@@ -2,21 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)b.t	6.1 (Berkeley) %G%
+.\"	@(#)b.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Device Defaulting Rules
-.ds CF July 27, 1983
-.LP
-.nr H1 1
-.ds CH "
+.\".ds RH "Device Defaulting Rules
 .bp
-.ds CH "\(hy \\n(PN \(hy
 .LG
 .B
 .ce
 APPENDIX B. RULES FOR DEFAULTING SYSTEM DEVICES
-.sp 2
+.sp
 .R
 .NL
 .PP
@@ -78,7 +72,7 @@ System dumps are automatically taken after a system crash,
 provided the device driver for the ``dumps'' device supports
 this.  The dump contains the contents of memory, but not
 the swap areas.  Normally the dump device is a disk in
-which case the information is copied to a location near the
+which case the information is copied to a location at the
 back of the partition.  The dump is placed in the back of the
 partition because the primary swap and dump device are commonly
 the same device and this allows the system to be rebooted without
@@ -107,11 +101,10 @@ for more information about its operation.
 .PP
 The value \fIdumplo\fP is calculated to be 
 .DS
-\fIdumpdev-size\fP \- DUMPDEV
+\fIdumpdev-size\fP \- \fImemsize\fP
 .DE
 where \fIdumpdev-size\fP is the size of the disk partition
-where system dumps are to be placed, and DUMPDEV is 10 Megabytes.
-If the disk partition is not large enough to hold a 10 Megabyte
-dump, \fIdumplo\fP is set to 0 (the front of the partition).
-For sites with more than 10 Megabytes of memory the definition
-of DUMPDEV in /sys/vax/autoconf.c will have to be changed.
+where system dumps are to be placed, and
+\fImemsize\fP is the size of physical memory.
+If the disk partition is not large enough to hold a full
+dump, \fIdumplo\fP is set to 0 (the start of the partition).

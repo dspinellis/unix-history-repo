@@ -2,24 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	6.1 (Berkeley) %G%
+.\"	@(#)2.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Configuration File Contents
-.ds CF July 27, 1983
-.LP
-.nr H1 2
-.nr H2 0
-.ds CH "
-.bp
-.ds CH "\(hy \\n(PN \(hy
-.LG
-.B
-.ce
-2. CONFIGURATION FILE CONTENTS
-.sp 2
-.R
-.NL
+.\".ds RH "Configuration File Contents
+.ne 2i
+.NH
+CONFIGURATION FILE CONTENTS
 .PP
 A system configuration must include at least the following
 pieces of information:
@@ -48,10 +36,14 @@ Machine type
 .PP
 The 
 .I "machine type"
-indicates if the system is going to operate on a DEC VAX-11 computer,
-or some other machine on which 4.2BSD operates.  The machine type
-is used to locate certain data files which are machine specific and,
-also, to select rules used in constructing the resultant
+indicates if the system is going to operate on a DEC VAX-11\(dg computer,
+.FS
+\(dg DEC, VAX, UNIBUS, MASSBUS and MicroVAX are trademarks of Digital
+Equipment Corporation.
+.FE
+or some other machine on which 4.3BSD operates.  The machine type
+is used to locate certain data files which are machine specific, and
+also to select rules used in constructing the resultant
 configuration files.
 .NH 2
 Cpu type
@@ -60,9 +52,12 @@ The
 .I "cpu type"
 indicates which, of possibly many, cpu's the system is to operate on.
 For example, if the system is being configured for a VAX-11, it could
-be running on a VAX-11/780, VAX-11/750, or VAX-11/730.  Specifying
-more than one cpu type implies the system should be configured to run
-on all the cpu's specified.  For some types of machines this is not
+be running on a VAX 8600, VAX-11/780, VAX-11/750, VAX-11/730 or MicroVAX II.
+(Other VAX cpu types, including the 8650, 785 and 725, are configured using
+the cpu designation for compatible machines introduced earlier.)
+Specifying
+more than one cpu type implies that the system should be configured to run
+on any of the cpu's specified.  For some types of machines this is not
 possible and 
 .I config
 will print a diagnostic indicating such.
@@ -142,11 +137,21 @@ be spent understanding it.  Section 6.3 contains a description of
 the autoconfiguration process, as it applies to those planning to
 write, or modify existing, device drivers.
 .NH 2
-Optional items
+Pseudo devices
+.PP
+Several system facilities are configured in a manner like that used
+for hardware devices although they are not associated with specific hardware.
+These system options are configured as
+.IR pseudo-devices .
+Some pseudo devices allow an optional parameter that sets the limit
+on the number of instances of the device that are active simultaneously.
+.NH 2
+System options
 .PP
 Other than the mandatory pieces of information described above, it
-is also possible to include various optional system facilities.  For
-example, 4.2BSD can be configured to support binary compatibility for
+is also possible to include various optional system facilities
+or to modify system behavior and/or limits.
+For example, 4.3BSD can be configured to support binary compatibility for
 programs built under 4.1BSD.  Also, optional support is provided
 for disk quotas and tracing the performance of the virtual memory
 subsystem.  Any optional facilities to be configured into

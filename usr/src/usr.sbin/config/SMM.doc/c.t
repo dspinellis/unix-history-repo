@@ -2,21 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)c.t	6.1 (Berkeley) %G%
+.\"	@(#)c.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Sample Config Files
-.ds CF July 27, 1983
-.LP
-.nr H1 1
-.ds CH "
+.\".ds RH "Sample Config Files
 .bp
-.ds CH "\(hy \\n(PN \(hy
 .LG
 .B
 .ce
 APPENDIX C. SAMPLE CONFIGURATION FILES
-.sp 2
+.sp
 .R
 .NL
 .PP
@@ -63,6 +57,7 @@ ident	UCBVAX
 timezone	8 dst
 maxusers	32
 options	INET
+options	NS
 
 config	vmunix	root on hp swap on hp and rk0 and rk1
 config	upvmunix	root on up
@@ -78,9 +73,7 @@ disk	up1	at sc0 drive 1
 controller	hk0	at uba? csr 0177440	vector rkintr
 disk	rk0	at hk0 drive 0
 disk	rk1	at hk0 drive 1
-pseudo-device	inet
 pseudo-device	pty
-# software loopback device for testing
 pseudo-device	loop
 pseudo-device	imp
 device	acc0	at uba? csr 0167600	vector accrint accxint

@@ -2,24 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.1 (Berkeley) %G%
+.\"	@(#)3.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "System Building Process
-.ds CF July 27, 1983
-.LP
-.nr H1 3
-.nr H2 0
-.ds CH "
-.bp
-.ds CH "\(hy \\n(PN \(hy
-.LG
-.B
-.ce
-3. SYSTEM BUILDING PROCESS
-.sp 2
-.R
-.NL
+.\".ds RH "System Building Process
+.ne 2i
+.NH
+SYSTEM BUILDING PROCESS
 .PP
 In this section we consider the steps necessary to build a bootable system
 image.  We assume the system source is located in the ``/sys'' directory
@@ -37,10 +25,13 @@ on the configuration file to generate the files required
 to compile and load the system image.
 .IP 4)
 Construct the source code interdependency rules for the
-configured system.
+configured system with
+.I make depend
+using
+.IR make (1).
 .IP 5)
 Compile and load the system with 
-.I make (1).
+.IR make .
 .PP
 Steps 1 and 2 are usually done only once.  When a system configuration
 changes it usually suffices to just run
@@ -55,10 +46,10 @@ Creating a configuration file
 .PP
 Configuration files normally reside in the directory ``/sys/conf''.
 A configuration file is most easily constructed by copying an
-existing configuration file and modifying it.  The 4.2BSD distribution
-contains a number of configuration files for machines at Berkeley,
-one may be suitable or, in worst case, you may take the generic configuration
-file and edit that.
+existing configuration file and modifying it.  The 4.3BSD distribution
+contains a number of configuration files for machines at Berkeley;
+one may be suitable or, in worst case, a copy
+of the generic configuration file may be edited.
 .PP
 The configuration file must have the same name as the directory in
 which the configured system is to be built.  
@@ -68,16 +59,18 @@ assumes this directory is located in the parent directory of
 the directory in which it
 is run.  For example, the generic
 system has a configuration file ``/sys/conf/GENERIC'' and an accompanying
-directory named ``/sys/GENERIC''.  In general it is unwise to move your
-configuration directories out of ``/sys'' as most of the system code
-and the files created by
+directory named ``/sys/GENERIC''.
+Although it is not required that the system sources and configuration
+files reside in ``/sys,'' the configuration and compilation procedure
+depends on the relative locations of directories within that hierarchy,
+as most of the system code and the files created by
 .I config
-use pathnames of the form ``../''.  If you are running out of space on
-the file system where the configuration directories are located there is
-a mechanism for sharing relocatable object files between systems;
-this is described later.
+use pathnames of the form ``../''.
+If the system files are not located in ``/sys,''
+it is desirable to make a symbolic link there for use in installation
+of other parts of the system that share files with the kernel.
 .PP
-When building your configuration file, be sure to include the items
+When building the configuration file, be sure to include the items
 described in section 2.  In particular, the machine type,
 cpu type, timezone, system identifier, maximum users, and root device
 must be specified.  The specification of the hardware present may take
@@ -109,23 +102,30 @@ on your configuration file will generate a number of files in
 the configuration directory.  These files are:
 .IP \(bu 3
 A file to be used by \fImake\fP\|(1)
-in compiling and loading the system.
+in compiling and loading the system,
+.IR Makefile .
 .IP \(bu 3
-One file for each possible system image for your machine
+One file for each possible system image for this machine,
+.IR swapxxx.c ,
+where
+.I xxx
+is the name of the system image,
 which describes where swapping, the root file system, and other
 miscellaneous system devices are located.
 .IP \(bu 3
 A collection of header files, one per possible device the
 system supports, which define the hardware configured.
 .IP \(bu 3
-A file containing the i/o configuration tables used by the system
+A file containing the I/O configuration tables used by the system
 during its 
 .I autoconfiguration
-phase.
+phase,
+.IR ioconf.c .
 .IP \(bu 3
 An assembly language file of interrupt vectors which
-connect interrupts from your machine's external buses to the main
-system path for handling interrupts.
+connect interrupts from the machine's external buses to the main
+system path for handling interrupts,
+and a file that contains counters and names for the interrupt vectors.
 .PP
 Unless you have reason to doubt 
 .IR config ,
@@ -153,13 +153,14 @@ This step is particularly important if your site makes changes
 to the system include files.  The rules generated specify which source code
 files are dependent on which include files.  Without these rules,
 .I make
-will not recognize when it must rebuild modules due to a system header file
-being modified.  Note that dependency rules created by this step only
-reflect directly included files.  That is, if file ``a'' includes another
-file ``b'', which includes yet another, say ``c'', and then ``c'' is modified, 
-.I make
-will not recognize that ``a'' should be recompiled.  It is best to keep
-include file dependencies only one level deep.
+will not recognize when it must rebuild modules
+due to the modification of a system header file.
+The dependency rules are generated by a pass of the C preprocessor
+and reflect the global system options.
+This step must be repeated when the configuration file is changed
+and
+.I config
+is used to regenerate the system makefile.
 .NH 2
 Building the system
 .PP
@@ -178,6 +179,9 @@ Thus, if you have configured ``vmunix'' to be a system with the root file
 system on an ``hp'' device and ``hkvmunix'' to be a system with the root
 file system on an ``hk'' device, then ``make vmunix hkvmunix'' will generate
 binary images for each.
+As the system will generally use the disk from which it is loaded
+as the root filesystem, separate system images are only required
+to support different swap configurations.
 .PP
 Note that the name of a bootable image is different from the system
 identifier.  All bootable images are configured for the same system;
@@ -190,7 +194,7 @@ generated by
 .I config
 does this automatically for you.
 This is advantageous for programs such as
-\fIps\fP\|(1) and \fIvmstat\fP\|(1),
+\fInetstat\fP\|(1) and \fIvmstat\fP\|(1),
 which run much faster when the symbols they need are located at
 the front of the symbol table.  
 Remember also that many programs expect
@@ -212,12 +216,13 @@ configuration requirements (one machine may be a development machine
 where disk quotas are not needed, while another is a production machine
 where they are), etc.  In these cases it is possible
 for common systems to share relocatable object modules which are not
-configuration dependent; most of the module in the directory ``/sys/sys''
+configuration dependent; most of the modules in the directory ``/sys/sys''
 are of this sort.
 .PP
 To share object modules, a generic system should be built.  Then, for
 each system configure the system as before, but before recompiling and
-linking the system, type ``make links''.  This will cause the system
+linking the system, type ``make links'' in the system compilation directory.
+This will cause the system
 to be searched for source modules which are safe to share between systems
 and generate symbolic links in the current directory to the appropriate
 object modules in the directory ``../GENERIC''.  A shell script,
@@ -228,8 +233,8 @@ for modules which may be shared.  Note that this list includes the definitions
 used to conditionally compile in the virtual memory tracing facilities, and
 the trace point support used only rarely (even at Berkeley). 
 It may be necessary
-to modify this file to reflect local needs.  Note further, that as
-described previously, interdependencies which are not directly visible
+to modify this file to reflect local needs.  Note further that
+interdependencies which are not directly visible
 in the source code are not caught.  This means that if you place
 per-system dependencies in an include file, they will not be recognized
 and the shared code may be selected in an unexpected fashion.
@@ -242,16 +247,15 @@ may be collected with \fIkgmon\fP\|(8) and processed with
 \fIgprof\fP\|(1)
 to obtain information regarding the system's operation.  Profiled
 systems maintain histograms of the program counter as well as the
-number of invocations of each routine.  The
-\fIgprof\fP\|(1)
+number of invocations of each routine.  The \fIgprof\fP
 command will also generate a dynamic call graph of the executing
 system and propagate time spent in each routine along the arcs
-of the call graph (consult the gprof documentation for elaboration).
+of the call graph (consult the \fIgprof\fP documentation for elaboration).
 The program counter sampling can be driven by the system clock, or
-if you have an alternate real time clock this can be used.  The 
-latter is highly recommended as use of the system clock will result
-in statistical anomalies and time spent in the clock routine will
-not be accurately accounted for.
+if you have an alternate real time clock, this can be used.  The 
+latter is highly recommended, as use of the system clock will result
+in statistical anomalies, and time spent in the clock routine will
+not be accurately attributed.
 .PP
 To configure a profiled system, the
 .B \-p

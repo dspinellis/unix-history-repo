@@ -2,24 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	6.1 (Berkeley) %G%
+.\"	@(#)5.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Sample Configuration Files
-.ds CF July 27, 1983
-.LP
-.nr H1 5
-.nr H2 0
-.ds CH "
-.bp
-.ds CH "\(hy \\n(PN \(hy
-.LG
-.B
-.ce
-5. SAMPLE CONFIGURATION FILES
-.sp 2
-.R
-.NL
+.\".ds RH "Sample Configuration Files
+.ne 2i
+.NH
+SAMPLE CONFIGURATION FILES
 .PP
 In this section we will consider how to configure a
 sample VAX-11/780 system on which the hardware can be
@@ -70,7 +58,7 @@ run only on this one processor, so the
 .I "cpu type"
 is ``VAX780''.  The options are empty since this is going to
 be a ``vanilla'' VAX.  The system identifier, as mentioned before,
-is ``ANSEL'' and the maximum number of users we plan to support is
+is ``ANSEL,'' and the maximum number of users we plan to support is
 about 40.  Thus the beginning of the configuration file looks like
 this:
 .DS
@@ -172,6 +160,7 @@ ident	UCBVAX
 timezone	8 dst
 maxusers	32
 options	INET
+options	NS
 .DE
 .PP
 The multiple cpu types allow us to replace UCBVAX with a
@@ -180,12 +169,14 @@ value of 32 given for the maximum number of users is done to
 force the system data structures to be over-allocated.  That
 is desirable on this machine because, while it is not expected
 to support many users, it is expected to perform a great deal
-of work.  Upping this value results in a larger disk buffer cache
-than would normally be allocated if the true number of users
-were given.  The ``INET'' indicates we plan to use the
-DARPA standard Internet protocols on this machine.
+of work.
+The ``INET'' indicates that we plan to use the
+DARPA standard Internet protocols on this machine,
+and ``NS'' also includes support for Xerox NS protocols.
+Note that unlike 4.2BSD configuration files,
+the network protocol options do not require corresponding pseudo devices.
 .PP
-The system images and disks are configured in next.
+The system images and disks are configured next.
 .DS
 .ta 1.5i 2.5i 4.0i
 config	vmunix	root on hp swap on hp and rk0 and rk1
@@ -213,13 +204,12 @@ must be installed (most of our old UNIBUS controllers have been
 replaced with the newer MASSBUS controllers, so we have a number
 of these around as spares).
 .PP
-Finally, we add in the network support.  The Internet protocols
-require an ``inet'' 
-.I pseudo-device
-in addition to the global ``INET'' option
-specified above.  Pseudo terminals are needed to allow users to
+Finally, we add in the network devices.
+Pseudo terminals are needed to allow users to
 log in across the network (remember the only hardwired terminal
-is the console).  The connection to the Internet is through
+is the console).
+The software loopback device is used for on-machine communications.
+The connection to the Internet is through
 an IMP, this requires yet another
 .I pseudo-device
 (in addition to the actual hardware device used by the
@@ -230,9 +220,7 @@ to map between Internet and Ethernet addresses.  Thus, yet another
 is needed.  The additional device specifications are show below.
 .DS
 .ta 1.5i 2.5i 4.0i
-pseudo-device	inet
 pseudo-device	pty
-# software loopback device for testing
 pseudo-device	loop
 pseudo-device	imp
 device	acc0	at uba? csr 0167600	vector accrint accxint

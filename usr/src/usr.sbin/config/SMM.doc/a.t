@@ -2,21 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	6.1 (Berkeley) %G%
+.\"	@(#)a.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Configuration File Grammar
-.ds CF July 27, 1983
-.LP
-.nr H1 1
-.ds CH "
+.\".ds RH "Configuration File Grammar
 .bp
-.ds CH "\(hy \\n(PN \(hy
 .LG
 .B
 .ce
 APPENDIX A. CONFIGURATION FILE GRAMMAR
-.sp 2
+.sp
 .R
 .NL
 .PP
@@ -77,6 +71,10 @@ Opt_list ::=  Option [ \fB,\fP Option ]*
 Option ::=  ID [ \fB=\fP Opt_value ]
 
 Opt_value ::=  ID | NUMBER
+
+Mkopt_list ::=  Mkoption [ \fB,\fP Mkoption ]*
+
+Mkoption ::=  ID \fB=\fP Opt_value
 
 /* device specifications */
 
