@@ -1,6 +1,6 @@
 # Makefile for f77 math & startup lib, libF77.a
 #
-# @(#)Makefile	1.6 (Berkeley) %G%
+# @(#)Makefile	1.7 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -34,7 +34,6 @@ OBJS	      = abort_.o \
 		c_log.o \
 		c_sin.o \
 		c_sqrt.o \
-		cabs.o \
 		d_abs.o \
 		d_acos.o \
 		d_asin.o \
@@ -55,7 +54,6 @@ OBJS	      = abort_.o \
 		d_sign.o \
 		d_sin.o \
 		d_sinh.o \
-		d_sqrt.o \
 		d_tan.o \
 		d_tanh.o \
 		dbesj0_.o \
@@ -145,7 +143,6 @@ OBJS	      = abort_.o \
 		traper_.o \
 		trapov_.o \
 		trpfpe_.o \
-		z_abs.o \
 		z_cos.o \
 		z_div.o \
 		z_exp.o \
@@ -173,7 +170,6 @@ SRCS	      = abort_.c \
 		c_log.c \
 		c_sin.c \
 		c_sqrt.c \
-		cabs.c \
 		d_abs.c \
 		d_acos.c \
 		d_asin.c \
@@ -194,7 +190,6 @@ SRCS	      = abort_.c \
 		d_sign.c \
 		d_sin.c \
 		d_sinh.c \
-		d_sqrt.c \
 		d_tan.c \
 		d_tanh.c \
 		dbesj0_.c \
@@ -284,7 +279,6 @@ SRCS	      = abort_.c \
 		traper_.c \
 		trapov_.c \
 		trpfpe_.c \
-		z_abs.c \
 		z_cos.c \
 		z_div.c \
 		z_exp.c \
