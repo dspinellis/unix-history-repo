@@ -1,0 +1,363 @@
+.\" Copyright (c) 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	%W% (Berkeley) %G%
+.\"
+This section describes the commands available in the command mode
+of the
+.Nm \&vi
+editor.
+#ifdef REFERENCE
+.Pp
+A
+.Dq word
+in
+.Nm \&vi
+is a sequence of letters, digits and underscores, delimited by other
+characters or the beginning or ending of a line.
+Many vi commands operate on this kind of
+.Dq word ,
+while some operate on
+.Dq words
+which are delimited by white space characters and the beginning and
+end of line, only.
+.Pp
+.Nm \&Vi
+keeps track of the currently
+.Dq most attractive
+cursor position.
+Each command below, that can change the current cursor position,
+specifies if the cursor is set to a specific location in the line,
+or if it is moved to the
+.Dq most attractive
+cursor position.
+The latter means that the cursor is moved to the cursor position that
+is vertically as close as possible to the last cursor position.
+If the current line is shorter than than the cursor position
+.Nm \&vi
+would select, the cursor is positioned on the last character in the line.
+In all cases, if the line is empty, the cursor is positioned on the first
+column of the line.
+#endif
+.Pp
+In each entry below, the tag line is a usage statement for the command
+character.
+A leading word count, in square brackets, indicates that the command
+takes an optional
+.Dq Li count ,
+causing it to repeat the command's effect
+.Li count
+times.
+.Bl -tag -width "XXXX" -compact
+.It Li "[count] ^A"
+Search forward for the
+.Li count
+occurrence of the
+.Sy word
+upon which the cursor is positioned.
+The
+.Dq Li \&^A
+command may be used as a motion argument.
+#ifdef REFERENCE
+The cursor is positioned at the beginning of the
+.Sy word
+if it is found.
+Affected by the
+.Sy extended
+and
+.Sy wrapscan
+options.
+#endif
+.It Li "^B [count]"
+Scroll up
+.Li count
+screens.
+#ifdef REFERENCE
+The cursor is positioned at the first non-blank character of the new line.
+#endif
+.It Li "^C"
+Interrupt an operation (e.g. text input, read, write, search).
+#ifdef REFERENCE
+If
+.Li \&^C
+is used to interrupt inserting text into the file, it is as if
+the <escape> character was used; all text input up to the
+interruption is resolved into the file.
+If it is used to interrupt entering an
+.Nm \&ex
+command, the command is aborted, the cursor returns to its previous
+position, and
+.Nm \&vi
+remains in command mode.
+.It Li "^D [count]"
+Scroll down the number of lines specified by the
+.Sy scroll
+option.
+The cursor is positioned at the first non-blank character of the new line.
+#ifdef REFERENCE
+If
+.Li count
+is specified,
+.Li \&^D
+scrolls down that many lines, and the value of the
+.Sy scroll
+option is set to
+.Li count .
+Affected by the
+.Sy scroll
+option.
+#endif
+.It Li "^E [count]"
+Scroll the screen down
+.Li count
+lines.
+#ifdef REFERENCE
+The
+.Li \&^E
+command differs from the other scrolling commands (with the exception of
+.Li \&^Y )
+in that it moves the screen, without moving the cursor, i.e. the cursor
+follows the line.
+If the line the cursor is on scrolls off the bottom of the screen,
+the cursor is positioned at the most attractive column.
+#endif
+.It Li "^F [count]"
+Scroll down
+.Li count
+screens.
+#ifdef REFERENCE
+The cursor is positioned at the first non-blank character of the new line.
+#endif
+.It Li "^G"
+Display the file name and status.
+#ifdef REFERENCE
+Affected by the
+.Sy showdirty
+option.
+#endif
+.It Li "^H [count, motion]"
+.de HH
+Move the cursor left
+.Li count
+characters.
+#ifdef REFERENCE
+The beginning of the line is a sink for the movement, however,
+it is an error to move left from the first character of the line.
+#endif
+..
+.It Li "^J [count, motion]"
+.de JJ
+Move the cursor down
+.Li count
+physical lines.
+#ifdef REFERENCE
+The cursor is positioned at the most attractive column.
+#endif
+..
+.It Li "^L"
+Redraw the screen.
+.It Li "^M"
+.de MM
+Move the cursor down
+.Li count
+physical lines.
+#ifdef REFERENCE
+The cursor is positioned at the first non-blank character of the new line.
+#endif
+..
+.It Li "^N"
+.JJ
+.It Li "^P [count, motion]"
+.de PP
+Move the cursor up
+.Li count
+lines.
+#ifdef REFERENCE
+The cursor is positioned at the most attractive column.
+.endif
+..
+.It Li "^R"
+Redraw the screen.
+.It Li "^U [count]"
+Scroll up the number of lines specified by the
+.Sy scroll
+option.
+The cursor is positioned at the first non-blank character of the new line.
+#ifdef REFERENCE
+If
+.Li count
+is specified,
+.Li \&^U
+scrolls up that many lines, and the value of the
+.Sy scroll
+option is set to
+.Li count .
+Affected by the
+.Sy scroll
+option.
+#endif
+.It Li "^Y"
+Scroll the screen up
+.Li count
+lines.
+#ifdef REFERENCE
+The
+.Li \&^Y
+command differs from the other scrolling commands (with the exception of
+.Li \&^E )
+in that it moves the screen, without moving the cursor, i.e. the cursor
+follows the line.
+If the line the cursor is on scrolls off the top of the screen,
+the cursor is positioned at the most attractive column.
+#endif
+.It Li "^Z"
+Suspend the
+.Nm \&vi
+session.
+.It Li "^["
+This is the <escape> character as well as
+.Dq Li \&^[ .
+#ifdef MANUAL
+Execute
+.Nm \&ex
+commands and cancel partial commands.
+#endif
+#ifdef REFERENCE
+If an
+.Nm \&ex
+command is being entered, the <escape> character causes the command
+to be executed.
+If a partial command has been entered, e.g.
+.Dq Li "[0-9]*" ,
+or
+.Dq Li "[0-9]*[!<>cdy]" ,
+the command is cancelled.
+Otherwise, it is considered and error.
+#endif
+.It Li "^]"
+.It Li "^^"
+.It Li "' ' [count, motion] "
+.de LL
+Move the cursor right
+.Li count
+characters.
+#ifdef REFERENCE
+The end of the line is a sink for the movement, however,
+it is an error to move right from the last character of the line.
+It is not, however, an error to use the the <space> or
+.Dq Li l
+commands as motion commands at the end of the line.
+#endif
+..
+.It Li "! [count]"
+.It Li "#"
+.It Li "$"
+.It Li "%"
+.It Li "&"
+.It Li "'"
+.It Li "("
+.It Li ")"
+.It Li "+"
+.MM
+.It Li ","
+.It Li "-"
+.It Li "."
+.It Li "/"
+.It Li "0"
+.It Li ":"
+.It Li ";"
+.It Li "<"
+.It Li ">"
+.It Li "?"
+.It Li "@"
+.It Li "A"
+.It Li "B"
+.It Li "C"
+.It Li "D"
+.It Li "E"
+.It Li "F"
+.It Li "G"
+.It Li "H"
+.It Li "I"
+.It Li "J"
+.It Li "L"
+.It Li "M"
+.It Li "N"
+.It Li "O"
+.It Li "P"
+.It Li "Q"
+.It Li "R"
+.It Li "S"
+.It Li "T"
+.It Li "U"
+.It Li "W"
+.It Li "X"
+.It Li "Y"
+.It Li "ZZ"
+.It Li "[["
+.It Li "]]"
+.It Li "^"
+.It Li "_"
+.It Li "`<mark>"
+.It Li "a"
+.It Li "b"
+.It Li "c"
+.It Li "d"
+.It Li "e"
+.It Li "f"
+.It Li "h"
+.HH
+.It Li "i"
+.It Li "j"
+.JJ
+.It Li "k"
+.PP
+.It Li "l"
+.LL
+.It Li "m"
+.It Li "n"
+.It Li "o"
+.It Li "p"
+.It Li "r"
+.It Li "s"
+.It Li "t"
+.It Li "u"
+.It Li "w"
+.It Li "x"
+.It Li "y"
+.It Li "z"
+.It Li "{"
+.It Li "|"
+.It Li "}"
+.It Li "~"
+.El
+This section describes the commands available in the text input mode
+of the
+.Nm \&vi
+editor.
+.Bl -tag -width "XXXX" -compact
+.It Li "^T"
+Move the cursor forwards the number of columns specified by the option
+.Sy shiftwidth .
+#ifdef REFERENCE
+First, <tab> characters are inserted, and then <spaces> if necessary.
+Historically,
+.Nm \&vi
+did not permit the
+.Li \&^T
+command to be used unless the cursor was at the first column of a new
+line or it was preceded only by
+.Sy autoindent
+characters.
+.Nm \&Nvi
+permits it to be used at any time during insert mode.
+#endif
+.It Li "^["
+This is the <escape> character as well as
+.Dq Li \&^[ .
+.It Li "^V"
+.It Li "^W"
+.It Li "^X"
+.El
