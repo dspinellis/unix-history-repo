@@ -1,11 +1,11 @@
-/*	rx.c	4.6	83/03/23	*/
+/*	rx.c	4.7	83/03/26	*/
 
 #include "rx.h"
 #if NFX > 0
 /*
  * RX02 floppy disk device driver
  *
- * -- WARNING, UNTESTED --
+ * -- WARNING, NOT THOROUGHLY TESTED --
  */
 #include "../machine/pte.h"
 
@@ -43,8 +43,9 @@ struct	rx_ctlr {
 } rx_ctlr[NFX];
 
 /* per-drive buffers */
-struct buf	rrxbuf[NRX];	/* buffers for I/O */
+struct buf	rrxbuf[NRX];	/* buffers for raw I/O */
 struct buf	erxbuf[NRX];	/* buffers for reading error status */
+struct buf	rxutab[NRX];	/* per drive buffer queue heads */
 
 /* per-drive data */
 struct rx_softc {
@@ -58,6 +59,10 @@ struct rx_softc {
 #define	RXF_USEWDDS	0x40	/* write deleted-data sector */
 	int	sc_csbits;	/* constant bits for CS register */
 	int	sc_tocnt;	/* for watchdog routine */
+	caddr_t	sc_uaddr;	/* save orig. unibus address while */
+				/* doing multisector transfers */
+	long	sc_bcnt;	/* save total transfer count for */
+				/* multisector transfers */
 } rx_softc[NRX];
 
 struct rxerr {
@@ -130,6 +135,7 @@ rxopen(dev, flag)
 	register int unit = RXUNIT(dev);
 	register struct rx_softc *sc;
 	register struct uba_device *ui;
+	register struct rxdevice *rxaddr;
 
 	if (unit >= NRX || (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
@@ -140,6 +146,14 @@ rxopen(dev, flag)
 	sc->sc_csbits = RX_INTR;
 	sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
 	sc->sc_csbits |= minor(dev) & RXF_DBLDEN ? RX_DDEN : RX_SDEN;
+	rxaddr = (struct rxdevice *)rxminfo[unit]->um_addr;
+	if (rxaddr->rxcs == 0x800) {
+		/*
+		 * If the drive subsystem has been powered down,
+		 * the rx211 controller must be initialized.
+		 */
+		rxreset(rxminfo[unit]->um_ubanum);
+	}
 	return (0);
 }
 
@@ -159,26 +173,57 @@ rxstrategy(bp)
 {
 	struct uba_device *ui;
 	register struct uba_ctlr *um;
-	int s;
+	register struct buf *dp;
+	struct rx_softc *sc;
+	int s, unit = RXUNIT(bp->b_dev);
 
-	ui = rxdinfo[RXUNIT(bp->b_dev)];
-	if (ui == 0 || ui->ui_alive == 0) {
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		return;
-	}
+	ui = rxdinfo[unit];
+	sc = &rx_softc[unit];
+	if (ui == 0 || ui->ui_alive == 0) 
+		goto bad;
 	um = ui->ui_mi;
-	bp->b_actf = NULL;
+	if (bp->b_blkno < 0 || (bp->b_blkno * DEV_BSIZE) > RXSIZE )
+		goto bad;
 	s = spl5();
-	if (um->um_tab.b_actf == NULL)
-		um->um_tab.b_actf = bp;
-	else
-		um->um_tab.b_actl->b_forw = bp;
-	um->um_tab.b_actl = bp;
+	dp = &rxutab[ui->ui_unit];
+	disksort(dp, bp);
+	rxustart(ui);
+	bp->b_resid = bp->b_bcount;
+	sc->sc_uaddr = bp->b_un.b_addr;
+	sc->sc_bcnt = bp->b_bcount;
 	rxstart(um);
 	splx(s);
+	return;
+
+bad:	bp->b_flags |= B_ERROR;
+	iodone(bp);
+	return;
 }
 
+/*
+ * Unit start routine.
+ * Put this unit on the ready queue for the controller,
+ * unless it is already there.
+ */
+rxustart(ui)
+	register struct uba_device *ui;
+{
+	struct buf *dp;
+	struct uba_ctlr *um;
+
+	dp = &rxutab[ui->ui_unit];
+	um = ui->ui_mi;
+
+	if (!dp->b_active) {
+		dp->b_forw = NULL;
+		if (um->um_tab.b_actf == NULL)
+			um->um_tab.b_actf = dp;
+		else
+			um->um_tab.b_actl->b_forw = dp;
+		um->um_tab.b_actl = dp;
+		dp->b_active++;
+	}
+}
 /*
  * Sector mapping routine.
  * Two independent sets of choices are available:
@@ -210,7 +255,7 @@ rxmap(bp, psector, ptrack)
 	register int lt, ls, ptoff;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
-	ls = ( bp->b_blkno * DEV_BSIZE ) / NBPS;
+	ls = ( bp->b_blkno * DEV_BSIZE + ( sc->sc_bcnt - bp->b_resid )) / NBPS;
 	lt = ls / 26;
 	ls %= 26;
 	/*
@@ -222,7 +267,7 @@ rxmap(bp, psector, ptrack)
 	ptoff = 0;
 	if (sc->sc_flags&RXF_DIRECT)
 		ptoff = 77;
-	if (sc->sc_flags&RXF_TRKZERO)
+	if (!sc->sc_flags&RXF_TRKZERO)
 		ptoff++;
 	if (lt + ptoff < 77)
 		ls = ((ls << 1) + (ls >= 13) + (6*lt)) % 26;
@@ -230,22 +275,36 @@ rxmap(bp, psector, ptrack)
 	*psector = ls + 1;
 }
 
+/*
+ * Controller start routine
+ */
 rxstart(um)
 	register struct uba_ctlr *um;
 {
 	register struct rxdevice *rxaddr;
 	register struct rx_ctlr *rxc;
 	register struct rx_softc *sc;
-	struct buf *bp;
+	struct buf *dp, *bp;
 	int unit, sector, track;
 
-	if (um->um_tab.b_active || (bp = um->um_tab.b_actf) == NULL)
+	if (um->um_tab.b_active)
 		return;
+loop:
+	if ((dp = um->um_tab.b_actf) == NULL)
+		return;
+	if ((bp = dp->b_actf) == NULL) {
+		um->um_tab.b_actf = dp->b_forw;
+		goto loop;
+	}
 	um->um_tab.b_active++;
 	unit = RXUNIT(bp->b_dev);
 	sc = &rx_softc[unit];
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
+	sc->sc_tocnt = 0;
+	bp->b_bcount = bp->b_resid;
+	if (bp->b_bcount > NBPS)
+		bp->b_bcount = NBPS;
 	rxtimo(bp->b_dev);				/* start watchdog */
 	if (bp->b_flags&B_CTRL) {			/* format */
 		rxc->rxc_state = RXS_FORMAT;
@@ -259,7 +318,8 @@ rxstart(um)
 		rxmap(bp, &sector, &track);
 		rxc->rxc_state = RXS_READ;
 		rxaddr->rxcs = RX_READ | sc->sc_csbits;
-		printf("rxstart: (read) track=%d, sector=%d\n", track, sector);
+		printf("rxstart/r: tr=%d, sc=%d, bl=%d, cnt=%d\n", 
+			track, sector, bp->b_blkno, bp->b_bcount);
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = (u_short)sector;
@@ -278,11 +338,11 @@ rxdgo(um)
 {
 	register struct rxdevice *rxaddr = (struct rxdevice *)um->um_addr;
 	int ubinfo = um->um_ubinfo;
-	struct buf *bp = um->um_tab.b_actf;
+	struct buf *bp = um->um_tab.b_actf->b_actf;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 	struct rx_ctlr *rxc = &rx_ctlr[um->um_ctlr];
 
-	sc->sc_tocnt = 0;
+	rxaddr->rxcs = um->um_cmd | ((ubinfo & 0x30000) >> 4) | sc->sc_csbits;
 	if (rxc->rxc_state != RXS_RDERR) {
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
@@ -291,7 +351,6 @@ rxdgo(um)
 	while ((rxaddr->rxcs&RX_TREQ) == 0)
 		;
 	rxaddr->rxdb = ubinfo;
-	rxaddr->rxcs = um->um_cmd | ((ubinfo & 0x30000) >> 4) | sc->sc_csbits;
 }
 
 rxintr(dev)
@@ -300,7 +359,7 @@ rxintr(dev)
 	int unit = RXUNIT(dev), sector, track;
 	struct uba_ctlr *um = rxminfo[unit];
 	register struct rxdevice *rxaddr;
-	register struct buf *bp;
+	register struct buf *bp, *dp;
 	register struct rx_softc *sc = &rx_softc[unit];
 	struct uba_device *ui = rxdinfo[unit];
 	struct rxerr *er;
@@ -309,11 +368,14 @@ rxintr(dev)
 	sc->sc_tocnt = 0;
 	if (!um->um_tab.b_active)
 		return;
+	dp = um->um_tab.b_actf;
+	if (!dp->b_active)
+		return;
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
 	er = &rxerr[unit];
-	bp = um->um_tab.b_actf;
-	printf("rxintr: unit=%d, state=0x%x, ctrlr status=0x%x\n", 
+	bp = dp->b_actf;
+	printf("rxintr: dev=%d, state=0x%x, status=0x%x\n", 
 		unit, rxc->rxc_state, rxaddr->rxcs);
 	if ((rxaddr->rxcs & RX_ERR) &&
 	    rxc->rxc_state != RXS_RDSTAT && rxc->rxc_state != RXS_RDERR)
@@ -382,9 +444,8 @@ rxintr(dev)
 		goto done;
 
 	default:
-		printf("rx%d: state %d (reset)", unit, rxc->rxc_state);
+		printf("rx%d: state %d (reset)\n", unit, rxc->rxc_state);
 		rxreset(um->um_ubanum);
-		printf("\n");
 		return;
 	}
 error:
@@ -458,23 +519,34 @@ rderr:
 	bp->b_un.b_addr = (caddr_t)er->rxxt;
 	bp->b_bcount = sizeof (er->rxxt);
 	bp->b_flags &= ~(B_DIRTY|B_UAREA|B_PHYS|B_PAGET);
-	if (um->um_tab.b_actf == NULL)
-		um->um_tab.b_actl = bp;
-	bp->b_forw = um->um_tab.b_actf;
-	um->um_tab.b_actf = bp;
+	if (um->um_tab.b_actf->b_actf == NULL)
+		um->um_tab.b_actf->b_actl = bp;
+	bp->b_forw = um->um_tab.b_actf->b_actf;
+	um->um_tab.b_actf->b_actf = bp;
 	rxc->rxc_state = RXS_RDERR;
 	um->um_cmd = RX_RDERR;
 	(void) ubago(ui);
 	return;
 done:
 	um->um_tab.b_active = 0;
-	um->um_tab.b_actf = bp->b_forw;
+	um->um_tab.b_errcnt = 0;
+	ubadone(um);
+	if ((bp->b_resid -= NBPS) > 0) {
+		bp->b_un.b_addr += NBPS;
+		rxstart(um);
+		return;
+	}
+	bp->b_un.b_addr = sc->sc_uaddr;
 	bp->b_resid = 0;
+	bp->b_bcount = sc->sc_bcnt;
 	iodone(bp);
 	rxc->rxc_state = RXS_IDLE;
-	ubadone(um);
+	um->um_tab.b_actf = dp->b_forw;
+	dp->b_active = 0;
+	dp->b_errcnt = 0;
+	dp->b_actf = bp->av_forw;
 	/*
-	 * If this unit (controller) has more work to do,
+	 * If this controller has more work to do,
 	 * start it up right away
 	 */
 	if (um->um_tab.b_actf)
@@ -482,6 +554,7 @@ done:
 }
 
 /*ARGSUSED*/
+#ifdef notdef
 minrxphys(bp)
 	struct buf *bp;
 {
@@ -490,6 +563,7 @@ minrxphys(bp)
 	if (bp->b_bcount > NBPS)
 		bp->b_bcount = NBPS;
 }
+#endif
 
 rxtimo(dev)
 	dev_t dev;
@@ -500,7 +574,8 @@ rxtimo(dev)
 		timeout(rxtimo, (caddr_t)dev, hz);
 	if (++sc->sc_tocnt < RX_MAXTIMEOUT)
 		return;
-	printf("rx: timeout on dev %d\n", dev);
+	printf("rx: timeout dev 0x%x\n", dev);
+	sc->sc_tocnt = 0;
 	rxintr(dev);
 }
 
@@ -515,11 +590,8 @@ rxreset(uban)
 		if ((um = rxminfo[ctlr]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		printf(" fx%d: ", ctlr);
-		if (um->um_ubinfo) {
-			printf("<%d>", (um->um_ubinfo>>28)&0xf);
+		if (um->um_ubinfo)
 			um->um_ubinfo = 0;
-		}
 		rx_ctlr[ctlr].rxc_state = RXS_IDLE;
 		rxaddr = (struct rxdevice *)um->um_addr;
 		rxaddr->rxcs = RX_INIT;
@@ -529,32 +601,37 @@ rxreset(uban)
 	}
 }
 
+/*
+ * make the world believe this is a 
+ * 512b/s device
+ */
+
 rxread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	int unit = RXUNIT(dev), ctlr = rxdinfo[unit]->ui_ctlr;
-	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
+	int unit = RXUNIT(dev) ;
+	struct rx_softc *sc = &rx_softc[unit];
 
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
 		return (EIO);
-	return (physio(rxstrategy, &rrxbuf[ctlr], dev, B_READ, minrxphys, uio));
+	return (physio(rxstrategy, &rrxbuf[unit], dev, B_READ, minphys, uio));
 }
 
 rxwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	int unit = RXUNIT(dev), ctlr = rxdinfo[unit]->ui_ctlr;
-	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
+	int unit = RXUNIT(dev);
+	struct rx_softc *sc = &rx_softc[unit];
 
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
 		return (EIO);
-	return(physio(rxstrategy, &rrxbuf[ctlr], dev, B_WRITE, minrxphys, uio));
+	return(physio(rxstrategy, &rrxbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 /*
@@ -569,8 +646,8 @@ rxwrite(dev, uio)
  *		  (by returning with an EIO error code if it did).
  *
  * Requests relating to deleted-data marks can be handled right here.
- * A "set density" request, however, must additionally be processed
- * through "rxstart", just like a read or write request.
+ * A "set density" (format) request, however, must additionally be 
+ * processed through "rxstart", just like a read or write request.
  */
 /*ARGSUSED3*/
 rxioctl(dev, cmd, data, flag)
@@ -606,12 +683,12 @@ rxioctl(dev, cmd, data, flag)
 rxformat(dev)
 	dev_t dev;
 {
-	int ctlr = rxdinfo[RXUNIT(dev)]->ui_mi->um_ctlr;
+	int unit = RXUNIT(dev);
 	struct buf *bp;
-	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
+	struct rx_softc *sc = &rx_softc[unit];
 	int s, error = 0;
 
-	bp = &rrxbuf[RXUNIT(dev)];
+	bp = &rrxbuf[unit];
 	s = spl5();
 	while (bp->b_flags & B_BUSY)
 		sleep(bp, PRIBIO);
