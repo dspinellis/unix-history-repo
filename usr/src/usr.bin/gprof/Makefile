@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.1 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.2 (Berkeley) %G%
 RRHBIN = /va/staff/rrh/bin
 NCC = ${RRHBIN}/ncc
 
@@ -82,5 +82,6 @@ lint:
 	lint ${CFLAGS} ${LINTFLAGS} dprof.c arcs.c dfn.c lookup.c printdprof.c
 
 ${DPROFHDRS} ${DPROFSRCS} ${OTHERS}:
-	${GET} $@
+	sccs get $@
 
+sources: ${DPROFHDRS} ${DPROFSRCS} ${OTHERS}
