@@ -35,7 +35,6 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 
 #include "types.h"
 #include "param.h"
-#include "../ufs/dir.h"
 #include "user.h"
 #include "mbuf.h"
 #include "domain.h"
