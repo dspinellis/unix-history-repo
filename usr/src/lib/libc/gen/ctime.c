@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -1213,6 +1213,11 @@ int * const		okayp;
 		--yourtm.tm_year;
 		yourtm.tm_mday +=
 			year_lengths[isleap(yourtm.tm_year + TM_YEAR_BASE)];
+	}
+	while (yourtm.tm_mday > DAYSPERLYEAR) {
+		yourtm.tm_mday -=
+		    year_lengths[isleap(yourtm.tm_year + TM_YEAR_BASE)];
+		++yourtm.tm_year;
 	}
 	for ( ; ; ) {
 		i = mon_lengths[isleap(yourtm.tm_year +
