@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -439,7 +439,8 @@ findname(string, level, bufp, namelist)
 		return (-1);
 	}
 	for (i = 0; i < namelist->size; i++)
-		if (!strcmp(name, namelist->list[i].ctl_name))
+		if (namelist->list[i].ctl_name != NULL &&
+		    strcmp(name, namelist->list[i].ctl_name) == 0)
 			break;
 	if (i == namelist->size) {
 		fprintf(stderr, "%s level name %s in %s is invalid\n",
