@@ -698,7 +698,7 @@
 .	\" UL - underline in troff
 .de UL
 .if t \\$1\l'|0\(ul'\\$2
-.if n .I \\$1 \\$2
+.if n .I "\\$1" "\\$2"
 ..
 .	\" SM - smaller
 .de SM
@@ -916,7 +916,7 @@
 .el \{\
 \s-1UNIX\s0\\$1\(dg
 .FS
-\(dg \s-1UNIX\s0 is a trademark of Bell Laboratories.
+\(dg \s-1UNIX\s0 is a trademark of AT&T Bell Laboratories.
 .FE
 .nr UX 1
 .\}
