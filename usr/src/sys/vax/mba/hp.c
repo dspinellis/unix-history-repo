@@ -1,4 +1,4 @@
-/*	hp.c	3.15	%G%	*/
+/*	hp.c	3.16	%G%	*/
 
 /*
  * RP06/RM03/RM05 disk driver
@@ -279,10 +279,10 @@ search:
 		hpaddr->hpcs1 = SEARCH|GO;
 	}
 	unit += DK_N;
-	if (unit <= DK_NMAX)
+	if (unit <= DK_NMAX) {
 		dk_busy |= 1<<unit;
-	if (DK_N+NHP <= DK_NMAX)
 		dk_seek[unit]++;
+	}
 	return;
 
 done:
