@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.12 %G%";
+static char SccsId[] = "@(#)sccs.c	1.13 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
