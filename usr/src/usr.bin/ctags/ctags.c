@@ -1,4 +1,5 @@
-static char *sccsid = "@(#)ctags.c	4.3 (Berkeley) 11/24/80";
+static char *sccsid = "@(#)ctags.c	4.7 (Berkeley) 8/18/83";
+
 #include <stdio.h>
 #include <ctype.h>
 
@@ -21,8 +22,9 @@ static char *sccsid = "@(#)ctags.c	4.3 (Berkeley) 11/24/80";
 #define	max(I1,I2)	(I1 > I2 ? I1 : I2)
 
 struct	nd_st {			/* sorting structure			*/
-	char	*func;			/* function name		*/
+	char	*entry;			/* function or type name	*/
 	char	*file;			/* file name			*/
+	logical f;			/* use pattern or line no	*/
 	int	lno;			/* for -x option		*/
 	char	*pat;			/* search pattern		*/
 	logical	been_warned;		/* set if noticed dup		*/
@@ -39,7 +41,14 @@ logical	number,				/* T if on line starting with #	*/
 					/* boolean "func" (see init)	*/
 	_wht[0177],_etk[0177],_itk[0177],_btk[0177],_gd[0177];
 
-char	searchar = '?';			/* use ?...? searches 		*/
+	/* typedefs are recognized using a simple finite automata,
+	 * tydef is its state variable.
+	 */
+typedef enum {none, begin, middle, end } TYST;
+
+TYST tydef = none;
+
+char	searchar = '/';			/* use /.../ searches 		*/
 
 int	lineno;				/* line number of current line */
 char	line[4*BUFSIZ],		/* current input line			*/
@@ -50,11 +59,13 @@ char	line[4*BUFSIZ],		/* current input line			*/
 				/* token ending chars			*/
 	*begtk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
 				/* token starting chars			*/
-	*intk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789",				/* valid in-token chars			*/
+	*intk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789",
+				/* valid in-token chars			*/
 	*notgd	= ",;";		/* non-valid after-function chars	*/
 
 int	file_num;		/* current file number			*/
 int	aflag;			/* -a: append to tags */
+int	tflag;			/* -t: create tags for typedefs */
 int	uflag;			/* -u: update tags */
 int	wflag;			/* -w: suppress warnings */
 int	vflag;			/* -v: create vgrind style index output */
@@ -81,8 +92,17 @@ char	*av[];
 	while (ac > 1 && av[1][0] == '-') {
 		for (i=1; av[1][i]; i++) {
 			switch(av[1][i]) {
+				case 'B':
+					searchar='?';
+					break;
+				case 'F':
+					searchar='/';
+					break;
 				case 'a':
 					aflag++;
+					break;
+				case 't':
+					tflag++;
 					break;
 				case 'u':
 					uflag++;
@@ -105,7 +125,7 @@ char	*av[];
 	}
 
 	if (ac <= 1) {
-		usage: printf("Usage: ctags [-au] file ...\n");
+usage:		printf("Usage: ctags [-BFatuwvx] file ...\n");
 		exit(1);
 	}
 
@@ -114,10 +134,10 @@ char	*av[];
 	 * loop through files finding functions
 	 */
 	for (file_num = 1; file_num < ac; file_num++)
-		find_funcs(av[file_num]);
+		find_entries(av[file_num]);
 
 	if (xflag) {
-		put_funcs(head);
+		put_entries(head);
 		exit(0);
 	}
 	if (uflag) {
@@ -134,7 +154,7 @@ char	*av[];
 		perror(outfile);
 		exit(1);
 	}
-	put_funcs(head);
+	put_entries(head);
 	fclose(outf);
 	if (uflag) {
 		sprintf(cmd, "sort %s -o %s", outfile, outfile);
@@ -175,9 +195,9 @@ init()
 
 /*
  * This routine opens the specified file and calls the function
- * which finds the function definitions.
+ * which finds the function and type definitions.
  */
-find_funcs(file)
+find_entries(file)
 char	*file;
 {
 	char *cp;
@@ -188,26 +208,35 @@ char	*file;
 	}
 	curfile = savestr(file);
 	cp = rindex(file, '.');
-	if (cp && (cp[1] != 'c' || cp[1] != 'h') && cp[2] == 0) {
-		if (PF_funcs(inf) == 0) {
-			rewind(inf);
-			C_funcs();
+	/* .l implies lisp source code */
+	if (cp && cp[1] == 'l' && cp[2] == '\0') {
+		L_funcs(inf);
+		fclose(inf);
+		return;
+	}
+	/* if not a .c or .h file, try fortran */
+	if (cp && (cp[1] != 'c' && cp[1] != 'h') && cp[2] == '\0') {
+		if (PF_funcs(inf) != 0) {
+			fclose(inf);
+			return;
 		}
-	} else
-		C_funcs();
+		rewind(inf);	/* no fortran tags found, try C */
+	}
+	C_entries();
 	fclose(inf);
 }
 
-pfnote(name, ln)
+pfnote(name, ln, f)
 	char *name;
+	logical f;			/* f == TRUE when function */
 {
 	register char *fp;
 	register NODE *np;
 	char nbuf[BUFSIZ];
 
 	if ((np = (NODE *) malloc(sizeof (NODE))) == NULL) {
-		fprintf(stderr, "ctags: too many functions to sort\n");
-		put_funcs(head);
+		fprintf(stderr, "ctags: too many entries to sort\n");
+		put_entries(head);
 		free_tree(head);
 		head = np = (NODE *) malloc(sizeof (NODE));
 	}
@@ -223,8 +252,9 @@ pfnote(name, ln)
 			*fp = 0;
 		name = nbuf;
 	}
-	np->func = savestr(name);
+	np->entry = savestr(name);
 	np->file = curfile;
+	np->f = f;
 	np->lno = ln;
 	np->left = np->right = 0;
 	if (xflag == 0) {
@@ -240,14 +270,15 @@ pfnote(name, ln)
 }
 
 /*
- * This routine finds functions in C syntax and adds them
+ * This routine finds functions and typedefs in C syntax and adds them
  * to the list.
  */
-C_funcs()
+C_entries()
 {
 	register int c;
 	register char *token, *tp;
-	int incomm, inquote, inchar, midtoken, level;
+	logical incomm, inquote, inchar, midtoken;
+	int level;
 	char *sp;
 	char tok[BUFSIZ];
 
@@ -304,6 +335,9 @@ C_funcs()
 				number = TRUE;
 			continue;
 		case '{':
+			if (tydef == begin) {
+				tydef=middle;
+			}
 			level++;
 			continue;
 		case '}':
@@ -311,18 +345,22 @@ C_funcs()
 				level = 0;	/* reset */
 			else
 				level--;
+			if (!level && tydef==middle) {
+				tydef=end;
+			}
 			continue;
 		}
-		if (!level && !inquote && !incomm && gotone == 0) {
+		if (!level && !inquote && !incomm && gotone == FALSE) {
 			if (midtoken) {
 				if (endtoken(c)) {
+					int f;
 					int pfline = lineno;
-					if (start_func(&sp,token,tp)) {
+					if (start_entry(&sp,token,tp,&f)) {
 						strncpy(tok,token,tp-token+1);
 						tok[tp-token+1] = 0;
 						getline();
-						pfnote(tok, pfline);
-						gotone = TRUE;
+						pfnote(tok, pfline, f);
+						gotone = f;	/* function */
 					}
 					midtoken = FALSE;
 					token = sp;
@@ -333,6 +371,8 @@ C_funcs()
 				midtoken = TRUE;
 			}
 		}
+		if (c == ';'  &&  tydef==end)	/* clean with typedefs */
+			tydef=none;
 		sp++;
 		if (c == '\n' || sp > &line[sizeof (line) - BUFSIZ]) {
 			tp = token = sp = line;
@@ -343,12 +383,14 @@ C_funcs()
 }
 
 /*
- *	This routine  checks to see if the current token is
- * at the start of a function.  It updates the input line
- * so that the '(' will be in it when it returns.
+ * This routine  checks to see if the current token is
+ * at the start of a function, or corresponds to a typedef
+ * It updates the input line * so that the '(' will be
+ * in it when it returns.
  */
-start_func(lp,token,tp)
+start_entry(lp,token,tp,f)
 char	**lp,*token,*tp;
+int	*f;
 {
 
 	reg	char	c,*sp,*tsp;
@@ -356,6 +398,7 @@ char	**lp,*token,*tp;
 	logical	firsttok;		/* T if have seen first token in ()'s */
 	int	bad;
 
+	*f = 1;			/* a function */
 	sp = *lp;
 	c = *sp;
 	bad = FALSE;
@@ -371,15 +414,7 @@ char	**lp,*token,*tp;
 	/* the following tries to make it so that a #define a b(c)	*/
 	/* doesn't count as a define of b.				*/
 	} else {
-		logical	define;
-
-		define = TRUE;
-		for (tsp = "define"; *tsp && token < tp; tsp++)
-			if (*tsp != *token++) {
-				define = FALSE;
-				break;
-			}
-		if (define)
+		if (!strncmp(token, "define", 6))
 			found = 0;
 		else
 			found++;
@@ -388,6 +423,23 @@ char	**lp,*token,*tp;
 badone:			bad = TRUE;
 			goto ret;
 		}
+	}
+	/* check for the typedef cases		*/
+	if (tflag && !strncmp(token, "typedef", 7)) {
+		tydef=begin;
+		goto badone;
+	}
+	if (tydef==begin && (!strncmp(token, "struct", 6) ||
+	    !strncmp(token, "union", 5) || !strncmp(token, "enum", 4))) {
+		goto badone;
+	}
+	if (tydef==begin) {
+		tydef=end;
+		goto badone;
+	}
+	if (tydef==end) {
+		*f = 0;
+		goto ret;
 	}
 	if (c != '(')
 		goto badone;
@@ -419,7 +471,8 @@ ret:
 	if (c == '\n')
 		lineno--;
 	ungetc(c,inf);
-	return !bad && isgood(c);
+	return !bad && (!*f || isgood(c));
+					/* hack for typedefs */
 }
 
 getline()
@@ -451,20 +504,20 @@ add_node(node, cur_node)
 {
 	register int dif;
 
-	dif = strcmp(node->func,cur_node->func);
+	dif = strcmp(node->entry, cur_node->entry);
 	if (dif == 0) {
 		if (node->file == cur_node->file) {
 			if (!wflag) {
-fprintf(stderr,"Duplicate function in file %s, line %d: %s\n",
-    node->file,lineno,node->func);
+fprintf(stderr,"Duplicate entry in file %s, line %d: %s\n",
+    node->file,lineno,node->entry);
 fprintf(stderr,"Second entry ignored\n");
 			}
 			return;
 		}
 		if (!cur_node->been_warned)
 			if (!wflag)
-fprintf(stderr,"Duplicate function in files %s and %s: %s (Warning only)\n",
-    node->file, cur_node->file, node->func);
+fprintf(stderr,"Duplicate entry in files %s and %s: %s (Warning only)\n",
+    node->file, cur_node->file, node->entry);
 		cur_node->been_warned = TRUE;
 		return;
 	} 
@@ -481,29 +534,37 @@ fprintf(stderr,"Duplicate function in files %s and %s: %s (Warning only)\n",
 		cur_node->right = node;
 }
 
-put_funcs(node)
+put_entries(node)
 reg NODE	*node;
 {
 	reg char	*sp;
 
 	if (node == NULL)
 		return;
-	put_funcs(node->left);
-	if (xflag == 0) {
-		fprintf(outf, "%s\t%s\t%c^", node->func, node->file ,searchar);
-		for (sp = node->pat; *sp; sp++)
-			if (*sp == '\\')
-				fprintf(outf, "\\\\");
-			else
-				putc(*sp, outf);
-		fprintf(outf, "%c\n", searchar);
-	}
+	put_entries(node->left);
+	if (xflag == 0)
+		if (node->f) {		/* a function */
+			fprintf(outf, "%s\t%s\t%c^",
+				node->entry, node->file, searchar);
+			for (sp = node->pat; *sp; sp++)
+				if (*sp == '\\')
+					fprintf(outf, "\\\\");
+				else if (*sp == searchar)
+					fprintf(outf, "\\%c", searchar);
+				else
+					putc(*sp, outf);
+			fprintf(outf, "%c\n", searchar);
+		} else {		/* a typedef; text pattern inadequate */
+			fprintf(outf, "%s\t%s\t%d\n",
+				node->entry, node->file, node->lno);
+		}
 	else if (vflag)
-		fprintf(stdout, "%s %s %d\n", node->func, node->file, (node->lno+63)/64);
+		fprintf(stdout, "%s %s %d\n",
+				node->entry, node->file, (node->lno+63)/64);
 	else
 		fprintf(stdout, "%-16s%4d %-16s %s\n",
-		    node->func, node->lno, node->file, node->pat);
-	put_funcs(node->right);
+			node->entry, node->lno, node->file, node->pat);
+	put_entries(node->right);
 }
 
 char	*dbp = lbuf;
@@ -668,4 +729,47 @@ register char *sp, c;
 			r = sp;
 	} while (*sp++);
 	return(r);
+}
+
+/*
+ * lisp tag functions
+ * just look for (def or (DEF
+ */
+
+L_funcs (fi)
+FILE *fi;
+{
+	lineno = 0;
+	pfcnt = 0;
+	while (fgets(lbuf, sizeof(lbuf), fi)) {
+		lineno++;
+		dbp = lbuf;
+		if (dbp[0] == '(' && 
+		     (dbp[1] == 'D' || dbp[1] == 'd') &&
+		     (dbp[2] == 'E' || dbp[2] == 'e') &&
+		     (dbp[3] == 'F' || dbp[3] == 'f')) {
+		   while (!isspace(*dbp)) dbp++;
+		   while (isspace(*dbp)) dbp++;
+		   L_getit();
+		   }
+		}
+	}
+
+L_getit()
+{
+	register char *cp;
+	char c;
+	char nambuf[BUFSIZ];
+
+	for (cp = lbuf; *cp; cp++) ;
+	*--cp = 0;		/* zap newline */
+	if (*dbp == 0) return;
+	for (cp = dbp+1; *cp && *cp != '(' && *cp != ' '; cp++)
+	        continue;
+	c = cp[0];
+	cp[0] = 0;
+	strcpy(nambuf, dbp);
+	cp[0] = c;
+	pfnote(nambuf, lineno,TRUE);
+	pfcnt++;
 }
