@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socket.h	7.4 (Berkeley) %G%
+ *	@(#)socket.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -78,7 +78,7 @@ struct	linger {
 #define	AF_PUP		4		/* pup protocols: e.g. BSP */
 #define	AF_CHAOS	5		/* mit CHAOS protocols */
 #define	AF_NS		6		/* XEROX NS protocols */
-#define	AF_NBS		7		/* nbs protocols */
+#define	AF_ISO		7		/* ISO protocols */
 #define	AF_ECMA		8		/* european computer manufacturers */
 #define	AF_DATAKIT	9		/* datakit protocols */
 #define	AF_CCITT	10		/* CCITT protocols, X.25 etc */
@@ -88,25 +88,26 @@ struct	linger {
 #define AF_LAT		14		/* LAT */
 #define	AF_HYLINK	15		/* NSC Hyperchannel */
 #define	AF_APPLETALK	16		/* Apple Talk */
+#define	AF_ROUTE	17		/* Internal Routing Protocol */
 
-#define	AF_MAX		17
+#define	AF_MAX		18
 
 /*
  * Structure used by kernel to store most
  * addresses.
  */
-#ifdef notyet
 struct sockaddr {
 	u_char	sa_len;			/* total length */
 	u_char	sa_family;		/* address family */
-	char	sa_addr[1];		/* actually longer; address value */
+	char	sa_data[14];		/* actually longer; address value */
 };
-#else
-struct sockaddr {
+/*
+ * 4.3 compat sockaddr, move to compat file later
+ */
+struct osockaddr {
 	u_short	sa_family;		/* address family */
 	char	sa_data[14];		/* up to 14 bytes of direct address */
 };
-#endif
 
 /*
  * Structure used by kernel to pass protocol
@@ -127,7 +128,7 @@ struct sockproto {
 #define	PF_PUP		AF_PUP
 #define	PF_CHAOS	AF_CHAOS
 #define	PF_NS		AF_NS
-#define	PF_NBS		AF_NBS
+#define	PF_ISO		AF_ISO
 #define	PF_ECMA		AF_ECMA
 #define	PF_DATAKIT	AF_DATAKIT
 #define	PF_CCITT	AF_CCITT
@@ -137,6 +138,7 @@ struct sockproto {
 #define PF_LAT		AF_LAT
 #define	PF_HYLINK	AF_HYLINK
 #define	PF_APPLETALK	AF_APPLETALK
+#define	PF_ROUTE	AF_ROUTE
 
 #define	PF_MAX		AF_MAX
 
