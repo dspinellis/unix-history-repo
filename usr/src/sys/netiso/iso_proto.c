@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso_proto.c,v $ 
- *	@(#)iso_proto.c	7.6 (Berkeley) %G% *
+ *	@(#)iso_proto.c	7.7 (Berkeley) %G% *
  *
  * iso_proto.c : protocol switch tables in the ISO domain
  *
@@ -56,7 +56,8 @@ int	tp_ctloutput();
 int	tpclnp_ctlinput();
 int	tpclnp_input();
 int	tp_usrreq();
-int	tp_init(),tp_slowtimo(),tp_drain();
+int	tp_init(), tp_slowtimo(), tp_drain();
+int	cons_init(), tpcons_input();
 
 int	esis_input(), esis_ctlinput(), esis_init(), esis_usrreq();
 int	cltp_input(), cltp_ctlinput(), cltp_init(), cltp_usrreq(), cltp_output();
@@ -100,7 +101,7 @@ struct protosw isosw[] = {
 
 /* ES-IS protocol */
 { SOCK_DGRAM,	&isodomain,		ISOPROTO_ESIS,		PR_ATOMIC|PR_ADDR,
-  esis_input,	0,				esis_ctlinput,				0,
+  esis_input,	0,				esis_ctlinput,		0,
   esis_usrreq,
   esis_init,	0,				0,					0
 },
@@ -113,11 +114,20 @@ struct protosw isosw[] = {
 },
 
 /* ISOPROTO_TP */
-{ SOCK_SEQPACKET,	&isodomain,	ISOPROTO_TP,	PR_CONNREQUIRED|PR_WANTRCVD,
+{ SOCK_SEQPACKET,	&isodomain,	ISOPROTO_TP,		PR_CONNREQUIRED|PR_WANTRCVD,
   tpclnp_input,		0,			tpclnp_ctlinput,	tp_ctloutput,
   tp_usrreq,
-  tp_init,			0,			tp_slowtimo,	tp_drain,
+  tp_init,			0,			tp_slowtimo,		tp_drain,
 },
+
+#ifdef TPCONS
+/* ISOPROTO_TP */
+{ SOCK_SEQPACKET,	&isodomain,	ISOPROTO_TP0,		PR_CONNREQUIRED|PR_WANTRCVD,
+  tpcons_input,		0,			0,					tp_ctloutput,
+  tp_usrreq,
+  cons_init,		0,			0,					0,
+},
+#endif
 
 };
 
