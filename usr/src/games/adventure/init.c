@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: data initialization                   */
 
-static char sccsid[] = "	init.c	1.1	82/05/11	";
+static char sccsid[] = "	init.c	4.1	82/05/11	";
 
 # include "hdr.h"
 

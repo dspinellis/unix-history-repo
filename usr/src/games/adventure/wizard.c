@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: privileged operations                 */
 
-static char sccsid[] = "	wizard.c	1.1	82/05/11	";
+static char sccsid[] = "	wizard.c	4.1	82/05/11	";
 
 # include "hdr.h"
 

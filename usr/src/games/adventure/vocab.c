@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: data structure routines               */
 
-static char sccsid[] = "	vocab.c	1.1	82/05/11	";
+static char sccsid[] = "	vocab.c	4.1	82/05/11	";
 
 # include "hdr.h"
 

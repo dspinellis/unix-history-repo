@@ -12,7 +12,7 @@
  * "glorkz" in the directory where the program is first run.
  */
 
-static char hdr_sccsid[] = "	hdr.h	1.1	82/05/11	";
+static char hdr_sccsid[] = "	hdr.h	4.1	82/05/11	";
 
 /*  hdr.h */
 /* hdr.h: included by c advent files */

@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: termination routines                  */
 
-static char sccsid[] = "	done.c	1.1	82/05/11	";
+static char sccsid[] = "	done.c	4.1	82/05/11	";
 
 
 # include "hdr.h"
