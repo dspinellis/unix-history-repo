@@ -1,4 +1,4 @@
-/*	dz.c	4.25	81/05/09	*/
+/*	dz.c	4.26	81/05/29	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -372,7 +372,7 @@ dzstart(tp)
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags&RAW || tp->t_flags&LLITOUT)
+	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
 		cc = ndqb(&tp->t_outq, 0);
 	else {
 		cc = ndqb(&tp->t_outq, 0200);
