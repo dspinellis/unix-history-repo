@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	7.5 (Berkeley) %G%
+ *	@(#)time.h	7.6 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -57,6 +57,20 @@ struct	itimerval {
 
 #ifndef KERNEL
 #include <time.h>
-#endif
+
+#ifndef _POSIX_SOURCE
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	adjtime __P((const struct timeval *, struct timeval *));
+int	getitimer __P((int, struct itimerval *));
+int	gettimeofday __P((struct timeval *, struct timezone *));
+int	setitimer __P((int, const struct itimerval *, struct itimerval *));
+int	settimeofday __P((const struct timeval *, const struct timezone *));
+int	utimes __P((const char *, const struct timeval *));
+__END_DECLS
+#endif /* !POSIX */
+
+#endif /* !KERNEL */
 
 #endif /* !_SYS_TIME_H_ */
