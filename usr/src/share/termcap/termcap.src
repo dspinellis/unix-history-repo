@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.93 (Berkeley) %G%
+#	@(#)termcap.src	5.94 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -810,10 +810,11 @@ Ms|swtp|ct82|southwest technical products ct82:\
 	:is=^\^r^^^s^^^d^]^w^i^s^^^]^^^o^]^w^r^i:
 Mt|terak|Terak emulating Datamedia 1520:\
 	:tc=dm1520:
+# :is resets scrolling region in case a previous user had used "tset vt100"
 Mu|sun|Sun Microsystems Workstation console:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:am:bs:mi:ms:pt:km:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:rs=\E[s:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:is=\E[1r:rs=\E[1r:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
