@@ -38,7 +38,9 @@ static const char rcsid[] =
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
-#include <err.h>
+#include <string.h>
+
+#define MESSAGE ": warning: this program uses setruid, which doesn't do anything\r\n(but used to)\r\n"
 
 int
 #ifdef __STDC__
@@ -48,7 +50,9 @@ setruid(ruid)
 	int ruid;
 #endif
 {
-	warnx("this program uses setruid, which doesn't do anything\r\n(but used to)\r");
+	extern char *__progname;
+	write(2, __progname, strlen(__progname));
+	write(2, MESSAGE, sizeof(MESSAGE) - 1);
 	return (setreuid(ruid, -1));
 }
 
