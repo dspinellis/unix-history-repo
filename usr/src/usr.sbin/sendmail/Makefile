@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.7		%G%
+#		@(#)Makefile	4.8		%G%
 #
 
 ALL=	src/sendmail
@@ -29,11 +29,11 @@ install: $(ALL) $(DIRS)
 	install -c -o root -m 644	lib/sendmail.hf	$(SENDMAIL).hf
 	install -c -o root -m 666	/dev/null	$(SENDMAIL).st
 	install -c -o root -m 644	/dev/null	$(SENDMAIL).fc
-	install -c -o root -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
 	rm -f					$(DESTDIR)/usr/ucb/newaliases
 	$(LN)			$(SENDMAIL)	$(DESTDIR)/usr/ucb/newaliases
 	rm -f					$(DESTDIR)/usr/ucb/mailq
 	$(LN)			$(SENDMAIL)	$(DESTDIR)/usr/ucb/mailq
+	install -c -o root -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
 #	install -o 1		aux/syslog	$(DESTDIR)/etc/syslog
 #	install -c -o 1 -m 644	aux/syslog.conf	$(DESTDIR)/etc/syslog.conf
 #	install -c -o 1 -m 644	/dev/null	$(DESTDIR)/etc/syslog.pid
