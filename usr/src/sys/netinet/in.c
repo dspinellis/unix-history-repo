@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	6.8 (Berkeley) %G%
+ *	@(#)in.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -73,6 +73,7 @@ in_makeaddr(net, host)
 /*
  * Return the network number from an internet address.
  */
+u_long
 in_netof(in)
 	struct in_addr in;
 {
@@ -92,7 +93,7 @@ in_netof(in)
 	 * if so, return subnet number.
 	 */
 	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if ((ia->ia_netmask & net) == ia->ia_net)
+		if (net == ia->ia_net)
 			return (i & ia->ia_subnetmask);
 	return (net);
 }
@@ -123,14 +124,14 @@ in_lnaof(in)
 	 * if so, use the modified interpretation of `host'.
 	 */
 	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if ((ia->ia_netmask & net) == ia->ia_net)
+		if (net == ia->ia_net)
 			return (host &~ ia->ia_subnetmask);
 	return (host);
 }
 
 /*
  * Return 1 if an internet address is for a ``local'' host
- * (one to which we have a connection).
+ * (one to which we have a connection through a local logical net).
  */
 in_localaddr(in)
 	struct in_addr in;
@@ -147,15 +148,19 @@ in_localaddr(in)
 		net = i & IN_CLASSC_NET;
 
 	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if ((ia->ia_netmask & net) == ia->ia_net)
+		if (net == ia->ia_net)
 			return (1);
 	return (0);
 }
+
+int	in_interfaces;		/* number of external internet interfaces */
+extern	struct ifnet loif;
 
 /*
  * Generic internet control operations (ioctl's).
  * Ifp is 0 if not an interface-specific ioctl.
  */
+/* ARGSUSED */
 in_control(so, cmd, data, ifp)
 	struct socket *so;
 	int cmd;
@@ -214,6 +219,8 @@ in_control(so, cmd, data, ifp)
 				ifp->if_addrlist = (struct ifaddr *) ia;
 			ia->ia_ifp = ifp;
 			IA_SIN(ia)->sin_family = AF_INET;
+			if (ifp != &loif)
+				in_interfaces++;
 		}
 		break;
 	}
@@ -246,7 +253,7 @@ in_control(so, cmd, data, ifp)
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
 			return (EINVAL);
 		if (ifp->if_ioctl &&
-		    (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia)))
+		    (error = (*ifp->if_ioctl)(ifp, SIOCSIFDSTADDR, ia)))
 			return (error);
 		ia->ia_dstaddr = ifr->ifr_dstaddr;
 		break;
@@ -259,7 +266,6 @@ in_control(so, cmd, data, ifp)
 
 	case SIOCSIFADDR:
 		return (in_ifinit(ifp, ia, &ifr->ifr_addr));
-		break;
 
 	case SIOCSIFNETMASK:
 		ia->ia_subnetmask = ntohl(satosin(&ifr->ifr_addr)->sin_addr.s_addr);
