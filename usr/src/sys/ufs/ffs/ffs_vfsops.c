@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.12 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -355,8 +355,8 @@ ffs_mountfs(devvp, mp, p)
 	int havepart = 0, blks;
 	caddr_t base, space;
 	int havepart = 0, blks;
-	int error, i, size;
-	int ronly;
+	int error, i, size, ronly;
+	int32_t *lp;
 	extern struct vnode *rootvp;
 
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, FSCRED, p))
@@ -415,8 +415,10 @@ ffs_mountfs(devvp, mp, p)
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	base = space = malloc((u_long)fs->fs_cssize, M_UFSMNT,
-	    M_WAITOK);
+	size = fs->fs_cssize;
+	if (fs->fs_contigsumsize > 0)
+		size += fs->fs_ncg * sizeof(int32_t);
+	base = space = malloc((u_long)size, M_UFSMNT, M_WAITOK);
 	for (i = 0; i < blks; i += fs->fs_frag) {
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
@@ -437,6 +439,11 @@ ffs_mountfs(devvp, mp, p)
 		brelse(bp);
 		bp = NULL;
 	}
+	if (fs->fs_contigsumsize > 0) {
+		fs->fs_maxcluster = lp = (int32_t *)space;
+		for (i = 0; i < fs->fs_ncg; i++)
+			*lp++ = fs->fs_contigsumsize;
+	}
 	mp->mnt_data = (qaddr_t)ump;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
 	mp->mnt_stat.f_fsid.val[1] = MOUNT_UFS;
@@ -452,6 +459,9 @@ ffs_mountfs(devvp, mp, p)
 		ump->um_quotas[i] = NULLVP;
 	devvp->v_specflags |= SI_MOUNTEDON;
 	ffs_oldfscompat(fs);
+	ump->um_savedmaxfilesize = fs->fs_maxfilesize;		/* XXX */
+	if (fs->fs_maxfilesize > (quad_t)1 << 39)		/* XXX */
+		fs->fs_maxfilesize = (quad_t)1 << 39;		/* XXX */
 	return (0);
 out:
 	if (bp)
@@ -828,7 +838,7 @@ ffs_sbupdate(mp, waitfor)
 	struct ufsmount *mp;
 	int waitfor;
 {
-	register struct fs *fs = mp->um_fs;
+	register struct fs *dfs, *fs = mp->um_fs;
 	register struct buf *bp;
 	int blks;
 	caddr_t space;
@@ -842,17 +852,19 @@ ffs_sbupdate(mp, waitfor)
 #endif SECSIZE
 	bcopy((caddr_t)fs, bp->b_data, (u_int)fs->fs_sbsize);
 	/* Restore compatibility to old file systems.		   XXX */
+	dfs = (struct fs *)bp->b_data;				/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
-		((struct fs *)bp->b_data)->fs_nrpos = -1;	/* XXX */
+		dfs->fs_nrpos = -1;				/* XXX */
 	if (fs->fs_inodefmt < FS_44INODEFMT) {			/* XXX */
 		long *lp, tmp;					/* XXX */
 								/* XXX */
-		lp = (long *)&((struct fs *)bp->b_data)->fs_qbmask; /* XXX */
+		lp = (long *)&dfs->fs_qbmask; 			/* XXX */
 		tmp = lp[4];					/* XXX */
 		for (i = 4; i > 0; i--)				/* XXX */
 			lp[i] = lp[i-1];			/* XXX */
 		lp[0] = tmp;					/* XXX */
 	}							/* XXX */
+	dfs->fs_maxfilesize = mp->um_savedmaxfilesize;		/* XXX */
 #ifdef SECSIZE
 #ifdef tahoe
 	/* restore standard fsbtodb shift */
