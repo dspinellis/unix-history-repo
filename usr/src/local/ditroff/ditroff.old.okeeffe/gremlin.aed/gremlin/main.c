@@ -1,5 +1,4 @@
-
-/* main.c -
+/* @(#)main.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -120,7 +119,7 @@ char *s;
     Consume = FALSE;
 }
 
-
+
 main(argc, argv)
 int argc;
 char *argv[];
@@ -373,7 +372,7 @@ char *argv[];
 
 }  /* end main */
 
-
+
 OnStop(signo)
 int signo;
 
@@ -396,7 +395,7 @@ int signo;
     SHRedis();
 }
 
-
+
 OnCommand()
 
 /*-----------------------------------------------------------------------------
@@ -473,7 +472,7 @@ OnCommand()
     else 
     {
         TxLine(inline);
-        if (cmd != '\') putchar(cmd);
+        if (cmd != '\') putchar(cmd);
         (void) fflush(stdout);
         SHCommand(&cmd);
     }

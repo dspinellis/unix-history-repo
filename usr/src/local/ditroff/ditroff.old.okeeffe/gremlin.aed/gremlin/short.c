@@ -1,5 +1,4 @@
-
-/* short.c -
+/* @(#)short.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -86,7 +85,7 @@ extern ELT arhead;                  /* arrow head template           */
 extern char *textpos[], *dispmode[];/* text positioning modes        */
 extern int textmode[];              /* text positioning              */
 
-
+
 extern SHUpdate(), SHDrawArc(), SHDrawCurve(), SHCopy(), SHRedis(),
        SHDefineSet(), SHErase(), SHSetArea(), SHGravity(),
        SHGrid(), SHRotate(), SHScale(), SHTranslate(), SHShellEsc(),
@@ -123,7 +122,7 @@ static (*(shrtns[]))() = {
     SHBox,                      /* rectangle from two points */
     SHMAdjust};			/* manhattan adjust */
   
-
+
 int
 SHLookup(c, table)
 char c;				/* Pointer to a char to be looked up */
@@ -159,7 +158,7 @@ char table[];			/* Pointer to an array of characters
     return(-1);
 }  /* end SHLookup */
 
-
+
 SHCommand(command)
 char *command;
 
@@ -187,7 +186,7 @@ char *command;
 	error("no such command");
     }
 }  /* end SHCommand */
-
+
 static char nopnt[18] = "not enough points";
 static char noset[15] = "no current set";
 
@@ -301,7 +300,7 @@ SHDrawArc()
 	}
 }  /* end SHDrawARc */
 
-
+
 SHDrawCurve()
 /*
  *      This routine creates and displays a curve using points previously
@@ -365,7 +364,7 @@ SHErase()
 	CHANGED = TRUE;
 }  /* end SHErase */
 
-
+
 SHGravity()
 /*
  *      This routine toggles the gravity mode.
@@ -406,7 +405,7 @@ SHGrid()
 	Consume = FALSE;
 }  /* end SHGrid */
 
-
+
 SHMAdjust()
 /*
  * Manhattan Adjust -
@@ -430,7 +429,7 @@ SHMAdjust()
 	Consume = FALSE;
 }
 
-
+
 SHDefineSet()
 /*
  *      This routine defines the current set based upon previously
@@ -479,7 +478,7 @@ SHSetArea()
 	}  /* end while */
 }  /* end SHSetArea */
 
-
+
 SHTranslate()
 /*
  *      This routine translates the elements in the current set as defined
@@ -519,7 +518,7 @@ SHTranslate()
 	CHANGED = TRUE;
 }  /* end SHTranslate */
 
-
+
 SHCopy()
 /*
  *      This routine copies the elements in the current set as defined
@@ -573,7 +572,7 @@ SHCopy()
 	CHANGED = TRUE;
 }  /* end SHCopy */
 
-
+
 SHRotate()
 /*
  *      This routine rotates the elements in the current set as defined
@@ -643,7 +642,7 @@ SHRotate()
 	CHANGED = TRUE;
 }  /* end SHRotate */
 
-
+
 SHScale()
 /*
  *      This routine scales the elements in the current set as defined
@@ -718,7 +717,7 @@ SHScale()
 	CHANGED = TRUE;
 }  /* end SHScale */
 
-
+
 SHUpdate()
 /*
  *      This routine redraws the graphics screen by clearing the screen ,
@@ -752,7 +751,7 @@ SHUpdate()
 	Consume = FALSE;
 }  /* end SHUpdate */
 
-
+
 SHRedis()
 /*
  *      This routine is used to redisplay the text screen.
@@ -792,7 +791,7 @@ SHRedis()
         Consume = FALSE;
 }  /* end SHRedis */
 
-
+
 SHShellEsc()
 /* 
  *      This routine performs a shell escape through the c 'system'
@@ -812,7 +811,7 @@ SHShellEsc()
 	SHRedis();  /* reclaim terminal */
 }  /* end ShellEsc */
 
-
+
 static savemen(sym)
 int sym;
 /*
@@ -895,7 +894,7 @@ SHSave4()
 }
 
 
-
+
 SHBox()
 /*
  *      This routine creates and displays a rectangle whose diagonal is
