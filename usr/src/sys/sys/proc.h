@@ -1,4 +1,4 @@
-/*	proc.h	4.1	%G%	*/
+/*	proc.h	4.2	%G%	*/
 
 /*
  * One structure allocated per active
@@ -106,6 +106,7 @@ struct	proc *runq;
 #define	STIMO	0x040000	/* timing out during sleep */
 #define	SDETACH	0x080000	/* detached inherited by init */
 #define	SNUSIG	0x100000	/* using new signal mechanism */
+#define	SOWEUPC	0x200000	/* owe process an addupc() call at next ast */
 
 /*
  * parallel proc structure

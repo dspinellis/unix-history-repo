@@ -1,4 +1,4 @@
-/*	clock.h	4.2	%G%	*/
+/*	clock.h	4.3	%G%	*/
 
 /*
  * VAX clock registers
@@ -32,3 +32,8 @@
 #define	clkreld()	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_INT+ICCS_ERR)
 
 #define	clkwrap()	(((unsigned)mfpr(TODR) - TODRZERO)/100 > SECYR+SECDAY)
+
+/*
+ * Software clock is software interrupt level 8
+ */
+#define	setsoftclock()	mtpr(SIRR, 0x8)
