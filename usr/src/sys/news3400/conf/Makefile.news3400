@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.9 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.10 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -27,7 +27,7 @@ LD=	/usr/local/gnu/lib/gcc-lib/mips-sony-bsd/2.2.2/ld
 S=	../..
 NEWS3400=	$S/news3400
 
-INCLUDES= -I. -I$S -I$S/sys
+INCLUDES= -I. -I$S
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL ${FAKEMAIN}
 CFLAGS=	${COPTS}
 AHEADS=
