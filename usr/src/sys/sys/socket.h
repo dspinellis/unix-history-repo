@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.22 (Berkeley) %G%
+ *	@(#)socket.h	7.23 (Berkeley) %G%
  */
 
 #ifndef _SOCKET_H_
@@ -247,10 +247,10 @@ struct cmsghdr {
 /* followed by	u_char  cmsg_data[]; */
 };
 
-/* given pointer to struct adatahdr, return pointer to data */
+/* given pointer to struct cmsghdr, return pointer to data */
 #define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + 1))
 
-/* given pointer to struct adatahdr, return pointer to next adatahdr */
+/* given pointer to struct cmsghdr, return pointer to next cmsghdr */
 #define	CMSG_NXTHDR(mhdr, cmsg)	\
 	(((caddr_t)(cmsg) + (cmsg)->cmsg_len + sizeof(struct cmsghdr) > \
 	    (mhdr)->msg_control + (mhdr)->msg_controllen) ? \
