@@ -1,7 +1,7 @@
 .\" eqn % | troff -me
 .\"if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 5.3''Last Mod %G%'
+.fo 'Version 5.4''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -29,7 +29,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.3
+Version 5.4
 .)l
 .sp 2
 .pp
@@ -594,6 +594,10 @@ for each recipient.
 .ip S
 The sender address.
 There may only be one of these lines.
+.ip E
+An error address.
+If any such lines exist,
+they represent the addresses that should receive error messages.
 .ip T
 The job creation time.
 This is used to compute when to time out the job.
@@ -3453,6 +3457,9 @@ line in sendmail.cf).
 .ip "MAXUSERENVIRON [40]"
 The maximum number of items in the user environment
 that will be passed to subordinate mailers.
+.ip "QUEUESIZE [600]"
+The maximum number of entries that will be processed
+in a single queue run.
 .lp
 A number of other compilation options exist.
 These specify whether or not specific code should be compiled in.
@@ -3462,9 +3469,17 @@ If set,
 the
 .q DBM
 package in UNIX is used
-(see DBM(3X) in [UNIX80]).
+(see
+.i dbm(3X)
+in [UNIX80]).
 If not set,
 a much less efficient algorithm for processing aliases is used.
+.ip NDBM
+If set,
+the new version of the DBM library
+that allows multiple databases will be used.
+.q DBM
+must also be set.
 .ip DEBUG
 If set, debugging information is compiled in.
 To actually get the debugging output,
@@ -3493,18 +3508,7 @@ that speaks SMTP.
 .ip DAEMON
 If set,
 code to run a daemon is compiled in.
-This code is for 4.2BSD
-if the
-NVMUNIX
-flag is specified;
-otherwise,
-4.1a BSD code is used.
-Beware however
-that there are bugs in the 4.1a code
-that make it impossible for
-.b sendmail
-to work correctly
-under heavy load.
+This code is for 4.2 or 4.3BSD.
 .ip UGLYUUCP
 If you have a UUCP host adjacent to you which is not running
 a reasonable version of
@@ -3864,7 +3868,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.3
+Version 5.4
 .ce 0
 .bp 1
 .ce
