@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.20 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -150,6 +150,8 @@ enterpgrp(p, pgid, mksess)
 		panic("enterpgrp: session leader attempted setpgrp");
 #endif
 	if (pgrp == NULL) {
+		pid_t savepid = p->p_pid;
+		struct proc *np;
 		/*
 		 * new process group
 		 */
@@ -159,6 +161,8 @@ enterpgrp(p, pgid, mksess)
 #endif
 		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP,
 		       M_WAITOK);
+		if ((np = pfind(savepid)) == NULL || np != p)
+			return (ESRCH);
 		if (mksess) {
 			register struct session *sess;
 
@@ -189,7 +193,7 @@ enterpgrp(p, pgid, mksess)
 		pgrp->pg_jobc = 0;
 		pgrp->pg_mem = NULL;
 	} else if (pgrp == p->p_pgrp)
-		return;
+		return (0);
 
 	/*
 	 * Adjust eligibility of affected pgrps to participate in job control.
@@ -202,13 +206,16 @@ enterpgrp(p, pgid, mksess)
 	/*
 	 * unlink p from old process group
 	 */
-	for (pp = &p->p_pgrp->pg_mem; *pp; pp = &(*pp)->p_pgrpnxt)
+	for (pp = &p->p_pgrp->pg_mem; *pp; pp = &(*pp)->p_pgrpnxt) {
 		if (*pp == p) {
 			*pp = p->p_pgrpnxt;
-			goto done;
+			break;
 		}
-	panic("enterpgrp: can't find p on old pgrp");
-done:
+	}
+#ifdef DIAGNOSTIC
+	if (pp == NULL)
+		panic("enterpgrp: can't find p on old pgrp");
+#endif
 	/*
 	 * delete old if empty
 	 */
@@ -220,6 +227,7 @@ done:
 	p->p_pgrp = pgrp;
 	p->p_pgrpnxt = pgrp->pg_mem;
 	pgrp->pg_mem = p;
+	return (0);
 }
 
 /*
@@ -230,16 +238,20 @@ leavepgrp(p)
 {
 	register struct proc **pp = &p->p_pgrp->pg_mem;
 
-	for (; *pp; pp = &(*pp)->p_pgrpnxt)
+	for (; *pp; pp = &(*pp)->p_pgrpnxt) {
 		if (*pp == p) {
 			*pp = p->p_pgrpnxt;
-			goto done;
+			break;
 		}
-	panic("leavepgrp: can't find p in pgrp");
-done:
+	}
+#ifdef DIAGNOSTIC
+	if (pp == NULL)
+		panic("leavepgrp: can't find p in pgrp");
+#endif
 	if (!p->p_pgrp->pg_mem)
 		pgdelete(p->p_pgrp);
 	p->p_pgrp = 0;
+	return (0);
 }
 
 /*
@@ -253,13 +265,16 @@ pgdelete(pgrp)
 	if (pgrp->pg_session->s_ttyp != NULL && 
 	    pgrp->pg_session->s_ttyp->t_pgrp == pgrp)
 		pgrp->pg_session->s_ttyp->t_pgrp = NULL;
-	for (; *pgp; pgp = &(*pgp)->pg_hforw)
+	for (; *pgp; pgp = &(*pgp)->pg_hforw) {
 		if (*pgp == pgrp) {
 			*pgp = pgrp->pg_hforw;
-			goto done;
+			break;
 		}
-	panic("pgdelete: can't find pgrp on hash chain");
-done:
+	}
+#ifdef DIAGNOSTIC
+	if (pgp == NULL)
+		panic("pgdelete: can't find pgrp on hash chain");
+#endif
 	if (--pgrp->pg_session->s_count == 0)
 		FREE(pgrp->pg_session, M_SESSION);
 	FREE(pgrp, M_PGRP);
