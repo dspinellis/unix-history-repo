@@ -1,4 +1,4 @@
-/*	ndbm.h	4.4	84/09/05	*/
+/*	ndbm.h	4.5	85/01/09	*/
 
 /*
  * Hashed key data base library.
@@ -30,6 +30,10 @@ typedef struct {
 #define dbm_error(db)	((db)->dbm_flags & _DBM_IOERR)
 	/* use this one at your own risk! */
 #define dbm_clearerr(db)	((db)->dbm_flags &= ~_DBM_IOERR)
+
+/* for flock(2) and fstat(2) */
+#define dbm_dirfno(db)	((db)->dbm_dirf)
+#define dbm_pagfno(db)	((db)->dbm_pagf)
 
 typedef struct {
 	char	*dptr;
