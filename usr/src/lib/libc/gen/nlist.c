@@ -1,4 +1,4 @@
-/* @(#)nlist.c	4.6 (Berkeley) %G% */
+/* @(#)nlist.c	4.7 (Berkeley) %G% */
 
 #include <sys/types.h>
 #include <a.out.h>
@@ -34,7 +34,7 @@ nlist(name, list)
 	}
 	f = fopen(name, "r");
 	if (f == NULL)
-		return (NULL);
+		return (-1);
 	fread((char *)&buf, sizeof buf, 1, f);
 	if (N_BADMAG(buf)) {
 		fclose(f);
