@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmf.4	5.1 (Berkeley) %G%
+.\"	@(#)dmf.4	6.1 (Berkeley) %G%
 .\"
-.TH DMF 4 "27 July 1983"
+.TH DMF 4 ""
 .UC 5
 .SH NAME
 dmf \- DMF-32, terminal multiplexor
@@ -16,9 +16,9 @@ dmf \- DMF-32, terminal multiplexor
 .SH DESCRIPTION
 The 
 .I dmf
-device provides 8 lines of asynchronous serial line support with full
-modem control (the DMF-32 provides other services, but these are
-not supported by the driver).
+device provides 8 lines of asynchronous serial line support. The first two
+of these have full modem control
+(the DMF-32 provides other services, but these are not supported by the driver).
 .PP
 Each line attached to a DMF-32 serial line port behaves as described
 in
