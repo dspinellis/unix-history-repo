@@ -1,4 +1,4 @@
-/*	hp.c	4.64	83/02/10	*/
+/*	hp.c	4.65	83/02/10	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -218,11 +218,14 @@ u_char	hp_offset[16] = {
 struct	buf	rhpbuf[NHP];
 struct	buf	bhpbuf[NHP];
 struct	dkbad	hpbad[NHP];
-/* SHOULD CONSOLIDATE ALL THIS STUFF INTO A STRUCTURE */
-char	hpinit[NHP];
-char	hprecal[NHP];
-char	hphdr[NHP];
-daddr_t	mlsize[NHP];
+
+struct	hpsoftc {
+	u_char	sc_hpinit;	/* drive initialized */
+	u_char	sc_recal;	/* recalibrate state */
+	u_char	sc_hdr;		/* next i/o includes header */
+	u_char	sc_doseeks;	/* perform explicit seeks */
+	daddr_t	sc_mlsize;	/* ML11 size */
+} hpsoftc[NHP];
 
 #define	b_cylin b_resid
  
@@ -234,8 +237,6 @@ daddr_t	mlsize[NHP];
 #ifdef INTRLVE
 daddr_t dkblock();
 #endif
- 
-int	hpseek;
 
 /*ARGSUSED*/
 hpattach(mi, slave)
@@ -344,12 +345,12 @@ done:
 	 * transfer rates based on device characteristics.
 	 */
 	if (type == HPDT_ML11A || type == HPDT_ML11B) {
-		register int trt, sz;
+		register struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
+		register int trt;
 
-		sz = hpaddr->hpmr & HPMR_SZ;
+		sc->sc_mlsize = hpaddr->hpmr & HPMR_SZ;
 		if ((hpaddr->hpmr & HPMR_ARRTYP) == 0)
-			sz >>= 2;
-		mlsize[mi->mi_unit] = sz;
+			sc->sc_mlsize >>= 2;
 		if (mi->mi_dk >= 0) {
 			trt = (hpaddr->hpmr & HPMR_TRT) >> 8;
 			dk_mspw[mi->mi_dk] = 1.0 / (1<<(20-trt));
@@ -390,8 +391,10 @@ hpstrategy(bp)
 		goto bad;
 	st = &hpst[mi->mi_type];
 	if (ML11) {
+		struct hpsoftc *sc = &hpsoftc[unit];
+
 		if (bp->b_blkno < 0 ||
-		    dkblock(bp)+sz > mlsize[mi->mi_unit])
+		    dkblock(bp)+sz > sc->sc_mlsize)
 			goto bad;
 		bp->b_cylin = 0;
 	} else {
@@ -419,16 +422,17 @@ hpustart(mi)
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st = &hpst[mi->mi_type];
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	daddr_t bn;
 	int sn, dist;
 
 	hpaddr->hpcs1 = 0;
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
-	if ((hpaddr->hpds & HPDS_VV) == 0 || hpinit[mi->mi_unit] == 0) {
+	if ((hpaddr->hpds & HPDS_VV) == 0 || !sc->sc_hpinit) {
 		struct buf *bbp = &bhpbuf[mi->mi_unit];
 
-		hpinit[mi->mi_unit] = 1;
+		sc->sc_hpinit = 1;
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		if (mi->mi_mba->mba_drv[0].mbd_as & (1<<mi->mi_drive))
 			printf("DCLR attn\n");
@@ -458,7 +462,7 @@ hpustart(mi)
 	sn = bn%st->nspc;
 	sn = (sn+st->nsect-hpSDIST)%st->nsect;
 	if (bp->b_cylin == (hpaddr->hpdc & 0xffff)) {
-		if (hpseek)
+		if (sc->sc_seek)
 			return (MBU_DODATA);
 		dist = ((hpaddr->hpla & 0xffff)>>6) - st->nsect + 1;
 		if (dist < 0)
@@ -467,7 +471,7 @@ hpustart(mi)
 			return (MBU_DODATA);
 	} else
 		hpaddr->hpdc = bp->b_cylin;
-	if (hpseek)
+	if (sc->sc_seek)
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 	else {
 		hpaddr->hpda = sn;
@@ -482,6 +486,7 @@ hpstart(mi)
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st = &hpst[mi->mi_type];
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	daddr_t bn;
 	int sn, tn;
 
@@ -495,7 +500,7 @@ hpstart(mi)
 		hpaddr->hpdc = bp->b_cylin;
 		hpaddr->hpda = (tn << 8) + sn;
 	}
-	if (hphdr[mi->mi_unit]) {
+	if (sc->sc_hdr) {
 		if (bp->b_flags & B_READ)
 			return (HP_RHDR|HP_GO);
 		else
@@ -512,6 +517,7 @@ hpdtint(mi, mbsr)
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st = &hpst[mi->mi_type];
 	register int er1, er2;
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	int retry = 0;
 
 	if (bp->b_flags&B_BAD) {
@@ -544,8 +550,7 @@ hpdtint(mi, mbsr)
 		if (er1&HPER1_WLE) {
 			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
-		} else if ((er1&0xffff) == HPER1_FER && RP06 &&
-		    hphdr[mi->mi_unit] == 0) {
+		} else if ((er1&0xffff) == HPER1_FER && RP06 && !sc->sc_hdr) {
 			if (hpecc(mi, BSE))
 				return(MBD_RESTARTED);
 			else
@@ -553,7 +558,7 @@ hpdtint(mi, mbsr)
 		} else if (++mi->mi_tab.b_errcnt > 27 ||
 		    mbsr & MBSR_HARD ||
 		    er1 & HPER1_HARD ||
-		    hphdr[mi->mi_unit] ||
+		    sc->sc_hdr ||
 		    (!ML11 && (er2 & HPER2_HARD))) {
 hard:
 			if (ML11)
@@ -575,7 +580,7 @@ hard:
 			printf("\n");
 			bp->b_flags |= B_ERROR;
 			retry = 0;
-			hprecal[mi->mi_unit] = 0;
+			sc->sc_recal = 0;
 		} else if ((er2 & HPER2_BSE) && !ML11) {
 			if (hpecc(mi, BSE))
 				return(MBD_RESTARTED);
@@ -596,7 +601,7 @@ hard:
 				goto hard;
 		} else if ((mi->mi_tab.b_errcnt&07) == 4) {
 			hpaddr->hpcs1 = HP_RECAL|HP_GO;
-			hprecal[mi->mi_unit] = 1;
+			sc->sc_recal = 1;
 			return(MBD_RESTARTED);
 		}
 		if (retry)
@@ -604,8 +609,8 @@ hard:
 	}
 #ifdef HPDEBUG
 	else
-		if (hpdebug && hprecal[mi->mi_unit]) {
-			printf("recal %d ", hprecal[mi->mi_unit]);
+		if (hpdebug && sc->sc_recal) {
+			printf("recal %d ", sc->sc_recal);
 			printf("errcnt %d\n", mi->mi_tab.b_errcnt);
 			printf("mbsr=%b ", mbsr, mbsr_bits);
 			printf("er1=%b er2=%b\n",
@@ -613,12 +618,12 @@ hard:
 			    hpaddr->hper2, HPER2_BITS);
 		}
 #endif
-	switch (hprecal[mi->mi_unit]) {
+	switch (sc->sc_recal) {
 
 	case 1:
 		hpaddr->hpdc = bp->b_cylin;
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-		hprecal[mi->mi_unit]++;
+		sc->sc_recal++;
 		return (MBD_RESTARTED);
 	case 2:
 		if (mi->mi_tab.b_errcnt < 16 ||
@@ -626,14 +631,14 @@ hard:
 			goto donerecal;
 		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-		hprecal[mi->mi_unit]++;
+		sc->sc_recal++;
 		return (MBD_RESTARTED);
 	donerecal:
 	case 3:
-		hprecal[mi->mi_unit] = 0;
+		sc->sc_recal = 0;
 		return (MBD_RETRY);
 	}
-	hphdr[mi->mi_unit] = 0;
+	sc->sc_hdr = 0;
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
 	if (mi->mi_tab.b_errcnt >= 16) {
 		/*
@@ -685,7 +690,7 @@ hpioctl(dev, cmd, data, flag)
 	switch (cmd) {
 
 	case DKIOCHDR:	/* do header read/write */
-		hphdr[minor(dev)>>3] = 1;
+		hpsoftc[minor(dev) >> 3].sc_hdr = 1;
 		return (0);
 
 	default:
