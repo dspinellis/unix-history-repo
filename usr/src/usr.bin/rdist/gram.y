@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.4 (Berkeley) 83/10/12";
+static	char *sccsid = "@(#)gram.y	4.5 (Berkeley) 83/10/20";
 #endif
 
 #include "defs.h"
@@ -13,20 +13,22 @@ struct	block *lastc;
 %term EQUAL 1
 %term LP 2
 %term RP 3
-%term ARROW 4
-%term DCOLON 5
-%term NAME 6
-%term INSTALL 7
-%term NOTIFY 8
-%term EXCEPT 9
-%term OPTION 10
+%term SM 4
+%term ARROW 5
+%term DCOLON 6
+%term NAME 7
+%term INSTALL 8
+%term NOTIFY 9
+%term EXCEPT 10
+%term OPTION 11
 
 %union {
 	struct block *blk;
 	int intval;
 }
 
-%type <blk> NAME, INSTALL, NOTIFY, EXCEPT, namelist, names, cmdlist, cmd
+%type <blk> NAME, INSTALL, NOTIFY, EXCEPT
+%type <blk> namelist, names, opt_name, cmdlist, cmd
 %type <intval> OPTION, options
 
 %%
@@ -84,30 +86,41 @@ cmdlist:	  /* VOID */ {
 		}
 		;
 
-cmd:		  INSTALL options NAME = {
+cmd:		  INSTALL options opt_name SM = {
 			register struct block *b;
 
 			$1->b_options = $2 | options;
-			b = expand($3, 0);
-			if (b == NULL || b->b_next != NULL)
-				fatal("exactly one name allowed\n");
-			$1->b_name = b->b_name;
+			if ($3 != NULL) {
+				b = expand($3, 0);
+				if (b->b_next != NULL)
+					fatal("exactly one name allowed\n");
+				$1->b_name = b->b_name;
+			}
 			$$ = $1;
 		}
-		| NOTIFY namelist = {
+		| NOTIFY namelist SM = {
 			$1->b_args = expand($2, 1);
 			$$ = $1;
 		}
-		| EXCEPT namelist = {
+		| EXCEPT namelist SM = {
 			$1->b_args = expand($2, 0);
 			$$ = $1;
 		}
 		;
+
 options:	  /* VOID */ = {
 			$$ = 0;
 		}
 		| options OPTION = {
 			$$ |= $2;
+		}
+		;
+
+opt_name:	  /* VOID */ = {
+			$$ = NULL;
+		}
+		| NAME = {
+			$$ = $1;
 		}
 		;
 
@@ -148,6 +161,9 @@ again:
 	case ')':  /* RP */
 		return(RP);
 
+	case ';':  /* SM */
+		return(SM);
+
 	case '-':  /* -> */
 		if ((c = getc(fin)) == '>')
 			return(ARROW);
@@ -179,7 +195,7 @@ again:
 		}
 		*cp1++ = c;
 		c = getc(fin);
-		if (c == EOF || any(c, " \t()=\n")) {
+		if (c == EOF || any(c, " \t()=;\n")) {
 			ungetc(c, fin);
 			break;
 		}
@@ -187,6 +203,10 @@ again:
 	*cp1 = '\0';
 	if (yytext[0] == '-' && yytext[2] == '\0') {
 		switch (yytext[1]) {
+		case 'r':
+			yylval.intval = REMOVE;
+			return(OPTION);
+
 		case 'v':
 			yylval.intval = VERIFY;
 			return(OPTION);
@@ -230,5 +250,6 @@ yyerror(s)
 {
 	extern int yychar;
 
+	errs++;
 	fprintf(stderr, "rdist: line %d: %s\n", yylineno, s);
 }
