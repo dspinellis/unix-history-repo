@@ -1,4 +1,4 @@
-/* ip_input.c 1.23 81/12/09 */
+/* ip_input.c 1.24 81/12/09 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -56,7 +56,6 @@ ipintr()
 	register struct ipq *fp;
 	int hlen, s;
 
-printf("ipintr\n");
 COUNT(IPINTR);
 next:
 	/*
@@ -66,18 +65,12 @@ next:
 	s = splimp();
 	IF_DEQUEUE(&ipintrq, m);
 	splx(s);
-	if (m == 0) {
-printf("ipintr returns\n");
+	if (m == 0)
 		return;
-	}
-printf("ipintr dequeued %x\n", m);
 	if (m->m_len < sizeof (struct ip) &&
-	    m_pullup(m, sizeof (struct ip)) == 0) {
-printf("ipintr pullup drop\n");
+	    m_pullup(m, sizeof (struct ip)) == 0)
 		goto bad;
-	}
 	ip = mtod(m, struct ip *);
-printf("ipintr ip->ip_hl %d\n", ip->ip_hl);
 	if ((hlen = ip->ip_hl << 2) > m->m_len) {
 		if (m_pullup(m, hlen) == 0)
 			goto bad;
@@ -89,7 +82,6 @@ printf("ipintr ip->ip_hl %d\n", ip->ip_hl);
 			ipstat.ips_badsum++;
 			goto bad;
 		}
-printf("cksum passed\n");
 
 #if vax
 	/*
@@ -111,7 +103,6 @@ printf("cksum passed\n");
 	for (; m != NULL; m = m->m_next)
 		i += m->m_len;
 	m = m0;
-printf("ip->ip_len %d, i %d\n", ip->ip_len , i);
 	if (i != ip->ip_len) {
 		if (i < ip->ip_len) {
 			ipstat.ips_tooshort++;
@@ -124,7 +115,6 @@ printf("ip->ip_len %d, i %d\n", ip->ip_len , i);
 	 * Process options and, if not destined for us,
 	 * ship it on.
 	 */
-printf("ipintr at option code\n");
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
 	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
@@ -183,7 +173,6 @@ found:
 	/*
 	 * Switch out to protocol's input routine.
 	 */
-printf("ipintr switching out to protocol %d\n", ip->ip_p);
 	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
 	goto next;
 bad:
