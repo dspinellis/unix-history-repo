@@ -8,5 +8,5 @@ FRTN(frtn, save)
 	register struct formalrtn *frtn;
 	char *save;
 {
-	blkcpy(frtn->fbn * sizeof(struct display), save, &_disply[1]);
+	blkcpy(save, &_disply[1], frtn->fbn * sizeof(struct display));
 }
