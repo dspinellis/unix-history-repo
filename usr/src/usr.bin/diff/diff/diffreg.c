@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.14 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.15 %G%";
 
 #include "diff.h"
 /*
@@ -658,7 +658,7 @@ output()
 		}
 #undef c
 	}
-	if (opt == D_CONTEXT)
+	if (anychange && opt == D_CONTEXT)
 		dump_context_vec();
 }
 
