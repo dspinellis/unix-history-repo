@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_file.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_file.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)kvm_file.c	5.3 (Berkeley) %G%";
 #include "kvm_private.h"
 
 #define KREAD(kd, addr, obj) \
-	(kvm_read(kd, addr, (char *)(obj), sizeof(*obj)) != sizeof(*obj))
+	(kvm_read(kd, addr, obj, sizeof(*obj)) != sizeof(*obj))
 
 /*
  * Get file structures.
@@ -51,7 +51,7 @@ static
 kvm_deadfiles(kd, op, arg, filehead_o, nfiles)
 	kvm_t *kd;
 	int op, arg, nfiles;
-	off_t filehead_o;
+	long filehead_o;
 {
 	int buflen = kd->arglen, needed = buflen, error, n = 0;
 	struct file *fp, file, *filehead;
@@ -75,11 +75,12 @@ kvm_deadfiles(kd, op, arg, filehead_o, nfiles)
 	 */
 	for (fp = filehead; fp != NULL; fp = fp->f_filef) {
 		if (buflen > sizeof (struct file)) {
-			if (KREAD(kd, (off_t)fp, ((struct file *)where))) {
+			if (KREAD(kd, fp, ((struct file *)where))) {
 				_kvm_err(kd, kd->program, "can't read kfp");
 				return (0);
 			}
 			buflen -= sizeof (struct file);
+			fp = (struct file *)where;
 			where += sizeof (struct file);
 			n++;
 		}
