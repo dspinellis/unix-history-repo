@@ -82,6 +82,7 @@ int	 ufs_readlink __P((struct vop_readlink_args *));
 int	 ufs_reclaim __P((struct vnode *));
 int	 ufs_remove __P((struct vop_remove_args *));
 int	 ufs_rename __P((struct vop_rename_args *));
+#define	 ufs_revoke vop_revoke
 int	 ufs_rmdir __P((struct vop_rmdir_args *));
 int	 ufs_root __P((struct mount *, struct vnode **));
 int	 ufs_seek __P((struct vop_seek_args *));
