@@ -1,6 +1,7 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 DIR=	papers/px
+MACROS=	-ms
 SRCS=	pxin0.n pxin1.n pxin2.n pxin3.n pxin4.n
 EXTRA=	fig1.1.n fig1.2.n fig1.3.n fig2.3.raw fig2.4.n fig3.2.n \
 	fig3.3.n table2.1.n table2.2.n table2.3.n table3.1.n tmac.p
