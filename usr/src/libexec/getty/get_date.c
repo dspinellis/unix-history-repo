@@ -1,6 +1,12 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)get_date.c	4.1 (Berkeley) 85/02/05";
-#endif
+static char sccsid[] = "@(#)get_date.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <stdio.h>
 #include <sys/time.h>
