@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tty.c	7.15 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,7 @@ cttyopen(dev, flag, mode, p)
 cttyread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct vnode *ttyvp = cttyvp(uio->uio_procp);
 	int error;
@@ -61,6 +62,7 @@ cttyread(dev, uio, flag)
 cttywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct vnode *ttyvp = cttyvp(uio->uio_procp);
 	int error;
