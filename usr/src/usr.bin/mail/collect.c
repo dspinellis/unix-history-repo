@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	1.3 %G%";
+static char *SccsId = "@(#)collect.c	1.4 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -27,6 +27,7 @@ static char *SccsId = "@(#)collect.c	1.3 %G%";
 
 static	int	(*savesig)();		/* Previous SIGINT value */
 static	int	(*savehup)();		/* Previous SIGHUP value */
+static	int	(*savecont)();		/* Previous SIGCONT value */
 static	FILE	*newi;			/* File for saving away */
 static	FILE	*newo;			/* Output side of same */
 static	int	hf;			/* Ignore interrups */
@@ -39,7 +40,7 @@ collect(hp)
 	struct header *hp;
 {
 	FILE *ibuf, *fbuf, *obuf;
-	int lc, cc, escape, collrub(), intack(), stopdot, collhup;
+	int lc, cc, escape, collrub(), intack(), stopdot, collhup, collcont();
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
@@ -56,6 +57,7 @@ collect(hp)
 		sigset(SIGINT, hf ? intack : collrub), sighold(SIGINT);
 	if ((savehup = sigset(SIGHUP, SIG_IGN)) != SIG_IGN)
 		sigset(SIGHUP, collrub), sighold(SIGINT);
+	savecont = sigset(SIGCONT, collcont);
 	newi = NULL;
 	newo = NULL;
 	if ((obuf = fopen(tempMail, "w")) == NULL) {
@@ -379,6 +381,7 @@ err:
 		fclose(obuf);
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
+	sigset(SIGCONT, savecont);
 	noreset = 0;
 	return(NULL);
 }
@@ -712,6 +715,16 @@ transmit(mailp, obuf)
 }
 
 /*
+ * Print (continue) when continued after ^Z.
+ */
+collcont(s)
+{
+
+	printf("(continue)\n");
+	fflush(stdout);
+}
+
+/*
  * On interrupt, go here to save the partial
  * message on ~/dead.letter.
  * Then restore signals and execute the normal
@@ -724,6 +737,8 @@ collrub(s)
 	register FILE *dbuf;
 	register int c;
 
+	if (s == SIGINT)
+		sigset(SIGCONT, collrub);
 	if (s == SIGINT && hadintr == 0) {
 		hadintr++;
 		clrbuf(stdout);
@@ -746,11 +761,12 @@ done:
 	fclose(newi);
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
+	sigset(SIGCONT, savecont);
 	if (rcvmode) {
 		if (s == SIGHUP)
 			hangup(SIGHUP);
 		else
-			stop();
+			stop(s);
 	}
 	else
 		exit(1);
@@ -763,6 +779,7 @@ done:
 intack(s)
 {
 	
+	sigrelse(SIGCONT);
 	puts("@");
 	fflush(stdout);
 	clearerr(stdin);
