@@ -1,0 +1,24 @@
+.KF
+.TS
+center, box;
+cw(15).
+\s-2CASEOP\s0
+_
+No. of cases
+_
+.sp
+Case
+transfer
+table
+.sp
+_
+.sp
+Array of case
+label values
+.sp
+.TE
+.sp
+.ce
+Figure 2.4 \- Case data structure
+.sp
+.KE
