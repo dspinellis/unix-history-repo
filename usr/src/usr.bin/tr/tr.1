@@ -1,69 +1,192 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.roff%
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)tr.1	6.3 (Berkeley) %G%
+.\"     @(#)tr.1	6.4 (Berkeley) %G%
 .\"
-.TH TR 1 ""
-.AT 3
-.SH NAME
-tr \- translate characters
-.SH SYNOPSIS
-.B tr
-[
-.B \-cds
-] [ string1 [ string2 ] ]
-.SH DESCRIPTION
-.I Tr
-copies the standard input to the standard output with 
-substitution or deletion of selected characters.
-Input characters found in 
-.I string1
-are mapped into the corresponding characters of
-.IR string2 .
-When 
-.I string2
-is short it is padded to the length of 
-.I string1
-by duplicating its last character.
-Any combination of the options
-.B \-cds
-may be used:
-.B \-c
-complements the set of characters in
-.I string1
-with respect to the universe of characters
-whose ASCII codes are 0 through 0377 octal;
-.B \-d
-deletes all input characters in
-.I string1;
-.B \-s
-squeezes all strings of repeated output characters that are
-in 
-.I string2
-to single characters.
-.PP
-In either string the notation
-.IB a \- b
-means a range of characters from
-.I a
-to
-.I b
-in increasing ASCII order.
-The character
-`\e' followed by 1, 2 or 3 octal digits stands for the
-character whose ASCII code is given by those digits.
-A `\e' followed by any other character stands
-for that character.
-.PP
-The following example creates a list of all
-the words in `file1', each on a separate line, in `file2',
-where a word is taken to be a string of alphabetics.
-The second string is quoted
-to protect `\e' from the Shell.
-012 is the ASCII code for newline.
-.IP
-tr \-cs A\-Za\-z \'\e012\' <file1 >file2
-.SH "SEE ALSO"
-ed(1), expand(1), ascii(7)
+.Dd 
+.Dt TR 1
+.Os
+.Sh NAME
+.Nm tr
+.Nd translate characters
+.Sh SYNOPSIS
+.Nm tr
+.Op Fl c
+.Op Fl d | Fl s
+.Ar string1 string2
+.Sh DESCRIPTION
+The tr utility copies the standard input to the standard
+output with substitution or deletion of selected characters.
+The options specified and the
+.Ar string1
+and
+.Ar string2
+operands
+control translations that occur while copying characters.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl c
+Complements the set of characters in string1 with
+respect to the universe of characters whose
+.Tn ISO
+646
+[4] codes are 00 through 0377 octal.
+.It Fl d
+Deletes all input characters in
+.Ar string1 .
+.It Fl s
+Squeezes all output strings of one or more
+instances of a single character in
+.Ar string2
+to a
+single instance of that character.
+Input characters found
+in
+.Ar string1
+are mapped into the corresponding characters
+of
+.Ar string2 .
+When
+.Ar string2
+is shorter than
+.Ar string1 , string2
+is extended to the length of
+.Ar string1
+by duplicating the last character of
+.Ar string2 .
+If
+.Ar string2
+is explicitly a string of zero
+length,
+.Ar string2
+is padded with
+.Tn NUL
+characters.
+.El
+.Pp
+The following operands are available:
+.Bl -tag -width stringx
+.It Ar string1
+.It Ar string2
+Translation character strings.
+.El
+.Pp
+.Pp
+If
+the
+.Fl c
+option is given in conjunction with the
+.Fl d
+option, then only those characters found in
+.Ar string1
+is copied to the standard output.
+.Pp
+The following conventions can be used in
+.Ar string1
+or
+.Ar string2
+or both to specify characters, character ranges, character
+classes, or collating elements:
+.Bl -tag -width [[:equiv:]]
+.It character
+Represents that character.
+.It \eoctal
+A backslash followed by 1, 2, or 3 octal
+digits represents a character with that
+encoded value.
+If a \eoctal sequence is
+followed by digits, the backslash and up to
+three digits are interpreted to prepare a
+character; subsequent digits are interpreted
+as individual characters.
+.It \echaracter
+A backslash followed by any character except
+an octal digit represents that character.
+.It [c-c]
+Represents the range of ordered elements
+between the range endpoints, inclusive.
+.\" ; as
+.\" defined by the current setting of the
+.\" setlocale() category
+.\" .Em LC_COLLATE .
+.\" The collating
+.\" elements are ordered in ascending collating
+.\" sequence, and the first endpoint shall precede
+.\" the second in the collating sequence.
+.It [[:class:]]
+Represents all characters belonging to the
+defined character class.
+.\" as defined by the
+.\" current setting of the setlocale() category
+.\" .Ev LC_CTYPE .
+Allowable names for class are:
+.Bl -column alpha upper lower digit xdigit -offset indent
+alpha  upper  lower  digit  xdigit  alnum
+space  punct  print  graph  cntrl
+.El
+.Pp
+The characters placed in ascending order.
+.\" .Em LC_COLLATE .
+.\" (Characters not defined in the
+.\" current collating sequence are ordered
+.\" according to the collation sequence's rules
+.\" for ordering of undefined characters.)
+.It [[=equiv=]]
+Represents all characters or collating (sorting)
+elements belonging to the same equivalence class
+as equiv.
+.\" 
+.\" 
+.\" .Em LC_COLLATE .
+If
+there is a secondary ordering within the
+equivalence class, the characters are ordered
+in ascending sequence.
+Otherwise, they are
+ordered after their encoded values. 
+.It [[.cs.]]
+Represents a collating symbol.
+Multicharacter
+collating symbols shall be represented as
+collating symbols to distinguish them from a
+string of the same characters.
+.It [x*n]
+Represents n repeated occurrences of the
+character or collating symbol x.
+This
+expression is only valid when it occurs in
+.Ar string2 .
+If n is omitted or is zero, it is
+be interpreted as large enough to extend the
+.Ar string2 Ns -based
+sequence to the length of the
+.Ar string1 Ns -based
+sequence.
+If n has a leading
+zero, it shall be interpreted as an octal
+value.
+Otherwise, it shall be interpreted as
+a decimal value.
+.El
+.Pp
+Characters belonging to an equivalence class occupy the same
+position in the sequence, ordered after secondary ordering.
+.Pp
+The
+.Nm tr
+utility exits with one of the following values:
+.Bl -tag -width Ds
+.It 0
+All input was processed successfully.
+.It 1
+An error occurred.
+.El
+.Sh STANDARDS
+The
+.Nm tr
+utility is expected to be
+.Tn POSIX
+1003.2 compatible.

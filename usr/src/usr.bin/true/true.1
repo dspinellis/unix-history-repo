@@ -1,36 +1,33 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1983, 1985, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.roff%
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)true.1	6.2 (Berkeley) %G%
+.\"     @(#)true.1	6.3 (Berkeley) %G%
 .\"
-.TH TRUE 1 ""
-.AT 3
-.SH NAME
-true, false \- provide truth values
-.SH SYNOPSIS
-.B true
-.PP
-.B false
-.SH DESCRIPTION
-.I True
-and
-.I false
-are usually used in a Bourne shell script.
-They test for the appropriate status "true" or "false" before running 
+.Dd 
+.Dt TRUE 1
+.Os
+.Sh NAME
+.Nm true
+.Nd return true value
+.Sh SYNOPSIS
+.Nm true
+.Sh DESCRIPTION
+.Nm True
+is normally used in a Bourne shell script.
+.Nm True
+tests for the appropriate status "false" before running 
 (or failing to run) a list of commands.  
-.SH EXAMPLE
-.IP
-.nf
-     while true 
-     do
-          command list 
-     done
-.SH "SEE ALSO"
-csh(1),
-sh(1),
-false(1)
-.SH DIAGNOSTICS
-.I True 
-has exit status zero.
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr sh 1 ,
+.Xr false 1
+.Sh DIAGNOSTICS
+The
+.Nm true
+utility always returns with exit code zero.
+.Sh STANDARDS
+The
+.Nm true
+function is expected to be POSIX 1003.2 compatible.
