@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.h	6.7 (Berkeley) %G%
+ *	@(#)route.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -44,7 +44,6 @@ struct rtentry {
 #define	RTF_UP		0x1		/* route useable */
 #define	RTF_GATEWAY	0x2		/* destination is a gateway */
 #define	RTF_HOST	0x4		/* host entry (net otherwise) */
-#define RTF_REINSTATE	0x8		/* re-instate route after timeout */
 #define	RTF_DYNAMIC	0x10		/* created dynamically (by redirect) */
 
 /*
