@@ -1,6 +1,0 @@
-: loop
-if $1x = x exit
-icheck $1
-dcheck $1
-shift
-goto loop

@@ -1,9 +1,0 @@
-as as1?.s
-ld -s -n a.out
-cmp a.out /bin/as
-cp a.out /bin/as
-as as2?.s
-ld -s -n a.out
-cmp a.out /lib/as2
-cp a.out /lib/as2
-rm a.out
