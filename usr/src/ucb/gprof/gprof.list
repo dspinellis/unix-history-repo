@@ -1,0 +1,12 @@
+
+Sat Jan 15 13:15:29 PST 1983
+cc -O  -c gprof.c
+cc -O  -c arcs.c
+cc -O  -c dfn.c
+cc -O  -c lookup.c
+cc -O  -c calls.c
+cc -O  -c hertz.c
+cc -O  -c printgprof.c
+cc -O  -c printlist.c
+cc -o gprof -O  gprof.o arcs.o dfn.o lookup.o calls.o hertz.o  printgprof.o printlist.o
+111.0u 28.3s 4:58 46% 83+110k 439+537io 340pf+0w
