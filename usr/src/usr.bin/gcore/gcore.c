@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gcore.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcore.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,14 +26,13 @@ static char sccsid[] = "@(#)gcore.c	5.15 (Berkeley) %G%";
  * Engineering group at Lawrence Berkeley Laboratory under DARPA
  * contract BG 91-66 and contributed to Berkeley.
  */
-
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/sysctl.h>
-#include <sys/kinfo_proc.h>
+
 #include <machine/vmparam.h>
 
 #include <a.out.h>
@@ -45,6 +44,7 @@ static char sccsid[] = "@(#)gcore.c	5.15 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "extern.h"
 
 void	core __P((int, int, struct kinfo_proc *));
