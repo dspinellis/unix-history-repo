@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.4 (Berkeley) %G%
+#	@(#)Makefile.inc	5.5 (Berkeley) %G%
 
 # string sources
 .PATH: ${.CURDIR}/${MACHINE}/string ${.CURDIR}/string
@@ -10,7 +10,7 @@ SRCS+=	memccpy.c strcasecmp.c strcoll.c strdup.c strerror.c \
 SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.s memchr.c memcmp.c memset.c \
 	rindex.s strcat.c strcmp.s strcpy.s strcspn.c strlen.s \
 	strncat.c strncmp.s strncpy.s strpbrk.c strsep.c \
-	strstr.c strstr.c
+	strspn.c strstr.c
 .elif (${MACHINE} == "i386")
 SRCS+=	bcmp.c bcopy.c bzero.s ffs.c index.c memchr.c memcmp.c memset.c \
 	rindex.c strcat.c strcmp.c strcpy.c strcspn.c strlen.c \
