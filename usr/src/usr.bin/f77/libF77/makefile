@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.20	%G%
+#	@(#)makefile	1.21	%G%
 
 DESTDIR =
 LIB = libF77.a
@@ -10,12 +10,14 @@ CFLAGS = -O
 
 # for the CFO 11's
 #LIBDIR = ${DESTDIR}/usr/ucb/lib
+#OLDDIR = ${DESTDIR}/usr/old/lib
 #TAPE = /dev/nrmt1
 #OPTIONS = 
 
 # for the VAX
 LIBDIR = ${DESTDIR}/usr/lib
-TAPE = /dev/rnmt0.1600
+OLDDIR = ${DESTDIR}/usr/old/lib
+TAPE = /dev/rnmt0
 OPTIONS = -DUCBVAX
 
 MISC =	main.o s_rnge.o abort_.o exit_.o long_.o short_.o \
@@ -85,11 +87,11 @@ trapov_.o: trapov_.c
 install:	$(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB_P)
 
 $(LIBDIR)/$(LIB):	$(LIB)
-	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	@-mv $(LIBDIR)/$(LIB) $(OLDDIR)/$(LIB)
 	tar cf - $(LIB) | (cd $(LIBDIR); tar xvf - )
 
 $(LIBDIR)/$(LIB_P):	$(LIB_P)
-	@-mv $(LIBDIR)/$(LIB_P) $(LIBDIR)/$(LIB_P).old
+	@-mv $(LIBDIR)/$(LIB_P) $(OLDDIR)/$(LIB_P)
 	tar cf - $(LIB_P) | (cd $(LIBDIR); tar xvf - )
 
 clean:
