@@ -1,4 +1,4 @@
-#	@(#)gettytab	4.3 (Berkeley) 83/07/07
+#	@(#)gettytab	4.4 (Berkeley) 83/07/23
 
 #
 # Most of the table entries here are just copies of the
@@ -60,7 +60,7 @@ d110|Dial-110:\
 	:tc=110-baud:
 
 4|Console|Console Decwriter II:\
-	:co:nd@:cd@:rw:tc=300-baud:
+	:nd@:cd@:rw:tc=300-baud:
 
 i|Interdata console:\
 	:uc:sp#0:
