@@ -8,11 +8,21 @@
 
 #ifndef lint
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.22 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.23 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.22 (Berkeley) %G% (without DBM)";
+#ifdef NEWDB
+static char sccsid[] = "@(#)alias.c	5.23 (Berkeley) %G% (with NEWDB)";
+#else
+static char sccsid[] = "@(#)alias.c	5.23 (Berkeley) %G% (without DBM)";
+#endif
 #endif
 #endif /* not lint */
+
+# ifdef DBM
+# ifdef NEWDB
+#   ERROR: must choose one of DBM or NEWDB compilation flags
+# endif
+# endif
 
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -21,6 +31,10 @@ static char sccsid[] = "@(#)alias.c	5.22 (Berkeley) %G% (without DBM)";
 # include "sendmail.h"
 # include <sys/file.h>
 # include <pwd.h>
+
+# ifdef NEWDB
+# include <db.h>
+# endif
 
 /*
 **  ALIAS -- Compute aliases.
@@ -53,11 +67,15 @@ static char sccsid[] = "@(#)alias.c	5.22 (Berkeley) %G% (without DBM)";
 #ifdef DBM
 typedef struct
 {
-	char	*dptr;
-	int	dsize;
-} DATUM;
-extern DATUM fetch();
-#endif DBM
+	char	*data;
+	int	size;
+} DBT;
+extern DBT fetch();
+#endif /* DBM */
+
+#ifdef NEWDB
+static DB	*AliasDBptr;
+#endif
 
 alias(a, sendq)
 	register ADDRESS *a;
@@ -121,14 +139,21 @@ char *
 aliaslookup(name)
 	char *name;
 {
-# ifdef DBM
-	DATUM rhs, lhs;
+# if defined(NEWDB) || defined(DBM)
+	DBT rhs, lhs;
+	int s;
 
 	/* create a key for fetch */
-	lhs.dptr = name;
-	lhs.dsize = strlen(name) + 1;
+	lhs.data = name;
+	lhs.size = strlen(name) + 1;
+# ifdef NEWDB
+	s = AliasDBptr->get(AliasDBptr, &lhs, &rhs, 0);
+	if (s != 0)
+		return (NULL);
+# else
 	rhs = fetch(lhs);
-	return (rhs.dptr);
+# endif
+	return (rhs.data);
 # else DBM
 	register STAB *s;
 
@@ -162,12 +187,12 @@ initaliases(aliasfile, init)
 	char *aliasfile;
 	bool init;
 {
-#ifdef DBM
+#if defined(DBM) || defined(NEWDB)
 	int atcnt;
 	time_t modtime;
 	bool automatic = FALSE;
 	char buf[MAXNAME];
-#endif DBM
+#endif
 	struct stat stb;
 	static bool initialized = FALSE;
 	static int readaliases();
@@ -185,7 +210,7 @@ initaliases(aliasfile, init)
 		return;
 	}
 
-# ifdef DBM
+# if defined(DBM) || defined(NEWDB)
 	/*
 	**  Check to see that the alias file is complete.
 	**	If not, we will assume that someone died, and it is up
@@ -193,7 +218,15 @@ initaliases(aliasfile, init)
 	*/
 
 	if (!init)
+	{
+# ifdef NEWDB
+		(void) strcpy(buf, aliasfile);
+		(void) strcat(buf, ".db");
+		AliasDBptr = hash_open(buf, O_RDONLY, DBMMODE, NULL);
+# else
 		dbminit(aliasfile);
+# endif
+	}
 	atcnt = SafeAlias * 2;
 	if (atcnt > 0)
 	{
@@ -209,10 +242,20 @@ initaliases(aliasfile, init)
 			**	added before the sleep(30).
 			*/
 
+# ifdef NEWDB
+			AliasDBptr->close(AliasDBptr);
+# endif
+
 			sleep(30);
+# ifdef NEWDB
+			(void) strcpy(buf, aliasfile);
+			(void) strcat(buf, ".db");
+			AliasDBptr = hash_open(buf, O_RDONLY, DBMMODE, NULL);
+# else
 # ifdef NDBM
 			dbminit(aliasfile);
-# endif NDBM
+# endif
+# endif
 		}
 	}
 	else
@@ -227,7 +270,11 @@ initaliases(aliasfile, init)
 
 	modtime = stb.st_mtime;
 	(void) strcpy(buf, aliasfile);
+# ifdef NEWDB
+	(void) strcat(buf, ".db");
+# else
 	(void) strcat(buf, ".pag");
+# endif
 	stb.st_ino = 0;
 	if (!init && (stat(buf, &stb) < 0 || stb.st_mtime < modtime || atcnt < 0))
 	{
@@ -307,6 +354,9 @@ readaliases(aliasfile, init)
 	void (*oldsigint)();
 	ADDRESS al, bl;
 	register STAB *s;
+# ifdef NEWDB
+	DB *dbp;
+# endif
 	char line[BUFSIZ];
 
 	if ((af = fopen(aliasfile, "r")) == NULL)
@@ -318,7 +368,7 @@ readaliases(aliasfile, init)
 		return;
 	}
 
-# ifdef DBM
+# if defined(DBM) || defined(NEWDB)
 	/* see if someone else is rebuilding the alias file already */
 	if (flock(fileno(af), LOCK_EX | LOCK_NB) < 0 && errno == EWOULDBLOCK)
 	{
@@ -342,6 +392,7 @@ readaliases(aliasfile, init)
 	if (init)
 	{
 		oldsigint = signal(SIGINT, SIG_IGN);
+# ifdef DBM
 		(void) strcpy(line, aliasfile);
 		(void) strcat(line, ".dir");
 		if (close(creat(line, DBMMODE)) < 0)
@@ -359,6 +410,12 @@ readaliases(aliasfile, init)
 			return;
 		}
 		dbminit(aliasfile);
+# endif
+# ifdef NEWDB
+		(void) strcpy(line, aliasfile);
+		(void) strcat(line, ".db");
+		dbp = hash_open(line, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, NULL);
+# endif
 	}
 
 	/*
@@ -516,16 +573,23 @@ readaliases(aliasfile, init)
 		lhssize = strlen(lhs) + 1;
 		rhssize = strlen(rhs) + 1;
 
-# ifdef DBM
+# if defined(DBM) || defined(NEWDB)
 		if (init)
 		{
-			DATUM key, content;
+			DBT key, content;
 
-			key.dsize = lhssize;
-			key.dptr = al.q_user;
-			content.dsize = rhssize;
-			content.dptr = rhs;
+			key.size = lhssize;
+			key.data = al.q_user;
+			content.size = rhssize;
+			content.data = rhs;
+# ifdef DBM
 			store(key, content);
+# else
+			if (dbp->put(dbp, &key, &content, R_PUT) != 0)
+			{
+				syserr("cannot put alias %s", al.q_user);
+			}
+# endif
 		}
 		else
 # endif DBM
@@ -541,15 +605,20 @@ readaliases(aliasfile, init)
 			longest = rhssize;
 	}
 
-# ifdef DBM
+# if defined(DBM) || defined(NEWDB)
 	if (init)
 	{
 		/* add the distinquished alias "@" */
-		DATUM key;
+		DBT key;
 
-		key.dsize = 2;
-		key.dptr = "@";
+		key.size = 2;
+		key.data = "@";
+# ifdef NEWDB
+		dbp->put(dbp, &key, &key, R_PUT);
+		dbp->close(dbp);
+# else
 		store(key, key);
+# endif
 
 		/* restore the old signal */
 		(void) signal(SIGINT, oldsigint);
