@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)lfs.c	5.6 (Berkeley) %G%";
 #include <sys/resource.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/mount.h>
 
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/quota.h>
