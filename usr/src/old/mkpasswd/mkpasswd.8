@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mkpasswd.8	6.6 (Berkeley) %G%
+.\"	@(#)mkpasswd.8	6.7 (Berkeley) %G%
 .\"
 .TH MKPASSWD 8 ""
 .UC 6
@@ -15,6 +15,10 @@ mkpasswd \- generate hashed password table
 .B \-p
 ] passwdfile
 .SH DESCRIPTION
+.ft B
+Mkpasswd has been obsoleted by pwd_mkdb(8).
+.ft R
+.PP
 .I Mkpasswd
 is used to generated the hashed password database used by the
 password library routines (see
