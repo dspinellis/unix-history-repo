@@ -1,4 +1,4 @@
-.\"	@(#)kernmalloc.t	1.2	(Copyright 1988 M. K. McKusick)	88/02/20
+.\"	@(#)kernmalloc.t	1.3	(Copyright 1988 M. K. McKusick)	88/04/21
 .\" reference a system routine name
 .de RN
 \fI\\$1\fP\^()\\$2
@@ -28,15 +28,20 @@ Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, California  94720
 .AB
-This paper describes the current haphazard methods for allocating memory in
-the 4.3BSD UNIX kernel.
-Next it describes the requirements for a general purpose memory
-allocator suitable for use in the kernel.
-After describing the currently available memory allocators,
-the paper describes how a hybrid of them are used to
-implement a memory allocator suitable for all dynamic memory allocation
-in the kernel.
-It concludes with a discussion of our experience in using
+The 4.3BSD UNIX kernel uses many memory allocation mechanisms,
+each designed for the particular needs of the utilizing subsystem.
+This paper describes a general purpose dynamic memory allocator
+that can be used by all the kernel subsystems.
+The design of this allocator takes advantage of known memory usage
+patterns in the UNIX kernel and a hybrid strategy that is time-efficient
+for small allocations and space-efficient for large allocations.
+This allocator replaces the multiple memory allocation interfaces 
+with a single easy-to-program interface,
+results in more efficient use of global memory by eliminating
+partitioned and specialized memory pools,
+and is quick enough that no performance loss relative to the
+current implementations is observed.
+The paper concludes with a discussion of our experience in using
 the new memory allocator,
 and directions for future improvements.
 .AE
@@ -50,14 +55,13 @@ and others include information to describe I/O operations.
 Often the allocations are for small pieces of memory that are only
 needed for the duration of a single system call.
 In a user process such short-term
-memory would be allocated on the runtime stack.
-Because the kernel has a limited runtime stack,
+memory would be allocated on the run-time stack.
+Because the kernel has a limited run-time stack,
 it is not feasible to allocate even moderate blocks of memory on it.
 Consequently, such memory must be allocated through a more dynamic mechanism.
 For example,
 when the system must translate a pathname,
 it must allocate a one kilobye buffer to hold the name.
-.PP
 Other blocks of memory must be more persistent than a single system call
 and really have to be allocated from dynamic memory.
 Examples include protocol control blocks that remain throughout
@@ -75,7 +79,7 @@ The allocation is slow because of the implied semantics of
 finding the oldest buffer, pushing its contents to disk if they are dirty,
 and moving physical memory into or out of the buffer to create 
 the requested size [Thompson78].
-To reduce the overhead a ``new'' memory allocator is built
+To reduce the overhead a ``new'' memory allocator was built in 4.3BSD
 for name translation that allocates a pool of empty buffers.
 It keeps them on a free list so they can
 be quickly allocated and freed [McKusick85].
@@ -92,7 +96,7 @@ of writing code inside the kernel.
 Rather than providing many semi-specialized ways of allocating memory,
 the kernel should provide a single general purpose allocator.
 With only a single interface, 
-programmers need not concern themselves with trying to figure
+programmers do not need to figure
 out the most appropriate way to allocate memory.
 If a good general purpose allocator is available,
 it helps avoid the syndrome of creating yet another special
@@ -100,7 +104,7 @@ purpose allocator.
 .PP
 To ease the task of understanding how to use it,
 the memory allocator should have an interface similar to the interface
-provided by the well known memory allocator provided for
+of the well known memory allocator provided for
 applications programmers through the C library routines
 .RN malloc
 and
@@ -112,11 +116,11 @@ The range of sizes for memory requests should not be constrained.
 The free routine should take a pointer to the storage being freed,
 and should not require additional information such as the size
 of the piece of memory being freed.
-.H 1 "Criterion for a Kernel Memory Allocator
+.H 1 "Criteria for a Kernel Memory Allocator
 .PP
 The design specification for a kernel memory allocator is similar to,
-but not identical with,
-the design criterion for a user level memory allocator.
+but not identical to,
+the design criteria for a user level memory allocator.
 The first criterion for a memory allocator is that it make good use
 of the physical memory.
 Good use of memory is measured by the amount of memory needed to hold
@@ -139,22 +143,26 @@ Good memory utilization in the kernel is more important than
 in user processes.
 Because user processes run in virtual memory,
 unused parts of their address space can be paged out.
-Thus pages that are part of the ``required'' pool that are not
+Thus pages in the process address space
+that are part of the ``required'' pool that are not
 being ``requested'' need not tie up physical memory.
 Because the kernel is not paged,
 all pages in the ``required'' pool are held by the kernel and
 cannot be used for other purposes.
-Consequently, it is desirable to keep the utilization percentage
-as high as possible.
-It is also desirable to release memory from the ``required'' pool
+To keep the kernel utilization percentage as high as possible,
+it is desirable to release unused memory in the ``required'' pool
 rather than to hold it as is typically done with user processes.
+Because the kernel can directly manipulate its own page maps,
+releasing unused memory is fast;
+a user process must do a system call to release memory.
 .PP
 The most important criterion for a memory allocator is that it be fast.
-Memory allocation is done frequently,
-as a slow memory allocator will degrade the system performance.
-The kernel is more critical than user processes in this respect
+Because memory allocation is done frequently,
+a slow memory allocator will degrade the system performance.
+Speed of allocation is more critical when executing in the
+kernel than in user code,
 because the kernel must allocate many data structure that user
-programs would be able to allocate cheaply on their runtime stack.
+processes can allocate cheaply on their run-time stack.
 In addition, the kernel represents the platform on which all user
 processes run,
 so if it is slow, it will degrade the performance of every process
@@ -190,7 +198,7 @@ implementations of user-level memory allocators.
 A survey of those available on UNIX systems appeared in [Korn85].
 Nearly all the memory allocators tested made good use of memory, 
 though most of them were too slow for use in the kernel.
-The fastest memory allocator by nearly a factor of two,
+The fastest memory allocator in the survey by nearly a factor of two
 was the memory allocator provided on 4.2BSD originally
 written by Chris Kingsley at California Institute of Technology.
 Unfortunately,
@@ -225,9 +233,9 @@ and is typically much less since a machine with all its
 memory dedicated to the operating system is uninteresting to use.
 Thus the kernel can statically allocate a set of data structures
 to manage its dynamically allocated memory.
-These data structures never need to be expanded to accommodate
-memory requests, yet if properly designed need not be large.
-.PP
+These data structures never need to be
+expanded to accommodate memory requests;
+yet if properly designed they need not be large.
 For a user process, the maximum amount of memory that may be allocated
 is a function of the maximum size of its virtual memory.
 Although it could allocate static data structures to manage
@@ -269,9 +277,9 @@ network on a diskless workstation.
 In profiling studies of the kernel, we found that most of its
 allocations are for small objects.
 Large allocations occur infrequently, 
-and are typically for long lived objects
+and are typically for long-lived objects
 such as buffers to hold the superblock for
-a file system when it is mounted.
+a mounted file system.
 Thus a memory allocator only needs to be fast for small pieces of memory.
 .H 1 "Implementation of the Kernel Memory Allocator
 .PP
@@ -287,8 +295,8 @@ To avoid the cost of a subroutine call,
 macros are provided to compute the list to use and remove an
 element if it is available.
 Only if the request cannot be fulfilled from a list is a call
-made into the allocator itself.
-To insure that the allocator is always called for large requests,
+made to the allocator itself.
+To ensure that the allocator is always called for large requests,
 the lists corresponding to large allocations are always empty.
 .PP
 Similarly, freeing a block of memory can be done with a macro.
@@ -312,7 +320,18 @@ always requests a one kilobyte block.
 Additionally the allocation method for large blocks is based on allocating
 pieces of memory in multiples of pages.
 Consequently the density of allocation for requests of size
-$2~times~pagesize$ or less are identical.
+$2~times~pagesize$ or less are identical.\*(dg
+.FS
+\*(dgTo understand why this number is $2~times~pagesize$ one observes
+that the power-of-two algorithm yields sizes of 1, 2, 4, 8, ...
+pages while the large block algorithm that allocates in multiples
+of pages yields sizes of 1, 2, 3, 4, ... pages.
+Thus for allocations of sizes between one and two pages
+both algorithms use two pages;
+it is not until allocations of sizes between two and three pages
+that a difference emerges where the power-of-two algorithm will use
+four pages while the large block algorithm will use three pages.
+.FE
 In 4.3BSD on the VAX, the (software) page size is one kilobyte,
 so two kilobytes is the smallest logical cutoff.
 .PP
@@ -323,8 +342,8 @@ Thus a request for a five kilobyte piece of memory will use exactly
 five pages of memory rather than eight kilobytes as with
 the power-of-two allocation strategy.
 .PP
-Another technique both to improve the efficiency of memory utilization
-and to speed allocation
+Another technique to improve both the efficiency of memory utilization
+and the speed of allocation
 is to cluster same-sized small allocations on a page.
 When a list for a power-of-two allocation is empty,
 a new page is allocated and divided into pieces of the needed size.
@@ -340,15 +359,37 @@ require a power-of-two-sized block.
 Therefore,
 instead of storing the size of each piece of memory with the piece itself,
 the size information is associated with the memory page.
-To determine the size of a piece of memory that is being freed,
-the kernel calculates the page in which it resides,
-and looks up the size associated with that page.
+Figure 1 shows how the kernel determines
+the size of a piece of memory that is being freed,
+by calculating the page in which it resides,
+and looking up the size associated with that page.
+.KF
+.DS B
+.so alloc.fig
+.DE
+.ce
+Figure 1 \- Calculation of allocation size.
+.KE
 Eliminating the cost of the overhead per piece improved utilization
 far more than expected.
 The reason is that many allocations in the kernel are for blocks of 
 memory whose size is a power-of-two.
 These requests would be nearly doubled if the user-level strategy were used.
 Now they can be accommodated with no wasted memory.
+.PP
+The allocator can be called both from the top half of the kernel
+that is willing to wait for memory to become available,
+and from the interrupt routines in the bottom half of the kernel
+that cannot wait for memory to become available.
+Clients indicate their willingness (and ability) to wait with a flag
+to the allocation routine.
+For clients that are willing to wait,
+the allocator guarrentees that their request will succeed.
+Thus, these clients can need not check the return value from the allocator.
+If memory is unavailable and the client cannot wait,
+the allocator returns a null pointer.
+These clients must be prepared to cope with this (infrequent) condition
+(usually by giving up and hoping to do better later).
 .H 1 "Results of the Implementation
 .PP
 The new memory allocator was written about a year ago.
@@ -360,10 +401,6 @@ This list includes
 .RN wmemall ,
 and 
 .RN zmemall .
-Most of the uses of
-.RN m_get
-as a general purpose allocator have been
-converted to use the new allocator.
 Many of the special purpose memory allocators built on
 top of other allocators have also been eliminated.
 For example, the allocator that was built on top of the buffer pool allocator
@@ -376,14 +413,14 @@ we have found that none of the special purpose pools are needed.
 Indeed, the allocation is about the same as the previous cost of
 allocating buffers from the network pool (``mbufs'').
 Consequently applications that used to allocate network
-buffers for their own uses can be switched over to using
+buffers for their own uses have been switched over to using
 the general purpose allocator without loss in performance.
 .PP
 The other major success has been in keeping the size information
 on a per page basis.
-This technique allowed the most-frequently-requested sizes to be
+This technique allows the most frequently requested sizes to be
 allocated without waste.
-It also reduced the amount of bookkeeping information associated
+It also reduces the amount of bookkeeping information associated
 with the allocator to a compact four kilobytes of information
 per megabyte of memory under management (with a one kilobyte page size).
 .H 1 "Future Work
