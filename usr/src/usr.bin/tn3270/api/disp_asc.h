@@ -5,4 +5,4 @@
 
 extern unsigned char
 	disp_asc[256],		/* Goes between display code and ascii */
-	asc_disp[128];		/* Goes between ascii and display code */
+	asc_disp[256];		/* Goes between ascii and display code */
