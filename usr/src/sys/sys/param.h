@@ -1,6 +1,6 @@
 /* "@(#)param.h 2.1 3/25/82" */
 
-/*	param.h	4.19	82/07/15	*/
+/*	param.h	4.20	82/08/08	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -34,6 +34,7 @@
 #define	PZERO	25
 #define	PPIPE	26
 #define	PWAIT	30
+#define	PLOCK	35
 #define	PSLEP	40
 #define	PUSER	50
 
