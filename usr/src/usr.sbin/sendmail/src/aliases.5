@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)aliases.5	8.1 (Berkeley) %G%
+.\"     @(#)aliases.5	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ALIASES 5
@@ -45,10 +45,8 @@ file in their home directory have messages forwarded to the
 list of users defined in that file.
 .Pp
 This is only the raw data file; the actual aliasing information is
-placed into a binary format in the files
-.Pa /etc/aliases.dir
-and
-.Pa /etc/aliases.pag
+placed into a binary format in the file
+.Pa /etc/aliases.db
 using the program
 .Xr newaliases 1 .
 A
@@ -57,6 +55,7 @@ command should be executed each time the aliases file is changed for the
 change to take effect.
 .Sh SEE  ALSO
 .Xr newaliases 1 ,
+.Xr dbopen 3 ,
 .Xr dbm 3 ,
 .Xr sendmail 8
 .Rs
@@ -66,9 +65,12 @@ change to take effect.
 .%T "SENDMAIL An Internetwork Mail Router"
 .Re
 .Sh BUGS
-Because of restrictions in
+If you have compiled
+.Xr sendmail
+with DBM support instead of NEWDB,
+you may have encounter problems in
 .Xr dbm 3
-a single alias cannot contain more than about 1000 bytes of information.
+restricting a single alias to about 1000 bytes of information.
 You can get longer aliases by ``chaining''; that is, make the last name in
 the alias be a dummy name which is a continuation alias.
 .Sh HISTORY
