@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.35 (Berkeley) %G%
+#	@(#)Makefile	5.36 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -16,6 +16,7 @@ STD=	a.out.h ar.h assert.h bitstring.h ctype.h curses.h ndbm.h \
 	ttyent.h tzfile.h utmp.h varargs.h vfont.h vis.h
 LMCH=	float.h frame.h
 LSYS=	errno.h fcntl.h signal.h syslog.h termios.h unistd.h
+NOOBJ=	noobj
 
 DIRS=	sys net netimp netinet netiso netns ufs nfs
 .if   (${MACHINE} == "hp300")
@@ -31,6 +32,8 @@ DIRS+=	vax vaxmba vaxuba vaxif
 # in environments where it's not possible to keep /sys publicly readable)
 # SHARED=	copies
 SHARED=	symlinks
+
+all include clean cleandir depend lint tags:
 
 install: ${SHARED}
 	@echo installing ${STD}
@@ -82,4 +85,4 @@ install: ${SHARED}
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 	done
 
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
