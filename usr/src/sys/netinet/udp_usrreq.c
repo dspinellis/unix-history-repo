@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.9 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ int	udpcksum = 0;		/* XXX */
 #endif
 int	udp_ttl = UDP_TTL;
 
-struct	sockaddr_in udp_in = { AF_INET };
+struct	sockaddr_in udp_in = { sizeof(udp_in), AF_INET };
 
 udp_input(m, iphlen)
 	register struct mbuf *m;
