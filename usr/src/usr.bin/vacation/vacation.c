@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -121,8 +121,8 @@ main(argc, argv)
 		exit(1);
 	}
 
-	db = hash_open(VDB, O_CREAT|O_RDWR | (iflag ? O_TRUNC : 0),
-	    S_IRUSR|S_IWUSR, (HASHINFO *)NULL);
+	db = dbopen(VDB, O_CREAT|O_RDWR | (iflag ? O_TRUNC : 0),
+	    S_IRUSR|S_IWUSR, DB_HASH, NULL);
 	if (!db) {
 		syslog(LOG_NOTICE, "vacation: %s: %s\n", VDB, strerror(errno));
 		exit(1);
@@ -305,7 +305,7 @@ setinterval(interval)
 	key.size = sizeof(VIT);
 	data.data = &interval;
 	data.size = sizeof(interval);
-	(void)(db->put)(db, &key, &data, R_PUT);
+	(void)(db->put)(db, &key, &data, 0);
 }
 
 /*
@@ -322,7 +322,7 @@ setreply()
 	(void)time(&now);
 	data.data = &now;
 	data.size = sizeof(now);
-	(void)(db->put)(db, &key, &data, R_PUT);
+	(void)(db->put)(db, &key, &data, 0);
 }
 
 /*
