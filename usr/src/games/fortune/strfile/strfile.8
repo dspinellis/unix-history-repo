@@ -16,39 +16,34 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strfile.8	5.6 (Berkeley) %G%
+.\"	@(#)strfile.8	5.7 (Berkeley) %G%
 .\"
 .TH STRFILE 8 ""
 .UC 4
 .SH NAME
 strfile, unstr \- create a random access file for storing strings
 .SH SYNOPSIS
-.B strfile
-[
-.B \-iorsx
-] [
-.B \-c char
-]
-sourcefile
-[ datafile ]
-.sp
+.B strfile [
+.I \-iorsx
+.B ] [
+.I \-c char
+.B ]
+.I source_file
+.B [
+.I output_file
+.B ]
+.br
 .B unstr
-sourcfile
+.I source_file
 .SH DESCRIPTION
 .I Strfile
-takes a file which contains a set of strings and creates a data file
-which contains those strings, along with a seek pointer table to the
-beginning of each.
+reads a file containing groups of lines separated by a line containing
+a single percent (``%'') sign and creates a data file which contains
+a header structure and a table of file offsets for each group of lines.
 This allows random access of the strings.
 .PP
-The source file contains strings separated by lines containing
-a single percent (``%'') sign.
-.PP
-The data file, if not specified on the command line, is named
-.IB sourcefile .out ,
-and contains a header, which describes the contents of the data file,
-the seek pointers to the beginning of each string, and the strings
-themselves, terminated by null bytes.
+The output file, if not specified on the command line, is named
+\fIsource_file\fB.out\fR.
 .PP
 The options are as follows:
 .TP
@@ -61,35 +56,34 @@ Ignore case when ordering the strings.
 .TP
 .B \-o
 Order the strings in alphabetical order.
-The strings will be stored in the same order in the data file
-as they were in the source, but the seek pointer table will be
-sorted in alphabetical order of the strings pointed to.
-Any
-.I initial
-non-alphanumeric characters are ignored.
-This option sets the STR_ORDERED bit in the
-.B str_flags
-field of the header.
+The offset table will be sorted in the alphabetical order of the
+groups of lines referenced.
+Any initial non-alphanumeric characters are ignored.
+This option causes the STR_ORDERED bit in the header
+.I str_flags
+field to be set.
 .TP
 .B \-r
-Randomize the order of the seek pointers in the table.
-The strings will be stored in the same order in the data file
-as they were in the source, but the seek pointer table will
-be randomized.
-This option sets the STR_RANDOM bit in the
-.B str_flags
-field of the header.
+Randomize access to the strings.
+Entries in the offset table will be randomly ordered.
+This option causes the STR_RANDOM bit in the header
+.I str_flags
+field to be set.
 .TP
 .B \-s
-Run silently; don't give a summary of data at the end.
+Run silently; don't give a summary message when finished.
 .TP
 .B \-x
-Set the rotated bit in the header to indicate the the fortunes
-are rotated 13 positions in a simply caesar cypher.
+Note that each alphabetic character in the groups of lines is rotated
+13 positions in a simple caesar cypher.
+This option causes the STR_ROTATED bit in the header
+.I str_flags
+field to be set.
 .PP
 The format of the header is:
-.sp
+.in +5
 .nf
+#define	VERSION	1
 unsigned long	str_version;	/* version number */
 unsigned long	str_numstr;	/* # of strings in the file */
 unsigned long	str_longlen;	/* length of longest string */
@@ -101,25 +95,17 @@ unsigned long	str_flags;	/* bit field for flags */
 char str_delim;			/* delimiting character */
 .fi
 .PP
-The field
-.B str_flags
-will have the bit STR_RANDOM set if the
-.B \-r
-flag was specified, or STR_ORDERED if the
-.B \-o
-flag was specified, or STR_ROTATED if the
-.B \-x
-flag was specified.
+All fields are written in network byte order.
 .PP
 The purpose of
 .I unstr
 is to undo the work of
 .IR strfile .
 It prints out the strings contained in the file
-.I sourcefile
+.I source_file
 in the order that they are listed in
 the header file
-.IB sourcefile .dat
+.IB source_file .dat
 to standard output.
 It is possible to create sorted versions of input files by using
 .B \-o
@@ -129,4 +115,4 @@ is run and then using
 .I unstr
 to dump them out in the table order.
 .SH "SEE ALSO"
-fortune(6)
+byteorder(3), fortune(6)
