@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)flvalue.c 1.2 %G%";
+static	char sccsid[] = "@(#)flvalue.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -13,11 +13,11 @@ static	char sccsid[] = "@(#)flvalue.c 1.2 %G%";
 #endif PC
 #ifdef OBJ
 /*
- * define the display structure for purposes of allocating
- * a temporary
+ * runtime display structure
  */
 struct dispsave {
-	char	*ptr;
+	char *locvars;		/* pointer to local variables */
+	struct stack *stp;	/* pointer to local stack frame */
 };
 #endif OBJ
 

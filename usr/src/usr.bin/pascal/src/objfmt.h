@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)objfmt.h 1.2 %G%"; */
+/* static	char sccsid[] = "@(#)objfmt.h 1.3 %G%"; */
 
 #ifdef OBJ
 	/*
@@ -15,6 +15,7 @@
 #   define	HEADER_BYTES	1024		/* the size of px_header */
 #   define PX_HEADER "/usr/lib/px_header"	/* px_header's name */
 #   define PX_INTRP "/usr/ucb/px"		/* the interpreter's name */
+#   define INDX 0				/* amt to shift display index */
 #endif OBJ
 
     /*
@@ -33,7 +34,6 @@
 	     *	these are because of varying sizes of pointers
 	     */
 #ifdef VAX
-#	define INDX 2				/* log2 of sizeof( * ) */
 #	define PTR_AS O_AS4
 #	define PTR_RV O_RV4
 #	define PTR_IND O_IND4
@@ -73,7 +73,6 @@
 #endif VAX
 
 #ifdef PDP11
-#	define INDX 1
 #	define PTR_AS O_AS2
 #	define PTR_RV O_RV2
 #	define PTR_IND O_IND2
