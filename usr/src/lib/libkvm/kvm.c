@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <machine/pte.h>
@@ -226,8 +226,8 @@ kvm_nlist(nl)
 {
 	datum key, data;
 	char dbname[MAXPATHLEN];
-	char dbversion[_BSD_LINE_MAX];
-	char kversion[_BSD_LINE_MAX];
+	char dbversion[_POSIX2_LINE_MAX];
+	char kversion[_POSIX2_LINE_MAX];
 	int dbversionlen;
 	char symbuf[MAXSYMSIZE+1];
 	struct nlist nbuf, *n;
@@ -865,7 +865,7 @@ vtophys(loc)
 }
 
 #include <varargs.h>
-static char errbuf[_BSD_LINE_MAX];
+static char errbuf[_POSIX2_LINE_MAX];
 
 static
 seterr(va_alist)
