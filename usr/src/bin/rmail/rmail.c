@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -219,7 +219,8 @@ main(argc, argv)
 		err(EX_TEMPFAIL, NULL);
 
 					/* Set name of ``from'' person. */
-	(void)snprintf(buf, sizeof(buf), "-f%s%s", from_path, from_user);
+	(void)snprintf(buf, sizeof(buf), "-f%s%s",
+	    from_path ? from_path : "", from_user);
 	if ((args[i++] = strdup(buf)) == NULL)
 		err(EX_TEMPFAIL, NULL);
 
@@ -228,7 +229,7 @@ main(argc, argv)
 	 * passed to sendmail and could be interpreted as flags.
 	 */
 	do {
-		if (**argv == '-')
+		if (*argv && **argv == '-')
 			err(EX_USAGE, "dash precedes argument: %s", *argv);
 	} while ((args[i++] = *argv++) != NULL);
 
