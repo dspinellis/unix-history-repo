@@ -1,26 +1,16 @@
 .\" Copyright (c) 1988 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sendmail.8	6.3 (Berkeley) %G%
+.\"	@(#)sendmail.8	6.4 (Berkeley) %G%
 .\"
 .TH SENDMAIL 8 ""
 .UC 4
 .SH NAME
 sendmail \- send mail over the internet
 .SH SYNOPSIS
-.B /usr/lib/sendmail
+.B sendmail
 [
 flags
 ] [
@@ -339,7 +329,7 @@ to keep
 from suppressing the blanks from between arguments.
 For example, a common alias is:
 .PP
-	msgs: "|/usr/ucb/msgs -s"
+	msgs: "|/usr/bin/msgs -s"
 .PP
 Aliases may also have the syntax ``:include:\c
 .IR filename ''
@@ -395,29 +385,29 @@ If invoked as
 will print the contents of the mail queue.
 .SH FILES
 Except for
-/usr/lib/sendmail.cf,
+/etc/sendmail.cf,
 these pathnames are all specified in
-/usr/lib/sendmail.cf.
+/etc/sendmail.cf.
 Thus,
 these values are only approximations.
 .PP
 .if t .ta 2i
 .if n .ta 3i
-/usr/lib/aliases	raw data for alias names
+/etc/aliases	raw data for alias names
 .br
-/usr/lib/aliases.pag
+/etc/aliases.pag
 .br
-/usr/lib/aliases.dir	data base of alias names
+/etc/aliases.dir	data base of alias names
 .br
-/usr/lib/sendmail.cf	configuration file
+/etc/sendmail.cf	configuration file
 .br
-/usr/lib/sendmail.fc	frozen configuration
+/etc/sendmail.fc	frozen configuration
 .br
-/usr/lib/sendmail.hf	help file
+/usr/share/misc/sendmail.hf	help file
 .br
-/usr/lib/sendmail.st	collected statistics
+/var/log/sendmail.st	collected statistics
 .br
-/usr/spool/mqueue/*	temp files
+/var/spool/mqueue/*	temp files
 .SH SEE\ ALSO
 binmail(1), mail(1), rmail(1), syslog(3),
 aliases(5), mailaddr(7), rc(8);
