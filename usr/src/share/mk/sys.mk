@@ -1,5 +1,4 @@
 unix=		We run UNIX.
-LIBC=		/lib/libc.a
 SHELL=		/bin/sh
 
 .SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h \
@@ -9,7 +8,6 @@ SHELL=		/bin/sh
 #.SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h \
 #		.c,v .y,v .l,v .s,v .h,v .8 .7 .6 .5 .4 .3 .2 .1 .0
 
-.INCLUDES:	.h
 .LIBS:		.a
 #.NULL:		.out
 
@@ -56,7 +54,7 @@ YFLAGS=
 #	${CO} ${COFLAGS} ${.IMPSRC} ${.TARGET}
 
 .c.o:
-	${CC} ${.INCLUDES} ${CFLAGS} -c ${.IMPSRC}
+	${CC} ${CFLAGS} -c ${.IMPSRC}
 
 .p.o:
 	${PC} ${PFLAGS} -c ${.IMPSRC}
