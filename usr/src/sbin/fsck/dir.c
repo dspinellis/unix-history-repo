@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -89,7 +89,8 @@ dirscan(idesc)
 		idesc->id_dirp = (struct direct *)dbuf;
 		if ((n = (*idesc->id_func)(idesc)) & ALTERED) {
 			bp = getdirblk(idesc->id_blkno, blksiz);
-			bcopy(dbuf, (char *)dp, dsize);
+			bcopy(dbuf, bp->b_un.b_buf + idesc->id_loc - dsize,
+			    dsize);
 			dirty(bp);
 			sbdirty();
 		}
@@ -108,7 +109,7 @@ fsck_readdir(idesc)
 {
 	register struct direct *dp, *ndp;
 	register struct bufarea *bp;
-	long size, blksiz;
+	long size, blksiz, fix;
 
 	blksiz = idesc->id_numfrags * sblock.fs_fsize;
 	bp = getdirblk(idesc->id_blkno, blksiz);
@@ -119,11 +120,14 @@ fsck_readdir(idesc)
 			goto dpok;
 		idesc->id_loc += DIRBLKSIZ;
 		idesc->id_filesize -= DIRBLKSIZ;
+		fix = dofix(idesc, "DIRECTORY CORRUPTED");
+		bp = getdirblk(idesc->id_blkno, blksiz);
+		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
 		dp->d_reclen = DIRBLKSIZ;
 		dp->d_ino = 0;
 		dp->d_namlen = 0;
 		dp->d_name[0] = '\0';
-		if (dofix(idesc, "DIRECTORY CORRUPTED"))
+		if (fix)
 			dirty(bp);
 		return (dp);
 	}
@@ -139,10 +143,13 @@ dpok:
 	if (idesc->id_loc < blksiz && idesc->id_filesize > 0 &&
 	    dircheck(idesc, ndp) == 0) {
 		size = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
-		dp->d_reclen += size;
 		idesc->id_loc += size;
 		idesc->id_filesize -= size;
-		if (dofix(idesc, "DIRECTORY CORRUPTED"))
+		fix = dofix(idesc, "DIRECTORY CORRUPTED");
+		bp = getdirblk(idesc->id_blkno, blksiz);
+		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
+		dp->d_reclen += size;
+		if (fix)
 			dirty(bp);
 	}
 	return (dp);
