@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pas.y	5.2 (Berkeley) %G%
+ *	@(#)pas.y	5.3 (Berkeley) %G%
  */
 
 /*
@@ -94,7 +94,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 5.2 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 5.3 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -104,7 +104,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 5.2 %G%";
+static	char sccsid[] = "@(#)pas.y 5.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -217,8 +217,8 @@ label_decl:
 
 const_decl:
 	YCONST YID '=' const ';'
-		= constbeg($1.i_entry), const(lineof($3.i_entry), $2.cptr,
-						$4.tr_entry);
+		= constbeg($1.i_entry, lineof($1.i_entry)),
+		  const(lineof($3.i_entry), $2.cptr, $4.tr_entry);
 		|
 	const_decl YID '=' const ';'
 		= const(lineof($3.i_entry), $2.cptr, $4.tr_entry);
