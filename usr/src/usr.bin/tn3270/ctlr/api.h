@@ -190,6 +190,9 @@ typedef struct {
     } keystroke_specifier;
 } WriteKeystrokeParms;
 
+#define	OPTION_SINGLE_KEYSTROKE		0x20
+#define	OPTION_MULTIPLE_KEYSTROKES	0x30
+
 typedef struct {
     char
 	rc,
