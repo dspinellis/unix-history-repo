@@ -1,4 +1,4 @@
-/*	ht.c	4.18	81/05/10	*/
+/*	ht.c	4.19	81/08/31	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -301,7 +301,7 @@ htdtint(mi, mbsr)
 		if (bp == &rhtbuf[HTUNIT(bp->b_dev)]) {
 			er &= ~HTER_FCE;
 			mbs &= ~(MBSR_DTABT|MBSR_MBEXC);
-		} else
+		}
 		if (bp->b_flags & B_READ && ds & HTDS_PES)
 			er &= ~(HTER_CSITM|HTER_CORCRC);
 		if (er&HTER_HARD || mbs&MBSR_EBITS || (ds&HTDS_MOL) == 0 ||
