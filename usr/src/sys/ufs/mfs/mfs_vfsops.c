@@ -4,48 +4,42 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.19 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.20 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "time.h"
-#include "kernel.h"
-#include "proc.h"
-#include "buf.h"
-#include "mount.h"
-#include "signalvar.h"
-#include "vnode.h"
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/mount.h>
+#include <sys/signalvar.h>
+#include <sys/vnode.h>
 
-#include "quota.h"
-#include "inode.h"
-#include "ufsmount.h"
-#include "mfsnode.h"
-#include "fs.h"
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
+#include <ufs/ufs/ufs_extern.h>
+
+#include <ufs/ffs/fs.h>
+#include <ufs/ffs/ffs_extern.h>
+
+#include <ufs/mfs/mfsnode.h>
+#include <ufs/mfs/mfs_extern.h>
 
 extern struct vnodeops mfs_vnodeops;
 
 /*
  * mfs vfs operations.
  */
-int mfs_mount();
-int mfs_start();
-int ufs_unmount();
-int ufs_root();
-int ufs_quotactl();
-int mfs_statfs();
-int ufs_sync();
-int ufs_fhtovp();
-int ufs_vptofh();
-int mfs_init();
-
 struct vfsops mfs_vfsops = {
 	mfs_mount,
 	mfs_start,
-	ufs_unmount,
+	ffs_unmount,
 	ufs_root,
 	ufs_quotactl,
 	mfs_statfs,
-	ufs_sync,
+	ffs_sync,
 	ufs_fhtovp,
 	ufs_vptofh,
 	mfs_init,
@@ -57,6 +51,7 @@ struct vfsops mfs_vfsops = {
  * mount system call
  */
 /* ARGSUSED */
+int
 mfs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
@@ -94,7 +89,7 @@ mfs_mount(mp, path, data, ndp, p)
 	mfsp->mfs_vnode = devvp;
 	mfsp->mfs_pid = p->p_pid;
 	mfsp->mfs_buflist = (struct buf *)0;
-	if (error = mountfs(devvp, mp)) {
+	if (error = ffs_mountfs(devvp, mp, p)) {
 		mfsp->mfs_buflist = (struct buf *)-1;
 		vrele(devvp);
 		return (error);
@@ -108,7 +103,7 @@ mfs_mount(mp, path, data, ndp, p)
 	(void) copyinstr(args.name, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 		&size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) mfs_statfs(mp, &mp->mnt_stat);
+	(void) mfs_statfs(mp, &mp->mnt_stat, p);
 	return (0);
 }
 
@@ -123,6 +118,7 @@ int	mfs_pri = PWAIT | PCATCH;		/* XXX prob. temp */
  * address space.
  */
 /* ARGSUSED */
+int
 mfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -164,7 +160,7 @@ mfs_statfs(mp, sbp, p)
 {
 	int error;
 
-	error = ufs_statfs(mp, sbp, p);
+	error = ffs_statfs(mp, sbp, p);
 	sbp->f_type = MOUNT_MFS;
 	return (error);
 }
