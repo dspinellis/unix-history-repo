@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	7.2 (Berkeley) %G%
+ *	@(#)if_ex.c	7.3 (Berkeley) %G%
  */
 
 
@@ -16,8 +16,6 @@
  *	George Powers
  *	Excelan Inc.
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -47,6 +45,7 @@
 #include "../netns/ns_if.h"
 #endif
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 #include "if_exreg.h"
@@ -54,7 +53,7 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-#define DEBUG			/* check for "impossible" events */
+/* #define DEBUG			/* check for "impossible" events */
 
 #define	NH2X 4			/* a sufficient number is critical */
 #define	NX2H 4			/* this is pretty arbitrary */
