@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.2 (Berkeley) %G%
 
 # machine-dependent gen sources
 SRCS+=	_setjmp.s fabs.s fixunsdfsi.s main.s modf.s mul.s saveregs.s \
@@ -7,8 +7,15 @@ SRCS+=	frexp.c isinf.c isnan.c ldexp.c
 
 # `source' files built from m4 source
 # the name `div.o' is taken for the ANSI C `div' function, hence sdiv here
-SRCS+=	sdiv.s udiv.s rem.s urem.s
-CLEANFILES+=sdiv.s udiv.s rem.s urem.s
+SRCS+=	rem.s sdiv.s udiv.s urem.s
+CLEANFILES+=rem.s sdiv.s udiv.s urem.s
+
+# these are copied down to the kernel library
+KMSRCS+=mul.s rem.s sdiv.s udiv.s umul.s urem.s
+
+# need DEFS.h too
+libkern.sparc::
+	cp -p ${.CURDIR}/sparc/DEFS.h /sys/libkern/sparc
 
 sdiv.s: divrem.m4
 	@echo 'building ${.TARGET} from ${.ALLSRC}'
