@@ -1,0 +1,3 @@
+For generic 4.3-Reno BSD machine.
+HAVE_UNDERSCORE_SETJMP	1
+STRTOD_MISSING	1
