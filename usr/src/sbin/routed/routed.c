@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.17 82/06/17";
+static char sccsid[] = "@(#)routed.c	4.18 82/06/20";
 #endif
 
 /*
@@ -43,6 +43,7 @@ int	supplier = -1;		/* process should supply updates */
 int	install = 1;		/* if 1 call kernel */
 int	lookforinterfaces = 1;
 int	performnlist = 1;
+int	externalinterfaces = 0;	/* # of remote and local interfaces */
 int	timeval = -TIMER_RATE;
 int	timer();
 int	cleanup();
@@ -90,6 +91,18 @@ main(argc, argv)
 		dup2(fileno(ftrace), 1);
 		dup2(fileno(ftrace), 2);
 	}
+
+	/*
+	 * We use two sockets.  One for which outgoing
+	 * packets are routed and for which they're not.
+	 * The latter allows us to delete routing table
+	 * entries in the kernel for network interfaces
+	 * attached to our host which we believe are down
+	 * while still polling it to see when/if it comes
+	 * back up.  With the new ipc interface we'll be
+	 * able to specify ``don't route'' as an option
+	 * to send, but until then we utilize a second port.
+	 */
 #ifdef vax || pdp11
 	routingaddr.sin_port = htons(routingaddr.sin_port);
 	noroutingaddr.sin_port = htons(noroutingaddr.sin_port);
@@ -127,11 +140,18 @@ usage:
 		fprintf(stderr, "usage: routed [ -sq ]\n");
 		exit(1);
 	}
+	/*
+	 * Collect an initial view of the world by
+	 * snooping in the kernel and the gateway kludge
+	 * file.  Then, send a request packet on all
+	 * directly connected networks to find out what
+	 * everyone else thinks.
+	 */
 	rtinit();
+	gwkludge();
 	ifinit();
 	if (supplier < 0)
 		supplier = 0;
-	gwkludge();
 	msg->rip_cmd = RIPCMD_REQUEST;
 	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
 	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
@@ -164,11 +184,17 @@ rtinit()
 
 struct	interface *ifnet;
 
+/*
+ * Probe the kernel through /dev/kmem to find the network
+ * interfaces which have configured themselves.  If the
+ * interface is present but not yet up (for example an
+ * ARPANET IMP), set the lookforinterfaces flag so we'll
+ * come back later and look again.
+ */
 ifinit()
 {
 	struct interface *ifp;
 	struct ifnet ifs, *next;
-	int externalinterfaces = 0;
 
 	if (performnlist) {
 		nlist("/vmunix", nl);
@@ -202,10 +228,13 @@ ifinit()
 			lookforinterfaces = 1;
 			continue;
 		}
+		/* already known to us? */
 		if (if_ifwithaddr(&ifs.if_addr))
 			continue;
+		/* argh, this'll have to change sometime */
 		if (ifs.if_addr.sa_family != AF_INET)
 			continue;
+		/* no one cares about software loopback interfaces */
 		if (ifs.if_net == LOOPBACKNET)
 			continue;
 		ifp = (struct interface *)malloc(sizeof (struct interface));
@@ -217,7 +246,7 @@ ifinit()
 		 * Count the # of directly connected networks
 		 * and point to point links which aren't looped
 		 * back to ourself.  This is used below to
-		 * decide if we should be a routing "supplier".
+		 * decide if we should be a routing ``supplier''.
 		 */
 		if ((ifs.if_flags & IFF_POINTOPOINT) == 0 ||
 		    if_ifwithaddr(&ifs.if_dstaddr) == 0)
@@ -257,10 +286,24 @@ addrouteforif(ifp)
 		net.sin_addr = if_makeaddr(ifp->int_net, INADDR_ANY);
 		dst = (struct sockaddr *)&net;
 	}
-	rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
+	if (rtlookup(dst) == 0)
+		rtadd(dst, &ifp->int_addr, ifp->int_metric,
+		  ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 }
 
+/*
+ * As a concession to the ARPANET we read a list of gateways
+ * from /etc/gateways and add them to our tables.  This file
+ * exists at each ARPANET gateway and indicates a set of ``remote''
+ * gateways (i.e. a gateway which we can't immediately determine
+ * if it's present or not as we can do for those directly connected
+ * at the hardware level).  If a gateway is marked ``passive''
+ * in the file, then we assume it doesn't have a routing process
+ * of our design and simply assume it's always present.  Those
+ * not marked passive are treated as if they were directly
+ * connected -- they're added into the interface list so we'll
+ * send them routing updates.
+ */
 gwkludge()
 {
 	struct sockaddr_in dst, gate;
@@ -293,6 +336,9 @@ gwkludge()
 		}
 		if (strcmp(buf, "passive") == 0)
 			ifp->int_flags |= IFF_PASSIVE;
+		else
+			/* assume no duplicate entries */
+			externalinterfaces++;
 		ifp->int_addr = *((struct sockaddr *)&gate);
 		ifp->int_metric = metric;
 		ifp->int_next = ifnet;
@@ -302,23 +348,38 @@ gwkludge()
 	fclose(fp);
 }
 
+/*
+ * Timer routine.  Performs routing information supply
+ * duties and manages timers on routing table entries.
+ */
 timer()
 {
 	register struct rthash *rh;
 	register struct rt_entry *rt;
 	struct rthash *base = hosthash;
-	int doinghost = 1, supplyeverything;
+	int doinghost = 1, timetobroadcast;
 
 	timeval += TIMER_RATE;
 	if (lookforinterfaces && (timeval % CHECK_INTERVAL) == 0)
 		ifinit();
-	supplyeverything = supplier && (timeval % SUPPLY_INTERVAL) == 0;
+	timetobroadcast = supplier && (timeval % SUPPLY_INTERVAL) == 0;
 	tprintf(">>> time %d >>>\n", timeval);
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
 		rt = rh->rt_forw;
 		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-			if (!(rt->rt_state & RTS_PASSIVE))
+			/*
+			 * We don't advance time on a routing entry for
+			 * a passive gateway or that for our only interface. 
+			 * The latter is excused because we don't act as
+			 * a routing information supplier and hence would
+			 * time it out.  This is fair as if it's down
+			 * we're cut off from the world anyway and it's
+			 * not likely we'll grow any new hardware in
+			 * the mean time.
+			 */
+			if (!(rt->rt_state & RTS_PASSIVE) &&
+			    (supplier || !(rt->rt_state & RTS_INTERFACE)))
 				rt->rt_timer += TIMER_RATE;
 			if (rt->rt_timer >= EXPIRE_TIME)
 				rt->rt_metric = HOPCNT_INFINITY;
@@ -331,7 +392,7 @@ again:
 			if (rt->rt_state & RTS_CHANGED) {
 				rt->rt_state &= ~RTS_CHANGED;
 				/* don't send extraneous packets */
-				if (supplyeverything)
+				if (!supplier || timetobroadcast)
 					continue;
 				log("broadcast", rt);
 				msg->rip_cmd = RIPCMD_RESPONSE;
@@ -347,7 +408,7 @@ again:
 		base = nethash;
 		goto again;
 	}
-	if (supplyeverything)
+	if (timetobroadcast)
 		toall(supply);
 	tprintf("<<< time %d <<<\n", timeval);
 	alarm(TIMER_RATE);
@@ -377,6 +438,10 @@ sendmsg(dst, dontroute)
 	(*afswitch[dst->sa_family].af_output)(s, dst, sizeof (struct rip));
 }
 
+/*
+ * Supply dst with the contents of the routing tables.
+ * If this won't fit in one packet, chop it up into several.
+ */
 supply(dst, dontroute)
 	struct sockaddr *dst;
 	int dontroute;
@@ -439,6 +504,8 @@ rip_input(from, size)
 	switch (msg->rip_cmd) {
 
 	case RIPCMD_REQUEST:
+		if (!supplier)
+			return;
 		newsize = 0;
 		size -= 4 * sizeof (char);
 		n = msg->rip_nets;
@@ -534,7 +601,7 @@ rip_input(from, size)
 			  rt->rt_metric, rt->rt_timer);
 
 			/*
-			 * update if from gateway, shorter, or getting
+			 * Update if from gateway, shorter, or getting
 			 * stale and equivalent.
 			 */
 			if (equal(from, &rt->rt_router) ||
@@ -550,6 +617,9 @@ rip_input(from, size)
 	tprintf("bad packet, cmd=%x\n", msg->rip_cmd);
 }
 
+/*
+ * Lookup dst in the tables for an exact match.
+ */
 struct rt_entry *
 rtlookup(dst)
 	struct sockaddr *dst;
@@ -581,6 +651,9 @@ again:
 	return (0);
 }
 
+/*
+ * Find a route to dst as the kernel would.
+ */
 struct rt_entry *
 rtfind(dst)
 	struct sockaddr *dst;
