@@ -13,9 +13,9 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * OMRON: $Id: machdep.c,v 1.3 92/06/14 06:17:12 moti Exp $
  *
- * from: hp300/hp300/machdep.c  7.29 (Berkeley) 7/8/92
+ * from: hp300/hp300/machdep.c  7.33 (Berkeley) 10/11/92
  *
- *	@(#)machdep.c	7.4 (Berkeley) %G%
+ *	@(#)machdep.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -502,12 +502,13 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
+struct sigreturn_args {
+	struct sigcontext *sigcntxp;
+};
 /* ARGSUSED */
 sigreturn(p, uap, retval)
 	struct proc *p;
-	struct args {
-		struct sigcontext *sigcntxp;
-	} *uap;
+	struct sigreturn_args *uap;
 	int *retval;
 {
 	register struct sigcontext *scp;
@@ -637,7 +638,7 @@ boot(howto)
 		savectx(curproc->p_addr, 0);
 
 	boothowto = howto;
-	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
+	if ((howto&RB_NOSYNC) == 0 && waittime < 0) {
 		register struct buf *bp;
 		int iter, nbusy;
 
