@@ -1,4 +1,4 @@
-/*	up.c	4.19	81/02/22	*/
+/*	up.c	4.20	81/02/23	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -86,8 +86,10 @@ struct	upst {
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
 };
 
-u_char	up_offset[16] =
-  { P400,M400,P400,M400,P800,M800,P800,M800,P1200,M1200,P1200,M1200,0,0,0,0 };
+u_char	up_offset[16] = {
+    UP_P400, UP_M400, UP_P400, UP_M400, UP_P800, UP_M800, UP_P800, UP_M800, 
+    UP_P1200, UP_M1200, UP_P1200, UP_M1200, 0, 0, 0, 0
+};
 
 struct	buf	rupbuf[NUP];
 
@@ -109,9 +111,9 @@ upprobe(reg)
 #ifdef lint	
 	br = 0; cvec = br; br = cvec;
 #endif
-	((struct device *)reg)->upcs1 = (IE|RDY);
+	((struct updevice *)reg)->upcs1 = UP_IE|UP_RDY;
 	DELAY(10);
-	((struct device *)reg)->upcs1 = 0;
+	((struct updevice *)reg)->upcs1 = 0;
 	return (1);
 }
 
@@ -119,12 +121,12 @@ upslave(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
-	register struct device *upaddr = (struct device *)reg;
+	register struct updevice *upaddr = (struct updevice *)reg;
 
 	upaddr->upcs1 = 0;		/* conservative */
 	upaddr->upcs2 = ui->ui_slave;
-	if (upaddr->upcs2&NED) {
-		upaddr->upcs1 = DCLR|GO;
+	if (upaddr->upcs2&UP_NED) {
+		upaddr->upcs1 = UP_DCLR|UP_GO;
 		return (0);
 	}
 	return (1);
@@ -133,6 +135,9 @@ upslave(ui, reg)
 upattach(ui)
 	register struct uba_dinfo *ui;
 {
+#ifdef notdef
+	register struct updevice *upaddr;
+#endif
 
 	if (upwstart == 0) {
 		timeout(upwatch, (caddr_t)0, HZ);
@@ -142,6 +147,15 @@ upattach(ui)
 		dk_mspw[ui->ui_dk] = .0000020345;
 	upip[ui->ui_ctlr][ui->ui_slave] = ui;
 	up_softc[ui->ui_ctlr].sc_ndrive++;
+#ifdef notdef
+	upaddr = (struct updevice *)ui->ui_addr;
+	upaddr->upcs1 = 0;
+	upaddr->upcs2 = ui->ui_slave;
+	upaddr->uphr = -1;
+	/* ... */
+	if (upaddr-> ... == 10)
+		ui->ui_type = 1;
+#endif
 }
  
 upstrategy(bp)
@@ -189,7 +203,7 @@ upustart(ui)
 {
 	register struct buf *bp, *dp;
 	register struct uba_minfo *um;
-	register struct device *upaddr;
+	register struct updevice *upaddr;
 	register struct upst *st;
 	daddr_t bn;
 	int sn, cn, csn;
@@ -199,7 +213,7 @@ upustart(ui)
 		return (0);
 	/*
 	 * The SC21 cancels commands if you just say
-	 *	cs1 = IE
+	 *	cs1 = UP_IE
 	 * so we are cautious about handling of cs1.
 	 * Also don't bother to clear as bits other than in upintr().
 	 */
@@ -216,16 +230,16 @@ upustart(ui)
 	if (dp->b_active)
 		goto done;
 	dp->b_active = 1;
-	upaddr = (struct device *)um->um_addr;
+	upaddr = (struct updevice *)um->um_addr;
 	upaddr->upcs2 = ui->ui_slave;
-	if ((upaddr->upds & VV) == 0) {
+	if ((upaddr->upds & UP_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
-		upaddr->upcs1 = IE|DCLR|GO;
-		upaddr->upcs1 = IE|PRESET|GO;
-		upaddr->upof = FMT22;
+		upaddr->upcs1 = UP_IE|UP_DCLR|UP_GO;
+		upaddr->upcs1 = UP_IE|UP_PRESET|UP_GO;
+		upaddr->upof = UP_FMT22;
 		didie = 1;
 	}
-	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
+	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL))
 		goto done;
 	if (up_softc[um->um_ctlr].sc_ndrive == 1)
 		goto done;
@@ -246,10 +260,10 @@ upustart(ui)
 search:
 	upaddr->updc = cn;
 	if (upseek)
-		upaddr->upcs1 = IE|SEEK|GO;
+		upaddr->upcs1 = UP_IE|UP_SEEK|UP_GO;
 	else {
 		upaddr->upda = sn;
-		upaddr->upcs1 = IE|SEARCH|GO;
+		upaddr->upcs1 = UP_IE|UP_SEARCH|UP_GO;
 	}
 	didie = 1;
 	if (ui->ui_dk >= 0) {
@@ -258,12 +272,15 @@ search:
 	}
 	goto out;
 done:
-	dp->b_forw = NULL;
-	if (um->um_tab.b_actf == NULL)
-		um->um_tab.b_actf = dp;
-	else
-		um->um_tab.b_actl->b_forw = dp;
-	um->um_tab.b_actl = dp;
+	if (dp->b_active != 2) {
+		dp->b_forw = NULL;
+		if (um->um_tab.b_actf == NULL)
+			um->um_tab.b_actf = dp;
+		else
+			um->um_tab.b_actl->b_forw = dp;
+		um->um_tab.b_actl = dp;
+		dp->b_active = 2;
+	}
 out:
 	return (didie);
 }
@@ -273,7 +290,7 @@ upstart(um)
 {
 	register struct buf *bp, *dp;
 	register struct uba_dinfo *ui;
-	register struct device *upaddr;
+	register struct updevice *upaddr;
 	struct upst *st;
 	daddr_t bn;
 	int dn, sn, tn, cmd;
@@ -285,10 +302,6 @@ loop:
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
-	/*
-	 * Mark the controller busy, and multi-part disk address.
-	 * Select the unit on which the i/o is to take place.
-	 */
 	um->um_tab.b_active++;
 	ui = updinfo[dkunit(bp)];
 	bn = dkblock(bp);
@@ -297,17 +310,11 @@ loop:
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn %= st->nsect;
-	upaddr = (struct device *)ui->ui_addr;
+	upaddr = (struct updevice *)ui->ui_addr;
 	upaddr->upcs2 = dn;
-	/*
-	 * If drive is not present and on-line, then
-	 * get rid of this with an error and loop to get
-	 * rid of the rest of its queued requests.
-	 * (Then on to any other ready drives.)
-	 */
-	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
+	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
 		printf("up%d not ready", dkunit(bp));
-		if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
+		if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
 			printf("\n");
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
@@ -317,30 +324,21 @@ loop:
 			iodone(bp);
 			goto loop;
 		}
-		printf(" (flakey... it came back)\n");
+		printf(" (flakey)\n");
 	}
-	/*
-	 * If this is a retry, then with the 16'th retry we
-	 * begin to try offsetting the heads to recover the data.
-	 */
 	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | FMT22;
-		upaddr->upcs1 = IE|OFFSET|GO;
-		while (upaddr->upds & PIP)
+		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | UP_FMT22;
+		upaddr->upcs1 = UP_IE|UP_OFFSET|UP_GO;
+		while (upaddr->upds & UP_PIP)
 			DELAY(25);
 	}
-	/*
-	 * Now set up the transfer, retrieving the high
-	 * 2 bits of the UNIBUS address from the information
-	 * returned by ubasetup() for the cs1 register bits 8 and 9.
-	 */
 	upaddr->updc = bp->b_cylin;
 	upaddr->upda = (tn << 8) + sn;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
 	if (bp->b_flags & B_READ)
-		cmd = IE|RCOM|GO;
+		cmd = UP_IE|UP_RCOM|UP_GO;
 	else
-		cmd = IE|WCOM|GO;
+		cmd = UP_IE|UP_WCOM|UP_GO;
 	um->um_cmd = cmd;
 	ubago(ui);
 	return (1);
@@ -349,28 +347,19 @@ loop:
 updgo(um)
 	struct uba_minfo *um;
 {
-	register struct device *upaddr = (struct device *)um->um_addr;
+	register struct updevice *upaddr = (struct updevice *)um->um_addr;
 
 	upaddr->upba = um->um_ubinfo;
 	upaddr->upcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
 
-/*
- * Handle a device interrupt.
- *
- * If the transferring drive needs attention, service it
- * retrying on error or beginning next transfer.
- * Service all other ready drives, calling ustart to transfer
- * their blocks to the ready queue in um->um_tab, and then restart
- * the controller if there is anything to do.
- */
 scintr(sc21)
 	register sc21;
 {
 	register struct buf *bp, *dp;
 	register struct uba_minfo *um = upminfo[sc21];
 	register struct uba_dinfo *ui;
-	register struct device *upaddr = (struct device *)um->um_addr;
+	register struct updevice *upaddr = (struct updevice *)um->um_addr;
 	register unit;
 	struct up_softc *sc = &up_softc[um->um_ctlr];
 	int as = (upaddr->upas & 0377) | sc->sc_softas;
@@ -379,20 +368,20 @@ scintr(sc21)
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
 	if (um->um_tab.b_active) {
-		if ((upaddr->upcs1 & RDY) == 0)
+		if ((upaddr->upcs1 & UP_RDY) == 0)
 			printf("upintr !RDY\n");
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
 		ui = updinfo[dkunit(bp)];
 		dk_busy &= ~(1 << ui->ui_dk);
 		upaddr->upcs2 = ui->ui_slave;
-		if ((upaddr->upds&ERR) || (upaddr->upcs1&TRE)) {
+		if ((upaddr->upds&UP_ERR) || (upaddr->upcs1&UP_TRE)) {
 			int cs2;
-			while ((upaddr->upds & DRY) == 0)
+			while ((upaddr->upds & UP_DRY) == 0)
 				DELAY(25);
-			if (upaddr->uper1&WLE)	
+			if (upaddr->uper1&UP_WLE)	
 				printf("up%d is write locked\n", dkunit(bp));
-			if (++um->um_tab.b_errcnt > 28 || upaddr->uper1&WLE)
+			if (++um->um_tab.b_errcnt > 28 || upaddr->uper1&UP_WLE)
 				bp->b_flags |= B_ERROR;
 			else
 				um->um_tab.b_active = 0; /* force retry */
@@ -400,16 +389,17 @@ scintr(sc21)
 				cs2 = (int)upaddr->upcs2;
 				deverror(bp, cs2, (int)upaddr->uper1);
 			}
-			if ((upaddr->uper1&(DCK|ECH))==DCK && upecc(ui))
-				return;
-			upaddr->upcs1 = TRE|IE|DCLR|GO;
+			if ((upaddr->uper1&(UP_DCK|UP_ECH))==UP_DCK)
+				if (upecc(ui))
+					return;
+			upaddr->upcs1 = UP_TRE|UP_IE|UP_DCLR|UP_GO;
 			needie = 0;
 			if ((um->um_tab.b_errcnt&07) == 4) {
-				upaddr->upcs1 = RECAL|GO|IE;
-				while(upaddr->upds & PIP)
+				upaddr->upcs1 = UP_RECAL|UP_IE|UP_GO;
+				while(upaddr->upds & UP_PIP)
 					DELAY(25);
 			}
-			if (um->um_tab.b_errcnt == 28 && cs2&(NEM|MXF)) {
+			if (um->um_tab.b_errcnt == 28 && cs2&(UP_NEM|UP_MXF)) {
 				printf("FLAKEY UP ");
 				ubareset(um->um_ubanum);
 				return;
@@ -418,8 +408,8 @@ scintr(sc21)
 		ubadone(um);
 		if (um->um_tab.b_active) {
 			if (um->um_tab.b_errcnt >= 16) {
-				upaddr->upcs1 = RTC|GO|IE;
-				while (upaddr->upds & PIP)
+				upaddr->upcs1 = UP_RTC|UP_GO|UP_IE;
+				while (upaddr->upds & UP_PIP)
 					DELAY(25);
 				needie = 0;
 			}
@@ -437,8 +427,8 @@ scintr(sc21)
 		}
 		as &= ~(1<<ui->ui_slave);
 	} else {
-		if (upaddr->upcs1 & TRE)
-			upaddr->upcs1 = TRE;
+		if (upaddr->upcs1 & UP_TRE)
+			upaddr->upcs1 = UP_TRE;
 	}
 	for (unit = 0; as; as >>= 1, unit++)
 		if (as & 1) {
@@ -450,7 +440,7 @@ scintr(sc21)
 		if (upstart(um))
 			needie = 0;
 	if (needie)
-		upaddr->upcs1 = IE;
+		upaddr->upcs1 = UP_IE;
 }
 
 upread(dev)
@@ -484,7 +474,7 @@ upwrite(dev)
 upecc(ui)
 	register struct uba_dinfo *ui;
 {
-	register struct device *up = (struct device *)ui->ui_addr;
+	register struct updevice *up = (struct updevice *)ui->ui_addr;
 	register struct buf *bp = uputab[ui->ui_unit].b_actf;
 	register struct uba_minfo *um = ui->ui_mi;
 	register struct upst *st;
@@ -507,7 +497,7 @@ upecc(ui)
 	prdev("ECC", bp->b_dev);
 	mask = up->upec2;
 	if (mask == 0) {
-		up->upof = FMT22;		/* == RTC ???? */
+		up->upof = UP_FMT22;		/* == RTC ???? */
 		return (0);
 	}
 	/*
@@ -544,7 +534,11 @@ upecc(ui)
 	 * We have completed npf+1 sectors of the transfer already;
 	 * restart at offset o of next sector (i.e. in UBA register reg+1).
 	 */
-	up->upcs1 = TRE|IE|DCLR|GO;
+#ifdef notdef
+	up->uper1 = 0;
+	up->upcs1 |= UP_GO;
+#else
+	up->upcs1 = UP_TRE|UP_IE|UP_DCLR|UP_GO;
 	bn = dkblock(bp);
 	st = &upst[ui->ui_type];
 	cn = bp->b_cylin;
@@ -558,8 +552,9 @@ upecc(ui)
 	ubaddr = (int)ptob(reg+1) + o;
 	up->upba = ubaddr;
 	cmd = (ubaddr >> 8) & 0x300;
-	cmd |= IE|GO|RCOM;
+	cmd |= UP_IE|UP_GO|UP_RCOM;
 	up->upcs1 = cmd;
+#endif
 	return (1);
 }
 
@@ -590,7 +585,7 @@ upreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
-		((struct device *)(um->um_addr))->upcs2 = CLR;
+		((struct updevice *)(um->um_addr))->upcs2 = UP_CLR;
 		for (unit = 0; unit < NUP; unit++) {
 			if ((ui = updinfo[unit]) == 0)
 				continue;
@@ -623,8 +618,8 @@ upwatch()
 		sc = &up_softc[sc21];
 		if (um->um_tab.b_active == 0) {
 			for (unit = 0; unit < NUP; unit++)
-				if (updinfo[unit]->ui_mi == um &&
-				    uputab[unit].b_active)
+				if (uputab[unit].b_active &&
+				    updinfo[unit]->ui_mi == um)
 					goto active;
 			sc->sc_wticks = 0;
 			continue;
@@ -646,7 +641,7 @@ upwatch()
 updump(dev)
 	dev_t dev;
 {
-	struct device *upaddr;
+	struct updevice *upaddr;
 	char *start;
 	int num, blk, unit;
 	struct size *sizes;
@@ -672,19 +667,19 @@ updump(dev)
 		ubainit(uba);
 #endif
 	DELAY(1000000);
-	upaddr = (struct device *)ui->ui_physaddr;
-	while ((upaddr->upcs1&DVA) == 0)
+	upaddr = (struct updevice *)ui->ui_physaddr;
+	while ((upaddr->upcs1&UP_DVA) == 0)
 		;
 	num = maxfree;
 	start = 0;
 	upaddr->upcs2 = unit;
-	if ((upaddr->upds & VV) == 0) {
-		upaddr->upcs1 = DCLR|GO;
-		upaddr->upcs1 = PRESET|GO;
-		upaddr->upof = FMT22;
+	if ((upaddr->upds & UP_VV) == 0) {
+		upaddr->upcs1 = UP_DCLR|UP_GO;
+		upaddr->upcs1 = UP_PRESET|UP_GO;
+		upaddr->upof = UP_FMT22;
 	}
-	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
-		printf("up !DPR || !MOL\n");
+	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
+		printf("dna\n");
 		return (-1);
 	}
 	st = &upst[ui->ui_type];
@@ -714,11 +709,11 @@ updump(dev)
 		*rp = (tn << 8) + sn;
 		*--rp = 0;
 		*--rp = -blk*NBPG / sizeof (short);
-		*--rp = GO|WCOM;
+		*--rp = UP_GO|UP_WCOM;
 		do {
 			DELAY(25);
-		} while ((upaddr->upcs1 & RDY) == 0);
-		if (upaddr->upcs1&ERR) {
+		} while ((upaddr->upcs1 & UP_RDY) == 0);
+		if (upaddr->upcs1&UP_ERR) {
 			printf("up dump dsk err: (%d,%d,%d) cs1=%x, er1=%x\n",
 			    cn, tn, sn, upaddr->upcs1, upaddr->uper1);
 			return (-1);
