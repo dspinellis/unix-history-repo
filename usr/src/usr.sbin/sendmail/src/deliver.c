@@ -15,14 +15,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
-# include <signal.h>
-# include <errno.h>
-# include "sendmail.h"
-# include <sys/stat.h>
-# include <netdb.h>
+#include <sendmail.h>
+#include <sys/signal.h>
+#include <sys/stat.h>
+#include <netdb.h>
+#include <errno.h>
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -63,7 +63,7 @@ deliver(firstto, editfcn)
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
-	register int rcode;		/* response code */
+	int rcode;		/* response code */
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE-50];		/* text line of to people */
 	char buf[MAXNAME];
@@ -371,40 +371,29 @@ deliver(firstto, editfcn)
 		editfcn = putmessage;
 	if (ctladdr == NULL)
 		ctladdr = &e->e_from;
-# ifdef SMTP
-	if (clever)
-	{
-		i = smtpfinish(m, editfcn);
-		/* send the initial SMTP protocol */
-		rcode = smtpinit(m, pv);
 
-		if (rcode == EX_OK)
-		{
 			/* send the recipient list */
 			tobuf[0] = '\0';
-			for (to = tochain; to != NULL; to = to->q_tchain)
-			{
-				int i;
+			for (to = tochain; to; to = to->q_tchain) {
+				register int i;
+				register char *t = tobuf;
 
 				e->e_to = to->q_paddr;
 				i = smtprcpt(to, m);
-				if (i != EX_OK)
-				{
+				if (i != EX_OK) {
 					markfailure(e, to, i);
 					giveresponse(i, m, e);
 				}
-				else
-				{
-					(void) strcat(tobuf, ",");
-					(void) strcat(tobuf, to->q_paddr);
+				else {
+					*t++ = ',';
+					for (p = to->q_paddr; *p; *t++ = *p++);
 				}
 			}
 
 			/* now send the data */
 			if (tobuf[0] == '\0')
 				e->e_to = NULL;
-			else
-			{
+			else {
 				e->e_to = tobuf + 1;
 				rcode = smtpdata(m, e);
 			}
@@ -414,7 +403,7 @@ deliver(firstto, editfcn)
 		}
 	}
 	else
-# endif SMTP
+#endif /* SMTP */
 		i = sendoff(m, pv, editfcn, ctladdr);
 
 	/*
