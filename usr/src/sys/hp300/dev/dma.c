@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dma.c	7.5 (Berkeley) %G%
+ *	@(#)dma.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@
 
 #include "dmareg.h"
 #include "dmavar.h"
-#include "device.h"
+#include "hp/dev/device.h"
 
 #include "../include/cpu.h"
 #include "../hp300/isr.h"
@@ -164,10 +164,10 @@ dmafree(dq)
 	dmatimo[unit] = 0;
 #endif
 	DMA_CLEAR(dc);
+#if defined(HP360) || defined(HP370) || defined(HP380)
 	/*
 	 * XXX we may not always go thru the flush code in dmastop()
 	 */
-#if defined(HP360) || defined(HP370)
 	if (dc->sc_flags & DMAF_PCFLUSH) {
 		PCIA();
 		dc->sc_flags &= ~DMAF_PCFLUSH;
@@ -238,6 +238,13 @@ dmago(unit, addr, count, flags)
 	 */
 	for (dcp = dc->sc_chain; count > 0; dcp++) {
 		dcp->dc_addr = (char *) kvtop(addr);
+#if defined(HP380)
+		/*
+		 * Push back dirty cache lines
+		 */
+		if (mmutype == MMU_68040)
+			DCFP(dcp->dc_addr);
+#endif
 		if (count < (tcount = NBPG - ((int)addr & PGOFSET)))
 			tcount = count;
 		dcp->dc_count = tcount;
@@ -282,6 +289,17 @@ dmago(unit, addr, count, flags)
 		dc->sc_cmd |= DMA_WORD;
 	if (flags & DMAGO_PRI)
 		dc->sc_cmd |= DMA_PRI;
+#if defined(HP380)
+	/*
+	 * On the 68040 we need to flush (push) the data cache before a
+	 * DMA (already done above) and flush again after DMA completes.
+	 * In theory we should only need to flush prior to a write DMA
+	 * and purge after a read DMA but if the entire page is not
+	 * involved in the DMA we might purge some valid data.
+	 */
+	if (mmutype == MMU_68040 && (flags & DMAGO_READ))
+		dc->sc_flags |= DMAF_PCFLUSH;
+#endif
 #if defined(HP360) || defined(HP370)
 	/*
 	 * Remember if we need to flush external physical cache when
@@ -332,7 +350,7 @@ dmastop(unit)
 	dmatimo[unit] = 0;
 #endif
 	DMA_CLEAR(dc);
-#if defined(HP360) || defined(HP370)
+#if defined(HP360) || defined(HP370) || defined(HP380)
 	if (dc->sc_flags & DMAF_PCFLUSH) {
 		PCIA();
 		dc->sc_flags &= ~DMAF_PCFLUSH;

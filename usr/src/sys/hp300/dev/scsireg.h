@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsireg.h	7.3 (Berkeley) %G%
+ *	@(#)scsireg.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -150,6 +150,7 @@ struct scsidevice {
 #define CMD_SEND_DIAGNOSTIC	0x1D
 
 #define CMD_REWIND		0x01
+#define CMD_REZERO		0x01
 #define CMD_FORMAT_UNIT		0x04
 #define CMD_READ_BLOCK_LIMITS	0x05
 #define CMD_REASSIGN_BLOCKS	0x07

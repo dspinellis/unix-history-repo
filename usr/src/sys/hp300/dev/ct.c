@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.3 (Berkeley) %G%
+ *	@(#)ct.c	7.4 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -30,8 +30,8 @@
 #include "tprintf.h"
 #include "proc.h"
 
+#include "hp/dev/device.h"
 #include "ctreg.h"
-#include "device.h"
 
 /* number of eof marks to remember */
 #define EOFS	128

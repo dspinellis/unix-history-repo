@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: machparam.h 1.11 89/08/14$
+ * from: Utah $Hdr: machparam.h 1.12 91/01/18$
  *
- *	@(#)param.h	7.10 (Berkeley) %G%
+ *	@(#)param.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,7 @@
 #define	PGSHIFT		12		/* LOG2(NBPG) */
 #define	NPTEPG		(NBPG/(sizeof (struct pte)))
 
-#define NBSEG		(1024*NBPG)	/* bytes/segment */
+#define NBSEG		0x400000	/* bytes/segment */
 #define	SEGOFSET	(NBSEG-1)	/* byte offset into segment */
 #define	SEGSHIFT	22		/* LOG2(NBSEG) */
 
@@ -106,12 +106,8 @@
 /*
  * Mach derived conversion macros
  */
-#define hp300_round_seg(x)	((((unsigned)(x)) + NBSEG - 1) & ~(NBSEG-1))
-#define hp300_trunc_seg(x)	((unsigned)(x) & ~(NBSEG-1))
 #define hp300_round_page(x)	((((unsigned)(x)) + NBPG - 1) & ~(NBPG-1))
 #define hp300_trunc_page(x)	((unsigned)(x) & ~(NBPG-1))
-#define hp300_btos(x)		((unsigned)(x) >> SEGSHIFT)
-#define hp300_stob(x)		((unsigned)(x) << SEGSHIFT)
 #define hp300_btop(x)		((unsigned)(x) >> PGSHIFT)
 #define hp300_ptob(x)		((unsigned)(x) << PGSHIFT)
 
@@ -156,7 +152,6 @@
 int	cpuspeed;
 #define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
 #endif
-
 #else
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif
@@ -165,9 +160,13 @@ int	cpuspeed;
 /*
  * Constants/macros for HPUX multiple mapping of user address space.
  * Pages in the first 256Mb are mapped in at every 256Mb segment.
+ *
+ * XXX broken in new VM XXX
  */
 #define HPMMMASK	0xF0000000
-#define ISHPMMADDR(v)	\
-    ((curproc->p_addr->u_pcb.pcb_flags&PCB_HPUXMMAP) && ((unsigned)(v)&HPMMMASK) != HPMMMASK)
-#define HPMMBASEADDR(v)	((unsigned)(v) & ~HPMMMASK)
+#define ISHPMMADDR(v) \
+	((curproc->p_addr->u_pcb.pcb_flags & PCB_HPUXMMAP) && \
+	 ((unsigned)(v) & HPMMMASK) != HPMMMASK)
+#define HPMMBASEADDR(v) \
+	((unsigned)(v) & ~HPMMMASK)
 #endif

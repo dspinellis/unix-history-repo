@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.6 (Berkeley) %G%
+ *	@(#)scsi.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -20,13 +20,13 @@
 #if NSCSI > 0
 
 #ifndef lint
-static char rcsid[] = "$Header: scsi.c,v 1.4 91/01/17 12:50:18 mike Exp $";
+static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/scsi.c,v 1.2 92/04/10 20:48:29 mike Exp $";
 #endif
 
 #include "sys/param.h"
 #include "sys/systm.h"
 #include "sys/buf.h"
-#include "device.h"
+#include "hp/dev/device.h"
 
 #include "scsivar.h"
 #include "scsireg.h"
@@ -213,6 +213,11 @@ scsiinit(hc)
 	scsi_isr[hc->hp_unit].isr_arg = hc->hp_unit;
 	isrlink(&scsi_isr[hc->hp_unit]);
 	scsireset(hc->hp_unit);
+	/*
+	 * XXX scale initialization wait according to CPU speed.
+	 * Should we do this for all wait?  Should we do this at all?
+	 */
+	scsi_init_wait *= cpuspeed;
 	return(1);
 }
 
@@ -889,6 +894,7 @@ scsiustart(unit)
 	register struct scsi_softc *hs = &scsi_softc[unit];
 
 	hs->sc_dq.dq_ctlr = DMA0 | DMA1;
+	hs->sc_flags |= SCSI_HAVEDMA;
 	if (dmareq(&hs->sc_dq))
 		return(1);
 	return(0);
@@ -921,7 +927,10 @@ scsigo(ctlr, slave, unit, bp, cdb, pad)
 
 	/* select the SCSI bus (it's an error if bus isn't free) */
 	if (issue_select(hd, slave, hs->sc_scsi_addr) || wait_for_select(hd)) {
-		dmafree(&hs->sc_dq);
+		if (hs->sc_flags & SCSI_HAVEDMA) {
+			hs->sc_flags &=~ SCSI_HAVEDMA;
+			dmafree(&hs->sc_dq);
+		}
 		return (1);
 	}
 	/*
@@ -1054,6 +1063,7 @@ out:
 	return (0);
 abort:
 	scsiabort(hs, hd, "go");
+	hs->sc_flags &=~ SCSI_HAVEDMA;
 	dmafree(&hs->sc_dq);
 	return (1);
 }
@@ -1102,7 +1112,7 @@ scsiintr(unit)
 #endif
 		dq = hs->sc_sq.dq_forw;
 		finishxfer(hs, hd, dq->dq_slave);
-		hs->sc_flags &=~ SCSI_IO;
+		hs->sc_flags &=~ (SCSI_IO|SCSI_HAVEDMA);
 		dmafree(&hs->sc_dq);
 		(dq->dq_driver->d_intr)(dq->dq_unit, hs->sc_stat[0]);
 	} else {
@@ -1112,7 +1122,7 @@ scsiintr(unit)
 		scsierror(hs, hd, ints);
 		scsiabort(hs, hd, "intr");
 		if (hs->sc_flags & SCSI_IO) {
-			hs->sc_flags &=~ SCSI_IO;
+			hs->sc_flags &=~ (SCSI_IO|SCSI_HAVEDMA);
 			dmafree(&hs->sc_dq);
 			dq = hs->sc_sq.dq_forw;
 			(dq->dq_driver->d_intr)(dq->dq_unit, -1);
@@ -1151,12 +1161,20 @@ scsi_tt_oddio(ctlr, slave, unit, buf, len, b_flags, freedma)
 	u_char iphase;
 	int stat;
 
+#ifdef DEBUG
+	if (freedma && (hs->sc_flags & SCSI_HAVEDMA) == 0 ||
+	    !freedma && (hs->sc_flags & SCSI_HAVEDMA))
+		printf("oddio: freedma (%d) inconsistency (flags=%x)\n",
+		       freedma, hs->sc_flags);
+#endif
 	/*
 	 * First free any DMA channel that was allocated.
 	 * We can't use DMA to do this transfer.
 	 */
-	if (freedma)
+	if (freedma) {
+		hs->sc_flags &=~ SCSI_HAVEDMA;
 		dmafree(hs->sc_dq);
+	}
 	/*
 	 * Initialize command block
 	 */

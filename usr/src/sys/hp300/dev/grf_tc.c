@@ -9,22 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_tc.c 1.18 91/04/02$
+ * from: Utah $Hdr: grf_tc.c 1.19 92/01/21$
  *
- *	@(#)grf_tc.c	7.4 (Berkeley) %G%
+ *	@(#)grf_tc.c	7.5 (Berkeley) %G%
  */
 
 #include "grf.h"
 #if NGRF > 0
 
 /*
- * Graphics routines for TOPCAT frame buffer
+ * Graphics routines for TOPCAT and CATSEYE frame buffers
  */
 #include "sys/param.h"
 #include "sys/errno.h"
 
-#include "grfioctl.h"
-#include "grfvar.h"
+#include "hp/dev/grfioctl.h"
+#include "hp/dev/grfvar.h"
 #include "grf_tcreg.h"
 
 #include "../include/cpu.h"

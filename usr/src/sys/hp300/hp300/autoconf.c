@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
+ * from: Utah $Hdr: autoconf.c 1.35 92/01/22$
  *
- *	@(#)autoconf.c	7.5 (Berkeley) %G%
+ *	@(#)autoconf.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -35,9 +35,9 @@
 #include "../include/cpu.h"
 #include "pte.h"
 #include "isr.h"
-#include "../dev/device.h"
-#include "../dev/grfioctl.h"
-#include "../dev/grfvar.h"
+#include "hp/dev/device.h"
+#include "hp/dev/grfreg.h"
+#include "hp/dev/hilreg.h"
 
 /*
  * The following several variables are related to
@@ -71,7 +71,8 @@ configure()
 	/*
 	 * XXX: these should be consolidated into some kind of table
 	 */
-	hilinit();
+	hilsoftinit(0, HILADDR);
+	hilinit(0, HILADDR);
 	isrinit();
 	dmainit();
 
@@ -761,7 +762,7 @@ find_devs()
 			/* 98544-547 topcat */
 			case 2:
 				break;
-			/* 98720/721 */
+			/* 98720/721 renassiance */
 			case 4:
 				if (sc < 132) {
 					hw->hw_size *= 2;
@@ -774,12 +775,15 @@ find_devs()
 			case 7:
 			case 9:
 				break;
-			/* 98730/731 */
+			/* 98730/731 davinci */
 			case 8:
 				if (sc < 132) {
 					hw->hw_size *= 2;
 					sc++;
 				}
+				break;
+			/* A1096A hyperion */
+			case 14:
 				break;
 			/* 987xx */
 			default:
@@ -865,7 +869,7 @@ iounmap(kva, size)
 }
 
 #if NCD > 0
-#include "../dev/cdvar.h"
+#include "dev/cdvar.h"
 
 find_cdevices()
 {
@@ -956,21 +960,22 @@ setroot()
 {
 	register struct hp_ctlr *hc;
 	register struct hp_device *hd;
-	int  majdev, mindev, unit, part, adaptor;
+	int  majdev, mindev, unit, part, controller, adaptor;
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
 	if (boothowto & RB_DFLTROOT ||
 	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
 		return;
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	if (majdev > sizeof(devname) / sizeof(devname[0]))
+	majdev = B_TYPE(bootdev);
+	if (majdev >= sizeof(devname) / sizeof(devname[0]))
 		return;
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	adaptor = B_ADAPTOR(bootdev);
+	controller = B_CONTROLLER(bootdev);
+	part = B_PARTITION(bootdev);
+	unit = B_UNIT(bootdev);
 	/*
-	 * First, find the controller type which support this device.
+	 * First, find the controller type which supports this device.
 	 */
 	for (hd = hp_dinit; hd->hp_driver; hd++)
 		if (hd->hp_driver->d_name[0] == devname[majdev][0] &&
@@ -979,8 +984,8 @@ setroot()
 	if (hd->hp_driver == 0)
 		return;
 	/*
-	 * Next, find the controller of that type corresponding to
-	 * the adaptor number.
+	 * Next, find the "controller" (bus adaptor) of that type
+	 * corresponding to the adaptor number.
 	 */
 	for (hc = hp_cinit; hc->hp_driver; hc++)
 		if (hc->hp_alive && hc->hp_unit == adaptor &&
@@ -989,15 +994,27 @@ setroot()
 	if (hc->hp_driver == 0)
 		return;
 	/*
-	 * Finally, find the device in question attached to that controller.
+	 * Finally, find the "device" (controller or slave) in question
+	 * attached to that "controller".
 	 */
 	for (hd = hp_dinit; hd->hp_driver; hd++)
-		if (hd->hp_alive && hd->hp_slave == unit &&
+		if (hd->hp_alive && hd->hp_slave == controller &&
 		    hd->hp_cdriver == hc->hp_driver &&
 		    hd->hp_ctlr == hc->hp_unit)
 			break;
 	if (hd->hp_driver == 0)
 		return;
+	/*
+	 * XXX note that we are missing one level, the unit, here.
+	 * Most HP drives come with one controller per disk.  There
+	 * are some older drives (e.g. 7946) which have two units
+	 * on the same controller but those are typically a disk as
+	 * unit 0 and a tape as unit 1.  This would have to be
+	 * rethought if you ever wanted to boot from other than unit 0.
+	 */
+	if (unit != 0)
+		printf("WARNING: using device at unit 0 of controller\n");
+
 	mindev = hd->hp_unit;
 	/*
 	 * Form a new rootdev

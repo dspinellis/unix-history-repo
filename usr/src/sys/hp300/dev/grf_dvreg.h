@@ -9,10 +9,16 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_dvreg.h 1.1 90/07/09$
+ * from: Utah $Hdr: grf_dvreg.h 1.5 92/01/21$
  *
- *	@(#)grf_dvreg.h	7.2 (Berkeley) %G%
+ *	@(#)grf_dvreg.h	7.3 (Berkeley) %G%
  */
+
+#ifdef KERNEL
+#include "hp/dev/iotypes.h"	/* XXX */
+#else
+#include <hp/dev/iotypes.h>	/* XXX */
+#endif
 
 /*
  * Map of the DaVinci frame buffer controller chip in memory ...
@@ -21,10 +27,6 @@
 #define db_waitbusy(regaddr) \
 	while (((struct dvboxfb *)(regaddr))->wbusy || \
 	       ((struct dvboxfb *)(regaddr))->as_busy) DELAY(100)
-
-#define	vu_char		volatile u_char
-#define	vu_short	volatile u_short
-#define	vu_int		volatile u_int
 
 struct rgb {
   u_char :8, :8, :8;

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsivar.h	7.1 (Berkeley) %G%
+ *	@(#)scsivar.h	7.2 (Berkeley) %G%
  */
 
 struct	scsi_softc {
@@ -24,7 +24,8 @@ struct	scsi_softc {
 /* sc_flags */
 #define	SCSI_IO		0x80	/* DMA I/O in progress */
 #define	SCSI_DMA32	0x40	/* 32-bit DMA should be used */
-#define	SCSI_ALIVE	0x01	/* controller initialized */
+#define	SCSI_HAVEDMA	0x04	/* controller has DMA channel */
 #ifdef DEBUG
 #define	SCSI_PAD	0x02	/* 'padded' transfer in progress */
 #endif
+#define	SCSI_ALIVE	0x01	/* controller initialized */

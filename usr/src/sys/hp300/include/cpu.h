@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  *
- *	@(#)cpu.h	7.9 (Berkeley) %G%
+ *	@(#)cpu.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -107,8 +107,10 @@ extern unsigned char ssir;
 #define	HP_370		4	/* 33Mhz 68030+64K external cache */
 #define	HP_340		5	/* 16Mhz 68030 */
 #define	HP_375		6	/* 50Mhz 68030+32K external cache */
+#define	HP_380		7	/* 25Mhz 68040 */
 
 /* values for mmutype (assigned for quick testing) */
+#define	MMU_68040	-2	/* 68040 on-chip MMU */
 #define	MMU_68030	-1	/* 68030 on-chip subset of 68851 */
 #define	MMU_HP		0	/* HP proprietary */
 #define	MMU_68851	1	/* Motorola 68851 */
@@ -218,6 +220,20 @@ extern	char *intiobase, *intiolimit;
 #define	PMMU_BE		0x8000
 #define	PMMU_FAULT	(PMMU_WP|PMMU_INV)
 
+/*
+ * 68040 MMU
+ */
+#define	MMU4_RES	0x001
+#define	MMU4_TTR	0x002
+#define	MMU4_WP		0x004
+#define	MMU4_MOD	0x010
+#define	MMU4_CMMASK	0x060
+#define	MMU4_SUP	0x080
+#define	MMU4_U0		0x100
+#define	MMU4_U1		0x200
+#define	MMU4_GLB	0x400
+#define	MMU4_BE		0x800
+
 /* 680X0 function codes */
 #define	FC_USERD	1	/* user data space */
 #define	FC_USERP	2	/* user program space */
@@ -246,3 +262,10 @@ extern	char *intiobase, *intiolimit;
 #define	CACHE_CLR	(CACHE_ON)
 #define	IC_CLEAR	(DC_WA|DC_BE|DC_ENABLE|IC_BE|IC_CLR|IC_ENABLE)
 #define	DC_CLEAR	(DC_WA|DC_BE|DC_CLR|DC_ENABLE|IC_BE|IC_ENABLE)
+
+/* 68040 cache control register */
+#define	IC4_ENABLE	0x8000		/* instruction cache enable bit */
+#define	DC4_ENABLE	0x80000000	/* data cache enable bit */
+
+#define	CACHE4_ON	(IC4_ENABLE|DC4_ENABLE)
+#define	CACHE4_OFF	(0)

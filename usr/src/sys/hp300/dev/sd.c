@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.12 (Berkeley) %G%
+ *	@(#)sd.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
 #if NSD > 0
 
 #ifndef lint
-static char rcsid[] = "$Header: sd.c,v 1.15 91/04/24 11:54:30 mike Exp $";
+static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/sd.c,v 1.2 92/04/10 20:48:35 mike Exp $";
 #endif
 
 #include "sys/param.h"
@@ -28,7 +28,7 @@ static char rcsid[] = "$Header: sd.c,v 1.15 91/04/24 11:54:30 mike Exp $";
 #include "sys/malloc.h"
 #include "sys/proc.h"
 
-#include "device.h"
+#include "hp/dev/device.h"
 #include "scsireg.h"
 #include "vm/vm_param.h"
 #include "vm/lock.h"
@@ -104,6 +104,8 @@ struct	sd_softc {
 
 /* sc_flags values */
 #define	SDF_ALIVE	0x1
+#define SDF_WANTED	0x2
+#define SDF_RMEDIA	0x4
 
 #ifdef DEBUG
 int sddebug = 1;
@@ -279,6 +281,8 @@ sdident(sc, hd)
 		printf("sd%d: %s %s rev %s", hd->hp_unit, idstr, &idstr[8],
 			&idstr[24]);
 	printf(", %d %d byte blocks\n", sc->sc_blks, sc->sc_blksize);
+	if (inqbuf.qual & 0x80)
+		sc->sc_flags |= SDF_RMEDIA;
 	if (sc->sc_blksize != DEV_BSIZE) {
 		if (sc->sc_blksize < DEV_BSIZE) {
 			printf("sd%d: need %d byte blocks - drive ignored\n",
@@ -304,6 +308,7 @@ sdinit(hd)
 	register struct sd_softc *sc = &sd_softc[hd->hp_unit];
 
 	sc->sc_hd = hd;
+	sc->sc_flags = 0;
 	sc->sc_punit = sdpunit(hd->hp_flags);
 	sc->sc_type = sdident(sc, hd);
 	if (sc->sc_type < 0)
@@ -351,7 +356,7 @@ sdinit(hd)
 		sc->sc_info.part[7].strtblk = 0;
 	}
 
-	sc->sc_flags = SDF_ALIVE;
+	sc->sc_flags |= SDF_ALIVE;
 	return(1);
 }
 
@@ -380,6 +385,30 @@ sdopen(dev, flags, mode, p)
 	if (sc->sc_hd->hp_dk >= 0)
 		dk_wpms[sc->sc_hd->hp_dk] = sc->sc_wpms;
 	return(0);
+}
+
+int
+sdclose(dev, flag, mode, p)
+	dev_t dev;
+	int flag, mode;
+	struct proc *p;
+{
+	int unit = sdunit(dev);
+	register struct sd_softc *sc = &sd_softc[unit];
+	int s;
+
+	/*
+	 * XXX we should really do this for all drives.
+	 */
+	if (sc->sc_flags & SDF_RMEDIA) {
+		s = splbio();
+		while (sdtab[unit].b_active) {
+			sc->sc_flags |= SDF_WANTED;
+			sleep((caddr_t)&sdtab[unit], PRIBIO);
+		}
+		splx(s);
+	}
+	sc->sc_format_pid = 0;
 }
 
 /*
@@ -594,15 +623,22 @@ sdfinish(unit, sc, bp)
 	register struct sd_softc *sc;
 	register struct buf *bp;
 {
-	sdtab[unit].b_errcnt = 0;
-	sdtab[unit].b_actf = bp->b_actf;
+	register struct buf *dp = &sdtab[unit];
+
+	dp->b_errcnt = 0;
+	dp->b_actf = bp->b_actf;
 	bp->b_resid = 0;
 	biodone(bp);
 	scsifree(&sc->sc_dq);
-	if (sdtab[unit].b_actf)
+	if (dp->b_actf)
 		sdustart(unit);
-	else
-		sdtab[unit].b_active = 0;
+	else {
+		dp->b_active = 0;
+		if (sc->sc_flags & SDF_WANTED) {
+			sc->sc_flags &= ~SDF_WANTED;
+			wakeup((caddr_t)dp);
+		}
+	}
 }
 
 void

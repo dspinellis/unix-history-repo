@@ -9,10 +9,16 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_gbreg.h 1.1 90/07/09$
+ * from: Utah $Hdr: grf_gbreg.h 1.11 92/01/21$
  *
- *	@(#)grf_gbreg.h	7.2 (Berkeley) %G%
+ *	@(#)grf_gbreg.h	7.3 (Berkeley) %G%
  */
+
+#ifdef KERNEL
+#include "hp/dev/iotypes.h"	/* XXX */
+#else
+#include <hp/dev/iotypes.h>	/* XXX */
+#endif
 
 /*
  * Gatorbox driver regs
@@ -33,8 +39,6 @@
 
 #define gbcm_waitbusy(regaddr) \
 	while (((struct gboxfb *)(regaddr))->cmap_busy != 0xff)
-
-#define	vu_char		volatile u_char
 
 struct gboxfb {
   u_char 	:8;

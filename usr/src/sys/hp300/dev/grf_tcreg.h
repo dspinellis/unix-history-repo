@@ -9,19 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_tcreg.h 1.10 91/03/25$
+ * from: Utah $Hdr: grf_tcreg.h 1.11 92/01/21$
  *
- *	@(#)grf_tcreg.h	7.3 (Berkeley) %G%
+ *	@(#)grf_tcreg.h	7.4 (Berkeley) %G%
  */
+
+#ifdef KERNEL
+#include "hp/dev/iotypes.h"	/* XXX */
+#else
+#include <hp/dev/iotypes.h>	/* XXX */
+#endif
 
 #define tccm_waitbusy(regaddr) \
 	while (((struct tcboxfb *)(regaddr))->cmap_busy & 0x04) DELAY(100)
 
 #define tc_waitbusy(regaddr,planes) \
 	while (((struct tcboxfb *)(regaddr))->busy & planes) DELAY(100)
-
-#define	vu_char		volatile u_char
-#define	vu_short	volatile u_short
 
 struct tcboxfb {
   u_char 	:8;
@@ -116,4 +119,3 @@ struct tcboxfb {
   u_char 	f24[0x60f0-0x60ba-2];
   vu_short 	strobe;			/* color map trigger 	      0x60f0 */
 };
-

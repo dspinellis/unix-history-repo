@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.38 90/10/12$
  *
- *	@(#)rd.c	7.13 (Berkeley) %G%
+ *	@(#)rd.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@
 #include "sys/buf.h"
 #include "sys/uio.h"
 
-#include "device.h"
+#include "hp/dev/device.h"
 #include "rdreg.h"
 
 #include "vm/vm_param.h"

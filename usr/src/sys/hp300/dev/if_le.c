@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.10 (Berkeley) %G%
+ *	@(#)if_le.c	7.11 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -55,7 +55,7 @@ extern	char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
 #include "../include/cpu.h"
 #include "../hp300/isr.h"
 #include "../include/mtpr.h"
-#include "device.h"
+#include "hp/dev/device.h"
 #include "if_lereg.h"
 
 #if NBPFILTER > 0
@@ -94,14 +94,18 @@ struct	le_softc {
 	struct	lereg1 *sc_r1;	/* LANCE registers */
 	struct	lereg2 *sc_r2;	/* dual-port RAM */
 	int	sc_rmd;		/* predicted next rmd to process */
+	int	sc_tmd;		/* next available tmd */
+	int	sc_txcnt;	/* # of transmit buffers in use */
+	/* stats */
 	int	sc_runt;
 	int	sc_jab;
 	int	sc_merr;
 	int	sc_babl;
 	int	sc_cerr;
 	int	sc_miss;
-	int	sc_xint;
+	int	sc_rown;
 	int	sc_xown;
+	int	sc_xown2;
 	int	sc_uflo;
 	int	sc_rxlen;
 	int	sc_rxoff;
@@ -109,10 +113,6 @@ struct	le_softc {
 	int	sc_busy;
 	short	sc_iflags;
 	caddr_t sc_bpf;
-	int	sc_tmd;		/* predicted next tmd to process */
-	int	sc_txcnt;	/* transmissions in progress */
-	int	sc_txbad;
-	int	sc_txbusy;
 } le_softc[NLE];
 
 /* access LANCE registers */
@@ -244,7 +244,7 @@ lereset(unit)
 	LERDWR(ler0, LE_CSR0, ler1->ler1_rap);
 	LERDWR(ler0, LE_STOP, ler1->ler1_rdp);
 	ledrinit(le->sc_r2, le);
-	le->sc_txcnt = le->sc_tmd = le->sc_rmd = 0;
+	le->sc_rmd = le->sc_tmd = 0;
 	LERDWR(ler0, LE_CSR1, ler1->ler1_rap);
 	LERDWR(ler0, (int)&lemem->ler2_mode, ler1->ler1_rdp);
 	LERDWR(ler0, LE_CSR2, ler1->ler1_rap);
@@ -265,6 +265,7 @@ lereset(unit)
 	LERDWR(ler0, LE_CSR0, ler1->ler1_rap);
 	LERDWR(ler0, LE_STRT | LE_INEA, ler1->ler1_rdp);
 	le->sc_if.if_flags &= ~IFF_OACTIVE;
+	le->sc_txcnt = 0;
 }
 
 /*
@@ -305,36 +306,38 @@ lestart(ifp)
 	register struct mbuf *m;
 	int len;
 
-again:
 	if ((le->sc_if.if_flags & IFF_RUNNING) == 0)
 		return (0);
-	IF_DEQUEUE(&le->sc_if.if_snd, m);
-	if (m == 0)
-		return (0);
-	tmd = le->sc_r2->ler2_tmd + le->sc_tmd;
-	if (tmd->tmd1 & LE_OWN)
-		return (le->sc_txbusy++, 0);
-	len = leput(le->sc_r2->ler2_tbuf[le->sc_tmd], m);
+	tmd = &le->sc_r2->ler2_tmd[le->sc_tmd];
+	do {
+		if (tmd->tmd1 & LE_OWN) {
+			le->sc_xown2++;
+			return (0);
+		}
+		IF_DEQUEUE(&le->sc_if.if_snd, m);
+		if (m == 0)
+			return (0);
+		len = leput(le->sc_r2->ler2_tbuf[le->sc_tmd], m);
 #if NBPFILTER > 0
-	/*
-	 * If bpf is listening on this interface, let it
-	 * see the packet before we commit it to the wire.
-	 */
-	if (le->sc_bpf)
-                bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[le->sc_tmd], len);
+		/* 
+		 * If bpf is listening on this interface, let it 
+		 * see the packet before we commit it to the wire.
+		 */
+		if (le->sc_bpf)
+			bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[le->sc_tmd],
+				len);
 #endif
-	tmd->tmd3 = 0;
-	tmd->tmd2 = -len;
-	if (++le->sc_tmd >= LETBUF)
-		le->sc_tmd = 0;
-	if (++le->sc_txcnt >= LETBUF) {
-		le->sc_txcnt = LETBUF;
-		le->sc_if.if_flags |= IFF_OACTIVE;
+
+		tmd->tmd3 = 0;
+		tmd->tmd2 = -len;
 		tmd->tmd1 = LE_OWN | LE_STP | LE_ENP;
-	} else {
-		tmd->tmd1 = LE_OWN | LE_STP | LE_ENP;
-		goto again;
-	}
+		if (++le->sc_tmd == LETBUF) {
+			le->sc_tmd = 0;
+			tmd = le->sc_r2->ler2_tmd;
+		} else
+			tmd++;
+	} while (++le->sc_txcnt < LETBUF);
+	le->sc_if.if_flags |= IFF_OACTIVE;
 	return (0);
 }
 
@@ -380,14 +383,10 @@ leintr(unit)
 		lereset(unit);
 		return(1);
 	}
-	if (stat & LE_RINT) {
-		/* interrupt is cleared in lerint */
+	if (stat & LE_RINT)
 		lerint(unit);
-	}
-	if (stat & LE_TINT) {
-		LERDWR(ler0, LE_TINT|LE_INEA, ler1->ler1_rdp);
+	if (stat & LE_TINT)
 		lexint(unit);
-	}
 	return(1);
 }
 
@@ -400,52 +399,42 @@ lexint(unit)
 {
 	register struct le_softc *le = &le_softc[unit];
 	register struct letmd *tmd;
-	int i, loopcount = 0;
+	int i, gotone = 0;
 
-	if (le->sc_txcnt == 0) {
-		le->sc_xint++;
-		return;
-	}
-again:
-	if ((i = le->sc_tmd - le->sc_txcnt) < 0) i += LETBUF;
-	tmd = le->sc_r2->ler2_tmd + i;
-	if (tmd->tmd1 & LE_OWN) {
-		if (loopcount)
-			goto out;
-		le->sc_xown++;
-		return;
-	}
-	if (tmd->tmd1 & LE_ERR) {
-err:
-		lexerror(unit);
-		le->sc_if.if_oerrors++;
-		if (tmd->tmd3 & (LE_TBUFF|LE_UFLO)) {
-			le->sc_uflo++;
-			lereset(unit);
+	do {
+		if ((i = le->sc_tmd - le->sc_txcnt) < 0)
+			i += LETBUF;
+		tmd = &le->sc_r2->ler2_tmd[i];
+		if (tmd->tmd1 & LE_OWN) {
+			if (gotone)
+				break;
+			le->sc_xown++;
+			return;
 		}
-		else if (tmd->tmd3 & LE_LCOL)
-			le->sc_if.if_collisions++;
-		else if (tmd->tmd3 & LE_RTRY)
-			le->sc_if.if_collisions += 16;
-	}
-	else if (tmd->tmd3 & LE_TBUFF)
+
+		/* clear interrupt */
+		LERDWR(le->sc_r0, LE_TINT|LE_INEA, le->sc_r1->ler1_rdp);
+
 		/* XXX documentation says BUFF not included in ERR */
-		goto err;
-	else if (tmd->tmd1 & LE_ONE)
-		le->sc_if.if_collisions++;
-	else if (tmd->tmd1 & LE_MORE)
-		/* what is the real number? */
-		le->sc_if.if_collisions += 2;
-	else
-		le->sc_if.if_opackets++;
-	loopcount++;
-	if (--le->sc_txcnt > 0)
-		goto again;
-	if (le->sc_txcnt < 0) {
-		le->sc_txbad++;
-		le->sc_txcnt = 0;
-	}
-out:
+		if ((tmd->tmd1 & LE_ERR) || (tmd->tmd3 & LE_TBUFF)) {
+			lexerror(unit);
+			le->sc_if.if_oerrors++;
+			if (tmd->tmd3 & (LE_TBUFF|LE_UFLO)) {
+				le->sc_uflo++;
+				lereset(unit);
+			} else if (tmd->tmd3 & LE_LCOL)
+				le->sc_if.if_collisions++;
+			else if (tmd->tmd3 & LE_RTRY)
+				le->sc_if.if_collisions += 16;
+		} else if (tmd->tmd1 & LE_ONE)
+			le->sc_if.if_collisions++;
+		else if (tmd->tmd1 & LE_MORE)
+			/* what is the real number? */
+			le->sc_if.if_collisions += 2;
+		else
+			le->sc_if.if_opackets++;
+		gotone++;
+	} while (--le->sc_txcnt > 0);
 	le->sc_if.if_flags &= ~IFF_OACTIVE;
 	(void) lestart(&le->sc_if);
 }
@@ -470,6 +459,7 @@ lerint(unit)
 	 * Out of sync with hardware, should never happen?
 	 */
 	if (rmd->rmd1 & LE_OWN) {
+		le->sc_rown++;
 		LERDWR(le->sc_r0, LE_RINT|LE_INEA, le->sc_r1->ler1_rdp);
 		return;
 	}

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_dv.c 1.7 91/01/21$
+ * from: Utah $Hdr: ite_dv.c 1.8 92/01/21$
  *
- *	@(#)ite_dv.c	7.5 (Berkeley) %G%
+ *	@(#)ite_dv.c	7.6 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -24,32 +24,37 @@
 #include "tty.h"
 #include "systm.h"
 
-#include "itevar.h"
-#include "itereg.h"
+#include "hp/dev/itevar.h"
+#include "hp/dev/itereg.h"
 #include "grf_dvreg.h"
 
 #include "machine/cpu.h"
 
 /* XXX */
-#include "grfioctl.h"
-#include "grfvar.h"
+#include "hp/dev/grfioctl.h"
+#include "hp/dev/grfvar.h"
 
 #define REGBASE		((struct dvboxfb *)(ip->regbase))
 #define WINDOWMOVER	dvbox_windowmove
 
 dvbox_init(ip)
-	struct ite_softc *ip;
+	register struct ite_softc *ip;
 {
 	int i;
 	
 	/* XXX */
 	if (ip->regbase == 0) {
-		struct grf_softc *gp = &grf_softc[ip - ite_softc];
+		struct grf_softc *gp = ip->grf;
+
 		ip->regbase = gp->g_regkva;
 		ip->fbbase = gp->g_fbkva;
+		ip->fbwidth = gp->g_display.gd_fbwidth;
+		ip->fbheight = gp->g_display.gd_fbheight;
+		ip->dwidth = gp->g_display.gd_dwidth;
+		ip->dheight = gp->g_display.gd_dheight;
 	}
 
-	dv_reset(REGADDR);
+	dv_reset(ip->regbase);
 
 	/*
 	 * Turn on frame buffer, turn on overlay planes, set replacement
@@ -98,16 +103,16 @@ dvbox_init(ip)
 	}
 	REGBASE->cmapbank = 0;
 	
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 
-	ite_devinfo(ip);
+	ite_fontinfo(ip);
 	ite_fontinit(ip);
 
 	/*
 	 * Clear the (visible) framebuffer.
 	 */
 	dvbox_windowmove(ip, 0, 0, 0, 0, ip->dheight, ip->dwidth, RR_CLEAR);
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 
 	/*
 	 * Stash the inverted cursor.
@@ -118,10 +123,10 @@ dvbox_init(ip)
 }
 
 dvbox_deinit(ip)
-	struct ite_softc *ip;
+	register struct ite_softc *ip;
 {
 	dvbox_windowmove(ip, 0, 0, 0, 0, ip->fbheight, ip->fbwidth, RR_CLEAR);
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 
    	ip->flags &= ~ITE_INITED;
 }
@@ -207,7 +212,7 @@ dvbox_windowmove(ip, sy, sx, dy, dx, h, w, func)
 	if (h == 0 || w == 0)
 		return;
 	
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 	dp->rep_rule = func << 4 | func;
 	dp->source_y = sy;
 	dp->source_x = sx;

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_tc.c 1.25 91/03/25$
+ * from: Utah $Hdr: ite_tc.c 1.26 92/01/21$
  *
- *	@(#)ite_tc.c	7.4 (Berkeley) %G%
+ *	@(#)ite_tc.c	7.5 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -25,26 +25,32 @@
 #include "systm.h"
 
 #include "grf_tcreg.h"
-#include "itereg.h"
-#include "itevar.h"
+#include "hp/dev/grfreg.h"
+#include "hp/dev/itereg.h"
+#include "hp/dev/itevar.h"
 
 #include "machine/cpu.h"
 
+/* XXX */
+#include "hp/dev/grfioctl.h"
+#include "hp/dev/grfvar.h"
+
 #define REGBASE	    	((struct tcboxfb *)(ip->regbase))
 #define WINDOWMOVER 	topcat_windowmove
-
-/* XXX */
-#include "grfioctl.h"
-#include "grfvar.h"
 
 topcat_init(ip)
 	register struct ite_softc *ip;
 {
 	/* XXX */
 	if (ip->regbase == NULL) {
-		struct grf_softc *gp = &grf_softc[ip - ite_softc];
+		struct grf_softc *gp = ip->grf;
+
 		ip->regbase = gp->g_regkva;
 		ip->fbbase = gp->g_fbkva;
+		ip->fbwidth = gp->g_display.gd_fbwidth;
+		ip->fbheight = gp->g_display.gd_fbheight;
+		ip->dwidth = gp->g_display.gd_dwidth;
+		ip->dheight = gp->g_display.gd_dheight;
 	}
 
 	/*
@@ -80,13 +86,13 @@ topcat_init(ip)
 	REGBASE->ren  = ip->planemask;
 	REGBASE->prr  = RR_COPY;
 
-	ite_devinfo(ip);
+	ite_fontinfo(ip);
 
 	/*
 	 * Clear the framebuffer on all planes.
 	 */
 	topcat_windowmove(ip, 0, 0, 0, 0, ip->fbheight, ip->fbwidth, RR_CLEAR);
-	tc_waitbusy(REGADDR, ip->planemask);
+	tc_waitbusy(ip->regbase, ip->planemask);
 
 	ite_fontinit(ip);
 
@@ -94,10 +100,10 @@ topcat_init(ip)
 	 * Initialize color map for color displays
 	 */
 	if (ip->planemask != 1) {
-	  	tc_waitbusy(REGADDR, ip->planemask);
+	  	tc_waitbusy(ip->regbase, ip->planemask);
 		REGBASE->nblank = 0x01;
 
-		tccm_waitbusy(REGADDR);
+		tccm_waitbusy(ip->regbase);
 		REGBASE->rdata  = 0x0;
 		REGBASE->gdata  = 0x0;
 		REGBASE->bdata  = 0x0;
@@ -105,14 +111,14 @@ topcat_init(ip)
 		REGBASE->strobe = 0xFF;
 
 		DELAY(100);
-		tccm_waitbusy(REGADDR);
+		tccm_waitbusy(ip->regbase);
 		REGBASE->rdata  = 0x0;
 		REGBASE->gdata  = 0x0;
 		REGBASE->bdata  = 0x0;
 		REGBASE->cindex = 0x0;
 
 		DELAY(100);
-		tccm_waitbusy(REGADDR);
+		tccm_waitbusy(ip->regbase);
 		REGBASE->rdata  = 0xFF;
 		REGBASE->gdata  = 0xFF;
 		REGBASE->bdata  = 0xFF;
@@ -120,7 +126,7 @@ topcat_init(ip)
 		REGBASE->strobe = 0xFF;
 
 		DELAY(100);
-		tccm_waitbusy(REGADDR);
+		tccm_waitbusy(ip->regbase);
 		REGBASE->rdata  = 0x0;
 		REGBASE->gdata  = 0x0;
 		REGBASE->bdata  = 0x0;
@@ -139,7 +145,7 @@ topcat_deinit(ip)
 	register struct ite_softc *ip;
 {
 	topcat_windowmove(ip, 0, 0, 0, 0, ip->fbheight, ip->fbwidth, RR_CLEAR);
-	tc_waitbusy(REGADDR, ip->planemask);
+	tc_waitbusy(ip->regbase, ip->planemask);
 
 	REGBASE->nblank = ~0;
    	ip->flags &= ~ITE_INITED;
@@ -225,7 +231,7 @@ topcat_windowmove(ip, sy, sx, dy, dx, h, w, func)
 	
 	if (h == 0 || w == 0)
 		return;
-	tc_waitbusy(REGADDR, ip->planemask);
+	tc_waitbusy(ip->regbase, ip->planemask);
 	rp->wmrr     = func;
 	rp->source_y = sy;
 	rp->source_x = sx;
