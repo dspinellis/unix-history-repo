@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)termios.h	7.1 (Berkeley) %G%
+ *	@(#)termios.h	7.2 (Berkeley) %G%
  */
 
 /*
- *  posix termios structure
+ *  termios structure
  */
 #ifndef _TERMIOS_
 #define _TERMIOS_
@@ -30,6 +30,7 @@
 #define	VEOL		1	/* ICANON */
 #define	VEOL2		2	/* ICANON */
 #define	VERASE		3	/* ICANON */
+#define	VERASE2		18	/* ICANON */
 #define VWERASE 	4	/* ICANON */
 #define VKILL		5	/* ICANON */
 #define	VREPRINT 	6	/* ICANON */
@@ -48,15 +49,14 @@
 
 #define	NCC		20	/* two spares */
 
-#define POSIX_V_DISABLE	((unsigned char)'\377')
-#define _POSIX_V_DISABLE POSIX_V_DISABLE
+#define _POSIX_VDISABLE	((unsigned char)'\377')
 
 /*
  * Input flags - software input processing
  */
 #define	IGNBRK		0x00000001	/* ignore BREAK condition */
 #define	BRKINT		0x00000002	/* map BREAK to SIGINTR */
-#define	IGNPAR		0x00000004	/* ignore (throw out) parity errors */
+#define	IGNPAR		0x00000004	/* ignore (discard) parity errors */
 #define	PARMRK		0x00000008	/* mark parity and framing errors */
 #define	INPCK		0x00000010	/* disable checking of parity errors */
 #define	ISTRIP		0x00000020	/* strip 8th bit off chars */
@@ -74,9 +74,11 @@
 /*
  * Output flags - software output processing
  */
-#define	OPOST		0x00000001	/* enable output processing */
+#define	OPOST		0x00000001	/* enable following output processing */
 #define ONLCR		0x00000002	/* map NL to CR-NL (ala CRMOD) */
+#define ONLCRNL		ONLCR
 #define OXTABS		0x00000004	/* expand tabs to spaces */
+#define ONOEOT		0x00000008	/* discard EOT's (^D) on output) */
 
 /*
  * Control flags - hardware control of terminal
@@ -91,31 +93,36 @@
 #define PARENB		0x00001000	/* parity enable */
 #define PARODD		0x00002000	/* odd parity, else even */
 #define HUPCL		0x00004000	/* hang up on last close */
-#define CLOCAL		0x00008000	/* ignore mode status lines */
+#define CLOCAL		0x00008000	/* ignore modem status lines */
 #define CRTSCTS		0x00010000	/* RTS/CTS flow control */
 
 
 /* 
  * "Local" flags - dumping ground for other state
  *
- *  Note presence of ISIG and ICANON.  Its not *our* fault.
+ * Warning: some flags in this structure begin with
+ * the letter "I" and look like they belong in the
+ * input flag.  Isn't history fun.
  */
 
-#define ECHO		0x00000001	/* enable echoing */
+#define	ECHOKE		0x00000001	/* visual erase for line kill */
 #define	ECHOE		0x00000002	/* visually erase chars */
 #define	ECHOK		0x00000004	/* echo NL after line kill */
-#define	ECHOKE		0x00000008	/* visual erase for line kill */
 #define	ECHONL		0x00000010	/* echo NL even if ECHO is off */
 #define	ECHOPRT		0x00000020	/* visual erase mode for hardcopy */
 #define ECHOCTL  	0x00000040	/* echo control chars as ^(Char) */
 #define	ISIG		0x00000080	/* enable signals INTR, QUIT, [D]SUSP */
 #define	ICANON		0x00000100	/* canonicalize input lines */
-#define	NOFLSH		0x00000200	/* don't flush after interrupt */
-#define TOSTOP		0x00000400	/* stop background jobs from output */
-#define	MDMBUF		0x00000800	/* flow control output via Carrier */
-#define	NOHANG		0x00001000	/* XXX this should go away */
-#define FLUSHO		0x00002000	/* output being flushed (state) */
-#define PENDIN		0x00004000	/* retype pending input (state) */
+#define ALTWERASE	0x00000200	/* use alternate WERASE algorithm */
+#ifdef notdef	/* XXX already defined in ioctl.h */
+#define ECHO		0x00000008	/* enable echoing */
+#define	MDMBUF		0x00100000	/* flow control output via Carrier */
+#define TOSTOP		0x00400000	/* stop background jobs from output */
+#define FLUSHO		0x00800000	/* output being flushed (state) */
+#define	NOHANG		0x01000000	/* XXX this should go away */
+#define PENDIN		0x20000000	/* retype pending input (state) */
+#define	NOFLSH		0x80000000	/* don't flush after interrupt */
+#endif /*notdef*/
 
 struct termios {
 	unsigned long	c_iflag;	/* input flags */
@@ -128,21 +135,22 @@ struct termios {
 };
 
 /* 
- * Flags to tcsetattr(), for setting the termios structure.
- * 
- * If TCSASOFT is or'ed in with one of the first three, then
- * only the software processing flags in the termios structure
- * are set.  That is, the settings of the cflag and speeds
- * are ignored.
+ * Commands passed to tcsetattr() for setting the termios structure.
  */
 #define	TCSANOW		0		/* make change immediate */
 #define	TCSADRAIN	1		/* drain output, then change */
 #define	TCSADFLUSH	2		/* drain output, flush input */
+/*
+ * TCSASOFT is a flag which can be or'ed in with a command.
+ * If set, only the software processing flags in the termios 
+ * structure are altered.  That is, the settings of the cflag and 
+ * speeds are ignored.
+ */
 #define TCSASOFT	0x80000000	/* but ignore hardware settings */
 
 /*
- * Is c equal to control character val?  XXX - should reverse val and c
+ * Is c equal to control character val?
  */
-#define CCEQ(val, c)	(c == val ? val != POSIX_V_DISABLE : 0)
+#define CCEQ(val, c)	(c == val ? val != _POSIX_VDISABLE : 0)
 
 #endif _TERMIOS_
