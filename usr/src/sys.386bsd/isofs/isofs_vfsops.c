@@ -1,3 +1,11 @@
+/*
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00151
+ * --------------------         -----   ----------------------
+ *
+ * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
+ */
 #include "param.h"
 #include "systm.h"
 #include "namei.h"
@@ -396,6 +404,9 @@ isofs_root(mp, vpp)
 	ip = VTOI(&tvp);
 	ip->i_vnode = &tvp;
 	ip->i_dev = imp->im_dev;
+	ip->i_diroff = 0;
+	ip->iso_extent = imp->root_extent;
+	ip->i_diroff = 0;
 	error = iso_iget(ip, imp->root_extent, &nip,
 			 (struct iso_directory_record *) imp->root);
 	if (error)
@@ -444,25 +455,48 @@ isofs_sync(mp, waitfor)
 /*
  * File handle to vnode
  *
- * Have to be really careful about stale file handles:
- * - check that the inode number is in range
- * - call iget() to get the locked inode
- * - check for an unallocated inode (i_mode == 0)
- * - check that the generation number matches
+ * Less complicated than ufs file systems 'cos of read only.
+ * 
+ * -Jagane D Sundar-
  */
+
+
+struct ifid {
+	ushort	ifid_len;
+	ushort	ifid_pad;
+	int	ifid_lbn;
+	int	ifid_offset;
+	int	ifid_ino;
+};
+
 isofs_fhtovp(mp, fhp, vpp)
 	register struct mount *mp;
 	struct fid *fhp;
 	struct vnode **vpp;
 {
-	return (EINVAL);
-#if 0
 	/* here's a guess at what we need here */
-	struct vnode tvp;
-	int error;
+	struct vnode			tvp;
+	int				error;
+	int				lbn, off;
+	struct ifid			*ifhp;
+	struct iso_mnt			*imp;
+	struct buf			*bp;
+	struct iso_directory_record	*dirp;
+	struct iso_node 		*ip, *nip;
+	struct proc 			*p;
 
 	ifhp = (struct ifid *)fhp;
 	imp = VFSTOISOFS (mp);
+
+#ifdef	ISOFS_DBG
+	printf("fhtovp: lbn %d, off %d, ino %d\n",
+			ifhp->ifid_lbn, ifhp->ifid_offset, ifhp->ifid_ino);
+#endif
+
+	lbn = ifhp->ifid_lbn;
+	off = ifhp->ifid_offset;
+	ifhp->ifid_lbn += (ifhp->ifid_offset >> 12);
+	ifhp->ifid_offset &= 0x7fff;
 
 	if (ifhp->ifid_lbn >= imp->volume_space_size)
 		return (EINVAL);
@@ -471,19 +505,31 @@ isofs_fhtovp(mp, fhp, vpp)
 	    >= imp->im_bsize)
 		return (EINVAL);
 
-	bread (isomp->im_devvp, ifhp->ifid_lbn, imp->im_bsize, NOCRED, &bp);
+	if (error = bread (imp->im_devvp,
+		 (ifhp->ifid_lbn * imp->im_bsize / DEV_BSIZE), imp->im_bsize,
+								 NOCRED, &bp)) {
+		printf("fhtovp: bread error %d\n", error);
+		return(EINVAL);
+	}
 
-	dirp = bp->b_un.b_addr + ifhp->ifid_offset;
+	dirp = (struct iso_directory_record *)
+				 (bp->b_un.b_addr + ifhp->ifid_offset);
 
-	if (ifhp->ifid_offset + isonum_711 (dirp) >= imp->im_bsize) {
+	if (ifhp->ifid_offset + isonum_711 (dirp->length) >= imp->im_bsize) {
 		brelse (bp);
 		return (EINVAL);
+	}
+	if (isonum_733(dirp->extent) != ifhp->ifid_ino) {
+		brelse(bp);
+		return(EINVAL);
 	}
 
 	tvp.v_mount = mp;
 	ip = VTOI(&tvp);
 	ip->i_vnode = &tvp;
 	ip->i_dev = imp->im_dev;
+	ip->i_diroff = off;
+	ip->iso_extent = lbn;
 	if (error = iso_iget(ip, ifhp->ifid_ino, &nip, dirp)) {
 		*vpp = NULLVP;
 		brelse (bp);
@@ -493,7 +539,6 @@ isofs_fhtovp(mp, fhp, vpp)
 	*vpp = ITOV(ip);
 	brelse (bp);
 	return (0);
-#endif
 }
 
 /*
@@ -504,15 +549,25 @@ isofs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
 {
-	return (EINVAL);
-#if 0
-	register struct inode *ip = VTOI(vp);
-	register struct ufid *ufhp;
+	register struct iso_node *ip = VTOI(vp);
+	register struct ifid *ifhp;
+	register struct iso_mnt *mp = ip->i_mnt;
 
-	ufhp = (struct ufid *)fhp;
-	ufhp->ufid_len = sizeof(struct ufid);
-	ufhp->ufid_ino = ip->i_number;
-	ufhp->ufid_gen = ip->i_gen;
-	return (0);
+	ifhp = (struct ifid *)fhp;
+	ifhp->ifid_len = sizeof(struct ifid);
+
+	ifhp->ifid_lbn = ip->iso_parent_ext;
+	ifhp->ifid_offset = ip->iso_parent;
+	ifhp->ifid_ino = ip->i_number;
+
+	if(ip->i_number == mp->root_extent) {
+		ifhp->ifid_lbn = ip->i_number;
+		ifhp->ifid_offset = 0;
+	}
+
+#ifdef	ISOFS_DBG
+	printf("vptofh: lbn %d, off %d, ino %d\n",
+			ifhp->ifid_lbn, ifhp->ifid_offset, ifhp->ifid_ino);
 #endif
+	return (0);
 }

@@ -1,3 +1,11 @@
+/*
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00151
+ * --------------------         -----   ----------------------
+ *
+ * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
+ */
 struct iso_node {
 	struct	iso_node *i_chain[2]; /* hash chain, MUST be first */
 	struct	vnode *i_vnode;	/* vnode associated with this inode */
@@ -23,6 +31,9 @@ struct iso_node {
 	int iso_interleave_gap;
 	int iso_volume_seq;
 	int iso_namelen;
+	/* The following are reqd for NFS FH. -Jagane D Sundar- */
+	int iso_parent;
+	int iso_parent_ext;
 };
 
 #define	i_forw		i_chain[0]
