@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.11 1994/03/15 05:55:08 davidg Exp $
+ *	$Id: vfs_syscalls.c,v 1.12 1994/03/16 23:32:58 davidg Exp $
  */
 
 #include "param.h"
@@ -996,33 +996,37 @@ lseek(p, uap, retval)
 	register struct file *fp;
 	struct vattr vattr;
 	int error;
+	off_t offset;
 
 	if ((unsigned)uap->fdes >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (ESPIPE);
+	offset = fp->f_offset;
 	switch (uap->sbase) {
 
 	case L_INCR:
-		fp->f_offset += uap->off;
+		offset += uap->off;
 		break;
 
 	case L_XTND:
 		if (error = VOP_GETATTR((struct vnode *)fp->f_data,
 		    &vattr, cred, p))
 			return (error);
-		fp->f_offset = uap->off + vattr.va_size;
+		offset = uap->off + vattr.va_size;
 		break;
 
 	case L_SET:
-		fp->f_offset = uap->off;
+		offset = uap->off;
 		break;
 
 	default:
 		return (EINVAL);
 	}
-	*retval = fp->f_offset;
+	if (offset < 0)
+		return (EINVAL);
+	*retval = fp->f_offset = offset;
 	return (0);
 }
 
