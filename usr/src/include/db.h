@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.12 (Berkeley) %G%
+ *	@(#)db.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -29,18 +29,16 @@ typedef struct {
 	size_t	 size;			/* data length */
 } DBT;
 
-/* Flags for DB.put() call. */
-#define	R_IBEFORE	1		/* RECNO */
-#define	R_IAFTER	2		/* RECNO */
-#define	R_NOOVERWRITE	3		/* BTREE, HASH, RECNO */
-#define	R_PUT		4		/* BTREE, HASH, RECNO */
-
-/* Flags for DB.seq() call. */
-#define	R_CURSOR	1		/* BTREE, RECNO */
-#define	R_FIRST		2		/* BTREE, HASH, RECNO */
-#define	R_LAST		3		/* BTREE, RECNO */
-#define	R_NEXT		4		/* BTREE, HASH, RECNO */
-#define	R_PREV		5		/* BTREE, RECNO */
+/* Routine flags. */
+#define	R_APPEND	1		/* put (RECNO) */
+#define	R_CURSOR	2		/* del, put, seq */
+#define	R_FIRST		3		/* seq */
+#define	R_IAFTER	4		/* put (RECNO) */
+#define	R_IBEFORE	5		/* put (RECNO) */
+#define	R_LAST		6		/* seq (BTREE, RECNO) */
+#define	R_NEXT		7		/* seq */
+#define	R_NOOVERWRITE	8		/* put */
+#define	R_PREV		9		/* seq (BTREE, RECNO) */
 
 typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 
@@ -50,9 +48,10 @@ typedef struct __db {
 	void *internal;		/* access method private */
 	int (*close)	__P((struct __db *));
 	int (*del)	__P((const struct __db *, const DBT *, unsigned int));
-	int (*get)	__P((const struct __db *, DBT *, DBT *, unsigned int));
+	int (*get)	__P((const struct __db *, const DBT *, DBT *,
+			    unsigned int));
 	int (*put)	__P((const struct __db *, const DBT *, const DBT *,
-			     unsigned int));
+			    unsigned int));
 	int (*seq)	__P((const struct __db *, DBT *, DBT *, unsigned int));
 	int (*sync)	__P((const struct __db *));
 } DB;
@@ -110,7 +109,12 @@ typedef struct {
 	u_char valid;
 } RECNOKEY;
 
-/* Little endian <--> big endian long swap macros. */
+/*
+ * Little endian <==> big endian long swap macros.
+ *	BLSWAP		swap a memory location
+ *	BLPSWAP		swap a referenced memory location
+ *	BLSWAP_COPY	swap from one location to another
+ */
 #define BLSWAP(a) { \
 	u_long _tmp = a; \
 	((char *)&a)[0] = ((char *)&_tmp)[3]; \
@@ -118,20 +122,37 @@ typedef struct {
 	((char *)&a)[2] = ((char *)&_tmp)[1]; \
 	((char *)&a)[3] = ((char *)&_tmp)[0]; \
 }
-#define	BLSWAP_COPY(a,b) { \
+#define	BLPSWAP(a) { \
+	u_long _tmp = *(u_long *)a; \
+	((char *)a)[0] = ((char *)&_tmp)[3]; \
+	((char *)a)[1] = ((char *)&_tmp)[2]; \
+	((char *)a)[2] = ((char *)&_tmp)[1]; \
+	((char *)a)[3] = ((char *)&_tmp)[0]; \
+}
+#define	BLSWAP_COPY(a, b) { \
 	((char *)&(b))[0] = ((char *)&(a))[3]; \
 	((char *)&(b))[1] = ((char *)&(a))[2]; \
 	((char *)&(b))[2] = ((char *)&(a))[1]; \
 	((char *)&(b))[3] = ((char *)&(a))[0]; \
 }
 
-/* Little endian <--> big endian short swap macros. */
+/*
+ * Little endian <==> big endian short swap macros.
+ *	BSSWAP		swap a memory location
+ *	BSPSWAP		swap a referenced memory location
+ *	BSSWAP_COPY	swap from one location to another
+ */
 #define BSSWAP(a) { \
 	u_short _tmp = a; \
 	((char *)&a)[0] = ((char *)&_tmp)[1]; \
 	((char *)&a)[1] = ((char *)&_tmp)[0]; \
 }
-#define BSSWAP_COPY(a,b) { \
+#define BSPSWAP(a) { \
+	u_short _tmp = *(u_short *)a; \
+	((char *)a)[0] = ((char *)&_tmp)[1]; \
+	((char *)a)[1] = ((char *)&_tmp)[0]; \
+}
+#define BSSWAP_COPY(a, b) { \
 	((char *)&(b))[0] = ((char *)&(a))[1]; \
 	((char *)&(b))[1] = ((char *)&(a))[0]; \
 }
