@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.3 %G%";
+static char sccsid[] = "@(#)tmps.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -57,7 +57,7 @@ tmpalloc(size, type, mode)
 		    return -(((offset + FIRSTREG) << 1) + 1);
 	    }
 #	endif PC
-	offset = op->curtmps.om_off -= size;
+	offset = op->curtmps.om_off -= leven( size );
 	if ( offset < op->om_max ) {
 	        op->om_max = offset;
 	}
