@@ -33,7 +33,8 @@ typedef struct same {
 	*lasttoken,			/* Back pointer */
 	*depend_list,			/* If target, dependancies */
 	*action_list,			/* If target, actions */
-	*value_list;			/* If variable, value list */
+	*value_list,			/* If variable, value list */
+	*shell_item;			/* If a shell variable, current value */
 } same_t;
 
 %}
@@ -45,35 +46,39 @@ typedef struct same {
     }
 
 %start makefile
-%token <intval>	FOR IN DO DONE
 %token <string> TOKEN QUOTED_STRING
-%token <intval> MACRO_CHAR WHITE_SPACE NL END_OF_FILE
-%token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')'
-%type <same> target assignment actions action
-%type <same> for_statement maybe_at_minus tokens token
-%type <intval> special_chars white_space macro_char
+%token <intval>	FOR IN DO DONE
+%token <intval> MACRO_CHAR NL WHITE_SPACE
+%token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')' ' ' '\t'
+%type <same> target assignment assign1 actions action command_list command list
+%type <same> for_statement maybe_at_minus tokens token non_white_token
+%type <same> maybe_tokens
+%type <intval> white_space macro_char
 %%
 
-makefile : lines END_OF_FILE;
+makefile : lines;
 
 lines : line
     | lines line
     ;
 
-line : maybe_white_space NL
+line : NL
     | assignment
     | target_action
     ;
 
 assignment :
-    token maybe_white_space '=' maybe_white_space tokens maybe_white_space NL
+    assign1 tokens NL
     {
-	assign($1, $5);
+	assign($1, $2);
     }
-    | token maybe_white_space '=' maybe_white_space NL
+    | assign1 NL
     {
 	assign($1, same_copy(null));
     }
+    ;
+
+assign1: non_white_token maybe_white_space '=' maybe_white_space
     ;
 
 target_action: target actions
@@ -87,13 +92,9 @@ target_action: target actions
     ;
 
 target :
-    tokens maybe_white_space ':' maybe_white_space tokens maybe_white_space NL
+    non_white_token maybe_tokens ':' maybe_tokens NL
     {
 	$$ = add_depends($1, $5);
-    }
-    | tokens maybe_white_space ':' maybe_white_space NL
-    {
-	$$ = add_depends($1, same_copy(null));
     }
     ;
 
@@ -104,23 +105,52 @@ actions: action
     }
     ;
 
-action:	white_space tokens NL
+action:	white_space command_list NL
     {
 	$$ = $2;
     }
-    | white_space for_statement NL
+    | white_space for_statement do command_list semi_colon done NL
     {
 	$$ = $2;
     }
     ;
 
-for_statement: maybe_at_minus FOR white_space token
-		white_space IN white_space tokens maybe_white_space ';'
-		maybe_white_space DO white_space '(' maybe_white_space
-		tokens maybe_white_space ')' maybe_white_space ';'
-		maybe_white_space DONE
+for_statement: maybe_at_minus FOR white_space non_white_token
+		white_space IN tokens semi_colon
     {
-	$$ = for_statement($1, $4, expand_variables($8, 0), $16);
+	$$ = for_statement($1, $4, expand_variables($7, 0));
+    }
+    ;
+
+do:	white_space DO white_space
+    ;
+
+done:	white_space DONE
+    ;
+
+semi_colon:	maybe_white_space ';'
+    ;
+
+command_list: list
+    | '(' list maybe_white_space ')'
+    {
+	$$ = $2;
+    }
+    ;
+
+list: command
+    {
+	$$ = $1;
+    }
+    | list semi_colon command
+    {
+	$$ = same_cat($1, same_cat(same_char('\n'), $3));
+    }
+    ;
+
+command: non_white_token maybe_tokens
+    {
+	$$ = same_cat($1, $2);
     }
     ;
 
@@ -145,6 +175,14 @@ maybe_at_minus: /* empty */
 	$$ = same_item(string_lookup(buffer));
     }
     ;
+
+maybe_tokens:
+    {
+	$$ = same_copy(null);
+    }
+    | tokens
+    ;
+
 tokens : token
     | tokens token
     {
@@ -152,7 +190,14 @@ tokens : token
     }
     ;
 
-token: TOKEN
+token: non_white_token
+    | white_space
+    {
+	$$ = same_char($1);
+    }
+    ;
+
+non_white_token: TOKEN
     {
 	$$ = same_item($1);
     }
@@ -170,16 +215,15 @@ token: TOKEN
 
 	$$ = same_item(string_lookup(buffer));
     }
-    | special_chars
+    | '$' '$' non_white_token
     {
-	char buffer[2];
-
-	buffer[0] = $1;
-	buffer[1] = 0;
-
-	$$ = same_item(string_lookup(buffer));
+	$$ = shell_variable($3);
     }
-    | '$' '{' token '}'
+    | MACRO_CHAR
+    {
+	$$ = same_char($1);
+    }
+    | '$' '{' non_white_token '}'
     {
 	$$ = variable($3);
     }
@@ -194,11 +238,7 @@ token: TOKEN
     ;
 
 macro_char: MACRO_CHAR
-    | '$'
-    ;
-
-special_chars : MACRO_CHAR
-    | white_space
+    | '@'
     ;
 
 maybe_white_space:
@@ -207,7 +247,6 @@ maybe_white_space:
 white_space : WHITE_SPACE
     | white_space WHITE_SPACE
     ;
-
 %%
 #include <stdio.h>
 
@@ -217,7 +256,10 @@ static int column = 0, lineno = 1;
 
 static string_t
     *strings = 0;
+
 static same_t
+    *shell_variables = 0,
+    *shell_special = 0,
     *variables = 0,
     *targets = 0,
     *actions = 0;
@@ -350,6 +392,9 @@ same_t
 {
     same_t *last;
 
+    if (tokens == 0) {
+	return list;
+    }
     if (list) {
 	last = tokens->lasttoken;
 	tokens->lasttoken = list->lasttoken;
@@ -588,15 +633,33 @@ same_t *var_name;
     return resolved;
 }
 
+
 same_t *
-for_statement(special, variable, list, commands)
+shell_variable(name)
+same_t *name;
+{
+    same_t *shell;
+
+    if ((shell = same_search(shell_variables, name)) == 0) {
+	char buffer[100];
+	sprintf(buffer, "Unknown shell variable %s.", name->string->string);
+	yyerror(buffer);
+	exit(1);
+    }
+    return same_copy(shell->shell_item);
+}
+
+same_t *
+for_statement(special, variable, list)
 same_t
     *special,
     *variable,
-    *list,
-    *commands;
+    *list;
 {
-    return same_cat(special, same_cat(variable, same_cat(list, commands)));
+    shell_special = special;
+    variable->value_list = list;
+    shell_variables = variable;
+    return same_copy(null);
 }
 
 
@@ -685,7 +748,7 @@ yylex()
 	    fprintf(stderr, "End of file ignored.\n");
 	    exit(1);
 	}
-	Return(END_OF_FILE,0);
+	Return(EOF,0);
     }
     while ((c = Getchar()) != EOF) {
 	switch (c) {
@@ -755,7 +818,7 @@ yylex()
     eof_found = 1;
 
     ret_token(' ');
-    Return(END_OF_FILE, 0);
+    Return(EOF, 0);
 }
 
 main()
