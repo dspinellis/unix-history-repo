@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.27 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -331,13 +331,13 @@ kprintf(fmt, flags, tp, ap)
 	for (;;) {
 		padc = ' ';
 		width = 0;
-		while ((ch = *fmt++) != '%') {
+		while ((ch = *(u_char *)fmt++) != '%') {
 			if (ch == '\0')
 				return;
 			putchar(ch, flags, tp);
 		}
 		lflag = 0;
-reswitch:	switch (ch = *fmt++) {
+reswitch:	switch (ch = *(u_char *)fmt++) {
 		case '0':
 			padc = '0';
 			goto reswitch;
