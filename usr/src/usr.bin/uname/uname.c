@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uname.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uname.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,8 +36,8 @@ main(argc, argv)
 #define	VFLAG	0x10
 	u_int flags;
 	int ch, name[2];
-	size_t len;
-	char *prefix, buf[1024];
+	size_t len, tlen;
+	char *p, *prefix, buf[1024];
 
 	flags = 0;
 	while ((ch = getopt(argc, argv, "amnrsv")) != EOF)
@@ -76,26 +76,54 @@ main(argc, argv)
 
 	prefix = "";
 
-#define SHOW(l1, l2) {						\
-	name[0] = l1;							\
-	name[1] = l2;							\
-	len = sizeof(buf);						\
-	if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)			\
-		err(1, "sysctl");					\
-	(void)printf("%s%.*s", prefix, len, buf);			\
-	prefix = " ";							\
-}
-	if (flags & SFLAG)
-		SHOW(CTL_KERN, KERN_OSTYPE);
-	if (flags & NFLAG)
-		SHOW(CTL_KERN, KERN_HOSTNAME);
-	if (flags & RFLAG)
-		SHOW(CTL_KERN, KERN_OSRELEASE);
-	if (flags & VFLAG)
-		SHOW(CTL_KERN, KERN_OSREV);
-	if (flags & MFLAG)
-		SHOW(CTL_HW, HW_MACHINE);
-
+	if (flags & SFLAG) {
+		name[0] = CTL_KERN;
+		name[1] = KERN_OSTYPE;
+		len = sizeof(buf);
+		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+			err(1, "sysctl");
+		(void)printf("%s%.*s", prefix, len, buf);
+		prefix = " ";
+	}
+	if (flags & NFLAG) {
+		name[0] = CTL_KERN;
+		name[1] = KERN_HOSTNAME;
+		len = sizeof(buf);
+		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+			err(1, "sysctl");
+		(void)printf("%s%.*s", prefix, len, buf);
+		prefix = " ";
+	}
+	if (flags & RFLAG) {
+		name[0] = CTL_KERN;
+		name[1] = KERN_OSRELEASE;
+		len = sizeof(buf);
+		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+			err(1, "sysctl");
+		(void)printf("%s%.*s", prefix, len, buf);
+		prefix = " ";
+	}
+	if (flags & VFLAG) {
+		name[0] = CTL_KERN;
+		name[1] = KERN_VERSION;
+		len = sizeof(buf);
+		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+			err(1, "sysctl");
+		for (p = buf, tlen = len; tlen--; ++p)
+			if (*p == '\n' || *p == '\t')
+				*p = ' ';
+		(void)printf("%s%.*s", prefix, len, buf);
+		prefix = " ";
+	}
+	if (flags & MFLAG) {
+		name[0] = CTL_HW;
+		name[1] = HW_MACHINE;
+		len = sizeof(buf);
+		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+			err(1, "sysctl");
+		(void)printf("%s%.*s", prefix, len, buf);
+		prefix = " ";
+	}
 	(void)printf("\n");
 	exit (0);
 }
