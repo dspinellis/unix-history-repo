@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.5 (Berkeley) %G%
+ *	@(#)systm.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -54,7 +54,6 @@ extern	int szicode;		/* its size */
 daddr_t	bmap();
 int	memall();
 int	vmemall();
-caddr_t	wmemall();
 swblk_t	vtod();
 
 /*
@@ -70,7 +69,9 @@ int	noproc;			/* no one is running just now */
 char	*panicstr;
 int	wantin;
 int	boothowto;		/* reboot flags, from console subsystem */
+#ifdef	KADB
 char	*bootesym;		/* end of symbol info from boot */
+#endif
 int	selwait;
 
 extern	char vmmap[];		/* poor name! */
