@@ -1,4 +1,7 @@
-static	char *sccsid = "@(#)reboot.c	4.6 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)reboot.c	4.7 (Berkeley) %G%";
+#endif
+
 /*
  * Reboot
  */
@@ -101,6 +104,7 @@ markdown()
 		lseek(f, 0L, 2);
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "shutdown");
+		SCPYN(wtmp.ut_host, "");
 		time(&wtmp.ut_time);
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
