@@ -47,8 +47,10 @@ int	type;
 int	form;
 int	stru;			/* avoid C keyword */
 int	mode;
+int	usedefault = 1;		/* for data transfers */
 char	hostname[32];
 char	*remotehost;
+struct	servent *sp;
 
 int	lostconn();
 FILE	*getdatasock(), *dataconn();
@@ -59,7 +61,6 @@ main(argc, argv)
 	char *argv[];
 {
 	int ctrl, s, options = 0;
-	struct servent *sp;
 	union wait status;
 	char *cp;
 
@@ -119,7 +120,6 @@ main(argc, argv)
 			sleep(5);
 			continue;
 		}
-		data_dest = his_addr;
 		if (fork() == 0) {
 			if (logging)
 				dolog(&his_addr);
@@ -350,6 +350,7 @@ dataconn(name, size, mode)
 	if (data >= 0) {
 		reply(125, "Using existing data connection for %s%s.",
 		    name, sizebuf);
+		usedefault = 1;
 		return (fdopen(data, mode));
 	}
 	reply(150, "Opening data connection for %s (%s,%d)%s.",
@@ -361,9 +362,19 @@ dataconn(name, size, mode)
 		    ntoa(data_source.sin_addr),
 		    ntohs(data_source.sin_port),
 		    sys_errlist[errno]);
+		usedefault = 1;
 		return (NULL);
 	}
 	data = fileno(file);
+	/*
+	 * If no PORT command was specified,
+	 * use the default address.
+	 */
+	if (usedefault) {
+		data_dest = his_addr;
+		data_dest.sin_port = htons(ntohs(sp->s_port) - 1);
+	}
+	usedefault = 0;
 	if (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
 		reply(425, "Can't build data connection: %s.",
 		    sys_errlist[errno]);
