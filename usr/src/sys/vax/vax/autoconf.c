@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.16 (Berkeley) %G%
+ *	@(#)autoconf.c	6.17 (Berkeley) %G%
  */
 
 /*
@@ -13,16 +13,6 @@
  * device tables and the memory controller monitoring.  Available
  * devices are determined (from possibilities mentioned in ioconf.c),
  * and the drivers are initialized.
- *
- * N.B.: A lot of the conditionals based on processor type say
- *	#if VAX780
- * and
- *	#if VAX750
- * which may be incorrect after more processors are introduced if they
- * are like either of these machines.
- *
- * TODO:
- *	use pcpu info about whether a ubasr exists
  */
 
 #include "mba.h"
@@ -107,7 +97,7 @@ configure()
 	for (ocp = percpu; ocp->pc_cputype; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			cpuspeed = ocp->pc_cpuspeed;
-			probeioa(ocp);
+			probeio(ocp);
 			/*
 			 * Write protect the scb and UNIBUS interrupt vectors.
 			 * It is strange that this code is here, but this is
@@ -137,97 +127,109 @@ configure()
 	asm("halt");
 }
 
-probeioa(pcpu)
-register struct percpu *pcpu;
+/*
+ * Probe the main IO bus(es).
+ * The percpu structure gives us a handle on the addresses and/or types.
+ */
+probeio(pcpu)
+	register struct percpu *pcpu;
 {
-	register struct ioa *ioap;
-	struct sbia_regs *sbiaregs;
-	caddr_t ioa_paddr;
-	union ioacsr ioacsr;
-	int type;
+	register struct iobus *iob;
 	int ioanum;
 
 	ioanum = 0;
-	ioap = ioa;
-	for (;ioanum < pcpu->pc_nioa; ioanum++,
-	    ioap = (struct ioa *)((caddr_t)ioap + pcpu->pc_ioasize)) {
-		if (pcpu->pc_ioaaddr) {
-			ioa_paddr = pcpu->pc_ioaaddr[ioanum];
-			nxaccess(ioa_paddr, Ioamap[ioanum], pcpu->pc_ioasize);
-			if (badaddr(ioap, 4))
-				continue;
-			if (pcpu->pc_ioatype)
-				type = (int)pcpu->pc_ioatype[ioanum];
-			else {
-				ioacsr.ioa_csr = ioap->ioacsr.ioa_csr;
-				type = ioacsr.ioa_type & IOA_TYPMSK;
-			}
-		} else
-			type = (int)pcpu->pc_ioatype[ioanum];
-		switch (type) {
-#if VAX780
-		case IOA_SBI780:
-			probesbi(&sbi780);
+	for (iob = pcpu->pc_io; ioanum < pcpu->pc_nioa; ioanum++, iob++) {
+
+		switch (iob->io_type) {
+
+#if VAX780 || VAX750 || VAX730
+		case IO_SBI780:
+		case IO_CMI750:
+		case IO_XXX730:
+			probenexi((struct nexusconnect *)iob->io_details);
 			break;
 #endif
-#if VAX750
-		case IOA_CMI750:
-			probesbi(&cmi750);
-			break;
-#endif
-#if VAX730
-		case IOA_XXX730:
-			probesbi(&xxx730);
-			break;
-#endif
+
 #if VAX8600
-		case IOA_SBIA:
-			printf("SBIA%d at IO adaptor %d address 0x%x\n",
-			    nsbi, ioanum, ioa_paddr);
-			probesbi(&sbi8600[nsbi]);
-			nsbi++;
-			sbiaregs = (struct sbia_regs *)ioap;
-			sbiaregs->sbi_errsum = -1;
-			sbiaregs->sbi_error = 0x1000;
-			sbiaregs->sbi_fltsts = 0xc0000;
+		case IO_ABUS:
+			probe_Abus(ioanum, iob);
 			break;
 #endif
 		default:
-			if (pcpu->pc_ioaaddr) {
-				printf(
-			"IOA%d at address 0x%x is unsupported (type = 0x%x)\n",
-				    ioanum, ioa_paddr, ioacsr.ioa_type);
+			if (iob->io_addr) {
+			    printf(
+		"IO adaptor %d, type %d, at address 0x%x is unsupported\n",
+				ioanum, iob->io_type, iob->io_addr);
 			} else
-				printf("IOA%d type 0x%x unknown\n", ioanum,
-					type);
+			    printf("IO adaptor %d, type %d, is unsupported\n",
+				ioanum, iob->io_type);
+			break;
 		}
 	}
 }
+
+#if VAX8600
+probe_Abus(ioanum, iob)
+	register struct iobus *iob;
+{
+	register struct ioa *ioap;
+	union ioacsr ioacsr;
+	int type;
+	struct sbia_regs *sbiaregs;
+
+	ioap = &ioa[ioanum];
+	nxaccess(iob->io_addr, Ioamap[ioanum], iob->io_size);
+	if (badaddr((caddr_t)ioap, 4))
+		return;
+	ioacsr.ioa_csr = ioap->ioacsr.ioa_csr;
+	type = ioacsr.ioa_type & IOA_TYPMSK;
+
+	switch (type) {
+
+	case IOA_SBIA:
+		printf("SBIA%d at IO adaptor %d address 0x%x\n",
+		    nsbi, ioanum, iob->io_addr);
+		probenexi((struct nexusconnect *)iob->io_details);
+		nsbi++;
+		sbiaregs = (struct sbia_regs *)ioap;
+		sbiaregs->sbi_errsum = -1;
+		sbiaregs->sbi_error = 0x1000;
+		sbiaregs->sbi_fltsts = 0xc0000;
+		break;
+
+	default:
+		printf("IOA%d at address 0x%x is unsupported (type = 0x%x)\n",
+		    ioanum, iob->io_addr, ioacsr.ioa_type);
+		break;
+	}
+}
+#endif
 
 /*
  * Probe nexus space, finding the interconnects
  * and setting up and probing mba's and uba's for devices.
  */
 /*ARGSUSED*/
-probesbi(psbi)
-	register struct persbi *psbi;
+probenexi(pnc)
+	register struct nexusconnect *pnc;
 {
 	register struct nexus *nxv;
-	struct nexus *nxp = psbi->psb_nexbase;
+	struct nexus *nxp = pnc->psb_nexbase;
 	union nexcsr nexcsr;
 	int i;
 	
 	nexnum = 0, nxv = &nexus[nsbi * 16];
-	for (; nexnum < psbi->psb_nnexus; nexnum++, nxp++, nxv++) {
+	for (; nexnum < pnc->psb_nnexus; nexnum++, nxp++, nxv++) {
 			/*
 			 * the 16 below shouldn't be there, but the constant
 			 * is used at other points (vax/locore.s)
 			 */
-		nxaccess(nxp, Nexmap[nsbi * 16 + nexnum], sizeof(struct nexus));
+		nxaccess((caddr_t)nxp, Nexmap[nsbi * 16 + nexnum],
+		     sizeof(struct nexus));
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
-		if (psbi->psb_nextype && psbi->psb_nextype[nexnum] != NEX_ANY)
-			nexcsr.nex_csr = psbi->psb_nextype[nexnum];
+		if (pnc->psb_nextype && pnc->psb_nextype[nexnum] != NEX_ANY)
+			nexcsr.nex_csr = pnc->psb_nextype[nexnum];
 		else
 			nexcsr = nxv->nexcsr;
 		if (nexcsr.nex_csr&NEX_APD)
@@ -267,8 +269,8 @@ probesbi(psbi)
 #endif
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
-			    umem[numuba], psbi->psb_umaddr[i], UMEMmap[numuba],
-			    psbi->psb_haveubasr);
+			    umem[numuba], pnc->psb_umaddr[i], UMEMmap[numuba],
+			    pnc->psb_haveubasr);
 #if defined(VAX780) || defined(VAX8600)
 			if ((cpu == VAX_780) || (cpu == VAX_8600))
 				((struct uba_regs *)nxv)->uba_cr =
@@ -798,7 +800,7 @@ setscbnex(fn)
 }
 
 /*
- * Make a nexus accessible at physical address phys
+ * Make an IO register area accessible at physical address physa
  * by mapping kernel ptes starting at pte.
  *
  * WE LEAVE ALL NEXI MAPPED; THIS IS PERHAPS UNWISE
@@ -806,7 +808,7 @@ setscbnex(fn)
  * PRESENT NEXI DONT RESPOND TO ALL OF THEIR ADDRESS SPACE.
  */
 nxaccess(physa, pte, size)
-	struct nexus *physa;
+	caddr_t physa;
 	register struct pte *pte;
 	int size;
 {

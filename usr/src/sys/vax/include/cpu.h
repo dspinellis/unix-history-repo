@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	6.5 (Berkeley) %G%
+ *	@(#)cpu.h	6.6 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -42,12 +42,25 @@ union cpusid {
 	} cpu730;
 };
 #endif
+/*
+ * Vax CPU types.
+ * Similar types are grouped with their earliest example.
+ */
 #define	VAX_780		1
 #define	VAX_750		2
 #define	VAX_730		3
 #define VAX_8600	4
 
 #define	VAX_MAX		4
+
+/*
+ * Main IO backplane types.
+ * This gives us a handle on how to do autoconfiguration.
+ */
+#define	IO_SBI780	1
+#define	IO_CMI750	2
+#define	IO_XXX730	3
+#define IO_ABUS		4
 
 #ifndef LOCORE
 /*
@@ -56,13 +69,21 @@ union cpusid {
 struct	percpu {
 	short	pc_cputype;		/* cpu type code */
 	short	pc_cpuspeed;		/* relative speed of cpu */
-	short	pc_nioa;		/* number of IO adaptors/SBI's */
-	caddr_t	*pc_ioaaddr;		/* phys addresses of IO adaptors */
-	int	pc_ioasize;		/* size of an IO adaptor */
-	short	*pc_ioatype;		/* io adaptor types if no cfg reg */
+	short	pc_nioa;		/* number of IO adaptors/nexus blocks */
+	struct	iobus *pc_io;		/* descriptions of IO adaptors */
 };
 
-struct persbi {
+struct iobus {
+	caddr_t	io_addr;		/* phys address of IO adaptor */
+	int	io_size;		/* size of an IO space */
+	short	io_type;		/* io adaptor types if no cfg reg */
+	caddr_t	io_details;		/* specific to adaptor types */
+};
+
+/*
+ * Description of a main bus that maps "nexi", ala the 780 SBI.
+ */
+struct nexusconnect {
 	short	psb_nnexus;		/* number of nexus slots */
 	struct	nexus *psb_nexbase;	/* base of nexus space */
 /* we should be able to have just one address for the unibus memories */
@@ -80,17 +101,5 @@ struct persbi {
 #ifdef KERNEL
 int	cpu;
 struct	percpu percpu[];
-#if VAX730
-struct persbi xxx730;
-#endif
-#if VAX750
-struct persbi cmi750;
-#endif
-#if VAX780
-struct persbi sbi780;
-#endif
-#if VAX8600
-struct persbi sbi8600[];
-#endif
 #endif
 #endif

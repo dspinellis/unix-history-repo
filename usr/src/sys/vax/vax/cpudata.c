@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	6.5 (Berkeley) %G%
+ *	@(#)cpudata.c	6.6 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -71,46 +71,50 @@ short	nexty730[NNEX730] = {
 #endif
 
 #if VAX8600
-struct persbi sbi8600[2] = {
+struct nexusconnect sbi8600[] = {
 	{ NNEX8600, NEXA8600, umaddr8600a, NBDP8600, 1, 0 },
 	{ NNEX8600, NEXB8600, umaddr8600b, NBDP8600, 1, 0 },
 };
-caddr_t ioaaddr8600[] = { IOA8600(0), IOA8600(1) };
+struct iobus io8600[] = {
+	{ IOA8600(0), IOAMAPSIZ, IO_ABUS, (caddr_t)&sbi8600[0] },
+	{ IOA8600(1), IOAMAPSIZ, IO_ABUS, (caddr_t)&sbi8600[1] },
+};
 #endif
 
 #if VAX780
-struct persbi sbi780 = {
+struct nexusconnect sbi780 = {
 	NNEX780, NEX780, umaddr780, NBDP780, 1, 0,
 };
-short ioa780[] = { IOA_SBI780 };
+struct iobus io780[] = { 0, 0, IO_SBI780, (caddr_t)&sbi780 };
 #endif
 
 #if VAX750
-struct persbi cmi750 = {
+struct nexusconnect cmi750 = {
 	NNEX750, NEX750, umaddr750, NBDP750, 0, nexty750,
 };
-short ioa750[] = { IOA_CMI750 };
+struct iobus io750[] = { 0, 0, IO_CMI750, (caddr_t)&cmi750 };
 #endif
 
 #if VAX730
-struct persbi xxx730 = {
+struct nexusconnect xxx730 = {
 	NNEX730, NEX730, umaddr730, NBDP730, 0, nexty730,
 };
-short ioa730[] = { IOA_XXX730 };
+struct iobus io730[] = { 0, 0, IO_XXX730, (caddr_t)&xxx730 };
 #endif
+
 
 struct percpu percpu[] = {
 #if VAX8600
-	{ VAX_8600, 4, 2, ioaaddr8600, 512, (short *)0 },
+	{ VAX_8600, 6, 2, io8600 },
 #endif
 #if VAX780
-	{ VAX_780, 2, 1, (caddr_t *)0, 0, ioa780 },
+	{ VAX_780, 2, 1, io780 },
 #endif
 #if VAX750
-	{ VAX_750, 1, 1, (caddr_t *)0, 0, ioa750 },
+	{ VAX_750, 1, 1, io750 },
 #endif
 #if VAX730
-	{ VAX_730, 1, 1, (caddr_t *)0, 0, ioa730 },
+	{ VAX_730, 1, 1, io730 },
 #endif
 	0,
 };
