@@ -42,9 +42,10 @@ int
 ttyflush(drop)
 int drop;
 {
-    int n;
+    register int n, n0, n1;
 
-    if ((n = ring_full_consecutive(&ttyoring)) > 0) {
+    n0 = ring_full_count(&ttyoring);
+    if ((n1 = n = ring_full_consecutive(&ttyoring)) > 0) {
 	if (drop) {
 	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
@@ -52,7 +53,18 @@ int drop;
 	    n = TerminalWrite(tout, ttyoring.consume, n);
 	}
     }
-    if (n >= 0) {
+    if (n > 0) {
+	/*
+	 * If we wrote everything, and the full count is
+	 * larger than what we wrote, then write the
+	 * rest of the buffer.
+	 */
+	if (n1 == n && n0 > n) {
+		n1 = n0 - n;
+		if (!drop)
+			n1 = TerminalWrite(tout, ttyoring.bottom, n1);
+		n += n1;
+	}
 	ring_consumed(&ttyoring, n);
     }
     return n > 0;

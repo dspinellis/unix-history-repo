@@ -606,7 +606,8 @@ telrcv()
 	    }
 	}
     }
-    ring_consumed(&netiring, count);
+    if (count)
+	ring_consumed(&netiring, count);
     return returnValue||count;
 }
 
@@ -693,7 +694,8 @@ telsnd()
 	    NETADD(c);
 	}
     }
-    ring_consumed(&ttyiring, count);
+    if (count)
+	ring_consumed(&ttyiring, count);
     return returnValue||count;		/* Non-zero if we did anything */
 }
 
@@ -761,8 +763,8 @@ int	block;			/* should we block in the select ? */
 					ring_full_consecutive(&ttyiring));
 	    if (c) {
 		returnValue = 1;
+	        ring_consumed(&ttyiring, c);
 	    }
-	    ring_consumed(&ttyiring, c);
 	} else {
 #   endif /* defined(TN3270) */
 	    returnValue |= telsnd();

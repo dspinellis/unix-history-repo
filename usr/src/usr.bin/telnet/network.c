@@ -10,6 +10,7 @@
 
 #include "defines.h"
 #include "externs.h"
+#include "fdset.h"
 
 Ring	netoring, netiring;
 char	netobuf[2*BUFSIZ], netibuf[BUFSIZ];
@@ -82,9 +83,10 @@ setneturg()
 int
 netflush()
 {
-    int n;
+    register int n, n0, n1;
 
-    if ((n = ring_full_consecutive(&netoring)) > 0) {
+    n0 = ring_full_count(&netoring);
+    if ((n1 = n = ring_full_consecutive(&netoring)) > 0) {
 	if (!ring_at_mark(&netoring)) {
 	    n = send(net, netoring.consume, n, 0);	/* normal write */
 	} else {
@@ -101,6 +103,7 @@ netflush()
     }
     if (n < 0) {
 	if (errno != ENOBUFS && errno != EWOULDBLOCK) {
+	abortit:
 	    setcommandmode();
 	    perror(hostname);
 	    NetClose(net);
@@ -113,6 +116,20 @@ netflush()
     if (netdata && n) {
 	Dump('>', netoring.consume, n);
     }
-    ring_consumed(&netoring, n);
+    if (n) {
+	if (n1 == n && n0 > n && !ring_at_mark(&netoring)) {
+	    n1 = send(net, netoring.bottom, n0 - n, 0);
+	    if (n1 < 0) {
+		if (errno != ENOBUFS && errno != EWOULDBLOCK) {
+		    goto abortit;
+		}
+	    }
+	    if (netdata && n1) {
+		Dump('>', netoring.bottom, n1);
+	    }
+	    n += n1;
+	}
+	ring_consumed(&netoring, n);
+    }
     return n > 0;
 }
