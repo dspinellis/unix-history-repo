@@ -1,4 +1,13 @@
-/* @(#)bcopy.s	4.5 %G% */
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)bcopy.s	5.1 (Berkeley) %G%";
+#endif not lint
+
 /* bcopy(from, to, size) */
 
 #include "DEFS.h"

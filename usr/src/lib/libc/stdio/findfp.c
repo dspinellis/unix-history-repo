@@ -1,4 +1,13 @@
-/* @(#)findfp.c	1.3 (Berkeley) %G% */
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)findfp.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include <stdio.h>
 
 #define active(iop)	((iop)->_flag & (_IOREAD|_IOWRT|_IORW))

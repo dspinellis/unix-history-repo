@@ -1,4 +1,12 @@
-/*	strncpy.s	4.2	84/11/01	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)strncpy.s	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Copy string s2 over top of string s1.

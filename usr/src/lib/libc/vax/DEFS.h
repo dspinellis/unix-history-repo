@@ -1,4 +1,10 @@
-/*	DEFS.h	4.3	84/11/01	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)DEFS.h	5.1 (Berkeley) %G%
+ */
 
 #define R0	0x001
 #define R1	0x002
