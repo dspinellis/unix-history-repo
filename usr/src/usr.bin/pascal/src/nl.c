@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.6 %G%";
+static	char sccsid[] = "@(#)nl.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -214,7 +214,7 @@ int in_fops[] =
 int in_pops[] =
     {
 	O_DATE|NSTAND,
-	O_DISPOSE|NSTAND,
+	O_DISPOSE,
 	O_FLUSH|NSTAND,
 	O_GET,
 	0,
