@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	6.3 %G%";
+static char *sccsid = "@(#)ex_put.c	6.4 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -1099,40 +1099,4 @@ noonl()
 {
 
 	putchar(Outchar != termchar ? ' ' : '\n');
-}
-
-#ifdef SIGTSTP
-/*
- * We have just gotten a susp.  Suspend and prepare to resume.
- */
-onsusp()
-{
-	ttymode f;
-
-	f = setty(normf);
-	vnfl();
-	putpad(TE);
-	flush();
-
-	signal(SIGTSTP, SIG_DFL);
-	kill(0, SIGTSTP);
-
-	/* the pc stops here */
-
-	signal(SIGTSTP, onsusp);
-	vcontin(0);
-	setty(f);
-	if (!inopen)
-		error(0);
-	else {
-		if (vcnt < 0) {
-			vcnt = -vcnt;
-			if (state == VISUAL)
-				vclear();
-			else if (state == CRTOPEN)
-				vcnt = 0;
-		}
-		vdirty(0, LINES);
-		vrepaint(cursor);
-	}
 }

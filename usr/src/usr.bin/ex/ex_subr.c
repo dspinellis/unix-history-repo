@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_subr.c	6.2 %G%";
+static char *sccsid = "@(#)ex_subr.c	6.3 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -826,4 +826,156 @@ onemt()
 	if (_ovno < 0 || _ovno > 3)
 		_ovno = 0;
 	error("emt trap, _ovno is %d @ - try again");
+}
+
+/*
+ * When a hangup occurs our actions are similar to a preserve
+ * command.  If the buffer has not been [Modified], then we do
+ * nothing but remove the temporary files and exit.
+ * Otherwise, we sync the temp file and then attempt a preserve.
+ * If the preserve succeeds, we unlink our temp files.
+ * If the preserve fails, we leave the temp files as they are
+ * as they are a backup even without preservation if they
+ * are not removed.
+ */
+onhup()
+{
+
+	/*
+	 * USG tty driver can send multiple HUP's!!
+	 */
+	signal(SIGINT, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
+	if (chng == 0) {
+		cleanup(1);
+		exit(0);
+	}
+	if (setexit() == 0) {
+		if (preserve()) {
+			cleanup(1);
+			exit(0);
+		}
+	}
+	exit(1);
+}
+
+/*
+ * An interrupt occurred.  Drain any output which
+ * is still in the output buffering pipeline.
+ * Catch interrupts again.  Unless we are in visual
+ * reset the output state (out of -nl mode, e.g).
+ * Then like a normal error (with the \n before Interrupt
+ * suppressed in visual mode).
+ */
+onintr()
+{
+
+#ifndef CBREAK
+	signal(SIGINT, onintr);
+#else
+	signal(SIGINT, inopen ? vintr : onintr);
+#endif
+	draino();
+	if (!inopen) {
+		pstop();
+		setlastchar('\n');
+#ifdef CBREAK
+	}
+#else
+	} else
+		vraw();
+#endif
+	error("\nInterrupt" + inopen);
+}
+
+/*
+ * If we are interruptible, enable interrupts again.
+ * In some critical sections we turn interrupts off,
+ * but not very often.
+ */
+setrupt()
+{
+
+	if (ruptible) {
+#ifndef CBREAK
+		signal(SIGINT, onintr);
+#else
+		signal(SIGINT, inopen ? vintr : onintr);
+#endif
+#ifdef SIGTSTP
+		if (dosusp)
+			signal(SIGTSTP, onsusp);
+#endif
+	}
+}
+
+preserve()
+{
+
+#ifdef VMUNIX
+	tflush();
+#endif
+	synctmp();
+	pid = fork();
+	if (pid < 0)
+		return (0);
+	if (pid == 0) {
+		close(0);
+		dup(tfile);
+		execl(EXPRESERVE, "expreserve", (char *) 0);
+		exit(1);
+	}
+	waitfor();
+	if (rpid == pid && status == 0)
+		return (1);
+	return (0);
+}
+
+#ifndef V6
+exit(i)
+	int i;
+{
+
+# ifdef TRACE
+	if (trace)
+		fclose(trace);
+# endif
+	_exit(i);
+}
+#endif
+
+#ifdef SIGTSTP
+/*
+ * We have just gotten a susp.  Suspend and prepare to resume.
+ */
+onsusp()
+{
+	ttymode f;
+
+	f = setty(normf);
+	vnfl();
+	putpad(TE);
+	flush();
+
+	signal(SIGTSTP, SIG_DFL);
+	kill(0, SIGTSTP);
+
+	/* the pc stops here */
+
+	signal(SIGTSTP, onsusp);
+	vcontin(0);
+	setty(f);
+	if (!inopen)
+		error(0);
+	else {
+		if (vcnt < 0) {
+			vcnt = -vcnt;
+			if (state == VISUAL)
+				vclear();
+			else if (state == CRTOPEN)
+				vcnt = 0;
+		}
+		vdirty(0, LINES);
+		vrepaint(cursor);
+	}
 }
