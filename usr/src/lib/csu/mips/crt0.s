@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)crt0.s	5.3 (Berkeley) %G%
+ *	@(#)crt0.s	5.4 (Berkeley) %G%
  */
 
 #include <machine/regdef.h>
@@ -16,10 +16,7 @@
 	.comm	environ, 4
 
 NON_LEAF(__start, 24, ra)
-	li	v0, 45		# illegal ULTRIX system call to switch to BSD
-	syscall			#   system call numbers.
 	lw	a0, 0(sp)	# get argc from stack
-	la	gp, _gp		# init gp pointer
 	addu	a1, sp, 4	# get pointer to argv
 	addu	a2, a1, 4	# skip null pointer on stack
 	sll	v0, a0, 2	# add number of argv pointers
@@ -33,6 +30,10 @@ NON_LEAF(__start, 24, ra)
 	jal	exit		# exit(v0);
 	break	0
 END(__start)
+
+LEAF(__main)
+	j	ra
+END(__main)
 
 LEAF(moncontrol)
 	j	ra
