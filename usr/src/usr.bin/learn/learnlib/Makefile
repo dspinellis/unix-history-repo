@@ -1,9 +1,9 @@
-#	Makefile	4.1	83/07/08
+#	Makefile	4.2	83/07/08
 #
 # Make install will build the learn lesson libraries
 # from this directory. 
 #
-LESSONS=C bin editor eqn files macros morefiles
+LESSONS=C editor eqn files macros morefiles
 FILES=	Linfo Xinfo
 DESTDIR=
 
