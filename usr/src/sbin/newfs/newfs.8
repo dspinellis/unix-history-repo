@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1987, 1991, 1993
+.\" Copyright (c) 1983, 1987, 1991, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)newfs.8	8.2 (Berkeley) %G%
+.\"     @(#)newfs.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NEWFS 8
@@ -14,12 +14,38 @@
 .Nd construct a new file system
 .Sh SYNOPSIS
 .Nm newfs
-.Op Fl N
-.Op Ar newfs-options
+.Op Fl NO
+.Op Fl S Ar sector-size
+.Op Fl a maxcontig
+.Op Fl b Ar block-size
+.Op Fl c Ar cylinders
+.Op Fl d Ar rotdelay
+.Op Fl e Ar maxbpg
+.Op Fl f Ar frag-size
+.Op Fl i Ar bytes
+.Op Fl k Ar skew
+.Op Fl l Ar interleave
+.Op Fl m Ar free space
+.Op Fl o Ar optimization
+.Op Fl p Ar sectors
+.Op Fl r Ar revolutions
+.Op Fl s Ar size
+.Op Fl t Ar tracks
+.Op Fl u Ar sectors
+.Op Fl x Ar sectors
 .Ar special
 .Nm mount_mfs
-.Op Fl F Ar mount_flags
-.Op Ar newfs-options
+.Op Fl N
+.Op Fl a maxcontig
+.Op Fl b Ar block-size
+.Op Fl c Ar cylinders
+.Op Fl d Ar rotdelay
+.Op Fl e Ar maxbpg
+.Op Fl f Ar frag-size
+.Op Fl i Ar bytes
+.Op Fl m Ar free space
+.Op Fl o Ar options
+.Op Fl s Ar size
 .Ar special node
 .Sh DESCRIPTION
 .Nm Newfs
@@ -71,13 +97,46 @@ without really creating the file system.
 Creates a 4.3BSD format filesystem.
 This options is primarily used to build root filesystems
 that can be understood by older boot ROMs.
+.It Fl a Ar maxcontig
+This specifies the maximum number of contiguous blocks that will be
+laid out before forcing a rotational delay (see the
+.Fl d
+option).
+The default value is one.
+See
+.Xr tunefs 8
+for more details on how to set this option.
 .It Fl b Ar block-size
-The block size of the file system in bytes.  
+The block size of the file system, in bytes.  
+.It Fl c Ar #cylinders/group
+The number of cylinders per cylinder group in a file system.
+The default value is 16.
+.It Fl d Ar rotdelay
+This specifies the expected time (in milliseconds) to service a transfer
+completion interrupt and initiate a new transfer on the same disk.
+The default is 4 milliseconds.
+See
+.Xr tunefs 8
+for more details on how to set this option.
+.It Fl e Ar maxbpg
+This indicates the maximum number of blocks any single file can
+allocate out of a cylinder group before it is forced to begin
+allocating blocks from another cylinder group.
+The default is about one quarter of the total blocks in a cylinder group.
+See
+.Xr tunefs 8
+for more details on how to set this option.
 .It Fl f Ar frag-size
 The fragment size of the file system in bytes.
+.It Fl i Ar number of bytes per inode
+This specifies the density of inodes in the file system.
+The default is to create an inode for each 2048 bytes of data space.
+If fewer inodes are desired, a larger number should be used;
+to create more inodes a smaller number should be given.
 .It Fl m Ar free space \&%
-The percentage of space reserved from normal users; the minimum
-free space threshold.  The default value used is 10%.
+The percentage of space reserved from normal users; the minimum free
+space threshold.
+The default value used is 10%.
 See
 .Xr tunefs 8
 for more details on how to set this option.
@@ -92,107 +151,81 @@ the default is to optimize for time.
 See
 .Xr tunefs 8
 for more details on how to set this option.
-.It Fl a Ar maxcontig
-This specifies the maximum number of contiguous blocks that will
-be laid out before forcing a rotational delay (see
-.Fl d
-below).
-The default value is one.
-See
-.Xr tunefs 8
-for more details on how to set this option.
-.It Fl d Ar rotdelay
-This specifies the expected time (in milliseconds)
-to service a transfer completion
-interrupt and initiate a new transfer on the same disk.
-The default is 4 milliseconds.
-See
-.Xr tunefs 8
-for more details on how to set this option.
-.It Fl e Ar maxbpg
-This indicates the maximum number of blocks any single file can
-allocate out of a cylinder group before it is forced to begin
-allocating blocks from another cylinder group.
-The default is about one quarter of the total blocks in a cylinder group.
-See
-.Xr tunefs 8
-for more details on how to set this option.
-.It Fl i Ar number of bytes per inode
-This specifies the density of inodes in the file system.
-The default is to create an inode for each 2048 bytes of data space.
-If fewer inodes are desired, a larger number should be used;
-to create more inodes a smaller number should be given.
-.It Fl c Ar #cylinders/group
-The number of cylinders per cylinder group in a file system.
-The default value used is 16.
 .It Fl s Ar size
 The size of the file system in sectors.
+.El
 .Pp
 The following options override the standard sizes for the disk geometry. 
 Their default values are taken from the disk label.
 Changing these defaults is useful only when using
 .Nm newfs
-to build a file system whose raw image will eventually be used
-on a different type of disk than the one on which it is initially
-created (for example on a write-once disk).
-Note that changing any of these values from their
-defaults will make it impossible for 
+to build a file system whose raw image will eventually be used on a
+different type of disk than the one on which it is initially created
+(for example on a write-once disk).
+Note that changing any of these values from their defaults will make
+it impossible for 
 .Xr fsck
 to find the alternate superblocks if the standard superblock is lost.
-.It Fl r Ar revolutions/minute
-The speed of the disk in revolutions per minute.
+.Bl -tag -width Fl
 .It Fl S Ar sector-size
 The size of a sector in bytes (almost never anything but 512).
-.It Fl u Ar sectors/track
-The number of sectors per track available for data
-allocation by the file system.  This does not
-include sectors reserved at the end of each track
-for bad block replacement (see
-.Fl p
-below).
-.It Fl t Ar #tracks/cylinder
-The number of tracks/cylinder available for data
-allocation by the file system.
-.It Fl p Ar spare sectors per track
-Spare sectors (bad sector replacements) are physical sectors
-that occupy space at the end of each track.
-They are not counted as part of the sectors/track
-.Pq Fl u
-since they are not available to the file system for data allocation.
-.It Fl x Ar spare sectors per cylinder
-Spare sectors (bad sector replacements) are physical sectors
-that occupy space at the end of the last track in the cylinder.
-They are deducted from the sectors/track
-.Pq Fl u
-of the last track of each cylinder
-since they are not available to the file system for data allocation.
+.It Fl k Ar sector \&0 skew , per track
+Used to describe perturbations in the media format to compensate for
+a slow controller.
+Track skew is the offset of sector 0 on track N relative to sector 0
+on track N-1 on the same cylinder.
 .It Fl l Ar hardware sector interleave
-Used to describe perturbations in the media format to
-compensate for a slow controller.
+Used to describe perturbations in the media format to compensate for
+a slow controller.
 Interleave is physical sector interleave on each track,
 specified as the denominator of the ratio:
 .Dl sectors read/sectors passed over
-Thus an interleave of 1/1 implies contiguous layout, while 1/2
-implies logical sector 0 is separated by one sector from logical
-sector 1.
-.It Fl k Ar sector \&0 skew , per track
-Used to describe perturbations in the media format to
-compensate for a slow controller.
-Track skew is the offset of sector 0 on track N
-relative to sector 0 on track N-1 on the same cylinder.
-.Pp
+Thus an interleave of 1/1 implies contiguous layout, while 1/2 implies
+logical sector 0 is separated by one sector from logical sector 1.
+.It Fl p Ar spare sectors per track
+Spare sectors (bad sector replacements) are physical sectors that occupy
+space at the end of each track.
+They are not counted as part of the sectors/track
+.Pq Fl u
+since they are not available to the file system for data allocation.
+.It Fl r Ar revolutions/minute
+The speed of the disk in revolutions per minute.
+.It Fl t Ar #tracks/cylinder
+The number of tracks/cylinder available for data allocation by the file
+system.
+.It Fl u Ar sectors/track
+The number of sectors per track available for data allocation by the file
+system.
+This does not include sectors reserved at the end of each track for bad
+block replacement (see the
+.Fl p
+option.)
+.It Fl x Ar spare sectors per cylinder
+Spare sectors (bad sector replacements) are physical sectors that occupy
+space at the end of the last track in the cylinder.
+They are deducted from the sectors/track
+.Pq Fl u
+of the last track of each cylinder since they are not available to the file
+system for data allocation.
 .El
-The following option applies only to
-.Nm mount_mfs .
-.Bl -tag -width Fl
-.It Fl F Ar mount flags
-Used to pass in a decimal numeric value to be passed
-as mount flags when running as a memory based file system.
-This option is primarily intended for use when
+.Pp
+The options to the
 .Nm mount_mfs
-is started by the
+command are as described for the
+.Nm newfs
+command, except for the
+.Fl o
+option.
+.Pp
+That option is as follows:
+.Bl -tag -width indent
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
 .Xr mount 8
-command.
+man page for possible options and their meanings.
 .El
 .Sh SEE ALSO
 .Xr disktab 5 ,
@@ -202,6 +235,7 @@ command.
 .Xr diskpart 8 ,
 .Xr fsck 8 ,
 .Xr format 8 ,
+.Xr mount 8 ,
 .Xr tunefs 8
 .Rs
 .%A M. McKusick
