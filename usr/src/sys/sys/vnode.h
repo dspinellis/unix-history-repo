@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.51 (Berkeley) %G%
+ *	@(#)vnode.h	7.52 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -12,26 +12,26 @@
 #endif
 
 /*
- * The vnode is the focus of all file activity in UNIX.  There is a unique
- * vnode allocated for each active file, each current directory, each
- * mounted-on file, text file, and the root.
+ * The vnode is the focus of all file activity in UNIX.  There is a
+ * unique vnode allocated for each active file, each current directory,
+ * each mounted-on file, text file, and the root.
  */
 
 /*
- * vnode types. VNON means no type.
+ * Vnode types.  VNON means no type.
  */
-enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
+enum vtype	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
 
 /*
  * Vnode tag types.
  * These are for the benefit of external programs only (e.g., pstat)
- * and should NEVER be inspected inside the kernel.
+ * and should NEVER be inspected by the kernel.
  */
 enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_LFS };
 
 /*
  * Each underlying filesystem allocates its own private area and hangs
- * it from v_data. If non-null, this area is free in getnewvnode().
+ * it from v_data.  If non-null, this area is free in getnewvnode().
  */
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
@@ -69,7 +69,7 @@ struct vnode {
 #define	v_fifoinfo	v_un.vu_fifoinfo
 
 /*
- * vnode flags.
+ * Vnode flags.
  */
 #define	VROOT		0x0001	/* root of its file system */
 #define	VTEXT		0x0002	/* vnode is a pure text prototype */
@@ -103,27 +103,17 @@ struct vattr {
 	u_quad_t	va_filerev;	/* file modification number */
 };
 #ifdef _NOQUAD
-#define va_size		va_qsize.val[_QUAD_LOWWORD]
-#define va_size_rsv	va_qsize.val[_QUAD_HIGHWORD]
-#define va_bytes	va_qbytes.val[_QUAD_LOWWORD]
-#define va_bytes_rsv	va_qbytes.val[_QUAD_HIGHWORD]
+#define	va_size		va_qsize.val[_QUAD_LOWWORD]
+#define	va_size_rsv	va_qsize.val[_QUAD_HIGHWORD]
+#define	va_bytes	va_qbytes.val[_QUAD_LOWWORD]
+#define	va_bytes_rsv	va_qbytes.val[_QUAD_HIGHWORD]
 #else
-#define va_size		va_qsize
-#define va_bytes	va_qbytes
+#define	va_size		va_qsize
+#define	va_bytes	va_qbytes
 #endif
 
 /*
- * Operations on vnodes.
- */
-#ifdef __STDC__
-struct flock;
-struct nameidata;
-struct componentname;
-#endif
-
-
-/*
- * flags for ioflag
+ * Flags for ioflag.
  */
 #define	IO_UNIT		0x01		/* do I/O as atomic unit */
 #define	IO_APPEND	0x02		/* append write to end */
@@ -132,17 +122,17 @@ struct componentname;
 #define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
 
 /*
- *  Modes. Some values same as Ixxx entries from inode.h for now
+ *  Modes.  Some values same as Ixxx entries from inode.h for now.
  */
 #define	VSUID	04000		/* set user id on execution */
 #define	VSGID	02000		/* set group id on execution */
 #define	VSVTX	01000		/* save swapped text even after use */
-#define	VREAD	0400		/* read, write, execute permissions */
-#define	VWRITE	0200
-#define	VEXEC	0100
+#define	VREAD	00400		/* read, write, execute permissions */
+#define	VWRITE	00200
+#define	VEXEC	00100
 
 /*
- * Token indicating no attribute value yet assigned
+ * Token indicating no attribute value yet assigned.
  */
 #define	VNOVAL	(-1)
 
@@ -164,21 +154,21 @@ extern int		vttoif_tab[];
 #define	FORCECLOSE	0x0002		/* vflush: force file closeure */
 #define	DOCLOSE		0x0004		/* vclean: close active files */
 
-#ifndef DIAGNOSTIC
-#define	VREF(vp)	(vp)->v_usecount++	/* increase reference */
-#define	VHOLD(vp)	(vp)->v_holdcnt++	/* increase buf or page ref */
-#define	HOLDRELE(vp)	(vp)->v_holdcnt--	/* decrease buf or page ref */
-#define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
-#else
-#define	VREF(vp)	vref(vp)
-#define	VHOLD(vp)	vhold(vp)
+#ifdef DIAGNOSTIC
 #define	HOLDRELE(vp)	holdrele(vp)
 #define	VATTR_NULL(vap)	vattr_null(vap)
+#define	VHOLD(vp)	vhold(vp)
+#define	VREF(vp)	vref(vp)
 
 void	holdrele __P((struct vnode *));
 void	vattr_null __P((struct vattr *));
 void	vhold __P((struct vnode *));
 void	vref __P((struct vnode *));
+#else
+#define	HOLDRELE(vp)	(vp)->v_holdcnt--	/* decrease buf or page ref */
+#define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
+#define	VHOLD(vp)	(vp)->v_holdcnt++	/* increase buf or page ref */
+#define	VREF(vp)	(vp)->v_usecount++	/* increase reference */
 #endif
 
 #define	NULLVP	((struct vnode *)NULL)
@@ -198,7 +188,7 @@ extern	struct vattr va_null;		/* predefined null vattr structure */
 
 #ifdef NFS
 void	lease_check __P((struct vnode *vp, struct proc *p,
-		struct ucred *ucred, int flag));
+	    struct ucred *ucred, int flag));
 void	lease_updatetime __P((int deltat));
 #define	LEASE_CHECK(vp, p, cred, flag)	lease_check((vp), (p), (cred), (flag))
 #define	LEASE_UPDATETIME(dt)		lease_updatetime(dt)
@@ -214,10 +204,10 @@ void	lease_updatetime __P((int deltat));
  */
 
 /*
- * flags for vdesc_flags:
+ * Flags for vdesc_flags:
  */
 #define VDESC_MAX_VPS		16
-/* low order 16 flag bits are reserved for map flags for vp arguments. */
+/* Low order 16 flag bits are reserved for map flags for vp arguments. */
 #define VDESC_NOMAP_VPP		0x0100
 
 /*
@@ -235,20 +225,18 @@ struct vnodeop_desc {
 	int	vdesc_flags;		/* VDESC_* flags */
 
 	/*
-	 * These ops are used by bypass routines
-	 * to map and locate arguments.
-	 * Creds and procs are not needed in bypass routines,
-	 * but sometimes they are useful to (for example)
-	 * transport layers.
+	 * These ops are used by bypass routines to map and locate arguments.
+	 * Creds and procs are not needed in bypass routines, but sometimes
+	 * they are useful to (for example) transport layers.
 	 */
 	int	*vdesc_vp_offsets;	/* list ended by VDESC_NO_OFFSET */
 	int	vdesc_vpp_offset;	/* return vpp location */
 	int	vdesc_cred_offset;	/* cred location, if any */
 	int	vdesc_proc_offset;	/* proc location, if any */
 	/*
-	 * Finally, we've got a list of private data
-	 * (about each operation) for each transport layer.
-	 * (Support to manage this list is not yet part of BSD.)
+	 * Finally, we've got a list of private data (about each operation)
+	 * for each transport layer.  (Support to manage this list is not
+	 * yet part of BSD.)
 	 */
 	caddr_t	*vdesc_transports;
 };
@@ -279,18 +267,18 @@ extern struct vnodeop_desc *vnodeop_descs[];
  */
 struct vnodeopv_entry_desc {
 	struct vnodeop_desc *opve_op;   /* which operation this is */
-	int (*opve_impl)();	/* code implementing this operation */
+	int (*opve_impl)();		/* code implementing this operation */
 };
 struct vnodeopv_desc {
-	int (***opv_desc_vector_p)();
 			/* ptr to the ptr to the vector where op should go */
+	int (***opv_desc_vector_p)();
 	struct vnodeopv_entry_desc *opv_desc_ops;   /* null terminated list */
 };
 
 /*
  * A default routine which just returns an error.
  */
-extern int vn_default_error();
+int vn_default_error __P((void));
 
 /*
  * A generic structure.
@@ -302,26 +290,17 @@ struct vop_generic_args {
 };
 
 /*
- * Standards, standards, standards...
- */
-#ifdef __STDC__
-#define CONCAT2(A,B) A##B
-#else
-#define CONCAT2(A,B) A/**/B
-#endif
-
-/*
- * VOCALL calls an op given an ops vector.
- * We break it out because BSD's vclean changes
- * the ops vector and then wants to call ops
- * with the old vector.
+ * VOCALL calls an op given an ops vector.  We break it out because BSD's
+ * vclean changes the ops vector and then wants to call ops with the old
+ * vector.
  */
 #define VOCALL(OPSV,OFF,AP) (( *((OPSV)[(OFF)])) (AP))
+
 /*
  * This call works for vnodes in the kernel.
  */
 #define VCALL(VP,OFF,AP) VOCALL((VP)->v_op,(OFF),(AP))
-#define VDESC(OP) (& CONCAT2(OP,_desc))
+#define VDESC(OP) (& __CONCAT(OP,_desc))
 #define VOFFSET(OP) (VDESC(OP)->vdesc_offset)
 
 /*
@@ -330,34 +309,40 @@ struct vop_generic_args {
 #include <sys/vnode_if.h>
 
 /*
- * public vnode manipulation functions
+ * Public vnode manipulation functions.
  */
+struct file;
+struct mount;
+struct nameidata;
+struct proc;
+struct ucred;
+struct uio;
+struct vattr;
+struct vnode;
+struct vop_bwrite_args;
+
+int 	bdevvp __P((dev_t dev, struct vnode **vpp));
+int 	getnewvnode __P((enum vtagtype tag,
+	    struct mount *mp, int (**vops)(), struct vnode **vpp));
+void 	vattr_null __P((struct vattr *vap));
+int 	vcount __P((struct vnode *vp));
+int 	vget __P((struct vnode *vp));
+void 	vgone __P((struct vnode *vp));
+void 	vgoneall __P((struct vnode *vp));
+int	vn_bwrite __P((struct vop_bwrite_args *ap));
+int 	vn_close __P((struct vnode *vp,
+	    int flags, struct ucred *cred, struct proc *p));
+int 	vn_closefile __P((struct file *fp, struct proc *p));
+int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
 int 	vn_open __P((struct nameidata *ndp, int fmode, int cmode));
-int 	vn_close __P((struct vnode *vp, int flags, struct ucred *cred,
-	    struct proc *p));
 int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
 	    int len, off_t offset, enum uio_seg segflg, int ioflg,
 	    struct ucred *cred, int *aresid, struct proc *p));
 int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	vn_bwrite __P((struct vop_bwrite_args *ap));
-int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
 int	vn_select __P((struct file *fp, int which, struct proc *p));
-int 	vn_closefile __P((struct file *fp, struct proc *p));
-int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
-	    int (**vops)(), struct vnode **vpp));
-int 	bdevvp __P((dev_t dev, struct vnode **vpp));
-	/* check for special device aliases */
-struct 	vnode *checkalias __P((struct vnode *vp, dev_t nvp_rdev,
-	    struct mount *mp));
-void 	vattr_null __P((struct vattr *vap));
-int 	vcount __P((struct vnode *vp));	/* total references to a device */
-int 	vget __P((struct vnode *vp));	/* get first reference to a vnode */
-void 	vref __P((struct vnode *vp));	/* increase reference to a vnode */
-void 	vput __P((struct vnode *vp));	/* unlock and release vnode */
-void 	vrele __P((struct vnode *vp));	/* release vnode */
-void 	vgone __P((struct vnode *vp));	/* completely recycle vnode */
-void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
-
-
-
+int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+struct vnode *
+	checkalias __P((struct vnode *vp, dev_t nvp_rdev, struct mount *mp));
+void 	vput __P((struct vnode *vp));
+void 	vref __P((struct vnode *vp));
+void 	vrele __P((struct vnode *vp));
