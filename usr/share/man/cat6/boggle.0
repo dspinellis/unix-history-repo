@@ -1,0 +1,132 @@
+
+
+
+BOGGLE(6)              BSD Reference Manual             BOGGLE(6)
+
+
+NNAAMMEE
+       boggle - word search game
+
+SSYYNNOOPPSSIISS
+       boggle  [-bd]  [-s  seed]  [-t  time]  [-w  length] [+[+]]
+       [boardspec]
+
+DDEESSCCRRIIPPTTIIOONN
+       The object of _b_o_g_g_l_e is to find as many words as  possible
+       on the Boggle board within the three minute time limit.  A
+       Boggle board is a  four  by  four  arrangement  of  Boggle
+       cubes,  each  side of each cube displaying a letter of the
+       alphabet or `qu'.  Words are formed by finding a  sequence
+       of cubes (letters) that are in the game's dictionary.  The
+       (N+1)th cube in the word must be horizontally, vertically,
+       or  diagonally  adjacent to the Nth cube.  Cubes cannot be
+       reused.  Words consist solely of lower  case  letters  and
+       must be at least 3 letters long.
+
+       Command line flags can be given to change the rules of the
+       game.  The ++ flag allows a cube to be used multiple times,
+       but  not in succession.  The ++++ flag allows the same cubes
+       to be considered adjacent to itself.  AA  sseeeedd  ootthheerr  tthhaann
+       tthhee  ttiimmee ooff ddaayy iiss ssppeecciiffiieedd bbyy --ss##,, where ## is the seed.
+       The time limit can be changed from the default  3  minutes
+       by  using  the  flag --tt##,, where ## is the duration (in sec-
+       onds) of each  game.   The  minimum  word  length  can  be
+       changed  from  3 letters by specifying --ww##,, where ## is the
+       minimum number of letters to use.
+
+       A starting board position can be specified on the  command
+       line by listing the board left to right and top to bottom.
+
+       The --bb flag puts _b_o_g_g_l_e in batch mode.  A  bbooaarrddssppeecc  must
+       also  be  given.   The dictionary is read from stdin and a
+       list of words appearing in bbooaarrddssppeecc is printed to stdout.
+
+       Help  is  available  during  play  by  typing  `?'.   More
+       detailed information on the game is given there.
+
+BBUUGGSS
+       If there are a great many words in the cube the final dis-
+       play  of the words may scroll off of the screen.  (On a 25
+       line screen about 130 words can be displayed.)
+
+
+       No word can contain a 'q' that is not immediately followed
+       by a 'u'.
+
+
+       When  using  the  '+' or '++' options the display of words
+
+
+
+3rd Berkeley Distribution June 11, 1993                         1
+
+
+
+
+
+
+
+
+BOGGLE(6)              BSD Reference Manual             BOGGLE(6)
+
+
+       found in the board doesn't indicate reused cubes.
+
+AAUUTTHHOORR
+       Boggle is a trademark of Parker Brothers.
+       Barry Brachman
+       Dept. of Computer Science
+       University of British Columbia
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3rd Berkeley Distribution June 11, 1993                         2
+
+
+
+
+
