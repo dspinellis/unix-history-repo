@@ -40,7 +40,7 @@ char copyright[] =
 #ifndef lint
 /* From: static char sccsid[] = "@(#)route.c	5.35 (Berkeley) 6/27/91"; */
 const char main_c_rcsid[] =
-	"$Id$";
+	"$Id: route.c,v 1.3 1993/11/17 21:27:20 wollman Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -166,7 +166,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			usage();
+			usage((char *)NULL);
 		}
 	argc -= optind;
 	argv += optind;
