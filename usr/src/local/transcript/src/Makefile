@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.4 %G%
+#	@(#)Makefile	1.4 (Berkeley) %G%
 # transcript/src/Makefile.bsd
 #
 # Copyright (C) 1985 Adobe Systems Incorporated
@@ -7,13 +7,12 @@
 
 
 LIBPROGS = psbanner pscatmap pscomm psrv pstext
-BINPROGS = enscript ps4014 ps630 psplot psgrind
-LNPROGS = pscat psdit psplot psrev psrev
+BINPROGS = enscript ps4014 ps630 psgrind
+LNPROGS = pscat psdit psplot psrev
 
 OBJECTS = psbanner.o pscomm.o psrv.o pstext.o \
 	enscript.o ps4014.o ps630.o pscat.o pscatmap.o \
-	psdit.o psplot.o psrev.o \
-	psutil.o
+	psdit.o psplot.o psrev.o psutil.o
 
 #
 # These values are automatically inserted into the appropriate
@@ -27,7 +26,7 @@ PSTEMPDIR = /tmp
 
 CFLAGS = -O -DBSD
 
-programs all:	${LIBPROGS} ${BINPROGS}
+programs all:	${LIBPROGS} ${BINPROGS} ${LNPROGS}
 
 enscript: enscript.o psutil.o config.o getopt.o
 	cc ${CFLAGS} -o enscript enscript.o psutil.o config.o getopt.o
@@ -83,11 +82,12 @@ config.c: config.proto ../config
 install: ${LIBPROGS} ${BINPROGS}
 	install -s -o $$OWNER -g $$GROUP $(LIBPROGS) $$PSLIBDIR
 	install -s -o $$OWNER -g $$GROUP $(BINPROGS) $$BINDIR
+	install -s -o $$OWNER -g $$GROUP $(LNPROGS) $$PSLIBDIR
 	-cd $$BINDIR ; rm -f ${LNPROGS}
 	for i in ${LNPROGS} ;\
 	do ln -s $$PSLIBDIR/$$i $$BINDIR ;\
 	done
 
 clean:
-	rm -f - *.o config.c ${BINPROGS} ${LIBPROGS} *BAK *CKP .emacs* *~
+	rm -f *.o config.c ${BINPROGS} ${LIBPROGS} ${LNPROGS} .emacs* *~
 
