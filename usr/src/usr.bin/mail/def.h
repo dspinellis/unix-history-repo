@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	1.1 %G%";
+ * Sccs Id = "@(#)def.h	1.2 %G%";
  */
 
 /*
@@ -201,7 +201,7 @@ struct grouphead {
 #define TPLUS	10			/* A '+' */
 
 #define	REGDEP	2			/* Maximum regret depth. */
-#define	STRINGLEN	16		/* Maximum length of string token */
+#define	STRINGLEN	64		/* Maximum length of string token */
 
 /*
  * Kludges to handle the change from setexit / reset to setjmp / longjmp
