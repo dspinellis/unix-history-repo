@@ -1,0 +1,50 @@
+# Contributed by Noah Friedman.
+
+# To avoid using a function in bash, you can use the `builtin' or
+# `command' builtins, but neither guarantees that you use an external
+# program instead of a bash builtin if there's a builtin by that name.  So
+# this function can be used like `command' except that it guarantees the
+# program is external by first disabling any builtin by that name.  After
+# the command is done executing, the state of the builtin is restored. 
+function external ()
+{
+ local state=""
+ local exit_status
+  
+    if builtin_p "$1"; then
+       state="builtin"
+       enable -n "$1"
+    fi
+
+    command "$@"
+    exit_status=$?
+
+    if [ "$state" = "builtin" ]; then
+       enable "$1"
+    fi
+
+    return ${exit_status}
+}
+
+# What is does is tell you if a particular keyword is currently enabled as
+# a shell builtin.  It does NOT tell you if invoking that keyword will
+# necessarily run the builtin.  For that, do something like
+#
+#       test "$(builtin type -type [keyword])" = "builtin"
+#
+# Note also, that disabling a builtin with "enable -n" will make builtin_p
+# return false, since the builtin is no longer available.
+function builtin_p ()
+{
+ local word
+
+    set $(builtin type -all -type "$1")
+
+    for word in "$@" ; do
+       if [ "${word}" = "builtin" ]; then
+          return 0
+       fi
+    done
+
+    return 1
+}
