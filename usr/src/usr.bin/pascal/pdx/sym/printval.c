@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printval.c 1.2 %G%";
+static char sccsid[] = "@(#)printval.c 1.3 %G%";
 
 /*
  * Print out the value at the top of the stack using the given type.
@@ -18,104 +18,104 @@ static char sccsid[] = "@(#)printval.c 1.2 %G%";
 printval(s)
 SYM *s;
 {
-	SYM *t;
-	ADDRESS a;
-	int len;
+    SYM *t;
+    ADDRESS a;
+    int len;
 
-	if (s->class == REF) {
-		s = s->type;
+    if (s->class == REF) {
+	s = s->type;
+    }
+    switch(s->class) {
+	case ARRAY:
+	    t = rtype(s->type);
+	    if (t==t_char || (t->class==RANGE && t->type==t_char)) {
+		len = size(s);
+		sp -= len;
+		printf("'%.*s'", len, sp);
+		break;
+	    } else {
+		printarray(s);
+	    }
+	    break;
+
+	case RECORD:
+	    printrecord(s);
+	    break;
+
+	case VARNT:
+	    error("can't print out variant records");
+	    break;
+
+	case RANGE:
+	    if (s == t_real) {
+		printf("%g", pop(double));
+	    } else if (s == t_char) {
+		printf("'%c'", pop(char));
+	    } else if (s == t_boolean) {
+		printf(pop(BOOLEAN)==TRUE ? "true" : "false");
+	    } else {
+		printf("%ld", popsmall(s));
+	    }
+	    break;
+
+	case FILET:
+	case PTR: {
+	    ADDRESS addr;
+
+	    addr = pop(ADDRESS);
+	    if (addr == 0) {
+		printf("nil");
+	    } else {
+		printf("0%o", addr);
+	    }
+	    break;
 	}
-	switch(s->class) {
-		case ARRAY:
-			t = rtype(s->type);
-			if (t==t_char || (t->class==RANGE && t->type==t_char)) {
-				len = size(s);
-				sp -= len;
-				printf("'%.*s'", len, sp);
-				break;
-			} else {
-				printarray(s);
-			}
-			break;
 
-		case RECORD:
-			printrecord(s);
-			break;
+	case FIELD:
+	    error("missing record specification");
+	    break;
 
-		case VARNT:
-			error("can't print out variant records");
-			break;
+	case SCAL: {
+	    int scalar;
+	    BOOLEAN found;
 
-		case RANGE:
-			if (s == t_real) {
-				printf("%g", pop(double));
-			} else if (s == t_char) {
-				printf("'%c'", pop(long));
-			} else if (s == t_boolean) {
-				printf(pop(BOOLEAN)==TRUE ? "true" : "false");
-			} else {
-				printf("%ld", pop(long));
-			}
-			break;
-
-		case FILET:
-		case PTR: {
-			ADDRESS addr;
-
-			addr = pop(ADDRESS);
-			if (addr == 0) {
-				printf("nil");
-			} else {
-				printf("0%o", addr);
-			}
-			break;
+	    scalar = popsmall(s);
+	    found = FALSE;
+	    for (t = s->chain; t != NIL; t = t->chain) {
+		if (t->symvalue.iconval == scalar) {
+		    printf("%s", t->symbol);
+		    found = TRUE;
+		    break;
 		}
-
-		case FIELD:
-			error("missing record specification");
-			break;
-
-		case SCAL: {
-			int scalar;
-			BOOLEAN found;
-
-			scalar = pop(long);
-			found = FALSE;
-			for (t = s->chain; t != NIL; t = t->chain) {
-				if (t->symvalue.iconval == scalar) {
-					printf("%s", t->symbol);
-					found = TRUE;
-					break;
-				}
-			}
-			if (!found) {
-				printf("(scalar = %d)", scalar);
-			}
-			break;
-		}
-
-		case FPROC:
-		case FFUNC:
-		{
-			ADDRESS a;
-
-			a = fparamaddr(pop(long));
-			t = whatblock(a);
-			if (t == NIL) {
-				printf("(proc %d)", a);
-			} else {
-				printf("%s", t->symbol);
-			}
-			break;
-		}
-
-		default:
-			if (s->class < BADUSE || s->class > VARNT) {
-				panic("printval: bad class %d", s->class);
-			}
-			error("don't know how to print a %s", classname(s));
-			/* NOTREACHED */
+	    }
+	    if (!found) {
+		printf("(scalar = %d)", scalar);
+	    }
+	    break;
 	}
+
+	case FPROC:
+	case FFUNC:
+	{
+	    ADDRESS a;
+
+	    a = fparamaddr(pop(long));
+	    t = whatblock(a);
+	    if (t == NIL) {
+		printf("(proc %d)", a);
+	    } else {
+		printf("%s", t->symbol);
+	    }
+	    break;
+	}
+
+	default:
+	    if (s->class < BADUSE || s->class > VARNT) {
+		panic("printval: bad class %d", s->class);
+	    }
+	    error("don't know how to print a %s", classname(s));
+	    /* NOTREACHED */
+    }
 }
 
 /*
@@ -125,15 +125,15 @@ SYM *s;
 LOCAL printrecord(s)
 SYM *s;
 {
-	SYM *t;
+    SYM *t;
 
-	if ((t = s->chain) == NIL) {
-		error("record has no fields");
-	}
-	printf("(");
-	sp -= size(s);
-	printfield(t);
-	printf(")");
+    if ((t = s->chain) == NIL) {
+	error("record has no fields");
+    }
+    printf("(");
+    sp -= size(s);
+    printfield(t);
+    printf(")");
 }
 
 /*
@@ -144,18 +144,17 @@ SYM *s;
 LOCAL printfield(s)
 SYM *s;
 {
-	STACK *savesp;
+    STACK *savesp;
 
-	if (s->chain != NIL) {
-		printfield(s->chain);
-		printf(", ");
-	}
-	printf("%s = ", s->symbol);
-	savesp = sp;
-	sp += (s->symvalue.offset + size(s->type));
-	alignstack();
-	printval(s->type);
-	sp = savesp;
+    if (s->chain != NIL) {
+	printfield(s->chain);
+	printf(", ");
+    }
+    printf("%s = ", s->symbol);
+    savesp = sp;
+    sp += (s->symvalue.offset + size(s->type));
+    printval(s->type);
+    sp = savesp;
 }
 
 /*
@@ -170,22 +169,22 @@ SYM *s;
 LOCAL printarray(a)
 SYM *a;
 {
-	STACK *savesp, *newsp;
-	SYM *eltype;
-	long elsize;
+    STACK *savesp, *newsp;
+    SYM *eltype;
+    long elsize;
 
-	savesp = sp;
-	sp -= size(a);
-	newsp = sp;
-	eltype = a->type;
-	elsize = size(eltype);
-	printf("(");
-	for (sp += elsize; sp <= savesp; sp += 2*elsize) {
-		if (sp - elsize != newsp) {
-			printf(", ");
-		}
-		printval(eltype);
+    savesp = sp;
+    sp -= size(a);
+    newsp = sp;
+    eltype = a->type;
+    elsize = size(eltype);
+    printf("(");
+    for (sp += elsize; sp <= savesp; sp += 2*elsize) {
+	if (sp - elsize != newsp) {
+	    printf(", ");
 	}
-	sp = newsp;
-	printf(")");
+	printval(eltype);
+    }
+    sp = newsp;
+    printf(")");
 }
