@@ -9,7 +9,8 @@
 #include <ctype.h>
 
 char *malloc();
-void rewind();
+static void rewind();
+long lseek();
 int wflag;
 int xflag;
 int tflag;
@@ -31,7 +32,7 @@ main(argc,argv)
 	char *argv[];
 {
 	struct tm *tm;
-	long timetemp;
+	long timetemp,time();
 	int year;
 	int day;
 	char *tapename;
@@ -54,7 +55,7 @@ main(argc,argv)
 
 	char *key;
 
-	timetemp = time(0);
+	timetemp = time((long *)NULL);
 	tm = localtime(&timetemp);
 	year = tm->tm_year;
 	day = tm->tm_yday;
@@ -194,7 +195,7 @@ main(argc,argv)
 	tape = open(device,wflag?O_RDWR:O_RDONLY,NULL);
 	if(tape<0) {
 		perror(device);
-		printf(stderr,"tape not accessable - check if drive online and write ring present\n");
+		fprintf(stderr,"tape not accessable - check if drive online and write ring present\n");
 		exit(1);
 	}
 	rewind(tape);
@@ -308,7 +309,6 @@ char *ibuf;
 char *ibufstart;
 char *obuf;
 char *obufstart;
-char sizebuf[5];
 char *endibuf;
 char *endobuf;
 int got;
@@ -319,8 +319,8 @@ int numline = 0 ;
 int numblock = 0;
 int success;
 
-	ibufstart = ibuf = malloc(blocksize<4096?8200:(2*blocksize+10));
-	obufstart = obuf = malloc(blocksize+10);
+	ibufstart = ibuf = malloc((unsigned)(blocksize<4096?8200:(2*blocksize+10)));
+	obufstart = obuf = malloc((unsigned)(blocksize+10));
 	endobuf = obuf + blocksize;
 	endibuf = ibuf;
 
@@ -367,8 +367,6 @@ int success;
 			}
 
 			if(ibuf[i] == '\n') { /* end of line */
-				/*sprintf(sizebuf,"%4.4d",i+4); /* make length string */
-				/*strncpy(obuf,sizebuf,4); /* put in length field */
 				obuf[0] = ((i+4)/1000) + '0';
 				obuf[1] = (((i+4)/100)%10) + '0';
 				obuf[2] = (((i+4)/10)%10) + '0';
@@ -465,7 +463,7 @@ writetm(tape)
 }
 
 void
-rewind(tape)
+static rewind(tape)
 	int tape;
 {
 	struct mtop mtop;
@@ -611,7 +609,6 @@ char *ibuf;
 char *ibufstart;
 char *endibuf;
 char *fixpoint;
-int i;
 int size;
 int numblock = 0 ;
 int numchar = 0 ;
@@ -620,7 +617,6 @@ int argnum;
 int ok;
 int blocksize;
 int recordsize;
-int writeblock;
 
 	if(!(read(tape,buf,80))) return(1); /* no hdr record, so second eof */
 	sscanf(buf,"HDR1%17s",filename);
@@ -628,7 +624,7 @@ int writeblock;
 	sscanf(buf,"HDR2%c%5d%5d",&mode,&blocksize,&recordsize);
 	blocksize = blocksize>recordsize?blocksize:recordsize;
 	skipfile(tape); /* throw away rest of header(s) - not interesting */
-	ibufstart=ibuf=malloc(blocksize+10);
+	ibufstart=ibuf=malloc((unsigned)(blocksize+10));
 	endibuf=ibufstart+blocksize;
 	extract=0;
 	if(tflag || xflag) {
