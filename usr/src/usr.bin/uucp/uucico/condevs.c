@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.19	(Berkeley) %G%";
 #endif
 
 extern int errno;
@@ -161,7 +161,10 @@ register char *flds[];
 	modem_control = 0;
 #endif
 	dfp = fopen(DEVFILE, "r");
-	ASSERT(dfp != NULL, "CAN'T OPEN", DEVFILE, 0);
+	if (dfp == NULL) {
+		syslog(LOG_ERR, "fopen(%s) failed: %m", DEVFILE);
+		cleanup(FAIL);
+	}
 	while ((status = rddev(dfp, &dev)) != FAIL) {
 #ifdef VMSDTR	/* Modem control on vms(works dtr) */
 		/* If we find MOD in the device type field we go into action */
@@ -283,7 +286,10 @@ register char *flds[];
 	nobrand[0] = '\0';
 	DEBUG(4, "Dialing %s\n", phone);
 	dfp = fopen(DEVFILE, "r");
-	ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
+	if (dfp == NULL) {
+		syslog(LOG_ERR, "fopen(%s) failed: %m", DEVFILE);
+		cleanup(FAIL);
+	}
 
 	acustatus = 0;	/* none found, none locked */
 	while (rddev(dfp, &dev) != FAIL) {
@@ -309,8 +315,10 @@ register char *flds[];
 		}
 		for(cd = condevs; cd->CU_meth != NULL; cd++) {
 			if (snccmp(line, cd->CU_meth) == SAME) {
-				if (snccmp(dev.D_brand, cd->CU_brand) == SAME) 
+				if (snccmp(dev.D_brand, cd->CU_brand) == SAME) {
+					nobrand[0] = '\0';
 					break;
+				}
 				strncpy(nobrand, dev.D_brand, sizeof nobrand);
 			}
 		}
