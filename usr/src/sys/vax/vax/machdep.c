@@ -1,4 +1,4 @@
-/*	machdep.c	6.8	84/08/28	*/
+/*	machdep.c	6.9	84/09/05	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -232,8 +232,8 @@ vmtime(otime, olbolt, oicr)
  * returns to user who then unwinds with the
  * rei at the bottom of sigcode.
  */
-sendsig(p, sig, sigmask)
-	int (*p)(), sig, sigmask;
+sendsig(p, sig, mask)
+	int (*p)(), sig, mask;
 {
 	register struct sigcontext *scp;	/* know to be r11 */
 	register int *regs;
@@ -249,8 +249,7 @@ sendsig(p, sig, sigmask)
 	regs = u.u_ar0;
 	oonstack = u.u_onstack;
 	scp = (struct sigcontext *)regs[SP] - 1;
-#define	mask(s)	(1<<((s)-1))
-	if (!u.u_onstack && (u.u_sigonstack & mask(sig))) {
+	if (!u.u_onstack && (u.u_sigonstack & sigmask(sig))) {
 		fp = (struct sigframe *)u.u_sigsp - 1;
 		u.u_onstack = 1;
 	} else
@@ -299,7 +298,7 @@ sendsig(p, sig, sigmask)
 	fp->sf_scpcopy = scp;
 	/* sigcontext goes on previous stack */
 	scp->sc_onstack = oonstack;
-	scp->sc_mask = sigmask;
+	scp->sc_mask = mask;
 	/* setup rei */
 	scp->sc_sp = (int)&scp->sc_pc;
 	scp->sc_pc = regs[PC];
@@ -316,7 +315,7 @@ bad:
 	 * instruction to halt it in its tracks.
 	 */
 	u.u_signal[SIGILL] = SIG_DFL;
-	sig = mask(SIGILL);
+	sig = sigmask(SIGILL);
 	u.u_procp->p_sigignore &= ~sig;
 	u.u_procp->p_sigcatch &= ~sig;
 	u.u_procp->p_sigmask &= ~sig;
@@ -347,10 +346,9 @@ sigcleanup()
 #endif
 	u.u_onstack = scp->sc_onstack & 01;
 	u.u_procp->p_sigmask =
-	    scp->sc_mask &~ (mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP));
+	    scp->sc_mask &~ (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
 	u.u_ar0[SP] = scp->sc_sp;
 }
-#undef mask
 
 #ifdef notdef
 dorti()
@@ -598,9 +596,9 @@ boot(paniced, arghowto)
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		waittime = 0;
-		(void) spl1();
-		update();
+		(void) splnet();
 		printf("syncing disks... ");
+		update();
 #ifdef notdef
 		DELAY(10000000);
 #else
