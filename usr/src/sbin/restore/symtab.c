@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.2	(Berkeley)	83/02/26";
+static char sccsid[] = "@(#)symtab.c	3.3	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -76,10 +76,10 @@ lookupname(name)
 				break;
 		if (ep == NIL)
 			break;
-		if (*cp == '\0')
+		if (*cp++ == '\0')
 			return (ep);
 	}
-	/* NOTREACHED */
+	return (NIL);
 }
 
 /*
@@ -97,11 +97,11 @@ lookupparent(name)
 		return (NIL);
 	*tailindex = '\0';
 	ep = lookupname(name);
+	*tailindex = '/';
 	if (ep == NIL)
 		return (NIL);
 	if (ep->e_type != NODE)
 		panic("%s is not a directory\n", name);
-	*tailindex = '/';
 	return (ep);
 }
 
@@ -304,12 +304,15 @@ savename(name)
 	char *name;
 {
 	long len;
+	char *cp;
 
 	if (name == NULL)
 		panic("bad name\n");
 	len = strlen(name) + 2;
 	len = (len + 3) & ~3;
-	return ((char *)malloc((unsigned)len));
+	cp = (char *)malloc((unsigned)len);
+	strcpy(cp, name);
+	return (cp);
 }
 
 /*

@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.2	(Berkeley)	83/02/26";
+static char sccsid[] = "@(#)main.c	3.3	(Berkeley)	83/02/27";
 #endif
 
 /*
@@ -41,17 +41,18 @@ main(argc, argv)
 	char *argv[];
 {
 	register char *cp;
+	ino_t ino;
 	char *inputdev = "/dev/rmt8";
-	char *symtbl = "./lost+found/restoresymtable";
-	char *dirmodefile = "./lost+found/dirmodes";
+	char *symtbl = "./restoresymtable";
+	char *dirmodefile = "./dirmodes";
 	int (*signal())();
 	extern int onintr();
-	ino_t ino;
 
 	if (signal(SIGINT, onintr) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
 	if (signal(SIGTERM, onintr) == SIG_IGN)
 		signal(SIGTERM, SIG_IGN);
+	setlinebuf(stderr);
 	if (argc < 2) {
 usage:
 		fprintf(stderr, "Usage: restor xtfhmsvy file file... or restor rRfsvy\n");
@@ -183,7 +184,9 @@ usage:
 			else
 				addfile(*argv++, ino, LEAF);
 		}
+		createnodes();
 		createfiles();
+		createlinks();
 		setdirmodes(dirmodefile);
 		if (dflag)
 			checkrestore();

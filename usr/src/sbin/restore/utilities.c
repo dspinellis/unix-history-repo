@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.1	(Berkeley)	83/02/18";
+static char sccsid[] = "@(#)utilities.c	3.2	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -44,13 +44,10 @@ pathcheck(name, type)
 {
 	register char *cp;
 	struct entry *ep;
-	char *start, *last;
+	char *start;
 
 	start = index(name, '/');
-	last = rindex(name, '/');
-	if (last == 0)
-		panic("bad name %s to pathcheck\n", name);
-	if (start == last)
+	if (start == 0)
 		return (lookupino(ROOTINO));
 	for (cp = start; *cp != '\0'; cp++) {
 		if (*cp != '/')
@@ -108,7 +105,7 @@ newnode(np)
 	if (np->e_type != NODE)
 		badentry(np, "newnode: not a node");
 	cp = myname(np);
-	if (mkdir(cp, 0666) < 0) {
+	if (mkdir(cp, 0777) < 0) {
 		perror("newnode");
 		panic("Cannot make node %s\n", cp);
 	}

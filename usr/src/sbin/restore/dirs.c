@@ -1,12 +1,12 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.1	(Berkeley)	83/02/18";
+static char sccsid[] = "@(#)dirs.c	3.2	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
 #include <dumprestor.h>
-#include <file.h>
+#include <sys/file.h>
 #include <dir.h>
 
 #define HASHSIZE	1000
@@ -17,8 +17,9 @@ struct inotab {
 	ino_t	t_ino;
 	daddr_t	t_seekpt;
 	long t_size;
-} *inotab[HASHSIZE];
-struct inotab *inotablookup();
+};
+static struct inotab *inotab[HASHSIZE];
+extern struct inotab *inotablookup();
 
 struct modeinfo {
 	ino_t ino;
@@ -28,11 +29,11 @@ struct modeinfo {
 	short gid;
 };
 
-daddr_t	seekpt;
-FILE	*df, *mf;
-DIR	*dirp;
-char	dirfile[] = "/tmp/rstaXXXXXX";
-extern	ino_t search();
+static daddr_t	seekpt;
+static FILE	*df, *mf;
+static DIR	*dirp;
+static char	dirfile[] = "/tmp/rstaXXXXXX";
+extern ino_t	search();
 
 #define ODIRSIZ 14
 struct odirect {
@@ -66,7 +67,7 @@ extractdirs(modefile)
 	}
 	if (modefile != NULL) {
 		mf = fopen(modefile, "w");
-		if (df == 0) {
+		if (mf == 0) {
 			fprintf(stderr,
 			    "restor: %s - cannot create modefile \n",
 			    modefile);
@@ -403,20 +404,25 @@ setdirmodes(modefile)
 		panic("cannot open mode file %s\n", modefile);
 	}
 	clearerr(mf);
-	fread((char *)&node, 1, sizeof(struct modeinfo), mf);
-	while (!feof(mf)) {
+	for (;;) {
+		fread((char *)&node, 1, sizeof(struct modeinfo), mf);
+		if (feof(mf))
+			break;
 		ep = lookupino(node.ino);
-		if (ep == NIL)
+		if (ep == NIL) {
+			if (command == 'x')
+				continue;
 			panic("cannot find directory inode %d\n", node.ino);
+		}
 		cp = myname(ep);
 		chown(cp, node.uid, node.gid);
 		chmod(cp, node.mode);
 		utime(cp, node.timep);
-		fread((char *)&node, 1, sizeof(struct modeinfo), mf);
 	}
 	if (ferror(mf))
 		panic("error setting directory modes\n");
 	fclose(mf);
+	unlink(modefile);
 }
 
 /*
