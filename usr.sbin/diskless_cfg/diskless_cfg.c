@@ -10,6 +10,12 @@ Based loosely on the 4.4BSD diskless setup code
 #include <sys/stat.h>
 #include <netdb.h>
 
+#ifdef sun
+#include <rpc/types.h>
+#include <sys/errno.h>
+#include <nfs/nfs.h>
+#endif
+
 #ifdef i386				/* Native 386bsd system */
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -39,6 +45,7 @@ struct nfs_diskless nfs_diskless;
 #define KW_NETMASK	6
 #define KW_HOSTNAME	7
 #define KW_KERNEL	8
+#define KW_GATEWAY	9
 
 struct {
 	char *name;
@@ -51,10 +58,12 @@ struct {
 	{ "-rsize",	KW_RSIZE },
 	{ "-wsize",	KW_WSIZE },
 	{ "-hostname",	KW_HOSTNAME },
+	{ "-gateway",	KW_GATEWAY },
 	{ NULL,		KW_HELP }
 };
 
 char *hostname = "386bsd";
+char *gateway = NULL;
 char cfg[64];
 char *rootpath = "/var/386bsd";
 char *swappath = "/var/swap/386bsd";
@@ -161,7 +170,27 @@ main(argc, argv)
 				hostname = argv[i+1];
 				i += 2;
 				break;
+			case KW_GATEWAY:
+				gateway = argv[i+1];
+				i += 2;
+				break;
 		}
+	}
+	if(gateway)
+	{
+		if (gethostname(gateway, 256) < 0) {
+			fprintf(stderr,"%s: unable to get gateway host name\n",argv[0]);
+			exit(2);
+		}
+		if ((hp = gethostbyname(gateway)) == NULL) {
+			fprintf(stderr,"%s: unable to get gateway host address\n",argv[0]);
+			exit(2);
+		}
+		nfs_diskless.mygateway.sa_len = sizeof(struct sockaddr);
+		nfs_diskless.mygateway.sa_family = AF_INET;
+		nfs_diskless.mygateway.sa_data[0] = NFS_SOCKET >> 8;
+		nfs_diskless.mygateway.sa_data[1] = NFS_SOCKET & 0x00FF;
+		bcopy(*hp->h_addr_list, &nfs_diskless.mygateway.sa_data[2], 4);
 	}
 	nfs_diskless.swap_args.rsize = i386order(rsize);
 	nfs_diskless.swap_args.wsize = i386order(wsize);
