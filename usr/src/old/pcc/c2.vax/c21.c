@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.11 %G%";
+static	char sccsid[] = "@(#)c21.c 4.12 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -411,6 +411,10 @@ rmove()
 	for (p=first.forw; p!=0; p = p->forw) {
 	lastp=p;
 	if (debug) {
+		if (*conloc) {
+			r1=conval[0];
+			printf("Con %s = %d%d %s\n", conloc, r1&0xF, r1>>4, conval+1);
+		}
 		printf("Regs:\n");
 		for (r=0; r<NREG; r++)
 			if (regs[r][0]) {
@@ -1036,6 +1040,13 @@ register char *s;
 	register int i;
 
 	source(s); /* handle addressing side effects */
+	if (!natural(s)) {
+		/* wild store, everything except constants vanishes */
+		for (i=NREG; --i>=0;)
+			if (regs[i][1] != '$') *(short *)(regs[i]) = 0;
+		conloc[0] = 0; ccloc[0] = 0;
+		return;
+	}
 	if ((i = isreg(s)) >= 0) {
 		*(short *)(regs[i]) = 0; /* if register destination, that reg is a goner */
 		switch(type & 0xF){
@@ -1072,22 +1083,29 @@ register char *s;
 			*(short *)(regs[i]) = 0; /* previous indirection through destination is invalid */
 	while ((i = findrand(s,0)) >= 0) /* previous values of destination are invalid */
 		*(short *)(regs[i]) = 0;
-	if (!natural(s)) {/* wild store, everything except constants vanishes */
-		for (i=NREG; --i>=0;) if (regs[i][1] != '$') *(short *)(regs[i]) = 0;
-		conloc[0] = 0; ccloc[0] = 0;
-	} else setcc(s,type); /* natural destinations set condition codes */
+	if (*conloc && equstr(conloc, s))
+		conloc[0] = 0;
+	setcc(s, type); /* natural destinations set condition codes */
 }
 
-splitrand(p) struct node *p; {
 /* separate operands at commas, set up 'regs' and 'lastrand' */
-register char *p1, *p2; register char **preg;
-preg=regs+RT1;
-if (p1=p->code) while (*p1) {
-	lastrand=p2= *preg++;
-	while (*p1) if (','==(*p2++= *p1++)) {--p2; break;}
-	*p2=0;
-}
-while (preg<(regs+RT1+5)) *(*preg++)=0;
+splitrand(p) struct node *p; {
+	register char *p1, *p2;
+	register char **preg;
+
+	preg = regs+RT1;
+	if (p1 = p->code)
+		while (*p1) {
+			lastrand = p2 = *preg++;
+			while (*p1)
+				if (',' == (*p2++ = *p1++)) {
+					--p2;
+					break;
+				}
+			*p2 = 0;
+		}
+	while (preg < (regs+RT1+5))
+		*(*preg++) = 0;
 }
 
 compat(have, want) {
@@ -1258,8 +1276,8 @@ register struct node *p;
 #ifdef COPYCODE
 			if (p->labno == 0)
 				p->code = p1->code;
-			if (p->ref)
 #endif
+			if (p->ref)
 				p->ref->refc++;
 		}
 	} else if (p1->op==TST && equstr(regs[RT1],ccloc+1) &&
@@ -1391,11 +1409,11 @@ indexa(p) register char *p; {/* 1-> uses [r] addressing mode; 0->doesn't */
 natural(p)
 register char *p;
 {/* 1->simple local, parameter, global, or register; 0->otherwise */
-	if (*p=='*' || *p=='(' || *p=='-'&&*(p+1)=='(' || *p=='$'&&getnum(p+1))
+	if (*p=='*' || *p=='(' || *p=='-'&&p[1]=='(' || *p=='$'&&getnum(p+1))
 		return(0);
 	while (*p++);
 	p--;
-	if (*--p=='+' || *p==']' || *p==')' && *(p-2)!='a' && *(p-2)!='f')
+	if (*--p=='+' || *p==']' || *p==')' && p[-2]!='a' && p[-2]!='f')
 		return(0);
 	return(1);
 }
