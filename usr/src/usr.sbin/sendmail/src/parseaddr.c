@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -617,6 +617,10 @@ struct match
 
 # define MAXMATCH	9	/* max params per rewrite */
 
+# ifndef MAXRULERECURSION
+#  define MAXRULERECURSION	50	/* max recursion depth */
+# endif
+
 
 int
 rewrite(pvp, ruleset, reclevel, e)
@@ -647,7 +651,7 @@ rewrite(pvp, ruleset, reclevel, e)
 		syserr("554 rewrite: illegal ruleset number %d", ruleset);
 		return EX_CONFIG;
 	}
-	if (reclevel++ > 50)
+	if (reclevel++ > MAXRULERECURSION)
 	{
 		syserr("rewrite: infinite recursion, ruleset %d", ruleset);
 		return EX_CONFIG;
