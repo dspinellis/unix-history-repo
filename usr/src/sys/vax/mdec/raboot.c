@@ -1,12 +1,11 @@
-/*	raboot.c	4.2	83/02/20	*/
+/*	raboot.c	4.3	83/05/03	*/
 
 /*
  * UDA50 1st level boot program: loads next 7.5Kbytes from
  * boot sector of file system and sets it up to run.
- *	UNTESTED
  */
 	.set	RELOC,0x50000
-	.set	BOOTSIZE,15		/* size of boot in sectors */
+	.set	BOOTLAST,15		/* last boot sector */
 	.set	RABPSECT,512		/* bytes per sector */
 
 init:
@@ -14,30 +13,38 @@ init:
 	nop;nop;nop;nop;nop;nop;nop;nop /* some no-ops for 750 boot to skip */
 	nop;nop;
 start:
+	movl	r1,r7			/* UNIBUS I/O page address */
+	movl	r2,r8			/* boot device CSR */
+	movl	r3,r9			/* unit number */
 	movl	r5,r11			/* boot flags */
 	movl	$RELOC,sp
-	moval	init,r9
-	movc3	$end,(r9),(sp)
+	moval	init,r10
+	movc3	$end,(r10),(sp)
+	movl	r7,r1			/* UNIBUS I/O page address */
+	movl	r8,r2			/* boot device CSR */
+	movl	r9,r3			/* unit number */
 	jmp	*$RELOC+start2
 /* now running relocated */
 /* bring in the boot program */
 start2:					/* running relocated */
-	clrl	r9			/* transfer counter */
-	clrl	r5			/* transfer address */
-	movl	$1,r8			/* requested sector # */
-1:
 	pushr	$0xffff			/* BEGIN FIREWALL */
-	calls	$0,(r6)			/* call ROM-based driver */
+	movl	$1,r4			/* first boot sector */
+	clrl	r5			/* transfer address */
+	clrl	-(sp)			/* transfer address */
+1:
+	movl	r4,r8			/* requested sector # */
+	jsb	(r6)			/* call ROM-based driver */
 	blbs	r0,2f
 	halt				/* read error */
 2:
-	popr	$0xffff			/* END FIREWALL */
-	incl	r8			/* bump sector */
-	addl2	$RABPSECT,r5		/* bump memory location */
-	aobleq	BOOTSIZE,r9,1b
+	addl2	$RABPSECT,r5		/* bump address */
+	movl	r5,(sp)
+	aobleq	$BOOTLAST,r4,1b
 
-	.set	PROGSIZE,(BOOTSIZE*RABPSECT)
+	.set	PROGSIZE,((BOOTLAST-1)*RABPSECT)
 done:
+	tstl	(sp)+			/* pop address */
+	popr	$0xffff			/* END FIREWALL */
 	movl	$PROGSIZE,r3
 clrcor:
 	clrq	(r3)
