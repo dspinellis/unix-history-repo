@@ -1,4 +1,4 @@
-.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" Copyright (c) 1983, 1990, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -6,35 +6,27 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)quotacheck.8	6.6 (Berkeley) %G%
+.\"     @(#)quotacheck.8	6.7 (Berkeley) %G%
 .\"
-.TH QUOTACHECK 8 ""
-.UC 5
-.SH NAME
-quotacheck \- filesystem quota consistency checker
-.SH SYNOPSIS
-.B quotacheck
-[
-.B \-g
-] [
-.B \-u
-] [
-.B \-v
-]
-filesystem ...
-.br
-.B quotacheck
-[
-.B \-g
-] [
-.B \-u
-] [
-.B \-v
-]
-.B \-a
-.br
-.SH DESCRIPTION
-.I Quotacheck
+.Dd 
+.Dt QUOTACHECK 8
+.Os BSD 4.2
+.Sh NAME
+.Nm quotacheck
+.Nd filesystem quota consistency checker
+.Sh SYNOPSIS
+.Nm quotacheck
+.Op Fl g
+.Op Fl u
+.Op Fl v
+.Ar filesystem Ar ...
+.Nm quotacheck
+.Op Fl g
+.Op Fl u
+.Op Fl v
+.Fl a
+.Sh DESCRIPTION
+.Nm Quotacheck
 examines each filesystem,
 builds a table of current disk usage,
 and compares this table against that recorded
@@ -44,80 +36,96 @@ quota file and the current system copy of the
 incorrect quotas are updated (the latter only
 occurs if an active filesystem is checked).
 By default both user and group quotas are checked.
-The optional \fI-g\fP flag specifies that only group quotas should be checked.
-The optional \fI-u\fP flag specifies that only user quotas should be checked.
-Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
-.PP
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl a
 If the
-.B \-a
+.Fl a
 flag is supplied in place of any filesystem names,
-.I quotacheck
+.Nm quotacheck
 will check all the filesystems indicated in
-.I /etc/fstab
+.Pa /etc/fstab
 to be read-write with disk quotas.
 By default only the types of quotas listed in
-.I /etc/fstab
+.Pa /etc/fstab
 are checked.
-The optional \fI-g\fP flag specifies that only group quotas listed in
-.I /etc/fstab
-should be checked.
-The optional \fI-u\fP flag specifies that only user quotas listed in
-.I /etc/fstab
-should be checked.
-Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+.It Fl g
+Only group quotas listed in
+.Pa /etc/fstab
+are to be checked.
+.It Fl u
+Only user quotas listed in
+.Pa /etc/fstab
+are to be checked.
+.It Fl v
+.Nm quotacheck
+reports discrepancies between the
+calculated and recorded disk quotas.
+.El
+.Pp
+Specifying both
+.Fl g
+and
+.Fl u
+is equivalent to the default.
 Parallel passes are run on the filesystems required,
 using the pass numbers in
-.I /etc/fstab
+.Pa /etc/fstab
 in an identical fashion to
-.IR fsck (8).
-.PP
+.Xr fsck 8 .
+.Pp
 Normally
-.I quotacheck
+.Nm quotacheck
 operates silently.
-If the
-.B \-v
-option is supplied,
-.I quotacheck
-will report discrepancies between the
-calculated and recorded disk quotas.
-.PP
-.I Quotacheck
+.Pp
+.Nm Quotacheck
 expects each filesystem to be checked to have a
 quota files named
-.I quota.user
+.Pa quota.user
 and
-.I quota.group
+.Pa quota.group
 which are located at the root of the associated file system.
 These defaults may be overridden in
-.I /etc/fstab .
+.Pa /etc/fstab .
 If a file is not present, 
-.I quotacheck
+.Nm quotacheck
 will create it.
-.PP
-.I Quotacheck 
+.Pp
+.Nm Quotacheck
 is normally run at boot time from the
-.I /etc/rc.local
+.Pa /etc/rc.local
 file, see
-.IR rc (8),
+.Xr rc 8 ,
 before enabling disk quotas with
-.IR quotaon (8).
-.PP
-.I Quotacheck
+.Xr quotaon 8 .
+.Pp
+.Nm Quotacheck
 accesses the raw device in calculating the actual
 disk usage for each user.
 Thus, the filesystems
 checked should be quiescent while
-.I quotacheck
+.Nm quotacheck
 is running.
-.SH FILES
-.DT
-\fIquota.user\fP	at the filesystem root with user quotas
-.br
-\fIquota.group\fP	at the filesystem root with group quotas
-.br
-/etc/fstab	default filesystems
-.SH "SEE ALSO"
-quota(1),
-quotactl(2),
-fstab(5),
-edquota(8), fsck(8), quotaon(8), repquota(8)
+.Sh FILES
+.Bl -tag -width quota.group -compact
+.It Pa quota.user
+at the filesystem root with user quotas
+.It Pa quota.group
+at the filesystem root with group quotas
+.It Pa /etc/fstab
+default filesystems
+.El
+.Sh SEE ALSO
+.Xr quota 1 ,
+.Xr quotactl 2 ,
+.Xr fstab 5 ,
+.Xr edquota 8 ,
+.Xr fsck 8 ,
+.Xr quotaon 8 ,
+.Xr repquota 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

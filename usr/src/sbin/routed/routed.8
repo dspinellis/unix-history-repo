@@ -1,31 +1,26 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)routed.8	6.5 (Berkeley) %G%
+.\"     @(#)routed.8	6.6 (Berkeley) %G%
 .\"
-.TH ROUTED 8 ""
-.UC 5
-.SH NAME
-routed \- network routing daemon
-.SH SYNOPSIS
-.B routed
-[
-.B \-d
-] [
-.B \-g
-] [
-.B \-s
-] [
-.B \-q
-] [
-.B \-t
-] [
-.I logfile
-]
-.SH DESCRIPTION
-.I Routed
+.Dd 
+.Dt ROUTED 8
+.Os BSD 4.2
+.Sh NAME
+.Nm routed
+.Nd network routing daemon
+.Sh SYNOPSIS
+.Nm routed
+.Op Fl d
+.Op Fl g
+.Op Fl q
+.Op Fl s
+.Op Fl t
+.Op Ar logfile
+.Sh DESCRIPTION
+.Nm Routed
 is invoked at boot time to manage the network routing tables.
 The routing daemon uses a variant of the Xerox NS Routing
 Information Protocol in maintaining up to date kernel routing
@@ -33,98 +28,97 @@ table entries.
 It used a generalized protocol capable of use with multiple
 address types, but is currently used only for Internet routing
 within a cluster of networks.
-.PP
+.Pp
 In normal operation
-.I routed
+.Nm routed
 listens on the
-.IR udp (4)
+.Xr udp 4
 socket for the
-.I route
+.Xr route 8
 service (see
-.IR services (5))
+.Xr services 5 )
 for routing information packets.  If the host is an
 internetwork router, it periodically supplies copies
 of its routing tables to any directly connected hosts
 and networks.
-.PP
+.Pp
 When
-.I routed
-is started, it uses the SIOCGIFCONF
-.I ioctl
+.Nm routed
+is started, it uses the
+.Dv SIOCGIFCONF
+.Xr ioctl 2
 to find those
 directly connected interfaces configured into the
 system and marked ``up'' (the software loopback interface
 is ignored).  If multiple interfaces
 are present, it is assumed that the host will forward packets
 between networks.
-.I Routed
+.Nm Routed
 then transmits a 
-.I request
+.Em request
 packet on each interface (using a broadcast packet if
 the interface supports it) and enters a loop, listening
 for
-.I request
+.Em request
 and
-.I response
+.Em response
 packets from other hosts.
-.PP
+.Pp
 When a
-.I request
+.Em request
 packet is received, 
-.I routed
+.Nm routed
 formulates a reply based on the information maintained in its
 internal tables.  The
-.I response
+.Em response
 packet generated contains a list of known routes, each marked
 with a ``hop count'' metric (a count of 16, or greater, is
 considered ``infinite'').  The metric associated with each
 route returned provides a metric
-.IR "relative to the sender" .
-.PP
-.I Response
+.Em relative to the sender .
+.Pp
+.Em Response
 packets received by
-.I routed
+.Nm routed
 are used to update the routing tables if one of the following
 conditions is satisfied:
-.TP
-(1)
+.Bl -enum
+.It
 No routing table entry exists for the destination network
 or host, and the metric indicates the destination is ``reachable''
 (i.e. the hop count is not infinite).
-.TP
-(2)
+.It
 The source host of the packet is the same as the router in the
 existing routing table entry.  That is, updated information is
 being received from the very internetwork router through which
 packets for the destination are being routed.
-.TP
-(3)
+.It
 The existing entry in the routing table has not been updated for
 some time (defined to be 90 seconds) and the route is at least
 as cost effective as the current route.
-.TP
-(4)
+.It
 The new route describes a shorter route to the destination than
 the one currently stored in the routing tables; the metric of
 the new route is compared against the one stored in the table
 to decide this.
-.PP
+.El
+.Pp
 When an update is applied,
-.I routed
+.Nm routed
 records the change in its internal tables and updates the kernel
 routing table.
 The change is reflected in the next
-.I response
+.Em response
 packet sent.
-.PP
+.Pp
 In addition to processing incoming packets,
-.I routed
+.Nm routed
 also periodically checks the routing table entries.
 If an entry has not been updated for 3 minutes, the entry's metric
 is set to infinity and marked for deletion.  Deletions are delayed
 an additional 60 seconds to insure the invalidation is propagated
 throughout the local internet.
-.PP
+.Pp
 Hosts acting as internetwork routers gratuitously supply their
 routing tables every 30 seconds to all directly connected hosts
 and networks.
@@ -137,71 +131,70 @@ network and interface are functioning correctly.
 If no response is received on an interface, another route may be chosen
 to route around the interface, or the route may be dropped if no alternative
 is available.
-.PP
-.I Routed supports several options:
-.TP
-.B \-d
+.Pp
+Options supported by
+.Nm routed :
+.Bl -tag -width Ds
+.It Fl d
 Enable additional debugging information to be logged,
 such as bad packets received.
-.TP
-.B \-g
+.It Fl g
 This flag is used on internetwork routers to offer a route
 to the ``default'' destination.
 This is typically used on a gateway to the Internet,
 or on a gateway that uses another routing protocol whose routes
 are not reported to other local routers.
-.TP
-.B \-s
+.It Fl s
 Supplying this
 option forces 
-.I routed
+.Nm routed
 to supply routing information whether it is acting as an internetwork
 router or not.
 This is the default if multiple network interfaces are present,
 or if a point-to-point link is in use.
-.TP
-.B \-q
+.It Fl q
 This
 is the opposite of the
-.B \-s
+.Fl s
 option.
-.TP
-.B \-t
+.It Fl t
 If the
-.B \-t
+.Fl t
 option is specified, all packets sent or received are
 printed on the standard output.  In addition,
-.I routed
+.Nm routed
 will not divorce itself from the controlling terminal
 so that interrupts from the keyboard will kill the process.
-.PP
+.El
+.Pp
 Any other argument supplied is interpreted as the name
 of file in which 
-.IR routed 's
+.Nm routed Ns \'s
 actions should be logged.  This log contains information
 about any changes to the routing tables and, if not tracing all packets,
 a history of recent messages sent and received which are related to
 the changed route.
-.PP
+.Pp
 In addition to the facilities described above, 
-.I routed
+.Nm routed
 supports the notion of ``distant''
-.I passive
+.Em passive
 and 
-.I active
+.Em active
 gateways.  When 
-.I routed
+.Nm routed
 is started up, it reads the file
-.I /etc/gateways
+.Pa /etc/gateways
 to find gateways which may not be located using
-only information from the SIOGIFCONF
-.IR ioctl .
+only information from the
+.Dv SIOGIFCONF
+.Xr ioctl 2 .
 Gateways specified in this manner should be marked passive
 if they are not expected to exchange routing information,
 while gateways marked active
 should be willing to exchange routing information (i.e.
 they should have a
-.I routed
+.Nm routed
 process running on the machine).
 Routes through passive gateways are installed in the
 kernel's routing tables once upon startup.
@@ -213,101 +206,129 @@ to the gateway and if no routing information is
 received for a period of the time, the associated
 route is deleted.
 Gateways marked
-.I external
+.Em external
 are also passive, but are not placed in the kernel
 routing table nor are they included in routing updates.
 The function of external entries is to inform
-.I routed
+.Nm routed
 that another routing process
 will install such a route, and that alternate routes to that destination
 should not be installed.
 Such entries are only required when both routers may learn of routes
 to the same destination.
-.PP
+.Pp
 The 
-.I /etc/gateways
+.Pa /etc/gateways
 is comprised of a series of lines, each in
 the following format:
-.PP
-.nf
-< \fBnet\fP | \fBhost\fP > \fIname1\fP \fBgateway\fP \fIname2\fP \fBmetric\fP \fIvalue\fP < \fBpassive\fP | \fBactive\fP | \fBexternal\fP >
-.fi
-.PP
+.Bd -ragged
+.Pf < Cm net No \&|
+.Cm host Ns >
+.Ar name1
+.Cm gateway
+.Ar name2
+.Cm metric
+.Ar value
+.Pf < Cm passive No \&|
+.Cm active No \&|
+.Cm external Ns >
+.Ed
+.Pp
 The 
-.B net
+.Cm net
 or
-.B host
+.Cm host
 keyword indicates if the route is to a network or specific host.
-.PP
-.I Name1
+.Pp
+.Ar Name1
 is the name of the destination network or host.  This may be a
 symbolic name located in
-.I /etc/networks
+.Pa /etc/networks
 or
-.I /etc/hosts
+.Pa /etc/hosts
 (or, if started after
-.IR named (8),
+.Xr named 8 ,
 known to the name server), 
 or an Internet address specified in ``dot'' notation; see
-.IR inet (3).
-.PP
-.I Name2
+.Xr inet 3 .
+.Pp
+.Ar Name2
 is the name or address of the gateway to which messages should
 be forwarded.
-.PP
-.I Value
+.Pp
+.Ar Value
 is a metric indicating the hop count to the destination host
 or network.
-.PP
+.Pp
 One of the keywords
-.BR passive ,
-.B active
+.Cm passive ,
+.Cm active
 or
-.B external
+.Cm external
 indicates if the gateway should be treated as 
-.I passive
+.Em passive
 or
-.I active
+.Em active
 (as described above),
 or whether the gateway is
-.I external
+.Em external
 to the scope of the
-.I routed
+.Nm routed
 protocol.
-.PP
+.Pp
 Internetwork routers that are directly attached to the Arpanet or Milnet
-should use the Exterior Gateway Protocol (EGP) to gather routing information
+should use the Exterior Gateway Protocol
+.Pq Tn EGP
+to gather routing information
 rather then using a static routing table of passive gateways.
-EGP is required in order to provide routes for local networks to the rest
+.Tn EGP
+is required in order to provide routes for local networks to the rest
 of the Internet system.
 Sites needing assistance with such configurations
 should contact the Computer Systems Research Group at Berkeley.
-.SH FILES
-.DT
-/etc/gateways	for distant gateways
-.SH "SEE ALSO"
-``Internet Transport Protocols'', XSIS 028112, Xerox System Integration
-Standard.
-.br
-udp(4), icmp(4), XNSrouted(8), htable(8)
-.SH BUGS
+.Sh FILES
+.Bl -tag -width /etc/gateways -compact
+.It Pa /etc/gateways
+for distant gateways
+.El
+.Sh SEE ALSO
+.Xr udp 4 ,
+.Xr icmp 4 ,
+.Xr XNSrouted 8 ,
+.Xr htable 8
+.Rs
+.%T Internet Transport Protocols
+.%R XSIS 028112
+.%Q Xerox System Integration Standard
+.Re
+.Sh BUGS
 The kernel's routing tables may not correspond to those of
-.I routed
+.Nm routed
 when redirects change or add routes.
-.I Routed
+.Nm Routed
 should note any redirects received by reading
-the ICMP packets received via a raw socket.
-.PP
-.I Routed
+the
+.Tn ICMP
+packets received via a raw socket.
+.Pp
+.Nm Routed
 should incorporate other routing protocols,
-such as Xerox NS
-.RI ( XNSrouted (8))
-and EGP.
+such as Xerox
+.Tn \&NS
+.Pq Xr XNSrouted 8
+and
+.Tn EGP .
 Using separate processes for each requires configuration options
 to avoid redundant or competing routes.
-.PP
-.I Routed
-should listen to intelligent interfaces, such as an IMP,
+.Pp
+.Nm Routed
+should listen to intelligent interfaces, such as an
+.Tn IMP ,
 to gather more information.
 It does not always detect unidirectional failures in network interfaces
 (e.g., when the output side fails).
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .
