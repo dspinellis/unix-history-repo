@@ -2,7 +2,7 @@ Original BTL Ratfor System for 4.2
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)r.y	1.2 (Berkeley) %G%
+ *	@(#)r.y	8.1 (Berkeley) %G%
  */
 
 %{
