@@ -16,7 +16,7 @@
 
 #ifndef lint
 #ifndef NOID
-static char	privatehid[] = "@(#)private.h	7.4";
+static char	privatehid[] = "@(#)private.h	7.5";
 #endif /* !defined NOID */
 #endif /* !defined lint */
 
@@ -51,7 +51,8 @@ static char	privatehid[] = "@(#)private.h	7.4";
 #ifndef P
 #ifdef __STDC__
 #define P(x)	x
-#else /* !defined __STDC__ */
+#endif /* defined __STDC__ */
+#ifndef __STDC__
 #define ASTERISK	*
 #define P(x)	( /ASTERISK x ASTERISK/ )
 #endif /* !defined __STDC__ */
@@ -63,7 +64,8 @@ static char	privatehid[] = "@(#)private.h	7.4";
 
 #ifdef __STDC__
 typedef void *		genericptr_t;
-#else /* !defined __STDC__ */
+#endif /* defined __STDC__ */
+#ifndef __STDC__
 typedef char *		genericptr_t;
 #endif /* !defined __STDC__ */
 
@@ -92,7 +94,8 @@ extern int	unlink P((const char * filename));
 
 #ifdef MAXPATHLEN
 #define FILENAME_MAX	MAXPATHLEN
-#else /* !defined MAXPATHLEN */
+#endif /* defined MAXPATHLEN */
+#ifndef MAXPATHLEN
 #define FILENAME_MAX	1024		/* Pure guesswork */
 #endif /* !defined MAXPATHLEN */
 
@@ -112,7 +115,8 @@ extern int	unlink P((const char * filename));
 #define qsort_size_t	size_t
 #define fwrite_size_t	size_t
 
-#else /* !defined __STDC__ */
+#endif /* defined __STDC__ */
+#ifndef __STDC__
 
 #ifndef alloc_size_t
 #define alloc_size_t	unsigned
@@ -121,7 +125,8 @@ extern int	unlink P((const char * filename));
 #ifndef qsort_size_t
 #ifdef USG
 #define qsort_size_t	unsigned
-#else /* !defined USG */
+#endif /* defined USG */
+#ifndef USG
 #define qsort_size_t	int
 #endif /* !defined USG */
 #endif /* !defined qsort_size_t */
