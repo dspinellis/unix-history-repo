@@ -1,32 +1,23 @@
-/*
- * Copyright (c) 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms is permitted
- * provided that all copyright information, including this notice,
- * is retained in all such forms, and that any documentation,
- * advertising or other materials related to such distribution and
- * use acknowledge that the software was
- * developed by the University of California, Berkeley.  The name
- * of the University may not be used to endorse or promote products
- * derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	1.8 (Berkeley) 2/16/90";
+static char sccsid[] = "@(#)ps.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <machine/pte.h>
+
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/user.h>
@@ -35,7 +26,6 @@ static char sccsid[] = "@(#)ps.c	1.8 (Berkeley) 2/16/90";
 #include <sys/text.h>
 #include <sys/stat.h>
 #include <sys/mbuf.h>
-#include <machine/pte.h>
 #include <nlist.h>
 #include <pwd.h>
 #include <math.h>
@@ -127,8 +117,6 @@ struct var {
 		0, pvar, 8, POFF(p_traceflag), LONG, "x"},
 	{{"ktracep", "tracep"}, "KTRACEP",
 		0, pvar, 8, POFF(p_tracep), LONG, "x"},
-	{{"cursig"}, "CURSIG",
-		0, pvar, 2, POFF(p_cursig), CHAR, "d"},
 	{{"sig", "pending"}, "PENDING",
 		0, pvar, 8, POFF(p_sig), LONG, "x"},
 	{{"sigmask", "blocked"}, "BLOCKED",
@@ -222,7 +210,7 @@ struct combovar {
 #define LFMT \
 	"uid pid ppid cp pri nice vsz rss wchan state tname cputime comm"
 #define	JFMT	"user pid ppid pgid sess jobc state tname cputime comm"
-#define	SFMT	"user pid cursig sig sigmask sigignore sigcatch tname comm"
+#define	SFMT	"uid pid sig sigmask sigignore sigcatch stat tname comm"
 #define	VFMT \
 	"pid tt state time sl re pagein vsz rss lim tsiz trs %cpu %mem comm"
 #define UFMT \
@@ -299,7 +287,7 @@ main (argc, argv)
 	if (argc > 1)
 		argv[1] = kludge_oldps_options(argv[1]);
 
-	while ((ch = getopt(argc, argv, "o:O:wlvujnsaxt:p:SCLmchTg")) != EOF)
+	while ((ch = getopt(argc, argv, "o:O:wlvujnsaxt:p:SCLmrhTg")) != EOF)
 		switch((char)ch) {
 		case 'o':
 			parsefmt(optarg);
@@ -371,6 +359,7 @@ main (argc, argv)
 		}
 		case 'p':
 			pid = atoi(optarg);
+			xflg++;
 			break;
 		case 'S':
 			sumrusage++;
@@ -410,7 +399,7 @@ main (argc, argv)
 		case 'm':
 			sortby = SORTMEM;
 			break;
-		case 'c':
+		case 'r':
 			sortby = SORTCPU;
 			break;
 		case 'h':
@@ -450,8 +439,10 @@ main (argc, argv)
 	 * and adjusting header widths as appropiate.
 	 */
 	scanvars();
+#ifdef notdef
 	if (sortby == SORTCPU)
 		neednlist = 1;
+#endif
 	if (neednlist)
 		donlist();
 	/*
@@ -707,7 +698,9 @@ state(k, v)
 		*cp++ = 'V';
 	if (flag & (SSYS|SLOCK|SULOCK|SKEEP|SPHYSIO))
 		*cp++ = 'L';
-	if ((flag & SCTTY) && k->ki_e->e_pgid == k->ki_e->e_pgid)
+	if (k->ki_e->e_flag & EPROC_SLEADER)
+		*cp++ = 's';
+	if ((flag & SCTTY) && k->ki_e->e_pgid == k->ki_e->e_tpgid)
 		*cp++ = '+';
 	*cp = '\0';
 	printf("%-*s", v->width, buf);
@@ -768,7 +761,7 @@ tname(k, v)
 		if (strncmp(tname, "tty", 3) == 0)
 			tname += 3;
 		printf("%*.*s%c", v->width-1, v->width-1, tname,
-			k->ki_p->p_flag & SCTTY ? ' ' : '-');
+			k->ki_e->e_flag & EPROC_CTTY ? ' ' : '-');
 	}
 }
 
@@ -904,7 +897,7 @@ getpcpu(k)
 	struct proc *p = k->ki_p;
 #define	fxtofl(fixpt)	((double)(fixpt) / fscale)
 
-	if (p->p_time == 0 || (p->p_flag & SLOAD) == 0)
+	if (p->p_time == 0 || (p->p_flag & SLOAD) == 0)	/* XXX - I don't like this */
 		return (0.0);
 	if (rawcpu)
 		return (100.0 * fxtofl(p->p_pctcpu));
@@ -1156,6 +1149,10 @@ pscomp(k1, k2)
 
 	if (sortby == SORTCPU)
 		return (getpcpu(k2) - getpcpu(k1));
+#ifdef notyet
+	if (sortby == SORTRUN)
+		return (proc_compare(k1->ki_p, k2->ki_p));
+#endif
 	if (sortby == SORTMEM)
 		return (VSIZE(k2) - VSIZE(k1));
 	i =  k1->ki_e->e_tdev - k2->ki_e->e_tdev;
