@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.7	%G%	*/
+/*	lfs_vnops.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -135,8 +135,7 @@ dup()
 /*
  * the mount system call.
  */
-smount()
-{
+smount() {
 	dev_t dev;
 	register struct inode *ip;
 	register struct mount *mp;
@@ -148,6 +147,7 @@ smount()
 		char	*freg;
 		int	ronly;
 	} *uap;
+	register char *cp;
 
 	uap = (struct a *)u.u_ap;
 	dev = getmdev();
@@ -189,6 +189,11 @@ smount()
 	fp->s_ronly = uap->ronly & 1;
 	fp->s_nbehind = 0;
 	fp->s_lasti = 1;
+	u.u_dirp = uap->freg;
+	for (cp = fp->s_fsmnt; cp < &fp->s_fsmnt[sizeof (fp->s_fsmnt) - 1]; )
+		if ((*cp++ = uchar()) == 0)
+			u.u_dirp--;		/* get 0 again */
+	*cp = 0;
 	brelse(bp);
 	ip->i_flag |= IMOUNT;
 	prele(ip);
