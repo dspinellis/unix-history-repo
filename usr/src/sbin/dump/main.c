@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.13 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -26,6 +26,7 @@ main(argc, argv)
 	tape = TAPE;
 	disk = DISK;
 	increm = NINCREM;
+	temp = TEMP;
 	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0) {
 		msg("TP_BSIZE must be a multiple of DEV_BSIZE\n");
 		dumpabort();
@@ -48,11 +49,6 @@ main(argc, argv)
 		break;
 	case 'W':			/* what to do */
 		lastdump('W');		/* tell us the current state of what has been done */
-		exit(0);		/* do nothing else */
-		break;
-
-	case 'J':			/* update old to new */
-		o_nconvert();
 		exit(0);		/* do nothing else */
 		break;
 
