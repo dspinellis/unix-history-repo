@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.5 (Berkeley) %G%
+ *	@(#)fs.h	8.6 (Berkeley) %G%
  */
 
 /*
@@ -91,6 +91,21 @@
  * is set by FS_MAXCONTIG.
  */
 #define FS_MAXCONTIG	16
+
+/*
+ * MINFREE gives the minimum acceptable percentage of file system
+ * blocks which may be free. If the freelist drops below this level
+ * only the superuser may continue to allocate blocks. This may
+ * be set to 0 if no reserve of free blocks is deemed necessary,
+ * however throughput drops by fifty percent if the file system
+ * is run at between 95% and 100% full; thus the minimum default
+ * value of fs_minfree is 5%. However, to get good clustering
+ * performance, 10% is a better choice. hence we use 10% as our
+ * default value. With 10% free space, fragmentation is not a
+ * problem, so we choose to optimize for time.
+ */
+#define MINFREE		5
+#define DEFAULTOPT	FS_OPTTIME
 
 /*
  * Per cylinder group information; summarized in blocks allocated
