@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rmdir.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)rmdir.c	4.7 (Berkeley) %G%";
 /*
  * Remove directory
  */
@@ -16,6 +16,7 @@ main(argc,argv)
 	}
 	while (--argc)
 		if (rmdir(*++argv) < 0) {
+			fprintf(stderr, "rmdir: ");
 			perror(*argv);;
 			errors++;
 		}
