@@ -618,7 +618,6 @@ main(argc,argv)
 	    SendBanner();
 	    progress++;
 	}
-	if (BannerFirst) VOIDC unlink(".banner");
 
 	donefile:;
 
@@ -912,6 +911,7 @@ private SendBanner()
 	VOIDC write(fdsend,buf,cnt);
     }
     VOIDC close(banner);
+    VOIDC unlink(".banner");
 }
 
 /* search backwards from p in start for patt */
