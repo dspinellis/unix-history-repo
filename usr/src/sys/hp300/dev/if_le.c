@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.15 (Berkeley) %G%
+ *	@(#)if_le.c	7.16 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -681,9 +681,9 @@ leread(unit, buf, len)
 	 * the type and length which are at the front of any trailer data.
 	 */
 	m = m_devget((char *)(et + 1), len, off, &le->sc_if, 0);
-	m->m_flags |= flags;
 	if (m == 0)
 		return;
+	m->m_flags |= flags;
 	ether_input(&le->sc_if, et, m);
 }
 
