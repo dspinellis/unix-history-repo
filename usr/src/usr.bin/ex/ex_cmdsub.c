@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_cmdsub.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_cmdsub.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -113,7 +113,7 @@ ex_delete(hush)
 
 	nonzero();
 	if(FIXUNDO) {
-		register int (*dsavint)();
+		register void (*dsavint)();
 
 #ifdef TRACE
 		if (trace)
