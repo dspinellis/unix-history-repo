@@ -1,0 +1,132 @@
+
+
+
+XWD(1)		    UNIX Programmer's Manual		   XWD(1)
+
+
+
+NAME
+     xwd - X Window System, window image dumper.
+
+SYNOPSIS
+     xwd [ -debug ] [ -help ] [ -nobdrs ] [ -out _f_i_l_e ] [ -xy ] [
+     _h_o_s_t:_d_i_s_p_l_a_y ]
+
+DESCRIPTION
+     _X_w_d is an X Window System (protocol version 10) window image
+     dumping utility.  _X_w_d allows X users to store window images
+     in a specially formated window dump file.	This file can
+     then be read by various other X utilities for redisplay,
+     printing, editing, formatting, archiving, image processing
+     etc..  The target window is selected by clicking the mouse
+     in the desired window.  The keyboard bell is rung once at
+     the beginning of the dump and twice when the dump is com-
+     pleted.  The window dump file format is currently under
+     development; no guarantee of upward compatibility is made:
+     the dump file format will be completely different under V11.
+
+ARGUMENT SUMMARY
+     -help   Print out the `Usage:' command syntax summary.
+
+     -nobdrs This argument specifies that the window dump  should
+	     not  include  the pixels that compose the X window
+	     border.  This is useful in situations where you may
+	     wish to include the  window  contents in a document
+	     as an illustration.
+
+     -out _f_i_l_e
+	     This argument allows the user to explicitly specify
+	     the output file on the command line.  The default is
+	     to output to standard out.
+
+     -xy     This option applies to color displays only. It
+	     selects `XY' format dumping instead of the default
+	     `Z' format. Monochrome displays are always dumped in
+	     `XY' format.
+
+     _h_o_s_t:_d_i_s_p_l_a_y
+	     This  argument  allow  you  to  specify the host and
+	     display number on which to find the target window.
+	     For example `xwd orpheus:1' would specify that the
+	     target window is on display `1' on the machine
+	     `orpheus'.  By default, _x_w_d uses the host and
+	     display number stored in the environment variable
+	     DISPLAY, and therefore this argument is not normally
+	     specified.
+
+ENVIRONMENT
+     DISPLAY To get default host and display number.
+
+
+
+
+Printed 9/15/87         21 November 1986			1
+
+
+
+
+
+
+XWD(1)		    UNIX Programmer's Manual		   XWD(1)
+
+
+
+FILES
+     XWDFile.h
+	     X Window Dump File format definition file.
+
+SEE ALSO
+     xwud(1), xpr(1), xdpr(1), X(1)
+
+AUTHOR
+     Copyright 1985, 1986, Massachusetts Institute of Technology.
+
+     Tony Della Fera, Digital Equipment Corp., MIT Project Athena
+
+     William F. Wyatt, Smithsonian Astrophysical Observatory
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87         21 November 1986			2
+
+
+
