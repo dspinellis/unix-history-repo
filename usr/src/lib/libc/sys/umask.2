@@ -2,36 +2,32 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)umask.2	4.1 (Berkeley) %G%
+.\"	@(#)umask.2	5.1 (Berkeley) %G%
 .\"
-.TH UMASK 2
+.TH UMASK 2 "12 February 1983"
 .UC 4
 .SH NAME
 umask \- set file creation mode mask
 .SH SYNOPSIS
-.B umask(complmode)
+.ft B
+oumask = umask(numask)
+.br
+int oumask, numask;
+.ft R
 .SH DESCRIPTION
 .I Umask
-sets a mask used whenever a file is created by
-.IR creat (2)
-or
-.IR mknod (2):
-the actual mode (see
-.IR chmod (2))
-of the newly-created file is the logical
-.B and
-of the given mode and the complement of the argument.
-Only the low-order 9 bits of the mask (the protection bits)
-participate.
-In other words, the mask shows the bits to be turned off
-when files are created.
+sets the process's file mode creation mask to \fInumask\fP
+and returns the previous value of the mask.  The low-order
+9 bits of \fInumask\fP are used whenever a file is created,
+clearing corresponding bits in the file mode
+(see
+.IR chmod (2)).
+This clearing allows each user to restrict the default access
+to his files.
 .PP
-The previous value of the mask is returned by the call.
 The value is initially 022 (write access for owner only).
 The mask is inherited by child processes.
+.SH "RETURN VALUE
+The previous value of the file mode mask is returned by the call.
 .SH SEE ALSO
-creat(2), mknod(2), chmod(2)
-.SH "ASSEMBLER (PDP-11)"
-(umask = 60.)
-.br
-.B sys umask; complmode
+chmod(2), mknod(2), open(2)
