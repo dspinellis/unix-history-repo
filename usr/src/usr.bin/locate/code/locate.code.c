@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,11 +54,14 @@ static char sccsid[] = "@(#)locate.code.c	8.3 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
+
 #include <err.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <unistd.h>
+
 #include "locate.h"
 
 #define	BGBUFSIZE	(NBG * 2)	/* size of bigram buffer */
