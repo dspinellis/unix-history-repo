@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)index.3	5.3 (Berkeley) %G%
+.\"     @(#)index.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INDEX 3
@@ -28,9 +28,7 @@ locates the first character matching
 in the null-terminated string
 .Fa s .
 .Sh RETURN VALUES
-The character
-.Fa c
-is returned if it is found; otherwise
+A pointer to the character is returned if it is found; otherwise
 .Dv NULL
 is returned.
 If
