@@ -1,4 +1,4 @@
-/*	hgraph.c	1.7	(Berkeley) 83/10/12
+/*	hgraph.c	1.8	(Berkeley) 83/10/12
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -7,7 +7,7 @@
 #include "gprint.h"
 
 
-#define  MAXVECT	50
+#define  MAXVECT	40
 #define  pi		3.14159265358979324
 #define  twopi		(2.0 * pi)
 #define  len(a, b)	sqrt((b.x-a.x) * (b.x-a.x) + (b.y-a.y) * (b.y-a.y))
