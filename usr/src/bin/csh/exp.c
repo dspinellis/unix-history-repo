@@ -6,13 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifndef SHORT_STRINGS
+#include <string.h>
+#endif /* SHORT_STRINGS */
 #if __STDC__
 # include <stdarg.h>
 #else
