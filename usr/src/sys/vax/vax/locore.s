@@ -1,4 +1,4 @@
-/*	locore.s	4.49	81/05/15	*/
+/*	locore.s	4.50	81/05/18	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -682,9 +682,9 @@ rem2:
 rem3:	.asciz	"remrq"
 
 /*
- * Materpaddr is the p->p_addr of the running process on the master
+ * Masterpaddr is the p->p_addr of the running process on the master
  * processor.  When a multiprocessor system, the slave processors will have
- * an array of spavepaddr's.
+ * an array of slavepaddr's.
  */
 	.globl	_masterpaddr
 	.data
@@ -721,7 +721,9 @@ sw3:
 	cmpl	$SRUN,r3		##
 	bneq	sw1b			##
 	clrl	P_RLINK(r2)		##
-	ashl	$PGSHIFT,*P_ADDR(r2),r0	# r0 = pcbb(p)
+	movl	*P_ADDR(r2),r0
+	movl	r0,_masterpaddr
+	ashl	$PGSHIFT,r0,r0		# r0 = pcbb(p)
 /*	mfpr	$PCBB,r1		# resume of current proc is easy
  *	cmpl	r0,r1
  */	beql	res0
@@ -738,7 +740,6 @@ _Resume:
 	svpctx
 	mtpr	r0,$PCBB
 	ldpctx
-	mfpr	$PCBB,_masterpcbb
 	movl	_u+PCB_CMAP2,_CMAP2	# yech
 res0:
 	tstl	_u+PCB_SSWAP
