@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lock.h	8.9 (Berkeley) %G%
+ *	@(#)lock.h	8.10 (Berkeley) %G%
  */
 
 #ifndef	_LOCK_H_
@@ -17,10 +17,10 @@
 /*
  * The general lock structure.  Provides for multiple shared locks,
  * upgrading from shared to exclusive, and sleeping until the lock
- * can be gained. The simple_lock is defined in <machine/param.h>.
+ * can be gained. The simple locks are defined in <machine/param.h>.
  */
 struct lock {
-	struct	simple_lock lk_interlock; /* lock on remaining fields */
+	struct	simplelock lk_interlock; /* lock on remaining fields */
 	u_int	lk_flags;		/* see below */
 	int	lk_sharecount;		/* # of accepted shared locks */
 	int	lk_waitcount;		/* # of processes sleeping for lock */
@@ -90,8 +90,8 @@ struct lock {
 #define LK_WANT_EXCL	0x00000200	/* exclusive lock sought */
 #define LK_HAVE_EXCL	0x00000400	/* exclusive lock obtained */
 #define LK_WAITDRAIN	0x00000800	/* process waiting for lock to drain */
-#define LK_DRAINING	0x00001000	/* lock is being drained */
-#define LK_DRAINED	0x00002000	/* lock has been decommissioned */
+#define LK_DRAINING	0x00004000	/* lock is being drained */
+#define LK_DRAINED	0x00008000	/* lock has been decommissioned */
 /*
  * Control flags
  *
@@ -129,14 +129,14 @@ struct proc;
 void	lockinit __P((struct lock *, int prio, char *wmesg, int timo,
 			int flags));
 int	lockmgr __P((__volatile struct lock *, u_int flags,
-			struct simple_lock *, struct proc *p));
+			struct simplelock *, struct proc *p));
 int	lockstatus __P((struct lock *));
 
 #ifdef DEBUG
-void simple_unlock __P((__volatile struct simple_lock *alp));
-int simple_lock_try __P((__volatile struct simple_lock *alp));
-void simple_lock __P((__volatile struct simple_lock *alp));
-void simple_lock_init __P((struct simple_lock *alp));
+void simple_unlock __P((__volatile struct simplelock *alp));
+int simple_lock_try __P((__volatile struct simplelock *alp));
+void simple_lock __P((__volatile struct simplelock *alp));
+void simple_lock_init __P((struct simplelock *alp));
 #else /* !DEBUG */
 #if NCPUS == 1 /* no multiprocessor locking is necessary */
 #define	simple_lock_init(alp)
