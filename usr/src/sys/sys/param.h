@@ -1,4 +1,4 @@
-/*	param.h	4.15	82/02/15	*/
+/*	param.h	4.16	82/03/30	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -95,6 +95,7 @@
 /* round a number of clicks up to a whole cluster */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ (CLSIZE-1))
 
+#define DEV_BSIZE 512
 #if CLSIZE==1
 #define	BSIZE	512		/* size of secondary block (bytes) */
 #define	INOPB	8		/* 8 inodes per block */
