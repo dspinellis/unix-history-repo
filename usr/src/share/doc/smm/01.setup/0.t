@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.7 (Berkeley) %G%
+.\"	@(#)0.t	6.8 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -15,6 +15,9 @@
 .ds Dk sd
 .ds Dn disk
 .ds Pa c
+.\" block size used on the tape
+.ds Bb 10240
+.ds Bz 20
 .\" document date
 .ds Dy 
 .de Sm
