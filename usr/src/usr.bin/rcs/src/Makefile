@@ -1,5 +1,13 @@
-NOMAN=noman
 #$Header: /usr/src/local/bin/rcs/src/RCS/Makefile,v 1.13 89/05/02 14:53:40 narten Exp $
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00122
+# --------------------         -----   ----------------------
+#
+# 30 Mar 93	Rodney W. Grimes	Moved NOMAN,
+#					added .include <bsd.prog.mk>
+#
 # Copyright (C) 1982, 1988, 1989 Walter Tichy
 # All rights reserved.
 #
@@ -254,3 +262,5 @@ HFILES=	rcsbase.h time.h
 
 depend:	${SOURCE} ${HFILES}
 	mkdep ${CFLAGS:S/-O//} ${.ALLSRC:M*.c}
+NOMAN=noman
+.include <bsd.prog.mk>
