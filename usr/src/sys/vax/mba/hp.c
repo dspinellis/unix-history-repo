@@ -1,4 +1,4 @@
-/*	hp.c	4.59	82/12/17	*/
+/*	hp.c	4.60	83/01/01	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -152,7 +152,7 @@ struct	size {
 }, hpfj_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 18 */
 	33440,	19,		/* B=cyl 19 thru 58 */
-	723991,	0,		/* C=cyl 0 thru 841 */
+	724120,	0,		/* C=cyl 0 thru 841 */
 	0, 0,
 	0, 0,
 	0, 0,
@@ -226,7 +226,7 @@ struct hpst {
 	32,	40,	32*40,	843,	si9775_sizes,	/* 9775 */
 	32,	10,	32*10,	823,	si9730_sizes,	/* 9730 */
 	32,	16,	32*16,	1024,	hpam_sizes,	/* AMPEX capricorn */
-	43,	20,	43*20,	843,	hpfj_sizes,	/* Fujitsu EAGLE */
+	43,	20,	43*20,	842,	hpfj_sizes,	/* Fujitsu EAGLE */
 };
 
 u_char	hp_offset[16] = {
@@ -265,6 +265,7 @@ hpattach(mi, slave)
 	struct mba_device *mi;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+	int ntracks;
 
 	switch (mi->mi_type) {
 
@@ -321,13 +322,15 @@ hpattach(mi, slave)
 	case HPDT_RM02:
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
-		if ((hpaddr->hphr&0xffff) == 15) {
+		ntracks = (hpaddr->hphr & 0xffff) + 1;
+		if (ntracks == 16) {
 			printf("hp%d: capricorn\n", mi->mi_unit);
 			mi->mi_type = HPDT_CAPRICORN;
-		} else {
+		} else if (ntracks == 20) {
 			printf("hp%d: eagle\n", mi->mi_unit);
 			mi->mi_type = HPDT_EAGLE;
-		}
+		} else
+			printf("hp%d: ntracks %d: unknown device\n", ntracks);
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		break;
 
