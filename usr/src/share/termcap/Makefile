@@ -18,10 +18,13 @@ clean: FRC
 	rm -f termcap
 
 install: FRC
+	install -c -o bin -g bin -m 444 map3270 ${DESTDIR}/etc/map3270
 	install -o bin -g staff -m 444 termcap ${DESTDIR}/etc/termcap
 	rm -rf ${DESTDIR}/usr/lib/tabset
 	mkdir ${DESTDIR}/usr/lib/tabset
-	cp tabset/* ${DESTDIR}/usr/lib/tabset
+	chown bin.bin ${DESTDIR}/usr/lib/tabset
+	chmod 755 ${DESTDIR}/usr/lib/tabset
+	install -c -o bin -g bin -m 444 tabset/* ${DESTDIR}/usr/lib/tabset
 
 depend:
 lint:
