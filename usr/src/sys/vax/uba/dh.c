@@ -1,4 +1,4 @@
-/*	dh.c	4.27	81/03/06	*/
+/*	dh.c	4.28	81/03/07	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -16,7 +16,8 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
+#include "../h/ubavar.h"
 #include "../h/bk.h"
 #include "../h/clist.h"
 #include "../h/mx.h"
@@ -27,13 +28,13 @@
  * There is one definition for the dh and one for the dm.
  */
 int	dhprobe(), dhattach(), dhrint(), dhxint();
-struct	uba_dinfo *dhinfo[NDH];
+struct	uba_device *dhinfo[NDH];
 u_short	dhstd[] = { 0 };
 struct	uba_driver dhdriver =
 	{ dhprobe, 0, dhattach, 0, dhstd, "dh", dhinfo };
 
 int	dmprobe(), dmattach(), dmintr();
-struct	uba_dinfo *dminfo[NDH];
+struct	uba_device *dminfo[NDH];
 u_short	dmstd[] = { 0 };
 struct	uba_driver dmdriver =
 	{ dmprobe, 0, dmattach, 0, dmstd, "dm", dminfo };
@@ -173,7 +174,7 @@ dhprobe(reg)
  * Routine called to attach a dh.
  */
 dhattach(ui)
-	struct uba_dinfo *ui;
+	struct uba_device *ui;
 {
 
 	dhsoftCAR[ui->ui_unit] = ui->ui_flags;
@@ -199,7 +200,7 @@ dmprobe(reg)
 
 /*ARGSUSED*/
 dmattach(ui)
-	struct uba_dinfo *ui;
+	struct uba_device *ui;
 {
 
 	/* no local state to set up */
@@ -217,7 +218,7 @@ dhopen(dev, flag)
 	register struct tty *tp;
 	register int unit, dh;
 	register struct dhdevice *addr;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	int s;
 
 	unit = minor(dev);
@@ -321,7 +322,7 @@ dhrint(dh)
 	register c;
 	register struct dhdevice *addr;
 	register struct tty *tp0;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	int overrun = 0;
 
 	ui = dhinfo[dh];
@@ -453,7 +454,7 @@ dhxint(dh)
 	register struct tty *tp;
 	register struct dhdevice *addr;
 	short ttybit, bar, *sbar;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register int unit;
 	u_short cntr;
 
@@ -607,7 +608,7 @@ dhreset(uban)
 {
 	register int dh, unit;
 	register struct tty *tp;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	int i;
 
 	if (dh_ubinfo[uban] == 0)
@@ -659,7 +660,7 @@ dmopen(dev)
 {
 	register struct tty *tp;
 	register struct dmdevice *addr;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register int unit;
 	register int dm;
 
@@ -694,7 +695,7 @@ dmctl(dev, bits, how)
 	dev_t dev;
 	int bits, how;
 {
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct dmdevice *addr;
 	register int unit, s;
 	int dm;
@@ -730,7 +731,7 @@ dmctl(dev, bits, how)
 dmintr(dm)
 	register int dm;
 {
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct tty *tp;
 	register struct dmdevice *addr;
 
