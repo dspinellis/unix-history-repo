@@ -162,6 +162,7 @@ char	errpfx;
 #define	standard()	setpfx('s')
 #define	warning()	setpfx('w')
 #define	recovered()	setpfx('e')
+#define	continuation()	setpfx(' ')
 
 int	cgenflg;
 
