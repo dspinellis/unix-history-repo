@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)strncpy.s	1.4 (Berkeley) %G%"
+	.asciz "@(#)strncpy.s	8.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
