@@ -1,4 +1,4 @@
-/*	locore.s	6.9	84/07/08	*/
+/*	locore.s	6.10	84/07/27	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -802,6 +802,39 @@ _copyinstr:
 	subl3	r6,12(ap),*16(ap)
 1:
 	ret
+
+/*
+ * Copy a null terminated string from the kernel
+ * address space to the user address space.
+ *
+ * copyoutstr(fromaddr, toaddr, maxlength, &lencopied)
+ */
+	.globl	_copyoutstr
+_copyoutstr:
+	.word	0x40			# save r6
+	movl	12(ap),r6		# r6 = max length
+	jlss	8b
+	movl	4(ap),r1		# r1 = kernel address
+	movl	8(ap),r3		# r3 = user address
+	bicl3	$~(NBPG-1),r3,r2	# r2 = bytes on first page
+	subl3	r2,$NBPG,r2
+1:
+	cmpl	r6,r2			# r2 = min(bytes on page, length left);
+	jgeq	2f
+	movl	r6,r2
+2:
+	probew	$3,r2,(r3)		# bytes accessible?
+	jeql	8b
+	subl2	r2,r6			# update bytes left count
+	locc	$0,r2,(r1)		# null byte found?
+	jneq	3b
+	subl2	r2,r1			# back up pointer updated by `locc'
+	movc3	r2,(r1),(r3)		# copy in next piece
+	movl	$NBPG,r2		# check next page
+	tstl	r6			# run out of space?
+	jneq	1b
+	movl	$ENOENT,r0		# set error code and return
+	jbr	9b
 
 /*
  * Copy a null terminated string from one point to another in
