@@ -3,6 +3,16 @@
 #	@(#)mkdep.sh	5.2	(Berkeley)	%G%
 #
 
+if [ $# = 0 ] ; then
+	echo 'usage: mkdep flags file ...'
+	exit 1
+fi
+
+if [ ! -w Makefile ]; then
+	echo 'mkdep: no writeable file "Makefile"'
+	exit 1
+fi
+
 CC="/bin/cc -M"
 TMP=/tmp/mkdep$$
 
@@ -13,8 +23,8 @@ cp Makefile Makefile.bak
 sed -e '/DO NOT DELETE THIS LINE/,$d' < Makefile > $TMP
 
 cat << _EOF_ >> $TMP
-# DON'T DELETE THIS LINE -- mkdep uses it.
-# DON'T PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 _EOF_
 
