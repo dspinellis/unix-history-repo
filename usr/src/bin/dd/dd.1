@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)dd.1	8.1 (Berkeley) %G%
+.\"     @(#)dd.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DD 1
@@ -140,9 +140,7 @@ The value
 .Cm oldascii
 specifies the one used in historic
 .Tn AT&T
-and
-.Pf pre- Bx 4.3 reno
-systems.
+and pre-4.3BSD-reno systems.
 .It Cm block
 Treats the input as a sequence of newline or end-of-file terminated variable
 length records independent of input and output block boundaries.
@@ -154,7 +152,7 @@ operand.
 Input records shorter than the conversion record size are padded with spaces.
 Input records longer than the conversion record size are truncated.
 The number of truncated input records, if any, are reported to the standard
-error at the completion of the copy.
+error output at the completion of the copy.
 .It Cm ebcdic , ibm , oldebcdic , oldibm
 The same as the
 .Cm block
@@ -187,16 +185,14 @@ and
 .Cm oldibm
 are maps used in historic
 .Tn AT&T
-and
-.Pf pre- Bx 4.3 reno
-systems.
+and pre-4.3BSD-reno systems.
 .It Cm lcase
 Transform uppercase characters into lowercase characters.
 .It Cm noerror
 Do not stop processing on an input error.
 When an input error occurs, a diagnostic message followed by the current
-input and output block counts will be written to standard error in the
-same format as the standard completion message.
+input and output block counts will be written to the standard error output
+in the same format as the standard completion message.
 If the
 .Cm sync
 conversion is also specified, any missing input data will be replaced
@@ -277,15 +273,15 @@ receives a
 (see the ``status'' argument for
 .Xr stty 1 )
 signal, the current input and output block counts will
-be written to standard error in the same format as the standard completion
-message.
+be written to the standard error output
+in the same format as the standard completion message.
 If
 .Nm dd
 receives a
 .Dv SIGINT
 signal, the current input and output block counts will
-be written to standard error in the same format as the standard completion
-message and
+be written to the standard error output
+in the same format as the standard completion message and
 .Nm dd
 will exit.
 .Pp
