@@ -1,99 +1,139 @@
-.\" Copyright (c) 1988 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)getgrent.3	6.3 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getgrent.3	6.4 (Berkeley) %G%
 .\"
 .TH GETGRENT 3  ""
 .AT 3
 .SH NAME
-getgrent, getgrgid, getgrnam, setgrent, endgrent setgrfile \- get group file entry
+getgrent, getgrnam, getgrgid, setgroupent, setgrfile, setgrent,
+endgrent \- get group file entry
 .SH SYNOPSIS
 .nf
-.B #include <sys/types.h>
 .B #include <grp.h>
 .PP
 .B struct group *getgrent()
 .PP
+.B struct group *getgrnam(name)
+.B char *name;
+.PP
 .B struct group *getgrgid(gid)
 .B gid_t gid;
 .PP
-.B struct group *getgrnam(name)
+.B setgroupent(stayopen)
+.B int stayopen;
+.PP
+.B void setgrfile(name)
 .B char *name;
 .PP
 .B setgrent()
 .PP
 .B void endgrent()
-.PP
-.B void setgrfile(name)
-.B char *name;
 .fi
 .SH DESCRIPTION
 .I Getgrent,
 .I getgrgid
 and
 .I getgrnam
-each return pointers to an object with the following structure
-containing the broken-out fields of a line in the group file,
-as described in
-.IR < grp.h > .
-.RS
+each return a pointer to a structure containing the broken-out fields
+of a line in the group file.  This structure is defined by the include
+file
+.IR < grp.h >,
+and contains the following fields:
 .PP
+.RS
 .nf
-struct	group {
-	char	*gr_name;
-	char	*gr_passwd;
-	gid_t	gr_gid;
-	char	**gr_mem;
+struct group {
+	char		*gr_name;		/* group name */
+	char		*gr_passwd;	/* group password */
+	gid_t	gr_gid;		/* group id */
+	char		**gr_mem;		/* group members */
 };
 .ft R
 .ad
 .fi
 .RE
 .PP
-The fields have meanings described in
-.IR grp (5).
+These fields are more completely described in
+.IR group (5).
+.PP
+.I Getgrnam
+and
+.I getgrgid
+search the group database for a matching group name or group id,
+respectively, returning the first one encountered.  Identical group
+names or group gids may result in undefined behavior.
+.PP
+.I Getgrent
+sequentially reads the group database and is intended for programs
+that wish to step through the complete list of groups.
+.PP
+All three routines will open the group file for reading, if necesssary.
 .PP
 .I Setgrfile
 changes the default group file to
-.IR name ,
-thus allowing usage of alternate group files.
+.IR file ,
+thus allowing the use of alternate group files.
+.PP
+.I Setgroupent
+opens the file, or rewinds it if it is already open.  If
+.I stayopen
+is non-zero, file descriptors are left open, significantly speeding
+up subsequent calls.  This functionality is unnecessary for
+.I getgrent
+as it doesn't close its file descriptors by default.  It should also
+be noted that it is dangerous for long-running programs to use this
+functionality as the group file may be updated.
 .PP
 .I Setgrent
-opens the file (closing any previously opened file) or rewinds it
-if it it already open.
+is identical to
+.I setgroupent
+with an argument of zero.
 .PP
 .I Endgrent
 closes any open files.
 .PP
-.I Getgrgid
-and
-.I getgrnam
-search the entire file (opening it if necessary) for a matching
-.I gid
-or
-.IR name .
 .PP
-For programs wishing to read the entire database,
-.I getgrent
-reads the next entry (opening the file if necessary).
 .SH FILES
 /etc/group
 .SH "SEE ALSO"
-getlogin(3), getpwent(3), group(5)
+ getpwent(3), group(5)
 .SH DIAGNOSTICS
 The routines
 .IR getgrent ,
-.IR getgruid ,
-and
 .IR getgrnam ,
-return a null pointer (0) on EOF or error.
-.I Setgrent
-returns 0 on failure, 1 on success.
+and
+.IR getgrgid ,
+return a null pointer on EOF or error.
+.I Setgroupent
+and
+.I setgrent
+return 0 on failure, 1 on success.
 .I Endgrent
 and
 .I setgrfile
 have no return value.
 .SH BUGS
-All information is contained in a static area so it must be
-copied if it is to be saved.
+All information is contained in a static buffer which is overwritten
+by each new call.  It must be copied elsewhere to be retained.
+.PP
+The routines
+.IR getgrent ,
+.IR endgrent ,
+.IR setgroupent ,
+and
+.IR setgrent
+are fairly useless in a networked environment and should be
+avoided, if possible.
