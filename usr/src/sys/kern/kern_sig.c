@@ -3,12 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.1 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
 #include "../machine/psl.h"
+#include "../machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
@@ -490,7 +491,6 @@ psignal(p, sig)
 		 * It will either never be noticed, or noticed very soon.
 		 */
 		if (p == u.u_procp && !noproc)
-#include "../vax/mtpr.h"
 			aston();
 		goto out;
 	}

@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.2 (Berkeley) %G%
+ *	@(#)kern_time.c	7.3 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
 
 #include "param.h"
 #include "dir.h"		/* XXX */
@@ -14,6 +12,9 @@
 #include "kernel.h"
 #include "inode.h"
 #include "proc.h"
+
+#include "../machine/reg.h"
+#include "../machine/cpu.h"
 
 /* 
  * Time of day and interval timer support.

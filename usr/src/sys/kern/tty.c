@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.2 (Berkeley) %G%
+ *	@(#)tty.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -19,7 +19,7 @@
 #include "file.h"
 #include "conf.h"
 #include "buf.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "uio.h"
 #include "kernel.h"
 
@@ -465,7 +465,7 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case TIOCLGET:
-		*(int *)data = ((unsigned) tp->t_flags) >> 16;
+		*(int *)data = ((unsigned)tp->t_flags) >> 16;
 		break;
 
 	/*
@@ -504,20 +504,6 @@ ttioctl(tp, com, data, flag)
 		*(struct winsize *)data = tp->t_winsize;
 		break;
 
-	case TIOCCONS:
-	    {
-		extern struct tty *constty;
-
-		if (constty != NULL)
-			return (EBUSY);
-#ifndef	UCONSOLE
-		if (!suser())
-			return (EPERM);
-#endif
-		constty = tp;
-		break;
-	    }
-
 	default:
 		return (-1);
 	}
@@ -549,7 +535,7 @@ ttselect(dev, rw)
 
 	case FREAD:
 		nread = ttnread(tp);
-		if ((nread > 0) || ((tp->t_state & TS_CARR_ON) == 0))
+		if (nread > 0 || (tp->t_state & TS_CARR_ON) == 0)
 			goto win;
 		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
@@ -1280,15 +1266,15 @@ ttycheckoutq(tp, wait)
 	hiwat = TTHIWAT(tp);
 	s = spltty();
 	if (tp->t_outq.c_cc > hiwat + 200)
-	    while (tp->t_outq.c_cc > hiwat) {
-		ttstart(tp);
-		if (wait == 0) {
-			splx(s);
-			return (0);
+		while (tp->t_outq.c_cc > hiwat) {
+			ttstart(tp);
+			if (wait == 0) {
+				splx(s);
+				return (0);
+			}
+			tp->t_state |= TS_ASLEEP;
+			sleep((caddr_t)&tp->t_outq, TTOPRI);
 		}
-		tp->t_state |= TS_ASLEEP;
-		sleep((caddr_t)&tp->t_outq, TTOPRI);
-	}
 	splx(s);
 	return (1);
 }
