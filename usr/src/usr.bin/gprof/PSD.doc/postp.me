@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.10 %G%
+\"	@(#)postp.me	1.11 %G%
 .EQ
 delim ##
 gsize 12
@@ -9,7 +9,7 @@ Having gathered the arcs of the call graph and timing information
 for an execution of the program,
 we are interested in attributing the time for each routine to the
 routines that call it.
-We construct a dynamic call graph with arcs from caller to callee,
+We build a dynamic call graph with arcs from caller to callee,
 and propagate time from descendants to ancestors
 by topologically sorting the call graph.
 Time propagation is performed from the leaves of the
@@ -65,7 +65,7 @@ T sub r ~ = ~ {S sub r} ~ + ~
                    sum from {r ~ roman CALLS ~ e}
                    {T sub e times {{C sub e sup r} over {C sub e}}}
 .EN
-where #r ~ roman CALLS ~ e# is a relation indicating all routines
+where #r ~ roman CALLS ~ e# is a relation showing all routines
 #e# called by a routine #r#.
 This relation is easily available from the call graph.
 .pp
@@ -169,7 +169,7 @@ would require two moderately difficult steps:
 finding the source text for the program
 (which may not be available),
 and scanning and parsing that text,
-which may be in any one of a number of languages.
+which may be in any one of several languages.
 In our programming system,
 the static calling information is also contained in the 
 executable version of the program,
