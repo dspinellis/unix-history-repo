@@ -1,4 +1,4 @@
-/*	param.h	4.34	83/06/02	*/
+/*	param.h	4.35	83/06/10	*/
 
 /*
  * Machine type dependent parameters.
@@ -52,7 +52,7 @@
 
 #define	ISSIG(p) \
 	((p)->p_sig && ((p)->p_flag&STRC || \
-	 ((p)->p_sig &~ ((p)->p_sigignore | (p)->p_sigmask)) && issig()))
+	 ((p)->p_sig &~ ((p)->p_sigignore | (p)->p_sigmask))) && issig())
 
 /*
  * Fundamental constants of the implementation.
