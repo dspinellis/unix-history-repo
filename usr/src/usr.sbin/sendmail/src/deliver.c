@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.80		%G%);
+SCCSID(@(#)deliver.c	3.81		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -165,7 +165,7 @@ deliver(firstto)
 		*pvp = NULL;
 
 		/* send the initial SMTP protocol */
-		smtpinit(m, pv, (ADDRESS *) NULL);
+		i = smtpinit(m, pv, (ADDRESS *) NULL);
 # ifdef QUEUE
 		if (i == EX_TEMPFAIL)
 		{
@@ -350,7 +350,7 @@ deliver(firstto)
 		if (clever)
 			smtpquit(pv[0]);
 # endif SMTP
-		define('g', NULL);
+		define('g', (char *) NULL);
 		return (0);
 	}
 
@@ -405,7 +405,7 @@ deliver(firstto)
 # endif QUEUE
 
 	errno = 0;
-	define('g', NULL);
+	define('g', (char *) NULL);
 	return (i);
 }
 /*
@@ -446,7 +446,7 @@ deliver(firstto)
 		pid = fORKfN();\
 		if (pid >= 0)\
 			break;\
-		sleep((unsigned) NFORKTRIES - i);\
+		sleep(NFORKTRIES - i);\
 	}\
 }
 /*
@@ -1121,6 +1121,12 @@ putbody(fp, m, xdot)
 	**  Output the body of the message
 	*/
 
+#ifdef lint
+	/* m will be needed later for complete smtp emulation */
+	if (m == NULL)
+		return;
+#endif lint
+
 	if (TempFile != NULL)
 	{
 		rewind(TempFile);
@@ -1204,6 +1210,7 @@ remotename(name, m, force)
 	extern char **prescan();
 	register char **pvp;
 	extern char *getxpart();
+	extern ADDRESS *buildaddr();
 
 	/*
 	**  See if this mailer wants the name to be rewritten.  There are
@@ -1213,7 +1220,7 @@ remotename(name, m, force)
 	*/
 
 	if (!bitset(M_RELRCPT, m->m_flags) && !force)
-		return;
+		return (name);
 
 	/*
 	**  Do general rewriting of name.
@@ -1303,10 +1310,10 @@ samefrom(ifrom, efrom)
 	if (p == NULL)
 		goto failure;
 	*p = '\0';
-	strcpy(buf, ifrom);
-	strcat(buf, " at ");
+	(void) strcpy(buf, ifrom);
+	(void) strcat(buf, " at ");
 	*p++ = '@';
-	strcat(buf, p);
+	(void) strcat(buf, p);
 	if (strcmp(buf, efrom) == 0)
 		goto success;
 

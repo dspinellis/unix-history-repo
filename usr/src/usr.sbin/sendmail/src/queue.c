@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.15		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.16		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.15		%G%);
+SCCSID(@(#)queue.c	3.16		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -45,8 +45,8 @@ queueup(e, queueall)
 	**  Create control file.
 	*/
 
-	strcpy(cf, QueueDir);
-	strcat(cf, "/tfXXXXXX");
+	(void) strcpy(cf, QueueDir);
+	(void) strcat(cf, "/tfXXXXXX");
 	(void) mktemp(cf);
 	cfp = fopen(cf, "w");
 	if (cfp == NULL)
@@ -68,18 +68,18 @@ queueup(e, queueall)
 	{
 		register FILE *dfp;
 
-		strcpy(buf, QueueDir);
-		strcat(buf, "/dfXXXXXX");
+		(void) strcpy(buf, QueueDir);
+		(void) strcat(buf, "/dfXXXXXX");
 		e->e_df = newstr(mktemp(buf));
 		dfp = fopen(e->e_df, "w");
 		if (dfp == NULL)
 		{
 			syserr("queueup: cannot create %s", e->e_df);
-			fclose(cfp);
+			(void) fclose(cfp);
 			return;
 		}
 		(*e->e_putbody)(dfp, Mailer[1], FALSE);
-		fclose(dfp);
+		(void) fclose(dfp);
 	}
 
 	/*
@@ -146,7 +146,7 @@ queueup(e, queueall)
 	if (link(cf, buf) < 0)
 		syserr("cannot link(%s, %s), df=%s", cf, buf, e->e_df);
 	else
-		unlink(cf);
+		(void) unlink(cf);
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.
@@ -175,7 +175,7 @@ runqueue(forkflag)
 	if (QueueIntvl != 0)
 	{
 		(void) signal(SIGALRM, reordersig);
-		(void) alarm((unsigned) QueueIntvl);
+		(void) alarm(QueueIntvl);
 	}
 
 	if (forkflag)
@@ -187,7 +187,7 @@ runqueue(forkflag)
 			return;
 		}
 		else
-			(void) alarm((unsigned) 0);
+			(void) alarm(0);
 	}
 
 	for (;;)
@@ -280,7 +280,7 @@ reordersig()
 	*/
 
 	(void) signal(SIGALRM, reordersig);
-	(void) alarm((unsigned) QueueIntvl);
+	(void) alarm(QueueIntvl);
 }
 /*
 **  ORDERQ -- order the work queue.
@@ -344,10 +344,10 @@ orderq()
 			continue;
 
 		/* yes -- find the control file location */
-		strcpy(cbuf, QueueDir);
-		strcat(cbuf, "/");
+		(void) strcpy(cbuf, QueueDir);
+		(void) strcat(cbuf, "/");
 		p = &cbuf[strlen(cbuf)];
-		strcpy(p, d->d_name);
+		(void) strcpy(p, d->d_name);
 
 		/* open control file */
 		cf = fopen(cbuf, "r");

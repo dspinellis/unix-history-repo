@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.42		%G%);
+SCCSID(@(#)parseaddr.c	3.43		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -390,7 +390,7 @@ toktype(c)
 	{
 		firstime = FALSE;
 		expand("$o", buf, &buf[sizeof buf - 1], CurEnv);
-		strcat(buf, DELIMCHARS);
+		(void) strcat(buf, DELIMCHARS);
 	}
 	if (c == MATCHCLASS || c == MATCHREPL)
 		return (ONEMORE);
@@ -692,8 +692,8 @@ buildaddr(tv, a)
 		while (*++tv != NULL)
 		{
 			if (buf[0] != '\0')
-				strcat(buf, " ");
-			strcat(buf, *tv);
+				(void) strcat(buf, " ");
+			(void) strcat(buf, *tv);
 		}
 		usrerr(buf);
 		return (NULL);
@@ -721,7 +721,7 @@ buildaddr(tv, a)
 		}
 		buf[0] = '\0';
 		while (*tv != NULL && **tv != CANONUSER)
-			strcat(buf, *tv++);
+			(void) strcat(buf, *tv++);
 		a->q_host = newstr(buf);
 	}
 	else

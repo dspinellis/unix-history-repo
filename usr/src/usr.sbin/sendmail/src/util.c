@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.15		%G%);
+SCCSID(@(#)util.c	3.16		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -103,7 +103,7 @@ capitalize(s)
 
 char *
 xalloc(sz)
-	register unsigned int sz;
+	register int sz;
 {
 	register char *p;
 
@@ -136,8 +136,8 @@ newstr(s)
 {
 	register char *p;
 
-	p = xalloc((unsigned) (strlen(s) + 1));
-	strcpy(p, s);
+	p = xalloc(strlen(s) + 1);
+	(void) strcpy(p, s);
 	return (p);
 }
 /*
@@ -172,7 +172,7 @@ copyplist(list, copycont)
 
 	vp++;
 
-	newvp = (char **) xalloc((unsigned) (vp - list) * sizeof *vp);
+	newvp = (char **) xalloc((vp - list) * sizeof *vp);
 	bmove((char *) list, (char *) newvp, (vp - list) * sizeof *vp);
 
 	if (copycont)

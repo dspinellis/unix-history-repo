@@ -1,7 +1,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)macro.c	3.12		%G%);
+SCCSID(@(#)macro.c	3.13		%G%);
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.

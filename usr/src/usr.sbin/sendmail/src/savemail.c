@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.30		%G%);
+SCCSID(@(#)savemail.c	3.31		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -33,8 +33,6 @@ savemail()
 	extern char *ttypath();
 	static int exclusive;
 	typedef int (*fnptr)();
-	ENVELOPE errenvelope;
-	register ENVELOPE *ee;
 	extern ENVELOPE *newenvelope();
 
 	if (exclusive++)
@@ -191,7 +189,6 @@ savemail()
 **		mail.
 */
 
-static char	*ErrorMessage;
 static bool	SendBody;
 
 returntosender(msg, returnto, sendbody)
@@ -240,7 +237,7 @@ returntosender(msg, returnto, sendbody)
 
 	/* if the error message was "queued", make that happen */
 	if (bitset(QQUEUEUP, to_addr.q_flags))
-		queueup(ee);
+		queueup(ee, FALSE);
 
 	/* restore state */
 	CurEnv = CurEnv->e_parent;
@@ -251,30 +248,6 @@ returntosender(msg, returnto, sendbody)
 		return (-1);
 	}
 	return (0);
-}
-/*
-**  ERRHEADER -- Output the header for error mail.
-**
-**	Parameters:
-**		xfile -- the transcript file.
-**		fp -- the output file.
-**
-**	Returns:
-**		none
-**
-**	Side Effects:
-**		Outputs the header for an error message.
-*/
-
-errheader(fp, m)
-	register FILE *fp;
-	register struct mailer *m;
-{
-	/*
-	**  Output header of error message.
-	*/
-
-	putheader(fp, m);
 }
 /*
 **  ERRBODY -- output the body of an error message.
@@ -328,15 +301,15 @@ errbody(fp, m, xdot)
 		{
 			fprintf(fp, "\n   ----- Unsent message follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, Mailer[1], CurEnv->e_parent);
+			putheader(fp, m, CurEnv->e_parent);
 			fprintf(fp, "\n");
-			putbody(fp, Mailer[1], xdot);
+			putbody(fp, m, xdot);
 		}
 		else
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, Mailer[1]);
+			putheader(fp, m, CurEnv);
 		}
 	}
 	else
