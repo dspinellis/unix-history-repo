@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)locore.s	5.8 (Berkeley) %G%
+ *	@(#)locore.s	5.9 (Berkeley) %G%
  */
 
 /*
@@ -102,7 +102,6 @@ _/**/mname:	.globl	_/**/mname;		\
 	.set	atmemsz,0x100000-0xa0000
 	.set	atpgs,(atmemsz>>PGSHIFT)
 	SYSMAP(ATDevmem,atdevbase,atpgs)
-/*#define USRIOSIZE 30*/
 	SYSMAP(Usriomap,usrio,USRIOSIZE+CLSIZE) /* for PHYSIO */
 	ZSYSMAP(ekmempt,kmemlimit,0)
 	SYSMAP(Usrptmap,usrpt,USRPTSIZE+CLSIZE)
@@ -119,15 +118,16 @@ eSysmap:
 	# .set rptes,(ptes)%1024
 	# .set rptes,1024-rptes
 	# .set ptes,ptes+rptes
-	.set Npdes,10
+	.set Npdes,8
 	# .space (NBPG - sz)
 
 /*
  * Initialization
  */
 	.data
-	.globl	_cpu, _boothowto, _bootdev, _cyloffset, _Maxmem
+	.globl	_cpu, _cold, _boothowto, _bootdev, _cyloffset, _Maxmem
 _cpu:	.long	0		# are we 386, 386sx, or 486
+_cold:	.long	1		# cold till we are not
 	.text
 	.globl	start
 start:				# This is assumed to be location zero!
@@ -197,34 +197,12 @@ start:				# This is assumed to be location zero!
 	subl	%edi,%ecx
 	addl	$(UPAGES*NBPG)+NBPG+NBPG+NBPG,%ecx
 	#	txt+data+proc zero pt+u.
-	# any other junk?
-	# addl	$ NBPG-1,%ecx
-	# andl	$~(NBPG-1),%ecx
-	# shrl	$2,%ecx	# convert to long word count
 	xorl	%eax,%eax	# pattern
 	cld
 	rep
 	stosb
 
-#ifdef notdef
-	/* pass parameters on stack (howto, bootdev, unit, cyloffset) */
-
-	movl	4(%esp),%eax
-	movl	%eax,_boothowto-SYSTEM
-	movl	8(%esp),%eax
-	movl	%eax,_bootdev-SYSTEM
-	movl	12(%esp),%eax
-	movl	%eax, _cyloffset-SYSTEM
-
-
-	movl	$0x36000,%edi
-	movl	$0x68000,%ecx
-	xorl	%eax,%eax	# pattern
-	cld
-	rep
-	stosb
-
-#endif
+/* should do all of memory, but some systems don't probe correctly (yet)*/
 	movl	$0x100000,%edi
 	movl	$0x200000,%ecx
 	xorl	%eax,%eax	# pattern
@@ -290,16 +268,9 @@ start:				# This is assumed to be location zero!
 	addl	$4,%ebx				# next pte
 	loop	1b
 
- /*# map proc 0's page directory*/
+ /* locate proc 0's page directory*/
 	lea	(1*NBPG)(%esi),%eax	# physical address of ptd in proc 0
 	movl	%eax,%edi		# remember ptd physical address
-#ifdef dubious
-	orl	$ PG_V|PG_URKW,%eax	#  having these bits set,
-	lea	(0*NBPG)(%esi),%ebx	# physical address of stack pt in proc 0
-	addl	$(UPTEOFF*4),%ebx
-	addl	$(UPAGES*4),%ebx
-	movl	%eax,0(%ebx)
-#endif
 
 /*
  * Construct a page table directory
@@ -317,7 +288,6 @@ start:				# This is assumed to be location zero!
 	loop	1b
 					# install a pde for temporary double map
 	movl	$_Sysmap+4096-SYSTEM,%eax	# physical address of temp page table
-	# movl	$_Sysmap-SYSTEM,%eax	# physical address of temp page table
 	orl	$ PG_V,%eax		# pde entry is valid
 	movl	%edi,%ebx		# phys address of ptd in proc 0
 	movl	%eax,0(%ebx)			# which is where temp maps!
@@ -356,6 +326,7 @@ begin:
 	movl	%ecx,PCB_P0BR(%eax)	# p0br: SVA of text/data user PT
 	xorl	%ecx,%ecx
 	movl	%ecx,PCB_P0LR(%eax)	# p0lr: 0 (doesn t really exist)
+	movl	%ecx,PCB_FLAGS(%eax)	# no fp yet.
 	movl	$_usrpt+NBPG,%ecx	# addr of end of PT
 	subl	$ P1PAGES*4,%ecx		# backwards size of P1 region
 	movl	%ecx,PCB_P1BR(%eax)	# p1br: P1PAGES from end of PT
@@ -393,10 +364,7 @@ begin:
 	.globl	__exit
 __exit:
 	call _reset_cpu
-	lidt	xaxa		# invalidate interrupt descriptor
-	movl	$0,%esp		# hardware "freeze" fault
-	ret
-xaxa:	.long	0,0
+	/* NOTREACHED */
 
 	.set	exec,11
 	.set	exit,1
@@ -410,7 +378,7 @@ xaxa:	.long	0,0
  * If the exec fails, process 1 exits.
  */
 _icode:
-	# pushl	$argv-_icode
+	# pushl	$argv-_icode	# gas fucks up again
 	movl	$argv,%eax
 	subl	$_icode,%eax
 	pushl	%eax
@@ -464,6 +432,7 @@ ___divsi3:
 
 	.globl	_inb
 _inb:	movl	4(%esp),%edx
+	inb	$0x84,%al	# Compaq SystemPro 
 	subl	%eax,%eax	# clr eax
 	NOP
 	inb	%dx,%al
@@ -475,6 +444,7 @@ _outb:	movl	4(%esp),%edx
 	movl	8(%esp),%eax
 	NOP
 	outb	%al,%dx
+	inb	$0x84,%al
 	NOP
 	ret
 
@@ -700,8 +670,9 @@ _lcr3:
 	ret
 
 	# lcr0(cr0)
-	.globl	_lcr0
+	.globl	_lcr0,_load_cr0
 _lcr0:
+_load_cr0:
 	movl	4(%esp),%eax
 	movl	%eax,%cr0
 	ret
@@ -918,8 +889,6 @@ rem2:
 
 rem3:	.asciz	"remrq"
 sw0:	.asciz	"swtch"
-sw01:	.asciz	"swtch1"
-sw02:	.asciz	"swtch2"
 
 /*
  * When no processes are on the runq, Swtch branches to idle
@@ -986,10 +955,6 @@ sw2:
 	movl	P_ADDR(%ecx),%edx
 	movl	(%edx),%eax
 	movl	%eax,_Swtchmap
-	# movl	4(%edx),%eax
-	# movl	%eax,_Swtchmap+4
-	# movl	%cr3,%eax
-	# movl	%eax,%cr3
 	movl	_Swtchbase+PCB_CR3,%edx
 
 /* switch to new process. first, save context as needed */
@@ -1004,13 +969,29 @@ sw2:
 	movl	%esi, PCB_ESI(%ecx)
 	movl	%edi, PCB_EDI(%ecx)
 
-	fsave	PCB_SAVEFPU(%ecx)
+#ifdef NPX
+	movb	PCB_FLAGS(%ecx),%al
+	/* have we used fp, and need a save? */
+	andb	$ FP_WASUSED|FP_NEEDSSAVE,%al
+	cmpb	$ FP_WASUSED|FP_NEEDSSAVE,%al
+	jne	1f
+	movl	%cr0,%eax		/* insure fp is enabled */
+	andb 	$0xfb,%al
+	movl	%eax,%cr0
+	fnsave	PCB_SAVEFPU(%ecx)
+	orb 	$4,%al			/* disable it */
+	movl	%eax,%cr0
+	movb	PCB_FLAGS(%ecx),%al
+	xorb	$ FP_NEEDSSAVE,%al	/* save processed */
+	movb	%al,PCB_FLAGS(%ecx)
+1:
+#endif
 
 	movl	_CMAP2,%eax		# save temporary map PTE
 	movl	%eax,PCB_CMAP2(%ecx)	# in our context
 
  	orl	$ I386_CR3PAT,%edx
-	movl	%edx,%cr3	# context switch
+	movl	%edx,%cr3	# context switch address space
 
 	movl	$_u,%ecx
 
@@ -1023,18 +1004,21 @@ sw2:
 	movl	PCB_EIP(%ecx), %eax
 	movl	%eax, (%esp)
 
-	frstor	PCB_SAVEFPU(%ecx)
+#ifdef NPX
+	movb	PCB_FLAGS(%ecx),%al
+	/* if fp could be used, a dna trap will do a restore */
+	testb	$ FP_WASUSED,%al
+	je	1f
+	orb	$ FP_NEEDSRESTORE,%al
+	movb	%al, PCB_FLAGS(%ecx)
+1:
+#endif
 
 	movl	PCB_CMAP2(%ecx),%eax	# get temporary map
 	movl	%eax,_CMAP2		# reload temporary map PTE
-#ifdef FPUNOTYET
-#endif
 	cmpl	$0,PCB_SSWAP(%ecx)	# do an alternate return?
 	jne	res3			# yes, go reload regs
 
-	# pushl	PCB_IML(%ecx)
-	# call	_splx
-	# popl	%eax
 	call _spl0
 	movl	$0,%eax
 	ret
@@ -1051,7 +1035,6 @@ res3:
 	movl	20(%eax),%edx		# get rta
 	movl	%edx,(%esp)		# put in return frame
 
-	# call	_spl0
 	pushl	_u+PCB_IML
 	call	_splx
 	popl	%eax
@@ -1063,7 +1046,6 @@ res3:
 /*
  * Resume(p_addr)
  * current just used to fillout u. tss so fork can fake a return to swtch
- * [ all thats really needed is esp and eip ]
  */
 ENTRY(resume)
 	# movl	4(%esp),%ecx
@@ -1077,12 +1059,20 @@ ENTRY(resume)
 	movl	%ebp, PCB_EBP(%ecx)
 	movl	%esi, PCB_ESI(%ecx)
 	movl	%edi, PCB_EDI(%ecx)
-#ifdef FPUNOTYET
+#ifdef NPX
+	/* have we ever used fp, and need to save? */
+	testb	$ FP_WASUSED,PCB_FLAGS(%ecx)
+	je	1f
+	movl	%cr0,%eax
+	andb 	$0xfb,%al
+	movl	%eax,%cr0
+	fnsave	PCB_SAVEFPU(%ecx)
+	orb 	$4,%eax
+	movl	%eax,%cr0
+1:
 #endif
-	fsave	PCB_SAVEFPU(%ecx)
 	movl	$0,%eax
 	ret
-
 
 .data
 	.globl	_cyloffset
@@ -1094,16 +1084,12 @@ _nofault:	.long	0
 	.globl _addupc
 	.globl _astoff
 	.globl _doadump
-	.globl _inittodr
-	.globl _physaddr
-_addupc:
+_addupc:		# sorry, no profiling
 	.byte 0xcc
 _astoff:
 	ret
 _doadump:
-	.byte 0xcc
-_physaddr:
-	.byte 0xcc
+	call _reset_cpu
 
 #define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
 /*#define	PANIC(msg)	xorl %eax,%eax; movl %eax,_waittime; pushl 1f; \
@@ -1195,26 +1181,10 @@ alltraps:
 	movw	%ax,%es
 	incl	_cnt+V_TRAP
 	call	_trap
-
-#ifdef junk
-	cmpl	$0xfc000000,12*4(%esp)	# is it a user pc
-	ja	1f 
-	cmpw	$0x1f,13*4(%esp)	# is it a user cs
-	je	1f 
-	.data	; lx: .asciz "t user cs %x?" ; .text
-2:
-	movl	13*4(%esp),%eax
-	pushl	%eax
-	pushl	$lx
-	call	_pg
-	popl %eax ; popl %eax
-	jmp	2b
-1:
-#endif junk
-
 	pop %es
 	pop %ds
 	popal
+	nop
 	addl	$8,%esp			# pop type, code
 	iret
 
@@ -1229,26 +1199,13 @@ IDTVEC(syscall)
 	movw	%ax,%ds
 	movw	%ax,%es
 	call	_syscall
-
-#ifdef notdef
-	cmpw	$0x1f,10*4(%esp)	# is user cs what it should be?
-	jz	1f
-	.data	; lz: .asciz "s user cs %x?" ; .text
-2:
-	movl	10*4(%esp),%eax
-	pushl	%eax
-	pushl	$lz
-	call	_pg
-	jmp	2b
-1:
-#endif
-
 	movw	__udatasel,%ax	# switch back to user segments
 	movw	%ax,%ds
 	movw	%ax,%es
 	popal
+	nop
 	popfl
-	lret			# back we go, we hope!
+	lret
 
 ENTRY(htonl)
 ENTRY(ntohl)
