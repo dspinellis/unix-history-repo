@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.78 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -224,7 +224,7 @@ readcf(cfname)
 			*p = '\0';
 			(void) expand(&buf[1], exbuf, &exbuf[sizeof exbuf]);
 			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf,
-					     sizeof pvpbuf, NULL);
+					     sizeof pvpbuf, NULL, NULL);
 			nfuzzy = 0;
 			if (rwp->r_lhs != NULL)
 			{
@@ -308,7 +308,7 @@ readcf(cfname)
 				continue;
 			(void) expand(p, exbuf, &exbuf[sizeof exbuf]);
 			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf,
-					     sizeof pvpbuf, NULL);
+					     sizeof pvpbuf, NULL, NULL);
 			if (rwp->r_rhs != NULL)
 			{
 				register char **ap;

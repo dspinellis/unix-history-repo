@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -96,18 +96,20 @@ mime8to7(mci, header, e, boundaries, flags)
 	char bbuf[128];
 	char buf[MAXLINE];
 	char pvpbuf[MAXLINE];
+	extern char MimeTokenTab[256];
 
 	if (tTd(43, 1))
 	{
 		printf("mime8to7: boundary=%s\n",
 			boundaries[0] == NULL ? "<none>" : boundaries[0]);
 		for (i = 1; boundaries[i] != NULL; i++)
-			printf("\tboundaries[i]\n");
+			printf("\t%s\n", boundaries[i]);
 	}
 	type = subtype = "-none-";
 	p = hvalue("Content-Type", header);
 	if (p != NULL &&
-	    (pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL)) != NULL &&
+	    (pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL,
+			   MimeTokenTab)) != NULL &&
 	    pvp[0] != NULL)
 	{
 		type = *pvp++;
@@ -155,7 +157,7 @@ mime8to7(mci, header, e, boundaries, flags)
 		else
 			p = argv[i].value;
 		if (*p == '"')
-			q = strchr(p, '"');
+			q = strchr(++p, '"');
 		else
 			q = p + strlen(p);
 		if (q - p > sizeof bbuf - 1)
@@ -614,8 +616,7 @@ isboundary(line, boundaries)
 {
 	register int i;
 
-	i = 0;
-	while (boundaries[i] != NULL)
+	for (i = 0; boundaries[i] != NULL; i++)
 	{
 		if (strcmp(line, boundaries[i]) == 0)
 			return i;
