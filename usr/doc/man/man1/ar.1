@@ -1,0 +1,104 @@
+.th AR I 3/15/72
+.sh NAME
+ar \*- archive and library maintainer
+.sh SYNOPSIS
+.bd ar
+key afile name ...
+.sh DESCRIPTION
+.it Ar
+maintains groups of files
+combined into a single archive file.
+Its main use
+is to create and update library files as used by the loader.
+It can be used, though, for any similar purpose.
+.s3
+.it Key
+is one character from the set
+.bd drtux,
+optionally concatenated with
+.bd v.
+.it Afile
+is the archive file.
+The
+.it names
+are constituent files in the archive file.
+The meanings of the
+.it key
+characters are:
+.s3
+.bd d
+means delete the named files from the archive file.
+.s3
+.bd r
+means replace the named files in the archive file.
+If the archive file does not exist,
+.bd r
+creates it.
+If the named files are not in the archive file, they are appended.
+.s3
+.bd t
+prints a table of contents of the archive file.
+If no names are given, all files in the archive are tabled.
+If names are given, only those files are tabled.
+.s3
+.bd u
+is similar to
+.bd r
+except that only those
+files that have been modified are replaced.
+If no names are given, all files in the archive that
+have been modified are replaced by the modified version.
+.s3
+.bd x
+extracts the named files.
+If no names are given, all files in the archive are
+extracted.
+In neither case does
+.bd x
+alter the archive file.
+.s3
+.bd v
+means verbose.
+Under the verbose option,
+.it ar
+gives a file-by-file
+description of the making of a
+new archive file from the old archive and the constituent files.
+The following abbreviations
+are used:
+.s3
+.bd "   c"
+copy
+.bd "   a"
+append
+.bd "   d"
+delete
+.bd "   r"
+replace
+.bd "   x"
+extract
+.sh FILES
+/tmp/vtm?	temporary
+.sh "SEE ALSO"
+ld (I), archive (V)
+.sh BUGS
+Option
+.bd tv
+should be implemented as a table with more information.
+.s3
+There should be a way to specify the placement
+of a new file in an archive.
+Currently, it is placed at the end.
+.s3
+Since
+.it ar
+has not been rewritten to
+deal properly with the new file system
+modes,
+extracted files have mode 666.
+.s3
+For the same reason,
+only the first 8 characters of file names are significant.
+.s3
+If the same file is mentioned twice in an argument list,
+it may be put in the archive twice.
