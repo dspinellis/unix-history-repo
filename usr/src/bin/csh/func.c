@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)func.c	4.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)func.c	4.14 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -736,7 +736,7 @@ echo(sep, v)
 			bferr("No match");
 	} else
 		trim(v);
-	if (sep == ' ' && !strcmp(*v, "-n"))
+	if (sep == ' ' && *v && !strcmp(*v, "-n"))
 		nonl++, v++;
 	while (cp = *v++) {
 		register int c;
@@ -901,7 +901,8 @@ dolimit(v)
 		return;
 	}
 	limit = getval(lp, v+1);
-	setlim(lp, limit);
+	if (setlim(lp, limit) < 0)
+		error(NOSTR);
 }
 
 getval(lp, v)
@@ -1003,16 +1004,21 @@ dounlimit(v)
 	register char **v;
 {
 	register struct limits *lp;
+	int err = 0;
 
 	v++;
 	if (*v == 0) {
 		for (lp = limits+1; lp->limconst >= 0; lp++)
-			setlim(lp, (int)RLIM_INFINITY);
+			if (setlim(lp, (int)RLIM_INFINITY) < 0)
+				err++;
+		if (err)
+			error(NOSTR);
 		return;
 	}
 	while (*v) {
 		lp = findlim(*v++);
-		setlim(lp, (int)RLIM_INFINITY);
+		if (setlim(lp, (int)RLIM_INFINITY) < 0)
+			error(NOSTR);
 	}
 }
 
@@ -1022,12 +1028,16 @@ setlim(lp, limit)
 	struct rlimit rlim;
 
 	(void) getrlimit(lp->limconst, &rlim);
-  	if(limit == RLIM_INFINITY && geteuid() != 0)
+  	if (limit == RLIM_INFINITY && geteuid() != 0)
  		rlim.rlim_cur = rlim.rlim_max;
  	else
  		rlim.rlim_cur = limit;
-	if (setrlimit(lp->limconst, &rlim) < 0)
-		Perror(bname);
+	if (setrlimit(lp->limconst, &rlim) < 0) {
+		printf("%s: %s: Can't %s limit\n", bname, lp->limname,
+		    limit == RLIM_INFINITY ? "remove" : "set");
+		return (-1);
+	}
+	return (0);
 }
 
 dosuspend()
