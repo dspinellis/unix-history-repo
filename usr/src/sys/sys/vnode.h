@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.12 (Berkeley) %G%
+ *	@(#)vnode.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -62,7 +62,7 @@ struct vnode {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;	/* unix ipc (VSOCK) */
 		struct text	*vu_text;	/* text/mapped region (VREG) */
-		dev_t		vu_rdev;	/* device (VCHR, VBLK) */
+		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 	} v_un;
 	enum vtagtype	v_tag;			/* type of underlying data */
 	char v_data[VN_MAXPRIVATE];		/* private data for fs */
@@ -70,7 +70,7 @@ struct vnode {
 #define v_mountedhere v_un.vu_mountedhere
 #define v_socket v_un.vu_socket
 #define v_text v_un.vu_text
-#define v_rdev v_un.vu_rdev
+#define v_specinfo v_un.vu_specinfo
 
 /*
  * vnode flags.
@@ -82,6 +82,7 @@ struct vnode {
 #define	VEXLOCK		0x10	/* exclusive lock */
 #define	VSHLOCK		0x20	/* shared lock */
 #define	VLWAIT		0x40	/* proc is waiting on shared or excl. lock */
+#define	VALIASED	0x80	/* vnode has an alias */
 
 /*
  * Operations on vnodes.
@@ -154,6 +155,22 @@ struct vnodeops {
 #define	VOP_UNLOCK(v)		(*((v)->v_op->vn_unlock))(v)
 #define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vn_bmap))((v),(s),(p),(n))
 #define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vn_strategy))(b)
+
+/*
+ * This structure defines the information maintained about
+ * special devices. It is allocated in checkalias and freed
+ * in vgone.
+ */
+struct specinfo {
+	dev_t	si_rdev;
+	daddr_t	si_lastr;
+	struct	mount *si_mounton;
+	struct	vnode *si_specnext;
+};
+#define v_rdev v_specinfo->si_rdev
+#define v_lastr v_specinfo->si_lastr
+#define v_mounton v_specinfo->si_mounton
+#define v_specnext v_specinfo->si_specnext
 
 /*
  * flags for ioflag
