@@ -1,9 +1,15 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1980,1983,1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)netdb.h	5.8 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)netdb.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -53,9 +59,11 @@ struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
 
 /*
  * Error return codes from gethostbyname() and gethostbyaddr()
+ * (left in extern int h_errno).
  */
 
-#define	HOST_NOT_FOUND	1 /* Authoritive Answer Host not found */
+#define	HOST_NOT_FOUND	1 /* Authoritative Answer Host not found */
 #define	TRY_AGAIN	2 /* Non-Authoritive Host not found, or SERVERFAIL */
 #define	NO_RECOVERY	3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
-#define	NO_ADDRESS	4 /* Valid host name, no address, look for MX record */
+#define	NO_DATA		4 /* Valid name, no data record of requested type */
+#define	NO_ADDRESS	NO_DATA		/* no address, look for MX record */
