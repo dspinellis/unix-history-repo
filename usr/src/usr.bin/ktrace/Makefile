@@ -18,7 +18,7 @@
 #
 
 CFLAGS=	-O
-LIBC=	/lib/libc.a
+LIBC=	/usr/lib/libc.a
 SRCS=	ktrace.c kdump.c subr.c ioctl.c
 OBJS=	ktrace.o kdump.o subr.o ioctl.o
 MAN=	ktrace.0 kdump.0
@@ -32,7 +32,7 @@ kdump: ${LIBC} ioctl.o subr.o
 	${CC} -o $@ ${CFLAGS} $@.c ioctl.o subr.o
 
 ioctl.c: mkioctls
-	/bin/sh ./mkioctls > ioctl.c
+	/bin/sh ${.CURDIR}/mkioctls > ioctl.c
 
 clean:
 	rm -f ${OBJS} core ktrace kdump
