@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -1076,7 +1076,8 @@ pfork(t, wanttty)
 		if (t->t_dflg & FNOHUP)
 			(void) signal(SIGHUP, SIG_IGN);
 		if (t->t_dflg & FNICE)
-			(void) setpriority(PRIO_PROCESS, 0, t->t_nice);
+			(void) setpriority(PRIO_PROCESS, 0,
+			    getpriority(PRIO_PROCESS, 0) + t->t_nice);
 	} else {
 		palloc(pid, t);
 		(void) sigsetmask(omask);
