@@ -191,7 +191,7 @@ depend:
 clean:
 	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h ${AOUT} mkdate mkdate.o \
 	    makedefs makedefs.o date.c core mon.out prof.out make.out \
-	    cerror.s ops.c machine.c runtime.c
+	    cerror.s ops.c machine.c runtime.c date.o
 
 cleandefs:
 	rm -f ${HDR} y.tab.h
