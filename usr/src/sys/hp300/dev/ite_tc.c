@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_tc.c 1.22 89/04/11$
+ * from: Utah $Hdr: ite_tc.c 1.25 91/03/25$
  *
- *	@(#)ite_tc.c	7.3 (Berkeley) %G%
+ *	@(#)ite_tc.c	7.4 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -42,9 +42,24 @@ topcat_init(ip)
 {
 	/* XXX */
 	if (ip->regbase == NULL) {
-		struct grfinfo *gi = &grf_softc[ip - ite_softc].g_display;
-		ip->regbase = IOV(gi->gd_regaddr);
-		ip->fbbase = IOV(gi->gd_fbaddr);
+		struct grf_softc *gp = &grf_softc[ip - ite_softc];
+		ip->regbase = gp->g_regkva;
+		ip->fbbase = gp->g_fbkva;
+	}
+
+	/*
+	 * Catseye looks a lot like a topcat, but not completely.
+	 * So, we set some bits to make it work.
+	 */
+	if (REGBASE->fbid != GID_TOPCAT) {
+		while ((REGBASE->catseye_status & 1))
+			;
+		REGBASE->catseye_status = 0x0;
+		REGBASE->vb_select      = 0x0;
+		REGBASE->tcntrl         = 0x0;
+		REGBASE->acntrl         = 0x0;
+		REGBASE->pncntrl        = 0x0;
+		REGBASE->rug_cmdstat    = 0x90;
 	}
 
 	/*
