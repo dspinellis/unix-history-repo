@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
-/*	@(#)clnp_subr.c	7.8 (Berkeley) %G% */
+/*	@(#)clnp_subr.c	7.9 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
@@ -176,12 +176,17 @@ register struct iso_addr *dst;		/* ptr to destination address */
 
 	for (ia = iso_ifaddr; ia; ia = ia->ia_next) {
 		IFDEBUG(D_ROUTE)
-			printf("clnp_ours: ia_sis x%x, dst x%x\n", &IA_SIS(ia)->siso_addr, 
+			printf("clnp_ours: ia_sis x%x, dst x%x\n", &ia->ia_addr, 
 				dst);
 		ENDDEBUG
-		/* PHASE 2: uses iso_addrmatch & mask from iso_ifaddr */
-		if (iso_addrmatch1(&IA_SIS(ia)->siso_addr, dst))
-			return 1;
+		/*
+		 * XXX Warning:
+		 * We are overloading siso_tlen in the if's address, as an nsel length.
+		 */
+		if (dst->isoa_len == ia->ia_addr.siso_tlen + ia->ia_addr.siso_nlen &&
+			bcmp((caddr_t)ia->ia_addr.siso_addr.isoa_genaddr,
+				 (caddr_t)dst->isoa_genaddr, ia->ia_addr.siso_nlen) == 0)
+					return 1;
 	}
 	return 0;
 }
