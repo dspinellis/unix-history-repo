@@ -1,5 +1,11 @@
-/*	dumb.h	4.1	83/11/10	*/
 /*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)dumb.h	5.1 (Berkeley) %G%
+ *
+ *
  * This accepts plot file formats and produces the appropriate plots
  * for dumb terminals.  It can also be used for printing terminals and
  * lineprinter listings, although there is no way to specify number of
