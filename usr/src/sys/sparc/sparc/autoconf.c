@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
  *	@(#)autoconf.c	7.4 (Berkeley) %G%
  *
- * from: $Header: autoconf.c,v 1.23 92/07/10 22:35:23 torek Exp $ (LBL)
+ * from: $Header: autoconf.c,v 1.31 93/04/07 01:34:47 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -23,6 +23,7 @@
 #include <sys/buf.h>
 #include <sys/disklabel.h>
 #include <sys/device.h>
+#include <sys/disk.h>
 #include <sys/dkstat.h>
 #include <sys/conf.h>
 #include <sys/dmap.h>
@@ -36,10 +37,6 @@
 #include <machine/bsd_openprom.h>
 #include <machine/cpu.h>
 
-#ifndef	FS_NFS		/* XXX */
-#define	FS_NFS	100	/* XXX */
-#endif			/* XXX */
-
 /*
  * The following several variables are related to
  * the configuration process, and are used in initializing
@@ -47,23 +44,20 @@
  */
 int	cold;		/* if 1, still working on cold-start */
 int	dkn;		/* number of iostat dk numbers assigned so far */
-int	cpuspeed = 10;	/* relative cpu speed */
 int	fbnode;		/* node ID of ROM's console frame buffer */
 int	optionsnode;	/* node ID of ROM's options */
 
-extern struct promvec *promvec;
+extern	struct promvec *promvec;
 
 static	int rootnode;
-int	findroot();
-static	struct	bootinfo *findbootdev();
+int	findroot __P((void));
+void	setroot __P((void));
+static	int getstr __P((char *, int));
+static	int findblkmajor __P((struct dkdevice *));
+static	struct device *getdisk __P((char *, int, int, dev_t *));
+static	struct device *parsedisk __P((char *, int, int, dev_t *));
 
-static	struct bootinfo {
-	char	name[16];	/* device name */
-	int	val[3];		/* up to 3 values */
-	int	type;		/* FS type */
-	caddr_t	data;		/* FS dependant info */
-} bootinfo;
-
+struct	bootpath bootpath[8];
 
 /*
  * Most configuration on the SPARC is done by matching OPENPROM Forth
@@ -116,13 +110,13 @@ str2hex(str, vp)
 void
 bootstrap()
 {
-	register char *cp, *bp, *ep;
-	register int i;
+	register char *cp, *pp;
+	register struct bootpath *bp;
+	int v0val[3];
 	int nmmu, ncontext, node;
 #ifdef KGDB
 	extern int kgdb_debug_panic;
 #endif
-	extern char *rindex(const char *, int);
 
 	node = findroot();
 	nmmu = getpropint(node, "mmu-npmg", 128);
@@ -138,20 +132,45 @@ bootstrap()
 	 * "vmunix -s" or whatever.
 	 * ###	DO THIS BEFORE pmap_boostrap?
 	 */
+	bp = bootpath;
 	if (promvec->pv_romvec_vers < 2) {
 		/* Grab boot device name and values. */
 		cp = (*promvec->pv_v0bootargs)->ba_argv[0];
 		if (cp != NULL) {
-			bp = bootinfo.name;
-			ep = &bootinfo.name[sizeof(bootinfo.name)];
-			while (*cp != '(' && *cp != '\0' && bp < ep - 1)
-				*bp++ = *cp++;
-			*bp = '\0';
+			/* Kludge something up */
+			pp = cp + 2;
+			v0val[0] = v0val[1] = v0val[2] = 0;
+			if (*pp == '(' &&
+			    *(pp = str2hex(++pp, &v0val[0])) == ',' &&
+			    *(pp = str2hex(++pp, &v0val[1])) == ',')
+				(void)str2hex(++pp, &v0val[2]);
 
-			if (*cp == '(' &&
-			    *(cp = str2hex(++cp, &bootinfo.val[0])) == ',' &&
-			    *(cp = str2hex(++cp, &bootinfo.val[1])) == ',')
-				(void)str2hex(++cp, &bootinfo.val[2]);
+			/* Assume sbus0 */
+			strcpy(bp->name, "sbus");
+			bp->val[0] = 0;
+			++bp;
+
+			if (cp[0] == 'l' && cp[1] == 'e') {
+				/* le */
+				strcpy(bp->name, "le");
+				bp->val[0] = -1;
+				bp->val[1] = v0val[0];
+			} else {
+				/* sd or maybe st; assume espN */
+				strcpy(bp->name, "esp");
+				bp->val[0] = -1;
+				bp->val[1] = v0val[0];
+
+/* XXX map target 0 to 3, 3 to 0. Should really see how the prom is configed */
+#define CRAZYMAP(v) ((v) == 3 ? 0 : (v) == 0 ? 3 : (v))
+
+				++bp;
+				bp->name[0] = cp[0];
+				bp->name[1] = cp[1];
+				bp->name[2] = '\0';
+				bp->val[0] = CRAZYMAP(v0val[1]);
+				bp->val[1] = v0val[2];
+			}
 		}
 
 		/* Setup pointer to boot flags */
@@ -159,20 +178,23 @@ bootstrap()
 		if (cp == NULL || *cp != '-')
 			return;
 	} else {
-		/* Grab boot device name and values. */
+		/* Grab boot path */
 		cp = *promvec->pv_v2bootargs.v2_bootpath;
-		if (cp != NULL && (cp = rindex(cp, '/')) != NULL) {
+		while (cp != NULL && *cp == '/') {
+			/* Step over '/' */
 			++cp;
-			bp = bootinfo.name;
-			ep = &bootinfo.name[sizeof(bootinfo.name)];
-			while (*cp != '@' && *cp != '\0' && bp < ep - 1)
-				*bp++ = *cp++;
-			*bp = '\0';
+			/* Extract name */
+			pp = bp->name;
+			while (*cp != '@' && *cp != '/' && *cp != '\0')
+				*pp++ = *cp++;
+			*pp = '\0';
 
-			if (*cp == '@' &&
-			    *(cp = str2hex(++cp, &bootinfo.val[0])) == ',' &&
-			    *(cp = str2hex(++cp, &bootinfo.val[1])) == ',')
-				(void)str2hex(++cp, &bootinfo.val[2]);
+			if (*cp == '@') {
+				cp = str2hex(++cp, &bp->val[0]);
+				if (*cp == ',')
+					cp = str2hex(++cp, &bp->val[1]);
+			}
+			++bp;
 		}
 
 		/* Setup pointer to boot flags */
@@ -226,10 +248,6 @@ configure()
 	register char *cp;
 	struct romaux ra;
 	void sync_crash();
-#ifdef NFS
-	register struct bootinfo *bi;
-	extern int (*mountroot)(), nfs_mountroot();
-#endif
 
 	node = findroot();
 	cp = getpropstring(node, "device_type");
@@ -242,31 +260,13 @@ configure()
 	ra.ra_name = cp = "mainbus";
 	if (!config_rootfound(cp, (void *)&ra))
 		panic("mainbus not configured");
-	(void) spl0();
+	(void)spl0();
+	if (bootdv)
+		printf("Found boot device %s\n", bootdv->dv_xname);
 	cold = 0;
-#ifdef NFS
-	if (boothowto & RB_ASKNAME) {
-		char ans[100];
-
-		printf("nfs root? (y/n) [n] ");
-		gets(ans);
-		if (ans[0] == 'y')
-			mountroot = nfs_mountroot;
-	} else if ((bi = findbootdev()) != NULL && bi->type == FS_NFS) {
-		mountroot = nfs_mountroot;
-#ifdef LBL
-		lbl_diskless_setup();
-#endif /* LBL */
-	}
-#endif /* NFS */
-#if GENERIC
-	if ((boothowto & RB_ASKNAME) == 0)
-		setroot();
-	setconf();
-#else
 	setroot();
-#endif
 	swapconf();
+	dumpconf();
 }
 
 /*
@@ -436,6 +436,9 @@ mainbus_attach(parent, dev, aux)
 	optionsnode = findnode(node0, "options");
 	if (optionsnode == 0)
 		panic("no options in OPENPROM");
+
+	/* Start at the beginning of the bootpath */
+	ra.ra_bp = bootpath;
 
 	/*
 	 * Locate and configure the ``early'' devices.  These must be
@@ -738,7 +741,7 @@ swapconf()
 	register struct swdevt *swp;
 	register int nblks;
 
-	for (swp = swdevt; swp->sw_dev; swp++)
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++)
 		if (bdevsw[major(swp->sw_dev)].d_psize) {
 			nblks =
 			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
@@ -746,88 +749,188 @@ swapconf()
 			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
 				swp->sw_nblks = nblks;
 		}
-	dumpconf();
 }
 
-#define	DOSWAP			/* Change swdevt, argdev, and dumpdev too */
+#define	DOSWAP			/* Change swdevt and dumpdev too */
 u_long	bootdev;		/* should be dev_t, but not until 32 bits */
-
-static	char devname[][2] = {
-	0,0,		/* 0 = xx */
-};
 
 #define	PARTITIONMASK	0x7
 #define	PARTITIONSHIFT	3
+
+static int
+findblkmajor(dv)
+	register struct dkdevice *dv;
+{
+	register int i;
+
+	for (i = 0; i < nblkdev; ++i)
+		if ((void (*)(struct buf *))bdevsw[i].d_strategy ==
+		    dv->dk_driver->d_strategy)
+			return (i);
+
+	return (-1);
+}
+
+static struct device *
+getdisk(str, len, defpart, devp)
+	char *str;
+	int len, defpart;
+	dev_t *devp;
+{
+	register struct device *dv;
+
+	if ((dv = parsedisk(str, len, defpart, devp)) == NULL) {
+		printf("use one of:");
+		for (dv = alldevs; dv != NULL; dv = dv->dv_next)
+			if (dv->dv_class == DV_DISK)
+				printf(" %s[a-h]", dv->dv_xname);
+		printf("\n");
+	}
+	return (dv);
+}
+
+static struct device *
+parsedisk(str, len, defpart, devp)
+	char *str;
+	int len, defpart;
+	dev_t *devp;
+{
+	register struct device *dv;
+	register char *cp;
+	int majdev, mindev, part;
+
+	if (len == 0)
+		return (NULL);
+	cp = str + len - 1;
+	if (*cp >= 'a' && *cp <= 'h') {
+		part = *cp - 'a';
+		*cp-- = '\0';
+	} else
+		part = defpart;
+
+	for (dv = alldevs; dv != NULL; dv = dv->dv_next)
+		if (dv->dv_class == DV_DISK &&
+		    strcmp(str, dv->dv_xname) == 0) {
+			majdev = findblkmajor((struct dkdevice *)dv);
+			if (majdev < 0)
+				panic("parsedisk");
+			mindev = (dv->dv_unit << PARTITIONSHIFT) + part;
+			*devp = makedev(majdev, mindev);
+			return (dv);
+		}
+
+	return (NULL);
+}
 
 /*
  * Attempt to find the device from which we were booted.
  * If we can do so, and not instructed not to do so,
  * change rootdev to correspond to the load device.
  */
+void
 setroot()
 {
-#ifdef notyet
-	struct swdevt *swp;
+	register struct swdevt *swp;
+	register struct device *dv;
+	register int len, majdev, mindev, part;
+	dev_t nrootdev, nswapdev;
+	char buf[128];
+#ifdef DOSWAP
+	dev_t temp;
+#endif
+#ifdef NFS
+	extern int (*mountroot)(), nfs_mountroot();
+#endif
 
-	if (boothowto & RB_DFLTROOT ||
-	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
+	if (boothowto & RB_ASKNAME) {
+		for (;;) {
+			printf("root device? ");
+			len = getstr(buf, sizeof(buf));
+#ifdef GENERIC
+			if (len > 0 && buf[len - 1] == '*') {
+				buf[--len] = '\0';
+				dv = getdisk(buf, len, 1, &nrootdev);
+				if (dv != NULL) {
+					bootdv = dv;
+					nswapdev = nrootdev;
+					swaponroot++;
+					goto setswap;
+				}
+			}
+#endif
+			dv = getdisk(buf, len, 0, &nrootdev);
+			if (dv != NULL) {
+				bootdv = dv;
+				break;
+			}
+		}
+		for (;;) {
+			printf("swap device (default %sb)? ", bootdv->dv_xname);
+			len = getstr(buf, sizeof(buf));
+			if (len == 0) {
+				nswapdev = makedev(major(nrootdev),
+				    (minor(nrootdev) & ~ PARTITIONMASK) | 1);
+				break;
+			}
+			if (getdisk(buf, len, 1, &nswapdev) != NULL)
+				break;
+		}
+		rootdev = nrootdev;
+		swapdev = nswapdev;
+		dumpdev = nswapdev;		/* ??? */
+		swdevt[0].sw_dev = nswapdev;
+		swdevt[1].sw_dev = NODEV;
 		return;
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	if (majdev > sizeof(devname) / sizeof(devname[0]))
+	}
+
+	/* XXX currently there's no way to set RB_DFLTROOT... */
+	if (boothowto & RB_DFLTROOT || bootdv == NULL)
 		return;
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
-	/*
-	 * First, find the controller type which support this device.
-	 */
-	for (hd = hp_dinit; hd->hp_driver; hd++)
-		if (hd->hp_driver->d_name[0] == devname[majdev][0] &&
-		    hd->hp_driver->d_name[1] == devname[majdev][1])
-			break;
-	if (hd->hp_driver == 0)
+
+	switch (bootdv->dv_class) {
+
+#ifdef NFS
+	case DV_IFNET:
+		mountroot = nfs_mountroot;
+#ifdef LBL
+		lbl_diskless_setup();
+#endif
 		return;
-	/*
-	 * Next, find the controller of that type corresponding to
-	 * the adaptor number.
-	 */
-	for (hc = hp_cinit; hc->hp_driver; hc++)
-		if (hc->hp_alive && hc->hp_unit == adaptor &&
-		    hc->hp_driver == hd->hp_cdriver)
-			break;
-	if (hc->hp_driver == 0)
+#endif
+
+#if defined(FFS) || defined(LFS)
+	case DV_DISK:
+		majdev = findblkmajor((struct dkdevice *)bootdv);
+		if (majdev < 0)
+			return;
+		part = 0;
+		mindev = (bootdv->dv_unit << PARTITIONSHIFT) + part;
+		break;
+#endif
+
+	default:
+		printf("can't figure root, hope your kernel is right\n");
 		return;
-	/*
-	 * Finally, find the device in question attached to that controller.
-	 */
-	for (hd = hp_dinit; hd->hp_driver; hd++)
-		if (hd->hp_alive && hd->hp_slave == unit &&
-		    hd->hp_cdriver == hc->hp_driver &&
-		    hd->hp_ctlr == hc->hp_unit)
-			break;
-	if (hd->hp_driver == 0)
-		return;
-	mindev = hd->hp_unit;
+	}
+
 	/*
 	 * Form a new rootdev
 	 */
-	mindev = (mindev << PARTITIONSHIFT) + part;
-	orootdev = rootdev;
-	rootdev = makedev(majdev, mindev);
+	nrootdev = makedev(majdev, mindev);
 	/*
 	 * If the original rootdev is the same as the one
 	 * just calculated, don't need to adjust the swap configuration.
 	 */
-	if (rootdev == orootdev)
+	if (rootdev == nrootdev)
 		return;
 
-	printf("Changing root device to %c%c%d%c\n",
-		devname[majdev][0], devname[majdev][1],
-		mindev >> PARTITIONSHIFT, part + 'a');
+	rootdev = nrootdev;
+	printf("Changing root device to %s%c\n", bootdv->dv_xname, part + 'a');
 
 #ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
-	for (swp = swdevt; swp->sw_dev; swp++) {
+	temp = NODEV;
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
 		if (majdev == major(swp->sw_dev) &&
 		    mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
 			temp = swdevt[0].sw_dev;
@@ -836,60 +939,29 @@ setroot()
 			break;
 		}
 	}
-	if (swp->sw_dev == 0)
+	if (swp->sw_dev == NODEV)
 		return;
 
 	/*
-	 * If argdev and dumpdev were the same as the old primary swap
-	 * device, move them to the new primary swap device.
+	 * If dumpdev was the same as the old primary swap device, move
+	 * it to the new primary swap device.
 	 */
 	if (temp == dumpdev)
 		dumpdev = swdevt[0].sw_dev;
-	if (temp == argdev)
-		argdev = swdevt[0].sw_dev;
-#endif
 #endif
 }
 
-/*
- * Return pointer to device we booted from. Return NULL if we can't
- * figure this out.
- * XXX currently only works for network devices.
- */
-
-static struct bootinfo *
-findbootdev()
-{
-	register struct bootinfo *bi;
-	register char *bp;
-	register int unit, controller;
-	register struct ifnet *ifp;
-
-	bi = &bootinfo;
-	bp = bi->name;
-printf("findbootdev: (v%d rom) trying \"%s(%x,%x,%x)\"... ",
-    promvec->pv_romvec_vers, bp, bi->val[0], bi->val[1], bi->val[2]);
-
-	/* Try network devices first */
-	unit = bi->val[0];
-	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (unit == ifp->if_unit && strcmp(bp, ifp->if_name) == 0) {
-printf("found \"%s%d\"\n", ifp->if_name, ifp->if_unit);
-			bi->type = FS_NFS;
-			bi->data = (caddr_t)ifp;
-			return (bi);
-		}
-printf("not found\n");
-	return (NULL);
-}
-
-gets(cp)
+static int
+getstr(cp, size)
 	register char *cp;
+	register int size;
 {
 	register char *lp;
 	register int c;
+	register int len;
 
 	lp = cp;
+	len = 0;
 	for (;;) {
 		c = cngetc();
 		switch (c) {
@@ -897,24 +969,29 @@ gets(cp)
 		case '\r':
 			printf("\n");
 			*lp++ = '\0';
-			return;
+			return (len);
 		case '\b':
 		case '\177':
 		case '#':
-			if (lp > cp) {
-				lp--;
+			if (len) {
+				--len;
+				--lp;
 				printf(" \b ");
 			}
 			continue;
 		case '@':
 		case 'u'&037:
+			len = 0;
 			lp = cp;
-			cnputc('\n');
+			printf("\n");
 			continue;
 		default:
-			if (c < ' ')
+			if (len + 1 >= size || c < ' ') {
+				printf("\007");
 				continue;
-			cnputc(c);
+			}
+			printf("%c", c);
+			++len;
 			*lp++ = c;
 		}
 	}
