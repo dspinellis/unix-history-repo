@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)icu.s	7.2 (Berkeley) %G%
+ *	@(#)icu.s	7.3 (Berkeley) %G%
  */
 
 /*
@@ -90,12 +90,19 @@ doreti:
 	DONET(NETISR_RAW,_rawintr)
 #ifdef INET
 	DONET(NETISR_IP,_ipintr)
+	DONET(NETISR_ARP,_arpintr)
 #endif
 #ifdef IMP
 	DONET(NETISR_IMP,_impintr)
 #endif
 #ifdef NS
 	DONET(NETISR_NS,_nsintr)
+#endif
+#ifdef ISO
+	DONET(NETISR_ISO,_clnlintr)
+#endif
+#ifdef CCITT
+	DONET(NETISR_CCITT,_hdintr)
 #endif
 
 	popl	%eax
