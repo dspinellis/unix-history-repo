@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.2 (Berkeley) %G%
+ *	@(#)vnode.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -188,6 +188,7 @@ extern int vn_rdwr();			/* read or write vnode */
 extern int vn_close();			/* close vnode */
 extern void vrele();			/* release vnode */
 extern void vattr_null();		/* set attributes to null */
+#define VREF(vp)	(vp)->v_count++;/* increment vnode reference count */
 
 #define vinit(vp, mountp, type, vops)	{ \
 	(vp)->v_flag = 0; \
