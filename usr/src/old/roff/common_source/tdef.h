@@ -1,8 +1,9 @@
-/*	tdef.h	4.7	86/10/19	*/
+/*	tdef.h	4.8	87/04/30	*/
 
-#include <machine/machparam.h>
-#include <machine/vmparam.h>
-#define MAXPTR (USRSTACK-1)	/* max value of any pointer variable */
+#include <sys/param.h>
+#undef CMASK			/* XXX */
+#undef BIG			/* XXX */
+#define MAXPTR (-1)		/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
 #define EM t.Em
 #define HOR t.Hor
@@ -117,7 +118,6 @@
 #define IBUFSZ 8192	/*bytes*/
 #define NC 256	/*cbuf size words*/
 #define NOV 10	/*number of overstrike chars*/
-#define ZONE 5	/*5hrs for EST*/
 #define TDELIM 032
 #define LEFT 035
 #define RIGHT 036
