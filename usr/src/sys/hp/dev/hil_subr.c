@@ -7,10 +7,11 @@
  *
  * from: Utah $Hdr: hil_subr.c 1.1 91/11/19$
  *
- *	@(#)hil_subr.c	7.1 (Berkeley) %G%
+ *	@(#)hil_subr.c	7.2 (Berkeley) %G%
  */
 
 #include "sys/param.h"
+#include "sys/systm.h"
 #include "sys/ioctl.h"
 #include "sys/tty.h"
 #include "sys/clist.h"
@@ -49,8 +50,8 @@ hilq_to_b(q, cp, cc)
 
 	while (cc) {
 		nc = sizeof (struct cblock) - ((int)q->c_cf & CROUND);
-		nc = MIN(nc, cc);
-		nc = MIN(nc, q->c_cc);
+		nc = min(nc, cc);
+		nc = min(nc, q->c_cc);
 		(void) bcopy(q->c_cf, cp, (unsigned)nc);
 		q->c_cf += nc;
 		q->c_cc -= nc;

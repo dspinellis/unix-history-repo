@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	7.4 (Berkeley) %G%
+ *	@(#)ppi.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,7 @@
 #if NPPI > 0
 
 #include "sys/param.h"
+#include "sys/systm.h"
 #include "sys/errno.h"
 #include "sys/uio.h"
 #include "sys/malloc.h"
@@ -183,7 +184,7 @@ ppirw(dev, uio)
 		       dev, uio, uio->uio_rw == UIO_READ ? 'R' : 'W',
 		       sc->sc_burst, sc->sc_timo, uio->uio_resid);
 #endif
-	buflen = MIN(sc->sc_burst, uio->uio_resid);
+	buflen = min(sc->sc_burst, uio->uio_resid);
 	buf = (char *)malloc(buflen, M_DEVBUF, M_WAITOK);
 	sc->sc_flags |= PPIF_UIO;
 	if (sc->sc_timo > 0) {
@@ -191,7 +192,7 @@ ppirw(dev, uio)
 		timeout(ppitimo, unit, sc->sc_timo);
 	}
 	while (uio->uio_resid > 0) {
-		len = MIN(buflen, uio->uio_resid);
+		len = min(buflen, uio->uio_resid);
 		cp = buf;
 		if (uio->uio_rw == UIO_WRITE) {
 			error = uiomove(cp, len, uio);

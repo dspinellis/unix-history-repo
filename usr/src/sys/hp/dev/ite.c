@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.24 92/01/21$
  *
- *	@(#)ite.c	7.12 (Berkeley) %G%
+ *	@(#)ite.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -392,7 +392,7 @@ doesc:
 			switch (c) {
 
 			case 'Y':			/* Only y coord. */
-				ip->cury = MIN(ip->pos, ip->rows-1);
+				ip->cury = min(ip->pos, ip->rows-1);
 				ip->pos = 0;
 				ip->escape = 0;
 				(*sp->ite_cursor)(ip, MOVE_CURSOR);
@@ -400,13 +400,13 @@ doesc:
 				break;
 
 			case 'y':			/* y coord first */
-				ip->cury = MIN(ip->pos, ip->rows-1);
+				ip->cury = min(ip->pos, ip->rows-1);
 				ip->pos = 0;
 				ip->fpd = 0;
 				break;
 
 			case 'C':			/* x coord */
-				ip->curx = MIN(ip->pos, ip->cols-1);
+				ip->curx = min(ip->pos, ip->cols-1);
 				ip->pos = 0;
 				ip->escape = 0;
 				(*sp->ite_cursor)(ip, MOVE_CURSOR);

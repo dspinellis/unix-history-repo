@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	7.16 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -162,7 +162,7 @@ icmp_input(m, hlen)
 		icmpstat.icps_tooshort++;
 		goto freeit;
 	}
-	i = hlen + MIN(icmplen, ICMP_ADVLENMIN);
+	i = hlen + min(icmplen, ICMP_ADVLENMIN);
 	if (m->m_len < i && (m = m_pullup(m, i)) == 0)  {
 		icmpstat.icps_tooshort++;
 		return;
