@@ -1,12 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	umount
-SRCS=	umount.c
-CFLAGS+=-DLETS_GET_SMALL
-DPADD=	${LIBRPC}
-LDADD=	-lrpc
+CFLAGS+=-s -N -I${.CURDIR}/../cat
 NOMAN=	noman
-LDFLAGS=-N
-.PATH:	${.CURDIR}/../../../../sbin/umount
 
 .include <bsd.prog.mk>
