@@ -7,7 +7,7 @@
 #
 #  This has been tested on Solaris 2.3.
 #
-#	@(#)Makefile.SunOS.5.4	8.4 (Berkeley) %G%
+#	@(#)Makefile.SunOS.5.4	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -52,6 +52,9 @@ HFDIR=	${DESTDIR}/etc/mail
 # additional .o files needed
 OBJADD=
 
+# things to be made before compilation begins
+BEFORE=	sysexits.h
+
 ###################  end of user configuration flags  ######################
 
 CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${ENVDEF}
@@ -74,6 +77,9 @@ all: ${ALL}
 
 sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
+
+sysexits.h: /usr/ucbinclude/sysexits.h
+	ln -s /usr/ucbinclude/sysexits.h
 
 NROFF=	nroff -h
 
