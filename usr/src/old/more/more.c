@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.13 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)more.c	5.14 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -24,7 +30,7 @@ static char sccsid[] = "@(#)more.c	5.13 (Berkeley) %G%";
 */
 
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <ctype.h>
 #include <signal.h>
 #include <errno.h>
@@ -32,7 +38,8 @@ static char sccsid[] = "@(#)more.c	5.13 (Berkeley) %G%";
 #include <setjmp.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#include <sys/exec.h>
+#include <a.out.h>
+#include <varargs.h>
 
 #define HELPFILE	"/usr/lib/more.help"
 #define VI		"/usr/ucb/vi"
@@ -240,7 +247,7 @@ char *argv[];
 		left = command (fnames[fnum], f);
 	    }
 	    if (left != 0) {
-		if ((noscroll || clearit) && (file_size != 0x7fffffffffffffffL))
+		if ((noscroll || clearit) && (file_size != LONG_MAX))
 		    if (clreol)
 			home ();
 		    else
@@ -333,64 +340,65 @@ char *s;
 
 FILE *
 checkf (fs, clearfirst)
-register char *fs;
-int *clearfirst;
+	register char *fs;
+	int *clearfirst;
 {
-    struct stat stbuf;
-    register FILE *f;
-    char c;
+	struct stat stbuf;
+	register FILE *f;
+	char c;
 
-    if (stat (fs, &stbuf) == -1) {
-	fflush(stdout);
-	if (clreol)
-	    cleareol ();
-	perror(fs);
-	return (NULL);
-    }
-    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
-	printf("\n*** %s: directory ***\n\n", fs);
-	return (NULL);
-    }
-    if ((f=Fopen(fs, "r")) == NULL) {
-	fflush(stdout);
-	perror(fs);
-	return (NULL);
-    }
-    /* Try to see whether it is an ASCII file */
-    if (magic(f)) {
-	printf("\n******** %s: Not a text file ********\n\n", fs);
-	fclose (f);
-	return (NULL);
-    }
-    c = Getc(f);
-    if (c == '\f')
-	*clearfirst = 1;
-    else {
-	*clearfirst = 0;
+	if (stat (fs, &stbuf) == -1) {
+		(void)fflush(stdout);
+		if (clreol)
+			cleareol ();
+		perror(fs);
+		return((FILE *)NULL);
+	}
+	if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+		printf("\n*** %s: directory ***\n\n", fs);
+		return((FILE *)NULL);
+	}
+	if ((f = Fopen(fs, "r")) == NULL) {
+		(void)fflush(stdout);
+		perror(fs);
+		return((FILE *)NULL);
+	}
+	if (magic(f, fs))
+		return((FILE *)NULL);
+	c = Getc(f);
+	*clearfirst = c == '\f';
 	Ungetc (c, f);
-    }
-    if ((file_size = stbuf.st_size) == 0)
-	file_size = 0x7fffffffffffffffL;
-    return (f);
+	if ((file_size = stbuf.st_size) == 0)
+		file_size = LONG_MAX;
+	return(f);
 }
 
 /*
- * Check for file magic numbers. This code would best
- * be shared with the file(1) program or, perhaps, more
- * should not try and be so smart?
+ * magic --
+ *	check for file magic numbers.  This code would best be shared with
+ *	the file(1) program or, perhaps, more should not try and be so smart?
  */
-magic(f)
-    FILE *f;
+static
+magic(f, fs)
+	FILE *f;
+	char *fs;
 {
-    long magic;
+	struct exec ex;
 
-    magic = getw(f);
-    if (ftell(f) < sizeof magic)
-    	rewind(f);				/* reset file position */
-    else
-    	fseek(f, -sizeof (magic), L_INCR);	/* reset file position */
-    return (magic == 0405 || magic == OMAGIC || magic == NMAGIC ||
-	magic == 0411 || magic == ZMAGIC || magic == 0177545);
+	if (fread(&ex, sizeof(ex), 1, f) == 1)
+		switch(ex.a_magic) {
+		case OMAGIC:
+		case NMAGIC:
+		case ZMAGIC:
+		case 0405:
+		case 0411:
+		case 0177545:
+			printf("\n******** %s: Not a text file ********\n\n", fs);
+			(void)fclose(f);
+			return(1);
+		}
+	(void)fseek(f, 0L, L_SET);		/* rewind() not necessary */
+	return(NULL);
 }
 
 /*
