@@ -1,3 +1,6 @@
+/*
+ *	@(#)bib.h	1.2	%G%
+ */
 /*   various arguments for bib and listrefs processors */
 
 /* constants */

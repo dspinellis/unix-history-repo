@@ -1,3 +1,7 @@
+#ifndef lint
+static char sccsid[] = "@(#)listrefs.c	1.2	%G%";
+#endif not lint
+
 /*
         list all documents in ref index file
                                                         */

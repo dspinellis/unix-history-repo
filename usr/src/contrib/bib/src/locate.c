@@ -1,7 +1,6 @@
-#
 #ifndef lint
-static char sccsid[] = "@(#)locate.c 1.1 %G%";
-#endif lint
+static char sccsid[] = "@(#)locate.c	1.2	%G%";
+#endif not lint
 
 # include   "stdio.h"
 # include   "streams.h"
@@ -223,6 +222,6 @@ struct reftype *ref;
     if (cntl=='\n') {return (0);}
     if (cntl==':')  fscanf(stream, "%s", oldfile);
     strcpy(ref->reffile, oldfile);
-    fscanf(stream, "%D/%D", &ref->start, &ref->length);
+    fscanf(stream, "%ld/%ld", &ref->start, &ref->length);
     return(1);
 }

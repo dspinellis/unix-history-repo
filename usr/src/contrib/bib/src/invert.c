@@ -1,4 +1,7 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)invert.c	1.2	%G%";
+#endif not lint
+
 /*  input:  records of lines, separated by blank lines
     output: key:file1 start/length ... start/length:file2 start/length ...
 */
@@ -69,7 +72,7 @@ char **arglist;
             records++;
 	    kcnt= 0;
             length= recsize(input,start);
-            sprintf(tag_line, " %s %D %D\n", filename, start, length);
+            sprintf(tag_line, " %s %ld %ld\n", filename, start, length);
 
             while (ftell(input) < start+length && kcnt < max_kcnt)
             {   getword(input,word,ignore);
@@ -90,7 +93,7 @@ char **arglist;
     distinct = shorten(tmpfile,INDEX);
     if( silent == 0 )
 	fprintf(stderr,
-	    "%D documents   %D distinct keys  %D key occurrences\n",
+	    "%ld documents   %ld distinct keys  %ld key occurrences\n",
 	    records, distinct, keys);
 }
 
@@ -156,22 +159,22 @@ char *inf, *outf;
     }
 
     getline(in,line);
-    sscanf(line,"%s%s%D%D", key, file, &start, &length);
-    fprintf(out, "%s :%s %D/%D", key, file, start, length);
+    sscanf(line,"%s%s%ld%ld", key, file, &start, &length);
+    fprintf(out, "%s :%s %ld/%ld", key, file, start, length);
     for ( getline(in, line) ; !feof(in);  getline(in, line))
-    {   sscanf(line,"%s%s%D%D", newkey, newfile, &start, &length);
+    {   sscanf(line,"%s%s%ld%ld", newkey, newfile, &start, &length);
         if (strcmp(key,newkey)!=0)
         {   strcpy(key, newkey);
             strcpy(file, newfile);
-            fprintf(out, "\n%s :%s %D/%D",  key, file, start, length);
+            fprintf(out, "\n%s :%s %ld/%ld",  key, file, start, length);
 	    lines++;
         }
         else if (strcmp(file,newfile)!=0)
         {   strcpy(file,newfile);
-            fprintf(out, ":%s %D/%D", file, start, length);
+            fprintf(out, ":%s %ld/%ld", file, start, length);
         }
         else
-            fprintf(out, " %D/%D", start, length);
+            fprintf(out, " %ld/%ld", start, length);
     }
     fprintf(out, "\n");
     lines++;
