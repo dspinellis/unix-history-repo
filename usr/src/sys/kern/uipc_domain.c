@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_domain.c	8.2 (Berkeley) %G%
+ *	@(#)uipc_domain.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ void	pfslowtimo __P((void *));
 	domains = &__CONCAT(x,domain); \
 }
 
+void
 domaininit()
 {
 	register struct domain *dp;
@@ -67,8 +68,8 @@ if (max_linkhdr < 16)		/* XXX */
 max_linkhdr = 16;
 	max_hdr = max_linkhdr + max_protohdr;
 	max_datalen = MHLEN - max_hdr;
-	timeout(pffasttimo, (void *)0, 1);
-	timeout(pfslowtimo, (void *)0, 1);
+	timeout(pffasttimo, NULL, 1);
+	timeout(pfslowtimo, NULL, 1);
 }
 
 struct protosw *
@@ -115,6 +116,7 @@ found:
 	return (maybe);
 }
 
+int
 net_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
@@ -152,6 +154,7 @@ found:
 	return (ENOPROTOOPT);
 }
 
+void
 pfctlinput(cmd, sa)
 	int cmd;
 	struct sockaddr *sa;
@@ -176,7 +179,7 @@ pfslowtimo(arg)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_slowtimo)
 				(*pr->pr_slowtimo)();
-	timeout(pfslowtimo, (void *)0, hz/2);
+	timeout(pfslowtimo, NULL, hz/2);
 }
 
 void
@@ -190,5 +193,5 @@ pffasttimo(arg)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_fasttimo)
 				(*pr->pr_fasttimo)();
-	timeout(pffasttimo, (void *)0, hz/5);
+	timeout(pffasttimo, NULL, hz/5);
 }
