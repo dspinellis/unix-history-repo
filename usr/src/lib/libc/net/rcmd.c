@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.3 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.4 %G%";
 #endif
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ retry:
 		return (-1);
 	sin.sin_family = hp->h_addrtype;
 	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-	sin.sin_port = htons((u_short)rport);
+	sin.sin_port = rport;
 	if (connect(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		if (errno == EADDRINUSE) {
 			close(s);
@@ -123,7 +123,7 @@ rresvport(options, alport)
 
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = 0;
-	s = socket(0, SOCK_STREAM, 0, 0);
+	s = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (s < 0)
 		return (-1);
 	for (;;) {
