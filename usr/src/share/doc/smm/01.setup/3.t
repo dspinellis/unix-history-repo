@@ -1333,6 +1333,37 @@ Most of the other kernel interfaces have been changed to correspond
 with the POSIX.1 interface, although that work is not quite complete.
 See the relevant manual pages, perhaps in conjunction with the IEEE POSIX
 standard.
+.NH 4
+Native operating system compatibility
+.PP
+Both the HP300 and SPARC ports feature the ability to run binaries
+built for the native operating system (HP-UX or SunOS) by emulating
+their system calls.
+Building an HP300 kernel with the HPUXCOMPAT and COMPAT_OHPUX options
+or a SPARC kernel with the COMPAT_SUNOS option will enable this feature
+(on by default in the generic kernel provided in the root filesystem image).
+Though this native operating system compatibility was provided by the
+developers as needed for their purposes and is by no means complete,
+it is sufficient to run a number of non-trivial applications including
+those which require HP-UX or SunOS shared libraries.
+.PP
+It is important to remember that merely copying over a native binary
+and executing it (or executing it directly across NFS) does not imply
+that it will run.
+All but the most trivial of applications are likely to require access
+to auxilliary files that don't exist under \*(4B (e.g.
+.Pn /etc/ld.so.cache )
+or have a slightly different format (e.g.
+.Pn /etc/passwd ).
+However, by using system call tracing and
+through creative use of symlinks,
+many problems can be tracked down and corrected.
+.PP
+The DECstation port also has code for ULTRIX emulation
+(kernel option ULTRIXCOMPAT, not compiled into the generic kernel)
+but it was used primarily for initially bootstrapping the port and
+has not been used since.
+Hence, some work may be required to make it useful.
 .NH 3
 Changes to the utilities
 .PP
@@ -1507,12 +1538,12 @@ cause difficulty in doing the conversion.
 It does not include changes in the network;
 see section 5 for information on setting up the network.
 .PP
-The stat st_size field is now 64-bits instead of 32.
-Doing something like:
+Since the stat st_size field is now 64-bits instead of 32,
+doing something like:
 .DS
 foo(st.st_size);
 .DE
-and then (improperly) defining foo with an "int" or "long" param:
+and then (improperly) defining foo with an ``int'' or ``long'' parameter:
 .DS
 foo(size)
 	int size;
@@ -1523,7 +1554,7 @@ foo(size)
 will fail miserably (well, it might work on a little endian machine).
 This problem showed up in emacs as well as several other programs.
 A related problem is improperly casting (or failing to cast)
-the second argument to lseek (or [f]truncate) ala:
+the second argument to lseek or [f]truncate ala:
 .DS
 lseek(fd, (long)off, 0);
 .DE
@@ -1535,17 +1566,17 @@ The best solution is to include
 .Pn <sys/types.h>
 which has prototypes that catch these types of errors.
 .PP
-Determining the namelen param for a connect call on a unix domain socket
-should use the SUN_LEN macro.
+Determining the ``namelen'' parameter for a connect call on a
+unix domain socket should use the SUN_LEN macro.
 One old way that was used:
 .DS
 addrlen = strlen(unaddr.sun_path) + sizeof(unaddr.sun_family);
 .DE
-no longer works as there is an additional field "sun_len".
+no longer works as there is an additional field ``sun_len''.
 .PP
 The timezone conversion code uses data files installed in
 .Pn /usr/share/zoneinfo
-to convert from "GMT" to various timezones.  The data file for the default
+to convert from ``GMT'' to various timezones.  The data file for the default
 timezone for the system should be copied to
 .Pn /etc/localtime .
 Other timezones can be selected by setting the TZ environment variable.
@@ -1571,7 +1602,7 @@ The data files without leap second information
 are constructed from the source directory,
 .Pn /usr/src/share/zoneinfo .
 Change the variable REDO in Makefile
-from "right" to "posix", and then do
+from ``right'' to ``posix'', and then do
 .DS
 make obj	(if necessary)
 make
