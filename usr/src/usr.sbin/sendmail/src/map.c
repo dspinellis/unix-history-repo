@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -179,9 +179,15 @@ map_rewrite(map, s, slen, av)
 
 	if (tTd(23, 1))
 	{
-		printf("map_rewrite(%.*s), av =\n", slen, s);
-		for (avp = av; *avp != NULL; avp++)
-			printf("\t%s\n", *avp);
+		printf("map_rewrite(%.*s), av =", slen, s);
+		if (av == NULL)
+			printf(" (nullv)");
+		else
+		{
+			for (avp = av; *avp != NULL; avp++)
+				printf("\n\t%s", *avp);
+		}
+		printf("\n");
 	}
 
 	/* count expected size of output (can safely overestimate) */
