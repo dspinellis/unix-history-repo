@@ -1,4 +1,4 @@
-#	Makefile	4.5	83/08/11
+#	Makefile	4.6	83/08/13
 #
 # Doing a make install builds /usr/include
 #
@@ -29,7 +29,7 @@ all:
 
 install: ${SHARED}
 	-for i in ${STD}; do \
-		install -c -m 644 $$i ${DESTDIR}/usr/include/$$i; \
+		install -c -m 444 $$i ${DESTDIR}/usr/include/$$i; \
 	done
 	-for i in ${SUBDIRS}; do \
 		if [ ! -d ${DESTDIR}/usr/include/$$i ]; \
@@ -37,7 +37,7 @@ install: ${SHARED}
 			mkdir ${DESTDIR}/usr/include/$$i; \
 		fi; \
 		(cd $$i; for j in *.[ih]; do \
-			install -c -m 644 $$j ${DESTDIR}/usr/include/$$i/$$j; \
+			install -c -m 444 $$j ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
 	-for i in ${LINKS}; do \
@@ -65,7 +65,7 @@ copies:
 	done
 	rm -rf ${DESTDIR}/usr/include/sys;
 	mkdir ${DESTDIR}/usr/include/sys; 
-	chmod 755 ${DESTDIR}/usr/include/sys;
+	chmod 775 ${DESTDIR}/usr/include/sys;
 	(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpf -))
 
 clean:
