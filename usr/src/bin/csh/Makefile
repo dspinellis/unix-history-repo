@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley Software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -16,7 +16,7 @@ XSTR=	/usr/ucb/xstr
 AS=	as
 RM=	-rm
 CXREF=	/usr/ucb/cxref
-VGRIND=	csh /usr/ucb/vgrind
+VGRIND=	/usr/ucb/vgrind
 CTAGS=	/usr/ucb/ctags
 LIBES=
 SCCS=	sccs
@@ -36,7 +36,7 @@ OBJS=	alloc.o doprnt.o printf.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
 # strings.o must be last since it can change when previous files compile
 csh: ${OBJS} strings.o
 	rm -f csh
-	${CC} ${OBJS} strings.o -o csh ${LIBES}
+	${CC} ${CFLAGS} ${OBJS} strings.o -o csh ${LIBES}
 
 .DEFAULT:
 	${SCCS} get $<
@@ -45,17 +45,17 @@ csh: ${OBJS} strings.o
 doprnt.o: doprnt.c
 	${CC} -E doprnt.c | ${AS} -o doprnt.o
 
-# strings.o and sh.init.o are specially processed to be shared
+# strings.o, sh.init.o, and sh.char.o are specially processed to be shared
 strings.o: strings
 	${XSTR}
 	${CC} -c -R xs.c
 	mv -f xs.o strings.o
 	rm -f xs.c
 
-sh.init.o:
-	${CC} -E ${CFLAGS} sh.init.c | ${XSTR} -c -
+sh.char.o sh.init.o:
+	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
 	${CC} ${CFLAGS} -c -R x.c
-	mv -f x.o sh.init.o
+	mv -f x.o $*.o
 	rm -f x.c
 	
 lint:
@@ -63,7 +63,7 @@ lint:
 
 print:
 	@pr READ_ME
-	@pr makefile makefile.*
+	@pr Makefile Makefile.*
 	@(size -l a.out; size *.o) | pr -h SIZES
 	@${CXREF} sh*.c | pr -h XREF
 	@ls -l | pr 
@@ -71,7 +71,7 @@ print:
 
 vprint:
 	@pr -l84 READ_ME TODO
-	@pr -l84 makefile makefile.*
+	@pr -l84 Makefile Makefile.*
 	@(size -l a.out; size *.o) | pr -l84 -h SIZES
 	@${CXREF} sh*.c | pr -l84 -h XREF
 	@ls -l | pr -l84
@@ -80,9 +80,10 @@ vprint:
 
 vgrind:
 	@cp /dev/null index
-	@for i in *.h; do vgrind -t -h "C Shell" $$i >/crp/bill/csh/$$i.t; done
-	@for i in *.c; do vgrind -t -h "C Shell" $$i >/crp/bill/csh/$$i.t; done
-	@vgrind -t -x -h Index index >/crp/bill/csh/index.t
+	@-mkdir grind
+	for i in *.h; do ${VGRIND} -t -h "C Shell" $$i >grind/$$i.t; done
+	for i in *.c; do ${VGRIND} -t -h "C Shell" $$i >grind/$$i.t; done
+	${VGRIND} -t -x -h Index index >grind/index.t
 
 install: csh
 	install -s csh ${DESTDIR}/bin/csh
@@ -90,27 +91,28 @@ install: csh
 clean:
 	${RM} -f a.out strings x.c xs.c csh errs
 	${RM} -f *.o
+	${RM} -rf vgrind
 
 tags:
-	${CTAGS} *.h sh*.c
+	${CTAGS} -t *.h sh*.c
 
-sh.o: sh.h sh.local.h
+sh.o: sh.h sh.local.h sh.char.h
 sh.char.o: sh.char.h
 sh.dir.o: sh.h sh.local.h sh.dir.h
 sh.dol.o: sh.h sh.local.h sh.char.h
-sh.err.o: sh.h sh.local.h
-sh.exec.o: sh.h sh.local.h
-sh.exp.o: sh.h sh.local.h
-sh.file.o: sh.h sh.local.h
-sh.func.o: sh.h sh.local.h
+sh.err.o: sh.h sh.local.h sh.char.h
+sh.exec.o: sh.h sh.local.h sh.char.h
+sh.exp.o: sh.h sh.local.h sh.char.h
+sh.file.o: sh.h sh.local.h sh.char.h
+sh.func.o: sh.h sh.local.h sh.char.h
 sh.glob.o: sh.h sh.local.h sh.char.h
-sh.hist.o: sh.h sh.local.h
+sh.hist.o: sh.h sh.local.h sh.char.h
 sh.init.o: sh.local.h
 sh.lex.o: sh.h sh.local.h sh.char.h
-sh.misc.o: sh.h sh.local.h
-sh.parse.o: sh.h sh.local.h
-sh.print.o: sh.h sh.local.h
-sh.proc.o: sh.h sh.local.h sh.dir.h sh.proc.h
-sh.sem.o: sh.h sh.local.h sh.proc.h
-sh.set.o: sh.h sh.local.h
-sh.time.o: sh.h sh.local.h
+sh.misc.o: sh.h sh.local.h sh.char.h
+sh.parse.o: sh.h sh.local.h sh.char.h
+sh.print.o: sh.h sh.local.h sh.char.h
+sh.proc.o: sh.h sh.local.h sh.dir.h sh.proc.h sh.char.h
+sh.sem.o: sh.h sh.local.h sh.proc.h sh.char.h
+sh.set.o: sh.h sh.local.h sh.char.h
+sh.time.o: sh.h sh.local.h sh.char.h
