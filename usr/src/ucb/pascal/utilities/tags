@@ -1,0 +1,322 @@
+ABS	stab.c	?^#define	ABS( x )	( x < 0 ? -x : x )$?
+ADDTYPE	pcops.h	?^#define ADDTYPE( t,m )	( ( ( ( t ) & ~P2BASETYPE )?
+BLOCKNO	0.h	?^#define	BLOCKNO( flag )	( flag & 037 )$?
+Mmain	main.c	?^main(argc, argv)$?
+Mopc	opc.c	?^main()  {$?
+Mpic	pic.c	?^main()  {$?
+Mversion	version.c	?^main()$?
+NLFLAGS	0.h	?^#define NLFLAGS( flag ) ( flag &~ 037 )$?
+OYcopy	yycopy.c	?^OYcopy ()$?
+Perror	subr.c	?^Perror(file, error)$?
+TOF77	p2put.c	?^#define		TOF77( fop,val,rest )	( ( ( (rest) & 0177?
+a8tol	ato.c	?^a8tol(cp)$?
+addlist	yytree.c	?^addlist(vroot, new)$?
+addtype	p2put.c	?^addtype( underlying , mtype )$?
+align	var.c	?^align( np )$?
+alph	yy.h	?^#define alph(c)		((c >= 'a' && c <= 'z') || (c >= ?
+any	subr.c	?^any(cp, ch)$?
+arycod	lval.c	?^arycod(np, el)$?
+aryconst	var.c	?^long aryconst(np, n)$?
+asgnop	stat.c	?^asgnop(r)$?
+asgnop1	stat.c	?^asgnop1(r, p)$?
+asrtop	stat.c	?^asrtop(r)$?
+binarysw	pccaseop.c	?^binarysw( ctab , count )$?
+brerror	yyerror.c	?^brerror(where, what)$?
+bsrecur	pccaseop.c	?^bsrecur( deflabel , ctab , count )$?
+bytes	var.c	?^bytes(lb, ub)$?
+call	call.c	?^call(p, argv, porf, psbn)$?
+calloc	subr.c	?^calloc(num, size)$?
+casecmp	pccaseop.c	?^casecmp( this , that )$?
+caseop	case.c	?^caseop(r)$?
+cat	savenl.c	?^cat(fd)$?
+cerror	error.c	?^cerror(a1, a2, a3, a4, a5)$?
+charname	yyprint.c	?^charname(ch , which )$?
+classify	clas.c	?^classify(p1)$?
+codeoff	0.h	?^#define	codeoff()	--cgenflg$?
+codeon	0.h	?^#define	codeon()	cgenflg++$?
+commform	yy.h	?^#define	commform()	quickcomm(CFORM)$?
+commnl	yy.h	?^#define	commnl()	quickcomm(CNL)$?
+commnlbl	yy.h	?^#define	commnlbl()	quickcomm(CNLBL)$?
+compat	conv.c	?^compat(p1, p2, t)$?
+const	const.c	?^const(cline, cid, cdecl)$?
+constbeg	const.c	?^constbeg()$?
+constend	const.c	?^constend()$?
+constval	rval.c	?^constval(r)$?
+conv	conv.c	?^conv(dub)$?
+convert	conv.c	?^convert(p1, p2)$?
+copy	subr.c	?^copy(to, from, bytes)$?
+copyfile	yymain.c	?^copyfile()$?
+copynlfile	savenl.c	?^copynlfile()$?
+copystr	tree.c	?^copystr(token)$?
+correct	yyrecover.c	?^correct(fchar, origin, c, multvec, Ps0, Pv0)$?
+deffld	rec.c	?^deffld(p, s, t)$?
+defnl	nl.c	?^defnl(sym, cls, typ, val)$?
+defvnt	rec.c	?^defvnt(p, t, vr, ct)$?
+delcost	yycosts.c	?^delcost(what)$?
+derror	error.c	?^derror(a1, a2, a3, a4, a5)$?
+digit	yy.h	?^#define digit(c)	(c >= '0' && c <= '9')$?
+directsw	pccaseop.c	?^directsw( ctab , count )$?
+dotalign	var.c	?^dotalign( alignment )$?
+dotted	subr.c	?^dotted(fp, c)$?
+dumpnl	nl.c	?^dumpnl(to, rout)$?
+eholdnl	0.h	?^#define	eholdnl()	Eholdnl = 1$?
+elineoff	0.h	?^#define	elineoff()	Enoline = TRUE$?
+elineon	0.h	?^#define	elineon()	Enoline = FALSE$?
+enter	nl.c	?^enter(np)$?
+error	error.c	?^error(a1, a2, a3, a4, a5)$?
+esavestr	string.c	?^esavestr(cp)$?
+even	var.c	?^even(w)$?
+evenit	string.c	?^evenit()$?
+extlabname	lab.c	?^extlabname( buffer , name , level )$?
+fcompat	call.c	?^fcompat( formal , actual )$?
+fields	rec.c	?^fields(p, r)$?
+fixlist	yytree.c	?^fixlist(vroot)$?
+flvalue	flvalue.c	?^flvalue( r , formalp )$?
+foredecl	type.c	?^foredecl()$?
+forop	forop.c	?^forop( arg )$?
+fparams	fhdr.c	?^fparams(p, formal)$?
+funcbody	fdec.c	?^funcbody(fp)$?
+funccod	func.c	?^funccod(r)$?
+funcend	fend.c	?^funcend(fp, bundle, endline)$?
+funcext	fdec.c	?^funcext(fp)$?
+funcfwd	fdec.c	?^funcfwd(fp)$?
+funchdr	fhdr.c	?^funchdr(r)$?
+gconst	const.c	?^gconst(r)$?
+gen	gen.c	?^gen(p, o, w1, w2)$?
+genmx	gen.c	?^genmx()$?
+getcnt	stat.c	?^getcnt()$?
+geterr	main.c	?^geterr(seekpt, buf)$?
+getlab	put.c	?^getlab()$?
+getline	yyget.c	?^getline()$?
+getnext	put.c	?^getnext(next, new)$?
+gettime	subr.c	?^gettime( filename )$?
+gotoop	lab.c	?^gotoop(s)$?
+graphic	yyput.c	?^graphic(ch)$?
+gtype	type.c	?^gtype(r)$?
+hash	hash.c	?^int *hash(s, save)$?
+hdefnl	nl.c	?^hdefnl(sym, cls, typ, val)$?
+header	main.c	?^header()$?
+identis	yyid.c	?^identis(cp, kind)$?
+ifop	stat.c	?^ifop(r)$?
+inccnt	stat.c	?^inccnt( counter )$?
+includ	yyget.c	?^includ()$?
+inithash	hash.c	?^inithash()$?
+initnl	nl.c	?^initnl()$?
+initstring	string.c	?^initstring()$?
+inittree	tree.c	?^inittree()$?
+inpflist	subr.c	?^inpflist(fp)$?
+inscost	yycosts.c	?^inscost(sy, before)$?
+isa	clas.c	?^isa(p, s)$?
+isblock	savenl.c	?^#define isblock(s)	(s->class == FUNC || s->class =?
+isbuiltin	savenl.c	?^#define isbuiltin(s)	((s->nl_block&037) == 0 && is?
+isconst	const.c	?^isconst(r)$?
+isnta	clas.c	?^isnta(p, s)$?
+itesw	pccaseop.c	?^itesw( ctab , count )$?
+label	lab.c	?^label(r, l)$?
+labeled	lab.c	?^labeled(s)$?
+lenstr	put.c	?^lenstr(sptr, padding)$?
+level1	fdec.c	?^level1()$?
+leven	var.c	?^leven(w)$?
+line2of	y.tab.c	?^#define	line2of(l)	l$?
+lineno	savenl.c	?^lineno(line)$?
+linenum	call.c	?^linenum(p)$?
+lineof	y.tab.c	?^#define	lineof(l)	l$?
+listnames	put.c	?^listnames(ap)$?
+loccor	yyrecover.c	?^loccor(ps, ntok)$?
+lookup	lookup.c	?^lookup(s)$?
+lookup1	lookup.c	?^lookup1(s)$?
+lptr	lval.c	?^lptr(c)$?
+lvalue	lval.c	?^lvalue(r, modflag , required )$?
+lwidth	var.c	?^lwidth(np)$?
+magic	yymain.c	?^magic()$?
+magic2	yymain.c	?^magic2()$?
+myctime	subr.c	?^myctime(tv)$?
+nameof	clas.c	?^nameof(p)$?
+nerror	fdec.c	?^nerror(a1, a2, a3)$?
+newfile	savenl.c	?^newfile(s, line)$?
+newlist	yytree.c	?^newlist(new)$?
+nilfnil	pclval.c	?^nilfnil( p , c , modflag , firstp , r2 )$?
+nlcopy	nl.c	?^nlcopy(p)$?
+nlfree	nl.c	?^nlfree(p)$?
+nlfund	lookup.c	?^nlfund(sp)$?
+nlhdrsize	savenl.c	?^nlhdrsize()$?
+nloff	nl.c	?^nloff(p)$?
+nocascade	0.h	?^#define	nocascade()	Enocascade = 1$?
+nocomp	rval.c	?^nocomp(c)$?
+norange	type.c	?^norange(p)$?
+nowexp	clas.c	?^nowexp(r)$?
+nullsem	yyseman.c	?^nullsem(ch)$?
+onintr	main.c	?^onintr()$?
+opop	subr.c	?^opop(c)$?
+opt	0.h	?^#define opt(c) opts[c-'A']$?
+options	yyoptions.c	?^options()$?
+opush	subr.c	?^opush(c)$?
+p2name	p2put.c	?^p2name( name )$?
+p2string	p2put.c	?^p2string( string )$?
+p2type	p2put.c	?^p2type( np )$?
+p2word	p2put.c	?^p2word( word )$?
+panic	error.c	?^panic(s)$?
+params	fhdr.c	?^params(p, formalist)$?
+parnam	call.c	?^parnam(nltype)$?
+patch	put.c	?^patch(loc)$?
+patch4	put.c	?^patch4(loc)$?
+patchfil	put.c	?^patchfil(loc, value, words)$?
+pccaseop	pccaseop.c	?^pccaseop( tcase )$?
+pcfunccod	pcfunc.c	?^pcfunccod( r )$?
+pchr	main.c	?^pchr(c)$?
+pclvalue	pclval.c	?^pclvalue( r , modflag , required )$?
+pcproc	pcproc.c	?^pcproc(r)$?
+pexit	main.c	?^pexit(c)$?
+pflush	put.c	?^pflush()$?
+plist	call.c	?^plist(p)$?
+pnums	fdec.c	?^pnums(p)$?
+postcheck	conv.c	?^postcheck( p )$?
+postcset	cset.c	?^postcset( r , csetp )$?
+precheck	conv.c	?^precheck( p , name1 , name2 )$?
+precset	cset.c	?^precset( r , settype , csetp )$?
+printjbr	p2put.c	?^printjbr( prefix , label )$?
+proc	proc.c	?^proc(r)$?
+put	p2put.c	?^put( arg1 , arg2 )$?
+put1	putn.c	?^put1 ( arg1 )$?
+put2	putn.c	?^put2 ( arg1 , arg2 )$?
+put3	putn.c	?^put3 ( arg1 , arg2 , arg3 )$?
+put4	putn.c	?^put4 ( arg1 , arg2 , arg3 , arg4 )$?
+putCON8	p2put.c	?^putCON8( value )$?
+putCONG	p2put.c	?^putCONG( string , length , required )$?
+putLV	p2put.c	?^putLV( name , level , offset , extra_flags , type ?
+putRV	p2put.c	?^putRV( name , level , offset , extra_flags , type ?
+putblock	savenl.c	?^LOCAL putblock(s)$?
+putcnt	stat.c	?^putcnt()$?
+putdot	p2put.c	?^putdot( filename , line )$?
+puteof	p2put.c	?^puteof()$?
+putjbr	p2put.c	?^putjbr( label )$?
+putlab	put.c	?^putlab(l)$?
+putlbracket	p2put.c	?^putlbracket( ftnno , localbytes )$?
+putleaf	p2put.c	?^putleaf( op , lval , rval , type , name )$?
+putline	stat.c	?^putline()$?
+putop	p2put.c	?^putop( op , type )$?
+putprintf	p2put.c	?^putprintf( format , incomplete , arg1 , arg2 , arg?
+putrbracket	p2put.c	?^putrbracket( ftnno )$?
+putspace	put.c	?^putspace(n)$?
+putstr	put.c	?^putstr(sptr, padding)$?
+putstring	savenl.c	?^LOCAL putstring(s)$?
+putstrop	p2put.c	?^putstrop( op , type , size , alignment )$?
+puttext	p2put.c	?^puttext( string )$?
+rangechk	conv.c	?^rangechk(p, q)$?
+rdops	pcproc.c	?^#define rdops(x) rdxxxx[(x)-(TFIRST)]$?
+readch	yyget.c	?^readch()$?
+reclook	rec.c	?^reclook(p, s)$?
+recovered	0.h	?^#define	recovered()	setpfx('e')$?
+removenlfile	savenl.c	?^removenlfile()$?
+repcost	yycosts.c	?^repcost(what, with)$?
+repop	stat.c	?^repop(r)$?
+roundup	var.c	?^roundup( x , y )$?
+rvalue	rval.c	?^rvalue(r, contype , required )$?
+rvlist	call.c	?^rvlist(al)$?
+savenl	savenl.c	?^savenl(to, rout)$?
+savestr	string.c	?^savestr(cp)$?
+savmask	tmps.c	?^savmask()$?
+scalar	clas.c	?^scalar(p1)$?
+segend	fdec.c	?^ segend()$?
+setpfx	0.h	?^#define	setpfx(x)	errpfx = x$?
+setran	var.c	?^setran(q)$?
+setuflg	yylex.c	?^setuflg()$?
+setupfield	yytree.c	?^setupfield( field , other )$?
+setuptyrec	yytree.c	?^setuptyrec( line , fldlst )$?
+setupvar	yytree.c	?^setupvar(var, init)$?
+sextname	fend.c	?^sextname( buffer , name , level )$?
+skipbl	yyget.c	?^skipbl(ocp)$?
+soffset	string.c	?^soffset(cp)$?
+sreloc	string.c	?^sreloc(i)$?
+stabefunc	stab.c	?^stabefunc( name , class , line )$?
+stabfield	stab.c	?^stabfield( name , type , offset , length )$?
+stabfunc	stab.c	?^stabfunc( name , class , line , level )$?
+stabgconst	stab.c	?^stabgconst( const , line )$?
+stabglabel	stab.c	?^stabglabel( label , line )$?
+stabgtype	stab.c	?^stabgtype( type , line )$?
+stabgvar	stab.c	?^stabgvar( name , type , offset , length , line )$?
+stabinclude	stab.c	?^stabinclude( filename )$?
+stablbrac	stab.c	?^stablbrac( level )$?
+stabline	stab.c	?^stabline( line )$?
+stablvar	stab.c	?^stablvar( name , type , level , offset , length )$?
+stabparam	stab.c	?^stabparam( name , type , offset , length )$?
+stabrbrac	stab.c	?^stabrbrac( level )$?
+stabsource	stab.c	?^stabsource( filename )$?
+standard	0.h	?^#define	standard()	setpfx('s')$?
+startnlfile	savenl.c	?^startnlfile()$?
+statement	stat.c	?^statement(r)$?
+statlist	stat.c	?^statlist(r)$?
+stklval	stklval.c	?^stklval(r, modflag)$?
+stkrval	stkrval.c	?^stkrval(r, contype , required )$?
+str4len	p2put.c	?^str4len( string )$?
+strcmp	subr.c	?^strcmp(s1, s2)$?
+strcpy	subr.c	?^strcpy(s1, s2)$?
+symno	savenl.c	?^#define symno(p)	(p==NULL ? 0 : nloff(p))$?
+text	clas.c	?^text(p)$?
+tmpalloc	tmps.c	?^tmpalloc(size, type, mode)$?
+tmpfree	tmps.c	?^tmpfree(restore)$?
+togopt	subr.c	?^togopt(c)$?
+tokname	yyprint.c	?^tokname(tp , which )$?
+tralloc	tree.c	?^tralloc(howmuch)$?
+tree	tree.c	?^int *tree(cnt, a)$?
+tree1	treen.c	?^tree1 ( arg1 )$?
+tree2	treen.c	?^tree2 ( arg1 , arg2 )$?
+tree3	treen.c	?^tree3 ( arg1 , arg2 , arg3 )$?
+tree4	treen.c	?^tree4 ( arg1 , arg2 , arg3 , arg4 )$?
+tree5	treen.c	?^tree5 ( arg1 , arg2 , arg3 , arg4 , arg5 )$?
+trfree	tree.c	?^trfree()$?
+trystate	yyrecover.c	?^trystate(Ps0, Pv0, flag, insmult, delmult, repmult?
+tyary	type.c	?^tyary(r)$?
+type	type.c	?^type(tline, tid, tdecl)$?
+typebeg	type.c	?^typebeg()$?
+typeend	type.c	?^typeend()$?
+typerecur	p2put.c	?^typerecur( np , quals )$?
+tyrang	type.c	?^tyrang(r)$?
+tyrec	rec.c	?^tyrec(r, off)$?
+tyrec1	rec.c	?^tyrec1(r, off, first)$?
+tyscal	type.c	?^tyscal(r)$?
+ungoto	stat.c	?^ungoto()$?
+uninclud	yyget.c	?^uninclud()$?
+uniqv	rec.c	?^uniqv(p)$?
+unyylex	yylex.c	?^unyylex(y)$?
+var	var.c	?^var(vline, vidl, vtype)$?
+varbeg	var.c	?^varbeg()$?
+varend	var.c	?^varend()$?
+variants	rec.c	?^variants(p, r)$?
+warning	0.h	?^#define	warning()	setpfx('w')$?
+whereis	clas.c	?^whereis( level , offset , extra_flags )$?
+whilop	stat.c	?^whilop(r)$?
+width	var.c	?^width(np)$?
+withop	stat.c	?^withop(s)$?
+word	put.c	?^word(o)$?
+writef	yymain.c	?^writef(i, cp)$?
+yerror	yyerror.c	?^yerror(s, a1, a2, a3, a4, a5)$?
+yyEactr	y.tab.c	?^yyEactr(__np__, var)$?
+yyPerror	yypanic.c	?^yyPerror(cp, kind)$?
+yySsync	yyput.c	?^yySsync()$?
+yyactr	y.tab.c	?^yyactr(__np__){$?
+yybadref	yyid.c	?^yybadref(p, line)$?
+yybaduse	yyid.c	?^yybaduse(cp, line, kindmask)$?
+yycosts	yycosts.c	?^yycosts()$?
+yydocost	yycosts.c	?^yydocost(c)$?
+yyexeof	yyrecover.c	?^yyexeof()$?
+yyflush	yyput.c	?^yyflush()$?
+yygetline	yyput.c	?^yygetline(efile, seekp, eline, eseqid)$?
+yyidok	yyid.c	?^yyidok(p, kind)$?
+yyidok1	yyid.c	?^yyidok1(p, kind)$?
+yyisvar	yyid.c	?^yyisvar(p, class)$?
+yylex	yylex.c	?^yylex()$?
+yymain	yymain.c	?^yymain()$?
+yyoutfl	yyput.c	?^yyoutfl(toseqid)$?
+yyoutline	yyput.c	?^yyoutline()$?
+yyparse	yyparse.c	?^yyparse()$?
+yyprintf	yyput.c	?^yyprintf(cp, line)$?
+yyprline	yyput.c	?^yyprline(buf, line, file, id)$?
+yyputfn	yyput.c	?^yyputfn(cp)$?
+yyrecover	yyrecover.c	?^yyrecover(Ps0, idfail)$?
+yyresume	yy.h	?^#define	yyresume()	yyResume = 1;$?
+yyretrieve	yyput.c	?^yyretrieve()$?
+yyset	yylex.c	?^yyset()$?
+yysetfile	error.c	?^yysetfile(name)$?
+yysync	yyput.c	?^yysync()$?
+yyunexeof	yyrecover.c	?^yyunexeof()$?
