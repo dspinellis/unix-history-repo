@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -19,6 +19,7 @@ SRCS=	af.c if.c input.c main.c output.c startup.c tables.c timer.c \
 	trace.c inet.c
 OBJS=	af.o if.o input.o main.o output.o startup.o tables.o timer.o \
 	trace.o inet.o
+HDRS=	af.h defs.h interface.h table.h trace.h
 
 all: routed
 
@@ -33,7 +34,7 @@ routed:	${OBJS} ${LIBC}
 	rm -f $*.s
 
 clean: FRC
-	rm -f ${OBJS} core routed tags
+	rm -f ${OBJS} core routed
 	(cd tools; make ${MFLAGS} clean)
 
 depend: FRC
@@ -47,7 +48,7 @@ lint: FRC
 	lint ${CFLAGS} ${SRCS}
 
 tags: FRC
-	ctags ${SRCS}
+	ctags ${HDRS} ${SRCS}
 	(cd tools; make ${MFLAGS} tags)
 
 FRC:
@@ -73,9 +74,11 @@ main.o: /usr/include/net/route.h /usr/include/netinet/in.h
 main.o: /usr/include/protocols/routed.h /usr/include/stdio.h
 main.o: /usr/include/netdb.h trace.h interface.h table.h af.h
 main.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-main.o: /usr/include/sys/ttydev.h /usr/include/sys/time.h /usr/include/time.h
-main.o: /usr/include/net/if.h /usr/include/net/if_arp.h /usr/include/errno.h
-main.o: /usr/include/signal.h /usr/include/machine/trap.h /usr/include/syslog.h
+main.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+main.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/net/if.h
+main.o: /usr/include/net/if_arp.h /usr/include/sys/errno.h
+main.o: /usr/include/sys/signal.h /usr/include/machine/trap.h
+main.o: /usr/include/sys/syslog.h
 output.o: output.c defs.h /usr/include/sys/types.h /usr/include/sys/socket.h
 output.o: /usr/include/net/route.h /usr/include/netinet/in.h
 output.o: /usr/include/protocols/routed.h /usr/include/stdio.h
@@ -85,14 +88,16 @@ startup.o: /usr/include/net/route.h /usr/include/netinet/in.h
 startup.o: /usr/include/protocols/routed.h /usr/include/stdio.h
 startup.o: /usr/include/netdb.h trace.h interface.h table.h af.h
 startup.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-startup.o: /usr/include/sys/ttydev.h /usr/include/net/if.h
-startup.o: /usr/include/net/if_arp.h /usr/include/syslog.h
+startup.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+startup.o: /usr/include/net/if.h /usr/include/net/if_arp.h
+startup.o: /usr/include/syslog.h
 tables.o: tables.c defs.h /usr/include/sys/types.h /usr/include/sys/socket.h
 tables.o: /usr/include/net/route.h /usr/include/netinet/in.h
 tables.o: /usr/include/protocols/routed.h /usr/include/stdio.h
 tables.o: /usr/include/netdb.h trace.h interface.h table.h af.h
 tables.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-tables.o: /usr/include/sys/ttydev.h /usr/include/errno.h /usr/include/syslog.h
+tables.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+tables.o: /usr/include/errno.h /usr/include/sys/syslog.h
 timer.o: timer.c defs.h /usr/include/sys/types.h /usr/include/sys/socket.h
 timer.o: /usr/include/net/route.h /usr/include/netinet/in.h
 timer.o: /usr/include/protocols/routed.h /usr/include/stdio.h
@@ -101,7 +106,8 @@ trace.o: trace.c defs.h /usr/include/sys/types.h /usr/include/sys/socket.h
 trace.o: /usr/include/net/route.h /usr/include/netinet/in.h
 trace.o: /usr/include/protocols/routed.h /usr/include/stdio.h
 trace.o: /usr/include/netdb.h trace.h interface.h table.h af.h
-trace.o: /usr/include/sys/stat.h
+trace.o: /usr/include/sys/stat.h /usr/include/sys/signal.h
+trace.o: /usr/include/machine/trap.h
 inet.o: inet.c defs.h /usr/include/sys/types.h /usr/include/sys/socket.h
 inet.o: /usr/include/net/route.h /usr/include/netinet/in.h
 inet.o: /usr/include/protocols/routed.h /usr/include/stdio.h
