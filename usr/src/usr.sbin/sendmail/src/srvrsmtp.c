@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.14 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.15 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.14 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.15 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -123,8 +123,15 @@ smtp(e)
 	CurHostName = RealHostName;
 	setproctitle("server %s startup", CurHostName);
 	expand("\201e", inp, &inp[sizeof inp], e);
-	message("220-%s", inp);
-	message("220 ESMTP spoken here");
+	if (BrokenSmtpPeers)
+	{
+		message("220 %s", inp);
+	}
+	else
+	{
+		message("220-%s", inp);
+		message("220 ESMTP spoken here");
+	}
 	for (;;)
 	{
 		/* arrange for backout */
