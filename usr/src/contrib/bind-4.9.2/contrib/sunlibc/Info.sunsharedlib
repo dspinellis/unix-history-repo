@@ -1,0 +1,189 @@
+Updated by Dave Morrison for 4.9.2 release of bind.		11/4/93
+
+-------
+Message-Id: <9302101649.AA29641@irving.nas.nasa.gov>
+From: pomeranz@nas.nasa.gov (Hal Pomeranz)
+Date: Wed, 10 Feb 1993 08:49:03 -0800
+X-Mailer: Mail User's Shell (7.2.4 2/2/92)
+To: bind@ucbarpa.berkeley.edu
+Subject: Re: getting name service right on non-NIS Sun
+
+			-----------------
+			NEW BIND FOR SUNS			2/11/91
+			-----------------
+
+[Partially taken from the document "Making a libc.so for DNS without NIS"
+ that has been distributed to various SunOS users, and seen on Usenet.
+
+ Original document by Paul Balyoz (pab@naucse.cse.nau.edu).
+ Updated to include OS4.1.2 information, Hal Pomeranz, 3/3/92.
+]
+
+This document tells how to install a NEW version of the BIND Name Server
+resolver routines into the shared C library of a Sparcstation running
+SunOS 4.1 or greater.  The procedure is a bit different when you are
+trying to install a version of BIND distributed from Berkeley, compared
+to the (older) resolver library that comes with SunOS.
+
+
+
+
+A.  Get a 4.9.2 copy of bind, one which has the contrib/sunlibc
+directory.  Configure conf/options.h to taste as you would a standard
+bind installation.  Unless you are also compiling the name server you
+don't need to worry about the server specific options.  Options of
+consequence are DEBUG, RESOLVSORT, SUNSECURITY, ALLOW_T_UNSPEC,
+and ALLOW_UPDATES.
+
+Go to the contrib/sunlibc directory.  Run the make there.  Check the
+Makefile to get BUILDDIR right.  Make sure that it is the file that is
+used for the build so you get the libraries built with the correct
+options!
+
+This rebuilds the resolv library with the cflags required for shared
+libraries (-pic).  It also copies the object files to place in libc into
+the current directory.
+
+		cd .../bind-4.9.2/contrib/sunlibc
+		make BUILDDIR=../../sun4.b
+
+B.  Follow the steps below to make a new shared library on your Sun
+which includes the new resolver library routines in it.
+
+	(If you feel confident you know what to do, you can copy the
+	provided script make_lib.sh into /usr/lib/shlib.etc and run it.
+	It does steps 1-8, although is not very safety checking.  It is,
+	however, convenient for admins who are tired of typing or
+	copying all these commands!)
+
+    1.  Move into the shared-lib area and make a temporary directory:
+		cd /usr/lib/shlib.etc
+		mkdir tmp
+
+    2.  Move into this new directory, extract the pic (position
+	independent code) object files from libc_pic.a and remove
+	the SYMDEF file.  The renaming (mv commands) is done because
+	the "ar" command truncates names to 16 characters.
+		cd tmp
+		ar x ../libc_pic.a
+		rm __.SYMDEF
+		mv rpc_dtablesize. rpc_dtablesize.o
+		mv rpc_commondata. rpc_commondata.o
+		mv xccs.multibyte. xccs.multibyte.o
+
+    3.  Copy the object files created in part A to this libc build
+	directory.  This will replace Sun's inet_addr.o, which is
+	ok, this one is better.  Make sure that Sun's mktemp.o and
+	strpbrk.o don't get stomped, you need to use Sun's.
+
+		cp -i .../bind-4.9.2/contrib/sunlibc/*.o .
+
+    4.  Make sure the old host resolver is not still lying around:
+		rm gethostent.o
+	(ignore error "rm: gethostent.o nonexistent" if you see it.)
+
+    5.  Go back up to the shared library building directory and
+	duplicate the list of object files to use:
+		cd ..
+		cp lorder-sparc lorder-sparc.orig
+
+    6.  Edit this object file list and make the following modifications
+	if they haven't already been done before to this file:
+		remove: gethostent.o
+		add:	gethnamaddr.o
+			sethostent.o
+			res_query.o
+			res_mkquery.o
+			res_send.o
+			res_debug.o
+			res_comp.o
+			res_init.o
+			herror.o
+			strerr.o
+	(the last two are new, which Sun's resolver doesn't use)
+	After deleting gethostent.o, you can use the following
+	patch, or make the changes by hand (in this order):
+
+		***************
+		*** 149,154 ****
+		--- 149,164 ----
+		  listen.o
+		  getwd.o
+		  getnetgrent.o
+		+ gethnamaddr.o
+		+ herror.o
+		+ sethostent.o
+		+ res_query.o
+		+ res_mkquery.o
+		+ res_send.o
+		+ res_debug.o
+		+ res_comp.o
+		+ res_init.o
+		+ strerror.o
+		  ypxdr.o
+		  ttyname.o
+		  setbuffer.o
+
+    7.  The Makefile in shlib.etc for building shared libraries
+	has one problem when you run it as the super user.  So
+	edit it and modify the definition of "OBJSORT" to read:
+
+		OBJSORT=./objsort
+
+	If you are using SunOS 4.1.2, change the lines (there are two)
+	in the Makefile	which read
+
+		ld -assert pure-text `${OBJSORT} lorder-sparc tmp`
+
+	to read
+
+		ld -assert pure-text `${OBJSORT} lorder-sparc tmp` -ldl
+
+    8.  Now we can finally build the shared library.  Type:
+		make libc.so
+
+	What kind of errors might you get?  Here's a couple:
+	a. It blows up on one of the .o files in tmp, saying
+	   that the object file is in an inconsistent state.
+	   SOLUTION: start over; you did something wrong when you
+	   compiled the new libresolv.a in section A, above.
+	   Make SURE not to let Makefile "ld" the object files!
+	b. It lists hundreds of error lines about offsets or
+	   addresses being wrong in all your resolver .o files.
+	   SOLUTION: start over; you needed to specify "-pic"
+	   to the C compiler when building the libresolv.a library.
+
+    9.  If all goes well, you now have a "libc.so.x.y.z" in this
+	directory.  Test it out before installing it systemwide!
+	You can do this by pointing your shell's library path
+	variable to the current directory, then trying various
+	networking commands:
+		setenv LD_LIBRARY_PATH `pwd`
+		ping some.host.edu
+		ftp another.host.com
+		telnet someone.else.ca
+		unsetenv LD_LIBRARY_PATH
+	If anything in the library fails, you need to start
+	section B over again.  Maybe you forgot to use Sun's
+	versions of mktemp.o and strpbrk.o; things just won't
+	work with BIND's new versions of these files.
+
+   10.  When you are sure it's working OK, you can install it
+	into the system library directory (you will need to be superuser
+        to do this):
+
+		su
+		cp lib.so.x.y.z /usr/lib
+		chmod 755 /usr/lib/lib.so.x.y.z
+		ldconfig
+
+   11.  You can prove that you're using the new library now,
+	by watching the output of something like:
+		trace date
+
+	The lastest BIND resolver is now installed on your system.
+	You can go ahead and compile and install the other BIND
+	tools such as named, nslookup, etc.  You do not need to
+	specify the "-lresolv" library when compiling these tools.
+
+
