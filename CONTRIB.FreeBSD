@@ -1,4 +1,4 @@
-			  FreeBSD 1.0
+			  FreeBSD 1.1
 		        Contributor List
 
 
@@ -35,7 +35,7 @@ Andreas Schulz <ats@g386bsd.first.bmd.de>
 John Dyson <dyson@implode.rain.com>
 Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
 David Greenman <davidg@implode.rain.com>
-Jordan K. Hubbard <jkh@whisker.lotus.ie>
+Jordan K. Hubbard <jkh@whisker.hubbard.ie>
 Nate Williams <nate@bsd.coe.montana.edu>
 Paul Richards <paul@isl.cf.ac.uk>
 Rich Murphey <rich@lamprey.utmb.edu>
@@ -178,3 +178,5 @@ William Jolitz <withheld>
 Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
+
+$Id$
