@@ -3,51 +3,50 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tcgetpgrp.3	5.1 (Berkeley) %G%
+.\"	@(#)tcgetpgrp.3	5.2 (Berkeley) %G%
 .\"
-.Dd Jun 11, 1991
-.Dt TCGETPGRP
+.Dd ""
+.Dt TCGETPGRP 3
 .Os
 .Sh NAME
 .Nm tcgetpgrp
-.LP
-.B "Get Foreground Process Group ID"
-.LP
-.B "Function:  tcgetpgrp()"
-.LP
-.B "Synopsis"
-.LP
-.nf
-#include <sys/types.h>
-
-pid_t tcgetpgrp(int fildes);
-.fi
-.LP
-.B "Description"
-.LP
-The tcgetpgrp() function shall return the value of the process
-group ID of the foreground process group associated with the
-terminal.
-.LP
-.B "Returns"
-.LP
-Upon successful completion, tcgetpgrp() returns the process group ID of
-the foreground process group associated with the terminal.  If there is
-no foreground process group, tcgetpgrp() shall return a value greater
-than 1 that does not match the process group ID of any existing process
-group.  Otherwise, a value of -1 is returned and errno is set to indicate
-the error.
-.LP
-.B "Errors"
-.LP
-If any of the following conditions occur, the tcgetpgrp() function shall
-return -1 and set errno to the corresponding value:
-.nf
-   [EBADF]       The fildes argument is not a valid file descriptor.
-
-   [ENOSYS]      The tcgetpgrp() function is not supported in this
-                 implementation.
-
-   [ENOTTY]      The calling process does not have a controlling terminal
-                 or the file is not the controlling terminal.
-.fi
+.Nd get foreground process group ID
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Ft pid_t
+.Fn tcgetpgrp "int fd"
+.Sh DESCRIPTION
+The
+.Nm tcgetpgrp
+function returns the value of the process group ID of the foreground
+process group associated with the terminal device.
+If there is no foreground process group,
+.Nm tcgetpgrp
+returns an invalid process ID.
+.Sh ERRORS
+If an error occurs,
+.Nm tcgetpgrp
+returns -1 and the global variable
+.Va errno
+is set to indicate the error, as follows:
+.Bl -tag -width Er
+.It Bq Er EBADF
+The
+.Fa fd
+argument is not a valid file descriptor.
+.It Bq Er ENOTTY
+The calling process does not have a controlling terminal or the
+underlying terminal device represented by
+.Fa fd
+is not the controlling terminal.
+.El
+.Sh SEE ALSO
+.Xr setpgid 3 ,
+.Xr setsid 2 ,
+.Xr tcsetpgrp 3
+.Sh STANDARDS
+The
+.Nm tcgetpgrp
+function is expected to be compliant with the
+.St -p1003.1-88
+specification.

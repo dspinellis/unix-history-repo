@@ -3,120 +3,126 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tcsendbreak.3	5.1 (Berkeley) %G%
+.\"	@(#)tcsendbreak.3	5.2 (Berkeley) %G%
 .\"
-.Dd Jun 11, 1991
+.Dd ""
 .Dt LINE 3
 .Os
 .Sh NAME
-.Nm tcsendbreak,
-.Nm tcdrain,
-.Nm tcflush,
+.Nm tcsendbreak ,
+.Nm tcdrain ,
+.Nm tcflush ,
 .Nm tcflow
-.LP
-.B "Synopsis"
+.Nd line control functions
+.Sh SYNOPSIS
+.Fd #include <termios.h>
 .Ft int
 .Fn tcdrain "int fd"
 .Ft int
 .Fn tcflow "int fd" "int action"
 .Ft int
-.Fn tcflush "int fd" "int which"
+.Fn tcflush "int fd" "int action"
 .Ft int
 .Fn tcsendbreak "int fd" "int len"
-.nf
-#include <termios.h>
-
-int tcsendbreak(int fildes, int duration);
-int tcdrain(int fildes);
-
-int tcflush(int fildes, int queue_selector);
-int tcflow(int fildes, int action);
-.fi
-.LP
-.B "Description"
-.LP
-If the terminal is using asynchronous serial data transmission, the
-tcsendbreak() function shall cause transmission of a continuous stream of
-zero-valued bits for a specific duration.  If duration is zero, it shall
-cause transmission of zero-valued bits for at least 0.25 seconds, and not
-more that 0.5 seconds.
-.PP
-The tcdrain() function shall wait until all output written to the object
-referred to by fildes has been transmitted.
-.PP
-Upon successful completion, the tcflush() function shall have discarded
-any data written to the object referred to by fildes but not transmitted,
-or data received but not read, depending on the value of queue_selector:
-.nf
-    (1)  If queue_selector is TCIFLUSH, it shall flush data received but
-         not read.
-
-    (2)  If queue_selector is TCOFLUSH, it shall flush data written but
-         not transmitted.
-
-    (3)  If queue_selector is TCIOFLUSH, it shall flush both data
-         received but not read, and data written but not transmitted.
-.fi
-.PP
-The tcflow() function shall suspend transmission or reception of data on
-the object referred to by fildes, depending on the value of action:
-.nf
-    (1)  If action is TCOOFF, it shall suspend output.
-
-    (2)  If action is TCOON, it shall restart suspended output.
-
-    (3)  If action is TCIOFF, the system shall transmit a STOP character,
-         which is intended to cause the terminal device to stop
-         transmitting data to the system.  (See the description of IXOFF
-         in "Input Modes".)
-
-    (4)  If action is TCION, the system shall transmit a START character,
-         which is intended to cause the terminal device to start
-         transmitting data to the system.  (See the description of IXOFF
-         in "Input Modes".)
-.fi
-.LP
-.B "Returns"
-.LP
-Upon successful completion, a value of zero is returned.  Otherwise, a
-value of -1 is returned and errno is set to indicate the error.
-.LP
-.B "Errors"
-.LP
-If any of the following conditions occur, the tcsendbreak() function
-shall return -1 and set errno to the corresponding value:
-.nf
-   [EBADF]       The fildes argument is not a valid file descriptor.
-
-   [ENOTTY]      The file associated with fildes is not a terminal.
-.fi
-.PP
-If any of the following conditions occur, the tcdrain() function shall
-return -1 and set errno to the corresponding value:
-.nf
-   [EBADF]       The fildes argument is not a valid file descriptor.
-
-   [EINTR]       A signal interrupted the tcdrain() function.
-
-   [ENOTTY]      The file associated with fildes is not a terminal.
-.fi
-.PP
-If any of the following conditions occur, the tcflush() function shall
-return -1 and set errno to the corresponding value:
-.nf
-   [EBADF]       The fildes argument is not a valid file descriptor.
-
-   [EINVAL]      The queue_selector argument is not a proper value.
-
-   [ENOTTY]      The file associated with fildes is not a terminal.
-.fi
-.PP
-If any of the following conditions occur, the tcflow() function shall
-return -1 and set errno to the corresponding value:
-.nf
-   [EBADF]       The fildes argument is not a valid file descriptor.
-
-   [EINVAL]      The action argument is not a proper value.
-
-   [ENOTTY]      The file associated with fildes is not a terminal.
-.fi
+.Sh DESCRIPTION
+The
+.Nm tcdrain
+function waits until all output written to the terminal referenced by
+.Fa fd
+has been transmitted to the terminal.
+.Pp
+The
+.Nm tcflow
+function suspends transmission of data to or the reception of data from
+the terminal referenced by
+.Fa fd
+depending on the value of
+.Fa action .
+The value of
+.Fa action
+must be one of the following:
+.Bl -tag -width "TCIOFF"
+.It Fa TCOOFF
+Suspend output.
+.It Fa TCOON
+Restart suspended output.
+.It Fa TCIOFF
+Transmit a STOP character, which is intended to cause the terminal to stop
+transmitting data to the system.
+(See the description of IXOFF in the
+.Ql Input Modes
+section of
+.Xr termios 4 ).
+.It Fa TCION
+Transmit a START character, which is intended to cause the terminal to start
+transmitting data to the system.
+(See the description of IXOFF in the
+.Ql Input Modes
+section of
+.Xr termios 4 ).
+.El
+.Pp
+The
+.Nm tcflush
+function discards any data written to the terminal referenced by
+.Fa fd
+which has not been transmitted to the terminal, or any data received
+from the terminal but not yet read, depending on the value of
+.Fa action .
+The value of
+.Fa action
+must be one of the following:
+.Bl -tag -width "TCIOFLUSH"
+.It Fa TCIFLUSH
+Flush data received but not read.
+.It Fa TCOFLUSH
+Flush data written but not transmitted.
+.It Fa TCIOFLUSH
+Flush both data received but not read and data written but not transmitted.
+.El
+.Pp
+The
+.Nm tcsendbreak
+function transmits a continuous stream of zero-valued bits for four-tenths
+of a second to the terminal referenced by
+.Fa fd .
+The
+.Fa len
+parameter is ignored in this implementation.
+.Sh RETURN VALUES
+Upon successful completion, all of these functions return a value of zero.
+.Sh ERRORS
+If any error occurs, a value of -1 is returned and the global variable
+.Va errno
+is set to indicate the error, as follows:
+.Bl -tag -width Er
+.It Bq Er EBADF
+The
+.Fa fd
+argument is not a valid file descriptor.
+.It Bq Er EINVAL
+The
+.Fa action
+argument is not a proper value.
+.It Bq Er ENOTTY
+The file associated with
+.Fa fd
+is not a terminal.
+.It Bq Er EINTR
+A signal interrupted the
+.Nm tcdrain
+function.
+.El
+.Sh SEE ALSO
+.Xr tcsetattr 3 ,
+.Xr termios 4
+.Sh STANDARDS
+The
+.Nm tcsendbreak ,
+.Nm tcdrain ,
+.Nm tcflush
+and
+.Nm tcflow
+functions are expected to be compliant with the
+.St -p1003.1-88
+specification.
