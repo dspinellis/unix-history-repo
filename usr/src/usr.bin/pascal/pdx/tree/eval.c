@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.6 %G%";
+static char sccsid[] = "@(#)eval.c 1.7 %G%";
 
 /*
  * Parse tree evaluation.
@@ -15,6 +15,8 @@ static char sccsid[] = "@(#)eval.c 1.6 %G%";
 #include "breakpoint.h"
 #include "machine.h"
 #include "tree.rep"
+
+#define Boolean char	/* underlying representation type for booleans */
 
 /*
  * Evaluate a parse tree using a stack; value is left at top.
@@ -67,7 +69,7 @@ register NODE *p;
 		if (!isactive(f)) {
 		    error("\"%s\" is not active", name(f));
 		}
-		push(int, address(s, NIL));
+		push(long, address(s, NIL));
 	    }
 	    break;
 	}
@@ -108,9 +110,9 @@ register NODE *p;
 	    int n;
 	    long i;
 
-	    n = pop(int);
+	    n = pop(long);
 	    i = evalindex(p->left->nodetype, popsmall(p->right->nodetype));
-	    push(int, n + i*size(p->nodetype));
+	    push(long, n + i*size(p->nodetype));
 	    break;
 	}
 
@@ -135,7 +137,7 @@ register NODE *p;
 	    ADDRESS addr, len;
 	    long i;
 
-	    addr = pop(int);
+	    addr = pop(long);
 	    if (addr == 0) {
 		error("reference through nil pointer");
 	    }
@@ -207,51 +209,51 @@ register NODE *p;
 	    break;
 
 	case O_LT:
-	    push(BOOLEAN, r0 < r1);
+	    push(Boolean, r0 < r1);
 	    break;
 
 	case O_LTF:
-	    push(BOOLEAN, fr0 < fr1);
+	    push(Boolean, fr0 < fr1);
 	    break;
 
 	case O_LE:
-	    push(BOOLEAN, r0 <= r1);
+	    push(Boolean, r0 <= r1);
 	    break;
 
 	case O_LEF:
-	    push(BOOLEAN, fr0 <= fr1);
+	    push(Boolean, fr0 <= fr1);
 	    break;
 
 	case O_GT:
-	    push(BOOLEAN, r0 > r1);
+	    push(Boolean, r0 > r1);
 	    break;
 
 	case O_GTF:
-	    push(BOOLEAN, fr0 > fr1);
+	    push(Boolean, fr0 > fr1);
 	    break;
 
 	case O_EQ:
-	    push(BOOLEAN, r0 == r1);
+	    push(Boolean, r0 == r1);
 	    break;
 
 	case O_EQF:
-	    push(BOOLEAN, fr0 == fr1);
+	    push(Boolean, fr0 == fr1);
 	    break;
 
 	case O_NE:
-	    push(BOOLEAN, r0 != r1);
+	    push(Boolean, r0 != r1);
 	    break;
 
 	case O_NEF:
-	    push(BOOLEAN, fr0 != fr1);
+	    push(Boolean, fr0 != fr1);
 	    break;
 
 	case O_AND:
-	    push(BOOLEAN, r0 && r1);
+	    push(Boolean, r0 && r1);
 	    break;
 
 	case O_OR:
-	    push(BOOLEAN, r0 || r1);
+	    push(Boolean, r0 || r1);
 	    break;
 
 	case O_ASSIGN:
