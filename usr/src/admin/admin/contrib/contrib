@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.55 (Berkeley) %G%
+.\"	@(#)contrib	5.56 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -90,7 +90,7 @@ ANSI C prototypes	Donn Seeley and John Kohl
 Autoconfiguration	Robert Elz
 C library documentation	American National Standards Committee X3
 CCI 6/32 support	Computer Consoles Inc.
-DEC 3000/5000 support	Ralph Campbell
+DEC 3100/5000 support	Ralph Campbell
 Disklabels	Symmetric Computer Systems
 Documentation	Cynthia Livingston and The USENIX Association
 Franz Lisp	Richard Fateman, John Foderaro, Keith Sklower, Kevin Layer
