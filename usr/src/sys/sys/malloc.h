@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)malloc.h	7.14 (Berkeley) %G%
+ *	@(#)malloc.h	7.15 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -56,6 +56,8 @@
 #define	M_CACHE		25	/* Dynamically allocated cache entries */
 #define	M_DQUOT		26	/* UFS quota entries */
 #define	M_UFSMNT	27	/* UFS mount structure */
+#define	M_MAPMEM	28	/* mapped memory descriptors */
+#define	M_SHM		29	/* SVID compatible shared memory segments */
 #define M_TEMP		49	/* misc temporary data buffers */
 #define M_LAST		50
 
