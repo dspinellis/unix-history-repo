@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.16 83/12/06";
+static	char *sccsid = "@(#)cmd2.c	3.17 84/01/11";
 #endif
 
 #include "defs.h"
@@ -250,6 +250,18 @@ register struct ww *w;
 	wwcurtowin(w);
 	while (bgetc() < 0)
 		bread();
+}
+
+/*VARARGS2*/
+more(w, fmt, a, b, c, d, e)
+register struct ww *w;
+char *fmt;
+{
+	if (w->ww_cur.r > w->ww_w.b - 3) {
+		waitnl(w);
+		(void) wwputs("\033E", w);
+	}
+	(void) wwprintf(w, fmt, a, b, c, d, e);
 }
 
 closeiwin(w)
