@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.7 (Berkeley) %G%
+ *	@(#)ns.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -86,6 +86,7 @@ struct sockaddr_ns {
 #define sns_port sns_addr.x_port
 
 #define ns_netof(a) (*(long *) & ((a).x_net))
+#define ns_neteq(a,b) (ns_netof(a) == ns_netof(b))
 #define satons_addr(sa)	(((struct sockaddr_ns *)&(sa))->sns_addr)
 #define ns_hosteqnh(s,t) ((s).s_host[0] == (t).s_host[0] && \
 	(s).s_host[1] == (t).s_host[1] && (s).s_host[2] == (t).s_host[2])
