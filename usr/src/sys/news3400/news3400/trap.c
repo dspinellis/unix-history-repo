@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -21,6 +21,7 @@
 #include "proc.h"
 #include "kernel.h"
 #include "signalvar.h"
+#include "syscall.h"
 #include "user.h"
 #include "buf.h"
 #ifdef KTRACE
@@ -414,14 +415,18 @@ trap(statusReg, causeReg, vadr, pc, args)
 		if (code >= 1000)
 			code -= 1000;			/* too easy */
 #endif
-		if (code == 0) {			/* indir */
+		switch (code) {
+		case SYS_indir:
+			/*
+			 * Code is first argument, followed by actual args.
+			 */
 			code = locr0[A0];
 #ifdef COMPAT_NEWSOS
 			if (code >= 1000)
 				code -= 1000;		/* too easy */
 #endif
 			if (code >= numsys)
-				callp = &systab[0];	/* indir (illegal) */
+				callp = &systab[SYS_indir]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
@@ -430,7 +435,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 			args.i[2] = locr0[A3];
 			if (i > 3) {
 				i = copyin((caddr_t)(locr0[SP] +
-						3 * sizeof(int)),
+						4 * sizeof(int)),
 					(caddr_t)&args.i[3],
 					(u_int)(i - 3) * sizeof(int));
 				if (i) {
@@ -444,9 +449,42 @@ trap(statusReg, causeReg, vadr, pc, args)
 					goto done;
 				}
 			}
-		} else {
+			break;
+
+		case SYS___indir:
+			/*
+			 * Like indir, but code is a quad, so as to maintain
+			 * quad alignment for the rest of the arguments.
+			 */
+			code = locr0[A0 + _QUAD_LOWWORD];
 			if (code >= numsys)
-				callp = &systab[0];	/* indir (illegal) */
+				callp = &systab[SYS_indir]; /* (illegal) */
+			else
+				callp = &systab[code];
+			i = callp->sy_narg;
+			args.i[0] = locr0[A2];
+			args.i[1] = locr0[A3];
+			if (i > 2) {
+				i = copyin((caddr_t)(locr0[SP] +
+						4 * sizeof(int)),
+					(caddr_t)&args.i[2],
+					(u_int)(i - 2) * sizeof(int));
+				if (i) {
+					locr0[V0] = i;
+					locr0[A3] = 1;
+#ifdef KTRACE
+					if (KTRPOINT(p, KTR_SYSCALL))
+						ktrsyscall(p->p_tracep, code,
+							callp->sy_narg, args.i);
+#endif
+					goto done;
+				}
+			}
+			break;
+
+		default:
+			if (code >= numsys)
+				callp = &systab[SYS_indir]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
