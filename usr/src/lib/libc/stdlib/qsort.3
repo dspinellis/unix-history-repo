@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)qsort.3	6.1 (Berkeley) %G%
+.\"	@(#)qsort.3	6.2 (Berkeley) %G%
 .\"
 .TH QSORT 3  ""
 .UC 4
@@ -28,3 +28,5 @@ according as the first argument is to be considered
 less than, equal to, or greater than the second.
 .SH "SEE ALSO"
 sort(1)
+.SH BUGS
+The comparison routine may not itself call \fIqsort\fP.
