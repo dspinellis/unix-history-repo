@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)finger.1	6.2 (Berkeley) %G%
+.\"	@(#)finger.1	6.3 (Berkeley) %G%
 .\"
 .TH FINGER 1 ""
 .UC 4
@@ -17,7 +17,7 @@ options
 By default
 .I finger
 lists the login name, full name, terminal name and write status
-(as a '*' before the terminal name if write permission is denied),
+(as a `*' before the terminal name if write permission is denied),
 idle time, login time, and office location and phone number
 (if they are known) for each current UNIX user.
 (Idle time is minutes if it is a single integer, hours and minutes if a ':'
@@ -35,6 +35,11 @@ in their home
 directory, and the project on which they are working from the file
 .I \&.project
 also in the home directory.
+.PP
+.I Finger
+may be used to lookup users on a remote machine.  The format is to specify
+the user as ``user@host.''  If the user name is left off, the
+standard format listing is provided on the remote machine.
 .PP
 .I Finger
 options include:
@@ -76,6 +81,10 @@ The encoding of the gcos field is UCB dependent \- it knows that an office
 `197MC' is `197M Cory Hall', and that `529BE' is `529B Evans Hall'.
 It also knows that a four digit office phone number should have a ``x2-''
 prepended.
+.PP
+There is no way to pass arguments to the remote machine as
+.I finger
+uses an internet standard port.
 .PP
 A user information data base is in the works and will radically alter
 the way the information that
