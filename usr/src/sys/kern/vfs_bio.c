@@ -1,4 +1,4 @@
-/*	vfs_bio.c	3.11	%G%	*/
+/*	vfs_bio.c	3.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -350,6 +350,7 @@ daddr_t blkno;
 	if (bp->b_dev == NODEV)
 		goto done;
 	/* INLINE EXPANSION OF bunhash(bp) */
+	(void) spl6();
 	i = BUFHASH(dbtofsb(bp->b_blkno));
 	x = bp - buf;
 	if (bufhash[i] == x) {
@@ -364,6 +365,7 @@ daddr_t blkno;
 		panic("getblk");
 	}
 done:
+	(void) spl0();
 	/* END INLINE EXPANSION */
 	bp->b_flags = B_BUSY;
 	bp->b_back->b_forw = bp->b_forw;
@@ -422,23 +424,26 @@ bunhash(bp)
 	register struct buf *bp;
 {
 	register struct buf *ep;
-	register int i, x;
+	register int i, x, s;
 
 	if (bp->b_dev == NODEV)
 		return;
+	s = spl6();
 	i = BUFHASH(dbtofsb(bp->b_blkno));
 	x = bp - buf;
 	if (bufhash[i] == x) {
 		bufhash[i] = bp->b_hlink;
-		return;
+		goto ret;
 	}
 	for (ep = &buf[bufhash[i]]; ep != &buf[-1];
 	    ep = &buf[ep->b_hlink])
 		if (ep->b_hlink == x) {
 			ep->b_hlink = bp->b_hlink;
-			return;
+			goto ret;
 		}
 	panic("bunhash");
+ret:
+	splx(s);
 }
 
 /*
