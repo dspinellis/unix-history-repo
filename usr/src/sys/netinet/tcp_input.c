@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	8.11 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.12 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
