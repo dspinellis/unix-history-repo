@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -894,6 +894,7 @@ deliver(firstto, editfcn)
 	*/
 
 	curhost = NULL;
+	SmtpPhase = NULL;
 
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
