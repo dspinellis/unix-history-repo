@@ -1,13 +1,10 @@
-/*	user.h	4.4	81/02/19	*/
+/*	user.h	4.5	81/02/23	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
 #include "../h/dmap.h"
 #include "../h/vtimes.h"
-#ifdef FASTVAX
-asm(".set U_ARG,120");
-asm(".set U_QSAV,140");
-#endif
+#include "assym.s"
 #else
 #include <sys/pcb.h>
 #include <sys/dmap.h>
@@ -64,7 +61,6 @@ struct	user
 	struct	file *u_ofile[NOFILE];	/* pointers to file structures of open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
 #define	EXCLOSE 01		/* auto-close on exec */
-#define	ISPORT	02		/* is a port */
 	label_t u_ssav;			/* label variable for swapping */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
 	int	u_cfcode;		/* ``code'' to trap when CM faulted */
@@ -126,6 +122,7 @@ struct	user
 					 * extends from u + UPAGES*512
 					 * backward not to reach here
 					 */
+/* SHOULD INSTEAD GROW STACK BACKWARDS ABOVE u. TOWARDS A VIRTUAL HOLE */
 };
 
 /* u_eosys values */
