@@ -1,4 +1,4 @@
-/*	in_systm.h	4.10	82/04/20	*/
+/*	in_systm.h	4.11	82/05/31	*/
 
 /*
  * Miscellaneous internetwork
@@ -31,7 +31,8 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
  */
 
 /* splnet is defined in ../sys/asm.sed */
-#ifdef ECHACK
+#include "ec.h"
+#if NEC > 0
 #define	splimp		spl6
 #else
 #define	splimp		spl5
