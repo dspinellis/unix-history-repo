@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)glob.h	5.14 (Berkeley) %G%
+ *	@(#)glob.h	5.15 (Berkeley) %G%
  */
 
 /*
@@ -61,7 +61,6 @@ struct	ignoretab	saveignore[2];	/* ignored and retained fields
 					   on save to folder */
 struct	ignoretab	ignoreall[2];	/* special, ignore all headers */
 char	**altnames;			/* List of alternate names for user */
-char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */
 int	screenwidth;			/* Screen width, or best guess */
 int	screenheight;			/* Screen height, or best guess,
