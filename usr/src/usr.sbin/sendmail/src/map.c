@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -498,13 +498,21 @@ ndbm_map_close(map)
 
 #endif
 /*
-**  HASH (NEWDB) Modules
+**  NEWDB (Hash and BTree) Modules
 */
 
 #ifdef NEWDB
 
 /*
-**  BTREE_MAP_PARSE -- BTREE-style map initialization
+**  BT_MAP_OPEN, HASH_MAP_OPEN -- database open primitives.
+**
+**	These do rather bizarre locking.  If you can lock on open,
+**	do that to avoid the condition of opening a database that
+**	is being rebuilt.  If you don't, we'll try to fake it, but
+**	there will be a race condition.  If opening for read-only,
+**	we immediately release the lock to avoid freezing things up.
+**	We really ought to hold the lock, but guarantee that we won't
+**	be pokey about it.  That's hard to do.
 */
 
 bool
@@ -514,25 +522,47 @@ bt_map_open(map, mode)
 {
 	DB *db;
 	int i;
+	int omode;
 	char buf[MAXNAME];
 
 	if (tTd(38, 2))
 		printf("bt_map_open(%s, %d)\n", map->map_file, mode);
 
-	if (mode == O_RDWR)
-		mode |= O_CREAT|O_TRUNC;
+	omode = mode;
+	if (omode == O_RDWR)
+	{
+		omode |= O_CREAT|O_TRUNC;
+#if defined(O_EXLOCK) && !defined(LOCKF)
+		omode |= O_EXLOCK;
+# if !defined(OLD_NEWDB)
+	}
+	else
+	{
+		omode |= O_SHLOCK;
+# endif
+#endif
+	}
 
 	(void) strcpy(buf, map->map_file);
 	i = strlen(buf);
 	if (i < 3 || strcmp(&buf[i - 3], ".db") != 0)
 		(void) strcat(buf, ".db");
-	db = dbopen(buf, mode, DBMMODE, DB_BTREE, NULL);
+	db = dbopen(buf, omode, DBMMODE, DB_BTREE, NULL);
 	if (db == NULL)
 	{
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
 	}
+#if !defined(OLD_NEWDB) && !defined(LOCKF)
+# if !defined(O_EXLOCK)
+	if (mode == O_RDWR)
+		(void) lockfile(db->fd(db), map->map_file, LOCK_EX);
+# else
+	if (mode == O_RDONLY)
+		(void) lockfile(db->fd(db), map->map_file, LOCK_UN);
+# endif
+#endif
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
 		aliaswait(map, ".db");
@@ -551,25 +581,47 @@ hash_map_open(map, mode)
 {
 	DB *db;
 	int i;
+	int omode;
 	char buf[MAXNAME];
 
 	if (tTd(38, 2))
 		printf("hash_map_open(%s, %d)\n", map->map_file, mode);
 
-	if (mode == O_RDWR)
-		mode |= O_CREAT|O_TRUNC;
+	omode = mode;
+	if (omode == O_RDWR)
+	{
+		omode |= O_CREAT|O_TRUNC;
+#if defined(O_EXLOCK) && !defined(LOCKF)
+		omode |= O_EXLOCK;
+# if !defined(OLD_NEWDB)
+	}
+	else
+	{
+		omode |= O_SHLOCK;
+# endif
+#endif
+	}
 
 	(void) strcpy(buf, map->map_file);
 	i = strlen(buf);
 	if (i < 3 || strcmp(&buf[i - 3], ".db") != 0)
 		(void) strcat(buf, ".db");
-	db = dbopen(buf, mode, DBMMODE, DB_HASH, NULL);
+	db = dbopen(buf, omode, DBMMODE, DB_HASH, NULL);
 	if (db == NULL)
 	{
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
 	}
+#if !defined(OLD_NEWDB) && !defined(LOCKF)
+# if !defined(O_EXLOCK)
+	if (mode == O_RDWR)
+		(void) lockfile(db->fd(db), map->map_file, LOCK_EX);
+# else
+	if (mode == O_RDONLY)
+		(void) lockfile(db->fd(db), map->map_file, LOCK_UN);
+# endif
+#endif
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
 		aliaswait(map, ".db");
