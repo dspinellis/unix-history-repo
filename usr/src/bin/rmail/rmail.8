@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rmail.8	6.9 (Berkeley) %G%
+.\"	@(#)rmail.8	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RMAIL 8
@@ -20,7 +20,7 @@ interprets incoming mail received via
 .Xr uucp 1 ,
 collapsing ``From'' lines in the form generated
 by
-.Xr binmail  1
+.Xr mail.local 8
 into a single line of the form ``return-path!sender'',
 and passing the processed mail on to
 .Xr sendmail  8  .
@@ -31,8 +31,8 @@ is explicitly designed for use with
 and
 .Xr sendmail  .
 .Sh SEE ALSO
-.Xr binmail 1 ,
 .Xr uucp 1 ,
+.Xr mail.local 8 ,
 .Xr sendmail 8
 .Sh HISTORY
 The
