@@ -1,3 +1,3 @@
-#	@(#)Makefile.inc	5.2 (Berkeley) %G%
+#	@(#)Makefile.inc	5.3 (Berkeley) %G%
 
-SRCS+=	_setjmp.s ldexp.s modf.s setjmp.s
+SRCS+=	_setjmp.s isinf.s ldexp.s modf.s setjmp.s
