@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.16	%G%";
+static char	SccsId[] = "@(#)collect.c	3.17	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -222,6 +222,11 @@ maketemp(from)
 **		such as the date.
 */
 
+char	*DowList[] =
+{
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", NULL
+};
+
 char	*MonthList[] =
 {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -234,6 +239,11 @@ eatfrom(fm)
 {
 	register char *p;
 	register char **dt;
+
+# ifdef DEBUG
+	if (Debug > 1)
+		printf("eatfrom(%s)\n", fm);
+# endif DEBUG
 
 	/* find the date part */
 	p = fm;
@@ -248,10 +258,15 @@ eatfrom(fm)
 			continue;
 
 		/* we have a possible date */
-		for (dt = MonthList; *dt != NULL; dt++)
+		for (dt = DowList; *dt != NULL; dt++)
 			if (strncmp(*dt, p, 3) == 0)
 				break;
+		if (*dt == NULL)
+			continue;
 
+		for (dt = MonthList; *dt != NULL; dt++)
+			if (strncmp(*dt, &p[4], 3) == 0)
+				break;
 		if (*dt != NULL)
 			break;
 	}
