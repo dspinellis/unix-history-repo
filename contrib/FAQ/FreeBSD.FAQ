@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.11 1994/04/20 11:45:30 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.12 1994/04/20 17:09:11 jkh Exp $
 
 
 Table of Contents
@@ -66,7 +66,28 @@ some of the highlights of which are:
    Too many additional utilities and applications to mention
  
 
-0.2 What are the FreeBSD mailing lists, and how can I get on them? 
+0.2 My friends told me that FreeBSD was illegal and I shouldn't use it.
+    Is this really true?
+
+FreeBSD versions up to and including 1.1 have included code from Berkeley's
+Net/2 distribution.  UNIX Systems Laboratories (now Novell) sued Berkeley
+claiming that Net/2 included some code that belonged to USL.  In February
+of 1994, USL and Berkeley announced a settlement in which neither side
+admitted to doing anything wrong, but agreed to stop distributing the
+disputed software.
+
+Since Berkeley will no longer defend this code, we have been requested
+to stop distributing it, and will be integrating all the improvements we
+have made in the VM system and i386-specific code into Berkeley's 4.4-Lite
+distribution; the result will form the basis of the next release of FreeBSD
+(we haven't decided whether to call it 1.2 or 2.0).  We expect the integration
+to take place over a period of three to six months, during which time we
+will have to stop work on 1.1 and concentrate all our efforts on the merge.
+
+We expect to make more information available on the status of the merge
+effort as the situation progresses.
+
+0.3 What are the FreeBSD mailing lists, and how can I get on them? 
 
 The following mailing lists are provided for FreeBSD users and developers.
 For more information, send to majordomo@freefall.cdrom.com and include a
@@ -85,7 +106,7 @@ Please see also the FreeBSD mailing list FAQ in:
 
 	/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.mailing-list.FAQ
 
-0.3 What are the various FreeBSD news groups? 
+0.4 What are the various FreeBSD news groups? 
 
 While there are no groups currently dedicated to FreeBSD, you may find the 
 following groups useful.  
