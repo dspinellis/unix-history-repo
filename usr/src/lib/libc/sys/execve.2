@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)execve.2	6.4 (Berkeley) %G%
+.\"	@(#)execve.2	6.5 (Berkeley) %G%
 .\"
 .TH EXECVE 2 ""
 .UC 4
@@ -27,25 +27,25 @@ and initialized data pages.  Additional pages may be specified
 by the header to be initialize with zero data.  See
 .IR a.out (5).
 .PP
-An interpreter file begins with a line of the form ``#! \fIinterpreter\fP'';
+An interpreter file begins with a line of the form ``#! \fIinterpreter\fP''.
 When an interpreter file is
 .IR execve\| 'd,
 the system \fIexecve\fP\|'s the specified \fIinterpreter\fP, giving
-it the name of the originally exec'd file as an argument,
+it the name of the originally exec'd file as an argument and
 shifting over the rest of the original arguments.
 .PP
 There can be no return from a successful \fIexecve\fP because the calling
 core image is lost.
 This is the mechanism whereby different process images become active.
 .PP
-The argument \fIargv\fP is an array of character pointers
+The argument \fIargv\fP is a null-terminated array of character pointers
 to null-terminated character strings.  These strings constitute
 the argument list to be made available to the new
 process.  By convention, at least one argument must be present in
 this array, and the first element of this array should be
 the name of the executed program (i.e. the last component of \fIname\fP).
 .PP
-The argument \fIenvp\fP is also an array of character pointers
+The argument \fIenvp\fP is also a null-terminated array of character pointers
 to null-terminated strings.  These strings pass information to the
 new process that is not directly an argument to the command, see
 .IR environ (7).
@@ -60,6 +60,7 @@ Descriptors that remain open are unaffected by
 Ignored signals remain ignored across an
 .IR execve ,
 but signals that are caught are reset to their default values.
+Blocked signals remain blocked regardless of changes to the signal action.
 The signal stack is reset to be undefined; see
 .IR sigvec (2)
 for more information.
@@ -97,7 +98,7 @@ resource usages	see \fIgetrusage\fP\|(2)
 interval timers	see \fIgetitimer\fP\|(2)
 resource limits	see \fIgetrlimit\fP\|(2)
 file mode mask	see \fIumask\fP\|(2)
-signal mask	see \fIsigvec\fP\|(2)
+signal mask	see \fIsigvec\fP\|(2), \fIsigmask\fP\|(2)
 .in -5n
 .fi
 .PP
@@ -203,7 +204,7 @@ An I/O error occurred while reading from the file system.
 If a program is
 .I setuid
 to a non-super-user, but is executed when
-the real \fIuid\fP is ``root'', then the program has the powers
+the real \fIuid\fP is ``root'', then the program has some of the powers
 of a super-user as well.
 .SH "SEE ALSO"
 exit(2), fork(2), execl(3), environ(7)
