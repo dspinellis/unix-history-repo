@@ -1,4 +1,4 @@
-/*	machdep.c	4.84	83/07/09	*/
+/*	machdep.c	4.85	83/07/09	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -406,7 +406,7 @@ memenable()
 		}
 	}
 	if (memintvl > 0)
-		timeout(memenable, (caddr_t)0, memintvl);
+		timeout(memenable, (caddr_t)0, memintvl*hz);
 }
 
 /*
@@ -438,8 +438,10 @@ memerr()
 #if VAX750
 		case VAX_750:
 			if (M750_ERR(mcr)) {
+				struct mcr amcr;
+				amcr.mc_reg[0] = mcr->mc_reg[0];
 				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M750_ADDR(mcr), M750_SYN(mcr));
+				    m, M750_ADDR(&amcr), M750_SYN(&amcr));
 				M750_INH(mcr);
 			}
 			break;
