@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)ncheck.c	2.2 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)ncheck.c	2.3 (Berkeley) %G%";
+#endif
 /*
  * ncheck -- obtain file names from reading filesystem
  */
@@ -7,17 +9,11 @@ static	char *sccsid = "@(#)ncheck.c	2.2 (Berkeley) %G%";
 #define	HSIZE		2503
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
-#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#else
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#endif
+#include <sys/dir.h>
 #include <stdio.h>
-#include <dir.h>
 
 struct	fs	sblock;
 struct	dinode	itab[MAXIPG];
