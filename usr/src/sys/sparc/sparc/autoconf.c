@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	8.3 (Berkeley) %G%
+ *	@(#)autoconf.c	8.4 (Berkeley) %G%
  *
- * from: $Header: autoconf.c,v 1.37 93/09/28 07:19:48 leres Exp $ (LBL)
+ * from: $Header: autoconf.c,v 1.38 93/10/01 21:24:51 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -411,9 +411,9 @@ mainbus_attach(parent, dev, aux)
 	struct romaux ra;
 	static const char *const special[] = {
 		/* find these first (end with empty string) */
+		"memory-error",	/* as early as convenient, in case of error */
 		"eeprom",
 		"counter-timer",
-		"memory-error",
 		"",
 
 		/* ignore these (end with NULL) */
