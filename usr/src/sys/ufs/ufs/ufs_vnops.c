@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	6.9	84/07/02	*/
+/*	ufs_vnops.c	6.10	84/07/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,7 +60,7 @@ chdirec(ipp)
 	}
 	if (access(ip, IEXEC))
 		goto bad;
-	iunlock(ip);
+	IUNLOCK(ip);
 	if (*ipp)
 		irele(*ipp);
 	*ipp = ip;
@@ -160,7 +160,7 @@ copen(mode, arg)
 		goto bad;
 	if (mode&FTRUNC)
 		itrunc(ip, (u_long)0);
-	iunlock(ip);
+	IUNLOCK(ip);
 	fp->f_flag = mode&FMASK;
 	fp->f_type = DTYPE_INODE;
 	fp->f_ops = &inodeops;
@@ -250,7 +250,7 @@ link()
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
 	iupdat(ip, &time, &time, 1);
-	iunlock(ip);
+	IUNLOCK(ip);
 	u.u_dirp = (caddr_t)uap->linkname;
 	xp = namei(uchar, CREATE, 0);
 	if (xp != NULL) {
@@ -525,9 +525,9 @@ fchmod()
 	ip = (struct inode *)fp->f_data;
 	if (u.u_uid != ip->i_uid && !suser())
 		return;
-	ilock(ip);
+	ILOCK(ip);
 	chmod1(ip, uap->fmode);
-	iunlock(ip);
+	IUNLOCK(ip);
 }
 
 /*
@@ -590,9 +590,9 @@ fchown()
 	ip = (struct inode *)fp->f_data;
 	if (!suser())
 		return;
-	ilock(ip);
+	ILOCK(ip);
 	u.u_error = chown1(ip, uap->uid, uap->gid);
-	iunlock(ip);
+	IUNLOCK(ip);
 }
 
 /*
@@ -708,9 +708,9 @@ ftruncate()
 		return;
 	}
 	ip = (struct inode *)fp->f_data;
-	ilock(ip);
+	ILOCK(ip);
 	itrunc(ip, uap->length);
-	iunlock(ip);
+	IUNLOCK(ip);
 }
 
 /*
@@ -728,9 +728,9 @@ fsync()
 	if (fp == NULL)
 		return;
 	ip = (struct inode *)fp->f_data;
-	ilock(ip);
+	ILOCK(ip);
 	syncip(ip);
-	iunlock(ip);
+	IUNLOCK(ip);
 }
 
 /*
@@ -808,7 +808,7 @@ rename()
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
 	iupdat(ip, &time, &time, 1);
-	iunlock(ip);
+	IUNLOCK(ip);
 
 	/*
 	 * When the target exists, both the directory
