@@ -1,13 +1,11 @@
-#	@(#)Makefile	5.1.1.1 (Berkeley) %G%
-
-# Missing:  00.contents 01.Clang 02.f77 03.f77io 05.as 09.lint 10.adb 11.dbx
-#	    12.make 15.yacc 16.lex 17.m4
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 BINDIR=	/usr/share/doc/ps1
-FILES=	Makefile Title
-SUBDIR=	04.pascal 06.sysman 07.ipctut \
-	08.ipc 13.rcs 14.sccs \
-	18.curses
+FILES=	00.contents Makefile Title
+SUBDIR=	01.cacm 02.implement 03.iosys 04.uprog 05.sysman 06.Clang \
+	07.pascal 08.f77 09.f77io 10.gdb 11.adb 12.make 13.rcs \
+	14.sccs 15.yacc 16.lex 17.m4 18.gprof 19.curses 20.ipctut \
+	21.ipc
 
 beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${FILES} \

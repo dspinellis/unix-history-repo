@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)Clang.ms	6.3 (Berkeley) %G%
+.\"	@(#)Clang.ms	6.4 (Berkeley) %G%
 .\"
 .nr Cl 2
 .TL
@@ -14,8 +14,8 @@ Murray Hill, NJ 07974
 This manual is a reprint, with updates to the current C standard, from 
 \fIThe C Programming Language\fR,
 by Brian W. Kernighan and Dennis M. Richie, Prentice-Hall, Inc., 1978.
-.EH 'PS1:1-%''The C Programming Language - Reference Manual'
-.OH 'The C Programming Language - Reference Manual''PS1:1-%'
+.EH 'PSD:6-%''The C Programming Language - Reference Manual'
+.OH 'The C Programming Language - Reference Manual''PSD:6-%'
 .NH 1
 Introduction
 .PP

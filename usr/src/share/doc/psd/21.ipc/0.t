@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	5.2 (Berkeley) %G%
+.\"	@(#)0.t	5.3 (Berkeley) %G%
 .\"
-.EH 'PS1:8-%''Advanced 4.4BSD IPC Tutorial'
-.OH 'Advanced 4.4BSD IPC Tutorial''PS1:8-%'
+.EH 'PSD:21-%''Advanced 4.4BSD IPC Tutorial'
+.OH 'Advanced 4.4BSD IPC Tutorial''PSD:21-%'
 .ds lq ``
 .ds rq ''
 .de DT

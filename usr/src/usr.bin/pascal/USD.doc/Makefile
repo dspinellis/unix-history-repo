@@ -1,6 +1,6 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-DIR=	ps1/04.pascal
+DIR=	psd/07.pascal
 SRCS=	puman0.n puman1.n puman2.n puman3.n puman4.n puman5.n pumanA.n
 FIGURES=firstout firstobjout firstobjout2 bigger2.p bigger3.p bigout1 \
 	bigger6.p bigout2 bigout3 bigout4 primeout1 primeout2 digitsout \
@@ -9,7 +9,7 @@ FIGURES=firstout firstobjout firstobjout2 bigger2.p bigger3.p bigout1 \
 	xxxxqqqout xxxxqqqout2 primes primes-d comments1.p commentsout
 CLEANFILES+=csfix ${FIGURES}
 
-paper.${PRINTER}: ${FIGURES}
+paper.ps: ${FIGURES}
 	${SOELIM} ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
