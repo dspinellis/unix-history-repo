@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -38,6 +38,7 @@ static char copyright[] =
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include <paths.h>
 
 #if __STDC__
@@ -530,8 +531,7 @@ getdisklabel(s, fd)
 			return (lp);
 		}
 #endif
-		(void)fprintf(stderr,
-		    "%s: ioctl (GDINFO): %s\n", progname, strerror(errno));
+		warn("ioctl (GDINFO)");
 		fatal(lmsg, s);
 	}
 	return (&lab);
@@ -549,8 +549,7 @@ rewritelabel(s, fd, lp)
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	if (ioctl(fd, DIOCWDINFO, (char *)lp) < 0) {
-		(void)fprintf(stderr,
-		    "%s: ioctl (WDINFO): %s\n", progname, strerror(errno));
+		warn("ioctl (WDINFO)");
 		fatal("%s: can't rewrite disk label", s);
 	}
 #if vax
@@ -581,9 +580,7 @@ rewritelabel(s, fd, lp)
 				fatal("lseek to badsector area: %s",
 				    strerror(errno));
 			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize)
-				fprintf(stderr,
-				    "%s: alternate label %d write: %s\n",
-				    progname, i/2, strerror(errno));
+				warn("alternate label %d write", i/2);
 		}
 		close(cfd);
 	}
@@ -607,11 +604,16 @@ fatal(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	fprintf(stderr, "%s: ", progname);
-	(void)vfprintf(stderr, fmt, ap);
+	if (fcntl(STDERR_FILENO, F_GETFL) < 0) {
+		openlog(progname, LOG_CONS, LOG_DAEMON);
+		vsyslog(LOG_ERR, fmt, ap);
+		closelog();
+	} else {
+		vwarnx(fmt, ap);
+	}
 	va_end(ap);
-	putc('\n', stderr);
 	exit(1);
+	/*NOTREACHED*/
 }
 
 usage()
