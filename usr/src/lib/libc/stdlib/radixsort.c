@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -162,6 +162,7 @@ radixsort(l1, nmemb, tab, endbyte)
 		for (t1 = endbyte + 1; t1 < NBUCKETS; ++t1)
 			ltab[t1] = t1;
 		tr = ltab;
+		recd = c + tr[endbyte];
 	}
 	last = c + NBUCKETS;
 	first = c;
