@@ -4,12 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" Edward Wang at The University of California, Berkeley.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)window.1	6.14 (Berkeley) %G%
+.\"	@(#)window.1	6.15 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt WINDOW 1
 .Os BSD 4.3
@@ -26,7 +24,8 @@
 .Sh DESCRIPTION
 .Nm Window
 implements a window environment on
-ASCII terminals.
+.Tn ASCII
+terminals.
 .Pp
 A window is a rectangular portion of the physical terminal
 screen associated with a set of processes.  Its size and
@@ -49,22 +48,19 @@ executed.  If it does not exist, two equal sized windows spanning
 the terminal screen are created by default.
 .Pp
 The command line options are
-.Tw Fl
-.Tp Fl t
+.Bl -tag -width Fl
+.It Fl t
 Turn on terse mode (see
 .Ic terse
 command below).
-.Tp Fl f
+.It Fl f
 Fast.  Don't perform any startup action.
-.Tp Fl d
+.It Fl d
 Ignore
 .Pa .windowrc
 and create the two default
 windows instead.
-.Tp Cx Fl e
-.Cx \&\ \&
-.Ar escape-char
-.Cx
+.It Fl e Ar escape-char 
 Set the escape character to
 .Ar escape-char  .
 .Ar Escape-char
@@ -73,18 +69,13 @@ can be a single character, or in the form
 where
 .Ar X
 is any character, meaning
-.Cx control\-
-.Ar X  .
-.Cx
-.Tp Cx Fl c
-.Cx \&\ \&
-.Ar command
-.Cx
+.No control\- Ns Ar X  . 
+.It Fl c Ar command 
 Execute the string
 .Ar command
 as a long command (see below)
 before doing anything else.
-.Tp
+.El
 .Pp
 Windows can overlap and are framed as necessary.  Each window
 is named by one of the digits ``1'' to ``9''.  This one-character
@@ -113,7 +104,9 @@ process environment tailored to that window.  Its standard input,
 output, and diagnostic file descriptors are bound to one end of either
 a pseudo-terminal
 .Xr (pty 4 )
-or a UNIX domain socket
+or a
+.Ux
+domain socket
 .Xr (socketpair 4 ) .
 If a pseudo-terminal is used, then its special
 characters and modes (see
@@ -148,9 +141,7 @@ on top of all other windows, except those in foreground.  In addition,
 it is set apart by highlighting its identifier and label in reverse video.
 .Pp
 Typing
-.Cx Nm window
-.Cx 's
-.Cx
+.Nm window Ns 's 
 escape character (normally
 .Ic ^P )
 in conversation
@@ -168,14 +159,12 @@ command below), or read from a file (see
 below).
 .Ss Short Commands
 Below,
-.Ar #
+.Ar \&#
 represents one of the digits ``1'' to ``9''
 corresponding to the windows 1 to 9.
 .Ic ^X
 means
-.Cx control\-
-.Ar X  ,
-.Cx
+.No control\- Ns Ar X  , 
 where
 .Ar X
 is any character.  In particular,
@@ -184,32 +173,28 @@ is
 .Li control\-^.
 .Ar Escape
 is the escape key, or
-.Ic ^\&[
-.Tw Ds
-.Tp Ar #
+.Ic ^\&[ .
+.Bl -tag -width Ds
+.It Ar #
 Select window
 .Ar #
 as the current window
 and return to conversation mode.
-.Tp Cx Ic %
-.Ar #
-.Cx
+.It Ic \&% Ns Ar # 
 Select window
 .Ar #
 but stay in command mode.
-.Tp Ic ^^
+.It Ic ^^
 Select the previous window and return to conversation
 mode.  This is useful for toggling between two windows.
-.Tp Ic escape
+.It Ic escape
 Return to conversation mode.
-.Tp Ic ^P
+.It Ic ^P
 Return to conversation mode and write
 .Ic ^P
 to the
 current window.  Thus, typing two
-.Cx Ic ^P
-.Cx \'s
-.Cx
+.Ic ^P Ns 's
 in conversation
 mode sends one to the current window.  If the
 .Nm window
@@ -217,18 +202,18 @@ escape is changed to some other character, that
 character takes the place of
 .Ic ^P
 here.
-.Tp Ic ?
+.It Ic ?
 List a short summary of commands.
-.Tp Ic ^L
+.It Ic ^L
 Refresh the screen.
-.Tp Ic q
+.It Ic q
 Exit
 .Nm window  .
 Confirmation is requested.
-.Tp Ic ^Z
+.It Ic ^Z
 Suspend
 .Nm window  .
-.Tp Ic w
+.It Ic w
 Create a new window.  The user is prompted for the positions
 of the upper left and lower right corners of the window.
 The cursor is placed on the screen and the keys ``h'', ``j'',
@@ -251,9 +236,7 @@ is used (see
 command below).
 .Pp
 Only fully visible windows can be created this way.
-.Tp Cx Ic c
-.Ar #
-.Cx
+.It Ic c Ns Ar # 
 Close window
 .Ar # .
 The process in the window is sent
@@ -262,9 +245,7 @@ the hangup signal (see
 .Xr Csh 1
 should
 handle this signal correctly and cause no problems.
-.Tp Cx Ic m
-.Ar #
-.Cx
+.It Ic m Ns Ar # 
 Move window
 .Ar #
 to another location.  A box in the shape
@@ -274,15 +255,11 @@ those for the
 .Ic w
 command are used to position the box.  The
 window can be moved partially off-screen.
-.Tp Cx Ic M
-.Ar #
-.Cx
+.It Ic M Ns Ar # 
 Move window
 .Ar #
 to its previous position.
-.Tp Cx Ic s
-.Ar #
-.Cx
+.It Ic s Ns Ar # 
 Change the size of window
 .Ar # .
 The user is prompted
@@ -293,42 +270,40 @@ keys used in
 and
 .Ic m
 are used to enter the position.
-.Tp Cx Ic S
-.Ar #
-.Cx
+.It Ic S Ns Ar # 
 Change window
 .Ar #
 to its previous size.
-.Tp Ic ^Y
+.It Ic ^Y
 Scroll the current window up by one line.
-.Tp Ic ^E
+.It Ic ^E
 Scroll the current window down by one line.
-.Tp Ic ^U
+.It Ic ^U
 Scroll the current window up by half the window size.
-.Tp Ic ^D
+.It Ic ^D
 Scroll the current window down by half the window size.
-.Tp Ic ^B
+.It Ic ^B
 Scroll the current window up by the full window size.
-.Tp Ic ^F
+.It Ic ^F
 Scroll the current window down by the full window size.
-.Tp Ic h
+.It Ic h
 Move the cursor of the current window left by one column.
-.Tp Ic j
+.It Ic j
 Move the cursor of the current window down by one line.
-.Tp Ic k
+.It Ic k
 Move the cursor of the current window up by one line.
-.Tp Ic l
+.It Ic l
 Move the cursor of the current window right by one column.
-.Tp Ic ^S
+.It Ic ^S
 Stop output in the current window.
-.Tp Ic ^Q
+.It Ic ^Q
 Start output in the current window.
-.Tp Ic :
+.It Ic :
 Enter a line to be executed as long commands.
 Normal line
 editing characters (erase character, erase word, erase line)
 are supported.
-.Tp
+.El
 .Ss Long Commands
 Long commands are a sequence of statements
 parsed much like a programming language, with a syntax
@@ -362,7 +337,7 @@ an expression on the next line, terminate the first line with ``\\''.
 has a single control structure:
 the fully bracketed if statement in the form
 .Pp
-.Ds I
+.Bd -literal -offset indent -compact
 if <expr> then
 \t<statement>
 \t...
@@ -373,7 +348,7 @@ else
 \t<statement>
 \t...
 endif
-.De
+.Ed
 .Pp
 The
 .Ic else
@@ -399,374 +374,189 @@ numeric and string values.  Some variables are predefined.  They
 are listed below.
 .Pp
 The operators in order of increasing precedence:
-.Tw Fl
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Bl -tag -width Fl
+.It Xo
+.Aq Va expr1
 .Ic =
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Assignment.  The variable of name
-.Cx <
-.Va expr1
-.Cx >,
-.Cx
+.Aq Va expr1 , 
 which must be string valued,
 is assigned the result of
-.Cx <
-.Va expr2
-.Cx >.
-.Cx
+.Aq Va expr2 . 
 Returns the value of
-.Cx <
-.Va expr2
-.Cx >.
-.Cx
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 . 
+.It Xo
+.Aq Va expr1
 .Ic ?
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2
 .Ic :
-.Cx \&\ \&
-.Cx <
-.Va expr3
-.Cx >
-.Cx
+.Aq Va expr3
+.Xc
 Returns the value of
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2 
 if
-.Cx <
-.Va expr1
-.Cx >
-.Cx
+.Aq Va expr1 
 evaluates true
 (non-zero numeric value); returns the value of
-.Cx <
-.Va expr3
-.Cx >
-.Cx
+.Aq Va expr3 
 otherwise.  Only
 one of
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2 
 and
-.Cx <
-.Va expr3
-.Cx >
-.Cx
+.Aq Va expr3 
 is evaluated.
-.Cx <
-.Va Expr1
-.Cx >
-.Cx
+.Aq Va Expr1 
 must
 be numeric.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic \&|\&|
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Logical or.  Numeric values only.  Short circuit evaluation is supported
 (i.e., if
-.Cx <
-.Va expr1
-.Cx >
-.Cx
+.Aq Va expr1 
 evaluates true, then
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2 
 is not evaluated).
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic \&&\&&
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Logical and with short circuit evaluation.  Numeric values only.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic \&|
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Bitwise or.  Numeric values only.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic ^
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Bitwise exclusive or.  Numeric values only.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic \&&
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Bitwise and.  Numeric values only.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
-.Ic =
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >,
-.Cx \&\ \&
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
+.Ic ==
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic !=
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq expr2
+.Xc
 Comparison (equal and not equal, respectively).  The boolean
 result (either 1 or 0) of the comparison is returned.  The
 operands can be numeric or string valued.  One string operand
 forces the other to be converted to a string in necessary.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic <
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >,
-.Cx \&\ \&
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic >
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >,
-.Cx \&\ \&
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic <=
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >,
-.Cx
+.Aq Va expr2 ,
+.Xc
 Less than, greater than, less than or equal to,
 greater than or equal to.  Both numeric and string values, with
 automatic conversion as above.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic <<
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >,
-.Cx \&\ \&
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic >>
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 If both operands are numbers,
-.Cx <
-.Va expr1
-.Cx >
-.Cx
+.Aq Va expr1
 is bit
 shifted left (or right) by
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
 bits.  If
-.Cx <
-.Va expr1
-.Cx >
-.Cx
+.Aq Va expr1
 is
 a string, then its first (or last)
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
 characters are
 returns (if
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
 is also a string, then its length is used
 in place of its value).
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic +
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >,
-.Cx \&\ \&
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic -
-.Cx \&\ \&
-.Cx <
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Addition and subtraction on numbers.  For ``+'', if one
 argument is a string, then the other is converted to a string,
 and the result is the concatenation of the two strings.
-.Tp Cx <
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.It Xo
+.Aq Va expr1
 .Ic \&*
-.Cx \&\ \&<
-.Va expr2
-.Cx >,
-.Cx \&\ \&<
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic \&/
-.Cx \&\ \&<
-.Va expr2
-.Cx >,\&\ \&<
-.Va expr1
-.Cx >,
-.Cx \&\ \&<
-.Va expr1
-.Cx >
-.Cx \&\ \&
+.Aq Va expr2 ,
+.Aq Va expr1
 .Ic \&%
-.Cx \&\ \&<
-.Va expr2
-.Cx >
-.Cx
+.Aq Va expr2
+.Xc
 Multiplication, division, modulo.  Numbers only.
-.Tp Cx <
-.Va expr
-.Cx >,
-.Cx \&\ \&
-.Ic ~
-.Cx <
-.Va expr
-.Cx >,
-.Cx \&\ \&
-.Ic \&!
-.Cx <
-.Va expr
-.Cx >,
-.Cx \&\ \&
-.Ic \&$
-.Cx <
-.Va expr
-.Cx >,
-.Cx \&\ \&
-.Ic \&$?
-.Cx <
-.Va expr
-.Cx >
-.Cx
+.It Xo
+.Ic \- Ns Aq Va expr ,
+.Ic ~ Ns Aq Va expr ,
+.Ic \&! Ns Aq Va expr ,
+.Ic \&$ Ns Aq Va expr ,
+.Ic \&$? Ns Aq Va expr
+.Xc
 The first three are unary minus, bitwise complement and logical complement
 on numbers only.  The operator, ``$'', takes
-.Cx <
-.Va expr
-.Cx >
-.Cx
+.Aq Va expr
 and returns
 the value of the variable of that name.  If
-.Cx <
-.Va expr
-.Cx >
-.Cx
+.Aq Va expr
 is numeric
 with value
 .Ar n
 and it appears within an alias macro (see below),
 then it refers to the nth argument of the alias invocation.  ``$?''
 tests for the existence of the variable
-.Cx <
-.Va expr
-.Cx >,
-.Cx
+.Aq Va expr ,
 and returns 1
 if it exists or 0 otherwise.
-.Tp Cx <
-.Va expr
-.Cx >(<
-.Ar arglist
-.Cx >)
-.Cx
+.It Xo
+.Ao Va expr Ac Ns Pq Aq Ar arglist
+.Xc
 Function call.
-.Cx <
-.Va Expr
-.Cx >
-.Cx
+.Aq Va Expr
 must be a string that is the unique
 prefix of the name of a builtin
 .Nm window
 function
 or the full name of a user defined alias macro.  In the case of a builtin
 function,
-.Cx <
-.Ar arglist
-.Cx >
-.Cx
+.Aq Ar arglist
 can be in one of two forms:
-.Dl <expr1>, <expr2>, ...
-.Dl argname1 = <expr1>, argname2 = <expr2>, ...
+.Bd -literal -offset indent
+<expr1>, <expr2>, ...
+argname1 = <expr1>, argname2 = <expr2>, ...
+.Ed
+.Pp
 The two forms can in fact be intermixed, but the result is
 unpredictable.  Most arguments can be omitted; default values will
 be supplied for them.  The
@@ -786,7 +576,7 @@ Most functions return value, but some are used for side effect
 only and so must be used as statements.  When a function or an alias is used
 as a statement, the parenthesis surrounding
 the argument list may be omitted.  Aliases return no value.
-.Tp
+.El
 .Ss  Builtin Functions
 The arguments are listed by name in their natural
 order.  Optional arguments are in square brackets
@@ -807,61 +597,31 @@ or
 with
 obvious meanings, or it can be a numeric expression,
 in which case a non-zero value is true.
-.Tw Fl
-.Tp Cx Ic alias
-.Cx \&([<
-.Ar string
-.Cx ]>,
-.Cx \&\ \&[<
-.Ar  string\-list
-.Cx >]\&)
-.Cx
+.Bl -tag -width Fl
+.It Xo
+.Ic alias Ns Po Bq Aq Ar string ,
+.Bq Aq Ar string\-list Pc
+.Xc
 If no argument is given, all currently defined alias macros are
 listed.  Otherwise,
-.Cx <
-.Ar string
-.Cx >
-.Cx
+.Aq Ar string
 is defined as an alias,
 with expansion
-.Cx <
-.Ar string\-list
-.Cx > .
-.Cx
+.Aq Ar string\-list > . 
 The previous definition of
-.Cx <
-.Ar string
-.Cx >,
-.Cx
+.Aq Ar string ,
 if any, is returned.  Default for
-.Cx <
-.Ar string\-list
-.Cx >
-.Cx
+.Aq Ar string\-list
 is no change.
-.Tp Cx Ic close
-.Cx (<
-.Ar window\-list
-.Cx >)
-.Cx
+.It Ic close Ns Pq Aq Ar window\-list
 Close the windows specified in
-.Cx <
-.Ar window\-list
-.Cx >.
-.Cx
+.Aq Ar window\-list .
 If
-.Cx <
-.Ar window\-list
-.Cx >
-.Cx
+.Aq Ar window\-list
 is the word
 .Ar all  ,
 than all windows are closed.  No value is returned.
-.Tp Cx Ic cursormodes
-.Cx \&(
-.Op Ar modes
-.Cx \&)
-.Cx
+.It Ic cursormodes Ns Pq Bq Ar modes
 Set the window cursor to
 .Ar modes  .
 .Ar Modes
@@ -881,36 +641,21 @@ For example,
 .Li cursor($m_rev$m_blk)
 sets the window cursors to blinking
 reverse video.
-.Tp Cx Ic default_nline
-.Cx \&(
-.Op Ar nline
-.Cx \&)
-.Cx
+.It Ic default_nline Ns Pq Bq Ar nline
 Set the default buffer size to
 .Ar nline  .
 Initially, it is
 48 lines.  Returns the old default buffer size.  Default is
 no change.  Using a very large buffer can slow the program down
 considerably.
-.Tp Cx Ic default_shell
-.Cx \&([<
-.Ar string\-list
-.Cx >]\&)
-.Cx
+.It Ic default_shell Ns Pq Bq Aq Ar string\-list
 Set the default window shell program to
-.Cx <
-.Ar string\-list
-.Cx >.
-.Cx
+.Aq Ar string\-list .
 Returns
 the first string in the old shell setting.  Default is no change.  Initially,
 the default shell is taken from the environment variable
 .Ev SHELL  .
-.Tp Cx Ic default_smooth
-.Cx \&(
-.Op Ar flag
-.Cx \&)
-.Cx
+.It Ic default_smooth Ns Pq Bq Ar flag
 Set the default value of the
 .Ar smooth
 argument
@@ -928,18 +673,12 @@ or a number,
 as described above).  Default is no change.
 The old value (as a number) is returned.
 The initial value is 1 (true).
-.Tp Cx Ic echo
-.Cx \&(
-.Op Ar window
-.Cx \&,\&\ \&[<
-.Ar string\-list
-.Cx >]\&)
-.Cx
+.It Xo
+.Ic echo Ns ( Op Ar window ,
+.Bq Aq Ar string\-list )
+.Xc
 Write the list of strings,
-.Cx <
-.Ar string-list
-.Cx >,
-.Cx
+.Aq Ar string-list ,
 to
 .Nm window  ,
 separated
@@ -949,11 +688,7 @@ involved (see
 .Ic write
 below).  No value is returned.  Default
 is the current window.
-.Tp Cx Ic escape
-.Cx \&(
-.Op Ar escapec
-.Cx \&)
-.Cx
+.It Ic escape Ns Pq Bq Ar escapec
 Set the escape character to
 .Ar escape-char  .
 Returns the old
@@ -964,17 +699,11 @@ can be a string of a single character, or
 in the form
 .Fl ^X ,
 meaning
-Cx control\-
-.Ar X
-.Cx .
-.Cx
-.Tp Cx Ic foreground
-.Cx \&(
-.Op Ar window
-.Cx \&,
-.Op Ar flag
-.Cx \&)
-.Cx
+.No control\- Ns Ar X .
+.It Xo
+.Ic foreground Ns ( Bq Ar window ,
+.Bq Ar flag ) 
+.Xc
 Move
 .Nm window
 in or out of foreground.
@@ -986,13 +715,10 @@ is the current window,
 default for
 .Ar flag
 is no change.
-.Tp Cx Ic label
-.Cx \&(
-.Op Ar window
-.Cx \&,
-.Op Ar label
-.Cx \&)
-.Cx
+.It Xo
+.Ic label Ns ( Bq Ar window ,
+.Bq Ar label ) 
+.Xc
 Set the label of
 .Nm window
 to
@@ -1005,33 +731,19 @@ window, default for
 .Ar label
 is no change.  To turn
 off a label, set it to an empty string ("").
-.Tp Cx Ic list
-.Cx \&( \&)
-.Cx
+.It Ic list Ns Pq
 No arguments.  List the identifiers and labels of all windows.  No
 value is returned.
-.Tp Cx Ic select
-.Cx \&(
-.Op Ar window
-.Cx \&)
-.Cx
+.It Ic select Ns Pq Bq Ar window
 Make
 .Nm window
 the current window.  The previous current window
 is returned.  Default is no change.
-.Tp Cx Ic source
-.Cx \&(
-.Ar filename
-.Cx \&)
-.Cx
+.It Ic source Ns Pq Ar filename
 Read and execute the long commands in
 .Ar filename  .
-Returns -1 if the file cannot be read, 0 otherwise.
-.Tp Cx Ic terse
-.Cx \&(
-.Op flag
-.Cx \&)
-.Cx
+Returns \-1 if the file cannot be read, 0 otherwise.
+.It Ic terse Ns Pq Bq flag
 Set terse mode to
 .Ar flag  .
 In terse mode, the command window
@@ -1043,70 +755,36 @@ values as in
 .Ar foreground
 above.  Returns the old terse flag.
 Default is no change.
-.Tp Cx Ic unalias
-.Cx \&(
-.Ar alias
-.Cx \&)
-.Cx
+.It Ic unalias Ns Pq Ar alias
 Undefine
 .Ar alias  .
 Returns -1 if
 .Ar alias
 does not exist,
 0 otherwise.
-.Tp Cx Ic unset
-.Cx \&(
-.Ar variable
-.Cx \&)
-.Cx
+.It Ic unset Ns Pq Ar variable
 Undefine
 .Ar variable  .
 Returns -1 if
 .Ar variable
 does not exist,
 0 otherwise.
-.Tp Cx Ic variables
-.Cx \&( \&)
-.Cx
+.It Ic variables Ns Pq
 No arguments.  List all variables.  No value is returned.
-.Tp Cx Ic window
-.Cx \&(
-.Op Ar row
-.Cx \&,
-.Cx \&\ \&
-.Op Ar column
-.Cx \&,
-.Cx \&\ \&
-.Op Ar nrow
-.Cx \&,
-.Cx \&\ \&
-.Op Ar ncol
-.Cx \&,
-.Cx \&\ \&
-.Op Ar nline
-.Cx \&,
-.Cx \&\ \&
-.Op Ar label
-.Cx \&,
-.Cx \&\ \&
-.Cx Op Ar pty
-.Cx \&,
-.Cx
-.Op Ar frame
-.Cx \&,
-.Cx \&\ \&
-.Op Ar mapnl
-.Cx \&,
-.Cx \&\ \&
-.Op Ar keepopen
-.Cx \&,
-.Cx \&\ \&
-.Op Ar smooth
-.Cx \&,
-.Cx \&\ \&
-.Op Ar shell
-.Cx \&).
-.Cx
+.It Xo
+.Ic window Ns ( Bq Ar row ,
+.Bq Ar column ,
+.Bq Ar nrow ,
+.Bq Ar ncol ,
+.Bq Ar nline ,
+.Bq Ar label ,
+.Bq Ar pty , 
+.Bq Ar frame ,
+.Bq Ar mapnl ,
+.Bq Ar keepopen ,
+.Bq Ar smooth ,
+.Bq Ar shell ) . 
+.Xc
 Open a window with upper left corner at
 .Ar row  ,
 .Ar column
@@ -1160,33 +838,27 @@ by
 .Ar default_shell  ,
 see above).  The created window's identifier
 is returned as a number.
-.Tp Cx Ic write
-.Cx \&(
-.Op Ar window
-.Cx \&,\&\ \&[<
-.Ar string\-list
-.Cx >]\&)
-.Cx
+.It Xo
+.Ic write Ns ( Bq Ar window ,
+.Bq Aq Ar string\-list )
+.Xc
 Send the list of strings,
-.Cx <
-.Ar string-list
-.Cx >,
-.Cx
+.Aq Ar string-list ,
 to
 .Nm window  ,
 separated
 by spaces but not terminated with a new line.  The strings are actually
 given to the window as input.  No value is returned.  Default
 is the current window.
-.Tp
+.El
 .Ss Predefined Variables
 These variables are for information only.  Redefining them does
 not affect the internal operation of
 .Nm window  .
-.Tw Fl
-.Tp Ar baud
+.Bl -tag -width modes
+.It Ar baud
 The baud rate as a number between 50 and 38400.
-.Tp Ar modes
+.It Ar modes
 The display modes (reverse video, underline, blinking, graphics)
 supported by the physical terminal.  The value of
 .Ar modes
@@ -1201,19 +873,19 @@ These values are useful
 in setting the window cursors' modes (see
 .Ar cursormodes
 above).
-.Tp Ar m_blk
+.It Ar m_blk
 The blinking mode bit.
-.Tp Ar m_grp
+.It Ar m_grp
 The graphics mode bit (not very useful).
-.Tp Ar m_rev
+.It Ar m_rev
 The reverse video mode bit.
-.Tp Ar m_ul
+.It Ar m_ul
 The underline mode bit.
-.Tp Ar ncol
+.It Ar ncol
 The number of columns on the physical screen.
-.Tp Ar nrow
+.It Ar nrow
 The number of rows on the physical screen.
-.Tp Ar term
+.It Ar term
 The terminal type.  The standard name, found in the second name
 field of the terminal's
 .Ev TERMCAP
@@ -1227,20 +899,16 @@ utilizes these environment variables:
 .Ev TERMCAP ,
 .Ev WINDOW_ID .
 .Sh FILES
-.Dw /dev/[pt]ty[pq]?
-.Di L
-.Dp Pa ~/.windowrc
+.Bl -tag -width /dev/[pt]ty[pq]? -compact
+.It Pa ~/.windowrc
 startup command file.
-.Dp Cx Pa /dev/
-.Op Pa pt
-.Cx ty
-.Op Pa pq
-.Cx ?
-.Cx
+.It Pa /dev/[pt]ty[pq]? 
 pseudo-terminal devices.
-.Dp
+.El
 .Sh HISTORY
+The
 .Nm window
-appeared in 4.3 BSD.
+command appeared in
+.Bx 4.3 .
 .Sh DIAGNOSTICS
 Should be self explanatory.
