@@ -1,0 +1,25 @@
+B=/usr/lib
+echo $*
+sflag=-s
+lflag=
+lcon=
+rflag=
+rcon=
+mflag=-ms
+mlflag=
+eflag=
+Pflag=
+for i in $*
+do case $i in
+-r) rflag=-r; shift; rcon=$1;shift;continue;;
+-l)lflag=-l; shift; lcon=$1;shift;continue;;
+-mm) mflag=-mm;shift;continue;;
+-ms) mflag=-ms;shift;continue;;
+-ml) mlflag=-ml;shift;continue;;
+-p) sflag=-p;shift;continue;;
+-a) sflag=-a;shift;continue;;
+-e) eflag=-e;shift;continue;;
+-P) Pflag=-P;shift;continue;;
+esac
+done
+$B/deroff $mflag $mlflag $*^$B/style1^$B/style2^$B/style3 $rflag $rcon $lflag $lcon $sflag $eflag $Pflag
