@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)symorder.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)symorder.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,22 +48,31 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern char *optarg;
+	extern int optind;
 	register struct nlist *p, *symp;
 	register FILE *f;
 	register int i;
 	register char *start, *t;
-	int n, o;
+	int ch, n, o;
 
-	if (argc != 3 && argc != 4) {
-		(void)fprintf(stderr, "usage: symorder [-T] orderlist file\n");
-		exit(ERREXIT);
-	}
-	if (argc == 4 && strcmp(argv[1],"-T") == 0) {
-		argv++;
-		small++;
-	}
-	if ((f = fopen(argv[1], "r")) == NULL)
-		error(argv[1]);
+	while ((ch = getopt(argc, argv, "t")) != EOF)
+		switch(ch) {
+		case 't':
+			small = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 2)
+		usage();
+
+	if ((f = fopen(argv[0], "r")) == NULL)
+		error(argv[0]);
 
 	for (p = order; fgets(asym, sizeof(asym), f) != NULL;) {
 		for (t = asym; isspace(*t); ++t);
@@ -78,7 +87,7 @@ main(argc, argv)
 	}
 	(void)fclose(f);
 
-	kfile = argv[2];
+	kfile = argv[1];
 	if ((f = fopen(kfile, "r")) == NULL)
 		error(kfile);
 	if ((o = open(kfile, O_WRONLY)) < 0)
@@ -100,17 +109,17 @@ main(argc, argv)
 	(void)fseek(f, sa, SEEK_SET);
 	n = exec.a_syms;
 	if (!(symtab = (struct nlist *)malloc(n)))
-		error((char *)NULL);
-	if (fread((char *)symtab, 1, n, f) != n)
+		error(NULL);
+	if (fread((void *)symtab, 1, n, f) != n)
 		badfmt("corrupted symbol table");
 
 	/* read string table size and string table */
-	if (fread((char *)&strtabsize, sizeof(int), 1, f) != 1 ||
+	if (fread((void *)&strtabsize, sizeof(int), 1, f) != 1 ||
 	    strtabsize <= 0)
 		badfmt("corrupted string table");
 	strings = malloc(strtabsize);
-	if (strings == (char *)NULL)
-		error((char *)NULL);
+	if (strings == NULL)
+		error(NULL);
 	/*
 	 * Subtract four from strtabsize since strtabsize includes itself,
 	 * and we've already read it.
@@ -121,16 +130,16 @@ main(argc, argv)
 
 	newtab = (struct nlist *)malloc(n);
 	if (newtab == (struct nlist *)NULL)
-		error((char *)NULL);
+		error(NULL);
 
 	i = n / sizeof(struct nlist);
 	reorder(symtab, newtab, i);
-	free((char *)symtab);
+	free((void *)symtab);
 	symtab = newtab;
 
 	newstrings = malloc(strtabsize);
-	if (newstrings == (char *)NULL)
-		error((char *)NULL);
+	if (newstrings == NULL)
+		error(NULL);
 	t = newstrings;
 	for (symp = symtab; --i >= 0; symp++) {
 		if (symp->n_un.n_strx == 0)
@@ -149,14 +158,14 @@ main(argc, argv)
 		/* fix exec sym size */
 		(void)lseek(o, 0, SEEK_SET);
 		exec.a_syms = n;
-		if (write(o, (char *)&exec, sizeof(exec)) != sizeof(exec))
+		if (write(o, (void *)&exec, sizeof(exec)) != sizeof(exec))
 			error(kfile);
 	}
 
 	(void)lseek(o, sa, SEEK_SET);
-	if (write(o, (char *)symtab, n) != n)
+	if (write(o, (void *)symtab, n) != n)
 		error(kfile);
-	if (write(o, (char *)&strtabsize, sizeof(int)) != sizeof(int)) 
+	if (write(o, (void *)&strtabsize, sizeof(int)) != sizeof(int)) 
 		error(kfile);
 	if (write(o, newstrings, strtabsize - sizeof(int)) !=
 	    strtabsize - sizeof(int))
@@ -236,5 +245,11 @@ error(n)
 	if (n)
 		(void)fprintf(stderr, "%s: ", n);
 	(void)fprintf(stderr, "%s\n", strerror(sverr));
+	exit(ERREXIT);
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: symorder [-t] symlist file\n");
 	exit(ERREXIT);
 }

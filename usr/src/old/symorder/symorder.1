@@ -3,28 +3,43 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)symorder.1	6.3 (Berkeley) %G%
+.\"     @(#)symorder.1	6.4 (Berkeley) %G%
 .\"
 .TH SYMORDER 1 "%Q"
 .UC
 .SH NAME
 symorder \- rearrange name list
 .SH SYNOPSIS
-.B symorder
-orderlist symbolfile
+.nf
+.ft B
+symorder [\-t] symlist file
+.ft R
+.fi
 .SH DESCRIPTION
-.I Orderlist
-is a file containing symbols to be found in symbolfile,
-1 symbol per line.
+The file
+.I symlist
+contains a list of symbols expected to be found in
+.IR file ,
+one symbol per line.
 .PP
-.I Symbolfile
-is updated in place to put the requested symbols first
-in the symbol table, in the order specified.  This is done
-by swapping the old symbols in the required spots with the
-new ones.  If all of the order symbols are not found, an
-error is generated.
+The file
+.I file
+is updated in place to place the listed symbols first in the symbol
+table, in the order specified.
 .PP
-This program was specifically designed to cut down on the
-overhead of getting symbols from /vmunix.
+The options are as follows:
+.TP
+\-t
+Restrict the symbol table to the symbols listed in
+.IR symlist .
+.PP
+The
+.I symorder
+utility exits 0 on success, 1 if a symbol listed in the
+.I symlist
+file was not found in the symbol table, and >1 if an error occurs.
+.PP
+This program was specifically designed to cut down on the overhead of
+getting extracting symbols from the kernel.
 .SH "SEE ALSO"
-nlist(3)
+nm(1), strip(1), nlist(3)
