@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.63 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.64 (Berkeley) %G%
  */
 
 /*
@@ -1088,24 +1088,4 @@ netaddr_match(family, haddr, hmask, nam)
 		break;
 	};
 	return (0);
-}
-
-/*
- * Generate a hash code for an iso host address. Used by NETADDRHASH() for
- * iso addresses.
- */
-iso_addrhash(saddr)
-	struct sockaddr *saddr;
-{
-#ifdef ISO
-	register struct sockaddr_iso *siso;
-	register int i, sum;
-
-	sum = 0;
-	for (i = 0; i < siso->siso_nlen; i++)
-		sum += siso->siso_data[i];
-	return (sum & (NETHASHSZ - 1));
-#else
-	return (0);
-#endif	/* ISO */
 }
