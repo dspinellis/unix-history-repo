@@ -1,0 +1,20 @@
+.th VS IV 10/28/73
+.sh NAME
+vs \*- voice synthesizer interface
+.sh DESCRIPTION
+Bytes written on
+.it vs
+drive a Federal Screw Works Votrax\(rg
+voice synthesizer.
+The upper two bits encode an inflection, the other 6 specify a phoneme.
+The code is given in section vs (VII).
+.s3
+Touch-Tone\(rg signals sent by a caller will be
+picked up during a
+.it read
+as the ASCII characters {0123456789#*}.
+.sh FILES
+/dev/vs
+.sh "SEE ALSO"
+speak (I), vs (VII)
+.sh BUGS
