@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.25 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -64,15 +64,22 @@ main(argc, argv)
 char **argv;
 {
 	register i;
+	struct passwd *pwent;
 
 	my_name = getlogin();
 	if (my_name == NULL || *my_name == '\0') {
-		struct passwd *pwent;
 		pwent = getpwuid(getuid());
 		if (pwent==NULL)
 			my_name = "???";
 		else
 			my_name = pwent->pw_name;
+	}
+	else {
+		pwent = getpwnam(my_name);
+		if ( getuid() != pwent->pw_uid) {
+			pwent = getpwuid(getuid());
+			my_name = pwent->pw_name;
+		}
 	}
 	if (setjmp(sjbuf))
 		done();
