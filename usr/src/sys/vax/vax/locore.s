@@ -1,4 +1,4 @@
-/*	locore.s	4.21	81/02/16	*/
+/*	locore.s	4.22	81/02/17	*/
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
@@ -9,6 +9,7 @@
 	.set	BSIZE,NBPG*CLSIZE
 	.set	MAXNBUF,128
 	.set	UPAGES,6	# size of user area, in pages
+	.set	NISP,3		# number of interrupt stack pages
 
 /*
  * User structure is UPAGES at top of user space.
@@ -30,7 +31,7 @@ erpb:
 	.space	4
 	.globl	_intstack
 _intstack:
-	.space	2048
+	.space	NISP*NBPG
 eintstack:
 
 /*
@@ -215,9 +216,9 @@ _catcher:
 SCBVEC(ustray):
 	PUSHR
 	mfpr	$IPL,-(sp)
-	subl3	$_catcher,28(sp),-(sp)
+	subl3	$_catcher,6*4+4(sp),-(sp)
 	ashl	$-1,(sp),(sp)
-	PRINTF(2, "Stray unibus interrupt (%x) (IPL %x)\n")
+	PRINTF(2, "Stray unibus interrupt (%o) (IPL %x)\n")
 	POPR
 	tstl	(sp)+
 	rei
@@ -324,7 +325,7 @@ start:
 	mtpr	$_Syssize,$SLR			## GROT ??
 	mtpr	$_Sysmap,$P0BR			## GROT ??
 	mtpr	$_Syssize,$P0LR			## GROT ??
-	movl	$_intstack+2048,sp		# set ISP
+	movl	$_intstack+NISP*NBPG,sp		# set ISP
 /* init RPB */
 	movab	_rpb,r0
 	movl	r0,(r0)+			# rp_selfref
@@ -382,6 +383,7 @@ start:
 	bbcc	$31,r6,0f; 0:
 	ashl	$-PGSHIFT,r6,r3			# r3 = btoc(r6)
 	bisl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
+	incl	r3
 	movab	_usrpt,r0
 	mtpr	r0,$TBIS
 /* init p0br, p0lr */
@@ -395,12 +397,12 @@ start:
 	moval	-4*UPAGES(r0)[r1],r2
 	mtpr	r2,$P1BR
 /* setup mapping for UPAGES of _u */
-	movl	$UPAGES,r2; movab _u+NBPG*UPAGES,r1; jbr 2f
-1:	incl	r3
+	movl	$UPAGES,r2; movab _u+NBPG*UPAGES,r1; addl2 $UPAGES,r3; jbr 2f
+1:	decl	r3
 	moval	-NBPG(r1),r1;
 	bisl3	$PG_V|PG_URKW,r3,-(r0)
 	mtpr	r1,$TBIS
-2:	sobgeq r2,1b
+2:	sobgeq	r2,1b
 /* initialize (slightly) the pcb */
 	movab	UPAGES*NBPG(r1),PCB_KSP(r1)
 	mnegl	$1,PCB_ESP(r1)
