@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,9 +9,14 @@ static char sccsid[] = "@(#)htable.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+#include <netdb.h>
+#include <sys/socket.h>
+
 #include "htable.h"		/* includes <sys/types.h> */
 
 #include <netinet/in.h>
+
+#define	INTERNET	10	/* gag */
 
 FILE	*hf;			/* hosts file */
 FILE	*gf;			/* gateways file */
@@ -91,6 +96,8 @@ do_entry(keyword, addrlist, namelist, cputype, opsys, protos)
 {
 	register struct addr *al, *al2;
 	register struct name *nl;
+	struct addr *inetal;
+	int count;
 
 	switch (keyword) {
 
@@ -120,21 +127,45 @@ do_entry(keyword, addrlist, namelist, cputype, opsys, protos)
 		goto alreadyfree;
 
 	case KW_GATEWAY:
-		for (al = addrlist; al; al = al->addr_link) {
-			register int net = inet_netof(al->addr_val);
+		/*
+		 * Kludge here: take only gateways directly connected to
+		 * the Internet.  Should really calculate closure on
+		 * connectivity matrix to identify gateways to all networks
+		 * described in data base, but that's real work.
+		 */
+		/* locate Internet address, if one */
+		for (al = addrlist; al; al = al->addr_link)
+			if (inet_netof(al->addr_val) == INTERNET)
+				break;
+		if (al == NULL)
+			break;
+		inetal = al;
+		for (count = 0, al = al->addr_link; al; al = al->addr_link) {
+			register int net;
+			register struct netent *np;
 
+			if (al == inetal)
+				continue;
 			/* suppress duplicates -- not optimal */
+			net = inet_netof(al->addr_val);
 			if (checkgateway(net))
 				break;
+			count++;
 			fprintf(gf, "net ");
-			putnet(gf, net);
+			np = getnetbyaddr(net, AF_INET);
+			if (np)
+				fprintf(gf, "%s", np->n_name);
+			else
+				putnet(gf, net);
 			/* this is a kludge */
-			fprintf(gf, " destination %s metric 1 passive\n",
-				lower(namelist->name_val));
-			putaddr(hf, al->addr_val);
-			fprintf(hf, "%s\t# gateway\n",
+			fprintf(gf, " gateway %s metric 1 passive\n",
 				lower(namelist->name_val));
 			savegateway(net);
+		}
+		if (count > 0) {
+			putaddr(hf, inetal->addr_val);
+			fprintf(hf, "%s\t# gateway\n",
+				lower(namelist->name_val));
 		}
 		break;
 
