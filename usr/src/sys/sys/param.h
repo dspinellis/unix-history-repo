@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	6.14 (Berkeley) %G%
+ *	@(#)param.h	6.15 (Berkeley) %G%
  */
 
-#define	BSD	4.3
-#define BSD4_3
+#define	BSD	43		/* 4.3 * 10, as cpp doesn't do floats */
+#define BSD4_3	1
 
 /*
  * Machine type dependent parameters.
@@ -26,7 +26,7 @@
 #define	NMOUNT	20		/* number of mountable file systems */
 /* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
 #define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
-#define	MAXUPRC	25		/* max processes per user */
+#define	MAXUPRC	40		/* max processes per user */
 #define	NOFILE	64		/* max open files per process */
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	20480		/* # characters in exec arglist */
