@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)main.c	6.43 (Berkeley) %G%";
 #include <arpa/nameser.h>
 #include <resolv.h>
 #endif
+#include <pwd.h>
 
 # ifdef lint
 char	edata;
@@ -98,7 +99,9 @@ main(argc, argv, envp)
 	bool safecf = TRUE;
 	static bool reenter = FALSE;
 	char *argv0 = argv[0];
+	struct passwd *pw;
 	struct stat stb;
+	char realuser[256];
 	char jbuf[60];			/* holds MyHostName */
 	extern int DtableSize;
 	extern time_t convtime();
@@ -157,6 +160,12 @@ main(argc, argv, envp)
 	RealUid = getuid();
 	RealGid = getgid();
 
+	pw = getpwuid(RealUid);
+	if (pw != NULL)
+		(void) strcpy(realuser, pw->pw_name);
+	else
+		(void) sprintf(realuser, "Unknown UID %d", RealUid);
+
 	/*
 	**  Do a quick prescan of the argument list.
 	**	We do this to find out if we can potentially thaw the
@@ -168,7 +177,7 @@ main(argc, argv, envp)
 	argv[argc] = NULL;
 	av = argv;
 	nothaw = FALSE;
-#ifdef __alpha
+#ifdef __osf__
 #define OPTIONS		"b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvx"
 #else
 	while ((p = *++av) != NULL)
@@ -248,53 +257,63 @@ main(argc, argv, envp)
 		/* initialize some macros, etc. */
 		initmacros();
 
-		/* hostname */
-		av = myhostname(jbuf, sizeof jbuf);
-		if (jbuf[0] != '\0')
-		{
-			struct	utsname	utsname;
-			extern char *strchr();
-
-			if (tTd(0, 4))
-				printf("canonical name: %s\n", jbuf);
-			p = newstr(jbuf);
-			define('w', p, CurEnv);
-
-			q = strchr(jbuf, '.');
-			if (q != NULL)
-			{
-				*q++ = '\0';
-				p = newstr(jbuf);
-				define('m', q, CurEnv);
-			}
-			setclass('w', p);
-
-			if (uname(&utsname) >= 0)
-				p = utsname.nodename;
-			else
-			{
-				makelower(jbuf);
-				p = jbuf;
-			}
-			if (tTd(0, 4))
-				printf("UUCP nodename: %s\n", p);
-			p = newstr(p);
-			define('k', p, CurEnv);
-			setclass('w', p);
-		}
-		while (av != NULL && *av != NULL)
-		{
-			if (tTd(0, 4))
-				printf("\ta.k.a.: %s\n", *av);
-			setclass('w', *av++);
-		}
-
 		/* version */
 		define('v', Version, CurEnv);
 	}
 
+	/* hostname */
+	av = myhostname(jbuf, sizeof jbuf);
+	if (jbuf[0] != '\0')
+	{
+		struct	utsname	utsname;
+		extern char *strchr();
+
+		if (tTd(0, 4))
+			printf("canonical name: %s\n", jbuf);
+		p = newstr(jbuf);
+		define('w', p, CurEnv);
+
+		q = strchr(jbuf, '.');
+		if (q != NULL)
+		{
+			*q++ = '\0';
+			p = newstr(jbuf);
+			define('m', q, CurEnv);
+		}
+		setclass('w', p);
+
+		if (uname(&utsname) >= 0)
+			p = utsname.nodename;
+		else
+		{
+			makelower(jbuf);
+			p = jbuf;
+		}
+		if (tTd(0, 4))
+			printf("UUCP nodename: %s\n", p);
+		p = newstr(p);
+		define('k', p, CurEnv);
+		setclass('w', p);
+	}
+	while (av != NULL && *av != NULL)
+	{
+		if (tTd(0, 4))
+			printf("\ta.k.a.: %s\n", *av);
+		setclass('w', *av++);
+	}
+
 	/* current time */
 	define('b', arpadate((char *) NULL), CurEnv);
+
+	/*
+	**  Find our real host name for future logging.
+	*/
+
+	p = getrealhostname(STDIN_FILENO);
+	if (p != NULL)
+		RealHostName = newstr(p);
+	else
+		RealHostName = "localhost";
 
 	/*
 	** Crack argv.
@@ -361,6 +380,10 @@ main(argc, argv, envp)
 			break;
 
 		  case 'C':	/* select configuration file (already done) */
+			if (getuid() != 0)
+				auth_warning(CurEnv,
+					"Processed by %s with -C %s",
+					realuser, optarg);
 			break;
 
 		  case 'd':	/* debugging -- redo in case frozen */
@@ -550,17 +573,14 @@ main(argc, argv, envp)
 		/* remove things that don't make sense in daemon mode */
 		FullName = NULL;
 		break;
+
+	  case MD_SMTP:
+		if (RealUid != 0)
+			auth_warning(CurEnv,
+				"%s owned process doing -bs",
+				realuser);
+		break;
 	}
-
-	/*
-	**  Find our real host name for future logging.
-	*/
-
-	p = getrealhostname(STDIN_FILENO);
-	if (p != NULL)
-		RealHostName = newstr(p);
-	else
-		RealHostName = "localhost";
 
 	/* do heuristic mode adjustment */
 	if (Verbose)
