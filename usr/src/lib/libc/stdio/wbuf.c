@@ -1,4 +1,4 @@
-/* @(#)wbuf.c	4.7 (Berkeley) %G% */
+/* @(#)wbuf.c	4.8 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -6,6 +6,7 @@
 char	*malloc();
 
 _flsbuf(c, iop)
+unsigned char c;
 register FILE *iop;
 {
 	register char *base;
@@ -28,9 +29,9 @@ tryagain:
 		if (iop->_ptr >= base+iop->_bufsiz || c == '\n') {
 			n = write(fileno(iop), base, rn = iop->_ptr - base);
 			iop->_ptr = base;
+			iop->_cnt = 0;
 		} else
 			rn = n = 0;
-		iop->_cnt = 0;
 	} else if (iop->_flag&_IONBF) {
 		c1 = c;
 		rn = 1;
