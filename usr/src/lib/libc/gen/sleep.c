@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)sleep.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <sys/time.h>
@@ -45,8 +45,8 @@ sleep(n)
 	}
 	setvec(vec, sleepx);
 	(void) sigvec(SIGALRM, &vec, &ovec);
-	(void) setitimer(ITIMER_REAL, itp, (struct itimerval *)0);
 	ringring = 0;
+	(void) setitimer(ITIMER_REAL, itp, (struct itimerval *)0);
 	while (!ringring)
 		sigpause(omask &~ mask(SIGALRM));
 	(void) sigvec(SIGALRM, &ovec, (struct sigvec *)0);
