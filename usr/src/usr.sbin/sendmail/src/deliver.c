@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.97 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.98 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2232,7 +2232,8 @@ putbody(mci, e, separator)
 				else
 				{
 					pos += bp - buf;
-					*pbp++ = c;
+					if (c != '\r')
+						*pbp++ = c;
 				}
 				bp = buf;
 
@@ -2290,8 +2291,7 @@ putch:
 					fputc(c, TrafficLogFile);
 				putc(c, mci->mci_out);
 				pos++;
-				if (c == '\n')
-					ostate = OS_HEAD;
+				ostate = c == '\n' ? OS_HEAD : OS_INLINE;
 				break;
 			}
 		}
