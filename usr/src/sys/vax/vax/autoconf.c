@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.3 (Berkeley) %G%
+ *	@(#)autoconf.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,7 @@
 #include "systm.h"
 #include "map.h"
 #include "buf.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "vm.h"
 #include "conf.h"
 #include "dmap.h"
@@ -404,6 +404,8 @@ mbafind(nxv, nxp)
 	mba_hd[nummba].mh_mba = mdp;
 	mba_hd[nummba].mh_physmba = (struct mba_regs *)nxp;
 	setscbnex(mbaintv[nummba]);
+	mdp->mba_cr = MBCR_INIT;
+	mdp->mba_cr = MBCR_IE;
 	fnd.mi_mba = mdp;
 	fnd.mi_mbanum = nummba;
 	for (mbd = mdp->mba_drv, dn = 0; mbd < &mdp->mba_drv[8]; mbd++, dn++) {
@@ -441,8 +443,6 @@ mbafind(nxv, nxp)
 				}
 		    }
 	}
-	mdp->mba_cr = MBCR_INIT;
-	mdp->mba_cr = MBCR_IE;
 }
 
 /*
@@ -944,7 +944,8 @@ swapconf()
 		if (bdevsw[major(swp->sw_dev)].d_psize) {
 			nblks =
 			    (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
-			if (swp->sw_nblks == 0 || swp->sw_nblks > nblks)
+			if (nblks != -1 &&
+			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
 				swp->sw_nblks = nblks;
 		}
 	}
