@@ -1,20 +1,24 @@
-/* @(#)getpwent.c	4.6 (Berkeley) 85/01/16 */
+/* @(#)getpwent.c	4.6 (Berkeley) 85/01/21 */
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
 
-static char *PASSWD = "/etc/passwd";
 static char EMPTY[] = "";
 static FILE *pwf = NULL;
 static char line[BUFSIZ+1];
 static struct passwd passwd;
-DBM *_pw_db;
-int _pw_stayopen;
+
+/*
+ * The following are shared with getpwnamuid.c
+ */
+char	*_pw_file = "/etc/passwd";
+DBM	*_pw_db;
+int	_pw_stayopen;
 
 setpwent()
 {
 	if (pwf == NULL)
-		pwf = fopen(PASSWD, "r");
+		pwf = fopen(_pw_file, "r");
 	else
 		rewind(pwf);
 }
@@ -49,7 +53,7 @@ getpwent()
 	register char *p;
 
 	if (pwf == NULL) {
-		if ((pwf = fopen( PASSWD, "r" )) == NULL)
+		if ((pwf = fopen( _pw_file, "r" )) == NULL)
 			return(0);
 	}
 	p = fgets(line, BUFSIZ, pwf);
@@ -79,5 +83,5 @@ getpwent()
 setpwfile(file)
 	char *file;
 {
-	PASSWD = file;
+	_pw_file = file;
 }
