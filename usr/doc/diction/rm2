@@ -1,0 +1,92 @@
+.bp
+.SH
+References
+.LP
+.IP 1.
+L. L. Cherry,
+``PARTS - A System for Assigning Word Classes to English Text,''
+submitted
+.I
+Communications of the ACM.
+.R
+.IP 2.
+B. W. Kernighan and J. R. Mashey,
+``The UNIX Programming Environment,''
+.I
+Software \- Practice & Experience
+.R
+, \fB9\fR, 1-15 (1979).
+.IP 3.
+G. R. Klare,
+``Assessing Readability,''
+.I
+Reading Research Quarterly,
+.R
+1974-1975,
+.B
+10
+.R
+, 62-102.
+.IP 4.
+E. A. Smith and P. Kincaid,
+``Derivation and validation of the automated readability index
+for use with technical materials,''
+.I
+Human Factors,
+.R
+1970, 12, 457-464.
+.IP 5.
+J. P. Kincaid, R. P. Fishburne, R. L. Rogers, and B. S. Chissom,
+``Derivation of new readability formulas (Automated Readability Index,
+Fog count, and Flesch Reading Ease Formula)
+for Navy enlisted personnel,''
+Navy Training Command Research Branch Report 8-75, Feb., 1975.
+.IP 6.
+M. Coleman and T. L. Liau,
+``A Computer Readability Formula Designed for Machine Scoring,''
+.I
+Journal of Applied Psychology,
+.R
+1975, 60, 283-284.
+.IP 7.
+R. Flesch,
+``A New Readability Yardstick,''
+.I
+Journal of Applied Psychology,
+.R
+1948, 32, 221-233.
+.IP 8.
+E. U. Coke,
+private communication.
+.IP 9.
+D. W. Ewing,
+.I
+Writing for Results,
+.R
+John Wiley & Sons, Inc., New York, N. Y. (1974).
+.IP 10.
+G. Leggett, C. D. Mead and W. Charvat,
+.I
+Prentice-Hall Handbook for Writers,
+.R
+Seventh Edition, Prentice-Hall Inc., Englewood Cliffs, N. J. (1978).
+.IP 11.
+E. B. Coleman,
+``Learning of Prose Written in Four Grammatical Transformations,''
+.I
+Journal of Applied Psychology,
+.R
+1965, vol. 49, no. 5, pp. 332-341.
+.IP 12
+A. V. Aho and M. J. Corasick,
+``Efficient String Matching: an aid to Bibliographic Search,''
+.I
+Communications of the ACM,
+.R
+\fB18\fR, (6), 333-340, June 1975.
+.IP 13.
+Bell Laboratories,
+.I
+``UNIX TIME-SHARING SYSTEM: UNIX PROGRAMMER'S MANUAL,'' 
+.R
+Seventh Edition, Vol. 1 (January 1979).
