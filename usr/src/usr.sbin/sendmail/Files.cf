@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.3 (Berkeley) %G%
+#	@(#)Files.cf	8.4 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -47,6 +47,7 @@ cf/feature/nodns.m4
 cf/feature/notsticky.m4
 cf/feature/nouucp.m4
 cf/feature/nullclient.m4
+cf/feature/procmail.m4
 cf/feature/redirect.m4
 cf/feature/stickyhost.m4
 cf/feature/use_cw_file.m4
