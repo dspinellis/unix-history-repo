@@ -8,8 +8,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmd.c	7.3 (Berkeley) %G%
+ *	@(#)bmd.c	7.4 (Berkeley) %G%
  */
+
 /*
 
  * bmd.c --- Bitmap-Display raw-level driver routines
@@ -83,19 +84,18 @@ struct bmd_softc {
 
 #define	STAT_NORMAL	0x0000
 #define	STAT_ESCAPE	0x0001
-#define	STAT_INSERT	0x0100
+#define	STAT_STOP	0x0002
 
 struct	bmd_softc bmd_softc;
 struct	bmd_linec bmd_linec[52];
 
 void	bmd_escape();
-void	bmd_escape_0();
-void	bmd_escape_1();
-
 
 /*
  * Escape-Sequence
  */
+
+#define push_ESC(p, c)		*(p)->bc_esc++ = c; *(p)->bc_esc = '\0'
 
 void
 bmd_escape(c)
@@ -103,109 +103,10 @@ bmd_escape(c)
 {
 	register struct bmd_softc *bp = &bmd_softc;
 
-	switch (c) {
-
-	case '[':
-		bp->bc_escape = bmd_escape_0;
-		break;
-
-	default:
-		bp->bc_stat &= ~STAT_ESCAPE;
-		bp->bc_esc = &bp->bc_escseq[0];
-		bp->bc_escape = bmd_escape;
-		break;
-	}
-}
-
-void
-bmd_escape_0(c)
-	int c;
-{
-	register struct bmd_softc *bp = &bmd_softc;
-	register struct	bmd_linec *bq = bp->bc_bl;
-
-	switch (c) {
-
-	case 'A':
-		if (bp->bc_row > bp->bc_ymin) {
-			bp->bc_row--;
-		}
-		break;
-
-	case 'C':
-		if (bq->bl_col < bp->bc_xmax - 1) {
-			bq->bl_col++;
-		}
-		break;
-
-	case 'K':
-		if (bq->bl_col < bp->bc_xmax) {
-			register int col;
-			for (col = bq->bl_col; col < bp->bc_xmax; col++)
-				bmd_erase_char(bp->bc_raddr,
-					       bp->bc_waddr,
-					       col, bp->bc_row);
-		}
-		bq->bl_end = bq->bl_col;
-		break;
-
-	case 'H':
-		bq->bl_col = bq->bl_end = bp->bc_xmin;
-		bp->bc_row = bp->bc_ymin;
-		break;
-
-	default:
-/*
-		*bp->bc_esc++ = c;
-		bp->bc_escape = bmd_escape_1;
-		return;
- */
-		break;
-	}
-
 	bp->bc_stat &= ~STAT_ESCAPE;
 	bp->bc_esc = &bp->bc_escseq[0];
-	bp->bc_escape = bmd_escape;
+/*	bp->bc_escape = bmd_escape;	*/
 }
-
-void
-bmd_escape_1(c)
-	int c;
-{
-	register struct bmd_softc *bp = &bmd_softc;
-	register struct	bmd_linec *bq = bp->bc_bl;
-	register int col = 0, row = 0;
-	register char *p;
-
-	switch (c) {
-
-	case 'J':
-		bp->bc_stat &= ~STAT_ESCAPE;
-		bp->bc_esc = &bp->bc_escseq[0];
-		bp->bc_escape = bmd_escape;
-		break;
-
-	case 'H':
-		for (p = &bp->bc_escseq[0]; *p != ';'; p++)
-			row = (row * 10) + (*p - 0x30);
-		p++;
-		for (p = &bp->bc_escseq[0]; p != bp->bc_esc; p++)
-			col = (col * 10) + (*p - 0x30);
-
-		bq->bl_col = col + bp->bc_xmin;
-		bp->bc_row = row + bp->bc_ymin;
-
-		bp->bc_stat &= ~STAT_ESCAPE;
-		bp->bc_esc = &bp->bc_escseq[0];
-		bp->bc_escape = bmd_escape;
-		break;
-
-	default:
-		*bp->bc_esc++ = c;
-		break;
-	}
-}
-
 
 /*
  * Entry Routine
@@ -265,12 +166,17 @@ bmdputc(c)
 	register struct bmd_linec *bq = bp->bc_bl;
 	register int i;
 
+							/* skip out, if STAT_STOP */
+	if (bp->bc_stat & STAT_STOP)
+		return(c);
+
 	c &= 0x7F;
 							/* turn off cursole */
 	bmd_reverse_char(bp->bc_raddr,
 			 bp->bc_waddr,
 			 bq->bl_col, bp->bc_row);
 							/* do escape-sequence */
+
 	if (bp->bc_stat & STAT_ESCAPE) {
 		*bp->bc_esc++ = c;
 		(*bp->bc_escape)(c);
@@ -327,8 +233,15 @@ bmdputc(c)
 			break;
 
 		case 0x1b:				/* ESC */
+			bmdputc('<');
+			bmdputc('E');
+			bmdputc('S');
+			bmdputc('C');
+			bmdputc('>');
+/*
 			bp->bc_stat |= STAT_ESCAPE;
 			*bp->bc_esc++ = 0x1b;
+ */
 			break;
 
 		case 0x7F:				/* DEL */
@@ -354,12 +267,43 @@ bmdputc(c)
 	return(c);
 }
 
-bmdclear()
+/*
+ *
+ */
+
+bmd_on()
+{
+	bmdinit();
+}
+
+bmd_off()
+{
+	register struct bmd_softc *bp = &bmd_softc;
+
+	bp->bc_stat |= STAT_STOP;
+	bmd_erase_screen((u_long *) bp->bc_waddr);	/* clear screen */
+}
+
+bmd_clear()
 {
 	register struct bmd_softc *bp = &bmd_softc;
 	register struct bmd_linec *bq = bp->bc_bl;
 
 	bmd_erase_screen((u_long *) bp->bc_waddr);	/* clear screen */
+
+	bmd_reverse_char(bp->bc_raddr,
+			 bp->bc_waddr,
+			 bq->bl_col, bp->bc_row);	/* turn on  cursole */
+}
+
+bmd_home()
+{
+	register struct bmd_softc *bp = &bmd_softc;
+	register struct bmd_linec *bq = bp->bc_bl;
+
+	bmd_reverse_char(bp->bc_raddr,
+			 bp->bc_waddr,
+			 bq->bl_col, bp->bc_row);	/* turn off cursole */
 
 	bq->bl_col = bq->bl_end = bp->bc_xmin;
 	bp->bc_row = bp->bc_ymin;
@@ -368,17 +312,6 @@ bmdclear()
 			 bp->bc_waddr,
 			 bq->bl_col, bp->bc_row);	/* turn on  cursole */
 }
-
-
-/*
- *
- */
-
-void
-bmd_add_new_line()
-{
-}
-
 
 /*
  *  charactor operation routines
