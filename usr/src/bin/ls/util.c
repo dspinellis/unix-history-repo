@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,6 +40,7 @@ prcopy(src, dest, len)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: ls [-1ACFLRTWacdfiklqrstu] [file ...]\n");
+	(void)fprintf(stderr,
+	    "usage: ls [-1ACFLRTWacdfikloqrstu] [file ...]\n");
 	exit(1);
 }
