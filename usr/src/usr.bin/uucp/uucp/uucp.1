@@ -1,6 +1,10 @@
-.\"	@(#)uucp.1	6.3 (Berkeley) %G%
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
 .\"
-.TH UUCP 1C ""
+.\"	@(#)uucp.1	6.4 (Berkeley) %G%
+.\"
+.TH UUCP 1 ""
 .AT 3
 .SH NAME
 uucp \- unix to unix copy
@@ -101,7 +105,7 @@ Do not make intermediate directories for the file copy.
 is a single letter/number; lower ASCII sequence characters
 will cause a job to be transmitted earlier during a particular conversation.
 Default is `n'. By way of comparison,
-.IR uux (1C)
+.IR uux (1)
 defaults to `A'; mail is usually sent at `C'.
 .TP 
 .B \-m
@@ -130,7 +134,7 @@ Turn on the debugging at level
 .br
 /usr/lib/uucp/* - other data and program files
 .SH SEE ALSO
-uux(1C), mail(1)
+uux(1), mail(1)
 .PP
 D. A. Nowitz and M. E. Lesk,
 .IR "A Dial-Up Network of UNIX Systems" .
@@ -173,7 +177,7 @@ the form
 .fi
 .PP
 is not permitted. Use
-.IR uusend (1C)
+.IR uusend (1)
 instead.
 .PP
 When invoking
