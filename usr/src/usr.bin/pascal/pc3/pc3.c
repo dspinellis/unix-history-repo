@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.6 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.7 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -269,6 +269,8 @@ checksymbol( nlp , ofilep )
 #	    endif DEBUG
 	    symbolp -> desc = nlp -> n_desc;
 	    switch ( symbolp -> desc ) {
+		default:
+			error( FATAL , "panic: [checksymbol] NEW" );
 		case N_PGLABEL:
 		case N_PGCONST:
 		case N_PGTYPE:
@@ -318,6 +320,8 @@ checksymbol( nlp , ofilep )
 			, symbolp -> name );
 #	    endif DEBUG
 	    switch ( symbolp -> desc ) {
+		default:
+			error( FATAL , "panic [checksymbol] OLD" );
 		case N_PSO:
 			    /*
 			     *	finding a file again means you are back
@@ -342,35 +346,56 @@ checksymbol( nlp , ofilep )
 		case N_PEFUNC:
 		case N_PEPROC:
 			    /*
-			     *	we may see any number of external declarations,
-			     *	but they all have to come
-			     *	from the same include file.
+			     *	this might be the resolution of the external
+			     *	has to match func/proc of external
+			     *	and has to have included external
+			     *	and has to not have been previously resolved.
 			     */
-			if (   nlp -> n_desc == N_PEFUNC
-			    || nlp -> n_desc == N_PEPROC ) {
-			    goto included;
+			if (  (  ( symbolp -> desc == N_PEFUNC
+			         && nlp -> n_desc == N_PGFUNC )
+			      || ( symbolp -> desc == N_PEPROC
+				 && nlp -> n_desc == N_PGPROC ) )
+			   && ( symbolp -> sym_un.sym_str.fromp == pfilep )
+			   && ( symbolp -> sym_un.sym_str.rfilep == NIL ) ) {
+				/*
+				 *	resolve external
+				 */
+#			    ifdef DEBUG
+				fprintf( stderr , "[checksymbol] resolving external\n" );
+#			    endif DEBUG
+			    symbolp -> sym_un.sym_str.rfilep = ifilep;
+			    symbolp -> sym_un.sym_str.rline = nlp -> n_value;
+			    return;
 			}
 			    /*
-			     *	an external function can be resolved by
-			     *	the resolution of the function
-			     *	if the resolving file
-			     *	included the external declaration.
+			     *	otherwise, it might be another external,
+			     *	which is okay if it's
+			     *	the same type and from the same include file
 			     */
-			if (    (  symbolp -> desc == N_PEFUNC
-				&& nlp -> n_desc != N_PGFUNC )
-			    ||  (  symbolp -> desc == N_PEPROC
-				&& nlp -> n_desc != N_PGPROC )
-			    || symbolp -> sym_un.sym_str.fromp != pfilep ) {
-			    break;
+			if (  (  ( symbolp -> desc == N_PEFUNC
+			         && nlp -> n_desc == N_PEFUNC )
+			      || ( symbolp -> desc == N_PEPROC
+				 && nlp -> n_desc == N_PEPROC ) )
+			   && ( symbolp -> sym_un.sym_str.fromi == ifilep ) ) {
+				/*
+				 *	just another pretty external
+				 *	make it look like it comes from here.
+				 */
+#			    ifdef DEBUG
+				fprintf( stderr , "[checksymbol] just another pretty external\n" );
+#			    endif DEBUG
+			    symbolp -> sym_un.sym_str.fromp = pfilep;
+			    return;
 			}
 			    /*
-			     *	an external function can only be resolved once.
+			     *	something is wrong
 			     */
-			if ( symbolp -> sym_un.sym_str.rfilep != NIL ) {
-			    break;
-			}
-			symbolp -> sym_un.sym_str.rfilep = ifilep;
-			symbolp -> sym_un.sym_str.rline = nlp -> n_value;
+			error( WARNING ,
+			    "%s, line %d: %s already defined (%s, line %d)." ,
+			    ifilep -> name , nlp -> n_value , 
+			    nlp -> n_un.n_name , 
+			    symbolp -> sym_un.sym_str.fromi -> name ,
+			    symbolp -> sym_un.sym_str.iline );
 			return;
 		case N_PGFUNC:
 		case N_PGPROC:
