@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.56 (Berkeley) %G%
+#	@(#)termcap.src	5.57 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2554,6 +2554,17 @@ vh|tvi910+|910+|televideo 910+:\
 	:k4=^AD\r:k5=^AE\r:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=^H:\
 	:kd=^J:kh=^^:kl=^H:kr=^L:ku=^K:li#24:ll=\E=7\040:ma=^K^P^L\040:\
 	:nd=^L:pt:se=\EG0:sg#1:so=\EG4:ue=\EG0:up=^K:us=\EG8:xn:
+# From Humberto Appleton, beto@cs.utexas.edu, 880521 UT Austin
+vs|tvi970|970|televideo970:\
+	:is=\E<\E[?21l\E[19h\E[1Q\E[10l\E[7l\E[H\E[2J:\
+	:ae=\E(B:al=\E[L:as=\E(B:bs:bt=\E[Z:\
+	:cd=\E[0J:ce=\E[0K:cl=\E[H\E[2J:cm=\E[%i%d;%df:co#80:\
+	:da:db:dc=\E[P:dl=\E[M:do=\ED:ei=\E[4l:im=\E[4h:\
+	:k1=\E?a:k2=\E?b:k3=\E?c:k4=\E?d:k5=\E?e:k6=\E?f:k7=\E?g:k8=\E?h:\
+	:k9=\E?i:kb=^H:kd=\E[B:kh=\E[H:kl=\E[D:kr=\E[C:ku=\E[A:\
+	:li#24:mi:ms:nd=\E[C:pt:se=\E[0m:sg#0:so=\E[7m:sr=\EM:\
+	:ue=\E[0m:ug#0:up=\EM:us=\E[4m:vs=\E[1Q:\
+	:vb=\E[5;m\200\200\200\200\200\200\200\200\200\E[0;m
 # From fair@ucbarpa  Sun Oct 27 07:21:05 1985
 v6|ims950-b|bare ims950 no is:\
 	:is@:tc=ims950:
