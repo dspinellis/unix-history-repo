@@ -1,0 +1,139 @@
+ac(1m) ac: login accounting.
+adb(1) adb: debugger.
+ar(1) ar: archive and library maintainer.
+ar11(1) ar11: PDP-11 compatible archive and library maintainer.
+arcv(1m) arcv: convert archives to new format.
+as(1) as: assembler.
+at(1) at: execute commands at a later time.
+awk(1) awk: pattern scanning and processing language.
+basename(1) basename: strip filename affixes.
+bc(1) bc: arbitrary-precision arithmetic language.
+cal(1) cal: print calendar.
+calendar(1) calendar: reminder service.
+call(1c) call: ring a telephone.
+cat(1) cat: catenate and print.
+cb(1) cb: C program beautifier.
+cc(1) cc: C compiler.
+cd(1) cd: change working directory.
+chmod(1) chmod: change mode.
+chown(1) chown, chgrp: change owner or group.
+clri(1m) clri: clear i-node.
+cmp(1) cmp: compare two files.
+col(1) col: filter reverse line feeds.
+comm(1) comm: select or reject lines common to two sorted files.
+cp(1) cp: copy.
+cron(1m) cron: clock daemon.
+crypt(1) crypt: encode/decode.
+cu(1c) cu: call UNIX.
+date(1) date: print and set the date.
+dc(1) dc: desk calculator.
+dcheck(1m) dcheck: file system directory consistency check.
+dd(1) dd: convert and copy a file.
+deroff(1) deroff: remove nroff, troff, tbl and eqn constructs.
+df(1m) df: disk free.
+diff(1) diff: differential file comparator.
+diff3(1) diff3: 3-way differential file comparison.
+du(1) du: summarize disk usage.
+dump(1m) dump: incremental file system dump.
+dumpdir(1m) dumpdir: print the names of files on a dump tape.
+echo(1) echo: echo arguments.
+ed(1) ed: text editor.
+eqn(1) eqn, neqn, checkeq: typeset mathematics.
+expr(1) expr: evaluate arguments as an expression.
+f77(1) f77: Fortran 77 compiler.
+file(1) file: determine file type.
+find(1) find: find files.
+graph(1g) graph: draw a graph.
+grep(1) grep, egrep, fgrep: search a file for a pattern.
+icheck(1m) icheck: file system storage consistency check.
+intro(1) intro: introduction to commands.
+iostat(1m) iostat: report I/O statistics.
+join(1) join: relational database operator.
+kill(1) kill: terminate a process with extreme prejudice.
+ld(1) ld: link editor.
+learn(1) learn: computer aided instruction about UNIX.
+lex(1) lex: generator of lexical analysis programs.
+lint(1) lint: a C program verifier.
+ln(1) ln: make a link.
+login(1) login: sign on.
+look(1) look: find lines in a sorted list.
+lorder(1) lorder: find ordering relation for an object library.
+lpr(1) lpr, vpr: line printer spooler.
+ls(1) ls: list contents of directory.
+m4(1) m4: macro processor.
+mail(1) mail: send or receive mail among users.
+make(1) make: maintain program groups.
+man(1) man: print sections of this manual.
+mesg(1) mesg: permit or deny messages.
+mkdir(1) mkdir: make a directory.
+mkfs(1m) mkfs: construct a file system.
+mknod(1m) mknod: build special file.
+mount(1m) mount, umount: mount and dismount file system.
+mv(1) mv: move or rename files.
+ncheck(1m) ncheck: generate names from i-numbers.
+newgrp(1) newgrp: log in to a new group.
+nice(1) nice, nohup: run a command at low priority.
+nm(1) nm: print name list.
+nohup(1) nohup: run a command immune to hangups.
+number(1) number: convert Arabic numerals to English.
+od(1) od: octal dump.
+passwd(1) passwd: change login password.
+plot(1g) plot: graphics filters.
+pr(1) pr: print file.
+prof(1) prof: display profile data.
+ps(1) ps: process status.
+pstat(1m) pstat: print system facts.
+ptx(1) ptx: permuted index.
+pwd(1) pwd: working directory name.
+quot(1m) quot: summarize file system ownership.
+ratfor(1) ratfor: rational Fortran dialect.
+rc(1) rc: Ratfor compiler.
+refer(1) refer, lookbib: find and insert literature references in documents.
+restor(1m) restor: incremental file system restore.
+rev(1) rev: reverse lines of a file.
+rm(1) rm, rmdir: remove (unlink) files.
+sa(1m) sa, accton: system accounting.
+sdb(1) sdb: C symbolic debugger.
+sed(1) sed: stream editor.
+sh(1) sh, for, case, if, while, \fB:\fP, \fB.\fP, break, continue, cd, eval, exec, exit, export, login, newgrp, read, readonly, set, shift, times, trap, umask, wait: command language.
+size(1) size: size of an object file.
+sleep(1) sleep: suspend execution for an interval.
+sort(1) sort: sort or merge files.
+spell(1) spell, spellin, spellout: find spelling errors.
+spline(1g) spline: interpolate smooth curve.
+split(1) split: split a file into pieces.
+strip(1) strip: remove symbols and relocation bits.
+struct(1) struct: structure Fortran programs.
+stty(1) stty: set terminal options.
+su(1) su: substitute user id temporarily.
+sum(1) sum: sum and count blocks in a file.
+sync(1m) sync: update the super block.
+tabs(1) tabs: set terminal tabs.
+tail(1) tail: deliver the last part of a file.
+tar(1) tar: tape archiver.
+tbl(1) tbl: format tables for nroff or troff.
+tc(1) tc: photypesetter simulator.
+tee(1) tee: pipe fitting.
+test(1) test: condition command.
+time(1) time: time a command.
+tk(1) tk: paginator for the Tektronix 4014.
+touch(1) touch: update date last modified of a file.
+tp(1) tp: manipulate tape archive.
+tr(1) tr: translate characters.
+troff(1) troff, nroff: text formatting and typesetting.
+true(1) true, false: provide truth values.
+tsort(1) tsort: topological sort.
+tty(1) tty: get terminal name.
+uniq(1) uniq: report repeated lines in a file.
+units(1) units: conversion program.
+uucp(1c) uucp, uulog: unix to unix copy.
+uudiff(1c) uudiff: directory comparison between machines.
+uulog(1c) uulog: uucp user log inquiry.
+uux(1c) uux: unix to unix command execution.
+wait(1) wait: await completion of process.
+wall(1m) wall: write to all users.
+wc(1) wc: word count.
+who(1) who: who is on the system.
+write(1) write: write to another user.
+xsend(1) xsend, xget, enroll: secret mail.
+yacc(1) yacc: yet another compiler-compiler.
