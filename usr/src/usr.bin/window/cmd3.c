@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	3.3 83/08/22";
+static	char *sccsid = "@(#)cmd3.c	3.4 83/11/22";
 #endif
 
 #include "defs.h"
+#include "string.h"
 
 struct ww *getwin();
 struct ww *openwin();
@@ -93,13 +94,5 @@ setlabel(w, label)
 register struct ww *w;
 char *label;
 {
-	char *malloc();
-
 	if (w->ww_label != 0)
-		free(w->ww_label);
-	w->ww_label = malloc(strlen(label) + 1);
-	strcpy(w->ww_label, label);
-	wwunframe(w);		/* cover up the old label */
-	wwframe(w);
-	labelwin(w);
 }
