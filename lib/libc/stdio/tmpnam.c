@@ -49,6 +49,6 @@ tmpnam(s)
 
 	if (s == NULL)
 		s = buf;
-	(void)snprintf(s, L_tmpnam, "%s/tmp.XXXXXX", P_tmpdir);
+	(void)snprintf(s, L_tmpnam, "%stmp.XXXXXX", P_tmpdir);
 	return(mktemp(s));
 }
