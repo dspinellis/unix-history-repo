@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.33 (Berkeley) %G%
+ *	@(#)mount.h	7.34 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -138,14 +138,14 @@ struct vfsops {
 	int	(*vfs_unmount)	__P((struct mount *mp, int mntflags,
 				    struct proc *p));
 	int	(*vfs_root)	__P((struct mount *mp, struct vnode **vpp));
-			/* int uid,		should be uid_t */
-	int	(*vfs_quotactl)	__P((struct mount *mp, int cmds, u_int uid,
+	int	(*vfs_quotactl)	__P((struct mount *mp, int cmds, uid_t uid,
 				    caddr_t arg, struct proc *p));
 	int	(*vfs_statfs)	__P((struct mount *mp, struct statfs *sbp,
 				    struct proc *p));
-	int	(*vfs_sync)	__P((struct mount *mp, int waitfor));
+	int	(*vfs_sync)	__P((struct mount *mp, int waitfor,
+				    struct ucred *cred, struct proc *p));
 	int	(*vfs_fhtovp)	__P((struct mount *mp, struct fid *fhp,
-				    int setgen, struct vnode **vpp));
+				    struct vnode **vpp));
 	int	(*vfs_vptofh)	__P((struct vnode *vp, struct fid *fhp));
 	int	(*vfs_init)	__P((void));
 };
@@ -157,9 +157,8 @@ struct vfsops {
 #define VFS_ROOT(MP, VPP)	  (*(MP)->mnt_op->vfs_root)(MP, VPP)
 #define VFS_QUOTACTL(MP,C,U,A,P)  (*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
 #define VFS_STATFS(MP, SBP, P)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
-#define VFS_SYNC(MP, WAITFOR)	  (*(MP)->mnt_op->vfs_sync)(MP, WAITFOR)
-#define VFS_FHTOVP(MP, FIDP, SG, VPP) \
-	(*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, SG, VPP)
+#define VFS_SYNC(MP, WAIT, C, P)  (*(MP)->mnt_op->vfs_sync)(MP, WAIT, C, P)
+#define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, VPP)
 #define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
 #endif /* KERNEL */
 
