@@ -1,9 +1,9 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	1.2	%G%";
+static char SccsId[] = "@(#)macro.c	1.3	%G%";
 
 char	*Macro[128];
-extern bool	Debug;
+extern int	Debug;
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.
@@ -32,7 +32,7 @@ expand(s, buf, buflim)
 	bool skipping;
 
 # ifdef DEBUG
-	if (Debug)
+	if (Debug > 3)
 		printf("expand(%s)\n", s);
 # endif DEBUG
 
@@ -83,7 +83,7 @@ expand(s, buf, buflim)
 	*bp = '\0';
 
 # ifdef DEBUG
-	if (Debug)
+	if (Debug > 3)
 		printf("expand ==> '%s'\n", buf);
 # endif DEBUG
 
@@ -110,7 +110,7 @@ define(n, v)
 	char *v;
 {
 # ifdef DEBUG
-	if (Debug)
+	if (Debug > 3)
 		printf("define(%c as %s)\n", n, v);
 # endif DEBUG
 	Macro[n & 0177] = v;
