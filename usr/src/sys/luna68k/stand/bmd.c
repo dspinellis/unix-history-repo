@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmd.c	7.1 (Berkeley) %G%
+ *	@(#)bmd.c	7.2 (Berkeley) %G%
  */
 /*
 
@@ -18,8 +18,8 @@
  */
 
 
-#include "param.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
 
 extern u_short bmdfont[][20];
 
