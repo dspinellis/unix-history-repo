@@ -6,6 +6,7 @@
  *	@(#)talk.h	5.1 (Berkeley) 6/6/85
  */
 
+#include <sys/types.h>
 #include <curses.h>
 #include <utmp.h>
 
