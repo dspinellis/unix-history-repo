@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.27 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -571,17 +571,17 @@ mntflushbuf(mountp, flags)
 	int flags;
 {
 	register struct vnode *vp;
-	struct vnode *nvp;
 
 	if ((mountp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("mntflushbuf: not busy");
 loop:
-	for (vp = mountp->mnt_mounth; vp; vp = nvp) {
-		nvp = vp->v_mountf;
+	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
 		if (vget(vp))
 			goto loop;
 		vflushbuf(vp, flags);
 		vput(vp);
+		if (vp->v_mount != mountp)
+			goto loop;
 	}
 }
 
@@ -649,18 +649,18 @@ mntinvalbuf(mountp)
 	struct mount *mountp;
 {
 	register struct vnode *vp;
-	struct vnode *nvp;
 	int dirty = 0;
 
 	if ((mountp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("mntinvalbuf: not busy");
 loop:
-	for (vp = mountp->mnt_mounth; vp; vp = nvp) {
-		nvp = vp->v_mountf;
+	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
 		if (vget(vp))
 			goto loop;
 		dirty += vinvalbuf(vp, 1);
 		vput(vp);
+		if (vp->v_mount != mountp)
+			goto loop;
 	}
 	return (dirty);
 }
