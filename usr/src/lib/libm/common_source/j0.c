@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)j0.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)j0.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -178,7 +178,7 @@ double
 y0(x) 
 	double x;
 {
-	double z, s,c,ss,cc,u,v,j0();
+	double z, s, c, ss, cc, u, v;
     /* Y0(NaN) is NaN, y0(-inf) is Nan, y0(inf) is 0  */
 	if (!finite(x))
 		if (_IEEE)

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ttydefaults.h	8.1 (Berkeley) %G%
+ *	@(#)ttydefaults.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -27,10 +27,10 @@
  */
 #define CTRL(x)	(x&037)
 #define	CEOF		CTRL('d')
-#define	CEOL		((unsigned)'\377')	/* XXX avoid _POSIX_VDISABLE */
+#define	CEOL		((unsigned char)'\377')	/* XXX avoid _POSIX_VDISABLE */
 #define	CERASE		0177
 #define	CINTR		CTRL('c')
-#define	CSTATUS		((unsigned)'\377')	/* XXX avoid _POSIX_VDISABLE */
+#define	CSTATUS		((unsigned char)'\377')	/* XXX avoid _POSIX_VDISABLE */
 #define	CKILL		CTRL('u')
 #define	CMIN		1
 #define	CQUIT		034		/* FS, ^\ */

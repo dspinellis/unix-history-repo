@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <math.h>
@@ -348,7 +348,6 @@ log(x) double x;
 {
 	int m, j;
 	double F, f, g, q, u, u2, v, zero = 0.0, one = 1.0;
-	double logb(), ldexp();
 	volatile double u1;
 
 	/* Catch special cases */
@@ -424,7 +423,6 @@ __log__D(x) double x;
 {
 	int m, j;
 	double F, f, g, q, u, v, u2, one = 1.0;
-	double logb(), ldexp();
 	volatile double u1;
 	struct Double r;
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jn.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)jn.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -76,7 +76,6 @@ static char sccsid[] = "@(#)jn.c	8.1 (Berkeley) %G%";
 #define infnan(x) (0.0)
 #endif
 
-extern double j0(),j1(),log(),fabs(),sqrt(),cos(),sin(),y0(),y1();
 static double
 invsqrtpi= 5.641895835477562869480794515607725858441e-0001,
 two  = 2.0,
