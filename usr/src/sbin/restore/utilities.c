@@ -1,46 +1,16 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.4	(Berkeley)	83/02/28";
+static char sccsid[] = "@(#)utilities.c	3.6	(Berkeley)	83/03/23";
 #endif
 
 #include "restore.h"
 
 /*
- * Move the contents of a directory to a new directory.
- */
-movecontents(from, to)
-	struct entry *from, *to;
-{
-	register struct entry *ep;
-	struct entry *np;
-	register char *targetp;
-	char target[BUFSIZ];
-
-	strcpy(target, myname(to));
-	targetp = &target[strlen(target)];
-	*targetp++ = '/';
-	for (ep = from->e_entries; ep != NIL; ) {
-		strcpy(targetp, ep->e_name);
-		if (ep->e_flags & TMPNAME)
-			badentry(ep, "movecontents: found TMPNAME");
-		np = lookupname(target);
-		if (np != NIL)
-			mktempname(np);
-		renameit(myname(ep), target);
-		np = ep->e_sibling;
-		moveentry(ep, target);
-		ep = np;
-	}
-}
-
-/*
  * Insure that all the components of a pathname exist.
  */
-struct entry *
-pathcheck(name, type)
+pathcheck(name)
 	char *name;
-	char type;
 {
 	register char *cp;
 	struct entry *ep;
@@ -48,20 +18,19 @@ pathcheck(name, type)
 
 	start = index(name, '/');
 	if (start == 0)
-		return (lookupino(ROOTINO));
+		return;
 	for (cp = start; *cp != '\0'; cp++) {
 		if (*cp != '/')
 			continue;
 		*cp = '\0';
 		ep = lookupname(name);
 		if (ep == NIL) {
-			ep = addentry(name, (ino_t)0, NODE);
-			ep->e_flags |= type;
+			ep = addentry(name, ep->e_ino, NODE);
+			ep->e_flags |= KEEP;
 			newnode(ep);
 		}
 		*cp = '/';
 	}
-	return (ep);
 }
 
 /*
@@ -70,15 +39,35 @@ pathcheck(name, type)
 mktempname(ep)
 	register struct entry *ep;
 {
-	char oldname[BUFSIZ];
+	char oldname[MAXPATHLEN];
 
 	if (ep->e_flags & TMPNAME)
 		badentry(ep, "mktempname: called with TMPNAME");
 	ep->e_flags |= TMPNAME;
 	strcpy(oldname, myname(ep));
-	ep->e_name[ep->e_namlen++] = TMPCHAR;
-	ep->e_name[ep->e_namlen] = '\0';
+	freename(ep->e_name);
+	ep->e_name = savename(gentempname(ep));
+	ep->e_namlen = strlen(ep->e_name);
 	renameit(oldname, myname(ep));
+}
+
+/*
+ * Generate a temporary name for an entry.
+ */
+char *
+gentempname(ep)
+	struct entry *ep;
+{
+	static char name[MAXPATHLEN];
+	struct entry *np;
+	long i = 0;
+
+	for (np = lookupino(ep->e_ino); np != NIL && np != ep; np = np->e_links)
+		i++;
+	if (np == NIL)
+		badentry(ep, "not on ino list");
+	sprintf(name, "%s%d%d", TMPHDR, i, ep->e_ino);
+	return (name);
 }
 
 /*
@@ -134,7 +123,7 @@ removenode(ep)
 		panic("Cannot remove node %s\n", cp);
 	}
 	ep->e_flags |= REMOVED;
-	ep->e_flags &= ~(TMPNAME|TMPNODE);
+	ep->e_flags &= ~TMPNAME;
 	vprintf(stdout, "Remove node %s\n", cp);
 }
 
@@ -198,7 +187,7 @@ lowerbnd(start)
 		ep = lookupino(start);
 		if (ep == NIL)
 			continue;
-		if (ep->e_flags & (NEW|EXTRACT|CHANGE))
+		if (ep->e_flags & (NEW|EXTRACT))
 			return (start);
 	}
 	return (start);
@@ -217,7 +206,7 @@ upperbnd(start)
 		ep = lookupino(start);
 		if (ep == NIL)
 			continue;
-		if (ep->e_flags & (NEW|EXTRACT|CHANGE))
+		if (ep->e_flags & (NEW|EXTRACT))
 			return (start);
 	}
 	return (start);
@@ -234,8 +223,6 @@ badentry(ep, msg)
 
 	fprintf(stderr, "bad entry: %s\n", msg);
 	fprintf(stderr, "name: %s\n", myname(ep));
-	if (ep->e_newname != NULL)
-		fprintf(stderr, "new name: %s\n", ep->e_newname);
 	fprintf(stderr, "parent name %s\n", myname(ep->e_parent));
 	if (ep->e_sibling != NIL)
 		fprintf(stderr, "sibling name: %s\n", myname(ep->e_sibling));
@@ -243,27 +230,19 @@ badentry(ep, msg)
 		fprintf(stderr, "next entry name: %s\n", myname(ep->e_entries));
 	if (ep->e_links != NIL)
 		fprintf(stderr, "next link name: %s\n", myname(ep->e_links));
+	if (ep->e_next != NIL)
+		fprintf(stderr, "next hashchain name: %s\n", myname(ep->e_next));
 	fprintf(stderr, "entry type: %s\n",
 		ep->e_type == NODE ? "NODE" : "LEAF");
 	fprintf(stderr, "inode number: %ld\n", ep->e_ino);
 	strcpy(flagbuf, "|NIL");
 	flagbuf[0] = '\0';
-	if (ep->e_flags & REMOVE)
-		strcat(flagbuf, "|REMOVE");
 	if (ep->e_flags & REMOVED)
 		strcat(flagbuf, "|REMOVED");
-	if (ep->e_flags & RENAME)
-		strcat(flagbuf, "|RENAME");
 	if (ep->e_flags & TMPNAME)
 		strcat(flagbuf, "|TMPNAME");
-	if (ep->e_flags & TMPNODE)
-		strcat(flagbuf, "|TMPNODE");
 	if (ep->e_flags & EXTRACT)
 		strcat(flagbuf, "|EXTRACT");
-	if (ep->e_flags & RENUMBER)
-		strcat(flagbuf, "|RENUMBER");
-	if (ep->e_flags & CHANGE)
-		strcat(flagbuf, "|CHANGE");
 	if (ep->e_flags & NEW)
 		strcat(flagbuf, "|NEW");
 	if (ep->e_flags & KEEP)
@@ -280,12 +259,12 @@ canon(rawname, canonname)
 	int len;
 
 	if (strcmp(rawname, ".") == 0 || strncmp(rawname, "./", 2) == 0)
-		strcpy(canonname, "");
+		(void) strcpy(canonname, "");
 	else if (rawname[0] == '/')
-		strcpy(canonname, ".");
+		(void) strcpy(canonname, ".");
 	else
-		strcpy(canonname, "./");
-	strcat(canonname, rawname);
+		(void) strcpy(canonname, "./");
+	(void) strcat(canonname, rawname);
 	len = strlen(canonname) - 1;
 	if (canonname[len] == '/')
 		canonname[len] = '\0';
