@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)commands.c	1.19 (Berkeley) %G%";
 #include <netinet/in.h>
 #ifdef	CRAY
 #include <sys/fcntl.h>
-#endif	CRAY
+#endif	/* CRAY */
 
 #include <signal.h>
 #include <netdb.h>
@@ -45,14 +45,14 @@ static char sccsid[] = "@(#)commands.c	1.19 (Berkeley) %G%";
 #include "types.h"
 
 #ifdef	SRCRT
-#if	!defined(CRAY)
-#include <netinet/in_systm.h>
-#if	!defined(sun)
-#include <machine/endian.h>
-#endif
-#endif
+# ifndef CRAY
+# include <netinet/in_systm.h>
+#  ifndef sun
+#  include <machine/endian.h>
+#  endif /* sun */
+# endif /* CRAY */
 #include <netinet/ip.h>
-#endif
+#endif /* SRCRT */
 
 
 char	*hostname;
@@ -715,7 +715,7 @@ _setlist_init()
 	Setlist[11].charp = &termEraseChar;
 	Setlist[12].charp = &termKillChar;
 }
-#endif	CRAY
+#endif	/* CRAY */
 
 static char **
 getnextset(name)

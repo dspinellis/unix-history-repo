@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -223,7 +223,7 @@ register int func;
     case SLC_EW:	return(&termWerasChar);
     case SLC_RP:	return(&termRprntChar);
     case SLC_LNEXT:	return(&termLiteralNextChar);
-#endif	CRAY
+#endif	/* CRAY */
 
     case SLC_SYNCH:
     case SLC_BRK:
@@ -489,7 +489,7 @@ long *rows, *cols;
 	*cols = ws.ws_col;
 	return 1;
     }
-#endif	TIOCGWINSZ
+#endif	/* TIOCGWINSZ */
     return 0;
 }
 
