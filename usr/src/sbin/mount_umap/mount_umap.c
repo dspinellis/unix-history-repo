@@ -8,12 +8,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_umap.c	5.1 (Berkeley) %G%
+ *	@(#)mount_umap.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/mount.h>
-#include <umapfs/umap_info.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <umapfs/umap.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -24,6 +26,13 @@
 void usage __P((void));
 
 #define ROOTUSER 0
+
+/* This define controls whether any user but the superuser can own and
+ * write mapfiles.  If other users can, system security can be gravely
+ * compromised.  If this is not a concern, undefine SECURITY.
+ */
+
+#define MAPSECURITY 1
 
 /* This routine provides the user interface to mounting a umap layer.
  * It takes 4 mandatory parameters.  The mandatory arguments are the place 
@@ -43,13 +52,12 @@ main(argc, argv)
 	int e, i, nentries, gnentries, count;
         int mapdata[MAPFILEENTRIES][2];
         int gmapdata[GMAPFILEENTRIES][2];
-	int  flags = M_NEWTYPE;
 	char *fs_type="umap";
 	char *source, *target;
 	char *mapfile, *gmapfile;
-        struct _iobuf *fp, *gfp, *fopen();
+        FILE *fp, *gfp, *fopen();
 	struct stat statbuf;
-	struct umap_mountargs args;
+	struct umap_args args;
 
 	mntflags = 0;
 	while ((ch = getopt(argc, argv, "F:")) != EOF)
@@ -72,6 +80,7 @@ main(argc, argv)
 	mapfile = argv[i++];
 	gmapfile = argv[i++];
 
+#ifdef MAPSECURITY
 	/*
 	 * Check that group and other don't have write permissions on
 	 * this mapfile, and that the mapfile belongs to root. 
@@ -95,6 +104,7 @@ main(argc, argv)
 		printf("mount_umap: %s does not belong to root\n", mapfile);
 		notMounted();
 	}
+#endif MAPSECURITY
 
 	/*
 	 * Read in uid mapping data.
@@ -173,14 +183,14 @@ main(argc, argv)
 	/*
 	 * Setup mount call args.
 	 */
-	args.source = source;
+	args.target = source;
 	args.nentries = nentries;
 	args.mapdata = &(mapdata[0][0]);
 	args.gnentries = gnentries;
 	args.gmapdata = &(gmapdata[0][0]);
 
-	printf("calling mount_umap(%s,%d,<%s>)\n",target,flags,
-	       args.source);
+	printf("calling mount_umap(%s,%d,<%s>)\n",target,mntflags,
+	       args.target);
 	if (mount(MOUNT_UMAP, argv[1], mntflags, &args)) {
 		(void)fprintf(stderr, "mount_umap: %s\n", strerror(errno));
 	}
@@ -191,11 +201,11 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: mount_umap [ -F fsoptions ] target_fs mount_point\n");
+	    "usage: mount_umap [ -F fsoptions ] target_fs mount_point user_mapfile group_mapfile\n");
 	exit(1);
 }
 
-void
+int
 notMounted()
 {
 	(void)fprintf(stderr, "file system not mounted\n");

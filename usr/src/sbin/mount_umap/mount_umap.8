@@ -7,12 +7,38 @@
 .\" Jan-Simon Pendry and from John Heidemann of the UCLA Ficus project.
 .\"
 .\"
-.\" %sccs.include.redist.roff%
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
 .\"
-.\"     @(#)mount_umap.8	5.1 (Berkeley) %G%
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)mount_umap.8	1.1 (Berkeley) 7/10/92
 .\"
 .\"
-.Dd 
+.Dd July 10, 1992
 .Dt MOUNT_UMAP 8
 .Os BSD 4.4
 .Sh NAME
@@ -69,30 +95,11 @@ The layer created by the
 command is meant to serve as a simple example of file system layering.
 It is not meant for production use.  The implementation is not very
 sophisticated, and not particularly fast.
-
-This command makes use of the layered file system, described
-command makes a sub-tree of an existing filesystem visible
-in another part of the global filesystem namespace,
-while also performing mappings of uids and gids.  
-This allows existing files and directories to be accessed
-using a different pathname.
-.Pp
-Virtual file system sub-trees created by the null layer should
-be identical to those created by the loopback
-The virtual copy of a file system sub-tree created by the null
-layer should be nearly identical to one created by
-.Xr mount_lofs 8 .
-The purpose of the null layer is to serve as a basis for future
-layer development.
-.Pp
-An example of a layer constructed from the null layer is
-the umap layer (see
-.Xr mount_umap 8 ).
 .Sh SEE ALSO
-UCLA Technical Report CSD-910056,
-"Stackable Layers: an Architecture for File System Development".
+.Xr mount_null 8
+.Xr mount_lofs 8
 .Sh HISTORY
 The
-null file system layer
+umap file system layer
 is
 .Ud
