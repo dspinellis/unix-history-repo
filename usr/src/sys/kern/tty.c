@@ -1,4 +1,4 @@
-/*	tty.c	3.17	%G%	*/
+/*	tty.c	3.18	%G%	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -207,13 +207,24 @@ caddr_t addr;
 	int temp;
 
 	/*
+	 * This is especially so that isatty() will
+	 * fail when carrier is gone.
+	 */
+	if ((tp->t_state&CARR_ON) == 0) {
+		u.u_error = EBADF;
+		return (1);
+	}
+
+	/*
 	 * If the ioctl involves modification,
 	 * insist on being able to write the device,
 	 * and hang if in the background.
 	 */
 	switch(com) {
 
-	case TIOCHPCL:
+	case TIOCSETD:
+	case TIOCSETP:
+	case TIOCSETN:
 	case TIOCFLUSH:
 	case TIOCSETC:
 	case TIOCSLTC:
@@ -222,10 +233,12 @@ caddr_t addr;
 	case TIOCLBIC:
 	case TIOCLSET:
 	case TIOCSTI:
+/* this is reasonable, but impractical... 
 		if ((flag & FWRITE) == 0) {
 			u.u_error = EBADF;
 			return (1);
 		}
+ */
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
