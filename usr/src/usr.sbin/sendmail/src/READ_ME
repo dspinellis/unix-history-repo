@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.93 (Berkeley) %G%
+#	@(#)READ_ME	8.94 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -509,7 +509,7 @@ GCC 2.5.x problems  *** IMPORTANT ***
 	*************** find_reloads_toplev (x, opnum, type, ind
 	*** 3888,3894 ****
 		 force a reload in that case.  So we should not do anything here.  */
-	  
+
 		else if (regno >= FIRST_PSEUDO_REGISTER
 	! #if defined(BYTE_LOADS_ZERO_EXTEND) || defined(BYTE_LOADS_SIGN_EXTEND)
 		       && (GET_MODE_SIZE (GET_MODE (x))
@@ -517,7 +517,7 @@ GCC 2.5.x problems  *** IMPORTANT ***
 	  #endif
 	--- 3888,3894 ----
 		 force a reload in that case.  So we should not do anything here.  */
-	  
+
 		else if (regno >= FIRST_PSEUDO_REGISTER
 	! #ifdef LOAD_EXTEND_OP
 		       && (GET_MODE_SIZE (GET_MODE (x))
@@ -564,7 +564,7 @@ Solaris 2.x (SunOS 5.x)
 
 	From a correspondent:
 
-	   For solaris 2.2, I have 
+	   For solaris 2.2, I have
 
 		hosts:      files dns
 
@@ -609,67 +609,43 @@ Solaris 2.x (SunOS 5.x)
 	see system logging.
 
 Solaris 2.4 (SunOS 5.4)
-	Date: Fri, 17 Feb 1995 23:00:13 +0100
-	From: nissen@montefiore.ulg.ac.be (Alain Nissen)
-	To: sendmail@CS.Berkeley.EDU
-	Subject: A bug inside Solaris 2.4 can cause problems to Sendmail
+	If you include /usr/lib at the end of your LD_LIBRARY_PATH you run
+	the risk of getting the wrong libraries under some circumstances.
+	This is because of a new feature in Solaris 2.4, described by
+	Rod.Evans@Eng.Sun.COM:
 
-	I discovered a bug inside Solaris 2.4 which can cause problems with
-	Sendmail 8.6.9 (and maybe other versions).  Here is a short
-	description of the bug.  There isn't a bugid yet, nor a patchid
-	(of course).  The bug has been reported to SunSoft (Belgium), and a
-	bugid should be created in a few days.
-
-	When a root-setuid dynamically program is executed by a user
-	different from root, then, at run-time, the dynamic libraries are
-	first searched in /usr/lib, then is the contents of LD_RUN_PATH as
-	it was at compilation-time.
-
-	The correct behaviour (as it is in Solaris 2.3) should be to search
-	at run-time first in the contents of LD_RUN_PATH as it was at
-	compilation, then in /usr/lib.
-
-	This bug causes problems with Sendmail if the following particular
-	condition is encountered: you want to link Sendmail (at
-	compilation-time) with BIND's shared libresolv.so library that has
-	been put in /usr/local/lib (for example).
-
-	By default, BIND's shared library is optionnaly merged inside the
-	libc library.  But it is possible to build (by hand) a shared
-	library which would be called libresolv.so and put in /usr/local/lib
-	(for example).
-
-	At compilation-time, the linker uses BIND's library, but, at run-time,
-	it uses the original /usr/lib/libresolv.so library (because the name
-	is the same as the one in /usr/local/lib), even if LD_RUN_PATH was
-	containing /usr/local/lib before /usr/lib at compilation-time.
-
-	When Sendmail is called from some mailer (for example, the BSD Mail),
-	it runs uid=user and euid=root and the wrong library is used.
-	Numerous "name server timeouts" or "host not found" errors may occur.
-
-	A quick fix is to link "libresolv" and "lib44bsd" statically, while
-	linking other libraries dynamically.  With GCC, this can be done using
-
-		LIBDIRS= -L/usr/local/lib -R/usr/local/lib
-		LIBS= -Xlinker -Bstatic -lresolv -l44bsd -Xlinker \
-			-Bdynamic -lsocket -lnsl -lelf
-
-	in the Makefile.SunOS.5.x.
-
-	I hope this will help other Solaris 2.4 users.
-
-		    ********************************************************
-		    * Alain Nissen - Teacher Assistant                     *
-	 _________  * Department of Computer Science (A.I.)                *
-	| | |  _| | * University of Liege - Institut Montefiore, Bat B28,  *
-	| | | | | | * Grande Traverse, 10, B-4000 Liege - Belgium (Europe) *
-	| | | | | | * Phone: (+32)-41-662626          Fax: (+32)-41-662984 *
-	| | |___| | *                                                      *
-	| \_____/ | * E-mail: nissen@montefiore.ulg.ac.be                  *
-	\_________/ * URL:    http://www.montefiore.ulg.ac.be/~nissen/     *
-		    * Finger: nissen@finger.montefiore.ulg.ac.be           *
-		    ********************************************************
+	>> Prior to SunOS 5.4, any LD_LIBRARY_PATH setting was ignored by the
+	>> runtime linker if the application was setxid (secure), thus your
+	>> applications search path would be:
+	>>
+	>>	/usr/local/lib	LD_LIBRARY_PATH component - IGNORED
+	>>	/usr/lib	LD_LIBRARY_PATH component - IGNORED
+	>>	/usr/local/lib	RPATH - honored
+	>>	/usr/lib	RPATH - honored
+	>>
+	>> the effect is that path 3 would be the first used, and this would
+	>> satisfy your resolv.so lookup.
+	>>
+	>> In SunOS 5.4 we made the LD_LIBRARY_PATH a little more flexible.
+	>> People who developed setxid applications wanted to be able to alter
+	>> the library search path to some degree to allow for their own
+	>> testing and debugging mechanisms.  It was decided that the only
+	>> secure way to do this was to allow a `trusted' path to be used in
+	>> LD_LIBRARY_PATH.  The only trusted directory we presently define
+	>> is /usr/lib.  Thus a setuid root developer could play with some
+	>> alternative shared object implementations and place them in
+	>> /usr/lib (being root we assume they'ed have access to write in this
+	>> directory).  This change was made as part of 1155380 - after a
+	>> *huge* amount of discussion regarding the security aspect of things.
+	>>
+	>> So, in SunOS 5.4 your applications search path would be:
+	>>
+	>>	/usr/local/lib	from LD_LIBRARY_PATH - IGNORED (untrustworthy)
+	>>	/usr/lib	from LD_LIBRARY_PATH - honored (trustworthy)
+	>>	/usr/local/lib	from RPATH - honored
+	>>	/usr/lib	from RPATH - honored
+	>>
+	>> here, path 2 would be the first used.
 
 Ultrix
 	By default, the IDENT protocol is turned off on Ultrix.  If you
@@ -679,7 +655,7 @@ Ultrix
 	to 30 seconds.
 
 OSF/1
-	If you are compiling on OSF/1 (DEC Alpha), you must use 
+	If you are compiling on OSF/1 (DEC Alpha), you must use
 	-L/usr/shlib (otherwise it core dumps on startup).  You may also
 	need -mld to get the nlist() function, although some versions
 	apparently don't need this.
@@ -791,7 +767,7 @@ SCO Unix
 	Organisation:  Stallion Technologies Pty Ltd.
 
 	It will probably help those who are trying to configure sendmail 8.6.9
-	to know that if they are on SCO, they had better set 
+	to know that if they are on SCO, they had better set
 		OI-dnsrch
 	or they will core dump as soon as they try to use the resolver.
 	ie. although SCO has _res.dnsrch defined, and is kinda BIND 4.8.3, it
@@ -906,7 +882,7 @@ DELL SVR4
 	   but we do want the ones from "-lelf".
 
 	If anyone needs a compiled gcc 2.4.5 and/or a ported DB library, they
-	can use anonymous ftp to fetch them from lut.fi in the /kim directory. 
+	can use anonymous ftp to fetch them from lut.fi in the /kim directory.
 	They are copies of what I use on grendel.lut.fi, and offering them
 	does not imply that I would also support them.  I have sent the DB
 	port for SVR4 back to Keith Bostic for inclusion in the official
@@ -917,7 +893,7 @@ DELL SVR4
 
 	Cheers
 	+ Kim
-	-- 
+	--
 	 *  Kimmo.Suominen@lut.fi  *  SysVr4 enthusiast at GRENDEL.LUT.FI  *
 	*    KIM@FINFILES.BITNET   *  Postmaster and Hostmaster at LUT.FI   *
 	 *    + 358 200 865 718    *  Unix area moderator at NIC.FUNET.FI  *
@@ -1090,4 +1066,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.93, last update %G% 14:37:39)
+(Version 8.94, last update %G% 07:14:31)
