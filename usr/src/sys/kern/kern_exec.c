@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.47 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.48 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,7 +72,7 @@ execve(p, uap, retval)
 	char *sharg;
 	struct vnode *vp;
 	int resid, error, paged = 0;
-	vm_offset_t execargs;
+	vm_offset_t execargs = 0;
 	struct vattr vattr;
 	char cfarg[MAXINTERP];
 	union {
@@ -218,6 +218,12 @@ execve(p, uap, retval)
 	switch ((int)exdata.ex_exec.a_magic) {
 
 	case OMAGIC:
+#ifdef COFF
+		if (exdata.ex_exec.ex_fhdr.magic != COFF_MAGIC) {
+			error = ENOEXEC;
+			goto bad;
+		}
+#endif
 		exdata.ex_exec.a_data += exdata.ex_exec.a_text;
 		exdata.ex_exec.a_text = 0;
 		break;
@@ -226,6 +232,12 @@ execve(p, uap, retval)
 		paged++;
 		/* FALLTHROUGH */
 	case NMAGIC:
+#ifdef COFF
+		if (exdata.ex_exec.ex_fhdr.magic != COFF_MAGIC) {
+			error = ENOEXEC;
+			goto bad;
+		}
+#endif
 		if (exdata.ex_exec.a_text == 0) {
 			error = ENOEXEC;
 			goto bad;
@@ -286,6 +298,10 @@ execve(p, uap, retval)
 	nc = 0;
 	cc = NCARGS;
 	execargs = kmem_alloc_wait(exec_map, NCARGS);
+#ifdef DIAGNOSTIC
+	if (execargs == (vm_offset_t)0)
+		panic("execve: kmem_alloc_wait");
+#endif
 	cp = (char *) execargs;
 	/*
 	 * Copy arguments into file in argdev area.
@@ -460,10 +476,14 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 			toff = sizeof (struct hpux_exec);
 	} else
 #endif
+#ifdef COFF
+	toff = N_TXTOFF(*ep);
+#else
 	if (paged)
 		toff = CLBYTES;
 	else
 		toff = sizeof (struct exec);
+#endif
 	if (ep->a_text != 0 && (vp->v_flag & VTEXT) == 0 &&
 	    vp->v_writecount != 0)
 		return (ETXTBSY);
@@ -513,13 +533,39 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 	else
 		p->p_flag &= ~SHPUX;
 #endif
+#ifdef ULTRIXCOMPAT
+	/*
+	 * Always start out as an ULTRIX process.
+	 * A system call in crt0.o will change us to BSD system calls later.
+	 */
+	p->p_md.md_flags |= MDP_ULTRIX;
+#endif
 	p->p_flag |= SEXEC;
+#ifndef COFF
 	addr = VM_MIN_ADDRESS;
 	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ts + ds)), FALSE)) {
 		uprintf("Cannot allocate text+data space\n");
 		error = ENOMEM;			/* XXX */
 		goto badmap;
 	}
+	vm->vm_taddr = (caddr_t)VM_MIN_ADDRESS;
+	vm->vm_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
+#else /* COFF */
+	addr = (vm_offset_t)ep->ex_aout.codeStart;
+	vm->vm_taddr = (caddr_t)addr;
+	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ts)), FALSE)) {
+		uprintf("Cannot allocate text space\n");
+		error = ENOMEM;			/* XXX */
+		goto badmap;
+	}
+	addr = (vm_offset_t)ep->ex_aout.heapStart;
+	vm->vm_daddr = (caddr_t)addr;
+	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ds)), FALSE)) {
+		uprintf("Cannot allocate data space\n");
+		error = ENOMEM;			/* XXX */
+		goto badmap;
+	}
+#endif /* COFF */
 	size = round_page(MAXSSIZ);		/* XXX */
 #ifdef	i386
 	addr = trunc_page(USRSTACK - size) - NBPG;	/* XXX */
@@ -538,8 +584,6 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		goto badmap;
 	}
 	vm->vm_maxsaddr = (caddr_t)addr;
-	vm->vm_taddr = (caddr_t)VM_MIN_ADDRESS;
-	vm->vm_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
 
 	if (paged == 0) {
 		/*
@@ -556,14 +600,15 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 			error = vn_rdwr(UIO_READ, vp, vm->vm_taddr,
 				(int)ep->a_text, toff, UIO_USERSPACE,
 				(IO_UNIT|IO_NODELOCKED), cred, (int *)0, p);
-			(void) vm_map_protect(&vm->vm_map, VM_MIN_ADDRESS,
-				VM_MIN_ADDRESS + trunc_page(ep->a_text),
+			(void) vm_map_protect(&vm->vm_map, vm->vm_taddr,
+				vm->vm_taddr + trunc_page(ep->a_text),
 				VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
 		}
 	} else {
 		/*
 		 * Allocate a region backed by the exec'ed vnode.
 		 */
+#ifndef COFF
 		addr = VM_MIN_ADDRESS;
 		size = round_page(ep->a_text + ep->a_data);
 		error = vm_mmap(&vm->vm_map, &addr, size, VM_PROT_ALL,
@@ -572,6 +617,20 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		(void) vm_map_protect(&vm->vm_map, addr,
 			addr + trunc_page(ep->a_text),
 			VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+#else /* COFF */
+		addr = (vm_offset_t)vm->vm_taddr;
+		size = round_page(ep->a_text);
+		error = vm_mmap(&vm->vm_map, &addr, size,
+			VM_PROT_READ|VM_PROT_EXECUTE,
+			MAP_FILE|MAP_COPY|MAP_FIXED,
+			(caddr_t)vp, (vm_offset_t)toff);
+		toff += size;
+		addr = (vm_offset_t)vm->vm_daddr;
+		size = round_page(ep->a_data);
+		error = vm_mmap(&vm->vm_map, &addr, size, VM_PROT_ALL,
+			MAP_FILE|MAP_COPY|MAP_FIXED,
+			(caddr_t)vp, (vm_offset_t)toff);
+#endif /* COFF */
 		vp->v_flag |= VTEXT;
 	}
 badmap:
