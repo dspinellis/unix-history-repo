@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ipc.h	7.1 (Berkeley) %G%
+ *	@(#)ipc.h	7.2 (Berkeley) %G%
  */
 
 /*
  * SVID compatible ipc.h file
  */
-#ifndef _IPC_
-#define _IPC_
+#ifndef _IPC_H_
+#define _IPC_H_
 
 typedef	long	key_t;	/* XXX should be in types.h */
 
@@ -45,4 +45,4 @@ struct ipc_perm {
 #define	IPC_SET		1	/* set options */
 #define	IPC_STAT	2	/* get options */
 
-#endif /* _IPC_ */
+#endif /* !_IPC_H_ */

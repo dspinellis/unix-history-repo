@@ -3,8 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmap.h	7.1 (Berkeley) %G%
+ *	@(#)dmap.h	7.2 (Berkeley) %G%
  */
+
+#ifndef _DMAP_H_
+#define	_DMAP_H_
 
 /*
  * Definitions for the mapping of vitual swap
@@ -33,3 +36,5 @@ struct	dblock
 	swblk_t	db_base;	/* base of physical contig drum block */
 	swblk_t	db_size;	/* size of block */
 };
+
+#endif	/* !_DMAP_H_ */

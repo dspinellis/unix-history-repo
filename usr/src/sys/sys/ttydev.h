@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydev.h	7.6 (Berkeley) %G%
+ *	@(#)ttydev.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -13,8 +13,8 @@
 /*
  * Terminal definitions related to underlying hardware.
  */
-#ifndef _TTYDEV_
-#define	_TTYDEV_
+#ifndef _TTYDEV_H_
+#define	_TTYDEV_H_
 
 #ifdef USE_OLD_TTY
 /*
@@ -38,4 +38,4 @@
 #define EXTB	15
 #endif /* USE_OLD_TTY */
 
-#endif /* _TTYDEV_ */
+#endif /* !_TTYDEV_H_ */

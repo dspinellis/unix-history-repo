@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regexp.h	1.5 (Berkeley) %G%
+ *	@(#)regexp.h	5.1 (Berkeley) %G%
  */
 
 /*
@@ -28,14 +28,11 @@ typedef struct regexp {
 	char program[1];	/* Unwarranted chumminess with compiler. */
 } regexp;
 
-#if __STDC__ || c_plusplus
-extern regexp *regcomp(const char *);
-extern int regexec(const  regexp *, const char *);
-extern void regsub(const  regexp *, const char *, char *);
-extern void regerror(const char *);
-#else
-extern regexp *regcomp();
-extern int regexec();
-extern void regsub();
-extern void regerror();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+regexp *regcomp __P((const char *));
+int regexec __P((const  regexp *, const char *));
+void regsub __P((const  regexp *, const char *, char *));
+void regerror __P((const char *));
+__END_DECLS

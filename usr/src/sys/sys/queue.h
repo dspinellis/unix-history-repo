@@ -10,15 +10,15 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)queue.h	7.1 (Berkeley) %G%
+ *	@(#)queue.h	7.2 (Berkeley) %G%
  */
 
 /*
  *	Type definitions for generic queues.
  */
 
-#ifndef	_QUEUE_
-#define	_QUEUE_
+#ifndef	_QUEUE_H_
+#define	_QUEUE_H_
 
 struct queue_entry {
 	struct queue_entry	*next;		/* next element */
@@ -81,4 +81,4 @@ typedef	struct queue_entry	*queue_entry_t;
 	queue_remove((h), (e), t, f);				\
 }
 
-#endif	/* _QUEUE_ */
+#endif	/* !_QUEUE_H_ */

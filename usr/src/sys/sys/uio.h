@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uio.h	7.5 (Berkeley) %G%
+ *	@(#)uio.h	7.6 (Berkeley) %G%
  */
 
-#ifndef _UIO_
-#define	_UIO_
+#ifndef _UIO_H_
+#define	_UIO_H_
 
 struct iovec {
 	caddr_t	iov_base;
@@ -41,4 +41,4 @@ struct uio {
 #define UIO_MAXIOV	1024		/* max 1K of iov's */
 #define UIO_SMALLIOV	8		/* 8 on stack, else malloc */
 
-#endif /* !_UIO_ */
+#endif /* !_UIO_H_ */

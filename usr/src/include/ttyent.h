@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ttyent.h	5.5 (Berkeley) %G%
+ *	@(#)ttyent.h	5.6 (Berkeley) %G%
  */
 
 #define	_PATH_TTYS	"/etc/ttys"
@@ -25,14 +25,11 @@ struct ttyent {
 	char	*ty_comment;	/* comment field */
 };
 
-#if __STDC__ || c_plusplus
-extern struct ttyent *getttyent(void);
-extern struct ttyent *getttynam(const char *);
-extern int setttyent(void);
-extern int endttyent(void);
-#else
-extern struct ttyent *getttyent();
-extern struct ttyent *getttynam();
-extern int setttyent();
-extern int endttyent();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+struct ttyent *getttyent __P((void));
+struct ttyent *getttynam __P((const char *));
+int setttyent __P((void));
+int endttyent __P((void));
+__END_DECLS

@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shm.h	7.1 (Berkeley) %G%
+ *	@(#)shm.h	7.2 (Berkeley) %G%
  */
 
 /*
  * SVID compatible shm.h file
  */
-#ifndef _SHM_
-#define _SHM_
+#ifndef _SHM_H_
+#define _SHM_H_
 
 #ifdef KERNEL
 #include "ipc.h"
@@ -65,4 +65,4 @@ struct	shmid_ds	*shmsegs;
 struct	shminfo		shminfo;
 #endif
 
-#endif /* _SHM_ */
+#endif /* !_SHM_H_ */

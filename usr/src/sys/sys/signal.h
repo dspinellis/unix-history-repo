@@ -4,10 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.14 (Berkeley) %G%
+ *	@(#)signal.h	7.15 (Berkeley) %G%
  */
 
-#ifndef	NSIG
+#ifndef	_SIGNAL_H_
+#define	_SIGNAL_H_
+
 #define NSIG	32		/* counting 0; could be 33 (mask is 1-32) */
 
 #ifndef _POSIX_SOURCE
@@ -69,19 +71,15 @@ void	(*signal())();
 
 typedef unsigned int sigset_t;
 
-#if __STDC__ || c_plusplus
-int sigemptyset(sigset_t *);
-int sigfillset(sigset_t *);
-int sigaddset(sigset_t *, int);
-int sigdelset(sigset_t *, int);
-int sigismember(const sigset_t *, int);
-#else
-int sigemptyset();
-int sigfillset();
-int sigaddset();
-int sigdelset();
-int sigismember();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	sigaddset __P((sigset_t *, int));
+int	sigdelset __P((sigset_t *, int));
+int	sigemptyset __P((sigset_t *));
+int	sigfillset __P((sigset_t *));
+int	sigismember __P((const sigset_t *, int));
+__END_DECLS
 
 #define sigemptyset(set)	( *(set) = 0 )
 #define sigfillset(set)		( *(set) = ~(sigset_t)0, 0 )
@@ -189,19 +187,14 @@ struct	sigcontext {
 #endif /* KERNEL */
 
 #ifndef KERNEL
-#if __STDC__ || c_plusplus
 #include <sys/types.h>
-int kill(pid_t, int);
-int sigaction(int, const struct sigaction *, struct sigaction *);
-int sigprocmask(int, const sigset_t *, sigset_t *);
-int sigpending(sigset_t *);
-int sigsuspend(const sigset_t *);
-#else
-int kill();
-int sigaction();
-int sigprocmask();
-int sigpending();
-int sigsuspend();
+
+__BEGIN_DECLS
+int	kill __P((pid_t, int));
+int	sigaction __P((int, const struct sigaction *, struct sigaction *));
+int	sigpending __P((sigset_t *));
+int	sigprocmask __P((int, const sigset_t *, sigset_t *));
+int	sigsuspend __P((const sigset_t *));
+__END_DECLS
 #endif
-#endif
-#endif /* NSIG */
+#endif	/* !_SIGNAL_H_ */

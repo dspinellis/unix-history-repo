@@ -4,10 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)filedesc.h	7.1 (Berkeley) %G%
+ *	@(#)filedesc.h	7.2 (Berkeley) %G%
  */
 
-#ifndef _FILEDESC_
+#ifndef _FILEDESC_H_
+#define _FILEDESC_H_
+
 /*
  * This structure is used for the management of descriptors.
  * It may be shared by multiple threads.
@@ -71,4 +73,5 @@ char *ofileflagsfunc();
  */
 extern struct filedesc *fddup();
 extern int nofile;
-#endif _FILEDESC_
+
+#endif /* !_FILEDESC_H_ */

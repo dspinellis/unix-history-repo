@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	7.7 (Berkeley) %G%
+ *	@(#)ttydefaults.h	7.8 (Berkeley) %G%
  */
 
 /*
  * System wide defaults for terminal state.
  */
-#ifndef _TTYDEFAULTS_
-#define	_TTYDEFAULTS_
+#ifndef _TTYDEFAULTS_H_
+#define	_TTYDEFAULTS_H_
 
 /*
  * Defaults on "first" open.
@@ -49,7 +49,7 @@
 #define	CFLUSH		CDISCARD
 
 /* PROTECTED INCLUSION ENDS HERE */
-#endif /* _TTYDEFAULTS_ */
+#endif /* !_TTYDEFAULTS_H_ */
 
 /*
  * #define TTYDEFCHARS to include an array of default control characters.

@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.12 (Berkeley) %G%
+ *	@(#)ioctl.h	7.13 (Berkeley) %G%
  */
 
 /*
  * Ioctl definitions
  */
-#ifndef	_IOCTL_
-#define	_IOCTL_
+#ifndef	_IOCTL_H_
+#define	_IOCTL_H_
 
 /*
  * Window/terminal size structure.
@@ -207,4 +207,4 @@ struct ttysize {
 #define	SIOCGARP	_IOWR('i',38, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW('i', 32, struct arpreq)	/* delete arp entry */
 
-#endif
+#endif /* !_IOCTL_H_ */

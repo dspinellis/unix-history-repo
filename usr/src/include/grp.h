@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)grp.h	5.2 (Berkeley) %G%
+ *	@(#)grp.h	5.3 (Berkeley) %G%
  */
 
 #ifndef _POSIX_SOURCE
@@ -18,24 +18,16 @@ struct group {
 	char	**gr_mem;		/* group members */
 };
 
-#if __STDC__ || c_plusplus
-extern struct group *getgrgid(gid_t);
-extern struct group *getgrnam(const char *);
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+struct group *getgrgid __P((gid_t));
+struct group *getgrnam __P((const char *));
 #ifndef _POSIX_SOURCE
-extern struct group *getgrent(void);
-extern int setgrent(void);
-extern void endgrent(void);
-extern void setgrfile(const char *);
-extern int setgroupent(int);
+struct group *getgrent __P((void));
+int setgrent __P((void));
+void endgrent __P((void));
+void setgrfile __P((const char *));
+int setgroupent __P((int));
 #endif
-#else
-extern struct group *getgrgid();
-extern struct group *getgrnam();
-#ifndef _POSIX_SOURCE
-extern struct group *getgrent();
-extern int setgrent();
-extern void endgrent();
-extern void setgrfile();
-extern int setgroupent();
-#endif
-#endif
+__END_DECLS

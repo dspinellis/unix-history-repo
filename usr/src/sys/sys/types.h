@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.12 (Berkeley) %G%
+ *	@(#)types.h	7.13 (Berkeley) %G%
  */
 
-#ifndef _TYPES_
-#define	_TYPES_
+#ifndef _TYPES_H_
+#define	_TYPES_H_
 
 typedef	short	dev_t;
 #ifndef _POSIX_SOURCE
@@ -91,4 +91,4 @@ typedef	struct fd_set {
 #define	FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 
 #endif /* !_POSIX_SOURCE */
-#endif /* _TYPES_ */
+#endif /* !_TYPES_H_ */

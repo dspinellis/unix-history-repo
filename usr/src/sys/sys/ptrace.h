@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ptrace.h	7.1 (Berkeley) %G%
+ *	@(#)ptrace.h	7.2 (Berkeley) %G%
  */
 
-#ifndef _PTRACE_
-#define _PTRACE_
+#ifndef _PTRACE_H_
+#define _PTRACE_H_
 
 #define PT_TRACE_ME	0	/* child declares it's being traced */
 #define PT_READ_I	1	/* read word in child's I space */
@@ -20,4 +20,4 @@
 #define PT_KILL		8	/* kill the child process */
 #define PT_STEP		9	/* single step the child */
 
-#endif
+#endif /* !_PTRACE_H_ */

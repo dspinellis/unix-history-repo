@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termios.h	7.19 (Berkeley) %G%
+ *	@(#)termios.h	7.20 (Berkeley) %G%
  */
 
 /*
  *  termios structure
  */
-#ifndef _TERMIOS_
-#define _TERMIOS_
+#ifndef _TERMIOS_H_
+#define _TERMIOS_H_
 
 /* 
  * Special Control Characters 
@@ -197,7 +197,7 @@ struct termios {
 /*
  * END OF PROTECTED INCLUDE.
  */
-#endif /* _TERMIOS_ */
+#endif /* !_TERMIOS_H_ */
 
 #ifndef _POSIX_SOURCE
 #ifdef KERNEL

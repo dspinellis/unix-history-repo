@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)times.h	7.4 (Berkeley) %G%
+ *	@(#)times.h	7.5 (Berkeley) %G%
  */
 
 #include <machine/types.h>
@@ -22,9 +22,9 @@ struct tms {
 };
 
 #ifndef KERNEL
-#if __STDC__ || c_plusplus
-clock_t times(struct tms *);
-#else
-clock_t times();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+clock_t	times __P((struct tms *));
+__END_DECLS
 #endif

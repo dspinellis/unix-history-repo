@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.11 (Berkeley) %G%
+ *	@(#)namei.h	7.12 (Berkeley) %G%
  */
 
-#ifndef _NAMEI_
-#define	_NAMEI_
+#ifndef _NAMEI_H_
+#define	_NAMEI_H_
 
 #ifdef KERNEL
 #include "../ufs/dir.h"
@@ -125,4 +125,4 @@ struct	nchstats {
 	long	ncs_pass2;		/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
 };
-#endif /* _NAMEI_ */
+#endif /* !_NAMEI_H_ */
