@@ -1,4 +1,4 @@
-static char	*sccsid = "@(#)support.c	1.13 (Berkeley) %G%";
+static char	*sccsid = "@(#)support.c	1.14 (Berkeley) %G%";
 
 #include	<curses.h>
 #include	"deck.h"
@@ -87,7 +87,7 @@ char		*s;
 
     prhand(hand, CINHAND, Playwin, FALSE);
     sprintf(prompt, "Your %s scores ", s);
-    i = scorehand(hand, turnover, CINHAND, strcmp(s, "crib"), explain);
+    i = scorehand(hand, turnover, CINHAND, strcmp(s, "crib") == 0, explain);
     if ((j = number(0, 29, prompt)) == 19)
 	j = 0;
     if (i != j) {
@@ -120,7 +120,7 @@ char		*s;
 {
 	register int		j;
 
-	j = scorehand(h, turnover, CINHAND, FALSE, FALSE);
+	j = scorehand(h, turnover, CINHAND, strcmp(s, "crib") == 0, FALSE);
 	prhand(h, CINHAND, Compwin, FALSE);
 	msg("My %s scores %d", s, (j == 0 ? 19 : j));
 	return chkscr(&cscore, j);
