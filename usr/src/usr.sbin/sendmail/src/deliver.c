@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.109		%G%);
+SCCSID(@(#)deliver.c	3.110		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -980,7 +980,11 @@ putheader(fp, m, e)
 		if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
 			/* address field */
-			commaize(h, p, fp, e->e_oldstyle, m);
+			bool oldstyle = e->e_oldstyle;
+
+			if (bitset(H_FROM, h->h_flags))
+				oldstyle = FALSE;
+			commaize(h, p, fp, oldstyle, m);
 		}
 		else
 		{
