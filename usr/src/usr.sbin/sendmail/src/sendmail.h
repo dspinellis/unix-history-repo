@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.56 (Berkeley) %G%
+ *	@(#)sendmail.h	6.57 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.56		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.57		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -407,6 +407,9 @@ struct metamac
 	char	metaname;	/* external code (after $) */
 	char	metaval;	/* internal code (as above) */
 };
+
+
+#define ALIASCLASS	struct _aliasclass
 /*
 **  Information about currently open connections to mailers, or to
 **  hosts that we have looked up recently.
@@ -537,6 +540,7 @@ struct symtab
 		char		*sv_hostsig;	/* host signature */
 		MCI		sv_mci;		/* mailer connection info */
 		NAMECANON	sv_namecanon;	/* canonical name cache */
+		ALIASCLASS	*sv_aliasclass;	/* alias class (type) */
 	}	s_value;
 };
 
@@ -552,6 +556,7 @@ typedef struct symtab	STAB;
 # define ST_MAP		6	/* mapping function */
 # define ST_HOSTSIG	7	/* host signature */
 # define ST_NAMECANON	8	/* cached canonical name */
+# define ST_ALIASCLASS	9	/* alias class */
 # define ST_MCI		16	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
@@ -703,7 +708,6 @@ union bigsockaddr
 */
 
 EXTERN bool	FromFlag;	/* if set, "From" person is explicit */
-EXTERN bool	NoAlias;	/* if set, don't do any aliasing */
 EXTERN bool	MeToo;		/* send to the sender also */
 EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
@@ -739,7 +743,6 @@ EXTERN int	RefuseLA;	/* load average refusing connections are */
 EXTERN int	CurrentLA;	/* current load average */
 EXTERN long	QueueFactor;	/* slope of queue function */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
-EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*ErrMsgFile;	/* file to prepend to all error messages */
 EXTERN char	*StatFile;	/* location of statistics summary */

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.26 (Berkeley) %G%
+ *	@(#)conf.h	6.27 (Berkeley) %G%
  */
 
 /*
@@ -34,6 +34,7 @@
 # define MEMCHUNKSIZE	1024		/* chunk size for memory allocation */
 # define MAXUSERENVIRON	100		/* max envars saved, must be >= 3 */
 # define MAXIPADDR	16		/* max # of IP addrs for this host */
+# define MAXALIASDB	12		/* max # of alias databases */
 # define PSBUFSIZE	(MAXLINE + MAXATOM)	/* size of prescan buffer */
 
 # ifndef QUEUESIZE
