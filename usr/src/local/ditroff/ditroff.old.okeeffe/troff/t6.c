@@ -1,4 +1,4 @@
-/*	t6.c	1.3	(Berkeley)	83/09/23	*/
+/*	t6.c	1.4	(Berkeley)	83/11/09	*/
 #include "tdef.h"
 extern
 #include "d.h"
@@ -355,7 +355,7 @@ int	a;
 	if (i == 'S' || i == '0')
 		return;
 	if ((j = findft(i)) == -1)
-		if ((j = setfp(0, i, 0)) == -1)	/* try to put it in position 0 */
+		if ((j = setfp(0, i)) == -1)	/* try to put it in position 0 */
 			return;
 s0:
 	font1 = font;
@@ -540,60 +540,79 @@ caselg()
 
 casefp()
 {
-	register i, j;
-	register char *p;
-	char dir[50];
+	register i, j, last;
 
 	skip();
-	if ((i = cbits(getch()) - '0') <= 0 || i > nfonts)
+	j = getrq();
+	if ((i = (j & BMASK) - '0') >= 0 && i <= 9) {	/* digit - see if two */
+	    if (last = cbits(j) >> BYTE)
+		if ((last -= '0') < 0 || last > 9 || (i = i*10+last) > nfonts)
+			i = -1;
+	} else i = -1;
+	if (i <= 0 || i > nfonts)
 		fprintf(stderr, "troff: fp: bad font position %d\n", i);
 	else if (skip() || !(j = getrq()))
 		fprintf(stderr, "troff: fp: no font name\n"); 
 	else {
 		skip();
-		setfp(i, j, 0);
+		setfp(i, j);
 	}
 }
 
-setfp(pos, f, d)	/* mount font f at position pos[0...nfonts] */
-int pos, f;
-char *d;
+
+setfp(pos, font)	/* mount font at position pos[0...nfonts] */
+int pos, font;
 {
-	register i, j, k;
+	register i, j, file;
 	int n;
-	char	longname[NS], shortname[10], *p;
+	char	longname[NS], shortname[3];
 	extern int	nchtab;
 
-	shortname[0] = f & BMASK;
-	shortname[1] = f >> BYTE;
+	shortname[0] = font & BMASK;
+	shortname[1] = font >> BYTE;
 	shortname[2] = '\0';
-	if (d == 0)	/* normal case */
-		sprintf(longname, "%s/dev%s/%s.out", fontfile, devname, shortname);
-	else		/* 3rd argument is a directory for the font */
-		sprintf(longname, "%s/%s.out", fontfile, shortname);
-	if ((k = open(longname, 0)) < 0) {
+
+	for (i = 0; i < nfonts; i++)		/* first search through the */
+	    if (fontlab[i] == font) {		/* list of fonts and see if */
+		register char *c;		/* it's already here to swap */
+
+#define ptrswap(x, y) { c = (char*) (x); x = y; y = c; }
+
+		ptrswap(fontbase[pos], fontbase[i]);
+		ptrswap(fontab[pos], fontab[i]);
+		ptrswap(kerntab[pos], kerntab[i]);
+		ptrswap(fitab[pos], fitab[i]);
+		ptfpcmd(pos, shortname);
+						/* tell driver about the swap */
+		shortname[0] = fontlab[pos] & BMASK;
+		shortname[1] = fontlab[pos] >> BYTE;
+		ptfpcmd(i, shortname);
+		fontlab[pos] = font;
+		if (pos == 0)
+			ch = (tchar) FONTPOS | (tchar) font << 16;
+		return(pos);
+	    }
+
+	sprintf(longname, "%s/dev%s/%s.out", fontfile, devname, shortname);
+	if ((file = open(longname, 0)) < 0) {
 		fprintf(stderr, "troff: Can't open %s\n", longname);
 		return(-1);
 	}
 	n = fontbase[pos]->nwfont & BMASK;
-	read(k, fontbase[pos], 3*n + nchtab + 128 - 32 + sizeof(struct font));
+	read(file, fontbase[pos], 3*n + nchtab + 96 + sizeof(struct font));
 	kerntab[pos] = (char *) fontab[pos] + (fontbase[pos]->nwfont & BMASK);
 	/* have to reset the fitab pointer because the width may be different */
 	fitab[pos] = (char *) fontab[pos] + 3 * (fontbase[pos]->nwfont & BMASK);
 	if ((fontbase[pos]->nwfont & BMASK) > n) {
-		fprintf(stderr, "troff: Font %s too big for position %d\n", shortname, pos);
+		fprintf(stderr, "troff: Font %s too big for position %d\n",
+								shortname, pos);
 		return(-1);
 	}
-	fontbase[pos]->nwfont = n;	/* so can load a larger one again later */
-	close(k);
-	if (pos == smnt) {
-		smnt = 0; 
-		sbold = 0; 
-	}
-	if ((fontlab[pos] = f) == 'S')
-		smnt = pos;
+	fontbase[pos]->nwfont = n;	/* for loading a larger one later */
+	close(file);
+
+	fontlab[pos] = font;
 	bdtab[pos] = cstab[pos] = ccstab[pos] = 0;
-		/* if there is a directory, no place to store its name. */
 		/* if position isn't zero, no place to store its value. */
 		/* only time a FONTPOS is pushed back is if it's a */
 		/* standard font on position 0 (i.e., mounted implicitly. */
@@ -602,9 +621,9 @@ char *d;
 		/* will all be in the last one because the "x font ..." */
 		/* comes out too soon.  pushing back FONTPOS doesn't work */
 		/* with .ft commands because input is flushed after .xx cmds */
-	ptfpcmd(pos, shortname, d);
-	if (d == 0 && pos == 0)
-		ch = (tchar) FONTPOS | (tchar) f << 16;
+	ptfpcmd(pos, shortname);
+	if (pos == 0)
+		ch = (tchar) FONTPOS | (tchar) font << 16;
 	return(pos);
 }
 
@@ -641,10 +660,6 @@ bd0:
 			goto bd1;
 		else 
 			return;
-	}
-	if (j == smnt) {
-		k = smnt;
-		goto bd0;
 	}
 	if (k) {
 		sbold = j;
