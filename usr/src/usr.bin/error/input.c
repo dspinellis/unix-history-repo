@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)errorinput.c	1.2 (Berkeley) 1/14/81";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -11,7 +11,8 @@ int	language;
 
 Errorclass	onelong();
 Errorclass	cpp();
-Errorclass	ccom();
+Errorclass	pccccom();	/* Portable C Compiler C Compiler */
+Errorclass	richieccom();	/* Richie Compiler for 11 */
 Errorclass	lint0();
 Errorclass	lint1();
 Errorclass	lint2();
@@ -48,7 +49,8 @@ eaterrors(r_errorc, r_errorv)
 #endif
 	   || (( errorclass = onelong() ) != C_UNKNOWN)
 	   || (( errorclass = cpp() ) != C_UNKNOWN)
-	   || (( errorclass = ccom() ) != C_UNKNOWN)
+	   || (( errorclass = pccccom() ) != C_UNKNOWN)
+	   || (( errorclass = richieccom() ) != C_UNKNOWN)
 	   || (( errorclass = lint0() ) != C_UNKNOWN)
 	   || (( errorclass = lint1() ) != C_UNKNOWN)
 	   || (( errorclass = lint2() ) != C_UNKNOWN)
@@ -187,7 +189,7 @@ Errorclass	cpp()
 	return(C_UNKNOWN);
 }	/*end of cpp*/
 
-Errorclass ccom()
+Errorclass pccccom()
 {
 	/*
 	 *	Now attempt a ccom error message match:
@@ -220,6 +222,40 @@ Errorclass ccom()
 	}
 	return(C_UNKNOWN);
 }	/* end of ccom */
+/*
+ *	Do the error message from the Richie C Compiler for the PDP11,
+ *	which has this source:
+ *
+ *	if (filename[0])
+ *		fprintf(stderr, "%s:", filename);
+ *	fprintf(stderr, "%d: ", line);
+ *
+ */
+Errorclass richieccom()
+{
+	register	char	*cp;
+	register	char	**nwordv;
+			char	*file;
+	if (lastchar(wordv[1]) == ':'){
+		cp = wordv[1] + strlen(wordv[1]) - 1;
+		while (isdigit(*--cp))
+			continue;
+		if (*cp == ':'){
+			clob_last(wordv[1], '\0');	/* last : */
+			*cp = '\0';			/* first : */
+			file = wordv[1];
+			nwordv = wordvsplice(1, wordc, wordv+1);
+			nwordv[0] = file;
+			nwordv[1] = cp + 1;
+			wordc += 1;
+			wordv = nwordv - 1;
+			language = INCC;
+			currentfilename = wordv[1];
+			return(C_TRUE);
+		}
+	}
+	return(C_UNKNOWN);
+}
 
 Errorclass lint0()
 {
