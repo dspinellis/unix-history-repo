@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.6	%H%	*/
+/*	kern_proc.c	3.7	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -493,12 +493,25 @@ done:
 			q->p_ppid = 1;
 			wakeup((caddr_t)&proc[1]);
 			/*
-			 * Stopped or traced processes are killed
+			 * Traced processes are killed
 			 * since their existence means someone is screwing up.
+			 * Traced processes are sent a hangup and a continue.
+			 * This is designed to be ``safe'' for setuid
+			 * processes since they must be willing to tolerate
+			 * hangups anyways.
 			 */
-			if (q->p_stat == SSTOP || q->p_flag&STRC) {
+			if (q->p_flag&STRC) {
 				q->p_flag &= ~STRC;
 				psignal(q, SIGKILL);
+			} else if (q->p_stat == SSTOP) {
+				psignal(q, SIGHUP);
+				psignal(q, SIGCONT);
+				/*
+				 * Protect this process from future
+				 * tty signals, and clear TSTP if pending.
+				 */
+				q->p_pgrp = 0;
+				q->p_sig &= ~(1<<(SIGTSTP-1));
 			}
 		}
 	wakeup((caddr_t)p->p_pptr);
