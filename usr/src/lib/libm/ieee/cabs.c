@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* CABS(Z)
@@ -91,13 +91,18 @@ struct { double x, y;} z;
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* r2p1hi =  2.4142135623730950345E0     , Hex  2^  2   *  .9A827999FCEF32 */
 /* r2p1lo =  1.4349369327986523769E-17   , Hex  2^-55   *  .84597D89B3754B */
 /* sqrt2  =  1.4142135623730950622E0     ; Hex  2^  1   *  .B504F333F9DE65 */
-static long    r2p1hix[] = { 0x8279411a, 0xef3299fc};
-static long    r2p1lox[] = { 0x597d2484, 0x754b89b3};
-static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
+static long    r2p1hix[] = { _0x(8279,411a), _0x(ef32,99fc)};
+static long    r2p1lox[] = { _0x(597d,2484), _0x(754b,89b3)};
+static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
 #define   r2p1hi    (*(double*)r2p1hix)
 #define   r2p1lo    (*(double*)r2p1lox)
 #define    sqrt2    (*(double*)sqrt2x)
