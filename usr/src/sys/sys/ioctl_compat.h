@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl_compat.h	7.2 (Berkeley) %G%
+ *	@(#)ioctl_compat.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -101,7 +101,7 @@ struct sgttyb {
 #define		LITOUT		0x00200000	/* literal output */
 #define		TOSTOP		0x00400000	/*SIGSTOP on background output*/
 #define		FLUSHO		0x00800000	/* flush output to terminal */
-#define		NOHANG		0x01000000	/* no SIGHUP on carrier drop */
+#define		NOHANG		0x01000000	/* (no-op) was no SIGHUP on carrier drop */
 #define		L001000		0x02000000
 #define		CRTKIL		0x04000000	/* kill line with " \b " */
 #define		PASS8		0x08000000
