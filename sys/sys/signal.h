@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)signal.h	7.16 (Berkeley) 3/17/91
- *	$Id: signal.h,v 1.3 1993/10/16 17:17:39 rgrimes Exp $
+ *	$Id: signal.h,v 1.4 1994/01/31 10:27:49 davidg Exp $
  */
 
 #ifndef	_SIGNAL_H_
@@ -205,6 +205,7 @@ struct	sigcontext {
 #define	SIG_ERR		((__sighandler_t) -1)
 #endif	/* _POSIX_SOURCE */
   
+#define	BADSIG		((__sighandler_t) -1)
 #define	SIG_DFL		((__sighandler_t) 0)
 #define	SIG_IGN		((__sighandler_t) 1)
 
