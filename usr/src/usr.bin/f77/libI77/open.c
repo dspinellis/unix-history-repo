@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.5";
+char id_open[] = "@(#)open.c	1.6";
  *
  * open.c  -  f77 file open routines
  */
@@ -16,6 +16,8 @@ char id_open[] = "@(#)open.c	1.5";
 #define FROM_OPEN	"\1"	/* for use in f_clos() */
 
 short	opnbof_;		/* open at beginning of file */
+short	ccntrl_;		/* recognize carriage control */
+short	blzero_;		/* blanks count as zero */
 extern char *tmplate;
 extern char *fortfile;
 
@@ -91,7 +93,12 @@ f_open(a) olist *a;
 		err(errflag,F_ERARG,"recl on open")
 	else
 		b->url = a->orl;
-	b->ublnk = (a->oblnk && (lcase(*a->oblnk)=='z'));
+	if (a->oblnk)
+		b->ublnk = (lcase(*a->oblnk)=='z');
+	else if (lunit == STDERR)
+		b->ublnk = NO;
+	else
+		b->ublnk = blzero_;
 	if (a->ofm)
 	{
 		switch(lcase(*a->ofm))
@@ -116,7 +123,10 @@ f_open(a) olist *a;
 	}
 	else	/* not specified */
 	{	b->ufmt = (b->url==0);
-		b->uprnt = NO;
+		if (lunit == STDERR)
+			b->uprnt = NO;
+		else
+			b->uprnt = ccntrl_;
 	}
 	if(b->url && b->useek) rewind(b->ufd);
 	return(OK);
