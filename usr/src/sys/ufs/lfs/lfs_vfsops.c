@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.71 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.72 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -178,11 +178,9 @@ lfs_mountfs(devvp, mp, p)
 	extern struct vnode *rootvp;
 	register struct lfs *fs;
 	register struct ufsmount *ump;
-	struct inode *ip;
 	struct vnode *vp;
 	struct buf *bp;
 	struct partinfo dpart;
-	daddr_t seg_addr;
 	dev_t dev;
 	int error, i, ronly, size;
 
@@ -226,7 +224,6 @@ lfs_mountfs(devvp, mp, p)
 
 	/* Set up the I/O information */
 	fs->lfs_iocount = 0;
-	/* XXX NOTUSED:	fs->lfs_seglist = NULL; */
 
 	/* Set the file system readonly/modify bits. */
 	fs = ump->um_lfs;
@@ -245,27 +242,20 @@ lfs_mountfs(devvp, mp, p)
 	ump->um_devvp = devvp;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
-
-	/* Read the ifile disk inode and store it in a vnode. */
-	if (error = bread(devvp, fs->lfs_idaddr, fs->lfs_bsize, NOCRED, &bp))
-		goto out;
-	if (error = lfs_vcreate(mp, LFS_IFILE_INUM, &vp))
-		goto out;
-	ip = VTOI(vp);
-	VREF(ip->i_devvp);
-
-	/* The ifile inode is stored in the superblock. */
-	fs->lfs_ivnode = vp;
-
-	/* Copy the on-disk inode into place. */
-	ip->i_din = *lfs_ifind(fs, LFS_IFILE_INUM, bp->b_un.b_dino);
-	brelse(bp);
-
-	/* Initialize the associated vnode */
-	vp->v_type = IFTOVT(ip->i_mode);
-
 	devvp->v_specflags |= SI_MOUNTEDON;
-	VREF(ip->i_devvp);
+
+	/*
+	 * We use the ifile vnode for almost every operation.  Instead of
+	 * retrieving it from the hash table each time we retrieve it here,
+	 * artificially increment the reference count and keep a pointer
+	 * to it in the incore copy of the superblock.
+	 */
+	if (error = lfs_vget(mp, LFS_IFILE_INUM, &vp))
+		goto out;
+	fs->lfs_ivnode = vp;
+	VREF(vp);
+	vput(vp);
+
 
 	return (0);
 out:
@@ -329,13 +319,9 @@ return(0);
 #endif
 	if (error = vflush(mp, NULLVP, flags))
 		return (error);
-#ifdef NOTLFS							/* LFS */
-	fs = ump->um_fs;
-	ronly = !fs->fs_ronly;
-#else
 	fs = ump->um_lfs;
 	ronly = !fs->lfs_ronly;
-#endif
+	vrele(fs->lfs_ivnode);
  * Get file system statistics.
  */
 lfs_statfs(mp, sbp, p)
