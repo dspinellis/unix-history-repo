@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.6 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.7 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.6 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.7 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -592,7 +592,7 @@ getauthinfo(fd)
 	}
 
 	/* put a timeout around the whole thing */
-	ev = setevent((time_t) 30, authtimeout, 0);
+	ev = setevent(TimeOuts.to_ident, authtimeout, 0);
 
 	/* connect to foreign IDENT server */
 	s = socket(AF_INET, SOCK_STREAM, 0);

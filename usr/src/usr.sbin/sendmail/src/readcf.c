@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1572,6 +1572,7 @@ makemapentry(line)
 **		Initializes the TimeOuts structure
 */
 
+#define SECONDS
 #define MINUTES	* 60
 #define HOUR	* 3600
 
@@ -1594,6 +1595,7 @@ settimeouts(val)
 		TimeOuts.to_quit = (time_t) 2 MINUTES;
 		TimeOuts.to_nextcommand = (time_t) 1 HOUR;
 		TimeOuts.to_miscshort = (time_t) 2 MINUTES;
+		TimeOuts.to_ident = (time_t) 30 SECONDS;
 		return;
 	}
 
@@ -1654,6 +1656,8 @@ settimeouts(val)
 				TimeOuts.to_quit = to;
 			else if (strcasecmp(val, "misc") == 0)
 				TimeOuts.to_miscshort = to;
+			else if (strcasecmp(val, "ident") == 0)
+				TimeOuts.to_ident = to;
 			else
 				syserr("settimeouts: invalid timeout %s", val);
 		}
