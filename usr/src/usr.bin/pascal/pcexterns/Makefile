@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.17 %G%
+SCCSID = @(#)Makefile 1.18 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -8,7 +8,7 @@ RM = rm -f
 CFLAGS = -O -I${SRCDIR}
 
 PROGS =	pc pix pmerge
-FILES =	pc2 pc3 pcexterns.o how_pc how_pi how_pix how_pxp
+FILES =	pc3 pcexterns.o how_pc how_pi how_pix how_pxp
 
 all: pix px_header pc pc2 pc3 pmerge pcexterns.o
 
@@ -18,9 +18,9 @@ install: all pxref.p
 	for i in ${PROGS}; do (install $$i ${INSTALL}/$$i ); done
 	for i in ${FILES}; do (install $$i ${INSTALLIB}/$$i ); done
 	cd ${INSTALLIB}; chmod 644 how* pcexterns.o ${PX_HEADER}
-	strip ${INSTALLIB}/pc2
 	strip ${INSTALLIB}/pc3
-	cd ${INSTALLIB}; chmod 555 pc2 pc3
+	cd ${INSTALLIB}; chmod 555 pc3
+	cd pc2; make install
 	-pc -w pxref.p
 	install a.out ${INSTALL}/pxref
 	cd ${INSTALL} ; chmod 555 pmerge pxref pc pix
@@ -35,13 +35,8 @@ px_header: px_header.c ${SRCDIR}/objfmt.h config.o
 	${CC} ${CFLAGS} -o px_header px_header.c config.o -N
 	strip px_header
 
-pc2: pc2.c
-	${CC} ${CFLAGS} pc2.c -lpc -o tmp
-	${CC} ${CFLAGS} -S pc2.c
-	./tmp pc2.s npc2.s
-	as -o pc2.o npc2.s
-	${CC} ${CFLAGS} pc2.o -o pc2
-	rm -f pc2.o npc2.s pc2.s tmp
+pc2: /tmp
+	cd pc2; make
 
 pc3: pc3.c pc3.h ${SRCDIR}/pstab.h
 	${CC} ${CFLAGS} pc3.c -o pc3
@@ -91,10 +86,10 @@ picture: ${SRCDIR}/OPnames.h ${SRCDIR}/pic.c
 	${RM} pic
 
 clean:
-	${RM} pix px_header pxref pmerge pc pc2 pc3 \
+	${RM} pix px_header pxref pmerge pc pc3 \
 	pcexterns.s *.o errs opc opc.c pic pic.c picture
 
 print: picture
 	@pr READ_ME makefile picture
 	@ls -l | pr
-	@pr pix.c pmerge.c pxref.p pc.c pc2.c pc3.h pc3.c
+	@pr pix.c pmerge.c pxref.p pc.c pc3.h pc3.c
