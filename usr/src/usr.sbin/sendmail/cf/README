@@ -1,34 +1,38 @@
-@(#)README	2.5 (Berkeley) %G%
+
+
+		NEW SENDMAIL CONFIGURATION FILES
+
+		Eric Allman <eric@CS.Berkeley.EDU>
+
+		@(#)README	2.6 (Berkeley) %G%
+
 
 This document describes the sendmail configuration files being used
-at Berkeley.  There have been several previous versions.  This file
-is being written on 24 July 1991, and will probably not be generally
-available for several months.
+at Berkeley.  These use features in the new (R6) sendmail, and although
+there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
+old versions and cannot be expected to work well.
 
-INSTALLING A NEW SITE CONFIGURATION
+These configuration files are probably not as general as previous
+versions, and don't handle as many of the wierd cases automagically.
+I was able to simplify by them for two reasons.  First, the network
+has become more consistent -- for example, at this point, everyone
+on the internet is supposed to be running a name server, so hacks to
+handle NIC-registered hosts can go away.  Second, I assumed that a
+subdomain would be running SMTP internally -- UUCP is presumed to be
+a long-haul protocol.  I realize that this is not universal, but it
+does describe the vast majority of sites with which I am familiar,
+including those outside the US.
 
-Configuration files are contained in the subdirectory "cf", with a
-suffix ".mc".  They must be run through "m4" to produce a ".cf" file.
+Of course, the downside of this is that if you do live in a wierd
+world, things are going to get wierder for you.  I'm sorry about that,
+but at the time we at Berkeley had a problem, and it seemed like the
+right thing to do.
 
-Every .mc file SHOULD begin with:
-
-	divert(-1)
-	COPYRIGHT NOTICE
-	divert(0)
-
-If you don't care about copyrights, you can omit this.  If you try
-to patent this, I'll be very, very pissed.  I haven't patented a lot
-of hot ideas so that you can use them; I expect reciprocal courtesy.
-A copyleft is a copyright by another name.
-
-The copyright, if any, MUST be followed by:
-
-	include(../m4/cf.m4)
-
-This will pull in the M4 macros you will need to make sense of
-everything else.  As the saying goes, don't think about it, just
-do it.  If you don't do it, don't bother reading the rest of this
-file.
+This package requires a relatively new version of M4.  SunOS's
+/usr/5bin/m4 or BSD-Net/2's m4 both work.  GNU m4 (which is a language
+unto itself) also works, but I don't intend to work so hard to keep
+this up in the future.  [Note to GNU folks:  the construct
+"define(`FOO')" should work without my having to add a null value.]
 
 At this point, let me make one thing perfectly clear.  I am a rope
 salesman.  I sell you rope.  I haven't produced a new M4 system
@@ -37,6 +41,20 @@ that detects latent bugs, nor have I tried to fix the old one.
 are running the 4.2bsd, SysV.2, or 7th Edition version, I suggest
 finding a friend with a newer version.  You can m4-expand on
 their system, then run locally.)
+
+I'm not pretending that this README describes everything that these
+configuration files can do; clever people can probably tweak them
+to great effect.  But it should get you started.
+
+These files only include minimal database primitives, largely because
+of inertia -- and those haven't really been tested at Berkeley.
+
++--------------------------+
+| INTRODUCTION AND EXAMPLE |
++--------------------------+
+
+Configuration files are contained in the subdirectory "cf", with a
+suffix ".mc".  They must be run through "m4" to produce a ".cf" file.
 
 Let's examine a typical .mc file (cf/cs-exposed.mc):
 
@@ -59,19 +77,26 @@ Let's examine a typical .mc file (cf/cs-exposed.mc):
 	# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 	#
 
-If you copy this file and modify it, you should maintain this copyright
-notice.  If you actually start from scratch you can delete it -- but be
-honest!
+The divert(-1) will delete the crud in the resulting output file.
+The copyright notice is what your lawyers require.  My lawyers require
+the one that I've included in my files. A copyleft is a copyright by
+another name.
+
+The next line MUST be
 
 	include(`../m4/cf.m4')
 
-You need this line!
+This will pull in the M4 macros you will need to make sense of
+everything else.  As the saying goes, don't think about it, just
+do it.  If you don't do it, don't bother reading the rest of this
+file.
 
 	VERSIONID(`<SCCS or RCS version id>')
 
 VERSIONID is a macro that stuffs the version information into the
 resulting file.  We use SCCS; you could use RCS, something else, or
-omit it completely.
+omit it completely.  This is not the same as the version id included
+in SMTP greeting messages -- this is defined in m4/version.m4.
 
 	DOMAIN(cs.exposed)
 
@@ -79,24 +104,94 @@ This example exposes the host inside of the CS subdomain -- that is,
 it doesn't try to hide the name of the workstation to the outside
 world.  Changing this to DOMAIN(cs.hidden) would have made outgoing
 messages refer to "<username>@CS.Berkeley.EDU" instead of using the
-local hostname.  This can also be effected by using:
-
-	define(`MASQUERADE_AS', `masquerade.host.name.domain.name')dnl
-
-in the ".mc" file.
+local hostname.  Internaly this is effected by using
+"MASQUERADE_AS(CS.Berkeley.EDU)".
 
 	MAILER(smtp)
 
 These describe the mailers used at the default CS site site.  The
 local mailer is always included automatically.
 
++--------+
+| OSTYPE |
++--------+
+
 Note that cf/cs-exposed.mc omits an OSTYPE macro -- this assumes
 default Computer Science Division environment.  There are several
-environments available: bsd4.3, bsd4.4, riscos4.5, sunos3.5,
-sunos4.1, and ultrix4.1.  These change things like the location
-of the alias file and queue directory.
+environments available: bsd4.3, bsd4.4, hpux, irix, osf1, riscos4.5,
+sunos3.5, sunos4.1, and ultrix4.1.  These change things like the
+location of the alias file and queue directory.  Some of these
+are identical.
 
-MAILERS
+Operating system definitions are easy to write.  They may define
+the following variables (everything defaults, so an ostype file
+may be empty).
+
+ALIAS_FILE		[/etc/aliases] The location of the text version
+			of the alias file.
+HELP_FILE		[/usr/lib/sendmail.hf] The name of the file
+			containing information printed in response to
+			the SMTP HELP command.
+LOCAL_MAILER		[/bin/mail] The program used to deliver local mail.
+LOCAL_SHELL		[/bin/sh] The shell used to deliver piped email.
+QUEUE_DIR		[/var/spool/mqueue] The directory containing
+			queue files.
+STATUS_FILE		[/etc/sendmail.st] The file containing status
+			information.
+LOCAL_MAILER_FLAGS	[rn] The flags used by the local mailer.  The
+			flags lsDFMm are always included.
+HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
+			hostmap key definition.  You can redefine this
+			to change the class, flags, and filename of
+			the hostmap.  The default flag (-o) makes this
+			map optional.
+
+In addition, the following boolean flags may be defined -- the value
+is ignored.
+
+NEED_DOMAIN		If set, the $j macro is defined as $w.$D.
+			If not set, $j is defined as $w.  If this is
+			set, the domain must be defined using the line
+			DD<domainname> (probably in the domain file,
+			but possibly in the .mc file).  You will only
+			need this if you define your system hostname
+			without a domain (type "hostname" -- if it
+			has no dots in the output, you qualify) or if
+			you are running Ultrix or OSF/1 sendmail.
+			Either of these is probably a mistake.
+
++---------+
+| DOMAINS |
++---------+
+
+You will probably want to collect domain-dependent defines into one
+file, referenced by the DOMAIN macro.  For example, our Berkeley
+domain file includes definitions for several internal distinguished
+hosts:
+
+UUCP_RELAY	The host that will forward UUCP-addressed email.
+		If not defined, all UUCP sites must be directly
+		connected.
+BITNET_RELAY	The host that will forward BITNET-addressed email.
+		If not defined, the .BITNET pseudo-domain won't work.
+CSNET_RELAY	The host that will forward CSNET-addressed email.
+		If not defined, the .CSNET pseudo-domain won't work.
+LOCAL_RELAY	The site that will handle unqualified names -- that
+		is, names with out an @domain extension.  If not set,
+		they are assumed to belong on this machine.  This
+		allows you to have a central site to store a
+		company- or department-wide alias database.  This
+		only works at small sites, and there are better
+		methods.
+
+The domain file can also be used to define a domain name, if needed
+(directly using "DD<domain>") and set certain site-wide features,
+such as no_wildcard_MX.  If all hosts at your site masquerade
+behind one email name, you could also use MASQUERADE_AS here.
+
++---------+
+| MAILERS |
++---------+
 
 There are fewer mailers supported in this version than the previous
 version, owing mostly to a simpler world.
@@ -114,8 +209,94 @@ uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		defines two mailers, "uucp" and "suucp".  The latter
 		is for when you know that the UUCP mailer at the other
 		end can handle multiple recipients in one transfer.
+		When you invoke this, sendmail looks for all names in
+		the $=U class and sends them to the uucp mailer; all
+		names in the $=Y class are sent to suucp.  Note that
+		this is a function of what version of rmail runs on
+		the receiving end, and hence may be out of your control.
 
-EXTENSIONS
++----------+
+| FEATURES |
++----------+
+
+Special features can be requested using the "FEATURE" macro.  For
+example, the .mc line:
+
+	FEATURE(use_cw_file)
+
+tells sendmail that you want to have it read an /etc/sendmail.cw
+file to get values for class $=w.  Available features are:
+
+use_cw_file	Read the file /etc/sendmail.cw file to get alternate
+		names for this host.  This might be used if you were
+		on a host that MXed for a dynamic set of other
+		hosts.  If the set is static, just including the line
+		"Cw<name1> <name2> ..." is probably superior.
+
+no_wildcard_MX	This domain does not have a wildcard MX record that
+		matches it.  For example, I am in domain
+		CS.Berkeley.EDU, and there is no MX record that
+		matches *.CS.Berkeley.EDU or *.Berkeley.EDU, so I
+		can safely use this feature.  If you set this, you
+		get better name server performance.
+
+Other FEATUREs should be defined, but I was trying to keep these
+config files fairly lean and mean.
+
++-------+
+| HACKS |
++-------+
+
+Some things just can't be called features.  To make this clear,
+they go in the hack subdirectory and are ferenced using the HACK
+macro.  These will tend to be site-dependent.  The release
+includes the Berkeley-dependent "cssubdomain" hack (that makes
+sendmail accept local names in either Berkeley.EDU or CS.Berkeley.EDU;
+this is intended as a short-term aid while we move hosts into
+subdomains.
+
++--------------------+
+| SITE CONFIGURATION |
++--------------------+
+
+Complex sites will need more local configuration information, such as
+lists of UUCP hosts they speak with directly.  This can get a bit more
+tricky.  For an example of a "complex" site, see cf/ucbvax.mc.
+
+The SITECONFIG macro allows you to indirectly reference site-dependent
+configuration information stored in the siteconfig subdirectory.  For
+example, the line
+
+	SITECONFIG(uucp.ucbvax, ucbvax, U)
+
+reads the file uucp.ucbvax for local connection information.  The
+second parameter is the local name (in this case just "ucbvax" since
+it is locally connected, and hence a UUCP hostname) and the name of
+the class in which to store the host information.  Another SITECONFIG
+line reads
+
+	SITECONFIG(uucp.ucbarpa, ucbarpa.Berkeley.EDU, W)
+
+This says that the file uucp.ucbarpa contains the list of UUCP sites
+connected to ucbarpa.Berkeley.EDU.  The $=W class will be used to
+store this list.  [The machine ucbarpa is gone now, but I've left
+this out-of-date configuration file around to demonstrate how you
+might do this.]
+
+The siteconfig file (e.g., siteconfig/uucp.ucbvax.m4) contains nothing
+more than a sequence of SITE macros describing connectivity.  For
+example:
+
+	SITE(cnmat)
+	SITE(sgi olympus)
+
+The second example demonstrates that you can use two names on the
+same line; these are usually aliases for the same host (or are at
+least in the same company).
+
++-------------------+
+| TWEAKING RULESETS |
++-------------------+
 
 For more complex configurations, you can define special rules.
 The macro LOCAL_RULE_3 introduces rules that are used in canonicalizing
@@ -132,6 +313,13 @@ will cause addresses of the form "decvax!user" and "research!user"
 to be converted to "user@decvax.dec.com" and "user@research.att.com"
 respectively.
 
+This could also be used to look hosts in a database map:
+
+	LOCAL_RULE_3
+	R$* < @ $+ > $*		$: $1 < @ $(hostmap $2 $) > $3
+
+This map would be defined in the LOCAL_CONFIG portion, as shown below.
+
 Similarly, LOCAL_RULE_0 can be used to introduce new parsing rules.
 For example, new rules are needed to parse hostnames that you accept
 via MX records.  For example, you might have:
@@ -143,9 +331,60 @@ You would use this if you had installed an MX record for cnmat.Berkeley.EDU
 pointing at this host; this rule catches the message and forwards it on
 using UUCP.
 
-????
+A similar macro is LOCAL_CONFIG.  This introduces lines added after the
+boilerplate option setting but before rulesets, and can be used to
+override default options, declare local database maps, or whatever.
+For example:
 
-HIERARCHY
+	LOCAL_CONFIG
+	Khostmap hash /etc/hostmap.db
+	Kyplocal nis -m hosts.byname
+	OJ/var/forward/$u:$z/.forward
+	OL3
+
++---------------------------+
+| MASQUERADING AND RELAYING |
++---------------------------+
+
+You can have your host masquerade as another using
+
+	MASQUERADE_AS(host.domain)
+
+This causes outgoing SMTP mail to be labelled as coming from the
+indicated domain, rather than $j.  One normally masquerades as one
+of your own subdomains (for example, it's unlikely that I would
+choose to masquerade as an MIT site).
+
+there are always users that need to be "exposed" -- that is, their
+internal site name should be displayed instead of the masquerade name.
+Root is an example.  You can add users to this list using
+
+	EXPOSED_USER(usernames)
+
+This adds users to class E; you could also use something like
+
+	FE/etc/sendmail.cE
+
+You can also arrange to relay all unqualified names (that is, names
+without @host) to a relay host.  For example, if you have a central
+email server, you might relay to that host so that users don't have
+to have .forward files or aliases.  You can do this using
+
+	define(`LOCAL_RELAY', hostname)
+
+There are some user names that you don't want relayed, perhaps because
+of local aliases.  A common example is root, which may be locally
+aliased.  You can add entries to this list using
+
+	LOCAL_USER(usernames)
+
+This adds users to class L; you could also use something like
+
+	FL/etc/sendmail.cL
+
++-----------+
+| HIERARCHY |
++-----------+
 
 Within this directory are several subdirectories, to wit:
 
@@ -192,7 +431,9 @@ siteconfig	Site configuration -- e.g., tables of locally connected
 		UUCP sites.
 
 
-ADMINISTRATIVE DETAILS
++------------------------+
+| ADMINISTRATIVE DETAILS |
++------------------------+
 
 The following sections detail usage of certain internal parts of the
 sendmail.cf file.  Read them carefully if you are trying to modify
@@ -256,7 +497,7 @@ CLASSES
    B
    C
    D
-   E
+   E	addresses that should not seem to come from $M
    F	hosts we forward for
    G
    H
@@ -283,7 +524,7 @@ CLASSES
 
 M4 DIVERSIONS
 
-   1	Versions
+   1
    2	Local Ruleset 0 additions
    3	Local Ruleset 3 additions
    4	UUCP Ruleset 0 additions
