@@ -1,4 +1,4 @@
-/* ip_input.c 1.13 81/11/15 */
+/* ip_input.c 1.14 81/11/16 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,6 @@ ip_init()
 {
 	register struct protosw *pr;
 	register int i;
-	int raw;
 
 	pr = pffindproto(PF_INET, IPPROTO_RAW);
 	if (pr == 0)
@@ -57,7 +56,6 @@ ip_input(m0)
 	register struct ip *ip;		/* known to be r11 in CKSUM below */
 	register struct mbuf *m = m0;
 	register int i;
-	register struct ipq *q;
 	register struct ipq *fp;
 	int hlen;
 
@@ -80,7 +78,7 @@ COUNT(IP_INPUT);
 			return;
 		}
 	}
-	ip->ip_len = ntohs(ip->ip_len);
+	ip->ip_len = ntohs((u_short)ip->ip_len);
 	ip->ip_id = ntohs(ip->ip_id);
 	ip->ip_off = ntohs(ip->ip_off);
 
@@ -108,10 +106,10 @@ COUNT(IP_INPUT);
 	 * ship it on.
 	 */
 	if (hlen > sizeof (struct ip))
-		ip_dooptions(ip, hlen);
+		ip_dooptions(ip);
 	if (ip->ip_dst.s_addr != n_lhost.s_addr) {
 		if (--ip->ip_ttl == 0) {
-			icmp_error(ip, ICMP_TIMXCEED);
+			icmp_error(ip, ICMP_TIMXCEED, 0);
 			return;
 		}
 		ip_output(dtom(ip));
@@ -275,7 +273,7 @@ ip_reass(ip, fp)
 	((struct ip *)ip)->ip_src = fp->ipq_src;
 	((struct ip *)ip)->ip_dst = fp->ipq_dst;
 	remque(fp);
-	m_free(dtom(fp));
+	(void) m_free(dtom(fp));
 	m = dtom(ip);
 	m->m_len += sizeof (struct ipasfrag);
 	m->m_off -= sizeof (struct ipasfrag);
@@ -302,7 +300,7 @@ ip_freef(fp)
 	m = dtom(fp);
 	fp = fp->next;
 	remque(fp->prev);
-	m_free(m);
+	(void) m_free(m);
 	return (fp);
 }
 
@@ -365,10 +363,9 @@ ip_dooptions(ip)
 	struct ip *ip;
 {
 	register u_char *cp;
-	int opt, optlen, cnt, s;
+	int opt, optlen, cnt;
 	struct ip_addr *sp;
 	register struct ip_timestamp *ipt;
-	int x;
 
 	cp = (u_char *)(ip + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
@@ -436,10 +433,10 @@ ip_dooptions(ip)
 			ipt->ipt_ptr += 4;
 		}
 	}
-	return (0);
+	return;
 bad:
 	/* SHOULD FORCE ICMP MESSAGE */
-	return (-1);
+	return;
 }
 
 /*
@@ -451,14 +448,12 @@ ip_stripoptions(ip)
 {
 	register int i;
 	register struct mbuf *m;
-	char *op;
 	int olen;
 COUNT(IP_OPT);
 
 	olen = (ip->ip_hl<<2) - sizeof (struct ip);
-	op = (caddr_t)ip + olen;
 	m = dtom(++ip);
 	i = m->m_len - (sizeof (struct ip) + olen);
-	bcopy((caddr_t)ip+olen, (caddr_t)ip, i);
+	bcopy((caddr_t)ip+olen, (caddr_t)ip, (unsigned)i);
 	m->m_len -= i;
 }

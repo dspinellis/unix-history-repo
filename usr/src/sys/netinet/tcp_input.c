@@ -1,4 +1,4 @@
-/* tcp_input.c 1.23 81/11/15 */
+/* tcp_input.c 1.24 81/11/16 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -56,8 +56,8 @@ tcp_input(mp)
 	int nstate;
 	struct mbuf *m;
 	struct socket *so;
-	int hlen, tlen;
-	u_short lport, fport;
+	int hlen;
+	u_short tlen, lport, fport;
 #ifdef TCPDEBUG
 	struct tcp_debug tdb;
 #endif
@@ -73,8 +73,8 @@ COUNT(TCP_INPUT);
 	n->ti_next = NULL;
 	n->ti_prev = NULL;
 	n->ti_x1 = 0;
-	lport = ntohs(n->ti_dst);
-	fport = ntohs(n->ti_src);
+	lport = ntohs(n->ti_dport);
+	fport = ntohs(n->ti_sport);
 
 	/* WONT BE POSSIBLE WHEN MBUFS ARE 256 BYTES */
 	if ((hlen = n->ti_off << 2) > mp->m_len)
@@ -95,8 +95,11 @@ COUNT(TCP_INPUT);
 	/*
 	 * Find tcb for message.
 	 */
-	inp = inpcb_lookup(&tcb, &n->ti_src, fport, &n_lhost, lport);
+	inp = in_pcblookup(&tcb, &n->ti_src, fport, &n_lhost, lport);
 	if (inp == 0)
+		goto notwanted;
+	tp = intotcpcb(inp);
+	if (tp == 0)
 		goto notwanted;
 
 	/*
@@ -106,7 +109,7 @@ COUNT(TCP_INPUT);
 	n->ti_sport = fport;
 	n->ti_dport = lport;
 	n->ti_seq = ntohl(n->ti_seq);
-	n->ti_ackno = ntohl(n->ti_ackno);
+	n->ti_ackno = ntohl((n_long)n->ti_ackno);
 	n->ti_win = ntohs(n->ti_win);
 	n->ti_urp = ntohs(n->ti_urp);
 
@@ -150,7 +153,7 @@ COUNT(TCP_INPUT);
 			tp->t_rexmt = 0;
 			tp->t_rexmttl = 0;
 			tp->t_persist = 0;
-			h_free(inp->inp_fhost);
+			in_hostfree(inp->inp_fhost);
 			inp->inp_fhost = 0;
 			tp->t_state = LISTEN;
 			goto badseg;
@@ -220,7 +223,7 @@ goodseg:
 
 	case LISTEN:
 		if (!syn_ok(tp, n) ||
-		    ((inp->inp_lhost = in_hmake(&n->ti_src)) == 0)) {
+		    ((inp->inp_lhost = in_hostalloc(&n->ti_src)) == 0)) {
 			nstate = EFAILEC;
 			goto done;
 		}
@@ -313,7 +316,7 @@ input:
 				tp->t_finack = T_2ML;
 				tp->tc_flags &= ~TC_WAITED_2_ML;
 			} else
-				tcp_sndctl(tp);			/* 31 */
+				(void) tcp_sndctl(tp);		/* 31 */
 			goto done;
 		}
 		goto input;
@@ -351,7 +354,7 @@ input:
 			goto done;
 		}
 		if (thflags&TH_FIN) {
-			tcp_sndctl(tp);				/* 31 */
+			(void) tcp_sndctl(tp);			/* 31 */
 			goto done;
 		}
 		goto input;
@@ -414,7 +417,7 @@ notwanted:
 	if (thflags&TH_ACK)
 		n->ti_seq = n->ti_ackno;
 	else {
-		n->ti_ackno = htonl(ntohl(n->ti_seq) + tlen - hlen);
+		n->ti_ackno = htonl((unsigned)(ntohl(n->ti_seq) + tlen-hlen));
 		n->ti_seq = 0;
 	}
 	n->ti_flags = ((thflags & TH_ACK) ? 0 : TH_ACK) | TH_RST;
@@ -431,7 +434,6 @@ tcp_ctldat(tp, n0, dataok)
 	struct tcpiphdr *n0;
 	int dataok;
 {
-	register struct mbuf *m;
 	register struct tcpiphdr *n = n0;
 	register int thflags = n->ti_flags;
 	struct socket *so = tp->t_inpcb->inp_socket;
@@ -453,8 +455,6 @@ COUNT(TCP_CTLDAT);
 /* ack */
 	if ((thflags&TH_ACK) && (tp->tc_flags&TC_SYN_RCVD) &&
 	    n->ti_ackno > tp->snd_una) {
-		register struct mbuf *mn;
-
 		/*
 		 * Reflect newly acknowledged data.
 		 */
@@ -476,7 +476,7 @@ COUNT(TCP_CTLDAT);
 		/*
 		 * Remove acked data from send buf
 		 */
-		sbdrop(&so->so_snd, tp->snd_una - tp->snd_off);
+		sbdrop(&so->so_snd, (int)(tp->snd_una - tp->snd_off));
 		tp->snd_off = tp->snd_una;
 		if ((tp->tc_flags&TC_SYN_ACKED) == 0 &&
 		    (tp->snd_una > tp->iss)) {
@@ -499,7 +499,7 @@ COUNT(TCP_CTLDAT);
 	}
 /* text */
 	if (dataok && n->ti_len) {
-		register struct tcpiphdr *p, *q;
+		register struct tcpiphdr *q;
 		int overage;
 
 /* eol */
@@ -540,7 +540,7 @@ COUNT(TCP_CTLDAT);
 			register int i;
 			q = (struct tcpiphdr *)(q->ti_prev);
 			/* conversion to int (in i) handles seq wraparound */
-			i = q->ti_seq + q->ti_len - n->th_seq;
+			i = q->ti_seq + q->ti_len - n->ti_seq;
 			if (i > 0) {
 				if (i >= n->ti_len)
 					goto notext;
@@ -587,7 +587,7 @@ COUNT(TCP_CTLDAT);
 				register int i = MIN(q->ti_len, overage);
 				overage -= i;
 				q->ti_len -= i;
-				m_adj(q, -i);
+				m_adj(dtom(q), -i);
 				if (q->ti_len)
 					break;
 				if (q == n)
@@ -647,7 +647,7 @@ notext:
 	n = tp->seg_next;
 	while (n != (struct tcpiphdr *)tp && n->ti_seq < tp->rcv_nxt) {
 		remque(n);
-		sbappend(so->so_rcv, dtom(n));
+		sbappend(&so->so_rcv, dtom(n));
 		tp->seqcnt -= n->ti_len;
 		if (tp->seqcnt < 0)
 			panic("tcp_input present");

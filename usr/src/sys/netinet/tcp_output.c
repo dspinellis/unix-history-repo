@@ -1,4 +1,4 @@
-/* tcp_output.c 4.12 81/11/15 */
+/* tcp_output.c 4.13 81/11/16 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,9 +48,8 @@ COUNT(TCP_SNDWIN);
 			return;
 	}
         if (tcp_send(tp))
-		return (1);
+		return;
 	tcp_sndnull(tp);
-	return (0);
 }
 
 tcp_sndnull(tp)
@@ -58,7 +57,7 @@ tcp_sndnull(tp)
 {
 COUNT(TCP_SNDNULL);
 
-	tcp_output(tp, 0, 0, (struct mbuf *)0);
+	(void) tcp_output(tp, 0, 0, (struct mbuf *)0);
         tp->tc_flags &= ~TC_ACK_DUE;
 }
 
@@ -111,7 +110,7 @@ COUNT(TCP_SEND);
 	} else {
 		if (tp->tc_flags&TC_SYN_ACKED) {
 			wind = tp->snd_una + tp->snd_wnd;
-			tp->snd_lst = min(last, wind);
+			tp->snd_lst = MIN(last, wind);
 			if ((len = tp->snd_lst - tp->snd_nxt) > 1024)
 				tp->snd_lst -= len - 1024;
 			if (tp->snd_lst >= wind)
@@ -122,9 +121,9 @@ COUNT(TCP_SEND);
 			forced = 1;
 		} else if (tp->snd_nxt >= tp->snd_lst && (tp->tc_flags&TC_SND_FIN) == 0)
 			return (0);
-		m = sb_copy(&so->so_snd,
-		      MAX(tp->iss+1,tp->snd_nxt) - tp->snd_off,
-		      tp->snd_lst - tp->snd_off);
+		m = sbcopy(&so->so_snd,
+		      (int)(MAX(tp->iss+1,tp->snd_nxt) - tp->snd_off),
+		      (int)(tp->snd_lst - tp->snd_off));
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
 			flags |= TH_EOL;
 		if ((tp->tc_flags&TC_SND_FIN) && !forced &&
@@ -138,7 +137,7 @@ COUNT(TCP_SEND);
 		return (0);
 	if (tp->tc_flags & TC_SND_URG)
 		flags |= TH_URG;
-	sent = tcp_output(tp, flags, tp->snd_lst - tp->snd_nxt, m);
+	sent = tcp_output(tp, flags, (int)(tp->snd_lst - tp->snd_nxt), m);
 	if (!forced) {
 		tp->t_rexmt = tp->t_xmtime;
 		tp->t_rexmt_val = tp->snd_lst;
@@ -229,6 +228,8 @@ COUNT(TCP_OUTPUT);
 		len--;
 	if (flags & TH_FIN)
 		len--;
+	if (len < 0)
+		panic("tcp_output");
 	bcopy((caddr_t)t, mtod(m, caddr_t), sizeof (struct tcpiphdr));
 	t = mtod(m, struct tcpiphdr *);
 	if (tp->tc_flags&TC_SND_RST) {
@@ -239,14 +240,14 @@ COUNT(TCP_OUTPUT);
 		flags |= TH_ACK;
 	t->ti_flags = flags;
 	if (flags & TH_URG)
-		t->ti_urp = htons(tp->snd_urp);
+		t->ti_urp = htons((u_short)tp->snd_urp);	/*XXX */
 	t->ti_win =
 	    so->so_rcv.sb_hiwat -
 		(so->so_rcv.sb_cc + tp->seqcnt);
 	if (tp->rcv_nxt + t->ti_win > tp->rcv_adv)
 		tp->rcv_adv = tp->rcv_nxt + t->ti_win;
 	if (len)
-		t->ti_len = htons(len + TCPSIZE);
+		t->ti_len = htons((u_short)(len + TCPSIZE));
 	t->ti_win = htons(t->ti_win);
 #ifdef TCPDEBUG
 	if ((so->so_options & SO_DEBUG) || tcpconsdebug) {

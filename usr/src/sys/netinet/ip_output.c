@@ -1,4 +1,4 @@
-/* ip_output.c 1.12 81/11/15 */
+/* ip_output.c 1.13 81/11/16 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -32,13 +32,14 @@ COUNT(IP_OUTPUT);
 	p->ip_hl = hlen >> 2;
 	p->ip_off = 0 | (p->ip_off & IP_DF);
 	p->ip_ttl = MAXTTL;
-/*###35 [cc] ip_id undefined %%%*/
 	p->ip_id = ip_id++;
 
-	if (p->ip_len <= MTU)
-		return (ip_send(p));
+	if (p->ip_len <= MTU) {
+		ip_send(p);
+		return;
+	}
 	if (p->ip_off & IP_DF)
-		return (0);
+		return;
 	max = MTU - hlen;
 	len = p->ip_len - hlen;
 	off = 0;
@@ -56,10 +57,11 @@ COUNT(IP_OUTPUT);
 		if (i < max || m == NULL) {
 			p->ip_off = p->ip_off &~ IP_MF;
 			p->ip_len = i + hlen;
-			return (ip_send(p));
+			ip_send(p);
+			return;
 		}
 		if ((mm = m_get(1)) == NULL)    /* no more bufs */
-			return(0);
+			return;
 		p->ip_off |= IP_MF;
 		i -= m->m_len;
 		rnd = i & ~7;
@@ -70,17 +72,18 @@ COUNT(IP_OUTPUT);
 		m = mm;
 		m->m_off = MMAXOFF - hlen - adj;
 		m->m_len = hlen + adj;
-		bcopy(p, (caddr_t)((int)m + m->m_off), hlen);
+		bcopy((caddr_t)p, mtod(m, caddr_t), (unsigned)hlen);
 		if (adj) {
 			n->m_len -= adj;
-			bcopy((caddr_t)((int)n + n->m_len + n->m_off),
-			      (caddr_t)((int)m + m->m_off + hlen), adj);
+			bcopy(mtod(n, caddr_t) + n->m_len,
+			    mtod(m, caddr_t) + hlen, (unsigned) adj);
 		}
 		ip_send(p);
 		p = (struct ip *)((int)m + m->m_off);
 		len -= rnd;
 		off += rnd;
 	}
+	return;
 }
 
 ip_send(ip)
@@ -93,14 +96,14 @@ ip_send(ip)
 COUNT(IP_SEND);
 
 	m = dtom(ip);
-	l = (struct imp *)((int)m + m->m_off - L1822);
+	l = (struct imp *)(mtod(m, caddr_t) - L1822);
 	l->i_shost = ip->ip_src.s_host;
 	l->i_dhost = ip->ip_dst.s_host;
 	l->i_type = IPTYPE;
 	ip->ip_sum = 0;
-	ip->ip_len = htons(ip->ip_len);
+	ip->ip_len = htons((u_short)ip->ip_len);
 	ip->ip_id = htons(ip->ip_id);
-	ip->ip_off = htons(ip->ip_off);
+	ip->ip_off = htons((u_short)ip->ip_off);
 	CKSUM_IPSET(m, ip, r11, hlen);
 	m->m_off -= L1822;
 	m->m_len += L1822;
@@ -123,5 +126,4 @@ COUNT(IP_SEND);
 	imp_stat.inq_tail = m;
 	setsoftnet();
 #endif IMPLOOP
-	return (1);
 }

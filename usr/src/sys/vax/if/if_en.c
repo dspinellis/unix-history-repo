@@ -1,4 +1,4 @@
-/* if_en.c 4.8 81/11/15 */
+/* if_en.c 4.9 81/11/16 */
 
 #include "en.h"
 /*
@@ -30,7 +30,8 @@
 #include "../h/cpu.h"
 #include "../h/cmap.h"
 
-int	enrswaps, enwswaps;
+int	enrswaps;
+/* int	enwswaps; */
 int	enprobe(), enattach(), enrint(), enxint(), encollide();
 struct	uba_device *eninfo[NEN];
 u_short enstd[] = { 0 };
@@ -59,6 +60,7 @@ enprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	enrint(), enxint(), encollide();
 #endif
 
 	addr->en_istat = 0;
@@ -72,6 +74,7 @@ enprobe(reg)
 	return (1);
 }
 
+/*ARGSUSED*/
 enattach(ui)
 	struct uba_device *ui;
 {
@@ -102,7 +105,7 @@ eninit(unit)
 		j = i << 1;
 		cp = (char *)pftom(i);
 		if (memall(&Mbmap[j], k, proc, CSYS) == 0)
-			return (0);
+			panic("eninit");
 		vmaccess(&Mbmap[j], (caddr_t)cp, k);
 		rpkt = (struct en_packet *)
 		    (cp + 1024 - sizeof (struct en_prefix));
@@ -151,9 +154,9 @@ enreset(uban)
 		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
 			continue;
 		if (imp_stat.iaddr)
-			ubarelse(uban, imp_stat.iaddr);
+			ubarelse(uban, &imp_stat.iaddr);
 		if (imp_stat.oaddr)
-			ubarelse(uban, imp_stat.oaddr);
+			ubarelse(uban, &imp_stat.oaddr);
 		eninit(unit);
 		printf("en%d ", unit);
 	}
@@ -169,7 +172,6 @@ enstart(dev)
 	register caddr_t cp, top;
         int unit;
         register int len;
-	u_short uaddr;
 	struct uba_device *ui;
 	int enxswapnow = 0;
 COUNT(ENSTART);
@@ -205,7 +207,8 @@ COUNT(ENSTART);
 				*(int *)(enxmr+1) = enwproto | pte->pg_pfnum;
 				enxswapd = enxswapnow = 1;
 			} else
-				bcopy((int)m + m->m_off, cp, m->m_len);
+				bcopy(mtod(m, caddr_t), cp,
+				    (unsigned)m->m_len);
 			cp += m->m_len;
 			/* too soon! */
 			MFREE(m, mp);
@@ -220,7 +223,8 @@ COUNT(ENSTART);
 		else
 			enlastx = xpkt->Header.en_dhost;
 	}
-	len = ntohs(((struct ip *)((int)xpkt + L1822))->ip_len) + L1822;
+	len = ntohs((u_short)(((struct ip *)((int)xpkt + L1822))->ip_len)) +
+	    L1822;
 	if (len > sizeof(struct en_packet)) {
 		printf("imp_output: ridiculous IP length %d\n", len);
 		return;
@@ -247,29 +251,6 @@ COUNT(ENSTART);
 	prt_byte(xpkt, len);
 #endif
 	addr->en_ostat = EN_IEN|EN_GO;
-}
-
-/*
- * Setup for a read
- */
-ensetup(dev)
-	dev_t dev;
-{
-	register struct endevice *addr;
-	register struct uba_device *ui;
-        register unsigned ubaddr;
-	register int sps;
-COUNT(ENSETUP);
-
-	ui = eninfo[ENUNIT(dev)];
-	if (ui == 0 || ui->ui_alive == 0) {
-		printf("en%d (imp_read): not alive\n", ENUNIT(dev));
-		return;
-	}
-	addr = (struct endevice *)ui->ui_addr;
-	addr->en_iba = imp_stat.iaddr;
-	addr->en_iwc = -600;	/* a little extra to avoid hardware bugs */
-	addr->en_istat = EN_IEN|EN_GO;
 }
 
 /*
@@ -346,7 +327,7 @@ enrint(unit)
 	register caddr_t cp;
 	struct mbuf *p, *top = 0;
 	struct ip *ip;
-	int j, hlen;
+	u_int hlen;
 COUNT(ENRINT);
 
 	ui = eninfo[unit];
@@ -396,7 +377,7 @@ COUNT(ENRINT);
 	top = m;
 	m->m_off = MMINOFF;
 	m->m_len = hlen;
-	bcopy(rpkt, mtod(m, caddr_t), hlen);
+	bcopy((caddr_t)rpkt, mtod(m, caddr_t), hlen);
 	len -= hlen;
 	cp = (caddr_t)rpkt + hlen;
 	mp = m;
@@ -432,7 +413,7 @@ nopage:
 			m->m_len = MIN(MLEN, len);
 			m->m_off = MMINOFF;
 		}
-		bcopy(cp, (int)m + m->m_off, m->m_len);
+		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
 nocopy:
 		cp += m->m_len;
 		len -= m->m_len;
