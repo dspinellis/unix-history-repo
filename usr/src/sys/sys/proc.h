@@ -45,8 +45,8 @@ struct	proc
 	int	p_clktim;	/* time to alarm clock signal */
 	struct	pte *p_p0br;	/* page table base P0BR */
 	struct	proc *p_xlink;	/* linked list of procs sharing same text */
-	short	p_faults;	/* faults in last second */
-	short	p_aveflt;	/* average of p_faults into past */
+	short	p_cpticks;	/* ticks of cpu time */
+	float	p_pctcpu;	/* %cpu for this process during p_time */
 	short	p_ndx;		/* proc index for memall (because of vfork) */
 	short	p_idhash;	/* hashed based on p_pid for kill+exit+... */
 	struct	proc *p_pptr;	/* pointer to process structure of parent */
