@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.h	7.6 (Berkeley) %G%
+ *	@(#)if.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -89,6 +89,7 @@ struct ifnet {
 	u_char	if_type;		/* ethernet, tokenring, etc */
 	u_char	if_addrlen;		/* media address length */
 	u_char	if_hdrlen;		/* media header length */
+	u_char	if_index;		/* numeric abbreviation for this if  */
 /* more statistics here to avoid recompiling netstat */
 	struct	timeval if_lastchange;	/* last updated */
 	int	if_ibytes;		/* total number of octets received */
@@ -167,7 +168,12 @@ struct ifaddr {
 	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
 	struct	ifaddr *ifa_next;	/* next address for interface */
+	int	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
+	struct 	rtentry *ifa_rt;	/* ??? for ROUTETOIF */
+	u_short	ifa_flags;		/* mostly rt_flags for cloning */
+	u_short	ifa_llinfolen;		/* extra to malloc for link info */
 };
+#define IFA_ROUTE	RTF_UP		/* route installed */
 /*
  * Interface request structure used for socket
  * ioctl's.  All interface ioctl's must have parameter
