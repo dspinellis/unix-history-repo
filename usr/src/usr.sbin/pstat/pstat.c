@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -150,7 +150,7 @@ main(argc, argv)
 	int ch;
 
         Program = argv[0];
-	while ((ch = getopt(argc, argv, "Tafvikptu:sxn")) != EOF)
+	while ((ch = getopt(argc, argv, "TafvikptU:sxnu")) != EOF)
 		switch((char)ch) {
 		case 'T':
 			totflg++;
@@ -171,7 +171,7 @@ main(argc, argv)
 		case 't':
 			ttyf++;
 			break;
-		case 'u':
+		case 'U':
 			usrf++;
 			sscanf(optarg, "%d", &upid);
 			break;
@@ -184,9 +184,12 @@ main(argc, argv)
 		case 'n':
 			nflg++;
 			break;
+		case 'u':
+			fprintf(stderr, "pstat: use [ -U pid ] for -u\n");
+			exit(1);
 		case '?':
 		default:
-			printf("usage: pstat -[Tafiptsx] [-u [pid]] [system] [core]\n");
+			fprintf(stderr, "usage: pstat -[Tafiptsx] [-U [pid]] [system] [core]\n");
 			exit(1);
 		}
 	argc -= optind;
@@ -205,7 +208,7 @@ main(argc, argv)
 		exit(1);
 	}
 	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf)) {
-		printf("pstat: one or more of -[aivxptfsu] is required\n");
+		printf("pstat: one or more of -[aivxptfsU] is required\n");
 		exit(1);
 	}
 	if (filf||totflg)
@@ -728,7 +731,7 @@ doproc()
 	nproc = getword(nl[SNPROC].n_value);
 	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
 	aproc = (struct proc *)getword(nl[SPROC].n_value);
-	if (nproc < 0 || nproc > 10000) {
+	if (nproc < 0 || nproc > 100000) {
 		fprintf(stderr, "number of procs is preposterous (%d)\n",
 			nproc);
 		return;
@@ -782,7 +785,7 @@ doproc()
 	free(xproc);
 }
 
-char mesg[] = "LINE    RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGID DISC\n";
+char mesg[] = "  LINE RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGID DISC\n";
 int ttyspace = 128;
 struct tty *tty;
 
@@ -940,106 +943,116 @@ struct tty *atp;
 
 dousr()
 {
-#ifdef notyet
 	register struct user *up;
 	register i, j, *ip;
-	register struct nameidata *nd = &U.u_nd;
+	register struct nameidata *nd;
 	struct proc *p;
+	int ret;
 
-	/* This wins only if CLBYTES >= sizeof (struct user) */
-	/* (WHICH IT ISN'T, but u. is going away - so who cares */
-	if (kvm_getprocs(KINFO_PROC_PID, upid) != 0) {
-		error("kvm_getproc: %s", kvm_geterr());
+	if ((ret = kvm_getprocs(KINFO_PROC_PID, upid)) != 1) {
+		if (ret == -1)
+			error("kvm_getproc: %s", kvm_geterr());
+		else
+			error("can't locate process %d", upid);
 		return (1);
 	}
-	if ((p = kvm_nextproc()); == NULL) {
+	if ((p = kvm_nextproc()) == NULL) {
 		error("kvm_nextproc: %s", kvm_geterr());
 		return (1);
 	}
-	if (up = kvm_getu(p)) == NULL) {
+	if ((up = kvm_getu(p)) == NULL) {
 		error("kvm_getu: %s", kvm_geterr());
 		return (1);
 	}
+	nd = &up->u_nd;
 	printf("pcb");
 	ip = (int *)&up->u_pcb;
-	while (ip < &up->u_arg[0]) {
-		if ((ip - (int *)&up->u_pcb) % 4 == 0)
-			printf("\t");
-		printf("%x ", *ip++);
-		if ((ip - (int *)&up->u_pcb) % 4 == 0)
-			printf("\n");
+	i = 0;
+	while (ip < (int *)((char *)&up->u_pcb + sizeof (struct pcb))) {
+		if (i%4 == 0)
+			putchar('\t');
+		printf("%#10x ", *ip++);
+		if (i%4 == 3)
+			putchar('\n');
+		i++;
 	}
-	if ((ip - (int *)&up->u_pcb) % 4 != 0)
-		printf("\n");
-	printf("arg");
-	for (i=0; i<sizeof(up->u_arg)/sizeof(up->u_arg[0]); i++) {
-		if (i%5==0)
-			printf("\t");
-		printf(" %.1x", up->u_arg[i]);
-		if (i%5==4)
-			printf("\n");
-	}
-	if (i%5)
-		printf("\n");
-	printf("segflg\t%d\nerror %d\n", nd->ni_segflg, up->u_error);
-	printf("uids\t%d,%d,%d,%d\n", up->u_uid,up->u_gid,up->u_ruid,up->u_rgid);
-	printf("procp\t%.1x\n", up->u_procp);
-	printf("ap\t%.1x\n", up->u_ap);
-	printf("r_val?\t%.1x %.1x\n", up->u_r.r_val1, up->u_r.r_val2);
-	printf("base, count, offset %.1x %.1x %ld\n", nd->ni_base,
-		nd->ni_count, nd->ni_offset);
-	printf("cdir rdir %.1x %.1x\n", up->u_cdir, up->u_rdir);
-	printf("dirp %.1x\n", nd->ni_dirp);
-	printf("dent %d %.14s\n", nd->ni_dent.d_ino, nd->ni_dent.d_name);
-	printf("dvp vp %.1x %.1x\n", nd->ni_dvp, nd->ni_vp);
-	printf("file");
-	for (i=0; i<NOFILE; i++) {
-		if (i % 8 == 0)
-			printf("\t");
-		printf("%9.1x", up->u_ofile[i]);
-		if (i % 8 == 7)
-			printf("\n");
-	}
-	if (i % 8)
-		printf("\n");
-	printf("pofile");
-	for (i=0; i<NOFILE; i++) {
-		if (i % 8 == 0)
-			printf("\t");
-		printf("%9.1x", up->u_pofile[i]);
-		if (i % 8 == 7)
-			printf("\n");
-	}
-	if (i % 8)
-		printf("\n");
+	if (i%4)
+		putchar('\n');
+	printf("procp\t%#x\n", up->u_procp);
+	printf("ar0\t%#x\n", up->u_ar0);
+	printf("sizes\ttext %d data %d stack %d\n", 
+		up->u_tsize, up->u_dsize, up->u_ssize);
+	/* DMAPS */
 	printf("ssave");
 	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
 		if (i%5==0)
 			printf("\t");
-		printf("%9.1x", up->u_ssave.val[i]);
+		printf("%#11x", up->u_ssave.val[i]);
 		if (i%5==4)
 			printf("\n");
 	}
 	if (i%5)
 		printf("\n");
+	printf("odsize\t%#x\n", up->u_odsize);
+	printf("ossize\t%#x\n", up->u_ossize);
+	printf("outime\t%d\n", up->u_outime);
+	printf("mmap\t%#x\n", up->u_mmap);
 	printf("sigs");
 	for (i=0; i<NSIG; i++) {
 		if (i % 8 == 0)
 			printf("\t");
-		printf("%.1x ", up->u_signal[i]);
+		printf("%#x ", up->u_signal[i]);
 		if (i % 8 == 7)
 			printf("\n");
 	}
 	if (i % 8)
 		printf("\n");
-	printf("code\t%.1x\n", up->u_code);
-	printf("ar0\t%.1x\n", up->u_ar0);
-	printf("prof\t%x %x %x %x\n", up->u_prof.pr_base, up->u_prof.pr_size,
+	printf("sigmask");
+	for (i=0; i<NSIG; i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%#x ", up->u_sigmask[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("sigonstack\t%#x\n", up->u_sigonstack);
+	printf("sigintr\t%#x\n", up->u_sigintr);
+	printf("oldmask\t%#x\n", up->u_oldmask);
+	printf("sigstack\t%#x %#x\n", 
+		up->u_sigstack.ss_sp, up->u_sigstack.ss_onstack);
+	printf("sig\t%#x\n", up->u_sig);
+	printf("code\t%#x\n", up->u_code);
+	printf("file");
+	for (i=0; i<NOFILE; i++) {
+		if (i % 6 == 0)
+			printf("\t");
+		printf("%#11x", up->u_ofile[i]);
+		if (i % 6 == 5)
+			printf("\n");
+	}
+	if (i % 6)
+		printf("\n");
+	printf("pofile");
+	for (i=0; i<NOFILE; i++) {
+		if (i % 6 == 0)
+			printf("\t");
+		printf("%#11x", up->u_pofile[i]);
+		if (i % 6 == 5)
+			printf("\n");
+	}
+	if (i % 6)
+		printf("\n");
+	printf("lastfile\t%d\n", up->u_lastfile);
+	printf("cmask\t%#o\n", up->u_cmask);
+	/* RUSAGES */
+	/* TIMERS */
+	printf("start\t%ld secs %ld usecs\n", 
+		up->u_start.tv_sec, up->u_start.tv_usec);
+	printf("acflag\t%#x\n", up->u_acflag);
+	printf("prof\t%#x %#x %#x %#x\n", up->u_prof.pr_base, up->u_prof.pr_size,
 	    up->u_prof.pr_off, up->u_prof.pr_scale);
-	printf("start\t%ld\n", up->u_start.tv_sec);
-	printf("acflag\t%ld\n", up->u_acflag);
-	printf("cmask\t%ld\n", up->u_cmask);
-	printf("sizes\t%.1x %.1x %.1x\n", up->u_tsize, up->u_dsize, up->u_ssize);
 	printf("ru\t");
 	ip = (int *)&up->u_ru;
 	for (i = 0; i < sizeof(up->u_ru)/sizeof(int); i++)
@@ -1050,18 +1063,7 @@ dousr()
 	for (i = 0; i < sizeof(up->u_cru)/sizeof(int); i++)
 		printf("%ld ", ip[i]);
 	printf("\n");
-#ifdef notdef
-	i =  up->u_stack - &U;
-	while (U[++i] == 0);
-	i &= ~07;
-	while (i < 512) {
-		printf("%x ", 0140000+2*i);
-		for (j=0; j<8; j++)
-			printf("%9x", U[i++]);
-		printf("\n");
-	}
-#endif
-#endif
+	/* NAMEI */
 }
 
 oatoi(s)
@@ -1088,7 +1090,7 @@ dofile()
 	nfile = getword(nl[SNFILE].n_value);
 	xfile = (struct file *)calloc(nfile, sizeof (struct file));
 	afile = (struct file *)getword(nl[SFIL].n_value);
-	if (nfile < 0 || nfile > 10000) {
+	if (nfile < 0 || nfile > 100000) {
 		fprintf(stderr, "number of files is preposterous (%d)\n",
 			nfile);
 		return;
@@ -1110,7 +1112,7 @@ dofile()
 	for (fp=xfile,loc=(int)afile; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
 		if (fp->f_count==0)
 			continue;
-		printf("%8x ", loc);
+		printf("%x ", loc);
 		if (fp->f_type <= DTYPE_SOCKET)
 			printf("%-8.8s", dtypes[fp->f_type]);
 		else
@@ -1180,10 +1182,14 @@ doswap()
 		fprintf(stderr, "can't allocate memory for swdevt table\n");
 		exit(1);
 	}
-	kvm_read(nl[SSWDEVT].n_value, swdevt, nswdev * sizeof (struct swdevt));
-	kvm_read(nl[SPROC].n_value, proc, nproc * sizeof (struct proc));
-	kvm_read(nl[STEXT].n_value, xtext, ntext * sizeof (struct text));
-	kvm_read(nl[SWAPMAP].n_value, swapmap, nswapmap * sizeof (struct map));
+	kvm_read(nl[SSWDEVT].n_value, swdevt,
+		nswdev * sizeof (struct swdevt));
+	kvm_read(getword(nl[SPROC].n_value), proc,
+		nproc * sizeof (struct proc));
+	kvm_read(getword(nl[STEXT].n_value), xtext,
+		ntext * sizeof (struct text));
+	kvm_read(getword(nl[SWAPMAP].n_value), swapmap,
+		nswapmap * sizeof (struct map));
 
 	swapmap->m_name = "swap";
 	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
