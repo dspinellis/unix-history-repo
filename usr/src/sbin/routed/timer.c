@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,25 +24,27 @@ static char sccsid[] = "@(#)timer.c	5.7 (Berkeley) %G%";
  */
 #include "defs.h"
 
-int	timeval = -TIMER_RATE;
+int	faketime;
 
 /*
  * Timer routine.  Performs routing information supply
  * duties and manages timers on routing table entries.
+ * Management of the RTS_CHANGED bit assumes that we broadcast
+ * each time called.
  */
 timer()
 {
 	register struct rthash *rh;
 	register struct rt_entry *rt;
 	struct rthash *base = hosthash;
-	int doinghost = 1, timetobroadcast, changes = 0;
+	int doinghost = 1, timetobroadcast;
 	extern int externalinterfaces;
-	time_t now;
 
-	timeval += TIMER_RATE;
-	if (lookforinterfaces && (timeval % CHECK_INTERVAL) == 0)
+	(void) gettimeofday(&now, (struct timezone *)NULL);
+	faketime += TIMER_RATE;
+	if (lookforinterfaces && (faketime % CHECK_INTERVAL) == 0)
 		ifinit();
-	timetobroadcast = supplier && (timeval % SUPPLY_INTERVAL) == 0;
+	timetobroadcast = supplier && (faketime % SUPPLY_INTERVAL) == 0;
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
 		rt = rh->rt_forw;
@@ -60,27 +62,10 @@ again:
 				rtdelete(rt->rt_forw);
 				continue;
 			}
-			if (rt->rt_timer >= EXPIRE_TIME) {
-				if (traceactions && changes++ == 0) {
-					(void) time(&now);
-					curtime = ctime(&now);
-				}
+			if (rt->rt_timer >= EXPIRE_TIME &&
+			    rt->rt_metric < HOPCNT_INFINITY)
 				rtchange(rt, &rt->rt_router, HOPCNT_INFINITY);
-			}
-			if (rt->rt_state & RTS_CHANGED) {
-				rt->rt_state &= ~RTS_CHANGED;
-				/* don't send extraneous packets */
-				if (!supplier || timetobroadcast)
-					continue;
-				msg->rip_cmd = RIPCMD_RESPONSE;
-				msg->rip_vers = RIPVERSION;
-				msg->rip_nets[0].rip_dst = rt->rt_dst;
-				msg->rip_nets[0].rip_dst.sa_family =
-				   htons(msg->rip_nets[0].rip_dst.sa_family);
-				msg->rip_nets[0].rip_metric =
-				   htonl(min(rt->rt_metric, HOPCNT_INFINITY));
-				toall(sendmsg);
-			}
+			rt->rt_state &= ~RTS_CHANGED;
 		}
 	}
 	if (doinghost) {
@@ -88,9 +73,13 @@ again:
 		base = nethash;
 		goto again;
 	}
-	if (timetobroadcast)
-		toall(supply);
-	alarm(TIMER_RATE);
+	if (timetobroadcast) {
+		toall(supply, 0, (struct interface *)NULL);
+		lastbcast = now;
+		lastfullupdate = now;
+		needupdate = 0;		/* cancel any pending dynamic update */
+		nextbcast.tv_sec = 0;
+	}
 }
 
 /*
@@ -115,7 +104,7 @@ again:
 			base = nethash;
 			goto again;
 		}
-		toall(supply);
+		toall(supply, 0, (struct interface *)NULL);
 	}
 	exit(1);
 }

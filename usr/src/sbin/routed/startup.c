@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)startup.c	5.14 (Berkeley) %G%";
 #include <syslog.h>
 
 struct	interface *ifnet;
+struct	interface **ifnext = &ifnet;
 int	lookforinterfaces = 1;
 int	externalinterfaces = 0;		/* # of remote and local interfaces */
 int	foundloopback;			/* valid flag for loopaddr */
@@ -51,14 +52,15 @@ ifinit()
 
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		syslog(LOG_ERR, "socket: %m");
-		exit(1);
+		close(s);
+                return;
 	}
         ifc.ifc_len = sizeof (buf);
         ifc.ifc_buf = buf;
         if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
                 syslog(LOG_ERR, "ioctl (get interface configuration)");
 		close(s);
-                return (0);
+                return;
         }
         ifr = ifc.ifc_req;
 	lookforinterfaces = 0;
@@ -67,7 +69,8 @@ ifinit()
 		ifs.int_addr = ifr->ifr_addr;
 		ifreq = *ifr;
                 if (ioctl(s, SIOCGIFFLAGS, (char *)&ifreq) < 0) {
-                        syslog(LOG_ERR, "ioctl (get interface flags)");
+                        syslog(LOG_ERR, "%s: ioctl (get interface flags)",
+			    ifr->ifr_name);
                         continue;
                 }
 		ifs.int_flags = ifreq.ifr_flags | IFF_INTERFACE;
@@ -75,6 +78,21 @@ ifinit()
 		    ifr->ifr_addr.sa_family == AF_UNSPEC) {
 			lookforinterfaces = 1;
 			continue;
+		}
+		/* argh, this'll have to change sometime */
+		if (ifs.int_addr.sa_family != AF_INET)
+			continue;
+                if (ifs.int_flags & IFF_POINTOPOINT) {
+                        if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
+                                syslog(LOG_ERR, "%s: ioctl (get dstaddr)",
+				    ifr->ifr_name);
+                                continue;
+			}
+			if (ifr->ifr_addr.sa_family == AF_UNSPEC) {
+				lookforinterfaces = 1;
+				continue;
+			}
+			ifs.int_dstaddr = ifreq.ifr_dstaddr;
 		}
 		/*
 		 * already known to us?
@@ -88,9 +106,6 @@ ifinit()
 				continue;
 		} else if (if_ifwithaddr(&ifs.int_addr))
 			continue;
-		/* argh, this'll have to change sometime */
-		if (ifs.int_addr.sa_family != AF_INET)
-			continue;
 		if (ifs.int_flags & IFF_LOOPBACK) {
 			ifs.int_flags |= IFF_PASSIVE;
 			foundloopback = 1;
@@ -99,24 +114,28 @@ ifinit()
 			    if (ifp->int_flags & IFF_POINTOPOINT)
 				add_ptopt_localrt(ifp);
 		}
-                if (ifs.int_flags & IFF_POINTOPOINT) {
-                        if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
-                                syslog(LOG_ERR, "ioctl (get dstaddr)");
-                                continue;
-			}
-			ifs.int_dstaddr = ifreq.ifr_dstaddr;
-		}
                 if (ifs.int_flags & IFF_BROADCAST) {
                         if (ioctl(s, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
-                                syslog(LOG_ERR, "ioctl (get broadaddr)");
+                                syslog(LOG_ERR, "%s: ioctl (get broadaddr)",
+				    ifr->ifr_name);
                                 continue;
                         }
+#ifndef sun
 			ifs.int_broadaddr = ifreq.ifr_broadaddr;
+#else
+			ifs.int_broadaddr = ifreq.ifr_addr;
+#endif
 		}
-		if (ioctl(s, SIOCGIFMETRIC, (char *)&ifreq) < 0)
-			syslog(LOG_ERR, "ioctl (get metric)");
-		else
+#ifdef SIOCGIFMETRIC
+		if (ioctl(s, SIOCGIFMETRIC, (char *)&ifreq) < 0) {
+			syslog(LOG_ERR, "%s: ioctl (get metric)",
+			    ifr->ifr_name);
+			ifs.int_metric = 0;
+		} else
 			ifs.int_metric = ifreq.ifr_metric;
+#else
+		ifs.int_metric = 0;
+#endif
 		/*
 		 * Use a minimum metric of one;
 		 * treat the interface metric (default 0)
@@ -124,7 +143,8 @@ ifinit()
 		 */
 		ifs.int_metric++;
 		if (ioctl(s, SIOCGIFNETMASK, (char *)&ifreq) < 0) {
-			syslog(LOG_ERR, "ioctl (get netmask)");
+			syslog(LOG_ERR, "%s: ioctl (get netmask)",
+			    ifr->ifr_name);
 			continue;
 		}
 		sin = (struct sockaddr_in *)&ifreq.ifr_addr;
@@ -169,11 +189,12 @@ ifinit()
 		if (ifp->int_name == 0) {
 			fprintf(stderr, "routed: ifinit: out of memory\n");
 			syslog(LOG_ERR, "routed: ifinit: out of memory\n");
+			close(s);
 			return;
 		}
 		strcpy(ifp->int_name, ifr->ifr_name);
-		ifp->int_next = ifnet;
-		ifnet = ifp;
+		*ifnext = ifp;
+		ifnext = &ifp->int_next;
 		traceinit(ifp);
 		addrouteforif(ifp);
 	}

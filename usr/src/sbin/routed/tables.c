@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -192,9 +192,14 @@ rtchange(rt, gate, metric)
 	struct sockaddr *gate;
 	short metric;
 {
-	int add = 0, delete = 0;
+	int add = 0, delete = 0, newgateway = 0;
 	struct rtentry oldroute;
 
+	if (!equal(&rt->rt_router, gate)) {
+		newgateway++;
+		TRACE_ACTION("CHANGE FROM ", rt);
+	} else if (metric != rt->rt_metric)
+		TRACE_NEWMETRIC(rt, metric);
 	if ((rt->rt_state & RTS_INTERNAL) == 0) {
 		/*
 		 * If changing to different router, we need to add
@@ -203,7 +208,7 @@ rtchange(rt, gate, metric)
 		 * the route if has become unreachable, or re-add
 		 * it if it had been unreachable.
 		 */
-		if (!equal(&rt->rt_router, gate)) {
+		if (newgateway) {
 			add++;
 			if (rt->rt_metric != HOPCNT_INFINITY)
 				delete++;
@@ -212,10 +217,6 @@ rtchange(rt, gate, metric)
 		else if (rt->rt_metric == HOPCNT_INFINITY)
 			add++;
 	}
-	if (!equal(&rt->rt_router, gate)) {
-		TRACE_ACTION("CHANGE FROM ", rt);
-	} else if (metric != rt->rt_metric)
-		TRACE_NEWMETRIC(rt, metric);
 	if (delete)
 		oldroute = rt->rt_rt;
 	if ((rt->rt_state & RTS_INTERFACE) && delete) {
@@ -234,7 +235,7 @@ rtchange(rt, gate, metric)
 	}
 	rt->rt_metric = metric;
 	rt->rt_state |= RTS_CHANGED;
-	if (add)
+	if (newgateway)
 		TRACE_ACTION("CHANGE TO   ", rt);
 	if (add && install)
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
@@ -263,8 +264,8 @@ rtdelete(rt)
 	free((char *)rt);
 }
 
-rtdeleteall(s)
-	int s;
+rtdeleteall(sig)
+	int sig;
 {
 	register struct rthash *rh;
 	register struct rt_entry *rt;
@@ -289,7 +290,7 @@ again:
 		base = nethash;
 		goto again;
 	}
-	exit(s);
+	exit(sig);
 }
 
 /*

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,8 +30,10 @@ static char sccsid[] = "@(#)output.c	5.11 (Berkeley) %G%";
  * use of broadcasting use it, otherwise address
  * the output to the known router.
  */
-toall(f)
+toall(f, rtstate, skipif)
 	int (*f)();
+	int rtstate;
+	struct interface *skipif;
 {
 	register struct interface *ifp;
 	register struct sockaddr *dst;
@@ -39,13 +41,13 @@ toall(f)
 	extern struct interface *ifnet;
 
 	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
-		if (ifp->int_flags & IFF_PASSIVE)
+		if (ifp->int_flags & IFF_PASSIVE || ifp == skipif)
 			continue;
 		dst = ifp->int_flags & IFF_BROADCAST ? &ifp->int_broadaddr :
 		      ifp->int_flags & IFF_POINTOPOINT ? &ifp->int_dstaddr :
 		      &ifp->int_addr;
 		flags = ifp->int_flags & IFF_INTERFACE ? MSG_DONTROUTE : 0;
-		(*f)(dst, flags, ifp);
+		(*f)(dst, flags, ifp, rtstate);
 	}
 }
 
@@ -53,10 +55,11 @@ toall(f)
  * Output a preformed packet.
  */
 /*ARGSUSED*/
-sendmsg(dst, flags, ifp)
+sendmsg(dst, flags, ifp, rtstate)
 	struct sockaddr *dst;
 	int flags;
 	struct interface *ifp;
+	int rtstate;
 {
 
 	(*afswitch[dst->sa_family].af_output)(s, flags,
@@ -68,10 +71,11 @@ sendmsg(dst, flags, ifp)
  * Supply dst with the contents of the routing tables.
  * If this won't fit in one packet, chop it up into several.
  */
-supply(dst, flags, ifp)
+supply(dst, flags, ifp, rtstate)
 	struct sockaddr *dst;
 	int flags;
 	register struct interface *ifp;
+	int rtstate;
 {
 	register struct rt_entry *rt;
 	register struct netinfo *n = msg->rip_nets;
@@ -99,6 +103,12 @@ again:
 		if (rt->rt_state & RTS_EXTERNAL)
 			continue;
 		/*
+		 * For dynamic updates, limit update to routes
+		 * with the specified state.
+		 */
+		if (rtstate && (rt->rt_state & rtstate) == 0)
+			continue;
+		/*
 		 * Limit the spread of subnet information
 		 * to those who are interested.
 		 */
@@ -110,20 +120,23 @@ again:
 		}
 		size = (char *)n - packet;
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
-			(*output)(s, flags, dst, size);
 			TRACE_OUTPUT(ifp, dst, size);
+			(*output)(s, flags, dst, size);
 			/*
 			 * If only sending to ourselves,
 			 * one packet is enough to monitor interface.
 			 */
-			if ((ifp->int_flags &
+			if (ifp && (ifp->int_flags &
 			   (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0)
 				return;
 			n = msg->rip_nets;
 			npackets++;
 		}
 		n->rip_dst = rt->rt_dst;
+#if BSD < 198810
+		if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
 		n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
+#endif
 		n->rip_metric = htonl(rt->rt_metric);
 		n++;
 	}
@@ -132,9 +145,9 @@ again:
 		base = nethash;
 		goto again;
 	}
-	if (n != msg->rip_nets || npackets == 0) {
+	if (n != msg->rip_nets || (npackets == 0 && rtstate == 0)) {
 		size = (char *)n - packet;
-		(*output)(s, flags, dst, size);
 		TRACE_OUTPUT(ifp, dst, size);
+		(*output)(s, flags, dst, size);
 	}
 }
