@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)arff.8	4.1 (Berkeley) %G%
+.\"	@(#)arff.8	5.1 (Berkeley) %G%
 .\"
-.TH ARFF 8 "4/3/81"
+.TH ARFF 8V "18 July 1983"
 .UC 4
 .SH NAME
 arff, flcopy \- archiver and copier for floppy
@@ -63,19 +63,12 @@ The following characters may be used in addition to the letter
 which selects the function desired.
 .TP 10
 .B  v
-Normally
-.I arff
-does its work silently.
 The
 .B v
 (verbose)
-option causes it to type the name of each file it treats
-preceded by the function letter.
-With the
+option, when used with the
 .B t
-function,
-.B v
-gives more information about the
+function gives more information about the
 floppy entries than just the name.
 .TP 10
 .B f
@@ -92,7 +85,14 @@ around a floppy disk.  In conjunction with the
 .B f
 option it may be
 used for extracting files from rt11 formatted cartridge disks, for
-example.
+example. It may also be used to speed up reading from and writing to 
+rx02 floppy disks, by using the `c' device instead of the `b' device.
+.TP 10
+.B c
+causes
+.I arff
+to create a new directory on the floppy, effectively deleting
+all previously existing files.
 .PP
 .I Flcopy
 copies
@@ -120,10 +120,20 @@ option
 causes only the first
 .I n
 tracks to participate in a copy.
+.PP
+.I Arff
+may also be used with the console TU58 cassettes on the 11/730.
+To do so, the 
+.B m
+key must be specified.   Normally, the
+.B f
+key is also used.
 .SH FILES
-/dev/floppy
+/dev/floppy or /dev/rrx??
 .br
 floppy (in current directory)
+.SH SEE ALSO
+fl(4), rx(4), rxformat(8V)
 .SH AUTHORS
 Keith Sklower, Richard Tuck
 .SH BUGS
