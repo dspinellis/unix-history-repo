@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.1 82/04/02";
+static char sccsid[] = "@(#)ruptime.c	4.2 82/04/03";
 #endif
 
 #include <sys/types.h>		/* botch in ndir.h */
@@ -93,7 +93,7 @@ again:
 			    interval(now - hsp->hs_wd->wd_recvtime, "down"));
 			continue;
 		}
-		printf("%-8.8s%s,  %4d user%s  load %4.2f, %4.2f, %4.2f\n",
+		printf("%-8.8s%s,  %4d user%s  load %5.2f, %5.2f, %5.2f\n",
 		    hsp->hs_wd->wd_hostname,
 		    interval(hsp->hs_wd->wd_sendtime -
 			hsp->hs_wd->wd_bootime, "  up"),
