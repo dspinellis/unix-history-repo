@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.1 90/07/09$
  *
- *	@(#)hpux_tty.c	7.6 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,7 @@
 #include "sys/param.h"
 #include "sys/systm.h"
 #include "sys/user.h"
+#include "sys/filedesc.h"
 #include "sys/ioctl.h"
 #include "sys/tty.h"
 #include "sys/proc.h"
@@ -323,7 +324,7 @@ ohpuxgtty(p, uap, retval)
 	int *retval;
 {
 
-	return (getsettty(uap->fdes, HPUXTIOCGETP, uap->cmarg));
+	return (getsettty(p, uap->fdes, HPUXTIOCGETP, uap->cmarg));
 }
 
 ohpuxstty(p, uap, retval)
@@ -335,23 +336,26 @@ ohpuxstty(p, uap, retval)
 	int *retval;
 {
 
-	return (getsettty(uap->fdes, HPUXTIOCSETP, uap->cmarg));
+	return (getsettty(p, uap->fdes, HPUXTIOCSETP, uap->cmarg));
 }
 
 /*
  * Simplified version of ioctl() for use by
  * gtty/stty and TIOCGETP/TIOCSETP.
  */
-getsettty(fdes, com, cmarg)
+getsettty(p, fdes, com, cmarg)
+	struct proc *p;
 	int fdes, com;
 	caddr_t cmarg;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	struct hpuxsgttyb hsb;
 	struct sgttyb sb;
 	int error;
 
-	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL)
+	if (((unsigned)fdes) >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, fdes)) == NULL)
 		return (EBADF);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
 		return (EBADF);
