@@ -1,4 +1,4 @@
-#	Makefile	7.6	83/07/03
+#	Makefile	7.7	83/07/09
 VERSION=3.7
 #
 # Ex skeletal makefile for VAX VM/Unix 4.2BSD
@@ -65,7 +65,7 @@ VHDR=	"Ex Version ${VERSION}"
 	${CC} ${CFLAGS} -c x.c 
 	mv x.o $*.o
 
-all:	a.out exrecover expreserve tags
+all:	a.out exrecover expreserve
 
 a.out: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${TERMLIB}
