@@ -33,6 +33,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00144
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Julian Stacey		max file name length fixed
  */
 
 #ifndef lint
@@ -222,7 +229,11 @@ count_int checkpoint = CHECK_GAP;
 #define	CLEAR	256	/* table clear output code */
 
 int force = 0;
-char ofname [100];
+char ofname [MAXPATHLEN] ;
+		/* stacey@guug.de changed 100 to MAXPATHLEN,
+			to allow `find /usr/src -type f -exec compress {} \;'
+			to traverse deep source trees (such as X windows). 
+			*/
 #ifdef DEBUG
 int debug, verbose;
 #endif
