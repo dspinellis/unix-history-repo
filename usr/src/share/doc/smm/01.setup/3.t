@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.12 (Berkeley) %G%
+.\"	@(#)3.t	6.13 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -121,7 +121,7 @@ Section 3.2 lists the files to be saved as part of the conversion process.
 Section 3.3 describes the bootstrap process.
 Section 3.4 discusses the merger of the saved files back into the new system.
 Section 3.5 gives an overview of the major
-bug fixes and changes between \(*Ps and \*(4B.
+bug fixes and changes between \*(Ps and \*(4B.
 Section 3.6 provides general hints on possible problems to be
 aware of when converting from \*(Ps to \*(4B.
 .NH 2
@@ -138,7 +138,7 @@ image of the following files before the new filesystems are created.
 The rest of this subsection describes where theses files
 have moved and how they have changed.
 .TS
-l c l.
+lfC c l.
 /.cshrc	\(dg	root csh startup script (moves to \f(CW/root/.cshrc\fP)
 /.login	\(dg	root csh login script (moves to \f(CW/root/.login\fP)
 /.profile	\(dg	root sh startup script (moves to \f(CW/root/.profile\fP)
@@ -213,6 +213,104 @@ for possible tuning of the layout.
 Section 4.2 and
 .Xr config (8)
 are required reading.
+.PP
+The filesystem in \*(4B has been reorganized in an effort to
+meet several goals:
+.IP 1)
+The root filesystem should be small.
+.IP 2)
+There should be a per-architecture centrally-shareable read-only
+.Pn /usr
+filesystem.
+.IP 3)
+Variable per-machine directories should be concentrated below
+a single mount point named
+.Pn /var .
+.IP 4)
+Site-wide machine independent shareable text files should be separated
+from architecture specific binary files and should be concentrated below
+a single mount point named
+.Pn /usr/share .
+.LP
+These goals are realized with the following general layouts.
+The reorganized root filesystem has the following directories:
+.TS
+lfC l.
+etc	(config files)
+bin	(user binaries needed when single-user)
+sbin	(root binaries needed when single-user)
+local	(locally added binaries used only by this machine)
+tmp	(mount point for memory based file system)
+dev	(local devices)
+home	(mount point for AMD)
+var	(mount point for per-machine variable directories)
+usr	(mount point for multiuser binaries and files)
+.TE
+.LP
+The reorganized
+.Pn /usr
+filesystem has the following directories:
+.TS
+lfC l.
+bin	(user binaries)
+contrib	(software contributed to \*(4B)
+games	(binaries for games, score files in \f(CW/var\fP)
+include	(standard include files)
+lib	(lib*.a from old \f(CW/usr/lib\fP)
+libdata	(databases from old \f(CW/usr/lib\fP)
+libexec	(executables from old \f(CW/usr/lib\fP)
+local	(locally added binaries used site-wide)
+old	(deprecated binaries)
+sbin	(root binaries)
+share	(mount point for site-wide shared text)
+src	(mount point for sources)
+.TE
+.LP
+The reorganized
+.Pn /usr/share
+filesystem has the following directories:
+.TS
+lfC l.
+lib	(tmac, learn, ms, me, etc)
+calendar	(various useful calendar files)
+dict	(dictionaries)
+doc	(\*(4B manual sources)
+games	(games text files)
+groff_font	(groff font information)
+man	(typeset manual pages)
+misc	(dumping ground for random text files)
+mk	(templates for \*(4B makefiles)
+skel	(template user home directory files)
+tmac	(various groff macro packages)
+zoneinfo	(information on time zones)
+.TE
+.LP
+The reorganized
+.Pn /var
+filesystem has the following directories:
+.TS
+lfC l.
+account	(accounting files, formerly \f(CW/usr/adm\fP)
+at	(at spooling area)
+backups	(backups of system files)
+crash	(crash dumps)
+db	(system-wide databases, e.g. tags)
+games	(score files)
+log	(log files)
+mail	(users mail)
+obj	(heirarchy to build \f(CW/usr/src\fP)
+preserve	(preserve area for vi)
+quotas	(directory to store quota files)
+run	(directory to store *.pid files)
+rwho	(rwho databases)
+spool/ftp	(home directory for anonymous ftp)
+spool/mqueue	(sendmail spooling directory)
+spool/news	(news spooling area)
+spool/output	(printer spooling area)
+spool/uucp	(uucp spooling area)
+tmp	(disk-based temp directory)
+users	(root of per-machine user home directories)
+.TE
 .PP
 The \*(4B bootstrap routines pass the identity of the boot device
 through to the kernel.
@@ -432,7 +530,6 @@ See the examples provided in
 as a guide.
 The following table lists some of the local configuration files
 whose locations and/or contents have changed.
-.DS I .3i
 .TS
 l l l
 lfC lfC l.
@@ -475,19 +572,16 @@ _	_	_
 	/etc/ftpwelcome	welcome message displayed for ftp users; see ftpd(8)
 	/etc/kerberosIV	Kerberos directory; see below
 	/etc/man.conf	lists directories searched by \fIman\fP\|(1)
-	/etc/master.passwd	master user data base; see pwd_mkdb(8).
 	/etc/mtree	directory for local mtree files; see mtree(8)
 	/etc/netgroup	NFS group list used in \f(CW/etc/exports\fP
 	/etc/pwd.db	non-secure hashed user data base file
 	/etc/spwd.db	secure hashed user data base file
 	/etc/security	daily system security checker
 .TE
-.DE
 .PP
 System security changes require adding several new ``well-known'' groups to
 .Pn /etc/group .
 The groups that are needed by the system as distributed are:
-.DS
 .TS
 l n l.
 name	number	purpose
@@ -508,7 +602,6 @@ nobody	39	the least privileged group
 utmp	45	access to utmp files
 dialer	117	access to remote ports and dialers
 .TE
-.DE
 Only users in the ``wheel'' group are permitted to
 .Xr su
 to ``root''.
@@ -1204,9 +1297,9 @@ This emulation is expected to be unavailable in many vendors releases,
 so conversion to the new interface is encouraged.
 .PP
 \*(4B also adds the IEEE Std1003.1 job control interface,
-which is similar to the \(*Ps job control interface,
+which is similar to the \*(Ps job control interface,
 but adds a security model that was missing in the
-\(*Ps job control implementation.
+\*(Ps job control implementation.
 A new system call,
 .Fn setsid ,
 is used to create a job-control session consisting of a single process
