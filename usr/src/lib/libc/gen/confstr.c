@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)confstr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)confstr.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -50,7 +50,7 @@ confstr(name, buf, len)
 			buf[len - 1] = '\0';
 			free(p);
 		}
-		return (tlen);
+		return (tlen + 1);
 	default:
 		errno = EINVAL;
 		return (0);
