@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fnmatch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fnmatch.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -17,14 +17,87 @@ static char sccsid[] = "@(#)fnmatch.c	5.4 (Berkeley) %G%";
  * Compares a filename or pathname to a pattern.
  */
 
-#include <unistd.h>
+#include <fnmatch.h>
 #include <string.h>
 
 #define	EOS	'\0'
 
+static char *rangematch __P((char *, int));
+
+fnmatch(pattern, string, flags)
+	register const char *pattern, *string;
+	int flags;
+{
+	register char c;
+	char test;
+
+	for (;;)
+		switch (c = *pattern++) {
+		case EOS:
+			return (*string == EOS ? 0 : FNM_NOMATCH);
+		case '?':
+			if ((test = *string++) == EOS ||
+			    test == '/' && flags & FNM_PATHNAME)
+				return (FNM_NOMATCH);
+			break;
+		case '*':
+			c = *pattern;
+			/* Collapse multiple stars. */
+			while (c == '*')
+				c = *++pattern;
+
+			/* Optimize for pattern with * at end or before /. */
+			if (c == EOS)
+				if (flags & FNM_PATHNAME)
+					return (index(string, '/') == NULL ?
+					    0 : FNM_NOMATCH);
+				else
+					return (0);
+			else if (c == '/' && flags & FNM_PATHNAME) {
+				if ((string = index(string, '/')) == NULL)
+					return (FNM_NOMATCH);
+				break;
+			}
+
+			/* General case, use recursion. */
+			while ((test = *string) != EOS) {
+				if (!fnmatch(pattern, string, flags))
+					return (0);
+				if (test == '/' && flags & FNM_PATHNAME)
+					break;
+				++string;
+			}
+			return (FNM_NOMATCH);
+		case '[':
+			if ((test = *string++) == EOS ||
+			    test == '/' && flags & FNM_PATHNAME)
+				return (FNM_NOMATCH);
+			if ((pattern = rangematch(pattern, test)) == NULL)
+				return (FNM_NOMATCH);
+			break;
+		case '\\':
+			if (!(flags & FNM_NOESCAPE)) {
+				if ((c = *pattern++) == EOS) {
+					c = '\\';
+					--pattern;
+				}
+				if (c != *string++)
+					return (FNM_NOMATCH);
+				break;
+			}
+			/* FALLTHROUGH */
+		default:
+			if (c != *string++)
+				return (FNM_NOMATCH);
+			break;
+		}
+	/* NOTREACHED */
+}
+
 static char *
 rangematch(pattern, test)
-	register char *pattern, test;
+	register char *pattern;
+	register int test;
 {
 	register char c, c2;
 	int negate, ok;
@@ -33,12 +106,12 @@ rangematch(pattern, test)
 		++pattern;
 
 	/*
+	 * XXX
 	 * TO DO: quoting
 	 */
-
 	for (ok = 0; (c = *pattern++) != ']';) {
 		if (c == EOS)
-			return(NULL);		/* illegal pattern */
+			return (NULL);		/* Illegal pattern. */
 		if (*pattern == '-' && (c2 = pattern[1]) != EOS && c2 != ']') {
 			if (c <= test && test <= c2)
 				ok = 1;
@@ -47,74 +120,5 @@ rangematch(pattern, test)
 		else if (c == test)
 			ok = 1;
 	}
-	return(ok == negate ? NULL : pattern);
-}
-
-fnmatch(pattern, string, flags)
-	register const char *pattern;
-	register const char *string;
-	int flags;
-{
-	register char c;
-	char test, *rangematch();
-
-	for (;;)
-		switch (c = *pattern++) {
-		case EOS:
-			return(*string == EOS);
-		case '?':
-			if ((test = *string++) == EOS ||
-			    test == '/' && flags & FNM_PATHNAME)
-				return(0);
-			break;
-		case '*':
-			c = *pattern;
-			/* collapse multiple stars */
-			while (c == '*')
-				c = *++pattern;
-
-			/* optimize for pattern with * at end or before / */
-			if (c == EOS)
-				if (flags & FNM_PATHNAME)
-					return(!index(string, '/'));
-				else
-					return(1);
-			else if (c == '/' && flags & FNM_PATHNAME) {
-				if ((string = index(string, '/')) == NULL)
-					return(0);
-				break;
-			}
-
-			/* general case, use recursion */
-			while ((test = *string) != EOS) {
-				if (fnmatch(pattern, string, flags))
-					return(1);
-				if (test == '/' && flags & FNM_PATHNAME)
-					break;
-				++string;
-			}
-			return(0);
-		case '[':
-			if ((test = *string++) == EOS ||
-			    test == '/' && flags & FNM_PATHNAME)
-				return(0);
-			if ((pattern = rangematch(pattern, test)) == NULL)
-				return(0);
-			break;
-		case '\\':
-			if (flags & FNM_QUOTE) {
-				if ((c = *pattern++) == EOS) {
-					c = '\\';
-					--pattern;
-				}
-				if (c != *string++)
-					return(0);
-				break;
-			}
-			/* FALLTHROUGH */
-		default:
-			if (c != *string++)
-				return(0);
-			break;
-		}
+	return (ok == negate ? NULL : pattern);
 }
