@@ -1,9 +1,9 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)dbx.1	6.5 (Berkeley) %G%
+.\"     @(#)dbx.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DBX 1
@@ -22,7 +22,8 @@
 .Sh DESCRIPTION
 .Nm Dbx
 is a tool for source level debugging and execution of
-programs under UNIX.
+programs under
+.Ux .
 The
 .Ar objfile
 is an object file produced by a compiler
@@ -33,7 +34,9 @@ Currently,
 .Xr cc 1 ,
 .Xr f77 1 ,
 .Xr pc 1 ,
-and the DEC Western
+and the
+.Tn DEC
+Western
 Research Laboratory Modula-2 compiler,
 .Xr mod l ,
 produce the appropriate source information.
@@ -66,8 +69,8 @@ in the user's home directory
 if there isn't one in the current directory.
 .Pp
 The command line options and their meanings are:
-.Tw Fl
-.Tp Fl r
+.Bl -tag -width indent
+.It Fl r
 Execute
 .Ar objfile
 immediately.
@@ -84,16 +87,13 @@ when
 .Fl r
 is specified
 and standard input is not a terminal.
-.Tp Fl i
+.It Fl i
 Force
 .Nm dbx
 to act as though standard input is a terminal.
-.Tp Fl k
+.It Fl k
 Map memory addresses, useful for kernel debugging.
-.Tp Cx Fl I
-.Cx \&\ \&
-.Ar dir
-.Cx
+.It Fl I Ar dir 
 Add
 .Ar dir
 to the list of directories
@@ -107,17 +107,14 @@ is located.
 The directory search path can also be set with the
 .Ic use
 command.
-.Tp Cx Fl c
-.Cx \&\ \&
-.Ar file
-.Cx
+.It Fl c Ar file 
 Execute the
 .Nm dbx
 commands in the
 .Ar file
 before
 reading from standard input.
-.Tp
+.El
 .Pp
 Unless
 .Fl r
@@ -125,24 +122,19 @@ is specified,
 .Nm dbx
 just prompts and waits for a command.
 .Ss Execution and Tracing Commands
-.Dw Fl
-.Di L
-.Dp Cx Ic run
-.Cx \&\ \&
-.Op Ar args
-.Cx \&\ \&
+.Pp
+.Bl -tag -width indent -compact
+.It Xo
+.Ic run Op Ar args
 .Op Sy < Ar filename
-.Cx \&\ \&
-.Op Sy > Ar filename
-.Cx
-.Dp Cx Ic rerun
-.Cx \&\ \&
+.Op Sy > Ar filename 
+.Xc
+.It Xo
+.Ic rerun
 .Op Ar args
-.Cx \&\ \&
 .Op Sy < Ar filename
-.Cx \&\ \&
-.Op Sy > Ar filename
-.Cx
+.Op Sy > Ar filename 
+.Xc
 Start executing
 .Ar objfile  ,
 passing
@@ -164,44 +156,31 @@ has been written since the last time the symbolic information
 was read in,
 .Nm dbx
 will read in the new information.
-.Dp Cx Ic trace
-.Cx \&\ \&
-.Op Ic in Ar procedure/function
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
-.Dp Cx Ic trace
-.Cx \&\ \&
-.Ar source-line-number
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
-.Dp Cx Ic trace
-.Cx \&\ \&
-.Ar procedure/function
-.Cx \&\ \&
-.Op Ic in Ar procedure/function
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
-.Dp Cx Ic trace
-.Cx \&\ \&
-.Ar expression
-.Cx \&\ \&
-.Ic at
-.Cx \&\ \&
-.Ar source-line-number
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
-.Dp Cx Ic trace
-.Cx \&\ \&
-.Ar variable
-.Cx \&\ \&
-.Op Ic in Ar procedure/function
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
+.Pp
+.It Xo
+.Ic trace
+.Op Ic \&in Ar procedure/function
+.Op Ic \&if Ar condition 
+.Xc
+.It Xo
+.Ic trace Ar source-line-number
+.Op Ic \&if Ar condition 
+.Xc
+.It Xo
+.Ic trace Ar procedure/function
+.Op Ic \&in Ar procedure/function
+.Op Ic \&if Ar condition 
+.Xc
+.It Xo
+.Ic trace Ar expression
+.Ic \&at Ar source-line-number
+.Op Ic \&if Ar condition 
+.Xc
+.It Xo
+.Ic trace Ar variable
+.Op Ic \&in Ar procedure/function
+.Op Ic \&if Ar condition 
+.Xc
 Have tracing information printed when the program is executed.
 A number is associated with the command that is used
 to turn the tracing off (see the
@@ -251,81 +230,60 @@ or function.
 is a boolean expression and is
 evaluated prior to printing the tracing information;
 if it is false then the information is not printed.
-.Dp Cx Ic stop if
-.Cx \&\ \&
-.Ar condition
-.Cx
-.Dp Cx Ic stop at
-.Cx \&\ \&
-.Ar source-line-number
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
-.Dp Cx Ic stop in
-.Cx \&\ \&
-.Ar source-line-number
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
-.Dp Cx Ic stop
-.Cx \&\ \&
-.Ar variable
-.Cx \&\ \&
-.Op Ic if Ar condition
-.Cx
+.Pp
+.It Ic "stop if" Ar condition 
+.It Xo
+.Ic "stop at" Ar source-line-number
+.Op Ic \&if Ar condition 
+.Xc
+.It Xo
+.Ic "stop in" Ar source-line-number
+.Op Ic \&if Ar condition 
+.Xc
+.It Xo
+.Ic stop Ar variable
+.Op Ic \&if Ar condition 
+.Xc
 Stop execution when the given line is reached, procedure or function
 called, variable changed, or condition true.
-.Dp Cx Ic status
-.Cx \&\ \&
-.Op Ic \&> Ar filename
-.Cx
+.Pp
+.It Ic status Op Ic \&> Ar filename 
 Print out the currently active
 .Ic trace
 and
 .Ic stop
 commands.
-.Dp Cx Ic delete
-.Cx \&\ \&
-.Ar command-number ...
-.Cx
+.Pp
+.It Ic delete Ar command-number ... 
 The traces or stops corresponding to the given numbers are removed.
 The numbers associated with traces and stops are printed by
 the
 .Ic status
 command.
-.Dp Cx Ic catch
-.Cx \&\ \&
-.Ar number
-.Cx
-.Dp Cx Ic catch
-.Cx \&\ \&
-.Ar signal-name
-.Cx
-.Dp Cx Ic ignore
-.Cx \&\ \&
-.Ar number
-.Cx
-.Dp Cx Ic ignore
-.Cx \&\ \&
-.Ar signal-name
-.Cx
+.Pp
+.It Ic catch Ar number 
+.It Ic catch Ar signal-name 
+.It Ic ignore Ar number 
+.It Ic ignore Ar signal-name 
 Start or stop trapping a signal before it is sent
 to the program.
 This is useful when a program being debugged
 handles signals such as interrupts.
 A signal may be specified by number or by a name
-(e.g., SIGINT).
-Signal names are case insensitive and the ``SIG'' prefix is optional.
-By default all signals are trapped except SIGCONT, SIGCHILD,
-SIGALRM and SIGKILL.
-.Dp Cx Ic cont
-.Cx \&\ \&
-.Ar integer
-.Cx
-.Dp Cx Ic cont
-.Cx \&\ \&
-.Ar signal-name
-.Cx
+(e.g.,
+.Dv SIGINT ) .
+Signal names are case insensitive and the
+.Dq Dv SIG
+prefix is optional.
+By default all signals are trapped except
+.Dv SIGCONT ,
+.Dv SIGCHILD ,
+.Dv SIGALRM
+and
+.Dv SIGKILL .
+.Pp
+.It Ic cont Ar integer 
+.It Ic cont Ar signal-name 
 Continue execution from where it stopped.
 If a signal is specified, the process continues as though
 it received the signal.
@@ -336,9 +294,11 @@ that is, called the standard procedure ``exit''.
 .Nm Dbx
 does not allow the process to exit, thereby
 letting the user to examine the program state.
-.Dp Ic step
+.Pp
+.It Ic step
 Execute one source line.
-.Dp Ic next
+.Pp
+.It Ic next
 Execute up to the next source line.
 The difference between this and
 .Ic step
@@ -350,20 +310,16 @@ command will stop at the beginning of that
 block, while the
 .Ic next
 command will not.
-.Dp Cx Ic return
-.Cx \&\ \&
-.Op Ar procedure
-.Cx
+.Pp
+.It Ic return Op Ar procedure 
 Continue until a return to
 .Ar procedure
 is executed, or
 until the current procedure returns if none is specified.
-.Dp Cx Ic call
-.Cx \&\ \&
-.Ar procedure (parameters )
-.Cx
+.Pp
+.It Ic call Ar procedure(parameters ) 
 Execute the object code associated with the named procedure or function.
-.Dp
+.El
 .Ss Printing Variables and Expressions
 Names are resolved first using the static scope of the current function,
 then using the dynamic scope if the name is not defined
@@ -371,7 +327,7 @@ in the static scope.
 If static and dynamic searches do not yield a result,
 an arbitrary symbol is chosen and
 the message
-.Dq Li [using Ar qualified name]
+.Dq Bq Li using Ar qualified name
 is printed.
 The name resolution procedure may be overridden by qualifying an identifier
 with a block name, e.g.,
@@ -384,10 +340,7 @@ common subset of C and Pascal (or equivalently Modula-2) syntax.
 Indirection can be denoted using either a prefix ``*'' or
 a postfix ``^'' and
 array expressions are subscripted by brackets
-.Cx (``
-.Op
-.Cx \'\').
-.Cx
+.Pq Dq Bq
 The field reference operator (``.'') can be used with pointers
 as well as records, making the C operator ``\->'' unnecessary
 (although it is supported).
@@ -395,68 +348,44 @@ as well as records, making the C operator ``\->'' unnecessary
 Types of expressions are checked;
 the type of an expression may be overridden
 by using
-.Cx ``
-.Ar type-name (expression)
-.Cx \'\'.
-.Cx
+.Dq Ar type-name Ns Pq Ar expression .
 When there is no corresponding named type
 the special constructs
-.Cx ``&
-.Ar type-name
-.Cx \'\'
-.Cx
+.Dq Ar &type-name
 and
-.Cx ``$$
-.Ar tag-name
-.Cx \'\'
-.Cx
+.Dq Ar $$tag-name
 can be used to represent a pointer to a named type or C structure tag.
-.Dw Fl
-.Di L
-.Dp Cx Ic assign
-.Cx \&\ \&
-.Ar variable
-.Ic =
-.Ar expression
-.Cx
+.Pp
+.Bl -tag -width indent -compact
+.It Ic assign Ar variable Ic = Ar expression 
 Assign the value of the expression to the variable.
-.Dp Cx Ic dump
-.Cx \&\ \&
+.Pp
+.It Xo
+.Ic dump
 .Op Ar procedure
-.Cx \&\ \&
-.Op Ic > Ar filename
-.Cx
+.Op Ic > Ar filename 
+.Xc
 Print the names and values of variables in the given procedure,
 or the current one if none is specified.
 If the procedure given is ``.'', then the all active variables
 are dumped.
-.Dp Cx Ic print
-.Cx \&\ \&
-.Ar expression
-.Cx \&\ \&
-.Op Ic \&, Ar expression ...
-.Cx
+.Pp
+.It Xo
+.Ic print Ar expression
+.Op Ic \&, Ar expression ... 
+.Xc
 Print out the values of the expressions.
-.Dp Cx Ic whatis
-.Cx \&\ \&
-.Ar name
-.Cx
+.Pp
+.It Ic whatis Ar name 
 Print the declaration of the given name, which may be qualified
 with block names as above.
-.Dp Cx Ic which
-.Cx \&\ \&
-.Ar identifier
-.Cx
+.Pp
+.It Ic which Ar identifier 
 Print the full qualification of the given identifer, i.e.
 the outer blocks that the identifier is associated with.
-.Dp Cx Ic up
-.Cx \&\ \&
-.Op Ar count
-.Cx
-.Dp Cx Ic down
-.Cx \&\ \&
-.Op Ar count
-.Cx
+.Pp
+.It Ic up Op Ar count 
+.It Ic down Op Ar count 
 Move the current function, which is used for resolving names,
 up or down the stack
 .Ar count
@@ -464,35 +393,25 @@ levels.
 The default
 .Ar count
 is 1.
-.Dp Ic where
+.Pp
+.It Ic where
 Print out a list of the active procedures and function.
-.Dp Cx Ic whereis
-.Cx \&\ \&
-.Ar identifier
-.Cx
+.Pp
+.It Ic whereis Ar identifier 
 Print the full qualification of all the symbols whose
 name matches the given identifier.
 The order in which the symbols are printed is not meaningful.
-.Dp
+.El
 .Ss Accessing Source Files
 .Pp
-.Di L
-.Dp Cx Ar /regular expression
-.Op /
-.Cx
-.Dp Cx Ar ?regular expression
-.Op ?
-.Cx
+.Bl -tag -width indent -compact
+.It Ns / Ar "regular expression" Ns Op / 
+.It Ns ? Ar "regular expression" Ns Op ? 
 Search forward or backward in the current source file
 for the given pattern.
-.Dp Cx Ic edit
-.Cx \&\ \&
-.Op Ar filename
-.Cx
-.Dp Cx Ic edit
-.Cx \&\ \&
-.Ar procedure/function-name
-.Cx
+.Pp
+.It Ic edit Op Ar filename 
+.It Ic edit Ar procedure/function-name 
 Invoke an editor on
 .Ar filename
 or the current source file if none
@@ -507,30 +426,25 @@ Which editor is invoked by default depends on the installation.
 The default can be overridden by setting the environment variable
 .Ev EDITOR
 to the name of the desired editor.
-.Dp Cx Ic file
-.Cx \&\ \&
-.Op Ar filename
-.Cx
+.Pp
+.It Ic file Op Ar filename 
 Change the current source file name to
 .Ar filename  .
 If none is specified then the current source file name is printed.
-.Dp Cx Ic func
-.Cx \&\ \&
-.Op Ar procedure/function
-.Cx
+.Pp
+.It Ic func Op Ar procedure/function 
 Change the current function.
 If none is specified then print the current function.
 Changing the current function implicitly changes the current source file
 to the one that contains the function; it also changes the current scope
 used for name resolution.
-.Dp Cx Ic list
-.Cx \&\ \&
-.Op Ar source-line-number Op Ic \&, Ar source-line-number
-.Cx
-.Dp Cx Ic list
-.Cx \&\ \&
-.Ar procedure/function
-.Cx
+.Pp
+.It Xo
+.Ic list
+.Oo Ar source-line-number
+.Op Ic \&, Ar source-line-number Oc
+.Xc
+.It Ic list Ar procedure/function 
 List the lines in the current source file from the first line number to
 the second inclusive.
 If no lines are specified, the next 10 lines are listed.
@@ -545,36 +459,21 @@ is the first statement
 in the procedure or function and
 .Ar k
 is small.
-.Dp Cx Ic use
-.Cx \&\ \&
-.Ar directory-list
-.Cx
+.Pp
+.It Ic use Ar directory-list 
 Set the list of directories to be searched
 when looking for source files.
-.Dp
+.El
 .Ss Command Aliases and Variables
-.Dw Fl
-.Di L
-.Dp Cx Ic alias
-.Cx \&\ \&
-.Ar name
-.Cx \&\ \&
-.Ar name
-.Cx
-.Dp Cx Ic alias
-.Cx \&\ \&
-.Ar name
-.Cx \&\ \&
-.Ar string
-.Cx
-.Dp Cx Ic alias
-.Cx \&\ \&
-.Ar name (parameters)
-.Cx \&\ \&
-.Cx ``
-.Ar string
-.Cx \'\'
-.Cx
+.Pp
+.Bl -tag -width indent -compact
+.It Ic alias Ar name Ar name 
+.It Ic alias Ar name Ar string 
+.It Xo
+.Ic alias
+.Ar name Pq Ar parameters
+.Dq Ar string
+.Xc
 When commands are processed,
 dbx first checks to see if the word
 is an alias for either a command or a string.
@@ -585,7 +484,7 @@ For example,
 to define an alias ``rr'' for the command ``rerun'',
 one can say
 .Pp
-.Dl alias rr rerun
+.Dl alias \&rr rerun
 .Pp
 To define an alias called ``b'' that sets a stop at a particular line
 one can say
@@ -594,11 +493,10 @@ one can say
 .Pp
 Subsequently, the command ``b(12)'' will expand to ``stop at 12''.
 .Pp
-.Dp Cx Ic set
-.Ws
-.Ar name
-.Op \&= Ar expression
-.Cx
+.It Xo
+.Ic set Ar name
+.Op No \&= Ar expression 
+.Xc
 The
 .Ic set
 command defines values for debugger variables.
@@ -606,33 +504,37 @@ The names of these variables cannot conflict with names in the program
 being debugged, and are expanded to the corresponding expression
 within other commands.
 The following variables have a special meaning:
-.Dw Ds
-.Di L
-.Dp Li $frame
+.Pp
+.Bl -tag -width flag -compact
+.It Li $frame
 Setting this variable to an address causes dbx to use the stack frame
 pointed to by the address for
 doing stack traces and accessing local variables.
 This facility is of particular use for kernel debugging.
-.Dp Li $hexchars
-.Dp Li $hexints
-.Dp Li $hexoffsets
-.Dp Li $hexstrings
+.Pp
+.It Li $hexchars
+.It Li $hexints
+.It Li $hexoffsets
+.It Li $hexstrings
 When set, dbx prints out
 out characters, integers, offsets from registers, or character pointers
 respectively in hexadecimal.
-.Dp Li $listwindow
+.Pp
+.It Li $listwindow
 The value of this variable specifies the number
 of lines to list around a function or when the
 .Ic list
 command
 is given without any parameters.
 Its default value is 10.
-.Dp Li $mapaddrs
+.Pp
+.It Li $mapaddrs
 Setting (unsetting) this variable causes dbx to start (stop)
 mapping addresses.
 As with ``$frame'', this is useful for kernel debugging.
-.Dp Li $unsafecall
-.Dp Li $unsafeassign
+.Pp
+.It Li $unsafecall
+.It Li $unsafeassign
 When ``$unsafecall'' is set,
 strict type checking is turned off for arguments to
 subroutine or function calls (
@@ -648,70 +550,60 @@ statement is turned off.
 These variables should be used only with great care,
 because they severely limit dbx's usefulness
 for detecting errors.
-.Dp
-.Dp Cx Ic unalias
-.Cx \&\ \&
-.Ar name
-.Cx
+.El
+.Pp
+.It Ic unalias Ar name 
 Remove the alias with the given name.
-.Dp Cx Ic unset
-.Cx \&\ \&
-.Ar name
-.Cx
+.Pp
+.It Ic unset Ar name 
 Delete the debugger variable associated with
 .Ar name  .
-.Dp
+.El
 .Ss Machine Level Commands
-.Dw Fl
-.Di L
-.Dp Cx Ic tracei
-.Cx \&\ \&
+.Pp
+.Bl -tag -width Fl -compact
+.It Xo
+.Ic tracei
 .Op Ar address
-.Cx \&\ \&
-.Op .Ic if Ar cond
-.Cx
-.Dp Cx Ic tracei
-.Cx \&\ \&
+.Op Ic \&if Ar cond 
+.Xc
+.It Xo
+.Ic tracei
 .Op Ar variable
-.Cx \&\ \&
-.Op Ic at Ar address
-.Cx \&\ \&
-.Op Ic if Ar cond
-.Cx
-.Dp Cx Ic stopi
-.Cx \&\ \&
+.Op Ic \&at Ar address
+.Op Ic \&if Ar cond 
+.Xc
+.It Xo
+.Ic stopi
 .Op Ar address
-.Cx \&\ \&
-.Op Ic if Ar cond
-.Cx
-.Dp Cx Ic stopi
-.Cx \&\ \&
-.Op Ic at
-.Cx \&\ \&
+.Op Ic \&if Ar cond 
+.Xc
+.It Xo
+.Ic stopi
+.Op Ic \&at
 .Op Ar address
-.Cx \&\ \&
-.Op Ic if Ar cond
-.Cx
+.Op Ic \&if Ar cond 
+.Xc
 Turn on tracing or set a stop using a machine instruction address.
-.Dp Ic stepi
-.Dp Ic nexti
+.Pp
+.It Ic stepi
+.It Ic nexti
 Single step as in
 .Ic step
 or
 .Ic next  ,
 but do a single instruction
 rather than source line.
-.Dp Cx Ar address
-.Cx \&,
-.Ar address
-.Cx \&/
-.Op Ar mode
-.Cx
-.Dp Cx Ar address
-.Cx \&/
-.Op Ar count
-.Op Ar mode
-.Cx
+.Pp
+.Sm off
+.It Xo
+.Ar address , Ar address / Op Ar mode 
+.Xc
+.It Xo
+.Ar address / Op Ar count
+.Sm on
+.Op Ar mode 
+.Xc
 Print the contents of memory starting at the first
 .Ar address
 and continuing up to the second
@@ -727,90 +619,88 @@ specifies how memory is to be printed;
 if it is omitted the previous mode specified is used.
 The initial mode is ``X''.
 The following modes are supported:
-.Dw Cm
-.Dp Cm i
-print the machine instruction
-.Dp Cm d
-print a short word in decimal
-.Dp Cm D
-print a long word in decimal
-.Dp Cm o
-print a short word in octal
-.Dp Cm O
-print a long word in octal
-.Dp Cm x
-print a short word in hexadecimal
-.Dp Cm X
-print a long word in hexadecimal
-.Dp Cm b
-print a byte in octal
-.Dp Cm c
-print a byte as a character
-.Dp Cm s
-print a string of characters terminated by a null byte
-.Dp Cm f
-print a single precision real number
-.Dp Cm g
-print a double precision real number
-.Dp
+.Pp
+.Bl -tag -width flag -compact
+.It Cm i
+Print the machine instruction.
+.It Cm d
+Print a short word in decimal.
+.It Cm D
+Print a long word in decimal.
+.It Cm o
+Print a short word in octal.
+.It Cm O
+Print a long word in octal.
+.It Cm x
+Print a short word in hexadecimal.
+.It Cm X
+Print a long word in hexadecimal.
+.It Cm b
+Print a byte in octal.
+.It Cm c
+Print a byte as a character.
+.It Cm s
+Print a string of characters terminated by a null byte.
+.It Cm f
+Print a single precision real number.
+.It Cm g
+Print a double precision real number.
+.El
+.El
 .Pp
 Symbolic addresses are specified by preceding the name with an ``&''.
 Registers are denoted by ``$rN'' where N is the number of the register.
 Addresses may be expressions made up of other addresses and
 the operators ``+'', ``-'', and indirection (unary ``*'').
-.Dp
 .Ss Miscellaneous Commands
-.Tw Ic
-.Tp Ic gripe
+.Bl -tag -width indent
+.It Ic gripe
 Invoke a mail program to send a message to the person in charge of
 .Nm dbx  .
-.Tp Ic help
+.It Ic help
 Print out a synopsis of
 .Nm dbx
 commands.
-.Tp Ic quit
+.It Ic quit
 Exit
 .Nm dbx  .
-.Tp Cx Ic sh
-.Cx \&\ \&
-.Ar command-line
-.Cx
+.It Ic sh Ar command-line 
 Pass the command line to the shell for execution.
-The SHELL environment variable determines which shell is used.
-.Tp Cx Ic source
-.Cx \&\ \&
-.Ar filename
-.Cx
+The
+.Ev SHELL
+environment variable determines which shell is used.
+.It Ic source Ar filename 
 Read
 .Nm dbx
 commands from the given
 .Ar filename  .
-.Tp
+.El
 .Sh ENVIRONMENT
 .Nm Dbx
-utilizes the following environment variables:
-.Ds I
-EDITOR
-HOME
-PATH
-SHELL
-.De
+examines the following environment variables:
+.Bl -tag -width indent -compact -offset indent
+.It Ev EDITOR
+.It Ev HOME
+.It Ev PATH
+.It Ev SHELL
+.El
 .Sh FILES
-.Dw .dbxinit
-.Di L
-.Dp Pa a.out
-object file
-.Dp Pa .dbxinit
-initial commands
-.Dp
+.Bl -tag -width .dbxinit -compact
+.It Pa a.out
+Object file.
+.It Pa .dbxinit
+Initial commands.
+.El
 .Sh SEE ALSO
 .Xr cc 1 ,
 .Xr mod l ,
 .Xr f77 1 ,
 .Xr pc 1
 .Sh HISTORY
-.Nm Dbx
-appeared in 4.2 BSD.
+The
+.Nm dbx
+command appeared in
+.Bx 4.2 .
 .Sh BUGS
 .Nm Dbx
 suffers from the same ``multiple include'' malady as did

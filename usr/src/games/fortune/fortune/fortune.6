@@ -1,4 +1,4 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -6,142 +6,140 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fortune.6	6.8 (Berkeley) %G%
+.\"	@(#)fortune.6	6.9 (Berkeley) %G%
 .\"
-.TH FORTUNE 6 ""
-.UC 4
-.SH NAME
-fortune \- print a random, hopefully interesting, adage
-.SH SYNOPSIS
-.B fortune
-[
-.B \-aefilosw
-]
-[
-.B \-m
-.I pattern
-]
-[ [
-.IR N%
-]
-.I file/dir/all
-]
-.SH DESCRIPTION
+.Dd 
+.Dt FORTUNE 6
+.Os BSD 4
+.Sh NAME
+.Nm fortune
+.Nd "print a random, hopefully interesting, adage"
+.Sh SYNOPSIS
+.Nm fortune
+.Op Fl aefilosw
+.Op Fl m Ar pattern
+.Oo
+.Op Ar \&N%
+.Ar file/dir/all
+.Oc
+.Sh DESCRIPTION
 When
-.I fortune
+.Nm fortune
 is run with no arguments it prints out a random epigram.
 Epigrams are divided into several categories, where each category
 is subdivided into those which are potentially offensive and those
 which are not.
 The options are as follows:
-.TP
-.B \-a
+.Bl -tag -width flag
+.It Fl a
 Choose from all lists of maxims, both offensive and not.
-.TP
-.B \-e
+.It Fl e
 Consider all fortune files to be of equal size (see discussion below
 on multiple files).
-.TP
-.B \-f
+.It Fl f
 Print out the list of files which would be searched, but don't
 print a fortune.
-.TP
-.B \-l
+.It Fl l
 Long dictums only.
-.TP
-.B \-m
+.It Fl m
 Print out all fortunes which match the regular expression
-.IR pattern .
+.Ar pattern .
 See
-.BR regex (3)
+.Xr regex 3
 for a description of patterns.
-.TP
-.B \-o
+.It Fl o
 Choose only from potentially offensive aphorisms.
-.ft B
+.Bf -symbolic
 Please, please, please request a potentially offensive fortune if and
 only if you believe, deep down in your heart, that you are willing
 to be offended.
-(And that if you are, you'll just quit using -o rather than give us
+(And that if you are, you'll just quit using
+.Fl o
+rather than give us
 grief about it, okay?)
-.ft R
-.PP
-.in +5
+.Ef
+.Bd -filled -offset indent
 \&... let us keep in mind the basic governing philosophy
 of The Brotherhood, as handsomely summarized in these words:
 we believe in healthy, hearty laughter -- at the expense of
 the whole human race, if needs be.
 Needs be.
-.br
-.in +10
--- H. Allen Smith, "Rude Jokes"
-.TP
-.B \-s
+.Bd -filled -offset indent-two -compact
+--H. Allen Smith, "Rude Jokes"
+.Ed
+.Ed
+.It Fl s
 Short apothegms only.
-.TP
-.B \-i
+.It Fl i
 Ignore case for
-.B \-m
+.Fl m
 patterns.
-.TP
-.B \-w
+.It Fl w
 Wait before termination for an amount of time calculated from the
 number of characters in the message.
 This is useful if it is executed as part of the logout procedure
 to guarantee that the message can be read before the screen is cleared.
-.PP
+.El
+.Pp
 The user may specify alternate sayings.
 You can specify a specific file, a directory which contains one or
 more files, or the special word
-.B all
+.Em all
 which says to use all the standard databases.
 Any of these may be preceded by a percentage, which is a number
-.I N
+.Ar N
 between 0 and 100 inclusive, followed by a
-.B % .
+.Ar % .
 If it is, there will be a
-.I N
+.Ar N
 percent probability that an adage will be picked from that file
 or directory.
 If the percentages do not sum to 100, and there are specifications
 without percentages, the remaining percent will apply to those files
 and/or directories, in which case the probability of selecting from
 one of them will be based on their relative sizes.
-.PP
+.Pp
 As an example, given two databases
-.B funny
+.Em funny
 and
-.B not-funny ,
+.Em not-funny ,
 with
-.B funny
+.Em funny
 twice as big, saying
-.RS
+.Bd -literal -offset indent
 fortune funny not-funny
-.RE
+.Ed
+.Pp
 will get you fortunes out of
-.B funny
+.Em funny
 two-thirds of the time.
 The command
-.RS
+.Bd -literal -offset indent
 fortune 90% funny 10% not-funny
-.RE
+.Ed
+.Pp
 will pick out 90% of its fortunes from
-.B funny
+.Em funny
 (the ``10% not-funny'' is unnecessary, since 10% is all that's left).
 The
-.B \-e
+.Fl e
 option says to consider all files equal;
 thus
-.RS
-fortune \-e
-.RE
+.Bd -literal -offset indent
+fortune -e
+.Ed
+.Pp
 is equivalent to
-.RS
-fortune 50% funny 50% not-funny
-.RE
-.SH FILES
-/usr/share/games/fortune
-.SH AUTHOR
-Ken Arnold
-.SH "SEE ALSO"
-regex(3), regcmp(3), strfile(8)
+.Bd -literal -offset indent
+fortune 50% funny 50% notEm -funny
+.Ed
+.Sh FILES
+.Bl -tag -width Pa -compact
+.It Pa /usr/share/games/fortune
+.El
+.Sh AUTHOR
+.An Ken Arnold
+.Sh SEE ALSO
+.Xr regex 3 ,
+.Xr regcmp 3 ,
+.Xr strfile 8
