@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)err.c	5.1	%G%
+ *	@(#)err.c	5.2	%G%
  */
 
 /*
@@ -24,7 +24,8 @@ unit units[MXUNIT];	/*unit table*/
 flag reading;		/*1 if reading,		0 if writing*/
 flag external;		/*1 if external io,	0 if internal */
 flag sequential;	/*1 if sequential io,	0 if direct*/
-flag formatted;		/*1 if formatted io,	0 if unformatted, -1 if list*/
+flag formatted;		/*1 if formatted io,	0 if unformatted,
+				-1 if list directed, -2 if namelist */
 char *fmtbuf, *icptr, *icend, *fmtptr;
 int (*doed)(),(*doned)();
 int (*doend)(),(*donewrec)(),(*dorevert)(),(*dotab)();
@@ -84,7 +85,8 @@ fatal(n,s) char *s;
 	{	fprintf(stderr,"lately: %s %s %s %s I/O\n",
 			reading?"reading":"writing",
 			sequential?"sequential":"direct",
-			formatted>0?"formatted":(formatted<0?"list":"unformatted"),
+			formatted>0?"formatted":(formatted==0?"unformatted":
+				(formatted==LISTDIRECTED?"list":"namelist")),
 			external?"external":"internal");
 		if (formatted)
 		{	if(fmtbuf) prnt_fmt(n);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lread.c	5.1	%G%
+ *	@(#)lread.c	5.2	%G%
  */
 
 /*
@@ -50,6 +50,8 @@ s_rsle(a) cilist *a;	/* start read sequential list external */
 {
 	int n;
 	reading = YES;
+	formatted = LISTDIRECTED;
+	fmtbuf = "ext list io";
 	if(n=c_le(a,READ)) return(n);
 	l_first = YES;
 	lquit = NO;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lwrite.c	5.1	%G%
+ *	@(#)lwrite.c	5.2	%G%
  */
 
 /*
@@ -20,6 +20,8 @@ s_wsle(a) cilist *a;
 {
 	int n;
 	reading = NO;
+	formatted = LISTDIRECTED;
+	fmtbuf = "ext list io";
 	if(n=c_le(a,WRITE)) return(n);
 	putn = t_putc;
 	lioproc = l_write;
@@ -55,6 +57,7 @@ l_write(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 	double *yy;
 	for(i=0;i< *number; i++)
 	{
+		if( formatted == NAMELIST && i != 0 ) PUT(',');
 		switch((int)type)
 		{
 		case TYSHORT:
@@ -62,35 +65,35 @@ l_write(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 			goto xint;
 		case TYLONG:
 			x=ptr->flint;
-	xint:		ERR(lwrt_I(x));
+	xint:		ERRCHK(lwrt_I(x));
 			break;
 		case TYREAL:
-			ERR(lwrt_F(ptr->flreal));
+			ERRCHK(lwrt_F(ptr->flreal));
 			break;
 		case TYDREAL:
-			ERR(lwrt_D(ptr->fldouble));
+			ERRCHK(lwrt_D(ptr->fldouble));
 			break;
 		case TYCOMPLEX:
 			xx= &(ptr->flreal);
 			y = *xx++;
 			z = *xx;
-			ERR(lwrt_C(y,z));
+			ERRCHK(lwrt_C(y,z));
 			break;
 		case TYDCOMPLEX:
 			yy = &(ptr->fldouble);
 			yd= *yy++;
 			zd = *yy;
-			ERR(lwrt_DC(yd,zd));
+			ERRCHK(lwrt_DC(yd,zd));
 			break;
 		case TYLOGICAL:
 			if(len == sizeof(short))
 				x = ptr->flshort;
 			else
 				x = ptr->flint;
-			ERR(lwrt_L(x));
+			ERRCHK(lwrt_L(x));
 			break;
 		case TYCHAR:
-			ERR(lwrt_A((char *)ptr,len));
+			ERRCHK(lwrt_A((char *)ptr,len));
 			break;
 		default:
 			fatal(F_ERSYS,"unknown type in lwrite");
@@ -98,6 +101,10 @@ l_write(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 		ptr = (flex *)((char *)ptr + len);
 	}
 	return(OK);
+
+got_err:
+	err( n>0?errflag:endflag,  n,
+		formatted==LISTDIRECTED?"list io":"name list io");
 }
 
 LOCAL
@@ -105,7 +112,7 @@ lwrt_I(in) ftnint in;
 {	int n;
 	char buf[16],*p;
 	sprintf(buf,"  %ld",(long)in);
-	if(n=chk_len(LINTW)) return(n);
+	chk_len(LINTW);
 	for(p=buf;*p;) PUT(*p++)
 	return(OK);
 }
@@ -113,17 +120,26 @@ lwrt_I(in) ftnint in;
 LOCAL
 lwrt_L(ln) ftnint ln;
 {	int n;
-	if(n=chk_len(LLOGW)) return(n);
+	chk_len(LLOGW);
 	return(wrt_L(&ln,LLOGW));
 }
 
 LOCAL
 lwrt_A(p,len) char *p; ftnlen len;
 {	int i,n;
-	if(n=chk_len(LSTRW)) return(n);
-	PUT(' ')
-	PUT(' ')
-	for(i=0;i<len;i++) PUT(*p++)
+	chk_len(LSTRW);
+	if(formatted == LISTDIRECTED)
+	{
+		PUT(' ')
+		PUT(' ')
+		for(i=0;i<len;i++) PUT(*p++)
+	}
+	else
+	{
+		PUT('\'')
+		for(i=0;i<len;i++) PUT(*p++)
+		PUT('\'')
+	}
 	return(OK);
 }
 
@@ -133,7 +149,7 @@ lwrt_F(fn) float fn;
 	if(fn==0.0) return(lwrt_0());
 	f.pf = fn;
 	d = width(fn);
-	if(n=chk_len(d)) return(n);
+	chk_len(d);
 	if(d==LFW)
 	{
 		scale = 0;
@@ -153,7 +169,7 @@ lwrt_D(dn) double dn;
 	if(dn==0.0) return(lwrt_0());
 	f.pd = dn;
 	d = dwidth(dn);
-	if(n=chk_len(d)) return(n);
+	chk_len(d);
 	if(d==LDFW)
 	{
 		scale = 0;
@@ -170,7 +186,7 @@ lwrt_D(dn) double dn;
 LOCAL
 lwrt_C(a,b) float a,b;
 {	int n;
-	if(n=chk_len(LCW)) return(n);
+	chk_len(LCW);
 	PUT(' ')
 	PUT(' ')
 	PUT('(')
@@ -184,7 +200,7 @@ lwrt_C(a,b) float a,b;
 LOCAL
 lwrt_DC(a,b) double a,b;
 {	int n;
-	if(n=chk_len(LDCW)) return(n);
+	chk_len(LDCW);
 	PUT(' ')
 	PUT(' ')
 	PUT('(')
@@ -198,14 +214,7 @@ lwrt_DC(a,b) double a,b;
 LOCAL
 lwrt_0()
 {	int n; char *z = "  0.";
-	if(n=chk_len(4)) return(n);
+	chk_len(4);
 	while(*z) PUT(*z++)
-	return(OK);
-}
-
-LOCAL
-chk_len(w)
-{	int n;
-	if(recpos+w > line_len) PUT('\n')
 	return(OK);
 }
