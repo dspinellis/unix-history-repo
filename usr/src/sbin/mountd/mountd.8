@@ -3,14 +3,17 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mountd.8	5.3 (Berkeley) %G%
+.\"	@(#)mountd.8	5.4 (Berkeley) %G%
 .\"
 .TH MOUNTD 8 ""
 .UC 7
 .SH NAME
 mountd \- service remote NFS mount requests
 .SH SYNOPSIS
-.B mountd
+.B /sbin/mountd
+[
+.B \-n
+]
 [
 exportsfile
 ]
@@ -24,10 +27,16 @@ listens for service requests at the port indicated in the
 .SM NFS
 server specification; see
 ``Network File System Protocol Specification, RFC1094''.
-The optional argument specifies an alternate location for the exports file.
+The \fB\-n\fR option allows non-root mount requests to be served.
+This should only be specified if there are clients such as PC's,
+that require it.
+The \fBexportsfile\fR argument specifies an alternate location
+for the exports file.
 .SH FILES
 /etc/exports
 .SH SEE ALSO
 .IR nfsstat (1),
+.IR exports (5),
 .IR nfsd (8),
-.IR portmap (8)
+.IR portmap (8),
+.IR showmount (8)
