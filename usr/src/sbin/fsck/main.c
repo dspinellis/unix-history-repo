@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "../h/param.h"
@@ -135,10 +135,6 @@ int	offsumbad;
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 #define	zapino(x)	(*(x) = zino)
 struct	dinode zino;
-
-#define	setbit(a, i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
-#define	clrbit(a, i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
-#define	isset(a, i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
 
 #define	setlncnt(x)	(lncntp[inum] = x)
 #define	getlncnt()	(lncntp[inum])
