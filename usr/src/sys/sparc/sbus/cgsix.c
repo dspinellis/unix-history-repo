@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cgsix.c	8.2 (Berkeley) %G%
+ *	@(#)cgsix.c	8.3 (Berkeley) %G%
  *
  * from: $Header: cgsix.c,v 1.2 93/10/18 00:01:51 torek Exp $
  */
@@ -72,7 +72,9 @@ struct cgsix_softc {
 	volatile struct bt_regs *sc_bt;		/* Brooktree registers */
 	volatile int *sc_fhc;			/* FHC register */
 	volatile struct cg6_thc *sc_thc;	/* THC registers */
-	int	sc_blanked;		/* true if blanked */
+	volatile struct cg6_tec_xxx *sc_tec;	/* TEC registers */
+	short	sc_fhcrev;		/* hardware rev */
+	short	sc_blanked;		/* true if blanked */
 	struct	cg6_cursor sc_cursor;	/* software cursor info */
 	union	bt_cmap sc_cmap;	/* Brooktree color map */
 };
@@ -138,11 +140,17 @@ cgsixattach(parent, self, args)
 	 */
 	sc->sc_physadr = p = (struct cg6_layout *)sa->sa_ra.ra_paddr;
 	sc->sc_bt = bt = (volatile struct bt_regs *)
-	    mapiodev((caddr_t)&p->cg6_bt_un.un_btregs, sizeof(struct bt_regs));
+	    mapiodev((caddr_t)&p->cg6_bt_un.un_btregs, sizeof *sc->sc_bt);
 	sc->sc_fhc = (volatile int *)
-	    mapiodev((caddr_t)&p->cg6_fhc_un.un_fhc, sizeof(int));
+	    mapiodev((caddr_t)&p->cg6_fhc_un.un_fhc, sizeof *sc->sc_fhc);
 	sc->sc_thc = (volatile struct cg6_thc *)
-	    mapiodev((caddr_t)&p->cg6_thc_un.un_thc, sizeof(struct cg6_thc));
+	    mapiodev((caddr_t)&p->cg6_thc_un.un_thc, sizeof *sc->sc_thc);
+	sc->sc_tec = (volatile struct cg6_tec_xxx *)
+	    mapiodev((caddr_t)&p->cg6_tec_un.un_tec, sizeof *sc->sc_tec);
+
+	sc->sc_fhcrev = (*sc->sc_fhc >> FHC_REV_SHIFT) &
+	    (FHC_REV_MASK >> FHC_REV_SHIFT);
+	printf(", rev %d", sc->sc_fhcrev);
 
 	/* reset cursor & frame buffer controls */
 	cg6_reset(sc);
@@ -368,25 +376,31 @@ static void
 cg6_reset(sc)
 	register struct cgsix_softc *sc;
 {
-	register int oldfhc, newfhc, rev;
+	register volatile struct cg6_tec_xxx *tec;
+	register int fhc;
 	register volatile struct bt_regs *bt;
 
 	/* hide the cursor, just in case */
 	sc->sc_thc->thc_cursxy = (THC_CURSOFF << 16) | THC_CURSOFF;
 
-	/* take care of hardware bugs in various revisions */
-	oldfhc = *sc->sc_fhc;
-	rev = (oldfhc >> FHC_REV_SHIFT) & (FHC_REV_MASK >> FHC_REV_SHIFT);
-	if (rev < 5) {
+	/* turn off frobs in transform engine (makes X11 work) */
+	tec = sc->sc_tec;
+	tec->tec_mv = 0;
+	tec->tec_clip = 0;
+	tec->tec_vdc = 0;
+
+	/* take care of hardware bugs in old revisions */
+	if (sc->sc_fhcrev < 5) {
 		/*
 		 * Keep current resolution; set cpu to 68020, set test
 		 * window (size 1Kx1K), and for rev 1, disable dest cache.
 		 */
-		newfhc = (oldfhc & FHC_RES_MASK) | FHC_CPU_68020 | FHC_TEST |
+		fhc = (*sc->sc_fhc & FHC_RES_MASK) | FHC_CPU_68020 |
+		    FHC_TEST |
 		    (11 << FHC_TESTX_SHIFT) | (11 << FHC_TESTY_SHIFT);
-		if (rev < 2)
-			newfhc |= FHC_DST_DISABLE;
-		*sc->sc_fhc = newfhc;
+		if (sc->sc_fhcrev < 2)
+			fhc |= FHC_DST_DISABLE;
+		*sc->sc_fhc = fhc;
 	}
 
 	/* Enable cursor in Brooktree DAC. */
