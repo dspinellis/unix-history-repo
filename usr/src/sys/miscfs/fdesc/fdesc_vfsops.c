@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	8.9 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	8.10 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.9 1993/04/06 15:28:33 jsp Exp $
  */
@@ -126,6 +126,7 @@ fdesc_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
+	struct proc *p = curproc;	/* XXX */
 	struct vnode *vp;
 
 	/*
@@ -133,7 +134,7 @@ fdesc_root(mp, vpp)
 	 */
 	vp = VFSTOFDESC(mp)->f_root;
 	VREF(vp);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	*vpp = vp;
 	return (0);
 }

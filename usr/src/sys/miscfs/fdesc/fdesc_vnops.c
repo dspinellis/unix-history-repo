@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.14 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.15 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -71,6 +71,7 @@ fdesc_allocvp(ftype, ix, mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
+	struct proc *p = curproc;	/* XXX */
 	struct fdhashhead *fc;
 	struct fdescnode *fd;
 	int error = 0;
@@ -79,7 +80,7 @@ fdesc_allocvp(ftype, ix, mp, vpp)
 loop:
 	for (fd = fc->lh_first; fd != 0; fd = fd->fd_hash.le_next) {
 		if (fd->fd_ix == ix && fd->fd_vnode->v_mount == mp) {
-			if (vget(fd->fd_vnode, 0))
+			if (vget(fd->fd_vnode, 0, p))
 				goto loop;
 			*vpp = fd->fd_vnode;
 			return (error);
@@ -146,7 +147,7 @@ fdesc_lookup(ap)
 	if (ap->a_cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
 		VREF(dvp);	
-		VOP_LOCK(dvp);
+		vn_lock(dvp, LK_EXCLUSIVE | LK_RETRY, p);
 		return (0);
 	}
 
@@ -168,7 +169,7 @@ fdesc_lookup(ap)
 				goto bad;
 			*vpp = fvp;
 			fvp->v_type = VDIR;
-			VOP_LOCK(fvp);
+			vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);
 			return (0);
 		}
 
@@ -183,7 +184,7 @@ fdesc_lookup(ap)
 				goto bad;
 			*vpp = fvp;
 			fvp->v_type = VFIFO;
-			VOP_LOCK(fvp);
+			vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);
 			return (0);
 		}
 
@@ -214,7 +215,7 @@ fdesc_lookup(ap)
 			VTOFDESC(fvp)->fd_link = ln;
 			*vpp = fvp;
 			fvp->v_type = VLNK;
-			VOP_LOCK(fvp);
+			vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);
 			return (0);
 		} else {
 			error = ENOENT;
@@ -852,11 +853,12 @@ fdesc_badop()
 #define fdesc_rmdir ((int (*) __P((struct  vop_rmdir_args *)))eopnotsupp)
 #define fdesc_symlink ((int (*) __P((struct vop_symlink_args *)))eopnotsupp)
 #define fdesc_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
-#define fdesc_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
-#define fdesc_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
+#define fdesc_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
+#define fdesc_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
 #define fdesc_bmap ((int (*) __P((struct  vop_bmap_args *)))fdesc_badop)
 #define fdesc_strategy ((int (*) __P((struct  vop_strategy_args *)))fdesc_badop)
-#define fdesc_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define fdesc_islocked \
+	((int (*) __P((struct vop_islocked_args *)))vop_noislocked)
 #define fdesc_advlock ((int (*) __P((struct vop_advlock_args *)))eopnotsupp)
 #define fdesc_blkatoff \
 	((int (*) __P((struct  vop_blkatoff_args *)))eopnotsupp)
