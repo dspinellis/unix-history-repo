@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.8 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -813,6 +813,15 @@ ffs_sbupdate(mp, waitfor)
 	/* Restore compatibility to old file systems.		   XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
 		((struct fs *)bp->b_data)->fs_nrpos = -1;	/* XXX */
+	if (fs->fs_inodefmt < FS_44INODEFMT) {			/* XXX */
+		long *lp, tmp;					/* XXX */
+								/* XXX */
+		lp = (long *)&((struct fs *)bp->b_data)->fs_qbmask; /* XXX */
+		tmp = lp[4];					/* XXX */
+		for (i = 4; i > 0; i--)				/* XXX */
+			lp[i] = lp[i-1];			/* XXX */
+		lp[0] = tmp;					/* XXX */
+	}							/* XXX */
 #ifdef SECSIZE
 #ifdef tahoe
 	/* restore standard fsbtodb shift */
