@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	1.11 (Berkeley) %G%
+ *	@(#)param.h	1.12 (Berkeley) %G%
  */
 
 /*
@@ -11,7 +11,7 @@
  */
 #define	MACHINE	"tahoe"
 
-#ifndef ENDIAN
+#ifndef BYTE_ORDER
 #include <machine/endian.h>
 #endif
 
