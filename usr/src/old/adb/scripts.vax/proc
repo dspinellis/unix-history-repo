@@ -1,14 +1,17 @@
-./"link"16t"rlink"16t"next"16t"prev"n4Xn
+./"link"16t"rlink"16t"next"16t"prev"n4X
 +/"addr"16t"upri"8t"pri"8t"cpu"8t"stat"8t"time"nX5b
-+/"nice"8t"slp"8t"cursig"16t"sig"n3b16tX
++/"nice"8t"slp"8t"dupfd"16t"sig"n3b16tX
 +/"mask"16t"ignore"16t"catch"n3X
-+/"flag"16t"uid"8t"pgrp"8t"pid"8t"ppid"nX4d
-+/"xstat"16t"ru"16t"poip"8t"szpt"8t"tsize"nx2+16tX2xX
-+/"dsize"16t"ssize"16t"rssize"16t"maxrss"n4X
-+/"swrss"16t"swaddr"16t"wchan"16t"textp"n4X
-+/"p0br"16t"xlink"16t"ticks"n2Xd2+
-+/"%cpu"16t" "16t"ndx"8t"idhash"8t"pptr"nf16t2xX
-+/"cptr"16t"osptr"16t"ysptr"n3X
++/"flag"16t"uid"8t"ruid"8t"svuid"8t"rgid"8t"svgid"nX5d
++/"pid"8t"ppid"8t"xstat"8t"ru"56t"poip"8t"szpt"n3dXdd
++/"tsize"16t"dsize"16t"mmsize"16t"ssize"n4D
++/"rssize"16t"maxrss"16t"swrss"16t"swaddr"n4D
++/"wchan"16t"textp"16t"p0br"16t"xlink"n4X
++/"ticks"16t"%cpu"16t"ndx"8t"hash"nd++16tXd++X
++/"pptr"16t"cptr"16t"osptr"16t"ysptr"n4X
++/"pgrp"16t"pgrpnxt"nXX
 +/"real itimer"n4D
-+/"quota"16tX
++/"traceflag"16t"tracep"16t"comm"nXX8C12+
++/"logname"48t"wmesg"n8C4+48tX
++/"utime"32t"stime"n4D
 +,<9-1$<proc
