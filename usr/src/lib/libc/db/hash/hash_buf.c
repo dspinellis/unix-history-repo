@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_buf.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_buf.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -29,6 +29,7 @@ static char sccsid[] = "@(#)hash_buf.c	5.10 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
+
 #include <db.h>
 #include <errno.h>
 #include <stdio.h>
@@ -36,11 +37,12 @@ static char sccsid[] = "@(#)hash_buf.c	5.10 (Berkeley) %G%";
 #ifdef DEBUG
 #include <assert.h>
 #endif
+
 #include "hash.h"
 #include "page.h"
 #include "extern.h"
 
-static BUFHEAD *newbuf __P((u_int, BUFHEAD *));
+static BUFHEAD *newbuf __P((HTAB *, u_int, BUFHEAD *));
 
 /* Unlink B from its place in the lru */
 #define BUF_REMOVE(B) { \
@@ -72,7 +74,8 @@ static BUFHEAD *newbuf __P((u_int, BUFHEAD *));
  * address you are seeking.
  */
 extern BUFHEAD *
-__get_buf(addr, prev_bp, newpage)
+__get_buf(hashp, addr, prev_bp, newpage)
+	HTAB *hashp;
 	u_int addr;
 	BUFHEAD *prev_bp;
 	int newpage;	/* If prev_bp set, indicates a new overflow page. */
@@ -105,8 +108,9 @@ __get_buf(addr, prev_bp, newpage)
 	}
 
 	if (!bp) {
-		bp = newbuf(addr, prev_bp);
-		if (!bp || __get_page(bp->page, addr, !prev_bp, is_disk, 0))
+		bp = newbuf(hashp, addr, prev_bp);
+		if (!bp ||
+		    __get_page(hashp, bp->page, addr, !prev_bp, is_disk, 0))
 			return (NULL);
 		if (!prev_bp)
 			segp[segment_ndx] =
@@ -125,8 +129,9 @@ __get_buf(addr, prev_bp, newpage)
  * If newbuf finds an error (returning NULL), it also sets errno.
  */
 static BUFHEAD *
-newbuf(addr, prev_bp)
-	u_int   addr;
+newbuf(hashp, addr, prev_bp)
+	HTAB *hashp;
+	u_int addr;
 	BUFHEAD *prev_bp;
 {
 	register BUFHEAD *bp;		/* The buffer we're going to use */
@@ -164,7 +169,7 @@ newbuf(addr, prev_bp)
 			shortp = (u_short *)bp->page;
 			if (shortp[0])
 				oaddr = shortp[shortp[0] - 1];
-			if ((bp->flags & BUF_MOD) && __put_page(bp->page,
+			if ((bp->flags & BUF_MOD) && __put_page(hashp, bp->page,
 			    bp->addr, (int)IS_BUCKET(bp->flags), 0))
 				return (NULL);
 			/*
@@ -208,8 +213,8 @@ newbuf(addr, prev_bp)
 				if (shortp[0])
 					/* set before __put_page */
 					oaddr = shortp[shortp[0] - 1];
-				if ((xbp->flags & BUF_MOD) &&
-				    __put_page(xbp->page, xbp->addr, 0, 0))
+				if ((xbp->flags & BUF_MOD) && __put_page(hashp,
+				    xbp->page, xbp->addr, 0, 0))
 					return (NULL);
 				xbp->addr = 0;
 				xbp->flags = 0;
@@ -245,7 +250,8 @@ newbuf(addr, prev_bp)
 }
 
 extern void
-__buf_init(nbytes)
+__buf_init(hashp, nbytes)
+	HTAB *hashp;
 	int nbytes;
 {
 	BUFHEAD *bfp;
@@ -269,7 +275,8 @@ __buf_init(nbytes)
 }
 
 extern int
-__buf_free(do_free, to_disk)
+__buf_free(hashp, do_free, to_disk)
+	HTAB *hashp;
 	int do_free, to_disk;
 {
 	BUFHEAD *bp;
@@ -281,7 +288,7 @@ __buf_free(do_free, to_disk)
 		/* Check that the buffer is valid */
 		if (bp->addr || IS_BUCKET(bp->flags)) {
 			if (to_disk && (bp->flags & BUF_MOD) &&
-			    __put_page(bp->page,
+			    __put_page(hashp, bp->page,
 			    bp->addr, IS_BUCKET(bp->flags), 0))
 				return (-1);
 		}
@@ -299,7 +306,8 @@ __buf_free(do_free, to_disk)
 }
 
 extern void
-__reclaim_buf(bp)
+__reclaim_buf(hashp, bp)
+	HTAB *hashp;
 	BUFHEAD *bp;
 {
 	bp->ovfl = 0;
