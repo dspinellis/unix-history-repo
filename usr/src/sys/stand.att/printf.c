@@ -4,17 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)printf.c	5.3 (Berkeley) %G%
+ *	@(#)printf.c	5.4 (Berkeley) %G%
  */
 
 /*
  * Scaled down version of printf(3).
  *
- * Used to print diagnostic information directly on the console tty.  Since
- * it is not interrupt driven, all system activities are suspended.  Printf
- * should not be used for chit-chat.
+ * One additional format:
  *
- * One additional format: %b is supported to decode error registers.
+ * The format %b is supported to decode error registers.
  * Its usage is:
  *
  *	printf("reg=%b\n", regval, "<base><arg>*");
@@ -32,35 +30,33 @@
  *	reg=3<BITTWO,BITONE>
  */
 
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
+#include <sys/cdefs.h>
 
-static void abort(){}				/* Needed by stdarg macros. */
-static void number();
+/*
+ * Note that stdarg.h and the ANSI style va_start macro is used for both
+ * ANSI and traditional C compilers.
+ */
+#define KERNEL
+#include <machine/stdarg.h>
+#undef KERNEL
+
+static void kprintn __P((u_long, int));
 
 void
 #if __STDC__
 printf(const char *fmt, ...)
 #else
-printf(fmt, va_alist)
+printf(fmt /* , va_alist */)
 	char *fmt;
-        va_dcl
 #endif
 {
 	register char *p;
 	register int ch, n;
 	unsigned long ul;
 	int lflag, set;
-
 	va_list ap;
-#if __STDC__
+
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 	for (;;) {
 		while ((ch = *fmt++) != '%') {
 			if (ch == '\0')
@@ -75,7 +71,7 @@ reswitch:	switch (ch = *fmt++) {
 		case 'b':
 			ul = va_arg(ap, int);
 			p = va_arg(ap, char *);
-			number(ul, *p++);
+			kprintn(ul, *p++);
 
 			if (!ul)
 				break;
@@ -101,6 +97,9 @@ reswitch:	switch (ch = *fmt++) {
 			while (ch = *p++)
 				putchar(ch);
 			break;
+		case 'D':
+			lflag = 1;
+			/* FALLTHROUGH */
 		case 'd':
 			ul = lflag ?
 			    va_arg(ap, long) : va_arg(ap, int);
@@ -108,22 +107,31 @@ reswitch:	switch (ch = *fmt++) {
 				putchar('-');
 				ul = -(long)ul;
 			}
-			number(ul, 10);
+			kprintn(ul, 10);
 			break;
+		case 'O':
+			lflag = 1;
+			/* FALLTHROUGH */
 		case 'o':
 			ul = lflag ?
-			    va_arg(ap, long) : va_arg(ap, unsigned int);
-			number(ul, 8);
+			    va_arg(ap, u_long) : va_arg(ap, u_int);
+			kprintn(ul, 8);
 			break;
+		case 'U':
+			lflag = 1;
+			/* FALLTHROUGH */
 		case 'u':
 			ul = lflag ?
-			    va_arg(ap, long) : va_arg(ap, unsigned int);
-			number(ul, 10);
+			    va_arg(ap, u_long) : va_arg(ap, u_int);
+			kprintn(ul, 10);
 			break;
+		case 'X':
+			lflag = 1;
+			/* FALLTHROUGH */
 		case 'x':
 			ul = lflag ?
-			    va_arg(ap, long) : va_arg(ap, unsigned int);
-			number(ul, 16);
+			    va_arg(ap, u_long) : va_arg(ap, u_int);
+			kprintn(ul, 16);
 			break;
 		default:
 			putchar('%');
@@ -136,7 +144,7 @@ reswitch:	switch (ch = *fmt++) {
 }
 
 static void
-number(ul, base)
+kprintn(ul, base)
 	unsigned long ul;
 	int base;
 {
