@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.11 (Berkeley) %G%
+#	@(#)Makefile	4.12 (Berkeley) %G%
 #
-CFLAGS=	-O
+CFLAGS=	-DUSE_OLD_TTY -O
 LIBC=	/lib/libc.a
 SRCS=	bsdtcp.c df2.c df12.c dk.c dn.c hys.c hysq.c mic.c nov.c pen.c pnet.c \
 	rvmacs.c sy.c unet.c va212.c va811.c va820.c vad.c vent.c vmacs.c \
