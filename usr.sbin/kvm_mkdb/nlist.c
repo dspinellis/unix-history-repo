@@ -146,7 +146,10 @@ create_knlist(name, db)
 			rel_off = nbuf.n_value & ~KERNBASE;
 #endif
 #ifdef i386
-			rel_off = ((nbuf.n_value & ~KERNBASE) + CLBYTES);
+			/* -hv- 180793 for kernel loaded at 0xfe100000,
+			 * ~KERNBASE alone is not correct mask
+			 */
+			rel_off = ((nbuf.n_value & ~(KERNBASE|0x00F00000)) + CLBYTES);
 #endif
 			/*
 			 * When loaded, data is rounded to next page cluster
