@@ -1,44 +1,66 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)chown.8	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)chown.8	6.4 (Berkeley) %G%
 .\"
 .TH CHOWN 8 ""
 .UC 4
 .SH NAME
-chown \- change owner
+chown \- change file owner and group
 .SH SYNOPSIS
-.B chown
-[
-.B \-Rf
-]
-owner[.group] file ...
+.nf
+.ft B
+chown [-Rf] [owner][:group] file ...
 .SH DESCRIPTION
 .I Chown
-changes the owner of the
-.I files
-to
-.IR owner .
-The owner may be either a decimal UID or
-a login name found in the password file.
-An optional group may also be specified.
-The group may be either a decimal GID or
-a group name found in the group-ID file.
+sets the user ID and/or the group ID of the specified files.
 .PP
-Only the super-user can change owner,
-in order to simplify accounting procedures.
-No errors, except for usage errors, are reported when the
-.B \-f
-(force) option is given.
+The options are as follows:
+.TP
+-R
+Change the user ID and/or the group ID for the file hierarchies rooted
+in the files instead of just the files themselves.
+.TP
+-f
+Don't report any failure to change file owner or group, nor modify
+the exit status to reflect such failures.
 .PP
-When the
-.B \-R
-option is given, 
+The
+.I owner
+and
+.I group
+operands are both optional, but at least one must be specified; if
+the group operand is specified, it must be preceded by a colon (``:'')
+character.
+.PP
+The
+.I owner
+should be either a numeric user ID or a user name.
+If a user name is also a numeric user ID, the operand is used as a
+user name.
+The
+.I group
+should be either a numeric group ID or a group name.
+If a group name is also a numeric group ID, the operand is used as a
+group name.
+.PP
+Only the super-user may change the owner of a file in order to
+simplify accounting procedures and to prevent the circumvention
+of system security.
+.PP
+The owner and group of symbolic links are themselves changed instead
+of the file to which the link points.
+.PP
+The
 .I chown
-recursively descends its directory arguments
-setting the specified owner.
-When symbolic links are encountered, their ownership is changed,
-but they are not traversed.
+utility exits 0 on success, and >0 if an error occurs.
+.SH COMPATIBILITY
+Previous versions of the
+.I chown
+utility used the dot (``.'') character to distinguish the group name.
+This has been changed to be a colon (``:'') character so that user and
+group names may contain the dot character.
 .SH "SEE ALSO"
-chgrp(1), chown(2)
+chgrp(1), find(1), chown(2)
