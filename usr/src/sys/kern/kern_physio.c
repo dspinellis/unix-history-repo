@@ -4,26 +4,26 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.21 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.22 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "proc.h"
-#include "seg.h"
-#include "trace.h"
-#include "map.h"
-#include "vnode.h"
-#include "specdev.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/seg.h>
+#include <sys/trace.h>
+#include <sys/map.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
 
 #ifdef HPUXCOMPAT
-#include "user.h"
+#include <sys/user.h>
 #endif
 
-static	struct buf *getswbuf();
-static	freeswbuf();
+static void freeswbuf __P((struct buf *));
+static struct buf *getswbuf __P((int));
 
 /*
  * This routine does device I/O for a user process.
@@ -143,8 +143,7 @@ minphys(bp)
 		bp->b_bcount = MAXPHYS;
 }
 
-static
-struct buf *
+static struct buf *
 getswbuf(prio)
 	int prio;
 {
@@ -162,7 +161,7 @@ getswbuf(prio)
 	return (bp);
 }
 
-static
+static void
 freeswbuf(bp)
 	struct buf *bp;
 {

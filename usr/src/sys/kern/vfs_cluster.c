@@ -6,21 +6,22 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.42 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.43 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "proc.h"
-#include "buf.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "mount.h"
-#include "trace.h"
-#include "resourcevar.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/mount.h>
+#include <sys/trace.h>
+#include <sys/resourcevar.h>
 
 /*
  * Initialize buffers and hash links for buffers.
  */
+void
 bufinit()
 {
 	register int i;
@@ -592,6 +593,7 @@ biowait(bp)
  * If a callback has been requested, e.g. the pageout
  * daemon, do so. Otherwise, awaken waiting processes.
  */
+void
 biodone(bp)
 	register struct buf *bp;
 {
