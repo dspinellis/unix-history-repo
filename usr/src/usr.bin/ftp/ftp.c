@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -531,7 +531,7 @@ sendrequest(cmd, local, remote)
 	(void) fclose(dout);
 	(void) getreply(0);
 	(void) signal(SIGINT, oldintr);
-	if (bytes > 0 && verbose)
+	if (bytes > 0)
 		ptransfer("sent", bytes, &start, &stop, local, remote);
 	return;
 abort:
@@ -553,7 +553,7 @@ abort:
 	code = -1;
 	if (closefunc != NULL && fin != NULL)
 		(*closefunc)(fin);
-	if (bytes > 0 && verbose)
+	if (bytes > 0)
 		ptransfer("sent", bytes, &start, &stop, local, remote);
 }
 
@@ -791,7 +791,7 @@ recvrequest(cmd, local, remote, mode)
 	(void) gettimeofday(&stop, (struct timezone *)0);
 	(void) fclose(din);
 	(void) getreply(0);
-	if (bytes > 0 && verbose)
+	if (bytes > 0)
 		ptransfer("received", bytes, &start, &stop, local, remote);
 	if (oldtype) {
 		if (!debug)
@@ -883,7 +883,7 @@ abort:
 		(*closefunc)(fout);
 	if (din)
 		(void) fclose(din);
-	if (bytes > 0 && verbose)
+	if (bytes > 0)
 		ptransfer("received", bytes, &start, &stop, local, remote);
 	(void) signal(SIGINT,oldintr);
 }
@@ -984,16 +984,19 @@ ptransfer(direction, bytes, t0, t1, local, remote)
 	struct timeval td;
 	float s, bs;
 
-	tvsub(&td, t1, t0);
-	s = td.tv_sec + (td.tv_usec / 1000000.);
+	if (verbose) {
+		tvsub(&td, t1, t0);
+		s = td.tv_sec + (td.tv_usec / 1000000.);
 #define	nz(x)	((x) == 0 ? 1 : (x))
-	bs = bytes / nz(s);
-	if (local && *local != '-')
-		printf("local: %s ", local);
-	if (remote)
-		printf("remote: %s\n", remote);
-	printf("%ld bytes %s in %.2g seconds (%.2g Kbytes/s)\n",
-		bytes, direction, s, bs / 1024.);
+		bs = bytes / nz(s);
+		printf("%ld bytes %s in %.2g seconds (%.2g Kbytes/s)\n",
+		    bytes, direction, s, bs / 1024.);
+	} else {
+		if (local && *local != '-')
+			printf("local: %s ", local);
+		if (remote)
+			printf("remote: %s\n", remote);
+	}
 }
 
 /*tvadd(tsum, t0)
