@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)pass1.c	5.10 (Berkeley) %G%";
 static daddr_t badblk;
 static daddr_t dupblk;
 int pass1check();
+struct dinode *getnextinode();
 
 pass1()
 {
@@ -58,11 +59,12 @@ pass1()
 	idesc.id_func = pass1check;
 	inumber = 0;
 	n_files = n_blks = 0;
+	resetinodebuf();
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		for (i = 0; i < sblock.fs_ipg; i++, inumber++) {
 			if (inumber < ROOTINO)
 				continue;
-			dp = ginode(inumber);
+			dp = getnextinode(inumber);
 			if ((dp->di_mode & IFMT) == 0) {
 				if (bcmp((char *)dp->di_db, (char *)zino.di_db,
 					NDADDR * sizeof(daddr_t)) ||
@@ -164,6 +166,7 @@ pass1()
 			}
 		}
 	}
+	freeinodebuf();
 }
 
 pass1check(idesc)
