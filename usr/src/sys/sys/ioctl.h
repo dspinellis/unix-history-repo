@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.6.1.1 (Berkeley) %G%
+ *	@(#)ioctl.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -105,11 +105,11 @@ struct ttysize {
 /*
  * tty ioctl commands
  */
-#define	TIOCGETD	_IOR('t', 0, int)		/* get line discipline */
-#define	TIOCSETD	_IOW('t', 1, int)		/* set line discipline */
+#define	TIOCGETD	_IOR('t', 0, int)	/* get line discipline */
+#define	TIOCSETD	_IOW('t', 1, int)	/* set line discipline */
 #define	TIOCHPCL	_IO('t', 2)		/* hang up on last close */
-#define	TIOCMODG	_IOR('t', 3, int)		/* get modem control state */
-#define	TIOCMODS	_IOW('t', 4, int)		/* set modem control state */
+#define	TIOCMODG	_IOR('t', 3, int)	/* get modem control state */
+#define	TIOCMODS	_IOW('t', 4, int)	/* set modem control state */
 #define		TIOCM_LE	0001		/* line enable */
 #define		TIOCM_DTR	0002		/* data terminal ready */
 #define		TIOCM_RTS	0004		/* request to send */
@@ -123,7 +123,7 @@ struct ttysize {
 #define		TIOCM_DSR	0400		/* data set ready */
 #define	TIOCGETP	_IOR('t', 8,struct sgttyb)/* get parameters -- gtty */
 #define	TIOCSETP	_IOW('t', 9,struct sgttyb)/* set parameters -- stty */
-#define	TIOCSETN	_IOW('t',10,struct sgttyb)/* as above, but no flushtty */
+#define	TIOCSETN	_IOW('t',10,struct sgttyb)/* as above, but no flushtty*/
 #define	TIOCEXCL	_IO('t', 13)		/* set exclusive use of tty */
 #define	TIOCNXCL	_IO('t', 14)		/* reset exclusive use of tty */
 #define	TIOCFLUSH	_IOW('t', 16, int)	/* flush buffers */
@@ -164,9 +164,9 @@ struct ttysize {
 #define		PRTERA		0x00020000	/* \ ... / erase */
 #define		CRTERA		0x00040000	/* " \b " to wipe out char */
 #define		TILDE		0x00080000	/* hazeltine tilde kludge */
-#define		MDMBUF		0x00100000	/* start/stop output on carrier intr */
+#define		MDMBUF		0x00100000	/*start/stop output on carrier*/
 #define		LITOUT		0x00200000	/* literal output */
-#define		TOSTOP		0x00400000	/* SIGSTOP on background output */
+#define		TOSTOP		0x00400000	/*SIGSTOP on background output*/
 #define		FLUSHO		0x00800000	/* flush output to terminal */
 #define		NOHANG		0x01000000	/* no SIGHUP on carrier drop */
 #define		L001000		0x02000000
@@ -176,6 +176,18 @@ struct ttysize {
 #define		PENDIN		0x20000000	/* tp->t_rawq needs reread */
 #define		DECCTQ		0x40000000	/* only ^Q starts after ^S */
 #define		NOFLSH		0x80000000	/* no output flush on signal */
+/* POSIX line discipline */
+#define	TIOCGETA	_IOR('t', 19, struct termios) /* get termios struct */
+#define	TIOCSETA	_IOW('t', 20, struct termios) /* set termios struct */
+#define	TIOCSETAW	_IOW('t', 21, struct termios) /* drain output, set */
+#define	TIOCSETAF	_IOW('t', 22, struct termios) /* drn out, fls in, set */
+#define	TIOCSETAS	_IOW('t', 23, struct termios) /* SETA ign hdw state */
+#define	TIOCSETAWS	_IOW('t', 24, struct termios) /* SETAW ign hdw state */
+#define	TIOCSETAFS	_IOW('t', 25, struct termios) /* SETAF ign hdw state */
+#define TCGETA	TIOCGETA
+#define TCSETA	TIOCSETA
+#define TCSETAW	TIOCSETAW
+#define TCSETAF	TIOCSETAF
 /* locals, from 127 down */
 #define	TIOCLBIS	_IOW('t', 127, int)	/* bis local mode bits */
 #define	TIOCLBIC	_IOW('t', 126, int)	/* bic local mode bits */
@@ -202,8 +214,8 @@ struct ttysize {
 #define	TIOCCDTR	_IO('t', 120)		/* clear data terminal ready */
 #define	TIOCGPGRP	_IOR('t', 119, int)	/* get pgrp of tty */
 #define	TIOCSPGRP	_IOW('t', 118, int)	/* set pgrp of tty */
-#define	TIOCSLTC	_IOW('t',117,struct ltchars)/* set local special chars */
-#define	TIOCGLTC	_IOR('t',116,struct ltchars)/* get local special chars */
+#define	TIOCSLTC	_IOW('t',117,struct ltchars)/* set local special chars*/
+#define	TIOCGLTC	_IOR('t',116,struct ltchars)/* get local special chars*/
 #define	TIOCOUTQ	_IOR('t', 115, int)	/* output queue size */
 #define	TIOCSTI		_IOW('t', 114, char)	/* simulate terminal input */
 #define	TIOCNOTTY	_IO('t', 113)		/* void tty association */
@@ -231,10 +243,11 @@ struct ttysize {
 #define	TIOCBLK		_IOW('t', 100, int)	/* pty: block slave writes */
 #define	TIOCIOANS(s)	_IOWX('t', 99, (s))	/* pty: reply to user ioctl */
 #define	TIOCCONS	_IO('t', 98)		/* become virtual console */
+#define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
 
-#define	OTTYDISC	0		/* old, v7 std tty driver */
+#define	OTTYDISC	0		/* termios ldisc */
 #define	NETLDISC	1		/* line discip for berk net */
-#define	NTTYDISC	2		/* new tty discipline */
+#define	NTTYDISC	2		/* also termios ldisc */
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 
