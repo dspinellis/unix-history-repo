@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readobj.c 1.2 %G%";
+static char sccsid[] = "@(#)readobj.c 1.3 %G%";
 
 /*
  * Read in the namelist from the obj file.
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)readobj.c 1.2 %G%";
 #include "symtab.h"
 #include "object.h"
 #include "objfmt.h"
+#include "main.h"
 #include "mappings.h"
 #include "mappings/filetab.h"
 #include "mappings/linetab.h"
@@ -30,12 +31,30 @@ char *file;
 	if ((fp = fopen(file, "r")) == NIL) {
 		panic("can't open %s", file);
 	}
-	fseek(fp, (long) (HEADER_BYTES - sizeof(struct pxhdr)), 0);
 	get(fp, hdr);
+	if (hdr.magicnum != MAGICNUM) {
+		fseek(fp, (long) (HEADER_BYTES - sizeof(struct pxhdr)), 0);
+		get(fp, hdr);
+		if (hdr.magicnum != MAGICNUM) {
+			fatal("%s is not a Pascal object file", file);
+		}
+	}
+	if (hdr.symtabsize == 0) {
+		fatal("%s doesn't have symbolic information", file);
+	}
 	objsize = hdr.objsize;
 	fseek(fp, (long) objsize, 1);
 	if (get(fp, nlhdr) != 1) {
-		panic("readobj:  get failed");
+		panic("can't read nlhdr");
+	}
+	if (option('h')) {
+		printf("\nHeader information:\n");
+		printf("\tobject size %d\n", objsize);
+		printf("\tsymtab size %d\n", hdr.symtabsize);
+		printf("\tstringsize  %d\n", nlhdr.stringsize);
+		printf("\tnsyms       %d\n", nlhdr.nsyms);
+		printf("\tnfiles      %d\n", nlhdr.nfiles);
+		printf("\tnlines      %d\n", nlhdr.nlines);
 	}
 	stringtab = alloc(nlhdr.stringsize, char);
 	fread(stringtab, sizeof(char), nlhdr.stringsize, fp);
