@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.12 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -31,7 +31,8 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char *locuser, *remuser, *cmd;
 	int *fd2p;
 {
-	int s, timo = 1, pid, oldmask;
+	int s, timo = 1, pid;
+	long oldmask;
 	struct sockaddr_in sin, sin2, from;
 	char c;
 	int lport = IPPORT_RESERVED - 1;
