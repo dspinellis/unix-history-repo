@@ -1,4 +1,4 @@
-#       Makefile     1.8     85/05/01
+#       Makefile     1.9     85/05/22
 DESTDIR=
 INCPATH=
 CFLAGS= -O
@@ -12,7 +12,7 @@ systat: ${OBJS}
 	${CC} -o systat -O ${OBJS} ${LIBS}
 
 install: systat
-	install -s systat ${DESTDIR}/usr/local/systat
+	install -s -g kmem -m 2755 systat ${DESTDIR}/usr/local/systat
 
 clean:
 	rm -f ${OBJS} systat core a.out errs
