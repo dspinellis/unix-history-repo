@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.53		%G%);
+SCCSID(@(#)recipient.c	3.54		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -416,6 +416,11 @@ finduser(name)
 			*p = ' ';
 	}
 
+	/* look up this login name */
+	if ((pw = getpwnam(name)) != NULL)
+		return (pw);
+
+	/* search for a matching full name instead */
 	setpwent();
 	while ((pw = getpwent()) != NULL)
 	{
