@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -84,8 +84,9 @@ dumpfs(name)
 	    afs.fs_fsize, afs.fs_fshift, afs.fs_fmask);
 	printf("frag\t%d\tshift\t%d\tfsbtodb\t%d\n",
 	    afs.fs_frag, afs.fs_fragshift, afs.fs_fsbtodb);
-	printf("minfree\t%d%%\tmaxbpg\t%d\n",
-	    afs.fs_minfree, afs.fs_maxbpg);
+	printf("minfree\t%d%%\tmaxbpg\t%d\toptim\t%s\n",
+	    afs.fs_minfree, afs.fs_maxbpg,
+	    afs.fs_optim == FS_OPTSPACE ? "space" : "time");
 	printf("maxcontig %d\trotdelay %dms\trps\t%d\n",
 	    afs.fs_maxcontig, afs.fs_rotdelay, afs.fs_rps);
 	printf("csaddr\t%d\tcssize\t%d\tshift\t%d\tmask\t0x%08x\n",
