@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.16 (Berkeley) %G%
+.\"	@(#)contrib	5.17 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -136,6 +136,7 @@ kvm(3)	Peter Shipley
 larn(6)	Noah Morgan
 lex(1)	Vern Paxson
 locate(1)	James A. Woods
+look(1)	David Hitz
 ls(1)	Michael Fischbein
 lsearch(3)	Roger L. Snyder
 m4(1)	Ozan Yigit
