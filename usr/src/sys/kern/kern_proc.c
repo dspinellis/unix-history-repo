@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.57	83/01/17	*/
+/*	kern_proc.c	4.58	83/02/10	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -15,7 +15,7 @@
 #include "../h/inode.h"
 #include "../h/seg.h"
 #include "../h/acct.h"
-#include <wait.h>
+#include "../h/wait.h"
 #include "../h/vm.h"
 #include "../h/text.h"
 #include "../h/file.h"
