@@ -1,4 +1,4 @@
-.\"	@(#)3.t	1.6	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)3.t	1.7	(Copyright 1989 M. K. McKusick)	89/02/24
 .NH
 System Release
 .PP
@@ -81,14 +81,14 @@ had to coordinate the efforts of the respective authors
 to make the programs work together harmoniously.
 .PP
 Once the sources have stabilized,
-an attempt is made to build the entire source tree.
+an attempt is made to compile the entire source tree.
 Often this exposes errors caused by changed header files,
 or use of obsoleted C library interfaces.
 If the incompatibilities affect too many programs,
 or require excessive amounts of change in the programs
 that are affected,
-the incompatibility is backed out or some backward
-compatible interface is provided.
+the incompatibility is backed out or some backward-compatible
+interface is provided.
 The incompatibilities that are found and left in are noted
 in a list that is later incorporated into the release notes.
 Thus, users upgrading to the new system can anticipate problems
@@ -153,12 +153,12 @@ or operational shortcomings of the facilities.
 When such problems are found,
 the person in charge of that facility is responsible
 for resolving the problem.
-Occasionally this requires rearchitecting and reimplementing
+Occasionally this requires redesigning and reimplementing
 parts of the affected facility.
 For example,
 in 4.2\s-1BSD\s+1,
-the alpha release of the networking did not have connection queueing.
-This shortcoming prevented the networking from handling many
+the alpha release of the networking system did not have connection queueing.
+This shortcoming prevented the network from handling many
 connections to a single server.
 The result was that the networking interface had to be
 redesigned to provide this functionality.
@@ -167,14 +167,15 @@ The alpha sites are also responsible for ferreting out interoperability
 problems between different utilities.
 The user populations of the test sites differ from the user population at
 .SM CSRG ,
-and as a result the utilities are exercised in ways that differ
+and, as a result, the utilities are exercised in ways that differ
 from the ways that they are used at
 .SM CSRG .
 These differences in usage patterns turn up problems that
 do not occur in our initial test environment.
 .PP
 The alpha sites frequently redistribute the alpha tape to several
-of their own alpha sites.
+of their own alpha sites that are particularly interested
+in parts of the new system.
 These additional sites are responsible for reporting
 problems back to the site from which they received the distribution,
 not to
@@ -255,7 +256,7 @@ the directory-listing command and a changed return value for the
 library routine;
 the changes were removed from the source before final distribution.
 Although this process is long and tedious,
-it forces the developers to create a coherent picture of the entire set of
+it forces the developers to obtain a coherent picture of the entire set of
 changes to the system.
 This exercise often turns up inconsistencies that would
 otherwise never be found.
@@ -299,7 +300,7 @@ alpha distribution for three main reasons.
 First, as it is closer to the final release, more sites are willing
 to run it in a production environment without fear of catastrophic failures.
 Second, more commercial sites delivering
-.SM BSD
+.SM BSD -\c
 derived systems are interested in getting a preview of the
 upcoming changes in preparation for merging them into their
 own systems.
@@ -325,13 +326,13 @@ and ensuring that everything affected by the change is rebuilt and tested.
 Thus, a change to a C library routine requires that the entire
 system be rebuilt.
 .PP
-During this period, the documentation is all printed out and proofread.
+During this period, the documentation is all printed and proofread.
 As minor changes are made to the manual pages and documentation,
 the affected pages must be reprinted.
 .PP
 The final step in the release process is to check the distribution tree
 to ensure that it is in a consistent state.
-This includes verifying that every file and directory
+This step includes verification that every file and directory
 on the distribution has the proper owner, group, and modes.
 All source files must be checked to be sure that they have
 appropriate copyright notices and source code control system headers.
@@ -344,7 +345,9 @@ a typical distribution.
 Much of the checking can be done by a set of programs set to scan
 over the distribution tree.
 Unfortunately, the exception list is long, and requires
-hours of tedious hand checking; this has caused CSRG to develop even
+hours of tedious hand checking; this has caused
+.SM CSRG
+to develop even
 more comprehensive validation programs for use in our next release.
 .PP
 Once the final set of checks has been run,

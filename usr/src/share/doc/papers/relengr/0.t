@@ -1,4 +1,4 @@
-.\"	@(#)0.t	1.3	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)0.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/24
 .rm CM
 .nr PO 1.25i
 .ds CH "
@@ -24,7 +24,7 @@ Figure \\n(Fn - \\$1.
 \&\fB\\$1\fP\\$2
 ..
 .TL
-The Release Engineering of 4.3BSD
+The Release Engineering of 4.3\s-1BSD\s0
 .AU
 Marshall Kirk McKusick
 .AU
@@ -41,7 +41,7 @@ Berkeley, California  94720
 This paper describes an approach used by a small group of people
 to develop and integrate a large software system.
 It details the development and release engineering strategy
-used during the preparation of the 4.3BSD version of the UNIX\(dg
+used during the preparation of the \*(b3 version of the UNIX\(dg
 .FS
 \(dgUNIX is a registered trademark of AT&T in the US and other countries.
 .FE
