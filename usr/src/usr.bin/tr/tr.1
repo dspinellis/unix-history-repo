@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tr.1	6.8 (Berkeley) %G%
+.\"     @(#)tr.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TR 1
@@ -215,7 +215,7 @@ Translate the contents of file1 to upper-case.
 .sp
 Strip out non-printable characters from file1.
 .sp
-.D1 Li "tr -d \*q[:print:]\*q < file1"
+.D1 Li "tr -cd \*q[:print:]\*q < file1"
 .Sh COMPATIBILITY
 System V has historically implemented character ranges using the syntax
 ``[c-c]'' instead of the ``c-c'' used by historic BSD implementations and
