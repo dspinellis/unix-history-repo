@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.14	82/03/31	*/
+/*	vm_meter.c	4.15	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/text.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
+#include "../h/kernel.h"
 
 int	maxslp = MAXSLP;
 int	saferss = SAFERSS;
@@ -376,7 +377,7 @@ vmmeter()
 		*cp = 0;
 		rp++, cp++, sp++;
 	}
-	if (time % 5 == 0) {
+	if (time.tv_sec % 5 == 0) {
 		vmtotal();
 		rate.v_swpin = cnt.v_swpin;
 		sum.v_swpin += cnt.v_swpin;
@@ -393,19 +394,17 @@ vmmeter()
 	}
 }
 
-vmpago()
-{
-	register int vavail;
-	register int scanrate;
+#define	RATETOSCHEDPAGING	4		/* hz that is */
 
-	/*
-	 * Compute new rate for clock; if
-	 * nonzero, restart clock.
-	 * Rate ranges linearly from one rev per
-	 * slowscan seconds when there is lotsfree memory
-	 * available to one rev per fastscan seconds when
-	 * there is no memory available.
-	 */
+/*
+ * Schedule rate for paging.
+ * Rate is linear interpolation between
+ * slowscan with lotsfree and fastscan when out of memory.
+ */
+schedpaging()
+{
+	register int vavail, scanrate;
+
 	nscan = desscan = 0;
 	vavail = freemem - deficit;
 	if (vavail < 0)
@@ -413,12 +412,9 @@ vmpago()
 	if (freemem >= lotsfree)
 		return;
 	scanrate = (slowscan * vavail + fastscan * (lotsfree - vavail)) / nz(lotsfree);
-	desscan = (LOOPPAGES / CLSIZE) / nz(scanrate);
-	/*
-	 * DIVIDE BY 4 TO ACCOUNT FOR RUNNING 4* A SECOND (see clock.c)
-	 */
-	desscan /= 4;
+	desscan = ((LOOPPAGES / CLSIZE) / nz(scanrate)) / RATETOSCHEDPAGING;
 	wakeup((caddr_t)&proc[2]);
+	timeout(schedpaging, 0, hz / RATETOSCHEDPAGING);
 }
 
 vmtotal()
