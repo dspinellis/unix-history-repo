@@ -1,0 +1,12 @@
+# apply a command to every INGRES file
+
+echo applying $*:q to all INGRES source files
+set nonomatch
+foreach i (*)
+	if (-d $i) then
+		echo "---------------- $i ----------------"
+		chdir $i
+		$*:q Makefile *.[chsqy]
+		chdir ..
+	endif
+end

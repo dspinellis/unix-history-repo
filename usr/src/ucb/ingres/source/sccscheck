@@ -1,0 +1,12 @@
+# check to see that everything is in SCCS form
+
+foreach i (*)
+	if (-d $i) then
+		echo "---------------- $i ----------------"
+		if (-e $i/SCCS) then
+			sccs -p$i/SCCS info $*
+		else
+			echo "$i not in SCCS format"
+		endif
+	endif
+end
