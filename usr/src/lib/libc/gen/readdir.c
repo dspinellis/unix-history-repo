@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)readdir.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)readdir.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -32,6 +32,8 @@ readdir(dirp)
 			continue;
 		}
 		dp = (struct direct *)(dirp->dd_buf + dirp->dd_loc);
+		if ((int)dp & 03)	/* bogus pointer check */
+			return NULL;
 		if (dp->d_reclen <= 0 ||
 		    dp->d_reclen > DIRBLKSIZ + 1 - dirp->dd_loc)
 			return NULL;
