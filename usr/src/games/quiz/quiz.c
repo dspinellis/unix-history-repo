@@ -1,5 +1,5 @@
 
-static char sccsid[] = "	quiz.c	4.3	87/06/17	";
+static char sccsid[] = "	quiz.c	4.4	88/01/02	";
 
 #include <stdio.h>
 #include <signal.h>
@@ -28,9 +28,11 @@ int select[NF];
 
 readline()
 {
+	register int ch;
 	char *t;
 loop:
-	for(t=line;(*t=getc(input))!=-1;t++) {
+	for(t=line;(ch=getc(input))!=-1;t++) {
+		*t = ch;
 		nc++;
 		if(*t==' '&&(t==line||t[-1]==' '))
 			t--;
@@ -45,10 +47,10 @@ loop:
 		if(t-line>=NC) {
 			printf("Too hard for me\n");
 			do {
-				*line = getc(input);
-				if(*line==0377)
+				if ((ch = getc(input)) == EOF)
 					return(0);
-			} while(*line!='\n');
+			} while(ch!='\n');
+			*line = '\n';
 			goto loop;
 		}
 	}
