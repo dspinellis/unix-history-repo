@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.12 %G%";
+static char sccsid[] = "@(#)newfs.c	4.13 %G%";
 #endif
 
 /*
@@ -258,7 +258,7 @@ next:
 	if (verbose)
 		printf("%s\n", cmd);
 	if (status = system(cmd))
-		exit(status);
+		exit(status >> 8);
 	if (*cp == 'a' && !noboot) {
 		char type[3];
 		struct stat sb;
