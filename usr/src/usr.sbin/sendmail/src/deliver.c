@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.10.1.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -368,31 +368,9 @@ deliver(firstto, editfcn)
 # ifdef SMTP
 	if (clever)
 	{
-# ifdef MXDOMAIN
-		expand("\001w", buf, &buf[sizeof buf - 1], e);
-		if ((nmx = getmxrr(host, mxhosts, MAXMXHOSTS, buf)) < 0)
-		{
-			/*
-			 * Map errors into standard values
-			 */
-			if (nmx == -1)
-				rcode = EX_TEMPFAIL;
-			else if (nmx == -3)
-				rcode = EX_NOHOST;
-			else
-				rcode = EX_UNAVAILABLE;
-		}
-		else
-			rcode = EX_OK;
-#else MXDOMAIN
-		nmx = 1;
-		mxhosts[0] = q->q_host;
-		rcode = EX_OK;
-#endif
 		i = smtpfinish(m, editfcn);
 		/* send the initial SMTP protocol */
-		if (rcode == EX_OK)
-			rcode = smtpinit(m, pv);
+		rcode = smtpinit(m, pv);
 
 		if (rcode == EX_OK)
 		{
@@ -744,7 +722,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		extern STAB *stab();
 #endif HOSTINFO
 #ifdef DAEMON
-		register int i, j;
+		register int i;
 		register u_short port;
 
 		CurHostName = pvp[1];
@@ -754,38 +732,33 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
-		for (j = 0; j < nmx; j++)
-		{
-			CurHostName = mxhosts[j];
 #ifdef HOSTINFO
 		/* see if we have already determined that this host is fried */
-			st = stab(mxhosts[j], ST_HOST, ST_FIND);
-			if (st == NULL || st->s_host.ho_exitstat == EX_OK)
-				i = makeconnection(mxhosts[j], port, pmfile, prfile);
-			else
-			{
-				i = st->s_host.ho_exitstat;
-				errno = st->s_host.ho_errno;
-			}
-#else HOSTINFO
-			i = makeconnection(mxhosts[j], port, pmfile, prfile);
-#endif HOSTINFO
-			if (i != EX_OK)
-			{
-#ifdef HOSTINFO
-				/* enter status of this host */
-				if (st == NULL)
-					st = stab(mxhosts[j], ST_HOST, ST_ENTER);
-				st->s_host.ho_exitstat = i;
-				st->s_host.ho_errno = errno;
-#endif HOSTINFO
-				ExitStat = i;
-				continue;
-			}
-			else
-				return (0);
+		st = stab(pvp[1], ST_HOST, ST_FIND);
+		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
+			i = makeconnection(pvp[1], port, pmfile, prfile);
+		else
+		{
+			i = st->s_host.ho_exitstat;
+			errno = st->s_host.ho_errno;
 		}
-		return (-1);
+#else HOSTINFO
+		i = makeconnection(pvp[1], port, pmfile, prfile);
+#endif HOSTINFO
+		if (i != EX_OK)
+		{
+#ifdef HOSTINFO
+			/* enter status of this host */
+			if (st == NULL)
+				st = stab(pvp[1], ST_HOST, ST_ENTER);
+			st->s_host.ho_exitstat = i;
+			st->s_host.ho_errno = errno;
+#endif HOSTINFO
+			ExitStat = i;
+			return (-1);
+		}
+		else
+			return (0);
 #else DAEMON
 		syserr("openmailer: no IPC");
 		return (-1);
