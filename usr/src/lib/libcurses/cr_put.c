@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"curses.ext"
@@ -359,7 +359,7 @@ dontcr:
 			else {
 				i = curscr->_y[outline][outcol];
 				if ((i&_STANDOUT) == (curscr->_flags&_STANDOUT))
-					_putchar(i);
+					_putchar(i & 0177);
 				else
 					goto nondes;
 			}
