@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.18 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.19 (Berkeley) %G%
 .\"
 .TH DB 3 ""
 .UC 7
@@ -136,9 +136,6 @@ The address and length of the data associated with the specified
 .I key
 are returned in the structure referenced by
 .IR data .
-The address and length of the key used to enter the data into the database
-are returned in the structure referenced by
-.IR key .
 .I Get
 routines return -1 on error (setting
 .IR errno ),
@@ -151,28 +148,37 @@ A pointer to a routine to store key/data pairs in the database.
 .IP
 The parameter
 .I flag
-must be set to one of the following values:
+may be set to one of the following values:
 .RS
+.TP
+R_APPEND
+Append the data to the tree, creating a new key/data pair.
+(Applicable only to the DB_RECNO access method.)
+.TP
+R_CURSOR
+Replace the key/data pair referenced by the cursor.
 .TP
 R_IAFTER
 Append the data immediately after the data referenced by
 .IR key ,
 creating a new key/data pair.
-(This implies that the access method is able to create new keys,
-i.e. the keys are ordered and independent, for example, record numbers.
-Applicable only to the DB_RECNO access method.)
+(Applicable only to the DB_RECNO access method.)
 .TP
 R_IBEFORE
 Insert the data immediately before the data referenced by
 .IR key ,
 creating a new key/data pair.
-(This implies that the access method is able to create new keys,
-i.e. the keys are ordered and independent, for example, record numbers.
-Applicable only to the DB_RECNO access method.)
+(Applicable only to the DB_RECNO access method.)
 .TP
 R_NOOVERWRITE
 Enter the new key/data pair only if the key does not previously exist.
 .RE
+.IP
+R_APPEND, R_IAFTER and R_IBEFORE are available only for the DB_RECNO access
+method because they each imply that the access method is able to create new
+keys.
+This is only true if the keys are ordered and independent, record numbers
+for example.
 .IP
 The default behavior of the
 .I put
@@ -209,7 +215,9 @@ Modifications to the database during a sequential scan will be reflected
 in the scan, i.e. records inserted behind the cursor will not be returned
 while records inserted in front of the cursor will be returned.
 .IP
-The flag value must be set to one of the following values:
+The flag value
+.B must
+be set to one of the following values:
 .RS
 .TP
 R_CURSOR
@@ -218,18 +226,17 @@ This differs from the
 .I get
 routines in that it sets the ``cursor'' to the location of the
 key as well.
-(This implies that the access method has a implicit order which does
-not change.
-Applicable only to the DB_BTREE and DB_RECNO access methods.)
+(Note, for the DB_BTREE access method, the returned key is not necessarily an
+exact match for the specified key.
+The returned key is the smallest key greater than or equal to the specified
+key, permitting partial key matches and range searches.)
 .TP
 R_FIRST
 The first key/data pair of the database is returned.
 .TP
 R_LAST
 The last key/data pair of the database is returned.
-(This implies that the access method has a implicit order which does
-not change.
-Applicable only to the DB_BTREE and DB_RECNO access methods.)
+(Applicable only to the DB_BTREE and DB_RECNO access methods.)
 .TP
 R_NEXT
 Retrieve the key/data pair immediately after the key/data pair most recently
@@ -254,15 +261,18 @@ If
 is set to R_PREV the first time the
 .I seq
 routine is called, the last key/data pair of the database is returned.
-(This implies that the access method has a implicit order which does
-not change.
-Applicable only to the DB_BTREE and DB_RECNO access methods.)
+(Applicable only to the DB_BTREE and DB_RECNO access methods.)
 .RE
+.IP
+R_LAST and R_PREV are available only for the DB_BTREE and DB_RECNO
+access methods because they each imply that the keys have an inherent order
+which does not change.
 .IP
 .I Seq
 routines return -1 on error (setting
 .IR errno ),
-0 on success, 1 if there are no more key/data pairs available.
+0 on success and 1 if there are no key/data pairs less than or greater
+than the specified or current key.
 If the DB_RECNO access method is being used, and if the database file
 is a character special file and no complete key/data pairs are currently
 available, the
