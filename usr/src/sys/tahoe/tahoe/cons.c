@@ -1,4 +1,4 @@
-/*	cons.c	1.4	86/11/25	*/
+/*	cons.c	1.5	86/12/06	*/
 
 /*
  * Tahoe console processor driver
@@ -38,18 +38,12 @@ struct	consoftc {
 #define	CSF_POLLING	0x4	/* polling for input */
 } consoftc[3];
 struct	cpdcb_o consout[3] = { 
-	/* 	unit,		cmd,count, buf */
-	{ (char)(CPTAKE | CPDONE),0,   0 },
-	{ (char)(CPTAKE | CPDONE),0,   0 },
-	{ (char)(CPTAKE | CPDONE),0,   0 }
+	{ CPTAKE|CPDONE }, { CPTAKE|CPDONE }, { CPTAKE|CPDONE }
 };
 struct	cpdcb_i consin[3] = {
-	/* 	unit,		cmd,count, buf */
-	{ (char)(CPTAKE | CPDONE),0,   0 },
-	{ (char)(CPTAKE | CPDONE),0,   0 },
-	{ (char)(CPTAKE | CPDONE),0,   0 }
+	{ CPTAKE|CPDONE }, { CPTAKE|CPDONE }, { CPTAKE|CPDONE }
 };
-struct	cphdr *lasthdr;
+struct	cphdr *cnlast;
 
 int	cnstart();
 int	ttrstrt();
@@ -83,20 +77,18 @@ cnpostread(unit)
 {
 	register struct cpdcb_i *cin;
 
-	if (lasthdr != (struct cphdr *)0) {
-		register int timo;
-
-		timo = 10000;
-		uncache(&lasthdr->cp_unit);
-		while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
-			uncache(&lasthdr->cp_unit);
+	if (cnlast != (struct cphdr *)0) {
+		register int timo = 10000;
+		do
+			uncache(&cnlast->cp_unit);
+		while ((cnlast->cp_unit&CPTAKE) == 0 && --timo);
 	}
 	cin = &consin[unit];
 	cin->cp_hdr.cp_unit = unit;
 	cin->cp_hdr.cp_comm = CPREAD;
 	cin->cp_hdr.cp_count = 1;	/* Get ready for input */
 	mtpr(CPMDCB, cin);
-	lasthdr = (struct cphdr *)cin;
+	cnlast = (struct cphdr *)cin;
 }
 
 cnclose(dev)
@@ -151,15 +143,14 @@ cnrint(dev)
 	 * otherwise give up
 	 */
 	timo = 10000;
-	uncache(&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit&CPTAKE) == 0  && --timo)
-		uncache(&lasthdr->cp_unit);
-	uncache(&lasthdr->cp_unit);
-	if (lasthdr->cp_unit&CPTAKE) {
+	do
+		uncache(&cnlast->cp_unit);
+	while ((cnlast->cp_unit&CPTAKE) == 0  && --timo);
+	if (cnlast->cp_unit&CPTAKE) {
 		consin[unit].cp_hdr.cp_unit = unit;
 			/* This resets status bits */
 		mtpr(CPMDCB, &consin[unit]); /* Ready for new character */
-		lasthdr = (struct cphdr *)&consin[unit];
+		cnlast = (struct cphdr *)&consin[unit];
 		tp = constty[unit];
 #ifdef KDB
 		if (unit == CPCONS && kdbrintr(c, tp))
@@ -274,8 +265,8 @@ cnputchar(c, tp)
 	if (tp == 0) {
 		current = &consout[CPCONS];
 		unit = CPCONS;
-		if (lasthdr == 0)	/* not done anythig yet */
-			lasthdr = (struct cphdr *)current;
+		if (cnlast == 0)	/* not done anythig yet */
+			cnlast = (struct cphdr *)current;
 		c |= partab[c&0177]&0200;
 	} else {
 		current = &consout[minor(tp->t_dev)];
@@ -285,11 +276,10 @@ cnputchar(c, tp)
 	/*
 	 * Try waiting for the console tty to come ready,
 	 * otherwise give up after a reasonable time.
-	 * make sure we dont test this bit in cache!
 	 */
-	uncache(&current->cp_hdr.cp_unit);
-	while ((current->cp_hdr.cp_unit&CPDONE) == 0 && --timo)
+	do
 		uncache(&current->cp_hdr.cp_unit);
+	while ((current->cp_hdr.cp_unit&CPDONE) == 0 && --timo);
 	current->cp_hdr.cp_comm = CPWRITE;
 	current->cp_hdr.cp_count = 1;
 	current->cp_buf[0] = c & 0xff;
@@ -298,12 +288,12 @@ cnputchar(c, tp)
 	 * Try waiting for the console tty to come ready,
 	 * otherwise give up after a reasonable time.
 	 */
-	uncache(&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
-		uncache(&lasthdr->cp_unit);
+	do
+		uncache(&cnlast->cp_unit);
+	while ((cnlast->cp_unit&CPTAKE) == 0 && --timo);
 	/* Reset done bit */
 	current->cp_hdr.cp_unit = (char)unit;
-	lasthdr = (struct cphdr *)current;
+	cnlast = (struct cphdr *)current;
 #ifdef	CPPERF
 	if (intenable != 0)
 		scope_in(5);
@@ -341,25 +331,25 @@ cngetchar(tp)
 	if (tp == 0) {
 		current = &consin[CPCONS];
 		unit = CPCONS;
-		if (lasthdr == 0)	/* not done anything yet */
-			lasthdr = (struct cphdr *)current;
+		if (cnlast == 0)	/* not done anything yet */
+			cnlast = (struct cphdr *)current;
 	} else {
 		current = &consin[minor(tp->t_dev)];
 		unit = minor(tp->t_dev);
 	}
 	timo = 10000;
-	uncache((char *)&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
-		uncache(&lasthdr->cp_unit);
+	do
+		uncache((char *)&cnlast->cp_unit);
+	while ((cnlast->cp_unit&CPTAKE) == 0 && --timo);
 	current->cp_hdr.cp_unit = unit;		/* Resets done bit */
 	current->cp_hdr.cp_comm = CPREAD;
 	current->cp_hdr.cp_count = 1;
 	mtpr(CPMDCB, current);
-	while ((current->cp_hdr.cp_unit & CPDONE) == 0) 
+	while ((current->cp_hdr.cp_unit&CPDONE) == 0) 
 		uncache(&current->cp_hdr.cp_unit);
 	uncache(&current->cpi_buf[0]);
 	c = current->cpi_buf[0] & 0x7f;
-	lasthdr = (struct cphdr *)current;
+	cnlast = (struct cphdr *)current;
 	return (c);
 }
 #endif
@@ -401,9 +391,9 @@ cnparams(tp)
 	 * otherwise give up after a reasonable time.
 	 * make sure we dont test this bit in cache!
 	 */
-	uncache(&current->cp_hdr.cp_unit);
-	while ((current->cp_hdr.cp_unit&CPDONE) == 0 && --timo)
+	do
 		uncache(&current->cp_hdr.cp_unit);
+	while ((current->cp_hdr.cp_unit&CPDONE) == 0 && --timo);
 	current->cp_hdr.cp_comm = CPSTTY;
 	current->cp_hdr.cp_count = 4;
 	current->cp_buf[0] = tp->t_ispeed;
@@ -416,24 +406,24 @@ cnparams(tp)
 	 * Try waiting for the console tty to come ready,
 	 * otherwise give up after a reasonable time.
 	 */
-	uncache(&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
-		uncache(&lasthdr->cp_unit);
+	do
+		uncache(&cnlast->cp_unit);
+	while ((cnlast->cp_unit&CPTAKE) == 0 && --timo);
 	/* Reset done bit */
 	current->cp_hdr.cp_unit = (char)minor(tp->t_dev); 
-	lasthdr = (struct cphdr *)current;
+	cnlast = (struct cphdr *)current;
 	mtpr(CPMDCB, current);
 
 	timo = 10000;
-	uncache(&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
-		uncache(&lasthdr->cp_unit);
+	do
+		uncache(&cnlast->cp_unit);
+	while ((cnlast->cp_unit&CPTAKE) == 0 && --timo);
 	cin = &consin[minor(tp->t_dev)];
 	cin->cp_hdr.cp_unit = minor(tp->t_dev);
 	cin->cp_hdr.cp_comm = CPREAD;
 	cin->cp_hdr.cp_count = 1;	/* Get ready for input */
 	mtpr(CPMDCB, cin);
-	lasthdr = (struct cphdr *)cin;
+	cnlast = (struct cphdr *)cin;
 }
 
 #ifdef KDB

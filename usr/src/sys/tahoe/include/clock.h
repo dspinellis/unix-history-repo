@@ -1,4 +1,4 @@
-/*	clock.h	1.2	86/01/05	*/
+/*	clock.h	1.3	86/12/06	*/
 
 #define	SECDAY		((unsigned)(24*60*60))		/* seconds per day */
 #define	SECYR		((unsigned)(365*SECDAY))	/* per common year */
@@ -10,3 +10,9 @@
  * Software clock is software interrupt level 8
  */
 #define	setsoftclock()	mtpr(SIRR, 0x8)
+
+/*
+ * To calculate value for interval timer register, we
+ * use the fact that 20512 yields a 60hz clock.
+ */
+#define	hztocount(v)	((20512*60) / (v))
