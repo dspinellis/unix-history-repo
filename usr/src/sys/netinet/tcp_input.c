@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.4	84/08/29	*/
+/*	tcp_input.c	6.5	84/10/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -242,6 +242,7 @@ tcp_input(m0)
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);
+			dropsocket = 0;		/* socket is already gone */
 			inp->inp_laddr = laddr;
 			tp = 0;
 			goto drop;
@@ -497,7 +498,6 @@ trimthenstep6:
 		else {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-			tp->t_rtt = 1;
 			tp->t_rxtshift = 0;
 		}
 		if (acked > so->so_snd.sb_cc) {
@@ -530,6 +530,11 @@ trimthenstep6:
 				if (so->so_state & SS_CANTRCVMORE)
 					soisdisconnected(so);
 				tp->t_state = TCPS_FIN_WAIT_2;
+				/*
+				 * This is contrary to the specification,
+				 * but if we haven't gotten our FIN in 
+				 * 5 minutes, it's not forthcoming.
+				 */
 			}
 			break;
 
@@ -596,7 +601,7 @@ step6:
 		 * soreceive.  It's hard to imagine someone
 		 * actually wanting to send this much urgent data.
 		 */
-		if (ti->ti_urp > tp->t_maxseg) {	/* XXX */
+		if (ti->ti_urp > tp->rcv_wnd + 1) {	/* XXX */
 			ti->ti_urp = 0;			/* XXX */
 			tiflags &= ~TH_URG;		/* XXX */
 			ti->ti_flags &= ~TH_URG;	/* XXX */
