@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -43,13 +43,13 @@ grabh(hp, gflags)
 	struct header *hp;
 {
 	struct sgttyb ttybuf;
-	int (*saveint)();
+	sig_t saveint;
 #ifndef TIOCSTI
-	int (*savequit)();
+	sig_t savequit;
 #endif
-	int (*savetstp)();
-	int (*savettou)();
-	int (*savettin)();
+	sig_t savetstp;
+	sig_t savettou;
+	sig_t savettin;
 	int errs;
 	int ttyint();
 
@@ -234,7 +234,7 @@ redo:
  */
 ttystop(s)
 {
-	int (*old_action)() = signal(s, SIG_DFL);
+	sig_t old_action = signal(s, SIG_DFL);
 
 	sigsetmask(sigblock(0) & ~sigmask(s));
 	kill(0, s);

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -69,7 +69,7 @@ edit1(msgvec, type)
 	 * Deal with each message to be edited . . .
 	 */
 	for (i = 0; msgvec[i] && i < msgCount; i++) {
-		int (*sigint)();
+		sig_t sigint;
 
 		if (i > 0) {
 			char buf[100];
