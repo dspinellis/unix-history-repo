@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.17 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -804,45 +804,14 @@ int
 cd9660_lock(ap)
 	struct vop_lock_args /* {
 		struct vnode *a_vp;
+		int a_flags;
+		struct proc *a_p;
 	} */ *ap;
 {
-	register struct vnode *vp = ap->a_vp;
-	register struct iso_node *ip;
-	struct proc *p = curproc;	/* XXX */
+	struct vnode *vp = ap->a_vp;
 
-start:
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-	}
-	if (vp->v_tag == VT_NON)
-		return (ENOENT);
-	ip = VTOI(vp);
-	if (ip->i_flag & IN_LOCKED) {
-		ip->i_flag |= IN_WANTED;
-#ifdef DIAGNOSTIC
-		if (p) {
-			if (p->p_pid == ip->i_lockholder)
-				panic("locking against myself");
-			ip->i_lockwaiter = p->p_pid;
-		} else
-			ip->i_lockwaiter = -1;
-#endif
-		(void) sleep((caddr_t)ip, PINOD);
-	}
-#ifdef DIAGNOSTIC
-	ip->i_lockwaiter = 0;
-	if (ip->i_lockholder != 0)
-		panic("lockholder (%d) != 0", ip->i_lockholder);
-	if (p && p->p_pid == 0)
-		printf("locking by process 0\n");
-	if (p)
-		ip->i_lockholder = p->p_pid;
-	else
-		ip->i_lockholder = -1;
-#endif
-	ip->i_flag |= IN_LOCKED;
-	return (0);
+	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags, &vp->v_interlock,
+		ap->a_p));
 }
 
 /*
@@ -852,28 +821,14 @@ int
 cd9660_unlock(ap)
 	struct vop_unlock_args /* {
 		struct vnode *a_vp;
+		int a_flags;
+		struct proc *a_p;
 	} */ *ap;
 {
-	register struct iso_node *ip = VTOI(ap->a_vp);
-	struct proc *p = curproc;	/* XXX */
+	struct vnode *vp = ap->a_vp;
 
-#ifdef DIAGNOSTIC
-	if ((ip->i_flag & IN_LOCKED) == 0) {
-		vprint("ufs_unlock: unlocked inode", ap->a_vp);
-		panic("ufs_unlock NOT LOCKED");
-	}
-	if (p && p->p_pid != ip->i_lockholder && p->p_pid > -1 &&
-	    ip->i_lockholder > -1/* && lockcount++ < 100*/)
-		panic("unlocker (%d) != lock holder (%d)",
-		    p->p_pid, ip->i_lockholder);
-	ip->i_lockholder = 0;
-#endif
-	ip->i_flag &= ~IN_LOCKED;
-	if (ip->i_flag & IN_WANTED) {
-		ip->i_flag &= ~IN_WANTED;
-		wakeup((caddr_t)ip);
-	}
-	return (0);
+	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE,
+		&vp->v_interlock, ap->a_p));
 }
 
 /*
@@ -939,9 +894,7 @@ cd9660_islocked(ap)
 	} */ *ap;
 {
 
-	if (VTOI(ap->a_vp)->i_flag & IN_LOCKED)
-		return (1);
-	return (0);
+	return (lockstatus(&VTOI(ap->a_vp)->i_lock));
 }
 
 /*
