@@ -5,10 +5,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getservbyname.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getservbyname.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <netdb.h>
+
+extern int _serv_stayopen;
 
 struct servent *
 getservbyname(name, proto)
@@ -17,7 +19,7 @@ getservbyname(name, proto)
 	register struct servent *p;
 	register char **cp;
 
-	setservent(0);
+	setservent(_serv_stayopen);
 	while (p = getservent()) {
 		if (strcmp(name, p->s_name) == 0)
 			goto gotname;
@@ -29,6 +31,7 @@ gotname:
 		if (proto == 0 || strcmp(p->s_proto, proto) == 0)
 			break;
 	}
-	endservent();
+	if (!_serv_stayopen)
+		endservent();
 	return (p);
 }

@@ -5,10 +5,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getnetbyname.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getnetbyname.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <netdb.h>
+
+extern int _net_stayopen;
 
 struct netent *
 getnetbyname(name)
@@ -17,7 +19,7 @@ getnetbyname(name)
 	register struct netent *p;
 	register char **cp;
 
-	setnetent(0);
+	setnetent(_net_stayopen);
 	while (p = getnetent()) {
 		if (strcmp(p->n_name, name) == 0)
 			break;
@@ -26,6 +28,7 @@ getnetbyname(name)
 				goto found;
 	}
 found:
-	endnetent();
+	if (!_net_stayopen)
+		endnetent();
 	return (p);
 }

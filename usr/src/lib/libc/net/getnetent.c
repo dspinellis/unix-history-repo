@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getnetent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getnetent.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -21,7 +21,7 @@ static FILE *netf = NULL;
 static char line[BUFSIZ+1];
 static struct netent net;
 static char *net_aliases[MAXALIASES];
-static int stayopen = 0;
+int _net_stayopen;
 static char *any();
 
 setnetent(f)
@@ -31,15 +31,16 @@ setnetent(f)
 		netf = fopen(NETDB, "r" );
 	else
 		rewind(netf);
-	stayopen |= f;
+	_net_stayopen |= f;
 }
 
 endnetent()
 {
-	if (netf && !stayopen) {
+	if (netf) {
 		fclose(netf);
 		netf = NULL;
 	}
+	_net_stayopen = 0;
 }
 
 struct netent *

@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getservent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getservent.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -21,8 +21,8 @@ static FILE *servf = NULL;
 static char line[BUFSIZ+1];
 static struct servent serv;
 static char *serv_aliases[MAXALIASES];
-static int stayopen = 0;
 static char *any();
+int _serv_stayopen;
 
 setservent(f)
 	int f;
@@ -31,15 +31,16 @@ setservent(f)
 		servf = fopen(SERVDB, "r" );
 	else
 		rewind(servf);
-	stayopen |= f;
+	_serv_stayopen |= f;
 }
 
 endservent()
 {
-	if (servf && !stayopen) {
+	if (servf) {
 		fclose(servf);
 		servf = NULL;
 	}
+	_serv_stayopen = 0;
 }
 
 struct servent *

@@ -5,10 +5,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getprotoname.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getprotoname.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <netdb.h>
+
+extern int _proto_stayopen;
 
 struct protoent *
 getprotobyname(name)
@@ -17,7 +19,7 @@ getprotobyname(name)
 	register struct protoent *p;
 	register char **cp;
 
-	setprotoent(0);
+	setprotoent(_proto_stayopen);
 	while (p = getprotoent()) {
 		if (strcmp(p->p_name, name) == 0)
 			break;
@@ -26,6 +28,7 @@ getprotobyname(name)
 				goto found;
 	}
 found:
-	endprotoent();
+	if (!_proto_stayopen)
+		endprotoent();
 	return (p);
 }
