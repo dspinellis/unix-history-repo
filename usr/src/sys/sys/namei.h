@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.12 (Berkeley) %G%
+ *	@(#)namei.h	7.13 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_H_
@@ -27,8 +27,9 @@ struct nameidata {
 		/* arguments to namei and related context: */
 	caddr_t	ni_dirp;		/* pathname pointer */
 	enum	uio_seg ni_segflg;	/* location of pathname */
-	short	ni_nameiop;		/* see below */
+	u_long	ni_nameiop;		/* see below */
 	struct	ucred *ni_cred;		/* credentials */
+	struct	vnode *ni_startdir;	/* alternate starting directory */
 
 		/* shared between namei, lookup routines and commit routines: */
 	caddr_t	ni_pnbuf;		/* pathname buffer */
@@ -68,22 +69,32 @@ struct nameidata {
 
 #ifdef KERNEL
 /*
- * namei operations and modifiers
+ * namei operations
  */
 #define	LOOKUP		0	/* perform name lookup only */
 #define	CREATE		1	/* setup for file creation */
 #define	DELETE		2	/* setup for file deletion */
 #define	RENAME		3	/* setup for file renaming */
-#define	OPFLAG		3	/* mask for operation */
-#define	LOCKLEAF	0x004	/* lock inode on return */
-#define	LOCKPARENT	0x008	/* want parent vnode returned locked */
-#define	WANTPARENT	0x010	/* want parent vnode returned unlocked */
-#define	NOCACHE		0x020	/* name must not be left in cache */
-#define	FOLLOW		0x040	/* follow symbolic links */
-#define	NOFOLLOW	0x000	/* do not follow symbolic links (pseudo) */
-#define	NOCROSSMOUNT	0x080	/* do not cross mount points */
-#define	REMOTE		0x100	/* lookup for remote filesystem servers */
-#define	HASBUF		0x200	/* has preallocated pathname buffer */
+#define	OPMASK		3	/* mask for operation */
+/*
+ * namei operational modifiers
+ */
+#define	LOCKLEAF	0x0004	/* lock inode on return */
+#define	LOCKPARENT	0x0008	/* want parent vnode returned locked */
+#define	WANTPARENT	0x0010	/* want parent vnode returned unlocked */
+#define	NOCACHE		0x0020	/* name must not be left in cache */
+#define	FOLLOW		0x0040	/* follow symbolic links */
+#define	NOFOLLOW	0x0000	/* do not follow symbolic links (pseudo) */
+#define	MODMASK		0x00fc	/* mask of operational modifiers */
+/*
+ * namei parameter descriptors
+ */
+#define	NOCROSSMOUNT	0x0100	/* do not cross mount points */
+#define	REMOTE		0x0200	/* lookup for remote filesystem servers */
+#define	HASBUF		0x0400	/* has preallocated pathname buffer */
+#define	STARTDIR	0x0800	/* has alternate starting directory */
+#define	SAVESTARTDIR	0x1000	/* do not vrele alternate starting directory */
+#define PARAMASK	0xff00	/* mask of parameter descriptors */
 #endif
 
 /*
