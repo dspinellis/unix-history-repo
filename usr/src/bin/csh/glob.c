@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)glob.c 4.4 %G%";
+static	char *sccsid = "@(#)glob.c 4.5 %G%";
 
 #include "sh.h"
 #include <dir.h>
