@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sgi
@@ -124,7 +124,6 @@ getcmd(name)
 	register char *p, *q;
 	register struct cmd *c, *found;
 	register int nmatches, longest;
-	extern struct cmd cmdtab[];
 	extern int NCMDS;
 
 	longest = 0;
@@ -186,7 +185,6 @@ help(argc, argv)
 	char *argv[];
 {
 	register struct cmd *c;
-	extern struct cmd cmdtab[];
 
 	if (argc == 1) {
 		register int i, j, w;
