@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.28	82/10/19	*/
+/*	vfs_lookup.c	4.29	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -396,7 +396,7 @@ found:
 			u.u_error = ELOOP;
 			goto bad2;
 		}
-		bcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
+		ovbcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
 		u.u_error =
 		    rdwri(UIO_READ, dp, nbp->b_un.b_addr, dp->i_size,
 			0, 1, (int *)0);
