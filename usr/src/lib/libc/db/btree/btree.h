@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Mike Olson.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.15 (Berkeley) %G%
+ *	@(#)btree.h	8.1 (Berkeley) %G%
  */
 
 #include <mpool.h>
