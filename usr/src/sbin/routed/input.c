@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -121,6 +121,12 @@ rip_input(from, size)
 		/* are we talking to ourselves? */
 		ifp = if_ifwithaddr(from);
 		if (ifp) {
+			if (ifp->int_flags & IFF_PASSIVE) {
+				syslog(LOG_ERR,
+				  "bogus input (from passive interface, %s)",
+				  (*afswitch[from->sa_family].af_format)(from));
+				return;
+			}
 			rt = rtfind(from);
 			if (rt == 0 || ((rt->rt_state & RTS_INTERFACE) == 0) &&
 			    rt->rt_metric >= ifp->int_metric) 
@@ -204,33 +210,37 @@ rip_input(from, size)
 				if (rt && rt->rt_state & RTS_SUBNET &&
 				    (*afp->af_sendroute)(rt, from))
 					continue;
-				/*
-				 * Look for an equivalent route that includes
-				 * this one before adding this route.
-				 */
-				rt = rtfind(&n->rip_dst);
-				if (rt && equal(from, &rt->rt_router))
-					continue;
-				if (n->rip_metric < HOPCNT_INFINITY)
+				if ((unsigned)n->rip_metric < HOPCNT_INFINITY) {
+				    /*
+				     * Look for an equivalent route that
+				     * includes this one before adding
+				     * this route.
+				     */
+				    rt = rtfind(&n->rip_dst);
+				    if (rt && equal(from, &rt->rt_router))
+					    continue;
 				    rtadd(&n->rip_dst, from, n->rip_metric, 0);
+				}
 				continue;
 			}
 
 			/*
 			 * Update if from gateway and different,
-			 * shorter, or getting stale and equivalent.
+			 * shorter, or equivalent but old route
+			 * is getting stale.
 			 */
 			if (equal(from, &rt->rt_router)) {
 				if (n->rip_metric != rt->rt_metric) {
 					rtchange(rt, from, n->rip_metric);
+					rt->rt_timer = 0;
 					if (rt->rt_metric >= HOPCNT_INFINITY)
 						rt->rt_timer =
 						    GARBAGE_TIME - EXPIRE_TIME;
 				} else if (rt->rt_metric < HOPCNT_INFINITY)
 					rt->rt_timer = 0;
 			} else if ((unsigned) n->rip_metric < rt->rt_metric ||
-			    (rt->rt_timer > (EXPIRE_TIME/2) &&
-			    rt->rt_metric == n->rip_metric &&
+			    (rt->rt_metric == n->rip_metric &&
+			    rt->rt_timer > (EXPIRE_TIME/2) &&
 			    (unsigned) n->rip_metric < HOPCNT_INFINITY)) {
 				rtchange(rt, from, n->rip_metric);
 				rt->rt_timer = 0;
