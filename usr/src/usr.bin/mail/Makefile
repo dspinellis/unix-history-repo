@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	1.2 %G%";
+# Sccs Id = "@(#)Makefile	1.3 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -20,8 +20,7 @@ OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o edit.o fio.o \
 
 SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c optim.c names.c lex.c list.c main.c \
-	quit.c send.c strings.c temp.c tty.c vars.c \
-	errlst.c str.c
+	quit.c send.c strings.c temp.c tty.c vars.c errlst.c
 
 HDRS=rcv.h def.h glob.h v7.local.h local.h
 
