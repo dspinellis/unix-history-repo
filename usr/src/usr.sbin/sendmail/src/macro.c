@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -58,7 +58,7 @@ expand(s, buf, buflim, e)
 		s = "";
 	for (xp = xbuf; *s != '\0'; s++)
 	{
-		char c;
+		int c;
 
 		/*
 		**  Check for non-ordinary (special?) character.
@@ -205,7 +205,7 @@ expand(s, buf, buflim, e)
 
 void
 define(n, v, e)
-	char n;
+	int n;
 	char *v;
 	register ENVELOPE *e;
 {
@@ -232,7 +232,7 @@ define(n, v, e)
 
 char *
 macvalue(n, e)
-	char n;
+	int n;
 	register ENVELOPE *e;
 {
 	n &= 0177;
