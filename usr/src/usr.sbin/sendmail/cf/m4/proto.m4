@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	2.33 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	2.34 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -46,18 +46,11 @@ CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
 # who I send unqualified names to (null means deliver locally)
 CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
 
-# names that should be delivered locally, even if we have a relay
+# class L: names that should be delivered locally, even if we have a relay
+# class E: names that should be exposed as from this host, even if we masquerade
 CLroot
+CEroot
 undivert(5)dnl
-
-ifdef(`UUCP_NAME',
-`# uucp hostnames
-UUCP_NAME
-UUCP_ALIASES
-
-# local UUCP connections
-include(UUCP_HOSTS_FILE)',
-`dnl')
 
 # operators that cannot be in local usernames (i.e., network indicators)
 CO @ % !
@@ -72,10 +65,6 @@ OU`'ifdef(`USERDB_SPEC', `USERDB_SPEC')
 Ow`'ifdef(`_NO_WILDCARD_MX_', `True', `False')
 
 include(`../m4/version.m4')
-
-ifdef(`INTERNET_RELAY',
-`include(../sitedep/nicregistered.m4)',
-`dnl')
 include(`../m4/boilerplate.m4')
 undivert(6)dnl
 #
@@ -134,8 +123,7 @@ R$* @ $*		$@ $>6 $1 < @ $2 >		Insert < > and finish
 ###  Ruleset 6 -- bottom half of ruleset 3  ###
 ###############################################
 
-#  At this point, everything should be in a local_part@domain format.
-
+#  At this point, everything should be in a "local_part<@domain>extra" format.
 S6
 
 # handle special cases for local names
