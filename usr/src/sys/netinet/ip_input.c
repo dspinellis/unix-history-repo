@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.4 (Berkeley) %G%
+ *	@(#)ip_input.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -594,7 +594,7 @@ ip_dooptions(ip, ifp)
 			off--;			/* 0 origin */
 			if (off > optlen - sizeof(struct in_addr))
 				break;
-			bcopy((caddr_t)(cp + off), (caddr_t)&ipaddr.sin_addr,
+			bcopy((caddr_t)(&ip->ip_dst), (caddr_t)&ipaddr.sin_addr,
 			    sizeof(ipaddr.sin_addr));
 			/*
 			 * locate outgoing interface
@@ -842,7 +842,11 @@ ip_forward(ip, ifp)
 		return;
 #endif
 	}
-	if (ip->ip_ttl < IPTTLDEC) {
+	if (in_canforward(ip->ip_dst) == 0) {
+		m_freem(dtom(ip));
+		return;
+	}
+	if (ip->ip_ttl <= IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
 		goto sendicmp;
 	}
