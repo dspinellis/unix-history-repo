@@ -2,24 +2,30 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lseek.2	5.1 (Berkeley) %G%
+.\"	@(#)lseek.2	6.1 (Berkeley) %G%
 .\"
-.TH LSEEK 2 "7 July 1983"
+.TH LSEEK 2 ""
 .UC 4
 .SH NAME
 lseek \- move read/write pointer
 .SH SYNOPSIS
 .nf
 .ft B
-.ta 1.25i 1.6i
+#include <sys/file.h>
+.PP
+.nf
+.ft B
+.ta 1.25i 1.6i 1.8i
 #define L_SET	0	/* set the seek pointer */
 #define L_INCR	1	/* increment the seek pointer */
 #define L_XTND	2	/* extend the file size */
 .PP
 .ft B
 pos = lseek(d, offset, whence)
-int pos;
-int d, offset, whence;
+off_t pos;
+int d;
+off_t offset;
+int whence;
 .fi
 .ft R
 .SH DESCRIPTION
