@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass1.c	3.6 (Berkeley) %G%";
+static char version[] = "@(#)pass1.c	3.7 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -15,6 +15,7 @@ pass1()
 {
 	register int c, i, j;
 	register DINODE *dp;
+	struct zlncnt *zlnp;
 	int ndb, partial, cgd;
 	struct inodesc idesc;
 	ino_t inumber;
@@ -96,12 +97,15 @@ pass1()
 			n_files++;
 			lncntp[inumber] = dp->di_nlink;
 			if (dp->di_nlink <= 0) {
-				if (badlnp < &badlncnt[MAXLNCNT])
-					*badlnp++ = inumber;
-				else {
+				zlnp = (struct zlncnt *)malloc(sizeof *zlnp);
+				if (zlnp == NULL) {
 					pfatal("LINK COUNT TABLE OVERFLOW");
 					if (reply("CONTINUE") == 0)
 						errexit("");
+				} else {
+					zlnp->zlncnt = inumber;
+					zlnp->next = zlnhead;
+					zlnhead = zlnp;
 				}
 			}
 			statemap[inumber] = DIRCT(dp) ? DSTATE : FSTATE;

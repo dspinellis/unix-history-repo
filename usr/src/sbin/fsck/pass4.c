@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass4.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)pass4.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -11,9 +11,10 @@ int	pass4check();
 
 pass4()
 {
-	register ino_t inumber, *blp;
-	int n;
+	register ino_t inumber;
+	register struct zlncnt *zlnp;
 	struct inodesc idesc;
+	int n;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = ADDR;
@@ -28,8 +29,8 @@ pass4()
 			if (n)
 				adjust(&idesc, (short)n);
 			else {
-				for (blp = badlncnt;blp < badlnp; blp++)
-					if (*blp == inumber) {
+				for (zlnp = zlnhead; zlnp; zlnp = zlnp->next)
+					if (zlnp->zlncnt == inumber) {
 						clri(&idesc, "UNREF", 1);
 						break;
 					}
@@ -65,7 +66,7 @@ pass4check(idesc)
 				dlp->dup = duplist->dup;
 				dlp = duplist;
 				duplist = duplist->next;
-				free(dlp);
+				/* free(dlp); */
 				break;
 			}
 			if (dlp == 0) {

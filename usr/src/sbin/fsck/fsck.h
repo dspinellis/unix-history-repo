@@ -1,8 +1,7 @@
-/* @(#)fsck.h	3.5 (Berkeley) %G% */
+/* @(#)fsck.h	3.6 (Berkeley) %G% */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
 #define	MAXBAD		10	/* limit on bad blks (per inode) */
-#define	MAXLNCNT	500	/* num zero link cnts to remember */
 
 typedef	int	(*SIG_TYP)();
 
@@ -89,7 +88,25 @@ struct inodesc {
 #define	ADDR	2
 
 /*
- * Linked list of duplicate blocks
+ * Linked list of duplicate blocks.
+ * 
+ * The list is composed of two parts. The first part of the
+ * list (from duplist through the node pointed to by muldup)
+ * contains a single copy of each duplicate block that has been 
+ * found. The second part of the list (from muldup to the end)
+ * contains duplicate blocks that have been found more than once.
+ * To check if a block has been found as a duplicate it is only
+ * necessary to search from duplist through muldup. To find the 
+ * total number of times that a block has been found as a duplicate
+ * the entire list must be searched for occurences of the block
+ * in question. The following diagram shows a sample list where
+ * w (found twice), x (found once), y (found three times), and z
+ * (found once) are duplicate block numbers:
+ *
+ *    w -> y -> x -> z -> y -> w -> y
+ *    ^		     ^
+ *    |		     |
+ * duplist	  muldup
  */
 struct dups {
 	struct dups *next;
@@ -98,8 +115,14 @@ struct dups {
 struct dups *duplist;		/* head of dup list */
 struct dups *muldup;		/* end of unique duplicate dup block numbers */
 
-ino_t	badlncnt[MAXLNCNT];	/* table of inos with zero link cnts */
-ino_t	*badlnp;		/* next entry in table */
+/*
+ * Linked list of inodes with zero link counts.
+ */
+struct zlncnt {
+	struct zlncnt *next;
+	ino_t zlncnt;
+};
+struct zlncnt *zlnhead;		/* head of zero link count list */
 
 char	rawflg;
 char	*devname;
