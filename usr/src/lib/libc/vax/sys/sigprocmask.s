@@ -16,7 +16,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)sigprocmask.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)sigprocmask.s	5.2 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -25,17 +25,17 @@ err:
 	jmp	cerror
 
 ENTRY(sigprocmask)
-	tstl	8(fp)			# check new sigset pointer
+	tstl	8(ap)			# check new sigset pointer
 	bneq	1f			# if not null, indirect
-	movl	$0,8(fp)		# null mask pointer: block empty set
-	movl	$1,4(fp)		# SIG_BLOCK
+/*	movl	$0,8(ap)		# null mask pointer: block empty set */
+	movl	$1,4(ap)		# SIG_BLOCK
 	jbr	2f
-1:	movl	*8(fp),8(fp)		# indirect to new mask arg
+1:	movl	*8(ap),8(ap)		# indirect to new mask arg
 2:	chmk	$SYS_sigprocmask
 	jcs	err
-	tstl	12(fp)			# test if old mask requested
+	tstl	12(ap)			# test if old mask requested
 	beql	out
-	movl	r0,*12(fp)		# store old mask
+	movl	r0,*12(ap)		# store old mask
 out:
 	clrl	r0
 	ret
