@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)whois.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -50,7 +50,7 @@ main(argc, argv)
 	char *host;
 
 	host = NICHOST;
-	while ((ch = getopt(argc, argv, "h")) != EOF)
+	while ((ch = getopt(argc, argv, "h:")) != EOF)
 		switch((char)ch) {
 		case 'h':
 			host = optarg;
@@ -67,7 +67,8 @@ main(argc, argv)
 
 	hp = gethostbyname(host);
 	if (hp == NULL) {
-		fprintf(stderr, "whois: %s: host unknown\n", host);
+		fprintf(stderr, "whois: %s: ", host);
+		herror((char *)NULL);
 		exit(1);
 	}
 	host = hp->h_name;
