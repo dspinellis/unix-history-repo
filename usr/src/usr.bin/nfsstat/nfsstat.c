@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -158,6 +158,7 @@ intpr(interval, nfsstataddr)
 	klseek(kmem, nfsstataddr, 0);
 	read(kmem, (char *)&nfsstats, sizeof(struct nfsstats));
 	printf("Client Info:\n");
+	printf("Rpc Counts:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
 		"Write", "Create", "Remove");
@@ -181,7 +182,15 @@ intpr(interval, nfsstataddr)
 		nfsstats.rpccnt[15],
 		nfsstats.rpccnt[16],
 		nfsstats.rpccnt[17]);
-	printf("Rpc retries\n%11d\n",nfsstats.rpcretries);
+	printf("Rpc Info:\n");
+	printf("%9.9s %9.9s %9.9s %9.9s %9.9s\n",
+		"TimedOut", "Invalid", "X Replies", "Retries", "Requests");
+	printf("%9d %9d %9d %9d %9d\n",
+		nfsstats.rpctimeouts,
+		nfsstats.rpcinvalid,
+		nfsstats.rpcunexpected,
+		nfsstats.rpcretries,
+		nfsstats.rpcrequests);
 	printf("Cache Info:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s",
 		"Attr Hits", "Misses", "Lkup Hits", "Misses");
@@ -195,10 +204,17 @@ intpr(interval, nfsstataddr)
 		nfsstats.read_bios,
 		nfsstats.biocache_writes-nfsstats.write_bios,
 		nfsstats.write_bios);
-	printf("%9.9s %9.9s\n", "DirE Hits", "Misses");
-	printf("%9d %9d\n",
+	printf("%9.9s %9.9s %9.9s %9.9s",
+		"BioRLHits", "Misses", "BioD Hits", "Misses");
+	printf(" %9.9s %9.9s\n", "DirE Hits", "Misses");
+	printf("%9d %9d %9d %9d",
+		nfsstats.biocache_readlinks-nfsstats.readlink_bios,
+		nfsstats.readlink_bios,
+		nfsstats.biocache_readdirs-nfsstats.readdir_bios,
+		nfsstats.readdir_bios);
+	printf(" %9d %9d\n",
 		nfsstats.direofcache_hits, nfsstats.direofcache_misses);
-	printf("Server Info:\n");
+	printf("\nServer Info:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
 		"Write", "Create", "Remove");
