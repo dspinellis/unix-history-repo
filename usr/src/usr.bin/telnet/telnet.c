@@ -1,4 +1,7 @@
-static char sccsid[] = "@(#)telnet.c	4.17 (Berkeley) %G%";
+#ifndef lint
+static char sccsid[] = "@(#)telnet.c	4.18 (Berkeley) %G%";
+#endif
+
 /*
  * User telnet program.
  */
@@ -56,33 +59,33 @@ int	setcrmod(), setdebug();
 #define HELPINDENT (sizeof ("connect"))
 
 struct cmd {
-	char	*name;
-	char	*help;
-	int	(*handler)();
+	char	*name;		/* command name */
+	char	*help;		/* help string */
+	int	(*handler)();	/* routine which executes command */
 };
 
-char	ohelp[] = "connect to a site";
-char	chelp[] = "close current connection";
-char	qhelp[] = "exit telnet";
-char	zhelp[] = "suspend telnet";
-char	dhelp[] = "toggle debugging";
-char	ehelp[] = "set escape character";
-char	shelp[] = "print status information";
-char	hhelp[] = "print help information";
-char	phelp[] = "toggle viewing of options processing";
-char	rhelp[] = "toggle mapping of received carriage returns";
+char	openhelp[] =	"connect to a site";
+char	closehelp[] =	"close current connection";
+char	quithelp[] =	"exit telnet";
+char	zhelp[] =	"suspend telnet";
+char	debughelp[] =	"toggle debugging";
+char	escapehelp[] =	"set escape character";
+char	statushelp[] =	"print status information";
+char	helphelp[] =	"print help information";
+char	optionshelp[] =	"toggle viewing of options processing";
+char	crmodhelp[] =	"toggle mapping of received carriage returns";
 
 struct cmd cmdtab[] = {
-	{ "open",	ohelp,		tn },
-	{ "close",	chelp,		bye },
-	{ "quit",	qhelp,		quit },
+	{ "open",	openhelp,	tn },
+	{ "close",	closehelp,	bye },
+	{ "quit",	quithelp,	quit },
 	{ "z",		zhelp,		suspend },
-	{ "escape",	ehelp,		setescape },
-	{ "status",	shelp,		status },
-	{ "options",	phelp,		setoptions },
-	{ "crmod",	rhelp,		setcrmod },
-	{ "debug",	dhelp,		setdebug },
-	{ "?",		hhelp,		help },
+	{ "escape",	escapehelp,	setescape },
+	{ "status",	statushelp,	status },
+	{ "options",	optionshelp,	setoptions },
+	{ "crmod",	crmodhelp,	setcrmod },
+	{ "debug",	debughelp,	setdebug },
+	{ "?",		helphelp,	help },
 	0
 };
 
@@ -177,9 +180,8 @@ tn(argc, argv)
 		perror("telnet: socket");
 		return;
 	}
-	if (debug)
-		if (setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-			perror("telnet: setsockopt");
+	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		perror("setsockopt (SO_DEBUG)");
 	sigset(SIGINT, intr);
 	sigset(SIGPIPE, deadpeer);
 	printf("Trying...\n");
@@ -248,12 +250,11 @@ suspend()
 /*VARARGS*/
 bye()
 {
-	int how = 2;
 	register char *op;
 
 	(void) mode(0);
 	if (connected) {
-		ioctl(net, SIOCDONE, &how);
+		shutdown(net, 2);
 		printf("Connection closed.\n");
 		close(net);
 		connected = 0;
@@ -272,7 +273,6 @@ quit()
 
 /*
  * Help command.
- * Call each command handler with argc == 0 and argv[0] == name.
  */
 help(argc, argv)
 	int argc;
@@ -435,6 +435,8 @@ telnet(s)
 				tcc = 0;
 				break;
 			}
+			if (c == IAC)
+				*nfrontp++ = c;
 			*nfrontp++ = c;
 		}
 		if ((obits & (1 << s)) && (nfrontp - nbackp) > 0)
@@ -713,6 +715,8 @@ setdebug()
 	printf("%s turn on socket level debugging.\n",
 		debug ? "Will" : "Wont");
 	fflush(stdout);
+	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		perror("setsockopt (SO_DEBUG)");
 }
 
 /*
