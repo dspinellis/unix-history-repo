@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.17 83/12/01";
+static	char *sccsid = "@(#)cmd1.c	3.18 83/12/17";
 #endif
 
 #include "defs.h"
@@ -21,7 +21,8 @@ c_window()
 		wwsetcursor(row, col);
 		while (bpeekc() < 0)
 			bread();
-		switch (getpos(&row, &col, 1, 0, wwnrow - 1, wwncol - 1)) {
+		switch (getpos(&row, &col, row > 1, 0,
+			wwnrow - 1, wwncol - 1)) {
 		case 3:
 			wwunbox(boxwin);
 			wwdelete(boxwin);
