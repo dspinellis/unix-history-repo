@@ -1,4 +1,4 @@
-/*	dz.c	4.30	81/10/11	*/
+/*	dz.c	4.30	81/11/08	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -22,7 +22,6 @@
 #include "../h/pdma.h"
 #include "../h/bk.h"
 #include "../h/file.h"
-#include "../h/mx.h"
 
 /*
  * Driver information for auto-configuration stuff.
@@ -153,7 +152,6 @@ dzopen(dev, flag)
 	tp = &dz_tty[unit];
 	tp->t_addr = (caddr_t)&dzpdma[unit];
 	tp->t_oproc = dzstart;
-	tp->t_iproc = NULL;
 	tp->t_state |= WOPEN;
 	if ((tp->t_state & ISOPEN) == 0) {
 		ttychars(tp);
@@ -360,10 +358,7 @@ dzstart(tp)
 		goto out;
 	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
-		if (tp->t_chan)
-			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
-		else
-			wakeup((caddr_t)&tp->t_outq);
+		wakeup((caddr_t)&tp->t_outq);
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;

@@ -1,4 +1,4 @@
-/*	conf.c	4.40	81/11/07	*/
+/*	conf.c	4.41	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -285,19 +285,6 @@ int	dnopen(), dnclose(), dnwrite(), dnselect();
 #define	dnselect	selecttrue
 #endif
 
-#include "dr.h"
-#if NDR > 0
-int	dropen(),drclose(),drread(),drwrite(),drioctl(),drreset(),drselect();
-#else
-#define	dropen		nodev
-#define	drclose		nodev
-#define drread		nodev
-#define	drwrite		nodev
-#define	drioctl		nodev
-#define	drreset		nodev
-#define	drselect	selecttrue
-#endif
-
 int	ttselect(), seltrue(), selectfalse();
 
 struct cdevsw	cdevsw[] =
@@ -377,9 +364,9 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		accreset,	0,
 	nodev,
-	dropen,		drclose,	drread,		drwrite,	/*23*/
-	drioctl,	nodev,		drreset,	0,
-	seltrue,
+	nodev,		nodev,		nodev,		nodev,		/*23*/
+	nodev,		nodev,		nodev,		0,
+	nodev,
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
 	nodev,		nodev,		nodev,		0,
 	seltrue,
@@ -394,12 +381,22 @@ int	ttyopen(),ttyclose(),ttread(),nullioctl(),ttstart();
 char	*ttwrite();
 int	ttyinput();
 
+#include "bk.h"
+#if NBK > 0
+int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
+#endif
+
 struct	linesw linesw[] =
 {
 	ttyopen, nodev, ttread, ttwrite, nullioctl,
 	ttyinput, nodev, nulldev, ttstart, nulldev,
+#if NBK > 0
+	bkopen, bkclose, bkread, ttwrite, bkioctl,
+	bkinput, nodev, nulldev, ttstart, nulldev,
+#else
 	nodev, nodev, nodev, (char *(*)())nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
+#endif
 	ttyopen, ttyclose, ttread, ttwrite, nullioctl,
 	ttyinput, nodev, nulldev, ttstart, nulldev,
 	0

@@ -1,4 +1,4 @@
-/*	dh.c	4.39	81/10/11	*/
+/*	dh.c	4.39	81/11/08	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -19,7 +19,6 @@
 #include "../h/ubavar.h"
 #include "../h/bk.h"
 #include "../h/clist.h"
-#include "../h/mx.h"
 #include "../h/file.h"
 
 /*
@@ -234,7 +233,6 @@ dhopen(dev, flag)
 	addr = (struct dhdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)addr;
 	tp->t_oproc = dhstart;
-	tp->t_iproc = NULL;
 	tp->t_state |= WOPEN;
 	/*
 	 * While setting up state for this uba and this dh,
@@ -524,10 +522,7 @@ dhstart(tp)
 	 */
 	if ((tp->t_state&ASLEEP) && tp->t_outq.c_cc<=TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
-		if (tp->t_chan)
-			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
-		else
-			wakeup((caddr_t)&tp->t_outq);
+		wakeup((caddr_t)&tp->t_outq);
 	}
 	/*
 	 * Now restart transmission unless the output queue is
