@@ -1,112 +1,258 @@
-.\"	@(#)chmod.1	6.3 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)chmod.1	6.4 (Berkeley) %G%
 .\"
 .TH CHMOD 1 ""
-.AT 3
+.UC 7
 .SH NAME
-chmod \- change mode
+chmod - change file modes
 .SH SYNOPSIS
-\fBchmod\fP [
-.B \-Rf
-] mode file ...
+.nf
+chmod [-fR] mode file ...
+.fi
 .SH DESCRIPTION
-The mode of each named file is changed according to \fImode\fP,
-which may be absolute or symbolic.  An absolute \fImode\fP
-is an octal number constructed from the OR of the following modes:
-.TP 10
+The
+.I chmod
+utility modifies the file mode bits of the listed files
+as specified by the
+.I mode
+operand.
+.PP
+The options are as follows:
+.TP
+-f
+If the -f option is given,
+.I chmod
+will still exit 0 and not complain if it fails to change the mode
+on a file.
+.TP
+-R
+Traverse a file hierarchy.
+For each file that is of type directory,
+.I chmod
+changes the mode of all files in the file hierarchy below it followed
+by the mode of the directory itself.
+.PP
+Symbolic links are not indirected through, nor are their modes altered.
+.PP
+Only the owner of a file or the super-user is permitted to change
+the mode of a file.
+.PP
+The
+.I chmod
+utility exits 0 on success, and >0 if an error occurs.
+.SH MODES
+Modes may be absolute or symbolic.
+An absolute mode is an octal number constructed by
+.IR or 'ing
+the following values:
+.RS
+.TP 8
 4000
-set user ID on execution
+set-user-ID-on-execution
 .br
 .ns
-.TP 10
+.TP
 2000
-set group ID on execution
+set-group-ID-on-execution
 .br
 .ns
-.TP 10
+.TP
 1000
-sticky bit, see
-.IR  chmod (2)
+sticky bit, see chmod(2)
 .br
 .ns
-.TP 10
+.TP
 0400
 read by owner
 .br
 .ns
-.TP 10
+.TP
 0200
 write by owner
 .br
 .ns
-.TP 10
+.TP
 0100
-execute (search in directory) by owner
+execute (or search for directories) by owner
 .br
 .ns
-.TP 10
+.TP
 0070
-read, write, execute (search) by group
+read, write, execute/search by group
 .br
 .ns
-.TP 10
+.TP
 0007
-read, write, execute (search) by others
-.LP
-A symbolic \fImode\fP has the form:
-.IP
-.RI [ who ]
-\fIop permission\fP
-.RI [ "op permission" "] ..."
-.LP
-The \fIwho\fP part is a combination of the letters \fBu\fP
-(for user's permissions), \fBg\fP (group) and \fBo\fP (other).
-The letter \fBa\fP stands for all, or \fBugo.\fP
-If \fIwho\fP is omitted, the default is \fIa\fP
-but the setting of the file creation mask (see umask(2)) is taken into account.
-.LP
-\fIOp\fP can be \fB+\fP to add \fIpermission\fP to the file's mode,
-\fB\-\fP to take away \fIpermission\fP and \fB=\fP to assign
-\fIpermission\fP absolutely (all other bits will be reset).
-.LP
-\fIPermission\fP is any combination of the letters \fBr\fP (read),
-\fBw\fP (write), \fBx\fP (execute),
-\fBX\fP (set execute only if file is a directory
-or some other execute bit is set),
-\fBs\fP (set owner or group id)
-and \fBt\fP (save text \- sticky).
-Letters \fBu\fP, \fBg\fP, or \fBo\fP indicate that \fIpermission\fP
-is to be taken from the current mode. 
-Omitting \fIpermission\fP
-is only useful with \fB=\fP to take away all permissions.
+read, write, execute/search by others
 .PP
-When the
-.B \-R
-option is given, 
-.I chmod
-recursively descends its directory arguments
-setting the mode for each file as described above.
-When symbolic links are encountered, their mode is not changed
-and they are not traversed.
+The read, write, and execute/search values for group and others
+are encoded as described for owner.
+.RE
 .PP
-If the
-.B \-f
-option is given,
-.I chmod
-will not complain if it fails to change the mode
-on a file.
+The symbolic mode is described by the following grammar:
+.sp
+.nf
+.RS
+newmode ::= clause [ , clause ]
+ clause ::= [ who ] op [ perm ]
+    who ::= [ u | g | o ] ... | a
+     op ::= + | - | =
+   perm ::= [ r | s | t | w | X | x ] ...
+.RE
+.fi
+.sp
+.PP
+Each
+.I clause
+specifies an operation to be performed on the current mode
+bits.
+Each operation is applied to the mode bits in the order specified.
+.PP
+The
+.I who
+symbols ``u'', ``g'', and ``o'' specify the user, group, and other parts
+of the mode bits, respectively.
+A
+.I who
+consisting of the symbol ``a'' is equivalent to ``ugo''.
+.PP
+The
+.I perm
+symbols represent the portions of the mode bits as follows:
+.TP
+r
+The read bits.
+.TP
+s
+The set-user-ID-on-execution and set-group-ID-on-execution bits.
+.TP
+t
+The sticky bits.
+.TP
+w
+The write bits.
+.TP
+X
+The execute/search bits if the file is a directory or any of the
+execute/search bits are already set.
+.TP
+x
+The execute/search bits.
+.PP
+The
+.I op
+symbols represent the operation performed, as follows:
+.TP
++
+If no value is supplied for
+.IR perm ,
+the ``+'' operation has no effect.
+If no value is supplied for
+.IR who ,
+each permission bit specified in
+.IR perm ,
+for which the corresponding bit in the file mode creation mask of the
+invoking process is clear, is set, and, if
+.I perm
+includes ``s'', the set-user-ID-on-execution and set-group-ID-on-execution
+bits are set.
+If values are provided for both
+.I who
+and
+.IR perm ,
+each mode bit represented by the specified
+.I who
+and
+.I perm
+values is set.
+.TP
+-
+If no value is supplied for
+.IR who ,
+clear the mode bits represented by
+.I perm
+for the owner, group, and other permissions.
+Otherwise, clear the mode bits represented by the specified
+.I who
+and
+.I perm
+values.
+.TP
+=
+If no value is supplied for
+.IR who ,
+set the permission bits specified in
+.I perm
+that correspond to bits that are not set in the value of the file mode
+creation mask of the invoking process.
+Otherwise, clear all the mode bits for user, group, and other as
+specified by the
+.I who
+value.
+Then, if a value is supplied for both
+.I perm
+and
+.IR who ,
+set each mode bit represented by all combinations
+of the specified
+.I who
+and
+.I perm
+values.
+.PP
+Operations upon the other permissions (specified by the symbol ``o'' or
+the symbol ``a'') in combination with the
+.I perm
+symbols ``s'' or ``t''
+are ignored, and do not change any mode bits or cause an error.
 .SH EXAMPLES
-.LP
-The first example denies write permission to others,
-the second makes a file executable by all if it is executable by anyone:
-.IP
-chmod o\-w file
+.TP
+``644''
+make a file readable by anyone but writeable only by the owner.
 .br
-chmod +X file
-.LP
-Multiple symbolic modes separated by commas may be given.
-Operations are performed in the order specified.  The letter
-\fBs\fP is only useful with \fBu\fP or \fBg.\fP
-.LP
-Only the owner of a file (or the super-user) may change its mode.
+.ns
+.TP
+``go-w''
+deny write permission to group and others.
+.br
+.ns
+.TP
+``+X''
+make a file executable by everyone if it is already executable by
+anyone.
+.br
+.ns
+.TP
+``711'' or ``u=rwx,go=x''
+make a file executable by everyone and read/writeable by the owner only.
+.TP
+``go=''
+clear all mode bits for group and others.
+.SH BUGS
+There's no
+.I perm
+option for the naughty bits.
+.SH ENVIRONMENT
 .SH "SEE ALSO"
-ls(1), chmod(2), stat(2), umask(2), chown(8)
+install(1), chmod(2), fts(2), stat(2), umask(2), setmode(3), chown(8)
+.SH STANDARDS
+The
+.I chmod
+function is expected to be POSIX 1003.2 compatible with the exception
+of the
+.I perm
+symbols ``t'' and ``X'' which are not included in that standard.

@@ -1,47 +1,53 @@
 /*
- * Copyright (c) 1980, 1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1988 Regents of the University of California.\n\
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * chmod options mode files
- * where
- *	mode is [ugoa][+-=][rwxXstugo] or an octal number
- *	options are -Rf
- */
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <fts.h>
+#include <stdio.h>
+#include <strings.h>
 
-static int	fflag, rflag, retval, um;
-static char	*modestring, *ms;
+int retval;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern char *optarg;
-	extern int optind, opterr;
-	int ch;
+	extern int errno, optind;
+	register FTS *fts;
+	register FTSENT *p;
+	register int oct, omode;
+	register char *mode;
+	struct stat sb;
+	int ch, fflag, rflag;
+	mode_t setmode();
 
-	/*
-	 * since "-[rwx]" etc. are valid file modes, we don't let getopt(3)
-	 * print error messages, and we mess around with optind as necessary.
-	 */
-	opterr = 0;
-	while ((ch = getopt(argc, argv, "Rf")) != EOF)
+	fflag = rflag = 0;
+	while ((ch = getopt(argc, argv, "Rfrwx")) != EOF)
 		switch((char)ch) {
 		case 'R':
 			rflag++;
@@ -49,205 +55,76 @@ main(argc, argv)
 		case 'f':
 			fflag++;
 			break;
-		case '?':
-		default:
+		/* "-[rwx]" are valid file modes */
+		case 'r':
+		case 'w':
+		case 'x':
 			--optind;
 			goto done;
+		case '?':
+		default:
+			usage();
 		}
 done:	argv += optind;
 	argc -= optind;
 
-	if (argc < 2) {
-		fputs("usage: chmod [-Rf] [ugoa][+-=][rwxXstugo] file ...\n",
-		    stderr);
-		exit(-1);
+	if (argc < 2)
+		usage();
+
+	mode = *argv;
+	if (*mode >= '0' && *mode <= '7') {
+		omode = (int)strtol(mode, (char **)NULL, 8);
+		oct = 1;
+	} else {
+		if (setmode(mode, 0, 0) == (mode_t)-1) {
+			(void)fprintf(stderr, "chmod: invalid file mode.\n");
+			exit(1);
+		}
+		oct = 0;
 	}
 
-	modestring = *argv;
-	um = umask(0);
-	(void)newmode((u_short)0);
-
-	while (*++argv)
-		change(*argv);
+	retval = 0;
+	if (rflag) {
+		if (!(fts = ftsopen(++argv,
+		    (oct ? FTS_NOSTAT : 0)|FTS_MULTIPLE|FTS_PHYSICAL, 0))) {
+			(void)fprintf(stderr, "chmod: %s.\n", strerror(errno));
+			exit(1);
+		}
+		while (p = ftsread(fts)) {
+			if (p->info == FTS_D)
+				continue;
+			if (p->info == FTS_ERR) {
+				if (!fflag)
+					error(p->path);
+				continue;
+			}
+			if (chmod(p->accpath, oct ? omode :
+			    (int)setmode(mode, p->statb.st_mode, 0)) && !fflag)
+				error(p->path);
+		}
+		exit(retval);
+	}
+	if (oct) {
+		while (*++argv)
+			if (chmod(*argv, omode) && !fflag)
+				error(*argv);
+	} else
+		while (*++argv)
+			if ((lstat(*argv, &sb) || chmod(*argv,
+			    (int)setmode(mode, sb.st_mode, 0))) && !fflag)
+				error(*argv);
 	exit(retval);
 }
 
-change(file)
-	char *file;
+error(name)
+	char *name;
 {
-	register DIR *dirp;
-	register struct direct *dp;
-	struct stat buf;
-
-	if (lstat(file, &buf) || chmod(file, newmode(buf.st_mode))) {
-		err(file);
-		return;
-	}
-	if (rflag && ((buf.st_mode & S_IFMT) == S_IFDIR)) {
-		if (chdir(file) < 0 || !(dirp = opendir("."))) {
-			err(file);
-			return;
-		}
-		for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
-			if (dp->d_name[0] == '.' && (!dp->d_name[1] ||
-			    dp->d_name[1] == '.' && !dp->d_name[2]))
-				continue;
-			change(dp->d_name);
-		}
-		closedir(dirp);
-		if (chdir("..")) {
-			err("..");
-			exit(fflag ? 0 : -1);
-		}
-	}
+	(void)fprintf(stderr, "chmod: %s: %s.\n", name, strerror(errno));
+	retval = 1;
 }
 
-err(s)
-	char *s;
+usage()
 {
-	if (fflag)
-		return;
-	fputs("chmod: ", stderr);
-	perror(s);
-	retval = -1;
-}
-
-newmode(nm)
-	u_short nm;
-{
-	register int o, m, b;
-
-	ms = modestring;
-	m = abs();
-	if (*ms == '\0')
-		return (m);
-	do {
-		m = who();
-		while (o = what()) {
-			b = where((int)nm);
-			switch (o) {
-			case '+':
-				nm |= b & m;
-				break;
-			case '-':
-				nm &= ~(b & m);
-				break;
-			case '=':
-				nm &= ~m;
-				nm |= b & m;
-				break;
-			}
-		}
-	} while (*ms++ == ',');
-	if (*--ms) {
-		fputs("chmod: invalid mode.\n", stderr);
-		exit(-1);
-	}
-	return ((int)nm);
-}
-
-abs()
-{
-	register int c, i;
-
-	i = 0;
-	while ((c = *ms++) >= '0' && c <= '7')
-		i = (i << 3) + (c - '0');
-	ms--;
-	return (i);
-}
-
-#define	USER	05700	/* user's bits */
-#define	GROUP	02070	/* group's bits */
-#define	OTHER	00007	/* other's bits */
-#define	ALL	01777	/* all (note absence of setuid, etc) */
-
-#define	READ	00444	/* read permit */
-#define	WRITE	00222	/* write permit */
-#define	EXEC	00111	/* exec permit */
-#define	SETID	06000	/* set[ug]id */
-#define	STICKY	01000	/* sticky bit */
-
-who()
-{
-	register int m;
-
-	m = 0;
-	for (;;) switch (*ms++) {
-	case 'u':
-		m |= USER;
-		continue;
-	case 'g':
-		m |= GROUP;
-		continue;
-	case 'o':
-		m |= OTHER;
-		continue;
-	case 'a':
-		m |= ALL;
-		continue;
-	default:
-		ms--;
-		if (m == 0)
-			m = ALL & ~um;
-		return (m);
-	}
-}
-
-what()
-{
-	switch (*ms) {
-	case '+':
-	case '-':
-	case '=':
-		return (*ms++);
-	}
-	return (0);
-}
-
-where(om)
-	register int om;
-{
-	register int m;
-
- 	m = 0;
-	switch (*ms) {
-	case 'u':
-		m = (om & USER) >> 6;
-		goto dup;
-	case 'g':
-		m = (om & GROUP) >> 3;
-		goto dup;
-	case 'o':
-		m = (om & OTHER);
-	dup:
-		m &= (READ|WRITE|EXEC);
-		m |= (m << 3) | (m << 6);
-		++ms;
-		return (m);
-	}
-	for (;;) switch (*ms++) {
-	case 'r':
-		m |= READ;
-		continue;
-	case 'w':
-		m |= WRITE;
-		continue;
-	case 'x':
-		m |= EXEC;
-		continue;
-	case 'X':
-		if ((om & S_IFDIR) || (om & EXEC))
-			m |= EXEC;
-		continue;
-	case 's':
-		m |= SETID;
-		continue;
-	case 't':
-		m |= STICKY;
-		continue;
-	default:
-		ms--;
-		return (m);
-	}
+	(void)fprintf(stderr, "chmod: chmod [-fR] mode file ...\n");
+	exit(1);
 }
