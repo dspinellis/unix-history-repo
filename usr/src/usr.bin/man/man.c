@@ -55,7 +55,8 @@ DIR	stanlist[] = {		/* standard sub-directory list */
 };
 
 static DIR	*dirlist;		/* list of directories to search */
-static int	nomore;			/* copy file to stdout */
+static int	nomore,			/* copy file to stdout */
+		where;			/* just tell me where */
 static char	*defpath,		/* default search path */
 		*locpath,		/* local search path */
 		*machine,		/* machine type */
@@ -107,6 +108,13 @@ main(argc, argv)
 			execvp(*arg_start, arg_start);
 			fputs("apropos: Command not found.\n", stderr);
 			exit(1);
+		case 'w':
+			/*
+			 * Deliberately undocumented; really only useful when
+			 * you're moving man pages around.  Not worth adding.
+			 */
+			where = YES;
+			break;
 		case '?':
 		default:
 			usage();
@@ -258,7 +266,7 @@ numtest:			if (!*++argv) {
 		 * knows an awful lot about what gets assigned to what in
 		 * the switch statement we just passed through.  Sorry.
 		 */
-		if (!manual(section, *argv))
+		if (!manual(section, *argv) && !where)
 			if (manpath == locpath)
 				if (section == NO_SECTION)
 					fprintf(stderr, "No entry for %s in the local manual.\n", *argv);
@@ -322,16 +330,16 @@ find(beg, dir, name)
 	char	fname[MAXPATHLEN + 1];
 
 	(void)sprintf(fname, "%s/%s/%s.0", beg, dir, name);
-	if (!access(fname, R_OK)) {
-		show(fname);
-		return(YES);
+	if (access(fname, R_OK)) {
+		(void)sprintf(fname, "%s/%s/%s/%s.0", beg, dir, machine, name);
+		if (access(fname, R_OK))
+			return(NO);
 	}
-	(void)sprintf(fname, "%s/%s/%s/%s.0", beg, dir, machine, name);
-	if (!access(fname, R_OK)) {
+	if (where)
+		printf("man: found in %s.\n", fname);
+	else
 		show(fname);
-		return(YES);
-	}
-	return(NO);
+	return(!where);
 }
 
 /*
