@@ -1,0 +1,30 @@
+#
+# UCB HARRIS HCX-7 (alias Power 6/32)  MATISSE
+#
+machine		tahoe
+cpu		"TAHOE"
+ident		MATISSE
+timezone	8 dst
+maxusers	32
+options		INET
+options		NS
+options		FPE
+options		KDB
+
+config		vmunix	root on dk0 swap on dk0 and dk1 and dk2
+
+controller	vba0
+controller	vd0	at vba? csr 0xffff2000 	vector vdintr
+disk		dk0	at vd0 drive 0
+disk		dk1	at vd0 drive 1
+controller	vd1	at vba? csr 0xffff2100 	vector vdintr
+disk		dk2	at vd1 drive 0
+controller	cy0	at vba? csr 0xffff4000	vector cyintr
+device		yc0	at cy0 drive 0
+device	 	vx0	at vba? csr 0xfffe0000	vector vackint vcmdrsp vunsol
+device	 	vx1	at vba? csr 0xfffe4000	vector vackint vcmdrsp vunsol
+device	 	vx2	at vba? csr 0xfffe8000	vector vackint vcmdrsp vunsol
+pseudo-device	loop
+pseudo-device	pty
+pseudo-device	ether
+device	ace0	at vba? csr 0xffff0000 flags 0xfff80000 vector acecint acerint
