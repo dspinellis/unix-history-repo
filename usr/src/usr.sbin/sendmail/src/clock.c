@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)clock.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)clock.c	8.7 (Berkeley) %G%";
 **		none.
 */
 
-static void tick();
+static void tick __P((int));
 
 EVENT *
 setevent(intvl, func, arg)
@@ -75,7 +75,7 @@ setevent(intvl, func, arg)
 		printf("setevent: intvl=%ld, for=%ld, func=%x, arg=%d, ev=%x\n",
 			intvl, now + intvl, func, arg, ev);
 
-	tick();
+	tick(0);
 	return (ev);
 }
 /*
@@ -117,7 +117,7 @@ clrevent(ev)
 	}
 
 	/* restore clocks and pick up anything spare */
-	tick();
+	tick(0);
 }
 /*
 **  TICK -- take a clock tick
@@ -125,7 +125,7 @@ clrevent(ev)
 **	Called by the alarm clock.  This routine runs events as needed.
 **
 **	Parameters:
-**		none.
+**		One that is ignored; for compatibility with signal handlers.
 **
 **	Returns:
 **		none.
@@ -135,7 +135,8 @@ clrevent(ev)
 */
 
 static void
-tick()
+tick(arg)
+	int arg;
 {
 	register time_t now;
 	register EVENT *ev;
