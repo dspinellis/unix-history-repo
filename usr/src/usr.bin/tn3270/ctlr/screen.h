@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)screen.h	4.1 (Berkeley) %G%
+ *	@(#)screen.h	4.2 (Berkeley) %G%
  */
 
 #define	INCLUDED_SCREEN
@@ -109,10 +109,6 @@
 		(((c)&ATTR_DSPD_MASK) == ATTR_DSPD_HIGH)
 #define	IsHighlighted(p) \
 		(IsHighlightedAttr(FieldAttributes(p)) && !IsStartField(p))
-
-
-#define MAX(x,y)	((x)<(y)? (y):(x))
-#define MIN(x,y)	((x)<(y)? x:(y))
 
 typedef unsigned char ScreenImage;
 
