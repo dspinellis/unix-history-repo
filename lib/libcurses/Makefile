@@ -9,7 +9,7 @@ SRCS=	addbytes.c addch.c addnstr.c box.c clear.c clrtobot.c clrtoeol.c \
 	standout.c toucholap.c touchwin.c tscroll.c tstp.c tty.c unctrl.c
 MAN3=	curses.3
 
-CFLAGS+=-D_CURSES_PRIVATE -I${.CURDIR}
+CFLAGS+=-D_CURSES_PRIVATE
 SHARED_LDADD+= -ltermcap
 
 beforeinstall:
