@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_usrreq.c	7.6 (Berkeley) %G%
+ *	@(#)tuba_usrreq.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -176,6 +176,10 @@ tuba_usrreq(so, req, m, nam, control)
 	/* case PRU_CONNECT: */
 		if (error = iso_pcbconnect(isop, nam))
 			break;
+		if ((siso = isop->isop_laddr) && siso->siso_nlen > 1)
+			siso->siso_data[siso->siso_nlen - 1] = ISOPROTO_TCP;
+		else
+			panic("tuba_usrreq: connect");
 		siso = mtod(nam, struct sockaddr_iso *);
 		if (!(inp->inp_faddr.s_addr = tuba_lookup(&siso->siso_addr, M_WAITOK))) {
 		unconnect:

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.h	7.7 (Berkeley) %G%
+ *	@(#)tuba_table.h	7.8 (Berkeley) %G%
  */
 
 struct tuba_cache {
@@ -16,8 +16,6 @@ struct tuba_cache {
 	int	tc_index;
 	u_short	tc_sum;				/* cksum of nsap inc. length */
 	u_short	tc_ssum;			/* swab(tc_sum) */
-	u_short	tc_sum_d;			/* o.c. diff sum - index */
-	u_short	tc_ssum_d;			/* o.c. diff ssum - index */
 	struct	sockaddr_iso tc_siso;		/* for responding */
 };
 
@@ -25,6 +23,8 @@ struct tuba_cache {
 #define REDUCE(a, b) { union { u_short s[2]; long l;} l_util; long x; \
 	l_util.l = (b); x = l_util.s[0] + l_util.s[1]; ADDCARRY(x); \
 	if (x == 0) x = 0xffff; a = x;}
+#define SWAB(a, b) { union { u_char c[2]; u_short s;} s_util; u_short x; \
+	u_char t; s_util.s = b; t = c[0]; c[0] = c[1]; c[1] = t; }
 
 #ifdef KERNEL
 extern int	tuba_table_size;
