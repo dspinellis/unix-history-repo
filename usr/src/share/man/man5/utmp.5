@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utmp.5	6.5 (Berkeley) %G%
+.\"	@(#)utmp.5	6.6 (Berkeley) %G%
 .\"
 .TH UTMP 5  ""
 .UC 4
@@ -62,8 +62,8 @@ record-keeping is turned off.  It is summarized by
 and
 .IR ac (8).
 .SH FILES
-/etc/utmp
+/var/run/utmp
 .br
-/usr/adm/wtmp
+/var/log/wtmp
 .SH "SEE ALSO"
 last(1), login(1), who(1), ac(8), init(8)
