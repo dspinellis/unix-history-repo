@@ -1,4 +1,4 @@
-/*	dh.c	4.42	82/03/14	*/
+/*	dh.c	4.43	82/03/31	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -153,7 +153,7 @@ dhprobe(reg)
 #endif
 #ifndef notdef
 	dhaddr->un.dhcsr = DH_RIE|DH_MM|DH_RI;
-	DELAY(25);
+	DELAY(1000);
 	dhaddr->un.dhcsr = 0;
 #else
 	dhaddr->un.dhcsr = DH_TIE;
