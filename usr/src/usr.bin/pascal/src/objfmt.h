@@ -61,6 +61,20 @@ union display {
 #   define	AP_OFFSET	(0)
 #   define	FP_OFFSET	(0)
 #endif mc68000
+#ifdef tahoe
+	/*
+	 *	the display is just the saved FP.
+	 *	arguments are at positive offsets,
+	 *	locals are at negative offsets.
+	 *	there are no offsets within the saved display structure.
+	 */
+    struct dispsave {
+	char	*savedFP;
+    } display[ DSPLYSZ ];
+
+#   define	AP_OFFSET	0
+#   define	FP_OFFSET	0
+#endif tahoe
 #endif PC
 
     /*
@@ -104,6 +118,14 @@ struct blockmark {
 	char	*saveda6;
     };
 #endif mc68000
+#ifdef tahoe
+	/*
+	 *	since we have the fp pointing to its predecessor
+	 */
+    struct blockmark {
+	long	savedfp;
+    };
+#endif tahoe
 #endif PC
 
     /*
@@ -145,6 +167,10 @@ struct formalrtn	frtn;
 #   define HEADER_BYTES	2048			/* the size of px_header */
 #   define START 0x0				/* beginning of text */
 #endif vax
+#ifdef tahoe
+#   define HEADER_BYTES	2048			/* the size of px_header */
+#   define START 0x0				/* beginning of text */
+#endif tahoe
 #ifdef mc68000
 #   define HEADER_BYTES	3072			/* the size of px_header */
 #   define START 0x8000				/* beginning of text */
