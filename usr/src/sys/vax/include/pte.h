@@ -1,4 +1,4 @@
-/*	pte.h	6.1	83/07/29	*/
+/*	pte.h	6.2	84/08/12	*/
 
 /*
  * VAX page table entry
@@ -65,7 +65,6 @@ unsigned int	pg_blkno:20,		/* file system block number */
 
 #ifndef LOCORE
 #ifdef KERNEL
-struct	pte *vtopte();
 
 /* utilities defined in locore.s */
 extern	struct pte Sysmap[];
