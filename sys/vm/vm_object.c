@@ -483,7 +483,11 @@ vm_object_deactivate_pages(object)
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		next = (vm_page_t) queue_next(&p->listq);
 		vm_page_lock_queues();
-		vm_page_deactivate(p);
+		if (!p->busy)
+			vm_page_deactivate(p);	/* optimisation from mach 3.0 -
+						 * andrew@werple.apana.org.au,
+						 * Feb '93
+						 */
 		vm_page_unlock_queues();
 		p = next;
 	}
@@ -1170,12 +1174,29 @@ void vm_object_collapse(object)
 				    }
 				    else {
 					if (pp) {
+#if 1
+					    /*
+					     *  This should never happen -- the
+					     *  parent cannot have ever had an
+					     *  external memory object, and thus
+					     *  cannot have absent pages.
+					     */
+					    panic("vm_object_collapse: bad case");
+					    /* andrew@werple.apana.org.au - from
+					       mach 3.0 VM */
+#else
 					    /* may be someone waiting for it */
 					    PAGE_WAKEUP(pp);
 					    vm_page_lock_queues();
 					    vm_page_free(pp);
 					    vm_page_unlock_queues();
+#endif
 					}
+					/*
+					 *	Parent now has no page.
+					 *	Move the backing object's page
+					 *	up.
+					 */
 					vm_page_rename(p, object, new_offset);
 				    }
 				}
@@ -1190,7 +1211,21 @@ void vm_object_collapse(object)
 			 */
 
 			object->pager = backing_object->pager;
+#if 1
+			/* Mach 3.0 code */
+			/* andrew@werple.apana.org.au, 12 Feb 1993 */
+
+			/*
+			 * If there is no pager, leave paging-offset alone.
+			 */
+			if (object->pager)
+				object->paging_offset =
+					backing_object->paging_offset +
+						backing_offset;
+#else
+			/* old VM 2.5 version */
 			object->paging_offset += backing_offset;
+#endif
 
 			backing_object->pager = NULL;
 
@@ -1288,6 +1323,18 @@ void vm_object_collapse(object)
 
 			vm_object_reference(object->shadow = backing_object->shadow);
 			object->shadow_offset += backing_object->shadow_offset;
+
+#if 1
+			/* Mach 3.0 code */
+			/* andrew@werple.apana.org.au, 12 Feb 1993 */
+
+			/*
+			 *      Backing object might have had a copy pointer
+			 *      to us.  If it did, clear it.
+			 */
+			 if (backing_object->copy == object)
+				backing_object->copy = NULL;
+#endif
 
 			/*	Drop the reference count on backing_object.
 			 *	Since its ref_count was at least 2, it
