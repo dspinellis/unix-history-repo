@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -87,6 +87,7 @@ display(win, text, size)
 				waddch(win->x_win, ' ');
 			wmove(win->x_win, win->x_line, xcol + 1);
 			getyx(win->x_win, win->x_line, win->x_col);
+			text++;
 			continue;
 		}
 		/* line kill */
