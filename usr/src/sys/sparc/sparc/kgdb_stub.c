@@ -9,37 +9,33 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.3 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.4 (Berkeley) %G%
  *
- * from: $Header: kgdb_stub.c,v 1.11 92/06/17 05:22:07 torek Exp $
+ * from: $Header: kgdb_stub.c,v 1.13 92/11/26 03:04:55 torek Exp $
  */
 
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
  */
 #ifdef KGDB
-#ifndef lint
-/* from LBL version: */
-static char rcsid[] = "$Header: kgdb_stub.c,v 1.11 92/06/17 05:22:07 torek Exp $";
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
 
+#include <machine/ctlreg.h>
 #include <machine/psl.h>
 #include <machine/pte.h>
 #include <machine/reg.h>
+#include <machine/remote-sl.h>
 #include <machine/trap.h>
 
 #include <sparc/sparc/asm.h>
-#include <sparc/sparc/ctlreg.h>
 #include <sparc/sparc/kgdb_proto.h>
-#include <machine/remote-sl.h>
 
 #ifndef KGDBDEV
 #define KGDBDEV -1
