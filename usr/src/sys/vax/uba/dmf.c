@@ -579,16 +579,9 @@ dmfxint(dmf)
 		tp->t_state &= ~TS_BUSY;
 		if (tp->t_state&TS_FLUSH)
 			tp->t_state &= ~TS_FLUSH;
-		else if (dmf_dma[unit0 + t]) {
-			/*
-			 * Do arithmetic in a short to make up
-			 * for lost 16&17 bits.
-			 */
-			addr->dmfcsr = DMFIR_TBA | DMF_IE | t;
-			cntr = addr->dmftba -
-			    UBACVT(tp->t_outq.c_cf, ui->ui_ubanum);
-			ndflush(&tp->t_outq, (int)cntr);
-		}
+		else if (dmf_dma[unit0 + t])
+			ndflush(&tp->t_outq, (int)dmf_dma[unit0 + t]);
+		dmf_dma[unit0 + t] = 0;
 		if (tp->t_line)
 			(*linesw[tp->t_line].l_start)(tp);
 		else
@@ -673,7 +666,7 @@ dmfstart(tp)
 	if (nch >= dmf_mindma) {
 		register car;
 
-		dmf_dma[minor(tp->t_dev)] = 1;
+		dmf_dma[minor(tp->t_dev)] = nch;
 		addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
 		addr->dmflctms = addr->dmflctms | DMF_TE;
 		car = UBACVT(tp->t_outq.c_cf, dmfinfo[dmf]->ui_ubanum);
