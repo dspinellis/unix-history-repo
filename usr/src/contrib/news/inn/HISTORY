@@ -1,0 +1,258 @@
+$Revision: 1.6 $
+This file contains a few messages of historical interest.  Some of the
+information in these messages is out of date (e.g., you don't need any
+other software, ihave/sendme is suported, etc); see the README and
+installation manual.
+
+The first is a mail message I sent as soon as I got the idea.
+
+Six months later I had something to beta, and I posted the second message
+to Usenet.  My ship date was optimistic.
+
+The third message is the application that I required all beta sites to
+fill out.
+
+The fourth is a copy of the release notice.
+
+From: Rich Salz <rsalz@bbn.com>
+Date: Sat, 8 Dec 90 15:23:20 EST
+Message-Id: <9012082023.AA13441@litchi.bbn.com>
+To: newsgurus@ucsd.edu, nntp-managers@ucbarpa.Berkeley.EDU
+Subject: Speed idea.
+
+Suppose inews, nntp, "rnews -U", newsunbatch, etc., all just fed their
+articles to a single daemon?
+
+An idea I started kicking around yesterday.  This is intended only for
+sites supporting BSD networking.  I believe that anyone else who needs
+this kind of speed would find Cnews good enough.
+
+A multi-threaded server that used non-blocking IO to read all incoming
+articles on several sockets (don't forker a server, select on the
+connection socket will return READOK when a connection request comes in).
+All articles are read into memory, then written out to the filesystem
+using a single writev call (easy way to splice the path).
+
+Hash the active file and compile the sys file so as soon as an article was
+accepted we can write out the batchfile entries.  As one special case,
+write entries to another socket for articles that should be fed out via
+NNTPLINK or something.
+
+Put the socket inside a group-access-only directory, so that only trusted
+front-ends like inews "rnews -U" etc can connect to it.
+
+Oh yeah, for things like nntp use sendmsg/recvmesg to hand off the
+feeding site to the demon once it's authenticated the incoming call and
+recognized it as an "xfer no" site.
+
+I've a few pages of notes and code fragments to type in.
+
+No locks of any kind.  active file is mmap'd or periodically flushed.
+Keep it all in core and blat it out with a single write.
+
+When you want to expire, or add a group, you send a special message
+on a control port, or perhaps a sighup/sigusr1 to force it to resynch.
+
+Any feedback?
+	/r$
+
+Path: papaya.bbn.com!rsalz
+From: rsalz@bbn.com (Rich Salz)
+Newsgroups: news.software.nntp,news.admin,comp.org.usenix
+Subject: Seeking beta-testers for a new NNTP transfer system
+Message-ID: <3632@litchi.bbn.com>
+Date: 18 Jun 91 15:47:21 GMT
+Followup-To: poster
+Organization: Bolt, Beranek and Newman, Inc.
+Lines: 72
+Xref: papaya.bbn.com news.software.nntp:1550 news.admin:15565 comp.org.usenix:418
+
+InterNetNews, or INN, is a news transport system.  The core part of the
+package is a single long-running daemon that handles all incoming NNTP
+connections.  It files the articles and arranges for them to be forwarded
+to downstream sites.  Because it is long-running, it can be directed to
+spawn other long-running processes, telling them exactly when an article
+should be sent to a feed.  This can replace the "watch the logfile" mode
+of nntplink, for example, with a much cleaner mechanism:  read the
+batchfile on standard input.
+
+InterNetNews assumes that memory is cheap and fast while disks are slow.
+No temporary files are used while incoming articles are being received,
+and once processed the entire article is written out using a single
+writev(2) call (this includes updating the Path and Xref headers).  The
+active file is kept in memory (a compile-time option can be set to use
+mmap(2)), and the newsfeeds file is parsed once to build a complete matrix
+of which sites receive which newsgroups.
+
+InterNetNews uses many features of standard BSD sockets including
+non-blocking I/O and Unix-domain stream and datagram sockets.  It is
+highly doubtful that the official version will ever provide support for
+TLI, DECNET, or other facilities.
+
+INN is fast.  Not many hard numbers are available (that is one requirement
+of being a beta-site), but some preliminary tests show it to be at least
+twice as fast as the current standard NNTP/C News combination.  For
+example, Jim Thompson at Sun has had 20 nntpxmits feeding into a 4/490,
+and was getting over 14 articles per second, with the CPU 11% utilized.  I
+was getting 10 articles/second feeding into a DECstations 3100, with the
+program (running profiled!) 50% idle and the load average under .7.  (It
+is a scary thing to see several articles filed with the same timestamp.)
+
+The sys file format is somewhat different, and has been renamed.  The
+arcane "foo.all" syntax is gone, replaced with a set of order-dependant
+shell patterns.  For example, instead of "comp,comp.sys.sun,!comp.sys" you
+would write "comp.*,!comp.sys.*,comp.sys.sun"; to not get any groups
+related to binaries or pictures, you write "!*pictures*,!*binaries*".
+
+There are other incompatibilities as well.  For example, ihave/sendme
+control messages are not supported.  Also the philosophy is that that
+invalid articles are dropped, rather than filed into "junk."  (A log
+message is written with the reason, and also sent back to the upstream
+feed as part of the NNTP reject reply.)  The active file is taken to be
+the definitive list of groups that an article wants to recieve, and if
+none of an article's newsgroups are mentioned in the active file, then the
+article is invalid, logged, and dropped.
+
+The history and log files are intended to be compatible with those created
+by C News.  I want to thank Henry and Geoff for their kind permission to
+use DBZ and SUBST.  You will need to be running C News expire or a B2.11
+expire that has been modified to use DBZ.
+
+The InterNetNews daemon does not implement all NNTP commands.  If sites
+within your campus are going to post or read news via NNTP, you will need
+the standard NNTP distribution.  The daemon will spawn the standard nntpd
+if any site not mentioned in its "hosts.nntp" file connects to the TCP
+port.  InterNetNews includes a replacement for the "mini-inews" that comes
+with the standard NNTP distribution.  This can be used on any machine that
+posts news and connects to an NNTP server somewhere; its use is not
+limited to INN.  At some point I hope to have a replacement nntpd
+optimized for newsreaders, and an NNTP transmission program.  These will
+remove the need for any external software beyond the C News expire program.
+
+If you would like to beta-test this version, please FTP the file
+pub/usenet/INN.BETA from cronus.bbn.com for directions.  It will be a
+fairly tightly-screened beta:  DO NOT ASK ME FOR COPIES!  Once the system
+is stable, it will be freely redistributable.  I hope to have the official
+release by August 7, so that schools can bring the system up before the
+semester starts.
+	/rich $alz
+-- 
+Please send comp.sources.unix-related mail to rsalz@uunet.uu.net.
+Use a domain-based address or give alternate paths, or you may lose out.
+
+Thanks for your interest in InterNetNews.  I want to run a fairly
+tightly-controlled beta test of the software before I make it generally
+available.  This means that I'm going to screen the sites which will be
+able to participate in the test.  Please don't be offended or upset by
+this whole procedure.  I want to make the final package as stable as soon
+as possible so that the entire net can benefit (it will be freely
+redistributable).  I've set up this mechanism because I think it's the
+best way for me to get the best test results as quickly as possible.
+
+I would therefore appreciate your answers to the following questions.
+If you think the answers to some of them will be obvious to me (e.g.,
+"Describe your organization" --> "UUNET" :-) then feel free to leave it
+blank.  If you have any other feedback or comments, please add them.
+
+Email your results to <rsalz@bbn.com>
+	/r$
+
+What software (transport, batching, readers, etc.) do you currently run?
+
+How much experience do you have with Usenet and NNTP?
+
+Describe your organization.
+
+How do you plan on testing InterNetNews?  Be specific, describing the
+machine hardware, any test servers, etc.  [The answers to this one
+won't be obvious to me -- you gotta write something.]
+
+What are the rough counts of the upstream and downstream feeds, and how do
+they break down by category (UUCP, NNTP, etc.)?
+
+What special news functions does your server perform (gatewaying,
+archiving, etc.)?
+
+Do you understand that by participating in the beta-test you agree not to
+redistribute the software outside of your administrative domain, and that
+you promise to upgrade to the official release in a timely manner?
+
+From: Rich Salz <rsalz@uunet.uu.net>
+Message-Id: <inn-announce@uunet.uu.net>
+Newsgroups: news.software.b,news.protocols.nntp
+Subject: Announcing the release of InterNetNews
+
+I am pleased to announce the official release of InterNetNews.
+
+InterNetNews, or INN, is a news transport system.  The core part of the
+package is a single long-running daemon that handles all incoming NNTP
+connections.  It files the articles and arranges for them to be forwarded
+to downstream sites.  Because it is long-running, it can be directed to
+spawn other long-running processes, telling them exactly when an article
+should be sent to a feed.
+
+INN is a complete Usenet system.  It provides article expiration and
+archiving, NNTP transport, and UUCP support.  Nntplink works fine.
+
+INN does not include a newsreader.  It does provide a version of the NNTP
+reference implementation "clientlib" routines so that rrn and other
+newsreaders compile with little trouble.  The next release of xrn will
+include INN support.
+
+The spool directory is unchanged while the history database is
+upwardly-compatible with that of C News and the log file is very similar.
+All system configuration files are different.
+
+INN assumes that memory is cheap and fast while disks are slow.  No
+temporary files are used while incoming articles are being received, and
+once processed the entire article is written out using a single system
+call (this includes updating the Path and Xref headers).  The active file
+is kept in memory, and the newsfeeds file is parsed at start-up to build a
+complete matrix of which sites receive which newsgroups.  A paper
+describing the implementation was presented at the June 1992 Usenix
+conference.
+
+INN uses many features of standard BSD sockets including non-blocking
+I/O.  It is highly doubtful that the official version will ever provide
+support for TLI, DECNET, or other facilities.  Among others, INN beta
+sites include ATT Unix System V Release 4, Apple A/UX, BSDI BSD/386 0.3.3,
+DEC Ultrix 3.x and 4.x, HP-UX s800 8.0, IBM AIX 3.1 and 3.2, Next NeXT-OS
+2.1, Pyramid OSx 5.1, SCO Xenix 2.3.4, SGI Irix 4.0, Sequent Dynix 3.0.4
+and 3.0.12, and Sun SunOS 3.5 and 4.x.
+
+Almost all of the beta-testers have reported faster performance and less
+load once they installed INN.  Many people find it easy to maintain.
+
+A number of sites have graciously agreed to provide FTP access to this
+release.  The machine names and directories are listed below.  Within
+those directories you will find one or more of the following files:
+	README			Intro and unpacking instructions;
+	 -or-			a copy appears at the end of this
+	README.INN		article.
+	inn1.0.tar.Z		The full distribution
+	inn.usenix.ps.Z		The Usenix paper on INN
+
+The sites providing access are:
+	cs.utexas.edu		/pub/inn
+	ftp.cs.widener.edu	/pub/inn.tar.Z (or wherever).
+	ftp.germany.eu.net	/pub/news/inn
+	ftp.ira.uka.de		pub/network/news
+	ftp.msen.com		/pub/packages/inn
+	ftp.uu.net		/pub/news/nntp/inn
+	gatekeeper.dec.com	/pub/news/inn
+	grasp1.univ-lyon1.fr	/pub/unix/news/inn
+	munnari.oz.au		/pub/news/inn
+	sparky.Sterling.COM	/news/inn
+	src.doc.ic.ac.uk	/computing/usenet/software/transport
+	stasys.sta.sub.org	/pub/src/inn
+	    (Stasys also has anonymous UUCP; contact <fkk@sta.sub.org>.
+	ucsd.edu		/INN
+	usc.edu			/pub/inn
+
+Discussion about INN should be posted to news.software.b and
+news.software.nntp.  Email should be sent to <rsalz@uunet.uu.net>.  Please
+do NOT send it to <rsalz@osf.org> -- it will only just delay your response
+since I will have to forward it to UUNET.
+
+The README follows after the formfeed.
+	/r$
