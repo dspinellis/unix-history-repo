@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)zs.c	7.3 (Berkeley) %G%
+ *	@(#)zs.c	7.4 (Berkeley) %G%
  *
- * from: $Header: zs.c,v 1.24 92/06/30 02:24:21 torek Exp $
+ * from: $Header: zs.c,v 1.28 93/04/20 11:19:44 torek Exp $
  */
 
 /*
@@ -41,6 +41,9 @@
 
 #include <machine/autoconf.h>
 #include <machine/cpu.h>
+
+#include <sparc/sparc/vaddrs.h>
+#include <sparc/sparc/auxreg.h>
 
 #include <sparc/dev/kbd.h>
 #include <sparc/dev/zsreg.h>
@@ -138,6 +141,9 @@ static struct conk_state {	/* console keyboard state */
 	char	conk_id;	/* true => ID coming up (console only) */
 	char	conk_l1;	/* true => L1 pressed (console only) */
 } zsconk_state;
+
+int zshardscope;
+int zsshortcuts;		/* number of "shortcut" software interrupts */
 
 /*
  * Match slave number to zs unit number, so that misconfiguration will
@@ -514,7 +520,7 @@ zsopen(dev_t dev, int flags, int mode, struct proc *p)
 	}
 	splx(s);
 	if (error == 0)
-		error = (*linesw[tp->t_line].l_open)(dev, tp);
+		error = linesw[tp->t_line].l_open(dev, tp);
 	if (error)
 		zs_modem(cs, 0);
 	return (error);
@@ -534,7 +540,7 @@ zsclose(dev_t dev, int flags, int mode, struct proc *p)
 	zi = zscd.cd_devs[unit >> 1];
 	cs = &zi->zi_cs[unit & 1];
 	tp = cs->cs_ttyp;
-	(*linesw[tp->t_line].l_close)(tp, flags);
+	linesw[tp->t_line].l_close(tp, flags);
 	if (tp->t_cflag & HUPCL || tp->t_state & TS_WOPEN ||
 	    (tp->t_state & TS_ISOPEN) == 0) {
 		zs_modem(cs, 0);
@@ -588,28 +594,50 @@ zshard(void *intrarg)
 {
 	register struct zs_chanstate *a;
 #define	b (a + 1)
-	register int rr3, intflags = 0;
-	static int zsrint(struct zs_chanstate *);
-	static int zsxint(struct zs_chanstate *);
-	static int zssint(struct zs_chanstate *);
+	register volatile struct zschan *zc;
+	register int rr3, intflags = 0, v, i;
+	static int zsrint(struct zs_chanstate *, volatile struct zschan *);
+	static int zsxint(struct zs_chanstate *, volatile struct zschan *);
+	static int zssint(struct zs_chanstate *, volatile struct zschan *);
 
 	for (a = zslist; a != NULL; a = b->cs_next) {
 		rr3 = ZS_READ(a->cs_zc, 3);
-		if (rr3 == 0)
-			continue;
-		intflags |= 2;		/* took an interrupt */
-		if (rr3 & ZSRR3_IP_A_RX)
-			intflags |= zsrint(a);
-		if (rr3 & ZSRR3_IP_B_RX)
-			intflags |= zsrint(b);
-		if (rr3 & ZSRR3_IP_A_TX)
-			intflags |= zsxint(a);
-		if (rr3 & ZSRR3_IP_B_TX)
-			intflags |= zsxint(b);
-		if (rr3 & ZSRR3_IP_A_STAT)
-			intflags |= zssint(a);
-		if (rr3 & ZSRR3_IP_B_STAT)
-			intflags |= zssint(b);
+		if (rr3 & (ZSRR3_IP_A_RX|ZSRR3_IP_A_TX|ZSRR3_IP_A_STAT)) {
+			intflags |= 2;
+			zc = a->cs_zc;
+			i = a->cs_rbput;
+			if (rr3 & ZSRR3_IP_A_RX && (v = zsrint(a, zc)) != 0) {
+				a->cs_rbuf[i++ & ZLRB_RING_MASK] = v;
+				intflags |= 1;
+			}
+			if (rr3 & ZSRR3_IP_A_TX && (v = zsxint(a, zc)) != 0) {
+				a->cs_rbuf[i++ & ZLRB_RING_MASK] = v;
+				intflags |= 1;
+			}
+			if (rr3 & ZSRR3_IP_A_STAT && (v = zssint(a, zc)) != 0) {
+				a->cs_rbuf[i++ & ZLRB_RING_MASK] = v;
+				intflags |= 1;
+			}
+			a->cs_rbput = i;
+		}
+		if (rr3 & (ZSRR3_IP_B_RX|ZSRR3_IP_B_TX|ZSRR3_IP_B_STAT)) {
+			intflags |= 2;
+			zc = b->cs_zc;
+			i = b->cs_rbput;
+			if (rr3 & ZSRR3_IP_B_RX && (v = zsrint(b, zc)) != 0) {
+				b->cs_rbuf[i++ & ZLRB_RING_MASK] = v;
+				intflags |= 1;
+			}
+			if (rr3 & ZSRR3_IP_B_TX && (v = zsxint(b, zc)) != 0) {
+				b->cs_rbuf[i++ & ZLRB_RING_MASK] = v;
+				intflags |= 1;
+			}
+			if (rr3 & ZSRR3_IP_B_STAT && (v = zssint(b, zc)) != 0) {
+				b->cs_rbuf[i++ & ZLRB_RING_MASK] = v;
+				intflags |= 1;
+			}
+			b->cs_rbput = i;
+		}
 	}
 #undef b
 	if (intflags & 1) {
@@ -617,7 +645,12 @@ zshard(void *intrarg)
 		struct clockframe *p = intrarg;
 
 		if ((p->psr & PSR_PIL) < (PIL_TTY << 8)) {
+			zsshortcuts++;
 			(void) spltty();
+			if (zshardscope) {
+				LED_ON;
+				LED_OFF;
+			}
 			return (zssoft(intrarg));
 		}
 #endif
@@ -627,11 +660,9 @@ zshard(void *intrarg)
 }
 
 static int
-zsrint(register struct zs_chanstate *cs)
+zsrint(register struct zs_chanstate *cs, register volatile struct zschan *zc)
 {
-	register volatile struct zschan *zc = cs->cs_zc;
-	register int c = zc->zc_data, i;
-
+	register int c = zc->zc_data;
 
 	if (cs->cs_conk) {
 		register struct conk_state *conk = &zsconk_state;
@@ -663,17 +694,15 @@ zsrint(register struct zs_chanstate *cs)
 		goto clearit;
 	}
 #endif
-	/* store receive character and status into ring */
-	i = cs->cs_rbput;
-	cs->cs_rbput = i + 1;
+	/* compose receive character and status */
 	c <<= 8;
 	c |= ZS_READ(zc, 1);
-	cs->cs_rbuf[i & ZLRB_RING_MASK] = c;
 
 	/* clear receive error & interrupt condition */
 	zc->zc_csr = ZSWR0_RESET_ERRORS;
 	zc->zc_csr = ZSWR0_CLR_INTR;
-	return (1);
+
+	return (ZRING_MAKE(ZRING_RINT, c));
 
 clearit:
 	zc->zc_csr = ZSWR0_RESET_ERRORS;
@@ -682,16 +711,14 @@ clearit:
 }
 
 static int
-zsxint(register struct zs_chanstate *cs)
+zsxint(register struct zs_chanstate *cs, register volatile struct zschan *zc)
 {
-	register volatile struct zschan *zc = cs->cs_zc;
-	register int c, i = cs->cs_tbc;
+	register int i = cs->cs_tbc;
 
 	if (i == 0) {
 		zc->zc_csr = ZSWR0_RESET_TXINT;
 		zc->zc_csr = ZSWR0_CLR_INTR;
-		cs->cs_txint = 1;
-		return (1);
+		return (ZRING_MAKE(ZRING_XINT, 0));
 	}
 	cs->cs_tbc = i - 1;
 	zc->zc_data = *cs->cs_tba++;
@@ -700,21 +727,37 @@ zsxint(register struct zs_chanstate *cs)
 }
 
 static int
-zssint(register struct zs_chanstate *cs)
+zssint(register struct zs_chanstate *cs, register volatile struct zschan *zc)
 {
-	register volatile struct zschan *zc = cs->cs_zc;
-	register int i;
+	register int rr0;
 
-	i = zc->zc_csr;
+	rr0 = zc->zc_csr;
 	zc->zc_csr = ZSWR0_RESET_STATUS;
 	zc->zc_csr = ZSWR0_CLR_INTR;
-	if ((i & ZSRR0_BREAK) && cs->cs_brkabort)
-		zsabort();
-	else if (! cs->cs_softcar) {
-		cs->cs_rr0 = i | 0x100;
-		return (1);
+	/*
+	 * The chip's hardware flow control is, as noted in zsreg.h,
+	 * busted---if the DCD line goes low the chip shuts off the
+	 * receiver (!).  If we want hardware CTS flow control but do
+	 * not have it, and carrier is now on, turn HFC on; if we have
+	 * HFC now but carrier has gone low, turn it off.
+	 */
+	if (rr0 & ZSRR0_DCD) {
+		if (cs->cs_ttyp->t_cflag & CCTS_OFLOW &&
+		    (cs->cs_creg[3] & ZSWR3_HFC) == 0) {
+			cs->cs_creg[3] |= ZSWR3_HFC;
+			ZS_WRITE(zc, 3, cs->cs_creg[3]);
+		}
+	} else {
+		if (cs->cs_creg[3] & ZSWR3_HFC) {
+			cs->cs_creg[3] &= ~ZSWR3_HFC;
+			ZS_WRITE(zc, 3, cs->cs_creg[3]);
+		}
 	}
-	return (0);
+	if ((rr0 & ZSRR0_BREAK) && cs->cs_brkabort) {
+		zsabort();
+		return (0);
+	}
+	return (ZRING_MAKE(ZRING_SINT, rr0));
 }
 
 zsabort()
@@ -746,63 +789,55 @@ zsoverrun(int unit, long *ptime, char *what)
 
 	if (*ptime != time.tv_sec) {
 		*ptime = time.tv_sec;
-		log(LOG_WARNING, "zs%d%c: input %s overrun\n", unit >> 1,
+		log(LOG_WARNING, "zs%d%c: %s overrun\n", unit >> 1,
 		    (unit & 1) + 'a', what);
 	}
 }
 
 /*
- * ZS software interrupt.  Scan both ZS chips.
+ * ZS software interrupt.  Scan all channels for deferred interrupts.
  */
 int
 zssoft(void *arg)
 {
 	register struct zs_chanstate *cs;
 	register volatile struct zschan *zc;
+	register struct linesw *line;
 	register struct tty *tp;
-	register int get, n, c, cc, rr0, txint, unit, s;
+	register int get, n, c, cc, unit, s;
 
-	for (cs = zslist; cs; cs = cs->cs_next) {
-		unit = cs->cs_unit;
+	for (cs = zslist; cs != NULL; cs = cs->cs_next) {
+		get = cs->cs_rbget;
+again:
+		n = cs->cs_rbput;	/* atomic */
+		if (get == n)		/* nothing more on this line */
+			continue;
+		unit = cs->cs_unit;	/* set up to handle interrupts */
 		zc = cs->cs_zc;
 		tp = cs->cs_ttyp;
+		line = &linesw[tp->t_line];
 		/*
-		 * Scan receive ring.  This involves calling ttyinput(),
-		 * which is quite slow, so we loop until we have caught
-		 * up with the receiver.  (XXX should test effectiveness)
-		 * If we are not interested, discard the input right away.
-		 *
-		 * XXX this will have to be broken up so that we can get
-		 * ^S stops out reasonably quickly....
+		 * Compute the number of interrupts in the receive ring.
+		 * If the count is overlarge, we lost some events, and
+		 * must advance to the first valid one.  It may get
+		 * overwritten if more data are arriving, but this is
+		 * too expensive to check and gains nothing (we already
+		 * lost out; all we can do at this point is trade one
+		 * kind of loss for another).
 		 */
-		for (;;) {
-			n = cs->cs_rbput;	/* atomic */
-			get = cs->cs_rbget;
-			if (get == n)
-				break;
-			/*
-			 * Compute the number of characters in the receive
-			 * ring; drain them.  If the count is overlarge, we
-			 * lost some receive data, and must advance to the
-			 * first still-extant character.  It may get
-			 * overwritten if more data are arriving, but this
-			 * is too expensive to check and gains nothing (we
-			 * already lost out; all we can do at this point is
-			 * trade one kind of loss for another).
-			 *
-			 * XXX	should do flow control if ring is
-			 *	getting full ... needs more thought; will
-			 *	require locking against zshard().
-			 */
-			n -= get;
-			if (n > ZLRB_RING_SIZE) {
-				zsoverrun(unit, &cs->cs_rotime, "ring");
-				get += n - ZLRB_RING_SIZE;
-				n = ZLRB_RING_SIZE;
-			}
-			while (--n >= 0) {
-				/* race to keep ahead of incoming data */
-				c = cs->cs_rbuf[get++ & ZLRB_RING_MASK];
+		n -= get;
+		if (n > ZLRB_RING_SIZE) {
+			zsoverrun(unit, &cs->cs_rotime, "ring");
+			get += n - ZLRB_RING_SIZE;
+			n = ZLRB_RING_SIZE;
+		}
+		while (--n >= 0) {
+			/* race to keep ahead of incoming interrupts */
+			c = cs->cs_rbuf[get++ & ZLRB_RING_MASK];
+			switch (ZRING_TYPE(c)) {
+
+			case ZRING_RINT:
+				c = ZRING_VALUE(c);
 				if (c & ZSRR1_DO)
 					zsoverrun(unit, &cs->cs_fotime, "fifo");
 				cc = c >> 8;
@@ -819,81 +854,63 @@ zssoft(void *arg)
 				else if (unit == ZS_MOUSE)
 					ms_rint(cc);
 				else
-					(*linesw[tp->t_line].l_rint)(cc, tp);
-			}
-			cs->cs_rbget = get;
-		}
-check_xmit:
-		/*
-		 * Atomically get and clear transmit and status change
-		 * interrupts.
-		 */
-		s = splzs();
-		txint = cs->cs_txint;
-		rr0 = cs->cs_rr0;
-		if (txint)
-			cs->cs_txint = 0;
-		if (rr0 & 0x100)
-			cs->cs_rr0 = rr0 & 255;
-		splx(s);
+					line->l_rint(cc, tp);
+				break;
 
-		/*
-		 * Check for status changes.  If carrier has changed,
-		 * and we want CTS output flow control, we have to fiddle
-		 * the HFC bit (see zsparam).  If carrier is gone, and
-		 * linesw l_modem returns 0, drop DTR.
-		 */
-		if (rr0 & 0x100) {
-			if (rr0 & ZSRR0_DCD) {
-				(void) splzs();
-				if (tp->t_cflag & CCTS_OFLOW &&
-				    (cs->cs_creg[3] & ZSWR3_HFC) == 0) {
-					cs->cs_creg[3] |= ZSWR3_HFC;
-					ZS_WRITE(zc, 3, cs->cs_creg[3]);
+			case ZRING_XINT:
+				/*
+				 * Transmit done: change registers and resume,
+				 * or clear BUSY.
+				 */
+				if (cs->cs_heldchange) {
+					s = splzs();
+					c = zc->zc_csr;
+					if ((c & ZSRR0_DCD) == 0)
+						cs->cs_preg[3] &= ~ZSWR3_HFC;
+					bcopy((caddr_t)cs->cs_preg,
+					    (caddr_t)cs->cs_creg, 16);
+					zs_loadchannelregs(zc, cs->cs_creg);
+					splx(s);
+					cs->cs_heldchange = 0;
+					if (cs->cs_heldtbc &&
+					    (tp->t_state & TS_TTSTOP) == 0) {
+						cs->cs_tbc = cs->cs_heldtbc - 1;
+						zc->zc_data = *cs->cs_tba++;
+						goto again;
+					}
 				}
-				splx(s);
-				(void) (*linesw[tp->t_line].l_modem)(tp, 1);
-			} else {
-				(void) splzs();
-				if (cs->cs_creg[3] & ZSWR3_HFC) {
-					cs->cs_creg[3] &= ~ZSWR3_HFC;
-					ZS_WRITE(zc, 3, cs->cs_creg[3]);
-				}
-				splx(s);
-				if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0)
-					zs_modem(cs, 0);
-			}
-		}
+				tp->t_state &= ~TS_BUSY;
+				if (tp->t_state & TS_FLUSH)
+					tp->t_state &= ~TS_FLUSH;
+				else
+					ndflush(&tp->t_outq,
+					    cs->cs_tba - tp->t_outq.c_cf);
+				line->l_start(tp);
+				break;
 
-		if (txint) {
-			/*
-			 * Transmit done: change registers and resume
-			 * or clear BUSY.
-			 */
-			if (cs->cs_heldchange) {
-				s = splzs();
-				if ((rr0 & ZSRR0_DCD) == 0)
-					cs->cs_preg[3] &= ~ZSWR3_HFC;
-				bcopy((caddr_t)cs->cs_preg,
-				    (caddr_t)cs->cs_creg, 16);
-				zs_loadchannelregs(cs->cs_zc, cs->cs_creg);
-				splx(s);
-				cs->cs_heldchange = 0;
-				if (cs->cs_heldtbc &&
-				    (tp->t_state & TS_TTSTOP) == 0) {
-					cs->cs_tbc = cs->cs_heldtbc - 1;
-					zc->zc_data = *cs->cs_tba++;
-					continue;
+			case ZRING_SINT:
+				/*
+				 * Status line change.  HFC bit is run in
+				 * hardware interrupt, to avoid locking
+				 * at splzs here.
+				 */
+				c = ZRING_VALUE(c);
+				if ((c ^ cs->cs_rr0) & ZSRR0_DCD) {
+					cc = (c & ZSRR0_DCD) != 0;
+					if (line->l_modem(tp, cc) == 0)
+						zs_modem(cs, cc);
 				}
+				cs->cs_rr0 = c;
+				break;
+
+			default:
+				log(LOG_ERR, "zs%d%c: bad ZRING_TYPE (%x)\n",
+				    unit >> 1, (unit & 1) + 'a', c);
+				break;
 			}
-			tp->t_state &= ~TS_BUSY;
-			if (tp->t_state & TS_FLUSH)
-				tp->t_state &= ~TS_FLUSH;
-			else
-				ndflush(&tp->t_outq,
-				    cs->cs_tba - tp->t_outq.c_cf);
-			(*linesw[tp->t_line].l_start)(tp);
 		}
+		cs->cs_rbget = get;
+		goto again;
 	}
 	return (1);
 }
@@ -906,7 +923,7 @@ zsioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 	register struct tty *tp = zi->zi_cs[unit & 1].cs_ttyp;
 	register int error;
 
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
+	error = linesw[tp->t_line].l_ioctl(tp, cmd, data, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
