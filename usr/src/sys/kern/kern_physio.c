@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.20	81/04/24	*/
+/*	kern_physio.c	4.21	81/05/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -716,7 +716,7 @@ unsigned (*mincnt)();
 	bp->b_error = 0;
 	bp->b_proc = u.u_procp;
 	bp->b_un.b_addr = u.u_base;
-	while (u.u_count != 0 && (bp->b_flags&B_ERROR)==0) {
+	while (u.u_count != 0) {
 		bp->b_flags = B_BUSY | B_PHYS | rw;
 		bp->b_dev = dev;
 		bp->b_blkno = u.u_offset >> PGSHIFT;
@@ -737,6 +737,8 @@ unsigned (*mincnt)();
 		bp->b_un.b_addr += c;
 		u.u_count -= c;
 		u.u_offset += c;
+		if (bp->b_flags&B_ERROR)
+			break;
 	}
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS);
 	u.u_count = bp->b_resid;
