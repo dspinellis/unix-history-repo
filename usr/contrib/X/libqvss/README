@@ -1,0 +1,8 @@
+	I am not able to distribute source for the QVSS bit-blit code.
+Included in this directory are the device dependent X routines which use them,
+however, as an example of another ddX interface.
+
+	To change the font location, edit ``vssite.h'', and recompile 
+``ddxfontloc.c''.  Archive the resulting file into libqvss.a.
+
+				Jim Gettys
