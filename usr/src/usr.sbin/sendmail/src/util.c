@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1169,18 +1169,23 @@ strcontainedin(a, b)
 	register char *a;
 	register char *b;
 {
-	int l;
+	int la;
+	int lb;
+	int c;
 
-	l = strlen(a);
-	for (;;)
+	la = strlen(a);
+	lb = strlen(b);
+	c = *a;
+	if (isascii(c) && isupper(c))
+		c = tolower(c);
+	for (; lb-- >= la; b++)
 	{
-		b = strchr(b, a[0]);
-		if (b == NULL)
-			return FALSE;
-		if (strncmp(a, b, l) == 0)
+		if (*b != c && isascii(*b) && isupper(*b) && tolower(*b) != c)
+			continue;
+		if (strncasecmp(a, b, la) == 0)
 			return TRUE;
-		b++;
 	}
+	return FALSE;
 }
 /*
 **  CHECKFD012 -- check low numbered file descriptors
