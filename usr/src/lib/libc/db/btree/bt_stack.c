@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_stack.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_stack.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -52,7 +52,7 @@ __bt_push(t, pgno, index)
 {
 	if (t->bt_sp == t->bt_maxstack) {
 		t->bt_maxstack += 50;
-		if ((t->bt_stack = realloc(t->bt_stack,
+		if ((t->bt_stack = (EPGNO *)realloc(t->bt_stack,
 		    t->bt_maxstack * sizeof(EPGNO))) == NULL) {
 			t->bt_maxstack -= 50;
 			return (RET_ERROR);

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	8.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -82,7 +82,7 @@ __hash_open(file, flags, mode, info, dflags)
 		return (NULL);
 	}
 
-	if (!(hashp = calloc(1, sizeof(HTAB))))
+	if (!(hashp = (HTAB *)calloc(1, sizeof(HTAB))))
 		return (NULL);
 	hashp->fp = -1;
 
@@ -165,7 +165,7 @@ __hash_open(file, flags, mode, info, dflags)
 	hashp->new_file = new_table;
 	hashp->save_file = file && (hashp->flags & O_RDWR);
 	hashp->cbucket = -1;
-	if (!(dbp = malloc(sizeof(DB)))) {
+	if (!(dbp = (DB *)malloc(sizeof(DB)))) {
 		save_errno = errno;
 		hdestroy(hashp);
 		errno = save_errno;
@@ -805,8 +805,8 @@ __expand_table(hashp)
 				return (-1);
 			hashp->DSIZE = dirsize << 1;
 		}
-		if (!(hashp->dir[new_segnum] =
-			calloc(hashp->SGSIZE, sizeof(SEGMENT))))
+		if ((hashp->dir[new_segnum] =
+		    (SEGMENT)calloc(hashp->SGSIZE, sizeof(SEGMENT))) == NULL)
 			return (-1);
 		hashp->exsegs++;
 		hashp->nsegs++;
@@ -881,15 +881,16 @@ alloc_segs(hashp, nsegs)
 
 	int save_errno;
 
-	if (!(hashp->dir = calloc(hashp->DSIZE, sizeof(SEGMENT *)))) {
+	if ((hashp->dir =
+	    (SEGMENT *)calloc(hashp->DSIZE, sizeof(SEGMENT *))) == NULL) {
 		save_errno = errno;
 		(void)hdestroy(hashp);
 		errno = save_errno;
 		return (-1);
 	}
 	/* Allocate segments */
-	store = calloc(nsegs << hashp->SSHIFT, sizeof(SEGMENT));
-	if (!store) {
+	if ((store =
+	    (SEGMENT)calloc(nsegs << hashp->SSHIFT, sizeof(SEGMENT))) == NULL) {
 		save_errno = errno;
 		(void)hdestroy(hashp);
 		errno = save_errno;

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mpool.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mpool.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -63,7 +63,7 @@ mpool_open(key, fd, pagesize, maxcache)
 		return (NULL);
 	}
 
-	if ((mp = malloc(sizeof(MPOOL))) == NULL)
+	if ((mp = (MPOOL *)malloc(sizeof(MPOOL))) == NULL)
 		return (NULL);
 	mp->free.cnext = mp->free.cprev = (BKT *)&mp->free;
 	mp->lru.cnext = mp->lru.cprev = (BKT *)&mp->lru;
@@ -347,7 +347,7 @@ mpool_bkt(mp)
 			return (b);
 		}
 
-new:	if ((b = malloc(sizeof(BKT) + mp->pagesize)) == NULL)
+new:	if ((b = (BKT *)malloc(sizeof(BKT) + mp->pagesize)) == NULL)
 		return (NULL);
 #ifdef STATISTICS
 	++mp->pagealloc;

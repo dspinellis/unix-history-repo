@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -605,7 +605,7 @@ __init_bitmap(hashp, pnum, nbits, ndx)
 	u_long *ip;
 	int clearbytes, clearints;
 
-	if (!(ip = malloc(hashp->BSIZE)))
+	if ((ip = (u_long *)malloc(hashp->BSIZE)) == NULL)
 		return (1);
 	hashp->nmaps++;
 	clearints = ((nbits - 1) >> INT_BYTE_SHIFT) + 1;
@@ -883,11 +883,15 @@ fetch_bitmap(hashp, ndx)
 	HTAB *hashp;
 	int ndx;
 {
-	if (ndx >= hashp->nmaps ||
-	    !(hashp->mapp[ndx] = malloc(hashp->BSIZE)) ||
-	    __get_page(hashp, (char *)hashp->mapp[ndx],
-	    hashp->BITMAPS[ndx], 0, 1, 1))
+	if (ndx >= hashp->nmaps)
 		return (NULL);
+	if ((hashp->mapp[ndx] = (u_long *)malloc(hashp->BSIZE)) == NULL)
+		return (NULL);
+	if (__get_page(hashp,
+	    (char *)hashp->mapp[ndx], hashp->BITMAPS[ndx], 0, 1, 1)) {
+		free(hashp->mapp[ndx]);
+		return (NULL);
+	}
 	return (hashp->mapp[ndx]);
 }
 
