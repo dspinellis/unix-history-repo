@@ -1,4 +1,4 @@
-/*	kern_physio.c	6.4	84/10/31	*/
+/*	kern_physio.c	6.5	85/03/12	*/
 
 #include "../machine/pte.h"
 
@@ -105,7 +105,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		if (bp->b_flags & B_ERROR) {
 			if ((flag & (B_UAREA|B_PAGET)) || rdflg == B_WRITE)
 				panic("hard IO err in swap");
-			swkill(p, (char *)0);
+			swkill(p, "swap: read error from swap device");
 		}
 		nbytes -= c;
 		dblkno += btodb(c);
@@ -152,14 +152,9 @@ swkill(p, rout)
 	struct proc *p;
 	char *rout;
 {
-	char *mesg;
 
-	printf("pid %d: ", p->p_pid);
-	if (rout)
-		printf(mesg = "killed due to no swap space\n");
-	else
-		printf(mesg = "killed on swap error\n");
-	uprintf("sorry, pid %d was %s", p->p_pid, mesg);
+	printf("pid %d: %s", p->p_pid, rout);
+	uprintf("sorry, pid %d was killed in %s", p->p_pid, rout);
 	/*
 	 * To be sure no looping (e.g. in vmsched trying to
 	 * swap out) mark process locked in core (as though
