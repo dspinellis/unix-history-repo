@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,7 +39,7 @@ main(argc, argv)
 	register qflag = 0;
 	int needlog = 1;
 	char *user, *getlogin();
-	struct passwd *pw, *getpwuid();
+	struct passwd *pw;
 
 	openlog("reboot", 0, LOG_AUTH);
 	argc--, argv++;
@@ -115,6 +115,7 @@ dingdong()
 }
 
 setalarm(n)
+	int n;
 {
 	signal(SIGALRM, dingdong);
 	alarm(n);
