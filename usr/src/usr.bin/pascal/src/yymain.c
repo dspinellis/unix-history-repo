@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yymain.c 1.3 %G%";
+static char sccsid[] = "@(#)yymain.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)yymain.c 1.3 %G%";
 #include <a.out.h>
 #include "objfmt.h"
 #include <signal.h>
+#include "config.h"
 
 /*
  * Yymain initializes each of the utility
@@ -128,7 +129,7 @@ magic()
 	unsigned	*ubuf = buf;
 	register int	hf, i;
 
-	hf = open(PX_HEADER,0);
+	hf = open(px_header,0);
 	if (hf >= 0 && read(hf, buf, HEADER_BYTES) > sizeof(struct exec)) {
 		magichdr.a_magic = ubuf[0];
 		magichdr.a_text = ubuf[1];
