@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)build.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)build.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -136,7 +136,7 @@ badread:	if (nr < 0)
 	}
 
 	/* Seek to symbol table. */
-	if (fseek(fp, (long)r_off + N_SYMOFF(ebuf), SEEK_SET) == (off_t)-1)
+	if (fseek(fp, (long)r_off + N_SYMOFF(ebuf), SEEK_SET))
 		goto bad2;
 
 	/* For each symbol read the nlist entry and save it as necessary. */
@@ -196,7 +196,7 @@ symobj()
 	char hb[sizeof(struct ar_hdr) + 1], pad;
 
 	/* Rewind the archive, leaving the magic number. */
-	if (fseek(fp, (long)SARMAG, SEEK_SET) == (long)-1)
+	if (fseek(fp, (long)SARMAG, SEEK_SET))
 		error(archive);
 
 	/* Size of the ranlib archive file, pad if necessary. */
