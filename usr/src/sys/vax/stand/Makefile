@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.18 (Berkeley) %G%
+#	@(#)Makefile	7.19 (Berkeley) %G%
 #
 
 DESTDIR=
@@ -283,7 +283,6 @@ depend: ${SRCS}
 
 install: FRC
 	install -c -s -o bin -g bin -m 644 format cat copy drtest ls ${DESTDIR}${STAND}
-	install -c -o bin -g bin -m 644 boot pcs750.bin ${DESTDIR}/
 	[ -d ../vaxdist/tp ] || mkdir ../vaxdist/tp
 	cp tpcopy ../vaxdist/tp/copy
 	cp tpboot ../vaxdist/tp/boot
