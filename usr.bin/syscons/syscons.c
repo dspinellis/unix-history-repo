@@ -120,7 +120,7 @@ int		fd;
 vtmode_t	mode;
 
 	/* Try to find out if we are running on a syscons VT */
-	if (ioctl(fd, VT_GETMODE, mode) == 0)
+	if (ioctl(fd, VT_GETMODE, &mode) == 0)
 		return(1);
 	if (errno == ENOTTY) {
 		printf("You must be running this from a syscons vty for it to work.\n\n");
