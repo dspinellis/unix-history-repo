@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.7 (Berkeley) %G%
+.\"	@(#)2.t	6.8 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -27,7 +27,7 @@ Bootstrapping from the tape
 .LP
 The set of files on the distribution tape are as follows:
 .IP 1)
-dd (HP300 and DecStation) or dump (SPARC) image of the root filesystem
+dd (HP300 and DECstation) or dump (SPARC) image of the root filesystem
 .IP 2)
 tar image of the
 .Pn /var
@@ -63,7 +63,7 @@ Extract the system and utility source files as desired.
 .PP
 The following sections describe the above steps in detail.
 The details of the first step vary between architectures.
-The specific steps for the HP300, SPARC, and DecStation are
+The specific steps for the HP300, SPARC, and DECstation are
 given in the next three sections respectively.
 You should follow the instructions for your particular architecture.
 In all sections,
@@ -213,6 +213,7 @@ For HPs, the root filesystem image is the first file on the tape.
 It includes a disklabel and bootblock along with the root filesystem.
 An example command to copy the image from tape to the beginning of a disk is:
 .DS
+.ft CW
 dd if=/dev/rmt/0m of=/dev/rdsk/1s0 bs=20b
 .DE
 The actual special file syntax may vary depending on unit numbers and
@@ -237,6 +238,7 @@ To do this, you need to extract the first file of the distribution tape
 drive and then create a bootable cartridge or DAT tape.
 For example:
 .DS
+.ft CW
 dd if=/dev/rst0 of=bootimage bs=20b
 rcp bootimage foo:/tmp/bootimage
 <login to foo>
@@ -387,7 +389,7 @@ or peak performance is not an issue, you can skip this step and
 proceed directly to step 5.
 .PP
 Connect a second disk to your machine.
-If you bootstraped using the two disk method, you can
+If you bootstrapped using the two disk method, you can
 overwrite your initial bootstrapping disk, as it will no longer
 be needed.
 .PP
@@ -555,6 +557,7 @@ Mount the new root, then copy the SunOS
 into place and use the SunOS ``installboot'' program
 to enable disk-based booting:
 .DS
+.ft CW
 # mount /dev/sd3a /mnt
 # cp /boot /mnt/boot
 # umount /dev/sd3a
@@ -569,6 +572,7 @@ does not handle the new \*(4B filesystem format.
 .IP 5)
 Mount the new root and restore the root.
 .DS
+.ft CW
 # mount /dev/sd3a /mnt
 # cd /mnt
 # rrestore xf tapehost:/dev/nrst0
@@ -581,6 +585,7 @@ Boot the supplied kernel.  Configure the network, build
 .Pn /usr ,
 mount it, and restore it:
 .DS
+.ft CW
 # halt
 ok boot disk3 -s			[for old proms] OR
 ok boot sd(0,3)vmunix -s		[for new proms]
@@ -596,6 +601,7 @@ ok boot sd(0,3)vmunix -s		[for new proms]
 .IP 7)
 At this point you may wish to set up \*(4B to reboot automatically:
 .DS
+.ft CW
 # halt
 ok setenv boot-from sd(0,3)vmunix	[for old proms] OR
 ok setenv boot-device disk3		[for new proms]
@@ -611,6 +617,7 @@ If you wish to run SunOS binaries that use SunOS shared libraries, you
 simply need to copy all of the dynamic linker files from an existing
 SunOS system:
 .DS
+.ft CW
 # rcp sunos-host:/etc/ld.so.cache /etc/
 # rcp sunos-host:'/usr/lib/*.so*' /usr/lib/
 .DE
@@ -618,32 +625,163 @@ The SunOS compiler and linker should be able to produce SunOS binaries
 under \*(4B, but this has not been tested.  If you plan to try it you
 will need the appropriate .sa files as well.
 .NH 2
-Booting the DecStation
+Booting the DECstation
 .NH 3
 Supported hardware
+.LP
+The hardware supported by \*(4B for the DECstation is as follows:
+.TS
+center box;
+lw(1i) lw(4i).
+CPUs	T{
+R2000 based (3100) and
+R3000 based (5000/200, 5000/20, 5000/25, 5000/1xx).
+T}
+_
+DISKs	T{
+SCSI-I (tested RZ23, RZ55, RZ57, Maxtor 8760S).
+T}
+_
+TAPEs	T{
+SCSI-I (tested DEC TK50, Archive DAT, Emulex MT02).
+T}
+_
+RS232	T{
+Internal DEC dc7085 and AMD 8530 based interfaces.
+T}
+_
+NETWORK	T{
+TURBOchannel PMAD-AA and internal LANCE based interfaces.
+T}
+_
+GRAPHICS	T{
+Terminal emulation and raw frame buffer support for
+3100 (color & monochrome),
+TURBOchannel PMAG-AA, PMAG-BA, PMAG-DV.
+T}
+_
+INPUT	T{
+Standard DEC keyboard (LK201) and mouse.
+T}
+_
+MISC	T{
+Battery-backed real time clock,
+internal and TURBOchannel PMAZ-AA SCSI interfaces.
+T}
+.TE
+.LP
+Major items not supported include the 5000/240 (there is code but not
+compiled in or tested),
+R4000 based machines, FDDI and audio interfaces.
+Diskless machines are not supported but booting kernels and bootstrapping
+over the network is supported on the 5000 series.
 .NH 3
 The Procedure
 .PP
-Steps to bootstrap a system.
+The first file on the distribution tape is a tar file which contains
+four files.
+The first step requires a running UNIX (or ULTRIX) system that can
+be used to extract the tar archive from the first file on the tape.
+The command:
+.DS
+.ft CW
+tar xf /dev/rmt0
+.DE
+will extract the following four files:
+.DS
+A) root.image: \fIdd\fP image of the root filesystem
+B) vmunix.tape: \fIdd\fP image for creating boot tapes
+C) vmunix.net: file for booting over the network
+D) root.dump: dump image of the root filesystem
+.DE
+There are three basic ways a system can be bootstrapped corresponding to the
+first three files.
+You may want to read the section on bootstrapping the HP300
+since many of the steps are similar.
+A spare, formatted SCSI disk is also useful.
+.NH 4
+Procedure A: copy root filesystem to disk
+.PP
+This procedure is similar to the HP300.
+If you have an extra disk, the easiest approach is to use \fIdd\fP\|(1)
+under ULTRIX to copy the root filesystem image to the beginning
+of the spare disk. 
+The root filesystem image includes a disklabel and bootblock along with the
+root filesystem.
+An example command to copy the image to the beginning of a disk is:
+.DS
+.ft CW
+dd if=root.image of=/dev/rz1c bs=20b
+.DE
+The actual special file syntax will vary depending on unit numbers and
+the version of ULTRIX that is running.
+This system is now ready to boot.
+You will probably want to change the disk label
+to create reasonable partitions for your machine (see section 4.2).
+You can then proceed to section 2.5 to install the rest of the system.
+.NH 4
+Procedure B: bootstrap from tape
+.PP
+If you have only a single machine with a single disk,
+you need to use the more difficult approach of booting a
+kernel and mini-root from tape or the network, and using it to restore
+the root filesystem.
+.PP
+First, you will need to create a boot tape. This can be done using
+\fIdd\fP as in the following example.
+.DS
+.ft CW
+dd if=vmunix.tape of=/dev/nrmt0 bs=1b
+dd if=root.dump of=/dev/nrmt0 bs=20b
+.DE
+The actual special file syntax for the tape drive will vary depending on
+unit numbers, tape device and the version of ULTRIX that is running.
+.PP
+The first file on the boot tape contains a boot header, kernel, and
+mini-root file system that the PROM can copy into memory.
+Installing from tape has only been tested
+on a 3100 and a 5000/200 using a TK50 tape drive. Here are two example
+PROM commands to boot from tape.
+.DS
+.ft CW
+DEC 3100:    boot \-f tz(0,5,0) m    # 5 is the SCSI id of the TK50
+DEC 5000:    boot 5/tz6 m           # 6 is the SCSI id of the TK50
+.DE
+The `m' argument tells the kernel to look for a root filesystem in memory.
+Next you should proceed to section 2.4.3 to build a disk-based root filesystem.
+.NH 4
+Procedure C: bootstrap over the network
+.PP
+You will need a host machine that is running the \fIbootp\fP server 
+with the vmunix.net file installed in the default directory defined by the
+configuration file for \fIbootp\fP.
+Here are two example PROM commands to boot across the net:
+.DS
+.ft CW
+DEC 3100:	boot \-f tftp()vmunix.net m
+DEC 5000:	boot 6/tftp/vmunix.net m
+.DE
+This command should load the kernel and mini-root into memory and
+run the same as the tape install (procedure B).
+The rest of the steps are the same except you will need to
+execute the following to start the networking:
+.DS
+.ft CW
+# mount -u /
+# echo 127.0.0.1 localhost >> /etc/hosts
+# echo <your.host.inet.number> myname.my.domain myname >> /etc/hosts
+# echo <friend.host.inet.number> myfriend.my.domain myfriend >> /etc/hosts
+# ifconfig le0 inet myname
+.DE
+Next you should proceed to section 2.4.3 to build a disk-based root filesystem.
+.NH 3
+Label disk and create the root filesystem.
+.LP
+There are five steps to create a disk-based root filesystem.
 .IP 1)
-Load kernel and root filesystem into memory with one of the PROM commands.
-This is the only step that depends on what type of machine you are using.
-The 'cnfg' PROM command will display what devices are available
-(DEC 5000 only).
-The 'm' argument tells the kernel to look for a root filesystem in memory.
+Label the disk.
 .DS
-DEC 3100:	boot -f tz(0,5,0) m	# 5 is the SCSI id of the TK50
-DEC 5000:	boot 5/tz6 m		# 6 is the SCSI id of the TK50
-DEC 5000:	boot 6/tftp/bootfile m	# requires bootp on host
-.DE
-.IP 2)
-Format the disk if needed. Most SCSI disks are already formatted.
-.DS
-format
-.DE
-.IP 3)
-Label disks and create filesystems.
-.DS
+.ft CW
 # disklabel -W /dev/rrz?c		# This enables writing the label
 # disklabel -w -r -B /dev/rrz?c $DISKTYPE
 # newfs /dev/rrz?a
@@ -653,40 +791,60 @@ Label disks and create filesystems.
 .DE
 Supported disk types are listed in
 .Pn /etc/disktab .
-Feel free to add to this list.
-.IP 4)
+.IP 3)
 Restore the root filesystem.
 .DS
+.ft CW
 # mount \-u /
 # mount /dev/rz?a /a
 # cd /a
+.DE
+.ti +0.4i
+If you are restoring locally (procedure B), run:
+.DS
+.ft CW
 # mt \-f /dev/nrmt0 rew
 # restore \-xsf 2 /dev/rmt0
+.DE
+.ti +0.4i
+If you are restoring across the net (procedure c), run:
+.DS
+.ft CW
+# rrestore xf myfriend:/path/to/root.dump
+.DE
+.ti +0.4i
+When the restore finishes, clean up with:
+.DS
+.ft CW
 # cd /
 # sync
 # umount /a
 # fsck /dev/rz?a
 .DE
-.IP 5)
-Initialize the PROM monitor to boot automatically.
+.IP 4)
+Reset the system and initialize the PROM monitor to boot automatically.
 .DS
-# halt \-q
-
-DEC 3100:	setenv bootpath boot -f rz(0,?,0)vmunix
+.ft CW
+DEC 3100:	setenv bootpath boot \-f rz(0,?,0)vmunix
 DEC 5000:	setenv bootpath 5/rz?/vmunix -a
 .DE
-.IP 6)
+.IP 5)
 After booting UNIX, you will need to create
 .Pn /dev/mouse
-to run X windows.
-Type `link /dev/xx /dev/mouse' where xx is one of the
-following:
+to run X windows as in the following example.
+.DS
+.ft CW
+rm /dev/mouse
+ln /dev/xx /dev/mouse
+.DE
+The 'xx' should be one of the following:
 .DS
 pm0	raw interface to PMAX graphics devices
 cfb0	raw interface to turbochannel PMAG-BA color frame buffer
 xcfb0	raw interface to maxine graphics devices
 mfb0	raw interface to mono graphics devices
 .DE
+You can then proceed to section 2.5 to install the rest of the system.
 .NH 2
 Installing the rest of the system
 .PP
