@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vi.in	6.3 (Berkeley) %G%
+.\"	@(#)vi.in	6.4 (Berkeley) %G%
 .\"
-.EH 'USD:15-%''An Introduction to Display Editing with Vi'
-.OH 'An Introduction to Display Editing with Vi''USD:15-%'
+.EH 'USD:12-%''An Introduction to Display Editing with Vi'
+.OH 'An Introduction to Display Editing with Vi''USD:12-%'
 .bd S 3
 .if t .ds dg \(dg
 .if n .ds dg +

@@ -1,10 +1,10 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-DIR=	smm/18.password
+DIR=	smm/17.password
 SRCS=	password.ms
 MACROS=	-ms
 
-paper.${PRINTER}: ${SRCS}
+paper.ps: ${SRCS}
 	${TBL} ${SRCS} | ${EQN} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>

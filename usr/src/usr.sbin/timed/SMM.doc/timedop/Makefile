@@ -1,10 +1,7 @@
-#	@(#)Makefile	6.3 (Berkeley) %G%
+#	@(#)Makefile	6.4 (Berkeley) %G%
 
-DIR=	smm/08.timedop
+DIR=	smm/11.timedop
 SRCS=	timed.ms
 MACROS=	-ms
-
-paper.${PRINTER}: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
 
 .include <bsd.doc.mk>

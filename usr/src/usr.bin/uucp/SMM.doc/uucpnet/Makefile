@@ -1,11 +1,11 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-DIR=	smm/21.uucpnet
+DIR=	smm/15.uucpnet
 SRCS=	network.ms
 MACROS=	-ms
-REFER=	refer -p /usr/doc/run/Ind
+REFER=	refer -p /usr/old/dict/papers/Ind
 
-paper.${PRINTER}: ${SRCS}
+paper.ps: ${SRCS}
 	${REFER} -e ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
