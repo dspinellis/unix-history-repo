@@ -1,9 +1,10 @@
-static char *sccsid = "@(#)vfontinfo.c	4.1 (Berkeley) 10/1/80";
+static char *sccsid = "@(#)vfontinfo.c	4.4 (Berkeley) %G%";
 /* Font Information for VCat-style fonts
  *      Andy Hertzfeld  4/79
  *
  *	Modified to print Ascii chars 1/80 by Mark Horton
  *	Zoom option added 5/81 by Steve Stone with tables from Mark Horton.
+ *	Message option added 5/31 by Mark Horton
  */
 #include <stdio.h>
 #include <ctype.h>
@@ -20,8 +21,13 @@ char	defascii[256];
 char	*charswanted = defascii;
 int	verbose;
 char	charbits[4000];
-int	H, W, WB;
-int 	zoom = -1;
+int	H, W, WB, base;
+int 	zoom = 1;
+
+char msgout[24][80];
+int msgflag = 0;
+int curline, curcol;	/* cursor, numbered from lower left corner */
+int minline=24, maxline=0, maxcol=0;
 
 main(argc,argv)
 int argc;
@@ -37,6 +43,14 @@ char **argv;
 			break;
 		case 'z':
 			zoom = argv[1][2] - '0';
+			break;
+		case 'm':
+			msgflag = 1;
+			zoom = 2;
+			for (i=0; i<24; i++)
+				for (j=0; j<80; j++)
+					msgout[i][j] = ' ';
+			curline = 5; curcol = 0;
 			break;
 		default:
 			printf("Bad flag: %s\n", argv[1]);
@@ -69,28 +83,31 @@ char **argv;
 	fbase = sizeof FontHeader + sizeof disptable;
 
 	if (FontHeader.magic != 0436)
-	printf("Magic number %o wrong\n", FontHeader.magic);
-	printf("Font %s, ",argv[1]);
-	printf("raster size %d, ",FontHeader.size);
-	printf("max width %d, max height %d, xtend %d\n",
-		FontHeader.maxx, FontHeader.maxy,FontHeader.xtend);
-	printf("\n ASCII     offset    size  left    right   up     down    width \n");
+		printf("Magic number %o wrong\n", FontHeader.magic);
+	if (!msgflag) {
+		printf("Font %s, ",argv[1]);
+		printf("raster size %d, ",FontHeader.size);
+		printf("max width %d, max height %d, xtend %d\n",
+			FontHeader.maxx, FontHeader.maxy,FontHeader.xtend);
+		printf("\n ASCII     offset    size  left    right   up     down    width \n");
+	}
 
 	for (i=0; i<256; i++) {
 		j = charswanted[i];
 		if (i>0 && j==0)
 			break;
 		if (disptable[j].nbytes != 0) {
-			printf("  %3o %2s     %4d   %4d   %4d   %4d   %4d   %4d   %5d\n",
-				j, rdchar(j),
-				disptable[j].addr,
-				disptable[j].nbytes,
-				disptable[j].left,
-				disptable[j].right,
-				disptable[j].up,
-				disptable[j].down,
-				disptable[j].width);
-			if (verbose) {
+			if (!msgflag)
+				printf("  %3o %2s     %4d   %4d   %4d   %4d   %4d   %4d   %5d\n",
+					j, rdchar(j),
+					disptable[j].addr,
+					disptable[j].nbytes,
+					disptable[j].left,
+					disptable[j].right,
+					disptable[j].up,
+					disptable[j].down,
+					disptable[j].width);
+			if (verbose || msgflag) {
 				int len = disptable[j].nbytes;
 				int k, l, last;
 
@@ -98,8 +115,13 @@ char **argv;
 				read(FID, charbits, len);
 				H = (disptable[j].up) + (disptable[j].down);
 				W = (disptable[j].left) + (disptable[j].right);
+				base = disptable[j].up;
 				WB = (W+7)/8;
 				if (zoom < 0) {
+					/*
+					 * Old 1 for 1 code.  The aspect ratio
+					 * is awful, so we don't use it.
+					 */
 					for (k=0; k<H; k++) {
 						for (last=W-1; last >= 0; last--)
 							if (fbit(k, last))
@@ -110,9 +132,23 @@ char **argv;
 						printf("\n");
 					}
 					printf("\n");
-				} else
+				} else {
 					shozoom();
+					if (msgflag) {
+						k = disptable[j].width;
+						if (zoom == 0) k *= 2;
+						else if (zoom == 2) k /= 2;
+						curcol += k;
+					}
+				}
 			}
+		}
+	}
+	if (msgflag) {
+		for (i=maxline; i>=minline; i--) {
+			for (j=0; j<maxcol; j++)
+				putchar(msgout[i][j]);
+			putchar('\n');
 		}
 	}
 }
@@ -141,7 +177,7 @@ int row, col;
 {
 	int thisbyte, thisbit, ret;
 
-	if (row>=H || col>=W) return(0);
+	if (row<0 || row>=H || col>=W) return(0);
 	thisbyte = charbits[row*WB + (col>>3)] & 0xff;
 	thisbit = 0x80 >> (col&7);
 	ret = thisbyte & thisbit;
@@ -256,10 +292,14 @@ sho1()
 sho2()
 {
 	register i,j,k,l;
+	int line = curline + (base+3)/4;
+	int col;
 
-	k = 0;
+	k = base%4;
+	if (k > 0) k -= 4;
 	while (k < H) {
 		l = 0;
+		col = curcol;
 		while (l<W) {
 			i = fbit(k,l)*8 + fbit(k+1,l)*4 + 
 			    fbit(k+2,l)*2 + fbit(k+3,l);
@@ -267,11 +307,23 @@ sho2()
 			j = fbit(k,l)*8 + fbit(k+1,l)*4 + 
 			    fbit(k+2,l)*2 + fbit(k+3,l);
 
-			printf("%c",graphtab[i][j]);
+			if (msgflag) {
+				if (graphtab[i][j] != ' ') {
+					if (line > maxline) maxline = line;
+					if (line < minline) minline = line;
+					if (col > maxcol)   maxcol  = col;
+				}
+				msgout[line][col] = graphtab[i][j];
+			} else
+				printf("%c",graphtab[i][j]);
 			l++;
+			col++;
 		}
-		printf("\n");
+		if (msgflag == 0)
+			printf("\n");
 		k += 4;
+		line--;
 	}
-	printf("\n");
+	if (msgflag == 0)
+		printf("\n");
 }
