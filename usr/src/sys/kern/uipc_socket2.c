@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.12	81/12/02	*/
+/*	uipc_socket2.c	4.13	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,8 +62,8 @@ soisdisconnecting(so)
 	so->so_state &= ~(SS_ISCONNECTED|SS_ISCONNECTING);
 	so->so_state |= (SS_ISDISCONNECTING|SS_CANTRCVMORE|SS_CANTSENDMORE);
 	wakeup((caddr_t)&so->so_timeo);
-	sorwakeup(so);
 	sowwakeup(so);
+	sorwakeup(so);
 }
 
 soisdisconnected(so)
@@ -194,7 +194,7 @@ sbwakeup(sb)
  * first calling m_copy on the socket buffer mbuf chain and sending this
  * to a peer, and then removing the data from the socket buffer with
  * sbdrop when the data is acknowledged by the peer (or immediately
- * in the case of unreliable protocols.
+ * in the case of unreliable protocols.)
  *
  * Protocols which do not require connections place both source address
  * and data information in socket buffer queues.  The source addresses
@@ -207,7 +207,7 @@ sbwakeup(sb)
  * a mbuf to store the address in.
  *
  * The higher-level routines sosend and soreceive (in socket.c)
- * also add data to, and remove data from socket buffers.
+ * also add data to, and remove data from socket buffers repectively.
  */
 
 /*

@@ -1,4 +1,4 @@
-/*	if_en.c	4.16	81/12/02	*/
+/*	if_en.c	4.17	81/12/03	*/
 
 #include "en.h"
 
@@ -33,7 +33,7 @@ int	enprobe(), enattach(), enrint(), enxint(), encollide();
 struct	uba_device *eninfo[NEN];
 u_short enstd[] = { 0 };
 struct	uba_driver endriver =
-	{ enprobe, 0, enattach, 0, enstd, "es", eninfo };
+	{ enprobe, 0, enattach, 0, enstd, "en", eninfo };
 #define	ENUNIT(x)	minor(x)
 
 int	eninit(),enoutput(),enreset();
@@ -67,7 +67,7 @@ struct	en_softc {
 enprobe(reg)
 	caddr_t reg;
 {
-	register int br, cvec;
+	register int br, cvec;		/* r11, r10 value-result */
 	register struct endevice *addr = (struct endevice *)reg;
 
 COUNT(ENPROBE);
@@ -96,14 +96,15 @@ enattach(ui)
 COUNT(ENATTACH);
 
 	es->es_if.if_unit = ui->ui_unit;
+	es->es_if.if_name = "en";
 	es->es_if.if_mtu = ENMTU;
 	es->es_if.if_net = ui->ui_flags;
 	es->es_if.if_host[0] =
 	    ~(((struct endevice *)eninfo[ui->ui_unit])->en_addr) & 0xff;
 	es->es_if.if_addr =
 	    if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
-	es->es_if.if_output = enoutput;
 	es->es_if.if_init = eninit;
+	es->es_if.if_output = enoutput;
 	es->es_if.if_ubareset = enreset;
 	if_attach(&es->es_if);
 }
@@ -118,12 +119,10 @@ enreset(unit, uban)
 	register struct uba_device *ui;
 COUNT(ENRESET);
 
-	if (unit >= NEN || (ui = eninfo[unit]) == 0 || ui->ui_alive == 0) {
-		printf("es%d: not alive\n", unit);
+	if (unit >= NEN || (ui = eninfo[unit]) == 0 || ui->ui_alive == 0 ||
+	    ui->ui_ubanum != uban)
 		return;
-	}
-	if (ui->ui_ubanum != uban)
-		return;
+	printf(" en%d", unit);
 	eninit(unit);
 }
 
@@ -134,26 +133,28 @@ COUNT(ENRESET);
 eninit(unit)
 	int unit;
 {
-	register struct uba_device *ui;
+	register struct en_softc *es = &en_softc[unit];
+	register struct uba_device *ui = eninfo[unit];
 	register struct endevice *addr;
-	register struct en_softc *es;
 	int s;
 
-	es = &en_softc[unit];
-	ui = eninfo[unit];
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
 	    sizeof (struct en_header), (int)btop(ENMTU)) == 0) { 
-		printf("es%d: can't initialize\n", unit);
+		printf("en%d: can't initialize\n", unit);
 		return;
 	}
 	addr = (struct endevice *)ui->ui_addr;
 	addr->en_istat = addr->en_ostat = 0;
 
 	/*
-	 * Hang pending read, start any writes.
+	 * Hang a receive and start any
+	 * pending writes by faking a transmit complete.
 	 */
 	s = splimp();
-	enstart(unit);
+	addr->en_iba = es->es_ifuba.ifu_r.ifrw_info;
+	addr->en_iwc = -(sizeof (struct en_header) + ENMTU) >> 1;
+	addr->en_istat = EN_IEN|EN_GO;
+	es->es_oactive = 1;
 	enxint(unit);
 	splx(s);
 }
@@ -171,17 +172,14 @@ int	enlastdel = 25;
 enstart(dev)
 	dev_t dev;
 {
-        int unit;
-	struct uba_device *ui;
+        int unit = ENUNIT(dev);
+	struct uba_device *ui = eninfo[unit];
+	register struct en_softc *es = &en_softc[unit];
 	register struct endevice *addr;
-	register struct en_softc *es;
 	struct mbuf *m;
 	int dest;
 COUNT(ENSTART);
 
-	unit = ENUNIT(dev);
-	ui = eninfo[unit];
-	es = &en_softc[unit];
 	if (es->es_oactive)
 		goto restart;
 
@@ -230,23 +228,26 @@ restart:
 enxint(unit)
 	int unit;
 {
+	register struct uba_device *ui = eninfo[unit];
+	register struct en_softc *es = &en_softc[unit];
 	register struct endevice *addr;
-	register struct uba_device *ui;
-	register struct en_softc *es;
 COUNT(ENXINT);
 
-	ui = eninfo[unit];
-	es = &en_softc[unit];
 	if (es->es_oactive == 0)
 		return;
 	addr = (struct endevice *)ui->ui_addr;
-	es = &en_softc[unit];
+	es->es_if.if_opackets++;
 	es->es_oactive = 0;
 	es->es_delay = 0;
 	es->es_mask = ~0;
 	if (addr->en_ostat&EN_OERROR)
 		printf("es%d: output error\n", unit);
 	if (es->es_if.if_snd.ifq_head == 0) {
+		es->es_if.if_oerrors++;
+		if (es->es_ifuba.ifu_xtofree) {
+			m_freem(es->es_ifuba.ifu_xtofree);
+			es->es_ifuba.ifu_xtofree = 0;
+		}
 		es->es_lastx = 0;
 		return;
 	}
@@ -261,21 +262,29 @@ COUNT(ENXINT);
 encollide(unit)
 	int unit;
 {
-	register struct en_softc *es;
+	register struct en_softc *es = &en_softc[unit];
 COUNT(ENCOLLIDE);
 
-	es = &en_softc[unit];
 	es->es_if.if_collisions++;
 	if (es->es_oactive == 0)
 		return;
+	/*
+	 * Es_mask is a 16 bit number with n low zero bits, with
+	 * n the number of backoffs.  When es_mask is 0 we have
+	 * backed off 16 times, and give up.
+	 */
 	if (es->es_mask == 0) {
 		printf("es%d: send error\n", unit);
 		enxint(unit);
-	} else {
-		es->es_mask <<= 1;
-		es->es_delay = mfpr(ICR) &~ es->es_mask;
-		enstart(unit);
+		return;
 	}
+	/*
+	 * Another backoff.  Restart with delay based on n low bits
+	 * of the interval timer.
+	 */
+	es->es_mask <<= 1;
+	es->es_delay = mfpr(ICR) &~ es->es_mask;
+	enstart(unit);
 }
 
 /*
@@ -290,20 +299,19 @@ COUNT(ENCOLLIDE);
 enrint(unit)
 	int unit;
 {
-	struct endevice *addr;
-	register struct en_softc *es;
-	struct en_header *en;
+	register struct en_softc *es = &en_softc[unit];
+	struct endevice *addr = (struct endevice *)eninfo[unit]->ui_addr;
+	register struct en_header *en;
     	struct mbuf *m;
-	struct ifqueue *inq;
-	register int len;
+	int len;
+	register struct ifqueue *inq;
 	int off;
 COUNT(ENRINT);
 
-	es = &en_softc[unit];
-	addr = (struct endevice *)eninfo[unit]->ui_addr;
+	es->es_if.if_ipackets++;
 
 	/*
-	 * Purge BDP; drop error packets.
+	 * Purge BDP; drop if input error indicated.
 	 */
 	UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_r.ifrw_bdp);
 	if (addr->en_istat&EN_IERROR) {
@@ -323,8 +331,9 @@ COUNT(ENRINT);
 	if (en->en_type >= ENPUP_TRAIL &&
 	    en->en_type < ENPUP_TRAIL+ENPUP_NTRAILER) {
 		off = (en->en_type - ENPUP_TRAIL) * 512;
+		if (off >= ENMTU)
+			goto setup;		/* sanity */
 		en->en_type = *endataaddr(en, off, u_short *);
-		off += 2;
 	} else
 		off = 0;
 
@@ -353,8 +362,7 @@ COUNT(ENRINT);
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; if_rubaget will then force this header
 	 * information to be at the front, but we still have to drop
-	 * the two-byte type which is at the front of the trailer data
-	 * (which we ``consumed'' above).
+	 * the two-byte type which is at the front of any trailer data.
 	 */
 	m = if_rubaget(&es->es_ifuba, len, off);
 	if (off) {
@@ -397,7 +405,7 @@ enoutput(ifp, m0, pf)
 
 		dest = ip->ip_dst.s_addr >> 24;
 		off = ip->ip_len - m->m_len;
-		if (off && off % 512 == 0 && m->m_off >= MMINOFF + 2) {
+		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
 			type = ENPUP_TRAIL + (off>>9);
 			m->m_off -= 2;
 			m->m_len += 2;
@@ -416,23 +424,23 @@ enoutput(ifp, m0, pf)
 		return (0);
 	}
 
+gottrailertype:
 	/*
 	 * Packet to be sent as trailer: move first packet
 	 * (control information) to end of chain.
 	 */
-gottrailertype:
 	while (m->m_next)
 		m = m->m_next;
 	m->m_next = m0;
 	m = m0->m_next;
 	m0->m_next = 0;
+	m0 = m;
 
+gottype:
 	/*
 	 * Add local net header.  If no space in first mbuf,
 	 * allocate another.
 	 */
-gottype:
-	m0 = m;
 	if (MMINOFF + sizeof (struct en_header) > m->m_off) {
 		m = m_get(0);
 		if (m == 0) {

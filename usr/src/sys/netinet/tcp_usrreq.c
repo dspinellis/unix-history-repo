@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.38 81/12/02 */
+/* tcp_usrreq.c 1.39 81/12/03 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -89,6 +89,7 @@ COUNT(TCP_USRREQ);
 			error = ENOBUFS;
 			break;
 		}
+		tp->t_template = tcp_template(tp);
 		tp->t_inpcb = inp;
 		inp->inp_ppcb = (caddr_t)tp;
 		soisconnecting(so);

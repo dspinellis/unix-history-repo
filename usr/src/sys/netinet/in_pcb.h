@@ -1,4 +1,4 @@
-/*	in_pcb.h	4.1	81/11/20	*/
+/*	in_pcb.h	4.2	81/12/03	*/
 
 /*
  * Common structure pcb for internet protocol implementation.
@@ -10,6 +10,8 @@
 struct inpcb {
 	struct	inpcb *inp_next,*inp_prev;
 					/* pointers to other pcb's */
+	struct	inpcb *inp_head;	/* pointer back to chain of inpcb's
+					   for this protocol */
 	struct	in_addr inp_faddr;	/* foreign host table entry */
 	u_short	inp_fport;		/* foreign port */
 	struct	in_addr inp_laddr;	/* local host table entry */

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.13	81/12/02	*/
+/*	udp_usrreq.c	4.14	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -247,14 +247,4 @@ COUNT(UDP_USRREQ);
 		panic("udp_usrreq");
 	}
 	return (0);
-}
-
-/*ARGSUSED*/
-udp_sense(m)
-	struct mbuf *m;
-{
-
-COUNT(UDP_SENSE);
-	printf("udp_sense\n");
-	return (EOPNOTSUPP);
 }

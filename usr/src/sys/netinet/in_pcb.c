@@ -1,4 +1,4 @@
-/* in_pcb.c 4.11 81/12/02 */
+/* in_pcb.c 4.12 81/12/03 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,6 +40,9 @@
  * the disconnect is in progress.  We notice that this has happened
  * when the disconnect is complete, and perform the PRU_DETACH operation,
  * freeing the socket.
+ *
+ * TODO:
+ *	use hashing
  */
 
 /*
@@ -66,20 +69,14 @@ COUNT(IN_PCBATTACH);
 		if (ifp == 0)
 			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
-		if (lport) {
-			xp = head->inp_next;
-			for (; xp != head; xp = xp->inp_next) 
-				if (xp->inp_laddr.s_addr ==
-				    sin->sin_addr.s_addr &&
-				    xp->inp_lport == lport &&
-				    xp->inp_faddr.s_addr == 0)
-					return (EADDRINUSE);
-		}
+		if (lport &&
+		    in_pcblookup(head, 0, 0, sin->sin_addr.s_addr, lport))
+			return (EADDRINUSE);
 	} else {
 		ifp = if_ifwithaddr(ifnet->if_addr);
 		lport = 0;
 	}
-	m = m_getclr(M_WAIT);
+	m = m_getclr(0);
 	if (m == 0)
 		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, sndcc) == 0)
@@ -87,19 +84,16 @@ COUNT(IN_PCBATTACH);
 	if (sbreserve(&so->so_rcv, rcvcc) == 0)
 		goto bad2;
 	inp = mtod(m, struct inpcb *);
+	inp->inp_head = head;
 	inp->inp_laddr = ifp->if_addr;
-	if (lport)
-		goto gotport;
-again:
-	if (head->inp_lport++ < 1024)
-		head->inp_lport = 1024;
-	for (xp = head->inp_next; xp != head; xp = xp->inp_next)
-		if (xp->inp_lport == head->inp_lport)
-			goto again;
-	lport = htons(head->inp_lport);
-gotport:
-	inp->inp_socket = so;
+	if (lport == 0)
+		do {
+			if (head->inp_lport++ < 1024)
+				head->inp_lport = 1024;
+			lport = htons(head->inp_lport);
+		} while (in_pcblookup(head, 0, 0, inp->inp_laddr, lport));
 	inp->inp_lport = lport;
+	inp->inp_socket = so;
 	insque(inp, head);
 	so->so_pcb = (caddr_t)inp;
 	sin = (struct sockaddr_in *)&so->so_addr;
@@ -118,13 +112,16 @@ in_pcbconnect(inp, sin)
 	struct inpcb *inp;
 	struct sockaddr_in *sin;
 {
+	struct inpcb *xp;
 
 COUNT(IN_PCBCONNECT);
 	if (sin->sin_family != AF_INET)
 		return (EAFNOSUPPORT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
-	/* should check not already in use... */
+	xp = in_pcblookup(inp->inp_head, sin->sin_addr, sin->sin_port, inp->inp_laddr, inp->inp_lport);
+	if (xp->inp_faddr)
+		return (EADDRINUSE);
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);

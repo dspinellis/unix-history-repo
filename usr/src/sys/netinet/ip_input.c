@@ -1,4 +1,4 @@
-/* ip_input.c 1.21 81/12/02 */
+/* ip_input.c 1.22 81/12/03 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,7 +17,7 @@
 u_char	ip_protox[IPPROTO_MAX];
 
 /*
- * Ip initialization: fill in IP protocol switch table.
+ * IP initialization: fill in IP protocol switch table.
  * All protocols not implemented in kernel go to raw IP protocol handler.
  */
 ip_init()

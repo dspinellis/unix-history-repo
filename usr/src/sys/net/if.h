@@ -1,4 +1,4 @@
-/*	if.h	4.5	81/12/02	*/
+/*	if.h	4.6	81/12/03	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -32,6 +32,7 @@
  * (Would like to call this struct ``if'', but C isn't PL/1.)
  */
 struct ifnet {
+	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
 	short	if_unit;		/* sub-unit for lower level driver */
 	short	if_mtu;			/* maximum transmission unit */
 	short	if_net;			/* network number of interface */
@@ -46,9 +47,11 @@ struct ifnet {
 	int	(*if_output)();		/* output routine */
 	int	(*if_ubareset)();	/* uba reset routine */
 /* generic interface statistics */
+	int	if_ipackets;		/* packets received on interface */
+	int	if_ierrors;		/* input errors on interface */
+	int	if_opackets;		/* packets sent on interface */
+	int	if_oerrors;		/* output errors on interface */
 	int	if_collisions;		/* collisions on csma interfaces */
-	int	if_ierrors;		/* input errors */
-	int	if_oerrors;		/* output errors */
 /* end statistics */
 	struct	ifnet *if_next;
 };
