@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.10 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.11 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.10 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.11 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -405,6 +405,42 @@ myhostname(hostbuf, size)
 		return (NULL);
 }
 /*
+**  GETREALHOSTNAME -- get the real host name asociated with a file descriptor
+**
+**	Parameters:
+**		fd -- the descriptor
+**
+**	Returns:
+**		The host name associated with this descriptor, if it can
+**			be determined.
+**		NULL otherwise.
+**
+**	Side Effects:
+**		none
+*/
+
+char *
+getrealhostname(fd)
+	int fd;
+{
+	register struct hostent *hp;
+	struct sockaddr_in sin;
+	int sinlen;
+	char hbuf[MAXNAME];
+	extern struct hostent *gethostbyaddr();
+	extern char *inet_ntoa();
+
+	if (getsockname(fd, (struct sockaddr *) &sin, &sinlen) < 0)
+		return NULL;
+	hp = gethostbyaddr((char *) &sin.sin_addr, sizeof sin.sin_addr,
+			   sin.sin_family);
+	if (hp != NULL)
+		(void) strcpy(hbuf, hp->h_name);
+	else
+		(void) sprintf(hbuf, "[%s]", inet_ntoa(sin.sin_addr));
+	return hbuf;
+}
+/*
 **  MAPHOSTNAME -- turn a hostname into canonical form
 **
 **	Parameters:
@@ -511,6 +547,27 @@ myhostname(hostbuf, size)
 		(void) fclose(f);
 	}
 	return (NULL);
+}
+/*
+**  GETREALHOSTNAME -- get the real host name asociated with a file descriptor
+**
+**	Parameters:
+**		fd -- the descriptor
+**
+**	Returns:
+**		The host name associated with this descriptor, if it can
+**			be determined.
+**		NULL otherwise.
+**
+**	Side Effects:
+**		none
+*/
+
+char *
+getrealhostname(fd)
+	int fd;
+{
+	return NULL;
 }
 /*
 **  MAPHOSTNAME -- turn a hostname into canonical form

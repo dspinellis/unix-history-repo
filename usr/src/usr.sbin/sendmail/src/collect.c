@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -245,17 +245,22 @@ readerr:
 	/* An EOF when running SMTP is an error */
 	if ((feof(InChannel) || ferror(InChannel)) && OpMode == MD_SMTP)
 	{
+		char *host;
 		int usrerr(), syserr();
 
+		host = RealHostName;
+		if (host == NULL)
+			host = "localhost";
+
 # ifdef LOG
-		if (RealHostName != NULL && LogLevel > 0 && feof(InChannel))
+		if (LogLevel > 0 && feof(InChannel))
 			syslog(LOG_NOTICE,
-			    "collect: unexpected close on connection from %s: %m\n",
-			    e->e_from.q_paddr, RealHostName);
+			    "collect: unexpected close on connection from %s, sender=%s: %m\n",
+			    host, e->e_from.q_paddr);
 # endif
 		(feof(InChannel) ? usrerr : syserr)
-			("451 collect: unexpected close on connection, from=%s",
-				e->e_from.q_paddr);
+			("451 collect: unexpected close on connection from %s, from=%s",
+				host, e->e_from.q_paddr);
 
 		/* don't return an error indication */
 		e->e_to = NULL;

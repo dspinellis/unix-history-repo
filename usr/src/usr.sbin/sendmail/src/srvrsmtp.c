@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.17 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.18 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.17 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.18 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -109,8 +109,6 @@ smtp(e)
 		(void) dup(fileno(OutChannel));
 	}
 	settime(e);
-	if (RealHostName == NULL)
-		RealHostName = MyHostName;
 	CurHostName = RealHostName;
 	setproctitle("srvrsmtp %s", CurHostName);
 	expand("\201e", inp, &inp[sizeof inp], e);
@@ -200,7 +198,7 @@ smtp(e)
 					MyHostName);
 				break;
 			}
-			if (RealHostName != NULL && strcasecmp(p, RealHostName) != 0)
+			if (strcasecmp(p, RealHostName) != 0)
 			{
 				char hostbuf[MAXNAME];
 
@@ -456,7 +454,7 @@ smtp(e)
 		  case CMDDBGQSHOW:	/* show queues */
 		  case CMDDBGDEBUG:	/* set debug mode */
 # ifdef LOG
-			if (RealHostName != NULL && LogLevel > 0)
+			if (LogLevel > 0)
 				syslog(LOG_NOTICE,
 				    "\"%s\" command from %s (%s)",
 				    c->cmdname, RealHostName,

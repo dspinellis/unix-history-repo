@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -383,9 +383,7 @@ eatheader(e, queuejob)
 		char hbuf[MAXNAME];
 		char sbuf[MAXLINE];
 
-		if (RealHostName == NULL)
-			name = "local";
-		else if (RealHostName[0] == '[')
+		if (RealHostName[0] == '[')
 			name = RealHostName;
 		else
 		{
