@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.93 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.94 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -523,8 +523,7 @@ recipient(a, sendq, aliaslevel, e)
 			buildfname(pw->pw_gecos, pw->pw_name, nbuf);
 			if (nbuf[0] != '\0')
 				a->q_fullname = newstr(nbuf);
-			if (pw->pw_shell != NULL && pw->pw_shell[0] != '\0' &&
-			    !usershellok(pw->pw_shell))
+			if (!usershellok(pw->pw_name, pw->pw_shell))
 			{
 				a->q_flags |= QBOGUSSHELL;
 			}
@@ -1051,7 +1050,7 @@ resetuid:
 				sh = pw->pw_shell;
 			else
 				sh = "/SENDMAIL/ANY/SHELL/";
-			if (!usershellok(sh))
+			if (!usershellok(pw->pw_name, sh))
 			{
 				if (safechown)
 					ctladdr->q_flags |= QBOGUSSHELL;
