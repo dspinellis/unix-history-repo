@@ -1,17 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <time.h>
 #include <sgtty.h>
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
+#include <netimp/if_imp.h>
 
 #define	LOGFILE	"/usr/adm/implog"
-#define	IMPMTU	((8159 / 8) & ~01)
 
 u_char	request[1024];
 int	marktime();
@@ -57,25 +58,25 @@ main(argc, argv)
 	  }
 	}
 #endif
-	log = open(LOGFILE, 1);
-	if (log < 0)
+	log = open(LOGFILE, FCREATE|FWRONLY|FAPPEND, 0644);
+	if (log < 0) {
+		perror("implogd: open");
 		exit(1);
-	lseek(log, 0L, 2);
+	}
 	from.sin_time = time(0);
 	from.sin_len = sizeof (time_t);
 	write(log, (char *)&from, sizeof (from));
-again:
-	s = socket(AF_IMPLINK, SOCK_RAW, 0, 0);
-	if (s < 0) {
-		perror("socket");
+	while ((s = socket(AF_IMPLINK, SOCK_RAW, 0, 0)) < 0) {
+		perror("implogd: socket");
 		sleep(5);
-		goto again;
 	}
 	for (;;) {
 		int len = sizeof (request);
 
-		if (recvfrom(s, request, &len, &from, sizeof (from), 0) < 0)
+		if (recvfrom(s, request, &len, 0, &from, sizeof (from)) < 0) {
+			perror("implogd: recvfrom");
 			continue;
+		}
 		if (len <= 0 || len > IMPMTU)	/* sanity */
 			continue;
 		from.sin_len = len;
