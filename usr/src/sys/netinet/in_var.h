@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_var.h	7.7 (Berkeley) %G%
+ *	@(#)in_var.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -44,13 +44,16 @@ struct	in_aliasreq {
  */
 #define	IA_SIN(ia) (&(((struct in_ifaddr *)(ia))->ia_addr))
 
-#ifdef	KERNEL
-struct	in_ifaddr *in_ifaddr;
-struct	in_ifaddr *in_iaonnetof();
-struct	ifqueue	ipintrq;		/* ip packet input queue */
-#endif
+#define IN_LNAOF(in, ifa) \
+	((ntohl((in).s_addr) & ~((struct in_ifaddr *)(ifa)->ia_subnetmask))
+			
 
-#ifdef KERNEL
+#ifdef	KERNEL
+extern	struct	in_ifaddr *in_ifaddr;
+extern	struct	ifqueue	ipintrq;		/* ip packet input queue */
+void	in_socktrim __P((struct sockaddr_in *));
+
+
 /*
  * Macro for finding the interface (ifnet structure) corresponding to one
  * of our IP addresses.

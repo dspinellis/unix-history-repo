@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.h	7.7 (Berkeley) %G%
+ *	@(#)in_pcb.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -45,5 +45,6 @@ struct inpcb {
 #define	sotoinpcb(so)	((struct inpcb *)(so)->so_pcb)
 
 #ifdef KERNEL
-struct	inpcb *in_pcblookup();
+struct	inpcb *in_pcblookup __P((struct inpcb *, struct in_addr, int,
+				 struct in_addr,  int, int));
 #endif

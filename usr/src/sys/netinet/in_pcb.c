@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.25 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -136,6 +136,8 @@ in_pcbconnect(inp, nam)
 		 * choose the broadcast address for that interface.
 		 */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
+#define sintosa(sin)	((struct sockaddr *)(sin))
+#define ifatoia(ifa)	((struct in_ifaddr *)(ifa))
 		if (sin->sin_addr.s_addr == INADDR_ANY)
 		    sin->sin_addr = IA_SIN(in_ifaddr)->sin_addr;
 		else if (sin->sin_addr.s_addr == (u_long)INADDR_BROADCAST &&
@@ -144,7 +146,6 @@ in_pcbconnect(inp, nam)
 	}
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
 		register struct route *ro;
-		struct ifnet *ifp;
 
 		ia = (struct in_ifaddr *)0;
 		/* 
@@ -175,21 +176,16 @@ in_pcbconnect(inp, nam)
 		 * unless it is the loopback (in case a route
 		 * to our address on another net goes to loopback).
 		 */
-		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp) &&
-		    (ifp->if_flags & IFF_LOOPBACK) == 0 &&
-		    (ia = (struct in_ifaddr *)ro->ro_rt->rt_ifa) == 0)
-			for (ia = in_ifaddr; ia; ia = ia->ia_next)
-				if (ia->ia_ifp == ifp)
-					break;
+		if (ro->ro_rt && !(ro->ro_rt->rt_ifp->if_flags & IFF_LOOPBACK))
+			ia = ifatoia(ro->ro_rt->rt_ifa);
 		if (ia == 0) {
 			int fport = sin->sin_port;
 
 			sin->sin_port = 0;
-			ia = (struct in_ifaddr *)
-			    ifa_ifwithdstaddr((struct sockaddr *)sin);
-			sin->sin_port = fport;
+			ia = ifatoia(ifa_ifwithdstaddr(sintosa(sin)));
 			if (ia == 0)
-				ia = in_iaonnetof(in_netof(sin->sin_addr));
+				ia = ifatoia(ifa_ifwithnet(sintosa(sin)));
+			sin->sin_port = fport;
 			if (ia == 0)
 				ia = in_ifaddr;
 			if (ia == 0)
@@ -203,6 +199,7 @@ in_pcbconnect(inp, nam)
 		if (IN_MULTICAST(ntohl(sin->sin_addr.s_addr)) &&
 		    inp->inp_moptions != NULL) {
 			struct ip_moptions *imo;
+			struct ifnet *ifp;
 
 			imo = inp->inp_moptions;
 			if (imo->imo_multicast_ifp != NULL) {

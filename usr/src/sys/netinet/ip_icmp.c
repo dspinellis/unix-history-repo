@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	7.20 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,10 +75,7 @@ icmp_error(n, type, code, dest, destifp)
 		goto freeit;
 	}
 	/* Don't send error in response to a multicast or broadcast packet */
-	if ((n->m_flags & (M_BCAST|M_MCAST)) ||
-	    in_broadcast(oip->ip_dst) ||
-	    IN_MULTICAST(ntohl(oip->ip_dst.s_addr)) ||
-	    IN_EXPERIMENTAL(ntohl(oip->ip_dst.s_addr)))
+	if (n->m_flags & (M_BCAST|M_MCAST))
 		goto freeit;
 	/*
 	 * First, formulate icmp message
@@ -160,7 +157,6 @@ icmp_input(m, hlen)
 	struct in_ifaddr *ia;
 	int (*ctlfunc)(), code;
 	extern u_char ip_protox[];
-	extern struct in_addr in_makeaddr();
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -168,7 +164,9 @@ icmp_input(m, hlen)
 	 */
 #ifdef ICMPPRINTFS
 	if (icmpprintfs)
-		printf("icmp_input from %x, len %d\n", ip->ip_src, icmplen);
+		printf("icmp_input from %x to %x, len %d\n",
+			ntohl(ip->ip_src.s_addr), ntohl(ip->ip_dst.s_addr),
+			icmplen);
 #endif
 	if (icmplen < ICMP_MINLEN) {
 		icmpstat.icps_tooshort++;
@@ -290,19 +288,27 @@ icmp_input(m, hlen)
 		icp->icmp_ttime = icp->icmp_rtime;	/* bogus, do later! */
 		goto reflect;
 		
-	case ICMP_IREQ:
-#define	satosin(sa)	((struct sockaddr_in *)(sa))
-		if (in_netof(ip->ip_src) == 0 &&
-		    (ia = ifptoia(m->m_pkthdr.rcvif)))
-			ip->ip_src = in_makeaddr(in_netof(IA_SIN(ia)->sin_addr),
-			    in_lnaof(ip->ip_src));
-		icp->icmp_type = ICMP_IREQREPLY;
-		goto reflect;
-
 	case ICMP_MASKREQ:
-		if (icmplen < ICMP_MASKLEN ||
-		    m->m_flags & M_BCAST ||	/* Don't reply to broadcasts */
-		    (ia = ifptoia(m->m_pkthdr.rcvif)) == 0)
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+		/*
+		 * We are not able to respond with all ones broadcast
+		 * unless we receive it over a point-to-point interface.
+		 */
+		if (icmplen < ICMP_MASKLEN)
+			break;
+		switch (ip->ip_dst.s_addr) {
+
+		case INADDR_BROADCAST:
+		case INADDR_ANY:
+			icmpdst.sin_addr = ip->ip_src;
+			break;
+
+		default:
+			icmpdst.sin_addr = ip->ip_dst;
+		}
+		ia = (struct in_ifaddr *)ifaof_ifpforaddr(
+			    (struct sockaddr *)&icmpdst, m->m_pkthdr.rcvif);
+		if (ia == 0)
 			break;
 		icp->icmp_type = ICMP_MASKREPLY;
 		icp->icmp_mask = ia->ia_sockmask.sin_addr.s_addr;
@@ -327,10 +333,6 @@ reflect:
 			icmpstat.icps_badlen++;
 			break;
 		}
-		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
-			icmpstat.icps_badlen++;
-			break;
-		}
 		/*
 		 * Short circuit routing redirects to force
 		 * immediate change in the kernel's routing
@@ -345,27 +347,12 @@ reflect:
 			printf("redirect dst %x to %x\n", icp->icmp_ip.ip_dst,
 				icp->icmp_gwaddr);
 #endif
-		if (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) {
-			u_long in_netof();
-			icmpsrc.sin_addr =
-			 in_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
-			in_sockmaskof(icp->icmp_ip.ip_dst, &icmpmask);
-			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst,
-			  (struct sockaddr *)&icmpmask, RTF_GATEWAY,
-			  (struct sockaddr *)&icmpgw, (struct rtentry **)0);
-			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
-			pfctlinput(PRC_REDIRECT_NET,
-			  (struct sockaddr *)&icmpsrc);
-		} else {
-			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
-			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst,
-			  (struct sockaddr *)0, RTF_GATEWAY | RTF_HOST,
-			  (struct sockaddr *)&icmpgw, (struct rtentry **)0);
-			pfctlinput(PRC_REDIRECT_HOST,
-			  (struct sockaddr *)&icmpsrc);
-		}
+		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
+		rtredirect((struct sockaddr *)&icmpsrc,
+		  (struct sockaddr *)&icmpdst,
+		  (struct sockaddr *)0, RTF_GATEWAY | RTF_HOST,
+		  (struct sockaddr *)&icmpgw, (struct rtentry **)0);
+		pfctlinput(PRC_REDIRECT_HOST, (struct sockaddr *)&icmpsrc);
 		break;
 
 	/*
@@ -402,6 +389,12 @@ icmp_reflect(m)
 	struct mbuf *opts = 0, *ip_srcroute();
 	int optlen = (ip->ip_hl << 2) - sizeof(struct ip);
 
+	if (!in_canforward(ip->ip_src) &&
+	    ((ntohl(ip->ip_src.s_addr) & IN_CLASSA_NET) !=
+	     (IN_LOOPBACKNET << IN_CLASSA_NSHIFT))) {
+		m_freem(m);	/* Bad return address */
+		goto done;	/* Ip_output() will check for broadcast */
+	}
 	t = ip->ip_dst;
 	ip->ip_dst = ip->ip_src;
 	/*
@@ -417,8 +410,14 @@ icmp_reflect(m)
 		    t.s_addr == satosin(&ia->ia_broadaddr)->sin_addr.s_addr)
 			break;
 	}
+	icmpdst.sin_addr = t;
 	if (ia == (struct in_ifaddr *)0)
-		ia = ifptoia(m->m_pkthdr.rcvif);
+		ia = (struct in_ifaddr *)ifaof_ifpforaddr(
+			(struct sockaddr *)&icmpdst, m->m_pkthdr.rcvif);
+	/*
+	 * The following happens if the packet was not addressed to us,
+	 * and was received on an interface with no IP address.
+	 */
 	if (ia == (struct in_ifaddr *)0)
 		ia = in_ifaddr;
 	t = IA_SIN(ia)->sin_addr;
@@ -501,20 +500,9 @@ icmp_reflect(m)
 	m->m_flags &= ~(M_BCAST|M_MCAST);
 
 	icmp_send(m, opts);
+done:
 	if (opts)
 		(void)m_free(opts);
-}
-
-struct in_ifaddr *
-ifptoia(ifp)
-	struct ifnet *ifp;
-{
-	register struct in_ifaddr *ia;
-
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (ia->ia_ifp == ifp)
-			return (ia);
-	return ((struct in_ifaddr *)0);
 }
 
 /*

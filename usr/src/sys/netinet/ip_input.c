@@ -65,6 +65,7 @@ extern	struct protosw inetsw[];
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
 struct	in_ifaddr *in_ifaddr;			/* first inet address */
+struct	ifqueue ipintrq;
 
 /*
  * We need to save the IP options in case a protocol wants to respond
@@ -606,7 +607,6 @@ ip_drain()
 	}
 }
 
-extern struct in_ifaddr *ifptoia();
 struct in_ifaddr *ip_rtaddr();
 
 /*
@@ -626,9 +626,10 @@ ip_dooptions(m)
 	register struct in_ifaddr *ia;
 	int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB, forward = 0;
 	int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB, forward = 0;
-	struct in_addr *sin;
+	struct in_addr *sin, dst;
 	n_time ntime;
 
+	dst = ip->ip_dst;
 	cp = (u_char *)(ip + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
 	for (; cnt > 0; cnt -= optlen, cp += optlen) {
@@ -696,7 +697,7 @@ ip_dooptions(m)
 #define	INA	struct in_ifaddr *
 #define	SA	struct sockaddr *
 			    if ((ia = (INA)ifa_ifwithdstaddr((SA)&ipaddr)) == 0)
-				ia = in_iaonnetof(in_netof(ipaddr.sin_addr));
+				ia = (INA)ifa_ifwithnet((SA)&ipaddr);
 			} else
 				ia = ip_rtaddr(ipaddr.sin_addr);
 			if (ia == 0) {
@@ -763,7 +764,11 @@ ip_dooptions(m)
 				if (ipt->ipt_ptr + sizeof(n_time) +
 				    sizeof(struct in_addr) > ipt->ipt_len)
 					goto bad;
-				ia = ifptoia(m->m_pkthdr.rcvif);
+				ipaddr.sin_addr = dst;
+				ia = (INA)ifaof_ifpforaddr((SA)&ipaddr,
+							    m->m_pkthdr.rcvif);
+				if (ia == 0)
+					continue;
 				bcopy((caddr_t)&IA_SIN(ia)->sin_addr,
 				    (caddr_t)sin, sizeof(struct in_addr));
 				ipt->ipt_ptr += sizeof(struct in_addr);
@@ -796,7 +801,7 @@ ip_dooptions(m)
 	return (0);
 bad:
 	ip->ip_len -= ip->ip_hl << 2;   /* XXX icmp_error adds in hdr length */
-	icmp_error(m, type, code);
+	icmp_error(m, type, code, 0, 0);
 	ipstat.ips_badoptions++;
 	return (1);
 }
@@ -1072,21 +1077,9 @@ ip_forward(m, srcrt)
 			dest = satosin(rt->rt_gateway)->sin_addr;
 		    else
 			dest = ip->ip_dst;
-		    /*
-		     * If the destination is reached by a route to host,
-		     * is on a subnet of a local net, or is directly
-		     * on the attached net (!), use host redirect.
-		     * (We may be the correct first hop for other subnets.)
-		     */
+		    /* Router requirements says to only send host redirects */
 		    type = ICMP_REDIRECT;
-		    if ((rt->rt_flags & RTF_HOST) ||
-		        (rt->rt_flags & RTF_GATEWAY) == 0)
-			    code = ICMP_REDIRECT_HOST;
-		    else if (RTA(rt)->ia_subnetmask != RTA(rt)->ia_netmask &&
-		        (dst & RTA(rt)->ia_netmask) ==  RTA(rt)->ia_net)
-			    code = ICMP_REDIRECT_HOST;
-		    else
-			    code = ICMP_REDIRECT_NET;
+		    code = ICMP_REDIRECT_HOST;
 #ifdef DIAGNOSTIC
 		    if (ipprintfs)
 		        printf("redirect (%d) to %x\n", code, dest.s_addr);
@@ -1094,7 +1087,11 @@ ip_forward(m, srcrt)
 		}
 	}
 
-	error = ip_output(m, (struct mbuf *)0, &ipforward_rt, IP_FORWARDING, 0);
+	error = ip_output(m, (struct mbuf *)0, &ipforward_rt, IP_FORWARDING
+#ifdef DIRECTED_BROADCAST
+			    | IP_ALLOWBROADCAST
+#endif
+						, 0);
 	if (error)
 		ipstat.ips_cantforward++;
 	else {

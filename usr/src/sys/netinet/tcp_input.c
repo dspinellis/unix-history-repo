@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.34 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.35 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -518,9 +518,13 @@ findpcb:
 			goto dropwithreset;
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
-		/* RFC1122 4.2.3.10, p. 104: discard bcast/mcast SYN */
+		/*
+		 * RFC1122 4.2.3.10, p. 104: discard bcast/mcast SYN
+		 * in_broadcast() should never return true on a received
+		 * packet with M_BCAST not set.
+		 */
 		if (m->m_flags & (M_BCAST|M_MCAST) ||
-		    in_broadcast(ti->ti_dst) || IN_MULTICAST(ti->ti_dst.s_addr))
+		    IN_MULTICAST(ti->ti_dst.s_addr))
 			goto drop;
 		am = m_get(M_DONTWAIT, MT_SONAME);	/* XXX */
 		if (am == NULL)
@@ -1291,7 +1295,7 @@ dropwithreset:
 	 * Don't bother to respond if destination was broadcast/multicast.
 	 */
 	if ((tiflags & TH_RST) || m->m_flags & (M_BCAST|M_MCAST) ||
-	    in_broadcast(ti->ti_dst) || IN_MULTICAST(ti->ti_dst.s_addr))
+	    IN_MULTICAST(ti->ti_dst.s_addr))
 		goto drop;
 	if (tiflags & TH_ACK)
 		tcp_respond(tp, ti, m, (tcp_seq)0, ti->ti_ack, TH_RST);
