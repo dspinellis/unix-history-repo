@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	5.2 (Berkeley) %G% */
+/*	@(#)tmscp.c	5.3 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -417,7 +417,6 @@ tmscpslave (ui, reg)
 tmscpattach (ui)
 	register struct uba_device *ui;		/* ptr to unibus dev struct */
 {
-	register struct uba_ctlr *um = ui->ui_mi; /* ptr to controller struct */
 
 	ui->ui_flags = 0;
 	tmscpip[ui->ui_ctlr][ui->ui_slave] = ui;
