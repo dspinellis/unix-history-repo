@@ -1,0 +1,32 @@
+RANLIB(5)                   BSD Programmer's Manual                  RANLIB(5)
+
+NNAAMMEE
+     rraannlliibb - archive (library) table-of-contents format
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<rraannlliibb..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The archive table-of-contents command rraannlliibb creates a table of contents
+     for archives, containing object files, to be used by the link-editor
+     ld(1).  It operates on archives created with the utility ar(1).
+
+     The RRaannlliibb function prepends a new file to the archive which has three
+     separate parts.  The first part is a standard archive header, which has a
+     special name field,  "__.SYMDEF".
+
+     The second part is a ``long'' followed by a list of ranlib structures.
+     The long is the size, in bytes, of the list of ranlib structures.  Each
+     of the ranlib structures consists of a zero based offset into the next
+     section (a string table of symbols) and an offset from the beginning of
+     the archive to the start of the archive file which defines the symbol.
+     The actual number of ranlib structures is this number divided by the size
+     of an individual ranlib structure.
+
+     The third part is a ``long'' followed by a string table.  The long is the
+     size, in bytes of the string table.
+
+SSEEEE AALLSSOO
+     ar(1),  ranlib(1)
+
+4.4BSD                           June 6, 1993                                1

@@ -1,0 +1,78 @@
+SPELL(1)                     BSD Reference Manual                     SPELL(1)
+
+NNAAMMEE
+     ssppeellll, ssppeelllliinn, ssppeelllloouutt - find spelling errors
+
+SSYYNNOOPPSSIISS
+     ssppeellll [--vv] [--bb] [--xx] [--dd _h_l_i_s_t] [--ss _h_s_t_o_p] [--hh _s_p_e_l_l_h_i_s_t] [_f_i_l_e] _._._.
+     ssppeelllliinn [_l_i_s_t]
+     ssppeelllloouutt [--dd] Ar list
+
+DDEESSCCRRIIPPTTIIOONN
+     SSppeellll collects words from the named documents, and looks them up in a
+     spelling list.  Words that neither occur among nor are derivable (by ap-
+     plying certain inflections, prefixes or suffixes) from words in the
+     spelling list are printed on the standard output.  If no files are named,
+     words are collected from the standard input.
+
+     SSppeellll ignores most troff(1),  tbl(1) and eqn(1) constructions.
+
+     Under the --vv option, all words not literally in the spelling list are
+     printed, and plausible derivations from spelling list words are indicat-
+     ed.
+
+     Under the --bb option, British spelling is checked.  Besides preferring
+     _c_e_n_t_r_e, _c_o_l_o_u_r, _s_p_e_c_i_a_l_i_t_y, _t_r_a_v_e_l_l_e_d, etc., this option insists upon
+     --iissee in words like _s_t_a_n_d_a_r_d_i_s_e_, Fowler and the OED to the contrary
+     notwithstanding.
+
+     Under the --xx option, every plausible stem is printed with `=' for each
+     word.
+
+     The spelling list is based on many sources.  While it is more haphazard
+     than an ordinary dictionary, it is also more effective with proper names
+     and popular technical words.  Coverage of the specialized vocabularies of
+     biology, medicine and chemistry is light.
+
+     The auxiliary files used for the spelling list, stop list, and history
+     file may be specified by arguments following the --dd, --ss, and --hh options.
+     The default files are indicated below.  Copies of all output may be accu-
+     mulated in the history file.  The stop list filters out misspellings
+     (e.g. thier=thy-y+ier) that would otherwise pass.
+
+     Two routines help maintain the hash lists used by ssppeellll.. Both expect a
+     set of words, one per line, from the standard input.  SSppeelllliinn combines
+     the words from the standard input and the preexisting _l_i_s_t file and
+     places a new list on the standard output.  If no _l_i_s_t file is specified,
+     the new list is created from scratch.  SSppeelllloouutt looks up each word from
+     the standard input and prints on the standard output those that are miss-
+     ing from (or present on, with option --dd) the hashed _l_i_s_t file.  For exam-
+     ple, to verify that _h_o_o_k_e_y is not on the default spelling list, add it to
+     your own private list, and then use it with ssppeellll,
+
+           echo  hookey  |  spellout  /usr/share/dict/hlista
+           echo  hookey  |  spellin  /usr/share/dict/hlista  >  myhlist
+           spell  -d  myhlist  huckfinn
+
+FFIILLEESS
+     /usr/dict/hlist[ab]    Hashed spelling lists, American & British, default
+                            for --dd.
+     /usr/dict/hstop        Hashed stop list, default for --ss.
+     /dev/null              History file, default for --hh.
+     /tmp/spell.$$*         Temporary files.
+     /usr/libexec/spell     Binary exectuted by the shell script
+                            _/_u_s_r_/_b_i_n_/_s_p_e_l_l.
+
+SSEEEE AALLSSOO
+     deroff(1),  sort(1),  tee(1),  sed(1)
+
+BBUUGGSS
+     The spelling list's coverage is uneven; new installations will probably
+     wish to monitor the output for several months to gather local additions.
+
+     British spelling was done by an American.
+
+HHIISSTTOORRYY
+     The ssppeellll command appeared in Version 6 AT&T UNIX.
+
+AT&T 7th Edition                 June 6, 1993                                2

@@ -1,0 +1,32 @@
+SHOWMOUNT(8)              BSD System Manager's Manual             SHOWMOUNT(8)
+
+NNAAMMEE
+     sshhoowwmmoouunntt - show remote nfs mounts on host
+
+SSYYNNOOPPSSIISS
+     sshhoowwmmoouunntt [--aaddee] [_h_o_s_t]
+
+DDEESSCCRRIIPPTTIIOONN
+     SShhoowwmmoouunntt shows status information about the NFS server on _h_o_s_t. By de-
+     fault it prints the names of all hosts that have NFS file systems mounted
+     on the host. See _N_F_S_: _N_e_t_w_o_r_k _F_i_l_e _S_y_s_t_e_m _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n, RFC
+     1094, Appendix A , for a detailed desciption of the protocol.
+
+     --aa      List all mount points in the form: _h_o_s_t:_d_i_r_p_a_t_h
+
+     --dd      List directory paths of mount points instead of hosts
+
+     --ee      Show the _h_o_s_t's exports list
+
+SSEEEE AALLSSOO
+     mount(1),  mountd(8)
+
+BBUUGGSS
+     The mount daemon running on the server only has an idea of the actual
+     mounts, since the NFS server is stateless.  SShhoowwmmoouunntt will only display
+     the information as accurately as the mount daemon reports it.
+
+HHIISSTTOORRYY
+     The sshhoowwmmoouunntt utility first appeared in 4.4BSD.
+
+4th Berkeley Distribution        June 9, 1993                                1

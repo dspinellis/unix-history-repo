@@ -1,0 +1,148 @@
+PR(1)                        BSD Reference Manual                        PR(1)
+
+NNAAMMEE
+     pprr - print files
+
+SSYYNNOOPPSSIISS
+     pprr [_+_p_a_g_e] [--_c_o_l_u_m_n] [--aaddFFmmrrtt] [[--ee] [_c_h_a_r] [_g_a_p]] [--hh _h_e_a_d_e_r] [[--ii]
+        [_c_h_a_r] [_g_a_p]] [--ll _l_i_n_e_s] [--oo _o_f_f_s_e_t] [[--ss] [_c_h_a_r]] [[--nn] [_c_h_a_r]
+        [_w_i_d_t_h]] [--ww _w_i_d_t_h] [-] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The pprr utility is a printing and pagination filter for text files.  When
+     multiple input files are specified, each is read, formatted, and written
+     to standard output.  By default, the input is separated into 66-line
+     pages, each with
+
+     +o A 5-line header with the page number, date, time, and the pathname of
+       the file.
+
+     +o A 5-line trailer consisting of blank lines.
+
+     If standard output is associated with a terminal, diagnostic messages are
+     suppressed until the pprr utility has completed processing.
+
+     When multiple column output is specified, text columns are of equal
+     width.  By default text columns are separated by at least one _<_b_l_a_n_k_>_.
+     Input lines that do not fit into a text column are truncated.  Lines are
+     not truncated under single column output.
+
+OOPPTTIIOONNSS
+     In the following option descriptions, column, lines, offset, page, and
+     width are positive decimal integers and gap is a nonnegative decimal in-
+     teger.
+
+     _+_p_a_g_e
+           Begin output at page number _p_a_g_e of the formatted input.
+
+     --_c_o_l_u_m_n
+           Produce output that is _c_o_l_u_m_n_s wide (default is 1) that is written
+           vertically down each column in the order in which the text is re-
+           ceived from the input file.  The options --ee and --ii are assumed.
+           This option should not be used with --mm. When used with --tt, the min-
+           imum number of lines is used to display the output.
+
+     --aa    Modify the effect of the --ccoolluummnn option so that the columns are
+           filled across the page in a round-robin order (e.g., when column is
+           2, the first input line heads column 1, the second heads column 2,
+           the third is the second line in column 1, etc.).  This option re-
+           quires the use of the --ccoolluummnn option.
+
+     --dd    Produce output that is double spaced. An extra _<_n_e_w_l_i_n_e_> character
+           is output following every <newline> found in the input.
+
+     --ee _[_c_h_a_r_]_[_g_a_p_]
+           Expand each input <tab> to the next greater column position speci-
+           fied by the formula _n_*_g_a_p_+_1, where _n is an integer > 0.  If _g_a_p is
+           zero or is omitted the default is 8.  All _<_t_a_b_> characters in the
+           input are expanded into the appropriate number of _<_s_p_a_c_e_>_s. If any
+           nondigit character, _c_h_a_r, is specified, it is used as the input tab
+           character.
+
+     --FF    Use a _<_f_o_r_m_-_f_e_e_d_> character for new pages, instead of the default
+           behavior that uses a sequence o _<_n_e_w_l_i_n_e_> characters.
+
+     --hh _h_e_a_d_e_r
+           _h_e_a_d_e_r Use the string _h_e_a_d_e_r to replace the _f_i_l_e _n_a_m_e in the header
+           line.
+
+     --ii _[_c_h_a_r_]_[_g_a_p_]
+           In output, replace multiple <space>s with <tab>s whenever two or
+           more adjacent <space>s reach column positions _g_a_p_+_1, _2_*_g_a_p_+_1, etc.
+           If _g_a_p is zero or omitted, default _<_t_a_b_> settings at every eighth
+           column position is used.  If any nondigit character, _c_h_a_r, is spec-
+           ified, it is used as the output _<_t_a_b_> character.
+
+     --ll _l_i_n_e_s
+           Override the 66 line default and reset the page length to _l_i_n_e_s_. If
+           _l_i_n_e_s is not greater than the sum of both the header and trailer
+           depths (in lines), the pprr utility suppresses output of both the
+           header and trailer, as if the --tt option were in effect.
+
+     --mm    Merge the contents of multiple files.  One line from each file
+           specified by a file operand is written side by side into text
+           columns of equal fixed widths, in terms of the number of column po-
+           sitions.  The number of text columns depends on the number of file
+           operands successfully opened.  The maximum number of files merged
+           depends on page width and the per process open file limit.  The op-
+           tions --ee and --ii are assumed.
+
+     --nn _[_c_h_a_r_]_[_w_i_d_t_h_]
+           Provide _w_i_d_t_h digit line numbering.  The default for _w_i_d_t_h, if not
+           specified, is 5.  The number occupies the first _w_i_d_t_h column posi-
+           tions of each text column or each line of --mm output.  If _c_h_a_r (any
+           nondigit character) is given, it is appended to the line number to
+           separate it from whatever follows. The default for _c_h_a_r is a _<_t_a_b_>.
+           Line numbers longer than _w_i_d_t_h columns are truncated.
+
+     --oo _o_f_f_s_e_t
+           Each line of output is preceeded by _o_f_f_s_e_t _<_s_p_a_c_e_s_>_s. If the option
+           is not specified, the default is zero.  The space taken is in addi-
+           tion to the output line width.
+
+     --rr    Write no diagnostic reports on failure to open a file.
+
+     --ss _c_h_a_r
+           Separate text columns by the single character _c_h_a_r instead of by
+           the appropriate number of _<_s_p_a_c_e_>_s (default for _c_h_a_r is the _<_t_a_b_>
+           character).
+
+     --tt    Print neither the five-line identifying header nor the five-line
+           trailer usually supplied for each page.  Quit printing after the
+           last line of each file without spacing to the end of the page.
+
+     --ww _w_i_d_t_h
+           Set the width of the line to _w_i_d_t_h column positions for multiple
+           text-column output only.  If the --ww option is not specified and the
+           --ss option is not specified, the default width is 72.  If the --ww op-
+           tion is not specified and the --ss option is specified, the default
+           width is 512.
+
+     _f_i_l_e  A pathname of a file to be printed.  If no _f_i_l_e operands are speci-
+           fied, or if a _f_i_l_e operand is `--', the standard input is used.  The
+           standard input is used only if no _f_i_l_e operands are specified, or
+           if a _f_i_l_e operand is `--'.
+
+     The --ss option does not allow the option letter to be separated from its
+     argument, and the options --ee, --ii, and --nn require that both arguments, if
+     present, not be separated from the option letter.
+
+EERRRROORRSS
+
+     If pprr receives an interrupt while printing to a terminal, it flushes all
+     accumulated error messages to the screen before terminating.
+
+     The pprr utility exits 0 on success, and 1 if an error occurs.
+
+     Error messages are written to standard error during the printing process
+     (if output is redirected) or after all successful file printing is com-
+     plete (when printing to a terminal).
+
+SSEEEE AALLSSOO
+     cat(1),  more(1)
+
+SSTTAANNDDAARRDDSS
+     The pprr utility is IEEE Std1003.2 (``POSIX'')
+      compatible.
+
+4.4BSD                           June 6, 1993                                3

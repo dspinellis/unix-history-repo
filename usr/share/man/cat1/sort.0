@@ -1,0 +1,119 @@
+SORT(1)                      BSD Reference Manual                      SORT(1)
+
+NNAAMMEE
+     ssoorrtt - sort or merge text files
+
+SSYYNNOOPPSSIISS
+     ssoorrtt [--mmuubbddffiinnrrttxx] [++_p_o_s_1 [--_p_o_s_2]] _._._. [--oo _o_u_t_p_u_t] [--TT _d_i_r_e_c_t_o_r_y] [_f_i_l_e]
+          _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssoorrtt utility sorts text files by lines.  Comparisons are based on one
+     or more sort keys (or fields) extracted from each line of input, and are
+     performed lexicographically. By default, if keys are not given, ssoorrtt re-
+     gards each input line as a single field.
+
+     The following options are available:
+
+     --cc      Check that the single input file is sorted lexicographically.  If
+             the file is not sorted, ssoorrtt sorts it and writes the sorted out-
+             put to the standard output or the filename specified by the --oo
+             option.
+
+     --mm      Merge only; the input files are assumed to be pre-sorted.
+
+     --oo _o_u_t_p_u_t
+             The argument given is the name of an _o_u_t_p_u_t file to be used in-
+             stead of the standard output.  This file can be the same as one
+             of the input files.
+
+     --TT _d_i_r_e_c_t_o_r_y
+             The argument _d_i_r_e_c_t_o_r_y is used for creating temporary files.
+
+     --uu      Unique: suppress all but one in each set of lines having equal
+             keys.  If used with the --cc option, check that there are no lines
+             with duplicate keys.
+
+     The following options override the default ordering rules.  When ordering
+     options appear independent of key field specifications, the requested
+     field ordering rules are applied globally to all sort keys.
+
+     --dd      Only blank space and alphanumeric characters are used in making
+             comparisons.
+
+     --ff      Considers all lowercase characters that have uppercase equiva-
+             lents to be the same for purposes of comparison.
+
+     --ii      Ignore all non-printable characters.
+
+     --nn      An initial numeric string, consisting of optional blank space,
+             optional minus sign, and zero or more digits (including decimal
+             point) is sorted by arithmetic value.  The --nn option implies the
+             --bb option. (See below.)  Note that the --bb option is only effec-
+             tive when key fields have been specified and that --00 is consid-
+             ered equal to zero.  Reverse the sense of comparisons.
+
+     The treatment of field separators can be altered using the options:
+
+     --bb      Leading blank spaces are ignored when determining the starting
+             ending positions of a restricted sort key.  If the --bb option is
+             specified before the first ++_p_o_s_1 argument, it shall be applied to
+             all ++_p_o_s_1 arguments.  Otherwise, the --bb option can be attached
+             independently to each ++_p_o_s_1 or --_p_o_s_2 argument (see below).
+
+     --tt _c_h_a_r
+             _C_h_a_r is used as the field separator character; _c_h_a_r is not con-
+             sidered to be part of a field (although it can be included in a
+             sort key).  Each occurrence of _c_h_a_r is significant (for example,
+             ``_c_h_a_r_c_h_a_r'' delimits an empty field).  If --tt is not specified,
+             blank space characters are used as default field separators.
+
+     ++_p_o_s_1   Designates the start position of a key field.
+
+     --_p_o_s_1   Designates the end position of a key field.
+
+     The following operands are available: _f_i_l_e The pathname of a file to be
+     sorted, merged, or checked.  If no file operands are specified, or if a
+     file operand is --, the standard input is used.
+
+     A field is defined as a minimal sequence of characters followed by a
+     field separator or a newline character.  By default, the first blank
+     space of a sequence of blank spaces acts as the field separator.  All
+     blank spaces in a sequence of blank spaces are considered to be part of
+     the next field; for example, all blank spaces at the beginning of a line
+     are considered to be part of the first field.
+
+     Fields are specified by the ++_p_o_s_1 and --_p_o_s_2 arguments.  A missing ++_p_o_s_1
+     argument defaults to the beginning of a line.  A missing --_p_o_s_2 argument
+     defaults to the end of a line.
+
+     The arguments ++_p_o_s_1 and --_p_o_s_2 have the form _m_._n followed by one or more
+     of the options --bb, --dd, --ff, --ii, --nn, --rr. A ++_p_o_s_1 position specified by _m_._n
+     is interpreted to mean the _nth character in the _m+1th field.  A missing
+     _._n means `.0', indicating the first character of the _m+1th field.  If the
+     --bb option is in effect, _n is counted from the first non-blank character
+     in the _m+1th field; _m.0b refers to the first non-blank character in the
+     _m+1th field.
+
+     A --_p_o_s_2 position specified by _m_._n is interpreted to mean the _nth charac-
+     ter (including separators) after the last character of the _mth field.  A
+     missing _._n means `.0', indicating the last character of the _mth field.
+     If the --bb option is in effect, _n is counted from the last leading blank
+     character in the _m+1th field; _m.1b refers to the first non-blank charac-
+     ter in the _m+1th field.
+
+FFIILLEESS
+     /var/tmp/stm*, /tmp/*             Default temporary directories (in order
+                                       of search).
+
+SSEEEE AALLSSOO
+     comm(1),  uniq(1),  join(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+BBUUGGSS
+     Lines which are longer than 4096 are discarded and processing continues.
+
+HHIISSTTOORRYY
+     A ssoorrtt command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 10, 1993                               2

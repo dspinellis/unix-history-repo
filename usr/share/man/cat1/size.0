@@ -1,0 +1,21 @@
+SIZE(1)                      BSD Reference Manual                      SIZE(1)
+
+NNAAMMEE
+     ssiizzee - display object file segment sizes (text, data and bss)
+
+SSYYNNOOPPSSIISS
+     ssiizzee [_o_b_j_e_c_t___f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     SSiizzee displays the text, data and bss segment sizes of the specified
+     _o_b_j_e_c_t___f_i_l_e in bytes (in decimal), and the sum of the three segments (in
+     decimal and hexidecimal).  If no _o_b_j_e_c_t___f_i_l_e is specified ssiizzee attempts
+     to report on the file _a_._o_u_t.
+
+SSEEEE AALLSSOO
+     a.out(5)
+
+HHIISSTTOORRYY
+     A ssiizzee command appeared in Version 6 AT&T Unix.
+
+4.4BSD                           June 6, 1993                                1

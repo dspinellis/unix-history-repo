@@ -1,0 +1,41 @@
+SOELIM(1)                    BSD Reference Manual                    SOELIM(1)
+
+NNAAMMEE
+     ssooeelliimm - eliminate .so's from nroff input
+
+SSYYNNOOPPSSIISS
+     ssooeelliimm [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     SSooeelliimm reads the specified files or the standard input and performs the
+     textual inclusion implied by the nroff(1) directives of the form:
+
+           .so somefile
+
+     The directives need to appear at the beginning of input lines.  This is
+     useful since programs such as tbl(1) do not normally do this; it allows
+     the placement of individual tables in separate files to be run as a part
+     of a large document.
+
+     An argument consisting of a single minus `--' is taken to be a file name
+     corresponding to the standard input.
+
+     Note that inclusion can be suppressed by using `\'' instead of `\.', i.e.
+
+           'so /usr/lib/tmac.s
+
+     A sample usage of ssooeelliimm would be
+
+           soelim exum?.n | tbl | nroff -ms | col | lpr
+
+SSEEEE AALLSSOO
+     colcrt(1),  more(1)
+
+BBUUGGSS
+     The format of the source commands must involve no strangeness - exactly
+     one blank must precede and no blanks follow the file name.
+
+HHIISSTTOORRYY
+     The ssooeelliimm command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1

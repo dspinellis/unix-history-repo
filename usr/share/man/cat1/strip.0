@@ -1,0 +1,26 @@
+STRIP(1)                     BSD Reference Manual                     STRIP(1)
+
+NNAAMMEE
+     ssttrriipp - remove unnecessary information from executable files
+
+SSYYNNOOPPSSIISS
+     ssttrriipp [--dd] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrriipp utility deletes the relocation information and symbol table
+     used by assemblers, loaders and debuggers.  This significantly decreases
+     the size of the installed binaries and saves disk space.
+
+     The options are as follows:
+
+     --dd      Delete only debugging and empty symbols.
+
+     SSttrriipp exits 0 on success and 1 if an error occurred.
+
+SSEEEE AALLSSOO
+     cc(1),  ld(1),  stab(5)
+
+HHIISSTTOORRYY
+     A ssttrriipp command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

@@ -1,0 +1,49 @@
+TPUT(1)                      BSD Reference Manual                      TPUT(1)
+
+NNAAMMEE
+     ttppuutt - terminal capability interface
+
+SSYYNNOOPPSSIISS
+     ttppuutt [--TT _t_e_r_m] _a_t_t_r_i_b_u_t_e
+
+DDEESSCCRRIIPPTTIIOONN
+     TTppuutt makes terminal-dependent information available to users or shell ap-
+     plications.  The options are as follows:
+
+     --TT      The terminal name as specified in the termcap database, for exam-
+             ple, ``vt100'' or ``xterm''.  If not specified, ttppuutt retrieves
+             the ``TERM'' variable from the environment.
+
+     TTppuutt outputs a string if the _a_t_t_r_i_b_u_t_e is of type string; a number if it
+     is of type integer.  Otherwise, ttppuutt exits 0 if the terminal has the ca-
+     pability and 1 if it does not, without further action.
+
+     The following special attributes are available:
+
+     _c_l_e_a_r         Clear the screen (the termcap ``cl'' sequence).
+
+     _i_n_i_t          Initialize the terminal (the termcap ``is'' sequence).
+
+     _l_o_n_g_n_a_m_e      Print the descriptive name of the user's terminal type.
+
+     _r_e_s_e_t         Reset the terminal (the termcap ``rs'' sequence).
+
+DDIIAAGGNNOOSSTTIICCSS
+     The exit value of ttppuutt is based on the last attribute specified.  If the
+     attribute is of type string or of type integer, ttppuutt exits 0 if the at-
+     tribute is defined for this terminal type and 1 if it is not.  If the at-
+     tribute is of type boolean, ttppuutt exits 0 if the terminal has this at-
+     tribute, and 1 if it does not.  TTppuutt exits 2 if any error occurred.
+
+SSEEEE AALLSSOO
+     termcap(3),  termcap(5)
+
+BBUUGGSS
+     TTppuutt can't really distinguish between different types of attributes.
+     This is due to the limited interface in the current version of
+     termcap(3),  and will be fixed in the near future.
+
+HHIISSTTOORRYY
+     The ttppuutt command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1

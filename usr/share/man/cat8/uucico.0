@@ -1,0 +1,132 @@
+UUCICO(8)                 BSD System Manager's Manual                UUCICO(8)
+
+NNAAMMEE
+     uuuucciiccoo, uuuuccppdd - transfer files queued by uucp or uux
+
+SSYYNNOOPPSSIISS
+     uuuucciiccoo [--LL] [--RR] [--dd_s_p_o_o_l_d_i_r] [--gg_g_r_a_d_e] [--rr_r_o_l_e] [--ss_s_y_s_t_e_m] [--xx_d_e_b_u_g]
+            [--tt_t_u_r_n_a_r_o_u_n_d]
+     uuuuccppdd
+
+DDEESSCCRRIIPPTTIIOONN
+     UUuucciiccoo performs the actual work involved in transferring files between
+     systems.  Uucp(1) and uux(1) merely queue requests for data transfer
+     which uuuucciiccoo processes.
+
+     The following options are available.
+
+     --LL      Only call ``local'' sites. A site is considered local if the de-
+             vice-type field in L.sys(5) is one of LOCAL, DIR or TCP.
+
+     --RR      Reverse roles.  When used with the --rr_1 option, this tells the re-
+             mote system to begin sending its jobs first, instead of waiting
+             for the local machine to finish.
+
+     --dd_s_p_o_o_l_d_i_r
+             Use _s_p_o_o_l_d_i_r as the spool directory. The default is
+             _/_v_a_r_/_s_p_o_o_l_/_u_u_c_p_.
+
+     --gg_g_r_a_d_e
+             Only send jobs of grade _g_r_a_d_e or higher this transfer.  The grade
+             of a job is specified when the job is queued by uucp(1) or
+             uux(1).
+
+     --rr_r_o_l_e  _r_o_l_e is either 1 or 0; it indicates whether uuuucciiccoo is to start up
+             in master or slave role, respectively. 1 is used when running
+             uuuucciiccoo by hand or from cron(8).  0 is used when another system
+             calls the local system.  Slave role is the default.
+
+     --ss_s_y_s_t_e_m
+             Call only system _s_y_s_t_e_m. If --ss is not specified, and --rr_1 is spec-
+             ified, uuuucciiccoo will attempt to call all systems for which there is
+             work.  If --ss is specified, a call will be made even if there is
+             no work for that system. This is useful for polling.
+
+     --tt_t_u_r_n_a_r_o_u_n_d
+             Use _t_u_r_n_a_r_o_u_n_d as the line turnaround time (in minutes) instead
+             of the default 30.  If _t_u_r_n_a_r_o_u_n_d is missing or 0, line
+             turnaround will be disabled.  After uuuucciiccoo has been running in
+             slave role for _t_u_r_n_a_r_o_u_n_d minutes, it will attempt to run in mas-
+             ter role by negotiating with the remote machine.  In earlier ver-
+             sions of uuuucciiccoo, a transfer of many large files in one direction
+             would hold up mail going in the other direction.  With the
+             turnaround code working, the message flow will be more bidirec-
+             tional in the short term.  This option only works with newer
+             uuuucciiccoo's and is ignored by older ones.
+
+     --xx_d_e_b_u_g
+             Turn on debugging at level _d_e_b_u_g. Level 5 is a good start when
+             trying to find out why a call failed. Level 9 is very detailed.
+             Level 99 is absurdly verbose.  If _r_o_l_e is 1 (master), output is
+             written to the standard error _s_t_d_e_r_r. If _s_t_d_e_r_r is unavailable,
+             output is written to _/_v_a_r_/_s_p_o_o_l_/_u_u_c_p_/_A_U_D_I_T_/_s_y_s_t_e_m. When _r_o_l_e is 0
+             (slave), debugging output is always written to the AUDIT file.
+
+
+     If uuuucciiccoo receives a SIGFPE (see kill(1)),  it will toggle the debugging
+     on or off.
+
+     UUuuccppdd is the server for supporting uucp connections over networks.  UUuuccppdd
+     listens for service requests at the port indicated in the ``uucp'' ser-
+     vice specification; see services(5).  The server provides login name and
+     password authentication before starting up uuuucciiccoo for the rest of the
+     transaction.
+
+     UUuucciiccoo is commonly used either of two ways: as a daemon run periodically
+     by cron(8) to call out to remote systems, and as a ``shell'' for remote
+     systems who call in.  For calling out periodically, a typical line in
+     crontab would be:
+
+     0    *    *    *    *    /usr/lib/uucp/uucico -r1
+
+     This will run uuuucciiccoo every hour in master role.  For each system that has
+     transfer requests queued, uuuucciiccoo calls the system, logs in, and executes
+     the transfers. The file L.sys(5) is consulted for information about how
+     to log in, while L-devices(5) specifies available lines and modems for
+     calling.
+
+     For remote systems to dial in, an entry in the passwd(5) file must be
+     created, with a login ``shell'' of uuuucciiccoo. For example:
+
+     nuucp:Password:6:1::/var/spool/uucppublic:/usr/lib/uucp/uucico
+
+     The UID for UUCP remote logins is not critical, so long as it differs
+     from the UUCP Administrative login.  The latter owns the UUCP files, and
+     assigning this UID to a remote login would be an extreme security hazard.
+
+FFIILLEESS
+     /usr/lib/uucp/                UUCP internal files/utilities
+     /usr/lib/uucp/L-devices       Local device descriptions
+     /usr/lib/uucp/L-dialcodes     Phone numbers and prefixes
+     /usr/lib/uucp/L.aliases       Hostname aliases
+     /usr/lib/uucp/L.cmds          Remote command permissions list
+     /usr/lib/uucp/L.sys           Host connection specifications
+     /usr/lib/uucp/USERFILE        Remote directory tree permissions list
+     /var/spool/uucp/              Spool directory
+     /var/spool/uucp/AUDIT/*       Debugging audit trails
+     /var/spool/uucp/C./           Control files directory
+     /var/spool/uucp/D./           Incoming data file directory
+     /var/spool/uucp/D.hostname/   Outgoing data file directory
+     /var/spool/uucp/D.hostnameX/  Outgoing execution file directory
+     /var/spool/uucp/CORRUPT/      Place for corrupted C. and D. files
+     /var/spool/uucp/ERRLOG        UUCP internal error log
+     /var/spool/uucp/LOGFILE       UUCP system activity log
+     /var/spool/uucp/LCK/LCK..*    Device lock files
+     /var/spool/uucp/              SYSLOG File transfer statistics log
+     /var/spool/uucp/STST/*        System status files
+     /var/spool/uucp/TM./          File transfer temp directory
+     /var/spool/uucp/X./           Incoming execution file directory
+     /var/spool/uucppublic         Public access directory
+
+SSEEEE AALLSSOO
+     uucp(1),  uuq(1),  uux(1),  L-devices(5),  L-dialcodes(5),  L.aliases(5),
+      L.cmds(5),  L.sys(5),  uuclean(8),  uupoll(8),  uusnap(8),  uuxqt(8)
+
+     D. A. Nowitz, and M. E. Lesk, _A _D_i_a_l_-_U_p _N_e_t_w_o_r_k _o_f _U_N_I_X _S_y_s_t_e_m_s.
+
+     D. A. Nowitz, _U_u_c_p _I_m_p_l_e_m_e_n_t_a_t_i_o_n _D_e_s_c_r_i_p_t_i_o_n.
+
+HHIISSTTOORRYY
+     The uuuucciiccoo command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                2

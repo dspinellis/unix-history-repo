@@ -1,0 +1,198 @@
+
+
+
+RS(1)                  BSD Reference Manual                 RS(1)
+
+
+NNAAMMEE
+       rs - reshape a data array
+
+SSYYNNOOPPSSIISS
+       rrss [[ --[[ccssCCSS]][[x]][[kkKKggGGww]][[N]]ttTTeeEEnnyyjjhhHHmm ]] [[ rows [[ cols ]] ]]
+
+DDEESSCCRRIIPPTTIIOONN
+       _R_s  reads  the standard input, interpreting each line as a
+       row of blank-separated entries in an array, transforms the
+       array according to the options, and writes it on the stan-
+       dard output.  With no arguments it transforms stream input
+       into a columnar format convenient for terminal viewing.
+
+       The shape of the input array is deduced from the number of
+       lines and the number of columns on  the  first  line.   If
+       that  shape  were inconvenient, a more useful one might be
+       obtained by skipping some of the input with the --kk option.
+       Other options control interpretation of the input columns.
+
+       The shape of the output array is influenced  by  the  _r_o_w_s
+       and  _c_o_l_s  specifications,  which should be positive inte-
+       gers.  If only one of them is a positive integer, _r_s  com-
+       putes  a value for the other which will accommodate all of
+       the data.  When necessary, missing data are supplied in  a
+       manner  specified  by  the  options  and  surplus data are
+       deleted.  There are options to control presentation of the
+       output  columns,  including  transposition of the rows and
+       columns.
+
+       The options are described below.
+
+       --ccx    Input columns are delimited by the single character
+              _x.  A missing _x is taken to be `^I'.
+
+       --ssx    Like --cc, but maximal strings of _x are delimiters.
+
+       --CCx    Output  columns are delimited by the single charac-
+              ter _x.  A missing _x is taken to be `^I'.
+
+       --SSx    Like --CC, but padded strings of _x are delimiters.
+
+       --tt     Fill in the rows of  the  output  array  using  the
+              columns  of the input array, that is, transpose the
+              input while honoring any _r_o_w_s and  _c_o_l_s  specifica-
+              tions.
+
+       --TT     Print the pure transpose of the input, ignoring any
+              _r_o_w_s or _c_o_l_s specification.
+
+       --kkN    Ignore the first _N lines of input.
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         1
+
+
+
+
+
+
+
+
+RS(1)                  BSD Reference Manual                 RS(1)
+
+
+       --KKN    Like --kk, but print the ignored lines.
+
+       --ggN    The gutter width (inter-column space), normally  2,
+              is taken to be _N.
+
+       --GGN    The  gutter width has _N percent of the maximum col-
+              umn width added to it.
+
+       --ee     Consider each line of input as an array entry.
+
+       --nn     On lines having fewer entries than the first  line,
+              use  null  entries  to pad out the line.  Normally,
+              missing entries are taken from  the  next  line  of
+              input.
+
+       --yy     If  there are too few entries to make up the output
+              dimensions, pad the output by recycling  the  input
+              from the beginning.  Normally, the output is padded
+              with blanks.
+
+       --hh     Print the shape of the input array and  do  nothing
+              else.   The  shape  is just the number of lines and
+              the number of entries on the first line.
+
+       --HH     Like --hh, but also print the length of each line.
+
+       --jj     Right adjust entries within columns.
+
+       --wwN    The width of the display, normally 80, is taken  to
+              be the positive integer _N.
+
+       --mm     Do  not trim excess delimiters from the ends of the
+              output array.
+
+       With no arguments, _r_s transposes its  input,  and  assumes
+       one  array  entry  per  input  line  unless the first non-
+       ignored line is longer than  the  display  width.   Option
+       letters which take numerical arguments interpret a missing
+       number as zero unless otherwise indicated.
+
+EEXXAAMMPPLLEESS
+       _R_s can be used as a filter to convert the stream output of
+       certain  programs  (e.g.,  _s_p_e_l_l, _d_u, _f_i_l_e, _l_o_o_k, _n_m, _w_h_o,
+       and _w_c(1)) into a convenient ``window'' format, as in
+
+              wwhhoo   ||   rrss
+
+       This function has been incorporated into  the  _l_s(1)  pro-
+       gram, though for most programs with similar output _r_s suf-
+       fices.
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         2
+
+
+
+
+
+
+
+
+RS(1)                  BSD Reference Manual                 RS(1)
+
+
+       To convert stream input into vector output and back again,
+       use
+
+              rrss   11   00   ||   rrss   00   11
+
+       A  10  by 10 array of random numbers from 1 to 100 and its
+       transpose can be generated with
+
+              jjoott   --rr   110000   ||   rrss   1100   1100   ||   tteeee   aarrrraayy
+              ||   rrss   --TT   >>   ttaarrrraayy
+
+       In  the  editor  _v_i(1),  a file consisting of a multi-line
+       vector with 9 elements per line can undergo insertions and
+       deletions, and then be neatly reshaped into 9 columns with
+
+              ::11,,$$!!rrss   00   99
+
+       Finally, to sort a database by  the  first  line  of  each
+       4-line field, try
+
+              rrss    --eeCC    00   44   ||   ssoorrtt   ||   rrss   --cc   00   11
+
+
+SSEEEE AALLSSOO
+       jot(1), vi(1), sort(1), pr(1)
+
+BBUUGGSS
+       Handles only two dimensional arrays.
+
+       The algorithm currently reads the whole file into  memory,
+       so files that do not fit in memory will not be reshaped.
+
+       Fields cannot be defined yet on character positions.
+
+       Re-ordering of columns is not yet possible.
+
+       There are too many options.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         3
+
+
+
+
+

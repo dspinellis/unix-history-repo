@@ -1,0 +1,14 @@
+REV(1)                       BSD Reference Manual                       REV(1)
+
+NNAAMMEE
+     rreevv - reverse lines of a file
+
+SSYYNNOOPPSSIISS
+     rreevv [_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     The rreevv utility copies the specified files to the standard output, re-
+     versing the order of characters in every line.  If no files are speci-
+     fied, the standard input is read.
+
+4.4BSD                           June 9, 1993                                1

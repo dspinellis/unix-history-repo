@@ -1,0 +1,323 @@
+SED(1)                       BSD Reference Manual                       SED(1)
+
+NNAAMMEE
+     sseedd - stream editor
+
+SSYYNNOOPPSSIISS
+     sseedd [--aann] _c_o_m_m_a_n_d [_f_i_l_e _._._.]
+     sseedd [--aann] [--ee _c_o_m_m_a_n_d] [--ff _c_o_m_m_a_n_d___f_i_l_e] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseedd utility reads the specified files, or the standard input if no
+     files are specified, modifying the input as specified by a list of com-
+     mands.  The input is then written to the standard output.
+
+     A single command may be specified as the first argument to sseedd. Multiple
+     commands may be specified by using the --ee or --ff options.  All commands
+     are applied to the input in the order they are specified regardless of
+     their origin.
+
+     The following options are available:
+
+     --aa      The files listed as parameters for the ``w'' functions are creat-
+             ed (or truncated) before any processing begins, by default.  The
+             --aa option causes sseedd to delay opening each file until a command
+             containing the related ``w'' function is applied to a line of in-
+             put.
+
+     --ee _c_o_m_m_a_n_d
+             Append the editing commands specified by the _c_o_m_m_a_n_d argument to
+             the list of commands.
+
+     --ff _c_o_m_m_a_n_d___f_i_l_e
+             Append the editing commands found in the file _c_o_m_m_a_n_d___f_i_l_e to the
+             list of commands.  The editing commands should each be listed on
+             a separate line.
+
+     --nn      By default, each line of input is echoed to the standard output
+             after all of the commands have been applied to it.  The --nn option
+             suppresses this behavior.
+
+     The form of a sseedd command is as follows:
+
+           [address[,address]]function[arguments]
+
+     Whitespace may be inserted before the first address and the function por-
+     tions of the command.
+
+     Normally, sseedd cyclically copies a line of input, not including its termi-
+     nating newline character, into a _p_a_t_t_e_r_n _s_p_a_c_e, (unless there is some-
+     thing left after a ``D'' function), applies all of the commands with ad-
+     dresses that select that pattern space, copies the pattern space to the
+     standard output, appending a newline, and deletes the pattern space.
+
+     Some of the functions use a _h_o_l_d _s_p_a_c_e to save all or part of the pattern
+     space for subsequent retrieval.
+
+SSeedd AAddddrreesssseess
+     An address is not required, but if specified must be a number (that
+     counts input lines cumulatively across input files), a dollar (``$'')
+     character that addresses the last line of input, or a context address
+     (which consists of a regular expression preceded and followed by a delim-
+     iter).
+
+     A command line with no addresses selects every pattern space.
+
+
+     A command line with one address selects all of the pattern spaces that
+     match the address.
+
+     A command line with two addresses selects the inclusive range from the
+     first pattern space that matches the first address through the next pat-
+     tern space that matches the second.  (If the second address is a number
+     less than or equal to the line number first selected, only that line is
+     selected.)  Starting at the first line following the selected range, sseedd
+     starts looking again for the first address.
+
+     Editing commands can be applied to non-selected pattern spaces by use of
+     the exclamation character (``!'') function.
+
+SSeedd RReegguullaarr EExxpprreessssiioonnss
+     The sseedd regular expressions are basic regular expressions (BRE's, see
+     regex(3) for more information).  In addition, sseedd has the following two
+     additions to BRE's:
+
+     1.   In a context address, any character other than a backslash (``\'')
+          or newline character may be used to delimit the regular expression.
+          Also, putting a backslash character before the delimiting character
+          causes the character to be treated literally.  For example, in the
+          context address \xabc\xdefx, the RE delimiter is an ``x'' and the
+          second ``x'' stands for itself, so that the regular expression is
+          ``abcxdef''.
+
+     2.   The escape sequence \n matches a newline character embedded in the
+          pattern space.  You can't, however, use a literal newline character
+          in an address or in the substitute command.
+
+     One special feature of sseedd regular expressions is that they can default
+     to the last regular expression used.  If a regular expression is empty,
+     i.e. just the delimiter characters are specified, the last regular ex-
+     pression encountered is used instead.  The last regular expression is de-
+     fined as the last regular expression used as part of an address or sub-
+     stitute command, and at run-time, not compile-time.  For example, the
+     command ``/abc/s//XXX/'' will substitute ``XXX'' for the pattern ``abc''.
+
+SSeedd FFuunnccttiioonnss
+     In the following list of commands, the maximum number of permissible ad-
+     dresses for each command is indicated by [0addr], [1addr], or [2addr],
+     representing zero, one, or two addresses.
+
+     The argument _t_e_x_t consists of one or more lines.  To embed a newline in
+     the text, precede it with a backslash.  Other backslashes in text are
+     deleted and the following character taken literally.
+
+     The ``r'' and ``w'' functions take an optional file parameter, which
+     should be separated from the function letter by white space.  Each file
+     given as an argument to sseedd is created (or its contents truncated) before
+     any input processing begins.
+
+     The ``b'', ``r'', ``s'', ``t'', ``w'', ``y'', ``!'', and ``:'' functions
+     all accept additional arguments.  The following synopses indicate which
+     arguments have to be separated from the function letters by white space
+     characters.
+
+     Two of the functions take a function-list.  This is a list of sseedd func-
+     tions separated by newlines, as follows:
+
+           { function
+             function
+             ...
+             function
+           }
+
+     The ``{'' can be preceded by white space and can be followed by white
+     space.  The function can be preceded by white space.  The terminating
+     ``}'' must be preceded by a newline an optional white space.
+
+     [2addr] function-list
+             Execute function-list only when the pattern space is selected.
+
+     [1addr]a\
+     text
+             Write _t_e_x_t to standard output immediately before each attempt to
+             read a line of input, whether by executing the ``N'' function or
+             by beginning a new cycle.
+
+     [2addr]b[lable]
+             Branch to the ``:'' function with the specified label.  If the
+             label is not specified, branch to the end of the script.
+
+     [2addr]c\
+     text
+             Delete the pattern space.  With 0 or 1 address or at the end of a
+             2-address range, _t_e_x_t is written to the standard output.
+
+     [2addr]d
+             Delete the pattern space and start the next cycle.
+
+     [2addr]D
+             Delete the initial segment of the pattern space through the first
+             newline character and start the next cycle.
+
+     [2addr]g
+             Replace the contents of the pattern space with the contents of
+             the hold space.
+
+     [2addr]G
+             Append a newline character followed by the contents of the hold
+             space to the pattern space.
+
+     [2addr]h
+             Replace the contents of the hold space with the contents of the
+             pattern space.
+
+     [2addr]H
+             Append a newline character followed by the contents of the pat-
+             tern space to the hold space.
+
+     [1addr]i\
+     text
+             Write _t_e_x_t to the standard output.
+
+     [2addr]l
+             (The letter ell.)  Write the pattern space to the standard output
+             in a visually unambiguous form.  This form is as follows:
+
+                   backslash          \
+                   alert              \a
+                   form-feed          \f
+                   newline            \n
+                   carriage-return    \r
+                   tab                \t
+                   vertical tab       \v
+
+             Nonprintable characters are written as three-digit octal numbers
+             (with a preceding backslash) for each byte in the character (most
+             significant byte first).  Long lines are folded, with the point
+             of folding indicated by displaying a backslash followed by a new-
+             line.  The end of each line is marked with a ``$''.
+
+     [2addr]n
+             Write the pattern space to the standard output if the default
+             output has not been suppressed, and replace the pattern space
+             with the next line of input.
+
+     [2addr]N
+             Append the next line of input to the pattern space, using an em-
+             bedded newline character to separate the appended material from
+             the original contents.  Note that the current line number
+             changes.
+
+     [2addr]p
+             Write the pattern space to standard output.
+
+     [2addr]P
+             Write the pattern space, up to the first newline character to the
+             standard output.
+
+     [1addr]q
+             Branch to the end of the script and quit without starting a new
+             cycle.
+
+     [1addr]r file
+             Copy the contents of _f_i_l_e to the standard output immediately be-
+             fore the next attempt to read a line of input.  If _f_i_l_e cannot be
+             read for any reason, it is silently ignored and no error condi-
+             tion is set.
+
+     [2addr]s/regular expression/replacement/flags
+             Substitute the replacement string for the first instance of the
+             regular expression in the pattern space.  Any character other
+             than backslash or newline can be used instead of a slash to de-
+             limit the RE and the replacement.  Within the RE and the replace-
+             ment, the RE delimiter itself can be used as a literal character
+             if it is preceded by a backslash.
+
+             An ampersand (``&'') appearing in the replacement is replaced by
+             the string matching the RE.  The special meaning of ``&'' in this
+             context can be suppressed by preceding it by backslash.  The
+             string ``\#'', where ``#'' is a digit, is replaced by the text
+             matched by the corresponding backreference expression (see
+             re_format(7)).
+
+             A line can be split by substituting a newline character into it.
+             To specify a newline character in the replacement string, precede
+             it with a backslash.
+
+             The value of _f_l_a_g_s in the substitute function is zero or more of
+             the following:
+
+                   0 ... 9
+                           Make the substitution only for the N'th occurrence
+                           of the regular expression in the pattern space.
+
+                   g       Make the substitution for all non-overlapping
+                           matches of the regular expression, not just the
+                           first one.
+
+                   p       Write the pattern space to standard output if a re-
+                           placement was made.  If the replacement string is
+                           identical to that which it replaces, it is still
+                           considered to have been a replacement.
+
+                   w _f_i_l_e  Append the pattern space to _f_i_l_e if a replacement
+                           was made.  If the replacement string is identical
+                           to that which it replaces, it is still considered
+                           to have been a replacement.
+
+     [2addr]t [label]
+             Branch to the ``'': function bearing the label if any substitu-
+             tions have been made since the most recent reading of an input
+             line or execution of a ``t'' function.  If no label is specified,
+             branch to the end of the script.
+
+     [2addr]w _f_i_l_e
+             Append the pattern space to the _f_i_l_e.
+
+     [2addr]x
+             Swap the contents of the pattern and hold spaces.
+
+     [2addr]y/string1/string2/
+             Replace all occurrences of characters in _s_t_r_i_n_g_1 in the pattern
+             space with the corresponding characters from _s_t_r_i_n_g_2. Any charac-
+             ter other than a backslash or newline can be used instead of a
+             slash to delimit the strings.  Within _s_t_r_i_n_g_1 and _s_t_r_i_n_g_2, a
+             backslash followed by any character other than a newline is that
+             literal character, and a backslash followed by an ``n'' is re-
+             placed by a newline character.
+
+     [2addr]!function
+     [2addr]!function-list
+             Apply the function or function-list only to the lines that are
+             _n_o_t selected by the address(es).
+
+     [0addr]:label
+             This function does nothing; it bears a label to which the ``b''
+             and ``t'' commands may branch.
+
+     [1addr]=
+             Write the line number to the standard output followed by a new-
+             line character.
+
+     [0addr]
+             Empty lines are ignored.
+
+     [0addr]#
+             The ``#'' and the remainder of the line are ignored (treated as a
+             comment), with the single exception that if the first two charac-
+             ters in the file are ``#n'', the default output is suppressed.
+             This is the same as specifying the --nn option on the command line.
+
+     The sseedd utility exits 0 on success and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     awk(1),  ed(1),  grep(1),  regex(3),  re_format(7)
+
+HHIISSTTOORRYY
+     A sseedd command appeared in Version 7 AT&T UNIX.
+
+SSTTAANNDDAARRDDSS
+     The sseedd function is expected to be a superset of the IEEE Std1003.2
+     (``POSIX'') specification.
+
+4.4BSD                           June 6, 1993                                5

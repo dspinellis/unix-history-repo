@@ -1,0 +1,132 @@
+
+
+
+STRUCT(1)              BSD Reference Manual             STRUCT(1)
+
+
+NNAAMMEE
+       struct - structure Fortran programs
+
+SSYYNNOOPPSSIISS
+       ssttrruucctt [ option ] ...  file
+
+DDEESSCCRRIIPPTTIIOONN
+       _S_t_r_u_c_t  translates  the  Fortran program specified by _f_i_l_e
+       (standard input default) into a Ratfor program.   Wherever
+       possible,  Ratfor  control constructs replace the original
+       Fortran.  Statement numbers appear only where still neces-
+       sary.   Cosmetic changes are made, including changing Hol-
+       lerith strings into quoted strings and  relational  opera-
+       tors  into symbols (.e.g. ".GT." into ">").  The output is
+       appropriately indented.
+
+       The following options may occur in any order.
+
+       --ss     Input is accepted in standard  format,  i.e.   com-
+              ments  are  specified  by a c, C, or * in column 1,
+              and continuation lines are specified by a  nonzero,
+              nonblank  character in column 6.  Normally input is
+              in the form accepted by _f_7_7(1)
+
+       --ii     Do not turn computed goto statements into switches.
+              (Ratfor  does  not turn switches back into computed
+              goto statements.)
+
+       --aa     Turn sequences of else ifs into a non-Ratfor switch
+              of the form
+
+              switch
+                   { case pred1: code
+                     case pred2: code
+                     case pred3: code
+                     default: code
+                   }
+
+              The  case  predicates are tested in order; the code
+              appropriate to only one  case  is  executed.   This
+              generalized form of switch statement does not occur
+              in Ratfor.
+
+       --bb     Generate goto's instead of multilevel break  state-
+              ments.
+
+       --nn     Generate  goto's  instead of multilevel next state-
+              ments.
+
+       --tt_n    Make the nonzero integer _n the lowest valued  label
+              in the output program (default 10).
+
+
+
+7th Edition                     1Q                              1
+
+
+
+
+
+
+
+
+STRUCT(1)              BSD Reference Manual             STRUCT(1)
+
+
+       --cc_n    Increment  successive  labels in the output program
+              by the nonzero integer _n (default 1).
+
+       --ee_n    If _n is 0 (default), place code within a loop  only
+              if  it  can lead to an iteration of the loop.  If _n
+              is nonzero, admit a small code segments to  a  loop
+              if  otherwise  the loop would have exits to several
+              places including the segment, and the  segment  can
+              be  reached  only  from the loop.  `Small' is close
+              to, but not equal to, the number of  statements  in
+              the  code  segment.   Values of n under 10 are sug-
+              gested.
+
+FFIILLEESS
+       /tmp/struct*
+
+SSEEEE AALLSSOO
+       f77(1)
+
+BBUUGGSS
+       Struct knows Fortran 66 syntax, but not full Fortran 77.
+       If an input Fortran program contains identifiers which are
+       reserved  words  in  Ratfor, the structured version of the
+       program will not be a valid Ratfor program.
+       The labels generated cannot go above 32767.
+       If you get a goto without a target, try --ee ..
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7th Edition                     2Q                              2
+
+
+
+
+

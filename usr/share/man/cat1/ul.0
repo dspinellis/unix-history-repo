@@ -1,0 +1,51 @@
+UL(1)                        BSD Reference Manual                        UL(1)
+
+NNAAMMEE
+     uull - do underlining
+
+SSYYNNOOPPSSIISS
+     uull [--ii] [--tt _t_e_r_m_i_n_a_l] [_n_a_m_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     UUll reads the named files (or standard input if none are given) and trans-
+     lates occurrences of underscores to the sequence which indicates under-
+     lining for the terminal in use, as specified by the environment variable
+     TERM. The file _/_e_t_c_/_t_e_r_m_c_a_p is read to determine the appropriate se-
+     quences for underlining.  If the terminal is incapable of underlining,
+     but is capable of a standout mode then that is used instead.  If the ter-
+     minal can overstrike, or handles underlining automatically, uull degener-
+     ates to cat(1).  If the terminal cannot underline, underlining is ig-
+     nored.
+
+     The following options are available:
+
+     --ii      Underlining is indicated by a separate line containing appropri-
+             ate dashes `-'; this is useful when you want to look at the un-
+             derlining which is present in an nroff output stream on a crt-
+             terminal.
+
+     --tt _t_e_r_m_i_n_a_l
+             Overrides the terminal type specified in the environment with
+             _t_e_r_m_i_n_a_l.
+
+EENNVVIIRROONNMMEENNTT
+     The following environment variable is used:
+
+     TERM  The TERM variable is used to relate a tty device with its device
+           capability description (see termcap(5)).  TERM is set at login
+           time, either by the default terminal type specified in _/_e_t_c_/_t_t_y_s or
+           as set during the login process by the user in their _l_o_g_i_n file
+           (see setenv(1)).
+
+SSEEEE AALLSSOO
+     man(1),  nroff(1),  colcrt(1)
+
+BBUUGGSS
+     Nroff usually outputs a series of backspaces and underlines intermixed
+     with the text to indicate underlining.  No attempt is made to optimize
+     the backward motion.
+
+HHIISSTTOORRYY
+     The uull command appeared in 3.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

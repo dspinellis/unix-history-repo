@@ -1,0 +1,38 @@
+UUXQT(8)                  BSD System Manager's Manual                 UUXQT(8)
+
+NNAAMMEE
+     uuuuxxqqtt - UUCP execution file interpreter
+
+SSYYNNOOPPSSIISS
+     uuuuxxqqtt [--xx _d_e_b_u_g]
+
+DDEESSCCRRIIPPTTIIOONN
+     UUuuxxqqtt interprets _e_x_e_c_u_t_i_o_n _f_i_l_e_s created on a remote system via uux(1)
+     and transferred to the local system via uucico(8).  When a user uses uux
+     to request remote command execution, it is uuuuxxqqtt that actually executes
+     the command.
+
+     Option availble:
+
+     --xx_d_e_b_u_g       Normally, uuuuxxqqtt is forked from uucico(8) to process queued
+                   execution files; for debugging, it may also be run manually
+                   by the UUCP administrator.
+
+     UUuuxxqqtt runs in its own subdirectory _/_v_a_r_/_s_p_o_o_l_/_u_u_c_p_/_X_T_M_P. It copies inter-
+     mediate files to this directory when necessary.
+
+FFIILLEESS
+     /usr/lib/uucp/L.cmds         Remote command permissions list
+     /usr/lib/uucp/USERFILE       Remote directory tree permissions list
+     /var/spool/uucp/LOGFILE      UUCP system activity log
+     /var/spool/uucp/LCK/LCK.XQT  UUuuxxqqtt lock file
+     /var/spool/uucp/X./          Incoming execution file directory
+     /var/spool/uucp/XTMP         UUuuxxqqtt running directory
+
+SSEEEE AALLSSOO
+     uucp(1),  uux(1),  L.cmds(5),  USERFILE(5),  uucico(8)
+
+HHIISSTTOORRYY
+     The uuuuxxqqtt command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                1

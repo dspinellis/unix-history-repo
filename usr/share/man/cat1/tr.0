@@ -1,0 +1,162 @@
+TR(1)                        BSD Reference Manual                        TR(1)
+
+NNAAMMEE
+     ttrr - translate characters
+
+SSYYNNOOPPSSIISS
+     ttrr [--ccss] _s_t_r_i_n_g_1 _s_t_r_i_n_g_2
+     ttrr [--cc] --dd _s_t_r_i_n_g_1
+     ttrr [--cc] --ss _s_t_r_i_n_g_1
+     ttrr [--cc] --ddss _s_t_r_i_n_g_1 _s_t_r_i_n_g_2
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttrr utility copies the standard input to the standard output with sub-
+     stitution or deletion of selected characters.
+
+     The following options are available:
+
+     --cc      Complements the set of characters in _s_t_r_i_n_g_1, that is ``-c ab''
+             includes every character except for ``a'' and ``b''.
+
+     --dd      The --dd option causes characters to be deleted from the input.
+
+     --ss      The --ss option squeezes multiple occurrences of the characters
+             listed in the last operand (either _s_t_r_i_n_g_1 or _s_t_r_i_n_g_2) in the in-
+             put into a single instance of the character.  This occurs after
+             all deletion and translation is completed.
+
+     In the first synopsis form, the characters in _s_t_r_i_n_g_1 are translated into
+     the characters in _s_t_r_i_n_g_2 where the first character in _s_t_r_i_n_g_1 is trans-
+     lated into the first character in _s_t_r_i_n_g_2 and so on.  If _s_t_r_i_n_g_1 is
+     longer than _s_t_r_i_n_g_2, the last character found in _s_t_r_i_n_g_2 is duplicated
+     until _s_t_r_i_n_g_1 is exhausted.
+
+     In the second synopsis form, the characters in _s_t_r_i_n_g_1 are deleted from
+     the input.
+
+     In the third synopsis form, the characters in _s_t_r_i_n_g_1 are compressed as
+     described for the --ss option.
+
+     In the fourth synopsis form, the characters in _s_t_r_i_n_g_1 are deleted from
+     the input, and the characters in _s_t_r_i_n_g_2 are compressed as described for
+     the --ss option.
+
+     The following conventions can be used in _s_t_r_i_n_g_1 and _s_t_r_i_n_g_2 to specify
+     sets of characters:
+
+     character  Any character not described by one of the following conven-
+                tions represents itself.
+
+     \octal     A backslash followed by 1, 2 or 3 octal digits represents a
+                character with that encoded value.  To follow an octal se-
+                quence with a digit as a character, left zero-pad the octal
+                sequence to the full 3 octal digits.
+
+     \character
+                A backslash followed by certain special characters maps to
+                special values.
+
+                \a   <alert character>
+                \b   <backspace>
+                \f   <form-feed>
+                \n   <newline>
+                \r   <carriage return>
+
+
+                \t   <tab>
+                \v   <vertical tab>
+
+                A backslash followed by any other character maps to that char-
+                acter.
+
+     c-c        Represents the range of characters between the range end-
+                points, inclusively.
+
+     [:class:]  Represents all characters belonging to the defined character
+                class.  Class names are:
+
+                alnum     <alphanumeric characters>
+                alpha     <alphabetic characters>
+                cntrl     <control characters>
+                digit     <numeric characters>
+                graph     <graphic characters>
+                lower     <lower-case alphabetic characters>
+                print     <printable characters>
+                punct     <punctuation characters>
+                space     <space characters>
+                upper     <upper-case characters>
+                xdigit    <hexadecimal characters>
+
+                With the exception of the ``upper'' and ``lower'' classes,
+                characters in the classes are in unspecified order.  In the
+                ``upper'' and ``lower'' classes, characters are entered in as-
+                cending order.
+
+                For specific information as to which ASCII characters are in-
+                cluded in these classes, see ctype(3) and related manual
+                pages.
+
+     [=equiv=]  Represents all characters or collating (sorting) elements be-
+                longing to the same equivalence class as _e_q_u_i_v. If there is a
+                secondary ordering within the equivalence class, the charac-
+                ters are ordered in ascending sequence.  Otherwise, they are
+                ordered after their encoded values.  An example of an equiva-
+                lence class might be ``c'' and ``ch'' in Spanish; English has
+                no equivalence classes.
+
+     [#*n]      Represents _n repeated occurrences of the character represented
+                by _#. This expression is only valid when it occurs in _s_t_r_i_n_g_2.
+                If _n is omitted or is zero, it is be interpreted as large
+                enough to extend _s_t_r_i_n_g_2 sequence to the length of _s_t_r_i_n_g_1. If
+                _n has a leading zero, it is interpreted as an octal value,
+                otherwise, it's interpreted as a decimal value.
+
+     The ttrr utility exits 0 on success, and >0 if an error occurs.
+
+EEXXAAMMPPLLEESS
+     The following examples are shown as given to the shell:
+
+     Create a list of the words in file1, one per line, where a word is taken
+     to be a maximal string of letters.
+
+           tr -cs "[:alpha:]" "\n" < file1
+
+     Translate the contents of file1 to upper-case.
+
+           tr "[:lower:]" "[:upper:]" < file1
+
+     Strip out non-printable characters from file1.
+
+           tr -cd "[:print:]" < file1
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     System V has historically implemented character ranges using the syntax
+     ``[c-c]'' instead of the ``c-c'' used by historic BSD implementations and
+     standardized by POSIX.  System V shell scripts should work under this im-
+     plementation as long as the range is intended to map in another range,
+     i.e. the command ``tr [a-z] [A-Z]'' will work as it will map the ``[''
+     character in _s_t_r_i_n_g_1 to the ``['' character in _s_t_r_i_n_g_2_. However, if the
+     shell script is deleting or squeezing characters as in the command ``tr
+     -d [a-z]'', the characters ``['' and ``]'' will be included in the dele-
+     tion or compression list which would not have happened under an historic
+     System V implementation.  Additionally, any scripts that depended on the
+     sequence ``a-z'' to represent the three characters ``a'', ``-'' and ``z''
+     will have to be rewritten as ``a\-z''.
+
+     The ttrr utility has historically not permitted the manipulation of NUL
+     bytes in its input and, additionally, stripped NUL's from its input
+     stream.  This implementation has removed this behavior as a bug.
+
+     The ttrr utility has historically been extremely forgiving of syntax er-
+     rors, for example, the --cc and --ss options were ignored unless two strings
+     were specified.  This implementation will not permit illegal syntax.
+
+SSTTAANNDDAARRDDSS
+     The ttrr utility is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+     It should be noted that the feature wherein the last character of _s_t_r_i_n_g_2
+     is duplicated if _s_t_r_i_n_g_2 has less characters than _s_t_r_i_n_g_1 is permitted by
+     POSIX but is not required.  Shell scripts attempting to be portable to
+     other POSIX systems should use the ``[#*]'' convention instead of relying
+     on this behavior.
+
+4.4BSD                           June 6, 1993                                3

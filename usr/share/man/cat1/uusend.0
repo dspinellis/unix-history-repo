@@ -1,0 +1,45 @@
+UUSEND(1)                    BSD Reference Manual                    UUSEND(1)
+
+NNAAMMEE
+     uuuusseenndd - send a file to a remote host
+
+SSYYNNOOPPSSIISS
+     uuuusseenndd [--mm _m_o_d_e] _s_o_u_r_c_e_f_i_l_e _s_y_s_1_!_s_y_s_2_!_._._!_r_e_m_o_t_e_f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+     UUuusseenndd sends a file to a given location on a remote system.  The system
+     need not be directly connected to the local system, but a chain of
+     uucp(1) links must to connect the two systems.
+
+     Available option:
+
+     --mm _m_o_d_e     The mode of the file on the remote end is taken from the oc-
+                 tal number given.  Otherwise, the mode of the input file will
+                 be used.
+
+     The sourcefile can be `--', meaning to use the standard input.  Both of
+     these options are primarily intended for internal use of uuuusseenndd.
+
+     The remotefile can include the _~_u_s_e_r_i_d syntax.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If anything goes wrong any further away than the first system down the
+     line, you will never hear about it.
+
+SSEEEE AALLSSOO
+     uux(1),  uucp(1),  uuencode(1)
+
+BBUUGGSS
+     This command should not exist, since uucp should handle it.
+
+     All systems along the line must have the uuuusseenndd command available and al-
+     low remote execution of it.
+
+     Some uucp systems have a bug where binary files cannot be the input to a
+     uux(1) command.  If this bug exists in any system along the line, the
+     file will show up severly munged.
+
+HHIISSTTOORRYY
+     The uuuusseenndd command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1
