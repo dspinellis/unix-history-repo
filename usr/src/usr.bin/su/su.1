@@ -1,8 +1,19 @@
-.\" Copyright (c) 1980, 1988 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)su.1	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)su.1	6.5 (Berkeley) %G%
 .\"
 .TH SU 1 ""
 .UC
@@ -10,43 +21,38 @@
 su \- substitute user id
 .SH SYNOPSIS
 .B su
-[-fl] [login]
+[-flm] [login]
 .SH DESCRIPTION
-.I Su
-requests the password for
-.I login
-(or for ``root'', if no login is provided), changes to that user and
-group ID and invokes another instance of your login shell.
-The environment is unmodified.
+\fISu\fP requests the password for \fIlogin\fP (or for ``root'', if no
+login is provided), and switches to that user and group ID.  A shell is
+then invoked.
 .PP
-If the invoked shell is
-.IR csh ,
-the
-.I -f
-option prevents it from reading your
-.I .cshrc
-file.  Otherwise, the
-.I -f
-option is ignored.
+By default, your environment is unmodified with the exception of
+\fIUSER\fP, \fIHOME\fP, and \fISHELL\fP.  \fIHOME\fP and \fISHELL\fP
+are set to the target login's \fI/etc/passwd\fP values.  \fIUSER\fP
+is set to the target login, unless the target login has a UID of 0,
+in which  case it is unmodified.  The invoked shell is the target
+login's.  This is the traditional behavior of \fIsu\fP.
 .PP
-The
-.I -l
-option simulates a full login; the environment is discarded except for
-HOME, SHELL, TERM, and USER.  HOME, SHELL, and USER are taken from the
-password file for the user being substituted.  TERM is copied from
-your environment.  The invoked shell is the substituted user's, not
-yours.
+The \fI-l\fP option simulates a full login.  The environment is discarded
+except for \fIHOME\fP, \fISHELL\fP, \fIPATH\fP, \fITERM\fP, and \fIUSER\fP.
+\fIHOME\fP and \fISHELL\fP are modified as above.  \fIUSER\fP is set to
+the target login.  \fIPATH\fP is set to ``/usr/ucb:/bin:/usr/bin''.
+\fITERM\fP is imported from your current environment.  The invoked shell
+is the target login's, and \fIsu\fP will change directory to the target
+login's home directory.
 .PP
-The new user ID stays in force until the shell exits.
+The \fI-m\fP option causes the environment to remain unmodified, and
+the invoked shell to be your login shell.  No directory changes are
+made.  As a security precaution, if the target login has no password,
+its shell is used, rather than yours.
 .PP
-If the substituted user has no password, their login shell is invoked
-rather than yours.
+If the invoked shell is \fIcsh\fP, the \fI-f\fP option prevents it from
+reading the \fI.cshrc\fP file.  Otherwise, this option is ignored.
 .PP
-Only users in group 0 (normally ``wheel'') can
-.I su
-to ``root'', even with the root password.
+Only users in group 0 (normally ``wheel'') can \fIsu\fP to ``root''.
 .PP
-To remind the super-user of his responsibilities, by default,
-the shell substitutes ``#'' for its usual prompt.
+By default (unless the prompt is reset by a startup file) the super-user
+prompt is set to ``#'' to remind one of its awesome power.
 .SH "SEE ALSO"
-csh(1), login(1), sh(1), environ(7)
+csh(1), login(1), sh(1), passwd(5), group(5), environ(7)

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,14 +43,16 @@ main(argc, argv)
 	register char *p, **g;
 	struct group *gr;
 	uid_t ruid, getuid();
-	int ch, fulllogin, fastlogin, prio;
+	int asme, ch, fulllogin, fastlogin, prio;
 	enum { UNSET, YES, NO } iscsh = UNSET;
-	char *user, *shell, *username, *cleanenv[2];
+	char *user, *shell, *username, *cleanenv[2], *nargv[4], **np;
 	char namebuf[50], shellbuf[MAXPATHLEN];
 	char *crypt(), *getpass(), *getenv(), *getlogin(), *rindex(), *strcpy();
 
-	fulllogin = fastlogin = 0;
-	while ((ch = getopt(argc, argv, "-fl")) != EOF)
+	np = &nargv[3];
+	*np-- = NULL;
+	asme = fulllogin = fastlogin = 0;
+	while ((ch = getopt(argc, argv, "-flm")) != EOF)
 		switch((char)ch) {
 		case 'f':
 			fastlogin = 1;
@@ -59,6 +61,9 @@ main(argc, argv)
 		case 'l':
 			fulllogin = 1;
 			break;
+		case 'm':
+			asme = 1;
+			break;
 		case '?':
 		default:
 			fprintf(stderr, "usage: su [-fl] [login]\n");
@@ -66,12 +71,19 @@ main(argc, argv)
 		}
 	argv += optind;
 
+	errno = 0;
+	prio = getpriority(PRIO_PROCESS, 0);
+	if (errno)
+		prio = 0;
+	(void)setpriority(PRIO_PROCESS, 0, -2);
+
+	/* get current login name and shell */
 	if ((pwd = getpwuid(ruid = getuid())) == NULL) {
 		fprintf(stderr, "su: who are you?\n");
 		exit(1);
 	}
 	username = strcpy(namebuf, pwd->pw_name);
-	if (!fulllogin)
+	if (asme)
 		if (pwd->pw_shell && *pwd->pw_shell)
 			shell = strcpy(shellbuf,  pwd->pw_shell);
 		else {
@@ -79,7 +91,8 @@ main(argc, argv)
 			iscsh = NO;
 		}
 
-	user = *argv ? *argv++ : "root";
+	/* get target login information */
+	user = *argv ? *argv : "root";
 	if ((pwd = getpwnam(user)) == NULL) {
 		fprintf(stderr, "su: unknown login %s\n", user);
 		exit(1);
@@ -96,28 +109,19 @@ main(argc, argv)
 				break;
 		}
 
-	errno = 0;
-	prio = getpriority(PRIO_PROCESS, 0);
-	if (errno)
-		prio = 0;
-	(void)setpriority(PRIO_PROCESS, 0, -2);
-
-	if ((p = getlogin()) && *p)
-		username = p;
-
-	if (*pwd->pw_passwd && ruid) {
+	/* if target requires a password, verify it */
+	if (ruid && *pwd->pw_passwd) {
 		p = getpass("Password:");
 		if (strcmp(pwd->pw_passwd, crypt(p, pwd->pw_passwd))) {
 			fprintf(stderr, "Sorry\n");
 			if (pwd->pw_uid == 0)
-				syslog(LOG_CRIT|LOG_AUTH, "su: BAD SU %s on %s",
-				    username, ttyname(2));
+				syslog(LOG_CRIT|LOG_AUTH, "su: BAD SU %s on %s", username, ttyname(2));
 			exit(1);
 		}
 	}
 
-	/* if target user has no password, or fulllogin, use their shell */
-	if (!*pwd->pw_passwd || fulllogin)
+	/* if not asme or target has no password, use their shell */
+	if (!asme || !*pwd->pw_passwd)
 		if (pwd->pw_shell && *pwd->pw_shell) {
 			shell = pwd->pw_shell;
 			iscsh = UNSET;
@@ -126,6 +130,7 @@ main(argc, argv)
 			iscsh = NO;
 		}
 
+	/* if we're forking a csh, we want to slightly muck the args */
 	if (iscsh == UNSET) {
 		if (p = rindex(shell, '/'))
 			++p;
@@ -134,6 +139,7 @@ main(argc, argv)
 		iscsh = strcmp(p, "csh") ? NO : YES;
 	}
 
+	/* set permissions */
 	if (setgid(pwd->pw_gid) < 0) {
 		perror("su: setgid");
 		exit(1);
@@ -146,26 +152,34 @@ main(argc, argv)
 		perror("su: setuid");
 		exit(1);
 	}
-	if (fulllogin) {
-		p = getenv("TERM");
-		cleanenv[0] = "PATH=:/usr/ucb:/bin:/usr/bin";
-		cleanenv[1] = NULL;
-		environ = cleanenv;
+
+	if (!asme) {
+		if (fulllogin) {
+			p = getenv("TERM");
+			cleanenv[0] = "PATH=:/usr/ucb:/bin:/usr/bin";
+			cleanenv[1] = NULL;
+			environ = cleanenv;
+			(void)setenv("TERM", p, 1);
+			if (chdir(pwd->pw_dir) < 0) {
+				fprintf(stderr, "su: no directory\n");
+				exit(1);
+			}
+		}
+		if (fulllogin || pwd->pw_uid)
+			(void)setenv("USER", pwd->pw_name, 1);
 		(void)setenv("HOME", pwd->pw_dir, 1);
 		(void)setenv("SHELL", shell, 1);
-		(void)setenv("TERM", p, 1);
-		(void)setenv("USER", pwd->pw_name, 1);
-		if (chdir(pwd->pw_dir) < 0) {
-			fprintf(stderr, "su: no directory\n");
-			exit(1);
-		}
 	}
 
-	if (fastlogin && iscsh == YES)
-		*--argv = "-f";
+	if (iscsh == YES) {
+		if (fastlogin)
+			*np-- = "-f";
+		if (asme)
+			*np-- = "-m";
+	}
 
 	/* csh strips the first character... */
-	*--argv = fulllogin ? "-su" : iscsh == YES ? "_su" : "su";
+	*np = fulllogin ? "-su" : iscsh == YES ? "_su" : "su";
 
 	if (pwd->pw_uid == 0)
 		syslog(LOG_NOTICE|LOG_AUTH, "su: %s on %s",
@@ -173,7 +187,7 @@ main(argc, argv)
 
 	(void)setpriority(PRIO_PROCESS, 0, prio);
 
-	execv(shell, argv);
+	execv(shell, np);
 	fprintf(stderr, "su: no shell.\n");
 	exit(1);
 }
