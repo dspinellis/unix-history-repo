@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.16	(Berkeley)	83/08/11";
+static char sccsid[] = "@(#)dirs.c	3.17	(Berkeley)	83/12/30";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -88,7 +88,7 @@ extractdirs(genmode)
 	df = fopen(dirfile, "w");
 	if (df == 0) {
 		fprintf(stderr,
-		    "restor: %s - cannot create directory temporary\n",
+		    "restore: %s - cannot create directory temporary\n",
 		    dirfile);
 		perror("fopen");
 		done(1);
@@ -98,7 +98,7 @@ extractdirs(genmode)
 		mf = fopen(modefile, "w");
 		if (mf == 0) {
 			fprintf(stderr,
-			    "restor: %s - cannot create modefile \n",
+			    "restore: %s - cannot create modefile \n",
 			    modefile);
 			perror("fopen");
 			done(1);
@@ -440,10 +440,13 @@ setdirmodes()
 	char *cp;
 	
 	vprintf(stdout, "Set directory mode, owner, and times.\n");
+	(void) sprintf(modefile, "/tmp/rstmode%d", dumpdate);
 	mf = fopen(modefile, "r");
 	if (mf == NULL) {
 		perror("fopen");
-		panic("cannot open mode file %s\n", modefile);
+		fprintf(stderr, "cannot open mode file %s\n", modefile);
+		fprintf(stderr, "directory mode, owner, and times not set\n");
+		return;
 	}
 	clearerr(mf);
 	for (;;) {
