@@ -1,4 +1,4 @@
-.\"	@(#)lex.1	6.1 (Berkeley) %G%
+.\"	@(#)lex.1	6.2 (Berkeley) %G%
 .\"
 .TH LEX 1 ""
 .AT 3
@@ -58,7 +58,7 @@ and place the output in
 .ta \w'[A\-Z] 'u
 %%
 [A\-Z]	putchar(yytext[0]+\'a\'\-\'A\');
-[ ]+$
+[ ]+$	;
 [ ]+	putchar(\' \');
 .fi
 .PP
