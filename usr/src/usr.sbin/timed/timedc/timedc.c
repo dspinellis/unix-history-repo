@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	2.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "timedc.h"
@@ -108,7 +108,7 @@ cmdscanner(top)
 			printf("timedc> ");
 			(void) fflush(stdout);
 		}
-		if (gets(cmdline) == 0)
+		if (fgets(cmdline, sizeof(cmdline), stdin) == 0)
 			quit();
 		if (cmdline[0] == 0)
 			break;
