@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -21,7 +21,7 @@ SCRIPT=	false true
 #
 STD=	ar cat cc chmod cmp date dd du echo ed grep hostid hostname \
 	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rm rmail \
-	rmdir size strip stty sync tar tee test time wall who write
+	rmdir size stty sync tar tee test time wall who write
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -35,18 +35,20 @@ SETUID=	chgrp df login mail passwd rcp su
 #
 KMEM=	ps
 
-all:	${SUBDIR} ${STD} ${NSTD} ${SETUID} ${KMEM} cp mv
+all:	${SUBDIR} ${STD} ${NSTD} ${SETUID} ${KMEM} cp mv strip
 
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
 
-${STD} ${SETUID} mv cp:
+${STD} ${SETUID} mv cp strip:
 	${CC} ${CFLAGS} -o $@ $@.c
 
-# take care with cp and mv, install uses them
+# take care with cp, strip, and mv, install uses them
 install:
 	install -s cp ${DESTDIR}/bin/newcp; \
 		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp;
+	install -s strip ${DESTDIR}/bin/newstrip; \
+		mv ${DESTDIR}/bin/newstrip ${DESTDIR}/bin/strip;
 	rm -f ${DESTDIR}/bin/mv; cp mv ${DESTDIR}/bin/mv; rm -f mv; \
 		strip ${DESTDIR}/bin/mv
 	-for i in ${SUBDIR}; do \
@@ -65,10 +67,10 @@ install:
 clean:
 	rm -f a.out core *.s *.o errs
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f ${STD} ${NSTD} ${KMEM} ${SETUID} expr.c cp mv
+	rm -f ${STD} ${NSTD} ${KMEM} ${SETUID} expr.c cp mv strip
 
 depend:
-	for i in ${STD} ${NSTD} ${KMEM} ${SETUID} cp mv; do \
+	for i in ${STD} ${NSTD} ${KMEM} ${SETUID} cp mv strip; do \
 	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
 	    awk ' { if ($$1 != prev) \
 		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
@@ -163,8 +165,6 @@ rm: /usr/include/sys/file.h
 rmail: rmail.c /usr/include/stdio.h /usr/include/sysexits.h
 rmdir: rmdir.c /usr/include/stdio.h
 size: size.c /usr/include/stdio.h /usr/include/a.out.h /usr/include/sys/exec.h
-strip: strip.c /usr/include/a.out.h /usr/include/sys/exec.h
-strip: /usr/include/signal.h /usr/include/stdio.h /usr/include/sys/file.h
 stty: stty.c /usr/include/stdio.h /usr/include/sys/ioctl.h
 stty: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 sync: sync.c
@@ -248,6 +248,8 @@ mv: mv.c /usr/include/sys/param.h /usr/include/machine/machparam.h
 mv: /usr/include/signal.h /usr/include/sys/types.h /usr/include/sys/stat.h
 mv: /usr/include/sys/time.h /usr/include/time.h /usr/include/stdio.h
 mv: /usr/include/sys/dir.h /usr/include/errno.h /usr/include/signal.h
+strip: strip.c /usr/include/a.out.h /usr/include/sys/exec.h
+strip: /usr/include/signal.h /usr/include/stdio.h /usr/include/sys/file.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
