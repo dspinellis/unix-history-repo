@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.2	82/07/24	*/
+/*	kern_sig.c	5.3	82/08/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -690,7 +690,7 @@ core()
 	if (!access(ip, IWRITE) &&
 	   (ip->i_mode&IFMT) == IFREG &&
 	   ip->i_nlink == 1) {
-		itrunc(ip);
+		itrunc(ip, 0);
 		u.u_acflag |= ACORE;
 		u.u_offset = 0;
 		u.u_base = (caddr_t)&u;
