@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.63 (Berkeley) %G%
+ *	@(#)conf.h	8.64 (Berkeley) %G%
  */
 
 /*
@@ -63,21 +63,6 @@
 # endif
 
 /*
-**  Due to a "feature" in some operating systems such as Ultrix 4.3 and
-**  HPUX 8.0, if you receive a "No route to host" message (ICMP message
-**  ICMP_UNREACH_HOST) on _any_ connection, all connections to that host
-**  are closed.  Some firewalls return this error if you try to connect
-**  to the IDENT port (113), so you can't receive email from these hosts
-**  on these systems.  The firewall really should use a more specific
-**  message such as ICMP_UNREACH_PROTOCOL or _PORT or _NET_PROHIB.  This
-**  will get #undefed below as needed.
-*/
-
-#ifndef IDENTPROTO
-# define IDENTPROTO	1	/* use IDENT proto (RFC 1413) */
-#endif
-
-/*
 **  Most systems have symbolic links today, so default them on.  You
 **  can turn them off by #undef'ing this below.
 */
@@ -125,7 +110,9 @@
 # define setreuid(r, e)		setresuid(r, e, -1)	
 # define LA_TYPE	LA_FLOAT
 # define _PATH_UNIX	"/hp-ux"
-# undef IDENTPROTO		/* TCP/IP implementation is broken */
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 # endif
 
 
@@ -229,7 +216,9 @@ extern char		*getenv();
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has Posix setsid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# undef IDENTPROTO		/* TCP/IP implementation is broken */
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 # undef SETPROCTITLE
 
 /* these include files must be included early on DG/UX */
@@ -261,7 +250,9 @@ extern long	dgux_inet_addr();
 #  define LA_TYPE	LA_INT
 #  define LA_AVENRUN	"avenrun"
 # endif
-# undef IDENTPROTO		/* TCP/IP implementation is broken */
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 #endif
 
 
@@ -396,7 +387,9 @@ typedef int		pid_t;
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
-# undef IDENTPROTO		/* TCP/IP implementation is broken */
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 # undef WEXITSTATUS
 # undef WIFEXITED
 typedef short		pid_t;
@@ -446,7 +439,9 @@ extern int		errno;
 # define HASSETSID	1	/* has POSIX setsid(2) call */
 # define NEEDGETOPT	1	/* need replacement for getopt(3) */
 # define LA_TYPE	LA_FLOAT
-# undef IDENTPROTO
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 #endif
 
 
@@ -539,7 +534,9 @@ extern void		*malloc();
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define SIGFUNC_DEFINED	/* sigfunc_t already defined */
-# undef IDENTPROTO		/* TCP/IP implementation is broken */
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 # define FORK		fork
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
@@ -685,6 +682,21 @@ typedef int		pid_t;
 
 #ifdef titan
 # undef HASINITGROUPS		/* doesn't have initgroups(3) call */
+#endif
+
+/*
+**  Due to a "feature" in some operating systems such as Ultrix 4.3 and
+**  HPUX 8.0, if you receive a "No route to host" message (ICMP message
+**  ICMP_UNREACH_HOST) on _any_ connection, all connections to that host
+**  are closed.  Some firewalls return this error if you try to connect
+**  to the IDENT port (113), so you can't receive email from these hosts
+**  on these systems.  The firewall really should use a more specific
+**  message such as ICMP_UNREACH_PROTOCOL or _PORT or _NET_PROHIB.  If
+**  not explicitly set to zero above, default it on.
+*/
+
+#ifndef IDENTPROTO
+# define IDENTPROTO	1	/* use IDENT proto (RFC 1413) */
 #endif
 
 
@@ -861,7 +873,3 @@ typedef void		(*sigfunc_t) __P((int));
 # ifndef FORK
 # define FORK		vfork		/* function to call to fork mailer */
 # endif
-
-#ifndef IDENTPROTO
-# define IDENTPROTO	0		/* don't use RFC 1413 */
-#endif
