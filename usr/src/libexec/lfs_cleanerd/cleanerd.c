@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -211,17 +211,21 @@ clean_fs(fsp, cost_func)
 	}
 	i = choose_segments(fsp, segs, cost_func);
 #ifdef VERBOSE
-	printf("clean_fs: cleaning %d segments in file system %s\n",
+	printf("clean_fs: found %d segments to clean in file system %s\n",
 		i, fsp->fi_statfsp->f_mntonname);
 	fflush(stdout);
 #endif
 	if (i)
-		for (i = MIN(i, NUM_TO_CLEAN(fsp)), sp = segs; i-- ; ++sp)
+		for (i = MIN(i, NUM_TO_CLEAN(fsp)), sp = segs; i-- ; ++sp) {
 			if (clean_segment(fsp, sp->sl_id) < 0)
 				perror("clean_segment failed");
 			else if (lfs_segclean (fsp->fi_statfsp->f_fsid,
 			    sp->sl_id) < 0)
 				perror("lfs_segclean failed");
+#ifdef VERBOSE
+			printf("Completed cleaning segment %d\n", sp->sl_id);
+#endif
+		}
 	free(segs);
 }
 
@@ -361,7 +365,7 @@ clean_segment(fsp, id)
 	if (num_blocks > 0)
 		if (lfs_markv(fsp->fi_statfsp->f_fsid, block_array, num_blocks)
 		    < 0 ) {
-			err(0, "clean_segment: lfs_bmapv failed");
+			err(0, "clean_segment: lfs_markv failed");
 			return (-1);
 		}
 	free(block_array);
