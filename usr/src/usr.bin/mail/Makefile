@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	1.5 %G%";
+# Sccs Id = "@(#)Makefile	1.6 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -16,7 +16,7 @@ RM=-rm
 OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o edit.o fio.o \
 	getname.o head.o v7.local.o lock.o optim.o names.o lex.o list.o main.o \
 	quit.o send.o strings.o temp.o tty.o vars.o version.o \
-	errlst.o str.o
+	errlst.o str.o npopen.o
 
 SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c optim.c names.c lex.c list.c main.c \
@@ -33,6 +33,7 @@ S = $(SRCS) $(HDRS)
 	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
 	${CC} -c ${CFLAGS} x.c 
 	mv x.o $*.o
+	@$(RM) -f x.c
 
 Mail:	$S $(OBJS) tags
 	$(RM) -f Mail
@@ -49,6 +50,8 @@ install:
 
 $S:
 	sccs get $@
+
+srcs:	$S
 
 tags:
 	${CTAGS} *.c;
@@ -71,20 +74,15 @@ str.o: strings
 	$(XSTR)
 	$(CC) -R -c xs.c
 	mv xs.o str.o
+	$(RM) xs.c
 
 cmdtab.o: cmdtab.c
-	$(CC) -S $(CFLAGS) cmdtab.c
-	$(ED) - <:rofix cmdtab.s
-	$(AS) -o cmdtab.o cmdtab.s
-	$(RM) cmdtab.s
+	$(CC) -R -c $(CFLAGS) cmdtab.c
 
 errlst.o: errlst.c
 	${CC} -E ${CFLAGS} errlst.c | ${XSTR} -c -
-	${CC} ${CFLAGS} -S x.c
-	${ED} - <:rofix x.s
-	${AS} -o errlst.o x.s
-	${RM} x.s
-	${RM} x.c
+	${CC} ${CFLAGS} -R x.c
+	mv x.o errlst.o
 
 #
 # Make the version file.  /tmp is always changing.
