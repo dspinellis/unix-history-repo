@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.72 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.73 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.72 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.73 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1495,7 +1495,7 @@ printqueue()
 	{
 		struct stat st;
 		auto time_t submittime = 0;
-		long dfsize = -1;
+		long dfsize;
 		int flags = 0;
 		int qfver;
 		char message[MAXLINE];
@@ -1509,6 +1509,11 @@ printqueue()
 			errno = 0;
 			continue;
 		}
+		w->w_name[0] = 'd';
+		if (stat(w->w_name, &st) >= 0)
+			dfsize = st.st_size;
+		else
+			dfsize = -1;
 		if (w->w_lock)
 			printf("*");
 		else if (shouldqueue(w->w_pri, w->w_ctime))
@@ -1587,11 +1592,6 @@ printqueue()
 
 			  case 'T':	/* creation time */
 				submittime = atol(&buf[1]);
-				break;
-
-			  case 'D':	/* data file name */
-				if (stat(&buf[1], &st) >= 0)
-					dfsize = st.st_size;
 				break;
 
 			  case 'F':	/* flag bits */
