@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mscp.c	7.1 (Berkeley) %G%
+ *	@(#)mscp.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -458,7 +458,8 @@ Emulex SC41/MS screwup: %s%d, got %d correct, then changed 0x%x to 0x%x\n",
 
 			case MSCP_FAILED:	/* no luck */
 				diskerr(bp, drivename, "hard error",
-				    LOG_PRINTF, -1, &md->md_lab[ui->ui_unit]);
+				    LOG_PRINTF, -1, md->md_lab ?
+				    &md->md_lab[ui->ui_unit] : md->md_lab);
 				mscp_printevent(mp);
 				bp->b_flags |= B_ERROR;
 				bp->b_error = EIO;
