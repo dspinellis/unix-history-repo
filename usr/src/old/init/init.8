@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)init.8	4.1 (Berkeley) %G%
+.\"	@(#)init.8	5.1 (Berkeley) %G%
 .\"
-.TH INIT 8 4/1/81
+.TH INIT 8 4/1/83
 .UC 4
 .SH NAME
 init \- process control initialization
@@ -152,7 +152,12 @@ is hung and could not be killed when the system was shutting down.
 This is usually caused by a process
 which is stuck in a device driver due to a persistent device error condition.
 .SH FILES
-/dev/console, /dev/tty?, /etc/utmp, /usr/adm/wtmp, /etc/ttys, /etc/rc
+/dev/console,
+/dev/tty*,
+/etc/utmp,
+/usr/adm/wtmp,
+/etc/ttys,
+/etc/rc
 .SH "SEE ALSO"
-login(1), kill(1), sh(1), ttys(5), crash(8), getty(8), rc(8), reboot(8),
+login(1), kill(1), sh(1), ttys(5), crash(8V), getty(8), rc(8), reboot(8),
 halt(8), shutdown(8)
