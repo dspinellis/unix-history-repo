@@ -1,0 +1,8 @@
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c cmds.c
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c cmdtab.c
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c partab.c
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c tip.c
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c tipout.c
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c value.c
+cc -I../include -DDEFBR=1200 -DDEFFS=BUFSIZ -DPRISTINE -c vars.c
+cc -o tip  cmds.o cmdtab.o partab.o tip.o tipout.o value.o vars.o  ../libc/libc.a
