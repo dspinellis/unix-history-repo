@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -67,7 +67,7 @@ __bt_split(t, sp, key, data, flags, ilen, skip)
 	DBT a, b;
 	EPGNO *parent;
 	PAGE *h, *l, *r, *lchild, *rchild;
-	index_t nxtindex;
+	indx_t nxtindex;
 	size_t n, nbytes, nksize;
 	int nosplit;
 	char *dest;
@@ -188,7 +188,7 @@ __bt_split(t, sp, key, data, flags, ilen, skip)
 		}
 
 		/* Split the parent page if necessary or shift the indices. */
-		if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+		if (h->upper - h->lower < nbytes + sizeof(indx_t)) {
 			sp = h;
 			h = h->pgno == P_ROOT ?
 			    bt_root(t, h, &l, &r, &skip, nbytes) :
@@ -198,8 +198,8 @@ __bt_split(t, sp, key, data, flags, ilen, skip)
 		} else {
 			if (skip < (nxtindex = NEXTINDEX(h)))
 				bcopy(h->linp + skip, h->linp + skip + 1,
-				    (nxtindex - skip) * sizeof(index_t));
-			h->lower += sizeof(index_t);
+				    (nxtindex - skip) * sizeof(indx_t));
+			h->lower += sizeof(indx_t);
 			nosplit = 1;
 		}
 
@@ -334,7 +334,7 @@ bt_page(t, h, lp, rp, skip, ilen)
 		++bt_sortsplit;
 #endif
 		h->nextpg = r->pgno;
-		r->lower = BTDATAOFF + sizeof(index_t);
+		r->lower = BTDATAOFF + sizeof(indx_t);
 		*skip = 0;
 		*lp = h;
 		*rp = r;
@@ -463,7 +463,7 @@ bt_rroot(t, h, l, r)
 	WR_RINTERNAL(dest,
 	    r->flags & P_RLEAF ? NEXTINDEX(r) : rec_total(r), r->pgno);
 
-	h->lower = BTDATAOFF + 2 * sizeof(index_t);
+	h->lower = BTDATAOFF + 2 * sizeof(indx_t);
 
 	/* Unpin the root page, set to recno internal page. */
 	h->flags &= ~P_TYPE;
@@ -538,7 +538,7 @@ bt_broot(t, h, l, r)
 	}
 
 	/* There are two keys on the page. */
-	h->lower = BTDATAOFF + 2 * sizeof(index_t);
+	h->lower = BTDATAOFF + 2 * sizeof(indx_t);
 
 	/* Unpin the root page, set to btree internal page. */
 	h->flags &= ~P_TYPE;
@@ -574,7 +574,7 @@ bt_psplit(t, h, l, r, pskip, ilen)
 	RLEAF *rl;
 	EPGNO *c;
 	PAGE *rval;
-	index_t full, half, skip, used;
+	indx_t full, half, skip, used;
 	size_t nbytes;
 	void *src;
 	int bigkeycnt, isbigkey, nxt, off, top;
@@ -652,7 +652,7 @@ bt_psplit(t, h, l, r, pskip, ilen)
 	 * Off is the last offset that's valid for the left page.
 	 * Nxt is the first offset to be placed on the right page.
 	 */
-	l->lower += (off + 1) * sizeof(index_t);
+	l->lower += (off + 1) * sizeof(indx_t);
 
 	/*
 	 * If splitting the page that the cursor was on, the cursor has to be
@@ -718,11 +718,11 @@ bt_psplit(t, h, l, r, pskip, ilen)
 		r->linp[off] = r->upper -= nbytes;
 		bcopy(src, (char *)r + r->upper, nbytes);
 	}
-	r->lower += off * sizeof(index_t);
+	r->lower += off * sizeof(indx_t);
 
 	/* If the key is being appended to the page, adjust the index. */
 	if (skip == top)
-		r->lower += sizeof(index_t);
+		r->lower += sizeof(indx_t);
 
 	return (rval);
 }
@@ -775,7 +775,7 @@ rec_total(h)
 	PAGE *h;
 {
 	recno_t recs;
-	index_t nxt, top;
+	indx_t nxt, top;
 
 	for (recs = 0, nxt = 0, top = NEXTINDEX(h); nxt < top; ++nxt)
 		recs += GETRINTERNAL(h, nxt)->nrecs;

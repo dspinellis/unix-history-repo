@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.25 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -86,13 +86,13 @@ __bt_open(fname, flags, mode, openinfo)
 			goto einval;
 
 		/*
-		 * Page size must be index_t aligned and >= MINPSIZE.  Default
+		 * Page size must be indx_t aligned and >= MINPSIZE.  Default
 		 * page size is set farther on, based on the underlying file
 		 * transfer size.
 		 */
 		if (b.psize &&
 		    (b.psize < MINPSIZE || b.psize > MAX_PAGE_OFFSET ||
-		    b.psize & sizeof(index_t) - 1))
+		    b.psize & sizeof(indx_t) - 1))
 			goto einval;
 
 		/* Minimum number of keys per page; absolute minimum is 2. */
@@ -210,7 +210,7 @@ __bt_open(fname, flags, mode, openinfo)
 		if (m.m_magic != BTREEMAGIC || m.m_version != BTREEVERSION)
 			goto eftype;
 		if (m.m_psize < MINPSIZE || m.m_psize > MAX_PAGE_OFFSET ||
-		    m.m_psize & sizeof(index_t) - 1)
+		    m.m_psize & sizeof(indx_t) - 1)
 			goto eftype;
 		if (m.m_flags & ~SAVEMETA)
 			goto eftype;
@@ -262,10 +262,10 @@ __bt_open(fname, flags, mode, openinfo)
 	 * pages.
 	 */
 	t->bt_ovflsize = (t->bt_psize - BTDATAOFF) / b.minkeypage -
-	    (sizeof(index_t) + NBLEAFDBT(0, 0));
-	if (t->bt_ovflsize < NBLEAFDBT(NOVFLSIZE, NOVFLSIZE) + sizeof(index_t))
+	    (sizeof(indx_t) + NBLEAFDBT(0, 0));
+	if (t->bt_ovflsize < NBLEAFDBT(NOVFLSIZE, NOVFLSIZE) + sizeof(indx_t))
 		t->bt_ovflsize =
-		    NBLEAFDBT(NOVFLSIZE, NOVFLSIZE) + sizeof(index_t);
+		    NBLEAFDBT(NOVFLSIZE, NOVFLSIZE) + sizeof(indx_t);
 
 	/* Initialize the buffer pool. */
 	if ((t->bt_mp =

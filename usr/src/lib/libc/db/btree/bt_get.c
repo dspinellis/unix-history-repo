@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_get.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_get.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -97,7 +97,7 @@ __bt_first(t, key, exactp)
 	register EPG *e;
 	EPG save;
 	pgno_t cpgno, pg;
-	index_t cindex;
+	indx_t cindex;
 	int found;
 
 	/*

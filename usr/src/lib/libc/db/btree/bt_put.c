@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -48,7 +48,7 @@ __bt_put(dbp, key, data, flags)
 	DBT tkey, tdata;
 	EPG *e;
 	PAGE *h;
-	index_t index, nxtindex;
+	indx_t index, nxtindex;
 	pgno_t pg;
 	size_t nbytes;
 	int dflags, exact, status;
@@ -170,7 +170,7 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 	 * into the offset array, shift the pointers up.
 	 */
 	nbytes = NBLEAFDBT(key->size, data->size);
-	if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+	if (h->upper - h->lower < nbytes + sizeof(indx_t)) {
 		if ((status = __bt_split(t, h, key,
 		    data, dflags, nbytes, index)) != RET_SUCCESS)
 			return (status);
@@ -179,8 +179,8 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 
 	if (index < (nxtindex = NEXTINDEX(h)))
 		bcopy(h->linp + index, h->linp + index + 1,
-		    (nxtindex - index) * sizeof(index_t));
-	h->lower += sizeof(index_t);
+		    (nxtindex - index) * sizeof(indx_t));
+	h->lower += sizeof(indx_t);
 
 	h->linp[index] = h->upper -= nbytes;
 	dest = (char *)h + h->upper;
@@ -249,7 +249,7 @@ bt_fast(t, key, data, exactp)
 	 * to search to get split stack.
 	 */
 	nbytes = NBLEAFDBT(key->size, data->size);
-	if (h->upper - h->lower < nbytes + sizeof(index_t))
+	if (h->upper - h->lower < nbytes + sizeof(indx_t))
 		goto miss;
 
 	if (t->bt_order == FORWARD) {

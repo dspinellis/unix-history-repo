@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_search.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_search.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ __bt_search(t, key, exactp)
 	const DBT *key;
 	int *exactp;
 {
-	register index_t index;
+	register indx_t index;
 	register int base, cmp, lim;
 	register PAGE *h;
 	pgno_t pg;
