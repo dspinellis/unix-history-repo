@@ -1,4 +1,4 @@
-/*	machdep.c	1.11	87/02/21	*/
+/*	machdep.c	1.12	87/02/26	*/
 
 #include "param.h"
 #include "systm.h"
@@ -230,6 +230,11 @@ startup(firstaddr)
 	intenable = 1;		/* Enable interrupts from now on */
 
 	/*
+	 * Set up CPU-specific registers, cache, etc.
+	 */
+	initcpu();
+
+	/*
 	 * Set up buffers, so they can be used to read disk labels.
 	 */
 	bhinit();
@@ -403,8 +408,8 @@ osigcleanup()
 
 int	waittime = -1;
 
-boot(paniced, arghowto)
-	int paniced, arghowto;
+boot(arghowto)
+	int arghowto;
 {
 	register long dummy;		/* r12 is reserved */
 	register int howto;		/* r11 == how to boot */
@@ -449,17 +454,17 @@ boot(paniced, arghowto)
 	}
 	mtpr(IPL, 0x1f);			/* extreme priority */
 	devtype = major(rootdev);
+	*(int *)CPBFLG = howto;
 	if (howto&RB_HALT) {
 		printf("halting (in tight loop); hit ~h\n\n");
 		mtpr(IPL, 0x1f);
 		for (;;)
 			;
 	} else {
-		if (paniced == RB_PANIC) {
+		if (howto & RB_DUMP) {
 			doadump();		/* TXDB_BOOT's itsself */
 			/*NOTREACHED*/
 		}
-		*(int *)CPBFLG = howto;
 		tocons(CPBOOT);
 	}
 	for (;;)
@@ -635,6 +640,20 @@ physstrat(bp, strat, prio)
 	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, prio);
 	splx(s);
+}
+
+initcpu()
+{
+	register struct proc *p;
+
+	p = &proc[0];
+#ifndef lint
+#define	initkey(which, p, index) \
+    which/**/_cache[index] = 1, which/**/_cnt[index] = 1; \
+    p->p_/**/which = index;
+	initkey(ckey, p, MAXCKEY);
+	initkey(dkey, p, MAXDKEY);
+#endif
 }
 
 /*
