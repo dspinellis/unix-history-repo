@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)idp_usrreq.c	7.6 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -528,7 +528,7 @@ idp_raw_usrreq(so, req, m, nam, rights)
 
 	case PRU_ATTACH:
 
-		if (!suser() || (nsp != NULL)) {
+		if (suser(u.u_cred, &u.u_acflag) || (nsp != NULL)) {
 			error = EINVAL;
 			break;
 		}

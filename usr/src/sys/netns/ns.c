@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns.c	7.4 (Berkeley) %G%
+ *	@(#)ns.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ ns_control(so, cmd, data, ifp)
 	struct ifaddr *ifa;
 	struct ns_ifaddr *oia;
 	struct mbuf *m;
-	int dstIsNew, hostIsNew;
+	int error, dstIsNew, hostIsNew;
 
 	/*
 	 * Find address for this interface, if it exists.
@@ -94,8 +94,8 @@ ns_control(so, cmd, data, ifp)
 		return (0);
 	}
 
-	if (!suser())
-		return (u.u_error);
+	if (error = suser(u.u_cred, &u.u_acflag))
+		return (error);
 
 	switch (cmd) {
 	case SIOCAIFADDR:
