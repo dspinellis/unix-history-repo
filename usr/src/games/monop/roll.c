@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)roll.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)roll.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)roll.c	5.1 (Berkeley) %G%";
 
 # define	reg	register
 
-# ifndef vax
+# if !defined(vax) && !defined(tahoe)
 # define	MAXRAND	32767L
 
 roll(ndie, nsides)
