@@ -1,11 +1,12 @@
 # include <signal.h>
 # include <pwd.h>
+# define  _DEFINE
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.34	%G%";
+static char	SccsId[] = "@(#)main.c	3.35	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -100,36 +101,9 @@ static char	SccsId[] = "@(#)main.c	3.34	%G%";
 
 
 
-int	ArpaMode;	/* specifies the ARPANET mode */
-bool	FromFlag;	/* from person is explicitly specified */
-bool	MailBack;	/* mail back response on error */
-bool	BerkNet;	/* called from BerkNet */
-bool	WriteBack;	/* write back response on error */
-bool	HasXscrpt;	/* if set, the transcript file exists */
-bool	NoAlias;	/* don't do aliasing */
-bool	ForceMail;	/* mail even if already sent a copy */
-bool	MeToo;		/* send to the sender also if in a group expansion */
-bool	SaveFrom;	/* save From lines on the front of messages */
-bool	IgnrDot;	/* if set, ignore dot when collecting mail */
-bool	SuprErrs;	/* supress errors if set */
-bool	Verbose;	/* set if blow-by-blow desired */
-bool	GrabTo;		/* if set, read recipient addresses from msg */
-bool	DontSend;	/* mark recipients as QDONTSEND */
-bool	NoReturn;	/* don't return content of letter to sender */
-int	OldUmask;	/* umask when called */
-int	Debug;		/* debug level */
-int	Errors;		/* count of errors */
-int	AliasLevel;	/* current depth of aliasing */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
-ADDRESS	From;		/* the from person */
-char	*To;		/* the target person */
-int	HopCount;	/* hop count */
-int	ExitStat;	/* the exit status byte */
-HDR	*Header;	/* header list */
-long	CurTime;	/* current time */
-int	NextMailer = 0;	/* "free" index into Mailer struct */
-struct mailer	*Mailer[MAXMAILERS+1];	/* definition of mailers */
+int	NextMailer = 0;		/* "free" index into Mailer struct */
 
 
 
