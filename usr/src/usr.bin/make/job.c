@@ -34,6 +34,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00039
+ * --------------------         -----   ----------------------
+ *
+ * 10 Aug 92    David Dawes             Fixed "remove directory" bug
  */
 
 #ifndef lint
@@ -2469,8 +2476,13 @@ JobInterrupt (runINTERRUPT)
 	    char  	*file = (job->node->path == (char *)NULL ?
 				 job->node->name :
 				 job->node->path);
-	    if (unlink (file) == 0) {
-		Error ("*** %s removed", file);
+	    /* Don't unlink directories */		/* 10 Aug 92*/
+	    struct stat sbuf;
+	    stat (file, &sbuf);
+	    if (!(sbuf.st_mode & S_IFDIR)) {
+		if (unlink (file) == 0) {
+		    Error ("*** %s removed", file);
+		}
 	    }
 	}
 #ifdef RMT_WANTS_SIGNALS
