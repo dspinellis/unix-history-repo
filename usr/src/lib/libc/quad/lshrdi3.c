@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)lshrdi3.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lshrdi3.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "longlong.h"
@@ -27,7 +27,7 @@ __lshrdi3 (u, b1)
 
   uu.ll = u;
 
-  bm = (sizeof (int) * BITS_PER_UNIT) - b;
+  bm = (sizeof (int) * NBBY) - b;
   if (bm <= 0)
     {
       w.s.high = 0;
