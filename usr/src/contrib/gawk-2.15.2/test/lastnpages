@@ -1,0 +1,47 @@
+From nstn.ns.ca!news.cs.indiana.edu!news.nd.edu!spool.mu.edu!uunet!elroy.jpl.nasa.gov!swrinde!zaphod.mps.ohio-state.edu!uakari.primate.wisc.edu!dali.cs.montana.edu!milton!uw-beaver!fluke!ssc-vax!brennan Mon May  6 23:41:40 ADT 1991
+Article: 26492 of comp.unix.questions
+Path: cs.dal.ca!nstn.ns.ca!news.cs.indiana.edu!news.nd.edu!spool.mu.edu!uunet!elroy.jpl.nasa.gov!swrinde!zaphod.mps.ohio-state.edu!uakari.primate.wisc.edu!dali.cs.montana.edu!milton!uw-beaver!fluke!ssc-vax!brennan
+From: brennan@ssc-vax.UUCP (Michael D Brennan)
+Newsgroups: comp.unix.questions
+Subject: Re: How to print last <n> pages of a file
+Message-ID: <3948@ssc-bee.ssc-vax.UUCP>
+Date: 6 May 91 15:42:00 GMT
+Article-I.D.: ssc-bee.3948
+Organization: Boeing Aerospace & Electronics, Seattle WA
+Lines: 33
+
+
+The following shell & (new) awk program prints the last n pages.
+
+If you get more than 65 lines to a page, the program that inserts
+the ^L's should be fixed.
+
+-------------------------------------------------------------
+#!/bin/sh
+# usage: lastpages   --  prints 1 page reads stdin
+#        lastpages  n -- prints  n pages reads stdin
+#        lastpages  n  files -- prints n pages, reads file list
+
+program='BEGIN{RS = ORS = "\f" }
+
+
+{ page[NR] = $0 
+  if ( NR > numpages )  delete  page[NR-numpages]
+}
+
+END { 
+  i = NR - numpages + 1
+  if ( i <= 0 ) i = 1
+
+  while( i <= NR )  print page[i++]
+}'
+
+
+case $# in 
+0)  awk "$program" numpages=1 - ;;
+1)  awk "$program" numpages=$1 - ;;
+*)  pages=$1 ; shift
+    awk "$program" numpages=$pages  $* ;;
+esac
+
+
