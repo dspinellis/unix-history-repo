@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)bpf.4	8.2 (Berkeley) %G%
+.\"	@(#)bpf.4	8.3 (Berkeley) %G%
 .\"
 .TH BPF 4 ""
 .UC 7
@@ -647,7 +647,8 @@ struct bpf_insn insns[] = {
 tcpdump(1)
 .LP
 McCanne, S., Jacobson V.,
-.RI ` "An efficient, extensible, and portable network monitor" '
+.IR "The BSD Packet Filter: A New Architecture for User-level Packet Capture" ,
+Proceedings of the 1993 Winter USENIX Technical Conference, pp 259\-269.
 .SH FILES
 /dev/bpf0, /dev/bpf1, ...
 .SH BUGS
