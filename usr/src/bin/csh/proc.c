@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.5 (Berkeley) 81/04/05";
+static	char *sccsid = "@(#)proc.c	4.6 (Berkeley) 81/05/03";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -128,8 +128,11 @@ found:
 #endif
 			    !eq(dcwd->di_name, fp->p_cwd->di_name)) {
 				;	/* print in pjwait */
-			} else if ((jobflags & (PTIME|PSTOPPED)) == PTIME)
+			}
+/*
+		else if ((jobflags & (PTIME|PSTOPPED)) == PTIME)
 				ptprint(fp);
+*/
 		} else {
 			if (jobflags&PNOTIFY || adrof("notify")) {
 				printf("\215\n");
