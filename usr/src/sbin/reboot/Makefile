@@ -1,17 +1,10 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	reboot
-NOMAN=	noman
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
+MAN8=	reboot_${MACHINE}.0
+MANSUBDIR=/${MACHINE}
+MLINKS=	reboot_${MACHINE}.8 reboot.8
 
-all: vax.reboot.0 tahoe.reboot.0
-
-beforeinstall:
-	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE} vax.reboot.0 \
-	    ${DESTDIR}${MANDIR}8/vax
-	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE} tahoe.reboot.0 \
-	    ${DESTDIR}${MANDIR}8/tahoe
-
-.include <bsd.own.mk>
 .include <bsd.prog.mk>
