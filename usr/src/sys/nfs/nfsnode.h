@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.29 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.30 (Berkeley) %G%
  */
 
 /*
@@ -87,6 +87,7 @@ int	nfsspec_close __P((struct vop_close_args *));
 int	nfsfifo_close __P((struct vop_close_args *));
 #endif
 int	nfs_access __P((struct vop_access_args *));
+int	nfsspec_access __P((struct vop_access_args *));
 int	nfs_getattr __P((struct vop_getattr_args *));
 int	nfs_setattr __P((struct vop_setattr_args *));
 int	nfs_read __P((struct vop_read_args *));
