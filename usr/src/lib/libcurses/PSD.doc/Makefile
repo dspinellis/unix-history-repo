@@ -3,13 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.1 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 #	makefile for screen package documentation
 #
 NROFF=	nroff
 TROFF=	vtroff
-#	VFONT=	vfontedpr
+VFONT=	/usr/lib/vfontedpr
 NFLAGS=	-Tcrt
 TFLAGS=
 CFLAGS=	-O -n -s
@@ -25,8 +25,8 @@ CSOURCE=win_st.gr twinkle1.gr twinkle2.gr life.gr
 SOURCE=	macros appen.A.tbl appen.B appen.C disclaim intro.0 intro.1 \
 	intro.2.tbl intro.3 intro.4 intro.5
 
-.SUFFIXES:
-.SUFFIXES: .c .gr
+#.SUFFIXES:
+#.SUFFIXES: .c .gr
 
 #
 # this section formats C input source into nice troffable (or nroffable)
@@ -37,8 +37,9 @@ SOURCE=	macros appen.A.tbl appen.B appen.C disclaim intro.0 intro.1 \
 Curses.doc: ${VFONT} Master macros ${SOURCE}
 	${NROFF} -me ${NFLAGS} Master > Curses.doc
 
-.c.gr:
-	${VFONT} $*.c > $*.gr
+# Don't re-run vgrind unless you want to patch the output files.
+#.c.gr:
+#	${VFONT} $*.c > $*.gr
 
 ${CSOURCE}: ${VFONT}
 troff: Master macros ${SOURCE}
