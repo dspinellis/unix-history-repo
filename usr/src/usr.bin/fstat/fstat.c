@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-char sccsid[] = "@(#)fstat.c	5.23 (Berkeley) %G%";
+char sccsid[] = "@(#)fstat.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -296,6 +296,7 @@ vtrans(vp, i)
 	char *fstype;
 	char *getmnton(), *vtype();
 	int nodata = 0;
+	extern char *devname();
 
 	if (kvm_read((off_t)vp, &vn, sizeof (struct vnode)) != 
 	    sizeof (struct vnode)) {
@@ -357,17 +358,16 @@ vtrans(vp, i)
 	printf(" %6d %3s", fst.fileid, vtype(vn.v_type));
 	switch (vn.v_type) {
 	case VBLK:
-		if (nflg)
+	case VCHR: {
+		char *name;
+
+		if (nflg || ((name = devname(fst.rdev, vn.v_type == VCHR ? 
+		    S_IFCHR : S_IFBLK)) == NULL))
 			printf("  %2d,%-2d", major(fst.rdev), minor(fst.rdev));
 		else
-			printf(" %-6s", devname(fst.rdev, 0));
+			printf(" %6s", name);
 		break;
-	case VCHR:
-		if (nflg)
-			printf("  %2d/%-2d", major(fst.rdev), minor(fst.rdev));
-		else
-			printf(" %-6s", devname(fst.rdev, 1));
-		break;
+	}
 	default:
 		printf(" %6d", fst.size);
 	}
@@ -397,7 +397,7 @@ nfs_filestat(vp, fsp)
 
 	fsp->fsid = np->n_vattr.va_fsid;
 	fsp->fileid = np->n_vattr.va_fileid;
-	fsp->size = np->n_vattr.va_size;
+	fsp->size = np->n_size;
 	fsp->rdev = np->n_vattr.va_rdev;
 }
 
