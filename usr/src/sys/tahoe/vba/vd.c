@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)vd.c	7.2 (Berkeley) %G%
+ *	@(#)vd.c	7.3 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -851,9 +851,10 @@ vdharderr(what, vd, bp, dcb)
 
 	if (vd->vd_wticks < VDMAXTIME)
 		status &= ~DONTCARE;
-	blkdone = ((((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk)
-	    * lp->d_nsectors + dcb->err_sec) >> dksoftc[unit].dk_bshift)
-	    - lp->d_partitions[vdpart(bp->b_dev)].p_offset - bp->b_blkno;
+	blkdone = ((((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk) *
+	    lp->d_nsectors + dcb->err_sec -
+	    lp->d_partitions[vdpart(bp->b_dev)].p_offset) >>
+	    dksoftc[unit].dk_bshift) - bp->b_blkno;
 	diskerr(bp, "dk", what, LOG_PRINTF, blkdone, lp);
 	printf(", status %b", status, VDERRBITS);
 	if (vd->vd_type == VDTYPE_SMDE)
@@ -869,9 +870,10 @@ vdsofterr(bp, dcb)
 	int status = dcb->operrsta;
 	int blkdone;
 
-	blkdone = ((((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk)
-	    * lp->d_nsectors + dcb->err_sec) >> dksoftc[unit].dk_bshift)
-	    - lp->d_partitions[vdpart(bp->b_dev)].p_offset - bp->b_blkno;
+	blkdone = ((((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk) *
+	    lp->d_nsectors + dcb->err_sec -
+	    lp->d_partitions[vdpart(bp->b_dev)].p_offset) >>
+	    dksoftc[unit].dk_bshift) - bp->b_blkno;
 
 	if (status != (DCBS_CCD|DCBS_SOFT|DCBS_ERR|DCBS_DONE)) {
 		diskerr(bp, "dk", "soft error", LOG_WARNING, blkdone, lp);
