@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.c	7.1 (Berkeley) %G%
+ *	@(#)ns_pcb.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -95,6 +95,7 @@ ns_pcbconnect(nsp, nam)
 {
 	struct ns_ifaddr *ia;
 	register struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
+	struct sockaddr_ns *ifaddr;
 	register struct ns_addr *dst;
 
 	if (nam->m_len != sizeof (*sns))
@@ -103,69 +104,56 @@ ns_pcbconnect(nsp, nam)
 		return (EAFNOSUPPORT);
 	if (sns->sns_port==0 || ns_nullhost(sns->sns_addr))
 		return (EADDRNOTAVAIL);
-	if (ns_nullhost(nsp->nsp_laddr) &&
-	    (!ns_neteq(nsp->nsp_lastdst, sns->sns_addr))) {
+	if (ns_nullhost(nsp->nsp_laddr)) {
 		register struct route *ro;
 		struct ifnet *ifp;
+		/* 
+		 * If route is known or can be allocated now,
+		 * our src addr is taken from the i/f, else punt.
+		 */
 		ro = &nsp->nsp_route;
 		dst = &satons_addr(ro->ro_dst);
 
-		ia = ns_iaonnetof(&sns->sns_addr);
-		if (ia == 0 ||
-			(ia->ia_ifp->if_flags & IFF_UP) == 0) {
-			/* 
-			 * If route is known or can be allocated now,
-			 * our src addr is taken from the i/f, else punt.
-			 */
-			if (ro->ro_rt &&
-				!ns_hosteq(*dst, sns->sns_addr)) {
+		ia = (struct ns_ifaddr *)0;
+		if (ro->ro_rt) {
+		    if ((!ns_neteq(nsp->nsp_lastdst, sns->sns_addr)) ||
+			((ifp = ro->ro_rt->rt_ifp) &&
+			 (ifp->if_flags & IFF_POINTOPOINT) &&
+			 (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr))) ||
+			(nsp->nsp_socket->so_options & SO_DONTROUTE)) {
 				RTFREE(ro->ro_rt);
 				ro->ro_rt = (struct rtentry *)0;
 			}
-			if ((ro->ro_rt == (struct rtentry *)0) ||
-			    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
-				/* No route yet, so try to acquire one */
-				ro->ro_dst.sa_family = AF_NS;
-				*dst = sns->sns_addr;
-				dst->x_port = 0;
-				rtalloc(ro);
-				if (ro->ro_rt == 0)
-					ifp = (struct ifnet *)0;
-				else
-					ifp = ro->ro_rt->rt_ifp;
-			}
-			if (ifp) {
-				for (ia = ns_ifaddr; ia; ia = ia->ia_next)
-					if (ia->ia_ifp == ifp)
-					    break;
-			}
+		}
+		if ((nsp->nsp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
+		    (ro->ro_rt == (struct rtentry *)0 ||
+		     ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
+			    /* No route yet, so try to acquire one */
+			    ro->ro_dst.sa_family = AF_NS;
+			    *dst = sns->sns_addr;
+			    dst->x_port = 0;
+			    rtalloc(ro);
+		}
+		/*
+		 * If we found a route, use the address
+		 * corresponding to the outgoing interface
+		 */
+		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp))
+			for (ia = ns_ifaddr; ia; ia = ia->ia_next)
+				if (ia->ia_ifp == ifp)
+					break;
+		if (ia == 0) {
+			u_short fport = sns->sns_addr.x_port;
+			sns->sns_addr.x_port = 0;
+			ia = (struct ns_ifaddr *)
+				ifa_ifwithdstaddr((struct sockaddr *)sns);
+			sns->sns_addr.x_port = fport;
+			if (ia == 0)
+				ia = ns_iaonnetof(&sns->sns_addr);
 			if (ia == 0)
 				ia = ns_ifaddr;
 			if (ia == 0)
 				return (EADDRNOTAVAIL);
-		} else if (ro->ro_rt) {
-			if (ns_neteq(*dst, sns->sns_addr)) {
-				/*
-				 * This assume that we have no GH
-				 * type routes.
-				 */
-				if (ro->ro_rt->rt_flags & RTF_HOST) {
-					if (!ns_hosteq(*dst, sns->sns_addr))
-						goto re_route;
-
-				}
-				if ((ro->ro_rt->rt_flags & RTF_GATEWAY) == 0) {
-					dst->x_host = sns->sns_addr.x_host;
-				}
-				/* 
-				 * Otherwise, we go through the same gateway
-				 * and dst is already set up.
-				 */
-			} else {
-			re_route:
-				RTFREE(ro->ro_rt);
-				ro->ro_rt = (struct rtentry *)0;
-			}
 		}
 		nsp->nsp_laddr.x_net = satons_addr(ia->ia_addr).x_net;
 		nsp->nsp_lastdst = sns->sns_addr;
