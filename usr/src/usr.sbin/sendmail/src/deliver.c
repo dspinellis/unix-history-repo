@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.74 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -100,6 +100,7 @@ sendall(e, mode)
 	if (e->e_hopcount > MaxHopCount)
 	{
 		errno = 0;
+		e->e_flags |= EF_FATALERRS|EF_PM_NOTIFY|EF_CLRQUEUE;
 		syserr("554 too many hops %d (%d max): from %s via %s, to %s",
 			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
 			RealHostName == NULL ? "localhost" : RealHostName,
@@ -1870,7 +1871,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 
 #  else		/* we have a very short log buffer size */
 
-	l = SYSLOG_BUFSIZE - 80;
+	l = SYSLOG_BUFSIZE - 85;
 	p = e->e_to;
 	while (strlen(p) >= l)
 	{
