@@ -1,4 +1,4 @@
-/*	rk.c	4.2	%G%	*/
+/*	rk.c	4.3	%G%	*/
 
 #include "rk.h"
 #if NRK > 0
@@ -174,10 +174,10 @@ rkstart()
 		com |= RCOM; else
 		com |= WCOM;
 	rkaddr->rkcs1 = com;
-	dk_busy |= 1<<DK_N;
-	dk_xfer[DK_N] += 1;
+	dk_busy |= 1<<RKDK_N;
+	dk_xfer[RKDK_N] += 1;
 	com = bp->b_bcount>>6;
-	dk_wds[DK_N] += com;
+	dk_wds[RKDK_N] += com;
 }
 
 rkintr()
@@ -189,7 +189,7 @@ rkintr()
 
 	if (rktab.b_active == NULL)
 		return;
-	dk_busy &= ~(1<<DK_N);
+	dk_busy &= ~(1<<RKDK_N);
 	bp = rktab.b_actf;
 	rktab.b_active = NULL;
 	if (rkaddr->rkcs1 < 0) {		/* error bit */
