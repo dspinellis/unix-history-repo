@@ -1,4 +1,4 @@
-/*	up.c	4.5	83/01/31	*/
+/*	up.c	4.6	83/02/16	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -62,7 +62,7 @@ upopen(io)
 	if (io->i_boff < 0 || io->i_boff > 7 || st->off[io->i_boff] == -1)
 		_stop("up bad unit");
 	upaddr = (struct updevice *)ubamem(unit, ubastd[0]);
-	while ((upaddr->upcs1 & UP_DVA) == 0) /* infinite wait */
+	while ((upaddr->upcs1 & UP_DVA) == 0)
 		;
 	if (up_gottype[unit] == 0) {
 		register int i;
@@ -124,23 +124,24 @@ upstrategy(io, func)
 	register struct st *st = &upst[up_type[unit]];
 
 	sectsiz = SECTSIZ;
-	if ((io->i_flgs & (F_HDR|F_CHECK)) != 0)
+	if (io->i_flgs & (F_HDR|F_HCHECK))
 		sectsiz += HDRSIZ;
-	io->i_errcnt = 0;
-	recal = 0;
 	upaddr->upcs2 = unit;
 	if ((upaddr->upds & UPDS_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_PRESET|UP_GO;
 		upaddr->upof = UPOF_FMT22;
 	}
-	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY)
+	if ((upaddr->upds & UPDS_DREADY) == 0)
 		_stop("up not ready");
 	info = ubasetup(io, 1);
 	upaddr->upwc = -io->i_cc / sizeof (short);
 	upaddr->upba = info;
+	recal = 0;
+	io->i_errcnt = 0;
+
 restart: 
-	bn = io->i_bn + (io->i_cc + upaddr->upwc*sizeof(short))/sectsiz;
+	bn = io->i_bn + (io->i_cc + upaddr->upwc * sizeof(short)) / sectsiz;
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
 	if (upstart(io, bn) != 0) {
@@ -150,21 +151,30 @@ restart:
 	do {
 		DELAY(25);
 	} while ((upaddr->upcs1 & UP_RDY) == 0);
-
-	if (((upaddr->upds&UPDS_ERR) | (upaddr->upcs1&UP_TRE)) == 0 ) {
+	/*
+	 * If transfer has completed, free UNIBUS
+	 * resources and return transfer size.
+	 */
+	if ((upaddr->upds&UPDS_ERR) == 0 && (upaddr->upcs1&UP_TRE) == 0) {
 		ubafree(io, info);
-		return(io->i_cc);
+		return (io->i_cc);
 	}
-
 #ifdef LOGALLERRS
 	printf("uper: (c,t,s)=(%d,%d,%d) cs2=%b er1=%b er2=%b wc=%x\n",
-			upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f-1),
-		    	upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
-			UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
+		upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f-1),
+	    	upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
+		UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
 #endif
 	waitdry = 0;
 	while ((upaddr->upds & UPDS_DRY) == 0 && ++waitdry < sectsiz)
 		DELAY(5);
+	if (upaddr->uper1&UPER1_WLE) {
+		/*
+		 * Give up on write locked devices immediately.
+		 */
+		printf("up%d: write locked\n", unit);
+		return (-1);
+	}
 	if (++io->i_errcnt > 27) {
 		/*
 		 * After 28 retries (16 without offset, and
@@ -174,63 +184,49 @@ restart:
 		if (upaddr->upcs2 & UPCS2_WCE)
 			io->i_error = EWCK;
 hard:
-		bn = io->i_bn + (io->i_cc + upaddr->upwc*sizeof(short))/sectsiz;
+		bn = io->i_bn +
+			(io->i_cc + upaddr->upwc * sizeof (short)) / sectsiz;
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
 		sn = sn%st->nsect;
-		printf("up error: (cyl,trk,sec)=(%d,%d,%d) cs2=%b er1=%b er2=%b\n",
-		    	cn, tn, sn,
-		    	upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
-			UPER1_BITS, upaddr->uper2, UPER2_BITS);
+		printf(
+		  "up error: (cyl,trk,sec)=(%d,%d,%d) cs2=%b er1=%b er2=%b\n",
+		   cn, tn, sn,
+		   upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
+		   UPER1_BITS, upaddr->uper2, UPER2_BITS);
 		upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		io->i_errblk = bn;
-		return (io->i_cc + upaddr->upwc*sizeof(short));
-	} else 
-		if (upaddr->uper1&UPER1_WLE) {
-			/*
-			 * Give up on write locked devices
-			 * immediately.
-			 */
-			printf("up%d: write locked\n", unit);
-			return(-1);
-		}
-#ifndef NOBADSECT
-	else if (upaddr->uper2 & UPER2_BSE) {
-		if (io->i_flgs & F_NBSF) {
-			io->i_error = EBSE;
-			goto hard;
-		}
-		if (upecc( io, BSE) == 0) 
+		return (io->i_cc + upaddr->upwc * sizeof(short));
+	}
+	if (upaddr->uper2 & UPER2_BSE) {
+		short wc = upaddr->upwc;
+		if ((io->i_flgs&F_NBSF) == 0 && upecc(io, BSE) == 0) {
+			if (wc != upaddr->upwc)
+				printf("wc %x upwc %x\n", wc, upaddr->upwc);
 			goto success;
-		else {
-			io->i_error = EBSE;
+		}
+		io->i_error = EBSE;
+		goto hard;
+	}
+	/*
+	 * Retriable error.
+	 * If a soft ecc, correct it 
+	 * Otherwise fall through and retry the transfer
+	 */
+	if (upaddr->uper1 & UPER1_DCK) {
+		/*
+		 * If a write check command is active, all
+		 * ecc errors give UPER1_ECH.
+		 */
+		if ((upaddr->uper1 & UPER1_ECH) == 0 || 
+		    (upaddr->upcs2 & UPCS2_WCE)) {
+			if (upecc(io, ECC) == 0)
+				goto success;
+			io->i_error = EECC;
 			goto hard;
 		}
-	}
-#endif
-	else {
-		/*
-		 * Retriable error.
-		 * If a soft ecc, correct it 
-		 * Otherwise fall through and retry the transfer
-		 */
-		if ((upaddr->uper1 & UPER1_DCK) != 0) {
-			/*
-			 * If a write check command is active, all
-			 * ecc errors give UPER1_ECH.
-			 */
-			if (((upaddr->uper1 & UPER1_ECH) == 0 )|| 
-			    ((upaddr->upcs2 & UPCS2_WCE) != 0 )) {
-				if (upecc(io, ECC) == 0)
-					goto success;
-				else {
-					io->i_error = EECC;
-					goto hard;
-				}
-			}
-		} 
-	}
+	} 
 	/*
 	 * Clear drive error and, every eight attempts,
 	 * (starting with the fourth)
@@ -255,7 +251,7 @@ hard:
 	case 1:
 		upaddr->updc = cn;
 		upaddr->upcs1 = UP_SEEK|UP_GO;
-		recal++;
+		recal = 2;
 		goto restart;
 
 	case 2:
@@ -263,7 +259,7 @@ hard:
 			goto donerecal;
 		upaddr->upof = up_offset[io->i_errcnt & 017] | UPOF_FMT22;
 		upaddr->upcs1 = UP_OFFSET|UP_GO;
-		recal++;
+		recal = 3;
 		goto restart;
 
 	donerecal:
@@ -282,6 +278,7 @@ hard:
 			DELAY(25);
 	}
 	goto restart;
+
 success:
 	if (upaddr->upwc != 0)
 		goto restart;
@@ -330,6 +327,7 @@ upecc(io, flag)
 	 */
 	if (flag == ECC) {
 		int bit, byte, ecccnt;
+
 		ecccnt = 0;
 		mask = up->upec2;
 		printf("up%d: soft ecc sn%d\n", io->i_unit, bn);
@@ -355,7 +353,7 @@ upecc(io, flag)
 			 *	  before the error sector times the sector size)
 			 *	  + byte number
 			 */
-			addr = io->i_ma + (npf*sectsiz) + byte;
+			addr = io->i_ma + (npf * sectsiz) + byte;
 #ifdef UPECCDEBUG
 			printf("addr %x old: %x ",addr, (*addr&0xff));
 #endif
@@ -367,21 +365,21 @@ upecc(io, flag)
 			byte++;
 			i++;
 			bit -= 8;
-			if ((ecccnt++ >= MAXECC) && ((io->i_flgs&F_ECCLM) != 0))
-				return(1);
+			if ((io->i_flgs&F_ECCLM) && ++ecccnt > MAXECC)
+				return (1);
 		}
-		return(0);
-#ifndef NOBADSECT
-	} else if (flag == BSE) {
+		return (0);
+	}
+	if (flag == BSE) {
 		/*
 		 * if not in bad sector table, return 1 (= hard error)
 		 */
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		if ((bbn = isbad(&upbad[io->i_unit], cn, tn, sn)) < 0)
-			return(1);
+			return (1);
 		bbn = st->ncyl * st->nspc -st->nsect - 1 - bbn;
 		twc = up->upwc + sectsiz;
-		up->upwc = -(sectsiz / sizeof (short));
+		up->upwc = - (sectsiz / sizeof (short));
 #ifdef UPECCDEBUG
 		printf("revector to block %d\n", bbn);
 #endif
@@ -465,7 +463,6 @@ upioctl(io, cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-
 	struct st *st = &upst[up_type[io->i_unit]], *tmp;
 
 	switch(cmd) {
@@ -473,10 +470,7 @@ upioctl(io, cmd, arg)
 	case SAIODEVDATA:
 		tmp = (struct st *)arg;
 		*tmp = *st;
-		return(0);
-
-	default:
-		return (ECMD);
+		return (0);
 	}
+	return (ECMD);
 }
-
