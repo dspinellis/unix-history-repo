@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
  *
- *	@(#)hpux_compat.c	7.27 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -1162,7 +1162,7 @@ hpuxgetcontext(p, uap, retval)
 
 #if defined(HP380)
 	if (machineid == HP_380) {
-		len = MIN(uap->len, sizeof(hpux040context));
+		len = min(uap->len, sizeof(hpux040context));
 		if (len)
 			error = copyout(hpux040context, uap->buf, len);
 		if (error == 0)
@@ -1170,7 +1170,7 @@ hpuxgetcontext(p, uap, retval)
 		return (error);
 	}
 #endif
-	len = MIN(uap->len, sizeof(hpuxcontext));
+	len = min(uap->len, sizeof(hpuxcontext));
 	if (len)
 		error = copyout(hpuxcontext, uap->buf, (u_int)len);
 	if (error == 0)
