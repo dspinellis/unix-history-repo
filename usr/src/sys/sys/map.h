@@ -1,4 +1,4 @@
-/*	map.h	4.5	81/02/28	*/
+/*	map.h	4.6	81/05/12	*/
 
 /*
  * Resource Allocation Maps.
@@ -40,4 +40,7 @@ int	nswapmap;
 struct	map *argmap;
 #define	ARGMAPSIZE	16
 struct	map *kernelmap;
+#ifdef BBNNET
+struct  map *netmap;
+#endif
 #endif
