@@ -510,6 +510,12 @@ save(a1, a2)
 {
 	register int more;
 
+	if (!FIXUNDO)
+		return;
+#ifdef TRACE
+	if (trace)
+		vudump("before save");
+#endif
 	undkind = UNDNONE;
 	undadot = dot;
 	more = (a2 - a1 + 1) - (unddol - dol);
@@ -526,6 +532,10 @@ save(a1, a2)
 	unddel = a1 - 1;
 	undap1 = a1;
 	undap2 = a2 + 1;
+#ifdef TRACE
+	if (trace)
+		vudump("after save");
+#endif
 }
 
 save12()
@@ -596,11 +606,11 @@ smerror(seekpt, cp)
 #ifdef lint
 char	*std_errlist[] = {
 #else
-#ifdef VMUNIX
+# ifdef VMUNIX
 char	*std_errlist[] = {
-#else
+# else
 short	std_errlist[] = {
-#endif
+# endif
 #endif
 	error("Error 0"),
 	error("Not super-user"),

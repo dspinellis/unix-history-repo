@@ -275,7 +275,11 @@ struct	rbuf {
 	short	rb_next;
 	char	rb_text[BUFSIZ - 2 * sizeof (short)];
 } *rbuf;
+#ifdef VMUNIX
+short	rused[256];
+#else
 short	rused[32];
+#endif
 short	rnleft;
 short	rblock;
 short	rnext;
@@ -396,17 +400,20 @@ putreg(c)
 		error("Nothing in register %c", c);
 	}
 	if (inopen && partreg(c)) {
+		if (!FIXUNDO) {
+			splitw++; vclean(); vgoto(WECHO, 0); vreg = -1;
+			error("Can't put partial line inside macro");
+		}
 		squish();
 		addr1 = addr2 = dol;
 	}
-	ignore(append(getREG, addr2));
+	cnt = append(getREG, addr2);
 	if (inopen && partreg(c)) {
 		unddol = dol;
 		dol = odol;
 		dot = odot;
 		pragged(0);
 	}
-	cnt = undap2 - undap1;
 	killcnt(cnt);
 	notecnt = cnt;
 }

@@ -526,7 +526,6 @@ quit:
 				flush();
 				unixwt(1, unixex("-i", (char *) 0, 0, 0));
 				vcontin(0);
-				putpad(TI);
 				continue;
 
 /* source */
@@ -598,7 +597,7 @@ quit:
 				tail("version");
 				setNAEOL();
 				/* should use SCCS subst here */
-				printf("Version 3.2, January 4, 1980");
+				printf("Version 3.3, February 2, 1980");
 				noonl();
 				continue;
 
@@ -620,7 +619,9 @@ quit:
 		case 'w':
 			c = peekchar();
 			tail(c == 'q' ? "wq" : "write");
+wq:
 			if (skipwh() && peekchar() == '!') {
+				pofix();
 				ignchar();
 				setall();
 				unix0(0);
@@ -633,6 +634,14 @@ quit:
 			if (c == 'q')
 				goto quit;
 			continue;
+
+/* xit */
+		case 'x':
+			tail("xit");
+			if (!chng)
+				goto quit;
+			c = 'q';
+			goto wq;
 
 /* yank */
 		case 'y':
@@ -681,14 +690,15 @@ quit:
 caseline:
 			notempty();
 			if (addr2 == 0) {
-				if (dot == dol)
-					error("At EOF|At end-of-file");
 				if (UP != NOSTR && c == '\n' && !inglobal)
 					c = CTRL(k);
 				if (inglobal)
 					addr1 = addr2 = dot;
-				else
+				else {
+					if (dot == dol)
+						error("At EOF|At end-of-file");
 					addr1 = addr2 = dot + 1;
+				}
 			}
 			setdot();
 			nonzero();
@@ -716,6 +726,8 @@ numberit:
 		case '=':
 			newline();
 			setall();
+			if (inglobal == 2)
+				pofix();
 			printf("%d", lineno(addr2));
 			noonl();
 			continue;
@@ -728,12 +740,11 @@ numberit:
 				filter(2);
 			} else {
 				unix0(1);
-				vnfl();
+				pofix();
 				putpad(TE);
 				flush();
 				unixwt(1, unixex("-c", uxb, 0, 0));
-				vcontin(1);
-				putpad(TI);
+				vcontin(0);
 				nochng();
 			}
 			continue;

@@ -767,9 +767,12 @@ vishft()
 			goim();
 			up = tp + j * WCOLS - shft;
 			i = shft;
-			do
-				vputchar(*up++);
-			while (--i);
+			do {
+				if (*up)
+					vputchar(*up++);
+				else
+					break;
+			} while (--i);
 		}
 		vigotoCL(tabstart);
 		i = shft - (inssiz - doomed);
@@ -1029,9 +1032,9 @@ vputchar(c)
 	if (trace)
 		tracec(c);
 #endif
-	/* Patch to fix problem of >79 chars on echo line: don't echo extras */
+	/* Fix problem of >79 chars on echo line. */
 	if (destcol >= WCOLS-1 && splitw && destline == WECHO)
-		return;
+		pofix();
 	if (destcol >= WCOLS) {
 		destline += destcol / WCOLS;
 		destcol %= WCOLS;

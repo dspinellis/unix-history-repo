@@ -20,7 +20,8 @@ vmain()
 	char *oglobp;
 	char d;
 	line *addr;
-	int ind;
+	int ind, nlput;
+	int shouldpo = 0;
 	int onumber, olist, (*OPline)(), (*OPutchar)();
 
 	/*
@@ -141,6 +142,8 @@ reread:
 				ungetkey(c);
 				goto looptop;
 			}
+			if (!value(REMAP))
+				break;
 		} while (c != op);
 
 		/*
@@ -161,16 +164,23 @@ reread:
 		/*
 		 * ^L		Clear screen e.g. after transmission error.
 		 */
-		case CTRL(l):
-			vclear();
-			vdirty(0, vcnt);
-			/* fall into... */
 
 		/*
 		 * ^R		Retype screen, getting rid of @ lines.
 		 *		If in open, equivalent to ^L.
+		 *		On terminals where the right arrow key sends
+		 *		^L we make ^R act like ^L, since there is no
+		 *		way to get ^L.  These terminals (adm31, tvi)
+		 *		are intelligent so ^R is useless.  Soroc
+		 *		will probably foul this up, but nobody has
+		 *		one of them.
 		 */
+		case CTRL(l):
 		case CTRL(r):
+			if (c == CTRL(l) || (KR && *KR==CTRL(l))) {
+				vclear();
+				vdirty(0, vcnt);
+			}
 			if (state != VISUAL) {
 				/*
 				 * Get a clean line, throw away the
@@ -209,7 +219,9 @@ reread:
 		 *		in vmacbuf, point vglobp there and punt.
 		 */
 		 case '@':
-			c = getkey();
+			c = getesc();
+			if (c == 0)
+				continue;
 			if (c == '@')
 				c = lastmac;
 			if (isupper(c))
@@ -221,7 +233,7 @@ reread:
 				char tmpbuf[BUFSIZ];
 
 				regbuf(c,tmpbuf,sizeof(vmacbuf));
-				macpush(tmpbuf);
+				macpush(tmpbuf, 1);
 			ONERR
 				lastmac = 0;
 				splitw = 0;
@@ -500,7 +512,7 @@ reread:
 				mbuf[3] = 0;
 				if (isalpha(mbuf[1]))
 					mbuf[1] ^= ' ';	/* toggle the case */
-				macpush(mbuf);
+				macpush(mbuf, 1);
 			}
 			continue;
 
@@ -567,7 +579,9 @@ insrt:
 			prepapp();
 			vnoapp();
 			doomed = c == 'R' ? 10000 : 0;
-			vundkind = VCHNG;
+			if(FIXUNDO)
+				vundkind = VCHNG;
+			vmoving = 0;
 			CP(vutmp, linebuf);
 
 			/*
@@ -605,6 +619,7 @@ insrt:
 				onintr();
 			/* fall into... */
 
+#ifdef notdef
 		/*
 		 * q		Quit back to command mode, unless called as
 		 *		vi on command line in which case dont do it
@@ -620,6 +635,7 @@ insrt:
 				vrepaint(cursor);
 				continue;
 			}
+#endif
 			/* fall into... */
 
 		/*
@@ -630,6 +646,17 @@ insrt:
 			vsave();
 			return;
 
+
+		/*
+		 * ZZ		Like :x
+		 */
+		 case 'Z':
+			forbid(getkey() != 'Z');
+			oglobp = globp;
+			globp = "x";
+			vclrech(0);
+			goto gogo;
+			
 		/*
 		 * P		Put back text before cursor or before current
 		 *		line.  If text was whole lines goes back
@@ -644,7 +671,7 @@ insrt:
 		case 'P':
 		case 'p':
 			vmoving = 0;
-			forbid (inopen < 0);
+			forbid (!vreg && value(UNDOMACRO) && inopen < 0);
 			/*
 			 * If previous delete was partial line, use an
 			 * append or insert to put it back so as to
@@ -696,6 +723,7 @@ insrt:
 			 * We thus put a catch in here.  If we didn't and
 			 * there was an error we would end up in command mode.
 			 */
+			addr = dol;	/* old dol */
 			CATCH
 				vremote(1, vreg ? putreg : put, vreg);
 			ONERR
@@ -707,24 +735,31 @@ insrt:
 				}
 			ENDCATCH
 			splitw = 0;
+			nlput = dol - addr + 1;
 			if (!i) {
 				/*
 				 * Increment undap1, undap2 to make up
 				 * for their incorrect initialization in the
 				 * routine vremote before calling put/putreg.
 				 */
-				undap1++, undap2++;
+				if (FIXUNDO)
+					undap1++, undap2++;
 				vcline++;
-			}
+				nlput--;
 
-			/*
-			 * After a put want current line first line,
-			 * and dot was made the last line put in code run
-			 * so far.  This is why we increment vcline above,
-			 * and decrease (usually) dot here.
-			 */
-			dot = undap1;
-			vreplace(vcline, i, undap2 - undap1);
+				/*
+				 * After a put want current line first line,
+				 * and dot was made the last line put in code
+				 * run so far.  This is why we increment vcline
+				 * above and decrease dot here.
+				 */
+				dot -= nlput - 1;
+			}
+#ifdef TRACE
+			if (trace)
+				fprintf(trace, "vreplace(%d, %d, %d), undap1=%d, undap2=%d, dot=%d\n", vcline, i, nlput, lineno(undap1), lineno(undap2), lineno(dot));
+#endif
+			vreplace(vcline, i, nlput);
 			if (state != VISUAL) {
 				/*
 				 * Special case in open mode.
@@ -830,6 +865,14 @@ doinit:
 			 * command mode).  This is clumsy.
 			 */
 			d = peekc; ungetchar(0);
+			if (shouldpo) {
+				/*
+				 * So after a "Hit return..." ":", we do
+				 * another "Hit return..." the next time
+				 */
+				pofix();
+				shouldpo = 0;
+			}
 			CATCH
 				/*
 				 * Save old values of options so we can
@@ -892,7 +935,7 @@ fixup:
 			 * a write command there, but its not
 			 * worth worrying about.
 			 */
-			if (tchng && tchng != i)
+			if (FIXUNDO && tchng && tchng != i)
 				vundkind = VMANY, cursor = 0;
 
 			/*
@@ -901,8 +944,10 @@ fixup:
 			 */
 			if (vcnt < 0 && Peekkey == ':') {
 				getDOT();
+				shouldpo = 1;
 				continue;
 			}
+			shouldpo = 0;
 
 			/*
 			 * In the case where the file being edited is
@@ -950,8 +995,9 @@ fixup:
 					vcnt = -vcnt;
 					if (state == VISUAL)
 						vclear();
-					else if (state == CRTOPEN)
+					else if (state == CRTOPEN) {
 						vcnt = 0;
+					}
 				}
 
 				/*
@@ -1059,12 +1105,12 @@ vremote(cnt, f, arg)
 
 	addr1 = dot;
 	addr2 = dot + cnt - 1;
-	if (inopen > 0)
-		undap1 = undap2 = dot;
 	inglobal = 0;
+	if (FIXUNDO)
+		undap1 = undap2 = dot;
 	(*f)(arg);
 	inglobal = oing;
-	if (inopen > 0)
+	if (FIXUNDO)
 		vundkind = VMANY;
 	vmcurs = 0;
 }
@@ -1077,7 +1123,7 @@ vsave()
 	char temp[LBSIZE];
 
 	CP(temp, linebuf);
-	if (vundkind == VCHNG || vundkind == VCAPU) {
+	if (FIXUNDO && vundkind == VCHNG || vundkind == VCAPU) {
 		/*
 		 * If the undo state is saved in the temporary buffer
 		 * vutmp, then we sync this into the temp file so that

@@ -50,7 +50,7 @@ setterm(type)
 	putpad(TE);
 	if (tgetent(ltcbuf, type) != 1) {
 		unknown++;
-		CP(genbuf, "xx|dumb:");
+		CP(ltcbuf, "xx|dumb:");
 	}
 	i = LINES = tgetnum("li");
 	if (LINES <= 5)
@@ -59,9 +59,9 @@ setterm(type)
 		LINES = 48;
 	l = LINES;
 	if (ospeed < B1200)
-		l /= 2;
+		l = 9;	/* including the message line at the bottom */
 	else if (ospeed < B2400)
-		l = (l * 2) / 3;
+		l = 17;
 	aoftspace = tspace;
 	zap();
 	/*
@@ -85,7 +85,7 @@ setterm(type)
 		CA = 1, costCM = strlen(tgoto(CM, 8, 10));
 	PC = xPC ? xPC[0] : 0;
 	aoftspace = tspace;
-	CP(ttytype, longname(genbuf, type));
+	CP(ttytype, longname(ltcbuf, type));
 	if (i <= 0)
 		LINES = 2;
 	/* proper strings to change tty type */

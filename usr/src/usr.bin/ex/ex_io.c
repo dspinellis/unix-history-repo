@@ -218,6 +218,8 @@ glob(gp)
 		close(1);
 		dup(pvec[1]);
 		close(pvec[0]);
+		close(2);	/* so errors don't mess up the screen */
+		open("/dev/null", 1);
 		execl(svalue(SHELL), "sh", "-c", genbuf, 0);
 		oerrno = errno; close(1); dup(2); errno = oerrno;
 		filioerr(svalue(SHELL));
@@ -248,7 +250,7 @@ glob(gp)
 	} while (c >= 0);
 	waitfor();
 	if (gp->argc0 == 0)
-		error(NOSTR);
+		error("No match");
 }
 
 /*
@@ -346,7 +348,7 @@ rop(c)
 		setdot();
 	else
 		setall();
-	if (inopen && c == 'r')
+	if (FIXUNDO && inopen && c == 'r')
 		undap1 = undap2 = dot + 1;
 	rop2();
 	rop3(c);
@@ -389,7 +391,8 @@ other:
 					dot = one;
 				markpr(one);
 			}
-		undkind = UNDNONE;
+		if(FIXUNDO)
+			undkind = UNDNONE;
 		if (inopen) {
 			vcline = 0;
 			vreplace(0, LINES, lineDOL());
@@ -442,6 +445,8 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 			error("Write forms are 'w' and 'w>>'");
 		filename('w');
 	} else {
+		if (savedfile[0] == 0)
+			error("No file|No current filename");
 		saddr1=addr1;
 		saddr2=addr2;
 		addr1=one;
@@ -632,7 +637,7 @@ uexp:
 			vnfl();
 		if (hush == 0)
 			lprintf("!%s", uxb);
-		if (inopen) {
+		if (inopen && Outchar != termchar) {
 			vclreol();
 			vgoto(WECHO, 0);
 		} else
@@ -779,7 +784,8 @@ filter(mode)
 		addr2 = addr1 - 1;
 	}
 	if (mode & 1) {
-		undap1 = undap2 = addr2+1;
+		if(FIXUNDO)
+			undap1 = undap2 = addr2+1;
 		ignore(append(getfile, addr2));
 	}
 	close(io);

@@ -73,6 +73,7 @@ out:
 	newline();
 	*gp++ = c;
 	*gp++ = 0;
+	saveall();
 	inglobal = 2;
 	for (a1 = one; a1 <= dol; a1++) {
 		*a1 &= ~01;
@@ -80,7 +81,6 @@ out:
 			*a1 |= 01;
 	}
 	/* should use gdelete from ed to avoid n**2 here on g/.../d */
-	saveall();
 	if (inopen)
 		inopen = -1;
 	for (a1 = one; a1 <= dol; a1++) {
@@ -115,7 +115,7 @@ substitute(c)
 	int gsubf;
 
 	gsubf = compsub(c);
-	if (!inglobal)
+	if(FIXUNDO)
 		save12(), undkind = UNDCHANGE;
 	stotal = 0;
 	slines = 0;
@@ -257,8 +257,10 @@ magic:
 
 		case '\n':
 		case EOF:
-			ungetchar(c);
-			goto endrhs;
+			if (!(globp && globp[0])) {
+				ungetchar(c);
+				goto endrhs;
+			}
 
 		case '~':
 		case '&':

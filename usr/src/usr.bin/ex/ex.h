@@ -108,11 +108,11 @@ struct	option options[NOPTS + 1];
 #	undef	putchar
 #	undef	getchar
 #else
-#ifdef	VMUNIX
+# ifdef	VMUNIX
 #	define	BUFSIZ	1024
-#else
+# else
 #	define	BUFSIZ	512
-#endif
+# endif
 #	define	NULL	0
 #	define	EOF	-1
 #endif
@@ -195,6 +195,11 @@ int	xchng;			/* Suppresses multiple "No writes" in !cmd */
  * Macros
  */
 #define	CP(a, b)	(ignore(strcpy(a, b)))
+			/*
+			 * FIXUNDO: do we want to mung undo vars?
+			 * Usually yes unless in a macro or global.
+			 */
+#define FIXUNDO		(inopen >= 0 && (inopen || !inglobal))
 #define ckaw()		{if (chng && value(AUTOWRITE)) wop(0);}
 #define	copy(a,b,c)	Copy((char *) a, (char *) b, c)
 #define	eq(a, b)	((a) && (b) && strcmp(a, b) == 0)
@@ -217,9 +222,9 @@ int	xchng;			/* Suppresses multiple "No writes" in !cmd */
  * Environment like memory
  */
 char	altfile[FNSIZE];	/* Alternate file name */
-char	direct[32];		/* Temp file goes here */
-char	shell[32];		/* Copied to be settable */
-char	ttytype[16];		/* A long and pretty name */
+char	direct[ONMSZ];		/* Temp file goes here */
+char	shell[ONMSZ];		/* Copied to be settable */
+char	ttytype[ONMSZ];		/* A long and pretty name */
 char	uxb[UXBSIZE + 2];	/* Last !command for !! */
 
 /*
