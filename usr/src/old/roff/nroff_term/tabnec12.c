@@ -1,4 +1,4 @@
-/*	tabnec12.c	4.1	83/08/05	*/
+/*	tabnec12.c	4.2	85/02/14	*/
 #define INCH 240
 /*
  * NEC Spinwriter 5500 or 7700 12 Pitch
@@ -51,7 +51,7 @@ struct {
 /*bdon*/	"\033+",
 /*bdoff*/	"\033,",
 /*ploton*/	"\033]A\033]P",
-/*plotoff*/	"\033]L\033]W",
+/*plotoff*/	"\033]J\033]W",
 /*up*/		"\0339",
 /*down*/	"\033ZA",
 /*right*/	" ",
