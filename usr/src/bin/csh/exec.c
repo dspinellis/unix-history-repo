@@ -6,17 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
-#include <sys/dir.h>
-#include <string.h>
-#include "pathnames.h"
-
-/*
- * C shell
- */
 
 /*
  * System level search and execute of a command.
@@ -25,15 +18,15 @@ static char sccsid[] = "@(#)exec.c	5.11 (Berkeley) %G%";
  * If there is no search path then we execute only full path names.
  */
 
-/* 
+/*
  * As we search for the command we note the first non-trivial error
  * message for presentation to the user.  This allows us often
  * to show that a file has the wrong mode/no access when the file
  * is not in the last component of the search path, so we must
  * go on after first detecting the error.
  */
-char	*exerr;			/* Execution error message */
-char	*expath;		/* Path for exerr */
+static char *exerr;		/* Execution error message */
+static Char *expath;		/* Path for exerr */
 
 /*
  * Xhash is an array of HSHSIZ bits (HSHSIZ / 8 chars), which are used
@@ -48,143 +41,190 @@ char	*expath;		/* Path for exerr */
  * times (once for each path component checked).
  * Byte size is assumed to be 8.
  */
-#define	HSHSIZ		8192			/* 1k bytes */
+#define	HSHSIZ		8192	/* 1k bytes */
 #define HSHMASK		(HSHSIZ - 1)
 #define HSHMUL		243
-char	xhash[HSHSIZ / 8];
+static char xhash[HSHSIZ / 8];
+
 #define hash(a, b)	((a) * HSHMUL + (b) & HSHMASK)
 #define bit(h, b)	((h)[(b) >> 3] & 1 << ((b) & 7))	/* bit test */
 #define bis(h, b)	((h)[(b) >> 3] |= 1 << ((b) & 7))	/* bit set */
 #ifdef VFORK
-int	hits, misses;
+static int hits, misses;
+
 #endif
 
 /* Dummy search path for just absolute search when no path */
-char	*justabs[] =	{ "", 0 };
+static Char *justabs[] = {STRNULL, 0};
 
+static void pexerr();
+static void texec();
+static int hashname();
+
+void
 doexec(t)
-	register struct command *t;
+    register struct command *t;
 {
-	char *sav;
-	register char *dp, **pv, **av;
-	register struct varent *v;
-	bool slash = (bool)index(t->t_dcom[0], '/');
-	int hashval, hashval1, i;
-	char *blk[2];
+    register Char *dp, **pv, **av, *sav;
+    register struct varent *v;
+    register bool slash;
+    register int hashval = 0, hashval1, i;
+    Char   *blk[2];
 
-	/*
-	 * Glob the command name.  If this does anything, then we
-	 * will execute the command only relative to ".".  One special
-	 * case: if there is no PATH, then we execute only commands
-	 * which start with '/'.
-	 */
-	dp = globone(t->t_dcom[0]);
-	sav = t->t_dcom[0];
-	exerr = 0; expath = t->t_dcom[0] = dp;
-	xfree(sav);
-	v = adrof("path");
-	if (v == 0 && expath[0] != '/')
-		pexerr();
-	slash |= gflag;
-
-	/*
-	 * Glob the argument list, if necessary.
-	 * Otherwise trim off the quote bits.
-	 */
-	gflag = 0; av = &t->t_dcom[1];
-	tglob(av);
-	if (gflag) {
-		av = globall(av);
-		if (av == 0)
-			error("No match");
+    /*
+     * Glob the command name. We will search $path even if this does something,
+     * as in sh but not in csh.  One special case: if there is no PATH, then we
+     * execute only commands which start with '/'.
+     */
+    blk[0] = t->t_dcom[0];
+    blk[1] = 0;
+    gflag = 0, tglob(blk);
+    if (gflag) {
+	pv = globall(blk);
+	if (pv == 0) {
+	    setname(short2str(blk[0]));
+	    stderror(ERR_NAME | ERR_NOMATCH);
 	}
-	blk[0] = t->t_dcom[0];
-	blk[1] = 0;
-	av = blkspl(blk, av);
-#ifdef VFORK
-	Vav = av;
-#endif
-	trim(av);
+	gargv = 0;
+    }
+    else
+	pv = saveblk(blk);
 
-	xechoit(av);		/* Echo command if -x */
-	/*
-	 * Since all internal file descriptors are set to close on exec,
-	 * we don't need to close them explicitly here.  Just reorient
-	 * ourselves for error messages.
-	 */
-	SHIN = 0; SHOUT = 1; SHDIAG = 2; OLDSTD = 0;
+    trim(pv);
 
-	/*
-	 * We must do this AFTER any possible forking (like `foo`
-	 * in glob) so that this shell can still do subprocesses.
-	 */
-	(void) sigsetmask(0L);
+    exerr = 0;
+    expath = Strsave(pv[0]);
+#ifdef VFORK
+    Vexpath = expath;
+#endif
 
+    v = adrof(STRpath);
+    if (v == 0 && expath[0] != '/') {
+	blkfree(pv);
+	pexerr();
+    }
+    slash = any(short2str(expath), '/');
+
+    /*
+     * Glob the argument list, if necessary. Otherwise trim off the quote bits.
+     */
+    gflag = 0;
+    av = &t->t_dcom[1];
+    tglob(av);
+    if (gflag) {
+	av = globall(av);
+	if (av == 0) {
+	    blkfree(pv);
+	    setname(short2str(expath));
+	    stderror(ERR_NAME | ERR_NOMATCH);
+	}
+	gargv = 0;
+    }
+    else
+	av = saveblk(av);
+
+    blkfree(t->t_dcom);
+    t->t_dcom = blkspl(pv, av);
+    xfree((ptr_t) pv);
+    xfree((ptr_t) av);
+    av = t->t_dcom;
+    trim(av);
+
+    if (*av == (Char *) 0 || **av == '\0')
+	pexerr();
+
+    xechoit(av);		/* Echo command if -x */
+    /*
+     * Since all internal file descriptors are set to close on exec, we don't
+     * need to close them explicitly here.  Just reorient ourselves for error
+     * messages.
+     */
+    SHIN = 0;
+    SHOUT = 1;
+    SHDIAG = 2;
+    OLDSTD = 0;
+    /*
+     * We must do this AFTER any possible forking (like `foo` in glob) so that
+     * this shell can still do subprocesses.
+     */
+    (void) sigsetmask((sigmask_t) 0);
+    /*
+     * If no path, no words in path, or a / in the filename then restrict the
+     * command search.
+     */
+    if (v == 0 || v->vec[0] == 0 || slash)
+	pv = justabs;
+    else
+	pv = v->vec;
+    sav = Strspl(STRslash, *av);/* / command name for postpending */
+#ifdef VFORK
+    Vsav = sav;
+#endif
+    if (havhash)
+	hashval = hashname(*av);
+    i = 0;
+#ifdef VFORK
+    hits++;
+#endif
+    do {
 	/*
-	 * If no path, no words in path, or a / in the filename
-	 * then restrict the command search.
+	 * Try to save time by looking at the hash table for where this command
+	 * could be.  If we are doing delayed hashing, then we put the names in
+	 * one at a time, as the user enters them.  This is kinda like Korn
+	 * Shell's "tracked aliases".
 	 */
-	if (v == 0 || v->vec[0] == 0 || slash)
-		pv = justabs;
-	else
-		pv = v->vec;
-	sav = strspl("/", *av);		/* / command name for postpending */
+	if (!slash && pv[0][0] == '/' && havhash) {
+	    hashval1 = hash(hashval, i);
+	    if (!bit(xhash, hashval1))
+		goto cont;
+	}
+	if (pv[0][0] == 0 || eq(pv[0], STRdot))	/* don't make ./xxx */
+	    texec(*av, av);
+	else {
+	    dp = Strspl(*pv, sav);
 #ifdef VFORK
-	Vsav = sav;
+	    Vdp = dp;
 #endif
-	if (havhash)
-		hashval = hashname(*av);
-	i = 0;
+	    texec(dp, av);
 #ifdef VFORK
-	hits++;
+	    Vdp = 0;
 #endif
-	do {
-		if (!slash && pv[0][0] == '/' && havhash) {
-			hashval1 = hash(hashval, i);
-			if (!bit(xhash, hashval1))
-				goto cont;
-		}
-		if (pv[0][0] == 0 || eq(pv[0], "."))	/* don't make ./xxx */
-			texec(*av, av);
-		else {
-			dp = strspl(*pv, sav);
+	    xfree((ptr_t) dp);
+	}
 #ifdef VFORK
-			Vdp = dp;
-#endif
-			texec(dp, av);
-#ifdef VFORK
-			Vdp = 0;
-#endif
-			xfree(dp);
-		}
-#ifdef VFORK
-		misses++;
+	misses++;
 #endif
 cont:
-		pv++;
-		i++;
-	} while (*pv);
+	pv++;
+	i++;
+    } while (*pv);
 #ifdef VFORK
-	hits--;
+    hits--;
 #endif
 #ifdef VFORK
-	Vsav = 0;
-	Vav = 0;
+    Vsav = 0;
 #endif
-	xfree(sav);
-	xfree((char *)av);
-	pexerr();
+    xfree((ptr_t) sav);
+    pexerr();
 }
 
+static void
 pexerr()
 {
-
-	/* Couldn't find the damn thing */
-	setname(expath);
-	/* xfree(expath); */
-	if (exerr)
-		bferr(exerr);
-	bferr("Command not found");
+    /* Couldn't find the damn thing */
+    if (expath) {
+	setname(short2str(expath));
+#ifdef VFORK
+	Vexpath = 0;
+#endif
+	xfree((ptr_t) expath);
+	expath = 0;
+    }
+    else
+	setname("");
+    if (exerr)
+	stderror(ERR_NAME | ERR_STRING, exerr);
+    stderror(ERR_NAME | ERR_COMMAND);
 }
 
 /*
@@ -192,152 +232,206 @@ pexerr()
  * Record error message if not found.
  * Also do shell scripts here.
  */
-texec(f, t)
-	char *f;
-	register char **t;
+static void
+texec(sf, st)
+    Char   *sf;
+    register Char **st;
 {
-	register struct varent *v;
-	register char **vp;
-	char *lastsh[2];
+    register char **t;
+    register char *f;
+    register struct varent *v;
+    register Char **vp;
+    Char   *lastsh[2];
+    int     fd;
+    unsigned char c;
+    Char   *st0, **ost;
 
-	execv(f, t);
-	switch (errno) {
+    /* The order for the conversions is significant */
+    t = short2blk(st);
+    f = short2str(sf);
+#ifdef VFORK
+    Vt = t;
+#endif
+    errno = 0;			/* don't use a previous error */
+    (void) execv(f, t);
+#ifdef VFORK
+    Vt = 0;
+#endif
+    blkfree((Char **) t);
+    switch (errno) {
 
-	case ENOEXEC:
-		/*
-		 * If there is an alias for shell, then
-		 * put the words of the alias in front of the
-		 * argument list replacing the command name.
-		 * Note no interpretation of the words at this point.
-		 */
-		v = adrof1("shell", &aliases);
-		if (v == 0) {
-			register int ff = open(f, 0);
-			char ch;
-
-			vp = lastsh;
-			vp[0] = adrof("shell") ? value("shell") : _PATH_CSHELL;
-			vp[1] = (char *) NULL;
-			if (ff != -1 && read(ff, &ch, 1) == 1 && ch != '#')
-				vp[0] = _PATH_BSHELL;
-			(void) close(ff);
-		} else
-			vp = v->vec;
-		t[0] = f;
-		t = blkspl(vp, t);		/* Splice up the new arglst */
-		f = *t;
-		execv(f, t);
-		xfree((char *)t);
-		/* The sky is falling, the sky is falling! */
-
-	case ENOMEM:
-		Perror(f);
-
-	case ENOENT:
-		break;
-
-	default:
-		if (exerr == 0) {
-			exerr = strerror(errno);
-			expath = savestr(f);
+    case ENOEXEC:
+	/*
+	 * From: casper@fwi.uva.nl (Casper H.S. Dik) If we could not execute
+	 * it, don't feed it to the shell if it looks like a binary!
+	 */
+	if ((fd = open(f, O_RDONLY)) != -1) {
+	    if (read(fd, (char *) &c, 1) == 1) {
+		if (!Isprint(c) && (c != '\n' && c != '\t')) {
+		    (void) close(fd);
+		    /*
+		     * We *know* what ENOEXEC means.
+		     */
+		    stderror(ERR_ARCH, f, strerror(errno));
 		}
+	    }
+#ifdef _PATH_BSHELL
+	    else
+		c = '#';
+#endif
+	    (void) close(fd);
 	}
+	/*
+	 * If there is an alias for shell, then put the words of the alias in
+	 * front of the argument list replacing the command name. Note no
+	 * interpretation of the words at this point.
+	 */
+	v = adrof1(STRshell, &aliases);
+	if (v == 0) {
+	    vp = lastsh;
+	    vp[0] = adrof(STRshell) ? value(STRshell) : STR_SHELLPATH;
+	    vp[1] = NULL;
+#ifdef _PATH_BSHELL
+	    if (fd != -1 && c != '#')
+		vp[0] = STR_BSHELL;
+#endif
+	}
+	else
+	    vp = v->vec;
+	st0 = st[0];
+	st[0] = sf;
+	ost = st;
+	st = blkspl(vp, st);	/* Splice up the new arglst */
+	ost[0] = st0;
+	sf = *st;
+	/* The order for the conversions is significant */
+	t = short2blk(st);
+	f = short2str(sf);
+	xfree((ptr_t) st);
+#ifdef VFORK
+	Vt = t;
+#endif
+	(void) execv(f, t);
+#ifdef VFORK
+	Vt = 0;
+#endif
+	blkfree((Char **) t);
+	/* The sky is falling, the sky is falling! */
+
+    case ENOMEM:
+	stderror(ERR_SYSTEM, f, strerror(errno));
+
+    case ENOENT:
+	break;
+
+    default:
+	if (exerr == 0) {
+	    exerr = strerror(errno);
+	    if (expath)
+		xfree((ptr_t) expath);
+	    expath = Strsave(sf);
+#ifdef VFORK
+	    Vexpath = expath;
+#endif
+	}
+    }
 }
 
 /*ARGSUSED*/
+void
 execash(t, kp)
-	char **t;
-	register struct command *kp;
+    char  **t;
+    register struct command *kp;
 {
-
-	rechist();
-	(void) signal(SIGINT, parintr);
-	(void) signal(SIGQUIT, parintr);
-	(void) signal(SIGTERM, parterm);	/* if doexec loses, screw */
-	lshift(kp->t_dcom, 1);
-	exiterr++;
-	doexec(kp);
-	/*NOTREACHED*/
+    if (chkstop == 0 && setintr)
+	panystop(0);
+    rechist();
+    (void) signal(SIGINT, parintr);
+    (void) signal(SIGQUIT, parintr);
+    (void) signal(SIGTERM, parterm);	/* if doexec loses, screw */
+    lshift(kp->t_dcom, 1);
+    exiterr = 1;
+    doexec(kp);
+    /* NOTREACHED */
 }
 
+void
 xechoit(t)
-	char **t;
+    Char  **t;
 {
-
-	if (adrof("echo")) {
-		flush();
-		haderr = 1;
-		blkpr(t), cshputchar('\n');
-		haderr = 0;
-	}
+    if (adrof(STRecho)) {
+	flush();
+	haderr = 1;
+	blkpr(t), xputchar('\n');
+	haderr = 0;
+    }
 }
 
-/*VARARGS0*//*ARGSUSED*/
+/*VARARGS0*/
+void
 dohash()
 {
-	struct stat stb;
-	DIR *dirp;
-	register struct direct *dp;
-	register int cnt;
-	int i = 0;
-	struct varent *v = adrof("path");
-	char **pv;
-	int hashval;
+    DIR    *dirp;
+    register struct dirent *dp;
+    register int cnt;
+    int     i = 0;
+    struct varent *v = adrof(STRpath);
+    Char  **pv;
+    int     hashval;
 
-	havhash = 1;
-	for (cnt = 0; cnt < sizeof xhash; cnt++)
-		xhash[cnt] = 0;
-	if (v == 0)
-		return;
-	for (pv = v->vec; *pv; pv++, i++) {
-		if (pv[0][0] != '/')
-			continue;
-		dirp = opendir(*pv);
-		if (dirp == NULL)
-			continue;
-		if (fstat(dirp->dd_fd, &stb) < 0 || !S_ISDIR(stb.st_mode)) {
-			closedir(dirp);
-			continue;
-		}
-		while ((dp = readdir(dirp)) != NULL) {
-			if (dp->d_ino == 0)
-				continue;
-			if (dp->d_name[0] == '.' &&
-			    (dp->d_name[1] == '\0' ||
-			     dp->d_name[1] == '.' && dp->d_name[2] == '\0'))
-				continue;
-			hashval = hash(hashname(dp->d_name), i);
-			bis(xhash, hashval);
-		}
-		closedir(dirp);
+    havhash = 1;
+    for (cnt = 0; cnt < sizeof xhash; cnt++)
+	xhash[cnt] = 0;
+    if (v == 0)
+	return;
+    for (pv = v->vec; *pv; pv++, i++) {
+	if (pv[0][0] != '/')
+	    continue;
+	dirp = opendir(short2str(*pv));
+	if (dirp == NULL)
+	    continue;
+	while ((dp = readdir(dirp)) != NULL) {
+	    if (dp->d_ino == 0)
+		continue;
+	    if (dp->d_name[0] == '.' &&
+		(dp->d_name[1] == '\0' ||
+		 dp->d_name[1] == '.' && dp->d_name[2] == '\0'))
+		continue;
+	    hashval = hash(hashname(str2short(dp->d_name)), i);
+	    bis(xhash, hashval);
+	    /* tw_add_comm_name (dp->d_name); */
 	}
+	(void) closedir(dirp);
+    }
 }
 
+void
 dounhash()
 {
-
-	havhash = 0;
+    havhash = 0;
 }
 
 #ifdef VFORK
+void
 hashstat()
 {
-
-	if (hits+misses)
-		printf("%d hits, %d misses, %d%%\n",
-			hits, misses, 100 * hits / (hits + misses));
+    if (hits + misses)
+	xprintf("%d hits, %d misses, %d%%\n",
+		hits, misses, 100 * hits / (hits + misses));
 }
+
 #endif
 
 /*
  * Hash a command name.
  */
+static int
 hashname(cp)
-	register char *cp;
+    register Char *cp;
 {
-	register long h = 0;
+    register long h = 0;
 
-	while (*cp)
-		h = hash(h, *cp++);
-	return ((int) h);
+    while (*cp)
+	h = hash(h, *cp++);
+    return ((int) h);
 }

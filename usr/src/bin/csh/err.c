@@ -6,21 +6,282 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
+#define _h_tc_err		/* Don't redefine the errors	 */
 #include "sh.h"
-#include <sys/ioctl.h>
+#include <varargs.h>
+
+char   *seterr = (char *) 0;	/* Holds last error if there was one */
+
+#define ERR_FLAGS	0xf0000000
+#define ERR_NAME	0x10000000
+#define ERR_SILENT	0x20000000
+#define ERR_OLD		0x40000000
+
+static char *errorlist[] =
+{
+#define ERR_SYNTAX	0
+    "Syntax Error",
+#define ERR_NOTALLOWED	1
+    "%s is not allowed",
+#define ERR_WTOOLONG	2
+    "Word too long",
+#define ERR_LTOOLONG	3
+    "$< line too long",
+#define ERR_DOLZERO	4
+    "No file for $0",
+#define ERR_DOLQUEST	5
+    "$? not allowed here",
+#define ERR_INCBR	6
+    "Incomplete [] modifier",
+#define ERR_EXPORD	7
+    "$ expansion must end before ]",
+#define ERR_BADMOD	8
+    "Bad : modifier in $ (%c)",
+#define ERR_SUBSCRIPT	9
+    "Subscript error",
+#define ERR_BADNUM	10
+    "Badly formed number",
+#define ERR_NOMORE	11
+    "No more words",
+#define ERR_FILENAME	12
+    "Missing file name",
+#define ERR_GLOB	13
+    "Internal glob error",
+#define ERR_COMMAND	14
+    "Command not found",
+#define ERR_TOOFEW	15
+    "Too few arguments",
+#define ERR_TOOMANY	16
+    "Too many arguments",
+#define ERR_DANGER	17
+    "Too dangerous to alias that",
+#define ERR_EMPTYIF	18
+    "Empty if",
+#define ERR_IMPRTHEN	19
+    "Improper then",
+#define ERR_NOPAREN	20
+    "Words not parenthesized",
+#define ERR_NOTFOUND	21
+    "%s not found",
+#define ERR_MASK	22
+    "Improper mask",
+#define ERR_LIMIT	23
+    "No such limit",
+#define ERR_TOOLARGE	24
+    "Argument too large",
+#define ERR_SCALEF	25
+    "Improper or unknown scale factor",
+#define ERR_UNDVAR	26
+    "Undefined variable",
+#define ERR_DEEP	27
+    "Directory stack not that deep",
+#define ERR_BADSIG	28
+    "Bad signal number",
+#define ERR_UNKSIG	29
+    "Unknown signal; kill -l lists signals",
+#define ERR_VARBEGIN	30
+    "Variable name must begin with a letter",
+#define ERR_VARTOOLONG	31
+    "Variable name too long",
+#define ERR_VARALNUM	32
+    "Variable name must contain alphanumeric characters",
+#define ERR_JOBCONTROL	33
+    "No job control in this shell",
+#define ERR_EXPRESSION	34
+    "Expression Syntax",
+#define ERR_NOHOMEDIR	35
+    "No home directory",
+#define ERR_CANTCHANGE	36
+    "Can't change to home directory",
+#define ERR_NULLCOM	37
+    "Invalid null command",
+#define ERR_ASSIGN	38
+    "Assignment missing expression",
+#define ERR_UNKNOWNOP	39
+    "Unknown operator",
+#define ERR_AMBIG	40
+    "Ambiguous",
+#define ERR_EXISTS	41
+    "%s: File exists",
+#define ERR_INTR	42
+    "Interrupted",
+#define ERR_RANGE	43
+    "Subscript out of range",
+#define ERR_OVERFLOW	44
+    "Line overflow",
+#define ERR_VARMOD	45
+    "Unknown variable modifier",
+#define ERR_NOSUCHJOB	46
+    "No such job",
+#define ERR_TERMINAL	47
+    "Can't from terminal",
+#define ERR_NOTWHILE	48
+    "Not in while/foreach",
+#define ERR_NOPROC	49
+    "No more processes",
+#define ERR_NOMATCH	50
+    "No match",
+#define ERR_MISSING	51
+    "Missing %c",
+#define ERR_UNMATCHED	52
+    "Unmatched %c",
+#define ERR_NOMEM	53
+    "Out of memory",
+#define ERR_PIPE	54
+    "Can't make pipe",
+#define ERR_SYSTEM	55
+    "%s: %s",
+#define ERR_STRING	56
+    "%s",
+#define ERR_JOBS	57
+    "Usage: jobs [ -l ]",
+#define ERR_JOBARGS	58
+    "Arguments should be jobs or process id's",
+#define ERR_JOBCUR	59
+    "No current job",
+#define ERR_JOBPREV	60
+    "No previous job",
+#define ERR_JOBPAT	61
+    "No job matches pattern",
+#define ERR_NESTING	62
+    "Fork nesting > %d; maybe `...` loop",
+#define ERR_JOBCTRLSUB	63
+    "No job control in subshells",
+#define ERR_BADPLPS	64
+    "Badly placed ()'s",
+#define ERR_STOPPED	65
+    "%sThere are suspended jobs",
+#define ERR_NODIR	66
+    "No other directory",
+#define ERR_EMPTY	67
+    "Directory stack empty",
+#define ERR_BADDIR	68
+    "Bad directory",
+#define ERR_DIRUS	69
+    "Usage: %s [-lvn]%s",
+#define ERR_HFLAG	70
+    "No operand for -h flag",
+#define ERR_NOTLOGIN	71
+    "Not a login shell",
+#define ERR_DIV0	72
+    "Division by 0",
+#define ERR_MOD0	73
+    "Mod by 0",
+#define ERR_BADSCALE	74
+    "Bad scaling; did you mean \"%s\"?",
+#define ERR_SUSPLOG	75
+    "Can't suspend a login shell (yet)",
+#define ERR_UNKUSER	76
+    "Unknown user: %s",
+#define ERR_NOHOME	77
+    "No $home variable set",
+#define ERR_HISTUS	78
+    "Usage: history [-rht] [# number of events]",
+#define ERR_SPDOLLT	79
+    "$ or < not allowed with $# or $?",
+#define ERR_NEWLINE	80
+    "Newline in variable name",
+#define ERR_SPSTAR	81
+    "* not allowed with $# or $?",
+#define ERR_DIGIT	82
+    "$?<digit> or $#<digit> not allowed",
+#define ERR_VARILL	83
+    "Illegal variable name",
+#define ERR_NLINDEX	84
+    "Newline in variable index",
+#define ERR_EXPOVFL	85
+    "Expansion buffer overflow",
+#define ERR_VARSYN	86
+    "Variable syntax",
+#define ERR_BADBANG	87
+    "Bad ! form",
+#define ERR_NOSUBST	88
+    "No previous substitute",
+#define ERR_BADSUBST	89
+    "Bad substitute",
+#define ERR_LHS		90
+    "No previous left hand side",
+#define ERR_RHSLONG	91
+    "Right hand side too long",
+#define ERR_BADBANGMOD	92
+    "Bad ! modifier: %c",
+#define ERR_MODFAIL	93
+    "Modifier failed",
+#define ERR_SUBOVFL	94
+    "Substitution buffer overflow",
+#define ERR_BADBANGARG	95
+    "Bad ! arg selector",
+#define ERR_NOSEARCH	96
+    "No prev search",
+#define ERR_NOEVENT	97
+    "%s: Event not found",
+#define ERR_TOOMANYRP	98
+    "Too many )'s",
+#define ERR_TOOMANYLP	99
+    "Too many ('s",
+#define ERR_BADPLP	100
+    "Badly placed (",
+#define ERR_MISRED	101
+    "Missing name for redirect",
+#define ERR_OUTRED	102
+    "Ambiguous output redirect",
+#define ERR_REDPAR	103
+    "Can't << within ()'s",
+#define ERR_INRED	104
+    "Ambiguous input redirect",
+#define ERR_ALIASLOOP	105
+    "Alias loop",
+#define ERR_HISTLOOP	106
+    "!# History loop",
+#define ERR_ARCH        107
+    "%s: %s. Wrong Architecture",
+#define ERR_FILEINQ	108
+    "Malformed file inquiry",
+#define ERR_SELOVFL	109
+    "Selector overflow",
+#define ERR_INVALID	110
+    "Invalid Error"
+};
 
 /*
- * C Shell
+ * The parser and scanner set up errors for later by calling seterr,
+ * which sets the variable err as a side effect; later to be tested,
+ * e.g. in process.
  */
+void
+/*VARARGS1*/
+seterror(id, va_alist)
+    int     id;
 
-bool	errspl;			/* Argument to error was spliced by seterr2 */
-char	one[2] = { '1', 0 };
-char	*onev[2] = { one, NOSTR };
+va_dcl
+{
+    if (seterr == 0) {
+	va_list va;
+	char    berr[BUFSIZ];
+
+	if (id < 0 || id > sizeof(errorlist) / sizeof(errorlist[0]))
+	    id = ERR_INVALID;
+	va_start(va);
+	xvsprintf(berr, errorlist[id], va);
+	va_end(va);
+
+	seterr = strsave(berr);
+    }
+}
+
 /*
- * Print error string s with optional argument arg.
+ * Print the error with the given id.
+ *
+ * Special ids:
+ *	ERR_SILENT: Print nothing.
+ *	ERR_OLD: Print the previously set error if one was there.
+ *	         otherwise return.
+ *	ERR_NAME: If this bit is set, print the name of the function
+ *		  in bname
+ *
  * This routine always resets or exits.  The flag haderr
  * is set so the routine who catches the unwind can propogate
  * it if they want.
@@ -29,124 +290,75 @@ char	*onev[2] = { one, NOSTR };
  * be closed in the routine process in sh.c which is the only
  * place error unwinds are ever caught.
  */
-/*VARARGS1*/
-error(s, arg)
-	char *s;
+void
+/*VARARGS*/
+stderror(id, va_alist)
+    int     id;
+
+va_dcl
 {
-	register char **v;
-	register char *ep;
+    va_list va;
+    register Char **v;
+    int     flags = id & ERR_FLAGS;
 
-	/*
-	 * Must flush before we print as we wish output before the error
-	 * to go on (some form of) standard output, while output after
-	 * goes on (some form of) diagnostic output.
-	 * If didfds then output will go to 1/2 else to FSHOUT/FSHDIAG.
-	 * See flush in sh.print.c.
-	 */
-	flush();
-	haderr = 1;		/* Now to diagnostic output */
-	timflg = 0;		/* This isn't otherwise reset */
-	if (v = pargv)
-		pargv = 0, blkfree(v);
-	if (v = gargv)
-		gargv = 0, blkfree(v);
+    id &= ~ERR_FLAGS;
 
-	/*
-	 * A zero arguments causes no printing, else print
-	 * an error diagnostic here.
-	 */
-	if (s)
-		printf(s, arg), printf(".\n");
+    if ((flags & ERR_OLD) && seterr == (char *) 0)
+	return;
 
-	didfds = 0;		/* Forget about 0,1,2 */
-	if ((ep = err) && errspl) {
-		errspl = 0;
-		xfree(ep);
+    if (id < 0 || id > sizeof(errorlist) / sizeof(errorlist[0]))
+	id = ERR_INVALID;
+
+    /*
+     * Must flush before we print as we wish output before the error to go on
+     * (some form of) standard output, while output after goes on (some form
+     * of) diagnostic output. If didfds then output will go to 1/2 else to
+     * FSHOUT/FSHDIAG. See flush in sh.print.c.
+     */
+    flush();
+    haderr = 1;			/* Now to diagnostic output */
+    timflg = 0;			/* This isn't otherwise reset */
+
+
+    if (!(flags & ERR_SILENT)) {
+	if (flags & ERR_NAME)
+	    xprintf("%s: ", bname);
+	if ((flags & ERR_OLD))
+	    /* Old error. */
+	    xprintf("%s.\n", seterr);
+	else {
+	    va_start(va);
+	    xvprintf(errorlist[id], va);
+	    va_end(va);
+	    xprintf(".\n");
 	}
-	errspl = 0;
+    }
 
-	/*
-	 * Go away if -e or we are a child shell
-	 */
-	if (exiterr || child)
-		exit(1);
+    if (seterr) {
+	xfree((ptr_t) seterr);
+	seterr = (char *) 0;
+    }
 
-	/*
-	 * Reset the state of the input.
-	 * This buffered seek to end of file will also
-	 * clear the while/foreach stack.
-	 */
-	btoeof();
+    if (v = pargv)
+	pargv = 0, blkfree(v);
+    if (v = gargv)
+	gargv = 0, blkfree(v);
 
-	setq("status", onev, &shvhed);
-	if (tpgrp > 0)
-		(void) ioctl(FSHTTY, TIOCSPGRP, (char *)&tpgrp);
-	longjmp(reslab, 0);		/* Unwind */
-}
+    didfds = 0;			/* Forget about 0,1,2 */
+    /*
+     * Go away if -e or we are a child shell
+     */
+    if (exiterr || child)
+	xexit(1);
 
-/*
- * Perror is the shells version of perror which should otherwise
- * never be called.
- */
-Perror(s)
-	char *s;
-{
+    /*
+     * Reset the state of the input. This buffered seek to end of file will
+     * also clear the while/foreach stack.
+     */
+    btoeof();
 
-	/*
-	 * Perror uses unit 2, thus if we didn't set up the fd's
-	 * we must set up unit 2 now else the diagnostic will disappear
-	 */
-	if (!didfds) {
-		register int oerrno = errno;
-
-		(void) dcopy(SHDIAG, 2);
-		errno = oerrno;
-	}
-	perror(s);
-	error(NOSTR);		/* To exit or unwind */
-}
-
-bferr(cp)
-	char *cp;
-{
-
-	flush();
-	haderr = 1;
-	printf("%s: ", bname);
-	error(cp);
-}
-
-/*
- * The parser and scanner set up errors for later by calling seterr,
- * which sets the variable err as a side effect; later to be tested,
- * e.g. in process.
- */
-seterr(s)
-	char *s;
-{
-
-	if (err == 0)
-		err = s, errspl = 0;
-}
-
-/* Set err to a splice of cp and dp, to be freed later in error() */
-seterr2(cp, dp)
-	char *cp, *dp;
-{
-
-	if (err)
-		return;
-	err = strspl(cp, dp);
-	errspl++;
-}
-
-/* Set err to a splice of cp with a string form of character d */
-seterrc(cp, d)
-	char *cp, d;
-{
-	char chbuf[2];
-
-	chbuf[0] = d;
-	chbuf[1] = 0;
-	seterr2(cp, chbuf);
+    set(STRstatus, Strsave(STR1));
+    if (tpgrp > 0)
+	(void) tcsetpgrp(FSHTTY, tpgrp);
+    reset();			/* Unwind */
 }

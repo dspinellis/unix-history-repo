@@ -6,57 +6,84 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-/* From "@(#)malloc.c	5.5 (Berkeley) 2/25/86"; */
-
 /*
- * malloc.c (Caltech) 2/21/82
+ * tc.alloc.c from malloc.c (Caltech) 2/21/82
  * Chris Kingsley, kingsley@cit-20.
  *
- * This is a very fast storage allocator.  It allocates blocks of a small 
+ * This is a very fast storage allocator.  It allocates blocks of a small
  * number of different sizes, and keeps free lists of each size.  Blocks that
- * don't exactly fit are passed up to the next larger size.  In this 
- * implementation, the available sizes are 2^n-4 (or 2^n-10) bytes long.
- * This is designed for use in a virtual memory environment.
+ * don't exactly fit are passed up to the next larger size.  In this
+ * implementation, the available sizes are 2^n-4 (or 2^n-12) bytes long.
+ * This is designed for use in a program that uses vast quantities of memory,
+ * but bombs when it runs out.
  */
 
-#include <sys/types.h>
+#include "sh.h"
 
+char   *memtop = NULL;		/* PWP: top of current memory */
+char   *membot = NULL;		/* PWP: bottom of allocatable memory */
+
+#ifndef SYSMALLOC
+
+#undef RCHECK
+#undef DEBUG
+
+
+#ifndef NULL
 #define	NULL 0
+#endif
+
+typedef unsigned char U_char;	/* we don't really have signed chars */
+typedef unsigned int U_int;
+typedef unsigned short U_short;
+static int findbucket();
+static void morecore();
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
  * contains a pointer to the next free block, and the bottom two bits must
  * be zero.  When in use, the first byte is set to MAGIC, and the second
  * byte is the size index.  The remaining bytes are for alignment.
- * If range checking is enabled then a second word holds the size of the
- * requested block, less 1, rounded up to a multiple of sizeof(RMAGIC).
- * The order of elements is critical: ov_magic must overlay the low order
- * bits of ov_next, and ov_magic can not be a valid ov_next bit pattern.
+ * If range checking is enabled and the size of the block fits
+ * in two bytes, then the top two bytes hold the size of the requested block
+ * plus the range checking words, and the header word MINUS ONE.
  */
-union	overhead {
-	union	overhead *ov_next;	/* when free */
-	struct {
-		u_char	ovu_magic;	/* magic number */
-		u_char	ovu_index;	/* bucket # */
-#ifdef RCHECK
-		u_short	ovu_rmagic;	/* range magic number */
-		u_int	ovu_size;	/* actual block size */
+
+#ifdef SUNOS4
+/*
+ * SunOS localtime() overwrites the 9th byte on an 8 byte malloc()....
+ * So we align to 16 bytes...
+ */
+#define ROUNDUP	15
+#else
+#define ROUNDUP	7
 #endif
-	} ovu;
+
+#define ALIGN(a) (((a) + ROUNDUP) & ~ROUNDUP)
+
+union overhead {
+    union overhead *ov_next;	/* when free */
+    struct {
+	U_char  ovu_magic;	/* magic number */
+	U_char  ovu_index;	/* bucket # */
+#ifdef RCHECK
+	U_short ovu_size;	/* actual block size */
+	U_int   ovu_rmagic;	/* range magic number */
+#endif
+    }       ovu;
 #define	ov_magic	ovu.ovu_magic
 #define	ov_index	ovu.ovu_index
-#define	ov_rmagic	ovu.ovu_rmagic
 #define	ov_size		ovu.ovu_size
+#define	ov_rmagic	ovu.ovu_rmagic
 };
 
-#define	MAGIC		0xef		/* magic # on accounting info */
-#define RMAGIC		0x5555		/* magic # on range info */
-
+#define	MAGIC		0xfd	/* magic # on accounting info */
+#define RMAGIC		0x55555555	/* magic # on range info */
 #ifdef RCHECK
-#define	RSLOP		sizeof (u_short)
+#define	RSLOP		sizeof (U_int)
 #else
 #define	RSLOP		0
 #endif
@@ -67,183 +94,218 @@ union	overhead {
  * precedes the data area returned to the user.
  */
 #define	NBUCKETS 30
-static	union overhead *nextf[NBUCKETS];
-extern	char *sbrk();
+static union overhead *nextf[NBUCKETS];
 
-static	int pagesz;			/* page size */
-static	int pagebucket;			/* page size bucket */
+#ifdef notdef
+extern char *sbrk();
+
+#endif
 
 /*
  * nmalloc[i] is the difference between the number of mallocs and frees
  * for a given block size.
  */
-static	u_int nmalloc[NBUCKETS];
+static U_int nmalloc[NBUCKETS];
 
-#if defined(DEBUG) || defined(RCHECK)
-#define	ASSERT(p)   if (!(p)) botch("p")
-static
-botch(s)
-	char *s;
-{
-	printf("\r\nassertion botched: %s\r\n", s);
-	abort();
-}
+
+#ifdef DEBUG
+#define CHECK(a, str, p) \
+    if (a) { \
+	xprintf(str, p);	\
+	xprintf("memtop = %lx membot = %lx.\n", memtop, membot);	\
+	abort(); \
+    }	\
+    else
 #else
-#define	ASSERT(p)
+#define CHECK(a, str, p) \
+    if (a) { \
+	xprintf(str, p);	\
+	xprintf("memtop = %lx membot = %lx.\n", memtop, membot);	\
+	return; \
+    }	\
+    else
 #endif
 
-char *
+ptr_t
 malloc(nbytes)
-	unsigned nbytes;
+    register size_t nbytes;
 {
-  	register union overhead *op;
-  	register int bucket;
-	register unsigned amt, n;
+#ifndef lint
+    register union overhead *p;
+    register int bucket = 0;
+    register unsigned shiftr;
 
-	/*
-	 * First time malloc is called, setup page size and
-	 * align break pointer so all data will be page aligned.
-	 */
-	if (pagesz == 0) {
-		pagesz = n = getpagesize();
-		op = (union overhead *)sbrk(0);
-  		n = n - sizeof (*op) - ((int)op & (n - 1));
-		if (n < 0)
-			n += pagesz;
-  		if (n) {
-  			if (sbrk(n) == (char *)-1)
-				return (NULL);
-		}
-		bucket = 0;
-		amt = 8;
-		while (pagesz > amt) {
-			amt <<= 1;
-			bucket++;
-		}
-		pagebucket = bucket;
-	}
-	/*
-	 * Convert amount of memory requested into closest block size
-	 * stored in hash buckets which satisfies request.
-	 * Account for space used per block for accounting.
-	 */
-	if (nbytes <= (n = pagesz - sizeof (*op) - RSLOP)) {
-#ifndef RCHECK
-		amt = 8;	/* size of first bucket */
-		bucket = 0;
+    /*
+     * Convert amount of memory requested into closest block size stored in
+     * hash buckets which satisfies request.  Account for space used per block
+     * for accounting.
+     */
+    nbytes = ALIGN(ALIGN(sizeof(union overhead)) + nbytes + RSLOP);
+    shiftr = (nbytes - 1) >> 2;
+
+    /* apart from this loop, this is O(1) */
+    while (shiftr >>= 1)
+	bucket++;
+    /*
+     * If nothing in hash bucket right now, request more memory from the
+     * system.
+     */
+    if (nextf[bucket] == NULL)
+	morecore(bucket);
+    if ((p = (union overhead *) nextf[bucket]) == NULL) {
+	child++;
+#ifndef DEBUG
+	stderror(ERR_NOMEM);
 #else
-		amt = 16;	/* size of first bucket */
-		bucket = 1;
+	showall();
+	xprintf("nbytes=%d: Out of memory\n", nbytes);
+	abort();
 #endif
-		n = -(sizeof (*op) + RSLOP);
-	} else {
-		amt = pagesz;
-		bucket = pagebucket;
-	}
-	while (nbytes > amt + n) {
-		amt <<= 1;
-		if (amt == 0)
-			return (NULL);
-		bucket++;
-	}
-	/*
-	 * If nothing in hash bucket right now,
-	 * request more memory from the system.
-	 */
-  	if ((op = nextf[bucket]) == NULL) {
-  		morecore(bucket);
-  		if ((op = nextf[bucket]) == NULL)
-  			return (NULL);
-	}
-	/* remove from linked list */
-  	nextf[bucket] = op->ov_next;
-	op->ov_magic = MAGIC;
-	op->ov_index = bucket;
-  	nmalloc[bucket]++;
+	/* fool lint */
+	return ((ptr_t) 0);
+    }
+    /* remove from linked list */
+    nextf[bucket] = nextf[bucket]->ov_next;
+    p->ov_magic = MAGIC;
+    p->ov_index = bucket;
+    nmalloc[bucket]++;
 #ifdef RCHECK
-	/*
-	 * Record allocated size of block and
-	 * bound space with magic numbers.
-	 */
-	op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
-	op->ov_rmagic = RMAGIC;
-  	*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
+    /*
+     * Record allocated size of block and bound space with magic numbers.
+     */
+    if (nbytes <= 0x10000)
+	p->ov_size = nbytes - 1;
+    p->ov_rmagic = RMAGIC;
+    *((U_int *) (((caddr_t) p) + nbytes - RSLOP)) = RMAGIC;
 #endif
-  	return ((char *)(op + 1));
+    return ((ptr_t) (((caddr_t) p) + ALIGN(sizeof(union overhead))));
+#else
+    if (nbytes)
+	return ((ptr_t) 0);
+    else
+	return ((ptr_t) 0);
+#endif				/* !lint */
 }
 
+#ifndef lint
 /*
  * Allocate more memory to the indicated bucket.
  */
+static void
 morecore(bucket)
-	int bucket;
+    register bucket;
 {
-  	register union overhead *op;
-	register int sz;		/* size of desired block */
-  	int amt;			/* amount to allocate */
-  	int nblks;			/* how many blocks we get */
+    register union overhead *op;
+    register int rnu;		/* 2^rnu bytes will be requested */
+    register int nblks;		/* become nblks blocks of the desired size */
+    register int siz;
 
-	/*
-	 * sbrk_size <= 0 only for big, FLUFFY, requests (about
-	 * 2^30 bytes on a VAX, I think) or for a negative arg.
-	 */
-	sz = 1 << (bucket + 3);
-#ifdef DEBUG
-	ASSERT(sz > 0);
-#else
-	if (sz <= 0)
-		return;
-#endif
-	if (sz < pagesz) {
-		amt = pagesz;
-  		nblks = amt / sz;
-	} else {
-		amt = sz + pagesz;
-		nblks = 1;
-	}
-	op = (union overhead *)sbrk(amt);
-	/* no more room! */
-  	if ((int)op == -1)
-  		return;
-	/*
-	 * Add new memory allocated to that on
-	 * free list for this hash bucket.
-	 */
-  	nextf[bucket] = op;
-  	while (--nblks > 0) {
-		op->ov_next = (union overhead *)((caddr_t)op + sz);
-		op = (union overhead *)((caddr_t)op + sz);
-  	}
+    if (nextf[bucket])
+	return;
+    /*
+     * Insure memory is allocated on a page boundary.  Should make getpageize
+     * call?
+     */
+    op = (union overhead *) sbrk(0);
+    memtop = (char *) op;
+    if (membot == NULL)
+	membot = memtop;
+    if ((int) op & 0x3ff) {
+	memtop = (char *) sbrk(1024 - ((int) op & 0x3ff));
+	memtop += 1024 - ((int) op & 0x3ff);
+    }
+
+    /* take 2k unless the block is bigger than that */
+    rnu = (bucket <= 8) ? 11 : bucket + 3;
+    nblks = 1 << (rnu - (bucket + 3));	/* how many blocks to get */
+    if (rnu < bucket)
+	rnu = bucket;
+    memtop = (char *) sbrk(1 << rnu);	/* PWP */
+    op = (union overhead *) memtop;
+    memtop += 1 << rnu;
+    /* no more room! */
+    if ((int) op == -1)
+	return;
+    /*
+     * Round up to minimum allocation size boundary and deduct from block count
+     * to reflect.
+     */
+    if (((U_int) op) & ROUNDUP) {
+	op = (union overhead *) (((U_int) op + (ROUNDUP + 1)) & ~ROUNDUP);
+	nblks--;
+    }
+    /*
+     * Add new memory allocated to that on free list for this hash bucket.
+     */
+    nextf[bucket] = op;
+    siz = 1 << (bucket + 3);
+    while (--nblks > 0) {
+	op->ov_next = (union overhead *) (((caddr_t) op) + siz);
+	op = (union overhead *) (((caddr_t) op) + siz);
+    }
 }
 
-free(cp)
-	char *cp;
-{   
-  	register int size;
-	register union overhead *op;
+#endif
 
-  	if (cp == NULL)
-  		return;
-	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
-	/* 
-	 * The following botch is because csh tries to free a free block
-	 * when processing the =~ or !~ operators. -- layer@ucbmonet
-	*/
-#ifdef CSHbotch /* was DEBUG */
-  	ASSERT(op->ov_magic == MAGIC);		/* make sure it was in use */
+#ifdef sun
+int
 #else
-	if (op->ov_magic != MAGIC)
-		return;				/* sanity */
+void
 #endif
+free(cp)
+    ptr_t   cp;
+{
+#ifndef lint
+    register int size;
+    register union overhead *op;
+
+    if (cp == NULL)
+	return;
+    CHECK(!memtop || !membot, "free(%lx) called before any allocations.", cp);
+    CHECK(cp > (ptr_t) memtop, "free(%lx) above top of memory.", cp);
+    CHECK(cp < (ptr_t) membot, "free(%lx) above top of memory.", cp);
+    op = (union overhead *) (((caddr_t) cp) - ALIGN(sizeof(union overhead)));
+    CHECK(op->ov_magic != MAGIC, "free(%lx) bad block.", cp);
+
 #ifdef RCHECK
-  	ASSERT(op->ov_rmagic == RMAGIC);
-	ASSERT(*(u_short *)((caddr_t)(op + 1) + op->ov_size) == RMAGIC);
+    if (op->ov_index <= 13)
+	CHECK(*(U_int *) ((caddr_t) op + op->ov_size + 1 - RSLOP) != RMAGIC,
+	      "free(%lx) bad range check.", cp);
 #endif
-  	size = op->ov_index;
-  	ASSERT(size < NBUCKETS);
-	op->ov_next = nextf[size];	/* also clobbers ov_magic */
-  	nextf[size] = op;
-  	nmalloc[size]--;
+    CHECK(op->ov_index >= NBUCKETS, "free(%lx) bad block index.", cp);
+    size = op->ov_index;
+    op->ov_next = nextf[size];
+    nextf[size] = op;
+
+    nmalloc[size]--;
+
+#else
+    if (cp == NULL)
+	return;
+#endif
+}
+
+ptr_t
+calloc(i, j)
+    size_t  i, j;
+{
+#ifndef lint
+    register char *cp, *scp;
+
+    i *= j;
+    scp = cp = (char *) xmalloc((size_t) i);
+    if (i != 0)
+	do
+	    *cp++ = 0;
+	while (--i);
+
+    return (scp);
+#else
+    if (i && j)
+	return ((ptr_t) 0);
+    else
+	return ((ptr_t) 0);
+#endif
 }
 
 /*
@@ -257,130 +319,203 @@ free(cp)
  * is extern so the caller can modify it).  If that fails we just copy
  * however many bytes was given to realloc() and hope it's not huge.
  */
-int realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
+#ifndef lint
+int     realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
 
-char *
+#endif				/* lint */
+
+ptr_t
 realloc(cp, nbytes)
-	char *cp; 
-	unsigned nbytes;
-{   
-  	register u_int onb, i;
-	union overhead *op;
-  	char *res;
-	int was_alloced = 0;
-	static int findbucket();
+    ptr_t   cp;
+    size_t  nbytes;
+{
+#ifndef lint
+    register U_int onb;
+    union overhead *op;
+    char   *res;
+    register int i;
+    int     was_alloced = 0;
 
-  	if (cp == NULL)
-  		return (malloc(nbytes));
-	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
-	if (op->ov_magic == MAGIC) {
-		was_alloced++;
-		i = op->ov_index;
-	} else {
-		/*
-		 * Already free, doing "compaction".
-		 *
-		 * Search for the old block of memory on the
-		 * free list.  First, check the most common
-		 * case (last element free'd), then (this failing)
-		 * the last ``realloc_srchlen'' items free'd.
-		 * If all lookups fail, then assume the size of
-		 * the memory block being realloc'd is the
-		 * largest possible (so that all "nbytes" of new
-		 * memory are copied into).  Note that this could cause
-		 * a memory fault if the old area was tiny, and the moon
-		 * is gibbous.  However, that is very unlikely.
-		 */
-		if ((i = findbucket(op, 1)) < 0 &&
-		    (i = findbucket(op, realloc_srchlen)) < 0)
-			i = NBUCKETS;
-	}
-	onb = 1 << (i + 3);
-	if (onb < pagesz)
-		onb -= sizeof (*op) + RSLOP;
-	else
-		onb += pagesz - sizeof (*op) - RSLOP;
-	/* avoid the copy if same size block */
-	if (was_alloced) {
-		if (i) {
-			i = 1 << (i + 2);
-			if (i < pagesz)
-				i -= sizeof (*op) + RSLOP;
-			else
-				i += pagesz - sizeof (*op) - RSLOP;
-		}
-		if (nbytes <= onb && nbytes > i) {
-#ifdef RCHECK
-			op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
-			*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
-#endif
-			return(cp);
-		} else
-			free(cp);
-	}
-  	if ((res = malloc(nbytes)) == NULL)
-  		return (NULL);
-  	if (cp != res)		/* common optimization if "compacting" */
-		bcopy(cp, res, (nbytes < onb) ? nbytes : onb);
-  	return (res);
+    if (cp == NULL)
+	return (malloc(nbytes));
+    op = (union overhead *) (((caddr_t) cp) - ALIGN(sizeof(union overhead)));
+    if (op->ov_magic == MAGIC) {
+	was_alloced++;
+	i = op->ov_index;
+    }
+    else
+	/*
+	 * Already free, doing "compaction".
+	 * 
+	 * Search for the old block of memory on the free list.  First, check the
+	 * most common case (last element free'd), then (this failing) the last
+	 * ``realloc_srchlen'' items free'd. If all lookups fail, then assume
+	 * the size of the memory block being realloc'd is the smallest
+	 * possible.
+	 */
+	if ((i = findbucket(op, 1)) < 0 &&
+	    (i = findbucket(op, realloc_srchlen)) < 0)
+	i = 0;
+
+    onb = ALIGN(nbytes + ALIGN(sizeof(union overhead)) + RSLOP);
+
+    /* avoid the copy if same size block */
+    if (was_alloced && (onb < (1 << (i + 3))) && (onb >= (1 << (i + 2))))
+	return ((ptr_t) cp);
+    if ((res = malloc(nbytes)) == NULL)
+	return ((ptr_t) 0);
+    if (cp != res)		/* common optimization */
+	bcopy(cp, res, nbytes);
+    if (was_alloced)
+	free(cp);
+    return (res);
+#else
+    if (cp && nbytes)
+	return ((ptr_t) 0);
+    else
+	return ((ptr_t) 0);
+#endif				/* !lint */
 }
 
+
+
+#ifndef lint
 /*
  * Search ``srchlen'' elements of each free list for a block whose
  * header starts at ``freep''.  If srchlen is -1 search the whole list.
  * Return bucket number, or -1 if not found.
  */
-static
+static int
 findbucket(freep, srchlen)
-	union overhead *freep;
-	int srchlen;
+    union overhead *freep;
+    int     srchlen;
 {
-	register union overhead *p;
-	register int i, j;
+    register union overhead *p;
+    register int i, j;
 
-	for (i = 0; i < NBUCKETS; i++) {
-		j = 0;
-		for (p = nextf[i]; p && j != srchlen; p = p->ov_next) {
-			if (p == freep)
-				return (i);
-			j++;
-		}
+    for (i = 0; i < NBUCKETS; i++) {
+	j = 0;
+	for (p = nextf[i]; p && j != srchlen; p = p->ov_next) {
+	    if (p == freep)
+		return (i);
+	    j++;
 	}
-	return (-1);
+    }
+    return (-1);
 }
+
+#endif
+
+
+#else				/* SYSMALLOC */
+
+/**
+ ** ``Protected versions'' of malloc, realloc, calloc, and free
+ **
+ ** On many systems:
+ **
+ ** 1. malloc(0) is bad
+ ** 2. free(0) is bad
+ ** 3. realloc(0, n) is bad
+ ** 4. realloc(n, 0) is bad
+ **
+ ** Also we call our error routine if we run out of memory.
+ **/
+char   *
+Malloc(n)
+    size_t  n;
+{
+    ptr_t   ptr;
+
+    n = n ? n : 1;
+
+    if ((ptr = malloc(n)) == (ptr_t) 0) {
+	child++;
+	stderror(ERR_NOMEM);
+    }
+    return ((char *) ptr);
+}
+
+char   *
+Realloc(p, n)
+    ptr_t   p;
+    size_t  n;
+{
+    ptr_t   ptr;
+
+    n = n ? n : 1;
+    if ((ptr = (p ? realloc(p, n) : malloc(n))) == (ptr_t) 0) {
+	child++;
+	stderror(ERR_NOMEM);
+    }
+    return ((char *) ptr);
+}
+
+char   *
+Calloc(s, n)
+    size_t  s, n;
+{
+    char   *sptr;
+    ptr_t   ptr;
+
+    n *= s;
+    n = n ? n : 1;
+    if ((ptr = malloc(n)) == (ptr_t) 0) {
+	child++;
+	stderror(ERR_NOMEM);
+    }
+
+    sptr = (char *) ptr;
+    if (n != 0)
+	do
+	    *sptr++ = 0;
+	while (--n);
+
+    return ((char *) ptr);
+}
+
+void
+Free(p)
+    ptr_t   p;
+{
+    if (p)
+	free(p);
+}
+
+#endif				/* SYSMALLOC */
 
 /*
  * mstats - print out statistics about malloc
- * 
+ *
  * Prints two lines of numbers, one showing the length of the free list
  * for each size category, the second showing the number of mallocs -
  * frees for each size category.
  */
-showall(s)
-char **s;
+void
+showall()
 {
-	register int i, j;
-	register union overhead *p;
-	int totfree = 0,
-	totused = 0;
+#ifndef SYSMALLOC
+    register int i, j;
+    register union overhead *p;
+    int     totfree = 0, totused = 0;
 
-	if (s[1])
-		printf("Memory allocation statistics %s\nfree:", s[1]);
-	for (i = 0; i < NBUCKETS; i++) {
-		for (j = 0, p = nextf[i]; p; p = p->ov_next, j++)
-			;
-		if (s[1])
-			printf(" %d", j);
-		totfree += j * (1 << (i + 3));
-	}
-	if (s[1])
-		printf("\nused:");
-	for (i = 0; i < NBUCKETS; i++) {
-		if (s[1])
-			printf(" %d", nmalloc[i]);
-		totused += nmalloc[i] * (1 << (i + 3));
-	}
-	if (s[1])
-		printf("\n");
-	printf("Total in use: %d, total free: %d\n", totused, totfree);
+    xprintf("csh current memory allocation:\nfree:\t");
+    for (i = 0; i < NBUCKETS; i++) {
+	for (j = 0, p = nextf[i]; p; p = p->ov_next, j++);
+	xprintf(" %4d", j);
+	totfree += j * (1 << (i + 3));
+    }
+    xprintf("\nused:\t");
+    for (i = 0; i < NBUCKETS; i++) {
+	xprintf(" %4d", nmalloc[i]);
+	totused += nmalloc[i] * (1 << (i + 3));
+    }
+    xprintf("\n\tTotal in use: %d, total free: %d\n",
+	    totused, totfree);
+    xprintf("\tAllocated memory from 0x%lx to 0x%lx.  Real top at 0x%lx\n",
+	    membot, memtop, (char *) sbrk(0));
+#else
+    xprintf("Allocated memory from 0x%lx to 0x%lx (%ld).\n",
+	    membot, memtop = (char *) sbrk(0), memtop - membot);
+#endif				/* SYSMALLOC */
 }
