@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.15 (Berkeley) %G%
+#	@(#)Makefile.vax	7.16 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -112,14 +112,14 @@ links:
 	sh makelinks && rm -f dontlink
 
 tags:
-	@echo "see ../sys/Makefile for tags"
+	@echo "see ../kern/Makefile for tags"
 
 print:
-	@pr -f Makefile ../sys/TODO linterrs
+	@pr -f Makefile ../kern/TODO linterrs
 	@/usr/ucb/ctags -x ${CFILES} | pr -f -h XREF
 	@(size vmunix *.o) | pr -f -h sizes
 	@ls -ls | pr -f
-	@cd ../sys; ls -ls | pr -f ; pr -f *.m *.h
+	@cd ../kern; ls -ls | pr -f ; pr -f *.m *.h
 	@echo 'once upon a time ...'
 	@cd ../vax; pr -f Locore.c scb.s locore.s
 	@cd ../vax/inline; make print
