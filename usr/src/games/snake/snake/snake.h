@@ -1,4 +1,10 @@
-/*	snake.h	4.1	83/07/04	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)snake.h	5.1 (Berkeley) %G%
+ */
 
 # include <stdio.h>
 # include <assert.h>
