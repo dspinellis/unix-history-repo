@@ -1,11 +1,4 @@
-#
-# Copyright (c) 1991 The Regents of the University of California.
-# All rights reserved.
-#
-# %sccs.include.redist.sh
-#
-#	@(#)Makefile	5.3 (Berkeley) %G%
-#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 LIB=	telnet
 SRCS=	auth.c encrypt.c genget.c getent.c gettytab.c misc.c
