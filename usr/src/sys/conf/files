@@ -120,7 +120,7 @@ bbnnet/hmp.c		optional inet bbnnet hmp
 bbnnet/hmp_subr.c	optional inet bbnnet hmp
 bbnnet/hmp_traps.c	optional inet bbnnet hmp
 bbnnet/rdp_fsm.c	optional inet bbnnet rdp
-bbnnet/rdp_cksum.c	optional inet bbnnet
+bbnnet/rdp_cksum.s	optional inet bbnnet
 bbnnet/rdp_input.c	optional inet bbnnet rdp
 bbnnet/rdp_prim.c	optional inet bbnnet rdp
 bbnnet/rdp_states.c	optional inet bbnnet rdp
