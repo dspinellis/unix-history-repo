@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)MAKEDEV	5.10 (Berkeley) %G%
+#	@(#)MAKEDEV	5.11 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -57,6 +57,16 @@ std)
 	mknod vmem 	c 3 3	; chmod 640 vmem ; chgrp kmem vmem
 	mknod tty	c 2 0	; chmod 666 tty
 	mknod klog	c 15 0	; chmod 400 klog
+	mknod stdin	c 21 0	; chmod 666 stdin
+	mknod stdout	c 21 1	; chmod 666 stdout
+	mknod stderr	c 21 2	; chmod 666 stderr
+	mkdir fd > /dev/null 2>&1
+	(cd fd && eval `echo "" | awk ' BEGIN { \
+		for (i = 0; i < 64; i++) \
+			printf("mknod %d c 21 %d;", i, i)}'`)
+	chown -R bin.bin fd
+	chmod 555 fd
+	chmod 666 fd/*
 	;;
 
 cy*)
