@@ -1,6 +1,10 @@
-/* Copyright (c) 1982 Regents of the University of California */
-
-/* static char sccsid[] = "@(#)object.h 1.3 %G%"; */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)object.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * Object module definitions.
