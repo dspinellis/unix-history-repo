@@ -1,0 +1,12 @@
+#!/bin/sh
+# usage: sh catman
+# put the section numbers here:
+for section in 1
+do
+  echo formatting section $section...
+  for file in man$section/*
+  do
+    echo $file "->" cat$section/`basename $file .$section`.0
+    nroff -man <$file >cat$section/`basename $file .$section`.0
+  done
+done
