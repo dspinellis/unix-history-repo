@@ -199,6 +199,11 @@ pcfs/pcfs_fat.c		optional pcfs
 pcfs/pcfs_lookup.c	optional pcfs
 pcfs/pcfs_vfsops.c	optional pcfs
 pcfs/pcfs_vnops.c	optional pcfs
+scsi/cd.c		optional cd
+scsi/ch.c		optional ch
+scsi/scsiconf.c		optional scbus
+scsi/sd.c		optional sd
+scsi/st.c		optional st
 ufs/mfs_vfsops.c	optional mfs
 ufs/mfs_vnops.c		optional mfs
 ufs/ufs_alloc.c		standard
