@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.2 (Berkeley) %G%
+.\"	@(#)csh.1	6.3 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -13,7 +13,7 @@
 \fB\\$1\fR
 .PP
 ..
-.if n .ds ua \o'^|'
+.if n .ds ua ^
 .if t .ds ua \(ua
 .if n .ds aa '
 .if t .ds aa \(aa
@@ -32,10 +32,9 @@ arg ...
 .SH DESCRIPTION
 .I Csh
 is a first implementation of a command language interpreter
-incorporating a history mechanism (see
-.B "History Substitutions)"
-job control facilities (see
-.B Jobs)
+incorporating a history mechanism (see \fBHistory Substitutions\fP),
+job control facilities (see \fBJobs\fP), interactive file name
+and user name completion (see \fBFile Name Completion\fP),
 and a C-like syntax.
 So as to be able to use its job control facilities, users of
 .I csh
@@ -195,6 +194,65 @@ be warned that `You have stopped jobs.'  You may use the \fIjobs\fR
 command to see what they are.  If you do this or immediately try to
 exit again, the shell will not warn you a second time, and the suspended
 jobs will be terminated.
+.sh "File Name Completion"
+When the file name completion feature is enabled by setting
+the shell variable \fIfilec\fP (see \fBset\fP), \fIcsh\fP will
+interactively complete file names and user names from unique
+prefixes, when they are input from the terminal followed by
+the escape character (the escape key, or control-[).  For example,
+if the current directory looks like
+.ta 1i 2i 3i 4i 5i 6i
+.br
+	DSC.OLD	bin	cmd	lib	memos
+.br
+	DSC.NEW	chaosnet	cmtest	mail	netnews
+.br
+	bench	class	dev	mbox	new
+.br
+and the input is
+.br
+	% vi ch<escape>
+.br
+\fIcsh\fP will complete the prefix ``ch''
+to the only matching file name ``chaosnet'', changing the input
+line to
+.br
+	% vi chaosnet
+.br
+However, given
+.br
+	% vi D<escape>
+.br
+\fIcsh\fP will only expand the input to
+.br
+	% vi DSC.
+.br
+and will sound the terminal bell to indicate the expansion is
+incomplete, since there are two file names matching the prefix ``D''.
+.PP
+If a partial file name is followed by the end-of-file character
+(usually control-D), then, instead of completing the name, \fIcsh\fP
+will list all file names matching the prefix.  For example,
+the input
+.br
+	% vi D<control-D>
+.br
+causes all files beginning with ``D'' to be listed:
+.br
+	DSC.NEW	DSC.OLD
+.br
+while the input line remains unchanged.
+.PP
+The same system of escape and end-of-file can also be used to
+expand partial user names, if the word to be completed
+(or listed) begins with the character ``~''.  For example,
+typing
+.br
+	cd ~ro<control-D>
+.br
+may produce the expansion
+.br
+	cd ~root
 .sh Substitutions
 We now describe the various transformations the shell performs on the
 input in the order in which they occur.
@@ -1821,6 +1879,10 @@ For non-builtin commands all expansions occur before echoing.
 Builtin commands are echoed before command and filename substitution,
 since these substitutions are then done selectively.
 .TP 15
+.B filec
+Enable file name completion.
+\c
+.TP 15
 .B histchars
 \c
 Can be given a string value to change the characters used in history
@@ -2141,7 +2203,8 @@ In no case are interrupts allowed when a login shell is reading the file
 William Joy.
 Job control and directory stack features first implemented by J.E. Kulp of
 I.I.A.S.A, Laxenburg, Austria,
-with different syntax than that used now.
+with different syntax than that used now.  File name completion
+code written by Ken Greer, HP Labs.
 .SH FILES
 .ta 1.75i
 .nf
@@ -2199,8 +2262,3 @@ to be combined with `|', and to be used with `&' and `;' metasyntax.
 It should be possible to use the `:' modifiers on the output of command
 substitutions.
 All and more than one `:' modifier should be allowed on `$' substitutions.
-.PP
-Symbolic links fool the shell.  In particular,
-.I dirs
-and `cd ..' don't work properly once you've crossed through a symbolic
-link.
