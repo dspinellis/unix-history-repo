@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	6.3	84/02/06	*/
+/*	lfs_alloc.c	6.4	84/07/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -670,9 +670,9 @@ ialloccg(ip, cg, ipref, mode)
 	int mode;
 {
 	register struct fs *fs;
-	register struct buf *bp;
 	register struct cg *cgp;
-	int i;
+	struct buf *bp;
+	int start, len, loc, map, i;
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
@@ -689,19 +689,28 @@ ialloccg(ip, cg, ipref, mode)
 		ipref %= fs->fs_ipg;
 		if (isclr(cgp->cg_iused, ipref))
 			goto gotit;
-	} else
-		ipref = cgp->cg_irotor;
-	for (i = 0; i < fs->fs_ipg; i++) {
-		ipref++;
-		if (ipref >= fs->fs_ipg)
-			ipref = 0;
-		if (isclr(cgp->cg_iused, ipref)) {
+	}
+	start = cgp->cg_irotor / NBBY;
+	len = howmany(fs->fs_ipg - cgp->cg_irotor, NBBY);
+	loc = skpc(0xff, len, &cgp->cg_iused[start]);
+	if (loc == 0) {
+		printf("cg = %s, irotor = %d, fs = %s\n",
+		    cg, cgp->cg_irotor, fs->fs_fsmnt);
+		panic("ialloccg: map corrupted");
+		/* NOTREACHED */
+	}
+	i = start + len - loc;
+	map = cgp->cg_iused[i];
+	ipref = i * NBBY;
+	for (i = 1; i < (1 << NBBY); i <<= 1, ipref++) {
+		if ((map & i) == 0) {
 			cgp->cg_irotor = ipref;
 			goto gotit;
 		}
 	}
-	brelse(bp);
-	return (NULL);
+	printf("fs = %s\n", fs->fs_fsmnt);
+	panic("ialloccg: block not in map");
+	/* NOTREACHED */
 gotit:
 	setbit(cgp->cg_iused, ipref);
 	cgp->cg_cs.cs_nifree--;
@@ -849,6 +858,8 @@ ifree(ip, ino, mode)
 		panic("ifree: freeing free inode");
 	}
 	clrbit(cgp->cg_iused, ino);
+	if (ino < cgp->cg_irotor)
+		cgp->cg_irotor = ino;
 	cgp->cg_cs.cs_nifree++;
 	fs->fs_cstotal.cs_nifree++;
 	fs->fs_cs(fs, cg).cs_nifree++;
@@ -896,8 +907,12 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		loc = scanc((unsigned)len, (caddr_t)&cgp->cg_free[start],
 			(caddr_t)fragtbl[fs->fs_frag],
 			(int)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
-		if (loc == 0)
+		if (loc == 0) {
+			printf("start = %d, len = %d, fs = %s\n",
+			    start, len, fs->fs_fsmnt);
+			panic("alloccg: map corrupted");
 			return (-1);
+		}
 	}
 	bno = (start + len - loc) * NBBY;
 	cgp->cg_frotor = bno;
