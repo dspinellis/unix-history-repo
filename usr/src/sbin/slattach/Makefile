@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 slattach ${DESTDIR}/etc/slattach
+	install -s -o bin -g bin -m 755 slattach ${DESTDIR}/sbin
 	install -c -o bin -g bin -m 444 slattach.0 ${DESTDIR}/usr/man/cat8
 	rm -f ${DESTDIR}/usr/man/cat8/slip.0
 	ln ${DESTDIR}/usr/man/cat8/slattach.0 ${DESTDIR}/usr/man/cat8/slip.0
