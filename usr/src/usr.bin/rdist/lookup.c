@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lookup.c	4.4 (Berkeley) 84/02/09";
+static	char *sccsid = "@(#)lookup.c	4.5 (Berkeley) 84/02/16";
 #endif
 
 #include "defs.h"
@@ -38,7 +38,7 @@ define(name)
 		value = NULL;
 	} else if (cp[1] != '(') {
 		*cp++ = '\0';
-		value = makenl(name);
+		value = makenl(cp);
 	} else {
 		nl = NULL;
 		*cp++ = '\0';
@@ -105,12 +105,8 @@ lookup(name, action, value)
 		if (strcmp(name, s->s_name))
 			continue;
 		if (action != LOOKUP) {
-			if (s->s_type == CONST)
+			if (action != INSERT || s->s_type != CONST)
 				fatal("%s redefined\n", name);
-			if (action == INSERT) {
-				warn("%s redefined\n", name);
-				s->s_value = value;
-			}
 		}
 		return(s->s_value);
 	}
