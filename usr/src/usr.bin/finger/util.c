@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -262,4 +262,51 @@ walloc(pn)
 	}
 	w->next = NULL;
 	return(w);
+}
+
+char *
+prphone(num)
+	char *num;
+{
+	register char *p;
+	int len;
+	static char pbuf[15];
+
+	/* don't touch anything if the user has their own formatting */
+	for (p = num; *p; ++p)
+		if (!isdigit(*p))
+			return(num);
+	len = p - num;
+	p = pbuf;
+	switch(len) {
+	case 11:			/* +0-123-456-7890 */
+		*p++ = '+';
+		*p++ = *num++;
+		*p++ = '-';
+		/* FALLTHROUGH */
+	case 10:			/* 012-345-6789 */
+		*p++ = *num++;
+		*p++ = *num++;
+		*p++ = *num++;
+		*p++ = '-';
+		/* FALLTHROUGH */
+	case 7:				/* 012-3456 */
+		*p++ = *num++;
+		*p++ = *num++;
+		*p++ = *num++;
+		break;
+	case 5:				/* x0-1234 */
+		*p++ = 'x';
+		*p++ = *num++;
+		break;
+	default:
+		return(num);
+	}
+	*p++ = '-';
+	*p++ = *num++;
+	*p++ = *num++;
+	*p++ = *num++;
+	*p++ = *num++;
+	*p = '\0';
+	return(pbuf);
 }

@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)finger.1	6.8 (Berkeley) %G%
+.\"	@(#)finger.1	6.9 (Berkeley) %G%
 .\"
 .TH FINGER 1 ""
 .UC 4
@@ -53,8 +53,8 @@ The
 option produces a multi-line format displaying all of the information
 described for the
 .I -s
-option as well as the user's home directory, login shell, and the
-contents of the files
+option as well as the user's home directory, home phone number, login
+shell, and the contents of the files
 .I ``.plan''
 and
 .I ``.project''
@@ -64,8 +64,13 @@ If idle time is at least a minute and less than a day, it is
 presented in the form ``hh:mm''.
 Idle times greater than a day are presented as ``d day[s] hh:mm''.
 .PP
-If write permission is denied to the device, the phrase ``(messages
-off)'' is appended to the line containing the device name.
+Phone numbers specified as eleven digits are printed as ``+N-NNN-NNN-NNNN''.
+Numbers specified as ten or seven digits are printed as the appropriate
+subset of that string.
+Numbers specified as five digits are printed as ``xN-NNNN''.
+.PP
+If write permission is denied to the device, the phrase ``(messages off)''
+is appended to the line containing the device name.
 One entry per user is displayed with the
 .IR -l
 option; if a user is logged on multiple times, terminal information

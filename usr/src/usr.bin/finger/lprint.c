@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -60,7 +60,7 @@ lprint(pn)
 	register int cpr, len, maxlen;
 	int oddfield;
 	time_t time();
-	char *t, *ctime();
+	char *t, *ctime(), *prphone();
 
 	/*
 	 * long format --
@@ -85,7 +85,7 @@ lprint(pn)
 	    strlen(pn->office) + strlen(pn->officephone) +
 	    sizeof(OFFICE_TAG) + 2 <= 5 * TAB_LEN) {
 		(void)sprintf(tbuf, "%s: %s, %s", OFFICE_TAG, pn->office,
-		    pn->officephone);
+		    prphone(pn->officephone));
 		oddfield = demi_print(tbuf, oddfield);
 	} else {
 		if (pn->office) {
@@ -94,12 +94,13 @@ lprint(pn)
 		}
 		if (pn->officephone) {
 			(void)sprintf(tbuf, "%s: %s", OFFICE_PHONE_TAG,
-			    pn->officephone);
+			    prphone(pn->officephone));
 			oddfield = demi_print(tbuf, oddfield);
 		}
 	}
 	if (pn->homephone) {
-		(void)sprintf(tbuf, "%s: %s", "Home Phone", pn->homephone);
+		(void)sprintf(tbuf, "%s: %s", "Home Phone",
+		    prphone(pn->homephone));
 		oddfield = demi_print(tbuf, oddfield);
 	}
 	if (oddfield)
