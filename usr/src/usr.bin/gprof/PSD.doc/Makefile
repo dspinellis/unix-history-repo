@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 DIR=	papers/gprof
 SRCS=	header.me abstract.me intro.me profiling.me gathering.me \
