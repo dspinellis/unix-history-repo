@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.64 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.65 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -226,7 +226,7 @@ lfs_mountfs(devvp, mp, p)
 
 	/* Set up the I/O information */
 	fs->lfs_iocount = 0;
-	fs->lfs_seglist = NULL;
+	/* XXX NOTUSED:	fs->lfs_seglist = NULL; */
 
 	/* Set the file system readonly/modify bits. */
 	fs = ump->um_lfs;
@@ -247,7 +247,6 @@ lfs_mountfs(devvp, mp, p)
 		ump->um_quotas[i] = NULLVP;
 
 	/* Read the ifile disk inode and store it in a vnode. */
-	/* XXX Why not just lfs_vget?? */
 	if (error = bread(devvp, fs->lfs_idaddr, fs->lfs_bsize, NOCRED, &bp))
 		goto out;
 	if (error = lfs_vcreate(mp, LFS_IFILE_INUM, &vp))
@@ -265,21 +264,6 @@ lfs_mountfs(devvp, mp, p)
 	/* Initialize the associated vnode */
 	vp->v_type = IFTOVT(ip->i_mode);
 
-	/*
-	 * Read in the segusage table.
-	 * 
-	 * Since we always explicitly write the segusage table at a checkpoint,
-	 * we're assuming that it is continguous on disk.
-	 */
-	seg_addr = ip->i_din.di_db[0];
-	size = fs->lfs_segtabsz << fs->lfs_bshift;
-	fs->lfs_segtab = malloc(size, M_SUPERBLK, M_WAITOK);
-	if (error = bread(devvp, seg_addr, size, NOCRED, &bp)) {
-		free(fs->lfs_segtab, M_SUPERBLK);
-		goto out;
-	}
-	bcopy((caddr_t)bp->b_un.b_addr, fs->lfs_segtab, size);
-	brelse(bp);
 	devvp->v_specflags |= SI_MOUNTEDON;
 	VREF(ip->i_devvp);
 
@@ -310,7 +294,9 @@ lfs_unmount(mp, mntflags, p)
 	int i, error, ronly, flags = 0;
 	int ndirty;						/* LFS */
 
-printf("lfs_unmount\n");
+#ifdef VERBOSE
+	printf("lfs_unmount\n");
+#endif
 	if (mntflags & MNT_FORCE) {
 		if (!doforce || mp == rootfs)
 			return (EINVAL);
@@ -361,21 +347,6 @@ lfs_statfs(mp, sbp, p)
 	register struct ufsmount *ump;
 
 	ump = VFSTOUFS(mp);
-#ifdef NOTLFS							/* LFS */
-	fs = ump->um_fs;
-	if (fs->fs_magic != FS_MAGIC)
-		panic("ufs_statfs");
-	sbp->f_type = MOUNT_UFS;
-	sbp->f_fsize = fs->fs_fsize;
-	sbp->f_bsize = fs->fs_bsize;
-	sbp->f_blocks = fs->fs_dsize;
-	sbp->f_bfree = fs->fs_cstotal.cs_nbfree * fs->fs_frag +
-		fs->fs_cstotal.cs_nffree;
-	sbp->f_bavail = (fs->fs_dsize * (100 - fs->fs_minfree) / 100) -
-		(fs->fs_dsize - sbp->f_bfree);
-	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
-	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
-#else
 	fs = ump->um_lfs;
 	if (fs->lfs_magic != LFS_MAGIC)
 		panic("lfs_statfs: magic");
@@ -388,7 +359,6 @@ lfs_statfs(mp, sbp, p)
 		(fs->lfs_dsize - sbp->f_bfree);
 	sbp->f_files = fs->lfs_nfiles;
 	sbp->f_ffree = fs->lfs_bfree * INOPB(fs);
-#endif
 	if (sbp != &mp->mnt_stat) {
 		bcopy((caddr_t)mp->mnt_stat.f_mntonname,
 			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
@@ -413,7 +383,9 @@ lfs_sync(mp, waitfor)
 	static int sync_lock, sync_want;
 	int error;
 
-printf("lfs_sync\n");
+#ifdef VERBOSE
+	printf("lfs_sync\n");
+#endif
 
 	/*
 	 * Meta data blocks are only marked dirty, not busy, so LFS syncs
