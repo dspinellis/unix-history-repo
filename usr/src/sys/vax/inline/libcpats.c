@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)libcpats.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)libcpats.c	1.4 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)libcpats.c	1.3 (Berkeley) %G%";
 struct pats libc_ptab[] = {
 
 #ifdef vax
-	{ "1,_fgetc\n",
+	{ 1, "_fgetc\n",
 "	sobgeq	*(sp),1f\n\
 	calls	$1,__filbuf\n\
 	jbr     2f\n\
@@ -26,7 +26,7 @@ struct pats libc_ptab[] = {
 	incl	(r1)\n\
 2:\n" },
 
-	{ "2,_fputc\n",
+	{ 2, "_fputc\n",
 "	sobgeq	*4(sp),1f\n\
 	calls	$2,__flsbuf\n\
 	jbr	2f\n\
@@ -36,7 +36,7 @@ struct pats libc_ptab[] = {
 	incl	4(r1)\n\
 2:\n" },
 
-	{ "1,_strlen\n",
+	{ 1, "_strlen\n",
 "	movl	(sp)+,r5\n\
 	movl	r5,r1\n\
 1:\n\
@@ -49,5 +49,5 @@ struct pats libc_ptab[] = {
 /* someday... */
 #endif mc68000
 
-	{ "", "" }
+	{ 0, "", "" }
 };
