@@ -1,0 +1,40 @@
+CD(1)                        BSD Reference Manual                        CD(1)
+
+NNAAMMEE
+     ccdd - change working directory
+
+SSYYNNOOPPSSIISS
+     ccdd _d_i_r_e_c_t_o_r_y
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_i_r_e_c_t_o_r_y is an absolute or relative pathname which becomes the new work-
+     ing directory.  The interpretation of a relative pathname by cd depends
+     on the CDPATH environment variable (see below).
+
+EENNVVIIRROONNMMEENNTT
+     The following environment variables affect the execution of cd:
+
+     CDPATH  If the _d_i_r_e_c_t_o_r_y operand does not begin with a slash (/) charac-
+             ter, and the first component is not dot (.) or dot-dot (..), ccdd
+             searches for the directory relative to each directory named in
+             the CDPATH variable, in the order listed.  The new working direc-
+             tory is set to the first matching directory found.  An empty
+             string in place of a directory pathname represents the current
+             directory.  If the new working directory was derived from CDPATH,
+             it will be printed to the standard output.
+
+     HOME    If ccdd is invoked without arguments and the HOME environment vari-
+             able exists and contains a directory name, that directory becomes
+             the new working directory.
+
+     See csh(1) for more information on environment variables.
+
+     The ccdd utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     csh(1),  pwd(1),  sh(1),  chdir(2)
+
+SSTTAANNDDAARRDDSS
+     The ccdd command is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4th Berkeley Distribution        June 5, 1993                                1
