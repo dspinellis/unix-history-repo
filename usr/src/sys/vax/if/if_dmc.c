@@ -1,9 +1,9 @@
-/*	if_dmc.c	4.22	82/12/17	*/
+/*	if_dmc.c	4.23	83/02/20	*/
 
 #include "dmc.h"
 #if NDMC > 0
 #define printd if(dmcdebug)printf
-int dmcdebug = 1;
+int dmcdebug = 0;
 /*
  * DMC11 device driver, internet version
  *
@@ -34,6 +34,10 @@ int dmcdebug = 1;
 #include "../vaxif/if_dmc.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
+
+#ifndef DMC_USEMAINT
+#define	DMC_USEMAINT	1	/* use maintenance mode */
+#endif
 
 /*
  * Driver information for auto-configuration stuff.
@@ -178,7 +182,7 @@ dmcinit(unit)
 	base = sc->sc_ubinfo & 0x3ffff;
 	printd("  base 0x%x\n", base);
 	dmcload(sc, DMC_BASEI, base, (base>>2)&DMC_XMEM);
-	dmcload(sc, DMC_CNTLI, 0, 0);
+	dmcload(sc, DMC_CNTLI, 0, DMC_USEMAINT ? DMC_MAINT : 0);
 	base = sc->sc_ifuba.ifu_r.ifrw_info & 0x3ffff;
 	dmcload(sc, DMC_READ, base, ((base>>2)&DMC_XMEM)|DMCMTU);
 	printd("  first read queued, addr 0x%x\n", base);
@@ -273,7 +277,7 @@ dmcrint(unit)
 		while (addr->bsel0&DMC_RDYI)
 			;
 		if (sc->sc_que.c_cc == 0)
-			return;
+			goto out;
 		addr->bsel0 = getc(&sc->sc_que);
 		n = RDYSCAN;
 		while (n-- && (addr->bsel0&DMC_RDYI) == 0)
@@ -281,6 +285,8 @@ dmcrint(unit)
 	}
 	if (sc->sc_que.c_cc)
 		addr->bsel0 |= DMC_IEI;
+out:
+	dmxint(unit);
 }
 
 /*
@@ -297,15 +303,18 @@ dmcxint(unit)
 	struct dmcdevice *addr;
 	struct mbuf *m;
 	register struct ifqueue *inq;
-	int arg, cmd, len;
+	int arg, arg2, cmd, len;
 
 	addr = (struct dmcdevice *)ui->ui_addr;
+	cmd = addr->bsel2 & 0xff;
+	if ((cmd & DMC_RDYO) == 0)
+		return;
+	arg2 = addr->sel4;
 	arg = addr->sel6;
-	cmd = addr->bsel2&7;
 	addr->bsel2 &= ~DMC_RDYO;
 	sc = &dmc_softc[unit];
 	printd("dmcxint\n");
-	switch (cmd) {
+	switch (cmd & 07) {
 
 	case DMC_OUR:
 		/*
