@@ -11,14 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 
-#define	DEF_PATH	"/usr/man"		/* default man path */
+#define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
 #define	MAXLINELEN	1000			/* max line handled */
 #define	NO		0			/* no/false */
 #define	WHATIS		"whatis"		/* database name */
@@ -173,4 +173,3 @@ usage()
 	fprintf(stderr, "usage: %s [-M path] string ...\n", myname);
 	exit(1);
 }
-
