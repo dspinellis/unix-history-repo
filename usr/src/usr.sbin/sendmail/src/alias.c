@@ -10,7 +10,6 @@
 # include <sys/stat.h>
 # include <sys/file.h>
 # include <signal.h>
-# include <fcntl.h>
 # include <pwd.h>
 
 # ifdef DBM
@@ -28,15 +27,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.26 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.26 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.26 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.26 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -502,10 +501,8 @@ readaliases(aliasfile, init, e)
 # ifdef NDBM
 	DBM *dbmp;
 # endif
-# ifdef LOCKF
-	struct flock fld;
-# endif
 	char line[BUFSIZ];
+	extern bool lockfile();
 
 	if ((af = fopen(aliasfile, "r+")) == NULL)
 	{
@@ -520,24 +517,14 @@ readaliases(aliasfile, init, e)
 
 # if defined(NDBM) || defined(NEWDB)
 	/* see if someone else is rebuilding the alias file already */
-# ifdef LOCKF
-	fld.l_type = F_WRLCK;
-	fld.l_whence = fld.l_start = fld.l_len = 0;
-	if (fcntl(fileno(af), F_SETLK, &fld) < 0)
-# else
-	if (flock(fileno(af), LOCK_EX | LOCK_NB) < 0 && errno == EWOULDBLOCK)
-# endif
+	if (!lockfile(fileno(af), aliasfile, LOCK_EX|LOCK_NB))
 	{
 		/* yes, they are -- wait until done and then return */
 		message("Alias file is already being rebuilt");
 		if (OpMode != MD_INITALIAS)
 		{
 			/* wait for other rebuild to complete */
-# ifdef LOCKF
-			(void) fcntl(fileno(af), F_SETLKW, &fld);
-# else
-			(void) flock(fileno(af), LOCK_EX);
-# endif
+			(void) lockfile(fileno(af), aliasfile, LOCK_EX);
 		}
 		(void) fclose(af);
 		errno = 0;

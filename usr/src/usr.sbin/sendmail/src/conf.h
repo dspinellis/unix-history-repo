@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.10 (Berkeley) %G%
+ *	@(#)conf.h	6.11 (Berkeley) %G%
  */
 
 /*
@@ -13,6 +13,7 @@
 */
 
 # include <sys/param.h>
+# include <fcntl.h>
 
 /*
 **  Table sizes, etc....
@@ -149,4 +150,10 @@ struct utsname
 
 #ifndef STDERR_FILENO
 #define STDERR_FILENO	2
+#endif
+
+#ifdef LOCKF
+#define LOCK_SH		0x01	/* shared lock */
+#define LOCK_EX		0x02	/* exclusive lock */
+#define LOCK_NB		0x04	/* non-blocking lock */
 #endif

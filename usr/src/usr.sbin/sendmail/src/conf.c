@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -584,7 +584,6 @@ rlsesigs()
 #if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
 
 #include <nlist.h>
-#include <fcntl.h>
 
 #ifndef LA_AVENRUN
 #define LA_AVENRUN	"_avenrun"
@@ -793,6 +792,12 @@ refuseconnections()
 **		display the title.
 */
 
+#ifdef SETPROCTITLE
+# ifdef __hpux
+#  include <sys/pstat.h>
+# endif
+#endif
+
 char	ProcTitleBuf[MAXLINE];
 
 /*VARARGS1*/
@@ -808,6 +813,9 @@ setproctitle(fmt, va_alist)
 	register char *p;
 	register int i;
 	VA_LOCAL_DECL
+#  ifdef __hpux
+	union pstun pst;
+#  endif
 	extern char **Argv;
 	extern char *LastArgv;
 
@@ -840,6 +848,7 @@ setproctitle(fmt, va_alist)
 	p = &Argv[0][i];
 	while (p < LastArgv)
 		*p++ = ' ';
+#  endif
 # endif /* SETPROCTITLE */
 }
 /*
@@ -936,7 +945,11 @@ unsetenv(name)
 int
 getdtablesize()
 {
+# ifdef _SC_OPEN_MAX
+	return sysconf(_SC_OPEN_MAX);
+# else
 	return NOFILE;
+# endif
 }
 
 #endif
@@ -1234,5 +1247,56 @@ transienterror(err)
 	}
 
 	/* nope, must be permanent */
+	return FALSE;
+}
+/*
+**  LOCKFILE -- lock a file using flock or (shudder) lockf
+**
+**	Parameters:
+**		fd -- the file descriptor of the file.
+**		filename -- the file name (for error messages).
+**		type -- type of the lock.  Bits can be:
+**			LOCK_EX -- exclusive lock.
+**			LOCK_NB -- non-blocking.
+**
+**	Returns:
+**		TRUE if the lock was acquired.
+**		FALSE otherwise.
+*/
+
+bool
+lockfile(fd, filename, type)
+	int fd;
+	char *filename;
+	int type;
+{
+# ifdef LOCKF
+	int action;
+	struct flock lfd;
+
+	if (bitset(LOCK_EX, type)
+		lfd.l_type = F_WRLCK;
+	else
+		lfd.l_type = F_RDLCK;
+
+	if (bitset(LOCK_NB, type))
+		action = F_SETLK;
+	else
+		action = F_SETLKW;
+
+	lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+
+	if (fcntl(fd, action, &lfd) >= 0)
+		return TRUE;
+
+	if (!bitset(LOCK_NB, type) || (errno != EACCES && errno != EAGAIN))
+		syserr("cannot lockf(%s)", filename);
+# else
+	if (flock(fd, type) >= 0)
+		return TRUE;
+
+	if (!bitset(LOCK_NB, type) || errno != EWOULDBLOCK)
+		syserr("cannot flock(%s)", filename);
+# endif
 	return FALSE;
 }

@@ -7,11 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
-#include <fcntl.h>
 
 #ifdef DBM_MAP
 #include <ndbm.h>

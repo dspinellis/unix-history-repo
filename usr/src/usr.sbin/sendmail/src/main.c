@@ -13,16 +13,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
-#include <fcntl.h>
+#include "sendmail.h"
 #include <sys/stat.h>
 #include <signal.h>
 #include <sgtty.h>
-#include "sendmail.h"
 #ifdef NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
@@ -878,8 +877,10 @@ main(argc, argv, envp)
 	**  Do basic system initialization and set the sender
 	*/
 
+# ifndef SYSTEM5
 	/* make sendmail immune from process group signals */
 	(void) setpgrp(0, getpid());
+# endif
 
 	initsys(CurEnv);
 	setsender(from, CurEnv, NULL);
