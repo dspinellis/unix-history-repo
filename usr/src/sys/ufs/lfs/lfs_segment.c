@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.16 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -54,7 +54,7 @@ struct segment {
 	((fs)->lfs_dbpseg - ((fs)->lfs_offset - (fs)->lfs_curseg) > \
 	1 << (fs)->lfs_fsbtodb)
 
-int	 lfs_callback __P((struct buf *));
+void	 lfs_callback __P((struct buf *));
 void	 lfs_gather __P((struct lfs *, struct segment *,
 	     struct vnode *, int (*) __P((struct lfs *, struct buf *))));
 void	 lfs_initseg __P((struct lfs *, struct segment *));
@@ -882,7 +882,7 @@ lfs_newbuf(fs, daddr, size)
 	return (bp);
 }
 
-int						/* XXX should be void */
+void
 lfs_callback(bp)
 	struct buf *bp;
 {
