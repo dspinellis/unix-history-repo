@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -37,12 +37,18 @@ __rec_close(dbp)
 	BTREE *t;
 	int rval;
 
+	t = dbp->internal;
+
+	/* Toss any page pinned across calls. */
+	if (t->bt_pinned != NULL) {
+		mpool_put(t->bt_mp, t->bt_pinned, 0);
+		t->bt_pinned = NULL;
+	}
+
 	if (__rec_sync(dbp, 0) == RET_ERROR)
 		return (RET_ERROR);
 
 	/* Committed to closing. */
-	t = dbp->internal;
-
 	rval = RET_SUCCESS;
 	if (ISSET(t, R_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
 		rval = RET_ERROR;
@@ -83,6 +89,12 @@ __rec_sync(dbp, flags)
 	int status;
 
 	t = dbp->internal;
+
+	/* Toss any page pinned across calls. */
+	if (t->bt_pinned != NULL) {
+		mpool_put(t->bt_mp, t->bt_pinned, 0);
+		t->bt_pinned = NULL;
+	}
 
 	if (flags == R_RECNOSYNC)
 		return (__bt_sync(dbp, 0));

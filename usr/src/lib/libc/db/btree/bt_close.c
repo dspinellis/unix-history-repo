@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -42,6 +42,12 @@ __bt_close(dbp)
 	int fd;
 
 	t = dbp->internal;
+
+	/* Toss any page pinned across calls. */
+	if (t->bt_pinned != NULL) {
+		mpool_put(t->bt_mp, t->bt_pinned, 0);
+		t->bt_pinned = NULL;
+	}
 
 	/*
 	 * Delete any already deleted record that we've been saving
@@ -88,12 +94,19 @@ __bt_sync(dbp, flags)
 	PAGE *h;
 	void *p;
 
+	t = dbp->internal;
+
+	/* Toss any page pinned across calls. */
+	if (t->bt_pinned != NULL) {
+		mpool_put(t->bt_mp, t->bt_pinned, 0);
+		t->bt_pinned = NULL;
+	}
+
+	/* Sync doesn't currently take any flags. */
 	if (flags != 0) {
 		errno = EINVAL;
 		return (RET_ERROR);
 	}
-
-	t = dbp->internal;
 
 	if (ISSET(t, B_INMEM | B_RDONLY) || !ISSET(t, B_MODIFIED))
 		return (RET_SUCCESS);
