@@ -1,4 +1,4 @@
-# symbols.raw 4.6 82/11/13
+# symbols.raw 4.7 83/03/10
 	_version
 #dmesg
 	_msgbuf
@@ -22,6 +22,8 @@
 	_maxslp
 	_ccpu
 	_ecmx
+	_nproc
+	_ntext
 #pstat
 	_inode
 	_text
@@ -56,4 +58,24 @@
 	_usrpt
 	_nswap
 	_avenrun
-	_bootime
+	_boottime
+#netstat
+	_mbstat
+	_ipstat
+	_tcb
+	_tcpstat
+	_udb
+	_udpstat
+	_rawcb
+	_Sysmap
+	_Syssize
+	_ifnet
+	_hosts
+	_rthost
+	_rtnet
+	_icmpstat
+#routed
+	_ifnet
+#rwho
+	_avenrun
+	_boottime
