@@ -1,4 +1,4 @@
-/*	conf.c	1.8	87/03/26	*/
+/*	conf.c	1.9	87/03/28	*/
 
 #include "param.h"
 #include "systm.h"
@@ -186,7 +186,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nulldev,	nodev,		nodev,		/*4*/
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
-	vdopen,		nulldev,	vdread,		vdwrite,	/*5*/
+	vdopen,		vdclose,	vdread,		vdwrite,	/*5*/
 	vdioctl,	nodev,		nulldev,	0,
 	seltrue,	nodev,
 	nodev,		nulldev,	nodev,		nodev,		/*6*/
