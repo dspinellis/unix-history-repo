@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.31 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -462,8 +462,9 @@ lfs_writeinode(fs, sp, ip)
 		}
 #endif
 		sup->su_nbytes -= sizeof(struct dinode);
+		redo_ifile =
+		    (ino == LFS_IFILE_INUM && !(bp->b_flags & B_GATHERED));
 		error = VOP_BWRITE(bp);
-		redo_ifile = (ino == LFS_IFILE_INUM && !(bp->b_flags & B_GATHERED));
 	}
 	return (redo_ifile);
 }
@@ -799,9 +800,9 @@ lfs_writeseg(fs, sp)
 	sup->su_flags |= SEGUSE_ACTIVE;
 	sup->su_ninos += ninos;
 	++sup->su_nsums;
+	do_again = !(bp->b_flags & B_GATHERED);
 	(void)VOP_BWRITE(bp);
 	fs->lfs_bfree -= (fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE);
-	do_again = !(bp->b_flags & B_GATHERED);
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
 	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op[VOFFSET(vop_strategy)];
@@ -865,6 +866,7 @@ lfs_writeseg(fs, sp)
 				brelse(bp);
 			}
 		}
+		++cbp->b_vp->v_numoutput;
 		splx(s);
 		cbp->b_bcount = p - cbp->b_un.b_addr;
 		/*
@@ -892,6 +894,7 @@ lfs_writesuper(fs, sp)
 	struct buf *bp;
 	dev_t i_dev;
 	int (*strategy) __P((struct vop_strategy_args *));
+	int s;
 	struct vop_strategy_args vop_strategy_a;
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
@@ -909,6 +912,9 @@ lfs_writesuper(fs, sp)
 	bp->b_flags &= ~(B_DONE | B_CALL | B_ERROR | B_READ | B_DELWRI);
 	vop_strategy_a.a_desc = VDESC(vop_strategy);
 	vop_strategy_a.a_bp = bp;
+	s = splbio();
+	bp->b_vp->v_numoutput += 2;
+	splx(s);
 	(strategy)(&vop_strategy_a);
 	biowait(bp);
 
@@ -979,7 +985,7 @@ lfs_newbuf(vp, daddr, size)
 
 	nbytes = roundup(size, DEV_BSIZE);
 	bp = malloc(sizeof(struct buf) + nbytes, M_SEGMENT, M_WAITOK);
-	bzero(bp, sizeof(struct buf));
+	bzero(bp, sizeof(struct buf) + nbytes);
 	bgetvp(vp, bp);
 	bp->b_un.b_addr = (caddr_t)(bp + 1);
 	bp->b_bufsize = size;
