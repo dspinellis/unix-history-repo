@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.117 (Berkeley) %G%
+#	@(#)termcap.src	5.118 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -480,6 +480,9 @@ tab132wrv:\
 # requirements in MS.
 mw2|Multiwriter 2:\
 	:do=^J:co#132:hc:os:
+# luna's BMC terminal emulator
+luna|luna68k|LUNA68K Bitmap console:\
+	:li#46:co#88:tc=ansi:
 # SCO console and SOS-Syscons console for 386bsd
 scoansi|SCO Extended ANSI standard crt:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J\E[H:cm=\E[%i%d;%dH:co#80:\
