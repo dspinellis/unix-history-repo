@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.15 %G%"
+SCCSID = "@(#)Makefile 1.16 %G%"
 
 CFLAGS = -O
 
@@ -51,18 +51,18 @@ EXOBJ =	APPEND.o SEEK.o TELL.o
 sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
 
 .s.o:
-	sed -f mcount.sed $*.s | ${AS} -o tmp
-	-${LD} -X -r -o profiled/$@ tmp
-	${AS} -o tmp $*.s
-	-${LD} -x -r -o $@ tmp
+	sed -f mcount.sed $*.s | ${AS} -o tmp.o
+	-${LD} -X -r -o profiled/$@ tmp.o
+	${AS} -o tmp.o $*.s
+	-${LD} -x -r -o $@ tmp.o
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
-	mv $@ tmp
-	-${LD} -X -r -o profiled/$@ tmp
+	mv $@ tmp.o
+	-${LD} -X -r -o profiled/$@ tmp.o
 	${CC} ${CFLAGS} -c $*.c
-	mv $@ tmp
-	-${LD} -x -r -o $@ tmp
+	mv $@ tmp.o
+	-${LD} -x -r -o $@ tmp.o
 
 libpc libpc_p: ${OBJS} ${SYOBJ} ${EXOBJ}
 	cd profiled; ${AR} cru ../libpc_p ${OBJS} ${SYOBJ} ${EXOBJ}
