@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -178,8 +178,6 @@ mime8to7(mci, header, e, boundary)
 		for (p = buf; *p != '\0'; p++)
 		{
 			/* count bytes with the high bit set */
-			/* XXX should this count any character that will */
-			/* XXX have to be encoded in quoted-printable? */
 			sectionsize++;
 			if (bitset(0200, *p))
 				sectionhighbits++;
@@ -213,7 +211,24 @@ mime8to7(mci, header, e, boundary)
 		printf("mime8to7: %ld high bits in %ld bytes\n",
 			sectionhighbits, sectionsize);
 	}
-	if (sectionsize / 8 < sectionhighbits)
+	if (sectionhighbits == 0)
+	{
+		/* no encoding necessary */
+		putline("", mci);
+		mci->mci_flags &= ~MCIF_INHEADER;
+		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
+		{
+			bt = mimeboundary(buf, boundary);
+			if (bt != MBT_NOTSEP)
+				break;
+			if (buf[0] == 'F' &&
+			    bitnset(M_ESCFROM, mci->mci_mailer->m_flags) &&
+			    strncmp(buf, "From ", 5) == 0)
+				(void) putc('>', mci->mci_out);
+			putline(buf, mci);
+		}
+	}
+	else if (sectionsize / 8 < sectionhighbits)
 	{
 		/* use base64 encoding */
 		int c1, c2;
@@ -264,7 +279,7 @@ mime8to7(mci, header, e, boundary)
 		putline("", mci);
 		mci->mci_flags &= ~MCIF_INHEADER;
 		linelen = 0;
-		c2 = EOF;
+		c2 = '\n';
 		while ((c1 = mime_getchar(e->e_dfp, boundary)) != EOF)
 		{
 			if (c1 == '\n')
@@ -279,11 +294,18 @@ mime8to7(mci, header, e, boundary)
 				c2 = c1;
 				continue;
 			}
+			else if (c2 == '\n' && c1 == '.' &&
+				 bitnset(M_XDOT, mci->mci_mailer->m_flags))
+			{
+				fputc('.', mci->mci_out);
+				linelen++;
+			}
 			if (linelen > 72)
 			{
 				fputc('=', mci->mci_out);
 				fputs(mci->mci_mailer->m_eol, mci->mci_out);
 				linelen = 0;
+				c2 = '\n';
 			}
 			if ((c1 < 0x20 && c1 != '\t') || c1 >= 0x7f || c1 == '=')
 			{
@@ -363,21 +385,6 @@ mime_getchar(fp, boundary)
 		buflen = bp - buf - 1;
 		bp = buf;
 		return *bp++;
-	}
-	else if (atbol && c == '.')
-	{
-		/* implement hidden dot algorithm */
-		bp = buf;
-		*bp = c;
-		buflen = 1;
-		c = fgetc(fp);
-		if (c != '\n')
-			return '.';
-		atbol = TRUE;
-		buf[0] = '.';
-		buf[1] = '\n';
-		buflen = 2;
-		return '.';
 	}
 
 	atbol = c == '\n';
