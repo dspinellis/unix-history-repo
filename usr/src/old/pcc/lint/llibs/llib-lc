@@ -1,4 +1,4 @@
-/*	llib-lc	1.19	85/05/15	*/
+/*	llib-lc	1.20	85/06/17	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -23,6 +23,7 @@ int	errno;
 int	accept(s, a, l) struct sockaddr *a; int *l; { return s; }
 int	access( p, m) char *p; { return 0; }
 int	acct(f) char *f; { return 0;}
+int	adjtime(delta, odelta) struct timeval *delta, *odelta; { return 0; }
 int	bind(s, n, l) struct sockaddr *n; { return 0; }
 char	*brk(a) char *a; { return(a); }
 int	chdir(s) char *s; { return(0); }
@@ -110,7 +111,7 @@ int	setregid( r, e){ return 0; }
 int	setreuid( r, e){ return 0; }
 int	setrlimit( res, rip) struct rlimit *rip; { return 0;}
 	/* VARARGS */
-int	setsockopt( s, level, opt, buf, len ) { return 0;}
+int	setsockopt( s, level, opt, buf, len ) char *buf; { return 0;}
 int	settimeofday( t, z ) struct timeval *t; struct timezone *z; { return 0;}
 int	shutdown( s, h ){ return 0;}
 int	(*signal(c, f))() int (*f)(); { return(f); }
