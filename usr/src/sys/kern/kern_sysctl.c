@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.14 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -193,7 +193,10 @@ fill_eproc(p, ep)
 	ep->e_pcred = *p->p_cred;
 	ep->e_ucred = *p->p_ucred;
 	ep->e_vm = *p->p_vmspace;
-	ep->e_ppid = p->p_pptr->p_pid;
+	if (p->p_pptr)
+		ep->e_ppid = p->p_pptr->p_pid;
+	else
+		ep->e_ppid = 0;
 	ep->e_pgid = p->p_pgrp->pg_id;
 	ep->e_jobc = p->p_pgrp->pg_jobc;
 	if ((p->p_flag&SCTTY) && 
