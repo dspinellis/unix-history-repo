@@ -10,7 +10,6 @@ hp300/ns_cksum.c	optional ns
 hp300/oc_cksum.s	optional inet
 hp300/sys_machdep.c	standard
 hp300/trap.c		standard
-hp300/ufs_machdep.c	standard
 hp300/vm_machdep.c	standard
 hpdev/dma.c		standard
 hpdev/cd.c		optional cd
