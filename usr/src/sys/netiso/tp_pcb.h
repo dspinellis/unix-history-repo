@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
- *	@(#)tp_pcb.h	7.4 (Berkeley) %G% *
+ *	@(#)tp_pcb.h	7.5 (Berkeley) %G% *
  *
  * 
  * This file defines the transport protocol control block (tpcb).
@@ -151,9 +151,13 @@ struct tp_pcb {
 										 * Minimizes the amount sent in a
 										 * regular tp_send() also.
 										 */
+	u_int   tp_ackrcvd; /* ACKs received since the send window was updated */
+	SeqNum              tp_last_retrans;
+	SeqNum              tp_retrans_hiwat;
 	SeqNum				tp_snduna;		/* seq # of lowest unacked DT */
 	struct tp_rtc		*tp_snduna_rtc;	/* lowest unacked stuff sent so far */
 	SeqNum				tp_sndhiwat;	/* highest seq # sent so far */
+
 	struct tp_rtc		*tp_sndhiwat_rtc;	/* last stuff sent so far */
 	int					tp_Nwindow;		/* for perf. measurement */
 	struct mbuf			*tp_ucddata;	/* user connect/disconnect data */
@@ -167,6 +171,18 @@ struct tp_pcb {
 	u_short				tp_lcredit;		/* current local credit in # packets */
 	SeqNum				tp_rcvnxt;		/* next DT seq # expect to recv */
 	struct tp_rtc		*tp_rcvnxt_rtc;	/* unacked stuff recvd out of order */
+
+	/* receiver congestion state stuff ...  */
+	u_int               tp_win_recv;
+
+	/* receive window as a scaled int (8 bit fraction part) */
+
+	struct cong_sample {
+		ushort  cs_size; 				/* current window size */
+		ushort  cs_received;   			/* PDUs received in this sample */
+		ushort  cs_ce_set;    /* PDUs received in this sample with CE bit set */
+	} tp_cong_sample;
+
 
 	/* parameters per-connection controllable by user */
 	struct tp_conn_param _tp_param; 
@@ -210,7 +226,8 @@ struct tp_pcb {
 		tp_trace:1,				/* is this pcb being traced? (not used yet) */
 		tp_perf_on:1,			/* 0/1 -> performance measuring on  */
 		tp_reneged:1,			/* have we reneged on cdt since last ack? */
-		tp_decbit:4,			/* dec bit was set, we're in reneg mode  */
+		tp_decbit:3,			/* dec bit was set, we're in reneg mode  */
+		tp_cebit_off:1,			/* the real DEC bit algorithms not in use */
 		tp_flags:8,				/* values: */
 #define TPF_CONN_DATA_OUT	TPFLAG_CONN_DATA_OUT
 #define TPF_CONN_DATA_IN	TPFLAG_CONN_DATA_IN
@@ -261,6 +278,46 @@ struct tp_pcb {
 	u_short				tp_r_subseq;	/* highest recv subseq */
 
 };
+
+u_int	tp_start_win;
+
+#define ROUND(scaled_int) (((scaled_int) >> 8) + (((scaled_int) & 0x80) ? 1:0))
+
+/* to round off a scaled int with an 8 bit fraction part */
+
+#define CONG_INIT_SAMPLE(pcb) \
+	pcb->tp_cong_sample.cs_received = \
+    pcb->tp_cong_sample.cs_ce_set = 0; \
+    pcb->tp_cong_sample.cs_size = MAX(pcb->tp_lcredit, 1) << 1;
+
+#define CONG_UPDATE_SAMPLE(pcb, ce_bit) \
+    pcb->tp_cong_sample.cs_received++; \
+    if (ce_bit) { \
+        pcb->tp_cong_sample.cs_ce_set++; \
+    } \
+    if (pcb->tp_cong_sample.cs_size <= pcb->tp_cong_sample.cs_received) { \
+        if ((pcb->tp_cong_sample.cs_ce_set << 1) >=  \
+                    pcb->tp_cong_sample.cs_size ) { \
+            pcb->tp_win_recv -= pcb->tp_win_recv >> 3; /* multiply by .875 */ \
+            pcb->tp_win_recv = MAX(1 << 8, pcb->tp_win_recv); \
+        } \
+        else { \
+            pcb->tp_win_recv += (1 << 8); /* add one to the scaled int */ \
+        } \
+        pcb->tp_lcredit = ROUND(pcb->tp_win_recv); \
+        CONG_INIT_SAMPLE(pcb); \
+    }
+
+#define CONG_ACK(pcb, seq) \
+{ int   newacks = SEQ_SUB(pcb, seq, pcb->tp_snduna); \
+	if (newacks > 0) { \
+		pcb->tp_ackrcvd += newacks; \
+		if (pcb->tp_ackrcvd >= MIN(pcb->tp_fcredit, pcb->tp_cong_win)) { \
+			++pcb->tp_cong_win; \
+			pcb->tp_ackrcvd = 0; \
+		} \
+	} \
+}
 
 extern struct timeval 	time;
 extern struct tp_ref 	tp_ref[];
