@@ -1,4 +1,4 @@
-static char sccsid[] = "	subs.c	4.1	82/05/11	";
+static char sccsid[] = "	subs.c	4.2	82/11/27	";
 
 #include <stdio.h>
 #include "back.h"
@@ -265,30 +265,21 @@ getarg (arg)
 register char	***arg;
 
 {
-	register char	*s;
+	register char	**s;
 
 	/* process arguments here.  dashes are ignored, nbrw are ignored
 	   if the game is being recovered */
 
-	s = **arg;
-	if (*s == '-' && s[1] == '\0')  {
-		tflag = 0;
-		text (descr);
-		getout ();
-	}
-	for (; *s != '\0'; s++)  {
-		switch (*s)  {
-
-		/* ignore dashes */
-		case '-':
-			break;
+	s = *arg;
+	while (s[0][0] == '-') {
+		switch (s[0][1])  {
 
 		/* don't ask if rules or instructions needed */
 		case 'n':
 			if (rflag)
 				break;
 			aflag = 0;
-			args[acnt++] = *s;
+			args[acnt++] = 'n';
 			break;
 
 		/* player is both read and white */
@@ -297,7 +288,7 @@ register char	***arg;
 				break;
 			pnum = 0;
 			aflag = 0;
-			args[acnt++] = *s;
+			args[acnt++] = 'b';
 			break;
 
 		/* player is red */
@@ -306,7 +297,7 @@ register char	***arg;
 				break;
 			pnum = -1;
 			aflag = 0;
-			args[acnt++] = *s;
+			args[acnt++] = 'r';
 			break;
 
 		/* player is white */
@@ -315,39 +306,41 @@ register char	***arg;
 				break;
 			pnum = 1;
 			aflag = 0;
-			args[acnt++] = *s;
+			args[acnt++] = 'w';
 			break;
 
 		/* print board after move according to following character */
 		case 'p':
-			s++;
-			if (*s != 'r' && *s != 'w' && *s != 'b')
+			if (s[0][2] != 'r' && s[0][2] != 'w' && s[0][2] != 'b')
 				break;
 			args[acnt++] = 'p';
-			args[acnt++] = *s;
-			if (*s == 'r')
+			args[acnt++] = s[0][2];
+			if (s[0][2] == 'r')
 				bflag = 1;
-			if (*s == 'w')
+			if (s[0][2] == 'w')
 				bflag = -1;
-			if (*s == 'b')
+			if (s[0][2] == 'b')
 				bflag = 0;
 			break;
 
 		case 't':
-			if (*++s == '\0')	/* get terminal caps */
-				tflag = getcaps (*(++*arg));
-			else
-				tflag = getcaps (s);
-			return;
+			if (s[0][2] == '\0') {	/* get terminal caps */
+				s++;
+				tflag = getcaps (*s);
+			} else
+				tflag = getcaps (&s[0][2]);
+			break;
 
 		case 's':
-			if (*++s == '\0')	/* recover file */
-				recover (*(++*arg));
-			else
-				recover (s);
-			return;
+			s++;
+			/* recover file */
+			recover (s[0]);
+			break;
 		}
+		s++;
 	}
+	if (s[0] != 0)
+		recover(s[0]);
 }
 
 init ()  {
