@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.29 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.30 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -194,6 +194,11 @@ CONCAT(On, confCHECK_ALIASES)
 # default messages to old style headers if no special punctuation?
 CONCAT(Oo, confOLD_STYLE_HEADERS)
 
+# SMTP daemon options
+ifdef(`confDAEMON_OPTIONS',
+	CONCAT(OO, confDAEMON_OPTIONS),
+	#OOPort=esmtp)
+
 # privacy flags
 CONCAT(Op, confPRIVACY_FLAGS)
 
@@ -237,6 +242,11 @@ CONCAT(Ou, confDEF_USER_ID)
 
 # list of locations of user database file (null means no lookup)
 OU`'ifdef(`confUSERDB_SPEC', `confUSERDB_SPEC')
+
+# fallback MX host
+ifdef(`confFALLBACK_MX',
+	CONCAT(OV, confFALLBACK_MX),
+	#OVfall.back.host.net)
 
 # load average at which we just queue messages
 CONCAT(Ox, confQUEUE_LA)

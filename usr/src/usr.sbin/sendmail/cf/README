@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.17 (Berkeley) %G%
+		@(#)README	6.18 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -636,6 +636,7 @@ confCHECK_ALIASES	True		On	Check RHS of aliases when
 						running newaliases.
 confOLD_STYLE_HEADERS	True		Oo	Assume that headers without
 						special chars are old style.
+confDAEMON_OPTIONS	(undefined)	OO	SMTP daemon options.
 confPRIVACY_FLAGS	authwarnings	Op	Privacy flags.
 confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
 						of all error messages.
@@ -652,6 +653,7 @@ confTIME_ZONE		USE_SYSTEM	Oz	Time zone info -- can be
 						else to force that value.
 confDEF_USER_ID		1		Ou	Default user id.
 confUSERDB_SPEC		(undefined)	OU	User database specification.
+confFALLBACK_MX		(undefined)	OV	Fallback MX host.
 confNO_WILDCARD_MX	False		Ow	No wildcard MX records matches
 						our domain.
 confQUEUE_LA		8		Ox	Load average at which queue-only
