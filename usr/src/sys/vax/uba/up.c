@@ -1,16 +1,15 @@
-/*	%H%	3.15	%G%	*/
+/*	%H%	3.16	%G%	*/
 
-#define	spl5	spl6		/* block clock, for delay loop's sake */
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
- * NB: This device is very sensitive: be aware that the code is the way
- *     it is for good reason and that there are delay loops here which may
- *     have to be lengthened if your processor is faster and which should
- *     probably be shortened if your processor is slower.
+ * NB: This driver works reliably only on an SC-11B controller with
+ *     rev. level at least J (in particular rev. level H will not work well).
+ *     If you have an older controller you may be able to get by if you
+ *		#define	OLDUCODE
+ *     which implements larger delays for slow ucode.
  *
- * This driver has been tested on a SC-11B Controller, configured
- * with the following internal switch settings:
+ * Controller switch settings:
  *	SW1-1	5/19 surfaces	(off, 19 surfaces on Ampex 9300)
  *	SW1-2	chksum enable	(off, checksum disabled)
  *	SW1-3	volume select	(off, 815 cylinders)
@@ -22,16 +21,8 @@
  * and top mounted switches:
  *	SW2-1	extend opcodes	(off=open, disable)
  *	SW2-2	extend diag	(off=open, disable)
- *	SW2-3	4 wd dma burst	(off=open, disable)
+ *	SW2-3	4 wd dma burst	(on=closed, enable)
  *	SW2-4	unused		(off=open)
- *
- * The controller transfers data much more rapidly with SW2-3 set,
- * but we have previously experienced problems with it set this way.
- * We intend to try this again in the near future.
- *
- * NB: OUR SYSTEM CURRENTLY GETS UBA ERRORS WHEN RUNNING THIS DRIVER
- *     AND THE BUS OCCASIONALLY HANGS, NECESSITATING THE DEVIE RESET
- *     CODE WHICH RE-INITS THE UNIBUS.  YECHHH.
  */
 
 #include "../h/param.h"
@@ -91,7 +82,7 @@ struct	device
  * postpone starting SEARCH commands until the controller
  * is not transferring.
  */
-int	softas;
+int	upsoftas;
 
 /*
  * If upseek then we don't issue SEARCH commands but rather just
@@ -138,7 +129,7 @@ struct	size
 } up_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
-	494912,	0,		/* C=cyl 0 thru 814 */
+	495520,	0,		/* C=cyl 0 thru 814 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
 	81472,	681,		/* F=cyl 681 thru 814 */
@@ -154,7 +145,7 @@ struct	size
  * +/- microinches.  Note that header compare inhibit (HCI) is not
  * tried (this makes sense only during read, in any case.)
  *
- * ARE ALL THESE IMPLEMENTED ON 9300?
+ * NOT ALL OF THESE ARE IMPLEMENTED ON 9300!?!
  */
 #define	P400	020
 #define	M400	0220
@@ -227,18 +218,19 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 int	up_ubinfo;		/* Information about UBA usage saved here */
 /*
  * The EMULEX controller balks if accessed quickly after
- * certain operations.  The exact timing has not yet been
- * determined, but delays are known to be needed when changing
- * the selected drive (by writing in upcs2), and thought to be
- * needed after operations like PRESET and DCLR.  The following
- * variables control the delay, DELAY(n) is approximately n usec.
+ * certain operations.  With rev J delays seem to be needed only
+ * when selecting a new unit, and in drive initialization type
+ * like PRESET and DCLR.  The following variables control the delay
+ * DELAY(n) is approximately n usec.
  */
 int	idelay = 500;		/* Delay after PRESET or DCLR */
+#ifdef OLDUCODE
 int	sdelay = 150;		/* Delay after selecting drive in upcs2 */
 int	rdelay = 100;		/* Delay after SEARCH */
 int	asdel = 100;		/* Delay after clearing bit in upas */
-
-int	csdel2 = 0;		/* ??? Delay in upstart ??? */
+#else
+int	sdelay = 25;
+#endif
 
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
  
@@ -341,7 +333,7 @@ register unit;
 	 * until an interrupt when a transfer is pending.
 	 */
 	if (uptab.b_active) {
-		softas |= 1<<unit;
+		upsoftas |= 1<<unit;
 		return (0);
 	}
 	if (dp->b_active)
@@ -364,7 +356,6 @@ register unit;
 		upaddr->upcs1 = IE|PRESET|GO;
 		DELAY(idelay);
 		upaddr->upof = FMT22;
-		printf("VV done ds %o, er? %o %o %o\n", upaddr->upds, upaddr->uper1, upaddr->uper2, upaddr->uper3);
 		didie = 1;
 	}
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
@@ -409,7 +400,9 @@ search:
 		dk_busy |= 1<<unit;
 		dk_numb[unit]++;
 	}
+#ifdef OLDUCODE
 	DELAY(rdelay);
+#endif
 	goto out;
 
 done:
@@ -440,7 +433,6 @@ upstart()
 	int dn, sn, tn, cn, cmd;
 
 loop:
-	if (csdel2) DELAY(csdel2);
 	/*
 	 * Pick a drive off the queue of ready drives, and
 	 * perform the first transfer on its queue.
@@ -552,10 +544,12 @@ upintr()
 	register unit;
 	register struct device *upaddr = UPADDR;
 	int as = upaddr->upas & 0377;
-	int osoftas;
+	int oupsoftas;
 	int needie = 1;
 
+#ifdef OLDUCODE
 	(void) spl6();
+#endif
 	up_wticks = 0;
 	if (uptab.b_active) {
 		/*
@@ -566,7 +560,8 @@ upintr()
 		if ((upaddr->upcs1 & RDY) == 0) {
 			printf("!RDY: cs1 %o, ds %o, wc %d\n", upaddr->upcs1,
 			    upaddr->upds, upaddr->upwc);
-printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
+			printf("as=%d act %d %d %d\n", as, uptab.b_active,
+			    uputab[0].b_active, uputab[1].b_active);
 		}
 		/*
 		 * Mark controller or drive not busy, and check for an
@@ -657,7 +652,8 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			dp->b_actf = bp->av_forw;
 			bp->b_resid = (-upaddr->upwc * sizeof(short));
 			if (bp->b_resid)
-				printf("resid %d ds %o er? %o %o %o\n", bp->b_resid, upaddr->upds,
+				printf("resid %d ds %o er? %o %o %o\n",
+				    bp->b_resid, upaddr->upds,
 				    upaddr->uper1, upaddr->uper2, upaddr->uper3);
 			iodone(bp);
 			if(dp->b_actf)
@@ -665,7 +661,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 					needie = 0;
 		}
 		as &= ~(1<<unit);
-		softas &= ~(1<<unit);
+		upsoftas &= ~(1<<unit);
 		ubafree(up_ubinfo), up_ubinfo = 0;
 	} else {
 		if (upaddr->upcs1 & TRE) {
@@ -680,14 +676,16 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 	 * Finally, if the controller is not transferring
 	 * start it if any drives are now ready to transfer.
 	 */
-	as |= softas;
-	osoftas = softas;
-	softas = 0;
+	as |= upsoftas;
+	oupsoftas = upsoftas;
+	upsoftas = 0;
 	for (unit = 0; unit < NUP; unit++)
-		if ((as|osoftas) & (1<<unit)) {
+		if ((as|oupsoftas) & (1<<unit)) {
 			if (as & (1<<unit)) {
 				upaddr->upas = 1<<unit;
-				if (asdel) DELAY(asdel);
+#ifdef OLDUCODE
+				DELAY(asdel);
+#endif
 			}
 			if (upustart(unit))
 				needie = 0;

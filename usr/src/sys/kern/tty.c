@@ -1,4 +1,4 @@
-/*	tty.c	3.8	%G%	*/
+/*	tty.c	3.9	%G%	*/
 
 /*
  * general TTY subroutines
@@ -15,6 +15,7 @@
 #include "../h/reg.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
+#include "../h/dk.h"
 
 char	partab[];
 
@@ -373,10 +374,24 @@ caddr_t addr;
 		break;
 
 	case FIONREAD: {
-		off_t nread = tp->t_canq.c_cc;
+		off_t nread;
 
-		if (tp->t_flags & (RAW|CBREAK))
-			nread += tp->t_rawq.c_cc;
+		switch (tp->t_line) {
+
+		case NETLDISC:
+			nread = tp->t_rec ? tp->t_inbuf : 0;
+			break;
+
+		case NTTYDISC:
+			nread = tp->t_canq.c_cc;
+			if (tp->t_flags & (RAW|CBREAK))
+				nread += tp->t_rawq.c_cc;
+			break;
+
+		case 0:
+			/* do something here ... */
+			;
+		}
 		if (copyout((caddr_t)&nread, addr, sizeof (off_t)))
 			u.u_error = EFAULT;
 		break;
@@ -451,6 +466,8 @@ register struct tty *tp;
 {
 	register s;
 
+	if (tp->t_line == NETLDISC)
+		return;
 	s = spl6();
 	while (getc(&tp->t_canq) >= 0)
 		;
