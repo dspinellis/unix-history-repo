@@ -1,4 +1,4 @@
-/*	machdep.c	4.26	81/03/17	*/
+/*	machdep.c	4.27	81/03/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,7 +28,7 @@
 #include "../h/cmap.h"
 #include <frame.h>
 
-char	version[] = "VAX/UNIX (Berkeley Version 4.26) 81/03/17 05:49:33 \n";
+char	version[] = "VAX/UNIX (Berkeley Version 4.27) 81/03/17 17:01:04 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -43,6 +43,12 @@ int	icode[] =
 };
 int	szicode = sizeof(icode);
  
+/*
+ * Declare these as initialized data so we can patch them.
+ */
+int	nbuf = 0;
+int	nswbuf = 0;
+
 /*
  * Machine-dependent startup code
  */
@@ -74,8 +80,16 @@ startup(firstaddr)
 	 * Current alg is 32 per megabyte, with min of 32.
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
-	nbuf = (32 * physmem) / btoc(1024*1024); if (nbuf < 32) nbuf = 32;
-	nswbuf = (nbuf / 2) &~ 1;	/* force even */
+	if (nbuf == 0) {
+		nbuf = (32 * physmem) / btoc(1024*1024);
+		if (nbuf < 32)
+			nbuf = 32;
+	}
+	if (nswbuf == 0) {
+		nswbuf = (nbuf / 2) &~ 1;	/* force even */
+		if (nswbuf > 256)
+			nswbuf = 256;		/* sanity */
+	}
 
 	/*
 	 * Allocate space for system data structures.
