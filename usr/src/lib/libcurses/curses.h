@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.21 (Berkeley) %G%
+ *	@(#)curses.h	5.22 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -195,7 +195,6 @@ extern char	 __unctrllen[0x80];	/* Control strings length. */
 
 /* Public function prototypes. */
 void	 __cputchar __P((int));
-int	 _sprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 int	 box __P((WINDOW *, int, int));
 int	 cbreak __P((void));
 int	 delwin __P((WINDOW *));
@@ -228,13 +227,15 @@ int	 savetty __P((void));
 int	 scanw __P((const char *, ...));
 int	 scroll __P((WINDOW *));
 int	 setterm __P((char *));
-int	 sscans __P((WINDOW *, const char *, _BSD_VA_LIST_));
+int	 sscans __P((WINDOW *, const char *, ...));
 WINDOW	*subwin __P((WINDOW *, int, int, int, int));
 int	 suspendwin __P((void));
 int	 touchline __P((WINDOW *, int, int, int));
 int	 touchoverlap __P((WINDOW *, WINDOW *));
 int	 touchwin __P((WINDOW *));
 void	 tstp __P((int));
+int 	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
+int      vwscanw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 int	 waddch __P((WINDOW *, int));
 int	 waddstr __P((WINDOW *, char *));
 int	 wclear __P((WINDOW *));

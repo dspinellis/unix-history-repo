@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,7 +24,6 @@ static char sccsid[] = "@(#)printw.c	5.11 (Berkeley) %G%";
  * is not in effect.
  */
 
-static int __sprintw __P((WINDOW *, const char *, va_list));
 static int __winwrite __P((void *, const char *, int));
 
 /*
@@ -48,7 +47,7 @@ printw(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sprintw(stdscr, fmt, ap);
+	ret = vwprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -75,7 +74,7 @@ wprintw(win, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sprintw(win, fmt, ap);
+	ret = vwprintw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -105,7 +104,7 @@ mvprintw(y, x, fmt, va_alist)
 #endif
 	if (move(y, x) != OK)
 		return (ERR);
-	ret = __sprintw(stdscr, fmt, ap);
+	ret = vwprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -133,7 +132,7 @@ mvwprintw(win, y, x, fmt, va_alist)
 	if (wmove(win, y, x) != OK)
 		return (ERR);
 
-	ret = __sprintw(win, fmt, ap);
+	ret = vwprintw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -157,13 +156,11 @@ __winwrite(cookie, buf, n)
 }
 
 /*
- * __sprintw --
+ * vwprintw --
  *	This routine actually executes the printf and adds it to the window.
- *	It must not be declared static as it is used in mvprintw.c.
- *	THIS SHOULD BE RENAMED vwprintw AND EXPORTED
  */
 static int
-__sprintw(win, fmt, ap)
+vwprintw(win, fmt, ap)
 	WINDOW *win;
 	const char *fmt;
 	va_list ap;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvprintw.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvprintw.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -42,7 +42,7 @@ mvprintw(y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sprintw(stdscr, fmt, ap);
+	ret = vwprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -68,7 +68,7 @@ mvwprintw(win, y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = _sprintw(win, fmt, ap);
+	ret = vwprintw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
