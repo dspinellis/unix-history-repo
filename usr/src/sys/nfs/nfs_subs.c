@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.55 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.56 (Berkeley) %G%
  */
 
 /*
@@ -17,23 +17,17 @@
  */
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/filedesc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/mount.h>
-#include <sys/file.h>
 #include <sys/vnode.h>
 #include <sys/namei.h>
 #include <sys/mbuf.h>
-#include <sys/map.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include <vm/vm.h>
-
-#include <ufs/ufs/quota.h>
-#include <ufs/ufs/inode.h>
-#include <ufs/ufs/ufsmount.h>
+#include <ufs/ufs/quota.h>		/* XXX for nfsrv_fhtovp */
+#include <ufs/ufs/ufsmount.h>		/* XXX for nfsrv_fhtovp */
 
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
@@ -1015,7 +1009,7 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 		 */
 		np = ump->um_netaddr[NETMASK_HASH];
 		while (np) {
-		    if (nfs_netaddr_match(np->neth_family, &np->neth_haddr,
+		    if (netaddr_match(np->neth_family, &np->neth_haddr,
 			&np->neth_hmask, nam))
 			break;
 			np = np->neth_next;
@@ -1028,7 +1022,7 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 		    saddr = mtod(nam, struct sockaddr *);
 		    np = ump->um_netaddr[NETADDRHASH(saddr)];
 		    while (np) {
-			if (nfs_netaddr_match(np->neth_family, &np->neth_haddr,
+			if (netaddr_match(np->neth_family, &np->neth_haddr,
 			    (struct netaddrhash *)0, nam))
 			    break;
 			np = np->neth_next;
