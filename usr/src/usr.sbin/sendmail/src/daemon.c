@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.11 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.12 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.11 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.12 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -82,6 +82,8 @@ static FILE	*MailPort;	/* port that mail comes in on */
 int		DaemonSocket	= -1;		/* fd describing socket */
 SOCKADDR	DaemonAddr;			/* socket for incoming */
 int		ListenQueueSize = 10;		/* size of listen queue */
+int		TcpRcvBufferSize = 0;		/* size of TCP receive buffer */
+int		TcpSndBufferSize = 0;		/* size of TCP send buffer */
 
 getrequests()
 {
@@ -385,6 +387,26 @@ gothostent:
 			syserr("makeconnection: no socket");
 			goto failure;
 		}
+
+#ifdef SO_SNDBUF
+		if (TcpSndBufferSize > 0)
+		{
+			if (setsockopt(s, SOL_SOCKET, SO_SNDBUF,
+				       &TcpSndBufferSize,
+				       sizeof(TcpSndBufferSize)) < 0)
+				syserr("makeconnection: setsockopt(SO_SNDBUF)");
+		}
+#endif
+
+#ifdef SO_RCVBUF
+		if (TcpRcvBufferSize > 0)
+		{
+			if (setsockopt(s, SOL_SOCKET, SO_RCVBUF,
+				       &TcpRcvBufferSize,
+				       sizeof(TcpRcvBufferSize)) < 0)
+				syserr("makeconnection: setsockopt(SO_RCVBUF)");
+		}
+#endif
 
 		if (tTd(16, 1))
 			printf("makeconnection: fd=%d\n", s);
