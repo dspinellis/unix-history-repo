@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.1 (Berkeley) %G%
+ *	@(#)conf.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -215,6 +215,19 @@ int	rlreset(),rldump(),rlsize();
 #define	rlreset		nulldev
 #define	rldump		nodev
 #define	rlsize		0
+#endif
+
+#include "np.h"
+#if NNP > 0
+int	npopen(),npclose(),npread(),npwrite();
+int	npreset(),npioctl();
+#else
+#define	npopen		nodev
+#define	npclose		nodev
+#define	npread		nodev
+#define	npwrite		nodev
+#define	npreset		nulldev
+#define	npioctl		nodev
 #endif
 
 int	swstrategy(),swread(),swwrite();
@@ -619,9 +632,9 @@ struct cdevsw	cdevsw[] =
 	tmscpopen,	tmscpclose,	tmscpread,	tmscpwrite,	/*38*/
 	tmscpioctl,	nodev,		tmscpreset,	0,
 	seltrue,	nodev,
-	nodev,		nodev,		nodev,		nodev,		/*39*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	npopen,		npclose,	npread,		npwrite,	/*39*/
+	npioctl,	nodev,		npreset,	0,
+	seltrue,	nodev,
 	nodev,		nodev,		nodev,		nodev,		/*40*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
