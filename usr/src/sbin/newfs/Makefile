@@ -1,51 +1,47 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	7.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	7.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	newfs.c mkfs.c
 OBJS=	newfs.o mkfs.o
+MAN=	newfs.0
 
 all: newfs
 
 newfs: ${OBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core newfs
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 newfs ${DESTDIR}/etc/newfs
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-newfs.o: newfs.c /usr/include/sys/param.h /usr/include/sys/types.h
-newfs.o: /usr/include/signal.h /usr/include/machine/machparam.h
-newfs.o: /usr/include/sys/stat.h /usr/include/sys/fs.h /usr/include/sys/dir.h
-newfs.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-newfs.o: /usr/include/sys/ttydev.h /usr/include/sys/disklabel.h
-newfs.o: /usr/include/sys/file.h /usr/include/stdio.h /usr/include/ctype.h
-mkfs.o: mkfs.c /usr/include/stdio.h /usr/include/a.out.h
-mkfs.o: /usr/include/sys/exec.h /usr/include/sys/param.h
-mkfs.o: /usr/include/sys/types.h /usr/include/signal.h
-mkfs.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-mkfs.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
-mkfs.o: /usr/include/sys/disklabel.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

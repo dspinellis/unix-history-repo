@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.9	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -14,10 +25,11 @@ LOCOBJS=dir.o inode.o main.o pass1.o pass1b.o pass2.o \
 	pass3.o pass4.o pass5.o setup.o utilities.o
 SYSOBJS=ufs_subr.o ufs_tables.o
 OBJS=	${LOCOBJS} ${SYSOBJS}
+MAN=	fsck.0
 
 all: fsck
 
-fsck:	${OBJS} ${LIBC}
+fsck: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 ${LOCOBJS}:
@@ -29,82 +41,21 @@ ufs_subr.o:
 ufs_tables.o:
 	${CC} ${CFLAGS} -I/usr/include/sys -c /sys/sys/ufs_tables.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} fsck core
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 fsck ${DESTDIR}/etc/fsck
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-dir.o: dir.c /usr/include/sys/param.h /usr/include/sys/types.h
-dir.o: /usr/include/signal.h /usr/include/machine/machparam.h
-dir.o: /usr/include/sys/inode.h /usr/include/sys/fs.h /usr/include/sys/dir.h
-dir.o: fsck.h
-inode.o: inode.c /usr/include/pwd.h /usr/include/sys/param.h
-inode.o: /usr/include/sys/types.h /usr/include/signal.h
-inode.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-inode.o: /usr/include/sys/fs.h /usr/include/sys/dir.h fsck.h
-main.o: main.c /usr/include/sys/param.h /usr/include/sys/types.h
-main.o: /usr/include/signal.h /usr/include/machine/machparam.h
-main.o: /usr/include/sys/inode.h /usr/include/sys/fs.h /usr/include/sys/stat.h
-main.o: /usr/include/sys/wait.h /usr/include/fstab.h /usr/include/strings.h
-main.o: fsck.h
-pass1.o: pass1.c /usr/include/sys/param.h /usr/include/sys/types.h
-pass1.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pass1.o: /usr/include/sys/inode.h /usr/include/sys/fs.h fsck.h
-pass1b.o: pass1b.c /usr/include/sys/param.h /usr/include/sys/types.h
-pass1b.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pass1b.o: /usr/include/sys/inode.h /usr/include/sys/fs.h fsck.h
-pass2.o: pass2.c /usr/include/sys/param.h /usr/include/sys/types.h
-pass2.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pass2.o: /usr/include/sys/inode.h /usr/include/sys/fs.h /usr/include/sys/dir.h
-pass2.o: /usr/include/strings.h fsck.h
-pass3.o: pass3.c /usr/include/sys/param.h /usr/include/sys/types.h
-pass3.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pass3.o: /usr/include/sys/inode.h /usr/include/sys/fs.h fsck.h
-pass4.o: pass4.c /usr/include/sys/param.h /usr/include/sys/types.h
-pass4.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pass4.o: /usr/include/sys/inode.h /usr/include/sys/fs.h fsck.h
-pass5.o: pass5.c /usr/include/sys/param.h /usr/include/sys/types.h
-pass5.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pass5.o: /usr/include/sys/inode.h /usr/include/sys/fs.h fsck.h
-setup.o: setup.c /usr/include/sys/param.h /usr/include/sys/types.h
-setup.o: /usr/include/signal.h /usr/include/machine/machparam.h
-setup.o: /usr/include/sys/inode.h /usr/include/sys/fs.h /usr/include/sys/stat.h
-setup.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-setup.o: /usr/include/sys/ttydev.h /usr/include/sys/disklabel.h
-setup.o: /usr/include/sys/file.h /usr/include/ctype.h fsck.h
-utilities.o: utilities.c /usr/include/stdio.h /usr/include/ctype.h
-utilities.o: /usr/include/sys/param.h /usr/include/sys/types.h
-utilities.o: /usr/include/signal.h /usr/include/machine/machparam.h
-utilities.o: /usr/include/sys/inode.h /usr/include/sys/fs.h
-utilities.o: /usr/include/sys/dir.h fsck.h
-ufs_subr.o: /sys/sys/ufs_subr.c /usr/include/sys/param.h
-ufs_subr.o: /usr/include/sys/types.h /usr/include/signal.h
-ufs_subr.o: /usr/include/machine/machparam.h /usr/include/sys/systm.h
-ufs_subr.o: /usr/include/sys/mount.h /usr/include/sys/fs.h
-ufs_subr.o: /usr/include/sys/buf.h /usr/include/sys/inode.h
-ufs_subr.o: /usr/include/sys/dir.h /usr/include/sys/user.h
-ufs_subr.o: /usr/include/machine/pcb.h /usr/include/sys/dmap.h
-ufs_subr.o: /usr/include/sys/time.h /usr/include/time.h
-ufs_subr.o: /usr/include/sys/resource.h /usr/include/sys/namei.h
-ufs_subr.o: /usr/include/sys/uio.h /usr/include/errno.h
-ufs_subr.o: /usr/include/sys/quota.h
-ufs_tables.o: /sys/sys/ufs_tables.c /usr/include/sys/param.h
-ufs_tables.o: /usr/include/sys/types.h /usr/include/signal.h
-ufs_tables.o: /usr/include/machine/machparam.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
