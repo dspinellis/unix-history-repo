@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mknod.2	6.3 (Berkeley) %G%
+.\"	@(#)mknod.2	6.4 (Berkeley) %G%
 .\"
 .TH MKNOD 2 ""
 .UC 4
@@ -26,8 +26,8 @@ The mode of the new file
 is initialized from
 .IR mode .
 (The protection part of the mode
-is modified by the process's mode mask; see
-.IR umask (2)).
+is modified by the process's mode mask (see
+.IR umask (2))).
 The first block pointer of the i-node
 is initialized from
 .I dev 
