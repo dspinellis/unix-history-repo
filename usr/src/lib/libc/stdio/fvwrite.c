@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fvwrite.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fvwrite.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -44,7 +44,9 @@ __sfvwrite(fp, uio)
 #define	COPY(n)	  (void) memcpy((void *)fp->_p, (void *)p, (size_t)(n));
 
 	iov = uio->uio_iov;
-	len = 0;
+	p = iov->iov_base;
+	len = iov->iov_len;
+	iov++;
 #define GETIOV(extra_work) \
 	while (len == 0) { \
 		extra_work; \
@@ -117,6 +119,7 @@ __sfvwrite(fp, uio)
 		 * that the amount to write is MIN(len,nldist).
 		 */
 		nlknown = 0;
+		nldist = 0;	/* XXX just to keep gcc happy */
 		do {
 			GETIOV(nlknown = 0);
 			if (!nlknown) {
