@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.3 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -145,15 +145,16 @@ sleep(chan, pri)
 	register struct proc *rp;
 	register struct slpque *qp;
 	register s;
+	extern int cold;
 
 	rp = u.u_procp;
 	s = splhigh();
-	if (panicstr) {
+	if (cold || panicstr) {
 		/*
-		 * After a panic, just give interrupts a chance,
-		 * then just return; don't run any other procs 
-		 * or panic below, in case this is the idle process
-		 * and already asleep.
+		 * After a panic, or during autoconfiguration,
+		 * just give interrupts a chance, then just return;
+		 * don't run any other procs or panic below,
+		 * in case this is the idle process and already asleep.
 		 * The splnet should be spl0 if the network was being used
 		 * by the filesystem, but for now avoid network interrupts
 		 * that might cause another panic.
