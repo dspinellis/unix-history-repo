@@ -1,4 +1,4 @@
-/*	old.bin.grep.c	4.3	83/04/29	*/
+/*	old.bin.grep.c	4.4	83/06/30	*/
 
 /*
  * grep -- print lines matching (or not matching) a pattern
@@ -20,6 +20,8 @@
 #define	CDOL	10
 #define	CEOF	11
 #define	CKET	12
+#define	CBRC	14
+#define	CLET	15
 #define	CBACK	18
 
 #define	STAR	01
@@ -41,6 +43,7 @@ int	nfile;
 int	hflag	= 1;
 int	sflag;
 int	yflag;
+int	wflag;
 int	retcode = 0;
 int	circf;
 int	blkno;
@@ -67,8 +70,13 @@ char **argv;
 	while (--argc > 0 && (++argv)[0][0]=='-')
 		switch (argv[0][1]) {
 
+		case 'i':
 		case 'y':
 			yflag++;
+			continue;
+
+		case 'w':
+			wflag++;
 			continue;
 
 		case 'h':
@@ -169,6 +177,8 @@ char *astr;
 		circf++;
 		sp++;
 	}
+	if (wflag)
+		*ep++ = CBRC;
 	for (;;) {
 		if (ep >= &expbuf[ESIZE])
 			goto cerror;
@@ -177,6 +187,8 @@ char *astr;
 		switch (c) {
 
 		case '\0':
+			if (wflag)
+				*ep++ = CLET;
 			*ep++ = CEOF;
 			return;
 
@@ -185,7 +197,8 @@ char *astr;
 			continue;
 
 		case '*':
-			if (lastep==0 || *lastep==CBRA || *lastep==CKET)
+			if (lastep==0 || *lastep==CBRA || *lastep==CKET ||
+			    *lastep == CBRC || *lastep == CLET)
 				goto defchar;
 			*lastep |= STAR;
 			continue;
@@ -227,7 +240,17 @@ char *astr;
 			continue;
 
 		case '\\':
-			if((c = *sp++) == '(') {
+			if((c = *sp++) == 0)
+				goto cerror;
+			if(c == '<') {
+				*ep++ = CBRC;
+				continue;
+			}
+			if(c == '>') {
+				*ep++ = CLET;
+				continue;
+			}
+			if(c == '(') {
 				if(numbra >= NBRA) {
 					goto cerror;
 				}
@@ -438,6 +461,20 @@ register char *lp, *ep;
 				return(1);
 		} while (lp-- > curlp);
 		return(0);
+
+	case CBRC:
+		if (lp == expbuf)
+			continue;
+#define	uletter(c)	(isalpha(c) || (c) == '_')
+		if (uletter(*lp) || isdigit(*lp))
+			if (!uletter(lp[-1]) && !isdigit(lp[-1]))
+				continue;
+		return (0);
+
+	case CLET:
+		if (!uletter(*lp) && !isdigit(*lp))
+			continue;
+		return (0);
 
 	default:
 		errexit("grep RE botch\n", (char *)NULL);
