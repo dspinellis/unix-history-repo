@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.4	%G%	*/
+/*	fs.h	1.5	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -91,9 +91,12 @@ struct csum {
  *
  * The super block is nominally located at disk block 1 although
  * this is naive due to bad blocks.  Inode 0 can't be used for normal
- * purposes, thus the root inode is inode 1.
+ * purposes, historically bad blocks were linked to inode 1,
+ * thus the root inode is 2. (inode 1 is no longer used for
+ * this purpose, however numerous dump tapes make this
+ * assumption, so we are stuck with it)
  */
-#define	ROOTINO	((ino_t)1)	/* i number of all roots */
+#define	ROOTINO	((ino_t)2)	/* i number of all roots */
 
 #define	FS_MAGIC	0x110854
 struct	fs
