@@ -1,0 +1,32 @@
+#! /bin/sh -x
+
+# address search pattern to recognize local hosts
+LOCALADDR='^128\.32'
+
+# awk pattern for uninteresting (eg, long form) alias
+SKIP='/^ucb|\.berkeley\.edu$|^$/'
+
+# Special entries that don't get generated normally
+SPECIAL='ucbvax ucbarpa'
+
+
+cd ${DESTDIR}/usr/hosts
+#
+# We want to save ourselves while cleaning up.  The funny sequence is to
+# minimize the window where the machine could crash and leave MAKEHOSTS
+# misplaced.
+#
+mv MAKEHOSTS .MAKEHOSTS
+rm -f M*
+mv .MAKEHOSTS MAKEHOSTS
+rm -f [A-LN-Za-z]*
+
+for i in `egrep "$LOCALADDR" ${DESTDIR}/etc/hosts | awk "\\$2 !~ $SKIP {print \\$2} \\$3 !~ $SKIP {print \\$3} \\$4 !~ $SKIP {print \\$4}"`;
+do
+	ln -s /usr/ucb/rsh $i
+done
+
+for i in $SPECIAL
+do
+	ln -s /usr/ucb/rsh $i
+done
