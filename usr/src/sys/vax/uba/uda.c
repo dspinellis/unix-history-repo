@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.11 (Berkeley) %G%
+ *	@(#)uda.c	7.12 (Berkeley) %G%
  *
  */
 
@@ -176,6 +176,7 @@ struct ra_info {
 		u_short	rg_nrct;	/* number of rct copies */
 #endif
 	} ra_geom;
+	int	ra_wlabel;	/* label sector is currently writable */
 	u_long	ra_openpart;	/* partitions open */
 	u_long	ra_bopenpart;	/* block partitions open */
 	u_long	ra_copenpart;	/* character partitions open */
@@ -365,7 +366,7 @@ udaslave(ui, reg)
 	register struct mscp *mp;
 	register struct uda_softc *sc;
 	register struct ra_info *ra;
-	int next = 0, type, timeout, tries, i;
+	int next = 0, timeout, tries, i;
 
 #ifdef lint
 	i = 0; i = i;
@@ -731,6 +732,7 @@ udaopen(dev, flag, fmt)
 	return (0);
 }
 
+/*ARGSUSED*/
 udaclose(dev, flags, fmt)
 	dev_t dev;
 	int flags, fmt;
@@ -759,6 +761,7 @@ udaclose(dev, flags, fmt)
 			sleep((caddr_t)&udautab[unit], PZERO - 1);
 		splx(s);
 		ra->ra_state = CLOSED;
+		ra->ra_wlabel = 0;
 	}
 	return (0);
 }
@@ -860,7 +863,7 @@ uda_rasave(unit, mp, check)
 	register struct ra_info *ra = &ra_info[unit];
 
 	if (check && ra->ra_type != mp->mscp_guse.guse_drivetype) {
-		printf("ra%d: changed types! was %d now %d\n",
+		printf("ra%d: changed types! was %d now %d\n", unit,
 			ra->ra_type, mp->mscp_guse.guse_drivetype);
 		ra->ra_state = CLOSED;	/* ??? */
 	}
@@ -890,7 +893,6 @@ udastrategy(bp)
 {
 	register int unit;
 	register struct uba_device *ui;
-	register struct disklabel *lp;
 	register struct ra_info *ra;
 	struct partition *pp;
 	int p;
@@ -914,9 +916,10 @@ udastrategy(bp)
 		return;
 	}
 	p = udapart(bp->b_dev);
-	if ((ra->ra_openpart & (1 << p)) == 0)	/* can't happen? */
-		panic("udastrategy");
-		/* alternatively, ENODEV */
+	if ((ra->ra_openpart & (1 << p)) == 0) {
+		bp->b_error = ENODEV;
+		goto bad;
+	}
 
 	/*
 	 * Determine the size of the transfer, and make sure it is
@@ -927,6 +930,14 @@ udastrategy(bp)
 	if (pp->p_offset + pp->p_size > ra->ra_dsize)
 		maxsz = ra->ra_dsize - pp->p_offset;
 	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
+	if (bp->b_blkno + pp->p_offset <= LABELSECTOR &&
+#if LABELSECTOR != 0
+	    bp->b_blkno + pp->p_offset + sz > LABELSECTOR &&
+#endif
+	    (bp->b_flags & B_READ) == 0 && ra->ra_wlabel == 0) {
+		bp->b_error = EROFS;
+		goto bad;
+	}
 	if (bp->b_blkno < 0 || bp->b_blkno + sz > maxsz) {
 		/* if exactly at end of disk, return an EOF */
 		if (bp->b_blkno == maxsz) {
@@ -1596,7 +1607,8 @@ udaioctl(dev, cmd, data, flag)
 {
 	register int unit = udaunit(dev);
 	register struct disklabel *lp;
-	int error = 0;
+	register struct ra_info *ra = &ra_info[unit];
+	int error = 0, wlab;
 
 	lp = &udalabel[unit];
 
@@ -1617,15 +1629,30 @@ udaioctl(dev, cmd, data, flag)
 			error = EBADF;
 		else
 			error = setdisklabel(lp, (struct disklabel *)data,
-			    ra_info[unit].ra_openpart);
+			    ra->ra_openpart);
+		break;
+
+	case DIOCWLABEL:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			ra->ra_wlabel = *(int *)data;
 		break;
 
 	case DIOCWDINFO:
+		/* simulate opening partition 0 so write succeeds */
+		ra->ra_openpart |= (1 << 0);		/* XXX */
+		wlab = ra->ra_wlabel;
+		ra->ra_wlabel = 1;
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
-			    ra_info[unit].ra_openpart)) == 0)
+			    ra->ra_openpart)) == 0)
 			error = writedisklabel(dev, udastrategy, lp);
+		ra->ra_openpart = ra->ra_copenpart | ra->ra_bopenpart;
+		if (error == 0)
+			ra->ra_state = OPEN;
+		ra->ra_wlabel = wlab;
 		break;
 
 #ifdef notyet
@@ -1967,7 +1994,6 @@ udasize(dev)
 {
 	register int unit = udaunit(dev);
 	register struct uba_device *ui;
-	register struct size *st;
 
 	if (unit >= NRA || (ui = udadinfo[unit]) == NULL ||
 	    ui->ui_alive == 0 || (ui->ui_flags & UNIT_ONLINE) == 0 ||
