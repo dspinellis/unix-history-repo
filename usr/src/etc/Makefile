@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -61,17 +61,19 @@ distribution:
 	    ${DESTDIR}/var/log/lpd-errs
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
 	    ${DESTDIR}/var/run/utmp
+	(cd etc.${MACHINE}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    fstab.* ${DESTDIR}/)
 .if ${MACHINE} == "tahoe"
-	cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
-	    ${DESTDIR}/
+	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
+	    ${DESTDIR}/)
 .endif
 .if ${MACHINE} == "vax"
-	cd etc.vax; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${PCS} \
-	    ${DESTDIR}/
+	(cd etc.vax; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${PCS} \
+	    ${DESTDIR}/)
 .endif
 
 hcx9-distribution:
-	cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS2} \
-	    ${DESTDIR}/
+	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS2} \
+	    ${DESTDIR}/)
 
 .include <bsd.prog.mk>
