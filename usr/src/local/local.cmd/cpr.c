@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.6		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.7		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -23,8 +23,9 @@ typedef char	bool;
 #define FALSE	0
 
 struct sgttyb	tbuf;
-int		SysLine;
-bool		FormFeedFollowing;
+int		SysLinePid;		/* pid of sysline process */
+bool		FormFeedFollowing;	/* print form feed following print */
+bool		EchoDuringPrint;	/* echo on terminal while printing */
 
 main(argc, argv)
 	int argc;
@@ -37,7 +38,7 @@ main(argc, argv)
 	/* arrange to stop the sysline program during printing */
 	p = getenv("SYSLINE");
 	if (p != NULL)
-		SysLine = atoi(p);
+		SysLinePid = atoi(p);
 
 	/* process arguments */
 	while (--argc > 0)
@@ -49,6 +50,10 @@ main(argc, argv)
 		{
 		  case 'f':
 			FormFeedFollowing = TRUE;
+			break;
+
+		  case 'e':
+			EchoDuringPrint = TRUE;
 			break;
 		}
 	}
@@ -99,9 +104,13 @@ setupterm()
 	tbuf.sg_flags |= CBREAK | XTABS;
 	stty(1, &tbuf);
 	tbuf.sg_flags = oldflags;
-	if (SysLine > 0)
-		kill(SysLine, SIGSTOP);
-	fputs("\033Y$", stdout);
+	if (SysLinePid > 0)
+		kill(SysLinePid, SIGSTOP);
+	fputs("\033Y", stdout);
+	if (EchoDuringPrint)
+		fputs("4", stdout);
+	else
+		fputs("$", stdout);
 	if (getack() >= 0)
 		return;
 	fprintf(stderr, "Cannot attach printer\n");
@@ -138,6 +147,6 @@ getack()
 resetmodes()
 {
 	stty(1, &tbuf);
-	if (SysLine > 0)
-		kill(SysLine, SIGCONT);
+	if (SysLinePid > 0)
+		kill(SysLinePid, SIGCONT);
 }
