@@ -3,21 +3,21 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)fsck.8	6.10 (Berkeley) %G%
+.\"	@(#)fsck.8	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FSCK 8
 .Os BSD 4
 .Sh NAME
 .Nm fsck
-.Nd file system consistency check and interactive repair
+.Nd filesystem consistency check and interactive repair
 .Sh SYNOPSIS
 .Nm fsck
 .Fl p
 .Op Fl m Ar mode
 .Nm fsck
 .Op Fl b Ar block#
-.Op Fl c
+.Op Fl c Ar level
 .Op Fl y
 .Op Fl n
 .Op Fl m Ar mode
@@ -26,7 +26,7 @@
 .Sh DESCRIPTION
 The first form of
 .Nm fsck
-preens a standard set of filesystems or the specified file systems.
+preens a standard set of filesystems or the specified filesystems.
 It is normally used in the script
 .Pa /etc/rc
 during automatic reboot.
@@ -34,7 +34,7 @@ Here
 .Nm fsck
 reads the table
 .Pa /etc/fstab
-to determine which file systems to check.
+to determine which filesystems to check.
 Only partitions in fstab that are mounted ``rw,'' ``rq'' or ``ro''
 and that have non-zero pass number are checked.
 Filesystems with pass number 1 (normally just the root filesystem)
@@ -45,15 +45,20 @@ The disk drive containing each filesystem is inferred from the longest prefix
 of the device name that ends in a digit; the remaining characters are assumed
 to be the partition designator.
 .Pp
-The system takes care that only a restricted class of innocuous
+The kernel takes care that only a restricted class of innocuous filesystem
 inconsistencies can happen unless hardware or software failures intervene.
 These are limited to the following:
-.Bl -item -compact -indent indent
-.It Unreferenced inodes
-.It Link counts in inodes too large
-.It Missing blocks in the free map
-.It Blocks in the free map also in files
-.It Counts in the super-block wrong
+.Bl -item -compact
+.It
+Unreferenced inodes
+.It
+Link counts in inodes too large
+.It
+Missing blocks in the free map
+.It
+Blocks in the free map also in files
+.It
+Counts in the super-block wrong
 .El
 .Pp
 These are the only inconsistencies that
@@ -63,11 +68,10 @@ with the
 option will correct; if it encounters other inconsistencies, it exits
 with an abnormal return status and an automatic reboot will then fail.
 For each corrected inconsistency one or more lines will be printed
-identifying the file system on which the correction will take place,
-and the nature of the correction.  After successfully correcting a file
-system,
+identifying the filesystem on which the correction will take place,
+and the nature of the correction.  After successfully correcting a filesystem,
 .Nm fsck
-will print the number of files on that file system,
+will print the number of files on that filesystem,
 the number of used and free blocks,
 and the percentage of fragmentation.
 .Pp
@@ -75,17 +79,18 @@ If sent a
 .Dv QUIT
 signal,
 .Nm fsck
-will finish the file system checks, then exit with an abnormal
+will finish the filesystem checks, then exit with an abnormal
 return status that causes an automatic reboot to fail.
-This is useful when to finish the file system checks during an automatic reboot,
+This is useful when you want to finish the filesystem checks during an
+automatic reboot,
 but do not want the machine to come up multiuser after the checks complete.
 .Pp
 Without the
 .Fl p
 option,
 .Nm fsck
-audits and interactively repairs inconsistent conditions for file systems. 
-If the file system is inconsistent the operator is prompted for concurrence
+audits and interactively repairs inconsistent conditions for filesystems. 
+If the filesystem is inconsistent the operator is prompted for concurrence
 before each correction is attempted.
 It should be noted that some of the corrective actions which are not
 correctable under the
@@ -98,7 +103,7 @@ is to wait for the operator to respond
 .Li yes
 or
 .Li no .
-If the operator does not have write permission on the file system
+If the operator does not have write permission on the filesystem
 .Nm fsck
 will default to a 
 .Fl n
@@ -117,7 +122,7 @@ The following flags are interpreted by
 .Bl -tag -width indent
 .It Fl b
 Use the block specified immediately after the flag as
-the super block for the file system.  Block 32 is usually
+the super block for the filesystem.  Block 32 is usually
 an alternate super block.
 .It Fl l
 Limit the number of parallel checks to the number specified in the following
@@ -144,32 +149,41 @@ Assume a no response to all questions asked by
 except for
 .Ql CONTINUE? ,
 which is assumed to be affirmative;
-do not open the file system for writing.
+do not open the filesystem for writing.
 .It Fl c
-If the file system is in the old (static table) format,
-convert it to the new (dynamic table) format.
-If the file system is in the new format,
-convert it to the old format provided the old format
-can support the filesystem configuration.
+Convert the filesystem to the specified level.
+Note that the level of a filesystem can only be raised.
+.Bl -tag -width indent
+There are currently three levels defined:
+.It 0
+The filesystem is in the old (static table) format.
+.It 1
+The filesystem is in the new (dynamic table) format.
+.It 2
+The filesystem supports 32-bit uid's and gid's,
+short symbolic links are stored in the inode, 
+and directories have an added field showing the file type.
+.El
+.Pp
 In interactive mode,
 .Nm fsck
-will list the direction the conversion is to be made
+will list the conversion to be made
 and ask whether the conversion should be done.
 If a negative answer is given,
 no further operations are done on the filesystem.
 In preen mode,
-the direction of the conversion is listed and done if
+the conversion is listed and done if
 possible without user interaction.
-Conversion in preen mode is best used when all the file systems
+Conversion in preen mode is best used when all the filesystems
 are being converted at once.
-The format of a file system can be determined from the
+The format of a filesystem can be determined from the
 first line of output from 
 .Xr dumpfs 8 .
 .El
 .Pp
 If no filesystems are given to 
 .Nm fsck
-then a default list of file systems is read from
+then a default list of filesystems is read from
 the file
 .Pa /etc/fstab .
 .Pp
@@ -178,14 +192,14 @@ Inconsistencies checked are as follows:
 .It
 Blocks claimed by more than one inode or the free map.
 .It
-Blocks claimed by an inode outside the range of the file system.
+Blocks claimed by an inode outside the range of the filesystem.
 .It
 Incorrect link counts.
 .It
 Size checks:
 .Bl -item -indent indent -compact
 .It 
-Directory size not of proper format.
+Directory size not a multiple of DIRBLKSIZ.
 .It
 Partially truncated file.
 .El
@@ -206,12 +220,14 @@ or having the wrong inode number.
 .El
 .It
 Super Block checks:
+.Bl -item -indent indent -compact
 .It 
-More blocks for inodes than there are in the file system.
+More blocks for inodes than there are in the filesystem.
 .It
 Bad free block map format.
 .It
 Total free block and/or free inode count incorrect.
+.El
 .El
 .Pp
 Orphaned files and directories (allocated but unreferenced) are,
@@ -230,7 +246,7 @@ the raw device should always be used.
 .Sh FILES
 .Bl -tag -width /etc/fstab -compact
 .It Pa /etc/fstab
-contains default list of file systems to check.
+contains default list of filesystems to check.
 .El
 .Sh DIAGNOSTICS
 The diagnostics produced by 
