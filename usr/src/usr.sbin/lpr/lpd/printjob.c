@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.21 (Berkeley) %G%";
 #endif
 
 /*
@@ -516,7 +516,7 @@ start:
 	if ((child = dofork(DORETURN)) == 0) {	/* child */
 		dup2(fi, 0);
 		dup2(fo, 1);
-		n = open(tmpfile, O_WRONLY|O_CREAT, 0664);
+		n = open(tmpfile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
 		if (n >= 0)
 			dup2(n, 2);
 		for (n = 3; n < NOFILE; n++)
