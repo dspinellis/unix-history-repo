@@ -108,6 +108,8 @@ rip_output(m, so, dst)
 	register struct ip *ip;
 	register struct inpcb *inp = sotoinpcb(so);
 	register struct sockaddr_in *sin;
+	struct mbuf *opts;
+	int flags = (so->so_options & SO_DONTROUTE) | IP_ALLOWBROADCAST;
 
 	/*
 	 * If the user handed us a complete IP packet, use it.
@@ -123,12 +125,14 @@ rip_output(m, so, dst)
 		ip->ip_src = inp->inp_laddr;
 		ip->ip_dst.s_addr = dst;
 		ip->ip_ttl = MAXTTL;
+		opts = inp->inp_options;
+	} else {
+		opts = NULL;
+		/* XXX prevent ip_output from overwriting header fields */
+		flags |= IP_RAWOUTPUT;
+		ipstat.ips_rawout++;
 	}
-	return (ip_output(m,
-	   (inp->inp_flags & INP_HDRINCL)? (struct mbuf *)0: inp->inp_options,
-	    &inp->inp_route, 
-	   (so->so_options & SO_DONTROUTE) | IP_ALLOWBROADCAST,
-	   inp->inp_moptions));
+	return (ip_output(m, opts, &inp->inp_route, flags, inp->inp_moptions));
 }
 
 /*
