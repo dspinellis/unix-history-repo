@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.20 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.20 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -117,7 +117,9 @@ smtp(e)
 	message("220 %s", inp);
 	SmtpPhase = "startup";
 	sendinghost = NULL;
+	protocol = NULL;
 	gothello = FALSE;
+	gotmail = FALSE;
 	for (;;)
 	{
 		/* arrange for backout */
