@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -501,8 +501,11 @@ count_spaces(current, buffer)
     return (cur);
 };
 
+int	found_err;
 diag(level, msg, a, b)
 {
+    if (level)
+	found_err = 1;
     if (output == stdout) {
 	fprintf(stdout, "/**INDENT** %s@%d: ", level == 0 ? "Warning" : "Error", line_no);
 	fprintf(stdout, msg, a, b);

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -57,6 +57,7 @@ main(argc, argv)
     int         argc;
     char      **argv;
 {
+    extern int	found_err;	/* if any error occurred */
 
     int         dec_ind;	/* current indentation for declarations */
     int         di_stack[20];	/* a stack of structure indentation levels */
@@ -385,7 +386,7 @@ check_type:
 		       (1.0 * ps.com_lines) / code_lines);
 	    }
 	    fflush(output);
-	    exit(ps.tos <= 1);
+	    exit(ps.tos > 1 || found_err);
 	}
 	if (
 	    (type_code != comment) &&
