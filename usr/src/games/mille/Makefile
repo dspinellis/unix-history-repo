@@ -1,82 +1,94 @@
 #
-# Copyright (c) 1982 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) 5/15/86
+#	@(#)Makefile	5.3	(Berkeley)	%G%
 #
-# mille bourne game makefile
-#
-HEADERS=mille.h
-CFILES=	comp.c end.c extern.c init.c mille.c misc.c move.c print.c \
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+LIBS=	-lcurses -ltermlib
+SRCS=	comp.c end.c extern.c init.c mille.c misc.c move.c print.c \
+	roll.c save.c table.c types.c varpush.c
+MSRCS=	comp.c end.c extern.c init.c mille.c misc.c move.c print.c \
 	roll.c save.c types.c varpush.c
-OBJS=	comp.o end.o extern.o init.o mille.o misc.o move.o print.o \
+MOBJS=	comp.o end.o extern.o init.o mille.o misc.o move.o print.o \
 	roll.o save.o types.o varpush.o
-POBJS=	comp.po end.po extern.po init.po mille.po misc.po move.po \
-	roll.po print.po save.po types.po varpush.po
-# CRL=	/jb/ingres/arnold/=lib/=curses/crlib
-# CRL=	=curses/screen/libcurses.a
-CRL=	
-# L=	-ltermlib
-L=	-lcurses -ltermlib
-LIBS=	${CRL} ${L}
-DEFS=
-CFLAGS=	-O ${DEFS}
-LDFLAGS=
-DESTDIR=
-BINDIR=	/usr/games
-.SUFFIXES: .po .i
+TSRCS=	table.c extern.c
+TOBJS=	table.o extern.o
 
-.c.po:
-	rm -f x.c ; ln $*.c x.c
-	${CC} ${CFLAGS} -p -c x.c
-	mv x.o $*.po
+all: mille
 
-.c.i:
-	${CC} ${LDFLAGS} -P $*.c
+mille: ${MOBJS} ${LIBC}
+	${CC} ${CFLAGS} -o $@ ${MOBJS} ${LIBS}
 
-a.out: ${OBJS} ${CRL}
-	${CC} ${LDFLAGS} ${OBJS} ${LIBS}
+table: ${TOBJS} ${LIBC}
+	${CC} ${CFLAGS} -o $@ ${TOBJS}
 
-mille: ${OBJS} ${CRL}
-	${CC} ${CFLAGS} -o mille ${OBJS} ${LIBS}
+clean: FRC
+	rm -f ${OBJS} ${TOBJS} core mille table
 
-install: mille
-	install -s mille ${DESTDIR}${BINDIR}
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-pmb: ${POBJS} ../pcrlib
-	${CC} ${CFLAGS} -p -o pmb ${POBJS} ../pcrlib -ltermlib
+install: FRC
+	install -s -o bin -g bin -m 755 mille ${DESTDIR}/usr/games/mille
 
-mille.po: mille.c
-	rm -f x.c ; ln mille.c x.c
-	${CC} ${CFLAGS} -DPROF -p -c x.c
-	mv x.o mille.po
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+	lint ${CFLAGS} ${TSRCS}
 
-table: table.o extern.o
-	${CC} ${CFLAGS} -i -o table table.o extern.o
+tags: FRC
+	ctags ${SRCS}
+	ctags -a ${TSRCS}
+	sort -o tags tags
 
-readdump: readdump.o extern.o varpush.o
-	${CC} ${CFLAGS} -i -o readdump readdump.o extern.o varpush.o
+FRC:
 
-ctags:
-	ctags ${HEADERS} ${CFILES}
-	ed - tags < :ctfix
-	sort tags -o tags
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-lint:
-	lint -hxb ${DEFS} ${CFILES} ${L} > lint.out
+comp.o: comp.c mille.h /usr/include/ctype.h /usr/include/curses.h
+comp.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+comp.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+end.o: end.c mille.h /usr/include/ctype.h /usr/include/curses.h
+end.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+end.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+extern.o: extern.c mille.h /usr/include/ctype.h /usr/include/curses.h
+extern.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+extern.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+init.o: init.c mille.h /usr/include/ctype.h /usr/include/curses.h
+init.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+init.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+mille.o: mille.c mille.h /usr/include/ctype.h /usr/include/curses.h
+mille.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+mille.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+mille.o: /usr/include/signal.h
+misc.o: misc.c mille.h /usr/include/ctype.h /usr/include/curses.h
+misc.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+misc.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+misc.o: /usr/include/sys/file.h
+move.o: move.c mille.h /usr/include/ctype.h /usr/include/curses.h
+move.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+move.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+print.o: print.c mille.h /usr/include/ctype.h /usr/include/curses.h
+print.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+print.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+roll.o: roll.c mille.h /usr/include/ctype.h /usr/include/curses.h
+roll.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+roll.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+save.o: save.c mille.h /usr/include/ctype.h /usr/include/curses.h
+save.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+save.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+save.o: /usr/include/sys/types.h /usr/include/sys/stat.h
+table.o: table.c mille.h /usr/include/ctype.h /usr/include/curses.h
+table.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+table.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+types.o: types.c mille.h /usr/include/ctype.h /usr/include/curses.h
+types.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+types.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+varpush.o: varpush.c mille.h /usr/include/ctype.h /usr/include/curses.h
+varpush.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+varpush.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 
-mille.ar:
-	ar ruv mille.ar Makefile tags ${HEADERS} ${CFILES}
-
-tar:
-	tar rvf /dev/rmt0 Makefile tags :ctfix ${HEADERS} ${CFILES}
-
-lpr:
-	pr Makefile ${HEADERS} ${CFILES} tags | lpr ; lpq
-
-clean:
-	rm -f ${OBJS} ${POBJS} core ? a.out errs mille lint.out mille.ar \
-		tags pmb
-
-depend:
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
