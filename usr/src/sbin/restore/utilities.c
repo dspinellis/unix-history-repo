@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.19	(Berkeley)	85/02/18";
+static char sccsid[] = "@(#)utilities.c	3.20	(Berkeley)	85/02/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -27,8 +27,8 @@ pathcheck(name)
 		if (ep == NIL) {
 			ep = addentry(name, psearch(name), NODE);
 			newnode(ep);
-			ep->e_flags |= NEW|KEEP;
 		}
+		ep->e_flags |= NEW|KEEP;
 		*cp = '/';
 	}
 }
