@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cksum.1	8.1 (Berkeley) %G%
+.\"	@(#)cksum.1	5.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CKSUM 1
@@ -21,8 +21,8 @@
 .Sh DESCRIPTION
 The
 .Nm cksum
-utility writes to standard output three whitespace separated fields for each
-input file.
+utility writes to the standard output three whitespace separated
+fields for each input file.
 These fields are a checksum
 .Tn CRC ,
 the total number of octets in the file and the file name.
@@ -61,7 +61,7 @@ r = s % 2^16 + (s % 2^32) / 2^16;
 cksum = (r % 2^16) + r / 2^16;
 .Ed
 .Pp
-Both algorithm 1 and 2 write to standard output the same fields as
+Both algorithm 1 and 2 write to the standard output the same fields as
 the default algorithm except that the size of the file in bytes is
 replaced with the size of the file in blocks.
 For historic reasons, the block size is 1024 for algorithm 1 and 512
@@ -128,9 +128,9 @@ article.
 .%D "August 1988"
 .Re
 .Sh STANDARDS
-.Nm Cksum
-is expected to conform to
-.St -p1003.2 .
+The
+.Nm cksum
+utility is expected to be POSIX 1003.2 compatible.
 .Sh HISTORY
 The
 .Nm cksum
