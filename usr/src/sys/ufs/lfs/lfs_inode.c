@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.56 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.57 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -171,7 +171,7 @@ lfs_update(vp, ta, tm, waitfor)
 #define UPDATE_SEGUSE \
 	if (lastseg != -1) { \
 		LFS_SEGENTRY(sup, fs, lastseg, sup_bp); \
-		sup->su_nbytes -= fs->lfs_bsize * num; \
+		sup->su_nbytes -= num << fs->lfs_bshift; \
 		LFS_UBWRITE(sup_bp); \
 		blocksreleased += num; \
 	}
@@ -330,7 +330,7 @@ lfs_truncate(vp, length, flags)
 				SEGDEC;
 				ip->i_ib[off] = 0;
 			}
-			if (lbn == lastblock)
+			if (lbn == lastblock || lbn <= NDADDR)
 				--lbn;
 			else {
 				lbn -= NINDIR(fs);
