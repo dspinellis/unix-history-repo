@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.27 (Berkeley) %G%
+#	@(#)Makefile	7.28 (Berkeley) %G%
 
 VERSION=3.7
 
@@ -13,7 +13,7 @@ VERSION=3.7
 # If your system expands tabs to 4 spaces you should -DTABS=4 below.
 #
 PROG=	ex
-SUBDIR=	exrecover expreserve
+SUBDIR=	ex3.7recover ex3.7preserve
 CFLAGS+=-DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
 	-DFASTTAG -DUNIX_SBRK
 SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_extern.c \
@@ -43,6 +43,5 @@ strings.o: strings
 	ed - < ${.CURDIR}/rofix xs.s
 	${AS} -o strings.o xs.s
 	rm xs.s
-	${CC} -c
 
 .include <bsd.prog.mk>
