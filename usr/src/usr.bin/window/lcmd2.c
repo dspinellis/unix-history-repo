@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -86,7 +86,7 @@ register struct value *a;
 	struct timeval timeval;
 	char *strtime();
 
-	if ((w = openiwin(6, "Timing and Resource Usage")) == 0) {
+	if ((w = openiwin(8, "Timing and Resource Usage")) == 0) {
 		error("Can't open time window: %s.", wwerror());
 		return;
 	}
@@ -101,15 +101,20 @@ register struct value *a;
 			&& str_match(a->v_str, "children", 1)
 		? RUSAGE_CHILDREN : RUSAGE_SELF, &rusage);
 
-	wwprintf(w, "time\t\tutime\t\tstime\t\tmaxrss\tixrss\tidrss\tisrss\n");
-	wwprintf(w, "%-16s", strtime(&timeval));
-	wwprintf(w, "%-16s", strtime(&rusage.ru_utime));
-	wwprintf(w, "%-16s", strtime(&rusage.ru_stime));
-	wwprintf(w, "%ld\t%ld\t%ld\t%ld\n",
+	wwprintf(w, "%-15s %-15s %-15s\n",
+		"time", "utime", "stime");
+	wwprintf(w, "%-15s ", strtime(&timeval));
+	wwprintf(w, "%-15s ", strtime(&rusage.ru_utime));
+	wwprintf(w, "%-15s\n", strtime(&rusage.ru_stime));
+	wwprintf(w, "%-15s %-15s %-15s %-15s\n",
+		"maxrss", "ixrss", "idrss", "isrss");
+	wwprintf(w, "%-15ld %-15ld %-15ld %-15ld\n",
 		rusage.ru_maxrss, rusage.ru_ixrss,
 		rusage.ru_idrss, rusage.ru_isrss);
-	wwprintf(w, "minflt\tmajflt\tnswap\tinblk\toublk\tmsgsnd\tmsgrcv\tnsigs\tnvcsw\tnivcsw\n");
-	wwprintf(w, "%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n",
+	wwprintf(w, "%-7s %-7s %-7s %-7s %-7s %-7s %-7s %-7s %-7s %-7s\n",
+		"minflt", "majflt", "nswap", "inblk", "oublk",
+		"msgsnd", "msgrcv", "nsigs", "nvcsw", "nivcsw");
+	wwprintf(w, "%-7ld %-7ld %-7ld %-7ld %-7ld %-7ld %-7ld %-7ld %-7ld %-7ld\n",
 		rusage.ru_minflt, rusage.ru_majflt, rusage.ru_nswap,
 		rusage.ru_inblock, rusage.ru_oublock,
 		rusage.ru_msgsnd, rusage.ru_msgrcv, rusage.ru_nsignals,
