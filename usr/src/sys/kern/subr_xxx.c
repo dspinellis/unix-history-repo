@@ -3,23 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	7.4 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.5 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
-
-#include "param.h"
-#include "systm.h"
-#include "conf.h"
-#include "inode.h"
-#include "dir.h"
-#include "user.h"
-#include "buf.h"
-#include "proc.h"
-#include "fs.h"
-#include "vm.h"
-#include "cmap.h"
-#include "uio.h"
+#include "errno.h"
 
 /*
  * Routine placed in illegal entries in the bdevsw and cdevsw tables.
