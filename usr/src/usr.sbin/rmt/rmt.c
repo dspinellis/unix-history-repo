@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rmt.c	4.2 82/04/19";
 #endif
 
 /*
@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)rmt.c	4.1 82/04/02";
 
 int	tape = -1;
 
-#define	MAXRECSIZ	(60*1024)
+#define	MAXRECSIZ	(10*1024)	/* small enuf for pdp-11's too */
 char	record[MAXRECSIZ];
 
 #define	SSIZE	64
@@ -33,7 +33,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	long rval;
+	int rval;
 	char c;
 	int n, i, cc;
 
@@ -131,6 +131,7 @@ if (debug) fprintf(debug, "rmtd: S\n");
 if (debug) fprintf(debug, "rmtd: garbage command %c\n", c);
 		exit(1);
 	}
+if (debug) fprintf(debug, "rmtd: A %d\n", rval);
 	(void) sprintf(resp, "A%d\n", rval);
 	(void) write(1, resp, strlen(resp));
 	goto top;
@@ -158,6 +159,8 @@ error(num)
 	int num;
 {
 
+if (debug) fprintf(debug, "rmtd: E %d (%s)\n", num, sys_errlist[num]);
 	(void) sprintf(resp, "E%d\n%s\n", num, sys_errlist[num]);
 	(void) write(1, resp, strlen (resp));
 }
+
