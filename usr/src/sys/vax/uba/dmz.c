@@ -46,6 +46,7 @@
 #include "ubareg.h"
 #include "ubavar.h"
 #include "dmzreg.h"
+#include "dmreg.h"
 
 int dmzprobe(), dmzattach(), dmzrint(), dmzxint();
 struct uba_device *dmzinfo[NDMZ];
@@ -182,7 +183,6 @@ dmzopen(device, flag)
 	dmz_addr = (struct dmzdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)dmz_addr;
 	tp->t_oproc = dmzstart;
-	tp->t_state |= TS_WOPEN;
 
 	/*
 	 * Set up Unibus map registers.  Block uba resets, which can
@@ -213,14 +213,14 @@ dmzopen(device, flag)
 		ttychars(tp);
 		tp->t_ispeed = tp->t_ospeed = ISPEED;
 		tp->t_flags = IFLAGS;
-		dmzparam(unit);
 		dmz_softc[unit].dmz_state = 0;
 	}
+	dmzparam(unit);
 
 	/*
 	 * Wait for carrier, then process line discipline specific open.
 	 */
-	if ((dmzmctl(device, DMZ_ON, DMSET) & (DMZ_CAR << 8)) ||
+	if ((dmzmctl(unit, DMZ_ON, DMSET) & DMZ_CAR) ||
 	    (dmzsoftCAR[controller] & (1 << (unit % 24))))
 		tp->t_state |= TS_CARR_ON;
 	priority = spl5();	
@@ -238,7 +238,7 @@ dmzparam(unit)
 {
 	register struct tty *tp;
 	register struct dmzdevice *dmz_addr;
-	register int line_parameters, line_control;
+	register int line_parameters;
 	register int octet;
 	int priority;
 
@@ -256,11 +256,10 @@ dmzparam(unit)
 	}
 
 	line_parameters = (dmz_speeds[tp->t_ospeed] << 12) | (dmz_speeds[tp->t_ispeed] << 8);
-	line_control = DMZ_LCE;
 
 	if ((tp->t_ispeed) == B134)
 		line_parameters |= DMZ_6BT | DMZ_PEN;
-	else if (tp->t_flags & (RAW | LITOUT))
+	else if (tp->t_flags & (RAW | LITOUT | PASS8))
 		line_parameters |= DMZ_8BT;
 	else
 		line_parameters |= DMZ_7BT | DMZ_PEN;
@@ -273,12 +272,7 @@ dmzparam(unit)
 	line_parameters |= (unit & 07);
 
 	dmz_addr->octet[octet].octet_lprm = line_parameters;
-	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_LCTMR | (unit & 07);
-	dmz_addr->octet[octet].octet_lctmr = 
-	    (dmz_addr->octet[octet].octet_lctmr | (line_control & 0xff));
-
 	splx(priority);
-	return;
 }
 
 /* ARGSUSED */
@@ -291,9 +285,10 @@ dmzclose(device, flag)
 
 	unit = minor(device);
 	tp = &dmz_tty[unit];
+	(*linesw[tp->t_line].l_close)(tp);
 
 	/*
-	 * Break, hang-up and close the modem.
+	 * Clear break, hang-up and close the modem.
 	 */
 	(void) dmzmctl(unit, DMZ_BRK, DMBIC);
 	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0)
@@ -419,16 +414,11 @@ dmzrint(controller, octet)
 
 		if (character & DMZ_DSC &&
 		    (dmzsoftCAR[controller] & (1 << (octet * 8 + unit))) == 0) {
-			dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMS | unit;
-			if (dmz_addr->octet[octet].octet_rms & DMZ_CAR)
+			dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMSTSC | unit;
+			if (dmz_addr->octet[octet].octet_rmstsc & DMZ_CAR)
 				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-			else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
-				dmz_addr->octet[octet].octet_csr =
-				   DMZ_IE | IR_LCTMR | unit;
-				dmz_addr->octet[octet].octet_lctmr =
-				   dmz_addr->octet[octet].octet_lctmr &
-				   ((DMZ_OFF<<8) | 0xff);
-			}
+			else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+				(void)dmzmctl(tp - dmz_tty, DMZ_OFF, DMSET);
 			continue;
 		}
 
@@ -581,7 +571,7 @@ dmzstart(tp)
 
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags & (RAW | LITOUT))
+	if (tp->t_flags & (RAW | LITOUT | PASS8))
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);
@@ -683,35 +673,37 @@ dmzioctl(device, command, data, flag)
 		return (error);
 	error = ttioctl(tp, command, data, flag);
 	if (error >= 0) {
-		if (command == TIOCSETP || command == TIOCSETN)
+		if (command == TIOCSETP || command == TIOCSETN ||
+		    command == TIOCLSET || command == TIOCLBIS ||
+		    command == TIOCLBIC)
 			dmzparam(unit);
 		return (error);
 	}
 
 	switch (command) {
 		case TIOCSBRK:
-			(void) dmzmctl(device, DMZ_BRK, DMBIS);
+			(void) dmzmctl(unit, DMZ_BRK, DMBIS);
 			break;
 		case TIOCCBRK:
-			(void) dmzmctl(device, DMZ_BRK, DMBIC);
+			(void) dmzmctl(unit, DMZ_BRK, DMBIC);
 			break;
 		case TIOCSDTR:
-			(void) dmzmctl(device, DMZ_DTR | DMZ_RTS, DMBIS);
+			(void) dmzmctl(unit, DMZ_DTR | DMZ_RTS, DMBIS);
 			break;
 		case TIOCCDTR:
-			(void) dmzmctl(device, DMZ_DTR | DMZ_RTS, DMBIC);
+			(void) dmzmctl(unit, DMZ_DTR | DMZ_RTS, DMBIC);
 			break;
 		case TIOCMSET:
-			(void) dmzmctl(device, dmtodmz(*(int *)data), DMSET);
+			(void) dmzmctl(unit, dmtodmz(*(int *)data), DMSET);
 			break;
 		case TIOCMBIS:
-			(void) dmzmctl(device, dmtodmz(*(int *)data), DMBIS);
+			(void) dmzmctl(unit, dmtodmz(*(int *)data), DMBIS);
 			break;
 		case TIOCMBIC:
-			(void) dmzmctl(device, dmtodmz(*(int *)data), DMBIC);
+			(void) dmzmctl(unit, dmtodmz(*(int *)data), DMBIC);
 			break;
 		case TIOCMGET:
-			*(int *)data = dmztodm(dmzmctl(device, 0, DMGET));
+			*(int *)data = dmzmctl(unit, 0, DMGET);
 			break;
 		default:
 			return (ENOTTY);
@@ -719,99 +711,85 @@ dmzioctl(device, command, data, flag)
 	return (0);
 }
 
-dmzmctl(device, bits, how)
-	dev_t device;
+dmzmctl(unit, bits, how)
+	register int unit;
 	int bits, how;
 {
 	register struct dmzdevice *dmz_addr;
-	register int unit, modem_status, line_control;
-	register int temp;
+	register int modem_status, line_control;
 	int priority;
 	int octet;
 
-	unit = minor(device);
 	octet = OCTET(unit);
-	dmz_addr = (struct dmzdevice *) dmz_tty[unit].t_addr;
+	dmz_addr = (struct dmzdevice *) dmzinfo[DMZ(unit)]->ui_addr;
 
 	priority = spl5();
-	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMS | (unit & 07);
-	modem_status = dmz_addr->octet[octet].octet_rms << 8;
+	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMSTSC | (unit & 07);
+	modem_status = dmz_addr->octet[octet].octet_rmstsc & 0xff00;
 
 	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_LCTMR | (unit & 07);
-	temp = dmz_addr->octet[octet].octet_lctmr;
-	modem_status |= ((temp>>8) & (0x1f));
-	line_control = (temp & (0x3f));
+	line_control = dmz_addr->octet[octet].octet_lctmr;
 
-	if (line_control & DMZ_RBK)
-		modem_status |= DMZ_BRK;
 
 	switch (how) {
 		case DMSET:
-			modem_status = (modem_status & 0xff00) | bits;
+			line_control = bits;
 			break;
 		case DMBIS:
-			modem_status |= bits;
+			line_control |= bits;
 			break;
 		case DMBIC:
-			modem_status &= ~bits;
+			line_control &= ~bits;
 			break;
 		case DMGET:
 			(void) splx(priority);
-			return (modem_status);
+			return (dmztodm(modem_status, line_control));
 	}
-
-	if (modem_status & DMZ_BRK)
-		line_control |= DMZ_RBK;
-	else
-		line_control &= ~DMZ_RBK;
-	modem_status &= ~DMZ_BRK;
 
 	dmz_addr->octet[octet].octet_csr =
 		DMZ_IE | IR_LCTMR | (unit & 07);
-	dmz_addr->octet[octet].octet_lctmr =
-		((modem_status & 0x1f) << 8) | (line_control & 0x3f);
+	dmz_addr->octet[octet].octet_lctmr = line_control;
 
-	(void) splx(priority);
+	splx(priority);
 	return (modem_status);
 }
 
 /*
- * Routine to convert modem status from dm to dmz format.
- * Pull bits 1 & 3 through unchanged. If dm secondary transmit bit is set,
- * and/or dm request to send bit is set, and/or dm user modem signal bit
- * is set, set the corresponding dmz bits.
+ * Routine to convert modem status from dm to dmz lctmr format.
  */
 dmtodmz(bits)
 	register int bits;
 {
-	register int b;
+	register int lcr = DMZ_LCE;
 
-	b = bits & 012;
-	if (bits & DM_ST)
-		b |= DMZ_RAT;
-	if (bits & DM_RTS)
-		b |= DMZ_RTS;
-	if (bits & DM_USR)
-		b |= DMZ_USW;
-	return (b);
+	if (bits & DML_DTR)
+		lcr |= DMZ_DTR;
+	if (bits & DML_RTS)
+		lcr |= DMZ_RTS;
+	if (bits & DML_ST)
+		lcr |= DMF_ST;
+	if (bits & DML_USR)
+		lcr |= DMZ_USRW;
+	return (lcr);
 }
 
 /*
- * Routine to convert modem status from dmz to dm format.  Pull bits 1 & 3
- * through unchanged. Pull bits 11 - 15 through as bits 4 - 8 and set bit
- * 0 to dm line enable.  If dmz user modem signal bit set, and/or  dmz
- * request to send bit set, then set the corresponding dm bit also.
+ * Routine to convert modem status from dmz receive modem status
+ * and line control register to dm format.
+ * If dmz user modem read bit set, set DML_USR.
  */
-dmztodm(bits)
-	register int bits;
+dmztodm(rms, lcr)
+	register int rms, lcr;
 {
-	register int b;
 
-	b = (bits & 012) | ((bits >> 7) & 0760) | DM_LE;
-	if (bits & DMZ_USR)
-		b |= DM_USR;
-	if (bits & DMZ_RTS)
-		b |= DM_RTS;
-	return (b);
+	rms = ((rms & (DMZ_DSR|DMZ_RNG|DMZ_CAR|DMZ_CTS|DMF_SR)) >> 7) | 
+		((rms & DMZ_USRR) >> 1) | DML_LE;
+	if (lcr & DMZ_DTR)
+		rms |= DML_DTR;
+	if (lcr & DMF_ST)
+		rms |= DML_ST;
+	if (lcr & DMZ_RTS)
+		rms |= DML_RTS;
+	return (rms);
 }
 #endif
