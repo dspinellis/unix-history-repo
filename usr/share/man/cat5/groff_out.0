@@ -1,0 +1,198 @@
+
+
+
+GROFF_OUT(@MAN5EXT@)   BSD Reference Manual  GROFF_OUT(@MAN5EXT@)
+
+
+NNAAMMEE
+       groff_out - groff intermediate output format
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page describes the format output by GNU troff.
+       The output format used by GNU troff  is  very  similar  to
+       that  used by Unix device-independent troff. Only the dif-
+       ferences are documented here.
+
+       The argument to the ss command is in scaled  points  (units
+       of _p_o_i_n_t_s_/n_, where _n is the argument to the ssiizzeessccaallee com-
+       mand  in the DESC file.)  The  argument  to  the  xx HHeeiigghhtt
+       command is also in scaled points.
+
+       The first three output commands are guaranteed to be:
+
+              xx TT _d_e_v_i_c_e
+              xx rreess _n _h _v
+              xx iinniitt
+
+       If  the  ttccoommmmaanndd  line is present in the DESC file, troff
+       will use the following two commands
+
+       tt_x_x_x   _x_x_x is any sequence of characters terminated  by  a
+              space  or  a newline; the first character should be
+              printed at the current position,  the  the  current
+              horizontal  position  should  be  increased  by the
+              width of the first character, and so  on  for  each
+              character.   The  width  of  the  character is that
+              given in the font file,  appropriately  scaled  for
+              the current point size, and rounded so that it is a
+              multiple of  the  horizontal  resolution.   Special
+              characters cannot be printed using this command.
+
+       uu_n _x_x_x This  is  same  as  the tt command except that after
+              printing each  character,  the  current  horizontal
+              position  is  increased  by the sum of the width of
+              that character and _n.
+
+       Note that single characters can have the eighth  bit  set,
+       as can the names of fonts and special characters.
+
+       The  names  of  characters  and  fonts  an be of arbitrary
+       length; drivers should not assume that they will  be  only
+       two characters long.
+
+       When  a  character  is  to be printed, that character will
+       always be in the current font.  Unlike  device-independent
+       troff,  it  is not necessary for drivers to search special
+       fonts to find a character.
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            1
+
+
+
+
+
+
+
+
+GROFF_OUT(@MAN5EXT@)   BSD Reference Manual  GROFF_OUT(@MAN5EXT@)
+
+
+       The DD drawing command has been extended.  These extensions
+       will only be used by GNU pic if the --xx option is given.
+
+       DDff _n\n Set  the shade of gray to be used for filling solid
+              objects to _n; _n must be an integer  between  0  and
+              1000,  where  0 corresponds solid white and 1000 to
+              solid black, and values in  between  correspond  to
+              intermediate  shades of gray.  This applies only to
+              solid circles, solid ellipses and  solid  polygons.
+              By default, a level of 1000 will be used.  Whatever
+              color a solid  object  has,  it  should  completely
+              obscure  everything  beneath  it.   A value greater
+              than 1000 or less than 0 can  also  be  used:  this
+              means fill with the shade of gray that is currently
+              being used for lines and text.  Normally this  will
+              be  black,  but  some  drivers may provide a way of
+              changing this.
+
+       DDCC _d\n Draw a solid circle with a diameter of _d  with  the
+              leftmost point at the current position.
+
+       DDEE _d_x _d_y\n
+              Draw  a solid ellipse with a horizontal diameter of
+              _d_x and a vertical diameter of _d_y with the  leftmost
+              point at the current position.  delim $$
+
+       DDpp  $dx  sub 1$ $dy sub 1$ $dx sub 2$ $dy sub 2$ $...$ $dx
+              sub n$ $dy sub n$\n
+              Draw  a polygon with, for $i = 1 ,..., n+1$, the _i-
+              th vertex at the current position $+ sum  from  j=1
+              to  i-1  (  dx sub j , dy sub j )$.  At the moment,
+              GNU pic only uses this command to  generate  trian-
+              gles and rectangles.
+
+       DDPP  $dx  sub 1$ $dy sub 1$ $dx sub 2$ $dy sub 2$ $...$ $dx
+              sub n$ $dy sub n$\n
+              Like DDpp but draw a solid rather than outlined poly-
+              gon.
+
+       DDtt _n\n Set the current line thickness to _n machine  units.
+              Traditionally  Unix troff drivers use a line thick-
+              ness  proportional  to  the  current  point   size;
+              drivers should continue to do this if no DDtt command
+              has been given, or if a DDtt command has  been  given
+              with  a  negative  value  of  _n.  A zero value of _n
+              selects the smallest available line thickness.
+
+       A difficulty arises in how the current position should  be
+       changed  after  the  execution of these commands.  This is
+       not of great importance since the code  generated  by  GNU
+       pic  does  not depend on this.  Given a drawing command of
+
+
+
+Groff Version @VERSION@      @MDATE@                            2
+
+
+
+
+
+
+
+
+GROFF_OUT(@MAN5EXT@)   BSD Reference Manual  GROFF_OUT(@MAN5EXT@)
+
+
+       the form
+
+              \\DD''_c $x sub 1$ $y sub 1$ $x sub 2$ $y sub 2$  $...$
+              $x sub n$ $y sub n$'
+
+       where  _c  is  not  one of cc, ee, ll, aa or ~~, Unix troff will
+       treat each of the $x sub i$ as a horizontal quantity,  and
+       each  of  the  $y  sub  i$ as a vertical quantity and will
+       assume that the width of the drawn object is $sum from i=1
+       to n x sub i$, and that the height is $sum from i=1 to n y
+       sub i$.  (The assumption about the height can be  seen  by
+       examining  the  sstt  and  ssbb registers after using such a DD
+       command in a \w escape sequence.)  This  rule  also  holds
+       for  all  the original drawing commands with the exception
+       of DDee.  For the sake of compatibility GNU troff also  fol-
+       lows  this rule, even though it produces an ugly result in
+       the case of the DDff, DDtt, and, to a lesser extent,  DDEE  com-
+       mands.  Thus after executing a DD command of the form
+
+              DD_c $x sub 1$ $y sub 1$ $x sub 2$ $y sub 2$ $...$ $x
+              sub n$ $y sub n$\n
+
+       the current position should be increased by  $(  sum  from
+       i=1 to n x sub i , sum from i=1 to n y sub i )$.
+
+       There is a continuation convention which permits the argu-
+       ment to the xx XX command to  contain  newlines:  when  out-
+       putting  the  argument  to the xx XX command, GNU troff will
+       follow each newline in the argument with a ++ character (as
+       usual,  it  will terminate the entire argument with a new-
+       line); thus if the line after the line containing the  xx XX
+       command  starts  with  ++, then the newline ending the line
+       containing the xx XX command should be treated  as  part  of
+       the  argument to the xx XX command, the ++ should be ignored,
+       and the part of the line following the ++ should be treated
+       like the part of the line following the xx XX command.
+
+SSEEEE AALLSSOO
+       ggrrooffff__ffoonntt(@MAN5EXT@)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            3
+
+
+
+
+
