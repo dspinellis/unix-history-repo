@@ -1,0 +1,267 @@
+ASSERT	/usr/src/libc/gen/malloc.c	?^#define ASSERT(p) if(!(p))botch("p");else$?
+CTRL	/usr/src/lib/libtermlib/tgoto.c	?^#define	CTRL(c)	('c' & 037)$?
+Mmain	/usr/src/lib/libln/main.c	?^main(){$?
+Mtc1	/usr/src/lib/libtermlib/tc1.c	?^main(argc, argv) char **argv; {$?
+Mtc2	/usr/src/lib/libtermlib/tc2.c	?^main(argc, argv) char **argv; {$?
+_cleanup	/usr/src/libc/stdio/flsbuf.c	?^_cleanup()$?
+_cleanup	/usr/src/lib/libNS/flsbuf.c	?^_cleanup()$?
+_doscan	/usr/src/libc/stdio/doscan.c	?^_doscan(iop, fmt, argp)$?
+_error	/usr/src/libc/stdio/error.c	?^_error(s)$?
+_filbuf	/usr/src/libc/stdio/filbuf.c	?^_filbuf(iop)$?
+_filbuf	/usr/src/lib/libNS/filbuf.c	?^_filbuf(iop)$?
+_flsbuf	/usr/src/libc/stdio/flsbuf.c	?^_flsbuf(c, iop)$?
+_flsbuf	/usr/src/lib/libNS/flsbuf.c	?^_flsbuf(c, iop)$?
+_getccl	/usr/src/libc/stdio/doscan.c	?^_getccl(s)$?
+_innum	/usr/src/libc/stdio/doscan.c	?^_innum(ptr, type, len, size, iop, eofptr)$?
+_instr	/usr/src/libc/stdio/doscan.c	?^_instr(ptr, type, len, iop, eofptr)$?
+_strout	/usr/src/libc/stdio/strout.c	?^_strout(count, string, adjust, file, fillch)$?
+acos	/usr/src/lib/libm/asin.c	?^acos(arg) double arg; {$?
+acos	/usr/src/lib/libnm/acos.c	?^acos(arg) double arg; {$?
+additem	/usr/src/lib/libdbm/dbm.c	?^additem(buf, item)$?
+allock	/usr/src/libc/gen/malloc.c	?^allock()$?
+allprint	/usr/src/lib/libln/allprint.c	?^allprint(c)$?
+asctime	/usr/src/libc/gen/ctime.c	?^asctime(t)$?
+asin	/usr/src/lib/libm/asin.c	?^asin(arg) double arg; {$?
+asym	/usr/src/lib/libm/gamma.c	?^asym(arg)$?
+asympt	/usr/src/lib/libm/j0.c	?^asympt(arg) double arg;{$?
+asympt	/usr/src/lib/libm/j1.c	?^asympt(arg) double arg;{$?
+atan	/usr/src/lib/libm/atan.c	?^atan(arg)$?
+atan2	/usr/src/lib/libm/atan.c	?^atan2(arg1,arg2)$?
+atoi	/usr/src/libc/gen/atoi.c	?^atoi(ap)$?
+atol	/usr/src/libc/gen/atol.c	?^atol(p)$?
+attach	/usr/src/libc/gen/mpx.c	?^attach(sub,gp)$?
+botch	/usr/src/libc/gen/malloc.c	?^botch(s)$?
+cabs	/usr/src/lib/libm/hypot.c	?^cabs(arg)$?
+calchash	/usr/src/lib/libdbm/dbm.c	?^calchash(item)$?
+calloc	/usr/src/libc/gen/calloc.c	?^calloc(num, size)$?
+ceil	/usr/src/lib/libm/floor.c	?^ceil(d)$?
+cfree	/usr/src/libc/gen/calloc.c	?^cfree(p, num, size)$?
+chan	/usr/src/libc/gen/mpx.c	?^chan(gr)$?
+chkblk	/usr/src/lib/libdbm/dbm.c	?^chkblk(buf)$?
+ckill	/usr/src/libc/gen/mpx.c	?^ckill(index,gp,sig)$?
+clearbusy	/usr/src/libc/gen/malloc.c	?^#define clearbusy(p) (union store *)((INT)(p)&~BUS?
+clearerr	/usr/src/libc/stdio/clrerr.c	?^clearerr(iop)$?
+clrbuf	/usr/src/lib/libdbm/dbm.c	?^clrbuf(cp, n)$?
+cmpdatum	/usr/src/lib/libdbm/dbm.c	?^cmpdatum(d1, d2)$?
+connect	/usr/src/libc/gen/mpx.c	?^connect(fd,ch,side)$?
+cos	/usr/src/lib/libm/sin.c	?^cos(arg)$?
+cosh	/usr/src/lib/libm/sinh.c	?^cosh(arg)$?
+crypt	/usr/src/libc/gen/crypt.c	?^crypt(pw,salt)$?
+ct_numb	/usr/src/libc/gen/ctime.c	?^ct_numb(cp, n)$?
+ctime	/usr/src/libc/gen/ctime.c	?^ctime(t)$?
+cvt	/usr/src/libc/gen/ecvt.c	?^cvt(arg, ndigits, decpt, sign, eflag)$?
+dbm_access	/usr/src/lib/libdbm/dbm.c	?^dbm_access(hash)$?
+dbminit	/usr/src/lib/libdbm/dbm.c	?^dbminit(file)$?
+debug	/usr/src/libc/gen/mpx.c	?^debug(var,val)$?
+delete	/usr/src/lib/libdbm/dbm.c	?^delete(key)$?
+delitem	/usr/src/lib/libdbm/dbm.c	?^delitem(buf, n)$?
+detach	/usr/src/libc/gen/mpx.c	?^detach(sub,gp)$?
+dummy	/usr/src/lib/libmp/util.c	?^dummy(){}$?
+dysize	/usr/src/libc/gen/ctime.c	?^dysize(y)$?
+ecvt	/usr/src/libc/gen/ecvt.c	?^ecvt(arg, ndigits, decpt, sign)$?
+encrypt	/usr/src/libc/gen/crypt.c	?^encrypt(block, edflag)$?
+endgrent	/usr/src/libc/stdio/getgrent.c	?^endgrent()$?
+endpwent	/usr/src/libc/stdio/getpwent.c	?^endpwent()$?
+erf	/usr/src/lib/libm/erf.c	?^erf(arg) double arg;{$?
+erfc	/usr/src/lib/libm/erf.c	?^erfc(arg) double arg;{$?
+execat	/usr/src/libc/gen/execvp.c	?^execat(s1, s2, si)$?
+execlp	/usr/src/libc/gen/execvp.c	?^execlp(name, argv)$?
+execvp	/usr/src/libc/gen/execvp.c	?^execvp(name, argv)$?
+exp	/usr/src/lib/libm/exp.c	?^exp(arg)$?
+extract	/usr/src/libc/gen/mpx.c	?^extract(sub,ch,side)$?
+fabs	/usr/src/lib/libm/fabs.c	?^fabs(arg)$?
+fatal	/usr/src/lib/libmp/util.c	?^fatal(s) char *s;$?
+fclose	/usr/src/libc/stdio/flsbuf.c	?^fclose(iop)$?
+fclose	/usr/src/lib/libNS/flsbuf.c	?^fclose(iop)$?
+fcvt	/usr/src/libc/gen/ecvt.c	?^fcvt(arg, ndigits, decpt, sign)$?
+fdopen	/usr/src/libc/stdio/fdopen.c	?^fdopen(fd, mode)$?
+fetch	/usr/src/lib/libdbm/dbm.c	?^fetch(key)$?
+fflush	/usr/src/libc/stdio/flsbuf.c	?^fflush(iop)$?
+fflush	/usr/src/lib/libNS/flsbuf.c	?^fflush(iop)$?
+fgetc	/usr/src/libc/stdio/fgetc.c	?^fgetc(fp)$?
+fgets	/usr/src/libc/stdio/fgets.c	?^fgets(s, n, iop)$?
+firsthash	/usr/src/lib/libdbm/dbm.c	?^firsthash(hash)$?
+firstkey	/usr/src/lib/libdbm/dbm.c	?^firstkey()$?
+floor	/usr/src/lib/libm/floor.c	?^floor(d)$?
+fmin	/usr/src/lib/libmp/mout.c	?^fmin(a,f) MINT *a; FILE *f;$?
+fmout	/usr/src/lib/libmp/mout.c	?^fmout(a,f) MINT *a; FILE *f;$?
+fopen	/usr/src/libc/stdio/fopen.c	?^fopen(file, mode)$?
+fopen	/usr/src/lib/libNS/fopen.c	?^struct _iobuf *fopen(file, mode)$?
+forder	/usr/src/lib/libdbm/dbm.c	?^forder(key)$?
+fprintf	/usr/src/libc/stdio/fprintf.c	?^fprintf(iop, fmt, args)$?
+fputc	/usr/src/libc/stdio/fputc.c	?^fputc(c, fp)$?
+fputs	/usr/src/libc/stdio/fputs.c	?^fputs(s, iop)$?
+fread	/usr/src/libc/stdio/rdwr.c	?^fread(ptr, size, count, iop)$?
+free	/usr/src/libc/gen/malloc.c	?^free(ap)$?
+freopen	/usr/src/libc/stdio/freopen.c	?^freopen(file, mode, iop)$?
+freopen	/usr/src/lib/libNS/freopen.c	?^struct _iobuf *freopen(file, mode, iop)$?
+frexp	/usr/src/libc/gen/frexp.c	?^frexp(x,i)$?
+fscanf	/usr/src/libc/stdio/scanf.c	?^fscanf(iop, fmt, args)$?
+fseek	/usr/src/libc/stdio/fseek.c	?^fseek(iop, offset, ptrname)$?
+fseek	/usr/src/lib/libNS/fseek.c	?^long fseek(iop, offset, ptrname)$?
+ftell	/usr/src/libc/stdio/ftell.c	?^long ftell(iop)$?
+ftell	/usr/src/lib/libNS/ftell.c	?^long ftell(iop)$?
+fwrite	/usr/src/libc/stdio/rdwr.c	?^fwrite(ptr, size, count, iop)$?
+gamma	/usr/src/lib/libm/gamma.c	?^gamma(arg)$?
+gcd	/usr/src/lib/libmp/gcd.c	?^gcd(a,b,c) MINT *a,*b,*c;$?
+gcvt	/usr/src/libc/stdio/gcvt.c	?^gcvt(number, ndigit, buf)$?
+getbit	/usr/src/lib/libdbm/dbm.c	?^getbit()$?
+getchar	/usr/src/libc/stdio/getchar.c	?^getchar()$?
+getenv	/usr/src/libc/gen/getenv.c	?^getenv(name)$?
+getgrent	/usr/src/libc/stdio/getgrent.c	?^getgrent()$?
+getgrgid	/usr/src/libc/stdio/getgrgid.c	?^getgrgid(gid)$?
+getgrnam	/usr/src/libc/stdio/getgrnam.c	?^getgrnam(name)$?
+getlogin	/usr/src/libc/gen/getlogin.c	?^getlogin()$?
+getpass	/usr/src/libc/stdio/getpass.c	?^getpass(prompt)$?
+getpw	/usr/src/libc/stdio/getpw.c	?^getpw(uid, buf)$?
+getpwent	/usr/src/libc/stdio/getpwent.c	?^getpwent()$?
+getpwnam	/usr/src/libc/stdio/getpwnam.c	?^getpwnam(name)$?
+getpwuid	/usr/src/libc/stdio/getpwuid.c	?^getpwuid(uid)$?
+gets	/usr/src/libc/stdio/gets.c	?^gets(s)$?
+getsh	/usr/src/lib/libNS/getw.c	?^short getsh(iop)$?
+getttys	/usr/src/libc/gen/ttyslot.c	?^getttys(f)$?
+getw	/usr/src/libc/stdio/getw.c	?^getw(iop)$?
+getw	/usr/src/lib/libNS/getw.c	?^getw(iop)$?
+gmtime	/usr/src/libc/gen/ctime.c	?^gmtime(tim)$?
+grskip	/usr/src/libc/stdio/getgrent.c	?^grskip(p,c)$?
+gtty	/usr/src/libc/gen/stty.c	?^gtty(fd, ap)$?
+hashinc	/usr/src/lib/libdbm/dbm.c	?^hashinc(hash)$?
+hypot	/usr/src/lib/libm/hypot.c	?^hypot(a,b)$?
+index	/usr/src/libc/gen/index.c	?^index(sp, c)$?
+intss	/usr/src/libc/stdio/intss.c	?^ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ?
+invert	/usr/src/lib/libmp/gcd.c	?^invert(a, b, c) MINT *a, *b, *c;$?
+isatty	/usr/src/libc/gen/isatty.c	?^isatty(f)$?
+itom	/usr/src/lib/libmp/util.c	?^MINT *itom(n)$?
+j0	/usr/src/lib/libm/j0.c	?^j0(arg) double arg;{$?
+j1	/usr/src/lib/libm/j1.c	?^j1(arg) double arg;{$?
+jn	/usr/src/lib/libm/jn.c	?^jn(n,x) int n; double x;{$?
+join	/usr/src/libc/gen/mpx.c	?^join(fd,ch)$?
+l3tol	/usr/src/libc/gen/l3tol.c	?^$?
+ldexp	/usr/src/libc/gen/ldexp.c	?^ldexp(fr,exp) double fr; int exp;{$?
+localtime	/usr/src/libc/gen/ctime.c	?^localtime(tim)$?
+log	/usr/src/lib/libm/log.c	?^log(arg)$?
+log10	/usr/src/lib/libm/log.c	?^log10(arg)$?
+ltol3	/usr/src/libc/gen/ltol3.c	?^ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ?
+m_add	/usr/src/lib/libmp/madd.c	?^m_add(a,b,c) struct mint *a,*b,*c;$?
+m_div	/usr/src/lib/libmp/mdiv.c	?^m_div(a,b,q,r) MINT *a,*b,*q,*r;$?
+m_dsb	/usr/src/lib/libmp/mdiv.c	?^m_dsb(q,n,a,b) short *a,*b;$?
+m_in	/usr/src/lib/libmp/mout.c	?^m_in(a,b,f) MINT *a; FILE *f;$?
+m_mult	/usr/src/lib/libmp/mult.c	?^m_mult(a,b,c) struct mint *a,*b,*c;$?
+m_out	/usr/src/lib/libmp/mout.c	?^m_out(a,b,f) MINT *a; FILE *f;$?
+m_sub	/usr/src/lib/libmp/madd.c	?^m_sub(a,b,c) struct mint *a,*b,*c;$?
+m_trq	/usr/src/lib/libmp/mdiv.c	?^m_trq(v1,v2,u1,u2,u3)$?
+madd	/usr/src/lib/libmp/madd.c	?^madd(a,b,c) struct mint *a,*b,*c;$?
+makdatum	/usr/src/lib/libdbm/dbm.c	?^makdatum(buf, n)$?
+malloc	/usr/src/libc/gen/malloc.c	?^malloc(nbytes)$?
+mcan	/usr/src/lib/libmp/util.c	?^mcan(a) MINT *a;$?
+mcmp	/usr/src/lib/libmp/util.c	?^mcmp(a,b) MINT *a,*b;$?
+mdiv	/usr/src/lib/libmp/mdiv.c	?^mdiv(a,b,q,r) MINT *a,*b,*q,*r;$?
+min	/usr/src/lib/libmp/mout.c	?^min(a) MINT *a;$?
+mktemp	/usr/src/libc/gen/mktemp.c	?^mktemp(as)$?
+modf	/usr/src/libc/gen/modf.c	?^modf(arg,ent)$?
+monitor	/usr/src/libc/gen/mon.c	?^f(bufsiz < o)$?
+mout	/usr/src/lib/libmp/mout.c	?^mout(a) MINT *a;$?
+move	/usr/src/lib/libmp/util.c	?^move(a,b) MINT *a,*b;$?
+mpx	/usr/src/libc/gen/mpx.c	?^mpx(name,mode)$?
+msqrt	/usr/src/lib/libmp/msqrt.c	?^msqrt(a,b,r) MINT *a,*b,*r;$?
+msub	/usr/src/lib/libmp/madd.c	?^msub(a,b,c) struct mint *a,*b,*c;$?
+mult	/usr/src/lib/libmp/mult.c	?^mult(a,b,c) struct mint *a,*b,*c;$?
+neg	/usr/src/lib/libm/gamma.c	?^neg(arg)$?
+nextkey	/usr/src/lib/libdbm/dbm.c	?^nextkey(key)$?
+nlist	/usr/src/libc/gen/nlist.c	?^nlist(name, list)$?
+npgrp	/usr/src/libc/gen/mpx.c	?^npgrp(ch, gfd, pid)$?
+nvmatch	/usr/src/libc/gen/getenv.c	?^nvmatch(s1, s2)$?
+omin	/usr/src/lib/libmp/mout.c	?^omin(a) MINT *a;$?
+omout	/usr/src/lib/libmp/mout.c	?^omout(a) MINT *a;$?
+pclose	/usr/src/libc/stdio/popen.c	?^pclose(ptr)$?
+perror	/usr/src/libc/gen/perror.c	?^perror(s)$?
+popen	/usr/src/libc/stdio/popen.c	?^popen(cmd,mode)$?
+pos	/usr/src/lib/libm/gamma.c	?^pos(arg)$?
+pow	/usr/src/lib/libm/pow.c	?^pow(arg1,arg2)$?
+pow	/usr/src/lib/libmp/pow.c	?^pow(a,b,c,d) MINT *a,*b,*c,*d;$?
+printable	/usr/src/lib/libln/allprint.c	?^printable(c)$?
+printf	/usr/src/libc/stdio/printf.c	?^printf(fmt, args)$?
+putchar	/usr/src/libc/stdio/putchar.c	?^putchar(c)$?
+puts	/usr/src/libc/stdio/puts.c	?^puts(s)$?
+putsh	/usr/src/lib/libNS/putw.c	?^short putsh(i, iop)$?
+putw	/usr/src/libc/stdio/putw.c	?^putw(w, iop)$?
+putw	/usr/src/lib/libNS/putw.c	?^putw(i, iop)$?
+pwskip	/usr/src/libc/stdio/getpwent.c	?^pwskip(p)$?
+qs1	/usr/src/libc/gen/qsort.c	?^static qs1(a, l)$?
+qsexc	/usr/src/libc/gen/qsort.c	?^static qsexc(i, j)$?
+qsort	/usr/src/libc/gen/qsort.c	?^qsort(a, n, es, fc)$?
+qstexc	/usr/src/libc/gen/qsort.c	?^static qstexc(i, j, k)$?
+rand	/usr/src/libc/gen/rand.c	?^rand()$?
+realloc	/usr/src/libc/gen/malloc.c	?^realloc(p, nbytes)$?
+rewind	/usr/src/libc/stdio/rew.c	?^rewind(iop)$?
+rin	/usr/src/libc/gen/rin.c	?^rin()$?
+rindex	/usr/src/libc/gen/rindex.c	?^rindex(sp, c)$?
+rpow	/usr/src/lib/libmp/pow.c	?^rpow(a,n,b) MINT *a,*b;$?
+s_div	/usr/src/lib/libmp/mout.c	?^s_div(a,n,q,r) MINT *a,*q; short *r;$?
+satan	/usr/src/lib/libm/atan.c	?^satan(arg)$?
+scanf	/usr/src/libc/stdio/scanf.c	?^scanf(fmt, args)$?
+sdiv	/usr/src/lib/libmp/mout.c	?^sdiv(a,n,q,r) MINT *a,*q; short *r;$?
+setbit	/usr/src/lib/libdbm/dbm.c	?^setbit()$?
+setbuf	/usr/src/libc/stdio/setbuf.c	?^setbuf(iop, buf)$?
+setbusy	/usr/src/libc/gen/malloc.c	?^#define setbusy(p) (union store *)((INT)(p)|BUSY)$?
+setgrent	/usr/src/libc/stdio/getgrent.c	?^setgrent()$?
+setkey	/usr/src/libc/gen/crypt.c	?^setkey(key)$?
+setpwent	/usr/src/libc/stdio/getpwent.c	?^setpwent()$?
+sin	/usr/src/lib/libm/sin.c	?^sin(arg)$?
+sinh	/usr/src/lib/libm/sinh.c	?^sinh(arg)$?
+sinus	/usr/src/lib/libm/sin.c	?^sinus(arg, quad)$?
+sleep	/usr/src/libc/gen/sleep.c	?^sleep(n)$?
+sleepx	/usr/src/libc/gen/sleep.c	?^sleepx()$?
+sprint	/usr/src/lib/libln/allprint.c	?^sprint(s)$?
+sprintf	/usr/src/libc/stdio/sprintf.c	?^char *sprintf(str, fmt, args)$?
+sqrt	/usr/src/lib/libm/sqrt.c	?^sqrt(arg)$?
+srand	/usr/src/libc/gen/rand.c	?^srand(x)$?
+sscanf	/usr/src/libc/stdio/scanf.c	?^sscanf(str, fmt, args)$?
+store	/usr/src/lib/libdbm/dbm.c	?^store(key, dat)$?
+strcat	/usr/src/libc/gen/strcat.c	?^strcat(s1, s2)$?
+strcatn	/usr/src/libc/gen/strcatn.c	?^strcatn(s1, s2, n)$?
+strcmp	/usr/src/libc/gen/strcmp.c	?^strcmp(s1, s2)$?
+strcmpn	/usr/src/libc/gen/strcmpn.c	?^strcmpn(s1, s2, n)$?
+strcpy	/usr/src/libc/gen/strcpy.c	?^strcpy(s1, s2)$?
+strcpyn	/usr/src/libc/gen/strcpyn.c	?^strcpyn(s1, s2, n)$?
+strlen	/usr/src/libc/gen/strlen.c	?^strlen(s)$?
+strncat	/usr/src/libc/gen/strncat.c	?^strncat(s1, s2, n)$?
+strncmp	/usr/src/libc/gen/strncmp.c	?^strncmp(s1, s2, n)$?
+strncpy	/usr/src/libc/gen/strncpy.c	?^strncpy(s1, s2, n)$?
+stty	/usr/src/libc/gen/stty.c	?^stty(fd, ap)$?
+sunday	/usr/src/libc/gen/ctime.c	?^sunday(t, d)$?
+swab	/usr/src/libc/gen/swab.c	?^swab(pf, pt, n)$?
+system	/usr/src/libc/stdio/system.c	?^system(s)$?
+tan	/usr/src/lib/libm/tan.c	?^tan(arg)$?
+tanh	/usr/src/lib/libm/tanh.c	?^tanh(arg)$?
+tdecode	/usr/src/lib/libtermlib/termcap.c	?^tdecode(str, area)$?
+tell	/usr/src/libc/gen/tell.c	?^long tell(f)$?
+testbusy	/usr/src/libc/gen/malloc.c	?^#define testbusy(p) ((INT)(p)&BUSY)$?
+tgetent	/usr/src/lib/libtermlib/termcap.c	?^tgetent(bp, name)$?
+tgetflag	/usr/src/lib/libtermlib/termcap.c	?^tgetflag(id)$?
+tgetnum	/usr/src/lib/libtermlib/termcap.c	?^tgetnum(id)$?
+tgetstr	/usr/src/lib/libtermlib/termcap.c	?^tgetstr(id, area)$?
+tgoto	/usr/src/lib/libtermlib/tgoto.c	?^tgoto(CM, destcol, destline)$?
+timezone	/usr/src/libc/gen/timezone.c	?^char *timezone(zone, dst)$?
+tmpnam	/usr/src/libc/stdio/tmpnam.c	?^ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ?
+tnamatch	/usr/src/lib/libtermlib/termcap.c	?^tnamatch(np)$?
+tnchktc	/usr/src/lib/libtermlib/termcap.c	?^tnchktc()$?
+tputs	/usr/src/lib/libtermlib/tputs.c	?^tputs(cp, affcnt, outc)$?
+tradd	/usr/src/lib/libmp/mult.c	?^tradd(a,b,c) long c; int *a; union g {long xx; str?
+tskip	/usr/src/lib/libtermlib/termcap.c	?^tskip(bp)$?
+tst	/usr/src/libc/stdio/popen.c	?^#define	tst(a,b)	(*mode == 'r'?
+ttyname	/usr/src/libc/gen/ttyname.c	?^ttyname(f)$?
+ttyslot	/usr/src/libc/gen/ttyslot.c	?^ttyslot()$?
+ungetc	/usr/src/libc/stdio/ungetc.c	?^ungetc(c, iop)$?
+valloc	/usr/src/libc/gen/valloc.c	?^valloc(i)$?
+wdleng	/usr/src/libc/stdio/stuff.c	?^wdleng()$?
+xalloc	/usr/src/lib/libmp/util.c	?^short *xalloc(nint,s) char *s;$?
+xatan	/usr/src/lib/libm/atan.c	?^xatan(arg)$?
+xfree	/usr/src/lib/libmp/util.c	?^xfree(c) MINT *c;$?
+y0	/usr/src/lib/libm/j0.c	?^y0(arg) double arg;{$?
+y1	/usr/src/lib/libm/j1.c	?^y1(arg) double arg;{$?
+yn	/usr/src/lib/libm/jn.c	?^yn(n,x) int n; double x;{$?
+yyless	/usr/src/lib/libln/yyless.c	?^ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ?
+yyracc	/usr/src/lib/libln/reject.c	?^yyracc(m)$?
+yyreject	/usr/src/lib/libln/reject.c	?^yyreject ()$?
+yywrap	/usr/src/lib/libln/yywrap.c	?^ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ?
