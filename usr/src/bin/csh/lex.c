@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -159,7 +159,7 @@ prlex(fp, sp0)
     register struct wordent *sp = sp0->next;
 
     for (;;) {
-	(void) fprintf(fp, "%s", short2str(sp->word));
+	(void) fprintf(fp, "%s", vis_str(sp->word));
 	sp = sp->next;
 	if (sp == sp0)
 	    break;
@@ -1221,7 +1221,7 @@ gethent(sc)
 	    return (&hp->Hlex);
 	}
     np = putn(event);
-    seterror(ERR_NOEVENT, short2str(np));
+    seterror(ERR_NOEVENT, vis_str(np));
     return (0);
 }
 
@@ -1272,7 +1272,7 @@ findev(cp, anyarg)
 	    argno++;
 	} while (lp->word[0] != '\n');
     }
-    seterror(ERR_NOEVENT, short2str(cp));
+    seterror(ERR_NOEVENT, vis_str(cp));
     return (0);
 }
 

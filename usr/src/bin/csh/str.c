@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #define MALLOC_INCR	128
@@ -16,11 +16,13 @@ static char sccsid[] = "@(#)str.c	5.10 (Berkeley) %G%";
  *	     This has been a lesson of how to write buggy code!
  */
 
+#include <sys/types.h>
 #if __STDC__
 # include <stdarg.h>
 #else
 # include <varargs.h>
 #endif
+#include <vis.h>
 
 #include "csh.h"
 #include "extern.h"
@@ -404,3 +406,33 @@ short2qstr(src)
     *dst = 0;
     return (sdst);
 }
+
+/*
+ * XXX: Should we worry about QUOTE'd chars?
+ */
+char *
+vis_str(cp)
+    Char *cp;
+{
+    static char *sdst = NULL;
+    static size_t dstsize = 0;
+    size_t n;
+    Char *dp;
+
+    if (cp == NULL)
+	return (NULL);
+    
+    for (dp = cp; *dp++;)
+	continue;
+    n = ((dp - cp) << 2) + 1; /* 4 times + NULL */
+    if (dstsize < n) {
+	sdst = (char *) (dstsize ? 
+			    xrealloc(sdst, (size_t) n * sizeof(char)) :
+			    xmalloc((size_t) n * sizeof(char)));
+	dstsize = n;
+    }
+    (void) strvis(sdst, short2str(cp), 
+		  AsciiOnly ? VIS_NOSLASH : (VIS_NLS | VIS_NOSLASH));
+    return (sdst);
+}
+    

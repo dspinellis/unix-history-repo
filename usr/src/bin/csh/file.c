@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -238,7 +238,7 @@ print_by_column(dir, items, count)
 	    if (i < count) {
 		register int w;
 
-		(void) fprintf(cshout, "%s", short2str(items[i]));
+		(void) fprintf(cshout, "%s", vis_str(items[i]));
 		(void) fputc(dir ? filetype(dir, items[i]) : ' ', cshout);
 		if (c < columns - 1) {	/* last column? */
 		    w = Strlen(items[i]) + 1;
@@ -325,13 +325,13 @@ print_recognized_stuff(recognized_part)
 	break;
 
     case 1:			/* overstrike the ^, erase the [ */
-	(void) fprintf(cshout, "%s", short2str(recognized_part));
+	(void) fprintf(cshout, "%s", vis_str(recognized_part));
 	(void) fputc(' ', cshout);
 	(void) fputc('\b', cshout);
 	break;
 
     default:			/* overstrike both Characters ^[ */
-	(void) fprintf(cshout, "%s", short2str(recognized_part));
+	(void) fprintf(cshout, "%s", vis_str(recognized_part));
 	break;
     }
     (void) fflush(cshout);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -82,7 +82,7 @@ blkpr(fp, av)
 {
 
     for (; *av; av++) {
-	(void) fprintf(fp, "%s", short2str(*av));
+	(void) fprintf(fp, "%s", vis_str(*av));
 	if (av[1])
 	    (void) fprintf(fp, " ");
     }
@@ -374,7 +374,7 @@ udvar(name)
     Char   *name;
 {
 
-    setname(short2str(name));
+    setname(vis_str(name));
     stderror(ERR_NAME | ERR_UNDVAR);
 }
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -182,7 +182,7 @@ doalias(v, t)
     }
     else {
 	if (eq(p, STRalias) || eq(p, STRunalias)) {
-	    setname(short2str(p));
+	    setname(vis_str(p));
 	    stderror(ERR_NAME | ERR_DANGER);
 	}
 	set1(strip(p), saveblk(v), &aliases);
@@ -248,7 +248,7 @@ doif(v, kp)
     if (eq(*vv, STRthen)) {
 	if (*++vv)
 	    stderror(ERR_NAME | ERR_IMPRTHEN);
-	setname(short2str(STRthen));
+	setname(vis_str(STRthen));
 	/*
 	 * If expression was zero, then scan to else, otherwise just fall into
 	 * following code.
@@ -767,7 +767,7 @@ past:
 	stderror(ERR_NAME | ERR_NOTFOUND, "end");
 
     case T_GOTO:
-	setname(short2str(Sgoal));
+	setname(vis_str(Sgoal));
 	stderror(ERR_NAME | ERR_NOTFOUND, "label");
     }
     /* NOTREACHED */
@@ -899,10 +899,10 @@ xecho(sep, v)
 	register int c;
 
 	while (c = *cp++)
-	    (void) fputc(c | QUOTE, cshout);
+	    (void) vis_fputc(c | QUOTE, cshout);
 
 	if (*v)
-	    (void) fputc(sep | QUOTE, cshout);
+	    (void) vis_fputc(sep | QUOTE, cshout);
     }
     if (sep && nonl == 0)
 	(void) fputc('\n', cshout);
@@ -929,7 +929,7 @@ dosetenv(v, t)
 	if (setintr)
 	    (void) sigsetmask(sigblock((sigset_t) 0) & ~sigmask(SIGINT));
 	for (ep = STR_environ; *ep; ep++)
-	    (void) fprintf(cshout, "%s\n", short2str(*ep));
+	    (void) fprintf(cshout, "%s\n", vis_str(*ep));
 	return;
     }
     if ((lp = *v++) == 0)

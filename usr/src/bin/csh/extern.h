@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.10 (Berkeley) %G%
+ *	@(#)extern.h	5.11 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -24,6 +24,7 @@ void	printprompt __P((void));
 void	process __P((bool));
 void	rechist __P((void));
 void	untty __P((void));
+int	vis_fputc __P((int, FILE *));
 
 #ifdef PROF
 void done __P((int));
@@ -315,3 +316,4 @@ char	 *short2str __P((Char *));
 char	**short2blk __P((Char **));
 #endif
 char	 *short2qstr __P((Char *));
+char	 *vis_str    __P((Char *));

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -102,7 +102,7 @@ doexec(v, t)
     if (gflag) {
 	pv = globall(blk);
 	if (pv == 0) {
-	    setname(short2str(blk[0]));
+	    setname(vis_str(blk[0]));
 	    stderror(ERR_NAME | ERR_NOMATCH);
 	}
 	gargv = 0;
@@ -133,7 +133,7 @@ doexec(v, t)
 	av = globall(av);
 	if (av == 0) {
 	    blkfree(pv);
-	    setname(short2str(expath));
+	    setname(vis_str(expath));
 	    stderror(ERR_NAME | ERR_NOMATCH);
 	}
 	gargv = 0;
@@ -217,7 +217,7 @@ pexerr()
 {
     /* Couldn't find the damn thing */
     if (expath) {
-	setname(short2str(expath));
+	setname(vis_str(expath));
 	Vexpath = 0;
 	xfree((ptr_t) expath);
 	expath = 0;
@@ -609,7 +609,7 @@ dowhich(v, c)
 
     while (*++v) {
 	if (vp = adrof1(*v, &aliases)) {
-	    (void) fprintf(cshout, "%s: \t aliased to ", short2str(*v));
+	    (void) fprintf(cshout, "%s: \t aliased to ", vis_str(*v));
 	    blkpr(cshout, vp->vec);
 	    (void) fputc('\n', cshout);
 	}
@@ -669,7 +669,7 @@ tellmewhat(lex)
 	    if (aliased)
 		prlex(cshout, lex);
 	    (void) fprintf(cshout, "%s: shell built-in command.\n", 
-			   short2str(sp->word));
+			   vis_str(sp->word));
 	    sp->word = s0;	/* we save and then restore this */
 	    return;
 	}
@@ -704,7 +704,7 @@ tellmewhat(lex)
     else {
 	if (aliased)
 	    prlex(cshout, lex);
-	(void) fprintf(csherr, "%s: Command not found.\n", short2str(sp->word));
+	(void) fprintf(csherr, "%s: Command not found.\n", vis_str(sp->word));
     }
     sp->word = s0;		/* we save and then restore this */
 }
