@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.39 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.40 (Berkeley) %G%
  */
 
 /*
@@ -41,6 +41,8 @@
 #include "vnode.h"
 #include "text.h"
 #include "map.h"
+#include "../ufs/quota.h"
+#include "../ufs/inode.h"
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsnode.h"
@@ -221,7 +223,6 @@ extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers;
 extern char nfsiobuf[MAXPHYS+NBPG];
 struct map nfsmap[NFS_MSIZ];
-enum vtype v_type[NFLNK+1];
 struct buf nfs_bqueue;		/* Queue head for nfsiod's */
 int nfs_asyncdaemons = 0;
 struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
@@ -743,17 +744,53 @@ nfsmout:
 
 /*
  * nfs mknod call
- * This call is currently not supported.
+ * This is a kludge. Use a create rpc but with the IFMT bits of the mode
+ * set to specify the file type and the size field for rdev.
  */
 /* ARGSUSED */
 nfs_mknod(ndp, vap, cred)
 	struct nameidata *ndp;
 	struct ucred *cred;
-	struct vattr *vap;
+	register struct vattr *vap;
 {
+	register struct nfsv2_sattr *sp;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
+	u_long rdev;
 
-	nfs_abortop(ndp);
-	return (EOPNOTSUPP);
+	if (vap->va_type == VCHR || vap->va_type == VBLK)
+		rdev = txdr_unsigned(vap->va_rdev);
+#ifdef FIFO
+	else if (vap->va_type == VFIFO)
+		rdev = 0xffffffff;
+#endif /* FIFO */
+	else {
+		VOP_ABORTOP(ndp);
+		return (EOPNOTSUPP);
+	}
+	nfsstats.rpccnt[NFSPROC_CREATE]++;
+	nfsm_reqhead(nfs_procids[NFSPROC_CREATE], ndp->ni_cred,
+	  NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen)+NFSX_SATTR);
+	nfsm_fhtom(ndp->ni_dvp);
+	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
+	nfsm_build(sp, struct nfsv2_sattr *, NFSX_SATTR);
+	sp->sa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	sp->sa_uid = txdr_unsigned(ndp->ni_cred->cr_uid);
+	sp->sa_gid = txdr_unsigned(ndp->ni_cred->cr_gid);
+	sp->sa_size = rdev;
+	/* or should these be VNOVAL ?? */
+	txdr_time(&vap->va_atime, &sp->sa_atime);
+	txdr_time(&vap->va_mtime, &sp->sa_mtime);
+	nfsm_request(ndp->ni_dvp, NFSPROC_CREATE, u.u_procp);
+	nfsm_reqdone;
+	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
+	nfs_nput(ndp->ni_dvp);
+	return (error);
 }
 
 /*
@@ -1222,6 +1259,9 @@ nfs_readdirrpc(vp, uiop, cred, procp)
 	
 		/* loop thru the dir entries, doctoring them to 4bsd form */
 		off = uiop->uio_offset;
+#ifdef lint
+		dp = (struct direct *)0;
+#endif /* lint */
 		while (more_dirs && siz < uiop->uio_resid) {
 			savoff = off;		/* Hold onto offset and dp */
 			savdp = dp;
