@@ -1,4 +1,4 @@
-/*	if_en.c	4.52	82/04/07	*/
+/*	if_en.c	4.53	82/04/07	*/
 
 #include "en.h"
 #include "imp.h"
@@ -465,7 +465,7 @@ COUNT(ENOUTPUT);
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
 		if (dest & 0x00ffff00)
-			goto drop;
+			goto bad;
 		dest = (dest >> 24) & 0xff;
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
