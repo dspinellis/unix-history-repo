@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.7 %G%";
+static char sccsid[] = "@(#)source.c 1.8 %G%";
 
 /*
  * Source file management.
@@ -127,13 +127,17 @@ String filename;
     File f;
 
     f = nil;
-    foreach (String, dir, sourcepath)
-	sprintf(buf, "%s/%s", dir, filename);
-	f = fopen(buf, "r");
-	if (f != nil) {
-	    break;
+    if (filename[0] == '/') {
+	f = fopen(filename, "r");
+    } else {
+	foreach (String, dir, sourcepath)
+	    sprintf(buf, "%s/%s", dir, filename);
+	    f = fopen(buf, "r");
+	    if (f != nil) {
+		break;
 	}
-    endfor
+	endfor
+    }
     return f;
 }
 
