@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.7 (Berkeley) %G%
+ *	@(#)stat.h	8.8 (Berkeley) %G%
  */
 
 #ifndef _SYS_STAT_H_
@@ -96,6 +96,7 @@ struct stat {
 #define	S_IFREG	 0100000		/* regular */
 #define	S_IFLNK	 0120000		/* symbolic link */
 #define	S_IFSOCK 0140000		/* socket */
+#define	S_IFWHT  0160000		/* whiteout */
 #define	S_ISVTX	 0001000		/* save swapped text even after use */
 #endif
 
@@ -109,6 +110,7 @@ struct stat {
 #define	S_ISLNK(m)	((m & 0170000) == 0120000)	/* symbolic link */
 #define	S_ISSOCK(m)	((m & 0170000) == 0100000 || \
 			 (m & 0170000) == 0140000)	/* fifo or socket */
+#define	S_ISWHT(m)	((m & 0170000) == 0160000)	/* whiteout */
 #endif
 
 #ifndef _POSIX_SOURCE
@@ -129,6 +131,7 @@ struct stat {
 #define	UF_NODUMP	0x00000001	/* do not dump file */
 #define	UF_IMMUTABLE	0x00000002	/* file may not be changed */
 #define	UF_APPEND	0x00000004	/* writes to file may only append */
+#define UF_OPAQUE	0x00000008	/* directory is opaque wrt. union */
 /*
  * Super-user changeable flags.
  */
@@ -141,6 +144,7 @@ struct stat {
 /*
  * Shorthand abbreviations of above.
  */
+#define	OPAQUE		(UF_OPAQUE)
 #define	APPEND		(UF_APPEND | SF_APPEND)
 #define	IMMUTABLE	(UF_IMMUTABLE | SF_IMMUTABLE)
 #endif
