@@ -1,4 +1,4 @@
-/* ip_output.c 1.6 81/10/30 */
+/* ip_output.c 1.7 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -112,7 +112,7 @@ COUNT(IP_SEND);
 	imp_stat.outq_tail = m;
 	splx(s);
 	if (!imp_stat.outactive)
-		imp_output(0);
+		enstart(0);
 #else
 	if (imp_stat.inq_head != NULL)
 		imp_stat.inq_tail->m_act = m;

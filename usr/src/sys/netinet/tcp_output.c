@@ -1,4 +1,4 @@
-/* tcp_output.c 4.3 81/10/30 */
+/* tcp_output.c 4.4 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -36,8 +36,7 @@ COUNT(TCP_SNDWIN);
 		ihave = tp->t_ucb->uc_rhiwat -
 		    (tp->t_ucb->uc_rcc + tp->seqcnt);
 		hehas = tp->rcv_adv - tp->rcv_nxt;
-		if (hehas > 32 &&
-		   (100*(ihave-hehas)/tp->t_ucb->uc_rhiwat) < 35)
+		if ((100*(ihave-hehas)/tp->t_ucb->uc_rhiwat) < 35)
 			return;
 	}
         if (tcp_send(tp))
