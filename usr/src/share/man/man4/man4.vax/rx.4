@@ -2,18 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rx.4	5.1 (Berkeley) %G%
+.\"	@(#)rx.4	6.1 (Berkeley) %G%
 .\"
-.TH RX 4 "27 July 1983"
+.TH RX 4 ""
 .UC 5
 .SH NAME
 rx \- DEC RX02 floppy disk interface
 .SH SYNOPSIS
 .B "controller fx0 at uba0 csr 0177170  vector rxintr"
 .br
-.B "disk rx0 at fx0 slave 0"
+.B "disk rx0 at fx0 drive 0"
 .br
-.B "disk rx1 at fx0 slave 1"
+.B "disk rx1 at fx0 drive 1"
 .SH DESCRIPTION
 The
 .I rx
@@ -71,6 +71,7 @@ The mapping used on the `c' device is compatible with the
 DEC operating system RT-11.  The `b' device accesses the
 sectors of the disk in strictly sequential order.  
 The `a' device is the most efficient for disk-to-disk copying.
+This mapping is always used by the block device.
 .PP
 I/O requests must start on a sector boundary, involve an integral
 number of complete sectors, and not go off the end of the disk.
@@ -107,10 +108,10 @@ The applicable codes are:
 Format the diskette. The density to use is specified
 by the 
 .I arg
-argument, 0 gives single density while non-zero
+argument, zero gives single density while non-zero
 gives double density.
 .IP RXIOC_GETDENS
-Return the density of the diskette (0 or !=0 as above).
+Return the density of the diskette (zero or non-zero as above).
 .IP RXIOC_WDDMK
 On the next write, include a \fIdeleted data address mark\fP in 
 the header of the first sector.
@@ -119,7 +120,7 @@ Return non-zero if the last sector read contained a
 \fIdeleted data address mark\fP in its header, otherwise
 return 0.
 .SH ERRORS
-The following errors may be returned by the above ioctl calls:
+The following errors may be returned by the driver:
 .TP 12
 [ENODEV]
 Drive not ready; usually because no disk is in the drive or
@@ -139,7 +140,9 @@ unknown format.
 Drive has been opened for exclusive access.
 .IP [EBADF] 12
 No write access (on format), or wrong density; the latter
-can only happen if the disk is changed without closing the device
+can only happen if the disk is changed without 
+.I closing 
+the device
 (i.e., calling \fIclose\fP(2) ).
 .SH FILES
 /dev/rx?
