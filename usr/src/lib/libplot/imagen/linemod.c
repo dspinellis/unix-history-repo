@@ -5,8 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)linemod.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)linemod.c	5.3 (Berkeley) %G%";
 #endif not lint
+
+#include "imp.h"
 
 /*
  * Hack to set font.
