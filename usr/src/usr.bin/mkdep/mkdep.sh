@@ -10,7 +10,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)mkdep.sh	5.9 (Berkeley) %G%
+#	@(#)mkdep.sh	5.10 (Berkeley) %G%
 #
 
 PATH=/bin:/usr/bin:/usr/ucb
@@ -28,7 +28,7 @@ while :
 		# the -p flag produces "program: program.c" style dependencies
 		# so .o's don't get produced
 		-p)
-			SED='-e s;\.o;;'
+			SED='s;\.o;;'
 			shift ;;
 		*)
 			break ;;
@@ -59,22 +59,29 @@ cat << _EOF_ >> $TMP
 
 _EOF_
 
-cc -M $* | /bin/sed -e "s; \./; ;g" $SED | \
-	awk ' { \
-		if ($1 != prev) { \
-			if (rec != "") \
-				print rec; rec = $0; prev = $1; \
-		} \
-		else { \
-			if (length(rec $2) > 78) { \
-				print rec; rec = $0; \
-			} else \
-				rec = rec " " $2 \
-		} \
-	} \
-	END { \
-		print rec \
-	} ' >> $TMP
+cc -M $* |
+sed "
+	s; \./; ;g
+	$SED" |
+awk '{
+	if ($1 != prev) {
+		if (rec != "")
+			print rec;
+		rec = $0;
+		prev = $1;
+	}
+	else {
+		if (length(rec $2) > 78) {
+			print rec;
+			rec = $0;
+		}
+		else
+			rec = rec " " $2
+	}
+}
+END {
+	print rec
+}' >> $TMP
 
 cat << _EOF_ >> $TMP
 
