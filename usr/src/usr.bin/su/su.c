@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,7 @@ main(argc, argv)
 	enum { UNSET, YES, NO } iscsh = UNSET;
 	char *user, *shell, *username, *cleanenv[2], *nargv[4], **np;
 	char shellbuf[MAXPATHLEN];
-	char *crypt(), *getpass(), *getenv(), *getlogin(), *mytty();
+	char *crypt(), *getpass(), *getenv(), *getlogin(), *ontty();
 
 	np = &nargv[3];
 	*np-- = NULL;
@@ -89,13 +89,37 @@ main(argc, argv)
 	if (errno)
 		prio = 0;
 	(void)setpriority(PRIO_PROCESS, 0, -2);
+	openlog("su", LOG_CONS, 0);
 
-	/* get current login name and shell */
-	if ((pwd = getpwuid(ruid = getuid())) == NULL) {
-		fprintf(stderr, "su: who are you?\n");
-		exit(1);
+	/*
+	 * Get current login name and shell.
+	 * This code assumes the trustable (system call)
+	 * version of getlogin (the old one was easily confused).
+	 */
+	ruid = getuid();
+	username = getlogin();
+	if (username == NULL || (pwd = getpwnam(username)) == NULL) {
+		if (username)
+			syslog(LOG_AUTH|LOG_ERR,
+			    "su attempt by unknown user %s (uid %d) to %s%s",
+			    username, ruid, user, ontty());
+#ifdef notyet
+		/*
+		 * The following will happen regularly from cron, etc.
+		 * unless such things do a setlogin().
+		 */
+		else
+			syslog(LOG_AUTH|LOG_ERR,
+			    "su attempt with null login name (uid %d) to %s%s",
+			    ruid, user, ontty());
+#endif
+		pwd = getpwuid(ruid);
+		if (pwd == NULL) {
+			fprintf(stderr, "su: who are you?\n");
+			exit(1);
+		}
+		username = strdup(pwd->pw_name);
 	}
-	username = strdup(pwd->pw_name);
 	if (asme)
 		if (pwd->pw_shell && *pwd->pw_shell)
 			shell = strcpy(shellbuf,  pwd->pw_shell);
@@ -122,7 +146,6 @@ main(argc, argv)
 			if (!strcmp(username, *g))
 				break;
 		}
-	openlog("su", LOG_CONS, 0);
 
 	if (ruid) {
 #ifdef KERBEROS
@@ -133,9 +156,9 @@ main(argc, argv)
 			p = getpass("Password:");
 			if (strcmp(pwd->pw_passwd, crypt(p, pwd->pw_passwd))) {
 				fprintf(stderr, "Sorry\n");
-				syslog(LOG_AUTH|LOG_CRIT,
-					"BAD SU %s on %s to %s", username,
-					mytty(), user);
+				syslog(LOG_AUTH|LOG_WARNING,
+					"BAD SU %s to %s%s", username,
+					user, ontty());
 				exit(1);
 			}
 		}
@@ -207,7 +230,9 @@ main(argc, argv)
 	/* csh strips the first character... */
 	*np = asthem ? "-su" : iscsh == YES ? "_su" : "su";
 
-	syslog(LOG_NOTICE|LOG_AUTH, "%s on %s to %s", username, mytty(), user);
+	if (ruid != 0)
+		syslog(LOG_NOTICE|LOG_AUTH, "%s to %s%s",
+		    username, user, ontty());
 
 	(void)setpriority(PRIO_PROCESS, 0, prio);
 
@@ -229,11 +254,15 @@ chshell(sh)
 }
 
 char *
-mytty()
+ontty()
 {
 	char *p, *ttyname();
+	static char buf[MAXPATHLEN + 4];
 
-	return((p = ttyname(STDERR_FILENO)) ? p : "UNKNOWN TTY");
+	buf[0] = 0;
+	if (p = ttyname(STDERR_FILENO))
+		sprintf(buf, " on %s", p);
+	return (buf);
 }
 
 #ifdef KERBEROS
@@ -250,7 +279,7 @@ kerberos(username, user, uid)
 	u_long faddr;
 	char lrealm[REALM_SZ], krbtkfile[MAXPATHLEN];
 	char hostname[MAXHOSTNAMELEN], savehost[MAXHOSTNAMELEN];
-	char *mytty();
+	char *ontty();
 
 	if (krb_get_lrealm(lrealm, 1) != KSUCCESS) {
 		(void)fprintf(stderr, "su: couldn't get local realm.\n");
@@ -263,6 +292,10 @@ kerberos(username, user, uid)
 	(void)sprintf(krbtkfile, "%s_%s_%d", TKT_ROOT, user, getuid());
 
 	(void)setenv("KRBTKFILE", krbtkfile, 1);
+	/*
+	 * Set real as well as effective ID to 0 for the moment,
+	 * to make the kerberos library do the right thing.
+	 */
 	if (setuid(0) < 0) {
 		perror("su: setuid");
 		return(1);
@@ -276,11 +309,12 @@ kerberos(username, user, uid)
 	 * we need to get a ticket for "yyy.", where yyy represents
 	 * the name of the person being su'd to, and the instance is null
 	 *
-	 * Also: POLICY: short ticket lifetime for root
+	 * We should have a way to set the ticket lifetime,
+	 * with a system default for root.
 	 */
 	kerno = krb_get_pw_in_tkt((uid == 0 ? username : user),
 		(uid == 0 ? "root" : ""), lrealm,
-	    	"krbtgt", lrealm, (uid == 0 ? 2 : DEFAULT_TKT_LIFE), 0);
+	    	"krbtgt", lrealm, DEFAULT_TKT_LIFE, 0);
 
 	if (kerno != KSUCCESS) {
 		if (kerno == KDC_PR_UNKNOWN) {
@@ -291,8 +325,8 @@ kerberos(username, user, uid)
 		}
 		(void)printf("su: unable to su: %s\n", krb_err_txt[kerno]);
 		syslog(LOG_NOTICE|LOG_AUTH,
-		    "su: BAD Kerberos SU: %s on %s to %s: %s",
-		    username, mytty(), user, krb_err_txt[kerno]);
+		    "su: BAD Kerberos SU: %s to %s%s: %s",
+		    username, user, ontty(), krb_err_txt[kerno]);
 		return(1);
 	}
 
@@ -318,12 +352,12 @@ kerberos(username, user, uid)
 	if (kerno == KDC_PR_UNKNOWN) {
 		(void)printf("Warning: tgt not verified.\n");
 		syslog(LOG_NOTICE|LOG_AUTH,
-			"su: %s on %s to %s, TGT not verified",
-		    	username, mytty(), user);
+			"su: %s to %s%s, TGT not verified",
+		    	username, user, ontty());
 	} else if (kerno != KSUCCESS) {
 		(void)printf("Unable to use TGT: %s\n", krb_err_txt[kerno]);
-		syslog(LOG_NOTICE|LOG_AUTH, "su: failed su: %s on %s to %s: %s",
-		    username, mytty(), user, krb_err_txt[kerno]);
+		syslog(LOG_NOTICE|LOG_AUTH, "su: failed su: %s to %s%s: %s",
+		    username, user, ontty(), krb_err_txt[kerno]);
 		dest_tkt();
 		return(1);
 	} else {
@@ -339,8 +373,8 @@ kerberos(username, user, uid)
 			(void)printf("su: unable to verify rcmd ticket: %s\n",
 			    krb_err_txt[kerno]);
 			syslog(LOG_NOTICE|LOG_AUTH,
-			    "su: failed su: %s on %s to %s: %s", username,
-			    mytty(), user, krb_err_txt[kerno]);
+			    "su: failed su: %s to %s%s: %s", username,
+			    ontty(), user, krb_err_txt[kerno]);
 			dest_tkt();
 			return(1);
 		}
