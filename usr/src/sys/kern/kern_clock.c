@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.29	81/12/12	*/
+/*	kern_clock.c	4.30	81/12/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -147,7 +147,7 @@ hardclock(pc, ps)
 	/*
 	 * Time moves on for protocols.
 	 */
-	++protoslow; ++protofast;
+	--protoslow; --protofast;
 
 #if VAX780
 	/*
@@ -263,10 +263,14 @@ softclock(pc, ps)
 	/*
 	 * Run network slow and fast timeouts.
 	 */
-	if (protofast >= hz / PR_FASTHZ)
+	if (protofast <= 0) {
+		protofast = hz / PR_FASTHZ;
 		pffasttimo();
-	if (protofast >= hz / PR_SLOWHZ)
+	}
+	if (protoslow <= 0) {
+		protoslow = hz / PR_SLOWHZ;
 		pfslowtimo();
+	}
 
 	/*
 	 * Lightning bolt every second:
