@@ -16,12 +16,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strrchr.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)strrchr.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
-
-#ifdef notdef
-static char sccsid[] = "@(#)rindex.c	5.3 (Berkeley) 6/2/88";
-#endif
 
 #include <string.h>
 
