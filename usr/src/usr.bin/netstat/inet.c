@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.3 82/10/06";
+static char sccsid[] = "@(#)inet.c	4.4 82/10/07";
 #endif
 
 #include <sys/types.h>
@@ -70,7 +70,7 @@ protopr(off, name)
 			break;
 		}
 		if (!aflag &&
-		  in_lnaof(inpcb.inp_laddr.s_addr) == INADDR_ANY) {
+		  inet_lnaof(inpcb.inp_laddr.s_addr) == INADDR_ANY) {
 			prev = next;
 			continue;
 		}
@@ -124,47 +124,6 @@ inetprint(in, port, proto)
 }
 
 /*
- * Return the network number from an internet
- * address; handles class a/b/c network #'s.
- */
-in_netof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-	register u_long net;
-
-	if ((in.s_addr&IN_CLASSA) == 0)
-		return (in.s_addr & IN_CLASSA_NET);
-	if ((in.s_addr&IN_CLASSB) == 0)
-		return ((int)htons((u_short)(in.s_addr & IN_CLASSB_NET)));
-	net = htonl((u_long)(in.s_addr & IN_CLASSC_NET));
-	net >>= 8;
-	return ((int)net);
-#else
-	return (IN_NETOF(in));
-#endif
-}
-
-/*
- * Return the local network address portion of an
- * internet address; handles class a/b/c network
- * number formats.
- */
-in_lnaof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-#define	IN_LNAOF(in) \
-	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
-		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
-			(in).s_addr&IN_CLASSC_LNA)
-	return ((int)htonl((u_long)IN_LNAOF(in)));
-#else
-	return (IN_LNAOF(in));
-#endif
-}
-
-/*
  * Construct an Internet address representation.
  * If the nflag has been supplied, give 
  * numeric value, otherwise try for symbolic name.
@@ -177,9 +136,10 @@ inetname(in)
 	static char line[50];
 
 	if (!nflag) {
-		if (in_lnaof(in) == INADDR_ANY) {
-			struct netent *np = getnetbyaddr(in_netof(in), AF_INET);
+		if (inet_lnaof(in) == INADDR_ANY) {
+			struct netent *np;
 
+			np = getnetbyaddr(inet_netof(in), AF_INET);
 			if (np)
 				cp = np->n_name;
 		} else {

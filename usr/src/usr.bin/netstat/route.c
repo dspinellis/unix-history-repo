@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.3 82/10/06";
+static char sccsid[] = "@(#)route.c	4.4 82/10/07";
 #endif
 
 #include <sys/types.h>
@@ -109,8 +109,8 @@ routename(in)
 	static char line[50];
 	int lna, net;
 
-	net = in_netof(in);
-	lna = in_lnaof(in);
+	net = inet_netof(in);
+	lna = inet_lnaof(in);
 	if (!nflag) {
 		if (lna == INADDR_ANY) {
 			struct netent *np = getnetbyaddr(net, AF_INET);
