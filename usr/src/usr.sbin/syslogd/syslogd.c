@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -578,6 +578,7 @@ logmsg(pri, msg, from, flags)
 						f->f_type = F_UNUSED;
 						logerror(f->f_un.f_fname);
 					}
+					untty();
 				} else {
 					f->f_type = F_UNUSED;
 					errno = e;
@@ -676,8 +677,13 @@ wallmsg(f, iov)
 			(void) alarm(30);
 			/* open the terminal */
 			ttyf = open(p, O_WRONLY);
-			if (ttyf >= 0)
-				(void) writev(ttyf, iov, 6);
+			if (ttyf >= 0) {
+				struct stat statb;
+
+				if (fstat(ttyf, &statb) == 0 &&
+				    (statb.st_mode & S_IWRITE))
+					(void) writev(ttyf, iov, 6);
+			}
 			exit(0);
 		}
 	}
