@@ -60,7 +60,7 @@ printlong(name, accpath, sb)
 {
 	char modep[15], *user_from_uid(), *group_from_gid();
 
-	(void)printf("%6lu %4qd ", sb->st_ino, sb->st_blocks);
+	(void)printf("%6lu %4qd ", sb->st_ino, (long long)sb->st_blocks);
 	(void)strmode(sb->st_mode, modep);
 	(void)printf("%s %3u %-*s %-*s ", modep, sb->st_nlink, UT_NAMESIZE,
 	    user_from_uid(sb->st_uid, 0), UT_NAMESIZE,
@@ -70,7 +70,7 @@ printlong(name, accpath, sb)
 		(void)printf("%3d, %3d ", major(sb->st_rdev),
 		    minor(sb->st_rdev));
 	else
-		(void)printf("%8qd ", sb->st_size);
+		(void)printf("%8qd ", (long long)sb->st_size);
 	printtime(sb->st_mtime);
 	(void)printf("%s", name);
 	if (S_ISLNK(sb->st_mode))
