@@ -2,8 +2,8 @@
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software written by Ken Arnold and published
- * in UNIX Review, Vol. 6, No. 8.
+ * This code is derived from software written by Ken Arnold and
+ * published in UNIX Review, Vol. 6, No. 8.
  *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
@@ -19,92 +19,93 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/param.h>
+#include <sys/signal.h>
+#include <sys/wait.h>
 #include <stdio.h>
 
-#define	MAXFILES	32
-
-typedef struct {
-	int pid;
-	int status;
-} PID_STRUCT;
-
-PID_STRUCT pids[MAXFILES];
+static uid_t *pids;
+static int fds;
 
 FILE *
 popen(program, type)
-char *program, *type;
+	char *program, *type;
 {
-	char **argv;
-	int pdes[2], pid;
 	FILE *iop;
+	int pdes[2], pid;
+	char *malloc();
 
-	if (*type != 'r' && *type != 'w')
-		return NULL;
+	if (*type != 'r' && *type != 'w' || type[1])
+		return(NULL);
+
+	if (!pids) {
+		if ((fds = getdtablesize()) <= 0)
+			return(NULL);
+		if (!(pids =
+		    (uid_t *)malloc((u_int)(fds * sizeof(uid_t)))))
+			return(NULL);
+		bzero(pids, fds * sizeof(uid_t));
+	}
 	if (pipe(pdes) < 0)
-		return NULL;
-	switch(pid = fork()) {
-	case -1:
-		iop = NULL;
-		break;
-	case 0:			/* child */
-		if (*type == 'r') {
-			close(1);
-			dup(pdes[1]);
-		}
-		else {
-			close(0);
-			dup(pdes[0]);
-		}
-		close(pdes[1]);
-		close(pdes[0]);
-		execl("/bin/sh", "sh", "-c", program, NULL);
-		exit(-1);
+		return(NULL);
+	switch(pid = vfork()) {
+	case -1:			/* error */
+		(void)close(pdes[0]);
+		(void)close(pdes[1]);
+		return(NULL);
 		/* NOTREACHED */
-	default:
+	case 0:				/* child */
 		if (*type == 'r') {
-			iop = fdopen(pdes[0], "r");
-			close(pdes[1]);
+			if (pdes[1] != 1) {
+				dup2(pdes[1], 1);
+				(void)close(pdes[1]);
+			}
+			(void)close(pdes[0]);
 		} else {
-			iop = fdopen(pdes[0], "w");
-			close(pdes[0]);
+			if (pdes[0] != 0) {
+				dup2(pdes[0], 0);
+				(void)close(pdes[0]);
+			}
+			(void)close(pdes[1]);
 		}
-		break;
+		execl("/bin/sh", "sh", "-c", program, NULL);
+		_exit(127);
+		/* NOTREACHED */
 	}
-	if (iop != NULL)
-		pids[fileno(iop)].pid = pid;
-	else {
-		close(pdes[0]);
-		close(pdes[1]);
+	/* parent; assume fdopen can't fail...  */
+	if (*type == 'r') {
+		iop = fdopen(pdes[0], type);
+		(void)close(pdes[1]);
+	} else {
+		iop = fdopen(pdes[1], type);
+		(void)close(pdes[0]);
 	}
-	return iop;
+	pids[fileno(iop)] = pid;
+	return(iop);
 }
 
 pclose(iop)
-FILE *iop;
+	FILE *iop;
 {
-	int status;
-	int pid, fdes, i;
+	register int fdes;
+	long omask;
+	int stat_loc;
+	pid_t waitpid();
 
-	fdes = fileno(iop);
-	fclose(iop);
-	if (pids[fdes].pid == 0)
-		return pids[fdes].status;
-	for (;;) {
-		pid = wait(&status);
-		if (pid < 0)
-			return -1;
-		if (pid == pids[fdes].pid) {
-			pids[fdes].pid = 0;
-			return status;
-		}
-		for (i = 0; i < MAXFILES; i++)
-			if (pids[i].pid == pid) {
-				pids[i].pid = 0;
-				pids[i].status = status;
-				break;
-			}
-	}
+	/*
+	 * pclose returns -1 if stream is not associated with a
+	 * `popened' command, or, if already `pclosed'.
+	 */
+	if (pids[fdes = fileno(iop)] == 0)
+		return(-1);
+	(void)fclose(iop);
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
+	stat_loc = waitpid(pids[fdes], &stat_loc, 0) == -1 ?
+	    -1 : WEXITSTATUS(stat_loc);
+	(void)sigsetmask(omask);
+	pids[fdes] = 0;
+	return(stat_loc);
 }
