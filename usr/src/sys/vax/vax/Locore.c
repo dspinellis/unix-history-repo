@@ -1,4 +1,4 @@
-/*	Locore.c	4.5	%G%	*/
+/*	Locore.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,7 +7,6 @@
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/tty.h"
-#include "../h/cmap.h"
 #include "../h/proc.h"
 #include "../h/buf.h"
 #include "../h/uba.h"
@@ -15,8 +14,6 @@
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.
  */
-struct	cmap *cmap;
-struct	cmap *ecmap;
 
 struct	scb scb;
 int	(*UNIvec[128])();
@@ -104,8 +101,6 @@ struct	pte CMAP2;
 char	CADDR2;
 struct	pte mmap[1];
 char	vmmap[NBPG];
-struct	pte bufmap[NBUF];
-char	buffers[NBUF][BSIZE];
 struct	pte msgbufmap[CLSIZE];
 char	msgbuf[CLSIZE*NBPG];
 struct	pte camap[32];
