@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.9 %G%";
+static char sccsid[] = "@(#)asmain.c 4.10 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)asmain.c 4.9 %G%";
 #include "asexpr.h"
 
 #ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.9"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.10"
 #endif
 
 #ifdef VMS
@@ -259,6 +259,9 @@ argprocess(argc, argv)
 					yyerror("Unknown flag: %c", *--cp);
 					cp++;
 					break;
+				 case 'v':
+					selfwhat(stdout);
+					exit(1);
 				 case 'd':
 					d124 = *cp++ - '0';
 					if ( (d124 != 1) && (d124 != 2) && 
@@ -316,6 +319,37 @@ argprocess(argc, argv)
 	   nextarg:;
 	}
 	/* innames[ninfiles] = 0; */
+}
+/*
+ *	poke through the data space and find all sccs identifiers.
+ *	We assume:
+ *	a) that extern char **environ; is the first thing in the bss
+ *	segment (true, if one is using the new version of cmgt.crt0.c)
+ *	b) that the sccsid's have not been put into text space.
+ */
+selfwhat(place)
+	FILE	*place;
+{
+	extern	char **environ;
+	register	char	*ub;
+	register	char *cp;
+	register	char	*pat;
+	char	*sbrk();
+
+	for (cp = (char *)&environ, ub = sbrk(0); cp < ub; cp++){
+		if (cp[0] != '@') continue;
+		if (cp[1] != '(') continue;
+		if (cp[2] != '#') continue;
+		if (cp[3] != ')') continue;
+		fputc('\t', place);
+		for (cp += 4; cp < ub; cp++){
+			if (*cp == 0) break;
+			if (*cp == '>') break;
+			if (*cp == '\n') break;
+			fputc(*cp, place);
+		}
+		fputc('\n', place);
+	}
 }
 
 initialize()
