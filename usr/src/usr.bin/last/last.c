@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -76,6 +76,8 @@ main(ac, av)
 		if (!strcmp(argv[i], "~"))
 			continue;
 		if (!strcmp(argv[i], "ftp"))
+			continue;
+		if (!strcmp(argv[i], "uucp"))
 			continue;
 		if (getpwnam(argv[i]))
 			continue;
@@ -183,6 +185,8 @@ want(bp)
 		strcpy(bp->ut_name, "reboot");		/* bandaid */
 	if (strncmp(bp->ut_line, "ftp", 3) == 0)
 		bp->ut_line[3] = '\0';
+	if (strncmp(bp->ut_line, "uucp", 4) == 0)
+		bp->ut_line[4] = '\0';
 	if (bp->ut_name[0] == 0)
 		return (0);
 	if (nameargs == 0)
