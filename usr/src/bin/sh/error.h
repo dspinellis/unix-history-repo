@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)error.h	8.1 (Berkeley) %G%
+ *	@(#)error.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -56,24 +56,16 @@ extern volatile int intpending;
 extern char *commandname;	/* name of command--printed on error */
 
 #define INTOFF suppressint++
-#define INTON if (--suppressint == 0 && intpending) onint(); else
+#define INTON { if (--suppressint == 0 && intpending) onint(); }
 #define FORCEINTON {suppressint = 0; if (intpending) onint();}
 #define CLEAR_PENDING_INT intpending = 0
 #define int_pending() intpending
 
-#ifdef __STDC__
-void exraise(int);
-void onint(void);
-void error2(char *, char *);
-void error(char *, ...);
-char *errmsg(int, int);
-#else
-void exraise();
-void onint();
-void error2();
-void error();
-char *errmsg();
-#endif
+void exraise __P((int));
+void onint __P((void));
+void error2 __P((char *, char *));
+void error __P((char *, ...));
+char *errmsg __P((int, int));
 
 
 /*

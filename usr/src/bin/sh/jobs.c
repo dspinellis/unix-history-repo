@@ -9,14 +9,29 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <fcntl.h>
+#include <signal.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#ifdef BSD
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
 
 #include "shell.h"
 #if JOBS
 #include "sgtty.h"
 #undef CEOF			/* syntax.h redefines this */
 #endif
+#include "redir.h"
+#include "show.h"
 #include "main.h"
 #include "parser.h"
 #include "nodes.h"
@@ -29,17 +44,6 @@ static char sccsid[] = "@(#)jobs.c	8.4 (Berkeley) %G%";
 #include "memalloc.h"
 #include "error.h"
 #include "mystring.h"
-#include <fcntl.h>
-#include <signal.h>
-#include <errno.h>
-#include <unistd.h>
-#ifdef BSD
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#endif
-
 
 
 struct job *jobtab;		/* array of jobs */
@@ -50,22 +54,14 @@ int initialpgrp;		/* pgrp of shell on invocation */
 short curjob;			/* current job */
 #endif
 
-#ifdef __STDC__
-STATIC void restartjob(struct job *);
-STATIC struct job *getjob(char *);
-STATIC void freejob(struct job *);
-STATIC int procrunning(int);
-STATIC int dowait(int, struct job *);
-STATIC int waitproc(int, int *);
-#else
-STATIC void restartjob();
-STATIC struct job *getjob();
-STATIC void freejob();
-STATIC int procrunning();
-STATIC int dowait();
-STATIC int waitproc();
-#endif
-
+STATIC void restartjob __P((struct job *));
+STATIC void freejob __P((struct job *));
+STATIC struct job *getjob __P((char *));
+STATIC int dowait __P((int, struct job *));
+STATIC int onsigchild __P((void));
+STATIC int waitproc __P((int, int *));
+STATIC void cmdtxt __P((union node *));
+STATIC void cmdputs __P((char *));
 
 
 /*
@@ -79,7 +75,9 @@ STATIC int waitproc();
 MKINIT int jobctl;
 
 void
-setjobctl(on) {
+setjobctl(on) 
+	int on;
+{
 #ifdef OLD_TTY_DRIVER
 	int ldisc;
 #endif
@@ -124,6 +122,7 @@ setjobctl(on) {
 
 
 #ifdef mkinit
+INCLUDE <stdlib.h>
 
 SHELLPROC {
 	backgndpid = -1;
@@ -137,7 +136,11 @@ SHELLPROC {
 
 
 #if JOBS
-fgcmd(argc, argv)  char **argv; {
+int
+fgcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	struct job *jp;
 	int pgrp;
 	int status;
@@ -155,7 +158,11 @@ fgcmd(argc, argv)  char **argv; {
 }
 
 
-bgcmd(argc, argv)  char **argv; {
+int
+bgcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	struct job *jp;
 
 	do {
@@ -171,7 +178,7 @@ bgcmd(argc, argv)  char **argv; {
 STATIC void
 restartjob(jp)
 	struct job *jp;
-	{
+{
 	struct procstat *ps;
 	int i;
 
@@ -191,7 +198,10 @@ restartjob(jp)
 
 
 int
-jobscmd(argc, argv)  char **argv; {
+jobscmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	showjobs(0);
 	return 0;
 }
@@ -207,7 +217,9 @@ jobscmd(argc, argv)  char **argv; {
  */
 
 void
-showjobs(change) {
+showjobs(change) 
+	int change;
+{
 	int jobno;
 	int procno;
 	int i;
@@ -301,7 +313,10 @@ freejob(jp)
 
 
 int
-waitcmd(argc, argv)  char **argv; {
+waitcmd(argc, argv) 
+	int argc;
+	char **argv; 
+{
 	struct job *job;
 	int status;
 	struct job *jp;
@@ -342,7 +357,11 @@ waitcmd(argc, argv)  char **argv; {
 
 
 
-jobidcmd(argc, argv)  char **argv; {
+int
+jobidcmd(argc, argv)  
+	int argc;
+	char **argv; 
+{
 	struct job *jp;
 	int i;
 
@@ -410,6 +429,8 @@ currentjob:
 		}
 	}
 	error("No such job: %s", name);
+	/*NOTREACHED*/
+	return NULL;
 }
 
 
@@ -421,7 +442,8 @@ currentjob:
 struct job *
 makejob(node, nprocs)
 	union node *node;
-	{
+	int nprocs;
+{
 	int i;
 	struct job *jp;
 
@@ -432,7 +454,7 @@ makejob(node, nprocs)
 				jobtab = ckmalloc(4 * sizeof jobtab[0]);
 			} else {
 				jp = ckmalloc((njobs + 4) * sizeof jobtab[0]);
-				memmove(jp, jobtab, njobs * sizeof jp[0]);
+				memcpy(jp, jobtab, njobs * sizeof jp[0]);
 				ckfree(jobtab);
 				jobtab = jp;
 			}
@@ -458,7 +480,8 @@ makejob(node, nprocs)
 		jp->ps = &jp->ps0;
 	}
 	INTON;
-	TRACE(("makejob(0x%x, %d) returns %%%d\n", (int)node, nprocs, jp - jobtab + 1));
+	TRACE(("makejob(0x%lx, %d) returns %%%d\n", (long)node, nprocs,
+	    jp - jobtab + 1));
 	return jp;
 }	
 
@@ -482,11 +505,13 @@ int
 forkshell(jp, n, mode)
 	union node *n;
 	struct job *jp;
-	{
+	int mode;
+{
 	int pid;
 	int pgrp;
 
-	TRACE(("forkshell(%%%d, 0x%x, %d) called\n", jp - jobtab, (int)n, mode));
+	TRACE(("forkshell(%%%d, 0x%lx, %d) called\n", jp - jobtab, (long)n,
+	    mode));
 	INTOFF;
 	pid = fork();
 	if (pid == -1) {
@@ -645,8 +670,9 @@ waitforjob(jp)
 
 STATIC int
 dowait(block, job)
+	int block;
 	struct job *job;
-	{
+{
 	int pid;
 	int status;
 	struct procstat *sp;
@@ -771,8 +797,9 @@ STATIC int onsigchild() {
 
 STATIC int
 waitproc(block, status)
+	int block;
 	int *status;
-	{
+{
 #ifdef BSD
 	int flags;
 

@@ -9,14 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trap.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)trap.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "shell.h"
 #include "main.h"
 #include "nodes.h"	/* for other headers */
 #include "eval.h"
 #include "jobs.h"
+#include "show.h"
 #include "options.h"
 #include "syntax.h"
 #include "output.h"
@@ -24,7 +29,6 @@ static char sccsid[] = "@(#)trap.c	8.2 (Berkeley) %G%";
 #include "error.h"
 #include "trap.h"
 #include "mystring.h"
-#include <signal.h>
 
 
 /*
@@ -51,7 +55,11 @@ int pendingsigs;			/* indicates some signal received */
  * The trap builtin.
  */
 
-trapcmd(argc, argv)  char **argv; {
+int
+trapcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	char *action;
 	char **ap;
 	int signo;
@@ -114,10 +122,12 @@ clear_traps() {
  * out what it should be set to.
  */
 
-int
-setsignal(signo) {
+long
+setsignal(signo) 
+	int signo;
+{
 	int action;
-	sig_t sigact;
+	sig_t sigact = SIG_DFL;
 	char *t;
 	extern void onsig();
 	extern sig_t getsigaction();
@@ -181,20 +191,22 @@ setsignal(signo) {
 		case S_IGN:	sigact = SIG_IGN;	break;
 	}
 	*t = action;
-	return (int)signal(signo, sigact);
+	return (long)signal(signo, sigact);
 }
 
 /*
  * Return the current setting for sig w/o changing it.
  */
 sig_t
-getsigaction(signo) {
+getsigaction(signo) 
+	int signo;
+{
 	struct sigaction sa;
 
 	if (sigaction(signo, (struct sigaction *)0, &sa) == -1)
 		error("Sigaction system call failed");
 
-	return sa.sa_handler;
+	return (sig_t) sa.sa_handler;
 }
 
 /*
@@ -202,7 +214,9 @@ getsigaction(signo) {
  */
 
 void
-ignoresig(signo) {
+ignoresig(signo) 
+	int signo;
+{
 	if (sigmode[signo - 1] != S_IGN && sigmode[signo - 1] != S_HARD_IGN) {
 		signal(signo, SIG_IGN);
 	}
@@ -232,7 +246,9 @@ SHELLPROC {
  */
 
 void
-onsig(signo) {
+onsig(signo) 
+	int signo;
+{
 	signal(signo, onsig);
 	if (signo == SIGINT && trap[SIGINT] == NULL) {
 		onint();
@@ -278,7 +294,9 @@ done:
 
 
 void
-setinteractive(on) {
+setinteractive(on)
+	int on;
+{
 	static int is_interactive;
 
 	if (on == is_interactive)
@@ -296,7 +314,9 @@ setinteractive(on) {
  */
 
 void
-exitshell(status) {
+exitshell(status) 
+	int status;
+{
 	struct jmploc loc1, loc2;
 	char *p;
 

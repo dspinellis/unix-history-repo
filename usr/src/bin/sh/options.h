@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)options.h	8.1 (Berkeley) %G%
+ *	@(#)options.h	8.2 (Berkeley) %G%
  */
 
 struct shparam {
@@ -46,21 +46,21 @@ struct optent {
 
 #ifdef DEFINE_OPTIONS
 struct optent optlist[NOPTS] = {
-	"errexit",	'e',	0,
-	"noglob",	'f',	0,
-	"ignoreeof",	'I',	0,
-	"interactive",	'i',	0,
-	"monitor",	'm',	0,
-	"noexec",	'n',	0,
-	"stdin",	's',	0,
-	"xtrace",	'x',	0,
-	"verbose",	'v',	0,
-	"vi",		'V',	0,
-	"emacs",	'E',	0,
-	"noclobber",	'C',	0,
-	"allexport",	'a',	0,
-	"notify",	'b',	0,
-	"nounset",	'u',	0,
+	{ "errexit",	'e',	0 },
+	{ "noglob",	'f',	0 },
+	{ "ignoreeof",	'I',	0 },
+	{ "interactive",'i',	0 },
+	{ "monitor",	'm',	0 },
+	{ "noexec",	'n',	0 },
+	{ "stdin",	's',	0 },
+	{ "xtrace",	'x',	0 },
+	{ "verbose",	'v',	0 },
+	{ "vi",		'V',	0 },
+	{ "emacs",	'E',	0 },
+	{ "noclobber",	'C',	0 },
+	{ "allexport",	'a',	0 },
+	{ "notify",	'b',	0 },
+	{ "nounset",	'u',	0 },
 };
 #else
 extern struct optent optlist[NOPTS];
@@ -74,15 +74,11 @@ extern char **argptr;		/* argument list for builtin commands */
 extern char *optarg;		/* set by nextopt */
 extern char *optptr;		/* used by nextopt */
 
-
-#ifdef __STDC__
-void procargs(int, char **);
-void setparam(char **);
-void freeparam(struct shparam *);
-int nextopt(char *);
-#else
-void procargs();
-void setparam();
-void freeparam();
-int nextopt();
-#endif
+void procargs __P((int, char **)); 
+void optschanged __P((void));
+void setparam __P((char **));
+void freeparam __P((struct shparam *)); 
+int shiftcmd __P((int, char **));
+int setcmd __P((int, char **));
+int getoptscmd __P((int, char **));
+int nextopt __P((char *));

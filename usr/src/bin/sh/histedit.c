@@ -9,22 +9,29 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)histedit.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)histedit.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Editline and history functions (and glue).
- */
 #include <sys/param.h>
 #include <paths.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+/*
+ * Editline and history functions (and glue).
+ */
 #include "shell.h"
 #include "parser.h"
 #include "var.h"
 #include "options.h"
+#include "main.h"
+#include "output.h"
 #include "mystring.h"
+#ifndef NO_HISTORY
+#include "myhistedit.h"
+#endif
 #include "error.h"
-#include "histedit.h"
+#include "eval.h"
 #include "memalloc.h"
 
 #define MAXHISTLOOPS	4	/* max recursions through fc */
@@ -41,7 +48,9 @@ STATIC char *fc_replace __P((const char *, char *, char *));
  * Set history and editing status.  Called whenever the status may
  * have changed (figures out what to do).
  */
-histedit() {
+void
+histedit() 
+{
 
 #define editing (Eflag || Vflag)
 
@@ -106,7 +115,10 @@ bad:
 	}
 }
 
-sethistsize() {
+
+void
+sethistsize()
+{
 	char *cp;
 	int histsize;
 
@@ -123,8 +135,10 @@ sethistsize() {
  *  This command is provided since POSIX decided to standardize
  *  the Korn shell fc command.  Oh well...
  */
+int
 histcmd(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
 	extern char *optarg;
 	extern int optind, optopt, optreset;
@@ -141,6 +155,21 @@ histcmd(argc, argv)
 	struct jmploc *volatile savehandler;
 	char editfile[MAXPATHLEN + 1];
 	FILE *efp;
+#ifdef __GNUC__
+	/* Avoid longjmp clobbering */
+	(void) &editor;
+	(void) &lflg;
+	(void) &nflg;
+	(void) &rflg;
+	(void) &sflg;
+	(void) &firststr;
+	(void) &laststr;
+	(void) &pat;
+	(void) &repl;
+	(void) &efp;
+	(void) &argc;
+	(void) &argv;
+#endif
 
 	if (hist == NULL)
 		error("history not active");
@@ -332,6 +361,7 @@ histcmd(argc, argv)
 		--active;
 	if (displayhist)
 		displayhist = 0;
+	return 0;
 }
 
 STATIC char *
@@ -358,14 +388,18 @@ fc_replace(s, p, r)
 	return (dest);
 }
 
+int
 not_fcnumber(s)
         char *s;
 {
+	if (s == NULL)
+		return 0;
         if (*s == '-')
                 s++;
 	return (!is_number(s));
 }
 
+int
 str_to_event(str, last)
 	char *str;
 	int last;
@@ -373,7 +407,7 @@ str_to_event(str, last)
 	const HistEvent *he;
 	char *s = str;
 	int relative = 0;
-	int i, j;
+	int i;
 
 	he = history(hist, H_FIRST);
 	switch (*s) {

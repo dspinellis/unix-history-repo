@@ -9,8 +9,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <unistd.h>
+#include <stdlib.h>
 
 /*
  * Shell variables.
@@ -29,6 +32,9 @@ static char sccsid[] = "@(#)var.c	8.2 (Berkeley) %G%";
 #include "memalloc.h"
 #include "error.h"
 #include "mystring.h"
+#ifndef NO_HISTORY
+#include "myhistedit.h"
+#endif
 
 
 #define VTABSIZE 39
@@ -44,7 +50,9 @@ struct varinit {
 #if ATTY
 struct var vatty;
 #endif
+#ifndef NO_HISTORY
 struct var vhistsize;
+#endif
 struct var vifs;
 struct var vmail;
 struct var vmpath;
@@ -60,11 +68,13 @@ const struct varinit varinit[] = {
 #if ATTY
 	{&vatty,	VSTRFIXED|VTEXTFIXED|VUNSET,	"ATTY="},
 #endif
+#ifndef NO_HISTORY
 	{&vhistsize,	VSTRFIXED|VTEXTFIXED|VUNSET,	"HISTSIZE="},
+#endif
 	{&vifs,	VSTRFIXED|VTEXTFIXED,		"IFS= \t\n"},
 	{&vmail,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL="},
 	{&vmpath,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH="},
-	{&vpath,	VSTRFIXED|VTEXTFIXED,		"PATH=:/bin:/usr/bin"},
+	{&vpath,	VSTRFIXED|VTEXTFIXED,		"PATH=/bin:/usr/bin"},
 	/* 
 	 * vps1 depends on uid
 	 */
@@ -141,7 +151,8 @@ initvar() {
 void
 setvar(name, val, flags)
 	char *name, *val;
-	{
+	int flags;
+{
 	char *p, *q;
 	int len;
 	int namelen;
@@ -192,7 +203,8 @@ setvar(name, val, flags)
 void
 setvareq(s, flags)
 	char *s;
-	{
+	int flags;
+{
 	struct var *vp, **vpp;
 
 	vpp = hashvar(s);
@@ -212,8 +224,10 @@ setvareq(s, flags)
 			vp->text = s;
 			if (vp == &vmpath || (vp == &vmail && ! mpathset()))
 				chkmail(1);
+#ifndef NO_HISTORY
 			if (vp == &vhistsize)
 				sethistsize();
+#endif
 			INTON;
 			return;
 		}
@@ -278,7 +292,8 @@ lookupvar(name)
 char *
 bltinlookup(name, doall)
 	char *name;
-	{
+	int doall;
+{
 	struct strlist *sp;
 	struct var *v;
 
@@ -288,8 +303,8 @@ bltinlookup(name, doall)
 	}
 	for (v = *hashvar(name) ; v ; v = v->next) {
 		if (varequal(v->text, name)) {
-			if (v->flags & VUNSET
-			 || ! doall && (v->flags & VEXPORT) == 0)
+			if ((v->flags & VUNSET)
+			 || (!doall && (v->flags & VEXPORT) == 0))
 				return NULL;
 			return strchr(v->text, '=') + 1;
 		}
@@ -376,7 +391,10 @@ shprocvar() {
  */
 
 int
-showvarscmd(argc, argv)  char **argv; {
+showvarscmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	struct var **vpp;
 	struct var *vp;
 
@@ -396,7 +414,10 @@ showvarscmd(argc, argv)  char **argv; {
  */
 
 int
-exportcmd(argc, argv)  char **argv; {
+exportcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	struct var **vpp;
 	struct var *vp;
 	char *name;
@@ -439,7 +460,11 @@ found:;
  * The "local" command.
  */
 
-localcmd(argc, argv)  char **argv; {
+int
+localcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	char *name;
 
 	if (! in_function())
@@ -470,7 +495,7 @@ mklocal(name)
 	lvp = ckmalloc(sizeof (struct localvar));
 	if (name[0] == '-' && name[1] == '\0') {
 		lvp->text = ckmalloc(sizeof optlist);
-		memmove(lvp->text, optlist, sizeof optlist);
+		memcpy(lvp->text, optlist, sizeof optlist);
 		vp = NULL;
 	} else {
 		vpp = hashvar(name);
@@ -511,7 +536,7 @@ poplocalvars() {
 		localvars = lvp->next;
 		vp = lvp->vp;
 		if (vp == NULL) {	/* $- saved */
-			memmove(optlist, lvp->text, sizeof optlist);
+			memcpy(optlist, lvp->text, sizeof optlist);
 			ckfree(lvp->text);
 		} else if ((lvp->flags & (VUNSET|VSTRFIXED)) == VUNSET) {
 			(void)unsetvar(vp->text);
@@ -526,7 +551,11 @@ poplocalvars() {
 }
 
 
-setvarcmd(argc, argv)  char **argv; {
+int
+setvarcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	if (argc <= 2)
 		return unsetcmd(argc, argv);
 	else if (argc == 3)
@@ -543,7 +572,11 @@ setvarcmd(argc, argv)  char **argv; {
  * with the same name.
  */
 
-unsetcmd(argc, argv)  char **argv; {
+int
+unsetcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	char **ap;
 	int i;
 	int flg_func = 0;

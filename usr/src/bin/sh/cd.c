@@ -9,8 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 
 /*
  * The cd and pwd commands.
@@ -24,31 +30,24 @@ static char sccsid[] = "@(#)cd.c	8.1 (Berkeley) %G%";
 #include "output.h"
 #include "memalloc.h"
 #include "error.h"
+#include "redir.h"
 #include "mystring.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
+#include "show.h"
 
-
-#ifdef __STDC__
-STATIC int docd(char *, int);
-STATIC void updatepwd(char *);
-STATIC void getpwd(void);
-STATIC char *getcomponent(void);
-#else
-STATIC int docd();
-STATIC void updatepwd();
-STATIC void getpwd();
-STATIC char *getcomponent();
-#endif
-
+STATIC int docd __P((char *, int));
+STATIC char *getcomponent __P((void));
+STATIC void updatepwd __P((char *));
+STATIC void getpwd __P((void));
 
 char *curdir;			/* current working directory */
 char *prevdir;			/* previous working directory */
 STATIC char *cdcomppath;
 
 int
-cdcmd(argc, argv)  char **argv; {
+cdcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	char *dest;
 	char *path;
 	char *p;
@@ -66,8 +65,7 @@ cdcmd(argc, argv)  char **argv; {
 	if (*dest == '/' || (path = bltinlookup("CDPATH", 1)) == NULL)
 		path = nullstr;
 	while ((p = padvance(&path, dest)) != NULL) {
-		if (stat(p, &statb) >= 0
-		 && (statb.st_mode & S_IFMT) == S_IFDIR) {
+		if (stat(p, &statb) >= 0 && S_ISDIR(statb.st_mode)) {
 			if (!print) {
 				/*
 				 * XXX - rethink
@@ -82,6 +80,8 @@ cdcmd(argc, argv)  char **argv; {
 		}
 	}
 	error("can't cd to %s", dest);
+	/*NOTREACHED*/
+	return 0;
 }
 
 
@@ -119,7 +119,8 @@ docd(dest, print)
 STATIC int
 docd(dest, print)
 	char *dest;
-	{
+	int print;
+{
 	register char *p;
 	register char *q;
 	char *symlink;
@@ -139,7 +140,7 @@ top:
 	}
 	first = 1;
 	while ((q = getcomponent()) != NULL) {
-		if (q[0] == '\0' || q[0] == '.' && q[1] == '\0')
+		if (q[0] == '\0' || (q[0] == '.' && q[1] == '\0'))
 			continue;
 		if (! first)
 			STPUTC('/', p);
@@ -152,7 +153,7 @@ top:
 		STACKSTRNUL(p);
 		if (lstat(stackblock(), &statb) < 0)
 			error("lstat %s failed", stackblock());
-		if ((statb.st_mode & S_IFMT) != S_IFLNK)
+		if (!S_ISLNK(statb.st_mode))
 			continue;
 
 		/* Hit a symbolic link.  We have to start all over again. */
@@ -282,7 +283,10 @@ updatepwd(dir)
 
 
 int
-pwdcmd(argc, argv)  char **argv; {
+pwdcmd(argc, argv)
+	int argc;
+	char **argv; 
+{
 	getpwd();
 	out1str(curdir);
 	out1c('\n');
@@ -329,7 +333,7 @@ getpwd() {
 	pip[1] = -1;
 	p = buf;
 	while ((i = read(pip[0], p, buf + MAXPWD - p)) > 0
-	     || i == -1 && errno == EINTR) {
+	     || (i == -1 && errno == EINTR)) {
 		if (i > 0)
 			p += i;
 	}

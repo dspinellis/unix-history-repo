@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)expand.h	8.1 (Berkeley) %G%
+ *	@(#)expand.h	8.2 (Berkeley) %G%
  */
 
 struct strlist {
@@ -31,17 +31,10 @@ struct arglist {
 #define EXP_CASE	0x10	/* keeps quotes around for CASE pattern */
 
 
-#ifdef __STDC__
 union node;
-void expandarg(union node *, struct arglist *, int);
-void expandhere(union node *, int);
-int patmatch(char *, char *);
-void rmescapes(char *);
-int casematch(union node *, char *);
-#else
-void expandarg();
-void expandhere();
-int patmatch();
-void rmescapes();
-int casematch();
-#endif
+void expandhere __P((union node *, int));
+void expandarg __P((union node *, struct arglist *, int));
+void expari __P((int));
+int patmatch __P((char *, char *));
+void rmescapes __P((char *));
+int casematch __P((union node *, char *));

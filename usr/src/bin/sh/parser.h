@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parser.h	8.2 (Berkeley) %G%
+ *	@(#)parser.h	8.3 (Berkeley) %G%
  */
 
 /* control characters in argument strings */
@@ -48,12 +48,7 @@ extern int tokpushback;
 extern int whichprompt;		/* 1 == PS1, 2 == PS2 */
 
 
-#ifdef __STDC__
-union node *parsecmd(int);
-int goodname(char *);
-char *getprompt(void *);
-#else
-union node *parsecmd();
-int goodname();
-char *getprompt();
-#endif
+union node *parsecmd __P((int));
+void fixredir __P((union node *, const char *, int));
+int goodname __P((char *));
+char *getprompt __P((void *));  

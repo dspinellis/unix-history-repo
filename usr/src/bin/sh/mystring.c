@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mystring.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mystring.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)mystring.c	8.1 (Berkeley) %G%";
  *	is_number(s)		Return true if s is a string of digits.
  */
 
+#include <stdlib.h>
 #include "shell.h"
 #include "syntax.h"
 #include "error.h"

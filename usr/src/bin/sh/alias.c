@@ -9,9 +9,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <stdlib.h>
 #include "shell.h"
 #include "input.h"
 #include "output.h"
@@ -25,12 +26,15 @@ static char sccsid[] = "@(#)alias.c	8.2 (Berkeley) %G%";
 
 struct alias *atab[ATABSIZE];
 
+STATIC void setalias __P((char *, char *));
+STATIC int unalias __P((char *));
 STATIC struct alias **hashalias __P((char *));
 
 STATIC
+void
 setalias(name, val)
 	char *name, *val;
-	{
+{
 	struct alias *ap, **app;
 
 	app = hashalias(name);
@@ -70,7 +74,7 @@ setalias(name, val)
 	{
 	int len = strlen(val);
 	ap->val = ckmalloc(len + 2);
-	memmove(ap->val, val, len);
+	memcpy(ap->val, val, len);
 	ap->val[len] = ' ';	/* fluff */
 	ap->val[len+1] = '\0';
 	}
@@ -145,7 +149,8 @@ rmaliases() {
 struct alias *
 lookupalias(name, check)
 	char *name;
-	{
+	int check;
+{
 	struct alias *ap = *hashalias(name);
 
 	for (; ap; ap = ap->next) {
@@ -162,9 +167,11 @@ lookupalias(name, check)
 /*
  * TODO - sort output
  */
+int
 aliascmd(argc, argv)
+	int argc;
 	char **argv;
-	{
+{
 	char *n, *v;
 	int ret = 0;
 	struct alias *ap;
@@ -179,7 +186,7 @@ aliascmd(argc, argv)
 			}
 		return (0);
 	}
-	while (n = *++argv) {
+	while ((n = *++argv) != NULL) {
 		if ((v = strchr(n+1, '=')) == NULL) /* n+1: funny ksh stuff */
 			if ((ap = lookupalias(n, 0)) == NULL) {
 				outfmt(out2, "alias: %s not found\n", n);
@@ -195,9 +202,11 @@ aliascmd(argc, argv)
 	return (ret);
 }
 
+int
 unaliascmd(argc, argv)
+	int argc;
 	char **argv;
-	{
+{
 	int i;
 	
 	while ((i = nextopt("a")) != '\0') {
