@@ -1,4 +1,4 @@
-/*      if_css.c     4.1     82/07/20     */
+/*      if_css.c     4.2     82/10/09     */
 
 #include "css.h"
 
@@ -39,12 +39,10 @@
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/if_css.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../vaxif/if_css.h"
 #include "../net/if.h"
-#include "../net/if_imp.h"
-#include "../net/if_uba.h"
+#include "../netimp/if_imp.h"
+#include "../vaxif/if_uba.h"
 
 int     cssprobe(), cssattach(), cssrint(), cssxint();
 struct  uba_device *cssinfo[NCSS];

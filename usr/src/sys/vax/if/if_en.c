@@ -1,4 +1,4 @@
-/*	if_en.c	4.67	82/06/20	*/
+/*	if_en.c	4.68	82/10/09	*/
 
 #include "en.h"
 
@@ -19,14 +19,14 @@
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/if_en.h"
-#include "../net/if_uba.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
-#include "../net/pup.h"
+#include "../vaxif/if_en.h"
+#include "../vaxif/if_uba.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#include "../netpup/pup.h"
 #include "../net/route.h"
 #include <errno.h>
 

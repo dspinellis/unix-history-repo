@@ -1,4 +1,4 @@
-/*	if_uba.c	4.12	82/06/20	*/
+/*	if_uba.c	4.13	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,10 +12,8 @@
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
 #include "../h/socket.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
-#include "../net/if_uba.h"
+#include "../vaxif/if_uba.h"
 
 /*
  * Routines supporting UNIBUS network interfaces.

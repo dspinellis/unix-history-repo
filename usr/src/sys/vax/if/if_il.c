@@ -1,4 +1,4 @@
-/*	if_il.c	4.10	82/06/24	*/
+/*	if_il.c	4.11	82/10/09	*/
 
 #include "il.h"
 
@@ -18,14 +18,14 @@
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/if_il.h"
-#include "../net/if_uba.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
-#include "../net/pup.h"
+#include "../vaxif/if_il.h"
+#include "../vaxif/if_uba.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#include "../netpup/pup.h"
 #include "../net/route.h"
 #include <errno.h>
 
