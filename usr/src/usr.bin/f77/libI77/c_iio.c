@@ -1,5 +1,5 @@
 /*
-char id_c_iio[] = "@(#)c_iio.c	1.2";
+char id_c_iio[] = "@(#)c_iio.c	1.3";
  *
  * internal (character array) i/o: common portions
  */
@@ -158,11 +158,3 @@ c_li(a) icilist *a;
 	leof = NO;
 	return(OK);
 }
-
-ftnint
-iiorec_()
-{	return(recnum);	}
-
-ftnint
-iiopos_()
-{	return(recpos);	}
