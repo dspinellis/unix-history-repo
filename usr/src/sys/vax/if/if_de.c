@@ -1,4 +1,11 @@
-/*	if_de.c	6.9	85/05/04	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)if_de.c	6.10 (Berkeley) %G%
+ */
+
 #include "de.h"
 #if NDE > 0
 
@@ -26,14 +33,23 @@
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#endif
+
 #ifdef PUP
 #include "../netpup/pup.h"
+#endif
+
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
 #endif
 
 #include "../vax/cpu.h"
@@ -582,6 +598,13 @@ deread(ds, ifrw, len)
 		arpinput(&ds->ds_ac, m);
 		return;
 #endif
+#ifdef NS
+	case ETHERTYPE_NS:
+		schednetisr(NETISR_NS);
+		inq = &nsintrq;
+		break;
+
+#endif
 	default:
 		m_freem(m);
 		return;
@@ -637,6 +660,14 @@ deoutput(ifp, m0, dst)
 			goto gottrailertype;
 		}
 		type = ETHERTYPE_IP;
+		off = 0;
+		goto gottype;
+#endif
+#ifdef NS
+	case AF_NS:
+		type = ETHERTYPE_NS;
+ 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
+		(caddr_t)edst, sizeof (edst));
 		off = 0;
 		goto gottype;
 #endif
@@ -993,11 +1024,20 @@ deioctl(ifp, cmd, data)
 		deinit(ifp->if_unit);
 
 		switch (ifa->ifa_addr.sa_family) {
+#ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
 				IA_SIN(ifa)->sin_addr;
 			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
 			break;
+#endif
+#ifdef NS
+		case AF_NS:
+			IA_SNS(ifa)->sns_addr.x_host =
+				* (union ns_host *)
+				     (de_softc[ifp->if_unit].ds_addr);
+			break;
+#endif
 		}
 		break;
 
