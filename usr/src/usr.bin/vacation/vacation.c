@@ -5,7 +5,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-SCCSID(@(#)vacation.c	3.5		%G%);
+SCCSID(@(#)vacation.c	3.6		%G%);
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -16,11 +16,18 @@ SCCSID(@(#)vacation.c	3.5		%G%);
 **	care not to return a message too often to prevent
 **	"I am on vacation" loops.
 **
+**	For best operation, this program should run setuid to
+**	root or uucp or someone else that sendmail will believe
+**	a -f flag from.  Otherwise, the user must be careful
+**	to include a header on his .vacation.msg file.
+**
 **	Positional Parameters:
-**		the user to send to.
+**		the user to collect the vacation message from.
 **
 **	Flag Parameters:
 **		-I	initialize the database.
+**		-tT	set the timeout to T.  messages arriving more
+**			often than T will be ignored to avoid loops.
 **
 **	Side Effects:
 **		A message is sent back to the sender.
@@ -48,7 +55,8 @@ main(argc, argv)
 	char *from;
 	register char *p;
 	struct passwd *pw;
-	register char *homedir;
+	char *homedir;
+	char *myname;
 	char buf[MAXLINE];
 	extern struct passwd *getpwnam();
 	extern char *newstr();
@@ -62,17 +70,7 @@ main(argc, argv)
 		switch (*++p)
 		{
 		  case 'I':	/* initialize */
-			homedir = getenv("HOME");
-			if (homedir == NULL)
-				syserr("No home!");
-			strcpy(buf, homedir);
-			strcat(buf, "/.vacation.dir");
-			if (close(creat(buf, 0644)) < 0)
-				syserr("Cannot create %s", buf);
-			strcpy(buf, homedir);
-			strcat(buf, "/.vacation.pag");
-			if (close(creat(buf, 0644)) < 0)
-				syserr("Cannot create %s", buf);
+			initialize();
 			exit(EX_OK);
 
 		  case 't':	/* set timeout */
@@ -92,11 +90,13 @@ main(argc, argv)
 		exit(EX_USAGE);
 	}
 
+	myname = p;
+
 	/* find user's home directory */
-	pw = getpwnam(p);
+	pw = getpwnam(myname);
 	if (pw == NULL)
 	{
-		usrerr("Unknown user %s", p);
+		usrerr("Unknown user %s", myname);
 		exit(EX_NOUSER);
 	}
 	homedir = newstr(pw->pw_dir);
@@ -115,7 +115,7 @@ main(argc, argv)
 
 		/* send the message back */
 		strcat(buf, ".msg");
-		sendmessage(buf, from);
+		sendmessage(buf, from, myname);
 		/* never returns */
 	}
 	exit (EX_OK);
@@ -230,9 +230,10 @@ setknows(user)
 **		sends mail to 'user' using /usr/lib/sendmail.
 */
 
-sendmessage(msgf, user)
+sendmessage(msgf, user, myname)
 	char *msgf;
 	char *user;
+	char *myname;
 {
 	FILE *f;
 
@@ -245,8 +246,41 @@ sendmessage(msgf, user)
 			syserr("No message to send");
 	}
 
-	execl("/usr/lib/sendmail", "sendmail", "-n", user, NULL);
+	execl("/usr/lib/sendmail", "sendmail", "-f", myname, "-n", user, NULL);
 	syserr("Cannot exec /usr/lib/sendmail");
+}
+/*
+**  INITIALIZE -- initialize the database before leaving for vacation
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Initializes the files .vacation.{pag,dir} in the
+**		caller's home directory.
+*/
+
+initialize()
+{
+	char *homedir;
+	char buf[MAXLINE];
+
+	setgid(getgid());
+	setuid(getuid());
+	homedir = getenv("HOME");
+	if (homedir == NULL)
+		syserr("No home!");
+	strcpy(buf, homedir);
+	strcat(buf, "/.vacation.dir");
+	if (close(creat(buf, 0644)) < 0)
+		syserr("Cannot create %s", buf);
+	strcpy(buf, homedir);
+	strcat(buf, "/.vacation.pag");
+	if (close(creat(buf, 0644)) < 0)
+		syserr("Cannot create %s", buf);
 }
 /*
 **  USRERR -- print user error
