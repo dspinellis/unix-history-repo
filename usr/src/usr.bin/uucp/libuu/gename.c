@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)gename.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gename.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
+#include <sys/types.h>
 
 #define SEQLEN 4
 
@@ -50,12 +51,12 @@ register char *snum;
 
 	if (lastchar == NULL || (snum[SEQLEN-1] = *(lastchar++)) == '\0') {
 		for (i = 0; i < SLOCKTRIES; i++) {
-			if (!ulockf(SEQLOCK, SLOCKTIME))
+			if (!ulockf(SEQLOCK, (time_t)SLOCKTIME))
 				break;
 			sleep(5);
 		}
 
-		ASSERT(i < SLOCKTRIES, "CAN NOT GET %s", "", SEQLOCK);
+		ASSERT(i < SLOCKTRIES, "CAN NOT GET", "SEQLOCK", 0);
 
 		if ((fd = open(SEQFILE, 2)) >= 0) {
 			int alphalen;
@@ -85,7 +86,7 @@ register char *snum;
 				snum[i] = alphabet[0];
 		}
 
-		lseek(fd, 0, 0);
+		lseek(fd, 0L, 0);
 		write(fd, snum, SEQLEN);
 		close(fd);
 		rmlock(SEQLOCK);
