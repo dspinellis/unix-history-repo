@@ -39,8 +39,8 @@ SRCS+=	udiv.s urem.s
 .endif
 
 MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
-	gen/ctype.3 gen/directory.3 gen/exec.3 gen/fnmatch.3 gen/frexp.3 \
-	gen/fts.3 gen/getcwd.3 gen/getdiskbyname.3 gen/getfsent.3 \
+	gen/ctype.3 gen/directory.3 gen/err.3 gen/exec.3 gen/fnmatch.3 \
+	gen/frexp.3 gen/fts.3 gen/getcwd.3 gen/getdiskbyname.3 gen/getfsent.3 \
 	gen/getgrent.3 gen/getmntinfo.3 gen/getpass.3 gen/getpwent.3 \
 	gen/getsubopt.3 gen/getttyent.3 gen/getusershell.3 gen/glob.3 \
 	gen/initgroups.3 gen/isalnum.3 gen/isalpha.3 gen/isascii.3 \
