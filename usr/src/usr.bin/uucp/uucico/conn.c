@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.13	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -124,7 +124,10 @@ char *system;
 	nf = 0;
 
 	fsys = fopen(SYSFILE, "r");
-	ASSERT(fsys != NULL, "CAN'T OPEN", SYSFILE, 0);
+	if (fsys == NULL) {
+		syslog(LOG_ERR, "fopen(%s) failed: %m", SYSFILE);
+		cleanup(FAIL);
+	}
 
 	DEBUG(4, "finds (%s) called\n", system);
 keeplooking:
@@ -151,7 +154,11 @@ keeplooking:
 			static struct Devices dev;
 
 			dfp = fopen(DEVFILE, "r");
-			ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
+			if (dfp == NULL) {
+				syslog(LOG_ERR, "fopen(%s) failed: %m",
+					DEVFILE);
+				cleanup(FAIL);
+			}
 			while ((status=rddev(dfp, &dev)) != FAIL
 				&& strcmp(PCP, dev.D_type) != SAME)
 					;
@@ -356,7 +363,10 @@ FILE *fp;
 	if (!cfgets(dev->D_argbfr, sizeof(dev->D_argbfr), fp))
 		return FAIL;
 	na = getargs(dev->D_argbfr, dev->D_arg, 20);
-	ASSERT(na >= 4, "BAD DEVICE ENTRY", dev->D_argbfr, 0);
+	if (na < 4) {
+		syslog(LOG_ERR, "%s: invalid device entry", dev->D_argbfr);
+		cleanup(FAIL);
+	}
 	if (na == 4) {
 		dev->D_brand = "";
 		na++;
@@ -415,7 +425,10 @@ int nf, fn;
 	register char *want, *altern;
 	int k, ok;
 
-	ASSERT(nf > 4, "TOO FEW LOG FIELDS", CNULL, nf);
+	if (nf < 4) {
+		syslog(LOG_ERR, "Too few log fields: %d", nf);
+		cleanup(FAIL);
+	}
 	if (setjmp(Cjbuf))
 		return FAIL;
 	AbortOn = NULL;
@@ -538,7 +551,10 @@ int tty, spwant;
 	for (ps = spds; ps->sp_val; ps++)
 		if (ps->sp_val == spwant)
 			speed = ps->sp_name;
-	ASSERT(speed >= 0, "BAD SPEED", CNULL, speed);
+	if (speed < 0) {
+		syslog(LOG_ERR, "unrecognized speed: %d", speed);
+		cleanup(FAIL);
+	}
 #ifdef	USG
 	if (ioctl(tty, TCGETA, &ttbuf) < 0)
 		return FAIL;
@@ -684,7 +700,7 @@ int fn;
 
 	if (!p_init) {
 		p_init++;
-		bld_partab(P_EVEN);
+		bld_partab(P_ZERO);
 	}
 
 	if (prefix("BREAK", str)) {
@@ -1148,6 +1164,8 @@ register int tty;
 			DEBUG(9,"Incoming baudrate is %d\n", linebaudrate);
 			return;
 		}
-	ASSERT(linebaudrate >= 0, "BAD SPEED", CNULL, speed);
+	if (linebaudrate < 0) {
+		syslog(LOG_ERR, "unrecognized speed: %d", linebaudrate);
+		cleanup(FAIL);
+	}
 }
-

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gename.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)gename.c	5.7	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -61,10 +61,9 @@ char pre, *sys, grade, *file;
 			}
 			snum[SEQLEN-1] = alphabet[0];
 		} else {
-			extern int errno;
+			syslog(LOG_WARNING, "open(%s) failed: %m", SEQFILE);
 			fd = creat(SEQFILE, 0666);
 getrandseq:		srand((int)time((time_t *)0));
-			assert(SEQFILE, "is missing or trashed\n", errno);
 			for (i = 0; i < SEQLEN; i++)
 				snum[i] = alphabet[rand() % (sizeof alphabet - 1)];
 			snum[SEQLEN-1] = alphabet[0];
