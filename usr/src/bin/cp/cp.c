@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.3 82/03/31";
+static char *sccsid = "@(#)cp.c	4.4 82/04/28";
 #endif
 
 /*
@@ -148,8 +148,10 @@ rcopy(from, to)
 	}
 	for (;;) {
 		dp = readdir(fold);
-		if (dp == 0)
+		if (dp == 0) {
+			closedir(fold);
 			return (errs);
+		}
 		if (dp->d_ino == 0)
 			continue;
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
