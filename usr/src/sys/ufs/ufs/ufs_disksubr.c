@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.8 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -292,7 +292,9 @@ dkcksum(lp)
 /*
  * Disk error is the preface to plaintive error messages
  * about failing disk transfers.  It prints messages of the form
- *	"hp0g: hard error reading fsbn 12345 of 12344-12347 (hp0 bn 812345)"
+
+hp0g: hard error reading fsbn 12345 of 12344-12347 (hp0 bn %d cn %d tn %d sn %d)
+
  * if the offset of the error in the transfer and a disk label
  * are both available.  blkdone should be -1 if the position of the error
  * is unknown; the disklabel pointer may be null from drivers that have not
@@ -332,7 +334,9 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	}
 	if (lp && (blkdone >= 0 || bp->b_bcount <= DEV_BSIZE)) {
 		sn += lp->d_partitions[part].p_offset;
-		(*pr)(" (%s%d bn %d) ", dname, unit, sn);
-		/* could log cyl/trk/sect */
+		(*pr)(" (%s%d bn %d; cn %d", dname, unit, sn,
+		    sn / lp->d_secpercyl);
+		sn %= lp->d_secpercyl;
+		(*pr)(" tn %d sn %d)", sn / lp->d_ntracks, sn % lp->d_ntracks);
 	}
 }
