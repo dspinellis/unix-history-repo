@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.31 1994/01/05 20:11:49 nate Exp $
+#	$Id: Makefile,v 1.32 1994/01/11 08:06:49 rgrimes Exp $
 #
 
 SUBDIR=
@@ -81,6 +81,14 @@ cleandist:
 	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src,,'`; \
 	cd $$dest; rm -rf ${SUBDIR}
 	find . -name obj | xargs -n30 rm -rf
+.if defined(MAKE_LOCAL) & exists(local) & exists(local/Makefile)
+	# The cd is done as local may well be a symbolic link
+	-cd local ; find . -name obj | xargs -n30 rm -rf
+.endif
+.if defined(MAKE_PORTS) & exists(ports) & exists(ports/Makefile)
+	# The cd is done as local may well be a symbolic link
+	-cd ports ; find . -name obj | xargs -n30 rm -rf
+.endif
 	make cleandir
 	make obj
 .endif
