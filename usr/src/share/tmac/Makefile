@@ -1,8 +1,7 @@
 #	@(#)Makefile	6.12 (Berkeley) %G%
 
-FILES=	tmac.an.old tmac.r tmac.doc tmac.andoc tmac.doc.old tmac.doc-ditroff \
-	tmac.doc-nroff tmac.doc-common tmac.doc-syms
-MSRCS=  doc-parse doc-ditroff doc-common doc-nroff doc-syms
+FILES=	tmac.an.old tmac.r tmac.andoc tmac.doc.old
+MSRCS=  doc doc-ditroff doc-common doc-nroff doc-syms
 LINKS=	${BINDIR}/tmac/tmac.andoc ${BINDIR}/tmac/tmac.an
 NOOBJ=	noobj
 
@@ -13,9 +12,13 @@ all clean cleandir depend lint tags:
 
 beforeinstall:
 	for i in ${MSRCS}; do \
-		sed -f strip.sed < $$i > tmac.$$i; \
+		sccs get $$i; \
+		sed -f strip.sed < $$i > ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
+		chown ${BINOWN}.${BINGRP} ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
+		chmod 444 ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
 	done
 	install -c -o ${BINOWN} -g ${BINOWN} -m 444 ${FILES} \
-	    ${DESTDIR}${BINDIR}/tmac
+		${DESTDIR}${BINDIR}/tmac
+
 
 .include <bsd.prog.mk>
