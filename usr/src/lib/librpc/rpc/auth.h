@@ -62,7 +62,7 @@ enum auth_stat {
 	AUTH_FAILED=7			/* some unknown reason */
 };
 
-#if (mc68000 || sparc || vax || i386 || tahoe || hp300)
+#if (mc68000 || sparc || vax || i386 || tahoe || hp300 || mips)
 typedef u_long u_int32;	/* 32-bit unsigned integers */
 #endif
 
