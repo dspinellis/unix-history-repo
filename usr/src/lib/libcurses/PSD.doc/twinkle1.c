@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)twinkle1.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)twinkle1.c	6.1 (Berkeley) %G%";
 #endif not lint
 
 # include	<curses.h>
@@ -20,22 +20,21 @@ static char sccsid[] = "@(#)twinkle1.c	5.1 (Berkeley) %G%";
 # define	NLINES	24
 # define	MAXPATTERNS	4
 
-struct locs {
-	char	y, x;
-};
-
-typedef struct locs	LOCS;
+typedef struct {
+	int	y, x;
+} LOCS;
 
 LOCS	Layout[NCOLS * NLINES];	/* current board layout */
 
 int	Pattern,		/* current pattern number */
 	Numstars;		/* number of stars in pattern */
 
-main() {
+char	*getenv();
 
-	char		*getenv();
-	int		die();
+int	die();
 
+main()
+{
 	srand(getpid());		/* initialize random sequence */
 
 	initscr();
@@ -58,10 +57,10 @@ main() {
  * We lie and say we used to be at the upper right corner to guarantee
  * absolute addressing.
  */
-die() {
-
+die()
+{
 	signal(SIGINT, SIG_IGN);
-	mvcur(0, COLS-1, LINES-1, 0);
+	mvcur(0, COLS - 1, LINES - 1, 0);
 	endwin();
 	exit(0);
 }
@@ -72,8 +71,8 @@ die() {
  * calls ison() to determine if the character is on that pattern
  * or not.
  */
-makeboard() {
-
+makeboard()
+{
 	reg int		y, x;
 	reg LOCS	*lp;
 
@@ -83,7 +82,8 @@ makeboard() {
 		for (x = 0; x < NCOLS; x++)
 			if (ison(y, x)) {
 				lp->y = y;
-				lp++->x = x;
+				lp->x = x;
+				lp++;
 			}
 	Numstars = lp - Layout;
 }
@@ -112,8 +112,8 @@ reg int	y, x; {
 }
 
 puton(ch)
-reg char	ch; {
-
+reg char	ch;
+{
 	reg LOCS	*lp;
 	reg int		r;
 	reg LOCS	*end;
