@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -571,7 +571,8 @@ telnet(f, p)
 			if (c == IAC)
 				*nfrontp++ = c;
 			*nfrontp++ = c;
-			if (c == '\r') {
+			/* Don't do CR-NUL if we are in binary mode */
+			if ((c == '\r') && (myopts[TELOPT_BINARY] == OPT_NO)) {
 				if (pcc > 0 && ((*ptyip & 0377) == '\n')) {
 					*nfrontp++ = *ptyip++ & 0377;
 					pcc--;
@@ -634,7 +635,7 @@ telrcv()
 			 * unix way of saying that (\r is only good
 			 * if CRMOD is set, which it normally is).
 			 */
-			if ((myopts[TELOPT_BINARY] == OPT_NO) && c == '\r') {
+			if ((c == '\r') && (hisopts[TELOPT_BINARY] == OPT_NO)) {
 				if ((ncc > 0) && ('\n' == *netip)) {
 					netip++; ncc--;
 					c = '\n';
