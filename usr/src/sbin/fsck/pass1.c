@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -74,6 +74,7 @@ pass1()
 					pfatal("PARTIALLY ALLOCATED INODE I=%u",
 						inumber);
 					if (reply("CLEAR") == 1) {
+						dp = ginode(inumber);
 						clearinode(dp);
 						inodirty();
 					}
@@ -90,6 +91,7 @@ pass1()
 			}
 			if (!preen && (dp->di_mode & IFMT) == IFMT &&
 			    reply("HOLD BAD BLOCK") == 1) {
+				dp = ginode(inumber);
 				dp->di_size = sblock.fs_fsize;
 				dp->di_mode = IFREG|0600;
 				inodirty();
@@ -152,6 +154,7 @@ pass1()
 					printf(" (CORRECTED)\n");
 				else if (reply("CORRECT") == 0)
 					continue;
+				dp = ginode(inumber);
 				dp->di_blocks = idesc.id_entryno;
 				inodirty();
 			}
@@ -161,6 +164,7 @@ pass1()
 			statemap[inumber] = FCLEAR;
 			if (reply("CLEAR") == 1) {
 				statemap[inumber] = USTATE;
+				dp = ginode(inumber);
 				clearinode(dp);
 				inodirty();
 			}
