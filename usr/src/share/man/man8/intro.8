@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.8	6.1 (Berkeley) %G%
+.\"	@(#)intro.8	6.2 (Berkeley) %G%
 .\"
 .TH INTRO 8 ""
 .UC 5
@@ -36,10 +36,9 @@ crash dumps.
 .sp 5p
 ac	ac.8	login accounting
 accton	sa.8	system accounting
-adduser	adduser.8	procedure for adding new users
-analyze	analyze.8	Virtual UNIX postmortem crash analyzer
-arcv	arcv.8	convert archives to new format
+adduser	adduser.8	procedures for adding new users
 arff	arff.8v	archiver and copier for floppy
+arp	arp.8c	address resolution display and control
 bad144	bad144.8	read/write dec standard 144 bad sector information
 badsect	badsect.8	create files to contain bad sectors
 bugfiler	bugfiler.8	file bug reports in folders automatically
@@ -59,6 +58,7 @@ dumpfs	dumpfs.8	dump file system information
 edquota	edquota.8	edit user quotas
 fastboot	fastboot.8	reboot/halt the system without checking the disks
 fasthalt	fastboot.8	reboot/halt the system without checking the disks
+fingerd	fingerd.8c	remote user information server
 flcopy	arff.8v	archiver and copier for floppy
 format	format.8v	how to format disk packs
 fsck	fsck.8	file system consistency check and interactive repair
@@ -71,6 +71,7 @@ icheck	icheck.8	file system storage consistency check
 ifconfig	ifconfig.8c	configure network interface parameters
 implog	implog.8c	IMP log interpreter
 implogd	implogd.8c	IMP logger process
+inetd	inetd.8	internet ``super\-server''
 init	init.8	process control initialization
 kgmon	kgmon.8	generate a dump of the operating systems profile buffers
 lpc	lpc.8	line printer control program
@@ -78,13 +79,17 @@ lpd	lpd.8	line printer daemon
 makedev	makedev.8	make system special files
 makekey	makekey.8	generate encryption key
 mkfs	mkfs.8	construct a file system
+mkhosts	mkhosts.8	generate hashed host table
 mklost+found	mklost+found.8	make a lost+found directory for fsck
 mknod	mknod.8	build special file
+mkpasswd	mkpasswd.8	generate hashed password table
 mkproto	mkproto.8	construct a prototype file system
 mount	mount.8	mount and dismount file system
+named	named.8	Internet domain name server
 ncheck	ncheck.8	generate names from i-numbers
 newfs	newfs.8	construct a new file system
 pac	pac.8	printer/ploter accounting information
+ping	ping.8	send ICMP ECHO_REQUEST packets to network hosts
 pstat	pstat.8	print system facts
 quot	quot.8	summarize file system ownership
 quotacheck	quotacheck.8	file system quota consistency checker
@@ -109,16 +114,26 @@ sa	sa.8	system accounting
 savecore	savecore.8	save a core dump of the operating system
 sendmail	sendmail.8	send mail over the internet
 shutdown	shutdown.8	close down the system at a given time
+slattach	slattach.8c	attach serial lines as network interfaces
 sticky	sticky.8	executable files with persistent text
 swapon	swapon.8	specify additional device for paging and swapping
 sync	sync.8	update the super block
-syslog	syslog.8	log systems messages
+syslogd	syslogd.8	log systems messages
+talkd	talkd.8c	remote user communications server
 telnetd	telnetd.8c	DARPA TELNET protocol server
 tftpd	tftpd.8c	DARPA Trivial File Transfer Protocol server
+timed	timed.8	time server daemon
+timedc	timedc.8	timed control program
 trpt	trpt.8c	transliterate protocol trace
+trsp	trsp.8c	transliterate sequenced packet protocol trace
 tunefs	tunefs.8	tune up an existing file system
 umount	mount.8	mount and dismount file system
 update	update.8	periodically update the super block
+uucico	uucico.8c	transfer files queued by uucp or uux
+uucpd	uucico.8c	transfer files queued by uucp or uux
 uuclean	uuclean.8c	uucp spool directory clean-up
+uupoll	uupoll.8c	poll a remote UUCP site
 uusnap	uusnap.8c	show snapshot of the UUCP system
+uuxqt	uuxqt.8c	UUCP execution file interpreter
 vipw	vipw.8	edit the password file
+XNSrouted	XNSrouted.8c	NS Routing Information Protocol daemon
