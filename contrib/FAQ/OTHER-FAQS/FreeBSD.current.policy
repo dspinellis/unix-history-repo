@@ -1,5 +1,7 @@
                         THE FREEBSD CURRENT POLICY 
 
+Last updated: $Date:$
+
 This document attempts to explain the rationale behind FreeBSD-current,
 what you should expect should you decide to run it, and states some
 prerequisites for making sure the process goes as smoothly as possible.
