@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)devname.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)devname.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -38,7 +38,7 @@ devname(dev, type)
 		failure = 1;
 	}
 	if (failure)
-		return ("??");
+		return (NULL);
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
@@ -50,5 +50,5 @@ devname(dev, type)
 	bkey.type = type;
 	key.data = &bkey;
 	key.size = sizeof(bkey);
-	return ((db->get)(db, &key, &data, 0) ? "??" : (char *)data.data);
+	return ((db->get)(db, &key, &data, 0) ? NULL : (char *)data.data);
 }
