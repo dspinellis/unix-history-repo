@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.10	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,15 +36,15 @@ RFOBJS=	deliv2.o glue1.o glue2.o glue3.o glue4.o glue5.o hunt2.o hunt3.o \
 	refer2.o refer4.o refer5.o refer6.o refer7.o refer8.o shell.o
 WHSRCS=	what1.c what2.c what3.c what4.c shell.c mkey3.c
 WHOBJS=	what1.o what2.o what3.o what4.o shell.o mkey3.o
-SRCS=	addbib.c lookbib.c ${DLSRCS} ${HTSRCS} ${INSRCS} ${MKSRCS} ${RFSRCS} \
-	${WHSRCS}
-OBJS=	addbib.o lookbib.o sortbib.o ${DLOBJS} ${HTOBJS} ${INOBJS} ${MKOBJS} \
-	${RFOBJS} ${WHOBJS}
+SRCS=	${DLSRCS} ${HTSRCS} ${INSRCS} ${MKSRCS} ${RFSRCS} ${WHSRCS}
+OBJS=	${DLOBJS} ${HTOBJS} ${INOBJS} ${MKOBJS} ${RFOBJS} ${WHOBJS} \
+	addbib.o lookbib.o sortbib.o
+MAN=	addbib.0 lookbib.0 refer.0 roffbib.0 sortbib.0
 
-all:	addbib deliv hunt inv lookbib mkey refer sortbib whatabout
+all: addbib deliv hunt inv lookbib mkey refer sortbib whatabout
 
-addbib: addbib.o
-	${CC} ${CFLAGS} addbib.o -o $@
+addbib lookbib sortbib: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
 deliv: ${DLOBJS} ${LIBC}
 	${CC} ${CFLAGS} ${DLOBJS} -o $@
@@ -43,9 +54,6 @@ hunt: ${HTOBJS} ${LIBC}
 
 inv: ${INOBJS} ${LIBC}
 	${CC} ${CFLAGS} ${INOBJS} -o $@
-
-lookbib: lookbib.o
-	${CC} ${CFLAGS} lookbib.o -o $@
 
 mkey: ${MKOBJS} ${LIBC}
 	${CC} ${CFLAGS} ${MKOBJS} -o $@
@@ -62,31 +70,31 @@ refer: ${RFOBJS} ${LIBC}
 #refpart: ${RPOBJS} ${LIBC}
 #	${CC} ${CFLAGS} ${RPOBJS} -o $@
 
-sortbib: sortbib.o
-	${CC} ${CFLAGS} sortbib.o -o $@
-
 whatabout: ${WHOBJS} ${LIBC}
 	${CC} ${CFLAGS} ${WHOBJS} -o $@
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core addbib deliv hunt inv lookbib mkey refer \
 		refpart sortbib whatabout
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
+	mkdep -p ${CFLAGS} addbib.c sortbib.c lookbib.c
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	-[ -d ${DESTDIR}/usr/lib/refer ] || mkdir ${DESTDIR}/usr/lib/refer
-	install -s -o bin -g bin -m 755 mkey ${DESTDIR}/usr/lib/refer/mkey
-	install -s -o bin -g bin -m 755 inv ${DESTDIR}/usr/lib/refer/inv
-	install -s -o bin -g bin -m 755 hunt ${DESTDIR}/usr/lib/refer/hunt
-	install -s -o bin -g bin -m 755 refer ${DESTDIR}/usr/bin/refer
-	install -s -o bin -g bin -m 755 addbib ${DESTDIR}/usr/bin/addbib
-	install -s -o bin -g bin -m 755 sortbib ${DESTDIR}/usr/bin/sortbib
-	install -s -o bin -g bin -m 755 lookbib ${DESTDIR}/usr/bin/lookbib
+	install -s -o bin -g bin -m 755 mkey inv hunt ${DESTDIR}/usr/lib/refer
+	install -s -o bin -g bin -m 755 addbib lookbib sortbib refer \
+		${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 755 roffbib.sh ${DESTDIR}/usr/bin/roffbib
 	install -c -o bin -g bin -m 755 indxbib.sh ${DESTDIR}/usr/bin/indxbib
 	install -c -o bin -g bin -m 755 tmac.bib ${DESTDIR}/usr/lib/tmac
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/indxbib.0
+	ln ${DESTDIR}/usr/man/cat1/lookbib.0 ${DESTDIR}/usr/man/cat1/indxbib.0
 	(cd /usr/dict/papers; /bin/sh runinv)
 
 lint: FRC
@@ -107,87 +115,3 @@ tags: FRC
 #	ctags -a ${RPSRCS}
 	ctags -a ${WHSRCS}
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-addbib.o: addbib.c /usr/include/stdio.h /usr/include/ctype.h
-addbib.o: /usr/include/signal.h /usr/include/machine/trap.h
-lookbib.o: lookbib.c /usr/include/stdio.h /usr/include/ctype.h
-deliv1.o: deliv1.c /usr/include/stdio.h
-deliv2.o: deliv2.c /usr/include/stdio.h deliv2.c /usr/include/stdio.h
-glue4.o: glue4.c /usr/include/stdio.h /usr/include/ctype.h
-glue5.o: glue5.c /usr/include/stdio.h /usr/include/ctype.h
-hunt1.o: hunt1.c /usr/include/stdio.h /usr/include/assert.h
-hunt2.o: hunt2.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-hunt2.o: /usr/include/assert.h
-hunt3.o: hunt3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-hunt3.o: /usr/include/assert.h
-hunt5.o: hunt5.c /usr/include/stdio.h /usr/include/sys/types.h
-hunt5.o: /usr/include/sys/stat.h
-hunt6.o: hunt6.c /usr/include/stdio.h /usr/include/assert.h
-hunt7.o: hunt7.c /usr/include/stdio.h /usr/include/assert.h
-hunt8.o: hunt8.c /usr/include/stdio.h /usr/include/assert.h
-hunt9.o: hunt9.c
-refer3.o: refer3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer3.o: /usr/include/assert.h
-shell.o: shell.c
-tick.o: tick.c /usr/include/stdio.h /usr/include/sys/types.h
-tick.o: /usr/include/sys/timeb.h
-inv1.o: inv1.c /usr/include/stdio.h /usr/include/assert.h
-inv2.o: inv2.c /usr/include/stdio.h /usr/include/assert.h
-inv3.o: inv3.c
-inv5.o: inv5.c /usr/include/stdio.h
-inv6.o: inv6.c /usr/include/stdio.h /usr/include/assert.h
-deliv2.o: deliv2.c /usr/include/stdio.h
-mkey1.o: mkey1.c /usr/include/stdio.h
-mkey2.o: mkey2.c /usr/include/stdio.h /usr/include/ctype.h
-mkey3.o: mkey3.c /usr/include/stdio.h
-deliv2.o: deliv2.c /usr/include/stdio.h deliv2.c /usr/include/stdio.h
-glue1.o: glue1.c /usr/include/stdio.h
-glue2.o: glue2.c
-glue3.o: glue3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-glue3.o: /usr/include/assert.h
-glue4.o: glue4.c /usr/include/stdio.h /usr/include/ctype.h
-glue5.o: glue5.c /usr/include/stdio.h /usr/include/ctype.h
-hunt2.o: hunt2.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-hunt2.o: /usr/include/assert.h
-hunt3.o: hunt3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-hunt3.o: /usr/include/assert.h
-hunt5.o: hunt5.c /usr/include/stdio.h /usr/include/sys/types.h
-hunt5.o: /usr/include/sys/stat.h
-hunt6.o: hunt6.c /usr/include/stdio.h /usr/include/assert.h
-hunt7.o: hunt7.c /usr/include/stdio.h /usr/include/assert.h
-hunt8.o: hunt8.c /usr/include/stdio.h /usr/include/assert.h
-hunt9.o: hunt9.c
-mkey3.o: mkey3.c /usr/include/stdio.h
-refer0.o: refer0.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer0.o: /usr/include/assert.h
-refer1.o: refer1.c /usr/include/signal.h /usr/include/machine/trap.h refer..c
-refer1.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/assert.h
-refer2.o: refer2.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer2.o: /usr/include/assert.h
-refer4.o: refer4.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer4.o: /usr/include/assert.h
-refer5.o: refer5.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer5.o: /usr/include/assert.h
-refer6.o: refer6.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer6.o: /usr/include/assert.h
-refer7.o: refer7.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer7.o: /usr/include/assert.h
-refer8.o: refer8.c refer..c /usr/include/stdio.h /usr/include/ctype.h
-refer8.o: /usr/include/assert.h
-shell.o: shell.c
-what1.o: what1.c what..c /usr/include/stdio.h /usr/include/ctype.h
-what1.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
-what2.o: what2.c /usr/include/stdio.h /usr/include/ctype.h
-what3.o: what3.c what..c /usr/include/stdio.h /usr/include/ctype.h
-what3.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
-what4.o: what4.c what..c /usr/include/stdio.h /usr/include/ctype.h
-what4.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
-shell.o: shell.c
-mkey3.o: mkey3.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
