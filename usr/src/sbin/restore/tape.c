@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.10	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)tape.c	3.11	(Berkeley)	83/04/17";
 #endif
 
 #include "restore.h"
