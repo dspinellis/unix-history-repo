@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,9 +30,6 @@ static char sccsid[] = "@(#)vmstat.c	5.18 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <sys/dkstat.h>
 #include <sys/buf.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
 #include <sys/namei.h>
 #include <sys/text.h>
 #include <sys/malloc.h>
@@ -588,7 +585,9 @@ char *kmemnames[] = {
 	"NFS mount",	/* 23 M_NFSMNT */
 	"vnodes",	/* 24 M_VNODE */
 	"namecache",	/* 25 M_CACHE */
-	0, 0, 0,
+	"UFS quota",	/* 26 M_DQUOT */
+	"UFS mount",	/* 27 M_UFSMNT */
+	0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
