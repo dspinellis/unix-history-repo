@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_debug.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_debug.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -171,15 +171,16 @@ __bt_dpage(h)
 		case P_BINTERNAL:
 			bi = GETBINTERNAL(h, cur);
 			(void)fprintf(stderr,
-			    "size %2d pgno %2d", bi->ksize, bi->pgno);
+			    "size %03d pgno %03d", bi->ksize, bi->pgno);
 			if (bi->flags & P_BIGKEY)
 				(void)fprintf(stderr, " (indirect)");
 			else if (bi->ksize)
-				(void)fprintf(stderr, " {%s}", bi->bytes);
+				(void)fprintf(stderr,
+				    " {%.*s}", bi->ksize, bi->bytes);
 			break;
 		case P_RINTERNAL:
 			ri = GETRINTERNAL(h, cur);
-			(void)fprintf(stderr, "entries %2d pgno %2d",
+			(void)fprintf(stderr, "entries %03d pgno %03d",
 				ri->nrecs, ri->pgno);
 			break;
 		case P_BLEAF:
@@ -199,7 +200,7 @@ __bt_dpage(h)
 				    sizeof(pgno_t)));
 			else if (bl->dsize)
 				(void)fprintf(stderr,
-				    "%s", bl->bytes + bl->ksize);
+				    "%.*s", bl->dsize, bl->bytes + bl->ksize);
 			break;
 		case P_RLEAF:
 			rl = GETRLEAF(h, cur);
@@ -209,7 +210,8 @@ __bt_dpage(h)
 				    *(pgno_t *)rl->bytes,
 				    *(size_t *)(rl->bytes + sizeof(pgno_t)));
 			else if (rl->dsize)
-				(void)fprintf(stderr, "%s", rl->bytes);
+				(void)fprintf(stderr,
+				    "%.*s", rl->dsize, rl->bytes);
 			break;
 		}
 		(void)fprintf(stderr, "\n");
