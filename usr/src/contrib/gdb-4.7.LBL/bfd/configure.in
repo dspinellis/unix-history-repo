@@ -1,0 +1,109 @@
+# This file is a shell script that supplies the information necessary
+# to tailor a template configure script into the configure script
+# appropriate for this directory.  For more information, check any
+# existing configure script.
+
+configdirs="doc"
+srctrigger=libbfd.c
+srcname="BFD"
+target_dependent=true
+
+# per-host:
+
+. ${srcdir}/configure.host
+
+# Set up to make a link between the host's include file and "sysdep.h".
+files="hosts/${my_host}.h"
+links="sysdep.h"
+
+if [ ! -f ${srcdir}/${files} ] ; then
+	if [ -n "${my_host}" ] ; then
+		echo '***' No file ${srcdir}/${files} 1>&2
+	fi
+	echo '***' ${srcname} does not support host ${host} 1>&2
+	exit 1
+fi
+
+host_makefile_frag=
+if [ -f ${srcdir}/config/${my_host}.mh ] ; then
+	host_makefile_frag=config/${my_host}.mh
+fi
+
+# per-target:
+
+# WHEN ADDING ENTRIES TO THIS MATRIX:
+#  Make sure that the left side always has two dashes.  Otherwise you
+#  can get spurious matches.  Even for unambiguous cases, do this as a
+#  convention, else the table becomes a real mess to understand and maintain.
+
+case "${target}" in
+  a29k-*-ebmon)		bfd_target=a29k-coff ;;
+  a29k-*-udi)		bfd_target=a29k-coff ;;
+  a29k-*-aout)		bfd_target=a29k-aout ;;
+  a29k-*-coff)		bfd_target=a29k-coff ;;
+  a29k-*-sym1)		bfd_target=a29k-coff ;;
+  h8300-*-*)		bfd_target=h8300-coff ;;
+  hppa*-*-bsd)		bfd_target=hppabsd ;;
+  hppa*-*-hpux)		bfd_target=hppahpux ;;
+  i[34]86-*-sysv4*)	bfd_target=i386-elf ;;
+  i[34]86-*-sysv*)	bfd_target=i386-coff ;;
+  i[34]86-*-sco*)	bfd_target=i386-coff ;;
+  i[34]86-*-bsd*)	bfd_target=i386-bsd ;;
+  i[34]86-none-*)	bfd_target=i386-coff ;;
+  i960-*-vxworks)	bfd_target=i960-bout ;;
+  i960-*-aout)		bfd_target=i960-bout ;;
+  i960-*-bout)		bfd_target=i960-bout ;;
+  m68*-hp-bsd)		bfd_target=hp300bsd ;;
+  m68*-omron-bsd)	bfd_target=luna68k ;;
+  m68*-*-aout)		bfd_target=m68k-aout ;;
+  m68*-*-coff)		bfd_target=m68k-coff ;;
+  m68*-*-hpux)		bfd_target=hp300 ;;
+  m68*-*-os68k)		bfd_target=m68k-aout ;;
+  m68*-*-sunos*)	bfd_target=m68k-aout ;;
+  m68*-*-vxworks*)	bfd_target=m68k-aout ;;
+  m68*-ericsson-*)	bfd_target=m68k-aout ;;
+  m68*-netx-*)		bfd_target=m68k-aout ;;
+  m88k-*-*)		bfd_target=m88k-coff ;;
+  mips-big-*)		bfd_target=irix3 ;;
+  mips-dec-*)		bfd_target=decstation ;;
+  mips-sgi-*)		bfd_target=irix3 ;;
+  rs6000-*-*)		bfd_target=rs6000 ;;
+  sparc-*-solaris2*)	bfd_target=sparc-elf ;;
+  sparc-*-sysv4*)	bfd_target=sparc-elf ;;
+  sparc*-*-*)		bfd_target=sparc-aout ;;
+  sparc-*-bsd*)		bfd_target=sparcbsd-aout ;;
+  tahoe-*-*)		bfd_target=tahoe ;;
+  vax-*-*)		bfd_target=vax ;;
+  we32k-*-*)		bfd_target=we32k ;;
+  z8k*-*-*)		bfd_target=z8k-coff ;;
+
+  *-*-aout)		bfd_target=${target_cpu}-aout ;;
+  *-*-bsd)		bfd_target=${target_cpu}-aout ;;
+  *-*-sysv4*)		bfd_target=${target_cpu}-elf ;;
+  *-*-solaris2*)	bfd_target=${target_cpu}-elf ;;
+  *-*-go32)		bfd_target=${target_cpu}-aout ;;
+  *-*-linux*)		bfd_target=${target_cpu}-linux ;;
+  *-*-sysv*)		bfd_target=${target_cpu}-coff ;;
+  *-*-scosysv*)		bfd_target=${target_cpu}-coff ;;
+
+  *-adobe-*)		bfd_target=adobe ;;
+  *-sony-*)		bfd_target=news ;;
+  *-intel-*)		bfd_target=${target_cpu}-coff ;;
+  *-stratus-*)		bfd_target=${target_cpu}-elf ;;
+  *-cbm-*)		bfd_target=${target_cpu}-elf ;;
+  *-ncr-*)		bfd_target=${target_cpu}-elf ;;
+  *-tandem-*)		bfd_target=st2000 ;;
+esac
+
+if [ ! -f ${srcdir}/config/${bfd_target}.mt ] ; then
+	if [ -n "${bfd_target}" ] ; then
+		echo '***' No file ${srcdir}/config/${bfd_target}.mt 1>&2
+	fi
+	echo '***' BFD does not support target ${target} 1>&2
+	echo '***' Look in bfd/configure.in for supported targets 1>&2
+	exit 1
+fi
+target_makefile_frag=config/${bfd_target}.mt
+
+# We don't do any links based on the target system, just very minor makefile
+# config.
