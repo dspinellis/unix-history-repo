@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delete.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)delete.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,16 +40,16 @@ delete(argv)
 	afd = open_archive(O_RDWR);
 	tfd = tmp();
 
+	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, tfd, tname, RPAD|WPAD);
 	while (get_header(afd)) {
 		if (*argv && files(argv)) {
 			if (options & AR_V)
 				(void)printf("d - %s\n", chdr.name);
-			SKIP(afd, chdr.size, archive);
+			skipobj(afd);
 			continue;
 		}
-		put_header(&cf, (struct stat *)NULL);
-		copyfile(&cf, chdr.size);
+		put_object(&cf, (struct stat *)NULL);
 	}
 	eval = 0;
 	ORPHANS;
@@ -57,7 +57,7 @@ delete(argv)
 	size = lseek(tfd, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd, (off_t)0, SEEK_SET);
 	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
-	SETCF(tfd, tname, afd, archive, RPAD|WPAD);
+	SETCF(tfd, tname, afd, archive, NOPAD);
 	copyfile(&cf, size);
 	(void)close(tfd);
 	(void)ftruncate(afd, size + SARMAG);
