@@ -106,9 +106,10 @@ long authopts;
 	s = getport(&lport);
 		if (s < 0) {
 			if (errno == EAGAIN)
-				fprintf(stderr, "socket: All ports in use\n");
+				fprintf(stderr,
+					"kcmd(socket): All ports in use\n");
 			else
-				perror("rcmd: socket");
+				perror("kcmd: socket");
 			sigsetmask(oldmask);
 			return (-1);
 		}
@@ -131,7 +132,7 @@ long authopts;
 	 * don't wait very long for Kerberos rcmd.
 	 */
 	if (errno == ECONNREFUSED && timo <= 4) {
-			sleep(timo);
+			/* sleep(timo); don't wait at all here */
 			timo *= 2;
 			continue;
 		}
@@ -140,7 +141,8 @@ long authopts;
 			int oerrno = errno;
 
 			fprintf(stderr,
-			    "connect to address %s: ", inet_ntoa(sin.sin_addr));
+			    "kcmd: connect to address %s: ",
+			    inet_ntoa(sin.sin_addr));
 			errno = oerrno;
 			perror(0);
 			hp->h_addr_list++;
@@ -172,7 +174,7 @@ long authopts;
 		listen(s2, 1);
 		(void) sprintf(num, "%d", lport);
 		if (write(s, num, strlen(num)+1) != strlen(num)+1) {
-			perror("write: setting up stderr");
+			perror("kcmd(write): setting up stderr");
 			(void) close(s2);
 	    status = -1;
 			goto bad;
@@ -180,7 +182,7 @@ long authopts;
 		s3 = accept(s2, (struct sockaddr *)&from, &len);
 		(void) close(s2);
 		if (s3 < 0) {
-			perror("accept");
+			perror("kcmd:accept");
 			lport = 0;
 			status = -1;
 			goto bad;
@@ -190,7 +192,7 @@ long authopts;
 		if (from.sin_family != AF_INET ||
 		    from.sin_port >= IPPORT_RESERVED) {
 			fprintf(stderr,
-			    "socket: protocol failure in circuit setup.\n");
+			 "kcmd(socket): protocol failure in circuit setup.\n");
 			goto bad2;
 		}
 	}
@@ -208,7 +210,7 @@ long authopts;
 
 	sin_len = sizeof (struct sockaddr_in);
 	if (getsockname(s, (struct sockaddr *)laddr, &sin_len) < 0) {
-	    perror("getsockname");
+	    perror("kcmd(getsockname)");
 	    status = -1;
 	    goto bad2;
 	}
@@ -228,7 +230,7 @@ long authopts;
 	if (rc==-1) {
 		perror(*ahost);
 	} else {
-	    fprintf(stderr,"rcmd: bad connection with remote host\n");
+	    fprintf(stderr,"kcmd: bad connection with remote host\n");
 	}
 	status = -1;
 		goto bad2;
