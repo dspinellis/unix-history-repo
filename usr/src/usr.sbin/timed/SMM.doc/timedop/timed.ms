@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)timed.ms	6.3 (Berkeley) %G%
+.\"	@(#)timed.ms	6.4 (Berkeley) %G%
 .\"
 .TL
 Timed Installation and Operation Guide
@@ -33,8 +33,8 @@ either expressed or implied, of the Defense Research Projects Agency,
 of the US Government, or of CSELT.
 .FE
 .LP
-.EH 'SMM:8-%''Timed Installation and Operation'
-.OH 'Timed Installation and Operation''SMM:8-%'
+.EH 'SMM:11-%''Timed Installation and Operation'
+.OH 'Timed Installation and Operation''SMM:11-%'
 .SH 
 Introduction
 .PP
