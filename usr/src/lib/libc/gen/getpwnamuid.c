@@ -1,4 +1,4 @@
-/*	getpwnamuid.c	4.7	85/01/21	*/
+/*	getpwnamuid.c	4.7	85/02/04	*/
 
 #include <stdio.h>
 #include <pwd.h>
@@ -6,12 +6,15 @@
 
 #include <sys/file.h>
 
-static char PASSWD[] = "/etc/passwd";
-static char EMPTY[] = "";
 static char line[BUFSIZ+1];
 static struct passwd passwd;
-DBM *_pw_db;
-int _pw_stayopen;
+
+/*
+ * The following are shared with getpwent.c
+ */
+extern	char *_pw_file;
+DBM	*_pw_db;
+int	_pw_stayopen;
 
 static struct passwd *
 fetchpw(key)
@@ -51,14 +54,16 @@ getpwnam(nam)
 	register struct passwd *pw;
 
         if (_pw_db == (DBM *)0 &&
-	    (_pw_db = dbm_open(PASSWD, O_RDONLY)) == (DBM *)0) {
+	    (_pw_db = dbm_open(_pw_file, O_RDONLY)) == (DBM *)0) {
 	oldcode:
 		setpwent();
-		while ((pw = getpwent()) && strcmp(nam, pw->pw_name));
-		endpwent();
+		while ((pw = getpwent()) && strcmp(nam, pw->pw_name))
+			;
+		if (!_pw_stayopen)
+			endpwent();
 		return (pw);
 	}
-	if (flock(_pw_db->dbm_dirf, LOCK_SH) < 0) {
+	if (flock(dbm_dirfno(_pw_db), LOCK_SH) < 0) {
 		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 		goto oldcode;
@@ -66,7 +71,7 @@ getpwnam(nam)
         key.dptr = nam;
         key.dsize = strlen(nam);
 	pw = fetchpw(key);
-	(void) flock(_pw_db->dbm_dirf, LOCK_UN);
+	(void) flock(dbm_dirfno(_pw_db), LOCK_UN);
 	if (!_pw_stayopen) {
 		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
@@ -82,14 +87,16 @@ getpwuid(uid)
 	register struct passwd *pw;
 
         if (_pw_db == (DBM *)0 &&
-	    (_pw_db = dbm_open(PASSWD, O_RDONLY)) == (DBM *)0) {
+	    (_pw_db = dbm_open(_pw_file, O_RDONLY)) == (DBM *)0) {
 	oldcode:
 		setpwent();
-		while ((pw = getpwent()) && pw->pw_uid != uid);
-		endpwent();
+		while ((pw = getpwent()) && pw->pw_uid != uid)
+			;
+		if (!_pw_stayopen)
+			endpwent();
 		return (pw);
 	}
-	if (flock(_pw_db->dbm_dirf, LOCK_SH) < 0) {
+	if (flock(dbm_dirfno(_pw_db), LOCK_SH) < 0) {
 		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 		goto oldcode;
@@ -97,7 +104,7 @@ getpwuid(uid)
         key.dptr = (char *) &uid;
         key.dsize = sizeof uid;
 	pw = fetchpw(key);
-	(void) flock(_pw_db->dbm_dirf, LOCK_UN);
+	(void) flock(dbm_dirfno(_pw_db), LOCK_UN);
 	if (!_pw_stayopen) {
 		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
