@@ -1,4 +1,4 @@
-/* main.c	1.7	83/06/24
+/* main.c	1.8	83/07/06
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -30,7 +30,6 @@ extern POINT *PTInit(), *PTMakePoint();
 
 int	linethickness = 0;	/* brush styles */
 int	linmod = SOLID;
-char	chrtab[][16];
 char	*obuf;			/* output buffer NumOfLin x DevRange/8 */
 int	bufsize;		/* output buffer size */
 int	lastx;
