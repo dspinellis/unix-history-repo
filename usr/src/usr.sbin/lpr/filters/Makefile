@@ -14,40 +14,34 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 LIBDIR=	/usr/lib
 SRCS=	lpf.c
-OBJS=	lpf.o
+OBJS=
 
 all: lpf
 
-lpf: lpf.c
-	${CC} -o $@ ${CFLAGS} lpf.c
+lpf: ${LIBC}
+	${CC} -o $@ ${CFLAGS} $@.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core lpf
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 lpf ${DESTDIR}/${LIBDIR}/lpf
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-lpf: lpf.c /usr/include/stdio.h /usr/include/signal.h
-lpf: /usr/include/machine/trap.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
