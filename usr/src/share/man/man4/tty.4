@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.1 (Berkeley) %G%
+.\"	@(#)tty.4	6.1 (Berkeley) 5/15/85
 .\"
-.TH TTY 4 ""
+.TH TTY 4 "May 15, 1985"
 .UC 4
 .SH NAME
 tty \- general terminal interface
@@ -178,8 +178,9 @@ In cooked mode, terminal input is processed in units of lines.
 A program attempting
 to read will normally be suspended until an entire line has been
 received
-(but see the description of SIGTTIN in \fBModes\fR above and FIONREAD in
-\fBSummary\fR below.)
+(but see the description of SIGTTIN in \fBJob access control\fR
+and of FIONREAD in
+\fBSummary\fR, both below.)
 No matter how many characters are requested
 in the read call, at most one line will be returned.
 It is not, however, necessary to read a whole line at
