@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -233,7 +233,7 @@ initsys(e)
 	static char cbuf[5];			/* holds hop count */
 	static char pbuf[10];			/* holds pid */
 #ifdef TTYNAME
-	static char ybuf[10];			/* holds tty id */
+	static char ybuf[60];			/* holds tty id */
 	register char *p;
 #endif /* TTYNAME */
 	extern char *ttyname();
