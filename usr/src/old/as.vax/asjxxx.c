@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asjxxx.c 4.3 %G%";
+static	char sccsid[] = "@(#)asjxxx.c 4.4 %G%";
 #include	<stdio.h>
 #include	"as.h"
 #include	"assyms.h"
@@ -116,9 +116,18 @@ jalign(xp, sp)
 	register struct symtab *sp;
 {
 	register	int	mask;
-	if (xp->e_xtype != XABS || xp->e_xvalue < 0 || xp->e_xvalue > 16) {
+	if (   (xp->e_xtype != XABS)
+	    || (xp->e_xvalue < 0)
+	    || (xp->e_xvalue > 16)
+	    ) {
 		yyerror("Illegal `align' argument");
 		return;
+	}
+	if (   (xp->e_xvalue > 3)
+	    && (dotp != &usedot[0])
+	    ) {
+		yywarning("Alignment by %d in segments other than text 0 may not work.", xp->e_xvalue);
+		yywarning("Phase errors may occur after this .align in the second pass.");
 	}
 	flushfield(NBPW/4);
 	if (passno == 1) {
