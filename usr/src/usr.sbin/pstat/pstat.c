@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#) (Berkeley) 82/10/19";
+static char *sccsid = "@(#) (Berkeley) 82/12/13";
 #endif
 /*
  * Print system stuff
@@ -18,6 +18,7 @@ static char *sccsid = "@(#) (Berkeley) 82/10/19";
 #include <sys/text.h>
 #include <sys/inode.h>
 #include <sys/map.h>
+#include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
 #include <sys/vm.h>
@@ -217,7 +218,7 @@ printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\
 		if (ip->i_count == 0)
 			continue;
 		printf("%8.1x ", ainode + (ip - xinode));
-		putf(ip->i_flag&ILOCK, 'L');
+		putf(ip->i_flag&ILOCKED, 'L');
 		putf(ip->i_flag&IUPD, 'U');
 		putf(ip->i_flag&IACC, 'A');
 		putf(ip->i_flag&IMOUNT, 'M');
@@ -229,8 +230,8 @@ printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\
 		putf(ip->i_flag&ILWAIT, 'Z');
 		printf("%4d", ip->i_count&0377);
 		printf("%4d,%3d", major(ip->i_dev), minor(ip->i_dev));
-		printf("%4d", ip->i_rdlockc&0377);
-		printf("%4d", ip->i_wrlockc&0377);
+		printf("%4d", ip->i_shlockc&0377);
+		printf("%4d", ip->i_exlockc&0377);
 		printf("%6d", ip->i_number);
 		printf("%6x", ip->i_mode & 0xffff);
 		printf("%4d", ip->i_nlink);
@@ -360,7 +361,6 @@ doproc()
 		printf(" %7x", clear(pp->p_wchan));
 		printf(" %7x", clear(pp->p_link));
 		printf(" %7x", clear(pp->p_textp));
-		printf("    %u", pp->p_clktim);
 		printf("\n");
 	}
 }
@@ -443,7 +443,7 @@ struct tty *atp;
 		printf("%4d", tp->t_canq.c_cc);
 	}
 	printf("%4d", tp->t_outq.c_cc);
-	printf("%8.1o", tp->t_flags);
+	printf("%8.1x", tp->t_flags);
 	printf(" %8.1x", tp->t_addr);
 	printf("%3d", tp->t_delct);
 	printf("%4d ", tp->t_col);
@@ -454,9 +454,7 @@ struct tty *atp;
 	putf(tp->t_state&TS_BUSY, 'B');
 	putf(tp->t_state&TS_ASLEEP, 'A');
 	putf(tp->t_state&TS_XCLUDE, 'X');
-/*
 	putf(tp->t_state&TS_HUPCLS, 'H');
- */
 	printf("%6d", tp->t_pgrp);
 	switch (tp->t_line) {
 
@@ -497,7 +495,7 @@ dousr()
 	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
 		if (i%5==0)
 			printf("\t");
-		printf("%9.1x", U.u_ssav[i]);
+		printf("%9.1x", U.u_ssave.val[i]);
 		if (i%5==4)
 			printf("\n");
 	}
@@ -528,11 +526,11 @@ dousr()
 	for (i=10; i<NOFILE; i++)
 		printf("%9.1x", U.u_pofile[i]);
 	printf("\n");
-	printf("ssav");
+	printf("ssave");
 	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
 		if (i%5==0)
 			printf("\t");
-		printf("%9.1x", U.u_ssav[i]);
+		printf("%9.1x", U.u_ssave.val[i]);
 		if (i%5==4)
 			printf("\n");
 	}
@@ -547,7 +545,6 @@ dousr()
 	printf("prof\t%X %X %X %X\n", U.u_prof.pr_base, U.u_prof.pr_size,
 	    U.u_prof.pr_off, U.u_prof.pr_scale);
 	printf("\neosys\t%d\n", U.u_eosys);
-	printf("sep\t%d\n", U.u_sep);
 	printf("ttyp\t%.1x\n", U.u_ttyp);
 	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
 	printf("exdata\t");
@@ -558,17 +555,16 @@ dousr()
 	printf("comm %.14s\n", U.u_comm);
 	printf("start\t%D\n", U.u_start);
 	printf("acflag\t%D\n", U.u_acflag);
-	printf("fpflag\t%D\n", U.u_fpflag);
 	printf("cmask\t%D\n", U.u_cmask);
 	printf("sizes\t%.1x %.1x %.1x\n", U.u_tsize, U.u_dsize, U.u_ssize);
-	printf("vm\t");
-	ip = (int *)&U.u_vm;
-	for (i = 0; i < sizeof(U.u_vm)/sizeof(int); i++)
+	printf("ru\t");
+	ip = (int *)&U.u_ru;
+	for (i = 0; i < sizeof(U.u_ru)/sizeof(int); i++)
 		printf("%D ", ip[i]);
 	printf("\n");
-	ip = (int *)&U.u_cvm;
-	printf("cvm\t");
-	for (i = 0; i < sizeof(U.u_vm)/sizeof(int); i++)
+	ip = (int *)&U.u_cru;
+	printf("cru\t");
+	for (i = 0; i < sizeof(U.u_cru)/sizeof(int); i++)
 		printf("%D ", ip[i]);
 	printf("\n");
 /*
