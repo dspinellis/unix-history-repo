@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.57	%G%";
+SCCSID(@(#)main.c	3.58		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.

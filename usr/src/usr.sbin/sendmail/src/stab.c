@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.10	%G%";
+SCCSID(@(#)stab.c	3.11		%G%);
 
 /*
 **  STAB -- manage the symbol table

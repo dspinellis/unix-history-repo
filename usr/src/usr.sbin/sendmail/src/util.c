@@ -7,7 +7,7 @@
 # include <ctype.h>
 # include "conf.h"
 
-static char	SccsId[] = "@(#)util.c	3.12.1.1	%G%";
+SCCSID(@(#)util.c	3.13		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.

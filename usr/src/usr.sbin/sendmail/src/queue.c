@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-static char	SccsId[] =	"@(#)queue.c	3.7	%G%	(no queueing)";
+SCCSID(@(#)queue.c	3.8		%G%	(no queueing));
 # else QUEUE
 
-static char	SccsId[] =	"@(#)queue.c	3.7	%G%";
+SCCSID(@(#)queue.c	3.8		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -33,10 +33,9 @@ queueup(df)
 {
 	char cf[MAXNAME];
 	register FILE *f;
-	register int i;
 	register HDR *h;
-	register char *p;
 	register ADDRESS *q;
+	extern char *mktemp();
 
 	/*
 	**  Create control file.
@@ -265,7 +264,6 @@ orderq()
 	register WORK **wp;		/* parent of w */
 	register FILE *f;
 	register int i;
-	struct stat st;
 	WORK wlist[WLSIZE];
 	int wn = 0;
 	extern workcmpf();

@@ -1,6 +1,7 @@
 # include <sysexits.h>
+# include "useful.h"
 
-static char	SccsId[] = "@(#)sysexits.c	3.2	%G%";
+SCCSID(@(#)sysexits.c	3.3		%G%);
 
 /*
 **  SYSEXITS.C -- error messages corresponding to sysexits.h

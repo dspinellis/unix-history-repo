@@ -6,12 +6,12 @@
 ** same thing.
 */
 
-static char	SccsId[] =	"@(#)rmail.c	3.5	%G%";
-
 # include <stdio.h>
 # include <sysexits.h>
 # include "useful.h"
 # include "conf.h"
+
+SCCSID(@(#)rmail.c	3.6	(Berkeley)	%G%);
 
 extern FILE *popen();
 extern char *index();
@@ -90,7 +90,7 @@ main(argc, argv)
 	}
 	strcat(from, ufrom);
 
-	sprintf(cmd, "%s -em -f%s", MAILER, from);
+	(void) sprintf(cmd, "%s -em -f%s", MAILER, from);
 	while (*++argv != NULL)
 	{
 		strcat(cmd, " '");

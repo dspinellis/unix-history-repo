@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)stats.c	3.3	%G%";
+SCCSID(@(#)stats.c	3.4		%G%);
 
 /*
 **  POSTSTATS -- post statistics in the statistics file
