@@ -1,18 +1,29 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1980, 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.14 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)mount.c	5.15 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "pathnames.h"
 #include <sys/param.h>
@@ -45,8 +56,8 @@ static char sccsid[] = "@(#)mount.c	5.14 (Berkeley) %G%";
 #define	SETTYPE(type) \
 	(!strcmp(type, FSTAB_RW) || !strcmp(type, FSTAB_RQ))
 
-static int fake, verbose, mnttype;
-char **envp;
+int fake, verbose, mnttype;
+char *mntname, **envp;
 
 #ifdef NFS
 int xdr_dir(), xdr_fh();
@@ -90,6 +101,7 @@ main(argc, argv, arge)
 	all = 0;
 	type = NULL;
 	mnttype = MOUNT_UFS;
+	mntname = "ufs";
 	while ((ch = getopt(argc, argv, "afrwvt:o:")) != EOF)
 		switch((char)ch) {
 		case 'a':
@@ -111,9 +123,8 @@ main(argc, argv, arge)
 			options = optarg;
 			break;
 		case 't':
-			if (mnttype = getmnttype(optarg))
-				break;
-			/* fall through */
+			mnttype = getmnttype(optarg);
+			break;
 		case '?':
 		default:
 			usage();
@@ -194,6 +205,7 @@ mountfs(spec, name, type, options, mntopts)
 	int flags, argc, status, i;
 	struct ufs_args args;
 	char *argp, *argv[50];
+	char execname[MAXPATHLEN + 1], flagval[12];
 
 	flags = 0;
 	if (!strcmp(type, FSTAB_RO))
@@ -202,6 +214,7 @@ mountfs(spec, name, type, options, mntopts)
 		getstdopts(options, &flags);
 	if (mntopts)
 		getstdopts(mntopts, &flags);
+	argc = 1;
 	switch (mnttype) {
 	case MOUNT_UFS:
 		if (options)
@@ -227,17 +240,27 @@ mountfs(spec, name, type, options, mntopts)
 
 #ifdef MFS
 	case MOUNT_MFS:
-		argv[0] = "memfs";
-		argc = 1;
+		mntname = "memfs";
 		if (options)
 			argc += getmfsopts(options, &argv[argc]);
 		if (mntopts)
 			argc += getmfsopts(mntopts, &argv[argc]);
+		/* fall through to */
+#endif /* MFS */
+
+	default:
+		argv[0] = mntname;
+		if (flags) {
+			argv[argc++] = "-F";
+			sprintf(flagval, "%d", flags);
+			argv[argc++] = flagval;
+		}
 		argv[argc++] = spec;
 		argv[argc++] = name;
+		sprintf(execname, "%s/%s", _PATH_EXECDIR, mntname);
 		if (verbose) {
-			printf("exec:");
-			for (i = 0; i < argc; i++)
+			printf("exec: %s", execname);
+			for (i = 1; i < argc; i++)
 				printf(" %s", argv[i]);
 			printf("\n");
 		}
@@ -245,26 +268,19 @@ mountfs(spec, name, type, options, mntopts)
 			break;
 		if (i = vfork()) {
 			if (i == -1) {
-				perror("mount: vfork for memfs");
+				perror("mount: vfork starting file system");
 				return (1);
 			}
 			if (waitpid(i, &status, 0) != -1 &&
 			    WIFEXITED(status) &&
 			    WEXITSTATUS(status) != 0)
 				return (WEXITSTATUS(status));
-			spec = "memfs";
+			spec = mntname;
 			goto out;
 		}
-		execve(_PATH_MEMFS, argv, envp);
-		perror(_PATH_MEMFS);
+		execve(execname, argv, envp);
+		perror(execname);
 		exit (1);
-#endif /* MFS */
-
-	default:
-		if (opflags & ISBGRND)
-			exit(1);
-		fprintf(stderr, "%d: unknown mount type\n", mnttype);
-		exit(1);
 		/* NOTREACHED */
 
 	}
@@ -331,6 +347,7 @@ getmnttype(fstype)
 	char *fstype;
 {
 
+	mntname = fstype;
 	if (!strcmp(fstype, "ufs"))
 		return (MOUNT_UFS);
 	if (!strcmp(fstype, "nfs"))
