@@ -1,4 +1,4 @@
-/*	if_en.c	4.65	82/06/13	*/
+/*	if_en.c	4.66	82/06/14	*/
 
 #include "en.h"
 
@@ -260,8 +260,6 @@ COUNT(ENXINT);
 		return;
 	if (es->es_mask && (addr->en_ostat&EN_OERROR)) {
 		es->es_if.if_oerrors++;
-		if (es->es_if.if_oerrors % 100 == 0)
-			printf("en%d: += 100 output errors\n", unit);
 		endocoll(unit);
 		return;
 	}
@@ -354,8 +352,6 @@ COUNT(ENRINT);
 		UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_r.ifrw_bdp);
 	if (addr->en_istat&EN_IERROR) {
 		es->es_if.if_ierrors++;
-		if (es->es_if.if_ierrors % 100 == 0)
-			printf("en%d: += 100 input errors\n", unit);
 		goto setup;
 	}
 
