@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.6 %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.7 %G%";
 #endif
 
 #include "defs.h"
@@ -191,14 +191,15 @@ register struct var *r;
 }
 
 struct lcmd_arg arg_shell[] = {
-	{ "shell",	1,	ARG_STR },
+	{ "",	0,		ARG_ANY|ARG_LIST },
 	0
 };
 
 l_shell(v, a)
-struct value *v, *a;
+	struct value *v, *a;
 {
-	register char **pp;
+	register char **pp, *p;
+	register struct value *vp;
 
 	if (a->v_type == V_ERR) {
 		if ((v->v_str = str_cpy(shellfile)) != 0)
@@ -207,15 +208,19 @@ struct value *v, *a;
 	}
 	if (v->v_str = shellfile) {
 		v->v_type = V_STR;
-		for (pp = shell + 1; *pp; pp++)
+		for (pp = shell + 1; *pp; pp++) {
 			str_free(*pp);
+			*pp = 0;
+		}
 	}
-	if (mkargv(a->v_str, shell, sizeof shell / sizeof *shell) < 0)
-		*shell = 0;
-	for (pp = shell; *pp; pp++)
-		if ((*pp = str_cpy(*pp)) == 0) {
+	for (pp = shell, vp = a;
+	     vp->v_type != V_ERR && pp < &shell[sizeof shell/sizeof *shell-1];
+	     pp++, vp++)
+		if ((*pp = vp->v_type == V_STR ?
+		     str_cpy(vp->v_str) : str_itoa(vp->v_num)) == 0) {
 			/* just leave shell[] the way it is */
 			p_memerror();
+			break;
 		}
 	if (shellfile = *shell)
 		if (*shell = rindex(shellfile, '/'))
@@ -225,13 +230,13 @@ struct value *v, *a;
 }
 
 struct lcmd_arg arg_alias[] = {
-	{ "name",	1,	ARG_STR },
-	{ "string",	1,	ARG_STR },
+	{ "",	0,		ARG_STR },
+	{ "",	0,		ARG_STR|ARG_LIST },
 	0
 };
 
 l_alias(v, a)
-struct value *v, *a;
+	struct value *v, *a;
 {
 	if (a->v_type == V_ERR) {
 		register struct ww *w;
@@ -254,10 +259,29 @@ struct value *v, *a;
 			}
 			v->v_type = V_STR;
 		}
-		if (a[1].v_type == V_STR &&
-		    alias_set(a[0].v_str, a[1].v_str) == 0) {
-			p_memerror();
-			return;
+		if (a[1].v_type == V_STR) {
+			register struct value *vp;
+			register char *p, *q;
+			char *str;
+			register n;
+
+			for (n = 0, vp = a + 1; vp->v_type != V_ERR; vp++, n++)
+				for (p = vp->v_str; *p; p++, n++)
+					;
+			if ((str = str_alloc(n)) == 0) {
+				p_memerror();
+				return;
+			}
+			for (q = str, vp = a + 1; vp->v_type != V_ERR;
+			     vp++, q[-1] = ' ')
+				for (p = vp->v_str; *q++ = *p++;)
+					;
+			q[-1] = 0;
+			if ((ap = alias_set(a[0].v_str, 0)) == 0) {
+				p_memerror();
+				return;
+			}
+			ap->a_buf = str;
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)lcmd.h	3.3 %G%
+ * @(#)lcmd.h	3.4 %G%
  */
 
 #define LCMD_NARG 20			/* maximum number of arguments */
@@ -14,11 +14,14 @@ struct lcmd_tab {
 struct lcmd_arg {
 	char *arg_name;
 	int arg_minlen;
-	char arg_type;
+	int arg_flags;
 };
 
-#define ARG_ANY 0
-#define ARG_NUM 1
-#define ARG_STR 2
+	/* arg_flags bits */
+#define ARG_TYPE	0x0f		/* type of arg */
+#define ARG_ANY		0x00		/* any type */
+#define ARG_NUM		0x01		/* must be a number */
+#define ARG_STR		0x02		/* must be a string */
+#define ARG_LIST	0x10		/* this arg can be a list */
 
 struct lcmd_tab *lcmd_lookup();

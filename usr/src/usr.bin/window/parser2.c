@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)parser2.c	3.7 %G%";
+static char sccsid[] = "@(#)parser2.c	3.8 %G%";
 #endif
 
 #include "parser.h"
@@ -18,7 +18,8 @@ register struct value *v;
 	struct value t;
 	register struct lcmd_tab *c = 0;
 	register struct alias *a = 0;
-	register struct lcmd_arg *ap;
+	register struct lcmd_arg *ap;		/* this arg */
+	struct lcmd_arg *lp = 0;		/* list arg */
 	register i;
 	struct value av[LCMD_NARG + 1];
 	register struct value *vp;
@@ -36,25 +37,15 @@ register struct value *v;
 	for (vp = av; vp < &av[LCMD_NARG + 1]; vp++)
 		vp->v_type = V_ERR;
 
-	for (i = 0;;) {
-		ap = 0;
-		vp = 0;
-		if (p_expr0(&t, flag) < 0)
-			if (!p_synerred() && token == T_MUL) {
-				if (c != 0)
-					if (c->lc_arg[i].arg_name == 0)
-						p_error("%s: Too many arguments.", name);
-					else
-						i++;
-				(void) s_gettok();
-				continue;
-			} else
-				break;
+	for (i = 0; p_expr0(&t, flag) >= 0;) {
 		if (t.v_type == V_ERR)
 			flag = 0;
+		ap = 0;
+		vp = 0;
 		if (token != T_ASSIGN) {
-			if (i >= LCMD_NARG || c != 0 && c->lc_arg != 0
-			    && (ap = c->lc_arg + i)->arg_name == 0) {
+			if (i >= LCMD_NARG ||
+			    c != 0 && (ap = lp) == 0 &&
+			    (ap = c->lc_arg + i)->arg_name == 0) {
 				p_error("%s: Too many arguments.", name);
 				flag = 0;
 			} else
@@ -81,8 +72,9 @@ register struct value *v;
 				} else {
 					for (ap = c->lc_arg, vp = av;
 					     ap != 0 && ap->arg_name != 0 &&
-						!str_match(tmp, ap->arg_name,
-							ap->arg_minlen);
+					     (*ap->arg_name == '\0' ||
+					      !str_match(tmp, ap->arg_name,
+							ap->arg_minlen));
 					     ap++, vp++)
 						;
 					if (ap == 0 || ap->arg_name == 0) {
@@ -97,19 +89,33 @@ register struct value *v;
 			}
 		}
 		if (ap != 0) {
+			if (ap->arg_flags & ARG_LIST) {
+				i = vp - av + 1;
+				lp = ap;
+			}
 			if (vp->v_type != V_ERR) {
-				p_error("%s: Argument %d (%s) duplicated.",
-					name, ap - c->lc_arg + 1,
-					ap->arg_name);
+				if (*ap->arg_name)
+					p_error("%s: Argument %d (%s) duplicated.",
+						name, vp - av + 1,
+						ap->arg_name);
+				else
+					p_error("%s: Argument %d duplicated.",
+						name, vp - av + 1);
 				flag = 0;
 				vp = 0;
 			} else if (t.v_type == V_ERR) {
 				/* do nothing */
-			} else if (ap->arg_type == ARG_NUM && t.v_type != V_NUM
-			    || ap->arg_type == ARG_STR && t.v_type != V_STR) {
-				p_error("%s: Argument %d (%s) type mismatch.",
-					name, ap - c->lc_arg + 1,
-					ap->arg_name);
+			} else if ((ap->arg_flags&ARG_TYPE) == ARG_NUM &&
+				   t.v_type != V_NUM ||
+				   (ap->arg_flags&ARG_TYPE) == ARG_STR &&
+				   t.v_type != V_STR) {
+				if (*ap->arg_name)
+					p_error("%s: Argument %d (%s) type mismatch.",
+						name, vp - av + 1,
+						ap->arg_name);
+				else
+					p_error("%s: Argument %d type mismatch.",
+						name, vp - av + 1);
 				flag = 0;
 				vp = 0;
 			}

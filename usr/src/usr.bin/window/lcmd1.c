@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd1.c	3.25 %G%";
+static char sccsid[] = "@(#)lcmd1.c	3.26 %G%";
 #endif
 
 #include "defs.h"
@@ -9,52 +9,69 @@ static char sccsid[] = "@(#)lcmd1.c	3.25 %G%";
 #include "var.h"
 
 struct lcmd_arg arg_window[] = {
-	{ "row",	1,	ARG_ANY },
-	{ "column",	1,	ARG_ANY },
-	{ "nrows",	2,	ARG_ANY },
-	{ "ncols",	2,	ARG_ANY },
+	{ "row",	1,	ARG_NUM },
+	{ "column",	1,	ARG_NUM },
+	{ "nrows",	2,	ARG_NUM },
+	{ "ncols",	2,	ARG_NUM },
 	{ "nlines",	2,	ARG_NUM },
 	{ "label",	1,	ARG_STR },
-	{ "shell",	1,	ARG_STR },
 	{ "pty",	1,	ARG_ANY },
 	{ "frame",	1,	ARG_ANY },
 	{ "mapnl",	1,	ARG_ANY },
+	{ "shell",	1,	ARG_ANY|ARG_LIST },
 	0
 };
 
 l_window(v, a)
-register struct value *v, *a;
+struct value *v;
+register struct value *a;
 {
-	register struct ww *w;
+	struct ww *w;
 	int col, row, ncol, nrow, id, nline;
 	char *label;
 	char haspty, hasframe, mapnl;
 	char *shf, **sh;
 	char *argv[sizeof shell / sizeof *shell];
+	register char **pp;
 
 	if ((id = findid()) < 0)
 		return;
-	row = a[0].v_type != V_NUM ? 1 : a[0].v_num;
-	col = a[1].v_type != V_NUM ? 0 : a[1].v_num;
-	nrow = a[2].v_type != V_NUM ? wwnrow - row : a[2].v_num;
-	ncol = a[3].v_type != V_NUM ? wwncol - col : a[3].v_num;
-	nline = a[4].v_type == V_ERR ? nbufline : a[4].v_num;
-	label =  a[5].v_type == V_ERR ? 0 : a[5].v_str;
-	if (a[6].v_type == V_STR) {
-		if (mkargv(a[6].v_str, argv, sizeof argv / sizeof *argv) < 0)
-			return;
-		sh = argv;
-		shf = *argv;
+	row = a->v_type == V_ERR ? 1 : a->v_num;
+	a++;
+	col = a->v_type == V_ERR ? 0 : a->v_num;
+	a++;
+	nrow = a->v_type == V_ERR ? wwnrow - row : a->v_num;
+	a++;
+	ncol = a->v_type == V_ERR ? wwncol - col : a->v_num;
+	a++;
+	nline = a->v_type == V_ERR ? nbufline : a->v_num;
+	a++;
+	label = a->v_type == V_ERR ? 0 : a->v_str;
+	if ((haspty = vtobool(++a, 1, -1)) < 0)
+		return;
+	if ((hasframe = vtobool(++a, 1, -1)) < 0)
+		return;
+	if ((mapnl = vtobool(++a, !haspty, -1)) < 0)
+		return;
+	if ((++a)->v_type != V_ERR) {
+		for (pp = argv; a->v_type != V_ERR &&
+		     pp < &argv[sizeof argv/sizeof *argv-1]; pp++, a++) {
+			if (a->v_type == V_NUM && p_convstr(a->v_num) < 0) {
+				p_memerror();
+				return;
+			}
+			*pp = a->v_str;
+		}
+		*pp = 0;
+		shf = *(sh = argv);
+		if (*sh = rindex(shf, '/'))
+			(*sh)++;
+		else
+			*sh = shf;
 	} else {
 		sh = shell;
 		shf = shellfile;
 	}
-	if ((haspty = vtobool(a + 7, 1, -1)) < 0)
-		return;
-	if ((hasframe = vtobool(a + 8, 1, -1)) < 0)
-		return;
-	if ((mapnl = vtobool(a + 9, !haspty, -1)) < 0)
-		return;
 	if ((w = openwin(id, row, col, nrow, ncol, nline, label, haspty,
 	    hasframe, shf, sh)) == 0)
 		return;
@@ -203,6 +220,12 @@ register struct value *v, *a;
 		v->v_num = 0;
 }
 
+struct lcmd_arg arg_write[] = {
+	{ "window",	1,	ARG_NUM },
+	{ "",		0,	ARG_ANY|ARG_LIST },
+	0
+};
+
 /*ARGSUSED*/
 l_write(v, a)
 struct value *v;
@@ -223,6 +246,11 @@ register struct value *a;
 			(void) write(w->ww_pty, " ", 1);
 	}
 }
+
+struct lcmd_arg arg_close[] = {
+	{ "window",	1,	ARG_ANY|ARG_LIST },
+	0
+};
 
 /*ARGSUSED*/
 l_close(v, a)
