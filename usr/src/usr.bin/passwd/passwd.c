@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -56,7 +56,7 @@ main(argc, argv)
 		break;
 	case 1:
 #ifdef	KERBEROS
-		if (use_kerberos && strcmp(argv[1], uname)) {
+		if (use_kerberos && strcmp(argv[0], uname)) {
 			(void)fprintf(stderr, "passwd: %s\n\t%s\n%s\n",
 "to change another user's Kerberos password, do",
 "\"kinit user; passwd; kdestroy\";",
