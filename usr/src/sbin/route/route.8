@@ -13,18 +13,29 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)route.8	6.3 (Berkeley) %G%
+.\"	@(#)route.8	6.4 (Berkeley) %G%
 .\"
 .TH ROUTE 8 ""
 .UC 5
 .SH NAME
-route \- manually manipulate the routing tables
+route \- manually manipulate the routing tables (Interim)
 .SH SYNOPSIS
 .B /etc/route
 [
+.B \-i
+] [
 .B \-f
 ] [
 .B \-n
+] [
+.B \-q
+] [
+.B \-k
+.I vmunix
+] [
+.B \-x
+] [
+.B \-o
 ] [
 .I command args
 ]
@@ -37,16 +48,30 @@ system routing table management daemon,
 should tend to this task.
 .PP
 .I Route
-accepts two commands:
+accepts three commands:
 .IR add ,
-to add a route, and
+to add a route,
 .IR delete ,
-to delete a route.
+to delete a route, and
+.IR monitor ,
+to report any changes to the routing information base,
+routing lookup misses, or suspected network partionings.
 .PP
-All commands have the following syntax:
+The monitor command has the syntax
+.ti +0.25i
+.B /etc/route 
+[
+.I -n 
+]
+.I monitor
+.PP
+The other commands have the following syntax:
 .PP
 .ti +0.25i
 .B /etc/route 
+[
+.I -n -i -f -x -o
+]
 .I command
 [
 .B net
@@ -55,25 +80,14 @@ All commands have the following syntax:
 ]
 .I destination gateway
 [
-.I metric
+.I mask
 ]
 .PP
 where
 .I destination
 is the destination host or network,
 .I gateway
-is the next-hop gateway to which packets should be addressed, and
-.I metric
-is a count indicating the number of hops to
-the
-.IR destination .
-The metric is required for
-.I add
-commands; it must be zero if the destination is on a directly-attached network,
-and nonzero if the route utilizes one or more gateways.
-If adding a route with metric 0,
-the gateway given is the address of this host on the common network,
-indicating the interface to be used for transmission.
+is the next-hop gateway to which packets should be addressed.
 Routes to a particular host are distinguished from those to
 a network by interpreting the Internet address associated with
 .IR destination .
@@ -89,10 +103,24 @@ or if the
 .I destination
 is the symbolic name of a network, then the route is
 assumed to be to a network; otherwise, it is presumed to be a
-route to a host.  If the route is to a destination connected
+route to a host.  If the route is via an interface rather than
 via a gateway, the 
-.I metric
-should be greater than 0.  All symbolic names specified for a
+.I -i
+flag should be specified;
+the gateway given is the address of this host on the common network,
+indicating the interface to be used for transmission.
+.PP
+The optional flags
+.I -x
+and
+.I -o
+specify that the addresses are in the XNS or OSI address families,
+and the names must be numeric specifications rather than
+symbolic names.
+For OSI addresses a third paramter is the address mask,
+as given in an ESIS redirect.
+.PP
+All symbolic names specified for a
 .I destination 
 or 
 .I gateway
@@ -103,9 +131,9 @@ If this lookup fails,
 is then used to interpret the name as that of a network.
 .PP
 .I Route
-uses a raw socket and the SIOCADDRT and SIOCDELRT
-.IR ioctl 's
-to do its work.  As such, only the super-user may modify
+uses a routing socket and the new message types
+RTM_ADD and RTM_DELETE.
+As such, only the super-user may modify
 the routing tables.
 .PP
 If the 

@@ -17,14 +17,15 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1989  The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <paths.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -34,18 +35,23 @@ static char sccsid[] = "@(#)route.c	5.15 (Berkeley) %G%";
 #include <net/route.h>
 #include <netinet/in.h>
 #include <netns/ns.h>
+#include <netiso/iso.h>
 
 #include <netdb.h>
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
-#include <paths.h>
 
 struct	ortentry route;
-struct	sockaddr_in sockmask;
+union	{
+	struct	sockaddr sa;
+	struct	sockaddr_in sin;
+	struct	sockaddr_ns sns;
+	struct	sockaddr_iso siso;
+} so_dst, so_gate, so_mask; 
 int	s;
 int	forcehost, forcenet, doflush, nflag, xnsflag, qflag, Cflag;
-int	iflag;
+int	iflag, osiflag, verbose;
 int	pid;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	in_addr inet_makeaddr();
@@ -89,6 +95,12 @@ main(argc, argv)
 				break;
 			case 'i':
 				iflag++;
+				break;
+			case 'o':
+				osiflag++;
+				break;
+			case 'v':
+				verbose++;
 				break;
 			}
 	}
@@ -315,28 +327,27 @@ d_rtentry(rt)
 register struct rtentry *rt;
 {
 	int doinghost = rt->rt_flags & RTF_HOST;
+	int result;
 
 	ortentry.rt_flags = rt->rt_flags;
 	ortentry.rt_dst = *(rt_key(rt));
 	ortentry.rt_gateway = *(rt->rt_gateway);
 	if (rt->rt_flags & RTF_GATEWAY) {
-	   if (Cflag == 0) {
-		rtmsg('d', rt_key(rt), rt->rt_gateway, rt_mask(rt),
-			rt->rt_flags);
-		return;
-	   }
-	   if (qflag == 0) {
-		printf("%-20.20s ", doinghost ?
-		    routename(rt_key(rt)) :
-		    netname(rt_key(rt)));
-		printf("%-20.20s ", routename(rt->rt_gateway));
-		if (ioctl(s, SIOCDELRT, (caddr_t)&ortentry) < 0) {
-			fflush(stdout);
-			error("delete");
-		} else
-			printf("done\n");
-	    } else
-		(void) ioctl(s, SIOCDELRT, (caddr_t)&ortentry);
+	       if (Cflag == 0)
+		       result = rtmsg('d', rt_key(rt), rt->rt_gateway,
+					rt_mask(rt), rt->rt_flags);
+	       else
+			result = ioctl(s, SIOCDELRT, (caddr_t)&ortentry);
+	       if (qflag == 0) {
+			printf("%-20.20s ", doinghost ?
+				routename(rt_key(rt)) : netname(rt_key(rt)));
+			printf("%-20.20s ", routename(rt->rt_gateway));
+			if (result < 0) {
+				fflush(stdout);
+				error("delete");
+			} else
+				printf("done\n");
+		}
 	}
 }
 
@@ -493,7 +504,7 @@ newroute(argc, argv)
 {
 	struct sockaddr_in *sin;
 	char *cmd, *dest, *gateway, *mask;
-	int ishost, metric = 0, ret, attempts, oerrno;
+	int ishost, metric = 0, ret, attempts, oerrno, flags = 0;
 	struct hostent *hp;
 	extern int errno;
 
@@ -505,39 +516,40 @@ newroute(argc, argv)
 		forcenet++;
 		argc--, argv++;
 	}
-	sin = (struct sockaddr_in *)&route.rt_dst;
-	ishost = getaddr(argv[1], &route.rt_dst, &sockmask,
+	ishost = getaddr(argv[1], &so_dst.sa, &so_mask.sa,
 						&hp, &dest, forcenet);
 	if (forcehost)
 		ishost = 1;
 	if (forcenet)
 		ishost = 0;
-	sin = (struct sockaddr_in *)&route.rt_gateway;
-	(void) getaddr(argv[2], &route.rt_gateway, 0, &hp, &gateway, 0);
+	(void) getaddr(argv[2], &so_gate.sa, 0, &hp, &gateway, 0);
 	if ((Cflag == 0) && argc == 4) {
-		(void) getaddr(argv[3], &sockmask, 0, &hp, &mask, 0);
+		(void) getaddr(argv[3], &so_mask.sa, 0, &hp, &mask, 0);
 	}
-	route.rt_flags = RTF_UP;
+	flags = RTF_UP;
 	if (ishost)
-		route.rt_flags |= RTF_HOST;
+		flags |= RTF_HOST;
 	if (iflag == 0)
-		route.rt_flags |= RTF_GATEWAY;
+		flags |= RTF_GATEWAY;
 	for (attempts = 1; ; attempts++) {
 		errno = 0;
 		if (Cflag) {
+			route.rt_flags = flags;
+			route.rt_dst = so_dst.sa;
+			route.rt_gateway = so_gate.sa;
 			if ((ret = ioctl(s, *cmd == 'a' ? SIOCADDRT : SIOCDELRT,
 			     (caddr_t)&route)) == 0)
 				break;
 		} else {
-		    if ((ret = rtmsg(*cmd, &route.rt_dst, &route.rt_gateway,
-			    (ishost ? 0 : &sockmask), route.rt_flags)) == 0)
+		    if ((ret = rtmsg(*cmd, &so_dst.sa, &so_gate.sa,
+			    (ishost ? 0 : &so_mask.sa), flags)) == 0)
 				break;
 		}
 		if (errno != ENETUNREACH && errno != ESRCH)
 			break;
 		if (hp && hp->h_addr_list[1]) {
 			hp->h_addr_list++;
-			bcopy(hp->h_addr_list[0], (caddr_t)&sin->sin_addr,
+			bcopy(hp->h_addr_list[0], (caddr_t)&so_dst.sin.sin_addr,
 			    hp->h_length);
 		} else
 			break;
@@ -634,7 +646,7 @@ struct sockaddr_in *sin, *sockmask;
 	}
 	sin->sin_addr.s_addr = (htonl(addr));
 	if (sockmask) {
-		register char *cp = (char *)(sockmask->sin_zero);
+		register char *cp = (char *)&(sockmask->sin_port);
 		register char *cpbase = (char *)&(sockmask->sin_addr);
 
 		sockmask->sin_addr.s_addr = htonl(mask);
@@ -663,18 +675,21 @@ getaddr(s, sin, sockmask, hpp, name, isnet)
 	struct	ns_addr ns_addr();
 	struct hostent *hp;
 	struct netent *np;
-	u_long val;
+	u_long val = 1;
 
-	if (xnsflag)
-		goto do_xns;
-	*hpp = 0;
-	sin->sin_family = AF_INET;
-	sin->sin_len = sizeof(*sin);
 	if (strcmp(s, "default") == 0) {
 		val = 0;
 		*name = "default";
-		goto out;
 	}
+	if (xnsflag)
+		goto do_xns;
+	if (osiflag)
+		goto do_osi;
+	sin->sin_family = AF_INET;
+	sin->sin_len = sizeof(*sin);
+	if (val == 0)
+		goto out;
+	*hpp = 0;
 	if (isnet == 0) {
 		val = inet_addr(s);
 		if (val != -1) {
@@ -714,6 +729,8 @@ do_xns:
 	bzero((char *)sns, sizeof(*sns));
 	sns->sns_family = AF_NS;
 	sns->sns_len = sizeof (*sns);
+	if (val == 0)
+		return(0);
 	if (sockmask) {
 		extern short ns_bh[3];
 		struct sockaddr_ns *sms = (struct sockaddr_ns *)sockmask;
@@ -722,15 +739,22 @@ do_xns:
 		sms->sns_len = 6;
 		sms->sns_addr.x_net = *(union ns_net *)ns_bh;
 	}
-	if (strcmp(s, "default") == 0) {
-		*name = "default";
-		if (sockmask)
-			sockmask->sin_len = 0;
-		return(0);
-	}
 	*name = s;
 	sns->sns_addr = ns_addr(s);
 	return (!ns_nullhost(sns->sns_addr));
+do_osi:
+    {
+	struct sockaddr_iso *siso = (struct sockaddr_iso *)sin;
+	struct iso_addr iso_addr();
+
+	siso->siso_family = AF_ISO;
+	siso->siso_len = sizeof(*siso);
+	if (val == 0)
+		return (0);
+	*name = s;
+	siso->siso_addr = iso_addr(s);
+	return (1);
+    }
 }
 
 short ns_nullh[] = {0,0,0};
@@ -840,13 +864,13 @@ struct sockaddr_in *dst, *gateway, *mask;
 	if ((rlen = write(s, (char *)&m_rtmsg, len)) < 0) {
 		perror("writing to routing socket");
 		printf("got only %d for rlen\n", rlen);
-		return (rlen);
+		return (-1);
 	}
 again:
 	if ((rlen = read(s, (char *)&m_rtmsg, len)) < 0) {
 		perror("reading from routing socket");
 		printf("got only %d for rlen\n", rlen);
-		return (rlen);
+		return (-1);
 	}
 	if ((m_rtmsg.m_rtm.rtm_pid != pid) ||
 	    (m_rtmsg.m_rtm.rtm_seq != seq)) {
@@ -889,6 +913,8 @@ register struct rt_msghdr *rtm;
 	register struct sockaddr *sa;
 	int i = rtm->rtm_count;
 
+	if (verbose == 0)
+		return;
 	if (rtm->rtm_version != 1) {
 	    printf("routing message version %d not understood\n",
 							rtm->rtm_version);
