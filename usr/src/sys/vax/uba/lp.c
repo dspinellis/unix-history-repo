@@ -1,4 +1,4 @@
-/*	lp.c	4.31	82/12/17	*/
+/*	lp.c	4.32	83/01/03	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -16,6 +16,9 @@
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
+#include "../h/uio.h"
+#include "../h/tty.h"
+#include "../h/kernel.h"
 
 #include "../vaxuba/ubavar.h"
 
@@ -26,11 +29,7 @@
 #define	LPLWAT	650
 #define	LPHWAT	800
 
-#ifndef CAD
 #define MAXCOL	132
-#else
-#define	MAXCOL	512
-#endif
 #define CAP	1
 
 #define LPUNIT(dev) (minor(dev) >> 3)
@@ -47,6 +46,7 @@ struct lp_softc {
 	int	sc_logcol;
 	int	sc_physline;
 	char	sc_flags;
+	short	sc_maxcol;
 	int	sc_lpchar;
 	struct	buf *sc_inbuf;
 } lp_softc[NLP];
@@ -64,7 +64,6 @@ struct uba_driver lpdriver =
 #define	MOD		4	/* device state has been modified */
 #define	ASLP		8	/* awaiting draining of printer */
 
-extern	lbolt;
 int	lptout();
 
 lpattach(ui)
@@ -74,6 +73,10 @@ lpattach(ui)
 
 	sc = &lp_softc[ui->ui_unit];
 	sc->sc_lpchar = -1;
+	if (ui->ui_flags)
+		sc->sc_maxcol = ui->ui_flags;
+	else
+		sc->sc_maxcol = MAXCOL;
 }
 
 lpprobe(reg)
@@ -86,14 +89,9 @@ lpprobe(reg)
 	lpintr(0);
 #endif
 
-#ifdef INGVAX
-	br = 0x14;
-	cvec = 0200;
-#else
 	lpaddr->lpsr = IENABLE;
 	DELAY(5);
 	lpaddr->lpsr = 0;
-#endif
 	return (sizeof (struct lpdevice));
 }
 
@@ -240,7 +238,7 @@ lpcanon(dev, c)
 			lpoutput(dev, '\r');
 			physcol = 0;
 		}
-		if (logcol < MAXCOL) {
+		if (logcol < sc->sc_maxcol) {
 			while (logcol > physcol) {
 				lpoutput(dev, ' ');
 				physcol++;
