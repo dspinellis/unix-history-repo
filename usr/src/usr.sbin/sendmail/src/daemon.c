@@ -15,19 +15,20 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.7 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.8 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <netdb.h>
+# include <sys/signal.h>
 # include <sys/wait.h>
 # include <sys/time.h>
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.7 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.8 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -87,8 +88,8 @@ char	*NetName;			/* name of home (local?) network */
 getrequests()
 {
 	int t;
-	union wait status;
 	register struct servent *sp;
+	extern reapchild();
 
 	/*
 	**  Set up the address for the mailer.
@@ -148,6 +149,8 @@ getrequests()
 		(void) close(DaemonSocket);
 		goto severe;
 	}
+
+	signal(SIGCHLD, reapchild);
 
 # ifdef DEBUG
 	if (tTd(15, 1))
