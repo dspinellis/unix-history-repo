@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)registerd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)registerd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -34,7 +34,6 @@ static char sccsid[] = "@(#)registerd.c	5.1 (Berkeley) %G%";
 #define	RCRYPT		0x00
 #define	CLEAR		0x01
 
-struct	sockaddr_in	sin;
 char	*progname, msgbuf[BUFSIZ];
 
 main(argc, argv)
@@ -46,6 +45,7 @@ main(argc, argv)
 	struct	keyfile_data	*kfile;
 	u_char	code;
 	int	kf, retval, sval;
+	struct	sockaddr_in	sin;
 	char	keyfile[MAXPATHLEN], keybuf[KBUFSIZ];
 	void die();
 
@@ -107,7 +107,7 @@ main(argc, argv)
 
 		switch(code) {
 		case	APPEND_DB:
-			retval = do_append();
+			retval = do_append(&sin);
 			break;
 		case	ABORT:
 			cleanup();
@@ -144,7 +144,8 @@ static	Principal	principal_data[MAX_PRINCIPAL];
 static	C_Block		key, master_key;
 static Key_schedule	master_key_schedule;
 int
-do_append()
+do_append(sinp)
+	struct sockaddr_in *sinp;
 {
 	Principal	default_princ;
 	char		input_name[ANAME_SZ];
@@ -238,7 +239,7 @@ do_append()
 	syslog(LOG_NOTICE, "Kerberos update: wrote new record for %s.%s from %s",
 		principal_data[0].name,
 		principal_data[0].instance,
-		inet_ntoa(sin.sin_addr)
+		inet_ntoa(sinp->sin_addr)
 	);
 
 	return(KSUCCESS);
