@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex.h	5.1 (Berkeley) %G%
+ *	@(#)regex.h	5.2 (Berkeley) %G%
  */
 
 #ifndef _REGEX_H_
@@ -28,12 +28,6 @@ typedef struct {
 	regoff_t rm_eo;		/* end of match */
 } regmatch_t;
 
-int	regcomp __P((regex_t *, const char *, int));
-size_t	regerror __P((int, const regex_t *, char *, size_t));
-int	regexec __P((const regex_t *,
-	    const char *, size_t, regmatch_t [], int));
-void	regfree __P((regex_t *));
-
 /* regcomp() flags */
 #define	REG_EXTENDED	001
 #define	REG_ICASE	002
@@ -46,6 +40,7 @@ void	regfree __P((regex_t *));
 #define	REG_STARTEND	00004
 #define	REG_TRACE	00400	/* debugging tracing */
 #define	REG_LARGE	01000	/* force large state model for debug */
+#define	REG_BACKR	02000
 
 /* errors */
 #define	REG_NOMATCH	(1)
@@ -63,5 +58,15 @@ void	regfree __P((regex_t *));
 #define	REG_BADRPT	(13)
 #define	REG_EMPTY	(14)	/* empty component */
 #define	REG_ASSERT	(15)	/* assertion failure */
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	regcomp __P((regex_t *, const char *, int));
+size_t	regerror __P((int, const regex_t *, char *, size_t));
+int	regexec __P((const regex_t *,
+	    const char *, size_t, regmatch_t [], int));
+void	regfree __P((regex_t *));
+__END_DECLS
 
 #endif /* !_REGEX_H_ */
