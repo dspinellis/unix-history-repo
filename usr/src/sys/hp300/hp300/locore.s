@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.58 91/04/22$
  *
- *	@(#)locore.s	7.10 (Berkeley) %G%
+ *	@(#)locore.s	7.11 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -1110,12 +1110,8 @@ Lnocache0:
 	movw	#PSL_LOWIPL,sr		| lower SPL
 	movl	d7,_boothowto		| save reboot flags
 	movl	d6,_bootdev		|   and boot device
-	movl	a4,d1			| addr of first available RAM
-	moveq	#PGSHIFT,d2
-	lsrl	d2,d1			| convert to click
-	movl	d1,sp@-			| param to main
-	jbsr	_main			| main(firstaddr)
-	addql	#4,sp
+	jbsr	_main			| call main()
+
 /* proc[1] == init now running here;
  * create a null exception frame and return to user mode in icode
  */
@@ -1717,10 +1713,6 @@ Lswnofpsave:
 	jeq	Lbadsw			| panic
 #endif
 	lea	a0@(VM_PMAP),a0		| pmap = &vmspace.vm_pmap
-#ifdef DIAGNOSTIC
-	tstl	a0			| pmap == PMAP_NULL?
-	jeq	Lbadsw			| panic
-#endif
 	tstl	a0@(PM_STCHG)		| pmap->st_changed?
 	jeq	Lswnochg		| no, skip
 	pea	a1@			| push pcb (at p_addr)
