@@ -1,5 +1,5 @@
 /*
- *	@(#)disklabel.h	7.1 (Berkeley) %G%
+ *	@(#)disklabel.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,7 @@
  * disk geometry, filesystem partitions, and drive specific information.
  * The label is in block 0 or 1, possibly offset from the beginning
  * to leave room for a bootstrap, etc.
+ * All fields are stored in "standard" (network) byte order.
  */
 
 #define LABELSECTOR	0		/* sector containing label */
@@ -21,11 +22,103 @@
 #define	MAXPARTITIONS	8
 #endif
 
+
+#ifndef LOCORE
+struct disklabel {
+	u_long	d_magic;		/* the magic number */
+	short	d_type;			/* drive type */
+	short	d_subtype;		/* controller/d_type specific */
+	char	d_typename[16];		/* type name, e.g. "eagle" */
+	char	d_name[16];		/* pack identifier */
+#define	d_swabfirst d_secsize
+
+			/* disk geometry: */
+	u_long	d_secsize;		/* # of bytes per sector */
+	u_long	d_nsectors;		/* # of data sectors per track */
+	u_long	d_ntracks;		/* # of tracks per cylinder */
+	u_long	d_ncylinders;		/* # of data cylinders per unit */
+	u_long	d_secpercyl;		/* # of data sectors per cylinder */
+	u_long	d_secperunit;		/* # of data sectors per unit */
+	/*
+	 * Spares (bad sector replacements) below
+	 * are not counted in d_nsectors or d_secpercyl.
+	 * Spare sectors are assumed to be physical sectors
+	 * which occupy space at the end of each track and/or cylinder.
+	 */
+	u_long	d_sparespertrack;	/* # of spare sectors per track */
+	u_long	d_sparespercyl;		/* # of spare sectors per cylinder */
+	/*
+	 * Alternate cylinders include maintenance, replacement,
+	 * configuration description areas, etc.
+	 */
+	u_long	d_acylinders;		/* # of alt. cylinders per unit */
+
+			/* hardware characteristics: */
+	u_long	d_rpm;			/* rotational speed */
+	/*
+	 * d_interleave, d_trackskew and d_cylskew describe perturbations
+	 * in the media format used to compensate for a slow controller.
+	 * Interleave is physical sector interleave, set up by the formatter
+	 * or controller when formatting.  When interleaving is in use,
+	 * logically adjacent sectors are not physically contiguous,
+	 * but instead are separated by some number of sectors.
+	 * It is specified as the ratio of physical sectors traversed
+	 * per logical sector.  Thus an interleave of 1:1 implies contiguous
+	 * layout, while 2:1 implies that logical sector 0 is separated
+	 * by one sector from logical sector 1.
+	 * d_trackskew is the offset of sector 0 on track N
+	 * relative to sector 0 on track N-1 on the same cylinder.
+	 * Finally, d_cylskew is the offset of sector 0 on cylinder N
+	 * relative to sector 0 on cylinder N-1.
+	 */
+	u_long	d_interleave;		/* hardware sector interleave */
+	u_long	d_trackskew;		/* sector 0 skew, per track */
+	u_long	d_cylskew;		/* sector 0 skew, per cylinder */
+	u_long	d_headswitch;		/* head switch time, usec */
+	u_long	d_trkseek;		/* track-to-track seek, usec */
+	u_long	d_flags;		/* generic flags */
+#define NDDATA 5
+	u_long	d_drivedata[NDDATA];	/* drive-type specific information */
+#define NSPARE 5
+	u_long	d_spare[NSPARE];	/* reserved for future use */
+	u_long	d_magic2;		/* the magic number (again) */
+	u_long	d_checksum;		/* xor of data incl. partitions */
+
+			/* filesystem and partition information: */
+	u_long	d_npartitions;		/* number of partitions in following */
+	u_long	d_bbsize;		/* size of boot area at sn0, bytes */
+	u_long	d_sbsize;		/* max size of fs superblock, bytes */
+#define	d_swablast d_sbsize
+	struct	partition {		/* the partition table */
+		u_long	p_size;		/* number of sectors in partition */
+		u_long	p_offset;	/* starting sector */
+		u_long	p_fsize;	/* filesystem basic fragment size */
+		u_char	p_fstype;	/* filesystem type, see below */
+		u_char	p_frag;		/* filesystem fragments per block */
+		u_short	p_cpg;		/* filesystem cylinders per group */
+	} d_partitions[MAXPARTITIONS];	/* actually may be more */
+};
+#else LOCORE
+	/*
+	 * offsets for asm boot files.
+	 * Warning: all fields in big-endian byte order!
+	 */
+	.set	d_secsize,40
+	.set	d_nsectors,44
+	.set	d_ntracks,48
+	.set	d_ncylinders,52
+	.set	d_secpercyl,56
+	.set	d_secperunit,60
+	.set	d_end_,292		/* size of disk label */
+#endif LOCORE
+
+/* d_type values: */
 #define	DTYPE_SMD		1		/* SMD, XSMD; VAX hp/up */
 #define	DTYPE_MSCP		2		/* MSCP */
 #define	DTYPE_DEC		3		/* other DEC (rk, rl) */
-#define	DTYPE_SCSI		4		/* SCSI/ST506 etc. */
+#define	DTYPE_SCSI		4		/* SCSI */
 #define	DTYPE_ESDI		5		/* ESDI interface */
+#define	DTYPE_ST506		6		/* ST506 etc. */
 #define	DTYPE_FLOPPY		10		/* floppy */
 
 #ifdef DKTYPENAMES
@@ -45,49 +138,6 @@ static char *dktypenames[] = {
 };
 #define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
 #endif
-
-
-#ifndef LOCORE
-struct disklabel {
-	u_long	d_magic;		/* the magic number */
-	short	d_type;			/* drive type */
-	short	d_subtype;		/* controller/d_type specific */
-			/* disk geometry: */
-	u_long	d_secsize;		/* # of bytes per sector */
-	u_long	d_nsectors;		/* # of sectors per track */
-	u_long	d_ntracks;		/* # of tracks per cylinder */
-	u_long	d_ncylinders;		/* # of cylinders per unit */
-	u_long	d_acylinders;		/* # of alt. cylinders per unit */
-	u_long	d_secpercyl;		/* # of sectors per cylinder */
-	u_long	d_secperunit;		/* # of sectors per unit */
-			/* hardware characteristics: */
-	u_long	d_rpm;			/* rotational speed */
-	u_short	d_interleave;		/* hardware sector interleave */
-	u_short	d_sectorskew;		/* sector 0 skew, per track */
-	u_short	d_headswitch;		/* head switch time, usec */
-	u_short	d_trkseek;		/* track-to-track seek, usec */
-	u_long	d_flags;		/* generic flags */
-#define NDDATA 10
-	u_long	d_drivedata[NDDATA];	/* drive-type specific information */
-			/* other identification: */
-	char	d_typename[16];		/* type name, e.g. "eagle" */
-	char	d_name[16];		/* pack identifier */
-	u_long	d_magic2;		/* the magic number (again) */
-	u_short	d_checksum;		/* xor of data incl. partitions */
-			/* filesystem and partition information: */
-	u_short	d_npartitions;		/* number of partitions in following */
-	u_long	d_bbsize;		/* size of boot area at sn0, bytes */
-	u_long	d_sbsize;		/* max size of fs superblock, bytes */
-	struct	partition {		/* the partition table */
-		u_long	p_size;		/* number of sectors in partition */
-		u_long	p_offset;	/* starting sector */
-		u_long	p_fsize;	/* filesystem basic fragment size */
-		u_char	p_fstype;	/* filesystem type, see below */
-		u_char	p_frag;		/* filesystem fragments per block */
-		u_short	p_cpg;		/* filesystem cylinders per group */
-	} d_partitions[MAXPARTITIONS];	/* actually may be more */
-};
-#endif LOCORE
 
 /*
  * Filesystem type and version.
