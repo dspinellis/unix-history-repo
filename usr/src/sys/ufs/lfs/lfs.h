@@ -224,8 +224,9 @@ struct segsum {
 
 /* Write a block and update the inode change times. */
 #define	LFS_UBWRITE(BP) { \
+	USES_VOP_BWRITE; \
 	VTOI((BP)->b_vp)->i_flag |= ICHG | IUPD; \
-	lfs_bwrite(BP); \
+	VOP_BWRITE(BP); \
 }
 
 /*
