@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dol.c 4.2 %G%";
+static	char *sccsid = "@(#)dol.c 4.3 %G%";
 
 #include "sh.h"
 
@@ -281,7 +281,7 @@ Dgetdol()
 	char name[20];
 	int c, sc;
 	int subscr = 0, lwb = 1, upb = 0;
-	bool dimen = 0, isset = 0;
+	bool dimen = 0, bitset = 0;
 	char wbuf[BUFSIZ];
 
 	dolmod = dolmcnt = 0;
@@ -291,17 +291,17 @@ Dgetdol()
 	if ((c & TRIM) == '#')
 		dimen++, c = DgetC(0);		/* $# takes dimension */
 	else if (c == '?')
-		isset++, c = DgetC(0);		/* $? tests existence */
+		bitset++, c = DgetC(0);		/* $? tests existence */
 	switch (c) {
 	
 	case '$':
-		if (dimen || isset)
+		if (dimen || bitset)
 			goto syntax;		/* No $?$, $#$ */
 		setDolp(doldol);
 		goto eatbrac;
 
 	case '<'|QUOTE:
-		if (dimen || isset)
+		if (dimen || bitset)
 			goto syntax;		/* No $?<, $#< */
 		for (np = wbuf; read(OLDSTD, np, 1) == 1; np++) {
 			if (np >= &wbuf[BUFSIZ-1])
@@ -347,7 +347,7 @@ Dgetdol()
 			if (subscr < 0)
 				goto oob;
 			if (subscr == 0) {
-				if (isset) {
+				if (bitset) {
 					dolp = file ? "1" : "0";
 					goto eatbrac;
 				}
@@ -356,7 +356,7 @@ Dgetdol()
 				setDolp(file);
 				goto eatbrac;
 			}
-			if (isset)
+			if (bitset)
 				goto syntax;
 			vp = adrof("argv");
 			if (vp == 0) {
@@ -380,7 +380,7 @@ syntax:
 		unDredc(c);
 		vp = adrof(name);
 	}
-	if (isset) {
+	if (bitset) {
 		dolp = (vp || getenv(name)) ? "1" : "0";
 		goto eatbrac;
 	}

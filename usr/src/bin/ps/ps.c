@@ -1,6 +1,9 @@
-static	char *sccsid = "@(#)ps.c	4.16 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)ps.c	4.17 (Berkeley) %G%";
+#endif
+
 /*
- * ps; VAX 4BSD version
+ * ps
  */
 
 #include <stdio.h>
@@ -9,7 +12,7 @@ static	char *sccsid = "@(#)ps.c	4.16 (Berkeley) %G%";
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/tty.h>
-#include <sys/dir.h>
+#include <dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/pte.h>
@@ -51,7 +54,7 @@ struct	savcom {
 		float	u_pctcpu;
 		struct	vsav *vp;
 		int	s_ssiz;
-		struct	sssav *ssp;	/* RAND 2/81 */
+		struct	sssav *ssp;
 	} sun;
 	struct	asav *ap;
 } *savcom;
@@ -62,7 +65,7 @@ struct	asav {
 	short	a_stat, a_uid, a_pid, a_nice, a_pri, a_slptime, a_time;
 	size_t	a_size, a_rss, a_tsiz, a_txtrss;
 	short	a_xccount;
-	char	a_tty[DIRSIZ+1];
+	char	a_tty[MAXNAMLEN+1];
 	dev_t	a_ttyd;
 	time_t	a_cpu;
 	size_t	a_maxrss;
@@ -76,12 +79,12 @@ struct	lsav {
 	caddr_t	l_wchan;
 };
 
-char	*sshdr;				/* RAND 2/81 */
-struct	sssav {				/* RAND 2/81 */
-	short 	ss_ppid;		/* RAND 2/81 */
-	short	ss_brother;		/* RAND 2/81 */
-	short	ss_sons;		/* RAND 2/81 */
-};					/* RAND 2/81 */
+char	*sshdr;
+struct	sssav {
+	short 	ss_ppid;
+	short	ss_brother;
+	short	ss_sons;
+};
 
 char	*uhdr;
 char	*shdr;
@@ -97,22 +100,21 @@ struct	proc proc[8];		/* 8 = a few, for less syscalls */
 struct	proc *mproc;
 struct	text *text;
 
-int	paduser1;		/* avoid hardware mem clobbering botch */
 union {
 	struct	user user;
 	char	upages[UPAGES][NBPG];
 } user;
 #define u	user.user
-int	paduser2;		/* avoid hardware mem clobbering botch */
 
 #define clear(x) 	((int)x & 0x7fffffff)
 
 int	chkpid;
-int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, ssflg,  /* RAND 2/81 */
+int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, ssflg,
 	nonssflg, uflg, vflg, xflg;
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
-char	*rindex();		/* RAND 2/81 */
+char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
+long	lseek();
 double	pcpu(), pmem();
 int	pscomp();
 int	nswap, maxslp;
@@ -123,7 +125,7 @@ struct	pte *Usrptma, *usrpt;
 int	nproc, ntext, hz;
 
 struct	ttys {
-	char	name[DIRSIZ+1];
+	char	name[MAXNAMLEN+1];
 	dev_t	ttyd;
 	struct	ttys *next;
 	struct	ttys *cand;
@@ -155,14 +157,13 @@ main(argc, argv)
 	}
 	twidth = 80;
 
-	if (ap = rindex(argv[0], '/'))		/* RAND 2/81 */
+	if (ap = rindex(argv[0], '/'))
 		ap++;
 	else
 		ap = argv[0];
 	if (*ap == 's')				/* If name starts with 's' */
 		ssflg++;
 
-	setbuf(stdout, _sobuf);
 	argc--, argv++;
 	if (argc > 0) {
 		ap = argv[0];
@@ -234,7 +235,7 @@ main(argc, argv)
 			break;
 		}
 	}
-	if (ssflg) {			/* RAND 2/81 */
+	if (ssflg) {
 		if (nonssflg) {
 			fprintf (stderr, "Usage: ss [axwS]\n");
 			exit(1);
@@ -253,7 +254,7 @@ main(argc, argv)
 	hz = getw(nl[X_HZ].n_value);
 	savcom = (struct savcom *)calloc(nproc, sizeof (*savcom));
 	for (i=0; i<nproc; i += 8) {
-		klseek(kmem, (char *)procp, 0);
+		klseek(kmem, (long)procp, 0);
 		j = nproc - i;
 		if (j > 8)
 			j = 8;
@@ -285,7 +286,7 @@ main(argc, argv)
 		}
 	}
 	qsort(savcom, npr, sizeof(savcom[0]), pscomp);
-	if (ssflg) {			/* RAND 2/81 */
+	if (ssflg) {
 		walk(npr);
 		exit (npr == 0);
 	}
@@ -317,23 +318,25 @@ main(argc, argv)
 }
 
 getw(loc)
-	off_t loc;
+	unsigned long loc;
 {
 	long word;
 
-	klseek(kmem, loc, 0);
-	if (read(kmem, &word, sizeof (word)) != sizeof (word))
+	klseek(kmem, (long)loc, 0);
+	if (read(kmem, (char *)&word, sizeof (word)) != sizeof (word))
 		printf("error reading kmem at %x\n", loc);
 	return (word);
 }
 
 klseek(fd, loc, off)
-	int fd, loc, off;
+	int fd;
+	long loc;
+	int off;
 {
 
 	if (kflg)
 		loc &= 0x7fffffff;
-	lseek(fd, loc, off);
+	(void) lseek(fd, (long)loc, off);
 }
 
 openfiles(argc, argv)
@@ -384,22 +387,22 @@ getkvars(argc, argv)
 	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
 	usrpt = (struct pte *)nl[X_USRPT].n_value;
 	klseek(kmem, (long)nl[X_NSWAP].n_value, 0);
-	if (read(kmem, &nswap, sizeof (nswap)) != sizeof (nswap)) {
+	if (read(kmem, (char *)&nswap, sizeof (nswap)) != sizeof (nswap)) {
 		cantread("nswap", kmemf);
 		exit(1);
 	}
 	klseek(kmem, (long)nl[X_MAXSLP].n_value, 0);
-	if (read(kmem, &maxslp, sizeof (maxslp)) != sizeof (maxslp)) {
+	if (read(kmem, (char *)&maxslp, sizeof (maxslp)) != sizeof (maxslp)) {
 		cantread("maxslp", kmemf);
 		exit(1);
 	}
 	klseek(kmem, (long)nl[X_CCPU].n_value, 0);
-	if (read(kmem, &ccpu, sizeof (ccpu)) != sizeof (ccpu)) {
+	if (read(kmem, (char *)&ccpu, sizeof (ccpu)) != sizeof (ccpu)) {
 		cantread("ccpu", kmemf);
 		exit(1);
 	}
 	klseek(kmem, (long)nl[X_ECMX].n_value, 0);
-	if (read(kmem, &ecmx, sizeof (ecmx)) != sizeof (ecmx)) {
+	if (read(kmem, (char *)&ecmx, sizeof (ecmx)) != sizeof (ecmx)) {
 		cantread("ecmx", kmemf);
 		exit(1);
 	}
@@ -411,7 +414,7 @@ getkvars(argc, argv)
 			exit(1);
 		}
 		atext = (struct text *)getw(nl[X_TEXT].n_value);
-		klseek(kmem, (int)atext, 0);
+		klseek(kmem, (long)atext, 0);
 		if (read(kmem, (char *)text, ntext * sizeof (struct text))
 		    != ntext * sizeof (struct text)) {
 			cantread("text table", kmemf);
@@ -428,7 +431,7 @@ printhdr()
 		fprintf(stderr, "ps: specify only one of s,l,v and u\n");
 		exit(1);
 	}
-	hdr = ssflg ? sshdr : 		/* RAND 2/81 */
+	hdr = ssflg ? sshdr :
 		(lflg ? lhdr : 
 			(vflg ? vhdr : 
 				(uflg ? uhdr : shdr))); 
@@ -436,7 +439,7 @@ printhdr()
 		hdr += strlen("SSIZ ");
 	cmdstart = strlen(hdr);
 	printf("%s COMMAND\n", hdr);
-	fflush(stdout);
+	(void) fflush(stdout);
 }
 
 cantread(what, fromwhat)
@@ -446,25 +449,21 @@ cantread(what, fromwhat)
 	fprintf(stderr, "ps: error reading %s from %s", what, fromwhat);
 }
 
-struct	direct dbuf;
+struct	direct *dbuf;
 int	dialbase;
 
 getdev()
 {
-	register FILE *df;
-	register struct ttys *dp;
+	register DIR *df;
 
 	dialbase = -1;
-	if ((df = fopen(".", "r")) == NULL) {
+	if ((df = opendir(".")) == NULL) {
 		fprintf(stderr, "Can't open . in /dev\n");
 		exit(1);
 	}
-	while (fread((char *)&dbuf, sizeof(dbuf), 1, df) == 1) {
-		if (dbuf.d_ino == 0)
-			continue;
-		maybetty(dp);
-	}
-	fclose(df);
+	while ((dbuf = readdir(df)) != NULL) 
+		maybetty();
+	closedir(df);
 }
 
 /*
@@ -475,7 +474,7 @@ getdev()
  */
 maybetty()
 {
-	register char *cp = dbuf.d_name;
+	register char *cp = dbuf->d_name;
 	register struct ttys *dp;
 	int x;
 	struct stat stb;
@@ -492,12 +491,12 @@ maybetty()
 
 	case 'd':
 		if (!strcmp(cp, "drum"))
-			return (0);
+			return;
 		break;
 
 	case 'f':
 		if (!strcmp(cp, "floppy"))
-			return (0);
+			return;
 		break;
 
 	case 'k':
@@ -514,34 +513,30 @@ maybetty()
 		if (is(r,p) || is(u,p) || is(r,k) || is(r,m) || is(m,t)) {
 			cp += 2;
 			if (isdigit(*cp) && cp[2] == 0)
-				return (0);
+				return;
 		}
 		break;
 
 	case 'm':
 trymem:
 		if (cp[0] == 'm' && cp[1] == 'e' && cp[2] == 'm' && cp[3] == 0)
-			return (0);
+			return;
 		if (cp[0] == 'm' && cp[1] == 't')
-			return (0);
+			return;
 		break;
 
 	case 'n':
 		if (!strcmp(cp, "null"))
-			return (0);
+			return;
 		break;
 
 	case 'v':
 		if ((cp[1] == 'a' || cp[1] == 'p') && isdigit(cp[2]) &&
 		    cp[3] == 0)
-			return (0);
+			return;
 		break;
 	}
-mightbe:
-	cp = dbuf.d_name;
-	while (cp < &dbuf.d_name[DIRSIZ] && *cp)
-		cp++;
-	--cp;
+	cp = dbuf->d_name + dbuf->d_namlen - 1;
 	x = 0;
 	if (cp[-1] == 'd') {
 		if (dialbase == -1) {
@@ -555,7 +550,7 @@ mightbe:
 		else
 			x = 11;
 	}
-	if (cp > dbuf.d_name && isdigit(cp[-1]) && isdigit(*cp))
+	if (cp > dbuf->d_name && isdigit(cp[-1]) && isdigit(*cp))
 		x += 10 * (cp[-1] - ' ') + cp[0] - '0';
 	else if (*cp >= 'a' && *cp <= 'f')
 		x += 10 + *cp - 'a';
@@ -565,7 +560,7 @@ mightbe:
 		x = -1;
 donecand:
 	dp = (struct ttys *)alloc(sizeof (struct ttys));
-	strncpy(dp->name, dbuf.d_name, DIRSIZ);
+	(void) strcpy(dp->name, dbuf->d_name);
 	dp->next = allttys;
 	dp->ttyd = -1;
 	allttys = dp;
@@ -688,7 +683,7 @@ save()
 		vp->v_pctcpu = pcpu();
 #undef e
 	} else if (uflg) {
-		if (!ssflg) 		/* RAND 2/18 */
+		if (!ssflg)
 			sp->sun.u_pctcpu = pcpu();
 		else {
 			register struct sssav *ssp;
@@ -744,15 +739,13 @@ pcpu()
 getu()
 {
 	struct pte *pteaddr, apte;
-	int pad1;	/* avoid hardware botch */
 	struct pte arguutl[UPAGES+CLSIZE];
-	int pad2;	/* avoid hardware botch */
 	register int i;
 	int ncl, size;
 
 	size = sflg ? ctob(UPAGES) : sizeof (struct user);
 	if ((mproc->p_flag & SLOAD) == 0) {
-		lseek(swap, ctob(mproc->p_swaddr), 0);
+		(void) lseek(swap, (long)ctob(mproc->p_swaddr), 0);
 		if (read(swap, (char *)&user.user, size) != size) {
 			fprintf(stderr, "ps: cant read u for pid %d from %s\n",
 			    mproc->p_pid, swapf);
@@ -765,14 +758,15 @@ getu()
 	if (kflg)
 		mproc->p_p0br = (struct pte *)clear(mproc->p_p0br);
 	pteaddr = &Usrptma[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
-	klseek(kmem, pteaddr, 0);
+	klseek(kmem, (long)pteaddr, 0);
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
 		printf("ps: cant read indir pte to get u for pid %d from %s\n",
 		    mproc->p_pid, swapf);
 		return (0);
 	}
-	lseek(mem,
-	    ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte), 0);
+	(void) lseek(mem,
+	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte),
+		0);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
 		printf("ps: cant read page table for u of pid %d from %s\n",
 		    mproc->p_pid, swapf);
@@ -786,7 +780,7 @@ getu()
 	ncl = (size + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
 	while (--ncl >= 0) {
 		i = ncl * CLSIZE;
-		lseek(mem, ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
+		(void) lseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
 		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
 			printf("ps: cant read page %d of u of pid %d from %s\n",
 			    arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, memf);
@@ -800,12 +794,10 @@ char *
 getcmd()
 {
 	char cmdbuf[BUFSIZ];
-	int pad1;		/* avoid hardware botch */
 	union {
 		char	argc[CLSIZE*NBPG];
 		int	argi[CLSIZE*NBPG/sizeof (int)];
 	} argspac;
-	int pad2;		/* avoid hardware botch */
 	register char *cp;
 	register int *ip;
 	char c;
@@ -815,17 +807,17 @@ getcmd()
 	if (mproc->p_stat == SZOMB || mproc->p_flag&(SSYS|SWEXIT))
 		return ("");
 	if (cflg) {
-		strncpy(cmdbuf, u.u_comm, sizeof (u.u_comm));
+		(void) strncpy(cmdbuf, u.u_comm, sizeof (u.u_comm));
 		return (savestr(cmdbuf));
 	}
 	if ((mproc->p_flag & SLOAD) == 0 || argaddr == 0) {
 		vstodb(0, CLSIZE, &u.u_smap, &db, 1);
-		lseek(swap, ctob(db.db_base), 0);
+		(void) lseek(swap, (long)ctob(db.db_base), 0);
 		if (read(swap, (char *)&argspac, sizeof(argspac))
 		    != sizeof(argspac))
 			goto bad;
 	} else {
-		lseek(mem, argaddr, 0);
+		(void) lseek(mem, (long)argaddr, 0);
 		if (read(mem, (char *)&argspac, sizeof (argspac))
 		    != sizeof (argspac))
 			goto bad;
@@ -859,11 +851,11 @@ getcmd()
 	while (*--cp == ' ')
 		*cp = 0;
 	cp = (char *)ip;
-	strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG] - cp);
+	(void) strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG] - cp);
 	if (cp[0] == '-' || cp[0] == '?' || cp[0] <= ' ') {
-		strcat(cmdbuf, " (");
-		strncat(cmdbuf, u.u_comm, sizeof(u.u_comm));
-		strcat(cmdbuf, ")");
+		(void) strcat(cmdbuf, " (");
+		(void) strncat(cmdbuf, u.u_comm, sizeof(u.u_comm));
+		(void) strcat(cmdbuf, ")");
 	}
 /*
 	if (xflg == 0 && gflg == 0 && tptr == 0 && cp[0] == '-')
@@ -875,9 +867,9 @@ bad:
 	fprintf(stderr, "ps: error locating command name for pid %d\n",
 	    mproc->p_pid);
 retucomm:
-	strcpy(cmdbuf, " (");
-	strncat(cmdbuf, u.u_comm, sizeof (u.u_comm));
-	strcat(cmdbuf, ")");
+	(void) strcpy(cmdbuf, " (");
+	(void) strncat(cmdbuf, u.u_comm, sizeof (u.u_comm));
+	(void) strcat(cmdbuf, ")");
 	return (savestr(cmdbuf));
 }
 
@@ -1121,7 +1113,7 @@ getname(uid)
 			continue;
 		if (names[pw->pw_uid][0])
 			continue;
-		strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
+		(void) strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
 		if (pw->pw_uid == uid)
 			return (&names[uid][0]);
 	}
@@ -1141,7 +1133,7 @@ alloc(size)
 	register int i;
 
 	if (size > nleft) {
-		freebase = (char *)sbrk(i = size > 2048 ? size : 2048);
+		freebase = (char *)sbrk((int)(i = size > 2048 ? size : 2048));
 		if (freebase == 0) {
 			fprintf(stderr, "ps: ran out of memory\n");
 			exit(1);
@@ -1165,7 +1157,7 @@ savestr(cp)
 
 	len = strlen(cp);
 	dp = (char *)alloc(len+1);
-	strcpy(dp, cp);
+	(void) strcpy(dp, cp);
 	return (dp);
 }
 
@@ -1236,7 +1228,6 @@ walkpr(a, depth)
 	register struct savcom *a;
 	int depth;
 {
-	long tm;
 
 	if(!depth) {
 		printf("%-2.2s", a->ap->a_tty);

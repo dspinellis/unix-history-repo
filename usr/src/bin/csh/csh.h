@@ -1,4 +1,4 @@
-/* csh.h 4.3 %G% */
+/* csh.h 4.4 %G% */
 
 #include "sh.local.h"
 #ifdef VMUNIX
@@ -14,7 +14,7 @@
  * Jim Kulp, IIASA, Laxenburg Austria
  * April, 1980
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 
 #define	isdir(d)	((d.st_mode & S_IFMT) == S_IFDIR)
