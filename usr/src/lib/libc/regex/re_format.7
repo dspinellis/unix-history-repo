@@ -1,5 +1,5 @@
-.\" Copyright (c) 1992 Henry Spencer.
-.\" Copyright (c) 1992, 1993
+.\" Copyright (c) 1992, 1993, 1994 Henry Spencer.
+.\" Copyright (c) 1992, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)re_format.7	8.1 (Berkeley) %G%
+.\"	@(#)re_format.7	8.2 (Berkeley) %G%
 .\"
 .TH RE_FORMAT 7 ""
 .SH NAME
@@ -143,12 +143,14 @@ There are two special cases\(dg of bracket expressions:
 the bracket expressions `[[:<:]]' and `[[:>:]]' match the null string at
 the beginning and end of a word respectively.
 A word is defined as a sequence of
-.I alnum
-characters (as defined by
-.IR ctype (3))
+word characters
 which is neither preceded nor followed by
+word characters.
+A word character is an
 .I alnum
-characters.
+character (as defined by
+.IR ctype (3))
+or an underscore.
 This is an extension,
 compatible with but not specified by POSIX 1003.2,
 and should be used with
@@ -237,3 +239,5 @@ Avoid using them.
 1003.2's specification of case-independent matching is vague.
 The ``one case implies all cases'' definition given above
 is current consensus among implementors as to the right interpretation.
+.PP
+The syntax for word boundaries is incredibly ugly.

@@ -1,5 +1,5 @@
-.\" Copyright (c) 1992 Henry Spencer.
-.\" Copyright (c) 1992, 1993
+.\" Copyright (c) 1992, 1993, 1994 Henry Spencer.
+.\" Copyright (c) 1992, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -7,13 +7,13 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)regex.3	8.1 (Berkeley) %G%
+.\"	@(#)regex.3	8.2 (Berkeley) %G%
 .\"
+.TH REGEX 3 ""
 .de ZR
 .\" one other place knows this name:  the SEE ALSO section
 .IR re_format (7) \\$1
 ..
-.TH REGEX 3 ""
 .SH NAME
 regcomp, regexec, regerror, regfree \- regular-expression library
 .SH SYNOPSIS
@@ -456,8 +456,8 @@ REG_ASSERT	``can't happen''\(emyou found a bug
 REG_INVARG	invalid argument, e.g. negative-length string
 .fi
 .SH HISTORY
-Written by Henry Spencer at University of Toronto,
-henry@zoo.toronto.edu.
+Originally written by Henry Spencer at University of Toronto.
+Altered for inclusion in the 4.4BSD distribution.
 .SH BUGS
 This is an alpha release with known defects.
 Please report problems.
