@@ -1,6 +1,6 @@
 #
 
-static	char	*SccsID[] = "@(#)config.c	1.1 %G%";
+static	char	*SccsID[] = "@(#)config.c	1.2 %G%";
 
 /*
  * This file contains definitions of network data used by Mail
@@ -24,6 +24,10 @@ char	*metanet = "!^:%@.";
  * not all accessible hosts need be here (fortunately).
  */
 struct netmach netmach[] = {
+	"c70",		'7',		AN|SN,
+	"berkeley",	'7',		AN|SN,
+	"berk-c70",	'7',		AN|SN,
+	"ucb-c70",	'7',		AN|SN,
 	"a",		'a',		SN,
 	"b",		'b',		SN,
 	"c",		'c',		SN,
@@ -31,9 +35,8 @@ struct netmach netmach[] = {
 	"e",		'e',		SN,
 	"f",		'f',		SN,
 	"g",		'g',		SN,
-	"ingres",	'i',		AN|SN,
-	"ing70",	'i',		AN|SN,
-	"berkeley",	'i',		AN|SN,
+	"ingres",	'i',		SN,
+	"ing70",	'i',		SN,
 	"ingvax",	'j',		SN|BN,
 	"virus",	'k',		SN,
 	"vlsi",		'l',		SN,
@@ -50,7 +53,6 @@ struct netmach netmach[] = {
 	"ucb",		'v',		BN|SN,
 	"ucbvax",	'v',		BN|SN,
 	"onyx",		'x',		SN,
-	"vax135",	'X',		BN,
 	"cory",		'y',		SN,
 	"eecs40",	'z',		SN,
 	0,		0,		0
