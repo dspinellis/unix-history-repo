@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.23	82/08/10	*/
+/*	ffs_inode.c	4.24	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #ifdef QUOTA
 #include "../h/quota.h"
 #endif
+#include "../h/kernel.h"
 
 #define	INOHSZ	63
 #if	((INOHSZ&(INOHSZ-1)) == 0)
@@ -250,7 +251,7 @@ irele(ip)
 			ip->i_dquot = NODQUOT;
 #endif
 		}
-		IUPDAT(ip, &time, &time, 0);
+		IUPDAT(ip, &time.tv_sec, &time.tv_sec, 0);
 		iunlock(ip);
 		ip->i_flag = 0;
 		/*
@@ -308,7 +309,7 @@ iupdat(ip, ta, tm, waitfor)
 		if (ip->i_flag&IUPD)
 			ip->i_mtime = *tm;
 		if (ip->i_flag&ICHG)
-			ip->i_ctime = time;
+			ip->i_ctime = time.tv_sec;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
 		dp = bp->b_un.b_dino + itoo(fp, ip->i_number);
 		dp->di_ic = ip->i_ic;
@@ -359,7 +360,7 @@ itrunc(ip, length)
 	for (i = 0; i < NIADDR; i++)
 		itmp.i_ib[i] = 0;
 	itmp.i_flag |= ICHG|IUPD;
-	iupdat(&itmp, &time, &time, 1);
+	iupdat(&itmp, &time.tv_sec, &time.tv_sec, 1);
 	ip->i_flag &= ~(IUPD|IACC|ICHG);
 
 	/*
