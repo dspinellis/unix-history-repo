@@ -1,0 +1,208 @@
+The following text was written by someone at IBM to describe an older
+version of the code for dumping on AIX.
+
+I couldn't understand the code, and I can't fully understand this text
+either.  I rewrote the code to use the same basic principles, as far
+as I understood them, but more cleanly.  It does not always work.
+
+It seems that the IBM dumping code was simply set up to detect when
+the dumped data cannot be used, and in that case to act approximately
+as if CANNOT_DUMP had been defined all along.  (This is buried in
+paragraph 1.)  It seems simpler just to define CANNOT_DUMP, since
+Emacs is not set up to decide at run time whether there is dumping or
+not, and doing so correctly would be a lot of work.
+
+Note that much of the other information, such as the name and format 
+of the dumped data file, has been changed.
+
+
+		--rms
+
+
+
+        A different approach has been taken to implement the
+"dump/load" feature of GNU Emacs for AIX 3.1.  Traditionally the
+unexec function creates a new a.out executable file which contains
+preloaded Lisp code.  Executing the new a.out file (normally called
+xemacs) provides rapid startup since the standard suite of Lisp code
+is preloaded as part of the executable file.
+
+        AIX 3.1 architecture precludes the use of this technique
+because the dynamic loader cannot guarantee a fixed starting location
+for the process data section.  The loader loads all shared library
+data BEFORE process data.  When a shared library changes its data
+space, the process initial data section address (_data) will change
+and all global process variables are automatically relocated to new
+addresses.  This invalidates the "dumped" Emacs executable which has
+data addresses which are not relocatable and now corrupt.  Emacs would
+fail to execute until rebuilt with the new libraries.
+
+        To circumvent the dynamic loader feature of AIX 3.1, the dump process
+has been modified as follows:
+
+        1) A new executable file is NOT created.  Instead, both pure and
+           impure data are saved by the dump function and automatically
+           reloaded during process initialization.  If any of the saved data
+           is unavailable or invalid, loadup.el will be automatically loaded.
+
+        2) Pure data is defined as a shared memory segment and attached
+           automatically as read-only data during initialization.  This
+           allows the pure data to be a shared resource amoung all Emacs
+           processes.  The shared memory segment size is PURESIZE bytes.
+           If the shared memory segment is unavailable or invalid, a new
+           shared memory segment is created and the impure data save file
+           is destroyed, forcing loadup.el to be reloaded.
+
+        3) The ipc key used to create and access Emacs shared memory is
+           SHMKEY and can be overridden by the environment symbol EMACSSHMKEY.
+           Only one ipc key is allowed per system.  The environment symbol
+           is provided in case the default ipc key has already been used.
+
+        4) Impure data is written to the ../bin/.emacs.data file by the
+           dump function.  This file contains the process' impure data
+           at the moment of load completion.  During Emacs initialization,
+           the process' data section is expanded and overwritten
+           with the .emacs.data file contents.
+
+        The following are software notes concerning the GNU Emacs dump function under AIX 3.1:
+
+        1) All of the new dump/load code is activated by the #ifdef SHMKEY
+           conditional.
+
+        2) The automatic loading of loadup.el does NOT cause the dump function
+           to be performed.  Therefore once the pure/impure data is discarded,
+           someone must remake Emacs to create the saved data files.  This
+           should only be necessary when Emacs is first installed or whenever
+           AIX is upgraded.
+
+        3) Emacs will exit with an error if executed in a non-X environment
+           and the dump function was performed within a X window.  Therefore
+           the dump function should always be performed in a non-X
+           environment unless the X environment will ALWAYS be available.
+
+        4) Emacs only maintains the lower 24 bits of any data address.  The
+           remaining upper 8 bits are reset by the XPNTR macro whenever any
+           Lisp object is referenced.  This poses a serious problem because
+           pure data is stored in segment 3 (shared memory) and impure data
+           is stored in segment 2 (data).  To reset the upper 8 address bits
+           correctly, XPNTR must guess as to which type of data is represented
+           by the lower 24 address bits.  The technique chosen is based upon
+           the fact that pure data offsets in segment 3 range from
+           0 -> PURESIZE-1, which are relatively small offsets.  Impure data
+           offsets in segment 2 are relatively large (> 0x40000) because they
+           must follow all shared library data.  Therefore XPNTR adds segment
+           3 to each data offset which is small (below PURESIZE) and adds
+           segment 2 to all other offsets.  This algorithm will remain valid
+           as long as a) pure data size remains relatively small and b) process
+           data is loaded after shared library data.
+
+           To eliminate this guessing game, Emacs must preserve the 32-bit
+           address and add additional data object overhead for the object type
+           and garbage collection mark bit.
+
+        5) The data section written to .emacs.data is divided into three
+           areas as shown below.  The file header contains four character
+           pointers which are used during automatic data loading.  The file's
+           contents will only be used if the first three addresses match
+           their counterparts in the current process.  The fourth address is
+           the new data segment address required to hold all of the preloaded
+           data.
+
+
+                        .emacs.data file format
+
+                +---------------------------------------+ \
+                |     address of _data                  |  \
+                +---------------------------------------+   \
+                |     address of _end                   |    \
+                +---------------------------------------+      file header
+                |     address of initial sbrk(0)        |    /
+                +---------------------------------------+   /
+                |     address of final sbrk(0)          |  /
+                +---------------------------------------+ /
+                \                                       \
+                \                                       \
+                      all data to be loaded from
+                      _data to _end
+                \                                       \
+                \                                       \
+                +---------------------------------------+
+                \                                       \
+                \                                       \
+                      all data to be loaded from
+                      initial to final sbrk(0)
+                \                                       \
+                +---------------------------------------+
+
+
+           Sections two and three contain the preloaded data which is
+           resotred at locations _data and initial sbrk(0) respectively.
+
+           The reason two separate sections are needed is that process
+           initialization allocates data (via malloc) prior to main()
+           being called.  Therefore _end is several kbytes lower than
+           the address returned by an initial sbrk(0).  This creates a
+           hole in the process data space and malloc will abort if this
+           region is overwritten during the load function.
+
+           One further complication with the malloc'd space is that it
+           is partially empty and must be "consumed" so that data space
+           malloc'd in the future is not assigned to this region.  The malloc
+           function distributed with Emacs anticipates this problem but the
+           AIX 3.1 version does not.  Therefore, repeated malloc calls are
+           needed to exhaust this initial malloc space.  How do you know
+           when malloc has exhausted its free memroy? You don't!  So the
+           code must repeatedly call malloc for each buffer size and
+           detect when a new memory page has been allocated.  Once the new
+           memory page is allocated, you can calculate the number of free
+           buffers in that page and request exactly that many more.  Future
+           malloc requests will now be added at the top of a new memory page.
+
+           One final point - the initial sbrk(0) is the value of sbrk(0)
+           after all of the above malloc hacking has been performed.
+
+
+        The following Emacs dump/load issues need to be addressed:
+
+        1) Loadup.el exits with an error message because the xemacs and
+           emacs-xxx files are not created during the dump function.
+
+           Loadup.el should be changed to check for the new .emacs.data
+           file.
+
+        2) Dump will only support one .emacs.data file for the entire
+           system.  This precludes the ability to allow each user to
+           define his/her own "dumped" Emacs.
+
+           Add an environment symbol to override the default .emacs.data
+           path.
+
+        3) An error message "error in init file" is displayed out of
+           startup.el when the dumped Emacs is invoked by a non-root user.
+           Although all of the preloaded Lisp code is present, the important
+           purify-flag has not been set back to Qnil - precluding the
+           loading of any further Lisp code until the flag is manually
+           reset.
+
+           The problem appears to be an access violation which will go
+           away if the read-write access modes to all of the files are
+           changed to rw-.
+
+        4) In general, all file access modes should be changed from
+           rw-r--r-- to rw-rw-rw-.  They are currently setup to match
+           standard AIX access modes.
+
+        5) The dump function is not invoked when the automatic load of
+           loadup.el is performed.
+
+           Perhaps the command arguments array should be expanded with
+           "dump" added to force an automatic dump.
+
+        6) The automatic initialization function alloc_shm will delete
+           the shared memory segment and .emacs.data file if the "dump"
+           command argument is found in ANY argument position.  The
+           dump function will only take place in loadup.el if "dump"
+           is the third or fourth command argument.
+
+           Change alloc_shm to live by loadup.el rules.
+
