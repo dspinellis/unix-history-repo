@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)func.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)func.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -179,21 +179,6 @@ dologin(v)
 	untty();
 	exit(1);
 }
-
-#ifdef NEWGRP
-donewgrp(v)
-	char **v;
-{
-
-	if (chkstop == 0 && setintr)
-		panystop(0);
-	(void) signal(SIGTERM, parterm);
-	execl("/bin/newgrp", "newgrp", v[1], 0);
-	execl("/usr/bin/newgrp", "newgrp", v[1], 0);
-	untty();
-	exit(1);
-}
-#endif
 
 islogin()
 {

@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exec.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)exec.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include <sys/dir.h>
+#include <syspaths.h>
 
 /*
  * C shell
@@ -210,19 +211,15 @@ texec(f, t)
 		 */
 		v = adrof1("shell", &aliases);
 		if (v == 0) {
-#ifdef OTHERSH
 			register int ff = open(f, 0);
 			char ch;
-#endif
 
 			vp = lastsh;
-			vp[0] = adrof("shell") ? value("shell") : SHELLPATH;
+			vp[0] = adrof("shell") ? value("shell") : _PATH_CSHELL;
 			vp[1] = (char *) NULL;
-#ifdef OTHERSH
 			if (ff != -1 && read(ff, &ch, 1) == 1 && ch != '#')
-				vp[0] = OTHERSH;
+				vp[0] = _PATH_BSHELL;
 			(void) close(ff);
-#endif
 		} else
 			vp = v->vec;
 		t[0] = f;
