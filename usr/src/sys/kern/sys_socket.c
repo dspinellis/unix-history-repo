@@ -1,4 +1,4 @@
-/*	sys_socket.c	4.2	83/06/11	*/
+/*	sys_socket.c	4.3	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,9 +16,9 @@
 #include "../net/if.h"
 #include "../net/route.h"
 
-int	soo_rw(), soo_ioctl(), soo_select(), soo_stat(), soo_close();
+int	soo_rw(), soo_ioctl(), soo_select(), soo_close();
 struct	fileops socketops =
-    { soo_rw, soo_ioctl, soo_select, soo_stat, soo_close };
+    { soo_rw, soo_ioctl, soo_select, soo_close };
 
 soo_rw(fp, rw, uio)
 	struct file *fp;
@@ -130,11 +130,10 @@ soo_select(fp, which)
 	return (0);
 }
 
-soo_stat(fp, ub)
-	struct file *fp;
+soo_stat(so, ub)
+	register struct socket *so;
 	register struct stat *ub;
 {
-	register struct socket *so = (struct socket *)fp->f_data;
 
 	bzero((caddr_t)ub, sizeof (*ub));
 #ifdef notdef
@@ -152,4 +151,23 @@ soo_close(fp)
 
 	fp->f_data = 0;
 	return (error);
+}
+
+/*ARGSUSED*/
+soo_lock(so, pf, how)
+	struct socket *so;
+	u_char *pf;
+	int how;
+{
+
+	return (EOPNOTSUPP);
+}
+
+/*ARGSUSED*/
+soo_unlock(so, flags)
+	struct socket *so;
+	int flags;
+{
+
+	panic("soo_unlock");
 }

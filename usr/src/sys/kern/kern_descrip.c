@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.24	83/05/27	*/
+/*	kern_descrip.c	5.25	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/mount.h"
+#include "../h/stat.h"
 
 #include "../h/ioctl.h"
 
@@ -242,16 +243,51 @@ close()
 		int	i;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
+	register u_char *pf;
 
 	fp = getf(uap->i);
 	if (fp == 0)
 		return;
-	if (u.u_pofile[uap->i] & UF_MAPPED)
+	pf = (u_char *)&u.u_pofile[uap->i];
+	if (*pf & UF_MAPPED)
 		munmapfd(uap->i);
-	closef(fp, u.u_pofile[uap->i]);
+	if (*pf & (UF_SHLOCK|UF_EXLOCK))
+		unlockf(fp, pf);
+	closef(fp);
 	/* WHAT IF u.u_error ? */
 	u.u_ofile[uap->i] = NULL;
-	u.u_pofile[uap->i] = 0;
+	*pf = 0;
+}
+
+fstat()
+{
+	register struct file *fp;
+	register struct a {
+		int	fdes;
+		struct	stat *sb;
+	} *uap;
+	struct stat ub;
+
+	uap = (struct a *)u.u_ap;
+	fp = getf(uap->fdes);
+	if (fp == 0)
+		return;
+	switch (fp->f_type) {
+
+	case DTYPE_INODE:
+		u.u_error = ino_stat((struct inode *)fp->f_data, &ub);
+		break;
+
+	case DTYPE_SOCKET:
+		u.u_error = soo_stat((struct socket *)fp->f_data, &ub);
+		break;
+
+	default:
+		panic("fstat");
+		/*NOTREACHED*/
+	}
+	if (u.u_error == 0)
+		u.u_error = copyout(&ub, uap->sb, sizeof (ub));
 }
 
 /*
@@ -344,9 +380,8 @@ getf(f)
  * forcing a gc() to happen sometime soon, rather
  * than running one each time.
  */
-closef(fp, flags)
+closef(fp)
 	register struct file *fp;
-	int flags;					/* XXX */
 {
 
 	if (fp == NULL)
@@ -357,6 +392,73 @@ closef(fp, flags)
 			unp_gc();
 		return;
 	}
-	(*fp->f_ops->fo_close)(fp, flags);
+	(*fp->f_ops->fo_close)(fp);
 	fp->f_count = 0;
+}
+
+/*
+ * Apply an advisory lock on a file descriptor.
+ */
+flock()
+{
+	register struct a {
+		int	fd;
+		int	how;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+	register u_char *pf;
+	int cmd;
+
+	fp = getf(uap->fd);
+	if (fp == NULL)
+		return;
+	cmd = uap->how;
+	pf = (u_char *)&u.u_pofile[uap->fd];
+	if (cmd & LOCK_UN) {
+		unlockf(fp, pf);
+		return;
+	}
+	/*
+	 * No reason to write lock a file we've already
+	 * write locked, similarly with a read lock.
+	 */
+	if ((*pf & UF_EXLOCK) && (cmd & LOCK_EX) ||
+	    (*pf & UF_SHLOCK) && (cmd & LOCK_SH))
+		return;
+	switch (fp->f_type) {
+
+	case DTYPE_INODE:
+		u.u_error = ino_lock((struct inode *)fp->f_data, pf, cmd);
+		break;
+
+	case DTYPE_SOCKET:
+		u.u_error = soo_lock((struct socket *)fp->f_data, pf, cmd);
+		break;
+
+	default:
+		panic("lockf");
+	}
+}
+
+unlockf(fp, pf)
+	register struct file *fp;
+	register u_char *pf;
+{
+
+	if ((*pf & (UF_SHLOCK|UF_EXLOCK)) == 0)
+		return;
+	switch (fp->f_type) {
+
+	case DTYPE_INODE:
+		ino_unlock((struct inode *)fp->f_data, *pf);
+		break;
+
+	case DTYPE_SOCKET:
+		soo_unlock((struct socket *)fp->f_data, *pf);
+		break;
+
+	default:
+		panic("unlockf");
+	}
+	*pf &= ~(UF_SHLOCK|UF_EXLOCK);
 }
