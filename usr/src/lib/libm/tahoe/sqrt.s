@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sqrt.s	1.2	(ucb.elefunt)	%G%"
+.asciz	"@(#)sqrt.s	1.3	(ucb.elefunt)	%G%"
 
 /*
  * double sqrt(arg)   revised August 15,1982
@@ -21,14 +21,14 @@ _sccsid:
  * if(arg<0.0) { _errno = EDOM; return(<a reserved operand>); }
  * if arg is a reserved operand it is returned as it is
  * W. Kahan's magic square root
- * coded by Heidi Stettner and revised by Emile LeBlanc 8/18/82
- * adapted to run on the CCI 6/32 by Z. Alex Liu 7/11/87
+ * Coded by Heidi Stettner and revised by Emile LeBlanc 8/18/82.
+ * Re-coded in tahoe assembly language by Z. Alex Liu 7/13/87.
  *
  * entry points:_d_sqrt		address of double arg is on the stack
  *		_sqrt		double arg is on the stack
  */
 	.text
-	.align	1
+	.align	2
 	.globl	_sqrt
 	.globl	_d_sqrt
 	.globl	libm$dsqrt_r5
@@ -49,10 +49,10 @@ _sqrt:
 	ret			# biased exponent is zero -> 0 or reserved op.
 /*
  *				# internal procedure
+ *				# ENTRY POINT FOR cdabs and cdsqrt
  */
-libm$dsqrt_r5:			# ENTRY POINT FOR cdabs and cdsqrt
-	.word	0x0000		# returns double square root scaled by
-				# 2^r6
+libm$dsqrt_r5:			# returns double square root scaled by 2^r6
+	.word	0x0000		# save nothing
 2:	ldd	r0
 	std	r4
 	bleq	nonpos		# argument is not positive

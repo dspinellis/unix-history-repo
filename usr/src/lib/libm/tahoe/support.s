@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-	.asciz	"@(#)support.s	1.1	(ucb.elefunt)	%G%"
+	.asciz	"@(#)support.s	1.2	(ucb.elefunt)	%G%"
 /*
  * copysign(x,y),
  * logb(x),
@@ -29,7 +29,7 @@ _sccsid:
  */
 	.globl	_copysign
 	.text
-	.align	1
+	.align	2
 _copysign:
 	.word	0x0004			# save r2
 	movl	8(fp),r1
@@ -46,9 +46,9 @@ _copysign:
  */
 	.globl	_logb
 	.text
-	.align	1
+	.align	2
 _logb:
-	.word	0x0000
+	.word	0x0000			# save nothing
 	andl3	$0x7f800000,4(fp),r0	# r0[b23:b30] = biased exponent of x
 	beql    1f
 	shrl	$23,r0,r0		# r0[b0:b7] = biased exponent of x
@@ -68,9 +68,9 @@ _logb:
  */
 	.globl	_finite
 	.text
-	.align	1
+	.align	2
 _finite:
-	.word	0x0000
+	.word	0x0000			# save nothing
 	andl3	$0xff800000,4(fp),r0	# r0 = sign of x & its biased exponent
 	cmpl	r0,$0x80000000		# is x a reserved op?
 	beql	1f			# if so, return FALSE (0)
@@ -85,9 +85,9 @@ _finite:
 	.globl	_scalb
 	.set	ERANGE,34
 	.text
-	.align	1
+	.align	2
 _scalb:
-	.word	0x000c
+	.word	0x000c			# save r2-r3
 	movl	8(fp),r1
 	movl	4(fp),r0		# r0:r1 = x (-128 <= Ex <= 126)
 	andl3	$0x7f800000,r0,r3	# r3[b23:b30] = biased exponent of x
@@ -122,7 +122,7 @@ _scalb:
 	.globl	_drem
 	.set	EDOM,33
 	.text
-	.align	1
+	.align	2
 _drem:
 	.word	0x1ffc			# save r2-r12
 	movl	16(fp),r3
