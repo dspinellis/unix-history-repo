@@ -25,16 +25,18 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <syslog.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -52,23 +54,103 @@ int debug = 1;
 #else
 int debug = 0;
 #endif
+struct hadr {
+	u_long	ha_sad;
+	struct hadr *ha_next;
+};
+struct hadr hphead;
 
 /*
  * Nfs server daemon mostly just a user context for nfssvc()
  * 1 - do file descriptor and signal cleanup
  * 2 - create server socket
  * 3 - register socket with portmap
- * 4 - nfssvc(sock)
+ * For SOCK_DGRAM, just fork children and send them into the kernel
+ * by calling nfssvc()
+ * For connection based sockets, loop doing accepts. When you get a new socket
+ * from accept, fork a child that drops into the kernel via. nfssvc.
+ * This child will return from nfssvc when the connection is closed, so
+ * just shutdown() and exit().
+ * The arguments are:
+ * -t - support tcp nfs clients
+ * -u - support udp nfs clients
  */
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
 	register int i;
-	int cnt, sock;
-	struct sockaddr_in saddr;
-	u_long msk, mtch;
+	register char *cp, *cp2;
+	register struct hadr *hp;
+	int udpcnt, sock, msgsock, tcpflag = 0, udpflag = 0, ret, len;
+	char opt;
+	union wait chldstat;
+	extern int optind;
+	extern char *optarg;
+	struct sockaddr_in saddr, msk, mtch, peername;
 
+	while ((opt = getopt(argc, argv, "t:u:")) != EOF)
+		switch (opt) {
+		case 't':
+			tcpflag++;
+			if (cp = index(optarg, ',')) {
+				*cp++ = '\0';
+				msk.sin_addr.s_addr = inet_addr(optarg);
+				if (msk.sin_addr.s_addr == -1)
+					usage();
+				if (cp2 = index(cp, ','))
+					*cp2++ = '\0';
+				mtch.sin_addr.s_addr = inet_addr(cp);
+				if (mtch.sin_addr.s_addr == -1)
+					usage();
+				cp = cp2;
+				hphead.ha_next = (struct hadr *)0;
+				while (cp) {
+					if (cp2 = index(cp, ','))
+						*cp2++ = '\0';
+					hp = (struct hadr *)
+						malloc(sizeof (struct hadr));
+					hp->ha_sad = inet_addr(cp);
+					if (hp->ha_sad == -1)
+						usage();
+					hp->ha_next = hphead.ha_next;
+					hphead.ha_next = hp;
+					cp = cp2;
+				}
+			} else
+				usage();
+			break;
+		case 'u':
+			udpflag++;
+			if (cp = index(optarg, ',')) {
+				*cp++ = '\0';
+				msk.sin_addr.s_addr = inet_addr(optarg);
+				if (msk.sin_addr.s_addr == -1)
+					usage();
+				if (cp2 = index(cp, ','))
+					*cp2++ = '\0';
+				mtch.sin_addr.s_addr = inet_addr(cp);
+				if (mtch.sin_addr.s_addr == -1)
+					usage();
+				if (cp2)
+					udpcnt = atoi(cp2);
+				if (udpcnt < 1 || udpcnt > 20)
+					udpcnt = 1;
+			} else
+				usage();
+			break;
+		default:
+		case '?':
+			usage();
+		};
+	if (optind == 1) {
+		if (argc > 1)
+			udpcnt = atoi(*++argv);
+		if (udpcnt < 1 || udpcnt > 20)
+			udpcnt = 1;
+		msk.sin_addr.s_addr = mtch.sin_addr.s_addr = 0;
+		udpflag++;
+	}
 	if (debug == 0) {
 		if (fork())
 			exit(0);
@@ -95,41 +177,113 @@ main(argc, argv)
 		signal(SIGHUP, SIG_IGN);
 	}
 	openlog("nfsd:", LOG_PID, LOG_DAEMON);
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		syslog(LOG_ERR, "Can't create socket");
-		exit(1);
-	}
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.s_addr = INADDR_ANY;
-	saddr.sin_port = htons(NFS_PORT);
-	if (bind(sock, &saddr, sizeof(saddr)) < 0) {
-		syslog(LOG_ERR, "Can't bind addr");
-		exit(1);
-	}
 	pmap_unset(RPCPROG_NFS, NFS_VER2);
-	if (!pmap_set(RPCPROG_NFS, NFS_VER2, IPPROTO_UDP, NFS_PORT)) {
-		syslog(LOG_ERR, "Can't register with portmap");
-		exit(1);
+	if (udpflag) {
+		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+			syslog(LOG_ERR, "Can't create socket");
+			exit(1);
+		}
+		saddr.sin_family = AF_INET;
+		saddr.sin_addr.s_addr = INADDR_ANY;
+		saddr.sin_port = htons(NFS_PORT);
+		if (bind(sock, &saddr, sizeof(saddr)) < 0) {
+			syslog(LOG_ERR, "Can't bind addr");
+			exit(1);
+		}
+		if (!pmap_set(RPCPROG_NFS, NFS_VER2, IPPROTO_UDP, NFS_PORT)) {
+			syslog(LOG_ERR, "Can't register with portmap");
+			exit(1);
+		}
+	
+		/*
+		 * Send the nfs datagram servers right down into the kernel
+		 */
+		for (i = 0; i < udpcnt; i++)
+			if (fork() == 0) {
+				ret = nfssvc(sock, &msk, sizeof(msk),
+						&mtch, sizeof(mtch));
+				if (ret < 0)
+					syslog(LOG_ERR, "nfssvc() failed %m");
+				exit();
+			}
+		close(sock);
 	}
-	if (argc == 2) {
-		if ((cnt = atoi(argv[1])) <= 0 || cnt > 20)
-			cnt = 1;
-		msk = 0;
-		mtch = 0;
-	} else if (argc == 4) {
-		if ((cnt = atoi(argv[1])) <= 0 || cnt > 20)
-			cnt = 1;
-		msk = inet_addr(argv[2]);
-		mtch = inet_addr(argv[3]);
-	} else {
-		cnt = 1;
-		msk = 0;
-		mtch = 0;
+
+	/*
+	 * Now set up the master STREAM server waiting for tcp connections.
+	 */
+	if (tcpflag) {
+		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+			syslog(LOG_ERR, "Can't create socket");
+			exit(1);
+		}
+		saddr.sin_family = AF_INET;
+		saddr.sin_addr.s_addr = INADDR_ANY;
+		saddr.sin_port = htons(NFS_PORT);
+		if (bind(sock, &saddr, sizeof(saddr)) < 0) {
+			syslog(LOG_ERR, "Can't bind addr");
+			exit(1);
+		}
+		if (listen(sock, 5) < 0) {
+			syslog(LOG_ERR, "Listen failed");
+			exit(1);
+		}
+		if (!pmap_set(RPCPROG_NFS, NFS_VER2, IPPROTO_TCP, NFS_PORT)) {
+			syslog(LOG_ERR, "Can't register with portmap");
+			exit(1);
+		}
+		/*
+		 * Loop forever accepting connections and sending the children
+		 * into the kernel to service the mounts.
+		 */
+		for (;;) {
+			if ((msgsock = accept(sock, (struct sockaddr *)0,
+				(int *)0)) < 0) {
+				syslog(LOG_ERR, "Accept failed: %m");
+				exit(1);
+			}
+			/*
+			 * Grab child termination status' just so defuncts
+			 * are not left lying about.
+			 */
+			while (wait3(&chldstat, WNOHANG, (struct rusage *)0))
+				;
+			len = sizeof(peername);
+			if (getsockname(msgsock, &peername, &len) < 0) {
+				syslog(LOG_ERR, "Getsockname failed\n");
+				exit(1);
+			}
+			if ((peername.sin_addr.s_addr & msk.sin_addr.s_addr)
+				!= mtch.sin_addr.s_addr) {
+				hp = hphead.ha_next;
+				while (hp) {
+					if (peername.sin_addr.s_addr ==
+						hp->ha_sad)
+						break;
+					hp = hp->ha_next;
+				}
+				if (hp == NULL) {
+					shutdown(msgsock, 2);
+					close(msgsock);
+					continue;
+				}
+			}
+			if (fork() == 0) {
+				close(sock);
+				ret = nfssvc(msgsock, &msk, sizeof(msk),
+						&mtch, sizeof(mtch));
+				shutdown(msgsock, 2);
+				if (ret < 0)
+					syslog(LOG_ERR, "Nfssvc STREAM Failed");
+				exit();
+			}
+			close(msgsock);
+		}
 	}
-	for (i = 1; i < cnt; i++)
-		if (fork() == 0)
-			break;
-	if (nfssvc(sock, msk, mtch) < 0)	/* Only returns on error */
-		syslog(LOG_ERR, "nfssvc() failed %m");
-	exit();
+}
+
+usage()
+{
+	fprintf(stderr, "nfsd [-t msk,mtch[,addrs]] [-u msk,mtch,numprocs]\n");
+	exit(1);
 }
