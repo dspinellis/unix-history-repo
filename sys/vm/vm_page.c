@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.10 1994/01/31 04:21:10 davidg Exp $
+ *	$Id: vm_page.c,v 1.11 1994/01/31 04:32:41 davidg Exp $
  */
 
 /*
@@ -745,7 +745,7 @@ vm_page_deactivate(m)
 	 *	Paul Mackerras (paulus@cs.anu.edu.au) 9-Jan-93.
 	 */
 
-	spl = vm_disable_intr();
+	spl = splhigh();
 	m->deact = 0;
 	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
@@ -756,15 +756,12 @@ vm_page_deactivate(m)
 		}
 		queue_enter(&vm_page_queue_inactive, m, vm_page_t, pageq);
 		m->flags |= PG_INACTIVE;
-		vm_set_intr(spl);
 		vm_page_inactive_count++;
 		pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 		if ((m->flags & PG_CLEAN) == 0)
 			m->flags |= PG_LAUNDRY;
-	} else {
-		vm_set_intr(spl);
 	} 
-
+	splx(spl);
 }
 
 /*

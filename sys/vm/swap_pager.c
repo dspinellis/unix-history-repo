@@ -38,7 +38,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.14 1994/01/17 09:33:20 davidg Exp $
+ * $Id: swap_pager.c,v 1.15 1994/01/31 04:19:55 davidg Exp $
  */
 
 /*
@@ -951,12 +951,18 @@ swap_pager_io(swp, m, count, reqpage, flags)
 				return VM_PAGER_TRYAGAIN;
 */
 			s = splbio();
-			(void) swap_pager_clean(NULL, B_WRITE);
+			if( curproc == pageproc)
+				(void) swap_pager_clean(NULL, B_WRITE);
+			else
+				wakeup((caddr_t) &vm_pages_needed);
 			while (queue_empty(&swap_pager_free)) { 
 				swap_pager_needflags |= SWAP_FREE_NEEDED;
 				tsleep((caddr_t)&swap_pager_free,
 					PVM, "swpfre", 0);
-				(void) swap_pager_clean(NULL, B_WRITE);
+				if (curproc == pageproc)
+					(void) swap_pager_clean(NULL, B_WRITE);
+				else
+					wakeup((caddr_t) &vm_pages_needed);
 			}
 			splx(s);
 		}
@@ -1342,6 +1348,7 @@ swap_pager_iodone(bp)
 	    queue_empty(&swap_pager_inuse)) { 
 		swap_pager_needflags &= ~SWAP_FREE_NEEDED;
 		wakeup((caddr_t)&swap_pager_free);
+		wakeup((caddr_t)&vm_pages_needed);
 	}
 
 	if (vm_pageout_pages_needed) {

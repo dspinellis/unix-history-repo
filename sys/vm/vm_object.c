@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.18 1994/01/24 05:12:44 davidg Exp $
+ *	$Id: vm_object.c,v 1.19 1994/01/31 04:20:52 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -694,15 +694,22 @@ vm_object_pmap_remove(object, start, end)
 	register vm_offset_t	end;
 {
 	register vm_page_t	p;
-	vm_offset_t size = ((end - start) + PAGE_SIZE - 1) / PAGE_SIZE;
+	vm_offset_t size;
 
 	if (object == NULL)
 		return;
 
 	vm_object_lock(object);
+again:
+	size = ((end - start) + PAGE_SIZE - 1) / PAGE_SIZE;
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		if ((start <= p->offset) && (p->offset < end)) {
+			if (p->flags & PG_BUSY) {
+				p->flags |= PG_WANTED;
+				tsleep((caddr_t) p, PVM, "vmopmr", 0);
+				goto again;
+			}
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			if ((p->flags & PG_CLEAN) == 0)
 				p->flags |= PG_LAUNDRY;
@@ -711,35 +718,6 @@ vm_object_pmap_remove(object, start, end)
 		p = (vm_page_t) queue_next(&p->listq);
 	}
 	vm_object_unlock(object);
-}
-
-void
-vm_object_save_pmap_attributes(vm_object_t object,
-	vm_offset_t start, vm_offset_t end) {
-
-	vm_page_t p;
-
-	if (!object)
-		return;
-
-	if (object->shadow) {
-		vm_object_save_pmap_attributes(object->shadow,
-			object->shadow_offset + start,
-			object->shadow_offset + end);
-	}
-
-	p = (vm_page_t) queue_first(&object->memq);
-	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		if ((start <= p->offset) && (p->offset < end)) {
-			if ((p->flags & PG_CLEAN) 
-				 && pmap_is_modified(VM_PAGE_TO_PHYS(p))) {
-				p->flags &= ~PG_CLEAN;
-			}
-			if ((p->flags & PG_CLEAN) == 0)
-				p->flags |= PG_LAUNDRY;
-		}
-		p = (vm_page_t) queue_next(&p->listq);
-	}
 }
 
 /*
@@ -1522,12 +1500,18 @@ vm_object_page_remove(object, start, end)
 
 	start = trunc_page(start);
 	end = round_page(end);
+again:
 	size = end-start;
 	if (size > 4*PAGE_SIZE || size >= object->size/4) {
 		p = (vm_page_t) queue_first(&object->memq);
 		while (!queue_end(&object->memq, (queue_entry_t) p) && size > 0) {
 			next = (vm_page_t) queue_next(&p->listq);
 			if ((start <= p->offset) && (p->offset < end)) {
+				if (p->flags & PG_BUSY) {
+					p->flags |= PG_WANTED;
+					tsleep((caddr_t) p, PVM, "vmopar", 0);
+					goto again;
+				}
 				pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 				vm_page_lock_queues();
 				vm_page_free(p);
@@ -1539,6 +1523,11 @@ vm_object_page_remove(object, start, end)
 	} else {
 		while (size > 0) {
 			while (p = vm_page_lookup(object, start)) {
+				if (p->flags & PG_BUSY) {
+					p->flags |= PG_WANTED;
+					tsleep((caddr_t) p, PVM, "vmopar", 0);
+					goto again;
+				}
 				pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 				vm_page_lock_queues();
 				vm_page_free(p);
