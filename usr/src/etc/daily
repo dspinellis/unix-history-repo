@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.8 (Berkeley) %G%
+#	@(#)daily	5.9 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -140,3 +140,5 @@ if [ -f /etc/Distfile ]; then
 	echo "Running rdist:"
 	rdist -f /etc/Distfile 
 fi
+
+sh /etc/security | mail -s "daily insecurity output" root
