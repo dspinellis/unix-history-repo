@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.8 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -246,6 +246,8 @@ getw(loc)
 		loc &= 0x7fffffff;
 	lseek(fc, loc, 0);
 	read(fc, &word, sizeof (word));
+	if (kflg)
+		word &= 0x7fffffff;
 	return (word);
 }
 
