@@ -5,13 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include "glob.h"
 
-static int noglob;
+static int noglob, nonomatch;
 
 static int pargsiz, gargsiz;
 /*
@@ -255,6 +255,16 @@ globexpand(v)
 	return(vl);
 }
 
+int
+globcheck(str)
+	char *str;
+{
+	for (; *str; str++)
+		if(isglob(*str))
+			return(1);
+	return(0);
+}
+
 char * 
 globone(str)
 	char *str;
@@ -295,29 +305,26 @@ globone(str)
 
 		globv.gl_offs = 0;
 		globv.gl_pathv = 0;
-		glob(nstr, GLOB_NOCHECK, 0, &globv);
+		nonomatch = adrof("nonomatch") != 0;
+		glob(nstr, nonomatch ? GLOB_NOCHECK : 0, 0, &globv);
 		if (gflag & G_CSH)
 			xfree(nstr);
-		if (globv.gl_pathc != 1) {
+		switch (globv.gl_pathc) {
+		case 0:
+			setname(str);
+			globfree(&globv);
+			bferr("No match");
+			/*NOTREACHED*/
+		case 1:
+			str = strip(savestr(globv.gl_pathv[0]));
+			globfree(&globv);
+			return(str);
+		default:
 			setname(str);
 			globfree(&globv);
 			bferr("Ambiguous");
 			/*NOTREACHED*/
 		}
-		if (adrof("nonomatch") == 0) {
-			gflag = 0;
-			tglob(globv.gl_pathv);
-			/* No match */
-			if (gflag != G_NONE) {
-				setname(str);
-				globfree(&globv);
-				bferr("No match");
-				/*NOTREACHED*/
-			}
-		}
-		str = strip(savestr(globv.gl_pathv[0]));
-		globfree(&globv);
-		return(str);
 	}
 	return(strip(nstr));
 }
@@ -335,6 +342,7 @@ globall(v)
 	}
 
 	noglob = adrof("noglob") != 0;
+	nonomatch = adrof("nonomatch") != 0;
 	
 	if (gflag & G_CSH) 
 		/*
@@ -349,25 +357,29 @@ globall(v)
 		 * Glob the strings in vl using the glob routine
 		 * from libc
 		 */
+		int gappend = 0;
 		glob_t globv;
 
 		globv.gl_offs = 0;
 		globv.gl_pathv = 0;
-		glob(vl[0], GLOB_NOCHECK, 0, &globv);
-		while (*++vl) 
-			glob(*vl, GLOB_NOCHECK | GLOB_APPEND, 0, &globv);
-		if (gflag & G_CSH)
-			blkfree(vo);
-		if (adrof("nonomatch") == 0) {
-			gflag = 0;
-			tglob(globv.gl_pathv);
-			if (gflag != G_NONE) {
-				/* No match */
-				globfree(&globv);
-				gargc = 0;
-				return(gargv = (char **) 0);
+		do {
+			if (nonomatch)
+				glob(*vl, GLOB_NOCHECK | gappend, 0, &globv);
+			else if (globcheck(*vl)) {
+				glob(*vl, gappend, 0, &globv);
+				if (globv.gl_pathc == 0) {
+					if (gflag & G_CSH)
+						blkfree(vo);
+					globfree(&globv);
+					gargc = 0;
+					return(gargv = (char **) 0);
+				}
 			}
+			else
+				glob(*vl, GLOB_NOCHECK | gappend, 0, &globv);
+			gappend = GLOB_APPEND;
 		}
+		while (*++vl);
 		if (globv.gl_pathc)
 			vl = saveblk(globv.gl_pathv);
 		else
