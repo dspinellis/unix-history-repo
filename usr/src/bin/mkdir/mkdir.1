@@ -1,24 +1,45 @@
-.\"	@(#)mkdir.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)mkdir.1	6.2 (Berkeley) %G%
 .\"
 .TH MKDIR 1 ""
 .AT 3
 .SH NAME
-mkdir \- make a directory
+mkdir \- make directories
 .SH SYNOPSIS
-.B mkdir
-dirname ...
+\fBmkdir [ \fI-p\fB ] directory_name ...
 .SH DESCRIPTION
 .I Mkdir
-creates specified directories in mode 777.
-Standard entries,
-.RB ` . ',
-for the directory itself, and 
-.lg 0
-.BR ` .. '
-.lg 1
-for its parent, are made automatically.
+creates the directories named as operands, in the order specified,
+using mode 0777.
+.PP
+The options are as follows:
+.TP
+.I -p
+Create intermediate directories as required.  If this option is not
+specified, the full path prefix of each operand must already exist.
 .PP
 .I Mkdir
 requires write permission in the parent directory.
+.PP
+.I Mkdir
+exits 0 if successful, and >0 if an error occurred.
+.SH "HISTORY"
+Mkdir is POSIX 1003.2 compliant.
+.br
+This manual page derived from the POSIX 1003.2 manual page.
 .SH "SEE ALSO"
 rmdir(1)
