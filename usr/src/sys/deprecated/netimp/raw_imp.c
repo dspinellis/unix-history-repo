@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.4	82/02/15	*/
+/*	raw_imp.c	4.5	82/02/16	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -74,8 +74,6 @@ COUNT(RIMP_OUTPUT);
 	ip->il_network = sin->sin_addr.s_net;
 	ip->il_host = sin->sin_addr.s_host;
 	ip->il_imp = sin->sin_addr.s_imp;
-printf("imp_output: net=%x, host=%x, imp=%x\n", ip->il_network, ip->il_host,
-ip->il_impno);
 	ifp = if_ifonnetof(sin->sin_addr);
 	if (ifp == 0) {
 		ifp = if_gatewayfor(sin->sin_addr);
