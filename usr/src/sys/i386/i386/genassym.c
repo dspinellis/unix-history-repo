@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.14 (Berkeley) %G%
+ *	@(#)genassym.c	5.15 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #define KERNEL
@@ -69,6 +69,7 @@ main()
 	printf("#define\tNBPG %d\n", NBPG);
 	printf("#define\tNPTEPG %d\n", NPTEPG);
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
+	printf("#define\tPDRSHIFT %d\n", PDRSHIFT);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
 	printf("#define\tUSRIOSIZE %d\n", USRIOSIZE);
