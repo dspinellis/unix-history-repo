@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)talkd.c	1.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)talkd.c	1.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -61,7 +61,7 @@ main(argc, argv)
 		}
 		lastmsgtime = time(0);
 		swapmsg(&request);
-		if (debug) print_request(&request, fp);
+		if (debug) print_request(&request);
 		process_request(&request, &response);
 		/* can block here, is this what I want? */
 		cc = sendto(sockt, (char *) &response,
@@ -70,7 +70,6 @@ main(argc, argv)
 		if (cc != sizeof(response))
 			perror("sendto");
 	}
-	if (debug) close (debugout);
 }
 
 timeout()
@@ -81,9 +80,6 @@ timeout()
 	alarm(TIMEOUT);
 }
 
-#define swapshort(a) (((a << 8) | ((unsigned short) a >> 8)) & 0xffff)
-#define swaplong(a) ((swapshort(a) << 16) | (swapshort(((unsigned)a >> 16))))
-
 /*  
  * heuristic to detect if need to swap bytes
  */
@@ -91,11 +87,11 @@ timeout()
 swapmsg(req)
 	CTL_MSG *req;
 {
-	if (req->ctl_addr.sin_family == swapshort(AF_INET)) {
-		req->id_num = swaplong(req->id_num);
-		req->pid = swaplong(req->pid);
-		req->addr.sin_family = swapshort(req->addr.sin_family);
+	if (req->ctl_addr.sin_family == ntohs(AF_INET)) {
+		req->id_num = ntohl(req->id_num);
+		req->pid = ntohl(req->pid);
+		req->addr.sin_family = ntohs(req->addr.sin_family);
 		req->ctl_addr.sin_family =
-			swapshort(req->ctl_addr.sin_family);
+			ntohs(req->ctl_addr.sin_family);
 	}
 }
