@@ -1,0 +1,19 @@
+.NH
+Installation Under 4.2BSD
+.PP
+You are essentially on your own here.
+Besides the steps outlined in sections one through three,
+you must install the Vs100 device driver,
+install an improved version of the pseudo-tty driver,
+and even then you will run into an obscure TCP problem that will
+cause X to be unreliable.
+.PP
+We have also decided that it is hazardous for most people to attempt 
+installation of the changes to init, getty and login required for automatic
+login on the display.
+Furthermore, due to local changes and version skew, we no longer have
+a consistent set of sources for these programs for 4.2, and have no good
+way to test any installation directions as we have been running these
+changes for nearly a year on all our machines.
+For these reasons, WE RECOMMEND UPGRADING to 4.3BSD or Ultrix 1.2 where
+these changes are standard.
