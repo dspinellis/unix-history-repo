@@ -1,4 +1,4 @@
-/*	kernel.h	4.3	82/09/08	*/
+/*	kernel.h	4.4	82/09/12	*/
 
 /*
  * Global variables for the kernel
@@ -17,4 +17,12 @@ struct	timezone tz;			/* XXX */
 int	hz;
 int	tick;
 int	lbolt;				/* awoken once a second */
-int	unsel(),unrto();
+int	selitexpire();
+int	realitexpire();
+
+#ifdef GPROF
+extern	int profiling;
+extern	char *s_lowpc;
+extern	u_long s_textsize;
+extern	u_short *kcount;
+#endif
