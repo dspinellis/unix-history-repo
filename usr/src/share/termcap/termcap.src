@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.41 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.42 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -696,7 +696,7 @@ Mt|terak|Terak emulating Datamedia 1520:\
 Mu|sun|Sun Microsystems Workstation console:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:rs=\E[s:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
