@@ -1,4 +1,4 @@
-/* "@(#)head.h 4.1 %G%" */
+/* "@(#)head.h 4.2 %G%" */
 #include <sys/vm.h>
 #define	PAGSIZ	(CLSIZE*NBPG)
 #include <stdio.h>
@@ -23,7 +23,7 @@ int	ncolonflag;	/* set to 1 iff colon typed after number */
 int	percentflag;	/* set to 1 iff percent symbol typed */
 
 /* source file i/o */
-char	curfile[30];	/* name of file being edited */
+char	curfile[120];	/* name of file being edited */
 int	fline;		/* line number in file */
 char	fbuf[BUFSIZ];	/* current line from file */
 char 	filework[128];	/* place to put filename */
