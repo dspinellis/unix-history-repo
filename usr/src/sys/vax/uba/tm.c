@@ -1,4 +1,4 @@
-/*	tm.c	4.3	%G%	*/
+/*	tm.c	4.4	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
@@ -527,7 +527,7 @@ register buf, num;
 {
 	register int *io, npf;
 
-	tmwait();
+	twait();
 	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] |= BNE;
 	io = (int *)((struct uba_regs *)PHYSUBA0)->uba_map;
 	npf = num+1;
@@ -539,7 +539,7 @@ register buf, num;
 	TMPHYS->tmcs = WCOM | GO | D800;
 }
 
-tmwait()
+twait()
 {
 	register s;
 
@@ -548,17 +548,17 @@ tmwait()
 	while ((s & CUR) == 0);
 }
 
-tmrewind()
+rewind()
 {
 
-	tmwait();
+	twait();
 	TMPHYS->tmcs = REW | GO;
 }
 
-tmeof()
+teof()
 {
 
-	tmwait();
+	twait();
 	TMPHYS->tmcs = WEOF | GO | D800;
 }
 #endif
