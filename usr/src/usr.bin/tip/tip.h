@@ -1,4 +1,4 @@
-/*	tip.h	4.5	81/11/20	*/
+/*	tip.h	4.6	81/12/16	*/
 /*
  * tip - terminal interface program
  *
@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <ctype.h>
 
 /*
  * Remote host attributes
@@ -80,9 +81,6 @@ typedef
 	acu_t;
 
 #define	equal(a, b)	(strcmp(a,b)==0)/* A nice function to string compare */
-#define islower(c)	((c)>='a'&&(c)<='z')
-#define toupper(c)	(c)-=('a'-'A')
-#define isnum(c)	((c)>='0'&&(c)<= '9')
 #define CTRL(c)		('c'&037)
 
 /*

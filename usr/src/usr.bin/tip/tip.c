@@ -1,4 +1,4 @@
-/*	tip.c	4.10	81/11/29	*/
+/*	tip.c	4.11	81/12/16	*/
 
 /*
  * tip - UNIX link to other systems
@@ -23,15 +23,18 @@ int	disc = OTTYDISC;		/* tip normally runs this way */
 int	intprompt();
 int	timeout();
 int	cleanup();
+char	*sname();
+extern char *sprintf();
 
 main(argc, argv)
 	char *argv[];
 {
 	char *system = NOSTR;
 	register int i;
-	char *p;
+	register char *p;
+	char sbuf[12];
 
-	if (strcmp(argv[0], "tip")) {
+	if (equal(sname(argv[0]), "cu")) {
 		cumain(argc, argv);
 		cumode = 1;
 		goto cucommon;
@@ -45,8 +48,34 @@ main(argc, argv)
 		fprintf(stderr, "tip: must be interactive\n");
 		exit(1);
 	}
-	if (argc > 1 && argv[argc-1][0] != '-')
-		system = argv[argc-1];		/* always last item */
+
+	for (; argc > 1; argv++, argc--) {
+		if (argv[1][0] != '-')
+			system = argv[1];
+		else switch (argv[1][1]) {
+
+		case 'v':
+			vflag++;
+			break;
+
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			BR = atoi(&argv[1][1]);
+			break;
+
+		default:
+			fprintf(stderr, "tip: %s, unknown option\n", argv[1]);
+			break;
+		}
+	}
+
+	for (p = system; *p; p++)
+		if (isalpha(*p))
+			goto notnumber;
+	PN = system;		/* system name is really a phone number */
+	system = sprintf(sbuf, "tip%d", BR);
+
+notnumber:
 	signal(SIGINT, cleanup);
 	signal(SIGQUIT, cleanup);
 	signal(SIGHUP, cleanup);
@@ -72,9 +101,7 @@ main(argc, argv)
 	 */
 	setuid(getuid());
 	setgid(getgid());
-	for (i = 1; i < argc-1; i++)
-		if (equal(argv[i], "-v"))
-			vflag++;
+
 	/*
 	 * Kludge, their's no easy way to get the initialization
 	 *   in the right order, so force it here
@@ -82,13 +109,6 @@ main(argc, argv)
 	if ((PH = getenv("PHONES")) == NOSTR)
 		PH = "/etc/phones";
 	vinit();				/* init variables */
-	for (i = 1; i < argc-1; i++)
-		if (argv[i][0] == '-' && argv[i][1] != 'v') {
-			if (isnum(argv[i][1]))
-				number(value(BAUDRATE)) = atoi(&argv[i][1]);
-			else
-				printf("%s: unknown option\n", argv[i]);
-		}
 	if ((i = speed(number(value(BAUDRATE)))) == NULL) {
 		printf("tip: bad baud rate %d\n", number(value(BAUDRATE)));
 		delock(uucplock);
@@ -388,4 +408,20 @@ ttysetup(speed)
 #ifdef VMUNIX
 	ioctl(FD, TIOCLBIS, (char *)&bits);
 #endif
+}
+
+/*
+ * Return "simple" name from a file name,
+ * strip leading directories.
+ */
+char *
+sname(s)
+	register char *s;
+{
+	register char *p = s;
+
+	while (*s)
+		if (*s++ == '/')
+			p = s;
+	return (p);
 }

@@ -1,4 +1,4 @@
-/*	cu.c	4.2	81/11/29	*/
+/*	cu.c	4.3	81/12/16	*/
 
 #include "tip.h"
 
@@ -12,21 +12,13 @@ cumain(argc, argv)
 	char *argv[];
 {
 	register int i;
+	static char sbuf[12];
 
-	signal(SIGINT, cleanup);
-	signal(SIGQUIT, cleanup);
-	signal(SIGHUP, cleanup);
-	signal(SIGTERM, cleanup);
-	setbuf(stdout, NULL);
-	loginit();
-	setuid(getuid());
-	setgid(getgid());
-	vinit();
-	boolean(value(VERBOSE)) = 0;
 	if (argc < 2) {
-		printf("usage: cu telno [-t] [-s speed] [-a acu] [-l line]\n");
+		printf("usage: cu telno [-t] [-s speed] [-a acu] [-l line] [-#]\n");
 		exit(8);
 	}
+	CU = DV = NOSTR;
 	for (; argc > 1; argv++, argc--) {
 		if (argv[1][0] != '-')
 			PN = argv[1];
@@ -43,7 +35,8 @@ cumain(argc, argv)
 
 		case 's':
 			if (speed(atoi(argv[2])) == 0) {
-				printf("cu: unsupported speed %s\n", argv[2]);
+				fprintf(stderr, "cu: unsupported speed %s\n",
+					argv[2]);
 				exit(3);
 			}
 			BR = atoi(argv[2]); ++argv; --argc;
@@ -55,7 +48,10 @@ cumain(argc, argv)
 
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
-			CU[strlen(CU)-1] = argv[1][1];
+			if (CU)
+				CU[strlen(CU)-1] = argv[1][1];
+			if (DV)
+				DV[strlen(DV)-1] = argv[1][1];
 			break;
 
 		default:
@@ -63,11 +59,16 @@ cumain(argc, argv)
 			break;
 		}
 	}
+	signal(SIGINT, cleanup);
+	signal(SIGQUIT, cleanup);
+	signal(SIGHUP, cleanup);
+	signal(SIGTERM, cleanup);
+
 	/*
 	 * The "cu" host name is used to define the
 	 * attributes of the generic dialer.
 	 */
-	if ((i = hunt("cu")) == 0) {
+	if ((i = hunt(sprintf(sbuf, "cu%d", BR))) == 0) {
 		printf("all ports busy\n");
 		exit(3);
 	}
@@ -76,6 +77,12 @@ cumain(argc, argv)
 		delock(uucplock);
 		exit(3);
 	}
+	setbuf(stdout, NULL);
+	loginit();
+	setuid(getuid());
+	setgid(getgid());
+	vinit();
+	boolean(value(VERBOSE)) = 0;
 	if (HW)
 		ttysetup(speed(BR));
 	if (connect()) {

@@ -1,4 +1,4 @@
-/*	tipout.c	4.4	81/11/29	*/
+/*	tipout.c	4.5	81/12/16	*/
 #include "tip.h"
 /*
  * tip
@@ -67,6 +67,7 @@ intSYS()
 {
 	signal(SIGSYS, intSYS);
 	boolean(value(BEAUTIFY)) = !boolean(value(BEAUTIFY));
+	intflag = 1;
 }
 
 /*
@@ -74,6 +75,10 @@ intSYS()
  */
 tipout()
 {
+	char buf[BUFSIZ];
+	register char *cp;
+	register int cnt;
+
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGEMT, intEMT);		/* attention from TIPIN */
@@ -82,18 +87,26 @@ tipout()
 	signal(SIGHUP, intTERM);	/* for dial-ups */
 	signal(SIGSYS, intSYS);		/* beautify toggle */
 
-	while (1) {
+	for (;;) {
 		do {
 			intflag = 0;
-			read(FD,&ch,1);
-			ch &= 0177;
+			cnt = read(FD, buf, BUFSIZ);
 		} while (intflag);
-		write(1, &ch, 1);
+		if (cnt <= 0)
+			continue;
+		for (cp = buf; cp < buf + cnt; cp++)
+			*cp &= 0177;
+		write(1, buf, cnt);
 		if (boolean(value(SCRIPT)) && fscript != NULL) {
-			if (boolean(value(BEAUTIFY)) && ch < 040 &&
-			    !any(ch, value(EXCEPTIONS)))
+			if (!boolean(value(BEAUTIFY))) {
+				fputs(buf, fscript);
+				continue;
+			}
+			for (cp = buf; cp < buf + cnt; cp++) {
+				if (*cp < ' ' && !any(*cp, value(EXCEPTIONS)))
 					continue;
-			putc(ch, fscript);
+				putc(*cp, fscript);
+			}
 		}
 	}
 }
