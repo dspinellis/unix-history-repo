@@ -11,187 +11,214 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-/*
- * mount
- */
 #include <sys/param.h>
-
-#include <stdio.h>
+#include <sys/file.h>
 #include <fstab.h>
 #include <mtab.h>
 #include <errno.h>
+#include <stdio.h>
 
-#define	DNMAX	(sizeof (mtab[0].m_dname) - 1)
-#define	PNMAX	(sizeof (mtab[0].m_path) - 1)
+#define	BADTYPE(type) \
+	(strcmp(type, FSTAB_RO) && strcmp(type, FSTAB_RW) && \
+	    strcmp(type, FSTAB_RQ))
+#define	SETTYPE(type) \
+	(!strcmp(type, FSTAB_RW) || !strcmp(type, FSTAB_RQ))
 
-struct	mtab mtab[NMOUNT];
+#define	MTAB	"/etc/mtab"
 
-int	all;
-int	ro;
-int	fake;
-int	verbose;
-char	*index(), *rindex();
+static struct mtab mtab[NMOUNT];
+static int fake, verbose;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern char *optarg;
+	extern int optind;
 	register struct mtab *mp;
-	register char *np;
-	int mf;
-	char *type = FSTAB_RW;
+	register struct fstab *fs;
+	register int cnt;
+	int all, ch, fd;
+	char *type;
 
-	mf = open("/etc/mtab", 0);
-	read(mf, (char *)mtab, sizeof (mtab));
-	if (argc == 1) {
-		for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-			if (mp->m_path[0] != '\0')
+	all = 0;
+	type = NULL;
+	while ((ch = getopt(argc, argv, "afrwv")) != EOF)
+		switch((char)ch) {
+		case 'a':
+			all = 1;
+			break;
+		case 'f':
+			fake = 1;
+			break;
+		case 'r':
+			type = FSTAB_RO;
+			break;
+		case 'v':
+			verbose = 1;
+			break;
+		case 'w':
+			type = FSTAB_RW;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	/* NOSTRICT */
+	if ((fd = open(MTAB, O_RDONLY, 0)) >= 0) {
+		if (read(fd, (char *)mtab, NMOUNT * sizeof(struct mtab)) < 0)
+			mtaberr();
+		(void)close(fd);
+	}
+
+	if (all) {
+		while ((fs = getfsent()))
+			if (strcmp(fs->fs_file, "/") && !BADTYPE(fs->fs_type))
+				mountfs(fs->fs_spec, fs->fs_file,
+				    type ? type : fs->fs_type);
+		exit(0);
+	}
+
+	if (argc == 0) {
+		if (verbose || fake || type)
+			usage();
+		for (mp = mtab, cnt = NMOUNT; cnt--; ++mp)
+			if (*mp->m_path)
 				prmtab(mp);
 		exit(0);
 	}
-top:
-	if (argc > 1) {
-		if (!strcmp(argv[1], "-a")) {
-			all++;
-			argc--, argv++;
-			goto top;
-		}
-		if (!strcmp(argv[1], "-r")) {
-			type = FSTAB_RO;
-			argc--, argv++;
-			goto top;
-		}
-		if (!strcmp(argv[1], "-f")) {
-			fake++;
-			argc--, argv++;
-			goto top;
-		}
-		if (!strcmp(argv[1], "-v")) {
-			verbose++;
-			argc--, argv++;
-			goto top;
-		}
-	}
-	if (all) {
-		struct fstab *fsp;
 
-		if (argc > 1)
-			goto argcnt;
-		close(2); dup(1);
-		if (setfsent() == 0)
-			perror(FSTAB), exit(1);
-		while ((fsp = getfsent()) != 0) {
-			if (strcmp(fsp->fs_file, "/") == 0)
-				continue;
-			if (strcmp(fsp->fs_type, FSTAB_RO) &&
-			    strcmp(fsp->fs_type, FSTAB_RW) &&
-			    strcmp(fsp->fs_type, FSTAB_RQ))
-				continue;
-			mountfs(fsp->fs_spec, fsp->fs_file, fsp->fs_type);
+	if (all)
+		usage();
+
+	if (argc == 1) {
+		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
+			fprintf(stderr,
+			    "mount: unknown special file or file system %s.\n",
+			    *argv);
+			exit(1);
 		}
+		if (BADTYPE(fs->fs_type)) {
+			fprintf(stderr,
+			    "mount: %s has unknown file system type.\n", *argv);
+			exit(1);
+		}
+		mountfs(fs->fs_spec, fs->fs_file, type ? type : fs->fs_type);
 		exit(0);
 	}
-	if (argc == 2) {
-		struct fstab *fs;
 
-		if (setfsent() == 0)
-			perror(FSTAB), exit(1);
-		fs = getfsfile(argv[1]);
-		if (fs == NULL)
-			goto argcnt;
-		if (strcmp(fs->fs_type, FSTAB_RO) &&
-		    strcmp(fs->fs_type, FSTAB_RW) &&
-		    strcmp(fs->fs_type, FSTAB_RQ))
-			goto argcnt;
-		mountfs(fs->fs_spec, fs->fs_file, fs->fs_type);
-		exit(0);
-	}
-	if (argc != 3) {
-argcnt:
-		fprintf(stderr,
-    "usage: mount [ -a ] [ -r ] [ -f ] [ -v ] [ special dir ] [ dir ]\n");
-		exit(1);
-	}
-	mountfs(argv[1], argv[2], type);
+	if (argc != 2)
+		usage();
+
+	mountfs(argv[0], argv[1], type ? type : "rw");
 }
 
-prmtab(mp)
-	register struct mtab *mp;
-{
-
-	printf("%s on %s", mp->m_dname, mp->m_path);
-	if (strcmp(mp->m_type, FSTAB_RO) == 0)
-		printf("\t(read-only)");
-	if (strcmp(mp->m_type, FSTAB_RQ) == 0)
-		printf("\t(with quotas)");
-	putchar('\n');
-}
-
+static
 mountfs(spec, name, type)
 	char *spec, *name, *type;
 {
-	register char *np;
-	register struct mtab *mp;
-	int mf;
+	extern int errno;
+	register struct mtab *mp, *space;
+	register int cnt;
+	register char *p;
+	int fd;
+	char *index(), *rindex(), *strcpy();
 
 	if (!fake) {
-		if (mount(spec, name, strcmp(type, FSTAB_RO) == 0) < 0) {
-			extern int errno;
-			char *cp;
-
-			fprintf(stderr, "%s on ", spec);
+		if (mount(spec, name, type)) {
+			fprintf(stderr, "%s on %s: ", spec, name);
 			switch (errno) {
-
 			case EMFILE:
-				cp = "Mount table full";
+				fprintf(stderr, "Mount table full\n");
 				break;
-
 			case EINVAL:
-				cp = "Bogus super block";
+				fprintf(stderr, "Bogus super block\n");
 				break;
-
 			default:
-				perror(name);
-				return;
+				perror((char *)NULL);
+				break;
 			}
-			fprintf(stderr, "%s: %s\n", name, cp);
 			return;
 		}
+
 		/* we don't do quotas.... */
 		if (strcmp(type, FSTAB_RQ) == 0)
 			type = FSTAB_RW;
 	}
-	np = index(spec, '\0');
-	while (*--np == '/')
-		*np = '\0';
-	np = rindex(spec, '/');
-	if (np) {
-		*np++ = '\0';
-		spec = np;
+
+	/* trim trailing /'s and find last component of name */
+	for (p = index(spec, '\0'); *--p == '/';);
+	*++p = '\0';
+	if (p = rindex(spec, '/')) {
+		*p = '\0';
+		spec = p + 1;
 	}
-	for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-		if (strcmp(mp->m_dname, spec) == 0)
-			goto replace;
-	for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-		if (mp->m_path[0] == '\0')
-			goto replace;
-	return;
-replace:
-	strncpy(mp->m_dname, spec, DNMAX);
+
+	for (mp = mtab, cnt = NMOUNT, space = NULL; cnt--; ++mp) {
+		if (!strcmp(mp->m_dname, spec))
+			break;
+		if (!space && !*mp->m_path)
+			space = mp;
+	}
+	if (cnt == -1) {
+		if (!space) {
+			fprintf(stderr, "mount: no more room in %s.\n", MTAB);
+			exit(1);
+		}
+		mp = space;
+	}
+
+#define	DNMAX	(sizeof(mtab[0].m_dname) - 1)
+#define	PNMAX	(sizeof(mtab[0].m_path) - 1)
+
+	(void)strncpy(mp->m_dname, spec, DNMAX);
 	mp->m_dname[DNMAX] = '\0';
-	strncpy(mp->m_path, name, PNMAX);
+	(void)strncpy(mp->m_path, name, PNMAX);
 	mp->m_path[PNMAX] = '\0';
-	strcpy(mp->m_type, type);
+	(void)strcpy(mp->m_type, type);
+
 	if (verbose)
 		prmtab(mp);
-	mp = mtab + NMOUNT - 1;
-	while (mp > mtab && mp->m_path[0] == '\0')
-		--mp;
-	mf = creat("/etc/mtab", 0644);
-	write(mf, (char *)mtab, (mp - mtab + 1) * sizeof (struct mtab));
-	close(mf);
-	return;
+
+	for (mp = mtab + NMOUNT - 1; mp > mtab && !*mp->m_path; --mp);
+	if ((fd = open(MTAB, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0)
+		mtaberr();
+	cnt = (mp - mtab + 1) * sizeof(struct mtab);
+	/* NOSTRICT */
+	if (write(fd, (char *)mtab, cnt) != cnt)
+		mtaberr();
+	(void)close(fd);
+}
+
+static
+prmtab(mp)
+	register struct mtab *mp;
+{
+	printf("%s on %s", mp->m_dname, mp->m_path);
+	if (!strcmp(mp->m_type, FSTAB_RO))
+		printf("\t(read-only)");
+	else if (!strcmp(mp->m_type, FSTAB_RQ))
+		printf("\t(with quotas)");
+	printf("\n");
+}
+
+static
+mtaberr()
+{
+	fprintf(stderr, "mount: %s: ", MTAB);
+	perror((char *)NULL);
+	exit(1);
+}
+
+static
+usage()
+{
+	fprintf(stderr, "usage: mount [-arw]\nor mount [-rw] special | node\nor mount [-rw] special node\n");
+	exit(1);
 }
