@@ -1,41 +1,24 @@
-/*	param.h	4.7	81/02/23	*/
+/*	param.h	4.8	81/02/27	*/
 
 /*
- * tunable variables
+ * Tunable variables which do not usually vary per system.
  *
- * NB: NBUF must be less than MAXNBUF in locore.s.
+ * The sizes of most system tables are configured
+ * into each system description.  The file system buffer
+ * cache size is assigned based on available memory.
+ * The tables whose sizes don't vary often are given here.
  */
 
-#ifdef notdef
-#define	NBUF	64		/* size of buffer cache */
-#define	NINODE	200		/* number of in core inodes */
-#define	NFILE	175		/* number of in core file structures */
-#define	NMOUNT	7		/* number of mountable file systems */
-#define	MSWAPX	7		/* pseudo mount table index for swapdev */
-#define	NPROC	125		/* max number of processes */
-#define	NTEXT	40		/* max number of pure texts */
-#define	NCLIST	250		/* max total clist size */
-#endif
-#define	NBUF	128		/* size of buffer cache */
-#define	NINODE	400		/* number of in core inodes */
-#define	NFILE	350		/* number of in core file structures */
 #define	NMOUNT	15		/* number of mountable file systems */
 #define	MSWAPX	15		/* pseudo mount table index for swapdev */
-#define	NPROC	250		/* max number of processes */
-#define	NTEXT	60		/* max number of pure texts */
-#define	NCLIST	500		/* max total clist size */
 #define	MAXUPRC	25		/* max processes per user */
 #define	SSIZE	4		/* initial stack size (*512 bytes) */
 #define	SINCR	4		/* increment of stack (*512 bytes) */
 #define	NOFILE	20		/* max open files per process */
+/* NOFILE MUST NOT BE >= 31; SEE pte.h */
 #define	CANBSIZ	256		/* max size of typewriter line */
-#define	SMAPSIZ	(4*NPROC)	/* size of swap allocation area */
-#define	NCALL	40		/* max simultaneous time callouts */
-#define	HZ	60		/* Ticks/second of the clock */
-#define	TIMEZONE (8*60)		/* Minutes westward from Greenwich */
-#define	DSTFLAG	1		/* Daylight Saving Time applies in this locality */
-#define	MSGBUFS	128		/* Characters saved from error messages */
 #define	NCARGS	10240		/* # characters in exec arglist */
+
 /*
  * priorities
  * probably should not be
@@ -73,7 +56,6 @@
 /*
  * fundamental constants of the implementation--
  * cannot be changed easily.
- * note: UPAGES is well known in locore.s
  */
 
 #define	NBBY		8		/* number of bits in a byte */
@@ -98,8 +80,6 @@
  * deals with the same size blocks that the file system uses.
  *
  * NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE
- *
- * NB: CLSIZE is well known in locore.s.
  */
 #define	CLSIZE	2
 #define	CLOFSET		(CLSIZE*NBPG-1)	/* for clusters, like PGOFSET */
