@@ -1,4 +1,4 @@
-/*	tty.c	3.19	%G%	*/
+/*	tty.c	3.20	%G%	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -315,6 +315,9 @@ caddr_t addr;
 				wflushtty(tp);
 			while (canon(tp)>=0) 
 				;
+#ifdef notdef
+			wakeup((caddr_t)&tp->t_rawq);
+#endif
 		} else if (tp->t_line == NTTYDISC) {
 			if (tp->t_flags&RAW || iocb.sg_flags&RAW ||
 			    com == TIOCSETP)
@@ -329,9 +332,11 @@ caddr_t addr;
 					tp->t_local |= LPENDIN;
 					if (tp->t_canq.c_cc)
 						panic("ioccom canq");
+#ifdef notdef
 					if (tp->t_chan)
 						(void) sdata(tp->t_chan);
 					else
+#endif
 						wakeup((caddr_t)&tp->t_rawq);
 				}
 			}
