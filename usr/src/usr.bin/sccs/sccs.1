@@ -17,12 +17,9 @@ is a front end
 to csvax:eric.
 that make them mesh more cleanly
 with the rest of UNIX.
-It also runs as a special user
-.B sccs
-so that the
-.SM SCCS
-file protection
-can be used to advantage.
+It also includes the capability to run
+``set user id'' to another user
+to provide additional protection.
 .PP
 Basically,
 .I sccs
@@ -59,8 +56,9 @@ The
 flag runs
 .I sccs
 as the real user
-rather than as the pseudo-user
-.B sccs.
+rather than as whatever effective user
+.I sccs
+is ``set user id'' to.
 The
 .B \-p
 flag defines the pathname of the directory
@@ -71,31 +69,9 @@ will be found;
 .PP
 Certain commands (such as
 .IR admin )
-cannot be run by all users,
-since it would allow anyone to change the authorizations.
-If the file
-.I ADMINFILE
-exists in the
-.SM SCCS
-directory,
-lines of the form
-.sp 0.3
-.in +0.5i
-.B A
-.I uid
-.in
-.sp 0.3
-in this file
-authorize the user with
-the numerical
-user id
-.I uid
-to run protected commands.
-If the file is not present,
-anyone can run all commands.
-This file can be expected to expand
-to contain more information
-in the future.
+cannot be run ``set user id'' by all users,
+since this would allow anyone to change the authorizations.
+These commands are always run as the real user.
 .SH EXAMPLES
 .de BX
 .nf
@@ -152,7 +128,6 @@ prt(SCCS),
 rmdel(SCCS),
 sccsdiff(SCCS),
 what(SCCS),
-sccsdir(UCB)
 .SH AUTHOR
 Eric Allman (csvax:eric)
 .SH DISCLAIMER
