@@ -1,4 +1,4 @@
-/*	cmdtab.c	4.1	81/05/09	*/
+/*	cmdtab.c	4.2	81/05/26	*/
 #include "tip.h"
 
 extern int shell(), getfl(), sendfile(), chdirectory(),
@@ -17,6 +17,7 @@ esctable_t etable[] =
 	{ '%',  NORM,	"connect program to remote host",consh },
 #endif
 	{ 'c',	NORM,	"change directory",		 chdirectory },
+	{ '.',	NORM,	"exit from tip",		 finish },
 	{CTRL(d),NORM,	"exit from tip",		 finish },
 	{ 's',	NORM,	"set variable",			 variable },
 	{ '?',	NORM,	"get this summary",		 help},
