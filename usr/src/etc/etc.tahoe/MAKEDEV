@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	1.2	%G%
+#	@(#)MAKEDEV	5.1	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -44,8 +44,10 @@ cy*)
 	esac
 	case $unit in
 	0|1|2|3|4|5|6|7)
-		four=`expr $unit + 4` ; eight=`expr $unit + 8`
-#		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
+		four=`expr $unit + 4`
+		eight=`expr $unit + 8`
+		twelve=`expr $unit + 12`
+#		twenty=`expr $unit + 20`
 		/etc/mknod mt$unit	b $blk $unit
 		/etc/mknod mt$four	b $blk $four
 		/etc/mknod mt$eight	b $blk $eight
