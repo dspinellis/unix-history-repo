@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.11	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.12	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1040,14 +1040,7 @@ pass5(blk, size)
 			}
 		} else if (getfmap(blk)) {
 			fixcg = 1;
-			if (preen)
-				pfatal("DUP BLKS IN BIT MAPS.");
-			if (++dupblk >= DUPTBLSIZE) {
-				printf("EXCESSIVE DUP BLKS IN BIT MAPS.");
-				if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
+			++dupblk;
 		} else {
 			n_ffree++;
 			setfmap(blk);
