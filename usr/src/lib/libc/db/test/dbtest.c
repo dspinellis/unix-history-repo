@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)dbtest.c	8.1 (Berkeley) %G%";
 #include <unistd.h>
 
 #include <db.h>
+#include "../PORT/include/compat.h"
 
 enum S { COMMAND, COMPARE, GET, PUT, REMOVE, SEQ, SEQFLAG, KEY, DATA };
 
@@ -476,75 +477,75 @@ setinfo(type, s)
 	switch(type) {
 	case DB_BTREE:
 		if (!strcmp("flags", s)) {
-			ib.flags = strtoul(eq, NULL, 0);
+			ib.flags = atoi(eq);
 			return (&ib);
 		}
 		if (!strcmp("cachesize", s)) {
-			ib.cachesize = strtoul(eq, NULL, 0);
+			ib.cachesize = atoi(eq);
 			return (&ib);
 		}
 		if (!strcmp("maxkeypage", s)) {
-			ib.maxkeypage = strtoul(eq, NULL, 0);
+			ib.maxkeypage = atoi(eq);
 			return (&ib);
 		}
 		if (!strcmp("minkeypage", s)) {
-			ib.minkeypage = strtoul(eq, NULL, 0);
+			ib.minkeypage = atoi(eq);
 			return (&ib);
 		}
 		if (!strcmp("lorder", s)) {
-			ib.lorder = strtoul(eq, NULL, 0);
+			ib.lorder = atoi(eq);
 			return (&ib);
 		}
 		if (!strcmp("psize", s)) {
-			ib.psize = strtoul(eq, NULL, 0);
+			ib.psize = atoi(eq);
 			return (&ib);
 		}
 		break;
 	case DB_HASH:
 		if (!strcmp("bsize", s)) {
-			ih.bsize = strtoul(eq, NULL, 0);
+			ih.bsize = atoi(eq);
 			return (&ih);
 		}
 		if (!strcmp("ffactor", s)) {
-			ih.ffactor = strtoul(eq, NULL, 0);
+			ih.ffactor = atoi(eq);
 			return (&ih);
 		}
 		if (!strcmp("nelem", s)) {
-			ih.nelem = strtoul(eq, NULL, 0);
+			ih.nelem = atoi(eq);
 			return (&ih);
 		}
 		if (!strcmp("cachesize", s)) {
-			ih.cachesize = strtoul(eq, NULL, 0);
+			ih.cachesize = atoi(eq);
 			return (&ih);
 		}
 		if (!strcmp("lorder", s)) {
-			ih.lorder = strtoul(eq, NULL, 0);
+			ih.lorder = atoi(eq);
 			return (&ih);
 		}
 		break;
 	case DB_RECNO:
 		if (!strcmp("flags", s)) {
-			rh.flags = strtoul(eq, NULL, 0);
+			rh.flags = atoi(eq);
 			return (&rh);
 		}
 		if (!strcmp("cachesize", s)) {
-			rh.cachesize = strtoul(eq, NULL, 0);
+			rh.cachesize = atoi(eq);
 			return (&rh);
 		}
 		if (!strcmp("lorder", s)) {
-			rh.lorder = strtoul(eq, NULL, 0);
+			rh.lorder = atoi(eq);
 			return (&rh);
 		}
 		if (!strcmp("reclen", s)) {
-			rh.reclen = strtoul(eq, NULL, 0);
+			rh.reclen = atoi(eq);
 			return (&rh);
 		}
 		if (!strcmp("bval", s)) {
-			rh.bval = strtoul(eq, NULL, 0);
+			rh.bval = atoi(eq);
 			return (&rh);
 		}
 		if (!strcmp("psize", s)) {
-			rh.psize = strtoul(eq, NULL, 0);
+			rh.psize = atoi(eq);
 			return (&rh);
 		}
 		break;
