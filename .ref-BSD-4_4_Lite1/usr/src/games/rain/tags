@@ -1,4 +1,0 @@
-Mrain	rain.c	/^main(argc, argv)$/
-cursor	rain.c	/^#define	cursor(c, r)	tputs(tgoto(CM, c, r), 1, fpu/
-fputchar	rain.c	/^fputchar(c)$/
-onsig	rain.c	/^onsig()$/

@@ -1,5 +1,0 @@
-Mching.phx	ching.phx.c	/^main(argc, argv)$/
-changes	ching.phx.c	/^changes()$/
-codem	ching.phx.c	/^codem(a)$/
-doahex	ching.phx.c	/^doahex()$/
-phx	ching.phx.c	/^phx(hexagram, flag)$/
