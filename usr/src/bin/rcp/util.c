@@ -6,21 +6,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include <signal.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
-#include <string.h>
+#include <err.h>
+#include <errno.h>
 #include <paths.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "extern.h"
 
 char *
@@ -50,7 +52,7 @@ verifydir(cp)
 			return;
 		errno = ENOTDIR;
 	}
-	err("%s: %s", cp, strerror(errno));
+	run_err("%s: %s", cp, strerror(errno));
 	exit(1);
 }
 
@@ -71,7 +73,7 @@ okname(cp0)
 	} while (*++cp);
 	return (1);
 
-bad:	(void)fprintf(stderr, "rcp: %s: invalid user name\n", cp0);
+bad:	warnx("%s: invalid user name", cp0);
 	return (0);
 }
 
@@ -108,7 +110,7 @@ allocbuf(bp, fd, blksize)
 	size_t size;
 
 	if (fstat(fd, &stb) < 0) {
-		err("fstat: %s", strerror(errno));
+		run_err("fstat: %s", strerror(errno));
 		return (0);
 	}
 	size = roundup(stb.st_blksize, blksize);
@@ -118,7 +120,7 @@ allocbuf(bp, fd, blksize)
 		return (bp);
 	if ((bp->buf = realloc(bp->buf, size)) == NULL) {
 		bp->cnt = 0;
-		err("%s", strerror(errno));
+		run_err("%s", strerror(errno));
 		return (0);
 	}
 	bp->cnt = size;
@@ -130,13 +132,6 @@ lostconn(signo)
 	int signo;
 {
 	if (!iamremote)
-		(void)fprintf(stderr, "rcp: lost connection\n");
-	exit(1);
-}
-
-void
-nospace()
-{
-	(void)fprintf(stderr, "rcp: %s\n", strerror(errno));
+		warnx("lost connection");
 	exit(1);
 }
