@@ -1,4 +1,4 @@
-/*	up.c	6.2	84/08/29	*/
+/*	up.c	6.3	85/03/12	*/
 
 #include "up.h"
 #if NSC > 0
@@ -26,6 +26,7 @@
 #include "cmap.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
@@ -790,7 +791,7 @@ upecc(ui, flag)
 		npf--;
 		reg--;
 		mask = up->upec2;
-		printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
+		log(KERN_RECOV, "up%d%c: soft ecc sn%d\n", dkunit(bp),
 			'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 		/*
 		 * Flush the buffered data path, and compute the

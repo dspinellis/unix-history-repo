@@ -1,4 +1,4 @@
-/*	rk.c	6.3	84/08/29	*/
+/*	rk.c	6.4	85/03/12	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -33,6 +33,7 @@ int	rkbdebug;
 #include "dkbad.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -571,7 +572,7 @@ rkecc(ui, flag)
 
 		npf--;
 		reg--;
-		printf("rk%d%c: soft ecc sn%d\n", dkunit(bp),
+		log(KERN_RECOV, "rk%d%c: soft ecc sn%d\n", dkunit(bp),
 		    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 		mask = rk->rkec2;
 		i = rk->rkec1 - 1;		/* -1 makes 0 origin */

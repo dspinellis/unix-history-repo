@@ -1,4 +1,4 @@
-/*	idc.c	6.3	84/12/20	*/
+/*	idc.c	6.4	85/03/12	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -33,6 +33,7 @@ int	*trp = idctrb;
 #include "dkbad.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -696,7 +697,7 @@ idcecc(ui)
 	tn = idc_softc.sc_trk;
 	sn = idc_softc.sc_sect;
 	um->um_tab.b_active = 1;	/* Either complete or continuing... */
-	printf("rb%d%c: soft ecc sn%d\n", dkunit(bp),
+	log(KERN_RECOV, "rb%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07),
 	    (cn*st->ntrak + tn) * st->nsect + sn + npf);
 	mask = idc->idceccpat;
