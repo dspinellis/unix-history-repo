@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)swap.c	1.6 (Lucasfilm) %G%";
+static char *sccsid = "@(#)swap.c	1.7 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
@@ -17,11 +17,8 @@ static char *sccsid = "@(#)swap.c	1.6 (Lucasfilm) %G%";
 WINDOW *
 openswap()
 {
-	static WINDOW *w = NULL;
 
-        if (w == NULL)
-		w = newwin(20, 70, 3, 5);
-	return (w);
+	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
 
 closeswap(w)
@@ -30,10 +27,9 @@ closeswap(w)
 
 	if (w == NULL)
 		return;
-	move(5, 0);
-	clrtobot();
 	wclear(w);
 	wrefresh(w);
+	delwin(w);
 }
 
 int	dmmin;
@@ -79,7 +75,7 @@ showswap()
 			buckets[swatodev(xp->x_ptdaddr)]
 			    [dmtoindex(ctod(ctopt(xp->x_size)))]++;
 	}
-	row = swapdisplay(4, dmtext, 'X');
+	row = swapdisplay(2, dmtext, 'X');
 	if (kprocp == NULL)
 		return;
         for (i = 0, pp = kprocp; i < nproc; i++, pp++) {
@@ -96,8 +92,10 @@ showswap()
 			vusize(pp);
 #endif
         }
-	(void) swapdisplay(row + 1, dmmax, 'X');
+	(void) swapdisplay(1+row, dmmax, 'X');
 }
+
+#define	OFFSET	5			/* left hand column */
 
 swapdisplay(baserow, dmbound, c)
 	int baserow, dmbound;
@@ -110,7 +108,7 @@ swapdisplay(baserow, dmbound, c)
 	for (row = baserow, i = dmmin; i <= dmbound; i *= 2, row++) {
 		for (j = 0; j < nswdev; j++) {
 			pb = &buckets[j][row - baserow];
-			wmove(wnd, row, j * (1 + colwidth));
+			wmove(wnd, row, OFFSET + j * (1 + colwidth));
 			k = MIN(*pb, colwidth);
 			if (*pb > colwidth) {
 				sprintf(buf, " %d", *pb);
@@ -272,9 +270,8 @@ labelswap()
 		error("Don't know how many swap devices.\n");
 		return;
 	}
-        move(5, 0);
-	colwidth = (70 - (nswdev - 1)) / nswdev;
-	row = swaplabel(5, dmtext, 1);
+	colwidth = (COLS - OFFSET - (nswdev - 1)) / nswdev;
+	row = swaplabel(0, dmtext, 1);
 	(void) swaplabel(row, dmmax, 0);
 }
 
@@ -285,23 +282,22 @@ swaplabel(row, dmbound, donames)
 	register int i, j;
 
 	for (i = 0; i < nswdev; i++) {
-		if (donames) {
-			move(row, 5 + i * (1 + colwidth) + (colwidth - 3) / 2);
-			printw("%s%d", devnames[major(swdevt[i].sw_dev)],
-			    minor(swdevt[i].sw_dev) >> 3);
-		}
-		for (j = 0; j + 5 < colwidth; j += 5) {
-			move(row + donames, 5 + i * (1 + colwidth) + j);
-			printw("/%-2d  ", j);
-		}
+		if (donames)
+			mvwprintw(wnd,
+			    row, OFFSET + i*(1 + colwidth) + (colwidth - 3)/2,
+			    "%s%d", devnames[major(swdevt[i].sw_dev)],
+			        minor(swdevt[i].sw_dev) >> 3);
+		for (j = 0; j + 5 < colwidth; j += 5)
+			mvwprintw(wnd, row + donames,
+			    OFFSET + i*(1 + colwidth) + j, "/%-2d  ", j);
 	}
 	row += 1 + donames;
 	for (j = 0, i = dmmin; i <= dmbound; i *= 2, j++, row++) {
 		int k;
 
-		mvprintw(row, 0, "%4d|", i);
+		mvwprintw(wnd, row, 0, "%4d|", i);
 		for (k = 1; k < nswdev; k++)
-			mvwaddch(wnd, row - 3, k * (1 + colwidth) - 1, '|');
+			mvwaddch(wnd, row, OFFSET + k*(1 + colwidth) - 1, '|');
 	}
 	return (row);
 }

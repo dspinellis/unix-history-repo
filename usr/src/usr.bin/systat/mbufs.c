@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	1.4 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)mbufs.c	1.5 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
@@ -11,11 +11,8 @@ static char sccsid[] = "@(#)mbufs.c	1.4 (Lucasfilm) %G%";
 WINDOW *
 openmbufs()
 {
-	static WINDOW *w = NULL;
 
-	if (w == NULL)
-        	w = newwin(20, 70, 3, 5);
-	return (w);
+	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
 
 closembufs(w)
@@ -24,10 +21,9 @@ closembufs(w)
 
 	if (w == NULL)
 		return;
-	move(5, 0);
-	clrtobot();
 	wclear(w);
 	wrefresh(w);
+	delwin(w);
 }
 
 struct	mbstat *mb;
@@ -35,13 +31,12 @@ struct	mbstat *mb;
 labelmbufs()
 {
 
-        move(5, 0); clrtoeol();
-        mvaddstr(5, 20,
-                "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50");
+        wmove(wnd, 0, 0); wclrtoeol(wnd);
+        mvwaddstr(wnd, 0, 10,
+           "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50  /55  /60");
 }
 
-#define	NLINES	15		/* max # which can fit on screen */
-char *mtnames[NLINES] = {
+char *mtnames[] = {
 	"free",
 	"data",
 	"headers",
@@ -56,8 +51,8 @@ char *mtnames[NLINES] = {
 	"frags",
 	"rights",
 	"ifaddrs",
-	"#14"
 };
+#define	NNAMES	(sizeof (mtnames) / sizeof (mtnames[0]))
 
 showmbufs()
 {
@@ -66,21 +61,23 @@ showmbufs()
 
 	if (mb == 0)
 		return;
-	for (j = 0; j < NLINES; j++) {
+	for (j = 0; j < wnd->_maxy; j++) {
 		max = 0, index = -1; 
-		for (i = 0; i < NLINES; i++)
+		for (i = 0; i < wnd->_maxy; i++)
 			if (mb->m_mtypes[i] > max) {
 				max = mb->m_mtypes[i];
 				index = i;
 			}
 		if (max == 0)
 			break;
-		wmove(wnd, 3 + j, 0);
-		waddstr(wnd, mtnames[index]);
-		wmove(wnd, 3 + j, 15);
-		if (max > 50) {
+		if (j > NNAMES)
+			mvwprintw(wnd, 1+j, 0, "%10d", index);
+		else
+			mvwprintw(wnd, 1+j, 0, "%-10.10s", mtnames[index]);
+		wmove(wnd, 1 + j, 10);
+		if (max > 60) {
 			sprintf(buf, " %d", max);
-			max = 50;
+			max = 60;
 			while (max--)
 				waddch(wnd, 'X');
 			waddstr(wnd, buf);
@@ -91,10 +88,7 @@ showmbufs()
 		}
 		mb->m_mtypes[index] = 0;
 	}
-	while (j++ < NLINES) {
-		wmove(wnd, 3 + j, 0);
-		wclrtoeol(wnd);
-	}
+	wmove(wnd, 1+j, 0); wclrtobot(wnd);
 }
 
 static struct nlist nlst[] = {
