@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)crypt.3	6.5 (Berkeley) %G%
+.\"     @(#)crypt.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CRYPT 3
@@ -18,13 +18,13 @@
 .Sh SYNOPSIS
 .Ft char
 .Fn *crypt "const char *key" "const char *setting"
-.Ft void
+.Ft int
 .Fn setkey "char *key"
-.Ft void
+.Ft int
 .Fn encrypt "char *block" "int flag"
-.Ft void
+.Ft int
 .Fn des_setkey "const char *key"
-.Ft void
+.Ft int
 .Fn des_cipher "const char *in" "char *out" "long salt" "int count"
 .Sh DESCRIPTION
 The
@@ -118,6 +118,26 @@ into groups of 8 and ignoring the last bit in each group.
 specifies perturbations to
 .Tn DES
 as described above.
+.Pp
+The function
+.Fn crypt
+returns a pointer to the encrypted value on success and NULL on failure.
+The functions
+.Fn setkey ,
+.Fn encrypt ,
+.Fn des_setkey ,
+and
+.Fn des_cipher
+return 0 on success and 1 on failure.
+Historically, the functions
+.Fn setkey
+and
+.Fn encrypt
+did not return any value.
+They have been provided return values primarily to distinguish
+implementations where hardware support is provided but not
+available or where the DES encryption is not available due to the
+usual political silliness.
 .Sh SEE ALSO
 .Xr login 1 ,
 .Xr passwd 1 ,
@@ -166,6 +186,7 @@ is ridiculous.
 The
 .Fn crypt
 function leaves its result in an internal static object and returns
-a pointer to that object. Subsequent calls to
+a pointer to that object.
+Subsequent calls to
 .Fn crypt
 will modify the same object.

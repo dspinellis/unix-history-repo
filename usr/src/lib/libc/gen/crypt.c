@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -457,7 +457,8 @@ crypt(key, setting)
 			key++;
 		keyblock.b[i] = t;
 	}
-	des_setkey((char *)keyblock.b);	/* also initializes "a64toi" */
+	if (des_setkey((char *)keyblock.b))	/* also initializes "a64toi" */
+		return(NULL);
 
 	encp = &cryptresult[0];
 	switch (*setting) {
@@ -491,7 +492,9 @@ crypt(key, setting)
 		salt = (salt<<6) | a64toi[t];
 	}
 	encp += salt_size;
-	des_cipher((char *)&constdatablock, (char *)&rsltblock, salt, num_iter);
+	if (des_cipher((char *)&constdatablock, (char *)&rsltblock,
+	    salt, num_iter))
+		return(NULL);
 
 	/*
 	 * encrypt the remainder of the password 8 characters at a time.
@@ -506,8 +509,11 @@ crypt(key, setting)
 			if (t == 0)
 				break;	/* pad out with previous key */
 		}
-		des_setkey((char *)keyblock.b);
-		des_cipher((char *)&constdatablock, (char *)&xdatablock, 0L, 1);
+		if (des_setkey((char *)keyblock.b))
+			return(NULL);
+		if (des_cipher((char *)&constdatablock,
+		    (char *)&xdatablock, 0L, 1))
+			return(NULL);
 		rsltblock.b32.i0 ^= xdatablock.b32.i0;
 		rsltblock.b32.i1 ^= xdatablock.b32.i1;
 	}
@@ -545,7 +551,6 @@ static C_block	KS[KS_SIZE];
 /*
  * Set up the key schedule from the key.
  */
-void
 des_setkey(key)
 	register const char *key;
 {
@@ -569,6 +574,7 @@ des_setkey(key)
 		PERM6464(K,K0,K1,(unsigned char *)key,ptabp);
 		STORE(K&0xfcfcfcfcL, K0&0xfcfcfcfcL, K1, *(C_block *)key);
 	}
+	return(0);
 }
 
 /*
@@ -579,7 +585,6 @@ des_setkey(key)
  * NOTE: the performance of this routine is critically dependent on your
  * compiler and machine architecture.
  */
-void
 des_cipher(in, out, salt, num_iter)
 	const char *in;
 	char *out;
@@ -694,6 +699,7 @@ des_cipher(in, out, salt, num_iter)
 #else
 	STORE(L,L0,L1,*(C_block *)out);
 #endif
+	return(0);
 }
 
 
@@ -869,7 +875,6 @@ init_perm(perm, p, chars_in, chars_out)
 /*
  * "setkey" routine (for backwards compatibility)
  */
-void
 setkey(key)
 	register const char *key;
 {
@@ -884,13 +889,12 @@ setkey(key)
 		}
 		keyblock.b[i] = k;
 	}
-	des_setkey((char *)keyblock.b);
+	return(des_setkey((char *)keyblock.b));
 }
 
 /*
  * "encrypt" routine (for backwards compatibility)
  */
-void
 encrypt(block, flag)
 	register char *block;
 	int flag;
@@ -906,7 +910,8 @@ encrypt(block, flag)
 		}
 		cblock.b[i] = k;
 	}
-	des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag? -1: 1));
+	if (des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1)))
+		return(1);
 	for (i = 7; i >= 0; i--) {
 		k = cblock.b[i];
 		for (j = 7; j >= 0; j--) {
@@ -914,6 +919,7 @@ encrypt(block, flag)
 			k >>= 1;
 		}
 	}
+	return(0);
 }
 
 #ifdef DEBUG
