@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.4 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.5 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -20,6 +20,8 @@ int	naptime = 5;
 int     die();
 int     display();
 int     suspend();
+
+static	WINDOW *wload;			/* one line window for load average */
 
 main(argc, argv)
         int argc;
@@ -75,15 +77,20 @@ main(argc, argv)
         signal(SIGTERM, die);
 
         /*
-	 * Initialize display.  Load average appears in standard
-	 * window with current display's overlapping sub-window
-	 * maintained by the display routines to minimize update
-	 * work by curses.
+	 * Initialize display.  Load average appears in a one line
+	 * window of its own.  Current command's display appears in
+	 * an overlapping sub-window of stdscr configured by the display
+	 * routines to minimize update work by curses.
 	 */
         initscr();
 	wnd = (*curcmd->c_open)();
 	if (wnd == NULL) {
 		fprintf(stderr, "Couldn't initialize display.\n");
+		die();
+	}
+	wload = newwin(1, 0, 3, 20);
+	if (wload == NULL) {
+		fprintf(stderr, "Couldn't set up load average window.\n");
 		die();
 	}
 
@@ -98,8 +105,11 @@ main(argc, argv)
         labels();
 
         known[0].k_uid = -1;
-        strcpy(known[0].k_name, "<idle>");
+	known[0].k_name[0] = '\0';
         numknown = 1;
+	procs[0].pid = -1;
+	strcpy(procs[0].cmd, "<idle>");
+	numprocs = 1;
         dellave = 0.0;
 
         signal(SIGALRM, display);
@@ -116,7 +126,7 @@ labels()
 
         mvaddstr(2, 20,
                 "/0   /1   /2   /3   /4   /5   /6   /7   /8   /9   /10");
-        mvwaddstr(wnd, 0, 0, "Load Average");
+        mvaddstr(3, 5, "Load Average");
         (*curcmd->c_label)();
 #ifdef notdef
         mvprintw(21, 25, "CPU usage on %s", hostname);
@@ -143,13 +153,13 @@ display()
         if (dellave < 0.1)
                 c = '|';
         dellave = lave;
-        wmove(wnd, 0, 15);
-        wclrtoeol(wnd);
-        for (i = (j > 50)? 50 : j; i > 0; i--)
-                waddch(wnd, c);
+        wmove(wload, 0, 0); wclrtoeol(wload);
+        for (i = (j > 50) ? 50 : j; i > 0; i--)
+                waddch(wload, c);
         if (j > 50)
-                wprintw(wnd, " %4.1f", lave);
+                wprintw(wload, " %4.1f", lave);
         (*curcmd->c_refresh)();
+	wrefresh(wload);
         wrefresh(wnd);
         move(22, col);
         refresh();
