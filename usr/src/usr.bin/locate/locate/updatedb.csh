@@ -1,6 +1,6 @@
 #!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.4	(Berkeley)	83/07/21
+#	@(#)updatedb.csh	4.5	(Berkeley)	85/03/24
 #
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/lib/find		# for subprograms
@@ -32,5 +32,6 @@ if { grep -s -v 0 $errs } then
 	echo 'squeeze error: out of sort space' | mail $FINDHONCHO
 else
 	$LIBDIR/code $bigrams < $filelist > $FCODES
+	chmod 644 $FCODES
 	rm $bigrams $filelist $errs
 endif
