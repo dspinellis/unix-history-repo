@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.20 (Berkeley) %G%
+ *	@(#)fts.h	5.21 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -21,13 +21,14 @@ typedef struct {
 	int fts_nitems;			/* elements in the sort array */
 	int (*fts_compar)();		/* compare function */
 
-#define	FTS_LOGICAL	0x001		/* logical walk */
-#define	FTS_NOCHDIR	0x002		/* don't change directories */
-#define	FTS_NOSTAT	0x004		/* don't get stat info */
-#define	FTS_PHYSICAL	0x008		/* physical walk */
-#define	FTS_SEEDOT	0x010		/* return dot and dot-dot */
-#define	FTS_STOP	0x020		/* (private) unrecoverable error */
-#define	FTS_XDEV	0x040		/* don't cross devices */
+#define	FTS_COMFOLLOW	0x001		/* follow command line symlinks */
+#define	FTS_LOGICAL	0x002		/* logical walk */
+#define	FTS_NOCHDIR	0x004		/* don't change directories */
+#define	FTS_NOSTAT	0x008		/* don't get stat info */
+#define	FTS_PHYSICAL	0x010		/* physical walk */
+#define	FTS_SEEDOT	0x020		/* return dot and dot-dot */
+#define	FTS_STOP	0x040		/* (private) unrecoverable error */
+#define	FTS_XDEV	0x080		/* don't cross devices */
 	int fts_options;		/* openfts() options */
 } FTS;
 
