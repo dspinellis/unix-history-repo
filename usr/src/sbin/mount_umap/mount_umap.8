@@ -1,4 +1,4 @@
-.\" Copyright (c) 1992, 1993
+.\" Copyright (c) 1992, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\" All rights reserved.
 .\"
@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_umap.8	8.1 (Berkeley) %G%
+.\"	@(#)mount_umap.8	8.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MOUNT_UMAP 8
@@ -17,8 +17,10 @@
 .Nd sample file system layer
 .Sh SYNOPSIS
 .Nm mount_umap
-.Op Fl F Ar fsoptions
-.Ar target mount-point uid-mapfile gid-mapfile
+.Ar target
+.Ar mount-point
+.Ar uid-mapfile
+.Ar gid-mapfile
 .Sh DESCRIPTION
 The
 .Nm mount_umap
@@ -81,6 +83,7 @@ command is meant to serve as a simple example of file system layering.
 It is not meant for production use.  The implementation is not very
 sophisticated.
 .Sh SEE ALSO
+.Xr mount 8 ,
 .Xr mount_null 8 ,
 .Xr mount_lofs 8
 .Sh HISTORY

@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_procfs.8	8.1 (Berkeley) %G%
+.\"	@(#)mount_procfs.8	8.2 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -19,7 +19,7 @@
 .Nd mount the process file system
 .Sh SYNOPSIS
 .Nm mount_procfs
-.Op Fl F Ar fsoptions
+.Op Fl o Ar options
 .Pa /proc
 .Pa mount_point
 .Sh DESCRIPTION
@@ -32,6 +32,17 @@ The conventional mount point is
 This command is normally executed by
 .Xr mount 8
 at boot time.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
+.Xr mount 8
+man page for possible options and their meanings.
+.El
 .Pp
 The root of the process filesystem
 contains an entry for each active process.
