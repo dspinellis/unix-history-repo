@@ -1,0 +1,6 @@
+cc -z sysmod.o error.o prvect.o ../../lib/dbulib ../../lib/iutil ../../lib/gutil -o sysmod
+chmod 4751 sysmod
+ls -l sysmod; size sysmod
+-rwsr-x--x  1 ingres      58368 Jan 30 23:05 sysmod
+text	data	bss	dec	hex
+36864	10240	26796	73900	120ac
