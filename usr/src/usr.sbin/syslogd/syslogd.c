@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #define COMPAT		/* include 4.3 Alpha compatibility */
@@ -500,7 +500,7 @@ logmsg(pri, msg, from, flags)
 
 	dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n", pri, flags, from, msg);
 
-	omask = sigblock(sigmask(SIGALRM)|sigmask(SIGHUP));
+	omask = sigblock(sigmask(SIGHUP));
 
 	/*
 	 * Check to see if msg looks non-standard.
@@ -569,6 +569,7 @@ logmsg(pri, msg, from, flags)
 			(void) close(cfd);
 		}
 		untty();
+		(void) sigsetmask(omask);
 		return;
 	}
 	for (f = Files; f < &Files[NLOGS]; f++) {
