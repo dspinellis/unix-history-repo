@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,6 +46,9 @@ struct bits {
 	{ RTF_HOST,	'H' },
 	{ RTF_DYNAMIC,	'D' },
 	{ RTF_MODIFIED,	'M' },
+	{ RTF_CLONING,	'C' },
+	{ RTF_XRESOLVE,	'R' },
+	{ RTF_LLINFO,	'L' },
 	{ 0 }
 };
 
@@ -117,7 +120,7 @@ treestuff(rtree)
 off_t rtree;
 {
 	struct radix_node_head *rnh, head;
-	    
+
 	if (NewTree)
 		return(ntreestuff());
 	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
@@ -162,7 +165,7 @@ again:
 			p_rtentry(&rtentry);
 		} else {
 			p_sockaddr(kgetsa((struct sockaddr *)rnode.rn_key),
-				    0, "%-44.44s ");
+				    0, 44);
 			putchar('\n');
 		}
 		if (rn = rnode.rn_dupedkey)
@@ -182,7 +185,7 @@ ntreestuff()
 	if ((needed = getkerninfo(KINFO_RT_DUMP, 0, 0, 0)) < 0)
 		{ perror("route-getkerninfo-estimate"); exit(1);}
 	if ((buf = malloc(needed)) == 0)
-		{ printf("out of space\n");; exit(1);}
+		{ printf("out of space\n"); exit(1);}
 	if (getkerninfo(KINFO_RT_DUMP, buf, &needed, 0) < 0)
 		{ perror("actual retrieval of routing table"); exit(1);}
 	lim  = buf + needed;
@@ -218,24 +221,23 @@ register struct rt_msghdr *rtm;
 		old_af = af;
 	}
 	if (rtm->rtm_addrs == RTA_DST)
-		p_sockaddr(sa, 0, "%-36.36s ");
+		p_sockaddr(sa, 0, 36);
 	else {
-		p_sockaddr(sa, rtm->rtm_flags, "%-16.16s ");
+		p_sockaddr(sa, rtm->rtm_flags, 16);
 		if (sa->sa_len == 0)
 			sa->sa_len = sizeof(long);
 		sa = (struct sockaddr *)(sa->sa_len + (char *)sa);
-		p_sockaddr(sa, 0, "%-18.18s ");
+		p_sockaddr(sa, 0, 18);
 	}
 	p_flags(rtm->rtm_flags & interesting, "%-6.6s ");
 	putchar('\n');
 }
 
-p_sockaddr(sa, flags, format)
+p_sockaddr(sa, flags, width)
 struct sockaddr *sa;
-int flags;
-char *format;
+int flags, width;
 {
-	char workbuf[128], *cp, *cplim;
+	char format[20], workbuf[128], *cp, *cplim;
 	register char *cpout;
 
 	switch(sa->sa_family) {
@@ -266,7 +268,10 @@ char *format;
 		cp = workbuf;
 	    }
 	}
-	printf(format, cp);
+	if (nflag)
+		printf("%-*s ", width, cp);
+	else
+		printf("%-*.*s ", width, width, cp);
 }
 
 p_flags(f, format)
@@ -289,8 +294,8 @@ register struct rtentry *rt;
 	register struct sockaddr *sa;
 	struct ifnet ifnet;
 
-	p_sockaddr(kgetsa(rt_key(rt)), rt->rt_flags, "%-16.16s ");
-	p_sockaddr(kgetsa(rt->rt_gateway), 0, "%-18.18s ");;
+	p_sockaddr(kgetsa(rt_key(rt)), rt->rt_flags, 16);
+	p_sockaddr(kgetsa(rt->rt_gateway), 0, 18);
 	p_flags(rt->rt_flags, "%-6.6s ");
 	printf("%6d %8d ", rt->rt_refcnt, rt->rt_use);
 	if (rt->rt_ifp == 0) {
@@ -311,8 +316,8 @@ register struct ortentry *rt;
 	register struct sockaddr_in *sin;
 	struct ifnet ifnet;
 
-	p_sockaddr(&rt->rt_dst, rt->rt_flags, "%-16.16s ");
-	p_sockaddr(&rt->rt_gateway, 0, "%-18.18s ");
+	p_sockaddr(&rt->rt_dst, rt->rt_flags, 16);
+	p_sockaddr(&rt->rt_gateway, 0, 18);
 	p_flags(rt->rt_flags, "%-6.6s ");
 	printf("%6d %8d ", rt->rt_refcnt, rt->rt_use);
 	if (rt->rt_ifp == 0) {
@@ -478,7 +483,7 @@ struct sockaddr_ns *sns;
 		return (mybuf);
 	}
 
-	if (bcmp(ns_bh, work.x_host.c_host, 6) == 0) { 
+	if (bcmp(ns_bh, work.x_host.c_host, 6) == 0) {
 		host = "any";
 	} else if (bcmp(ns_nullh, work.x_host.c_host, 6) == 0) {
 		host = "*";
