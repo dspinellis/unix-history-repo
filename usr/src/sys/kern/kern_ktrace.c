@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_ktrace.c	7.9 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.10 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -16,13 +16,12 @@
 #include "vnode.h"
 #include "ktrace.h"
 #include "malloc.h"
+#include "syslog.h"
 
 #include "syscalls.c"
 
 extern int nsysent;
 extern char *syscallnames[];
-
-int ktrace_nocheck = 0;	/* set to 1 when security checks in place */
 
 struct ktr_header *
 ktrgetheader(type)
@@ -47,8 +46,6 @@ ktrsyscall(vp, code, narg, args)
 	register len = sizeof(struct ktr_syscall) + (narg * sizeof(int));
 	int 	*argp, i;
 
-	if (kth == NULL)
-		return;
 	MALLOC(ktp, struct ktr_syscall *, len, M_TEMP, M_WAITOK);
 	ktp->ktr_code = code;
 	ktp->ktr_narg = narg;
@@ -69,8 +66,6 @@ ktrsysret(vp, code, error, retval)
 	struct ktr_header *kth = ktrgetheader(KTR_SYSRET);
 	struct ktr_sysret ktp;
 
-	if (kth == NULL)
-		return;
 	ktp.ktr_code = code;
 	ktp.ktr_error = error;
 	ktp.ktr_retval = retval;		/* what about val2 ? */
@@ -88,8 +83,6 @@ ktrnamei(vp, path)
 {
 	struct ktr_header *kth = ktrgetheader(KTR_NAMEI);
 
-	if (kth == NULL)
-		return;
 	kth->ktr_len = strlen(path);
 	kth->ktr_buf = path;
 
@@ -108,7 +101,7 @@ ktrgenio(vp, fd, rw, iov, len, error)
 	register caddr_t cp;
 	register int resid = len, cnt;
 	
-	if (kth == NULL || error)
+	if (error)
 		return;
 	MALLOC(ktp, struct ktr_genio *, sizeof(struct ktr_genio) + len,
 		M_TEMP, M_WAITOK);
@@ -140,8 +133,6 @@ ktrpsig(vp, sig, action, mask, code)
 	struct ktr_header *kth = ktrgetheader(KTR_PSIG);
 	struct ktr_psig	kp;
 
-	if (kth == NULL)
-		return;
 	kp.signo = (char)sig;
 	kp.action = action;
 	kp.mask = mask;
@@ -172,18 +163,13 @@ ktrace(curp, uap, retval)
 	register struct vnode *vp = NULL;
 	register struct nameidata *ndp = &u.u_nd;
 	register struct proc *p;
-	register ops = KTROP(uap->ops);
 	struct pgrp *pg;
-	register int facs = uap->facs;
-	register int ret = 0;
+	int facs = uap->facs & ~KTRFAC_ROOT;
+	int ops = KTROP(uap->ops);
+	int descend = uap->ops & KTRFLAG_DESCEND;
+	int ret = 0;
 	int error = 0;
 
-	/*
-	 * Until security implications are thought through,
-	 * limit tracing to root (unless ktrace_nocheck is set).
-	 */
-	if (!ktrace_nocheck && (error = suser(u.u_cred, &u.u_acflag)))
-		return (error);
 	if (ops != KTROP_CLEAR) {
 		/*
 		 * an operation which requires a file argument.
@@ -204,45 +190,54 @@ ktrace(curp, uap, retval)
 	if (ops == KTROP_CLEARFILE) {
 		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_tracep == vp) {
-				p->p_tracep = NULL;
-				p->p_traceflag = 0;
-				vrele(vp);
+				if (ktrcanset(curp, p)) {
+					p->p_tracep = NULL;
+					p->p_traceflag = 0;
+					vrele(vp);
+				} else
+					error = EPERM;
 			}
 		}
 		goto done;
 	}
 	/*
-	 * need something to (un)trace
+	 * need something to (un)trace (XXX - why is this here?)
 	 */
 	if (!facs) {
 		error = EINVAL;
 		goto done;
 	}
 	/* 
-	 * doit
+	 * do it
 	 */
 	if (uap->pid < 0) {
+		/*
+		 * by process group
+		 */
 		pg = pgfind(-uap->pid);
 		if (pg == NULL) {
 			error = ESRCH;
 			goto done;
 		}
 		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt)
-			if (uap->ops&KTRFLAG_DESCEND)
-				ret |= ktrsetchildren(p, ops, facs, vp);
+			if (descend)
+				ret |= ktrsetchildren(curp, p, ops, facs, vp);
 			else 
-				ret |= ktrops(p, ops, facs, vp);
+				ret |= ktrops(curp, p, ops, facs, vp);
 					
 	} else {
+		/*
+		 * by pid
+		 */
 		p = pfind(uap->pid);
 		if (p == NULL) {
 			error = ESRCH;
 			goto done;
 		}
-		if (ops&KTRFLAG_DESCEND)
-			ret |= ktrsetchildren(p, ops, facs, vp);
+		if (descend)
+			ret |= ktrsetchildren(curp, p, ops, facs, vp);
 		else
-			ret |= ktrops(p, ops, facs, vp);
+			ret |= ktrops(curp, p, ops, facs, vp);
 	}
 	if (!ret)
 		error = EPERM;
@@ -252,12 +247,12 @@ done:
 	return (error);
 }
 
-ktrops(p, ops, facs, vp)
-	struct proc *p;
+ktrops(curp, p, ops, facs, vp)
+	struct proc *curp, *p;
 	struct vnode *vp;
 {
 
-	if (u.u_uid && u.u_uid != p->p_uid)
+	if (!ktrcanset(curp, p))
 		return (0);
 	if (ops == KTROP_SET) {
 		if (p->p_tracep != vp) { 
@@ -270,9 +265,11 @@ ktrops(p, ops, facs, vp)
 			p->p_tracep = vp;
 		}
 		p->p_traceflag |= facs;
+		if (curp->p_uid == 0)
+			p->p_traceflag |= KTRFAC_ROOT;
 	} else {	
 		/* KTROP_CLEAR */
-		if (((p->p_traceflag &= ~facs) & ~KTRFAC_INHERIT) == 0) {
+		if (((p->p_traceflag &= ~facs) & KTRFAC_MASK) == 0) {
 			/* no more tracing */
 			p->p_traceflag = 0;
 			if (p->p_tracep != NULL) {
@@ -282,11 +279,11 @@ ktrops(p, ops, facs, vp)
 		}
 	}
 
-	return 1;
+	return (1);
 }
 
-ktrsetchildren(top, ops, facs, vp)
-	struct proc *top;
+ktrsetchildren(curp, top, ops, facs, vp)
+	struct proc *curp, *top;
 	struct vnode *vp;
 {
 	register struct proc *p;
@@ -294,7 +291,7 @@ ktrsetchildren(top, ops, facs, vp)
 
 	p = top;
 	for (;;) {
-		ret |= ktrops(p, ops, facs, vp);
+		ret |= ktrops(curp, p, ops, facs, vp);
 		/*
 		 * If this process has children, descend to them next,
 		 * otherwise do any siblings, and if done with this level,
@@ -303,13 +300,13 @@ ktrsetchildren(top, ops, facs, vp)
 		if (p->p_cptr)
 			p = p->p_cptr;
 		else if (p == top)
-			return ret;
+			return (ret);
 		else if (p->p_osptr)
 			p = p->p_osptr;
 		else for (;;) {
 			p = p->p_pptr;
 			if (p == top)
-				return ret;
+				return (ret);
 			if (p->p_osptr) {
 				p = p->p_osptr;
 				break;
@@ -352,7 +349,7 @@ ktrwrite(vp, kth)
 	/*
 	 * If error encountered, give up tracing on this vnode.
 	 */
-	uprintf("\ntrace write failed with errno %d, tracing stopped\n", error);
+	log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n", error);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_tracep == vp) {
 			p->p_tracep = NULL;
@@ -361,4 +358,29 @@ ktrwrite(vp, kth)
 		}
 	}
 }
+
+/*
+ * Return true if caller has permission to set the ktracing state
+ * of target.  Essentially, the target can't possess any
+ * more permissions than the caller.  KTRFAC_ROOT signifies that
+ * root previously set the tracing status on the target process, and 
+ * so, only root may further change it.
+ *
+ * TODO: check groups  (have to wait till group list is moved
+ *       out of u.  use caller effective gid.
+ */
+ktrcanset(caller, target)
+	register struct proc *caller, *target;
+{
+	if ((caller->p_uid == target->p_ruid &&
+	     target->p_ruid == target->p_svuid &&
+	     caller->p_rgid == target->p_rgid &&	/* XXX */
+	     target->p_rgid == target->p_svgid &&
+	     (target->p_traceflag & KTRFAC_ROOT) == 0) ||
+	     caller->p_uid == 0)
+		return (1);
+
+	return (0);
+}
+
 #endif
