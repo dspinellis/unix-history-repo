@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,6 +32,7 @@ int	dead_lookup(),
 	dead_ioctl(),
 	dead_select(),
 	dead_lock(),
+	dead_ebadf(),
 	dead_badop(),
 	dead_nullop();
 
@@ -41,9 +42,9 @@ struct vnodeops dead_vnodeops = {
 	dead_badop,	/* mknod */
 	dead_open,	/* open */
 	dead_nullop,	/* close */
-	dead_badop,	/* access */
-	dead_badop,	/* getattr */
-	dead_badop,	/* setattr */
+	dead_ebadf,	/* access */
+	dead_ebadf,	/* getattr */
+	dead_ebadf,	/* setattr */
 	dead_read,	/* read */
 	dead_write,	/* write */
 	dead_ioctl,	/* ioctl */
@@ -57,8 +58,8 @@ struct vnodeops dead_vnodeops = {
 	dead_badop,	/* mkdir */
 	dead_badop,	/* rmdir */
 	dead_badop,	/* symlink */
-	dead_badop,	/* readdir */
-	dead_badop,	/* readlink */
+	dead_ebadf,	/* readdir */
+	dead_ebadf,	/* readlink */
 	dead_badop,	/* abortop */
 	dead_nullop,	/* inactive */
 	dead_nullop,	/* reclaim */
@@ -228,6 +229,15 @@ dead_lock(vp)
 	if (!locked)
 		return (0);
 	return (VOP_LOCK(vp));
+}
+
+/*
+ * Empty vnode failed operation
+ */
+dead_ebadf()
+{
+
+	return (EBADF);
 }
 
 /*
