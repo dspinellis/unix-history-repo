@@ -1,8 +1,19 @@
-/* Copyright (c) 1983 Regents of the University of California */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
 
 #ifndef lint
-static char sccsid[] = "@(#)rs.c	4.3	(Berkeley)	%G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)rs.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *	rs - reshape a data array
@@ -10,8 +21,9 @@ static char sccsid[] = "@(#)rs.c	4.3	(Berkeley)	%G%";
  *		BEWARE: lots of unfinished edges
  */
 
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 long	flags;
 #define	TRANSPOSE	000001
@@ -32,7 +44,6 @@ long	flags;
 #define ONEPERCHAR	0100000
 #define NOARGS		0200000
 
-char	buf[BUFSIZ];
 short	*colwidths;
 short	*cord;
 short	*icbd;
@@ -51,13 +62,22 @@ int	propgutter;
 char	isep = ' ', osep = ' ';
 int	owidth = 80, gutter = 2;
 
-char	**getptrs();
+void	  error __P((char *, char *));
+void	  getargs __P((int, char *[]));
+void	  getfile __P((void));
+int	  getline __P((void));
+char	 *getlist __P((short **, char *));
+char	 *getnum __P((int *, char *, int));
+char	**getptrs __P((char **));
+void	  prepfile __P((void));
+void	  prints __P((char *, int));
+void	  putfile __P((void));
 
+int
 main(argc, argv)
-int	argc;
-char	**argv;
+	int argc;
+	char *argv[];
 {
-	setbuf(stdout, buf);
 	getargs(argc, argv);
 	getfile();
 	if (flags & SHAPEONLY) {
@@ -65,19 +85,19 @@ char	**argv;
 		exit(0);
 	}
 	prepfile();
-	/*fprintf(stderr, "#irows %d icols %d orows %d ocols %d\n",irows,icols,orows,ocols);*/
 	putfile();
 	exit(0);
 }
 
+void
 getfile()
 {
-	register char	*p;
-	register char	*endp;
-	register char	**ep = 0;
-	int	multisep = (flags & ONEISEPONLY ? 0 : 1);
-	int	nullpad = flags & NULLPAD;
-	char	**padto;
+	register char *p;
+	register char *endp;
+	register char **ep = 0;
+	int multisep = (flags & ONEISEPONLY ? 0 : 1);
+	int nullpad = flags & NULLPAD;
+	char **padto;
 
 	while (skip--) {
 		getline();
@@ -134,11 +154,11 @@ getfile()
 	nelem = ep - elem;
 }
 
+void
 putfile()
 {
-	register char	**ep;
-	register int	i;
-	register int	j;
+	register char **ep;
+	register int i, j;
 
 	ep = elem;
 	if (flags & TRANSPOSE)
@@ -155,12 +175,13 @@ putfile()
 		}
 }
 
+void
 prints(s, col)
-char	*s;
-int	col;
+	char *s;
+	int col;
 {
-	register char	*p = s;
-	register int	n;
+	register int n;
+	register char *p = s;
 
 	while (*p)
 		p++;
@@ -174,25 +195,27 @@ int	col;
 		putchar(osep);
 }
 
+void
 error(msg, s)
-char	*msg;
-char	*s;
+	char *msg, *s;
 {
 	fprintf(stderr, "rs:  ");
 	fprintf(stderr, msg, s);
-	fprintf(stderr, "\nUsage:  rs [ -[csCS][x][kKgGw][N]tTeEnyjhHm ] [ rows [ cols ] ]\n");
+	fprintf(stderr,
+"\nUsage:  rs [ -[csCS][x][kKgGw][N]tTeEnyjhHm ] [ rows [ cols ] ]\n");
 	exit(1);
 }
 
+void
 prepfile()
 {
-	register char	**ep;
-	register int 	i;
-	register int 	j;
-	char	**lp;
-	int	colw;
-	int	max = 0;
-	int	n;
+	register char **ep;
+	register int  i;
+	register int  j;
+	char **lp;
+	int colw;
+	int max = 0;
+	int n;
 
 	if (!nelem)
 		exit(0);
@@ -273,13 +296,13 @@ prepfile()
 #define	BSIZE	2048
 char	ibuf[BSIZE];		/* two screenfuls should do */
 
+int
 getline()	/* get line; maintain curline, curlen; manage storage */
 {
-	register char	*p;
-	register int	c;
-	register int	i;
-	static	int	putlength;
-	static	char	*endblock = ibuf + BSIZE;
+	static	int putlength;
+	static	char *endblock = ibuf + BSIZE;
+	register char *p;
+	register int c, i;
 
 	if (!irows) {
 		curline = ibuf;
@@ -306,12 +329,11 @@ getline()	/* get line; maintain curline, curlen; manage storage */
 	return(c);
 }
 
-char	**
+char **
 getptrs(sp)
-char	**sp;
+	char **sp;
 {
-	register char	**p;
-	register char	**ep;
+	register char **p, **ep;
 
 	for (;;) {
 		allocsize += allocsize;
@@ -333,12 +355,12 @@ char	**sp;
 	}
 }
 
+void
 getargs(ac, av)
-int	ac;
-char	**av;
+	int ac;
+	char *av[];
 {
-	register char	*p;
-	char	*getnum(), *getlist();
+	register char *p;
 
 	if (ac == 1) {
 		flags |= NOARGS | TRANSPOSE;
@@ -370,7 +392,7 @@ char	**av;
 			case 'w':		/* window width, default 80 */
 				p = getnum(&owidth, p, 0);
 				if (owidth <= 0)
-					error("Width must be a positive integer", "");
+				error("Width must be a positive integer", "");
 				break;
 			case 'K':			/* skip N lines */
 				flags |= SKIPPRINT;
@@ -444,13 +466,13 @@ char	**av;
 	}
 }
 
-char	*
+char *
 getlist(list, p)
-short	**list;
-char	*p;
+	short **list;
+	char *p;
 {
-	register char	*t;
-	register int	count = 1;
+	register int count = 1;
+	register char *t;
 
 	for (t = p + 1; *t; t++) {
 		if (!isdigit(*t))
@@ -477,13 +499,12 @@ char	*p;
 	return(t - 1);
 }
 
-char	*
+char *
 getnum(num, p, strict)	/* num = number p points to; if (strict) complain */
-int	*num;				/* returns pointer to end of num */
-char	*p;
-int	strict;
+	int *num, strict;	/* returns pointer to end of num */
+	char *p;
 {
-	register char	*t = p;
+	register char *t = p;
 
 	if (!isdigit(*++t)) {
 		if (strict || *t == '-' || *t == '+')
