@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail4.nr	6.1 (Berkeley) %G%
+.\"	@(#)mail4.nr	6.1 (Berkeley) 5/23/86
 .\"
 .bp
 .sh 1 "More about sending mail"
@@ -153,14 +153,24 @@ adds the named people to the
 list, similar to ~t.
 Again, you can execute ~p to see what the message will look like.
 .pp
+The escape
+.(l
+~b name1 name2 ...
+.)l
+adds the named people to the
+.q "Cc:"
+list, but does not make the names visible in the
+.q "Cc:"
+line ("blind" carbon copy).
+.pp
 The recipients of the message together constitute the
 .q "To:"
 field, the subject the
 .q "Subject:"
 field, and the carbon copies the
 .q "Cc:"
-field.  If you wish to edit these in ways impossible with the ~t, ~s,
-and ~c escapes, you can use the escape
+field.  If you wish to edit these in ways impossible with the ~t, ~s, ~c
+and ~b escapes, you can use the escape
 .(l
 ~h
 .)l
@@ -225,6 +235,17 @@ replying to, using, for example:
 ~:t
 .)l
 It is also useful for setting options and modifying aliases.
+.pp
+If you wish abort the current message, you can use the escape
+.(l
+~q
+.)l
+This will terminate the current message and return you to the
+shell (or \fIMail\fP if you were using the \fBmail\fP command).
+If the \fBsave\fP option is set, the message will be copied
+to the file
+.q dead.letter
+in your home directory.
 .pp
 If you wish (for some reason) to send a message that contains
 a line beginning with a tilde, you must double it.  Thus, for example,
