@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	4.19 (Berkeley) %G%
+#	@(#)get	4.20 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -25,7 +25,7 @@ rm -rf etc; mkdir etc
 rm -rf a; mkdir a
 rm -rf tmp; mkdir tmp
 rm -rf usr; mkdir usr usr/mdec
-rm -rf sys; mkdir sys sys/floppy sys/cassette
+rm -rf sys; mkdir sys sys/floppy sys/cassette sys/consolerl
 cp $DISTROOT/etc/disktab etc
 cp $DISTROOT/etc/newfs etc; strip etc/newfs
 cp $DISTROOT/etc/mkfs etc; strip etc/mkfs
@@ -54,6 +54,7 @@ cp $DISTROOT/bin/awk bin; strip bin/awk
 cp $DISTROOT/bin/make bin; strip bin/make
 cp $DISTROOT/usr/mdec/* usr/mdec
 cp $DISTROOT/sys/floppy/[Ma-z0-9]* sys/floppy
+cp $DISTROOT/sys/consolerl/[Ma-z0-9]* sys/consolerl
 cp -r $DISTROOT/sys/cassette/[Ma-z0-9]* sys/cassette
 cp $DISTROOT/sys/stand/boot boot
 cp $DISTROOT/sys/stand/pcs750.bin pcs750.bin
