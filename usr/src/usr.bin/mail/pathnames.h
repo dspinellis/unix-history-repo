@@ -25,7 +25,7 @@
 #define	HELPFILE	"/usr/lib/Mail.help"
 					/* Name of casual help file */
 #define	THELPFILE	"/usr/lib/Mail.help.~"
-#define	POSTAGE		"/arch/kurt/postage"
+#define	POSTAGE		"/usr/adm/maillog"
 					/* Where to audit mail sending */
 					/* Name of casual tilde help */
 #define	UIDMASK		0177777		/* Significant uid bits */
