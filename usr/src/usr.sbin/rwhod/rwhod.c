@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.8 %G%";
+static char sccsid[] = "@(#)rwhod.c	4.9 83/05/05";
 #endif
 
 #include <sys/types.h>
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)rwhod.c	4.8 %G%";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 
+#include <net/if.h>
 #include <netinet/in.h>
 
 #include <nlist.h>
@@ -16,15 +17,13 @@ static char sccsid[] = "@(#)rwhod.c	4.8 %G%";
 #include <utmp.h>
 #include <ctype.h>
 #include <netdb.h>
-
-#include "rwhod.h"
+#include <rwhod.h>
 
 struct	sockaddr_in sin = { AF_INET };
 
 extern	errno;
 
-char	*localnet = "localnet";
-char	*myname = "myname";
+char	myname[32];
 
 struct	nlist nl[] = {
 #define	NL_AVENRUN	0
@@ -34,22 +33,40 @@ struct	nlist nl[] = {
 	0
 };
 
+/*
+ * We communicate with each neighbor in
+ * a list constructed at the time we're
+ * started up.  Neighbors are currently
+ * directly connected via a hardware interface.
+ */
+struct	neighbor {
+	struct	neighbor *n_next;
+	char	*n_name;		/* interface name */
+	char	*n_addr;		/* who to send to */
+	int	n_addrlen;		/* size of address */
+	int	n_flags;		/* should forward?, interface flags */
+};
+
+struct	neighbor *neighbors;
 struct	whod mywd;
+struct	servent *sp;
 int	s, utmpf, kmemf = -1;
 
-#define	WHDRSIZE	(sizeof (wd) - sizeof (wd.wd_we))
+#define	WHDRSIZE	(sizeof (mywd) - sizeof (mywd.wd_we))
+#define	RWHODIR		"/usr/spool/rwho"
 
 int	onalrm();
-char	*strcpy(), *sprintf();
+char	*strcpy(), *sprintf(), *malloc();
 long	lseek();
 int	getkmem();
+struct	in_addr inet_makeaddr();
 
 main()
 {
 	struct sockaddr_in from;
 	char path[64];
 	int addr;
-	struct servent *sp;
+	struct hostent *hp;
 
 	sp = getservbyname("who", "udp");
 	if (sp == 0) {
@@ -78,17 +95,14 @@ main()
 		fprintf(stderr, "rwhod: not super user\n");
 		exit(1);
 	}
-	addr = rhost(&localnet);
-	if (addr == -1) {
-		fprintf(stderr, "rwhod: no localnet\n");
+	/*
+	 * Establish host name as returned by system.
+	 */
+	if (gethostname(myname, sizeof (myname) - 1) < 0) {
+		perror("gethostname");
 		exit(1);
 	}
-	sin.sin_addr.s_addr = addr;
-	if (rhost(&myname) == -1) {
-		fprintf(stderr, "rwhod: don't know \"myname\"\n");
-		exit(1);
-	}
-	strncpy(mywd.wd_hostname, myname, sizeof (mywd.wd_hostname) - 1);
+	strncpy(mywd.wd_hostname, myname, sizeof (myname) - 1);
 	utmpf = open("/etc/utmp", 0);
 	if (utmpf < 0) {
 		(void) close(creat("/etc/utmp", 0644));
@@ -98,23 +112,32 @@ main()
 		perror("rwhod: /etc/utmp");
 		exit(1);
 	}
-	sin.sin_port = sp->s_port;
 	getkmem();
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0, 0)) < 0) {
 		perror("rwhod: socket");
 		exit(1);
 	}
+	hp = gethostbyname(myname);
+	if (hp == NULL) {
+		fprintf(stderr, "%s: don't know my own name\n", myname);
+		exit(1);
+	}
+	sin.sin_family = hp->h_addrtype;
+	sin.sin_port = sp->s_port;
 	if (bind(s, &sin, sizeof (sin), 0) < 0) {
 		perror("rwhod: bind");
 		exit(1);
 	}
+	if (!configure(s))
+		exit(1);
 	sigset(SIGALRM, onalrm);
 	onalrm();
 	for (;;) {
 		struct whod wd;
-		int cc, whod, len=sizeof (from);
+		int cc, whod, len = sizeof (from);
 
-		cc = recvfrom(s, (char *)&wd, sizeof (struct whod), 0, &from, &len);
+		cc = recvfrom(s, (char *)&wd, sizeof (struct whod), 0,
+			&from, &len);
 		if (cc <= 0) {
 			if (cc < 0 && errno != EINTR)
 				perror("rwhod: recv");
@@ -132,6 +155,8 @@ main()
 			continue;
 		}
 #endif
+		if (wd.wd_type != WHODTYPE_STATUS)
+			continue;
 		if (!verify(wd.wd_hostname)) {
 			fprintf(stderr, "rwhod: malformed host name from %x\n",
 				from.sin_addr);
@@ -199,6 +224,7 @@ onalrm()
 	int cc;
 	double avenrun[3];
 	time_t now = time(0);
+	register struct neighbor *np;
 
 	if (alarmcount % 10 == 0)
 		getkmem();
@@ -211,7 +237,7 @@ onalrm()
 			perror("/etc/utmp");
 			return;
 		}
-		wlast = &mywd.wd_we[(1024 / sizeof (struct whoent)) - 1];
+		wlast = &mywd.wd_we[1024 / sizeof (struct whoent) - 1];
 		utmpent = cc / sizeof (struct utmp);
 		for (i = 0; i < utmpent; i++)
 			if (utmp[i].ut_name[0]) {
@@ -246,7 +272,11 @@ onalrm()
 		we++;
 	}
 #endif
-	(void) sendto(s, (char *)&mywd, cc, 0, &sin, sizeof (sin));
+	mywd.wd_vers = WHODVERSION;
+	mywd.wd_type = WHODTYPE_STATUS;
+	for (np = neighbors; np != NULL; np = np->n_next)
+		(void) sendto(s, (char *)&mywd, cc, 0,
+			np->n_addr, np->n_addrlen);
 	(void) alarm(60);
 }
 
@@ -276,4 +306,85 @@ loop:
 	}
 	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, 0);
 	(void) read(kmemf, (char *)&mywd.wd_boottime, sizeof (mywd.wd_boottime));
+}
+
+/*
+ * Figure out device configuration and select
+ * networks which deserve status information.
+ */
+configure(s)
+	int s;
+{
+	char buf[BUFSIZ];
+	struct ifconf ifc;
+	struct ifreq ifreq, *ifr;
+	int n;
+	struct sockaddr_in *sin;
+	register struct neighbor *np;
+
+	ifc.ifc_len = sizeof (buf);
+	ifc.ifc_buf = buf;
+	if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
+		perror("rwhod: ioctl (get interface configuration)");
+		return (0);
+	}
+	ifr = ifc.ifc_req;
+	for (n = ifc.ifc_len / sizeof (struct ifreq); n > 0; n--, ifr++) {
+		for (np = neighbors; np != NULL; np = np->n_next)
+			if (np->n_name &&
+			    strcmp(ifr->ifr_name, np->n_name) == 0)
+				break;
+		if (np != NULL)
+			continue;
+		ifreq = *ifr;
+		np = (struct neighbor *)malloc(sizeof (*np));
+		if (np == NULL)
+			continue;
+		np->n_name = malloc(strlen(ifr->ifr_name) + 1);
+		if (np->n_name == NULL) {
+			free((char *)np);
+			continue;
+		}
+		strcpy(np->n_name, ifr->ifr_name);
+		np->n_addrlen = sizeof (ifr->ifr_addr);
+		np->n_addr = malloc(np->n_addrlen);
+		if (np->n_addr == NULL) {
+			free(np->n_name);
+			free((char *)np);
+			continue;
+		}
+		bcopy((char *)&ifr->ifr_addr, np->n_addr, np->n_addrlen);
+		if (ioctl(s, SIOCGIFFLAGS, (char *)&ifreq) < 0) {
+			perror("rwhod: ioctl (get interface flags)");
+			free((char *)np);
+			continue;
+		}
+		if ((ifreq.ifr_flags & (IFF_BROADCAST|IFF_POINTOPOINT)) == 0) {
+			free((char *)np);
+			continue;
+		}
+		np->n_flags = ifreq.ifr_flags;
+		if (np->n_flags & IFF_POINTOPOINT) {
+			if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
+				perror("rwhod: ioctl (get dstaddr)");
+				free((char *)np);
+				continue;
+			}
+			/* we assume addresses are all the same size */
+			bcopy((char *)&ifreq.ifr_dstaddr,
+			  np->n_addr, np->n_addrlen);
+		}
+		if (np->n_flags & IFF_BROADCAST) {
+			/* we assume addresses are all the same size */
+			sin = (struct sockaddr_in *)np->n_addr;
+			sin->sin_addr =
+			  inet_makeaddr(inet_netof(sin->sin_addr), INADDR_ANY);
+		}
+		/* gag, wish we could get rid of Internet dependencies */
+		sin = (struct sockaddr_in *)np->n_addr;
+		sin->sin_port = sp->s_port;
+		np->n_next = neighbors;
+		neighbors = np;
+	}
+	return (1);
 }
