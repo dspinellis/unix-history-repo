@@ -1,0 +1,3 @@
+This is a version of GAS 1.38 that we've hacked to understand the
+68K extended MMU instructions and to generate -g symbols, among
+other things.
