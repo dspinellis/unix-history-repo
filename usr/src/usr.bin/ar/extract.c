@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)extract.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)extract.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,11 +52,11 @@ extract(argv)
 
 	/* Read from an archive, write to disk; pad on read. */
 	SETCF(afd, archive, 0, 0, RPAD);
-	for (all = !*argv; get_header(afd);) {
+	for (all = !*argv; get_arobj(afd);) {
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv))) {
-			skipobj(afd);
+			skip_arobj(afd);
 			continue;
 		}
 
@@ -67,7 +67,7 @@ extract(argv)
 		if ((tfd = open(file, O_WRONLY|O_CREAT|O_TRUNC, S_IWUSR)) < 0) {
 			(void)fprintf(stderr, "ar: %s: %s.\n",
 			    file, strerror(errno));
-			skipobj(afd);
+			skip_arobj(afd);
 			eval = 1;
 			continue;
 		}
@@ -77,7 +77,7 @@ extract(argv)
 
 		cf.wfd = tfd;
 		cf.wname = file;
-		copyfile(&cf, chdr.size);
+		copy_ar(&cf, chdr.size);
 
 		if (fchmod(tfd, (short)chdr.mode)) {
 			(void)fprintf(stderr, "ar: %s: chmod: %s\n",

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -71,7 +71,7 @@ replace(argv)
 	 * all back together at the end.
 	 */
 	mods = (options & (AR_A|AR_B));
-	for (err = 0, curfd = tfd1; get_header(afd);) {
+	for (err = 0, curfd = tfd1; get_arobj(afd);) {
 		if (*argv && (file = files(argv))) {
 			if ((sfd = open(file, O_RDONLY)) < 0) {
 				err = 1;
@@ -88,9 +88,9 @@ replace(argv)
 
 			/* Read from disk, write to an archive; pad on write */
 			SETCF(sfd, file, curfd, tname, WPAD);
-			put_object(&cf, &sb);
+			put_arobj(&cf, &sb);
 			(void)close(sfd);
-			skipobj(afd);
+			skip_arobj(afd);
 			continue;
 		}
 
@@ -100,13 +100,13 @@ replace(argv)
 				curfd = tfd2;
 			/* Read and write to an archive; pad on both. */
 			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
-			put_object(&cf, (struct stat *)NULL);
+			put_arobj(&cf, (struct stat *)NULL);
 			if (options & AR_A)
 				curfd = tfd2;
 		} else {
 			/* Read and write to an archive; pad on both. */
 useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
-			put_object(&cf, (struct stat *)NULL);
+			put_arobj(&cf, (struct stat *)NULL);
 		}
 	}
 
@@ -131,7 +131,7 @@ append:	while (file = *argv++) {
 		/* Read from disk, write to an archive; pad on write. */
 		SETCF(sfd, file,
 		    options & (AR_A|AR_B) ? tfd1 : tfd2, tname, WPAD);
-		put_object(&cf, &sb);
+		put_arobj(&cf, &sb);
 		(void)close(sfd);
 	}
 	
@@ -141,14 +141,14 @@ append:	while (file = *argv++) {
 	if (tfd1 != -1) {
 		tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
 		(void)lseek(tfd1, (off_t)0, SEEK_SET);
-		copyfile(&cf, size);
+		copy_ar(&cf, size);
 	} else
 		tsize = 0;
 
 	tsize += size = lseek(tfd2, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd2, (off_t)0, SEEK_SET);
 	cf.rfd = tfd2;
-	copyfile(&cf, size);
+	copy_ar(&cf, size);
 
 	(void)ftruncate(afd, tsize + SARMAG);
 	close_archive(afd);

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delete.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)delete.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,21 +44,21 @@ delete(argv)
 
 	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, tfd, tname, RPAD|WPAD);
-	while (get_header(afd)) {
+	while (get_arobj(afd)) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("d - %s\n", file);
-			skipobj(afd);
+			skip_arobj(afd);
 			continue;
 		}
-		put_object(&cf, (struct stat *)NULL);
+		put_arobj(&cf, (struct stat *)NULL);
 	}
 
 	size = lseek(tfd, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd, (off_t)0, SEEK_SET);
 	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
 	SETCF(tfd, tname, afd, archive, NOPAD);
-	copyfile(&cf, size);
+	copy_ar(&cf, size);
 	(void)close(tfd);
 	(void)ftruncate(afd, size + SARMAG);
 	close_archive(afd);

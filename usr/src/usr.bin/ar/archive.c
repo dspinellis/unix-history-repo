@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)archive.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)archive.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -95,10 +95,10 @@ close_archive(fd)
 }
 
 /*
- * get_header --
+ * get_arobj --
  *	read the archive header for this member
  */
-get_header(fd)
+get_arobj(fd)
 	int fd;
 {
 	struct ar_hdr *hdr;
@@ -162,10 +162,10 @@ get_header(fd)
 static int already_written;
 
 /*
- * put_object --
+ * put_arobj --
  *	Write an archive member to a file.
  */
-put_object(cfp, sb)
+put_arobj(cfp, sb)
 	CF *cfp;
 	struct stat *sb;
 {
@@ -223,12 +223,12 @@ put_object(cfp, sb)
 			error(cfp->wname);
 		already_written = lname;
 	}
-	copyfile(cfp, size);
+	copy_ar(cfp, size);
 	already_written = 0;
 }
 
 /*
- * copyfile --
+ * copy_ar --
  *	Copy size bytes from one file to another - taking care to handle the
  *	extra byte (for odd size files) when reading archives and writing an
  *	extra byte if necessary when adding files to archive.  The length of
@@ -241,7 +241,7 @@ put_object(cfp, sb)
  *	because 16-bit word addressed copies were faster?)  Anyhow, it should
  *	have been ripped out long ago.
  */
-copyfile(cfp, size)
+copy_ar(cfp, size)
 	CF *cfp;
 	off_t size;
 {
@@ -279,11 +279,11 @@ copyfile(cfp, size)
 }
 
 /*
- * skipobj -
+ * skip_arobj -
  *	Skip over an object -- taking care to skip the pad bytes.
  */
 void
-skipobj(fd)
+skip_arobj(fd)
 	int fd;
 {
 	off_t len;

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)contents.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)contents.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ contents(argv)
 	
 	afd = open_archive(O_RDONLY);
 
-	for (all = !*argv; get_header(afd);) {
+	for (all = !*argv; get_arobj(afd);) {
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv)))
@@ -58,7 +58,7 @@ contents(argv)
 			(void)printf("%s\n", file);
 		if (!all && !*argv)
 			break;
-next:		skipobj(afd);
+next:		skip_arobj(afd);
 	} 
 	close_archive(afd);
 
