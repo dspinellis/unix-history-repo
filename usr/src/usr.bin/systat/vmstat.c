@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,7 +24,29 @@ static char sccsid[] = "@(#)vmstat.c	1.1 (Berkeley) %G%";
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <vax/pte.h>
-#include <sys/nami.h>
+#include <sys/namei.h>
+
+/*
+ * These constants define where the major pieces are laid out
+ */
+#define PROCSROW	13	/* uses 2 rows and 20 cols */
+#define PROCSCOL	 0
+#define NAMEIROW	20	/* uses 3 rows and 38 cols */
+#define NAMEICOL	 0
+#define GRAPHROW	16	/* uses 3 rows and 51 cols */
+#define GRAPHCOL	 0
+#define GENSTATROW	14	/* uses 8 rows and 11 cols */
+#define GENSTATCOL	51
+#define INTSROW		 2	/* uses all rows to bottom and 17 cols */
+#define INTSCOL		63
+#define STATROW		 0	/* uses 1 row and 68 cols */
+#define STATCOL		 2
+#define PAGEROW		 2	/* uses 11 rows and 26 cols */
+#define PAGECOL		36
+#define MEMROW		 2	/* uses 4 rows and 31 cols */
+#define MEMCOL		 0
+#define DISKROW		 7	/* uses 5 rows and 35 cols */
+#define DISKCOL		 0
 
 #if DK_NDRIVE > 6
 #undef DK_NDRIVE
@@ -86,6 +108,14 @@ struct nlist name[] = {
 #define	X_PHZ		20
 	{ "_nchstats" },
 #define	X_NCHSTATS	21
+	{ "_intrnames" },
+#define	X_INTRNAMES	22
+	{ "_eintrnames" },
+#define	X_EINTRNAMES	23
+	{ "_intrcnt" },
+#define	X_INTRCNT	24
+	{ "_eintrcnt" },
+#define	X_EINTRCNT	25
 	{ 0 },
 };
 
@@ -105,6 +135,7 @@ struct Info {
 	long	tk_nout;
 	struct	nchstats nchstats;
 	long	nchcount;
+	long	*intrcnt;
 } s, s1, s2, z;
 
 
@@ -130,10 +161,11 @@ time_t t;
 time_t bootime;
 double etime;
 int secs;
-int delay = 1;
+int delay = 5;
 int hz;
 int phz;
 float hertz;
+int nintr;
 
 char dr_name[DK_NDRIVE][10];
 enum state { BOOT, TIME, RUN, STOP } state = TIME;
@@ -152,6 +184,9 @@ main(argc,argv)
 	int interv;
 	int hits;
 	float f1, f2;
+	int inttotal, nextintsrow;
+	long *intrloc;
+	char *intrnamebuf, **intrname, *cp, *calloc(), *malloc();
 
 	if (argc > 1)
 		switch (c = argv[1][0] == '-' ? argv[1][1] : argv[1][0]) {
@@ -203,23 +238,56 @@ main(argc,argv)
 			dr_state[i] = SOME;
 	read_names();
 
+	nintr = (name[X_EINTRCNT].n_value -
+		name[X_INTRCNT].n_value) / sizeof(long);
+	intrloc = (long *) calloc(nintr, sizeof(long));
+	intrname = (char **) calloc(nintr, sizeof(long));
+	intrnamebuf = malloc(name[X_EINTRNAMES].n_value -
+		name[X_INTRNAMES].n_value);
+	if (intrnamebuf == NULL || intrname == NULL || intrloc == NULL) {
+		fprintf(stderr, "vsta: out of memory\n");
+		exit(1);
+	}
+	lseek(kmem, (long)name[X_INTRNAMES].n_value, 0);
+	read(kmem, intrnamebuf, name[X_EINTRNAMES].n_value -
+		name[X_INTRNAMES].n_value);
+	for (cp = intrnamebuf, i = 0; i < nintr; i++) {
+		intrname[i] = cp;
+		cp += strlen(cp) + 1;
+	}
+	nextintsrow = INTSROW + 2;
+	allocinfo(&s);
+	allocinfo(&s1);
+	allocinfo(&s2);
+	allocinfo(&z);
+
+	time(&lastime);
+	starttime = lastime;
+	getinfo(&s2, RUN);
+	switch (state) {
+	case RUN:
+		copyinfo(&s2, &s1);
+		break;
+	case TIME:
+		getinfo(&s1, TIME);
+		break;
+	case BOOT:
+		copyinfo(&z, &s1);
+		break;
+	default:
+		fprintf(stderr, "vsta: bad state %d\n", state);
+		exit(3);
+		break;
+	}
+	lseek(kmem, (long)name[X_BOOTIME].n_value, 0);
+	read(kmem, &bootime, sizeof bootime);
+
 	initscr();
 	signal(SIGINT, finish);
 	noecho();
 	crmode();
 	layout();
 
-	time(&lastime);
-	starttime = lastime;
-	getinfo(&s2, RUN);
-	if (state == RUN)
-		s1 = s2;
-/*			if included, this starts TIME at zeroes, else == boot
-	else if (state == TIME)
-		getinfo(&s1, TIME)
-*/
-	lseek(kmem, (long)name[X_BOOTIME].n_value, 0);
-	read(kmem, &bootime, sizeof bootime);
 	for (;;) {
 		while (state == STOP)
 			waittty(delay*10);
@@ -238,11 +306,24 @@ main(argc,argv)
 		}
 		if (etime < 5.0)	/* < 5 ticks - ignore this trash */
 			continue;
-	/*
-		if (etime == 0.0)
-			etime = 1.0;
-	*/
 		etime /= hertz;
+		inttotal = 0;
+		for (i = 0; i < nintr; i++) {
+			if (s.intrcnt[i] == 0)
+				continue;
+			if (intrloc[i] == 0) {
+				if (nextintsrow == LINES)
+					continue;
+				intrloc[i] = nextintsrow++;
+				mvprintw(intrloc[i], INTSCOL + 9, "%-8.8s",
+					intrname[i]);
+			}
+			X(intrcnt);
+			l = (int)((float)s.intrcnt[i]/etime + 0.5);
+			inttotal += l;
+			putint(l, intrloc[i], INTSCOL, 8);
+		}
+		putint(inttotal, INTSROW + 1, INTSCOL, 8);
 		Z(ncs_goodhits); Z(ncs_badhits); Z(ncs_miss);
 		Z(ncs_long); Z(ncs_pass2); Z(ncs_2passes);
 		s.nchcount = nchtotal.ncs_goodhits + nchtotal.ncs_badhits +
@@ -257,59 +338,83 @@ main(argc,argv)
 			f1 = cputime(i);
 			f2 += f1;
 			l = (int) ((f2 + 1.0) / 2.0) - psiz;
-			putfloat(f1, 15, 10 + 11*c, 4, 1, 0);
-			move(17, 5+psiz);
+			putfloat(f1, GRAPHROW, GRAPHCOL + 5 + 11*c, 4, 1, 0);
+			move(GRAPHROW + 2, psiz);
 			psiz += l;
 			while (l-- > 0)
 				addch(cpuchar[c]);
 		}
-	
-		putint(ucount(), 1, 1, 3);
-		putfloat(avenrun[0], 1, 18, 6, 2, 0);
-		putfloat(avenrun[1], 1, 24, 6, 2, 0);
-		putfloat(avenrun[2], 1, 30, 6, 2, 0);
-		mvaddstr(1, 58, buf);
-		putint(total.t_arm/2, 5, 5, 5);
-		putint(total.t_armtxt/2, 5, 10, 5);
-		putint(total.t_avm/2, 5, 15, 5);
-		putint(total.t_avmtxt/2, 5, 20, 5);
-		putint(total.t_rm/2, 6, 5, 5);
-		putint(total.t_rmtxt/2, 6, 10, 5);
-		putint(total.t_vm/2, 6, 15, 5);
-		putint(total.t_vmtxt/2, 6, 20, 5);
-		putint(total.t_free/2, 5, 27, 5);
-		putint(total.t_rq, 17, 62, 3);
-		putint(total.t_pw, 17, 65, 3);
-		putint(total.t_dw, 17, 68, 3);
-		putint(total.t_sl, 17, 71, 3);
-		putint(total.t_sw, 17, 74, 3);
-		putrate(rate.v_swtch, oldrate.v_swtch, 3, 75, 4);
-		putrate(rate.v_trap, oldrate.v_trap, 4, 75, 4);
-		putrate(rate.v_syscall, oldrate.v_syscall, 5, 75, 4);
-		putrate(rate.v_intr, oldrate.v_intr, 6, 75, 4);
-		putrate(rate.v_pdma, oldrate.v_pdma, 7, 75, 4);
-		putrate(rate.v_faults, oldrate.v_faults, 8, 75, 4);
-		putrate(rate.v_scan, oldrate.v_scan, 9, 75, 4);
-		putrate(rate.v_rev, oldrate.v_rev, 10, 75, 4);
-		putrate(rate.v_pgin, oldrate.v_pgin, 5, 45, 5);
-		putrate(rate.v_pgout, oldrate.v_pgout, 5, 50, 5);
-		putrate(rate.v_swpin, oldrate.v_swpin, 5, 55, 5);
-		putrate(rate.v_swpout, oldrate.v_swpout, 5, 60, 5);
-		putrate(rate.v_pgpgin, oldrate.v_pgpgin, 6, 45, 5);
-		putrate(rate.v_pgpgout, oldrate.v_pgpgout, 6, 50, 5);
-		putrate(rate.v_pswpin, oldrate.v_pswpin, 6, 55, 5);
-		putrate(rate.v_pswpout, oldrate.v_pswpout, 6, 60, 5);
-		putrate(rate.v_pgrec, oldrate.v_pgrec, 9, 40, 3);
-		putrate(rate.v_intrans, oldrate.v_intrans, 9, 44, 2);
-		putrate(rate.v_xsfrec, oldrate.v_xsfrec, 9, 47, 3);
-		putrate(rate.v_xifrec, oldrate.v_xifrec, 9, 51, 3);
-		putrate(rate.v_pgfrec, oldrate.v_pgfrec, 9, 55, 3);
-		putrate(rate.v_dfree, oldrate.v_dfree, 9, 59, 3);
-		putrate(rate.v_seqfree, oldrate.v_seqfree, 9, 63, 3);
-		putrate(rate.v_zfod, oldrate.v_zfod, 11, 40, 8);
-		putrate(rate.v_nzfod, oldrate.v_nzfod, 12, 40, 8);
-		putrate(rate.v_exfod, oldrate.v_exfod, 11, 54, 8);
-		putrate(rate.v_nexfod, oldrate.v_nexfod, 12, 54, 8);
+
+		putint(ucount(), STATROW, STATCOL, 3);
+		putfloat(avenrun[0], STATROW, STATCOL + 17, 6, 2, 0);
+		putfloat(avenrun[1], STATROW, STATCOL + 23, 6, 2, 0);
+		putfloat(avenrun[2], STATROW, STATCOL + 29, 6, 2, 0);
+		mvaddstr(STATROW, STATCOL + 53, buf);
+		putint(total.t_arm/2, MEMROW + 2, MEMCOL + 4, 5);
+		putint(total.t_armtxt/2, MEMROW + 2, MEMCOL + 9, 5);
+		putint(total.t_avm/2, MEMROW + 2, MEMCOL + 14, 5);
+		putint(total.t_avmtxt/2, MEMROW + 2, MEMCOL + 19, 5);
+		putint(total.t_rm/2, MEMROW + 3, MEMCOL + 4, 5);
+		putint(total.t_rmtxt/2, MEMROW + 3, MEMCOL + 9, 5);
+		putint(total.t_vm/2, MEMROW + 3, MEMCOL + 14, 5);
+		putint(total.t_vmtxt/2, MEMROW + 3, MEMCOL + 19, 5);
+		putint(total.t_free/2, MEMROW + 2, MEMCOL + 26, 5);
+		putint(total.t_rq, PROCSROW + 1, PROCSCOL + 5, 3);
+		putint(total.t_pw, PROCSROW + 1, PROCSCOL + 8, 3);
+		putint(total.t_dw, PROCSROW + 1, PROCSCOL + 11, 3);
+		putint(total.t_sl, PROCSROW + 1, PROCSCOL + 14, 3);
+		putint(total.t_sw, PROCSROW + 1, PROCSCOL + 17, 3);
+		putrate(rate.v_swtch, oldrate.v_swtch, 
+			GENSTATROW, GENSTATCOL, 7);
+		putrate(rate.v_trap, oldrate.v_trap, 
+			GENSTATROW + 1, GENSTATCOL, 7);
+		putrate(rate.v_syscall, oldrate.v_syscall, 
+			GENSTATROW + 2, GENSTATCOL, 7);
+		putrate(rate.v_intr, oldrate.v_intr, 
+			GENSTATROW + 3, GENSTATCOL, 7);
+		putrate(rate.v_pdma, oldrate.v_pdma, 
+			GENSTATROW + 4, GENSTATCOL, 7);
+		putrate(rate.v_faults, oldrate.v_faults, 
+			GENSTATROW + 5, GENSTATCOL, 7);
+		putrate(rate.v_scan, oldrate.v_scan, 
+			GENSTATROW + 6, GENSTATCOL, 7);
+		putrate(rate.v_rev, oldrate.v_rev, 
+			GENSTATROW + 7, GENSTATCOL, 7);
+		putrate(rate.v_pgin, oldrate.v_pgin, PAGEROW + 2,
+			PAGECOL + 5, 5);
+		putrate(rate.v_pgout, oldrate.v_pgout, PAGEROW + 2,
+			PAGECOL + 10, 5);
+		putrate(rate.v_swpin, oldrate.v_swpin, PAGEROW + 2,
+			PAGECOL + 15, 5);
+		putrate(rate.v_swpout, oldrate.v_swpout, PAGEROW + 2,
+			PAGECOL + 20, 5);
+		putrate(rate.v_pgpgin, oldrate.v_pgpgin, PAGEROW + 3,
+			PAGECOL + 5, 5);
+		putrate(rate.v_pgpgout, oldrate.v_pgpgout, PAGEROW + 3,
+			PAGECOL + 10, 5);
+		putrate(rate.v_pswpin, oldrate.v_pswpin, PAGEROW + 3,
+			PAGECOL + 15, 5);
+		putrate(rate.v_pswpout, oldrate.v_pswpout, PAGEROW + 3,
+			PAGECOL + 20, 5);
+		putrate(rate.v_pgrec, oldrate.v_pgrec, PAGEROW + 6, PAGECOL, 3);
+		putrate(rate.v_intrans, oldrate.v_intrans, PAGEROW + 6,
+			PAGECOL + 4, 2);
+		putrate(rate.v_xsfrec, oldrate.v_xsfrec, PAGEROW + 6,
+			PAGECOL + 7, 3);
+		putrate(rate.v_xifrec, oldrate.v_xifrec, PAGEROW + 6,
+			PAGECOL + 11, 3);
+		putrate(rate.v_pgfrec, oldrate.v_pgfrec, PAGEROW + 6,
+			PAGECOL + 15, 3);
+		putrate(rate.v_dfree, oldrate.v_dfree, PAGEROW + 6,
+			PAGECOL + 19, 3);
+		putrate(rate.v_seqfree, oldrate.v_seqfree, PAGEROW + 6,
+			PAGECOL + 23, 3);
+		putrate(rate.v_zfod, oldrate.v_zfod, PAGEROW + 8, PAGECOL, 8);
+		putrate(rate.v_nzfod, oldrate.v_nzfod, PAGEROW + 9, PAGECOL, 8);
+		putrate(rate.v_exfod, oldrate.v_exfod, PAGEROW + 8,
+			PAGECOL + 14, 8);
+		putrate(rate.v_nexfod, oldrate.v_nexfod, PAGEROW + 9,
+			PAGECOL + 14, 8);
 		putfloat (
 			rate.v_nzfod == 0 ?
 				0.0
@@ -320,8 +425,8 @@ main(argc,argv)
 			:
 				( 100.0 * (rate.v_zfod-oldrate.v_zfod)
 				/ (rate.v_nzfod-oldrate.v_nzfod) )
-			, 13
-			, 40
+			, PAGEROW + 10
+			, PAGECOL
 			, 8
 			, 2
 			, 1
@@ -336,8 +441,8 @@ main(argc,argv)
 			:
 				( 100.0 * (rate.v_exfod-oldrate.v_exfod)
 				/ (rate.v_nexfod-oldrate.v_nexfod) )
-			, 13
-			, 54
+			, PAGEROW + 10
+			, PAGECOL + 14
 			, 8
 			, 2
 			, 1
@@ -345,16 +450,16 @@ main(argc,argv)
 		c = 1;
 		for (i = 0; i < DK_NDRIVE; i++)
 			if (dr_state[i] == SOME)
-				dinfo(i, c++*5);
+				dinfo(i, c++);
 
-		putint(s.nchcount, 21, 6, 5);
-		putint(nchtotal.ncs_goodhits, 21, 14, 4);
+		putint(s.nchcount, NAMEIROW + 2, NAMEICOL, 9);
+		putint(nchtotal.ncs_goodhits, NAMEIROW + 2, NAMEICOL + 9, 9);
 #define nz(x)	((x) ? (x) : 1)
 		putfloat(nchtotal.ncs_goodhits * 100.0 / nz(s.nchcount),
-		   21, 19, 4, 0, 1);
-		putint(nchtotal.ncs_pass2, 21, 28, 4);
+		   NAMEIROW + 2, NAMEICOL + 19, 4, 0, 1);
+		putint(nchtotal.ncs_pass2, NAMEIROW + 2, NAMEICOL + 23, 9);
 		putfloat(nchtotal.ncs_pass2 * 100.0 / nz(s.nchcount),
-		   21, 34, 4, 0, 1);
+		   NAMEIROW + 2, NAMEICOL + 34, 4, 0, 1);
 #undef nz
 		move(LINES-1,0);
 		refresh();
@@ -427,12 +532,12 @@ docmd()
 		state = TIME;
 		break;
 	case 'r':
-		s1 = s2;
+		copyinfo(&s2, &s1);
 		state = RUN;
 		break;
 	case 'b':
 		state = BOOT;
-		s1 = z;
+		copyinfo(&z, &s1);
 		break;
 	case 't':
 		state = TIME;
@@ -471,52 +576,59 @@ layout()
 	register i, j;
 
 	clear();
-	mvprintw(1, 5, "users    Load");
-	mvprintw(3, 1, "Mem     REAL    VIRTUAL ");
-	mvprintw(4, 1, "      Tot Text  Tot Text");
-	mvprintw(5, 1, "Act");
-	mvprintw(6, 1, "All");
+	mvprintw(STATROW, STATCOL + 4, "users    Load");
+	mvprintw(MEMROW, MEMCOL, "Mem     REAL    VIRTUAL ");
+	mvprintw(MEMROW + 1, MEMCOL, "      Tot Text  Tot Text");
+	mvprintw(MEMROW + 2, MEMCOL, "Act");
+	mvprintw(MEMROW + 3, MEMCOL, "All");
 
-	mvprintw(4, 28, "Free");
+	mvprintw(MEMROW + 1, MEMCOL + 27, "Free");
 
-	mvprintw(3, 40, "        PAGING    SWAPING ");
-	mvprintw(4, 40, "        in  out   in  out ");
-	mvprintw(5, 40, "count");
-	mvprintw(6, 40, "pages");
+	mvprintw(PAGEROW, PAGECOL, "        PAGING    SWAPING ");
+	mvprintw(PAGEROW + 1, PAGECOL, "        in  out   in  out ");
+	mvprintw(PAGEROW + 2, PAGECOL, "count");
+	mvprintw(PAGEROW + 3, PAGECOL, "pages");
 
-	mvprintw( 3, 71, "Csw");
-	mvprintw( 4, 71, "Trp");
-	mvprintw( 5, 71, "Sys");
-	mvprintw( 6, 71, "Int");
-	mvprintw( 7, 71, "Pdm");
-	mvprintw( 8, 71, "Flt");
-	mvprintw( 9, 71, "Scn");
-	mvprintw(10, 71, "Rev");
+	mvprintw(INTSROW, INTSCOL, " Interrupts");
+	mvprintw(INTSROW + 1, INTSCOL + 9, "total");
 
-	mvprintw(8, 40, "Rec It F/S F/F RFL Fre SFr");
+	mvprintw(GENSTATROW, GENSTATCOL + 8, "Csw");
+	mvprintw(GENSTATROW + 1, GENSTATCOL + 8, "Trp");
+	mvprintw(GENSTATROW + 2, GENSTATCOL + 8, "Sys");
+	mvprintw(GENSTATROW + 3, GENSTATCOL + 8, "Int");
+	mvprintw(GENSTATROW + 4, GENSTATCOL + 8, "Pdm");
+	mvprintw(GENSTATROW + 5, GENSTATCOL + 8, "Flt");
+	mvprintw(GENSTATROW + 6, GENSTATCOL + 8, "Scn");
+	mvprintw(GENSTATROW + 7, GENSTATCOL + 8, "Rev");
 
-	mvprintw(11, 49, " zf");
-	mvprintw(12, 49, "nzf");
-	mvprintw(13, 49, "%%zf");
-	mvprintw(11, 63, " xf");
-	mvprintw(12, 63, "nxf");
-	mvprintw(13, 63, "%%xf");
+	mvprintw(PAGEROW + 5, PAGECOL, "Rec It F/S F/F RFL Fre SFr");
 
-	mvprintw(15, 5, " Sys   . %% User   . %% Nice   . %% Idle   . %%");
-	mvprintw(15,57, "Procs  r  p  d  s  w");
-	mvprintw(16, 5, "|    |    |    |    |    |    |    |    |    |    |");
+	mvprintw(PAGEROW + 8, PAGECOL + 9, " zf");
+	mvprintw(PAGEROW + 9, PAGECOL + 9, "nzf");
+	mvprintw(PAGEROW + 10, PAGECOL + 9, "%%zf");
+	mvprintw(PAGEROW + 8, PAGECOL + 23, " xf");
+	mvprintw(PAGEROW + 9, PAGECOL + 23, "nxf");
+	mvprintw(PAGEROW + 10, PAGECOL + 23, "%%xf");
 
-	mvprintw(19, 0, "Namei         Sys-cache     Proc-cache");
-	mvprintw(20, 0, "      Calls   hits    %%     hits     %%");
-	mvprintw( 8, 0, "Discs");
-	mvprintw( 9, 0, "seeks");
-	mvprintw(10, 0, "xfers");
-	mvprintw(11, 0, " blks");
-	mvprintw(12, 0, " msps");
+	mvprintw(GRAPHROW, GRAPHCOL,
+		" Sys   . %% User   . %% Nice   . %% Idle   . %%");
+	mvprintw(PROCSROW, PROCSCOL, "Procs  r  p  d  s  w");
+	mvprintw(GRAPHROW + 1, GRAPHCOL,
+		"|    |    |    |    |    |    |    |    |    |    |");
+
+	mvprintw(NAMEIROW, NAMEICOL, "Namei         Sys-cache     Proc-cache");
+	mvprintw(NAMEIROW + 1, NAMEICOL,
+		"    Calls     hits    %%     hits     %%");
+	mvprintw(DISKROW, DISKCOL, "Discs");
+	mvprintw(DISKROW + 1, DISKCOL, "seeks");
+	mvprintw(DISKROW + 2, DISKCOL, "xfers");
+	mvprintw(DISKROW + 3, DISKCOL, " blks");
+	mvprintw(DISKROW + 4, DISKCOL, " msps");
 	j = 0;
 	for (i = 0; i < DK_NDRIVE; i++)
 		if (dr_state[i] == SOME) {
-			mvprintw(8, 5 + 5*j, "  %3.3s", dr_name[j]);
+			mvprintw(DISKROW, DISKCOL + 5 + 5 * j,
+				"  %3.3s", dr_name[j]);
 			j++;
 		}
 }
@@ -653,12 +765,37 @@ getinfo(s, st)
 	read(kmem, s->dk_seek, sizeof s->dk_seek);
 	lseek(kmem, (long)name[X_NCHSTATS].n_value, 0);
 	read(kmem, &s->nchstats, sizeof s->nchstats);
+	lseek(kmem, (long)name[X_INTRCNT].n_value, 0);
+	read(kmem, s->intrcnt, nintr * sizeof (long));
+}
+
+allocinfo(s)
+	struct Info *s;
+{
+
+	s->intrcnt = (long *) malloc(nintr * sizeof(long));
+	if (s->intrcnt == NULL) {
+		fprintf(stderr, "vsta: out of memory\n");
+		exit(2);
+	}
+}
+
+copyinfo(from, to)
+	struct Info *from, *to;
+{
+	register int i, *fip = from->intrcnt, *tip = to->intrcnt;
+
+	*to = *from;
+	to->intrcnt = tip;
+	for (i = 0; i < nintr; i++)
+		*tip++ = *fip++;
 }
 
 dinfo(dn, c)
 {
 	double words, atime, itime, xtime;
 
+	c = DISKCOL + c * 5;
 	atime = s.dk_time[dn];
 	atime /= 60.0;
 	words = s.dk_wds[dn]*32.0;	/* number of words transferred */
@@ -668,11 +805,11 @@ dinfo(dn, c)
 		itime += xtime, xtime = 0;
 	if (itime < 0)
 		xtime += itime, itime = 0;
-	putint((int)((float)s.dk_seek[dn]/etime+0.5), 9, c, 5);
-	putint((int)((float)s.dk_xfer[dn]/etime+0.5), 10, c, 5);
-	putint((int)(words/etime/512.0 + 0.5), 11, c, 5);
+	putint((int)((float)s.dk_seek[dn]/etime+0.5), DISKROW + 1, c, 5);
+	putint((int)((float)s.dk_xfer[dn]/etime+0.5), DISKROW + 2, c, 5);
+	putint((int)(words/etime/512.0 + 0.5), DISKROW + 3, c, 5);
 	if (s.dk_seek[dn])
-		putfloat(itime*1000.0/s.dk_seek[dn], 12, c, 5, 1, 1);
+		putfloat(itime*1000.0/s.dk_seek[dn], DISKROW + 4, c, 5, 1, 1);
 	else
-		putint(0, 12, c, 5);
+		putint(0, DISKROW + 4, c, 5);
 }
