@@ -1,0 +1,134 @@
+.TH AR11 1 "UNIX/32V"
+.SH NAME
+ar11 \- PDP-11 compatible archive and library maintainer
+.SH SYNOPSIS
+.B ar
+key [ posname ] afile name ...
+.SH DESCRIPTION
+.I Ar
+maintains groups of files
+combined into a single archive file.
+Unlike ar, these archive files may also be manipulated by
+.I ar
+on the PDP-11.
+Its main use
+is to create and update library files as used by the loader.
+It can be used, though, for any similar purpose.
+.PP
+.I Key
+is one character from the set
+.B drqtpmx,
+optionally concatenated with
+one or more of
+.B vuaibcl.
+.I Afile
+is the archive file.
+The
+.I names
+are constituent files in the archive file.
+The meanings of the
+.I key
+characters are:
+.TP
+.B d
+Delete the named files from the archive file.
+.TP
+.B r
+Replace the named files in the archive file.
+If the optional character
+.B u
+is used with
+.B r,
+then only those files with
+modified dates later than
+the archive files are replaced.
+If an optional positioning character from the set
+.B abi
+is used, then the
+.I posname
+argument must be present
+and specifies that new files are to be placed
+after
+.RB ( a )
+or before
+.RB ( b
+or
+.BR i )
+.IR posname .
+Otherwise
+new files are placed at the end.
+.TP
+.B q
+Quickly append the named files to the end of the archive file.
+Optional positioning characters are invalid.
+The command does not check whether the added members
+are already in the archive.
+Useful only to avoid quadratic behavior when creating a large
+archive piece-by-piece.
+.TP
+.B t
+Print a table of contents of the archive file.
+If no names are given, all files in the archive are tabled.
+If names are given, only those files are tabled.
+.TP
+.B p
+Print the named files in the archive.
+.TP
+.B m
+Move the named files to the end of the archive.
+If a positioning character is present,
+then the
+.I posname
+argument must be present and,
+as in
+.B r,
+specifies where the files are to be moved.
+.TP
+.B x
+Extract the named files.
+If no names are given, all files in the archive are
+extracted.
+In neither case does
+.B x
+alter the archive file.
+.TP
+.B v
+Verbose.
+Under the verbose option,
+.I ar
+gives a file-by-file
+description of the making of a
+new archive file from the old archive and the constituent files.
+When used with
+.B t,
+it gives a long listing of all information about the files.
+When used with
+.pR B ,
+it precedes each file with a name.
+.TP
+.B c
+Create.
+Normally
+.I ar
+will create
+.I afile
+when it needs to.
+The create option suppresses the
+normal message that is produced when
+.I afile
+is created.
+.TP
+.B l
+Local.
+Normally
+.I ar
+places its temporary files in the directory /tmp.
+This option causes them to be placed in the local directory.
+.SH FILES
+/tmp/v*	temporaries
+.SH "SEE ALSO"
+ld(1), ar(5),
+lorder(1)
+.SH BUGS
+If the same file is mentioned twice in an argument list,
+it may be put in the archive twice.
