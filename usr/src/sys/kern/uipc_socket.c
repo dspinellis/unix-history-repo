@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.24	82/01/14	*/
+/*	uipc_socket.c	4.25	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -344,7 +344,8 @@ soreceive(so, asa)
 {
 	register struct mbuf *m, *n;
 	u_int len;
-	int eor, s, error = 0;
+	int eor, s, error = 0, cnt = u.u_count;
+	caddr_t base = u.u_base;
 
 COUNT(SORECEIVE);
 restart:
@@ -388,9 +389,12 @@ restart:
 			panic("receive 2");
 		so->so_rcv.sb_mb = m;
 	}
+	so->so_state &= ~SS_RCVATMARK;
+	if (so->so_oobmark && cnt > so->so_oobmark)
+		cnt = so->so_oobmark;
 	eor = 0;
 	do {
-		len = MIN(m->m_len, u.u_count);
+		len = MIN(m->m_len, cnt);
 		if (len == m->m_len) {
 			eor = (int)m->m_act;
 			sbfree(&so->so_rcv, m);
@@ -398,6 +402,7 @@ restart:
 		}
 		splx(s);
 		iomove(mtod(m, caddr_t), len, B_READ);
+		cnt -= len;
 		s = splnet();
 		if (len == m->m_len) {
 			MFREE(m, n);
@@ -406,7 +411,7 @@ restart:
 			m->m_len -= len;
 			so->so_rcv.sb_cc -= len;
 		}
-	} while ((m = so->so_rcv.sb_mb) && u.u_count && !eor);
+	} while ((m = so->so_rcv.sb_mb) && cnt && !eor);
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
 		do {
 			if (m == 0)
@@ -419,10 +424,27 @@ restart:
 		} while (eor == 0);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD, 0, 0);
+	if (so->so_oobmark) {
+		so->so_oobmark -= u.u_base - base;
+		if (so->so_oobmark == 0)
+			so->so_state |= SS_RCVATMARK;
+	}
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
 	return (error);
+}
+
+sohasoutofband(so)
+	struct socket *so;
+{
+
+	if (so->so_pgrp == 0)
+		return;
+	if (so->so_pgrp > 0)
+		gsignal(so->so_pgrp, SIGURG);
+	else 
+		psignal(-so->so_pgrp, SIGURG);
 }
 
 /*ARGSUSED*/
@@ -502,6 +524,23 @@ COUNT(SOIOCTL);
 			return;
 		}
 	}
+	case SIOCSPGRP: {
+		int pgrp;
+		if (copyin(cmdp, (caddr_t)&pgrp, sizeof (pgrp))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		so->so_pgrp = pgrp;
+		return;
+	}
+
+	case SIOCGPGRP: {
+		int pgrp = so->so_pgrp;
+		if (copyout((caddr_t)&pgrp, cmdp, sizeof (pgrp))) {
+			u.u_error = EFAULT;
+			return;
+		}
+	}
 
 	case SIOCDONE: {
 		int flags;
@@ -520,6 +559,49 @@ COUNT(SOIOCTL);
 		return;
 	}
 
+	case SIOCSENDOOB: {
+		char oob;
+		struct mbuf *m;
+		if (copyin(cmdp, (caddr_t)&oob, sizeof (oob))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		m = m_get(M_DONTWAIT);
+		if (m == 0) {
+			u.u_error = ENOBUFS;
+			return;
+		}
+		m->m_off = MMINOFF;
+		m->m_len = 1;
+		*mtod(m, caddr_t) = oob;
+		(*so->so_proto->pr_usrreq)(so, PRU_SENDOOB, m, 0);
+		return;
+	}
+
+	case SIOCRCVOOB: {
+		struct mbuf *m = m_get(M_DONTWAIT);
+		if (m == 0) {
+			u.u_error = ENOBUFS;
+			return;
+		}
+		m->m_off = MMINOFF; *mtod(m, caddr_t) = 0;
+		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB, m, 0);
+		if (copyout(mtod(m, caddr_t), cmdp, sizeof (char))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		m_free(m);
+		return;
+	}
+
+	case SIOCATMARK: {
+		int atmark = (so->so_state&SS_RCVATMARK) != 0;
+		if (copyout((caddr_t)&atmark, cmdp, sizeof (atmark))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		return;
+	}
 	}
 	switch (so->so_type) {
 
