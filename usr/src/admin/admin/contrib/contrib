@@ -1,9 +1,12 @@
-.\"     @(#)contrib	5.5 (Berkeley) %G%
+.\"	@(#)contrib	5.6 (Berkeley) %G%
 .\"
-.\" To build a document, pipe the bottom list through column -c180, making
+.\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
 .\" Then, compress multiple tabs into a single tab, and do "dtbl list |
 .\" psroff".  DON'T SAVE THE FILE IN COLUMNATED FORM, IT'S HARD TO UNDO!
+.\"
+.\" Be careful sorting the list, there are some entries that span two
+.\" two lines.
 .\"
 .ds CH
 .sp 5
@@ -52,22 +55,22 @@ System documentation	IEEE (POSIX)
 Timezone support	Arthur David Olson
 Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
 User level XNS support	Cornell University
+User level X25 	University of British Columbia
 VAX 3000 support	Mt. Xinu and Tom Ferrin
 VAX BI support	Chris Torek
 VAX device support	Digital Equipment Corp.
 Virtual memory implementation	Carnegie-Mellon University Mach project
 X11	MIT X Consortium
-X25	University of British Columbia
 .TE
 .bp
 .sp 5
 The following are people and organizations that have contributed a
 specific item, program, library routine or program maintenance.
 .sp
-.ps 8
-.vs 9
+.ps 9
+.vs 11
 .TS
-l l.
+l l l l.
 386 support	Carnegie-Mellon University Mach project
 386 support	Don Ahn, Sean Fagin, Tim Tucker
 adventure(6)	Will Crowther, Don Woods, Jim Gillogly
@@ -89,13 +92,15 @@ cksum(1)	James W. Williams
 clri(8)	Rich $alz
 col(1)	Michael Rendell
 comm(1)	Case Larsen
-compress(1)	James A. Woods, Spencer Thomas and Joseph Orost
+compress(1)	James A. Woods, Spencer Thomas
+	 and Joseph Orost
 cp(1)	David Hitz
 curses(3)	Ken Arnold
 cut(1)	Adam S. Moskowitz and Marciano Pitargue
 db(3) btree support	Mike Olson
 db(3) hashing support	Margo Seltzer
-des(1)	Phil Karn, Jim Gillogly and Richard Outerbridge
+des(1)	Phil Karn, Jim Gillogly
+	 and Richard Outerbridge
 disklabel(8)	Symmetric Computer Systems
 du(1)	Chris Newcomb
 emacs(1)	Richard Stallman
@@ -115,7 +120,8 @@ gprof(1)	Peter Kessler
 hack(6)	Andries Brouwer (and a cast of thousands)
 hangman(6)	Ken Arnold
 hunt(6)	Greg Couch, Conrad Huang
-indent(1)	David Willcox, Eric Schmidt, James Gosling and Sun Microsystems
+indent(1)	David Willcox, Eric Schmidt,
+	 James Gosling and Sun Microsystems
 jove(1)	Jonathon Payne
 kvm(3)	Peter Shipley
 larn(6)	Noah Morgan
