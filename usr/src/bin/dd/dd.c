@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -246,11 +246,10 @@ dd_in()
 
 		/* Handle partial input blocks. */
 		} else if (n != in.dbsz) {
-			/* If sync, fill the block with NULs. */
-			if (ddflags & C_SYNC) {
-				bzero(in.dbp + n, in.dbsz - n);
+			/* If sync, use the entire block. */
+			if (ddflags & C_SYNC)
 				in.dbcnt += in.dbrcnt = in.dbsz;
-			} else
+			else
 				in.dbcnt += in.dbrcnt = n;
 			++in.p_stats;
 		}
