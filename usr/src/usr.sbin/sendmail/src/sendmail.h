@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.5		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.6		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -309,6 +309,10 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 # define CONDIF		'\031'	/* conditional if-then */
 # define CONDELSE	'\032'	/* conditional else */
 # define CONDFI		'\033'	/* conditional fi */
+
+/* bracket characters for host name lookup */
+# define HOSTBEGIN	'\034'	/* hostname lookup begin */
+# define HOSTEND	'\035'	/* hostname lookup end */
 
 /* \001 is also reserved as the macro expansion character */
 /*
