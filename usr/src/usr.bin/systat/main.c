@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -20,8 +20,8 @@ static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 static struct nlist nlst[] = {
 #define X_CCPU          0
 	{ "_ccpu" },
-#define X_AVENRUN       1
-	{ "_avenrun" },
+#define X_FSCALE	1
+	{ "_fscale" },
 #define	X_HZ		2
 	{ "_hz" },
 #define	X_PHZ		3
@@ -39,7 +39,7 @@ int     display();
 int     suspend();
 int	(*sigtstpdfl)();
 
-double	ccpu;
+fixpt_t	ccpu;
 int     dellave;
 
 static	WINDOW *wload;			/* one line window for load average */
@@ -115,9 +115,9 @@ main(argc, argv)
 	}
 
 	gethostname(hostname, sizeof (hostname));
-	lseek(kmem, nlst[X_CCPU].n_value, L_SET);
-	read(kmem, &ccpu, sizeof (ccpu));
-	lccpu = log(ccpu);
+	ccpu = getw(nlst[X_CCPU].n_value);
+	fscale = getw(nlst[X_FSCALE].n_value);
+	lccpu = log((double) ccpu / fscale);
 	hz = getw(nlst[X_HZ].n_value);
 	phz = getw(nlst[X_PHZ].n_value);
 	(*curcmd->c_init)();
@@ -160,8 +160,7 @@ display()
 	register int i, j;
 
 	/* Get the load average over the last minute. */
-	lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
-	read(kmem, avenrun, sizeof (avenrun));
+	(void) getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0]));
 	(*curcmd->c_fetch)();
 	if (curcmd->c_flags & CF_LOADAV) {
 		j = 5.0*avenrun[0] + 0.5;
@@ -194,8 +193,7 @@ load()
 {
 	double	avenrun[3];
 
-	lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
-	read(kmem, avenrun, sizeof (avenrun));
+	(void) getloadavg(avenrun, sizeof(avenrun)/sizeof(avenrun[0]));
 	mvprintw(CMDLINE, 0, "%4.1f %4.1f %4.1f",
 	    avenrun[0], avenrun[1], avenrun[2]);
 	clrtoeol();

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -16,20 +16,20 @@ static char sccsid[] = "@(#)disks.c	5.4 (Berkeley) %G%";
 static struct nlist nlst[] = {
 #define	X_DK_NDRIVE	0
 	{ "_dk_ndrive" },
-#define	X_DK_MSPW	1
-	{ "_dk_mspw" },
+#define	X_DK_WPMS	1
+	{ "_dk_wpms" },
 #ifdef vax
-#define	X_MBDINIT	(X_DK_MSPW+1)
+#define	X_MBDINIT	(X_DK_WPMS+1)
 	{ "_mbdinit" },
-#define	X_UBDINIT	(X_DK_MSPW+2)
+#define	X_UBDINIT	(X_DK_WPMS+2)
 	{ "_ubdinit" },
 #endif
 #ifdef sun
-#define	X_MBDINIT	(X_DK_MSPW+1)
+#define	X_MBDINIT	(X_DK_WPMS+1)
 	{ "_mbdinit" },
 #endif
 #ifdef tahoe
-#define	X_VBDINIT	(X_DK_MSPW+1)
+#define	X_VBDINIT	(X_DK_WPMS+1)
 	{ "_vbdinit" },
 #endif
 	{ "" },
@@ -55,8 +55,15 @@ dkinit()
 		return(0);
 	}
 	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
-	lseek(kmem, nlst[X_DK_MSPW].n_value, L_SET);
-	read(kmem, dk_mspw, dk_ndrive * sizeof (float));
+	lseek(kmem, nlst[X_DK_WPMS].n_value, L_SET);
+	{
+		long *wpms = (long *)calloc(dk_ndrive, sizeof(long));
+		read(kmem, wpms, dk_ndrive * sizeof (long));
+		for (i = 0; i < dk_ndrive; i++)
+			*(dk_mspw + i) = (*(wpms + i) == 0)? 0.0:
+			                 (float) 1.0 / *(wpms + i);
+		free(wpms);
+	}
 	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
 	dk_select = (int *)calloc(dk_ndrive, sizeof (int));
 	for (cp = buf, i = 0; i < dk_ndrive; i++) {

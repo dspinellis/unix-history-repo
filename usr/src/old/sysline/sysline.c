@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -82,6 +82,7 @@ static char sccsid[] = "@(#)sysline.c	5.13 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/signal.h>
 #include <utmp.h>
 #include <ctype.h>
@@ -128,11 +129,9 @@ struct nlist nl[] = {
 #define	NL_BOOT 0
 	{ "_proc" },
 #define NL_PROC 1
-	{ "_avenrun" },
-#define NL_AVEN 2
 #ifdef VMUNIX
 	{ "_nproc" },
-#define NL_NPROC 3
+#define NL_NPROC 2
 #endif
 	0
 };
@@ -473,7 +472,7 @@ readnamelist()
 		if (!quiet)
 			fprintf(stderr,
 			"Time makes no sense... namelist must be wrong\n");
-		nl[NL_PROC].n_value = nl[NL_AVEN].n_value = 0;
+		nl[NL_PROC].n_value = 0;
 	}
 }
 
@@ -601,17 +600,11 @@ prtinfo()
 	 * print load average and difference between current load average
 	 * and the load average 5 minutes ago
 	 */
-	if (nl[NL_AVEN].n_value != 0) {
+	if (getloadavg(avenrun, 3) > 0) {
 		double diff;
 
 		stringspace();
-#ifdef VMUNIX
-		lseek(kmem, (long)nl[NL_AVEN].n_value, 0);
-		read(kmem, avenrun, sizeof avenrun);
-#endif
-#ifdef pdp11
-		loadav(avenrun);
-#endif
+
 		if ((diff = avenrun[0] - avenrun[1]) < 0.0)
 			stringprt("%.1f %.1f", avenrun[0],  diff);
 		else
@@ -1227,20 +1220,6 @@ initterm()
 		arrows = "->";
 }
 #endif TERMINFO
-
-#ifdef pdp11
-loadav(ap)
-double ap[];
-{
-	register int i;
-	short s_avenrun[3];
-
-	lseek(kmem, (long)nl[NL_AVEN].n_value, 0);
-	read(kmem, s_avenrun, sizeof(s_avenrun));
-	for (i=0; i < (sizeof(s_avenrun)/sizeof(s_avenrun[0])); i++)
-		ap[i] = s_avenrun[i] / 256.0;
-}
-#endif
 
 #ifdef RWHO
 char *
