@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.12 (Berkeley) %G%
+ *	@(#)tp_output.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -381,8 +381,13 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		else if (tpcb->tp_nlproto->nlp_ctloutput == NULL)
 			error = EOPNOTSUPP;
 		else
-			error = (tpcb->tp_nlproto->nlp_ctloutput)(cmd, optname, 
-				tpcb->tp_npcb, *mp);
+			return ((tpcb->tp_nlproto->nlp_ctloutput)(cmd, optname, 
+				tpcb->tp_npcb, *mp));
+		goto done;
+	} else if ( level == SOL_SOCKET) {
+		if (optname == SO_RCVBUF && cmd == PRCO_SETOPT) {
+			tp_rsyset(tpcb);
+		}
 		goto done;
 	} else if ( level !=  SOL_TRANSPORT ) {
 		error = EOPNOTSUPP; goto done;
@@ -620,7 +625,7 @@ tp_ctloutput(cmd, so, level, optname, mp)
 				tptrace(TPPTmisc,"C/D DATA: flags snd.sbcc val_len",
 					tpcb->tp_flags, so->so_snd.sb_cc,val_len,0);
 			ENDTRACE
-			*mp = MNULL; /* prevent sosetopt from freeing it! */
+			*mp = MNULL;
 			if (optname == TPOPT_CFRM_DATA && (so->so_state & SS_ISCONFIRMING))
 				(void) tp_confirm(tpcb);
 		}
@@ -657,15 +662,18 @@ done:
 	 * sigh: getsockopt looks only at m_len : all output data must 
 	 * reside in the first mbuf 
 	 */
-	if ( error  && (*mp) != MNULL )
-		(*mp)->m_len = 0;
-	if( (*mp) != MNULL ) {
-		ASSERT ( m_compress(*mp, mp) <= MLEN );
-		IFDEBUG(D_REQUEST)
-			dump_mbuf(*mp, "tp_ctloutput *mp after compress");
-		ENDDEBUG
+	if (*mp) {
+		if (cmd == PRCO_SETOPT)
+			m_freem(*mp);
+		else {
+			ASSERT ( m_compress(*mp, mp) <= MLEN );
+			if (error)
+				(*mp)->m_len = 0;
+			IFDEBUG(D_REQUEST)
+				dump_mbuf(*mp, "tp_ctloutput *mp after compress");
+			ENDDEBUG
+		}
 	}
-		
 	splx(s);
 	return error;
 }
