@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.40 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.41 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.40 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.41 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -247,6 +247,34 @@ smtp(e)
 				protocol = "SMTP";
 				SmtpPhase = "server HELO";
 			}
+
+			/* check for valid domain name (re 1123 5.2.5) */
+			if (*p == '\0')
+			{
+				message("501 %s requires domain address",
+					cmdbuf);
+				break;
+			}
+			else
+			{
+				register char *q;
+
+				for (q = p; *q != '\0'; q++)
+				{
+					if (!isascii(*q))
+						break;
+					if (isalnum(*q))
+						continue;
+					if (strchr("[].-_#", *q) == NULL)
+						break;
+				}
+				if (*q != '\0')
+				{
+					message("501 Invalid domain name");
+					break;
+				}
+			}
+
 			sendinghost = newstr(p);
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
