@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.46	82/12/28	*/
+/*	vfs_syscalls.c	4.47	83/01/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -909,6 +909,7 @@ rename()
 	} *uap;
 	register struct inode *ip, *xp, *dp;
 	int oldparent, parentdifferent, doingdirectory;
+	int error = 0;
 
 	uap = (struct a *)u.u_ap;
 	ip = namei(uchar, LOOKUP | LOCKPARENT, 0);
@@ -926,8 +927,8 @@ rename()
 		if (d->d_name[0] == '.') {
 			if (d->d_namlen == 1 ||
 			    (d->d_namlen == 2 && d->d_name[1] == '.')) {
-				u.u_error = EINVAL;
 				iput(ip);
+				u.u_error = EINVAL;
 				return;
 			}
 		}
@@ -953,8 +954,10 @@ rename()
 	 */
 	u.u_dirp = (caddr_t)uap->to;
 	xp = namei(uchar, CREATE | LOCKPARENT, 0);
-	if (u.u_error)
+	if (u.u_error) {
+		error = u.u_error;
 		goto out;
+	}
 	dp = u.u_pdir;
 	/*
 	 * 2) If target doesn't exist, link the target
@@ -966,7 +969,7 @@ rename()
 	parentdifferent = oldparent != dp->i_number;
 	if (xp == NULL) {
 		if (dp->i_dev != ip->i_dev) {
-			u.u_error = EXDEV;
+			error = EXDEV;
 			goto bad;
 		}
 		/*
@@ -982,47 +985,57 @@ rename()
 			iupdat(dp, &time, &time, 1);
 		}
 		direnter(ip);
-		if (u.u_error)
+		if (u.u_error) {
+			error = u.u_error;
 			goto out;
+		}
 	} else {
 		if (xp->i_dev != dp->i_dev || xp->i_dev != ip->i_dev) {
-			u.u_error = EXDEV;
+			error = EXDEV;
 			goto bad;
 		}
 		/*
-		 * Target must be empty if a directory.
+		 * Target must be empty if a directory
+		 * and have no links to it.
 		 * Also, insure source and target are
 		 * compatible (both directories, or both
 		 * not directories).
 		 */
 		if ((xp->i_mode&IFMT) == IFDIR) {
-			if (!dirempty(xp)) {
-				u.u_error = ENOTEMPTY;
+			if (!dirempty(xp) || xp->i_nlink > 2) {
+				error = ENOTEMPTY;
 				goto bad;
 			}
 			if (!doingdirectory) {
-				u.u_error = ENOTDIR;
+				error = ENOTDIR;
 				goto bad;
 			}
 		} else if (doingdirectory) {
-			u.u_error = EISDIR;
+			error = EISDIR;
 			goto bad;
 		}
 		dirrewrite(dp, ip);
-		if (u.u_error)
+		if (u.u_error) {
+			error = u.u_error;
 			goto bad1;
+		}
 		/*
-		 * If this is a directory we know it is
-		 * empty and we can squash the inode and
-		 * any space associated with it.  Otherwise,
-		 * we've got a plain file and the link count
-		 * simply needs to be adjusted.
+		 * Adjust the link count of the target to
+		 * reflect the dirrewrite above.  If this is
+		 * a directory it is empty and there are
+		 * no links to it, so we can squash the inode and
+		 * any space associated with it.  We disallowed
+		 * renaming over top of a directory with links to
+		 * it above, as we've no way to determine if
+		 * we've got a link or the directory itself, and
+		 * if we get a link, then ".." will be screwed up.
 		 */
+		xp->i_nlink--;
 		if (doingdirectory) {
-			xp->i_nlink = 0;
+			if (--xp->i_nlink != 0)
+				panic("rename: linked directory");
 			itrunc(xp, (u_long)0);
-		} else
-			xp->i_nlink--;
+		}
 		xp->i_flag |= ICHG;
 		iput(xp);
 	}
@@ -1061,6 +1074,8 @@ rename()
 			ip->i_nlink--;
 			ip->i_flag |= ICHG;
 		}
+		if (error == 0)		/* conservative */
+			error = u.u_error;
 	}
 	irele(ip);
 	if (dp)
@@ -1074,7 +1089,7 @@ rename()
 	 *    and a lot shorter than when it was done
 	 *    in a user process.
 	 */
-	if (doingdirectory && parentdifferent && u.u_error == 0) {
+	if (doingdirectory && parentdifferent && error == 0) {
 		struct dirtemplate dirbuf;
 
 		u.u_dirp = uap->to;
@@ -1088,9 +1103,9 @@ rename()
 			printf("rename: .. not a directory\n");
 			goto stuck;
 		}
-		u.u_error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
+		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
 			sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
-		if (u.u_error == 0) {
+		if (error == 0) {
 			dirbuf.dotdot_ino = dp->i_number;
 			(void) rdwri(UIO_WRITE, ip, (caddr_t)&dirbuf,
 			  sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
@@ -1099,7 +1114,8 @@ stuck:
 		irele(dp);
 		iput(ip);
 	}
-	return;
+	goto done;
+
 bad:
 	iput(u.u_pdir);
 bad1:
@@ -1109,6 +1125,9 @@ out:
 	ip->i_nlink--;
 	ip->i_flag |= ICHG;
 	irele(ip);
+done:
+	if (error)
+		u.u_error = error;
 }
 
 /*
