@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.12	81/12/12	*/
+/*	uipc_proto.c	4.13	81/12/20	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -159,6 +159,6 @@ pffasttimo()
 
 COUNT(PFSLOWTIMO);
 	for (pr = protoswLAST; pr >= protosw; pr--)
-		if (pr->pr_slowtimo)
-			(*pr->pr_slowtimo)();
+		if (pr->pr_fasttimo)
+			(*pr->pr_fasttimo)();
 }
