@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.25.1.1 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,6 +21,22 @@ struct kmemusage *kmemusage;
 char *kmembase, *kmemlimit;
 char *memname[] = INITKMEMNAMES;
 
+#ifdef DIAGNOSTIC
+/*
+ * This structure serves two purposes.
+ * The first is to provide a set of masks to catch unaligned frees.
+ * The second is to provide known text to copy into free objects so
+ * that modifications after frees can be detected.
+ */
+#define WEIRD_ADDR 0xdeadbeef
+long addrmask[] = { WEIRD_ADDR,
+	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
+	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
+	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
+	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
+};
+#endif /* DIAGNOSTIC */
+
 /*
  * Allocate a block of memory
  */
@@ -34,15 +50,14 @@ malloc(size, type, flags)
 	long indx, npg, alloc, allocsize;
 	int s;
 	caddr_t va, cp, savedlist;
+#ifdef DIAGNOSTIC
+	int i, copysize;
+#endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 
-#ifdef DIAGNOSTIC
 	if (((unsigned long)type) > M_LAST)
 		panic("malloc - bogus type");
-	if (type == M_NAMEI)
-		curproc->p_spare[0]++;
-#endif
 #endif
 
 	indx = BUCKETINDX(size);
@@ -58,6 +73,9 @@ malloc(size, type, flags)
 			ksp->ks_limblocks++;
 		tsleep((caddr_t)ksp, PSWP+2, memname[type], 0);
 	}
+#endif
+#ifdef DIAGNOSTIC
+	copysize = 1 << indx < sizeof addrmask ? 1 << indx : sizeof addrmask;
 #endif
 	if (kbp->kb_next == NULL) {
 		if (size > MAXALLOCSAVE)
@@ -96,12 +114,33 @@ malloc(size, type, flags)
 		 */
 		savedlist = kbp->kb_next;
 		kbp->kb_next = va + (npg * NBPG) - allocsize;
-		for (cp = kbp->kb_next; cp > va; cp -= allocsize)
+		for (cp = kbp->kb_next; ; cp -= allocsize) {
+#ifdef DIAGNOSTIC
+			/*
+			 * Copy in known text to detect modification
+			 * after freeing.
+			 */
+			bcopy(addrmask, cp, copysize);
+#endif /* DIAGNOSTIC */
+			if (cp <= va)
+				break;
 			*(caddr_t *)cp = cp - allocsize;
+		}
 		*(caddr_t *)cp = savedlist;
 	}
 	va = kbp->kb_next;
 	kbp->kb_next = *(caddr_t *)va;
+#ifdef DIAGNOSTIC
+	*(caddr_t *)va = (char *)WEIRD_ADDR;
+	if (bcmp(addrmask, va, copysize)) {
+		copysize >>= 2;
+		for (i = 0; i < copysize && addrmask[i] == ((int *)va)[i]; i++)
+			/* void */;
+		printf("Word %d %s 0x%x of size %d modified (0x%x != 0x%x)\n",
+		    i, "of object", va, size, ((int *)va)[i], addrmask[i]);
+		panic("malloc: data modified on freelist");
+	}
+#endif /* DIAGNOSTIC */
 #ifdef KMEMSTATS
 	kup = btokup(va);
 	if (kup->ku_indx != indx)
@@ -124,15 +163,6 @@ out:
 	return ((void *) va);
 }
 
-#ifdef DIAGNOSTIC
-long addrmask[] = { 0x00000000,
-	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
-	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
-	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
-	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
-};
-#endif /* DIAGNOSTIC */
-
 /*
  * Free a block of memory allocated by malloc.
  */
@@ -143,17 +173,25 @@ free(addr, type)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
-	long alloc, size;
+	long size;
 	int s;
+#ifdef DIAGNOSTIC
+	caddr_t cp;
+	long alloc, copysize;
+#endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 #endif
 
 	kup = btokup(addr);
 	size = 1 << kup->ku_indx;
+	kbp = &bucket[kup->ku_indx];
+	s = splimp();
 #ifdef DIAGNOSTIC
-	if (type == M_NAMEI)
-		curproc->p_spare[0]--;
+	/*
+	 * Check for returns of data that do not point to the
+	 * beginning of the allocation.
+	 */
 	if (size > NBPG * CLSIZE)
 		alloc = addrmask[BUCKETINDX(NBPG * CLSIZE)];
 	else
@@ -164,8 +202,6 @@ free(addr, type)
 		panic("free: unaligned addr");
 	}
 #endif /* DIAGNOSTIC */
-	kbp = &bucket[kup->ku_indx];
-	s = splimp();
 	if (size > MAXALLOCSAVE) {
 		kmem_free(kmem_map, (vm_offset_t)addr, ctob(kup->ku_pagecnt));
 #ifdef KMEMSTATS
@@ -182,6 +218,27 @@ free(addr, type)
 		splx(s);
 		return;
 	}
+#ifdef DIAGNOSTIC
+	/*
+	 * Check for multiple frees. Use a quick check to see if
+	 * it looks free before laboriously searching the freelist.
+	 */
+	*(caddr_t *)addr = (char *)WEIRD_ADDR;
+	copysize = size < sizeof addrmask ? size : sizeof addrmask;
+	if (!bcmp(addrmask, addr, copysize)) {
+		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
+			if (addr == cp) {
+				printf("multiply freed item 0x%x\n", addr);
+				panic("free: duplicated free");
+			}
+		}
+	}
+	/*
+	 * Copy in known text to detect modification after freeing
+	 * and to make it look free.
+	 */
+	bcopy(addrmask, addr, copysize);
+#endif /* DIAGNOSTIC */
 #ifdef KMEMSTATS
 	kup->ku_freecnt++;
 	if (kup->ku_freecnt >= kbp->kb_elmpercl)
