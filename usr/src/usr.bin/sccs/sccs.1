@@ -52,6 +52,32 @@ argument.
 These flags are specific to the command
 and are discussed in the documentation for that command.
 .PP
+Besides the usual
+.SM SCCS
+commands,
+several ``pseudo-commands'' can be issued.
+These are:
+.IP del 1i
+Perform a delta on the named files
+and then get new versions.
+The new versions will have id keywords expanded,
+and will not be editable.
+.IP fix
+Must be followed by a
+.B \-r
+flag.
+This command essentially removes the named delta,
+but leaves you with a copy of the delta
+with the changes that were in it.
+It is useful for fixing small compiler bugs, etc.
+Since it doesn't leave audit trails,
+it should be used carefully.
+.IP clean
+Takes no arguments.
+This routine removes everything from the current directory
+that can be recreated from SCCS files.
+It will not remove any files being editted.
+.PP
 The
 .B \-r
 flag runs
