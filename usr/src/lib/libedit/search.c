@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)search.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)search.c	5.4 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -396,7 +396,7 @@ cv_search(el, dir)
 
     c_insert(el, 2);	/* prompt + '\n' */
     *el->el_line.cursor++ = '\n';
-    *el->el_line.cursor++ = dir == ED_SEARCH_PREV_HISTORY ? '?' : '/';
+    *el->el_line.cursor++ = dir == ED_SEARCH_PREV_HISTORY ? '/' : '?';
     re_refresh(el);
 
 #ifdef ANCHOR
