@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/vmmac.h>
+#include <sys/socket.h>
 #include <machine/pte.h>
 #include <ctype.h>
 #include <errno.h>
@@ -62,12 +63,22 @@ struct nlist nl[] = {
 	{ "_unixsw" },
 #define N_RTHASHSIZE	18
 	{ "_rthashsize" },
+#define N_IDP		19
+	{ "_nspcb"},
+#define N_IDPSTAT	20
+	{ "_idpstat"},
+#define N_SPPSTAT	21
+	{ "_spp_istat"},
+#define N_NSERR		22
+	{ "_ns_errstat"},
 	"",
 };
 
 /* internet protocols */
 extern	int protopr();
 extern	int tcp_stats(), udp_stats(), ip_stats(), icmp_stats();
+extern	int nsprotopr();
+extern	int spp_stats(), idp_stats(), nserr_stats();
 
 struct protox {
 	u_char	pr_index;		/* index into nlist of cb head */
@@ -89,6 +100,17 @@ struct protox {
 	  0,		0 }
 };
 
+struct protox nsprotox[] = {
+	{ N_IDP,	N_IDPSTAT,	1,	nsprotopr,
+	  idp_stats,	"idp" },
+	{ N_IDP,	N_SPPSTAT,	1,	nsprotopr,
+	  spp_stats,	"spp" },
+	{ -1,		N_NSERR,	1,	0,
+	  nserr_stats,	"ns_err" },
+	{ -1,		-1,		0,	0,
+	  0,		0 }
+};
+
 struct	pte *Sysmap;
 
 char	*system = "/vmunix";
@@ -105,11 +127,13 @@ int	rflag;
 int	sflag;
 int	tflag;
 int	uflag;
+int	fflag;
 int	interval;
 char	*interface;
 int	unit;
-char	usage[] = "[ -Aaihmnrstu ] [-I interface] [ interval ] [ system ] [ core ]";
+char	usage[] = "[ -Aaihmnrstu ] [-f address_family] [-I interface] [ interval ] [ system ] [ core ]";
 
+int	af = AF_UNSPEC;
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -117,6 +141,7 @@ main(argc, argv)
 	int i;
 	char *cp, *name;
 	register struct protoent *p;
+	register struct protox *tp;
 
 	name = argv[0];
 	argc--, argv++;
@@ -164,6 +189,16 @@ main(argc, argv)
 			uflag++;
 			break;
 
+		case 'f':
+			argv++;
+			argc--;
+			if (strcmp(*argv,"ns")==0) {
+				af = AF_NS;
+			} else if (strcmp(*argv,"inet")==0) {
+				af = AF_INET;
+			}
+			break;
+			
 		case 'I':
 			iflag++;
 			if (*(interface = cp + 1) == 0) {
@@ -255,10 +290,10 @@ use:
 				nl[N_RTHASHSIZE].n_value);
 		exit(0);
 	}
+    if (af == AF_INET || af == AF_UNSPEC) {
 	setprotoent(1);
 	setservent(1);
 	while (p = getprotoent()) {
-		register struct protox *tp;
 
 		for (tp = protox; tp->pr_name; tp++)
 			if (strcmp(tp->pr_name, p->p_name) == 0)
@@ -273,6 +308,17 @@ use:
 			(*tp->pr_cblocks)(nl[tp->pr_index].n_value, p->p_name);
 	}
 	endprotoent();
+    }
+    if (af == AF_NS || af == AF_UNSPEC) {
+	for (tp = nsprotox; tp->pr_name; tp++) {
+		if (sflag && tp->pr_stats) {
+			(*tp->pr_stats)(nl[tp->pr_sindex].n_value, tp->pr_name);
+			continue;
+		}
+		if (tp->pr_cblocks)
+			(*tp->pr_cblocks)(nl[tp->pr_index].n_value, tp->pr_name);
+	}
+    }
 }
 
 /*
