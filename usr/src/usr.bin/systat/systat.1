@@ -1,0 +1,247 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)systat.1	6.1 (Berkeley) %G%
+.\"
+.TH SYSTAT 1 ""
+.UC 6
+.SH NAME
+systat \- display system statistics on a crt
+.SH SYNOPSIS
+.B systat
+[
+.RI \- display
+] [
+refresh-interval
+]
+.SH DESCRIPTION
+.B Systat
+displays various system statistics in a screen oriented fashion
+using the curses screen display library, 
+.IR curses (3X).
+.PP
+While
+.I systat
+is running the screen is usually divided into two windows (an exception
+is the vmstat display which uses the entire screen).  The
+upper window depicts the current system load average.  The
+information displayed in the lower window may vary, depending on
+user commands.  The last line on the screen is reserved for user
+input and error messages.
+.PP
+By default
+.I systat
+displays the processes getting the largest percentage of the processor
+in the lower window.  Other displays show swap space usage, disk i/o
+statistics (a la
+.IR iostat (1)),
+virtual memory statistics (a la
+.IR vmstat (1)),
+network ``mbuf'' utilization, and network connections (a la
+.IR netstat (1)).
+.PP
+Input is interpreted at two different levels. 
+A ``global'' command interpreter processes all keyboard input.
+If this command interpreter fails to recognize a command, the
+input line is passed to a per-display command interpreter.  This
+allows each display to have certain display-specific commands.
+.PP
+Certain characters cause immediate action by 
+.IR systat .
+These are
+.IP ^L
+Refresh the screen.
+.IP ^G
+Print the name of the current ``display'' being shown in
+the lower window and the refresh interval.
+.IP ^Z
+Stop 
+.IR systat .
+.IP :
+Move the cursor to the command line and interpret the input
+line typed as a command.  While entering a command the
+current character erase, word erase, and line kill characters
+may be used.
+.PP
+The following commands are interpreted by the ``global''
+command interpreter.
+.IP help
+.br
+Print the names of the available displays on the command line.
+.IP load
+.br
+Print the load average over the past 1, 5, and 15 minutes
+on the command line.
+.IP stop
+.br
+Stop refreshing the screen.
+.IP "[ start ] [ number ]"
+.br
+Start (continue) refreshing the screen.  If a second, numeric,
+argument is provided it is interpreted as a refresh interval
+(in seconds).
+Supplying only a number will set the refresh interval to this
+value.
+.IP "quit"
+.br
+Exit 
+.IR systat .
+(This may be abbreviated to
+.IR q ).
+.PP
+The available displays are:
+.IP pigs
+.br
+Display, in the lower window, those processes resident in main
+memory and getting the
+largest portion of the processor (the default display). 
+When less than 100% of the
+processor is scheduled to user processes, the remaining time
+is accounted to the ``idle'' process.
+.IP iostat
+.br
+Display, in the lower window, statistics about processor use
+and disk throughput.  Statistics on processor use appear as
+bar graphs of the amount of time executing in user mode (``user''),
+in user mode running low priority processes (``nice''), in 
+system mode (``system''), and idle (``idle'').  Statistics
+on disk throughput show, for each drive, kilobytes of data transferred,
+number disk transaction performed, and average seek time
+(in milliseconds).  This information may be displayed as
+bar graphs or as rows of numbers which scroll downward.  Bar
+graphs are shown by default; commands specific to this display  
+are discussed below.
+.IP swap
+.br
+Display, in the lower window, swap space in use on each swap
+device configured.  Two sets of bar graphs are shown.  The
+upper graph displays swap space allocated to pure text segments
+(code), the lower graph displays space allocated to stack and
+data segments.  Allocated space is sorted by its size into buckets
+of size dmmin, dmmin*2, dmmin*4, up to dmmax (to reflect allocation
+policies imposed by the system).  The disk segment size, in sectors,
+is displayed along the left hand side of the text,
+and data and stack graphs.
+Space allocated to the user structure and page
+tables is not currently accounted for.
+.IP mbufs
+.br
+Display, in the lower window, the number of mbufs allocated
+for particular uses, i.e. data, socket structures, etc.
+.IP vmstat
+.br
+Take over the entire display and show a (rather crowded) compendium
+of statistics related to virtual memory usage, process scheduling,
+device interrupts, system name translation cacheing, disk i/o, etc.
+.IP netstat
+.br
+Display, in the lower window, network connections.  By default,
+network servers awaiting requests are not displayed.  Each address
+is displayed in the format ``host.port'', with each shown symbolically,
+when possible.  It is possible to have addresses displayed numerically,
+limit the display to a set of ports, hosts, and/or protocols; see the
+list commands below.
+.PP
+Commands to switch between displays may be abbreviated to the
+minimum unambiguous prefix; for example, ``io'' for ``iostat''.
+Certain information may be discarded when the screen size is
+insufficient for display.  For example, on a machine with 10
+drives the 
+.I iostat
+bar graph displays only 3 drives on a 24 line terminal.  When
+a bar graph would overflow the allotted screen space it is
+truncated and the actual value is printed ``over top'' of the bar.
+.PP
+The following commands are specific to the 
+.I iostat
+display; the minimum unambiguous prefix may be supplied.
+.IP numbers
+Show the disk i/o statistics in numeric form.  Values are
+displayed in numeric columns which scroll downward.
+.IP bars
+Show the disk i/o statistics in bar graph form (default).
+.IP msps
+Toggle the display of average seek time (the default is to
+not display seek times).
+.IP "ignore [ drives ]"
+Do not display information about the drives indicated.  Multiple
+drives may be specified, separated by spaces.
+.IP "display [ drives ]"
+Display information about the drives indicated.  Multiple drives
+may be specified, separated by spaces.
+.PP
+The following commands are specific to the
+.I vmstat
+display; the minimum unambiguous prefix may be supplied.
+.IP boot
+Display cummulative statistics since the system was booted.
+.IP run
+Display statistics as a running total from the point this
+command is given.
+.IP time
+Display statistics averaged over the refresh interval (the default).
+.IP zero
+Reset running statistics to zero.
+.PP
+The following commands are specific to the
+.I netstat
+display; the minimum unambiguous prefix may be supplied.
+.IP all
+Toggle the displaying of server processes awaiting requests (this
+is the equivalent of the 
+.B \-a
+flag to
+.IR netstat (1)).
+.IP numbers
+Display network addresses numerically.
+.IP names
+Display network addresses symbolically.
+.IP "port name"
+Limit the display to connections on the specified port (the port
+is matched against the port both on the local and the foreign side
+of a connection).  A port
+.I name
+may be specified symbolically, e.g. ``ftp'', or numerically (base 10).
+This command may be specified many times to create a set of ports
+for matching.
+.IP "host name"
+Limit the display to connections to or from the specified host.  A
+host
+.I name
+may be specified symbolically or numerically in the Internet dot
+notation.  This command may be specified many times to create a set
+of hosts for matching.
+.IP "protocol name"
+Limit the display to connections using the specified protocol (currently
+``tcp'' or ``udp'').  The commands
+.I tcp
+and
+.I udp
+are shorthands for ``protocol tcp'' and ``protocol udp'', respectively.
+.IP "reset"
+Reset the port, host, and protocol matching mechanisms to the default
+(any protocol, port, or host).
+.SH FILES
+.nf
+.ta \w'/dev/services   'u
+/vmunix	for the namelist
+/dev/kmem	for information in main memory
+/dev/drum	for information about swapped out processes
+/etc/hosts	for host names
+/etc/networks	for network names
+/etc/services	for port names
+.SH AUTHOR
+The unknown hacker.
+.SH BUGS
+Takes 2-10 percent of the cpu.  Certain displays presume
+a 24 line by 80 character terminal.  The swap space display
+should account for space allocated to the user structure and
+page tables.   The
+.I vmstat
+display looks out of place because it is (it was added in as
+a separate display rather than create a new program). 
+.PP
+The whole
+thing is pretty hoakey, it was included in the distribution under
+serious duress.
