@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.72 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.73 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -242,7 +242,7 @@ ffs_write(vp, uio, ioflag, cred)
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn;
-	u_long osize;
+	off_t osize;
 	int n, on, flags;
 	int size, resid, error = 0;
 
@@ -377,7 +377,7 @@ ffs_inactive(vp, p)
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
-		error = ffs_truncate(vp, (u_long)0, 0);
+		error = ffs_truncate(vp, (off_t)0, 0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.11 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.12 (Berkeley) %G%
  */
 
 struct fid;
@@ -13,6 +13,7 @@ struct nameidata;
 struct proc;
 struct statfs;
 struct timeval;
+struct inode;
 struct uio;
 
 __BEGIN_DECLS
@@ -37,7 +38,7 @@ int	 lfs_root __P((struct mount *, struct vnode **));
 int	 lfs_segwrite __P((struct mount *, int));
 int	 lfs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	 lfs_sync __P((struct mount *, int));
-int	 lfs_truncate __P((struct vnode *, u_long, int));
+int	 lfs_truncate __P((struct vnode *, off_t, int));
 int	 lfs_unmount __P((struct mount *, int, struct proc *));
 int	 lfs_update
 	     __P((struct vnode *, struct timeval *, struct timeval *, int));

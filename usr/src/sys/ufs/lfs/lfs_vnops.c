@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.77 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.78 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -177,8 +177,9 @@ lfs_read(vp, uio, ioflag, cred)
 	register struct lfs *fs;				/* LFS */
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
-	int size, diff, error = 0;
+	int size, error = 0;
 	long n, on, type;
+	off_t diff;
 
 #ifdef VERBOSE
 	printf("lfs_read: ino %d\n", ip->i_number);
@@ -242,7 +243,7 @@ lfs_write(vp, uio, ioflag, cred)
 	register struct lfs *fs;
 	struct buf *bp;
 	daddr_t lbn;
-	u_long osize;
+	off_t osize;
 	int n, on, flags, newblock;
 	int size, resid, error = 0;
 
@@ -388,7 +389,7 @@ lfs_inactive(vp, p)
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
-		error = lfs_truncate(vp, (u_long)0, 0);
+		error = lfs_truncate(vp, (off_t)0, 0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;
