@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.29 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -147,7 +147,7 @@ getanswer(msg, msglen, iquery)
 	ap = host_aliases;
 	host.h_aliases = host_aliases;
 	hap = h_addr_ptrs;
-#if BSD >= 43
+#if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
 	host.h_addr_list = h_addr_ptrs;
 #endif
 	haveanswer = 0;
@@ -225,7 +225,7 @@ getanswer(msg, msglen, iquery)
 	}
 	if (haveanswer) {
 		*ap = NULL;
-#if BSD >= 43
+#if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
 		*hap = NULL;
 #else
 		host.h_addr = h_addr_ptrs[0];
@@ -452,7 +452,7 @@ again:
 		goto again;
 	*cp++ = '\0';
 	/* THIS STUFF IS INTERNET SPECIFIC */
-#if	BSD >= 43
+#if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
 	host.h_addr_list = host_addrs;
 #endif
 	host.h_addr = hostaddr;
