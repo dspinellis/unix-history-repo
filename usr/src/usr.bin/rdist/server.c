@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -1043,7 +1043,7 @@ ok:
 	if (userid)
 		setreuid(userid, 0);
 	if (chown(file, uid, gid) < 0 ||
-	    (mode & 06000) && chmod(file, mode) < 0) {
+	    (mode & 07000) && chmod(file, mode) < 0) {
 		note("%s: chown or chmod failed: file %s:  %s",
 			     host, file, sys_errlist[errno]);
 	}
