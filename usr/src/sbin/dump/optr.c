@@ -26,7 +26,6 @@ static char sccsid[] = "@(#)optr.c	5.11 (Berkeley) %G%";
 #include <time.h>
 #include <fstab.h>
 #include <grp.h>
-#include <varargs.h>
 #include <utmp.h>
 #include <tzfile.h>
 #include <errno.h>
@@ -34,6 +33,9 @@ static char sccsid[] = "@(#)optr.c	5.11 (Berkeley) %G%";
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+#else
+#include <varargs.h>
 #endif
 #include "dump.h"
 #include "pathnames.h"
@@ -318,55 +320,56 @@ void quit(fmt) char *fmt; { msg(fmt); dumpabort(); }
 
 #else /* lint */
 
-void
-msg(va_alist)
-	va_dcl
+/*
+ * We have three of these.  Yes, this is horribly ugly, but at least
+ * we only have to go through it once.
+ */
+#if __STDC__
+#define	MSG_FDECL(func)	void func(const char *fmt, ...)
+#define	MSG_VDECL	va_list ap
+#define	MSG_START	va_start(ap, fmt)
+#else
+#define MSG_FDECL(func)	void func(va_alist) va_dcl
+#define	MSG_VDECL	char *fmt; va_list ap
+#define	MSG_START	va_start(ap); fmt = va_arg(ap, char *)
+#endif
+
+MSG_FDECL(msg)
 {
-	va_list ap;
-	char *fmt;
+	MSG_VDECL;
 
 	(void) fprintf(stderr,"  DUMP: ");
 #ifdef TDEBUG
 	(void) fprintf(stderr, "pid=%d ", getpid());
 #endif
-	va_start(ap);
-	fmt = va_arg(ap, char *);
+	MSG_START;
 	(void) vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void) fflush(stdout);
 	(void) fflush(stderr);
-	va_start(ap);
-	fmt = va_arg(ap, char *);
+	MSG_START;
 	(void) vsprintf(lastmsg, fmt, ap);
 	va_end(ap);
 }
 
-void
-msgtail(va_alist)
-	va_dcl
+MSG_FDECL(msgtail)
 {
-	va_list ap;
-	char *fmt;
+	MSG_VDECL;
 
-	va_start(ap);
-	fmt = va_arg(ap, char *);
+	MSG_START;
 	(void) vfprintf(stderr, fmt, ap);
 	va_end(ap);
 }
 
-void
-quit(va_alist)
-	va_dcl
+MSG_FDECL(quit)
 {
-	va_list ap;
-	char *fmt;
+	MSG_VDECL;
 
 	(void) fprintf(stderr,"  DUMP: ");
 #ifdef TDEBUG
 	(void) fprintf(stderr, "pid=%d ", getpid());
 #endif
-	va_start(ap);
-	fmt = va_arg(ap, char *);
+	MSG_START;
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void) fflush(stdout);
