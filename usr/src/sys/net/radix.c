@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	8.2.2.1 (Berkeley) %G%
+ *	@(#)radix.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -13,13 +13,18 @@
 #ifndef _RADIX_H_
 #include <sys/param.h>
 #ifdef	KERNEL
+#ifdef	KERNEL
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #define	M_DONTWAIT M_NOWAIT
 #include <sys/domain.h>
 #else
 #include <stdlib.h>
+#else
+#include <stdlib.h>
 #endif
+#include <sys/syslog.h>
+#include <net/radix.h>
 #include <sys/syslog.h>
 #include <net/radix.h>
 #endif
@@ -141,11 +146,52 @@ rn_lookup(v_arg, m_arg, head)
 {
 	register struct radix_node *x;
 	caddr_t netmask = 0;
+struct radix_node *
+rn_lookup(v_arg, m_arg, head)
+	void *v_arg, *m_arg;
+	struct radix_node_head *head;
+{
+	register struct radix_node *x;
+	caddr_t netmask = 0;
 #define x1(a,n) ( a > ((1 << (n + 1)) - 1) ? n+1 : n)
 #define x2(a,n) (( a > ((1 << (2 + n)) - 1)) ? x1(a,n+2) : x1(a,n))
 #define x4(a,n) (( a > ((1 << (4 + n)) - 1)) ? x2(a,n+4) : x2(a,n))
 #define x8(a,n) (( a > ((1 << (8 + n)) - 1)) ? x4(a,n+8) : x4(a,n))
 #define x16(a,n) ((a > (((1 << n) - 1)+(65535 << n))) ? x8(a,n+16) : x8(a,n))
+
+	if (m_arg) {
+		if ((x = rn_addmask(m_arg, 1, head->rnh_treetop->rn_off)) == 0)
+			return (0);
+		netmask = x->rn_key;
+	}
+	x = rn_match(v_arg, head);
+	if (x && netmask) {
+		while (x && x->rn_mask != netmask)
+			x = x->rn_dupedkey;
+	}
+	return x;
+}
+
+static
+rn_satsifies_leaf(trial, leaf, skip)
+	char *trial;
+	register struct radix_node *leaf;
+	int skip;
+{
+	register char *cp = trial, *cp2 = leaf->rn_key, *cp3 = leaf->rn_mask;
+	char *cplim;
+	int length = min(*(u_char *)cp, *(u_char *)cp2);
+
+	if (cp3 == 0)
+		cp3 = rn_ones;
+	else
+		length = min(length, *(u_char *)cp3);
+	cplim = cp + length; cp3 += skip; cp2 += skip;
+	for (cp += skip; cp < cplim; cp++, cp2++, cp3++)
+		if ((*cp ^ *cp2) & *cp3)
+			return 0;
+	return 1;
+}
 
 	if (m_arg) {
 		if ((x = rn_addmask(m_arg, 1, head->rnh_treetop->rn_off)) == 0)
@@ -339,6 +385,8 @@ rn_match(v_arg, head)
 	 */
 	if (t->rn_mask)
 		vlen = *(u_char *)t->rn_mask;
+	if (t->rn_mask)
+		vlen = *(u_char *)t->rn_mask;
 	for (saved_t = t; t; t = t->rn_dupedkey)
 		/* if (bits_matched >= mask_index) */
 		if (rn_b <= t->rn_b) {
@@ -485,6 +533,14 @@ rn_masksubr(n_arg, v_arg, skip, head, len_p)
 		x = 0;
 	if (x || search)
 		return (x);
+	if (m0 < last_zeroed)
+		Bzero(addmask_key + m0, last_zeroed - m0);
+	*addmask_key = last_zeroed = mlen;
+	x = rn_search(addmask_key, rn_masktop);
+	if (Bcmp(addmask_key, x->rn_key, mlen) != 0)
+		x = 0;
+	if (x || search)
+		return (x);
 	if (skip > 0)
 		for (j = skip << 3; j > ((unsigned)x->rn_b);)
 			x = x->rn_r;
@@ -510,10 +566,50 @@ rn_masksubr(n_arg, v_arg, skip, head, len_p)
 		x->rn_b = -1 - mlen;
 	}
 	b += (cp - netmask) << 3;
+	b += (cp - netmask) << 3;
 found:
 	if (len_p)
 		*len_p = (-1 - x->rn_b) - head->rnh_offset;
 	return (x);
+}
+
+static int	/* XXX: arbitrary ordering for non-contiguous masks */
+rn_lexobetter(m_arg, n_arg)
+	void *m_arg, *n_arg;
+{
+	register u_char *mp = m_arg, *np = n_arg, *lim;
+
+	if (*mp > *np)
+		return 1;  /* not really, but need to check longer one first */
+	if (*mp == *np) 
+		for (lim = mp + *mp; mp < lim;)
+			if (*mp++ > *np++)
+				return 1;
+	return 0;
+}
+
+static struct radix_mask *
+rn_new_radix_mask(tt, next)
+	register struct radix_node *tt;
+	register struct radix_mask *next;
+{
+	register struct radix_mask *m;
+
+	MKGet(m);
+	if (m == 0) {
+		log(LOG_ERR, "Mask for route not entered\n");
+		return (0);
+	}
+	Bzero(m, sizeof *m);
+	m->rm_b = tt->rn_b;
+	m->rm_flags = tt->rn_flags;
+	if (tt->rn_flags & RNF_NORMAL)
+		m->rm_leaf = tt;
+	else
+		m->rm_mask = tt->rn_mask;
+	m->rm_mklist = next;
+	tt->rn_mklist = m;
+	return m;
 }
 
 static int	/* XXX: arbitrary ordering for non-contiguous masks */
@@ -628,6 +724,7 @@ rn_addroute(v_arg, n_arg, head, treenodes)
 				break;
 		p->rn_mklist = m; *mp = 0;
 	}
+on2:
 on2:
 	/* Add new route to highest possible ancestor's list */
 	if ((netmask == 0) || (masklen > p->rn_b ))
@@ -836,6 +933,7 @@ rn_inithead(head, off)
 	rnh->rnh_addaddr = rn_addroute;
 	rnh->rnh_deladdr = rn_delete;
 	rnh->rnh_matchaddr = rn_match;
+	rnh->rnh_lookup = rn_lookup;
 	rnh->rnh_lookup = rn_lookup;
 	rnh->rnh_walktree = rn_walktree;
 	rnh->rnh_bits_matched = rn_unmapped_bits_matched;
