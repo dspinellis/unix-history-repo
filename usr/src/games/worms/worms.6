@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)worms.6	6.1 (Berkeley) %G%
+.\"	@(#)worms.6	6.2 (Berkeley) %G%
 .\"
 .TH WORMS 6 ""
 .UC 4
@@ -11,14 +11,12 @@ worms  \-  animate worms on a display terminal
 .SH SYNOPSIS
 .B /usr/games/worms
 [
-.B \-field
+.B \-ft
 ] [
 .B \-length
 # ] [
 .B \-number
-# ] [
-.B \-trail
-]
+# ]
 .SH DESCRIPTION
 .ad b
 Brian Horn (cithep!bdh) showed me a
@@ -29,9 +27,9 @@ and suggested that I write a similar program that would run under
 .IR Unix .
 I did, and no apologies.
 .PP
-.B \-field
+.B \-f
 makes a "field" for the worm(s) to eat;
-.B \-trail
+.B \-t
 causes each worm to leave a trail behind it.  You can figure
 out the rest by yourself.
 .SH FILES
