@@ -1,0 +1,112 @@
+.SH
+Section 3: Lexical Analysis
+.PP
+The user must supply a lexical analyzer which reads the input stream and communicates tokens
+(with values, if desired) to the parser.
+The lexical analyzer is an integer valued function called yylex, in both C and Ratfor.
+The function returns an integer which represents the type of the token.
+The value to be associated in the parser with that token is
+assigned to the integer variable yylval.
+Thus, a lexical analyzer written in C should begin
+.DS
+yylex ( ) {
+	extern int yylval;
+	. . .
+.DE
+while a lexical analyzer written in Ratfor should begin
+.DS
+integer function yylex(yylval)
+	integer yylval
+	. . .
+.DE
+.PP
+Clearly, the parser and the lexical analyzer must agree on the type numbers in order for
+communication between them to take place.
+These numbers may be chosen by Yacc, or chosen by the user.
+In either case, the ``define'' mechanisms of C and Ratfor are used to allow the lexical analyzer
+to return these numbers symbolically.
+For example, suppose that the token name DIGIT has been defined in the declarations section of the
+specification.
+The relevant portion of the lexical analyzer (in C) might look like:
+.DS
+yylex( ) {
+	extern int yylval;
+	int c;
+	. . .
+	c = getchar( );
+	. . .
+	if( c >= \'0\' && c <= \'9\' ) {
+		yylval = c\-\'0\';
+		return(DIGIT);
+	}
+	. . .
+.DE
+.PP
+The relevant portion of the Ratfor lexical analyzer might look like:
+.DS
+integer function yylex(yylval)
+	integer yylval, digits(10), c
+	. . .
+	data digits(1) / "0" /;
+	data digits(2) / "1" /;
+	. . .
+	data digits(10) / "9" /;
+	. . .
+#   set c to the next input character
+	. . .
+	do i = 1, 10 {
+		if(c .EQ. digits(i)) {
+			yylval = i\-1
+			yylex = DIGIT
+			return
+		}
+	}
+	. . .
+.DE
+.PP
+In both cases, the intent is to return a token type of DIGIT, and a value equal to the numerical value of the
+digit.
+Provided that the lexical analyzer code is placed in the programs section of the specification,
+the identifier DIGIT will be redefined to be equal to the type number associated
+with the token name DIGIT.
+.PP
+This mechanism leads to clear
+and easily modified lexical analyzers; the only pitfall is that it makes it
+important to avoid using any names in the grammar which are reserved
+or significant in the chosen language; thus, in both C and Ratfor, the use of
+token names of ``if'' or ``yylex'' will almost certainly cause severe
+difficulties when the lexical analyzer is compiled.
+The token name ``error'' is reserved for error handling, and should not be used naively
+(see Section 5).
+.PP
+As mentioned above, the type numbers may be chosen by Yacc or by the user.
+In the default situation, the numbers are chosen by Yacc.
+The default type number for a literal
+character is the numerical value of the character, considered as a 1 byte integer.
+Other token names are assigned type numbers
+starting at 257.
+It is a difficult, machine dependent
+operation to determine the numerical value of an input character
+in Ratfor (or Fortran).
+Thus, the Ratfor user of Yacc will probably wish
+to set his own type numbers, or not use any literals in his specification.
+.PP
+To assign a type number to a token (including literals),
+the first appearance of the token name or literal
+.I
+in the declarations section
+.R
+can be immediately followed by
+a nonnegative integer.
+This integer is taken to be the type number of the name or literal.
+Names and literals not defined by this mechanism retain their default definition.
+It is important that all type numbers be distinct.
+.PP
+There is one exception to this situation.
+For sticky historical reasons, the endmarker must have type
+number 0.
+Note that this is not unattractive in C, since the nul character is returned upon
+end of file; in Ratfor, it makes no sense.
+This type number cannot be redefined by the user; thus, all
+lexical analyzers should be prepared to return 0 as a type number
+upon reaching the end of their input.

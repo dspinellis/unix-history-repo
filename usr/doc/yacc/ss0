@@ -1,0 +1,173 @@
+.SH
+Section 0: Introduction
+.PP
+Yacc provides a general tool for imposing structure on the input to a computer program.
+The Yacc user prepares a
+specification of the input process; this includes rules
+which describe the input structure, code which is to be invoked when these
+structures are recognized, and a low-level routine to do the
+basic input.
+Yacc then produces a subroutine to do the input procedure;
+this subroutine, called a
+.I
+parser,
+.R
+calls the user-supplied low-level input routine
+(called the
+.I
+lexical analyzer)
+.R
+to pick up the basic items
+(called
+.I
+tokens)
+.R
+from the input stream.
+These tokens are organized according to the input structure rules,
+called
+.I
+grammar rules;
+.R
+when one of these rules has been recognized,
+then the user code supplied for this rule, called an
+.I
+action,
+.R
+is invoked; actions have the ability to return values and
+make use of the values of other actions.
+.PP
+The heart of the input specification is a collection of grammar rules.
+Each rule describes an allowable structure and gives it a name.
+For example, one grammar rule might be
+.DS
+date  :  month\_name  day  \',\'  year   ;
+.DE
+Here, date, month\_name, day, and year represent structures of interest in the input process;
+presumably, month\_name, day, and year are defined elsewhere.
+The comma ``,'' is quoted by single quotes; this implies that the
+comma is to appear literally in the input.
+The colon and semicolon merely serve as punctuation in the rule, and have
+no significance in controlling the input.
+Thus, with proper definitions, the input
+.DS
+July  4, 1776
+.DE
+might be matched by the above rule.
+.PP
+As we mentioned above, an important part of the input process is carried out by the
+lexical analyzer.
+This user routine reads the true input stream, recognizing those
+structures which are more conveniently or more
+efficiently recognized directly, and communicates these recognized tokens
+to the parser.
+For historical reasons, the name of a structure recognized by the lexical analyzer is called a
+.I
+terminal symbol
+.R
+name, while the name of a structure recognized by the parser is called a
+.I
+nonterminal symbol
+.R
+name.
+To avoid the obvious confusion of terminology, we shall usually refer to
+terminal symbol names as
+.I
+token names.
+.R
+.PP
+There is considerable leeway in deciding whether to recognize structures by the lexical
+analyzer or by a grammar rule.
+Thus, in the above example it would be possible to have other rules of the form
+.DS
+month\_name  :  \'J\' \'a\' \'n\'   ;
+month\_name  :  \'F\' \'e\' \'b\'   ;
+
+         . . .
+
+month\_name  :  \'D\' \'e\' \'c\'   ;
+.DE
+Here, the lexical analyzer would only need to recognize individual letters, and
+month\_name would be a nonterminal symbol.
+Rules of this sort tend to be a bit wasteful of time and space, and may
+even restrict the power of the input process
+(although they are easy to write).
+For a more efficient input process, the lexical analyzer itself might
+recognize the month names,
+and return an indication that a
+month\_name was seen; in this case, month\_name would be a token.
+.PP
+Literal characters, such as ``,'', must also be passed through the lexical
+analyzer, and are considered tokens.
+.PP
+As an example of the flexibility of the grammar rule approach, we might add to the above
+specifications the rule
+.DS
+date  :  month \'/\' day \'/\' year   ;
+.DE
+and thus optionally allow the form
+.DS
+7/4/1776
+.DE
+as a synonym for
+.DS
+July 4, 1776
+.DE
+In most cases, this new rule could be ``slipped in'' to a working system with minimal effort,
+and a very small chance of disrupting existing input.
+.PP
+Frequently, the input being read does not conform to the
+specifications due to errors in the
+input.
+The parsers produced by Yacc have
+the very desirable property that they will detect these
+input errors at the earliest
+place at which this can be done with a
+left-to-right scan;
+thus, not only is the chance of reading and computing with bad
+input data substantially reduced, but the bad data can usually be quickly found.
+Error handling facilities,
+entered as part of the input specifications, frequently
+permit the reentry of bad data,
+or the continuation of the input process after skipping over the bad data.
+.PP
+In some cases, Yacc fails to produce a parser when given a set of
+specifications.
+For example, the specifications may be self contradictory, or they may
+require a more powerful recognition mechanism than that available to Yacc.
+The former cases probably represent true design errors;
+the latter cases
+can often be corrected
+by making
+the lexical analyzer
+more powerful, or by rewriting some of the grammar rules.
+The class of specifications which Yacc can handle compares very favorably
+with other systems of this type; moreover, the
+constructions which are difficult for Yacc to handle are
+also frequently difficult for human beings to handle.
+Some users have reported that the discipline of formulating valid
+Yacc specifications for their input revealed errors of
+conception or design early in the program development.
+.PP
+The next several sections describe the
+basic process of preparing a Yacc specification;
+Section 1 describes the preparation of grammar rules,
+Section 2 the preparation of the user supplied actions associated with these rules,
+and Section 3 the preparation of lexical analyzers.
+In Section 4, we discuss the
+diagnostics produced when Yacc
+is unable to produce a parser
+from the given specifications.
+This section also describes a simple, frequently useful mechanism for
+handling operator precedences.
+Section 5 discusses error detection and recovery.
+Sections 6C and 6R discuss the operating environment and special features
+of the subroutines which Yacc produces in C and Ratfor, respectively.
+Section 7 gives some hints which
+may lead to better designed, more efficient,
+and clearer specifications.
+Finally, Section 8 has a brief summary.
+Appendix A has a brief example, and Appendix B tells how to run Yacc on
+the UNIX operating system.
+Appendix C has a brief description of mechanisms and syntax
+which are no longer actively supported, but which
+are provided for historical continuity with older versions of Yacc.

@@ -1,0 +1,145 @@
+.SH
+Section 5: Error Handling
+.PP
+Error handling is an extremely difficult area, and many of the problems are semantic ones.
+When an error is found, for example, it may be necessary to reclaim parse tree storage,
+delete or alter symbol table entries, and, typically, set switches to avoid putting out any further output.
+.PP
+It is generally not acceptable to stop all processing when an error is found; we wish to continue
+scanning the input to find any further syntax errors.
+This leads to the problem of getting the parser ``restarted'' after an error.
+The general class of algorithms to do this involves reading ahead and discarding a number of tokens
+from the input string, and attempting to adjust the parser so that input can continue.
+.PP
+To allow the user some control over this process,
+Yacc provides a simple, but reasonably general, feature.
+The token name ``error'' is reserved for error handling.
+This name can be used in grammar rules;
+in effect, it suggests places where errors are expected, and recovery might take place.
+The parser attempts to find the last time in the input when the special
+token ``error'' is permitted.
+The parser then behaves as though it saw the token name ``error'' as an input token,
+and attempts to parse according to the rule encountered.
+The token at which the error was detected remains the next input token after this error token is processed.
+If no special error rules have been specified, the processing effectively halts when an error is detected.
+.PP
+In order to prevent a cascade of error messages, the parser assumes that, after
+detecting an error, it remains in error state until three tokens have been successfully
+read and shifted.
+If an error is detected when the parser is already in error state,
+no error message is given, and the input token is quietly deleted.
+.PP
+As a common example, the user might include a rule of the form
+.DS
+statement :  error ;
+.DE
+in his specification.
+This would, in effect, mean that on a syntax error the parser would attempt to skip over the statement
+in which the error was seen.
+(Notice, however, that it may be difficult or impossible to tell the end of a statement,
+depending on the other grammar rules).
+More precisely, the parser will
+scan ahead, looking for three tokens that might legally follow
+a statement, and start processing at the first of these; if
+the beginnings of statements are not sufficiently distinctive, it may make a
+false start in the middle of a statement, and end up reporting a
+second error where there is in fact no error.
+.PP
+The user may supply actions after these special grammar rules,
+just as after the other grammar rules.
+These actions might attempt to reinitialize tables, reclaim symbol table space, etc.
+.PP
+The above form of grammar rule is very general, but
+somewhat difficult to control.
+Somewhat easier to deal with are rules of the form
+.DS
+statement :  error \';\'  ;
+.DE
+Here, when there is an error, the parser will again attempt to skip over the statement, but in
+this case will do so by skipping to the next ``;''.
+All tokens after the error and before the next ``;'' give syntax errors, and are discarded.
+When the ``;'' is seen, this rule will be reduced, and any ``cleanup''
+action associated with it will be performed.
+.PP
+Still another form of error rule arises in interactive applications, where
+we may wish to prompt the user who has incorrectly input a line, and allow
+him to reenter the line.
+In C we might write:
+.DS
+inputline:	error \'\en\' prompt inputline
+	= { $$ = $4; };
+
+prompt:	/* matches no input */
+	= {  printf( "Reenter last line: " ); };
+.DE
+There is one difficulty with this approach;
+the parser must correctly process three input tokens before it is prepared to
+admit that it has correctly resynchronized after the error.
+Thus, if the reentered line contains errors
+in the first two tokens, the parser will simply delete the offending tokens,
+and give no message; this is clearly unacceptable.
+For this reason, there is a mechanism in both C and Ratfor which
+can be used to force the parser
+to believe that resynchronization has taken place.
+One need only include a statement of the form
+.DS
+yyerrok ;
+.DE
+in his action
+after such a grammar rule, and the desired effect will take place;
+this name will be expanded, using the ``# define'' mechanism of C or
+the ``define'' mechanism of Ratfor, into an appropriate code sequence.
+For example, in the situation discussed above where we
+want to prompt the user to produce input,
+we probably want to consider that the
+original error has been recovered
+when we have thrown away the previous line, including the newline.
+In this case,
+we can reset the error state before putting out the prompt message.
+The grammar rule for the nonterminal symbol prompt becomes:
+.DS
+prompt:	/* matches no input */
+	= {
+		yyerrok;
+		printf( "Reenter last line: " );
+	} ;
+.DE
+.PP
+There is another special feature which the user may
+wish to use in error recovery.
+As mentioned above, the token seen immediately
+after the ``error'' symbol is the input token at which the
+error was discovered.
+Sometimes, this is seen to be inappropriate; for example, an
+error recovery action might
+take upon itself the job of finding the correct place to resume input.
+In this case,
+the user wishes a way of clearing the previous input token
+held in the parser.
+One need only include a
+statement of the form
+.DS
+yyclearin ;
+.DE
+in his action; again, this expands, in both C and Ratfor, to the appropriate
+code sequence.
+For example, suppose the action after error
+were to call some sophisticated resynchronization routine,
+supplied by the user, which attempted to advance the input to the
+beginning of the next valid statement.
+After this routine was called, the next token returned by yylex would presumably
+be the first token in a legal statement; we wish to throw away the
+old, illegal token, and reset the error state.
+We might do this by the sequence:
+.DS
+statement :  error 
+	= { 
+		resynch( );
+		yyerrok ;
+		yyclearin ;
+	} ;
+.DE
+.PP
+These mechanisms are admittedly crude, but do allow for a simple, fairly effective recovery of the parser
+from many errors, and have the virtue that the user can get ``handles'' by which he can deal with
+the error actions required by the lexical and output portions of the system.
