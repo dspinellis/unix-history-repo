@@ -38,7 +38,13 @@ struct SREGS 	*sregs;
     sregs->es = (int) FP_SEG(ourseg);
     regs->x.di = (int) FP_OFF(ourseg);
 
+#if	defined(MSDOS)
     int86x(API_INTERRUPT_NUMBER, regs, regs, sregs);
+#endif	/* defined(MSDOS) */
+#if	defined(unix)
+    api_exch_api(regs, sregs);
+#endif	/* defined(unix) */
+
     if (regs->h.cl != 0) {
 	api_sup_errno = regs->h.cl;
 	return -1;
@@ -298,6 +304,7 @@ api_init()
     union REGS regs;
     struct SREGS sregs;
 
+#if	defined(MSDOS)
     regs.h.ah = 0x35;
     regs.h.al = API_INTERRUPT_NUMBER;
     intdosx(&regs, &regs, &sregs);
@@ -305,6 +312,12 @@ api_init()
     if ((regs.x.bx == 0) && (sregs.es == 0)) {
 	return 0;		/* Interrupt not being handled */
     }
+#endif	defined(MSDOS)
+#if	defined(unix)
+    if (api_open_api(0) == -1) {
+	return 0;
+    }
+#endif	/* defined(unix) */
 
     gate_sessmgr = api_name_resolve("SESSMGR");
     gate_keyboard = api_name_resolve("KEYBOARD");
