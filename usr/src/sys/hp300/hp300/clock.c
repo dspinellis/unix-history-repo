@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.13 (Berkeley) %G%
+ *	@(#)clock.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,12 +22,25 @@
 #include "../include/psl.h"
 #include "../include/cpu.h"
 
-#if defined(GPROF) && defined(PROFTIMER)
+#ifdef GPROF
 #include "sys/gprof.h"
 #endif
 
 int    clkstd[1];
-int    profhz;
+
+static int clkint;		/* clock interval, as loaded */
+/*
+ * Statistics clock interval and variance, in usec.  Variance must be a
+ * power of two.  Since this gives us an even number, not an odd number,
+ * we discard one case and compensate.  That is, a variance of 1024 would
+ * give us offsets in [0..1023].  Instead, we take offsets in [1..1023].
+ * This is symmetric about the point 512, or statvar/2, and thus averages
+ * to that value (assuming uniform random numbers).
+ */
+static int statvar = 1024 / 4;	/* {stat,prof}clock variance */
+static int statmin;		/* statclock interval - variance/2 */
+static int profmin;		/* profclock interval - variance/2 */
+static int timer3min;		/* current, from above choices */
 
 static int month_days[12] = {
 	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -40,335 +53,177 @@ struct hil_dev *bbcaddr = NULL;
 /*
  * Machine-dependent clock routines.
  *
- * Startrtclock restarts the real-time clock, which provides
- * hardclock interrupts to kern_clock.c.
- *
- * Inittodr initializes the time of day hardware which provides
- * date functions.
- *
- * Resettodr restores the time of day hardware after a time change.
- *
  * A note on the real-time clock:
- * We actually load the clock with CLK_INTERVAL-1 instead of CLK_INTERVAL.
+ * We actually load the clock with interval-1 instead of interval.
  * This is because the counter decrements to zero after N+1 enabled clock
  * periods where N is the value loaded into the counter.
+ *
+ * The frequencies of the HP300 clocks must be a multiple of four
+ * microseconds (since the clock counts in 4 us units).
  */
+#define	COUNTS_PER_SEC	(1000000 / CLK_RESOLUTION)
 
 /*
- * Start the real-time clock.
+ * Set up the real-time and statistics clocks.  Leave stathz 0 only if
+ * no alternative timer is available.
+ *
  */
-startrtclock()
+cpu_initclocks()
 {
-	register struct clkreg *clk;
+	register volatile struct clkreg *clk;
+	register int intvl, statint, profint, minint;
 
-	clkstd[0] = IIOV(0x5F8000);
-	clk = (struct clkreg *) clkstd[0];
+	clkstd[0] = IIOV(0x5F8000);		/* XXX grot */
+	clk = (volatile struct clkreg *)clkstd[0];
 
+	if (COUNTS_PER_SEC % hz) {
+		printf("cannot get %d Hz clock; using 100 Hz\n", hz);
+		hz = 100;
+	}
+	/*
+	 * Clock has several counters, so we can always use separate
+	 * statclock.
+	 */
+	if (stathz == 0)		/* XXX should be set in param.c */
+		stathz = hz;
+	else if (COUNTS_PER_SEC % stathz) {
+		printf("cannot get %d Hz statclock; using 100 Hz\n", stathz);
+		stathz = 100;
+	}
+	if (profhz == 0)		/* XXX should be set in param.c */
+		profhz = stathz * 5;
+	else if (profhz < stathz || COUNTS_PER_SEC % profhz) {
+		printf("cannot get %d Hz profclock; using %d Hz\n",
+		    profhz, stathz);
+		profhz = stathz;
+	}
+
+	intvl = COUNTS_PER_SEC / hz;
+	statint = COUNTS_PER_SEC / stathz;
+	profint = COUNTS_PER_SEC / profhz;
+	minint = statint / 2 + 100;
+	while (statvar > minint)
+		statvar >>= 1;
+
+	tick = intvl * CLK_RESOLUTION;
+
+	/* adjust interval counts, per note above */
+	intvl--;
+	statint--;
+	profint--;
+
+	/* calculate base reload values */
+	clkint = intvl;
+	statmin = statint - (statvar >> 1);
+	profmin = profint - (statvar >> 1);
+	timer3min = statmin;
+
+	/* finally, load hardware */
 	clk->clk_cr2 = CLK_CR1;
 	clk->clk_cr1 = CLK_RESET;
-	clk->clk_cr2 = CLK_CR3;
-	clk->clk_cr3 = 0;
-	clk->clk_msb1 = (CLK_INTERVAL-1) >> 8 & 0xFF;
-	clk->clk_lsb1 = (CLK_INTERVAL-1) & 0xFF;
+	clk->clk_msb1 = intvl >> 8;
+	clk->clk_lsb1 = intvl;
 	clk->clk_msb2 = 0;
 	clk->clk_lsb2 = 0;
-	clk->clk_msb3 = 0;
-	clk->clk_lsb3 = 0;
+	clk->clk_msb3 = statint >> 8;
+	clk->clk_lsb3 = statint;
 	clk->clk_cr2 = CLK_CR1;
 	clk->clk_cr1 = CLK_IENAB;
-
-	tick = CLK_INTERVAL * CLK_RESOLUTION;
-	hz = 1000000 / (CLK_INTERVAL * CLK_RESOLUTION);
+	clk->clk_cr2 = CLK_CR3;
+	clk->clk_cr3 = CLK_IENAB;
 }
 
 /*
- * Returns number of usec since last recorded clock "tick"
- * (i.e. clock interrupt).
+ * We assume newhz is either stathz or profhz, and that neither will
+ * change after being set up above.  Could recalculate intervals here
+ * but that would be a drag.
  */
-clkread()
+void
+setstatclockrate(newhz)
+	int newhz;
 {
-	register struct clkreg *clk = (struct clkreg *) clkstd[0];
-	register int high, low;
 
-	high = clk->clk_msb1;
-	low = clk->clk_lsb1;
-	if (high != clk->clk_msb1)
-		high = clk->clk_msb1;
-
-	high = (CLK_INTERVAL-1) - ((high << 8) | low);
-	/*
-	 * Pending interrupt indicates that the counter has wrapped
-	 * since we went to splhigh().  Need to compensate.
-	 */
-	if (clk->clk_sr & CLK_INT1)
-		high += CLK_INTERVAL;
-	return((high * tick) / CLK_INTERVAL);
-}
-
-#include "clock.h"
-#if NCLOCK > 0
-/*
- * /dev/clock: mappable high resolution timer.
- *
- * This code implements a 32-bit recycling counter (with a 4 usec period)
- * using timers 2 & 3 on the 6840 clock chip.  The counter can be mapped
- * RO into a user's address space to achieve low overhead (no system calls),
- * high-precision timing.
- *
- * Note that timer 3 is also used for the high precision profiling timer
- * (PROFTIMER code above).  Care should be taken when both uses are
- * configured as only a token effort is made to avoid conflicting use.
- */
-#include "sys/proc.h"
-#include "sys/resourcevar.h"
-#include "sys/ioctl.h"
-#include "sys/malloc.h"
-#include "vm/vm.h"
-#include "clockioctl.h"
-#include "sys/vnode.h"
-#include "sys/specdev.h"
-#include "sys/mman.h"
-
-int clockon = 0;		/* non-zero if high-res timer enabled */
-#ifdef PROFTIMER
-int  profprocs = 0;		/* # of procs using profiling timer */
-#endif
-#ifdef DEBUG
-int clockdebug = 0;
-#endif
-
-/*ARGSUSED*/
-clockopen(dev, flags)
-	dev_t dev;
-{
-#ifdef PROFTIMER
-#ifdef GPROF
-	/*
-	 * Kernel profiling enabled, give up.
-	 */
-	if (profiling)
-		return(EBUSY);
-#endif
-	/*
-	 * If any user processes are profiling, give up.
-	 */
-	if (profprocs)
-		return(EBUSY);
-#endif
-	if (!clockon) {
-		startclock();
-		clockon++;
-	}
-	return(0);
-}
-
-/*ARGSUSED*/
-clockclose(dev, flags)
-	dev_t dev;
-{
-	(void) clockunmmap(dev, (caddr_t)0, curproc);	/* XXX */
-	stopclock();
-	clockon = 0;
-	return(0);
-}
-
-/*ARGSUSED*/
-clockioctl(dev, cmd, data, flag, p)
-	dev_t dev;
-	caddr_t data;
-	struct proc *p;
-{
-	int error = 0;
-	
-	switch (cmd) {
-
-	case CLOCKMAP:
-		error = clockmmap(dev, (caddr_t *)data, p);
-		break;
-
-	case CLOCKUNMAP:
-		error = clockunmmap(dev, *(caddr_t *)data, p);
-		break;
-
-	case CLOCKGETRES:
-		*(int *)data = CLK_RESOLUTION;
-		break;
-
-	default:
-		error = EINVAL;
-		break;
-	}
-	return(error);
-}
-
-/*ARGSUSED*/
-clockmap(dev, off, prot)
-	dev_t dev;
-{
-	return((off + (INTIOBASE+CLKBASE+CLKSR-1)) >> PGSHIFT);
-}
-
-clockmmap(dev, addrp, p)
-	dev_t dev;
-	caddr_t *addrp;
-	struct proc *p;
-{
-	int error;
-	struct vnode vn;
-	struct specinfo si;
-	int flags;
-
-	flags = MAP_SHARED;
-	if (*addrp)
-		flags |= MAP_FIXED;
+	if (newhz == stathz)
+		timer3min = statmin;
 	else
-		*addrp = (caddr_t)0x1000000;	/* XXX */
-	vn.v_type = VCHR;			/* XXX */
-	vn.v_specinfo = &si;			/* XXX */
-	vn.v_rdev = dev;			/* XXX */
-	error = vm_mmap(&p->p_vmspace->vm_map, (vm_offset_t *)addrp,
-			PAGE_SIZE, VM_PROT_ALL, flags, (caddr_t)&vn, 0);
-	return(error);
+		timer3min = profmin;
 }
 
-clockunmmap(dev, addr, p)
-	dev_t dev;
-	caddr_t addr;
-	struct proc *p;
-{
-	int rv;
-
-	if (addr == 0)
-		return(EINVAL);		/* XXX: how do we deal with this? */
-	rv = vm_deallocate(&p->p_vmspace->vm_map,
-			   (vm_offset_t)addr, PAGE_SIZE);
-	return(rv == KERN_SUCCESS ? 0 : EINVAL);
-}
-
-startclock()
-{
-	register struct clkreg *clk = (struct clkreg *)clkstd[0];
-
-	clk->clk_msb2 = -1; clk->clk_lsb2 = -1;
-	clk->clk_msb3 = -1; clk->clk_lsb3 = -1;
-
-	clk->clk_cr2 = CLK_CR3;
-	clk->clk_cr3 = CLK_OENAB|CLK_8BIT;
-	clk->clk_cr2 = CLK_CR1;
-	clk->clk_cr1 = CLK_IENAB;
-}
-
-stopclock()
-{
-	register struct clkreg *clk = (struct clkreg *)clkstd[0];
-
-	clk->clk_cr2 = CLK_CR3;
-	clk->clk_cr3 = 0;
-	clk->clk_cr2 = CLK_CR1;
-	clk->clk_cr1 = CLK_IENAB;
-}
-#endif
-
-#ifdef PROFTIMER
 /*
- * This code allows the hp300 kernel to use one of the extra timers on
- * the clock chip for profiling, instead of the regular system timer.
- * The advantage of this is that the profiling timer can be turned up to
- * a higher interrupt rate, giving finer resolution timing. The profclock
- * routine is called from the lev6intr in locore, and is a specialized
- * routine that calls addupc. The overhead then is far less than if
- * hardclock/softclock was called. Further, the context switch code in
- * locore has been changed to turn the profile clock on/off when switching
- * into/out of a process that is profiling (startprofclock/stopprofclock).
- * This reduces the impact of the profiling clock on other users, and might
- * possibly increase the accuracy of the profiling. 
+ * Statistics/profiling clock interrupt.  Clear the interrupt and
+ * compute a new interval.
+ *
+ * DO THIS INLINE IN locore.s?
  */
-int  profint   = PRF_INTERVAL;	/* Clock ticks between interrupts */
-int  profscale = 0;		/* Scale factor from sys clock to prof clock */
-char profon    = 0;		/* Is profiling clock on? */
-
-/* profon values - do not change, locore.s assumes these values */
-#define PRF_NONE	0x00
-#define	PRF_USER	0x01
-#define	PRF_KERNEL	0x80
-
-initprofclock(profprocs)
-	int profprocs;
+void
+statintr(fp)
+	struct clockframe *fp;
 {
-	register struct clkreg *clk = (struct clkreg *)clkstd[0];
+	register volatile struct clkreg *clk;
+	register int newint, r, var;
+	register u_char discard;
 
-	/*
-	 * The profile interrupt interval must be an even divisor
-	 * of the CLK_INTERVAL so that scaling from a system clock
-	 * tick to a profile clock tick is possible using integer math.
-	 */
-	if (profint > CLK_INTERVAL || (CLK_INTERVAL % profint) != 0)
-		profint = CLK_INTERVAL;
-	profscale = CLK_INTERVAL / profint;
-	profhz = hz * profscale;
-	/*
-	 * If a process maps the clock, we fail silently.
-	 * Unfortunately, this gets reflected back to the user not as
-	 * an error but as a lack of results.
-	 */
-	if (clockon)
-		return;
-	switch (profprocs) {
-	case 1:
-		/* start clock */
-		clk->clk_msb3 = (profint-1) >> 8 & 0xFF;
-		clk->clk_lsb3 = (profint-1) & 0xFF;
-		clk->clk_cr2 = CLK_CR3;
-		clk->clk_cr3 = CLK_IENAB;
-		break;
-	case 0:
-		/* stop clock */
-		clk->clk_cr2 = CLK_CR3;
-		clk->clk_cr3 = 0;
-		break;
-	}
+	clk = (volatile struct clkreg *)clkstd[0];
+	discard = clk->clk_msb3;	/* clear interrupt */
+	var = statvar;
+	do {
+		r = random() & (var - 1);
+	} while (r == 0);
+	newint = timer3min + r;
+	clk->clk_msb3 = newint >> 8;
+	clk->clk_lsb3 = newint;
+	statclock(fp);
 }
 
-#ifdef GPROF
 /*
- * profclock() is expanded in line in lev6intr() unless profiling kernel.
- * Assumes it is called with clock interrupts blocked.
+ * Return the best possible estimate of the current time.
  */
-profclock(pc, ps)
-	caddr_t pc;
-	int ps;
+microtime(tvp)
+	register struct timeval *tvp;
 {
-	/*
-	 * Came from user mode.
-	 * If this process is being profiled record the tick.
-	 */
-	if (USERMODE(ps)) {
-		if (curproc->p_stats->p_prof.pr_scale)
-			addupc(pc, &curproc->p_stats->p_prof, 1);
-	}
-	/*
-	 * Came from kernel (supervisor) mode.
-	 * If we are profiling the kernel, record the tick.
-	 */
-	else if (profiling < 2) {
-		register int s = pc - s_lowpc;
+	register volatile struct clkreg *clk;
+	register int s, u, h, l, sr, l2, h2, u2, s2;
 
-		if (s < s_textsize)
-			kcount[s / (HISTFRACTION * sizeof (*kcount))]++;
-	}
 	/*
-	 * Kernel profiling was on but has been disabled.
-	 * Mark as no longer profiling kernel and if all profiling done,
-	 * disable the clock.
+	 * Read registers from slowest-changing to fastest-changing,
+	 * then re-read out to slowest.  If the values read before the
+	 * innermost match those read after, the innermost value is
+	 * consistent with the outer values.  If not, it may not be and
+	 * we must retry.  Typically this loop runs only once; occasionally
+	 * it runs twice, and only rarely does it run longer.
+	 *
+	 * (Using this loop avoids the need to block interrupts.)
 	 */
-	if (profiling && (profon & PRF_KERNEL)) {
-		profon &= ~PRF_KERNEL;
-		if (profon == PRF_NONE)
-			stopprofclock();
+	clk = (volatile struct clkreg *)clkstd[0];
+	do {
+		s = time.tv_sec;
+		u = time.tv_usec;
+		h = clk->clk_msb1;
+		l = clk->clk_lsb1;
+		sr = clk->clk_sr;
+		l2 = clk->clk_lsb1;
+		h2 = clk->clk_msb1;
+		u2 = time.tv_usec;
+		s2 = time.tv_sec;
+	} while (l != l2 || h != h2 || u != u2 || s != s2);
+
+	/*
+	 * Pending interrupt means that the counter wrapped and we did not
+	 * take the interrupt yet (can only happen if clock interrupts are
+	 * blocked).  If so, add one tick.  Then in any case, add remaining
+	 * count.  This should leave u < 2 seconds, since we can add at most
+	 * two clock intervals (assuming hz > 2!).
+	 */
+	if (sr & CLK_INT1)
+		u += tick;
+	u += clkint - ((h << 8) | l);
+	if (u >= 1000000) {		/* normalize */
+		s++;
+		u -= 1000000;
 	}
+	tvp->tv_sec = s;
+	tvp->tv_usec = u;
 }
-#endif
-#endif
 
 /*
  * Initialize the time of day register, based on the time base which is, e.g.
@@ -409,6 +264,9 @@ inittodr(base)
 	time.tv_sec = timbuf;
 }
 
+/*
+ * Restore the time of day hardware after a time change.
+ */
 resettodr()
 {
 	register int i;
