@@ -1,0 +1,115 @@
+.TH NEWSLOG 8
+.SH NAME
+newslog \- maintenance of Usenet log files
+.SH SYNOPSIS
+.B scanlogs
+[
+.B norotate
+]
+[
+.B nonn
+]
+
+.B writelog
+.B name
+.B text...
+
+.B innstat
+
+.B tally.unwanted
+
+.B tally.control
+
+.B innlog.awk
+
+.SH DESCRIPTION
+.I Scanlogs
+summarizes the information recorded in the INN log files (see
+.IR newslog (5)).
+By default, it also rotates and cleans out the logs.
+It is normally invoked by the
+.IR news.daily (8)
+script.
+.PP
+The following keywords are accepted:
+.TP
+.I norotate
+Using this keyword disables the rotating and cleaning aspect of the log
+processing: the logs files are only scanned for information and no contents
+are altered.
+.TP
+.I nonn
+Normally the
+.I nn
+log file is scanned and rotated.
+Using this keyword disables this function.
+.PP
+If
+.I scanlogs
+is invoked more than once a day, the ``norotate'' keyword should be used
+to prevent premature log cleaning.
+.PP
+The
+.I writelog
+script is used to write a log entry or send it as mail.
+The
+.I name
+parameter specifies the name of the log file where the entry should
+be written.
+If it is the word ``mail'' then the entry is mailed to the news administrator,
+.\" =()<@<NEWSMASTER>@.>()=
+usenet .
+The data that is written or sent consists of the
+.I text
+given on the command line, followed by standard input indented by
+four spaces.
+.IR Shlock (1)
+is used to avoid simultaneous updates to a single log file.
+.PP
+The
+.I innstat
+script prints a snapshot of the INN system.
+It displays the operating mode of the server,
+as well as disk usage and the status of all log and lock files.
+.PP
+The rest of the scripts described here are normally invoked by
+.IR scanlogs .
+They parse log files that are described in
+.IR newslog (5),
+and the server's article log file described in
+.IR innd (8).
+.PP
+.I Tally.unwanted
+script parses the article log file to update the cumulative list of
+articles posted to unwanted newsgroups,
+.IR unwanted.log .
+.PP
+.I Tally.control
+reads its standard input, which should be the
+.I newgroup.log
+and
+.I rmgroup.log
+log files.
+It updates the cumulative list of newsgroup creations and deletions,
+.IR control.log .
+.PP
+.I Innlog.awk
+is an
+.IR awk (1)
+script that summarizes the activity that
+.I innd
+and
+.IR nnrpd (8)
+report to syslog.
+.SH HISTORY
+Written by Landon Curt Noll <chongo@toad.com> and Rich $alz
+<rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: newslog.8,v 1.2 1992/08/04 19:12:39 rsalz Exp $
+.SH "SEE ALSO"
+innd(8)
+newslog(5),
+news.daily(8),
+nnrpd(8).
