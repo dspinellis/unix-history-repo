@@ -1,4 +1,4 @@
-/*	Locore.c	4.3	%G%	*/
+/*	Locore.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,6 +48,7 @@ lowinit()
 		;
 	trap(0, 0, (unsigned)0, 0, 0);
 	syscall(0, 0, (unsigned)0, 0, 0);
+	dumptrc();
 }
 
 dzdma()
@@ -82,18 +83,12 @@ copyout(kaddr, udaddr, n)
 	return (0);
 }
 
-int	whichqs;
-struct {
-	struct proc *q_forw;
-	struct proc *q_rev;
-} qs[32];
-
 /*ARGSUSED*/
 setjmp(lp)
 	label_t lp;
 {
 
-	/*NOTREACHED*/
+	return (0);
 }
 
 /*ARGSUSED*/
@@ -121,7 +116,6 @@ remrq(p)
 swtch()
 {
 
-	whichqs = 0;
 }
 
 /*ARGSUSED*/
@@ -256,6 +250,7 @@ struct	pte Pushmap[UPAGES];
 struct	pte Vfmap[UPAGES];
 struct	pte mcrmap[1];
 struct	pte bufmap[NBUF];
+struct	pte MBA0map[16], MBA1map[16];
 
 struct	pte mmap[1];
 struct	pte mcrmap[1];
@@ -315,4 +310,5 @@ bcopy(to, from, count)
 	unsigned count;
 {
 
+	mcrmap[0] = 0;
 }
