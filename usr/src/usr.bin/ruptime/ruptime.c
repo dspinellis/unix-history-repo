@@ -12,29 +12,31 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruptime.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/file.h>
+#include <sys/errno.h>
 #include <protocols/rwhod.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define	NHOSTS	100
-int	nhosts;
+size_t	nhosts, hspace = 20;
 struct hs {
 	struct	whod *hs_wd;
 	int	hs_nusers;
-} hs[NHOSTS];
+} *hs;
 struct	whod awhod;
 
+#define	ISDOWN(h)		(now - (h)->hs_wd->wd_recvtime > 11 * 60)
 #define	WHDRSIZE	(sizeof (awhod) - sizeof (awhod.wd_we))
-#define	down(h)		(now - (h)->hs_wd->wd_recvtime > 11 * 60)
 
-time_t	now;
-int	rflg = 1;
-int	hscmp(), ucmp(), lcmp(), tcmp();
+time_t now;
+int rflg = 1;
+int hscmp(), ucmp(), lcmp(), tcmp();
 
 main(argc, argv)
 	int argc;
@@ -42,7 +44,7 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	register struct hs *hsp = hs;
+	register struct hs *hsp;
 	register struct whod *wd;
 	register struct whoent *we;
 	register DIR *dirp;
@@ -51,10 +53,9 @@ main(argc, argv)
 	char buf[sizeof(struct whod)];
 	int (*cmp)() = hscmp;
 	time_t time();
-	char *interval(), *malloc();
+	char *interval();
 
 	aflg = 0;
-	maxloadav = -1;
 	while ((ch = getopt(argc, argv, "alrut")) != EOF)
 		switch((char)ch) {
 		case 'a':
@@ -73,59 +74,67 @@ main(argc, argv)
 			cmp = ucmp;
 			break;
 		default: 
-			fprintf(stderr, "usage: ruptime [-alrut]\n");
+			(void)fprintf(stderr, "usage: ruptime [-alrut]\n");
 			exit(1);
 		}
 
 	if (chdir(_PATH_RWHODIR) || (dirp = opendir(".")) == NULL) {
-		perror(_PATH_RWHODIR);
+		(void)fprintf(stderr, "ruptime: %s: %s.\n",
+		    _PATH_RWHODIR, strerror(errno));
 		exit(1);
 	}
+	morehosts();
+	hsp = hs;
+	maxloadav = -1;
 	while (dp = readdir(dirp)) {
 		if (dp->d_ino == 0 || strncmp(dp->d_name, "whod.", 5))
 			continue;
-		if (nhosts == NHOSTS) {
-			fprintf(stderr, "ruptime: too many hosts\n");
-			exit(1);
+		if ((f = open(dp->d_name, O_RDONLY, 0)) < 0) {
+			(void)fprintf(stderr, "ruptime: %s: %s\n",
+			    dp->d_name, strerror(errno));
+			continue;
 		}
-		f = open(dp->d_name, O_RDONLY, 0);
-		if (f > 0) {
-			cc = read(f, buf, sizeof(struct whod));
-			if (cc >= WHDRSIZE) {
-				/* NOSTRICT */
-				hsp->hs_wd = (struct whod *)malloc(WHDRSIZE);
-				wd = (struct whod *)buf;
-				bcopy(wd, hsp->hs_wd, WHDRSIZE);
-				hsp->hs_nusers = 0;
-				for (i = 0; i < 2; i++)
-					if (wd->wd_loadav[i] > maxloadav)
-						maxloadav = wd->wd_loadav[i];
-				we = (struct whoent *)(buf+cc);
-				while (--we >= wd->wd_we)
-					if (aflg || we->we_idle < 3600)
-						hsp->hs_nusers++;
-				nhosts++; hsp++;
-			}
-			(void)close(f);
+		cc = read(f, buf, sizeof(struct whod));
+		(void)close(f);
+		if (cc < WHDRSIZE)
+			continue;
+		if (nhosts == hspace) {
+			morehosts();
+			hsp = hs + nhosts;
 		}
+		/* NOSTRICT */
+		hsp->hs_wd = malloc((size_t)WHDRSIZE);
+		wd = (struct whod *)buf;
+		bcopy((char *)wd, (char *)hsp->hs_wd, (size_t)WHDRSIZE);
+		hsp->hs_nusers = 0;
+		for (i = 0; i < 2; i++)
+			if (wd->wd_loadav[i] > maxloadav)
+				maxloadav = wd->wd_loadav[i];
+		we = (struct whoent *)(buf+cc);
+		while (--we >= wd->wd_we)
+			if (aflg || we->we_idle < 3600)
+				hsp->hs_nusers++;
+		nhosts++;
+		hsp++;
 	}
 	if (!nhosts) {
-		printf("ruptime: no hosts!?!\n");
+		(void)printf("ruptime: no hosts in %s.\n", _PATH_RWHODIR);
 		exit(1);
 	}
 	qsort((char *)hs, nhosts, sizeof (hs[0]), cmp);
 	(void)time(&now);
 	for (i = 0; i < nhosts; i++) {
 		hsp = &hs[i];
-		if (down(hsp)) {
-			printf("%-12.12s%s\n", hsp->hs_wd->wd_hostname,
+		if (ISDOWN(hsp)) {
+			(void)printf("%-12.12s%s\n", hsp->hs_wd->wd_hostname,
 			    interval(now - hsp->hs_wd->wd_recvtime, "down"));
 			continue;
 		}
-		printf("%-12.12s%s,  %4d user%s  load %*.2f, %*.2f, %*.2f\n",
+		(void)printf(
+		    "%-12.12s%s,  %4d user%s  load %*.2f, %*.2f, %*.2f\n",
 		    hsp->hs_wd->wd_hostname,
-		    interval(hsp->hs_wd->wd_sendtime -
-			hsp->hs_wd->wd_boottime, "  up"),
+		    interval((time_t)hsp->hs_wd->wd_sendtime -
+			(time_t)hsp->hs_wd->wd_boottime, "  up"),
 		    hsp->hs_nusers,
 		    hsp->hs_nusers == 1 ? ", " : "s,",
 		    maxloadav >= 1000 ? 5 : 4,
@@ -134,7 +143,7 @@ main(argc, argv)
 		        hsp->hs_wd->wd_loadav[1] / 100.0,
 		    maxloadav >= 1000 ? 5 : 4,
 		        hsp->hs_wd->wd_loadav[2] / 100.0);
-		cfree(hsp->hs_wd);
+		free((void *)hsp->hs_wd);
 	}
 	exit(0);
 }
@@ -163,58 +172,70 @@ interval(tval, updown)
 	return(resbuf);
 }
 
-hscmp(h1, h2)
-	struct hs *h1, *h2;
+/* alphabetical comparison */
+hscmp(a1, a2)
+	void *a1, *a2;
 {
+	struct hs *h1 = a1, *h2 = a2;
+
 	return(rflg * strcmp(h1->hs_wd->wd_hostname, h2->hs_wd->wd_hostname));
 }
 
-/*
- * Compare according to load average.
- */
-lcmp(h1, h2)
-	struct hs *h1, *h2;
+/* load average comparison */
+lcmp(a1, a2)
+	void *a1, *a2;
 {
-	if (down(h1))
-		if (down(h2))
-			return(tcmp(h1, h2));
+	register struct hs *h1 = a1, *h2 = a2;
+
+	if (ISDOWN(h1))
+		if (ISDOWN(h2))
+			return(tcmp(a1, a2));
 		else
 			return(rflg);
-	else if (down(h2))
+	else if (ISDOWN(h2))
 		return(-rflg);
 	else
 		return(rflg *
 			(h2->hs_wd->wd_loadav[0] - h1->hs_wd->wd_loadav[0]));
 }
 
-/*
- * Compare according to number of users.
- */
-ucmp(h1, h2)
-	struct hs *h1, *h2;
+/* number of users comparison */
+ucmp(a1, a2)
+	void *a1, *a2;
 {
-	if (down(h1))
-		if (down(h2))
-			return(tcmp(h1, h2));
+	register struct hs *h1 = a1, *h2 = a2;
+
+	if (ISDOWN(h1))
+		if (ISDOWN(h2))
+			return(tcmp(a1, a2));
 		else
 			return(rflg);
-	else if (down(h2))
+	else if (ISDOWN(h2))
 		return(-rflg);
 	else
 		return(rflg * (h2->hs_nusers - h1->hs_nusers));
 }
 
-/*
- * Compare according to uptime.
- */
-tcmp(h1, h2)
-	struct hs *h1, *h2;
+/* uptime comparison */
+tcmp(a1, a2)
+	void *a1, *a2;
 {
+	register struct hs *h1 = a1, *h2 = a2;
+
 	return(rflg * (
-		(down(h2) ? h2->hs_wd->wd_recvtime - now
+		(ISDOWN(h2) ? h2->hs_wd->wd_recvtime - now
 			  : h2->hs_wd->wd_sendtime - h2->hs_wd->wd_boottime)
 		-
-		(down(h1) ? h1->hs_wd->wd_recvtime - now
+		(ISDOWN(h1) ? h1->hs_wd->wd_recvtime - now
 			  : h1->hs_wd->wd_sendtime - h1->hs_wd->wd_boottime)
 	));
+}
+
+morehosts()
+{
+	hs = realloc((char *)hs, (hspace *= 2) * sizeof(*hs));
+	if (hs == NULL) {
+		(void)fprintf(stderr, "ruptime: %s.\n", strerror(ENOMEM));
+		exit(1);
+	}
 }
