@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)pstat.c	5.24 (Berkeley) %G%";
 #define NFS
 #include <sys/file.h>
 #include <sys/mount.h>
+#include <ufs/quota.h>
 #include <ufs/inode.h>
 #include <sys/stat.h>
 #include <nfs/nfsv2.h>
@@ -223,26 +224,33 @@ main(argc, argv)
 		doswap();
 }
 
+struct e_vnode {
+	struct vnode *avnode;
+	struct vnode vnode;
+};
+
 dovnode()
 {
-	register struct vnode *vp, *vnodebase, *evnode;
+	register struct e_vnode *e_vnodebase, *endvnode, *evp;
+	register struct vnode *vp;
 	register struct mount *maddr = NULL, *mp;
 	register struct inode *ip;
 	int numvnodes;
-	struct vnode *loadvnodes();
+	struct e_vnode *loadvnodes();
 	struct mount *getmnt();
 
-	vnodebase = loadvnodes(&numvnodes);
+	e_vnodebase = loadvnodes(&numvnodes);
 	if (totflg) {
 		printf("%7d vnodes\n", numvnodes);
 		return;
 	}
-	evnode = vnodebase + numvnodes;
+	endvnode = e_vnodebase + numvnodes;
 	printf("%d active vnodes\n", numvnodes);
 
 
-#define ST	mp->m_stat
-	for (vp = vnodebase; vp < evnode; vp++) {
+#define ST	mp->mnt_stat
+	for (evp = e_vnodebase; evp < endvnode; evp++) {
+		vp = &evp->vnode;
 		if (vp->v_mount != maddr) {
 			/*
 			 * New filesystem
@@ -267,7 +275,7 @@ dovnode()
 			}
 			printf("\n");
 		}
-		vnode_print(vp);
+		vnode_print(evp->avnode, vp);
 		switch(ST.f_type) {
 		case MOUNT_UFS:
 		case MOUNT_MFS:
@@ -282,46 +290,17 @@ dovnode()
 			break;
 		}
 		printf("\n");
-#ifdef notdef
-printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\n");
-		ip = VTOI(vp);
-		/* HOW ???  - use pointer back to vnode in data area
-			printf("%8.1x ", ainode + (ip - xinode)); 
-		*/
-		putf(ip->i_flag&ILOCKED, 'L');
-		putf(ip->i_flag&IUPD, 'U');
-		putf(ip->i_flag&IACC, 'A');
-		putf(ip->i_flag&IWANT, 'W');
-		putf(ip->i_flag&ICHG, 'C');
-		putf(ip->i_flag&ISHLOCK, 'S');
-		putf(ip->i_flag&IEXLOCK, 'E');
-		putf(ip->i_flag&ILWAIT, 'Z');
-		putf(ip->i_flag&IMOD, 'M');
-		putf(ip->i_flag&IRENAME, 'R');
-		printf("%4d", vp->v_usecount&0377);
-		printf("%4d,%3d", major(ip->i_dev), minor(ip->i_dev));
-		printf("%4d", vp->v_shlockc&0377);
-		printf("%4d", vp->v_exlockc&0377);
-		printf("%6d", ip->i_number);
-		printf("%6x", ip->i_mode & 0xffff);
-		printf("%4d", ip->i_nlink);
-		printf("%4d", ip->i_uid);
-		if ((ip->i_mode&IFMT)==IFBLK || (ip->i_mode&IFMT)==IFCHR)
-			printf("%6d,%3d", major(ip->i_rdev), minor(ip->i_rdev));
-		else
-			printf("%10ld", ip->i_size);
-		printf("\n");
-#endif
 	}
-	free(vnodebase);
+	free(e_vnodebase);
 }
 
 vnode_header()
 {
-	printf("TYP VFLAG  USE  REF");
+	printf("ADDR     TYP VFLAG  USE  REF");
 }
 
-vnode_print(vp)
+vnode_print(avnode, vp)
+	struct vnode *avnode;
 	struct vnode *vp;
 {
 	char *type, flags[16]; 
@@ -381,13 +360,13 @@ vnode_print(vp)
 	/*
 	 * print it
 	 */
-	printf("%s %5s %4d %4d",
-		type, flags, vp->v_usecount, vp->v_holdcnt);
+	printf("%8x %s %5s %4d %4d",
+		avnode, type, flags, vp->v_usecount, vp->v_holdcnt);
 }
 
 ufs_header() 
 {
-	printf("     LOC FILEID IFLAG RDEV|SZ");
+	printf(" FILEID IFLAG RDEV|SZ");
 }
 
 ufs_print(vp) 
@@ -425,8 +404,7 @@ ufs_print(vp)
 		*flags++ = '-';
 	*flags = '\0';
 
-	printf(" %7x %6d %5s",
-		clear(ip->i_vnode), ip->i_number, flagbuf);
+	printf(" %6d %5s", ip->i_number, flagbuf);
 	type = ip->i_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
 		if (nflg || ((name = devname(ip->i_rdev, type)) == NULL))
@@ -440,13 +418,13 @@ ufs_print(vp)
 
 nfs_header() 
 {
-	printf("     LOC FILEID NFLAG RDEV|SZ");
+	printf(" FILEID NFLAG RDEV|SZ");
 }
 
 nfs_print(vp) 
 	struct vnode *vp;
 {
-	struct nfsnode *np = VTOI(vp);
+	struct nfsnode *np = VTONFS(vp);
 	char flagbuf[16], *flags = flagbuf;
 	register flag;
 	char *name;
@@ -471,8 +449,7 @@ nfs_print(vp)
 	*flags = '\0';
 
 #define VT	np->n_vattr
-	printf(" %7x %6d %5s",
-		clear(np->n_vnode), VT.va_fileid, flagbuf);
+	printf(" %6d %5s", VT.va_fileid, flagbuf);
 	type = VT.va_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
 		if (nflg || ((name = devname(VT.va_rdev, type)) == NULL))
@@ -523,7 +500,7 @@ mount_print(mp)
 	char *type = "unknown";
 	register flags;
 
-#define ST	mp->m_stat
+#define ST	mp->mnt_stat
 	printf("*** MOUNT ");
 	switch (ST.f_type) {
 	case MOUNT_NONE:
@@ -543,62 +520,101 @@ mount_print(mp)
 		break;
 	}
 	printf("%s %s on %s", type, ST.f_mntfromname, ST.f_mntonname);
-	if (flags = mp->m_flag) {
+	if (flags = mp->mnt_flag) {
 		char *comma = "(";
 
 		putchar(' ');
-		if (flags & M_RDONLY) {
+		/* user visable flags */
+		if (flags & MNT_RDONLY) {
 			printf("%srdonly", comma);
+			flags &= ~MNT_RDONLY;
 			comma = ",";
 		}
-		if (flags & M_SYNCHRONOUS) {
+		if (flags & MNT_SYNCHRONOUS) {
 			printf("%ssynchronous", comma);
+			flags &= ~MNT_SYNCHRONOUS;
 			comma = ",";
 		}
-		if (flags & M_NOEXEC) {
+		if (flags & MNT_NOEXEC) {
 			printf("%snoexec", comma);
+			flags &= ~MNT_NOEXEC;
 			comma = ",";
 		}
-		if (flags & M_NOSUID) {
+		if (flags & MNT_NOSUID) {
 			printf("%snosuid", comma);
+			flags &= ~MNT_NOSUID;
 			comma = ",";
 		}
-		if (flags & M_NODEV) {
+		if (flags & MNT_NODEV) {
 			printf("%snodev", comma);
+			flags &= ~MNT_NODEV;
 			comma = ",";
 		}
-		if (flags & M_EXPORTED) {
+		if (flags & MNT_EXPORTED) {
 			printf("%sexport", comma);
+			flags &= ~MNT_EXPORTED;
 			comma = ",";
 		}
-		if (flags & M_EXRDONLY) {
+		if (flags & MNT_EXRDONLY) {
 			printf("%sexrdonly", comma);
+			flags &= ~MNT_EXRDONLY;
 			comma = ",";
 		}
-		if (flags & M_MLOCK) {
+		if (flags & MNT_LOCAL) {
+			printf("%slocal", comma);
+			flags &= ~MNT_LOCAL;
+			comma = ",";
+		}
+		if (flags & MNT_QUOTA) {
+			printf("%squota", comma);
+			flags &= ~MNT_QUOTA;
+			comma = ",";
+		}
+		/* filesystem control flags */
+		if (flags & MNT_UPDATE) {
+			printf("%supdate", comma);
+			flags &= ~MNT_UPDATE;
+			comma = ",";
+		}
+		if (flags & MNT_MLOCK) {
 			printf("%slock", comma);
+			flags &= ~MNT_MLOCK;
 			comma = ",";
 		}
-		if (flags & M_MWAIT) {
+		if (flags & MNT_MWAIT) {
 			printf("%swait", comma);
+			flags &= ~MNT_MWAIT;
 			comma = ",";
 		}
-		if (flags & M_UPDATE) {
-			printf("%supdate only", comma);
+		if (flags & MNT_MPBUSY) {
+			printf("%sbusy", comma);
+			flags &= ~MNT_MPBUSY;
 			comma = ",";
 		}
+		if (flags & MNT_MPWANT) {
+			printf("%swant", comma);
+			flags &= ~MNT_MPWANT;
+			comma = ",";
+		}
+		if (flags & MNT_UNMOUNT) {
+			printf("%sunmount", comma);
+			flags &= ~MNT_UNMOUNT;
+			comma = ",";
+		}
+		if (flags)
+			printf("%sunknown_flags:%x", flags);
 		printf(")");
 	}
 	printf("\n");
 #undef ST
 }
 
-struct vnode *
+struct e_vnode *
 loadvnodes(avnodes)
 	int *avnodes;
 {
 	int ret, copysize, i;
-	struct vnode *vnodebase;
+	struct e_vnode *vnodebase;
 
 	if (fcore != NULL) {
 		error("vnodes on dead kernel, not impl yet\n");
@@ -609,7 +625,7 @@ loadvnodes(avnodes)
 		exit(1);
 	}
 	copysize = ret;
-	if ((vnodebase = (struct vnode *)malloc(copysize)) 
+	if ((vnodebase = (struct e_vnode *)malloc(copysize)) 
 	     == NULL) {
 		error("out of memory");
 		exit(1);
@@ -619,11 +635,11 @@ loadvnodes(avnodes)
 		syserror("can't get vnode list");
 		exit(1);
 	}
-	if (copysize % sizeof (struct vnode)) {
+	if (copysize % sizeof (struct e_vnode)) {
 		error("vnode size mismatch");
 		error(1);
 	}
-	*avnodes = copysize / sizeof (struct vnode);
+	*avnodes = copysize / sizeof (struct e_vnode);
 
 	return (vnodebase);
 }
@@ -770,7 +786,7 @@ doproc()
 	free(xproc);
 }
 
-char mesg[] = " #  DEV RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGRP DISC\n";
+char mesg[] = "LINE    RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGID DISC\n";
 int ttyspace = 128;
 struct tty *tty;
 
@@ -884,23 +900,17 @@ struct tty *atp;
 	register struct tty *tp;
 	char state[20];
 	register i, j;
+	char *name;
+	extern char *devname();
+	pid_t pgid;
 
 	tp = atp;
-	printf("%2d %2d/%-2d ", line, major(tp->t_dev), minor(tp->t_dev));
-	switch (tp->t_line) {
-
-#ifdef BERKNET_WAS_A_LONG_TIME_AGO
-	case NETLDISC:
-		if (tp->t_rec)
-			printf("%4d%4d", 0, tp->t_inbuf);
-		else
-			printf("%4d%4d", tp->t_inbuf, 0);
-		break;
-#endif
-
-	default:
-		printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
-	}
+	if (nflg || tp->t_dev == 0 || 	/* XXX */
+	   (name = devname(tp->t_dev, S_IFCHR)) == NULL)
+		printf("%7d ", line); 
+	else
+		printf("%7s ", name);
+	printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
 	printf("%3d %6d %6d %6d %4d %3d %8x %3d ", tp->t_outq.c_cc, 
 		tp->t_rawcc, tp->t_cancc, tp->t_outcc, 
 		tp->t_hiwat, tp->t_lowat, tp->t_addr, tp->t_col);
@@ -909,18 +919,15 @@ struct tty *atp;
 			state[j++] = ttystates[i].val;
 	state[j] = '\0';
 	printf("%-4s ", state);
-	printf("%6x ", clear(tp->t_pgrp));
+	if (tp->t_pgrp == NULL || kvm_read(&tp->t_pgrp->pg_id, &pgid, 
+	    sizeof (pid_t)) != sizeof (pid_t))
+		pgid = 0;
+	printf("%6d ", pgid);
 	switch (tp->t_line) {
 
 	case 0:
 		printf("term\n");
 		break;
-
-#ifdef BERKNET_WAS_A_LONG_TIME_AGO
-	case NETLDISC:
-		printf("berknet\n");
-		break;
-#endif
 
 	case TABLDISC:
 		printf("tab\n");
