@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.67 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.68 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -232,7 +232,7 @@ lfs_mountfs(devvp, mp, p)
 
 	/* Allocate the mount structure, copy the superblock into it. */
 	ump = (struct ufsmount *)malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
-	ump->um_lfs = malloc(sizeof(struct lfs), M_SUPERBLK, M_WAITOK);
+	ump->um_lfs = malloc(sizeof(struct lfs), M_UFSMNT, M_WAITOK);
 	bcopy(bp->b_un.b_addr, ump->um_lfs, sizeof(struct lfs));
 	if (sizeof(struct lfs) < LFS_SBPAD)			/* XXX why? */
 		bp->b_flags |= B_INVAL;
@@ -287,7 +287,7 @@ out:
 		brelse(bp);
 	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (ump) {
-		free(ump->um_lfs, M_SUPERBLK);
+		free(ump->um_lfs, M_UFSMNT);
 		free(ump, M_UFSMNT);
 		mp->mnt_data = (qaddr_t)0;
 	}
@@ -354,11 +354,11 @@ return(0);
 		NOCRED, p);
 	vrele(ump->um_devvp);
 #ifdef NOTLFS							/* LFS */
-	free((caddr_t)fs->fs_csp[0], M_SUPERBLK);
+	free((caddr_t)fs->fs_csp[0], M_UFSMNT);
 #else
 	iput(VTOI(fs->lfs_ivnode));
 #endif
-	free(fs, M_SUPERBLK);
+	free(fs, M_UFSMNT);
 	free(ump, M_UFSMNT);
 	mp->mnt_data = (qaddr_t)0;
 	mp->mnt_flag &= ~MNT_LOCAL;
