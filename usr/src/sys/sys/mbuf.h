@@ -89,20 +89,21 @@ struct mbuf {
  * Mbuf page cluster macros.
  * MCLALLOC allocates mbuf page clusters.
  * Note that it works only with a count of 1 at the moment.
+ * It must be called at splimp.
  * MCLGET adds such clusters to a normal mbuf.
  * m->m_len is set to CLBYTES upon success.
  * MCLFREE frees clusters allocated by MCLALLOC.
  */
 #define	MCLALLOC(m, i) \
-	{ int ms = splimp(); \
-	  if ((m)=mclfree) \
+	{ if ((m)=mclfree) \
 	     {++mclrefcnt[mtocl(m)];mbstat.m_clfree--;mclfree = (m)->m_next;} \
-	  splx(ms); }
+	}
 #define	M_HASCL(m)	((m)->m_off >= MSIZE)
 #define	MTOCL(m)	((struct mbuf *)(mtod((m), int)&~CLOFSET))
 
 #define	MCLGET(m) \
 	{ struct mbuf *p; \
+	  int ms = splimp(); \
 	  if (mclfree == 0) \
 		(void)m_clalloc(1, MPG_CLUSTERS, M_DONTWAIT); \
 	  MCLALLOC(p, 1); \
@@ -110,6 +111,7 @@ struct mbuf {
 		(m)->m_off = (int)p - (int)(m); \
 		(m)->m_len = CLBYTES; \
 	  } \
+	  splx(ms); \
 	}
 #define	MCLFREE(m) { \
 	if (--mclrefcnt[mtocl(m)] == 0) \
