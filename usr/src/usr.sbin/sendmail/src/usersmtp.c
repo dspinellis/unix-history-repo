@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.32 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.33 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.32 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.33 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -452,7 +452,7 @@ smtpfinish(m, editfcn)
 		nmessage(">>> .");
 
 	/* check for the results of the transaction */
-	SmtpPhase = mci->mci_phase = "result wait";
+	SmtpPhase = mci->mci_phase = "client DATA 250";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
 	r = reply(m, mci, e, TimeOuts.to_datafinal, NULL);
 	if (r < 0)
@@ -498,6 +498,7 @@ smtpquit(m)
 	/* send the quit message if we haven't gotten I/O error */
 	if (SmtpState == SMTP_OPEN || SmtpState == SMTP_SSD)
 	{
+		SmtpPhase = "client QUIT";
 			return;
 	}
 
@@ -523,6 +524,7 @@ smtprset(m, mci, e)
 {
 	int r;
 
+	SmtpPhase = "client RSET";
 	smtpmessage("RSET", m, mci);
 	r = reply(m, mci, e, TimeOuts.to_rset, NULL);
 	if (r < 0)
@@ -546,6 +548,7 @@ smtpprobe(mci)
 	extern ENVELOPE BlankEnvelope;
 	ENVELOPE *e = &BlankEnvelope;
 
+	SmtpPhase = "client probe";
 	smtpmessage("RSET", m, mci);
 	r = reply(m, mci, e, TimeOuts.to_miscshort, NULL);
 	if (r < 0 || REPLYTYPE(r) != 2)
