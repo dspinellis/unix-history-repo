@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.6 %G%";
+static char *SccsId = "@(#)collect.c	2.7 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -519,7 +519,7 @@ mesedit(ibuf, obuf, c)
 	}
 	while (wait(&s) != pid)
 		;
-	if (s != 0) {
+	if ((s & 0377) != 0) {
 		printf("Fatal error in \"%s\"\n", edit);
 		remove(tempEdit);
 		goto out;
