@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fopen.3	6.1 (Berkeley) %G%
+.\"	@(#)fopen.3	6.2 (Berkeley) %G%
 .\"
 .TH FOPEN 3S  ""
 .UC 4
@@ -95,7 +95,9 @@ return the pointer
 .B NULL
 if
 .I filename
-cannot be accessed.
+cannot be accessed,
+if too many files are already open,
+or if other resources needed cannot be allocated.
 .SH BUGS
 .I Fdopen
 is not portable to systems other than UNIX.
@@ -106,3 +108,14 @@ do not exist on all systems.  Those systems without
 read/write modes will probably treat the 
 .I type
 as if the '+' was not present.  These are unreliable in any event.
+.PP
+In order to support the same number of open files as does the system,
+.I fopen
+must allocate additional memory for data structures using
+.I calloc
+after 20 files have been opened.
+This confuses some programs which use their own memory allocators.
+An undocumented routine,
+.IR f_prealloc ,
+may be called to force immediate allocation of all internal memory
+except for buffers.
