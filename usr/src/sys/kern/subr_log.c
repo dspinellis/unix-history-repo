@@ -1,4 +1,4 @@
-/*	subr_log.c	6.3	84/08/29	*/
+/*	subr_log.c	6.4	85/03/18	*/
 
 /*
  * Error log buffer for kernel printf's.
@@ -15,7 +15,6 @@
 
 #define LOG_RDPRI	(PZERO + 1)
 
-#define LOG_OPEN	0x01
 #define LOG_NBIO	0x02
 #define LOG_ASYNC	0x04
 #define LOG_RDWAIT	0x08
@@ -25,6 +24,8 @@ struct logsoftc {
 	struct	proc *sc_selp;		/* process waiting on select call */
 	int	sc_pgrp;		/* process group for async I/O */
 } logsoftc;
+
+int	log_open;			/* also used in log() */
 
 #ifdef LOGDEBUG
 /*VARARGS1*/
@@ -44,9 +45,9 @@ logopen(dev)
 #ifdef LOGDEBUG
 	xprintf("logopen: dev=0x%x\n", dev);
 #endif
-	if (logsoftc.sc_state & LOG_OPEN)
+	if (log_open)
 		return (EBUSY);
-	logsoftc.sc_state |= LOG_OPEN;
+	log_open = 1;
 	logsoftc.sc_selp = 0;
 	logsoftc.sc_pgrp = u.u_procp->p_pgrp;
 	/*
@@ -71,6 +72,7 @@ logopen(dev)
 logclose(dev, flag)
 	dev_t dev;
 {
+	log_open = 0;
 	logsoftc.sc_state = 0;
 	logsoftc.sc_selp = 0;
 	logsoftc.sc_pgrp = 0;
@@ -161,6 +163,8 @@ win:
 logwakeup()
 {
 
+	if (!log_open)
+		return;
 	if (logsoftc.sc_selp) {
 		selwakeup(logsoftc.sc_selp, 0);
 		logsoftc.sc_selp = 0;

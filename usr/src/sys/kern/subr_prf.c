@@ -1,4 +1,4 @@
-/*	subr_prf.c	6.5	84/12/27	*/
+/*	subr_prf.c	6.6	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -13,6 +13,7 @@
 #include "proc.h"
 #include "ioctl.h"
 #include "tty.h"
+#include "syslog.h"
 
 #ifdef vax
 #include "../vax/mtpr.h"
@@ -70,6 +71,11 @@ uprintf(fmt, x1)
 	prf(fmt, &x1, TOTTY, u.u_ttyp);
 }
 
+/*
+ * tprintf prints on the specified terminal (console if none)
+ * and logs the message.  It is designed for error messages from
+ * single-open devices, and may be called from interrupt level.
+ */
 /*VARARGS2*/
 tprintf(ttyp, fmt, x1)
 	struct tty *ttyp;
@@ -77,12 +83,13 @@ tprintf(ttyp, fmt, x1)
 	unsigned x1;
 {
 
-	prf(fmt, &x1, TOTTY, ttyp);
+	prf(fmt, &x1, TOTTY | TOLOG, ttyp);
 }
 
 /*
  * Log writes to the log buffer,
  * and guarantees not to sleep (so can be called by interrupt routines).
+ * If there is no process reading the log yet, it writes to the console also.
  */
 /*VARARGS2*/
 log(level, fmt, x1)
@@ -90,12 +97,15 @@ log(level, fmt, x1)
 	unsigned x1;
 {
 	register s = splhigh();
+	extern int log_open;
 
 	putchar('<', TOLOG, (struct tty *)0);
 	printn(level, 10, TOLOG, (struct tty *)0);
 	putchar('>', TOLOG, (struct tty *)0);
 	prf(fmt, &x1, TOLOG, (struct tty *)0);
 	splx(s);
+	if (!log_open)
+		prf(fmt, &x1, TOCONS, (struct tty *)0);
 	logwakeup();
 }
 
@@ -226,7 +236,7 @@ tablefull(tab)
 	char *tab;
 {
 
-	printf("%s: table is full\n", tab);
+	log(KERN_FAIL, "%s: table is full\n", tab);
 }
 
 /*
