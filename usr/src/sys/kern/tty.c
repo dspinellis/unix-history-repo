@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.47 (Berkeley) %G%
+ *	@(#)tty.c	7.48 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -179,10 +179,9 @@ ttywait(tp)
 	return (error);
 }
 
-#define	flushq(qq) { \
-	register struct clist *q = qq; \
-	if (q->c_cc) \
-		ndflush(q, q->c_cc); \
+#define	flushq(q) { \
+	if ((q)->c_cc) \
+		ndflush(q, (q)->c_cc); \
 }
 
 /*
@@ -191,8 +190,9 @@ ttywait(tp)
  */
 ttyflush(tp, rw)
 	register struct tty *tp;
+	int rw;
 {
-	register s;
+	register int s;
 
 	s = spltty();
 	if (rw & FREAD) {
@@ -205,7 +205,11 @@ ttyflush(tp, rw)
 	}
 	if (rw & FWRITE) {
 		tp->t_state &= ~TS_TTSTOP;
+#ifdef sun4c						/* XXX */
+		(*tp->t_stop)(tp, rw);
+#else
 		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
+#endif
 		flushq(&tp->t_outq);
 		wakeup((caddr_t)&tp->t_outq);
 		if (tp->t_wsel) {
@@ -255,13 +259,16 @@ ttstart(tp)
 ttrstrt(tp)				/* XXX */
 	struct tty *tp;
 {
+	int s;
 
 #ifdef DIAGNOSTIC
 	if (tp == 0)
 		panic("ttrstrt");
 #endif
+	s = spltty();
 	tp->t_state &= ~TS_TIMEOUT;
 	ttstart(tp);
+	splx(s);
 }
 
 
@@ -274,7 +281,9 @@ ttrstrt(tp)				/* XXX */
 /*ARGSUSED*/
 ttioctl(tp, com, data, flag)
 	register struct tty *tp;
+	int com;
 	caddr_t data;
+	int flag;
 {
 	register struct proc *p = curproc;		/* XXX */
 	extern int nldisp;
@@ -294,7 +303,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCSETA:
 	case TIOCSETAW:
 	case TIOCSETAF:
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 	case TIOCSETP:
 	case TIOCSETN:
 	case TIOCSETC:
@@ -353,16 +362,23 @@ ttioctl(tp, com, data, flag)
 
 	/* prevent more opens on channel */
 	case TIOCEXCL:
+		s = spltty();
 		tp->t_state |= TS_XCLUDE;
+		splx(s);
 		break;
 
 	case TIOCNXCL:
+		s = spltty();
 		tp->t_state &= ~TS_XCLUDE;
+		splx(s);
 		break;
 
+#ifdef TIOCHPCL
 	case TIOCHPCL:
+		s = spltty();
 		tp->t_cflag |= HUPCL;
 		break;
+#endif
 
 	case TIOCFLUSH: {
 		register int flags = *(int *)data;
@@ -376,10 +392,12 @@ ttioctl(tp, com, data, flag)
 	}
 
 	case FIOASYNC:
+		s = spltty();
 		if (*(int *)data)
 			tp->t_state |= TS_ASYNC;
 		else
 			tp->t_state &= ~TS_ASYNC;
+		splx(s);
 		break;
 
 	case FIONBIO:
@@ -398,7 +416,11 @@ ttioctl(tp, com, data, flag)
 		s = spltty();
 		if ((tp->t_state&TS_TTSTOP) == 0) {
 			tp->t_state |= TS_TTSTOP;
+#ifdef sun4c						/* XXX */
+			(*tp->t_stop)(tp, 0);
+#else
 			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
+#endif
 		}
 		splx(s);
 		break;
@@ -544,7 +566,7 @@ ttioctl(tp, com, data, flag)
 		return(ottioctl(tp, com, data, flag));
 
 	default:
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 		return (ttcompat(tp, com, data, flag));
 #else
 		return (-1);
@@ -650,6 +672,7 @@ ttyopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
 {
+	int s = spltty();
 
 	tp->t_dev = dev;
 
@@ -662,6 +685,7 @@ ttyopen(dev, tp)
 		 *  old (old) line discipline.
 		 */
 	}
+	splx(s);
 	return (0);
 }
 
@@ -704,6 +728,7 @@ ttyclose(tp)
  */
 ttymodem(tp, flag)
 	register struct tty *tp;
+	int flag;
 {
 
 	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_lflag & MDMBUF)) {
@@ -715,7 +740,11 @@ ttymodem(tp, flag)
 			ttstart(tp);
 		} else if ((tp->t_state&TS_TTSTOP) == 0) {
 			tp->t_state |= TS_TTSTOP;
+#ifdef sun4c						/* XXX */
+			(*tp->t_stop)(tp, 0);
+#else
 			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
+#endif
 		}
 	} else if (flag == 0) {
 		/*
@@ -1061,6 +1090,7 @@ ttyoutput(c, tp)
 ttread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;
+	int flag;
 {
 	register struct clist *qp;
 	register int c, t_flags;
@@ -1172,6 +1202,7 @@ loop:
 	 * Look to unblock output now that (presumably)
 	 * the input queue has gone down.
 	 */
+	s = spltty();
 	if (tp->t_state&TS_TBLOCK && tp->t_rawq.c_cc < TTYHOG/5) {
 		if (cc[VSTART] != POSIX_V_DISABLE 
 		   && putc(cc[VSTART], &tp->t_outq) == 0) {
@@ -1179,6 +1210,7 @@ loop:
 			ttstart(tp);
 		}
 	}
+	splx(s);
 	}
 	return (error);
 }
@@ -1200,8 +1232,7 @@ ttycheckoutq(tp, wait)
 
 	hiwat = tp->t_hiwat;
 	s = spltty();
-	if (wait)
-		oldsig = curproc->p_sig;
+	oldsig = wait ? curproc->p_sig : 0;
 	if (tp->t_outq.c_cc > hiwat + 200)
 		while (tp->t_outq.c_cc > hiwat) {
 			ttstart(tp);
@@ -1223,6 +1254,7 @@ ttycheckoutq(tp, wait)
 ttwrite(tp, uio, flag)
 	register struct tty *tp;
 	register struct uio *uio;
+	int flag;
 {
 	register char *cp;
 	register int cc = 0, ce;
@@ -1588,6 +1620,7 @@ ttwakeup(tp)
  * used by drivers to map software speed values to hardware parameters.
  */
 ttspeedtab(speed, table)
+	int speed;
 	register struct speedtab *table;
 {
 
@@ -1674,7 +1707,9 @@ ttyinfo(tp)
 		/* Print percentage cpu, resident set size. */
 		tmp = pick->p_pctcpu * 10000 + FSCALE / 2 >> FSHIFT;
 		ttyprintf(tp, "%d%% %dk\n",
-		   tmp / 100, pgtok(pick->p_vmspace->vm_rssize));
+		    tmp / 100,
+		    pick->p_stat == SIDL || pick->p_stat == SZOMB ? 0 :
+			pgtok(pick->p_vmspace->vm_rssize));
 	}
 	tp->t_rocount = 0;	/* so pending input will be retyped if BS */
 }
