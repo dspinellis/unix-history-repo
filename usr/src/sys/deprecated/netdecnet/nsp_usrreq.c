@@ -1,3 +1,4 @@
+/*	nsp_usrreq.c	1.2	82/05/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
