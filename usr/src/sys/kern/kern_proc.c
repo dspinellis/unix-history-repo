@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.1	%G%	*/
+/*	kern_proc.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -491,7 +491,7 @@ done:
 			 * tty signals, clear TSTP/TTIN/TTOU if pending,
 			 * and set SDETACH bit on procs.
 			 */
-			spgrp(q, -1);
+			(void) spgrp(q, -1);
 		}
 	wakeup((caddr_t)p->p_pptr);
 	psignal(p->p_pptr, SIGCHLD);
