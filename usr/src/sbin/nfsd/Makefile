@@ -1,9 +1,9 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 PROG=	nfsd
 CFLAGS+=-DNFS
 MAN8=	nfsd.0
 DPADD=	${LIBRPC}
-LDADD=	-lrpc
+LDADD=	-lrpc -lutil
 
 .include <bsd.prog.mk>

@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -88,22 +88,8 @@ main(argc, argv)
 	
 	
 #ifndef DEBUG
-	if (!tracepackets) {
-		int t;
-
-		if (fork())
-			exit(0);
-		for (t = 0; t < 20; t++)
-			(void) close(t);
-		(void) open("/", 0);
-		(void) dup2(0, 1);
-		(void) dup2(0, 2);
-		t = open(_PATH_TTY, 2);
-		if (t >= 0) {
-			ioctl(t, TIOCNOTTY, (char *)0);
-			(void) close(t);
-		}
-	}
+	if (!tracepackets)
+		daemon(0, 0);
 #endif
 	openlog("XNSrouted", LOG_PID, LOG_DAEMON);
 

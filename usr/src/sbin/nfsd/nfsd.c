@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -142,25 +142,7 @@ main(argc, argv)
 		udpflag++;
 	}
 	if (debug == 0) {
-		if (fork())
-			exit(0);
-		{ int s;
-		for (s = 0; s < 10; s++)
-			(void) close(s);
-		}
-		(void) open("/dev/null", O_RDONLY);
-		(void) open("/dev/null", O_WRONLY);
-		(void) dup2(1, 2);
-		{ int tt = open("/dev/tty", O_RDWR);
-		  if (tt > 0) {
-			ioctl(tt, TIOCNOTTY, (char *)0);
-			close(tt);
-		  }
-		}
-		(void) setpgrp(0, 0);
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGTTIN, SIG_IGN);
-		signal(SIGTTOU, SIG_IGN);
+		daemon(0, 0);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
 		signal(SIGTERM, SIG_IGN);

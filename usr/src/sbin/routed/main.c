@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -97,23 +97,8 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (debug == 0) {
-		int t;
-
-		if (fork())
-			exit(0);
-		for (t = 0; t < 20; t++)
-			if (t != s)
-				(void) close(t);
-		(void) open("/", 0);
-		(void) dup2(0, 1);
-		(void) dup2(0, 2);
-		t = open(_PATH_TTY, 2);
-		if (t >= 0) {
-			ioctl(t, TIOCNOTTY, (char *)0);
-			(void) close(t);
-		}
-	}
+	if (debug == 0)
+		daemon(0, 0);
 	/*
 	 * Any extra argument is considered
 	 * a tracing log file.
