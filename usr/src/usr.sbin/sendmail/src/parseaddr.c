@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.80		%G%);
+SCCSID(@(#)parseaddr.c	3.81		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -1033,6 +1033,7 @@ remotename(name, m, senderaddress, canonical)
 
 			while ((*pxp++ = *qxq++) != NULL)
 				continue;
+			rewrite(pvp, 3);
 		}
 	}
 
