@@ -1,4 +1,7 @@
-/* @(#)strcmp.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)strcmp.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Compare strings:  s1>s2: >0  s1==s2: 0  s1<s2: <0
  */

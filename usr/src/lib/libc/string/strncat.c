@@ -1,4 +1,7 @@
-/* @(#)strncat.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)strncat.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Concatenate s2 on the end of s1.  S1's space must be large enough.
  * At most n characters are moved.

@@ -1,4 +1,7 @@
-/* @(#)atoi.c	4.3 (Berkeley) 81/02/28 */
+#ifndef lint
+static char sccsid[] = "@(#)atoi.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 atoi(p)
 register char *p;
 {

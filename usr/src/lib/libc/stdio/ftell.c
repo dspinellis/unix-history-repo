@@ -1,4 +1,7 @@
-/* @(#)ftell.c	4.3 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)ftell.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Return file offset.
  * Coordinates with buffering.

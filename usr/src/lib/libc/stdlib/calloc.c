@@ -1,4 +1,6 @@
-/* @(#)calloc.c	4.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)calloc.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Calloc - allocate and clear memory block

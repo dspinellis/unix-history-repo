@@ -1,4 +1,7 @@
-/* @(#)getpwuid.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)getpwuid.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include <pwd.h>
 
 struct passwd *

@@ -1,4 +1,7 @@
-/* @(#)atol.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)atol.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 long
 atol(p)
 register char *p;

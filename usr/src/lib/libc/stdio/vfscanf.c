@@ -1,6 +1,7 @@
-static char sccsid[] = "@(#)vfscanf.c	4.3	(Berkeley)	85/02/13";
+#ifndef lint
+static char sccsid[] = "@(#)vfscanf.c	5.1 (Berkeley) %G%";
+#endif not lint
 
-/* @(#)doscan.c	4.1 (Berkeley) 12/21/80 */
 #include <stdio.h>
 #include	<ctype.h>
 

@@ -1,4 +1,7 @@
-/* @(#)getgrgid.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)getgrgid.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include <grp.h>
 
 struct group *
