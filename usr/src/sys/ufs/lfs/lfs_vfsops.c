@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.42 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.43 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -520,7 +520,6 @@ ufs_sync(mp, waitfor)
 	register struct inode *ip;
 	register struct ufsmount *ump = VFSTOUFS(mp);
 	register struct fs *fs;
-	struct vnode *nvp;
 	int error, allerror = 0;
 
 	if (syncprt)
@@ -544,8 +543,13 @@ ufs_sync(mp, waitfor)
 	 * Write back each (modified) inode.
 	 */
 loop:
-	for (vp = mp->mnt_mounth; vp; vp = nvp) {
-		nvp = vp->v_mountf;
+	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+		/*
+		 * If the vnode that we are about to sync is no longer
+		 * associated with this mount point, start over.
+		 */
+		if (vp->v_mount != mp)
+			goto loop;
 		ip = VTOI(vp);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0 &&
 		    vp->v_dirtyblkhd == NULL)
