@@ -8,7 +8,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_mbuf.c	7.8 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -101,16 +101,6 @@ m_clalloc(ncl, how, canwait)
 		break;
 	}
 	return ((caddr_t)m);
-}
-
-m_pgfree(addr, n)
-	caddr_t addr;
-	int n;
-{
-
-#ifdef lint
-	addr = addr; n = n;
-#endif
 }
 
 /*
