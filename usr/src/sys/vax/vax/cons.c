@@ -1,4 +1,4 @@
-/*	cons.c	3.3	%H%	*/
+/*	cons.c	3.4	%H%	*/
 
 /*
  * Vax console driver and floppy interface
@@ -159,7 +159,7 @@ register struct tty *tp;
 	if (tp->t_outq.c_cc <= TTLOWAT && tp->t_state&ASLEEP) {
 		tp->t_state &= ~ASLEEP;
 		if (tp->t_chan)
-			mcstart(tp->t_char, (caddr_t)&tp->t_outq);
+			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
 		else
 			wakeup((caddr_t)&tp->t_outq);
 	}
