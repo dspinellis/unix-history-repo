@@ -31,6 +31,8 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include <stdio.h>
 #include <curses.h>
 
+#include "../general.h"
+
 #include "terminal.h"
 
 #include "../telnet.ext"
@@ -73,6 +75,7 @@ static char *KS, *KE;
 
 #if	defined(SLOWSCREEN)
 static int inHighlightMode = 0;
+ScreenImage Terminal[MAXSCREENSIZE];
 #endif	/* defined(SLOWSCREEN) */
 
 /* Variables for transparent mode */
@@ -99,6 +102,7 @@ init_screen()
     bellwinup = 0;
 #if	defined(SLOWSCREEN)
     inHighlightMode = 0;
+    ClearArray(Terminal);
 #endif	/* defined(SLOWSCREEN) */
 }
 
