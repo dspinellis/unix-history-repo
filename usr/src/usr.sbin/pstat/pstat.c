@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -454,7 +454,7 @@ ufs_print(vp)
 	printf(" %6d %5s", ip->i_number, flagbuf);
 	type = ip->i_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
-		if (nflg || ((name = devname(ip->i_rdev, S_IFBLK)) == NULL))
+		if (nflg || ((name = devname(ip->i_rdev, type)) == NULL))
 			printf("   %2d,%-2d", 
 				major(ip->i_rdev), minor(ip->i_rdev));
 		else
@@ -495,7 +495,7 @@ nfs_print(vp)
 	printf(" %6d %5s", VT.va_fileid, flagbuf);
 	type = VT.va_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
-		if (nflg || ((name = devname(VT.va_rdev, S_IFBLK)) == NULL))
+		if (nflg || ((name = devname(VT.va_rdev, type)) == NULL))
 			printf("   %2d,%-2d", 
 				major(VT.va_rdev), minor(VT.va_rdev));
 		else
