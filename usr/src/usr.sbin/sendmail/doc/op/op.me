@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.14 (Berkeley) %G%
+.\"	@(#)op.me	6.15 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.14
+Version 6.15
 .sp
-For Sendmail Version 6.25
+For Sendmail Version 6.26
 .)l
 .sp 2
 .pp
@@ -1156,6 +1156,8 @@ mode
 it should be relatively short,
 since it defines the maximum amount of time that a message
 may sit in the queue.
+.pp
+RFC 1123 section 5.3.1.1 says that this value should be at least 30 minutes.
 .sh 2 "Daemon Mode"
 .pp
 If you allow incoming mail over an IPC connection,
@@ -1267,12 +1269,13 @@ Most of these are set
 using an option in the configuration file.
 For example,
 the line
-.q OT3d
+.q OT5d
 sets option
 .q T
 to the value
-.q 3d
-(three days).
+.q 5d
+(five days,
+as recommended by RFC 1123 section 5.3.1.1).
 .pp
 Most of these options have appropriate defaults for most sites.
 However,
@@ -1309,26 +1312,74 @@ flag
 specifies how often a sub-daemon will run the queue.
 This is typically set to between fifteen minutes
 and one hour.
+RFC 1123 section 5.3.1.1 recommends that this be at least 30 minutes.
 .sh 3 "Read timeouts"
 .pp
 It is possible to time out when reading the standard input
 or when reading from a remote SMTP server.
-Technically,
-this is not acceptable within the published protocols.
-However,
-it might be appropriate to set it to something large
-in certain environments
-(such as an hour).
-This will reduce the chance of large numbers of idle daemons
-piling up on your system.
-This timeout is set using the
+These timeouts are set using the
 .b r
 option in the configuration file.
+The argument is a list of
+.i keyword=value
+pairs.
+The recognized keywords, their default values, and the minimum values
+allowed by RFC 1123 section 5.3.2 are:
+.nr ii 1i
+.ip initial
+The wait for the initial 220 greeting message
+[5m, 5m].
+.ip helo
+The wait for a reply from a HELO command
+[5m, unspecified].
+This may require a host name lookup, so
+five minutes is probably a reasonable minimum.
+.ip mail\(dg
+The wait for a reply from a MAIL command
+[10m, 5m].
+.ip rcpt\(dg
+The wait for a reply from a RCPT command
+[1h, 5m].
+This should be long
+because it could be pointing at a list
+that takes a long time to expand.
+.ip datainit\(dg
+The wait for a reply from a DATA command
+[5m, 2m].
+.ip datablock\(dg
+The wait for reading a data block
+(that is, the body of the message).
+[1h, 3m].
+This should be long because it also applies to programs
+piping input to
+.i sendmail
+which have no guarantee of promptness.
+.ip datafinal\(dg
+The wait for a reply from the dot terminating a message.
+[1h, 10m].
+.ip rset
+The wait for a reply from a RSET command
+[5m, unspecified].
+.ip quit
+The wait for a reply from a QUIT command
+[2m, unspecified].
+.ip misc
+The wait for a reply from miscellaneous (but short) commands
+such as NOOP (no-operation) and VERB (go into verbose mode).
+[2m, unspecified].
+.ip command\(dg
+In server SMTP,
+the time to wait for another command.
+[1h, 5m].
+.lp
+For compatibility with old configuration files,
+if no ``keyword='' is specified,
+all the timeouts marked with \(dg are set to the indicated value.
 .pp
-RFC1123
-recommends that this option be set to five minutes.
+Many of the RFC 1123 minimum values
+may well be too short.
 .i Sendmail
-was designed to the RFC822 protocols,
+was designed to the RFC 822 protocols,
 which did not specify read timeouts;
 hence,
 .i sendmail
@@ -1345,16 +1396,17 @@ with the name server;
 this involves network delays,
 and can in some cases can be considerable.
 .)f
-I recommend a two hour timeout \*-
+I recommend a one hour timeout \*-
 since this failure is rare,
 a long timeout is not onerous
 and may ultimately help reduce network load.
 .pp
-The timeout for a user SMTP process
-waiting for the initial
-.q HELO
-message
-is hard-wired to five minutes.
+For example, the line:
+.(b
+Orcommand=25m,datablock=3h
+.)b
+sets the server SMTP command timeout to 25 minutes
+and the input data block timeout to three hours.
 .sh 3 "Message timeouts"
 .pp
 After sitting in the queue for a few days,
@@ -1383,9 +1435,11 @@ Since this option is global,
 and since you can not
 .i "a priori"
 know how long another host outside your domain will be down,
-a three day timeout is recommended.
+a five day timeout is recommended.
 This allows a recipient to fix the problem even if it occurs
-at the beginning of a weekend.
+at the beginning of a long weekend.
+RFC 1123 section 5.3.1.1 says that this parameter
+should be ``at least 4\-5 days''.
 .sh 2 "Forking During Queue Runs"
 .pp
 By setting the
@@ -2727,12 +2781,13 @@ Do not insert a UNIX-style
 .q From
 line on the front of the message.
 .ip p
-Use the return-path in the SMTP
+Use the route-addr style reverse-path in the SMTP
 .q "MAIL FROM:"
 command
 rather than just the return address;
-although this is required in RFC821,
-many hosts do not process return paths properly.
+although this is required in RFC821 section 3.1,
+many hosts do not process reverse-paths properly.
+Reverse-paths are officially discouraged by RFC 1123.
 .ip P
 This mailer wants a
 .q Return-Path:
@@ -3172,11 +3227,36 @@ Defaults to 600000.
 Use the named
 .i dir
 as the queue directory.
-.ip r\fItime\fP
+.ip r\fItimeouts\fP
 Timeout reads after
 .i time
 interval.
-Defaults to two hours.
+The
+.i timeouts
+argument is a list of
+.i keyword=value
+pairs.
+The recognized timeouts and their default values, and their
+minimum values specified in RFC 1123 section 5.3.2 are:
+.(b
+initial	wait for initial greeting message [5m, 5m]
+helo	reply to HELO command [5m, none]
+mail	reply to MAIL command [10m, 5m]
+rcpt	reply to RCPT command [1h, 5m]
+datainit	reply to DATA command [5m, 2m]
+datablock	data block read [1h, 3m]
+datafinal	reply to final ``.'' in data [1h, 10m]
+rset	reply to RSET command [5m, none]
+quit	reply to QUIT command [2m, none]
+misc	reply to random short commands (NOOP, VERB, etc.) [2m, none]
+command	command read [1h, 5m]
+.)b
+All but
+.q command
+apply to client SMTP.
+For back compatibility,
+a timeout with no ``keyword='' part
+will set all of the longer values.
 .ip s
 Be super-safe when running things,
 i.e.,
@@ -3353,8 +3433,8 @@ rather, they describe compatibility features
 which will probably be removed in future releases.
 .pp
 .q Old
-configuration files are defined as level one.
-Level two files make the following changes:
+configuration files are defined as version level one.
+Version level two files make the following changes:
 .np
 Host name canonification ($[ ... $])
 appends a dot if the name is recognized;
@@ -3367,10 +3447,10 @@ flag \*- you can reset it to anything you prefer
 by declaring the map explicitly.)
 .np
 Default host name extension is consistent throughout processing;
-level one configurations turned off domain extension
+version level one configurations turned off domain extension
 (that is, adding the local domain name)
 during certain points in processing.
-Level two configurations are expected to include a trailing dot
+Version level two configurations are expected to include a trailing dot
 to indicate that the name is already canonical.
 .np
 Local names that are not aliases
@@ -3394,10 +3474,21 @@ but mail sent to
 .q vikki@localhost
 was delivered directly.
 .pp
-Level three files
+Version level three files
 allow # initiated comments on all lines.
 Exceptions are backslash escaped # marks
 and the $# syntax.
+.pp
+Version level four configuration files
+send error messages with a return path of
+.q <>
+as permitted by RFC 821 section 3.6
+and required by RFC 1123 section 5.3.3.
+This is not the default
+because this breaks older configuration files.
+Note that the macro
+.b $n
+is still used to specify the envelope From: header value.
 .sh 3 "K \*- key file declaration"
 .pp
 Special maps can be defined using the line:
@@ -4474,6 +4565,10 @@ The maximum number of entries that will be processed
 in a single queue run.
 .ip "MAXMXHOSTS [20]"
 The maximum number of MX records we will accept for any single host.
+.ip "MAXIPADDR [16]"
+The maximum number of numeric IP addresses we will accept
+for this host.
+This does not limit the number the number of addresses for other hosts.
 .lp
 A number of other compilation options exist.
 These specify whether or not specific code should be compiled in.
@@ -5526,7 +5621,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.14
+.\"Version 6.15
 .\".ce 0
 .pn 2
 .bp
