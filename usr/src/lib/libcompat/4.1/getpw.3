@@ -1,0 +1,30 @@
+.\"	@(#)getpw.3	4.1 (Berkeley) %G%
+.\"
+.TH GETPW 3  deprecated
+.AT 3
+.SH NAME
+getpw \- get name from uid
+.SH SYNOPSIS
+.nf
+.B getpw(uid, buf)
+.B char *buf;
+.fi
+.SH DESCRIPTION
+.I Getpw
+searches the password file for
+the (numerical)
+.IR uid ", and fills in " "buf"
+with the corresponding line;
+it returns non-zero if
+.IR uid ""
+could not
+be found.
+The line is null-terminated.
+.SH FILES
+/etc/passwd
+.SH "SEE ALSO"
+getpwent(3),
+passwd(5)
+.SH DIAGNOSTICS
+Non-zero
+return on error.
