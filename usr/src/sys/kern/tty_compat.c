@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_compat.c	7.5 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.6 (Berkeley) %G%
  */
 
 /* 
@@ -135,7 +135,7 @@ ttcompat(tp, com, data, flag)
 		cc[VSUSP] = ltc->t_suspc;
 		cc[VDSUSP] = ltc->t_dsuspc;
 		cc[VREPRINT] = ltc->t_rprntc;
-		cc[VFLUSHO] = ltc->t_flushc;
+		cc[VDISCARD] = ltc->t_flushc;
 		cc[VWERASE] = ltc->t_werasc;
 		cc[VLNEXT] = ltc->t_lnextc;
 		break;
@@ -147,7 +147,7 @@ ttcompat(tp, com, data, flag)
 		ltc->t_suspc = cc[VSUSP];
 		ltc->t_dsuspc = cc[VDSUSP];
 		ltc->t_rprntc = cc[VREPRINT];
-		ltc->t_flushc = cc[VFLUSHO];
+		ltc->t_flushc = cc[VDISCARD];
 		ltc->t_werasc = cc[VWERASE];
 		ltc->t_lnextc = cc[VLNEXT];
 		break;
