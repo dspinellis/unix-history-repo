@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -71,7 +71,7 @@ main(argc, argv)
 	if (kvm_nlist(nl) == -1)
 		err("kvm_nlist: %s", kvm_geterr());
 	if (nl[X_MSGBUF].n_type == 0)
-		err("s: msgbufp not found", nlistf ? nlistf : "namelist");
+		err("%s: msgbufp not found", nlistf ? nlistf : "namelist");
 
         kvm_read((void *)nl[X_MSGBUF].n_value, (void *)&bufp, sizeof(bufp));
         kvm_read((void *)bufp, (void *)&cur, sizeof(cur));
