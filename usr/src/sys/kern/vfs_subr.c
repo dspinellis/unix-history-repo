@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.37 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.38 (Berkeley) %G%
  */
 
 /*
@@ -171,32 +171,15 @@ ndrele(ndp)
 struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops, spec_vnodeops;
 extern void vclean();
+long numvnodes;
 
 /*
  * Initialize the vnode structures and initialize each file system type.
  */
 vfsinit()
 {
-	register struct vnode *vp = vnode;
 	struct vfsops **vfsp;
 
-	/*
-	 * Build vnode free list.
-	 */
-	vfreeh = vp;
-	vfreet = &vp->v_freef;
-	vp->v_freeb = &vfreeh;
-	vp->v_op = &dead_vnodeops;
-	vp->v_type = VBAD;
-	for (vp++; vp < vnodeNVNODE; vp++) {
-		*vfreet = vp;
-		vp->v_freeb = vfreet;
-		vfreet = &vp->v_freef;
-		vp->v_op = &dead_vnodeops;
-		vp->v_type = VBAD;
-	}
-	vp--;
-	vp->v_freef = NULL;
 	/*
 	 * Initialize the vnode name cache
 	 */
@@ -222,28 +205,34 @@ getnewvnode(tag, mp, vops, vpp)
 {
 	register struct vnode *vp, *vq;
 
-	if ((vp = vfreeh) == NULL) {
-		tablefull("vnode");
-		*vpp = 0;
-		return (ENFILE);
+	if (numvnodes < desiredvnodes) {
+		vp = (struct vnode *)malloc(sizeof *vp, M_VNODE, M_WAITOK);
+		bzero((char *)vp, sizeof *vp);
+		numvnodes++;
+	} else {
+		if ((vp = vfreeh) == NULL) {
+			tablefull("vnode");
+			*vpp = 0;
+			return (ENFILE);
+		}
+		if (vp->v_usecount)
+			panic("free vnode isn't");
+		if (vq = vp->v_freef)
+			vq->v_freeb = &vfreeh;
+		else
+			vfreet = &vfreeh;
+		vfreeh = vq;
+		vp->v_freef = NULL;
+		vp->v_freeb = NULL;
+		if (vp->v_type != VBAD)
+			vgone(vp);
+		vp->v_flag = 0;
+		vp->v_shlockc = 0;
+		vp->v_exlockc = 0;
+		vp->v_lastr = 0;
+		vp->v_socket = 0;
 	}
-	if (vp->v_usecount)
-		panic("free vnode isn't");
-	if (vq = vp->v_freef)
-		vq->v_freeb = &vfreeh;
-	else
-		vfreet = &vfreeh;
-	vfreeh = vq;
-	vp->v_freef = NULL;
-	vp->v_freeb = NULL;
-	if (vp->v_type != VBAD)
-		vgone(vp);
 	vp->v_type = VNON;
-	vp->v_flag = 0;
-	vp->v_shlockc = 0;
-	vp->v_exlockc = 0;
-	vp->v_lastr = 0;
-	vp->v_socket = 0;
 	cache_purge(vp);
 	vp->v_tag = tag;
 	vp->v_op = vops;
