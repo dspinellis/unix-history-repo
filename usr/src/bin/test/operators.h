@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)operators.h	5.2 (Berkeley) %G%
+ *	@(#)operators.h	8.1 (Berkeley) %G%
  */
 
 #define	NOT		0
