@@ -7,7 +7,11 @@
 #
 #  This has been tested on Linux 0.99p10.
 #
-#	@(#)Makefile.Linux	8.4 (Berkeley) %G%
+#  Linux doesn't really have standard places to install things, so this
+#  Makefile is likely to require a lot of customization.  Read it over
+#  carefully before proceeding.
+#
+#	@(#)Makefile.Linux	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
