@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -43,7 +43,7 @@ main(argc, argv)
 	struct stat	from_sb, to_sb;
 	struct passwd	*pp;
 	struct group	*gp;
-	int	ch;
+	int	ch, devnull;
 	char	pbuf[MAXPATHLEN];
 
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
@@ -87,7 +87,9 @@ main(argc, argv)
 		fprintf(stderr, "install: fstat: %s: %s\n", argv[0], sys_errlist[errno]);
 		exit(1);
 	}
-	if (!(from_sb.st_mode & S_IFREG)) {
+	/* special case for removing files */
+	devnull = !strcmp(argv[0], "/dev/null");
+	if (!devnull && !(from_sb.st_mode & S_IFREG)) {
 		fprintf(stderr, "install: %s isn't a regular file.\n", argv[0]);
 		exit(1);
 	}
@@ -95,13 +97,15 @@ main(argc, argv)
 	/* build target path, find out if target is same as source */
 	if (!stat(path = argv[1], &to_sb)) {
 		if (to_sb.st_mode & S_IFDIR) {
-			(void)sprintf(path = pbuf, "%s/%s", argv[1], argv[0]);
+			char	*C, *rindex();
+
+			(void)sprintf(path = pbuf, "%s/%s", argv[1], (C = rindex(argv[0], '/')) ? ++C : argv[0]);
 			if (stat(path, &to_sb))
 				goto nocompare;
-			if (to_sb.st_mode & S_IFDIR) {
-				fprintf(stderr, "install: %s is a directory.\n", path);
-				exit(1);
-			}
+		}
+		if (!(to_sb.st_mode & S_IFREG)) {
+			fprintf(stderr, "install: %s isn't a regular file.\n", path);
+			exit(1);
 		}
 		if (to_sb.st_dev == from_sb.st_dev && to_sb.st_ino == from_sb.st_ino) {
 			fprintf(stderr, "install: %s and %s are the same file.\n", argv[0], path);
@@ -125,6 +129,9 @@ nocompare:
 		fprintf(stderr, "install: fchown: %s: %s\n", path, sys_errlist[errno]);
 		bad();
 	}
+
+	if (devnull)
+		exit(0);
 
 	if (dostrip) {
 		strip(to_fd, argv[0], path);
