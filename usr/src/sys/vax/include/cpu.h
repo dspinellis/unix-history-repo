@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	6.2 (Berkeley) %G%
+ *	@(#)cpu.h	6.3 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -28,7 +28,12 @@ union cpusid {
 			:8,
 			cp_type:8;		/* VAX_750 */
 	} cpu750;
-	/* need structure for 730 */
+	struct cpu730 {
+		u_int	:8,			/* reserved */
+			cp_urev:8,		/* ucode rev level */
+			:8,			/* reserved */
+			cp_type:8;		/* VAX_730 */
+	} cpu730;
 };
 #endif
 #define	VAX_780		1
