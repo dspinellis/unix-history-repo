@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.23 (Berkeley) %G%
+ *	@(#)ip_output.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -352,7 +352,7 @@ ip_ctloutput(op, so, level, optname, mp)
 	int error = 0;
 
 	if (level != IPPROTO_IP)
-		error = EINVAL;
+		goto freeit;
 	else switch (op) {
 
 	case PRCO_SETOPT:
@@ -405,6 +405,7 @@ ip_ctloutput(op, so, level, optname, mp)
 			break;
 #undef OPTSET
 
+		freeit:
 		default:
 			error = EINVAL;
 			break;
