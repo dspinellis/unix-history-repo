@@ -1,6 +1,6 @@
 # include	"../hdr/macros.h"
 
-SCCSID(@(#)date_ab.c	4.2);
+SCCSID(@(#)date_ab.c	4.3);
 
 /*
 	Function to convert date in the form "yymmddhhmmss" to
@@ -73,7 +73,8 @@ long *bdt;
 mosize(y,t)
 int y, t;
 {
-	extern int dmsize[];
+	static	int dmsize[12] =
+	    { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 	if(t==2 && dysize(y)==366) return(29);
 	return(dmsize[t-1]);
