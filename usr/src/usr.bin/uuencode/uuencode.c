@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuencode.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuencode.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -32,7 +32,7 @@ char **argv;
 		in = stdin;
 
 	if (argc != 2) {
-		printf("Usage: uuencode [infile] remotefile\n");
+		fprintf(stderr,"Usage: uuencode [infile] remotefile\n");
 		exit(2);
 	}
 
@@ -53,15 +53,15 @@ char **argv;
  * copy from in to out, encoding as you go along.
  */
 encode(in, out)
-FILE *in;
-FILE *out;
+register FILE *in;
+register FILE *out;
 {
 	char buf[80];
-	int i, n;
+	register int i, n;
 
 	for (;;) {
 		/* 1 (up to) 45 character line */
-		n = fr(in, buf, 45);
+		n = fread(buf, 1, 45, in);
 		putc(ENC(n), out);
 
 		for (i=0; i<n; i += 3)
@@ -77,10 +77,10 @@ FILE *out;
  * output one group of 3 bytes, pointed at by p, on file f.
  */
 outdec(p, f)
-char *p;
-FILE *f;
+register char *p;
+register FILE *f;
 {
-	int c1, c2, c3, c4;
+	register int c1, c2, c3, c4;
 
 	c1 = *p >> 2;
 	c2 = (*p << 4) & 060 | (p[1] >> 4) & 017;
@@ -90,22 +90,4 @@ FILE *f;
 	putc(ENC(c2), f);
 	putc(ENC(c3), f);
 	putc(ENC(c4), f);
-}
-
-/* fr: like read but stdio */
-int
-fr(fd, buf, cnt)
-FILE *fd;
-char *buf;
-int cnt;
-{
-	int c, i;
-
-	for (i=0; i<cnt; i++) {
-		c = getc(fd);
-		if (c == EOF)
-			return(i);
-		buf[i] = c;
-	}
-	return (cnt);
 }
