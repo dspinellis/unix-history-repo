@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.24 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.25 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -1181,8 +1181,7 @@ optim2( p ) register NODE *p; {
 	/* do local tree transformations and optimizations */
 
 	int o;
-	int result, i;
-	int lower, upper;
+	int i;
 	register NODE *l, *r;
 
 	switch( o = p->in.op ) {
@@ -1197,7 +1196,18 @@ optim2( p ) register NODE *p; {
 	case ASG AND:
 		/* change meaning of AND to ~R&L - bic on pdp11 */
 		r = p->in.right;
-		if( r->in.op==ICON && r->in.name[0]==0 ) { /* complement constant */
+		if( r->in.op==ICON && r->in.name[0]==0 ) {
+			/* check for degenerate operations */
+			l = p->in.left;
+			if( (i = (r->tn.lval & (1 << tlen(l) * SZCHAR) - 1)) == 0 )
+				goto zero;
+			else if( i == (1 << tlen(l) * SZCHAR) - 1 ) {
+				r->in.op = FREE;
+				ncopy(p, l);
+				l->in.op = FREE;
+				break;
+				}
+			/* complement constant */
 			r->tn.lval = ~r->tn.lval;
 			}
 		else if( r->in.op==COMPL ) { /* ~~A => A */
@@ -1259,86 +1269,226 @@ optim2( p ) register NODE *p; {
 	case ULT:
 	case UGE:
 	case UGT:
-		o -= (UGE-GE);
+		p->in.op -= (UGE-GE);
+		if( degenerate(p) )
+			break;
+		p->in.op += (UGE-GE);
+		break;
+
 	case EQ:
 	case NE:
 	case LE:
 	case LT:
 	case GE:
 	case GT:
-		r = p->in.right;
+		(void) degenerate(p);
+		break;
+
+	case DIV:
+		if( p->in.right->in.op == ICON &&
+		    p->in.right->tn.name[0] == '\0' &&
+		    ISUNSIGNED(p->in.right->in.type) &&
+		    (unsigned) p->in.right->tn.lval >= 0x80000000 ) {
+			/* easy to do here, harder to do in zzzcode() */
+			p->in.op = UGE;
+			break;
+			}
+	case MOD:
+	case ASG DIV:
+	case ASG MOD:
+		/*
+		 * optimize DIV and MOD
+		 *
+		 * basically we spot UCHAR and USHORT and try to do them
+		 * as signed ints...  apparently div+mul+sub is always
+		 * faster than ediv for finding MOD on the VAX, when
+		 * full unsigned MOD isn't needed.
+		 *
+		 * a curious fact: for MOD, cmp+sub and cmp+sub+cmp+sub
+		 * are faster for unsigned dividend and a constant divisor
+		 * in the right range (.5 to 1 of dividend's range for the
+		 * first, .333+ to .5 for the second).  full unsigned is
+		 * already done cmp+sub in the appropriate case; the
+		 * other cases are less common and require more ambition.
+		 */
+		if( degenerate(p) )
+			break;
 		l = p->in.left;
-		if( r->in.op != ICON ||
-		    r->tn.name[0] != '\0' ||
-		    tlen(l) >= tlen(r) )
+		r = p->in.right;
+		if( !ISUNSIGNED(r->in.type) ||
+		    tlen(l) >= SZINT/SZCHAR ||
+		    !(tlen(r) < SZINT/SZCHAR ||
+		      (r->in.op == ICON && r->tn.name[0] == '\0')) )
 			break;
-		switch( l->in.type ) {
-		case CHAR:
-			lower = -(1 << SZCHAR - 1);
-			upper = (1 << SZCHAR - 1) - 1;
-			break;
-		case UCHAR:
-			lower = 0;
-			upper = (1 << SZCHAR) - 1;
-			break;
-		case SHORT:
-			lower = -(1 << SZSHORT - 1);
-			upper = (1 << SZSHORT - 1) - 1;
-			break;
-		case USHORT:
-			lower = 0;
-			upper = (1 << SZSHORT) - 1;
-			break;
-		default:
-			cerror("unsupported OPLOG in optim2");
-			}
-		result = -1;
-		i = r->tn.lval;
-		switch( o ) {
-		case EQ:
-		case NE:
-			if( lower == 0 && (unsigned) i > upper )
-				result = o == NE;
-			else if( i < lower || i > upper )
-				result = o == NE;
-			break;
-		case LT:
-		case GE:
-			if( lower == 0 && (unsigned) i > upper )
-				result = o == LT;
-			else if( i <= lower )
-				result = o != LT;
-			else if( i > upper )
-				result = o == LT;
-			break;
-		case LE:
-		case GT:
-			if( lower == 0 && (unsigned) i >= upper )
-				result = o == LE;
-			else if( i < lower )
-				result = o != LE;
-			else if( i >= upper )
-				result = o == LE;
-			break;
-			}
-		if( result == -1 )
-			break;
-			
-		if( tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
-			l->in.op = FREE;
-			ncopy(p, r);
-			r->in.op = FREE;
-			p->tn.type = INT;
-			p->tn.lval = result;
-			}
-		else {
-			p->in.op = COMOP;
-			p->in.type = INT;
+		if( r->in.op == ICON )
 			r->tn.type = INT;
-			r->tn.lval = result;
+		else {
+			NODE *t = talloc();
+			t->in.left = r;
+			r = t;
+			r->in.op = SCONV;
+			r->in.type = INT;
+			r->in.right = 0;
+			p->in.right = r;
+			}
+		if( o == DIV || o == MOD ) {
+			NODE *t = talloc();
+			t->in.left = l;
+			l = t;
+			l->in.op = SCONV;
+			l->in.type = INT;
+			l->in.right = 0;
+			p->in.left = l;
+			}
+		/* handle asgops in table */
+		break;
+
+	case RS:
+	case ASG RS:
+	case LS:
+	case ASG LS:
+		/* pick up degenerate shifts */
+		l = p->in.left;
+		r = p->in.right;
+		if( !(r->in.op == ICON && r->tn.name[0] == '\0') )
+			break;
+		i = r->tn.lval;
+		if( i < 0 )
+			/* front end 'fixes' this? */
+			if( o == LS || o == ASG LS )
+				o += (RS-LS);
+			else
+				o += (LS-RS);
+		if( (o == RS || o == ASG RS) &&
+		    !ISUNSIGNED(l->in.type) )
+			/* can't optimize signed right shifts */
+			break;
+		if( i < tlen(l) * SZCHAR )
+			break;
+	zero:
+		if( !asgop( o ) )
+			if( tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
+				/* no side effects */
+				l->in.op = FREE;
+				ncopy(p, r);
+				r->in.op = FREE;
+				p->tn.lval = 0;
+				}
+			else {
+				p->in.op = COMOP;
+				r->in.lval = 0;
+				}
+		else {
+			p->in.op = ASSIGN;
+			r->tn.lval = 0;
 			}
 		break;
 		}
+	}
+
+degenerate(p) register NODE *p; {
+	int o;
+	int result, i;
+	int lower, upper;
+	register NODE *l, *r;
+
+	/*
+	 * try to keep degenerate comparisons with constants
+	 * out of the table.
+	 */
+	r = p->in.right;
+	l = p->in.left;
+	if( r->in.op != ICON ||
+	    r->tn.name[0] != '\0' ||
+	    tlen(l) >= tlen(r) )
+		return (0);
+	switch( l->in.type ) {
+	case CHAR:
+		lower = -(1 << SZCHAR - 1);
+		upper = (1 << SZCHAR - 1) - 1;
+		break;
+	case UCHAR:
+		lower = 0;
+		upper = (1 << SZCHAR) - 1;
+		break;
+	case SHORT:
+		lower = -(1 << SZSHORT - 1);
+		upper = (1 << SZSHORT - 1) - 1;
+		break;
+	case USHORT:
+		lower = 0;
+		upper = (1 << SZSHORT) - 1;
+		break;
+	default:
+		cerror("unsupported OPLOG in optim2");
+		}
+	i = r->tn.lval;
+	switch( o = p->in.op ) {
+	case DIV:
+	case ASG DIV:
+	case MOD:
+	case ASG MOD:
+		/* DIV and MOD work like EQ */
+	case EQ:
+	case NE:
+		if( lower == 0 && (unsigned) i > upper )
+			result = o == NE;
+		else if( i < lower || i > upper )
+			result = o == NE;
+		else
+			return (0);
+		break;
+	case LT:
+	case GE:
+		if( lower == 0 && (unsigned) i > upper )
+			result = o == LT;
+		else if( i <= lower )
+			result = o != LT;
+		else if( i > upper )
+			result = o == LT;
+		else
+			return (0);
+		break;
+	case LE:
+	case GT:
+		if( lower == 0 && (unsigned) i >= upper )
+			result = o == LE;
+		else if( i < lower )
+			result = o != LE;
+		else if( i >= upper )
+			result = o == LE;
+		else
+			return (0);
+		break;
+	default:
+		cerror("unknown op in degenerate()");
+		}
+		
+	if( o == MOD || o == ASG MOD ) {
+		r->in.op = FREE;
+		ncopy(p, l);
+		l->in.op = FREE;
+		}
+	else if( o != ASG DIV && tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
+		/* no side effects */
+		l->in.op = FREE;
+		ncopy(p, r);
+		r->in.op = FREE;
+		p->tn.lval = result;
+		}
+	else {
+		if( o == ASG DIV )
+			p->in.op = ASSIGN;
+		else {
+			p->in.op = COMOP;
+			r->tn.type = INT;
+			}
+		r->tn.lval = result;
+		}
+	if( logop(o) )
+		p->in.type = INT;
+
+	return (1);
 	}
 
 /*ARGSUSED*/
@@ -1395,15 +1545,13 @@ hardops(p)  register NODE *p; {
 	return;
 
 	convert:
-	if( p->in.right->in.op == ICON && p->in.right->tn.name[0] == '\0' ) {
+	if( p->in.right->in.op == ICON && p->in.right->tn.name[0] == '\0' )
 		/* 'J', 'K' in zzzcode() -- assumes DIV or MOD operations */
 		/* save a subroutine call -- use at most 5 instructions */
-		if( p->in.op == DIV &&
-		     (unsigned) p->in.right->tn.lval >= 0x80000000 )
-			/* easy to do here, harder to do in zzzcode() */
-			p->in.op = UGE;
 		return;
-		}
+	if( tlen(p->in.left) < SZINT/SZCHAR && tlen(p->in.right) < SZINT/SZCHAR )
+		/* optim2() will modify the op into an ordinary int op */
+		return;
 	if( asgop( o ) ) {
 		old = NIL;
 		switch( p->in.left->in.op ){
