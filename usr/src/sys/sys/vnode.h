@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.42 (Berkeley) %G%
+ *	@(#)vnode.h	7.43 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -90,7 +90,7 @@ struct vattr {
 	gid_t		va_gid;		/* owner group id */
 	long		va_fsid;	/* file system id (dev for now) */
 	long		va_fileid;	/* file id */
-	u_quad		va_qsize;	/* file size in bytes */
+	u_quad_t	va_qsize;	/* file size in bytes */
 	long		va_blocksize;	/* blocksize preferred for i/o */
 	struct timeval	va_atime;	/* time of last access */
 	struct timeval	va_mtime;	/* time of last modification */
@@ -99,18 +99,17 @@ struct vattr {
 	u_long		va_flags;	/* flags defined for file */
 	dev_t		va_rdev;	/* device the special file represents */
 	short		va_pad;		/* pad out to long */
-	u_quad		va_qbytes;	/* bytes of disk space held by file */
+	u_quad_t	va_qbytes;	/* bytes of disk space held by file */
+	u_quad_t	va_filerev;	/* file modification number */
 };
-#if BYTE_ORDER == LITTLE_ENDIAN
-#define	va_size		va_qsize.val[0]
-#define	va_size_rsv	va_qsize.val[1]
-#define	va_bytes	va_qbytes.val[0]
-#define	va_bytes_rsv	va_qbytes.val[1]
+#ifdef _NOQUAD
+#define va_size		va_qsize.val[_QUAD_LOWWORD]
+#define va_size_rsv	va_qsize.val[_QUAD_HIGHWORD]
+#define va_bytes	va_qbytes.val[_QUAD_LOWWORD]
+#define va_bytes_rsv	va_qbytes.val[_QUAD_HIGHWORD]
 #else
-#define	va_size		va_qsize.val[1]
-#define	va_size_rsv	va_qsize.val[0]
-#define	va_bytes	va_qbytes.val[1]
-#define	va_bytes_rsv	va_qbytes.val[0]
+#define va_size		va_qsize
+#define va_bytes	va_qbytes
 #endif
 
 /*
@@ -257,7 +256,7 @@ struct vnodeops {
 /*
  * Token indicating no attribute value yet assigned
  */
-#define	VNOVAL	((unsigned)0xffffffff)
+#define	VNOVAL	(-1)
 
 #ifdef KERNEL
 /*
