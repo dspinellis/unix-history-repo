@@ -1,4 +1,4 @@
-.\"	@(#)ae1	5.1 (Berkeley) %G%
+.\"	@(#)ae1	6.1 (Berkeley) %G%
 .\"
 .NH
 INTRODUCTION
@@ -12,19 +12,36 @@ make the most effective use of them.
 In particular, people who are not computer specialists _
 typists, secretaries, casual users _
 often use the system less effectively than they might.
+(There is a good argument that new users would better use their time
+learning a display editor, like 
+.ul
+vi,
+or perhaps a version of
+.ul
+emacs,
+like
+.ul
+jove,
+rather than an editor as ignorant of display terminals as 
+.ul
+ed.)
 .PP
 This document is intended as a sequel to
 .ul
 A Tutorial Introduction to the UNIX Text Editor
 [1],
-providing explanations and examples of how to edit with less effort.
+providing explanations and examples of how to edit using
+.ul
+ed
+with less effort.
 (You should also be familiar with the material in
 .ul
 UNIX For Beginners
 [2].)
 Further information on all commands discussed here can be found in
+section 1 of the 
 .ul
-The UNIX Programmer's Manual
+The UNIX User's Manual
 [3].
 .PP
 Examples are based on observations
