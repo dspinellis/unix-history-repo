@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.25 (Berkeley) %G%
+ *	@(#)sendmail.h	8.26 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.25		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.26		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -755,7 +755,7 @@ EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	NoAlias;	/* suppress aliasing */
 EXTERN bool	UseNameServer;	/* use internet domain name server */
 EXTERN bool	SevenBit;	/* force 7-bit data */
-EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
+EXTERN time_t	SafeAlias;	/* interval to wait until @:@ in alias file */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN uid_t	RealUid;	/* when Daemon, real uid of caller */
