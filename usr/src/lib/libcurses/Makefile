@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -39,18 +39,18 @@ MAN=	curses.0
 	@ld -x -r $*.o
 	@mv a.out $*.o
 
-all: libcurses libcurses_p
+all: libcurses.a libcurses_p.a
 
-libcurses libcurses_p: ${OBJS}
-	@echo building profiled libcurses
-	@cd profiled; ar cu ../libcurses_p ${OBJS}
-	ranlib libcurses_p
+libcurses.a libcurses_p.a: ${OBJS}
 	@echo building normal libcurses
-	@ar cu libcurses ${OBJS}
-	ranlib libcurses
+	@ar cu libcurses.a ${OBJS}
+	ranlib libcurses.a
+	@echo building profiled libcurses
+	@cd profiled; ar cu ../libcurses_p.a ${OBJS}
+	ranlib libcurses_p.a
 
 clean:
-	rm -f ${OBJS} profiled/*.o libcurses libcurses_p
+	rm -f ${OBJS} profiled/*.o libcurses.a libcurses_p.a
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -60,10 +60,10 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat3
-	install -o bin -g bin -m 644 libcurses ${DESTDIR}/usr/lib/libcurses.a
-	ranlib ${DESTDIR}/usr/lib/libcurses.a
-	install -o bin -g bin -m 644 libcurses_p ${DESTDIR}/usr/lib/libcurses_p.a
-	ranlib ${DESTDIR}/usr/lib/libcurses_p.a
+	install -o bin -g bin -m 644 libcurses.a ${DESTDIR}/usr/lib
+	ranlib -t ${DESTDIR}/usr/lib/libcurses.a
+	install -o bin -g bin -m 644 libcurses_p.a ${DESTDIR}/usr/lib
+	ranlib -t ${DESTDIR}/usr/lib/libcurses_p.a
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
