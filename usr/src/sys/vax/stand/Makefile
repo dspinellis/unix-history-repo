@@ -1,4 +1,4 @@
-#	Makefile	4.27	83/02/18
+#	Makefile	4.28	83/02/20
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -17,7 +17,7 @@ NEWDRIVERS=hp.new.o up.new.o
 
 ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
 	format tpformat drtest boothp boothk bootup bootra bootrl \
-	730boot 730copy
+	730boot 730copy 730format 730drtest
 
 all: ${ALL}
 
@@ -53,11 +53,8 @@ tpboot.o: saio.h ../h/reboot.h ../h/vm.h
 	cc -c -O -DJUSTASK tpboot.c
 	rm tpboot.c
 
-tpcopy:	copy.c tpsrt0.o /usr/lib/libsa.a
-	cp copy.c tpcopy.c; chmod +w tpcopy.c
-	cc -c -O tpcopy.c
-	rm tpcopy.c
-	ld -N tpsrt0.o tpcopy.o -lsa -lc
+tpcopy:	copy.o tpsrt0.o /usr/lib/libsa.a
+	ld -N tpsrt0.o copy.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
 
 tpformat: format.c tpsrt0.o /usr/lib/libsa.a
@@ -103,16 +100,22 @@ dkbad.o: ../vax/dkbad.c
 730bootconf.o: ../h/fs.h saio.h
 	cp conf.c 730bootconf.c
 	cc -c ${730OPTS} -DBOOT 730bootconf.c
-	rm 730bootconf.c
+	rm -f 730bootconf.c
 
 730copy: copy.o srt0.o 730conf.o /usr/lib/libsa.a
 	ld -N -o 730copy srt0.o copy.o 730conf.o -lsa -lc
+
+730drtest: drtest.o srt0.o confup.o up.new.o dkbad.o /usr/lib/libsa.a
+	ld -N -o 730drtest srt0.o drtest.o confup.o up.new.o dkbad.o -lsa -lc
+
+730format: format.o srt0.o confup.o up.new.o dkbad.o /usr/lib/libsa.a
+	ld -N -o 730format srt0.o format.o confup.o up.new.o dkbad.o -lsa -lc
 
 730conf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 730conf.o: ../h/fs.h saio.h
 	cp conf.c 730conf.c
 	cc -c ${730OPTS} -DBOOT 730conf.c
-	rm 730conf.c
+	rm -f 730conf.c
 
 # bootstrap from ether
 
@@ -124,68 +127,49 @@ boothk: relsrt0.o boothk.o confrk.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm b.out
 
-boothk.o: bootxx.c
-	cc -c -S ${COPTS} -DBOOTRK bootxx.c
-	/lib/c2 -i bootxx.s | as -o boothk.o
-	rm -f bootxx.s
-
 boothp: relsrt0.o boothp.o confhp.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm b.out
-
-boothp.o: bootxx.c
-	cc -c -S ${COPTS} -DBOOTHP bootxx.c
-	/lib/c2 -i bootxx.s | as -o boothp.o
-	rm -f bootxx.s
 
 bootup: relsrt0.o bootup.o confup.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm b.out
 
-bootup.o: bootxx.c
-	cc -c -S ${COPTS} -DBOOTUP bootxx.c
-	/lib/c2 -i bootxx.s | as -o bootup.o
-	rm -f bootxx.s
-
 bootra: relsrt0.o bootra.o confra.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootra ibs=32 skip=1;rm b.out
-
-bootra.o: bootxx.c
-	cc -c -S ${COPTS} -DBOOTRA bootxx.c
-	/lib/c2 -i bootxx.s | as -o bootra.o
-	rm -f bootxx.s
 
 bootrl: relsrt0.o bootrl.o confrl.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootrl.o confra.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootrl ibs=32 skip=1;rm b.out
 
-bootrl.o: bootxx.c
-	cc -c -S ${COPTS} -DBOOTRL bootxx.c
-	/lib/c2 -i bootxx.s | as -o bootrl.o
-	rm -f bootxx.s
-
-boothp.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
+boothp.o: boothp.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 boothp.o: ../h/fs.h saio.h
-boothk.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
+boothk.o: boothk.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 boothk.o: ../h/fs.h saio.h
-bootup.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
+bootup.o: bootup.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 bootup.o: ../h/fs.h saio.h
-bootra.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
+bootra.o: bootra.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 bootra.o: ../h/fs.h saio.h
-bootrl.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
+bootrl.o: bootrl.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 bootrl.o: ../h/fs.h saio.h
 
+boothk.c: bootxx.c
+	sed -e 's/xx/hk/g' <bootxx.c >boothk.c
+boothp.c: bootxx.c
+	sed -e 's/xx/hp/g' <bootxx.c >boothp.c
+bootup.c: bootxx.c
+	sed -e 's/xx/up/g' <bootxx.c >bootup.c
+bootra.c: bootxx.c
+	sed -e 's/xx/ra/g' <bootxx.c >bootra.c
+bootrl.c: bootxx.c
+	sed -e 's/xx/rl/g' <bootxx.c >bootrl.c
+
 confrk.o: confrk.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-	${CC} -c ${CFLAGS} confrk.c
 confhp.o: confhp.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-	${CC} -c ${CFLAGS} confhp.c
 confup.o: confup.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-	${CC} -c ${CFLAGS} confup.c
 confra.o: confra.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-	${CC} -c ${CFLAGS} confra.c
 confrl.o: confrl.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-	${CC} -c ${CFLAGS} confrl.c
 
 confrk.c: confxx.c
 	sed -e 's/XX/hk/' -e 's/xx/rk/g' <confxx.c >confrk.c
@@ -208,9 +192,9 @@ print:
 clean:
 	rm -f *.o *.exe *.i errs
 	rm -f a.out b.out boot cat tpboot tpcopy copy tpformat
-	rm -f boot[a-z]? conf[a-wyz][a-z].c
+	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c
-	rm -f 730boot 730copy
+	rm -f 730boot 730copy 730drtest 730format
 
 lint:
 	lint ${COPTS} -hxbn boot.c ${SRCS} | \
@@ -229,10 +213,12 @@ install: ${ALL}
 		dd if=a.out of=../cassette/copy bs=32 skip=1
 	cp format a.out; strip a.out; \
 		dd if=a.out of=../floppy/format bs=32 skip=1
-	cp ../floppy/format ../cassette/format
+	cp 730format a.out; strip a.out; \
+		dd if=a.out of=../cassette/format bs=32 skip=1
 	cp drtest a.out; strip a.out; \
 		dd if=a.out of=../floppy/drtest bs=32 skip=1
-	cp ../floppy/drtest ../cassette/drtest
+	cp 730drtest a.out; strip a.out; \
+		dd if=a.out of=../cassette/drtest bs=32 skip=1
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
 
 # beware...
