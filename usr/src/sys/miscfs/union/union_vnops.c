@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	1.6 (Berkeley) %G%
+ *	@(#)union_vnops.c	1.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -54,18 +54,17 @@ union_lookup1(udvp, dvp, vpp, cnp)
 			VOP_LOCK(dvp);
 		}
 	}
-	
+
         error = VOP_LOOKUP(dvp, &tdvp, cnp);
 	if (error)
 		return (error);
 
 	/*
-	 * If going back up the directory tree, then the parent directory
-	 * will have been unlocked, unless lookup found the last
-	 * component.  In which case, re-lock the node here to allow
-	 * it to be unlocked again (phew) in union_lookup.
+	 * The parent directory will have been unlocked, unless lookup
+	 * found the last component.  In which case, re-lock the node
+	 * here to allow it to be unlocked again (phew) in union_lookup.
 	 */
-	if ((cnp->cn_flags & ISDOTDOT) && !(cnp->cn_flags & ISLASTCN))
+	if (dvp != tdvp && !(cnp->cn_flags & ISLASTCN))
 		VOP_LOCK(dvp);
 
 	dvp = tdvp;
@@ -203,9 +202,10 @@ union_lookup(ap)
 	 *    whatever the bottom layer returned.
 	 */
 
+	*ap->a_vpp = NULLVP;
+
 	/* case 1. */
 	if ((uerror != 0) && (lerror != 0)) {
-		*ap->a_vpp = NULLVP;
 		return (uerror);
 	}
 
@@ -370,7 +370,7 @@ union_open(ap)
 			 * be a loopback mount of some other filesystem...
 			 * so open the file with exclusive create and barf if
 			 * it already exists.
-			 * XXX - perhaps shoudl re-lookup the node (once more
+			 * XXX - perhaps should re-lookup the node (once more
 			 * with feeling) and simply open that.  Who knows.
 			 */
 			error = union_vn_create(&vp, un, p);
@@ -402,10 +402,10 @@ union_open(ap)
 					VOP_UNLOCK(tvp);
 				}
 				VOP_UNLOCK(un->un_uppervp);
-				(void) VOP_CLOSE(un->un_uppervp, FWRITE);
+				union_vn_close(un->un_uppervp, FWRITE);
 				VOP_LOCK(un->un_uppervp);
 				if (!error)
-					uprintf("union: copied up\n",
+					uprintf("union: copied up %s\n",
 								un->un_path);
 			}
 
@@ -417,18 +417,18 @@ union_open(ap)
 			 * the right thing with (cred) and (FREAD) though.
 			 * Ignoring error returns is not righ, either.
 			 */
-			for (i = 0; i < un->un_open; i++) {
+			for (i = 0; i < un->un_openl; i++) {
 				(void) VOP_CLOSE(tvp, FREAD);
 				(void) VOP_OPEN(un->un_uppervp, FREAD, cred, p);
 			}
-			un->un_open = 0;
+			un->un_openl = 0;
 
 			if (error == 0)
 				error = VOP_OPEN(un->un_uppervp, mode, cred, p);
 			VOP_UNLOCK(un->un_uppervp);
 			return (error);
 		}
-		un->un_open++;
+		un->un_openl++;
 	}
 
 	VOP_LOCK(tvp);
@@ -453,14 +453,14 @@ union_close(ap)
 	if (un->un_uppervp) {
 		vp = un->un_uppervp;
 	} else {
-#ifdef DIAGNOSTIC
-		if (un->un_open <= 0)
-			panic("union: un_open cnt");
+#ifdef UNION_DIAGNOSTIC
+		if (un->un_openl <= 0)
+			panic("union: un_openl cnt");
 #endif
-		--un->un_open;
+		--un->un_openl;
 		vp = un->un_lowervp;
 	}
-	
+
 	return (VOP_CLOSE(vp, ap->a_fflag, ap->a_cred, ap->a_p));
 }
 
@@ -698,6 +698,12 @@ union_remove(ap)
 		vput(ap->a_vp);
 
 		error = VOP_REMOVE(dvp, vp, ap->a_cnp);
+		if (!error)
+			union_removed_upper(un);
+
+		/*
+		 * XXX: should create a whiteout here
+		 */
 	} else {
 		/*
 		 * XXX: should create a whiteout here
@@ -891,6 +897,12 @@ union_rmdir(ap)
 		vput(ap->a_vp);
 
 		error = VOP_REMOVE(dvp, vp, ap->a_cnp);
+		if (!error)
+			union_removed_upper(un);
+
+		/*
+		 * XXX: should create a whiteout here
+		 */
 	} else {
 		/*
 		 * XXX: should create a whiteout here
@@ -1023,7 +1035,7 @@ union_inactive(ap)
 	 * That's too much work for now.
 	 */
 
-#ifdef DIAGNOSTIC
+#ifdef UNION_DIAGNOSTIC
 	struct union_node *un = VTOUNION(ap->a_vp);
 
 	if (un->un_flags & UN_LOCKED)
