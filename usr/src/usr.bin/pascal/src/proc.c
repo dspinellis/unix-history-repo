@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c 2.1 %G%";
+static char sccsid[] = "@(#)proc.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -735,15 +735,35 @@ proc(r)
 				 * var := file ^;
 				 */
 				if (file != NIL)
-					(void) stklval(file, NIL );
+				    (void) stklval(file, NIL);
 				else /* Magic */
-					(void) put(2, PTR_RV, (int)input->value[0]);
+				    (void) put(2, PTR_RV, (int)input->value[0]);
 				(void) put(1, O_FNIL);
-				(void) put(2, O_IND, width(filetype));
-				convert(filetype, ap);
-				if (isa(ap, "bsci"))
-					rangechk(ap, ap);
-				(void) put(2, O_AS, width(ap));
+				if (isa(filetype, "bcsi")) {
+				    int filewidth = width(filetype);
+
+				    switch (filewidth) {
+					case 4:
+					    (void) put(1, O_IND4);
+					    break;
+					case 2:
+					    (void) put(1, O_IND2);
+					    break;
+					case 1:
+					    (void) put(1, O_IND1);
+					    break;
+					default:
+					    (void) put(2, O_IND, filewidth);
+				    }
+				    convert(filetype, ap);
+				    rangechk(ap, ap);
+				    (void) gen(O_AS2, O_AS2,
+					    filewidth, width(ap));
+				} else {
+				    (void) put(2, O_IND, width(filetype));
+				    convert(filetype, ap);
+				    (void) put(2, O_AS, width(ap));
+				}
 				/*
 				 * get(file);
 				 */
