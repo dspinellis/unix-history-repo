@@ -361,7 +361,7 @@ rop(c)
 		value(READONLY) = ovro;
 		denied = 0;
 	}
-	if (c != 'r' && (stbuf.st_mode & 0222) == 0 || access(file, 2) < 0) {
+	if (c != 'r' && ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0)) {
 		ovro = value(READONLY);
 		denied = 1;
 		value(READONLY) = 1;
