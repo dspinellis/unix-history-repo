@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socketvar.h	7.17 (Berkeley) %G%
+ *	@(#)socketvar.h	7.18 (Berkeley) %G%
  */
 
 /*
