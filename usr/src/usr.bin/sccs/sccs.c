@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.38 %G%";
+static char SccsId[] = "@(#)sccs.c	1.39 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -120,11 +120,11 @@ static char SccsId[] = "@(#)sccs.c	1.38 %G%";
 
 /****************  End of Configuration Information  ****************/
 
-# define bitset(bit, word)	((bit) & (word))
-
 typedef char	bool;
 # define TRUE	1
 # define FALSE	0
+
+# define bitset(bit, word)	((bool) ((bit) & (word)))
 
 # ifdef UIDUSER
 # include <pwd.h>
@@ -329,7 +329,8 @@ command(argv, forkflag, editflag, arg0)
 
 	/*
 	**  Copy arguments.
-	**	Phase one -- from arg0 & if necessary argv[0].
+	**	Copy from arg0 & if necessary at most one arg
+	**	from argv[0].
 	*/
 
 	np = ap = &nav[1];
@@ -398,6 +399,7 @@ command(argv, forkflag, editflag, arg0)
 		break;
 
 	  case CMACRO:		/* command macro */
+		/* step through & execute each part of the macro */
 		for (p = cmd->sccspath; *p != '\0'; p++)
 		{
 			q = p;
@@ -416,9 +418,15 @@ command(argv, forkflag, editflag, arg0)
 			rval = EX_USAGE;
 			break;
 		}
+
+		/* get the version with all changes */
 		rval = command(&ap[1], TRUE, TRUE, "get -k");
+
+		/* now remove that version from the s-file */
 		if (rval == 0)
 			rval = command(&ap[1], TRUE, TRUE, "rmdel");
+
+		/* and edit the old version (but don't clobber new vers) */
 		if (rval == 0)
 			rval = command(&ap[2], FALSE, TRUE, "get -e -g");
 		break;
@@ -434,6 +442,8 @@ command(argv, forkflag, editflag, arg0)
 				*np++ = *argv;
 		}
 		*np = NULL;
+
+		/* get all the files that we unedited successfully */
 		if (i > 0)
 			rval = command(&ap[1], FALSE, FALSE, "get");
 		break;
@@ -447,6 +457,7 @@ command(argv, forkflag, editflag, arg0)
 		/* for each file, do the diff */
 		while (*np != NULL)
 		{
+			/* messy, but we need a null terminated argv */
 			*argv = *np++;
 			p = *np;
 			*np = NULL;
@@ -650,6 +661,7 @@ makefile(name)
 	**  Create the actual pathname.
 	*/
 
+	/* first the directory part */
 	if (name[0] != '/')
 	{
 		strcpy(buf, SccsDir);
@@ -657,16 +669,22 @@ makefile(name)
 	}
 	else
 		strcpy(buf, "");
+	
+	/* then the head of the pathname */
 	strncat(buf, name, p - name);
 	q = &buf[strlen(buf)];
 	strcpy(q, p);
 	if (strncmp(p, "s.", 2) != 0 && !isdir(buf))
 	{
+		/* sorry, no; copy the SCCS pathname & the "s." */
 		strcpy(q, SccsPath);
 		strcat(buf, "/s.");
+
+		/* and now the end of the name */
 		strcat(buf, p);
 	}
 
+	/* if i haven't changed it, why did I do all this? */
 	if (strcmp(buf, name) == 0)
 		p = name;
 
@@ -764,10 +782,15 @@ clean(mode)
 	bool gotedit;
 	FILE *pfp;
 
+	/*
+	**  Find and open the SCCS directory.
+	*/
+
 	strcpy(buf, SccsDir);
 	if (buf[0] != '\0')
 		strcat(buf, "/");
 	strcat(buf, SccsPath);
+
 	dirfd = fopen(buf, "r");
 	if (dirfd == NULL)
 	{
@@ -777,6 +800,8 @@ clean(mode)
 
 	/*
 	**  Scan the SCCS directory looking for s. files.
+	**	gotedit tells whether we have tried to clean any
+	**		files that are being edited.
 	*/
 
 	gotedit = FALSE;
@@ -797,6 +822,7 @@ clean(mode)
 		pfp = fopen(buf, "r");
 		if (pfp != NULL)
 		{
+			/* the file exists -- report it's contents */
 			while (fgets(pline, sizeof pline, pfp) != NULL)
 				printf("%12s: being edited: %s", basefile, pline);
 			fclose(pfp);
@@ -813,6 +839,7 @@ clean(mode)
 		}
 	}
 
+	/* cleanup & report results */
 	fclose(dirfd);
 	if (!gotedit && mode == INFOC)
 		printf("Nothing being edited\n");
@@ -876,7 +903,7 @@ unedit(fn)
 		return (FALSE);
 	}
 
-	/* turn "s." into "p." */
+	/* turn "s." into "p." & try to open it */
 	*++q = 'p';
 
 	pfp = fopen(pfn, "r");
@@ -886,10 +913,7 @@ unedit(fn)
 		return (FALSE);
 	}
 
-	/*
-	**  Copy p-file to temp file, doing deletions as needed.
-	*/
-
+	/* create temp file for editing p-file */
 	mktemp(tfn);
 	tfp = fopen(tfn, "w");
 	if (tfp == NULL)
@@ -898,6 +922,7 @@ unedit(fn)
 		exit(EX_OSERR);
 	}
 
+	/* figure out who I am */
 # ifdef UIDUSER
 	pw = getpwuid(getuid());
 	if (pw == NULL)
@@ -909,6 +934,11 @@ unedit(fn)
 # else
 	myname = getlogin();
 # endif UIDUSER
+
+	/*
+	**  Copy p-file to temp file, doing deletions as needed.
+	*/
+
 	while ((pent = getpfile(pfp)) != NULL)
 	{
 		if (strcmp(pent->p_user, myname) == 0)
@@ -918,6 +948,7 @@ unedit(fn)
 		}
 		else
 		{
+			/* output it again */
 			fprintf(tfp, "%s %s %s %s %s\n", pent->p_osid,
 			    pent->p_nsid, pent->p_user, pent->p_date,
 			    pent->p_time);
@@ -928,6 +959,7 @@ unedit(fn)
 	/* do final cleanup */
 	if (others)
 	{
+		/* copy it back (perhaps it should be linked?) */
 		if (freopen(tfn, "r", tfp) == NULL)
 		{
 			syserr("cannot reopen \"%s\"", tfn);
@@ -943,12 +975,14 @@ unedit(fn)
 	}
 	else
 	{
+		/* it's empty -- remove it */
 		unlink(pfn);
 	}
 	fclose(tfp);
 	fclose(pfp);
 	unlink(tfn);
 
+	/* actually remove the g-file */
 	if (delete)
 	{
 		unlink(tail(fn));
@@ -988,6 +1022,7 @@ dodiff(getv, gfile)
 	extern int errno;
 	int (*osig)();
 
+	/* create context for diff to run in */
 	if (pipe(pipev) < 0)
 	{
 		syserr("dodiff: pipe failed");
