@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)dosys.c	4.2 (Berkeley) 82/03/14";
 #include "defs"
 #include <signal.h>
 
@@ -145,7 +145,11 @@ struct stat stbuff;
 char junk[1];
 int fd;
 
+#if vax
+if (lstat(name, &stbuff) < 0)
+#else
 if( stat(name,&stbuff) < 0)
+#endif
 	if(force)
 		goto create;
 	else
