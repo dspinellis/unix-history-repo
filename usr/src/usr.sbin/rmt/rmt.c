@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmt.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)rmt.c	5.4 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/mtio.h>
 #include <errno.h>
+#include <string.h>
 
 int	tape = -1;
 
@@ -45,8 +46,6 @@ char	*checkbuf();
 char	device[SSIZE];
 char	count[SSIZE], mode[SSIZE], pos[SSIZE], op[SSIZE];
 
-extern	errno;
-char	*sys_errlist[];
 char	resp[BUFSIZ];
 
 long	lseek();
@@ -214,7 +213,7 @@ error(num)
 	int num;
 {
 
-	DEBUG2("rmtd: E %d (%s)\n", num, sys_errlist[num]);
-	(void) sprintf(resp, "E%d\n%s\n", num, sys_errlist[num]);
-	(void) write(1, resp, strlen (resp));
+	DEBUG2("rmtd: E %d (%s)\n", num, strerror(num));
+	(void) sprintf(resp, "E%d\n%s\n", num, strerror(num));
+	(void) write(1, resp, strlen(resp));
 }
