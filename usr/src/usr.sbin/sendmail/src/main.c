@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.128		%G%);
+SCCSID(@(#)main.c	3.129		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -144,6 +144,7 @@ main(argc, argv)
 	extern time_t convtime();
 	extern putheader(), putbody();
 	extern ENVELOPE *newenvelope();
+	extern intsig();
 
 	if (reenter)
 	{
@@ -158,10 +159,10 @@ main(argc, argv)
 	InChannel = stdin;
 	OutChannel = stdout;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		(void) signal(SIGINT, finis);
+		(void) signal(SIGINT, intsig);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
-		(void) signal(SIGHUP, finis);
-	(void) signal(SIGTERM, finis);
+		(void) signal(SIGHUP, intsig);
+	(void) signal(SIGTERM, intsig);
 	OldUmask = umask(0);
 	Mode = MD_DEFAULT;
 	MotherPid = getpid();
@@ -865,6 +866,26 @@ finis()
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
 # endif LOG
 	exit(ExitStat);
+}
+/*
+**  INTSIG -- clean up on interrupt
+**
+**	This just arranges to call finis.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Arranges to not unlink the qf and df files.
+*/
+
+intsig()
+{
+	CurEnv->e_df = CurEnv->e_qf = NULL;
+	finis();
 }
 /*
 **  OPENXSCRPT -- Open transcript file
