@@ -1,4 +1,4 @@
-/*	ffs_vfsops.c	6.6	84/07/08	*/
+/*	ffs_vfsops.c	6.7	84/07/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -44,7 +44,7 @@ smount()
 	if (fs == 0)
 		return;
 	(void) copyinstr(uap->freg, fs->fs_fsmnt, sizeof(fs->fs_fsmnt)-1, &len);
-	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - len);
+	bzero(fs->fs_fsmnt + len, sizeof (fs->fs_fsmnt) - len);
 }
 
 /* this routine has races if running twice */
