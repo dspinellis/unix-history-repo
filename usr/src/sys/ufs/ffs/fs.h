@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.13	%G%	*/
+/*	fs.h	1.14	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -171,6 +171,10 @@ struct	fs
 	short	fs_minfree;		/* minimum percentage of free blocks */
 	short	fs_rotdelay;		/* num of ms for optimal next block */
 	short	fs_rps;			/* disk revolutions per second */
+	long	fs_bmask;		/* ``blkoff'' calc of blk offsets */
+	long	fs_fmask;		/* ``fragoff'' calc of frag offsets */
+	short	fs_bshift;		/* ``lblkno'' calc of logical blkno */
+	short	fs_fshift;		/* ``numfrags'' calc number of frags */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
@@ -306,16 +310,34 @@ struct	cg {
 	((bno) * NSPF(fs) % (fs)->fs_nsect * NRPOS / (fs)->fs_nsect)
 
 /*
+ * The following macros optimize certain frequently calculated
+ * quantities by using shifts and masks in place of divisions
+ * modulos and multiplications.
+ */
+#define blkoff(fs, loc)		/* calculates (loc % fs->fs_bsize) */ \
+	((loc) & ~(fs)->fs_bmask)
+#define fragoff(fs, loc)	/* calculates (loc % fs->fs_fsize) */ \
+	((loc) & ~(fs)->fs_fmask)
+#define lblkno(fs, loc)		/* calculates (loc / fs->fs_bsize) */ \
+	((loc) >> (fs)->fs_bshift)
+#define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
+	((loc) >> (fs)->fs_fshift)
+#define blkroundup(fs, size)	/* calculates roundup(size, fs->fs_bsize) */ \
+	(((size) + (fs)->fs_bsize - 1) & (fs)->fs_bmask)
+#define fragroundup(fs, size)	/* calculates roundup(size, fs->fs_fsize) */ \
+	(((size) + (fs)->fs_fsize - 1) & (fs)->fs_fmask)
+
+/*
  * determining the size of a file block in the file system
  */
 #define blksize(fs, ip, lbn) \
 	(((lbn) >= NDADDR || (ip)->i_size >= ((lbn) + 1) * (fs)->fs_bsize) \
-		? (fs)->fs_bsize \
-		: (roundup((ip)->i_size % (fs)->fs_bsize, (fs)->fs_fsize)))
+	    ? (fs)->fs_bsize \
+	    : (fragroundup(fs, blkoff(fs, (ip)->i_size))))
 #define dblksize(fs, dip, lbn) \
 	(((lbn) >= NDADDR || (dip)->di_size >= ((lbn) + 1) * (fs)->fs_bsize) \
-		? (fs)->fs_bsize \
-		: (roundup((dip)->di_size % (fs)->fs_bsize, (fs)->fs_fsize)))
+	    ? (fs)->fs_bsize \
+	    : (fragroundup(fs, blkoff(fs, (dip)->di_size))))
 
 /*
  * number of disk sectors per block; assumes DEV_BSIZE byte sector size
