@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	6.19 (Berkeley) %G%
+ *	@(#)tty.c	6.20 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -675,7 +675,7 @@ ttyinput(c, tp)
 	 * Ignore any high bit added during
 	 * previous ttyinput processing.
 	 */
-	if ((tp->t_state&TS_TYPEN) == 0)
+	if ((tp->t_state&TS_TYPEN) == 0 && (t_flags&PASS8) == 0)
 		c &= 0177;
 	/*
 	 * Check for literal nexting very first
@@ -1161,7 +1161,7 @@ loop:
 		/*
 		 * Give user character.
 		 */
- 		error = ureadc(c & 0177, uio);
+ 		error = ureadc(t_flags&PASS8 ? c : c & 0177, uio);
 		if (error)
 			break;
  		if (uio->uio_resid == 0)

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	6.7 (Berkeley) %G%
+ *	@(#)dz.c	6.8 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -402,7 +402,7 @@ dzparam(unit)
 		return;
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
-	if (tp->t_flags & (RAW|LITOUT))
+	if (tp->t_flags & (RAW|LITOUT|PASS8))
 		lpr |= BITS8;
 	else
 		lpr |= (BITS7|PENABLE);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.8 (Berkeley) %G%
+ *	@(#)dmf.c	6.9 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -534,7 +534,7 @@ dmfparam(unit)
 	lcr = DMFLCR_ENA;
 	if ((tp->t_ispeed) == B134)
 		lpar |= BITS6|PENABLE;
-	else if (tp->t_flags & (RAW|LITOUT))
+	else if (tp->t_flags & (RAW|LITOUT|PASS8))
 		lpar |= BITS8;
 	else {
 		lpar |= BITS7|PENABLE;
