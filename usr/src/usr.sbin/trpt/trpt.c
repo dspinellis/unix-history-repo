@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	4.1 82/04/02";
+static char sccsid[] = "@(#)trpt.c	4.2 82/10/07";
 #endif
 
 #include <sys/param.h>
@@ -68,19 +68,15 @@ again:
 	read(0, tcp_debug, sizeof (tcp_debug));
 	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
 		struct tcp_debug *td = &tcp_debug[i];
-		ntime = td->td_time;
-#if vax
-		ntime = ntohl(ntime);
-#endif
+
+		ntime = ntohl(td->td_time);
 		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
 		    &td->td_ti, td->td_req);
 	}
 	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
 		struct tcp_debug *td = &tcp_debug[i];
-		ntime = td->td_time;
-#if vax
-		ntime = ntohl(ntime);
-#endif
+
+		ntime = ntohl(td->td_time);
 		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
 		    &td->td_ti, td->td_req);
 	}
@@ -97,7 +93,7 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 	int req;
 {
 	tcp_seq seq, ack;
-	int len, flags, win;
+	int len, flags, win, timer;
 	char *cp;
 
 	ptime(ntime);
@@ -111,7 +107,7 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 		ack = ti->ti_ack;
 		len = ti->ti_len;
 		win = ti->ti_win;
-#if vax
+#if vax || pdp11
 		if (act == TA_OUTPUT) {
 			seq = ntohl(seq);
 			ack = ntohl(ack);
@@ -138,9 +134,11 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 		break;
 
 	case TA_USER:
-		printf("%s", prurequests[req&0xff]);
-		if (req >> 8)
-			printf("<%s>", tcptimers[req>>8]);
+		timer = req >> 8;
+		req &= 0xff;
+		printf("%s", prurequests[req]);
+		if (req == PRU_SLOWTIMO || req == PRU_FASTTIMO)
+			printf("<%s>", tcptimers[timer]);
 		break;
 	}
 	printf(" -> %s", tcpstates[tp->t_state]);
