@@ -1,4 +1,4 @@
-/*	cons.c	7.4	89/11/22	*/
+/*	cons.c	7.5	90/01/17	*/
 
 /*
  * Tahoe console processor driver
@@ -199,6 +199,8 @@ cnrint(dev)
 	cnlast = &consin[unit].cp_hdr;
 
 	tp = cntty[unit];
+	if ((tp->t_cflag&CSIZE) != CS8)
+		c &= 0177;
 #ifdef KADB
 	if (unit == CPCONS && kdbrintr(c, tp))
 		return;
