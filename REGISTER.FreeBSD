@@ -1,0 +1,74 @@
+
+In the absence of any other mechanism for counting the number of users
+of FreeBSD, we ask you to please register with the counter set up by
+<Harald.T.Alvestrand@uninett.no>.  
+
+The reason for this counting is two things, firstly we sincerely do
+want to know what our user-base is, secondly a lot of people use this
+counter to measure the merits of the various PC-UNIX offerings.
+
+The FreeBSD team does not think this is a perfect way of doing things,
+but as I said, in the absence of any other mechanism.  But even as it 
+has shortcommings, it is usefull, and we thank Harald for his service.
+
+Included below is the blurp from the counter.
+
+Thanks in advance,
+
+				for the FreeBSD-team,
+				Poul-Henning Kamp <phk@login.dkuug.dk>
+
+
+How to get registered
+=====================
+
+In brief:
+
+  Send E-mail to bsd-counter@uninett.no with the SUBJECT line
+  
+    "I use FreeBSD at <place>"
+
+Introduction
+============
+The intention of this counting project is to count all users of UNIXes
+that are:
+
+ - BSD-derived
+ - Freely available
+
+The variants NetBSD, 386BSD and FreeBSD are currently distinguished.
+
+(NOTE: Linux is NOT BSD-derived. If you use that, send mail to
+linux-counter@uninett.no instead!!!)
+
+The information is *not* used for any purpose but statistics, and unless
+you request it, information about single persons are *never* made public.
+(A list of users who have requested publication is available from the
+FTP file ftp://aun.uninett.no/pub/misc/386bsd/persons)
+
+How to register
+===============
+Send E-mail to bsd-counter@uninett.no
+
+The subject should be
+
+  I use FreeBSD at <place>
+
+"place" can be school, work or home, or a combination of these.
+
+You will get back a letter with 3 things:
+
+  - An acknowledgement
+  - A form that you can fill out and send in with more information
+    about yourself, your machine, and your 386bsd-using friends
+  - A report giving the current status of the counter
+
+You can update your "vote" at any time, by sending an E-mail message
+from the same account. Duplicates will be weeded out.
+
+The current report, available by anonymous FTP to aun.uninett.no,
+directory pub/misc/386bsd-counter, file "short", is given below.
+
+For all questions, contact Harald.T.Alvestrand@uninett.no!
+
+$Id$
