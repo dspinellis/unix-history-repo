@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,7 +20,6 @@ static char sccsid[] = "@(#)umount.c	5.4 (Berkeley) %G%";
 #include <sys/param.h>
 #include <stdio.h>
 #include <fstab.h>
-#include <mtab.h>
 #include <sys/mount.h>
 #ifdef NFS
 #include <sys/time.h>
@@ -32,8 +31,6 @@ static char sccsid[] = "@(#)umount.c	5.4 (Berkeley) %G%";
 #include <rpc/pmap_prot.h>
 #include <nfs/rpcv2.h>
 #endif
-
-struct	mtab mtab[NMOUNT];
 
 char	*rindex();
 int	vflag, all, errs;
@@ -47,14 +44,10 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	register struct mtab *mp;
 	register char *p1, *p2;
-	int mf;
 
 	argc--, argv++;
 	sync();
-	mf = open("/etc/mtab", 0);
-	read(mf, (char *)mtab, sizeof (mtab));
 again:
 	if (argc > 0 && !strcmp(*argv, "-v")) {
 		vflag++;
@@ -144,14 +137,10 @@ freefsent(fs)
 	free((char *)fs);
 }
 
-struct	mtab zeromtab;
-
 umountfs(name)
 	char *name;
 {
 	register char *p1, *p2;
-	register struct	mtab *mp;
-	int mf;
 	struct fstab *fs;
 #ifdef NFS
 	register CLIENT *clp;
@@ -206,26 +195,12 @@ umountfs(name)
 			auth_destroy(clp->cl_auth);
 			clnt_destroy(clp);
 		}
-	} else
-		fprintf(stderr, "Warning: no /etc/fstab entry found\n");
+	}
 out:
 #endif NFS
 	if (vflag)
 		fprintf(stderr, "%s: Unmounted\n", name);
-	for (mp = mtab; mp < &mtab[NMOUNT]; mp++) {
-		if (strncmp(mp->m_path, name, sizeof (mp->m_path)))
-			continue;
-		*mp = zeromtab;
-		for (mp = &mtab[NMOUNT]; mp >= mtab; mp--)
-			if (mp->m_path[0])
-				break;
-		mp++;
-		mf = creat("/etc/mtab", 0644);
-		write(mf, (char *)mtab, (mp-mtab) * sizeof (struct mtab));
-		return (1);
-	}
-	fprintf(stderr, "%s: Not mounted\n", name);
-	return (0);
+	return (1);
 }
 
 #ifdef NFS
