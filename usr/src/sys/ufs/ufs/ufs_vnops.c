@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.50 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.51 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1086,10 +1086,13 @@ ufs_rename(fndp, tndp)
 		xp = VTOI(fndp->ni_vp);
 		dp = VTOI(fndp->ni_dvp);
 	} else {
-		if (fndp->ni_dvp != NULL)
-			vput(fndp->ni_dvp);
-		xp = NULL;
-		dp = NULL;
+		/*
+		 * From name has disappeared.
+		 */
+		if (doingdirectory)
+			panic("rename: lost dir entry");
+		vrele(ITOV(ip));
+		return (0);
 	}
 	/*
 	 * Ensure that the directory entry still exists and has not
