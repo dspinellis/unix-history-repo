@@ -1,4 +1,4 @@
-/*	locore.s	4.38	81/03/13	*/
+/*	locore.s	4.39	81/03/16	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -97,10 +97,8 @@ SCBVEC(wtime):
 	PANIC("wtimo");
 
 #if NMBA > 0
-#if VAX780
 SCBVEC(mba3int):
 	PUSHR; pushl $3; brb 1f
-#endif
 SCBVEC(mba2int):
 	PUSHR; pushl $2; brb 1f
 SCBVEC(mba1int):
