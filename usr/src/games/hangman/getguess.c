@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getguess.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getguess.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"hangman.h"
@@ -39,7 +39,7 @@ getguess()
 			else
 				break;
 		}
-		else if (ch == CTRL(D))
+		else if (ch == CTRL('D'))
 			die();
 		else
 			mvprintw(MESGY, MESGX, "Not a valid guess: '%s'",
@@ -76,7 +76,7 @@ readch()
 			if (++cnt > 100)
 				die();
 		}
-		else if (ch == CTRL(L)) {
+		else if (ch == CTRL('L')) {
 			wrefresh(curscr);
 			mvcur(0, 0, curscr->_cury, curscr->_curx);
 		}
