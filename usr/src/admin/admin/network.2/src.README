@@ -64,7 +64,7 @@ in the lib/libc/* directories, and creating a .o for the make directory
 will probably get you around this problem.
 
 Once you have a "new" make working, you have to install the template files
-that it uses.  These files are in the directory share/mk.  Normally, they
+that it uses.  These files are in the directory src/share/mk.  Normally, they
 are installed in the directory /usr/share/mk.  If you wish to install them
 somewhere else, change the file pathnames.h in src/usr.bin/make to reflect
 where you plan to install them.  There's a file named bsd.README in the
@@ -91,7 +91,8 @@ builds the object files there.  (There is one real nastiness in this scheme.
 Any makefile wishing to reference a file relative to the source directory
 must use the ${.CURDIR} macro before the path name, because when make runs
 it cd's into the "obj" directory.  This *will* be corrected by 4.4BSD, but
-we haven't done it yet.)
+we haven't done it yet.)  A simple work-around is to remove the symbolic
+link obj, or make it a real sub-directory of the source directory.
 
 Now you're ready to try and build the system.  First, we haven't really done
 this (as I said before, we just ran out of time).  So don't take the following
@@ -107,9 +108,9 @@ source tree.  Add a -I include path to the CFLAGS macro in the source
 makefiles that you are trying to compile so that the compiler looks for
 its include files in bsdinclude first.  (Another way to do this, to avoid
 modifying the makefiles, is to put the -I include path into the
-environmental variable "COPTS".  This environmental variable is looked at
-by make.)  Then, as you encounter problems in compiling, create include
-files that fix the problem.
+environmental variable "COPTS".  This environmental variable is used by
+make.)  Then, as you encounter problems in compiling, create include files
+that fix the problem.
 
 For example, one of the changes that we've made in our release is that
 we've extracted all full path names from the source code and placed them
@@ -122,21 +123,21 @@ go away.  However, our <utmp.h> include file has had paths added to it,
 as well, and now includes the <lastlog.h> include file as well.  To make
 this work, I'd suggest creating a utmp.h file in bsdinclude which #defines
 the paths that the BSD utmp.h include file does, but which then includes
-the standard utmp.h and lastlog.h include files.  So, the bsdinclude
+your standard utmp.h and lastlog.h include files.  So, the bsdinclude
 version of utmp.h might look like:
 
 	#define _PATH_UTMP      "/var/run/utmp"
 	#define _PATH_WTMP      "/var/log/wtmp"
 	#define _PATH_LASTLOG   "/var/log/lastlog"
 
-	#include <lastlog.h>
-	#include <utmp.h>
+	#include "/usr/include/lastlog.h"
+	#include "/usr/include/utmp.h"
 
 I believe that this approach will make it possible to build the C library.
 Once the C library is built, install it somewhere.  As you compile
 programs you will probably find unresolved references that need to be
 satisfied using the BSD library.  I'd suggest adding the BSD library 
-after the standard C library.  You can do this by changing the makefiles,
+*after* the standard C library.  You can do this by changing the makefiles,
 or adding the string "LDADD=-lc the/bsd/library/path" to your environment.
-Note, programs that require other libraries will probably need additional
+Note, programs that require other libraries will probably require  additional
 information in the LDADD environmental variable.
