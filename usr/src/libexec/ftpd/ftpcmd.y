@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.16 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.17 (Berkeley) %G%
  */
 
 /*
@@ -25,10 +25,10 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 
 #include <netinet/in.h>
@@ -59,6 +59,8 @@ extern  int transflag;
 extern  char tmpline[];
 char	**glob();
 
+off_t	restart_point;
+
 static	int cmd_type;
 static	int cmd_form;
 static	int cmd_bytesz;
@@ -80,7 +82,7 @@ char	*index();
 	MRSQ	MRCP	ALLO	REST	RNFR	RNTO
 	ABOR	DELE	CWD	LIST	NLST	SITE
 	STAT	HELP	NOOP	XMKD	XRMD	XPWD
-	XCUP	STOU
+	XCUP	STOU	SYST
 
 	LEXERR
 
@@ -92,6 +94,7 @@ cmd_list:	/* empty */
 	|	cmd_list cmd
 		= {
 			fromname = (char *) 0;
+			restart_point = (off_t) 0;
 		}
 	|	cmd_list rcmd
 	;
@@ -142,12 +145,14 @@ cmd:		USER SP username CRLF
 				break;
 
 			case TYPE_L:
-				if (cmd_bytesz == 8) {
+				if (cmd_bytesz == NBBY) {
 					reply(200,
-					    "Type set to L (byte size 8).");
+					    "Type set to L (byte size %d).",
+					    NBBY);
 					type = cmd_type;
 				} else
-					reply(504, "Byte size must be 8.");
+					reply(504, "Byte size must be %d.",
+					    NBBY);
 			}
 		}
 	|	STRU SP struct_code CRLF
@@ -300,6 +305,11 @@ cmd:		USER SP username CRLF
 			if ($4 != NULL)
 				free((char *) $4);
 		}
+	|	SYST CRLF
+		= {
+			reply(215, "UNIX Type: L%d Version: BSD-%d",
+				NBBY, BSD);
+		}
 	|	QUIT CRLF
 		= {
 			reply(221, "Goodbye.");
@@ -310,17 +320,25 @@ cmd:		USER SP username CRLF
 			yyerrok;
 		}
 	;
-
 rcmd:		RNFR check_login SP pathname CRLF
 		= {
 			char *renamefrom();
 
+			restart_point = (off_t) 0;
 			if ($2 && $4) {
 				fromname = renamefrom((char *) $4);
 				if (fromname == (char *) 0 && $4) {
 					free((char *) $4);
 				}
 			}
+		}
+	|	REST SP byte_size CRLF
+		= {
+			long atol();
+
+			fromname = (char *) 0;
+			restart_point = $3;
+			reply(350, "Restarting at %ld. Send STORE or RETRIEVE to initiate transfer.", restart_point);
 		}
 	;
 		
@@ -391,7 +409,7 @@ type_code:	A
 	|	L
 	= {
 		cmd_type = TYPE_L;
-		cmd_bytesz = 8;
+		cmd_bytesz = NBBY;
 	}
 	|	L SP byte_size
 	= {
@@ -509,7 +527,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "MRSQ", MRSQ, OSTR, 0,	"(mail recipient scheme question)" },
 	{ "MRCP", MRCP, STR1, 0,	"(mail recipient)" },
 	{ "ALLO", ALLO, ARGS, 1,	"allocate storage (vacuously)" },
-	{ "REST", REST, STR1, 0,	"(restart command)" },
+	{ "REST", REST, ARGS, 1,	"(restart command)" },
 	{ "RNFR", RNFR, STR1, 1,	"<sp> file-name" },
 	{ "RNTO", RNTO, STR1, 1,	"<sp> file-name" },
 	{ "ABOR", ABOR, ARGS, 1,	"(abort operation)" },
@@ -519,6 +537,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "LIST", LIST, OSTR, 1,	"[ <sp> path-name ]" },
 	{ "NLST", NLST, OSTR, 1,	"[ <sp> path-name ]" },
 	{ "SITE", SITE, STR1, 0,	"(get site parameters)" },
+	{ "SYST", SYST, ARGS, 1,	"(get type of operating system)" },
 	{ "STAT", STAT, OSTR, 0,	"(get server status)" },
 	{ "HELP", HELP, OSTR, 1,	"[ <sp> <string> ]" },
 	{ "NOOP", NOOP, ARGS, 1,	"" },
