@@ -22,13 +22,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vfontedpr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfontedpr.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <ctype.h>
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #define boolean int
 #define TRUE 1
@@ -81,7 +82,7 @@ int	psptr;			/* the stack index of the current procedure */
 char	pstack[PSMAX][PNAMELEN+1];	/* the procedure name stack */
 int	plstack[PSMAX];		/* the procedure nesting level stack */
 int	blklevel;		/* current nesting level */
-char	*defsfile = "/usr/lib/vgrindefs";	/* name of language definitions file */
+char	*defsfile = _PATH_VGRINDEFS;	/* name of language definitions file */
 char	pname[BUFSIZ+1];
 
 /*

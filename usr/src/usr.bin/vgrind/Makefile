@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -22,7 +22,7 @@ RSRCS=	retest.c regexp.c
 ROBJS=	retest.o regexp.o
 VSRCS=	regexp.c vfontedpr.c vgrindefs.c
 VOBJS=	regexp.o vfontedpr.o vgrindefs.o
-MAN=	vgrind.0
+MAN=	vgrind.0 vgrindefs.0
 
 all: retest vfontedpr
 
@@ -42,11 +42,14 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${RSRCS} ${VSRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 vfontedpr ${DESTDIR}/usr/lib/vfontedpr
-	install -c -o bin -g bin -m 755 vgrind.sh ${DESTDIR}/usr/ucb/vgrind
-	install -c -o bin -g bin -m 755 vgrindefs.src ${DESTDIR}/usr/lib/vgrindefs
-	install -c -o bin -g bin -m 755 tmac.vgrind ${DESTDIR}/usr/lib/tmac/tmac.vgrind
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	install -s -o bin -g bin -m 755 vfontedpr ${DESTDIR}/usr/libexec
+	install -c -o bin -g bin -m 755 vgrind.sh ${DESTDIR}/usr/pgrm/vgrind
+	install -c -o bin -g bin -m 755 vgrindefs.src \
+	    ${DESTDIR}/usr/share/misc/vgrindefs
+	install -c -o bin -g bin -m 755 tmac.vgrind \
+	    ${DESTDIR}/usr/share/tmac/tmac.vgrind
+	install -c -o bin -g bin -m 444 vgrind.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 vgrindefs.0 ${DESTDIR}/usr/man/cat5
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${RSRCS}
