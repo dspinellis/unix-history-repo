@@ -1,6 +1,10 @@
 # include "e.h"
+# include "dev.h"
 #define	MAXLINE	3600	/* maximum input line */
 	/* huge for Chris's graphics language */
+
+#define DEVDIR	"/usr/lib/font"		/* place to find "dev" directory */
+char	*devdir	= DEVDIR;
 
 char	in[MAXLINE];	/* input buffer */
 int	eqnexit();
@@ -162,23 +166,15 @@ setfile(argc, argv) int argc; char *argv[]; {
 		case 'm': minsize = atoi(&svargv[1][2]); break;
 		case 'f': gfont = svargv[1][2]; break;
 		case 'e': noeqn++; break;
-		case 'T':
-			if (strcmp(&svargv[1][2], "202") == 0)
-				{res = 972; minsize = 5; ttype = DEV202; }
-			else if (strcmp(&svargv[1][2], "aps") == 0)
-				{res = 723; minsize = 5; ttype = DEVAPS; }
-			else if (strcmp(&svargv[1][2], "cat") == 0)
-				{res = 432; minsize = 6; ttype = DEVCAT; }
-			else if (strcmp(&svargv[1][2], "ver") == 0)
-				{res = 200; minsize = 6; ttype = DEVCAT; }
-			else
-				error(FATAL, "unknown typesetter %s", &argv[1][2]);
-			break;
+		case 'T': device = &(svargv[1][2]); break;
+		case 'F': devdir = &(svargv[1][2]); break;
 		default: dbg = 1;
 		}
 		svargc--;
 		svargv++;
 	}
+
+	fileinit();
 	ifile = 1;
 	linect = 1;
 	if (svargc <= 0) {
@@ -187,6 +183,27 @@ setfile(argc, argv) int argc; char *argv[]; {
 	}
 	else if ((curfile = fopen(svargv[1], "r")) == NULL)
 		error( FATAL,"can't open file %s", svargv[1]);
+}
+
+fileinit()
+{
+	int fin;
+	short readmin;
+	struct dev device_info;
+	char temp[100];
+
+	sprintf(temp, "%s/dev%s/DESC.out", devdir, device);
+	if ((fin = open(temp, 0)) < 0) {
+	    fprintf(stderr, "can't open tables for %s\n", temp);
+	    exit(1);
+	}
+	read(fin, &device_info, sizeof(struct dev));
+	read(fin, &readmin, sizeof readmin);
+
+		/* if res and minsize were not set by option, do it now */
+	if (res <= 0) res = device_info.res;
+	if (minsize <= 0) minsize = readmin;
+	close(fin);
 }
 
 yyerror() {;}

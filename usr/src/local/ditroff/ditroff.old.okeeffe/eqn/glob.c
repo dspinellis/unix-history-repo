@@ -9,15 +9,9 @@ int	deltaps	= 3;	/* default change in ps */
 int	gsize	= 10;	/* default initial point size */
 int	gfont	= ITAL;	/* italic */
 int	ft;	/* default font */
-#ifdef	APS
-	int	ttype	= DEVAPS;	/* type of typesetter today */
-	int	res	= 723;	/* resolution of typesetter; dflt = 202 */
-	int	minsize	= 5;	/* min size it can handle; ditto */
-#else
-	int	ttype	= DEVCAT;	/* type of typesetter today */
-	int	res	= 200;	/* resolution of typesetter; dflt = 202 */
-	int	minsize	= 6;	/* min size it can handle; ditto */
-#endif
+char	*device ="var";	/* device for "res" and "minsize" (default = varian) */
+int	res	= 0;	/* resolution of typesetter; no default */
+int	minsize	= 0;	/* min size it can handle; no default */
 FILE	*curfile;	/* current input file */
 int	ifile;
 int	linect;	/* line number in file */
