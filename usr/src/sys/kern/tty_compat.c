@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_compat.c	7.10 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.11 (Berkeley) %G%
  */
 
 /* 
  * mapping routines for old line discipline (yuck)
  */
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 
 #include "param.h"
 #include "systm.h"
@@ -369,4 +369,4 @@ ttcompatsetlflags(tp, t)
 	t->c_lflag = lflag;
 	t->c_cflag = cflag;
 }
-#endif	/* COMPAT_43 */
+#endif	/* COMPAT_43 || COMPAT_SUNOS */
