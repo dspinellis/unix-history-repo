@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)gethostnamadr.c	5.2 (Berkeley) %G%";
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
+static char *host_addrs[2];
 
 /*
  * The following is shared with gethostent.c
@@ -55,6 +56,7 @@ fetchhost(key)
 	cp += sizeof (int);
 	bcopy(cp, (char *)&host.h_length, sizeof (int));
 	cp += sizeof (int);
+	host.h_addr_list = host_addrs;
 	host.h_addr = tp;
 	bcopy(cp, tp, host.h_length);
         return (&host);
