@@ -78,7 +78,7 @@ fatal(n,s) char *s;
 		fprintf(stderr,"logical unit %d, named '%s'\n",lunit,lfname);
 	}
 	if (elist)
-	{	fprintf(stderr,"lately: %s %s %s %s IO\n",
+	{	fprintf(stderr,"lately: %s %s %s %s I/O\n",
 			reading?"reading":"writing",
 			sequential?"sequential":"direct",
 			formatted>0?"formatted":(formatted<0?"list":"unformatted"),
@@ -92,15 +92,7 @@ fatal(n,s) char *s;
 			else prnt_int();	/* print internal array */
 		}
 	}
-	f_exit();
-	_cleanup();
-#if	vax
-	signal(SIGILL, SIG_DFL);
-	sigsetmask(0);
-#else	pdp11
-	signal(SIGIOT, SIG_DFL);
-#endif
-	abort();
+	f77_abort(n);
 }
 
 prnt_ext()
