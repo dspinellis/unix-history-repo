@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.15	82/10/22	*/
+/*	kern_descrip.c	5.16	82/10/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -182,10 +182,8 @@ select()
 	label_t lqsave;
 
 	obits[0] = obits[1] = obits[2] = 0;
-	if (uap->nd >= NOFILE) {
-		u.u_error = EINVAL;
-		goto done;
-	}
+	if (uap->nd > NOFILE)
+		uap->nd = NOFILE;	/* forgiving, if slightly wrong */
 
 #define	getbits(name, x) \
 	if (uap->name) { \
@@ -249,7 +247,7 @@ retry:
 done:
 #define	putbits(name, x) \
 	if (uap->name) { \
-		if (copyout((caddr_t)obits[x], (caddr_t)uap->name, \
+		if (copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
 		    sizeof (obits[x]))) \
 			u.u_error = EFAULT; \
 	}
