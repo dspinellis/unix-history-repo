@@ -1,4 +1,4 @@
-/*	common.c	4.5	83/06/02	*/
+/*	common.c	4.6	83/06/17	*/
 /*
  * Routines and data common to all the line printer functions.
  */
@@ -7,6 +7,7 @@
 
 int	DU;		/* daeomon user-id */
 int	MX;		/* maximum number of blocks to copy */
+int	MC;		/* maximum number of copies allowed */
 char	*LP;		/* line printer device name */
 char	*RM;		/* remote machine name */
 char	*RP;		/* remote printer name */
@@ -26,6 +27,7 @@ char	*CF;		/* name of cifplot filter (per job) */
 char	*PF;		/* name of vrast filter (per job) */
 char	*FF;		/* form feed string */
 char	*TR;		/* trailer string to be output when Q empties */
+short	SC;		/* suppress multiple copies */
 short	SF;		/* suppress FF on each print job */
 short	SH;		/* suppress header page */
 short	SB;		/* short banner instead of normal header */
@@ -35,10 +37,10 @@ short	PL;		/* page length */
 short	PX;		/* page width in pixels */
 short	PY;		/* page length in pixels */
 short	BR;		/* baud rate if lp is a tty */
-short	FC;		/* flags to clear if lp is a tty */
-short	FS;		/* flags to set if lp is a tty */
-short	XC;		/* flags to clear for local mode */
-short	XS;		/* flags to set for local mode */
+int	FC;		/* flags to clear if lp is a tty */
+int	FS;		/* flags to set if lp is a tty */
+int	XC;		/* flags to clear for local mode */
+int	XS;		/* flags to set for local mode */
 short	RS;		/* restricted to those with local accounts */
 
 char	line[BUFSIZ];
@@ -169,7 +171,7 @@ getq(namelist)
 	int arraysz, compar();
 	DIR *dirp;
 
-	if ((dirp = opendir(".")) == NULL)
+	if ((dirp = opendir(SD)) == NULL)
 		return(-1);
 	if (fstat(dirp->dd_fd, &stbuf) < 0)
 		goto errdone;

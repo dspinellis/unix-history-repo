@@ -1,4 +1,4 @@
-/*	recvjob.c	4.4	83/06/15	*/
+/*	recvjob.c	4.5	83/06/17	*/
 /*
  * Receive printer jobs from the network, queue them and
  * start the printer daemon.
@@ -143,8 +143,10 @@ readfile(file, size)
 		amt = BUFSIZ;
 		if (i + amt > size)
 			amt = size - i;
-		if (err == 0 && write(fd, buf, amt) != amt)
+		if (write(fd, buf, amt) != amt) {
 			err++;
+			break;
+		}
 	}
 	(void) close(fd);
 	if (err)

@@ -1,4 +1,4 @@
-/*	lp.h	4.2	83/05/13	*/
+/*	lp.h	4.3	83/06/17	*/
 /*
  * Global definitions for the line printer system.
  */
@@ -21,6 +21,7 @@
 
 extern int	DU;		/* daeomon user-id */
 extern int	MX;		/* maximum number of blocks to copy */
+extern int	MC;		/* maximum number of copies allowed */
 extern char	*LP;		/* line printer device name */
 extern char	*RM;		/* remote machine name */
 extern char	*RP;		/* remote printer name */
@@ -39,6 +40,7 @@ extern char	*VF;		/* name of raster filter (per job) */
 extern char	*CF;		/* name of cifplot filter (per job) */
 extern char	*FF;		/* form feed string */
 extern char	*TR;		/* trailer string to be output when Q empties */
+extern short	SC;		/* suppress multiple copies */
 extern short	SF;		/* suppress FF on each print job */
 extern short	SH;		/* suppress header page */
 extern short	SB;		/* short banner instead of normal header */
@@ -48,10 +50,10 @@ extern short	PX;		/* page width in pixels */
 extern short	PY;		/* page length in pixels */
 extern short	PL;		/* page length */
 extern short	BR;		/* baud rate if lp is a tty */
-extern short	FC;		/* flags to clear if lp is a tty */
-extern short	FS;		/* flags to set if lp is a tty */
-extern short	XC;		/* flags to clear for local mode */
-extern short	XS;		/* flags to set for local mode */
+extern int	FC;		/* flags to clear if lp is a tty */
+extern int	FS;		/* flags to set if lp is a tty */
+extern int	XC;		/* flags to clear for local mode */
+extern int	XS;		/* flags to set for local mode */
 extern short	RS;		/* restricted to those with local accounts */
 
 extern char	line[BUFSIZ];

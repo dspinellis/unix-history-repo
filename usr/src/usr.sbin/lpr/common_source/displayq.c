@@ -1,13 +1,13 @@
-/*	displayq.c	4.6	83/06/15	*/
+/*	displayq.c	4.7	83/06/17	*/
 /*
  * Routines to display the state of the queue.
  */
 
 #include "lp.h"
 
-#define JOBCOL	40	/* column for job # in -l format */
-#define OWNCOL	7	/* start of Owner column in normal */
-#define SIZCOL	62	/* start of Size column in normal */
+#define JOBCOL	40		/* column for job # in -l format */
+#define OWNCOL	7		/* start of Owner column in normal */
+#define SIZCOL	62		/* start of Size column in normal */
 
 /*
  * Stuff for handling job specifications
@@ -118,7 +118,7 @@ displayq(format)
 	fp = fopen(LO, "r");
 	if (fp == NULL || flock(fileno(fp), LOCK_SH|LOCK_NB) == 0) {
 		if (fp != NULL)
-			fclose(fp);
+			fclose(fp);	/* unlocks as well */
 		garbage = nitems;
 		if (sendtorem)
 			printf("\n%s: ", host);
@@ -146,7 +146,7 @@ displayq(format)
 			(void) flock(fd, LOCK_SH);
 			while ((i = read(fd, line, sizeof(line))) > 0)
 				(void) fwrite(line, 1, i, stdout);
-			(void) close(fd);
+			(void) close(fd);	/* unlocks as well */
 		} else
 			putchar('\n');
 	}
