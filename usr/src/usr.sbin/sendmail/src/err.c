@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -236,12 +236,16 @@ putoutmsg(msg, holdmsg)
 	bool holdmsg;
 {
 	/* output to transcript if serious */
-	if (CurEnv->e_xfp != NULL && (msg[0] == '4' || msg[0] == '5'))
+	if (CurEnv->e_xfp != NULL && strchr("456", msg[0]) != NULL)
 		fprintf(CurEnv->e_xfp, "%s\n", msg);
 
 	/* output to channel if appropriate */
 	if (holdmsg || (!Verbose && msg[0] == '0'))
 		return;
+
+	/* map warnings to something SMTP can handle */
+	if (msg[0] == '6')
+		msg[0] = '5';
 
 	(void) fflush(stdout);
 	if (OpMode == MD_SMTP)
@@ -286,13 +290,23 @@ putoutmsg(msg, holdmsg)
 puterrmsg(msg)
 	char *msg;
 {
+	char msgcode = msg[0];
+
 	/* output the message as usual */
 	putoutmsg(msg, HoldErrs);
 
 	/* signal the error */
-	Errors++;
-	if (msg[0] == '5' && bitset(EF_GLOBALERRS, CurEnv->e_flags))
-		CurEnv->e_flags |= EF_FATALERRS;
+	if (msgcode == '6')
+	{
+		/* notify the postmaster */
+		CurEnv->e_flags |= EF_PM_NOTIFY;
+	}
+	else
+	{
+		Errors++;
+		if (msgcode == '5' && bitset(EF_GLOBALERRS, CurEnv->e_flags))
+			CurEnv->e_flags |= EF_FATALERRS;
+	}
 }
 /*
 **  FMTMSG -- format a message into buffer.
