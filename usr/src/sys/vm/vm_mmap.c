@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.10 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -295,6 +295,7 @@ munmap(p, uap, retval)
 
 void
 munmapfd(fd)
+	int fd;
 {
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
@@ -754,7 +755,14 @@ vm_allocate_with_pager(map, addr, size, fitit, pager, poffset, internal)
 	cnt.v_lookups++;
 	if (object == NULL) {
 		object = vm_object_allocate(size);
-		vm_object_enter(object, pager);
+		/*
+		 * From Mike Hibler: "unnamed anonymous objects should never
+		 * be on the hash list ... For now you can just change
+		 * vm_allocate_with_pager to not do vm_object_enter if this
+		 * is an internal object ..."
+		 */
+		if (!internal)
+			vm_object_enter(object, pager);
 	} else
 		cnt.v_hits++;
 	if (internal)
