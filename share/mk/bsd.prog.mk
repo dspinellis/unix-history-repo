@@ -144,9 +144,8 @@ realinstall: _PROGSUBDIR
 	done; true
 .endif
 
-install: maninstall
-maninstall: afterinstall
-afterinstall: realinstall
+install: afterinstall
+afterinstall: realinstall maninstall
 realinstall: beforeinstall
 .endif
 
@@ -179,8 +178,4 @@ tags: ${SRCS} _PROGSUBDIR
 	-cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC} | \
 	    sed "s;\${.CURDIR}/;;" > tags
 .endif
-.endif
-
-.if !defined(NOMAN)
-.include <bsd.man.mk>
 .endif

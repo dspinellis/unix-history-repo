@@ -11,13 +11,15 @@ BINMODE?=	555
 _SUBDIRUSE: .USE
 	@for entry in ${SUBDIR}; do \
 		(if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
-			echo "===> $${entry}.${MACHINE}"; \
-			cd ${.CURDIR}/$${entry}.${MACHINE}; \
+			echo "===> ${DIRPRFX}$${entry}.${MACHINE}"; \
+			edir=$${entry}.${MACHINE}; \
+			cd ${.CURDIR}/$${edir}; \
 		else \
-			echo "===> $$entry"; \
-			cd ${.CURDIR}/$${entry}; \
+			echo "===> ${DIRPRFX}$$entry"; \
+			edir=$${entry}; \
+			cd ${.CURDIR}/$${edir}; \
 		fi; \
-		${MAKE} ${.TARGET:realinstall=install}); \
+		${MAKE} ${.TARGET:realinstall=install} DIRPRFX=${DIRPRFX}$$edir/); \
 	done
 
 ${SUBDIR}::
@@ -42,6 +44,10 @@ cleandir: _SUBDIRUSE
 
 .if !target(depend)
 depend: _SUBDIRUSE
+.endif
+
+.if !target (maninstall)
+maninstall: _SUBDIRUSE
 .endif
 
 .if !target(install)
