@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)init_main.c	7.5.1.1 (Berkeley) %G%
+ *	@(#)init_main.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,10 +35,6 @@
 #include "malloc.h"
 #include "protosw.h"
 #include "reboot.h"
-
-#include "machine/pte.h"
-#include "machine/reg.h"
-#include "machine/cpu.h"
 
 #include "machine/pte.h"
 #include "machine/reg.h"
