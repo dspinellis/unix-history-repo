@@ -1,0 +1,26 @@
+.TH TOD UCB 2/24/79 UCB
+.SH NAME
+tod \- print out a message germane to the current time of day
+.SH SYNOPSIS
+.B tod
+[ hour ]
+.SH DESCRIPTION
+.I Tod
+prints out a greeting depending on
+the current time of day.  If the optional
+.I hour
+argument is given, then
+.I tod
+will pretend that it is that hour of the day.
+.PP
+.I Tod
+is useful for running in an automatic login file.
+.SH AUTHOR
+Robert Toxen
+.SH SEE ALSO
+daytime(UCB)
+.SH BUGS
+.I Tod
+has programmed into it one person's idea of appropriate
+comments for different times of day.  This perception seems
+to vary from person to person.
