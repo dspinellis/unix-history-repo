@@ -16,10 +16,10 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)getgid.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)getgid.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 SYSCALL(getgid)
-	ret		# gid = getgid();
+	ret		/* gid = getgid(); */

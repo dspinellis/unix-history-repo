@@ -16,10 +16,10 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)setpgrp.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)setpgrp.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 SYSCALL(setpgrp)
-	ret		# setpgrp(pid, pgrp);
+	ret		/* setpgrp(pid, pgrp); */

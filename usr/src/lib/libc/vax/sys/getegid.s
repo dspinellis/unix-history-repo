@@ -16,11 +16,11 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)getegid.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)getegid.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 PSEUDO(getegid,getgid)
 	movl	r1,r0
-	ret		# egid = getegid();
+	ret		/* egid = getegid(); */
