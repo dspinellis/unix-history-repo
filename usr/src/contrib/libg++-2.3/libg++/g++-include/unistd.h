@@ -88,7 +88,7 @@ extern int      ftruncate _G_ARGS((int, _G_off_t));
 extern char*    getcwd _G_ARGS((char*, _G_size_t));
 extern int      getdomainname _G_ARGS((char*, int));
 extern int      getdtablesize _G_ARGS((void));
-extern int      getgroups _G_ARGS((int, int *));
+extern int      getgroups _G_ARGS((int, gid_t []));
 extern _G_uid_t geteuid _G_ARGS((void));
 extern _G_gid_t getegid _G_ARGS((void));
 extern _G_gid_t getgid _G_ARGS((void));
