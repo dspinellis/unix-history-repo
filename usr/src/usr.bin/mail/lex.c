@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
+#include <errno.h>
 
 /*
  * Mail -- a mail program
@@ -35,16 +36,34 @@ setfile(name, isedit)
 	static int shudclob;
 	static char efile[128];
 	extern char tempMesg[];
+	extern int errno;
 
 	if ((ibuf = fopen(name, "r")) == NULL)
 		return(-1);
-	if (!edit) {
-		if (fstat(fileno(ibuf), &stb) < 0) {
-			perror(name);
-			exit(1);
-		}
-		if (stb.st_size == 0)
-			return(-1);
+
+	if (fstat(fileno(ibuf), &stb) < 0) {
+		fclose(ibuf);
+		return (-1);
+	}
+
+	switch (stb.st_mode & S_IFMT) {
+	case S_IFDIR:
+		fclose(ibuf);
+		errno = EISDIR;
+		return (-1);
+
+	case S_IFREG:
+		break;
+
+	default:
+		fclose(ibuf);
+		errno = EINVAL;
+		return (-1);
+	}
+
+	if (!edit && stb.st_size == 0) {
+		fclose(ibuf);
+		return(-1);
 	}
 
 	/*
