@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.21 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.22 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -70,6 +70,7 @@ pcproc(r)
 	struct nl	*tempnlp;
 	long		readtype;
 	struct tmps	soffset;
+	bool		soffset_flag;
 
 #define	CONPREC 4
 #define	VARPREC 8
@@ -242,6 +243,7 @@ pcproc(r)
 		 * of the arguments.
 		 */
 		for (; argv != NIL; argv = argv[2]) {
+		        soffset_flag = FALSE;
 			/*
 			 * fmtspec indicates the type (CONstant or VARiable)
 			 *	and number (none, WIDTH, and/or PRECision)
@@ -636,6 +638,7 @@ pcproc(r)
 					 */
 				    if ( ( typ == TDOUBLE && al[3] == NIL )
 					|| typ == TSTR ) {
+					soffset_flag = TRUE;
 					soffset = sizes[cbn].curtmps;
 					tempnlp = tmpalloc(sizeof(long),
 						nl+T4INT, REGOK);
@@ -686,7 +689,6 @@ pcproc(r)
 						tempnlp -> value[ NL_OFFS ] ,
 						tempnlp -> extra_flags ,
 						P2INT );
-					    tmpfree(&soffset);
 					    putleaf( P2ICON ,
 						5 + EXPOSIZE + REALSPC ,
 						0 , P2INT , 0 );
@@ -820,7 +822,6 @@ pcproc(r)
 					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2COLON , P2INT );
 					putop( P2QUEST , P2INT );
-					tmpfree(&soffset);
 				} else {
 					if (   ( fmtspec & SKIP )
 					    && ( strfmt & CONWIDTH ) ) {
@@ -840,6 +841,10 @@ pcproc(r)
 				putop( P2LISTOP , P2INT );
 				putop( P2CALL , P2INT );
 				putdot( filename , line );
+			}
+			if (soffset_flag) {
+				tmpfree(&soffset);
+				soffset_flag = FALSE;
 			}
 		}
 		/*
