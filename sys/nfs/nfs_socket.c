@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_socket.c	7.23 (Berkeley) 4/20/91
- *	$Id: nfs_socket.c,v 1.3 1993/09/09 22:06:05 rgrimes Exp $
+ *	$Id: nfs_socket.c,v 1.5 1994/05/03 17:49:16 davidg Exp $
  */
 
 /*
@@ -971,6 +971,8 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	}
 	if (error)
 		return (error);
+	if (!mrep)
+		return (EBADRPC);
 	md = mrep;
 	mrep = nfs_uncompress(mrep);
 	if (mrep != md) {

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.9 (Berkeley) 12/1/93";
+static char sccsid[] = "@(#)mci.c	8.12 (Berkeley) 2/9/94";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -275,6 +275,9 @@ mci_get(host, m)
 	bzero(&CurHostAddr, sizeof CurHostAddr);
 #endif
 
+	/* clear out any expired connections */
+	mci_scan(NULL);
+
 	if (m->m_mno < 0)
 		syserr("negative mno %d (%s)", m->m_mno, m->m_name);
 	s = stab(host, ST_MCI + m->m_mno, ST_ENTER);
@@ -300,6 +303,21 @@ mci_get(host, m)
 			mci->mci_exitstat = EX_OK;
 			mci->mci_state = MCIS_CLOSED;
 		}
+		else
+		{
+			/* get peer host address for logging reasons only */
+			/* (this should really be in the mci struct) */
+			int socksize = sizeof CurHostAddr;
+
+			(void) getpeername(fileno(mci->mci_in),
+				(struct sockaddr *) &CurHostAddr, &socksize);
+		}
+	}
+	if (mci->mci_state == MCIS_CLOSED)
+	{
+		/* copy out any mailer flags needed in connection state */
+		if (bitnset(M_7BITS, m->m_flags))
+			mci->mci_flags |= MCIF_7BIT;
 	}
 
 	return mci;

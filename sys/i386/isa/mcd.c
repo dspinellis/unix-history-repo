@@ -39,7 +39,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: mcd.c,v 1.9 1994/02/07 15:46:22 davidg Exp $
+ *	$Id: mcd.c,v 1.10.2.1 1994/03/07 02:23:48 rgrimes Exp $
  */
 static char COPYRIGHT[] = "mcd-driver (C)1993 by H.Veit & B.Moore";
 
@@ -79,7 +79,7 @@ static char COPYRIGHT[] = "mcd-driver (C)1993 by H.Veit & B.Moore";
 #define mcd_part(dev)	((minor(dev)) & 7)
 #define mcd_unit(dev)	(((minor(dev)) & 0x38) >> 3)
 #define mcd_phys(dev)	(((minor(dev)) & 0x40) >> 6)
-#define RAW_PART	3
+#define RAW_PART	0
 
 /* flags */
 #define MCDOPEN		0x0001	/* device opened */
@@ -98,6 +98,12 @@ static char COPYRIGHT[] = "mcd-driver (C)1993 by H.Veit & B.Moore";
 #define MCDDSKCHNG	MCD_ST_DSKCHNG		/* sensed change of disk */
 #define MCDDSKIN	MCD_ST_DSKIN		/* sensed disk in drive */
 #define MCDDOOROPEN	MCD_ST_DOOROPEN		/* sensed door open */
+
+/* These are apparently the different states a mitsumi can get up to */
+#define MCDCDABSENT	0x0030
+#define MCDCDPRESENT	0x0020
+#define MCDSCLOSED	0x0080
+#define MCDSOPEN	0x00a0
 
 /* toc */
 #define MCD_MAXTOCS	104	/* from the Linux driver */
@@ -602,7 +608,9 @@ mcd_probe(struct isa_device *dev)
 		return 0;	/* Timeout */
 	}
 	status = inb(port+MCD_DATA);
-
+	if (status != MCDCDABSENT && status != MCDCDPRESENT &&
+		status != MCDSOPEN && status != MCDSCLOSED)
+		return 0;	/* Not actually a Mitsumi drive here */
 	/* Get version information */
 	outb(port+MCD_DATA, MCD_CMDCONTINFO);
 	for (j = 0; j < 3; j++) {

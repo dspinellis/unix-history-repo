@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:@(#)syscons.c	1.3 940129
- *	$Id: syscons.c,v 1.34 1994/02/04 10:36:15 chmr Exp $
+ *	$Id: syscons.c,v 1.35.2.1 1994/03/24 07:38:58 rgrimes Exp $
  *
  */
 
@@ -162,6 +162,10 @@ static default_attr kernel_default = {
 	(FG_WHITE | BG_BLACK) << 8,
 	(FG_BLACK | BG_LIGHTGREY) << 8
 };
+
+#define CONSOLE_BUFFER_SIZE 1024
+int console_buffer_count;
+char console_buffer[CONSOLE_BUFFER_SIZE];
 
 static	scr_stat	console[NCONS];
 static	scr_stat	*cur_console = &console[0];
@@ -1052,13 +1056,14 @@ void pcstart(struct tty *tp)
 
 #else /* __FreeBSD__ & __386BSD__ */
 
-	int c, s;
+	int c, s, len, i;
 	scr_stat *scp = get_scr_stat(tp->t_dev);
+	u_char buf[PCBURST];
 
 	if (scp->status & SLKED) 
 		return;
 	s = spltty();
-	if (!(tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP)))
+	if (!(tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))) {
 		for (;;) {
 			if (RB_LEN(&tp->t_out) <= tp->t_lowat) {
 				if (tp->t_state & TS_ASLEEP) {
@@ -1076,13 +1081,30 @@ void pcstart(struct tty *tp)
 				break;
 			if (scp->status & SLKED) 
 				break;
-			c = getc(&tp->t_out);
+			len = 0;
+			while( len < PCBURST) {
+				c = getc(&tp->t_out);
+				if (c == -1)
+					break;
+				buf[len++] = c;
+			}
 			tp->t_state |= TS_BUSY;
 			splx(s);
-			ansi_put(scp, c);
+			for(i=0;i<len;i++)
+				ansi_put(scp, buf[i]);
 			s = spltty();
 			tp->t_state &= ~TS_BUSY;
 		}
+		tp->t_state |= TS_BUSY;
+		if( in_putc == 0) {
+			int i;
+			for(i=0;i<console_buffer_count;i++) {
+				scput(console_buffer[i]);
+			}
+			console_buffer_count = 0;
+		}
+		tp->t_state &= ~TS_BUSY;
+	}
 	splx(s);
 #endif
 }
@@ -1442,7 +1464,6 @@ static void move_crsr(scr_stat *scp, int x, int y)
 	scp->crtat = scp->crt_base + scp->ypos * scp->xsize + scp->xpos;
 }
 
-
 static void move_up(u_short *s, u_short *d, u_int len)
 {
 	s += len;
@@ -1451,13 +1472,11 @@ static void move_up(u_short *s, u_short *d, u_int len)
 		*--d = *--s;
 }
 
-
 static void move_down(u_short *s, u_short *d, u_int len)
 {
 	while (len-- > 0)
 		*d++ = *s++;
 }
-
 
 static void scan_esc(scr_stat *scp, u_char c)
 {
@@ -1662,6 +1681,8 @@ static void scan_esc(scr_stat *scp, u_char c)
 
 		case 'S':	/* scroll up n lines */
 			n = scp->term.param[0]; if (n < 1)  n = 1;
+			if (n > scp->ypos)
+				n = scp->ypos;
 			bcopy(scp->crt_base + (scp->xsize * n),
 			      scp->crt_base, 
 			      scp->xsize * (scp->ysize - n) * 
@@ -1674,16 +1695,20 @@ static void scan_esc(scr_stat *scp, u_char c)
 
 		case 'T':	/* scroll down n lines */
 			n = scp->term.param[0]; if (n < 1)  n = 1;
+			if (n > scp->ysize - scp->ypos)
+				n = scp->ysize - scp->ypos;
 			bcopy(scp->crt_base, 
 			      scp->crt_base + (scp->xsize * n),
 			      scp->xsize * (scp->ysize - n) * 
 			      sizeof(u_short));
-			fillw(scp->term.cur_attr | scr_map[0x20], scp->crt_base, 
-			      scp->xsize);
+			fillw(scp->term.cur_attr | scr_map[0x20], 
+			      scp->crt_base, scp->xsize);
 			break;
 
 		case 'X':	/* delete n characters in line */
 			n = scp->term.param[0]; if (n < 1)  n = 1;
+			if (n > scp->xsize - scp->xpos)
+				n = scp->xsize - scp->xpos;
 			fillw(scp->term.cur_attr | scr_map[0x20], 
                               scp->crt_base + scp->xpos + 
 			      ((scp->xsize*scp->ypos) * sizeof(u_short)), n);
@@ -2029,13 +2054,20 @@ static void scput(u_char c)
 
 	if (crtat == 0)
 		scinit();
-	save = scp->term;
-	scp->term = kernel_console;
-	current_default = &kernel_default;
-	ansi_put(scp, c);
-	kernel_console = scp->term;
-	current_default = &user_default;
-	scp->term = save;
+	if( in_putc == 0) {
+		++in_putc;
+		save = scp->term;
+		scp->term = kernel_console;
+		current_default = &kernel_default;
+		ansi_put(scp, c);
+		kernel_console = scp->term;
+		current_default = &user_default;
+		scp->term = save;
+		--in_putc;
+	} else {
+		if( console_buffer_count < CONSOLE_BUFFER_SIZE)
+			console_buffer[console_buffer_count++] = c;
+	}
 }
 
 

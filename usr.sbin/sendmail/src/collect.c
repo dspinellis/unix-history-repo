@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.8 (Berkeley) 1/8/94";
+static char sccsid[] = "@(#)collect.c	8.9 (Berkeley) 1/31/94";
 #endif /* not lint */
 
 # include <errno.h>
@@ -317,8 +317,11 @@ readerr:
 			    "collect: %s on connection from %s, sender=%s: %m\n",
 			    problem, host, e->e_from.q_paddr);
 # endif
-		(feof(InChannel) ? usrerr : syserr)
-			("451 collect: %s on connection from %s, from=%s",
+		if (feof(InChannel))
+			usrerr("451 collect: %s on connection from %s, from=%s",
+				problem, host, e->e_from.q_paddr);
+		else
+			syserr("451 collect: %s on connection from %s, from=%s",
 				problem, host, e->e_from.q_paddr);
 
 		/* don't return an error indication */

@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.36 (Berkeley) 1/9/94 (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.40 (Berkeley) 3/6/94 (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.36 (Berkeley) 1/9/94 (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.40 (Berkeley) 3/6/94 (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -94,6 +94,7 @@ queueup(e, queueall, announce)
 	bool newid;
 	register char *p;
 	MAILER nullmailer;
+	MCI mcibuf;
 	char buf[MAXLINE], tf[MAXLINE];
 
 	/*
@@ -182,7 +183,10 @@ queueup(e, queueall, announce)
 		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
 			syserr("!queueup: cannot create data temp file %s, uid=%d",
 				e->e_df, geteuid());
-		(*e->e_putbody)(dfp, FileMailer, e, NULL);
+		bzero(&mcibuf, sizeof mcibuf);
+		mcibuf.mci_out = dfp;
+		mcibuf.mci_mailer = FileMailer;
+		(*e->e_putbody)(&mcibuf, e, NULL);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;
 	}
@@ -278,6 +282,9 @@ queueup(e, queueall, announce)
 	nullmailer.m_re_rwset = nullmailer.m_rh_rwset =
 			nullmailer.m_se_rwset = nullmailer.m_sh_rwset = -1;
 	nullmailer.m_eol = "\n";
+	bzero(&mcibuf, sizeof mcibuf);
+	mcibuf.mci_mailer = &nullmailer;
+	mcibuf.mci_out = tfp;
 
 	define('g', "\201f", e);
 	for (h = e->e_header; h != NULL; h = h->h_link)
@@ -330,8 +337,7 @@ queueup(e, queueall, announce)
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
 
-			commaize(h, h->h_value, tfp, oldstyle,
-				 &nullmailer, e);
+			commaize(h, h->h_value, oldstyle, &mcibuf, e);
 
 			TrafficLogFile = savetrace;
 		}
@@ -565,7 +571,8 @@ runqueue(forkflag)
 
 			pid = dowork(w->w_name + 2, ForkQueueRuns, FALSE, e);
 			errno = 0;
-			(void) waitfor(pid);
+			if (pid != 0)
+				(void) waitfor(pid);
 		}
 		free(w->w_name);
 		free((char *) w);
@@ -891,6 +898,7 @@ dowork(id, forkflag, requeueflag, e)
 		e->e_errormode = EM_MAIL;
 		e->e_id = id;
 		GrabTo = UseErrorsTo = FALSE;
+		ExitStat = EX_OK;
 		if (forkflag)
 		{
 			disconnect(1, e);
@@ -913,7 +921,7 @@ dowork(id, forkflag, requeueflag, e)
 			if (forkflag)
 				exit(EX_OK);
 			else
-				return;
+				return 0;
 		}
 
 		e->e_flags |= EF_INQUEUE;
@@ -1135,7 +1143,7 @@ readqf(e)
 			break;
 
 		  default:
-			syserr("readqf: %s: line %s: bad line \"%s\"",
+			syserr("readqf: %s: line %d: bad line \"%s\"",
 				qf, LineNumber, bp);
 			fclose(qfp);
 			rename(qf, queuename(e, 'Q'));
@@ -1539,7 +1547,10 @@ setctluser(user)
 		*p++ = '\0';
 	if (*user != '\0' && (pw = getpwnam(user)) != NULL)
 	{
-		a->q_home = newstr(pw->pw_dir);
+		if (strcmp(pw->pw_dir, "/") == 0)
+			a->q_home = "";
+		else
+			a->q_home = newstr(pw->pw_dir);
 		a->q_uid = pw->pw_uid;
 		a->q_gid = pw->pw_gid;
 		a->q_user = newstr(user);

@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:	@(#)pmap.c	7.7 (Berkeley)	5/12/91
- *	$Id: pmap.c,v 1.18 1994/02/10 03:03:44 davidg Exp $
+ *	$Id: pmap.c,v 1.19 1994/02/13 08:29:33 davidg Exp $
  */
 
 /*
@@ -184,6 +184,7 @@ vm_offset_t	virtual_end;	/* VA of last avail page (end of kernel AS) */
 int		i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
 boolean_t	pmap_initialized = FALSE;	/* Has pmap_init completed? */
 vm_offset_t	vm_first_phys, vm_last_phys;
+vm_offset_t	pager_sva, pager_eva;
 
 static inline boolean_t pmap_testbit();
 static inline void pmap_changebit();
@@ -948,8 +949,13 @@ pmap_remove(pmap, sva, eva)
 
 		if (((oldpte & PG_M) && (va < USRSTACK || va > UPT_MAX_ADDRESS))
 			|| (va >= USRSTACK && va < USRSTACK+(UPAGES*NBPG))) {
-			m = PHYS_TO_VM_PAGE(pa);
-			m->flags &= ~PG_CLEAN;
+		/*
+		 * don't update the dirty bit for pager mappings
+		 */
+			if( va < pager_sva || va >= pager_eva) {
+				m = PHYS_TO_VM_PAGE(pa);
+				m->flags &= ~PG_CLEAN;
+			}
 		}
 
 		pv = pa_to_pvh(pa);
@@ -1003,7 +1009,12 @@ pmap_remove_all(pa)
 		
 		if (((*(int *)pte & PG_M) && (pv->pv_va < USRSTACK || pv->pv_va > UPT_MAX_ADDRESS))
 			|| (pv->pv_va >= USRSTACK && pv->pv_va < USRSTACK+(UPAGES*NBPG))) {
-			m->flags &= ~PG_CLEAN;
+			/*
+			 * don't update the dirty bit for pager mappings
+			 */
+			if( pv->pv_va < pager_sva || pv->pv_va >= pager_eva) {
+				m->flags &= ~PG_CLEAN;
+			}
 		}
 
 		*(int *)pte = 0;

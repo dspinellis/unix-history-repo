@@ -34,7 +34,7 @@ PUSHDIVERT(-1)
 #
 
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
-ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -z -a$f -gC $h!rmail ($u)')')
+ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -a$f -gC $h!rmail ($u)')')
 ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
 ifdef(`UUCP_MAX_SIZE',, `define(`UUCP_MAX_SIZE', 100000)')
 POPDIVERT
@@ -42,7 +42,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.13 (Berkeley) 1/10/94')
+VERSIONID(`@(#)uucp.m4	8.15 (Berkeley) 2/16/94')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -151,7 +151,7 @@ R! $+				$: $j ! $1		in case $M undefined')
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
-R$* < @ $=Z . UUCP. > $*	$#uucp-uudom $@ $1 $: $1 < @ $2 .UUCP. > $3	@host.UUCP: ...
+R$* < @ $=Z . UUCP. > $*	$#uucp-uudom $@ $2 $: $1 < @ $2 .UUCP. > $3
 R$* < @ $=Y . UUCP. > $*	$#uucp-new $@ $2 $: $1 < @ $2 .UUCP. > $3
 R$* < @ $=U . UUCP. > $*	$#uucp-old $@ $2 $: $1 < @ $2 .UUCP. > $3
 POPDIVERT

@@ -1,4 +1,4 @@
-#	$Id$
+#	$Id: inst2.rc,v 1.1.2.1 1994/03/06 08:44:11 rgrimes Exp $
 #
 
 stty status '^T'
@@ -73,7 +73,7 @@ echo "in a place with lots of space, probably under /usr."
 echo "Then, load the remaining distribution files into that temporary"
 echo "directory by issuing one of the following commands:"
 echo
-echo "	load_fd		load_qic_tape	load_scsi_tape"
+echo "	load_dos	load_fd		load_qic_tape	load_scsi_tape"
 echo
 echo "or by fetching the files with ftp (see the installation notes for"
 echo "information on how to do that)."
@@ -85,7 +85,7 @@ echo
 echo "Once all of the filesets you wish to install have been extracted,"
 echo "enter the command 'configure' to finish setting up the system"
 echo " "
-echo "If you should wish to uninstall ${OPSYSTEM}, delete the partition by using the"
+echo "If you wish to uninstall ${OPSYSTEM}, delete the partition by using the"
 echo "DOS 5 FDISK program. If installed on the entire drive, use the FDISK/MBR"
 echo "to remove the ${OPSYSTEM} bootstrap from the drive."
 echo 'erase ^?, werase ^H, kill ^U, intr ^C'
@@ -302,6 +302,10 @@ load_fd()
 	echo "Working directory: `pwd`"
 	unset verbose answer drive altdrive device dir subdir tmp interactive
 }
+load_dos
+{
+	load_fd
+}
 load_qic_tape()
 {
 	tmp_dir
@@ -375,7 +379,7 @@ configure()
 	*)
 		intf=
 		while [ "$intf" = "" ]; do
-			echo -n "What is the primary interface name (i.e. we0, etc.)? "
+			echo -n "What is the primary interface name (i.e. ed0, etc.)? "
 			read intf
 		done
 		echo -n "What is the hostname for this interface? [$hname] "

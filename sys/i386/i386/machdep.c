@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)machdep.c	7.4 (Berkeley) 6/3/91
- *	$Id: machdep.c,v 1.35 1994/02/08 09:25:53 davidg Exp $
+ *	$Id: machdep.c,v 1.36.2.4 1994/04/18 03:03:34 rgrimes Exp $
  */
 
 #include "npx.h"
@@ -127,6 +127,9 @@ long dumplo;
 extern int bootdev;
 #ifdef SMALL
 extern int forcemaxmem;
+#endif
+#if defined(GENERICAH) || defined(GENERICBT)
+int generic_hack = 1;
 #endif
 int biosmem;
 
@@ -486,6 +489,7 @@ sendsig(catcher, sig, mask, code)
 	fp->sf_sc.sc_ps = regs[tEFLAGS];
 	regs[tESP] = (int)fp;
 	regs[tEIP] = (int)((struct pcb *)kstack)->pcb_sigc;
+	regs[tEFLAGS] &= ~PSL_VM;
 	regs[tCS] = _ucodesel;
 	regs[tDS] = _udatasel;
 	regs[tES] = _udatasel;
@@ -515,6 +519,7 @@ sigreturn(p, uap, retval)
 	register struct sigcontext *scp;
 	register struct sigframe *fp;
 	register int *regs = p->p_regs;
+	int eflags;
 
 	/*
 	 * (XXX old comment) regs[tESP] points to the return address.
@@ -528,6 +533,48 @@ sigreturn(p, uap, retval)
 
 	if (useracc((caddr_t)fp, sizeof (*fp), 0) == 0)
 		return(EINVAL);
+
+	eflags = scp->sc_ps;
+	if ((eflags & PSL_USERCLR) != 0 ||
+	    (eflags & PSL_USERSET) != PSL_USERSET ||
+	    (eflags & PSL_IOPL) < (regs[tEFLAGS] & PSL_IOPL)) {
+#ifdef DEBUG
+    		printf("sigreturn:  eflags=0x%x\n", eflags);
+#endif
+    		return(EINVAL);
+	}
+
+	/*
+	 * Sanity check the user's selectors and error if they
+	 * are suspect.
+	 */
+#define max_ldt_sel(pcb) \
+	((pcb)->pcb_ldt ? (pcb)->pcb_ldt_len : (sizeof(ldt) / sizeof(ldt[0])))
+
+#define valid_ldt_sel(sel) \
+	(ISLDT(sel) && ISPL(sel) == SEL_UPL && \
+	 IDXSEL(sel) < max_ldt_sel(&p->p_addr->u_pcb))
+
+#define null_sel(sel) \
+	(!ISLDT(sel) && IDXSEL(sel) == 0)
+
+	if ((scp->sc_cs&0xffff != _ucodesel && !valid_ldt_sel(scp->sc_cs)) ||
+	    (scp->sc_ss&0xffff != _udatasel && !valid_ldt_sel(scp->sc_ss)) ||
+	    (scp->sc_ds&0xffff != _udatasel && !valid_ldt_sel(scp->sc_ds) &&
+	     !null_sel(scp->sc_ds)) ||
+	    (scp->sc_es&0xffff != _udatasel && !valid_ldt_sel(scp->sc_es) &&
+	     !null_sel(scp->sc_es))) {
+#ifdef DEBUG
+    		printf("sigreturn:  cs=0x%x ss=0x%x ds=0x%x es=0x%x\n",
+			scp->sc_cs, scp->sc_ss, scp->sc_ds, scp->sc_es);
+#endif
+		trapsignal(p, SIGBUS, T_PROTFLT);
+		return(EINVAL);
+	}
+
+#undef max_ldt_sel
+#undef valid_ldt_sel
+#undef null_sel
 
 	/* restore scratch registers */
 	regs[tEAX] = scp->sc_eax;
@@ -544,18 +591,14 @@ sigreturn(p, uap, retval)
 
 	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
 		return(EINVAL);
-#ifdef notyet
-	if ((scp->sc_ps & PSL_MBZ) != 0 || (scp->sc_ps & PSL_MBO) != PSL_MBO) {
-		return(EINVAL);
-	}
-#endif
-        p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
+
+	p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
 	p->p_sigmask = scp->sc_mask &~
 	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
 	regs[tEBP] = scp->sc_fp;
 	regs[tESP] = scp->sc_sp;
 	regs[tEIP] = scp->sc_pc;
-	regs[tEFLAGS] = scp->sc_ps;
+	regs[tEFLAGS] = eflags;
 	return(EJUSTRETURN);
 }
 
@@ -740,6 +783,14 @@ microtime(tvp)
 #endif /* HZ */
 
 void
+physstratdone(bp)
+	struct buf *bp;
+{
+	wakeup((caddr_t) bp);
+	bp->b_flags &= ~B_CALL;
+}
+
+void
 physstrat(bp, strat, prio)
 	struct buf *bp;
 	int (*strat)(), prio;
@@ -747,6 +798,8 @@ physstrat(bp, strat, prio)
 	register int s;
 	caddr_t baddr;
 
+	bp->b_flags |= B_CALL;
+	bp->b_iodone = physstratdone;
 	vmapbuf(bp);
 	(*strat)(bp);
 	/* pageout daemon doesn't wait for pushed pages */
@@ -1115,6 +1168,25 @@ init386(first)
 	 */
 	if ((pagesinext > 3840) && (pagesinext < 4096))
 		pagesinext = 3840;
+
+#if defined(GENERICAH) || defined(GENERICBT)
+	/* XXX This is an ugle hack so that machines with >16MB of memory
+	 * can be booted using the GENERIC* kernels and not have to worry
+	 * about bus mastered DMA on the ISA bus.  It is ONLY compiled into
+	 * the GENERIC* kernels and can be disabled by tweaking the global
+	 * generic_hack to be zero using gdb.
+	 */
+	if (generic_hack) {
+		if (pagesinext > 3840) {
+		printf("WARNING WARNING WARNING WARNING WARNING WARNING\n");
+		printf("GENERIC* kernels only USE the first 16MB of your ");
+		printf("%dMB.\n", (pagesinext + 256) / 256);
+		printf("Read the RELNOTES.FreeBSD file for the reason.\n");
+		printf("WARNING WARNING WARNING WARNING WARNING WARNING\n");
+		pagesinext = 3840;
+		}
+	}
+#endif	/* defined (GENERICAH) || defiend(GENERICBT) */
 
 	/*
 	 * Maxmem isn't the "maximum memory", it's the highest page of

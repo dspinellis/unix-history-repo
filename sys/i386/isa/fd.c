@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:	@(#)fd.c	7.4 (Berkeley) 5/25/91
- *	$Id:$
+ *	$Id: fd.c,v 1.23 1994/03/02 18:34:41 ache Exp $
  *
  */
 
@@ -109,7 +109,7 @@ struct fd_type fd_types[NUMTYPES] =
 { 10,2,0xFF,0x10,82,1640,1,FDC_250KBPS,2,0x2E,1 }, /*  820K in HD 3.5in */
 { 10,2,0xFF,0x10,80,1600,1,FDC_250KBPS,2,0x2E,1 }, /*  800K in HD 3.5in */
 {  9,2,0xFF,0x20,80,1440,1,FDC_250KBPS,2,0x50,1 }, /*  720K in HD 3.5in */
-{  9,2,0xFF,0x2A,40, 720,1,FDC_300KBPS,2,0x50,1 }, /*  360K in DD 5.25in */
+{  9,2,0xFF,0x2A,40, 720,1,FDC_250KBPS,2,0x50,1 }, /*  360K in DD 5.25in */
 
 { 18,2,0xFF,0x02,82,2952,1,FDC_500KBPS,2,0x02,2 }, /* 1.48M in HD 5.25in */
 { 18,2,0xFF,0x02,80,2880,1,FDC_500KBPS,2,0x02,2 }, /* 1.44M in HD 5.25in */
@@ -290,15 +290,16 @@ fdattach(dev)
 		|| (fdsu >= DRVS_PER_CTLR)) {
 #else
 		) {
+			fd->type = NO_TYPE;
 #endif
 #if NFT > 0
 				/* If BIOS says no floppy, or > 2nd device */
 				/* Probe for and attach a floppy tape.     */
 			if (ftattach(dev, fdup))
 				continue;
-			
+			if (fdsu < DRVS_PER_CTLR) 
+				fd->type = NO_TYPE;
 #endif
-			fd->type = NO_TYPE;
 			continue;
 		}
 

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.2 (Berkeley) 7/29/93";
+static char sccsid[] = "@(#)macro.c	8.3 (Berkeley) 2/7/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -115,8 +115,14 @@ expand(s, buf, buflim, e)
 			continue;
 
 		  case MACROEXPAND:	/* macro interpolation */
-			c = *++s;
-			q = macvalue(c & 0177, e);
+			c = *++s & 0177;
+			if (c != '\0')
+				q = macvalue(c, e);
+			else
+			{
+				s--;
+				q = NULL;
+			}
 			if (q == NULL)
 				continue;
 			break;

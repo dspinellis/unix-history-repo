@@ -19,7 +19,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.14 1994/01/15 15:03:13 davidg Exp $
+ *	$Id: kern_execve.c,v 1.15.2.1 1994/03/24 08:34:16 rgrimes Exp $
  */
 
 #include "param.h"
@@ -180,7 +180,7 @@ interpret:
 			(caddr_t)vnodep,		/* vnode */
 			0);				/* offset */
 	if (error) {
-		printf("mmap failed: %d\n",error);
+		uprintf("mmap failed: %d\n",error);
 		goto exec_fail_dealloc;
 	}
 	iparams->image_header = image_header;
@@ -231,7 +231,6 @@ interpret:
 	stack_base = exec_copyout_strings(iparams);
 	p->p_vmspace->vm_minsaddr = (char *)stack_base;
 
-	p->p_vmspace->vm_ssize = (((caddr_t)USRSTACK - (char *)stack_base) >> PAGE_SHIFT) + 1;
 
 	/*
 	 * Stuff argument count as first item on stack
@@ -258,6 +257,8 @@ interpret:
 	}
 	
 	/* implement set userid/groupid */
+	p->p_flag &= ~SUGID;
+
 	/*
 	 * Turn off kernel tracing for set-id programs, except for
 	 * root.
@@ -270,12 +271,20 @@ interpret:
 	}
 	if ((attr.va_mode&VSUID) && (p->p_flag & STRC) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
-		p->p_cred->p_svuid = p->p_ucred->cr_uid = attr.va_uid;
+		p->p_ucred->cr_uid = attr.va_uid;
+		p->p_flag |= SUGID;
 	}
 	if ((attr.va_mode&VSGID) && (p->p_flag & STRC) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
-		p->p_cred->p_svgid = p->p_ucred->cr_groups[0] = attr.va_gid;
+		p->p_ucred->cr_groups[0] = attr.va_gid;
+		p->p_flag |= SUGID;
 	}
+
+	/*
+	 * Implement correct POSIX saved uid behavior.
+	 */
+	p->p_cred->p_svuid = p->p_ucred->cr_uid;
+	p->p_cred->p_svgid = p->p_ucred->cr_gid;
 
 	/* mark vnode pure text */
  	ndp->ni_vp->v_flag |= VTEXT;
@@ -334,7 +343,7 @@ exec_fail:
 
 /*
  * Destroy old address space, and allocate a new stack
- *	The new stack is only DFLSSIZ large because it is grown
+ *	The new stack is only SGROWSIZ large because it is grown
  *	automatically in trap.c.
  */
 int
@@ -343,7 +352,7 @@ exec_new_vmspace(iparams)
 {
 	int error;
 	struct vmspace *vmspace = iparams->proc->p_vmspace;
-	caddr_t	stack_addr = (caddr_t) (USRSTACK - DFLSSIZ);
+	caddr_t	stack_addr = (caddr_t) (USRSTACK - SGROWSIZ);
 
 	iparams->vmspace_destroyed = 1;
 
@@ -352,9 +361,11 @@ exec_new_vmspace(iparams)
 
 	/* Allocate a new stack */
 	error = vm_allocate(&vmspace->vm_map, (vm_offset_t *)&stack_addr,
-			    DFLSSIZ, FALSE);
+			    SGROWSIZ, FALSE);
 	if (error)
 		return(error);
+
+	vmspace->vm_ssize = SGROWSIZ >> PAGE_SHIFT;
 
 	/* Initialize maximum stack address */
 	vmspace->vm_maxsaddr = (char *)USRSTACK - MAXSSIZ;

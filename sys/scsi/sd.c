@@ -14,7 +14,7 @@
  *
  * Ported to run under 386BSD by Julian Elischer (julian@dialix.oz.au) Sept 1992
  *
- *      $Id: sd.c,v 1.17 1994/01/29 10:30:39 rgrimes Exp $
+ *      $Id: sd.c,v 1.18.2.1 1994/03/15 03:54:29 rgrimes Exp $
  */
 
 #define SPLSD splbio
@@ -877,7 +877,16 @@ sd_get_parms(unit, flags)
 
 		sectors = sd_size(unit, flags);
 		disk_parms->disksize = sectors;
-		sectors /= (disk_parms->heads * disk_parms->cyls);
+		/* Check if none of these values are zero */
+		if(disk_parms->heads && disk_parms->cyls) {
+			sectors /= (disk_parms->heads * disk_parms->cyls);
+		}
+		else {
+			/* set it to something reasonable */
+			sectors = 32;
+			disk_parms->heads = 64;
+			disk_parms->cyls = sectors / (64 * 32);
+		}
 		disk_parms->sectors = sectors;	/* dubious on SCSI *//*XXX */
 	}
 	sd->sc_link->flags |= SDEV_MEDIA_LOADED;

@@ -1,7 +1,6 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-			     VERY EARLY DRAFT
-		       Last Update: October 30, 1993
+		         Version 8.2 of 2/28/94
 
 
 This FAQ is specific to Version 8 of sendmail.
@@ -55,19 +54,19 @@ This FAQ is specific to Version 8 of sendmail.
 ----------------------------------------------------------------------
   * What books are available describing sendmail?
 
-	There are currently no books available devoted to sendmail.
-	However, there are several books that have sendmail chapters.
+	There is one book available devoted to sendmail, and
+	several books that have sendmail chapters.
 
 	Nemeth, Snyder, and Seebass, _Unix System Administration
 		Handbook_.  Prentice-Hall.
 	Carl-Mitchell and Quarterman, _Practical Internetworking with
 		TCP/IP and UNIX_.  Addison-Wesley.
 	Hunt, _TCP/IP Network Administration_.  O'Reilly & Associates.
-
-	At least two books are due out "soon":
-
 	Costales, Allman, and Rickert, _Sendmail_.  O'Reilly &
-|		Associates (to appear November 1, 1993).
+		Associates.
+
+	Another book is due out "soon":
+
 	Avolio & Vixie, _Sendmail Theory and Practice_.  Digital
 		Press (release date unknown).
 ----------------------------------------------------------------------
@@ -188,16 +187,16 @@ This FAQ is specific to Version 8 of sendmail.
 	ends.  If they disagree, large packets will be trashed and
 	the connection will hang.
 ----------------------------------------------------------------------
-+ * I just upgraded to 8.x and suddenly I'm getting messages in my
-+   syslog of the form "collect: I/O error on connection".  What is
-+   going wrong?
-+
-+    	Nothing.  This is just a diagnosis of a condition that had
-+    	not been diagnosed before.  If you are getting a lot of these
-+    	from a single host, there is probably some incompatibility
-+    	between 8.x and that host.  If you get a lot of them in general,
-+    	you may have network problems that are causing connections to
-+    	get reset.
+  * I just upgraded to 8.x and suddenly I'm getting messages in my
+    syslog of the form "collect: I/O error on connection".  What is
+    going wrong?
+
+    	Nothing.  This is just a diagnosis of a condition that had
+    	not been diagnosed before.  If you are getting a lot of these
+    	from a single host, there is probably some incompatibility
+    	between 8.x and that host.  If you get a lot of them in general,
+    	you may have network problems that are causing connections to
+    	get reset.
 ----------------------------------------------------------------------
   * How can I get sendmail to deliver local mail to $HOME/.mail
     instead of into /usr/spool/mail (or /usr/mail)?
@@ -227,4 +226,108 @@ This FAQ is specific to Version 8 of sendmail.
 
 	This will make message sent to "list" come out as being
 	"From list-request" instead of "From eric".
+----------------------------------------------------------------------
+  * There are four UUCP mailers listed in the configuration files.
+    Which one should I use?
+
+	The choice is partly a matter of local preferences and what is
+	running at the other end of your UUCP connection.  Unlike good
+	protocols that define what will go over the wire, UUCP uses
+	the policy that you should do what is right for the other end;
+	if they change, you have to change.  This makes it hard to
+	do the right thing, and discourages people from updating their
+	software.  In general, if you can avoid UUCP, please do.
+
+	If you can't avoid it, you'll have to find the version that is
+	closest to what the other end accepts.  Following is a summary
+	of the UUCP mailers available.
+
+	uucp-old (obsolete name: "uucp")
+	  This is the oldest, the worst (but the closest to UUCP) way of
+	  sending messages accros UUCP connections.  It does bangify
+	  everything and prepends $U (your UUCP name) to the sender's
+	  address (which can already be a bang path itself).  It can
+	  only send to one address at a time, so it spends a lot of
+	  time copying duplicates of messages.  Avoid this if at all
+	  possible.
+
+	uucp-new (obsolete name: "suucp")
+	  The same as above, except that it assumes that in one rmail
+	  command you can specify several recipients.  It still has a
+	  lot of other problems.
+
+	uucp-dom
+	  This UUCP mailer keeps everything as domain addresses.
+	  Basically, it uses the SMTP mailer rewriting rules.
+
+	  Unfortunately, a lot of UUCP mailer transport agents require
+	  bangified addresses in the envelope, although you can use
+	  domain-based addresses in the message header.  (The envelope
+	  shows up as the From_ line on UNIX mail.)  So....
+
+	uucp-uudom
+	  This is a cross between uucp-new (for the envelope addresses)
+	  and uucp-dom (for the header addresses).  It bangifies the
+	  envelope sender (From_ line in messages) without adding the
+	  local hostname, unless there is no host name on the address
+	  at all (e.g., "wolf") or the host component is a UUCP host name
+	  instead of a domain name ("somehost!wolf" instead of
+	  "some.dom.ain!wolf").
+
+	Examples:
+
+	We are on host grasp.insa-lyon.fr (UUCP host name "grasp").  The
+	following summarizes the sender rewriting for various mailers.
+
+	Mailer          sender		rewriting in the envelope
+	------		------		-------------------------
+	uucp-{old,new}	wolf		grasp!wolf
+	uucp-dom	wolf		wolf@grasp.insa-lyon.fr
+	uucp-uudom	wolf		grasp.insa-lyon.fr!wolf
+
+	uucp-{old,new}	wolf@fr.net	grasp!fr.net!wolf
+	uucp-dom	wolf@fr.net	wolf@fr.net
+	uucp-uudom	wolf@fr.net	fr.net!wolf
+
+	uucp-{old,new}	somehost!wolf	grasp!somehost!wolf
+	uucp-dom	somehost!wolf	somehost!wolf@grasp.insa-lyon.fr
+	uucp-uudom	somehost!wolf	grasp.insa-lyon.fr!somehost!wolf
+----------------------------------------------------------------------
+  * I'm trying to to get my mail to go into queue only mode, and it
+    delivers the mail interactively anyway.  (Or, I'm trying to use
+    the "don't deliver to expensive mailer" flag, and it doesn't
+    delivers the mail interactively anyway.)  I can see it does it:
+    here's the output of "sendmail -v foo@somehost" (or Mail -v or
+    equivalent).
+
+	The -v flag to sendmail (which is implied by the -v flag to
+	Mail and other programs in that family) tells sendmail to
+	watch the transaction.  Since you have explicitly asked to
+	see what's going on, it assumes that you do not want to to
+	auto-queue, and turns that feature off.  Remove the -v flag
+	and use a "tail -f" of the log instead to see what's going on.
+
+	If you are trying to use the "don't deliver to expensive mailer"
+	flag (mailer flag "e"), be sure you also turn on global option
+	"c" -- otherwise it ignores the mailer flag.
+----------------------------------------------------------------------
+  * I'm getting "Local configuration error" messages, such as:
+
+	553 relay.domain.net config error: mail loops back to myself
+	554 <user@domain.net>... Local configuration error
+
+    How can I solve this problem?
+
+	You have asked mail to the domain (e.g., domain.net) to be
+	forwarded to a specific host (in this case, relay.domain.net)
+	by using an MX record, but the relay machine doesn't recognize
+	itself as domain.net.  Add domain.net to /etc/sendmail.cw
+	(if you are using FEATURE(use_cw_file)) or add "Cw domain.net"
+	to your configuration file.
+----------------------------------------------------------------------
+  * I want to run Sendmail version 8 on my DEC system, but you don't
+    have MAIL11V3 support in sendmail.  How do I handle this?
+
+	Get Paul Vixie's reimplementation of the mail11 protocol
+	from gatekeeper.dec.com in /pub/DEC/gwtools.
 ----------------------------------------------------------------------

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)conf.h	8.75 (Berkeley) 1/8/94
+ *	@(#)conf.h	8.96 (Berkeley) 3/11/94
  */
 
 /*
@@ -80,12 +80,20 @@
 # define NETUNIX	1	/* include unix domain support */
 # define NETINET	1	/* include internet support */
 # define SETPROCTITLE	1	/* munge argv to display current status */
-# define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define MATCHGECOS	1	/* match user names from gecos field */
 # define XDEBUG		1	/* enable extended debugging */
-
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
+# endif
+
+/**********************************************************************
+**  0/1 Compilation options.
+**	#define these to 1 if they are available;
+**	#define them to 0 otherwise.
+**********************************************************************/
+
+# ifndef NAMED_BIND
+#  define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # endif
 
 /*
@@ -131,10 +139,10 @@
 # undef m_flags
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
-# define setreuid(r, e)		setresuid(r, e, -1)	
+# define setreuid(r, e)		setresuid(r, e, -1)
 # define LA_TYPE	LA_FLOAT
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # define GIDSET_T	gid_t
 # define _PATH_UNIX	"/hp-ux"
 # ifndef _PATH_SENDMAILCF
@@ -159,11 +167,11 @@ extern int	syslog(int, char *, ...);
 
 # ifdef _AIX3
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
 # undef  SETPROCTITLE		/* setproctitle confuses AIX */
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # endif
 
 
@@ -177,12 +185,12 @@ extern int	syslog(int, char *, ...);
 # include <sys/sysmacros.h>
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # endif
 
 
@@ -195,10 +203,10 @@ extern int	syslog(int, char *, ...);
 
 #if defined(sun) && !defined(BSD)
 
-# define LA_TYPE	LA_INT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
+# define LA_TYPE	LA_INT
 
 # ifdef SOLARIS_2_3
 #  define SOLARIS
@@ -222,12 +230,17 @@ extern int	syslog(int, char *, ...);
 #  ifndef _PATH_SENDMAILPID
 #   define _PATH_SENDMAILPID	"/etc/mail/sendmail.pid"
 #  endif
+#  ifndef SYSLOG_BUFSIZE
+#   define SYSLOG_BUFSIZE	1024	/* allow full size syslog buffer */
+#  endif
 
 # else
 			/* SunOS 4.0.3 or 4.1.x */
 #  define HASSETREUID	1	/* has setreuid(2) call */
-#  define HASSTATFS	1	/* has the statfs(2) syscall */
-#  define HASFLOCK	1	/* has flock(2) call */
+#  ifndef HASFLOCK
+#   define HASFLOCK	1	/* has flock(2) call */
+#  endif
+#  define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 #  include <vfork.h>
 
 #  ifdef SUNOS403
@@ -255,15 +268,16 @@ extern char		*getenv();
 #ifdef	DGUX
 # define SYSTEM5	1
 # define LA_TYPE	LA_SUBR
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has Posix setsid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASGETUSERSHELL 0	/* does not have getusershell(3) */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
 # undef SETPROCTITLE
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 
 /* these include files must be included early on DG/UX */
 # include <netinet/in.h>
@@ -283,18 +297,22 @@ extern long	dgux_inet_addr();
 */
 
 #ifdef ultrix
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# define HASUNAME	1	/* use System V uname(2) system call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# define BROKEN_RES_SEARCH 1	/* res_search(unknown) returns h_errno=0 */
 # ifdef vax
 #  define LA_TYPE	LA_FLOAT
 # else
 #  define LA_TYPE	LA_INT
 #  define LA_AVENRUN	"avenrun"
 # endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
@@ -306,12 +324,14 @@ extern long	dgux_inet_addr();
 */
 
 #ifdef __osf__
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define LA_TYPE	LA_INT
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef _PATH_SENDMAILPID
 #  define _PATH_SENDMAILPID	"/var/run/sendmail.pid"
 # endif
@@ -324,15 +344,17 @@ extern long	dgux_inet_addr();
 
 #ifdef NeXT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define sleep		sleepX
 # define setpgid	setpgrp
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_MACH
 # endif
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # ifndef _POSIX_SOURCE
 typedef int		pid_t;
 #  undef WEXITSTATUS
@@ -355,13 +377,36 @@ typedef int		pid_t;
 
 #ifdef BSD4_4
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
+# include <sys/cdefs.h>
+# define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_SUBR
+# endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
+#endif
+
+
+/*
+**  BSD/386 (all versions)
+**	From Tony Sanders, BSDI
+*/
+
+#ifdef __bsdi__
+# define HASUNSETENV	1	/* has the unsetenv(3) call */
+# define HASSETSID	1	/* has the setsid(2) POSIX syscall */
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
+# if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199312
+#  define HASSETPROCTITLE 1	/* setproctitle is in libc */
+# else
+#  define SETPROCTITLE	1
+# endif
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
 #endif
+
 
 
 /*
@@ -375,12 +420,12 @@ typedef int		pid_t;
 #if defined(__386BSD__) || defined(__FreeBSD__) || defined(__NetBSD__)
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 #endif
 
 
@@ -394,14 +439,16 @@ typedef int		pid_t;
 # define MACH386	1
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define NEEDSTRTOL	1	/* need the strtol() function */
 # define setpgid	setpgrp
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # undef HASSETVBUF		/* don't actually have setvbuf(3) */
 # undef WEXITSTATUS
 # undef WIFEXITED
@@ -417,11 +464,13 @@ typedef int		pid_t;
 /*
 **  4.3 BSD -- this is for very old systems
 **
+**	Should work for mt Xinu MORE/BSD and Mips UMIPS-BSD 2.1.
+**
 **	You'll also have to install a new resolver library.
 **	I don't guarantee that support for this environment is complete.
 */
 
-#ifdef oldBSD43
+#if defined(oldBSD43) || defined(MORE_BSD) || defined(umipsbsd)
 # define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define ARBPTR_T	char *
@@ -465,26 +514,40 @@ extern int		errno;
 #ifdef _SCO_unix_
 # define SYSTEM5	1	/* include all the System V defines */
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork
 # define MAXPATHLEN	PATHSIZE
 # define LA_TYPE	LA_SHORT
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # undef NETUNIX			/* no unix domain socket support */
 #endif
 
 
 /*
 **  ConvexOS 11.0 and later
+**
+**	"Todd C. Miller" <millert@mroe.cs.colorado.edu> claims this
+**	works on 9.1 as well.
 */
 
 #ifdef _CONVEX_SOURCE
 # define BSD		1	/* include all the BSD defines */
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETSID	1	/* has POSIX setsid(2) call */
 # define NEEDGETOPT	1	/* need replacement for getopt(3) */
 # define LA_TYPE	LA_FLOAT
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef S_IREAD
+#  define S_IREAD	_S_IREAD
+#  define S_IWRITE	_S_IWRITE
+#  define S_IEXEC	_S_IEXEC
+#  define S_IFMT	_S_IFMT
+#  define S_IFCHR	_S_IFCHR
+#  define S_IFBLK	_S_IFBLK
+# endif
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
@@ -500,7 +563,9 @@ extern int		errno;
 #ifdef RISCOS
 
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define LA_TYPE	LA_INT
@@ -522,19 +587,32 @@ extern void		*malloc();
 
 /*
 **  Linux 0.99pl10 and above...
-**	From Karl London <karl@borg.demon.co.uk>.
+**
+**  Thanks to, in reverse order of contact:
+**
+**	John Kennedy <warlock@csuchico.edu>
+**	Florian La Roche <rzsfl@rz.uni-sb.de>
+**	Karl London <karl@borg.demon.co.uk>
+**
+**  Last compiled against:	[03/02/94 @ 05:34 PM (Wednesday)]
+**	sendmail 8.6.6.b9	named 4.9.2-931205-p1	db-1.73
+**	gcc 2.5.8		libc.so.4.5.19
+**	slackware 1.1.2		linux 0.99.15
 */
 
 #ifdef __linux__
-# define BSD		1	/* pretend to be BSD based today */
-# undef  NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
+# define BSD		1	/* include BSD defines */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
+# define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# define GIDSET_T	gid_t	/* from <linux/types.h> */
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_FLOAT
+#  define LA_TYPE	LA_PROCSTR
 # endif
+# define SFS_TYPE	SFS_VFS		/* use <sys/vfs.h> statfs() impl */
 # include <sys/sysmacros.h>
-# define GIDSET_T	gid_t
+# undef atol			/* wounded in <stdlib.h> */
 #endif
 
 
@@ -563,9 +641,7 @@ extern void		*malloc();
 #ifdef _AUX_SOURCE
 # include <sys/sysmacros.h>
 # define BSD			/* has BSD routines */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define SIGFUNC_DEFINED	/* sigfunc_t already defined */
 # ifndef IDENTPROTO
@@ -578,6 +654,7 @@ extern void		*malloc();
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_ZERO
 # endif
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # undef WIFEXITED
 # undef WEXITSTATUS
 #endif
@@ -592,13 +669,13 @@ extern void		*malloc();
 #ifdef UMAXV
 # include <limits.h>
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
 # define FORK		fork	/* no vfork(2) primitive available */
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define MAXPATHLEN	PATH_MAX
 extern struct passwd	*getpwent(), *getpwnam(), *getpwuid();
 extern struct group	*getgrent(), *getgrnam(), *getgrgid();
@@ -632,6 +709,7 @@ typedef int		pid_t;
 */
 
 #ifdef sequent
+
 # define BSD		1
 # define HASUNSETENV	1
 # define BSD4_3		1	/* to get signal() in conf.c */
@@ -651,6 +729,10 @@ typedef int		pid_t;
 typedef int		pid_t;
 # define isgraph(c)	(isprint(c) && (c != ' '))
 
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+
 # ifndef _PATH_UNIX
 #  define _PATH_UNIX	"/dynix"
 # endif
@@ -658,6 +740,81 @@ typedef int		pid_t;
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
 
+#endif
+
+
+/*
+**  Sequent DYNIX/ptx v2.0 (and higher)
+**
+**	For DYNIX/ptx v1.x, undefine HASSETREUID.
+**
+**	From Tim Wright <timw@sequent.com>.
+*/
+
+#ifdef _SEQUENT_
+# define SYSTEM5	1	/* include all the System V defines */
+# define HASSETSID	1	/* has POSIX setsid(2) call */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# define GIDSET_T	gid_t
+# define LA_TYPE	LA_INT
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
+# undef SETPROCTITLE
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+#endif
+
+
+/*
+**  Cray Unicos
+**
+**	Ported by David L. Kensiski, Sterling Sofware <kensiski@nas.nasa.gov>
+*/
+
+#ifdef UNICOS
+# define SYSTEM5	1	/* include all the System V defines */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define MAXPATHLEN	PATHSIZE
+# define LA_TYPE	LA_ZERO
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
+#endif
+
+
+/*
+**  Apollo DomainOS
+**
+**  From Todd Martin <tmartint@tus.ssi1.com> & Don Lewis <gdonl@gv.ssi1.com>
+**
+**  15 Jan 1994
+**
+*/
+
+#ifdef apollo
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define HASINITGROUPS	1	/* has initgroups(2) call */
+# undef  SETPROCTITLE
+# define LA_TYPE	LA_SUBR		/* use getloadavg.c */
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+# undef  S_IFSOCK		/* S_IFSOCK and S_IFIFO are the same */
+# undef  S_IFIFO
+# define S_IFIFO	0010000
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 #endif
 
 
@@ -676,7 +833,9 @@ typedef int		pid_t;
 # define HASGETDTABLESIZE 1	/* has getdtablesize(2) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 #endif
 
 /* general System V Release 4 defines */
@@ -703,19 +862,21 @@ typedef int		pid_t;
 #endif
 
 /* general System V defines */
-# ifdef SYSTEM5
+#ifdef SYSTEM5
 # include <sys/sysmacros.h>
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_INT
+#  define LA_TYPE	LA_INT		/* assume integer load average */
+# endif
+# ifndef SFS_TYPE
+#  define SFS_TYPE	SFS_USTAT	/* use System V ustat(2) syscall */
 # endif
 # define bcopy(s, d, l)		(memmove((d), (s), (l)))
 # define bzero(d, l)		(memset((d), '\0', (l)))
 # define bcmp(s, d, l)		(memcmp((s), (d), (l)))
-# endif
+#endif
 
 /* general POSIX defines */
 #ifdef _POSIX_VERSION
@@ -742,6 +903,7 @@ typedef int		pid_t;
 # undef HASINITGROUPS		/* doesn't have initgroups(3) call */
 #endif
 
+
 /*
 **  Due to a "feature" in some operating systems such as Ultrix 4.3 and
 **  HPUX 8.0, if you receive a "No route to host" message (ICMP message
@@ -759,6 +921,10 @@ typedef int		pid_t;
 
 #ifndef HASGETUSERSHELL
 # define HASGETUSERSHELL 1	/* libc has getusershell(3) call */
+#endif
+
+#ifndef HASFLOCK
+# define HASFLOCK	0	/* assume no flock(2) support */
 #endif
 
 
@@ -935,3 +1101,11 @@ typedef void		(*sigfunc_t) __P((int));
 # ifndef FORK
 # define FORK		vfork		/* function to call to fork mailer */
 # endif
+
+/*
+**  If we are going to link scanf anyway, use it in readcf
+*/
+
+#if !defined(HASUNAME) && !defined(SCANF)
+# define SCANF		1
+#endif

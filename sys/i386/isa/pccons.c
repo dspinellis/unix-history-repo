@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id: pccons.c,v 1.12 1994/01/03 07:55:45 davidg Exp $
+ *	$Id: pccons.c,v 1.13 1994/02/10 10:17:58 ache Exp $
  */
 
 /*
@@ -869,6 +869,9 @@ sput(c,  ka)
 					break;
 				case 'S':  /* scroll up cx lines */
 					if (vs.cx <= 0) vs.cx = 1;
+					posy = (crtat - Crtat) / vs.ncol;
+					if (vs.cx > posy)
+						vs.cx = posy;
 					bcopy(Crtat+vs.ncol*vs.cx, Crtat, vs.ncol*(vs.nrow-vs.cx)*CHR);
 					fillw((at <<8)+' ',
 						(Crtat + vs.ncol * (vs.nrow - vs.cx)),
@@ -878,6 +881,9 @@ sput(c,  ka)
 					break;
 				case 'T':  /* scroll down cx lines */
 					if (vs.cx <= 0) vs.cx = 1;
+					posy = (crtat - Crtat) / vs.ncol;
+					if (vs.cx > vs.nrow - posy)
+						vs.cx = vs.nrow - posy;
 					bcopy(Crtat, Crtat+vs.ncol*vs.cx, vs.ncol*(vs.nrow-vs.cx)*CHR);
 					fillw((at <<8)+' ', Crtat, vs.ncol*vs.cx);
 					/* crtat += vs.ncol*vs.cx;*/ /* XXX */

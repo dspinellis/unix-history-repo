@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *	$Id: sys_process.c,v 1.8 1993/12/02 02:48:15 davidg Exp $
+ *	$Id: sys_process.c,v 1.9.2.1 1994/03/07 01:45:36 rgrimes Exp $
  */
 
 #include "param.h"
@@ -181,12 +181,23 @@ pwrite (struct proc *procp, unsigned int addr, unsigned int datum) {
 	vm_map_lookup_done (tmap, out_entry);
   
 	/*
+	 * Fault the page-table-page in...
+	 */
+	vm_map_pageable(map, trunc_page(vtopte(pageno)),
+		trunc_page(vtopte(pageno)) + NBPG, FALSE);
+	/*
 	 * Fault the page in...
 	 */
 
 	rv = vm_fault (map, pageno, VM_PROT_WRITE, FALSE);
-	if (rv != KERN_SUCCESS)
+	if (rv != KERN_SUCCESS) {
+		/*
+		 * release the page table page
+		 */
+		vm_map_pageable(map, trunc_page(vtopte(pageno)),
+			trunc_page(vtopte(pageno)) + NBPG, TRUE);
 		return EFAULT;
+	}
 
 	/*
 	 * The page may need to be faulted in again, it seems.
@@ -203,7 +214,7 @@ pwrite (struct proc *procp, unsigned int addr, unsigned int datum) {
 	if (!rv) {
 		vm_object_reference (object);
 
-		rv = vm_map_pageable (kernel_map, kva, kva + PAGE_SIZE, 0);
+		rv = vm_map_pageable (kernel_map, kva, kva + PAGE_SIZE, FALSE);
 		if (!rv) {
 		  bcopy (&datum, (caddr_t)(kva + page_offset), sizeof datum);
 		}
@@ -213,6 +224,13 @@ pwrite (struct proc *procp, unsigned int addr, unsigned int datum) {
 	if (fix_prot)
 		vm_map_protect (map, pageno, pageno + PAGE_SIZE,
 			VM_PROT_READ|VM_PROT_EXECUTE, 0);
+
+	/*
+	 * release the page table page
+	 */
+	vm_map_pageable(map, trunc_page(vtopte(pageno)),
+		trunc_page(vtopte(pageno)) + NBPG, TRUE);
+
 	return rv;
 }
 
@@ -427,9 +445,13 @@ profil(p, uap, retval)
 	 *
 	 * so we've gotta check to make sure that the info set up for
 	 * addupc is set right... it's gotta be writable by the user...
+	 *
+	 * Add a little extra sanity checking so that end profil requests
+	 * don't generate spurious faults.	-jkh
 	 */
 
-	if (useracc((caddr_t)uap->bufbase, uap->bufsize * sizeof(short),
+	if (uap->bufbase && uap->bufsize &&
+	    useracc((caddr_t)uap->bufbase, uap->bufsize * sizeof(short),
 		    B_WRITE) == 0)
 		return EFAULT;
 

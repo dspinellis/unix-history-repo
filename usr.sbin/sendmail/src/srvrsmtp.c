@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.23 (Berkeley) 12/21/93 (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.32 (Berkeley) 3/8/94 (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.23 (Berkeley) 12/21/93 (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.32 (Berkeley) 3/8/94 (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -117,6 +117,10 @@ bool	OneXact = FALSE;		/* one xaction only this run */
 char	*CurSmtpClient;			/* who's at the other end of channel */
 
 static char	*skipword();
+extern char	RealUserName[];
+
+
+#define MAXBADCOMMANDS	25		/* maximum number of bad commands */
 
 smtp(e)
 	register ENVELOPE *e;
@@ -132,10 +136,12 @@ smtp(e)
 	char *protocol;			/* sending protocol */
 	char *sendinghost;		/* sending hostname */
 	long msize;			/* approximate maximum message size */
+	char *peerhostname;		/* name of SMTP peer or "localhost" */
 	auto char *delimptr;
 	char *id;
 	int nrcpts;			/* number of RCPT commands */
 	bool doublequeue;
+	int badcommands = 0;		/* count of bad commands */
 	char inp[MAXLINE];
 	char cmdbuf[MAXLINE];
 	extern char Version[];
@@ -147,10 +153,13 @@ smtp(e)
 		(void) dup2(fileno(OutChannel), fileno(stdout));
 	}
 	settime(e);
-	CurHostName = RealHostName;
+	peerhostname = RealHostName;
+	if (peerhostname == NULL)
+		peerhostname = "localhost";
+	CurHostName = peerhostname;
 	CurSmtpClient = macvalue('_', e);
 	if (CurSmtpClient == NULL)
-		CurSmtpClient = RealHostName;
+		CurSmtpClient = CurHostName;
 
 	setproctitle("server %s startup", CurSmtpClient);
 	expand("\201e", inp, &inp[sizeof inp], e);
@@ -170,11 +179,15 @@ smtp(e)
 	for (;;)
 	{
 		/* arrange for backout */
-		if (setjmp(TopFrame) > 0 && InChild)
+		if (setjmp(TopFrame) > 0)
 		{
-			QuickAbort = FALSE;
-			SuprErrs = TRUE;
-			finis();
+			/* if() nesting is necessary for Cray UNICOS */
+			if (InChild)
+			{
+				QuickAbort = FALSE;
+				SuprErrs = TRUE;
+				finis();
+			}
 		}
 		QuickAbort = FALSE;
 		HoldErrs = FALSE;
@@ -196,6 +209,7 @@ smtp(e)
 		if (p == NULL)
 		{
 			/* end of file, just die */
+			disconnect(1, e);
 			message("421 %s Lost input channel from %s",
 				MyHostName, CurSmtpClient);
 #ifdef LOG
@@ -260,14 +274,6 @@ smtp(e)
 				SmtpPhase = "server HELO";
 			}
 			sendinghost = newstr(p);
-			if (strcasecmp(p, RealHostName) != 0 &&
-			    (strcasecmp(RealHostName, "localhost") != 0 ||
-			     strcasecmp(p, MyHostName) != 0))
-			{
-				auth_warning(e, "Host %s claimed to be %s",
-					RealHostName, p);
-			}
-
 			gothello = TRUE;
 			if (c->cmdcode != CMDEHLO)
 			{
@@ -297,7 +303,7 @@ smtp(e)
 			{
 				/* set sending host to our known value */
 				if (sendinghost == NULL)
-					sendinghost = RealHostName;
+					sendinghost = peerhostname;
 
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
@@ -326,8 +332,18 @@ smtp(e)
 			{
 				auth_warning(e,
 					"Host %s didn't use HELO protocol",
-					RealHostName);
+					peerhostname);
 			}
+#ifdef PICKY_HELO_CHECK
+			if (strcasecmp(sendinghost, peerhostname) != 0 &&
+			    (strcasecmp(peerhostname, "localhost") != 0 ||
+			     strcasecmp(sendinghost, MyHostName) != 0))
+			{
+				auth_warning(e, "Host %s claimed to be %s",
+					peerhostname, sendinghost);
+			}
+#endif
+
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);
@@ -362,12 +378,21 @@ smtp(e)
 			if (p != NULL && *p != '\0')
 				*p++ = '\0';
 
+			/* check for possible spoofing */
+			if (RealUid != 0 && OpMode == MD_SMTP &&
+			    (e->e_from.q_mailer != LocalMailer &&
+			     strcmp(e->e_from.q_user, RealUserName) != 0))
+			{
+				auth_warning(e, "%s owned process doing -bs",
+					RealUserName);
+			}
+
 			/* now parse ESMTP arguments */
 			msize = 0;
 			for (; p != NULL && *p != '\0'; p++)
 			{
 				char *kp;
-				char *vp;
+				char *vp = NULL;
 
 				/* locate the beginning of the keyword */
 				while (isascii(*p) && isspace(*p))
@@ -700,8 +725,9 @@ smtp(e)
 		  case CMDQUIT:		/* quit -- leave mail */
 			message("221 %s closing connection", MyHostName);
 
+doquit:
 			/* avoid future 050 messages */
-			Verbose = FALSE;
+			disconnect(1, e);
 
 			if (InChild)
 				ExitStat = EX_QUIT;
@@ -745,12 +771,19 @@ smtp(e)
 			if (LogLevel > 0)
 				syslog(LOG_CRIT,
 				    "\"%s\" command from %s (%s)",
-				    c->cmdname, RealHostName,
+				    c->cmdname, peerhostname,
 				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
 
 		  case CMDERROR:	/* unknown command */
+			if (++badcommands > MAXBADCOMMANDS)
+			{
+				message("421 %s Too many bad commands; closing connection",
+					MyHostName);
+				goto doquit;
+			}
+
 			message("500 Command unrecognized");
 			break;
 
@@ -782,6 +815,7 @@ skipword(p, w)
 	char *w;
 {
 	register char *q;
+	char *firstp = p;
 
 	/* find beginning of word */
 	while (isascii(*p) && isspace(*p))
@@ -796,7 +830,8 @@ skipword(p, w)
 	if (*p != ':')
 	{
 	  syntax:
-		message("501 Syntax error in parameters");
+		message("501 Syntax error in parameters scanning \"%s\"",
+			firstp);
 		Errors++;
 		return (NULL);
 	}
@@ -955,8 +990,11 @@ runinchild(label, e)
 					label, st & 0177);
 
 			/* if we exited on a QUIT command, complete the process */
-			if (st == (EX_QUIT << 8))
+			if (WEXITSTATUS(st) == EX_QUIT)
+			{
+				disconnect(1, e);
 				finis();
+			}
 
 			return (1);
 		}

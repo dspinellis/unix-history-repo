@@ -30,7 +30,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)op.me	8.32 (Berkeley) 1/12/94
+.\"	@(#)op.me	8.34 (Berkeley) 3/3/94
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -69,7 +69,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.32
+Version 8.34
 .sp
 For Sendmail Version 8.6
 .)l
@@ -2471,10 +2471,22 @@ is later rewritten by the mailer-specific envelope rewriting set
 and assigned to the
 .b $u
 macro.
+As a special case, if the value to
+.b $#
+is
+.q local
+and the first character of the
+.b $:
+value is
+.q @ ,
+the
+.q @
+is stripped off, and a flag is set in the address descriptor
+that causes sendmail to not do ruleset 5 processing.
 .pp
-Normally, a ruleset that matches is retried,
+Normally, a rule that matches is retried,
 that is,
-the ruleset loops until it fails.
+the rule loops until it fails.
 A RHS may also be preceded by a
 .b $@
 or a
@@ -3387,7 +3399,7 @@ Strip all output to seven bits.
 This is the default if the
 .b L
 flag is set.
-Note that setting this is not
+Note that clearing this option is not
 sufficient to get full eight bit data passed through
 .i sendmail .
 If the
@@ -6875,7 +6887,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.32
+.\"Version 8.34
 .\".ce 0
 .bp 2
 .rs

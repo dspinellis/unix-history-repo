@@ -1,5 +1,5 @@
 #	from: @(#)Makefile	5.11 (Berkeley) 5/21/91
-#	$Id: Makefile,v 1.52 1994/02/21 21:53:20 rgrimes Exp $
+#	$Id: Makefile,v 1.53.2.4 1994/05/01 20:50:35 rgrimes Exp $
 
 NOOBJ=	noobj
 
@@ -40,11 +40,15 @@ MDEC=		usr/mdec/bootfd usr/mdec/fdboot
 MDEC+=		usr/mdec/bootsd usr/mdec/sdboot
 MDEC+=		usr/mdec/bootwd usr/mdec/wdboot
 #
-KC_DIRS=	dev mnt bin sbin
+KC_DIRS=	bin dev mnt sbin
 KC_FILES=	${COPYRIGHT}
 KC_FILES+=	bin/sh					# XXX Crunch is broken!
+KC_FILES+=	sbin/mount sbin/mount_isofs		# XXX Crunch is broken!
 KC_LINKS=	bin/[ bin/cp bin/echo bin/test
-KC_LINKS+=	sbin/fsck sbin/halt sbin/init sbin/mount sbin/umount
+KC_LINKS+=	sbin/fsck sbin/halt sbin/init
+KC_LINKS+=	sbin/umount
+#
+CD_DIRS=	etc usr
 #
 FILESYSTEM_DIRS=	bin dev etc mnt proc sbin usr usr/bin usr/mdec usr/sbin
 FILESYSTEM_TREES=	dev
@@ -74,6 +78,7 @@ FILESYSTEM_CPIO+=	sbin/disklabel sbin/fdisk sbin/halt sbin/init
 FILESYSTEM_CPIO+=	sbin/mount sbin/mount_pcfs
 FILESYSTEM_CPIO+=	sbin/newfs
 FILESYSTEM_CPIO+=	sbin/umount
+FILESYSTEM_CPIO_DIRS=	root
 
 CPIO_FILES=	${COPYRIGHT}
 CPIO_CPIO=	bin/dd bin/ps bin/pwd bin/stty
@@ -87,7 +92,6 @@ CPIO_CPIO+=	usr/bin/awk usr/bin/chgrp usr/bin/cpio usr/bin/ex usr/bin/ftp
 CPIO_CPIO+=	usr/bin/gunzip usr/bin/gzcat usr/bin/gzip
 CPIO_CPIO+=	usr/bin/more usr/bin/tar usr/bin/tip
 CPIO_CPIO+=	usr/bin/vi usr/bin/view usr/bin/zcat
-CPIO_CPIO+=	usr/libexec/ld.so
 CPIO_CPIO+=	usr/lib/libc.so.1.0
 CPIO_CPIO+=	usr/lib/libcurses.so.1.0
 CPIO_CPIO+=	usr/lib/libgcc.so.1.0
@@ -95,9 +99,11 @@ CPIO_CPIO+=	usr/lib/libm.so.1.0
 CPIO_CPIO+=	usr/lib/libtermlib.so.1.0
 CPIO_CPIO+=	usr/lib/libtermcap.so.1.0
 CPIO_CPIO+=	usr/lib/libutil.so.1.0
+CPIO_CPIO+=	usr/libexec/ld.so
 CPIO_CPIO+=	usr/sbin/bad144 usr/sbin/chown
 CPIO_CPIO+=	usr/share/misc/termcap
-CPIO_CPIO_DIRS=	tmp var var/tmp var/run var/spool var/spool/lock
+CPIO_CPIO_DIRS=		tmp usr/lib usr/libexec usr/share usr/share/misc
+CPIO_CPIO_DIRS+=	var var/tmp var/run var/spool var/spool/lock
 
 CRYPT_LIB=	lib/libcrypt
 CRYPT_SRCS=	bin/ed bin/rcp
@@ -217,7 +223,7 @@ kcopy-kernels: ../sys/i386/conf/GENERICAH ../sys/i386/conf/GENERICBT
 kcopy-floppy:
 	disklabel -w -r ${FLOPPY} ${FLOPPY_TYPE} \
 		/usr/mdec/fdboot /usr/mdec/bootfd
-	newfs -b 4096 -c 80 -f 512 -i 16384 -m 0 -o space \
+	newfs -b 4096 -c 80 -f 512 -i 10240 -m 0 -o space \
 		r${FLOPPY} ${FLOPPY_TYPE}
 	mount /dev/${FLOPPY} ${MOUNT}
 	chown root.wheel ${MOUNT}/.
@@ -227,8 +233,10 @@ kcopy-floppy:
 	(cd ${MOUNT}/dev; \
 	    sh ${DESTDIR}/dev/MAKEDEV std; \
 	    rm -rf fd; \
-	    sh ${DESTDIR}/dev/MAKEDEV fd0 wd0 sd0 sd1; \
-	    rm -rf fd0?* rfd0?*;)
+	    sh ${DESTDIR}/dev/MAKEDEV fd0 fd1 wd0 wd1 sd0 sd1; \
+	    rm -rf fd0?* rfd0?* fd1?* rfd1?*; \
+	    sh ${DESTDIR}/dev/MAKEDEV cd0 mcd0 mcd1; \
+	    rm -rf rmcd*)
 	(cd ${DESTDIR}/; \
 	    ls ${KC_FILES} | cpio -pdamuv ${MOUNT})
 	install -c -o root -g wheel -m 755 etc.i386/kc.profile \
@@ -264,6 +272,45 @@ kcopy_bt.flp:
 	gzip --no-name -9 -c ${RELEASEDIR}/floppies/kcopy_bt.flp \
 		>${RELEASEDIR}/floppies/kcopy_bt.flp.gz
 
+cdins-floppy:
+	${MAKE} kcopy-floppy
+	(cd ${DESTDIR}/; \
+	    ls -d ${CD_DIRS} | cpio -pdamuv ${MOUNT})
+	(cd ${MOUNT}/usr; \
+	    ln -s /cdrom/filesys/usr/libexec libexec; \
+	    ln -s /cdrom/filesys/usr/lib lib)
+	mkdir ${MOUNT}/cdrom
+	chown root.wheel ${MOUNT}/cdrom
+	chmod 755 ${MOUNT}/cdrom
+	install -c -o root -g wheel -m 755 etc.i386/cdinst1.profile \
+	    ${MOUNT}/.profile
+	install -c -o root -g wheel -m 755 etc.i386/cdinst1.install \
+	    ${MOUNT}/install
+	
+cdins_ah.flp:
+	${MAKE} cdins-floppy
+	(cd ../sys/compile/GENERICAH; \
+	    install -c -o root -g wheel -m 755 386bsd ${MOUNT}/)
+	df -ik ${MOUNT}
+	umount /dev/${FLOPPY}
+	fsck /dev/r${FLOPPY}
+	dd if=/dev/r${FLOPPY} of=${RELEASEDIR}/floppies/cdins_ah.flp \
+		bs=15b count=160
+	gzip --no-name -9 -c ${RELEASEDIR}/floppies/cdins_ah.flp \
+		>${RELEASEDIR}/floppies/cdins_ah.flp.gz
+
+cdins_bt.flp:
+	${MAKE} cdins-floppy
+	(cd ../sys/compile/GENERICBT; \
+	    install -c -o root -g wheel -m 755 386bsd ${MOUNT}/)
+	df -ik ${MOUNT}
+	umount /dev/${FLOPPY}
+	fsck /dev/r${FLOPPY}
+	dd if=/dev/r${FLOPPY} of=${RELEASEDIR}/floppies/cdins_bt.flp \
+		bs=15b count=160
+	gzip --no-name -9 -c ${RELEASEDIR}/floppies/cdins_bt.flp \
+		>${RELEASEDIR}/floppies/cdins_bt.flp.gz
+
 filesyst.flp:
 	disklabel -w -r ${FLOPPY} ${FLOPPY_TYPE} \
 		/usr/mdec/fdboot /usr/mdec/bootfd
@@ -277,11 +324,11 @@ filesyst.flp:
 	(cd ${MOUNT}/dev; \
 	    sh ${DESTDIR}/dev/MAKEDEV std; \
 	    rm -rf fd; \
-	    sh ${DESTDIR}/dev/MAKEDEV fd0 fd1 wd0 sd0 sd1; \
+	    sh ${DESTDIR}/dev/MAKEDEV fd0 fd1 wd0 wd1 sd0 sd1; \
 	    rm -f fd0?* fd1?* rfd0?* rfd1?*)
 	(cd ${DESTDIR}/; \
 	    ls ${FILESYSTEM_FILES} | cpio -pdamuv ${MOUNT}; \
-	    ls ${FILESYSTEM_CPIO} | \
+	    (find ${FILESYSTEM_CPIO}; ls -d ${FILESYSTEM_CPIO_DIRS}) | \
 		cpio -H newc --block-size=16 -oav | \
 		gzip -9 >${MOUNT}/inst1.cpio.gz)
 	install -c -o root -g wheel -m 755 etc.i386/inst1.profile \
@@ -299,7 +346,7 @@ filesyst.flp:
 	    ls ${FILESYSTEM_LINKS} >>/tmp/filelist; \
 	    ls -d ${FILESYSTEM_DIRS} >>/tmp/filelist; \
 	    find ${FILESYSTEM_TREES} >>/tmp/filelist; \
-	    sort -u /tmp/filelist >filelist; \
+	    sort -u -r /tmp/filelist >filelist; \
 	    rm /tmp/filelist)
 	df -ik ${MOUNT}
 	umount /dev/${FLOPPY}
@@ -342,112 +389,112 @@ bin-tarball:
 		tar cf - . | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/bin_tgz.)
+		${RELEASEDIR}/tarballs/bindist/bin_tgz.)
 
 srcbase-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/[A-Z]* | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcbase_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/base.)
 
 srcbin-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/bin | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcbin_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/bin.)
 
 srccontrib-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/contrib | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srccontrib_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/contrib.)
 
 srcetc-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/etc | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcetc_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/etc.)
 
 srcgames-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/games | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcgames_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/games.)
 
 srcgnu-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/gnu | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcgnu_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/gnu.)
 
 srcinclude-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/include | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcinclude_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/include.)
 
 srclib-tarball:
 	(cd ${DESTDIR}; \
 		tar --exclude usr/src/${CRYPT_LIB} -cf - usr/src/lib | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srclib_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/lib.)
 
 srclibcrypt-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/${CRYPT_LIB} | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srclibcrypt_tgz.)
+		${RELEASEDIR}/tarballs/secrdist/libcrypt.)
 
 srclibexec-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/libexec | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srclibexec_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/libexec.)
 
 srcsbin-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/sbin | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcsbin_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/sbin.)
 
 srcshare-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/share | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcshare_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/share.)
 
 srcsys-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/sys | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcsys_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/sys.)
 
 srcusrbin-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/usr.bin | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcusrbin_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/usrbin.)
 
 srcusrsbin-tarball:
 	(cd ${DESTDIR}; \
 		tar -cf - usr/src/usr.sbin | \
 		gzip --no-name -9 -c | \
 		split -b 240640 - \
-		${RELEASEDIR}/tarballs/srcusrsbin_tgz.)
+		${RELEASEDIR}/tarballs/srcdist/usrsbin.)
 
 src-tarball: srcbase-tarball srcbin-tarball srccontrib-tarball srcetc-tarball \
 	srcgames-tarball srcgnu-tarball srcinclude-tarball srclib-tarball \
@@ -485,7 +532,7 @@ des-tarball:
 		tar cf - . | \
 			gzip --no-name -9 -c | \
 			split -b 240640 - \
-			${RELEASEDIR}/tarballs/des_tgz.)
+			${RELEASEDIR}/tarballs/secrdist/des_tgz.)
 	rm -rf ${RELEASEDIR}/tmpdes
 
 distrib-dirs:
@@ -497,11 +544,11 @@ distrib-dirs:
 .endif
 	cd ${DESTDIR}/; rm -f ${DESTDIR}/sys; ln -s usr/src/sys sys
 
-floppies: kcopy_ah.flp kcopy_bt.flp filesyst.flp \
-	  cpio.flp
+floppies:	kcopy_ah.flp kcopy_bt.flp filesyst.flp cpio.flp \
+		cdins_ah.flp cdins_bt.flp
 
-release: release-dirs distribution kcopy-kernels floppies \
-	 bin-tarball des-tarball
+release:	release-dirs distribution kcopy-kernels floppies \
+		bin-tarball des-tarball
 	
 release-dirs:
 	rm -rf ${RELEASEDIR}/filesys
@@ -510,8 +557,12 @@ release-dirs:
 	chmod 755 ${RELEASEDIR}/filesys
 	rm -rf ${RELEASEDIR}/tarballs
 	mkdir ${RELEASEDIR}/tarballs
-	chown root.wheel ${RELEASEDIR}/tarballs
-	chmod 755 ${RELEASEDIR}/tarballs
+	mkdir ${RELEASEDIR}/tarballs/bindist
+	mkdir ${RELEASEDIR}/tarballs/objdist
+	mkdir ${RELEASEDIR}/tarballs/secrdist
+	mkdir ${RELEASEDIR}/tarballs/srcdist
+	chown -R root.wheel ${RELEASEDIR}/tarballs
+	chmod -R 755 ${RELEASEDIR}/tarballs
 	rm -rf ${RELEASEDIR}/floppies
 	mkdir ${RELEASEDIR}/floppies
 	chown root.wheel ${RELEASEDIR}/floppies

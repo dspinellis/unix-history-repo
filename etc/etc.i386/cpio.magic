@@ -1,11 +1,11 @@
 #!bin/sh
-#	$Id$
+#	$Id: cpio.magic,v 1.2.2.3 1994/04/17 19:45:24 rgrimes Exp $
 #
 set_tmp_dir()
 {
 	def_tmp_dir=`pwd`
 	[ "$def_tmp_dir" = "/" ] && def_tmp_dir=/usr/distrib
-	echo -n "Copy files to which directory? [${def_tmp_dir}] "
+	echo -n "Where do we ${1:-put} the distrbution files? [${def_tmp_dir}] "
 	read tmp_dir
 	[ ! "$tmp_dir" ] && tmp_dir=$def_tmp_dir
 	if [ ! -d "$tmp_dir" ]; then
@@ -17,7 +17,7 @@ set_tmp_dir()
 tmp_dir()
 {
 	if [ "$tmp_dir" = "" ]; then
-		set_tmp_dir
+		set_tmp_dir $1
 	fi
 	cd $tmp_dir
 }
@@ -210,6 +210,10 @@ load_fd()
 	echo "Working directory: `pwd`"
 	unset verbose answer drive altdrive device dir subdir tmp interactive
 }
+load_dos()
+{
+	load_fd
+}
 load_qic_tape()
 {
 	tmp_dir
@@ -226,7 +230,8 @@ load_scsi_tape()
 }
 extract()
 {
-	tmp_dir
+	[ X"$1" = X"" ] && { echo "usage: extract dist-prefix"; return; }
+	tmp_dir find
 	echo -n "Would you like to be verbose about this? [n] "
 	read verbose
 	case $verbose in
@@ -238,16 +243,30 @@ extract()
 		;;
 	esac
 	#XXX ugly hack to eliminate busy files, copy them to /tmp and use them
-	#from there...
+	#from there... even uglier.. we CAN NOT LOAD libc.so.1.0 from the tar
+	#balls or it spams tar!!
 	cp -p /bin/cat /usr/bin/gunzip /usr/bin/tar /tmp
-	
+
+	#XXX more ugly hacks to get around busy text files/symlink problems.
+	if [ X"$1" = X"bin" ]; then
+		rm -f /bin/sh.$$ /sbin/init.$$ /etc/termcap.$$
+		mv /bin/sh /bin/sh.$$
+		mv /sbin/init /sbin/init.$$
+		mv /etc/termcap /etc/termcap.$$
+	fi
+	if [ X"$1" = X"des" ]; then
+		rm -f /sbin/init.$$
+		mv /sbin/init /sbin/init.$$
+	fi
 	for i in $*; do
 		/tmp/cat "$i"* | 
 		/tmp/gunzip |
-		(cd / ; /tmp/tar --extract --file - --preserve-permissions ${tarverbose} )
+		(cd / ; /tmp/tar --extract --file - --preserve-permissions --exclude libc.so.1.0 ${tarverbose} )
 	done
 	rm -f /tmp/cat /tmp/gunzip /tmp/tar
 	sync
+	[ X"$1" = X"bin" ] && echo "Run \`configure' to complete installation." 
+	echo "(wd is now: `pwd`)"
 }
 configure()
 {
@@ -283,7 +302,7 @@ configure()
 	*)
 		intf=
 		while [ "$intf" = "" ]; do
-			echo -n "What is the primary interface name (i.e. we0, etc.)? "
+			echo -n "What is the primary interface name (i.e. ed0, etc.)? "
 			read intf
 		done
 		echo -n "What is the hostname for this interface? [$hname] "
@@ -304,9 +323,11 @@ configure()
 		case "$resp" in
 		y*)
 			echo -n "What is the netmask? [0xffffff00] "
-			read ifnetmask
-			if [ "$ifnetmask" = "" ]; then
-				ifnetmask=0xffffff00
+			read resp
+			if [ "$resp" = "" ]; then
+				ifnetmask="netmask 0xffffff00"
+			else
+				ifnetmask="netmask $resp"
 			fi
 			;;
 		*)
@@ -329,7 +350,7 @@ configure()
 			;;
 		esac
 		
-		echo "inet $ifname netmask $ifnetmask $ifflags" > /etc/hostname.$intf
+		echo "inet $ifname $ifnetmask $ifflags" > /etc/hostname.$intf
 
 		echo	""
 		echo	"WARNING: if you have any more ethernet interfaces, you"

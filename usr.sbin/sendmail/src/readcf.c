@@ -33,13 +33,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.18 (Berkeley) 1/9/94";
+static char sccsid[] = "@(#)readcf.c	8.23 (Berkeley) 3/18/94";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <pwd.h>
 # include <grp.h>
-#ifdef NAMED_BIND
+#if NAMED_BIND
 # include <arpa/nameser.h>
 # include <resolv.h>
 #endif
@@ -221,7 +221,7 @@ readcf(cfname, safe, e)
 
 			if (*p == '\0')
 			{
-				syserr("invalid rewrite line \"%s\"", bp);
+				syserr("invalid rewrite line \"%s\" (tab expected)", bp);
 				break;
 			}
 
@@ -542,7 +542,7 @@ readcf(cfname, safe, e)
 	{
 		/* user didn't initialize: set up host map */
 		strcpy(buf, "host host");
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		if (ConfigLevel >= 2)
 			strcat(buf, " -a.");
 #endif
@@ -600,8 +600,19 @@ fileclass(class, filename, fmt, safe, optional)
 	struct stat stbuf;
 	char buf[MAXLINE];
 
+	if (tTd(37, 2))
+		printf("fileclass(%s, fmt=%s)\n", filename, fmt);
+
+	if (filename[0] == '|')
+	{
+		syserr("fileclass: pipes (F%c%s) not supported due to security problems",
+			class, filename);
+		return;
+	}
 	if (stat(filename, &stbuf) < 0)
 	{
+		if (tTd(37, 2))
+			printf("  cannot stat (%s)\n", errstring(errno));
 		if (!optional)
 			syserr("fileclass: cannot stat %s", filename);
 		return;
@@ -659,8 +670,7 @@ fileclass(class, filename, fmt, safe, optional)
 				*p++ = '\0';
 
 			/* enter the word in the symbol table */
-			s = stab(q, ST_CLASS, ST_ENTER);
-			setbitn(class, s->s_class);
+			setclass(class, q);
 		}
 	}
 
@@ -1007,7 +1017,7 @@ printrules()
 static BITMAP	StickyOpt;		/* set if option is stuck */
 
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 
 struct resolverflags
 {
@@ -1065,7 +1075,7 @@ setoption(opt, val, safe, sticky, e)
 
 	if (!safe && RealUid == 0)
 		safe = TRUE;
-	if (!safe && strchr("bCdeEijLmoprsvw7", opt) == NULL)
+	if (!safe && strchr("bCdeijLmoprsvw7", opt) == NULL)
 	{
 		if (opt != 'M' || (val[0] != 'r' && val[0] != 's'))
 		{
@@ -1216,7 +1226,7 @@ setoption(opt, val, safe, sticky, e)
 		break;
 
 	  case 'I':		/* use internet domain name server */
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		UseNameServer = TRUE;
 		for (p = val; *p != 0; )
 		{

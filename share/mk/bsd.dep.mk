@@ -1,4 +1,4 @@
-#	$Id: bsd.dep.mk,v 1.2 1993/10/31 04:32:32 ljo Exp $
+#	$Id: bsd.dep.mk,v 1.4 1994/02/27 19:28:44 nate Exp $
 
 # some of the rules involve .h sources, so remove them from mkdep line
 .if !target(depend)
@@ -40,7 +40,8 @@ tags:
 .endif
 
 .if defined(SRCS)
-clean: cleandepend
+clean:
+cleandir: cleandepend
 cleandepend:
 	rm -f .depend ${.CURDIR}/tags
 .endif

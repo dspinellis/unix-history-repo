@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
+/*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.6 1993/11/07 21:44:50 wollman Exp $
+ *	$Id: vfs_subr.c,v 1.7.2.1 1994/05/02 02:13:27 rgrimes Exp $
  */
 
 /*
@@ -730,6 +737,7 @@ void vrele(vp)
 		panic("vrele: ref cnt");
 	}
 #endif
+	vp->v_writecount = 0;	/* XXX */
 	if (vfreeh == NULLVP) {
 		/*
 		 * insert into empty list

@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
 /*-
  * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
  * All rights reserved.
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ioctl.h	7.19 (Berkeley) 6/26/91
- *	$Id: ioctl.h,v 1.5 1993/11/14 23:29:49 ache Exp $
+ *	$Id: ioctl.h,v 1.6 1993/12/19 00:55:15 wollman Exp $
  */
 
 #ifndef	_IOCTL_H_

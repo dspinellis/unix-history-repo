@@ -37,7 +37,7 @@
  *
  *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
- *	$Id: vm_machdep.c,v 1.10 1994/01/21 17:11:38 davidg Exp $
+ *	$Id: vm_machdep.c,v 1.11 1994/02/08 09:26:04 davidg Exp $
  */
 
 #include "npx.h"
@@ -341,8 +341,7 @@ cpu_reset() {
 
 /*
  * Grow the user stack to allow for 'sp'. This version grows the stack in
- *	chunks of DFLSSIZ. It is expected (required) that there is an
- *	integer number of DFLSSIZ chunks in MAXSSIZ.
+ *	chunks of SGROWSIZ.
  */
 int
 grow(p, sp)
@@ -362,7 +361,7 @@ grow(p, sp)
 		return (0);
 
 	if (vm->vm_ssize && roundup(vm->vm_ssize << PAGE_SHIFT,
-	    DFLSSIZ) < nss) {
+	    SGROWSIZ) < nss) {
 		int grow_amount;
 		/*
 		 * If necessary, grow the VM that the stack occupies
@@ -370,13 +369,13 @@ grow(p, sp)
 		 * to allocate all of the VM up-front in execve (which
 		 * is expensive).
 		 * Grow the VM by the amount requested rounded up to
-		 * the nearest DFLSSIZ to provide for some hysteresis.
+		 * the nearest SGROWSIZ to provide for some hysteresis.
 		 */
-		grow_amount = roundup((nss - (vm->vm_ssize << PAGE_SHIFT)), DFLSSIZ);
+		grow_amount = roundup((nss - (vm->vm_ssize << PAGE_SHIFT)), SGROWSIZ);
 		v = (char *)USRSTACK - roundup(vm->vm_ssize << PAGE_SHIFT,
-		    DFLSSIZ) - grow_amount;
+		    SGROWSIZ) - grow_amount;
 		/*
-		 * If there isn't enough room to extend by DFLSSIZ, then
+		 * If there isn't enough room to extend by SGROWSIZ, then
 		 * just extend to the maximum size
 		 */
 		if (v < vm->vm_maxsaddr) {

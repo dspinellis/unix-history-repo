@@ -20,13 +20,13 @@
 '''
 '''     Set up \*(-- to give an unbreakable dash;
 '''     string Tr holds user defined translation string.
-'''     Bell System Logo is used as a dummy character.
+'''     Greek uppercase omega is used as a dummy character.
 '''
-.tr \(bs-|\(bv\*(Tr
+.tr \(*W-|\(bv\*(Tr
 .ie n \{\
-.ds -- \(bs-
-.if (\n(.H=4u)&(1m=24u) .ds -- \(bs\h'-12u'\(bs\h'-12u'-\" diablo 10 pitch
-.if (\n(.H=4u)&(1m=20u) .ds -- \(bs\h'-12u'\(bs\h'-8u'-\" diablo 12 pitch
+.ds -- \(*W-
+.if (\n(.H=4u)&(1m=24u) .ds -- \(*W\h'-12u'\(*W\h'-12u'-\" diablo 10 pitch
+.if (\n(.H=4u)&(1m=20u) .ds -- \(*W\h'-12u'\(*W\h'-8u'-\" diablo 12 pitch
 .ds L" ""
 .ds R" ""
 .ds L' '
@@ -382,6 +382,12 @@ other clock performance information.
 Obtain debugging information for a clock peer.  This information is
 provided only by some clock drivers and is mostly undecodable without
 a copy of the driver source in hand.
+.PP
+.B kerninfo
+.PP
+Obtain and print kernel phase-lock loop operating parameters.  This
+information is available only if the kernel has been specially modified
+for a precision timekeeping function.
 .SH RUNTIME CONFIGURATION REQUESTS
 .PP
 All requests which cause state changes in the server are authenticated
@@ -494,15 +500,16 @@ deleted.  When appropriate, however, the association may persist in
 an unconfigured mode if the remote peer is willing to continue on in
 this fashion.
 .PP
-.B set bclient|auth
+.B set bclient|mclient|auth
 [
 .I ...
 ]
 .PP
-Allows the setting of the broadcast client and/or authenticate system
-flags.  Setting the former causes the server to listen for broadcast
-NTP to to synchronize to broadcasts when appropriate.  Setting the
-latter flag causes the server to only synchronize with peers which
+Allows the setting of the broadcast/multicast client and/or authenticate
+system flags.  Setting bclient causes the server to listen for broadcast
+NTP to to synchronize to broadcasts when appropriate.  Setting mclient
+causes the same thing, but using multicast facilities, when available.
+Setting auth causes the server to only synchronize with peers which
 include an authentication field encrypted with one of the local server's
 trusted keys.
 .PP
@@ -511,9 +518,9 @@ trusted keys.
 .I ...
 ]
 .PP
-Allows the broadcast client and/or authenticate system flags to be
-cleared.  Clearing the former causes incoming broadcast NTP packets
-to be ignored.  Clearing the latter allows peers which have not included
+Allows the broadcast/multicast client and/or authenticate system flags to be
+cleared.  Clearing bclient causes incoming broadcast and multicast NTP packets
+to be ignored.  Clearing auth allows peers which have not included
 an authentication field, or which have included one but have encrypted
 it with an untrusted key, to be considered synchronization candidates.
 .PP
@@ -539,6 +546,17 @@ requests) from the source.  Time service is not affected.
 Ignore all NTP mode 7 packets which attempt to modify the state of the
 server (i.e. run time reconfiguration).  Queries which return information
 are permitted.
+.Ip notrap 10
+Decline to provide mode 6 control message trap service to matching
+hosts.  The trap service is a subsystem of the mode 6 control message
+protocol which is intended for use by remote event logging programs.
+.Ip lowpriotrap 10
+Declare traps set by matching hosts to be low priority.  The number
+of traps a server can maintain is limited (the current limit is 3).
+Traps are usually assigned on a first come, first served basis, with
+later trap requestors being denied service.  This flag modifies the
+assignment algorithm by allowing low priority traps to be overridden
+by later requests for normal priority traps.
 .Ip noserve 10
 Ignore NTP packets whose mode is other than 7.  In effect, time service is
 denied, though queries may still be permitted.
@@ -549,6 +567,23 @@ useful as future synchronization partners.
 .Ip notrust 10
 Treat these hosts normally in other respects, but never use them as
 synchronization sources.
+.Ip limited 10
+These hosts are subject to limitation of number of clients from the
+same net. Net in this context refers to the IP notion of net (class A,
+class B, class C, etc.). Only the first \*(L"client_limit\*(R" hosts
+that have shown up at the server and that have been active during the
+last \*(L"client_limit_period\*(R" seconds are accepted. Requests from
+other clients from the same net are rejected. Only time request
+packets are taken into account. \*(L"Private\*(R", \*(L"control\*(R",
+and \*(L"broadcast\*(R" packets are not subject to client limitation
+and therefore are not contributing to client count. History of clients
+is kept using the monitoring capability of
+.IR xntpd.
+Thus, monitoring is active as long as there is a restriction entry
+with the \*(L"limited\*(R" flag. The default value for
+\*(L"client_limit\*(R" is 3. The default value for
+\*(L"client_limit_period\*(R" is 3600 seconds. Currently both
+variables are not runtime configurable. 
 .Ip ntpport 10
 This is actually a match algorithm modifier, rather than a restriction
 flag.  Its presence causes the restriction entry to be matched only if
@@ -635,14 +670,6 @@ done.
 .PP
 Sets the precision which the server advertises to the specified value.  This
 should be a negative integer in the range -4 through -20.
-.PP
-.B setselect
-.I algorithm_number
-.PP
-Sets the selection weight algorithm to that indicated by the specified number.
-This should be an integer value between 1 and 5 inclusive.  Algorithm 1
-is that specified in RFC 1119, the other 4 algorithms are experimental
-and should be used with caution.
 .SH SEE ALSO
 .PP
 .IR xntpd (8)

@@ -16,9 +16,9 @@ releases in the GAMMA distribution.  This 1.0 distribution fixes
 many of the first-run problems our GAMMA and EPSILON users reported back
 to us.
 
-Additionally, many packages such as XFree86 2.0, xview 3.2, elm, nntp,
-mh and dozens of other miscellaneous utilities have been ported and
-are now available as add-ons.  See then next section of this document
+Additionally, many packages such as XFree86 2.1, xview 3.2, elm, nntp,
+mh, InterViews and dozens of other miscellaneous utilities have been ported
+and are now available as add-ons.  See then next section of this document
 for more details.
 
 For a list of contributors, please see the files "CONTRIB.FreeBSD" and
@@ -28,9 +28,9 @@ The core of FreeBSD does not contain DES code which would inhibit its
 being exported outside the United States.  There is an add-on package
 to the core distribution, for use only in the United States, that
 contains the programs that normally use DES.  The auxilliary packages
-provided separately can be used by anyone.  Work is in progress to
-provide a freely (from outside the U.S.) exportable European distribution
-of DES for our non U.S. users.
+provided separately can be used by anyone.   A freely (from outside the U.S.)
+exportable European distribution of DES for our non U.S. users also exists
+and is described in the FreeBSD FAQ.
 
 
 2. Supported Configurations
@@ -57,13 +57,15 @@ Adaptec 154x series ISA SCSI controller (as long as you have less than
 
 Adaptec 174x series EISA SCSI controller in standard and enhanced mode.
 
+[Note that Buslogic was formerly known as "Bustec"]
 Buslogic 545S.
 Buslogic 445S VLB SCSI controller
+Buslogic 742A and 747.
+Please see special notes in /usr/src/KNOWNBUGS (filed under bt742a.c) for
+details concerning possible buggy firmware and undocumented switch settings
+that may be necessary for proper operation of your controller.
 
-Bustec 742A and 747.
-
-DTC 3290 EISA SCSI controller in 1542 emulation mode (as long as
-you have less than 16MB of main memory).
+DTC 3290 EISA SCSI controller in 1542 emulation mode.
 
 Ultra Store 14F and 34F.
 
@@ -74,22 +76,22 @@ inteface card) is the only way a CD ROM drive may be currently
 attached to a FreeBSD system; we do not support SoundBlaster CDROM
 interface, or other "mini SCSI" adapters.
 
-The limitation some controllers have with >16MB of memory (as noted)
-is due to the fact that the ISA bus only has a DMA address space of 24 bits.
+Some controllers have limitations with the way they deal with >16MB of memory,
+due to the fact that the ISA bus only has a DMA address space of 24 bits.
 If you do your arithmetic, you'll see that this makes it impossible to do
 direct DMA to any address >16MB.  This limitation is even true of some
 EISA controllers (which are normally 32 bit) when they're configured to
 emulate an ISA card, which they then do in *all* respects.  This problem
 is avoided entirely by IDE controllers (which do not use DMA), true EISA
-controllers (like the UltraStor or Adaptec 1742A) or VLB (local bus)
+controllers (like the UltraStor or Adaptec 1742A) and most VLB (local bus)
 controllers.
-
 
 
 2.2. Ethernet cards
 
 SMC Elite 16 WD8013 ethernet interface, and most other WD8003E,
-WD8003EBT, WD8003S, WD8003SBT and WD8013EBT based clones.
+WD8003EBT, WD8003W, WD8013W, WD8003S, WD8003SBT and WD8013EBT
+based clones.
 
 Isolan AT 4141-0 (16 bit)
 
@@ -98,6 +100,12 @@ Isolink 4110     (8 bit)
 Novell NE1000, NE2000, and NE2100 ethernet interface.
 
 3Com 3C503 Etherlink II
+
+3Com 3C509 Ethernet cards
+
+Toshiba ethernet cards
+
+SMC Elite Ultra
 
 
 2.3. Misc
@@ -110,7 +118,7 @@ BOCA ATIO66 6 port serial card using shared IRQ.
 
 STB 4 port card using shared IRQ.
 
-Mitsumi (LU005 and FX001D) CDROM interface and drive.
+Mitsumi (all models) CDROM interface and drive.
 
 Adlib, Soundblaster, Soundblaster Pro, ProAudioSpectrum, Gravis UltraSound
 and Roland MPU-401 sound cards.
@@ -271,9 +279,10 @@ Special mention to:
 	J.T. Conklin				Chris Demetriou
 	Julian Elischer				Bruce Evans
 	Sean Eric Fagan				Guy Helmer
-	Terry Lambert				Gary Moyer
-	Jaye Mathisen				L Jonas Olsson
-	Chris Provenzano			Dave Rivers
+	Jeffrey Hsu				Terry Lambert
+	Gary Moyer				Jaye Mathisen
+	Curt Mayer				L Jonas Olsson
+	Chris Provenzano 			Dave Rivers
 	Guido van Rooij				Steven Wallace
 	Rick Weldon				Terry Williams
 
@@ -286,4 +295,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.22 1994/02/06 21:14:09 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.29 1994/05/01 22:50:55 jkh Exp $

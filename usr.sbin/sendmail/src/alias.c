@@ -36,7 +36,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.21 (Berkeley) 12/11/93";
+static char sccsid[] = "@(#)alias.c	8.24 (Berkeley) 2/28/94";
 #endif /* not lint */
 
 
@@ -114,7 +114,9 @@ alias(a, sendq, e)
 	message("aliased to %s", p);
 #ifdef LOG
 	if (LogLevel > 9)
-		syslog(LOG_INFO, "%s: alias %s => %s", e->e_id, a->q_paddr, p);
+		syslog(LOG_INFO, "%s: alias %s => %s",
+			e->e_id == NULL ? "NOQUEUE" : e->e_id,
+			a->q_paddr, p);
 #endif
 	a->q_flags &= ~QSELFREF;
 	AliasLevel++;
@@ -417,7 +419,7 @@ rebuildaliases(map, automatic)
 	/* try to lock the source file */
 	if ((af = fopen(map->map_file, "r+")) == NULL)
 	{
-		if (errno != EACCES || automatic ||
+		if ((errno != EACCES && errno != EROFS) || automatic ||
 		    (af = fopen(map->map_file, "r")) == NULL)
 		{
 			int saveerr = errno;
@@ -748,7 +750,8 @@ forward(user, sendq, e)
 #ifdef LOG
 			if (LogLevel > 2)
 				syslog(LOG_ERR, "%s: forward %s: transient error: %s",
-					e->e_id, buf, errstring(err));
+					e->e_id == NULL ? "NOQUEUE" : e->e_id,
+					buf, errstring(err));
 #endif
 			message("%s: %s: message queued", buf, errstring(err));
 			user->q_flags |= QQUEUEUP;

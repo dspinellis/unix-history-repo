@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.39 (Berkeley) 1/10/94";
+static char sccsid[] = "@(#)recipient.c	8.44 (Berkeley) 2/28/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -307,8 +307,9 @@ recipient(a, sendq, e)
 			{
 #ifdef LOG
 				if (LogLevel > 2)
-					syslog(LOG_ERR, "%s: include %s: transient error: %e",
-						e->e_id, a->q_user, errstring(ret));
+					syslog(LOG_ERR, "%s: include %s: transient error: %s",
+						e->e_id == NULL ? "NOQUEUE" : e->e_id,
+						a->q_user, errstring(ret));
 #endif
 				a->q_flags |= QQUEUEUP;
 				a->q_flags &= ~QDONTSEND;
@@ -376,7 +377,8 @@ recipient(a, sendq, e)
 # ifdef LOG
 			if (LogLevel > 8)
 				syslog(LOG_INFO, "%s: deferred: udbexpand: %s",
-					e->e_id, errstring(errno));
+					e->e_id == NULL ? "NOQUEUE" : e->e_id,
+					errstring(errno));
 # endif
 			message("queued (user database error): %s",
 				errstring(errno));
@@ -447,7 +449,10 @@ recipient(a, sendq, e)
 				(void) strcpy(buf, pw->pw_name);
 				goto trylocaluser;
 			}
-			a->q_home = newstr(pw->pw_dir);
+			if (strcmp(pw->pw_dir, "/") == 0)
+				a->q_home = "";
+			else
+				a->q_home = newstr(pw->pw_dir);
 			a->q_uid = pw->pw_uid;
 			a->q_gid = pw->pw_gid;
 			a->q_ruser = newstr(pw->pw_name);
@@ -719,6 +724,19 @@ writable(filename, ctladdr, flags)
 **	Side Effects:
 **		reads the :include: file and sends to everyone
 **		listed in that file.
+**
+**	Security Note:
+**		If you have restricted chown (that is, you can't
+**		give a file away), it is reasonable to allow programs
+**		and files called from this :include: file to be to be
+**		run as the owner of the :include: file.  This is bogus
+**		if there is any chance of someone giving away a file.
+**		We assume that pre-POSIX systems can give away files.
+**
+**		There is an additional restriction that if you
+**		forward to a :include: file, it will not take on
+**		the ownership of the :include: file.  This may not
+**		be necessary, but shouldn't hurt.
 */
 
 static jmp_buf	CtxIncludeTimeout;
@@ -726,6 +744,11 @@ static int	includetimeout();
 
 #ifndef S_IWOTH
 # define S_IWOTH	(S_IWRITE >> 6)
+#endif
+
+#if defined(__FreeBSD__) && defined(_POSIX_CHOWN_RESTRICTED)
+#	undef _POSIX_CHOWN_RESTRICTED
+#	define _POSIX_CHOWN_RESTRICTED 1
 #endif
 
 int
@@ -750,6 +773,24 @@ include(fname, forwarding, ctladdr, sendq, e)
 	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
 	struct stat st;
 	char buf[MAXLINE];
+#ifdef _POSIX_CHOWN_RESTRICTED
+# if _POSIX_CHOWN_RESTRICTED == -1
+#  define safechown	FALSE
+# else
+#  define safechown	TRUE
+# endif
+#else
+# ifdef _PC_CHOWN_RESTRICTED
+	bool safechown;
+# else
+#  ifdef BSD
+#   define safechown	TRUE
+#  else
+#   define safechown	FALSE
+#  endif
+# endif
+#endif
+	extern bool chownsafe();
 
 	if (tTd(27, 2))
 		printf("include(%s)\n", fname);
@@ -858,7 +899,10 @@ resetuid:
 		return rval;
 	}
 
-	if (ca == NULL)
+#ifndef safechown
+	safechown = chownsafe(fileno(fp));
+#endif
+	if (ca == NULL && safechown)
 	{
 		ctladdr->q_uid = st.st_uid;
 		ctladdr->q_gid = st.st_gid;
@@ -872,13 +916,25 @@ resetuid:
 	}
 	else
 	{
+		char *sh;
 		register struct passwd *pw;
 
+		sh = "/SENDMAIL/ANY/SHELL/";
 		pw = getpwuid(st.st_uid);
-		if (pw == NULL || !usershellok(pw->pw_shell))
+		if (pw != NULL)
 		{
 			ctladdr->q_ruser = newstr(pw->pw_name);
+			if (safechown)
+				sh = pw->pw_shell;
+		}
+		if (pw == NULL)
 			ctladdr->q_flags |= QBOGUSSHELL;
+		else if(!usershellok(sh))
+		{
+			if (safechown)
+				ctladdr->q_flags |= QBOGUSSHELL;
+			else
+				ctladdr->q_flags |= QUNSAFEADDR;
 		}
 	}
 
@@ -924,7 +980,8 @@ resetuid:
 #ifdef LOG
 		if (forwarding && LogLevel > 9)
 			syslog(LOG_INFO, "%s: forward %s => %s",
-				e->e_id, oldto, buf);
+				e->e_id == NULL ? "NOQUEUE" : e->e_id,
+				oldto, buf);
 #endif
 
 		AliasLevel++;

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.62 (Berkeley) 1/9/94";
+static char sccsid[] = "@(#)conf.c	8.82 (Berkeley) 3/6/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -628,6 +628,7 @@ init_md(argc, argv)
 #define LA_SUBR		4	/* call getloadavg */
 #define LA_MACH		5	/* MACH load averages (as on NeXT boxes) */
 #define LA_SHORT	6	/* read kmem for avenrun; interpret as short */
+#define LA_PROCSTR	7	/* read string ("1.17") from /proc/loadavg */
 
 /* do guesses based on general OS type */
 #ifndef LA_TYPE
@@ -827,6 +828,52 @@ getla()
 
 
 #else
+#if LA_TYPE == LA_PROCSTR
+
+/*
+**  Read /proc/loadavg for the load average.  This is assumed to be
+**  in a format like "0.15 0.12 0.06".
+**
+**	Initially intended for Linux.  This has been in the kernel
+**	since at least 0.99.15.
+*/
+
+# ifndef _PATH_LOADAVG
+#  define _PATH_LOADAVG	"/proc/loadavg"
+# endif
+
+int
+getla()
+{
+	double avenrun;
+	register int result;
+	FILE *fp;
+
+	fp = fopen(_PATH_LOADAVG, "r");
+	if (fp == NULL) 
+	{
+		if (tTd(3, 1))
+			printf("getla: fopen(%s): %s\n",
+				_PATH_LOADAVG, errstring(errno));
+		return -1;
+	}
+	result = fscanf(fp, "%lf", &avenrun);
+	fclose(fp);
+	if (result != 1)
+	{
+		if (tTd(3, 1))
+			printf("getla: fscanf() = %d: %s\n",
+				result, errstring(errno));
+		return -1;
+	}
+
+	if (tTd(3, 1))
+		printf("getla(): %.2f\n", avenrun);
+
+	return ((int) (avenrun + 0.5));
+}
+
+#else
 
 getla()
 {
@@ -838,6 +885,54 @@ getla()
 #endif
 #endif
 #endif
+#endif
+
+
+/*
+ * Copyright 1989 Massachusetts Institute of Technology
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of M.I.T. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  M.I.T. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * M.I.T. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL M.I.T.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Authors:  Many and varied...
+ */
+
+/* Non Apollo stuff removed by Don Lewis 11/15/93 */
+#ifndef lint
+static char  rcsid[] = "@(#)$Id: conf.c,v 1.6 1994/03/19 07:36:47 alm Exp $";
+#endif /* !lint */
+
+#ifdef apollo
+# undef volatile
+#    include <apollo/base.h>
+
+/* ARGSUSED */
+int getloadavg( call_data )
+     caddr_t	call_data;	/* pointer to (double) return value */
+{
+     double *avenrun = (double *) call_data;
+     int i;
+     status_$t      st;
+     long loadav[3];
+     proc1_$get_loadav(loadav, &st);
+     *avenrun = loadav[0] / (double) (1 << 16);
+     return(0);
+}
+#   endif /* apollo */
 /*
 **  SHOULDQUEUE -- should this message be queued or sent?
 **
@@ -909,6 +1004,9 @@ refuseconnections()
 */
 
 #ifdef SETPROCTITLE
+# ifdef HASSETPROCTITLE
+   *** ERROR ***  Cannot have both SETPROCTITLE and HASSETPROCTITLE defined
+# endif
 # ifdef __hpux
 #  include <sys/pstat.h>
 # endif
@@ -931,6 +1029,8 @@ refuseconnections()
 #ifndef PROCTITLEPAD
 # define PROCTITLEPAD	' '
 #endif
+
+#ifndef HASSETPROCTITLE
 
 /*VARARGS1*/
 #ifdef __STDC__
@@ -986,6 +1086,8 @@ setproctitle(fmt, va_alist)
 #  endif
 # endif /* SETPROCTITLE */
 }
+
+#endif
 /*
 **  REAPCHILD -- pick up the body of my child, lest it become a zombie
 **
@@ -1407,6 +1509,8 @@ char	*DefaultUserShells[] =
 
 #endif
 
+#define WILDCARD_SHELL	"/SENDMAIL/ANY/SHELL/"
+
 bool
 usershellok(shell)
 	char *shell;
@@ -1417,7 +1521,7 @@ usershellok(shell)
 
 	setusershell();
 	while ((p = getusershell()) != NULL)
-		if (strcmp(p, shell) == 0 || strcmp(p, "*") == 0)
+		if (strcmp(p, shell) == 0 || strcmp(p, WILDCARD_SHELL) == 0)
 			break;
 	endusershell();
 	return p != NULL;
@@ -1452,7 +1556,7 @@ usershellok(shell)
 		while (*p != '\0' && *p != '#' && !isspace(*p))
 			p++;
 		*p = '\0';
-		if (strcmp(shell, q) == 0 || strcmp("*", q) == 0)
+		if (strcmp(shell, q) == 0 || strcmp(WILDCARD_SHELL, q) == 0)
 		{
 			fclose(shellf);
 			return TRUE;
@@ -1480,24 +1584,29 @@ usershellok(shell)
 **		Puts the filesystem block size into bsize.
 */
 
-#ifdef HASSTATFS
-# undef HASUSTAT
+/* statfs types */
+#define SFS_NONE	0	/* no statfs implementation */
+#define SFS_USTAT	1	/* use ustat */
+#define SFS_4ARGS	2	/* use four-argument statfs call */
+#define SFS_VFS		3	/* use <sys/vfs.h> implementation */
+#define SFS_MOUNT	4	/* use <sys/mount.h> implementation */
+#define SFS_STATFS	5	/* use <sys/statfs.h> implementation */
+
+#ifndef SFS_TYPE
+# define SFS_TYPE	SFS_NONE
 #endif
 
-#if defined(HASUSTAT)
+#if SFS_TYPE == SFS_USTAT
 # include <ustat.h>
 #endif
-
-#ifdef HASSTATFS
-# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX) || defined(_AIX3)
-#  include <sys/statfs.h>
-# else
-#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE) || defined(MACH386)
-#   include <sys/vfs.h>
-#  else
-#   include <sys/mount.h>
-#  endif
-# endif
+#if SFS_TYPE == SFS_4ARGS || SFS_TYPE == SFS_STATFS
+# include <sys/statfs.h>
+#endif
+#if SFS_TYPE == SFS_VFS
+# include <sys/vfs.h>
+#endif
+#if SFS_TYPE == SFS_MOUNT
+# include <sys/mount.h>
 #endif
 
 long
@@ -1505,8 +1614,8 @@ freespace(dir, bsize)
 	char *dir;
 	long *bsize;
 {
-#if defined(HASSTATFS) || defined(HASUSTAT)
-# if defined(HASUSTAT)
+#if SFS_TYPE != SFS_NONE
+# if SFS_TYPE == SFS_USTAT
 	struct ustat fs;
 	struct stat statbuf;
 #  define FSBLOCKSIZE	DEV_BSIZE
@@ -1519,17 +1628,17 @@ freespace(dir, bsize)
 #  else
 	struct statfs fs;
 #   define FSBLOCKSIZE	fs.f_bsize
-#   if defined(_SCO_unix_) || defined(IRIX)
+#   if defined(_SCO_unix_) || defined(IRIX) || defined(apollo)
 #    define f_bavail f_bfree
 #   endif
 #  endif
 # endif
 	extern int errno;
 
-# if defined(HASUSTAT)
+# if SFS_TYPE == SFS_USTAT
 	if (stat(dir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
 # else
-#  if defined(IRIX) || defined(apollo) || defined(UMAXV) || defined(DGUX)
+#  if SFS_TYPE == SFS_4ARGS
 	if (statfs(dir, &fs, sizeof fs, 0) == 0)
 #  else
 #   if defined(ultrix)
@@ -1694,6 +1803,9 @@ transienterror(err)
 #ifdef EADDRNOTAVAIL
 	  case EADDRNOTAVAIL:		/* Can't assign requested address */
 #endif
+#ifdef ETXTBSY
+	  case ETXTBSY:			/* (Apollo) file locked */
+#endif
 #if defined(ENOSR) && (!defined(ENOBUFS) || (ENOBUFS != ENOSR))
 	  case ENOSR:			/* Out of streams resources */
 #endif
@@ -1726,7 +1838,7 @@ lockfile(fd, filename, ext, type)
 	char *ext;
 	int type;
 {
-# ifndef HASFLOCK
+# if !HASFLOCK
 	int action;
 	struct flock lfd;
 
@@ -1823,6 +1935,70 @@ lockfile(fd, filename, ext, type)
 	return FALSE;
 }
 /*
+**  CHOWNSAFE -- tell if chown is "safe" (executable only by root)
+**
+**	Parameters:
+**		fd -- the file descriptor to check.
+**
+**	Returns:
+**		TRUE -- if only root can chown the file to an arbitrary
+**			user.
+**		FALSE -- if an arbitrary user can give away a file.
+*/
+
+#if defined(__FreeBSD__) && defined(_POSIX_CHOWN_RESTRICTED)
+#	undef _POSIX_CHOWN_RESTRICTED
+#	define _POSIX_CHOWN_RESTRICTED 1
+#endif
+
+bool
+chownsafe(fd)
+	int fd;
+{
+#ifdef __hpux
+	char *s;
+	int tfd;
+	uid_t o_uid, o_euid;
+	gid_t o_gid, o_egid;
+	bool rval;
+	struct stat stbuf;
+
+	o_uid = getuid();
+	o_euid = geteuid();
+	o_gid = getgid();
+	o_egid = getegid();
+	fstat(fd, &stbuf);
+	setresuid(stbuf.st_uid, stbuf.st_uid, -1);
+	setresgid(stbuf.st_gid, stbuf.st_gid, -1);
+	s = tmpnam(NULL);
+	tfd = open(s, O_RDONLY|O_CREAT, 0600);
+	rval = fchown(tfd, DefUid, DefGid) != 0;
+	close(tfd);
+	unlink(s);
+	setreuid(o_uid, o_euid);
+	setresgid(o_gid, o_egid, -1);
+	return rval;
+#else
+# ifdef _POSIX_CHOWN_RESTRICTED
+#  if _POSIX_CHOWN_RESTRICTED == -1
+	return FALSE;
+#  else
+	return TRUE;
+#  endif
+# else
+#  ifdef _PC_CHOWN_RESTRICTED
+	return fpathconf(fd, _PC_CHOWN_RESTRICTED) > 0;
+#  else
+#   ifdef BSD
+	return TRUE;
+#   else
+	return FALSE;
+#   endif
+#  endif
+# endif
+#endif
+}
+/*
 **  GETCFNAME -- return the name of the .cf file.
 **
 **	Some systems (e.g., NeXT) determine this dynamically.
@@ -1877,46 +2053,104 @@ setvendor(vendor)
 **  STRTOL -- convert string to long integer
 **
 **	For systems that don't have it in the C library.
+**
+**	This is taken verbatim from the 4.4-Lite C library.
 */
 
 #ifdef NEEDSTRTOL
 
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)strtol.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+
+#include <limits.h>
+
+/*
+ * Convert a string to a long integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+
 long
-strtol(p, ep, b)
-	char *p;
-	char **ep;
-	int b;
+strtol(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	register int base;
 {
-	long l = 0;
-	char c;
-	char maxd;
-	int neg = 1;
+	register const char *s = nptr;
+	register unsigned long acc;
+	register int c;
+	register unsigned long cutoff;
+	register int neg = 0, any, cutlim;
 
-	maxd = (b > 10) ? '9' : b + '0';
+	/*
+	 * Skip white space and pick up leading +/- sign if any.
+	 * If base is 0, allow 0x for hex and 0 for octal, else
+	 * assume decimal; if base is already 16, allow 0x.
+	 */
+	do {
+		c = *s++;
+	} while (isspace(c));
+	if (c == '-') {
+		neg = 1;
+		c = *s++;
+	} else if (c == '+')
+		c = *s++;
+	if ((base == 0 || base == 16) &&
+	    c == '0' && (*s == 'x' || *s == 'X')) {
+		c = s[1];
+		s += 2;
+		base = 16;
+	}
+	if (base == 0)
+		base = c == '0' ? 8 : 10;
 
-	if (p && *p == '-') {
-		neg = -1;
-		p++;
-	}
-	while (p && (c = *p)) {
-		if (c >= '0' && c <= maxd) {
-			l = l*b + *p++ - '0';
-			continue;
+	/*
+	 * Compute the cutoff value between legal numbers and illegal
+	 * numbers.  That is the largest legal value, divided by the
+	 * base.  An input number that is greater than this value, if
+	 * followed by a legal input character, is too big.  One that
+	 * is equal to this value may be valid or not; the limit
+	 * between valid and invalid numbers is then based on the last
+	 * digit.  For instance, if the range for longs is
+	 * [-2147483648..2147483647] and the input base is 10,
+	 * cutoff will be set to 214748364 and cutlim to either
+	 * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
+	 * a value > 214748364, or equal but the next digit is > 7 (or 8),
+	 * the number is too big, and we will return a range error.
+	 *
+	 * Set any if any `digits' consumed; make it negative to indicate
+	 * overflow.
+	 */
+	cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
+	cutlim = cutoff % (unsigned long)base;
+	cutoff /= (unsigned long)base;
+	for (acc = 0, any = 0;; c = *s++) {
+		if (isdigit(c))
+			c -= '0';
+		else if (isalpha(c))
+			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		else
+			break;
+		if (c >= base)
+			break;
+		if (any < 0 || acc > cutoff || acc == cutoff && c > cutlim)
+			any = -1;
+		else {
+			any = 1;
+			acc *= base;
+			acc += c;
 		}
-		if (c >= 'A' && c <= 'Z')
-			c -= 'A' + 'a';
-		c = c - 'a' + 10;
-		if (b > c) {
-			l = l*b + c;
-			p++;
-			continue;
-		}
-		break;
 	}
-	l *= neg;
-	if (ep)
-		*ep = p;
-	return l;
+	if (any < 0) {
+		acc = neg ? LONG_MIN : LONG_MAX;
+		errno = ERANGE;
+	} else if (neg)
+		acc = -acc;
+	if (endptr != 0)
+		*endptr = (char *)(any ? s - 1 : nptr);
+	return (acc);
 }
 
 #endif
@@ -1998,7 +2232,7 @@ ni_propval(directory, propname)
 	char *directory;
 	char *propname;
 {
-	char *propval;
+	char *propval = NULL;
 	int i;
 	void *ni = NULL;
 	void *lastni = NULL;

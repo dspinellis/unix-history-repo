@@ -33,12 +33,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.19 (Berkeley) 1/8/94";
+static char sccsid[] = "@(#)err.c	8.26 (Berkeley) 3/11/94";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <errno.h>
 # include <netdb.h>
+# include <pwd.h>
 
 /*
 **  SYSERR -- Print error message.
@@ -68,7 +69,7 @@ char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 static void	fmtmsg();
 
-#if defined(NAMED_BIND) && !defined(NO_DATA)
+#if NAMED_BIND && !defined(NO_DATA)
 # define NO_DATA	NO_ADDRESS
 #endif
 
@@ -85,6 +86,11 @@ syserr(fmt, va_alist)
 	register char *p;
 	int olderrno = errno;
 	bool panic;
+#ifdef LOG
+	char *uname;
+	struct passwd *pw;
+	char ubuf[80];
+#endif
 	VA_LOCAL_DECL
 
 	panic = *fmt == '!';
@@ -108,13 +114,24 @@ syserr(fmt, va_alist)
 			ExitStat = EX_SOFTWARE;
 		else
 			ExitStat = EX_OSERR;
+		if (tTd(54, 1))
+			printf("syserr: ExitStat = %d\n", ExitStat);
 	}
 
 # ifdef LOG
+	pw = getpwuid(getuid());
+	if (pw != NULL)
+		uname = pw->pw_name;
+	else
+	{
+		uname = ubuf;
+		sprintf(ubuf, "UID%d", getuid());
+	}
+
 	if (LogLevel > 0)
-		syslog(panic ? LOG_ALERT : LOG_CRIT, "%s: SYSERR: %s",
+		syslog(panic ? LOG_ALERT : LOG_CRIT, "%s: SYSERR(%s): %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
-			&MsgBuf[4]);
+			uname, &MsgBuf[4]);
 # endif /* LOG */
 	if (olderrno == EMFILE)
 	{
@@ -285,7 +302,10 @@ putoutmsg(msg, holdmsg)
 		msg[0] = '5';
 
 	(void) fflush(stdout);
-	if (OpMode == MD_SMTP || OpMode == MD_DAEMON)
+
+	/* if DisConnected, OutChannel now points to the transcript */
+	if (!DisConnected &&
+	    (OpMode == MD_SMTP || OpMode == MD_DAEMON || OpMode == MD_ARPAFTP))
 		fprintf(OutChannel, "%s\r\n", msg);
 	else
 		fprintf(OutChannel, "%s\n", &msg[4]);
@@ -294,7 +314,7 @@ putoutmsg(msg, holdmsg)
 			(OpMode == MD_SMTP || OpMode == MD_DAEMON) ? msg : &msg[4]);
 	if (msg[3] == ' ')
 		(void) fflush(OutChannel);
-	if (!ferror(OutChannel))
+	if (!ferror(OutChannel) || DisConnected)
 		return;
 
 	/*
@@ -404,7 +424,7 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 	/* output the "to" person */
 	if (to != NULL && to[0] != '\0')
 	{
-		(void) sprintf(eb, "%s... ", to);
+		(void) sprintf(eb, "%s... ", shortenstring(to, 203));
 		while (*eb != '\0')
 			*eb++ &= 0177;
 	}
@@ -434,18 +454,18 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 **  ERRSTRING -- return string description of error code
 **
 **	Parameters:
-**		errno -- the error number to translate
+**		errnum -- the error number to translate
 **
 **	Returns:
-**		A string description of errno.
+**		A string description of errnum.
 **
 **	Side Effects:
 **		none.
 */
 
 const char *
-errstring(errno)
-	int errno;
+errstring(errnum)
+	int errnum;
 {
 	char *dnsmsg;
 	static char buf[MAXLINE];
@@ -464,12 +484,12 @@ errstring(errno)
 	*/
 
 	dnsmsg = NULL;
-	switch (errno)
+	switch (errnum)
 	{
 # if defined(DAEMON) && defined(ETIMEDOUT)
 	  case ETIMEDOUT:
 	  case ECONNRESET:
-		(void) strcpy(buf, sys_errlist[errno]);
+		(void) strcpy(buf, sys_errlist[errnum]);
 		if (SmtpPhase != NULL)
 		{
 			(void) strcat(buf, " during ");
@@ -498,7 +518,7 @@ errstring(errno)
 	  case EOPENTIMEOUT:
 		return "Timeout on file open";
 
-# ifdef NAMED_BIND
+# if NAMED_BIND
 	  case HOST_NOT_FOUND + E_DNSBASE:
 		dnsmsg = "host not found";
 		break;
@@ -533,9 +553,9 @@ errstring(errno)
 		return buf;
 	}
 
-	if (errno > 0 && errno < sys_nerr)
-		return (sys_errlist[errno]);
+	if (errnum > 0 && errnum < sys_nerr)
+		return (sys_errlist[errnum]);
 
-	(void) sprintf(buf, "Error %d", errno);
+	(void) sprintf(buf, "Error %d", errnum);
 	return (buf);
 }

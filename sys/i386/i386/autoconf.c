@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)autoconf.c	7.1 (Berkeley) 5/9/91
- *	$Id: autoconf.c,v 1.7 1994/01/16 02:21:56 martin Exp $
+ *	$Id: autoconf.c,v 1.11 1994/03/21 15:02:47 ache Exp $
  */
 
 /*
@@ -134,6 +134,7 @@ u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
 static	char devname[][2] = {
 	'w','d',	/* 0 = wd */
 	's','w',	/* 1 = sw */
+#define FDMAJOR 2
 	'f','d',	/* 2 = fd */
 	'w','t',	/* 3 = wt */
 	's','d',	/* 4 = sd -- new SCSI system */
@@ -141,6 +142,7 @@ static	char devname[][2] = {
 
 #define	PARTITIONMASK	0x7
 #define	PARTITIONSHIFT	3
+#define FDUNITSHIFT     6
 
 /*
  * Attempt to find the device from which we were booted.
@@ -162,9 +164,15 @@ setroot()
 	if (majdev > sizeof(devname) / sizeof(devname[0]))
 		return;
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
-	mindev = (unit << PARTITIONSHIFT) + part;
+	if (majdev == FDMAJOR) {
+		part = 3;       /* raw */
+		mindev = unit << FDUNITSHIFT;
+	}
+	else {
+		part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+		mindev = (unit << PARTITIONSHIFT) + part;
+	}
 	orootdev = rootdev;
 	rootdev = makedev(majdev, mindev);
 	/*
@@ -175,7 +183,8 @@ setroot()
 		return;
 	printf("changing root device to %c%c%d%c\n",
 		devname[majdev][0], devname[majdev][1],
-		mindev >> PARTITIONSHIFT, part + 'a');
+		mindev >> (majdev == FDMAJOR ? FDUNITSHIFT : PARTITIONSHIFT),
+		part + 'a');
 #ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
 	for (swp = swdevt; swp->sw_dev; swp++) {

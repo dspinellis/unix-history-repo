@@ -13,14 +13,10 @@
  *   the SMC Elite Ultra (8216), the 3Com 3c503, the NE1000 and NE2000,
  *   and a variety of similar clones.
  *
- * Thanks to Charles Hannum for proving to me with example code that the
- *	NE1000/2000 support could be added with minimal impact. Without
- *	this, I wouldn't have proceeded in this direction.
- *	
  */
 
 /*
- * $Id: if_ed.c,v 1.32 1994/02/02 14:05:53 davidg Exp $
+ * $Id: if_ed.c,v 1.33.2.1 1994/03/07 02:02:34 rgrimes Exp $
  */
 
 #include "ed.h"
@@ -164,8 +160,8 @@ static unsigned short ed_790_intr_mask[] = {
 	0,
 	IRQ9,
 	IRQ3,
-	IRQ4,
 	IRQ5,
+	IRQ7,
 	IRQ10,
 	IRQ11,
 	IRQ15
@@ -418,14 +414,15 @@ ed_probe_WD80x3(isa_dev)
 		 * Assemble together the encoded interrupt number.
 		 */
 		iptr = (inb(isa_dev->id_iobase + ED_WD_ICR) & ED_WD_ICR_IR2) |
-		        ((inb(isa_dev->id_iobase + ED_WD_IRR) &
-		        (ED_WD_IRR_IR0 | ED_WD_IRR_IR1)) >> 5);
+			    ((inb(isa_dev->id_iobase + ED_WD_IRR) &
+			    (ED_WD_IRR_IR0 | ED_WD_IRR_IR1)) >> 5);
 		/*
 		 * Translate it using translation table, and check for correctness.
 		 */
 		if (ed_intr_mask[iptr] != isa_dev->id_irq) {
 			printf("ed%d: kernel configured irq %d doesn't match board configured irq %d\n",
-				isa_dev->id_unit, ffs(isa_dev->id_irq) - 1, ffs(ed_intr_mask[iptr]) - 1);
+			    isa_dev->id_unit, ffs(isa_dev->id_irq) - 1,
+			    ffs(ed_intr_mask[iptr]) - 1);
 			return(0);
 		}
 		/*
@@ -435,17 +432,25 @@ ed_probe_WD80x3(isa_dev)
 			inb(isa_dev->id_iobase + ED_WD_IRR) | ED_WD_IRR_IEN);
 	}
 	if (sc->is790) {
-		outb(isa_dev->id_iobase + 0x04, inb(isa_dev->id_iobase + 0x04) | 0x80);
-		iptr = ((inb(isa_dev->id_iobase + 0x0d) & 0x0c ) >> 2) | 
-			((inb(isa_dev->id_iobase + 0x0d) & 0x40) >> 4);
-		outb(isa_dev->id_iobase + 0x04, inb(isa_dev->id_iobase + 0x04) & ~0x80);
+		outb(isa_dev->id_iobase + ED_WD790_HWR,
+		    inb(isa_dev->id_iobase + ED_WD790_HWR) | ED_WD790_HWR_SWH);
+		iptr = (((inb(isa_dev->id_iobase + ED_WD790_GCR) & ED_WD790_GCR_IR2) >> 4) |
+			    (inb(isa_dev->id_iobase + ED_WD790_GCR) &
+			    (ED_WD790_GCR_IR1|ED_WD790_GCR_IR0)) >> 2);
+		outb(isa_dev->id_iobase + ED_WD790_HWR,
+		    inb(isa_dev->id_iobase + ED_WD790_HWR) & ~ED_WD790_HWR_SWH);
 
 		if (ed_790_intr_mask[iptr] != isa_dev->id_irq) {
 			printf("ed%d: kernel configured irq %d doesn't match board configured irq %d %d\n",
-				isa_dev->id_unit, ffs(isa_dev->id_irq) - 1, ffs(ed_790_intr_mask[iptr]) -1, iptr);
+			    isa_dev->id_unit, ffs(isa_dev->id_irq) - 1,
+			    ffs(ed_790_intr_mask[iptr]) - 1, iptr);
 			return 0;
 		}
-		outb(isa_dev->id_iobase + 0x06, inb(isa_dev->id_iobase + 0x06) | 0x01);
+		/*
+		 * Enable interrupts.
+		 */
+		outb(isa_dev->id_iobase + ED_WD790_ICR,
+		    inb(isa_dev->id_iobase + ED_WD790_ICR) | ED_WD790_ICR_EIL);
 	}
 
 	sc->isa16bit = isa16bit;
@@ -522,6 +527,7 @@ ed_probe_WD80x3(isa_dev)
 			if (sc->is790) {
 				sc->wd_laar_proto = inb(sc->asic_addr + ED_WD_LAAR);
 				outb(sc->asic_addr + ED_WD_LAAR, ED_WD_LAAR_M16EN);
+				(void) inb(0x84);
 			} else {
 				outb(sc->asic_addr + ED_WD_LAAR, (sc->wd_laar_proto =
 				     ED_WD_LAAR_L16EN | ED_WD_LAAR_M16EN |
@@ -551,9 +557,11 @@ ed_probe_WD80x3(isa_dev)
 				/*
 				 * Disable 16 bit access to shared memory
 				 */
-				if (isa16bit)
+				if (isa16bit) {
 					outb(sc->asic_addr + ED_WD_LAAR, (sc->wd_laar_proto &=
 					     ~ED_WD_LAAR_M16EN));
+					(void) inb(0x84);
+				}
 
 				return(0);
 			}
@@ -566,10 +574,11 @@ ed_probe_WD80x3(isa_dev)
 		 *	memory. and 2) so that other 8 bit devices with shared
 		 *	memory can be used in this 128k region, too.
 		 */
-		if (isa16bit)
+		if (isa16bit) {
 			outb(sc->asic_addr + ED_WD_LAAR, (sc->wd_laar_proto &=
 			     ~ED_WD_LAAR_M16EN));
-
+			(void) inb(0x84);
+		}
 	}
 
 	return (ED_WD_IO_PORTS);
@@ -1448,9 +1457,17 @@ outloop:
 			 *	may cause a call-back to ed_start)
 			 * XXX - the call-back to 'start' is a bug, IMHO.
 			 */
-			case ED_VENDOR_WD_SMC:
+			case ED_VENDOR_WD_SMC: {
 				outb(sc->asic_addr + ED_WD_LAAR,
 				    (sc->wd_laar_proto | ED_WD_LAAR_M16EN));
+				(void) inb(0x84);
+				if (sc->is790) {
+					outb(sc->asic_addr + ED_WD_MSR, ED_WD_MSR_MENB);
+					(void) inb(0x84);
+				}
+				(void) inb(0x84);
+				break;
+			    }
 			}
 		}
 
@@ -1469,9 +1486,15 @@ outloop:
 				outb(sc->asic_addr + ED_3COM_GACFR,
 				    ED_3COM_GACFR_RSEL | ED_3COM_GACFR_MBS0);
 				break;
-			case ED_VENDOR_WD_SMC:
+			case ED_VENDOR_WD_SMC: {
 				outb(sc->asic_addr + ED_WD_LAAR, sc->wd_laar_proto);
+				(void) inb(0x84);
+				if (sc->is790) {
+					outb(sc->asic_addr + ED_WD_MSR, 0x00);
+					(void) inb(0x84);
+				}
 				break;
+			    }
 			}
 		}
 	} else {
@@ -1827,6 +1850,12 @@ edintr(unit)
 					outb(sc->asic_addr + ED_WD_LAAR,
 					     (sc->wd_laar_proto |=
 					     ED_WD_LAAR_M16EN));
+					(void) inb(0x84);
+					if (sc->is790) {
+						outb(sc->asic_addr + ED_WD_MSR,
+						    ED_WD_MSR_MENB);
+						(void) inb(0x84);
+					}
 				}
 
 				ed_rint (unit);
@@ -1838,6 +1867,11 @@ edintr(unit)
 					outb(sc->asic_addr + ED_WD_LAAR,
 					     (sc->wd_laar_proto &=
 					     ~ED_WD_LAAR_M16EN));
+					(void) inb(0x84);
+					if (sc->is790) {
+						outb(sc->asic_addr + ED_WD_MSR, 0x00);
+						(void) inb(0x84);
+					}
 				}
 			}
 		}

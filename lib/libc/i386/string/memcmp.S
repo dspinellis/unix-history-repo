@@ -27,11 +27,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: memcmp.s,v 1.2 1993/10/09 08:31:18 davidg Exp $
+ *	$Id: memcmp.S,v 1.2 1994/03/04 19:47:11 ache Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: memcmp.s,v 1.2 1993/10/09 08:31:18 davidg Exp $"
+        .asciz "$Id: memcmp.S,v 1.2 1994/03/04 19:47:11 ache Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
@@ -73,8 +73,8 @@ L5:	movl	$4,%ecx			/* We know that one of the next	*/
 	subl	%ecx,%esi		/* match.			*/
 	repe
 	cmpsb
-L6:	movsbl  -1(%edi),%eax		/* Perform unsigned comparison	*/
-        movsbl  -1(%esi),%edx
+L6:     movzbl  -1(%edi),%eax           /* Perform unsigned comparison  */
+	movzbl  -1(%esi),%edx
         subl    %edx,%eax
 	popl	%esi
 	popl	%edi

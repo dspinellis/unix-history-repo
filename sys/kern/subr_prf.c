@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
 /*-
  * Copyright (c) 1986, 1988, 1991 The Regents of the University of California.
  * All rights reserved.
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)subr_prf.c	7.30 (Berkeley) 6/29/91
- *	$Id: subr_prf.c,v 1.5 1993/11/13 02:25:32 davidg Exp $
+ *	$Id: subr_prf.c,v 1.6 1993/12/19 00:51:32 wollman Exp $
  */
 
 #include "param.h"

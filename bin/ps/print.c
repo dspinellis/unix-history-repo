@@ -141,7 +141,7 @@ state(k, v)
 		if (flag & SSINTR)	/* interuptable (long) */
 			*cp = p->p_slptime >= MAXSLP ? 'I' : 'S';
 		else
-			*cp = (flag & SPAGE) ? 'P' : 'D';
+			*cp = /* (flag & SPAGE) ? 'P' : */ 'D';
 		break;
 
 	case SRUN:
@@ -190,6 +190,8 @@ state(k, v)
 	if (flag & (SSYS|SLOCK|SULOCK|SKEEP|SPHYSIO))
 #endif
 		*cp++ = 'L';
+	if (flag & SUGID)
+		*cp++ = 'U';
 	if (k->ki_e->e_flag & EPROC_SLEADER)
 		*cp++ = 's';
 	if ((flag & SCTTY) && k->ki_e->e_pgid == k->ki_e->e_tpgid)

@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
+/*
  * Copyright (c) 1982, 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_fork.c	7.29 (Berkeley) 5/15/91
- *	$Id: kern_fork.c,v 1.5 1993/12/09 09:16:41 davidg Exp $
+ *	$Id: kern_fork.c,v 1.6 1993/12/19 00:51:25 wollman Exp $
  */
 
 #include "param.h"

@@ -1,2 +1,0 @@
-COMPILER=gcc
-COPTS=-O2

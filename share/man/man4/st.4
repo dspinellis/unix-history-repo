@@ -151,10 +151,10 @@ be any value supported by the device, the scsi adapter and the
 system.  (often variable between 1 byte and 64k (sometimes more)).
 .Pp
 When reading a variable record/block from the tape, the head is
-logically considered to be immediatly after the last item read,
+logically considered to be immediately after the last item read,
 and before the next item after that. If the next item is a Filemark,
 but you never read it because you have all the data, then the next
-process to read will immediatly read the filemark and return EOF.
+process to read will immediately read the filemark and return EOF.
 (assuming you were in non-rewind mode).
 .It Pa fixed Blocksize
 Data written by the user is passed to the tape as a succession of
@@ -170,8 +170,8 @@ the drive will encounter the filemark. Because there is some data
 to return to you (unless there were no records before the filemark)
 the driver will return the data to you (less than you requested),
 but hide from you the discovery of the Filemark. The  NEXT read
-will be returned immediatly with an EOF. If you never Make the next
-read, but close the device, the next process to read will immediatly
+will be returned immediately with an EOF. If you never Make the next
+read, but close the device, the next process to read will immediately
 read the filemark and return EOF. (assuming you were in non-rewind
 mode).
 .El
@@ -188,7 +188,7 @@ types of tape do not actually write two filemarks to tape,
 but when read, report a 'phantom' filemark when the last file is read.
 These devices include the QIC family of devices. It might be that this
 set of devices is the same set as that of fixed block devices. This has not
-been detirmined yet, and they are treated as separate behaviours by the
+been detirmined yet, and they are treated as separate behaviors by the
 driver at this time.
 .Pp
 .SH KERNEL CONFIGURATION

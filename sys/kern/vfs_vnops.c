@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
+/*
  * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.
  *
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_vnops.c	7.33 (Berkeley) 6/27/91
- *	$Id: vfs_vnops.c,v 1.3 1993/11/25 01:33:45 wollman Exp $
+ *	$Id: vfs_vnops.c,v 1.4.2.1 1994/05/01 20:31:25 rgrimes Exp $
  */
 
 #include "param.h"
@@ -385,7 +392,7 @@ vn_ioctl(fp, com, data, p)
 	case VCHR:
 	case VBLK:
 		error = VOP_IOCTL(vp, com, data, fp->f_flag, p->p_ucred, p);
-		if (error == 0 && com == TIOCSCTTY) {
+		if (error == 0 && com == TIOCSCTTY && (p->p_session->s_ttyvp != vp)) {
 			p->p_session->s_ttyvp = vp;
 			VREF(vp);
 		}

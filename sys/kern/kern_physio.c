@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern__physio.c,v 1.7 1994/01/17 09:32:59 davidg Exp $
+ *	$Id: kern_physio.c,v 1.1.2.1 1994/05/01 06:58:54 rgrimes Exp $
  */
 
 #include "param.h"
@@ -174,7 +174,12 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 				/*
 				 * properly handle copy-on-write
 				 */
+#if 0
 				*(volatile int *) adr += 0;
+#endif
+				vm_fault(&curproc->p_vmspace->vm_map,
+					(vm_offset_t) adr,
+					VM_PROT_READ|VM_PROT_WRITE, FALSE);
 			}
 #if 0
 			else {

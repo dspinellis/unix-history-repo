@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.10 1994/01/31 04:22:01 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.11.2.2 1994/03/24 08:12:20 rgrimes Exp $
  */
 
 /*
@@ -388,15 +388,15 @@ vnode_pager_setsize(vp, nsize)
 		printf("vnode_pager_setsize: vp %x obj %x osz %d nsz %d\n",
 		       vp, object, vnp->vnp_size, nsize);
 #endif
+
 	/*
 	 * File has shrunk.
 	 * Toss any cached pages beyond the new EOF.
 	 */
-	nsize = round_page(nsize);
-	if (nsize < vnp->vnp_size) {
+	if (round_page(nsize) < round_page(vnp->vnp_size)) {
 		vm_object_lock(object);
 		vm_object_page_remove(object,
-				      (vm_offset_t)nsize, vnp->vnp_size);
+				      (vm_offset_t)round_page(nsize), round_page(vnp->vnp_size));
 		vm_object_unlock(object);
 	}
 	vnp->vnp_size = (vm_offset_t)nsize;
@@ -567,55 +567,49 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 	int bsize;
 	int errtype=0; /* 0 is file type otherwise vm type */
 	int error = 0;
+	int trimmed;
 
 	object = m[reqpage]->object;	/* all vm_page_t items are in same object */
 	paging_offset = object->paging_offset;
 
-	/*
-	 * get the UNDERLYING device for the file
-	 */
 	vp = vnp->vnp_vp;
 	bsize = vp->v_mount->mnt_stat.f_bsize;
-	VOP_BMAP(vp, 0, &dp, 0);
 
+	/* get the UNDERLYING device for the file with VOP_BMAP() */
 	/*
-	 * trim off unnecessary pages
+	 * originally, we did not check for an error return
+	 * value -- assuming an fs always has a bmap entry point
+	 * -- that assumption is wrong!!!
 	 */
-	for (i = reqpage - 1; i >= 0; --i) {
-		if (m[i]->object != object) {
-			for (j = 0; j <= i; j++)
-				vnode_pager_freepage(m[j]);
-			for (j = i + 1; j < count; j++) {
-				m[j - (i + 1)] = m[j];
-			}
-			count -= i + 1;
-			reqpage -= i + 1;
-			break;
-		}
-	}
-	for (i = reqpage + 1; i < count; i++) {
-		if ((m[i]->object != object) ||
-			(m[i]->offset + paging_offset >= vnp->vnp_size)) {
-			for (j = i; j < count; j++)
-				vnode_pager_freepage(m[j]);
-			count = i;
-			break;
-		}
-	}
-
 	/*
 	 * we only do direct I/O if the file is on a local
 	 * BLOCK device and currently if it is a read operation only.
 	 */
-
 	kva = 0;
 	mapsize = 0;
-	if (rw == UIO_READ && dp->v_type == VBLK &&
-		vp->v_mount->mnt_stat.f_type == MOUNT_UFS) {
+	if (!VOP_BMAP(vp, m[reqpage]->offset+paging_offset, &dp, 0) &&
+		rw == UIO_READ && ((dp->v_type == VBLK &&
+		(vp->v_mount->mnt_stat.f_type == MOUNT_UFS)) ||
+		 (vp->v_mount->mnt_stat.f_type == MOUNT_NFS))) {
 		/*
-		 * we do not block for a kva, notice we default to a kva conservative behavior
+		 * we do not block for a kva, notice we default to a kva
+		 * conservative behavior
 		 */
-		kva = kmem_alloc_pageable(pager_map, (mapsize = count*NBPG));
+		kva = kmem_alloc_pageable(pager_map,
+			(mapsize = count*NBPG));
+		if( !kva) {
+			for (i = 0; i < count; i++) {
+				if (i != reqpage) {
+					vnode_pager_freepage(m[i]);
+					m[i] = 0;
+				}
+			}
+			m[0] = m[reqpage];
+			kva = vm_pager_map_page(m[0]);
+			reqpage = 0;
+			count = 1;
+			mapsize = count*NBPG;
+		}
 	}
 
 	if (!kva) {
@@ -795,7 +789,7 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		}
 
 		/*
-		 * Scan forward and stop for the first discontiguous
+		 * Scan forward and stop for the first non-contiguous
 		 * entry or stop for a page being in buffer cache.
 		 */
 		failflag = 0;
@@ -860,7 +854,9 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		bp->b_flags = B_BUSY | B_READ | B_CALL;
 		bp->b_iodone = vnode_pager_iodone;
 		/* B_PHYS is not set, but it is nice to fill this in */
-		bp->b_proc = &proc0;
+		/* bp->b_proc = &proc0; */
+		bp->b_proc = curproc;
+		bp->b_rcred = bp->b_wcred = bp->b_proc->p_ucred;
 		bp->b_un.b_addr = (caddr_t) kva;
 		bp->b_blkno = firstaddr / DEV_BSIZE;
 		bp->b_vp = dp;

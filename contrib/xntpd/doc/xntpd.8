@@ -20,13 +20,13 @@
 '''
 '''     Set up \*(-- to give an unbreakable dash;
 '''     string Tr holds user defined translation string.
-'''     Bell System Logo is used as a dummy character.
+'''     Greek uppercase omega is used as a dummy character.
 '''
-.tr \(bs-|\(bv\*(Tr
+.tr \(*W-|\(bv\*(Tr
 .ie n \{\
-.ds -- \(bs-
-.if (\n(.H=4u)&(1m=24u) .ds -- \(bs\h'-12u'\(bs\h'-12u'-\" diablo 10 pitch
-.if (\n(.H=4u)&(1m=20u) .ds -- \(bs\h'-12u'\(bs\h'-8u'-\" diablo 12 pitch
+.ds -- \(*W-
+.if (\n(.H=4u)&(1m=24u) .ds -- \(*W\h'-12u'\(*W\h'-12u'-\" diablo 10 pitch
+.if (\n(.H=4u)&(1m=20u) .ds -- \(*W\h'-12u'\(*W\h'-8u'-\" diablo 12 pitch
 .ds L" ""
 .ds R" ""
 .ds L' '
@@ -88,7 +88,7 @@ with Internet standard time servers.
 .I Xntpd
 is a complete implementation of the Network Time Protocol (NTP) version
 3 standard as defined by RFC 1305 and also retains
-compatability with version 1 and 2 servers as defined
+compatibility with version 1 and 2 servers as defined
 by RFC 1059 and RFC 1119, respectively.
 .I Xntpd
 does all computations in fixed point arithmetic and is entirely free of
@@ -137,6 +137,9 @@ on this computer
 specify the location of the drift file
 .Ip -k 8
 specify the location of the file which contains the NTP authentication keys
+.Ip -m 8
+listen for multicast NTP and sync to this if available (requires multicast
+kernel)
 .Ip -p 8
 specify the name of the file to record the daemon's process id
 .Ip -r 8
@@ -215,7 +218,10 @@ the remote host synchronize to your own time.  The
 .B broadcast
 statement requests your local daemon to transmit broadcast NTP to
 the specified address.  The latter is usually the broadcast address
-on [one of] your local network[s].
+on [one of] your local network[s] or a multicast address assigned to
+NTP. The Numbers Czar has assigned the address 224.0.1.1 to NTP; this
+is presently the only number that should be used.  Note that the use
+of multicast requires a multicast kernel.
 .PP
 The
 .B key
@@ -273,7 +279,7 @@ must have write permission for the directory the drift file is located
 in, and that file system links, symbolic or otherwise, should probably
 be avoided.
 .PP
-.B "monitor yes|no"
+.B monitor yes|no
 .PP
 Indicates whether the
 .I xntpd
@@ -297,10 +303,23 @@ is primarily intended for very popular servers which exchange time with
 large numbers of peers, though it may also be useful for access monitoring
 of local servers if you are willing to accept the overhead.
 .PP
-.B "broadcastclient yes|no"
+.B broadcastclient
 .PP
-This indicates whether the local server should listen for, and attempt to
-synchonize to, broadcast NTP.  The default is \*(L"no\*(R".
+This directs the local server should listen for, and attempt to
+synchonize to, broadcast NTP.  Note that authentication is required in
+this mode.
+.PP
+.B multicastclient
+[
+.I IP address ...
+]
+.PP
+This directs the local server should listen for, and attempt to
+synchonize to, multicast NTP.  This function requires a multicast kernel
+and the use of authentication.
+If one or more IP addresses are given, the server joins the respective
+multicast group.  If none are given, the default address assigned to
+NTP (224.0.1.1) is assumed.
 .PP
 .B broadcastdelay
 .I seconds
@@ -311,7 +330,7 @@ typically (for ethernet) a number between 0.007 and 0.015 seconds.  This
 initial estimate may be improved by polling each server to determine a
 more accurate value.  Defaults to 0.008 seconds.
 .PP
-.B "authenticate yes|no"
+.B authenticate yes|no
 .PP
 Indicates whether the local server should operate in authenticate mode
 or not.  If \*(L"yes\*(R", only peers which include an authentication field
@@ -374,7 +393,8 @@ facility will be disabled.
 Certain changes can be made to the
 .I xntpd
 server via mode 6 control messages, in particular the setting of
-leap second indications in a server with a radio clock.  The
+leap second indications in a server with a radio clock.
+The
 .B controlkey
 statement specifies an encription key number to be used for authenticating
 such messages.  Omitting this statement will cause control messages
@@ -446,6 +466,22 @@ useful as future synchronization partners.
 .Ip notrust 10
 Treat these hosts normally in other respects, but never use them as
 synchronization sources.
+.Ip limited 10
+These hosts are subject to limitation of number of clients from the
+same net. Net in this context refers to the IP notion of net (class A,
+class B, class C, etc.). Only the first \*(L"client_limit\*(R" hosts
+that have shown up at the server and that have been active during the
+last \*(L"client_limit_period\*(R" seconds are accepted. Requests from
+other clients from the same net are rejected. Only time request
+packets are taken into account. \*(L"Private\*(R", \*(L"control\*(R",
+and \*(L"broadcast\*(R" packets are not subject to client limitation
+and therefore are not contributing to client count. History of clients
+is kept using the monitoring capability of
+.IR xntpd .
+Thus, monitoring is active as long as there is a restriction entry
+with the \*(L"limited\*(R" flag. The default value for
+\*(L"client_limit\*(R" is 3. The default value for
+\*(L"client_limit_period\*(R" is 3600 seconds.
 .Ip ntpport 10
 This is actually a match algorithm modifier, rather than a restriction
 flag.  Its presence causes the restriction entry to be matched only if
@@ -468,6 +504,21 @@ as well.  While this facility may be otherwise useful for keeping unwanted or
 broken remote time servers from affecting your own, it should not be
 considered an alternative to the standard NTP authentication facility.  Source
 address based restrictions are easily circumvented by a determined cracker.
+.PP
+.B clientlimit
+.I limit
+.PP
+Sets \*(L"client_limit\*(R" to \*(L"limit\*(R", allows configuration
+of client limitation policy. This variable defines the number of
+clients from the same network that are allowed to use the server.
+.PP
+.B clientperiod
+.I period
+.PP
+Sets \*(L"client_limit_period\*(R", allows configuration of client
+limitation policy. This variable specifies the number
+of seconds after which a client is considered inactive and thus no
+longer is counted for client limit restriction.
 .PP
 .B trap
 .I host_address
@@ -991,7 +1042,7 @@ reduce the residual jitter and improve accuracy.
 The fudge flag2 can be used to force the driver to send to
 the clock the commands required to reprogram the current WWV and WWVH fudge
 delays into it.  This is normally done only when the values are to be changed,
-such as during inital setup and calibration.  Setting
+such as during initial setup and calibration.  Setting
 the (otherwise undocumented) fudge flag3 will cause the driver to reset
 the clock.  The latter two flags are generally useful primarily for debugging.
 .PP
@@ -1070,7 +1121,7 @@ a serial port after demodulation.  While there are currently no commercial
 CHU receivers, the hardware required to receive the CHU timecode is fairly
 simple to build.  While it is possible to configure several CHU units
 simultaneously this is not recommended as the character interrupts from all
-units will be occuring at the same time and will interfere with each other.
+units will be occurring at the same time and will interfere with each other.
 .PP
 The fudge time1 parameter is used to specify the propagation delay between
 the CHU transmitter at Ottawa, Ontario, and the receiver. The default
@@ -1370,6 +1421,31 @@ If flag2 is set, then leaphold is set.
 If flag3 is set, then the sample information is dumped.
 If flag4 is set, then the input data is smoothed, and all data
 points are used.
+.PP
+.SH VARIABLES
+Most variables used by the NTP protocol can be examined with the xntpdc
+(mode 7 messages) and the ntpq (mode 6 messages). Currently very few variables
+can be modified via mode 6 messages. These variables are either created with the
+.I setvar
+directive or the leap warning variables. The leap warning bits that can be
+set in the 
+.B leapwarning
+variable (up to one month ahead). Both, the
+.B leapwarning and in the 
+.B leapindication
+variable, have a slightly different encoding than the usual
+.B leap
+bits interpretation:
+.P
+.Ip 00 8
+The daemon passes the leap bits of its synchronisation source (usual mode of
+operation).
+.Ip 01/10 8
+A leap second is added/deleted (operator forced leap second).
+.Ip 11 8
+Leap information from the sychronisation source is ignored (thus LEAP_NOWARNING
+is passed on).
+.PP
 .SH FILES
 .Ip /etc/ntp.conf 20
 the default name of the configuration file

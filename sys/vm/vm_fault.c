@@ -66,7 +66,7 @@
  * rights to redistribute these changes.
  */
 /*
- * $Id: vm_fault.c,v 1.13 1994/01/17 09:33:31 davidg Exp $
+ * $Id: vm_fault.c,v 1.14 1994/01/31 04:19:59 davidg Exp $
  */
 
 /*
@@ -1219,13 +1219,17 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 	 * in memory or on disk not in same object
 	 */
 	toffset = offset - NBPG;
+	if( rbehind*NBPG > offset)
+		rbehind = offset / NBPG;
 	startoffset = offset - rbehind*NBPG;
-	while (((int)(toffset+NBPG)) >= 0 && toffset >= startoffset) {
+	while (toffset >= startoffset) {
 		if (!vm_fault_page_lookup(first_object, toffset - offsetdiff, &rtobject, &rtoffset, &rtm) ||
 		    rtm != 0 || rtobject != object) {
 			startoffset = toffset + NBPG;
 			break;
 		}
+		if( toffset == 0)
+			break;
 		toffset -= NBPG;
 	}
 
@@ -1238,11 +1242,11 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 	while (toffset < object->size && toffset < endoffset) {
 		if (!vm_fault_page_lookup(first_object, toffset - offsetdiff, &rtobject, &rtoffset, &rtm) ||
 		    rtm != 0 || rtobject != object) {
-			endoffset = toffset;
 			break;
 		}
 		toffset += NBPG;
 	}
+	endoffset = toffset;
 
 	/* calculate number of bytes of pages */
 	size = (endoffset - startoffset) / NBPG;
