@@ -1,0 +1,48 @@
+.TH TRPT 8 
+.UC 4
+.SH NAME
+trpt \- transliterate protocol trace
+.SH SYNOPSIS
+.B trpt
+[
+.B \-s
+]  [
+.B \-p
+hex-address ]
+[ system [ core ] ]
+.SH DESCRIPTION
+.I Trpt
+interrogates the buffer of TCP trace records created
+when a socket is marked for \*(lqdebugging\*(rq (see
+.IR setsockopt (2)),
+and prints a readable description of these records.
+If the
+.B \-s
+option is given 
+.I trpt
+will print a detailed description of the packet
+sequencing information at each point in the trace.
+.If the
+.B \-p
+option is specified, along with the hexadecimal
+address of a protocol control block (as shown by
+the \-A option to
+.IR netstat (1)),
+then 
+.I trpt 
+will print only those trace records associated with
+that session.
+.PP
+Any further arguments are interpreted as the system
+image and/or core file.
+.SH FILES
+/vmunix, /dev/kmem
+.SH "SEE ALSO"
+setsockopt(2), netstat(1)
+.SH DIAGNOSTICS
+\(*lqno namelist\(*rq when the system image doesn't
+contain the proper symbols to find the trace buffer;
+others which should be self explanatory.
+.SH BUGS
+Should also print the data for each input or output,
+but this is not saved in the race record.
