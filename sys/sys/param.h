@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)param.h	7.23 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: param.h,v 1.2 1993/10/08 20:59:38 rgrimes Exp $
  */
 
 #ifndef _SYS_PARAM_H_
@@ -202,7 +202,7 @@
  * MAXALLOCSIZE must be a power of two.
  */
 #define MINBUCKET	4		/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * CLBYTES)
+#define MAXALLOCSAVE	(CLBYTES-1)
 
 /*
  * Scale factor for scaled integers used to count %cpu time and load avgs.
