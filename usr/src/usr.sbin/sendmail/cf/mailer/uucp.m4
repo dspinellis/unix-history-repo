@@ -11,7 +11,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.1 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.2 (Berkeley) %G%')
 
 Msuucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=mDFMhuU, S=12, R=12, M=100000
 	A=uux - -r -z -a$f -gC $h!rmail ($u)
@@ -27,7 +27,7 @@ R$* :;				$@ $1 :;
 R$* < @ $j >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
-R$+				$: $U ! $1		prepend our name
+R$+				$: $k ! $1		prepend our name
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
