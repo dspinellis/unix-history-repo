@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -218,7 +218,7 @@ register int f;
 		sb.sg_flags |= ECHO|CRMOD;
 	    }
 	    sb.sg_erase = sb.sg_kill = -1;
-	    if (f == 6) {
+	    if (localflow || (f == 6)) {
 		tc = &tc3;
 		tc3 = notc;
 		    /* get XON, XOFF characters */
@@ -301,6 +301,46 @@ register int f;
     }
 }
 
+void
+TerminalSpeeds(ispeed, ospeed)
+long *ispeed;
+long *ospeed;
+{
+    /*
+     * The order here is important.  The index of each speed needs to
+     * correspond with the sgtty structure value for that speed.
+     *
+     * Additionally, the search algorithm assumes the table is in
+     * ascending sequence.
+     */
+    static int ttyspeeds[] = {
+	    0, 50, 75, 110, 134, 150, 200, 300,
+	    600, 1200, 1800, 2400, 4800, 9600, 19200, 38400 };
+#define NUMSPEEDS sizeof ttyspeeds/sizeof ttyspeeds[0]
+
+    if ((ottyb.sg_ospeed < 0) || (ottyb.sg_ospeed > NUMSPEEDS) ||
+	(ottyb.sg_ispeed < 0) || (ottyb.sg_ispeed > NUMSPEEDS)) {
+	ExitString("Invalid terminal speed.");
+	/*NOTREACHED*/
+    } else {
+	*ispeed = ttyspeeds[ottyb.sg_ispeed];
+	*ospeed = ttyspeeds[ottyb.sg_ospeed];
+    }
+}
+
+int
+TerminalWindowSize(rows, cols)
+long *rows, *cols;
+{
+    struct winsize ws;
+
+    if (ioctl(fileno(stdin), TIOCGWINSZ, (char *)&ws) < 0) {
+	return 0;
+    }
+    *rows = ws.ws_row;
+    *cols = ws.ws_col;
+    return 1;
+}
 
 int
 NetClose(fd)
@@ -372,6 +412,14 @@ intr2()
 }
 
 static void
+sendwin()
+{
+    if (connected) {
+	sendnaws();
+    }
+}
+
+static void
 doescape()
 {
     command(0);
@@ -383,6 +431,7 @@ sys_telnet_init()
     (void) signal(SIGINT, (int (*)())intr);
     (void) signal(SIGQUIT, (int (*)())intr2);
     (void) signal(SIGPIPE, (int (*)())deadpeer);
+    (void) signal(SIGWINCH, (int (*)())sendwin);
 
     setconnmode();
 
