@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.3 82/11/14";
+static char sccsid[] = "@(#)rshd.c	4.4 82/11/15";
 #endif
 
 #include <sys/ioctl.h>
@@ -157,7 +157,7 @@ doit(f, fromp)
 		if (port >= IPPORT_RESERVED)
 			goto protofail;
 		(void) alarm(60);
-		fromp->sin_port = htons((u_short)fromp->sin_port);
+		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp), 0) < 0)
 			exit(1);
 		(void) alarm(0);
