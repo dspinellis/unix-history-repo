@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)buf.h	7.6 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)buf.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -65,6 +76,7 @@ struct buf
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 	int	(*b_iodone)();		/* function called by iodone */
+	struct vnode *b_vp;		/* Vnode for dev */
 	int	b_pfcent;		/* center page when swapping cluster */
 };
 
@@ -85,11 +97,11 @@ struct buf
 #define RND	(MAXBSIZE/DEV_BSIZE)
 #endif SECSIZE
 #if	((BUFHSZ&(BUFHSZ-1)) == 0)
-#define	BUFHASH(dev, dblkno)	\
-	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND))&(BUFHSZ-1)])
+#define	BUFHASH(dvp, dblkno)	\
+	((struct buf *)&bufhash[((int)(dvp)+(((int)(dblkno))/RND))&(BUFHSZ-1)])
 #else
-#define	BUFHASH(dev, dblkno)	\
-	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND)) % BUFHSZ])
+#define	BUFHASH(dvp, dblkno)	\
+	((struct buf *)&bufhash[((int)(dvp)+(((int)(dblkno))/RND)) % BUFHSZ])
 #endif
 
 struct	buf *buf;		/* the buffer pool itself */
@@ -103,14 +115,9 @@ struct	buf bfreelist[BQUEUES];	/* heads of available lists */
 struct	buf bswlist;		/* head of free swap header list */
 struct	buf *bclnlist;		/* head of cleaned page list */
 
-struct	buf *alloc();
-struct	buf *realloccg();
-struct	buf *baddr();
 struct	buf *getblk();
 struct	buf *geteblk();
 struct	buf *getnewbuf();
-struct	buf *bread();
-struct	buf *breada();
 
 unsigned minphys();
 #endif
@@ -141,6 +148,7 @@ unsigned minphys();
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
 #define	B_CALL		0x200000	/* call b_iodone from iodone */
 #define	B_RAW		0x400000	/* set by physio for raw transfers */
+#define	B_NOCACHE	0x800000	/* do not cache block after use */
 
 /*
  * Insq/Remq for the buffer hash lists.
@@ -197,3 +205,4 @@ unsigned minphys();
 	blkclr((bp)->b_un.b_addr, (unsigned)(bp)->b_bcount); \
 	(bp)->b_resid = 0; \
 }
+#define B_CLRBUF	0x1	/* request allocated buffer be cleared */

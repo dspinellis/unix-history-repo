@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.h	7.3 (Berkeley) %G%
+ *	@(#)conf.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -79,6 +79,7 @@ struct swdevt
 	dev_t	sw_dev;
 	int	sw_freed;
 	int	sw_nblks;
+	struct vnode *sw_vp;
 #ifdef SECSIZE
 	int	sw_blksize;
 	int	sw_bshift;

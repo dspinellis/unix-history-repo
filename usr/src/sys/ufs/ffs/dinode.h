@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)dinode.h	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)dinode.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -19,16 +30,18 @@
 
 struct inode {
 	struct	inode *i_chain[2];	/* must be first */
+	struct	vnode i_vnode;	/* vnode associated with this inode */
+	struct	vnode *i_devvp;	/* vnode for block I/O */
 	u_short	i_flag;
-	u_short	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
-	u_short	i_shlockc;	/* count of shared locks on inode */
-	u_short	i_exlockc;	/* count of exclusive locks on inode */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
 	long	i_id;		/* unique identifier */
+	long	i_diroff;	/* offset in dir, where we found last entry */
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
 	struct	text *i_text;	/* text entry, if any (should be region) */
+	struct	inode *i_devlst;/* list of block device inodes */
+	off_t	i_endoff;	/* end of useful stuff in directory */
 	union {
 		daddr_t	if_lastr;	/* last read (read-ahead) */
 		struct	socket *is_socket;
@@ -54,7 +67,8 @@ struct inode {
 		daddr_t	ic_ib[NIADDR];	/* 88: indirect blocks */
 		long	ic_flags;	/* 100: status, currently unused */
 		long	ic_blocks;	/* 104: blocks actually held */
-		long	ic_spare[5];	/* 108: reserved, currently unused */
+		long	ic_gen;		/* 108: generation number */
+		long	ic_spare[4];	/* 112: reserved, currently unused */
 	} i_ic;
 };
 
@@ -80,6 +94,7 @@ struct dinode {
 #define	i_ctime		i_ic.ic_ctime
 #define i_blocks	i_ic.ic_blocks
 #define	i_rdev		i_ic.ic_db[0]
+#define i_gen		i_ic.ic_gen
 #define	i_lastr		i_un.if_lastr
 #define	i_socket	i_un.is_socket
 #define	i_forw		i_chain[0]
@@ -102,50 +117,30 @@ struct dinode {
 #define	di_ctime	di_ic.ic_ctime
 #define	di_rdev		di_ic.ic_db[0]
 #define	di_blocks	di_ic.ic_blocks
+#define	di_gen		di_ic.ic_gen
 
 #ifdef KERNEL
-/*
- * Invalidate an inode. Used by the namei cache to detect stale
- * information. At an absurd rate of 100 calls/second, the inode
- * table invalidation should only occur once every 16 months.
- */
-#define cacheinval(ip)	\
-	(ip)->i_id = ++nextinodeid; \
-	if (nextinodeid == 0) \
-		cacheinvalall();
-
 struct inode *inode;		/* the inode table itself */
 struct inode *inodeNINODE;	/* the end of the inode table */
 int	ninode;			/* number of slots in the table */
-long	nextinodeid;		/* unique id generator */
 
-struct	inode *rootdir;			/* pointer to inode of root directory */
+extern struct vnodeops ufs_vnodeops;	/* vnode operations for ufs */
+extern struct vnodeops blk_vnodeops;	/* vnode operations for blk devices */
 
-struct	inode *ialloc();
-struct	inode *iget();
-#ifdef notdef
-struct	inode *ifind();
-#endif
-struct	inode *owner();
-struct	inode *maknode();
-struct	inode *namei();
-
-ino_t	dirpref();
+extern ino_t	dirpref();
 #endif
 
 /* flags */
 #define	ILOCKED		0x1		/* inode is locked */
 #define	IUPD		0x2		/* file has been modified */
 #define	IACC		0x4		/* inode access time to be updated */
-#define	IMOUNT		0x8		/* inode is mounted on */
-#define	IWANT		0x10		/* some process waiting on lock */
-#define	ITEXT		0x20		/* inode is pure text prototype */
-#define	ICHG		0x40		/* inode has been changed */
-#define	ISHLOCK		0x80		/* file has shared lock */
-#define	IEXLOCK		0x100		/* file has exclusive lock */
-#define	ILWAIT		0x200		/* someone waiting on file lock */
-#define	IMOD		0x400		/* inode has been modified */
-#define	IRENAME		0x800		/* inode is being renamed */
+#define	IWANT		0x8		/* some process waiting on lock */
+#define	ICHG		0x10		/* inode has been changed */
+#define	ISHLOCK		0x20		/* file has shared lock */
+#define	IEXLOCK		0x40		/* file has exclusive lock */
+#define	ILWAIT		0x80		/* someone waiting on file lock */
+#define	IMOD		0x100		/* inode has been modified */
+#define	IRENAME		0x200		/* inode is being renamed */
 
 /* modes */
 #define	IFMT		0170000		/* type of file */
@@ -163,10 +158,30 @@ ino_t	dirpref();
 #define	IWRITE		0200
 #define	IEXEC		0100
 
+#ifdef KERNEL
+/*
+ * Convert between inode pointers and vnode pointers
+ */
+#define VTOI(vp)	((struct inode *)(vp)->v_data)
+#define ITOV(ip)	((struct vnode *)&(ip)->i_vnode)
+
+/*
+ * Convert between vnode types and inode formats
+ */
+extern enum vtype	iftovt_tab[];
+extern int		vttoif_tab[];
+#define IFTOVT(mode)	(iftovt_tab[((mode) & IFMT) >> 13])
+#define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
+
+#define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
+
+/*
+ * Lock and unlock inodes.
+ */
 #define	ILOCK(ip) { \
 	while ((ip)->i_flag & ILOCKED) { \
 		(ip)->i_flag |= IWANT; \
-		sleep((caddr_t)(ip), PINOD); \
+		(void) sleep((caddr_t)(ip), PINOD); \
 	} \
 	(ip)->i_flag |= ILOCKED; \
 }
@@ -181,7 +196,7 @@ ino_t	dirpref();
 
 #define	IUPDAT(ip, t1, t2, waitfor) { \
 	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) \
-		iupdat(ip, t1, t2, waitfor); \
+		(void) iupdat(ip, t1, t2, waitfor); \
 }
 
 #define	ITIMES(ip, t1, t2) { \
@@ -196,3 +211,13 @@ ino_t	dirpref();
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
 	} \
 }
+
+/*
+ * This overlays the fid sturcture (see mount.h)
+ */
+struct ufid {
+	u_short	ufid_len;
+	ino_t	ufid_ino;
+	long	ufid_gen;
+};
+#endif
