@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.13	%G%
+#	locore.s		3.14	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -24,7 +24,7 @@
 
 	.set	INTSTK,1	# handle this interrupt on the interrupt stack
 	.set	HALT,3		# halt if this interrupt occurs
-	.align	PGSHIFT
+#	.align	PGSHIFT
 	.globl	Scbbase
 Scbbase:
 	.long	Xstray + INTSTK		# unused
@@ -1375,7 +1375,7 @@ ZERmsg:	.asciz	"ZERO VECTOR "
 #	.data
 #	.globl	_waitloc
 #	.globl	_ewaitloc
-#	.align	2
+#l	.align	2
 #_waitloc:	.long	waitloc
 #_ewaitloc:	.long	ewaitloc
 #idleflag:	.long	0
