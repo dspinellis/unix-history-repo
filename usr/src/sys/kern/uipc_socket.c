@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.1	83/07/29	*/
+/*	uipc_socket.c	4.77	83/08/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -369,9 +369,11 @@ again:
 nopages:
 			len = MIN(MLEN, iov->iov_len);
 		}
-		(void) uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
+		error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
 		m->m_len = len;
 		*mp = m;
+		if (error)
+			goto release;
 		mp = &m->m_next;
 		if (flags & MSG_OOB)
 			space -= len;
