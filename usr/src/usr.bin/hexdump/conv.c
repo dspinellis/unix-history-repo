@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conv.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)conv.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@ conv_c(pr, p)
 	PR *pr;
 	u_char *p;
 {
-	char *str;
+	char buf[10], *str;
 
 	switch(*p) {
 	case '\0':
@@ -54,16 +54,15 @@ conv_c(pr, p)
 		goto strpr;
 	case '\v':
 		str = "\\v";
-strpr:		*pr->cchar = 's';
-		(void)printf(pr->fmt, str);
-		break;
+		goto strpr;
 	default:
 		if (isprint(*p)) {
 			*pr->cchar = 'c';
 			(void)printf(pr->fmt, *p);
 		} else {
-			*pr->cchar = 'x';
-			(void)printf(pr->fmt, (int)*p);
+			(void)sprintf(str = buf, "%03o", (int)*p);
+strpr:			*pr->cchar = 's';
+			(void)printf(pr->fmt, str);
 		}
 	}
 }
