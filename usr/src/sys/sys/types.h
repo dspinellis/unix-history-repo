@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.20 (Berkeley) %G%
+ *	@(#)types.h	7.21 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -51,14 +51,14 @@ typedef	quad_t * qaddr_t;
 
 typedef	char *	caddr_t;		/* core address */
 typedef	long	daddr_t;		/* disk address */
-typedef	short	dev_t;			/* device number */
+typedef	u_long	dev_t;			/* device number */
 typedef	u_long	ino_t;			/* inode number */
-typedef	long	off_t;			/* file offset (should be a quad) */
+typedef	quad_t	off_t;			/* file offset */
 typedef	u_short	nlink_t;		/* link count */
 typedef	long	swblk_t;		/* swap offset */
 typedef	long	segsz_t;		/* segment size */
-typedef	u_short	uid_t;			/* user id */
-typedef	u_short	gid_t;			/* group id */
+typedef	u_long	uid_t;			/* user id */
+typedef	u_long	gid_t;			/* group id */
 typedef	short	pid_t;			/* process id */
 typedef	u_short	mode_t;			/* permissions */
 typedef u_long	fixpt_t;		/* fixed point number */
@@ -121,7 +121,7 @@ typedef	struct fd_set {
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define	FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
+#define	FD_ZERO(p)	bzero(p, sizeof(*(p)))
 
 #if defined(__STDC__) && defined(KERNEL)
 /*
