@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -75,7 +75,7 @@ printtrace(modif)
 					error(NOTOPEN);
 					/* NOTREACHED */
 				}
-				var[9] = gavecount ? ecount : 1;
+				var[9] = ecount;
 			} else {
 				oclose();
 				outfile = open(file, O_CREAT|O_WRONLY, 0644);
