@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.11 (Berkeley) %G%
+		@(#)README	8.12 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -37,7 +37,9 @@ to keep this up in the future.  [Note to GNU folks:  the construct
 "define(`FOO')" should work without my having to add a null value.]
 
 IF YOU DON'T HAVE A BERKELEY MAKE, don't despair!  Just run
-"m4 foo.mc > foo.cf" -- that should be all you need.
+"m4 foo.mc > foo.cf" -- that should be all you need.  There is also
+a fairly crude (but functional) Makefile.dist that works on the
+old version of make.
 
 To get started, you may want to look at tcpproto.mc (for TCP-only
 sites), uucpproto.mc (for UUCP-only sites), and clientproto.mc (for
