@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_compat.c	7.6 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.7 (Berkeley) %G%
  */
 
 /* 
@@ -29,7 +29,6 @@
 
 int ttydebug = 0;
 
-/* XXX - fold these two tables into one */
 static struct speedtab compatspeeds[] = {
 	38400,	15,
 	19200,	14,
@@ -54,12 +53,23 @@ static int compatspcodes[16] = {
 	1800, 2400, 4800, 9600, 19200, 38400,
 };
 
+ttspeedtab(speed, table)
+	register struct speedtab *table;
+{
+
+	for ( ; table->sp_speed != -1; table++)
+		if (table->sp_speed == speed)
+			return (table->sp_code);
+	return (-1);
+}
+
 /*ARGSUSED*/
 ttcompat(tp, com, data, flag)
 	register struct tty *tp;
 	caddr_t data;
 {
-	switch(com) {
+
+	switch (com) {
 	case TIOCGETP: {
 		register struct sgttyb *sg = (struct sgttyb *)data;
 		register u_char *cc = tp->t_cc;
@@ -96,7 +106,7 @@ ttcompat(tp, com, data, flag)
 			term.c_ospeed = compatspcodes[speed];
 		term.c_cc[VERASE] = sg->sg_erase;
 		term.c_cc[VKILL] = sg->sg_kill;
-		tp->t_flags = (tp->t_flags&0xffff0000) | sg->sg_flags;
+		tp->t_flags = tp->t_flags&0xffff0000 | sg->sg_flags&0xffff;
 		ttcompatsetflags(tp, &term);
 		return (ttioctl(tp, com == TIOCSETP ? TIOCSETAF : TIOCSETA, 
 			&term, flag));
@@ -184,18 +194,18 @@ ttcompat(tp, com, data, flag)
 	case OTIOCSETD: {
 		int ldisczero = 0;
 
-		return(ttioctl(tp, TIOCSETD, 
+		return (ttioctl(tp, TIOCSETD, 
 			*(int *)data == 2 ? (caddr_t)&ldisczero : data, flag));
+	    }
 
 	case OTIOCCONS:
 		*(int *)data = 1;
-		return(ttioctl(tp, TIOCCONS, data, flag));
-	}
+		return (ttioctl(tp, TIOCCONS, data, flag));
 
 	default:
 		return (-1);
 	}
-	return(0);
+	return (0);
 }
 
 ttcompatgetflags(tp)
@@ -268,7 +278,7 @@ ttcompatsetflags(tp, t)
 	} else {
 		iflag |= BRKINT|IXON|IMAXBEL;
 		oflag |= OPOST;
-		lflag |= ISIG|IEXTEN;
+		lflag |= ISIG|IEXTEN|ECHOCTL;	/* XXX was echoctl on ? */
 		if (flags & XTABS)
 			oflag |= OXTABS;
 		else
@@ -295,9 +305,12 @@ ttcompatsetflags(tp, t)
 		cflag |= CS8;
 		if ((flags&(RAW|PASS8)) == 0)
 			iflag |= ISTRIP;
+		else
+			iflag &= ~ISTRIP;
 	} else {
 		cflag &= ~CSIZE;
 		cflag |= CS7|PARENB;
+		iflag |= ISTRIP;
 	}
 	if ((flags&(EVENP|ODDP)) == EVENP) {
 		iflag |= INPCK;
