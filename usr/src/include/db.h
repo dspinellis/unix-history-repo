@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.7 (Berkeley) %G%
+ *	@(#)db.h	5.8 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -34,7 +34,6 @@ typedef struct {
 /* access method description structure */
 typedef struct __db {
 	void *internal;		/* access method private; really void * */
-__BEGIN_DECLS
 	int (*close) __P((const struct __db *));
 	int (*del) __P((const struct __db *, const DBT *, unsigned int));
 	int (*get) __P((const struct __db *, DBT *, DBT *, unsigned int));
@@ -42,7 +41,6 @@ __BEGIN_DECLS
 		unsigned int));
 	int (*seq) __P((const struct __db *, DBT *, DBT *, unsigned int));
 	int (*sync) __P((const struct __db *));
-__END_DECLS
 } DB;
 
 #define	BTREEMAGIC	0x053162
