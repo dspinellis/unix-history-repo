@@ -1,0 +1,5 @@
+ Xd - Widen
+
+ Widens the search area by one step.
+ This allows you to backtrack if you
+ have gone to a wrong location.

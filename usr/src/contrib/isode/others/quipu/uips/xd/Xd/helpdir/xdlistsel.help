@@ -1,0 +1,11 @@
+ Xd - Selection from List
+
+ If the mouse button is pressed
+ to select an item from the list
+ window, that item becomes high-
+ lighted and becomes the current
+ search area.  A read of any 
+ information held about that 
+ item is also performed and the
+ result is shown in the Read
+ window
