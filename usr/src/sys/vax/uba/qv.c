@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qv.c	1.8 (Berkeley) %G%
+ *	@(#)qv.c	1.9 (Berkeley) %G%
  */
 
 /*
@@ -1187,6 +1187,8 @@ qvcons_init()
                 ;
         if( pcpu == NULL )
                 return 0;
+	if (pcpu->pc_io->io_type != IO_QBUS)
+		return 0;
 
         /*
          * Found an entry for this cpu. Because this device is Microvax specific
