@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.16 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -581,9 +581,11 @@ mntflushbuf(mountp, flags)
 	int flags;
 {
 	register struct vnode *vp;
+	struct vnode *nvp;
 
 loop:
-	for (vp = mountp->m_mounth; vp; vp = vp->v_mountf) {
+	for (vp = mountp->m_mounth; vp; vp = nvp) {
+		nvp = vp->v_mountf;
 		if (vget(vp))
 			goto loop;
 		vflushbuf(vp, flags);
@@ -649,10 +651,12 @@ mntinvalbuf(mountp)
 	struct mount *mountp;
 {
 	register struct vnode *vp;
+	struct vnode *nvp;
 	int dirty = 0;
 
 loop:
-	for (vp = mountp->m_mounth; vp; vp = vp->v_mountf) {
+	for (vp = mountp->m_mounth; vp; vp = nvp) {
+		nvp = vp->v_mountf;
 		if (vget(vp))
 			goto loop;
 		dirty += vinvalbuf(vp, 1);
