@@ -763,7 +763,6 @@ nfsmout:
 					if (nmp->nm_cwnd > NFS_MAXCWND)
 						nmp->nm_cwnd = NFS_MAXCWND;
 				}
-				nmp->nm_sent -= NFS_CWNDSCALE;
 				/*
 				 * Update rtt using a gain of 0.125 on the mean
 				 * and a gain of 0.25 on the deviation.
@@ -965,6 +964,12 @@ tryagain:
 	rep->r_prev->r_next = rep->r_next;
 	rep->r_next->r_prev = rep->r_prev;
 	splx(s);
+
+	/*
+	 * Decrement the outstanding request count.
+	 */
+	if (rep->r_flags & R_SENT)
+		nmp->nm_sent -= NFS_CWNDSCALE;
 
 	/*
 	 * If there was a successful reply and a tprintf msg.
