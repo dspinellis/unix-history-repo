@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.12 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -151,7 +151,6 @@ acct(p)
 		ap->ac_mem = (ru->ru_ixrss+ru->ru_idrss+ru->ru_isrss) / i;
 	else
 		ap->ac_mem = 0;
-	ap->ac_mem >>= CLSIZELOG2;
 	ap->ac_io = compress(ru->ru_inblock + ru->ru_oublock, (long)0);
 	if (p->p_flag&SCTTY && p->p_session->s_ttyp)
 		ap->ac_tty = p->p_session->s_ttyp->t_dev;
