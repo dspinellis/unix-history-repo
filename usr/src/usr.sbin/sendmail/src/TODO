@@ -1,4 +1,4 @@
-(Version 8.25 of %G%)
+(Version 8.26 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -9,15 +9,9 @@ Key:
 
 X ****	Merge Sun changes.  [8.7]
 
-X ****	Macro giving size of the message in bytes.
-
 X ****	Create a "service switch" abstraction that will interface with
 	Sun NSS, Ultrix /etc/svc.conf, etc.  This will allow you to
 	turn off DNS entirely, a la ``OIoff''.  [8.7]
-
-X ****	Mailer flag to enable/disable surrounding route-addrs with
-	angle brackets in setsender().  UUCP cleanup scripts treat
-	these as file redirection.
 
 E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 	all cases except null input; change calls to be more sceptical
@@ -79,11 +73,7 @@ E ***	Dynamically allocate MAXNAME buffers for headers.
 
 E ***	Dynamically allocate "line" buffer in readaliases().
 
-X ***	Add ability to disable Return-Receipt-To: on a privacy flag. [8.8]
-
 X ***	Add -P to set precedence (e.g., -Pbulk). [8.8]  (BCX)
-
-X ***	Runtime option to enable/disable IDENT protocol.
 
 E ***	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
 	josh@osiris.ac.hmc.edu).
