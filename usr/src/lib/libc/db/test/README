@@ -1,8 +1,12 @@
-#	@(#)README	5.3 (Berkeley) %G%
+#	@(#)README	5.4 (Berkeley) %G%
 
 The script file consists of lines with a initial character which is
 the "command" for that line.  Legal characters are as follows:
 
+c: compare a record
+	+ must be followed by [kK][dD]; the data value in the database
+	  associated with the specified key is compared to the specified
+	  data value.
 e: echo a string
 	+ writes out the rest of the line into the output file
 g: do a get command
