@@ -1,4 +1,4 @@
-/*	va.c	4.20	83/02/10	*/
+/*	va.c	4.21	83/03/10	*/
 
 #include "va.h"
 #if NVA > 0
@@ -13,6 +13,7 @@
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
+#include "../h/ioctl.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
 #include "../h/kernel.h"
