@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # makefile for line printer spooling system
 #
@@ -68,7 +68,7 @@ install: all
 	install -s -g ${SPGRP} -m 2711 lpc ${DESTDIR}/etc/lpc
 	install -s lptest ${DESTDIR}/${BINDIR}/lptest
 	install -s pac ${DESTDIR}/etc/pac
-	chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
+	/etc/chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
 	chgrp ${SPGRP} ${DESTDIR}/${SPOOLDIR}
 	chmod 775 ${DESTDIR}/${SPOOLDIR}
 	cd filters; make ${MFLAGS} DESTDIR=${DESTDIR} install
