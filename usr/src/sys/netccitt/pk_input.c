@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.13 (Berkeley) %G%
+ *	@(#)pk_input.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -724,15 +724,15 @@ struct pkcb *pkp;
 	if (udlen < 0)
 		udlen = 0;
 	pk_from_bcd (a, 1, sa, pkp -> pk_xcp); /* get calling address */
-	pk_parse_facilities (u, sa);
+	pk_parse_facilities (facp, sa);
 	bcopy ((caddr_t)u, sa -> x25_udata, udlen);
 	sa -> x25_udlen = udlen;
 
 	/*
-	 * Now, loop through the  listen sockets looking for a match on the
-	 * PID. That is  the first  four octets  of the user data field.  This
-	 * is the closest thing to a port number for X.25 packets. What it
-	 * does provide is away of  multiplexing  services at the user level. 
+	 * Now, loop through the listen sockets looking for a match on the
+	 * PID. That is the first few octets of the user data field.
+	 * This is the closest thing to a port number for X.25 packets.
+	 * It does provide a way of multiplexing services at the user level. 
 	 */
 
 	for (l = pk_listenhead; l; l = l -> lcd_listen) {
