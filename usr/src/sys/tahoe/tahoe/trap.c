@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,7 +47,7 @@ char	*trap_type[] = {
 	"Alignment fault",			/* T_ALIGNFLT */
 	"Kernel stack not valid",		/* T_KSPNOTVAL */
 	"Bus error",				/* T_BUSERR */
-	"Kernel debugger trap",			/* T_KDBTRAP */
+	"Kernel debugger request",		/* T_KDBTRAP */
 };
 int	TRAP_TYPES = sizeof (trap_type) / sizeof (trap_type[0]);
 
@@ -56,11 +56,12 @@ int	TRAP_TYPES = sizeof (trap_type) / sizeof (trap_type[0]);
  */
 /*ARGSUSED*/
 trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
-	unsigned type, code;
+	unsigned type, code;	/* kdb assumes these are *not* registers */
 {
 	int r0, r1;		/* must reserve space */
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
+	unsigned ucode = code;
 	register struct proc *p;
 	struct timeval syst;
 
@@ -95,7 +96,7 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	case T_RESADFLT + USER:		/* reserved addressing fault */
 	case T_RESOPFLT + USER:		/* resereved operand fault */
 	case T_ALIGNFLT + USER:		/* unaligned data fault */
-		u.u_code = type &~ USER;
+		ucode = type &~ USER;
 		i = SIGILL;
 		break;
 
@@ -109,7 +110,6 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		goto out;
 
 	case T_ARITHTRAP + USER:
-		u.u_code = code;
 		i = SIGFPE;
 		break;
 
@@ -142,6 +142,9 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		i = SIGTRAP;
 		break;
 
+#ifdef notdef
+	/* THIS CODE IS BOGUS- delete? (KSP not valid is unrecoverable)
+	   And what does KSPNOTVAL in user-mode mean? */
 	/*
 	 * For T_KSPNOTVAL and T_BUSERR, can not allow spl to
 	 * drop to 0 as clock could go off and we would end up
@@ -157,19 +160,20 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		/* fall thru... */
 	case T_KSPNOTVAL + USER:
 		printf("pid %d: ksp not valid\n", u.u_procp->p_pid);
+panic("ksp not valid - 2");
 		/* must insure valid kernel stack pointer? */
 		psignal(u.u_procp, SIGKILL);
 		return;
+#endif
 
 	case T_BUSERR + USER:
-		u.u_code = code;
-		psignal(u.u_procp, SIGBUS);
-		return;
+		i = SIGBUS;
+		break;
 	}
-	psignal(u.u_procp, i);
+	trapsignal(i, ucode);
 out:
 	p = u.u_procp;
-	if (p->p_cursig || ISSIG(p))
+	if (ISSIG(p))
 		psig();
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
@@ -185,6 +189,8 @@ out:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
+		if (ISSIG(p))
+			psig();
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -314,26 +320,3 @@ done:
 	}
 	curpri = p->p_pri;
 }
-
-/*
- * nonexistent system call-- signal process (may want to handle it)
- * flag error if process won't see signal immediately
- * Q: should we do that all the time ??
- */
-nosys()
-{
-
-	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
-		u.u_error = EINVAL;
-	psignal(u.u_procp, SIGSYS);
-}
-
-#ifdef notdef
-/*
- * Ignored system call
- */
-nullsys()
-{
-
-}
-#endif
