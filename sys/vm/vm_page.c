@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.9 1994/01/17 09:33:52 davidg Exp $
+ *	$Id: vm_page.c,v 1.10 1994/01/31 04:21:10 davidg Exp $
  */
 
 /*
@@ -111,6 +111,8 @@ int	vm_page_free_target = 0;
 int	vm_page_free_min = 0;
 int	vm_page_inactive_target = 0;
 int	vm_page_free_reserved = 0;
+
+vm_size_t	page_size = PAGE_SIZE;
 
 /*
  *	vm_page_startup:
