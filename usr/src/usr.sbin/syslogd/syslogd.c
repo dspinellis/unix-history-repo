@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -272,7 +272,7 @@ main(argc, argv)
 		int nfds, readfds = FDMASK(funix) | inetm | klogm;
 
 		errno = 0;
-		dprintf("readfds = %#x\n", readfds, funix, finet, fklog);
+		dprintf("readfds = %#x\n", readfds);
 		nfds = select(20, (fd_set *) &readfds, (fd_set *) NULL,
 				  (fd_set *) NULL, (struct timeval *) NULL);
 		dprintf("got a message (%d, %#x)\n", nfds, readfds);
