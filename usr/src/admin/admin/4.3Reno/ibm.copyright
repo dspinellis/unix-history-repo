@@ -1,4 +1,4 @@
-.\"	@(#)ibm.copyright	5.1 (Berkeley) %G%
+.\"	@(#)ibm.copyright	5.2 (Berkeley) %G%
 .if n \{\
 .ND
 .rm CH
@@ -14,11 +14,6 @@
 .nr OI 0.5i
 .in 0.5i
 .ps 10p
-.nf
-Computer Systems Research Group
-457 Evans Hall
-Dept of EECS
-Berkeley, CA 94720
 .LP
 Dear Colleague,
 .PP
