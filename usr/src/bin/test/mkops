@@ -1,7 +1,14 @@
-# Copyright 1989 by Kenneth Almquist.  All rights reserved.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-# This file is part of ash.  Ash is distributed under the terms specified
-# by the Ash General Public License.  See the file named LICENSE.
+# This code is derived from software contributed to Berkeley by
+# Kenneth Almquist.
+# 
+# %sccs.include.redist.c%
+#
+#      @(#)mkops	1.2 (Berkeley) %G%
+#
+
 
 exec > operators.h
 awk '/^[^#]/	{printf "#define %s %d\n", $1, n++}' unary_op binary_op
