@@ -1,13 +1,13 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.9		%G%
+#		@(#)Makefile	4.10		%G%
 #
 
 ALL=	src/sendmail
 DIRS=	$(DESTDIR)/usr/spool/mqueue
 SRCDIR=	$(DESTDIR)/usr/src/usr.lib/sendmail
-ALLDIRS=include adm src aux md cf lib doc adb test
+ALLDIRS=include adm src aux md lib doc adb test
 BACKUP=	calder
 SENDMAIL=$(DESTDIR)/usr/lib/sendmail
 SYSLOG=	/usr/spool/mqueue/syslog
@@ -22,7 +22,6 @@ all:
 	cd lib; make ${MFLAGS}
 	cd src; m4 Makefile.m4 > Makefile; make ${MFLAGS}
 	-cd aux; m4 Makefile.m4 > Makefile; make ${MFLAGS}
-	cd cf;  make ${MFLAGS}
 #	cd doc; make ${MFLAGS}
 
 install: $(ALL) $(DIRS)
@@ -59,7 +58,6 @@ $(DESTDIR)/usr/spool/mqueue:
 
 clean:
 	-cd src; make ${MFLAGS} clean
-	-cd cf;  make ${MFLAGS} clean
 	-cd aux; make ${MFLAGS} clean
 	-cd lib; make ${MFLAGS} clean
 	-cd doc; make ${MFLAGS} clean
