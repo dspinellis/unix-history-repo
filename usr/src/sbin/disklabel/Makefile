@@ -1,9 +1,10 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 PROG=	disklabel
 MAN8=	disklabel.0
 BINGRP=operator
 BINMODE=2550
+CLEANFILES=disklabel.5.0
 
 all: disklabel.5.0
 
