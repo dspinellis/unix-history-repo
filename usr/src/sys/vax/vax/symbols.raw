@@ -1,8 +1,7 @@
-# symbols.raw 4.2 81/03/09
+# symbols.raw 4.3 81/03/15
 	_version
 #dmesg
 	_msgbuf
-	_msgbufp
 #iostat
 	_dk_busy
 	_dk_time
