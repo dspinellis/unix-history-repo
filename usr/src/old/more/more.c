@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1566,9 +1566,10 @@ readch ()
 	char ch;
 	extern int errno;
 
+	errno = 0;
 	if (read (2, &ch, 1) <= 0)
 		if (errno != EINTR)
-			exit(0);
+			end_it();
 		else
 			ch = otty.sg_kill;
 	return (ch);
