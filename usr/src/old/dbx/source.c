@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.6 %G%";
+static char sccsid[] = "@(#)source.c 1.7 %G%";
 
 /*
  * Source file management.
@@ -217,8 +217,6 @@ private free_seektab()
 
 /*
  * Figure out current source position.
- * Have to use "pc - 1" because pc is the address of the next instruction
- * rather than the current one.
  */
 
 public getsrcpos()
