@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <paths.h>
@@ -69,6 +69,7 @@ int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
 int	locking, lockrest, debugonly;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	rt_metrics rt_metrics;
+u_long  rtm_inits;
 struct	in_addr inet_makeaddr();
 char	*malloc(), *routename(), *netname();
 extern	char *iso_ntoa(), *link_ntoa();
@@ -84,6 +85,7 @@ char *cp;
 
 	exit(1);
 }
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -400,6 +402,7 @@ char *value;
 	caseof(K_RTT, RTV_RTT, rmx_rtt);
 	caseof(K_RTTVAR, RTV_RTTVAR, rmx_rttvar);
 	}
+	rtm_inits |= flag;
 	if (lockrest || locking)
 		rt_metrics.rmx_locks |= flag;
 	if (locking)
@@ -838,6 +841,7 @@ rtmsg(cmd, flags)
 	m_rtmsg.m_rtm.rtm_seq = ++seq;
 	m_rtmsg.m_rtm.rtm_addrs = rtm_addrs;
 	m_rtmsg.m_rtm.rtm_rmx = rt_metrics;
+	m_rtmsg.m_rtm.rtm_inits = rtm_inits;
 
 #define ROUND(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
 #define NEXTADDR(w, u) { if (rtm_addrs & (w)) {l = (u).sa.sa_len;\
