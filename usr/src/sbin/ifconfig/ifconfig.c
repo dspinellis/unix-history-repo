@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -96,6 +96,16 @@ setifaddr(addr, param)
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCSIFADDR, (caddr_t)&ifr) < 0)
 		Perror("ioctl (SIOCSIFADDR)");
+	/* 
+	 * SIFADDR ioctl above can change the flags value if it is
+	 * the first time the address has been set.  Must get the
+	 * new flags so that we don't store outdated ones later on.
+	 */
+	if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
+		Perror("ioctl (SIOCGIFFLAGS) 2");
+		exit(1);
+	}
+	flags = ifr.ifr_flags;
 }
 
 setifflags(vname, value)
