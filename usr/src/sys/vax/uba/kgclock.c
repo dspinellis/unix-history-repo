@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kgclock.c	6.4 (Berkeley) %G%
+ *	@(#)kgclock.c	6.5 (Berkeley) %G%
  */
 
 #include "kg.h"
@@ -47,6 +47,7 @@ kgprobe(reg)
 	klp->tcsr = KLSTRT;
 	DELAY(100000);
 	klp->tcsr = 0;
+	return (sizeof(struct klregs));
 }
 
 kgattach(ui)
