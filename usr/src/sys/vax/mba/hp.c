@@ -1,7 +1,7 @@
-/*	hp.c	3.10	%G%	*/
+/*	hp.c	3.11	%G%	*/
 
 /*
- * RP06/RM03 disk driver
+ * RP06/RM03/RM05 disk driver
  */
 
 #include "../h/param.h"
@@ -46,6 +46,7 @@ struct	device
 #define	NHP	2
 #define	RP	022
 #define	RM	024
+#define	RM5	027
 #define	NSECT	22
 #define	NTRAC	19
 #define	NRMSECT	32
@@ -64,31 +65,32 @@ struct	size
 	int	cyloff;
 } hp_sizes[8] =
 {
-	15884,	0,		/* cyl 0 thru 37 */
-	33440,	38,		/* cyl 38 thru 117 */
-	8360,	98,		/* cyl 98 thru 117 */
-#ifdef ERNIE
-	15884,	118,		/* cyl 118 thru 155 */
-	66880,	156,		/* cyl 156 thru 315 */
-	0,	0,
-	291346,	118,		/* cyl 118 thru 814, (like distrib) */
-	208582,	316,		/* cyl 316 thru 814 */
-#else
+	15884,	0,		/* A=cyl 0 thru 37 */
+	33440,	38,		/* B=cyl 38 thru 117 */
+	340670,	0,		/* C=cyl 0 thru 814 */
 	0,	0,
 	0,	0,
 	0,	0,
-	291346,	118,		/* cyl 118 thru 814 */
+	291346,	118,		/* G=cyl 118 thru 814 */
 	0,	0,
-#endif
 }, rm_sizes[8] = {
-	15884,	0,		/* cyl 0 thru 99 */
-	33440,	100,		/* cyl 100 thru 309 */
+	15884,	0,		/* A=cyl 0 thru 99 */
+	33440,	100,		/* B=cyl 100 thru 309 */
+	131680,	0,		/* C=cyl 0 thru 822 */
 	0,	0,
 	0,	0,
 	0,	0,
+	82080,	310,		/* G=cyl 310 thru 822 */
 	0,	0,
-	82080,	310,		/* cyl 310 thru 822 */
-	0,	0,
+}, rm5_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 26 */
+	33440,	27,		/* B=cyl 27 thru 81 */
+	500992,	0,		/* C=cyl 0 thru 823 */
+	15884,	562,		/* D=cyl 562 thru 588 */
+	55936,	589,		/* E=cyl 589 thru 680 */
+	86944,	681,		/* F=cyl 681 thru 823 */
+	159296,	562,		/* G=cyl 562 thru 823 */
+	291346,	82,		/* H=cyl 82 thru 561 */
 };
 
 #define	P400	020
@@ -161,12 +163,24 @@ register struct buf *bp;
 		hpaddr = mbadev(HPMBA, unit);
 		hp_type[unit] = hpaddr->hpdt;
 	}
-	if (hp_type[unit] == RM) {
+	switch (hp_type[unit]) {
+
+	case RM:
 		sizes = rm_sizes;
 		nspc = NRMSECT*NRMTRAC;
-	} else {
+		break;
+	case RM5:
+		sizes = rm5_sizes;
+		nspc = NRMSECT*NTRAC;
+		break;
+	case RP:
 		sizes = hp_sizes;
 		nspc = NSECT*NTRAC;
+		break;
+	default:
+		printf("hp: unknown device type 0%o\n", hp_type[unit]);
+		u.u_error = ENXIO;
+		unit = NHP+1;	/* force error */
 	}
 	if (unit >= NHP ||
 	    bp->b_blkno < 0 ||
@@ -219,12 +233,22 @@ register unit;
 
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
-	if(hp_type[unit] == RM) {
+	switch (hp_type[unit]) {
+
+	case RM:
 		sn = bn%(NRMSECT*NRMTRAC);
 		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
-	} else {
+		break;
+	case RM5:
+		sn = bn%(NRMSECT*NTRAC);
+		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
+		break;
+	case RP:
 		sn = bn%(NSECT*NTRAC);
 		sn = (sn+NSECT-hpSDIST)%NSECT;
+		break;
+	default:
+		panic("hpustart");
 	}
 
 	if(cn - (hpaddr->hpdc & 0xffff))
@@ -280,14 +304,24 @@ loop:
 	unit = minor(bp->b_dev) & 077;
 	dn = dkunit(bp);
 	bn = dkblock(bp);
-	if (hp_type[dn] == RM) {
+	switch (hp_type[dn]) {
+	case RM:
 		nspc = NRMSECT*NRMTRAC;
 		ns = NRMSECT;
 		cn = rm_sizes[unit&07].cyloff;
-	} else {
+		break;
+	case RM5:
+		nspc = NRMSECT*NTRAC;
+		ns = NRMSECT;
+		cn = rm5_sizes[unit&07].cyloff;
+		break;
+	case RP:
 		nspc = NSECT*NTRAC;
 		ns = NSECT;
 		cn = hp_sizes[unit&07].cyloff;
+		break;
+	default:
+		panic("hpstart");
 	}
 	cn += bn/nspc;
 	sn = bn%nspc;
@@ -475,12 +509,16 @@ register struct buf *bp;
 	rp->hpcs1 = DCLR|GO;
 	dn = dkunit(bp);
 	bn = dkblock(bp);
-	if (hp_type[dn] == RM) {
-		ns = NRMSECT;
-		nt = NRMTRAC;
-	} else {
-		ns = NSECT;
-		nt = NTRAC;
+	switch (hp_type[dn]) {
+
+	case RM:
+		ns = NRMSECT; nt = NRMTRAC; break;
+	case RM5:
+		ns = NRMSECT; nt = NTRAC; break;
+	case RP:
+		ns = NSECT; nt = NTRAC; break;
+	default:
+		panic("hpecc");
 	}
 	cn = bp->b_cylin;
 	sn = bn%(ns*nt) + npf + 1;
