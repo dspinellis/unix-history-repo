@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.7 (Berkeley) %G%
+ *	@(#)cpu.h	7.8 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -88,6 +88,17 @@ union cpuprid {
 #endif
 	} cpu;
 };
+
+/*
+ * CTL_MACHDEP definitions.
+ */
+#define	CPU_CONSDEV		1	/* dev_t: console terminal device */
+#define	CPU_MAXID		2	/* number of valid machdep ids */
+
+#define CTL_MACHDEP_NAMES { \
+	{ 0, 0 }, \
+	{ "console_device", CTLTYPE_STRUCT }, \
+}
 
 /*
  * MIPS CPU types (cp_imp).
