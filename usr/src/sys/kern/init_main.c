@@ -1,4 +1,4 @@
-/*	init_main.c	4.37	82/09/06	*/
+/*	init_main.c	4.38	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,7 +70,9 @@ main(firstaddr)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
 		    RLIM_INFINITY;
 	u.u_rlimit[RLIMIT_STACK].rlim_cur = 512*1024;
-	u.u_rlimit[RLIMIT_DATA].rlim_cur = ctob(MAXDSIZ);
+	u.u_rlimit[RLIMIT_STACK].rlim_max = ctob(MAXDSIZ);
+	u.u_rlimit[RLIMIT_DATA].rlim_max =
+	    u.u_rlimit[RLIMIT_DATA].rlim_cur = ctob(MAXDSIZ);
 	p->p_maxrss = RLIM_INFINITY/NBPG;
 #ifdef QUOTA
 	qtinit();
