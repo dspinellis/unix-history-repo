@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983, 1987 The Regents of the University of California.
+ * Copyright (c) 1983, 1987, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)resolv.h	5.7 (Berkeley) %G%
+ *	@(#)resolv.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -31,7 +31,8 @@
  * Global defines and variables for resolver stub.
  */
 #define	MAXNS		3		/* max # name servers we'll track */
-#define	MAXDNSRCH	3		/* max # default domain levels to try */
+#define	MAXDFLSRCH	3		/* # default domain levels to try */
+#define	MAXDNSRCH	6		/* max # domains in search path */
 #define	LOCALDOMAINPARTS 2		/* min levels in name that is "local" */
 
 #define	RES_TIMEOUT	5		/* min. seconds between retries */
