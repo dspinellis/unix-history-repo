@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettytab.5	5.1 (Berkeley) %G%
+.\"	@(#)gettytab.5	6.1 (Berkeley) %G%
 .\"
-.TH GETTYTAB 5 "18 July 1983"
+.TH GETTYTAB 5 ""
 .UC 5
 .SH NAME
 gettytab \- terminal configuration data base
@@ -151,8 +151,9 @@ The initial message, and login message,
 .B im
 and
 .B lm
-may include the character sequence \fB%h\fP to obtain
-the hostname. (\fB%%\fP obtains a single '%' character.)
+may include the character sequence \fB%h\fP or \fB%t\fP to obtain
+the hostname or tty name respectively.
+(\fB%%\fP obtains a single '%' character.)
 The hostname is normally obtained from the system,
 but may be set by the
 .B hn
@@ -233,12 +234,6 @@ The delay stuff is a real crock.
 Apart form its general lack of flexibility, some
 of the delay algorithms are not implemented.
 The terminal driver should support sane delay settings.
-.PP
-Currently
-.IR login (1)
-stomps on the environment, so there is no point
-setting it in
-.IR gettytab .
 .PP
 The
 .B he
