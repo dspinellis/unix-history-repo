@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.41 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -173,10 +173,10 @@ ufs_lookup(dvp, vpp, cnp)
 	 * case it doesn't already exist.
 	 */
 	slotstatus = FOUND;
+	slotfreespace = slotsize = slotneeded = 0;
 	if ((cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME) &&
 	    (cnp->cn_flags & ISLASTCN)) {
 		slotstatus = NONE;
-		slotfreespace = 0;
 		slotneeded = ((sizeof (struct direct) - (MAXNAMLEN + 1)) +
 			((cnp->cn_namelen + 1 + 3) &~ 3));
 	}
@@ -195,7 +195,7 @@ ufs_lookup(dvp, vpp, cnp)
 	bmask = VFSTOUFS(dvp->v_mount)->um_mountp->mnt_stat.f_iosize - 1;
 	if (cnp->cn_nameiop != LOOKUP || dp->i_diroff == 0 ||
 	    dp->i_diroff > dp->i_size) {
-		dp->i_offset = 0;
+		entryoffsetinblock = dp->i_offset = 0;
 		numdirpasses = 1;
 	} else {
 		dp->i_offset = dp->i_diroff;
@@ -205,6 +205,7 @@ ufs_lookup(dvp, vpp, cnp)
 		numdirpasses = 2;
 		nchstats.ncs_2passes++;
 	}
+	prevoff = dp->i_offset;
 	endsearch = roundup(dp->i_size, DIRBLKSIZ);
 	enduseful = 0;
 
