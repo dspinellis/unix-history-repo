@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
@@ -258,27 +258,28 @@ timeest()
 		if (blockswritten < 500)
 			return;	
 		deltat = tstart_writing - tnow +
-			(((1.0*(tnow - tstart_writing))/blockswritten) * esize);
+			(1.0 * (tnow - tstart_writing))
+			/ blockswritten * tapesize;
 		msg("%3.2f%% done, finished in %d:%02d\n",
-			(blockswritten*100.0)/esize,
-			deltat/3600, (deltat%3600)/60);
+			(blockswritten * 100.0) / tapesize,
+			deltat / 3600, (deltat % 3600) / 60);
 	}
 }
 
+/*
+ *	tapesize: total number of blocks estimated over all reels
+ *	blockswritten:	blocks actually written, over all reels
+ *	etapes:	estimated number of tapes to write
+ *
+ *	tsize:	blocks can write on this reel
+ *	asize:	blocks written on this reel
+ *	tapeno:	number of tapes written so far
+ */
 int
 blocksontape()
 {
-	/*
-	 *	esize: total number of blocks estimated over all reels
-	 *	blockswritten:	blocks actually written, over all reels
-	 *	etapes:	estimated number of tapes to write
-	 *
-	 *	tsize:	blocks can write on this reel
-	 *	asize:	blocks written on this reel
-	 *	tapeno:	number of tapes written so far
-	 */
 	if (tapeno == etapes)
-		return (esize - (etapes - 1)*tsize);
+		return (tapesize - (etapes - 1) * tsize);
 	return (tsize);
 }
 
@@ -451,58 +452,57 @@ void
 lastdump(arg)
 	char	arg;	/* w ==> just what to do; W ==> most recent dumps */
 {
-			char	*lastname;
-			char	*date;
-	register	int	i;
-			time_t	tnow;
-	register	struct	fstab	*dt;
-			int	dumpme;
-	register	struct	idates	*itwalk;
-
-	int	idatesort();
+	register int i;
+	register struct fstab *dt;
+	register struct dumpdates *dtwalk;
+	char *lastname, *date;
+	int dumpme, datesort();
+	time_t tnow;
 
 	time(&tnow);
 	getfstab();		/* /etc/fstab input */
-	inititimes();		/* /etc/dumpdates input */
-	qsort(idatev, nidates, sizeof(struct idates *), idatesort);
+	initdumptimes();	/* /etc/dumpdates input */
+	qsort(ddatev, nddates, sizeof(struct dumpdates *), datesort);
 
 	if (arg == 'w')
 		(void) printf("Dump these file systems:\n");
 	else
 		(void) printf("Last dump(s) done (Dump '>' file systems):\n");
 	lastname = "??";
-	ITITERATE(i, itwalk) {
-		if (strncmp(lastname, itwalk->id_name, sizeof(itwalk->id_name)) == 0)
+	ITITERATE(i, dtwalk) {
+		if (strncmp(lastname, dtwalk->dd_name,
+		    sizeof(dtwalk->dd_name)) == 0)
 			continue;
-		date = (char *)ctime(&itwalk->id_ddate);
+		date = (char *)ctime(&dtwalk->dd_ddate);
 		date[16] = '\0';	/* blast away seconds and year */
-		lastname = itwalk->id_name;
-		dt = fstabsearch(itwalk->id_name);
+		lastname = dtwalk->dd_name;
+		dt = fstabsearch(dtwalk->dd_name);
 		dumpme = (dt != NULL &&
 		    dt->fs_freq != 0 &&
-		    itwalk->id_ddate < tnow - (dt->fs_freq * DAY));
+		    dtwalk->dd_ddate < tnow - (dt->fs_freq * DAY));
 		if (arg != 'w' || dumpme)
 			(void) printf(
 			    "%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
 			    dumpme && (arg != 'w') ? '>' : ' ',
-			    itwalk->id_name,
+			    dtwalk->dd_name,
 			    dt ? dt->fs_file : "",
-			    itwalk->id_incno,
+			    dtwalk->dd_level,
 			    date);
 	}
 }
 
-int	idatesort(a1, a2)
+int
+datesort(a1, a2)
 	void *a1, *a2;
 {
-	struct idates *d1 = *(struct idates **)a1, *d2 = *(struct idates **)a2;
+	struct dumpdates *d1 = *(struct dumpdates **)a1;
+	struct dumpdates *d2 = *(struct dumpdates **)a2;
 	int diff;
 
-	diff = strncmp(d1->id_name, d2->id_name, sizeof(d1->id_name));
+	diff = strncmp(d1->dd_name, d2->dd_name, sizeof(d1->dd_name));
 	if (diff == 0)
-		return (d2->id_ddate - d1->id_ddate);
-	else
-		return (diff);
+		return (d2->dd_ddate - d1->dd_ddate);
+	return (diff);
 }
 
 int max(a, b)
