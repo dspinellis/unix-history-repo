@@ -198,8 +198,6 @@ smmap(p, uap, retval)
 		    ((flags & MAP_SHARED) &&
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
-		if ((flags & MAP_SHARED) && (fp->f_flag & FWRITE) == 0)
-			flags = (flags & ~MAP_SHARED) | MAP_PRIVATE;
 		handle = (caddr_t)vp;
 	} else if (uap->fd != -1)
 		handle = (caddr_t)fp;
