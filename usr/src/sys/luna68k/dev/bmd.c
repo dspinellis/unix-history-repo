@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmd.c	7.4 (Berkeley) %G%
+ *	@(#)bmd.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@
  *	by A.Fujita, SEP-09-1992
  */
 
+#undef	BMD_PRINTF
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -57,6 +58,8 @@ void	bmd_erase_char();
 void	bmd_erase_screen();
 void	bmd_scroll_screen();
 
+void	bmd_escape();
+
 
 struct bmd_linec {
 	struct bmd_linec *bl_next;
@@ -89,7 +92,7 @@ struct bmd_softc {
 struct	bmd_softc bmd_softc;
 struct	bmd_linec bmd_linec[52];
 
-void	bmd_escape();
+int	bmd_initflag = 0;
 
 /*
  * Escape-Sequence
@@ -157,14 +160,22 @@ bmdinit()
 	bmd_reverse_char(bp->bc_raddr,
 			 bp->bc_waddr,
 			 bq->bl_col, bp->bc_row);
+
+	bmd_initflag = 1;
 }
 
 bmdputc(c)
 	register int c;
 {
-	register struct bmd_softc *bp = &bmd_softc;
-	register struct bmd_linec *bq = bp->bc_bl;
+	register struct bmd_softc *bp;
+	register struct bmd_linec *bq;
 	register int i;
+
+	if (!bmd_initflag)
+		bmdinit();
+
+	bp = &bmd_softc;
+	bq = bp->bc_bl;
 
 							/* skip out, if STAT_STOP */
 	if (bp->bc_stat & STAT_STOP)
@@ -499,3 +510,194 @@ bmd_scroll_screen(lp, lq, xmin, xmax, ymin, ymax)
 	}
 
 }
+
+
+#ifdef	BMD_PRINTF
+
+#include <machine/stdarg.h>
+
+void		bmd_kprintf();
+static char *	bmd_sprintn();
+
+void
+#ifdef __STDC__
+bmd_printf(const char *fmt, ...)
+#else
+bmd_printf(fmt, va_alist)
+	char *fmt;
+#endif
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	bmd_kprintf(fmt, ap);
+	va_end(ap);
+}
+
+/*
+ * Scaled down version of printf(3).
+ *
+ * Two additional formats:
+ *
+ * The format %b is supported to decode error registers.
+ * Its usage is:
+ *
+ *	printf("reg=%b\n", regval, "<base><arg>*");
+ *
+ * where <base> is the output base expressed as a control character, e.g.
+ * \10 gives octal; \20 gives hex.  Each arg is a sequence of characters,
+ * the first of which gives the bit number to be inspected (origin 1), and
+ * the next characters (up to a control character, i.e. a character <= 32),
+ * give the name of the register.  Thus:
+ *
+ *	kprintf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
+ *
+ * would produce output:
+ *
+ *	reg=3<BITTWO,BITONE>
+ *
+ * The format %r passes an additional format string and argument list
+ * recursively.  Its usage is:
+ *
+ * fn(char *fmt, ...)
+ * {
+ *	va_list ap;
+ *	va_start(ap, fmt);
+ *	printf("prefix: %r: suffix\n", fmt, ap);
+ *	va_end(ap);
+ * }
+ *
+ * Space or zero padding and a field width are supported for the numeric
+ * formats only.
+ */
+void
+bmd_kprintf(fmt, ap)
+	register const char *fmt;
+	va_list ap;
+{
+	register char *p, *q;
+	register int ch, n;
+	u_long ul;
+	int base, lflag, tmp, width;
+	char padc;
+
+	for (;;) {
+		padc = ' ';
+		width = 0;
+		while ((ch = *(u_char *)fmt++) != '%') {
+			if (ch == '\0')
+				return;
+			if (ch == '\n')
+				bmdputc('\r');
+			bmdputc(ch);
+		}
+		lflag = 0;
+reswitch:	switch (ch = *(u_char *)fmt++) {
+		case '0':
+			padc = '0';
+			goto reswitch;
+		case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			for (width = 0;; ++fmt) {
+				width = width * 10 + ch - '0';
+				ch = *fmt;
+				if (ch < '0' || ch > '9')
+					break;
+			}
+			goto reswitch;
+		case 'l':
+			lflag = 1;
+			goto reswitch;
+		case 'b':
+			ul = va_arg(ap, int);
+			p = va_arg(ap, char *);
+			for (q = bmd_sprintn(ul, *p++, NULL); ch = *q--;)
+				bmdputc(ch);
+
+			if (!ul)
+				break;
+
+			for (tmp = 0; n = *p++;) {
+				if (ul & (1 << (n - 1))) {
+					bmdputc(tmp ? ',' : '<');
+					for (; (n = *p) > ' '; ++p)
+						bmdputc(n);
+					tmp = 1;
+				} else
+					for (; *p > ' '; ++p)
+						continue;
+			}
+			if (tmp)
+				bmdputc('>');
+			break;
+		case 'c':
+			bmdputc(va_arg(ap, int));
+			break;
+		case 'r':
+			p = va_arg(ap, char *);
+			bmd_kprintf(p, va_arg(ap, va_list));
+			break;
+		case 's':
+			p = va_arg(ap, char *);
+			while (ch = *p++)
+				bmdputc(ch);
+			break;
+		case 'd':
+			ul = lflag ? va_arg(ap, long) : va_arg(ap, int);
+			if ((long)ul < 0) {
+				bmdputc('-');
+				ul = -(long)ul;
+			}
+			base = 10;
+			goto number;
+		case 'o':
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 8;
+			goto number;
+		case 'u':
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 10;
+			goto number;
+		case 'x':
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 16;
+number:			p = bmd_sprintn(ul, base, &tmp);
+			if (width && (width -= tmp) > 0)
+				while (width--)
+					bmdputc(padc);
+			while (ch = *p--)
+				bmdputc(ch);
+			break;
+		default:
+			bmdputc('%');
+			if (lflag)
+				bmdputc('l');
+			/* FALLTHROUGH */
+		case '%':
+			bmdputc(ch);
+		}
+	}
+}
+
+/*
+ * Put a number (base <= 16) in a buffer in reverse order; return an
+ * optional length and a pointer to the NULL terminated (preceded?)
+ * buffer.
+ */
+static char *
+bmd_sprintn(ul, base, lenp)
+	register u_long ul;
+	register int base, *lenp;
+{					/* A long in base 8, plus NULL. */
+	static char buf[sizeof(long) * NBBY / 3 + 2];
+	register char *p;
+
+	p = buf;
+	do {
+		*++p = "0123456789abcdef"[ul % base];
+	} while (ul /= base);
+	if (lenp)
+		*lenp = p - buf;
+	return (p);
+}
+#endif
