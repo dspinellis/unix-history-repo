@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,7 +8,6 @@ static char sccsid[] = "@(#)setup.c	5.3 (Berkeley) %G%";
 
 #include "defs.h"
 #include <sys/file.h>
-#include <machine/machparam.h>
 
 static struct exec filhdr;
 
