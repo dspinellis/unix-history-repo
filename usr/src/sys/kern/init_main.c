@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.28 (Berkeley) %G%
+ *	@(#)init_main.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -99,7 +99,6 @@ main(firstaddr)
 	 */
 	u.u_nd.ni_iov = &u.u_nd.ni_iovec;
 	ndinit(&u.u_nd);
-	u.u_ap = u.u_arg;
 
 	u.u_cmask = cmask;
 	u.u_lastfile = -1;
