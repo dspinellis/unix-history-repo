@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getgrent.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)getgrent.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -17,9 +17,7 @@ static char sccsid[] = "@(#)getgrent.c	5.8 (Berkeley) %G%";
 static FILE *_gr_fp;
 static struct group _gr_group;
 static int _gr_stayopen;
-static const char *_gr_file = _PATH_GROUP;
-static start_gr();
-static grscan();
+static int grscan(), start_gr();
 
 #define	MAXGRP		200
 static char *members[MAXGRP];
@@ -29,8 +27,8 @@ static char line[MAXLINELENGTH];
 struct group *
 getgrent()
 {
-	if (!_gr_fp && !start_gr() || !grscan(0, 0, (char *)NULL))
-		return((struct group *)NULL);
+	if (!_gr_fp && !start_gr() || !grscan(0, 0, NULL))
+		return(NULL);
 	return(&_gr_group);
 }
 
@@ -41,11 +39,11 @@ getgrnam(name)
 	int rval;
 
 	if (!start_gr())
-		return((struct group *)NULL);
+		return(NULL);
 	rval = grscan(1, 0, name);
 	if (!_gr_stayopen)
 		endgrent();
-	return(rval ? &_gr_group : (struct group *)NULL);
+	return(rval ? &_gr_group : NULL);
 }
 
 struct group *
@@ -59,11 +57,11 @@ getgrgid(gid)
 	int rval;
 
 	if (!start_gr())
-		return((struct group *)NULL);
-	rval = grscan(1, gid, (char *)NULL);
+		return(NULL);
+	rval = grscan(1, gid, NULL);
 	if (!_gr_stayopen)
 		endgrent();
-	return(rval ? &_gr_group : (struct group *)NULL);
+	return(rval ? &_gr_group : NULL);
 }
 
 static
@@ -73,7 +71,7 @@ start_gr()
 		rewind(_gr_fp);
 		return(1);
 	}
-	return((_gr_fp = fopen(_gr_file, "r")) ? 1 : 0);
+	return((_gr_fp = fopen(_PATH_GROUP, "r")) ? 1 : 0);
 }
 
 int
@@ -97,15 +95,8 @@ endgrent()
 {
 	if (_gr_fp) {
 		(void)fclose(_gr_fp);
-		_gr_fp = (FILE *)NULL;
+		_gr_fp = NULL;
 	}
-}
-
-void
-setgrfile(file)
-	const char *file;
-{
-	_gr_file = file;
 }
 
 static
