@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.72 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.73 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -283,14 +283,10 @@ lfs_truncate(ap)
 	}
 	UPDATE_SEGUSE;
 	ip->i_blocks -= btodb(blocksreleased << fs->lfs_bshift);
-	/* 
-	 * XXX
-	 * Currently, we don't know when we allocate an indirect block, so
-	 * ip->i_blocks isn't getting incremented appropriately.  As a result,
-	 * when we delete any indirect blocks, we get a bad number here.
-	 */
+#ifdef DIAGNOSTIC
 	if (ip->i_blocks < 0)
-		ip->i_blocks = 0;
+		panic("lfs_truncate: block count < 0");
+#endif
 	ip->i_flag |= ICHG|IUPD;
 	e1 = vinvalbuf(vp, length > 0, ap->a_cred, ap->a_p); 
 	e2 = VOP_UPDATE(vp, &tv, &tv, 0);
