@@ -1,8 +1,8 @@
-/*	Kldexpf.s	1.3	86/01/05	*/
+/*	Kldexpf.s	1.4	90/12/04	*/
 
 #include "../tahoe/SYS.h"
-#include "../tahoemath/fp.h"
-#include "../tahoemath/Kfp.h"
+#include "../math/fp.h"
+#include "../math/Kfp.h"
 
 /* @(*)Kldexpf.s	4.2 (Berkeley) 12/21/80
  *	Tahoe 		2/2/83

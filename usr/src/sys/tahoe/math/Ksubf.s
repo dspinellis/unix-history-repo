@@ -1,4 +1,4 @@
-/*	Ksubf.s	1.3	86/01/05	*/
+/*	Ksubf.s	1.4	90/12/04	*/
 
 #include "../tahoe/SYS.h"
 
