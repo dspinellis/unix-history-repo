@@ -1,6 +1,16 @@
-/*
- *	@(#)no_lg.c	5.1 (Berkeley) %G%
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)no_lg.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *	@(#)no_lg.c	1.2

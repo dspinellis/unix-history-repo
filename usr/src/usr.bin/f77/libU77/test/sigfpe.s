@@ -1,3 +1,14 @@
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+	.asciz "@(#)sigfpe.s	5.2 (Berkeley) %G%"
+#endif /* not lint */
+
 	.data
 	.even
 L16:

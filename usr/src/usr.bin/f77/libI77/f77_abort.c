@@ -1,10 +1,15 @@
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)f77_abort.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
+
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)f77_abort.c	5.2	%G%
- *
  *	all f77 aborts eventually call f77_abort.
  *	f77_abort cleans up open files and terminates with a dump if needed,
  *	with a message otherwise.	

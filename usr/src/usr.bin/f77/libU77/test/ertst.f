@@ -1,3 +1,12 @@
+C
+C Copyright (c) 1980 The Regents of the University of California.
+C All rights reserved.
+C
+C %sccs.include.proprietary.f%
+C
+C	@(#)ertst.f	5.2 (Berkeley) %G%
+C
+
 	character*39 errno
 	character*32 gerror
 	external gerror

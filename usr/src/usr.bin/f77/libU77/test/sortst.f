@@ -1,3 +1,12 @@
+C
+C Copyright (c) 1980 The Regents of the University of California.
+C All rights reserved.
+C
+C %sccs.include.proprietary.f%
+C
+C	@(#)sortst.f	5.2 (Berkeley) %G%
+C
+
 	program tst
 c to test various syslib routines
 	external ntest

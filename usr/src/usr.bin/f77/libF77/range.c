@@ -1,10 +1,15 @@
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)range.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
+
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)range.c	5.4	%G%
- *
  * routines to return extreme values
  * VERY MACHINE DEPENDENT
  */
