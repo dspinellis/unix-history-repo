@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.17 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,6 +13,7 @@
 #include <sys/vnode.h>
 #include <sys/resourcevar.h>
 #include <sys/mount.h>
+#include <sys/kernel.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -34,6 +35,7 @@ int	lfs_writing;			/* Set if already kicked off a writer
 					   because of buffer space */
 #define WRITE_THRESHHOLD	((nbuf >> 2) - 10)
 #define WAIT_THRESHHOLD		((nbuf >> 1) - 10)
+#define LFS_BUFWAIT	2
 
 int
 lfs_bwrite(ap)
@@ -44,7 +46,7 @@ lfs_bwrite(ap)
 	register struct buf *bp = ap->a_bp;
 	struct lfs *fs;
 	struct inode *ip;
-	int s;
+	int error, s;
 
 	/*
 	 * Set the delayed write flag and use reassignbuf to move the buffer
@@ -62,11 +64,15 @@ lfs_bwrite(ap)
 	 */
 	if (!(bp->b_flags & B_LOCKED)) {
 		fs = VFSTOUFS(bp->b_vp->v_mount)->um_lfs;
-		if (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp) &&
+		while (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp) &&
 		    bp->b_lblkno > 0) {
-			brelse(bp);
+			/* Out of space, need cleaner to run */
 			wakeup(&lfs_allclean_wakeup);
-			return (ENOSPC);
+			if (error = tsleep(&fs->lfs_avail, PCATCH | PUSER,
+			    "cleaner", NULL)) {
+				brelse(bp);
+				return (error);
+			}
 		}
 		ip = VTOI((bp)->b_vp);
 		if (!(ip->i_flag & IMOD))
@@ -128,12 +134,16 @@ lfs_check(vp, blkno)
 	extern int lfs_allclean_wakeup;
 	int error;
 
+	error = 0;
 	if (incore(vp, blkno))
 		return (0);
 	if (locked_queue_count > WRITE_THRESHHOLD)
 		lfs_flush();
-	if (locked_queue_count > WAIT_THRESHHOLD)
-		error = tsleep(&lfs_allclean_wakeup, PCATCH | PUSER,
-		    "buffers", NULL);
+
+	/* If out of buffers, wait on writer */
+	while (locked_queue_count > WAIT_THRESHHOLD)
+	    error = tsleep(&locked_queue_count, PCATCH | PUSER, "buffers",
+	        hz * LFS_BUFWAIT);
+
 	return (error);
 }
