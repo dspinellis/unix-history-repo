@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)inode.h	7.6 (Berkeley) %G%
+ *	@(#)inode.h	7.7 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -41,10 +41,9 @@ struct inode {
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
 	struct	text *i_text;	/* text entry, if any (should be region) */
-	struct	inode *i_devlst;/* list of block device inodes */
 	long	i_diroff;	/* offset in dir, where we found last entry */
 	off_t	i_endoff;	/* end of useful stuff in directory */
-	long	i_spare[4];
+	long	i_spare[5];
 	union {
 		daddr_t	if_lastr;	/* last read (read-ahead) */
 		struct	socket *is_socket;
@@ -74,15 +73,6 @@ struct inode {
 #define	i_forw		i_chain[0]
 #define	i_back		i_chain[1]
 
-#ifdef KERNEL
-u_long	nextgennumber;		/* next generation number to assign */
-
-extern struct vnodeops ufs_vnodeops;	/* vnode operations for ufs */
-extern struct vnodeops blk_vnodeops;	/* vnode operations for blk devices */
-
-extern ino_t	dirpref();
-#endif
-
 /* flags */
 #define	ILOCKED		0x1		/* inode is locked */
 #define	IUPD		0x2		/* file has been modified */
@@ -111,6 +101,10 @@ extern int		vttoif_tab[];
 #define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
 
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
+
+u_long	nextgennumber;		/* next generation number to assign */
+
+extern ino_t	dirpref();
 
 /*
  * Lock and unlock inodes.
