@@ -6,16 +6,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)devname.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)devname.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <fcntl.h>
-#include <errno.h>
+
 #include <db.h>
+#include <err.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <paths.h>
 #include <stdio.h>
 #include <string.h>
-#include <paths.h>
 
 char *
 devname(dev, type)
@@ -32,22 +34,21 @@ devname(dev, type)
 
 	if (!db && !failure &&
 	    !(db = dbopen(_PATH_DEVDB, O_RDONLY, 0, DB_HASH, NULL))) {
-		(void)fprintf(stderr,
-		    "warning: %s: %s\n", _PATH_DEVDB, strerror(errno));
+		warn("warning: %s", _PATH_DEVDB);
 		failure = 1;
 	}
 	if (failure)
-		return("??");
+		return ("??");
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
 	 * the file (mode & S_IFMT), the latter is the st_rdev field.  Be
 	 * sure to clear any padding that may be found in bkey.
 	 */
-	bzero(&bkey, sizeof(bkey));
+	memset(&bkey, 0, sizeof(bkey));
 	bkey.dev = dev;
 	bkey.type = type;
 	key.data = &bkey;
 	key.size = sizeof(bkey);
-	return((db->get)(db, &key, &data, 0L) ? "??" : (char *)data.data);
+	return ((db->get)(db, &key, &data, 0) ? "??" : (char *)data.data);
 }
