@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.11	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.12	%G%";
 
 #define SENDMAIL	"/usr/lib/sendmail"
 
@@ -516,7 +516,7 @@ char **argv;
 		if (!sendmail(0, *++argv, truename))
 			error++;
 	}
-	if (error) {
+	if (error && safefile(dead)) {
 		setuid(getuid());
 		malf = fopen(dead, "w");
 		if (malf == NULL) {
@@ -632,10 +632,8 @@ char *fromaddr;
 		strcat(file, name);
 	}
 	mask = umask(MAILMODE);
-	if (stat(file, &statb) >= 0 && statb.st_nlink != 1) {
-		fprintf(stdout, "mail: %s's mail file has more than one link\n", name);
+	if (!safefile(file))
 		return(0);
-	}
 	malf = fopen(file, "a");
 	umask(mask);
 	if (malf == NULL) {
@@ -794,4 +792,18 @@ register char *s, *p;
 		*s++ = *p++;
 	*s = '\0';
 	return(p);
+}
+
+safefile(f)
+	char *f;
+{
+	struct stat statb;
+
+	if (lstat(f, &statb) < 0)
+		return (1);
+	if (statb.st_nlink != 1 || (statb.st_mode & S_IFMT) == S_IFLNK) {
+		fprintf(stderr, "mail: %s has more than one link or is a symbolic link\n", f);
+		return (0);
+	}
+	return (1);
 }
