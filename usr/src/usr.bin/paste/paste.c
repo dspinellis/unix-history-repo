@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)paste.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)paste.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -160,7 +160,7 @@ sequential(argv)
 	for (; p = *argv; ++argv) {
 		if (p[0] == '-' && !p[1])
 			fp = stdin;
-		if (!(fp = fopen(p, "r"))) {
+		else if (!(fp = fopen(p, "r"))) {
 			(void)fprintf(stderr, "paste: %s: %s.\n", p,
 			    strerror(errno));
 			continue;
