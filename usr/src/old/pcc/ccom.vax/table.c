@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)table.c	1.4 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.5 (Berkeley) %G%";
 # include "mfile2"
 
 # define WPTR TPTRTO|TINT|TLONG|TFLOAT|TDOUBLE|TPOINT|TUNSIGNED|TULONG
@@ -192,13 +192,13 @@ OPLOG,	FORCC,
 OPLOG,	FORCC,
 	SAREG|AWD,	TDOUBLE,
 	SAREG|AWD,	TFLOAT,
-		NAREG,	RESCC,
+		NAREG|NASR,	RESCC,
 		"	cvtfd	AR,A1\n	cmpd	AL,A1\nZP",
 
 OPLOG,	FORCC,
 	SAREG|AWD,	TFLOAT,
 	SAREG|AWD,	TDOUBLE,
-		NAREG,	RESCC,
+		NAREG|NASL,	RESCC,
 		"	cvtfd	AL,A1\n	cmpd	A1,AR\nZP",
 
 OPLOG,	FORCC,
