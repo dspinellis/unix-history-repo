@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ld.c 4.9 %G%";
+static	char sccsid[] = "@(#)ld.c 4.10 %G%";
 #endif
 
 /*
@@ -173,21 +173,22 @@ char	*tabstr;	/* string table for table of contents */
  * same time.  These structures are remnants from those days,
  * and now serve only to catch ``Premature EOF''.
  * In order to make I/O more efficient, we provide routines which
- * work in hardware page sizes. The associated constants are defined 
- * as BLKSIZE, BLKSHIFT, and BLKMASK.
+ * use the optimal block size returned by stat().
  */
 #define BLKSIZE 1024
-#define BLKSHIFT 10
-#define BLKMASK (BLKSIZE - 1)
 typedef struct {
 	short	*fakeptr;
 	int	bno;
 	int	nibuf;
 	int	nuser;
-	char	buff[BLKSIZE];
+	char	*buff;
+	int	bufsize;
 } PAGE;
 
 PAGE	page[2];
+int	p_blksize;
+int	p_blkshift;
+int	p_blkmask;
 
 struct {
 	short	*fakeptr;
@@ -284,9 +285,10 @@ int	delarg	= 4;
  */
 struct	biobuf {
 	short	b_nleft;		/* Number free spaces left in b_buf */
-/* Initialize to be less than BUFSIZ initially, to boundary align in file */
+/* Initialize to be less than b_bufsize initially, to boundary align in file */
 	char	*b_ptr;			/* Next place to stuff characters */
-	char	b_buf[BUFSIZ];		/* The buffer itself */
+	char	*b_buf;			/* Pointer to the buffer */
+	int	b_bufsize;		/* Size of the buffer */
 	off_t	b_off;			/* Current file offset */
 	struct	biobuf *b_link;		/* Link in chain for bflush() */
 } *biobufs;
@@ -513,14 +515,14 @@ delexit()
 		chmod(ofilename, ofilemode);
 	/*
 	 * We have to insure that the last block of the data segment
-	 * is allocated a full BLKSIZE block. If the underlying
-	 * file system allocates frags that are smaller than BLKSIZE,
-	 * a full zero filled BLKSIZE block needs to be allocated so 
+	 * is allocated a full pagesize block. If the underlying
+	 * file system allocates frags that are smaller than pagesize,
+	 * a full zero filled pagesize block needs to be allocated so 
 	 * that when it is demand paged, the paged in block will be 
 	 * appropriately filled with zeros.
 	 */
 	fstat(biofd, &stbuf);
-	size = round(stbuf.st_size, BLKSIZE);
+	size = round(stbuf.st_size, pagesize);
 	if (!rflag && size > stbuf.st_size) {
 		lseek(biofd, size - 1, 0);
 		write(biofd, &c, 1);
@@ -1000,6 +1002,7 @@ struct	biobuf toutb;
 setupout()
 {
 	int bss;
+	struct stat stbuf;
 	extern char *sys_errlist[];
 	extern int errno;
 
@@ -1009,16 +1012,12 @@ setupout()
 		filname = ofilename;		/* kludge */
 		archdr.ar_name[0] = 0;		/* kludge */
 		error(1, sys_errlist[errno]);	/* kludge */
-	} else {
-		struct stat mybuf;		/* kls kludge */
-		fstat(biofd, &mybuf);		/* suppose file exists, wrong*/
-		if(mybuf.st_mode & 0111) {	/* mode, ld fails? */
-			chmod(ofilename, mybuf.st_mode & 0666);
-			ofilemode = mybuf.st_mode;
-		}
 	}
-	tout = &toutb;
-	bopen(tout, 0);
+	fstat(biofd, &stbuf);		/* suppose file exists, wrong*/
+	if (stbuf.st_mode & 0111) {	/* mode, ld fails? */
+		chmod(ofilename, stbuf.st_mode & 0666);
+		ofilemode = stbuf.st_mode;
+	}
 	filhdr.a_magic = nflag ? NMAGIC : (zflag ? ZMAGIC : OMAGIC);
 	filhdr.a_text = nflag ? tsize :
 	    round(tsize, zflag ? pagesize : sizeof (long));
@@ -1039,33 +1038,32 @@ setupout()
 		filhdr.a_entry = 0;
 	filhdr.a_trsize = (rflag ? trsize:0);
 	filhdr.a_drsize = (rflag ? drsize:0);
+	tout = &toutb;
+	bopen(tout, 0, stbuf.st_blksize);
 	bwrite((char *)&filhdr, sizeof (filhdr), tout);
-	if (zflag) {
-		bflush1(tout);
-		biobufs = 0;
-		bopen(tout, pagesize);
-	}
+	if (zflag)
+		bseek(tout, pagesize);
 	wroff = N_TXTOFF(filhdr) + filhdr.a_text;
-	outb(&dout, filhdr.a_data);
+	outb(&dout, filhdr.a_data, stbuf.st_blksize);
 	if (rflag) {
-		outb(&trout, filhdr.a_trsize);
-		outb(&drout, filhdr.a_drsize);
+		outb(&trout, filhdr.a_trsize, stbuf.st_blksize);
+		outb(&drout, filhdr.a_drsize, stbuf.st_blksize);
 	}
 	if (sflag==0 || xflag==0) {
-		outb(&sout, filhdr.a_syms);
+		outb(&sout, filhdr.a_syms, stbuf.st_blksize);
 		wroff += sizeof (offset);
-		outb(&strout, 0);
+		outb(&strout, 0, stbuf.st_blksize);
 	}
 }
 
-outb(bp, inc)
+outb(bp, inc, bufsize)
 	register struct biobuf **bp;
 {
 
 	*bp = (struct biobuf *)malloc(sizeof (struct biobuf));
 	if (*bp == 0)
 		error(1, "ran out of memory (outb)");
-	bopen(*bp, wroff);
+	bopen(*bp, wroff, bufsize);
 	wroff += inc;
 }
 
@@ -1496,16 +1494,16 @@ top:
 		sp->ptr = p;
 		goto top;
 	}
-	if (n > BUFSIZ) {
-		take = n - n % BLKSIZE;
-		lseek(infil, (sp->bno+1)*BLKSIZE, 0);
+	if (n > p_blksize) {
+		take = n - n % p_blksize;
+		lseek(infil, (sp->bno+1)<<p_blkshift, 0);
 		if (take > sp->size || read(infil, loc, take) != take)
 			error(1, "premature EOF");
 		loc += take;
 		n -= take;
 		sp->size -= take;
 		sp->pos += take;
-		dseek(sp, (sp->bno+1+take/BLKSIZE)*BLKSIZE, -1);
+		dseek(sp, (sp->bno+1+(take>>p_blkshift))<<p_blkshift, -1);
 		goto top;
 	}
 	*loc++ = get(sp);
@@ -1539,8 +1537,8 @@ long loc, s;
 	register b, o;
 	int n;
 
-	b = loc>>BLKSHIFT;
-	o = loc&BLKMASK;
+	b = loc>>p_blkshift;
+	o = loc&p_blkmask;
 	if (o&01)
 		error(1, "loader error; odd offset");
 	--sp->pno->nuser;
@@ -1550,12 +1548,12 @@ long loc, s;
 				if (page[0].bno < page[1].bno)
 					p = &page[0];
 			p->bno = b;
-			lseek(infil, loc & ~(long)BLKMASK, 0);
-			if ((n = read(infil, p->buff, sizeof(p->buff))) < 0)
+			lseek(infil, loc & ~(long)p_blkmask, 0);
+			if ((n = read(infil, p->buff, p_blksize)) < 0)
 				n = 0;
 			p->nibuf = n;
-	} else
-		error(1, "botch: no pages");
+		} else
+			error(1, "botch: no pages");
 	++p->nuser;
 	sp->bno = b;
 	sp->pno = p;
@@ -1573,7 +1571,7 @@ STREAM *asp;
 
 	sp = asp;
 	if ((sp->nibuf -= sizeof(char)) < 0) {
-		dseek(sp, ((long)(sp->bno+1)<<BLKSHIFT), (long)-1);
+		dseek(sp, ((long)(sp->bno+1)<<p_blkshift), (long)-1);
 		sp->nibuf -= sizeof(char);
 	}
 	if ((sp->size -= sizeof(char)) <= 0) {
@@ -1595,10 +1593,9 @@ char *acp;
 	char arcmag[SARMAG+1];
 	struct stat stb;
 
-	cp = acp; 
 	infil = -1;
 	archdr.ar_name[0] = '\0';
-	filname = cp;
+	filname = cp = acp;
 	if (cp[0]=='-' && cp[1]=='l') {
 		char *locfilname = "/usr/local/lib/libxxxxxxxxxxxxxxx";
 		if(cp[2] == '\0')
@@ -1619,8 +1616,30 @@ char *acp;
 	}
 	if (infil == -1 && (infil = open(filname, 0)) < 0)
 		error(1, "cannot open");
+	fstat(infil, &stb);
 	page[0].bno = page[1].bno = -1;
 	page[0].nuser = page[1].nuser = 0;
+	c = stb.st_blksize;
+	if (c == 0 || (c & (c - 1)) != 0) {
+		/* use default size if not a power of two */
+		c = BLKSIZE;
+	}
+	if (p_blksize != c) {
+		p_blksize = c;
+		p_blkmask = c - 1;
+		for (p_blkshift = 0; c > 1 ; p_blkshift++)
+			c >>= 1;
+		if (page[0].buff != NULL)
+			free(page[0].buff);
+		page[0].buff = (char *)malloc(p_blksize);
+		if (page[0].buff == NULL)
+			error(1, "ran out of memory (getfile)");
+		if (page[1].buff != NULL)
+			free(page[1].buff);
+		page[1].buff = (char *)malloc(p_blksize);
+		if (page[1].buff == NULL)
+			error(1, "ran out of memory (getfile)");
+	}
 	text.pno = reloc.pno = (PAGE *) &fpage;
 	fpage.nuser = 2;
 	dseek(&text, 0L, SARMAG);
@@ -1636,7 +1655,6 @@ char *acp;
 	getarhdr();
 	if (strncmp(archdr.ar_name, "__.SYMDEF", sizeof(archdr.ar_name)) != 0)
 		return (1);
-	fstat(infil, &stb);
 	return (stb.st_mtime > atol(archdr.ar_date) ? 3 : 2);
 }
 
@@ -1874,12 +1892,15 @@ savestr(cp)
 	return (cp);
 }
 
-bopen(bp, off)
-	struct biobuf *bp;
+bopen(bp, off, bufsize)
+	register struct biobuf *bp;
 {
 
-	bp->b_ptr = bp->b_buf;
-	bp->b_nleft = BUFSIZ - off % BUFSIZ;
+	bp->b_ptr = bp->b_buf = (char *)malloc(bufsize);
+	if (bp->b_ptr == (char *)0)
+		error(1, "ran out of memory (bopen)");
+	bp->b_bufsize = bufsize;
+	bp->b_nleft = bufsize - (off % bufsize);
 	bp->b_off = off;
 	bp->b_link = biobufs;
 	biobufs = bp;
@@ -1910,10 +1931,10 @@ top:
 		cnt -= put;
 		goto top;
 	}
-	if (cnt >= BUFSIZ) {
+	if (cnt >= bp->b_bufsize) {
 		if (bp->b_ptr != bp->b_buf)
 			bflush1(bp);
-		put = cnt - cnt % BUFSIZ;
+		put = cnt - cnt % bp->b_bufsize;
 		if (boffset != bp->b_off)
 			lseek(biofd, bp->b_off, 0);
 		if (write(biofd, p, put) != put) {
@@ -1956,7 +1977,7 @@ bflush1(bp)
 	bp->b_off += cnt;
 	boffset = bp->b_off;
 	bp->b_ptr = bp->b_buf;
-	bp->b_nleft = BUFSIZ;
+	bp->b_nleft = bp->b_bufsize;
 }
 
 bflushc(bp, c)
@@ -1965,4 +1986,14 @@ bflushc(bp, c)
 
 	bflush1(bp);
 	bputc(c, bp);
+}
+
+bseek(bp, off)
+	register struct biobuf *bp;
+	register off_t off;
+{
+	bflush1(bp);
+	
+	bp->b_nleft = bp->b_bufsize - (off % bp->b_bufsize);
+	bp->b_off = off;
 }
