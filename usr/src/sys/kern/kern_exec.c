@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exec.c	7.33 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,7 +34,7 @@
 #include "../vm/vm_pager.h"
 
 #ifdef HPUXCOMPAT
-#include "../hpux/hpux_exec.h"
+#include "hp300/hpux/hpux_exec.h"
 #endif
 
 /*
