@@ -6,14 +6,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pty.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pty.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
+#include <sys/errno.h>
 #include <termios.h>
 #include <grp.h>
-#include <errno.h>
 
 openpty(amaster, aslave, name, termp, winp)
 	int *amaster, *aslave;
@@ -22,15 +24,13 @@ openpty(amaster, aslave, name, termp, winp)
 	struct winsize *winp;
 {
 	register char *line = "/dev/ptyXX", *cp1, *cp2;
-	register master, slave, ruid, ttygid;
+	register int master, slave, ttygid;
 	struct group *gr;
-	extern errno;
 
 	if ((gr = getgrnam("tty")) != NULL)
 		ttygid = gr->gr_gid;
 	else
 		ttygid = -1;
-	ruid = getuid();
 
 	for (cp1 = "pqrs"; *cp1; cp1++) {
 		line[8] = *cp1;
@@ -41,8 +41,8 @@ openpty(amaster, aslave, name, termp, winp)
 					return (-1);	/* out of ptys */
 			} else {
 				line[5] = 't';
-				(void) chown(line, ruid, ttygid);
-				(void) chmod(line, 0620);
+				(void) fchown(master, getuid(), ttygid);
+				(void) fchmod(master, S_IRUSR|S_IWUSR|S_IWGRP);
 				(void) revoke(line);
 				if ((slave = open(line, O_RDWR, 0)) != -1) {
 					*amaster = master;
