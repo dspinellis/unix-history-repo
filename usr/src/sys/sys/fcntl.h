@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.11 (Berkeley) %G%
+ *	@(#)fcntl.h	5.12 (Berkeley) %G%
  */
 
 #ifndef _FCNTL_H_
@@ -153,6 +153,9 @@ __BEGIN_DECLS
 int	open __P((const char *, int, ...));
 int	creat __P((const char *, mode_t));
 int	fcntl __P((int, int, ...));
+#ifndef _POSIX_SOURCE
+int	flock __P((int, int));
+#endif /* !_POSIX_SOURCE */
 __END_DECLS
 #endif
 
