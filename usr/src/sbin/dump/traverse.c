@@ -475,8 +475,12 @@ loop:
 		size -= dev_bsize;
 		goto loop;
 	}
-	msg("read error from %s [block %d]: count=%d, got=%d, errno=%d (%s)\n",
-		disk, blkno, size, cnt, errno, strerror(errno));
+	if (cnt == -1)
+		msg("read error from %s: %s: [block %d]: count=%d\n",
+			disk, strerror(errno), blkno, size);
+	else
+		msg("short read error from %s: [block %d]: count=%d, got=%d\n",
+			disk, blkno, size, cnt);
 	if (++breaderrors > BREADEMAX) {
 		msg("More than %d block read errors from %d\n",
 			BREADEMAX, disk);
@@ -495,8 +499,14 @@ loop:
 	for (i = 0; i < size; i += dev_bsize, buf += dev_bsize, blkno++) {
 		if (lseek(diskfd, (long)(blkno << dev_bshift), 0) < 0)
 			msg("bread: lseek2 fails!\n");
-		if ((cnt = read(diskfd, buf, dev_bsize)) != dev_bsize)
-			msg("    read error from %s [sector %d, errno %d]\n",
-			    disk, blkno, errno);
+		if ((cnt = read(diskfd, buf, dev_bsize)) == dev_bsize)
+			continue;
+		if (cnt == -1) {
+			msg("read error from %s: %s: [sector %d]: count=%d\n",
+				disk, strerror(errno), blkno, dev_bsize);
+			continue;
+		}
+		msg("short read error from %s: [sector %d]: count=%d, got=%d\n",
+			disk, blkno, dev_bsize, cnt);
 	}
 }
