@@ -1,4 +1,4 @@
-/*	if_ec.c	4.21	82/06/30	*/
+/*	if_ec.c	4.22	82/07/21	*/
 
 #include "ec.h"
 
@@ -31,6 +31,7 @@
 #include <errno.h>
 
 #define	ECMTU	1500
+#define	ECMEM	0000000
 
 int	ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
 struct	uba_device *ecinfo[NEC];
@@ -75,7 +76,7 @@ ecprobe(reg)
 {
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct ecdevice *addr = (struct ecdevice *)reg;
-	register caddr_t ecbuf = (caddr_t) &umem[numuba][0600000];
+	register caddr_t ecbuf = (caddr_t) &umem[numuba][ECMEM];
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -86,19 +87,36 @@ ecprobe(reg)
 	 */
 	addr->ec_rcr = EC_AROM;
 	/*
+	 * Disable map registers for ec unibus space,
+	 * but don't allocate yet.
+	 */
+	ubamem(numuba, ECMEM, 32*2, 0);
+	/*
 	 * Check for existence of buffers on Unibus.
-	 * This won't work on a 780 until more work is done.
 	 */
 	if (badaddr((caddr_t) ecbuf, 2)) {
-		printf("ec: buffer mem not found");
+	bad1:
+		printf("ec: buffer mem not found\n");
+	bad2:
+		ubamem(numuba, 0, 0, 0);	/* reenable map (780 only) */
+		addr->ec_rcr = EC_MDISAB;	/* disable memory */
 		return (0);
 	}
+#if VAX780
+	if (cpu == VAX_780 && uba_hd[numuba].uh_uba->uba_sr) {
+		uba_hd[numuba].uh_uba->uba_sr = uba_hd[numuba].uh_uba->uba_sr;
+		goto bad1;
+	}
+#endif
 
 	/*
 	 * Tell the system that the board has memory here, so it won't
 	 * attempt to allocate the addresses later.
 	 */
-	ubamem(numuba, 0600000, 32*2);
+	if (ubamem(numuba, ECMEM, 32*2, 1) == 0) {
+		printf("ecprobe: cannot reserve uba addresses\n");
+		goto bad2;
+	}
 
 	/*
 	 * Make a one byte packet in what should be buffer #0.
@@ -111,10 +129,14 @@ ecprobe(reg)
 	addr->ec_xcr = EC_XINTEN|EC_XWBN;
 	DELAY(100000);
 	addr->ec_xcr = EC_XCLR;
-	/* will this work if there's a collision? */
 	if (cvec > 0 && cvec != 0x200) {
-		cvec -= 010;
-		br += 2;		/* rcv is xmit + 2 */
+		if (cvec & 04) {	/* collision interrupt */
+			cvec -= 04;
+			br += 1;		/* rcv is collision + 1 */
+		} else {		/* xmit interrupt */
+			cvec -= 010;
+			br += 2;		/* rcv is xmit + 2 */
+		}
 	}
 	return (1);
 }
@@ -175,7 +197,7 @@ ecattach(ui)
 	ifp->if_output = ecoutput;
 	ifp->if_ubareset = ecreset;
 	for (i=0; i<16; i++)
-		es->es_buf[i] = &umem[ui->ui_ubanum][0600000+2048*i];
+		es->es_buf[i] = &umem[ui->ui_ubanum][ECMEM+2048*i];
 	if_attach(ifp);
 }
 
@@ -192,6 +214,7 @@ ecreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" ec%d", unit);
+	ubamem(uban, ECMEM, 32*2, 0);	/* map register disable (no alloc) */
 	ecinit(unit);
 }
 
@@ -347,7 +370,7 @@ ecdocoll(unit)
 	/*
 	 * Clear the controller's collision flag, thus enabling retransmit.
 	 */
-	addr->ec_xcr = EC_JINTEN|EC_XINTEN|EC_JCLR;
+	addr->ec_xcr = EC_CLEAR;
 }
 
 /*
