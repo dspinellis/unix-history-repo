@@ -61,7 +61,14 @@ vforkok:
 	jmp 	parent 
 .globl	_errno
 verror:
-	movl	%eax,_errno
+#ifdef PIC
+	PIC_PROLOGUE
+	movl    PIC_GOT(_errno), %edx
+	movl    %eax,(%edx)
+	PIC_EPILOGUE
+#else
+	movl    %eax,_errno
+#endif
 	movl	$-1,%eax
 	jmp	%ecx
 child:

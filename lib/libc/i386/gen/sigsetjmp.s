@@ -35,15 +35,16 @@
  *
  *
  *	from: @(#)setjmp.s	5.1 (Berkeley) 4/23/90"
- *	$Id: sigsetjmp.s,v 1.1 1993/10/19 18:51:21 jtc Exp $
+ *	$Id: sigsetjmp.s,v 1.2 1993/10/20 17:37:41 jtc Exp $
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
 	.text
-	.asciz "$Id: sigsetjmp.s,v 1.1 1993/10/19 18:51:21 jtc Exp $"
+	.asciz "$Id: sigsetjmp.s,v 1.2 1993/10/20 17:37:41 jtc Exp $"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
+#include "SYS.h"
 
 ENTRY(sigsetjmp)
 	movl	8(%esp),%eax
@@ -52,7 +53,7 @@ ENTRY(sigsetjmp)
 	testl	%eax,%eax
 	jz	1f
 	pushl	$0
-	call	_sigblock
+	call	PIC_PLT(_sigblock)
 	addl	$4,%esp
 	movl	4(%esp),%ecx 
 	movl	%eax,28(%ecx)
@@ -71,7 +72,7 @@ ENTRY(siglongjmp)
 	cmpl	$0,24(%edx)
 	jz	1f
 	pushl	28(%edx)
-	call	_sigsetmask
+	call	PIC_PLT(_sigsetmask)
 	addl	$4,%esp
 1:	movl	4(%esp),%edx
 	movl	8(%esp),%eax

@@ -48,6 +48,29 @@ ENTRY(_brk)
 	jmp	ok
 
 ENTRY(brk)
+#ifdef PIC
+        movl    4(%esp),%eax
+        PIC_PROLOGUE
+        movl    %edx,PIC_GOT(curbrk)    # set up GOT addressing
+        movl    %ecx,PIC_GOT(minbrk)    #
+        cmpl    %eax,(%ecx)
+        PIC_EPILOGUE
+        jl      ok
+        movl    (%ecx),%eax
+        movl    %eax,4(%esp)
+ok:
+        lea     SYS_brk,%eax
+        LCALL(7,0)
+        jb      err
+        movl    4(%esp),%eax
+        movl    %eax,(%edx)
+        movl    $0,%eax
+        ret
+err:
+        jmp     PIC_PLT(cerror)
+
+#else
+
 	movl	4(%esp),%eax
 	cmpl	%eax,minbrk
 	jl	ok
@@ -63,3 +86,4 @@ ok:
 	ret
 err:
 	jmp	cerror
+#endif

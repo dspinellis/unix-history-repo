@@ -42,7 +42,14 @@
 
 ENTRY(ptrace)
 	xorl	%eax,%eax
-	movl	%eax,_errno
+#ifdef PIC
+        PIC_PROLOGUE
+        movl    PIC_GOT(_errno),%edx
+        movl    %eax,(%edx)
+        PIC_EPILOGUE
+#else
+        movl    %eax,_errno
+#endif
 	lea	SYS_ptrace,%eax
 	LCALL(7,0)
 	jb	err

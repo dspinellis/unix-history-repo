@@ -50,10 +50,11 @@
  */
 
 #include "DEFS.h"
+#include "SYS.h"
 
 ENTRY(setjmp)
 	pushl	$0
-	call	_sigblock
+	call	PIC_PLT(_sigblock)
 	popl	%edx
 	movl	4(%esp),%ecx 
 	movl	0(%esp),%edx
@@ -71,7 +72,7 @@ ENTRY(setjmp)
 ENTRY(longjmp)
 	movl	4(%esp),%edx
 	pushl	24(%edx)
-	call	_sigsetmask	/* XXX this is not reentrant */
+	call	PIC_PLT(_sigsetmask)	/* XXX this is not reentrant */
 	popl	%eax
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax

@@ -52,6 +52,27 @@ curbrk:	.long	_end
 	.text
 
 ENTRY(sbrk)
+#ifdef PIC
+	movl    4(%esp),%ecx
+	PIC_PROLOGUE
+	movl    PIC_GOT(curbrk),%edx
+	movl    (%edx),%eax
+	PIC_EPILOGUE
+	addl    %eax,4(%esp)
+	lea     SYS_brk,%eax
+	LCALL(7,0)
+	jb      err
+	PIC_PROLOGUE
+	movl    PIC_GOT(curbrk),%edx
+	movl    (%edx),%eax
+	addl    %ecx,(%edx)
+	PIC_EPILOGUE
+	ret
+err:
+	jmp     PIC_PLT(cerror)
+
+#else
+
 	movl	4(%esp),%ecx
 	movl	curbrk,%eax
 	addl	%eax,4(%esp)
@@ -63,3 +84,4 @@ ENTRY(sbrk)
 	ret
 err:
 	jmp	cerror
+#endif

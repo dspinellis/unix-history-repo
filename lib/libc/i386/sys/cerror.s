@@ -42,6 +42,13 @@
 
 	.globl	_errno
 cerror:
+#ifdef PIC
+	PIC_PROLOGUE
+	movl	PIC_GOT(_errno),%ecx
+	movl	%eax,(%ecx)
+	PIC_EPILOGUE
+#else
 	movl	%eax,_errno
+#endif
 	movl	$-1,%eax
 	ret

@@ -43,5 +43,14 @@
 .globl	__logname_valid		/* in getlogin() */
 
 SYSCALL(setlogin)
-	movl	$0,__logname_valid
+#ifdef PIC
+	PIC_PROLOGUE
+	pushl   %eax
+	movl    PIC_GOT(__logname_valid),%eax
+	movl    $0,(%eax)
+	popl    %eax
+	PIC_EPILOGUE
+#else
+	movl    $0,__logname_valid
+#endif
 	ret				/* setlogin(name) */
