@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -31,7 +31,7 @@ static	struct file_list *fcur;
 char *tail();
 
 /*
- * Lookup a file, by make.
+ * Lookup a file, by name.
  */
 struct file_list *
 fl_lookup(file)
@@ -189,7 +189,7 @@ makefile()
 read_files()
 {
 	FILE *fp;
-	register struct file_list *tp;
+	register struct file_list *tp, *pf;
 	register struct device *dp;
 	register struct opt *op;
 	char *wd, *this, *needs, *devorprof;
@@ -235,7 +235,7 @@ next:
 		    fname, this);
 		exit(1);
 	}
-	if ((tp = fl_lookup(this)) && (tp->f_type != INVISIBLE || tp->f_flags))
+	if ((pf = fl_lookup(this)) && (pf->f_type != INVISIBLE || pf->f_flags))
 		isdup = 1;
 	else
 		isdup = 0;
@@ -334,6 +334,8 @@ save:
 	if (configdep)
 		tp->f_flags |= CONFIGDEP;
 	tp->f_needs = needs;
+	if (pf && pf->f_type == INVISIBLE)
+		pf->f_flags = 1;		/* mark as duplicate */
 	goto next;
 }
 
