@@ -1,11 +1,13 @@
-.\"	@(#)chmod.1	5.1 (Berkeley) %G%
+.\"	@(#)chmod.1	6.1 (Berkeley) %G%
 .\"
-.TH CHMOD 1 "18 January 1983"
+.TH CHMOD 1 ""
 .AT 3
 .SH NAME
 chmod \- change mode
 .SH SYNOPSIS
-\fBchmod\fP mode file ...
+\fBchmod\fP [
+.B \-R
+] mode file ...
 .SH DESCRIPTION
 The mode of each named file is changed according to \fImode\fP,
 which may be absolute or symbolic.  An absolute \fImode\fP
@@ -67,20 +69,30 @@ but the setting of the file creation mask (see umask(2)) is taken into account.
 \fIpermission\fP absolutely (all other bits will be reset).
 .LP
 \fIPermission\fP is any combination of the letters \fBr\fP (read),
-\fBw\fP (write), \fBx\fP (execute), \fBs\fP (set owner or group id)
-and \fBt\fP (save text \- sticky).  Letters
-.BR u,
-\fBg\fP or \fBo\fP indicate that \fIpermission\fP
-is to be taken from the current mode.  Omitting \fIpermission\fP
+\fBw\fP (write), \fBx\fP (execute),
+\fBX\fP (set execute only if file is a directory
+or some other execute bit is set),
+\fBs\fP (set owner or group id)
+and \fBt\fP (save text \- sticky).
+Letters \fBu\fP, \fBg\fP, or \fBo\fP indicate that \fIpermission\fP
+is to be taken from the current mode. 
+Omitting \fIpermission\fP
 is only useful with \fB=\fP to take away all permissions.
+.PP
+When the
+.B \-R
+option is given, 
+.I chmod
+recursively descends its directory arguments
+setting the mode for each file as described above.
 .SH EXAMPLES
 .LP
 The first example denies write permission to others,
-the second makes a file executable:
+the second makes a file executable by all if it is executable by anyone:
 .IP
 chmod o\-w file
 .br
-chmod +x file
+chmod +X file
 .LP
 Multiple symbolic modes separated by commas may be given.
 Operations are performed in the order specified.  The letter
