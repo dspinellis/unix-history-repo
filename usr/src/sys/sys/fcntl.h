@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.13 (Berkeley) %G%
+ *	@(#)fcntl.h	5.14 (Berkeley) %G%
  */
 
 #ifndef _FCNTL_H_
@@ -22,10 +22,10 @@
 
 /*
  * File status flags: these are used by open(2), fcntl(2).
- * They are also used in the kernel file structure,
- * which is a superset of the open/fcntl flags.
- * Open/fcntl flags begin with O_; kernel-internal-only
- * flags begin with F.
+ * They are also used (indirectly) in the kernel file structure f_flags,
+ * which is a superset of the open/fcntl flags.  Open flags and f_flags
+ * are inter-convertible using OFLAGS(fflags) and FFLAGS(oflags).
+ * Open/fcntl flags begin with O_; kernel-internal flags begin with F.
  */
 /* open-only flags */
 #define	O_RDONLY	0x0000		/* open for reading only */
@@ -78,11 +78,12 @@
  * and for backward compatibility for fcntl.
  */
 #ifndef _POSIX_SOURCE
-#define	FAPPEND		O_APPEND
-#define	FASYNC		O_ASYNC
-#define	FFSYNC		O_FSYNC
-#define	FNONBLOCK	O_NONBLOCK
-#define	O_NDELAY	O_NONBLOCK
+#define	FAPPEND		O_APPEND	/* kernel/compat */
+#define	FASYNC		O_ASYNC		/* kernel/compat */
+#define	FFSYNC		O_FSYNC		/* kernel */
+#define	FNONBLOCK	O_NONBLOCK	/* kernel */
+#define	FNDELAY		O_NONBLOCK	/* compat */
+#define	O_NDELAY	O_NONBLOCK	/* compat */
 #endif
 
 /*
