@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.2 (Berkeley) %G%
+#	@(#)sed.test	5.3 (Berkeley) %G%
 #
 
 # sed Regression Tests
@@ -22,6 +22,8 @@ main()
 	TEST=../obj/sed
 	TESTLOG=nsed.out
 	DICT=/usr/share/dict/words
+
+	test_error | more
 
 	awk 'END { for (i = 1; i < 15; i++) print "l1_" i}' </dev/null >lines1
 	awk 'END { for (i = 1; i < 10; i++) print "l2_" i}' </dev/null >lines2
@@ -68,7 +70,7 @@ mark()
 	exec >"$DIR/${MARK}_$1"
 	echo "Test $1:$MARK"
 	# Uncomment this line to match tests with sed error messages
-	echo "Test $1:$MARK" > /dev/stderr
+	echo "Test $1:$MARK" >&5
 }
 
 test_args()
@@ -465,6 +467,46 @@ u2/g' lines1
 		$SED -e 'y10\123456789198765432\101' lines1
 	fi
 	mark '8.15' ; $SED -e '1N;2y/\n/X/' lines1
+}
+
+test_error()
+{
+	exec 0>&3 4>&1 5>&2
+	exec 0</dev/null
+	exec 2>&1
+	set -x
+	$TEST -x && exit 1
+	$TEST -f && exit 1
+	$TEST -e && exit 1
+	$TEST -f /dev/dds && exit 1
+	$TEST p /dev/dds && exit 1
+	$TEST -f /bin/sh && exit 1
+	$TEST '{' && exit 1
+	$TEST '{' && exit 1
+	$TEST '/hello/' && exit 1
+	$TEST '1,/hello/' && exit 1
+	$TEST -e '-5p' && exit 1
+	$TEST '/jj' && exit 1
+	$TEST 'a hello' && exit 1
+	$TEST 'a \ hello' && exit 1
+	$TEST 'b foo' && exit 1
+	$TEST 'd hello' && exit 1
+	$TEST 's/aa' && exit 1
+	$TEST 's/aa/' && exit 1
+	$TEST 's/a/b' && exit 1
+	$TEST 's/a/b/c/d' && exit 1
+	$TEST 's/a/b/ 1 2' && exit 1
+	$TEST 's/a/b/ 1 g' && exit 1
+	$TEST 's/a/b/w' && exit 1
+	$TEST 'y/aa' && exit 1
+	$TEST 'y/aa/b/' && exit 1
+	$TEST 'y/aa/' && exit 1
+	$TEST 'y/a/b' && exit 1
+	$TEST 'y/a/b/c/d' && exit 1
+	$TEST '!' && exit 1
+	$TEST supercalifrangolisticexprialidociussupercalifrangolisticexprialidocius
+	set +x
+	exec 0>&3 1>&4 2>&5
 }
 
 main
