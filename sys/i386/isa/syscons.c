@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:@(#)syscons.c	1.3 940129
- *	$Id: syscons.c,v 1.44 1994/04/21 14:22:26 sos Exp $
+ *	$Id: syscons.c,v 1.45 1994/04/26 09:09:57 sos Exp $
  *
  */
 
@@ -86,7 +86,7 @@
 #define VIDEOMEM	0x000A0000
 
 /* misc defines */
-#define MAX_ESC_PAR 	3
+#define MAX_ESC_PAR 	5
 #define TEXT80x25	1
 #define TEXT80x50	2
 #define	COL		80
@@ -381,7 +381,7 @@ int pcattach(struct isa_device *dev)
 		scp->ysize = ROW;
 		scp->bell_pitch = BELL_PITCH;
 		scp->bell_duration = BELL_DURATION;
-		scp->status = 0;
+		scp->status = NLKED;
 		scp->pid = 0;
 		scp->proc = NULL;
 		scp->smode.mode = VT_AUTO;
@@ -396,6 +396,7 @@ int pcattach(struct isa_device *dev)
                      console[0].cursor_end);
 #endif
 	cursor_pos(1);
+	update_leds(console[0].status);
 	return 0;
 }
 
@@ -1757,39 +1758,45 @@ static void scan_esc(scr_stat *scp, u_char c)
 			break;
 
 		case 'm': 	/* change attribute */
-			if (scp->term.num_param == 0)
-				n = 0;
-			else
-				n = scp->term.param[0];
-			switch (n) {
-			case 0:	/* back to normal */
+			if (scp->term.num_param == 0) {
 				scp->term.cur_attr = scp->term.std_attr;
 				break;
-			case 1:	/* highlight (bold) */
-				scp->term.cur_attr &= 0xFF00;
-				scp->term.cur_attr |= 0x0800;
-				break;
-			case 4: /* highlight (underline) */
-				scp->term.cur_attr &= 0x0F00;
-				scp->term.cur_attr |= 0x0800;
-				break;
-			case 5: /* blink */
-				scp->term.cur_attr &= 0xFF00;
-				scp->term.cur_attr |= 0x8000;
-				break;
-			case 7: /* reverse video */
-				scp->term.cur_attr = scp->term.rev_attr; 
-				break;
-			case 30: case 31: case 32: case 33: /* set fg color */
-			case 34: case 35: case 36: case 37:
-				scp->term.cur_attr = (scp->term.cur_attr & 0xF0FF)
-					    | (ansi_col[(n - 30) & 7] << 8);
-				break;
-			case 40: case 41: case 42: case 43: /* set bg color */
-			case 44: case 45: case 46: case 47:
-				scp->term.cur_attr = (scp->term.cur_attr & 0x0FFF)
-					    | (ansi_col[(n - 40) & 7] << 12);
-				break;
+			}
+			for (i = 0; i < scp->term.num_param; i++) {
+				switch (n = scp->term.param[i]) {
+				case 0:	/* back to normal */
+					scp->term.cur_attr = scp->term.std_attr;
+					break;
+				case 1:	/* highlight (bold) */
+					scp->term.cur_attr &= 0xFF00;
+					scp->term.cur_attr |= 0x0800;
+					break;
+				case 4: /* highlight (underline) */
+					scp->term.cur_attr &= 0xFF00;
+					scp->term.cur_attr |= 0x0800;
+					break;
+				case 5: /* blink */
+					scp->term.cur_attr &= 0xFF00;
+					scp->term.cur_attr |= 0x8000;
+					break;
+				case 7: /* reverse video */
+					scp->term.cur_attr = scp->term.rev_attr;
+					break;
+				case 30: case 31: /* set fg color */
+				case 32: case 33: case 34: 
+				case 35: case 36: case 37:
+					scp->term.cur_attr = 
+						(scp->term.cur_attr & 0xF8FF)
+						| (ansi_col[(n-30) & 7] << 8);
+					break;
+				case 40: case 41: /* set bg color */
+				case 42: case 43: case 44: 
+				case 45: case 46: case 47:
+					scp->term.cur_attr = 
+						(scp->term.cur_attr & 0x8FFF)
+						| (ansi_col[(n-40) & 7] << 12);
+					break;
+				}
 			}
 			break;
 
@@ -2041,7 +2048,7 @@ static void scinit(void)
 	console[0].border = BG_BLACK;;
 	console[0].xsize = COL;
 	console[0].ysize = ROW;
-	console[0].status = 0;
+	console[0].status = NLKED;
 	console[0].pid = 0;
 	console[0].proc = NULL;
 	console[0].smode.mode = VT_AUTO;
