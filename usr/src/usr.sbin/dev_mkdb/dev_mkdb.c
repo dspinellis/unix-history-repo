@@ -12,17 +12,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/user.h>
 #include <fcntl.h>
-#include <ndbm.h>
 #undef DIRBLKSIZ
 #include <dirent.h>
 #include <kvm.h>
+#include <db.h>
 #include <errno.h>
 #include <stdio.h>
 #include <paths.h>
@@ -36,10 +36,11 @@ main(argc, argv)
 	register DIR *dirp;
 	register struct dirent *dp;
 	struct stat sb;
-	DBM *db;
-	datum key, data;
+	DB *db;
+	DBT data, key;
 	int ch;
-	char buf[MAXNAMLEN + 1], dbtmp[MAXPATHLEN + 1], dbname[MAXPATHLEN + 1];
+	u_char buf[MAXNAMLEN + 1];
+	char dbtmp[MAXPATHLEN + 1], dbname[MAXPATHLEN + 1];
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
 		switch((char)ch) {
@@ -55,15 +56,16 @@ main(argc, argv)
 
 	dirp = opendir(".");
 
-	(void)sprintf(dbtmp, "%s/dev.tmp", _PATH_VARRUN);
-	(void)sprintf(dbname, "%s/dev.db", _PATH_VARRUN);
-	if ((db = dbm_open(dbtmp, O_CREAT|O_WRONLY|O_EXCL,
-	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)) == NULL)
+	(void)snprintf(dbtmp, sizeof(dbtmp), "%s/dev.tmp", _PATH_VARRUN);
+	(void)snprintf(dbname, sizeof(dbtmp), "%s/dev.db", _PATH_VARRUN);
+	db = hash_open(dbtmp, O_CREAT|O_WRONLY|O_EXCL, DEFFILEMODE,
+	    (HASHINFO *)NULL);
+	if (!db)
 		error(dbtmp);
 
-	key.dptr = (char *)&sb.st_rdev;
-	key.dsize = sizeof(sb.st_rdev);
-	data.dptr = buf;
+	key.data = (u_char *)&sb.st_rdev;
+	key.size = sizeof(sb.st_rdev);
+	data.data = buf;
 	while (dp = readdir(dirp)) {
 		if (stat(dp->d_name, &sb))
 			error(dp->d_name);
@@ -73,12 +75,11 @@ main(argc, argv)
 		/* Nul terminate the name so ps doesn't have to. */
 		bcopy(dp->d_name, buf, dp->d_namlen);
 		buf[dp->d_namlen] = '\0';
-		data.dsize = dp->d_namlen + 1;
-		if (dbm_store(db, key, data, DBM_INSERT) < 0)
-			error("dbm_store");
+		data.size = dp->d_namlen + 1;
+		if ((db->put)(db, &key, &data, 0))
+			error(dbtmp);
 	}
-	(void)dbm_close(db);
-	(void)strcat(dbtmp, DBM_SUFFIX);
+	(void)(db->close)(db);
 	if (rename(dbtmp, dbname)) {
 		(void)fprintf(stderr, "dev_mkdb: %s to %s: %s.\n",
 		    dbtmp, dbname, strerror(errno));
@@ -90,7 +91,7 @@ main(argc, argv)
 error(n)
 	char *n;
 {
-	(void)fprintf(stderr, "kvm_mkdb: %s: %s\n", n, strerror(errno));
+	(void)fprintf(stderr, "dev_mkdb: %s: %s\n", n, strerror(errno));
 	exit(1);
 }
 
