@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.3 (Berkeley) %G%
+ *	@(#)mba.c	7.4 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -18,7 +18,6 @@
 #include "dkstat.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "map.h"
