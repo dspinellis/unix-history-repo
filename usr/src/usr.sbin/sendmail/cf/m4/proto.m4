@@ -8,12 +8,12 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.52 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.53 (Berkeley) %G%')
 
 MAILER(local)dnl
 
-# level 5 config file format
-V5
+# level 6 config file format
+V6
 ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `smtp')')dnl
 ifdef(`confLOCAL_MAILER',, `define(`confLOCAL_MAILER', `local')')dnl
 ifdef(`confRELAY_MAILER',,
