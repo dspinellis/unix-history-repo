@@ -1,0 +1,10 @@
+cc -I../h -O -c modify.c
+ar rvu dbulib modify.o
+r - modify.o
+chmod 664 dbulib
+ranlib dbulib
+cp dbulib ../../lib/dbulib
+ranlib ../../lib/dbulib
+cc ksort.o -z ../../lib/ctlmod ../../lib/iutil ../../lib/gutil -o ksort
+chmod 4740 ksort
+cp ksort ../../bin/ksort7; chmod 4740 ../../bin/ksort7
