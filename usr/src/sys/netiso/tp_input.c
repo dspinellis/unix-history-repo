@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.23 (Berkeley) %G%
+ *	@(#)tp_input.c	7.24 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -821,12 +821,6 @@ again:
 			if(tpcb->tp_xtd_format)
 				IncStat(ts_xtd_fmt);
 
-			/*
-			 * Get the maximum transmission unit from the lower layer(s)
-			 * so we can negotiate a reasonable max TPDU size.
-			 */
-			(tpcb->tp_nlproto->nlp_mtu)(so, tpcb->tp_npcb,
-						&tpcb->tp_l_tpdusize, &tpcb->tp_tpdusize, 0);
 			tpcb->tp_peer_acktime = acktime;
 
 			/* 
@@ -1117,16 +1111,6 @@ again:
 					tpcb->tp_class, tpcb->tp_flags, tpcb->tp_tpdusize, 
 					hdr->tpdu_CCclass);
 			ENDTRACE
-
-			/* 
-			 * Get the maximum transmission unit from the lower layer(s)
-			 * so we can decide how large a TPDU size to negotiate.
-			 * It would be nice if the arguments to this
-			 * were more reasonable.
-			 */
-			(tpcb->tp_nlproto->nlp_mtu)(tpcb->tp_sock, tpcb->tp_npcb,
-						&tpcb->tp_l_tpdusize, &tpcb->tp_tpdusize, 0);
-
 
 			/* if called or calling suffices appeared on the CC, 
 			 * they'd better jive with what's in the pcb
