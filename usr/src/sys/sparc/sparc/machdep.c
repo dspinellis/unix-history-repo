@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.4 (Berkeley) %G%
+ *	@(#)machdep.c	8.5 (Berkeley) %G%
  *
  * from: $Header: machdep.c,v 1.44 93/10/31 05:28:36 torek Exp $
  */
@@ -515,7 +515,8 @@ boot(howto)
 
 	fb_unblank();
 	boothowto = howto;
-	if ((howto & RB_NOSYNC) == 0 && waittime < 0 && rootfs) {
+	if ((howto & RB_NOSYNC) == 0 &&
+	    waittime < 0 && mountlist.tqh_first != NULL) {
 		register struct buf *bp;
 		int iter, nbusy;
 #if 1
