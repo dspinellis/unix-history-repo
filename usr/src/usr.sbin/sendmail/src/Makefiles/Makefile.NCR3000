@@ -37,7 +37,7 @@ LDOPTS=
 LIBDIRS=-L/usr/ucblib
 
 # libraries required on your system
-LIBS=	-lsocket -lc -lelf -lucb -ldbm -lnet -lnsl
+LIBS=	-lnsl -lnet -lsocket -lelf -lucb
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/ucblib
@@ -74,7 +74,7 @@ sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${LDOPTS} ${OBJS} ${LIBDIRS} ${LIBS}
 
 #NROFF=	nroff -h
-NROFF=	groff -Tascii
+NROFF=	/usr/ucb/nroff -h
 MANDOC=	-mandoc
 
 aliases.0: aliases.5
@@ -89,7 +89,7 @@ newaliases.0: newaliases.1
 sendmail.0: sendmail.8
 	${NROFF} ${MANDOC} sendmail.8 > sendmail.0
 
-INSTALL=install
+INSTALL=/usr/ucb/install
 
 install: install-sendmail install-docs
 
