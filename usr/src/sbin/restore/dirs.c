@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -172,22 +172,16 @@ treescan(pname, ino, todo)
 	namelen = strlen(locname);
 	rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	dp = rst_readdir(dirp); /* "." */
-	if (dp != NULL && strcmp(dp->d_name, ".") == 0) {
+	if (dp != NULL && strcmp(dp->d_name, ".") == 0)
 		dp = rst_readdir(dirp); /* ".." */
-	} else {
-		np = lookupino(ino);
-		if (np == NULL)
-			panic("corrupted symbol table\n");
-		fprintf(stderr, ". missing from directory %s\n", myname(np));
-	}
-	if (dp != NULL && strcmp(dp->d_name, "..") == 0) {
+	else
+		fprintf(stderr, "Warning: `.' missing from directory %s\n",
+			pname);
+	if (dp != NULL && strcmp(dp->d_name, "..") == 0)
 		dp = rst_readdir(dirp); /* first real entry */
-	} else {
-		np = lookupino(ino);
-		if (np == NULL)
-			panic("corrupted symbol table\n");
-		fprintf(stderr, ".. missing from directory %s\n", myname(np));
-	}
+	else
+		fprintf(stderr, "Warning: `..' missing from directory %s\n",
+			pname);
 	bpt = telldir(dirp);
 	/*
 	 * a zero inode signals end of directory
