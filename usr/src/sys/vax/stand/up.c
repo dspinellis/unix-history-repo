@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.5 (Berkeley) %G%
+ *	@(#)up.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -69,6 +69,7 @@ upopen(io)
 	register struct st *st;
 	register int unit;
 	struct disklabel *dlp, *lp;
+	int error = 0;
 
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
@@ -98,22 +99,18 @@ upopen(io)
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
 		if (upstrategy(&tio, READ) != SECTSIZ)
-			return (ERDLAB);
+			error = ERDLAB;
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
-#ifdef COMPAT_42
-		{
-			printf("up%d: unlabeled\n", unit);
-			if (!upmaptype(unit, upaddr, dlp)) {
-				printf("up: unknown drive type\n");
-				return (ENXIO);
-			}
-		}
-#else
-			return (EUNLAB);
-#endif
-		else
+		if (error == 0 && (dlp->d_magic != DISKMAGIC ||
+		    dlp->d_magic2 != DISKMAGIC))
+			error = EUNLAB;
+		if (error == 0)
 			*lp = *dlp;
+		else
+#ifdef COMPAT_42
+		    if (upmaptype(unit, upaddr, lp) == 0)
+#endif
+			return (error);
 
 #ifndef SMALL
 		/* Read in the bad sector table. */

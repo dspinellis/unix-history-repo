@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.8 (Berkeley) %G%
+ *	@(#)hp.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -81,6 +81,7 @@ hpopen(io)
 	register struct disklabel *lp;
 	struct hpdevice *hpaddr;
 	struct disklabel *dlp;
+	int error = 0;
 
 	if ((u_int)io->i_adapt >= MAXNMBA || !mbainit(io->i_adapt))
 		return (EADAPT);
@@ -122,19 +123,19 @@ hpopen(io)
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
 		if (hpstrategy(&tio, READ) != SECTSIZ)
-			return (ERDLAB);
+			error = ERDLAB;
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
-#ifdef COMPAT_42
-		{
-			printf("hp%d: unlabeled\n", unit);
-			hpmaptype(hpaddr, hpaddr->hpdt & MBDT_TYPE, unit, lp);
-		}
-#else
-			return (EUNLAB);
-#endif
-		else
+		if (error == 0 && (dlp->d_magic != DISKMAGIC ||
+		    dlp->d_magic2 != DISKMAGIC))
+			error = EUNLAB;
+		if (error == 0)
 			*lp = *dlp;
+		else
+#ifdef COMPAT_42
+		    if (hpmaptype(hpaddr, hpaddr->hpdt & MBDT_TYPE, unit, lp) == 0)
+#endif
+			return (error);
+
 #ifndef SMALL
 		/*
 		 * Read in the bad sector table.
