@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dumplab.c	1.1 (UKC) %G%";
+static char *sccsid = "@(#)dumplab.c	1.2 (UKC) %G%";
 #endif not lint
 /*
  *	This file included by Peter Collinson
@@ -33,14 +33,9 @@ static char *sccsid = "@(#)dumplab.c	1.1 (UKC) %G%";
  *
  *	log_volume()		- write a logfile entry for the volume
  *	
- *	This file also contains the rewind_offline() routine so that
- *	the tape can be dismounted at the end of each volume write
- *
  */
 
 #include "dump.h"
-#include <sys/ioctl.h>
-#include <sys/mtio.h>
 #include <math.h>
 
 
@@ -52,6 +47,8 @@ char	*labarg[LABMAX];	/* Pointer to argument list */
 
 int	labct;			/* number of entries */
 				/* if zero then no labels used */
+
+int	userlabel;		/* set if user has given a label */
 
 int	labchk;			/* check labels - set by t(est) flag */
 
@@ -71,8 +68,8 @@ char dumpvolumes[] = "/etc/dumpvolumes";
 storelabel(arg)
 	char *arg;
 {
-	labelarg = arg;
-
+	labfmt = arg;
+	userlabel = 1;
 }
 
 /*
@@ -96,22 +93,27 @@ storelabelmap(arg)
 	register char *incbase, *incr;
 	register lastc;
 	char *labskip();
+	char *strstore();
 	
+	userlabel = 1;
+
 	/*
 	 *	Parse the argument looking for a single string
 	 */
-	for (ss = arg; *ss; ss = es, labct++) {
+	for (ss = arg; *ss; ss = es) {
 		es = labskip(ss);
 		lastc = *es;	/* save last character */
 		*es++ = '\0';	/* make the first label into a string */
 		if (labct > LABMAX)
 			labfatal("Too many (> %d) tape labels specified\n", LABMAX);
-		lablist[labct++] = strstore(ss);
+		if (*ss == '\0')
+			labfatal("Zero length tape label found\n");
+		labarg[labct++] = strstore(ss);
 
-		if (lastch == 0)
+		if (lastc == 0)
 			break;		/* end of list */
 
-		if (lastch == '-') {
+		if (lastc == '-') {
 			/*
 			 * this gives a tape range
 			 * increment the source number until it equals the final
@@ -122,8 +124,9 @@ storelabelmap(arg)
 			es = labskip(ss);
 			if (*es == '-')
 				labfatal("Range has the format <string>-<string>\n");
-			lastch = *es;
-			*es = '\0';
+			lastc = *es;
+			if (lastc)
+				*es++ = '\0';
 			/*
 			 * basic test the source string length must be equal to the
 			 * end string length
@@ -149,27 +152,28 @@ labelrange(startrange, endrange)
 	for (incr = startrange + strlen(startrange) - 1;
 			strcmp(startrange, endrange) != 0; ) {
 		/* start incrementing */
-		for (carry = 0; carry; ) {
+		carry = 0;
+		do {
 			if (isdigit(*incr)) {
 				if (*incr == '9') {
 					*incr = '0';
 					carry = 1;
 				} else
-					*incr++;
+					(*incr)++;
 			} else
 			if (isupper(*incr)) {
 				if (*incr == 'Z') {
 					*incr = 'A';
 					carry = 1;
 				} else
-					*incr++;
+					(*incr)++;
 			} else
 			if (islower(*incr)) {
 				if (*incr == 'z') {
 					*incr = 'a';
 					carry = 1;
 				} else
-					*incr++;
+					(*incr)++;
 			} else
 				labfatal("Problem with label map range spec - can only increment alphanumeric values\n");
 			if (carry) {
@@ -177,10 +181,11 @@ labelrange(startrange, endrange)
 				if (incr < startrange)
 					labfatal("Problem with label map range spec - end of range reached\n");
 			}
-		}
+		} while (carry);
+		
 		if (labct > LABMAX)
 			labfatal("Too many (> %d) tape labels specified\n", LABMAX);
-		lablist[labct++] = strstore(startrange);
+		labarg[labct++] = strstore(startrange);
 
 	}
 }
@@ -195,6 +200,7 @@ strstore(arg)
 {
 	register len = strlen(arg)+1;
 	register char *dest;
+	char *malloc();
 
 	dest = malloc(len);
 	if (dest == NULL)
@@ -205,36 +211,34 @@ strstore(arg)
 	
 /*
  *	Create a tape label from a volume number
- *	if have not had a -l or -m parameter - return none
- *	if have not had a -l parameter - set format to %s
- *	if have not had a -m paramter - pass the volume number as a string
  */
 char *
 createlabel(volno)
 	int volno;
 {
 	static char buf[LBLSIZE+LBLSIZE];
-	static char volbuf[8];
 	static int lastvol;
+	char volbuf[8];
 	register char *arg;
 	
-	if (labfmt == NULL && labct == 0)
+	if (userlabel == 0)
 		return ("none");		/* previous behaviour */
 
-	if (volno == lastvol)
+	if (volno == lastvol)			/* cache */
 		return(buf);
-			
-	if (labelfmt == NULL)
-		labelfmt = "%s";
+	lastvol = volno;
+	
+	if (labfmt == NULL)
+		labfmt = "%s";
 
 	if (labct == 0)
 	{	(void) sprintf(volbuf, "%d", volno);
 		arg = volbuf;
 	}
 	else		
-		arg = lablist[volno];
-	(void) sprintf(buf, labelfmt, lablist[volno - 1]);	/* volumes run 1-> */
-	buf[LBLSIZE-1] = '\0';
+		arg = labarg[volno-1];		/* volumes run 1-> */
+	(void) sprintf(buf, labfmt, arg);
+	buf[LBLSIZE-1] = '\0';			/* Truncate to correct size */
 	return(buf);
 }
 
@@ -277,7 +281,6 @@ labelcheck(fd, tno)
 	union u_spcl uin;	/* lots on the stack but that should be OK */
 	register char *label;
 	register char *ontape = uin.s_spcl.c_label;
-	struct mtop mtop;
 
 	if (labchk == 0 || pipeout)
 		return(0);
@@ -291,13 +294,7 @@ labelcheck(fd, tno)
 	    strcmp(ontape, "none") == 0 ||
 	    strcmp(ontape, label) == 0) {
 		/* skip back one record */
-		mtop.mt_op = MTBSR;
-		mtop.mt_count = 1;
-#ifdef RDUMP
-		if (rmtioctl(fd, MTIOCTOP, &mtop) < 0)
-#else RDUMP
-		if (ioctl(fd, MTIOCTOP, &mtop) < 0)
-#endif RDUMP
+		if (backone(fd) < 0)
 			labfatal("Label check cannot backspace tape\n");
 		return(0);
 	}
@@ -309,14 +306,15 @@ labelcheck(fd, tno)
 /*
  *	write a log entry for the volume into the log file
  */
-log_volume()
+log_volume(tlabel)
+	char *tlabel;
 {
 	char *ctime();
 	FILE *logfd;
 
 	if (uflag == 0 || labchk == 0)
 		return;
-	if ((logfd = fopen(dumpvolume, "a")) == NULL)
+	if ((logfd = fopen(dumpvolumes, "a")) == NULL)
 		return;
 	fprintf(logfd, "%s: date=%20.20s dev=%s level=%c reel=%d ino=%d\n",
 			tlabel, ctime(&spcl.c_date)+4, disk, incno, tapeno,
@@ -350,28 +348,3 @@ labfatal(fmt, a1, a2, a3, a4, a5)
 	dumpabort();
 }
 
-
-/*
- *	put a tape drive offline
- */
-rewind_offline(fd)
-{	
-	struct mtop mtop;
-
-#ifdef RDUMP
-#define ioctl rmtioctl
-#endif RDUMP
-
-	mtop.mt_op = MTWEOF;
-	mtop.mt_count = 1;
-	if (ioctl(fd, MTIOCTOP, &mtop) < 0)
-		perror("Cannot write end of file record");
-	mtop.mt_op = MTWEOF;
-	mtop.mt_count = 1;
-	if (ioctl(fd, MTIOCTOP, &mtop) < 0)
-		perror("Cannot write end of file record");
-	mtop.mt_op = MTOFFL;
-	mtop.mt_count = 1;
-	if (ioctl(fd, MTIOCTOP, &mtop) < 0)
-		perror("Cannot put the tape offline");
-}

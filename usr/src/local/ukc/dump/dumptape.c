@@ -5,11 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumptape.c	5.8 (Berkeley) 2/23/87";
+static char sccsid[] = "@(#)dumptape.c	1.3 (UKC) %G%	5.8 (Berkeley) 2/23/87";
 #endif not lint
 
-#include <sys/file.h>
 #include "dump.h"
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/mtio.h>
+
 
 char	(*tblock)[TP_BSIZE];	/* pointer to malloc()ed buffer for tape */
 int	writesize;		/* size of malloc()ed buffer for tape */
@@ -17,6 +20,7 @@ long	lastspclrec = -1;	/* tape block number of last written header */
 int	trecno = 0;		/* next record to write in current block */
 extern int ntrec;		/* blocking factor on tape */
 extern int cartridge;
+extern int rewindoffline;
 extern int read(), write();
 #ifdef RDUMP
 extern char *host;
@@ -176,6 +180,11 @@ rewind()
 	msg("Tape rewinding\n");
 #ifdef RDUMP
 	if (host) {
+		if (rewindoffline) {
+			rewind_offline(to);
+			rmtclose();
+			return;
+		}
 		rmtclose();
 		while (rmtopen(tape, 0) < 0)
 			sleep(10);
@@ -183,6 +192,11 @@ rewind()
 		return;
 	}
 #endif RDUMP
+	if (rewindoffline) {
+		rewind_offline(to);
+		close(to);
+		return;
+	}
 	close(to);
 	while ((f = open(tape, 0)) < 0)
 		sleep (10);
@@ -191,9 +205,19 @@ rewind()
 
 close_rewind()
 {
+	extern int userlabel;
+	char *label;
+	char *createlabel();
+	
 	rewind();
 	if (!nogripe) {
-		msg("Change Tapes: Mount tape #%d\n", tapeno+1);
+		if (userlabel) {
+			label = createlabel(tapeno+1);
+			msg("Change Tapes: Mount tape labelled `%s' reel %d of this dump\n",
+				label, tapeno+1);
+		}
+		else
+			msg("Change Tapes: Mount tape #%d\n", tapeno+1);
 		broadcast("CHANGE TAPES!\7\7\n");
 	}
 	while (!query("Is the new tape mounted and ready to go?"))
@@ -221,7 +245,7 @@ otape()
 	int	waitpid;
 	int	(*interrupt)() = signal(SIGINT, SIG_IGN);
 	int	blks, i;
-
+	
 	parentpid = getpid();
 
     restore_check_point:
@@ -298,6 +322,10 @@ otape()
 			if (!query("Cannot open tape.  Do you want to retry the open?"))
 				dumpabort();
 
+		if (labelcheck(to, tapeno+1) < 0)
+			if (!query("Problem with tape label.  Do you want to retry the open?"))
+				dumpabort();
+
 		enslave();  /* Share open tape file descriptor with slaves */
 
 		asize = 0;
@@ -314,9 +342,25 @@ otape()
 		spcl.c_flags |= DR_NEWHEADER;
 		spclrec();
 		spcl.c_flags &=~ DR_NEWHEADER;
-		if (tapeno > 1)
-			msg("Tape %d begins with blocks from ino %d\n",
-				tapeno, ino);
+		/*
+		 *	It may seem that the logging ought to be done
+		 *	at the end of the write but
+		 *	a)	for cyclic dumps the tape has been destroyed
+		 *	b)	if this dump fails due to a bad tape
+		 *		then the new tape ought to be relabelled
+		 *	c)	if this dump fails for other reasons
+		 *		then the successful dump will also be logged
+		 */
+		log_volume(spcl.c_label);
+
+		if (tapeno > 1){
+			if (userlabel)
+				msg("Tape `%s' (reel %d) begins with blocks from ino %d\n",
+					spcl.c_label, tapeno, ino);
+			else
+				msg("Tape %d begins with blocks from ino %d\n",
+					tapeno, ino);
+		}
 	}
 }
 
@@ -489,4 +533,64 @@ atomic(func, fd, buf, count)
 	while ((got = (*func)(fd, buf, need)) > 0 && (need -= got) > 0)
 		buf += got;
 	return (got < 0 ? got : count - need);
+}
+
+/*
+ *	Added by Peter C to backspace one record after a label read
+ */
+backone(fd)
+{
+	struct mtop mtop;
+	
+	mtop.mt_op = MTBSR;
+	mtop.mt_count = 1;
+#ifdef RDUMP
+	if (host)
+		return(rmtioctl(fd, MTIOCTOP, &mtop));
+#endif RDUMP
+	return(ioctl(fd, MTIOCTOP, &mtop));
+}
+	
+/*
+ *	Added by Peter C
+ *	put a tape drive offline
+ */
+rewind_offline(fd)
+{	
+	struct mtop mtop;
+	char *eofr;
+	char *eoff;
+	
+	eofr = "Cannot write end of file record";
+	eoff = "Cannot put the tape offline";
+#ifdef RDUMP	
+	if (host) {
+		mtop.mt_op = MTWEOF;
+		mtop.mt_count = 1;
+		if (rmtioctl(fd, MTIOCTOP, &mtop) < 0)
+			perror(eofr);
+		mtop.mt_op = MTWEOF;
+		mtop.mt_count = 1;
+		if (rmtioctl(fd, MTIOCTOP, &mtop) < 0)
+			perror(eofr);
+		mtop.mt_op = MTOFFL;
+		mtop.mt_count = 1;
+		if (rmtioctl(fd, MTIOCTOP, &mtop) < 0)
+			perror(eoff);
+		return;
+	}
+#endif RDUMP
+	mtop.mt_op = MTWEOF;
+	mtop.mt_count = 1;
+	if (ioctl(fd, MTIOCTOP, &mtop) < 0)
+		perror(eofr);
+	mtop.mt_op = MTWEOF;
+	mtop.mt_count = 1;
+	if (ioctl(fd, MTIOCTOP, &mtop) < 0)
+		perror(eofr);
+	mtop.mt_op = MTOFFL;
+	mtop.mt_count = 1;
+	if (ioctl(fd, MTIOCTOP, &mtop) < 0)
+		perror(eoff);
+
 }
