@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	2.5 84/02/14
+# Makefile	@(#)Makefile	2.6 84/12/03
 #
 CC=	cc
 CTAGS=	ctags -w
@@ -26,11 +26,8 @@ DLIBS=
 LLIBS=
 
 SAILMASTER=	daemon
-SAIL=		sail
 DRIVER=		lib/saildriver
-SAIL.LOG=	sail.log
 LOGFILE=	lib/saillog
-DESTDIR=
 TARGET=		$(DESTDIR)/usr/games
 
 all: sail driver sail.log
@@ -58,22 +55,12 @@ clean:
 	rm -f ${DOBJS} ${POBJS} ${LOBJS} ${COMMONOBJS} ${JUNKFILES}
 
 install: sail driver sail.log $(TARGET)/$(LOGFILE)
-	install -c -s -m 4755 -o ${SAILMASTER} sail ${TARGET}/${SAIL}
+	install -c -s -m 4755 -o ${SAILMASTER} sail ${TARGET}/sail
 	install -c -s -m 4755 -o ${SAILMASTER} driver ${TARGET}/${DRIVER}
-	install -c -s -m 755 sail.log ${TARGET}/${SAIL.LOG}
-	install -c sail.6 /usr/man/man6
+	install -c -s -m 755 sail.log ${TARGET}/sail.log
+	install -c sail.6 $(DESTDIR)/usr/man/man6
 
 logfile $(TARGET)/$(LOGFILE):
 	cp /dev/null ${TARGET}/${LOGFILE}
 	chown ${SAILMASTER} ${TARGET}/${LOGFILE}
 	chmod 644 ${TARGET}/${LOGFILE}
-
-miro:
-	rdist -c '$(TARGET)/{$(SAIL),sail.log,$(DRIVER)}' \
-		/usr/man/man6/sail.6 miro
-cory:
-	rdist -c '$(TARGET)/{$(SAIL),sail.log,$(DRIVER)}' \
-		/usr/man/man6/sail.6 cory
-dali:
-	rdist -c '$(TARGET)/{$(SAIL),sail.log,$(DRIVER)}' \
-		/usr/man/man6/sail.6 dali
