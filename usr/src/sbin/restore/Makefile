@@ -1,18 +1,30 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.5	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 VPATH=	../dump:
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	main.c interactive.c restore.c dirs.c symtab.c tape.c utilities.c \
-	../dump/dumprmt.c
+	dumprmt.c
 OBJS=	main.o interactive.o restore.o dirs.o symtab.o utilities.o tape.o
 ROBJS=	main.o interactive.o restore.o dirs.o symtab.o utilities.o rtape.o \
 	dumprmt.o
+MAN=	restore.0 rrestore.0
 
 all: restore rrestore
 
@@ -25,70 +37,22 @@ rrestore: ${ROBJS} ${LIBC}
 rtape.o: ${LIBC} tape.c
 	${CC} ${CFLAGS} -c -DRRESTORE tape.c -o rtape.o
 
-clean: FRC
+clean:
 	rm -f ${ROBJS} ${OBJS} core restore rrestore
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 restore ${DESTDIR}/etc/restore
 	install -s -o root -g bin -m 4755 rrestore ${DESTDIR}/etc/rrestore
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-main.o: main.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
-main.o: /usr/include/sys/types.h /usr/include/signal.h
-main.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-main.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
-main.o: /usr/include/protocols/dumprestore.h /usr/include/signal.h
-interactive.o: interactive.c restore.h /usr/include/stdio.h
-interactive.o: /usr/include/sys/param.h /usr/include/sys/types.h
-interactive.o: /usr/include/signal.h /usr/include/machine/machparam.h
-interactive.o: /usr/include/sys/inode.h /usr/include/sys/fs.h
-interactive.o: /usr/include/sys/dir.h /usr/include/protocols/dumprestore.h
-interactive.o: /usr/include/setjmp.h
-restore.o: restore.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
-restore.o: /usr/include/sys/types.h /usr/include/signal.h
-restore.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-restore.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
-dirs.o: dirs.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
-dirs.o: /usr/include/sys/types.h /usr/include/signal.h
-dirs.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-dirs.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
-dirs.o: /usr/include/protocols/dumprestore.h /usr/include/sys/file.h
-symtab.o: symtab.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
-symtab.o: /usr/include/sys/types.h /usr/include/signal.h
-symtab.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-symtab.o: /usr/include/sys/fs.h /usr/include/sys/dir.h /usr/include/sys/stat.h
-tape.o: tape.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
-tape.o: /usr/include/sys/types.h /usr/include/signal.h
-tape.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
-tape.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
-tape.o: /usr/include/protocols/dumprestore.h /usr/include/sys/ioctl.h
-tape.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-tape.o: /usr/include/sys/mtio.h /usr/include/sys/file.h /usr/include/setjmp.h
-tape.o: /usr/include/sys/stat.h
-utilities.o: utilities.c restore.h /usr/include/stdio.h
-utilities.o: /usr/include/sys/param.h /usr/include/sys/types.h
-utilities.o: /usr/include/signal.h /usr/include/machine/machparam.h
-utilities.o: /usr/include/sys/inode.h /usr/include/sys/fs.h
-utilities.o: /usr/include/sys/dir.h
-dumprmt.o: ../dump/dumprmt.c /usr/include/sys/param.h /usr/include/sys/types.h
-dumprmt.o: /usr/include/signal.h /usr/include/machine/machparam.h
-dumprmt.o: /usr/include/sys/mtio.h /usr/include/sys/ioctl.h
-dumprmt.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-dumprmt.o: /usr/include/sys/socket.h /usr/include/sys/inode.h
-dumprmt.o: /usr/include/netinet/in.h /usr/include/stdio.h /usr/include/pwd.h
-dumprmt.o: /usr/include/netdb.h /usr/include/protocols/dumprestore.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
