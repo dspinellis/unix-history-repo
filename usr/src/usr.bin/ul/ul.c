@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ul.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ul.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -210,10 +210,8 @@ FILE *f;
 			obuf[col].c_mode |= UNDERL|mode;
 		} else if (obuf[col].c_char == c)
 			obuf[col].c_mode |= BOLD|mode;
-		else {
-			obuf[col].c_char = c;
+		else
 			obuf[col].c_mode = mode;
-		}
 		col++;
 		if (col > maxcol)
 			maxcol = col;
