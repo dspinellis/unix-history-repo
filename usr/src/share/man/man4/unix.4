@@ -1,0 +1,122 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)unix.4	6.1 (Berkeley) %G%
+.\"
+.TH UNIX 4 ""
+.UC 5
+.SH NAME
+unix \-
+.SM UNIX\c
+-domain protocol family
+.SH SYNOPSIS
+.B #include <sys/types.h>
+.br
+.B #include <sys/un.h>
+.SH DESCRIPTION
+.de _d
+.if t .ta .6i 2.1i 2.6i
+.\" 2.94 went to 2.6, 3.64 to 3.30
+.if n .ta .84i 2.6i 3.30i
+..
+.de _f
+.if t .ta .5i 1.25i 2.5i
+.\" 3.5i went to 3.8i
+.if n .ta .7i 1.75i 3.8i
+..
+The
+.SM UNIX\c
+-domain protocol family is a collection of protocols
+that provides local (on-machine) interprocess
+communication through the normal
+.IR socket (2)
+mechanisms.
+The 
+.SM UNIX\c
+-domain family supports the
+SOCK_STREAM and SOCK_DGRAM socket types and uses
+filesystem pathnames for addressing.
+.SH ADDRESSING
+.SM UNIX\c
+-domain addresses are variable-length filesystem pathnames of
+at most 104 characters.
+The include file
+.RI < sys/un.h >
+defines this address:
+.sp 1
+.nf
+._f
+struct sockaddr_un {
+	u_char	sun_len;
+	u_char	sun_family;
+	char	sun_path[104];
+};
+.sp 1
+.fi
+Binding a name to a
+.SM UNIX\c
+-domain socket with
+.IR bind (2)
+causes a socket file to be created in the filesystem.
+This file is
+.I not
+removed when the socket is closed\(em\c
+.IR unlink (2)
+must be used to remove the file.
+.PP
+The
+.SM UNIX\c
+-domain protocol family does not support broadcast addressing or any form
+of \*(lqwildcard\*(rq matching on incoming messages. 
+All addresses are absolute- or relative-pathnames
+of other
+.SM UNIX\c
+-domain sockets.
+Normal filesystem access-control mechanisms are also
+applied when referencing pathnames; e.g., the destination
+of a
+.IR connect (2)
+or
+.IR sendto (2)
+must be writable.
+.SH PROTOCOLS
+The 
+.SM UNIX\c
+-domain protocol family is comprised of simple
+transport protocols that support the
+.SM SOCK_STREAM
+and
+.SM SOCK_DGRAM
+abstractions.
+.SM SOCK_STREAM
+sockets also support the communication of 
+.UX
+file descriptors through the use of the
+.I msg_accrights
+field in the
+.I msg
+argument to
+.IR sendmsg (2)
+and
+.IR recvmsg (2).
+Any valid descriptor may be sent in a message.
+The received descriptor is a 
+.I duplicate
+of the sender's descriptor, as if it were created with a call to
+.IR dup (2).
+Per-process descriptor flags, set with
+.IR fcntl (2),
+are 
+.I not
+passed to a receiver.
+Descriptors that are awaiting delivery, or that are
+purposely not received, are automatically closed by the system
+when the destination socket is closed.
+.SH SEE ALSO
+socket(2), intro(4)
+.PP
+An Introductory 4.3BSD Interprocess Communication Tutorial (PS1:7).
+.PP
+An Advanced 4.3BSD Interprocess Communication Tutorial (PS1:8).
