@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)netstat.1	6.12 (Berkeley) %G%
+.\"     @(#)netstat.1	6.13 (Berkeley) %G%
 .\"
-.Vx
 .Vx
 .Dd 
 .Dt NETSTAT 1
@@ -22,18 +21,18 @@
 .Nm netstat
 .Op Fl himnrs
 .Op Fl f Ar address_family
-.Op Ar system
-.Op Ar core
+.Op Fl M Ar core
+.Op Fl N Ar system
 .Nm netstat
 .Op Fl n
 .Op Fl I Op Ar interface
-.Ar interval
-.Op Ar system
-.Op Ar core
+.Op Fl M Ar core
+.Op Fl N Ar system
+.Op Fl w Ar wait
 .Nm netstat
 .Op Fl p Ar protocol
-.Op Ar system
-.Op Ar core
+.Op Fl M Ar core
+.Op Fl N Ar system
 .Sh DESCRIPTION
 The
 .Nm netstat
@@ -45,9 +44,9 @@ The first form of the command displays a list of active sockets for
 each protocol.
 The second form presents the contents of one of the other network
 data structures according to the option selected.
-Using the third form, with an
-.Ar interval
-specified,
+Using the third form, with a
+.Ar wait
+interval specified,
 .Nm netstat
 will continuously display the information regarding packet
 traffic on the configured network interfaces.
@@ -80,11 +79,18 @@ located at boot time are not shown).
 .Cx
 Show information only about this interface;
 used with an
-.Ar interval
-as described below.
+.Ar wait
+interval as described below.
+.Tp Fl M
+Extract values associated with the name list from the specified core
+instead of the default
+.Pa /dev/kmem .
 .Tp Fl m
 Show statistics recorded by the memory management routines
 (the network manages a private pool of memory buffers).
+.Tp Fl N
+Extract the name list from the specified system instead of the default
+.Pa /vmunix .
 .Tp Fl n
 Show network addresses as numbers (normally
 .Nm netstat
@@ -133,15 +139,6 @@ for
 .Li AF_UNIX  .
 .Tp
 .Pp
-The arguments,
-.Ar system
-and
-.Ar core
-allow substitutes for the defaults
-.Dq Pa vmunix
-and
-.Dq Pa /dev/kmem .
-.Pp
 The default display, for active sockets, shows the local
 and remote addresses, send and receive queue sizes (in bytes), protocol,
 and the internal state of the protocol.
@@ -189,13 +186,12 @@ interface utilized for the route.
 .Pp
 When
 .Nm netstat
-is invoked with an
-.Ar interval
-argument, it displays a running count of statistics related to
-network interfaces.  This display consists of a
-column for the primary interface
-(the first interface found during autoconfiguration)
-and a column summarizing
+is invoked with a
+.Ar wait
+interval argument, it displays a running count of statistics related to
+network interfaces.
+This display consists of a column for the primary interface (the first
+interface found during autoconfiguration) and a column summarizing
 information for all interfaces.
 The primary interface may be replaced with another interface with the
 .Fl I
@@ -205,15 +201,26 @@ system was last rebooted.  Subsequent lines of output show values
 accumulated over the preceding interval.
 .Sh SEE ALSO
 .Xr iostat 1 ,
+.Xr nfsstat 1 ,
+.Xr ps 1 ,
 .Xr vmstat 1 ,
 .Xr hosts 5 ,
 .Xr networks 5 ,
 .Xr protocols 5 ,
 .Xr services 5 ,
-.Xr trpt 8
+.Xr trpt 8 ,
+.Xr trsp 8
 .Sh HISTORY
 .Nm Netstat
 appeared in 4.2 BSD.
+.\" .Sh FILES
+.\" .Bl -tag -width /dev/kmem -compact
+.\" .It Pa /vmunix
+.\" default kernel namelist
+.\" .It Pa /dev/kmem
+.\" default memory file
+.\" .El
 .Sh BUGS
-The notion of errors is ill-defined.  Collisions mean
-something else for the IMP.
+The notion of errors is ill-defined.
+.Pp
+Collisions mean something else for the IMP.
