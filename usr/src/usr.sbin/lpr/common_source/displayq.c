@@ -105,10 +105,14 @@ displayq(format)
 		fatal("cannot chdir to spooling directory");
 	if ((nitems = getq(&queue)) < 0)
 		fatal("cannot examine spooling area\n");
-	if (nitems == 0) {
+	if (stat(LO, &statb) >= 0 && (statb.st_mode & 010)) {
 		if (sendtorem)
 			printf("\n%s: ", host);
-		printf("no entries\n");
+		printf("Warning: %s queue is turned off\n", printer);
+	}
+	if (nitems == 0) {
+		if (!sendtorem)
+			printf("no entries\n");
 		return(0);
 	}
 	fp = fopen(LO, "r");
@@ -116,6 +120,8 @@ displayq(format)
 		if (fp != NULL)
 			fclose(fp);
 		garbage = nitems;
+		if (sendtorem)
+			printf("\n%s: ", host);
 		if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100))
 			printf("Warning: %s is down\n", printer);
 		else
