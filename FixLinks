@@ -4,9 +4,12 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /a/cvs/386BSD/src/FixLinks,v 1.5 1993/07/08 17:58:20 nate Exp $
+# $Header: /a/cvs/386BSD/src/FixLinks,v 1.6 1993/08/03 01:40:19 rgrimes Exp $
 #
 # $Log: FixLinks,v $
+# Revision 1.6  1993/08/03  01:40:19  rgrimes
+# Commented out many of the links that are no longer needed.
+#
 # Revision 1.5  1993/07/08  17:58:20  nate
 # Removed Fixed Links
 #
@@ -28,13 +31,13 @@
 pushd sys/netccitt ; ln -s x25.h x25_sockaddr.h ; popd
 pushd lib/libc/db ; ln -s VERSION README ; popd
 pushd lib/libc/db/PORT ; ln -s include sys ; popd
-pushd libexec/uucp ; ln -s sys1.unx sys1.c ; popd
-pushd libexec/uucp ; ln -s sys3.unx sys3.c ; popd
-pushd libexec/uucp ; ln -s sys4.unx sys4.c ; popd
-pushd libexec/uucp ; ln -s sys5.unx sys5.c ; popd
-pushd libexec/uucp ; ln -s sys6.unx sys6.c ; popd
-pushd libexec/uucp ; ln -s sys7.unx sys7.c ; popd
-pushd libexec/uucp ; ln -s sysh.unx sysdep.h ; popd
+#pushd libexec/uucp ; ln -s sys1.unx sys1.c ; popd
+#pushd libexec/uucp ; ln -s sys3.unx sys3.c ; popd
+#pushd libexec/uucp ; ln -s sys4.unx sys4.c ; popd
+#pushd libexec/uucp ; ln -s sys5.unx sys5.c ; popd
+#pushd libexec/uucp ; ln -s sys6.unx sys6.c ; popd
+#pushd libexec/uucp ; ln -s sys7.unx sys7.c ; popd
+#pushd libexec/uucp ; ln -s sysh.unx sysdep.h ; popd
 #pushd usr.bin/yacc/test ; ln -s ../../../libexec/ftpd/ftpcmd.y ftp.y ; popd
 #pushd usr.sbin/named ; ln -s /usr/include/arpa/nameser.h nameser.h ; popd
 #pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
