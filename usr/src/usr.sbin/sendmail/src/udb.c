@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.11 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.12 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.11 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.12 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -123,7 +123,7 @@ udbexpand(a, sendq, e)
 		printf("udbexpand(%s)\n", a->q_paddr);
 
 	/* make certain we are supposed to send to this address */
-	if (bitset(QDONTSEND, a->q_flags))
+	if (bitset(QDONTSEND|QVERIFIED, a->q_flags))
 		return EX_OK;
 	e->e_to = a->q_paddr;
 
@@ -185,7 +185,10 @@ udbexpand(a, sendq, e)
 					bcmp(key.data, keybuf, keylen) == 0)
 			{
 				if (bitset(EF_VRFYONLY, e->e_flags))
+				{
+					a->q_flags |= QVERIFIED;
 					return EX_OK;
+				}
 
 				breakout = TRUE;
 				if (info.size < sizeof buf)

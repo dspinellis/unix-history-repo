@@ -29,15 +29,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.16 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.17 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.16 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.17 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.16 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.17 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.16 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.17 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -121,7 +121,7 @@ alias(a, sendq, e)
 		printf("alias(%s)\n", a->q_paddr);
 
 	/* don't realias already aliased names */
-	if (bitset(QDONTSEND, a->q_flags))
+	if (bitset(QDONTSEND|QVERIFIED, a->q_flags))
 		return;
 
 	e->e_to = a->q_paddr;
@@ -145,9 +145,12 @@ alias(a, sendq, e)
 	if (tTd(27, 1))
 		printf("%s (%s, %s) aliased to %s\n",
 		    a->q_paddr, a->q_host, a->q_user, p);
-	message("aliased to %s", p);
 	if (bitset(EF_VRFYONLY, e->e_flags))
+	{
+		a->q_flags |= QVERIFIED;
 		return;
+	}
+	message("aliased to %s", p);
 #ifdef LOG
 	if (LogLevel > 9)
 		syslog(LOG_INFO, "%s: alias %s => %s", e->e_id, a->q_paddr, p);
