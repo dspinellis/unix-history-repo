@@ -416,14 +416,15 @@ summary of the changes in that release.
 		defined.  It turns out that Posix allows all-numeric
 		user names.  Fix from Tony Sanders of BSDI.
 	Add service switch support.  If the local OS has a service
-		switch (e.g., /etc/nsswitch.conf on Solaris) that will
-		be used; otherwise, it falls back to using a local
-		mechanism based on the ServiceSwitchFile option
-		(default: /etc/service.switch).  For example, if the
+		switch (e.g., /etc/nsswitch.conf on Solaris or /etc/svc.conf
+		on DEC systems) that will be used; otherwise, it falls back
+		to using a local mechanism based on the ServiceSwitchFile
+		option (default: /etc/service.switch).  For example, if the
 		service switch lists "files" and "nis" for the aliases
-		service, that will be the default lookup order.  Note
-		that you can still stack aliases files however, although
-		you have to list them explicitly as "implicit:filename".
+		service, that will be the default lookup order.  the "files"
+		("local" on DEC) service type expands to any alias files
+		you listed in the configuration file, even if they aren't
+		actually file lookups.
 	Option I (NameServerOptions) no longer sets the "UseNameServer"
 		variable which tells whether or not DNS should be considered
 		canonical.  This is now determined based on whether or not
@@ -735,6 +736,9 @@ summary of the changes in that release.
 		by Brian Coan of the Institute for Global Communications.
 	Log message when a message is dropped because it exceeds the maximum
 		message size.  Suggested by Leo Bicknell of Virginia Tech.
+	Allow trusted users (those on a T line or in $=t) to use -bs without
+		an X-Authentication-Warning: added.  Suggested by Mark Thomas
+		of Mark G. Thomas Consulting.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
@@ -838,6 +842,10 @@ summary of the changes in that release.
 		be used as an alternative to /bin/sh for the "prog" mailer,
 		giving the local administrator more control over what
 		programs can be run from sendmail.
+	MAIL.LOCAL: add this local mailer to the tape.  It is not really
+		part of the release proper, and isn't fully supported; in
+		particular, it does not run on System V based systems and
+		never will.
 	CONTRIB: a patch to rmail.c from Bill Gianopoulos of Raytheon
 		to allow rmail to compile on systems that don't have
 		function prototypes and systems that don't have snprintf.
@@ -987,6 +995,7 @@ summary of the changes in that release.
 		src/Makefiles/Makefile.Paragon
 		src/Makefiles/Makefile.SunOS.5.3
 		src/Makefiles/Makefile.SunOS.5.4
+		src/Makefiles/Makefile.SunOS.5.5
 		src/Makefiles/Makefile.UNIX_SV.4.2.i386
 		src/Makefiles/Makefile.uts.systemV
 		src/mime.c
