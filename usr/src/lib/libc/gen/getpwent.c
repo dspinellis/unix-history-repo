@@ -1,4 +1,4 @@
-/* @(#)getpwent.c	4.5 (Berkeley) 84/08/28 */
+/* @(#)getpwent.c	4.6 (Berkeley) 85/01/16 */
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
