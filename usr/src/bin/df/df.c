@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -171,16 +171,16 @@ prtstat(sfsp, maxwidth)
 	(void)printf("%-*.*s", maxwidth, maxwidth, sfsp->f_mntfromname);
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
-	(void)printf(" %*ld%8ld%8ld", headerlen,
+	(void)printf(" %*ld %7ld %7ld", headerlen,
 	    sfsp->f_blocks * sfsp->f_bsize / blocksize,
 	    used * sfsp->f_bsize / blocksize,
 	    sfsp->f_bavail * sfsp->f_bsize / blocksize);
-	(void)printf("%6.0f%%",
+	(void)printf(" %5.0f%%",
 	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
 	if (iflag) {
 		inodes = sfsp->f_files;
 		used = inodes - sfsp->f_ffree;
-		(void)printf("%8ld%8ld%6.0f%% ", used, sfsp->f_ffree,
+		(void)printf(" %7ld %7ld %5.0f%% ", used, sfsp->f_ffree,
 		   inodes == 0 ? 100.0 : (double)used / (double)inodes * 100.0);
 	} else 
 		(void)printf("  ");
