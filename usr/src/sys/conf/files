@@ -4,10 +4,10 @@ net/if_loop.c		optional loop
 net/raw_cb.c		standard
 net/raw_usrreq.c	standard
 net/route.c		standard
-netimp/if_imp.c		optional imp inet
-netimp/if_imphost.c	optional imp inet
-netimp/raw_imp.c	optional imp inet
-netinet/if_ether.c	optional ether inet
+netimp/if_imp.c		optional imp
+netimp/if_imphost.c	optional imp
+netimp/raw_imp.c	optional imp
+netinet/if_ether.c	optional ether
 netinet/in.c		optional inet
 netinet/in_pcb.c	optional inet
 netinet/in_proto.c	optional inet
