@@ -1,0 +1,71 @@
+#!/bin/sh
+# How to make a distribution tarfile.
+#
+# $1 is the name of the program.
+# $2 is the version number.
+# Remaining args are files to tar.
+# Optional argument of ~+notar" means don't create the actual tar file,
+# just create the symlinked directory.
+
+tar_inhibited=""
+if [ "$1" = "+notar" ]; then
+  tar_inhibited=yes
+  shift
+fi
+
+PROGRAM=$1
+VERSION=$2
+
+shift; shift
+
+if [ "$PROGRAM" = "" -o "$VERSION" = "" ]; then
+  echo "Usage: mktarfile [+notar] <progname> <version> <file ...>"
+  exit 2;
+fi
+
+TARFILE=$PROGRAM.tar
+TARDIR=$PROGRAM-$VERSION
+
+# Delete the tarfile if we are to create it.
+if [ ! "tar_inhibited" ]; then
+  rm -rf $TARFILE
+fi
+
+# Delete the destination directory if it already exists.
+rm -rf $TARDIR
+
+# Make the destination directory.
+echo "Making directory $TARDIR..."
+mkdir $TARDIR
+
+topdir=`pwd`
+where_I_am=$TARDIR
+
+trap "cd $topdir" 3
+
+for i in $*; do
+  filename=$i
+  while [ "$filename" ]; do
+    remainder=`echo $filename | sed 's@[-_a-zA-Z~0-9.]*/@@'`
+    dir=`echo $filename | sed "s@$remainder@@" | sed "s@/@@"`
+    if [ "$dir" ]; then
+       if [ ! -d $where_I_am/$dir ]; then
+	  echo "Making directory $where_I_am/$dir..."
+	  mkdir $where_I_am/$dir
+       fi
+       cd $where_I_am/$dir; where_I_am=`pwd`
+       filename=$remainder
+    else
+       break
+    fi
+  done
+  cd $topdir; where_I_am=$TARDIR
+  ln -s $topdir/$i $TARDIR/$i
+done
+
+if [ ! "$tar_inhibited" ]; then
+  tar -chf $TARFILE $TARDIR
+  rm -rf $TARDIR
+fi
+
+exit 0
