@@ -1,4 +1,4 @@
-/*	common.c	4.4	87/12/09	*/
+/*	common.c	4.5	88/05/11	*/
 
 #ifdef PASS1COMMON
 #include "pass1.h"
@@ -170,7 +170,7 @@ walkf( t, f ) register NODE *t;  int (*f)(); {
 	(*f)( t );
 	}
 #else
-#define	NR	100
+#define	NR	32
 
 /*
  * Deliberately avoids recursion -- use this version on machines with
@@ -180,10 +180,12 @@ walkf(t, f)
 	register NODE *t;
 	register int (*f)();
 {
+	NODE *Aat[NR];
+	int Aao[NR];
 	register int i = 1;
 	register int opty = optype(t->in.op);
-	static NODE *at[NR];
-	static int ao[NR];
+	register NODE **at = Aat;
+	register int *ao = Aao;
 
 #define	PUSH(dir, state) \
 	(ao[i] = state, at[i++] = t, t = t->in.dir, opty = optype(t->in.op))
