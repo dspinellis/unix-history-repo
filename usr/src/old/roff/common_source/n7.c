@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n7.c	4.1 %G%";
+static char sccsid[] = "@(#)n7.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -423,7 +423,7 @@ int a;
 nl1:
 	ejf = dip->hnl = v.nl = 0;
 	ejl = frame;
-	if(donef){
+	if(donef == 1){
 		if((!nc && !wch) || ndone)done1(0);
 		ndone++;
 		donef = 0;
