@@ -6,7 +6,7 @@ vax/cpudata.c		standard
 vax/dkbad.c		standard
 vax/flp.c		standard
 vax/in_cksum.c		optional inet
-vax/machdep.c		standard
+vax/machdep.c		standard config-dependent
 vax/mem.c		standard
 vax/pup_cksum.c		optional pup
 vax/sys_machdep.c	standard
