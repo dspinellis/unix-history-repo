@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00109
+ * --------------------         -----   ----------------------
+ *
+ * 01 Mar 93    Tor Egge		Fix bogus return value from memccpy()
+ *
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -52,7 +60,7 @@ memccpy(t, f, c, n)
 		register unsigned char uc = c;
 		do {
 			if ((*tp++ = *fp++) == uc)
-				return (t);
+				return (tp);
 		} while (--n != 0);
 	}
 	return (0);

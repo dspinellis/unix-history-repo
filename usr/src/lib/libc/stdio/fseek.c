@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00109
+ * --------------------         -----   ----------------------
+ *
+ * 02 Mar 93    Branko Lankester	Update internal buffer pointer
+ *
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -215,6 +223,7 @@ fseek(fp, offset, whence)
 	if ((*seekfn)(fp->_cookie, curoff, SEEK_SET) == POS_ERR)
 		goto dumb;
 	fp->_r = 0;
+ 	fp->_p = fp->_bf._base;
 	if (HASUB(fp))
 		FREEUB(fp);
 	fp->_flags &= ~__SEOF;
