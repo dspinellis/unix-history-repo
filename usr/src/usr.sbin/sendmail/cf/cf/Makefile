@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.4 (Berkeley) %G%
+#	@(#)Makefile	8.5 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -15,6 +15,7 @@ RM=	rm -f
 
 ALL=	cs-hidden.cf cs-exposed.cf \
 	hpux-cs-exposed.cf hpux-cs-hidden.cf \
+	riscos-cs-exposed.cf \
 	sunos3.5-cs-exposed.cf sunos3.5-cs-hidden.cf \
 	sunos4.1-cs-exposed.cf sunos4.1-cs-hidden.cf \
 	ultrix4.1-cs-exposed.cf ultrix4.1-cs-hidden.cf \
