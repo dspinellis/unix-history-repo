@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.3 %G%";
+static char sccsid[] = "@(#)tree.c 1.4 %G%";
 
 /*
  * Parse tree management.
@@ -101,6 +101,7 @@ Operator op;
 	    p->value.sym = nextarg(Symbol);
 	    break;
 
+	case O_DEBUG:
 	case O_LCON:
 	case O_CONT:
 	case O_DELETE:
@@ -174,6 +175,10 @@ Operator op;
     }
     check(p);
     assigntypes(p);
+    if(debug_flag[5]) {     
+  	fprintf(stderr," built %s node %d with arg0 %d arg1 %d \n",
+  	        showoperator(p->op), p, p->value.arg[0],p->value.arg[1]);
+    }
     return p;
 }
 
