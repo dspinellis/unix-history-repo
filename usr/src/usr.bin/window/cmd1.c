@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	1.6 83/07/28";
+static	char *sccsid = "@(#)cmd1.c	1.7 83/07/29";
 #endif
 
 #include "defs.h"
@@ -170,8 +170,8 @@ int id, nrow, ncol, row, col;
 		doclose(w);
 		return 0;
 	case 0:
-		execl("/bin/csh", "csh", 0);
-		perror("exec(csh)");
+		execl(shell, shellname, 0);
+		perror(shell);
 		exit(1);
 	}
 	return w;
