@@ -26,7 +26,7 @@
  */
 
 const char chkconfig_c_rcsid[] =
-  "$Id: chkconfig.c,v 1.2 1993/11/11 23:30:34 wollman Exp $";
+  "$Id: chkconfig.c,v 1.3 1993/11/11 23:53:04 wollman Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +38,7 @@ const char chkconfig_c_rcsid[] =
 #include "paths.h"
 
 static int testvalue(const char *);
-static int getflags(const char *);
+static int printflags(const char *);
 static int setvalue(const char *, int);
 static int printvalues(void);
 static void usage(void);
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     return printvalues();
 
   case 1:
-    return doflags ? getflags(argv[optind]) : testvalue(argv[optind]);
+    return doflags ? printflags(argv[optind]) : testvalue(argv[optind]);
 
   case 2:
     return setvalue(argv[optind], is_on(argv[optind + 1]));
@@ -158,11 +158,16 @@ static int testvalue(const char *str) {
   return rv;
 }
 
-static int getflags(const char *str) {
+static char *getflags(const char *str) {
   FILE *fp;
   char *line;
   const char *fname;
-  int rv = 0;
+  char *rv = strdup("");
+
+  if(!rv) {
+    errno = ENOMEM;
+    die("getflags: strdup");
+  }
 
   fname = confname(str, ".flags");
   fp = fopen(fname, "r");
@@ -172,13 +177,30 @@ static int getflags(const char *str) {
     } while(line && line[0] == '#');
 
     if(line) {
-      fputs(line, stdout);
-      fputc('\n', stdout);
+      free(rv);
+      rv = strdup(line);
+
+      if(!rv) {
+	errno = ENOMEM;
+	die("getflags: strdup");
+      }
     }
 
     fclose(fp);
   }
   free((void *)fname);
+
+  return rv;
+}
+
+
+static int printflags(const char *str) {
+  int rv = 0;
+  char *flags;
+
+  flags = getflags(str);
+  if(flags[0]) printf("%s\n", flags);
+  free(flags);
   return 0;
 }
 
@@ -227,6 +249,7 @@ struct q {
   struct q *next;
   int state;
   char *name;
+  char *flags;
 };
 
 static struct q *onhead;
@@ -245,6 +268,7 @@ static void insert(const char *fname) {
 
   q->name = strdup(fname);
   q->state = state = !testvalue(fname);
+  q->flags = getflags(fname);
 
   if(state || !sortbystate)
     headp = &onhead;
@@ -289,29 +313,34 @@ static int printvalues(void) {
    * Now we're done reading the file names, so we can print them out.
    * Thanks to insert(), everything is already in ASCII order.
    */
-#define FORMAT "%15s %-3s\n"
+#define FORMAT "%15s %-5s %s\n"
 
   if(sortbystate) {
-    printf("%15s %s\n", "Option", "State");
-    printf("%15s %s\n", "======", "=====");
+    printf("%15s %s %s\n", 
+	   "Option", "State", "Flags");
+    printf("%15s %s %s\n",
+	   "===============", "=====", "====================");
     doneheader = 1;
 
     while((temp = offhead)) {
-      printf(FORMAT, temp->name, "off");
+      printf(FORMAT, temp->name, "off", temp->flags);
       free(temp->name);
+      free(temp->flags);
       offhead = temp->next;
       free(temp);
     }
   }
 
   if(!doneheader) {
-    printf("%15s %s\n", "Option", "State");
-    printf("%15s %s\n", "======", "=====");
+    printf("%15s %s %s\n", "Option", "State", "Flags");
+    printf("%15s %s %s\n",
+	   "===============", "=====", "====================");
   }
 
   while((temp = onhead)) {
-    printf(FORMAT, temp->name, temp->state ? "on" : "off");
+    printf(FORMAT, temp->name, temp->state ? "on" : "off", temp->flags);
     free(temp->name);
+    free(temp->flags);
     onhead = temp->next;
     free(temp);
   }
