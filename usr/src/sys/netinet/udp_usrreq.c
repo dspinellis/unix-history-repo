@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1988, 1990, 1993 Regents of the University
+ * of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.33 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -179,14 +179,14 @@ udp_input(m, iphlen)
 			}
 			last = inp->inp_socket;
 			/*
-			 * Don't look for additional matches if this one
-			 * does not have the SO_REUSEPORT socket option set.
-			 * This heuristic avoids searching through all pcbs
-			 * in the common case of a non-shared port.  It
-			 * assumes that an application will never clear
-			 * the SO_REUSEPORT option after setting it.
+			 * Don't look for additional matches if this one does
+			 * not have either the SO_REUSEPORT or SO_REUSEADDR
+			 * socket options set.  This heuristic avoids searching
+			 * through all pcbs in the common case of a non-shared
+			 * port.  It * assumes that an application will never
+			 * clear these options after setting them.
 			 */
-			if ((last->so_options & SO_REUSEPORT) == 0)
+			if ((last->so_options&(SO_REUSEPORT|SO_REUSEADDR) == 0))
 				break;
 		}
 
