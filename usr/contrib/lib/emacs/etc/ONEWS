@@ -1,0 +1,1346 @@
+GNU Emacs NEWS -- history of user-visible changes.  26-Mar-1986
+Copyright (C) 1986 Richard M. Stallman.
+See the end for copying conditions.
+
+Changes in Emacs 17
+
+* Frustrated?
+
+Try M-x doctor.
+
+* Bored?
+
+Try M-x hanoi.
+
+* Brain-damaged?
+
+Try M-x yow.
+
+* Sun3, Tahoe, Apollo, HP9000s300, Celerity, NCR Tower 32,
+  Sequent, Stride, Encore, Plexus and AT&T 7300 machines supported.
+
+The Tahoe, Sun3, Sequent and Celerity use 4.2.  In regard to the
+Apollo, see the file APOLLO in this directory.  NCR Tower32,
+HP9000s300, Stride and Nu run forms of System V.  System V rel 2 also
+works on Vaxes now.  See etc/MACHINES.
+
+* System V Unix supported, including subprocesses.
+
+It should be possible now to bring up Emacs on a machine running
+mere unameliorated system V Unix with no major work; just possible bug
+fixes.  But you can expect to find a handful of those on any machine
+that Emacs has not been run on before.
+
+* Berkeley 4.1 Unix supported.
+
+See etc/MACHINES.
+
+* Portable `alloca' provided.
+
+Emacs can now run on machines that do not and cannot support the library
+subroutine `alloca' in the canonical fashion, using an `alloca' emulation
+written in C.
+
+* On-line manual.
+
+Info now contains an Emacs manual, with essentially the same text
+as in the printed manual.
+
+The manual can now be printed with a standard TeX.
+
+Nicely typeset and printed copies of the manual are available
+from the Free Software Foundation.
+
+* Backup file version numbers.
+
+Emacs now supports version numbers in backup files.
+
+The first time you save a particular file in one editing session,
+the old file is copied or renamed to serve as a backup file.
+In the past, the name for the backup file was made by appending `~'
+to the end of the original file name.
+
+Now the backup file name can instead be made by appending ".~NN~" to
+the original file name, where NN stands for a numeric version.  Each
+time this is done, the new version number is one higher than the
+highest previously used.
+
+Thus, the active, current file does not have a version number.
+Only the backups have them.
+
+This feature is controlled by the variable `version-control'.  If it
+is `nil', as normally, then numbered backups are made only for files
+that already have numbered backups.  Backup names with just `~' are
+used for files that have no numbered backups.
+
+If `version-control' is `never', then the backup file's name is
+made with just `~' in any case.
+
+If `version-control' is not `nil' or `never', numbered backups are
+made unconditionally.
+
+To prevent unlimited consumption of disk space, Emacs can delete
+old backup versions automatically.  Generally Emacs keeps the first
+few backups and the latest few backups, deleting any in between.
+This happens every time a new backup is made.  The two variables that
+control the deletion are `kept-old-versions' and `kept-new-versions'.
+Their values are, respectively, the number of oldest backups to keep
+and the number of newest ones to keep, each time a new backup is made.
+The value of `kept-new-versions' includes the backup just created.
+By default, both values are 2.
+
+If `trim-versions-without-asking' is non-`nil', the excess middle versions
+are deleted without a murmur.  If it is `nil', the default, then you
+are asked whether the excess middle versions should really be deleted.
+
+Dired has a new command `.' which marks for deletion all but the latest
+and oldest few of every numeric series of backups.  `kept-old-versions'
+controls the number of oldest versions to keep, and `dired-kept-versions'
+controls the number of latest versions to keep.  A numeric argument to
+the `.' command, if positive, specifies the number of latest versions
+to keep, overriding `dired-kept-versions'.  A negative argument specifies
+the number of oldest versions to keep, using minus the argument to override
+`kept-old-versions'.
+
+* Immediate conflict detection.
+
+Emacs now locks the files it is modifying, so that if
+you start to modify within Emacs a file that is being
+modified in another Emacs, you get an immediate warning.
+
+The warning gives you three choices:
+1. Give up, and do not make any changes.
+2. Make changes anyway at your own risk.
+3. Make changes anyway, and record yourself as
+ the person locking the file (instead of whoever
+ was previously recorded.)
+
+Just visiting a file does not lock it.  It is locked
+when you try to change the buffer that is visiting the file.
+Saving the file unlocks it until you make another change.
+
+Locking is done by writing a lock file in a special designated
+directory.  If such a directory is not provided and told to
+Emacs as part of configuring it for your machine, the lock feature
+is turned off.
+
+* M-x recover-file.
+
+This command is used to get a file back from an auto-save
+(after a system crash, for example).  It takes a file name
+as argument and visits that file, but gets the data from the
+file's last auto save rather than from the file itself.
+
+* M-x normal-mode.
+
+This command resets the current buffer's major mode and local
+variables to be as specified by the visit filename, the -*- line
+and/or the Local Variables: block at the end of the buffer.
+It is the same thing normally done when a file is first visited.
+
+* Echo area messages disappear shortly if minibuffer is in use.
+
+Any message in the echo area disappears after 2 seconds
+if the minibuffer is active.  This allows the minibuffer
+to become visible again.
+
+* C-z on System V runs a subshell.
+
+On systems which do not allow programs to be suspended, the C-z command
+forks a subshell that talks directly to the terminal, and then waits
+for the subshell to exit.  This gets almost the effect of suspending
+in that you can run other programs and then return to Emacs.  However,
+you cannot log out from the subshell.
+
+* C-c is always a prefix character.
+
+Also, subcommands of C-c which are letters are always
+reserved for the user.  No standard Emacs major mode
+defines any of them.
+
+* Picture mode C-c commands changed.
+
+The old C-c k command is now C-c C-w.
+The old C-c y command is now C-c C-x.
+
+* Shell mode commands changed.
+
+All the special commands of Shell mode are now moved onto
+the C-c prefix.  Most are not changed aside from that.
+Thus, the old Shell mode C-c command (kill current job)
+is now C-c C-c; the old C-z (suspend current job) is now C-c C-z,
+etc.
+
+The old C-x commands are now C-c commands.  C-x C-k (kill output)
+is now C-c C-o, and C-x C-v (show output) is now C-c C-r.
+
+The old M-= (copy previous input) command is now C-c C-y.
+
+* Shell mode recognizes aliases for `pushd', `popd' and `cd'.
+
+Shell mode now uses the variable `shell-pushd-regexp' as a
+regular expression to recognize any command name that is
+equivalent to a `pushd' command.  By default it is set up
+to recognize just `pushd' itself.  If you use aliases for
+`pushd', change the regexp to recognize them as well.
+
+There are also `shell-popd-regexp' to recognize commands
+with the effect of a `popd', and `shell-cd-regexp' to recognize
+commands with the effect of a `cd'.
+
+* "Exit" command in certain modes now C-c C-c.
+
+These include electric buffer menu mode, electric command history
+mode, Info node edit mode, and Rmail edit mode.  In all these
+modes, the command to exit used to be just C-c.
+
+* Outline mode changes.
+
+Lines that are not heading lines are now called "body" lines.
+The command `hide-text' is renamed to `hide-body'.
+The key M-H is renamed to C-c C-h.
+The key M-S is renamed to C-c C-s.
+The key M-s is renamed to C-c C-i.
+
+Changes of line visibility are no longer undoable.  As a result,
+they no longer use up undo memory and no longer interfere with
+undoing earlier commands.
+
+* Rmail changes.
+
+The s and q commands now both expunge deleted messages before saving;
+use C-x C-s to save without expunging.
+
+The u command now undeletes the current message if it is deleted;
+otherwise, it backs up as far as necessary to reach a deleted message,
+and undeletes that one.  The u command in the summary behaves likewise,
+but considers only messages listed in the summary.  The M-u command
+has been eliminated.
+
+The o and C-o keys' meanings are interchanged.
+o now outputs to an Rmail file, and C-o to a Unix mail file.
+
+The F command (rmail-find) is renamed to M-s (rmail-search).
+Various new commands and features exist; see the Emacs manual.
+
+* Local bindings described first in describe-bindings.
+
+* [...], {...} now balance in Fundamental mode.
+
+* Nroff mode and TeX mode.
+
+The are two new major modes for editing nroff input and TeX input.
+See the Emacs manual for full information.
+
+* New C indentation style variable `c-brace-imaginary-offset'.
+
+The value of `c-brace-imaginary-offset', normally zero, controls the
+indentation of a statement inside a brace-group where the open-brace
+is not the first thing on a line.  The value says where the open-brace
+is imagined to be, relative to the first nonblank character on the line.
+
+* Dired improvements.
+
+Dired now normally keeps the cursor at the beginning of the file name,
+not at the beginning of the line.  The most used motion commands are
+redefined in Dired to position the cursor this way.
+
+`n' and `p' are now equivalent in dired to `C-n' and `C-p'.
+
+If any files to be deleted cannot be deleted, their names are
+printed in an error message.
+
+If the `v' command is invoked on a file which is a directory,
+dired is run on that directory.
+
+* `visit-tag-table' renamed `visit-tags-table'.
+
+This is so apropos of `tags' finds everything you need to
+know about in connection with Tags.
+
+* `mh-e' library uses C-c as prefix.
+
+All the special commands of `mh-rmail' now are placed on a
+C-c prefix rather than on the C-x prefix.  This is for
+consistency with other special modes with their own commands.
+
+* M-$ or `spell-word' checks word before point.
+
+It used to check the word after point.
+
+* Quitting during autoloading no longer causes trouble.
+
+Now, when a file is autoloaded, all function redefinitions
+and `provide' calls are recorded and are undone if you quit
+before the file is finished loading.
+
+As a result, it no longer happens that some of the entry points
+which are normally autoloading have been defined already, but the
+entire file is not really present to support them.
+
+* `else' can now be indented correctly in C mode.
+
+TAB in C mode now knows which `if' statement an `else' matches
+up with, and can indent the `else' correctly under the `if',
+even if the `if' contained such things as another `if' statement,
+or a `while' or `for' statement, with no braces around it.
+
+* `batch-byte-compile'
+
+Runs byte-compile-file on the files specified on the command line.
+All the rest of the command line arguments are taken as files to
+compile (or, if directories, to do byte-recompile-directory on).
+Must be used only with -batch, and kills emacs on completion.
+Each file will be processed even if an error occurred previously.
+For example, invoke `emacs -batch -f batch-byte-compile *.el'.
+
+* `-batch' changes.
+
+`-batch' now implies `-q': no init file is loaded by Emacs when
+`-batch' is used.  Also, no `term/TERMTYPE.el' file is loaded.  Auto
+saving is not done except in buffers in which it is explicitly
+requested.  Also, many echo-area printouts describing what is going on
+are inhibited in batch mode, so that the only output you get is the
+output you program specifically.
+
+One echo-area message that is not suppressed is the one that says
+that a file is being loaded.  That is because you can prevent this
+message by passing `t' as the third argument to `load'.
+
+* Display of search string in incremental search.
+
+Now, when you type C-s or C-r to reuse the previous search
+string, that search string is displayed immediately in the echo area.
+
+Three dots are displayed after the search string while search
+is actually going on.
+
+* View commands.
+
+The commands C-x ], C-x [, C-x /, C-x j and C-x o are now
+available inside `view-buffer' and `view-file', with their
+normal meanings.
+
+* Full-width windows preferred.
+
+The ``other-window'' commands prefer other full width windows,
+and will split only full width windows.
+
+* M-x rename-file can copy if necessary.
+
+When used between different file systems, since actual renaming does
+not work, the old file will be copied and deleted.
+
+* Within C-x ESC, you can pick the command to repeat.
+
+While editing a previous command to be repeated, inside C-x ESC,
+you can now use the commands M-p and M-n to pick an earlier or
+later command to repeat.  M-n picks the next earlier command
+and M-p picks the next later one.  The new command appears in
+the minibuffer, and you can go ahead and edit it, and repeat it
+when you exit the minibuffer.
+
+Using M-n or M-p within C-x ESC is like having used a different
+numeric argument when you ran C-x ESC in the first place.
+
+The command you finally execute using C-x ESC is added to the
+front of the command history, unless it is identical with the
+first thing in the command history.
+
+* Use C-c C-c to exit from editing within Info.
+
+It used to be C-z for this.  Somehow this use of C-z was
+left out when all the others were moved.  The intention is that
+C-z should always suspend Emacs.
+
+* Default arg to C-x < and C-x > now window width minus 2.
+
+These commands, which scroll the current window horizontally
+by a specified number of columns, now scroll a considerable
+distance rather than a single column if used with no argument.
+
+* Auto Save Files Deleted.
+
+The default value of `delete-auto-save-files' is now `t', so that
+when you save a file for real, its auto save file is deleted.
+
+* Rnews changes.
+
+The N, P and J keys in Rnews are renamed to M-n, M-p and M-j.
+These keys move among newsgroups.
+
+The n and p keys for moving sequentially between news articles now
+accept repeat count arguments, and the + and - keys, made redundant by
+this change, are eliminated.
+
+The s command for outputting the current article to a file
+is renamed as o, to be compatible with Rmail.
+
+* Sendmail changes.
+
+If you have a ~/.mailrc file, Emacs searches it for mailing address
+aliases, and these aliases are expanded when you send mail in Emacs.
+
+Fcc fields can now be used in the headers in the *mail* buffer
+to specify files in which copies of the message should be put.
+The message is written into those files in Unix mail file format.
+The message as sent does not contain any Fcc fields in its header.
+You can use any number of Fcc fields, but only one file name in each one.
+The variable `mail-archive-file-name', if non-`nil', can be a string
+which is a file name; an Fcc to that file will be inserted in every
+message when you begin to compose it.
+
+A new command C-c q now exists in Mail mode.  It fills the
+paragraphs of an old message that had been inserted with C-c y.
+
+When the *mail* buffer is put in Mail mode, text-mode-hook
+is now run in addition to mail-mode-hook.  text-mode-hook
+is run first.
+
+The new variable `mail-header-separator' now specifies the string
+to use on the line that goes between the headers and the message text.
+By default it is still "--text follows this line--".
+
+* Command history truncated automatically.
+
+Just before each garbage collection, all but the last 30 elements
+of the command history are discarded.
+
+Incompatible Lisp Programming Changes in Emacs 17
+
+* `&quote' no longer supported.
+
+This feature, which allowed Lisp functions to take arguments
+that were not evaluated, has been eliminated, because it is
+inescapably hard to make the compiler work properly with such
+functions.
+
+You should use macros instead.  A simple way to change any
+code that uses `&quote' is to replace
+
+   (defun foo (&quote x y z) ...
+
+with
+
+   (defmacro foo (x y z)
+     (list 'foo-1 (list 'quote x) (list 'quote y) (list 'quote z)))
+
+   (defun foo-1 (x y z) ...
+
+* Functions `region-to-string' and `region-around-match' removed.
+
+These functions were made for compatibility with Gosling Emacs, but it
+turns out to be undesirable to use them in GNU Emacs because they use
+the mark.  They have been eliminated from Emacs proper, but are
+present in mlsupport.el for the sake of converted mocklisp programs.
+
+If you were using `region-to-string', you should instead use
+`buffer-substring'; then you can pass the bounds as arguments and
+can avoid setting the mark.
+
+If you were using `region-around-match', you can use instead
+the two functions `match-beginning' and `match-end'.  These give
+you one bound at a time, as a numeric value, without changing
+point or the mark.
+
+* Function `function-type' removed.
+
+This just appeared not to be very useful.  It can easily be written in
+Lisp if you happen to want it.  Just use `symbol-function' to get the
+function definition of a symbol, and look at its data type or its car
+if it is a list.
+
+* Variable `buffer-number' removed.
+
+You can still use the function `buffer-number' to find out
+a buffer's unique number (assigned in order of creation).
+
+* Variable `executing-macro' renamed `executing-kbd-macro'.
+
+This variable is the currently executing keyboard macro, as
+a string, or `nil' when no keyboard macro is being executed.
+
+* Loading term/$TERM.
+
+The library term/$TERM (where $TERM get replaced by your terminal
+type), which is done by Emacs automatically when it starts up, now
+happens after the user's .emacs file is loaded.
+
+In previous versions of Emacs, these files had names of the form
+term-$TERM; thus, for example, term-vt100.el, but now they live
+in a special subdirectory named term, and have names like
+term/vt100.el.
+
+* `command-history' format changed.
+
+The elements of this list are now Lisp expressions which can
+be evaluated directly to repeat a command.
+
+* Unused editing commands removed.
+
+The functions `forward-to-word', `backward-to-word',
+`upcase-char', `mark-beginning-of-buffer' and `mark-end-of-buffer'
+have been removed.  Their definitions can be found in file 
+lisp/unused.el if you need them.
+
+Upward Compatible Lisp Programming Changes in Emacs 17
+
+* You can now continue after errors and quits.
+
+When the debugger is entered because of a C-g, due to
+a non-`nil' value of `debug-on-quit', the `c' command in the debugger
+resumes execution of the code that was running when the quit happened.
+Use the `q' command to go ahead and quit.
+
+The same applies to some kinds of errors, but not all.  Errors
+signaled with the Lisp function `signal' can be continued; the `c'
+command causes `signal' to return.  The `r' command causes `signal' to
+return the value you specify.  The `c' command is equivalent to `r'
+with the value `nil'.
+
+For a `wrong-type-argument' error, the value returned with the `r'
+command is used in place of the invalid argument.  If this new value
+is not valid, another error occurs.
+
+Errors signaled with the function `error' cannot be continued.
+If you try to continue, the error just happens again.
+
+* `dot' renamed `point'.
+
+The word `dot' has been replaced with `point' in all
+function and variable names, including:
+
+  point, point-min, point-max,
+  point-marker, point-min-marker, point-max-marker,
+  window-point, set-window-point,
+  point-to-register, register-to-point,
+  exchange-point-and-mark.
+
+The old names are still supported, for now.
+
+* `string-match' records position of end of match.
+
+After a successful call to `string-match', `(match-end 0)' will
+return the index in the string of the first character after the match.
+Also, `match-begin' and `match-end' with nonzero arguments can be
+used to find the indices of beginnings and ends of substrings matched
+by subpatterns surrounded by parentheses.
+
+* New function `insert-before-markers'.
+
+This function is just like `insert' except in the handling of any
+relocatable markers that are located at the point of insertion.
+With `insert', such markers end up pointing before the inserted text.
+With `insert-before-markers', they end up pointing after the inserted
+text.
+
+* New function `copy-alist'.
+
+This function takes one argument, a list, and makes a disjoint copy
+of the alist structure.  The list itself is copied, and each element
+that is a cons cell is copied, but the cars and cdrs of elements
+remain shared with the original argument.
+
+This is what it takes to get two alists disjoint enough that changes
+in one do not change the result of `assq' on the other.
+
+* New function `copy-keymap'.
+
+This function takes a keymap as argument and returns a new keymap
+containing initially the same bindings.  Rebindings in either one of
+them will not alter the bindings in the other.
+
+* New function `copy-syntax-table'.
+
+This function takes a syntax table as argument and returns a new
+syntax table containing initially the same syntax settings.  Changes
+in either one of them will not alter the other.
+
+* Randomizing the random numbers.
+
+`(random t)' causes the random number generator's seed to be set
+based on the current time and Emacs's process id.
+
+* Third argument to `modify-syntax-entry'.
+
+The optional third argument to `modify-syntax-entry', if specified
+should be a syntax table.  The modification is made in that syntax table
+rather than in the current syntax table.
+
+* New function `run-hooks'.
+
+This function takes any number of symbols as arguments.
+It processes the symbols in order.  For each symbol which
+has a value (as a variable) that is non-nil, the value is
+called as a function, with no arguments.
+
+This is useful in major mode commands.
+
+* Second arg to `switch-to-buffer'.
+
+If this function is given a non-`nil' second argument, then the
+selection being done is not recorded on the selection history.
+The buffer's position in the history remains unchanged.  This
+feature is used by the view commands, so that the selection history
+after exiting from viewing is the same as it was before.
+
+* Second arg to `display-buffer' and `pop-to-buffer'.
+
+These two functions both accept an optional second argument which
+defaults to `nil'.  If the argument is not `nil', it means that
+another window (not the selected one) must be found or created to
+display the specified buffer in, even if it is already shown in
+the selected window.
+
+This feature is used by `switch-to-buffer-other-window'.
+
+* New variable `completion-ignore-case'.
+
+If this variable is non-`nil', completion allows strings
+in different cases to be considered matching.  The global value
+is `nil'
+
+This variable exists for the sake of commands that are completing
+an argument in which case is not significant.  It is possible
+to change the value globally, but you might not like the consequences
+in the many situations (buffer names, command names, file names)
+where case makes a difference.
+
+* Major modes related to Text mode call text-mode-hook, then their own hooks.
+
+For example, turning on Outline mode first calls the value of
+`text-mode-hook' as a function, if it exists and is non-`nil',
+and then does likewise for the variable `outline-mode-hook'.
+
+* Defining new command line switches.
+
+You can define a new command line switch in your .emacs file
+by putting elements on the value of `command-switch-alist'.
+Each element of this list should look like
+      (SWITCHSTRING . FUNCTION)
+where SWITCHSTRING is a string containing the switch to be
+defined, such as "-foo", and FUNCTION is a function to be called
+if such an argument is found in the command line.  FUNCTION
+receives the command line argument, a string, as its argument.
+
+To implement a switch that uses up one or more following arguments,
+use the fact that the remaining command line arguments are kept
+as a list in the variable `command-line-args'.  FUNCTION can
+examine this variable, and do
+    (setq command-line-args (cdr command-line-args)
+to "use up" an argument.
+
+* New variable `load-in-progress'.
+
+This variable is non-`nil' when a file of Lisp code is being read
+and executed by `load'.
+
+* New variable `print-length'.
+
+The value of this variable is normally `nil'.  It may instead be
+a number; in that case, when a list is printed by `prin1' or
+`princ' only that many initial elements are printed; the rest are
+replaced by `...'.
+
+* New variable `find-file-not-found-hook'.
+
+If `find-file' or any of its variants is used on a nonexistent file,
+the value of `find-file-not-found-hook' is called (if it is not `nil')
+with no arguments, after creating an empty buffer.  The file's name
+can be found as the value of `buffer-file-name'.
+
+* Processes without buffers.
+
+In the function `start-process', you can now specify `nil' as
+the process's buffer.  You can also set a process's buffer to `nil'
+using `set-process-buffer'.
+
+The reason you might want to do this is to prevent the process
+from being killed because any particular buffer is killed.
+When a process has a buffer, killing that buffer kills the
+process too.
+
+When a process has no buffer, its output is lost unless it has a
+filter, and no indication of its being stopped or killed is given
+unless it has a sentinel.
+
+* New function `user-variable-p'.  `v' arg prompting changed.
+
+This function takes a symbol as argument and returns `t' if
+the symbol is defined as a user option variable.  This means
+that it has a `variable-documentation' property whose value is
+a string starting with `*'.
+
+Code `v' in an interactive arg reading string now accepts
+user variables only, and completion is limited to the space of
+user variables.
+
+The function `read-variable' also now accepts and completes
+over user variables only.
+
+* CBREAK mode input is the default in Unix 4.3 bsd.
+
+In Berkeley 4.3 Unix, there are sufficient features for Emacs to
+work fully correctly using CBREAK mode and not using SIGIO.
+Therefore, this mode is the default when running under 4.3.
+This mode corresponds to `nil' as the first argument to
+`set-input-mode'.  You can still select either mode by calling
+that function.
+
+* Information on memory usage.
+
+The new variable `data-bytes-used' contains the number
+of bytes of impure space allocated in Emacs.
+`data-bytes-free' contains the number of additional bytes
+Emacs could allocate.  Note that space formerly allocated
+and freed again still counts as `used', since it is still
+in Emacs's address space.
+
+* No limit on size of output from `format'.
+
+The string output from `format' used to be truncated to
+100 characters in length.  Now it can have any length.
+
+* New errors `void-variable' and `void-function' replace `void-symbol'.
+
+This change makes it possible to have error messages that
+clearly distinguish undefined variables from undefined functions.
+It also allows `condition-case' to handle one case without the other.
+
+* `replace-match' handling of `\'.
+
+In `replace-match', when the replacement is not literal,
+`\' in the replacement string is always treated as an
+escape marker.  The only two special `\' constructs
+are `\&' and `\DIGIT', so `\' followed by anything other than
+`&' or a digit has no effect.  `\\' is necessary to include
+a `\' in the replacement text.
+
+This level of escaping is comparable with what goes on in
+a regular expression.  It is over and above the level of `\'
+escaping that goes on when strings are read in Lisp syntax.
+
+* New error `invalid-regexp'.
+
+A regexp search signals this type of error if the argument does
+not meet the rules for regexp syntax.
+
+* `kill-emacs' with argument.
+
+If the argument is a number, it is returned as the exit status code
+of the Emacs process.  If the argument is a string, its contents
+are stuffed as pending terminal input, to be read by another program
+after Emacs is dead.
+
+* New fifth argument to `subst-char-in-region'.
+
+This argument is optional and defaults to `nil'.  If it is not `nil',
+then the substitutions made by this function are not recorded
+in the Undo mechanism.
+
+This feature should be used with great care.  It is now used
+by Outline mode to make lines visible or invisible.
+
+* ` *Backtrace*' buffer renamed to `*Backtrace*'.
+
+As a result, you can now reselect this buffer easily if you switch to
+another while in the debugger.
+
+Exiting from the debugger kills the `*Backtrace*' buffer, so you will
+not try to give commands in it when no longer really in the debugger.
+
+* New function `switch-to-buffer-other-window'.
+
+This is the new primitive to select a specified buffer (the
+argument)  in another window.  It is not quite the same as
+`pop-to-buffer', because it is guaranteed to create another
+window (assuming there is room on the screen) so that it can
+leave the current window's old buffer displayed as well.
+
+All functions to select a buffer in another window should
+do so by calling this new function.
+
+* New variable `minibuffer-help-form'.
+
+At entry to the minibuffer, the variable `help-form' is bound
+to the value of `minibuffer-help-form'.
+
+`help-form' is expected at all times to contain either `nil'
+or an expression to be executed when C-h is typed (overriding
+teh definition of C-h as a command).  `minibuffer-help-form'
+can be used to provide a different default way of handling
+C-h while in the minibuffer.
+
+* New \{...} documentation construct.
+
+It is now possible to set up the documentation string for
+a major mode in such a way that it always describes the contents
+of the major mode's keymap, as it has been customized.
+To do this, include in the documentation string the characters `\{'
+followed by the name of the variable containing the keymap,
+terminated with `}'.  (The `\' at the beginning probably needs to
+be quoted with a second `\', to include it in the doc string.)
+This construct is normally used on a line by itself, with no blank
+lines before or after.
+
+For example, the documentation string for the function `c-mode' contains
+    ...
+    Paragraphs are separated by blank lines only.
+    Delete converts tabs to spaces as it moves back.
+    \\{c-mode-map}
+    Variables controlling indentation style:
+    ...
+
+* New character syntax class "punctuation".
+
+Punctuation characters behave like whitespace in word and
+list parsing, but can be distinguished in regexps and in the
+function `char-syntax'.  Punctuation syntax is represented by
+a period in `modify-syntax-entry'.
+
+* `auto-mode-alist' no longer needs entries for backup-file names,
+
+Backup suffixes of all kinds are now stripped from a file's name
+before searching `auto-mode-alist'.
+
+Changes in Emacs 16
+
+* No special code for Ambassadors, VT-100's and Concept-100's.
+
+Emacs now controls these terminals based on the termcap entry, like
+all other terminals.  Formerly it did not refer to the termcap entries
+for those terminal types, and often the termcap entries for those
+terminals are wrong or inadequate.  If you experience worse behavior
+on these terminals than in version 15, you can probably correct it by
+fixing up the termcap entry.  See ./TERMS for more info.
+
+See ./TERMS in any case if you find that some terminal does not work
+right with Emacs now.
+
+* Minibuffer default completion character is TAB (and not ESC).
+
+So that ESC can be used in minibuffer for more useful prefix commands.
+
+* C-z suspends Emacs in all modes.
+
+Formerly, C-z was redefined for other purposes by certain modes,
+such as Buffer Menu mode.  Now other keys are used for those purposes,
+to keep the meaning of C-z uniform.
+
+* C-x ESC (repeat-complex-command) allows editing the command it repeats.
+
+Instead of asking for confirmation to re-execute a command from the
+command history, the command is placed, in its Lisp form, into the
+minibuffer for editing.  You can confirm by typing RETURN, change some
+arguments and then confirm, or abort with C-g.
+
+* Incremental search does less redisplay on slow terminals.
+
+If the terminal baud rate is <= the value of `isearch-slow-speed',
+incremental searching outside the text on the screen creates
+a single-line window and uses that to display the line on which
+a match has been found.  Exiting or quitting the search restores
+the previous window configuration and redisplays the window you
+were searching in.
+
+The initial value of `isearch-slow-speed' is 1200.
+
+This feature is courtesy of crl@purdue.
+
+* Recursive minibuffers not allowed.
+
+If the minibuffer window is selected, most commands that would
+use the minibuffer gets an error instead.  (Specific commands
+may override this feature and therefore still be allowed.)
+
+Strictly speaking, recursive entry to the minibuffer is still
+possible, because you can switch to another window after
+entering the minibuffer, and then minibuffer-using commands
+are allowed.  This is still allowed by a deliberate decision:
+if you know enough to switch windows while in the minibuffer,
+you can probably understand recursive minibuffers.
+
+This may be overridden by binding the variable
+`enable-recursive-minibuffers' to t.
+
+* New major mode Emacs-Lisp mode, for editing Lisp code to run in Emacs.
+
+The mode in which emacs lisp files is edited is now called emacs-lisp-mode
+and is distinct from lisp-mode.  The latter is intended for use with
+lisps external to emacs.
+
+The hook which is funcalled (if non-nil) on entry to elisp-mode is now
+called emacs-lisp-mode-hook.  A consequence of this changes is that
+.emacs init files which set the value of lisp-mode-hook may need to be
+changed to use the new names.
+
+* Correct matching of parentheses is checked on insertion.
+
+When you insert a close-paren, the matching open-paren
+is checked for validity.  The close paren must be the kind
+of close-paren that the open-paren says it should match.
+Otherwise, a warning message is printed.  close-paren immediately
+preceded by quoting backslash syntax character is not matched. 
+
+This feature was originally written by shane@mit-ajax.
+
+* M-x list-command-history
+* M-x command-history-mode
+* M-x electric-command-history
+
+`list-command-history' displays forms from the command history subject
+to user controlled filtering and limit on number of forms.  It leaves
+the buffer in `command-history-mode'.  M-x command-history-mode
+recomputes the command history each time it is invoked via
+`list-command-history'.  It is like Emacs-Lisp mode except that characters
+don't insert themselves and provision is made for re-evaluating an
+expression from the list.  `electric-command-history' pops up a type
+out window with the command history displayed.  If the very next
+character is Space, the window goes away and the previous window
+configuration is restored.  Otherwise you can move around in the
+history and select an expression for evaluation *inside* the buffer
+which invoked `electric-command-history'.  The original window
+configuration is restored on exit unless the command selected changes
+it.
+
+* M-x edit-picture
+
+Enters a temporary major mode (the previous major mode is remembered
+and can is restored on exit) designed for editing pictures and tables.
+Printing characters replace rather than insert themselves with motion
+afterwards that is user controlled (you can specify any of the 8
+compass directions).  Special commands for movement are provided.
+Special commands for hacking tabs and tab stops are provided.  Special
+commands for killing rectangles and overlaying them are provided.  See
+the documentation of function  edit-picture  for more details.
+
+Calls value of `edit-picture-hook' on entry if non-nil.
+
+* Stupid C-s/C-q `flow control' supported.
+
+Do (set-input-mode nil t) to tell Emacs to use CBREAK mode and interpret
+C-s and C-q as flow control commands.  (set-input-mode t nil) switches
+back to interrupt-driven input.  (set-input-mode nil nil) uses CBREAK
+mode but no `flow control'; this may make it easier to run Emacs under
+certain debuggers that have trouble dealing with inferiors that use SIGIO.
+
+CBREAK mode has certain inherent disadvantages, which are why it is
+not the default:
+
+     Meta-keys are ignored; CBREAK mode discards the 8th bit of
+     input characters.
+
+     Control-G as keyboard input discards buffered output,
+     and therefore can cause incorrect screen updating.
+
+The use of `flow control' has its own additional disadvantage: the
+characters C-s and C-q are not available as editing commands.  You can
+partially compensate for this by setting up a keyboard-translate-table
+(see file ONEWS) that maps two other characters (such as C-^ and C-\) into
+C-s and C-q.  Of course, C-^ and C-\ are commonly used as escape
+characters in remote-terminal programs.  You really can't win except
+by getting rid of this sort of `flow control.'
+
+The configuration switch CBREAK_INPUT is now eliminated.
+INTERRUPT_INPUT exists only to specify the default mode of operation;
+#define it to make interrupt-driven input the default.
+
+* Completion of directory names provides a slash.
+
+If file name completion yields the name of a directory,
+a slash is appended to it.
+
+* Undo can clear modified-flag.
+
+If you undo changes in a buffer back to a state in which the
+buffer was not considered "modified", then it is labelled as
+once again "unmodified".
+
+* M-x run-lisp.
+
+This command creates an inferior Lisp process whose input and output
+appear in the Emacs buffer named `*lisp*'.  That buffer uses a major mode
+called inferior-lisp-mode, which has many of the commands of lisp-mode
+and those of shell-mode.   Calls the value of shell-mode-hook and
+lisp-mode-hook, in that order, if non-nil.
+
+Meanwhile, in lisp-mode, the command C-M-x is defined to
+send the current defun as input to the `*lisp*' subprocess.
+
+* Mode line says `Narrow' when buffer is clipped.
+
+If a buffer has a clipping restriction (made by `narrow-to-region')
+then its mode line contains the word `Narrow' after the major and
+minor modes.
+
+* Mode line says `Abbrev' when abbrev mode is on.
+
+* add-change-log-entry takes prefix argument
+
+Giving a prefix argument makes it prompt for login name, full name,
+and site name, with defaults.  Otherwise the defaults are used
+with no confirmation.
+
+* M-x view-buffer and M-x view-file
+
+view-buffer selects the named buffer, view-file finds the named file; the
+resulting buffer is placed into view-mode (a recursive edit).  The normal
+emacs commands are not available.  Instead a set of special commands is
+provided which faclitate moving around in the buffer, searching and
+scrolling by screenfuls.  Exiting view-mode returns to the buffer in which
+the view-file or view-buffer command was given.
+Type ? or h when viewing for a complete list of view commands.
+Each calls value of `view-hook' if non-nil on entry.
+
+written by shane@mit-ajax.
+
+* New key commands in dired.
+
+`v' views (like more) the file on the current line.
+`#' marks auto-save files for deletion.
+`~' marks backup files for deletion.
+`r' renames a file and updates the directory listing if the
+file is renamed to same directory.
+`c' copies a file and updates the directory listing if the file is
+copied to the same directory.
+
+* New function `electric-buffer-list'.
+
+This pops up a buffer describing the set of emacs buffers.
+Immediately typing space makes the buffer list go away and returns
+to the buffer and window which were previously selected.
+
+Otherwise one may use the c-p and c-n commands to move around in the
+buffer-list buffer and type Space or C-z to select the buffer on the
+cursor's line.  There are a number of other commands which are the same
+as those of buffer-menu-mode.
+
+This is a useful thing to bind to c-x c-b in your `.emacs' file if the
+rather non-standard `electric' behaviour of the buffer list suits your taste.
+Type C-h after invoking electric-buffer-list for more information.
+
+Calls value of `electric-buffer-menu-mode-hook' if non-nil on entry.
+Calls value of `after-electric-buffer-menu' on exit (select) if non-nil.
+
+Changes in version 16 for mail reading and sending
+
+* sendmail prefix character is C-c (and not C-z).  New command C-c w.
+
+For instance C-c C-c (or C-c C-s) sends mail now rather than C-z C-z.
+C-c w inserts your `signature' (contents of ~/.signature) at the end
+of mail.
+
+* New feature in C-c y command in sending mail.
+
+C-c y is the command to insert the message being replied to.
+Normally it deletes most header fields and indents everything
+by three spaces.
+
+Now, C-c y does not delete header fields or indent.
+C-c y with any other numeric argument does delete most header
+fields, but indents by the amount specified in the argument.
+
+* C-r command in Rmail edits current message.
+
+It does this by switching to a different major mode
+which is nearly the same as Text mode.  The only difference
+between it and text mode are the two command C-c and C-].
+C-c is defined to switch back to Rmail mode, and C-]
+is defined to restore the original contents of the message
+and then switch back to Rmail mode.
+
+C-c and C-] are the only ways "back into Rmail", but you
+can switch to other buffers and edit them as usual.
+C-r in Rmail changes only the handling of the Rmail buffer.
+
+* Rmail command `t' toggles header display.
+
+Normally Rmail reformats messages to hide most header fields.
+`t' switches to display of all the header fields of the
+current message, as long as it remains current.
+Another `t' switches back to the usual display.
+
+* Rmail command '>' goes to the last message.
+
+* Rmail commands `a' and `k' set message attributes.
+`a' adds an attribute and `k' removes one.  You specify
+the attrbute by name.  You can specify either a built-in
+flag such as "deleted" or "filed", or a user-defined keyword
+(anything not recognized as built-in).
+
+* Rmail commands `l' and `L' summarize by attributes.
+
+These commands create a summary with one line per message,
+like `h', but they list only some of the messages.  You
+specify which attribute (for `l') or attributes (for `L')
+the messages should have.
+
+* Rmail can parse mmdf mail files.
+
+* Interface to MH mail system.
+
+mh-e is a front end for GNU emacs and the MH mail system.  It
+provides a friendly and convient interface to the MH commands.
+
+To read mail, invoke mh-rmail.  This will inc new mail and display the
+scan listing on the screen.  To see a summary of the mh-e commands,
+type ?.  Help is available through the usual facilities.
+
+To send mail, invoke mh-smail.
+
+mh-e requires a copy of MH.5 that has been compiled with the MHE
+compiler switch.
+
+From larus@berkeley.
+
+New hooks and parameters in version 16
+
+* New variable `blink-matching-paren-distance'.
+
+This is the maximum number of characters to search for
+an open-paren to match an inserted close-paren.
+The matching open-paren is shown and checked if it is found
+within this distance.
+
+`nil' means search all the way to the beginning of the buffer.
+In this case, a warning message is printed if no matching
+open-paren is found.
+
+This feature was originally written by shane@mit-ajax.
+
+* New variable `find-file-run-dired'
+
+If nil, find-file will report an error if an attempt to visit a
+directory is detected; otherwise, it runs dired on that directory.
+The default is t.
+
+* Variable `dired-listing-switches' holds switches given to `ls' by dired.
+
+The value should be a string containing `-' followed by letters.
+The letter `l' had better be included and letter 'F' had better be excluded!
+The default is "-al".
+
+This feature was originally written by shane@mit-ajax.
+
+* New variable `display-time-day-and-date'.
+
+If this variable is set non-`nil', the function M-x display-time
+displays the day and date, as well as the time.
+
+* New parameter `c-continued-statement-indent'.
+
+This controls the extra indentation given to a line
+that continues a C statement started on the previous line.
+By default it is 2, which is why you would see
+
+	if (foo)
+	  bar ();
+
+
+* Changed meaning of `c-indent-level'.
+
+The value of `c-brace-offset' used to be
+subtracted from the value of `c-indent-level' whenever
+that value was used.  Now it is not.
+
+As a result, `c-indent-level' is now the offset of
+statements within a block, relative to the line containing
+the open-brace that starts the block.
+
+* turn-on-auto-fill is useful value for text-mode-hook.
+
+(setq text-mode-hook 'turn-on-auto-fill)
+is all you have to do to make sure Auto Fill mode is turned
+on whenever you enter Text mode.
+
+* Parameter explicit-shell-file-name for M-x shell.
+
+This variable, if non-nil, specifies the file name to use
+for the shell to run if you do M-x shell.
+
+Changes in version 16 affecting Lisp programming:
+
+* Documentation strings adapt to customization.
+
+Often the documentation string for a command wants to mention
+another command.  Simply stating the other command as a
+character sequence has a disadvantage: if the user customizes
+Emacs by moving that function to a different command, the
+cross reference in the documentation becomes wrong.
+
+A new feature allows you to write the documentation string
+using a function name, and the command to run that function
+is looked up when the documentation is printed.
+
+If a documentation string contains `\[' (two characters) then
+the following text, up to the next `]', is taken as a function name.
+Instead of printing that function name, the command that runs it is printed.
+(M-x is used to construct a command if no shorter one exists.)
+
+For example, instead of putting `C-n' in a documentation string
+to refer to the C-n command, put in `\[next-line]'.  (In practice
+you will need to quote the backslash with another backslash,
+due to the syntax for strings in Lisp and C.)
+
+To include the literal characters `\[' in a documentation string,
+precede them with `\='.  To include the characters `\=', precede
+them with `\='.  For example, "\\=\\= is the way to quote \\=\\["
+will come out as `\= is the way to quote \['.
+
+The new function `substitute-command-keys' takes a string possibly
+contaning \[...] constructs and replaces those constructs with
+the key sequences they currently stand for.
+
+* Primitives `find-line-comment' and `find-line-comment-body' flushed.
+
+Search for the value of `comment-start-skip' if you want to find
+whether and where a line has a comment.
+
+* New function `auto-save-file-name-p'
+
+Should return non-`nil' iff given a string which is the name of an
+auto-save file (sans directory name).  If you redefine
+`make-auto-save-file-name', you should redefine this accordingly.  By
+default, this function returns `t' for filenames beginning with
+character `#'.
+
+* The value of `exec-directory' now ends in a slash.
+
+This is to be compatible with most directory names in GNU Emacs.
+
+* Dribble files and termscript files.
+
+(open-dribble-file FILE) opens a dribble file named FILE.  When a
+dribble file is open, every character Emacs reads from the terminal is
+written to the dribble file.
+
+(open-termscript FILE) opens a termscript file named FILE.  When a
+termscript file is open, all characters sent to the terminal by Emacs
+are also written in the termscript file.
+
+The two of these together are very useful for debugging Emacs problems
+in redisplay.
+
+* Upper case command characters by default are same as lower case.
+
+If a character in a command is an upper case letter, and is not defined,
+Emacs uses the definition of the corresponding lower case letter.
+For example, if C-x U is not directly undefined, it is treated as
+a synonym for C-x u (undo).
+
+* Undefined function errors versus undefined variable errors.
+
+Void-symbol errors now say "boundp" if the symbol's value was void
+or "fboundp" if the function definition was void.
+
+* New function `bury-buffer'.
+
+The new function `bury-buffer' takes one argument, a buffer object,
+and puts that buffer at the end of the internal list of buffers.
+So it is the least preferred candidate for use as the default value
+of C-x b, or for other-buffer to return.
+
+* Already-displayed buffers have low priority for display.
+
+When a buffer is chosen automatically for display, or to be the
+default in C-x b, buffers already displayed in windows have lower
+priority than buffers not currently visible.
+
+* `set-window-start' accepts a third argument NOFORCE.
+
+This argument, if non-nil, prevents the window's force_start flag
+from being set.  Setting the force_start flag causes the next
+redisplay to insist on starting display at the specified starting
+point, even if dot must be moved to get it onto the screen.
+
+* New function `send-string-to-terminal'.
+
+This function takes one argument, a string, and outputs its contents
+to the terminal exactly as specified: control characters, escape
+sequences, and all.
+
+* Keypad put in command mode.
+
+The terminal's keypad is now put into command mode, as opposed to
+numeric mode, while Emacs is running.  This is done by means of the
+termcap `ks' and `ke' strings.
+
+* New function `generate-new-buffer'
+
+This function takes a string as an argument NAME and looks for a
+creates and returns a buffer called NAME if one did not already exist.
+Otherwise, it successively tries appending suffixes of the form "<1>",
+"<2>" etc to NAME until it creates a string which does not name an
+existing buffer.  A new buffer with that name is the created and returned.
+
+* New function `prin1-to-string'
+This function takes one argument, a lisp object, and returns a string
+containing that object's printed representation, such as `prin1'
+would output.
+
+* New function `read-from-minibuffer'
+Lets you supply a prompt, initial-contents, a keymap, and specify
+whether the result should be interpreted as a string or a lisp object.
+
+Old functions `read-minibuffer', `eval-minibuffer', `read-string' all
+take second optional string argument which is initial contents of
+minibuffer. 
+
+* minibuffer variable names changed (names of keymaps)
+
+minibuf-local-map -> minibuffer-local-map
+minibuf-local-ns-map -> minibuffer-local-ns-map
+minibuf-local-completion-map -> minibuffer-local-completion-map
+minibuf-local-must-match-map -> minibuffer-local-must-match-map
+
+Changes in version 16 affecting configuring and building Emacs
+
+* Configuration switch VT100_INVERSE eliminated.
+
+You can control the use of inverse video on any terminal by setting
+the variable `inverse-video', or by changing the termcap entry.  If
+you like, set `inverse-video' in your `.emacs' file based on
+examination of (getenv "TERM").
+
+* New switch `-batch' makes Emacs run noninteractively.
+
+If the switch `-batch' is used, Emacs treats its standard output
+and input like ordinary files (even if they are a terminal).
+It does not display buffers or windows; the only output to standard output
+is what would appear as messages in the echo area, and each
+message is followed by a newline.
+
+The terminal modes are not changed, so that C-z and C-c retain
+their normal Unix meanings.  Emacs does still read commands from
+the terminal, but the idea of `-batch' is that you use it with
+other command line arguments that tell Emacs a complete task to perform,
+including killing itself.  `-kill' used as the last argument is a good
+way to accomplish this.
+
+The Lisp variable `noninteractive' is now defined, to be `nil'
+except when `-batch' has been specified.
+
+* Emacs can be built with output redirected to a file.
+
+This is because -batch (see above) is now used in building Emacs.
+
+For older news, see the file ONEWS.
+
+----------------------------------------------------------------------
+Copyright information:
+
+Copyright (C) 1985 Richard M. Stallman
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and this permission notice are preserved,
+   thus giving the recipient permission to redistribute in turn.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them.
+
+Local variables:
+mode: text
+end:
