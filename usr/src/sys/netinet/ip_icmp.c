@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.24	82/11/03	*/
+/*	ip_icmp.c	4.25	82/11/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
