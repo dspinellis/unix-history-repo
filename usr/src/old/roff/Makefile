@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 SUBDIR=	nroff troff nroff_term
 FONTS=	fontlist ftB ftBC ftC ftCE ftCI ftCK ftCW ftFD ftG ftGI ftGM \
@@ -13,6 +13,6 @@ FONTS=	fontlist ftB ftBC ftC ftCE ftCI ftCK ftCW ftFD ftG ftGI ftGM \
 beforeinstall:
 	cd ${.CURDIR}/fonts; \
 	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${FONTS} \
-	    ${DESTDIR}/usr/libdata/troff_font
+	    ${DESTDIR}/usr/old/libdata/troff_font
 
 .include <bsd.subdir.mk>
