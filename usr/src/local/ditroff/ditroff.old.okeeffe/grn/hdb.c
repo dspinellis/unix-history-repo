@@ -1,4 +1,4 @@
-/*	hdb.c	1.1	(Berkeley) 83/07/09
+/*	hdb.c	1.2	(Berkeley) 83/07/21
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
