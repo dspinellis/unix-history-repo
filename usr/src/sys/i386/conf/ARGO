@@ -15,6 +15,8 @@ options		MFS
 options		"COMPAT_43"
 options		"TCP_COMPAT_42"
 options		"MAXRAM=0x2000000"	# argo has more than 16MB
+options		DEBUG
+options		"COMCONSOLE=0"
 
 config		vmunix	root on dk0 swap on dk0
 
@@ -26,7 +28,7 @@ controller	fd0	at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
 disk		dk4	at fd0 drive 0
 disk		dk5	at fd0 drive 1
 
-device		cn0	at isa? port "IO_KBD" tty irq 1 vector cnrint
+device		pc0	at isa? port "IO_KBD" tty irq 1 vector pcrint
 device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
 device		com0	at isa? port "IO_COM1" tty irq 4 vector comintr
 device		com1	at isa? port "IO_COM2" tty irq 3 vector comintr
@@ -37,7 +39,7 @@ pseudo-device	loop
 pseudo-device	pty
 pseudo-device	ether
 pseudo-device	sl	2
-pseudo-device	log	4
+pseudo-device	log
 
 pseudo-device	swappager
 pseudo-device	vnodepager
