@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.11	84/07/07	*/
+/*	ufs_lookup.c	6.12	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +10,6 @@
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/uio.h"
-#include "../h/nami.h"
 #include "../h/kernel.h"
 
 struct	buf *blkatoff();
@@ -43,8 +42,8 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  * with side effects usable in creating and removing files.
  * This is a very central and rather complicated routine.
  *
- * The func argument gives the routine which returns successive
- * characters of the name to be translated. 
+ * The segflg defines whether the name is to be copied from user
+ * space or kernel space.
  *
  * The flag argument is (LOOKUP, CREATE, DELETE) depending on whether
  * the name is to be (looked up, created, deleted).  If flag has
@@ -56,7 +55,7 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  * and LOCKPARENT is specified, the target may be ".", but the caller
  * must check to insure it does an irele and iput instead of two iputs.
  *
- * The follow argument is 1 when symbolic links are to be followed
+ * The FOLLOW flag is set when symbolic links are to be followed
  * when they occur at the end of the name translation process.
  *
  * Name caching works as follows:
@@ -88,7 +87,7 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  * dirloop:
  *	check accessibility of directory
  * dirloop2:
- *	copy next component of name to u.u_dent
+ *	copy next component of name to ndp->ni_dent
  *	handle degenerate case where name is null string
  *	look for name in cache, if found, then if at end of path
  *	  and deleting or creating, drop it, else to haveino
@@ -111,8 +110,8 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  *	 but unlocked.
  */
 struct inode *
-namei(func, flag, follow)
-	int (*func)(), flag, follow;
+namei(ndp)
+	register struct nameidata *ndp;
 {
 	register char *cp;		/* pointer into pathname argument */
 /* these variables refer to things which must be freed or unlocked */
@@ -132,19 +131,20 @@ namei(func, flag, follow)
 /* */
 	int numdirpasses;		/* strategy for directory search */
 	int endsearch;			/* offset to end directory search */
-	int prevoff;			/* u.u_offset of previous entry */
+	int prevoff;			/* ndp->ni_offset of previous entry */
 	int nlink = 0;			/* number of symbolic links taken */
 	struct inode *pdp;		/* saved dp during symlink work */
-	int i;
+	int error, i;
 	int lockparent;
 	int docache;
 	unsigned hash;			/* value of name hash for entry */
 	union nchash *nhp;		/* cache chain head for entry */
 	int isdotdot;			/* != 0 if current name is ".." */
+	int flag;			/* op ie, LOOKUP, CREATE, or DELETE */
 
-	lockparent = flag & LOCKPARENT;
-	docache = (flag & NOCACHE) ^ NOCACHE;
-	flag &= ~(LOCKPARENT|NOCACHE);
+	lockparent = ndp->ni_nameiop & LOCKPARENT;
+	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
+	flag = ndp->ni_nameiop &~ (LOCKPARENT|NOCACHE|FOLLOW);
 	if (flag == DELETE)
 		docache = 0;
 	/*
@@ -156,19 +156,14 @@ namei(func, flag, follow)
 		nbp = geteblk(MAXPATHLEN);
 	else
 		freenamebuf = nbp->av_forw;
-	for (cp = nbp->b_un.b_addr; *cp = (*func)(); ) {
-		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != DELETE) {
-			u.u_error = EPERM;
-			goto bad;
-		}
-		cp++;
-		if (cp >= nbp->b_un.b_addr + MAXPATHLEN) {
-			u.u_error = ENOENT;
-			goto bad;
-		}
-	}
-	if (u.u_error)
+	if (ndp->ni_segflg == UIO_SYSSPACE)
+		error = copystr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN);
+	else
+		error = copyinstr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN);
+	if (error) {
+		u.u_error = error;
 		goto bad;
+	}
 
 	/*
 	 * Get starting directory.
@@ -184,7 +179,7 @@ namei(func, flag, follow)
 	fs = dp->i_fs;
 	ILOCK(dp);
 	dp->i_count++;
-	u.u_pdir = (struct inode *)0xc0000000;		/* illegal */
+	ndp->ni_pdir = (struct inode *)0xc0000000;		/* illegal */
 
 	/*
 	 * We come to dirloop to search a new directory.
@@ -204,7 +199,7 @@ dirloop:
 
 dirloop2:
 	/*
-	 * Copy next component of name to u.u_dent.
+	 * Copy next component of name to ndp->ni_dent.
 	 */
 	hash = 0;
 	for (i = 0; *cp != 0 && *cp != '/'; cp++) {
@@ -212,20 +207,24 @@ dirloop2:
 			u.u_error = ENOENT;
 			goto bad;
 		}
-		u.u_dent.d_name[i++] = *cp;
+		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != DELETE) {
+			u.u_error = EPERM;
+			goto bad;
+		}
+		ndp->ni_dent.d_name[i++] = *cp;
 		hash += (unsigned char)*cp * i;
 	}
-	u.u_dent.d_namlen = i;
-	u.u_dent.d_name[i] = 0;
+	ndp->ni_dent.d_namlen = i;
+	ndp->ni_dent.d_name[i] = '\0';
 	isdotdot = (i == 2 &&
-		u.u_dent.d_name[0] == '.' && u.u_dent.d_name[1] == '.');
+		ndp->ni_dent.d_name[0] == '.' && ndp->ni_dent.d_name[1] == '.');
 
 	/*
 	 * Check for degenerate name (e.g. / or "")
 	 * which is a way of talking about a directory,
 	 * e.g. like "/." or ".".
 	 */
-	if (u.u_dent.d_name[0] == 0) {
+	if (ndp->ni_dent.d_name[0] == '\0') {
 		if (flag != LOOKUP || lockparent) {
 			u.u_error = EISDIR;
 			goto bad;
@@ -245,7 +244,7 @@ dirloop2:
 	 * holding long names (which would either waste space, or
 	 * add greatly to the complexity).
 	 */
-	if (u.u_dent.d_namlen > NCHNAMLEN) {
+	if (ndp->ni_dent.d_namlen > NCHNAMLEN) {
 		nchstats.ncs_long++;
 		docache = 0;
 	} else {
@@ -254,8 +253,9 @@ dirloop2:
 		    ncp = ncp->nc_forw) {
 			if (ncp->nc_ino == dp->i_number &&
 			    ncp->nc_dev == dp->i_dev &&
-			    ncp->nc_nlen == u.u_dent.d_namlen &&
-			    !bcmp(ncp->nc_name, u.u_dent.d_name, ncp->nc_nlen))
+			    ncp->nc_nlen == ndp->ni_dent.d_namlen &&
+			    !bcmp(ncp->nc_name, ndp->ni_dent.d_name,
+				ncp->nc_nlen))
 				break;
 		}
 
@@ -317,8 +317,8 @@ dirloop2:
 					dp = pdp;
 					nchstats.ncs_falsehits++;
 				} else {
-					u.u_dent.d_ino = dp->i_number;
-					/* u_dent.d_reclen is garbage ... */
+					ndp->ni_dent.d_ino = dp->i_number;
+					/* ni_dent.d_reclen is garbage ... */
 					nchstats.ncs_goodhits++;
 					goto haveino;
 				}
@@ -364,7 +364,7 @@ dirloop2:
 	if (flag == CREATE && *cp == 0) {
 		slotstatus = NONE;
 		slotfreespace = 0;
-		slotneeded = DIRSIZ(&u.u_dent);
+		slotneeded = DIRSIZ(&ndp->ni_dent);
 	}
 	/*
 	 * If this is the same directory that this process
@@ -378,17 +378,17 @@ dirloop2:
 	 */
 	if (flag != LOOKUP || dp->i_number != u.u_ncache.nc_inumber ||
 	    dp->i_dev != u.u_ncache.nc_dev) {
-		u.u_offset = 0;
+		ndp->ni_offset = 0;
 		numdirpasses = 1;
 	} else {
 		if ((dp->i_flag & ICHG) || dp->i_ctime >= u.u_ncache.nc_time) {
 			u.u_ncache.nc_prevoffset &= ~(DIRBLKSIZ - 1);
 			u.u_ncache.nc_time = time.tv_sec;
 		}
-		u.u_offset = u.u_ncache.nc_prevoffset;
-		entryoffsetinblock = blkoff(fs, u.u_offset);
+		ndp->ni_offset = u.u_ncache.nc_prevoffset;
+		entryoffsetinblock = blkoff(fs, ndp->ni_offset);
 		if (entryoffsetinblock != 0) {
-			bp = blkatoff(dp, u.u_offset, (char **)0);
+			bp = blkatoff(dp, ndp->ni_offset, (char **)0);
 			if (bp == 0)
 				goto bad;
 		}
@@ -398,16 +398,16 @@ dirloop2:
 	endsearch = roundup(dp->i_size, DIRBLKSIZ);
 
 searchloop:
-	while (u.u_offset < endsearch) {
+	while (ndp->ni_offset < endsearch) {
 		/*
 		 * If offset is on a block boundary,
 		 * read the next directory block.
 		 * Release previous if it exists.
 		 */
-		if (blkoff(fs, u.u_offset) == 0) {
+		if (blkoff(fs, ndp->ni_offset) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			bp = blkatoff(dp, u.u_offset, (char **)0);
+			bp = blkatoff(dp, ndp->ni_offset, (char **)0);
 			if (bp == 0)
 				goto bad;
 			entryoffsetinblock = 0;
@@ -433,9 +433,9 @@ searchloop:
 		ep = (struct direct *)(bp->b_un.b_addr + entryoffsetinblock);
 		if (ep->d_reclen <= 0 ||
 		    dirchk && dirbadentry(ep, entryoffsetinblock)) {
-			dirbad(dp, "mangled entry");
+			dirbad(dp, ndp->ni_offset, "mangled entry");
 			i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
-			u.u_offset += i;
+			ndp->ni_offset += i;
 			entryoffsetinblock += i;
 			continue;
 		}
@@ -454,17 +454,16 @@ searchloop:
 			if (size > 0) {
 				if (size >= slotneeded) {
 					slotstatus = FOUND;
-					slotoffset = u.u_offset;
+					slotoffset = ndp->ni_offset;
 					slotsize = ep->d_reclen;
 				} else if (slotstatus == NONE) {
 					slotfreespace += size;
 					if (slotoffset == -1)
-						slotoffset = u.u_offset;
+						slotoffset = ndp->ni_offset;
 					if (slotfreespace >= slotneeded) {
 						slotstatus = COMPACT;
-						slotsize =
-						    u.u_offset+ep->d_reclen -
-						      slotoffset;
+						slotsize = ndp->ni_offset +
+						      ep->d_reclen - slotoffset;
 					}
 				}
 			}
@@ -474,12 +473,13 @@ searchloop:
 		 * Check for a name match.
 		 */
 		if (ep->d_ino) {
-			if (ep->d_namlen == u.u_dent.d_namlen &&
-			    !bcmp(u.u_dent.d_name, ep->d_name, ep->d_namlen))
+			if (ep->d_namlen == ndp->ni_dent.d_namlen &&
+			    !bcmp(ndp->ni_dent.d_name, ep->d_name,
+				ep->d_namlen))
 				goto found;
 		}
-		prevoff = u.u_offset;
-		u.u_offset += ep->d_reclen;
+		prevoff = ndp->ni_offset;
+		ndp->ni_offset += ep->d_reclen;
 		entryoffsetinblock += ep->d_reclen;
 	}
 /* notfound: */
@@ -489,7 +489,7 @@ searchloop:
 	 */
 	if (numdirpasses == 2) {
 		numdirpasses--;
-		u.u_offset = 0;
+		ndp->ni_offset = 0;
 		endsearch = u.u_ncache.nc_prevoffset;
 		goto searchloop;
 	}
@@ -508,17 +508,17 @@ searchloop:
 		/*
 		 * Return an indication of where the new directory
 		 * entry should be put.  If we didn't find a slot,
-		 * then set u.u_count to 0 indicating that the
-		 * new slot belongs at the end of the directory.
-		 * If we found a slot, then the new entry can be
-		 * put in the range [u.u_offset..u.u_offset+u.u_count)
+		 * then set ndp->ni_count to 0 indicating that the new
+		 * slot belongs at the end of the directory. If we found
+		 * a slot, then the new entry can be put in the range
+		 * [ndp->ni_offset .. ndp->ni_offset + ndp->ni_count)
 		 */
 		if (slotstatus == NONE) {
-			u.u_offset = roundup(dp->i_size, DIRBLKSIZ);
-			u.u_count = 0;
+			ndp->ni_offset = roundup(dp->i_size, DIRBLKSIZ);
+			ndp->ni_count = 0;
 		} else {
-			u.u_offset = slotoffset;
-			u.u_count = slotsize;
+			ndp->ni_offset = slotoffset;
+			ndp->ni_count = slotsize;
 		}
 		dp->i_flag |= IUPD|ICHG;
 		if (bp)
@@ -531,9 +531,9 @@ searchloop:
 		 * valid if we actually decide to do a direnter().
 		 * We return NULL to indicate that the entry doesn't
 		 * currently exist, leaving a pointer to the (locked)
-		 * directory inode in u.u_pdir.
+		 * directory inode in ndp->ni_pdir.
 		 */
-		u.u_pdir = dp;
+		ndp->ni_pdir = dp;
 		return (NULL);
 	}
 	u.u_error = ENOENT;
@@ -546,7 +546,7 @@ found:
 	 * of this entry.
 	 */
 	if (entryoffsetinblock + DIRSIZ(ep) > dp->i_size) {
-		dirbad(dp, "i_size too small");
+		dirbad(dp, ndp->ni_offset, "i_size too small");
 		dp->i_size = entryoffsetinblock + DIRSIZ(ep);
 		dp->i_flag |= IUPD|ICHG;
 	}
@@ -557,16 +557,16 @@ found:
 	 * in the cache as to where the entry was found.
 	 */
 	if (*cp == '\0' && flag == LOOKUP) {
-		u.u_ncache.nc_prevoffset = u.u_offset;
+		u.u_ncache.nc_prevoffset = ndp->ni_offset;
 		u.u_ncache.nc_inumber = dp->i_number;
 		u.u_ncache.nc_dev = dp->i_dev;
 		u.u_ncache.nc_time = time.tv_sec;
 	}
 	/*
-	 * Save directory entry in u.u_dent,
+	 * Save directory entry in ndp->ni_dent,
 	 * and release directory buffer.
 	 */
-	bcopy((caddr_t)ep, (caddr_t)&u.u_dent, (u_int)DIRSIZ(ep));
+	bcopy((caddr_t)ep, (caddr_t)&ndp->ni_dent, (u_int)DIRSIZ(ep));
 	brelse(bp);
 	bp = NULL;
 
@@ -574,7 +574,7 @@ found:
 	 * If deleting, and at end of pathname, return
 	 * parameters which can be used to remove file.
 	 * If the lockparent flag isn't set, we return only
-	 * the directory (in u.u_pdir), otherwise we go
+	 * the directory (in ndp->ni_pdir), otherwise we go
 	 * on and lock the inode, being careful with ".".
 	 */
 	if (flag == DELETE && *cp == 0) {
@@ -583,24 +583,24 @@ found:
 		 */
 		if (access(dp, IWRITE))
 			goto bad;
-		u.u_pdir = dp;		/* for dirremove() */
+		ndp->ni_pdir = dp;		/* for dirremove() */
 		/*
-		 * Return pointer to current entry in u.u_offset,
+		 * Return pointer to current entry in ndp->ni_offset,
 		 * and distance past previous entry (if there
-		 * is a previous entry in this block) in u.u_count.
-		 * Save directory inode pointer in u.u_pdir for dirremove().
+		 * is a previous entry in this block) in ndp->ni_count.
+		 * Save directory inode pointer in ndp->ni_pdir for dirremove().
 		 */
-		if ((u.u_offset&(DIRBLKSIZ-1)) == 0)
-			u.u_count = 0;
+		if ((ndp->ni_offset&(DIRBLKSIZ-1)) == 0)
+			ndp->ni_count = 0;
 		else
-			u.u_count = u.u_offset - prevoff;
+			ndp->ni_count = ndp->ni_offset - prevoff;
 		if (lockparent) {
-			if (dp->i_number == u.u_dent.d_ino)
+			if (dp->i_number == ndp->ni_dent.d_ino)
 				dp->i_count++;
 			else {
-				dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+				dp = iget(dp->i_dev, fs, ndp->ni_dent.d_ino);
 				if (dp == NULL) {
-					iput(u.u_pdir);
+					iput(ndp->ni_pdir);
 					goto bad;
 				}
 				/*
@@ -609,11 +609,11 @@ found:
 				 * may not delete it (unless he's root). This
 				 * implements append-only directories.
 				 */
-				if ((u.u_pdir->i_mode & ISVTX) &&
+				if ((ndp->ni_pdir->i_mode & ISVTX) &&
 				    u.u_uid != 0 &&
-				    u.u_uid != u.u_pdir->i_uid &&
+				    u.u_uid != ndp->ni_pdir->i_uid &&
 				    dp->i_uid != u.u_uid) {
-					iput(u.u_pdir);
+					iput(ndp->ni_pdir);
 					u.u_error = EPERM;
 					goto bad;
 				}
@@ -631,8 +631,8 @@ found:
 	 */
 	if (isdotdot) {
 		if (dp == u.u_rdir)
-			u.u_dent.d_ino = dp->i_number;
-		else if (u.u_dent.d_ino == ROOTINO &&
+			ndp->ni_dent.d_ino = dp->i_number;
+		else if (ndp->ni_dent.d_ino == ROOTINO &&
 		   dp->i_number == ROOTINO) {
 			for (i = 1; i < NMOUNT; i++)
 			if (mount[i].m_bufp != NULL &&
@@ -657,18 +657,18 @@ found:
 	if ((flag == CREATE && lockparent) && *cp == 0) {
 		if (access(dp, IWRITE))
 			goto bad;
-		u.u_pdir = dp;		/* for dirrewrite() */
+		ndp->ni_pdir = dp;		/* for dirrewrite() */
 		/*
 		 * Careful about locking second inode. 
 		 * This can only occur if the target is ".". 
 		 */
-		if (dp->i_number == u.u_dent.d_ino) {
+		if (dp->i_number == ndp->ni_dent.d_ino) {
 			u.u_error = EISDIR;		/* XXX */
 			goto bad;
 		}
-		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+		dp = iget(dp->i_dev, fs, ndp->ni_dent.d_ino);
 		if (dp == NULL) {
-			iput(u.u_pdir);
+			iput(ndp->ni_pdir);
 			goto bad;
 		}
 		nbp->av_forw = freenamebuf;
@@ -699,13 +699,13 @@ found:
 	pdp = dp;
 	if (isdotdot) {
 		IUNLOCK(pdp);	/* race to get the inode */
-		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+		dp = iget(dp->i_dev, fs, ndp->ni_dent.d_ino);
 		if (dp == NULL)
 			goto bad2;
-	} else if (dp->i_number == u.u_dent.d_ino) {
+	} else if (dp->i_number == ndp->ni_dent.d_ino) {
 		dp->i_count++;	/* we want ourself, ie "." */
 	} else {
-		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+		dp = iget(dp->i_dev, fs, ndp->ni_dent.d_ino);
 		IUNLOCK(pdp);
 		if (dp == NULL)
 			goto bad2;
@@ -743,8 +743,8 @@ found:
 			ncp->nc_dev = pdp->i_dev;	/* & device */
 			ncp->nc_idev = dp->i_dev;	/* our device */
 			ncp->nc_id = dp->i_id;		/* identifier */
-			ncp->nc_nlen = u.u_dent.d_namlen;
-			bcopy(u.u_dent.d_name, ncp->nc_name, ncp->nc_nlen);
+			ncp->nc_nlen = ndp->ni_dent.d_namlen;
+			bcopy(ndp->ni_dent.d_name, ncp->nc_name, ncp->nc_nlen);
 
 				/* link at end of lru chain */
 			ncp->nc_nxt = NULL;
@@ -763,7 +763,8 @@ haveino:
 	/*
 	 * Check for symbolic link
 	 */
-	if ((dp->i_mode & IFMT) == IFLNK && (follow || *cp == '/')) {
+	if ((dp->i_mode & IFMT) == IFLNK &&
+	    ((ndp->ni_nameiop & FOLLOW) || *cp == '/')) {
 		u_int pathlen = strlen(cp) + 1;
 
 		if (dp->i_size + pathlen >= MAXPATHLEN - 1 ||
@@ -808,7 +809,7 @@ haveino:
 	nbp->av_forw = freenamebuf;
 	freenamebuf = nbp;
 	if (lockparent)
-		u.u_pdir = pdp;
+		ndp->ni_pdir = pdp;
 	else
 		irele(pdp);
 	return (dp);
@@ -825,13 +826,14 @@ bad:
 }
 
 
-dirbad(ip, how)
+dirbad(ip, offset, how)
 	struct inode *ip;
+	off_t offset;
 	char *how;
 {
 
 	printf("%s: bad dir ino %d at offset %d: %s\n",
-	    ip->i_fs->fs_fsmnt, ip->i_number, u.u_offset, how);
+	    ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
 }
 
 /*
@@ -854,7 +856,7 @@ dirbadentry(ep, entryoffsetinblock)
 	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
 		return (1);
 	for (i = 0; i < ep->d_namlen; i++)
-		if (ep->d_name[i] == 0)
+		if (ep->d_name[i] == '\0')
 			return (1);
 	return (ep->d_name[i]);
 }
@@ -862,13 +864,14 @@ dirbadentry(ep, entryoffsetinblock)
 /*
  * Write a directory entry after a call to namei, using the parameters
  * which it left in the u. area.  The argument ip is the inode which
- * the new directory entry will refer to.  The u. area field u.u_pdir is
+ * the new directory entry will refer to.  The u. area field ndp->ni_pdir is
  * a pointer to the directory to be written, which was left locked by
- * namei.  Remaining parameters (u.u_offset, u.u_count) indicate
+ * namei.  Remaining parameters (ndp->ni_offset, ndp->ni_count) indicate
  * how the space for the new entry is to be gotten.
  */
-direnter(ip)
+direnter(ip, ndp)
 	struct inode *ip;
+	register struct nameidata *ndp;
 {
 	register struct direct *ep, *nep;
 	struct buf *bp;
@@ -877,28 +880,27 @@ direnter(ip)
 	int newentrysize;
 	char *dirbuf;
 
-	u.u_dent.d_ino = ip->i_number;
-	u.u_segflg = 1;
-	newentrysize = DIRSIZ(&u.u_dent);
-	if (u.u_count == 0) {
+	ndp->ni_dent.d_ino = ip->i_number;
+	newentrysize = DIRSIZ(&ndp->ni_dent);
+	if (ndp->ni_count == 0) {
 		/*
-		 * If u.u_count is 0, then namei could find no space in the
-		 * directory.  In this case u.u_offset will be on a directory
+		 * If ndp->ni_count is 0, then namei could find no space in the
+		 * directory. In this case ndp->ni_offset will be on a directory
 		 * block boundary and we will write the new entry into a fresh
 		 * block.
 		 */
-		if (u.u_offset&(DIRBLKSIZ-1))
+		if (ndp->ni_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
-		u.u_dent.d_reclen = DIRBLKSIZ;
-		error = rdwri(UIO_WRITE, u.u_pdir, (caddr_t)&u.u_dent,
-		    newentrysize, u.u_offset, 1, (int *)0);
-		iput(u.u_pdir);
+		ndp->ni_dent.d_reclen = DIRBLKSIZ;
+		error = rdwri(UIO_WRITE, ndp->ni_pdir, (caddr_t)&ndp->ni_dent,
+		    newentrysize, ndp->ni_offset, 1, (int *)0);
+		iput(ndp->ni_pdir);
 		return (error);
 	}
 
 	/*
-	 * If u.u_count is non-zero, then namei found space for the
-	 * new entry in the range u.u_offset to u.u_offset+u.u_count.
+	 * If ndp->ni_count is non-zero, then namei found space for the new
+	 * entry in the range ndp->ni_offset to ndp->ni_offset + ndp->ni_count.
 	 * in the directory.  To use this space, we may have to compact
 	 * the entries located there, by copying them together towards
 	 * the beginning of the block, leaving the free space in
@@ -910,16 +912,16 @@ direnter(ip)
 	 * This should never push the size past a new multiple of
 	 * DIRBLKSIZE.
 	 */
-	if (u.u_offset + u.u_count > u.u_pdir->i_size)
-		u.u_pdir->i_size = u.u_offset + u.u_count;
+	if (ndp->ni_offset + ndp->ni_count > ndp->ni_pdir->i_size)
+		ndp->ni_pdir->i_size = ndp->ni_offset + ndp->ni_count;
 
 	/*
 	 * Get the block containing the space for the new directory
 	 * entry.  Should return error by result instead of u.u_error.
 	 */
-	bp = blkatoff(u.u_pdir, u.u_offset, (char **)&dirbuf);
+	bp = blkatoff(ndp->ni_pdir, ndp->ni_offset, (char **)&dirbuf);
 	if (bp == 0) {
-		iput(u.u_pdir);
+		iput(ndp->ni_pdir);
 		return (u.u_error);
 	}
 
@@ -927,12 +929,12 @@ direnter(ip)
 	 * Find space for the new entry.  In the simple case, the
 	 * entry at offset base will have the space.  If it does
 	 * not, then namei arranged that compacting the region
-	 * u.u_offset to u.u_offset+u.u_count would yield the space.
+	 * ndp->ni_offset to ndp->ni_offset+ndp->ni_count would yield the space.
 	 */
 	ep = (struct direct *)dirbuf;
 	dsize = DIRSIZ(ep);
 	spacefree = ep->d_reclen - dsize;
-	for (loc = ep->d_reclen; loc < u.u_count; ) {
+	for (loc = ep->d_reclen; loc < ndp->ni_count; ) {
 		nep = (struct direct *)(dirbuf + loc);
 		if (ep->d_ino) {
 			/* trim the existing slot */
@@ -954,26 +956,26 @@ direnter(ip)
 	if (ep->d_ino == 0) {
 		if (spacefree + dsize < newentrysize)
 			panic("wdir: compact1");
-		u.u_dent.d_reclen = spacefree + dsize;
+		ndp->ni_dent.d_reclen = spacefree + dsize;
 	} else {
 		if (spacefree < newentrysize)
 			panic("wdir: compact2");
-		u.u_dent.d_reclen = spacefree;
+		ndp->ni_dent.d_reclen = spacefree;
 		ep->d_reclen = dsize;
 		ep = (struct direct *)((char *)ep + dsize);
 	}
-	bcopy((caddr_t)&u.u_dent, (caddr_t)ep, (u_int)newentrysize);
+	bcopy((caddr_t)&ndp->ni_dent, (caddr_t)ep, (u_int)newentrysize);
 	bwrite(bp);
-	u.u_pdir->i_flag |= IUPD|ICHG;
-	iput(u.u_pdir);
+	ndp->ni_pdir->i_flag |= IUPD|ICHG;
+	iput(ndp->ni_pdir);
 	return (error);
 }
 
 /*
  * Remove a directory entry after a call to namei, using the
  * parameters which it left in the u. area.  The u. entry
- * u_offset contains the offset into the directory of the
- * entry to be eliminated.  The u_count field contains the
+ * ni_offset contains the offset into the directory of the
+ * entry to be eliminated.  The ni_count field contains the
  * size of the previous record in the directory.  If this
  * is 0, the first entry is being deleted, so we need only
  * zero the inode number to mark the entry as free.  If the
@@ -981,27 +983,29 @@ direnter(ip)
  * the space of the now empty record by adding the record size
  * to the size of the previous entry.
  */
-dirremove()
+dirremove(ndp)
+	register struct nameidata *ndp;
 {
-	register struct inode *dp = u.u_pdir;
+	register struct inode *dp = ndp->ni_pdir;
 	register struct buf *bp;
 	struct direct *ep;
 
-	if (u.u_count == 0) {
+	if (ndp->ni_count == 0) {
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
-		u.u_dent.d_ino = 0;
-		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
-		    (int)DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
+		ndp->ni_dent.d_ino = 0;
+		(void) rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
+		    (int)DIRSIZ(&ndp->ni_dent), ndp->ni_offset, 1, (int *)0);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
 		 */
-		bp = blkatoff(dp, (int)(u.u_offset - u.u_count), (char **)&ep);
+		bp = blkatoff(dp, (int)(ndp->ni_offset - ndp->ni_count),
+			(char **)&ep);
 		if (bp == 0)
 			return (0);
-		ep->d_reclen += u.u_dent.d_reclen;
+		ep->d_reclen += ndp->ni_dent.d_reclen;
 		bwrite(bp);
 		dp->i_flag |= IUPD|ICHG;
 	}
@@ -1013,13 +1017,14 @@ dirremove()
  * supplied.  The parameters describing the directory entry are
  * set up by a call to namei.
  */
-dirrewrite(dp, ip)
+dirrewrite(dp, ip, ndp)
 	struct inode *dp, *ip;
+	struct nameidata *ndp;
 {
 
-	u.u_dent.d_ino = ip->i_number;
-	u.u_error = rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
-		(int)DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
+	ndp->ni_dent.d_ino = ip->i_number;
+	u.u_error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
+		(int)DIRSIZ(&ndp->ni_dent), ndp->ni_offset, 1, (int *)0);
 	iput(dp);
 }
 
