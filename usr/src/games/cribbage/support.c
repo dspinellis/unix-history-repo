@@ -83,7 +83,7 @@ char		*s;
 	BOOLEAN			win;
 	static char		prompt[BUFSIZ];
 
-	prhand(hand, CINHAND, Playwin);
+	prhand(hand, CINHAND, Playwin, FALSE);
 	sprintf(prompt, "Your %s scores ", s);
 	i = scorehand(hand, turnover, CINHAND, FALSE, explain);	/* count */
 	if ((j = number(0, 29, prompt)) == 19)
@@ -118,7 +118,7 @@ char		*s;
 	register int		j;
 
 	j = scorehand(h, turnover, CINHAND, FALSE, FALSE);
-	prhand(h, CINHAND, Compwin);
+	prhand(h, CINHAND, Compwin, FALSE);
 	Hasread = FALSE;
 	msg("My %s scores %d", s, (j == 0 ? 19 : j));
 	return chkscr(&cscore, j);

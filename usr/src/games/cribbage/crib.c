@@ -256,7 +256,7 @@ BOOLEAN		mycrib;
 	sorthand(chand, FULLHAND);
 	sorthand(phand, FULLHAND);
 	makeknown(chand, FULLHAND);
-	prhand(phand, FULLHAND, Playwin);
+	prhand(phand, FULLHAND, Playwin, FALSE);
 	discard(mycrib);
 	if (cut(mycrib, deckpos))
 	    return TRUE;
@@ -309,12 +309,12 @@ BOOLEAN		mycrib;
 	cdiscard(mycrib);			/* puts best discard at end */
 	crd = phand[infrom(phand, FULLHAND, prompt)];
 	remove(crd, phand, FULLHAND);
-	prhand(phand, FULLHAND, Playwin);
+	prhand(phand, FULLHAND, Playwin, FALSE);
 	crib[0] = crd;
 /* next four lines same as last four except for cdiscard() */
 	crd = phand[infrom(phand, FULLHAND - 1, prompt)];
 	remove(crd, phand, FULLHAND - 1);
-	prhand(phand, FULLHAND, Playwin);
+	prhand(phand, FULLHAND, Playwin, FALSE);
 	crib[1] = crd;
 	crib[2] = chand[4];
 	crib[3] = chand[5];
@@ -413,7 +413,8 @@ BOOLEAN		mycrib;
 	myturn = !mycrib;
 	for (;;) {
 	    last = TRUE;				/* enable last flag */
-	    prhand(ph, pnum, Playwin);
+	    prhand(ph, pnum, Playwin, FALSE);
+	    prhand(ch, cnum, Compwin, TRUE);
 	    prtable(sum);
 	    if (myturn) {				/* my tyrn to play */
 		if (!anymove(ch, cnum, sum)) {		/* if no card to play */
@@ -487,7 +488,7 @@ BOOLEAN		mycrib;
 		    }
 		    else
 			for (;;) {
-			    prhand(ph, pnum, Playwin);
+			    prhand(ph, pnum, Playwin, FALSE);
 			    crd = ph[infrom(ph, pnum, "Your play: ")];
 			    if (sum + VAL(crd.rank) <= 31)
 				break;
@@ -517,7 +518,8 @@ BOOLEAN		mycrib;
 	    if (!pnum && !cnum)
 		break;					/* both done */
 	}
-	prhand(ph, pnum, Playwin);
+	prhand(ph, pnum, Playwin, FALSE);
+	prhand(ch, cnum, Compwin, TRUE);
 	prtable(sum);
 	if (last)
 	    if (played) {
@@ -541,7 +543,7 @@ BOOLEAN		mycrib;
 prtable(score)
 int	score;
 {
-	prhand(Table, Tcnt, Tablewin);
+	prhand(Table, Tcnt, Tablewin, FALSE);
 	mvwprintw(Tablewin, (Tcnt + 2) * 2, Tcnt + 1, "%2d", score);
 	wrefresh(Tablewin);
 }

@@ -74,12 +74,13 @@ BOOLEAN		brfrank,  brfsuit;
  * printcard:
  *	Print out a card.
  */
-printcard(win, cardno, c)
+printcard(win, cardno, c, blank)
 WINDOW		*win;
 int		cardno;
 CARD		c;
+BOOLEAN		blank;
 {
-	prcard(win, cardno * 2, cardno, c, FALSE);
+	prcard(win, cardno * 2, cardno, c, blank);
 }
 
 /*
@@ -111,16 +112,17 @@ BOOLEAN		blank;
  * prhand:
  *	Print a hand of n cards
  */
-prhand(h, n, win)
+prhand(h, n, win, blank)
 CARD		h[];
 int		n;
 WINDOW		*win;
+BOOLEAN		blank;
 {
 	register int	i;
 
 	werase(win);
 	for (i = 0; i < n; i++)
-	    printcard(win, i, h[i]);
+	    printcard(win, i, *h++, blank);
 	wrefresh(win);
 }
 
