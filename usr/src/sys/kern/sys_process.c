@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.35 (Berkeley) %G%
+ *	@(#)sys_process.c	7.36 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -255,7 +255,7 @@ procxmt(p)
 
 	case PT_KILL:			/* kill the child process */
 		wakeup((caddr_t)&ipc);
-		exit(p, (int)p->p_xstat);
+		exit1(p, (int)p->p_xstat);
 
 	case PT_DETACH:			/* stop tracing the child */
 		regs = (int *)((short *)regs + 1);
