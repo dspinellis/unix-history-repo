@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scanw.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanw.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -14,78 +14,76 @@ static char sccsid[] = "@(#)scanw.c	5.6 (Berkeley) %G%";
  *
  */
 
-# include	"curses.ext"
-# include	"stdarg.h"
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+#include "curses.ext"
 
 /*
  *	This routine implements a scanf on the standard screen.
  */
-scanw(fmt, args)
-char	*fmt;
-int	args; {
+#if __STDC__
+scanw(const char *fmt, ...)
+#else
+scanw(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+	int ret;
 
-	return _sscans(stdscr, fmt, &args);
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	ret = _sscans(stdscr, fmt, ap);
+	va_end(ap);
+	return ret;
 }
 
 /*
  *	This routine implements a scanf on the given window.
  */
-wscanw(win, fmt, args)
-WINDOW	*win;
-char	*fmt;
-int	args; {
+#if __STDC__
+wscanw(WINDOW *win, const char *fmt, ...)
+#else
+wscanw(win, fmt, va_alist)
+	WINDOW *win;
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+	int ret;
 
-	return _sscans(win, fmt, &args);
-}
-
-/*
- *	Internal routine to read from a string, and its data structure.
- */
-struct strinfo {
-	char	*addr;		/* address */
-	int	len;		/* remaining bytes */
-};
-
-static int
-_winread(cookie, buf, n)
-char	*cookie, *buf;
-reg int	n; {
-
-	reg struct strinfo *s = (struct strinfo *)cookie;
-
-	if (n > s->len)
-		n = s->len;
-	bcopy(s->addr, buf, n);
-	s->len -= n;
-	s->addr += n;
-	return n;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	ret = _sscans(win, fmt, ap);
+	va_end(ap);
+	return ret;
 }
 
 /*
  *	This routine actually executes the scanf from the window.
- *	SHOULD IMPLEMENT VSSCANF
+ *	THIS SHOULD BE RENAMED vwscanw AND EXPORTED
  */
-_sscans(win, fmt)
-WINDOW	*win;
-char	*fmt; {
-
+_sscans(win, fmt, ap)
+	WINDOW *win;
+#if __STDC__
+	const char *fmt;
+#else
+	char *fmt;
+#endif
 	va_list ap;
-	int	ret;
-	FILE	*f;
-	struct	strinfo s;
-	char	buf[100];
+{
+	char buf[100];
 
-	if ((f = fropen((char *)&s, _winread)) == NULL)
-		return ERR;
-	if (wgetstr(win, buf) == ERR) {
-		(void) fclose(f);
-		return ERR;
-	}
-	s.addr = buf;
-	s.len = strlen(buf);
-	va_start(ap, fmt);
-	ret = __svfscanf(f, fmt, ap);
-	va_end(ap);
-	(void) fclose(f);
-	return ret;
+	return wgetstr(win, buf) == OK ? vsscanf(buf, fmt, ap) : ERR;
 }

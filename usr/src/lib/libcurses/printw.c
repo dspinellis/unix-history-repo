@@ -6,28 +6,43 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
- * printw and friends
+ * printw and friends.
  *
+ * These routines make nonportable assumptions about varargs if __STDC__
+ * is not in effect.
  */
 
-# include	<varargs.h>
-# include	"curses.ext"
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+#include "curses.ext"
 
 /*
  *	This routine implements a printf on the standard screen.
  */
-printw(va_alist)
-va_dcl {
-
+#if __STDC__
+printw(const char *fmt, ...)
+#else
+printw(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
 	va_list	ap;
 	int	ret;
 
+#if __STDC__
+	va_start(ap, fmt);
+#else
 	va_start(ap);
-	ret = _sprintw(stdscr, ap);
+#endif
+	ret = _sprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -35,16 +50,24 @@ va_dcl {
 /*
  *	This routine implements a printf on the given window.
  */
-wprintw(va_alist)
-va_dcl {
-
+#if __STDC__
+wprintw(WINDOW *win, const char *fmt, ...)
+#else
+wprintw(win, fmt, va_alist)
+	WINDOW *win;
+	char *fmt;
+	va_dcl
+#endif
+{
 	va_list	ap;
-	WINDOW	*win;
 	int	ret;
 
+#ifdef __STDC__
+	va_start(ap, fmt);
+#else
 	va_start(ap);
-	win = va_arg(ap, WINDOW *);
-	ret = _sprintw(win, ap);
+#endif
+	ret = _sprintw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -54,12 +77,12 @@ va_dcl {
  */
 static int
 _winwrite(cookie, buf, n)
-void	*cookie;
-reg char *buf;
-int	n; {
-
-	reg WINDOW *win = (WINDOW *)cookie;
-	reg int c = n;
+	void *cookie;
+	register char *buf;
+	int n;
+{
+	register WINDOW *win = (WINDOW *)cookie;
+	register int c = n;
 
 	while (--c >= 0) {
 		if (waddch(win, *buf++) == ERR)
@@ -71,17 +94,21 @@ int	n; {
 /*
  *	This routine actually executes the printf and adds it to the window.
  *	It must not be declared static as it is used in mvprintw.c.
+ *	THIS SHOULD BE RENAMED vwprintw AND EXPORTED
  */
-_sprintw(win, ap)
-WINDOW	*win;
-va_list	ap; {
-
-	FILE	*f;
-	char	*fmt;
+_sprintw(win, fmt, ap)
+	WINDOW *win;
+#if __STDC__
+	const char *fmt;
+#else
+	char *fmt;
+#endif
+	va_list	ap;
+{
+	FILE *f;
 
 	if ((f = fwopen((void *)win, _winwrite)) == NULL)
 		return ERR;
-	fmt = va_arg(ap, char *);
 	(void) vfprintf(f, fmt, ap);
 	return fclose(f) ? ERR : OK;
 }
