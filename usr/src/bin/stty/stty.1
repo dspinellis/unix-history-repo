@@ -3,10 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	6.9 (Berkeley) %G%
+.\"     @(#)stty.1	6.10 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt STTY 1
 .Os
@@ -15,59 +13,61 @@
 .Nd set the options for a terminal device interface
 .Sh SYNOPSIS
 .Nm stty
-.Op Fl a Ar \&| Fl g
-.Nm stty
-.Op arguments
-.De
+.Op Fl a | Fl e | Fl g
+.Op Fl f Ar file
+.Op operands
 .Sh DESCRIPTION
-The stty utility sets or reports on terminal I/O
+The 
+.Nm stty
+utility sets or reports on terminal
+.Tn I/O
 characteristics for the device that is its standard input.
-Without options or arguments specified, it reports the
-settings of certain characteristics, usually those that differ
-from implementation-defined defaults.
+If no options or operands are specified, it reports the
+settings of certain characteristics if they differ
+from their default values.
 Otherwise it modifies
 the terminal state according to the specified arguments.
 Some combinations of arguments are mutually
 exclusive on some terminal types.
 .Pp
 The following options are available:
-.Tw Ds
-.Tp Fl a
-Write to standard output all the current settings
-for the terminal.
-.Tp Fl g
-Write the current settings to standard output in a
-form that can be used as arguments to
-another stty utility on the same system.
-.Tp
+.Bl -tag -width Ds
+.It Fl a
+Display all the current settings for the terminal to standard output 
+in the
+.St -p1003.2 .
+.It Fl e
+Display all the current settings for the terminal to standard output 
+in the traditional
+.Tn BSD
+``all'' and ``everything'' formats.
+.It Fl f
+Display the current settings for the terminal named by
+.Ar file .
+.It Fl g
+Display all the current settings for the terminal to standard output 
+in a form that may be used as an argument to another invocation of
+.Nm stty .
+.El
 .Pp
 The following arguments are available to set the terminal
 characteristics:
-.Tw Fl
-.Tc Cm parenb
-.Ws
-.Pf \&( Fl parenb )
-.Cx
+.Bl -tag -width Fl
+.It Cm parenb Pq Fl parenb
 Enable (disable) parity generation
 and detection.
-.Tc Cm parodd
-.Ws
-.Pf \&( Fl parodd )
-.Cx
+.It Cm parodd Pq Fl parodd
 Select odd (even) parity.
-.Tp Cm cs5 cs6 cs7 cs8
+.It Cm cs5 cs6 cs7 cs8
 Select character size, if possible.
-.Tp Ar number
+.It Ar number
 Set terminal baud rate to the
 number given, if possible.
 If the
 baud rate is set to zero, modem
 control is no longer
 asserted.
-.Tc Cm ispeed
-.Ws
-.Ar number
-.Cx
+.It Cm ispeed Ar number
 Set terminal input baud rate to the
 number given, if possible.
 If the
@@ -75,178 +75,126 @@ input baud rate is set to zero, the
 input baud rate is set to the
 value of the output baud
 rate.
-.Tc Cm ospeed
-.Ws
-.Ar number
-.Cx
+.It Cm ospeed Ar number
 Set terminal output baud rate to
 the number given, if possible.
 If
 the output baud rate is set to
 zero, modem control is
 no longer asserted.
-.Tc Cm hupcl
-.Ws
-.Pf \&( Fl hupcl )
-.Cx
+.It Cm hupcl Pq Fl hupcl
 Stop asserting modem control
 (do not stop asserting modem control) on last close.
-.Tc Cm hup
-.Ws
-.Pf \&( Fl hup )
-.Cx
+.It Cm hup Pq Fl hup
 Same as hupcl
-.Ws
-.Pf \&( Fl hupcl).
-.Tc Cm cstopb
-.Ws
-.Pf \&( Fl cstopb )
-.Cx
+.Pq Fl hupcl .
+.It Cm cstopb Pq Fl cstopb
 Use two (one) stop bits per character.
-.Tc Cm cread
-.Ws
-.Pf \&( Fl cread )
-.Cx
+.It Cm cread Pq Fl cread
 Enable (disable) the receiver.
-.Tc Cm clocal
-.Ws
-.Pf \&( Fl clocal )
-.Cx
+.It Cm clocal Pq Fl clocal
 Assume a line without (with) modem
 control.
-.Tc Cm ignbrk
-.Ws
-.Pf \&( Fl ignbrk )
-.Cx
+.It Cm ignbrk Pq Fl ignbrk
 Ignore (do not ignore) break on
 input.
-.Tc Cm brkint
-.Ws
-.Pf \&( Fl brkint )
-.Cx
-Signal (do not signal) INTR on
+.It Cm brkint Pq Fl brkint
+Signal (do not signal)
+.Dv INTR
+on
 break.
-.Tc Cm ignpar
-.Ws
-.Pf \&( Fl ignpar )
-.Cx
+.It Cm ignpar Pq Fl ignpar
 Ignore (do not ignore) parity
 errors.
-.Tc Cm parmrk
-.Ws
-.Pf \&( Fl parmrk )
-.Cx
+.It Cm parmrk Pq Fl parmrk
 Mark (do not mark) parity errors.
-.Tc Cm inpck
-.Ws
-.Pf \&( Fl inpck )
-.Cx
+.It Cm inpck Pq Fl inpck
 Enable (disable) input parity
 checking.
-.Tc Cm istrip
-.Ws
-.Pf \&( Fl istrip )
-.Cx
+.It Cm istrip Pq Fl istrip
 Strip (do not strip) input characters
 to seven bits.
-.Tc Cm inlcr
-.Ws
-.Pf \&( Fl inlcr )
-.Cx
-Map (do not map) NL to CR on input.
-.Tc Cm igncr
-.Ws
-.Pf \&( Fl igncr )
-.Cx
-Ignore (do not ignore) CR on input.
-.Tc Cm icrnl
-.Ws
-.Pf \&( Fl icrnl )
-.Cx
-Map (do not map) CR to NL on input.
-.Tc Cm ixon
-.Ws
-.Pf \&( Fl ixon )
-.Cx
-Enable (disable) START/STOP output
+.It Cm inlcr Pq Fl inlcr
+Map (do not map)
+.Dv NL
+to
+.Dv CR
+on input.
+.It Cm igncr Pq Fl igncr
+Ignore (do not ignore)
+.Dv CR
+on input.
+.It Cm icrnl Pq Fl icrnl
+Map (do not map)
+.Dv CR
+to
+.Dv NL
+on input.
+.It Cm ixon Pq Fl ixon
+Enable (disable)
+.Dv START/STOP
+output
 control.
 Output from the system is
 stopped when the system receives
-STOP and started when the system
-receives START.
-.Tc Cm ixoff
-.Ws
-.Pf \&( Fl ixoff )
-.Cx
+.Dv STOP
+and started when the system
+receives
+.Dv START .
+.It Cm ixoff Pq Fl ixoff
 Request that the system send (not
-send) START/STOP characters when
+send)
+.Dv START/STOP
+characters when
 the input queue is nearly
 empty/full.
-.Tc Cm opost
-.Ws
-.Pf \&( Fl opost )
-.Cx
+.It Cm opost Pq Fl opost
 Post-process output (do not
 post-process output; ignore all other
 output modes).
-.Tc Cm isig
-.Ws
-.Pf \&( Fl isig )
-.Cx
+.It Cm isig Pq Fl isig
 Enable (disable) the checking of
 characters against the special control
-characters INTR, QUIT, and
-SUSP.
-.Tc Cm icanon
-.Ws
-.Pf \&( Fl icanon )
-.Cx
+characters
+.Dv INTR , QUIT ,
+and
+.Dv SUSP .
+.It Cm icanon Pq Fl icanon
 Enable (disable) canonical input
-(ERASE and KILL processing).
-.Tc Cm iexten
-.Ws
-.Pf \&( Fl iexten )
-.Cx
+.Pf ( Dv ERASE
+and
+.Dv KILL
+processing).
+.It Cm iexten Pq Fl iexten
 Enable (disable) any implementation
 defined special control characters
 not currently controlled by icanon,
 isig, or ixon.
-.Tc Cm echo
-.Ws
-.Pf \&( Fl echo )
-.Cx
+.It Cm echo Pq Fl echo
 Echo back (do not echo back) every
 character typed.
-.Tc Cm echoe
-.Ws
-.Pf \&( Fl echoe )
-.Cx
-The ERASE character shall (shall
+.It Cm echoe Pq Fl echoe
+The
+.Dv ERASE
+character shall (shall
 not) visually erase the last character
 in the current line from the
 display, if possible.
-.Tc Cm echok
-.Ws
-.Pf \&( Fl echok )
-.Cx
-Echo (do not echo) NL after KILL
+.It Cm echok Pq Fl echok
+Echo (do not echo)
+.Dv NL
+after
+.Dv KILL
 character.
-.Tc Cm echonl
-.Ws
-.Pf \&( Fl echonl )
-.Cx
-Echo (do not echo) NL, even if echo
+.It Cm echonl Pq Fl echonl
+Echo (do not echo)
+.Dv NL ,
+even if echo
 is disabled.
-.Tc Cm noflsh
-.Ws
-.Pf \&( Fl noflsh )
-.Cx
-Disable (enable) flush after INTR,
-QUIT, SUSP.
-.Tc Cm control-character
-.Ws
-.Ar string
-.Cx
+.It Cm noflsh Pq Fl noflsh
+Disable (enable) flush after
+.Dv INTR , QUIT , SUSP .
+.It Cm control-character Ar string
 Set control-character to string.
 If string is a single character,
 the control character is set to
@@ -254,75 +202,72 @@ that character.
 If string is the
 two character sequence "^-" or the
 string "undef" the control character
-is set to {_POSIX_VDISABLE} if
+is set to
+.Pf { Dv _POSIX_VDISABLE Ns }
+if
 it is in effect for the device; if
-{_POSIX_VDISABLE} is not in effect
+.Pf { Dv _POSIX_VDISABLE Ns }
+is not in effect
 for the device, it is an
 error.
 .Pp
 Recognized control-characters:
-.Ds I
-.Cw character Subscript
-.Cl control-	POSIX.1
-.Cl character	Subscript	Description
-.Cl _________	_________	_______________
-.Cl eof	VEOF	EOF character
-.Cl eol	VEOL	EOL character
-.Cl erase	VERASE	ERASE character
-.Cl intr	VINTR	INTR character
-.Cl kill	VKILL	KILL character
-.Cl quit	VQUIT	QUIT character
-.Cl susp	VSUSP	SUSP character
-.Cl start	VSTART	START character
-.Cl stop	VSTOP	STOP character
-.Cw
-.De
-.Tp Cm saved settings
+.Bd -ragged -offset indent
+.Bl -column character Subscript
+.It control- Ta Tn POSIX.1
+.It character	Subscript	Description
+.It _________	_________	_______________
+.It eof Ta Tn VEOF	EOF No character
+.It eol Ta Tn VEOL	EOL No character
+.It erase Ta Tn VERASE	ERASE No character
+.It intr Ta Tn VINTR	INTR No character
+.It kill Ta Tn VKILL	KILL No character
+.It quit Ta Tn VQUIT	QUIT No character
+.It susp Ta Tn VSUSP	SUSP No character
+.It start Ta Tn VSTART	START No character
+.It stop Ta Tn VSTOP	STOP No character
+.El
+.Ed
+.It Cm saved settings
 Set the current terminal
 characteristics to the saved settings
 produced by the
 .Fl g
 option.
-.Tc Cm min
-.Ws
-.Ar number
-.Cx
-.Tc Cm time
-.Ws
-.Ar number
-.Cx
+.It Cm min Ar number
+.It Cm time Ar number
 Set the value of min or time to
 number.
-MIN and TIME are used in
+.Dv MIN
+and
+.Dv TIME
+are used in
 Non-Canonical mode input processing
 (-icanon).
-.Tc Cm evenp
-.Ws
-.Cx or 
-.Ws
-.Cm parity
-.Cx
+.It Cm evenp No or Cm parity
 Enable parenb and cs7; disable
 parodd.
-.Tp Cm oddp
+.It Cm oddp
 Enable parenb, cs7, and parodd.
-.Tp Fl parity , evenp ,  oddp
+.It Fl parity , evenp ,  oddp
 Disable parenb, and set cs8.
-.Tc Cm nl
-.Ws
-.Pf \&( Fl nl )
-.Cx
+.It Cm nl Pq Fl nl
 Enable (disable) icrnl.
 In addition
 -nl unsets inlcr and igncr.
-.Tp Cm ek
-Reset ERASE and KILL characters
+.It Cm ek
+Reset
+.Dv ERASE
+and
+.Dv KILL
+characters
 back to system defaults.
-.Tp Cm sane
+.It Cm sane
 Resets all modes to reasonable values for interactive terminal use.
-.Tp Cm tty
-Set the line discipline to the standard terminal line discipline TTYDISC.
-.Tp
+.It Cm tty
+Set the line discipline to the standard terminal line discipline
+.Dv TTYDISC .
+.El
 .Pp
 If the
 .Fl g
@@ -346,22 +291,21 @@ option is displayed.
 .Pp
 If the terminal input speed and output speed are the same,
 the speed information is displayed as follows:
-.Pp
-.Ds I
+.Bd -ragged -offset indent
 "speed %d baud;", <speed>
-.De
+.Ed
 .Pp
 Otherwise speeds are displayed as:
 .Pp
-.Ds I
+.Bd -ragged -offset indent
 "ispeed %d baud; ospeed %d baud;", <ispeed>, <ospeed>
-.De
+.Ed
 .Pp
 Control characters are displayed as:
 .Pp
-.Ds I
+.Bd -ragged -offset indent
 "%s = %s;", <control-character name>, <value>
-.De
+.Ed
 .Pp
 where value is either the character, or some visual
 representation of the character if it is non-printing, or
@@ -370,15 +314,17 @@ the string "<undef>" if the character is disabled.
 The
 .Nm stty
 utility exits with one of the following values:
-.Tw Ds
-.Tp Li \&0
+.Bl -tag -width indent
+.It Li \&0
 The terminal options were read or set successfully.
-.Tp Li \&>0
+.It Li \&>0
 An error occurred.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr stty 4
 .Sh STANDARDS
 The
 .Nm stty
-function is expected to be POSIX 1003.2 compatible.
+function is expected to be
+.St -p1003.2
+compatible.
