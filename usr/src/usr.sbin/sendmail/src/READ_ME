@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.85 (Berkeley) %G%
+#	@(#)READ_ME	8.86 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -281,24 +281,44 @@ ARBPTR_T	The type of an arbitrary pointer -- defaults to "void *".
 		this to be "char *".
 LA_TYPE		The type of load average your kernel supports.  These
 		can be one of:
-		LA_ZERO (1) -- it always returns the load average as
+		 LA_ZERO (1) -- it always returns the load average as
 			"zero" (and does so on all architectures).
-		LA_SUBR (4) if you have the getloadavg(3) routine,
-		LA_MACH (5) to use MACH-style load averages (calls
+		 LA_INT (2) to read /dev/kmem for the symbol avenrun and
+			interpret as a long integer.
+		 LA_FLOAT (3) same, but interpret the result as a floating
+			point number.
+		 LA_SHORT (6) to interpret as a short integer.
+		 LA_SUBR (4) if you have the getloadavg(3) routine in your
+			system library.
+		 LA_MACH (5) to use MACH-style load averages (calls
 			processor_set_info()),
-		LA_PROCSTR (7) to read /proc/loadavg and interpret it
+		 LA_PROCSTR (7) to read /proc/loadavg and interpret it
 			as a string representing a floating-point
-			number (Linux-style),
-		LA_FLOAT (3) if you read kmem and interpret the value
-			as a floating point number,
-		LA_INT (2) to interpret as a long integer,
-		LA_SHORT (6) to interpret as a short integer.
-		These last three have several other parameters that they
-		try to divine: the name of your kernel, the name of the
-		variable in the kernel to examine, the number of bits of
-		precision in a fixed point load average, and so forth.
+			number (Linux-style).
+		 LA_READKSYM (8) is an implementation suitable for some
+			versions of SVr4 that uses the MIOC_READKSYM ioctl
+			call to read /dev/kmem.
+		 LA_DGUX (9) is a special implementation for DG/UX that uses
+			the dg_sys_info system call.
+		 LA_HPUX (10) is an HP-UX specific version that uses the
+			pstat_getdynamic system call.
+		LA_INT, LA_SHORT, LA_FLOAT, and LA_READKSYM have several
+		other parameters that they try to divine: the name of your
+		kernel, the name of the variable in the kernel to examine,
+		the number of bits of precision in a fixed point load average,
+		and so forth.
 		In desperation, use LA_ZERO.  The actual code is in
 		conf.c -- it can be tweaked if you are brave.
+FSHIFT		For LA_INT, LA_SHORT, and LA_READKSYM, this is the number
+		of bits of load average after the binary point -- i.e.,
+		the number of bits to shift right in order to scale the
+		integer to get the true integer load average.  Defaults to 8.
+_PATH_UNIX	The path to your kernel.  Needed only for LA_INT, LA_SHORT,
+		and LA_FLOAT.  Defaults to "/unix" on System V, "/vmunix"
+		everywhere else.
+LA_AVENRUN	For LA_INT, LA_SHORT, and LA_FLOAT, the name of the kernel
+		variable that holds the load average.  Defaults to "avenrun"
+		on System V, "_avenrun" everywhere else.
 SFS_TYPE	Encodes how your kernel can locate the amount of free
 		space on a disk partition.  This can be set to SFS_NONE
 		(0) if you have no way of getting this information,
@@ -353,6 +373,8 @@ BROKEN_RES_SEARCH
 NAMELISTMASK	If defined, values returned by nlist(3) are masked
 		against this value before use -- a common value is
 		0x7fffffff to strip off the top bit.
+BSD4_4_SOCKADDR	If defined, socket addresses have an sa_len field that
+		defines the length of this address.
 
 
 
@@ -376,13 +398,22 @@ OLD_NEWDB	If non-zero, the version of NEWDB you have is the old
 		use -DOLD_NEWDB=0 it forces you to use the new interface.
 NIS		Define this to get NIS (YP) support for aliases and maps.
 		Normally defined in the Makefile.
+NISPLUS		Define this to get NIS+ support for aliases and maps.
+		Normally defined in the Makefile.
+HESIOD		Define this to get Hesiod support for aliases and maps.
+		Normally defined in the Makefile.
+NETINFO		Define this to get NeXT NetInfo support for aliases and maps.
+		Normally defined in the Makefile.
 USERDB		Include support for the User Information Database.  Implied
 		by NEWDB in conf.h.
 IDENTPROTO	Define this as 1 to get IDENT (RFC 1413) protocol support.
 		This is assumed unless you are running on Ultrix or
 		HP-UX, both of which have a problem in the UDP
 		implementation.  You can define it to be 0 to explicitly
-		turn off IDENT protocol support.
+		turn off IDENT protocol support.  If defined off, the code
+		is actually still compiled in, but it defaults off; you
+		can turn it on by setting the IDENT timeout to 30s in the
+		configuration file.
 LOG		Set this to get syslog(3) support.  Defined by default
 		in conf.h.  You want this if at all possible.
 NETINET		Set this to get TCP/IP support.  Defined by default
@@ -390,7 +421,7 @@ NETINET		Set this to get TCP/IP support.  Defined by default
 NETISO		Define this to get ISO networking support.
 SMTP		Define this to get the SMTP code.  Implied by NETINET
 		or NETISO.
-NAMED_BIND	Define this to get DNS (name daemon) support, including
+NAMED_BIND	If non-zero, include DNS (name daemon) support, including
 		MX support.  The specs you must use this if you run
 		SMTP.  Defined by default in conf.h.
 QUEUE		Define this to get queueing code.  Implied by NETINET
@@ -403,6 +434,11 @@ MATCHGECOS	Permit fuzzy matching of user names against the full
 		name (GECOS) field in the /etc/passwd file.  This should
 		probably be on, since you can disable it from the config
 		file if you want to.  Defined by default in conf.h.
+MIME8TO7	If non-zero, include 8 to 7 bit MIME conversions.  This
+		also controls advertisement of 8BITMIME in the ESMTP
+		startup dialogue.
+MIME7TO8	If non-zero, include 7 to 8 bit MIME conversions.  Not yet
+		implemented.
 
 
 +---------------------+
@@ -970,4 +1006,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.85, last update %G% 08:20:30)
+(Version 8.86, last update %G% 08:30:29)
