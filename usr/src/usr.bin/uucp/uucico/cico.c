@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.16	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -28,10 +28,6 @@ static char sccsid[] = "@(#)cico.c	5.15 (Berkeley) %G%";
 #include "uusub.h"
 
 #if defined(VMS) && defined(BSDTCP)
-#define NOGETPEER
-#endif
-
-#ifdef BSD2_9
 #define NOGETPEER
 #endif
 
@@ -94,7 +90,7 @@ struct sgttyb Savettyb;
  */
 main(argc, argv)
 int argc;
-register char *argv[];
+char **argv;
 {
 	register int ret;
 	int seq;
@@ -103,6 +99,8 @@ register char *argv[];
 	register char *p;
 	extern onintr(), timeout(), dbg_signal();
 	extern char *pskip();
+	extern char *optarg;
+	extern int optind;
 	char rflags[MAXFULLNAME];
 #ifdef NOGETPEER
 	u_long Hostnumber = 0;
@@ -111,7 +109,7 @@ register char *argv[];
 	strcpy(Progname, "uucico");
 
 #ifdef BSD4_2
-	sigsetmask(0);	/* in case we inherit blocked signals */
+	sigsetmask(0L);	/* in case we inherit blocked signals */
 #endif BSD4_2
 	signal(SIGINT, onintr);
 	signal(SIGHUP, onintr);
@@ -122,7 +120,10 @@ register char *argv[];
 	ret = guinfo(getuid(), User, msg);
 	strcpy(Loginuser, User);
 	uucpname(Myname);
-	ASSERT(ret == 0, "BAD UID", CNULL, ret);
+	if (ret == FAIL) {
+		syslog(LOG_ERR, "can't get uid");
+		cleanup(FAIL);
+	}
 
 	setbuf (stderr, CNULL);
 
@@ -130,36 +131,36 @@ register char *argv[];
 	umask(WFMASK);
 	strcpy(Rmtname, Myname);
 	Ifn = Ofn = -1;
-	while(argc>1 && argv[1][0] == '-'){
-		switch(argv[1][1]){
+	while ((ret = getopt(argc, argv, "RLd:g:p:r:s:x:t:")) != EOF)
+		switch(ret){
 		case 'd':
-			Spool = &argv[1][2];
+			Spool = optarg;
 			break;
 		case 'g':
 		case 'p':
-			MaxGrade = DefMaxGrade = argv[1][2];
+			MaxGrade = DefMaxGrade = *optarg;
 			break;
 		case 'r':
-			Role = atoi(&argv[1][2]);
+			Role = atoi(optarg);
 			break;
 		case 'R':
 			ReverseRole++;
 			Role = MASTER;
 			break;
 		case 's':
-			strncpy(Rmtname, &argv[1][2], MAXBASENAME);
+			strncpy(Rmtname, optarg, MAXBASENAME);
 			Rmtname[MAXBASENAME] = '\0';
 			if (Rmtname[0] != '\0')
 				onesys = 1;
 			break;
 		case 'x':
-			Debug = atoi(&argv[1][2]);
+			Debug = atoi(optarg);
 			if (Debug <= 0)
 				Debug = 1;
-			strcat(rflags, argv[1]);
+			strcat(rflags, argv[optind-1]);
 			break;
 		case 't':
-			turntime = atoi(&argv[1][2])*60;/* minutes to seconds */
+			turntime = atoi(optarg)*60;/* minutes to seconds */
 			break;
 		case 'L':	/* local calls only */
 			LocalOnly++;
@@ -169,17 +170,16 @@ register char *argv[];
 			Hostnumber = inet_addr(&argv[1][2]);
 			break;
 #endif NOGETPEER
+		case '?':
 		default:
-			printf("unknown flag %s (ignored)\n", argv[1]);
+			fprintf(stderr, "unknown flag %s (ignored)\n",
+				argv[optind-1]);
 			break;
 		}
-		--argc;  argv++;
-	}
 
-	while (argc > 1) {
-		fprintf(stderr, "unknown argument %s (ignored)\n", argv[1]);
-		--argc; argv++;
-	}
+	while (optind < argc)
+		fprintf(stderr, "unknown argument %s (ignored)\n",
+			argv[optind++]);
 
 	if (Debug && Role == MASTER)
 		chkdebug();
@@ -201,10 +201,24 @@ register char *argv[];
 	if (getpgrp(0) == 0) { /* We have no controlling terminal */
 		setpgrp(0, getpid());
 	}
+#ifdef USE_SYSLOG
+#ifdef BSD4_3
+	openlog("uucico", LOG_PID, LOG_UUCP);
+#else /* !BSD4_3 */
+	openlog("uucico", LOG_PID);
+#endif /* !BSD4_3 */
+#endif /* USE_SYSLOG */
 #endif BSD4_2
 
-	ret = subchdir(Spool);
-	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
+#ifdef BSD4_3
+	unsetenv("TZ");		/* We don't want him resetting our time zone */
+#endif /* !BSD4_3 */
+
+	if (subchdir(Spool) < 0) {
+		syslog(LOG_ERR, "chdir(%s) failed: %m", Spool);
+		cleanup(FAIL);
+	}
+
 	strcpy(Wrkdir, Spool);
 
 	if (Debug) {
@@ -305,7 +319,7 @@ register char *argv[];
 		if (versys(&Rmtname)) {
 #ifdef	NOSTRANGERS
 			/* If we don't know them, we won't talk to them... */
-			assert("Unknown host:", Rmtname, 0);
+			syslog(LOG_WARNING, "Unknown host: %s", Rmtname);
 			omsg('R', "You are unknown to me", Ofn);
 			cleanup(0);
 #endif	NOSTRANGERS
@@ -465,6 +479,10 @@ loop:
 	}
 	if (!onesys) {
 		do_connect_accounting();
+#ifdef DIALINOUT
+		/* reenable logins on dialout */
+		reenable();
+#endif DIALINOUT
 		StartTime = 0;
 		ret = gnsys(Rmtname, Spool, CMDPRE);
 		setdebug(DBG_PERM);
@@ -750,6 +768,7 @@ register int code;
 
 do_connect_accounting()
 {
+#ifdef DO_CONNECT_ACCOUNTING
 	register FILE *fp;
 	struct tm *localtime();
 	register struct tm *tm;
@@ -758,9 +777,11 @@ do_connect_accounting()
 	if (StartTime == 0)
 		return;
 
-#ifdef DO_CONNECT_ACCOUNTING
-	fp = fopen("/usr/spool/uucp/CONNECT", "a");
-	ASSERT(fp != NULL, "Can't open CONNECT file", Rmtname, errno);
+	fp = fopen(DO_CONNECT_ACCOUNTING, "a");
+	if (fp == NULL) {
+		syslog(LOG_ALERT, "fopen(%s) failed: %m",DO_CONNECT_ACCOUNTING);
+		cleanup(FAIL);
+	}
 
 	tm = localtime(&StartTime);
 #ifdef F_SETFL
@@ -847,8 +868,9 @@ int parm;
 		unlink(buf);
 		if (link(temp, buf) != 0) {
 			Debug = 0;
-			assert("RMTDEBUG LINK FAIL", temp, errno);
-			cleanup(1);
+			syslog(LOG_ERR, "RMTDEBUG link(%s,%s) failed: %m",
+				temp, buf);
+			cleanup(FAIL);
 		}
 		parm = DBG_CLEAN;
 	}
@@ -909,7 +931,8 @@ int parm;
 	if ((geteuid() != stbuf.st_uid) ||	  	/* We must own it    */
 	    ((stbuf.st_mode & 0170700) != 040700)) {	/* Directory, rwx    */
 		Debug = 0;
-		assert("INVALID RMTDEBUG DIRECTORY:", RMTDEBUG, stbuf.st_mode);
+		syslog(LOG_ERR, "%s: invalid directory mode: %o", RMTDEBUG,
+			stbuf.st_mode);
 		return;
 	}
 
@@ -918,8 +941,8 @@ int parm;
 		temp = malloc(strlen (buf) + 1);
 		if (temp == CNULL) {
 			Debug = 0;
-			assert("RMTDEBUG MALLOC ERROR:", temp, errno);
-			cleanup(1);
+			syslog(LOG_ERR, "RMTDEBUG malloc failed: %m");
+			cleanup(FAIL);
 		}
 		strcpy(temp, buf);
 	} else
@@ -928,8 +951,8 @@ int parm;
 	unlink(buf);
 	if (freopen(buf, "w", stderr) != stderr) {
 		Debug = 0;
-		assert("FAILED RMTDEBUG FILE OPEN:", buf, errno);
-		cleanup(1);
+		syslog(LOG_ERR, "RMTDEBUG freopen(%s) failed: %m", buf);
+		cleanup(FAIL);
 	}
 	setbuf(stderr, CNULL);
 	auditopen = 1;
