@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "../general/general.h"
+
 #include "api_exch.h"
 
 static int sock;		/* Socket number */
@@ -291,7 +293,7 @@ int
 char
     *location;
 {
-    int netleng = htons(length);
+    int netleng = length;
 
     if (conversation != SEND) {
 	if (enter_send() == -1) {
@@ -330,7 +332,7 @@ int
 char
     *location;
 {
-    int i, netleng = htons(length);
+    int i, netleng = length;
 
     if (conversation != RECEIVE) {
 	if (enter_receive() == -1) {
@@ -355,7 +357,7 @@ char
     }
     if (exch_state.length != netleng) {
 	fprintf(stderr, "Type 0x%x - expected length %d, received length %d.\n",
-		type, length, ntohs(exch_state.length));
+		type, length, exch_state.length);
 	return -1;
     }
     if (iget(location, length) == -1) {
