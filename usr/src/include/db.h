@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.19 (Berkeley) %G%
+ *	@(#)db.h	5.20 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -43,6 +43,9 @@ typedef struct {
 #define	R_SETCURSOR	10		/* put (RECNO) */
 
 typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
+
+#define	__USE_OPEN_FLAGS \
+	(O_CREAT|O_EXCL|O_EXLOCK|O_RDONLY|O_RDWR|O_SHLOCK|O_TRUNC)
 
 /* Access method description structure. */
 typedef struct __db {
