@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: dcmreg.h 1.3 89/08/23$
  *
- *	@(#)dcmreg.h	7.2 (Berkeley) %G%
+ *	@(#)dcmreg.h	7.3 (Berkeley) %G%
  */
 
 struct dcmdevice {	   /* host address, only odd bytes addressed */
@@ -211,8 +211,8 @@ struct	dcmpreg {
 #define RX_MASK		0xff
 
 /*
- * WARNING: Serial console is assumed to be at SC13
- * and CONUNIT must be 1, signaled by REMOTE/LOCAL switch on card
+ * WARNING: Serial console is assumed to be the lowest select-code card
+ * and that card must be logical unit 0 in the kernel.  Also, CONUNIT must
+ * be 1, the port affected by the REMOTE/LOCAL switch.
  */
-#define CONADDR	((struct dcmdevice *)(IOV(EXTIOBASE + (13 * IOCARDSIZE))))
 #define CONUNIT	(1)
