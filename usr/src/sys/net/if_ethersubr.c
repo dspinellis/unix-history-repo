@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	1.1 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -156,7 +156,7 @@ gottype:
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if ((ifp->if_flags & IFF_OACTIVE) == 0)
-		(*ifp->if_start)(ifp->if_unit);
+		(*ifp->if_start)(ifp);
 	splx(s);
 	return (0);
 
