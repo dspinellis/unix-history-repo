@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.7 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -260,6 +260,7 @@ ptcclose(dev)
 	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
+	tp->t_session = 0;
 	return (0);
 }
 
@@ -617,9 +618,9 @@ ptyioctl(dev, cmd, data, flag)
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
-		case TIOCSETAS:
-		case TIOCSETAWS:
-		case TIOCSETAFS:
+		case JUNK_TIOCSETAS:
+		case JUNK_TIOCSETAWS:
+		case JUNK_TIOCSETAFS:
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
