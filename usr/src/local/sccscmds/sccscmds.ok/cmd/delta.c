@@ -2,7 +2,7 @@
 # include	"../hdr/had.h"
 # include	"pathnames.h"
 
-static char Sccsid[] = "@(#)delta.c	4.11	%G%";
+static char Sccsid[] = "@(#)delta.c	4.12	%G%";
 USXALLOC();
 
 # ifdef LOGDELTA
@@ -10,7 +10,6 @@ char	*LogFile = _PATH_SCCSLOG;
 FILE	*Logf;
 # endif
 
-char	Diffpgm[] = "/usr/local/bdiff";
 FILE	*Diffin;
 int	Debug = 0;
 struct packet gpkt;
@@ -219,7 +218,8 @@ char *file;
 			Check top byte (exit code of child).
 			*/
 			if (((status >> 8) & 0377) == 32) { /* 'execl' failed */
-				sprintf(Error, "cannot execute '%s' (de12)", Diffpgm);
+				sprintf(Error, "cannot execute '%s' (de12)",
+				    _PATH_BDIFF);
 				fatal(Error);
 			}
 			/*
@@ -228,7 +228,7 @@ char *file;
 			if (difflim -= 500) {	/* reduce segmentation */
 				fprintf(stderr,
 			"'%s' failed, re-trying, segmentation = %d (de13)\n",
-					Diffpgm,difflim);
+					_PATH_BDIFF,difflim);
 				fclose(Xiop);	/* set up */
 				Xiop = 0;	/* for new x-file */
 				Xcreate = 0;
@@ -484,7 +484,6 @@ int difflim;
 	register int i;
 	int pfd[2];
 	FILE *iop;
-	extern char Diffpgm[];
 	char num[10];
 
 	xpipe(pfd);
@@ -501,7 +500,7 @@ int difflim;
 		for (i = getdtablesize(); i > 4; i--)
 			close(i);
 		sprintf(num,"%d",difflim);
-		execl(Diffpgm,Diffpgm,oldf,newf,num,"-s",0);
+		execl(_PATH_BDIFF,"bdiff",oldf,newf,num,"-s",0);
 		close(1);
 		exit(32);	/* tell parent that 'execl' failed */
 	}

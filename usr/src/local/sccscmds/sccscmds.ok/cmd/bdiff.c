@@ -1,6 +1,7 @@
 # include "../hdr/defines.h"
+# include "pathnames.h"
 
-static char Sccsid[] = "@(#)bdiff.c	4.5	%G%";
+static char Sccsid[] = "@(#)bdiff.c	4.6	%G%";
 
 /*
 	This program segments two files into pieces of <= seglim lines
@@ -22,7 +23,6 @@ static char Sccsid[] = "@(#)bdiff.c	4.5	%G%";
 
 int seglim;	/* limit of size of file segment to be generated */
 
-char diff[] = "/usr/bin/diff";
 char tempskel[] = "/tmp/bdXXXXX";		/* used to generate temp file names */
 char tempfile[32];
 char otmp[32], ntmp[32];
@@ -199,9 +199,9 @@ char *argv[];
 			/*
 			Execute 'diff' on the segment files.
 			*/
-			execl(diff,diff,otmp,ntmp,0);
+			execl(_PATH_DIFF,"diff",otmp,ntmp,0);
 			close(1);
-			sprintf(Error,"cannot execute '%s' (bd5)",diff);
+			sprintf(Error,"cannot execute '%s' (bd5)",_PATH_DIFF);
 			fatal(Error);
 		}
 		else {			/* parent process */
@@ -225,7 +225,7 @@ char *argv[];
 			*/
 			wait(&status);
 			if (status&~0x100) {
-				sprintf(Error,"'%s' failed (bd6)",diff);
+				sprintf(Error,"'%s' failed (bd6)",_PATH_DIFF);
 				fatal(Error);
 			}
 		}

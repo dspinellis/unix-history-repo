@@ -22,11 +22,11 @@
 
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
+# include "pathnames.h"
 
-static char Sccsid[] = "@(#)prs.c	4.3	%G%";
+static char Sccsid[] = "@(#)prs.c	4.4	%G%";
 
 char	had[26];
-char	Getpgm[] = "/usr/local/get";
 char	Sid[32];
 char	Mod[16];
 char	*Type;
@@ -701,7 +701,6 @@ struct packet *pkt;
 {
 	int	i;
 	int	status;
-	extern	char	Getpgm[];
 	char	str[128];
 	char	rarg[20];
 	char	filearg[80];
@@ -720,8 +719,8 @@ struct packet *pkt;
 		perform 'get' and redirect output
 		to standard output
 		*/
-		execl(Getpgm,Getpgm,"-s","-p","-r",rarg,filearg,0);
-		sprintf(Error,"cannot execute '%s'",Getpgm);
+		execl(_PATH_GET,"get","-s","-p","-r",rarg,filearg,0);
+		sprintf(Error,"cannot execute '%s'",_PATH_GET);
 		fatal(Error);
 	}
 	else {

@@ -1,4 +1,4 @@
-#	makefile	4.6	90/04/08
+#	makefile	4.7	90/11/11
 #
 CFLAGS=	-O -w
 LIBS=	../libpw.a ../libPW.a ../libwrt.a
@@ -106,21 +106,22 @@ clean:
 	rm -f admin bdiff chghist comb scv delta get help prt rmdel \
 	    what val snull cmt rmchg prs
 
+BDIR=	${DESTDIR}/usr/local/bin
 install: all
-	install -s admin ${DESTDIR}/usr/local
-	install -s bdiff ${DESTDIR}/usr/local
-	install -s chghist ${DESTDIR}/usr/local
-	rm -f ${DESTDIR}/usr/local/rmdel ${DESTDIR}/usr/local/rmchg
-	ln ${DESTDIR}/usr/local/chghist ${DESTDIR}/usr/local/rmchg
-	ln ${DESTDIR}/usr/local/chghist ${DESTDIR}/usr/local/rmdel
-	install -s comb ${DESTDIR}/usr/local
-	install -s delta ${DESTDIR}/usr/local
-	install -s help ${DESTDIR}/usr/local
-	install -s prt ${DESTDIR}/usr/local
-	install -s prs ${DESTDIR}/usr/local
-	install -c sccsdiff.sh ${DESTDIR}/usr/local/sccsdiff
-	install -s what ${DESTDIR}/usr/local
-	install -s val ${DESTDIR}/usr/local
-	install -s snull ${DESTDIR}/usr/local
-	install -s get ${DESTDIR}/usr/local
-#	install -s scv ${DESTDIR}/usr/local
+	install -s -o bin -g bin -m 755 admin ${BDIR}
+	install -s -o bin -g bin -m 755 bdiff ${BDIR}
+	install -s -o bin -g bin -m 755 chghist ${BDIR}
+	install -s -o bin -g bin -m 755 comb ${BDIR}
+	install -s -o bin -g bin -m 755 delta ${BDIR}
+	install -s -o bin -g bin -m 755 get ${BDIR}
+	install -s -o bin -g bin -m 755 help ${BDIR}
+	install -s -o bin -g bin -m 755 prs ${BDIR}
+	install -s -o bin -g bin -m 755 prt ${BDIR}
+#	install -s -o bin -g bin -m 755 scv ${BDIR}
+	install -s -o bin -g bin -m 755 snull ${BDIR}
+	install -s -o bin -g bin -m 755 val ${BDIR}
+	install -s -o bin -g bin -m 755 what ${BDIR}
+	install -c -o bin -g bin -m 755 sccsdiff.sh ${BDIR}/sccsdiff
+	rm -f ${BDIR}/rmdel ${BDIR}/rmchg
+	ln ${BDIR}/chghist ${BDIR}/rmchg
+	ln ${BDIR}/chghist ${BDIR}/rmdel
