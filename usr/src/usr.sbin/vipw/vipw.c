@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -13,12 +13,12 @@ static char sccsid[] = "@(#)vipw.c	4.4 (Berkeley) %G%";
 /*
  * Password file editor with locking.
  */
-char	*temp = "/etc/ptmp";
-char	*temp_pag = "/etc/ptmp.pag";
-char	*temp_dir = "/etc/ptmp.dir";
-char	*passwd = "/etc/passwd";
-char	*passwd_pag = "/etc/passwd.pag";
-char	*passwd_dir = "/etc/passwd.dir";
+char	temp[] = "/etc/ptmp";
+char	temp_pag[] = "/etc/ptmp.pag";
+char	temp_dir[] = "/etc/ptmp.dir";
+char	passwd[] = "/etc/passwd";
+char	passwd_pag[] = "/etc/passwd.pag";
+char	passwd_dir[] = "/etc/passwd.dir";
 char	buf[BUFSIZ];
 char	*getenv();
 char	*index();
@@ -31,9 +31,10 @@ main(argc, argv)
 	FILE *ft, *fp;
 	char *editor;
 
+	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 	setbuf(stderr, NULL);
 	umask(0);
 	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
@@ -144,6 +145,8 @@ main(argc, argv)
 			    passwd);
 	}
 bad:
+	unlink(temp_pag);
+	unlink(temp_dir);
 	unlink(temp);
 	exit(1);
 }
