@@ -1,0 +1,2380 @@
+%!PS
+%%Version: 3.3
+%%DocumentFonts: (atend)
+%%Pages: (atend)
+%%EndComments
+%
+% Version 3.3 prologue for troff files.
+%
+
+/#copies 1 store
+/aspectratio 1 def
+/formsperpage 1 def
+/landscape false def
+/linewidth .3 def
+/magnification 1 def
+/margin 0 def
+/orientation 0 def
+/resolution 720 def
+/rotation 1 def
+/xoffset 0 def
+/yoffset 0 def
+
+/roundpage true def
+/useclippath true def
+/pagebbox [0 0 612 792] def
+
+/R  /Times-Roman def
+/I  /Times-Italic def
+/B  /Times-Bold def
+/BI /Times-BoldItalic def
+/H  /Helvetica def
+/HI /Helvetica-Oblique def
+/HB /Helvetica-Bold def
+/HX /Helvetica-BoldOblique def
+/CW /Courier def
+/CO /Courier def
+/CI /Courier-Oblique def
+/CB /Courier-Bold def
+/CX /Courier-BoldOblique def
+/PA /Palatino-Roman def
+/PI /Palatino-Italic def
+/PB /Palatino-Bold def
+/PX /Palatino-BoldItalic def
+/Hr /Helvetica-Narrow def
+/Hi /Helvetica-Narrow-Oblique def
+/Hb /Helvetica-Narrow-Bold def
+/Hx /Helvetica-Narrow-BoldOblique def
+/KR /Bookman-Light def
+/KI /Bookman-LightItalic def
+/KB /Bookman-Demi def
+/KX /Bookman-DemiItalic def
+/AR /AvantGarde-Book def
+/AI /AvantGarde-BookOblique def
+/AB /AvantGarde-Demi def
+/AX /AvantGarde-DemiOblique def
+/NR /NewCenturySchlbk-Roman def
+/NI /NewCenturySchlbk-Italic def
+/NB /NewCenturySchlbk-Bold def
+/NX /NewCenturySchlbk-BoldItalic def
+/ZD /ZapfDingbats def
+/ZI /ZapfChancery-MediumItalic def
+/S  /S def
+/S1 /S1 def
+/GR /Symbol def
+
+/inch {72 mul} bind def
+/min {2 copy gt {exch} if pop} bind def
+
+/setup {
+	counttomark 2 idiv {def} repeat pop
+
+	landscape {/orientation 90 orientation add def} if
+	/scaling 72 resolution div def
+	linewidth setlinewidth
+	1 setlinecap
+
+	pagedimensions
+	xcenter ycenter translate
+	orientation rotation mul rotate
+	width 2 div neg height 2 div translate
+	xoffset inch yoffset inch neg translate
+	margin 2 div dup neg translate
+	magnification dup aspectratio mul scale
+	scaling scaling scale
+
+	/Symbol /S Sdefs cf
+	/Times-Roman /S1 S1defs cf
+	0 0 moveto
+} def
+
+/pagedimensions {
+	useclippath userdict /gotpagebbox known not and {
+		/pagebbox [clippath pathbbox newpath] def
+		roundpage currentdict /roundpagebbox known and {roundpagebbox} if
+	} if
+	pagebbox aload pop
+	4 -1 roll exch 4 1 roll 4 copy
+	landscape {4 2 roll} if
+	sub /width exch def
+	sub /height exch def
+	add 2 div /xcenter exch def
+	add 2 div /ycenter exch def
+	userdict /gotpagebbox true put
+} def
+
+/pagesetup {
+	/page exch def
+	currentdict /pagedict known currentdict page known and {
+		page load pagedict exch get cvx exec
+	} if
+} def
+
+/decodingdefs [
+	{counttomark 2 idiv {y moveto show} repeat}
+	{neg /y exch def counttomark 2 idiv {y moveto show} repeat}
+	{neg moveto {2 index stringwidth pop sub exch div 0 32 4 -1 roll widthshow} repeat}
+	{neg moveto {spacewidth sub 0.0 32 4 -1 roll widthshow} repeat}
+	{counttomark 2 idiv {y moveto show} repeat}
+	{neg setfunnytext}
+] def
+
+/setdecoding {/t decodingdefs 3 -1 roll get bind def} bind def
+
+/w {neg moveto show} bind def
+/m {neg dup /y exch def moveto} bind def
+/done {/lastpage where {pop lastpage} if} def
+
+/f {
+	dup /font exch def findfont exch
+	dup /ptsize exch def scaling div dup /size exch def scalefont setfont
+	linewidth ptsize mul scaling 10 mul div setlinewidth
+	/spacewidth ( ) stringwidth pop def
+} bind def
+
+/changefont {
+	/fontheight exch def
+	/fontslant exch def
+	currentfont [
+		1 0
+		fontheight ptsize div fontslant sin mul fontslant cos div
+		fontheight ptsize div
+		0 0
+	] makefont setfont
+} bind def
+
+/sf {f} bind def
+
+/cf {
+	dup length 2 idiv
+	/entries exch def
+	/chtab exch def
+	/newfont exch def
+
+	findfont dup length 1 add dict
+	/newdict exch def
+	{1 index /FID ne {newdict 3 1 roll put} {pop pop} ifelse} forall
+
+	newdict /Metrics entries dict put
+	newdict /Metrics get
+	begin
+		chtab aload pop
+		1 1 entries {pop def} for
+		newfont newdict definefont pop
+	end
+} bind def
+
+%
+% A few arrays used to adjust reference points and character widths in some
+% of the printer resident fonts. If square roots are too high try changing
+% the lines describing /radical and /radicalex to,
+%
+%	/radical	[0 -75 550 0]
+%	/radicalex	[-50 -75 500 0]
+%
+% Move braceleftbt a bit - default PostScript character is off a bit.
+%
+
+/Sdefs [
+	/bracketlefttp		[201 500]
+	/bracketleftbt		[201 500]
+	/bracketrighttp		[-81 380]
+	/bracketrightbt		[-83 380]
+	/braceleftbt		[203 490]
+	/bracketrightex		[220 -125 500 0]
+	/radical		[0 0 550 0]
+	/radicalex		[-50 0 500 0]
+	/parenleftex		[-20 -170 0 0]
+	/integral		[100 -50 500 0]
+	/infinity		[10 -75 730 0]
+] def
+
+/S1defs [
+	/underscore		[0 80 500 0]
+	/endash			[7 90 650 0]
+] def
+%
+% Tries to round clipping path dimensions, as stored in array pagebbox, so they
+% match one of the known sizes in the papersizes array. Lower left coordinates
+% are always set to 0.
+%
+
+/roundpagebbox {
+    7 dict begin
+	/papersizes [8.5 inch 11 inch 14 inch 17 inch] def
+
+	/mappapersize {
+		/val exch def
+		/slop .5 inch def
+		/diff slop def
+		/j 0 def
+		0 1 papersizes length 1 sub {
+			/i exch def
+			papersizes i get val sub abs
+			dup diff le {/diff exch def /j i def} {pop} ifelse
+		} for
+		diff slop lt {papersizes j get} {val} ifelse
+	} def
+
+	pagebbox 0 0 put
+	pagebbox 1 0 put
+	pagebbox dup 2 get mappapersize 2 exch put
+	pagebbox dup 3 get mappapersize 3 exch put
+    end
+} bind def
+
+%%EndProlog
+%%BeginSetup
+mark
+/linewidth 0.5 def
+/xoffset 0 def
+/yoffset 0 def
+/#copies 1 store
+/magnification 1 def
+%%FormsPerPage: 1
+/formsperpage 1 def
+
+/landscape false def
+/resolution 720 def
+setup
+2 setdecoding
+%%EndSetup
+%%Page: 1 1
+/saveobj save def
+mark
+1 pagesetup
+12 B f
+(Rc \320 A Shell for Plan 9 and UNIX Systems)9 2230 1 1765 1230 t
+10 I f
+(Tom Duff)1 381 1 2689 1470 t
+10 R f
+(AT&T Bell Laboratories)2 993 1 2383 1650 t
+(Murray Hill, New Jersey 07974)4 1267 1 2246 1770 t
+10 I f
+(ABSTRACT)2643 2150 w
+(Rc)1330 2410 w
+10 R f
+( also runs on a variety of traditional sys-)8 1641( It)1 115( interpreter for Plan 9.)4 900(is a command)2 561 4 1463 2410 t
+( provides similar facilities to Bourne's)5 1580( It)1 120( SunOS and the Tenth Edition.)5 1273(tems, including)1 627 4 1080 2530 t
+10 I f
+(/bin/sh)1080 2650 w
+10 R f
+( paper intro-)2 497( This)1 229(, with some small additions and mostly less idiosyncratic syntax.)9 2601 3 1353 2650 t
+(duces)1080 2770 w
+10 I f
+(rc)1335 2770 w
+10 R f
+( why it varies)3 547('s highlights with numerous examples, and discusses its design and)9 2715 2 1418 2770 t
+(from Bourne's.)1 610 1 1080 2890 t
+10 B f
+(1. Introduction)1 670 1 720 3250 t
+10 R f
+( new)1 208( porting the Bourne shell to an incompatible)7 1875( As)1 177(Plan 9 needs a command-programming language.)5 2060 4 720 3406 t
+( new command interpreter, called)4 1350(environment seemed a daunting task, I chose to write a)9 2232 2 720 3526 t
+10 I f
+(rc)4330 3526 w
+10 R f
+(because it runs)2 599 1 4441 3526 t
+( could hardly resist trying to)5 1220( tinkering with perfection is a dangerous business, I)8 2197(commands. Although)1 903 3 720 3646 t
+( Thus)1 250(`improve' on Bourne's design.)3 1226 2 720 3766 t
+10 I f
+(rc)2221 3766 w
+10 R f
+(is similar in spirit but different in detail from Bourne's shell.)10 2424 1 2329 3766 t
+(The bulk of this paper describes)5 1318 1 720 3922 t
+10 I f
+(rc)2071 3922 w
+10 R f
+( features with many small examples and a few larger ones.)10 2426('s principal)1 460 2 2154 3922 t
+(We close with a discussion of the principles guiding)8 2143 1 720 4042 t
+10 I f
+(rc)2895 4042 w
+10 R f
+( it differs from Bourne's design.)5 1317('s design and why)3 745 2 2978 4042 t
+( features, as individual details)4 1198(The descriptive sections include little discussion of the rationale for particular)10 3122 2 720 4162 t
+( skip to the discussion at the end before)8 1632( impatient reader may wish to)5 1230( The)1 213(are hard to justify in isolation.)5 1245 4 720 4282 t
+(skimming the expository parts of the paper.)6 1740 1 720 4402 t
+10 B f
+( commands)1 486(2. Simple)1 420 2 720 4642 t
+10 R f
+(For the simplest uses)3 881 1 720 4798 t
+10 I f
+(rc)1639 4798 w
+10 R f
+( all of the following behave as)6 1293( Thus)1 263(has syntax familiar to Bourne-shell users.)5 1724 3 1760 4798 t
+(expected:)720 4918 w
+9 CW f
+(date)1008 5088 w
+(con alice)1 486 1 1008 5198 t
+(who >user.names)1 810 1 1008 5308 t
+(who >>user.names)1 864 1 1008 5418 t
+(wc <file)1 432 1 1008 5528 t
+(echo [a-f]*.c)1 702 1 1008 5638 t
+(who | wc)2 432 1 1008 5748 t
+(who; date)1 486 1 1008 5858 t
+(cc *.c &)2 432 1 1008 5968 t
+(cyntax *.c && cc -g -o cmd *.c)7 1620 1 1008 6078 t
+(rm -r junk || echo rm failed!)6 1566 1 1008 6188 t
+10 B f
+(3. Quotation)1 559 1 720 6488 t
+10 R f
+(An argument that contains a space or one of)8 1813 1 720 6644 t
+10 I f
+(rc)2565 6644 w
+10 R f
+( in apostrophes)2 621('s other syntax characters must be enclosed)6 1771 2 2648 6644 t
+(\()720 6764 w
+10 CW f
+(')753 6764 w
+10 R f
+(\):)813 6764 w
+9 CW f
+(rm 'odd file name')3 972 1 1008 6934 t
+10 R f
+(An apostrophe in a quoted argument must be doubled:)8 2170 1 720 7114 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 1 1
+%%Page: 2 2
+/saveobj save def
+mark
+2 pagesetup
+10 R f
+(- 2 -)2 166 1 2797 480 t
+9 CW f
+(echo 'How''s your father?')3 1404 1 1008 830 t
+10 B f
+(4. Variables)1 536 1 720 1130 t
+10 I f
+(Rc)720 1286 w
+10 R f
+( by typing, for)3 602( may be given values)4 879( Variables)1 441(provides variables whose values are lists of arguments.)7 2259 4 859 1286 t
+(example:)720 1406 w
+9 CW f
+(path=\(. /bin /usr/bin\))2 1188 1 1008 1576 t
+(user=td)1008 1686 w
+(tty=/dev/tty8)1008 1796 w
+10 R f
+(The parentheses indicate that the value assigned to)7 2049 1 720 1976 t
+10 CW f
+(path)2798 1976 w
+10 R f
+( strings. The variables)3 897(is a list of three)4 632 2 3067 1976 t
+10 CW f
+(user)4626 1976 w
+10 R f
+(and)4896 1976 w
+10 CW f
+(tty)720 2096 w
+10 R f
+(are assigned lists containing a single string.)6 1735 1 925 2096 t
+(The value of a variable can be substituted into a command by preceding its name with a)16 3505 1 720 2252 t
+10 CW f
+($)4250 2252 w
+10 R f
+(, like this:)2 398 1 4310 2252 t
+9 CW f
+(echo $path)1 540 1 1008 2422 t
+10 R f
+(If)720 2602 w
+10 CW f
+(path)811 2602 w
+10 R f
+(had been set as above, this would be equivalent to)9 1997 1 1076 2602 t
+9 CW f
+(echo . /bin /usr/bin)3 1080 1 1008 2772 t
+10 R f
+(Variables may be subscripted by numbers or lists of numbers, like this:)11 2842 1 720 2952 t
+9 CW f
+(echo $path\(2\))1 702 1 1008 3122 t
+(echo $path\(3 2 1\))3 918 1 1008 3232 t
+10 R f
+(These are equivalent to)3 928 1 720 3412 t
+9 CW f
+(echo /bin)1 486 1 1008 3582 t
+(echo /usr/bin /bin .)3 1080 1 1008 3692 t
+10 R f
+( the subscript)2 555( Otherwise,)1 496(There can be no space separating the variable's name from the left parenthesis.)12 3269 3 720 3872 t
+(would be considered a separate parenthesized list.)6 1992 1 720 3992 t
+(The number of strings in a variable can be determined by the)11 2431 1 720 4148 t
+10 CW f
+($#)3176 4148 w
+10 R f
+( example,)1 388(operator. For)1 546 2 3321 4148 t
+9 CW f
+(echo $#path)1 594 1 1008 4318 t
+10 R f
+(would print the number of entries in)6 1443 1 720 4498 t
+10 CW f
+($path)2188 4498 w
+10 R f
+(.)2488 4498 w
+(The following two assignments are subtly different:)6 2070 1 720 4654 t
+9 CW f
+(empty=\(\))1008 4824 w
+(null='')1008 4934 w
+10 R f
+(The first sets)2 538 1 720 5114 t
+10 CW f
+(empty)1294 5114 w
+10 R f
+( second sets)2 501( The)1 217( list containing no strings.)4 1085(to a)1 158 4 1630 5114 t
+10 CW f
+(null)3628 5114 w
+10 R f
+(to a list containing a single)5 1135 1 3905 5114 t
+(string, but the string contains no characters.)6 1742 1 720 5234 t
+( indistinguishable\),)1 775(Although these may seem like more or less the same thing \(in Bourne's shell, they are)15 3545 2 720 5390 t
+( other things)2 500( Among)1 350(they behave differently in almost all circumstances.)6 2060 3 720 5510 t
+9 CW f
+(echo $#empty)1 648 1 1008 5680 t
+10 R f
+(prints 0, whereas)2 679 1 720 5860 t
+9 CW f
+(echo $#null)1 594 1 1008 6030 t
+10 R f
+(prints 1.)1 328 1 720 6210 t
+(All variables that have never been set have the value)9 2097 1 720 6366 t
+10 CW f
+(\(\))2842 6366 w
+10 R f
+(.)2962 6366 w
+10 B f
+(5. Arguments)1 602 1 720 6606 t
+10 R f
+(When)720 6762 w
+10 I f
+(rc)983 6762 w
+10 R f
+( from a file, the file has access to the arguments supplied on)12 2405(is reading its input)3 742 2 1091 6762 t
+10 I f
+(rc)4264 6762 w
+10 R f
+('s command line.)2 693 1 4347 6762 t
+(The variable)1 504 1 720 6882 t
+10 CW f
+($*)1252 6882 w
+10 R f
+( names)1 282( The)1 207( it.)1 108(initially has the list of arguments assigned to)7 1807 4 1400 6882 t
+10 CW f
+($1)3831 6882 w
+10 R f
+(,)3951 6882 w
+10 CW f
+($2)4003 6882 w
+10 R f
+(, etc. are synonyms for)4 917 1 4123 6882 t
+10 CW f
+($*\(1\))720 7002 w
+10 R f
+(,)1020 7002 w
+10 CW f
+($*\(2\))1070 7002 w
+10 R f
+( addition,)1 378( In)1 133(, etc.)1 191 3 1370 7002 t
+10 CW f
+($0)2097 7002 w
+10 R f
+(is the name of the file from which)7 1356 1 2242 7002 t
+10 I f
+(rc)3623 7002 w
+10 R f
+('s input is being read.)4 863 1 3706 7002 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 2 2
+%%Page: 3 3
+/saveobj save def
+mark
+3 pagesetup
+10 R f
+(- 3 -)2 166 1 2797 480 t
+10 B f
+(6. Concatenation)1 747 1 720 840 t
+10 I f
+(Rc)720 996 w
+10 R f
+(has a string concatenation operator, the caret)6 1781 1 850 996 t
+10 CW f
+(\303)2656 996 w
+10 R f
+(, to build arguments out of pieces.)6 1360 1 2716 996 t
+9 CW f
+(echo hully\303gully)1 864 1 1008 1166 t
+10 R f
+(is exactly equivalent to)3 924 1 720 1346 t
+9 CW f
+(echo hullygully)1 810 1 1008 1516 t
+10 R f
+(Suppose variable)1 685 1 720 1696 t
+10 CW f
+(i)1430 1696 w
+10 R f
+( Then)1 255(contains the name of a command.)5 1342 2 1515 1696 t
+9 CW f
+(cc -o $i $i\303.c)3 756 1 1008 1866 t
+10 R f
+(might compile the command's source code, leaving the result in the appropriate file.)12 3367 1 720 2046 t
+(Concatenation distributes over lists. The following)5 2027 1 720 2202 t
+9 CW f
+(echo \(a b c\)\303\(1 2 3\))5 1080 1 1008 2372 t
+(src=\(main subr io\))2 972 1 1008 2482 t
+(cc $src\303.c)1 540 1 1008 2592 t
+10 R f
+(are equivalent to)2 665 1 720 2772 t
+9 CW f
+(echo a1 b2 c3)3 702 1 1008 2942 t
+(cc main.c subr.c io.c)3 1134 1 1008 3052 t
+10 R f
+(In detail, the rule is: if both operands of)8 1640 1 720 3232 t
+10 CW f
+(\303)2392 3232 w
+10 R f
+( non-zero number of strings, they are con-)7 1735(are lists of the same)4 821 2 2484 3232 t
+( if one of the operands is a single string, it is concatenated with each mem-)15 3059( Otherwise,)1 491(catenated pairwise.)1 770 3 720 3352 t
+( other combination of operands is an error.)7 1702( Any)1 222(ber of the other operand in turn.)6 1272 3 720 3472 t
+10 B f
+( carets)1 279(7. Free)1 318 2 720 3712 t
+10 R f
+(User demand has dictated that)4 1263 1 720 3868 t
+10 I f
+(rc)2023 3868 w
+10 R f
+( syntax look more like the)5 1121(insert carets in certain places, to make the)7 1773 2 2146 3868 t
+( example, this:)2 586( For)1 189(Bourne shell.)1 533 3 720 3988 t
+9 CW f
+(cc -$flags $stems.c)2 1026 1 1008 4158 t
+10 R f
+(is equivalent to)2 611 1 720 4338 t
+9 CW f
+(cc -\303$flags $stems\303.c)2 1134 1 1008 4508 t
+10 R f
+(In general,)1 440 1 720 4688 t
+10 I f
+(rc)1199 4688 w
+10 R f
+(will insert)1 417 1 1321 4688 t
+10 CW f
+(\303)1777 4688 w
+10 R f
+( Specifically,)1 567( not separated by white space.)5 1272(between two arguments that are)4 1325 3 1876 4688 t
+(whenever one of)2 668 1 720 4808 t
+10 CW f
+($'`)1415 4808 w
+10 R f
+(follows a quoted or unquoted word, or an unquoted word follows a quoted word with)14 3418 1 1622 4808 t
+(no intervening blanks or tabs, a)5 1264 1 720 4928 t
+10 CW f
+(\303)2011 4928 w
+10 R f
+( an unquoted word immediately following)5 1700( If)1 119( between the two.)3 713(is inserted)1 410 4 2098 4928 t
+(a)720 5048 w
+10 CW f
+($)797 5048 w
+10 R f
+(contains a character other than an alphanumeric, underscore or)8 2564 1 890 5048 t
+10 CW f
+(*)3487 5048 w
+10 R f
+(, a)1 102 1 3547 5048 t
+10 CW f
+(\303)3682 5048 w
+10 R f
+( the first such)3 562(is inserted before)2 703 2 3775 5048 t
+(character.)720 5168 w
+10 B f
+( substitution)1 532(8. Command)1 575 2 720 5408 t
+10 R f
+( list from the output of a command.)7 1444(It is often useful to build an argument)7 1528 2 720 5564 t
+10 I f
+(Rc)3746 5564 w
+10 R f
+(allows a command, enclosed)3 1160 1 3880 5564 t
+(in braces and preceded by a left quote,)7 1569 1 720 5684 t
+10 CW f
+(`{...})2319 5684 w
+10 R f
+( command is)2 519( The)1 209( an argument is required.)4 1011(, anywhere that)2 622 4 2679 5684 t
+( characters stored in the variable)5 1333( The)1 213( its standard output captured.)4 1189(executed and)1 530 4 720 5804 t
+10 CW f
+(ifs)4018 5804 w
+10 R f
+(are used to split the)4 809 1 4231 5804 t
+( example,)1 388( For)1 189(output into arguments.)2 903 3 720 5924 t
+9 CW f
+(cat `{ls -tr|sed 10q})3 1134 1 1008 6094 t
+10 R f
+(will catenate the ten oldest files in the current directory in temporal order.)12 2947 1 720 6274 t
+10 B f
+( branching)1 465(9. Pipeline)1 470 2 720 6514 t
+10 R f
+( occasionally it is useful to have)6 1312( Very)1 254( for almost all cases.)4 838(The normal pipeline notation is general enough)6 1916 4 720 6670 t
+( can require arbitrarily large pipe)5 1350( topologies more general than trees)5 1440( Pipeline)1 386(pipelines that are not linear.)4 1144 4 720 6790 t
+(buffers, or worse, can cause deadlock.)5 1567 1 720 6910 t
+10 I f
+(Rc)2346 6910 w
+10 R f
+( of non-linear but treelike pipelines.)5 1481(has syntax for some kinds)4 1074 2 2485 6910 t
+(For example,)1 527 1 720 7030 t
+9 CW f
+(cmp <{old} <{new})2 918 1 1440 7200 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 3 3
+%%Page: 4 4
+/saveobj save def
+mark
+4 pagesetup
+10 R f
+(- 4 -)2 166 1 2797 480 t
+(will regression test a new version of a command.)8 1963 1 720 840 t
+10 CW f
+(<)2734 840 w
+10 R f
+(or)2820 840 w
+10 CW f
+(>)2929 840 w
+10 R f
+( in braces causes the com-)5 1054(followed by a command)3 971 2 3015 840 t
+( parent command \()3 751( The)1 205( be run with its standard output or input attached to a pipe.)12 2334(mand to)1 326 4 720 960 t
+10 CW f
+(cmp)4336 960 w
+10 R f
+(in the exam-)2 499 1 4541 960 t
+( descriptor or other, and with an argument)7 1701(ple\) is started with the other end of the pipe attached to some file)13 2619 2 720 1080 t
+( connect to the pipe when opened \(e.g.)7 1601(that will)1 341 2 720 1200 t
+10 CW f
+(/dev/fd/6)2721 1200 w
+10 R f
+( systems without)2 691(.\) On)1 239 2 3261 1200 t
+10 CW f
+(/dev/fd)4225 1200 w
+10 R f
+(or some-)1 361 1 4679 1200 t
+(thing similar \(SunOS for example\) this feature does not work.)9 2475 1 720 1320 t
+10 B f
+( status)1 275(10. Exit)1 353 2 720 1560 t
+10 R f
+( Plan 9 status is a character)6 1153( On)1 184( executed it.)2 509(When a command exits it returns status to the program that)10 2474 4 720 1716 t
+( normal termination it is empty.)5 1267( On)1 172(string describing an error condition.)4 1434 3 720 1836 t
+10 I f
+(Rc)720 1992 w
+10 R f
+( the variable)2 537(captures commands' exit statuses in)4 1521 2 871 1992 t
+10 CW f
+($status)2976 1992 w
+10 R f
+( a simple command the value of)6 1408(. For)1 236 2 3396 1992 t
+10 CW f
+($status)720 2112 w
+10 R f
+( a pipeline)2 420( For)1 191(is just as described above.)4 1048 3 1167 2112 t
+10 CW f
+($status)2853 2112 w
+10 R f
+( to the concatenation of the statuses of)7 1535(is set)1 205 2 3300 2112 t
+(the pipeline components with)3 1180 1 720 2232 t
+10 CW f
+(|)1925 2232 w
+10 R f
+(characters for separators.)2 998 1 2010 2232 t
+10 I f
+(Rc)720 2388 w
+10 R f
+( control flow, many of them conditioned by the status returned from previously)12 3286(has a several kinds of)4 895 2 859 2388 t
+( Any)1 224(executed commands.)1 839 2 720 2508 t
+10 CW f
+($status)1810 2508 w
+10 R f
+(containing only)1 627 1 2257 2508 t
+10 CW f
+(0)2911 2508 w
+10 R f
+('s and)1 243 1 2971 2508 t
+10 CW f
+(|)3241 2508 w
+10 R f
+('s has boolean value)3 818 1 3301 2508 t
+10 I f
+(true)4146 2508 w
+10 R f
+( other status)2 485(. Any)1 248 2 4307 2508 t
+(is)720 2628 w
+10 I f
+(false)812 2628 w
+10 R f
+(.)1001 2628 w
+10 B f
+( grouping)1 415(11. Command)1 625 2 720 2868 t
+10 R f
+(A sequence of commands enclosed in)5 1505 1 720 3024 t
+10 CW f
+({})2250 3024 w
+10 R f
+( example:)1 391( For)1 189(may be used anywhere a command is required.)7 1873 3 2395 3024 t
+9 CW f
+({sleep 3600;echo 'Time''s up!'}&)3 1728 1 1008 3194 t
+10 R f
+( the braces:)2 454( Without)1 378(will wait an hour in the background, then print a message.)10 2319 3 720 3374 t
+9 CW f
+(sleep 3600;echo 'Time''s up!'&)3 1620 1 1008 3544 t
+10 R f
+(this would lock up the terminal for an hour, then print the message in the background!)15 3440 1 720 3724 t
+10 B f
+( flow \320)2 333(12. Control)1 508 2 720 3964 t
+10 CW f
+(for)1586 3964 w
+10 R f
+(A command may be executed once for each member of a list by typing, for example:)15 3387 1 720 4120 t
+9 CW f
+(for\(i in printf scanf putchar\) look $i /usr/td/lib/dw.dat)7 3078 1 1008 4290 t
+10 R f
+(This looks for each of the words)6 1292 1 720 4470 t
+10 CW f
+(printf)2037 4470 w
+10 R f
+(,)2397 4470 w
+10 CW f
+(scanf)2447 4470 w
+10 R f
+(and)2772 4470 w
+10 CW f
+(putchar)2941 4470 w
+10 R f
+( general form is)3 629( The)1 205(in the given file.)3 655 3 3386 4470 t
+9 CW f
+(for\()1008 4640 w
+9 I f
+(name)1224 4640 w
+9 CW f
+(in)1473 4640 w
+9 I f
+(list)1635 4640 w
+9 CW f
+(\))1745 4640 w
+9 I f
+(command)1853 4640 w
+10 R f
+(or)720 4820 w
+9 CW f
+(for\()1008 4990 w
+9 I f
+(name)1224 4990 w
+9 CW f
+(\))1419 4990 w
+9 I f
+(command)1527 4990 w
+10 R f
+( first case)2 394(In the)1 235 2 720 5170 t
+10 I f
+(command)1380 5170 w
+10 R f
+(is executed once for each member of)6 1503 1 1799 5170 t
+10 I f
+(list)3333 5170 w
+10 R f
+(with that member assigned to variable)5 1553 1 3487 5170 t
+10 I f
+(name)720 5290 w
+10 R f
+(. If)1 141 1 936 5290 t
+10 CW f
+(in)1102 5290 w
+10 I f
+(list)1247 5290 w
+10 R f
+(is not given,)2 492 1 1395 5290 t
+10 I f
+($*)1912 5290 w
+10 R f
+(is used.)1 300 1 2037 5290 t
+10 B f
+( execution \320)2 555(13. Conditional)1 682 2 720 5530 t
+10 CW f
+(if)1982 5530 w
+10 I f
+(Rc)720 5686 w
+10 R f
+( example:)1 391( For)1 189(also provides a general if-statement.)4 1444 3 850 5686 t
+9 CW f
+(if\(cyntax *.c\) cc -g -o cmd *.c)6 1674 1 1008 5856 t
+10 R f
+(runs the C compiler whenever)4 1259 1 720 6036 t
+10 CW f
+(cyntax)2018 6036 w
+10 R f
+(finds no problems with)3 967 1 2417 6036 t
+10 CW f
+(*.c)3423 6036 w
+10 R f
+( `if not' statement provides a)5 1226(. An)1 211 2 3603 6036 t
+( example:)1 391( For)1 189(two-tailed conditional.)1 905 3 720 6156 t
+9 CW f
+(for\(i\){)1008 6326 w
+(if\(test -f /tmp/$i\) echo $i already in /tmp)7 2322 1 1224 6436 t
+(if not cp $i /tmp)4 918 1 1224 6546 t
+(})1008 6656 w
+10 R f
+(This loops over each file in)5 1090 1 720 6836 t
+10 CW f
+($*)1835 6836 w
+10 R f
+(, copying to)2 475 1 1955 6836 t
+10 CW f
+(/tmp)2455 6836 w
+10 R f
+(those that do not already appear there, and printing a mes-)10 2320 1 2720 6836 t
+(sage for those that do.)4 879 1 720 6956 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 4 4
+%%Page: 5 5
+/saveobj save def
+mark
+5 pagesetup
+10 R f
+(- 5 -)2 166 1 2797 480 t
+10 B f
+( flow \320)2 333(14. Control)1 508 2 720 840 t
+10 CW f
+(while)1586 840 w
+10 I f
+(Rc)720 996 w
+10 R f
+('s while statement looks like this:)5 1342 1 825 996 t
+9 CW f
+(while\(newer subr.c subr.o\) sleep 5)4 1836 1 1008 1166 t
+10 R f
+(This waits until)2 623 1 720 1346 t
+10 CW f
+(subr.o)1368 1346 w
+10 R f
+(is newer than)2 532 1 1753 1346 t
+10 CW f
+(subr.c)2310 1346 w
+10 R f
+(\(presumably because the C compiler finished with it.\))7 2147 1 2695 1346 t
+10 B f
+( flow \320)2 333(15. Control)1 508 2 720 1586 t
+10 CW f
+(switch)1586 1586 w
+10 I f
+(Rc)720 1742 w
+10 R f
+( general form is)3 629( Its)1 150(provides a switch statement to do pattern-matching on arbitrary strings.)9 2852 3 850 1742 t
+9 CW f
+(switch\()1008 1912 w
+9 I f
+(word)1386 1912 w
+9 CW f
+(\){)1571 1912 w
+(case)1008 2022 w
+9 I f
+(pattern ...)1 352 1 1278 2022 t
+(commands)1224 2132 w
+9 CW f
+(case)1008 2242 w
+9 I f
+(pattern ...)1 352 1 1278 2242 t
+(commands)1224 2352 w
+9 CW f
+(...)1008 2462 w
+(})1008 2572 w
+10 I f
+(Rc)720 2752 w
+10 R f
+( are the same as)4 647( Patterns)1 376(attempts to match the word against the patterns in each case statement in turn.)13 3164 3 853 2752 t
+(for filename matching, except that)4 1372 1 720 2872 t
+10 CW f
+(/)2117 2872 w
+10 R f
+(and the first characters of)4 1013 1 2202 2872 t
+10 CW f
+(.)3240 2872 w
+10 R f
+(and)3350 2872 w
+10 CW f
+(..)3519 2872 w
+10 R f
+(need not be matched explicitly.)4 1251 1 3689 2872 t
+( to the next case \(or the end of the switch\) are)11 1864(If any pattern matches, the commands following that case up)9 2456 2 720 3028 t
+( example,)1 388( For)1 189(executed, and execution of the switch is complete.)7 2010 3 720 3148 t
+9 CW f
+(switch\($#*\){)1008 3318 w
+(case 1)1 324 1 1008 3428 t
+(cat >>$1)1 432 1 1224 3538 t
+(case 2)1 324 1 1008 3648 t
+(cat >>$2 <$1)2 648 1 1224 3758 t
+(case *)1 324 1 1008 3868 t
+(echo 'Usage: append [from] to')4 1620 1 1224 3978 t
+(})1008 4088 w
+10 R f
+( two, the first)3 536( With)1 251( with one file argument, it tacks standard input to its end.)11 2279( Called)1 311(is an append command.)3 943 5 720 4268 t
+( other number elicits a usage message.)6 1533( Any)1 222(is appended to the second.)4 1051 3 720 4388 t
+(The built-in)1 475 1 720 4544 t
+10 CW f
+(\304)1220 4544 w
+10 R f
+( arguments are a)3 659( Its)1 151( more concise than a switch.)5 1136(command also matches patterns, and is often)6 1789 4 1305 4544 t
+( sets)1 181( It)1 118(string and a list of patterns.)5 1123 3 720 4664 t
+10 CW f
+($status)2173 4664 w
+10 R f
+(to true if and only if any of the patterns matches the string.)12 2416 1 2624 4664 t
+(The following example processes option arguments for the)7 2349 1 720 4784 t
+10 I f
+(man)3094 4784 w
+10 R f
+(\(1\) command:)1 563 1 3266 4784 t
+9 CW f
+(opt=\(\))1008 4954 w
+(while\(\304 $1 -* [1-9] 10\){)4 1296 1 1008 5064 t
+(switch\($1\){)1224 5174 w
+(case [1-9] 10)2 702 1 1224 5284 t
+(sec=$1 secn=$1)1 756 1 1440 5394 t
+(case -f)1 378 1 1224 5504 t
+(c=f s=f)1 378 1 1440 5614 t
+(case -[qwnt])1 648 1 1224 5724 t
+(cmd=$1)1440 5834 w
+(case -T*)1 432 1 1224 5944 t
+(T=$1)1440 6054 w
+(case -*)1 378 1 1224 6164 t
+(opt=\($opt $1\))1 702 1 1440 6274 t
+(})1224 6384 w
+(shift)1224 6494 w
+(})1008 6604 w
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 5 5
+%%Page: 6 6
+/saveobj save def
+mark
+6 pagesetup
+10 R f
+(- 6 -)2 166 1 2797 480 t
+10 B f
+(16. Functions)1 598 1 720 840 t
+10 R f
+(Functions may be defined by typing)5 1441 1 720 996 t
+9 CW f
+(fn)1008 1166 w
+9 I f
+(name)1170 1166 w
+9 CW f
+({)1419 1166 w
+9 I f
+(commands)1527 1166 w
+9 CW f
+(})1966 1166 w
+10 R f
+(Subsequently, whenever a command named)4 1795 1 720 1346 t
+10 I f
+(name)2550 1346 w
+10 R f
+(is encountered, the remainder of the command's argu-)7 2238 1 2802 1346 t
+( to)1 106(ment list will assigned)3 910 2 720 1466 t
+10 CW f
+($*)1764 1466 w
+10 R f
+(and)1912 1466 w
+10 I f
+(rc)2084 1466 w
+10 R f
+(will execute the)2 638 1 2195 1466 t
+10 I f
+(commands)2861 1466 w
+10 R f
+( value of)2 355(. The)1 233 2 3288 1466 t
+10 CW f
+($*)3904 1466 w
+10 R f
+(will be restored on com-)4 988 1 4052 1466 t
+( example:)1 391(pletion. For)1 492 2 720 1586 t
+9 CW f
+(fn g {)2 324 1 1008 1756 t
+(gre -e $1 *.[hcyl])3 972 1 1224 1866 t
+(})1008 1976 w
+10 R f
+(defines)720 2156 w
+10 CW f
+(g)1033 2156 w
+10 I f
+(pattern)1118 2156 w
+10 R f
+(to look for occurrences of)4 1030 1 1432 2156 t
+10 I f
+(pattern)2487 2156 w
+10 R f
+(in all program source files in the current directory.)8 2015 1 2801 2156 t
+(Function definitions are deleted by writing)5 1707 1 720 2312 t
+9 CW f
+(fn)1008 2482 w
+9 I f
+(name)1170 2482 w
+10 R f
+(with no function body.)3 911 1 720 2662 t
+10 B f
+( execution)1 430(17. Command)1 625 2 720 2902 t
+10 R f
+( very little about what)4 897(Up to now we've said)4 892 2 720 3058 t
+10 I f
+(rc)2539 3058 w
+10 R f
+( the command name)3 822( If)1 121(does to execute a simple command.)5 1445 3 2652 3058 t
+(is the name of a function defined using)7 1570 1 720 3178 t
+10 CW f
+(fn)2317 3178 w
+10 R f
+( if it is the name of a built-)8 1082( Otherwise,)1 487(, the function is executed.)4 1034 3 2437 3178 t
+(in command, the built-in is executed directly by)7 1964 1 720 3298 t
+10 I f
+(rc)2716 3298 w
+10 R f
+( if the name contains a)5 936(. Otherwise,)1 517 2 2799 3298 t
+10 CW f
+(/)4284 3298 w
+10 R f
+(, it is taken to be)5 696 1 4344 3298 t
+(the name of a binary program and is executed using)9 2155 1 720 3418 t
+10 I f
+(exec)2910 3418 w
+10 R f
+( the name contains no)4 907(\(2\). If)1 267 2 3086 3418 t
+10 CW f
+(/)4294 3418 w
+10 R f
+(, then directories)2 686 1 4354 3418 t
+(mentioned in the variable)3 1018 1 720 3538 t
+10 CW f
+($path)1763 3538 w
+10 R f
+(are searched until an executable file is found.)7 1806 1 2088 3538 t
+10 B f
+( commands)1 486(18. Built-in)1 504 2 720 3778 t
+10 R f
+( executed internally by)3 924(Several commands are)2 909 2 720 3934 t
+10 I f
+(rc)2582 3934 w
+10 R f
+(because they are difficult or impossible to implement oth-)8 2346 1 2694 3934 t
+(erwise.)720 4054 w
+10 CW f
+(. [-i])1 360 1 720 4210 t
+10 I f
+(file ...)1 228 1 1140 4210 t
+10 R f
+(Execute commands from)2 1008 1 970 4330 t
+10 I f
+(file)2008 4330 w
+10 R f
+(.)2136 4330 w
+10 CW f
+($*)2216 4330 w
+10 R f
+( reminder of the argument list follow-)6 1545(is set for the duration to the)6 1129 2 2366 4330 t
+(ing)970 4450 w
+10 I f
+(file)1125 4450 w
+10 R f
+(.)1253 4450 w
+10 CW f
+($path)1330 4450 w
+10 R f
+(is used to search for)4 806 1 1657 4450 t
+10 I f
+(file)2490 4450 w
+10 R f
+(. Option)1 354 1 2618 4450 t
+10 CW f
+(-i)2998 4450 w
+10 R f
+(indicates interactive input)2 1034 1 3144 4450 t
+10 S f
+(-)4204 4450 w
+10 R f
+(a prompt \(found in)3 755 1 4285 4450 t
+10 CW f
+($prompt)970 4570 w
+10 R f
+(\) is printed before each command is read.)7 1651 1 1390 4570 t
+10 CW f
+(builtin)720 4726 w
+10 I f
+(command ...)1 488 1 1200 4726 t
+10 R f
+(Execute)970 4846 w
+10 I f
+(command)1316 4846 w
+10 R f
+(as usual except that any function named)6 1597 1 1729 4846 t
+10 I f
+(command)3351 4846 w
+10 R f
+( example,)1 388( For)1 189(is ignored.)1 422 3 3764 4846 t
+9 CW f
+(fn cd{)1 324 1 1258 5016 t
+(builtin cd $* && pwd)4 1080 1 1474 5126 t
+(})1258 5236 w
+10 R f
+(defines a replacement for the)4 1177 1 970 5416 t
+10 CW f
+(cd)2177 5416 w
+10 R f
+(built-in \(see below\) that announces the full name of the new direc-)11 2713 1 2327 5416 t
+(tory.)970 5536 w
+10 CW f
+(cd [)1 240 1 720 5692 t
+10 I f
+(dir)960 5692 w
+10 CW f
+(])1077 5692 w
+10 R f
+(Change the current directory to)4 1255 1 970 5812 t
+10 I f
+(dir)2252 5812 w
+10 R f
+( default argument is)3 802(. The)1 232 2 2369 5812 t
+10 CW f
+($home)3430 5812 w
+10 R f
+(.)3730 5812 w
+10 CW f
+($cdpath)3808 5812 w
+10 R f
+(is a list of places in)5 784 1 4256 5812 t
+(which to search for)3 767 1 970 5932 t
+10 I f
+(dir)1762 5932 w
+10 R f
+(.)1879 5932 w
+10 CW f
+(eval [)1 360 1 720 6088 t
+10 I f
+(arg ...)1 239 1 1080 6088 t
+10 CW f
+(])1319 6088 w
+10 R f
+(The arguments are catenated separated by spaces into a string, read as input to)13 3159 1 970 6208 t
+10 I f
+(rc)4158 6208 w
+10 R f
+( For)1 193(, and executed.)2 606 2 4241 6208 t
+(example,)970 6328 w
+9 CW f
+(x='$y')1258 6498 w
+(y=Doody)1258 6608 w
+(eval echo Howdy, $x)3 1026 1 1258 6718 t
+10 R f
+(would echo)1 463 1 970 6898 t
+9 CW f
+(Howdy, Doody)1 648 1 1258 7068 t
+10 R f
+(since the arguments of)3 901 1 970 7248 t
+10 CW f
+(eval)1896 7248 w
+10 R f
+(would be)1 369 1 2161 7248 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 6 6
+%%Page: 7 7
+/saveobj save def
+mark
+7 pagesetup
+10 R f
+(- 7 -)2 166 1 2797 480 t
+9 CW f
+(echo Howdy, $y)2 756 1 1258 830 t
+10 R f
+(after substituting for)2 816 1 970 1010 t
+10 CW f
+($x)1811 1010 w
+10 R f
+(.)1931 1010 w
+10 CW f
+(shift [)1 420 1 720 1166 t
+10 I f
+(n)1140 1166 w
+10 CW f
+(])1190 1166 w
+10 R f
+(Delete the first)2 593 1 970 1286 t
+10 I f
+(n)1588 1286 w
+10 R f
+(\(default 1\) elements of)3 906 1 1663 1286 t
+10 CW f
+($*)2594 1286 w
+10 R f
+(.)2714 1286 w
+10 CW f
+(wait [)1 360 1 720 1442 t
+10 I f
+(pid)1080 1442 w
+10 CW f
+(])1208 1442 w
+10 R f
+( given)1 263(Wait for the process with the)5 1231 2 970 1562 t
+10 I f
+(pid)2505 1562 w
+10 R f
+( no)1 141( If)1 132(to exit.)1 294 3 2674 1562 t
+10 I f
+(pid)3282 1562 w
+10 R f
+(is given, all outstanding processes are)5 1589 1 3451 1562 t
+(waited for.)1 432 1 970 1682 t
+10 CW f
+(whatis)720 1838 w
+10 I f
+(name ...)1 316 1 1140 1838 t
+10 R f
+( each)1 209(Print the value of)3 694 2 970 1958 t
+10 I f
+(name)1900 1958 w
+10 R f
+(in a form suitable for input to)6 1189 1 2143 1958 t
+10 I f
+(rc)3359 1958 w
+10 R f
+( output is an assignment to a vari-)7 1366(. The)1 232 2 3442 1958 t
+(able, the definition of a function, a call to)8 1709 1 970 2078 t
+10 CW f
+(builtin)2711 2078 w
+10 R f
+( the path name of a)5 792(for a built-in command, or)4 1085 2 3163 2078 t
+( example,)1 388( For)1 189(binary program.)1 643 3 970 2198 t
+9 CW f
+(whatis path g cd who)4 1080 1 1258 2368 t
+10 R f
+(might print)1 448 1 970 2548 t
+9 CW f
+(path=\(. /bin /usr/bin\))2 1188 1 1258 2718 t
+(fn g {gre -e $1 *.[hycl]})5 1350 1 1258 2828 t
+(builtin cd)1 540 1 1258 2938 t
+(/bin/who)1258 3048 w
+10 CW f
+(\304)720 3264 w
+10 I f
+(subject pattern ...)2 697 1 840 3264 t
+10 R f
+(The)970 3384 w
+10 I f
+(subject)1150 3384 w
+10 R f
+(is matched against each)3 945 1 1458 3384 t
+10 I f
+(pattern)2428 3384 w
+10 R f
+( a match,)2 365( On)1 172(in turn.)1 289 3 2742 3384 t
+10 CW f
+($status)3594 3384 w
+10 R f
+( Otherwise,)1 486(is set to true.)3 514 2 4040 3384 t
+(it is set to)3 396 1 970 3504 t
+10 CW f
+('no match')1 602 1 1393 3504 t
+10 R f
+( The)1 207( are the same as for filename matching.)7 1582(. Patterns)1 399 3 1995 3504 t
+10 I f
+(patterns)4210 3504 w
+10 R f
+(are not sub-)2 475 1 4565 3504 t
+(jected to filename replacement before the)5 1698 1 970 3624 t
+10 CW f
+(\304)2702 3624 w
+10 R f
+(command is executed, so they need not be enclosed in)9 2244 1 2796 3624 t
+(quotation marks, unless of course, a literal match for)8 2102 1 970 3744 t
+10 CW f
+(* [)1 145 1 3097 3744 t
+10 R f
+(or)3267 3744 w
+10 CW f
+(?)3375 3744 w
+10 R f
+( example)1 363( For)1 189(is required.)1 449 3 3485 3744 t
+9 CW f
+(\304 $1 ?)2 324 1 1258 3914 t
+10 R f
+(matches any single character, whereas)4 1525 1 970 4094 t
+9 CW f
+(\304 $1 '?')2 432 1 1258 4264 t
+10 R f
+(only matches a literal question mark.)5 1476 1 970 4444 t
+10 B f
+( I/O Redirection)2 694(19. Advanced)1 603 2 720 4684 t
+10 I f
+(Rc)720 4840 w
+10 R f
+( of file descriptors other than 0 and 1 \(standard input and output\) by specifying the file)16 3472(allows redirection)1 718 2 850 4840 t
+(descriptor in square brackets)3 1144 1 720 4960 t
+10 CW f
+([ ])1 180 1 1889 4960 t
+10 R f
+(after the)1 329 1 2094 4960 t
+10 CW f
+(<)2448 4960 w
+10 R f
+(or)2533 4960 w
+10 CW f
+(>)2641 4960 w
+10 R f
+( example,)1 388(. For)1 214 2 2701 4960 t
+9 CW f
+(cc junk.c >[2]junk.diag)2 1242 1 1008 5130 t
+10 R f
+(saves the compiler's diagnostics in)4 1393 1 720 5310 t
+10 CW f
+(junk.diag)2138 5310 w
+10 R f
+(.)2678 5310 w
+( replaced by a copy, in the sense of)8 1471(File descriptors may be)3 959 2 720 5466 t
+10 I f
+(dup)3184 5466 w
+10 R f
+(\(2\), of an already-open file by typing, for)7 1706 1 3334 5466 t
+(example)720 5586 w
+9 CW f
+(cc junk.c >[2=1])2 864 1 1008 5756 t
+10 R f
+( in conjunction with other)4 1061( is more useful)3 609( It)1 117(This replaces file descriptor 2 with a copy of file descriptor 1.)11 2533 4 720 5936 t
+(redirections, like this)2 841 1 720 6056 t
+9 CW f
+(cc junk.c >junk.out >[2=1])3 1404 1 1008 6226 t
+10 R f
+( descriptor 1 to)3 629(Redirections are evaluated from left to right, so this redirects file)10 2667 2 720 6406 t
+10 CW f
+(junk.out)4050 6406 w
+10 R f
+(, then points)2 510 1 4530 6406 t
+( contrast,)1 366( By)1 167(file descriptor 2 at the same file.)6 1289 3 720 6526 t
+9 CW f
+(cc junk.c >[2=1] >junk.out)3 1404 1 1008 6696 t
+10 R f
+( \(presumably the terminal\), and then directs file)7 2000(Redirects file descriptor 2 to a copy of file descriptor 1)10 2320 2 720 6876 t
+( the first case, standard and diagnostic output will be intermixed in)11 2686( In)1 135( at a file.)3 355(descriptor 1)1 477 4 720 6996 t
+10 CW f
+(junk.out)4400 6996 w
+10 R f
+(. In)1 160 1 4880 6996 t
+(the second, diagnostic output will appear on the terminal, and standard output will be sent to the file.)17 4024 1 720 7116 t
+( For)1 211( using the duplication notation with an empty right-hand side.)9 2664(File descriptors may be closed by)5 1445 3 720 7272 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 7 7
+%%Page: 8 8
+/saveobj save def
+mark
+8 pagesetup
+10 R f
+(- 8 -)2 166 1 2797 480 t
+(example,)720 840 w
+9 CW f
+(cc junk.c >[2=])2 810 1 1008 1010 t
+10 R f
+(will discard diagnostics from the compilation.)5 1838 1 720 1190 t
+(Arbitrary file descriptors may be sent through a pipe by typing, for example)12 3031 1 720 1346 t
+9 CW f
+(cc junk.c |[2] grep -v '\303$')5 1458 1 1008 1516 t
+10 R f
+( that the output of)4 779( Note)1 261( the C compiler's output.)4 1065(This deletes those ever-so-annoying blank lines from)6 2215 4 720 1696 t
+10 CW f
+(grep)720 1816 w
+10 R f
+(still appears on file descriptor 1.)5 1287 1 985 1816 t
+( a pipe to some file descriptor other than zero.)9 1871(Very occasionally you may wish to connect the input side of)10 2449 2 720 1972 t
+(The notation)1 508 1 720 2092 t
+9 CW f
+(cmd1 |[5=19] cmd2)2 918 1 1008 2262 t
+10 R f
+(creates a pipeline with)3 895 1 720 2442 t
+10 CW f
+(cmd1)1640 2442 w
+10 R f
+('s file descriptor 5 connected through a pipe to)8 1863 1 1880 2442 t
+10 CW f
+(cmd2)3768 2442 w
+10 R f
+('s file descriptor 19.)3 804 1 4008 2442 t
+10 B f
+( documents)1 486(20. Here)1 385 2 720 2682 t
+10 I f
+(Rc)720 2838 w
+10 R f
+( to commands, as in this)5 982(procedures may include data, called ``here documents'', to be provided as input)11 3206 2 852 2838 t
+(version of the)2 549 1 720 2958 t
+10 I f
+(tel)1294 2958 w
+10 R f
+(command)1419 2958 w
+9 CW f
+(for\(i\) grep $i <<!)3 972 1 1008 3128 t
+(...)1008 3238 w
+(nls 2T-402 2912)2 810 1 1008 3348 t
+(norman 2C-514 2842)2 972 1 1008 3458 t
+(pjw 2T-502 7214)2 810 1 1008 3568 t
+(...)1008 3678 w
+(!)1008 3788 w
+10 R f
+(A here document is introduced by the redirection symbol)8 2288 1 720 3968 t
+10 CW f
+(<<)3034 3968 w
+10 R f
+( by an arbitrary eof marker \()6 1141(, followed)1 406 2 3154 3968 t
+10 CW f
+(!)4701 3968 w
+10 R f
+(in the)1 227 1 4813 3968 t
+( to a line containing only the eof marker are saved in a tempo-)13 2507( following the command, up)4 1142(example\). Lines)1 671 3 720 4088 t
+(rary file that it connected to the command's standard input when it is run.)13 2935 1 720 4208 t
+10 I f
+(Rc)720 4364 w
+10 R f
+( following)1 414( The)1 205(does variable substitution in here documents.)5 1804 3 850 4364 t
+10 I f
+(subst)3298 4364 w
+10 R f
+(command:)3529 4364 w
+9 CW f
+(ed $3 <<EOF)2 594 1 1008 4534 t
+(g/$1/s//$2/g)1008 4644 w
+(w)1008 4754 w
+(EOF)1008 4864 w
+10 R f
+( of)1 113(changes all occurrences)2 954 2 720 5044 t
+10 CW f
+($1)1817 5044 w
+10 R f
+(to)1967 5044 w
+10 CW f
+($2)2075 5044 w
+10 R f
+(in file)1 241 1 2225 5044 t
+10 CW f
+($3)2496 5044 w
+10 R f
+( include a literal)3 661(. To)1 191 2 2616 5044 t
+10 CW f
+($)3498 5044 w
+10 R f
+(in a here document, type)4 1004 1 3588 5044 t
+10 CW f
+($$)4622 5044 w
+10 R f
+( the)1 152(. If)1 146 2 4742 5044 t
+(name of a variable is followed immediately by)7 1861 1 720 5164 t
+10 CW f
+(\303)2606 5164 w
+10 R f
+(, the caret is deleted.)4 820 1 2666 5164 t
+( by enclosing the eof marker following)6 1643(Variable substitution can be entirely suppressed)5 1981 2 720 5320 t
+10 CW f
+(<<)4384 5320 w
+10 R f
+(in quotation)1 496 1 4544 5320 t
+(marks.)720 5440 w
+(Here documents may be provided on file descriptors other than 0 by typing, for example)14 3530 1 720 5596 t
+9 CW f
+(cmd <<[4]End)1 648 1 1008 5766 t
+(...)1008 5876 w
+(End)1008 5986 w
+10 B f
+(21. Signals)1 482 1 720 6286 t
+10 I f
+(Rc)720 6442 w
+10 R f
+( function with the name of)5 1067( A)1 124( an interrupt is received from the terminal.)7 1705(scripts normally terminate when)3 1293 4 851 6442 t
+( the usual way, but called when)6 1268(a signal, in lower case, is defined in)7 1449 2 720 6562 t
+10 I f
+(rc)3464 6562 w
+10 R f
+( of inter-)2 353( Signals)1 347(receives the signal.)2 766 3 3574 6562 t
+(est are:)1 285 1 720 6682 t
+10 CW f
+(sighup)720 6838 w
+10 R f
+( controlling teletype has disconnected from)5 1728(Hangup. The)1 546 2 970 6958 t
+10 I f
+(rc)3269 6958 w
+10 R f
+(.)3352 6958 w
+10 CW f
+(sigint)720 7114 w
+10 R f
+(The interrupt character \(usually ASCII del\) was typed on the controlling terminal.)11 3272 1 970 7234 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 8 8
+%%Page: 9 9
+/saveobj save def
+mark
+9 pagesetup
+10 R f
+(- 9 -)2 166 1 2797 480 t
+10 CW f
+(sigquit)720 840 w
+10 R f
+(The quit character \(usually ASCII fs, ctrl-\\\) was typed on the controlling terminal.)12 3278 1 970 960 t
+10 CW f
+(sigterm)720 1116 w
+10 R f
+(This signal is normally sent by)5 1231 1 970 1236 t
+10 I f
+(kill)2226 1236 w
+10 R f
+(\(1\).)2354 1236 w
+10 CW f
+(sigexit)720 1392 w
+10 R f
+(An artificial signal sent when)4 1176 1 970 1512 t
+10 I f
+(rc)2171 1512 w
+10 R f
+(is about to exit.)3 617 1 2279 1512 t
+(As an example,)2 618 1 720 1668 t
+9 CW f
+(fn sigint{)1 540 1 1008 1838 t
+(rm /tmp/junk)1 648 1 1224 1948 t
+(exit)1224 2058 w
+(})1008 2168 w
+10 R f
+(sets a trap for the keyboard interrupt that removes a temporary file before exiting.)13 3259 1 720 2348 t
+( routine is set to)4 651(Signals will be ignored if the signal)6 1434 2 720 2504 t
+10 CW f
+({})2833 2504 w
+10 R f
+( revert to their default behavior when their)7 1714(. Signals)1 373 2 2953 2504 t
+(handlers' definitions are deleted.)3 1308 1 720 2624 t
+10 B f
+(22. Environment)1 742 1 720 2864 t
+10 R f
+( Plan 9, the environ-)4 817( On)1 173( is a list of name-value pairs made available to executing binaries.)11 2645(The environment)1 685 4 720 3020 t
+( in a file system named)5 929(ment is stored)2 565 2 720 3140 t
+10 CW f
+(#e)2240 3140 w
+10 R f
+(, normally mounted on)3 914 1 2360 3140 t
+10 CW f
+(/env)3300 3140 w
+10 R f
+( value of each variable is stored)6 1269(. The)1 231 2 3540 3140 t
+( is not quite as horrendous as it sounds,)8 1577( \(This)1 262(in a separate file, with components terminated by ASCII nuls.)9 2481 3 720 3260 t
+( contents of)2 482( The)1 213( access is involved.\))3 828(the file system is maintained entirely in core, so no disk or network)12 2797 4 720 3380 t
+10 CW f
+(/env)720 3500 w
+10 R f
+(are shared on a per-process group basis)6 1579 1 987 3500 t
+10 S f
+(-)2593 3500 w
+10 R f
+( process group is created it effectively attaches)7 1885(when a new)2 480 2 2675 3500 t
+10 CW f
+(/env)720 3620 w
+10 R f
+( consequence of this organization is that)6 1603( A)1 122(to a new file system initialized with a copy of the old one.)12 2329 3 986 3620 t
+(commands can change environment entries and see the changes reflected in)10 3014 1 720 3740 t
+10 I f
+(rc)3759 3740 w
+10 R f
+(.)3842 3740 w
+( in the environment, although this could easily)7 1939(There is not currently a way on Plan 9 to place functions)11 2381 2 720 3896 t
+(done by mounting another instance of)5 1537 1 720 4016 t
+10 CW f
+(#e)2287 4016 w
+10 R f
+( can be)2 290( problem is that currently there)5 1259( The)1 210(on another directory.)2 844 4 2437 4016 t
+(only one instance of)3 807 1 720 4136 t
+10 CW f
+(#e)1552 4136 w
+10 R f
+(per process group.)2 734 1 1697 4136 t
+10 B f
+( Variables)1 436(23. Local)1 414 2 720 4376 t
+10 R f
+( assignment followed by a com-)5 1289( An)1 174( the duration of a single command.)6 1402(It is often useful to set a variable for)8 1455 4 720 4532 t
+( example)1 363( For)1 189(mand has this effect.)3 826 3 720 4652 t
+9 CW f
+(a=global)1008 4822 w
+(a=local echo $a)2 810 1 1008 4932 t
+(echo $a)1 378 1 1008 5042 t
+10 R f
+(will print)1 370 1 720 5222 t
+9 CW f
+(local)1008 5392 w
+(global)1008 5502 w
+10 R f
+(This works even for compound commands, like)6 1906 1 720 5682 t
+9 CW f
+(f=/fairly/long/file/name {)1 1404 1 1008 5852 t
+({ wc $f; spell $f; diff $f.old $f } |)9 1998 1 1224 5962 t
+(pr -h 'Facts about '$f | lp -ddp)7 1728 1 1332 6072 t
+(})1008 6182 w
+10 B f
+( \320)1 125(24. Examples)1 592 2 720 6482 t
+10 I f
+(cd, pwd)1 311 1 1462 6482 t
+10 R f
+(Here is a pair of functions that provide enhanced versions of the standard)12 2933 1 720 6638 t
+10 CW f
+(cd)3679 6638 w
+10 R f
+(and)3825 6638 w
+10 CW f
+(pwd)3996 6638 w
+10 R f
+(commands. \(Thanks)1 837 1 4203 6638 t
+(to Rob Pike for these.\))4 902 1 720 6758 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 9 9
+%%Page: 10 10
+/saveobj save def
+mark
+10 pagesetup
+10 R f
+(- 10 -)2 216 1 2772 480 t
+9 CW f
+( default prompt)2 810( #)1 486(ps1='% ')1 432 3 1008 830 t
+( a tab character)3 864( #)1 432(tab=' ')1 486 3 1008 940 t
+(fn pbd{)1 378 1 1008 1050 t
+(/bin/pwd|sed 's;.*/;;')1 1188 1 1116 1160 t
+(})1008 1270 w
+(fn cd{)1 324 1 1008 1380 t
+(builtin cd $1 &&)3 864 1 1116 1490 t
+(switch\($#*\){)1116 1600 w
+(case 0)1 324 1 1116 1710 t
+(dir=$home)1224 1820 w
+(prompt=\($ps1 $tab\))1 972 1 1224 1930 t
+(case *)1 324 1 1116 2040 t
+(switch\($1\))1224 2150 w
+(case /*)1 378 1 1224 2260 t
+(dir=$1)1332 2370 w
+(prompt=\(`{pbd}\303$ps1 $tab\))1 1350 1 1332 2480 t
+(case */* ..*)2 648 1 1224 2590 t
+(dir=\(\))1332 2700 w
+(prompt=\(`{pbd}\303$ps1 $tab\))1 1350 1 1332 2810 t
+(case *)1 324 1 1224 2920 t
+(dir=\(\))1332 3030 w
+(prompt=\($1\303$ps1 $tab\))1 1134 1 1332 3140 t
+(})1224 3250 w
+(})1116 3360 w
+(})1008 3470 w
+(fn pwd{)1 378 1 1008 3580 t
+(if\(\304 $#dir 0\))2 702 1 1116 3690 t
+(dir=`{/bin/pwd})1224 3800 w
+(echo $dir)1 486 1 1116 3910 t
+(})1008 4020 w
+10 R f
+(Function)720 4200 w
+10 CW f
+(pwd)1104 4200 w
+10 R f
+(is a version of the standard)5 1088 1 1312 4200 t
+10 CW f
+(pwd)2428 4200 w
+10 R f
+(that caches its value in variable)5 1270 1 2636 4200 t
+10 CW f
+($dir)3935 4200 w
+10 R f
+(, because the genuine)3 865 1 4175 4200 t
+10 CW f
+(pwd)720 4320 w
+10 R f
+(can be quite slow to execute.)5 1153 1 925 4320 t
+(Function)720 4476 w
+10 CW f
+(pbd)1114 4476 w
+10 R f
+( Function)1 419(is a helper that prints the last component of a directory name.)11 2589 2 1332 4476 t
+10 CW f
+(cd)4378 4476 w
+10 R f
+(calls the)1 344 1 4537 4476 t
+10 CW f
+(cd)4920 4476 w
+10 R f
+( so, it sets)3 404( If)1 119( was successful.)2 646(built-in, and checks that it)4 1057 4 720 4596 t
+10 CW f
+($dir)2974 4596 w
+10 R f
+(and)3242 4596 w
+10 CW f
+($prompt)3414 4596 w
+10 R f
+( prompt will include the)4 973(. The)1 233 2 3834 4596 t
+(last component of the current directory \(except in the home directory, where it will be null\), and)16 3869 1 720 4716 t
+10 CW f
+($dir)4616 4716 w
+10 R f
+(will)4884 4716 w
+(be reset either to the correct value or to)8 1562 1 720 4836 t
+10 CW f
+(\(\))2307 4836 w
+10 R f
+(, so that the)3 461 1 2427 4836 t
+10 CW f
+(pwd)2913 4836 w
+10 R f
+(function will work correctly.)3 1148 1 3118 4836 t
+10 B f
+( \320)1 125(25. Examples)1 592 2 720 5076 t
+10 I f
+(man)1462 5076 w
+10 R f
+(The)720 5232 w
+10 I f
+(man)900 5232 w
+10 R f
+( is called, for example, as)5 1017( It)1 111(command prints pages from of the Programmer's Manual.)7 2324 3 1097 5232 t
+9 CW f
+(man 3 isatty)2 648 1 1008 5402 t
+(man rc)1 324 1 1008 5512 t
+(man -t cat)2 540 1 1008 5622 t
+10 R f
+(In the first case, the page for)6 1192 1 720 5802 t
+10 I f
+(isatty)1946 5802 w
+10 R f
+( second case, the manual page for)6 1403( the)1 156( In)1 142(in section 3 is printed.)4 922 4 2197 5802 t
+10 I f
+(rc)4855 5802 w
+10 R f
+(is)4973 5802 w
+( specified, all sections are searched for the page, and it is found in sec-)14 2871( no manual section is)4 864(printed. Since)1 585 3 720 5922 t
+( the third case, the page for)6 1083( In)1 133(tion 1.)1 256 3 720 6042 t
+10 I f
+(cat)2217 6042 w
+10 R f
+(is typeset \(the)2 555 1 2364 6042 t
+10 CW f
+(-t)2944 6042 w
+10 R f
+(option\).)3089 6042 w
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 10 10
+%%Page: 11 11
+/saveobj save def
+mark
+11 pagesetup
+10 R f
+(- 11 -)2 216 1 2772 480 t
+9 CW f
+(cd /n/bowell/usr/man || {)3 1350 1 1008 830 t
+(echo $0: Manual not on line! >[1=2])6 1890 1 1116 940 t
+(exit 1)1 324 1 1116 1050 t
+(})1008 1160 w
+( default nroff)2 756(NT=n #)1 378 2 1008 1270 t
+(s='*' # section, default try all)5 1728 1 1008 1380 t
+(for\(i\) switch\($i\){)1 972 1 1008 1490 t
+(case -t)1 378 1 1008 1600 t
+(NT=t)1116 1710 w
+(case -n)1 378 1 1008 1820 t
+(NT=n)1116 1930 w
+(case -*)1 378 1 1008 2040 t
+(echo Usage: $0 '[-nt] [section] page ...' >[1=2])7 2592 1 1116 2150 t
+(exit 1)1 324 1 1116 2260 t
+(case [1-9] 10)2 702 1 1008 2370 t
+(s=$i)1116 2480 w
+(case *)1 324 1 1008 2590 t
+(eval 'pages=man'$s/$i'.*')1 1350 1 1116 2700 t
+(for\(page in $pages\){)2 1080 1 1116 2810 t
+(if\(test -f $page\))2 918 1 1224 2920 t
+($NT\303roff -man $page)2 1026 1 1332 3030 t
+(if not)1 324 1 1224 3140 t
+(echo $0: $i not found >[1=2])5 1512 1 1332 3250 t
+(})1116 3360 w
+(})1008 3470 w
+10 R f
+(Note the use of)3 619 1 720 3650 t
+10 CW f
+(eval)1368 3650 w
+10 R f
+( Without)1 382(to make a list of candidate manual pages.)7 1675 2 1637 3650 t
+10 CW f
+(eval)3723 3650 w
+10 R f
+(, the)1 176 1 3963 3650 t
+10 CW f
+(*)4168 3650 w
+10 R f
+(stored in)1 352 1 4258 3650 t
+10 CW f
+($s)4640 3650 w
+10 R f
+(would)4790 3650 w
+( if it weren't, it would be)6 1098(not trigger filename matching \320 it's enclosed in quotation marks, and even)11 3222 2 720 3770 t
+(expanded when assigned to)3 1098 1 720 3890 t
+10 CW f
+($s)1844 3890 w
+10 R f
+( causes its arguments to be re-processed by)7 1728(. Eval)1 259 2 1964 3890 t
+10 I f
+(rc)3977 3890 w
+10 R f
+('s parser and interpreter,)3 980 1 4060 3890 t
+(effectively delaying evaluation of the)4 1491 1 720 4010 t
+10 CW f
+(*)2236 4010 w
+10 R f
+(until the assignment to)3 909 1 2321 4010 t
+10 CW f
+($pages)3255 4010 w
+10 R f
+(.)3615 4010 w
+10 B f
+( \320)1 125(26. Examples)1 592 2 720 4250 t
+10 I f
+(holmdel)1462 4250 w
+10 R f
+(The following)1 575 1 720 4406 t
+10 I f
+(rc)1327 4406 w
+10 R f
+(script plays the deceptively simple game)5 1658 1 1442 4406 t
+10 I f
+(holmdel)3132 4406 w
+10 R f
+(, in which the players alternately name)6 1586 1 3454 4406 t
+(Bell Labs locations, the winner being the first to mention Holmdel.)10 2682 1 720 4526 t
+(This script is worth describing in detail \(rather, it would be if it weren't so silly.\))15 3222 1 720 4682 t
+(Variable)720 4838 w
+10 CW f
+($t)1097 4838 w
+10 R f
+( Including)1 443(is an abbreviation for the name of a temporary file.)9 2115 2 1251 4838 t
+10 CW f
+($pid)3844 4838 w
+10 R f
+(, initialized by)2 595 1 4084 4838 t
+10 I f
+(rc)4714 4838 w
+10 R f
+(to its)1 208 1 4832 4838 t
+( one)1 178(process-id, in the names of temporary files insures that their names won't collide, in case more than)16 4142 2 720 4958 t
+(instance of the script is running at a time.)8 1651 1 720 5078 t
+(Function)720 5234 w
+10 CW f
+(read)1102 5234 w
+10 R f
+( is the name of a variable into which a line gathered from standard input is read.)16 3223('s argument)1 475 2 1342 5234 t
+10 CW f
+($ifs)720 5354 w
+10 R f
+( Thus)1 252(is set to just a newline.)5 921 2 987 5354 t
+10 CW f
+(read)2187 5354 w
+10 R f
+( at spaces, but the terminating newline is)7 1633('s input is not split apart)5 980 2 2427 5354 t
+(deleted.)720 5474 w
+(A handler is set to catch)5 1012 1 720 5630 t
+10 CW f
+(sigint)1767 5630 w
+10 R f
+(,)2127 5630 w
+10 CW f
+(sigquit)2188 5630 w
+10 R f
+(, and)1 205 1 2608 5630 t
+10 CW f
+(sighup,)2849 5630 w
+10 R f
+(and the artificial)2 676 1 3305 5630 t
+10 CW f
+(sigexit)4017 5630 w
+10 R f
+( just)1 181(signal. It)1 386 2 4473 5630 t
+(removes the temporary file and exits.)5 1486 1 720 5750 t
+( file is initialized from a here document containing a list of Bell Labs locations, and the main)17 3730(The temporary)1 590 2 720 5906 t
+(loop starts.)1 439 1 720 6026 t
+( \(in)1 144(First, the program guesses a location)5 1500 2 720 6182 t
+10 CW f
+($lab)2397 6182 w
+10 R f
+(\) using the)2 438 1 2637 6182 t
+10 CW f
+(fortune)3108 6182 w
+10 R f
+(program to pick a random line from)6 1479 1 3561 6182 t
+( prints the location, and if it guessed Holmdel, prints a message and exits.)13 2942( It)1 111(the location list.)2 642 3 720 6302 t
+( the)1 149(Then it uses)2 485 2 720 6458 t
+10 CW f
+(read)1381 6458 w
+10 R f
+(function to get lines from standard input and validity-check them until it gets a legal)14 3392 1 1648 6458 t
+( that the condition part of a)6 1118(name. Note)1 491 2 720 6578 t
+10 CW f
+(while)2360 6578 w
+10 R f
+( the exit status of the)5 855( Only)1 255( compound command.)2 901(can be a)2 338 4 2691 6578 t
+(last command in the sequence is checked.)6 1666 1 720 6698 t
+( it goes back to the top of the loop.)9 1388( Otherwise)1 460(Again, if the result is Holmdel, it prints a message and exits.)11 2415 3 720 6854 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 11 11
+%%Page: 12 12
+/saveobj save def
+mark
+12 pagesetup
+10 R f
+(- 12 -)2 216 1 2772 480 t
+9 CW f
+(t=/tmp/holmdel$pid)1008 890 w
+(fn read{)1 432 1 1008 1000 t
+($1=`{awk '{print;exit}'})1 1296 1 1440 1110 t
+(})1008 1220 w
+(ifs=')1008 1330 w
+( just a newline)3 810(' #)1 486 2 1008 1440 t
+(fn sigexit sigint sigquit sighup{)4 1782 1 1008 1550 t
+(rm -f $t)2 432 1 1440 1660 t
+(exit)1440 1770 w
+(})1008 1880 w
+(cat <<'!' >$t)2 702 1 1008 1990 t
+(Allentown)1008 2100 w
+(Atlanta)1008 2210 w
+(Cedar Crest)1 594 1 1008 2320 t
+(Chester)1008 2430 w
+(Columbus)1008 2540 w
+(Elmhurst)1008 2650 w
+(Fullerton)1008 2760 w
+(Holmdel)1008 2870 w
+(Indian Hill)1 594 1 1008 2980 t
+(Merrimack Valley)1 864 1 1008 3090 t
+(Morristown)1008 3200 w
+(Piscataway)1008 3310 w
+(Reading)1008 3420 w
+(Short Hills)1 594 1 1008 3530 t
+(South Plainfield)1 864 1 1008 3640 t
+(Summit)1008 3750 w
+(Whippany)1008 3860 w
+(West Long Branch)2 864 1 1008 3970 t
+(!)1008 4080 w
+(while\(true\){)1008 4190 w
+(lab=`{/usr/games/fortune $t})1 1512 1 1170 4300 t
+(echo $lab)1 486 1 1170 4410 t
+(if\(\304 $lab Holmdel\){)2 1026 1 1170 4520 t
+(echo You lose.)2 756 1 1332 4630 t
+(exit)1332 4740 w
+(})1170 4850 w
+(while\(read lab; ! grep -i -s $lab $t\) echo No such location.)11 3240 1 1170 4960 t
+(if\(\304 $lab [hH]olmdel\){)2 1188 1 1170 5070 t
+(echo You win.)2 702 1 1332 5180 t
+(exit)1332 5290 w
+(})1170 5400 w
+(})1008 5510 w
+10 B f
+(27. Discussion)1 626 1 720 5690 t
+10 R f
+(Steve Bourne's)1 622 1 720 5846 t
+10 CW f
+(/bin/sh)1376 5846 w
+10 R f
+( I)1 93( comparison.)1 526(is extremely well-designed; any successor is bound to suffer in)9 2591 3 1830 5846 t
+( things wherever possible, usually by)5 1512(have tried to fix its best-acknowledged shortcomings and to simplify)9 2808 2 720 5966 t
+( I)1 67( Obviously)1 475( when irresistibly tempted have I introduced novel ideas.)8 2330( Only)1 258(omitting unessential features.)2 1190 5 720 6086 t
+(have tinkered extensively with Bourne's syntax, that being where his work was most open to criticism.)15 4109 1 720 6206 t
+(The most important principle in)4 1284 1 720 6362 t
+10 I f
+(rc)2032 6362 w
+10 R f
+( is never scanned more)4 930( Input)1 265('s design is that it's not a macro processor.)8 1730 3 2115 6362 t
+( by the lexical and syntactic analysis code \(except, of course, by the)12 2885(than once)1 401 2 720 6482 t
+10 CW f
+(eval)4046 6482 w
+10 R f
+(command, whose)1 714 1 4326 6482 t
+10 I f
+(raison d'etre)1 519 1 720 6602 t
+10 R f
+(is to break the rule\).)4 801 1 1264 6602 t
+( These)1 298( arguments containing spaces.)3 1228(Bourne shell scripts can often be made to run wild by passing them)12 2794 3 720 6758 t
+(will be split into multiple arguments using)6 1780 1 720 6878 t
+10 CW f
+(IFS)2539 6878 w
+10 R f
+( In)1 146( inopportune times.)2 801(, often as)2 391 3 2719 6878 t
+10 I f
+(rc)4095 6878 w
+10 R f
+(, values of variables,)3 862 1 4178 6878 t
+( have)1 227( Arguments)1 508( when substituted into a command.)5 1464(including command line arguments, are not re-read)6 2121 4 720 6998 t
+(presumably been scanned in the parent process, and ought not to be re-read.)12 3026 1 720 7118 t
+( store lists of)3 571( needs to be able to)5 858( He)1 184(Why does Bourne re-scan commands after variable substitution?)7 2707 4 720 7274 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 12 12
+%%Page: 13 13
+/saveobj save def
+mark
+13 pagesetup
+10 R f
+(- 13 -)2 216 1 2772 480 t
+( we eliminate re-scanning, we must change the)7 1875( If)1 117( character strings.)2 708(arguments in variables whose values are)5 1620 4 720 840 t
+(type of variables, so that they can explicitly carry lists of strings.)11 2583 1 720 960 t
+( are two dif-)3 505( There)1 287( for lists of words.)4 750( need a notation)3 647( We)1 192(This introduces some conceptual complications.)4 1939 6 720 1116 t
+(ferent kinds of concatenation, for strings \320)6 1798 1 720 1236 t
+10 CW f
+($a\303$b)2552 1236 w
+10 R f
+(, and lists \320)3 533 1 2852 1236 t
+10 CW f
+(\($a $b\))1 429 1 3419 1236 t
+10 R f
+( difference between)2 801(. The)1 238 2 3848 1236 t
+10 CW f
+(\(\))4920 1236 w
+10 R f
+(and)720 1356 w
+10 CW f
+('')895 1356 w
+10 R f
+( not the)2 314(is confusing to novices, although the distinction is arguably sensible \320 a null argument is)14 3680 2 1046 1356 t
+(same as no argument.)3 865 1 720 1476 t
+( the text enclosed in back-)5 1100( is because)2 452( This)1 238(Bourne also rescans input when doing command substitution.)7 2530 4 720 1632 t
+( it ought to be parsed when the enclosing com-)9 1939( Properly,)1 427(quotes is not properly a string, but a command.)8 1954 3 720 1752 t
+(mand is, but this makes it difficult to handle nested command substitutions, like this:)13 3393 1 720 1872 t
+9 CW f
+(size=`wc -l \\`ls -t|sed 1q\\``)4 1566 1 1008 2042 t
+10 R f
+( can get much worse)4 832( This)1 231( escaped to avoid terminating the outer command.)7 2018(The inner back-quotes must be)4 1239 4 720 2222 t
+(than the above example; the number of)6 1612 1 720 2342 t
+10 CW f
+(\\)2366 2342 w
+10 R f
+('s required is exponential in the nesting depth.)7 1911 1 2426 2342 t
+10 I f
+(Rc)4396 2342 w
+10 R f
+(fixes this by)2 505 1 4535 2342 t
+(making the backquote a unary operator whose argument is a command, like this:)12 3220 1 720 2462 t
+9 CW f
+(size=`{wc -l `{ls -t|sed 1q}})4 1566 1 1008 2632 t
+10 R f
+(No escapes are ever required, and the whole thing is parsed in one pass.)13 2862 1 720 2812 t
+(For similar reasons)2 772 1 720 2968 t
+10 I f
+(rc)1520 2968 w
+10 R f
+( associating a string)3 803(defines signal handlers as though they were functions, instead of)9 2606 2 1631 2968 t
+(with each signal, as Bourne does, with the attendant possibility of getting a syntax error message in)16 4320 1 720 3088 t
+( Since)1 285(response to typing the interrupt character.)5 1723 2 720 3208 t
+10 I f
+(rc)2766 3208 w
+10 R f
+(parses input when typed, it reports errors when you)8 2153 1 2887 3208 t
+(make them.)1 466 1 720 3328 t
+( need for the distinction)4 1029( is no)2 255( There)1 301(For all this trouble, we gain substantial semantic simplifications.)8 2735 4 720 3484 t
+(between)720 3604 w
+10 CW f
+($*)1080 3604 w
+10 R f
+(and)1228 3604 w
+10 CW f
+($@)1400 3604 w
+10 R f
+( rules that)2 398( is no need for four types of quotation, nor the extremely complicated)12 2812(. There)1 310 3 1520 3604 t
+( In)1 133(govern them.)1 527 2 720 3724 t
+10 I f
+(rc)1405 3724 w
+10 R f
+( to appear in an argu-)5 855(you use quotation marks exactly when you want a syntax character)10 2672 2 1513 3724 t
+(ment.)720 3844 w
+10 CW f
+(IFS)999 3844 w
+10 R f
+(is no longer used, except in the one case where it was indispensable: converting command out-)15 3833 1 1207 3844 t
+(put into argument lists during command substitution.)6 2121 1 720 3964 t
+( security hole [Ree88].)3 933(This also avoids an important)4 1211 2 720 4120 t
+10 I f
+(System)2922 4120 w
+10 R f
+(\(3\) and)1 293 1 3199 4120 t
+10 I f
+(popen)3525 4120 w
+10 R f
+(\(3\) call)1 293 1 3769 4120 t
+10 CW f
+(/bin/sh)4095 4120 w
+10 R f
+(to execute a)2 492 1 4548 4120 t
+( to use either of these routines with any assurance that the specified command)13 3212( is impossible)2 569(command. It)1 539 3 720 4240 t
+(will be executed, even if the caller of)7 1479 1 720 4360 t
+10 I f
+(system)2224 4360 w
+10 R f
+(or)2515 4360 w
+10 I f
+(popen)2623 4360 w
+10 R f
+( can)1 164( This)1 229( for the command.)3 735(specifies a full path name)4 1020 4 2892 4360 t
+( problem is that)3 643( The)1 211( a set-userid program.)3 888(be devastating if it occurs in)5 1164 4 720 4480 t
+10 CW f
+(IFS)3657 4480 w
+10 R f
+(is used to split the command)5 1172 1 3868 4480 t
+(into words, so an attacker can just set)7 1534 1 720 4600 t
+10 CW f
+(IFS=/)2285 4600 w
+10 R f
+( Trojan horse named)3 844(in his environment and leave a)5 1253 2 2616 4600 t
+10 CW f
+(usr)4745 4600 w
+10 R f
+(or)4957 4600 w
+10 CW f
+(bin)720 4720 w
+10 R f
+(in the current working directory before running the privileged program.)9 2891 1 929 4720 t
+10 I f
+(Rc)3874 4720 w
+10 R f
+(fixes this by not ever res-)5 1032 1 4008 4720 t
+(canning input for any reason.)4 1167 1 720 4840 t
+(Most of the other differences between)5 1565 1 720 4996 t
+10 I f
+(rc)2320 4996 w
+10 R f
+( eliminated Bourne's)2 860( I)1 94(and the Bourne shell are not so serious.)7 1647 3 2439 4996 t
+(peculiar forms of variable substitution, like)5 1726 1 720 5116 t
+9 CW f
+(echo ${a=b} ${c-d} ${e?error})3 1566 1 1008 5286 t
+10 R f
+( deleted the builtins)3 822( I)1 95(because they are little used, redundant and easily expressed in less abstruse terms.)12 3403 3 720 5466 t
+10 CW f
+(export)720 5586 w
+10 R f
+(,)1080 5586 w
+10 CW f
+(readonly)1131 5586 w
+10 R f
+(,)1611 5586 w
+10 CW f
+(break)1662 5586 w
+10 R f
+(,)1962 5586 w
+10 CW f
+(continue)2013 5586 w
+10 R f
+(,)2493 5586 w
+10 CW f
+(read)2544 5586 w
+10 R f
+(,)2784 5586 w
+10 CW f
+(return)2835 5586 w
+10 R f
+(,)3195 5586 w
+10 CW f
+(set)3246 5586 w
+10 R f
+(,)3426 5586 w
+10 CW f
+(times)3477 5586 w
+10 R f
+(and)3803 5586 w
+10 CW f
+(unset)3973 5586 w
+10 R f
+(because they seem)2 742 1 4298 5586 t
+(redundant or only marginally useful.)4 1462 1 720 5706 t
+(Where Bourne's syntax draws from Algol 68,)6 1917 1 720 5862 t
+10 I f
+(rc)2677 5862 w
+10 R f
+( I)1 99( is harder to defend.)4 859( This)1 244( C or Awk.)3 492('s is based on)3 586 5 2760 5862 t
+(believe that, for example)3 992 1 720 5982 t
+9 CW f
+(if\(test -f junk\) rm junk)4 1296 1 1008 6152 t
+10 R f
+(is better syntax than)3 802 1 720 6332 t
+9 CW f
+(if test -f junk; then rm junk; fi)7 1782 1 1008 6502 t
+10 R f
+( is less cluttered with keywords, it avoids the semicolons that Bourne requires in odd places, and)16 3921(because it)1 399 2 720 6682 t
+(the syntax characters better set off the active parts of the command.)11 2693 1 720 6802 t
+(The one bit of large-scale syntax that Bourne unquestionably does better than)11 3169 1 720 6958 t
+10 I f
+(rc)3922 6958 w
+10 R f
+(is the)1 222 1 4038 6958 t
+10 CW f
+(if)4293 6958 w
+10 R f
+(statement with)1 594 1 4446 6958 t
+10 CW f
+(else)720 7078 w
+10 R f
+(clause.)986 7078 w
+10 I f
+(Rc)1310 7078 w
+10 R f
+('s)1415 7078 w
+10 CW f
+(if)1512 7078 w
+10 R f
+(has no terminating)2 744 1 1657 7078 t
+10 CW f
+(fi)2426 7078 w
+10 R f
+( a result, the parser cannot tell whether or not)9 1807( As)1 161(-like bracket.)1 526 3 2546 7078 t
+(to expect an)2 482 1 720 7198 t
+10 CW f
+(else)1227 7198 w
+10 R f
+( problem is that after reading, for example)7 1685( The)1 205(clause without looking ahead in its input.)6 1647 3 1492 7198 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 13 13
+%%Page: 14 14
+/saveobj save def
+mark
+14 pagesetup
+10 R f
+(- 14 -)2 216 1 2772 480 t
+9 CW f
+(if\(test -f junk\) echo junk found)5 1728 1 1008 830 t
+10 R f
+(in interactive mode,)2 824 1 720 1010 t
+10 I f
+(rc)1583 1010 w
+10 R f
+(cannot decide whether to execute it immediately and print)8 2430 1 1705 1010 t
+10 CW f
+($prompt\(1\))4174 1010 w
+10 R f
+(, or to)2 266 1 4774 1010 t
+(print)720 1130 w
+10 CW f
+($prompt\(2\))937 1130 w
+10 R f
+(and wait for the)3 638 1 1565 1130 t
+10 CW f
+(else)2231 1130 w
+10 R f
+( the Bourne shell, this is not a problem, because)9 1930( In)1 136(to be typed.)2 475 3 2499 1130 t
+(the)720 1250 w
+10 CW f
+(if)867 1250 w
+10 R f
+(command must end with)3 986 1 1012 1250 t
+10 CW f
+(fi)2023 1250 w
+10 R f
+(, regardless of whether it contains an)6 1466 1 2143 1250 t
+10 CW f
+(else)3634 1250 w
+10 R f
+(or not.)1 261 1 3899 1250 t
+10 I f
+(Rc)720 1406 w
+10 R f
+( is to declare that the)5 839('s admittedly feeble solution)3 1144 2 825 1406 t
+10 CW f
+(else)2835 1406 w
+10 R f
+(clause is a separate statement, with the semantic)7 1938 1 3102 1406 t
+(proviso that it must immediately follow an)6 1724 1 720 1526 t
+10 CW f
+(if)2472 1526 w
+10 R f
+(, and to call it)4 559 1 2592 1526 t
+10 CW f
+(if not)1 363 1 3179 1526 t
+10 R f
+(rather than)1 432 1 3570 1526 t
+10 CW f
+(else)4030 1526 w
+10 R f
+(, as a reminder that)4 770 1 4270 1526 t
+( the braces are required in the)6 1227( only noticeable consequence of this is that)7 1766( The)1 212(something odd is going on.)4 1115 4 720 1646 t
+(construction)720 1766 w
+9 CW f
+(for\(i\){)1008 1936 w
+(if\(test -f $i\) echo $i found)5 1512 1 1224 2046 t
+(if not echo $i not found)5 1296 1 1224 2156 t
+(})1008 2266 w
+10 R f
+(and that)1 319 1 720 2446 t
+10 I f
+(rc)1064 2446 w
+10 R f
+(resolves the ``dangling else'' ambiguity in opposition to most people's expectations.)10 3378 1 1172 2446 t
+( the UNIX system programmer's manual the Bourne)7 2120(It is remarkable that in the four most recent editions of)10 2200 2 720 2602 t
+( not admit the command)4 976(shell grammar described in the manual page does)7 1985 2 720 2722 t
+10 CW f
+(who|wc)3707 2722 w
+10 R f
+( is surely an over-)4 719(. This)1 254 2 4067 2722 t
+( Even)1 266( something darker: nobody really knows what the Bourne shell's grammar is.)11 3206(sight, but it suggests)3 848 3 720 2842 t
+( the rou-)2 346( parser is implemented by recursive descent, but)7 1959( The)1 210(examination of the source code is little help.)7 1805 4 720 2962 t
+( categories all have a flag argument that subtly changes their operation)11 2885(tines corresponding to the syntactic)4 1435 2 720 3082 t
+(depending on the context.)3 1041 1 720 3202 t
+10 I f
+(Rc)1814 3202 w
+10 R f
+('s parser is implemented using)4 1233 1 1919 3202 t
+10 I f
+(yacc)3180 3202 w
+10 R f
+(, so I can say precisely what the grammar)8 1678 1 3362 3202 t
+(is.)720 3322 w
+( is a)2 165( There)1 284( it considerably except for two things.)6 1524( would simplify)2 636( I)1 84(Its lexical structure is harder to describe.)6 1627 6 720 3478 t
+( distinguish between parentheses that immediately follow a word with no intervening)11 3614(lexical kludge to)2 706 2 720 3598 t
+( use for)2 319(spaces and those that don't that I would eliminate if there were a reasonable pair of characters to)17 4001 2 720 3718 t
+( could also eliminate the insertion of free carets if users were not adamant about it.)15 3299( I)1 83(subscript brackets.)1 743 3 720 3838 t
+10 B f
+(28. Acknowledgements)1 1002 1 720 4078 t
+10 R f
+( Plan 9 users have been insistent, incessant sources of good ideas and)12 2825(Rob Pike, Howard Trickey and other)5 1495 2 720 4234 t
+( examples in this document are plagiarized from [Bou78], as are most of)12 2892(criticism. Some)1 653 2 720 4354 t
+10 I f
+(rc)4290 4354 w
+10 R f
+('s good features.)2 662 1 4373 4354 t
+10 B f
+(29. References)1 639 1 720 4594 t
+10 R f
+( R. Bourne, ``U)3 678(Bou78. S.)1 423 2 720 4822 t
+8 R f
+(NIX)1821 4822 w
+10 R f
+(Time-Sharing System: The U)3 1234 1 2006 4822 t
+8 R f
+(NIX)3240 4822 w
+10 R f
+(Shell,'')3425 4822 w
+10 I f
+(Bell System Technical Journal)3 1275 1 3765 4822 t
+10 B f
+(57)970 4942 w
+10 R f
+(\(6\), pp. 1971-1990 \(July-August 1978\).)4 1579 1 1070 4942 t
+( Reeds, ``)2 409(Ree88. J.)1 394 2 720 5098 t
+10 CW f
+(/bin/sh)1523 5098 w
+10 R f
+( Bell)1 205( AT&T)1 334(: the biggest UNIX security loophole,'' 11217-840302-04TM,)6 2558 3 1943 5098 t
+(Laboratories \(1988\).)1 820 1 970 5218 t
+cleartomark
+showpage
+saveobj restore
+%%EndPage: 14 14
+%%Trailer
+done
+%%Pages: 14
+%%DocumentFonts: Courier Times-Bold Times-Italic Times-Roman Symbol
