@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.65 %G%";
+static char SccsId[] = "@(#)sccs.c	1.66 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -994,8 +994,9 @@ clean(mode, argv)
 		/* the s. file exists and no p. file exists -- unlink the g-file */
 		if (mode == CLEANC && !gotpfent)
 		{
-			strcpy(buf, &dir->d_name[2]);
-			unlink(buf);
+			char	unlinkbuf[100];
+			strcpy(unlinkbuf, &dir->d_name[2]);
+			unlink(unlinkbuf);
 		}
 	}
 
