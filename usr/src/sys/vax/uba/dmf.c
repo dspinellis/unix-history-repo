@@ -1,4 +1,4 @@
-/*	dmf.c	4.14	82/10/22	*/
+/*	dmf.c	4.15	82/12/05	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -20,6 +20,7 @@
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/map.h"
 #include "../h/pte.h"
@@ -385,7 +386,7 @@ dmfrint(dmf)
 			if (tp->t_flags&RAW)
 				c = 0;
 			else
-				c = tun.t_intrc;
+				c = tp->t_intrc;
 #if NBK > 0
 		if (tp->t_line == NETLDISC) {
 			c &= 0177;
@@ -511,7 +512,7 @@ dmfparam(unit)
 	lcr = DMFLCR_ENA;
 	if ((tp->t_ispeed) == B134)
 		lpar |= BITS6|PENABLE;
-	else if ((tp->t_flags&RAW) || (tp->t_local&LLITOUT))
+	else if (tp->t_flags & (RAW|LITOUT))
 		lpar |= BITS8;
 	else {
 		lpar |= BITS7|PENABLE;
@@ -625,7 +626,7 @@ dmfstart(tp)
 	 */
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
+	if (tp->t_flags & (RAW|LITOUT))
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);

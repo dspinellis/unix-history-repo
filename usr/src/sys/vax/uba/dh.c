@@ -1,4 +1,4 @@
-/*	dh.c	4.53	82/10/17	*/
+/*	dh.c	4.54	82/12/05	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -11,6 +11,7 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/map.h"
 #include "../h/pte.h"
@@ -374,7 +375,7 @@ dhrint(dh)
 			if (tp->t_flags&RAW)
 				c = 0;
 			else
-				c = tun.t_intrc;
+				c = tp->t_intrc;
 #if NBK > 0
 		if (tp->t_line == NETLDISC) {
 			c &= 0177;
@@ -458,7 +459,7 @@ dhparam(unit)
 	lpar = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
 	if ((tp->t_ispeed) == B134)
 		lpar |= BITS6|PENABLE|HDUPLX;
-	else if ((tp->t_flags&RAW) || (tp->t_local&LLITOUT))
+	else if (tp->t_flags & (RAW|LITOUT))
 		lpar |= BITS8;
 	else
 		lpar |= BITS7|PENABLE;
@@ -567,7 +568,7 @@ dhstart(tp)
 	 */
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
+	if (tp->t_flags & (RAW|LITOUT))
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);
@@ -782,8 +783,8 @@ dmintr(dm)
 		if (addr->dmcsr&DM_CF) {
 			tp = &dh11[(dm<<4)+(addr->dmcsr&0xf)];
 			wakeup((caddr_t)&tp->t_rawq);
-			if ((tp->t_state&TS_WOPEN)==0 &&
-			    (tp->t_local&LMDMBUF)) {
+			if ((tp->t_state&TS_WOPEN) == 0 &&
+			    (tp->t_mode & MDMBUF)) {
 				if (addr->dmlstat & DML_CAR) {
 					tp->t_state &= ~TS_TTSTOP;
 					ttstart(tp);
@@ -793,7 +794,7 @@ dmintr(dm)
 				}
 			} else if ((addr->dmlstat&DML_CAR)==0) {
 				if ((tp->t_state&TS_WOPEN)==0 &&
-				    (tp->t_local&LNOHANG)==0) {
+				    (tp->t_mode & NOHANG) == 0) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmlstat = 0;

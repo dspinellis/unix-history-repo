@@ -1,4 +1,4 @@
-/*	dz.c	4.46	82/10/17	*/
+/*	dz.c	4.47	82/12/05	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -10,6 +10,7 @@
 #include "bk.h"
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -331,7 +332,7 @@ dzrint(dz)
 			if (tp->t_flags & RAW)
 				c = 0;
 			else
-				c = tun.t_intrc;
+				c = tp->t_intrc;
 		if (c&DZ_DO && overrun == 0) {
 			/* printf("dz%d,%d: silo overflow\n", dz, (c>>8)&7); */
 			overrun = 1;
@@ -461,7 +462,7 @@ dzparam(unit)
 		return;
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
-	if ((tp->t_local&LLITOUT) || (tp->t_flags&RAW))
+	if (tp->t_flags & (RAW|LITOUT))
 		lpr |= BITS8;
 	else
 		lpr |= (BITS7|PENABLE);
@@ -527,7 +528,7 @@ dzstart(tp)
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if ((tp->t_flags&RAW) || (tp->t_local&LLITOUT))
+	if (tp->t_flags & (RAW|LITOUT))
 		cc = ndqb(&tp->t_outq, 0);
 	else {
 		cc = ndqb(&tp->t_outq, 0200);
@@ -658,7 +659,7 @@ dzscan()
 			}
 		} else {
 			if ((tp->t_state&TS_CARR_ON) &&
-			    (tp->t_local&LNOHANG)==0) {
+			    (tp->t_flags&NOHANG) == 0) {
 				/* carrier lost */
 				if (tp->t_state&TS_ISOPEN) {
 					gsignal(tp->t_pgrp, SIGHUP);

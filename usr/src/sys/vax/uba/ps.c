@@ -1,4 +1,4 @@
-/*	ps.c	4.7	82/10/17	*/
+/*	ps.c	4.8	82/12/05	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -16,7 +16,7 @@
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/tty.h"
+#include "../h/ioctl.h"
 #include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/buf.h"
