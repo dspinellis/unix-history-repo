@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	6.2 (Berkeley) %G%
+.\"	@(#)man.1	6.3 (Berkeley) %G%
 .\"
 .TH MAN 1 ""
 .UC 4
@@ -106,7 +106,11 @@ path (a la the shell) with the
 .B \-M
 flag.  The search path is a colon (`:') separated list
 of directories in which manual subdirectories may be found;
-e.g. ``/usr/local:/usr/man''.  If a search path is supplied
+e.g. ``/usr/local:/usr/man''.  
+.hw MANPATH
+If the environment variable `MANPATH' is set,
+its value is used for the default path.
+If a search path is supplied
 with the 
 .B \-k
 or
