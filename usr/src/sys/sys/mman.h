@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mman.h	7.5 (Berkeley) %G%
+ *	@(#)mman.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -32,10 +32,10 @@
 /*
  * Other flags
  */
-#define	MAP_FIXED	0x0100	/* map addr must be exactly as requested */
-#define	MAP_NOEXTEND	0x0200	/* for MAP_FILE, don't change file size */
-#define	MAP_HASSEMPHORE	0x0400	/* region may contain semaphores */
-#define	MAP_INHERIT	0x0800	/* region is retained after exec */
+#define	MAP_FIXED	 0x0100	/* map addr must be exactly as requested */
+#define	MAP_NOEXTEND	 0x0200	/* for MAP_FILE, don't change file size */
+#define	MAP_HASSEMAPHORE 0x0400	/* region may contain semaphores */
+#define	MAP_INHERIT	 0x0800	/* region is retained after exec */
 
 /*
  * Advice to madvise
