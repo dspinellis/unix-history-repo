@@ -1,4 +1,4 @@
-/*	up.c	4.3	%G%	*/
+/*	up.c	4.4	%G%	*/
 
 #include "../conf/up.h"
 #if NUP > 0
@@ -172,6 +172,9 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 
 /* Bits of upcs2 */
 #define	CLR	040		/* Controller clear */
+#define	MXF	01000
+#define	NEM	04000
+
 /* Bits of uper1 */
 #define	DCK	0100000		/* Ecc error occurred */
 #define	ECH	0100		/* Ecc error was unrecoverable */
@@ -508,6 +511,7 @@ upintr()
 		if ((upaddr->upcs2 & 07) != unit)
 			upaddr->upcs2 = unit;
 		if ((upaddr->upds&ERR) || (upaddr->upcs1&TRE)) {
+			int cs2;
 			/*
 			 * An error occurred, indeed.  Select this unit
 			 * to get at the drive status (a SEARCH may have
@@ -529,6 +533,7 @@ upintr()
 			else
 				uptab.b_active = 0;	/* To force retry */
 			if (uptab.b_errcnt > 27)
+				cs2 = (int)upaddr->upcs2;
 				deverror(bp, (int)upaddr->upcs2,
 				    (int)upaddr->uper1);
 			/*
@@ -551,6 +556,11 @@ upintr()
 				upaddr->upcs1 = RECAL|GO|IE;
 				while(upaddr->upds & PIP)
 					DELAY(25);
+			}
+			if (uptab.b_errcnt == 28 && cs2&(NEM|MXF)) {
+				printf("FLAKEY UP ");
+				ubareset();
+				return;
 			}
 		}
 		/*
@@ -722,6 +732,7 @@ upreset()
 	int unit;
 
 	printf(" up");
+	DELAY(15000000);		/* give it time to self-test */
 	uptab.b_active = 0;
 	uptab.b_actf = uptab.b_actl = 0;
 	if (up_ubinfo) {
