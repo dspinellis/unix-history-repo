@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.71 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -908,6 +908,8 @@ refuseconnections()
 # define PROCTITLEPAD	' '
 #endif
 
+#ifndef HASSETPROCTITLE
+
 char	ProcTitleBuf[MAXLINE];
 
 /*VARARGS1*/
@@ -962,6 +964,8 @@ setproctitle(fmt, va_alist)
 #  endif
 # endif /* SETPROCTITLE */
 }
+
+#endif
 /*
 **  REAPCHILD -- pick up the body of my child, lest it become a zombie
 **

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.82 (Berkeley) %G%
+ *	@(#)conf.h	8.83 (Berkeley) %G%
  */
 
 /*
@@ -106,7 +106,7 @@
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
-# define setreuid(r, e)		setresuid(r, e, -1)	
+# define setreuid(r, e)		setresuid(r, e, -1)
 # define LA_TYPE	LA_FLOAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # define GIDSET_T	gid_t
@@ -176,6 +176,9 @@ extern int	syslog(int, char *, ...);
 
 # ifdef SOLARIS_2_3
 #  define SOLARIS
+#  ifndef SYSLOG_BUFSIZE
+#   define SYSLOG_BUFSIZE	1024	/* allow full size syslog buffer */
+#  endif
 # endif
 
 # ifdef SOLARIS
@@ -344,6 +347,29 @@ typedef int		pid_t;
 # endif
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 #endif
+
+
+/*
+**  BSD/386 (all versions)
+**	From Tony Sanders, BSDI
+*/
+
+#ifdef __bsdi__
+# define HASUNSETENV	1	/* has the unsetenv(3) call */
+# define HASSETSID	1	/* has the setsid(2) POSIX syscall */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199312
+#  define HASSETPROCTITLE 1	/* setproctitle is in libc */
+# else
+#  define SETPROCTITLE	1
+# endif
+# include <sys/cdefs.h>
+# define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_SUBR
+# endif
+#endif
+
 
 
 /*
@@ -681,7 +707,7 @@ typedef int		pid_t;
 **  Apollo DomainOS
 **
 **  From Todd Martin <tmartint@tus.ssi1.com> & Don Lewis <gdonl@gv.ssi1.com>
-** 
+**
 **  15 Jan 1994
 **
 */
@@ -705,7 +731,7 @@ typedef int		pid_t;
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
-#endif 
+#endif
 
 
 
