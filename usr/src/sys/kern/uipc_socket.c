@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.10	85/04/01	*/
+/*	uipc_socket.c	6.10	85/04/02	*/
 
 #include "param.h"
 #include "systm.h"
@@ -595,17 +595,18 @@ sorflush(so)
 	sbrelease(&asb);
 }
 
-sosetopt(so, level, optname, m)
+sosetopt(so, level, optname, m0)
 	register struct socket *so;
 	int level, optname;
-	register struct mbuf *m;
+	struct mbuf *m0;
 {
 	int error = 0;
+	register struct mbuf *m = m0;
 
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput)
 			return ((*so->so_proto->pr_ctloutput)
-				  (PRCO_SETOPT, so, level, optname, m));
+				  (PRCO_SETOPT, so, level, optname, &m0));
 		error = ENOPROTOOPT;
 	} else {
 		switch (optname) {
