@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.33 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.33.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,6 +57,13 @@ struct freelist {
 };
 #endif /* DIAGNOSTIC */
 
+struct uselist {
+	struct	uselist *next;
+	caddr_t	mem;
+	long	size;
+	long	type;
+} *listhd;
+
 /*
  * Allocate a block of memory
  */
@@ -75,6 +82,7 @@ malloc(size, type, flags)
 	long *end, *lp;
 	int copysize;
 	char *savedtype;
+	struct uselist *mlp;
 #endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
@@ -178,6 +186,12 @@ malloc(size, type, flags)
 		printf("%s %d of object 0x%x size %d %s %s (0x%x != 0x%x)\n",
 			"Data modified on freelist: word", lp - (long *)va,
 			va, size, "previous type", savedtype, *lp, WEIRD_ADDR);
+		for (mlp = listhd; mlp; mlp = mlp->next) {
+			if (mlp->mem + 128 != va)
+				continue;
+			printf("previous element 0x%x, size %d, type %s\n",
+				mlp->mem, mlp->size, memname[mlp->type]);
+		}
 		break;
 	}
 	freep->spare0 = 0;
@@ -200,6 +214,14 @@ out:
 #else
 out:
 #endif
+	if (size > 64 && size <= 128) {
+		mlp = (struct uselist *)malloc(sizeof(*mlp), M_TEMP, M_WAITOK);
+		mlp->type = type;
+		mlp->size = size;
+		mlp->mem = va;
+		mlp->next = listhd;
+		listhd = mlp;
+	}
 	splx(s);
 	return ((void *) va);
 }
@@ -229,6 +251,25 @@ free(addr, type)
 	size = 1 << kup->ku_indx;
 	kbp = &bucket[kup->ku_indx];
 	s = splimp();
+	if (size == 128) {
+		struct uselist *mlp, *pmlp;
+
+		mlp = listhd;
+		if (mlp->mem == addr)
+			listhd = mlp->next;
+		else for (pmlp = mlp, mlp = mlp->next ; mlp; mlp = mlp->next) {
+			if (mlp->mem == addr) {
+				pmlp->next = mlp->next;
+				break;
+			}
+			pmlp = mlp;
+		}
+		if (mlp == NULL)
+			printf("free: lost type %s size %d\n", memname[type],
+			    size);
+		else
+			free(mlp, M_TEMP);
+	}
 #ifdef DIAGNOSTIC
 	/*
 	 * Check for returns of data that do not point to the
