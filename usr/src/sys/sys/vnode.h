@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.50 (Berkeley) %G%
+ *	@(#)vnode.h	7.51 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -41,7 +41,7 @@ struct vnode {
 	daddr_t		v_lastr;		/* last read (read-ahead) */
 	u_long		v_id;			/* capability identifier */
 	struct mount	*v_mount;		/* ptr to vfs we are in */
-	struct vnodeops	*v_op;			/* vnode operations */
+	int 		(**v_op)();		/* vnode operations vector */
 	struct vnode	*v_freef;		/* vnode freelist forward */
 	struct vnode	**v_freeb;		/* vnode freelist back */
 	struct vnode	*v_mountf;		/* vnode mountlist forward */
@@ -121,128 +121,6 @@ struct nameidata;
 struct componentname;
 #endif
 
-struct vnodeops {
-#define	VOP_LOOKUP(d,v,c)	(*((d)->v_op->vop_lookup))(d,v,c)
-	int	(*vop_lookup)	__P((struct vnode *dvp, struct vnode **vpp,
-				     struct componentname *cnp));
-#define	VOP_CREATE(d,v,c,a)	(*((d)->v_op->vop_create))(d,v,c,a)
-	int	(*vop_create)	__P((struct vnode *dvp, struct vnode **vpp,
-				     struct componentname *cnp,
-				     struct vattr *vap));
-#define	VOP_MKNOD(d,v,c,a)	(*((d)->v_op->vop_mknod))(d,v,c,a)
-	int	(*vop_mknod)	__P((struct vnode *dvp, struct vnode **vpp,
-				     struct componentname *cnp,
-				     struct vattr *vap));
-#define	VOP_OPEN(v,f,c,p)	(*((v)->v_op->vop_open))(v,f,c,p)
-	int	(*vop_open)	__P((struct vnode *vp, int mode,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_CLOSE(v,f,c,p)	(*((v)->v_op->vop_close))(v,f,c,p)
-	int	(*vop_close)	__P((struct vnode *vp, int fflag,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_ACCESS(v,f,c,p)	(*((v)->v_op->vop_access))(v,f,c,p)
-	int	(*vop_access)	__P((struct vnode *vp, int mode,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_GETATTR(v,a,c,p)	(*((v)->v_op->vop_getattr))(v,a,c,p)
-	int	(*vop_getattr)	__P((struct vnode *vp, struct vattr *vap,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_SETATTR(v,a,c,p)	(*((v)->v_op->vop_setattr))(v,a,c,p)
-	int	(*vop_setattr)	__P((struct vnode *vp, struct vattr *vap,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_READ(v,u,i,c)	(*((v)->v_op->vop_read))(v,u,i,c)
-	int	(*vop_read)	__P((struct vnode *vp, struct uio *uio,
-				    int ioflag, struct ucred *cred));
-#define	VOP_WRITE(v,u,i,c)	(*((v)->v_op->vop_write))(v,u,i,c)
-	int	(*vop_write)	__P((struct vnode *vp, struct uio *uio,
-				    int ioflag, struct ucred *cred));
-#define	VOP_IOCTL(v,o,d,f,c,p)	(*((v)->v_op->vop_ioctl))(v,o,d,f,c,p)
-	int	(*vop_ioctl)	__P((struct vnode *vp, int command,
-				    caddr_t data, int fflag,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_SELECT(v,w,f,c,p)	(*((v)->v_op->vop_select))(v,w,f,c,p)
-	int	(*vop_select)	__P((struct vnode *vp, int which, int fflags,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_MMAP(v,c,p)		(*((v)->v_op->vop_mmap))(v,c,p)
-	int	(*vop_mmap)	__P((struct vnode *vp, int fflags,
-				    struct ucred *cred, struct proc *p));
-#define	VOP_FSYNC(v,f,c,w,p)	(*((v)->v_op->vop_fsync))(v,f,c,w,p)
-	int	(*vop_fsync)	__P((struct vnode *vp, int fflags,
-				    struct ucred *cred, int waitfor,
-				    struct proc *p));
-#define	VOP_SEEK(v,p,o,w)	(*((v)->v_op->vop_seek))(v,p,o,w)
-	int	(*vop_seek)	__P((struct vnode *vp, off_t oldoff,
-				    off_t newoff, struct ucred *cred));
-#define	VOP_REMOVE(d,v,c)	(*((d)->v_op->vop_remove))(d,v,c)
-	int	(*vop_remove)	__P((struct vnode *dvp, struct vnode *vp,
-				     struct componentname *cnp));
-#define	VOP_LINK(v,d,c)		(*((v)->v_op->vop_link))(v,d,c)
-	int	(*vop_link)	__P((struct vnode *vp, struct vnode *tdvp,
-				     struct componentname *cnp));
-#define	VOP_RENAME(fd,fv,fc,td,tv,tc) (*((fd)->v_op->vop_rename))(fd,fv,fc,td,tv,tc)
-	int	(*vop_rename)	__P((struct vnode *fdvp, struct vnode *fvp,
-				     struct componentname *fcnp,
-				     struct vnode *tdvp, struct vnode *tvp,
-				     struct componentname *tcnp));
-#define	VOP_MKDIR(d,v,c,a)	(*((d)->v_op->vop_mkdir))(d,v,c,a)
-	int	(*vop_mkdir)	__P((struct vnode *dvp, struct vnode **vpp,
-				     struct componentname *cnp,
-				     struct vattr *vap));
-#define	VOP_RMDIR(d,v,c)	(*((d)->v_op->vop_rmdir))(d,v,c)
-	int	(*vop_rmdir)	__P((struct vnode *dvp, struct vnode *vp,
-				     struct componentname *cnp));
-#define	VOP_SYMLINK(d,v,c,a,t)	(*((d)->v_op->vop_symlink))(d,v,c,a,t)
-	int	(*vop_symlink)	__P((struct vnode *dvp, struct vnode **vpp,
-				     struct componentname *cnp,
-				     struct vattr *vap, char *target));
-#define	VOP_READDIR(v,u,c,e)	(*((v)->v_op->vop_readdir))(v,u,c,e)
-	int	(*vop_readdir)	__P((struct vnode *vp, struct uio *uio,
-				    struct ucred *cred, int *eofflagp));
-#define	VOP_READLINK(v,u,c)	(*((v)->v_op->vop_readlink))(v,u,c)
-	int	(*vop_readlink)	__P((struct vnode *vp, struct uio *uio,
-				    struct ucred *cred));
-#define	VOP_ABORTOP(d,c)	(*((d)->v_op->vop_abortop))(d,c)
-	int	(*vop_abortop)	__P((struct vnode *dvp,
-				     struct componentname *cnp));
-#define	VOP_INACTIVE(v,p)	(*((v)->v_op->vop_inactive))(v,p)
-	int	(*vop_inactive)	__P((struct vnode *vp, struct proc *p));
-#define	VOP_RECLAIM(v)		(*((v)->v_op->vop_reclaim))(v)
-	int	(*vop_reclaim)	__P((struct vnode *vp));
-#define	VOP_LOCK(v)		(*((v)->v_op->vop_lock))(v)
-	int	(*vop_lock)	__P((struct vnode *vp));
-#define	VOP_UNLOCK(v)		(*((v)->v_op->vop_unlock))(v)
-	int	(*vop_unlock)	__P((struct vnode *vp));
-#define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vop_bmap))(v,s,p,n)
-	int	(*vop_bmap)	__P((struct vnode *vp, daddr_t bn,
-				    struct vnode **vpp, daddr_t *bnp));
-#define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vop_strategy))(b)
-	int	(*vop_strategy)	__P((struct buf *bp));
-#define	VOP_PRINT(v)		(*((v)->v_op->vop_print))(v)
-	int	(*vop_print)	__P((struct vnode *vp));
-#define	VOP_ISLOCKED(v)		(((v)->v_flag & VXLOCK) || \
-				(*((v)->v_op->vop_islocked))(v))
-	int	(*vop_islocked)	__P((struct vnode *vp));
-#define	VOP_ADVLOCK(v,p,o,l,f)	(*((v)->v_op->vop_advlock))(v,p,o,l,f)
-	int	(*vop_advlock)	__P((struct vnode *vp, caddr_t id, int op,
-				    struct flock *fl, int flags));
-#define	VOP_BLKATOFF(v,o,r,b)	(*((v)->v_op->vop_blkatoff))(v,o,r,b)
-	int	(*vop_blkatoff) __P((struct vnode *vp,
-		    off_t offset, char **res, struct buf **bpp));
-#define	VOP_VGET(v,i,vp)	(*((v)->v_op->vop_vget))((v)->v_mount,i,vp)
-	int	(*vop_vget)
-		    __P((struct mount *mp, ino_t ino, struct vnode **vpp));
-#define	VOP_VALLOC(v,m,c,vp)	(*((v)->v_op->vop_valloc))(v,m,c,vp)
-	int	(*vop_valloc) __P((struct vnode *pvp,
-		    int mode, struct ucred *cred, struct vnode **vpp));
-#define	VOP_VFREE(v,i,m)	(*((v)->v_op->vop_vfree))(v,i,m)
-	void	(*vop_vfree) __P((struct vnode *pvp, ino_t ino, int mode));
-#define	VOP_TRUNCATE(v,l,f,c)	(*((v)->v_op->vop_truncate))(v,l,f,c)
-	int	(*vop_truncate) __P((struct vnode *vp,
-		    off_t length, int flags, struct ucred *cred));
-#define	VOP_UPDATE(v,ta,tm,w)	(*((v)->v_op->vop_update))(v,ta,tm,w)
-	int	(*vop_update) __P((struct vnode *vp,
-		    struct timeval *ta, struct timeval *tm, int waitfor));
-#define	VOP_BWRITE(b)		(*((b)->b_vp->v_op->vop_bwrite))(b)
-	int	(*vop_bwrite) __P((struct buf *bp));
-};
 
 /*
  * flags for ioflag
@@ -278,35 +156,6 @@ extern int		vttoif_tab[];
 #define IFTOVT(mode)	(iftovt_tab[((mode) & IFMT) >> 12])
 #define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
-
-/*
- * public vnode manipulation functions
- */
-int 	vn_open __P((struct nameidata *ndp, int fmode, int cmode));
-int 	vn_close __P((struct vnode *vp, int flags, struct ucred *cred,
-	    struct proc *p));
-int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
-	    int len, off_t offset, enum uio_seg segflg, int ioflg,
-	    struct ucred *cred, int *aresid, struct proc *p));
-int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
-int	vn_select __P((struct file *fp, int which, struct proc *p));
-int 	vn_closefile __P((struct file *fp, struct proc *p));
-int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
-	    struct vnodeops *vops, struct vnode **vpp));
-int 	bdevvp __P((dev_t dev, struct vnode **vpp));
-	/* check for special device aliases */
-struct 	vnode *checkalias __P((struct vnode *vp, dev_t nvp_rdev,
-	    struct mount *mp));
-void 	vattr_null __P((struct vattr *vap));
-int 	vcount __P((struct vnode *vp));	/* total references to a device */
-int 	vget __P((struct vnode *vp));	/* get first reference to a vnode */
-void 	vref __P((struct vnode *vp));	/* increase reference to a vnode */
-void 	vput __P((struct vnode *vp));	/* unlock and release vnode */
-void 	vrele __P((struct vnode *vp));	/* release vnode */
-void 	vgone __P((struct vnode *vp));	/* completely recycle vnode */
-void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
 
 /*
  * Flags to various vnode functions.
@@ -358,3 +207,157 @@ void	lease_updatetime __P((int deltat));
 #define	LEASE_UPDATETIME(dt)
 #endif /* NFS */
 #endif
+
+
+/*
+ * Mods for exensibility.
+ */
+
+/*
+ * flags for vdesc_flags:
+ */
+#define VDESC_MAX_VPS		16
+/* low order 16 flag bits are reserved for map flags for vp arguments. */
+#define VDESC_NOMAP_VPP		0x0100
+
+/*
+ * VDESC_NO_OFFSET is used to identify the end of the offset list
+ * and in places where no such field exists.
+ */
+#define VDESC_NO_OFFSET -1
+
+/*
+ * This structure describes the vnode operation taking place.
+ */
+struct vnodeop_desc {
+	int	vdesc_offset;		/* offset in vector--first for speed */
+	char    *vdesc_name;		/* a readable name for debugging */
+	int	vdesc_flags;		/* VDESC_* flags */
+
+	/*
+	 * These ops are used by bypass routines
+	 * to map and locate arguments.
+	 * Creds and procs are not needed in bypass routines,
+	 * but sometimes they are useful to (for example)
+	 * transport layers.
+	 */
+	int	*vdesc_vp_offsets;	/* list ended by VDESC_NO_OFFSET */
+	int	vdesc_vpp_offset;	/* return vpp location */
+	int	vdesc_cred_offset;	/* cred location, if any */
+	int	vdesc_proc_offset;	/* proc location, if any */
+	/*
+	 * Finally, we've got a list of private data
+	 * (about each operation) for each transport layer.
+	 * (Support to manage this list is not yet part of BSD.)
+	 */
+	caddr_t	*vdesc_transports;
+};
+
+/*
+ * A list of all the operation descs.
+ */
+extern struct vnodeop_desc *vnodeop_descs[];
+
+
+/*
+ * This macro is very helpful in defining those offsets in the vdesc struct.
+ *
+ * This is stolen from X11R4.  I ingored all the fancy stuff for
+ * Crays, so if you decide to port this to such a serious machine,
+ * you might want to consult Intrisics.h's XtOffset{,Of,To}.
+ */
+#define VOPARG_OFFSET(p_type,field) \
+        ((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
+#define VOPARG_OFFSETOF(s_type,field) \
+	VOPARG_OFFSET(s_type*,field)
+#define VOPARG_OFFSETTO(S_TYPE,S_OFFSET,STRUCT_P) \
+	((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
+
+
+/*
+ * This structure is used to configure the new vnodeops vector.
+ */
+struct vnodeopv_entry_desc {
+	struct vnodeop_desc *opve_op;   /* which operation this is */
+	int (*opve_impl)();	/* code implementing this operation */
+};
+struct vnodeopv_desc {
+	int (***opv_desc_vector_p)();
+			/* ptr to the ptr to the vector where op should go */
+	struct vnodeopv_entry_desc *opv_desc_ops;   /* null terminated list */
+};
+
+/*
+ * A default routine which just returns an error.
+ */
+extern int vn_default_error();
+
+/*
+ * A generic structure.
+ * This can be used by bypass routines to identify generic arguments.
+ */
+struct vop_generic_args {
+	struct vnodeop_desc *a_desc;
+	/* other random data follows, presumably */
+};
+
+/*
+ * Standards, standards, standards...
+ */
+#ifdef __STDC__
+#define CONCAT2(A,B) A##B
+#else
+#define CONCAT2(A,B) A/**/B
+#endif
+
+/*
+ * VOCALL calls an op given an ops vector.
+ * We break it out because BSD's vclean changes
+ * the ops vector and then wants to call ops
+ * with the old vector.
+ */
+#define VOCALL(OPSV,OFF,AP) (( *((OPSV)[(OFF)])) (AP))
+/*
+ * This call works for vnodes in the kernel.
+ */
+#define VCALL(VP,OFF,AP) VOCALL((VP)->v_op,(OFF),(AP))
+#define VDESC(OP) (& CONCAT2(OP,_desc))
+#define VOFFSET(OP) (VDESC(OP)->vdesc_offset)
+
+/*
+ * Finally, include the default set of vnode operations.
+ */
+#include <sys/vnode_if.h>
+
+/*
+ * public vnode manipulation functions
+ */
+int 	vn_open __P((struct nameidata *ndp, int fmode, int cmode));
+int 	vn_close __P((struct vnode *vp, int flags, struct ucred *cred,
+	    struct proc *p));
+int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
+	    int len, off_t offset, enum uio_seg segflg, int ioflg,
+	    struct ucred *cred, int *aresid, struct proc *p));
+int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	vn_bwrite __P((struct vop_bwrite_args *ap));
+int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int	vn_select __P((struct file *fp, int which, struct proc *p));
+int 	vn_closefile __P((struct file *fp, struct proc *p));
+int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
+	    int (**vops)(), struct vnode **vpp));
+int 	bdevvp __P((dev_t dev, struct vnode **vpp));
+	/* check for special device aliases */
+struct 	vnode *checkalias __P((struct vnode *vp, dev_t nvp_rdev,
+	    struct mount *mp));
+void 	vattr_null __P((struct vattr *vap));
+int 	vcount __P((struct vnode *vp));	/* total references to a device */
+int 	vget __P((struct vnode *vp));	/* get first reference to a vnode */
+void 	vref __P((struct vnode *vp));	/* increase reference to a vnode */
+void 	vput __P((struct vnode *vp));	/* unlock and release vnode */
+void 	vrele __P((struct vnode *vp));	/* release vnode */
+void 	vgone __P((struct vnode *vp));	/* completely recycle vnode */
+void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
+
+
+
