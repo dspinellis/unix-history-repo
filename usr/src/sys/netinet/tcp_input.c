@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_input.c	7.14 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -555,63 +555,45 @@ trimthenstep6:
 		goto dropwithreset;
 	}
 
-	if (tp->rcv_wnd == 0) {
-		/*
-		 * If window is closed can only take segments at
-		 * window edge, and have to drop data and PUSH from
-		 * incoming segments.
-		 */
-		if (tp->rcv_nxt != ti->ti_seq) {
-			tcpstat.tcps_rcvpackafterwin++;
+	/*
+	 * If segment ends after window, drop trailing data
+	 * (and PUSH and FIN); if nothing left, just ACK.
+	 */
+	todrop = (ti->ti_seq+ti->ti_len) - (tp->rcv_nxt+tp->rcv_wnd);
+	if (todrop > 0) {
+		tcpstat.tcps_rcvpackafterwin++;
+		if (todrop >= ti->ti_len) {
 			tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
-			goto dropafterack;
-		}
-		if (ti->ti_len > 0) {
-			if (ti->ti_len == 1) 
+			/*
+			 * If a new connection request is received
+			 * while in TIME_WAIT, drop the old connection
+			 * and start over if the sequence numbers
+			 * are above the previous ones.
+			 */
+			if (tiflags & TH_SYN &&
+			    tp->t_state == TCPS_TIME_WAIT &&
+			    SEQ_GT(ti->ti_seq, tp->rcv_nxt)) {
+				iss = tp->rcv_nxt + TCP_ISSINCR;
+				(void) tcp_close(tp);
+				goto findpcb;
+			}
+			/*
+			 * If window is closed can only take segments at
+			 * window edge, and have to drop data and PUSH from
+			 * incoming segments.  Continue processing, but
+			 * remember to ack.  Otherwise, drop segment
+			 * and ack.
+			 */
+			if (tp->rcv_wnd == 0 && ti->ti_seq == tp->rcv_nxt) {
+				tp->t_flags |= TF_ACKNOW;
 				tcpstat.tcps_rcvwinprobe++;
-			else {
-				tcpstat.tcps_rcvpackafterwin++;
-				tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
-			}
-			m_adj(m, ti->ti_len);
-			ti->ti_len = 0;
-			tiflags &= ~(TH_PUSH|TH_FIN);
-		}
-	} else {
-		/*
-		 * If segment ends after window, drop trailing data
-		 * (and PUSH and FIN); if nothing left, just ACK.
-		 */
-		todrop = (ti->ti_seq+ti->ti_len) - (tp->rcv_nxt+tp->rcv_wnd);
-		if (todrop > 0) {
-			if (todrop >= ti->ti_len) {
-				/*
-				 * If a new connection request is received
-				 * while in TIME_WAIT, drop the old connection
-				 * and start over if the sequence numbers
-				 * are above the previous ones.
-				 */
-				if (tiflags & TH_SYN &&
-				    tp->t_state == TCPS_TIME_WAIT &&
-				    SEQ_GT(ti->ti_seq, tp->rcv_nxt)) {
-					iss = tp->rcv_nxt + TCP_ISSINCR;
-					(void) tcp_close(tp);
-					goto findpcb;
-				}
-				if (todrop == 1) 
-					tcpstat.tcps_rcvwinprobe++;
-				else {
-					tcpstat.tcps_rcvpackafterwin++;
-					tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
-				}
+			} else
 				goto dropafterack;
-			}
-			tcpstat.tcps_rcvpackafterwin++;
+		} else
 			tcpstat.tcps_rcvbyteafterwin += todrop;
-			m_adj(m, -todrop);
-			ti->ti_len -= todrop;
-			tiflags &= ~(TH_PUSH|TH_FIN);
-		}
+		m_adj(m, -todrop);
+		ti->ti_len -= todrop;
+		tiflags &= ~(TH_PUSH|TH_FIN);
 	}
 
 #ifdef TCP_COMPAT_42
