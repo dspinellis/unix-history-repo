@@ -1,0 +1,86 @@
+
+Short introduction to screen (Version 3.0.7)                  jw 7.9.91
+
+screen 
+  provides you with an ansi/vt100 terminal emulator, which can multiplex
+  up to 10 pseudo-terminals. On startup, it executes $SHELL in window 0.
+  Then it reads $HOME/.screenrc to learn configuration, keybindings, 
+  and may open more windows.
+
+  C-A C		Create new windows.
+
+  C-A SPACE	Advance from window to window (with wraparound)
+
+  C-A C-A	Toggle between two windows.
+
+  C-A 0
+   ...
+  C-A 9		Switch to window nr. 0 ... 9.
+
+  C-A w		Show a list of windows in the Statusline.
+
+  C-A a		(Think of goto-start-of-line in emacs or tcsh).
+  C-A s		(Think of i-search in emacs).
+  C-A q		Send a literal C-A/C-S/C-Q to the process in the window.
+
+  C-A l		Redraw this window.
+
+  C-A W		Toggle between 80 & 132 columns mode. 
+
+  C-A L		Try to toggle the utmp-slot for this window.
+
+  C-A A		Prompt for a new name for this window. (see C-A w).
+
+  C-A z		Suspend the whole screen.
+
+  C-A x		Execute /usr/bin/lock or $LOCKCMD or a builtin terminallock.
+
+  C-A C-[	Start copy&paste mode. Move cursor with h,j,k,l. Set 2 marks
+		with SPACE or y. Abort with ESC. Note that "C-[" is ESC.
+		NOTE: there is a userdefined amount of scrollback history.
+                The history buffer is entered, when the cursor hits the top
+		of the window.
+
+  C-A C-]	paste in current window's stdin. see C-A C-[.
+
+  C-A <
+  C-A >		Read or write the copybuffer from/to the exchange file.
+		Multiple screen users on the same host may thus transfer text.
+
+  C-A d		Detach screen. All processes continue and may spool output
+		to their pty's, but screen disconnects from your terminal.
+		reattach with "screen -r".
+
+  C-A D D	Power detach. Disconnect like C-A d and kill the parent shell.
+
+  C-A K		Kill a window and send SIGHUP to its processgroup. Per default
+		this would be C-A C-k. But it is redefined in the demo .screenrc
+		(think of killing a whole line in emacs).
+
+  C-A :set all  Show all keybindings. The above list is not at all complete and
+		may even be wrong, as keys can be redefined in .screenrc or
+		with "C-A :bind 'X' keyname [arguments]".
+
+  C-A : ....  Online configuration change.
+
+
+screen -r [host.tty]
+  Reattach a detached screen session. The terminal emulator reconfigures
+  according to your $TERMCAP or $TERM settings. '-R' brings up a detached
+  session or (if none) creates a new session. You should specify a socket
+  when there you have multiple screens detached. 
+
+screen -d [host.tty]
+  Detach a screen session from remote. Has the same effect as typing 'C-A d'
+  on the controlling terminal. '-D' will power-detach.
+
+screen -list
+screen -ls
+  Show all available sockets. If there are (DEAD???) sockets, you may consider 
+  removing them. If there are sockets missing, you may send a SIGCHLD to its
+  process 'SCREEN' and the process will re-establish the socket. (think of 
+  someone cleaning /tmp thoroughly).
+
+screen -h 200
+  Starts a new screen session and sets the number of lines in the scrollback
+  buffer to 200. The default is 50 lines.

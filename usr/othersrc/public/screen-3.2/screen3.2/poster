@@ -1,0 +1,40 @@
+This is iScreen version 3.2. It is an upgrade to version 3.1.1 that was posted
+in dec 91 to comp.sources.unix. 
+Versions 3.1.x of iScreen are potential security riscs under SunOS 4.1.1. These
+versions fail to detach or terminate the session when the modem line hangs up.
+Anyone using telnet or rlogin could (unwillingly) connect to such a session.
+
+iScreen users on SunOS 4.1.1 please do upgrade to version 3.2! 
+
+Although fixing the bug described above was the main reason for this posting,
+there are numerous other fixes/enhancements:
+
+	* support for NeXT, Apollo, Ultrix, SVR4, SCO, ISC, SGI, bsd386, ...
+	  added or enhanced. 
+	
+	* the "dead CTRL-O key" bug is fixed.
+	
+	* flow control has been redesigned.
+	
+	* I/O is no longer stripped to 7 bit.
+	
+	* new commands "hardcopy_append on", "bufferfile /tmp/myown", 
+	  "(set) refresh off".
+	  
+	* redesign of interrupt passing. The use of "screen -i" is now 
+	  encouraged.
+	
+	* overall code cleanup.
+	
+The complete distribution of iScreen 3.2 is available via ftp from:
+
+   ftp.uni-erlangen.de[131.188.1.43]:portal/utilities/screen/screen32.tar.Z
+   
+For a brief introduction and a short summary of essential commands
+refer to the files "readme" and "README".
+   
+I wish to thank all contributors for requesting features or sending patches.
+Special thanks to Marc Boucher who tested and patched iScreen on numerous
+platforms.
+
+juergen.

@@ -1,0 +1,10 @@
+SC|screen|VT 100/ANSI X3.64 virtual terminal|\
+	:DO=\E[%dB:LE=\E[%dD:RI=\E[%dC:UP=\E[%dA:bs:bt=\E[Z:\
+	:cd=\E[J:ce=\E[K:cl=\E[H\E[J:cm=\E[%i%d;%dH:ct=\E[3g:\
+	:do=^J:nd=\E[C:pt:rc=\E8:rs=\Ec:sc=\E7:st=\EH:up=\EM:\
+	:le=^H:bl=^G:cr=^M:it#8:ho=\E[H:nw=\EE:ta=^I:is=\E)0:xv:\
+	:li#43:co#80:LP:us=\E[4m:ue=\E[24m:so=\E[3m:se=\E[23m:\
+	:mb=\E[5m:md=\E[1m:mr=\E[7m:me=\E[m:ms:sr=\EM:al=\E[L:\
+	:AL=\E[%dL:dl=\E[M:DL=\E[%dM:cs=\E[%i%d;%dr:dc=\E[P:\
+	:DC=\E[%dP:im=\E[4h:ei=\E[4l:mi:ic=\E[@:IC=\E[%d@:\
+	:ks=\E=:ke=\E>:G0:
