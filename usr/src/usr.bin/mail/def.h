@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	1.5 %G%";
+ * Sccs Id = "@(#)def.h	1.6 %G%";
  */
 
 /*
@@ -102,6 +102,8 @@ struct cmd {
 #define	I	0100		/* Interactive command bit */
 #define	M	0200		/* Illegal from send mode bit */
 #define	W	0400		/* Illegal when read only bit */
+#define	C	01000		/* Is a conditional command */
+#define	T	02000		/* Is a transparent command */
 
 /*
  * Oft-used mask values
@@ -206,6 +208,15 @@ struct grouphead {
 
 #define	REGDEP	2			/* Maximum regret depth. */
 #define	STRINGLEN	64		/* Maximum length of string token */
+
+/*
+ * Constants for conditional commands.  These describe whether
+ * we should be executing stuff or not.
+ */
+
+#define	CANY		0		/* Execute in send or receive mode */
+#define	CRCV		1		/* Execute in receive mode only */
+#define	CSEND		2		/* Execute in send mode only */
 
 /*
  * Kludges to handle the change from setexit / reset to setjmp / longjmp
