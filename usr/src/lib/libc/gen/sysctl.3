@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	8.2 (Berkeley) %G%
+.\"	@(#)sysctl.3	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 3
@@ -560,7 +560,7 @@ The returned data consists of a
 .Sh RETURN VALUES
 If the call to
 .Nm sysctl
-is successful, 0 is returned.
+is successful, the number of bytes copied out is returned.
 Otherwise \-1 is returned and
 .Va errno
 is set appropriately.
