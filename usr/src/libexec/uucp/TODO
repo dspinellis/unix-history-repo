@@ -1,0 +1,386 @@
+Things to do for the Taylor UUCP package.  This list includes some of
+my thoughts, but is mostly suggestions from the net.  They are in no
+particular order.  Some of the numbers that were in here have been
+removed.
+
+2.
+
+John Cowan <cowan@snark.thyrsus.com> says:
+
+>I think you should accept a broader range of time specifications.
+>Consider using getdate() (from your handy Usenet news source code)
+>with its high-powered yacc parser.
+
+Of course, getdate() accepts a single date, but we want a range.  A
+better syntax would be certainly be nice.
+
+4.
+
+John R MacMillan <chance!john@sq.sq.com> mentions the HDB notion of
+services; something like this should be added whenever I get around to
+writing a version of cu.
+
+6.
+
+T. William Wells <bill@twwells.com> says:
+
+>Something related that might be useful: when calling the other
+>system, at certain times I do not want the other system to gain
+>control and begin to send files. If that worked, I could call
+>them for e-mail without worrying about getting my newsfeed at
+>daytime rates. Unfortunately, I can't ask them to batch me at
+>night only; my site gets a multibatch. Note that call-timegrade
+>would do as well, provided that the other system respects it but
+>I have no way to know that, other than by trying it.
+
+9.
+
+Gordon Burditt <gordon@sneaky.lonestar.org> warns about modifications
+to the TZ environment variable, to fool uucico into dialing out at an
+inappropriate time.
+
+10.
+
+Gordon Burditt <gordon@sneaky.lonestar.org> says:
+
+>(4) Less important, because few people will have this problem, is a 
+>port-specific dialcodes file.  Why?  Well, one system I had was connected
+>to 2 inside lines "dial 9 for outside line", and one outside line (which
+>doesn't want the 9).  A number of the systems called were "inside", so
+>you didn't add the 9 on those lines dialing from inside, but you did add 
+>"390" to the 4-digit number if you dialed it via "outside".  Also not 
+>unheard of are systems with 2 outside lines that are local to different 
+>area codes, or one local outside line and one WATS line (which MUST
+>have an area code).
+>Example:
+>	inside-line Dialcodes		outside-line Dialcodes
+>	pbx	""			pbx	"390"
+>	local	"9"			local	""
+>	nyc	"9-1212"		nyc	"1212"
+
+12.
+
+Ralf E. Stranzenbach <ralf@reswi.ruhr.de> says:
+
+>It would be nice to also have the option of running a shell script each time  
+>uucico connects/disconnects a systen. I do not mean shell scripts for dial/in.  
+>I would like to do some accounting and batching when the connection  
+>establishes.
+
+13.
+
+les@chinet.chi.il.us (Leslie Mikesell) writes:
+
+>>local-send /usr/spool/uucppublic !/usr/spool/uucpublic/private
+>>
+>>The directories are searched from left to right, and the last one to
+>>match determines whether the file may be sent or not.  This is
+>>slightly more general than NOWRITE, since it permits a public
+>>directory within a private directory within a public directory,
+>>although probably nobody will ever want that.
+>
+>Interesting... The obvious enhancement is to generalize to shell-like
+>wild cards for the READ/WRITE/COMMANDS entries.
+
+14.
+
+Should there be a way for chat scripts to specify the parity to
+generate?  I don't think there's much point to specifying what parity
+to accept.
+
+17.
+
+The -b and -s switches to uux are not implemented by uuxqt.
+
+18.
+
+If we are supposed to call a system back, we should do it immediately
+rather than merely queuing up an empty command file.
+
+19.
+
+Should there be some way to specify the maximum number of retries for
+each system using the new configuration scheme?  The maximum number of
+retries is currently a compilation parameter.
+
+20.
+
+Write some protocols that support bidirectional transfers.
+
+James Gardiner says:
+> MHSnet has this but with also 3  channels per direction.  Each channel
+> sends different size packets.  This alows mail, which is usually smaller,
+> to overtake news or big files.  Mail being the more important.
+> However, with high speed modems, this is no so important.
+
+21.
+
+Support transfers through systems using uucp and uux.  Implement the
+``forward-to'' command to allow control of these transfers.
+
+22.
+
+Add an ftp port type which uses anonymous ftp rather than any of the
+UUCP protocols to do file transfers.  This would allow ftp work to be
+done late at night.
+
+23.
+
+If we don't permit command execution, we still want to delete the work
+files we've been given for the command.
+
+24.
+
+Running uucico as a TCP server doesn't work right because only root
+can bind a port less than 1024.  This is checked by effective user id,
+and our effective user id is always uucp.  If we have saved set user
+id we could switch the effective user id to root and then back again;
+otherwise we have to not use setuid and start the program as root.
+Actually, we could use another program to start as root, bind the
+port, and invoke uucico.  Or we could use a setuid program and pass
+the file descriptor back using a socketpair.  Or we could just use
+inetd.
+
+31.
+
+David Nugent: add a -C option to uucico to only call the system if
+there was work to do.
+
+32.
+
+It would be nice if uucico could sleep until a line was available.
+This is complicated by the possibility of wanting to wait for any of
+several different lines, and one would really want some sort of
+semaphore function to do it right.  If the available lines could be
+sorted, then each could be assigned to a byte in a line lock file.
+Looking for a line could be done by sleeping on a read lock on all
+possible lines.  Once it came through, write locks would be attempted.
+If they all failed, somebody else snuck in, so you would sleep on a
+read lock again.  This isn't great because a process could be starved,
+but it might be better than nothing.
+
+This could be tied in to uucp and uux, such that they wouldn't
+actually fire up uucico unless a line was known to be available; an
+additional switch would be used to fire up uucico anyhow (or one could
+switch the default behaviour and the switch).
+
+So how do you sort the lines?  You could just use the index in the
+port (or Devices) file, but what if multiple ports used the same
+physical device?  Hmmm.
+
+33.
+
+David Nugent: allow the minimum wait time to be specified for a
+system, such that calls to that system are not made more frequently
+than, say, once an hour.
+
+34.
+
+Bob Izenberg: HDB UUCP will retry a call once if it fails.  This can
+be done in my system by adding an alternate and repeating the phone
+number.  Should there be a configuration parameter to do it in a
+simpler way?
+
+43.
+
+David Nugent: it would be nice to be able to set debugging, log, and
+statistics files on a site by site basis.
+
+74.
+
+Yanek Martinson: allow each system to independently choose whether to
+permit shell execution.
+
+75.
+
+Mike Park: we should accept an Shere=foo message with an alias of the
+system we are calling.
+
+81.
+
+Marty Shannon: log reason for dial failure (chat-fail string) in
+.Status file.
+
+82.
+
+Support restart of failed transfers a la SVR4 UUCP.
+
+83.
+
+Switch between 'M' and 'S' correctly in the BNU log file output.
+
+85.
+
+Les Mikesell: add TLI and TLIS connection ability.
+
+86.
+
+Les Mikesell: allow a separate program to be specified to handle the
+communications with a particular system.
+
+105.
+
+T. William Wells: close and open the Debug file after each file
+transfer.  Alternatively, cycle through a series of Debug file names
+every 1000 lines or so.
+
+106.
+
+Marty Shannon: add a time command for ports, to specify when they may
+be used.
+
+112.
+
+Franc,ois Pinard: allow defaults to appear at the top of the dial file
+(and presumably of the port file as well).
+
+115.
+
+T. William Wells: new options for uustat:
+	-i display job ids only
+	-K interactively kill jobs
+Also, there should perhaps be a configuration option to request uustat
+to only display jobs submitted by the user running uustat, except for
+root and uucp.
+
+117.
+
+Marc Unangst: provide some way to change the debugging level of a
+running uucico.  T. William Wells suggests having it read a file to
+change arbitrary configuration information, although obviously one has
+to be careful of what gets changed while a connection is active.
+
+120.
+
+Jarmo Raiha: new chat-fail commands: one to not update the status file
+and require a retry wait, and one to permit the string to occur a few
+times before reporting an error.
+
+121.
+
+Jarmo Raiha: uucp and uux fail to copy a file that is not world
+readable, because they are running under the wrong euid.  They should
+switch back and forth as necessary.
+
+124.
+
+Peter da Silva: perhaps there should be a ``chat-end-program'' command
+to let a program be run after the initial handshake has been completed
+and the protocol has been selected and turned on.  This would let
+people run stty to change their terminal parameters.
+
+128.
+
+Richard Stallman: have an interactive program to set up a chat script.
+It would let you type directly to the port, recording what you type as
+send strings and recording what comes back from the other side as
+expect strings.
+
+129.
+
+Use POSIX fcntl locks when possible instead of creating a lock file.
+
+130.
+
+Chip Salzenberg: BSD lets you override the timeout for a particular
+expect string by using a trailing ~.
+
+132.
+
+Franc,ois Pinard: cut the total number of 'g' protocol errors by some
+fraction every X bytes.  T. William Wells: only abort if you get a
+certain percentage of errors out of a certain number of packets.
+
+134.
+
+Chip Salzenberg: give .XQTDIR a mode of 0700 and the files put into it
+a mode of 0444.
+
+136.
+
+Thomas Fischer: every so often (1/2 hour) check to see whether there
+is any high grade work to be done and process it.  This should happen
+even on the slave, which means the slave needs some way to ask the
+master to hang up.  I think some uucico's do this by sending CYM.
+
+137.
+
+Support control over local executions by recognizing the local system
+name in the configuration file.  Think about what is needed to use the
+same configuration files on multiple systems.
+
+138.
+
+T. William Wells: BNU apparently uses a file named A.whatever to hold
+the line number reached in current C. file processing.  This is a
+hack, and won't work right with size control anyhow, but
+fsysdep_did_work could, for example, clobber the first byte in the
+line to a # or something to mark that it had been finished.  Still a
+hack, but a better one.
+
+139.
+
+Patrick Smith: incorporate patches to generate full debugging traces
+with less debugging file overhead.  The debugging file repeats too
+much information at great length right now--not good.
+
+140.
+
+Mark Pizzolato: put in the newer, better, 'g' protocol checksum
+calculation routine.
+
+141.
+
+Franc,ois Pinard: batch up pauses and delays in chat scripts and do
+them all at once in a single system call.  This is particularly useful
+for pauses on systems which don't support subsecond sleeps.  For
+everything else it's a fairly minor optimization.
+
+142.
+
+Franc,ois Pinard: give uustat an option to requeue jobs to another
+system.  This only makes a lot of sense for rmail executions, but it's
+fairly easy to do for any type of command.  I think uucico does all
+the file checking needed to ensure that this doesn't break security,
+but that should be double-checked.
+
+143.
+
+David J. MacKenzie: write a program to convert between the various
+different configuration styles.  This should not be too difficult.
+
+144.
+
+T. William Wells: add a -g option to uucico to permit specifying the
+maximum grade to be transferred at that time.  This could restrict the
+timegrade command further, but should not be permitted to override it.
+
+145.
+
+T. William Wells: if uucico or uuxqt get started with bad arguments,
+put an indication in the log file since stderr may be /dev/null.
+
+146.
+
+Richard Todd: it would be nice to sometimes be able to request the
+other side to turn on debugging.
+
+147.
+
+Bart Schaefer: some more possible options for uucico:
+    -R reverse roles (hangup immediately).  Not too exciting.
+    some method to restrict calling to particular systems.
+
+148.
+
+Jarmo Raiha: some method to control the work queue at the remote end.
+This could get awfully general, though.
+
+149.
+
+The interaction of the time command and defaults can be confusing,
+since any time command in the actual system entry, even a fairly
+specific one, will wipe out the default entry.  Not sure what can be
+done about this.
+
+150.

@@ -1,0 +1,215 @@
+This is the README file for version 1.03 of the Taylor UUCP package.
+
+It was written by Ian Lance Taylor.  I can be reached at ian@airs.com,
+or, equivalently, uunet!airs!ian, or c/o Infinity Development, P.O.
+Box 520, Waltham MA, 02254.
+
+There is a mailing list for discussion of the package.  To join the
+list, send a message to taylor-uucp-request@gnu.ai.mit.edu.  Make sure
+you include the address at which you want to receive messages; do not
+rely on the From: header.  To send a message to the list, send it to
+taylor-uucp@gnu.ai.mit.edu.
+
+This package is covered by the Gnu Public License.  See the file
+COPYING for details.  If you would like to do something with this
+package that you feel is reasonable but you feel is prohibited by the
+license, contact me to see if we can work it out.
+
+WHAT IT IS
+
+This is the complete source code for a Unix UUCP package.  It provides
+everything you need to make a UUCP connection.  It includes versions
+of uucico, uuxqt, uux, uucp, uustat, uulog and uuname, as well as
+uuchk (a program to check configuration files) and tstuu (a test
+harness for the package).
+
+The Free Software Foundation plans to make this their standard UUCP
+package.
+
+The package currently supports the 'f', 'g' (in all window and packet
+sizes), 't' and 'e' protocols.  If you have a Berkeley sockets
+library, it can make TCP connections.  It supports a new configuration
+file mechanism which I like (but other people dislike).
+
+The package has a few advantages over regular UUCP:
+
+    You get the source code.
+
+    It uses significantly less CPU time than most UUCP packages.
+
+    You can specify a chat script to run when a system calls in,
+    allowing adjustment of modem parameters on a per system basis.
+
+    You can specify failure strings for chat scripts, allowing the
+    chat script to fail immediately if the modem returns ``BUSY''.
+
+    If you are talking to another instance of the package, you can
+    restrict file transfers by size based on the time of day and who
+    placed the call.
+
+On the other hand:
+
+    It only runs on Unix.  The code is carefully divided into system
+    dependent and system independent portions, so it should be
+    possible to port it to other systems.  It would not be trivial.
+
+    You don't get uusched, uuclean, uusend, uuq, uusnap, uumonitor,
+    uuto, uupick, uutry, uupoll, etc.  If you have current copies of
+    these programs, you may be able to use them.  I expect to
+    eventually write some form of uusched and uuclean, though uuclean
+    especially may not resemble the usual version.  I believe the
+    supplied uustat program allows you to do everything that uuq,
+    uusnap and uumonitor do.  uuto, uupick, uutry and uupoll can be
+    done as shell scripts.
+
+    The package does not read modemcap or acucap files, although you
+    can use V2 configuration files with a BNU Dialers file or a dialer
+    file written in my new configuration file format.
+
+    The package cannot use BNU dialer programs directly, although it
+    can with a simple shell script interface.
+
+    There is no TLI support.  Hopefully by the next version.
+
+If you start using this package, I suggest that you join the mailing
+list (see above) to keep up to date on patches and new versions.  I am
+also open to suggestions for improvements and modifications.
+
+CHANGES SINCE 1.02
+
+For a complete list, see ChangeLog.  The man pages are only partially
+updated for the beta release of 1.03.  There is currently no man page
+for uustat, uuname or uulog.
+
+    As usual, many bugs were fixed.
+
+    Several useful and interesting programs and scripts are provided
+    in the contrib directory.  See contrib/README for details.
+
+    The programs uustat, uulog and uuname were added.  uucp and uux
+    support a -j switch to provide a jobid which uustat can use to
+    remove the job.
+
+    Configuration can now mostly be done automatically by a shell
+    script.  Adminstrative choices, as well as a few system parameters
+    the shell script cannot figure out, are made by editing a new
+    header file.
+
+    The code was successfully tested on a System III machine with a 16
+    bit processor (with segments; it would take work to pare the
+    executable size down to 64K).
+
+    Security was enhanced significantly.  It should no longer be
+    possible to uucp a file to which the user does not have read
+    access.  When accepting a uucp from a remote system, the
+    destination directory must be world writeable.
+
+    If a file cannot be sent to a remote system for some reason, it is
+    saved in a directory (typically /usr/spool/uucp/.Preserve) so the
+    UUCP administrator can do something with it.
+
+    Signal handling was improved and made much more reliable.  uucico
+    will now handle a SIGHUP signal by terminating the current
+    session; if appropriate, it will go on to call another system.
+    uucico will attempt to acquire the communication port as a
+    controlling terminal in order to receive the SIGHUP.  If uucico
+    receives a SIGINT signal, it will let the current session finish
+    but not start any new ones.  If uuxqt receives a signal, it will
+    let the current job finish but not start any new ones.  If uucp or
+    uux receive a signal, they will clean up any files they may have
+    created.
+
+    Debugging was improved, and individual types of debugging can now
+    be selected by name.  The following types are known: chat,
+    handshake, protocol, port, config, spooldir, execute, incoming,
+    outgoing.
+
+    uucico and uuxqt may now be replaced by shell scripts even on
+    systems which can not exec shell scripts; the shell will be
+    invoked if necessary.
+
+    A new status type, ``wrong time to call'' is now be written to the
+    system status file.
+
+    The configuration files may now continue lines by using a
+    backslash as the last character of the line.
+
+    A new ``max-uuxqts'' command was added to the configuration file
+    to control that maximum number of uuxqt processes which may
+    execute simultaneously.  If the code is compiled to support only
+    BNU configuration files, it will read the Maxuuxqts file to get
+    this value.
+
+    A new ``lockname'' command was added to the port file to allow
+    control over the lock file name used for that port.
+
+    A new ``protocol'' command was added to the port file to allow a
+    port to specify which protocols which should be used over it.
+    This allows support of the similar feature in the BNU Devices
+    file.
+
+    A retry time can now be specified with the ``time'' or
+    ``timegrade'' commands.
+
+    A name may now be given to an alternate; this name will appears in
+    the log file when the alternate is used.
+
+    The TCP server code is somewhat more robust, but still has no way
+    to bind a reserved port.
+
+    The -U flag (maximum file size) produced by SVR4 UUCP is now
+    recognized and supported; Taylor UUCP will not produce it, as it
+    uses other mechanisms.  File restart is not supported yet.
+
+    The default 'g' protocol window size was changed to 7.
+
+    The log file now records the port used on outgoing calls and the
+    login name and port used on incoming calls.
+
+DOCUMENTATION
+
+The documentation is in the file uucp.texi, which is a Texinfo file.
+Texinfo is a format used by the Free Software Foundation.  You can
+print the documentation using TeX in combination with the file
+texinfo.tex; neither are provided, but both are fairly readily
+available.  You can also read it as an Info file with GNU Emacs.  If
+these programs are not available, don't despair; the files
+uucp.info-*, which were generated from uucp.texi by the GNU makeinfo
+program, are easily readable by humans.
+
+See the TODO file for things which should be done.  Please feel free
+to do them, although you may want to check with me first.  Send me
+suggestions for new things to do.
+
+The compilation instructions are in uucp.texi.  Here is a summary.
+
+    Edit Makefile.in to set installation directories.
+
+    Type ``sh configure''.  You can pass a number of arguments in the
+    environment (using bash or sh, enter something like ``CC=gcc
+    configure''; using csh, enter something like ``setenv CC gcc; sh
+    configure''):
+        CC: C compiler to use; default is gcc -O if it exists, else cc
+        DEFS: Flags to pass to $CC for configure testing only; default none
+        CFLAGS: Flags to pass to $CC when compiling; default -g
+        LDFLAGS: Flags to pass to $CC when only linking; default none
+        LIBS: Library arguments to pass to $CC; default none
+        INSTALL: Install program; default install -c or cp
+        INSTALLDATA: Install data; default install -c -m 0644 or cp
+    The configure script will compile a number of test programs to see
+    what is available on your system, so if your system is at all
+    unusual you will need to pass in $CC and $LIBS correctly.
+
+    The configure script will create conf.h, and copy Makefile.in to
+    Makefile with substitutions.  It will also create config.status,
+    which may be ignored.
+
+    Examine conf.h and Makefile to make sure they're right.
+
+    Edit policy.h for your local system.    
+
+    Type ``make''.
+
+    Use ``uuchk'' to check configuration files.
+
+    Type ``make install'' to install.
