@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -692,10 +692,10 @@ commands()
 			cmd_exec();
 			c = currline(MIDDLE);
 			if (c == 0)
-				sprintf(cmdbuf, "%s %s",
+				(void)sprintf(cmdbuf, "%s %s",
 					editor, current_file);
 			else
-				sprintf(cmdbuf, "%s +%d %s",
+				(void)sprintf(cmdbuf, "%s +%d %s",
 					editor, c, current_file);
 			lsystem(cmdbuf);
 			ch_init(0, 0);
