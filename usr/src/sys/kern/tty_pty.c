@@ -4,16 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.28 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.29 (Berkeley) %G%
  */
 
 /*
  * Pseudo-teletype Driver
  * (Actually two drivers, requiring two entries in 'cdevsw')
  */
-#include "pty.h"
+#include "pty.h"		/* XXX */
 
-#if NPTY > 0
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>
@@ -37,14 +36,14 @@
  * pts == /dev/tty[pqrs]?
  * ptc == /dev/pty[pqrs]?
  */
-struct	tty pt_tty[NPTY];
+struct	tty pt_tty[NPTY];	/* XXX */
 struct	pt_ioctl {
 	int	pt_flags;
 	struct	selinfo pt_selr, pt_selw;
 	u_char	pt_send;
 	u_char	pt_ucntl;
 	struct	clist pt_ioc;
-} pt_ioctl[NPTY];
+} pt_ioctl[NPTY];		/* XXX */
 int	npty = NPTY;		/* for pstat -t */
 
 #define	PF_RCOLL	0x0001
@@ -63,6 +62,33 @@ int	npty = NPTY;		/* for pstat -t */
 
 void	ptsstop __P((struct tty *, int));
 
+/*
+ * Establish n (or default if n is 1) ptys in the system.
+ *
+ * XXX cdevsw & pstat require the array `pty[]' to be an array
+ */
+void
+ptyattach(n)
+	int n;
+{
+#ifdef notyet
+	char *mem;
+	register u_long ntb;
+#define	DEFAULT_NPTY	32
+
+	/* maybe should allow 0 => none? */
+	if (n <= 1)
+		n = DEFAULT_NPTY;
+	ntb = n * sizeof(struct tty);
+	mem = malloc(ntb + ALIGNBYTES + n * sizeof(struct pt_ioctl),
+	    M_DEVBUF, M_WAITOK);
+	pt_tty = (struct tty *)mem;
+	mem = (char *)ALIGN(mem + ntb);
+	pt_ioctl = (struct pt_ioctl *)mem;
+	npty = n;
+#endif
+}
+
 /*ARGSUSED*/
 ptsopen(dev, flag, devtype, p)
 	dev_t dev;
@@ -72,10 +98,7 @@ ptsopen(dev, flag, devtype, p)
 	register struct tty *tp;
 	int error;
 
-#ifdef lint
-	npty = npty;
-#endif
-	if (minor(dev) >= NPTY)
+	if (minor(dev) >= npty)
 		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
@@ -239,7 +262,7 @@ ptcopen(dev, flag, devtype, p)
 	register struct tty *tp;
 	struct pt_ioctl *pti;
 
-	if (minor(dev) >= NPTY)
+	if (minor(dev) >= npty)
 		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
 	if (tp->t_oproc)
@@ -779,4 +802,3 @@ ptyioctl(dev, cmd, data, flag, p)
 	}
 	return (error);
 }
-#endif
