@@ -13,9 +13,9 @@
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
  * OMRON: $Id: trap.c,v 1.2 92/06/14 06:23:41 moti Exp $
  *
- * from: hp300/hp300/trap.c	7.20 (Berkeley) 6/5/92
+ * from: hp300/hp300/trap.c     7.23 (Berkeley) 7/9/92
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,7 @@
 #include "kernel.h"
 #include "signalvar.h"
 #include "resourcevar.h"
+#include "syscall.h"
 #include "syslog.h"
 #include "user.h"
 #ifdef KTRACE
@@ -91,6 +92,76 @@ int mmupid = -1;
 #endif
 
 /*
+ * trap and syscall both need the following work done before returning
+ * to user mode.
+ */
+static inline void
+userret(p, fp, oticks, faultaddr, fromtrap)
+	register struct proc *p;
+	register struct frame *fp;
+	u_quad_t oticks;
+	u_int faultaddr;
+	int fromtrap;
+{
+	int sig, s;
+
+	/* take pending signals */
+	while ((sig = CURSIG(p)) != 0)
+		psig(sig);
+	p->p_pri = p->p_usrpri;
+	if (want_resched) {
+		/*
+		 * Since we are curproc, clock will normally just change
+		 * our priority without moving us from one queue to another
+		 * (since the running process is not on a queue.)
+		 * If that happened after we setrq ourselves but before we
+		 * swtch()'ed, we might not be on the queue indicated by
+		 * our priority.
+		 */
+		s = splstatclock();
+		setrq(p);
+		p->p_stats->p_ru.ru_nivcsw++;
+		swtch();
+		splx(s);
+		while ((sig = CURSIG(p)) != 0)
+			psig(sig);
+	}
+
+	/*
+	 * If profiling, charge system time to the trapped pc.
+	 */
+	if (p->p_flag & SPROFIL)
+		addupc_intr(p, fp->f_pc, (int)(p->p_sticks - oticks));
+#ifdef HP380
+	/*
+	 * Deal with user mode writebacks (from trap, or from sigreturn).
+	 * If any writeback fails, go back and attempt signal delivery.
+	 * unless we have already been here and attempted the writeback
+	 * (e.g. bad address with user ignoring SIGSEGV).  In that case
+	 * we just return to the user without sucessfully completing
+	 * the writebacks.  Maybe we should just drop the sucker?
+	 */
+	if (mmutype == MMU_68040 && fp->f_format == FMT7) {
+		if (beenhere) {
+#ifdef DEBUG
+			if (mmudebug & MDB_WBFAILED)
+				printf(fromtrap ?
+		"pid %d(%s): writeback aborted, pc=%x, fa=%x\n" :
+		"pid %d(%s): writeback aborted in sigreturn, pc=%x\n",
+				    p->p_pid, p->p_comm, fp->f_pc, faultaddr);
+#endif
+		} else if (sig = writeback(fp, fromtrap)) {
+			beenhere = 1;
+			oticks = p->p_sticks;
+			trapsignal(p, sig, faultaddr);
+			goto again;
+		}
+	}
+#endif
+	curpri = p->p_pri;
+}
+
+/*
  * Trap is called from locore to handle most types of processor traps,
  * including events such as simulated software interrupts/AST's.
  * System calls are broken out for efficiency.
@@ -103,16 +174,18 @@ trap(type, code, v, frame)
 	struct frame frame;
 {
 	register int i;
-	unsigned ucode = 0;
-	register struct proc *p = curproc;
-	struct timeval syst;
+	unsigned ucode;
+	register struct proc *p;
+	u_quad_t sticks;
 	unsigned ncode;
-	int s;
+	extern char fswintr[];
 
 	cnt.v_trap++;
-	syst = p->p_stime;
+	p = curproc;
+	ucode = 0;
 	if (USERMODE(frame.f_sr)) {
 		type |= T_USER;
+		sticks = p->p_sticks;
 		p->p_md.md_regs = frame.f_regs;
 	}
 	switch (type) {
@@ -261,7 +334,7 @@ copyfault:
 		if (ssir & SIR_CLOCK) {
 			siroff(SIR_CLOCK);
 			cnt.v_soft++;
-			softclock((caddr_t)frame.f_pc, (int)frame.f_sr);
+			softclock();
 		}
 		/*
 		 * If this was not an AST trap, we are all done.
@@ -271,15 +344,19 @@ copyfault:
 			return;
 		}
 		spl0();
-#ifndef PROFTIMER
-		if ((p->p_flag&SOWEUPC) && p->p_stats->p_prof.pr_scale) {
-			addupc(frame.f_pc, &p->p_stats->p_prof, 1);
+		if (p->p_flag & SOWEUPC) {
 			p->p_flag &= ~SOWEUPC;
+			ADDUPROF(p);
 		}
-#endif
 		goto out;
 
 	case T_MMUFLT:		/* kernel mode page fault */
+		/*
+		 * If we were doing profiling ticks or other user mode
+		 * stuff from interrupt code, Just Say No.
+		 */
+		if (p->p_addr->u_pcb.pcb_onfault == fswintr)
+			goto copyfault;
 		/* fall into ... */
 
 	case T_MMUFLT|T_USER:	/* page fault */
@@ -367,90 +444,70 @@ copyfault:
 	if ((type & T_USER) == 0)
 		return;
 out:
-	while (i = CURSIG(p))
-		psig(i);
-	p->p_pri = p->p_usrpri;
-	if (want_resched) {
-		/*
-		 * Since we are curproc, clock will normally just change
-		 * our priority without moving us from one queue to another
-		 * (since the running process is not on a queue.)
-		 * If that happened after we setrq ourselves but before we
-		 * swtch()'ed, we might not be on the queue indicated by
-		 * our priority.
-		 */
-		s = splclock();
-		setrq(p);
-		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
-		splx(s);
-		while (i = CURSIG(p))
-			psig(i);
-	}
-	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
-
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
-		if (ticks) {
-#ifdef PROFTIMER
-			extern int profscale;
-			addupc(frame.f_pc, &p->p_stats->p_prof,
-			    ticks * profscale);
-#else
-			addupc(frame.f_pc, &p->p_stats->p_prof, ticks);
-#endif
-		}
-	}
-	curpri = p->p_pri;
+	userret(p, &frame, sticks, v, 1);
 }
 
 /*
  * Proces a system call.
  */
 syscall(code, frame)
-	volatile unsigned code;
+	u_int code;
 	struct frame frame;
 {
 	register caddr_t params;
-	register int i;
 	register struct sysent *callp;
-	register struct proc *p = curproc;
+	register struct proc *p;
 	int error, opc, numsys, s;
+	u_int argsize;
 	struct args {
 		int i[8];
 	} args;
 	int rval[2];
-	struct timeval syst;
-	struct sysent *systab;
+	u_quad_t sticks;
 
 	cnt.v_syscall++;
-	syst = p->p_stime;
 	if (!USERMODE(frame.f_sr))
 		panic("syscall");
+	p = curproc;
+	sticks = p->p_sticks;
 	p->p_md.md_regs = frame.f_regs;
 	opc = frame.f_pc - 2;
-	systab = sysent;
-	numsys = nsysent;
+	callp = sysent, numsys = nsysent;
 	params = (caddr_t)frame.f_regs[SP] + sizeof(int);
-	if (code == 0) {			/* indir */
+	switch (code) {
+
+	case SYS_indir:
+		/*
+		 * Code is first argument, followed by actual args.
+		 */
 		code = fuword(params);
 		params += sizeof(int);
+		break;
+
+	case SYS___indir:
+		/*
+		 * Like indir, but code is a quad, so as to maintain
+		 * quad alignment for the rest of the arguments.
+		 */
+		code = fuword(params + _QUAD_LOWWORD * sizeof(int));
+		params += sizeof(quad_t);
+		break;
+
+	default:
+		/* nothing to do by default */
+		break;
 	}
-	if (code >= numsys)
-		callp = &systab[0];		/* indir (illegal) */
+	if (code < numsys)
+		callp += code;
 	else
-		callp = &systab[code];
-	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)&args, (u_int)i))) {
-		frame.f_regs[D0] = error;
-		frame.f_sr |= PSL_C;	/* carry bit */
+		callp += SYS_indir;	/* => nosys */
+	argsize = callp->sy_narg * sizeof(int);
+	if (argsize && (error = copyin(params, (caddr_t)&args, argsize))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
 			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
-		goto done;
+		goto bad;
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
@@ -459,64 +516,34 @@ syscall(code, frame)
 	rval[0] = 0;
 	rval[1] = frame.f_regs[D1];
 	error = (*callp->sy_call)(p, &args, rval);
-	if (error == ERESTART)
-		frame.f_pc = opc;
-	else if (error != EJUSTRETURN) {
-		if (error) {
-			frame.f_regs[D0] = error;
-			frame.f_sr |= PSL_C;	/* carry bit */
-		} else {
-			frame.f_regs[D0] = rval[0];
-			frame.f_regs[D1] = rval[1];
-			frame.f_sr &= ~PSL_C;
-		}
-	}
-	/* else if (error == EJUSTRETURN) */
-		/* nothing to do */
+	switch (error) {
 
-done:
-	/*
-	 * Reinitialize proc pointer `p' as it may be different
-	 * if this is a child returning from fork syscall.
-	 */
-	p = curproc;
-	while (i = CURSIG(p))
-		psig(i);
-	p->p_pri = p->p_usrpri;
-	if (want_resched) {
+	case 0:
 		/*
-		 * Since we are curproc, clock will normally just change
-		 * our priority without moving us from one queue to another
-		 * (since the running process is not on a queue.)
-		 * If that happened after we setrq ourselves but before we
-		 * swtch()'ed, we might not be on the queue indicated by
-		 * our priority.
+		 * Reinitialize proc pointer `p' as it may be different
+		 * if this is a child returning from fork syscall.
 		 */
-		s = splclock();
-		setrq(p);
-		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
-		splx(s);
-		while (i = CURSIG(p))
-			psig(i);
-	}
-	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
+		p = curproc;
+		frame.f_regs[D0] = rval[0];
+		frame.f_regs[D1] = rval[1];
+		frame.f_sr &= ~PSL_C;
+		break;
 
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
-		if (ticks) {
-#ifdef PROFTIMER
-			extern int profscale;
-			addupc(frame.f_pc, &p->p_stats->p_prof,
-			    ticks * profscale);
-#else
-			addupc(frame.f_pc, &p->p_stats->p_prof, ticks);
-#endif
-		}
+	case ERESTART:
+		frame.f_pc = opc;
+		break;
+
+	case EJUSTRETURN:
+		break;		/* nothing to do */
+
+	default:
+	bad:
+		frame.f_regs[D0] = error;
+		frame.f_sr |= PSL_C;
+		break;
 	}
-	curpri = p->p_pri;
+
+	userret(p, &frame, sticks, (u_int)0, 0);
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);

@@ -13,9 +13,9 @@
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  * OMRON: $Id: param.h,v 1.3 92/06/14 06:28:28 moti Exp $
  *
- * from: hp300/include/param.h	7.8 (Berkeley) 6/28/91
+ * from: hp300/include/param.h	7.12 (Berkeley) 7/8/92
  *
- *	@(#)param.h	7.1 (Berkeley) %G%
+ *	@(#)param.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -139,15 +139,16 @@
 #define spl6()  _spl(PSL_S|PSL_IPL6)
 #define spl7()  _spl(PSL_S|PSL_IPL7)
 
-#define splsoftclock()  spl1()
-#define splnet()        spl1()
-#define splbio()        spl5()
-#define splimp()        spl5()
-#define spltty()        spl6()
-#define splclock()      spl5()
-#define splvm()         spl6()
-#define splhigh()       spl7()
-#define splsched()      spl7()
+#define splsoftclock()	spl1()
+#define splnet()	spl1()
+#define splbio()	spl5()
+#define splimp()	spl5()
+#define spltty()	spl6()
+#define splclock()	spl5()
+#define splstatclock()	spl5()
+#define splvm()		spl6()
+#define splhigh()	spl7()
+#define splsched()	spl7()
 
 /* watch out for side effects */
 #define splx(s)         (s & PSL_IPL ? _spl(s) : spl0())

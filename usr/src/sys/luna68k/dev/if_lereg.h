@@ -1,11 +1,19 @@
 /*
- * Copyright (c) 1982, 1990, 1992 The Regents of the University of California.
+ * Copyright (c) 1982, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_lereg.h	7.1 (Berkeley) %G%
+ * from: hp300/dev/if_lereg.h	7.4 (Berkeley) 7/6/92
+ *
+ *	@(#)if_lereg.h	7.2 (Berkeley) %G%
  */
+
+#ifdef KERNEL
+#include "iotypes.h"	/* XXX */
+#else
+#include <luna68k/dev/iotypes.h>	/* XXX */
+#endif
 
 #define	LEID		21
 
@@ -17,8 +25,6 @@
 #define	LETBUF		2
 #define	LETBUFLOG2	1
 #define	LE_TLEN		(LETBUFLOG2 << 13)
-
-#define vu_char		volatile u_char
 
 /*
  * LANCE registers.
@@ -37,15 +43,14 @@ struct lereg1 {
 
 /*
  * Overlayed on 16K dual-port RAM.
- * Current size is 13,758 bytes with 8 x 1518 receive buffers and
- * 1 x 1518 transmit buffer.
+ * Current size is 15,284 bytes with 8 x 1518 receive buffers and
+ * 2 x 1518 transmit buffers.
  */
 struct lereg2 {
 	/* init block */
 	u_short	ler2_mode;		/* +0x0000 */
 	u_char	ler2_padr[6];		/* +0x0002 */
-	u_long	ler2_ladrf0;		/* +0x0008 */
-	u_long	ler2_ladrf1;		/* +0x000C */
+	u_long	ler2_ladrf[2];		/* +0x0008 */
 	u_short	ler2_rdra;		/* +0x0010 */
 	u_short	ler2_rlen;		/* +0x0012 */
 	u_short	ler2_tdra;		/* +0x0014 */
@@ -64,8 +69,8 @@ struct lereg2 {
 		short	tmd2;
 		u_short	tmd3;
 	} ler2_tmd[LETBUF];
-	char	ler2_rbuf[LERBUF][LEMTU]; /* +0x0060 */
-	char	ler2_tbuf[LETBUF][LEMTU]; /* +0x2FD0 */
+	char	ler2_rbuf[LERBUF][LEMTU]; /* +0x0068 */
+	char	ler2_tbuf[LETBUF][LEMTU]; /* +0x2FD8 */
 };
 
 /*
