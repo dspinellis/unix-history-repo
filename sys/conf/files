@@ -1,4 +1,4 @@
-# $Id: files,v 1.15 1994/01/17 09:43:24 davidg Exp $
+# $Id: files,v 1.16 1994/01/21 09:55:51 davidg Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -22,7 +22,7 @@ isofs/isofs_node.c	optional isofs
 isofs/isofs_util.c	optional isofs
 isofs/isofs_vfsops.c	optional isofs
 isofs/isofs_vnops.c	optional isofs
-isofs/isofs_rrip.c      optional isofs
+isofs/isofs_rrip.c	optional isofs
 kern/dead_vnops.c	standard
 kern/fifo_vnops.c	standard
 kern/imgact_aout.c	standard
@@ -56,9 +56,11 @@ kern/subr_xxx.c		standard
 kern/sys_generic.c	standard
 kern/sys_process.c	standard
 kern/sys_socket.c	standard
-kern/sysv_ipc.c         optional sysvipc
-kern/sysv_msg.c         optional sysvmsg
-kern/sysv_sem.c         optional sysvsem
+kern/sysv_ipc.c		optional sysvmsg
+kern/sysv_ipc.c		optional sysvsem
+kern/sysv_ipc.c		optional sysvshm
+kern/sysv_msg.c		optional sysvmsg
+kern/sysv_sem.c		optional sysvsem
 kern/sysv_shm.c		optional sysvshm
 kern/tty.c		standard
 kern/tty_compat.c	standard
