@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)mv.c	5.1 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include <stdio.h>
 #include <sys/dir.h>
@@ -116,7 +117,7 @@ move(source, target)
 	int targetexists;
 
 	if (lstat(source, &s1) < 0) {
-		error("cannot access %s", source);
+		Perror2(source, "Cannot access");
 		return (1);
 	}
 	/*
@@ -127,12 +128,13 @@ move(source, target)
 	 */
 	targetexists = lstat(target, &s2) >= 0;
 	if (targetexists) {
-		if (iflag && !fflag && query("remove %s? ", target) == 0)
-			return (1);
 		if (s1.st_dev == s2.st_dev && s1.st_ino == s2.st_ino) {
 			error("%s and %s are identical", source, target);
 			return (1);
 		}
+		if (iflag && !fflag && isatty(fileno(stdin)) &&
+		    query("remove %s? ", target) == 0)
+			return (1);
 		if (access(target, 2) < 0 && !fflag && isatty(fileno(stdin))) {
 			if (query("override protection %o for %s? ",
 			  s2.st_mode & MODEBITS, target) == 0)
@@ -150,7 +152,7 @@ move(source, target)
 		return (1);
 	}
 	if (targetexists && unlink(target) < 0) {
-		error("cannot unlink %s", target);
+		Perror2(target, "Cannot unlink");
 		return (1);
 	}
 	/*
@@ -160,12 +162,15 @@ move(source, target)
 	 */
 	if (ISLNK(s1)) {
 		register m;
-		char symln[MAXPATHLEN];
+		char symln[MAXPATHLEN + 1];
 
-		if (readlink(source, symln, sizeof (symln)) < 0) {
+		m = readlink(source, symln, sizeof (symln) - 1);
+		if (m < 0) {
 			Perror(source);
 			return (1);
 		}
+		symln[m] = '\0';
+
 		m = umask(~(s1.st_mode & MODEBITS));
 		if (symlink(symln, target) < 0) {
 			Perror(target);
@@ -175,40 +180,63 @@ move(source, target)
 		goto cleanup;
 	}
 	if (ISDEV(s1)) {
-		time_t tv[2];
+		struct timeval tv[2];
 
 		if (mknod(target, s1.st_mode, s1.st_rdev) < 0) {
 			Perror(target);
 			return (1);
 		}
-		/* kludge prior to utimes */
-		tv[0] = s1.st_atime;
-		tv[1] = s1.st_mtime;
-		(void) utime(target, tv);
+
+		tv[0].tv_sec = s1.st_atime;
+		tv[0].tv_usec = 0;
+		tv[1].tv_sec = s1.st_mtime;
+		tv[1].tv_usec = 0;
+		(void) utimes(target, tv);
 		goto cleanup;
 	}
 	if (ISREG(s1)) {
-		int i, c, status;
-		time_t tv[2];
+		register int fi, fo, n;
+		struct timeval tv[2];
+		char buf[MAXBSIZE];
 
-		i = fork();
-		if (i == -1) {
-			error("try again");
+		fi = open(source, 0);
+		if (fi < 0) {
+			Perror(source);
 			return (1);
 		}
-		if (i == 0) {
-			execl("/bin/cp", "cp", source, target, 0);
-			error("cannot exec /bin/cp");
-			exit(1);
-		}
-		while ((c = wait(&status)) != i && c != -1)
-			;
-		if (status != 0)
+
+		fo = creat(target, s1.st_mode & MODEBITS);
+		if (fo < 0) {
+			Perror(target);
+			close(fi);
 			return (1);
-		/* kludge prior to utimes */
-		tv[0] = s1.st_atime;
-		tv[1] = s1.st_mtime;
-		(void) utime(target, tv);
+		}
+
+		for (;;) {
+			n = read(fi, buf, sizeof buf);
+			if (n == 0) {
+				break;
+			} else if (n < 0) {
+				Perror2(source, "read");
+				close(fi);
+				close(fo);
+				return (1);
+			} else if (write(fo, buf, n) != n) {
+				Perror2(target, "write");
+				close(fi);
+				close(fo);
+				return (1);
+			}
+		}
+
+		close(fi);
+		close(fo);
+
+		tv[0].tv_sec = s1.st_atime;
+		tv[0].tv_usec = 0;
+		tv[1].tv_sec = s1.st_mtime;
+		tv[1].tv_usec = 0;
+		(void) utimes(target, tv);
 		goto cleanup;
 	}
 	error("%s: unknown file type %o", source, s1.st_mode);
@@ -216,7 +244,7 @@ move(source, target)
 
 cleanup:
 	if (unlink(source) < 0) {
-		error("cannot unlink %s", source);
+		Perror2(source, "Cannot unlink");
 		return (1);
 	}
 	return (0);
@@ -226,7 +254,7 @@ cleanup:
 query(prompt, a1, a2)
 	char *a1;
 {
-	register char i, c;
+	register int i, c;
 
 	fprintf(stderr, prompt, a1, a2);
 	i = c = getchar();
