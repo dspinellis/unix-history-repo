@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.134 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.135 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1813,7 +1813,7 @@ testmodeline(line, e)
 		}
 		else if (strcasecmp(&line[1], "tryflags") == 0)
 		{
-			while (*p != '\n')
+			for (; *p != '\0'; p++)
 			{
 				switch (*p)
 				{
