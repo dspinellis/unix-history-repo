@@ -1,6 +1,6 @@
 #/* Copyright (c) 1982 Regents of the University of California */
 #
-# static char sccsid[] = "@(#)Makefile 1.3 %G%";
+# static char sccsid[] = "@(#)Makefile 1.4 %G%";
 #
 # make file for pdx
 #
@@ -32,7 +32,7 @@ INSTALL	= /usr/ucb/pdx
 # LDFLAGS should be -i for pdp-11
 #
 
-CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -O
+CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -DVAX -O
 LDFLAGS	=
 
 #
