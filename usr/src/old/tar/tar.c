@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)tar.c	4.19 (Berkeley) %G%";
+static	char *sccsid = "@(#)tar.c	4.20 (Berkeley) %G%";
 #endif
 
 /*
  * Tape Archival Program
  */
+
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -61,7 +62,9 @@ int	wflag;
 int	hflag;
 int	Bflag;
 int	Fflag;
+int	Mflag;
 
+int	superuser;
 int	mt;
 int	term;
 int	chksum;
@@ -98,6 +101,9 @@ char	*argv[];
 
 	if (argc < 2)
 		usage();
+
+	/* determine if the super user is running this program */
+	superuser = !getuid();
 
 	tfile = NULL;
 	usefile =  magtape;
@@ -164,6 +170,10 @@ char	*argv[];
 			mflag++;
 			break;
 
+		case 'M':
+			Mflag++;
+			break;
+
 		case '-':
 			break;
 
@@ -171,8 +181,8 @@ char	*argv[];
 		case '1':
 		case '4':
 		case '5':
-		case '7':
 		case '8':
+		case '9':
 			magtape[8] = *cp;
 			usefile = magtape;
 			break;
@@ -273,7 +283,7 @@ char	*argv[];
 usage()
 {
 	fprintf(stderr,
-"tar: usage: tar -{txru}[cvfblmhopwBi] [tapefile] [blocksize] file1 file2...\n");
+"tar: usage: tar -{txru}[cvfblmhopwBFMi] [tapefile] [blocksize] file1 file2...\n");
 	done(1);
 }
 
@@ -334,7 +344,7 @@ dorep(argv)
 		}
 		putfile(*argv++, cp2, parent);
 		if (chdir(wdir) < 0) {
-			fprintf(stderr, "cannot change back?: ");
+			fprintf(stderr, "tar: cannot chdir back?: ");
 			perror(wdir);
 		}
 	}
@@ -352,7 +362,10 @@ dorep(argv)
 
 endtape()
 {
-	return (dblock.dbuf.name[0] == '\0');
+	if (dblock.dbuf.name[0] != '\0')
+		return (0);
+	backtape();
+	return (1);
 }
 
 getdir()
@@ -388,7 +401,7 @@ top:
 passtape()
 {
 	long blocks;
-	char buf[TBLOCK];
+	int i;
 
 	if (dblock.dbuf.linkflag == '1')
 		return;
@@ -396,8 +409,14 @@ passtape()
 	blocks += TBLOCK-1;
 	blocks /= TBLOCK;
 
-	while (blocks-- > 0)
-		readtape(buf);
+	while (blocks > 0) {
+		readtape(NULL);
+		i = nblock - recno;
+		if (blocks < i)
+			i = blocks;
+		recno += i;
+		blocks -= i;
+	}
 }
 
 putfile(longname, shortname, parent)
@@ -405,13 +424,13 @@ putfile(longname, shortname, parent)
 	char *shortname;
 	char *parent;
 {
-	int infile = 0;
-	long blocks;
+	int infile;
+	long blocks, size;
 	char buf[TBLOCK];
 	register char *cp, *cp2;
 	struct direct *dp;
 	DIR *dirp;
-	int i, j;
+	int i;
 	char newparent[NAMSIZ+64];
 	extern int errno;
 
@@ -461,6 +480,7 @@ putfile(longname, shortname, parent)
 		}
 		sprintf(newparent, "%s/%s", parent, shortname);
 		if (chdir(shortname) < 0) {
+			fprintf(stderr, "tar: ");
 			perror(shortname);
 			return;
 		}
@@ -468,7 +488,7 @@ putfile(longname, shortname, parent)
 			fprintf(stderr, "tar: %s: directory read error\n",
 			    longname);
 			if (chdir(parent) < 0) {
-				fprintf(stderr, "cannot change back?: ");
+				fprintf(stderr, "tar: cannot chdir back?: ");
 				perror(parent);
 			}
 			return;
@@ -488,7 +508,7 @@ putfile(longname, shortname, parent)
 		}
 		closedir(dirp);
 		if (chdir(parent) < 0) {
-			fprintf(stderr, "cannot change back?: ");
+			fprintf(stderr, "tar: cannot chdir back?: ");
 			perror(parent);
 		}
 		break;
@@ -508,6 +528,7 @@ putfile(longname, shortname, parent)
 		}
 		i = readlink(shortname, dblock.dbuf.linkname, NAMSIZ - 1);
 		if (i < 0) {
+			fprintf(stderr, "tar: ");
 			perror(longname);
 			return;
 		}
@@ -549,7 +570,7 @@ putfile(longname, shortname, parent)
 				strcpy(dblock.dbuf.linkname, lp->pathname);
 				dblock.dbuf.linkflag = '1';
 				sprintf(dblock.dbuf.chksum, "%6o", checksum());
-				writetape( (char *) &dblock);
+				writetape((char *)&dblock);
 				if (vflag) {
 					fprintf(stderr, "a %s ", longname);
 					fprintf(stderr, "link to %s\n",
@@ -575,7 +596,7 @@ putfile(longname, shortname, parent)
 				strcpy(lp->pathname, longname);
 			}
 		}
-		blocks = (stbuf.st_size + (TBLOCK-1)) / TBLOCK;
+		blocks = ((size = stbuf.st_size) + (TBLOCK-1)) / TBLOCK;
 		if (vflag) {
 			fprintf(stderr, "a %s ", longname);
 			fprintf(stderr, "%ld blocks\n", blocks);
@@ -583,14 +604,21 @@ putfile(longname, shortname, parent)
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		writetape((char *)&dblock);
 
-		while ((i = read(infile, buf, TBLOCK)) > 0 && blocks > 0) {
-			writetape(buf);
-			blocks--;
+		while (blocks > 0) {
+			i = nblock - recno;
+			if (blocks < i)
+				i = blocks;
+			if (read(infile, (char *)&tbuf[recno], i*TBLOCK) <= 0)
+				break;
+			if ((recno += i) >= nblock)
+				flushtape();
+			blocks -= i;
 		}
-		close(infile);
-		if (blocks != 0 || i != 0)
+		if (blocks != 0 || fstat(infile, &stbuf) < 0 ||
+		    size != stbuf.st_size)
 			fprintf(stderr, "tar: %s: file changed size\n",
 			    longname);
+		close(infile);
 		while (--blocks >=  0)
 			putempty();
 		break;
@@ -606,7 +634,6 @@ doxtract(argv)
 	char *argv[];
 {
 	long blocks, bytes;
-	char buf[TBLOCK];
 	char **cp;
 	int ofile;
 
@@ -653,7 +680,8 @@ gotit:
 				    dblock.dbuf.name, dblock.dbuf.linkname);
 #ifdef notdef
 			/* ignore alien orders */
-			chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
+			if (superuser)
+				chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 			if (mflag == 0) {
 				struct timeval tv[2];
 
@@ -686,28 +714,29 @@ gotit:
 			passtape();
 			continue;
 		}
-		chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
+		if (superuser)
+			chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 		blocks = ((bytes = stbuf.st_size) + TBLOCK-1)/TBLOCK;
 		if (vflag)
 			fprintf(stderr, "x %s, %ld bytes, %ld tape blocks\n",
 			    dblock.dbuf.name, bytes, blocks);
-		for (; blocks-- > 0; bytes -= TBLOCK) {
-			readtape(buf);
-			if (bytes > TBLOCK) {
-				if (write(ofile, buf, TBLOCK) < 0) {
-					fprintf(stderr,
-					"tar: %s: HELP - extract write error\n",
-					    dblock.dbuf.name);
-					done(2);
-				}
-				continue;
+		while (bytes > 0) {
+			int b, r;
+
+			readtape(NULL);
+			b = (r = nblock - recno) * TBLOCK;
+			if (bytes < b) {
+				b = bytes;
+				r = (b + TBLOCK-1)/TBLOCK;
 			}
-			if (write(ofile, buf, (int) bytes) < 0) {
+			if (write(ofile, (char *)&tbuf[recno], b) != b) {
 				fprintf(stderr,
 				    "tar: %s: HELP - extract write error\n",
 				    dblock.dbuf.name);
 				done(2);
 			}
+			bytes -= b;
+			recno += r;
 		}
 		close(ofile);
 		if (mflag == 0) {
@@ -839,7 +868,8 @@ checkdir(name)
 				*cp = '/';
 				return (0);
 			}
-			chown(name, stbuf.st_uid, stbuf.st_gid);
+			if (superuser)
+				chown(name, stbuf.st_uid, stbuf.st_gid);
 			if (pflag && cp[1] == '\0')
 				chmod(name, stbuf.st_mode & 0777);
 		}
@@ -965,7 +995,8 @@ checkupdate(arg)
 
 done(n)
 {
-	unlink(tname);
+	if (tfile != NULL)
+		unlink(tname);
 	exit(n);
 }
 
@@ -1049,7 +1080,7 @@ cmp(b, s, n)
 	register i;
 
 	if (b[0] != '\n')
-		exit(2);
+		done(2);
 	for(i=0; i<n; i++) {
 		if (b[i+1] > s[i])
 			return (-1);
@@ -1083,7 +1114,8 @@ readtape(buffer)
 		recno = 0;
 	}
 	first = 1;
-	bcopy((char *)&tbuf[recno++], buffer, TBLOCK);
+	if (buffer != NULL)
+		bcopy((char *)&tbuf[recno++], buffer, TBLOCK);
 	return (TBLOCK);
 }
 
@@ -1092,7 +1124,7 @@ writetape(buffer)
 {
 	first = 1;
 	if (recno >= nblock) {
-		if (write(mt, tbuf, TBLOCK*nblock) < 0) {
+		if (bwrite(mt, tbuf, TBLOCK*nblock) < 0) {
 			fprintf(stderr, "tar: tape write error\n");
 			done(2);
 		}
@@ -1100,7 +1132,7 @@ writetape(buffer)
 	}
 	bcopy(buffer, (char *)&tbuf[recno++], TBLOCK);
 	if (recno >= nblock) {
-		if (write(mt, tbuf, TBLOCK*nblock) < 0) {
+		if (bwrite(mt, tbuf, TBLOCK*nblock) < 0) {
 			fprintf(stderr, "tar: tape write error\n");
 			done(2);
 		}
@@ -1129,7 +1161,11 @@ backtape()
 
 flushtape()
 {
-	write(mt, tbuf, TBLOCK*nblock);
+	if (bwrite(mt, tbuf, TBLOCK*nblock) < 0) {
+		fprintf(stderr, "tar: tape write error\n");
+		done(2);
+	}
+	recno = 0;
 }
 
 bread(fd, buf, size)
@@ -1139,9 +1175,30 @@ bread(fd, buf, size)
 {
 	int count;
 	static int lastread = 0;
+	int i;
+	int tsize = size;
 
-	if (!Bflag)
-		return (read(fd, buf, size));
+	if (!Bflag) {
+		if (Mflag)
+			return (read(fd, buf, size));
+		while (size) {
+			i = read(fd, buf, size);
+			if (i <= 0) {
+				/*
+				 * Error on read, probably an EOF,
+				 * ask the user about it.
+				 */
+				fd = chgreel(0, fd);
+				if (fd == -1)
+					return (i);
+			} else {
+				size -= i;
+				buf += i;
+			}
+		}
+		return (tsize);
+	}
+
 	for (count = 0; count < size; count += lastread) {
 		if (lastread < 0) {
 			if (count > 0)
@@ -1161,7 +1218,79 @@ getcwd(buf)
 
 	if (getwd(buf) == NULL) {
 		fprintf(stderr, "tar: %s\n", buf);
-		exit(1);
+		done(1);
 	}
 	return (buf);
+}
+
+bwrite(mt, buf, count)
+	int mt, count;
+	char *buf;
+{
+	register int i;
+	int tc = count;
+
+	while (count) {
+		i = write(mt, buf, count);
+		if (i <= 0) {
+			if (Mflag)
+				return (i);
+			mt = chgreel(1, mt);
+			if (mt == -1)
+				done(2);
+		} else {
+			count -= i;
+			buf += i;
+		}
+	}
+	return (tc);
+}
+
+chgreel(x, fl)
+	int x, fl;
+{
+	register int f;
+	char str[BUFSIZ];
+	char *pstr;
+	FILE *devtty;
+	struct stat statb;
+
+	perror("tar");
+	fprintf(stderr, "Can't %s\n", x ? "write output": "read input");
+	fstat(fl, &statb);
+	if ((statb.st_mode & S_IFMT) != S_IFCHR)
+		done(2);
+
+	close(fl);
+	devtty = fopen("/dev/tty", "r");
+	for (;;) {
+		fprintf(stderr, "tar: If you want to go on, type \"yes\" or a new pathname of a device/file name when you are ready\n");
+		if (fgets(str, sizeof (str), devtty) == NULL)
+			break;
+		str[strlen(str) - 1] = '\0';
+
+		switch (*str) {
+		case '\0':
+		case 'N':
+		case 'n':
+			goto done;
+
+		case 'Y':
+		case 'y':
+		case '\n':
+			pstr = usefile;
+			break;
+
+		default:
+			pstr = str;
+		}
+		if ((f = open(pstr, x ? 1 : 0)) >= 0) {
+			fclose(devtty);
+			return (f);
+		}
+		fprintf(stderr, "tar: open of %s failed\n", pstr);
+	}
+done:
+	fclose(devtty);
+	return (-1);
 }
