@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mpool.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mpool.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -236,7 +236,7 @@ mpool_put(mp, page, flags)
 #ifdef STATISTICS
 	++mp->pageput;
 #endif
-	baddr = page - sizeof(BKT);
+	baddr = (BKT *)((char *)page - sizeof(BKT));
 #ifdef DEBUG
 	if (!(baddr->flags & MPOOL_PINNED))
 		err("mpool_put: page %d not pinned", b->pgno);
