@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.5	82/02/16	*/
+/*	raw_imp.c	4.6	82/02/16	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -58,9 +58,11 @@ COUNT(RIMP_OUTPUT);
 	ip = mtod(m, struct imp_leader *);
 	if (ip->il_format != IMP_NFF)
 		goto bad;
+#ifdef notdef
 	if (ip->il_link != IMPLINK_IP &&
 	    (ip->il_link < IMPLINK_LOWEXPER || ip->il_link > IMPLINK_HIGHEXPER))
 		goto bad;
+#endif
 
 	/*
 	 * Fill in IMP leader -- impoutput refrains from rebuilding
