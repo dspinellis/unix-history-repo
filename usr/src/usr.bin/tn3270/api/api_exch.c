@@ -121,7 +121,8 @@ send_state()
 	    return -1;
 	}
     }
-    exch_state.my_sequence = ++my_sequence;
+    my_sequence = (my_sequence+1)&0xff;
+    exch_state.my_sequence = my_sequence;
     exch_state.your_sequence = your_sequence;
     OBUFADDBYTES((char *)&exch_state, sizeof exch_state);
     return 0;
@@ -147,15 +148,13 @@ receive_state()
 	    fprintf(stderr, "Send sequence number mismatch.\n");
 	    return -1;
 	}
-	if (exch_state.my_sequence != ++your_sequence) {
+	if (exch_state.my_sequence != ((++your_sequence)&0xff)) {
 	    WHO_ARE_WE();
 	    fprintf(stderr, "Receive sequence number mismatch.\n");
 	    return -1;
 	}
-    } else {
-	/* In contention state, no sequence numbering */
-	your_sequence = exch_state.my_sequence;
     }
+    your_sequence = exch_state.my_sequence;
     return 0;
 }
 
