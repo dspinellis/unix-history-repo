@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.15 1993/09/24 14:13:25 rgrimes Exp $
+#	$Id: Makefile,v 1.16 1993/10/05 21:55:35 rgrimes Exp $
 #
 
 SUBDIR=
@@ -102,7 +102,7 @@ includes:
 	cd ${.CURDIR}/lib/librpc/rpc;		make beforeinstall
 
 libraries:
-	# setenv NOPROFILED if you do not want profiled libraries
+	# setenv NOPROFILE if you do not want profiled libraries
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR}/usr/lib"
 	@echo "--------------------------------------------------------------"
