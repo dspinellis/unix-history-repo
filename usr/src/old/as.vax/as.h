@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.1 %G%" */
+/* "@(#)as.h 4.2 %G%" */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
