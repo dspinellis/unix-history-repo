@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ring.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ring.c	1.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,7 +28,9 @@ static char sccsid[] = "@(#)ring.c	1.12 (Berkeley) %G%";
 #endif
 
 #include	<sys/types.h>
+#ifndef	FILIO_H
 #include	<sys/ioctl.h>
+#endif
 #include	<sys/socket.h>
 
 #include	"ring.h"
@@ -261,6 +263,7 @@ int count;
     }
 }
 
+#ifdef notdef
 
 /*
  * Move data from the "consume" portion of the ring buffer
@@ -281,3 +284,4 @@ int count;
 	buffer += i;
     }
 }
+#endif

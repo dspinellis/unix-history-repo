@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)slc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -15,11 +15,11 @@ static char sccsid[] = "@(#)slc.c	5.3 (Berkeley) %G%";
 /*
  * local varibles
  */
-static char	*def_slcbuf = (char *)0;
-static int	def_slclen = 0;
-static int	slcchange;	/* change to slc is requested */
-static char	*slcptr;	/* pointer into slc buffer */
-static char	slcbuf[NSLC*6];	/* buffer for slc negotiation */
+static unsigned char	*def_slcbuf = (unsigned char *)0;
+static int		def_slclen = 0;
+static int		slcchange;	/* change to slc is requested */
+static unsigned char	*slcptr;	/* pointer into slc buffer */
+static unsigned char	slcbuf[NSLC*6];	/* buffer for slc negotiation */
 
 /*
  * send_slc
@@ -133,7 +133,7 @@ start_slc(getit)
  * Finish up the slc negotiation.  If something to send, then send it.
  */
 end_slc(bufp)
-register char **bufp;
+register unsigned char **bufp;
 {
 	register int len;
 	void netflush();
@@ -407,10 +407,10 @@ register int len;
 		 * save this slc buffer if it is the first, otherwise dump
 		 * it.
 		 */
-		if (def_slcbuf == (char *)0) {
+		if (def_slcbuf == (unsigned char *)0) {
 			def_slclen = len;
-			def_slcbuf = malloc((unsigned)len);
-			if (def_slcbuf == (char *)0)
+			def_slcbuf = (unsigned char *)malloc((unsigned)len);
+			if (def_slcbuf == (unsigned char *)0)
 				return;  /* too bad */
 			bcopy(ptr, def_slcbuf, len);
 		}
@@ -430,7 +430,7 @@ deferslc()
 		do_opt_slc(def_slcbuf, def_slclen);
 		end_slc(0);
 		free(def_slcbuf);
-		def_slcbuf = (char *)0;
+		def_slcbuf = (unsigned char *)0;
 		def_slclen = 0;
 	}
 

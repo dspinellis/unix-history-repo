@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -29,6 +29,9 @@ char	wtmpf[]	= "/etc/wtmp";
 #define SCPYN(a, b)	(void) strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
 
+#ifdef	STREAMS
+#include <sys/stream.h>
+#endif
 #include <sys/tty.h>
 #ifdef	t_erase
 #undef	t_erase
@@ -47,6 +50,10 @@ char	wtmpf[]	= "/etc/wtmp";
 #undef	t_lnextc
 #endif
 
+#if defined(UNICOS5) && defined(CRAY2) && !defined(EXTPROC)
+# define EXTPROC 0400
+#endif
+
 #ifndef	USE_TERMIO
 struct termbuf {
 	struct sgttyb sg;
@@ -56,15 +63,17 @@ struct termbuf {
 	int lflags;
 } termbuf, termbuf2;
 #else	/* USE_TERMIO */
-# ifndef EXTPROC
-# define EXTPROC 0400
-# endif
 # ifdef	SYSV_TERMIO
 #	define termios termio
 # endif
 # ifndef TCSETA
-# define TCSETA TIOCSETA
-# define TCGETA TIOCGETA
+#  ifdef TCSETS
+#   define TCSETA TCSETS
+#   define TCGETA TCGETS
+#  else
+#   define TCSETA TIOCSETA
+#   define TCGETA TIOCGETA
+#  endif
 # endif /* 4.4BSD */
 struct termios termbuf, termbuf2;	/* pty control structure */
 #endif	/* USE_TERMIO */
@@ -271,8 +280,8 @@ cc_t **valpp;
 		defval(0);
 #endif
 	case SLC_AO:
-#ifdef	VDISCARD
-		setval(VDISCARD, SLC_VARIABLE|SLC_FLUSHOUT);
+#ifdef	VFLUSHO
+		setval(VFLUSHO, SLC_VARIABLE|SLC_FLUSHOUT);
 #else
 		defval(0);
 #endif
@@ -393,6 +402,10 @@ getpty()
  * tty_istrapsig()	Find out if signal trapping is enabled.
  * tty_setedit(on)	Turn on/off line editing.
  * tty_setsig(on)	Turn on/off signal trapping.
+ * tty_issofttab()	Find out if tab expansion is enabled.
+ * tty_setsofttab(on)	Turn on/off soft tab expansion.
+ * tty_islitecho()	Find out if typed control chars are echoed literally
+ * tty_setlitecho()	Turn on/off literal echo of control chars
  * tty_tspeed(val)	Set transmit speed to val.
  * tty_rspeed(val)	Set receive speed to val.
  */
@@ -571,6 +584,90 @@ int on;
 }
 #endif	/* LINEMODE */
 
+tty_issofttab()
+{
+#ifndef	USE_TERMIO
+	return (termbuf.sg.sg_flags & XTABS);
+#else
+# ifdef	OXTABS
+	return (termbuf.c_oflag & OXTABS);
+# endif
+# ifdef	TABDLY
+	return ((termbuf.c_oflag & TABDLY) == TAB3);
+# endif
+#endif
+}
+
+tty_setsofttab(on)
+int on;
+{
+#ifndef	USE_TERMIO
+	if (on)
+		termbuf.sg.sg_flags |= XTABS;
+	else
+		termbuf.sg.sg_flags &= ~XTABS;
+#else
+	if (on) {
+# ifdef	OXTABS
+		termbuf.c_oflag |= OXTABS;
+# endif
+# ifdef	TABDLY
+		termbuf.c_oflag &= ~TABDLY;
+		termbuf.c_oflag |= TAB3;
+# endif
+	} else {
+# ifdef	OXTABS
+		termbuf.c_oflag &= ~OXTABS;
+# endif
+# ifdef	TABDLY
+		termbuf.c_oflag &= ~TABDLY;
+		termbuf.c_oflag |= TAB0;
+# endif
+	}
+#endif
+}
+
+tty_islitecho()
+{
+#ifndef	USE_TERMIO
+	return (!(termbuf.sg.sg_flags & CTLECH));
+#else
+# ifdef	ECHOCTL
+	return (!(termbuf.c_lflag & ECHOCTL));
+# endif
+# ifdef	TCTLECH
+	return (!(termbuf.c_lflag & TCTLECH));
+# endif
+# if	!defined(ECHOCTL) && !defined(TCTLECH)
+	return (0);	/* assumes ctl chars are echoed '^x' */
+# endif
+#endif
+}
+
+tty_setlitecho(on)
+int on;
+{
+#ifndef	USE_TERMIO
+	if (on)
+		termbuf.sg.sg_flags &= ~CTLECH;
+	else
+		termbuf.sg.sg_flags |= CTLECH;
+#else
+# ifdef	ECHOCTL
+	if (on)
+		termbuf.c_lflag &= ~ECHOCTL;
+	else
+		termbuf.c_lflag |= ECHOCTL;
+# endif
+# ifdef	TCTLECH
+	if (on)
+		termbuf.c_lflag &= ~TCTLECH;
+	else
+		termbuf.c_lflag |= TCTLECH;
+# endif
+#endif
+}
+
 /*
  * A table of available terminal speeds
  */
@@ -595,7 +692,7 @@ tty_tspeed(val)
 #ifndef	USE_TERMIO
 	termbuf.sg.sg_ospeed = tp->value;
 #else
-# ifdef	SYSV_TERMIO
+# ifdef	CBAUD
 	termbuf.c_cflag &= ~CBAUD;
 	termbuf.c_cflag |= tp->value;
 # else
@@ -613,7 +710,7 @@ tty_rspeed(val)
 #ifndef	USE_TERMIO
 	termbuf.sg.sg_ispeed = tp->value;
 #else
-# ifdef	SYSV_TERMIO
+# ifdef	CBAUD
 	termbuf.c_cflag &= ~CBAUD;
 	termbuf.c_cflag |= tp->value;
 # else
@@ -673,12 +770,14 @@ getptyslave()
 		fatalperror(net, line);
 	if (fchmod(t, 0))
 		fatalperror(net, line);
+#if BSD <= 43
 	(void) signal(SIGHUP, SIG_IGN);
 	vhangup();
 	(void) signal(SIGHUP, SIG_DFL);
 	t = open(line, O_RDWR);
 	if (t < 0)
 		fatalperror(net, line);
+#endif
 
 	init_termbuf();
 #ifndef	USE_TERMIO
@@ -686,14 +785,18 @@ getptyslave()
 	termbuf.sg.sg_ospeed = termbuf.sg.sg_ispeed = B9600;
 #else
 	termbuf.c_lflag |= ECHO;
+#ifndef	OXTABS
+#define OXTABS	0
+#endif
 	termbuf.c_oflag |= ONLCR|OXTABS;
 	termbuf.c_iflag |= ICRNL;
 	termbuf.c_iflag &= ~IXOFF;
-# ifdef	SYSV_TERMIO
-	termbuf.sg.sg_ospeed = termbuf.sg.sg_ispeed = B9600;
-# else SYSV_TERMIO
+# ifdef	CBAUD
+	termbuf.c_cflag &= ~CBAUD;
+	termbuf.c_cflag |= B9600;
+# else	/* CBAUD */
 	termbuf.c_ospeed = termbuf.c_ispeed = B9600;
-# endif
+# endif	/* CBAUD */
 #endif
 	set_termbuf();
 #else	/* CRAY */
@@ -739,7 +842,7 @@ char *host;
 		register int pid = i;
 
 		setpgrp();
-		(void) signal(SIGUSR1, func);	/* reset handler to default */
+		utmp_sig_reset();		/* reset handler to default */
 		/*
 		 * Create utmp entry for child
 		 */
@@ -784,11 +887,19 @@ char *host;
 	SCPYN(request.gen_id, gen_id);
 	SCPYN(request.tty_id, &line[8]);
 	SCPYN(request.host, host);
-	SCPYN(request.term_type, &terminaltype[5]);
-#if	defined(UNICOS5)
+	SCPYN(request.term_type, terminaltype);
+#if	!defined(UNICOS5)
 	request.signal = SIGCLD;
 	request.pid = getpid();
 #endif
+#ifdef BFTPDAEMON
+	/*
+	 * Are we working as the bftp daemon?
+	 */
+	if (bftpd) {
+		SCPYN(request.exec_name, BFTPPATH);
+	}
+#endif /* BFTPDAEMON */
 	if (write(i, (char *)&request, sizeof(request)) < 0) {
 		char tbuf[128];
 		(void) sprintf(tbuf, "Can't write to %s\n", INIT_FIFO);
@@ -816,8 +927,45 @@ char *host;
 #endif	/* NEWINIT */
 }
 
-#ifndef	NEWINIT
 char	*envinit[3];
+extern char **environ;
+
+init_env()
+{
+	extern char *getenv();
+	char **envp;
+
+	envp = envinit;
+	if (*envp = getenv("TZ"))
+		*envp++ -= 3;
+#ifdef	CRAY
+	else
+		*envp++ = "TZ=GMT0";
+#endif
+	*envp = 0;
+	environ = envinit;
+}
+
+#ifdef	CRAY
+/*
+ * These are environment variable that we
+ * don't put on the argument line.
+ */
+char *invalid[] = {
+	"USER=",	/* Set up by login */
+	"HOME=",	/* Set up by login */
+	"LOGNAME=",	/* Set up by login */
+	"TMPDIR=",	/* Set up by login */
+	"SHELL=",	/* Set up by login */
+	"PATH=",	/* Set up by login */
+	"MAIL=",	/* Set up by login */
+	"TZ=",		/* Login gets it from the environment */
+	"TERM=",	/* Login gets it from the environment */
+	0
+};
+#endif
+
+#ifndef	NEWINIT
 
 /*
  * start_login(t, host)
@@ -830,10 +978,11 @@ start_login(t, host)
 int t;
 char *host;
 {
-	extern char *getenv();
-	char **envp;
-
+	register char *cp;
+	register char **argv;
+	char **addarg();
 #ifdef	CRAY
+	register char **cpp, **cpp2;
 	utmp_sig_wait();
 # ifndef TCVHUP
 	setpgrp();
@@ -872,9 +1021,12 @@ char *host;
 	/*
 	 * set up standard paths before forking to login
 	 */
-#if	BSD >43
+#ifndef	NO_SETSID
 	if (setsid() < 0)
 		fatalperror(net, "setsid");
+#endif
+
+#ifdef	TIOCSCTTY
 	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
 		fatalperror(net, "ioctl(sctty)");
 #endif
@@ -884,30 +1036,81 @@ char *host;
 	(void) dup2(t, 1);
 	(void) dup2(t, 2);
 	(void) close(t);
-	envp = envinit;
-	*envp++ = terminaltype;
-	if (*envp = getenv("TZ"))
-		*envp++ -= 3;
-#ifdef	CRAY
-	else
-		*envp++ = "TZ=GMT0";
-#endif
-	*envp = 0;
-	environ = envinit;
 	/*
 	 * -h : pass on name of host.
 	 *		WARNING:  -h is accepted by login if and only if
 	 *			getuid() == 0.
 	 * -p : don't clobber the environment (so terminal type stays set).
 	 */
-	execl(_PATH_LOGIN, "login", "-h", host,
-#ifndef CRAY
-					terminaltype ? "-p" : 0,
+	argv = addarg(0, "login");
+	argv = addarg(argv, "-h");
+	argv = addarg(argv, host);
+#if	!defined(CRAY) && !defined(NO_LOGIN_P)
+	argv = addarg(argv, "-p");
 #endif
-								0);
+#ifdef	BFTPDAEMON
+	/*
+	 * Are we working as the bftp daemon?  If so, then ask login
+	 * to start bftp instead of shell.
+	 */
+	if (bftpd) {
+		argv = addarg(argv, "-e");
+		argv = addarg(argv, BFTPPATH);
+	} else 
+#endif
+	if (getenv("USER")) {
+		argv = addarg(argv, getenv("USER"));
+	}
+#ifdef	CRAY
+	for (cpp = environ; *cpp; cpp++) {
+		for (cpp2 = invalid; *cpp2; cpp2++)
+			if (strncmp(*cpp2, *cpp, strlen(*cpp2)) == 0)
+				break;
+		if (*cpp2)
+			continue;
+		argv = addarg(argv, *cpp);
+	}
+#endif
+
+	execv(_PATH_LOGIN, argv);
+
 	syslog(LOG_ERR, "%s: %m\n", _PATH_LOGIN);
 	fatalperror(net, _PATH_LOGIN);
 	/*NOTREACHED*/
+}
+
+char **
+addarg(argv, val)
+register char **argv;
+register char *val;
+{
+	register char **cpp;
+	char *malloc();
+
+	if (argv == NULL) {
+		/*
+		 * 10 entries, a leading length, and a null
+		 */
+		argv = (char **)malloc(sizeof(*argv) * 12);
+		if (argv == NULL)
+			return(NULL);
+		*argv++ = (char *)10;
+		*argv = (char *)0;
+	}
+	for (cpp = argv; *cpp; cpp++)
+		;
+	if (cpp == &argv[(int)argv[-1]]) {
+		--argv;
+		*argv = (char *)((int)(*argv) + 10);
+		argv = (char **)realloc(argv, (int)(*argv) + 2);
+		if (argv == NULL)
+			return(NULL);
+		argv++;
+		cpp = &argv[(int)argv[-1] - 10];
+	}
+	*cpp++ = val;
+	*cpp = 0;
+	return(argv);
 }
 #endif	NEWINIT
 
@@ -944,7 +1147,6 @@ cleanup()
 	kill(0, SIGHUP);
 # else	/* NEWINIT */
 	(void) shutdown(net, 2);
-	sleep(2);
 # endif	/* NEWINT */
 #endif	/* CRAY */
 	exit(1);
@@ -979,6 +1181,11 @@ utmp_sig_init()
 	 */
 	if ((int)(func = signal(SIGUSR1, _utmp_sig_rcv)) == -1)
 		fatalperror(net, "telnetd/signal");
+}
+
+utmp_sig_reset()
+{
+	(void) signal(SIGUSR1, func);	/* reset handler to default */
 }
 
 utmp_sig_wait()

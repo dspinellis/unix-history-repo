@@ -4,16 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ext.h	5.5 (Berkeley) %G%
+ *	@(#)ext.h	5.6 (Berkeley) %G%
  */
 
 /*
  * Telnet server variable declarations
  */
-extern char	hisopts[256];
-extern char	myopts[256];
-extern char	hiswants[256];
-extern char	mywants[256];
+extern char	options[256];
 extern char	do_dont_resp[256];
 extern char	will_wont_resp[256];
 extern int	linemode;	/* linemode on/off */
@@ -27,6 +24,12 @@ extern int	lmodetype;	/* Client support for linemode */
 # endif	/* KLUDGELINEMODE */
 #endif	/* LINEMODE */
 extern int	flowmode;	/* current flow control state */
+#ifdef DIAGNOSTICS
+extern int	diagnostic;	/* telnet diagnostic capabilities */
+#endif /* DIAGNOSTICS */
+#ifdef BFTPDAEMON
+extern int	bftpd;		/* behave as bftp daemon */
+#endif /* BFTPDAEMON */
 
 extern slcfun	slctab[NSLC + 1];	/* slc mapping table */
 
@@ -53,6 +56,11 @@ extern int	pty, net;
 extern char	*line;
 extern int	SYNCHing;		/* we are in TELNET SYNCH mode */
 
+#ifdef DIAGNOSTICS
+extern void printoption();
+extern void printdata();
+#endif
+
 /*
  * The following are some clocks used to decide how to interpret
  * the relationship between various variables.
@@ -66,6 +74,8 @@ extern struct {
 	didnetreceive,		/* last time we read data from network */
 	ttypesubopt,		/* ttype subopt is received */
 	tspeedsubopt,		/* tspeed subopt is received */
+	environsubopt,		/* environ subopt is received */
+	xdisplocsubopt,		/* xdisploc subopt is received */
 	baseline,		/* time started to do timed action */
 	gotDM;			/* when did we last see a data mark */
 } clocks;

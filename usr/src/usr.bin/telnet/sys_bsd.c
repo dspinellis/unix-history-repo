@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,9 +53,15 @@ struct	termio old_tc = { 0 };
 extern struct termio new_tc;
 
 #ifndef	TCGETA
-#define	TCGETA	TIOCGETA
-#define	TCSETA	TIOCSETA
-#define	TCSETAW	TIOCSETAW
+# ifdef TCGETS
+#  define	TCGETA	TCGETS
+#  define	TCSETA	TCSETS
+#  define	TCSETAW	TCSETSW
+# else
+#  define	TCGETA	TIOCGETA
+#  define	TCSETA	TIOCSETA
+#  define	TCSETAW	TIOCSETAW
+# endif
 #endif	/* TCGETA */
 #endif	/* USE_TERMIO */
 
@@ -194,12 +200,12 @@ TerminalSaveState()
 
     new_tc = old_tc;
 
-    termFlushChar = 'O'&0x37;
-    termWerasChar = 'W'&0x37;
-    termRprntChar = 'R'&0x37;
-    termLiteralNextChar = 'V'&0x37;
-    termStartChar = 'Q'&0x37;
-    termStopChar = 'S'&0x37;
+    termFlushChar = CONTROL('O');
+    termWerasChar = CONTROL('W');
+    termRprntChar = CONTROL('R');
+    termLiteralNextChar = CONTROL('V');
+    termStartChar = CONTROL('Q');
+    termStopChar = CONTROL('S');
 #endif	/* USE_TERMIO */
 }
 
@@ -215,6 +221,7 @@ register int func;
     case SLC_EL:	return(&termKillChar);
     case SLC_XON:	return(&termStartChar);
     case SLC_XOFF:	return(&termStopChar);
+    case SLC_FORW1:	return(&termForw1Char);
 #ifndef	SYSV_TERMIO
     case SLC_AO:	return(&termFlushChar);
     case SLC_SUSP:	return(&termSuspChar);
@@ -222,13 +229,14 @@ register int func;
     case SLC_RP:	return(&termRprntChar);
     case SLC_LNEXT:	return(&termLiteralNextChar);
 #endif	/* SYSV_TERMIO */
+#ifdef	USE_TERMIO
+    case SLC_FORW2:	return(&termForw2Char);
+#endif
 
     case SLC_SYNCH:
     case SLC_BRK:
     case SLC_AYT:
     case SLC_EOR:
-    case SLC_FORW1:
-    case SLC_FORW2:
     default:
 	return((cc_t *)0);
     }
@@ -244,31 +252,33 @@ TerminalDefaultChars()
     nttyb.sg_erase = ottyb.sg_erase;
 #else	/* USE_TERMIO */
     memcpy(new_tc.c_cc, old_tc.c_cc, sizeof(old_tc.c_cc));
-# ifndef	VDISCARD
-    termFlushChar = 'O'&0x37;
+# ifndef	VFLUSHO
+    termFlushChar = CONTROL('O');
 # endif
 # ifndef	VWERASE
-    termWerasChar = 'W'&0x37;
+    termWerasChar = CONTROL('W');
 # endif
 # ifndef	VREPRINT
-    termRprntChar = 'R'&0x37;
+    termRprntChar = CONTROL('R');
 # endif
 # ifndef	VLNEXT
-    termLiteralNextChar = 'V'&0x37;
+    termLiteralNextChar = CONTROL('V');
 # endif
 # ifndef	VSTART
-    termStartChar = 'Q'&0x37;
+    termStartChar = CONTROL('Q');
 # endif
 # ifndef	VSTOP
-    termStopChar = 'S'&0x37;
+    termStopChar = CONTROL('S');
 # endif
 #endif	/* USE_TERMIO */
 }
 
+#ifdef notdef
 void
 TerminalRestoreState()
 {
 }
+#endif
 
 /*
  * TerminalNewMode - set up terminal to a specific mode.
@@ -424,6 +434,59 @@ register int f;
 #endif
     }
 
+    if ((f&(MODE_EDIT|MODE_TRAPSIG)) == 0) {
+#ifndef	USE_TERMIO
+	ltc.t_lnextc = -1;
+#else
+# ifdef VLNEXT
+	tmp_tc.c_cc[VLNEXT] = (cc_t)(-1);
+# endif
+#endif
+    }
+
+    if (f&MODE_SOFT_TAB) {
+#ifndef USE_TERMIO
+	sb.sg_flags |= XTABS;
+#else
+# ifdef	OXTABS
+	tmp_tc.c_oflag |= OXTABS;
+# endif
+# ifdef	TABDLY
+	tmp_tc.c_oflag &= ~TABDLY;
+	tmp_tc.c_oflag |= TAB3;
+# endif
+#endif
+    } else {
+#ifndef USE_TERMIO
+	sb.sg_flags &= ~XTABS;
+#else
+# ifdef	OXTABS
+	tmp_tc.c_oflag &= ~OXTABS;
+# endif
+# ifdef	TABDLY
+	tmp_tc.c_oflag &= ~TABDLY;
+# endif
+#endif
+    }
+
+    if (f&MODE_LIT_ECHO) {
+#ifndef USE_TERMIO
+	sb.sg_flags &= ~CTLECH;
+#else
+# ifdef	ECHOCTL
+	tmp_tc.c_lflag &= ~ECHOCTL;
+# endif
+#endif
+    } else {
+#ifndef USE_TERMIO
+	sb.sg_flags |= CTLECH;
+#else
+# ifdef	ECHOCTL
+	tmp_tc.c_lflag |= ECHOCTL;
+# endif
+#endif
+    }
+
     if (f == -1) {
 	onoff = 0;
     } else {
@@ -457,33 +520,50 @@ register int f;
 
     if (f != -1) {
 #ifdef	SIGTSTP
-	void susp();
+	static void susp();
 
 	(void) signal(SIGTSTP, (SIG_FUNC_RET (*)())susp);
 #endif	/* SIGTSTP */
+	/*
+	 * We don't want to process ^Y here.  It's just another
+	 * character that we'll pass on to the back end.  It has
+	 * to process it because it will be processed when the
+	 * user attempts to read it, not when we send it.
+	 */
+#ifndef	USE_TERMIO
+	ltc.t_dsuspc = -1;
+#else
+# ifdef	VDSUSP
+	tmp_tc.c_cc[VDSUSP] = (cc_t)(-1);
+# endif
+#endif
 #ifdef	USE_TERMIO
-#ifdef	VEOL2
 	/*
 	 * If the VEOL character is already set, then use VEOL2,
 	 * otherwise use VEOL.
 	 */
-	if (tmp_tc.c_cc[VEOL] != (cc_t)(-1))
-		tmp_tc.c_cc[VEOL2] = escape;
-	else
-#endif
+	if (tmp_tc.c_cc[VEOL] == (cc_t)(-1))
 		tmp_tc.c_cc[VEOL] = escape;
+# ifdef	VEOL2
+	else if (tmp_tc.c_cc[VEOL2] == (cc_t)(-1))
+		tmp_tc.c_cc[VEOL2] = escape;
+# endif
 #else
-	tc.t_brkc = escape;
+	if (tc.t_brkc == (cc_t)(-1))
+		tc.t_brkc = escape;
 #endif
     } else {
 #ifdef	SIGTSTP
 	(void) signal(SIGTSTP, SIG_DFL);
-	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
+	(void) sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
 #endif	/* SIGTSTP */
 #ifndef USE_TERMIO
 	ltc = oltc;
 	tc = otc;
 	sb = ottyb;
+	lmode = olmode;
+#else
+	tmp_tc = old_tc;
 #endif
     }
 #ifndef USE_TERMIO
@@ -536,7 +616,7 @@ struct termspeeds {
 # define	ISPEED	ottyb.sg_ispeed
 # define	OSPEED	ottyb.sg_ospeed
 #else
-# ifdef	SYSV_TERMIO
+# ifdef	CBAUD
 #  define	ISPEED	(old_tc.c_cflag&CBAUD)
 #  define	OSPEED	ISPEED
 # else
@@ -668,11 +748,6 @@ sendwin()
     }
 }
 
-static void
-doescape()
-{
-    command(0, 0, 0);
-}
 
 void
 sys_telnet_init()
@@ -797,7 +872,7 @@ int poll;		/* If 0, then block until something to do */
     if (FD_ISSET(net, &xbits)) {
 	FD_CLR(net, &xbits);
 	SYNCHing = 1;
-	ttyflush(1);	/* flush already enqueued data */
+	(void) ttyflush(1);	/* flush already enqueued data */
     }
 
     /*

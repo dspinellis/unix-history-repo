@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.4 (Berkeley) %G%
+ *	@(#)pathnames.h	5.5 (Berkeley) %G%
  */
 
 #if BSD > 43
@@ -19,3 +19,7 @@
 # define	_PATH_LOGIN	"/bin/login"
 
 #endif
+
+#ifdef BFTPDAEMON
+#define		BFTPPATH	"/usr/ucb/bftp"
+#endif  /* BFTPDAEMON */
