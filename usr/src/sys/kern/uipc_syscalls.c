@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.28	82/10/03	*/
+/*	uipc_syscalls.c	4.28	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,13 +33,13 @@ socket()
 	register struct file *fp;
 	struct socketopt aopt;
 
-	if ((fp = falloc()) == NULL)
-		return;
-	fp->f_flag = FREAD|FWRITE;
-	fp->f_type = DTYPE_SOCKET;
 	u.u_error = sockopt(&aopt, uap->opt);
 	if (u.u_error)
-		goto bad;
+		return;
+	if ((fp = falloc()) == NULL)
+		goto freeopt;
+	fp->f_flag = FREAD|FWRITE;
+	fp->f_type = DTYPE_SOCKET;
 	u.u_error = socreate(0, &so, uap->type, uap->protocol, &aopt);
 	if (u.u_error)
 		goto bad;
