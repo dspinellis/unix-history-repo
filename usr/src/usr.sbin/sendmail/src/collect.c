@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -288,7 +288,8 @@ bufferchar:
 				if (obuf != bufbuf)
 					free(obuf);
 			}
-			*bp++ = c;
+			if (c != '\0')
+				*bp++ = c;
 			if (istate == IS_BOL)
 				break;
 		}
