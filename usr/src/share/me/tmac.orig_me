@@ -9,15 +9,17 @@
 .\"*		U.C. Berkeley.						*
 .\"*	current address:						*
 .\"*		Britton-Lee, Inc.					*
+.\"*		1919 Addison Street Suite 105				*
+.\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.13	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.14	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.13	%G%
+.\"	@(#)tmac.orig_me	2.14	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -701,6 +703,20 @@
 .TS \\$1 \\$2
 .rm @W
 ..
+.de ]-			\" &&& initialize reference
+.rn ]- @]
+.so \\*(||/refer.me
+.]-
+.rm @]
+..
+.if n .ds [. " [
+.if t .ds [. \s-2\v'-.4m'\f1
+.if n .ds .] ]
+.if t .ds .] \v'.4m'\s+2\fP
+.if n .ds <. "
+.if t .ds <. .
+.if n .ds >. .
+.if t .ds >. "
 .\"		*** FONT AIDS ***
 .de sz			\" *** set point size and vertical spacing
 .ps \\$1

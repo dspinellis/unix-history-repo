@@ -1,29 +1,10 @@
 
 .nr _0 \n(c.
-.\"	@(#)refer.me	1.1	%G%
+.\"	@(#)refer.me	2.1	%G%
 .\"	%beginstrip%
-.if n .ds [. " [
-.if t .ds [. \s-2\v'-.4m'\f1
-.if n .ds .] ]
-.if t .ds .] \v'.4m'\s+2\fP
-.if n .ds <. "
-.if t .ds <. .
-.if n .ds >. .
-.if t .ds >. "
-.de []
-.][ \\$1
-..
 .de ][				\" *** refer output
 .if \\$1>5 .tm Bad arg to []
 .[\\$1
-..
-.de [5				\" --- tm style
-.(f
-.ip "\\*([F.\0"
-\\*([A, \\f2\\*([T\\f1,
-.ie \\n(TN \\*([M.
-.el Bell Laboratories internal memorandum (\\*([D).
-.)f
 ..
 .de [0				\" --- other
 .(f
@@ -69,18 +50,6 @@
 .if !"\\*([O"" \\*([O
 .)f
 ..
-.de [4				\" --- report
-.(f
-.ip "\\*([F.\0"
-\\*([A, \\*(lq\\*([T,\\*(rq
-\\*([R\c
-.if !"\\*([G"" \& (\\*([G)\c
-.if !"\\*([I"" ,  \\*([I\c
-.if !"\\*([C"" ,  \\*([C\c
- (\\*([D).
-.if !"\\*([O"" \\*([O
-.)f
-..
 .de [3				\" --- article in book
 .(f
 .ip "\\*([F.\0"
@@ -94,22 +63,33 @@ in \\f2\\*([B\\f1, \c
 .if !"\\*([O"" \\*([O
 .)f
 ..
-.de [<
-.]<
+.de [4				\" --- report
+.(f
+.ip "\\*([F.\0"
+\\*([A, \\*(lq\\*([T,\\*(rq
+\\*([R\c
+.if !"\\*([G"" \& (\\*([G)\c
+.if !"\\*([I"" ,  \\*([I\c
+.if !"\\*([C"" ,  \\*([C\c
+ (\\*([D).
+.if !"\\*([O"" \\*([O
+.)f
+..
+.de [5				\" --- tm style
+.(f
+.ip "\\*([F.\0"
+\\*([A, \\f2\\*([T\\f1,
+.ie \\n(TN \\*([M.
+.el Bell Laboratories internal memorandum (\\*([D).
+.)f
 ..
 .de ]<
 .$p References
 .lp
 .rm (f )f
 ..
-.de [>
-.]>
-..
 .de ]>
 .sp
-..
-.de [-
-.]-
 ..
 .de ]-
 .rm [V [P [A [T [N [C [B [O [R [I [E [D
