@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.77 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.78 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,11 +19,6 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
-
-/* NEEDSWORK: debugging */
-#define CURCOUNT (curproc?curproc->p_spare[2]:0)
-#define CHECKPOINT int oldrefcount=CURCOUNT;
-#define CHECKCHECK(F) if (oldrefcount!=CURCOUNT) { printf("REFCOUNT: %s, old=%d, new=%d\n", (F), oldrefcount, CURCOUNT); }
 
 /*
  * Virtual File System System Calls
@@ -43,7 +38,6 @@ mount(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	register struct mount *mp;
 	int error, flag;
@@ -57,13 +51,10 @@ mount(p, uap, retval)
 	/*
 	 * Get vnode to be covered
 	 */
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->dir;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->dir, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (uap->flags & MNT_UPDATE) {
 		if ((vp->v_flag & VROOT) == 0) {
 			vput(vp);
@@ -147,7 +138,7 @@ update:
 	/*
 	 * Mount the filesystem.
 	 */
-	error = VFS_MOUNT(mp, uap->dir, uap->data, ndp, p);
+	error = VFS_MOUNT(mp, uap->dir, uap->data, &nd, p);
 	if (mp->mnt_flag & MNT_UPDATE) {
 		mp->mnt_flag &= ~MNT_UPDATE;
 		vrele(vp);
@@ -191,7 +182,6 @@ unmount(p, uap, retval)
 	int *retval;
 {
 	register struct vnode *vp;
-	register struct nameidata *ndp;
 	struct mount *mp;
 	int error;
 	struct nameidata nd;
@@ -202,13 +192,10 @@ unmount(p, uap, retval)
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->pathp;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->pathp, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	/*
 	 * Must be the root of the filesystem
 	 */
@@ -303,18 +290,14 @@ quotactl(p, uap, retval)
 	int *retval;
 {
 	register struct mount *mp;
-	register struct nameidata *ndp;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->path;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	if (error = namei(&nd))
 		return (error);
-	mp = ndp->ni_vp->v_mount;
-	vrele(ndp->ni_vp);
+	mp = nd.ni_vp->v_mount;
+	vrele(nd.ni_vp);
 	return (VFS_QUOTACTL(mp, uap->cmd, uap->uid, uap->arg, p));
 }
 
@@ -331,20 +314,16 @@ statfs(p, uap, retval)
 	int *retval;
 {
 	register struct mount *mp;
-	register struct nameidata *ndp;
 	register struct statfs *sp;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->path;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	if (error = namei(&nd))
 		return (error);
-	mp = ndp->ni_vp->v_mount;
+	mp = nd.ni_vp->v_mount;
 	sp = &mp->mnt_stat;
-	vrele(ndp->ni_vp);
+	vrele(nd.ni_vp);
 	if (error = VFS_STATFS(mp, sp, p))
 		return (error);
 	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
@@ -472,19 +451,15 @@ chdir(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct filedesc *fdp = p->p_fd;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = chdirec(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = chdirec(&nd))
 		return (error);
 	vrele(fdp->fd_cdir);
-	fdp->fd_cdir = ndp->ni_vp;
+	fdp->fd_cdir = nd.ni_vp;
 	return (0);
 }
 
@@ -499,22 +474,18 @@ chroot(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct filedesc *fdp = p->p_fd;
 	int error;
 	struct nameidata nd;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = chdirec(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = chdirec(&nd))
 		return (error);
 	if (fdp->fd_rdir != NULL)
 		vrele(fdp->fd_rdir);
-	fdp->fd_rdir = ndp->ni_vp;
+	fdp->fd_rdir = nd.ni_vp;
 	return (0);
 }
 
@@ -522,13 +493,13 @@ chroot(p, uap, retval)
  * Common routine for chroot and chdir.
  */
 chdirec(ndp, p)
-	struct nameidata *ndp;
+	register struct nameidata *ndp;
 	struct proc *p;
 {
 	struct vnode *vp;
 	int error;
 
-	if (error = namei(ndp, p))
+	if (error = namei(ndp))
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VDIR)
@@ -555,7 +526,6 @@ open(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	struct nameidata *ndp;
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register struct vnode *vp;
@@ -571,11 +541,9 @@ open(p, uap, retval)
 	fp = nfp;
 	fmode = FFLAGS(uap->mode);
 	cmode = ((uap->crtmode &~ fdp->fd_cmask) & 07777) &~ S_ISVTX;
-	ndp = &nd;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	p->p_dupfd = -indx - 1;			/* XXX check for fdopen */
-	if (error = vn_open(ndp, p, fmode, cmode)) {
+	if (error = vn_open(&nd, fmode, cmode)) {
 		ffree(fp);
 		if (error == ENODEV &&		/* XXX from fdopen */
 		    p->p_dupfd >= 0 &&
@@ -588,7 +556,7 @@ open(p, uap, retval)
 		fdp->fd_ofiles[indx] = NULL;
 		return (error);
 	}
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	fp->f_flag = fmode & FMASK;
 	if (fmode & (O_EXLOCK | O_SHLOCK)) {
 		lf.l_whence = SEEK_SET;
@@ -656,22 +624,17 @@ mknod(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-	ndp = &nd;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp != NULL) {
 		error = EEXIST;
 		goto out;
@@ -696,18 +659,17 @@ mknod(p, uap, retval)
 	vattr.va_rdev = uap->dev;
 out:
 	if (!error) {
-		LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_MKNOD(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr);
+		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
+		error = VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr);
 	} else {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		if (vp)
 			vrele(vp);
 	}
-	CHECKCHECK("mknod");
 	return (error);
 }
 
@@ -723,7 +685,6 @@ mkfifo(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
@@ -731,26 +692,23 @@ mkfifo(p, uap, retval)
 #ifndef FIFO
 	return (EOPNOTSUPP);
 #else
-	ndp = &nd;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	if (ndp->ni_vp != NULL) {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == ndp->ni_vp)
-			vrele(ndp->ni_dvp);
+	if (nd.ni_vp != NULL) {
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == nd.ni_vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
-		vrele(ndp->ni_vp);
+			vput(nd.ni_dvp);
+		vrele(nd.ni_vp);
 		return (EEXIST);
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VFIFO;
 	vattr.va_mode = (uap->fmode & 07777) &~ p->p_fd->fd_cmask;
-	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	return (VOP_MKNOD(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr));
+	LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
+	return (VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr));
 #endif /* FIFO */
 }
 
@@ -766,51 +724,46 @@ link(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp, *xp;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->target;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->target, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type == VDIR &&
 	    (error = suser(p->p_ucred, &p->p_acflag)))
 		goto out1;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_dirp = (caddr_t)uap->linkname;
-	if (error = namei(ndp, p))
+	nd.ni_cnd.cn_nameiop = CREATE;
+	nd.ni_cnd.cn_flags = LOCKPARENT;
+	nd.ni_dirp = (caddr_t)uap->linkname;
+	if (error = namei(&nd))
 		goto out1;
-	xp = ndp->ni_vp;
+	xp = nd.ni_vp;
 	if (xp != NULL) {
 		error = EEXIST;
 		goto out;
 	}
-	xp = ndp->ni_dvp;
+	xp = nd.ni_dvp;
 	if (vp->v_mount != xp->v_mount)
 		error = EXDEV;
 out:
 	if (!error) {
 		LEASE_CHECK(xp, p, p->p_ucred, LEASE_WRITE);
 		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_LINK(vp, ndp->ni_dvp, &ndp->ni_cnd);
+		error = VOP_LINK(vp, nd.ni_dvp, &nd.ni_cnd);
 	} else {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == ndp->ni_vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == nd.ni_vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
-		if (ndp->ni_vp)
-			vrele(ndp->ni_vp);
+			vput(nd.ni_dvp);
+		if (nd.ni_vp)
+			vrele(nd.ni_vp);
 	}
 out1:
 	vrele(vp);
-	CHECKCHECK("link");
 	return (error);
 }
 
@@ -826,39 +779,33 @@ symlink(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	struct vattr vattr;
 	char *target;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
-	ndp = &nd;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->linkname;
 	MALLOC(target, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (error = copyinstr(uap->target, target, MAXPATHLEN, (u_int *)0))
 		goto out;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->linkname, p);
+	if (error = namei(&nd))
 		goto out;
-	if (ndp->ni_vp) {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == ndp->ni_vp)
-			vrele(ndp->ni_dvp);
+	if (nd.ni_vp) {
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == nd.ni_vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
-		vrele(ndp->ni_vp);
+			vput(nd.ni_dvp);
+		vrele(nd.ni_vp);
 		error = EEXIST;
 		goto out;
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_mode = 0777 &~ p->p_fd->fd_cmask;
-	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	error = VOP_SYMLINK(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr, target);
+	LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
+	error = VOP_SYMLINK(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr, target);
 out:
 	FREE(target, M_NAMEI);
-	CHECKCHECK("symlink");
 	return (error);
 }
 
@@ -869,23 +816,18 @@ out:
 unlink(p, uap, retval)
 	struct proc *p;
 	struct args {
-		char	*fname;
+		char	*name;
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
-	ndp = &nd;
-	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->name, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type == VDIR &&
 	    (error = suser(p->p_ucred, &p->p_acflag)))
 		goto out;
@@ -899,18 +841,17 @@ unlink(p, uap, retval)
 	(void) vnode_pager_uncache(vp);
 out:
 	if (!error) {
-		LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
+		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_REMOVE(ndp->ni_dvp, ndp->ni_vp, &ndp->ni_cnd);
+		error = VOP_REMOVE(nd.ni_dvp, nd.ni_vp, &nd.ni_cnd);
 	} else {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vput(vp);
 	}
-	CHECKCHECK("unlink");
 	return (error);
 }
 
@@ -973,23 +914,19 @@ saccess(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct ucred *cred = p->p_ucred;
 	register struct vnode *vp;
 	int error, mode, svuid, svgid;
 	struct nameidata nd;
 
-	ndp = &nd;
 	svuid = cred->cr_uid;
 	svgid = cred->cr_groups[0];
 	cred->cr_uid = p->p_cred->p_ruid;
 	cred->cr_groups[0] = p->p_cred->p_rgid;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		goto out1;
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	/*
 	 * fmode == 0 means only check for exist
 	 */
@@ -1024,19 +961,15 @@ stat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	struct stat sb;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	error = vn_stat(ndp->ni_vp, &sb, p);
-	vput(ndp->ni_vp);
+	error = vn_stat(nd.ni_vp, &sb, p);
+	vput(nd.ni_vp);
 	if (error)
 		return (error);
 	error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
@@ -1056,19 +989,15 @@ lstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	struct stat sb;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | NOFOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	error = vn_stat(ndp->ni_vp, &sb, p);
-	vput(ndp->ni_vp);
+	error = vn_stat(nd.ni_vp, &sb, p);
+	vput(nd.ni_vp);
 	if (error)
 		return (error);
 	error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
@@ -1088,21 +1017,16 @@ readlink(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct iovec aiov;
 	struct uio auio;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->name;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->name, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VLNK) {
 		error = EINVAL;
 		goto out;
@@ -1120,7 +1044,6 @@ readlink(p, uap, retval)
 out:
 	vput(vp);
 	*retval = uap->count - auio.uio_resid;
-	CHECKCHECK("readlink");
 	return (error);
 }
 
@@ -1136,19 +1059,15 @@ chflags(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
@@ -1208,19 +1127,15 @@ chmod(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
@@ -1281,19 +1196,15 @@ chown(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | NOFOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
@@ -1356,7 +1267,6 @@ utimes(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct timeval tv[2];
 	struct vattr vattr;
@@ -1365,13 +1275,10 @@ utimes(p, uap, retval)
 
 	if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
 		return (error);
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
@@ -1398,19 +1305,15 @@ truncate(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type == VDIR) {
 		error = EISDIR;
 		goto out;
@@ -1508,17 +1411,14 @@ rename(p, uap, retval)
 	struct nameidata fromnd, tond;
 	int error;
 
-	CHECKPOINT;
-	fromnd.ni_nameiop = DELETE | WANTPARENT | SAVESTART;
-	fromnd.ni_segflg = UIO_USERSPACE;
-	fromnd.ni_dirp = uap->from;
-	if (error = namei(&fromnd, p))
+	NDINIT(&fromnd, DELETE, WANTPARENT | SAVESTART, UIO_USERSPACE,
+		uap->from, p);
+	if (error = namei(&fromnd))
 		return (error);
 	fvp = fromnd.ni_vp;
-	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART;
-	tond.ni_segflg = UIO_USERSPACE;
-	tond.ni_dirp = uap->to;
-	if (error = namei(&tond, p)) {
+	NDINIT(&tond, RENAME, LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART,
+		UIO_USERSPACE, uap->to, p);
+	if (error = namei(&tond)) {
 		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
@@ -1551,8 +1451,9 @@ rename(p, uap, retval)
 	 * then there is nothing to do.
 	 */
 	if (fvp == tvp && fromnd.ni_dvp == tdvp &&
-	    fromnd.ni_namelen == tond.ni_namelen &&
-	    !bcmp(fromnd.ni_ptr, tond.ni_ptr, fromnd.ni_namelen))
+	    fromnd.ni_cnd.cn_namelen == tond.ni_cnd.cn_namelen &&
+	    !bcmp(fromnd.ni_cnd.cn_nameptr, tond.ni_cnd.cn_nameptr,
+	      fromnd.ni_cnd.cn_namelen))
 		error = -1;
 out:
 	if (!error) {
@@ -1561,14 +1462,8 @@ out:
 			LEASE_CHECK(fromnd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		if (tvp)
 			LEASE_CHECK(tvp, p, p->p_ucred, LEASE_WRITE);
-		if (fromnd.ni_startdir != fromnd.ni_dvp ||
-		    tond.ni_startdir != tond.ni_dvp)   /* NEEDSWORK: debug */
-			printf ("rename: f.startdir=%x, dvp=%x; t.startdir=%x, dvp=%x\n", fromnd.ni_startdir, fromnd.ni_dvp, tond.ni_startdir, tond.ni_dvp);
 		error = VOP_RENAME(fromnd.ni_dvp, fromnd.ni_vp, &fromnd.ni_cnd,
 				   tond.ni_dvp, tond.ni_vp, &tond.ni_cnd);
-		if (fromnd.ni_startdir != fromnd.ni_dvp ||
-		    tond.ni_startdir != tond.ni_dvp)   /* NEEDSWORK: debug */
-			printf ("rename: f.startdir=%x, dvp=%x; t.startdir=%x, dvp=%x\n", fromnd.ni_startdir, fromnd.ni_dvp, tond.ni_startdir, tond.ni_dvp);
 	} else {
 		VOP_ABORTOP(tond.ni_dvp, &tond.ni_cnd);
 		if (tdvp == tvp)
@@ -1583,12 +1478,11 @@ out:
 	}
 	p->p_spare[1]--;
 	vrele(tond.ni_startdir);
-	FREE(tond.ni_pnbuf, M_NAMEI);
+	FREE(tond.ni_cnd.cn_pnbuf, M_NAMEI);
 out1:
 	p->p_spare[1]--;
 	vrele(fromnd.ni_startdir);
-	FREE(fromnd.ni_pnbuf, M_NAMEI);
-	CHECKCHECK("rename");
+	FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI);
 	if (error == -1)
 		return (0);
 	return (error);
@@ -1606,38 +1500,31 @@ mkdir(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
-	ndp = &nd;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->name;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->name, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp != NULL) {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vrele(vp);
-		CHECKCHECK("mkdir1");
 		return (EEXIST);
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VDIR;
 	vattr.va_mode = (uap->dmode & 0777) &~ p->p_fd->fd_cmask;
-	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	error = VOP_MKDIR(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr);
+	LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
+	error = VOP_MKDIR(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr);
 	if (!error)
-		vput(ndp->ni_vp);
-	CHECKCHECK("mkdir2");
+		vput(nd.ni_vp);
 	return (error);
 }
 
@@ -1652,19 +1539,14 @@ rmdir(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	int error;
 	struct nameidata nd;
 
-	CHECKPOINT;
-	ndp = &nd;
-	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->name;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->name, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VDIR) {
 		error = ENOTDIR;
 		goto out;
@@ -1672,7 +1554,7 @@ rmdir(p, uap, retval)
 	/*
 	 * No rmdir "." please.
 	 */
-	if (ndp->ni_dvp == vp) {
+	if (nd.ni_dvp == vp) {
 		error = EINVAL;
 		goto out;
 	}
@@ -1683,18 +1565,17 @@ rmdir(p, uap, retval)
 		error = EBUSY;
 out:
 	if (!error) {
-		LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
+		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_RMDIR(ndp->ni_dvp, ndp->ni_vp, &ndp->ni_cnd);
+		error = VOP_RMDIR(nd.ni_dvp, nd.ni_vp, &nd.ni_cnd);
 	} else {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vput(vp);
 	}
-	CHECKCHECK("rmdir");
 	return (error);
 }
 
@@ -1775,19 +1656,15 @@ revoke(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VCHR && vp->v_type != VBLK) {
 		error = EINVAL;
 		goto out;
