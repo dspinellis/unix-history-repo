@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.27.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -983,6 +983,25 @@ rewrite(pvp, ruleset)
 **		fills in 'a'
 */
 
+struct errcodes
+{
+	char	*ec_name;		/* name of error code */
+	int	ec_code;		/* numeric code */
+} ErrorCodes[] =
+{
+	"usage",	EX_USAGE,
+	"nouser",	EX_NOUSER,
+	"nohost",	EX_NOHOST,
+	"unavailable",	EX_UNAVAILABLE,
+	"software",	EX_SOFTWARE,
+	"tempfail",	EX_TEMPFAIL,
+	"protocol",	EX_PROTOCOL,
+#ifdef EX_CONFIG
+	"config",	EX_CONFIG,
+#endif
+	NULL,		EX_UNAVAILABLE,
+};
+
 ADDRESS *
 buildaddr(tv, a)
 	register char **tv;
@@ -1007,7 +1026,19 @@ buildaddr(tv, a)
 	{
 		if (**++tv == CANONHOST)
 		{
-			setstat(atoi(*++tv));
+			register struct errcodes *ep;
+
+			if (isdigit(**++tv))
+			{
+				setstat(atoi(*tv));
+			}
+			else
+			{
+				for (ep = ErrorCodes; ep->ec_name != NULL; ep++)
+					if (strcasecmp(ep->ec_name, *tv) == 0)
+						break;
+				setstat(ep->ec_code);
+			}
 			tv++;
 		}
 		if (**tv != CANONUSER)
@@ -1036,22 +1067,20 @@ buildaddr(tv, a)
 
 	/* figure out what host (if any) */
 	tv++;
-	if (**tv != CANONHOST)
+	if (!bitnset(M_LOCAL, m->m_flags))
 	{
-		if (!bitnset(M_LOCAL, m->m_flags))
+		if (**tv++ != CANONHOST)
 		{
 			syserr("buildaddr: no host");
 			return (NULL);
 		}
-		a->q_host = NULL;
-	}
-	else
-	{
 		buf[0] = '\0';
-		while (*++tv != NULL && **tv != CANONUSER)
-			(void) strcat(buf, *tv);
+		while (*tv != NULL && **tv != CANONUSER)
+			(void) strcat(buf, *tv++);
 		a->q_host = newstr(buf);
 	}
+	else
+		a->q_host = NULL;
 
 	/* figure out the user */
 	if (*tv == NULL || **tv != CANONUSER)
