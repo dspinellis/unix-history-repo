@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.18 %G%";
+static char *SccsId = "@(#)lex.c	1.19 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -525,7 +525,7 @@ stop(s)
  * give the message count, and print a header listing.
  */
 
-char	*greeting	= "Mail version 2.0 %s.  Type ? for help.\n";
+char	*greeting	= "Mail version 2.1 %s.  Type ? for help.\n";
 
 announce(pr)
 {
