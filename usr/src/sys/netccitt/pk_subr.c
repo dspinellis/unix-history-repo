@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.10 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -779,7 +779,7 @@ register struct x25_packet *xp;
 		break;
 
 	case X25_DIAGNOSTIC:
-		type = DIAGNOSTIC;
+		type = DIAG_TYPE;
 		break;
 
 	default: 
