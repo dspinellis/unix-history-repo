@@ -14,8 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.23 (Berkeley) %G%
+ *	@(#)vnode.h	7.24 (Berkeley) %G%
  */
+
+#include <machine/endian.h>
 
 /*
  * The vnode is the focus of all file activity in UNIX.
@@ -209,8 +211,7 @@ struct vattr {
 	gid_t		va_gid;		/* owner group id */
 	long		va_fsid;	/* file system id (dev for now) */
 	long		va_fileid;	/* file id */
-	u_long		va_size;	/* file size in bytes (quad?) */
-	u_long		va_size1;	/* reserved if not quad */
+	quad		va_qsize;	/* file size in bytes */
 	long		va_blocksize;	/* blocksize preferred for i/o */
 	struct timeval	va_atime;	/* time of last access */
 	struct timeval	va_mtime;	/* time of last modification */
@@ -218,9 +219,19 @@ struct vattr {
 	u_long		va_gen;		/* generation number of file */
 	u_long		va_flags;	/* flags defined for file */
 	dev_t		va_rdev;	/* device the special file represents */
-	u_long		va_bytes;	/* bytes of disk space held by file */
-	u_long		va_bytes1;	/* reserved if va_bytes not a quad */
+	quad		va_qbytes;	/* bytes of disk space held by file */
 };
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define	va_size		va_qsize.val[0]
+#define	va_size_rsv	va_qsize.val[1]
+#define	va_bytes	va_qbytes.val[0]
+#define	va_bytes_rsv	va_qbytes.val[1]
+#else
+#define	va_size		va_qsize.val[1]
+#define	va_size_rsv	va_qsize.val[0]
+#define	va_bytes	va_qbytes.val[1]
+#define	va_bytes_rsv	va_qbytes.val[0]
+#endif
 
 /*
  *  Modes. Some values same as Ixxx entries from inode.h for now

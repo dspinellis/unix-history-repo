@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.33 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -323,8 +323,7 @@ ufs_getattr(vp, vap, cred)
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
 	vap->va_rdev = (dev_t)ip->i_rdev;
-	vap->va_size = ip->i_din.di_qsize.val[0];
-	vap->va_size1 = ip->i_din.di_qsize.val[1];
+	vap->va_qsize = ip->i_din.di_qsize;
 	vap->va_atime.tv_sec = ip->i_atime;
 	vap->va_atime.tv_usec = 0;
 	vap->va_mtime.tv_sec = ip->i_mtime;
@@ -341,7 +340,7 @@ ufs_getattr(vp, vap, cred)
 	else
 		vap->va_blocksize = ip->i_fs->fs_bsize;
 	vap->va_bytes = dbtob(ip->i_blocks);
-	vap->va_bytes1 = -1;
+	vap->va_bytes_rsv = 0;
 	vap->va_type = vp->v_type;
 	return (0);
 }
