@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/dumpdates
@@ -54,8 +54,11 @@ dumprmain.o: dumpmain.c
 dumprtape.o: dumptape.c
 	${CC} -c -DRDUMP ${CFLAGS} dumptape.c -o dumprtape.o
 
-clean: ${SRCS}
+clean:
 	rm -f ${ROBJS} ${OBJS} rdump dump core
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
