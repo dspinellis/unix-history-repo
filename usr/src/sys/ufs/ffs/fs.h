@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.2 (Berkeley) %G%
+ *	@(#)fs.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -83,6 +83,14 @@
  */
 #define MAXMNTLEN 512
 #define MAXCSBUFS 32
+
+/*
+ * A summary of contiguous blocks of various sizes is maintained
+ * in each cylinder group. Normally this is set by the initial
+ * value of fs_maxcontig. To conserve space, a maximum summary size
+ * is set by FS_MAXCONTIG.
+ */
+#define FS_MAXCONTIG	16
 
 /*
  * Per cylinder group information; summarized in blocks allocated
@@ -177,7 +185,8 @@ struct fs {
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	long	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_opostbl[16][8];	/* old rotation block list head */
-	long	fs_sparecon[51];	/* reserved for future constants */
+	long	fs_sparecon[50];	/* reserved for future constants */
+	long	fs_contigsumsize;	/* size of cluster summary array */ 
 	long	fs_maxsymlinklen;	/* max length of an internal symlink */
 	long	fs_inodefmt;		/* format of on-disk inodes */
 	u_quad_t fs_maxfilesize;	/* maximum representable file size */
@@ -252,7 +261,10 @@ struct	cg {
 	long	cg_iusedoff;		/* (char) used inode map */
 	long	cg_freeoff;		/* (u_char) free block map */
 	long	cg_nextfreeoff;		/* (u_char) next available space */
-	long	cg_sparecon[16];	/* reserved for future use */
+	long	cg_clustersumoff;	/* (long) counts of avail clusters */
+	long	cg_clusteroff;		/* (char) free cluster map */
+	long	cg_nclusterblks;	/* number of clusters this cg */
+	long	cg_sparecon[13];	/* reserved for future use */
 	u_char	cg_space[1];		/* space for cylinder group maps */
 /* actually longer */
 };
@@ -277,6 +289,10 @@ struct	cg {
     : ((u_char *)((char *)(cgp) + (cgp)->cg_freeoff)))
 #define cg_chkmagic(cgp) \
     ((cgp)->cg_magic == CG_MAGIC || ((struct ocg *)(cgp))->cg_magic == CG_MAGIC)
+#define cg_clustersfree(cgp) \
+    ((u_char *)((char *)(cgp) + (cgp)->cg_clusteroff))
+#define cg_clustersum(cgp) \
+    ((long *)((char *)(cgp) + (cgp)->cg_clustersumoff))
 
 /*
  * The following structure is defined
