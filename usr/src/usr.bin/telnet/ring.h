@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ring.h	1.10 (Berkeley) %G%
+ *	@(#)ring.h	5.1 (Berkeley) %G%
  */
 
 /*
