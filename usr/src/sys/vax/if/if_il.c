@@ -3,10 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	6.9 (Berkeley) %G%
+ *	@(#)if_il.c	6.10 (Berkeley) %G%
  */
 
 #include "il.h"
+#if NIL > 0
 
 /*
  * Interlan Ethernet Communications Controller interface
@@ -684,3 +685,4 @@ ilioctl(ifp, cmd, data)
 	splx(s);
 	return (error);
 }
+#endif

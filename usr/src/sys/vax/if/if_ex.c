@@ -8,6 +8,7 @@
 
 
 #include "ex.h"
+#if NEX > 0
 
 /*
  * Excelan EXOS 204 Interface
@@ -857,3 +858,4 @@ exioctl(ifp, cmd, data)
 	splx(s);
 	return (error);
 }
+#endif
