@@ -1,10 +1,9 @@
 #ifndef lint
-static char rcsid[] = "$Header: /b/source/CVS/src/sbin/mount_isofs/mount_isofs.c,v 1.5 1993/07/19 13:31:39 cgd Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/mount_isofs/mount_isofs.c,v 1.2 1993/07/20 03:33:49 jkh Exp $";
 #endif
 
 #include <stdio.h>
 #include <sys/types.h>
-#define ISOFS
 #include <sys/mount.h>
 
 void
@@ -35,7 +34,7 @@ char **argv;
 			opts |= atoi(argv[0]);
 			argc--; argv++;
 		} else if (!strcmp(argv[0], "-norrip")) {
-			opts |= ISOFSMNT_NORRIP;
+			opts |= MNT_NORRIP;
 			argc--; argv++;
 		} else
 			usage();
