@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.11 %G%
+ *	@(#)as.h 4.12 %G%
  */
 #ifdef VMS
 # define	vax	1
@@ -131,10 +131,6 @@ extern	char	*ty_string[];	/* {TYPB..TYPH} ==> printable */
 #define	FW	0x3
 #define	DW	0x7
 #define	OW	0xF
-
-#ifdef UNIX
-#  include <pagsiz.h>
-#endif UNIX
 
 #ifdef VMS
 #  define PAGRND	0x1FFL
