@@ -34,7 +34,7 @@ gethostname()
 {
 	register struct a {
 		char	*hostname;
-		int	len;
+		u_int	len;
 	} *uap = (struct a *)u.u_ap;
 	register u_int len;
 
