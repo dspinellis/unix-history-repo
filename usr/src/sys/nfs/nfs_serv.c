@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -134,10 +134,8 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 	nfsm_disect(p, u_long *, NFSX_SATTR);
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (vp->v_mount->m_flag & (M_RDONLY | M_EXRDONLY)) {
-		error = EROFS;
+	if (error = nfsrv_access(vp, VWRITE, cred))
 		goto out;
-	}
 	vattr_null(vap);
 	/*
 	 * Nah nah nah nah na nah
@@ -348,7 +346,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(cnt, NFS_MAXDATA);
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (error = VOP_ACCESS(vp, VREAD | VEXEC, cred)) {
+	if (error = nfsrv_access(vp, VREAD | VEXEC, cred)) {
 		vput(vp);
 		nfsm_reply(0);
 	}
@@ -475,8 +473,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	}
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if ((error = vn_writechk(vp)) ||
-	    (error = VOP_ACCESS(vp, VWRITE, cred))) {
+	if (error = nfsrv_access(vp, VWRITE, cred)) {
 		vput(vp);
 		nfsm_reply(0);
 	}
@@ -1041,7 +1038,7 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq)
 	fullsiz = siz;
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (error = VOP_ACCESS(vp, VEXEC, cred)) {
+	if (error = nfsrv_access(vp, VEXEC, cred)) {
 		vput(vp);
 		nfsm_reply(0);
 	}
@@ -1234,3 +1231,53 @@ nfsrv_noop(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvdone;
 }
 
+/*
+ * Perform access checking for vnodes obtained from file handles that would
+ * refer to files already opened by a Unix client. You cannot just use
+ * vn_writechk() and VOP_ACCESS() for two reasons.
+ * 1 - You must check for M_EXRDONLY as well as M_RDONLY for the write case
+ * 2 - The owner is to be given access irrespective of mode bits so that
+ *     processes that chmod after opening a file don't break. I don't like
+ *     this because it opens a security hole, but since the nfs server opens
+ *     a security hole the size of a barn door anyhow, what the heck.
+ */
+nfsrv_access(vp, flags, cred)
+	register struct vnode *vp;
+	int flags;
+	register struct ucred *cred;
+{
+	struct vattr vattr;
+	int error;
+	if (flags & VWRITE) {
+		/* Just vn_writechk() changed to check M_EXRDONLY */
+		/*
+		 * Disallow write attempts on read-only file systems;
+		 * unless the file is a socket or a block or character
+		 * device resident on the file system.
+		 */
+		if ((vp->v_mount->m_flag & (M_RDONLY | M_EXRDONLY)) &&
+			vp->v_type != VCHR &&
+			vp->v_type != VBLK &&
+			vp->v_type != VSOCK)
+				return (EROFS);
+		/*
+		 * If there's shared text associated with
+		 * the inode, try to free it up once.  If
+		 * we fail, we can't allow writing.
+		 */
+		if (vp->v_flag & VTEXT)
+			xrele(vp);
+		if (vp->v_flag & VTEXT)
+			return (ETXTBSY);
+		if (error = VOP_GETATTR(vp, &vattr, cred))
+			return (error);
+		if (cred->cr_uid == vattr.va_uid)
+			return (0);
+	} else {
+		if (error = VOP_GETATTR(vp, &vattr, cred))
+			return (error);
+		if (cred->cr_uid == vattr.va_uid)
+			return (0);
+	}
+	return (VOP_ACCESS(vp, flags, cred));
+}
