@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.26 (Berkeley) %G%
+ *	@(#)inode.h	7.27 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -67,15 +67,7 @@ struct inode {
 #define	i_nlink		i_din.di_nlink
 #define	i_uid		i_din.di_uid
 #define	i_gid		i_din.di_gid
-#ifdef _NOQUAD
-#define i_size	i_din.di_qsize.val[_QUAD_LOWWORD]
-#else
-#define i_size	i_din.di_qsize
-#endif
-#if defined(tahoe) /* ugh! -- must be fixed */
-#undef i_size
-#define	i_size		i_din.di_qsize.val[0]
-#endif
+#define i_size		i_din.di_size
 #define	i_db		i_din.di_db
 #define	i_ib		i_din.di_ib
 #define	i_atime		i_din.di_atime
@@ -134,7 +126,7 @@ struct inode {
 			(ip)->i_atime.ts_sec = (t1)->tv_sec; \
 		if ((ip)->i_flag&IUPD) { \
 			(ip)->i_mtime.ts_sec = (t2)->tv_sec; \
-			INCRQUAD((ip)->i_modrev); \
+			(ip)->i_modrev++; \
 		} \
 		if ((ip)->i_flag&ICHG) \
 			(ip)->i_ctime.ts_sec = time.tv_sec; \
