@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.9 81/10/23 */
+/* tcp_usrreq.c 1.10 81/10/23 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -247,10 +247,12 @@ COUNT(T_CLOSE);
 		m_freem(up->uc_rbuf);
 		up->uc_rbuf = NULL;
 	}
+	up->uc_rsize = 0;
 	if (up->uc_sbuf != NULL) {
 		m_freem(up->uc_sbuf);
 		up->uc_sbuf = NULL;
 	}
+	up->uc_ssize = 0;
 	for (m = tp->t_rcv_unack; m != NULL; m = m->m_act) {
 		m_freem(m);
 		tp->t_rcv_unack = NULL;
