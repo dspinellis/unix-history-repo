@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.183 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.184 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -426,7 +426,6 @@ inithostmaps()
 {
 	register int i;
 	int nmaps;
-	STAB *s;
 	char *maptype[MAXMAPSTACK];
 	short mapreturn[MAXMAPACTIONS];
 	char buf[MAXLINE];
@@ -443,14 +442,14 @@ inithostmaps()
 		    stab("hosts.files", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "hosts.files text -k 0 -v 1 /etc/hosts");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #if NAMED_BIND
 		else if (strcmp(maptype[i], "dns") == 0 &&
 		    stab("hosts.dns", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "hosts.dns dns A");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 #ifdef NISPLUS
@@ -458,7 +457,7 @@ inithostmaps()
 		    stab("hosts.nisplus", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "hosts.nisplus nisplus -k name -v address -d hosts.org_dir");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 #ifdef NIS
@@ -466,7 +465,7 @@ inithostmaps()
 		    stab("hosts.nis", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "hosts.nis nis -d -k 0 -v 1 hosts.byname");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 	}
@@ -484,7 +483,7 @@ inithostmaps()
 		if (ConfigLevel >= 2)
 			strcat(buf, " -a.");
 #endif
-		makemapentry(buf);
+		(void) makemapentry(buf);
 	}
 
 	/*
@@ -498,14 +497,14 @@ inithostmaps()
 		    stab("aliases.files", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "aliases.files implicit /etc/aliases");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #ifdef NISPLUS
 		else if (strcmp(maptype[i], "nisplus") == 0 &&
 		    stab("aliases.nisplus", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "aliases.nisplus nisplus -kalias -vexpansion -d mail_aliases.org_dir");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 #ifdef NIS
@@ -513,24 +512,22 @@ inithostmaps()
 		    stab("aliases.nis", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "aliases.nis nis -d mail.aliases");
-			makemapentry(buf);
+			(void) makemapentry(buf);
+		}
+#endif
+#ifdef HESIOD
+		else if (strcmp(maptype[i], "hesiod") == 0 &&
+		    stab("aliases.hesiod", ST_MAP, ST_FIND) == NULL)
+		{
+			strcpy(buf, "aliases.hesiod hesiod aliases");
+			(void) makemapentry(buf);
 		}
 #endif
 	}
-	s = stab("aliases", ST_MAP, ST_FIND);
-	if (s == NULL)
+	if (stab("aliases", ST_MAP, ST_FIND) == NULL)
 	{
 		strcpy(buf, "aliases switch aliases");
-		makemapentry(buf);
-		s = stab("aliases", ST_MAP, ST_FIND);
-	}
-	if (s == NULL)
-		syserr("inithostmaps: cannot initialize default aliases map");
-	else
-	{
-		extern MAP *AliasDB[MAXALIASDB + 1];
-
-		AliasDB[0] = &s->s_map;
+		(void) makemapentry(buf);
 	}
 
 #if 0		/* "user" map class is a better choice */
@@ -545,14 +542,14 @@ inithostmaps()
 		    stab("users.files", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "users.files text -m -z: -k0 -v6 /etc/passwd");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #ifdef NISPLUS
 		else if (strcmp(maptype[i], "nisplus") == 0 &&
 		    stab("users.nisplus", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "users.nisplus nisplus -m -kname -vhome -d passwd.org_dir");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 #ifdef NIS
@@ -560,7 +557,7 @@ inithostmaps()
 		    stab("users.nis", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "users.nis nis -m -d passwd.byname");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 #ifdef HESIOD
@@ -568,14 +565,14 @@ inithostmaps()
 		    stab("users.hesiod", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "users.hesiod hesiod");
-			makemapentry(buf);
+			(void) makemapentry(buf);
 		}
 #endif
 	}
 	if (stab("users", ST_MAP, ST_FIND) == NULL)
 	{
 		strcpy(buf, "users switch -m passwd");
-		makemapentry(buf);
+		(void) makemapentry(buf);
 	}
 #endif
 }

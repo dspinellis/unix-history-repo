@@ -9,12 +9,12 @@
 # include "sendmail.h"
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.49 (Berkeley) %G%";
 #endif /* not lint */
 
 
-MAP	*AliasDB[MAXALIASDB + 1];	/* actual database list */
-int	NAliasDBs = 1;			/* number of alias databases */
+MAP	*AliasFileMap = NULL;	/* the actual aliases.files map */
+int	NAliasFileMaps;		/* the number of entries in AliasFileMap */
 /*
 **  ALIAS -- Compute aliases.
 **
@@ -170,20 +170,19 @@ aliaslookup(name, pstat, e)
 	int *pstat;
 	ENVELOPE *e;
 {
-	register int dbno;
-	register MAP *map;
-	register char *p;
+	static MAP *map = NULL;
 
-	for (dbno = 0; dbno < NAliasDBs; dbno++)
+	if (map == NULL)
 	{
-		map = AliasDB[dbno];
-		if (map == NULL || !bitset(MF_OPEN, map->map_mflags))
-			continue;
-		p = (*map->map_class->map_lookup)(map, name, NULL, pstat);
-		if (p != NULL)
-			return p;
+		STAB *s = stab("aliases", ST_MAP, ST_FIND);
+
+		if (s == NULL)
+			return NULL;
+		map = &s->s_map;
 	}
-	return NULL;
+	if (!bitset(MF_OPEN, map->map_mflags))
+		return NULL;
+	return (*map->map_class->map_lookup)(map, name, NULL, pstat);
 }
 /*
 **  SETALIAS -- set up an alias map
@@ -205,45 +204,39 @@ setalias(spec)
 	register MAP *map;
 	char *class;
 	STAB *s;
-	static bool first_unqual = TRUE;
 
 	if (tTd(27, 8))
 		printf("setalias(%s)\n", spec);
 
 	for (p = spec; p != NULL; )
 	{
+		char buf[50];
+
 		while (isspace(*p))
 			p++;
 		if (*p == '\0')
 			break;
 		spec = p;
 
-		/*
-		**  Treat simple filename specially -- this is the file name
-		**  for the files implementation, not necessarily in order.
-		*/
-
-		if (spec[0] == '/' && first_unqual)
+		if (NAliasFileMaps >= MAXMAPSTACK)
 		{
-			s = stab("aliases.files", ST_MAP, ST_ENTER);
-			map = &s->s_map;
-			first_unqual = FALSE;
+			syserr("Too many alias databases defined, %d max",
+				MAXMAPSTACK);
+			return;
 		}
-		else
+		if (AliasFileMap == NULL)
 		{
-			char aname[50];
-
-			if (NAliasDBs >= MAXALIASDB)
+			strcpy(buf, "aliases.files sequence");
+			AliasFileMap = makemapentry(buf);
+			if (AliasFileMap == NULL)
 			{
-				syserr("Too many alias databases defined, %d max",
-					MAXALIASDB);
+				syserr("setalias: cannot create aliases.files map");
 				return;
 			}
-			(void) sprintf(aname, "Alias%d", NAliasDBs);
-			s = stab(aname, ST_MAP, ST_ENTER);
-			map = &s->s_map;
-			AliasDB[NAliasDBs] = map;
 		}
+		(void) sprintf(buf, "Alias%d", NAliasFileMaps);
+		s = stab(buf, ST_MAP, ST_ENTER);
+		map = &s->s_map;
 		bzero(map, sizeof *map);
 		map->map_mname = s->s_name;
 
@@ -288,8 +281,7 @@ setalias(spec)
 			if (map->map_class->map_parse(map, spec))
 			{
 				map->map_mflags |= MF_VALID|MF_ALIAS;
-				if (AliasDB[NAliasDBs] == map)
-					NAliasDBs++;
+				AliasFileMap->map_stack[NAliasFileMaps++] = map;
 			}
 		}
 	}
