@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.13 (Berkeley) %G%
+ *	@(#)machdep.c	7.14 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -315,7 +315,7 @@ mach_init(argc, argv, code, cv)
 	}
 	/* check for MIPS based platform */
 	if (((i >> 24) & 0xFF) != 0x82) {
-		printf("Unknown System type '%s'\n", cp);
+		printf("Unknown System type '%s' 0x%x\n", cp, i);
 		boot(RB_HALT | RB_NOSYNC);
 	}
 
@@ -1432,7 +1432,7 @@ int tc_verbose = 0;
 #endif
 
 static int
-tc_identify_option( addr, slot, complain)
+tc_identify_option(addr, slot, complain)
 	tc_rommap_t	*addr;
 	tc_option_t	*slot;
 	int		complain;
@@ -1498,7 +1498,7 @@ tc_identify_option( addr, slot, complain)
 
 #ifdef DEBUG
 	if (tc_verbose)
-		printf("%s %s '%s' at x%x\n %s %s %s '%s'\n %s %d %s %d %s\n",
+		printf("%s %s '%s' at 0x%x\n %s %s %s '%s'\n %s %d %s %d %s\n",
 		"Found a", vendor, module, addr,
 		"Firmware rev.", firmwr,
 		"diagnostics for a", host_type,
@@ -1507,7 +1507,7 @@ tc_identify_option( addr, slot, complain)
 #endif
 
 	bcopy(module, slot->module_name, TC_ROM_LLEN);
-	bcopy(vendor,  slot->module_id, TC_ROM_LLEN);
+	bcopy(vendor, slot->module_id, TC_ROM_LLEN);
 	bcopy(firmwr, &slot->module_id[TC_ROM_LLEN], TC_ROM_LLEN);
 	slot->slot_size = addr->slot_size.value;
 	slot->rom_width = width;
@@ -1522,7 +1522,6 @@ tc_identify_option( addr, slot, complain)
  * time we are basically only looking for a graphics board to
  * use as system console (all workstations).
  */
-
 
 void
 tc_find_all_options()
@@ -1580,8 +1579,9 @@ tc_find_all_options()
 			break;
 		}
 		if (!found) {
-			printf("%s %s %s\n", "Cannot associate a device driver to",
-			       sl->module_name, ". Will (try to) ignore it.");
+			printf("%s %s %s\n",
+				"Cannot associate a device driver to",
+				sl->module_name, ". Will (try to) ignore it.");
 			sl->present = 0;
 			continue;
 		}
