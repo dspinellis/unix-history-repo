@@ -1,12 +1,13 @@
 # include <pwd.h>
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <signal.h>
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.37		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.38		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.37		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.38		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -164,10 +165,29 @@ initaliases(aliasfile, init)
 	char *aliasfile;
 	bool init;
 {
+	int atcnt;
 	char buf[MAXNAME];
 	struct stat stb;
 	time_t modtime;
+	int (*oldsigint)();
 
+	if (stat(aliasfile, &stb) < 0)
+	{
+		NoAlias = TRUE;
+		return;
+	}
+
+	/*
+	**  Check to see that the alias file is complete.
+	**	If not, we will assume that someone died, and it is up
+	**	to us to rebuild it.
+	*/
+
+	dbminit(aliasfile);
+	for (atcnt = 10; !init && atcnt-- >= 0 && aliaslookup("@") == NULL; )
+		sleep(30);
+
+# ifdef DBM
 	/*
 	**  See if the DBM version of the file is out of date with
 	**  the text version.  If so, go into 'init' mode automatically.
@@ -177,14 +197,12 @@ initaliases(aliasfile, init)
 	**	unpalatable hack to see if the stat succeeded.
 	*/
 
-	if (stat(aliasfile, &stb) < 0)
-		return;
-# ifdef DBM
 	modtime = stb.st_mtime;
 	(void) strcpy(buf, aliasfile);
 	(void) strcat(buf, ".pag");
 	stb.st_ino = 0;
-	if ((stat(buf, &stb) < 0 || stb.st_mtime < modtime) && !init)
+	if ((stat(buf, &stb) < 0 || stb.st_mtime < modtime || atcnt < 0) &&
+	    !init)
 	{
 		if (stb.st_ino != 0 &&
 		    ((stb.st_mode & 0666) == 0666 || stb.st_uid == geteuid()))
@@ -201,7 +219,6 @@ initaliases(aliasfile, init)
 			Verbose = oldverb;
 		}
 	}
-# endif DBM
 
 	/*
 	**  If initializing, create the new files.
@@ -210,9 +227,9 @@ initaliases(aliasfile, init)
 	**	file -- or worse yet, doing a concurrent initialize.
 	*/
 
-# ifdef DBM
 	if (init)
 	{
+		oldsigint = signal(SIGINT, SIG_IGN);
 		(void) strcpy(buf, aliasfile);
 		(void) strcat(buf, ".dir");
 		if (close(creat(buf, DBMMODE)) < 0)
@@ -230,16 +247,51 @@ initaliases(aliasfile, init)
 	}
 
 	/*
-	**  Open and, if necessary, load the DBM file.
+	**  If necessary, load the DBM file.
 	**	If running without DBM, load the symbol table.
+	**	After loading the DBM file, add the distinquished alias "@".
 	*/
 
-	dbminit(aliasfile);
 	if (init)
+	{
+		DATUM key;
+
 		readaliases(aliasfile, TRUE);
+		key.dsize = 2;
+		key.dptr = "@";
+		store(key, key);
+		(void) signal(SIGINT, oldsigint);
+	}
 # else DBM
 	readaliases(aliasfile, init);
 # endif DBM
+}
+/*
+**  DBMCLOSE -- close the dbm file.
+**
+**	This is highly implementation dependent.  It should be in the
+**	DBM library rather than here.  So why isn't it?
+**
+**	This is really only needed to save file descriptors.  It can be
+**	safely (??) replaced by the null routine.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Closes the DBM file.
+*/
+
+dbmclose()
+{
+	/* hack attack!! -- see comment above */
+	extern int pagf, dirf;
+
+	(void) close(pagf);
+	(void) close(dirf);
 }
 /*
 **  READALIASES -- read and process the alias file.
