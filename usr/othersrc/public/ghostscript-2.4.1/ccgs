@@ -1,0 +1,18 @@
+if ( test -n "$4" ) then
+	./ansi2knr $4 _temp_$$.c
+	$1 $2 $3 -c _temp_$$.c
+	mv _temp_$$.o `basename $4 .c`.o
+	rm -f _temp_$$.c
+else
+if ( test -n "$3" ) then
+	./ansi2knr $3 _temp_$$.c
+	$1 $2 -c _temp_$$.c
+	mv _temp_$$.o `basename $3 .c`.o
+	rm -f _temp_$$.c
+else
+	./ansi2knr $2 _temp_$$.c
+	$1 -c _temp_$$.c
+	mv _temp_$$.o `basename $2 .c`.o
+fi
+fi
+rm -f _temp_$$.c
