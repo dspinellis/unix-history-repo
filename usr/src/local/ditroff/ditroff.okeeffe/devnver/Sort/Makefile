@@ -1,5 +1,5 @@
 #
-#  1.2	(CWI)	87/04/01
+#  1.3	(CWI)	87/07/16
 #
 # nvsort
 #
@@ -9,7 +9,7 @@ LIBDIR=/usr/lib
 all:	nvsort
 
 install: nvsort
-	 install -c nvsort $(DESTDIR)${LIBDIR}/nvsort
+	 install -c nvsort $(DESTDIR)${LIBDIR}/nvsort80
 
 clean:
 	rm -f make.out nvsort
