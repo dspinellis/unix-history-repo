@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.1 (Berkeley) %G%
+.\"	@(#)4.t	6.2 (Berkeley) %G%
 .\"
 .NH 1
 Setting up
 .PP
-The 4.2BSD release comes with the necessary programs 
+The 4.3BSD release comes with the necessary programs 
 installed and with the default line printer queue
 created.  If the system must be modified, the
 makefile in the directory /usr/src/usr.lib/lpr
@@ -65,7 +65,9 @@ should be used for printing the files;
 more will be said about filters later.
 The last entry causes errors
 to be written to the file ``/usr/adm/lpd-errs''
-instead of the console.
+instead of the console.  Most errors from \fIlpd\fP are logged using
+\fIsyslogd\fP\|(8) and will not be logged in the specified file.  The
+filters may use either method of reporting errors.
 .NH 3
 Remote printers
 .PP
@@ -103,7 +105,7 @@ is used to filter text data to the printer device when accounting is
 not used or when all text data must be passed through a filter.
 It is not intended to perform accounting since it is started only once,
 all text files are filtered through it, and no provision is made for passing
-owners' login name, identifying the begining and ending of jobs, etc.
+owners' login name, identifying the beginning and ending of jobs, etc.
 The other filters (if specified) are started for each file
 printed and perform accounting if there is an
 .B af
@@ -146,7 +148,7 @@ va|varian|Benson-Varian:\e
 .NH 2
 Access Control
 .PP
-Local access to printer queues is controled with the
+Local access to printer queues is controlled with the
 .B rg
 printcap entry.
 .DS
@@ -154,21 +156,21 @@ printcap entry.
 .DE
 Users must be in the group
 .I lprgroup
-in order to sumbit jobs to the specified printer.
+in order to submit jobs to the specified printer.
 The default is to allow all users access.
 Note that once the files are in the local queue, they can be printed
 locally or forwarded to another host depending on the configuration.
 .PP
-Remote access is controled by listing the hosts in either the file
+Remote access is controlled by listing the hosts in either the file
 /etc/hosts.equiv or /etc/hosts.lpd, one host per line. Note that
 .IR rsh (1)
 and
 .IR rlogin (1)
-use /etc/hosts to determine which hosts are equivalent for allowing logins
+use /etc/hosts.equiv to determine which hosts are equivalent for allowing logins
 without passwords. The file /etc/hosts.lpd is only used to control
 which hosts have line printer access.
 Remote access can be further restricted to only allow remote users with accounts
-on the local host to print jobs.
+on the local host to print jobs by using the \fBrs\fP printcap entry.
 .DS
 	:rs:
 .DE
