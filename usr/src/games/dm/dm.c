@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)dm.c	5.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	GAMEHIDE	"/usr/games/hide"
+#define	GAMEHIDE	"/usr/games/hide/"
 #define	NOGAMING	"/usr/games/nogames"
 #define	CONTROL		"/usr/games/dm.config"
 #ifdef LOG
@@ -74,14 +74,14 @@ static
 play(args)
 	char	**args;
 {
-	if (chdir(GAMEHIDE)) {
-		perror("dm: chdir");
-		exit(1);
-	}
+	char	pbuf[MAXPATHLEN], *strcpy();
+
+	(void)strcpy(pbuf, GAMEHIDE);
+	(void)strcpy(pbuf + sizeof(GAMEHIDE) - 1, game);
 	if (priority > 0)	/* < 0 requires root */
 		(void)setpriority(PRIO_PROCESS, 0, priority);
 	setgid(getgid());	/* we run setgid kmem; lose it */
-	execv(game, args);
+	execv(pbuf, args);
 	perror("dm");
 	exit(1);
 }
