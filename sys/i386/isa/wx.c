@@ -36,7 +36,7 @@ static int wdtest = 0;
  * SUCH DAMAGE.
  *
  *	from: @(#)wx.c	7.2 (Berkeley) 5/9/91
- *	$Id: wx.c,v 1.1 1993/10/26 22:26:38 nate Exp $
+ *	$Id: wx.c,v 1.2 1993/10/26 23:04:38 nate Exp $
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -868,6 +868,9 @@ wdcommand(struct disk *du, u_int cylinder, u_int head, u_int sector,
 	outb(wdc + wd_cyl_lo, cylinder);
 	outb(wdc + wd_cyl_hi, cylinder >> 8);
 	outb(wdc + wd_sdh, WDSD_IBM | (du->dk_unit << 4) | head);
+	DELAY(10);			/* XXX give drive time to see change */
+	if (wdwait(du, WDCS_READY) < 0)
+		return(1);
 	outb(wdc + wd_sector, sector + 1);
 	outb(wdc + wd_seccnt, count);
 	outb(du->dk_port + wd_command, command);
