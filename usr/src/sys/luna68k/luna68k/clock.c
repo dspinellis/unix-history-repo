@@ -13,7 +13,7 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	8.1 (Berkeley) %G%
+ *	@(#)clock.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -152,12 +152,14 @@ resettodr()
 	/* set bb-clock */
 #ifdef LUNA2
 	if (machineid == LUNA_II) {
+		bbc2->cal_ctl_b |= BBC2_B_SET;
 		bbc2->cal_sec = tmptr->tm_sec;
 		bbc2->cal_min = tmptr->tm_min;
 		bbc2->cal_hour =tmptr->tm_hour;
 		bbc2->cal_day = tmptr->tm_mday;
 		bbc2->cal_mon = tmptr->tm_mon;
 		bbc2->cal_year = tmptr->tm_year;
+		bbc2->cal_ctl_b &= ~BBC2_B_SET;
 	} else 
 #endif
 	{
@@ -224,12 +226,15 @@ bbc_to_gmt(timbuf)
 	/* read bb-clock */
 #ifdef LUNA2
 	if (machineid == LUNA_II) {
+		while (bbc2->cal_ctl_a & BBC2_A_UIP) {} /* wait (max 224 us) */
+		bbc2->cal_ctl_b |= BBC2_B_SET;
 		sec = bbc2->cal_sec;
 		min = bbc2->cal_min;
 		hour = bbc2->cal_hour;
 		day = bbc2->cal_day;
 		month = bbc2->cal_mon;
 		year = bbc2->cal_year + 1900;
+		bbc2->cal_ctl_b &= ~BBC2_B_SET;
 	} else
 #endif
 	{
@@ -248,13 +253,10 @@ bbc_to_gmt(timbuf)
 	range_test(hour, 0, 23);
 	range_test(day, 1, 31);
 	range_test(month, 1, 12);
-#if 1	/* limitted 2000 now ... */
-	range_test(year, STARTOFTIME, 2000);
-#else
+
 	if (year < 1970) {
 		year += 100;
 	}
-#endif
 	
 	tmp = 0;
 	
