@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)afmdit	1.1 %G%
+#	@(#)afmdit	1.2 %G%
 #
 # lib/ditroff.font/afmdit.bsd
 #
@@ -21,3 +21,4 @@ rm -f temp.*
 awk -f afmdit.awk ${DITFont}.map $AFMDIR/${PSFontName}.afm
 cat temp.header temp.spaces temp.trailer >> $DITFont
 mv temp.aux ${DITFont}.aux
+rm -f temp.*
