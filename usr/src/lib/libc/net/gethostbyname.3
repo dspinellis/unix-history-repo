@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gethostbyname.3	6.13 (Berkeley) %G%
+.\"     @(#)gethostbyname.3	6.14 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETHOSTBYNAME 3
@@ -43,7 +43,7 @@ or broken-out fields from a line in
 .Pa /etc/hosts .
 If the local name server is not running these routines do a lookup in
 .Pa /etc/hosts .
-.Bd -literal -offset indent
+.Bd -literal
 struct	hostent {
 	char	*h_name;	/* official name of host */
 	char	**h_aliases;	/* alias list */
