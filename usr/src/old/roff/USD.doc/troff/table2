@@ -1,6 +1,6 @@
-.\"	@(#)table2	5.1 (Berkeley) %G%
+.\"	@(#)table2	6.1 (Berkeley) %G%
 .\"
-.pn32
+.pn33
 .sp 100
 .br
 .de mx
@@ -24,7 +24,7 @@
 Table II
 .sp
 .ce2
-Input Naming Conventions for \', \`,and  \-
+Input Naming Conventions for \', \`, and  \-
 and for Non-ASCII Special Characters
 .sp .5i
 .ftR
@@ -204,7 +204,7 @@ insulate the appearance of equations from the choice of standard fonts.
 	\(dd	\\(dd	double dagger
 	\(rh	\\(rh	right hand
 	\(lh	\\(lh	left hand
-	\(bs	\\(bs	Bell System logo
+	\(bs	\\(bs	Bell System logo (typesetter-dependent)
 	\(or	\\(or	or
 	\(ci	\\(ci	circle
 	\(lt	\\(lt	left top of big curly bracket
