@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.12 1994/04/20 17:09:11 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.13 1994/04/20 19:10:56 wollman Exp $
 
 
 Table of Contents
@@ -349,7 +349,7 @@ There is support for the following cards:
 `ie' driver:
 	AT&T EN100/StarLAN 10
 
-`il' driver:
+`is' driver:
 	Isolan AT 4141-0
 	Isolink 4110
 
