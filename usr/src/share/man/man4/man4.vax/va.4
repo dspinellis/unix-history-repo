@@ -2,15 +2,20 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)va.4	4.1 (Berkeley) %G%
+.\"	@(#)va.4	5.1 (Berkeley) %G%
 .\"
-.TH VA 4 4/1/81
+.TH VA 4 "27 March 1983"
 .UC 4
 .SH NAME
 va \- Benson-Varian interface
 .SH SYNOPSIS
-device va0 at uba? csr 0164000 vector vaintr
+.B "controller va0 at uba0 csr 0164000 vector vaintr"
+.br
+.B "disk vz0 at va0 drive 0"
 .SH DESCRIPTION
+(\fBNOTE: the configuration description, while counter-intuitive,
+is actually as shown above\fP.)
+.PP
 The Benson-Varian printer/plotter in normally used with the programs
 .IR vpr (1),
 .IR vprint (1)
@@ -18,10 +23,6 @@ or
 .IR vtroff (1).
 This description is designed for those who wish to drive the Benson-Varian
 directly.
-.PP
-The Benson-Varian at Berkeley uses 11\*(rq by 8\*(rq fan-fold paper.
-It will print 132 characters per line in print mode
-and 2112 dots per line in plot mode.
 .PP
 In print mode, the Benson-Varian uses a modified ASCII character set.
 Most control characters print various non-ASCII graphics such as daggers,
@@ -39,36 +40,16 @@ The Benson-Varian must be sent an even number of bytes.
 If an odd number is sent, the last byte will be lost.
 Nulls can be used in print mode to pad to an even number of bytes.
 .PP
-To use the Benson-Varian yourself, you must realize that you cannot open the
-device,
+To use the Benson-Varian yourself,
+you must realize that you cannot open the device,
 .I /dev/va0
 if there is a daemon active.
-You can see if there is a daemon active by doing a
-.IR ps (1),
-or by looking in the directory
-.I /usr/spool/vad.
-If there is a file
-.I lock
-there, then there is probably a daemon
-.IR /usr/lib/vad
-running.
-If not, you should remove the
-.I lock.
+You can see if there is an active daemon by doing a
+.IR lpq (1)
+and seeing if there are any files being printed.
 .PP
-In any case, when your program tries to open the device
-.I /dev/va0
-you may get one of two errors.
-The first of these
-ENXIO
-indicates that the Benson-Varian is already in use.
-Your program can then
-.IR sleep (2)
-and try again in a while, or give up.
-The second is
-EIO
-and indicates that the Benson-Varian is offline.
-.PP
-To set the Benson-Varian into plot mode, ``#include <vcmd.h>''
+To set the Benson-Varian into plot mode include the file
+.RI < sys/vcmd.h >
 and use the following
 .IR ioctl (2)
 call
@@ -76,7 +57,7 @@ call
 ioctl(fileno(va), VSETSTATE, plotmd);
 .PP
 where
-.B plotmd
+.I plotmd
 is defined to be
 .IP
 \fBint\fR plotmd[] = { VPLOT, 0, 0 };
@@ -98,7 +79,7 @@ by sending it a FF after putting it back into print mode, i.e. by
 	write(fileno(va), "\ef\e0", 2);
 .fi
 .PP
-.IR N.B. :
+.BR N.B. :
 If you use the standard I/O library with the Benson-Varian you
 .B must
 do
@@ -119,11 +100,24 @@ This will cause it to run
 slowly and tend to grind the system to a halt.
 .SH FILES
 /dev/va0
-.br
-/usr/include/sys/vcmd.h
 .SH SEE ALSO
-vfont(5), vpr(1), vtroff(1), vp(4)
+vfont(5),
+lpr(1),
+lpd(8),
+vtroff(1),
+vp(4)
 .SH DIAGNOSTICS
+The following error numbers are significant at the
+time the device is opened.
+.TP 10
+[ENXIO]
+The device is already in use.
+.TP
+[EIO]
+The device is offline.
+.PP
+The following message may be printed on the console.
+.PP
 \fBva%d: npr timeout\fR.  The device was not able to get data from
 the UNIBUS within the timeout period, most likely because some other
 device was hogging the bus.  (But see BUGS below).
@@ -133,5 +127,7 @@ standard character set look very similar; caution is advised.
 .PP
 The interface hardware is rumored to have problems which can
 play havoc with the UNIBUS.  We have intermittent minor problems on the
-UNIBUS where our va lives, but haven't ever been able to pin them down
+UNIBUS where our
+.I va
+lives, but haven't ever been able to pin them down
 completely.
