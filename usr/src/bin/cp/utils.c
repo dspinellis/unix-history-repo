@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utils.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)utils.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -78,7 +78,7 @@ copy_file(entp, dne)
 	 */
 	if (fs->st_size <= 8 * 1048576) {
 		if ((p = mmap(NULL, (size_t)fs->st_size, PROT_READ,
-		    MAP_FILE, from_fd, (off_t)0)) == (char *)-1)
+		    0, from_fd, (off_t)0)) == (char *)-1)
 			err("%s: %s", entp->fts_path, strerror(errno));
 		if (write(to_fd, p, fs->st_size) != fs->st_size)
 			err("%s: %s", to.p_path, strerror(errno));
