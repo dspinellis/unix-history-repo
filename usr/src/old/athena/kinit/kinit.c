@@ -24,26 +24,17 @@ static char rcsid_kinit_c[] =
 "$Header: kinit.c,v 4.11 89/01/23 09:34:49 jtkohl Exp $";
 #endif	lint
 
-#include <mit-copyright.h>
+#include <kerberos/mit-copyright.h>
 #include <stdio.h>
 #include <pwd.h>
-#include <krb.h>
+#include <kerberos/krb.h>
 
-#ifdef	PC
-#define	LEN	64		/* just guessing */
-#endif	PC
-
-#ifdef	BSD42
 #include <strings.h>
 #include <sys/param.h>
-#if 	defined(ultrix) || defined(sun)
-#define LEN	64
-#else
-#define	LEN	MAXHOSTNAMELEN
-#endif	/* defined(ultrix) || defined(sun) */
-#endif	/* BSD42 */
 
-#define	LIFE	96	/* lifetime of ticket in 5-minute units */
+#define	LEN		MAXHOSTNAMELEN
+#define	LIFE		96 	/* tick lifetime in 5-min units<8hrs> */
+#define	MAX_LIFE	255	/* maximum life in 5-min units */
 
 char   *progname;
 
@@ -101,7 +92,7 @@ main(argc, argv)
 	fprintf(stderr, "%s: k_gethostname failed\n", progname);
 	exit(1);
     }
-    printf("MIT Project Athena (%s)\n", buf);
+    printf("MIT Project Athena/UC Berkeley (%s)\n", buf);
     if (username) {
 	printf("Kerberos Initialization for \"%s", aname);
 	if (*inst)
@@ -112,7 +103,7 @@ main(argc, argv)
     } else {
 	printf("Kerberos Initialization\n");
 	printf("Kerberos name: ");
-	gets(aname);
+	getstr(aname, ANAME_SZ);
 	if (!*aname)
 	    exit(0);
 	if (!k_isname(aname)) {
@@ -124,7 +115,7 @@ main(argc, argv)
     /* optional instance */
     if (iflag) {
 	printf("Kerberos instance: ");
-	gets(inst);
+	getstr(inst, INST_SZ);
 	if (!k_isinst(inst)) {
 	    fprintf(stderr, "%s: bad Kerberos instance format\n",
 		    progname);
@@ -133,7 +124,7 @@ main(argc, argv)
     }
     if (rflag) {
 	printf("Kerberos realm: ");
-	gets(realm);
+	fgets(realm, REALM_SZ);
 	if (!k_isrealm(realm)) {
 	    fprintf(stderr, "%s: bad Kerberos realm format\n",
 		    progname);
@@ -142,7 +133,7 @@ main(argc, argv)
     }
     if (lflag) {
 	 printf("Kerberos ticket lifetime (minutes): ");
-	 gets(buf);
+	 getstr(buf, LEN);
 	 lifetime = atoi(buf);
 	 if (lifetime < 5)
 	      lifetime = 1;
@@ -150,13 +141,15 @@ main(argc, argv)
 	      lifetime /= 5;
 	 /* This should be changed if the maximum ticket lifetime */
 	 /* changes */
-	 if (lifetime > 255)
-	      lifetime = 255;
+	 if (lifetime > MAX_LIFE)
+	      lifetime = MAX_LIFE;
     }
     if (!*realm && krb_get_lrealm(realm, 1)) {
 	fprintf(stderr, "%s: krb_get_lrealm failed\n", progname);
 	exit(1);
     }
+    printf("Getting initial ticket for %s.%s@%s\n",
+	aname, inst, realm);
     k_errno = krb_get_pw_in_tkt(aname, inst, realm, "krbtgt", realm,
 				lifetime, 0);
     if (vflag) {
@@ -172,4 +165,13 @@ usage()
 {
     fprintf(stderr, "Usage: %s [-irvl] [name]\n", progname);
     exit(1);
+}
+
+getstr(p, len)
+	register char	*p;
+	int		len;
+{
+	while(((*p++ = getchar()) != '\n') && --len)
+		;
+	*--p = '\0';
 }
