@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.3 (Berkeley) %G%
+**	@(#)sendmail.h	5.4 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.3		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.4		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -263,21 +263,23 @@ typedef struct envelope	ENVELOPE;
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
-**  Message priorities.
-**	Priorities > 0 should be preemptive.
+**  Message priority classes.
 **
-**	CurEnv->e_msgpriority is the number of bytes in the message adjusted
-**	by the message priority and the amount of time the message
-**	has been sitting around.  Each priority point is worth
-**	WKPRIFACT bytes of message, and each time we reprocess a
-**	message the size gets reduced by WKTIMEFACT.  Recipients are
-**	worth WKRECIPFACT.
+**	The message class is read directly from the Priority: header
+**	field in the message.
 **
-**	WKTIMEFACT is negative since jobs that fail once have a high
-**	probability of failing again.  Making it negative tends to force
-**	them to the back rather than the front of the queue, where they
-**	only clog things.  Thanks go to Jay Lepreau at Utah for pointing
-**	out the error in my thinking.
+**	CurEnv->e_msgpriority is the number of bytes in the message plus
+**	the creation time (so that jobs ``tend'' to be ordered correctly),
+**	adjusted by the message class, the number of recipients, and the
+**	amount of time the message has been sitting around.  This number
+**	is used to order the queue.  Higher values mean LOWER priority.
+**
+**	Each priority class point is worth WkClassFact priority points;
+**	each recipient is worth WkRecipFact priority points.  Each time
+**	we reprocess a message the priority is adjusted by WkTimeFact.
+**	WkTimeFact should normally decrease the priority so that jobs
+**	that have historically failed will be run later; thanks go to
+**	Jay Lepreau at Utah for pointing out the error in my thinking.
 **
 **	The "class" is this number, unadjusted by the age or size of
 **	this message.  Classes with negative representations will have
@@ -292,10 +294,6 @@ struct priority
 
 EXTERN struct priority	Priorities[MAXPRIORITIES];
 EXTERN int		NumPriorities;	/* pointer into Priorities */
-
-# define WKPRIFACT	1800		/* bytes each pri point is worth */
-# define WKTIMEFACT	(-600)		/* bytes each reprocessing is worth */
-# define WKRECIPFACT	1000		/* bytes each recipient is worth */
 /*
 **  Rewrite rules.
 */
@@ -536,6 +534,9 @@ extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
 extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
+EXTERN int	WkClassFact;	/* multiplier for message class -> priority */
+EXTERN int	WkRecipFact;	/* multiplier for # of recipients -> priority */
+EXTERN int	WkTimeFact;	/* priority offset each time this job is run */
 EXTERN int	CheckPointLimit;	/* deliveries before checkpointing */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
