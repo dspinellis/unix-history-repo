@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffdir.c 4.3 %G%";
+static	char sccsid[] = "@(#)diffdir.c 4.4 1/25/81";
 
 #include "diff.h"
 /*
@@ -185,17 +185,17 @@ setupdir(cp)
 		done();
 	}
 	fstat(0, &stb);
-	dp = (struct direct *)malloc(stb.st_size + sizeof (struct direct));
+	dp = (struct direct *)malloc((unsigned) stb.st_size + sizeof (struct direct));
 	if (dp == 0) {
 		fprintf(stderr, "diff: ran out of memory\n");
 		done();
 	}
-	if (read(0, (char *)dp, (short)stb.st_size) != (short)stb.st_size) {
+	if (read(0, (char *)dp, (int)stb.st_size) != (int)stb.st_size) {
 		fprintf(stderr, "diff: ");
 		perror(cp);
 		done();
 	}
-	qsort(dp, stb.st_size / sizeof (struct direct), 
+	qsort(dp, (int) stb.st_size / sizeof (struct direct), 
 	    sizeof (struct direct), entcmp);
 	ep = &dp[stb.st_size / sizeof (struct direct)];
 	ep->d_name[0] = 0;
