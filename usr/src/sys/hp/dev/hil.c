@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.38 92/01/21$
  *
- *	@(#)hil.c	7.14 (Berkeley) %G%
+ *	@(#)hil.c	7.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -160,7 +160,7 @@ hilopen(dev, flags, mode, p)
 	 * 3.	BSD processes default to shared queue interface.
 	 *	Multiple processes can open the device.
 	 */
-	if (p->p_flag & SHPUX) {
+	if (p->p_md.md_flags & MDP_HPUX) {
 		if (dptr->hd_flags & (HIL_READIN|HIL_QUEUEIN))
 			return(EBUSY);
 		dptr->hd_flags |= HIL_READIN;
@@ -215,7 +215,7 @@ hilclose(dev, flags, mode, p)
 	if (device && (dptr->hd_flags & HIL_PSEUDO))
 		return (0);
 
-	if (p && (p->p_flag & SHPUX) == 0) {
+	if (p && (p->p_md.md_flags & MDP_HPUX) == 0) {
 		/*
 		 * If this is the loop device,
 		 * free up all queues belonging to this process.
@@ -381,7 +381,7 @@ hilioctl(dev, cmd, data, flag, p)
 	}
 
 #ifdef HPUXCOMPAT
-	if (p->p_flag & SHPUX)
+	if (p->p_md.md_flags & MDP_HPUX)
 		return(hpuxhilioctl(dev, cmd, data, flag));
 #endif
 
@@ -398,6 +398,7 @@ hilioctl(dev, cmd, data, flag, p)
 		send_hil_cmd(hilp->hl_addr, (cmd & 0xFF), NULL, 0, NULL);
 		break;
 
+	case OHILIOCRRT:
 	case HILIOCRRT:
 		/* Transfer the real time to the 8042 data buffer */
 		send_hil_cmd(hilp->hl_addr, (cmd & 0xFF), NULL, 0, NULL);
