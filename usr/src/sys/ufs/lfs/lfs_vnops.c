@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.89 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.90 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -375,9 +375,6 @@ lfs_fsync(ap)
 {
 	struct timeval tv;
 
-#ifdef VERBOSE
-	printf("lfs_fsync\n");
-#endif
 	tv = time;
 	return (VOP_UPDATE(ap->a_vp, &tv, &tv,
 	    ap->a_waitfor == MNT_WAIT ? LFS_SYNC : 0));
@@ -399,9 +396,6 @@ lfs_inactive(ap)
 	struct timeval tv;
 	int mode, error;
 
-#ifdef VERBOSE
-	printf("lfs_inactive\n");
-#endif
 	if (prtactive && vp->v_usecount != 0)
 		vprint("lfs_inactive: pushing active", vp);
 
