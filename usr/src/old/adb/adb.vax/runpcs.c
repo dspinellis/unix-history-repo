@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)runpcs.c 4.1 %G%";
+static	char sccsid[] = "@(#)runpcs.c 4.2 %G%";
 
 extern	MAP	txtmap;
 
@@ -170,20 +170,41 @@ doexec()
 	*ap++=symfil;
 	REP	IF rdc()==EOR THEN break; FI
 		*ap = p;
-		WHILE lastc!=EOR ANDF lastc!=SP ANDF lastc!=TB DO *p++=lastc; readchar(); OD
-		*p++=0; filnam = *ap+1;
-		IF **ap=='<'
-		THEN	close(0);
+		/*
+		 * First thing is to look for direction characters
+		 * and get filename.  Do not use up the args for filenames.
+		 * Then get rid of spaces before next args.
+		 */
+		IF lastc=='<'
+		THEN	REP readchar(); PER lastc==SP ORF lastc==TB DONE
+			filnam = p;
+			WHILE lastc!=EOR ANDF lastc!=SP ANDF lastc!=TB ANDF lastc!='>'
+				DO *p++=lastc; readchar(); OD
+			*p = 0;
+			close(0);
 			IF open(filnam,0)<0
 			THEN	printf("%s: cannot open\n",filnam); _exit(0);
 			FI
-		ELIF **ap=='>'
-		THEN	close(1);
+			p = *ap;
+		ELIF lastc=='>'
+		THEN	REP readchar(); PER lastc==SP ORF lastc==TB DONE
+			filnam = p;
+			WHILE lastc!=EOR ANDF lastc!=SP ANDF lastc!=TB ANDF lastc!='<'
+				DO *p++=lastc; readchar(); OD
+			*p = '\0';
+			close(1);
 			IF creat(filnam,0666)<0
 			THEN	printf("%s: cannot create\n",filnam); _exit(0);
 			FI
-		ELSE	ap++;
+			p = *ap;
+		ELSE	
+			WHILE lastc!=EOR ANDF lastc!=SP ANDF lastc!=TB ANDF lastc!='>' ANDF lastc!='<'
+				DO *p++=lastc; readchar(); OD
+			*p++ = '\0';
+	 		ap++;
 		FI
+		WHILE lastc==SP ORF lastc==TB DO readchar(); OD
+
 	PER lastc!=EOR DONE
 	*ap++=0;
 	exect(symfil, argl, environ);
