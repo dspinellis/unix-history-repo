@@ -1,4 +1,4 @@
-/*	file.h	4.16	83/06/03	*/
+/*	file.h	4.17	83/06/09	*/
 
 #ifdef KERNEL
 /*
@@ -67,7 +67,8 @@ struct	file *falloc();
  */
 #define	LOCK_SH		1	/* shared lock */
 #define	LOCK_EX		2	/* exclusive lock */
-#define	LOCK_UN		4	/* unlock */
+#define	LOCK_NB		4	/* don't block when locking */
+#define	LOCK_UN		8	/* unlock */
 
 /*
  * Access call.
