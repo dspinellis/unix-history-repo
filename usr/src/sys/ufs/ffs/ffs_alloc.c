@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.21	83/01/14	*/
+/*	ffs_alloc.c	2.22	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -369,11 +369,11 @@ hashalloc(ip, cg, pref, size, allocator)
 	}
 	/*
 	 * 3: brute force search
-	 * Note that we start at i == 3, since 0 was checked initially,
-	 * and 1 and 2 are always checked in the quadratic rehash.
+	 * Note that we start at i == 2, since 0 was checked initially,
+	 * and 1 is always checked in the quadratic rehash.
 	 */
 	cg = icg;
-	for (i = 3; i < fs->fs_ncg; i++) {
+	for (i = 2; i < fs->fs_ncg; i++) {
 		result = (*allocator)(ip, cg, 0, size);
 		if (result)
 			return (result);
