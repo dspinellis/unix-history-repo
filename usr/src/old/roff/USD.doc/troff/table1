@@ -1,8 +1,8 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)table1	8.1 (Berkeley) %G%
+.\"	@(#)table1	6.3 (Berkeley) %G%
 .\"
-.pn 32
+.pn 30
 .rm mx
 .br
 .tr &&
@@ -13,19 +13,19 @@
 abcdefghijklmnopqrstuvwxyz
 ABCDEFGHIJKLMNOPQRSTUVWXYZ
 1234567890
-.ss9
+.ss 9
 ! $ % & ( ) ` ' * + \- . , / : ; = ? [ ] |
 .fi
 \(bu \(sq \(em \(hy \(ru \(14 \(12 \(34 \(fi \(fl \(ff
 \(Fi \(Fl
 \(de \(dg \(fm
 \(ct \(rg \(co
-.ss12
+.ss 12
 ..
 .de bb
-.ss9
+.ss 9
 .fi
-.ll5i
+.ll 5i
 " \' \e ^ \_ \` ~ \(sl < > { } # @ \(pl \(mi \(eq \(**
 .br
 \(*a \(*b \(*g \(*d \(*e \(*z \(*y \(*h \(*i \(*k \(*l \(*m
@@ -38,15 +38,15 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 \(di \(+- \(cu \(ca \(sb \(sp \(ib \(ip \(if \(pd
 .br
 \(sc \(gr \(no \(is \(pt \(es \(mo
-\(dd \(rh \(lh \(bs \(or \(ci
+\(dd \(rh \(lh \(or \(ci
 \(lt \(lb \(rt \(rb \(lk \(rk \(bv \(lf \(rf \(lc \(rc
 \(br
 .br
-.ss12
+.ss 12
 .nf
 ..
 .nf
-.ps12
+.ps 12
 .vs 14p
 .ft B
 .ce
@@ -56,7 +56,7 @@ Table I
 .ce
 Font Style Examples
 .sp .5i
-.ftR
+.ft R
 .ps 10
 .fi
 .vs 12p
@@ -65,29 +65,30 @@ The following fonts are printed in 12-point, with a vertical spacing of 14-point
 and with
 non-alphanumeric characters separated by \(14\|em space (all measurements
 on 8.5 \(mu 11 inch paper prior to photoreduction).
-This font sample is printed on an APS-5 phototypesetter at University of California,
-Berkeley.
-.sp.5i
-.ps12
-.vs14p
-.ftR
+This font sample is printed on an Apple Laserwriter
+at University of California, Berkeley.
+.sp .5i
+.ps 12
+.vs 14p
+.ft R
 Times Roman
-.sp.5
+.sp .5
 .aa
 .sp
-.ftI
+.ft I
 Times Italic
-.sp.5
+.sp .5
 .aa
 .sp
-.ftB
+.ft B
 Times Bold
-.sp.5
+.sp .5
 .aa
 .sp
-.ftR
+.ft R
 Special Mathematical Font
-.sp.5
+.sp .5
 .fi
 .ll 5i
 .bb
+.bp
