@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)invite.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)invite.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "talk_ctl.h"
@@ -40,8 +40,9 @@ invite_remote()
 	itimer.it_interval = itimer.it_value;
 	if (listen(sockt, 5) != 0)
 		p_error("Error on attempt to listen for caller");
-	msg.addr = my_addr;
-	msg.id_num = -1;		/* an impossible id_num */
+	msg.addr = *(struct sockaddr *)&my_addr;
+	msg.addr.sa_family = htons(msg.addr.sa_family);
+	msg.id_num = htonl(-1);		/* an impossible id_num */
 	invitation_waiting = 1;
 	announce_invite();
 	/*
@@ -68,9 +69,9 @@ invite_remote()
 	current_state = "Waiting for your party to respond";
 	start_msgs();
 
-	msg.id_num = local_id;
+	msg.id_num = htonl(local_id);
 	ctl_transact(my_machine_addr, msg, DELETE, &response);
-	msg.id_num = remote_id;
+	msg.id_num = htonl(remote_id);
 	ctl_transact(his_machine_addr, msg, DELETE, &response);
 	invitation_waiting = 0;
 }
@@ -85,10 +86,22 @@ re_invite()
 	message("Ringing your party again");
 	current_line++;
 	/* force a re-announce */
-	msg.id_num = remote_id + 1;
+	msg.id_num = htonl(remote_id + 1);
 	announce_invite();
 	longjmp(invitebuf, 1);
 }
+
+static	char *answers[] = {
+	"Your party is not logged on",			/* NOT_HERE */
+	"Target machine does not recognize us",		/* MACHINE_UNKNOWN */
+	"Target machine can not handle remote talk",	/* UNKNOWN_REQUEST */
+	"Target machine is too confused to talk to us",	/* FAILED */
+	"Your party is refusing messages",		/* PERMISSION_REFUSED */
+	"Target machine indicates protocol mismatch",	/* BADVERSION */
+	"Target machine indicates protocol botch (addr)",/* BADADDR */
+	"Target machine indicates protocol botch (ctl_addr)",/* BADCTLADDR */
+};
+#define	NANSWERS	(sizeof (answers) / sizeof (answers[0]))
 
 /*
  * Transmit the invitation and process the response
@@ -101,35 +114,15 @@ announce_invite()
 	ctl_transact(his_machine_addr, msg, ANNOUNCE, &response);
 	remote_id = response.id_num;
 	if (response.answer != SUCCESS) {
-		switch (response.answer) {
-			
-		case NOT_HERE :
-			message("Your party is not logged on");
-			break;
-
-		case MACHINE_UNKNOWN :
-			message("Target machine does not recognize us");
-			break;
-
-		case UNKNOWN_REQUEST :
-			message("Target machine can not handle remote talk");
-			break;
-
-		case FAILED :
-			message("Target machine is too confused to talk to us");
-			break;
-
-		case PERMISSION_DENIED :
-			message("Your party is refusing messages");
-			break;
-		}
+		if (response.answer < NANSWERS)
+			message(answers[response.answer]);
 		quit();
 	}
 	/* leave the actual invitation on my talk daemon */
 	ctl_transact(my_machine_addr, msg, LEAVE_INVITE, &response);
 	local_id = response.id_num;
 }
-	
+
 /*
  * Tell the daemon to remove your invitation
  */
@@ -141,14 +134,14 @@ send_delete()
 	 * This is just a extra clean up, so just send it
 	 * and don't wait for an answer
 	 */
-	msg.id_num = remote_id;
+	msg.id_num = htonl(remote_id);
 	daemon_addr.sin_addr = his_machine_addr;
-	if (sendto(ctl_sockt, &msg, sizeof(CTL_MSG), 0, &daemon_addr,
-	    sizeof(daemon_addr)) != sizeof(CTL_MSG))
-		perror("send_delete remote");
-	msg.id_num = local_id;
+	if (sendto(ctl_sockt, &msg, sizeof (msg), 0, &daemon_addr,
+	    sizeof (daemon_addr)) != sizeof(msg))
+		perror("send_delete (remote)");
+	msg.id_num = htonl(local_id);
 	daemon_addr.sin_addr = my_machine_addr;
-	if (sendto(ctl_sockt, &msg, sizeof(CTL_MSG), 0, &daemon_addr,
-	    sizeof(daemon_addr)) != sizeof(CTL_MSG))
-		perror("send_delete local");
+	if (sendto(ctl_sockt, &msg, sizeof (msg), 0, &daemon_addr,
+	    sizeof (daemon_addr)) != sizeof (msg))
+		perror("send_delete (local)");
 }

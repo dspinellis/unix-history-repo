@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctl_transact.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctl_transact.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "talk_ctl.h"
@@ -18,18 +18,13 @@ static char sccsid[] = "@(#)ctl_transact.c	5.1 (Berkeley) %G%";
  * not recieved an acknowledgement within a reasonable amount
  * of time
  */
-ctl_transact(target, msg, type, response)
+ctl_transact(target, msg, type, rp)
 	struct in_addr target;
 	CTL_MSG msg;
 	int type;
-	CTL_RESPONSE *response;
+	CTL_RESPONSE *rp;
 {
-	struct sockaddr junk;
-	int read_mask;
-	int ctl_mask;
-	int nready;
-	int cc;
-	int junk_size;
+	int read_mask, ctl_mask, nready, cc;
 	struct timeval wait;
 
 	msg.type = type;
@@ -38,37 +33,36 @@ ctl_transact(target, msg, type, response)
 	ctl_mask = 1 << ctl_sockt;
 
 	/*
-	 * keep sending the message until a response of the right
-	 * type is obtained
+	 * Keep sending the message until a response of
+	 * the proper type is obtained.
 	 */
 	do {
 		wait.tv_sec = CTL_WAIT;
 		wait.tv_usec = 0;
-
-		/* keep sending the message until a response is obtained */
+		/* resend message until a response is obtained */
 		do {
-			cc = sendto(ctl_sockt, (char *)&msg, sizeof(CTL_MSG), 0,
-				&daemon_addr, sizeof(daemon_addr));
-			if (cc != sizeof(CTL_MSG)) {
+			cc = sendto(ctl_sockt, (char *)&msg, sizeof (msg), 0,
+				&daemon_addr, sizeof (daemon_addr));
+			if (cc != sizeof (msg)) {
 				if (errno == EINTR)
 					continue;
 				p_error("Error on write to talk daemon");
 			}
 			read_mask = ctl_mask;
-			if ((nready = select(32, &read_mask, 0, 0, &wait)) < 0) {
+			nready = select(32, &read_mask, 0, 0, &wait);
+			if (nready < 0) {
 				if (errno == EINTR)
 					continue;
 				p_error("Error waiting for daemon response");
 			}
 		} while (nready == 0);
-		/* keep reading while there are queued messages 
-		   (this is not necessary, it just saves extra
-		   request/acknowledgements being sent)
+		/*
+		 * Keep reading while there are queued messages 
+		 * (this is not necessary, it just saves extra
+		 * request/acknowledgements being sent)
 		 */
 		do {
-			junk_size = sizeof(junk);
-			cc = recvfrom(ctl_sockt, (char *)response,
-			    sizeof (CTL_RESPONSE), 0, &junk, &junk_size);
+			cc = recv(ctl_sockt, (char *)rp, sizeof (*rp), 0);
 			if (cc < 0) {
 				if (errno == EINTR)
 					continue;
@@ -78,6 +72,9 @@ ctl_transact(target, msg, type, response)
 			/* an immediate poll */
 			timerclear(&wait);
 			nready = select(32, &read_mask, 0, 0, &wait);
-		} while (nready > 0 && response->type != type);
-	} while (response->type != type);
+		} while (nready > 0 && (rp->vers != TALK_VERSION ||
+		    rp->type != type));
+	} while (rp->vers != TALK_VERSION || rp->type != type);
+	rp->id_num = ntohl(rp->id_num);
+	rp->addr.sa_family = ntohs(rp->addr.sa_family);
 }

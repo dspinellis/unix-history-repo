@@ -3,10 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)talk_ctl.h	5.1 (Berkeley) %G%
+ *	@(#)talk_ctl.h	5.2 (Berkeley) %G%
  */
 
-#include "ctl.h"
+#include <sys/types.h>
+#include <protocols/talkd.h>
+#include <netinet/in.h>
 #include "talk.h"
 #include <errno.h>
 

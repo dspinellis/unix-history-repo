@@ -5,17 +5,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_names.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_names.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "talk.h"
-#include "ctl.h"
+#include <sys/param.h>
+#include <protocols/talkd.h>
 
-char *getlogin(), *ttyname(), *rindex();
-
-extern CTL_MSG msg;
-
-struct hostent *gethostbyname();
+char	*getlogin();
+char	*ttyname();
+char	*rindex();
+static	any();
+extern	CTL_MSG msg;
 
 /*
  * Determine the local and remote user, tty, and machines
@@ -24,17 +25,14 @@ get_names(argc, argv)
 	int argc;
 	char *argv[];
 {
-	char hostname[HOST_NAME_LENGTH];
-	char *his_name;
-	char *my_name;
-	char *my_machine_name;
-	char *his_machine_name;
-	char *my_tty;
-	char *his_tty;
-	char *ptr;
+	char hostname[MAXHOSTNAMELEN];
+	char *his_name, *my_name;
+	char *my_machine_name, *his_machine_name;
+	char *my_tty, *his_tty;
+	register char *cp;
 
 	if (argc < 2 ) {
-		printf("Usage:	talk user [ttyname]\n");
+		printf("Usage: talk user [ttyname]\n");
 		exit(-1);
 	}
 	if (!isatty(0)) {
@@ -50,36 +48,51 @@ get_names(argc, argv)
 	my_machine_name = hostname;
 	my_tty = rindex(ttyname(0), '/') + 1;
 	/* check for, and strip out, the machine name of the target */
-	for (ptr = argv[1]; *ptr != '\0' && *ptr != '@' && *ptr != ':' &&
-	    *ptr != '!' && *ptr != '.'; ptr++)
+	for (cp = argv[1]; *cp && !any(*cp, "@:!."); cp++)
 		;
-	if (*ptr == '\0') {
+	if (*cp == '\0') {
 		/* this is a local to local talk */
 		his_name = argv[1];
 		his_machine_name = my_machine_name;
 	} else {
-		if (*ptr == '@') {
+		if (*cp++ == '@') {
 			/* user@host */
 			his_name = argv[1];
-			his_machine_name = ptr + 1;
+			his_machine_name = cp;
 		} else {
 			/* host.user or host!user or host:user */
-			his_name = ptr + 1;
+			his_name = cp;
 			his_machine_name = argv[1];
 		}
-		*ptr = '\0';
+		*--cp = '\0';
 	}
 	if (argc > 2)
 		his_tty = argv[2];	/* tty name is arg 2 */
 	else
 		his_tty = "";
 	get_addrs(my_machine_name, his_machine_name);
-	/* Load these useful values into the standard message header */
-	msg.id_num = 0;
+	/*
+	 * Initialize the message template.
+	 */
+	msg.vers = TALK_VERSION;
+	msg.addr.sa_family = htons(AF_INET);
+	msg.ctl_addr.sa_family = htons(AF_INET);
+	msg.id_num = htonl(0);
 	strncpy(msg.l_name, my_name, NAME_SIZE);
 	msg.l_name[NAME_SIZE - 1] = '\0';
 	strncpy(msg.r_name, his_name, NAME_SIZE);
 	msg.r_name[NAME_SIZE - 1] = '\0';
 	strncpy(msg.r_tty, his_tty, TTY_SIZE);
 	msg.r_tty[TTY_SIZE - 1] = '\0';
+}
+
+static
+any(c, cp)
+	register char c, *cp;
+{
+
+	while (*cp)
+		if (c == *cp++)
+			return (1);
+	return (0);
 }
