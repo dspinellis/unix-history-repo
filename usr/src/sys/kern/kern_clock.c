@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.7	%G%	*/
+/*	kern_clock.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@
  *	reloading clock
  *	decrementing time to callouts
  *	recording cpu time usage
- *	modifying priority of current processing
+ *	modifying priority of current process
  *	arrange for soft clock interrupt
  *	kernel pc profiling
  *
@@ -46,11 +46,9 @@
  * interrupts compressed into one (due to excessive interrupt load),
  * but that hardclock interrupts should never be lost.
  */
-#ifdef KPROF
-unsigned short kcount[20000];
-#endif
 
 hardclock(pc, ps)
+	caddr_t pc;
 {
 	register struct callo *p1;
 	register struct proc *pp;
@@ -122,15 +120,6 @@ out:
 		}
 	}
 	++lbolt;
-#ifdef KPROF
-	if (!USERMODE(ps) && !noproc) {
-		register int indx = ((int)pc & 0x7fffffff) / 4;
-
-		if (indx >= 0 && indx < 20000)
-			if (++kcount[indx] == 0)
-				--kcount[indx];
-	}
-#endif
 #if VAX==780
 	if (!BASEPRI(ps))
 		unhang();
@@ -149,7 +138,7 @@ double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
  * which doesn't block device interrupts!
  */
 softclock(pc, ps)
-caddr_t pc;
+	caddr_t pc;
 {
 	register struct callo *p1, *p2;
 	register struct proc *pp;
@@ -182,6 +171,15 @@ caddr_t pc;
 #if NDZ11 > 0
 	s = spl5(); dztimer(); splx(s);
 #endif
+
+	/*
+	 * If idling and processes are waiting to swap in,
+	 * check on them.
+	 */
+	if (noproc && runin) {
+		runin = 0;
+		wakeup((caddr_t)&runin);
+	}
 
 	/*
 	 * Run paging daemon and reschedule every 1/4 sec.
@@ -300,8 +298,8 @@ caddr_t pc;
  * intelligent to be done if an entry won't fit.
  */
 timeout(fun, arg, tim)
-int (*fun)();
-caddr_t arg;
+	int (*fun)();
+	caddr_t arg;
 {
 	register struct callo *p1, *p2, *p3;
 	register int t;
