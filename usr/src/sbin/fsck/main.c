@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.23 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.24 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -384,14 +384,15 @@ check(dev)
 			dp = ginode();
 			if (dp == NULL)
 				continue;
+			n++;
 			if (ALLOC) {
 				if (!isset(cgrp.cg_iused, i)) {
 					if (debug)
 						printf("%d bad, not used\n",
 						    inum);
 					inosumbad++;
-					n++;
 				}
+				n--;
 				lastino = inum;
 				if (ftypeok(dp) == 0) {
 					pfatal("UNKNOWN FILE TYPE I=%u", inum);
@@ -416,7 +417,6 @@ check(dev)
 				badblk = dupblk = 0; filsize = 0; maxblk = 0;
 				ckinode(dp, ADDR);
 			} else {
-				n++;
 				if (isset(cgrp.cg_iused, i)) {
 					if (debug)
 						printf("%d bad, marked used\n",
@@ -436,7 +436,7 @@ check(dev)
 		}
 		if (n != cgrp.cg_cs.cs_nifree) {
 			if (debug)
-				printf("cg[%d].cg_cs.cs_nifree is %d not %d\n",
+				printf("cg[%d].cg_cs.cs_nifree is %d; calc %d\n",
 				    c, cgrp.cg_cs.cs_nifree, n);
 			inosumbad++;
 		}
@@ -556,7 +556,7 @@ out1b:
 		if (preen)
 			printf(" (FIXED)\n");
 		if (preen || reply("FIX") == 1) {
-			sblock.fs_cstotal.cs_nifree = imax - n_files;
+			sblock.fs_cstotal.cs_nifree = imax - ROOTINO - n_files;
 			sbdirty();
 		}
 	}
@@ -1486,7 +1486,6 @@ makecg()
 	int c, blk;
 	daddr_t dbase, d, dmin, dmax;
 	long i, j, s;
-	int x;
 	register struct csum *cs;
 	register DINODE *dp;
 
@@ -1503,7 +1502,7 @@ makecg()
 		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
 		if (dmax > sblock.fs_size) {
-			for ( ; dmax >= sblock.fs_size ; dmax--)
+			for ( ; dmax >= sblock.fs_size; dmax--)
 				clrbit(cgrp.cg_free, dmax - dbase);
 			dmax++;
 		}
@@ -1526,29 +1525,36 @@ makecg()
 			cgrp.cg_frsum[i] = 0;
 		inum = sblock.fs_ipg * c;
 		for (i = 0; i < sblock.fs_ipg; inum++, i++) {
+			cgrp.cg_cs.cs_nifree++;
+			clrbit(cgrp.cg_iused, i);
 			dp = ginode();
 			if (dp == NULL)
 				continue;
 			if (ALLOC) {
 				if (DIRCT)
 					cgrp.cg_cs.cs_ndir++;
+				cgrp.cg_cs.cs_nifree--;
 				setbit(cgrp.cg_iused, i);
 				continue;
 			}
-			cgrp.cg_cs.cs_nifree++;
-			clrbit(cgrp.cg_iused, i);
 		}
 		while (i < MAXIPG) {
 			clrbit(cgrp.cg_iused, i);
 			i++;
 		}
+		if (c == 0)
+			for (i = 0; i < ROOTINO; i++) {
+				setbit(cgrp.cg_iused, i);
+				cgrp.cg_cs.cs_nifree--;
+			}
 		for (s = 0; s < MAXCPG; s++) {
 			cgrp.cg_btot[s] = 0;
 			for (i = 0; i < NRPOS; i++)
 				cgrp.cg_b[s][i] = 0;
 		}
 		if (c == 0) {
-			dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) * sblock.fs_frag;
+			dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) *
+			    sblock.fs_frag;
 		}
 		for (d = 0; d < dmin; d++)
 			clrbit(cgrp.cg_free, d);
@@ -1573,12 +1579,10 @@ makecg()
 				fragacct(&sblock, blk, cgrp.cg_frsum, 1);
 			}
 		}
-		x = 0;
 		for (j = d; d < dmax - dbase; d++) {
 			if (!getbmap(dbase+d)) {
 				setbit(cgrp.cg_free, d);
 				cgrp.cg_cs.cs_nffree++;
-				x++;
 			} else
 				clrbit(cgrp.cg_free, d);
 		}
