@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_param.h	7.2 (Berkeley) %G%
+ *	@(#)vm_param.h	7.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,15 +60,15 @@ typedef int	boolean_t;
  *	The machine independent pages are refered to as PAGES.  A page
  *	is some number of hardware pages, depending on the target machine.
  */
+#define DEFAULT_PAGE_SIZE	4096
 
 /*
  *	All references to the size of a page should be done with PAGE_SIZE
  *	or PAGE_SHIFT.  The fact they are variables is hidden here so that
  *	we can easily make them constant if we so desire.
  */
-
-#define	PAGE_SIZE	page_size	/* size of page in addressible units */
-#define PAGE_SHIFT	page_shift	/* number of bits to shift for pages */
+#define	PAGE_SIZE	vm_stat.page_size	/* size of page */
+#define PAGE_SHIFT	page_shift		/* bits to shift for pages */
 
 /* 
  *	Return values from the VM routines.
@@ -110,8 +110,7 @@ typedef int	boolean_t;
 #endif	KERNEL
 
 #ifdef	KERNEL
-extern vm_size_t	page_size;	/* machine independent page size */
-extern vm_size_t	page_mask;	/* page_size - 1; mask for
+extern vm_size_t	page_mask;	/* vm_stat.page_size - 1; mask for
 						   offset within page */
 extern int		page_shift;	/* shift to use for page size */
 
