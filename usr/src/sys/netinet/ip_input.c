@@ -1,4 +1,4 @@
-/*	ip_input.c	1.66	83/03/12	*/
+/*	ip_input.c	1.67	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -646,8 +646,7 @@ ip_forward(ip)
 	mcopy = m_copy(dtom(ip), 0, imin(ip->ip_len, 64));
 	ip_stripoptions(ip, mopt);
 
-	/* last 0 here means no directed broadcast */
-	error = ip_output(dtom(ip), mopt, (struct route *)0, 0);
+	error = ip_output(dtom(ip), mopt, (struct route *)0, IP_FORWARDING);
 	if (error == 0) {
 		if (mcopy)
 			m_freem(mcopy);

@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.52	83/03/25	*/
+/*	tcp_output.c	4.53	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,6 +46,8 @@ tcp_output(tp)
 	int sendalot;
 
 
+	if (tp->t_state == TCPS_CLOSED)
+		return (EINVAL);
 	/*
 	 * Determine length of data that should be transmitted,
 	 * and flags that will be used.
@@ -293,8 +295,11 @@ noopt:
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (error = ip_output(m, tp->t_ipopt, (so->so_options & SO_DONTROUTE) ?
-	    &routetoif : &tp->t_inpcb->inp_route, 0))
+	if (so->so_options & SO_DONTROUTE)
+		error = ip_output(m, tp->t_ipopt, 0, IP_ROUTETOIF);
+	else
+		error = ip_output(m, tp->t_ipopt, &tp->t_inpcb->inp_route, 0);
+	if (error)
 		return (error);
 
 	/*

@@ -1,4 +1,4 @@
-/*	ip_output.c	1.46	83/02/10	*/
+/*	ip_output.c	1.47	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -18,11 +18,11 @@
 
 int	ipnorouteprint = 0;
 
-ip_output(m, opt, ro, allowbroadcast)
+ip_output(m, opt, ro, flags)
 	struct mbuf *m;
 	struct mbuf *opt;
 	struct route *ro;
-	int allowbroadcast;
+	int flags;
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
@@ -35,10 +35,12 @@ ip_output(m, opt, ro, allowbroadcast)
 	/*
 	 * Fill in IP header.
 	 */
-	ip->ip_v = IPVERSION;
 	ip->ip_hl = hlen >> 2;
-	ip->ip_off &= IP_DF;
-	ip->ip_id = htons(ip_id++);
+	if ((flags & IP_FORWARDING) == 0) {
+		ip->ip_v = IPVERSION;
+		ip->ip_off &= IP_DF;
+		ip->ip_id = htons(ip_id++);
+	}
 
 	/*
 	 * Route packet.
@@ -52,19 +54,23 @@ ip_output(m, opt, ro, allowbroadcast)
 		ro->ro_dst.sa_family = AF_INET;
 		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = ip->ip_dst;
 		/*
-		 * If routing to interface only, short circuit routing lookup.
+		 * If routing to interface only,
+		 * short circuit routing lookup.
 		 */
-		if (ro == &routetoif) {
-			/* check ifp is AF_INET??? */
+		if (flags & IP_ROUTETOIF) {
 			ifp = if_ifonnetof(in_netof(ip->ip_dst));
-			if (ifp == 0)
-				goto unreachable;
+			if (ifp == 0) {
+				error = ENETUNREACH;
+				goto bad;
+			}
 			goto gotif;
 		}
 		rtalloc(ro);
 	}
-	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0)
-		goto unreachable;
+	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
+		error = ENETUNREACH;
+		goto bad;
+	}
 	ro->ro_rt->rt_use++;
 	if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 		dst = &ro->ro_rt->rt_gateway;
@@ -89,7 +95,7 @@ gotif:
 			error = EADDRNOTAVAIL;
 			goto bad;
 		}
-		if (!allowbroadcast) {
+		if ((flags & IP_ALLOWBROADCAST) == 0) {
 			error = EACCES;
 			goto bad;
 		}
@@ -173,15 +179,10 @@ gotif:
 	m_freem(m);
 	goto done;
 
-unreachable:
-	if (ipnorouteprint)
-		printf("no route to %x (from %x, len %d)\n",
-		    ip->ip_dst.s_addr, ip->ip_src.s_addr, ip->ip_len);
-	error = ENETUNREACH;
 bad:
 	m_freem(m);
 done:
-	if (ro == &iproute && ro->ro_rt)
+	if (ro == &iproute && (flags & IP_ROUTETOIF) == 0 && ro->ro_rt)
 		RTFREE(ro->ro_rt);
 	return (error);
 }
