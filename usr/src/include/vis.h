@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vis.h	5.9 (Berkeley) %G%
+ *	@(#)vis.h	5.10 (Berkeley) %G%
  */
 
 #ifndef _VIS_H_
@@ -48,11 +48,11 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-char	*vis __P((char *, char, int, char));
+char	*vis __P((char *, int, int, int));
 int	strvis __P((char *, const char *, int));
 int	strvisx __P((char *, const char *, size_t, int));
 int	strunvis __P((char *, const char *));
-int	unvis __P((char *, char, int *, int));
+int	unvis __P((char *, int, int *, int));
 __END_DECLS
 
 #endif /* !_VIS_H_ */
