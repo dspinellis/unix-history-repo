@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.4 (Berkeley) %G%
+ *	@(#)rl.c	7.5 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -28,6 +28,7 @@
 #include "cmap.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"

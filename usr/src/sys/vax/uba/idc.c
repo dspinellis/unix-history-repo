@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.4 (Berkeley) %G%
+ *	@(#)idc.c	7.5 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -672,21 +672,15 @@ idcecc(ui)
 	register struct idcdevice *idc = (struct idcdevice *)ui->ui_addr;
 	register struct buf *bp = idcutab[ui->ui_unit].b_actf;
 	register struct uba_ctlr *um = ui->ui_mi;
-	register struct idcst *st;
 	register int i;
 	struct uba_regs *ubp = ui->ui_hd->uh_uba;
 	int bit, byte, mask;
 	caddr_t addr;
 	int reg, npf, o;
-	int cn, tn, sn;
 
 	npf = btop(idc->idcbcr + idc_softc.sc_bcnt) - 1;;
 	reg = btop(idc_softc.sc_ubaddr) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	st = &idcst[ui->ui_type];
-	cn = idc_softc.sc_cyl;
-	tn = idc_softc.sc_trk;
-	sn = idc_softc.sc_sect;
 	um->um_tab.b_active = 1;	/* Either complete or continuing... */
 	diskerr(bp, "rb", "soft ecc", LOG_WARNING, npf, (struct disklabel *)0);
 	addlog("\n");
