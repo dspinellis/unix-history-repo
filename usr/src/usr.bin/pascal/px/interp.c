@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.30 %G%";
+static char sccsid[] = "@(#)interp.c 1.31 %G%";
 
 #include <math.h>
 #include <signal.h>
@@ -129,7 +129,7 @@ interpreter(base)
 	double td, td1;
 	struct sze8 t8;
 	register short *tsp1;
-	long *tlp;
+	long *tlp, tl3;
 	char *tcp1;
 	bool tb;
 	struct blockmark *tstp;
@@ -560,6 +560,13 @@ interpreter(base)
 			blkcpy(tcp, *(char **)(tcp + tl1), tl);
 			popsp(tl1 + sizeof(char *));
 			continue;
+		case O_VAS:
+			pc.cp++;
+			tl = pop4();
+			tcp1 = popaddr();
+			tcp = popaddr();
+			blkcpy(tcp1, tcp, tl);
+			continue;
 		case O_INX2P2:
 			tl = *pc.cp++;		/* tl has shift amount */
 			tl1 = pop2();
@@ -597,6 +604,50 @@ interpreter(base)
 			tl = *pc.usp++;
 			if (_runtst)
 				SUBSC(tl1, tl2, tl); /* range check */
+			continue;
+		case O_VINX2:
+			pc.cp++;
+			tl = pop2();		/* tl has element size */
+			tl1 = pop2();		/* upper bound */
+			tl2 = pop2();		/* lower bound */
+			tl3 = pop2();		/* index */
+			tcp = popaddr();
+			pushaddr(tcp + (tl3 - tl2) * tl);
+			if (_runtst)
+				SUBSC(tl3, tl2, tl1); /* range check */
+			continue;
+		case O_VINX24:
+			pc.cp++;
+			tl = pop2();		/* tl has element size */
+			tl1 = pop2();		/* upper bound */
+			tl2 = pop2();		/* lower bound */
+			tl3 = pop4();		/* index */
+			tcp = popaddr();
+			pushaddr(tcp + (tl3 - tl2) * tl);
+			if (_runtst)
+				SUBSC(tl3, tl2, tl1); /* range check */
+			continue;
+		case O_VINX42:
+			pc.cp++;
+			tl = pop4();		/* tl has element size */
+			tl1 = pop4();		/* upper bound */
+			tl2 = pop4();		/* lower bound */
+			tl3 = pop2();		/* index */
+			tcp = popaddr();
+			pushaddr(tcp + (tl3 - tl2) * tl);
+			if (_runtst)
+				SUBSC(tl3, tl2, tl1); /* range check */
+			continue;
+		case O_VINX4:
+			pc.cp++;
+			tl = pop4();		/* tl has element size */
+			tl1 = pop4();		/* upper bound */
+			tl2 = pop4();		/* lower bound */
+			tl3 = pop4();		/* index */
+			tcp = popaddr();
+			pushaddr(tcp + (tl3 - tl2) * tl);
+			if (_runtst)
+				SUBSC(tl3, tl2, tl1); /* range check */
 			continue;
 		case O_OFF:
 			tl = *pc.cp++;
