@@ -1,4 +1,4 @@
-/*	ch2rst.c	1.6	85/02/19
+/*	ch2rst.c	1.7	86/03/04
  *
  * Font translation to Imagen-style fonts (RST format) from character format.
  *
@@ -30,6 +30,8 @@ char *	malloc();
 glyph_dir g[DIRSIZ];		/* directory of glyph definitions */
 preamble p;			/* set of variables for preamble */
 double widthtofix;		/* fix conversion factor */
+double wordsptemp;		/* holds wordsp "fix" `til res. is known */
+double linesptemp;		/* holds linesp "fix" `til res. is known */
 
 int	code;			/* read in code for a glyph */
 int	width, length;		/* width and length of read-in matrix */
@@ -79,7 +81,6 @@ char **argv;
 	    error("can't open file \"%s\"", argv[1]);
     } else filep = stdin;
 
-    widthtofix = (1.0 / FIXPIX);	/* default fix conversion factor */
     codeindex = 0;
     for (i = 0; i < DIRSIZ; glyphs[i++] = (char *) 0);
 
@@ -97,24 +98,25 @@ char **argv;
 	    else if (strcmp(ebuff, "version") == 0) {
 		if (p.p_version = par + 0.5)
 		    error("wrong version (%d) for Font file.", p.p_version);
-	    } else if (strcmp(ebuff, "mag") == 0) {
-		p.p_mag = par + 0.5;
-		if (p.p_mag) widthtofix = 1000.0 / (FIXPIX * p.p_mag);
-	    } else if (strcmp(ebuff, "desiz") == 0) p.p_desiz = par / FIX + 0.5;
-	    else if (strcmp(ebuff, "linesp") == 0)
-		p.p_linesp = par * widthtofix + 0.5;
-	    else if (strcmp(ebuff, "wordsp") == 0)
-		p.p_wordsp = par * widthtofix + 0.5;
+	    } else if (strcmp(ebuff, "mag") == 0) p.p_mag = par + 0.5;
+	    else if (strcmp(ebuff, "desiz") == 0) p.p_desiz = par / FIX + 0.5;
+	    else if (strcmp(ebuff, "linesp") == 0) linesptemp = par;
+	    else if (strcmp(ebuff, "wordsp") == 0) wordsptemp = par;
 	    else if (strcmp(ebuff, "rot") == 0) p.p_rot = par + 0.5;
 	    else if (strcmp(ebuff, "cadv") == 0) p.p_cadv = par + 0.5;
 	    else if (strcmp(ebuff, "ladv") == 0) p.p_ladv = par + 0.5;
 	    else if (strcmp(ebuff, "id") == 0) p.p_id = par + 0.5;
-	    else if (strcmp(ebuff, "res") == 0) {
-		if ((p.p_res = par + 0.5) != RES)
-		    fprintf(stderr, "ch2rst: warning, wrong resolution (%d).\n",
-				p.p_res);
-	    } /* ignore unrecognized fields */
+	    else if (strcmp(ebuff, "res") == 0) p.p_res = par + 0.5;
+		/* ignore unrecognized fields */
 	} else {
+			/* set up for real resolution of font file */
+	    if (p.p_mag)
+		widthtofix = 1000.0 / (FIXIN * p.p_res * p.p_mag);
+	    else
+		widthtofix = (1.0 / (FIXIN * p.p_res));
+	    p.p_wordsp = wordsptemp * widthtofix + 0.5;
+	    p.p_linesp = linesptemp * widthtofix + 0.5;
+
 	    if (sscanf (ibuff, ":%d, width = %f", &code, &par) != 2)
 		error("bad glyph header, %s", ibuff);
 	    if (ignorecode) codeindex++; else codeindex = code;
