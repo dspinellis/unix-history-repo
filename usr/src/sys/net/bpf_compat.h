@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bpf_compat.h	7.1 (Berkeley) %G%
+ *	@(#)bpf_compat.h	8.1 (Berkeley) %G%
  */
 
 /* from: $Header: bpf_compat.h,v 1.1 92/05/22 15:33:20 mccanne Exp $ (LBL) */
