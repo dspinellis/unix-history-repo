@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.4 83/08/22";
+static	char *sccsid = "@(#)lcmd.c	3.5 83/08/22";
 #endif
 
 #include "defs.h"
@@ -87,7 +87,7 @@ register char *p;
 
 	for (; *p == ' ' || *p == '\t'; p++)
 		;
-	while (*p && *p != '\n' && *p != '#'
+	while (*p && *p != '\n' && (*p != '#' || escape || quote)
 	       && pp < &argv[sizeof argv/sizeof *argv - 1]) {
 		*pp++ = q;
 		while (*p && *p != '\n') {
