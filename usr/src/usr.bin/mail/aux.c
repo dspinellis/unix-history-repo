@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	1.5 %G%";
+static char *SccsId = "@(#)aux.c	1.6 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -507,13 +507,87 @@ blankline(linebuf)
 }
 
 /*
+ * Get sender's name from this message.  If the message has
+ * a bunch of arpanet stuff in it, we may have to skin the name
+ * before returning it.
+ */
+char *
+nameof(mp, reptype)
+	register struct message *mp;
+{
+
+	return(skin(name1(mp, reptype)));
+}
+
+/*
+ * Skin an arpa net address according to the RFC 733 interpretation
+ * of "host-phrase."
+ */
+char *
+skin(name)
+	char *name;
+{
+	register int c;
+	register char *cp, *cp2;
+	int gotlt, lastsp;
+	char nbuf[BUFSIZ];
+
+	if (name == NOSTR)
+		return(NOSTR);
+	if (index(name, '(') == NOSTR && index(name, '<') == NOSTR)
+		return(name);
+	gotlt = 0;
+	lastsp = 0;
+	for (cp = name, cp2 = nbuf, c = *cp++; *cp; c = *cp++) {
+		switch (c) {
+		case '(':
+			while (*cp != ')' && *cp != 0)
+				cp++;
+			if (*cp)
+				cp++;
+			break;
+
+		case ' ':
+			lastsp = 1;
+			break;
+
+		case '<':
+			cp2 = nbuf;
+			gotlt++;
+			lastsp = 0;
+			break;
+
+		case '>':
+			if (gotlt)
+				goto done;
+
+			/* Fall into . . . */
+
+		default:
+			if (lastsp) {
+				lastsp = 0;
+				*cp2++ = ' ';
+			}
+			*cp2++ = c;
+			break;
+		}
+	}
+done:
+	*cp2 = 0;
+
+	return(savestr(nbuf));
+}
+
+/*
  * Fetch the sender's name from the passed message.
- * If fetching this name for replying purposes, do not
- * return sender:
+ * Reptype can be
+ *	0 -- get sender's name for display purposes
+ *	1 -- get sender's name for reply
+ *	2 -- get sender's name for Reply
  */
 
 char *
-nameof(mp, reply)
+name1(mp, reptype)
 	register struct message *mp;
 {
 	char namebuf[LINESIZE];
@@ -522,14 +596,12 @@ nameof(mp, reply)
 	register FILE *ibuf;
 	int first = 1;
 
-	if ((cp = hfield("from", mp)) != NOSTR) {
-		strcpy(namebuf, cp);
-		return(savestr(namebuf));
-	}
-	if (!reply && (cp = hfield("sender", mp)) != NOSTR) {
-		strcpy(namebuf, cp);
-		return(savestr(namebuf));
-	}
+#ifndef DELIVERMAIL
+	if ((cp = hfield("from", mp)) != NOSTR)
+		return(cp);
+	if (reptype == 0 && (cp = hfield("sender", mp)) != NOSTR)
+		return(cp);
+#endif
 	ibuf = setinput(mp);
 	copy("", namebuf);
 	if (readline(ibuf, linebuf) <= 0)
