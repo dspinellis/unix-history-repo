@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.84 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.85 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -98,7 +98,7 @@ struct vnodeopv_entry_desc ffs_specop_entries[] = {
 	{ &vop_ioctl_desc, spec_ioctl },		/* ioctl */
 	{ &vop_select_desc, spec_select },		/* select */
 	{ &vop_mmap_desc, spec_mmap },			/* mmap */
-	{ &vop_fsync_desc, spec_fsync },		/* fsync */
+	{ &vop_fsync_desc, ffs_fsync },			/* fsync */
 	{ &vop_seek_desc, spec_seek },			/* seek */
 	{ &vop_remove_desc, spec_remove },		/* remove */
 	{ &vop_link_desc, spec_link },			/* link */
@@ -147,7 +147,7 @@ struct vnodeopv_entry_desc ffs_fifoop_entries[] = {
 	{ &vop_ioctl_desc, fifo_ioctl },		/* ioctl */
 	{ &vop_select_desc, fifo_select },		/* select */
 	{ &vop_mmap_desc, fifo_mmap },			/* mmap */
-	{ &vop_fsync_desc, fifo_fsync },		/* fsync */
+	{ &vop_fsync_desc, ffs_fsync },			/* fsync */
 	{ &vop_seek_desc, fifo_seek },			/* seek */
 	{ &vop_remove_desc, fifo_remove },		/* remove */
 	{ &vop_link_desc, fifo_link },			/* link */
@@ -186,7 +186,12 @@ struct vnodeopv_desc ffs_fifoop_opv_desc =
  */
 /* ARGSUSED */
 ffs_read(ap)
-	struct vop_read_args *ap;
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct inode *ip = VTOI(vp);
@@ -248,7 +253,12 @@ ffs_read(ap)
  * Vnode op for writing.
  */
 ffs_write(ap)
-	struct vop_write_args *ap;
+	struct vop_write_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
 	USES_VOP_TRUNCATE;
 	USES_VOP_UPDATE;
@@ -335,7 +345,8 @@ ffs_write(ap)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (error && (ioflag & IO_UNIT)) {
-		(void)VOP_TRUNCATE(vp, osize, ioflag & IO_SYNC, ap->a_cred);
+		(void)VOP_TRUNCATE(vp, osize, ioflag & IO_SYNC, ap->a_cred,
+		    uio->uio_procp);
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
@@ -350,14 +361,57 @@ ffs_write(ap)
 /* ARGSUSED */
 int
 ffs_fsync(ap)
-	struct vop_fsync_args *ap;
+	struct vop_fsync_args /* {
+		struct vnode *a_vp;
+		struct ucred *a_cred;
+		int a_waitfor;
+		struct proc *a_p;
+	} */ *ap;
 {
 	USES_VOP_UPDATE;
-	struct inode *ip = VTOI(ap->a_vp);
+	register struct vnode *vp = ap->a_vp;
+	struct inode *ip = VTOI(vp);
+	register struct buf *bp;
+	struct buf *nbp;
+	int s;
 
-	if (ap->a_fflags & FWRITE)
-		ip->i_flag |= ICHG;
-	vflushbuf(ap->a_vp, ap->a_waitfor == MNT_WAIT ? B_SYNC : 0);
+	/*
+	 * Flush all dirty buffers associated with a vnode.
+	 */
+loop:
+	s = splbio();
+	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
+		nbp = bp->b_blockf;
+		if ((bp->b_flags & B_BUSY))
+			continue;
+		if ((bp->b_flags & B_DELWRI) == 0)
+			panic("ffs_fsync: not dirty");
+		bremfree(bp);
+		bp->b_flags |= B_BUSY;
+		splx(s);
+		/*
+		 * Wait for I/O associated with indirect blocks to complete,
+		 * since there is no way to quickly wait for them below.
+		 */
+		if (bp->b_vp == vp || ap->a_waitfor == MNT_NOWAIT)
+			(void) bawrite(bp);
+		else
+			(void) bwrite(bp);
+		goto loop;
+	}
+	if (ap->a_waitfor == MNT_WAIT) {
+		while (vp->v_numoutput) {
+			vp->v_flag |= VBWAIT;
+			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
+		}
+#ifdef DIAGNOSTIC
+		if (vp->v_dirtyblkhd) {
+			vprint("ffs_fsync: dirty", vp);
+			goto loop;
+		}
+#endif
+	}
+	splx(s);
 	return (VOP_UPDATE(ap->a_vp, &time, &time, ap->a_waitfor == MNT_WAIT));
 }
 
@@ -367,7 +421,9 @@ ffs_fsync(ap)
  */
 int
 ffs_inactive(ap)
-	struct vop_inactive_args *ap;
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	USES_VOP_TRUNCATE;
 	USES_VOP_UPDATE;
@@ -394,7 +450,7 @@ ffs_inactive(ap)
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
-		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED);
+		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, NULL);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;
