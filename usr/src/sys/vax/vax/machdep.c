@@ -1,4 +1,4 @@
-/*	machdep.c	4.10	%G%	*/
+/*	machdep.c	4.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,12 +16,13 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 #include "../h/conf.h"
+#include "../h/buf.h"
 #include <frame.h>
 
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.10) 81/02/08 01:02:22 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.11) 81/02/08 18:34:34 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -60,13 +61,7 @@ startup(firstaddr)
 	 */
 	printf(version);
 	printf("real mem  = %d\n", ctob(maxmem));
-
-	/*
-	 * Clear warm-restart inhibit flag.
-	 */
-	tocons(TXDB_CWSI);
-	tocons(TXDB_CCSI);
-
+	
 	/*
 	 * Allow for the u. area of process 0 and its (single)
 	 * page of page tables.
@@ -88,7 +83,19 @@ startup(firstaddr)
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	mfree(kernelmap, USRPTSIZE, 1);
-	ubainit();
+
+	/*
+	 * Configure the system.
+	 */
+	configure();
+
+	/*
+	 * Clear restart inhibit flags.
+	 */
+	tocons(TXDB_CWSI);
+	tocons(TXDB_CCSI);
+
+	ubainit();		/* GROT */
 	timeout(memchk, (caddr_t)0, 60);	/* it will pick its own intvl */
 }
 
@@ -392,7 +399,7 @@ boot(panic, arghowto)
 	register int devtype;		/* r10 == major of root dev */
 
 	howto = arghowto;
-	if ((howto&RB_NOSYNC)==0 && waittime < 0) {
+	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		waittime = 0;
 		update();
 		printf("syncing disks... ");

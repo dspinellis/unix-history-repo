@@ -1,4 +1,4 @@
-/*	scb.s	4.1	%G%	*/
+/*	scb.s	4.2	%G%	*/
 
 /*
  * System control block
@@ -7,8 +7,8 @@
 	.set	HALT,3		# halt if this interrupt occurs
 
 /*	.align	PGSHIFT	*/
-	.globl	Scbbase
-Scbbase:
+	.globl	_Scbbase
+_Scbbase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xmachcheck + INTSTK	# machine check interrupt
 	.long	Xkspnotval + INTSTK	# kernel stack not valid
@@ -33,7 +33,7 @@ Scbbase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-#if VAX==750
+#if VAX==750 || VAX==ANY
 	.long	Xwtime + INTSTK		# write timeout
 #else
 	.long	Xstray + INTSTK		# unused
@@ -92,11 +92,7 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-#if VAX==780
-	.long	Xua0int + INTSTK	# UBA 0 br4
-#else
 	.long	Xstray + INTSTK		# unused
-#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -114,22 +110,13 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-#if VAX==780
-	.long	Xua0int + INTSTK	# UBA 0 br5
-#else
-	.long	Xstray + INTSTK		# unused
-#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-#if VAX==780
-	.long	Xmba0int + INTSTK	# mass bus adapter 0
-	.long	Xmba1int + INTSTK	# mass bus adapter 1
-#else
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-#endif
+	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -141,11 +128,7 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-#if VAX==780
-	.long	Xua0int + INTSTK	# UBA 0 br6
-#else
 	.long	Xstray + INTSTK		# unused
-#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -176,4 +159,3 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
-

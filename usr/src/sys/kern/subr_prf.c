@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.7	%G%	*/
+/*	subr_prf.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -191,7 +191,7 @@ putchar(c, touser)
 		}
 		return;
 	}
-	if (c != '\0' && c != '\r' && c != 0177) {
+	if (c != '\0' && c != '\r' && c != 0177 && mfpr(MAPEN)) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			msgbuf.msg_bufx = 0;
 			msgbuf.msg_magic = MSG_MAGIC;
