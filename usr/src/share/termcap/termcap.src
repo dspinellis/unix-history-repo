@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.45 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.46 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -93,19 +93,19 @@
 #	EK352; SRI International; 333 Ravenswood Avenue; Menlo Park, CA 94025
 Aa|agile|agiles|sri agiles:\
 	:bs:hc:os:pl:co#132:do=^J:kb=^H:up=\E\n:\
-	:hu=\E0:hd=\E9:if=/usr/lib/tabset/std:is=\EE\EF\EJ:
+	:hu=\E0:hd=\E9:if=/usr/share/tabset/std:is=\EE\EF\EJ:
 A6|1620|1720|450|ipsi|diablo 1620:\
 	:do=^J:ct=\E2:st=\E1:ch=\E\t%i%.:\
-	:if=/usr/lib/tabset/xerox1720:\
+	:if=/usr/share/tabset/xerox1720:\
 	:kb=^H:le=^H:bs:co#132:hc:hu=\EU:hd=\ED:os:pt:up=\E\n:
 A7|1620-m8|1640-m8|diablo 1620 w/8 column left margin:\
 	:do=^J:co#124:is=\r        \E9:tc=1620:
 A8|1640|1740|630|1730|x1700|diablo|xerox|diablo 1640:\
-	:if=/usr/lib/tabset/xerox1730:\
+	:if=/usr/share/tabset/xerox1730:\
 	:us=\EE:ue=\ER:so=\EW:se=\E&:tc=1620:
 Am|1640-lm|1740-lm|630-lm|1730-lm|x1700-lm|diablo-lm|xerox-lm|\
 	diablo 1640 with idented left margin:\
-	:if=/usr/lib/tabset/xerox1730-lm:\
+	:if=/usr/share/tabset/xerox1730-lm:\
 	:co#124:us=\EE:ue=\ER:so=\EW:se=\E&:tc=1620:
 # DTC 382 with VDU.  Has no cd so we fake it with ce.  Standout works but
 # won't go away without dynamite.  The terminal has tabs, but I'm getting
@@ -125,7 +125,7 @@ Ac|dtc|ps|dtc382|382:\
 	:dl=^P^S:ei=^Pi:ho=^P^R:im=^PI:ve=^Pb:vs=^PB:pc=\177:te=20^P^]:\
 	:li#24:nd=^PR:.se=^P \200:.so=^P \002^PF:us=^P \020:ue=^P \200:\
 	:up=^P^L:nc:xr:xs:da:db:.pt:cr=^P^M:cd=^P^U^P^S^P^S:\
-	:if=/usr/lib/tabset/dtc382:
+	:if=/usr/share/tabset/dtc382:
 Ad|dtc300s|300|300s|dtc 300s:\
 	:ct=\E3:st=\E1:do=^J:\
 	:kb=^h:le=^H:bs:co#132:hc:hu=\EH:hd=\Eh:os:pt:up=^Z:
@@ -343,7 +343,7 @@ I3|ibm63|ibm3163|3163|i3163|IBM 3163:\
 	:tc=ibm61:
 I4|ibm|ibm3101|3101|i3101|IBM 3101-10:\
 	:do=^J:ct=\EH:st=\E0:\
-	:if=/usr/lib/tabset/ibm3101:\
+	:if=/usr/share/tabset/ibm3101:\
 	:am:le=^H:bs:cl=\EK:li#24:co#80:nd=\EC:up=\EA:cd=\EJ:ce=\EI:\
 	:kd=\EB:kl=\ED:kr=\EC:ku=\EA:ho=\EH:cm=\EY%+\40%+\40:pt:
 Ia|ibm-apl|apl|IBM apl terminal simulator:\
@@ -481,7 +481,7 @@ MN|ampex|d80|dialogue|dialogue80|ampex dialogue 80:\
 A2|a210|210|ampex210|ampex a210:\
 	:am:bs:cl=\E*:cm=\E=%+ %+ :al=\EE:bt=\EI:ic=\EQ:im=:ei=:\
 	:dl=\ER:dc=\EW:ho=^^:xn:ce=\Et:cd=\Ey:li#24:co#80:nd=^L:up=^K:\
-	:pt:if=/usr/lib/tabset/std:is=\EC\Eu\E'\E(\El\EA\E%\E{\E.2\EG0\Ed\En:\
+	:pt:if=/usr/share/tabset/std:is=\EC\Eu\E'\E(\El\EA\E%\E{\E.2\EG0\Ed\En:\
 	:kl=^H:kr=^L:kd=^V:ku=^K:kh=^^:hs:ts=\E.0\Eg\E}\Ef:fs=\E.2:\
 	:kn#10:k0=^A0^M:k1=^A1^M:k2=^A2^M:k3=^A3^M:k4=^A4^M:k5=^A5^M:\
 	:vb=\EU\EX\EU\EX\EU\EX\EU\EX:k6=^A6^M:k7=^A7^M:k8=^A8^M:k9=^A9^M:\
@@ -516,7 +516,7 @@ zL|aed-ucb|AED-UCB|aed512-ucb|AED512-UCB|aed 512 w/o UCB ROM:\
 	:ti=\E\07200>8000140{<04<0??00001010L<0\072004=0002??00\001:\
 	:te=\E\07200>8000100{804<0??00001000L80\072004=000200??\001:\
 	:so=\E\07200>8000140[80C00\001:se=\E[00C80\001:\
-	:if=/usr/lib/tabset/aed512:
+	:if=/usr/share/tabset/aed512:
 # CIT 80  - vt 100 emulator, the termcap has been modified to remove
 #           the delay times and do an auto tab set rather than the indirect
 #           file used in vt100.
@@ -550,7 +550,7 @@ Mh|cit500|cit-500|cit 500:\
 	:co#80:li#40:cl=50\E[;H\E[2J:bs:am:cm=5\E[%i%2;%2H:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
 	:is=\E(B\E)0\E>\E[?3l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
-	:if=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:if=/usr/share/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
 	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:xn:\
 	:do=\ED:al=\E[L:dc=\E[P:dl=\E[M:
 # Note several versions of blit.  I don't know exactly what is what
@@ -631,7 +631,7 @@ zM|f110-v|freedom110-v|freedom110 for 9600 vi or 1200 emacs:\
 	:tc=freedom100:
 # (from kerch@lll-crg)
 Q1|f200|freedom200| Freedom 200 VDT by Liberty Electronics :\
-	:if=/usr/lib/tabset/stdcrt:al=\EE:am:bs:bt=\EI:cd=\EY:\
+	:if=/usr/share/tabset/stdcrt:al=\EE:am:bs:bt=\EI:cd=\EY:\
 	:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:dl=\ER:do=^V:\
 	:ds=\Eh:ei=\Er:im=\Eq:is=\Eg\El\E\041\062:\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:\
@@ -1412,7 +1412,7 @@ Xz|4115|tek4115|Tektronix 4115:\
 	:co#80:li#34:\
 	:al=\E[L:am:bc=\E[D:bs:bt=\E[Z:cd=\E[J:ce=\E[K:\
 	:cl=\E[;H\E[2J:cm=\E[%i%d;%dH:da:db:dc=\E[P:dl=\E[M:do=\E[B:\
-	:ei=\E[4l:eo:ho=\E[;H:im=\E[4h:if=/usr/lib/tabset/vt100:\
+	:ei=\E[4l:eo:ho=\E[;H:im=\E[4h:if=/usr/share/tabset/vt100:\
 	:is=\E%\0410\E%\014\ELV0\EKA1\ELBB2\ENU@\075\ELLB2\ELM0\ELV1\EKYA?\E%\0411\E[<1l\E[?7h\E[?8h\E[34;1H\E[34B\E[0m:\
 	:kb=^H:ke=\E>:ks=\E=:nd=\E[C:pt:se=\E[m:so=\E[7m:sr=\EM:\
 	:te=\E%\0410\ELBG8\E%\0411\E[34;1H\E[J:
@@ -1529,7 +1529,7 @@ b2|sb2|sb3|fixed superbee:\
 # good grief - does this entry make sg/ug when it doesn't have to?
 # look at those spaces in se/so.  Seems strange to me...
 bh|bh3m|beehiveIIIm:\
-	:if=/usr/lib/tabset/beehive:do=^J:\
+	:if=/usr/share/tabset/beehive:do=^J:\
 	:al=160^S:am:le=^H:bs:cd=^R:ce=^P:cl=^E^R:\
 	:co#80:dl=350^Q:ho=^E:li#20:ll=^E^K:\
 	:nd=^L:pt:se= ^_:so=^] :up=^K:
@@ -1751,7 +1751,7 @@ d0|vt100|vt100-am|vt100am|dec vt100:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
 	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:\
-	:rf=/usr/lib/tabset/vt100:\
+	:rf=/usr/share/tabset/vt100:\
 	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=2*\EM:vt#3:xn:\
@@ -1773,7 +1773,7 @@ d6|vt125|vt125-am|DEC vt125:\
 	:le=^H:am:bs:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:\
 	:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:\
 	:me=2\E[m:is=\E[1;24r\E[24;1H\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
-	:ks=\E[?1h\E=:ke=\E[?1l\E>:if=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:if=/usr/share/tabset/vt100:ku=\EOA:kd=\EOB:\
 	:kr=\EOC:kl=\EOD:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:pt:sr=5\EM:vt#3:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
 d9|vt125-nam|DEC vt125 no automatic margin:\
@@ -1968,7 +1968,7 @@ hw|hp2621wl|2621wl|2621-wl|hp2621-wl|hp 2621 w/labels:\
 	:is=\E&jA\r:ke=\E&jA:tc=hp2621-fl:
 # 2392 (from haddix@arpa?)
 hz|2392|hp2392|hp2392a:\
-	:bt=\Ei:ip=2:is=\E&j@\E3\r:if=/usr/lib/tabset/stdcrt:\
+	:bt=\Ei:ip=2:is=\E&j@\E3\r:if=/usr/share/tabset/stdcrt:\
 	:ml=\El:MT:mu=\Em:km:\
 	:mh=\E&dH:mr=\E&dB:us=\E&dD:mb=\E&dA:me=\E&d@:\
 	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=hp:
@@ -2054,7 +2054,7 @@ kF|z29a|z29a-kc-bc|h29a-kc-bc|heath/zenith 29 in ansi mode:\
 	:rs=\E<\E[1;24r\E[24;1H\E[?7h\E[>4h\E[>1;2;3;5;6;7;8;9l\E[m\E[11m:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:k1=\EOS:k2=\EOT:k3=\EOU:k4=\EOV:k5=\EOW:k6=\EOP:k7=\EOQ:k8=\EOR:\
-	:k9=\EOX:k0=\E[~:l0=help:kn#2:ko=ho,cd:if=/usr/lib/tabset/zenith29:\
+	:k9=\EOX:k0=\E[~:l0=help:kn#2:ko=ho,cd:if=/usr/share/tabset/zenith29:\
 	:es:hs:ts=\E[s\E[>5;1h\E[25;%i%dH\E[1K:fs=\E[u\E[>5l:ds=\E[>1l:\
 	:cs=\E[%i%d;%dr:sr=\EM:sf=\ED:DO=\E[%dB:UP=\E[%dA:LE=\E[%dD:\
 	:RI=\E[%dC:AL=\E[%dL:DL=\E[%dM:sc=\E[s:rc=\E[r:dc=\E[1P:DC=\E[%dP:\
@@ -2262,7 +2262,7 @@ qs|sexidy|exidy smart:\
 	:do=^J:li#24:co#64:cl=^l:ho=^q:nd=^s:\
 	:up=^w:le=^H:bs:le=^a:bc=^a:ma=^x^J:kd=^S:
 qu|ubell|ubellchar:\
-	:if=/usr/lib/tabset/ubell:do=^J:am:le=^H:bs:pt:ce=\Ed:cl=^Z:\
+	:if=/usr/share/tabset/ubell:do=^J:am:le=^H:bs:pt:ce=\Ed:cl=^Z:\
 	:cm=\E=%+ %+ :co#80:li#24:nd=^L:up=^K:ma=j^Jk^P^K^Pl :ho=^^:
 qw|ttyWilliams:\
 	:do=^J:co#80:li#12:le=^Y:bc=^Y:do=^K:up=^Z:cl=^^:ce=^_:am:ho=^]:nd=^X:
@@ -2324,7 +2324,7 @@ v1|tvi912|912|920|tvi920|old televideo:\
 	:kb=^H:ku=^K:kd=^J:kl=^H:kr=^L:k0=^AI\r:k1=^A@\r:k2=^AA\r:k3=^AB\r:\
 	:bs:am:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:\
 	:ho=^^:im=:ic=\EQ:li#24:nd=^L:pt:se=\Ek:so=\Ej:up=^K:us=\El:ue=\Em:\
-	:ma=^K^P^L :sg#1:ug#1:if=/usr/lib/tabset/stdcrt:
+	:ma=^K^P^L :sg#1:ug#1:if=/usr/share/tabset/stdcrt:
 # the 912 has a <funct> key that's like shift: <funct>8 xmits "^A8\r".
 # The 920 has this plus real function keys that xmit different things.
 # Termcap makes you use the funct key on the 912 but the real keys on the 920.
@@ -2345,7 +2345,7 @@ v7|tvi950-ns|tvi950 w/no standout:\
 	:so@:se@:us@:ue@:tc=tvi950:
 vi|tvi925|925|televideo model 925:\
 	:hs:xn:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=\E*:cd=\Ey:ce=\Et:is=\El\E":\
-	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/share/tabset/stdcrt:\
 	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#1:us=\EG8:ue=\EG0:ug#1:\
 	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^V^J^L :\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
@@ -2365,7 +2365,7 @@ vk|tvi925vbn|925vbn|televideo model 925 visual bells no so or ul:\
 # entry by Tim Curry 5/21/82 Univ. of Central Fla. duke!ucf-cs!tim
 v9|925a|tvi925a|TeleVideo Model 925:\
 	:al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
-	:dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/std:im=:kb=^H:kd=^V:\
+	:dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/share/tabset/std:im=:kb=^H:kd=^V:\
 	:kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
 	:ue=\EG0:ug#1:up=^K:us=\EG8:is=\El\
 	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
@@ -2393,7 +2393,7 @@ va|tvi950|950|televideo950:\
 	:ct=\E3:st=\E1:do=^J:\
 	:is=\EDF\EC\Ed\EG0\Er\EO\E\047\E(\E%\Ew\EX\Ee ^O\
 	\El\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
-	\Ex3\200\200\Ex4\r\200\Ef\r:if=/usr/lib/tabset/stdcrt:\
+	\Ex3\200\200\Ex4\r\200\Ef\r:if=/usr/share/tabset/stdcrt:\
 	:al=\EE:am:le=^H:bs:bt=\EI:cd=\Ey:ce=\Et:cl=\E*:cm=\E=%+ %+ :\
 	:co#80:dc=\EW:dl=\ER:do=^V:ei=\Er:ho=^^:im=\Eq:k0=^A0\r:\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:\
@@ -2468,7 +2468,7 @@ vf|tvi950-rv-4p|950-rv-4p|televideo950 rev video w/4 pages:\
 	:te=\E\\3\E-07 :ti=\E\\1\E-07 :ks=\El:ke=\Ek:tc=tvi950:
 vg|tvi924|924|televideo model 924:\
 	:am:bs:xn:co#80:li#24:cm=\E=%+ %+ :cl=\E*0:cd=\Ey:ce=\Et:is=\Ek0\E"^O:\
-	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:ho=^^:\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/share/tabset/stdcrt:ho=^^:\
 	:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:us=\EG8:ue=\EG0:up=^K:do=^V:kb=^H:\
 	:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^Vj^Kk^Ll^^H^R^L:k1=^A@\r:k2=^AA\r:\
 	:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:\
@@ -2482,12 +2482,12 @@ vo|tvi924vb|924vb|televideo model 924 visual bells:\
 # 40), Esc K chooses the normal character set.  Not sure padding is needed, but
 # adapted from the tvi920c termcap.  so and us are klutzy, but at least use no
 # screen space.
-vp|tvipt|televideopt:if=/usr/lib/tabset/stdcrt:\
+vp|tvipt|televideopt:if=/usr/share/tabset/stdcrt:\
 	:is=\Ev\Eu\EK:al=5*\EE:am:bs:bt=\EI:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:\
 	:dl=5*\ER:kb=^H:ku=^K:kd=^J:kl=^H:kr=^L:ho=^^:li#24:nd=^L:se=\EF:\
 	:so=\EG1@A\EH:ue=\EF:us=\EG1B@\EH:up=^K:ma=^Kk^Ll^R^L:
 # Vanilla tvi910 -- W. Gish (cswarren@violet) 10/29/86
-vm|tvi910|910|televideo model 910:if=/usr/lib/tabset/stdcrt:\
+vm|tvi910|910|televideo model 910:if=/usr/share/tabset/stdcrt:\
 	:bs:bt=\EI:cd=\EY:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:\
 	:kb=^H:ku=^K:kd=^J:kl=^H:kr=^L:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:\
 	:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:k0=^AI\r:\
@@ -2497,7 +2497,7 @@ vm|tvi910|910|televideo model 910:if=/usr/lib/tabset/stdcrt:\
 vh|tvi910+|910+|televideo 910+:\
 	:al=5*\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+\040%+\040:\
 	:co#80:dc=\EW:dl=\ER:do=^J:ei=:ho=^^:ic=\EQ:\
-	:if=/usr/lib/tabset/stdcrt:im=:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:\
+	:if=/usr/share/tabset/stdcrt:im=:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:\
 	:k4=^AD\r:k5=^AE\r:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=^H:\
 	:kd=^J:kh=^^:kl=^H:kr=^L:ku=^K:li#24:ll=\E=7\040:ma=^K^P^L\040:\
 	:nd=^L:pt:se=\EG0:sg#1:so=\EG4:ue=\EG0:up=^K:us=\EG8:xn:
@@ -2514,7 +2514,7 @@ vd|ims950-rv|ims tvi950 rev video:\
 	:vb@:xn@:tc=tvi950-rv:
 vx|ims-ansi|ultima2|ultimaII|IMS Ultima II:\
 	:pt:am:bs:co#80:li#24:\
-	:is=\E[0m\E[>14l\E[?1;?5;20l\E>\E[1m^M:if=/usr/lib/tabset/vt100:\
+	:is=\E[0m\E[>14l\E[?1;?5;20l\E>\E[1m^M:if=/usr/share/tabset/vt100:\
 	:cl=\E[;H\E[2J:cd=\E[0J:ce=\E[0K:cm=\E[%i%2;%2H:up=\EM:do=\ED:\
 	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:kh=\E[H:\
 	:so=\E[7m:se=\E[0m\E[1m:us=\E[4m:ue=\E[0m\E[1m:sr=\EM:
@@ -2531,7 +2531,7 @@ y3|t3800|teleray 3800 series:\
 	:do=^J:le=^H:bs:cd=\EJ:ce=\EK:cl=^L:cm=\EY%+ %+ :co#80: \
 	:do=\n:ho=\EH:li#24:ll=\EY7 :nd=\EC:pt:up=^K:
 y6|t1061|teleray 1061:\
-	:if=/usr/lib/tabset/teleray:\
+	:if=/usr/share/tabset/teleray:\
 	:ct=\EG:st=\EF:do=^J:\
 	:al=2*\EL:am:le=^H:bs:cd=1\EJ:ce=\EK:cl=1^L:cm=\EY%+ %+ :co#80:\
 	:dc=\EQ:dl=2*\EM:ei=:ho=\EH:ic=\EP:im=:ip=0.4*:\
@@ -2577,7 +2577,7 @@ w6|w60|wyse60|Wyse 60 in native mode:\
 	:nd=^L:pt:se=\EG0:sf=\n:so=\EG4:sr=\Ej:ue=\EG0:up=^K:us=\EG8:
 # from John Gillmore hoptoad!gnu@lll-crg.arpa
 wv|wyse-vp|wyse|Wyse 50 in ADDS Viewpoint emulation mode with "enhance" on:\
-	:am:do=^J:if=/usr/lib/tabset/wyse-adds:\
+	:am:do=^J:if=/usr/share/tabset/wyse-adds:\
 	:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:nd=^F:\
 	:up=^Z:cl=^L:ho=^A:ll=^A^Z:kl=^U:kr=^F:kd=^J:ku=^Z:kh=^A:\
 	:pt:so=^N:se=^O:us=^N:ue=^O:dl=\El:al=\EM:im=\Eq:ei=\Er:dc=\EW:\
@@ -2675,7 +2675,7 @@ zc|masscomp:\
 # enter bold mode (md), enter reverse mode (mr), turn off all attributes (me)
 # Kimtron ABM 85 added by Dual Systems
 zd|abm85|Kimtron ABM 85:\
-	:is=\EC\EX\Eg\En\E%\Er\E(\Ek\Em\Eq:if=/usr/lib/tabset/stdcrt:\
+	:is=\EC\EX\Eg\En\E%\Er\E(\Ek\Em\Eq:if=/usr/share/tabset/stdcrt:\
 	:li#24:co#80:am:bs:bw:ms:pt:\
 	:cl=\E*:cd=\Ey:dl=\ER:al=\EE:ce=\Et:dc=\EW:im=\EQ:ei=\Er:\
 	:cm=\E=%+ %+ :do=^J:nd=^L:up=^K:bt=\EI:\
@@ -2715,7 +2715,7 @@ zg|o85h|oabm85h|Kimtron ABM 85H, old firmware rev.:\
 #from  malman@bbn-vax.arpa
 zE|kt7|kimtron model kt-7:\
 	:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=^Z:cd=\EY:ce=\ET:is=\El\E":\
-	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/share/tabset/stdcrt:\
 	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#0:us=\EG8:ue=\EG0:ug#0:\
 	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^V^J^L :\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
@@ -2789,7 +2789,7 @@ zu|go140|graphon go-140:\
 	:is=\E<\E=\E[?3l\E[?7l\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
 	:dl=\E[M:al=\E[L:dc=\E[P:im=\E[4h:ei=\E[4l:\
 	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
-	:if=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:if=/usr/share/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
 	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=\EM:
 zv|go140w|graphon go-140 in 132 column mode:\
 	:co#132:is=\E<\E=\E[?3h\E[?7h\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
@@ -2944,7 +2944,7 @@ zJ|ibmaed|IBM Experimental display:\
 # funny terminal that the TANDEM uses.
 zA|653|t653x|Tandem 653x multipage terminal:\
 	:li#24:co#80:ho=\EH:cm=\023%+ %+ :cl=\EI:cd=\EJ:ce=\EK:am:bs:\
-	:if=/usr/lib/tabset/tandem653:sb=\ES:sr=\ET:da:db:so=\E6$:se=\E6 :\
+	:if=/usr/share/tabset/tandem653:sb=\ES:sr=\ET:da:db:so=\E6$:se=\E6 :\
 	:us=\E60:ue=\E6 :sg#1:ug#1:up=\EA:do=\012:le=\010:nd=\EC:\
 	:hs:ts=\Eo:fs=\r:ds=\Eo\r:ws#64:
 # From Paul Leondis, unllab@amber.berkeley.edu
