@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.8 %G%";
+static char sccsid[] = "@(#)cpp.c	1.9 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -23,8 +23,9 @@ static char sccsid[] = "@(#)cpp.c	1.8 %G%";
 #define READ 0
 #define WRITE 1
 #define SALT '#'
-#ifndef BUFSIZ
-#define BUFSIZ 512
+#if !defined BUFSIZ || BUFSIZ < 8192
+#undef BUFSIZ
+#define BUFSIZ 8192
 #endif
 
 char *pbeg,*pbuf,*pend;
@@ -111,7 +112,7 @@ char *ptrtab;
 
 char buffer[NCPS+BUFSIZ+BUFSIZ+NCPS];
 
-# define SBSIZE 60000		/* std = 12000, wnj aug 1979 */
+# define SBSIZE 80000		/* std = 12000, wnj aug 1979 */
 char	sbf[SBSIZE];
 char	*savch	= sbf;
 
