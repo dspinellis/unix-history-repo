@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	1.1 83/08/11";
+static	char *sccsid = "@(#)wwscroll.c	1.2 83/08/12";
 #endif
 
 #include "ww.h"
@@ -14,7 +14,6 @@ int srow, erow, dir;
 char leaveit;
 {
 	register i;
-	int j;
 	int startrow, endrow;
 	int nvis;
 	int nvismax;
