@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -51,8 +51,29 @@ extern u_long rpc_reply, rpc_msgdenied, rpc_mismatch, rpc_vers, rpc_auth_unix,
 extern u_long nfs_prog, nfs_vers;
 /* Maybe these should be bits in a u_long ?? */
 extern int nonidempotent[NFS_NPROCS];
+static int compressrequest[NFS_NPROCS] = {
+	FALSE,
+	TRUE,
+	TRUE,
+	FALSE,
+	TRUE,
+	TRUE,
+	TRUE,
+	FALSE,
+	FALSE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+};
 int	nfs_sbwait();
 void	nfs_disconnect();
+struct mbuf *nfs_compress(), *nfs_uncompress();
 
 int	nfsrv_null(),
 	nfsrv_getattr(),
@@ -333,7 +354,7 @@ nfs_receive(so, aname, mp, rep)
 	struct uio auio;
 	struct iovec aio;
 	register struct mbuf *m;
-	struct mbuf *m2, *m3, *mnew, **mbp;
+	struct mbuf *m2, *mnew, **mbp;
 	caddr_t fcp, tcp;
 	u_long len;
 	struct mbuf **getnam;
@@ -475,47 +496,34 @@ errout:
 		/*
 		 * All this for something that may never happen.
 		 */
-		if (m->m_len & 0x3) {
+		if (m->m_next && (m->m_len & 0x3)) {
 			printf("nfs_rcv odd length!\n");
-			fcp = mtod(m, caddr_t);
-			mnew = m2 = (struct mbuf *)0;
-#ifdef lint
-			m3 = (struct mbuf *)0;
 			mlen = 0;
-#endif /* lint */
 			while (m) {
-				if (m2 == NULL || mlen == 0) {
-					MGET(m2, M_WAIT, MT_DATA);
-					if (len > MINCLSIZE)
-						MCLGET(m2, M_WAIT);
-					m2->m_len = 0;
-					mlen = M_TRAILINGSPACE(m2);
-					tcp = mtod(m2, caddr_t);
-					if (mnew) {
-						m3->m_next = m2;
-						m3 = m2;
-					} else
-						mnew = m3 = m2;
+				fcp = mtod(m, caddr_t);
+				while (m->m_len > 0) {
+					if (mlen == 0) {
+						MGET(m2, M_WAIT, MT_DATA);
+						if (len >= MINCLSIZE)
+							MCLGET(m2, M_WAIT);
+						m2->m_len = 0;
+						mlen = M_TRAILINGSPACE(m2);
+						tcp = mtod(m2, caddr_t);
+						*mbp = m2;
+						mbp = &m2->m_next;
+					}
+					siz = MIN(mlen, m->m_len);
+					bcopy(fcp, tcp, siz);
+					m2->m_len += siz;
+					mlen -= siz;
+					len -= siz;
+					tcp += siz;
+					m->m_len -= siz;
+					fcp += siz;
 				}
-				siz = (mlen > m->m_len) ? m->m_len : mlen;
-				bcopy(fcp, tcp, siz);
-				m2->m_len += siz;
-				mlen -= siz;
-				len -= siz;
-				tcp += siz;
-				m->m_len -= siz;
-				fcp += siz;
-				if (m->m_len == 0) {
-					do {
-						m = m->m_next;
-					} while (m && m->m_len == 0);
-					if (m)
-						fcp = mtod(m, caddr_t);
-				}
+				MFREE(m, mnew);
+				m = mnew;
 			}
-			m = *mbp;
-			*mbp = mnew;
-			m_freem(m);
 			break;
 		}
 		len -= m->m_len;
@@ -524,11 +532,6 @@ errout:
 	}
 	return (error);
 }
-
-struct rpc_replyhead {
-	u_long	r_xid;
-	u_long	r_rep;
-};
 
 /*
  * Implement receipt of reply on a socket.
@@ -543,7 +546,7 @@ nfs_reply(nmp, myrep)
 	register struct mbuf *m;
 	register struct nfsreq *rep;
 	register int error = 0;
-	struct rpc_replyhead replyh;
+	u_long rxid;
 	struct mbuf *mp, *nam;
 	char *cp;
 	int cnt, xfer;
@@ -596,30 +599,15 @@ nfs_reply(nmp, myrep)
 		 * Get the xid and check that it is an rpc reply
 		 */
 		m = mp;
-		if (m->m_len >= 2*NFSX_UNSIGNED)
-			bcopy(mtod(m, caddr_t), (caddr_t)&replyh,
-				2*NFSX_UNSIGNED);
-		else {
-			cnt = 2*NFSX_UNSIGNED;
-			cp = (caddr_t)&replyh;
-			while (m && cnt > 0) {
-				if (m->m_len > 0) {
-					xfer = (m->m_len >= cnt) ? cnt :
-						m->m_len;
-					bcopy(mtod(m, caddr_t), cp, xfer);
-					cnt -= xfer;
-					cp += xfer;
-				}
-				if (cnt > 0)
-					m = m->m_next;
-			}
-		}
-		if (replyh.r_rep != rpc_reply || m == NULL) {
+		while (m && m->m_len == 0)
+			m = m->m_next;
+		if (m == NULL) {
 			nfsstats.rpcinvalid++;
 			m_freem(mp);
 			nfs_sounlock(&nmp->nm_flag);
 			continue;
 		}
+		bcopy(mtod(m, caddr_t), (caddr_t)&rxid, NFSX_UNSIGNED);
 		/*
 		 * Loop through the request list to match up the reply
 		 * Iff no match, just drop the datagram
@@ -627,7 +615,7 @@ nfs_reply(nmp, myrep)
 		m = mp;
 		rep = nfsreqh.r_next;
 		while (rep != &nfsreqh) {
-			if (rep->r_mrep == NULL && replyh.r_xid == rep->r_xid) {
+			if (rep->r_mrep == NULL && rxid == rep->r_xid) {
 				/* Found it.. */
 				rep->r_mrep = m;
 				/*
@@ -693,7 +681,7 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	caddr_t dpos;
 	char *cp2;
 	int t1;
-	int s;
+	int s, compressed;
 	int error = 0;
 
 	nmp = VFSTONFS(mp);
@@ -732,6 +720,15 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	}
 	mreq->m_pkthdr.len = len;
 	mreq->m_pkthdr.rcvif = (struct ifnet *)0;
+	compressed = 0;
+	m = mreq;
+	if ((nmp->nm_flag & NFSMNT_COMPRESS) && compressrequest[procnum]) {
+		mreq = nfs_compress(mreq);
+		if (mreq != m) {
+			len = mreq->m_pkthdr.len;
+			compressed++;
+		}
+	}
 	/*
 	 * For non-atomic protocols, insert a Sun RPC Record Mark.
 	 */
@@ -808,11 +805,14 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 	}
 	m_freem(rep->r_mreq);
-	mrep = md = rep->r_mrep;
+	mrep = rep->r_mrep;
 	FREE((caddr_t)rep, M_NFSREQ);
 	if (error)
 		return (error);
 
+	if (compressed)
+		mrep = nfs_uncompress(mrep);
+	md = mrep;
 	/*
 	 * break down the rpc header and check if ok
 	 */
@@ -862,7 +862,7 @@ nfsmout:
  * - fill in the cred struct.
  */
 nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
-	msk, mtch)
+	msk, mtch, wascomp)
 	struct socket *so;
 	u_long prog;
 	u_long vers;
@@ -875,6 +875,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	u_long *procnum;
 	register struct ucred *cr;
 	struct mbuf *msk, *mtch;
+	int *wascomp;
 {
 	register int i;
 	register u_long *p;
@@ -899,6 +900,12 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	if (error)
 		return (error);
 	md = mrep;
+	mrep = nfs_uncompress(mrep);
+	if (mrep != md) {
+		*wascomp = 1;
+		md = mrep;
+	} else
+		*wascomp = 0;
 	dpos = mtod(mrep, caddr_t);
 	nfsm_disect(p, u_long *, 10*NFSX_UNSIGNED);
 	*retxid = *p++;
