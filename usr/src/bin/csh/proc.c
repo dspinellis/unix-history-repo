@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.10 (Berkeley) 83/06/11";
+static	char *sccsid = "@(#)proc.c	4.11 (Berkeley) 83/07/01";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -192,6 +192,8 @@ pjwait(pp)
 	register struct process *fp;
 	int jobflags, reason;
 
+	while (pp->p_pid != pp->p_jobid)
+		pp = pp->p_friends;
 	fp = pp;
 	do {
 		if ((fp->p_flags&(PFOREGND|PRUNNING)) == PRUNNING)
@@ -254,7 +256,7 @@ dowait()
 loop:
 	sighold(SIGCHLD);
 	for (pp = proclist.p_next; pp; pp = pp->p_next)
-		if (pp->p_pid && pp->p_pid == pp->p_jobid &&
+		if (pp->p_pid && /* pp->p_pid == pp->p_jobid && */
 		    pp->p_flags&PRUNNING) {
 			sigpause(sigblock(0) &~ mask(SIGCHLD));
 			goto loop;
@@ -811,6 +813,7 @@ pkill(v, signum)
 	register struct process *pp, *np;
 	register int jobflags = 0;
 	int pid;
+	char *cp;
 	extern char *sys_errlist[];
 	int err = 0;
 
@@ -818,8 +821,9 @@ pkill(v, signum)
 		sighold(SIGINT);
 	sighold(SIGCHLD);
 	while (*v) {
-		if (**v == '%') {
-			np = pp = pfind(*v);
+		cp = globone(*v);
+		if (*cp == '%') {
+			np = pp = pfind(cp);
 			do
 				jobflags |= np->p_flags;
 			while ((np = np->p_friends) != pp);
@@ -830,7 +834,7 @@ pkill(v, signum)
 			case SIGTTIN:
 			case SIGTTOU:
 				if ((jobflags & PRUNNING) == 0) {
-					printf("%s: Already stopped\n", *v);
+					printf("%s: Already stopped\n", cp);
 					err++;
 					goto cont;
 				}
@@ -838,10 +842,10 @@ pkill(v, signum)
 			killpg(pp->p_jobid, signum);
 			if (signum == SIGTERM || signum == SIGHUP)
 				killpg(pp->p_jobid, SIGCONT);
-		} else if (!digit(**v))
+		} else if (!digit(*cp))
 			bferr("Arguments should be jobs or process id's");
 		else {
-			pid = atoi(*v);
+			pid = atoi(cp);
 			if (kill(pid, signum) < 0) {
 				printf("%d: ", pid);
 				printf("%s\n", sys_errlist[errno]);
@@ -852,6 +856,7 @@ pkill(v, signum)
 				kill(pid, SIGCONT);
 		}
 cont:
+		xfree(cp);
 		v++;
 	}
 	sigrelse(SIGCHLD);
