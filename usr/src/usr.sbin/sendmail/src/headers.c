@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.48 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -1179,6 +1179,15 @@ commaize(h, p, oldstyle, mci, e)
 		flags = RF_HEADERADDR|RF_ADDDOMAIN;
 		if (bitset(H_FROM, h->h_flags))
 			flags |= RF_SENDERADDR;
+#ifdef USERDB
+		else if (e->e_from.q_mailer != NULL &&
+			 bitnset(M_UDBRECIPIENT, e->e_from.q_mailer->m_flags))
+		{
+			extern char *udbsender();
+
+			name = udbsender(name);
+		}
+#endif
 		stat = EX_OK;
 		name = remotename(name, mci->mci_mailer, flags, &stat, e);
 		if (*name == '\0')
