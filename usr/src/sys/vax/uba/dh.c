@@ -1,7 +1,7 @@
-/*	dh.c	4.22	81/02/23	*/
+/*	dh.c	4.23	81/02/23	*/
 
 #include "dh.h"
-#if NDH11 > 0
+#if NDH > 0
 #define	DELAY(i)	{ register int j = i; while (--j > 0); }
 /*
  * DH-11/DM-11 driver
@@ -26,13 +26,13 @@
  * There is one definition for the dh and one for the dm.
  */
 int	dhprobe(), dhattach(), dhrint(), dhxint();
-struct	uba_dinfo *dhinfo[NDH11];
+struct	uba_dinfo *dhinfo[NDH];
 u_short	dhstd[] = { 0 };
 struct	uba_driver dhdriver =
 	{ dhprobe, 0, dhattach, 0, dhstd, "dh", dhinfo };
 
 int	dmprobe(), dmattach(), dmintr();
-struct	uba_dinfo *dminfo[NDH11];
+struct	uba_dinfo *dminfo[NDH];
 u_short	dmstd[] = { 0 };
 struct	uba_driver dmdriver =
 	{ dmprobe, 0, dmattach, 0, dmstd, "dm", dminfo };
@@ -118,11 +118,11 @@ struct dmdevice
 /*
  * Local variables for the driver
  */
-short	dhsar[NDH11];			/* software copy of last bar */
-short	dhsoftCAR[NDH11];
+short	dhsar[NDH];			/* software copy of last bar */
+short	dhsoftCAR[NDH];
 
-struct	tty dh11[NDH11*16];
-int	ndh11	= NDH11*16;
+struct	tty dh11[NDH*16];
+int	ndh11	= NDH*16;
 int	dhact;				/* mask of active dh's */
 int	dhstart(), ttrstrt();
 
@@ -221,7 +221,7 @@ dhopen(dev, flag)
 
 	unit = minor(dev);
 	dh = unit >> 4;
-	if (unit >= NDH11*16 || (ui = dhinfo[dh])== 0 || ui->ui_alive == 0) {
+	if (unit >= NDH*16 || (ui = dhinfo[dh])== 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -617,7 +617,7 @@ dhreset(uban)
 	    512+NCLIST*sizeof (struct cblock), 0);
 	cbase[uban] = dh_ubinfo[uban]&0x3ffff;
 	dh = 0;
-	for (dh = 0; dh < NDH11; dh++) {
+	for (dh = 0; dh < NDH; dh++) {
 		ui = dhinfo[dh];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
@@ -647,7 +647,7 @@ dhtimer()
 {
 	register int dh;
 
-	for (dh = 0; dh < NDH11; dh++)
+	for (dh = 0; dh < NDH; dh++)
 		dhrint(dh);
 }
 
@@ -667,7 +667,7 @@ dmopen(dev)
 	dm = unit >> 4;
 	tp = &dh11[unit];
 	unit &= 0xf;
-	if (dm >= NDH11 || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0 ||
+	if (dm >= NDH || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0 ||
 	    (dhsoftCAR[dm]&(1<<unit))) {
 		tp->t_state |= CARR_ON;
 		return;
