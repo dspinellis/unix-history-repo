@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -92,9 +92,11 @@ dumpfs(name)
 	if (afs.fs_postblformat == FS_42POSTBLFMT)
 		afs.fs_nrpos = 8;
 	dev_bsize = afs.fs_fsize / fsbtodb(&afs, 1);
-	printf("magic\t%x\tformat\t%s\ttime\t%s", afs.fs_magic,
-	    afs.fs_postblformat == FS_42POSTBLFMT ? "static" : "dynamic",
+	printf("magic\t%x\ttime\t%s", afs.fs_magic,
 	    ctime(&afs.fs_time));
+	printf("cylgrp\t%s\tinodes\t%s\n",
+	    afs.fs_postblformat == FS_42POSTBLFMT ? "static" : "dynamic",
+	    afs.fs_inodefmt < FS_44INODEFMT ? "4.2/4.3BSD" : "4.4BSD");
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
 	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_ndir,
 	    afs.fs_cstotal.cs_nifree, afs.fs_cstotal.cs_nffree);
@@ -115,8 +117,8 @@ dumpfs(name)
 	    afs.fs_rotdelay, afs.fs_headswitch, afs.fs_trkseek, afs.fs_rps);
 	printf("ntrak\t%d\tnsect\t%d\tnpsect\t%d\tspc\t%d\n",
 	    afs.fs_ntrak, afs.fs_nsect, afs.fs_npsect, afs.fs_spc);
-	printf("trackskew %d\tinterleave %d\n",
-	    afs.fs_trackskew, afs.fs_interleave);
+	printf("symlinklen %d\ttrackskew %d\tinterleave %d\n",
+	    afs.fs_maxsymlinklen, afs.fs_trackskew, afs.fs_interleave);
 	printf("nindir\t%d\tinopb\t%d\tnspf\t%d\n",
 	    afs.fs_nindir, afs.fs_inopb, afs.fs_nspf);
 	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
