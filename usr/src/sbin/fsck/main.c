@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.28 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.29 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -882,7 +882,8 @@ pass2check(idesc)
 		if (dirp->d_ino != idesc->id_number) {
 			direrr(idesc->id_number, "BAD INODE NUMBER FOR '.'");
 			dirp->d_ino = idesc->id_number;
-			ret |= dofix(idesc);
+			if (reply("FIX") == 1)
+				ret |= ALTERED;
 		}
 		goto chk1;
 	}
@@ -899,7 +900,8 @@ pass2check(idesc)
 	} else if (dirp->d_reclen < 2 * entrysize) {
 		proto.d_reclen = dirp->d_reclen;
 		bcopy((char *)&proto, (char *)dirp, entrysize);
-		ret |= dofix(idesc);
+		if (reply("FIX") == 1)
+			ret |= ALTERED;
 	} else {
 		n = dirp->d_reclen - entrysize;
 		proto.d_reclen = entrysize;
@@ -909,7 +911,8 @@ pass2check(idesc)
 		dirp = (DIRECT *)((char *)(dirp) + entrysize);
 		bzero((char *)dirp, n);
 		dirp->d_reclen = n;
-		ret |= dofix(idesc);
+		if (reply("FIX") == 1)
+			ret |= ALTERED;
 	}
 chk1:
 	if (idesc->id_entryno > 1)
@@ -935,7 +938,8 @@ chk1:
 		if (dirp->d_ino != idesc->id_parent) {
 			direrr(idesc->id_number, "BAD INODE NUMBER FOR '..'");
 			dirp->d_ino = idesc->id_parent;
-			ret |= dofix(idesc);
+			if (reply("FIX") == 1)
+				ret |= ALTERED;
 		}
 		goto chk2;
 	}
@@ -948,7 +952,8 @@ chk1:
 	} else {
 		proto.d_reclen = dirp->d_reclen;
 		bcopy((char *)&proto, (char *)dirp, entrysize);
-		ret |= dofix(idesc);
+		if (reply("FIX") == 1)
+			ret |= ALTERED;
 	}
 chk2:
 	if (dirp->d_ino == 0)
@@ -959,12 +964,16 @@ chk2:
 		if (dirp->d_namlen == 1) {
 			direrr(idesc->id_number, "EXTRA '.' ENTRY");
 			dirp->d_ino = 0;
-			return (KEEPON | dofix(idesc));
+			if (reply("FIX") == 1)
+				ret |= ALTERED;
+			return (KEEPON | ret);
 		}
 		if (dirp->d_name[1] == '.') {
 			direrr(idesc->id_number, "EXTRA '..' ENTRY");
 			dirp->d_ino = 0;
-			return (KEEPON | dofix(idesc));
+			if (reply("FIX") == 1)
+				ret |= ALTERED;
+			return (KEEPON | ret);
 		}
 	}
 	curpathloc = pathp;
@@ -1025,7 +1034,6 @@ pass3()
 	register DINODE *dp;
 	struct inodesc idesc;
 	ino_t inumber, orphan;
-	int len;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = DATA;
@@ -1486,8 +1494,6 @@ fsck_readdir(idesc)
 		dp->d_ino = 0;
 		dp->d_namlen = 0;
 		dp->d_name[0] = '\0';
-		if (idesc->id_fix == DONTKNOW)
-			direrr(idesc->id_number, "DIRECTORY CORRUPTED");
 		if (dofix(idesc))
 			dirty(&fileblk);
 		return (dp);
@@ -1506,8 +1512,6 @@ dpok:
 		dp->d_reclen += size;
 		idesc->id_loc += size;
 		idesc->id_filesize -= size;
-		if (idesc->id_fix == DONTKNOW)
-			direrr(idesc->id_number, "DIRECTORY CORRUPTED");
 		if (dofix(idesc))
 			dirty(&fileblk);
 	}
@@ -2183,10 +2187,12 @@ rawname(cp)
 dofix(idesc)
 	register struct inodesc *idesc;
 {
+
 	switch (idesc->id_fix) {
 
 	case DONTKNOW:
-		if (reply("FIX") == 0) {
+		direrr(idesc->id_number, "DIRECTORY CORRUPTED");
+		if (reply("SALVAGE") == 0) {
 			idesc->id_fix = NOFIX;
 			return (0);
 		}
