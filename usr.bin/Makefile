@@ -3,7 +3,7 @@
 
 SUBDIR=	ar at basename bdes biff cal calendar checknr chat chpass cksum cmp \
 	col colcrt colrm column comm compress crontab ctags cut dirname \
-	du env error expand false file find finger fmt fold \
+	du elvis elvisrecover env error expand false file find finger fmt fold \
 	fpr from fsplit fstat ftp getopt gprof groups head hexdump id indent \
 	ipcrm ipcs join ktrace last lastcomm leave lex locate lock logger \
 	login logname look lorder m4 machine mail make mesg mkdep mkfifo \
