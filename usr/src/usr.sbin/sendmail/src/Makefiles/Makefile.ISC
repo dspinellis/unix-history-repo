@@ -3,7 +3,7 @@
 #
 #	Contributed by J.J. Bailey <jjb@jagware.bcc.com>
 #
-#	@(#)Makefile.ISC	8.3	(Berkeley)	%G%
+#	@(#)Makefile.ISC	8.4	(Berkeley)	%G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -16,10 +16,10 @@ O=	-O
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
 #
-DBMDEF=	-DNDBM -DISC_UNIX -DNIS
+DBMDEF=	-DNDBM -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=
+ENVDEF=	-DISC_UNIX
 
 # see also conf.h for additional compilation flags
 
