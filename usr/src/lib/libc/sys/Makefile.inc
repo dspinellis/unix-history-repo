@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.25 (Berkeley) %G%
+#	@(#)Makefile.inc	5.26 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -33,8 +33,8 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
 	setitimer.o setpgid.o setpriority.o \
 	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
 	shutdown.o sigaction.o sigaltstack.o socket.o socketpair.o stat.o \
-	statfs.o swapon.o symlink.o sync.o truncate.o umask.o unlink.o \
-	unmount.o utimes.o vadvise.o wait4.o write.o writev.o \
+	statfs.o swapon.o symlink.o sync.o sysctl.o truncate.o umask.o \
+	unlink.o unmount.o utimes.o vadvise.o wait4.o write.o writev.o \
 	sem_lock.o sem_wakeup.o \
 	__getrlimit.o __indir.o __setrlimit.o
 
@@ -82,8 +82,8 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 \
 	rmdir.0 select.0 send.0 setgroups.0 setpgid.0 setsid.0 setuid.0 \
 	shutdown.0 sigaction.0 sigpending.0 sigprocmask.0 sigreturn.0 \
 	sigaltstack.0 sigstack.0 sigsuspend.0 socket.0 socketpair.0  \
-	stat.0 statfs.0 swapon.0 symlink.0 sync.0 syscall.0 truncate.0 \
-	umask.0 unlink.0 utimes.0 vfork.0 wait.0 write.0
+	stat.0 statfs.0 swapon.0 symlink.0 sync.0 syscall.0 sysctl.0 \
+	truncate.0 umask.0 unlink.0 utimes.0 vfork.0 wait.0 write.0
 
 MLINKS+=brk.2 sbrk.2
 MLINKS+=dup.2 dup2.2
