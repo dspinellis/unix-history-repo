@@ -68,7 +68,8 @@ struct imp_softc {
 	char	imp_dropcnt;		/* used during initialization */
 } imp_softc[NIMP];
 
-struct ifqueue impintrq;
+struct	ifqueue impintrq;
+int	impqmaxlen = IFQ_MAXLEN;
 
 /*
  * Messages from IMP regarding why
@@ -142,6 +143,7 @@ impinit(unit)
 	}
 	sc->imp_state = IMPS_INIT;
 	impnoops(sc);
+	impintrq.ifq_maxlen = impqmaxlen;
 	splx(s);
 }
 
@@ -190,20 +192,40 @@ impinput(unit, m)
 	if (impprintfs)
 		printleader("impinput", ip);
 #endif
+	inq = &impintrq;
 
 	/* check leader type */
 	if (ip->il_format != IMP_NFF) {
 		sc->imp_if.if_collisions++;	/* XXX */
-		goto drop;
+		goto rawlinkin;
 	}
 
 	if (ip->il_mtype != IMPTYPE_DATA) {
 		/* If not data packet, build IP addr from leader (BRL) */
 		imp_leader_to_addr(&addr, ip, &sc->imp_if);
 	}
+
 	switch (ip->il_mtype) {
 
 	case IMPTYPE_DATA:
+		/*
+		 * Data for a protocol.  Dispatch to the appropriate
+		 * protocol routine (running at software interrupt).
+		 * If this isn't a raw interface, advance pointer
+		 * into mbuf past leader.
+		 */
+		switch (ip->il_link) {
+
+		case IMPLINK_IP:
+			m->m_len -= sizeof(struct imp_leader);
+			m->m_off += sizeof(struct imp_leader);
+			schednetisr(NETISR_IP);
+			inq = &ipintrq;
+			break;
+
+		default:
+			break;
+		}
 		break;
 
 	/*
@@ -221,7 +243,7 @@ impinput(unit, m)
 			hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
 			impnoops(sc);
 		}
-		goto drop;
+		break;
 
 	/*
 	 * IMP going down.  Print message, and if not immediate,
@@ -230,14 +252,14 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_DOWN:
 		if (sc->imp_state < IMPS_INIT)
-			goto drop;
+			break;
 		if ((ip->il_link & IMP_DMASK) == 0) {
 			sc->imp_state = IMPS_GOINGDOWN;
 			timeout(impdown, (caddr_t)sc, 30 * hz);
 		}
 		impmsg(sc, "going down %s",
 			(u_int)impmessage[ip->il_link&IMP_DMASK]);
-		goto drop;
+		break;
 
 	/*
 	 * A NOP usually seen during the initialization sequence.
@@ -250,22 +272,23 @@ impinput(unit, m)
 			sc->imp_dropcnt = IMP_DROPCNT;
 		}
 		if (sc->imp_state == IMPS_INIT && --sc->imp_dropcnt > 0)
-			goto drop;
+			break;
 		sin = (struct sockaddr_in *)&sc->imp_if.if_addrlist->ifa_addr;
-		if (ip->il_imp != 0) {	/* BRL */
+		if (ip->il_imp != 0) {
 			struct in_addr leader_addr;
+
 			imp_leader_to_addr(&leader_addr, ip, &sc->imp_if);
 			if (sin->sin_addr.s_addr != leader_addr.s_addr) {
 				impmsg(sc, "address reset to x%x (%d/%d)",
-					htonl(leader_addr.s_addr),
+					ntohl(leader_addr.s_addr),
 					(u_int)ip->il_host,
-					htons(ip->il_imp));
+					ntohs(ip->il_imp));
 				sin->sin_addr.s_addr = leader_addr.s_addr;
 			}
 		}
 		sc->imp_state = IMPS_UP;
 		sc->imp_if.if_flags |= IFF_UP;
-		goto drop;
+		break;
 
 	/*
 	 * RFNM or INCOMPLETE message, send next
@@ -296,7 +319,7 @@ impinput(unit, m)
 			hostfree(hp);
 			hp->h_timer = HOSTDEADTIMER;
 		}
-		goto rawlinkin;
+		break;
 
 	/*
 	 * Error in data.  Clear RFNM status for this host and send
@@ -307,7 +330,7 @@ impinput(unit, m)
 		if (hp = hostlookup(addr))
 			hp->h_rfnm = 0;
 		impnoops(sc);
-		goto drop;
+		break;
 
 	/*
 	 * Interface reset.
@@ -317,41 +340,35 @@ impinput(unit, m)
 		/* clear RFNM counts */
 		hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
 		impnoops(sc);
-		goto drop;
+		break;
 
 	default:
 		sc->imp_if.if_collisions++;		/* XXX */
-		goto drop;
+		break;
 	}
 
-	/*
-	 * Data for a protocol.  Dispatch to the appropriate
-	 * protocol routine (running at software interrupt).
-	 * If this isn't a raw interface, advance pointer
-	 * into mbuf past leader.
-	 */
-	switch (ip->il_link) {
-
-	case IMPLINK_IP:
-		m->m_len -= sizeof(struct imp_leader);
-		m->m_off += sizeof(struct imp_leader);
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-
-	default:
-	rawlinkin:
+rawlinkin:
+	if (inq == &impintrq)
 		schednetisr(NETISR_IMP);
-		inq = &impintrq;
-		break;
-	}
 	/*
 	 * Re-insert interface pointer in the mbuf chain
 	 * for the next protocol up.
 	 */
+	if (M_HASCL(m) && (mtod(m, int) & CLOFSET) < sizeof(struct ifnet *)) {
+		struct mbuf *n;
+
+		MGET(n, M_DONTWAIT, MT_HEADER);
+		if (n == 0)
+			goto drop;
+		n->m_next = m;
+		m = n;
+		m->m_len = 0;
+		m->m_off = MMINOFF + sizeof(struct ifnet  *);
+	}
 	m->m_off -= sizeof(struct ifnet *);
 	m->m_len += sizeof(struct ifnet *);
 	*(mtod(m, struct ifnet **)) = ifp;
+
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		goto drop;
@@ -419,17 +436,19 @@ impintr()
 		impproto.sp_protocol = cp->dl_link;
 		impdst.sin_addr = IA_SIN(ifp->if_addrlist)->sin_addr;
 
-		switch (cp->dl_link) {
+		if (cp->dl_mtype == IMPTYPE_HOSTDEAD ||
+		    cp->dl_mtype == IMPTYPE_HOSTUNREACH)
+			switch (cp->dl_link) {
 
-		case IMPLINK_IP:
-			pfctlinput((int)cp->dl_mtype,
-			    (struct sockaddr *)&impsrc);
-			break;
-		default:
-			raw_ctlinput((int)cp->dl_mtype,
-			    (struct sockaddr *)&impsrc);
-			break;
-		}
+			case IMPLINK_IP:
+				pfctlinput((int)cp->dl_mtype,
+				    (struct sockaddr *)&impsrc);
+				break;
+			default:
+				raw_ctlinput((int)cp->dl_mtype,
+				    (struct sockaddr *)&impsrc);
+				break;
+			}
 
 		raw_input(m, &impproto, (struct sockaddr *)&impsrc,
 		  (struct sockaddr *)&impdst);
@@ -711,10 +730,10 @@ imp_leader_to_addr(ap, ip, ifp)
 {
 	register u_long final;
 	register struct sockaddr_in *sin;
-	int imp = htons(ip->il_imp);
+	int imp = ntohs(ip->il_imp);
 
 	sin = (struct sockaddr_in *)(&ifp->if_addrlist->ifa_addr);
-	final = htonl(sin->sin_addr.s_addr);
+	final = ntohl(sin->sin_addr.s_addr);
 
 	if (IN_CLASSA(final)) {
 		final &= IN_CLASSA_NET;
@@ -736,7 +755,7 @@ imp_addr_to_leader(imp, a)
 	register struct imp_leader *imp;
 	u_long a;
 {
-	register u_long addr = htonl(a);
+	register u_long addr = ntohl(a);
 
 	imp->il_network = 0;	/* !! */
 
