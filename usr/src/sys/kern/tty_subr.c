@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.18	82/12/17	*/
+/*	tty_subr.c	4.19	83/02/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -165,11 +165,7 @@ int rem;
 register s;
 
 	s = spl5();
-	if (q->c_cc < 0) {
-		printf("neg q flush\n");
-		goto out;
-	}
-	if (q->c_cc == 0) {
+	if (q->c_cc <= 0) {
 		goto out;
 	}
 	while (cc>0 && q->c_cc) {
