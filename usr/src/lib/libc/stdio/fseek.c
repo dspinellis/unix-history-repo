@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fseek.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fseek.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -134,7 +134,7 @@ fseek(fp, offset, whence)
 		if (fp->_flags & __SOFF)
 			curoff = fp->_offset;
 		else {
-			curoff = (*seekfn)(fp->_cookie, 0L, SEEK_CUR);
+			curoff = (*seekfn)(fp->_cookie, (fpos_t)0, SEEK_CUR);
 			if (curoff == POS_ERR)
 				goto dumb;
 		}
@@ -207,7 +207,7 @@ fseek(fp, offset, whence)
 	 */
 dumb:
 	if (__sflush(fp) ||
-	    (*seekfn)(fp->_cookie, offset, whence) == POS_ERR) {
+	    (*seekfn)(fp->_cookie, (fpos_t)offset, whence) == POS_ERR) {
 		return (EOF);
 	}
 	/* success: clear EOF indicator and discard ungetc() data */
