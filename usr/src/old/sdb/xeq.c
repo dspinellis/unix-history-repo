@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)xeq.c 4.1 %G%";
+static	char sccsid[] = "@(#)xeq.c 4.2 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -325,6 +325,8 @@ char *cmds; {
 			return;
 		}
 		docommand();
+		if (!endflg)
+			*p = ';';
 		p = cmds = p + 1;
 	} while (!endflg);
 }

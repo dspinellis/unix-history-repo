@@ -1,5 +1,5 @@
 #
-#	sdb	Makefile	4.1	%G%
+#	sdb	Makefile	4.2	%G%
 #
 # Conditional compilation flags:
 #	STD - Distribution systems UNIX/32V, VM/UNIX 2.n
@@ -10,7 +10,7 @@
 # The files old.c and old.h contain routines and definitions peculiar
 # to old versions of the system.
 #
-CFLAGS=	-R -DVMUNIX -DVFORK -DFLEXNAMES -g
+CFLAGS=	-R -DVMUNIX -DVFORK -DFLEXNAMES
 
 SRCS=	access.c decode.c display.c docomm.c fio.c main.c message.c \
 	old.c opset.c optab.c pcs.c prvar.c re.c runpcs.c \
