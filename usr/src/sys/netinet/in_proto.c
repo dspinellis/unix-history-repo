@@ -1,4 +1,4 @@
-/*	in_proto.c	6.4	84/07/31	*/
+/*	in_proto.c	6.5	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -32,41 +32,36 @@ extern	int raw_usrreq();
 #if NIMP > 0
 int	rimp_output(), hostslowtimo();
 #endif
-/*
- * Network disk protocol: runs on top of IP
- */
-#include "nd.h"
-#if NND > 0
-int	nd_input(), nd_slowtimo(), nd_init();
-#endif
+
+extern	struct domain inetdomain;
 
 struct protosw inetsw[] = {
-{ 0,		PF_INET,	0,		0,
+{ 0,		&inetdomain,	0,		0,
   0,		ip_output,	0,		0,
   0,
   ip_init,	0,		ip_slowtimo,	ip_drain,
 },
-{ SOCK_DGRAM,	PF_INET,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
+{ SOCK_DGRAM,	&inetdomain,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp_input,	0,		udp_ctlinput,	0,
   udp_usrreq,
   udp_init,	0,		0,		0,
 },
-{ SOCK_STREAM,	PF_INET,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
+{ SOCK_STREAM,	&inetdomain,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
   tcp_input,	0,		tcp_ctlinput,	0,
   tcp_usrreq,
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
-{ SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&inetdomain,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,	0,
   raw_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RAW,	PF_INET,	IPPROTO_EGP,	PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&inetdomain,	IPPROTO_EGP,	PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,	0,
   raw_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RAW,	PF_INET,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
   icmp_input,	rip_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
@@ -74,11 +69,14 @@ struct protosw inetsw[] = {
 };
 
 struct domain inetdomain =
-    { AF_INET, "internet", inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])] };
+    { AF_INET, "internet", 0, 0, 0, 
+      inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])] };
 
 #if NIMP > 0
+extern	struct domain impdomain;
+
 struct protosw impsw[] = {
-{ SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&impdomain,	0,		PR_ATOMIC|PR_ADDR,
   0,		rimp_output,	0,		0,
   raw_usrreq,
   0,		0,		hostslowtimo,	0,
@@ -86,5 +84,6 @@ struct protosw impsw[] = {
 };
 
 struct domain impdomain =
-    { AF_IMPLINK, "imp", impsw, &impsw[sizeof (impsw)/sizeof(impsw[0])] };
+    { AF_IMPLINK, "imp", 0, 0, 0,
+      impsw, &impsw[sizeof (impsw)/sizeof(impsw[0])] };
 #endif

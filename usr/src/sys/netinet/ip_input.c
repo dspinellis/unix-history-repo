@@ -1,4 +1,4 @@
-/*	ip_input.c	6.3	84/05/25	*/
+/*	ip_input.c	6.4	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,7 +41,7 @@ ip_init()
 		ip_protox[i] = pr - inetsw;
 	for (pr = inetdomain.dom_protosw;
 	    pr <= inetdomain.dom_protoswNPROTOSW; pr++)
-		if (pr->pr_family == PF_INET &&
+		if (pr->pr_domain->dom_family == PF_INET &&
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
 			ip_protox[pr->pr_protocol] = pr - inetsw;
 	ipq.next = ipq.prev = &ipq;
