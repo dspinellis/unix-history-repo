@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.35 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -344,6 +344,7 @@ nfssvc_nfsd(nsd, argp, p)
 		nd->nd_procp = p;
 		nd->nd_cr.cr_ref = 1;
 		insque(nd, &nfsd_head);
+		nd->nd_nqlflag = NQL_NOVAL;
 		nfs_numnfsd++;
 	}
 	/*
