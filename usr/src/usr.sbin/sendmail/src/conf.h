@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.31 (Berkeley) %G%
+ *	@(#)conf.h	5.32 (Berkeley) %G%
  */
 
 /*
@@ -23,13 +23,17 @@
 # define MAXHOP		30		/* max value of HopCount */
 # define MAXATOM	100		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
-# define MAXRWSETS	30		/* max # of sets of rewriting rules */
+# define MAXRWSETS	100		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define MAXTRUST	30		/* maximum number of trusted users */
 # define MAXUSERENVIRON	40		/* max # of items in user environ */
-# define QUEUESIZE	600		/* max # of jobs per queue run */
-# define MAXMXHOSTS	10		/* max # of MX records */
+# define MAXMXHOSTS	20		/* max # of MX records */
 # define SMTPLINELIM	990		/* maximum SMTP line length */
+
+# ifndef QUEUESIZE
+# define QUEUESIZE	1000		/* max # of jobs per queue run */
+# endif
+
 # ifndef FORK
 # define FORK		vfork		/* function to call to fork mailer */
 # endif
