@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.c	7.10 (Berkeley) %G%
+ *	@(#)tp_timer.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -39,28 +39,15 @@ SOFTWARE.
  * $Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_timer.c,v $
  *
- * Contains all the timer code.  
- * There are two sources of calls to these routines:
- * the clock, and tp.trans. (ok, and tp_pcb.c calls it at init time)
- *
- * Timers come in two flavors - those that generally get
- * cancelled (tp_ctimeout, tp_cuntimeout)
- * and those that either usually expire (tp_etimeout, 
- * tp_euntimeout, tp_slowtimo) or may require more than one instance
- * of the timer active at a time.
- *
- * The C timers are stored in the tp_ref structure. Their "going off"
- * is manifested by a driver event of the TM_xxx form.
- *
- * The E timers are handled like the generic kernel callouts.
- * Their "going off" is manifested by a function call w/ 3 arguments.
  */
 
 #include "param.h"
-#include "types.h"
+#include "systm.h"
 #include "time.h"
 #include "malloc.h"
+#include "protosw.h"
 #include "socket.h"
+#include "kernel.h"
 
 #include "tp_param.h"
 #include "tp_timer.h"
@@ -72,7 +59,7 @@ SOFTWARE.
 #include "tp_seq.h"
 
 struct	tp_ref *tp_ref;
-int		N_TPREF = 127;
+int	tp_rttdiv, tp_rttadd, N_TPREF = 127;
 struct	tp_refinfo tp_refinfo;
 struct	tp_pcb *tp_ftimeolist = (struct tp_pcb *)&tp_ftimeolist;
 
@@ -87,17 +74,20 @@ void
 tp_timerinit()
 {
 	register int s;
-#define GETME(x, t, n) {s = (n)*sizeof(*x); x = (t) malloc(s, M_PCB, M_NOWAIT);\
-if (x == 0) panic("tp_timerinit"); bzero((caddr_t)x, s);}
 	/*
 	 * Initialize storage
 	 */
+	if (tp_refinfo.tpr_base)
+		return;
 	tp_refinfo.tpr_size = N_TPREF + 1;  /* Need to start somewhere */
-	GETME(tp_ref, struct tp_ref *, tp_refinfo.tpr_size);
+	s = sizeof(*tp_ref) * tp_refinfo.tpr_size;
+	if ((tp_ref = (struct tp_ref *) malloc(s, M_PCB, M_NOWAIT)) == 0)
+		panic("tp_timerinit");
 	tp_refinfo.tpr_base = tp_ref;
-#undef GETME
+	tp_rttdiv = hz / PR_SLOWHZ;
+	tp_rttadd = (2 * tp_rttdiv) - 1;
 }
-
+#ifdef TP_DEBUG_TIMERS
 /**********************  e timers *************************/
 
 /*
@@ -157,7 +147,7 @@ tp_euntimeout(tpcb, fun)
  * are typically cancelled so it's faster not to
  * mess with the chains
  */
-
+#endif
 /*
  * CALLED FROM:
  *  the clock, every 500 ms
@@ -181,7 +171,7 @@ tp_slowtimo()
 	IncStat(ts_Cticks);
 	/* tp_ref[0] is never used */
 	for (rp = tp_ref + tp_refinfo.tpr_maxopen; rp > tp_ref; rp--) {
-		if ((tpcb = rp->tpr_pcb) == 0 || rp->tpr_state < REF_OPEN) 
+		if ((tpcb = rp->tpr_pcb) == 0 || tpcb->tp_refstate < REF_OPEN) 
 			continue;
 		cpbase = tpcb->tp_timer;
 		t = TM_NTIMERS;
@@ -247,9 +237,8 @@ register struct tp_pcb *tpcb;
 		/* tpcb->tp_nlprotosw->nlp_losing(tpcb->tp_npcb) someday */
 		tpcb->tp_rtt = 0;
 	}
-	if (rexmt > 128)
-		rexmt = 128; /* XXXX value from tcp_timer.h */
-	tpcb->tp_timer[TM_data_retrans] = tpcb->tp_rxtcur = rexmt;
+	TP_RANGESET(tpcb->tp_rxtcur, rexmt, tpcb->tp_peer_acktime, 128);
+	tpcb->tp_timer[TM_data_retrans] = tpcb->tp_rxtcur;
 	tp_send(tpcb);
 }
 
@@ -280,6 +269,7 @@ tp_fasttimo()
 	splx(s);
 }
 
+#ifdef TP_DEBUG_TIMERS
 /*
  * CALLED FROM:
  *  tp.trans, tp_emit()
@@ -355,3 +345,4 @@ tp_cuntimeout(tpcb, which)
 		IncStat(ts_Ccan_inact);
 	tpcb->tp_timer[which] = 0;
 }
+#endif
