@@ -1,4 +1,4 @@
-/*	condevs.h	4.2	85/04/10	*/
+/*	condevs.h	4.3	85/06/19	*/
 
 #include "uucp.h"
 #include <errno.h>
@@ -28,7 +28,7 @@ int dnopn(), dncls();
 #endif DN11
 
 #ifdef HAYES
-int hysopn(), hyscls();
+int hyspopn(), hystopn(), hyscls();
 #endif HAYES
 
 #ifdef HAYESQ
