@@ -16,7 +16,7 @@
  */
 
 /*
- * $Id: if_ed.c,v 1.38 1994/05/17 22:30:47 jkh Exp $
+ * $Id: if_ed.c,v 1.39 1994/05/18 06:32:19 swallace Exp $
  */
 
 #include "ed.h"
@@ -879,6 +879,10 @@ ed_probe_Novell(isa_dev)
 	/* XXX - do Novell-specific probe here */
 
 	/* Reset the board */
+#ifdef GWETHER
+	outb(sc->asic_addr + ED_NOVELL_RESET, 0);
+	DELAY(200);
+#endif /* GWETHER */
 	tmp = inb(sc->asic_addr + ED_NOVELL_RESET);
 
 	/*
@@ -979,6 +983,83 @@ ed_probe_Novell(isa_dev)
 	sc->mem_end = sc->mem_start + memsize;
 	sc->tx_page_start = memsize / ED_PAGE_SIZE;
 
+#ifdef GWETHER
+	{
+		int x, i, mstart = 0, msize = 0;
+		char pbuf0[ED_PAGE_SIZE],
+		     pbuf[ED_PAGE_SIZE],
+		     tbuf[ED_PAGE_SIZE];
+
+		for(i=0;i<ED_PAGE_SIZE;i++)
+			pbuf0[i] = 0;
+
+		/* Clear all the memory. */
+		for(x=1;x<256;x++)
+			ed_pio_writemem(sc, pbuf0, x*256, ED_PAGE_SIZE);
+
+		/* Search for the start of RAM. */
+		for(x=1;x<256;x++)
+		{
+			ed_pio_readmem(sc, x*256, tbuf, ED_PAGE_SIZE);
+			if(memcmp(pbuf0, tbuf, ED_PAGE_SIZE) == 0)
+			{
+				for(i=0;i<ED_PAGE_SIZE;i++)
+					pbuf[i] = 255-x;
+				ed_pio_writemem(sc, pbuf, x*256, ED_PAGE_SIZE);
+				ed_pio_readmem(sc, x*256, tbuf, ED_PAGE_SIZE);
+				if(memcmp(pbuf, tbuf, ED_PAGE_SIZE) == 0)
+				{
+					mstart = x * ED_PAGE_SIZE;
+					msize  = ED_PAGE_SIZE;
+					break;
+				}
+			}
+		}
+
+		if(mstart == 0)
+		{
+			printf("ed%d: Cannot find start of RAM.\n", isa_dev->id_unit);
+			return 0;
+		}
+
+		/* Search for the start of RAM. */
+		for(x=(mstart / ED_PAGE_SIZE) + 1;x<256;x++)
+		{
+			ed_pio_readmem(sc, x*256, tbuf, ED_PAGE_SIZE);
+			if(memcmp(pbuf0, tbuf, ED_PAGE_SIZE) == 0)
+			{
+				for(i=0;i<ED_PAGE_SIZE;i++)
+					pbuf[i] = 255-x;
+				ed_pio_writemem(sc, pbuf, x*256, ED_PAGE_SIZE);
+				ed_pio_readmem(sc, x*256, tbuf, ED_PAGE_SIZE);
+				if(memcmp(pbuf, tbuf, ED_PAGE_SIZE) == 0)
+					msize += ED_PAGE_SIZE;
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		if(msize == 0)
+		{
+			printf("ed%d: Cannot find any RAM, start : %d, x = %d.\n", isa_dev->id_unit, mstart, x);
+			return 0;
+		}
+
+		printf("ed%d: RAM start at %d, size : %d.\n", isa_dev->id_unit, mstart, msize);
+
+		sc->mem_size = msize;
+		sc->mem_start = (char *)mstart;
+		sc->mem_end   = (char *)(msize + mstart);
+		sc->tx_page_start = mstart / ED_PAGE_SIZE;
+	}
+#endif /* GWETHER */
+		
 	/*
 	 * Use one xmit buffer if < 16k, two buffers otherwise (if not told
 	 *	otherwise).
@@ -996,6 +1077,11 @@ ed_probe_Novell(isa_dev)
 	ed_pio_readmem(sc, 0, romdata, 16);
 	for (n = 0; n < ETHER_ADDR_LEN; n++)
 		sc->arpcom.ac_enaddr[n] = romdata[n*(sc->isa16bit+1)];
+
+#ifdef GWETHER
+	if(sc->arpcom.ac_enaddr[2] == 0x86)
+		sc->type_str = "Gateway AT";
+#endif /* GWETHER */
 
 	/* clear any pending interrupts that might have occurred above */
 	outb(sc->nic_addr + ED_P0_ISR, 0xff);
