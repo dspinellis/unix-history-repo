@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dump.h	5.7 (Berkeley) %G%
+ *	@(#)dump.h	5.8 (Berkeley) %G%
  */
 
 #define	NI		16
@@ -12,12 +12,10 @@
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <ufs/fs.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 #include <protocols/dumprestore.h>
-#include <sys/dir.h>
+#include <ufs/dir.h>
 #include <utmp.h>
 #include <sys/signal.h>
 #include <fstab.h>
