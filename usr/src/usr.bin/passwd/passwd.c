@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,6 @@ main(argc, argv)
 {
 	register int ch;
 	extern int errno, optind;
-	extern char *optarg;
 	struct passwd *pw;
 	struct rlimit rlim;
 	FILE *temp_fp;
@@ -306,13 +305,13 @@ makedb(file)
 	char *file;
 {
 	union wait pstat;
-	pid_t pid, waitpid();
+	pid_t pid;
 
 	if (!(pid = vfork())) {
 		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
 		_exit(127);
 	}
-	return(waitpid(pid, &pstat, 0) == -1 ? -1 : pstat.w_status);
+	return(waitpid(pid, (int *)&pstat, 0) == -1 ? -1 : pstat.w_status);
 }
 
 usage()
