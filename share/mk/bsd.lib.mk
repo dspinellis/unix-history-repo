@@ -1,6 +1,14 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.20  1993/11/09  04:50:28  paul
+# Temporary fix to make src tree closer to useable.
+#
+# # XXX -- shouldn't need to comment these out  but there's something not quite
+# #        worked out with the new linker.
+# #       @${LD} -x -r ${.TARGET}
+# #       @mv a.out ${.TARGET}
+#
 # Revision 1.19  1993/11/07  09:14:44  paul
 # Added missing cleandir line for shared libs.
 #
@@ -157,14 +165,14 @@ BINMODE?=	555
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .s.po:
 	${CPP} -E -DPROF ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
-	@${LD} -X -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -X -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .s.so:
 	${CPP} -E -DPIC ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
