@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -73,6 +73,7 @@ main(argc, argv)
 	extern int optind;
 	struct passwd *pw;
 	struct servent *sp;
+	struct hostent *hp;
 	int uid, options = 0;
 	struct sgttyb ttyb;
 	long omask;
