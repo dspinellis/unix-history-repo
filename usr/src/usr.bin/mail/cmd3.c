@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.1 %G%";
+static char *SccsId = "@(#)cmd3.c	1.2 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -22,7 +22,11 @@ shell(str)
 	int (*sig[2])(), stat[1];
 	register int t;
 	char *Shell;
+	char cmd[BUFSIZ];
 
+	strcpy(cmd, str);
+	if (bangexp(cmd) < 0)
+		return(-1);
 	if ((Shell = value("SHELL")) == NOSTR)
 		Shell = SHELL;
 	for (t = 2; t < 4; t++)
@@ -32,7 +36,7 @@ shell(str)
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
 				signal(t, SIG_DFL);
-		execl(Shell, Shell, "-c", str, 0);
+		execl(Shell, Shell, "-c", cmd, 0);
 		perror(Shell);
 		_exit(1);
 	}
@@ -56,7 +60,6 @@ dosh(str)
 	int (*sig[2])(), stat[1];
 	register int t;
 	char *Shell;
-
 	if ((Shell = value("SHELL")) == NOSTR)
 		Shell = SHELL;
 	for (t = 2; t < 4; t++)
@@ -77,6 +80,60 @@ dosh(str)
 	for (t = 2; t < 4; t++)
 		signal(t, sig[t-2]);
 	putchar('\n');
+	return(0);
+}
+
+/*
+ * Expand the shell escape by expanding unescaped !'s into the
+ * last issued command where possible.
+ */
+
+char	lastbang[128];
+
+bangexp(str)
+	char *str;
+{
+	char bangbuf[BUFSIZ];
+	register char *cp, *cp2;
+	register int n;
+	int changed = 0;
+
+	cp = str;
+	cp2 = bangbuf;
+	n = BUFSIZ;
+	while (*cp) {
+		if (*cp == '!') {
+			if (n < strlen(lastbang)) {
+overf:
+				printf("Command buffer overflow\n");
+				return(-1);
+			}
+			changed++;
+			strcpy(cp2, lastbang);
+			cp2 += strlen(lastbang);
+			n -= strlen(lastbang);
+			cp++;
+			continue;
+		}
+		if (*cp == '\\' && cp[1] == '!') {
+			if (--n <= 1)
+				goto overf;
+			*cp2++ = '!';
+			cp += 2;
+			changed++;
+		}
+		if (--n <= 1)
+			goto overf;
+		*cp2++ = *cp++;
+	}
+	*cp2 = 0;
+	if (changed) {
+		printf("!%s\n", bangbuf);
+		fflush(stdout);
+	}
+	strcpy(str, bangbuf);
+	strncpy(lastbang, bangbuf, 128);
+	lastbang[127] = 0;
 	return(0);
 }
 
