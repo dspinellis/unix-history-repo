@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)npreg.h	6.2 (Berkeley) %G%
+ *	@(#)npreg.h	7.1 (Berkeley) %G%
  */
 
 /*

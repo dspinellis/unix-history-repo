@@ -2,4 +2,4 @@
 ?	.word	?d
 w
 q
-"	@(#)crt0.ex	4.2 (Berkeley) %G%	"
+"	@(#)crt0.ex	7.1 (Berkeley) %G%	"

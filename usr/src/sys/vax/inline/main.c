@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1984 Regents of the University of California.
+ * Copyright (c) 1984, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1984 Regents of the University of California.\n\
+"@(#) Copyright (c) 1984, 1986 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	7.1 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>

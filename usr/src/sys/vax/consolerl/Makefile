@@ -1,9 +1,9 @@
 #
-# Copyright (c) 1985 Regents of the University of California.
+# Copyright (c) 1985, 1986 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	7.1 (Berkeley) %G%
 # 
 BOOTS=	boot
 STDBOOS= defboo.com anyboo.com

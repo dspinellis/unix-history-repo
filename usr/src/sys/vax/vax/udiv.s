@@ -1,5 +1,5 @@
 /*
- *	@(#)udiv.s	6.3 (Berkeley) %G%
+ *	@(#)udiv.s	7.1 (Berkeley) %G%
  *
  *	udiv - unsigned division for vax-11
  *

@@ -1,4 +1,9 @@
-#	Makefile	6.5	86/03/12
+#
+# Copyright (c) 1980, 1986 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	Makefile	7.1	86/06/05
 #
 # Make a 780 rx01 floppy
 # 
