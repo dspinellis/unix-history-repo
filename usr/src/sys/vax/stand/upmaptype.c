@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)upmaptype.c	7.4 (Berkeley) %G%
+ *	@(#)upmaptype.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -12,8 +12,6 @@
  */
 #ifdef COMPAT_42
 #include "param.h" 
-#include "inode.h"
-#include "fs.h"
 #include "dkbad.h"
 #include "disklabel.h"
 #include "vmmac.h"

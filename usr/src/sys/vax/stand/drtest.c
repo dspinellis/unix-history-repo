@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)drtest.c	7.3 (Berkeley) %G%
+ *	@(#)drtest.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -11,10 +11,7 @@
  * by reading the disk a track at a time.
  */
 #include "param.h"
-#include "inode.h"
-#include "fs.h"
 #include "disklabel.h"
-
 #include "saio.h"
 
 #define SECTSIZ	512

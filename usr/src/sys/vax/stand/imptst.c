@@ -3,11 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)imptst.c	7.2 (Berkeley) %G%
+ *	@(#)imptst.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "inode.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../netinet/in.h"

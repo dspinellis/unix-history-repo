@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	7.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)format.c	7.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -24,8 +24,6 @@ static char sccsid[] = "@(#)format.c	7.4 (Berkeley) %G%";
  *	multi-pass format for disks with skip-sector capability
  */
 #include "param.h"
-#include "fs.h"
-#include "inode.h"
 #include "dkbad.h"
 #include "vmmac.h"
 #include "disklabel.h"
