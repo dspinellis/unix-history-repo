@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount.8	8.5 (Berkeley) %G%
+.\"     @(#)mount.8	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 8
@@ -65,7 +65,7 @@ Options are specified with a
 flag followed by a comma separated string of options.
 The following options are available:
 .Bl -tag -width indent
-.It asynchronous
+.It async
 All
 .Tn I/O
 to the file system should be done asynchronously.
@@ -93,7 +93,7 @@ Do not allow set-user-identifier or set-group-identifier bits to take effect.
 The same as
 .Fl f ;
 mount the file system read-only (even the super-user may not write it).
-.It synchronous
+.It sync
 All
 .Tn I/O
 to the file system should be done synchronously.
