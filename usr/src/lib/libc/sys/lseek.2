@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lseek.2	6.2 (Berkeley) %G%
+.\"	@(#)lseek.2	6.3 (Berkeley) %G%
 .\"
 .TH LSEEK 2 ""
 .UC 4
@@ -83,9 +83,6 @@ is associated with a pipe or a socket.
 [EINVAL]
 .I Whence
 is not a proper value.
-.TP 15
-[EINVAL]
-The resulting file pointer would be negative.
 .SH "SEE ALSO"
 dup(2), open(2)
 .SH BUGS

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)read.2	6.3 (Berkeley) %G%
+.\"	@(#)read.2	6.4 (Berkeley) %G%
 .\"
 .TH READ 2 ""
 .UC 4
@@ -39,7 +39,7 @@ performs the same action, but scatters the input data
 into the 
 .I iovcnt
 buffers specified by the members of the
-.I iovec
+.I iov
 array: iov[0], iov[1], ..., iov[iovcnt\|\-\|1].
 .PP
 For 
@@ -78,7 +78,7 @@ Upon return from
 the pointer is incremented by the number of bytes actually read.
 .PP
 Objects that are not capable of seeking always read from the current
-position.  The value of the pointer associated with such a 
+position.  The value of the pointer associated with such an
 object is undefined.
 .PP
 Upon successful completion,
@@ -116,6 +116,11 @@ An I/O error occurred while reading from the file system.
 [EINTR]
 A read from a slow device was interrupted before
 any data arrived by the delivery of a signal.
+.TP 15
+[EINVAL]
+The pointer associated with
+.I d
+was negative.
 .PP
 In addition, 
 .I readv

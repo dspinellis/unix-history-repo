@@ -2,17 +2,17 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)write.2	6.3 (Berkeley) %G%
+.\"	@(#)write.2	6.4 (Berkeley) %G%
 .\"
 .TH WRITE 2 ""
 .UC 4
 .SH NAME
-write, writev \- write on a file
+write, writev \- write output
 .SH SYNOPSIS
 .nf
 .ft B
-write(d, buf, nbytes)
-int d;
+cc = write(d, buf, nbytes)
+int cc, d;
 char *buf;
 int nbytes;
 .PP
@@ -21,10 +21,10 @@ int nbytes;
 #include <sys/uio.h>
 .PP
 .ft B
-writev(d, iov, ioveclen)
-int d;
+cc = writev(d, iov, iovcnt)
+int cc, d;
 struct iovec *iov;
-int ioveclen;
+int iovcnt;
 .fi
 .SH DESCRIPTION
 .I Write
@@ -36,8 +36,35 @@ from the buffer pointed to by
 .IR buf .
 .I Writev
 performs the same action, but gathers the output data
-from the \fIiovlen\fP buffers specified by the members
-of the \fIiovec\fP array: iov[0], iov[1], etc.
+from the 
+.I iovcnt
+buffers specified by the members of the
+.I iov
+array: iov[0], iov[1], ..., iov[iovcnt\|\-\|1].
+.PP
+For 
+.IR writev ,
+the 
+.I iovec
+structure is defined as
+.PP
+.nf
+.RS
+.DT
+struct iovec {
+	caddr_t	iov_base;
+	int	iov_len;
+};
+.RE
+.fi
+.PP
+Each 
+.I iovec
+entry specifies the base address and length of an area
+in memory from which data should be written.
+.I Writev
+will always write a complete area before proceeding
+to the next.
 .PP
 On objects capable of seeking, the \fIwrite\fP starts at a position
 given by the pointer associated with
@@ -60,12 +87,14 @@ by a user who
 \*(lqcaptures\*(rq a writable set-user-id file
 owned by the super-user.
 .SH "RETURN VALUE
-Upon successful completion the number of bytes actually writen
-is returned.  Otherwise a \-1 is returned and
+Upon successful completion the number of bytes actually written
+is returned.  Otherwise a \-1 is returned and the global variable
 .I errno
 is set to indicate the error.
 .SH ERRORS
 .I Write
+and
+.I writev
 will fail and the file pointer will remain unchanged if one or more
 of the following are true:
 .TP 15
@@ -88,6 +117,11 @@ file size limit or the maximum file size.
 Part of \fIiov\fP or data to be written to the file
 points outside the process's allocated address space.
 .TP 15
+[EINVAL]
+The pointer associated with
+.I d
+was negative.
+.TP 15
 [ENOSPC]
 There is no free space remaining on the file system
 containing the file.
@@ -98,5 +132,27 @@ containing the file has been exhausted.
 .TP 15
 [EIO]
 An I/O error occurred while reading from or writing to the file system.
+.PP
+In addition, 
+.I writev
+may return one of the following errors:
+.TP 15
+[EINVAL]
+.I Iovcnt
+was less than or equal to 0, or greater than 16.
+.TP 15
+[EINVAL]
+One of the
+.I iov_len
+values in the
+.I iov
+array was negative.
+.TP 15
+[EINVAL]
+The sum of the
+.I iov_len
+values in the
+.I iov
+array overflowed a 32-bit integer.
 .SH "SEE ALSO"
 lseek(2), open(2), pipe(2)
