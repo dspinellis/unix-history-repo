@@ -1,8 +1,10 @@
 #
-#	@(#)Makefile	5.1	(Berkeley)	85/07/12
+#	@(#)Makefile	5.2	(Berkeley)	86/07/26
 #
-libg.a:	dbxxx.s
-	as dbxxx.s -o libg.a
+DESTDIR=
+
+libg.a:	dbxxx.c
+	${CC} -E dbxxx.c | ${AS} -o libg.a
 
 install: libg.a
 	install -c libg.a ${DESTDIR}/usr/lib
