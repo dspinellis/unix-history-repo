@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.14 (Berkeley) %G%
+ *	@(#)vnode.h	8.15 (Berkeley) %G%
  */
 
 #include <sys/queue.h>
@@ -116,9 +116,10 @@ struct vattr {
 };
 
 /*
- * Flags for va_cflags.
+ * Flags for va_vaflags.
  */
 #define	VA_UTIMES_NULL	0x01		/* utimes argument was NULL */
+#define VA_EXCLUSIVE	0x02		/* exclusive create request */
 
 /*
  * Flags for ioflag.
