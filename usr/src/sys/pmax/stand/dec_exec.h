@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 1992 Regents of the University of California.
+/*-
+ * Copyright (c) 1993 Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -7,15 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dec_exec.h	7.1 (Berkeley) %G%
- *
- * devDiskLabel.h --
- *
- *      This defines the disk label that Sun writes on the 0'th sector of
- *      the 0'th cylinder of its SMD disks.  The disk label contains some
- *      geometry information and also the division of the disk into a
- *      number of partitions.  Each partition is identified to the drive
- *      by a different unit number.
+ *	@(#)dec_exec.h	7.2 (Berkeley) %G%
  */
 
 /*
