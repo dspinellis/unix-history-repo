@@ -6,8 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)qdivrem.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)qdivrem.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
+
+#include <unistd.h>
 
 #include "longlong.h"
 
@@ -29,17 +31,27 @@ static int bshift ();
 void 
 __bdiv (a, b, q, r, m, n)
      unsigned short *a, *b, *q, *r;
-     size_t m, n;
+     unsigned long m, n;
 {
   unsigned long qhat, rhat;
   unsigned long acc;
-  unsigned short *u = (unsigned short *) alloca (m);
-  unsigned short *v = (unsigned short *) alloca (n);
-  unsigned short *u0, *u1, *u2;
+  unsigned short array[12];
+  unsigned short *u, *v, *u0, *u1, *u2;
   unsigned short *v0;
   int d, qn;
   int i, j;
 
+  if (m > 16 || n > 8) {
+#ifdef KERNEL
+	panic("bdiv: out of space");
+#else
+#define	EMSG	"bdiv: out of space."
+	(void)write(STDERR_FILENO, EMSG, sizeof(EMSG) - 1);
+	abort();
+#endif
+  }
+  u = &array[0];
+  v = &array[m / sizeof(unsigned short)];
   m /= sizeof *a;
   n /= sizeof *b;
   qn = m - n;
