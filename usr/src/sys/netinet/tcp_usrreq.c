@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.74	83/02/10	*/
+/*	tcp_usrreq.c	1.75	83/02/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -240,6 +240,7 @@ tcp_usrreq(so, req, m, nam)
 
 	case PRU_SENDOOB:
 		if (sbspace(&so->so_snd) < -512) {
+			m_freem(m);
 			error = ENOBUFS;
 			break;
 		}
