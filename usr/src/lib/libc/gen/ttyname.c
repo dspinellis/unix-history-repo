@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)ttyname.c	5.8 (Berkeley) %G%";
 #include <fcntl.h>
 #include <dirent.h>
 #include <sgtty.h>
-#include <ndbm.h>
+#include <db.h>
 #include <unistd.h>
 #include <paths.h>
 
@@ -26,8 +26,8 @@ ttyname(fd)
 {
 	struct stat sb;
 	struct sgttyb ttyb;
-	DBM *db;
-	datum dp, key;
+	DB *db;
+	DBT data, key;
 	static char *__oldttyname();
 
 	/* Must be a terminal. */
@@ -37,15 +37,16 @@ ttyname(fd)
 	if (fstat(fd, &sb) || !S_ISCHR(sb.st_mode))
 		return(NULL);
 
-	if (!(db = dbm_open(_PATH_DEVDB, O_RDONLY, 0)))
-		return(__oldttyname(fd, &sb));
-	key.dptr = (char *)&sb.st_rdev;
-	key.dsize = sizeof(sb.st_rdev);
-	dp = dbm_fetch(db, key);
-	if (!dp.dptr)
-		return(__oldttyname(fd, &sb));
-	bcopy(dp.dptr, buf + sizeof(_PATH_DEV) - 1, dp.dsize);
-	return(buf);
+	if (db = hash_open(_PATH_DEVDB, O_RDONLY, 0, NULL)) {
+		key.data = (u_char *)&sb.st_rdev;
+		key.size = sizeof(sb.st_rdev);
+		if (!(db->get)(db, &key, &data, 0)) {
+			bcopy(data.data,
+			    buf + sizeof(_PATH_DEV) - 1, data.size);
+			return(buf);
+		}
+	}
+	return(__oldttyname(fd, &sb));
 }
 
 static char *
