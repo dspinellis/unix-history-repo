@@ -1,4 +1,4 @@
-/*	cy.c	1.9	87/01/11	*/
+/*	cy.c	1.10	87/01/30	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -303,10 +303,12 @@ cyopen(dev, flag)
 	cycommand(dev, CY_SENSE, 1);
 	if ((yc->yc_status&CYS_OL) == 0) {	/* not on-line */
 		uprintf("yc%d: not online\n", ycunit);
+		yc->yc_openf = 0;
 		return (ENXIO);
 	}
 	if ((flag&FWRITE) && (yc->yc_status&CYS_WP)) {
 		uprintf("yc%d: no write ring\n", ycunit);
+		yc->yc_openf = 0;
 		return (ENXIO);
 	}
 	yc->yc_blkno = (daddr_t)0;
