@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mscp.h	7.2 (Berkeley) %G%
+ *	@(#)mscp.h	7.3 (Berkeley) %G%
  */
 /*
  * Definitions for the Mass Storage Control Protocol
@@ -269,6 +269,30 @@ struct mscpv_guse {
 };
 
 /*
+ * Macros to break up and build media IDs.  An ID encodes the port
+ * type in the top 10 bits, and the drive type in the remaining 22.
+ * The 10 bits, and 15 of the 22, are in groups of 5, with the value
+ * 0 representing space and values 1..26 representing A..Z.  The low
+ * 7 bits represent a number in 0..127.  Hence an RA81 on a UDA50
+ * is <D><U><R><A>< >81, or 0x25641051.  This encoding scheme is known
+ * in part in uda.c.
+ *
+ * The casts below are just to make pcc generate better code.
+ */
+#define	MSCP_MEDIA_PORT(id)	(((long)(id) >> 22) & 0x3ff)	/* port */
+#define	MSCP_MEDIA_DRIVE(id)	((long)(id) & 0x003fffff)	/* drive */
+#define	MSCP_MID_ECH(n, id)	(((long)(id) >> ((n) * 5 + 7)) & 0x1f)
+#define	MSCP_MID_CHAR(n, id) \
+	(MSCP_MID_ECH(n, id) ? MSCP_MID_ECH(n, id) + '@' : ' ')
+#define	MSCP_MID_NUM(id)	((id) & 0x7f)
+/* for, e.g., RA81 */
+#define	MSCP_MKDRIVE2(a, b, n) \
+	(((a) - '@') << 17 | ((b) - '@') << 12 | (n))
+/* for, e.g., RRD50 */
+#define	MSCP_MKDRIVE3(a, b, c, n) \
+	(((a) - '@') << 17 | ((b) - '@') << 12 | ((c) - '@') << 7 | (n))
+
+/*
  * Error datagram variant.
  */
 struct mscpv_erd {
@@ -293,7 +317,7 @@ struct mscpv_erd {
 #define	erd_sdecyl	erd_un2.un_s
 	long	erd_volser;		/* volume serial number */
 	u_long	erd_hdr;		/* `header' (block number) */
-	char	erd_sdistat[12];	/* SDI status information (?) */
+	u_char	erd_sdistat[12];	/* SDI status information (?) */
 };
 
 /*
