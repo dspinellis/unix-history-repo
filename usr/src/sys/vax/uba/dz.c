@@ -1,4 +1,4 @@
-/*	dz.c	4.8	%G%	*/
+/*	dz.c	4.9	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -425,7 +425,7 @@ dzscan()
 		dzaddr = dzpdma[i].p_addr;
 		tp = &dz_tty[i];
 		bit = 1<<(i&07);
-		if (dzaddr->dzmsr & bit) {
+		if (dzaddr->dzmsr & bit || (i == 6 || i == 7)) {
 			/* carrier present */
 			if ((tp->t_state & CARR_ON) == 0) {
 				wakeup((caddr_t)&tp->t_rawq);
