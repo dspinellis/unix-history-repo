@@ -1,4 +1,4 @@
-/*	if_imp.c	6.2	84/08/29	*/
+/*	if_imp.c	6.3	85/02/28	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -7,8 +7,6 @@
  *
  * The IMP-host protocol is handled here, leaving
  * hardware specifics to the lower level interface driver.
- *
- * NB: only handles IMPS on class A networks.
  */
 #include "../machine/pte.h"
 
@@ -73,6 +71,8 @@ static char *impmessage[] = {
 	"to reload software",
 	"for emergency reset"
 };
+
+#define HOSTDEADTIMER	10		/* How long to wait when down */
 
 int	impdown(), impinit(), impioctl(), impoutput();
 
@@ -179,13 +179,8 @@ impinput(unit, m)
 	}
 
 	if (ip->il_mtype != IMPTYPE_DATA) {
-#ifdef notdef
-		addr.s_net = ip->il_network;
-#else
-		addr.s_net = sc->imp_if.if_net;
-#endif
-		addr.s_imp = ip->il_imp;
-		addr.s_host = ip->il_host;
+		/* If not data packet, build IP addr from leader (BRL) */
+		imp_leader_to_addr( &addr, ip, &sc->imp_if );
 	}
 	switch (ip->il_mtype) {
 
@@ -238,13 +233,17 @@ impinput(unit, m)
 		if (sc->imp_state == IMPS_INIT && --sc->imp_dropcnt > 0)
 			goto drop;
 		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
-		if (sin->sin_addr.s_host != ip->il_host ||
-		    sin->sin_addr.s_imp != ip->il_imp) {
-			sc->imp_if.if_host[0] =
-				sin->sin_addr.s_host = ip->il_host;
-			sin->sin_addr.s_imp = ip->il_imp;
-			impmsg(sc, "reset (host %d/imp %d)", (u_int)ip->il_host,
-				ntohs(ip->il_imp));
+		if( ip->il_imp != 0 )  {	/* BRL */
+			struct in_addr leader_addr;
+			imp_leader_to_addr( &leader_addr, ip, &sc->imp_if );
+			if( sin->sin_addr.s_addr != leader_addr.s_addr )  {
+				impmsg(sc, "address x%x (%d/%d)",
+					htonl( leader_addr.s_addr ),
+					(u_int)ip->il_host,
+					htons(ip->il_imp) );
+				sin->sin_addr.s_addr = leader_addr.s_addr;
+				sc->imp_if.if_host[0] = in_lnaof( leader_addr.s_addr );
+			}
 		}
 		sc->imp_state = IMPS_UP;
 		sc->imp_if.if_flags |= IFF_UP;
@@ -274,7 +273,7 @@ impinput(unit, m)
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
 		impnotify((int)ip->il_mtype, (struct control_leader *)ip,
-		    hostlookup(addr));
+		    hostlookup(addr), sc->imp_if);
 		goto rawlinkin;
 
 	/*
@@ -293,6 +292,7 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_RESET:
 		impmsg(sc, "interface reset");
+		hostreset(sc->imp_if.if_net);	/* clear RFNM counts */
 		impnoops(sc);
 		goto drop;
 
@@ -322,10 +322,8 @@ impinput(unit, m)
 	rawlinkin:
 		impproto.sp_protocol = ip->il_link;
 		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
-		impdst.sin_addr = sin->sin_addr;;
-		impsrc.sin_addr.s_net = ip->il_network;
-		impsrc.sin_addr.s_host = ip->il_host;
-		impsrc.sin_addr.s_imp = ip->il_imp;
+		impdst.sin_addr = sin->sin_addr;
+		imp_leader_to_addr( &impsrc.sin_addr, ip, &sc->imp_if );
 		raw_input(m, &impproto, (struct sockaddr *)&impsrc,
 		  (struct sockaddr *)&impdst);
 		return;
@@ -357,14 +355,14 @@ impdown(sc)
 }
 
 /*VARARGS*/
-impmsg(sc, fmt, a1, a2)
+impmsg(sc, fmt, a1, a2, a3)
 	struct imp_softc *sc;
 	char *fmt;
 	u_int a1;
 {
 
 	printf("imp%d: ", sc->imp_if.if_unit);
-	printf(fmt, a1, a2);
+	printf(fmt, a1, a2, a3);
 	printf("\n");
 }
 
@@ -372,20 +370,16 @@ impmsg(sc, fmt, a1, a2)
  * Process an IMP "error" message, passing this
  * up to the higher level protocol.
  */
-impnotify(what, cp, hp)
+impnotify(what, cp, hp, ifp)
 	int what;
 	struct control_leader *cp;
 	struct host *hp;
+	struct ifnet *ifp;		/* BRL */
 {
 	struct in_addr in;
 
-#ifdef notdef
-	in.s_net = cp->dl_network;
-#else
-	in.s_net = 10;			/* XXX */
-#endif
-	in.s_host = cp->dl_host;
-	in.s_imp = cp->dl_imp;
+	imp_leader_to_addr( &in, (struct imp_leader *) cp, ifp );  /* BRL */
+
 	if (cp->dl_link != IMPLINK_IP)
 		raw_ctlinput(what, (caddr_t)&in);
 	else
@@ -393,6 +387,7 @@ impnotify(what, cp, hp)
 	if (hp) {
 		hp->h_flags |= (1 << what);
 		hostfree(hp);
+		hp->h_timer = HOSTDEADTIMER;
 	}
 }
 
@@ -466,11 +461,9 @@ impoutput(ifp, m0, dst)
 	imp = mtod(m, struct imp_leader *);
 	imp->il_format = IMP_NFF;
 	imp->il_mtype = IMPTYPE_DATA;
-	imp->il_network = dnet;
-	imp->il_host = dhost;
-	imp->il_imp = htons((u_short)dimp);
-	imp->il_length =
-		htons((u_short)(len + sizeof(struct imp_leader)) << 3);
+	imp_addr_to_leader(imp,
+		((struct sockaddr_in *) dst)->sin_addr.s_addr ); /* BRL */
+	imp->il_length = htons( (u_short) len << 3 );		/* BRL */
 	imp->il_link = dlink;
 	imp->il_flags = imp->il_htype = imp->il_subtype = 0;
 
@@ -505,18 +498,12 @@ impsnd(ifp, m)
 	if (ip->il_mtype == IMPTYPE_DATA) {
 		struct in_addr addr;
 
-#ifdef notdef
-                addr.s_net = ip->il_network;
-#else
-		addr.s_net = ifp->if_net;	/* XXX */
-#endif
-                addr.s_host = ip->il_host;
-                addr.s_imp = ip->il_imp;
+		imp_leader_to_addr( &addr, ip, ifp );	/* BRL */
 		if ((hp = hostlookup(addr)) == 0)
 			hp = hostenter(addr);
 		if (hp && (hp->h_flags & (HF_DEAD|HF_UNREACH))) {
 			error = hp->h_flags&HF_DEAD ? EHOSTDOWN : EHOSTUNREACH;
-			hp->h_timer = HOSTTIMER;
+			hp->h_timer = HOSTDEADTIMER;
 			hp->h_flags &= ~HF_INUSE;
 			goto bad;
 		}
@@ -525,7 +512,10 @@ impsnd(ifp, m)
 		 * If IMP would block, queue until RFNM
 		 */
 		if (hp) {
-			if (hp->h_rfnm < 8) {
+#ifndef NORFNM					/* BRL */
+			if (hp->h_rfnm < 8)
+#endif
+			{
 				hp->h_rfnm++;
 				goto enque;
 			}
@@ -658,4 +648,68 @@ printbyte(cp, n)
 	putchar('\n');
 }
 #endif
+
+/*
+ * Routine to convert from IMP Leader to InterNet Address.
+ *
+ * This procedure is necessary because IMPs may be assigned Class A, B, or C
+ * network numbers, but only have 8 bits in the leader to reflect the
+ * IMP "network number".  The strategy is to take the network number from
+ * the ifnet structure, and blend in the host-on-imp and imp-on-net numbers
+ * from the leader.
+ *
+ * There is no support for "Logical Hosts".
+ *
+ * Class A:	Net.Host.0.Imp
+ * Class B:	Net.net.Host.Imp
+ * Class C:	Net.net.net.(Host4|Imp4)
+ */
+imp_leader_to_addr( ap, ip, ifp )
+register struct in_addr *ap;
+register struct imp_leader *ip;
+register struct ifnet *ifp;
+{
+	register long final;
+	register struct sockaddr_in *sin;
+	int imp = htons(ip->il_imp);
+
+	sin = (struct sockaddr_in *) (&ifp->if_addr);
+	final = htonl( sin->sin_addr.s_addr );		/* host order */
+
+	if( IN_CLASSA( final ) )  {
+		final &= IN_CLASSA_NET;
+		final |= (imp & 0xFF) | ((ip->il_host & 0xFF)<<16);
+	} else if( IN_CLASSB( final ) )  {
+		final &= IN_CLASSB_NET;
+		final |= (imp & 0xFF) | ((ip->il_host & 0xFF)<<8);
+	} else {
+		final &= IN_CLASSC_NET;
+		final |= (imp & 0x0F) | ((ip->il_host & 0x0F)<<4);
+	}
+	ap->s_addr = htonl( final );
+}
+
+/*
+ * Function to take InterNet address and fill in IMP leader fields.
+ */
+imp_addr_to_leader( imp, a )
+register struct imp_leader *imp;
+long a;
+{
+	register long addr = htonl( a );		/* host order */
+
+	imp->il_network = 0;	/* !! */
+
+	if( IN_CLASSA( addr ) )  {
+		imp->il_host = ((addr>>16) & 0xFF);
+		imp->il_imp = addr & 0xFF;
+	} else if ( IN_CLASSB( addr ) )  {
+		imp->il_host = ((addr>>8) & 0xFF);
+		imp->il_imp = addr & 0xFF;
+	} else {
+		imp->il_host = ((addr>>4) & 0xF);
+		imp->il_imp = addr & 0xF;
+	}
+	imp->il_imp = htons(imp->il_imp);	/* network order! */
+}
 #endif

@@ -1,4 +1,4 @@
-/*	raw_imp.c	6.2	84/08/29	*/
+/*	raw_imp.c	6.3	85/02/28	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -76,15 +76,9 @@ rimp_output(m, so)
 		len += n->m_len;
 	ip->il_length = htons((u_short)(len << 3));
 	sin = (struct sockaddr_in *)&rp->rcb_faddr;
-#ifdef notdef
-	ip->il_network = sin->sin_addr.s_net;
-#else
-	ip->il_network = 0;
-#endif
-	ip->il_host = sin->sin_addr.s_host;
-	ip->il_imp = sin->sin_addr.s_imp;
+	imp_addr_to_leader( ip, sin->sin_addr.s_addr );	/* BRL */
 	/* no routing here */
-	ifp = if_ifonnetof((int)sin->sin_addr.s_net);
+	ifp = if_ifonnetof(in_netof(sin->sin_addr));
 	if (ifp)
 		return (impoutput(ifp, m, (struct sockaddr *)sin));
 	error = ENETUNREACH;
