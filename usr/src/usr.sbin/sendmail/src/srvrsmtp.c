@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.58 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.59 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.58 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.59 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -334,7 +334,7 @@ smtp(e)
 			define('s', sendinghost, e);
 			initsys(e);
 			nrcpts = 0;
-			e->e_flags |= EF_LOGSENDER;
+			e->e_flags |= EF_LOGSENDER|EF_CLRQUEUE;
 			setproctitle("%s %s: %.80s", e->e_id, CurSmtpClient, inp);
 
 			/* child -- go do the processing */
@@ -509,6 +509,9 @@ smtp(e)
 			collect(InChannel, TRUE, doublequeue, NULL, e);
 			if (Errors != 0)
 				goto abortmessage;
+
+			/* make sure we actually do delivery */
+			e->e_flags &= ~EF_CLRQUEUE;
 
 			/* from now on, we have to operate silently */
 			HoldErrs = TRUE;
