@@ -1,5 +1,5 @@
 /*
- *	$Id: isofs_vfsops.c,v 1.5 1993/07/19 13:40:09 cgd Exp $
+ *	$Id: isofs_vfsops.c,v 1.2 1993/07/20 03:27:36 jkh Exp $
  */
 
 #include "param.h"
@@ -172,12 +172,12 @@ isofs_mount(mp, path, data, ndp, p)
 	imp = VFSTOISOFS(mp);
 
 	/* Check the Rock Ridge Extention support */
-	if ( args.exflags & ISOFSMNT_NORRIP ) {
+	if ( args.exflags & MNT_NORRIP ) {
 		imp->iso_ftype = ISO_FTYPE_9660;
-		mp->mnt_flag  |= ISOFSMNT_NORRIP;
+		mp->mnt_flag  |= MNT_NORRIP;
 	} else {
 		imp->iso_ftype = ISO_FTYPE_RRIP;
-		mp->mnt_flag  &= ~ISOFSMNT_NORRIP;
+		mp->mnt_flag  &= ~MNT_NORRIP;
 	}
 
 	(void) copyinstr(path, imp->im_fsmnt, sizeof(imp->im_fsmnt)-1, &size);
