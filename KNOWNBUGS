@@ -1,0 +1,8 @@
+This file lists known problems with this release of FreeBSD
+
+usr/bin/gdb:
+	The gdb in the release will not work on shared objects nor will it
+	work with C++ executables.  Please use the gdb in the ports area for
+	debugging shared and/or C++ code.
+
+$Id$
