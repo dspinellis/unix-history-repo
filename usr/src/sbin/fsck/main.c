@@ -1,4 +1,4 @@
-char version[] = "@(#)main.c	2.22	(Berkeley)	%G%";
+char version[] = "@(#)main.c	2.23	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -632,6 +632,17 @@ pass1()
 				statemap[inum] = DIRCT ? DSTATE : FSTATE;
 				badblk = dupblk = 0; filsize = 0; maxblk = 0;
 				ckinode(dp, ADDR);
+				filsize *= btodb(sblock.fs_fsize);
+				if (dp->di_blocks != filsize) {
+					pwarn("INCORRECT BLOCK COUNT I=%u (%ld should be %ld)",
+					    inum, dp->di_blocks, filsize);
+					if (preen)
+						printf(" (CORRECTED)\n");
+					else if (reply("CORRECT") == 0)
+						continue;
+					dp->di_blocks = filsize;
+					inodirty();
+				}
 				continue;
 		unknown:
 				if (!SOCK)
@@ -1883,7 +1894,7 @@ bread(fcp, buf, blk, size)
 	register size;
 	char *buf;
 {
-	if (lseek(fcp->rfdes, blk * DEV_BSIZE, 0) < 0)
+	if (lseek(fcp->rfdes, dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	else if (read(fcp->rfdes, buf, size) == size)
 		return (1);
@@ -1900,7 +1911,7 @@ bwrite(fcp, buf, blk, size)
 
 	if (fcp->wfdes < 0)
 		return (0);
-	if (lseek(fcp->wfdes, blk * DEV_BSIZE, 0) < 0)
+	if (lseek(fcp->wfdes, dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	else if (write(fcp->wfdes, buf, size) == size) {
 		fcp->mod = 1;
