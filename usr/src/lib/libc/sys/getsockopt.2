@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsockopt.2	8.1 (Berkeley) %G%
+.\"     @(#)getsockopt.2	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSOCKOPT 2
@@ -112,6 +112,7 @@ and set with
 .Bl -column SO_OOBINLINE -offset indent
 .It Dv SO_DEBUG Ta "enables recording of debugging information"
 .It Dv SO_REUSEADDR Ta "enables local address reuse"
+.It Dv SO_REUSEPORT Ta "enables duplicate address and port bindings"
 .It Dv SO_KEEPALIVE Ta "enables keep connections alive"
 .It Dv SO_DONTROUTE Ta "enables routing bypass for outgoing messages"
 .It Dv SO_LINGER  Ta "linger on close if data present"
@@ -134,6 +135,13 @@ indicates that the rules used in validating addresses supplied
 in a
 .Xr bind 2
 call should allow reuse of local addresses.
+.Dv SO_REUSEPORT
+allows completely duplicate bindings by multiple processes
+if they all set
+.Dv SO_REUSEPORT
+before binding the port.
+This option permits multiple instances of a program to each
+receive UDP/IP multicast or broadcast datagrams destined for the bound port.
 .Dv SO_KEEPALIVE
 enables the
 periodic transmission of messages on a connected socket.  Should the
