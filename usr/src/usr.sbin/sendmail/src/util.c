@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	4.3		%G%);
+SCCSID(@(#)util.c	4.4		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -812,26 +812,6 @@ waitfor(pid)
 	if (i < 0)
 		st = -1;
 	return (st);
-}
-/*
-**  CLOSEALL -- close all extraneous file descriptors
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Closes all file descriptors except zero, one, and two.
-*/
-
-closeall()
-{
-	int i;
-
-	for (i = 3; i < 50; i++)
-		(void) close(i);
 }
 /*
 **  BITINTERSECT -- tell if two bitmaps intersect

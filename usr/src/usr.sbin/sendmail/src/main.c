@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.6		%G%);
+SCCSID(@(#)main.c	4.7		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -155,7 +155,8 @@ main(argc, argv, envp)
 	CurEnv = &BlankEnvelope;
 
 	/* make sure we have a clean slate */
-	closeall();
+	for (i = 3; i < 50; i++)
+		(void) close(i);
 
 # ifdef LOG
 	openlog("sendmail", LOG_PID);

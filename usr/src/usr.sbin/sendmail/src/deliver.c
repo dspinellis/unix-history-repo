@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.4		%G%);
+SCCSID(@(#)deliver.c	4.5		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -758,6 +758,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	}
 	else if (pid == 0)
 	{
+		int i;
+
 		/* child -- set up input & exec mailer */
 		/* make diagnostic output be standard output */
 		(void) signal(SIGINT, SIG_IGN);
@@ -804,32 +806,23 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			}
 		}
 
-		/*
-		**  We have to be careful with vfork - we can't mung up the
-		**  memory but we don't want the mailer to inherit any extra
-		**  open files.  Chances are the mailer won't
-		**  care about an extra file, but then again you never know.
-		**  Actually, we would like to close(fileno(pwf)), but it's
-		**  declared static so we can't.  But if we fclose(pwf), which
-		**  is what endpwent does, it closes it in the parent too and
-		**  the next getpwnam will be slower.  If you have a weird
-		**  mailer that chokes on the extra file you should do the
-		**  endpwent().			-MRH
-		**
-		**  Similar comments apply to log.  However, openlog is
-		**  clever enough to set the FIOCLEX mode on the file,
-		**  so it will be closed automatically on the exec.
-		*/
-
-		closeall();
+		/* arrange for all the files to be closed */
+		for (i = 3; i < 50; i++)
+#ifdef FIOCLEX
+			(void) ioctl(i, FIOCLEX, 0);
+#else FIOCLEX
+			(void) close(i);
+#endif FIOCLEX
 
 		/* try to execute the mailer */
 		execv(m->m_mailer, pvp);
 
-		/* syserr fails because log is closed */
-		/* syserr("Cannot exec %s", m->m_mailer); */
+#ifdef FIOCLEX
+		syserr("Cannot exec %s", m->m_mailer);
+#else FIOCLEX
 		printf("Cannot exec '%s' errno=%d\n", m->m_mailer, errno);
 		(void) fflush(stdout);
+#endif FIOCLEX
 		_exit(EX_UNAVAILABLE);
 	}
 
