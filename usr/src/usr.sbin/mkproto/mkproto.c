@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)mkproto.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mkproto.c	4.3	(Berkeley)	%G%";
 
 /*
  * Make a file system prototype.
@@ -245,7 +245,7 @@ entry(ip, inum, str, buf)
 	char *buf;
 {
 	register struct direct *dp, *odp;
-	int oldsize, newsize, freespace;
+	int oldsize, newsize, spacefree;
 
 	odp = dp = (struct direct *)buf;
 	while ((int)dp - (int)buf < ip->i_size) {
@@ -256,14 +256,14 @@ entry(ip, inum, str, buf)
 		oldsize = DIRSIZ(odp);
 	else
 		oldsize = 0;
-	freespace = odp->d_reclen - oldsize;
+	spacefree = odp->d_reclen - oldsize;
 	dp = (struct direct *)((int)odp + oldsize);
 	dp->d_ino = inum;
 	dp->d_namlen = strlen(str);
 	newsize = DIRSIZ(dp);
-	if (freespace >= newsize) {
+	if (spacefree >= newsize) {
 		odp->d_reclen = oldsize;
-		dp->d_reclen = freespace;
+		dp->d_reclen = spacefree;
 	} else {
 		dp = (struct direct *)((int)odp + odp->d_reclen);
 		if ((int)dp - (int)buf >= fs->fs_bsize) {

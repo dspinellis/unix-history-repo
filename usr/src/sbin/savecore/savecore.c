@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)savecore.c	4.11 (Berkeley) 83/03/21";
+static	char *sccsid = "@(#)savecore.c	4.12 (Berkeley) 83/05/03";
 #endif
 
 /*
@@ -252,7 +252,7 @@ check_space()
 {
 	struct stat dsb;
 	register char *ddev;
-	int dfd, freespace;
+	int dfd, spacefree;
 	struct fs fs;
 
 	if (stat(dirname, &dsb) < 0) {
@@ -264,8 +264,8 @@ check_space()
 	Lseek(dfd, (long)(SBLOCK * DEV_BSIZE), 0);
 	Read(dfd, (char *)&fs, sizeof fs);
 	close(dfd);
-	freespace = fs.fs_cstotal.cs_nbfree * fs.fs_bsize / 1024;
-	if (read_number("minfree") > freespace) {
+	spacefree = fs.fs_cstotal.cs_nbfree * fs.fs_bsize / 1024;
+	if (read_number("minfree") > spacefree) {
 		fprintf(stderr,
 		   "savecore: Dump omitted, not enough space on device\n");
 		return (0);
