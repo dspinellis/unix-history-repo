@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.50 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.51 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -2739,6 +2739,12 @@ wt|wy85-w|wyse85-w|wyse 85 in 132-column mode:\
 wu|wy85-wvb|wyse85-wvb|wyse 85 with visual bell 132-columns:\
 	:vb=\E[30h\E,\E[30l:\
 	:tc=wy85:
+# From freudent@eric.ultra.nyu.edu (Eric Freudenthal)
+wv|wy100q|Wyse 100 for Quotron:\
+	:al=\EE:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:\
+	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`\072\200\EC\EDF\E0\E'\E(\EA21:\
+	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
+	:so=\EG4:se=\EG0:sg#1:sr=\Ej:ho=^^:ug#1:
 # # --------------------------------
 #
 # y: TELERAY
