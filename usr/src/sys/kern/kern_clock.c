@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.3	%G%	*/
+/*	kern_clock.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -128,6 +128,9 @@ out:
 		rcnt = 0;
 	} else
 		rcnt++;
+#ifdef CHAOS
+	ch_clock();
+#endif
 	if (!noproc) {
 		s = u.u_procp->p_rssize;
 		u.u_vm.vm_idsrss += s;
