@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)trees.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.4 (Berkeley) %G%";
 # include "mfile1"
 
 	    /* corrections when in violation of lint */
@@ -1301,6 +1301,7 @@ moditype( ty ) TWORD ty; {
 	switch( ty ){
 
 	case TVOID:
+		return( MPTR );
 	case UNDEF:
 		return(0); /* type is void */
 	case ENUMTY:
