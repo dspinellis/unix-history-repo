@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dumplab.c	1.2 (UKC) %G%";
+static char *sccsid = "@(#)dumplab.c	1.3 (UKC) %G%";
 #endif not lint
 /*
  *	This file included by Peter Collinson
@@ -59,6 +59,10 @@ int	labchk;			/* check labels - set by t(est) flag */
  *	label: date dev=<devname> level=<dump level> reel=<volume number> inode=<start inode>
  */
 char dumpvolumes[] = "/etc/dumpvolumes";
+
+#ifdef RDUMP
+extern char *host;
+#endif RDUMP
 
 /*
  *	Called from argument decoding to store the
@@ -248,7 +252,7 @@ initialtape()
 	if (labchk == 0)
 		return;
 	if (firstpr == 0)
-		msg("Mount tape %s for reel 1 of the dump\n", createlabel(0));
+		msg("Mount tape %s for reel 1 of the dump\n", createlabel(1));
 	firstpr = 1;
 }
 
@@ -272,34 +276,58 @@ labelest(etapes)
  *	labelcheck
  *	read a dump header and check that the tape header contains
  *	the label we expected
- *	close the fd on error to allow upper levels to loop
+ *	close the tape after use
  */
-labelcheck(fd, tno)
-	int fd;
+labelcheck(tno)
 	int tno;
 {	
-	union u_spcl uin;	/* lots on the stack but that should be OK */
+	register fd;
+	union u_spcl uin;
 	register char *label;
 	register char *ontape = uin.s_spcl.c_label;
-
+	
 	if (labchk == 0 || pipeout)
 		return(0);
 	label = createlabel(tno);
+
+#ifdef RDUMP
+	/* doing it this way to make it easier to read */
+	if (host) {
+		while (rmtopen(tape, 0) < 0)
+			if (!query("Cannot open tape. Do you want to retry the open?"))
+				dumpabort();
+		if (rmtread((char *)&uin, sizeof uin) != sizeof uin) {
+			msg("Tape does not start with the correctly sized record\n");
+			(void)rmtclose();
+			return(-1);
+		}
+		if (ontape[0] == '\0' ||
+		    strcmp(ontape, "none") == 0 ||
+		    strcmp(ontape, label) == 0) {
+			(void)rmtclose();
+			return(0);
+		}
+		msg("Tape labels do not match should be `%s' is `%s'\n", label, ontape);
+		(void)rmtclose();
+		return(-1);
+	}
+#endif RDUMP
+	while ((fd = open(tape, 0)) < 0)
+		if (!query("Cannot open tape. Do you want to retry the open?"))
+			dumpabort();
 	if (read(fd, (char *)&uin, sizeof uin) != sizeof uin) {
 		msg("Tape does not start with the correctly sized record\n");
-		close(fd);
+		(void)close(fd);
 		return(-1);
 	}
 	if (ontape[0] == '\0' ||
 	    strcmp(ontape, "none") == 0 ||
 	    strcmp(ontape, label) == 0) {
-		/* skip back one record */
-		if (backone(fd) < 0)
-			labfatal("Label check cannot backspace tape\n");
+		(void)close(fd);
 		return(0);
 	}
 	msg("Tape labels do not match should be `%s' is `%s'\n", label, ontape);
-	close(fd);
+	(void)close(fd);
 	return(-1);
 }
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumptape.c	1.3 (UKC) %G%	5.8 (Berkeley) 2/23/87";
+static char sccsid[] = "@(#)dumptape.c	1.4 (UKC) %G%	5.8 (Berkeley) 2/23/87";
 #endif not lint
 
 #include "dump.h"
@@ -313,6 +313,9 @@ otape()
 		msg("Child on Tape %d has parent %d, my pid = %d\n",
 			tapeno+1, parentpid, getpid());
 #endif TDEBUG
+		while (labelcheck(tapeno+1) < 0)
+			if (!query("Problem with tape label.  Do you want to retry the open?"))
+				dumpabort();
 #ifdef RDUMP
 		while ((to = (host ? rmtopen(tape, 2) :
 			pipeout ? 1 : creat(tape, 0666))) < 0)
@@ -320,10 +323,6 @@ otape()
 		while ((to = pipeout ? 1 : creat(tape, 0666)) < 0)
 #endif RDUMP
 			if (!query("Cannot open tape.  Do you want to retry the open?"))
-				dumpabort();
-
-		if (labelcheck(to, tapeno+1) < 0)
-			if (!query("Problem with tape label.  Do you want to retry the open?"))
 				dumpabort();
 
 		enslave();  /* Share open tape file descriptor with slaves */
@@ -533,22 +532,6 @@ atomic(func, fd, buf, count)
 	while ((got = (*func)(fd, buf, need)) > 0 && (need -= got) > 0)
 		buf += got;
 	return (got < 0 ? got : count - need);
-}
-
-/*
- *	Added by Peter C to backspace one record after a label read
- */
-backone(fd)
-{
-	struct mtop mtop;
-	
-	mtop.mt_op = MTBSR;
-	mtop.mt_count = 1;
-#ifdef RDUMP
-	if (host)
-		return(rmtioctl(fd, MTIOCTOP, &mtop));
-#endif RDUMP
-	return(ioctl(fd, MTIOCTOP, &mtop));
 }
 	
 /*
