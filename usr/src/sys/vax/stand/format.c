@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)format.c	6.7 (Berkeley) %G%";
 #endif not lint
 
 
@@ -41,7 +41,8 @@ static char sccsid[] = "@(#)format.c	6.6 (Berkeley) %G%";
 #define SSERR		0
 #define BSERR		1
 
-#define SSDEV		((ioctl(iob[fd-3], SAIOSSDEV, (char *)0) == 0))
+#define SSDEV(fd)	(ioctl((fd), SAIOSSDEV, (char *)0) == 0)
+#define MAXECCBITS	3
 
 struct sector {
 	u_short	header1;
@@ -50,6 +51,7 @@ struct sector {
 };
 
 struct	dkbad dkbad;		/* bad sector table */
+struct	dkbad oldbad;		/* old bad sector table */
 struct	dkbad sstab;		/* skip sector table */
 
 #define	NERRORS		6
@@ -60,17 +62,18 @@ errornames[NERRORS] = {
 #define	FE_WCE		1
 	"Write check",
 #define	FE_ECC		2
-	"ECC",
+	"Hard ECC",
 #define	FE_HARD		3
 	"Other hard",
 #define	FE_TOTAL	4
-	"Total",
+	"Marked bad",
 #define	FE_SSE		5
-	"Skip sector",
+	"Skipped",
 };
 
 int	errors[NERRORS];	/* histogram of errors */
 int	pattern;
+int	maxeccbits;
 
 /*
  * Purdue/EE severe burnin patterns.
@@ -89,9 +92,10 @@ unsigned short ppat[] = {
 #define	NPT	(sizeof (ppat) / sizeof (short))
 int	maxpass, npat;	/* subscript to ppat[] */
 int	severe;		/* nz if running "severe" burnin */
+int	ssdev;			/* device supports skip sectors */
 int	startcyl, endcyl, starttrack, endtrack;
-int	nbads;		/* subscript for bads */
-long	bads[MAXBADDESC]; /* Bad blocks accumulated */
+int	nbads;			/* subscript for bads */
+daddr_t	bads[2*MAXBADDESC]; 	/* Bad blocks accumulated */
 
 char	*malloc();
 int	qcompar();
@@ -124,24 +128,21 @@ again:
 	ioctl(fd, SAIODEVDATA, &st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
 	  st.ncyl, st.ntrak, st.nsect);
+	ssdev = SSDEV(fd);
+	if (ssdev) {
+		ioctl(fd, SAIOSSI, (char *)0);	/* set skip sector inhibit */
+		st.nsect++;
+		st.nspc += st.ntrak;
+		printf("(not counting skip-sector replacement)\n");
+	}
 	getrange(&st);
 	if (getpattern())
 		goto again;
 	printf("Start formatting...make sure the drive is online\n");
-	if (severe)
-		ioctl(fd, SAIOSEVRE, (char *) 0);
 	ioctl(fd, SAIONOBAD, (char *)0);
-	ioctl(fd, SAIOECCLIM, (char *)0);
+	ioctl(fd, SAIORETRIES, (char *)0);
+	ioctl(fd, SAIOECCLIM, (char *)maxeccbits);
 	ioctl(fd, SAIODEBUG, (char *)debug);
-	if (SSDEV) {
-		if (severe) {
-			printf("Severe burnin doesn't work with RM80 yet\n");
-			exit(1);
-		}
-		ioctl(fd, SAIOSSI, (char *)0);	/* set skip sector inhibit */
-		st.nsect++;
-		st.nspc += st.ntrak;
-	}
 	tracksize = sizeof (struct sector) * st.nsect;
 	rtracksize = SECTSIZ * st.nsect;
 	bp = (struct sector *)malloc(tracksize);
@@ -195,7 +196,7 @@ more:
 				/*
 				 * Don't record errors during write,
 				 * all errors will be found during
-				 * writecheck performed below.
+				 * check performed below.
 				 */
 				sn = iob[fd - 3].i_errblk;
 				cbp += sn - sector;
@@ -210,20 +211,25 @@ more:
 			 * sector to verify.
 			 */
 			for (resid = rtracksize, rcbp = rbp, sn = sector;;) {
-				int cc;
+				int cc, rsn;
 
 				lseek(fd, sn * SECTSIZ, 0);
 				cc = read(fd, rcbp, resid);
 				if (cc == resid)
 					break;
 				sn = iob[fd-3].i_errblk;
-				printf("sector %d, read error\n", sn);
+				if (ssdev) {
+					rsn = sn - (sn / st.nsect);
+					printf("data ");
+				} else
+					rsn = sn;
+				printf("sector %d, read error\n\n", rsn);
 				if (recorderror(fd, sn, &st) < 0 && pass > 0)
 					goto out;
 				/* advance past bad sector */
 				sn++;
-				rcbp += sn - sector;
-				resid -= ((sn - sector) * SECTSIZ);
+				resid = rtracksize - ((sn - sector) * SECTSIZ);
+				rcbp = rbp + ((sn - sector) * SECTSIZ);
 				if (resid < SECTSIZ) 
 					break;
 			}
@@ -233,13 +239,6 @@ more:
 	 * Checking finished.
 	 */
 out:
-	if (errors[FE_TOTAL] || errors[FE_SSE]) {
-		printf("Errors:\n");
-		for (i = 0; i < NERRORS; i++)
-			printf("%s: %d\n", errornames[i], errors[i]);
-		printf("Total of %d hard errors revectored\n",
-			errors[FE_TOTAL] + errors[FE_SSE]);
-	}
 	if (severe && maxpass < NPT) {
 		cp = prompt("More passes? (0 or number) ");
 		maxpass = atoi(cp);
@@ -252,7 +251,7 @@ out:
 		/*
 		 * Sort bads and insert in bad block table.
 		 */
-		qsort(bads, nbads, sizeof (long), qcompar);
+		qsort(bads, nbads, sizeof (daddr_t), qcompar);
 		severe = 0;
 		errno = 0;
 		for (i = 0; i < nbads; i++)
@@ -263,6 +262,13 @@ out:
 		/* change the headers of all the bad sectors */
 		writebb(fd, errors[FE_SSE], &sstab, &st, SSERR);
 		writebb(fd, errors[FE_TOTAL], &dkbad, &st, BSERR);
+	}
+	if (errors[FE_TOTAL] || errors[FE_SSE]) {
+		printf("Errors:\n");
+		for (i = 0; i < NERRORS; i++)
+			printf("%s: %d\n", errornames[i], errors[i]);
+		printf("Total of %d hard errors revectored\n",
+			errors[FE_TOTAL] + errors[FE_SSE]);
 	}
 	if (endcyl == st.ncyl - 1 &&
 	    (startcyl < st.ncyl - 1 || starttrack == 0)) {
@@ -285,7 +291,7 @@ out:
 		printf("New bad sectors (not added to table):\n");
 		bt = dkbad.bt_bad;
 		for (i = 0; i < errors[FE_TOTAL]; i++) {
-			printf("sn %d (cn=%d, tn=%d, sn=%d)\n", badsn(bt, st),
+			printf("bn %d (cn=%d, tn=%d, sn=%d)\n", badsn(bt, &st),
 			    bt->bt_cyl, bt->bt_trksec>>8, bt->bt_trksec&0xff);
 			bt++;
 		}
@@ -299,7 +305,7 @@ out:
 }
 
 qcompar(l1, l2)
-register long *l1, *l2;
+register daddr_t *l1, *l2;
 {
 	if (*l1 < *l2)
 		return(-1);
@@ -313,13 +319,19 @@ badsn(bt, st)
 	register struct bt_bad *bt;
 	register struct st *st;
 {
-	return ((bt->bt_cyl*st->ntrak + (bt->bt_trksec>>8)) * st->nsect
+
+	if (ssdev)
+	    return ((bt->bt_cyl * st->ntrak + (bt->bt_trksec>>8)) *
+		(st->nsect - 1) + (bt->bt_trksec&0xff)) - 1;
+	else
+	    return ((bt->bt_cyl*st->ntrak + (bt->bt_trksec>>8)) * st->nsect
 		+ (bt->bt_trksec&0xff));
 }
 
 /*
  * Mark the bad/skipped sectors.
- * Bad sectors on skip-sector devices are assumed to be skipped also.
+ * Bad sectors on skip-sector devices are assumed to be skipped also,
+ * and must be done after the (earlier) first skipped sector.
  */
 writebb(fd, nsects, dbad, st, sw)
 	int nsects, fd;
@@ -335,7 +347,7 @@ writebb(fd, nsects, dbad, st, sw)
 		btp = &dbad->bt_bad[i];
 		if (sw == BSERR) {
 			bb_buf.header1 = HDR1_FMT22|btp->bt_cyl;
-			if (SSDEV)
+			if (ssdev)
 				bb_buf.header1 |= HDR1_SSF;
 		} else
 			bb_buf.header1 =
@@ -347,18 +359,18 @@ writebb(fd, nsects, dbad, st, sw)
 		lseek(fd, bn * SECTSIZ, 0);
 		ioctl(fd, SAIOHDR, (char *)0);
 		write(fd, &bb_buf, sizeof (bb_buf));
-		if (!SSDEV)
-			continue;
 		/*
 		 * If skip sector, mark all remaining
 		 * sectors on the track.
 		 */
-		for (j = (btp->bt_trksec & 0xff) + 1, bn++;
-		    j <= st->nsect; j++, bn++) {
-			bb_buf.header2 = j | (btp->bt_trksec & 0xff00);
-			lseek(fd, bn * SECTSIZ, 0);
-			ioctl(fd, SAIOHDR, (char *)0);
-			write(fd, &bb_buf, sizeof (bb_buf));
+		if (sw == SSERR) {
+			for (j = (btp->bt_trksec & 0xff) + 1, bn++;
+			    j < st->nsect; j++, bn++) {
+				bb_buf.header2 = j | (btp->bt_trksec & 0xff00);
+				lseek(fd, bn * SECTSIZ, 0);
+				ioctl(fd, SAIOHDR, (char *)0);
+				write(fd, &bb_buf, sizeof (bb_buf));
+			}
 		}
 	}
 }
@@ -382,7 +394,7 @@ recorderror(fd, bn, st)
 		for (i = 0; i < nbads; i++)
 			if (bads[i] == bn)
 				return(0);	/* bn already flagged */
-		if (nbads >= MAXBADDESC) {
+		if (nbads >= (ssdev ? 2 * MAXBADDESC : MAXBADDESC)) {
 			printf("Bad sector table full, format terminating\n");
 			return(-1);
 		}
@@ -401,7 +413,7 @@ recorderror(fd, bn, st)
 	sn = bn % st->nspc;
 	tn = sn / st->nsect;
 	sn %= st->nsect;
-	if (SSDEV) {		/* if drive has skip sector capability */
+	if (ssdev) {		/* if drive has skip sector capability */
 		int ss = errors[FE_SSE];
 
 		if (errors[FE_SSE] >= MAXBADDESC) {
@@ -413,6 +425,12 @@ recorderror(fd, bn, st)
 		if (ss == 0 ||
 		    tn != (sstab.bt_bad[ss - 1].bt_trksec >> 8) ||
 		    cn != sstab.bt_bad[ss - 1].bt_cyl) {
+			/*
+			 * Don't bother with skipping the extra sector
+			 * at the end of the track.
+			 */
+			if (sn == st->nsect - 1)
+				return(0);
 			sstab.bt_bad[ss].bt_cyl = cn;
 			sstab.bt_bad[ss].bt_trksec = (tn<<8) + sn;
 			errors[FE_SSE]++;
@@ -484,8 +502,8 @@ getrange(st)
 	struct st *st;
 {
 	startcyl = getnum("Starting cylinder", 0, st->ncyl - 1, 0);
-	endcyl = getnum("Ending cylinder", 0, st->ncyl - 1, st->ncyl - 1);
 	starttrack = getnum("Starting track", 0, st->ntrak - 1, 0);
+	endcyl = getnum("Ending cylinder", 0, st->ncyl - 1, st->ncyl - 1);
 	endtrack = getnum("Ending track", 0, st->ntrak - 1, st->ntrak - 1);
 }
 
@@ -541,6 +559,9 @@ getpattern()
 		if (maxpass > NPT)
 			maxpass = NPT;
 	}
+	maxeccbits = getnum(
+		"Maximum number of bit errors to allow for soft ECC",
+		0, 11, MAXECCBITS);
 	return (0);
 }
 

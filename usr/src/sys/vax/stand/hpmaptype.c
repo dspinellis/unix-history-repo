@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	6.2 (Berkeley) %G%
+ *	@(#)hpmaptype.c	6.3 (Berkeley) %G%
  */
 
 /*
@@ -34,6 +34,29 @@ short	capricorn_off[8] = { 0, 32, 0, 668, 723, 778, 668, 98 };
 short	eagle_off[8] =	{ 0, 17, 0, 391, 408, 728, 391, 87 };
 /* END SHOULD BE READ IN */
 
+/*
+ * hptypes is used to translate Massbus drive type and other information
+ * into an index in hpst.  The indices of hptypes and hpst must therefore agree.
+ */
+short	hptypes[] = {
+	MBDT_RM03,
+	MBDT_RM05,
+	MBDT_RP06,
+	MBDT_RM80,
+	MBDT_RP05,
+	MBDT_RP07,
+	MBDT_ML11A,
+	MBDT_ML11B,
+	-1,		/* 9755 */
+	-1,		/* 9730 */
+	-1,		/* Capricorn */
+	-1,		/* Eagle */
+	MBDT_RM02,	/* actually something else */
+	-1,		/* 9300 */
+	-1,		/* 9766 */
+	0
+};
+
 struct st hpst[] = {
 #define	HPDT_RM03	0
 	32,	5,	32*5,	823,	rm03_off,	/* RM03 */
@@ -60,10 +83,13 @@ struct st hpst[] = {
 #define	HPDT_EAGLE	11
 	48,	20,	48*20,	842,	eagle_off,	/* Fuji Eagle */
 #define	HPDT_RM02	12
-	1,	1,	1,	1,	0,		/* rm02 - not used */
+	32,	5,	32*5,	823,	rm03_off,	/* rm02 - not used */
 #define	HPDT_9300	13
 	32,	19,	32*19,	815,	rm05_off,	/* Ampex 9300 */
+#define	HPDT_9766	14
+	32,	19,	32*19,	823,	rm05_off,	/* CDC 9766 */
 };
+#define	NTYPES	(sizeof(hpst) / sizeof(hpst[0]))
 
 #define	MASKREG(reg)	((reg)&0xffff)
 
@@ -72,7 +98,7 @@ hpmaptype(hpaddr, type, unit)
 	unsigned type;
 	int unit;
 {
-	int ntracks, hpsn;
+	int hpsn;
 
 	/*
 	 * Handle SI model byte stuff when
@@ -90,14 +116,8 @@ hpmaptype(hpaddr, type, unit)
 		case SI9730D:
 			return (HPDT_9730);
 
-		/*
-		 * Beware, since the only have SI controller we
-		 * have has a 9300 instead of a 9766, we map the
-		 * drive type into the 9300.  This means that
-		 * on a 9766 you lose the last 8 cylinders (argh).
-		 */
 		case SI9766:
-			return (HPDT_9300);
+			return (HPDT_9766);
 
 		case SI9762:
 			return (HPDT_RM03);
@@ -111,32 +131,35 @@ hpmaptype(hpaddr, type, unit)
 		return (type);
 	}
 	/*
-	 * RM03: EMULEX controller.  Map to correct
+	 * RM02: EMULEX controller.  Map to correct
 	 * drive type by checking the holding
 	 * register for the disk geometry.
 	 */
 	if (type == HPDT_RM02) {
-		int newtype = type;
+		int newtype, nsectors, ntracks, ncyl;
 
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 16) {
-			newtype = HPDT_CAP;	/* AMPEX capricorn */
-			goto done;
-		}
-		if (ntracks == 19) {
-			newtype = HPDT_9300;	/* AMPEX 9300 */
-			goto done;
-		}
+		DELAY(100);
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
-		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 48) {
-			newtype = HPDT_EAGLE;	/* 48 sector Eagle */
-			goto done;
+		nsectors = MASKREG(hpaddr->hphr) + 1;
+		DELAY(100);
+		hpaddr->hpcs1 = HP_NOP;
+		hpaddr->hphr = HPHR_MAXCYL;
+		ncyl = MASKREG(hpaddr->hphr) + 1;
+		for (newtype = 0; newtype < NTYPES; newtype++)
+			if (hpst[newtype].nsect == nsectors &&
+			    hpst[newtype].ntrak == ntracks &&
+			    hpst[newtype].ncyl == ncyl)
+				break;
+
+		if (newtype >= NTYPES) {
+			printf("RM02 with %d sectors, %d tracks, %d cylinders?\n",
+				nsectors, ntracks, ncyl);
+			newtype = type;
 		}
-		printf("RM02 with %d sectors/track?\n", ntracks);
 	done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		return (newtype);

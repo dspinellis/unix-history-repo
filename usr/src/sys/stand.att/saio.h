@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	6.3 (Berkeley) %G%
+ *	@(#)saio.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -42,9 +42,7 @@ struct	iob {
 #define F_ALLOC		0x4	/* buffer allocated */
 #define F_FILE		0x8	/* file instead of device */
 #define F_NBSF		0x10	/* no bad sector forwarding */
-#define F_ECCLM		0x20	/* limit # of bits in ecc correction */
 #define F_SSI		0x40	/* set skip sector inhibit */
-#define F_SEVRE		0x80	/* Severe burnin (no retries, no ECC) */
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
 #define	F_WRDATA	0x0200	/* write data */
@@ -115,17 +113,11 @@ extern	int errno;	/* just like unix */
 #define	SAIOHCHECK	(('d'<<8)|3)	/* next i/o checks header & data */
 #define	SAIONOBAD	(('d'<<8)|4)	/* inhibit bad sector forwarding */
 #define	SAIODOBAD	(('d'<<8)|5)	/* enable bad sector forwarding */
-#define	SAIOECCLIM	(('d'<<8)|6)	/* limit ecc correction to 5 bits */
-#define	SAIOECCUNL	(('d'<<8)|7)	/* use standard ecc procedures */
+#define	SAIOECCLIM	(('d'<<8)|6)	/* set limit to ecc correction, bits */
+#define	SAIORETRIES	(('d'<<8)|7)	/* set retry count for unit */
 #define	SAIODEVDATA	(('d'<<8)|8)	/* get device data */
 #define	SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
 #define	SAIONOSSI	(('d'<<8)|10)	/* inhibit skip sector handling */
 #define	SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */
 #define	SAIODEBUG	(('d'<<8)|12)	/* enable/disable debugging */
-#define	SAIOSEVRE	(('d'<<8)|13)	/* severe burnin, no ECC, no retries */
-#define	SAIONSEVRE	(('d'<<8)|14)	/* clear severe burnin */
-
-/* codes for sector header word 1 */
-#define	HDR1_FMT22	0x1000	/* standard 16 bit format */
-#define	HDR1_OKSCT	0xc000	/* sector ok */
-#define	HDR1_SSF	0x2000	/* skip sector flag */
+#define	SAIOGBADINFO	(('d'<<8)|13)	/* get bad-sector table */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	6.4 (Berkeley) %G%
+ *	@(#)boot.c	6.5 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -61,7 +61,8 @@ main()
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
-	printf("\nBoot\n");
+	printf("Boot\n");
+	loadpcs();
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
@@ -89,8 +90,9 @@ main()
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0) {
-			loadpcs();
 			copyunix(howto, io);
+			close(io);
+			howto = RB_SINGLE|RB_ASKNAME;
 		}
 		if (++retry > 2)
 			howto = RB_SINGLE|RB_ASKNAME;
@@ -129,7 +131,7 @@ copyunix(howto, io)
 	x.a_entry &= 0x7fffffff;
 	printf(" start 0x%x\n", x.a_entry);
 	(*((int (*)()) x.a_entry))();
-	_exit();
+	return;
 shread:
 	_stop("Short read\n");
 }
@@ -151,14 +153,13 @@ loadpcs()
 	register int i;		/* known to be r10 below */
 	register int *jp;	/* known to be r9 below */
 	register int j;
-	static int pcsdone = 0;
 	union cpusid sid;
 	char pcs[100];
 	char *closeparen;
 	char *index();
 
 	sid.cpusid = mfpr(SID);
-	if (sid.cpuany.cp_type!=VAX_750 || sid.cpu750.cp_urev<95 || pcsdone)
+	if (sid.cpuany.cp_type!=VAX_750 || sid.cpu750.cp_urev<95)
 		return;
 	printf("Updating 11/750 microcode: ");
 	strncpy(pcs, line, 99);
@@ -215,5 +216,4 @@ loadpcs()
 
 	sid.cpusid = mfpr(SID);
 	printf("new rev level=%d\n", sid.cpu750.cp_urev);
-	pcsdone = 1;
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)bootxx.c	6.2 (Berkeley) %G%
+ *	@(#)bootxx.c	6.3 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -29,12 +29,11 @@ main()
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
-	printf("loading %s", bootprog);
+	printf("loading %s\n", bootprog);
 	io = open(bootprog, 0);
 	if (io >= 0)
 		copyunix(howto, devtype, io);
-	printf("boot failed");
-	_exit();
+	_stop("boot failed\n");
 }
 
 /*ARGSUSED*/
@@ -66,7 +65,7 @@ copyunix(howto, devtype, io)
 		*addr++ = 0;
 	x.a_entry &= 0x7fffffff;
 	(*((int (*)()) x.a_entry))();
-	_exit();
+	return;
 shread:
 	_stop("Short read\n");
 }

@@ -3,12 +3,12 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.9 (Berkeley) %G%
+#	@(#)Makefile	6.10 (Berkeley) %G%
 #
 DESTDIR=/
 CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX730 -DVAX8600
-730OPTS=-O -DSTANDALONE -DVAX730
+730OPTS=-O -I../h -DSTANDALONE -DVAX730
 RELOC=	70000
 
 SRCS=	sys.c conf.c prf.c machdep.c \
@@ -58,7 +58,7 @@ relsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 
 tpboot:	tpboot.o relsrt0.o ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o tpboot.o ${LIBSA} -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tpboot ibs=32 skip=1; rm -f b.out
+	strip a.out; dd if=a.out of=tpboot ibs=32 skip=1; rm -f a.out
 
 tpboot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
 tpboot.o: saio.h ../h/reboot.h ../h/vm.h 
@@ -68,16 +68,14 @@ tpboot.o: saio.h ../h/reboot.h ../h/vm.h
 
 tpcopy:	copy.o tpsrt0.o ${LIBSA}
 	ld -N tpsrt0.o copy.o ${LIBSA} -lc
-	cp a.out b.out; strip b.out; \
-		dd if=b.out of=tpcopy ibs=32 skip=1; rm -f b.out
+	strip a.out; dd if=a.out of=tpcopy ibs=32 skip=1; rm -f a.out
 
 tpformat: format.o tpsrt0.o confhpup.o ${LIBSA}
 	cp format.c tpformat.c; chmod +w tpformat.c
 	cc -c -O -DJUSTEXIT tpformat.c
 	rm -f tpformat.c
 	ld -N tpsrt0.o tpformat.o confhpup.o ${LIBSA} -lc
-	cp a.out b.out; strip b.out; \
-		dd if=b.out of=tpformat ibs=32 skip=1; rm -f b.out
+	strip a.out; dd if=a.out of=tpformat ibs=32 skip=1; rm -f a.out
 
 # bootable from floppy or real disks
 
@@ -138,25 +136,25 @@ drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
 
 # getting booted from disc
 
-boothk: relsrt0.o boothk.o confrk.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o ${LIBSA} -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm -f b.out
+boothk: relsrt0.o boothk.o confrk.o smsys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o smsys.o ${LIBSA} -lc
+	strip a.out;dd if=a.out of=boothk ibs=32 skip=1;rm -f a.out
 
-boothp: relsrt0.o boothp.o confhp.o hp.old.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o ${LIBSA} -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm -f b.out
+boothp: relsrt0.o boothp.o confhp.o hp.old.o smsys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o smsys.o ${LIBSA} -lc
+	strip a.out;dd if=a.out of=boothp ibs=32 skip=1;rm -f a.out
 
-bootup: relsrt0.o bootup.o confup.o up.old.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o ${LIBSA} -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm -f b.out
+bootup: relsrt0.o bootup.o confup.o up.old.o smsys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o smsys.o ${LIBSA} -lc
+	strip a.out;dd if=a.out of=bootup ibs=32 skip=1;rm -f a.out
 
-bootra: relsrt0.o bootra.o confra.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o ${LIBSA} -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=bootra ibs=32 skip=1;rm -f b.out
+bootra: relsrt0.o bootra.o confra.o smsys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o smsys.o ${LIBSA} -lc
+	strip a.out;dd if=a.out of=bootra ibs=32 skip=1;rm -f a.out
 
-bootrl: relsrt0.o bootrl.o confrl.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o ${LIBSA} -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=bootrl ibs=32 skip=1;rm -f b.out
+bootrl: relsrt0.o bootrl.o confrl.o smsys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o smsys.o ${LIBSA} -lc
+	strip a.out;dd if=a.out of=bootrl ibs=32 skip=1;rm -f a.out
 
 boothp.o: boothp.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 boothp.o: ../h/fs.h saio.h
@@ -169,15 +167,26 @@ bootra.o: ../h/fs.h saio.h
 bootrl.o: bootrl.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 bootrl.o: ../h/fs.h saio.h
 
+smsys.o: sys.c
+	-rm -f smsys.c
+	-ln -s sys.c smsys.c
+	cc -c -DSMALL ${CFLAGS} smsys.c
+	-rm -f smsys.c
+
 boothk.c: bootxx.c
+	-rm -f boothk.c
 	sed -e 's/xx/hk/g' <bootxx.c >boothk.c
 boothp.c: bootxx.c
+	-rm -f boothp.c
 	sed -e 's/xx/hp/g' <bootxx.c >boothp.c
 bootup.c: bootxx.c
+	-rm -f bootup.c
 	sed -e 's/xx/up/g' <bootxx.c >bootup.c
 bootra.c: bootxx.c
+	-rm -f bootra.c
 	sed -e 's/xx/ra/g' <bootxx.c >bootra.c
 bootrl.c: bootxx.c
+	-rm -f bootrl.c
 	sed -e 's/xx/rl/g' <bootxx.c >bootrl.c
 
 confrk.o: confrk.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
@@ -187,14 +196,19 @@ confra.o: confra.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
 confrl.o: confrl.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
 
 confrk.c: confxx.c
+	-rm -f confrk.c
 	sed -e 's/XX/hk/' -e 's/xx/rk/g' <confxx.c >confrk.c
 confhp.c: confxx.c
+	-rm -f confhp.c
 	sed -e 's/XX/hp/' -e 's/xx/hp/g' <confxx.c >confhp.c
 confup.c: confxx.c
+	-rm -f confup.c
 	sed -e 's/XX/up/' -e 's/xx/up/g' <confxx.c >confup.c
 confra.c: confxx.c
+	-rm -f confra.c
 	sed -e 's/XX/ra/' -e 's/xx/ra/g' <confxx.c >confra.c
 confrl.c: confxx.c
+	-rm -f confrl.c
 	sed -e 's/XX/rl/' -e 's/xx/rl/g' <confxx.c >confrl.c
 
 # utilities
@@ -206,7 +220,7 @@ print:
 
 clean:
 	rm -f *.o *.exe *.i errs
-	rm -f a.out b.out boot cat tpboot tpcopy copy tpformat
+	rm -f a.out boot cat tpboot tpcopy copy tpformat
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c
 	rm -f 730boot 730copy 730drtest 730format
