@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.27 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -102,13 +102,12 @@ union_lookup1(udvp, dvpp, vpp, cnp)
 	while (dvp != udvp && (dvp->v_type == VDIR) &&
 	       (mp = dvp->v_mountedhere)) {
 
-		if (mp->mnt_flag & MNT_MLOCK) {
-			mp->mnt_flag |= MNT_MWAIT;
-			sleep((caddr_t) mp, PVFS);
+		if (vfs_busy(mp, 0, 0, p))
 			continue;
-		}
 
-		if (error = VFS_ROOT(mp, &tdvp)) {
+		error = VFS_ROOT(mp, &tdvp);
+		vfs_unbusy(mp, p);
+		if (error) {
 			vput(dvp);
 			return (error);
 		}
