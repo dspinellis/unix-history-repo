@@ -1,7 +1,10 @@
-#	@(#)TODO	5.6 (Berkeley) %G%
+#	@(#)TODO	5.7 (Berkeley) %G%
 
 NOTE: Changed the lookup on a page of inodes to search from the back
 in case the same inode gets written twice on the same page.
+
+I don't think we still need the next segment pointer in the LFS summary
+block. (TK)
 
 Make sure that if you are writing a file, but not all the blocks
 make it into a single segment, that you do not write the inode in
