@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)at.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)at.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -381,9 +381,8 @@ char **argv;
 	/*
 	 * Put in a line to run the proper shell using the rest of
 	 * the file as input.  Note that 'exec'ing the shell will
-	 * cause sh() to leave a /tmp/sh### file around.  This line
-	 * depends on the shells allowing EOF to end tagged input.  The
-	 * quotes also guarantee a quoting of the lines before EOF.
+	 * cause sh() to leave a /tmp/sh### file around.  The quotes
+	 * also guarantee a quoting of the lines before EOF.
 	 */
 	fprintf(spoolfile, "%s << 'QAZWSXEDCRFVTGBYHNUJMIKOLP'\n", shell);
 
@@ -394,9 +393,8 @@ char **argv;
 	while (fgets(line, LINSIZ, inputfile) != NULL)
 		fputs(line, spoolfile);
 
-	/*
-	 * Close all files and change the mode of the spoolfile.
-	 */
+	/* don't put on single quotes, csh doesn't like it */
+	fprintf(spoolfile, "QAZWSXEDCRFVTGBYHNUJMIKOLP\n");
 	fclose(inputfile);
 	fclose(spoolfile);
 
