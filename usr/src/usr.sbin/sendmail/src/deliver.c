@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1001,6 +1001,20 @@ tryhost:
 	}
 	else
 	{
+		int i;
+		struct stat stbuf;
+
+		/* make absolutely certain 0, 1, and 2 are in use */
+		for (i = 0; i < 3; i++)
+		{
+			if (fstat(i, &stbuf) < 0)
+			{
+				/* oops.... */
+				syserr("openmailer: fd %d not open", i);
+				(void) open("/dev/null", O_RDONLY, 0666);
+			}
+		}
+
 		/* create a pipe to shove the mail through */
 		if (pipe(mpvect) < 0)
 		{
@@ -1077,21 +1091,36 @@ tryhost:
 			if (clever)
 			{
 				(void) close(rpvect[0]);
-				(void) dup2(rpvect[1], STDOUT_FILENO);
+				if (dup2(rpvect[1], STDOUT_FILENO) < 0)
+				{
+					syserr("Cannot dup pipe %d for stdout",
+						rpvect[1]);
+					_exit(EX_OSERR);
+				}
 				(void) close(rpvect[1]);
 			}
 			else if (OpMode == MD_SMTP || HoldErrs)
 			{
 				/* put mailer output in transcript */
-				(void) dup2(fileno(e->e_xfp), STDOUT_FILENO);
+				if (dup2(fileno(e->e_xfp), STDOUT_FILENO) < 0)
+				{
+					syserr("Cannot dup xscript %d for stdout",
+						fileno(e->e_xfp));
+					_exit(EX_OSERR);
+				}
 			}
-			(void) dup2(STDOUT_FILENO, STDERR_FILENO);
+			if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0)
+			{
+				syserr("Cannot dup stdout for stderr");
+				_exit(EX_OSERR);
+			}
 
 			/* arrange to get standard input */
 			(void) close(mpvect[1]);
 			if (dup2(mpvect[0], STDIN_FILENO) < 0)
 			{
-				syserr("Cannot dup to zero!");
+				syserr("Cannot dup pipe %d for stdin",
+					mpvect[0]);
 				_exit(EX_OSERR);
 			}
 			(void) close(mpvect[0]);
@@ -1493,7 +1522,14 @@ giveresponse(stat, m, mci, e)
 
 	i = stat - EX__BASE;
 	if (stat == 0)
+	{
 		statmsg = "250 Sent";
+		if (e->e_message != NULL)
+		{
+			(void) sprintf(buf, "%s (%s)", statmsg, e->e_message);
+			statmsg = buf;
+		}
+	}
 	else if (i < 0 || i > N_SysEx)
 	{
 		(void) sprintf(buf, "554 unknown mailer error %d", stat);
