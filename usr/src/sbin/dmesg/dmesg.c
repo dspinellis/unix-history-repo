@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -56,7 +56,7 @@ char **argv;
 		lseek(of, 0L, 0);
 	}
 	sflg = 0;
-	nlist(argc>2? argv[2]:_PATH_VMUNIX, nl);
+	nlist(argc>2? argv[2]:_PATH_UNIX, nl);
 	if (nl[0].n_type==0)
 		done("Can't get kernel namelist\n");
 	if ((mem = open((argc>1? argv[1]: _PATH_KMEM), 0)) < 0)
