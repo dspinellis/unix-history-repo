@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.14 (Berkeley) 85/02/04";
+static	char *sccsid = "@(#)main.c	4.15 (Berkeley) 85/05/16";
 #endif
 
 #include "defs.h"
@@ -10,7 +10,7 @@ static	char *sccsid = "@(#)main.c	4.14 (Berkeley) 85/02/04";
  * Remote distribution program.
  */
 
-char	*distfile = "distfile";
+char	*distfile = NULL;
 char	tmpfile[] = "/tmp/rdistXXXXXX";
 char	*tmpname = &tmpfile[5];
 
@@ -150,9 +150,16 @@ main(argc, argv)
 	if (cmdargs)
 		docmdargs(argc, argv);
 	else {
-		if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
-			perror(distfile);
-			exit(1);
+		if (fin == NULL) {
+			if(distfile == NULL) {
+				if((fin = fopen("distfile","r")) == NULL)
+					fin = fopen("Distfile", "r");
+			} else
+				fin = fopen(distfile, "r");
+			if(fin == NULL) {
+				perror(distfile ? distfile : "distfile");
+				exit(1);
+			}
 		}
 		yyparse();
 		if (nerrs == 0)
