@@ -6,91 +6,109 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/file.h>
 #include <a.out.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-typedef struct nlist NLIST;
-#define	_strx	n_un.n_strx
-#define	_name	n_un.n_name
-#define	ISVALID(p)	(p->_name && p->_name[0])
-
 int
 nlist(name, list)
 	const char *name;
-	NLIST *list;
+	struct nlist *list;
 {
-	register NLIST *p, *s;
-	struct exec ebuf;
-	FILE *fstr, *fsym;
-	NLIST nbuf;
-	off_t strings_offset, symbol_offset, symbol_size, lseek();
-	int entries, len, maxlen;
-	char sbuf[256];
+	int fd, n;
 
-	entries = -1;
+	fd = open(name, O_RDONLY, 0);
+	if (fd < 0)
+		return (-1);
+	n = _fdnlist(fd, list);
+	(void)close(fd);
+	return (n);
+}
 
-	if (!(fsym = fopen(name, "r")))
-		return(-1);
-	if (fread((char *)&ebuf, sizeof(struct exec), 1, fsym) != 1 ||
-	    N_BADMAG(ebuf))
-		goto done1;
+#define	ISLAST(p)	(p->n_un.n_name == 0 || p->n_un.n_name[0] == 0)
 
-	symbol_offset = N_SYMOFF(ebuf);
-	symbol_size = ebuf.a_syms;
-	strings_offset = symbol_offset + symbol_size;
-	if (fseek(fsym, symbol_offset, SEEK_SET))
-		goto done1;
+int
+__fdnlist(fd, list)
+	register int fd;
+	register struct nlist *list;
+{
+	register struct nlist *p, *s;
+	register caddr_t strtab;
+	register off_t stroff, symoff;
+	register u_long symsize;
+	register int nent, strsize, cc;
+	struct nlist nbuf[1024];
+	struct exec exec;
+	struct stat st;
 
-	if (!(fstr = fopen(name, "r")))
-		goto done1;
+	if (lseek(fd, (off_t)0, SEEK_SET) == -1 ||
+	    read(fd, &exec, sizeof(exec)) != sizeof(exec) ||
+	    N_BADMAG(exec) || fstat(fd, &st) < 0)
+		return (-1);
 
+	symoff = N_SYMOFF(exec);
+	symsize = exec.a_syms;
+	stroff = symoff + symsize;
+	strsize = st.st_size - stroff;
+	/*
+	 * Map string table into our address space.  This gives us
+	 * an easy way to randomly access all the strings, without
+	 * making the memory allocation permanent as with malloc/free
+	 * (i.e., munmap will return it to the system).
+	 */
+	strtab = mmap(0, strsize, PROT_READ, MAP_FILE, fd, stroff);
+	if (strtab == (char *)-1)
+		return (-1);
 	/*
 	 * clean out any left-over information for all valid entries.
 	 * Type and value defined to be 0 if not found; historical
 	 * versions cleared other and desc as well.  Also figure out
 	 * the largest string length so don't read any more of the
 	 * string table than we have to.
+	 *
+	 * XXX clearing anything other than n_type and n_value violates
+	 * the semantics given in the man page.
 	 */
-	for (p = list, entries = maxlen = 0; ISVALID(p); ++p, ++entries) {
+	nent = 0;
+	for (p = list; !ISLAST(p); ++p) {
 		p->n_type = 0;
 		p->n_other = 0;
 		p->n_desc = 0;
 		p->n_value = 0;
-		if ((len = strlen(p->_name)) > maxlen)
-			maxlen = len;
+		++nent;
 	}
-	if (++maxlen > sizeof(sbuf)) {		/* for the NULL */
-		(void)fprintf(stderr, "nlist: symbol too large.\n");
-		entries = -1;
-		goto done2;
-	}
+	if (lseek(fd, symoff, SEEK_SET) == -1)
+		return (-1);
 
-	for (s = &nbuf; symbol_size; symbol_size -= sizeof(NLIST)) {
-		if (fread((char *)s, sizeof(NLIST), 1, fsym) != 1)
-			goto done2;
-		if (!s->_strx || s->n_type&N_STAB)
-			continue;
-		if (fseek(fstr, strings_offset + s->_strx, SEEK_SET))
-			goto done2;
-		(void)fread(sbuf, sizeof(sbuf[0]), maxlen, fstr);
-		for (p = list; ISVALID(p); p++)
-			if (!strcmp(p->_name, sbuf)) {
-				p->n_value = s->n_value;
-				p->n_type = s->n_type;
-				p->n_desc = s->n_desc;
-				p->n_other = s->n_other;
-				if (!--entries)
-					goto done2;
-			}
+	while (symsize > 0) {
+		cc = MIN(symsize, sizeof(nbuf));
+		if (read(fd, nbuf, cc) != cc)
+			break;
+		symsize -= cc;
+		for (s = nbuf; cc > 0; ++s, cc -= sizeof(*s)) {
+			register int soff = s->n_un.n_strx;
+
+			if (soff == 0 || (s->n_type & N_STAB) != 0)
+				continue;
+			for (p = list; !ISLAST(p); p++)
+				if (!strcmp(&strtab[soff], p->n_un.n_name)) {
+					p->n_value = s->n_value;
+					p->n_type = s->n_type;
+					p->n_desc = s->n_desc;
+					p->n_other = s->n_other;
+					if (--nent <= 0)
+						break;
+				}
+		}
 	}
-done2:	(void)fclose(fstr);
-done1:	(void)fclose(fsym);
-	return(entries);
+	munmap(strtab, strsize);
+	return (nent);
 }
