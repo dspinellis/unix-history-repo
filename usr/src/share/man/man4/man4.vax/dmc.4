@@ -1,0 +1,50 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)dmc.4	5.1 (Berkeley) %G%
+.\"
+.TH DMC 4 "27 July 1983"
+.UC 5
+.SH NAME
+dmc \- DEC DMC-11/DMR-11 point-to-point communications device
+.SH SYNOPSIS
+.B "device dmc0 at uba0 csr 167600 vector dmcrint dmcxint"
+.SH DESCRIPTION
+The
+.I dmc
+interface provides access to a point-to-point communications
+device which runs at either 1 Mb/s or 56 Kb/s.  DMC-11's communicate
+using the DEC DDCMP link layer protocol.
+.PP
+The
+.I dmc
+interface driver also supports a DEC DMR-11 providing point-to-point
+communication running at data rates from 2.4 Kb/s to 1 Mb/s.
+DMR-11's are a more recent design and thus are preferred over DMC-11's.
+.PP
+The host's address must be specified with an SIOCSIFADDR ioctl
+before the interface will transmit or recive any packets.
+.SH DIAGNOSTICS
+.BR "dmc%d: bad control %o" .
+A bad parameter was passed to the
+.I dmcload
+routine.
+.PP
+.BR "dmc%d: unknown address type %d" .
+An input packet was received which contained a type of
+address unknown to the driver.
+.PP
+.BR "DMC FATAL ERROR 0%o" .
+.PP
+.BR "DMC SOFT ERROR 0%o" .
+.PP
+.BR "dmc%d: af%d not supported" . 
+The interface was handed a message which has
+addresses formatted in an unsuitable address family.
+.SH SEE ALSO
+intro(4N), inet(4F)
+.SH BUGS
+Should allow multiple outstanding DMA requests, but due to
+the design of the current UNIBUS support routines this is
+very difficult.
