@@ -1,0 +1,17 @@
+#
+#  standard superscipted numeric format
+#
+C1
+I BMACLIB/bibinc.fullnames
+H
+T AT
+.so \*(l]/bmac.std
+.\" redefine string for citations
+.ds [[ \u
+.ds ]] \d
+.ds [.
+.ds .] .
+.ds [<
+.ds >] \ \&
+.ds [,
+.ds ,] ,

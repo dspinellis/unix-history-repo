@@ -1,0 +1,78 @@
+# abbreviated journal names, and other names
+#
+# journals
+D ACTA Acta Inf.
+D BIT B\&IT
+D BSTJ Bell System Tech. J.
+D CACM Comm. ACM
+D COMP Computer
+D COMPJOUR Computer J.
+D COMPLANG J. Computer Lang.
+D COMPSUR Computing Surveys
+D I&C Inf. and Control
+D IEEETSE IEEE Trans. on Software Eng.
+D IEEETC IEEE Trans. on Computers
+D IPL Inf. Proc. Letters
+D JACM J. ACM
+D JCSS J. Computer and System Sciences
+D SIGACT S\&IGACT News
+D SIGPLAN SI\&GPLAN Notices
+D SIGSOFT Software Eng. Notes
+D SP&E Software\*(emPractice & Experience
+D SPE SP&E
+D TODS ACM Trans. Database Systems
+D TOPLAS ACM Trans. Prog. Lang. and Systems
+#
+# conferences
+#
+D PROC Proc.
+D CONF Conf.
+D SYMP Symp.
+D POPL ACM SYMP on Prin. of Programming Languages
+D POPL3 CONF Rec. 3rd POPL
+D POPL4 CONF Rec. 4th POPL
+D POPL5 CONF Rec. 5th POPL
+D POPL6 CONF Rec. 6th POPL
+D POPL7 CONF Rec. 7th POPL
+D POPL8 CONF Rec. 8th POPL
+D POPL9 CONF Rec. 9th POPL
+D POPL10 CONF Rec. 10th POPL
+D STOC Annual ACM SYMP on Theory of Computing
+D FOCS Annual SYMP on Foundations of Computer Science
+D SOSP SYMP on Operating System Prin.
+D ICSE Int. CONF on Software Eng.
+D IFIPS PROC IF\&IPS
+#
+#  publishers
+#
+I BMACLIB/bibinc.publishers
+#
+# months
+#
+D JAN Jan.
+D FEB Feb.
+D MAR Mar.
+D APR Apr.
+D MAY May
+D JUN June
+D JUL July
+D AUG Aug.
+D SEP Sep.
+D OCT Oct.
+D NOV Nov.
+D DEC Dec.
+#
+#  miscellaneous
+#
+D CORP Corp.
+D DEPT Dept.
+D DIV Div.
+D UNIV Univ.
+D UA The UNIV of Arizona
+D TR Tech. Rep.
+D UATR TR
+D DCS DEPT of Computer Science
+D UADCS DCS, UA
+D DCSUA DCS, UA
+D CSD Computer Science DEPT
+D DISS Diss.
