@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.14 (Berkeley) %G%
+ *	@(#)lfs.h	7.15 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
 #define	LFS_SBPAD	8192		/* LFS superblock size */
-#define MAXMNTLEN	512		/* XXX move from fs.h to mount.h */
 
 /* On-disk and in-memory checkpoint segment usage structure. */
 typedef struct segusage SEGUSE;
@@ -93,9 +92,7 @@ struct lfs {
 
 /* These fields are set at mount time and are meaningless on disk. */
 	struct	vnode *lfs_ivnode;	/* vnode for the ifile */
-	SEGUSE	*lfs_segtab;		/* in-memory segment usage table */
-					/* XXX NOT USED */
-	void	*XXXlfs_seglist;	/* list of segments being written */
+	u_long	lfs_seglock;		/* single-thread the segment writer */
 	u_long	lfs_iocount;		/* number of ios pending */
 	u_long	lfs_writer;		/* don't allow any dirops to start */
 	u_long	lfs_dirops;		/* count of active directory ops */
@@ -104,7 +101,7 @@ struct lfs {
 	u_char	lfs_clean;		/* file system is clean flag */
 	u_char	lfs_ronly;		/* mounted read-only flag */
 	u_char	lfs_flags;		/* currently unused flag */
-	u_char	lfs_fsmnt[MAXMNTLEN];	/* name mounted on */
+	u_char	lfs_fsmnt[MNAMELEN];	/* name mounted on */
 	u_char	pad[3];			/* long-align */
 
 /* Checksum; valid on disk. */
@@ -233,7 +230,6 @@ struct segsum {
 
 /* Write a block and update the inode change times. */
 #define	LFS_UBWRITE(BP) { \
-	USES_VOP_BWRITE; \
 	VTOI((BP)->b_vp)->i_flag |= ICHG | IUPD; \
 	VOP_BWRITE(BP); \
 }
