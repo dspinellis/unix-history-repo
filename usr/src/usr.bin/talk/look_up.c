@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)look_up.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)look_up.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "talk_ctl.h"
@@ -30,8 +30,13 @@ check_local()
 	register CTL_RESPONSE *rp = &response;
 
 	/* the rest of msg was set up in get_names */
+#ifdef MSG_EOR
+	/* copy new style sockaddr to old, swap family (short in old) */
+	msg.ctl_addr = *(struct osockaddr *)&ctl_addr;
+	msg.ctl_addr.sa_family = htons(ctl_addr.sin_family);
+#else
 	msg.ctl_addr = *(struct sockaddr *)&ctl_addr;
-	msg.ctl_addr.sa_family = htons(msg.ctl_addr.sa_family);
+#endif
 	/* must be initiating a talk */
 	if (!look_for_invite(rp))
 		return (0);
