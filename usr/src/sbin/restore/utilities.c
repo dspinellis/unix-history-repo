@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -298,7 +298,7 @@ flagvalues(ep)
  */
 ino_t
 dirlookup(name)
-	char *name;
+	const char *name;
 {
 	ino_t ino;
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -59,7 +59,7 @@ static char	*fmtentry __P((struct afile *));
 static void	 formatf __P((struct afile *, int));
 static void	 getcmd __P((char *, char *, char *, struct arglist *));
 struct dirent	*glob_readdir __P((RST_DIR *dirp));
-static int	 glob_stat __P((char *, struct stat *));
+static int	 glob_stat __P((const char *, struct stat *));
 static void	 mkentry __P((struct direct *, struct afile *));
 static void	 printlist __P((char *, char *));
 
@@ -690,7 +690,7 @@ glob_readdir(dirp)
  */
 static int
 glob_stat(name, stp)
-	char *name;
+	const char *name;
 	struct stat *stp;
 {
 	register struct direct *dp;
