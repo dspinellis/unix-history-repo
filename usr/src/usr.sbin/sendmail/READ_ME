@@ -1,9 +1,8 @@
 /*-
- *	@(#)READ_ME	6.8 (Berkeley) %G%
+ *	@(#)READ_ME	6.9 (Berkeley) %G%
  */
 
-THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
-IN A HEAVY PRODUCTION ENVIRONMENT.  We've been running it (in various
+THIS IS A BETA VERSION OF SENDMAIL.  We've been running it (in various
 forms) at Berkeley for several months, but our environment is far from
 general.  In particular, it hasn't been heavily tested for non-SMTP
 environments.  The good news is that most of the changes have been
@@ -20,7 +19,9 @@ PLEASE DO NOT MAKE THIS AVAILABLE ON PUBLIC FTP.  Since it is still an
 early release, I'd prefer that people get copies directly from Berkeley
 to make certain that they have the most recent version.  This isn't
 an attempt to limit access, just to make certain that everyone is able
-to keep up.
+to keep up.  If you got this version from anywhere other than direct
+from Berkeley, check the machine FTP.CS.Berkeley.EDU, directory
+/ucb/sendmail for the latest version.
 
 You don't have to install mail.local to run the new version of sendmail.
 Many versions of /bin/mail take a "-d" flag or do local delivery already.
