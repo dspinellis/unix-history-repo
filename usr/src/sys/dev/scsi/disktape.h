@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)disktape.h	5.1 (Berkeley) %G%
+ *	@(#)disktape.h	5.2 (Berkeley) %G%
  *
  * from: $Header: disktape.h,v 1.2 92/05/15 11:24:00 torek Exp $ (LBL)
  */

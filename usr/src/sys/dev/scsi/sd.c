@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.2 (Berkeley) %G%
+ *	@(#)sd.c	5.3 (Berkeley) %G%
  *
  * from: $Header: sd.c,v 1.18 92/06/11 17:55:56 torek Exp $
  */
@@ -21,31 +26,33 @@
  * (from sd.c,v 1.7 90/12/15 14:11:26 van Exp)
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/proc.h"
-#include "sys/buf.h"
-#include "sys/errno.h"
-#include "sys/device.h"
-#include "sys/disklabel.h"
-#include "sys/dkstat.h"
-#include "sys/disk.h"
-#include "sys/ioctl.h"
-#include "sys/malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/errno.h>
+#include <sys/device.h>
+#include <sys/disklabel.h>
+#include <sys/dkstat.h>
+#include <sys/disk.h>
+#include <sys/ioctl.h>
+#include <sys/malloc.h>
 
-#include "scsi/scsi.h"
-#include "scsi/disk.h"
-#include "scsi/scsivar.h"
-#include "scsi/scsi_ioctl.h"
+#include <machine/cpu.h>
 
-#include "machine/cpu.h"
+#include "scsi.h"
+#include "disk.h"
+#include "scsivar.h"
+#include "scsi_ioctl.h"
 
 #include "sdtrace.h"
 
-#define SUN_LABEL_HACK
+#ifdef sparc					/* XXX */
+#define SUN_LABEL_HACK				/* XXX */
+#endif						/* XXX */
 
 #ifdef SUN_LABEL_HACK
-#include "sparc/sunos/sun_disklabel.h"
+#include <sparc/sunos/sun_disklabel.h>
 #endif
 
 /*
