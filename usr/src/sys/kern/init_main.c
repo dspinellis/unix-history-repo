@@ -1,4 +1,4 @@
-/*	init_main.c	3.2	%H%	*/
+/*	init_main.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -165,7 +165,7 @@ iinit()
  * I/O to be done-- e.g. swap headers swbuf[] for
  * swapping.
  */
-char	buffers[NBUF][BSIZE+BSLOP];
+char	buffers[NBUF][BSIZE];
 
 /*
  * Initialize the buffer I/O system by freeing
