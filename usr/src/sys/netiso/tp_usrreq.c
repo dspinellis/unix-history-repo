@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.20 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -405,18 +405,13 @@ tp_usrreq(so, req, m, nam, controlp)
 					break;
 			if (*tt)
 				*tt = tpcb->tp_nextlisten;
-			else {
-				for (tt = &tp_intercepts; *tt; tt = &((*tt)->tp_nextlisten))
-					if (*tt == tpcb)
-						break;
-				if (*tt)
-					*tt = tpcb->tp_nextlisten;
-				else
-					printf("tp_usrreq - detach: should panic\n");
-			}
+			else
+				printf("tp_usrreq - detach: should panic\n");
 		}
-		if (tpcb->tp_next)
+		if (tpcb->tp_next) {
 			remque(tpcb);
+			tpcb->tp_next = tpcb->tp_prev = 0;
+		}
 		error = DoEvent(T_DETACH);
 		if (tpcb->tp_state == TP_CLOSED) {
 			free((caddr_t)tpcb, M_PCB);
@@ -440,9 +435,14 @@ tp_usrreq(so, req, m, nam, controlp)
 				tpcb->tp_next == 0)
 			error = EINVAL;
 		else {
+			register struct tp_pcb **tt;
 			remque(tpcb);
-			tpcb->tp_nextlisten = tp_listeners;
-			tpcb->tp_next = tpcb->tp_prev = tp_listeners = tpcb;
+			tpcb->tp_next = tpcb->tp_prev = tpcb;
+			for (tt = &tp_listeners; *tt; tt = &((*tt)->tp_nextlisten))
+				if ((*tt)->tp_lsuffixlen)
+					break;
+			tpcb->tp_nextlisten = *tt;
+			*tt = tpcb;
 			error = DoEvent(T_LISTEN_req);
 		}
 		break;
