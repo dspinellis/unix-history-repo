@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1164,6 +1164,11 @@ setoption(opt, val, sticky)
 			continue;
 		while (*++p == ' ')
 			*p = '\0';
+		if (p == val)
+		{
+			syserr("readcf: null option name");
+			return;
+		}
 		if (*p == '=')
 			*p++ = '\0';
 		while (*p == ' ')
@@ -1188,9 +1193,12 @@ setoption(opt, val, sticky)
 	}
 
 	if (tTd(37, 1))
-		printf("setoption %s (0x%x)=%s",
+	{
+		printf(isascii(opt) && isprint(opt) ?
+			    "setoption %s (%c)=%s" : "setoption %s (0x%x)=%s",
 			o->o_name == NULL ? "<unknown>" : o->o_name,
 			opt, val);
+	}
 
 	/*
 	**  See if this option is preset for us.
