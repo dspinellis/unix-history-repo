@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.18 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.19 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -71,8 +71,8 @@ SYSTEM_LD=	-@if [ X${DEBUG} = X-g ]; \
 		then strip=-X; \
 		else strip=-x; \
 		fi; \
-		echo ${LD} $$strip -n -o $@ -e start '$${SYSTEM_OBJ}' vers.o ../../libkern/obj/libkern.a; \
-		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
+		echo ${LD} $$strip -n -o $@ -e start '$${SYSTEM_OBJ}' vers.o $S/libkern/obj/libkern.a; \
+		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o $S/libkern/obj/libkern.a
 #SYSTEM_LD_TAIL= @echo rearranging symbols;\
 #		symorder symbols.sort $@;\
 SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
