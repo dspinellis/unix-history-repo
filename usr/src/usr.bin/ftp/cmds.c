@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -402,13 +402,15 @@ usage:
  * Send multiple files.
  */
 mput(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	register int i;
-	int ointer;
-	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
+	register int i;
+	sig_t oldintr;
+	int ointer;
 	char *tp;
+	void mabort();
 
 	if (argc < 2) {
 		(void) strcat(line, " ");
@@ -671,7 +673,7 @@ usage:
 	return (0);
 }
 
-sig_t
+void
 mabort()
 {
 	int ointer;
@@ -696,12 +698,14 @@ mabort()
  * Get multiple files.
  */
 mget(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	char *cp, *tp, *tp2, tmpbuf[MAXPATHLEN];
-	int ointer;
-	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
+	sig_t oldintr;
+	int ointer;
+	char *cp, *tp, *tp2, tmpbuf[MAXPATHLEN];
+	void mabort();
 
 	if (argc < 2) {
 		(void) strcat(line, " ");
@@ -1091,12 +1095,14 @@ delete(argc, argv)
  * Delete multiple files.
  */
 mdelete(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	char *cp;
-	int ointer;
-	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
+	sig_t oldintr;
+	int ointer;
+	char *cp;
+	void mabort();
 
 	if (argc < 2) {
 		(void) strcat(line, " ");
@@ -1207,12 +1213,14 @@ ls(argc, argv)
  * of multiple remote files.
  */
 mls(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	char *cmd, mode[1], *dest;
-	int ointer, i;
-	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
+	sig_t oldintr;
+	int ointer, i;
+	char *cmd, mode[1], *dest;
+	void mabort();
 
 	if (argc < 2) {
 		(void) strcat(line, " ");
@@ -1268,10 +1276,11 @@ mls(argc, argv)
  */
 /*ARGSUSED*/
 shell(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
 	int pid;
-	sig_t (*old1)(), (*old2)();
+	sig_t old1, old2;
 	char shellnam[40], *shell, *namep; 
 	union wait status;
 
@@ -1686,7 +1695,7 @@ account(argc,argv)
 
 jmp_buf abortprox;
 
-sig_t
+void
 proxabort()
 {
 	extern int proxy;
@@ -1708,11 +1717,12 @@ doproxy(argc,argv)
 	int argc;
 	char *argv[];
 {
-	sig_t (*oldintr)(), proxabort();
-	register struct cmd *c;
-	struct cmd *getcmd();
 	extern struct cmd cmdtab[];
 	extern jmp_buf abortprox;
+	register struct cmd *c;
+	struct cmd *getcmd();
+	sig_t oldintr;
+	void proxabort();
 
 	if (argc < 2) {
 		(void) strcat(line, " ");

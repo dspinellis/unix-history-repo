@@ -16,14 +16,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)biz22.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)biz22.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
 
 #define DISCONNECT_CMD	"\20\04"	/* disconnection string */
 
-static	int sigALRM();
+static	void sigALRM();
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
 
@@ -114,7 +114,7 @@ biz22_abort()
 	write(FD, "\02", 1);
 }
 
-static int
+static void
 sigALRM()
 {
 
@@ -126,8 +126,8 @@ static int
 cmd(s)
 	register char *s;
 {
+	sig_t f;
 	char c;
-	int (*f)();
 
 	write(FD, s, strlen(s));
 	f = signal(SIGALRM, sigALRM);
@@ -148,8 +148,8 @@ static int
 detect(s)
 	register char *s;
 {
+	sig_t f;
 	char c;
-	int (*f)();
 
 	f = signal(SIGALRM, sigALRM);
 	timeout = 0;

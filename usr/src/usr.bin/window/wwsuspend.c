@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)wwsuspend.c	3.11 (Berkeley) %G%";
 #define mask(s)	(1<<(SIG/**/s-1))
 wwsuspend()
 {
-	int (*oldsig)();
+	sig_t oldsig;
 
 	oldmask = sigblock(mask(TSTP));
 	wwend();

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -186,8 +186,9 @@ main(argc, argv)
 	FILE *fp;
 	int ch;
 	char line[MSG_BSIZE + 1];
-	extern int optind, die(), domark(), reapchild();
+	extern int optind;
 	extern char *optarg;
+	void die(), domark(), reapchild();
 
 	while ((ch = getopt(argc, argv, "df:m:p:")) != EOF)
 		switch((char)ch) {
@@ -787,6 +788,7 @@ wallmsg(f, iov)
 	reenter = 0;
 }
 
+void
 reapchild()
 {
 	union wait status;
@@ -823,6 +825,7 @@ cvthname(f)
 	return (hp->h_name);
 }
 
+void
 domark()
 {
 	register struct filed *f;
@@ -865,6 +868,7 @@ logerror(type)
 	logmsg(LOG_SYSLOG|LOG_ERR, buf, LocalHostName, ADDDATE);
 }
 
+void
 die(sig)
 {
 	register struct filed *f;

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)courier.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)courier.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #define write cour_write
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)courier.c	5.3 (Berkeley) %G%";
 
 #define	MAXRETRY	5
 
-static	int sigALRM();
+static	void sigALRM();
 static	int timeout = 0;
 static	int connected = 0;
 static	jmp_buf timeoutbuf, intbuf;
@@ -104,7 +104,7 @@ cour_abort()
 	cour_disconnect();
 }
 
-static int
+static void
 sigALRM()
 {
 	printf("\07timeout waiting for reply\n");
@@ -116,8 +116,8 @@ static int
 cour_swallow(match)
   register char *match;
   {
+	sig_t f;
 	char c;
-	int (*f)();
 
 	f = signal(SIGALRM, sigALRM);
 	timeout = 0;
@@ -165,7 +165,7 @@ cour_connect()
 	struct sgttyb sb;
 	char dialer_buf[64];
 	struct baud_msg *bm;
-	int (*f)();
+	sig_t f;
 
 	if (cour_swallow("\r\n") == 0)
 		return (0);
@@ -333,7 +333,7 @@ static int ringring;
 cour_nap()
 {
 	
-        static int cour_napx();
+        static void cour_napx();
 	int omask;
         struct itimerval itv, oitv;
         register struct itimerval *itp = &itv;
@@ -358,7 +358,7 @@ cour_nap()
 	(void) sigsetmask(omask);
 }
 
-static
+static void
 cour_napx()
 {
         ringring = 1;
