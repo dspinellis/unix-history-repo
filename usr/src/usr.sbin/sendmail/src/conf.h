@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.127 (Berkeley) %G%
+ *	@(#)conf.h	8.128 (Berkeley) %G%
  */
 
 /*
@@ -994,6 +994,36 @@ extern int	syslog(int, char *, ...);
 #endif
 
 
+/*
+**  Amdahl UTS System V 2.1.5 (SVr3-based)
+**
+**    From: Janet Jackson <janet@dialix.oz.au>.
+*/
+
+#ifdef _UTS
+# include <sys/sysmacros.h>
+# undef HASLSTAT	/* has symlinks, but they cause problems */
+# define NEEDFSYNC	1	/* system fsync(2) fails on non-EFS filesys */
+# define SYS5SIGNALS	1	/* System V signal semantics */
+# define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
+# define HASUNAME	1	/* use System V uname(2) system call */
+# define HASINITGROUPS	1	/* has initgroups(3) function */
+# define HASSETVBUF	1	/* has setvbuf(3) function */
+# define HASSIGSETMASK	0	/* does not have sigsetmask(2) function */
+# ifndef HASGETUSERSHELL
+#  define HASGETUSERSHELL 0	/* does not have getusershell(3) function */
+# endif
+# define GIDSET_T	gid_t	/* type of 2nd arg to getgroups(2) isn't int */
+# define LA_TYPE	LA_ZERO		/* doesn't have load average */
+# define SFS_TYPE	SFS_4ARGS	/* use 4-arg statfs() */
+# define _PATH_UNIX	"/unix"
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+#endif
+
+
+
 
 /**********************************************************************
 **  End of Per-Operating System defines
@@ -1133,6 +1163,15 @@ extern int	syslog(int, char *, ...);
 
 #ifndef OLD_NEWDB
 # define OLD_NEWDB	0	/* assume newer version of newdb */
+#endif
+
+/* heuristic setting of HASSETSIGMASK; can override above */
+#ifndef HASSIGSETMASK
+# ifdef SIGVTALRM
+#  define HASSETSIGMASK	1
+# else
+#  define HASSETSIGMASK	0
+# endif
 #endif
 
 
