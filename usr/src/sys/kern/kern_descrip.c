@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.8	82/09/08	*/
+/*	kern_descrip.c	5.9	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -509,4 +509,11 @@ closef(fp, nouser, flags)
 		binval(dev);
 	}
 	(*cfunc)(dev, flag, fp);
+}
+
+opause()
+{
+
+	for (;;)
+		sleep((caddr_t)&u, PSLEP);
 }
