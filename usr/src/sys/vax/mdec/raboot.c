@@ -4,9 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-_sccsid:.asciz	"@(#)raboot.c	6.2 (Berkeley) %G%"
-#endif not lint
+/* "@(#)raboot.c	6.3 (Berkeley) %G%" */
 
 /*
  * UDA50 1st level boot program: loads next 7.5Kbytes from

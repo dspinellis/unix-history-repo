@@ -4,9 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-_sccsid:.asciz	"@(#)mtboot.c	6.2 (Berkeley) %G%"
-#endif not lint
+/* "@(#)mtboot.c	6.3 (Berkeley) %G%" */
 
 /*
  * VAX tape boot block for distribution tapes
