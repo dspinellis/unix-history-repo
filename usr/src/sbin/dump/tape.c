@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980,1991 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,7 @@ int	trecno = 0;		/* next record to write in current block */
 extern	long blocksperfile;	/* number of blocks per output file */
 extern int ntrec;		/* blocking factor on tape */
 extern int cartridge;
+char	*nexttape;
 #ifdef RDUMP
 extern char *host;
 int	rmtopen(), rmtwrite();
@@ -74,7 +75,9 @@ alloctape()
 	 * repositioning after stopping, i.e, streaming mode, where the gap is
 	 * variable, 0.30" to 0.45".  The gap is maximal when the tape stops.
 	 */
-	tenths = writesize/density + (cartridge ? 16 : density == 625 ? 5 : 8);
+	if (blocksperfile == 0)
+		tenths = writesize / density +
+		    (cartridge ? 16 : density == 625 ? 5 : 8);
 	/*
 	 * Allocate tape buffer contiguous with the array of instruction
 	 * packets, so flushtape() can write them together with one write().
@@ -213,7 +216,8 @@ close_rewind()
 		msg("Change Volumes: Mount volume #%d\n", tapeno+1);
 		broadcast("CHANGE DUMP VOLUMES!\7\7\n");
 	}
-	while (!query("Is the new volume mounted and ready to go?"))
+	while (nexttape == 0 &&
+	    !query("Is the new volume mounted and ready to go?"))
 		if (query("Do you want to abort?")) {
 			dumpabort();
 			/*NOTREACHED*/
@@ -239,6 +243,7 @@ startnewtape()
 	int	waitpid;
 	sig_t	interrupt;
 	int	blks, i;
+	char	*p;
 
 	interrupt = signal(SIGINT, SIG_IGN);
 	parentpid = getpid();
@@ -308,6 +313,18 @@ startnewtape()
 		msg("Child on Tape %d has parent %d, my pid = %d\n",
 			tapeno+1, parentpid, getpid());
 #endif TDEBUG
+		/*
+		 * If we have a name like "/dev/rmt0,/dev/rmt1",
+		 * use the name before the comma first, and save
+		 * the second name for next time.
+		 */
+		if (nexttape && *nexttape)
+			tape = nexttape;
+		if (p = index(tape, ',')) {
+			*p = '\0';
+			nexttape = p + 1;
+		} else
+			nexttape = NULL;
 #ifdef RDUMP
 		while ((tapefd = (host ? rmtopen(tape, 2) :
 			pipeout ? 1 : open(tape, O_WRONLY|O_CREAT, 0666))) < 0)
