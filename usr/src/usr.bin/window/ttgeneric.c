@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.19 83/12/21";
+static	char *sccsid = "@(#)ttgeneric.c	3.20 84/01/11";
 #endif
 
 #include "ww.h"
@@ -39,8 +39,8 @@ char *gen_BC;
 char *gen_ND;
 char *gen_HO;
 char *gen_NL;
-char *gen_GS;			/* graphics */
-char *gen_GE;
+char *gen_AS;
+char *gen_AE;
 char gen_MI;
 char gen_MS;
 char gen_AM;
@@ -91,11 +91,11 @@ register new;
 	}
 	if (diff & WWM_GRP) {
 		if (new & WWM_GRP) {
-			if (gen_GS)
-				ps(gen_GS);
+			if (gen_AS)
+				ps(gen_AS);
 		} else
-			if (gen_GE)
-				ps(gen_GE);
+			if (gen_AE)
+				ps(gen_AE);
 	}
 	tt.tt_modes = new;
 }
@@ -294,6 +294,8 @@ tt_generic()
 	gen_ND = tt_xgetstr("nd");
 	gen_HO = tt_xgetstr("ho");
 	gen_NL = tt_xgetstr("nl");
+	gen_AS = tt_xgetstr("as");
+	gen_AE = tt_xgetstr("ae");
 	gen_MI = tgetflag("mi");
 	gen_MS = tgetflag("ms");
 	gen_AM = tgetflag("am");
@@ -343,6 +345,8 @@ tt_generic()
 		tt.tt_availmodes |= WWM_REV;
 	if (gen_US)
 		tt.tt_availmodes |= WWM_UL;
+	if (gen_AS)
+		tt.tt_availmodes |= WWM_GRP;
 	tt.tt_hasinsert = gen_IM != 0;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;
