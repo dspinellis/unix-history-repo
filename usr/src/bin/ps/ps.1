@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ps.1	6.17 (Berkeley) %G%
+.\"     @(#)ps.1	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PS 1
@@ -158,7 +158,6 @@ the include file
 .It Dv "STRC" Ta No "0x0000010	process is being traced"
 .It Dv "SWTED" Ta No "0x0000020	another tracing flag"
 .It Dv "SSINTR" Ta No "0x0000040	sleep is interruptible"
-.It Dv "SPAGE" Ta No "0x0000080	process in page wait state"
 .It Dv "SKEEP" Ta No "0x0000100	another flag to prevent swap out"
 .It Dv "SOMASK" Ta No "0x0000200	restore old mask after taking signal"
 .It Dv "SWEXIT" Ta No "0x0000400	working on exiting"
@@ -218,8 +217,6 @@ The first letter indicates the run state of the process:
 Marks a process in disk (or other short term, uninterruptable) wait.
 .It I
 Marks a process that is idle (sleeping for longer than about 20 seconds).
-.It P
-Marks a process in page wait.
 .It R
 Marks a runnable process.
 .It S
