@@ -1,0 +1,260 @@
+@(#)README	2.1 (Berkeley) %G%
+
+This document describes the sendmail configuration files being used
+at Berkeley.  There have been several previous versions.  This file
+is being written on 24 July 1991, and will probably not be generally
+available for several months.
+
+INSTALLING A NEW SITE CONFIGURATION
+
+Configuration files are contained in the subdirectory "cf", with a
+suffix ".mc".  They must be run through "m4" to produce a ".cf" file.
+
+Every .mc file SHOULD begin with:
+
+	divert(-1)
+	COPYRIGHT NOTICE
+	divert(0)
+
+If you don't care about copyrights, you can omit this.  If you try
+to patent this, I'll be very, very pissed.  I haven't patented a lot
+of hot ideas so that you can use them; I expect reciprocal courtesy.
+A copyleft is a copyright by another name.
+
+The copyright, if any, MUST be followed by:
+
+	include(../m4/cf.m4)
+
+This will pull in the M4 macros you will need to make sense of
+everything else.  As the saying goes, don't think about it, just
+do it.  If you don't do it, don't bother reading the rest of this
+file.
+
+At this point, let me make one thing perfectly clear.  I am a rope
+salesman.  I sell you rope.  I haven't produced a new M4 system
+that detects latent bugs, nor have I tried to fix the old one.
+(However, I have decided to rely on a post-V7 version; if you
+are running the 4.2bsd, SysV.2, or 7th Edition version, I suggest
+finding a friend with a newer version.  You can m4-expand on
+their system, then run locally.)
+
+Let's examine a typical .mc file (cf/cs-exposed.mc):
+
+	divert(-1)
+	#
+	# Copyright (c) 1983 Eric P. Allman
+	# Copyright (c) 1988 The Regents of the University of California.
+	# All rights reserved.
+	#
+	# Redistribution and use in source and binary forms are permitted
+	# provided that the above copyright notice and this paragraph are
+	# duplicated in all such forms and that any documentation,
+	# advertising materials, and other materials related to such
+	# distribution and use acknowledge that the software was developed
+	# by the University of California, Berkeley.  The name of the
+	# University may not be used to endorse or promote products derived
+	# from this software without specific prior written permission.
+	# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+	# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+	# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+	#
+
+If you copy this file and modify it, you should maintain this copyright
+notice.  If you actually start from scratch you can delete it -- but be
+honest!
+
+	include(`../m4/cf.m4')
+
+You need this line!
+
+	VERSIONID(@(#)README	2.1 (Berkeley) %G%)
+
+VERSIONID is a macro that stuffs the version information into the
+resulting file.  We use SCCS; you could use RCS, something else, or
+omit it completely.
+
+	DOMAIN(cs.exposed)dnl
+
+This example exposes the host inside of the CS subdomain -- that is,
+it doesn't try to hide the name of the workstation to the outside
+world.  Changing this to DOMAIN(cs.hidden) would have made outgoing
+messages refer to "<username>@CS.Berkeley.EDU" instead of using the
+local hostname.  This can also be effected by using:
+
+	define(`MASQUERADE_AS', `masquerade.host.name.domain.name')dnl
+
+in the ".mc" file.
+
+	MAILER(local)dnl
+	MAILER(smtp)dnl
+
+These describe the mailers used at the default CS site site.  
+
+Note that cf/cs-exposed.mc omits an OSTYPE macro -- this assumes
+default Computer Science Division environment.  There are several
+environments available: bsd4.3, bsd4.4, riscos4.5, sunos3.5,
+sunos4.1, and ultrix4.1.  These change things like the location
+of the alias file and queue directory.
+
+MAILERS
+
+There are fewer mailers supported in this version than the previous
+version, owing mostly to a simpler world.
+
+local		The local and prog mailers.  You will almost always
+		need these; the only exception is if you relay ALL
+		your mail to another site.
+
+smtp		The Simple Mail Transport Protocol mailer.  This does
+		not hide hosts behind a gateway or another other
+		such hack; it assumes a world where everyone is
+		running the name server.
+
+uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
+		defines two mailers, "uucp" and "suucp".  The latter
+		is for when you know that the UUCP mailer at the other
+		end can handle multiple recipients in one transfer.
+
+HIERARCHY
+
+Within this directory are several subdirectories, to wit:
+
+m4		General support routines.  These are typically
+		very important and should not be changed without
+		contacting your lawyer.
+
+cf		The configuration files themselves.  They have
+		".mc" suffixes, and must be run through m4 to
+		become complete.  The resulting output should
+		have a ".cf" suffix.
+
+ostype		Definitions describing a particular operating
+		system type.  These should always be referenced
+		using the OSTYPE macro in the .mc file.  Examples
+		include "bsd4.3", "bsd4.4", "sunos3.5", and
+		"sunos4.1".
+
+domain		Definitions describing a particular domain, referenced
+		using the DOMAIN macro in the .mc file.  These are
+		site dependent; for example, we contribute "cs.exposed.m4"
+		and "cs.hidden.m4" which both describe hosts in the
+		CS.Berkeley.EDU subdomain; the former displays the local
+		hostname (e.g., mammoth.CS.Berkeley.EDU), whereas the
+		latter does its best to hide the identity of the local
+		workstation inside the CS subdomain.
+
+mailer		Descriptions of mailers.   These are referenced using
+		the MAILER macro in the .mc file.
+
+sh		Shell files used when building the .cf file from the
+		.mc file in the cf subdirectory.
+
+feature		These hold special orthogonal features that you might
+		want to include.  They should be referenced using
+		the FEATURE macro.
+
+hack		Local hacks.  These can be referenced using the HACK
+		macro.  They shouldn't be of more than voyeuristic
+		interest outside the .Berkeley.EDU domain, but who knows?
+		We've all got our own peccadilloes.
+
+
+ADMINISTRATIVE DETAILS
+
+The following sections detail usage of certain internal parts of the
+sendmail.cf file.  Read them carefully if you are trying to modify
+the current model.  If you find the above descriptions adequate, these
+should be {boring, confusing, tedious, ridiculous} (pick one or more).
+
+RULESETS (* means built in to sendmail)
+
+   0 *	Parsing
+   1 *	Sender rewriting
+   2 *	Recipient rewriting
+   3 *	Canonicalization
+   4 *	Post cleanup
+   5	Back compatibility for UUCP
+   6	Bottom half of Ruleset 3
+   7	--unused--
+   8	"host dependent cleanup" -- unused?
+   9	change rightmost % to @ -- needed?
+
+
+MAILERS
+
+   0	local, prog	local and program mailers
+   1	smtp		SMTP channel
+   2	uucp
+
+
+MACROS
+
+   A
+   B	Bitnet Relay
+   C	CSNET Relay
+   D
+   E
+   F
+   G
+   H
+   I
+   J
+   K
+   L
+   M	Masquerade (who I claim to be)
+   N
+   O
+   P
+   Q
+   R	Relay (for unqualified names)
+   S
+   T
+   U	UUCP Relay (all hosts)
+   V	UUCP Relay (class V hosts)
+   W	UUCP Relay (class W hosts)
+   X	UUCP Relay (class X hosts)
+   Y	UUCP Relay (class Y hosts)
+   Z	Version number
+
+
+CLASSES
+
+   A
+   B
+   C
+   D
+   E
+   F
+   G
+   H
+   I
+   J
+   K
+   L	addresses that should not be forwarded to $R
+   M
+   N
+   O	operators that indicate network operations (cannot be in local names)
+   P
+   Q
+   R
+   S
+   T
+   U	locally connected UUCP hosts
+   V	UUCP hosts connected to host $V
+   W	UUCP hosts connected to host $X
+   X	UUCP hosts connected to host $Y
+   Y	UUCP hosts connected to host $Z
+   Z
+
+
+M4 DIVERSIONS
+
+   1	Versions
+   2	Local Ruleset 0 additions
+   3	Local Ruleset 3 additions
+   4
+   5
+   6
+   7	mailer definitions
+   8
+   9
