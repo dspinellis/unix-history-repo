@@ -1,4 +1,4 @@
-/*	@(#)if_qe.c	7.4 (Berkeley) %G% */
+/*	@(#)if_qe.c	7.5 (Berkeley) %G% */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
  
@@ -327,7 +327,7 @@ qeattach(ui)
 	for( i=0 ; i<6 ; i++ )
 		sc->setup_pkt[i][1] = sc->qe_addr[i] = addr->qe_sta_addr[i] & 0xff;  
 	printf("qe%d: hardware address %s\n", ui->ui_unit,
-		ether_sprintf(is->is_addr));
+		ether_sprintf(c->qe_addr));
  
 	/*
 	 * Save the vector for initialization at reset time.
