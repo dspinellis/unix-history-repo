@@ -1,4 +1,4 @@
-/*	cy.c	1.5	86/01/26	*/
+/*	cy.c	1.6	86/01/27	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -659,8 +659,8 @@ cyintr(cipher)
 	cy = &cy_softc[cyunit];
 	cyuncachetpb(cy);
 	/*
-	 * If last command was a rewind or file mark search, and
-	 * tape is still moving, wait for the operation to complete.
+	 * If last command was a rewind and tape is
+	 * still moving, wait for the operation to complete.
 	 */
 	if (vm->um_tab.b_active == SREW) {
 		vm->um_tab.b_active = SCOM;
@@ -727,8 +727,7 @@ cyintr(cipher)
 		 * If error is not hard, and this was an i/o operation
 		 * retry up to 8 times.
 		 */
-		err = 1 << err;
-		if ((err&CYER_SOFT) && state == SIO) {
+		if (((1<<err)&CYER_SOFT) && state == SIO) {
 			if (++vm->um_tab.b_errcnt < 7) {
 				yc->yc_blkno++;
 				goto opcont;
