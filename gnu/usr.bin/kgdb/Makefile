@@ -1,6 +1,6 @@
 #	@(#)Makefile	6.4 (Berkley) 5/6/91
 
-PROG=		gdb
+PROG=		kgdb
 GDBSRCS=	blockframe.c breakpoint.c command.c copying.c core.c \
 		cplus-dem.c dbxread.c environ.c eval.c expprint.c \
 		expread.y findvar.c infcmd.c inflow.c infrun.c \

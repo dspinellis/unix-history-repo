@@ -120,7 +120,7 @@ static char dirbuf[MAXPATHLEN];
 #ifdef KERNELDEBUG
 /* Nonzero if we're debugging /dev/mem or a kernel crash dump */
 
-int kernel_debugging;
+int kernel_debugging = 1;
 #endif
 
 /* Nonzero to inhibit confirmation of quitting or restarting 
