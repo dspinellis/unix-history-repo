@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)psreg.h	7.2 (Berkeley) %G%
+ *	@(#)psreg.h	7.3 (Berkeley) %G%
  */
 
 #ifndef _PSREG_
@@ -25,7 +25,7 @@
 #ifndef KERNEL
 #include <sys/ioctl.h>
 #else
-#include "../h/ioctl.h"
+#include "ioctl.h"
 #endif
 
 struct  pslookup {
