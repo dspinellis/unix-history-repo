@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)init_main.c	7.16 (Berkeley) %G%
+ *	@(#)init_main.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -208,6 +208,7 @@ main(firstaddr)
 	 * make init process
 	 */
 
+	siginit(&proc[0]);
 	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
 		expand(clrnd((int)btoc(szicode)), 0);
