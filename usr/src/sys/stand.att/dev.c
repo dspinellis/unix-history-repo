@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)dev.c	7.2 (Berkeley) %G%
+ *	@(#)dev.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,14 +57,16 @@ devopen(io)
 	printf("%s(%d,%d,%d,%d): ", devsw[io->i_ino.i_dev].dv_name,
 		io->i_adapt, io->i_ctlr, io->i_unit, io->i_part);
 	switch(ret) {
+	case EIO:
+		break;		/* already reported */
 	case EADAPT:
-		printf("bad adaptor\n");
+		printf("bad adaptor number\n");
 		break;
 	case ECTLR:
-		printf("bad controller\n");
+		printf("bad controller number\n");
 		break;
 	case EUNIT:
-		printf("bad drive\n");
+		printf("bad drive number\n");
 		break;
 	case EPART:
 		printf("bad partition\n");
@@ -76,8 +78,11 @@ devopen(io)
 		printf("unlabeled\n");
 		break;
 	case ENXIO:
-	default:
 		printf("bad device specification\n");
+		break;
+	default:
+		printf("unknown open error\n");
+		break;
 	}
 	return (ret);
 }
