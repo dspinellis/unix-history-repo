@@ -1,4 +1,4 @@
-/*	if_ec.c	4.5	82/04/14	*/
+/*	if_ec.c	4.6	82/05/07	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -87,6 +87,10 @@ COUNT(ECPROBE);
 	br = 0; cvec = br; br = cvec;
 	ecrint(0); ecxint(0); eccollide(0);
 #endif
+	/*
+	 * Make sure memory is turned on
+	 */
+	addr->ec_rcr = EC_AROM;
 	/*
 	 * Check for existence of buffers on Unibus.
 	 * This won't work on a 780 until more work is done.
@@ -232,6 +236,8 @@ ecinit(unit)
 	/*
 	 * Hang receive buffers and start any pending
 	 * writes by faking a transmit complete.
+	 * Writing into the rcr also makes sure the memory
+	 * is turned on.
 	 */
 	s = splimp();
 	for (i=ECRHBF; i>=ECRLBF; i--)
