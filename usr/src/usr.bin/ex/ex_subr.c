@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_subr.c	6.1 %G%";
+static char *sccsid = "@(#)ex_subr.c	6.2 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -664,13 +664,12 @@ short	std_errlist[] = {
 	error("Illegal seek"),
 	error("Read-only file system"),
 	error("Too many links"),
-	error("Broken pipe")
-#ifndef QUOTA
-	, error("Math argument")
-	, error("Result too large")
-#else
-	, error("Quota exceeded")
+	error("Broken pipe"),
+#ifndef V6
+	error("Math argument"),
+	error("Result too large"),
 #endif
+	error("Quota exceeded")		/* Berkeley quota systems only */
 };
 
 #undef	error
@@ -806,4 +805,25 @@ markit(addr)
 
 	if (addr != dot && addr >= one && addr <= dol)
 		markDOT();
+}
+
+/*
+ * The following code is defensive programming against a bug in the
+ * pdp-11 overlay implementation.  Sometimes it goes nuts and asks
+ * for an overlay with some garbage number, which generates an emt
+ * trap.  This is a less than elegant solution, but it is somewhat
+ * better than core dumping and losing your work, leaving your tty
+ * in a weird state, etc.
+ */
+int _ovno;
+onemt()
+{
+	int oovno;
+
+	signal(SIGEMT, onemt);
+	oovno = _ovno;
+	/* 2 and 3 are valid on 11/40 type vi, so */
+	if (_ovno < 0 || _ovno > 3)
+		_ovno = 0;
+	error("emt trap, _ovno is %d @ - try again");
 }
