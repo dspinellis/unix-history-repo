@@ -1,0 +1,66 @@
+List of known bugs:
+
++ The complete list of POSIX.1 calls that can return EINTR are:
+	wait, waitpid, sleep, dup2, close, read, write,
+	fcntl(SETLCKW) tcsetattr, tcdrain
+  The problem is that technically, any system/library call can return
+  EINTR, so, while nvi blocks (most of?) the obvious ones, someone may
+  have to do a complete pass and block signals everywhere.
+
++ The man page requires the 4BSD mandoc macro set, should be converted
+  to the man macro set, or, if necessary, the me macro set.
+
++ The ex routines run in raw mode, not in cooked mode.  This has to
+  be fixed for user interface reasons, not to mention that it will
+  improve network throughput and POSIX 1003.2 is going to require it.
+
++ The svi_sm_fill routine should scroll if possible, not always redraw.
+
++ The number option doesn't display line numbers in ex append/insert
+  mode.
+
++ The option sidescroll is completely wrong, and setting it does more
+  harm than good.
+
++ The vi main command loop should use the general-purpose overflow and
+  underflow routines.  In addition, the
+  vi command loop uses unsigned longs -- should probably be fixed as a
+  32-bit unsigned type, and then check to make sure it's never used as
+  as variable type again.
+
++ When nvi edits files that don't have trailing newlines, it appends
+  one, regardless.
+
++ Open mode is not yet implemented.
+
++ ^C isn't passed to the shell in the script windows as an interrupt
+  character.
+
++ The options:
+
+	hardtabs, lisp, optimize, redraw, slowopen
+
+  are recognized, but not implemented.  These options are unlikely to
+  be implemented, so if you want them you might want to say something!
+  I will implement lisp if anyone ever documents how it worked.
+
++ Screen repainting over slow lines, for some screen changes, isn't
+  as good as the historic vi's.
+
++ The line movement commands ('k', 'j' are easy examples) don't find the
+  most attractive cursor position correctly when wrapped lines are longer
+  than 80 characters, and they're on the second or subsequent lines.
+
++ Colon commands longer than a single line cause the display to be
+  incorrect.
+
++ Historic vi permitted :g/xxx/vi, i.e. you could execute ex/vi as
+  global commands.  Need to review all of the old commands to verify
+  which ones could/could not be used as global commands.
+
++ Historic vi handled append/insert/change text, when applied to global
+  commands immediately, as part of the global command.  Nvi gets this
+  wrong.
+
++ If you run out of space in the recovery directory, the recovery
+  file is left in place.
