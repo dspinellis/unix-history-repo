@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.6 83/12/12";
+static	char *sccsid = "@(#)parser1.c	3.7 84/01/05";
 #endif
 
 #include <stdio.h>
@@ -321,6 +321,7 @@ register struct value *v;
 		flag = 0;
 	if (token != T_RP && token != T_EOL && token != T_EOF)
 		flag = 0;		/* look ahead a bit */
+	v->v_type = V_ERR;
 	if (flag)
 		(*c->lc_func)(v);
 	if (c != 0)
