@@ -16,10 +16,10 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)execve.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)execve.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 SYSCALL(execve)
-	ret		# execve(file, argv, arge)
+	ret		/* execve(file, argv, arge) */
