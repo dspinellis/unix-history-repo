@@ -2,21 +2,53 @@
  * Copyright (c) 1980 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regexp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regexp.c	5.4 (Berkeley) 8/3/92";
 #endif /* not lint */
 
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include "extern.h"
 
-typedef int	boolean;
-#define TRUE	1
 #define FALSE	0
+#define TRUE	!(FALSE)
 #define NIL	0
 
-boolean l_onecase;	/* true if upper and lower equivalent */
+static void	expconv __P((void));
+
+boolean	 _escaped;	/* true if we are currently _escaped */
+char	*_start;	/* start of string */
+boolean	 l_onecase;	/* true if upper and lower equivalent */
 
 #define makelower(c) (isupper((c)) ? tolower((c)) : (c))
 
@@ -25,6 +57,7 @@ boolean l_onecase;	/* true if upper and lower equivalent */
  *		if l_onecase is set.
  */
 
+int
 STRNCMP(s1, s2, len)
 	register char *s1,*s2;
 	register int len;
@@ -103,9 +136,8 @@ STRNCMP(s1, s2, len)
 #define ALT 8
 #define OPER 16
 
-char *ure;		/* pointer current position in unconverted exp */
-char *ccre;		/* pointer to current position in converted exp*/
-char *malloc();
+static char *ccre;	/* pointer to current position in converted exp*/
+static char *ure;	/* pointer current position in unconverted exp */
 
 char *
 convexp(re)
@@ -133,6 +165,7 @@ convexp(re)
     return (cre);
 }
 
+static void
 expconv()
 {
     register char *cs;		/* pointer to current symbol in converted exp */
@@ -223,7 +256,7 @@ expconv()
 	    OCNT(cs) = ccre - cs;		/* offset to next symbol */
 	    break;
 
-	/* return from a recursion */
+	/* reurn from a recursion */
 	case ')':
 	    if (acs != NIL) {
 		do {
@@ -302,9 +335,6 @@ expconv()
  *	The value returned is the pointer to the first non \a 
  *	character matched.
  */
-
-boolean _escaped;		/* true if we are currently _escaped */
-char *_start;			/* start of string */
 
 char *
 expmatch (s, re, mstring)
