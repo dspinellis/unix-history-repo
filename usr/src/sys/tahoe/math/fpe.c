@@ -1,4 +1,4 @@
-/*	fpe.c	1.1	86/01/03	*/
+/*	fpe.c	1.2	89/05/05	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -8,7 +8,6 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "seg.h"
