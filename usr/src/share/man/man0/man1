@@ -52,7 +52,7 @@
 /usr/src/usr.bin/diction/diction/diction.1
 /usr/src/usr.bin/diff/diff/diff.1
 /usr/src/usr.bin/diff/diff3/diff3.1
-/usr/src/contrib/bind-4.9/man/dig.1
+/usr/src/contrib/bind-4.9.2/man/dig.1
 /usr/src/usr.bin/du/du.1
 /usr/src/bin/sh/bltin/echo.1
 /usr/src/bin/ed/ed.1
@@ -75,7 +75,7 @@
 /usr/src/usr.bin/ftp/ftp.1
 /usr/src/contrib/gcc-2.3.3/g++.1
 /usr/src/usr.bin/gcore/gcore.1
-/usr/src/contrib/gdb-4.7.lbl/gdb/gdb.1
+/usr/src/contrib/gdb-4.7.LBL/gdb/gdb.1
 /usr/src/usr.bin/gprof/gprof.1
 /usr/src/usr.bin/graph/graph.1
 /usr/src/usr.bin/grep/egrep/grep.1
@@ -85,10 +85,10 @@
 /usr/src/contrib/groff-1.08/grops/grops.1
 /usr/src/contrib/groff-1.08/grotty/grotty.1
 /usr/src/usr.bin/id/groups.1
-/usr/src/contrib/gzip-1.0.7/gzip.1
+/usr/src/contrib/gzip-1.2.4/gzip.1
 /usr/src/usr.bin/head/head.1
 /usr/src/usr.bin/hexdump/hexdump.1
-/usr/src/contrib/bind-4.9/man/host.1
+/usr/src/contrib/bind-4.9.2/man/host.1
 /usr/src/bin/hostname/hostname.1
 /usr/src/usr.bin/id/id.1
 /usr/src/contrib/rcs-V5.6/man/ident.1
@@ -153,7 +153,6 @@
 /usr/src/usr.bin/nm/nm.1
 /usr/src/usr.bin/nohup/nohup.1
 /usr/src/contrib/groff-1.08/nroff/nroff.1
-/usr/src/contrib/bind-4.9/man/nslookup.1
 /usr/src/usr.bin/hexdump/od.1
 /usr/src/usr.bin/pagesize/pagesize.1
 /usr/src/usr.bin/passwd/passwd.1
