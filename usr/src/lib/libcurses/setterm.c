@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -39,8 +39,6 @@ static char	*_PC,
 static char	*aoftspace;		/* Address of _tspace for relocation */
 static char	tspace[2048];		/* Space for capability strings */
 
-static int	destcol, destline;
-
 char *ttytype;
 
 int
@@ -50,6 +48,7 @@ setterm(type)
 	static char genbuf[1024];
 	static char __ttytype[1024];
 	register int unknown;
+	int destcol, destline;
 	struct winsize win;
 	char *p;
 
