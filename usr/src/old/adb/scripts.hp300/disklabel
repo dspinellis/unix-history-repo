@@ -1,0 +1,13 @@
+./"magic"16t"type"8t"subtype"nXdd
++/"typename"n16C
++/"packname"n16C
++/"secsize"16t"nsectors"16t"ntracks"16t"ncylin"n4D
++/"secpercyl"16t"secperunit"16t"sparesecpertrk"16t"sparesecpercyl"n2Dd16td
++/"acylinders"16t"rpm"8t"interlv"16t"trackskew"8t"cylskew"nD3d16td
++/"headswitch"16t"trkseek"16t"flags"n2DX
++/"drivedata"n5X20+
++/"magic"nX
++/"checksum"8t"npartitions"16t"bbsize"16t"sbsize"nx16td16t2D
++/"partitions"n
+.,8$<dpartition
++,<9-1$<disklabel
