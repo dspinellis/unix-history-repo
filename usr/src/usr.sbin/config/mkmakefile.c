@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	1.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	1.31 (Berkeley) %G%";
 #endif
 
 /*
@@ -445,7 +445,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
 				extras, np);
-			fprintf(f, "\t${C2} %ss | sed -f ../%s/asm.sed |",
+			fprintf(f, "\t${C2} %ss | ../%s/asm |",
 			    tp, machinename);
 			fprintf(f, " ${AS} -o %so\n", tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
@@ -464,7 +464,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
 				extras, np);
-			fprintf(f,"\t${C2} -i %ss | sed -f ../%s/asm.sed |",
+			fprintf(f,"\t${C2} -i %ss | ../%s/asm |",
 			    tp, machinename);
 			fprintf(f, " ${AS} -o %so\n", tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
@@ -490,9 +490,8 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\t${CC} -I. -c -S %s %s../%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
-			fprintf(f,
-			    "\tsed -f ../vax/asm.sed %ss | ${AS} -o %so\n",
-			    tp, tp);
+			fprintf(f, "\t../%s/asm %ss | ${AS} -o %so\n",
+			    machinename, tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
 
@@ -545,8 +544,10 @@ do_systemspec(f, fl, first)
 	int first;
 {
 
-	fprintf(f, "%s: makefile locore.o ${OBJS} param.o", fl->f_needs);
-	fprintf(f, " ioconf.o swap%s.o\n", fl->f_fn);
+	fprintf(f, "%s: makefile", fl->f_needs);
+	if (machine == MACHINE_VAX)
+		fprintf(f, " ../%s/asm", machinename);
+	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
 	if (first) {
@@ -594,8 +595,7 @@ do_swapspec(f, name)
 	case MACHINE_VAX:
 		fprintf(f, "\t${CC} -I. -c -S ${COPTS} ");
 		fprintf(f, "../%s/swapgeneric.c\n", machinename);
-		fprintf(f, "\t${C2} swapgeneric.s | sed -f ../%s/asm.sed",
-		    machinename);
+		fprintf(f, "\t${C2} swapgeneric.s | ../%s/asm", machinename);
 		fprintf(f, " | ${AS} -o swapgeneric.o\n");
 		fprintf(f, "\trm -f swapgeneric.s\n\n");
 		break;

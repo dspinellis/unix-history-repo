@@ -1,4 +1,4 @@
-#	Makefile.vax	6.3	%G%
+#	Makefile.vax	6.4	%G%
 #
 # Makefile for 4.2 BSD
 #
@@ -48,6 +48,9 @@ lint: /tmp
 ../vax/symbols.sort: ../vax/symbols.raw
 	grep -v '^#' ../vax/symbols.raw \
 	    | sed 's/^	//' | sort -u > ../vax/symbols.sort
+
+../vax/asm: ../vax/asm.c
+	${CC} -o ../vax/asm -O ../vax/asm.c
 
 locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ../vax/locore.s \
     ubglue.s ../vax/mtpr.h ../vax/trap.h ../machine/psl.h \
@@ -125,13 +128,13 @@ print:
 	@ls -ls | pr -f
 	@cd ../h; ls -ls | pr -f ; pr -f *.m *.h
 	@echo 'once upon a time ...'
-	@cd ../sys; pr -f asm.sed Locore.c scb.s locore.s
+	@cd ../vax; pr -f asm.c Locore.c scb.s locore.s
 	@pr -f ${CFILES}
 
 ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
     ../vaxmba/mbavar.h ../h/vm.h ../vaxuba/ubavar.h
 	${CC} -I. -c -S ${COPTS} ioconf.c
-	${C2} ioconf.s | sed -f ../vax/asm.sed | ${AS} -o ioconf.o
+	${C2} ioconf.s | ../vax/asm | ${AS} -o ioconf.o
 	rm -f ioconf.s
 
 param.c: ../conf/param.c
