@@ -101,7 +101,8 @@ register char *cmd;
 		flags.nopick = 0;
 		cmd = parse();
 	}
-	if(!*cmd || *cmd == 0377 || (flags.no_rest_on_space && *cmd == ' ')){
+	if(!*cmd || (*cmd & 0377) == 0377 ||
+	   (flags.no_rest_on_space && *cmd == ' ')){
 		bell();
 		flags.move = 0;
 		return;		/* probably we just had an interrupt */
