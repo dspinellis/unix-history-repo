@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.23 %G%";
+static	char sccsid[] = "@(#)call.c 1.24 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -159,8 +159,10 @@ call(p, argv, porf, psbn)
 			    /*
 			     *	... ( t -> entryaddr )( ...
 			     */
+			    /* 	the descriptor */
 			putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
 				tempdescrp -> extra_flags , P2PTR | P2STRTY );
+			    /*	the entry address within the descriptor */
 			if ( FENTRYOFFSET != 0 ) {
 			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 0 );
 			    putop( P2PLUS , 
@@ -169,8 +171,19 @@ call(p, argv, porf, psbn)
 					    P2PTR ) ,
 					P2PTR ) );
 			}
-			putop( P2UNARY P2MUL ,
-			    ADDTYPE( ADDTYPE( p2type( p ) , P2FTN ) , P2PTR ) );
+			    /*
+			     *	indirect to fetch the formal entry address
+			     *	with the result type of the routine.
+			     */
+			if (p -> class == FFUNC) {
+			    putop( P2UNARY P2MUL ,
+				ADDTYPE(ADDTYPE(p2type(p -> type), P2FTN),
+					P2PTR));
+			} else {
+				/* procedures are int returning functions */
+			    putop( P2UNARY P2MUL ,
+				ADDTYPE(ADDTYPE(P2INT, P2FTN), P2PTR));
+			}
 			break;
 		default:
 			panic("call class");
