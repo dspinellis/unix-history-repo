@@ -1,9 +1,10 @@
-/*	dr.c	1.4	86/11/25	*/
+/*	dr.c	1.5	86/11/29	*/
 
 #include "dr.h"
 #if NDR > 0
 
 /*      DRV11-W DMA interface driver.
+ * UNTESTED WITH 4.3
  */
 
 #include "../machine/mtpr.h"
