@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.39	82/10/22	*/
+/*	udp_usrreq.c	4.40	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -227,7 +227,7 @@ udp_usrreq(so, req, m, nam, opt)
 		error = in_pcballoc(so, &udb);
 		if (error)
 			break;
-		error = in_pcbreserve(so, 2048, 2048);
+		error = soreserve(so, 2048, 2048);
 		if (error)
 			break;
 		break;

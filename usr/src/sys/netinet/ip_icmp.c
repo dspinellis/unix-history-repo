@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.23	82/10/30	*/
+/*	ip_icmp.c	4.24	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -148,7 +148,7 @@ icmp_input(m)
 			goto free;
 		if (icmpprintfs)
 			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
-		if (ctlfunc = protosw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
+		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
 			(*ctlfunc)(icmpmap[i] + icp->icmp_code, (caddr_t)icp);
 		goto free;
 

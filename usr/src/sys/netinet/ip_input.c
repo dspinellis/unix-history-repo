@@ -1,8 +1,9 @@
-/*	ip_input.c	1.57	82/10/30	*/
+/*	ip_input.c	1.58	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
+#include "../h/domain.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include <errno.h>
@@ -36,11 +37,12 @@ ip_init()
 	if (pr == 0)
 		panic("ip_init");
 	for (i = 0; i < IPPROTO_MAX; i++)
-		ip_protox[i] = pr - protosw;
-	for (pr = protosw; pr <= protoswLAST; pr++)
+		ip_protox[i] = pr - inetsw;
+	for (pr = inetdomain.dom_protosw;
+	    pr <= inetdomain.dom_protoswNPROTOSW; pr++)
 		if (pr->pr_family == PF_INET &&
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
-			ip_protox[pr->pr_protocol] = pr - protosw;
+			ip_protox[pr->pr_protocol] = pr - inetsw;
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time.tv_sec & 0xffff;
 	ipintrq.ifq_maxlen = ipqmaxlen;
@@ -197,7 +199,7 @@ found:
 	/*
 	 * Switch out to protocol's input routine.
 	 */
-	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
+	(*inetsw[ip_protox[ip->ip_p]].pr_input)(m);
 	goto next;
 bad:
 	m_freem(m);

@@ -1,4 +1,4 @@
-/*	in.h	4.17	82/10/31	*/
+/*	in.h	4.18	82/11/03	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -127,4 +127,9 @@ struct sockaddr_in {
 #define	ntohs(x)	(x)
 #define	htonl(x)	(x)
 #define	htons(x)	(x)
+#endif
+
+#ifdef KERNEL
+extern	struct domain inetdomain;
+extern	struct protosw inetsw[];
 #endif
