@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -574,10 +574,19 @@ telrcv()
 				continue;
 
 			case WILL:
+				state = TS_WILL;
+				continue;
+
 			case WONT:
+				state = TS_WONT;
+				continue;
+
 			case DO:
+				state = TS_DO;
+				continue;
+
 			case DONT:
-				state = TS_WILL + (c - WILL);
+				state = TS_DONT;
 				continue;
 
 			case IAC:
@@ -639,15 +648,15 @@ willoption(option)
 
 	case TELOPT_BINARY:
 		mode(RAW, 0);
-		goto common;
+		fmt = doopt;
+		break;
 
 	case TELOPT_ECHO:
 		mode(0, ECHO|CRMOD);
-		/*FALL THRU*/
+		fmt = doopt;
+		break;
 
 	case TELOPT_SGA:
-	common:
-		hisopts[option] = 1;
 		fmt = doopt;
 		break;
 
@@ -659,6 +668,11 @@ willoption(option)
 		fmt = dont;
 		break;
 	}
+	if (fmt == doopt) {
+		hisopts[option] = 1;
+	} else {
+		hisopts[option] = 0;
+	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (dont) - 2;
 }
@@ -669,24 +683,16 @@ wontoption(option)
 	char *fmt;
 
 	switch (option) {
-
 	case TELOPT_ECHO:
 		mode(ECHO|CRMOD, 0);
-		goto common;
+		break;
 
 	case TELOPT_BINARY:
 		mode(0, RAW);
-		/*FALL THRU*/
-
-	case TELOPT_SGA:
-	common:
-		hisopts[option] = 0;
-		fmt = dont;
 		break;
-
-	default:
-		fmt = dont;
 	}
+	fmt = dont;
+	hisopts[option] = 0;
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
 }
@@ -704,20 +710,26 @@ dooption(option)
 
 	case TELOPT_ECHO:
 		mode(ECHO|CRMOD, 0);
-		goto common;
+		fmt = will;
+		break;
 
 	case TELOPT_BINARY:
 		mode(RAW, 0);
-		/*FALL THRU*/
+		fmt = will;
+		break;
 
 	case TELOPT_SGA:
-	common:
 		fmt = will;
 		break;
 
 	default:
 		fmt = wont;
 		break;
+	}
+	if (fmt == will) {
+	    myopts[option] = 1;
+	} else {
+	    myopts[option] = 0;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
