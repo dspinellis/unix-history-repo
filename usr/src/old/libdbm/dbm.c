@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dbm.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbm.c	4.2 (Berkeley) %G%";
 #endif
 
 #include	"dbm.h"
@@ -130,7 +130,7 @@ loop:
 	return (0);
 
 split:
-	if(key.dsize+dat.dsize+2*sizeof(short) >= PBLKSIZ) {
+	if(key.dsize+dat.dsize+3*sizeof(short) >= PBLKSIZ) {
 		printf("entry too big\n");
 		return (-1);
 	}
