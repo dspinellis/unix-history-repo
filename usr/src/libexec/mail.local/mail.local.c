@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.37 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -37,7 +37,7 @@ long	iop, time();
 char	*getenv();
 char	*index();
 char	lettmp[] = _PATH_TMP;
-char	maildir[] = _PATH_MAILDIR;
+char	maildir[sizeof(_PATH_MAILDIR) + 5] = _PATH_MAILDIR;
 char	mailfile[] = "/usr/spool/mail/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	dead[] = "dead.letter";
 char	forwmsg[] = " forwarded\n";
@@ -66,6 +66,7 @@ char **argv;
 	char *name;
 	struct passwd *pwent;
 
+	(void)strcat(maildir, "/");
 	if (!(name = getlogin()) || !*name || !(pwent = getpwnam(name)) ||
 	    getuid() != pwent->pw_uid) 
 		pwent = getpwuid(getuid());
