@@ -6,6 +6,7 @@
 # The copyright notice above does not evidence any
 # actual or intended publication of such source code.
 
+CC= /usr/old/bin/cc
 YFLAGS=-d
 CFLAGS=
 
