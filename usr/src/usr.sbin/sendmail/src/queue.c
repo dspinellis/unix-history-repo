@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.24 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.25 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.24 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.25 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -985,6 +985,11 @@ queuename(e, type)
 			if (i < 0)
 			{
 				(void) unlink(nf);	/* kernel bug */
+				if (errno == ENOSPC) {
+					syserr("queuename: Cannot create \"%s\" in \"%s\"",
+						nf, QueueDir);
+					exit(EX_UNAVAILABLE);
+				}
 				continue;
 			}
 			(void) close(i);

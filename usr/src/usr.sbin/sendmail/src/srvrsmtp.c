@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.24 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.25 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.24 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.25 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -454,11 +454,13 @@ smtp()
 		  case CMDDBGDEBUG:	/* set debug mode */
 		  case CMDDBGKILL:	/* kill the parent */
 		  case CMDDBGWIZ:	/* become a wizard */
-			if (RealHostName)
+# ifdef LOG
+			if (RealHostName != NULL && LogLevel > 0)
 				syslog(LOG_NOTICE,
 				    "\"%s\" command from %s (%s)\n",
 				    c->cmdname, RealHostName,
 				    inet_ntoa(RealHostAddr.sin_addr));
+# endif
 			/* FALL THROUGH */
 # endif /* SMTPDEBUG */
 

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <pwd.h>
@@ -551,7 +551,10 @@ setsender(from)
 	pvp = prescan(from, '\0', pvpbuf);
 	if (pvp == NULL)
 	{
-		syslog(LOG_INFO, "cannot prescan from (%s)", from);
+# ifdef LOG
+		if (LogLevel >= 1)
+			syslog(LOG_NOTICE, "cannot prescan from (%s)", from);
+# endif
 		usrerr("cannot prescan from (%s)", from);
 		finis();
 	}

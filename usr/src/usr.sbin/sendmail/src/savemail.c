@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -199,8 +199,6 @@ savemail(e)
 				(void) fclose(fp);
 			}
 			printf("Original message will be saved in dead.letter.\r\n");
-			if (ferror(stdout))
-				(void) syserr("savemail: stdout: write err");
 			state = ESM_DEADLETTER;
 			break;
 

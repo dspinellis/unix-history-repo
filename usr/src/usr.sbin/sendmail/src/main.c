@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -302,12 +302,14 @@ main(argc, argv, envp)
 			{
 			  case MD_DAEMON:
 # ifndef DAEMON
-				syserr("Daemon mode not implemented");
+				usrerr("Daemon mode not implemented");
+				ExitStat = EX_USAGE;
 				break;
 # endif DAEMON
 			  case MD_SMTP:
 # ifndef SMTP
-				syserr("I don't speak SMTP");
+				usrerr("I don't speak SMTP");
+				ExitStat = EX_USAGE;
 				break;
 # endif SMTP
 			  case MD_ARPAFTP:
@@ -321,7 +323,8 @@ main(argc, argv, envp)
 				break;
 
 			  default:
-				syserr("Invalid operation mode %c", p[2]);
+				usrerr("Invalid operation mode %c", p[2]);
+				ExitStat = EX_USAGE;
 				break;
 			}
 			break;
@@ -348,14 +351,16 @@ main(argc, argv, envp)
 				p = *++av;
 				if (p == NULL || *p == '-')
 				{
-					syserr("No \"from\" person");
+					usrerr("No \"from\" person");
+					ExitStat = EX_USAGE;
 					av--;
 					break;
 				}
 			}
 			if (from != NULL)
 			{
-				syserr("More than one \"from\" person");
+				usrerr("More than one \"from\" person");
+				ExitStat = EX_USAGE;
 				break;
 			}
 			from = newstr(p);
@@ -365,7 +370,8 @@ main(argc, argv, envp)
 			p += 2;
 			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
 			{
-				syserr("Bad -F flag");
+				usrerr("Bad -F flag");
+				ExitStat = EX_USAGE;
 				av--;
 				break;
 			}
@@ -376,7 +382,8 @@ main(argc, argv, envp)
 			p += 2;
 			if (*p == '\0' && ((p = *++av) == NULL || !isdigit(*p)))
 			{
-				syserr("Bad hop count (%s)", p);
+				usrerr("Bad hop count (%s)", p);
+				ExitStat = EX_USAGE;
 				av--;
 				break;
 			}
@@ -396,7 +403,8 @@ main(argc, argv, envp)
 			queuemode = TRUE;
 			QueueIntvl = convtime(&p[2]);
 # else QUEUE
-			syserr("I don't know about queues");
+			usrerr("I don't know about queues");
+			ExitStat = EX_USAGE;
 # endif QUEUE
 			break;
 
@@ -890,7 +898,7 @@ freeze(freezefile)
 	f = creat(freezefile, FileMode);
 	if (f < 0)
 	{
-		syserr("Cannot freeze");
+		syserr("Cannot freeze %s", freezefile);
 		errno = 0;
 		return;
 	}
@@ -907,7 +915,7 @@ freeze(freezefile)
 	    write(f, (char *) &edata, (int) (fhdr.frzinfo.frzbrk - &edata)) !=
 					(int) (fhdr.frzinfo.frzbrk - &edata))
 	{
-		syserr("Cannot freeze");
+		syserr("Cannot freeze %s", freezefile);
 	}
 
 	/* fine, clean up */
