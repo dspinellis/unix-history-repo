@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)startslip.1	5.4 (Berkeley) %G%
+.\"     @(#)startslip.1	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STARTSLIP 1
@@ -15,6 +15,8 @@
 .Nm startslip
 .Op Fl d
 .Op Fl s Ar string
+.Op Fl A Ar annexname
+.Op Fl F Ar flowcontrol
 .Ar device user passwd
 .Sh DESCRIPTION
 .Nm Startslip
@@ -46,6 +48,27 @@ is written to
 .Ar device .
 For a dialup modem,
 the string is used to specify a dial sequence.
+.It Fl A Ar annexname
+.Nm Startslip
+assumes it is connecting to a Xylogics Annex box and engages in an
+appropriate dialog using the
+.Ar user
+and
+.Ar passwd
+arguments.
+The
+.Ar annexname
+argument is a string that is used to match against the Annex prompt
+to determine when a connection has been established.
+.It Fl F Ar flowcontrol
+Determines the type of flow control used on
+.Ar device .
+Choices for
+.Ar flowcontrol
+are
+``none'' for no flow control (the default),
+``hw'' for hardware RTS/CTS flow control and
+``sw'' for software XON/XOFF flow control.
 .El
 .Sh SEE ALSO
 .Xr sliplogin 8
