@@ -1,5 +1,5 @@
-/*	@(#)local.h	4.1	(Berkeley)	%G%	*/
+/*	@(#)local.h	4.2	(Berkeley)	%G%	*/
 
-#define CSVAX
+#define UCBVAX
 #define BERKELEY
 #define VAX
