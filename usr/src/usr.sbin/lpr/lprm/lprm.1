@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lprm.1	6.6 (Berkeley) %G%
+.\"     @(#)lprm.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LPRM 1
 .Os BSD 4.2
@@ -15,9 +13,7 @@
 .Nd remove jobs from the line printer spooling queue
 .Sh SYNOPSIS
 .Nm lprm
-.Oo
-.Op Fl P Ar printer
-.Oo
+.Op Fl P Ns Ar printer
 .Op Fl
 .Op job # ...
 .Op Ar user ...
@@ -33,14 +29,12 @@ and host name on the machine where the
 command was invoked.
 .Pp
 Options and arguments:
-.Tw Fl
-.Tc Fl P
-.Ar printer
-.Cx
+.Bl -tag -width indent
+.It Fl P Ns Ar printer
 Specify the queue associated with a specific
 .Ar printer
 (otherwise the default printer is used).
-.Tp Fl
+.It Fl
 If a single
 .Sq Fl
 is given,
@@ -48,29 +42,27 @@ is given,
 will remove all jobs which a user
 owns.  If the super-user employs this flag, the spool queue will
 be emptied entirely.
-.Tp Ar user
+.It Ar user
 Causes
 .Nm lprm
 to attempt to remove any jobs queued belonging to that user
 (or users).  This form of invoking
 .Nm lprm
 is useful only to the super-user.
-.Tp Ar job\ \&#
+.It Ar job\ \&#
 A user may dequeue an individual job by specifying its job number.
 This number may be obtained from the
-.Ar lpq  1
+.Xr lpq  1
 program, e.g.
 .Pp
-.Ds I
-.Cw \&a 1st:standard_input)
-.Cl \&% lpq \-l
+.Bd -literal -offset indent
+\&% lpq \-l
 
-.Cl 1st:ken\t\t[job #013ucbarpa]
-.Cl \t(standard input)	100 bytes
-.Cl % lprm 13
-.Cw
-.De
-.Tp
+1st:ken				[job #013ucbarpa]
+	(standard input)	100 bytes
+% lprm 13
+.Ed
+.El
 .Pp
 If neither arguments or options are given,
 .Nm Lprm
@@ -87,10 +79,10 @@ will kill off an active daemon, if necessary, before removing
 any spooling files.  If a daemon is killed, a new one is
 automatically restarted upon completion of file removals.
 .Sh ENVIRONMENT
-The following environment variable exists, it is utilized by
+If the following environment variable exists, it is utilized by
 .Nm lprm .
-.Tw Fl
-.Tp Ev PRINTER
+.Bl -tag -width PRINTER
+.It Ev PRINTER
 If the environment variable
 .Ev PRINTER
 exists,
@@ -99,18 +91,17 @@ and a printer has not been specified with the
 option,
 the default printer is assumed from 
 .Ev PRINTER .
-.Tp
+.El
 .Sh FILES
-.Dw /var/spool/*/lock/
-.Di L
-.Dp Pa /etc/printcap
-printer characteristics file
-.Dp Pa /var/spool/*
-spooling directories
-.Dp Pa /var/spool/*/lock
-lock file used to obtain the pid of the current
-daemon and the job number of the currently active job
-.Dp
+.Bl -tag -width /var/spool/*/lock/ -compact
+.It Pa /etc/printcap
+Printer characteristics file.
+.It Pa /var/spool/*
+Spooling directories.
+.It Pa /var/spool/*/lock
+Lock file used to obtain the pid of the current
+daemon and the job number of the currently active job.
+.El
 .Sh SEE ALSO
 .Xr lpr 1 ,
 .Xr lpq 1 ,
@@ -122,5 +113,7 @@ own.
 Since there are race conditions possible in the update of the lock file,
 the currently active job may be incorrectly identified.
 .Sh HISTORY
-.Nm Lprm
-appeared in 3 BSD.
+The
+.Nm lprm
+command appeared in
+.Bx 3.0 .
