@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.22	(Berkeley)	%G%
+#	@(#)Makefile	1.23	(Berkeley)	%G%
 #
 M=../../lib/mip
 P=../../lib/pcc
@@ -104,7 +104,7 @@ lintall:
 install: all SHELL ${MAN}
 	install -s -o bin -g bin -m 755 lpass1 ${DESTDIR}/usr/lib/lint/lint1
 	install -s -o bin -g bin -m 755 lpass2 ${DESTDIR}/usr/lib/lint/lint2
-	for i in llib-*; do install -c -o bin -g bin -m 644 $$i ${DESTDIR}/usr/lib/lint; done
+	install -c -o bin -g bin -m 444 llib-* ${DESTDIR}/usr/lib/lint
 	-rm -f ${DESTDIR}/usr/lib/lint/llib-ltermlib*
 	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
 	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
