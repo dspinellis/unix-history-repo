@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	6.3 (Berkeley) %G%
+ *	@(#)swapgeneric.c	6.4 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -27,7 +27,9 @@
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev, argdev, dumpdev;
+dev_t	rootdev;
+dev_t	argdev = NODEV;
+dev_t	dumpdev = NODEV;
 int	nswap;
 struct	swdevt swdevt[] = {
 	{ -1,	1,	0 },
@@ -54,6 +56,7 @@ struct	genericconf {
 	{ (caddr_t)&idcdriver,	"rb",	makedev(11, 0),	},
 	{ (caddr_t)&hldriver,	"rl",	makedev(14, 0),	},
 	{ (caddr_t)&hkdriver,	"hk",	makedev(3, 0),	},
+	{ (caddr_t)&hkdriver,	"rk",	makedev(3, 0),	},
 	{ 0 },
 };
 
@@ -152,6 +155,7 @@ gets(cp)
 			return;
 		case '\b':
 		case '#':
+		case '\177':
 			lp--;
 			if (lp < cp)
 				lp = cp;
