@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)write.c	4.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)write.c	4.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -241,10 +241,16 @@ do_write(tty, mytty, myuid)
 	char path[MAXPATHLEN], host[MAXHOSTNAMELEN], line[512];
 	void done();
 
+	/* Determine our login name before the we reopen() stdout */
+	if ((login = getlogin()) == NULL)
+		if (pwd = getpwuid(myuid))
+			login = pwd->pw_name;
+		else
+			login = "???";
+
 	(void)sprintf(path, "/dev/%s", tty);
 	if ((freopen(path, "w", stdout)) == NULL) {
-		(void)fprintf(stderr,
-		    "write: %s: %s\n", path, strerror(errno));
+		(void)fprintf(stderr, "write: %s: %s\n", path, strerror(errno));
 		exit(1);
 	}
 
@@ -252,11 +258,6 @@ do_write(tty, mytty, myuid)
 	(void)signal(SIGHUP, done);
 
 	/* print greeting */
-	if ((login = getlogin()) == NULL)
-		if (pwd = getpwuid(myuid))
-			login = pwd->pw_name;
-		else
-			login = "???";
 	if (gethostname(host, sizeof(host)) < 0)
 		(void)strcpy(host, "???");
 	now = time((time_t *)NULL);
