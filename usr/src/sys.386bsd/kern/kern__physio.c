@@ -45,6 +45,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00033
+ * --------------------         -----   ----------------------
+ *
+ * 09 Sep 92	Paul Kranenburg		Fixed read from /dev/drum
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/kern__physio.c,v 1.3 92/01/21 21:29:06 william Exp $";
 
@@ -95,6 +101,7 @@ static physio(strat, dev, off, rw, base, len, p)
 
 	/* create and build a buffer header for a transfer */
 	bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_NOWAIT);
+	bzero((char *)bp, sizeof(*bp));			/* 09 Sep 92*/
 	bp->b_flags = B_BUSY | B_PHYS | rw;
 	bp->b_proc = p;
 	bp->b_dev = dev;
@@ -120,7 +127,7 @@ static physio(strat, dev, off, rw, base, len, p)
 			ftype = VM_PROT_READ | VM_PROT_WRITE;
 		else
 			ftype = VM_PROT_READ;
-		for (adr = trunc_page(base) ; adr < base + bp->b_bcount;
+/* 09 Sep 92*/	for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
 			adr += NBPG) {
 			vm_fault(&curproc->p_vmspace->vm_map,
 				adr, ftype, FALSE);
