@@ -1,0 +1,76 @@
+.\" $Revision: 1.8 $
+.TH NNTPGET 1
+.SH NAME
+nntpget \- get Usenet articles from a remote NNTP server
+.SH SYNOPSIS
+.I nntpget
+[
+.BI \-d " dist"
+]
+[
+.BI \-f " file"
+]
+[
+.BI \-n " newsgroups"
+]
+[
+.BI \-t " timestring"
+]
+[
+.B \-o
+]
+[
+.BI \-u " file"
+]
+[
+.B \-v
+]
+.I host
+.SH DESCRIPTION
+.I Nntpget
+connects to the NNTP server at the specified
+.I host
+and retrieves articles from it.
+The articles are sent to standard output.
+.PP
+The ``\-o'' flag may be used only if the command is executed on the
+host where the
+.IR innd (8)
+server is running.
+If this flag is used,
+.I nntpget
+connects to the specified remote
+.I host
+to retrieve articles.
+Any article not present in the local
+.I history
+database is then fetched from the remote site and offered to the local server.
+.PP
+If the ``\-v'' flag is used with the ``\-o'' flag then each the Message-ID
+of each article will be sent to standard output as it is processed.
+.PP
+The list of article Message-ID's is normally read from standard input.
+If the ``\-f'' flag is used, then a ``newnews'' command is used to retrieve
+all articles newer then the modification date of the specified
+.IR file .
+The ``\-u'' flag is the same except that if the transfer succeeded, the
+file will be updated with a statistics line, modifying its timestamp so that
+it can be used in later invocations.
+If the ``\-t'' flag is used, then the specified
+.I timestring
+is used as the time and date parameter to the ``newnews'' command.
+.PP
+If either the ``\-t'' or ``\-f'' flags are used, then the ``\-n'' flag
+may be used to specify a newsgroup list and the ``\-d'' flag may be
+used to specify a distribution list.
+The default is ``*'' for all newsgroups, and no distribution list.
+.SH BUGS
+Truncates articles at 512 lines.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: nntpget.1,v 1.8 1993/03/18 21:03:45 rsalz Exp $
+.SH "SEE ALSO"
+innd(8).
