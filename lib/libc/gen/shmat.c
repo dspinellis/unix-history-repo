@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char *rcsid = "$Id: shmat.c,v 1.2 1993/08/26 15:26:18 brezak Exp $";
+static char *rcsid = "$Id: shmat.c,v 1.1 1993/09/27 00:57:45 rgrimes Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -7,13 +7,13 @@ static char *rcsid = "$Id: shmat.c,v 1.2 1993/08/26 15:26:18 brezak Exp $";
 #include <sys/shm.h>
 
 #if __STDC__
-int shmat(int shmid, caddr_t shmaddr, int shmflg)
+void *shmat(int shmid, void *shmaddr, int shmflg)
 #else
-int shmat(shmid, shmaddr, shmflg)
+void *shmat(shmid, shmaddr, shmflg)
 	int shmid;
-	caddr_t shmaddr;
+	void *shmaddr;
 	int shmflg;
 #endif
 {
-	return (shmsys(0, shmid, shmaddr, shmflg));
+	return ((void *)shmsys(0, shmid, shmaddr, shmflg));
 }
