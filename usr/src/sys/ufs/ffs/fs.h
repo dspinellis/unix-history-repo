@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.16	%G%	*/
+/*	fs.h	1.17	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -26,7 +26,7 @@
  *
  * The first boot and super blocks are given in absolute disk addresses.
  */
-#define BBSIZE		1024
+#define BBSIZE		8192
 #define SBSIZE		8192
 #define	BBLOCK		((daddr_t)(0))
 #define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
