@@ -1,4 +1,4 @@
-.\"	@(#)m1	5.1 (Berkeley) %G%
+.\"	@(#)m1	6.1 (Berkeley) %G%
 .\"
 .pn8
 .tr |
@@ -9,7 +9,7 @@
 .ftB
 .ps+2
 .rs
-.sp1.0i
+.\".sp1.0i
 REFERENCE MANUAL
 .ftR
 .ps-2
@@ -30,7 +30,7 @@ The control character \fB\'\fR suppresses the \fIbreak\fR function\(em\
 the forced output of a partially filled line\(em\
 caused by certain requests.
 The control character may be separated from the request/macro name by
-white space (spaces and/or tabs) for esthetic reasons.
+white space (spaces and/or tabs) for \(aesthetic reasons.
 Names must be followed by either
 space or newline.
 Control lines with unrecognized names are ignored.
@@ -39,7 +39,7 @@ Various special functions may be introduced anywhere in the input by
 means of an \fIescape\fR character, normally \fB\e\fR.
 For example, the function
 \fB\en\fIR\fR
-causes the interpolation of the contents of the
+causes the interpolation (insertion in place) of the contents of the
 \fInumber register R\fR
 in place of the function;
 here \fIR\fR is either a single character name
@@ -47,25 +47,25 @@ as in \fB\en\fIx\fR,
 or left-parenthesis-introduced, two-character name as in \fB\en(\fIxx\fR.
 .sc
 Formatter and device resolution.
-\*(TR internally uses 432 units\(slinch, corresponding to
+\*(TR internally uses 432 units\(slinch, (for historical reasons, corresponding to
 the Graphic Systems phototypesetter
-which has a horizontal resolution of
+which had a horizontal resolution of
 1\(sl432 inch and a vertical resolution
-of 1\(sl144 inch.
+of 1\(sl144 inch.)
 \*(NR internally uses 240 units\(slinch,
 corresponding to the least common multiple of the
 horizontal and vertical resolutions of various
 typewriter-like output devices.
-\*(TR rounds horizontal\(slvertical numerical parameter input to the actual
-horizontal\(slvertical resolution of the Graphic Systems typesetter.
+\*(TR rounds horizontal\(slvertical numerical parameter input to its own
+internal horizontal\(slvertical resolution.
 \*(NR similarly rounds numerical input to the actual resolution
 of the output device indicated by the \fB\(miT\fR option
 (default Model 37 Teletype).
 .sc
 Numerical parameter input.
 Both \*(NR and \*(TR
-accept numerical input with the appended scale
-indicators
+accept numerical input with the scale
+indicator suffixes
 shown in the following table,
 where
 \fIS\fR is the current type size in points,
@@ -137,12 +137,12 @@ an additional inappropriate default scaling.
 The number, \fIN\fR, may be specified in decimal-fraction form
 but the parameter finally stored is rounded to an integer number of basic units.
 .pg
-The \fIabsolute position\fR indicator \fB~\fR may be prepended
+The \fIabsolute position\fR indicator \fB~\fR may be prefixed
 to a number \fIN\fR
 to generate the distance to the vertical or horizontal place \fIN\fR.
 For vertically-oriented requests and functions, \fB~\|\fIN\fR
 becomes the distance in basic units from the current vertical place on the page or in a \fIdiversion\fR (\(sc7.4)
-to the the vertical place \fIN\fR.
+to the vertical place \fIN\fR.
 For \fIall\fR other requests and functions,
 \fB~\|\fIN\fR
 becomes the distance from
@@ -151,11 +151,11 @@ For example,
 .x1
 \&\fB.sp  ~\|3.2c\fR
 .x2
-will space \fIin the required direction\fR to 3.2\|centimeters from the top of the page.
+will space \fIin the required direction\fR to 3.2 centimeters from the top of the page.
 .sc
 .tr &&
 Numerical expressions.
-Wherever numerical input is expected an expression involving parentheses,
+Wherever numerical input is expected, an expression involving parentheses,
 the arithmetic operators \fB\(pl\fR, \fB\(mi\fR, \fB\(sl\fR, \fB\(**\fR, \fB%\fR (mod),
 and the logical operators
 \fB<\fR,
@@ -227,15 +227,15 @@ Character string arguments are indicated by multi-character mnemonics.
 Font and Character Size Control
 .sc
 Character set.
-The \*(TR character set consists of the Graphics Systems Commercial|II
+The \*(TR character set consists of a typesetter-dependent basic
 character set plus a Special Mathematical Font character
 set\(emeach having 102 characters.
-These character sets are shown in the attached Table|I.
-All \s-1ASCII\s+1 characters are included,
+An example of these character sets is shown in the Appendix Table|I.
+All printable \s-1ASCII\s+1 characters are included,
 with some on the Special Font.
-With three exceptions, the \s-1ASCII\s+1 characters are input as themselves,
+With three exceptions, these \s-1ASCII\s+1 characters are input as themselves,
 and non-\s-1ASCII\s+1 characters are input in the form \fB\e(\fIxx\fR where
-\fIxx\fR is a two-character name given in the attached Table|II.
+\fIxx\fR is a two-character name given in the Appendix Table|II.
 The three \s-1ASCII\s+1 exceptions are mapped as follows:
 .TS
 center box;
@@ -258,7 +258,7 @@ and
 may be input
 by \fB\e\'\fR, \fB\e\`\fR, and \fB\e\-\fR respectively or by their names (Table II).
 The \s-1ASCII\s+1 characters \fB@\fR, \fB#\fR, \fB"\fR, \fB\(aa\fR, \fB\(ga\fR, \fB<\fR, \fB>\fR, \fB\e\fR, \fB{\fR, \fB}\fR, \fB~\fR, \fB^\fR, and \fB\(ul\fR exist
-only on the Special Font and are printed as a 1-em space if that Font
+only on the Special Font and are printed as a 1-em space if that font
 is not mounted.
 .pg
 .tr ~|
@@ -297,7 +297,7 @@ either \fB\ef\fIx\fR, \fB\ef(\fIxx\fR, or \fB\ef\fIN\fR
 where
 \fIx\fR and \fIxx\fR are the name of a mounted font
 and \fIN\fR is a numerical font position.
-It is \fInot\fR necessary to change to the Special font;
+It is \fInot\fR necessary to change to the Special Font;
 characters on that font are automatically handled.
 A request for a named but not-mounted font is \fIignored\fR.
 \*(TR can be informed that any particular font is mounted
@@ -312,7 +312,7 @@ The current font is available (as numerical position) in the read-only number re
 and normally underlines Italic characters (see \(sc10.5).
 .sc
 Character size.
-Character point sizes available on the Graphic Systems typesetter are
+Character point sizes available are typesetter dependent, but often include
 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, and 36.
 This is a range of 1\(sl12 inch to 1\(sl2 inch.
 The \fBps\fR request is used to change or restore the point size.
@@ -344,12 +344,21 @@ A paired sequence
 will work because the previous requested value is also remembered.
 Ignored in \*(NR.
 .bt
+\fB&fz\fI|F|\(+-N\fR	off	-	E	The characters in font \fIF\fR will be adjusted to 
+be in size \(+-\fIN\fR.  Characters in the Special Font encountered during the
+use of font \fIF\fR will have the same size modification. (Use the \fB&fz S\fR
+request if different treatment of Special Font characters is required). \fB&fz\fR
+must follow any \fB&fp\fR request for the position.
+.bt
+\fB&fz|S|\fIF|\(+-N\fR	off	-	E	The characters in the Special Font
+will be in size \(+-\fIN\fR independent of previous \fB&fz\fR requests.
+.bt
 \fB&ss\fI|N\fR	12\(sl36\|em	ignored	E	Space-character size
 is set to \fIN\fR\(sl36\|ems.
 This size is the minimum word spacing in adjusted text.
 Ignored in \*(NR.
 .bt
-\fB&cs\|\fIF\|N\|M\fR	off	-	P	Constant character space
+\fB&cs|\fIF\|N\|M\fR	off	-	P	Constant character space
 (width) mode is
 set on for font \fIF\fR (if mounted); the width of every character will be
 taken to be \fIN\fR\(sl36 ems.
@@ -411,10 +420,11 @@ In the following, references to the \fIcurrent diversion\fR (\(sc7.4)
 mean that the mechanism being described works during both
 ordinary and diverted output (the former considered as the top diversion level).
 .pg
-The useable page width on the Graphic Systems phototypesetter
-is about 7.54|inches,
+The usable page width on the Graphic Systems phototypesetter
+was about 7.54|inches,
 beginning about 1\(sl27|inch from the left edge of the
-8|inch wide, continuous roll paper.
+8|inch wide, continuous roll paper, but these characteristics are typesetter-
+dependent.
 The physical limitations on \*(NR output
 are output-device dependent.
 .h1
@@ -437,7 +447,7 @@ Also see request \fBns\fR.
 \fB&pn\fI|\(+-N\fR	\fIN\fR\(eq1	ignored	-	Page number.
 The next page (when it occurs) will have the page number \fI\(+-N\fR.
 A \fBpn\fR must occur before the initial pseudo-page transition
-to effect the page number of the first page.
+to affect the page number of the first page.
 The current page number is in the \fB%\fR register.
 .bt
 \fB&po\fI|\(+-N\fR	0;|26\(sl27\|in\(dg	previous	\fBv\fR	Page offset.
@@ -488,7 +498,7 @@ words are collected from input text lines
 and assembled into a output text line
 until some word doesn't fit.
 An attempt is then made
-the hyphenate the word in effort to assemble a part
+to hyphenate the word to assemble a part
 of it into the output line.
 The spaces between the words on the output line
 are then increased to spread out the line
@@ -515,7 +525,9 @@ prevented or controlled.
 The \fItext length\fR on the last line output is available in the \fB.n\fR register,
 and text base-line position on the page for this line is in the \fBnl\fR register.
 The text base-line high-water mark (lowest place) on the current page is in
-the \fB.h\fR register.
+the \fB.h\fR register. The \fB.k\fR register (read-only) contains the horizontal size of
+the text portion (without indent) of the current partially-collected output
+line (if any) in the current environment.
 .pg
 An input text line ending with \fB.\fR\^, \fB?\fR, or \fB!\fR is taken
 to be the end of a \fIsentence\fR, and an additional space character is
@@ -530,9 +542,9 @@ line \fIspread out\fR to fill the current line length.
 .pg
 .tr &&
 A text input line that happens to begin
-with a control character can
+with a control character (\(sc10.4) can
 be made to not look like a control line
-by prefacing it with
+by preceding it by
 the non-printing, zero-width filler character \fB\e&\fR.
 Still another way is to specify output translation of some
 convenient character into the control character
@@ -577,6 +589,8 @@ If fill mode is not on, adjustment will be deferred until
 fill mode is back on.
 If the type indicator \fIc\fR is present,
 the adjustment type is changed as shown in the following table.
+The type indicator can also be a value saved  from the read-only \fB.j\fR number
+register, which is set to contain the current adjustment mode and type.
 .TS
 center box;
 c|c
@@ -650,13 +664,14 @@ not space \fIpast\fR a trap.
 A contiguous block of vertical space may be reserved using \fBsv\fR.
 .h1
 .bt
-\fB&vs\fI\|N\fR	1\(sl6in;12pts	previous	E,\fBp\fR	Set vertical base-line spacing size \fIV\fR.
+\fB&vs\fI|N\fR	1\(sl6in;12pts	previous	E,\fBp\fR	Set vertical base-line spacing size \fIV\fR.
 Transient \fIextra\fR vertical space available with \fB\ex\fI\'N\|\|\'\fR (see above).
 .bt
-\fB&ls\fI\|N\fR	\fIN\(eq\^\fR1	previous	E	\fILine\fR spacing
+\fB&ls\fI|N\fR	\fIN\(eq\^\fR1	previous	E	\fILine\fR spacing
 set to \fI\(+-N\fR.
 \fIN\(mi\fR1 \fIV\fR\^s \fI(blank lines)\fR are
-appended to each output text line.
+appended to each output text line. The (read-only) number register \fB.L\fR
+is set to contain the current line-spacing value.
 Appended blank lines are omitted, if the text or previous appended blank line reached a trap position.
 .bt
 \fB&sp\fI|N\fR	-	\fIN\fR\(eq1\fIV\fR	B,\fBv\fR	Space vertically in \fIeither\fR direction.
@@ -691,4 +706,4 @@ output occurs, or with \fBrs\fR.
 The no-space mode is turned off.
 .bt
 Blank|text|line.	-	B	Causes a break and
-output of a blank line exactly like \fBsp|1\fR.
+outputs a blank line just like \fBsp|1\fR.
