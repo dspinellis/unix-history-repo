@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.4 1994/05/25 19:56:48 wollman Exp $
+$Id: options.texi,v 1.5 1994/05/30 18:34:57 guido Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -313,6 +313,20 @@ filesystem which lives in the swap area.  Using MFS as a @file{/tmp}
 filesystem can dramatically increase the speed of
 temporary-space-intensive operations such as compilations.  See the
 @samp{mount_mfs} manual page for more details.
+
+@item options MULTICAST
+@findex MULTICAST
+@cindex Multicast IP
+@cindex Networking
+Enable multicast support for things like vat, nv, etc.
+
+
+@item options MROUTING
+@findex MROUTING
+@cindex Multicast Routing
+@cindex Networking
+Enable multicast routing support (generally goes hand-in-hand with the
+above).  See also mrouted(1).
 
 @item options NFS
 @findex NFS
@@ -677,6 +691,28 @@ option to enable bus-timing detection.
 This device supports the Bustek 742 SCSI controller.  It is included in
 the @samp{GENERICBT} distribution kernel; the @samp{scbus} device
 (@pxref{SCSI}) is a prerequisite.
+
+@item options ALLOW_CONFLICT_IOADDR
+@findex ALLOW_CONFLICT_IOADDR
+@cindex Allow IO Address Conflict
+@cindex ISA device management
+Allow devices on the ISA bus to share conflicting IO address spaces.
+This is generally an error, though things like PS/2 mouse drivers which
+are implemented seperately from the keyboard driver will require this
+option to be set.  Note that this is almost always sub-optimal, and the
+current PS/2 mouse driver will, in fact, frequently fight with the
+keyboard if you try to use them concurrently.  Needing this option
+enabled is a sure sign that you need to consider a different design for
+your driver.
+
+@item options ALLOW_CONFLICT_IRQ
+@findex ALLOW_CONFLICT_IRQ
+@cindex Allow IRQ Conflict
+@cindex ISA device management
+
+Allow devices on the ISA bus to share conflicting IRQ's.  This is often
+necessary for multiport serial cards which have several devices at the
+same IRQ.  Enable this only with caution!
 
 @item options COM_BIDIR
 @findex COM_BIDIR

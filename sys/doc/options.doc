@@ -1,4 +1,4 @@
-$Id: options.doc,v 1.4 1994/05/25 19:56:45 wollman Exp $
+$Id: options.doc,v 1.5 1994/05/30 18:34:55 guido Exp $
 
    This file documents the configuration options available in the
 FreeBSD operating system.
@@ -186,6 +186,13 @@ underscores must be quoted.
      filesystem can dramatically increase the speed of
      temporary-space-intensive operations such as compilations.  See the
      `mount_mfs' manual page for more details.
+
+`options MULTICAST'
+     Enable multicast support for things like vat, nv, etc.
+
+`options MROUTING'
+     Enable multicast routing support (generally goes hand-in-hand with the
+     above).  See also mrouted(1).
 
 `options NFS'
      The `NFS' option enables support for Sun's Network File System.
@@ -446,6 +453,22 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
      This device supports the Bustek 742 SCSI controller.  It is
      included in the `GENERICBT' distribution kernel; the `scbus' device
      (*note SCSI::.) is a prerequisite.
+
+`options ALLOW_CONFLICT_IOADDR'
+     Allow devices on the ISA bus to share conflicting IO address spaces.
+     This is generally an error, though things like PS/2 mouse drivers
+     which are implemented seperately from the keyboard driver will require
+     this option to be set.  Note that this is almost always sub-optimal,
+     and the current PS/2 mouse driver will, in fact, frequently fight with
+     the keyboard if you try to use them concurrently.  Needing this option
+     enabled is a sure sign that you need to consider a different design
+     for your driver.
+
+`options ALLOW_CONFLICT_IRQ'
+     Allow devices on the ISA bus to share conflicting IRQ's.  This is
+     often necessary for multiport serial cards which have several devices
+     at the same IRQ.  Enable this only with caution!
+
 
 `options COM_BIDIR'
      This option enables bi-directional support in the `sio' serial
