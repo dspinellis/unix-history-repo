@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.46	83/05/21	*/
+/*	vfs_cluster.c	4.47	83/06/14	*/
 
 #include "../machine/pte.h"
 
@@ -402,181 +402,6 @@ loop:
 }
 
 /*
- * Expand or contract the actual memory allocated to a buffer.
- * If no memory is available, release buffer and take error exit
- */
-allocbuf(tp, size)
-	register struct buf *tp;
-	int size;
-{
-	register struct buf *bp, *ep;
-	int sizealloc, take;
-#ifdef sun
-	register char *a;
-	int osize;
-#endif
-
-#ifndef sun
-	sizealloc = roundup(size, CLBYTES);
-#else
-	sizealloc = roundup(size, BUFALLOCSIZE);
-#endif
-	/*
-	 * Buffer size does not change
-	 */
-	if (sizealloc == tp->b_bufsize)
-		goto out;
-#ifndef sun
-	/*
-	 * Buffer size is shrinking.
-	 * Place excess space in a buffer header taken from the
-	 * BQ_EMPTY buffer list and placed on the "most free" list.
-	 * If no extra buffer headers are available, leave the
-	 * extra space in the present buffer.
-	 */
-	if (sizealloc < tp->b_bufsize) {
-		ep = bfreelist[BQ_EMPTY].av_forw;
-		if (ep == &bfreelist[BQ_EMPTY])
-			goto out;
-		notavail(ep);
-		pagemove(tp->b_un.b_addr + sizealloc, ep->b_un.b_addr,
-		    (int)tp->b_bufsize - sizealloc);
-		ep->b_bufsize = tp->b_bufsize - sizealloc;
-		tp->b_bufsize = sizealloc;
-		ep->b_flags |= B_INVAL;
-		ep->b_bcount = 0;
-		brelse(ep);
-		goto out;
-	}
-	/*
-	 * More buffer space is needed. Get it out of buffers on
-	 * the "most free" list, placing the empty headers on the
-	 * BQ_EMPTY buffer header list.
-	 */
-	while (tp->b_bufsize < sizealloc) {
-		take = sizealloc - tp->b_bufsize;
-		bp = getnewbuf();
-		if (take >= bp->b_bufsize)
-			take = bp->b_bufsize;
-		pagemove(&bp->b_un.b_addr[bp->b_bufsize - take],
-		    &tp->b_un.b_addr[tp->b_bufsize], take);
-		tp->b_bufsize += take;
-		bp->b_bufsize = bp->b_bufsize - take;
-		if (bp->b_bcount > bp->b_bufsize)
-			bp->b_bcount = bp->b_bufsize;
-		if (bp->b_bufsize <= 0) {
-			bremhash(bp);
-			binshash(bp, &bfreelist[BQ_EMPTY]);
-			bp->b_dev = (dev_t)NODEV;
-			bp->b_error = 0;
-			bp->b_flags |= B_INVAL;
-		}
-		brelse(bp);
-	}
-#else
-	/*
-	 * Buffer size is shrinking
-	 * Just put the tail end back in the map
-	 */
-	if (sizealloc < tp->b_bufsize) {
-		rmfree(buffermap, (long)(tp->b_bufsize - sizealloc),
-			(long)(tp->b_un.b_addr + sizealloc));
-		tp->b_bufsize = sizealloc;
-		goto out;
-	}
-	/*
-	 * Buffer is being expanded or created
-	 * If being expanded, attempt to get contiguous
-	 * section, otherwise get a new chunk and copy.
-	 * If no space, free up a buffer on the AGE list
-	 * and try again.
-	 */
-	do {
-		if ((osize = tp->b_bufsize)) {
-			a = (char *)rmget(buffermap, (long)(sizealloc-osize),
-				(long)(tp->b_un.b_addr + osize));
-			if (a == 0) {
-				a = (char *)rmalloc(buffermap, (long)sizealloc);
-				if (a != 0) {
-					bcopy(tp->b_un.b_addr, a, osize);
-					rmfree(buffermap, (long)osize,
-						(long)tp->b_un.b_addr);
-					tp->b_un.b_addr = a;
-				}
-			}
-		} else {
-			a = (char *)rmalloc(buffermap, (long)sizealloc);
-			if (a != 0)
-				tp->b_un.b_addr = a;
-		}
-	} while (a == 0 && bfreemem());
-	if (a == 0) {
-		brelse(tp);
-		return (0);
-	}
-	tp->b_bufsize = sizealloc;
-#endif
-out:
-	tp->b_bcount = size;
-	return (1);
-}
-
-/*
- * Release space associated with a buffer.
- */
-bfree(bp)
-	struct buf *bp;
-{
-#ifdef sun
-	if (bp->b_bufsize) {
-		rmfree(buffermap, (long)bp->b_bufsize, (long)bp->b_un.b_addr);
-		bp->b_bufsize = 0;
-	}
-#endif
-	bp->b_bcount = 0;
-}
-
-#ifdef sun
-/*
- * Attempt to free up buffer space by flushing
- * something in the free list.
- * Don't wait for something, that could cause deadlocks
- * We start with BQ_AGE because we know BQ_EMPTY take no memory.
- */
-bfreemem()
-{
-	register struct buf *bp, *dp;
-	int s;
-
-loop:
-	s = spl6();
-	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
-		if (dp->av_forw != dp)
-			break;
-	splx(s);
-	if (dp == bfreelist) {		/* no free blocks */
-		return (0);
-	}
-	bp = dp->av_forw;
-	notavail(bp);
-	if (bp->b_flags & B_DELWRI) {
-		bp->b_flags |= B_ASYNC;
-		bwrite(bp);
-		goto loop;
-	}
-	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
-	bp->b_flags = B_BUSY | B_INVAL;
-	bfree(bp);
-	bremhash(bp);
-	binshash(bp, &bfreelist[BQ_EMPTY]);
-	bp->b_dev = (dev_t)NODEV;
-	bp->b_error = 0;
-	brelse(bp);
-	return (1);
-}
-#endif
-
-/*
  * Find a buffer which is available for use.
  * Select something from a free list.
  * Preference is to AGE list, then LRU list.
@@ -633,12 +458,10 @@ biowait(bp)
 }
 
 /*
- * Mark I/O complete on a buffer. If the header
- * indicates a dirty page push completion, the
- * header is inserted into the ``cleaned'' list
- * to be processed by the pageout daemon. Otherwise
- * release it if I/O is asynchronous, and wake 
- * up anyone waiting for it.
+ * Mark I/O complete on a buffer.
+ * If someone should be called, e.g. the pageout
+ * daemon, do so.  Otherwise, wake up anyone
+ * waiting for it.
  */
 biodone(bp)
 	register struct buf *bp;
@@ -702,11 +525,10 @@ loop:
 }
 
 /*
- * make sure all write-behind blocks
+ * Make sure all write-behind blocks
  * on dev (or NODEV for all)
  * are flushed out.
  * (from umount and update)
- * (and temporarily pagein)
  */
 bflush(dev)
 	dev_t dev;
