@@ -2,10 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)timed.ms	6.1 (Berkeley) %G%
+.\"	@(#)timed.ms	6.2 (Berkeley) %G%
 .\"
 .TL
-The Berkeley UNIX
+The Berkeley
+.UX
 .br
 Time Synchronization Protocol
 .AU
@@ -37,7 +38,7 @@ has been designed for specific use by the program \fItimed\fP,
 a local area network clock synchronizer for 
 the UNIX 4.3BSD operating
 system.
-\fITimed\fP is built on the DARPA UDP protocol and 
+Timed is built on the DARPA UDP protocol [4] and
 is based on a master slave scheme.
 .PP
 TSP serves a dual purpose.
@@ -46,7 +47,7 @@ of the various hosts in a local area network.
 Second, it supports messages for the election that occurs
 among slave time daemons when, for any reason, the master disappears.
 The synchronization mechanism and the election procedure 
-employed by the program \fItimed\fP are described 
+employed by the program timed are described 
 in other documents [1,2,3].
 .PP
 Briefly, the synchronization software, which works in a 
@@ -57,7 +58,9 @@ The present implementation keeps processor clocks synchronized
 within 20 milliseconds.
 A \fImaster time daemon\fP measures the time
 difference between the clock of the machine on which it 
-is running and those of all other machines.
+is running and those of all other machines.  The current implementation
+uses ICMP \fITime Stamp Requests\fP [5] to measure the clock difference
+between machines.
 The master computes the \fInetwork time\fP as the average of the 
 times provided by nonfaulty clocks.\**
 .FS
@@ -79,15 +82,12 @@ before any user activity can begin.
 The time daemons therefore maintain a single network time in spite of 
 the drift of clocks away from each other. 
 .PP
-There is one other mode in which a time daemon may run, \fIsubmaster\fP.
-A \fIsubmaster timed daemon\fP is located only on gateways between networks.
-It functions as if it were a slave on one network, and a master on other
-networks.  This time daemon is indistinguishable from any other time daemon
-in the same state except for adjusting time.  In this case, the
-\fIsubmaster time daemon\fP receives an adjustment from the master on the
-network on which is a slave, measures the difference between its time and
-its slaves, and sends out adjustments based upon the sum of these two
-corrections.
+Additionally, a time daemon on gateway machines may run as 
+a \fIsubmaster\fP.
+A submaster time daemon functions as a slave on one network that
+already has a master and as master on other networks.
+In addition, a submaster is responsible for propagating broadcast
+packets from one network to the other.
 .PP
 To ensure that service provided is continuous and reliable,
 it is necessary to implement an election algorithm that will elect a
@@ -96,18 +96,20 @@ terminate (for example, because of a run-time error), or the network be
 partitioned.
 Under our algorithm, slaves are able to realize when the master has
 stopped functioning and to elect a new master from among themselves.
-It is important to note that, since the failure of the master results
+It is important to note that since the failure of the master results
 only in a gradual divergence of clock values, the election
 need not occur immediately.
+.PP
 All the communication occurring among time daemons uses the TSP
 protocol.
-.PP
 While some messages need not be sent in a reliable way,
-most communication in TSP does require reliability.
+most communication in TSP requires reliability not provided by the underlying
+protocol.
 Reliability is achieved by the use of acknowledgements, sequence numbers, and
 retransmission when message losses occur.
-When a message that requires acknowledgment is not acknowledged,
-the time daemon which has sent the message will assume that the
+When a message that requires acknowledgment is not acknowledged after
+multiple attempts,
+the time daemon that has sent the message will assume that the
 addressee is down.
 This document will not describe the details of how reliability is
 implemented, but will only point out when
@@ -118,36 +120,37 @@ however, in some instances, one or more fields are not used.
 The next section describes the message format.
 The following sections describe
 in detail the different message types, their use and the contents
-of each field.
+of each field.  NOTE:  The message format is likely to change in
+future versions of timed.
 .sp 2
 .SH
 Message Format
 .PP
 All fields are based upon 8-bit bytes.  Fields should be sent in
-internet byte order if they are more than one byte long.
+network byte order if they are more than one byte long.
 The structure of a TSP message is the following:
 .IP 1)
 A one byte message type.
 .IP 2)
-A one byte version number, specifying the protocol version to which a
-message refers.
+A one byte version number, specifying the protocol version which the
+message uses.
 .IP 3)
 A two byte sequence number to be used for recognizing duplicate messages
-that occur when acknowledgments are lost.
+that occur when messages are retransmitted.
 .IP 4)
 Eight bytes of packet specific data.  This field contains two 4 byte time
 values, a one byte hop count, or may be unused depending on the type
 of the packet.
 .IP 5)
-A null-terminated string of up to 256 characters with the name of 
+A zero-terminated string of up to 256 \s-2ASCII\s+2 characters with the name of 
 the machine sending the message.
 .PP
 The following charts describe the message types,
 show their fields, and explain their usages.
 For the purpose of the following discussion, a time daemon can 
 be considered to be in
-one of three states: slave, master, or candidate.
-Also, the word \fIbroadcast\fP refers to
+one of three states: slave, master, or candidate for election to master.
+Also, the term \fIbroadcast\fP refers to
 the sending of a message to all active time daemons.
 .sp 1
 .DS L
@@ -157,8 +160,6 @@ Adjtime Message
 .LP
 Type: TSP_ADJTIME (1)
 .sp 1
-.LP
-Description:
 .PP
 The master sends this message to a slave to communicate 
 the difference between 
@@ -176,8 +177,6 @@ Acknowledgment Message
 .LP
 Type: TSP_ACK (2)
 .sp 1
-.LP
-Description:
 .PP
 Both the master and the slaves use this message for
 acknowledgment only.
@@ -192,8 +191,6 @@ Master Request Message
 .LP
 Type: TSP_MASTERREQ (3)
 .sp 1
-.LP
-Description:
 .PP
 A newly-started time daemon broadcasts this message to
 locate a master.  No other action is implied by this packet.
@@ -207,8 +204,6 @@ Master Acknowledgement
 .LP
 Type: TSP_MASTERACK (4)
 .sp 1
-.LP
-Description:
 .PP
 The master sends this message to acknowledge the Master Request message
 and the Conflict Resolution Message.
@@ -217,14 +212,14 @@ and the Conflict Resolution Message.
 .DS L
 .SH
 Set Network Time Message
-.so time
+.so date
 .LP
 Type: TSP_SETTIME (5)
 .sp 1
-.LP
-Description:
 .PP
-The master sends this message to a newly-started time slave to set its time.
+The master sends this message to slave time daemons to set their time.
+This packet is sent to newly started time daemons and when the network
+date is changed.
 It contains the master's time as an approximation of the network time.
 It requires an acknowledgment.
 The next
@@ -239,8 +234,6 @@ Master Active Message
 .LP
 Type: TSP_MASTERUP (6)
 .sp 1
-.LP
-Description:
 .PP
 The master broadcasts this message to 
 solicit the names of the active slaves.
@@ -254,11 +247,9 @@ Slave Active Message
 .LP
 Type: TSP_SLAVEUP (7)
 .sp 1
-.LP
-Description:
 .PP
 A slave sends this message to the master in answer to a Master Active message.
-This message is also send when a new slave starts up to inform the master that
+This message is also sent when a new slave starts up to inform the master that
 it wants to be synchronized.
 .sp 1
 .DE
@@ -269,8 +260,6 @@ Master Candidature Message
 .LP
 Type: TSP_ELECTION (8)
 .sp 1
-.LP
-Description:
 .PP
 A slave eligible to become a master broadcasts this message when its election
 timer expires.
@@ -284,8 +273,6 @@ Candidature Acceptance Message
 .LP
 Type: TSP_ACCEPT (9)
 .sp 1
-.LP
-Description:
 .PP
 A slave sends this message to accept the candidature of the time daemon
 that has broadcast an Election message.
@@ -300,8 +287,6 @@ Candidature Rejection Message
 .LP
 Type: TSP_REFUSE (10)
 .sp 1
-.LP
-Description:
 .PP
 After a slave accepts the candidature of a time daemon, it will reply
 to any election messages from other slaves
@@ -316,8 +301,6 @@ Multiple Master Notification Message
 .LP
 Type: TSP_CONFLICT (11)
 .sp 1
-.LP
-Description:
 .PP
 When two or more masters reply to a Master Request message, the slave
 uses this message to inform one of them that more than one master exists.
@@ -330,11 +313,9 @@ Conflict Resolution Message
 .LP
 Type: TSP_RESOLVE (12)
 .sp 1
-.LP
-Description:
 .PP
 A master which has been informed of the existence of other masters
-sends this message to determine who the other masters are.
+broadcasts this message to determine who the other masters are.
 .sp 1
 .DE
 .DS L
@@ -344,14 +325,12 @@ Quit Message
 .LP
 Type: TSP_QUIT (13)
 .sp 1
-.LP
-Description:
 .PP
 This message is sent by the master in three different contexts:
-1) to a candidate that broadcasts an Election message,
+1) to a candidate that broadcasts an Master Candidature message,
 2) to another master when notified of its existence,
 3) to another master if a loop is detected.
-In both cases, the two time daemons will become slaves.
+In all cases, the recipient time daemon will become a slave.
 This message requires an acknowledgement.
 .sp 1
 .DE
@@ -362,12 +341,10 @@ Set Date Message
 .LP
 Type: TSP_SETDATE (22)
 .sp 1
-.LP
-Description:
 .PP
-The program \fIdate(1)\fP sends this message to the local time daemon
+The program \fIdate\fP\|(1) sends this message to the local time daemon
 when a super-user wants to set the network date.
-If the local time daemon is the master, it will set the time;
+If the local time daemon is the master, it will set the date;
 if it is a slave, it will communicate the desired date to the master.
 .sp 1
 .DE
@@ -378,8 +355,6 @@ Set Date Request Message
 .LP
 Type: TSP_SETDATEREQ (23)
 .sp 1
-.LP
-Description:
 .PP
 A slave that has received a Set Date message will communicate the
 desired date to the master using this message.
@@ -392,8 +367,6 @@ Set Date Acknowledgment Message
 .LP
 Type: TSP_DATEACK (16)
 .sp 1
-.LP
-Description:
 .PP
 The master sends this message to a slave in acknowledgment of a
 Set Date Request Message.
@@ -409,8 +382,6 @@ Start Tracing Message
 .LP
 Type: TSP_TRACEON (17)
 .sp 1
-.LP
-Description:
 .PP
 The controlling program \fItimedc\fP sends this message to the local
 time daemon to start the recording in a system file of
@@ -424,8 +395,6 @@ Stop Tracing Message
 .LP
 Type: TSP_TRACEOFF (18)
 .sp 1
-.LP
-Description:
 .PP
 \fITimedc\fP sends this message to the local
 time daemon to stop the recording of
@@ -439,8 +408,6 @@ Master Site Message
 .LP
 Type: TSP_MSITE (19)
 .sp 1
-.LP
-Description:
 .PP
 \fITimedc\fP sends this message to the local time daemon to find out
 where the master is running.
@@ -453,8 +420,6 @@ Remote Master Site Message
 .LP
 Type: TSP_MSITEREQ (20)
 .sp 1
-.LP
-Description:
 .PP
 A local time daemon broadcasts this message to find the location
 of the master.
@@ -469,11 +434,9 @@ Test Message
 .LP
 Type: TSP_TEST (21)
 .sp 1
-.LP
-Description:
 .PP
-For testing purposes, \fItimedc\fP sends this message to a set of slaves
-to cause their election timers expire simultaneously.  NOTE: \fItimed\fP
+For testing purposes, \fItimedc\fP sends this message to a slave
+to cause its election timer to expire.  NOTE: \fItimed\fP
 is not normally compiled to support this.
 .sp 1
 .DE
@@ -485,11 +448,9 @@ Loop Detection Message
 .LP
 Type: TSP_LOOP (24)
 .sp 1
-.LP
-Description
 .PP
 This packet is initiated by all masters occasionally to attempt to detect loops.
-All submasters forward this packet onto the networks they are master over.
+All submasters forward this packet onto the networks over which they are master.
 If a master receives a packet it sent out initially,
 it knows that a loop exists and tries to correct the problem.
 .DE
@@ -506,3 +467,11 @@ University of California, Berkeley, Technical Report, \fIto appear\fP.
 R. Gusella and S. Zatti, 
 \fIAn Election Algorithm for a Distributed Clock Synchronization Program\fP,
 University of California, Berkeley, CS Technical Report #275, Dec. 1985.
+.IP 4.
+Postel, J., \fIUser Datagram Protocol\fP, RFC 768.
+Network Information Center, SRI International, Menlo Park, California,
+August 1980.
+.IP 5.
+Postel, J., \fIInternet Control Message Protocol\fP, RFC 792.
+Network Information Center, SRI International, Menlo Park, California,
+September 1981.
