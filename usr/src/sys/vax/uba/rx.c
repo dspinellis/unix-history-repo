@@ -1,4 +1,4 @@
-/*	rx.c	4.10	83/04/04	*/
+/*	rx.c	4.11	83/04/06	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -29,6 +29,8 @@
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/rxreg.h"
+
+#define b_cylin	b_resid
 
 /* per-controller data */
 struct	rx_ctlr {
@@ -68,9 +70,12 @@ struct rx_softc {
 				/* doing multisector transfers */
 	long	sc_bcnt;	/* save total transfer count for */
 				/* multisector transfers */
+	long	sc_resid;	/* no of bytes left to transfer in multisect */
+				/* operations */
 	int	sc_offset;	/* raw mode kludge: gives the offset into */
 				/* a block of DEV_BSIZE for the current */
 				/* request */
+	int	sc_open;	/* count number of opens */
 } rx_softc[NRX];
 
 struct rxerr {
@@ -82,6 +87,7 @@ struct rxerr {
 
 struct	uba_device *rxdinfo[NRX];
 struct	uba_ctlr *rxminfo[NFX];
+
 int rxprobe(), rxslave(), rxattach(), rxdgo(), rxintr(), rxwatch(), rxphys();
 u_short rxstd[] = { 0177170, 0177150, 0 };
 struct uba_driver fxdriver =
@@ -90,15 +96,12 @@ struct uba_driver fxdriver =
 int	rxwstart;
 #define	RXUNIT(dev)	(minor(dev)>>3)
 #define	MASKREG(reg)	(reg&0xffff)
-#define NDPC	2				/* # drives per controller */
 
 /* constants related to floppy data capacity */
 #define	RXSECS	2002				/* # sectors on a floppy */
 #define	DDSTATE	(sc->sc_flags&RXF_DBLDEN)
 #define	NBPS	(DDSTATE ? 256 : 128)		/* # bytes per sector */
-#define	NWPS	(DDSTATE ? 128 : 64)		/* # words per sector */
 #define	RXSIZE	(DDSTATE ? 512512 : 256256)	/* # bytes per disk */
-#define	SECSHFT	(DDSTATE ? 8 : 7)		/* # bits to shift for sctr # */
 #define	SECMASK	(DDSTATE ? 0xff : 0x7f)		/* shifted-out bits of offset */
 
 #define	B_CTRL	0x80000000			/* control (format) request */
@@ -150,18 +153,17 @@ rxopen(dev, flag)
 	if (unit >= NRX || (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &rx_softc[unit];
-	if (sc->sc_flags & RXF_OPEN)
-		return (EBUSY);
-	ctlr = ui->ui_mi->um_ctlr;
-	rxc = &rx_ctlr[ctlr];
-	sc->sc_flags = RXF_OPEN | (minor(dev) & RXF_DEVTYPE);
-	sc->sc_csbits = RX_INTR;
-	sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
-	sc->sc_csbits |= minor(dev) & RXF_DBLDEN ? RX_DDEN : RX_SDEN;
-	rxc->rxc_tocnt = 0;
-	if (rxwstart == 0) {
-		rxwstart++;
-		rxtimo();				/* start watchdog */
+	if (sc->sc_open++ == 0) {
+		ctlr = ui->ui_mi->um_ctlr;
+		rxc = &rx_ctlr[ctlr];
+		sc->sc_flags = ( minor(dev) & RXF_DEVTYPE );
+		sc->sc_csbits = RX_INTR;
+		sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
+		sc->sc_csbits |= minor(dev) & RXF_DBLDEN ? RX_DDEN : RX_SDEN;
+		if (rxwstart++ == 0) {
+			rxc->rxc_tocnt = 0;
+			rxtimo();			/* start watchdog */
+		}
 	}
 	return (0);
 }
@@ -172,17 +174,11 @@ rxclose(dev, flag)
 	int flag;
 {
 	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
-	int i;
 
-	sc->sc_flags &= ~RXF_OPEN;
-	sc->sc_csbits = 0;
-	for (i=0; i<NFX*NDPC; i++) {
-		if (rx_softc[i].sc_flags&RXF_OPEN)
-			break;
+	if (--sc->sc_open == 0 ) {
+		sc->sc_csbits = 0;
+		rxwstart--;
 	}
-	if (i == NFX*NDPC)
-		rxwstart = 0;			/* Turn off watchdog if all */
-						/* devices are closed */
 }
 
 rxstrategy(bp)
@@ -201,9 +197,13 @@ rxstrategy(bp)
 		goto bad;
 	if (bp->b_blkno < 0 || (bp->b_blkno * DEV_BSIZE) > RXSIZE )
 		goto bad;
+#ifdef RXDEBUG
+	printf("rxstrategy: bp=0x%x, flgs=0x%x, unit=%d, block=%d, count=%d\n", 
+		bp, bp->b_flags, unit, bp->b_blkno, bp->b_bcount);
+#endif
 	s = spl5();
+	bp->b_cylin = bp->b_blkno;	/* don't care to calculate trackno */
 	dp = &rxutab[unit];
-	bp->b_resid = bp->b_bcount;
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
 		rxustart(ui);
@@ -214,7 +214,8 @@ rxstrategy(bp)
 	splx(s);
 	return;
 
-bad:	bp->b_flags |= B_ERROR;
+bad:
+	bp->b_flags |= B_ERROR;
 	iodone(bp);
 	return;
 }
@@ -268,7 +269,7 @@ rxmap(bp, psector, ptrack)
 	register int lt, ls, ptoff;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
-	ls = ( bp->b_blkno * DEV_BSIZE + ( sc->sc_offset - bp->b_resid ))/NBPS;
+	ls = ( bp->b_blkno * DEV_BSIZE + ( sc->sc_offset - sc->sc_resid ))/NBPS;
 	lt = ls / 26;
 	ls %= 26;
 	/*
@@ -280,7 +281,7 @@ rxmap(bp, psector, ptrack)
 	ptoff = 0;
 	if (sc->sc_flags&RXF_DIRECT)
 		ptoff = 77;
-	if (!(sc->sc_flags&RXF_TRKZERO))
+	if (sc->sc_flags&RXF_TRKZERO)
 		ptoff++;
 	if (lt + ptoff < 77)
 		ls = ((ls << 1) + (ls >= 13) + (6*lt)) % 26;
@@ -318,6 +319,7 @@ loop:
 	unit = RXUNIT(bp->b_dev);
 	sc = &rx_softc[unit];
 	if (dp->b_active == 1) {
+		sc->sc_resid = bp->b_bcount;
 		sc->sc_uaddr = bp->b_un.b_addr;
 		sc->sc_bcnt = bp->b_bcount;
 		sc->sc_offset += sc->sc_bcnt;
@@ -326,10 +328,13 @@ loop:
 	um->um_tab.b_active++;
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
-	bp->b_bcount = bp->b_resid;
+	bp->b_bcount = sc->sc_resid;
 	if (bp->b_bcount > NBPS)
 		bp->b_bcount = NBPS;
 	rxc->rxc_tocnt = 0;
+#ifdef RXDEBUG
+	printf("rxstart: ");
+#endif
 	if (rxaddr->rxcs == 0x800) {
 		/*
 		 * 'Volume valid'?, check
@@ -350,6 +355,9 @@ loop:
 
 	if (bp->b_flags&B_READ) {
 		rxmap(bp, &sector, &track);			/* read */
+#ifdef RXDEBUG
+		printf("read tr=%d, sc=%d", track, sector);
+#endif
 		rxc->rxc_state = RXS_READ;
 		rxaddr->rxcs = RX_READ | sc->sc_csbits;
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
@@ -359,13 +367,15 @@ loop:
 			;
 		rxaddr->rxdb = (u_short)track;
 	} else {
+#ifdef RXDEBUG
+		printf("write");
+#endif
 		rxc->rxc_state = RXS_FILL;			/* write */
 		um->um_cmd = RX_FILL;
 		(void) ubago(rxdinfo[unit]);
 	}
 #ifdef RXDEBUG
-	printf("rxstart: flgs=0x%x, unit=%d, tr=%d, sc=%d, bl=%d, cnt=%d\n", 
-		bp->b_flags, unit, track, sector, bp->b_blkno, bp->b_bcount);
+	printf("\n");
 #endif
 }
 
@@ -415,7 +425,7 @@ rxintr(ctlr)
 	rxc->rxc_tocnt = 0;
 	er = &rxerr[unit];
 #ifdef RXDEBUG
-	printf("rxintr: dev=0x%x, state=0x%x, status=0x%x\n", 
+	printf("rxintr: dev=%x, state=%d, status=0x%x", 
 		bp->b_dev, rxc->rxc_state, rxaddr->rxcs);
 #endif
 	if ((rxaddr->rxcs & RX_ERR) &&
@@ -436,6 +446,9 @@ rxintr(ctlr)
 		rxc->rxc_state = RXS_EMPTY;
 		um->um_cmd = RX_EMPTY;
 		(void) ubago(ui);
+#ifdef RXDEBUG
+		printf("\n");
+#endif
 		return;
 
 	case RXS_FILL:
@@ -452,6 +465,9 @@ rxintr(ctlr)
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = track;
+#ifdef RXDEBUG
+		printf("\n");
+#endif
 		return;
 
 	/*
@@ -518,7 +534,7 @@ retry:
 	 * In case we already have UNIBUS resources, give
 	 * them back since we reallocate things in rxstart.
 	 * Also, the active flag must be reset, otherwise rxstart
-	 * will refuse to restart the transfer
+	 * will not restart the transfer
 	 */
 	if (um->um_ubinfo)
 		ubadone(um);
@@ -556,8 +572,7 @@ rderr:
 	bp->b_error = EIO;
 	bp->b_flags |= B_ERROR;
 	ubadone(um);
-	erxbuf[unit].b_back = bp;	/* kludge to save the buffer pointer */
-					/* while processing the error */
+	erxbuf[unit].b_back = bp;	/* save the data buffer pointer */
 	er->rxcs = rxaddr->rxcs;
 	er->rxdb = rxaddr->rxdb;
 	bp = &erxbuf[unit];
@@ -576,21 +591,27 @@ done:
 	um->um_tab.b_active = 0;
 	um->um_tab.b_errcnt = 0;
 	ubadone(um);
-	if ((bp->b_resid -= NBPS) > 0) {
+	if ((sc->sc_resid -= NBPS) > 0) {
 		bp->b_un.b_addr += NBPS;
+#ifdef RXDEBUG
+		printf("\n");
+#endif
 		rxstart(um);
 		return;
 	}
 	bp->b_un.b_addr = sc->sc_uaddr;
 	bp->b_resid = 0;
 	bp->b_bcount = sc->sc_bcnt;
-	sc->sc_offset = 0;	/* move this statement to a more appropriate place! */
+	dp->b_actf = bp->av_forw;
 	iodone(bp);
+	sc->sc_offset = 0;
 	rxc->rxc_state = RXS_IDLE;
 	um->um_tab.b_actf = dp->b_forw;
 	dp->b_active = 0;
 	dp->b_errcnt = 0;
-	dp->b_actf = bp->av_forw;
+#ifdef RXDEBUG
+	printf(" old bp=0x%x, new=0x%x\n", bp, dp->b_actf);
+#endif
 	/*
 	 * If this unit has more work to do,
 	 * start it up right away
@@ -605,8 +626,8 @@ done:
 
 /* 
  * Wake up every second, check if an interrupt is pending
- * on one of the present controllers.
- * if it is, but nothing has happened increment a counter.
+ * on one (or more) of the present controllers.
+ * If it is, but nothing has happened increment a counter.
  * If nothing happens for RX_MAXTIMEOUT seconds, 
  * call the interrupt routine with the 'dead' controller
  * as an argument, thereby simulating an interrupt.
