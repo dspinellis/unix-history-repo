@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -765,8 +765,7 @@ deliver(e, firstto)
 		}
 
 		/* compute effective uid/gid when sending */
-		if (to->q_mailer == ProgMailer)
-			ctladdr = getctladdr(to);
+		ctladdr = getctladdr(to);
 
 		user = to->q_user;
 		e->e_to = to->q_paddr;
@@ -837,10 +836,8 @@ deliver(e, firstto)
 
 		if (m == FileMailer)
 		{
-			ADDRESS *caddr = getctladdr(to);
-
-			rcode = mailfile(user, caddr, e);
-			giveresponse(rcode, m, NULL, caddr, e);
+			rcode = mailfile(user, ctladdr, e);
+			giveresponse(rcode, m, NULL, ctladdr, e);
 			if (rcode == EX_OK)
 				to->q_flags |= QSENT;
 			continue;
@@ -911,8 +908,6 @@ deliver(e, firstto)
 	**	If we are running SMTP, we just need to clean up.
 	*/
 
-	if (ctladdr == NULL && m != ProgMailer)
-		ctladdr = &e->e_from;
 #ifdef NAMED_BIND
 	if (ConfigLevel < 2)
 		_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);	/* XXX */
