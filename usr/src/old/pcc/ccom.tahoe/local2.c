@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.14 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -196,70 +196,67 @@ zzzcode( p, c ) register NODE *p; {
 		cbgen( p->in.op, p->bn.label, c );
 		return;
 
-	case 'A':	/* assignment and load (integer only) */
+	case 'G':	/* i *= f; asgops with int lhs and float rhs */
 		{
-		register NODE *l, *r;
+		register NODE *l, *r, *s;
+		int lt, rt;
 
-		if (xdebug) eprint(p, 0, &val, &val);
-		r = getlr(p, 'R');
-		if (optype(p->in.op) == LTYPE || p->in.op == UNARY MUL) {
-			l = resc;
-			l->in.type = INT;
-		} else
-			l = getlr(p, 'L');
-		if(r->in.type==FLOAT || r->in.type==DOUBLE
-		 || l->in.type==FLOAT || l->in.type==DOUBLE)
-			cerror("float in ZA");
-		if (r->in.op == ICON)
-			if(r->in.name[0] == '\0') {
-				if (r->tn.lval == 0) {
-					putstr("clr");
-					prtype(l);
-					putchar('\t');
-					adrput(l);
-					return;
-				}
-				if (r->tn.lval < 0 && r->tn.lval >= -63) {
-					putstr("mneg");
-					prtype(l);
-					r->tn.lval = -r->tn.lval;
-					goto ops;
-				}
-#ifdef MOVAFASTER
-			} else {
-				putstr("movab\t");
-				acon(r);
-				putchar(',');
-				adrput(l);
-				return;
-#endif MOVAFASTER
-			}
+		l = p->in.left;
+		r = p->in.right;
+		s = talloc();
+		rt = r->in.type;
+		lt = l->in.type;
 
-		if (l->in.op == REG) {
-			if( tlen(l) < tlen(r) ) {
-				putstr(!ISUNSIGNED(l->in.type)?
-					"cvt": "movz");
-				prtype(l);
-				putchar('l');
-				goto ops;
-			} else
-				l->in.type = INT;
+		if (lt != INT && lt != UNSIGNED) {
+			s->in.op = SCONV;
+			s->in.left = l;
+			s->in.type = ISUNSIGNED(lt) ? UNSIGNED : INT;
+			zzzcode(s, 'U');
+			putstr("\n\t");
 		}
-		if (tlen(l) == tlen(r)) {
-			putstr("mov");
-			prtype(l);
-			goto ops;
-		} else if (tlen(l) > tlen(r) && ISUNSIGNED(r->in.type))
-			putstr("movz");
-		else
-			putstr("cvt");
-		prtype(r);
-		prtype(l);
-	ops:
+
+		if (ISUNSIGNED(lt)) {
+			s->in.op = SCONV;
+			s->in.left = lt == UNSIGNED ? l : resc;
+			s->in.type = rt;
+			unsigned_to_float(s);
+		} else {
+			putstr("cvl");
+			prtype(r);
+			putchar('\t');
+			adrput(lt == INT ? l : resc);
+		}
+		putstr("\n\t");
+
+		hopcode(rt == FLOAT ? 'F' : 'D', p->in.op);
 		putchar('\t');
 		adrput(r);
-		putchar(',');
-		adrput(l);
+
+		if (ISUNSIGNED(lt)) {
+			putstr("\n\t");
+			s->in.op = SCONV;
+			s->in.left = r;		/* we need only the type */
+			s->in.type = UNSIGNED;
+			float_to_unsigned(s);
+		} else {
+			putstr("\n\tcv");
+			prtype(r);
+			putstr("l\t");
+			if (lt == INT)
+				adrput(l);
+			else
+				adrput(resc);
+		}
+		if (lt != INT) {
+			putstr("\n\t");
+			s->in.op = ASSIGN;
+			s->in.left = l;
+			s->in.right = resc;
+			s->in.type = lt;
+			zzzcode(s, 'U');
+		}
+
+		s->in.op = FREE;
 		return;
 		}
 
@@ -295,7 +292,7 @@ zzzcode( p, c ) register NODE *p; {
 		}
 
 	case 'D':	/* INCR and DECR */
-		zzzcode(p->in.left, 'A');
+		zzzcode(p->in.left, 'U');
 		putstr("\n	");
 
 	case 'E':	/* INCR and DECR, FOREFF */
@@ -393,6 +390,23 @@ zzzcode( p, c ) register NODE *p; {
 	case 'U':		/* SCONV */
 	case 'V':		/* SCONV with FORCC */
 		sconv(p, c == 'V');
+		break;
+
+	case 'W':		/* SCONV float/double => unsigned */
+		putstr("ld");
+		prtype(p->in.left);
+		putchar('\t');
+		adrput(p->in.left);
+		putstr("\n\t");
+		float_to_unsigned(p);
+		break;
+
+	case 'Y':		/* SCONV unsigned => float/double */
+		unsigned_to_float(p);	/* stores into accumulator */
+		putstr("\n\tst");
+		prtype(p);
+		putchar('\t');
+		adrput(resc);
 		break;
 
 	case 'Z':
@@ -577,6 +591,63 @@ upput(p, size)
 		    opst[p->tn.op], size);
 		/*NOTREACHED*/
 	}
+}
+
+/*
+ * Convert a float or double in the accumulator into an unsigned int.
+ * Unlike the vax, the tahoe stores 0 into the destination
+ *	on a conversion of > 2 ** 31, so we compensate.
+ */
+float_to_unsigned(p)
+	NODE *p;
+{
+	register NODE *l = p->in.left;
+	int label1 = getlab();
+	int label2 = getlab();
+	int label3 = getlab();
+
+	printf(".data\n\t.align\t2\nL%d:\n\t.long\t0x50000000", label1);
+	if (l->in.type == DOUBLE)
+		putstr(", 0x00000000");
+	putstr(" # .double 2147483648\n\t.text\n\tcmp");
+	prtype(l);
+	printf("\tL%d\n\tjlss\tL%d\n\tsub", label1, label2);
+	prtype(l);
+	printf("\tL%d\n\tcv", label1);
+	prtype(l);
+	putstr("l\t");
+	adrput(resc);
+	putstr("\n\taddl2\t$-2147483648,");
+	adrput(resc);
+	printf("\n\tjbr\tL%d\nL%d:\n\tcv", label3, label2);
+	prtype(l);
+	putstr("l\t");
+	adrput(resc);
+	printf("\nL%d:", label3);
+}
+
+/*
+ * Convert an unsigned int into a float or double, leaving the result
+ *	in the accumulator.
+ */
+unsigned_to_float(p)
+	register NODE *p;
+{
+	int label1 = getlab();
+	int label2 = getlab();
+
+	printf(".data\n\t.align\t2\nL%d:\n\t.long\t0x50800000", label2);
+	if (p->in.type == DOUBLE)
+		putstr(", 0x00000000");
+	putstr(" # .double 4294967296\n\t.text\n\tmovl\t");
+	adrput(p->in.left);
+	putchar(',');
+	adrput(resc);
+	putstr("\n\tcvl");
+	prtype(p);
+	putchar('\t');
+	adrput(resc);
+	printf("\n\tjgeq\tL%d\n\taddd\tL%d\nL%d:", label1, label2, label1);
 }
 
 /*
