@@ -1,4 +1,4 @@
-/*	if_ec.c	6.5	84/08/29	*/
+/*	if_ec.c	6.6	85/02/15	*/
 
 #include "ec.h"
 
@@ -34,46 +34,15 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-/*
- * The memory address must be consecutive.  Any allocations 
- * not in order will cause problems on a VAX 780.
- */
+#if CLSIZE == 2
+#define ECBUFSIZE	32		/* on-board memory, clusters */
+#endif
 
-int ecmem[] = {
-#if NEC > 0
-	0000000,
-#endif
-#if NEC > 1
-	0100000,
-#endif
-#if NEC > 2
-	0200000,
-#endif
-#if NEC > 3
-	0300000,
-#endif
-#if NEC > 4
-	0400000,
-#endif
-#if NEC > 5
-	0500000,
-#endif
-#if NEC > 6
-	0600000,
-#endif
-#if NEC > 7
-	0700000,
-#endif
-	};
-
-int necmem = 0;			/* count of current memory number for ecprobe */
-
-int	ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
+int	ecubamem(), ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
 struct	uba_device *ecinfo[NEC];
 u_short ecstd[] = { 0 };
 struct	uba_driver ecdriver =
-	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo };
-#define	ECUNIT(x)	minor(x)
+	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo, 0, 0, 0, ecubamem };
 
 int	ecinit(),ecioctl(),ecoutput(),ecreset();
 struct	mbuf *ecget();
@@ -103,60 +72,88 @@ struct	ec_softc {
 } ec_softc[NEC];
 
 /*
- * Do output DMA to determine interface presence and
- * interrupt vector.  DMA is too short to disturb other hosts.
+ * Configure on-board memory for an interface.
+ * Called from autoconfig and after a uba reset.
+ * The address of the memory on the uba is supplied in the device flags.
  */
-ecprobe(reg)
-	caddr_t reg;
+ecubamem(ui, uban)
+	register struct uba_device *ui;
 {
-	register int br, cvec;		/* r11, r10 value-result */
-	register struct ecdevice *addr = (struct ecdevice *)reg;
-	register caddr_t ecbuf = (caddr_t) &umem[numuba][ecmem[necmem]];
+	register caddr_t ecbuf = (caddr_t) &umem[uban][ui->ui_flags];
+	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
 
-#ifdef lint
-	br = 0; cvec = br; br = cvec;
-	ecrint(0); ecxint(0); eccollide(0);
+	/*
+	 * Make sure csr is there (we run before ecprobe).
+	 */
+	if (badaddr((caddr_t)addr, 2))
+		return (-1);
+#if VAX780
+	if (cpu == VAX_780 && uba_hd[uban].uh_uba->uba_sr) {
+		uba_hd[uban].uh_uba->uba_sr = uba_hd[uban].uh_uba->uba_sr;
+		return (-1);
+	}
 #endif
 	/*
 	 * Make sure memory is turned on
 	 */
 	addr->ec_rcr = EC_AROM;
 	/*
-	 * Disable map registers for ec unibus space,
-	 * but don't allocate yet.
+	 * Tell the system that the board has memory here, so it won't
+	 * attempt to allocate the addresses later.
 	 */
-	(void) ubamem(numuba, ecmem[necmem], 32*2, 0);
+	if (ubamem(uban, ui->ui_flags, ECBUFSIZE*CLSIZE, 1) == 0) {
+		printf("ec%d: cannot reserve uba addresses\n", ui->ui_unit);
+		addr->ec_rcr = EC_MDISAB;	/* disable memory */
+		return (-1);
+	}
 	/*
 	 * Check for existence of buffers on Unibus.
 	 */
 	if (badaddr((caddr_t)ecbuf, 2)) {
-	bad1:
-		printf("ec: buffer mem not found\n");
-	bad2:
-		(void) ubamem(numuba, 0, 0, 0);	/* reenable map (780 only) */
+bad:
+		printf("ec%d: buffer mem not found\n", ui->ui_unit);
+		(void) ubamem(uban, ui->ui_flags, ECBUFSIZE*2, 0);
 		addr->ec_rcr = EC_MDISAB;	/* disable memory */
-		necmem++;
-		return (0);
+		return (-1);
 	}
 #if VAX780
-	if (cpu == VAX_780 && uba_hd[numuba].uh_uba->uba_sr) {
-		uba_hd[numuba].uh_uba->uba_sr = uba_hd[numuba].uh_uba->uba_sr;
-		goto bad1;
+	if (cpu == VAX_780 && uba_hd[uban].uh_uba->uba_sr) {
+		uba_hd[uban].uh_uba->uba_sr = uba_hd[uban].uh_uba->uba_sr;
+		goto bad;
 	}
+#endif
+	if (ui->ui_alive == 0)		/* Only printf from autoconfig */
+		printf("ec%d: mem %x-%x\n", ui->ui_unit,
+			ui->ui_flags, ui->ui_flags + ECBUFSIZE*CLBYTES - 1);
+	ui->ui_type = 1;		/* Memory on, allocated */
+	return (0);
+}
+
+/*
+ * Do output DMA to determine interface presence and
+ * interrupt vector.  DMA is too short to disturb other hosts.
+ */
+ecprobe(reg, ui)
+	caddr_t reg;
+	struct uba_device *ui;
+{
+	register int br, cvec;		/* r11, r10 value-result */
+	register struct ecdevice *addr = (struct ecdevice *)reg;
+	register caddr_t ecbuf = (caddr_t) &umem[ui->ui_ubanum][ui->ui_flags];
+
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	ecrint(0); ecxint(0); eccollide(0);
 #endif
 
 	/*
-	 * Tell the system that the board has memory here, so it won't
-	 * attempt to allocate the addresses later.
+	 * Check that buffer memory was found and enabled.
 	 */
-	if (ubamem(numuba, ecmem[necmem], 32*2, 1) == 0) {
-		printf("ecprobe: cannot reserve uba addresses\n");
-		goto bad2;
-	}
-
+	if (ui->ui_type == 0)
+		return(0);
 	/*
 	 * Make a one byte packet in what should be buffer #0.
-	 * Submit it for sending.  This whould cause an xmit interrupt.
+	 * Submit it for sending.  This should cause an xmit interrupt.
 	 * The xmit interrupt vector is 8 bytes after the receive vector,
 	 * so adjust for this before returning.
 	 */
@@ -174,7 +171,6 @@ ecprobe(reg)
 			br += 2;		/* rcv is xmit + 2 */
 		}
 	}
-	necmem++;
 	return (1);
 }
 
@@ -220,7 +216,7 @@ ecattach(ui)
 	ifp->if_reset = ecreset;
 	for (i=0; i<16; i++)
 		es->es_buf[i] 
-		    = (u_char *)&umem[ui->ui_ubanum][ecmem[ifp->if_unit]+2048*i];
+		    = (u_char *)&umem[ui->ui_ubanum][ui->ui_flags + 2048*i];
 	if_attach(ifp);
 }
 
@@ -237,7 +233,6 @@ ecreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" ec%d", unit);
-	(void) ubamem(uban, ecmem[unit], 32*2, 0);	/* mr disable (no alloc) */
 	ec_softc[unit].es_if.if_flags &= ~IFF_RUNNING;
 	ecinit(unit);
 }
@@ -288,10 +283,8 @@ ecinit(unit)
  * to send off of the interface queue, and map it to the interface
  * before starting the output.
  */
-ecstart(dev)
-	dev_t dev;
+ecstart(unit)
 {
-        int unit = ECUNIT(dev);
 	struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	struct mbuf *m;
