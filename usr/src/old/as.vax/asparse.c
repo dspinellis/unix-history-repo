@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.8 %G%";
+static char sccsid[] = "@(#)asparse.c 4.9 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -637,7 +637,19 @@ restlab:
 		 *	The final value of value is
 		 *	given by stabfix()
 		 */
-		stpt->s_tag = STABFLOATING;
+/*
+ * For exprs of the form (name + value) one needs to remember locxp->e_xvalue
+ * for use in stabfix. The right place to keep this is in stpt->s_value
+ * however this gets corrupted at an unknown point.
+ * As a bandaid hack the value is preserved in s_desc and s_other (a
+ * short and a char). This destroys these two values and will
+ * be fixed. May 19 ,1983 Alastair Fyfe
+ */
+		if(locxp->e_xvalue) {
+			stpt->s_other = (locxp->e_xvalue >> 16);
+			stpt->s_desc =  (locxp->e_xvalue  & 0x0000ffff);
+			stpt->s_tag = STABFLOATING;
+		}
 	}
 	/*
 	 *	tokptr now points at one token beyond
