@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *	$Id: sys_process.c,v 1.6 1993/11/16 09:55:03 davidg Exp $
+ *	$Id: sys_process.c,v 1.7 1993/11/25 01:33:22 wollman Exp $
  */
 
 #include "param.h"
@@ -79,7 +79,7 @@ pread (struct proc *procp, unsigned int addr, unsigned int *retval) {
 	int		rv;
 	vm_map_t	map, tmap;
 	vm_object_t	object;
-	vm_offset_t	kva;
+	vm_offset_t	kva = 0;
 	int		page_offset;	/* offset into page */
 	vm_offset_t	pageno;		/* page number */
 	vm_map_entry_t	out_entry;
@@ -126,7 +126,7 @@ pwrite (struct proc *procp, unsigned int addr, unsigned int datum) {
 	int		rv;
 	vm_map_t	map, tmap;
 	vm_object_t	object;
-	vm_offset_t	kva;
+	vm_offset_t	kva = 0;
 	int		page_offset;	/* offset into page */
 	vm_offset_t	pageno;		/* page number */
 	vm_map_entry_t	out_entry;
