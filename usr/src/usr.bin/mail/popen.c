@@ -4,7 +4,7 @@
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.1 %G%";
+static	char	*sccsid = "@(#)popen.c	1.2 %G%";
 
 FILE *
 popen(cmd,mode)
@@ -36,20 +36,20 @@ char	*mode;
 pclose(ptr)
 FILE *ptr;
 {
-	register f, r, (*hstat)(), (*istat)(), (*qstat)();
+	register f, r;
 	int status;
 
 	f = fileno(ptr);
 	fclose(ptr);
-	istat = signal(SIGINT, SIG_IGN);
-	qstat = signal(SIGQUIT, SIG_IGN);
-	hstat = signal(SIGHUP, SIG_IGN);
+	sighold(SIGINT);
+	sighold(SIGQUIT);
+	sighold(SIGHUP);
 	while((r = wait(&status)) != popen_pid[f] && r != -1)
 		;
 	if(r == -1)
 		status = -1;
-	signal(SIGINT, istat);
-	signal(SIGQUIT, qstat);
-	signal(SIGHUP, hstat);
+	sigrelse(SIGINT);
+	sigrelse(SIGQUIT);
+	sigrelse(SIGHUP);
 	return(status);
 }
