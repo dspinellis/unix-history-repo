@@ -102,7 +102,7 @@ gpsinit(fd)
 	struct termios termios;
 	speed_t speed = B4800;
 
-	bzero((char *)&termios, sizeof(termios));
+	memset((char *)&termios, 0, sizeof(termios));
 	termios.c_cflag = CS8 | CREAD | CLOCAL;
 	termios.c_iflag = IGNCR;
 	termios.c_lflag = ICANON;
