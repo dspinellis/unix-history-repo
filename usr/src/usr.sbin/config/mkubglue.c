@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mkubglue.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkubglue.c	1.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -88,8 +88,7 @@ dump_vec(fp, vector, number)
 		}
 		fprintf(fp, "\tpushl\t$%d\n", number);
 		fprintf(fp, "\tcalls\t$1,_%s\n\tpopr\t$0x3f\n", vector);
-		fprintf(fp, "#if defined(VAX750) || defined(VAX730)\n");
-		fprintf(fp, "\tincl\t_cnt+V_INTR\n#endif\n\trei\n\n");
+		fprintf(fp, "\tincl\t_cnt+V_INTR\n\trei\n\n");
 	}
 }
 
