@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.11	82/03/19	*/
+/*	raw_usrreq.c	4.12	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -242,7 +242,7 @@ COUNT(RAW_USRREQ);
 			raw_connaddr(rp, (struct sockaddr *)addr);
 		} else if ((rp->rcb_flags & RAW_ADDR) == 0)
 			return (ENOTCONN);
-		(void) (*so->so_proto->pr_output)(m, so);
+		error = (*so->so_proto->pr_output)(m, so);
 		if (addr)
 			rp->rcb_flags &= ~RAW_ADDR;
 		break;

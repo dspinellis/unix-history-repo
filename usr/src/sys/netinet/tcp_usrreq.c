@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.54 82/03/29 */
+/*	tcp_usrreq.c	1.55	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,7 @@
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
 #include "../net/tcp_debug.h"
-#include "../errno.h"
+#include <errno.h>
 
 /*
  * TCP protocol interface to socket abstraction.
@@ -131,7 +131,7 @@ COUNT(TCP_USRREQ);
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tcp_sendseqinit(tp);
-		(void) tcp_output(tp);
+		error = tcp_output(tp);
 		break;
 
 	/*
@@ -172,7 +172,7 @@ COUNT(TCP_USRREQ);
 	case PRU_SHUTDOWN:
 		socantsendmore(so);
 		tcp_usrclosed(tp);
-		(void) tcp_output(tp);
+		error = tcp_output(tp);
 		break;
 
 	/*
@@ -188,11 +188,11 @@ COUNT(TCP_USRREQ);
 	 */
 	case PRU_SEND:
 		sbappend(&so->so_snd, m);
-/*
+#ifdef notdef
 		if (tp->t_flags & TF_PUSH)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
- */
-		(void) tcp_output(tp);
+#endif
+		error = tcp_output(tp);
 		break;
 
 	/*
@@ -233,7 +233,9 @@ COUNT(TCP_USRREQ);
 			tp->t_oobmark = tp->snd_una + so->so_snd.sb_cc;
 printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
 			tp->t_oobflags |= TCPOOB_NEEDACK;
-			(void) tcp_output(tp);
+			/* what to do ...? */
+			if (error = tcp_output(tp))
+				break;
 		}
 #endif
 		if (sbspace(&so->so_snd) < -512) {
@@ -242,12 +244,12 @@ printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
 		}
 		tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
 		sbappend(&so->so_snd, m);
-/*
+#ifdef notdef
 		if (tp->t_flags & TF_PUSH)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
- */
+#endif
 		tp->t_force = 1;
-		(void) tcp_output(tp);
+		error = tcp_output(tp);
 		tp->t_force = 0;
 		break;
 

@@ -1,4 +1,4 @@
-/*	ip_output.c	1.31	82/03/31	*/
+/*	ip_output.c	1.32	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -11,6 +11,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/route.h"
+#include <errno.h>
 
 ip_output(m, opt, ro, allowbroadcast)
 	struct mbuf *m;
@@ -20,7 +21,7 @@ ip_output(m, opt, ro, allowbroadcast)
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
-	int len, hlen = sizeof (struct ip), off;
+	int len, hlen = sizeof (struct ip), off, error = 0;
 	struct route iproute;
 	struct sockaddr *dst;
 
@@ -51,11 +52,15 @@ COUNT(IP_OUTPUT);
 		rtalloc(ro);
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
-		printf("no route to %x (from %x, len %d)\n",
-		    ip->ip_dst.s_addr, ip->ip_src.s_addr, ip->ip_len);
+		extern int ipprintfs;
+
+		if (ipprintfs)
+			printf("no route to %x (from %x, len %d)\n",
+			    ip->ip_dst.s_addr, ip->ip_src.s_addr, ip->ip_len);
+		error = ENETUNREACH;
 		goto bad;
 	}
-	dst = ro->ro_rt->rt_flags&RTF_DIRECT ?
+	dst = ro->ro_rt->rt_flags & RTF_DIRECT ?
 	    (struct sockaddr *)&ro->ro_dst : &ro->ro_rt->rt_gateway;
 	if (ro == &iproute)
 		RTFREE(ro->ro_rt);
@@ -63,8 +68,10 @@ COUNT(IP_OUTPUT);
 		struct sockaddr_in *sin;
 
 		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr)
+		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr) {
+			error = EPERM;		/* ??? */
 			goto bad;
+		}
 	}
 
 	/*
@@ -85,11 +92,15 @@ COUNT(IP_OUTPUT);
 	 * Too large for interface; fragment if possible.
 	 * Must be able to put at least 8 bytes per fragment.
 	 */
-	if (ip->ip_off & IP_DF)
+	if (ip->ip_off & IP_DF) {
+		error = EMSGSIZE;
 		goto bad;
+	}
 	len = (ifp->if_mtu - hlen) &~ 7;
-	if (len < 8)
+	if (len < 8) {
+		error = EMSGSIZE;
 		goto bad;
+	}
 
 	/*
 	 * Discard IP header from logical mbuf for m_copy's sake.
@@ -102,8 +113,10 @@ COUNT(IP_OUTPUT);
 		struct mbuf *mh = m_get(M_DONTWAIT);
 		struct ip *mhip;
 
-		if (mh == 0)
+		if (mh == 0) {
+			error = ENOBUFS;
 			goto bad;
+		}
 		mh->m_off = MMAXOFF - hlen;
 		mhip = mtod(mh, struct ip *);
 		*mhip = *ip;
@@ -126,6 +139,7 @@ COUNT(IP_OUTPUT);
 		mh->m_next = m_copy(m, off, len);
 		if (mh->m_next == 0) {
 			(void) m_free(mh);
+			error = ENOBUFS;	/* ??? */
 			goto bad;
 		}
 #if vax
@@ -134,14 +148,12 @@ COUNT(IP_OUTPUT);
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
 		ro->ro_rt->rt_use++;
-		if ((*ifp->if_output)(ifp, mh, dst) == 0)
-			goto bad;
+		if (error = (*ifp->if_output)(ifp, mh, dst))
+			break;
 	}
-	m_freem(m);
-	return (1);
 bad:
 	m_freem(m);
-	return (0);
+	return (error);
 }
 
 /*

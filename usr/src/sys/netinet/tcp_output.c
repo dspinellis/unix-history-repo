@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.37	82/03/29	*/
+/*	tcp_output.c	4.38	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,7 @@
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
 #include "../net/tcp_debug.h"
-#include "../errno.h"
+#include <errno.h>
 
 char *tcpstates[]; /* XXX */
 
@@ -44,7 +44,7 @@ tcp_output(tp)
 	register struct socket *so = tp->t_inpcb->inp_socket;
 	register int len;
 	struct mbuf *m0;
-	int off, flags, win;
+	int off, flags, win, error;
 	register struct mbuf *m;
 	register struct tcpiphdr *ti;
 	u_char *opt;
@@ -61,7 +61,7 @@ COUNT(TCP_OUTPUT);
 	off = tp->snd_nxt - tp->snd_una;
 	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
 	if (len < 0)
-		return (0);			/* past FIN */
+		return (0);	/* ??? */	/* past FIN */
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
 
@@ -125,7 +125,7 @@ send:
 	 */
 	MGET(m, 0);
 	if (m == 0)
-		return (0);
+		return (ENOBUFS);
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
 	if (len) {
@@ -178,7 +178,7 @@ send:
 		if (m->m_next == 0) {
 			(void) m_free(m);
 			m_freem(m0);
-			return (0);
+			return (ENOBUFS);
 		}
 		m->m_next->m_next = m0;
 		m0 = m->m_next;
@@ -309,8 +309,8 @@ noopt:
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt, &tp->t_inpcb->inp_route, 0) == 0)
-		return (0);
+	if (error = ip_output(m, tp->t_ipopt, &tp->t_inpcb->inp_route, 0))
+		return (error);
 
 	/*
 	 * Data sent (as far as we can tell).
@@ -323,5 +323,5 @@ noopt:
 	tp->t_flags &= ~(TF_ACKNOW|TF_DELACK);
 	if (SEQ_GT(tp->snd_nxt, tp->snd_max))
 		tp->snd_max = tp->snd_nxt;
-	return (1);
+	return (0);
 }

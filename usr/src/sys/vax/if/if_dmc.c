@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.9	82/03/30	*/
+/*	if_dmc.c	4.10	82/04/10	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -32,6 +32,7 @@ int dmcdebug = 1;
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/route.h"
+#include <errno.h>
 
 /*
  * Driver information for auto-configuration stuff.
@@ -412,18 +413,18 @@ COUNT(DMCOUTPUT);
 	if (dst->sa_family != (ui->ui_flags & DMC_AF)) {
 		printf("dmc%d: af%d not supported\n", ifp->if_unit, pf);
 		m_freem(m);
-		return (0);
+		return (EAFNOSUPPORT);
 	}
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		m_freem(m);
 		splx(s);
-		return (0);
+		return (ENOBUFS);
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (dmc_softc[ifp->if_unit].sc_oactive == 0)
 		dmcstart(ifp->if_unit);
 	splx(s);
-	return (1);
+	return (0);
 }

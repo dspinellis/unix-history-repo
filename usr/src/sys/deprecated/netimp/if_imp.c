@@ -1,4 +1,4 @@
-/*	if_imp.c	4.23	82/04/10	*/
+/*	if_imp.c	4.24	82/04/10	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -31,6 +31,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/route.h"
+#include <errno.h>
 
 /*
  * IMP software status per interface.
@@ -383,13 +384,16 @@ impoutput(ifp, m0, dst)
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
 	int x, dhost, dimp, dlink, len, dnet;
+	int error = 0;
 
 COUNT(IMPOUTPUT);
 	/*
 	 * Don't even try if the IMP is unavailable.
 	 */
-	if (imp_softc[ifp->if_unit].imp_state != IMPS_UP)
+	if (imp_softc[ifp->if_unit].imp_state != IMPS_UP) {
+		error = ENETDOWN;
 		goto drop;
+	}
 
 	switch (dst->sa_family) {
 
@@ -412,6 +416,7 @@ COUNT(IMPOUTPUT);
 	default:
 		printf("imp%d: can't handle af%d\n", ifp->if_unit, 
 			dst->sa_family);
+		error = EAFNOSUPPORT;
 		goto drop;
 	}
 
@@ -423,8 +428,10 @@ COUNT(IMPOUTPUT);
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof(struct imp_leader) > m->m_off) {
 		m = m_get(M_DONTWAIT);
-		if (m == 0)
+		if (m == 0) {
+			error = ENOBUFS;
 			goto drop;
+		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
 		m->m_len = sizeof(struct imp_leader);
@@ -451,7 +458,7 @@ leaderexists:
 	return (impsnd(ifp, m));
 drop:
 	m_freem(m0);
-	return (0);
+	return (error);
 }
 
 /* 
@@ -504,14 +511,14 @@ COUNT(IMPSND);
 		}
 		m_freem(m);
 		splx(x);
-		return (0);
+		return (ENOBUFS);	/* XXX */
 	}
 enque:
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		m_freem(m);
 		splx(x);
-		return (0);
+		return (ENOBUFS);	/* XXX */
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 start:
@@ -519,7 +526,7 @@ start:
 	icp = &imp_softc[ifp->if_unit].imp_cb;
 	if (icp->ic_oactive == 0)
 		(*icp->ic_start)(ifp->if_unit);
-	return (1);
+	return (0);
 }
 
 /*
