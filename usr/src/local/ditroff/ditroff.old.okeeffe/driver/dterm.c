@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.5	(Berkeley)	%G%"
+/* @(#)dterm.c	1.6	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -19,8 +19,10 @@
  *		of each page, print "dterm:" and wait for a command.
  *		Type ? to get a list of available commands.
  *
- *	  -w	sets h = 20, v = 12, l = 131, also sets -c to allow for 
- *		extra-wide printouts on the printer.
+ *	  -L	put a form feed (^L) at the end of each page
+ *
+ *	  -w	sets h = 20, v = 12, l = 131, also sets -c and -L to allow
+ *		for extra-wide printouts on the printer.
  *
  *	-fxxx	get special character definition file "xxx".  Default is
  *		/usr/lib/font/devter/specfile.
@@ -51,11 +53,12 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.5	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.6	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
 char	*malloc();
+char	*operand();
 
 int 	keepon	= 0;	/* flags:  Don't stop at the end of each page? */
 int	clearsc = 0;		/* Put out form feed at each page? */
@@ -92,29 +95,28 @@ main(argc, argv)
 int argc;
 char **argv;
 {
-	argv++;
-	while (argc > 1 && **argv == '-') {
-	    switch (*(++*argv)) {
+	while (--argc > 0 && **++argv == '-') {
+	    switch ((*argv)[1]) {
 		case 'f':		/* special character filepath */
-			specfile = ++*argv;
+			specfile = operand(&argc, &argv);
 			break;
 		case 'l':		/* output line length */
-			linelen = atoi(++*argv) - 1;
+			linelen = atoi(operand(&argc, &argv)) - 1;
 			break;
 		case 'h':		/* horizontal scale (char/inch) */
-			hscale = atof(++*argv);
+			hscale = atof(operand(&argc, &argv));
 			break;
 		case 'v':		/* vertical scale (char/inch) */
-			vscale = atof(++*argv);
+			vscale = atof(operand(&argc, &argv));
 			break;
 		case 'o':		/* output list */
-			outlist(++*argv);
+			outlist(operand(&argc, &argv));
 			break;
 		case 'c':		/* continue at endofpage */
-			keepon = 1;
+			keepon = !keepon;
 			break;
 		case 'L':		/* form feed after each page */
-			clearsc = 1;
+			clearsc = !clearsc;
 			break;
  		case 'w':		/* "wide" printer format */
 			hscale = 16.0;
@@ -124,14 +126,12 @@ char **argv;
 			clearsc = 1;
 			break;
 	    }
-	    argc--;
-	    argv++;
 	}
 
-	if (argc <= 1)
+	if (argc < 1)
 		conv(stdin);
 	else
-		while (--argc) {
+		while (argc--) {
 			if (strcmp(*argv, "-") == 0)
 				fp = stdin;
 			else if ((fp = fopen(*argv, "r")) == NULL)
@@ -141,6 +141,29 @@ char **argv;
 			argv++;
 		}
 	done();
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  * operand (& argc,  & argv)
+ |
+ | Results:	returns address of the operand given with a command-line
+ |		option.  It uses either "-Xoperand" or "-X operand", whichever
+ |		is present.  The program is terminated if no option is present.
+ |
+ | Side Efct:	argc and argv are updated as necessary.
+ *----------------------------------------------------------------------------*/
+
+char *operand(argcp, argvp)
+int * argcp;
+char ***argvp;
+{
+	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
+	if ((--*argcp) <= 0) {			/* operand next word */
+	    fprintf (stderr, "command-line option operand missing.\n");
+	    exit(1);
+	}
+	return(*(++(*argvp)));			/* no operand */
 }
 
 
