@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.6 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.7 %G%";
 #endif
 
 #include <stdio.h>
@@ -142,14 +142,16 @@ rresvport(alport)
 	}
 }
 
-ruserok(rhost, ruser, luser)
-	char *rhost, *ruser, *luser;
+ruserok(rhost, superuser, ruser, luser)
+	char *rhost;
+	int superuser;
+	char *ruser, *luser;
 {
 	FILE *hostf;
 	char ahost[32];
 	int first = 1;
 
-	hostf = fopen("/etc/hosts.equiv", "r");
+	hostf = superuser ? (FILE *)0 : fopen("/etc/hosts.equiv", "r");
 again:
 	if (hostf) {
 		while (fgets(ahost, sizeof (ahost), hostf)) {
@@ -160,8 +162,10 @@ again:
 			if (user)
 				*user++ = 0;
 			if (!strcmp(rhost, ahost) &&
-			    !strcmp(ruser, user ? user : luser))
-				goto ok;
+			    !strcmp(ruser, user ? user : luser)) {
+				(void) fclose(hostf);
+				return (0);
+			}
 		}
 		(void) fclose(hostf);
 	}
@@ -171,9 +175,6 @@ again:
 		goto again;
 	}
 	return (-1);
-ok:
-	(void) fclose(hostf);
-	return (0);
 }
 
 socketaddr(x, y)
