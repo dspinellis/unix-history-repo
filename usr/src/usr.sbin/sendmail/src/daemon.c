@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.44		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.45		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	3.44		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.44		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.45		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -62,10 +62,9 @@ static FILE	*MailPort;	/* port that mail comes in on */
 **		to the communication channel.
 */
 
-# define MAXCONNS	4	/* maximum simultaneous sendmails */
-
 struct sockaddr_in	SendmailAddress;/* internet address of sendmail */
 int	DaemonSocket = -1;		/* fd describing socket */
+int	MaxConnections = 4;		/* maximum simultaneous sendmails */
 
 getrequests()
 {
