@@ -1,11 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)vmacs.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmacs.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
 #ifdef	VMACS
 /*
- * Racal-Vadic 'RV811' MACS system with 831 adaptor.
  *
  * A typical 300 baud L-devices entry is
  *	ACU /dev/tty10 /dev/tty11,48,1200 300 vmacs
@@ -165,4 +164,3 @@ register int fd;
 /*	ioctl(fd, TIOCCDTR, NULL);*/
 	close(fd);
 }
-#endif VMACS

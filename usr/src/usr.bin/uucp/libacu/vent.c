@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)vent.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vent.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
-#ifdef	VENTEL
 
 ventopn(telno, flds, dev)
 char *flds[], *telno;
@@ -97,4 +96,3 @@ int fd;
 		delock(devSel);
 	}
 }
-#endif VENTEL

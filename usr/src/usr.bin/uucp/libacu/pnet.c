@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pnet.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pnet.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"

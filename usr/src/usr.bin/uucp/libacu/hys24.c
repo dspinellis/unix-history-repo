@@ -1,10 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys24.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hys24.c	1.2 (Berkeley) %G%";
 #endif !lint
 
 #include "../condevs.h"
 
-#ifdef HAYES2400
 /*
  *	hyspopn24(telno, flds, dev) connect to hayes smartmodem (pulse call)
  *	hystopn24(telno, flds, dev) connect to hayes smartmodem (tone call)
@@ -123,4 +122,3 @@ int fd;
 		delock(devSel);
 	}
 }
-#endif HAYES2400

@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)df2.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)df2.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
-#ifdef DF02
 
 /*
  *	df2opn(ph, flds, dev)	dial remote machine
@@ -143,4 +142,3 @@ register int fd;
 		delock(devSel);
 	}
 }
-#endif DF02
