@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ln.c 4.2 %G%";
+static	char sccsid[] = "@(#)ln.c 4.3 %G%";
 /*
  * ln
  */
@@ -37,7 +37,7 @@ again:
 		argc++;
 	}
 	if (sflag == 0 && argc > 2) {
-		if (lstat(argv[argc-1], &stb) < 0)
+		if (stat(argv[argc-1], &stb) < 0)
 			goto usage;
 		if ((stb.st_mode&S_IFMT) != S_IFDIR) 
 			goto usage;
@@ -60,12 +60,12 @@ linkit(from, to)
 	int (*linkf)() = sflag ? symlink : link;
 
 	/* is target a directory? */
-	if (sflag == 0 && fflag == 0 && lstat(from, &stb) >= 0
+	if (sflag == 0 && fflag == 0 && stat(from, &stb) >= 0
 	    && (stb.st_mode&S_IFMT) == S_IFDIR) {
 		printf("%s is a directory\n", from);
 		return (1);
 	}
-	if (lstat(to, &stb) >= 0 && (stb.st_mode&S_IFMT) == S_IFDIR) {
+	if (stat(to, &stb) >= 0 && (stb.st_mode&S_IFMT) == S_IFDIR) {
 		tail = rindex(from, '/');
 		if (tail == 0)
 			tail = from;
