@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)puman3.n	6.1 (Berkeley) %G%
+.\"	@(#)puman3.n	6.2 (Berkeley) %G%
 .\"
-.if \n(xx .bp
 .if !\n(xx \{\
 .so tmac.p \}
 .if n 'ND
