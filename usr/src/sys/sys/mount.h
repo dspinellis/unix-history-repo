@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.6 (Berkeley) %G%
+ *	@(#)mount.h	7.7 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -41,6 +41,7 @@ struct mount {
 	struct mount	*m_prev;		/* prev in mount list */
 	struct vfsops	*m_op;			/* operations on fs */
 	struct vnode	*m_vnodecovered;	/* vnode we mounted on */
+	struct vnode	*m_mounth;		/* list of vnodes this mount */
 	int		m_flag;			/* flags */
 	long		m_fsize;		/* fundamental block size */
 	long		m_bsize;		/* optimal transfer size */
@@ -138,13 +139,6 @@ struct statfs {
 #define	MOUNT_MAXTYPE	4
 
 /*
- * Arguments to mount UFS
- */
-struct ufs_args {
-	char	*fspec;
-};
-
-/*
  * Generic file handle
  */
 struct fhandle {
@@ -153,14 +147,23 @@ struct fhandle {
 };
 typedef struct fhandle	fhandle_t;
 
+/*
+ * Arguments to mount UFS
+ */
+struct ufs_args {
+	char	*fspec;		/* block special device to mount */
+	int	exflags;	/* export related flags */
+	uid_t	exroot;		/* mapping for root uid */
+};
+
 #ifdef MFS
 /*
  * Arguments to mount MFS
  */
 struct mfs_args {
-	char	*name;
-	caddr_t	base;
-	u_long size;
+	char	*name;		/* name to export for statfs */
+	caddr_t	base;		/* base address of file system in memory */
+	u_long size;		/* size of file system */
 };
 #endif MFS
 
@@ -203,7 +206,6 @@ struct nfs_args {
 /*
  * exported vnode operations
  */
-extern int	vfs_add();		/* add a new vfs to mounted vfs list */
 extern void	vfs_remove();		/* remove a vfs from mounted vfs list */
 extern int	vfs_lock();		/* lock a vfs */
 extern void	vfs_unlock();		/* unlock a vfs */
