@@ -106,6 +106,7 @@ prog/telnet		Garrett Wollman		wollman@lcs.mit.edu
 sys/fd                  J"org Wunsch            joerg_wunsch@uriah.sax.de
 sys/fd                  Serge V.Vakulenko       vak@cronyx.msk.su
 sys/i386                David Greenman          davidg@root.com
+sys/i386/isa/seagate	Sean Vickery		seanv@cs.uq.edu.au
 sys/i386/isa/sound	Steven Wallace		swallace@freefall.cdrom.com
 sys/kern                David Greenman          davidg@root.com
 sys/kern/ntp	        Garrett Wollman         wollman@lcs.mit.edu
