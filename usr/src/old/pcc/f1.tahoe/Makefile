@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	f1
 MIP=	${.CURDIR}/../mip
@@ -9,18 +9,18 @@ NOMAN=	noman
 .PATH:	${MIP} ${CCOM}
 CLEANFILES+=pcclocal.h
 
-table.o: ${CCOM}/table.c
-	${CC} ${CFLAGS} -c -R ${CCOM}/table.c
+table.o:
+	${CC} ${CFLAGS} -c -R ${.IMPSRC}
 
-common.o: ${MIP}/common.c
-	${CC} ${CFLAGS} -DPASS2COMMON -c ${.ALLSRC}
+common.o:
+	${CC} ${CFLAGS} -DPASS2COMMON -c ${.IMPSRC}
 
-pcclocal.h: ${.CURDIR}/../ccom.vax/localdefs.h /usr/include/pcc.h
+pcclocal.h: localdefs.h /usr/include/pcc.h
 	cat ${.ALLSRC} | \
 	    egrep '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
 	    sed -e 's/PCC[A-Z]*_//' > ${.TARGET}
 
-.depend: pcclocal.h
+${OBJS} .depend: pcclocal.h
 
 .include <bsd.prog.mk>
 
