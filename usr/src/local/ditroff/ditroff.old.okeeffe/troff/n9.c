@@ -254,9 +254,6 @@ setdraw()	/* generate internal cookies for a drawing function */
 		c = getch();
 		if (cbits(c) == delim)
 			break;
-	/* ought to pick up optional drawing character */
-		if (cbits(c) != ' ')
-			ch = c;
 		vflag = 0;
 		dfact = EM;
 		dx[i] = quant(atoi(), HOR);
@@ -281,16 +278,15 @@ setdraw()	/* generate internal cookies for a drawing function */
 #ifndef NROFF
 	cbuf[0] = DRAWFCN | chbits | ZBIT;
 	cbuf[1] = type | chbits | ZBIT;
-	cbuf[2] = '.' | chbits | ZBIT;	/* indicates to use default drawing character */
-	for (k = 0, j = 3; k < i; k++) {
+	for (k = 0, j = 2; k < i; k++) {
 		cbuf[j++] = MOT | ((dx[k] >= 0) ? dx[k] : (NMOT | -dx[k]));
 		cbuf[j++] = MOT | VMOT | ((dy[k] >= 0) ? dy[k] : (NMOT | -dy[k]));
 	}
 	if (type == DRAWELLIPSE) {
-		cbuf[5] = cbuf[4] | NMOT;	/* so net vertical is zero */
-		j = 6;
+		cbuf[4] = cbuf[3] | NMOT;	/* so net vertical is zero */
+		j = 5;
 	} else if (type == DRAWTHICK || type == DRAWSTYLE) {
-		cbuf[4] = cbuf[3] | NMOT;	/* so net horizontal is zero */
+		cbuf[3] = cbuf[2] | NMOT;	/* so net horizontal is zero */
 	}
 	cbuf[j++] = '.' | chbits | ZBIT;	/* marks end for ptout */
 	cbuf[j] = 0;
