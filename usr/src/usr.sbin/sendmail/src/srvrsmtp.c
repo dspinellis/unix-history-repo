@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.81 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.82 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.81 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.82 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -943,7 +943,7 @@ rcpt_esmtp_args(a, kp, vp, e)
 			usrerr("501 ORCPT requires a value");
 			/* NOTREACHED */
 		}
-		if (!xtextok(vp))
+		if (strchr(vp, ';') == NULL || !xtextok(vp))
 		{
 			usrerr("501 Syntax error in ORCPT parameter value");
 			/* NOTREACHED */
