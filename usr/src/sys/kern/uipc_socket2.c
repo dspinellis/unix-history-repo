@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.29	82/10/16	*/
+/*	uipc_socket2.c	4.30	82/10/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,7 +126,7 @@ sonewconn(head)
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, 0, 0, 0)) {
 		(void) soqremque(so, 0);
-		m_free(m);
+		(void) m_free(m);
 		goto bad;
 	}
 	return (so);
