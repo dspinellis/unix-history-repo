@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
@@ -16,6 +16,7 @@ int	tapeno = 0;	/* current tape number */
 int	density = 0;	/* density in bytes/0.1" */
 int	ntrec = NTREC;	/* # tape blocks in each tape record */
 int	cartridge = 0;	/* Assume non-cartridge tape */
+long	dev_bsize = 1;	/* recalculated below */
 #ifdef RDUMP
 char	*host;
 #endif
@@ -225,11 +226,12 @@ main(argc, argv)
 	esize = 0;
 	sblock = (struct fs *)buf;
 	sync();
-	bread(SBLOCK, sblock, SBSIZE);
+	bread(SBOFF, sblock, SBSIZE);
 	if (sblock->fs_magic != FS_MAGIC) {
 		msg("bad sblock magic number\n");
 		dumpabort();
 	}
+	dev_bsize = sblock->fs_fsize / fsbtodb(sblock, 1);
 	msiz = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
 		TP_BSIZE);
 	clrmap = (char *)calloc(msiz, sizeof(char));
