@@ -1,4 +1,4 @@
-/*	dvar.c	1.10	84/02/27
+/*	dvar.c	1.11	84/03/14
  *
  * Varian driver for the new troff
  *
@@ -80,7 +80,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.10	84/02/27";
+char	SccsId[]= "dvar.c	1.11	84/03/14";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -335,7 +335,8 @@ register FILE *fp;
 			t_text(buf);
 			break;
 		case 'D':	/* draw function */
-			fgets(buf, sizeof(buf), fp);
+			if (fgets(buf, sizeof(buf), fp) == NULL)
+			    error(FATAL, "unexpected end of input");;
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 			    sscanf(buf+1, "%d %d", &n, &m);
@@ -414,13 +415,12 @@ register FILE *fp;
 			t_page(n);
 			break;
 		case 'n':	/* end of line */
-			while (getc(fp) != '\n')
-				;
 			t_newline();
-			break;
+
 		case '#':	/* comment */
-			while (getc(fp) != '\n')
-				;
+			do
+				c = getc(fp);
+			while (c != '\n' && c != EOF);
 			break;
 		case 'x':	/* device control */
 			if (devcntrl(fp)) return;
