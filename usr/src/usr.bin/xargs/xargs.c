@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,6 +29,8 @@ static char sccsid[] = "@(#)xargs.c	5.8 (Berkeley) %G%";
 #include "pathnames.h"
 
 int fflag, tflag;
+void err __P((const char *, ...));
+void run(), usage();
 
 main(argc, argv)
 	int argc;
@@ -37,34 +39,43 @@ main(argc, argv)
 	extern int optind;
 	extern char *optarg;
 	register int ch;
-	register char *p, *bp, *endbp, **bxp, **endxp, **xp;
-	int cnt, indouble, insingle, nargs, nline;
-	char *start, **xargs;
+	register char *p, *bbp, *ebp, **bxp, **exp, **xp;
+	int cnt, indouble, insingle, nargs, nflag, nline, xflag;
+	char **av, *argp;
 
-	nargs = 1024;				/* random value */
-	nline = ARG_MAX - 2048;			/* max POSIX.2 value */
-
-	while ((ch = getopt(argc, argv, "fn:s:t")) != EOF)
+	/*
+	 * POSIX.2 limits the exec line length to ARG_MAX - 2K.  Given that
+	 * the smallest argument is 2 bytes in length, this means that the
+	 * number of arguments is limited to:
+	 *
+	 *	 (ARG_MAX - 2K - LENGTH(utility + arguments)) / 2.
+	 *
+	 * We arbitrarily limit the number of arguments to 5000.  This is
+	 * allowed by POSIX.2 as long as the resulting minimum exec line is
+	 * at least LINE_MAX.  Realloc'ing as necessary is possible, but
+	 * probably not worthwhile.
+	 */
+	nargs = 5000;
+	nline = ARG_MAX - 2048;
+	nflag = xflag = 0;
+	while ((ch = getopt(argc, argv, "fn:s:tx")) != EOF)
 		switch(ch) {
 		case 'f':
 			fflag = 1;
 			break;
 		case 'n':
-			if ((nargs = atoi(optarg)) <= 0) {
-				(void)fprintf(stderr,
-				    "xargs: illegal argument count.\n");
-				exit(1);
-			}
+			nflag = 1;
+			if ((nargs = atoi(optarg)) <= 0)
+				err("illegal argument count");
 			break;
 		case 's':
-			if ((nline = atoi(optarg)) <= 0) {
-				(void)fprintf(stderr,
-				    "xargs: illegal command length.\n");
-				exit(1);
-			}
+			nline = atoi(optarg);
 			break;
 		case 't':
 			tflag = 1;
+			break;
+		case 'x':
+			xflag = 1;
 			break;
 		case '?':
 		default:
@@ -73,74 +84,103 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+	if (xflag && !nflag)
+		usage();
+
 	/*
-	 * Allocate for the utility and arguments passed to xarg, the pointers
-	 * to the arguments read from stdin and the trailing NULL.  Allocate
-	 * for the arguments read from stdin.
+	 * Allocate pointers for the utility name, the utility arguments,
+	 * the maximum arguments to be read from stdin and the trailing
+	 * NULL.
 	 */
-	if (!(xargs = malloc((u_int)(nargs + argc + 2) * sizeof(char **))) ||
-	    !(bp = malloc((u_int)nline + 1))) {
-		(void)fprintf(stderr, "xargs: %s.\n", strerror(errno));
-		exit(1);
-	}
+	if (!(av = bxp =
+	    malloc((u_int)(1 + argc + nargs + 1) * sizeof(char **))))
+		err("%s", strerror(errno));
 
 	/*
 	 * Use the user's name for the utility as argv[0], just like the
 	 * shell.  Echo is the default.  Set up pointers for the user's
 	 * arguments.
 	 */
-	xp = xargs + 1;
 	if (!*argv)
-		*xp++ = _PATH_ECHO;
+		cnt = strlen(*bxp++ = _PATH_ECHO);
 	else {
-		*xp++ = *argv;
-		while (*++argv)
-			*xp++ = *argv;
+		cnt = 0;
+		do {
+			cnt += strlen(*bxp++ = *argv) + 1;
+		} while (*++argv);
 	}
 
-	/* Set up the pointers into the buffer and the arguments */
-	*(endxp = (bxp = xp) + nargs) = NULL;
-	endbp = (start = p = bp) + nline;
+	/*
+	 * Set up begin/end/traversing pointers into the array.  The -n
+	 * count doesn't include the trailing NULL pointer, so the malloc
+	 * added in an extra slot.
+	 */
+	exp = (xp = bxp) + nargs;
 
-	insingle = indouble = 0;
-	for (;;)
+	/*
+	 * Allocate buffer space for the arguments read from stdin and the
+	 * trailing NULL.  Buffer space is defined as the default or specified
+	 * space, minus the length of the utility name and arguments.  Set up
+	 * begin/end/traversing pointers into the array.  The -s count does
+	 * include the trailing NULL, so the malloc didn't add in an extra
+	 * slot.
+	 */
+	nline -= cnt;
+	if (nline <= 0)
+		err("insufficient space for command");
+
+	if (!(bbp = malloc((u_int)nline + 1)))
+		err("%s", strerror(errno));
+	ebp = (argp = p = bbp) + nline - 1;
+
+	for (insingle = indouble = 0;;)
 		switch(ch = getchar()) {
 		case EOF:
-			/* Nothing to display. */
-			if (p == bp)
+			/* No arguments since last exec. */
+			if (p == bbp)
 				exit(0);
 
-			/* Nothing since last arg end. */
-			if (start == p) {
+			/* Nothing since end of last argument. */
+			if (argp == p) {
 				*xp = NULL;
-				run(xargs[0], xargs);
+				run(av);
 				exit(0);
 			}
-			goto addarg;
+			goto arg1;
 		case ' ':
 		case '\t':
+			/* Quotes escape tabs and spaces. */
 			if (insingle || indouble)
 				goto addch;
-			goto addarg;
+			goto arg2;
 		case '\n':
-			if (start == p)			/* Empty line. */
+			/* Empty lines are skipped. */
+			if (argp == p)
 				continue;
-addarg:			if (insingle || indouble) {
-				(void)fprintf(stderr,
-				   "xargs: unterminated quote\n");
-				exit(1);
-			}
-			*xp++ = start;
-			*p++ = '\0';
-			if (xp == endxp || p == endbp || ch == EOF) {
+
+			/* Quotes do not escape newlines. */
+arg1:			if (insingle || indouble)
+				 err("unterminated quote");
+
+arg2:			*p++ = '\0';
+			*xp++ = argp;
+
+			/*
+			 * If max'd out on args or buffer, or reached EOF,
+			 * run the command.  If xflag and max'd out on buffer
+			 * but not on args, object.
+			 */
+			if (xp == exp || p == ebp || ch == EOF) {
+				if (xflag && xp != exp && p == ebp)
+					err("insufficient space for arguments");
 				*xp = NULL;
-				run(xargs[0], xargs);
+				run(av);
 				if (ch == EOF)
 					exit(0);
-				p = bp;
+				p = bbp;
 				xp = bxp;
 			}
-			start = p;
+			argp = p;
 			break;
 		case '\'':
 			if (indouble)
@@ -153,40 +193,43 @@ addarg:			if (insingle || indouble) {
 			indouble = !indouble;
 			break;
 		case '\\':
-			if ((ch = getchar()) == EOF) {
-				(void)fprintf(stderr,
-				    "xargs: backslash at EOF\n");
-				exit(1);
-			}
+			/* Backslash escapes anything, is escaped by quotes. */
+			if (!insingle && !indouble && (ch = getchar()) == EOF)
+				err("backslash at EOF");
 			/* FALLTHROUGH */
 		default:
-addch:			if (p != endbp) {
+addch:			if (p != ebp) {
 				*p++ = ch;
-				continue;
+				break;
 			}
-			if (bxp == xp) {
-				(void)fprintf(stderr,
-				    "xargs: argument too large.\n");
-				exit(1);
-			}
+
+			/* If only one argument, not enough buffer space. */
+			if (bxp == xp)
+				err("insufficient space for argument");
+			/* Didn't hit argument limit, so if xflag object. */
+			if (xflag)
+				err("insufficient space for arguments");
+
 			*xp = NULL;
-			run(xargs[0], xargs);
-			cnt = endbp - start;
-			bcopy(start, bp, cnt);
-			p = (start = bp) + cnt;
-			*p++ = ch;
+			run(av);
 			xp = bxp;
+			cnt = ebp - argp;
+			bcopy(argp, bbp, cnt);
+			p = (argp = bbp) + cnt;
+			*p++ = ch;
 			break;
 		}
 	/* NOTREACHED */
 }
 
-run(prog, argv)
-	char *prog, **argv;
+void
+run(argv)
+	char **argv;
 {
-	int noinvoke, status;
+	register char **p;
 	pid_t pid;
-	char **p;
+	volatile int noinvoke;
+	int status;
 
 	if (tflag) {
 		(void)fprintf(stderr, "%s", *argv);
@@ -198,22 +241,17 @@ run(prog, argv)
 	noinvoke = 0;
 	switch(pid = vfork()) {
 	case -1:
-		(void)fprintf(stderr,
-		    "xargs: vfork: %s.\n", strerror(errno));
-		exit(1);
+		err("vfork: %s", strerror(errno));
 	case 0:
-		execvp(prog, argv);
+		execvp(argv[0], argv);
 		(void)fprintf(stderr,
-		    "xargs: %s: %s.\n", prog, strerror(errno));
+		    "xargs: %s: %s.\n", argv[0], strerror(errno));
 		noinvoke = 1;
 		_exit(1);
 	}
 	pid = waitpid(pid, &status, 0);
-	if (pid == -1) {
-		(void)fprintf(stderr,
-		    "xargs: waitpid: %s.\n", strerror(errno));
-		exit(1);
-	}
+	if (pid == -1)
+		err("waitpid: %s", strerror(errno));
 	/*
 	 * If we couldn't invoke the utility or the utility didn't exit
 	 * properly, quit with 127.
@@ -226,9 +264,39 @@ run(prog, argv)
 		exit(WEXITSTATUS(status));
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr,
-	    "xargs: [-ft] [-n number] [-s size] [utility [argument ...]]\n");
+"usage: xargs [-ft] [[-x] -n number] [-s size] [utility [argument ...]]\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "xargs: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
