@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -200,7 +200,8 @@ map_parseargs(map, ap)
 **		av -- arguments to interpolate into buf.
 **
 **	Returns:
-**		Pointer to rewritten result.
+**		Pointer to rewritten result.  This is static data that
+**		should be copied if it is to be saved!
 **
 **	Side Effects:
 **		none.
