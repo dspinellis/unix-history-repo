@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)0.h 1.1 %G%"; */
+/* static	char sccsid[] = "@(#)0.h 1.2 %G%"; */
 
 #define DEBUG
 #define	CHAR
@@ -535,17 +535,18 @@ short	cnts;
 
 /*
  * Parts records which declaration parts have been seen.
- * The grammar allows the "const" "type" and "var"
+ * The grammar allows the "label" "const" "type" "var" and routine
  * parts to be repeated and to be in any order, so that
  * they can be detected semantically to give better
  * error diagnostics.
  */
-short	parts;
+int	parts[ DSPLYSZ ];
 
-#define	LPRT	01
-#define	CPRT	02
-#define	TPRT	04
-#define	VPRT	08
+#define	LPRT	1
+#define	CPRT	2
+#define	TPRT	4
+#define	VPRT	8
+#define	RPRT	16
 
 /*
  * Flags for the "you used / instead of div" diagnostic

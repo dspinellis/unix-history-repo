@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.2 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -51,6 +51,7 @@ funchdr(r)
 		yyretrieve();	/* kludge */
 	}
 	pfcnt++;
+	parts[ cbn ] |= RPRT;
 	line = r[1];
 	if (r[3] == NIL && (p=lookup1(r[2])) != NIL && bn == cbn) {
 		/*
@@ -399,7 +400,7 @@ funcbody(fp)
 	sizes[cbn].om_max = sizes[cbn].om_off = -DPOFF1;
 	gotos[cbn] = NIL;
 	errcnt[cbn] = syneflg;
-	parts = NIL;
+	parts[ cbn ] = NIL;
 	dfiles[ cbn ] = FALSE;
 	if (fp == NIL)
 		return (NIL);
@@ -1015,7 +1016,10 @@ level1()
 
 	cbn++;
 	sizes[cbn].om_max = sizes[cbn].om_off = -DPOFF1;
-	parts = NIL;
+	gotos[cbn] = NIL;
+	errcnt[cbn] = syneflg;
+	parts[ cbn ] = NIL;
+	dfiles[ cbn ] = FALSE;
 	progseen++;
 }
 

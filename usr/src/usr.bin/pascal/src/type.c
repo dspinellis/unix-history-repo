@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)type.c 1.2 %G%";
+static	char sccsid[] = "@(#)type.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -14,7 +14,7 @@ typebeg()
 {
 
 /*
- * PC allows for multiple
+ * this allows for multiple
  * declaration parts unless
  * standard option has been
  * specified.
@@ -23,27 +23,25 @@ typebeg()
  */
 
 #ifndef PI1
-if (!progseen)
-	level1();
-#ifdef PC
-   if (opt('s')) {
-	if (parts & VPRT) {
+	if (!progseen)
+		level1();
+	if ( parts[ cbn ] & ( VPRT | RPRT ) ) {
+	    if ( opt( 's' ) ) {
 		standard();
-		error("Type declarations must precede var declarations");
+	    } else {
+		warning();
+	    }
+	    error("Type declarations should precede var and routine declarations");
 	}
-	if (parts & TPRT) {
+	if (parts[ cbn ] & TPRT) {
+	    if ( opt( 's' ) ) {
 		standard();
-		error("All types must be declared in one type part");
+	    } else {
+		warning();
+	    }
+	    error("All types should be declared in one type part");
 	}
-   }
-#endif PC
-#ifdef OBJ
-	if (parts & VPRT)
-		error("Type declarations must precede var declarations");
-	if (parts & TPRT)
-		error("All types must be declared in one type part");
-#endif OBJ
-	parts |= TPRT;
+	parts[ cbn ] |= TPRT;
 #endif
 	/*
 	 * Forechain is the head of a list of types that
