@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -334,9 +334,9 @@ recipient(a, sendq, e)
 			}
 			else if (ret != 0)
 			{
+				a->q_flags |= QBADADDR;
 				usrerr("550 Cannot open %s: %s",
 					a->q_user, errstring(ret));
-				a->q_flags |= QBADADDR;
 			}
 		}
 	}
@@ -477,7 +477,7 @@ recipient(a, sendq, e)
 		q = a->q_next;
 		while (q != NULL && bitset(QDONTSEND|QBADADDR, q->q_flags))
 			q = q->q_next;
-		if (bitset(QDONTSEND|QBADADDR, a->q_flags) && q == NULL)
+		if (bitset(QDONTSEND, a->q_flags) && q == NULL)
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("554 aliasing/forwarding loop broken");
