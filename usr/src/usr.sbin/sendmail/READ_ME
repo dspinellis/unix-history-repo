@@ -1,16 +1,20 @@
 /*-
- *	@(#)READ_ME	8.13 (Berkeley) %G%
+ *	@(#)READ_ME	8.14 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
 
 This directory has the latest sendmail software from Berkeley.  See
-doc/op/op.me for a summary of changes since 5.67.
+doc/changes/changes.me for a summary of changes since 5.67.
 
 Report any bugs to sendmail@CS.Berkeley.EDU.
 
-The latest version of sendmail is kept on FTP.CS.Berkeley.EDU, directory
-/ucb/sendmail; check there for the latest revision.
+**************************************************************************
+**  The latest version of sendmail is kept on FTP.CS.Berkeley.EDU,	**
+**  directory /ucb/src/sendmail; check there for the latest revision.	**
+**  In particular, THIS IS A BETA PRERELEASE.  Check the FTP site for	**
+**  updates, and read comp.mail.sendmail.				**
+**************************************************************************
 
 
 +--------------+
