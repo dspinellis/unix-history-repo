@@ -1,4 +1,4 @@
-/*	if_acc.c	4.26	82/10/22	*/
+/*	if_acc.c	4.27	82/10/23	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -104,14 +104,13 @@ accattach(ui)
 		struct	impcb ifimp_impcb;
 	} *ifimp;
 
-	if ((ifimp = (struct ifimpcb *)impattach(ui)) == 0)
+	if ((ifimp = (struct ifimpcb *)impattach(ui, acreset)) == 0)
 		panic("accattach");
 	sc->acc_if = &ifimp->ifimp_if;
 	ip = &ifimp->ifimp_impcb;
 	sc->acc_ic = ip;
 	ip->ic_init = accinit;
 	ip->ic_start = accstart;
-	sc->acc_ifuba.ifu_ubareset = accreset;
 	sc->acc_if->ifu_flags = UBA_CANTWAIT;
 #ifdef notdef
 	sc->acc_ifuba.ifu_flags |= UBA_NEEDBDP;
