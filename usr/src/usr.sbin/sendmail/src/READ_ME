@@ -1,3 +1,14 @@
+#
+#  Sendmail
+#  Copyright (c) 1983  Eric P. Allman
+#  Berkeley, California
+#
+#  Copyright (c) 1983 Regents of the University of California.
+#  All rights reserved.  The Berkeley software License Agreement
+#  specifies the terms and conditions for redistribution.
+#
+#	@(#)READ_ME	4.2 (Berkeley) %G%
+#
 This directory contains the source files for sendmail.
 
 For installation instructions, please read the document ../doc/op.me:
@@ -63,4 +74,4 @@ version.c	A master file for Version.c -- it may not exist in
 
 Eric Allman
 
-(Version 4.1, last update %G% 19:43:19)
+(Version 4.2, last update %G% 21:34:51)
