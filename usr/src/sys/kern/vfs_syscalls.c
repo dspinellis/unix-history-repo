@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_syscalls.c	7.4 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -261,6 +261,11 @@ link()
 	if (ip == NULL)
 		return;
 	if ((ip->i_mode&IFMT) == IFDIR && !suser()) {
+		iput(ip);
+		return;
+	}
+	if (ip->i_nlink == LINK_MAX - 1) {
+		u.u_error = EMLINK;
 		iput(ip);
 		return;
 	}
