@@ -16,16 +16,16 @@ struct dev {
 	unsigned short	paperlength;	/* max paper length in units */
 	unsigned short	nchtab;		/* number of funny names in chtab */
 	unsigned short	lchname;	/* length of chname table */
-	unsigned short	spare1;		/* #chars in largest ever font */
+	unsigned short	nstip;		/* number of stipples */
 	unsigned short	spare2;		/* in case of expansion */
 };
 
 struct Font {		/* characteristics of a font */
 	unsigned char	nwfont;		/* number of width entries for this font */
 	unsigned char	specfont;	/* 1 == special font */
-	unsigned char	ligfont;	/* 1 == ligatures exist on this font */
+	unsigned char	ligfont;	/* mask of ligatures on this font */
 	unsigned char	spare1;		/* unused for now */
-#ifdef 0
+#ifdef CWI
 	unsigned char	fonttab;	/* 1 == use extra table for fontnumbers */
 	unsigned char	slant;		/* if set, slant font by slant degrees */
 #endif
@@ -41,10 +41,9 @@ struct Font {		/* characteristics of a font */
 #define	LFFI	010
 #define	LFFL	020
 
+#ifdef CWI
 /*
  * Notes by jaap:
- *
- * spare1 int struct dev is also known as biggestfont
  *
  * in Font structure is added:
  *	fonttab: if set to 1, the Font.out has an extra
@@ -59,3 +58,4 @@ struct Font {		/* characteristics of a font */
  *		doesn't has italics for the sans-serif fonts; these
  *		italics have to be made by slanting)
  */
+#endif

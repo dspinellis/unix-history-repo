@@ -2,7 +2,7 @@
 /*
 static char sccsid[] = "@(#)t10.c	2.4 (CWI) 89/08/14";
 */
-static char sccsid[] = "@(#)t10.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)t10.c	2.6 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -28,7 +28,9 @@ int	Inch;
 int	Hor;
 int	Vert;
 int	Unitwidth;
-int	nfonts;
+int	nfonts;		/* highest font num. in fontab */
+int	physfonts;	/* highest font num. known to printer */
+int	zfont;		/* internal font num. mapped to 0 on printer */
 int	nsizes;
 int	nchtab;
 int	nstips;
@@ -77,18 +79,24 @@ ptinit()
 		errprint("can't open tables for %s", termtab);
 		done3(1);
 	}
-	read(fin, (char *) &dev, sizeof(struct dev ));
+	if (read(fin, (char *) &dev, sizeof(struct dev)) < sizeof(struct dev)) {
+		errprint("short read on %s", termtab);
+		done3(1);
+	}
 	Inch = dev.res;
 	Hor = dev.hor;
 	Vert = dev.vert;
 	Unitwidth = dev.unitwidth;
-	nfonts = dev.nfonts;
+	physfonts = nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
-	nstips = dev.spare1;
+	nstips = dev.nstip;
 	stiplab = (tchar *) malloc((nstips + 1) * sizeof(tchar));
-	filebase = malloc(dev.filesize + 2 * EXTRAFONT);
-	read(fin, filebase, dev.filesize);	/* all at once */
+	filebase = malloc(dev.filesize + EXTRAFONT);
+	if (read(fin, filebase, dev.filesize) < dev.filesize) {
+		errprint("short read on %s", termtab);
+		done3(1);
+	}
 	pstab = (short *) filebase;
 	chtab = pstab + nsizes + 1;
 	chname = (char *) (chtab + dev.nchtab);
@@ -471,11 +479,14 @@ ptfont()
 {
 	extern char *unpair();
 	mfont = xfont;
-	if( xfont > nfonts) {
-		register char *temp = unpair(fontlab[xfont]);
-		ptfpcmd(0, temp);	/* Put the desired font in the
-					 * fontcache of the filter */
+	if( xfont > physfonts) {
+		if (xfont != zfont) {
+			register char *temp = unpair(fontlab[xfont]);
+			ptfpcmd(0, temp);	/* Put the desired font in the
+						 * fontcache of the filter */
+		}
 		fdprintf(ptid, "f0\n");	/* make sure that it gets noticed */
+		zfont = xfont;
 	} else
 		fdprintf(ptid, "f%d\n", xfont);
 }
@@ -521,7 +532,9 @@ newpage(n)	/* called at end of each output page (we hope) */
 	if (ascii)
 		return;
 	fdprintf(ptid, "p%d\n", n);	/* new page */
-	for (i = 0; i <= nfonts; i++)
+	if (fontbase[zfont]->namefont && fontbase[zfont]->namefont[0])
+		fdprintf(ptid, "x font 0 %s\n", fontbase[zfont]->namefont);
+	for (i = 1; i <= physfonts; i++)
 		if (fontbase[i]->namefont && fontbase[i]->namefont[0])
 			fdprintf(ptid, "x font %d %s\n", i, fontbase[i]->namefont);
 	ptps();

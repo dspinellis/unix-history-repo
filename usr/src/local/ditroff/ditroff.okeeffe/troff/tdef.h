@@ -1,5 +1,5 @@
 /*
- * @(#)tdef.h	2.3 (Berkeley) %G%
+ * @(#)tdef.h	2.4 (Berkeley) %G%
  */
 
 /* starting values for typesetting parameters: */
@@ -88,7 +88,7 @@
 
 #define	iscontrol(n)	(n==035 || n==036)	/* used to test the next two */
 #define	HX	035	/* next character is value of \x'...' */
-#define MAXFONTS	99	/* Maximum number of fonts (in fontab) */
+#define MAXFONTS	99	/* Max number of mounted fonts (in fontab) */
 
 #define	HYPHEN	c_hyphen
 #define	EMDASH	c_emdash	/* \(em */
@@ -519,8 +519,13 @@ extern struct env env_array[];
  */
 #define MAXCHARS	255	/* current maximum of characters in a font */
 
+#ifdef CWI
 #define EXTRAFONT (3*MAXCHARS * sizeof(char) + dev.nchtab + (128-32) \
 	* sizeof(char) + sizeof(struct Font) + 255 * sizeof(short))
+#else
+#define EXTRAFONT (3*MAXCHARS * sizeof(char) + dev.nchtab + (128-32) \
+	* sizeof(char) + sizeof(struct Font))
+#endif
 
 #include <stdio.h>
 #define fdprintf fprintf
