@@ -1,4 +1,4 @@
-/*	dz.c	3.10	%G%	*/
+/*	dz.c	3.11	%G%	*/
 
 /*
  *  DZ-11 Driver
@@ -61,6 +61,8 @@ int	ttrstrt();
 struct	tty dz_tty[NDZ];
 int	dz_cnt = { NDZ };
 int	dzact;
+int	dzinit;
+int	dzdtr[(NDZ+7)/8];
 
 struct device {
 	short	dzcsr;
@@ -296,7 +298,7 @@ register struct tty *tp;
 	if (tp->t_state & FLUSH)
 		tp->t_state &= ~FLUSH;
 	else
-		ndflush(&tp->t_outq, dp->p_end-tp->t_outq.c_cf);
+		ndflush(&tp->t_outq, dp->p_mem-tp->t_outq.c_cf);
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
 	else
@@ -381,6 +383,7 @@ register int dev;
 		dzaddr->dzdtr &= ~bit;
 	else
 		dzaddr->dzdtr |= bit;
+	dzdtr[minor(dev)>>3] = dzaddr->dzdtr;
 }
  
 dzscan()
@@ -408,6 +411,7 @@ dzscan()
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					dzaddr->dzdtr &= ~bit;
+					dzdtr[i>>3] = dzaddr->dzdtr;
 					flushtty(tp);
 				}
 				tp->t_state &= ~CARR_ON;
@@ -421,4 +425,29 @@ dztimer()
 {
 
 	dzrint(0);
+}
+
+/*
+ * Reset state of driver if UBA reset was necessary.
+ * Reset all the dzdtr registers, then the csr and lpr
+ * registers, then restart all pending transmissions.
+ */
+dzreset()
+{
+	int d;
+	register struct tty *tp;
+
+	printf(" dz");
+	dzinit = 1;
+	for (d = 0; d < NDZ; d += 8)
+		dzpdma[d].p_addr->dzdtr = dzdtr[d>>3];
+	for (d = 0; d < NDZ; d++) {
+		tp = &dz_tty[d];
+		if (tp->t_state & (ISOPEN|WOPEN)) {
+			dzparam(d);
+			dzxint(tp);
+		}
+	}
+	dztimer();
+	dzinit = 0;
 }
