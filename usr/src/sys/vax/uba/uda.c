@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.17 (Berkeley) %G%
+ *	@(#)uda.c	7.18 (Berkeley) %G%
  *
  */
 
@@ -144,7 +144,6 @@ struct udastats {
 struct ra_info {
 	daddr_t	ra_dsize;	/* size in sectors */
 /*	u_long	ra_type;	/* drive type */
-#define	RA_TYPE_RX50	7	/* special: see udaopen */
 	u_long	ra_mediaid;	/* media id */
 	int	ra_state;	/* open/closed state */
 	struct	ra_geom {	/* geometry information */
@@ -514,7 +513,6 @@ udaattach(ui)
 		timeout(udawatch, (caddr_t) 0, hz);
 		udawstart++;
 	}
-	if (ui->ui_dk >= 0)
 
 	/*
 	 * Floppies cannot be brought on line unless there is
@@ -529,22 +527,10 @@ udaattach(ui)
 		printf(": floppy");
 		return;
 	}
+	if (ui->ui_dk >= 0)
 		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
 	udaip[ui->ui_ctlr][ui->ui_slave] = ui;
 
-#ifdef notdef
-	/*
-	 * RX50s cannot be brought on line unless there is
-	 * a floppy in the drive.  Since an ONLINE while cold
-	 * takes ten seconds to fail, and (when notyet becomes now)
-	 * no sensible person will swap to an RX50, we just
-	 * defer the ONLINE until someone tries to use the drive.
-	 */
-	if (ra_info[unit].ra_type == RA_TYPE_RX50) {
-		printf(": rx50");
-		return;
-	}
-#endif
 	if (uda_rainit(ui, 0))
 		printf(": offline");
 	else {
@@ -733,7 +719,6 @@ udaopen(dev, flag, fmt)
 }
 
 /* ARGSUSED */
-/*ARGSUSED*/
 udaclose(dev, flags, fmt)
 	dev_t dev;
 	int flags, fmt;
