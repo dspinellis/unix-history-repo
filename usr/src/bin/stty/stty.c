@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -31,21 +31,16 @@ static char sccsid[] = "@(#)stty.c	5.8 (Berkeley) %G%";
 #include <ctype.h>
 #include <stdio.h>
 
-#ifndef STATIC
-#define STATIC	/* ??? */
-#endif
-
-#define eq(s1, s2)	(strcmp(s1, s2) == 0)
+#define eq(s1, s2)	(strcmp((s1), (s2)) == 0)
 #define WRAPCOL 65
-#define COMPAT_43
 
-STATIC struct modes {
+struct modes {
 	char *name;
 	long set;
 	long unset;
 };
 
-STATIC struct modes imodes[] = {
+struct modes imodes[] = {
 	"ignbrk",	IGNBRK, 0,
 	"-ignbrk",	0, IGNBRK,
 	"brkint",	BRKINT, 0,
@@ -81,7 +76,7 @@ STATIC struct modes imodes[] = {
 	0
 };
 
-STATIC struct modes omodes[] = {
+struct modes omodes[] = {
 	"opost",	OPOST, 0,
 	"-opost",	0, OPOST,
 	"-litout",	OPOST, 0,
@@ -90,14 +85,12 @@ STATIC struct modes omodes[] = {
 	"-onlcr",	0, ONLCR,
 	"tabs",		0, OXTABS,	/* "preserve" tabs */
 	"-tabs",	OXTABS, 0,
-	"xtabs",	OXTABS, 0,	/* ??? */
-	"-xtabs",	0, OXTABS,	/* ??? */
 	"oxtabs",	OXTABS, 0,
 	"-oxtabs",	0, OXTABS,
 	0
 };
 
-STATIC struct modes cmodes[] = {
+struct modes cmodes[] = {
 	"cs5",		CS5, CSIZE,
 	"cs6",		CS6, CSIZE,
 	"cs7",		CS7, CSIZE,
@@ -128,7 +121,7 @@ STATIC struct modes cmodes[] = {
 	0
 };
 
-STATIC struct modes lmodes[] = {
+struct modes lmodes[] = {
 	"echo",		ECHO, 0,
 	"-echo",	0, ECHO,
 	"echoe",	ECHOE, 0,
@@ -191,9 +184,9 @@ STATIC struct modes lmodes[] = {
  * fit within 80 cols).  The rest are optional aliases.
  * All names are recognized on the command line.
  */
-#define MAXNAMES 5	/* ??? */
-STATIC struct {
-	char	*names[MAXNAMES+1];	/* ??? */
+#define MAXNAMES 3
+struct {
+	char	*names[MAXNAMES];
 	int	sub;
 	u_char	def;
 } cchars[] = {
@@ -216,26 +209,25 @@ STATIC struct {
 	0
 };
 	
-STATIC struct winsize win;
-STATIC int ldisc;
-STATIC int dodisc;
-STATIC int debug = 0;
-STATIC int trace, dotrace;
+struct winsize win;
+int ldisc;
+int dodisc;
+int debug = 0;
+int trace, dotrace;
 
 #define OUT	stdout		/* informational output stream */
 #define ERR	stderr		/* error message stream */
 #define CTL	0		/* default control descriptor */
-STATIC int ctl = CTL;
+int ctl = CTL;
 
 extern errno;
-extern char *sys_errlist[];
 
 #define NORMAL	0	/* only print modes differing from defaults */
 #define ALL	1	/* print all modes - POSIX standard format */
 #define ALL_BSD	2	/* print all modes - using BSD shorthand for cc's */
 #define GFMT	3	/* print modes in a form that can be re-input to stty */
 
-STATIC
+
 main(argc, argv) 
 	char *argv[];
 {
@@ -256,38 +248,13 @@ main(argc, argv)
 			syserrexit(*argv);
 		argc--, argv++;
 	}
-#ifdef notyet
-	while ((ch = getopt(argc, argv, "f:ga")) != EOF)
-		switch((char)ch) {
-		case 'f':
-			if ((ctl = open(*optarg, O_RDONLY | O_NONBLOCK)) < 0)
-				syserrexit(*argv);
-			break;
-		case 'a':
-			fmt = ALL;
-			break;
-		case 'g':
-			fmt = GFMT;
-			break;
-		case '?':
-		default:
-			fprintf(stderr, "usage: %s", *argv);
-			exit(1);
-		}
-	argc -= optind;
-	argv += optind;
-#endif
-
 	if (ioctl(ctl, TIOCGETD, &ldisc) < 0)
 		syserrexit("TIOCGETD");
 	if (tcgetattr(ctl, &t) < 0)
 		syserrexit("tcgetattr");
 	if (ioctl(ctl, TIOCGWINSZ, &win) < 0)
-		warning("TIOCGWINSZ: %s", sys_errlist[errno]);
-
-#ifdef COMPAT_43
+		warning("TIOCGWINSZ: %s", strerror(errno));
 	checkredirect();	/* conversion aid */
-#endif
 
 	if (argc == 0 || fmt) {
 		prmode(&t, ldisc, fmt);
@@ -346,7 +313,6 @@ main(argc, argv)
 #define	LKEEP	(ECHOKE|ECHOE|ECHOK|ECHOPRT|ECHOCTL|ALTWERASE|TOSTOP|NOFLSH)
 			t.c_lflag = TTYDEF_LFLAG | (t.c_lflag & LKEEP);
 			t.c_oflag = TTYDEF_OFLAG;
-			t.c_oflag |= (OPOST|ONLCR);	/* XXX */
 			goto next;
 		}
 		if (eq("rows", *argv)) {
@@ -363,7 +329,6 @@ main(argc, argv)
 			goto next;
 		}
 		if (eq("ospeed", *argv)) {
-			int code;
 			if (*(argv+1) == 0)
 				errexit("missing ospeed");
 			cfsetospeed(&t, atoi(*++argv));
@@ -477,7 +442,7 @@ prmode(tp, ldisc, fmt)
 			ld = "tablet"; 
 			break;
 		case SLIPDISC:	
-			ld = "slip(ed)"; 
+			ld = "slip"; 
 			break;
 		default:	
 			sprintf(unknown, "#%d", ldisc);
@@ -599,7 +564,6 @@ prmode(tp, ldisc, fmt)
 	}
 }
 
-#ifdef COMPAT_43
 /*
  * gross, but since we're changing the control descriptor
  * from 1 to 0, most users will be probably be doing
@@ -613,9 +577,8 @@ checkredirect() {
 	    fstat(2, &st2) != -1 && (st1.st_rdev != st2.st_rdev))
 warning("stdout appears redirected, but stdin is the control descriptor");
 }
-#endif
 
-STATIC char *
+char *
 ccval(c, fmt)
 	unsigned char c;
 {
@@ -648,7 +611,7 @@ ccval(c, fmt)
 	return(buf);
 }
 
-STATIC
+
 mdput(s)
 	char *s;
 {
@@ -668,38 +631,63 @@ mdput(s)
 	put(s);
 }
 
-STATIC
-put(f, a)	/* ??? */
-	char *f;
+#include <varargs.h>
+
+put(va_alist)
+	va_dcl
 {
-	_doprnt(f, &a, OUT);
+	char *fmt;
+	va_list ap;
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(OUT, fmt, ap);
+	va_end(ap);
 }
 
-STATIC
-warning(s, a)
-	char *s;
+
+warning(va_alist)
+	va_dcl
 {
+	char *fmt;
+	va_list ap;
+
 	fprintf(ERR, "stty: warning: ");
-	_doprnt(s, &a, ERR);	/* ??? */
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(ERR, fmt, ap);
+	va_end(ap);
 	fprintf(ERR, "\n");
 }
 
-STATIC
-errexit(s, a)
-	char *s;
+
+errexit(va_alist)
+	va_dcl
 {
+	char *fmt;
+	va_list ap;
+
 	fprintf(ERR, "stty: ");
-	_doprnt(s, &a, ERR);	/* ??? */
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(ERR, fmt, ap);
+	va_end(ap);
 	fprintf(ERR, "\n");
 	exit(1);
 }
 
-STATIC
-syserrexit(s, a)	/* ??? */
-	char *s;
+
+syserrexit(va_alist)
+	va_dcl
 {
+	char *fmt;
+	va_list ap;
+
 	fprintf(ERR, "stty: ");
-	_doprnt(s, &a, ERR);
-	fprintf(ERR, ": %s\n", sys_errlist[errno]);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(ERR, fmt, ap);
+	va_end(ap);
+	fprintf(ERR, ": %s\n", strerror(errno));
 	exit(1);
 }
