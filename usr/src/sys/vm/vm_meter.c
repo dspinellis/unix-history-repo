@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.10	81/04/26	*/
+/*	vm_meter.c	4.11	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,7 +42,6 @@ double	avenrun[3];		/* load average, of runnable procs */
  */
 setupclock()
 {
-	int nclust, nkb;
 
 	/*
 	 * Setup thresholds for paging:
@@ -174,7 +173,7 @@ loop:
 	 * and	3. the short (5-second) and longer (30-second) average
 	 *	   memory is less than desirable.
 	 */
-	if (kmapwnt || (avenrun[0] >= 2 && max(avefree, avefree30) < desfree &&
+	if (kmapwnt || (avenrun[0] >= 2 && imax(avefree, avefree30) < desfree &&
 	    (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
 		desperate = 1;
 		goto hardswap;
@@ -347,7 +346,7 @@ hardswap:
 			gives = p->p_rssize;
 			if (p->p_textp)
 				gives += p->p_textp->x_rssize / p->p_textp->x_ccount;
-			gives = min(gives, lotsfree);
+			gives = imin(gives, lotsfree);
 			deficit += gives;
 		} else
 			gives = 0;	/* someone else taketh away */
