@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)def.h	8.1 (Berkeley) %G%
+ *	@(#)def.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -244,4 +244,7 @@ struct ignoretab {
  * useful just before closing an old file that was opened
  * for read/write.
  */
-#define trunc(stream)	ftruncate(fileno(stream), (long) ftell(stream))
+#define trunc(stream) {							\
+	(void)fflush(stream); 						\
+	(void)ftruncate(fileno(stream), (long)ftell(stream));		\
+}
