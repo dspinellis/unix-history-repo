@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -178,18 +178,17 @@ setup(dev)
 			/*
 			 * Planning now for future expansion.
 			 */
-#			if (BYTE_ORDER == BIG_ENDIAN)
-				sblock.fs_qbmask.val[0] = 0;
-				sblock.fs_qbmask.val[1] = ~sblock.fs_bmask;
-				sblock.fs_qfmask.val[0] = 0;
-				sblock.fs_qfmask.val[1] = ~sblock.fs_fmask;
-#			endif /* BIG_ENDIAN */
-#			if (BYTE_ORDER == LITTLE_ENDIAN)
-				sblock.fs_qbmask.val[0] = ~sblock.fs_bmask;
-				sblock.fs_qbmask.val[1] = 0;
-				sblock.fs_qfmask.val[0] = ~sblock.fs_fmask;
-				sblock.fs_qfmask.val[1] = 0;
-#			endif /* LITTLE_ENDIAN */
+#			ifdef _NOQUAD
+				sblock.fs_qbmask.val[_QUAD_HIGHWORD] = 0;
+				sblock.fs_qbmask.val[_QUAD_LOWWORD] =
+				    ~sblock.fs_bmask;
+				sblock.fs_qfmask.val[_QUAD_HIGHWORD] = 0;
+				sblock.fs_qfmask.val[_QUAD_LOWWORD] =
+				    ~sblock.fs_fmask;
+#			else /* QUAD */
+				sblock.fs_qbmask = ~sblock.fs_bmask;
+				sblock.fs_qfmask = ~sblock.fs_fmask;
+#			endif /* QUAD */
 			sbdirty();
 			dirty(&asblk);
 		} else if (sblock.fs_postblformat == FS_DYNAMICPOSTBLFMT) {
