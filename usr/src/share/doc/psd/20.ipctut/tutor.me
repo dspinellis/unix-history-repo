@@ -1,0 +1,934 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tutor.me	6.1 (Berkeley) %G%
+.\"
+.he ``%``
+.sp7
+.b
+.ce
+Tutorial Examples of Interprocess Communication in Berkeley UNIX 4.3 BSD
+.r
+.sp2
+.ce
+.i "Stuart Sechrest"
+.sp
+.ce4
+Computer Science Research Group
+Computer Science Division
+Department of Electrical Engineering and Computer Science
+University of California, Berkeley
+.sp2
+.ce
+.i ABSTRACT
+.sp
+.(c
+.xl 5i
+.lp
+This is a second version of a tutorial document written for
+Berkeley UNIX 4.2BSD.  The present version contains certain clarifications
+and corrections.
+.lp
+Berkeley UNIX 4.3BSD offers several choices for interprocess communication.
+To aid the programmer in  developing programs comprising cooperating
+processes, the different choices are discussed and a series of example 
+programs are presented.  These programs
+demonstrate in a simple way the use of pipes, socketpairs, and sockets
+and the use of datagram and stream communication.  The intent of this
+document is to present a few simple example programs, not to describe the
+networking system in full generality.
+.xl
+.)c
+.sp2
+.ls2
+.(f
+UNIX is a trademark of AT&T Bell Laboratories.
+.sp
+This work was sponsored by the Defense Advanced Research Projects Agency
+(DoD), ARPA Order No. 4031, monitored by the Naval Electronics Systems
+Command under contract No. N00039-C-0235. 
+The views and conclusions contained in this document are those of the
+author and should not be interpreted as representing official policies,
+either expressed or implied, of the Defense Research Projects Agency
+or of the US Government.
+.)f
+.b
+.sh 1 "Goals"
+.r
+.pp
+UNIX is an operating system that supports processes.  Processes
+sit in their own little worlds off on their own machines and generally
+just compute. 
+Occasionally it has been reasonable to 
+write programs as small modular pieces that
+talk to each other, since the resulting facilities can be flexible and
+easy to modify.
+More recently, with more computers sitting around in the same buildings
+people have had the idea that
+it would be nice if a process on one machine could talk to a process
+on another machine.  For example these processes might relay commands
+typed by the user across machine boundaries, allowing the user to
+log into a different computer without walking to a new terminal,
+rewiring the old terminal, or taking other time consuming actions.  
+These ideas have been integrated and abstracted yielding an interface
+for interprocess communication, or IPC.
+.pp
+The basic idea of this interface is to make IPC similar to file I/O.
+In UNIX a process has a set of I/O descriptors, which one reads from
+and writes to.  The use of a descriptor has three phases, its creation,
+its use for reading and writing, and its destruction.  By using descriptors
+to write files, rather than simply naming the target file in the write
+call, one gains a surprising amount of flexibility.  Often the program that
+creates a descriptor will be different from the program that uses the
+descriptor.  For example the shell can create a descriptor for the output 
+of the `ls'
+command that will cause the listing to appear in a file rather than
+on a terminal.  The use of descriptors is not uniform throughout UNIX.
+There is another mechanism to flash a tiny amount of information from one 
+process to another, telling it, for example, that someone wants it to stop.  
+This is called sending a signal.  To signal
+another process one states explicitly the identity of the recipient.
+This requirement limits the flexibility of the signaling mechanism
+as a means of interprocess communication.
+.pp
+The identification of IPC with I/O is quite longstanding in UNIX and
+has proved quite successful.  At first, however, IPC was limited to
+processes communicating within a single machine.  With Berkeley UNIX
+4.2BSD this expanded to include IPC between machines.  This expansion
+has necessitated some change in the way that descriptors are created.
+Additionally, new possibilities for the meaning of read and write have
+been admitted.  Originally the meanings, or semantics, of these terms
+were fairly simple.  When you wrote something it was delivered.  When
+you read, you blocked until the data arrived.  Other possibilities exist,
+however.  One can write without full assurance of delivery if one can
+check later to catch occasional failures.  Messages can be kept as
+discrete units or merged into a stream. 
+One can ask to read, but insist on not waiting if nothing is immediately
+available.  These new possibilities are allowed in the Berkeley UNIX IPC
+interface.  
+.pp
+Thus Berkeley UNIX 4.3BSD offers several choices for IPC.
+This paper presents simple examples that illustrate some of
+the choices.
+The reader is presumed to be familiar with the C programming language
+[Kernighan & Ritchie 1978],
+but not necessarily with the system calls of the UNIX system or with
+processes and interprocess communication.
+The paper reviews the notion of a process and the types of
+communication that are supported by Berkeley UNIX 4.3BSD.
+A series of examples are presented that create processes that communicate
+with one another.  The programs show different ways of establishing
+channels of communication.
+Finally, the calls that actually transfer data are reviewed.
+To clearly present how communication can take place,
+the example programs have been cleared of anything that
+might be construed as useful work.
+They can, therefore, serve as models
+for the programmer trying to construct programs comprising
+cooperating processes.
+.b
+.sh 1 "Processes"
+.pp
+A \fIprogram\fP is both a sequence of statements and a rough way of referring 
+to the computation that occurs when the compiled statements are run.
+A \fIprocess\fP can be thought of as a single line of control in a program.
+Most programs execute some statements, go through a few loops, branch in
+various directions and then end.  They are single process programs.
+Programs can also have a point where control splits into two independent lines,
+an action called \fIforking.\fP
+In UNIX these lines can never join again.  A call to the system routine 
+\fIfork()\fP causes a process to split in this way.
+The result of this call is that two independent processes will be
+running, executing exactly the same code.
+Memory values will be the same for all values set before the fork, but,
+subsequently, each version will be able to change only the 
+value of its own copy of each variable.
+Initially, the only difference between the two will be the value returned by
+\fIfork().\fP  The parent will receive a process id for the child, 
+the child will receive a zero.
+Calls to \fIfork(),\fP
+therefore, typically precede, or are included in, an if-statement.
+.pp
+A process views the rest of the system through a private table of descriptors.
+The descriptors can represent open files or sockets (sockets are communication
+objects that will be discussed below).  Descriptors are referred to
+by their index numbers in the table.  The first three descriptors have been
+given special names, \fI stdin, stdout\fP and \fIstderr.\fP
+These are the standard input, output and error.
+When a process forks, its descriptor table is copied to the child.
+Thus, if the parent's standard input is being taken from a terminal
+(devices are also treated as files in UNIX), the child's input will 
+be taken from the
+same terminal.  Whoever reads first will get the input.  If, before forking,
+the parent changes its standard input so that it is reading from a
+new file, the child will take its input from the new file.  It is
+also possible to take input from a socket, rather than from a file.
+.b
+.sh 1 "Pipes"
+.r
+.pp
+Most users of UNIX know that they can pipe the output of a 
+program ``prog1'' to the input of another, ``prog2,'' by typing the command
+\fI``prog1 | prog2.''\fP
+This is called ``piping'' the output of one program
+to another because the mechanism used to transfer the output is called a
+pipe.
+When the user types a command, the command is read by the shell, which
+decides how to execute it.  If the command is simple, say just
+.i "``prog1,''"
+the shell forks a process, which executes the program prog1 and then dies.
+The shell waits for this termination and then prompts for the next
+command.
+If the command is a compound command, say 
+.i "``prog1 | prog2,''"
+the shell creates two processes connected by a pipe. One process
+runs the program prog1, the other runs prog2.  The pipe is an I/O
+mechanism with two ends, or sockets.  Data that is written into one socket
+can be read from the other.  
+.pp
+Since a program specifies its input and output only by the descriptor table
+indices, which appear as variables or constants,
+the input source and output destination can be changed without
+changing the text of the program.
+It is in this way that the shell is able to set up pipes.  Before executing
+prog1, the process can close whatever is at \fIstdout\fP
+and replace it with one
+end of a pipe.  Similarly, the process that will execute prog2 can substitute
+the opposite end of the pipe for 
+\fIstdin.\fP
+.(z
+.ft CW
+.eo
+.so ../examples/pipe.c
+.ec \
+.r
+.ce 1
+Figure 1\ \ Use of a pipe
+.)z
+.pp
+Let us now examine a program that creates a pipe for communication between
+its child and itself (Figure 1).
+A pipe is created by a parent process, which then forks.
+When a process forks, the parent's descriptor table is copied into 
+the child's.  
+.pp
+In Figure 1, the parent process makes a call to the system routine 
+\fIpipe().\fP
+This routine creates a pipe and places descriptors for the sockets
+for the two ends of the pipe in the process's descriptor table.
+\fIPipe().\fP
+is passed an array into which it places the index numbers of the 
+sockets it created.
+The two ends are not equivalent.  The socket whose index is
+returned in the low word of the array is opened for reading only,
+while the socket in the high end is opened only for writing.
+This corresponds to the fact that the standard input is the first
+descriptor of a process's descriptor table and the standard output
+the second.  After creating the pipe, the parent creates the child 
+with which it will share the pipe by calling \fIfork().\fP
+Figure 2 illustrates the effect of a fork.
+The parent process's descriptor table points to both ends of the pipe.
+After the fork, both parent's and child's descriptor table point to
+the pipe.
+The child can then use the pipe to send a message to the parent.
+.(z
+.GS C
+height 6i
+file pipe
+.GE
+.ce 1
+Figure 2\ \ Sharing a pipe between parent and child
+.)z
+.pp
+Just what is a pipe?
+It is a one-way communication mechanism, with one end opened
+for reading and the other end for writing.
+Therefore, parent and child need to agree on which way to turn
+the pipe, from parent to child or the other way around.
+Using the same pipe for communication both from parent to child and 
+from child to parent would be possible (since both processes have 
+references to both ends), but very complicated.
+If the parent and child are to have a two-way conversation,
+the parent creates two pipes, one for use in each direction.
+(In accordance with their plans both parent and child in the example above
+close the socket that they will not use.  It is not required that unused
+descriptors be closed, but it is good practice.)
+A pipe is also a \fIstream\fP communication mechanism, that
+is all messages sent through the pipe are placed in order
+and delivered.  When the reader asks for some number of bytes of this
+stream, he is given as many bytes as are available, up
+to the amount of the request.  Note that this pays no attention
+to whether those bytes all came from the same call to \fIwrite()\fP
+or came from several calls to \fIwrite()\fP but were concatenated.
+.b
+.sh 1 "Socketpairs"
+.r
+.pp
+Berkeley UNIX 4.2BSD provides a slight generalization of pipes.  A pipe is a
+pair of connected sockets for one-way stream communication.  One can
+get a pair of connected sockets for two-way stream communication
+by calling the routine \fIsocketpair().\fP
+The program in Figure 3 calls \fIsocketpair()\fP
+to create such a connection.  The program uses the link for
+communication in both directions.  Since socketpairs are
+an extension of pipes, their use resembles that of pipes. 
+Figure 4 illustrates the result of a fork following a call to 
+\fIsocketpair().\fP
+.pp
+\fISocketpair()\fP
+takes as
+arguments a specification of a domain, a style of communication, and a
+protocol.  
+These are the parameters shown in the example.
+Domains and protocols will be discussed in the next section.
+Briefly,
+a domain is a space of names that may be bound
+to sockets and implies certain other conventions.
+Currently, socketpairs have only been implemented for one
+domain, called the UNIX domain.
+The UNIX domain uses UNIX path names for naming sockets.  
+It only allows communication
+between sockets on the same machine.
+A style of communication is a statement about the semantics that
+are desired.  Currently socketpairs can only act as streams.
+.pp
+Note that the header files 
+.i "<sys/socket.h>"
+and
+.i "<sys/types.h>."
+are required in this program.
+The constants AF_UNIX and SOCK_STREAM are defined in 
+.i "<sys/socket.h>,"
+which in turn requires the file 
+.i "<sys/types.h>"
+for some of its definitions.
+.(z
+.ft CW
+.eo
+.so ../examples/socketpair.c
+.ec \
+.r
+.ce 1
+Figure 3\ \ Use of a socketpair
+.)z
+.(z
+.GS C
+height 6i
+file socketpair
+.GE
+.ce 1
+Figure 4\ \ Sharing a socketpair between parent and child
+.)z
+.b
+.sh 1 "Domains and Protocols"
+.r
+.pp
+Pipes and socketpairs are a simple solution for communicating between
+a parent and child or between child processes.
+What if we wanted to have processes that have no common ancestor
+to communicate?  Neither standard UNIX pipes nor socketpairs are
+the answer here, since both mechanisms require a common ancestor to
+set up the communication.
+We would like to have two processes separately create sockets
+and then have messages sent between them.  This is often the
+case when providing or using a service in the system.  This is
+also the case when the communicating processes are on separate machines.
+In Berkeley UNIX 4.3BSD one can create individual sockets, give them names and
+send messages between them.
+.pp
+Sockets created by different programs use names to refer to one another.
+The space from which a name is drawn is referred to as a
+.i domain.
+There are currently two domains for sockets, the UNIX domain (or AF_UNIX,
+for Address Format UNIX) and the Internet domain (or AF_INET).
+In the UNIX domain, a socket is given a path name within the file system
+name space.
+A file system node is created for the socket and other processes may 
+then refer to the socket by giving the proper pathname.
+Names in the internet domain consist of a machine network address
+and an identifying number, called a port.
+UNIX domain names, therefore, allow communication between any two processes
+that work in the same file system.
+Internet domain names allow communication between machines.
+.pp
+Communication follows some particular ``style.''
+Currently, communication is either through a \fIstream\fP
+or by \fIdatagram.\fP
+Stream communication implies several things.  Communication takes
+place across a connection between two sockets.  The communication
+is reliable, error-free, and, as in pipes, no message boundaries are
+kept. Reading from a stream may result in reading the data sent from
+one or several calls to \fIwrite()\fP
+or only part of the data from a single call, if there is not enough room
+for the entire message, or if not all the data from a large message
+has been transferred.
+The protocol implementing such a style will retransmit messages
+received with errors. It will also return error messages if one tries to
+send a message after the connection has been broken.
+Datagram communication does not use connections.  Each message is
+addressed individually.  If the address is correct, it will generally
+be received, although this is not guaranteed.  Often datagrams are
+used for requests that require a response from the 
+recipient.  If no response
+arrives in a reasonable amount of time, the request is repeated.
+The individual datagrams will be kept separate when they are read, that
+is, message boundaries are preserved.
+.pp
+The difference in performance between the two styles of communication is 
+generally less important than the difference in semantics.  The
+performance gain that one might find in using datagrams must be weighed
+against the increased complexity of the program, which must now concern
+itself with lost or out of order messages.  If lost messages may simply be 
+ignored, the quantity of traffic may be a consideration; the expense
+of setting up a connection is best justified by frequent use of the connection.
+Since the performance of a protocol changes as it is tuned for different
+situations, it is best to seek the most up-to-date information when
+making choices for a program in which performance is crucial.
+.pp
+A protocol is a set of rules and conventions that regulate the
+transfer of data between participants in the communication.
+The code that implements a protocol 
+keeps track of the names that are bound to sockets,
+sets up connections and	transfers data between sockets,
+perhaps sending the data across a network.
+This code also keeps track of the names that are bound to sockets.
+It is possible for several protocols, differing only in low level
+details, to implement the same style of communication within
+a particular domain.  Although it is possible to select
+which protocol should be used, for most users it is simplest to 
+request the default protocol.  This has been done in all the example
+programs.
+.pp
+One specifies the domain, style and protocol of a socket when
+it is created.  For example, in Figure 5a the call to \fIsocket()\fP
+causes the creation of a datagram socket with the default protocol 
+in the UNIX domain.
+.b
+.sh 1 "Datagrams in the UNIX Domain"
+.r
+.pp
+Let us now look at two programs that create sockets separately.
+The programs in Figures 5a and 5b use datagram communication
+rather than a stream.  
+The structure used to name UNIX domain sockets is defined
+in the file \fI<sys/un.h>.\fP
+The definition has also been included in the example for clarity.
+.pp
+Each program creates a socket with a call to \fIsocket().\fP
+These sockets are in the UNIX domain.
+Once a name has been decided upon it is attached to a socket by the
+system call \fIbind().\fP
+The program in Figure 5a uses the name ``socket'',
+which it binds to its socket.
+This name will appear in the working directory of the person running
+the program.
+The routines in Figure 5b uses its
+socket only for sending messages.  It does not create a name for
+the socket because no other process has to refer to it.  
+.(z
+.ft CW
+.eo
+.so ../examples/udgramread.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 5a\ \ Reading using UNIX domain datagrams
+.)z
+.(z
+.ft CW
+.eo
+.so ../examples/udgramsend.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 5b\ \ Sending a UNIX domain datagrams
+.)z
+.pp
+Names in the UNIX domain are path names.  Like file path names they may
+be either absolute (e.g. ``/dev/imaginary'') or relative (e.g. ``socket'').
+Because these names are used to allow processes to rendezvous, relative
+path names can pose difficulties and should be used with care.
+When a name is bound into the name space, an i-node is allocated in the
+file system.  If
+the i-node is not deallocated, the name will continue to exist even after
+the bound socket is closed.  This can cause subsequent runs of a program
+to find that a name is unavailable, and directories to fill up with these
+objects.  The names are removed by calling \fIunlink().\fP
+Names in the UNIX domain are only used for rendezvous.  They are not used
+for message delivery once a connection is established.  Therefore, in
+contrast with the Internet domain, unnamed sockets need not be (and are
+not) automatically given names when they are connected.  
+.pp
+There is no established means of communicating names to interested
+parties.  In the example, the program in Figure 5b gets the
+name of the socket to which it will send its message through its
+command line arguments.  Once a line of communication has been created
+one can send the names of additional, perhaps new, sockets over the link.
+Facilities will have to be built that will make the distribution of
+names less of a problem than it now is.
+.b
+.sh 1 "Datagrams in the Internet Domain"
+.r
+.pp
+The examples in Figure 6a and 6b are very close to the previous example
+except that the socket is in the Internet domain.
+The structure of internet domain names is defined in the file
+\fI<netinet/in.h>.\fP
+Internet domain names specify a delivery slot, or port, on a particular
+machine.  These names are managed by the system routines that implement 
+a particular protocol.
+Unlike UNIX domain names, Internet domain names are not entered into 
+the file system and, therefore,
+they do not have to be unlinked after the named socket has been closed.
+Routines implementing a particular protocol can run on several different
+machines.  When a message must be sent between machines it is sent to
+the protocol routine on the destination machine, which interprets the
+Internet name to decide to which socket the message should be delivered.
+Several different protocols may be active on 
+the same machine, but, in general, they will not talk to one another.
+As a result, different protocols are allowed to use the same name, that is a 
+particular \fI<port, machine address>\fP
+pair, to indicate a socket using that protocol.
+Thus, implicitly, an Internet name is a triple including a protocol as
+well as the port and machine address.
+.(z
+.ft CW
+.eo
+.so ../examples/dgramread.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 6a\ \ Reading using Internet domain datagrams
+.)z
+.(z
+.ft CW
+.eo
+.so ../examples/dgramsend.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 6b\ \ Sending an Internet domain datagram
+.)z
+.pp
+The protocol for a socket is chosen when the socket is created.  The 
+machine address for a socket can be any valid network address of the
+machine, if it has more than one, or it can be the wildcard value
+INADDR_ANY.
+The wildcard value is used in the program in Figure 6a.
+If a machine has several network addresses, it is likely
+that messages sent to any of the addresses should be deliverable to
+a socket.  This will be the case if the wildcard value has been chosen.
+Note that even if the wildcard value is chosen, a program sending messages
+to the
+named socket must specify a valid network address.  One can be willing
+to receive from ``anywhere,'' but one cannot send a message ``anywhere.''
+The program in Figure 6b is given the destination host name as a command
+line argument.
+To determine a network address to which it can send the message, it looks
+the host address up by the call to \fIgethostbyname().\fP
+The returned structure includes the host's network address,
+which is copied into the structure specifying the
+destination of the message.
+.pp
+The port number can be thought of as the number of a mailbox, into
+which the protocol places ones messages.  Certain daemons, offering
+certain advertised services, have reserved
+mailboxes with ``well-known'' port numbers.  These fall in the range
+from 1 to 1023.  Higher numbers are available to general users.  One does not
+typically ask for a particular number, since this would lead to collisions.
+Instead one specifies the port number 0, which causes a free port number
+to be assigned to the socket.  Since Internet names are necessary for
+message delivery in the Internet domain, names are bound to unnamed 
+sockets during a connect.
+Note that names are not automatically reported back to the user.  After
+calling \fIbind(),\fP asking for port 0, one can call 
+\fIgetsockname()\fP to discover what port was actually assigned. 
+The routine \fIgetsockname()\fP
+will not work for names in the UNIX domain.
+.pp
+The format of the socket name is specified in the design of the
+Internet domain.  The specification includes the order of the bytes in
+the name.  Because machines differ in the order they ordinarily use
+to represent integers, printing out the port number as returned by 
+\fIgetsockname()\fP may result in a misinterpretation.  To
+print out the number, it is necessary to use the macro \fIntohs()\fP
+(for \fInetwork to host: short\fP) to convert the number from the
+network representation to the host's representation.  On some machines,
+such as 68000-based machines, this is a null operation.  On others,
+such as VAXes, this results in a swapping of bytes.  A similar macro
+exists to convert a short integer from the host format to the network format.
+This is called \fIhtons().\fP  For further information, refer to the
+entry for \fIbyteorder\fP in section 3 of the manual.
+.b
+.sh 1 "Connections"
+.r
+.pp
+To send data between stream sockets (having communication style SOCK_STREAM),
+the sockets must be connected.
+Figures 7a and 7b show two programs that create such a connection.  The program in
+7b is relatively simple.  To initiate a connection, this program
+simply calls \fI connect(), \fP
+specifying the name of the socket to which
+it wishes its socket connected.  Provided that the target socket exists and
+is prepared to handle a connection, the program can begin to send
+messages.  Messages will be delivered in order without message
+boundaries, as with pipes.  The connection is destroyed when either
+end socket is closed (or soon thereafter).  If the process persists 
+in sending messages after the connection is closed, a SIGPIPE signal 
+is sent to the process by the operating system.  Unless explicit action
+is taken to handle the signal (see the manual page for \fIsignal\fP
+or \fIsigvec\fP),
+the process will terminate and the shell
+will print the message ``broken pipe.'' 
+.(z
+.ft CW
+.eo
+.so ../examples/streamread.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 7a\ \ Accepting an Internet domain stream connection
+.)z
+.(z
+.ft CW
+.eo
+.so ../examples/streamwrite.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 7b\ \ Initiating an Internet domain stream connection
+.)z
+.(z
+.ft CW
+.eo
+.so ../examples/strchkread.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 7c\ \ Using select() to check for pending connections
+.)z
+.(z
+.GS C
+height 6i
+file accept
+.GE
+.ce 1
+Figure 8\ \ Establishing a stream connection
+.)z
+.pp
+Forming a connection is asymmetrical; one process, like that running the
+program in Figure 7b, requests a connection with a particular socket,
+the other process accepts connection requests.
+Before a connection can be accepted a socket must be created and a name 
+bound to it.  This
+situation is illustrated in the top half of Figure 8.  Process 2
+has created a socket and bound a name to it.  Process 1 has created an
+unnamed socket.
+The name bound to process 2's socket is then made known to process 1 and, 
+perhaps to several other potential communicants as well.
+If there are several possible communicants,
+this one socket might get several requests for connections.
+As a result, a new socket is created for each connection.  This new socket
+is the endpoint of communication within this process for this connection.
+A connection can be destroyed by closing the corresponding socket.
+.pp
+The program in Figure 7a is a rather trivial example of a server.  It 
+creates a socket to which it binds a name, which it then advertises.
+(In this case it prints out the socket number.)  The program then calls
+\fIlisten() \fP for this socket.  
+Since several clients may attempt to connect more or less
+simultaneously, a queue of pending connections is maintained in the system
+address space.  \fIListen()\fP
+prepares the socket to accept connections by initializing the queue.
+When a connection is requested, it is listed in the queue.  If the
+queue is full, an error status is returned to the requester.
+The maximum length of this queue is specified by the second argument of
+\fIlisten()\fP (the maximum length may be limited by the system).  
+Once the listen call has been completed, the program enters
+an infinite loop.  On each pass through the loop, a new connection is
+accepted and removed from the queue, and, hence, a new socket for the 
+connection is created.  The bottom half of Figure 8 shows the result of
+Process 1 connecting with the named socket of Process 2 and Process 2
+accepting the connection.  After the connection is created, the
+service, in this case printing out the messages, is performed and the
+connection socket closed.  The \fIaccept()\fP
+call will take a pending connection
+request from the queue, if one is available, or block, waiting for a request.
+Messages are read from the connection socket.
+Reads from an active connection will normally block until data is available.
+The number of bytes read is returned.  When a connection is destroyed,
+the read call returns immediately.  The number of bytes returned will
+be zero.
+.pp
+The program in Figure 7c is a slight variation on the server in Figure 7a.
+It avoids blocking when there are no pending connection requests by 
+calling \fIselect() \fP
+to check for pending requests before calling \fIaccept().\fP
+.pp
+The programs in Figures 9a and 9b show a program using stream communication
+in the UNIX domain.  Streams in the UNIX domain can be used for this sort
+of program in exactly the same way as Internet domain streams, except for
+the form of the names and the restriction of the connections to a single
+file system.  There are some differences, however, in the functionality of 
+streams in the two domains, notably in the handling of 
+\fIout-of-band \fP data (discussed briefly below).  These differences
+are beyond the scope of this paper.
+.(z
+.ft CW
+.eo
+.so ../examples/ustreamread.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 9a\ \ Accepting a UNIX domain stream connection
+.)z
+.(z
+.ft CW
+.eo
+.so ../examples/ustreamwrite.c
+.ec \
+.r
+.sp 1
+.ce 1
+Figure 9b\ \ Initiating a UNIX domain stream connection
+.)z
+.b
+.sh 1 "Reads, Writes, Recvs, etc."
+.r
+.pp
+UNIX 4.2 BSD has several system calls for reading and writing information.
+The simplest calls are \fIread() \fP and \fIwrite().\fP \fIWrite()\fP
+takes as arguments the index of a descriptor, a pointer to a buffer 
+containing the data and the size of the data.
+The descriptor may indicate either a file or a connected socket.  
+``Connected'' can mean either a connected stream socket (as described
+in Section 8) or a datagram socket for which a \fIconnect()\fP
+call has provided a default destination (see the \fIconnect()\fP manual page).
+\fIRead()\fP also takes a descriptor that indicates either a file or a socket.
+\fIWrite()\fP requires a connected socket since no destination is 
+specified in the parameters of the system call.
+\fIRead()\fP can be used for either a connected or an unconnected socket.
+These calls are, therefore, quite flexible and may be used to
+write applications that require no assumptions about the source of
+their input or the destination of their output.
+There are variations on \fIread() \fP and \fIwrite()\fP
+that allow the source and destination of the input and output to be
+several separate buffers, while retaining the flexibility to handle
+both files and sockets.  These are \fIreadv()\fP and \fI writev(),\fP
+for read and write \fIvector.\fP
+.pp 
+It is sometimes necessary to send high priority data over a
+connection that may have unread low priority data at the
+other end.  For example, a user interface process may be interpreting
+commands and sending them on to another process through a stream connection.
+The user interface may have filled the stream with as yet unprocessed 
+requests when the user types
+a command to cancel all outstanding requests.
+Rather than have the high priority data wait
+to be processed after the low priority data, it is possible to
+send it as \fIout-of-band \fP
+(OOB) data.  The reception of OOB data results in the generation of
+a SIGURG signal, if this signal has been enabled (see the manual
+page for \fIsignal\fP or \fIsigvec\fP).
+See [Leffler 1983] for a more complete description of the OOB mechanism.
+There are a pair of calls allowing the sending 
+and receiving of OOB information.  These are \fI send()\fP
+and \fIrecv().\fP
+These calls require the use of sockets; specifying a file descriptor will
+result in the return of an error status.  These calls also allow
+\fIpeeking\fP at data in a stream.
+That is they allow a process to read data without removing the data from
+the stream.  One use of this facility is to read ahead in a stream
+to determine the size of the next item to be read.
+When not using these options, these calls have the same functions as 
+\fI read()\fP and \fIwrite().\fP
+.pp
+To send datagrams, one must be allowed to specify the destination.
+The call \fIsendto()\fP
+takes as input a destination address and is therefore used for
+sending datagrams.  The call \fIrecvfrom()\fP
+is often used to read datagrams, since this call returns the name
+of the sender, if it is available.
+If the identity of the sender does not matter, one may use \fIread()\fP
+or \fIrecv().\fP
+.pp
+Finally, there are a pair of calls that allow the sending and
+receiving of messages from multiple buffers, when the name of the
+recipient must be specified.  These are \fIsendmsg()\fP and 
+\fIrecvmsg().\fP
+These calls are actually quite general and have other uses,
+including, in the UNIX domain, the handing of a socket from one
+process to another.
+.pp
+The various options for reading and writing are shown in Figure 10,
+together with their parameters.  The parameters for each system call
+reflect the differences in function of the different calls.
+In the examples given in this paper, the calls \fIread()\fP and 
+\fIwrite()\fP have been used whenever possible.  One can go along time
+without having to use most of the other calls.
+.(z
+.ft CW
+     cc	= read(descriptor, buf, nbytes)
+     int cc, descriptor; char *buf; int nbytes;
+     /* The variable descriptor may be the descriptor of either a file
+      * or of a socket.
+      */
+
+     cc	= readv(descriptor, iov, iovcnt)
+     int cc, descriptor; struct iovec *iov; int iovcnt;
+     /* An iovec can include several source buffers.
+      */
+
+     cc = write(descriptor, buf, nbytes)
+     int cc, descriptor; char *buf; int nbytes;
+
+     cc = writev(descriptor, iovec, ioveclen)
+     int cc, descriptor; struct iovec *iovec; int ioveclen;
+
+     cc	= send(socket, msg, len, flags)
+     int cc, socket; char *msg; int len, flags; 
+     /* The variable socket must be the descriptor of a socket.
+      * Flags include OOB and ``peeking.''
+      */
+
+     cc	= sendto(socket, msg, len, flags, to, tolen)
+     int cc, socket; char *msg; int len, flags; struct sockaddr *to; int tolen;
+
+     cc	= sendmsg(socket, msg, flags)
+     int cc, socket; struct msghdr msg[]; int flags;
+
+     cc	= recv(socket, buf, len, flags)
+     int cc, socket; char *buf; int len, flags;
+
+     cc	= recvfrom(socket, buf, len, flags, from, fromlen)
+     int cc, socket; char *buf; int len, flags;
+     struct sockaddr *from; int *fromlen;
+
+     cc	= recvmsg(socket, msg, flags)
+     int cc, socket; struct msghdr msg[]; int flags;
+.r
+.sp 1
+.ce 1
+Figure 10\ \ Varieties of read and write commands
+.)z
+.b
+.sh 1 "Choices"
+.r
+.pp
+This paper has presented some of the forms of communication supported by
+Berkeley UNIX 4.3BSD.  These have been presented in an order chosen for
+ease of presentation.  It is useful to review these options emphasizing the
+factors that make each attractive.
+.pp
+Pipes have the advantage of portability, in that they are supported in all
+UNIX systems, not just the Berkeley system.  They also are relatively
+simple to use.  Socketpairs share this simplicity and have the additional
+advantage of allowing bidirectional communication.  The major shortcoming
+of these mechanisms is that they require communicating processes to be
+descendants of a common process.  They do not allow intermachine communication.
+.pp
+The two naming domains, UNIX and Internet, allow processes with no common
+ancestor to communicate.  Currently, only the Internet domain allows
+communication between machines.  This makes the Internet domain a necessary
+choice for processes running on separate machines.
+.pp
+The choice between datagrams and stream communication is best made by
+carefully considering the semantic and performance
+requirements of the application.
+Streams can be both advantageous and disadvantageous.  One disadvantage
+is that a process is only allowed a limited number of open streams,
+since there are usually only twenty entries available in the open descriptor
+table.  This can cause problems if a single server must talk with a large
+number of clients. 
+Another is that for delivering a short message the stream setup and 
+teardown time can be unnecessarily large.  Weighed against this are
+the reliability built into the streams.  This will often be the
+deciding factor in favor of streams.
+.b
+.sh 1 "What to do Next"
+.r
+.pp
+Many of the examples presented here can serve as models for multiprocess
+programs and for programs distributed across several machines.  
+In developing a new multiprocess program, it is often easiest to 
+first write the code to create the processes and communication paths.
+After this code is debugged, the code specific to the application can
+be added.
+.pp
+An introduction to the UNIX system and programming using UNIX system calls
+can be found in [Kernighan and Pike 1984].
+Further documentation of the Berkeley UNIX 4.3BSD IPC mechanisms can be 
+found in [Leffler, Fabry & Joy 1983].
+More detailed information about particular calls is provided by the
+UNIX Programmer's Manual [Leffler, Joy & McKusick 1983].
+In particular the following manual pages are relevant:
+.sp 1
+.ti 5
+creating and naming sockets:\ \ \ socket(2),
+bind(2)
+.sp 1
+.ti 5
+establishing connections:\ \ \ listen(2),
+accept(2),
+connect(2)
+.sp 1
+.ti 5
+transferring data:\ \ \ read(2),
+write(2),
+send(2),
+recv(2)
+.sp 1
+.ti 5
+addresses:\ \ \ inet(4F)
+.sp 1
+.ti 5
+protocols:\ \ \ tcp(4P),
+udp(4P).
+.(b
+.sp
+.b
+Acknowledgements
+.pp
+I would like to thank Sam Leffler and Mike Karels for their help in
+understanding the IPC mechanisms and all the people whose comments 
+have helped in writing and improving this report.
+.)b
+.(b
+.sp
+.b
+References
+.r
+.sp
+.ls 1
+B.W. Kernighan & R. Pike, 1984,
+.i "The UNIX Programming Environment."
+Englewood Cliffs, N.J.: Prentice-Hall.
+.sp
+.ls 1
+B.W. Kernighan & D.M. Ritchie, 1978,
+.i "The C Programming Language,"
+Englewood Cliffs, N.J.: Prentice-Hall.
+.sp
+.ls 1
+S.J. Leffler, R.S. Fabry & W.N. Joy, 1983,
+.i "A 4.2BSD Interprocess Communication Primer."
+Computer Systems Research Group,
+Department of Electrical Engineering and Computer Science,
+University of California, Berkeley.
+.sp
+.ls 1
+S.J.  Leffler, W.N. Joy & M.K. McKusick, 1983,
+.i "UNIX Programmer's Manual"
+Computer Systems Research Group,
+Department of Electrical Engineering and Computer Science,
+University of California, Berkeley.
+.)b
