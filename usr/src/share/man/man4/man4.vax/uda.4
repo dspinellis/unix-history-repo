@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uda.4	6.4 (Berkeley) %G%
+.\"	@(#)uda.4	6.5 (Berkeley) %G%
 .\"
 .TH UDA 4 ""
 .UC 4
@@ -47,8 +47,24 @@ The
 option enables runtime checking on all transfer completion responses
 from the controller.  This increases disk I/O overhead and may
 be undesirable on slow machines, but is otherwise recommended.
+.PP
+The first sector of each disk contains both a first-stage bootstrap program
+and a disk label containing geometry information and partition layouts (see
+.IR disklabel (5).
+This sector is normally write-protected, and disk-to-disk copies should
+avoid copying this sector.
+The label may be updated with
+.IR disklabel (8),
+which can also be used to write-enable and write-disable the sector.
+The next 15 sectors contain a second-stage bootstrap program.
 .SH "DISK SUPPORT"
-This driver configures the type of each drive when it is first
+During autoconfiguration,
+as well as when a drive is opened after all partitions are closed,
+the first sector of the drive is examined for a disk label.
+If a label is found, the geometry of the drive and the partition tables
+are taken from it.
+If no label is found,
+the driver configures the type of each drive when it is first
 encountered.  A default partition table in the driver is used for each type
 of disk when a pack is not labelled.  The origin and size
 (in sectors) of the default pseudo-disks on each
@@ -136,6 +152,8 @@ copying (it maps the entire disk).
 /dev/ra[0-9][a-f]
 .br
 /dev/rra[0-9][a-f]
+.SH SEE ALSO
+disklabel(5), disklabel(8)
 .SH DIAGNOSTICS
 .TP
 panic: udaslave
@@ -361,6 +379,15 @@ ra%d: unknown opcode 0x%x status 0x%x ignored
 The drive has reported something that the driver cannot understand.
 Perhaps DEC has been inventive, or perhaps your hardware is ill.
 This is followed by a hex dump of the offending packet.
+.TP
+\fBra%d%c: hard error %sing fsbn %d [of %d-%d] (ra%d bn %d cn %d tn %d sn %d)\fP.
+An unrecoverable error occurred during transfer of the specified
+filesystem block number(s),
+which are logical block numbers on the indicated partition.
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive,
+as well as the cylinder, track and sector number of the block.
 .TP
 uda%d: %s error datagram
 The controller has reported some kind of error, either `hard'

@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980,1988 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hp.4	6.3 (Berkeley) %G%
+.\"	@(#)hp.4	6.4 (Berkeley) %G%
 .\"
 .TH HP 4 ""
 .UC 4
@@ -32,11 +32,29 @@ In raw I/O counts should be a multiple of 512 bytes (a disk sector).
 Likewise
 .I seek
 calls should specify a multiple of 512 bytes.
+.PP
+The first sector of each disk contains both a first-stage bootstrap program
+and a disk label containing geometry information and partition layouts (see
+.IR disklabel (5).
+This sector is normally write-protected, and disk-to-disk copies should
+avoid copying this sector.
+The label may be updated with
+.IR disklabel (8),
+which can also be used to write-enable and write-disable the sector.
+The next 15 sectors contain a second-stage bootstrap program.
 .SH "DISK SUPPORT"
 This driver handles both standard DEC controllers and Emulex
-SC750 and SC780 controllers.  Standard DEC drive types are
-recognized according to the MASSBUS drive type register.  For
-the Emulex controller the drive type register should be configured
+SC750 and SC780 controllers.
+During autoconfiguration or whenever a drive comes on line for the first time,
+as well as when a drive is opened after all partitions are closed,
+the first sector of the drive is examined for a disk label.
+If a label is found, the geometry of the drive and the partition tables
+are taken from it.
+If no label is found,
+standard DEC drive types are
+recognized according to the MASSBUS drive type register,
+and default partitions are used.
+For the Emulex controller the drive type register should be configured
 to indicate the drive is an RM02.  When this is encountered,
 the driver checks the holding register to find out
 the disk geometry and, based on this information, decides what
@@ -44,7 +62,7 @@ the drive type is.  The following disks are supported: RM03,
 RM05, RP06, RM80, RP05, RP07, ML11A, ML11B, CDC 9775, CDC 9730,
 AMPEX Capricorn (32 sectors/track), FUJITSU Eagle (48 sectors/track),
 Fujitsu 2361, 
-and AMPEX 9300.  The origin and size (in sectors) of the pseudo-disks
+and AMPEX 9300.  The default origin and size (in sectors) of the pseudo-disks
 on each drive are as follows:
 .PP
 .nf
@@ -197,18 +215,24 @@ program.
 .br
 /dev/rhp[0-7][a-h]	raw files
 .SH SEE ALSO
-hk(4),
-uda(4),
-up(4)
+up(4),
+disklabel(5), disklabel(8)
 .SH DIAGNOSTICS
-\fBhp%d%c: hard error sn%d mbsr=%b er1=%b er2=%b\fR.  An unrecoverable
-error occurred during transfer of the specified sector of the specified
-disk partition.  The MASSBUS status register is printed in hexadecimal and
+\fBhp%d%c: hard error %sing fsbn %d [of %d-%d] (hp%d bn %d cn %d tn %d sn %d)
+mbsr=%b er1=%b er2=%b\fR.
+An unrecoverable error occurred during transfer of the specified
+filesystem block number,
+which is a logical block number on the indicated partition.
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive,
+as well as the cylinder, track and sector number of the block.
+The MASSBUS status register is printed in hexadecimal and
 with the error bits decoded if any error bits other than MBEXC and DTABT
 are set.  In any case the contents of the two error registers are also printed
 in octal and symbolically with bits decoded.
-(Note that er2 is what old rp06 manuals would call er3; the terminology
-is that of the rm disks).
+(Note that er2 is what old RP06 manuals would call RPER3; the terminology
+is that of the RM disks).
 The error was either unrecoverable, or a large number of retry attempts
 (including offset positioning and drive recalibration) could not
 recover the error.
@@ -219,8 +243,13 @@ when a write was attempted.  The write operation is not recoverable.
 \fBhp%d: not ready\fR.  The drive was spun down or off line when it was
 accessed.  The I/O operation is not recoverable.
 .PP
-\fBhp%d%c: soft ecc sn%d\fR.  A recoverable ECC error occurred on the
+\fBhp%d%c: soft ecc reading fsbn %d [of %d-%d] (hp%d bn %d cn %d tn %d sn %d)\fP.
+A recoverable ECC error occurred on the
 specified sector of the specified disk partition. 
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive,
+as well as the cylinder, track and sector number of the block.
 This happens normally
 a few times a week.  If it happens more frequently than
 this the sectors where the errors are occurring should be checked to see
@@ -230,6 +259,8 @@ or heads are indicated.
 During autoconfiguration one of the following messages may appear
 on the console indicating the appropriate drive type was recognized.
 The last message indicates the drive is of a unknown type.
+In this case, the correct geometry is set, and one partition is created
+that contains the entire drive.
 .PP
 .nf
 .BR "hp%d: 9775 (direct)" .
@@ -261,7 +292,3 @@ DEC-standard error logging should be supported.
 .PP
 A program to analyze the logged error information (even in its
 present reduced form) is needed.
-.PP
-The partition tables for the file systems should be read off of each
-pack, as they are never quite what any single installation would prefer,
-and this would make packs more portable.
