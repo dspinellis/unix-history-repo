@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)nullrelay.m4	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)nullrelay.m4	8.4 (Berkeley) %G%')
 
 #
 #  This configuration applies only to relay-only hosts.  They send
@@ -21,8 +21,10 @@ VERSIONID(`@(#)nullrelay.m4	8.3 (Berkeley) %G%')
 
 # hub host (to which all mail is sent)
 DH`'ifdef(`MAIL_HUB', MAIL_HUB,
-	ifdef(`LOCAL_RELAY', LOCAL_RELAY,
-	ifdef(`SMART_HOST', SMART_HOST)))
+	`errprint(`MAIL_HUB not defined for nullclient feature')')
+
+# name from which everyone will appear to come
+DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, MAIL_HUB)
 
 # route-addr separators
 C: : ,
@@ -235,20 +237,21 @@ R$*<$*<$+>$*>$*		<$3>$5				2-level <> nesting
 R$*<>$*			$@ <@>				MAIL FROM:<> case
 R$*<$+>$*		$2				basic RFC821/822 parsing
 
-# eliminate local host if present
-R@ $=w $=: $+		$@ @ $H $2 $3			@thishost ...
+ifdef(`_NO_CANONIFY_', `dnl',
+`# eliminate local host if present
+R@ $=w $=: $+		$@ @ $M $2 $3			@thishost ...
 R@ $+			$@ $1				@somewhere ...
 
-R$+ @ $=w		$@ $1 @ $H			...@thishost
+R$+ @ $=w		$@ $1 @ $M			...@thishost
 R$+ @ $+		$@ $1 @ $2			...@somewhere
 
-R$=w ! $+		$@ $2 @ $H			thishost!...
-R$+ ! $+		$@ $1 ! $2 @ $H			somewhere ! ...
+R$=w ! $+		$@ $2 @ $M			thishost!...
+R$+ ! $+		$@ $1 ! $2 @ $M			somewhere ! ...
 
-R$+ % $=w		$@ $1 @ $H			...%thishost
+R$+ % $=w		$@ $1 @ $M			...%thishost
 R$+ % $+		$@ $1 @ $2			...%somewhere
 
-R$+			$@ $1 @ $H			unadorned user
+R$+			$@ $1 @ $M			unadorned user')
 
 
 ######################################
