@@ -1,53 +1,100 @@
-.\"	@(#)calendar.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)calendar.1	6.2 (Berkeley) %G%
 .\"
 .TH CALENDAR 1 ""
-.AT 3
+.UC 7
 .SH NAME
 calendar \- reminder service
 .SH SYNOPSIS
 .B calendar
-[ \- ]
+[ \-a ]
 .SH DESCRIPTION
 .I Calendar 
-consults the file `calendar' in the current directory
-and prints out lines that contain today's or
-tomorrow's date anywhere in the line.
-Most reasonable month-day dates such as `Dec. 7,'
-`december 7,' `12/7,' etc., are recognized, but not
-`7 December' or `7/12'.
-If you give the month as ``*''
-with a date, i.e. ``* 1'', that day in any month will do.
-On weekends `tomorrow' extends through Monday.
+reads the file ``calendar'' in the current directory and displays lines
+that begin with either today's or tomorrow's date.
+On Fridays, events on Friday through Monday are displayed.
 .PP
-When 
-an argument is present,
-.I calendar
-does its job for every user
-who has a file `calendar' in his login directory
-and sends him any positive results by
-.IR mail (1).
-Normally this is done daily in the wee hours under control of
-.IR cron (8).
+The following options are available:
+.TP
+\-a
+Process the ``calendar'' files of all users and mail the results
+to them.
+This requires super-user privileges.
 .PP
-The file `calendar' is first run through the ``C'' preprocessor,
-.IR /lib/cpp ,
-to include any other calendar files
-specified with the usual ``#include'' syntax.
-Included calendars will usually be shared by all users,
-maintained and documented by the local administration.
+A month and day should begin lines.
+They may be entered in almost any format, either numeric or as character
+strings.
+A single asterisk (``*'') matches every month.
+A day without a month matches that day of every week.
+A month without a day matches the first of that month.
+Two numbers default to the month followed by the day.
+Lines with leading whitespace default to the last entered date, allowing
+multiple line specifications for a single date.
+By convention, dates followed by an asterisk are not fixed, i.e. change
+from year to year.
+.PP
+The ``calendar'' file is preprocessed by
+.IR cpp (1),
+allowing the inclusion of shared files such as company holidays or
+meetings.
+If the shared file is not referenced by a full pathname,
+.I cpp
+searches in the current (or home) directory first, and then in the
+directory
+.IR /usr/share/calendar .
+Empty lines and lines protected by the C commenting syntax (/* ... */)
+are ignored.
+.PP
+Some possible calendar entries:
+.in +5
+.sp
+.nf
+#include	<calendar.usholiday>
+#include	<calendar.birthday>
+.sp
+6/15		... June 15 (ambiguous, default to month/day).
+Jun. 15	... June 15.
+15 June	... June 15.
+Thursday	... Every Thursday.
+June		... Every June 1st.
+15 *		... 15th of every month.
+.fi
+.PP
 .SH FILES
-calendar
-.br
-/usr/lib/calendar to figure out today's and tomorrow's dates
-.br
-/etc/passwd
-.br
-/tmp/cal*
-.br
-/lib/cpp, egrep, sed, mail as subprocesses
+The following default calendar files are provided:
+.TP
+calendar.birthday
+Births and deaths of famous (and not-so-famous) people.
+.TP
+calendar.usholiday
+U.S. holidays and Judeo-Christian holidays.
+This calendar should be updated yearly by the local system administrator
+so that roving holidays are set correctly for the current year.
+.TP
+calendar.holiday
+Other holidays, including the not-well-known, obscure, and
+.B really
+obscure.
+.TP
+calendar.history
+Everything else, mostly U.S. historical events.
 .SH "SEE ALSO"
-at(1), cron(8), mail(1)
+at(1), cpp(1), mail(1), cron(8)
 .SH BUGS
-.I Calendar's
-extended idea of `tomorrow' doesn't account for
-holidays.
+.I Calendar
+doesn't handle events that move around from year to year, i.e.
+``the last Monday in April''.
