@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.6 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.7 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -21,6 +21,8 @@ V4
 define(`_SET_96_', 96)dnl
 define(`_SET_97_', 97)dnl
 define(`_SET_98_', 98)dnl')
+ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `esmtp')')dnl
+define(`_SMTP_', `confSMTP_MAILER')dnl	for readability only
 
 ##################
 #   local info   #
@@ -492,7 +494,7 @@ ifdef(`_MAILER_smtp_',
 ifdef(`_NO_CANONIFY_', `dnl',
 `R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr')
 R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
-R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	still numeric: send',
+R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 @ [$2] $3	still numeric: send',
 	`dnl')
 
 # now delete the local info -- note $=O to find characters that cause forwarding
@@ -571,7 +573,7 @@ R<> $*			$: $1				else strip off gunk',
 
 `# deal with other remote names
 ifdef(`_MAILER_smtp_',
-`R$* < @$* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain',
+`R$* < @$* > $*		$#_SMTP_ $@ $2 $: $1 < @ $2 > $3		user@host.domain',
 `R$* < @$* > $*		$#error $@NOHOST $: Unrecognized host name $2')')
 
 ifdef(`_OLD_SENDMAIL_',
