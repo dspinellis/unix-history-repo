@@ -3,15 +3,14 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	8.1 (Berkeley) %G%
+.\"	@(#)4.t	8.2 (Berkeley) %G%
 .\"
 .\".ds RH "Client/Server Model
-.bp
 .nr H1 4
 .nr H2 0
 .sp 8i
-.bp
 .LG
+.sp 2
 .B
 .ce
 4. CLIENT/SERVER MODEL
@@ -82,7 +81,27 @@ In 4.4BSD most servers are accessed at well known Internet addresses
 or UNIX domain names.  For
 example, the remote login server's main loop is of the form shown
 in Figure 2.
-.KF
+.PP
+The first step taken by the server is look up its service
+definition:
+.sp 1
+.nf
+.in +5
+.if t .ta .5i 1.0i 1.5i 2.0i
+.if n .ta .7i 1.4i 2.1i 2.8i
+sp = getservbyname("login", "tcp");
+if (sp == NULL) {
+	fprintf(stderr, "rlogind: tcp/login: unknown service\en");
+	exit(1);
+}
+.sp 1
+.in -5
+.fi
+The result of the \fIgetservbyname\fP call
+is used in later portions of the code to
+define the Internet port at which it listens for service
+requests (indicated by a connection).
+.ne 1i
 .if t .ta .5i 1.0i 1.5i 2.0i 2.5i 3.0i 3.5i
 .if n .ta .7i 1.4i 2.1i 2.8i 3.5i 4.2i 4.9i
 .sp 0.5i
@@ -135,28 +154,7 @@ main(argc, argv)
 .ce
 Figure 2.  Remote login server.
 .sp 0.5i
-.KE
-.PP
-The first step taken by the server is look up its service
-definition:
-.sp 1
-.nf
-.in +5
-.if t .ta .5i 1.0i 1.5i 2.0i
-.if n .ta .7i 1.4i 2.1i 2.8i
-sp = getservbyname("login", "tcp");
-if (sp == NULL) {
-	fprintf(stderr, "rlogind: tcp/login: unknown service\en");
-	exit(1);
-}
-.sp 1
-.in -5
-.fi
-The result of the \fIgetservbyname\fP call
-is used in later portions of the code to
-define the Internet port at which it listens for service
-requests (indicated by a connection).
-.KS
+.ne 1i
 .PP
 Step two is to disassociate the server from the controlling
 terminal of its invoker:
@@ -174,7 +172,6 @@ terminal of its invoker:
 		close(i);
 	}
 .DE
-.KE
 This step is important as the server will
 likely not want to receive signals delivered to the process
 group of the controlling terminal.  Note, however, that
@@ -336,6 +333,7 @@ to update a database.  This database is then interpreted
 to generate the status information for each host.  Servers
 operate autonomously, coupled only by the local network and
 its broadcast capabilities.
+.pl +1
 .PP
 Note that the use of broadcast for such a task is fairly inefficient,
 as all hosts must process each message, whether or not using an rwho server.
@@ -358,7 +356,47 @@ time, the database interpretation routines assume the host is
 down and indicate such on the status reports.  This algorithm
 is prone to error as a server may be down while a host is actually
 up, but serves our current needs.
-.KF
+.PP
+The second task performed by the server is to supply information
+regarding the status of its host.  This involves periodically
+acquiring system status information, packaging it up in a message
+and broadcasting it on the local network for other rwho servers
+to hear.  The supply function is triggered by a timer and 
+runs off a signal.  Locating the system status
+information is somewhat involved, but uninteresting.  Deciding
+where to transmit the resultant packet
+is somewhat problematical, however.
+.PP
+Status information must be broadcast on the local network.
+For networks which do not support the notion of broadcast another
+scheme must be used to simulate or
+replace broadcasting.  One possibility is to enumerate the
+known neighbors (based on the status messages received
+from other rwho servers).  This, unfortunately,
+requires some bootstrapping information,
+for a server will have no idea what machines are its
+neighbors until it receives status messages from them.
+Therefore, if all machines on a net are freshly booted,
+no machine will have any
+known neighbors and thus never receive, or send, any status information.
+This is the identical problem faced by the routing table management
+process in propagating routing status information.  The standard
+solution, unsatisfactory as it may be, is to inform one or more servers
+of known neighbors and request that they always communicate with
+these neighbors.  If each server has at least one neighbor supplied
+to it, status information may then propagate through
+a neighbor to hosts which
+are not (possibly) directly neighbors.  If the server is able to
+support networks which provide a broadcast capability, as well as
+those which do not, then networks with an
+arbitrary topology may share status information*.
+.FS
+* One must, however, be concerned about \*(lqloops\*(rq.
+That is, if a host is connected to multiple networks, it
+will receive status information from itself.  This can lead
+to an endless, wasteful, exchange of information.
+.FE
+.ne 1i
 .DS
 .if t .ta .5i 1.0i 1.5i 2.0i
 .if n .ta .7i 1.4i 2.1i 2.8i
@@ -415,47 +453,7 @@ main()
 .ce
 Figure 4.  rwho server.
 .sp
-.KE
-.PP
-The second task performed by the server is to supply information
-regarding the status of its host.  This involves periodically
-acquiring system status information, packaging it up in a message
-and broadcasting it on the local network for other rwho servers
-to hear.  The supply function is triggered by a timer and 
-runs off a signal.  Locating the system status
-information is somewhat involved, but uninteresting.  Deciding
-where to transmit the resultant packet
-is somewhat problematical, however.
-.PP
-Status information must be broadcast on the local network.
-For networks which do not support the notion of broadcast another
-scheme must be used to simulate or
-replace broadcasting.  One possibility is to enumerate the
-known neighbors (based on the status messages received
-from other rwho servers).  This, unfortunately,
-requires some bootstrapping information,
-for a server will have no idea what machines are its
-neighbors until it receives status messages from them.
-Therefore, if all machines on a net are freshly booted,
-no machine will have any
-known neighbors and thus never receive, or send, any status information.
-This is the identical problem faced by the routing table management
-process in propagating routing status information.  The standard
-solution, unsatisfactory as it may be, is to inform one or more servers
-of known neighbors and request that they always communicate with
-these neighbors.  If each server has at least one neighbor supplied
-to it, status information may then propagate through
-a neighbor to hosts which
-are not (possibly) directly neighbors.  If the server is able to
-support networks which provide a broadcast capability, as well as
-those which do not, then networks with an
-arbitrary topology may share status information*.
-.FS
-* One must, however, be concerned about \*(lqloops\*(rq.
-That is, if a host is connected to multiple networks, it
-will receive status information from itself.  This can lead
-to an endless, wasteful, exchange of information.
-.FE
+.ne 1i
 .PP
 It is important that software operating in a distributed
 environment not have any site-dependent information compiled into it.
