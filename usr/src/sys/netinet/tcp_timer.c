@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.12 82/01/17 */
+/* tcp_timer.c 4.13 82/01/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -130,7 +130,7 @@ COUNT(TCP_TIMERS);
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
-printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
+/* printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]); */
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);
