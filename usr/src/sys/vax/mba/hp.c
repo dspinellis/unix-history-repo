@@ -1,4 +1,4 @@
-/*	hp.c	4.46	82/02/15	*/
+/*	hp.c	4.47	82/02/18	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -336,7 +336,7 @@ hpdtint(mi, mbsr)
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	register int er1;
+	register int er1, er2;
 	int retry = 0;
 
 #ifndef NOBADSECT
@@ -363,8 +363,11 @@ hpdtint(mi, mbsr)
 		}
 #endif
 		er1 = hpaddr->hper1;
-		if (er1 & HPER1_HCRC)
+		er2 = hpaddr->hper2;
+		if (er1 & HPER1_HCRC) {
 			er1 &= ~(HPER1_HCE|HPER1_FER);
+			er2 &= ~HPER2_BSE;
+		}
 		if (er1&HPER1_WLE) {
 			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
@@ -380,7 +383,7 @@ hpdtint(mi, mbsr)
 		    mbsr & MBSR_HARD ||
 		    er1 & HPER1_HARD ||
 		    hphdr[mi->mi_unit] ||
-		    (!ML11 && (hpaddr->hper2 & HPER2_HARD))) {
+		    (!ML11 && (er2 & HPER2_HARD))) {
 hard:
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
@@ -395,14 +398,14 @@ hard:
 			printf("\n");
 			bp->b_flags |= B_ERROR;
 			hprecal[mi->mi_unit] = 0;
-		} else if ((hpaddr->hper2 & HPER2_BSE) && !ML11) {
+		} else if ((er2 & HPER2_BSE) && !ML11) {
 #ifndef NOBADSECT
 			if (hpecc(mi, BSE))
 				return(MBD_RESTARTED);
 			else
 #endif
 				goto hard;
-		} else if (RM80 && hpaddr->hper2&HPER2_SSE) {
+		} else if (RM80 && er2&HPER2_SSE) {
 			(void) hpecc(mi, SSE);
 			return (MBD_RESTARTED);
 		} else if ((er1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
