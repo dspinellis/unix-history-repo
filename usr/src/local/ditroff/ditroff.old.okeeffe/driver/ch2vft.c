@@ -1,21 +1,20 @@
-/* ch2vft.c	1.4	84/04/07
+/*	ch2vft.c	1.5	85/01/31
  *
- * Font translation to vfonts (RST format) from character format.
+ * Font translation to vfont format from character format.
  *
  *	Use:	ch2vft  [ -i  -s ]  charfile  > vfontfile
  *
  *		Takes input from charfile (which must be in the format written
- *	by xxx2ch), converts to rst format and writes to stdout.  If charfile
- *	is missing, stdin is read.  The -i flag tells ch2rst to ignore the
- *	character codes at the start of each glyph definition, and pack the
- *	glyphs in consecutive code positions starting with 0.  The -s flag
- *	forces ch2vft to include the whole bit-map that defines the glyph.
- *	Normally, it is trimmed of white space.  This is usefull for making
- *	stipple patterns of fixed size.
+ *	by one of the xxx2ch programs), converts to vfont format and writes it
+ *	to stdout.  If charfile is missing, stdin is read.  The -i flag tells
+ *	ch2vft to ignore the character codes at the start of each glyph
+ *	definition, and pack the glyphs in consecutive code positions starting
+ *	with 0.  The -s flag forces ch2vft to include the whole bit-map that
+ *	defines the glyph.  Normally, it is trimmed of white space.  This is
+ *	usefull for making stipple patterns of fixed size.
  */
 
 #include <stdio.h>
-#include <ctype.h>
 #include <vfont.h>
 
 
@@ -27,13 +26,12 @@
 #define DIMLIMIT	128
 
 
-char *	rdchar();
 char *	malloc();
 
 struct dispatch g[DIRSIZ];	/* directory of glyph definitions */
 struct header	head;		/* font file header */
 
-int	code, codeindex;
+int	code;
 int	width, length, maxv, minv, maxh, minh, refv, refh;
 int	fileaddr;
 
@@ -52,10 +50,11 @@ char **argv;
 {
     register int i;
     register int j;
-    register int k;
+    register int codeindex;
     register char *chp;
     register char *bitp;
     float par;
+
 
     head.magic = MAGICNO;
     head.maxx = head.maxy = head.xtend = 0;
@@ -92,30 +91,18 @@ char **argv;
 
 	if (ibuff[0] != ':') {
 	    sscanf (ibuff, "%s %f", ebuff, &par);
-	    if (strcmp(ebuff, "size") == 0);
-	    else if (strcmp(ebuff, "version") == 0) {
-		if ((int) (par + 0.5))
-		    error("wrong version (%d) for Font file.", (int)(par+0.5));
-	    } else if (strcmp(ebuff, "mag") == 0);
-	    else if (strcmp(ebuff, "desiz") == 0);  /*des_size = par/FIX + 0.5*/
-	    else if (strcmp(ebuff, "linesp") == 0);
-	    else if (strcmp(ebuff, "wordsp") == 0);
-	    else if (strcmp(ebuff, "rot") == 0);
-	    else if (strcmp(ebuff, "cadv") == 0);
-	    else if (strcmp(ebuff, "ladv") == 0);
-	    else if (strcmp(ebuff, "id") == 0);
-	    else if (strcmp(ebuff, "res") == 0) {
+	    if (strcmp(ebuff, "res") == 0) {
 		if (((int) (par + 0.5)) != RES)
 		    fprintf(stderr, "ch2vft warning: wrong resolution (%d).\n",
 			(int) (par + 0.5) );
-	    } else
-		error("unknown input descriptor, \"%s\"", ebuff);
+	    }
 	} else {
 	    if (sscanf (ibuff, ":%d, width = %f", &code, &par) != 2)
 		error("bad glyph header, %s", ibuff);
-	    if (ignorecode) i = codeindex++; else i = code;
-	    if (i < 0 || i >= DIRSIZ) error("code (%d) out of range", i);
-	    g[i].width = par + 0.5;
+	    if (ignorecode) codeindex++; else codeindex = code;
+	    if (codeindex < 0 || codeindex >= DIRSIZ)
+		error("code (%d) out of range", codeindex);
+	    g[codeindex].width = par + 0.5;
 
 	    chp = &charbits[0];
 	    if (fgets(chp, MAXLINE, filep) == NULL)
@@ -128,29 +115,29 @@ char **argv;
 	    for (length = 0; *chp != '\n'; length++) {
 		if ((length + 1) * width > GLYPHSPACE)
 		    error ("out of glyph space");
-		for (j = 0; j < width; j++, chp++) {
+		for (i = 0; i < width; i++, chp++) {
 		    switch (*chp) {
 			case '.':
 				break;
 			case 'x':
-				refh = j;
+				refh = i;
 				refv = length;
 				*chp = '.';
 				break;
 			case 'X':
-				refh = j;
+				refh = i;
 				refv = length;
 			case '@':
 			case '*':
 				maxv = length;
 				if (minv < 0) minv = length;
-				if (j < minh) minh = j;
-				if (j > maxh) maxh = j;
+				if (i < minh) minh = i;
+				if (i > maxh) maxh = i;
 				break;
 			default:
 				error("illegal character '%c' in map.", *chp);
 		    } /* switch */
-		} /* for j */
+		} /* for i */
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
@@ -167,18 +154,18 @@ char **argv;
 		minv = maxv = refv;
 		minh = maxh = refh;
 	    }
-	    g[i].up = bound(refv - minv);
-	    g[i].down = bound(maxv + 1 - refv);
-	    g[i].right = bound(maxh + 1 - refh);
-	    g[i].left = bound(refh - minh);
-	    g[i].nbytes = (maxv + 1 - minv) * ((maxh + 8 - minh) >> 3);
+	    g[codeindex].up = bound(refv - minv);
+	    g[codeindex].down = bound(maxv + 1 - refv);
+	    g[codeindex].right = bound(maxh + 1 - refh);
+	    g[codeindex].left = bound(refh - minh);
+	    g[codeindex].nbytes = (maxv + 1 - minv) * ((maxh + 8 - minh) >> 3);
 
 				/* convert from characters to bits */
-	    bitp = (glyphs[i] = malloc(g[i].nbytes)) - 1;
-	    for (k = minv; k <= maxv; k++) {
+	    bitp = (glyphs[codeindex] = malloc(g[codeindex].nbytes)) - 1;
+	    for (i = minv; i <= maxv; i++) {
 		register int bitwidth;
 
-		chp = &charbits[0] + width * k + minh;
+		chp = &charbits[0] + width * i + minh;
 		bitwidth = 0;
 		for (j = minh; j <= maxh; j++, chp++) {
 		    if (--bitwidth < 0) {
@@ -187,7 +174,7 @@ char **argv;
 		    }
 		    if (*chp != '.') *bitp |= 1 << bitwidth;
 		}
-	    } /* for */
+	    } /* for i */
 	} /* else */
     } /* while */
 
@@ -211,26 +198,61 @@ char **argv;
     for (i = 0; i < DIRSIZ; i++)
 	if (glyphs[i] != (char *) 0)
 	    vwrite(glyphs[i], g[i].nbytes);
+    exit(0);
 }
 
 
-vwrite(buf,usize)
+/*----------------------------------------------------------------------------*
+ | Routine:	bound (value)
+ |
+ | Results:	checks to make sure that the dimensions of a glyph fit into
+ |		the vfont format's limitations.  The up, down, right, and left
+ |		fields must fit into a byte!), but can be signed.
+ *----------------------------------------------------------------------------*/
+
+bound(i)
+{
+	if(i < DIMLIMIT && i >= -DIMLIMIT) return i;
+	error ("dimension out of range");
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	vwrite (buffer, buffer_size)
+ |
+ | Results:	writes out character array "buffer" of size "buffer_size"
+ |		to standard output in small enough chunks that a pipe could
+ |		handle them.
+ |
+ | Bugs:	this routine shouldn't be needed
+ *----------------------------------------------------------------------------*/
+
+vwrite(buf, bufsize)
 char *buf;
-int usize;
+int bufsize;
 {
 	int tsize = 0;
 
-	while (usize) {
+	while (bufsize) {
 		buf += tsize;
-		tsize = usize > BUFSIZ ? BUFSIZ : usize;
+		tsize = bufsize > BUFSIZ ? BUFSIZ : bufsize;
 		if ((tsize = write(1, buf, tsize)) < 0) {
 			perror("ch2vft: write failed");
 			exit(-1);
 		}
-		usize -= tsize;
+		bufsize -= tsize;
 	}
 }
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	error (format_string, argument1, argument2.... )
+ |
+ | Results:	fprints a message to standard error, then exits with error
+ |		code 1
+ |
+ | Side Efct:	This routine does NOT return
+ *----------------------------------------------------------------------------*/
 
 /*VARARGS1*/
 error(string, a1, a2, a3, a4)
@@ -239,11 +261,5 @@ char *string;
 	fprintf(stderr, "ch2vft: ");
 	fprintf(stderr, string, a1, a2, a3, a4);
 	fprintf(stderr, "\n");
-	exit(8);
-};
-
-bound(i)
-{
-	if(i < DIMLIMIT && i >= -DIMLIMIT) return i;
-	error ("dimension out of range");
+	exit(1);
 }
