@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -91,7 +91,7 @@ main(argc, argv)
 			errno = 0;
 			continue;
 		}
-		sigblock(1<<SIGALRM);
+		sigblock(sigmask(SIGALRM));
 		msgbuf[cc] = 0;
 		lastmsgtime = time(0);
 		mailfor(msgbuf);
