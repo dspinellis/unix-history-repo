@@ -1,4 +1,4 @@
-/* tcp_fsm.h 4.2 81/11/03 */
+/*	tcp_fsm.h	4.4	81/11/08	*/
 
 /*
  * TCP FSM definitions.
