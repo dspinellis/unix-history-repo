@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.29 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 SUBDIR=	apply apropos ar at banner basename bc bdes biff cal calendar \
 	cap_mkdb checknr chflags chpass cksum col colcrt colrm column \
