@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)dfn.c	1.2 (Berkeley) %G%";
+    static	char *sccsid = "@(#)dfn.c	1.3 (Berkeley) %G%";
 #endif lint
 
 #include <stdio.h>
@@ -15,7 +15,7 @@ typedef struct dfnstruct	dfntype;
 dfntype	dfn_stack[ DFN_DEPTH ];
 int	dfn_depth = 0;
 
-int	dfn_counter = 0;
+int	dfn_counter = DFN_NAN;
 
     /*
      *	given this parent, depth first number its children.
@@ -93,7 +93,7 @@ dfn_numbered( childp )
     nltype	*childp;
 {
     
-    return ( childp -> toporder != 0 && childp -> toporder != DFN_BUSY );
+    return ( childp -> toporder != DFN_NAN && childp -> toporder != DFN_BUSY );
 }
 
     /*
@@ -104,7 +104,7 @@ dfn_busy( childp )
     nltype	*childp;
 {
 
-    if ( childp -> toporder == 0 ) {
+    if ( childp -> toporder == DFN_NAN ) {
 	return FALSE;
     }
     return TRUE;

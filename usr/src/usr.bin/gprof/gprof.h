@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.14 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.15 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -93,8 +93,10 @@ int	nname;			/* the number of function names */
 
     /*
      *	flag which marks a nl entry as topologically ``busy''
+     *	flag which marks a nl entry as topologically ``not_numbered''
      */
 #define	DFN_BUSY	-1
+#define	DFN_NAN		0
 
     /* 
      *	namelist entries for cycle headers.
