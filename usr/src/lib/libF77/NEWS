@@ -1,0 +1,31 @@
+		LibF77 News - most recent first
+
+August 9, 1985:
+   add d_dprod() for dprod() when -r8 flag is used.
+
+July 6, 1985:
+   switch r_lg10 and d_lg10 to use new log10 in -lm.
+   switch functions of form r_*.c to be declared as float instead of double.
+   use -f flag for most single precision routines to get around C bug;
+	also put extra stores in 4 routines to bypass bug (See Usef in
+	Makefile & file Test_float).
+
+June 26, 1985:
+   move f77_abort() from libF77/main.c to libI77/f77_abort.c
+	so C progs can call f77 subroutines. 
+   fix pow_ii to divide by zero for i**j where i=0 and j is < 0
+   fix pow_hh by applying all fixes from pow_ii to it.
+
+June 6, 1985, 4.3BSD beta version:
+   all error exits now go through f77_abort().  Normally get dump
+	only if loaded with -lg (via f77 -g).  Can use f77_dump_flag
+	envir. var. to override that (set it to 'y' or 'n').
+
+   new routine: random()
+
+   delete sinh.o, tanh.o - identical to C routines in libm
+	  cabs.o, d_sqrt.o, z_abs.o - now in assembler in libm
+	  bit.o: not documented, man 3f bit now shows better ways.
+		routines in bit.o also had inverse arg. order to built in funct.
+
+   complex division by zero - now get error comment.
