@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.9	%G%
+#	locore.s		3.10	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -778,7 +778,9 @@ cm0:
 # proc 0 u. and proc 0 paget.
 #
 	movab	_edata,r6
-	movab	_ecmap,r5		# clear to end of cmap[]
+	movl	_ecmap,r5		# clear to end of cmap[]
+	bbcc	$31,r5,strtclr0
+strtclr0:
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
 strtclr:
 	clrq	(r6)
