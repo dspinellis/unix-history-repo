@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.6 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.7 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -65,6 +65,8 @@ static char *rcsid = "$Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $";
 #include "iso_errno.h"
 
 int tp_attach(), tp_driver();
+int TNew;
+int TPNagle1, TPNagle2;
 
 #ifdef ARGO_DEBUG
 /*
@@ -591,12 +593,12 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		 */
 		{
 			register struct mbuf *n = m;
-			register int len=0;
 			register struct sockbuf *sb = &so->so_snd;
 			int	maxsize = tpcb->tp_l_tpdusize 
 				    - tp_headersize(DT_TPDU_type, tpcb)
 				    - (tpcb->tp_use_checksum?4:0) ;
 			int totlen = n->m_pkthdr.len;
+			int	mbufcnt = 0;
 			struct mbuf *nn;
 
 			/*
@@ -615,7 +617,7 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			IFDEBUG(D_SYSCALL)
 				printf(
 				"PRU_SEND: eot %d before sbappend 0x%x len 0x%x to sb @ 0x%x\n",
-					eotsdu, m,len, sb);
+					eotsdu, m, totlen, sb);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 				dump_mbuf(m, "m : to be added");
 			ENDDEBUG
@@ -626,36 +628,45 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			 *
 			 * This presumes knowledge of sockbuf conventions.
 			 */
-			len = 0;
 			if (n = sb->sb_mb)
 				while (n->m_act)
 					n = n->m_act;
 			if ((nn = n) && n->m_pkthdr.len < maxsize) {
-				int space = maxsize - n->m_pkthdr.len;
+				u_int space = maxsize - n->m_pkthdr.len;
 
 				do {
 					if (n->m_flags & M_EOR)
 						goto on1;
 				} while (n->m_next && (n = n->m_next));
-				nn->m_pkthdr.len += space;
-				if (m->m_pkthdr.len <= space) {
+				if (totlen <= space) {
+					TPNagle1++;
 					n->m_next = m; 
-					sballoc(sb, m);
+					nn->m_pkthdr.len += totlen;
+					while (n = n->m_next)
+						sballoc(sb, n);
 					if (eotsdu)
 						nn->m_flags |= M_EOR; 
 					goto on2; 
-				} else {   
-					nn->m_next = m_copym(m, 0, space, M_WAIT);
-					sballoc(sb, nn->m_next);
-					m_adj(m, space);
+				} else {
+					/*
+					 * Can't sleep here, because when you wake up
+					 * packet you want to attach to may be gone!
+					 */
+					if (TNew && (n->m_next = m_copym(m, 0, space, M_NOWAIT))) {
+						nn->m_pkthdr.len += space;
+						TPNagle2++;
+						while (n = n->m_next)
+							sballoc(sb, n);
+						m_adj(m, space);
+					}
 				}
 			}	
-	on1:	len++;
+	on1:	mbufcnt++;
 			for (n = m; n->m_pkthdr.len > maxsize;) {
-				nn = m_copym(n, 0, len, M_WAIT);
+				nn = m_copym(n, 0, maxsize, M_WAIT);
 				sbappendrecord(sb, nn);
 				m_adj(n, maxsize);
-				len++;
+				mbufcnt++;
 			}
 			if (eotsdu)
 				n->m_flags |= M_EOR;
@@ -663,12 +674,12 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 	on2:	
 			IFTRACE(D_DATA)
 				tptraceTPCB(TPPTmisc,
-				"SEND BF: maxsize totlen frags eotsdu",
-					maxsize, totlen, len, eotsdu);
+				"SEND BF: maxsize totlen mbufcnt eotsdu",
+					maxsize, totlen, mbufcnt, eotsdu);
 			ENDTRACE
 			IFDEBUG(D_SYSCALL)
-				printf("PRU_SEND: eot %d after sbappend 0x%x len 0x%x\n",
-					eotsdu, n, len);
+				printf("PRU_SEND: eot %d after sbappend 0x%x mbufcnt 0x%x\n",
+					eotsdu, n, mbufcnt);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 			ENDDEBUG
 			error = DoEvent(T_DATA_req); 
