@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -71,13 +71,23 @@ ifinit()
 			lookforinterfaces = 1;
 			continue;
 		}
-		/* already known to us? */
-		if (if_ifwithaddr(&ifs.int_addr))
+		/*
+		 * already known to us?
+		 * This allows multiple point-to-point links
+		 * to share a source address (possibly with one
+		 * other link), but assumes that there will not be
+		 * multiple links with the same destination address.
+		 */
+		if (ifs.int_flags & IFF_POINTOPOINT) {
+			if (if_ifwithdstaddr(&ifs.int_dstaddr))
+				continue;
+		} else if (if_ifwithaddr(&ifs.int_addr))
 			continue;
 		/* argh, this'll have to change sometime */
 		if (ifs.int_addr.sa_family != AF_INET)
 			continue;
 		if (ifs.int_flags & IFF_LOOPBACK) {
+			ifs.int_flags |= IFF_PASSIVE;
 			foundloopback = 1;
 			loopaddr = ifs.int_addr;
 			for (ifp = ifnet; ifp; ifp = ifp->int_next)
@@ -102,6 +112,12 @@ ifinit()
 			syslog(LOG_ERR, "ioctl (get metric)");
 		else
 			ifs.int_metric = ifreq.ifr_metric;
+		/*
+		 * Use a minimum metric of one;
+		 * treat the interface metric (default 0)
+		 * as an increment to the hop count of one.
+		 */
+		ifs.int_metric++;
 		if (ioctl(s, SIOCGIFNETMASK, (char *)&ifreq) < 0) {
 			syslog(LOG_ERR, "ioctl (get netmask)");
 			continue;
@@ -219,7 +235,7 @@ addrouteforif(ifp)
 	    ifp->int_netmask) != ifp->int_net)
 		state &= ~RTS_SUBNET;
 	if (ifp->int_flags & IFF_LOOPBACK)
-		state |= RTS_EXTERNAL | RTS_PASSIVE;
+		state |= RTS_EXTERNAL;
 	rtadd(dst, &ifp->int_addr, ifp->int_metric, state);
 	if (ifp->int_flags & IFF_POINTOPOINT && foundloopback)
 		add_ptopt_localrt(ifp);
