@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)sub1.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub1.c	4.2 (Berkeley) %G%";
 #endif
 
 # include "ldefs.c"
