@@ -1,4 +1,4 @@
-/*	up.c	4.76	83/07/09	*/
+/*	up.c	4.77	83/07/20	*/
 
 #include "up.h"
 #if NSC > 0
@@ -84,6 +84,15 @@ struct	size {
 	109472,	810,		/* F=cyl 810 thru 1023 */
 	182176,	668,		/* G=cyl 668 thru 1023 */
 	291346,	98,		/* H=cyl 98 thru 667 */
+}, up980_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 99 */
+	33440,	100,		/* B=cyl 100 thru 308 */
+	131680,	0,		/* C=cyl 0 thru 822 */
+	15884,	309,		/* D=cyl 309 thru 408 */
+	55936,	409,		/* E=cyl 409 thru 758 */
+	10080,	759,		/* F=cyl 759 thru 822 */
+	82080,	309,		/* G=cyl 309 thru 822 */
+	0,	0,
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -113,6 +122,7 @@ struct	upst {
 	{ 32,	19,	32*19,	823,	up9766_sizes,	3, 4 },	/* 9766 */
 	{ 32,	10,	32*10,	823,	up160_sizes,	3, 4 },	/* fuji 160m */
 	{ 32,	16,	32*16,	1024,	upam_sizes,	7, 8 },	/* Capricorn */
+	{ 32,	5,	32*5,	823,	up980_sizes,	3, 4 }, /* DM980 */
 	{ 0,	0,	0,	0,	0,		0, 0 }
 };
 
