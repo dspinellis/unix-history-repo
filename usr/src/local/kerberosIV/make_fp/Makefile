@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	make_fp
 SRCS=	make_fp.c misc.c

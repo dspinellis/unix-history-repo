@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 FILES=	des.h kadm.h kadm_err.h kparse.h krb.h krb_db.h krb_err.h \
 	mit-copyright.h
