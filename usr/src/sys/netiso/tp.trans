@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.11 (Berkeley) %G%
+ *	@(#)tp.trans	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.11 (Berkeley) %G% */
+/* @(#)tp.trans	7.12 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -355,6 +355,7 @@ TP_AKWAIT		<==		 TP_CONFIRMING  							T_ACPT_req
 		IFDEBUG(D_CONN)
 			printf("Confirming connection: $P" );
 		ENDDEBUG
+		tp_getoptions($P);
 		soisconnecting($P.tp_sock);
 		if (($P.tp_rx_strat & TPRX_FASTSTART) && ($P.tp_fcredit > 0))
 			$P.tp_cong_win = $P.tp_fcredit;
@@ -642,7 +643,6 @@ TP_OPEN			<==		TP_AKWAIT 										DT_TPDU
 		tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
 		soisconnected($P.tp_sock);
-		tp_getoptions($P);
 		tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
 
 		/* see also next 2 transitions, if you make any changes */
@@ -737,7 +737,6 @@ TP_OPEN			<==		TP_AKWAIT										AK_TPDU
 		(void) tp_goodack($P, $$.e_cdt, $$.e_seq, $$.e_subseq);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
 
-		tp_getoptions($P);
 		soisconnected($P.tp_sock);
 		IFTRACE(D_CONN)
 			struct socket *so = $P.tp_sock;
@@ -764,7 +763,6 @@ TP_OPEN 		<== 	[ TP_OPEN, TP_AKWAIT ]						XPD_TPDU
 				$P.tp_ucddata = 0;
 			}
 			tp_cuntimeout($P.tp_refp, TM_retrans);
-			tp_getoptions($P);
 			soisconnected($P.tp_sock);
 			tp_ctimeout($P.tp_refp, TM_sendack, (int)$P.tp_keepalive_ticks);
 			tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
@@ -1324,7 +1322,7 @@ SAME			<==		TP_OPEN 									T_USR_rcvd
 
 			LOCAL_CREDIT($P);
 			/*
-			 * If the window has is now closed or has only
+			 * If the window is now closed or has only
 			 * one slot left and an ACK will increase this (local
 			 * credit is greater than or equal to 1) send an AK
 			 * here. Otherwise, we will wait for more data or
