@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 LIB=	curses
 SRCS=	addbytes.c addch.c addstr.c box.c clear.c clrtobot.c clrtoeol.c \
@@ -8,5 +8,10 @@ SRCS=	addbytes.c addch.c addstr.c box.c clear.c clrtobot.c clrtoeol.c \
 	newwin.c overlay.c overwrite.c printw.c putchar.c refresh.c scanw.c \
 	scroll.c toucholap.c standout.c touchwin.c tstp.c unctrl.c
 MAN3=	curses.0
+
+beforeinstall:
+	-cd ${.CURDIR}; cmp -s curses.h ${DESTDIR}/usr/include/curses.h || \
+	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 curses.h \
+	    ${DESTDIR}/usr/include
 
 .include <bsd.lib.mk>
