@@ -96,6 +96,18 @@ p_proto(proto)
 	case AF_INET:
 		printf("inet");
 		break;
+	case AF_NS:
+		printf("NS");
+		break;
+	case AF_OSI:
+		printf("OSI");
+		break;
+	case AF_CCITT:
+		printf("CCITT");
+		break;
+	case AF_APPLETALK:
+		printf("AppleTalk");
+		break;
 	default:
 		printf("%d", proto);
 		break;
@@ -120,47 +132,11 @@ routepr(hostaddr, netaddr, hashsizeaddr, treeaddr)
 	printf("Routing tables\n");
 	if (Aflag)
 		printf("%-8.8s ","Address");
-	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %s\n",
+	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %-5.5s %-6.6s %-6.6s\n",
 		"Destination", "Gateway",
-		"Flags", "Refs", "Use", "Interface");
+		"Flags", "Refs", "Use", "Iface", "MTU", "Rtt");
 	if (treeaddr)
 		return treestuff(treeaddr);
-	if (hostaddr == 0) {
-		printf("rthost: symbol not in namelist\n");
-		return;
-	}
-	if (netaddr == 0) {
-		printf("rtnet: symbol not in namelist\n");
-		return;
-	}
-	if (hashsizeaddr == 0) {
-		printf("rthashsize: symbol not in namelist\n");
-		return;
-	}
-	kget(hashsizeaddr, hashsize);
-	routehash = (struct mbuf **)malloc( hashsize*sizeof (struct mbuf *) );
-	kvm_read(hostaddr, (char *)routehash, hashsize*sizeof (struct mbuf *));
-again:
-	for (i = 0; i < hashsize; i++) {
-		if (routehash[i] == 0)
-			continue;
-		m = routehash[i];
-		while (m) {
-			kget(m, mb);
-			if (Aflag)
-				printf("%8.8x ", m);
-			p_ortentry((struct ortentry *)(mb.m_dat));
-			m = mb.m_next;
-		}
-	}
-	if (doinghost) {
-		kvm_read(netaddr, (char *)routehash,
-			hashsize*sizeof (struct mbuf *));
-		doinghost = 0;
-		goto again;
-	}
-	free((char *)routehash);
-	return;
 }
 
 static union {
@@ -407,29 +383,16 @@ register struct rtentry *rt;
 	}
 	kget(rt->rt_ifp, ifnet);
 	kvm_read((off_t)ifnet.if_name, name, 16);
-	printf(" %.15s%d%s", name, ifnet.if_unit,
-		rt->rt_nodes[0].rn_dupedkey ? " =>\n" : "\n");
-}
-
-p_ortentry(rt)
-register struct ortentry *rt;
-{
-	char name[16], *flags;
-	register struct bits *p;
-	register struct sockaddr_in *sin;
-	struct ifnet ifnet;
-
-	p_sockaddr(&rt->rt_dst, rt->rt_flags, 16);
-	p_sockaddr(&rt->rt_gateway, 0, 18);
-	p_flags(rt->rt_flags, "%-6.6s ");
-	printf("%6d %8d ", rt->rt_refcnt, rt->rt_use);
-	if (rt->rt_ifp == 0) {
-		putchar('\n');
-		return;
-	}
-	kget(rt->rt_ifp, ifnet);
-	kvm_read((off_t)ifnet.if_name, name, 16);
-	printf(" %.15s%d\n", name, ifnet.if_unit);
+	printf(" %.2s%d", name, ifnet.if_unit);
+	if(rt->rt_rmx.rmx_mtu)
+	  printf(" %6d", rt->rt_rmx.rmx_mtu);
+	else
+	  printf(" %-6s", "-");
+	if(rt->rt_rmx.rmx_rtt)
+	  printf(" %6.3f", (1. * rt->rt_rmx.rmx_rtt) / RTM_RTTUNIT);
+	else
+	  printf(" %-6s", "-");
+	printf(rt->rt_nodes[0].rn_dupedkey ? " =>\n" : "\n");
 }
 
 char *

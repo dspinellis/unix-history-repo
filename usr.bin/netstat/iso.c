@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)iso.c	5.6 (Berkeley) 4/27/91";
 #endif /* not lint */
 
 /*
- * $Header: /a/cvs/386BSD/src/usr.bin/netstat/iso.c,v 1.1.1.1 1993/06/12 14:47:55 rgrimes Exp $
+ * $Header: /a/cvs/386BSD/src/usr.bin/netstat/iso.c,v 1.2 1993/09/05 23:41:49 rgrimes Exp $
  * $Source: /a/cvs/386BSD/src/usr.bin/netstat/iso.c,v $
  */
 /*******************************************************************************
@@ -85,7 +85,7 @@ SOFTWARE.
 #undef satosiso
 #include <netiso/tp_param.h>
 #include <netiso/tp_states.h>
-#include <netiso/tp_astring.c>
+#include "tp_astring.c"
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_stat.h>
 #include <netiso/iso_pcb.h>
