@@ -12,12 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
 # include	<stdio.h>
 # include	<sgtty.h>
+# include	<setjmp.h>
+
 # define	PRIO		00	/* default priority */
 
 int	Mother	= 51 + (51 << 8);
@@ -119,6 +121,8 @@ int	Mother	= 51 + (51 << 8);
 ***********************************************************************
 */
 
+jmp_buf env;
+
 main(argc, argv)
 int	argc;
 char	**argv;
@@ -130,7 +134,6 @@ char	**argv;
 	register int		ac;
 	register char		**av;
 	struct	sgttyb		argp;
-	int			been_here = 0;
 
 	av = argv;
 	ac = argc;
@@ -191,13 +194,11 @@ char	**argv;
 
 	printf("\n   * * *   S T A R   T R E K   * * *\n\nPress return to continue.\n");
 
-	setexit();
-	if ( been_here == 1 )
+	if (setjmp(env))
 	{
 		if ( !getynpar("Another game") )
 			exit(0);
 	}
-	been_here = 1;
 	do
 	{
 		setup();

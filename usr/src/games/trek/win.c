@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)win.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)win.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
 # include	"getpar.h"
+# include	<setjmp.h>
 
 /*
 **  Signal game won
@@ -18,7 +19,7 @@ static char sccsid[] = "@(#)win.c	5.4 (Berkeley) %G%";
 **	This routine prints out the win message, arranges to print out
 **	your score, tells you if you have a promotion coming to you,
 **	cleans up the current input line, and arranges to have you
-**	asked whether or not you want another game (via the reset()
+**	asked whether or not you want another game (via the longjmp()
 **	call).
 **
 **	Pretty straightforward, although the promotion algorithm is
@@ -28,6 +29,7 @@ static char sccsid[] = "@(#)win.c	5.4 (Berkeley) %G%";
 win()
 {
 	long			s;
+	extern jmp_buf		env;
 	extern long		score();
 	extern struct cvntab	Skitab[];
 	register struct cvntab	*p;
@@ -57,5 +59,5 @@ win()
 
 	/* clean out input, and request new game */
 	skiptonl(0);
-	reset();
+	longjmp(env, 1);
 }
