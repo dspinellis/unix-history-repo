@@ -377,9 +377,11 @@ writecoords:
 			}
 			fprintf(ptid, "\n");
 			break;
+
 		case DRAWPOLY:	/* polygon with stipple */
+		case DRAWUBPOLY:/* polygon, stipple, no border */
 			if (xstip != stip) ptstip();
-			fprintf(ptid, "D%c %d", DRAWPOLY, dx);
+			fprintf(ptid, "D%c %d", cbits(pi[1]), dx);
 			goto writecoords;
 		}
 		for (n = 2; cbits(pi[n]) != '.'; n++)
