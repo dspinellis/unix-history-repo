@@ -49,6 +49,9 @@ print:
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
 
+action:
+	${ACTION}
+
 lint:
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 \
 				${TNMAIN} ${MOSTC} -lcurses
