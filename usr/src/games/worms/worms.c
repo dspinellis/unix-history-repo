@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worms.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)worms.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -147,11 +147,11 @@ static struct options {
 
 #define	cursor(c, r)	tputs(tgoto(CM, c, r), 1, fputchar)
 
-static char	*TE;
-static int	fputchar();
+char	*TE;
+int	fputchar();
 
 static char	flavor[] = {
-	'O', '*', '#', '$', '%', '0'
+	'O', '*', '#', '$', '%', '0', '@', '~'
 };
 static short	xinc[] = {
 	1,  1,  1,  0, -1, -1, -1,  0
@@ -161,7 +161,7 @@ static short	xinc[] = {
 static struct	worm {
 	int orientation, head;
 	short *xpos, *ypos;
-} worm[40];
+} *worm;
 
 main(argc, argv)
 	int argc;
@@ -175,12 +175,11 @@ main(argc, argv)
 	register struct options *op;
 	register short *ip;
 	register char *term;
-	int CO, IN, LI, last, bottom, ch, length, number, trail, Wrap,
-		onsig();
+	int CO, IN, LI, last, bottom, ch, length, number, trail, Wrap;
+	int onsig();
 	short **ref;
-	char *AL, *BC, *CM, *EI, *HO, *IC, *IM, *IP, *SR, *tcp,
-		*field, tcb[100], *mp, *malloc(), *getenv(), *tgetstr(),
-		*tgoto();
+	char *AL, *BC, *CM, *EI, *HO, *IC, *IM, *IP, *SR, *tcp;
+	char *field, tcb[100], *mp, *malloc(), *getenv(), *tgetstr(), *tgoto();
 	long random();
 #ifdef USG
 	struct termio sg;
@@ -193,19 +192,22 @@ main(argc, argv)
 	trail = ' ';
 	field = NULL;
 	while ((ch = getopt(argc, argv, "fl:n:t")) != EOF)
-		switch((char)ch) {
+		switch(ch) {
 		case 'f':
 			field = "WORM";
 			break;
 		case 'l':
 			if ((length = atoi(optarg)) < 2 || length > 1024) {
-				fprintf(stderr, "%s: invalid length; range %d - %d.\n", *argv, 2, 1024);
+				(void)fprintf(stderr,
+				    "worms: invalid length (%d - %d).\n",
+				     2, 1024);
 				exit(1);
 			}
 			break;
 		case 'n':
-			if ((number = atoi(optarg)) < 1 || number > 40) {
-				fprintf(stderr, "%s: invalid number of worms; range %d - %d.\n", *argv, 1, 40);
+			if ((number = atoi(optarg)) < 1) {
+				(void)fprintf(stderr,
+				    "worms: invalid number of worms.\n");
 				exit(1);
 			}
 			break;
@@ -214,25 +216,27 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: %s [-ft] [-length #] [-number #]\n", *argv);
+			(void)fprintf(stderr,
+			    "usage: worms [-ft] [-length #] [-number #]\n");
 			exit(1);
 		}
 
 	if (!(term = getenv("TERM"))) {
-		fprintf(stderr, "%s: TERM: parameter not set\n", *argv);
+		(void)fprintf(stderr, "worms: no TERM environment variable.\n");
 		exit(1);
 	}
-	if (!(mp = malloc((u_int)1024))) {
-		fprintf(stderr, "%s: out of space.\n", *argv);
-		exit(1);
-	}
+	if (!(worm = (struct worm *)malloc((u_int)number *
+	    sizeof(struct worm))) || !(mp = malloc((u_int)1024)))
+		nomem();
 	if (tgetent(mp, term) <= 0) {
-		fprintf(stderr, "%s: %s: unknown terminal type\n", *argv, term);
+		(void)fprintf(stderr, "worms: %s: unknown terminal type.\n",
+		    term);
 		exit(1);
 	}
 	tcp = tcb;
 	if (!(CM = tgetstr("cm", &tcp))) {
-		fprintf(stderr, "%s: terminal not capable of cursor motion\n", *argv);
+		(void)fprintf(stderr,
+		    "worms: terminal incapable of cursor motion.\n");
 		exit(1);
 	}
 	AL = tgetstr("al", &tcp);
@@ -260,14 +264,10 @@ main(argc, argv)
 	ospeed = sg.sg_ospeed;
 #endif
 	Wrap = tgetflag("am");
-	if (!(ip = (short *)malloc((u_int)(LI * CO * sizeof(short))))) {
-		fprintf(stderr, "%s: out of memory\n", *argv);
-		exit(1);
-	}
-	if (!(ref = (short **)malloc((u_int)(LI * sizeof(short *))))) {
-		fprintf(stderr, "%s: out of memory\n", *argv);
-		exit(1);
-	}
+	if (!(ip = (short *)malloc((u_int)(LI * CO * sizeof(short)))))
+		nomem();
+	if (!(ref = (short **)malloc((u_int)(LI * sizeof(short *)))))
+		nomem();
 	for (n = 0; n < LI; ++n) {
 		ref[n] = ip;
 		ip += CO;
@@ -278,17 +278,13 @@ main(argc, argv)
 		ref[bottom][last] = 1;
 	for (n = number, w = &worm[0]; --n >= 0; w++) {
 		w->orientation = w->head = 0;
-		if (!(ip = (short *)malloc((u_int)(length * sizeof(short))))) {
-			fprintf(stderr, "%s: out of memory\n", *argv);
-			exit(1);
-		}
+		if (!(ip = (short *)malloc((u_int)(length * sizeof(short)))))
+			nomem();
 		w->xpos = ip;
 		for (x = length; --x >= 0;)
 			*ip++ = -1;
-		if (!(ip = (short *)malloc((u_int)(length * sizeof(short))))) {
-			fprintf(stderr, "%s: out of memory\n", *argv);
-			exit(1);
-		}
+		if (!(ip = (short *)malloc((u_int)(length * sizeof(short)))))
+			nomem();
 		w->ypos = ip;
 		for (y = length; --y >= 0;)
 			*ip++ = -1;
@@ -400,9 +396,11 @@ main(argc, argv)
 				w->orientation = op->opts[0];
 				break;
 			default:
-				w->orientation = op->opts[(int)random() % op->nopts];
+				w->orientation =
+				    op->opts[(int)random() % op->nopts];
 			}
-			cursor(x += xinc[w->orientation], y += yinc[w->orientation]);
+			cursor(x += xinc[w->orientation],
+			    y += yinc[w->orientation]);
 			if (!Wrap || x != last || y != bottom)
 				fputchar(flavor[n % 6]);
 			ref[w->ypos[h] = y][w->xpos[h] = x]++;
@@ -410,16 +408,20 @@ main(argc, argv)
 	}
 }
 
-static
 onsig()
 {
 	tputs(TE, 1, fputchar);
 	exit(0);
 }
 
-static
 fputchar(c)
 	char c;
 {
 	putchar(c);
+}
+
+nomem()
+{
+	(void)fprintf(stderr, "worms: not enough memory.\n");
+	exit(1);
 }
