@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lpd.8	5.1 (Berkeley) %G%
+.\"	@(#)lpd.8	6.1 (Berkeley) %G%
 .\"
-.TH LPD 8 "18 July 1983"
+.TH LPD 8 ""
 .UC 5
 .ad
 .SH NAME
@@ -47,13 +47,23 @@ for debugging purposes.
 .PP
 Access control is provided by two means. First, All requests must come from
 one of the machines listed in the file
-.IR /etc/hosts.equiv .
+.I /etc/hosts.equiv
+or
+.IR /etc/hosts.lpd .
 Second, if the ``rs'' capability is specified in the
 .I printcap
 entry for the printer being accessed,
 .I lpr
 requests will only be honored for those users with accounts on the
 machine with the printer.
+.PP
+The file
+.I minfree
+in each spool directory contains the number of disk blocks to leave free
+so that the line printer queue won't completely fill the disk.
+The
+.I minfree
+file can be edited with your favorite text editor.
 .PP
 The file
 .I lock
@@ -107,6 +117,9 @@ as a filter.
 Troff File.  The file contains
 .IR troff (1)
 output (cat phototypesetter commands).
+.IP n
+Ditroff File.  The file contains device independent troff
+output.
 .IP d
 DVI File.  The file contains
 .IR Tex (l)
@@ -172,9 +185,11 @@ and
 .ta \w'/etc/printcap           'u
 /etc/printcap	printer description file
 /usr/spool/*	spool directories
+/usr/spool/*/minfree	minimum free space to leave
 /dev/lp*	line printer devices
 /dev/printer	socket for local requests
 /etc/hosts.equiv	lists machine names allowed printer access
+/etc/hosts.lpd	lists machine names allowed printer access
 .fi
 .SH "SEE ALSO"
 lpc(8),
