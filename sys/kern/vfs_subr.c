@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.7 1993/11/25 01:33:42 wollman Exp $
+ *	$Id: vfs_subr.c,v 1.9 1994/04/23 19:40:20 ache Exp $
  */
 
 /*
@@ -730,6 +730,7 @@ void vrele(vp)
 		panic("vrele: ref cnt");
 	}
 #endif
+	vp->v_writecount = 0;	/* XXX */
 	if (vfreeh == NULLVP) {
 		/*
 		 * insert into empty list
