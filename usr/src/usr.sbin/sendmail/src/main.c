@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.28	%G%";
+static char	SccsId[] = "@(#)main.c	3.29	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -124,6 +124,7 @@ bool	IgnrDot;	/* if set, ignore dot when collecting mail */
 bool	SuprErrs;	/* supress errors if set */
 bool	Verbose;	/* set if blow-by-blow desired */
 bool	GrabTo;		/* if set, read recipient addresses from msg */
+bool	DontSend;	/* mark recipients as QDONTSEND */
 int	Debug;		/* debug level */
 int	Errors;		/* count of errors */
 int	AliasLevel;	/* current depth of aliasing */
@@ -522,6 +523,8 @@ main(argc, argv)
 	** Scan argv and deliver the message to everyone.
 	*/
 
+	if (GrabTo)
+		DontSend = TRUE;
 	for (; argc-- > 0; argv++)
 	{
 		p = argv[1];
@@ -570,6 +573,7 @@ main(argc, argv)
 	**  Read the input mail.
 	*/
 
+	DontSend = FALSE;
 	collect();
 
 # ifdef DEBUG
