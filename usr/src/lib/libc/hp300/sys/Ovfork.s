@@ -10,13 +10,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)Ovfork.s	8.1 (Berkeley) %G%"
+	.asciz "@(#)Ovfork.s	5.3 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
-
-/*
- * @(#)vfork.s	4.1 (Berkeley) 12/21/80
- * C library -- vfork
- */
 
 /*
  * pid = vfork();
@@ -28,6 +23,8 @@
  * and then returns with a jump indirect, since only one person can return
  * with a ret off this stack... we do the ret before we vfork!
  */
+
+#include "SYS.h"
 
 	vfork = 66
 ENTRY(vfork)
