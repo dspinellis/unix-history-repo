@@ -29,10 +29,8 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_rrip.h
- *	$Id$
+ *	$Id: iso_rrip.h,v 1.2 1993/10/16 19:26:44 rgrimes Exp $
  */
-
-#define NOTYET	1
 
 /*
  *	Analyze function flag

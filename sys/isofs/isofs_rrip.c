@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: isofs_rrip.c,v 1.1 1993/07/20 03:36:48 jkh Exp $
+ *	$Id: isofs_rrip.c,v 1.2 1993/07/27 10:52:36 davidg Exp $
  */
 
 #include "param.h"
@@ -77,7 +77,6 @@ static int isofs_rrip_device( p, ana )
 ISO_RRIP_DEVICE  *p;
 ISO_RRIP_ANALYZE *ana;
 {
-#ifdef NOTYET
 	char   buf[3];
 
 	buf[0] = p->h.type[0];
@@ -90,7 +89,6 @@ ISO_RRIP_ANALYZE *ana;
 				isonum_731(p->dev_t_high_l),
 				isonum_731(p->dev_t_low_l)
 					 );
-#endif
 	return;
 }
 
@@ -121,7 +119,6 @@ static int isofs_rrip_clink( p, ana )
 ISO_RRIP_CLINK  *p;
 ISO_RRIP_ANALYZE *ana;
 {
-#ifdef NOTYET
 	char   buf[3];
 	buf[0] = p->h.type[0];
 	buf[1] = p->h.type[1];
@@ -131,7 +128,6 @@ ISO_RRIP_ANALYZE *ana;
 				isonum_711(p->h.length),
 				isonum_733(p->dir_loc)
 							);
-#endif	
 	ana->inode.iso_cln = isonum_733(p->dir_loc);
 	return;
 }
@@ -144,7 +140,6 @@ ISO_RRIP_PLINK  *p;
 ISO_RRIP_ANALYZE *ana;
 {
 
-#ifdef NOTYET
 	char   buf[3];
 	buf[0] = p->h.type[0];
 	buf[1] = p->h.type[1];
@@ -154,7 +149,6 @@ ISO_RRIP_ANALYZE *ana;
 				isonum_711(p->h.length),
 				isonum_733(p->dir_loc)
 							);
-#endif
 	ana->inode.iso_pln = isonum_733(p->dir_loc);
 	return;
 }
@@ -166,7 +160,6 @@ static int isofs_rrip_reldir( p, ana )
 ISO_RRIP_RELDIR  *p;
 ISO_RRIP_ANALYZE *ana;
 {
-#ifdef NOTYET
 	char   buf[3];
 
 	buf[0] = p->h.type[0];
@@ -174,7 +167,6 @@ ISO_RRIP_ANALYZE *ana;
 	buf[2]	= 0x00;
 
 	printf("isofs:%s[%d]\n",buf, isonum_711(p->h.length) );
-#endif
 	return;
 }
 
@@ -327,7 +319,6 @@ static int isofs_rrip_idflag( p, ana )
 ISO_RRIP_IDFLAG  *p;
 ISO_RRIP_ANALYZE *ana;
 {
-#ifdef NOTYET
 	char   buf[3];
 
 	buf[0] = p->h.type[0];
@@ -338,7 +329,6 @@ ISO_RRIP_ANALYZE *ana;
 				buf,
 				isonum_711(p->h.length),
 				p->flags );
-#endif
 	return;
 }
 
@@ -350,7 +340,6 @@ static int isofs_rrip_exflag( p, ana )
 ISO_RRIP_EXFLAG  *p;
 ISO_RRIP_ANALYZE *ana;
 {
-#ifdef NOTYET
 	char   buf[3];
 
 	buf[0] = p->h.type[0];
@@ -361,7 +350,6 @@ ISO_RRIP_ANALYZE *ana;
 				buf,
 				isonum_711(p->h.length),
 				p->flags );
-#endif
 	return;
 }
 
@@ -438,7 +426,6 @@ ISO_RRIP_ANALYZE		*analyze;
 			}
 		}
 		if ( found == 0 ) {
-			#ifdef NOTYET
 			printf("isofs: name '");
 			for ( i =0; i < isonum_711(isodir->name_len) ;i++) {
 				printf("%c", *(isodir->name + i) );
@@ -447,7 +434,6 @@ ISO_RRIP_ANALYZE		*analyze;
 			printf(" - type %c%c [%08x/%08x]...not found\n",
 				phead->type[0], phead->type[1], phead, pend );
 			isofs_hexdump( phead, (int)( (char *)pend - (char *)phead ) );
-			#endif
 		 	break;
 		}
 
@@ -472,7 +458,7 @@ setdefault:
 
 /* 
  * Get Alternate Name from 'AL' record 
- * If either no AL recorde nor 0 lenght, 
+ * If either no AL record nor 0 lenght, 
  *    it will be return the translated ISO9660 name,
  */
 int	isofs_rrip_getname( isodir, outbuf, outlen )
@@ -643,7 +629,6 @@ int				*outlen;
 	}
 	return( found );
 }
-#ifdef NOTYET
 /* Hexdump routine for debug*/
 int isofs_hexdump( p, size )
 	unsigned char *p;
@@ -673,4 +658,3 @@ int isofs_hexdump( p, size )
 	}
 	printf("\n");
 }
-#endif
