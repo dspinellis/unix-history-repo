@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.12 (Berkeley) %G%
+ *	@(#)rtsock.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,6 +36,7 @@ route_usrreq(so, req, m, nam, control)
 {
 	register int error = 0;
 	register struct rawcb *rp = sotorawcb(so);
+	int s;
 	if (req == PRU_ATTACH) {
 		MALLOC(rp, struct rawcb *, sizeof(*rp), M_PCB, M_WAITOK);
 		if (so->so_pcb = (caddr_t)rp)
@@ -52,12 +53,14 @@ route_usrreq(so, req, m, nam, control)
 			route_cb.iso_count--;
 		route_cb.any_count--;
 	}
+	s = splnet();
 	error = raw_usrreq(so, req, m, nam, control);
 	rp = sotorawcb(so);
 	if (req == PRU_ATTACH && rp) {
 		int af = rp->rcb_proto.sp_protocol;
 		if (error) {
 			free((caddr_t)rp, M_PCB);
+			splx(s);
 			return (error);
 		}
 		if (af == AF_INET)
@@ -71,6 +74,7 @@ route_usrreq(so, req, m, nam, control)
 		soisconnected(so);
 		so->so_options |= SO_USELOOPBACK;
 	}
+	splx(s);
 	return (error);
 }
 #define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
@@ -80,7 +84,7 @@ route_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
 {
-	register struct rt_msghdr *rtm;
+	register struct rt_msghdr *rtm = 0;
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *genmask = 0;
@@ -99,8 +103,8 @@ route_output(m, so)
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("route_output");
 	len = m->m_pkthdr.len;
-	rtm = mtod(m, struct rt_msghdr *);
-	if (len < rtm->rtm_msglen)
+	if (len < sizeof(*rtm) ||
+	    len != mtod(m, struct rt_msghdr *)->rtm_msglen)
 		senderr(EINVAL);
 	R_Malloc(rtm, struct rt_msghdr *, len);
 	if (rtm == 0)
