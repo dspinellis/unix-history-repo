@@ -5,7 +5,7 @@
 # Alternately, if you discover you've got the wrong time zone, you can just
 #	zic -l rightzone
 
-LOCALTIME=	US/Pacific
+LOCALTIME=	Factory
 
 # If you want something other than Eastern United States time as a template
 # for handling POSIX-style time zone environment variables,
@@ -14,7 +14,7 @@ LOCALTIME=	US/Pacific
 # Alternately, if you discover you've got the wrong time zone, you can just
 #	zic -p rightzone
 
-POSIXRULES=	US/Pacific
+POSIXRULES=	US/Eastern
 
 # Use an absolute path name for TZDIR unless you're just testing the software.
 
@@ -34,7 +34,7 @@ TZDIR=	${DESTDIR}/usr/share/zoneinfo
 #	REDO=		right_posix
 # below.
 
-REDO=		right_only
+REDO=		right_posix
 
 # If you're running on a System V-style system and don't want lint grief,
 # add

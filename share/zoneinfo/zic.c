@@ -1,3 +1,10 @@
+/*
+ * This file provided by Arthur David Olson of the National Cancer
+ * Institute.  Because it was created by the United States government,
+ * it is in the public domain with the United States, and freely distributable
+ * outside.  (Comment added by G. Wollman, FreeBSD Project.)
+ */
+/* $Id$ */
 #ifndef lint
 #ifndef NOID
 static char	elsieid[] = "@(#)zic.c	7.9";
@@ -58,7 +65,6 @@ struct zone {
 	time_t		z_untiltime;
 };
 
-extern int	emkdir P((const char * name, int mode));
 extern int	getopt P((int argc, char * argv[], const char * options));
 extern char *	icatalloc P((char * old, const char * new));
 extern char *	icpyalloc P((const char * string));
@@ -410,9 +416,7 @@ char *	argv[];
 	register int	i, j;
 	register int	c;
 
-#ifdef unix
 	(void) umask(umask(022) | 022);
-#endif /* defined unix */
 	progname = argv[0];
 	while ((c = getopt(argc, argv, "d:l:p:L:vsy:")) != EOF)
 		switch (c) {
@@ -526,14 +530,14 @@ const char * const	tofile;
 	register char *	toname;
 
 	if (fromfile[0] == '/')
-		fromname = fromfile;
+		fromname = (char *)fromfile;
 	else {
 		fromname = ecpyalloc(directory);
 		fromname = ecatalloc(fromname, "/");
 		fromname = ecatalloc(fromname, fromfile);
 	}
 	if (tofile[0] == '/')
-		toname = tofile;
+		toname = (char *)tofile;
 	else {
 		toname = ecpyalloc(directory);
 		toname = ecatalloc(toname, "/");
@@ -1873,21 +1877,11 @@ char * const	name;
 		return 0;
 	while ((cp = strchr(cp + 1, '/')) != 0) {
 		*cp = '\0';
-#ifndef unix
-		/*
-		** MS-DOS drive specifier?
-		*/
-		if (strlen(name) == 2 && isascii(name[0]) &&
-			isalpha(name[0]) && name[1] == ':') {
-				*cp = '/';
-				continue;
-		}
-#endif /* !defined unix */
 		if (!itsdir(name)) {
 			/*
 			** It doesn't seem to exist, so we try to create it.
 			*/
-			if (emkdir(name, 0755) != 0) {
+			if (mkdir(name, 0755) != 0) {
 				(void) fprintf(stderr,
 					"%s: Can't create directory ",
 					progname);
