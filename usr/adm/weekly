@@ -1,0 +1,32 @@
+#! /bin/sh -
+host=`hostname | sed -e 's/\..*//'`
+echo "Subject: $host weekly run output"
+
+#echo ""
+#echo "Removing old .o files:"
+#find /usr/src -name '*.o' -atime +21 -print -a -exec rm -f {} \;
+
+if [ -f /usr/lib/uucp/clean.weekly ]; then
+	echo ""
+	echo "Cleaning up UUCP:"
+	echo /usr/lib/uucp/clean.weekly | su daemon
+fi
+
+echo ""
+echo "Rotating messages:"
+cd /usr/adm
+if [ -f messages.2 ]; then mv -f messages.2 messages.3; fi
+if [ -f messages.1 ]; then mv -f messages.1 messages.2; fi
+if [ -f messages.0 ]; then mv -f messages.0 messages.1; fi
+mv -f messages   messages.0
+cp /dev/null  messages
+chmod 644 messages
+kill -1 `cat /etc/syslog.pid`
+cd /
+
+# not until su can run a uid with no shell
+#echo ""
+#echo "Rebuilding find database:"
+#su nobody << EOF
+#	/usr/lib/find/updatedb
+#EOF
