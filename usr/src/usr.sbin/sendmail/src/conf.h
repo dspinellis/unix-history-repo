@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.44 (Berkeley) %G%
+ *	@(#)conf.h	8.45 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,7 @@
 
 # define LOG		1	/* enable logging */
 # define UGLYUUCP	1	/* output ugly UUCP From lines */
+# define NETUNIX	1	/* include unix domain support */
 # define NETINET	1	/* include internet support */
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
@@ -135,7 +136,10 @@
 
 
 /*
-**  SunOS
+**  SunOS and Solaris
+**
+**	Tested on SunOS 4.1.x (a.k.a. Solaris 1.1.x) and
+**	Solaris 2.2 (a.k.a. SunOS 5.2).
 */
 
 #if defined(sun) && !defined(BSD)
@@ -143,12 +147,12 @@
 # define LA_TYPE	LA_INT
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASUNAME	1	/* use System V uname(2) system call */
 
 # ifdef SOLARIS
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
 #  define SYSTEM5	1	/* use System V definitions */
 #  define setreuid(r, e)	seteuid(e)
-#  include <sys/sysmacros.h>
 #  include <sys/time.h>
 #  define gethostbyname	__switch_gethostbyname	/* get working version */
 #  define gethostbyaddr	__switch_gethostbyaddr	/* get working version */
@@ -170,7 +174,9 @@
 #endif
 
 /*
-** DG/UX 5.4.2
+**  DG/UX
+**
+**	Tested on 5.4.2
 */
 
 #ifdef	DGUX
@@ -184,6 +190,11 @@
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # undef IDENTPROTO		/* TCP/IP implementation is broken */
 # undef SETPROCTITLE
+
+/* these include files must be included early on DG/UX */
+# include <netinet/in.h>
+# include <arpa/inet.h>
+
 # define inet_addr	dgux_inet_addr
 extern long	dgux_inet_addr();
 #endif
@@ -220,6 +231,9 @@ extern long	dgux_inet_addr();
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 /* # define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/var/run/sendmial.pid"
+# endif
 #endif
 
 
@@ -286,6 +300,35 @@ typedef int		pid_t;
 
 
 /*
+**  Mach386
+**
+**	For mt Xinu's Mach386 system.
+*/
+
+#if defined(MACH) && defined(i386)
+# define MACH386	1
+# define HASUNSETENV	1	/* has unsetenv(3) call */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASFLOCK	1	/* has flock(2) call */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define NEEDSTRTOL	1	/* need the strtol() function */
+# define setpgid	setpgrp
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_FLOAT
+# endif
+# undef WEXITSTATUS
+# undef WIFEXITED
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+#endif
+
+
+/*
 **  4.3 BSD -- this is for very old systems
 **
 **	You'll also have to install a new resolver library.
@@ -318,6 +361,7 @@ typedef int		pid_t;
 # define FORK		fork
 # define MAXPATHLEN	PATHSIZE
 # define LA_TYPE	LA_SHORT
+# undef NETUNIX			/* no unix domain socket support */
 #endif
 
 
@@ -457,6 +501,7 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 
 /* general System V defines */
 # ifdef SYSTEM5
+# include <sys/sysmacros.h>
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
@@ -469,7 +514,7 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 # endif
 
 /* general "standard C" defines */
-#if defined(__STDC__) || defined(SYSTEM5)
+#if (defined(__STDC__) && !defined(MACH386)) || defined(SYSTEM5)
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 #endif
 
