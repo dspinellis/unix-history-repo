@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fclose.3	6.4 (Berkeley) %G%
+.\"	@(#)fclose.3	6.5 (Berkeley) %G%
 .\"
 .TH FCLOSE 3 ""
 .UC 7
@@ -29,8 +29,6 @@ from its underlying file or set of functions.
 If the stream was being used for output, any buffered data is written
 first, using
 .IR fflush (3).
-.SH "SEE ALSO"
-close(2), fflush(3), fopen(3), setbuf(3)
 .SH "RETURN VALUE"
 Upon successful completion 0 is returned.
 Otherwise,
@@ -55,3 +53,5 @@ or
 .SH STANDARDS
 .I Fclose
 conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH "SEE ALSO"
+close(2), fflush(3), fopen(3), setbuf(3)
