@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.11 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -249,6 +249,7 @@ ptcopen(dev, flag)
 		return (EIO);
 	tp->t_oproc = ptsstart;
 	(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+	tp->t_lflag &= ~EXTPROC;
 	pti = &pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
 	pti->pt_send = 0;
@@ -290,6 +291,11 @@ ptcread(dev, uio, flag)
 				error = ureadc((int)pti->pt_send, uio);
 				if (error)
 					return (error);
+				if (pti->pt_send & TIOCPKT_IOCTL) {
+					cc = MIN(uio->uio_resid,
+						sizeof(tp->t_termios));
+					uiomove(&tp->t_termios, cc, uio);
+				}
 				pti->pt_send = 0;
 				return (0);
 			}
@@ -550,6 +556,28 @@ ptyioctl(dev, cmd, data, flag)
 	 * IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG.
 	 * ttywflush(tp) will hang if there are characters in the outq.
 	 */
+	if (cmd == TIOCEXT) {
+		/*
+		 * When the EXTPROC bit is being toggled, we need
+		 * to send an TIOCPKT_IOCTL if the packet driver
+		 * is turned on.
+		 */
+		if (*(int *)data) {
+			if (pti->pt_flags & PF_PKT) {
+				pti->pt_send |= TIOCPKT_IOCTL;
+				ptcwakeup(tp);
+			}
+			tp->t_lflag |= EXTPROC;
+		} else {
+			if ((tp->t_state & EXTPROC) &&
+			    (pti->pt_flags & PF_PKT)) {
+				pti->pt_send |= TIOCPKT_IOCTL;
+				ptcwakeup(tp);
+			}
+			tp->t_lflag &= ~EXTPROC;
+		}
+		return(0);
+	} else
 	if (cdevsw[major(dev)].d_open == ptcopen) {
 		if ((cmd & 0xffff) == (TIOCIOANS(0) & 0xffff)) {
 			if (!(pti->pt_flags & PF_LIOC) || pti->pt_ioc.c_cc)
@@ -633,6 +661,14 @@ ptyioctl(dev, cmd, data, flag)
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
+
+		case TIOCSIG:
+			if (*(unsigned int *)data >= NSIG)
+				return(EINVAL);
+			if ((tp->t_lflag&NOFLSH) == 0)
+				ttyflush(tp, FREAD|FWRITE);
+			pgsignal(tp->t_pgrp, *(unsigned int *)data);
+			return(0);
 		}
 	} else if (pti->pt_flags & PF_TIOC) {
 		while (pti->pt_flags & PF_LIOC) {
@@ -731,6 +767,31 @@ ptyioctl(dev, cmd, data, flag)
 			return (0);
 		}
 		error = ENOTTY;
+	}
+	/*
+	 * If external processing and packet mode send ioctl packet.
+	 */
+	if ((tp->t_lflag&EXTPROC) && (pti->pt_flags & PF_PKT)) {
+		switch(cmd) {
+		case TIOCSETA:
+		case TIOCSETAW:
+		case TIOCSETAF:
+		case JUNK_TIOCSETAS:
+		case JUNK_TIOCSETAWS:
+		case JUNK_TIOCSETAFS:
+		case TIOCSETP:
+		case TIOCSETN:
+#ifdef	COMPAT_43
+		case TIOCSETC:
+		case TIOCSLTC:
+		case TIOCLBIS:
+		case TIOCLBIC:
+		case TIOCLSET:
+#endif
+			pti->pt_send |= TIOCPKT_IOCTL;
+		default:
+			break;
+		}
 	}
 	stop = (tp->t_iflag & IXON) && CCEQ(cc[VSTOP], CTRL('s')) 
 		&& CCEQ(cc[VSTART], CTRL('q'));
