@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1980, 1991, 1993
+ * Copyright (c) 1980, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1980, 1991, 1993\n\
+"@(#) Copyright (c) 1980, 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -52,20 +52,19 @@ static char sccsid[] = "@(#)w.c	8.1 (Berkeley) %G%";
 
 #include "extern.h"
 
-struct timeval boottime;
-struct utmp utmp;
-struct winsize ws;
-kvm_t *kd;
-time_t now;			/* the current time of day */
-time_t uptime;			/* time of last reboot & elapsed time since */
-int ttywidth;			/* width of tty */
-int argwidth;			/* width of tty */
-int header = 1;			/* true if -h flag: don't print heading */
-int nflag;			/* true if -n flag: don't convert addrs */
-int sortidle;			/* sort bu idle time */
-char *sel_user;			/* login of particular user selected */
-char *program;
-char domain[MAXHOSTNAMELEN];
+struct timeval	boottime;
+struct utmp	utmp;
+struct winsize	ws;
+kvm_t	       *kd;
+time_t		now;		/* the current time of day */
+time_t		uptime;		/* time of last reboot & elapsed time since */
+int		ttywidth;	/* width of tty */
+int		argwidth;	/* width of tty */
+int		header = 1;	/* true if -h flag: don't print heading */
+int		nflag;		/* true if -n flag: don't convert addrs */
+int		sortidle;	/* sort bu idle time */
+char	       *sel_user;	/* login of particular user selected */
+char		domain[MAXHOSTNAMELEN];
 
 /*
  * One of these per active utmp entry.
@@ -84,15 +83,14 @@ static struct stat
 		*ttystat __P((char *));
 static void	 usage __P((int));
 
-char *fmt_argv __P((char **, char *, int));
+char *fmt_argv __P((char **, char *, int));	/* ../../bin/ps/fmt.c */
 
 int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern char *optarg;
-	extern int optind;
+	extern char *__progname;
 	struct kinfo_proc *kp;
 	struct hostent *hp;
 	struct stat *stp;
@@ -103,8 +101,8 @@ main(argc, argv)
 	char buf[MAXHOSTNAMELEN], errbuf[256];
 
 	/* Are we w(1) or uptime(1)? */
-	program = argv[0];
-	if ((p = rindex(program, '/')) || *(p = program) == '-')
+	p = __progname;
+	if (*p == '-')
 		p++;
 	if (*p == 'u') {
 		wcmd = 0;
@@ -144,7 +142,7 @@ main(argc, argv)
 	argv += optind;
 
 	if ((kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf)) == NULL)
-		err(1, "%s", errbuf);
+		errx(1, "%s", errbuf);
 
 	(void)time(&now);
 	if ((ut = fopen(_PATH_UTMP, "r")) == NULL)
@@ -164,7 +162,7 @@ main(argc, argv)
 			err(1, NULL);
 		*nextp = ep;
 		nextp = &(ep->next);
-		bcopy(&utmp, &(ep->utmp), sizeof (struct utmp));
+		memmove(&(ep->utmp), &utmp, sizeof(struct utmp));
 		stp = ttystat(ep->utmp.ut_line);
 		ep->tdev = stp->st_rdev;
 #ifdef CPU_CONSDEV
@@ -200,8 +198,8 @@ main(argc, argv)
 	if ((kp = kvm_getprocs(kd, KERN_PROC_ALL, 0, &nentries)) == NULL)
 		err(1, "%s", kvm_geterr(kd));
 	for (i = 0; i < nentries; i++, kp++) {
-		register struct proc *p = &kp->kp_proc;
-		register struct eproc *e;
+		struct proc *p = &kp->kp_proc;
+		struct eproc *e;
 
 		if (p->p_stat == SIDL || p->p_stat == SZOMB)
 			continue;
@@ -255,16 +253,16 @@ main(argc, argv)
 			
 	if (!nflag)
 		if (gethostname(domain, sizeof(domain) - 1) < 0 ||
-		    (p = index(domain, '.')) == 0)
+		    (p = strchr(domain, '.')) == 0)
 			domain[0] = '\0';
 		else {
 			domain[sizeof(domain) - 1] = '\0';
-			bcopy(p, domain, strlen(p) + 1);
+			memmove(domain, p, strlen(p) + 1);
 		}
 
 	for (ep = ehead; ep != NULL; ep = ep->next) {
 		p = *ep->utmp.ut_host ? ep->utmp.ut_host : "-";
-		if (x = index(p, ':'))
+		if (x = strchr(p, ':'))
 			*x++ = '\0';
 		if (!nflag && isdigit(*p) &&
 		    (long)(l = inet_addr(p)) != -1 &&
@@ -273,7 +271,7 @@ main(argc, argv)
 				p = hp->h_name;
 				p += strlen(hp->h_name);
 				p -= strlen(domain);
-				if (p > hp->h_name && !strcmp(p, domain))
+				if (p > hp->h_name && strcmp(p, domain) == 0)
 					*p = '\0';
 			}
 			p = hp->h_name;
@@ -304,7 +302,7 @@ pr_header(nowp, nusers)
 	int days, hrs, i, mins;
 	int mib[2];
 	size_t size;
-	char buf[256], fmt[10];
+	char buf[256];
 
 	/*
 	 * Print time of day.
@@ -312,9 +310,7 @@ pr_header(nowp, nusers)
 	 * Note, SCCS forces the string manipulation below, as it
 	 * replaces w.c with file information.
 	 */
-	(void)strcpy(fmt, "%l:%%%p");
-	fmt[4] = 'M';
-	(void)strftime(buf, sizeof(buf), fmt, localtime(nowp));
+	(void)strftime(buf,sizeof(buf),__CONCAT("%l:%","M%p"),localtime(nowp));
 	(void)printf("%s ", buf);
 
 	/*
