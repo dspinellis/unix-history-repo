@@ -22,8 +22,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirname.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirname.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <stdio.h>
 
 main(argc, argv)
 	int argc;
@@ -31,9 +33,15 @@ main(argc, argv)
 {
 	char *p, *rindex();
 
-	p = rindex(*++argv, '/');
-	if (p && p > *argv)
-		*p = '\0';
-	puts(*argv);
+	if (argc != 2) {
+		fprintf(stderr, "usage: dirname path\n");
+		exit(1);
+	}
+	if (p = rindex(*++argv, '/'))
+		if (p > *argv)
+			*p = '\0';
+		else
+			*++p = '\0';
+	printf("%s\n", *argv);
 	exit(0);
 }
