@@ -8,7 +8,7 @@
  * Routines for processing and detecting headlines.
  */
 
-static char *SccsId = "@(#)head.c	2.1 %G%";
+static char *SccsId = "@(#)head.c	2.2 %G%";
 
 /*
  * See if the passed line buffer is a mail header.
@@ -24,7 +24,7 @@ ishead(linebuf)
 	char parbuf[BUFSIZ];
 
 	cp = linebuf;
-	if (!isname("From ", cp, 5))
+	if (strncmp("From ", cp, 5) != 0)
 		return(0);
 	parse(cp, &hl, parbuf);
 	if (hl.l_from == NOSTR || hl.l_date == NOSTR) {
@@ -82,7 +82,7 @@ parse(line, hl, pbuf)
 	dp = nextword(cp, word);
 	if (!equal(word, ""))
 		hl->l_from = copyin(word, &sp);
-	if (isname(dp, "tty", 3)) {
+	if (strncmp(dp, "tty", 3) == 0) {
 		cp = nextword(dp, word);
 		hl->l_tty = copyin(word, &sp);
 		if (cp != NOSTR)
@@ -115,50 +115,6 @@ copyin(src, space)
 	cp += s + 1;
 	*space = cp;
 	return(top);
-}
-
-/*
- * See if the two passed strings agree in the first n characters.
- * Return true if they do, gnu.
- */
-
-isname(as1, as2, acount)
-	char *as1, *as2;
-{
-	register char *s1, *s2;
-	register count;
-
-	s1 = as1;
-	s2 = as2;
-	count = acount;
-	if (count > 0)
-		do
-			if (*s1++ != *s2++)
-				return(0);
-		while (--count);
-	return(1);
-}
-
-/*
- * See if the two passed strings agree in the first n characters.
- * Return true if they do, ignoring case.
- */
-
-icisname(as1, as2, acount)
-	char *as1, *as2;
-{
-	register char *s1, *s2;
-	register count;
-
-	s1 = as1;
-	s2 = as2;
-	count = acount;
-	if (count > 0)
-		do
-			if (raise(*s1++) != raise(*s2++))
-				return(0);
-		while (--count);
-	return(1);
 }
 
 /*
