@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	8.3 (Berkeley) %G%
+ *	@(#)nfs.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _NFS_NFS_H_
@@ -99,7 +99,9 @@
 /*
  * Arguments to mount NFS
  */
+#define NFS_ARGSVERSION	3		/* change when nfs_args changes */
 struct nfs_args {
+	int		version;	/* args structure version number */
 	struct sockaddr	*addr;		/* file server address */
 	int		addrlen;	/* length of address */
 	int		sotype;		/* Socket type */
