@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.27 (Berkeley) %G%
+#	@(#)READ_ME	8.28 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -108,6 +108,7 @@ SYS5SIGNALS	Use System V signal semantics -- the signal handler
 		If this is not set, use POSIX/BSD semantics, where the
 		signal handler stays in force until an exec or an
 		explicit delete.  Implied by SYSTEM5.
+SYS5SETPGRP	Use System V setpgrp() semantics.  Implied by SYSTEM5.
 HASFLOCK	Set this if you prefer to use the flock(2) system call
 		rather than using fcntl-based locking.  Fcntl locking
 		has some semantic gotchas, but many vendor systems
@@ -407,4 +408,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.27, last update %G% 13:15:55)
+(Version 8.28, last update %G% 16:01:21)
