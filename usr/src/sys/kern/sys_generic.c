@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.4	84/08/29	*/
+/*	sys_generic.c	6.5	84/10/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -411,9 +411,12 @@ selwakeup(p, coll)
 	}
 	if (p) {
 		int s = spl6();
-		if (p->p_wchan == (caddr_t)&selwait)
-			setrun(p);
-		else if (p->p_flag & SSEL)
+		if (p->p_wchan == (caddr_t)&selwait) {
+			if (p->p_stat == SSLEEP)
+				setrun(p);
+			else
+				unsleep(p);
+		} else if (p->p_flag & SSEL)
 			p->p_flag &= ~SSEL;
 		splx(s);
 	}
