@@ -1,4 +1,4 @@
-/*	defs.h	4.11	84/02/24	*/
+/*	defs.h	4.12	84/04/06	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -25,14 +25,15 @@
 #define RP	3
 #define SM	4
 #define ARROW	5
-#define DCOLON	6
-#define NAME	7
-#define STRING	8
-#define INSTALL	9
-#define NOTIFY	10
-#define EXCEPT	11
-#define SPECIAL	12
-#define OPTION	13
+#define COLON	6
+#define DCOLON	7
+#define NAME	8
+#define STRING	9
+#define INSTALL	10
+#define NOTIFY	11
+#define EXCEPT	12
+#define SPECIAL	13
+#define OPTION	14
 
 	/* lexical definitions */
 #define	QUOTE 	0200		/* used internally for quoted characters */
@@ -82,6 +83,7 @@ struct subcmd {
 struct cmd {
 	int	c_type;		/* type - ARROW,DCOLON */
 	char	*c_name;	/* hostname or time stamp file name */
+	char	*c_label;	/* label for partial update */
 	struct	namelist *c_files;
 	struct	subcmd *c_cmds;
 	struct	cmd *c_next;
@@ -95,8 +97,6 @@ extern int options;		/* global options */
 extern int nerrs;		/* number of errors seen */
 extern int rem;			/* remote file descriptor */
 extern int iamremote;		/* acting as remote server */
-extern int filec;		/* number of files to update */
-extern char **filev;		/* list of files/directories to update */
 extern char tmpfile[];		/* file name for logging changes */
 extern struct passwd *pw;	/* pointer to static area used by getpwent */
 extern struct group *gr;	/* pointer to static area used by getgrent */
