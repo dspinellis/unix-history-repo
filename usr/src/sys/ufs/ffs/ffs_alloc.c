@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)ffs_alloc.c 1.10 %G%";
+static char vers[] = "@(#)ffs_alloc.c 1.11 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -22,7 +22,7 @@ extern daddr_t		fragextend();
 extern daddr_t		blkpref();
 extern daddr_t		mapsearch();
 extern int		inside[], around[];
-extern unsigned char	fragtbl[];
+extern unsigned char	*fragtbl[];
 
 struct buf *
 alloc(dev, ip, bpref, size)
@@ -36,14 +36,14 @@ alloc(dev, ip, bpref, size)
 	register struct buf *bp;
 	int cg;
 	
-	if ((unsigned)size > BSIZE || size % FSIZE != 0)
-		panic("alloc: bad size");
 	fs = getfs(dev);
-	if (size == BSIZE && fs->fs_cstotal.cs_nbfree == 0)
+	if ((unsigned)size > fs->fs_bsize || size % fs->fs_fsize != 0)
+		panic("alloc: bad size");
+	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
 		goto nospace;
 	if (u.u_uid != 0 &&
-	    fs->fs_cstotal.cs_nbfree * FRAG + fs->fs_cstotal.cs_nffree <
-	      fs->fs_dsize * minfree / 100)
+	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
+	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
 	if (bpref >= fs->fs_size)
 		bpref = 0;
@@ -54,7 +54,7 @@ alloc(dev, ip, bpref, size)
 	bno = (daddr_t)hashalloc(dev, fs, cg, (long)bpref, size, alloccg);
 	if (bno == 0)
 		goto nospace;
-	bp = getblk(dev, bno, size);
+	bp = getblk(dev, fsbtodb(fs, bno), size);
 	clrbuf(bp);
 	return (bp);
 nospace:
@@ -76,13 +76,13 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	caddr_t cp;
 	int cg;
 	
-	if ((unsigned)osize > BSIZE || osize % FSIZE != 0 ||
-	    (unsigned)nsize > BSIZE || nsize % FSIZE != 0)
-		panic("realloccg: bad size");
 	fs = getfs(dev);
+	if ((unsigned)osize > fs->fs_bsize || osize % fs->fs_fsize != 0 ||
+	    (unsigned)nsize > fs->fs_bsize || nsize % fs->fs_fsize != 0)
+		panic("realloccg: bad size");
 	if (u.u_uid != 0 &&
-	    fs->fs_cstotal.cs_nbfree * FRAG + fs->fs_cstotal.cs_nffree <
-	      fs->fs_dsize * minfree / 100)
+	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
+	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
 	if (bprev == 0)
 		panic("realloccg: bad bprev");
@@ -90,7 +90,7 @@ realloccg(dev, bprev, bpref, osize, nsize)
 		cg = dtog(bprev, fs);
 	bno = fragextend(dev, fs, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
-		bp = bread(dev, bno, osize);
+		bp = bread(dev, fsbtodb(fs, bno), osize);
 		bp->b_bcount = nsize;
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
@@ -102,8 +102,8 @@ realloccg(dev, bprev, bpref, osize, nsize)
 		/*
 		 * make a new copy
 		 */
-		obp = bread(dev, bprev, osize);
-		bp = getblk(dev, bno, nsize);
+		obp = bread(dev, fsbtodb(fs, bprev), osize);
+		bp = getblk(dev, fsbtodb(fs, bno), nsize);
 		cp = bp->b_un.b_addr;
 		bp->b_un.b_addr = obp->b_un.b_addr;
 		obp->b_un.b_addr = cp;
@@ -172,10 +172,10 @@ dirpref(dev)
 	minndir = fs->fs_ipg;
 	mincg = 0;
 	for (cg = 0; cg < fs->fs_ncg; cg++)
-		if (fs->fs_cs(cg).cs_ndir < minndir &&
-		    fs->fs_cs(cg).cs_nifree >= avgifree) {
+		if (fs->fs_cs(fs, cg).cs_ndir < minndir &&
+		    fs->fs_cs(fs, cg).cs_nifree >= avgifree) {
 			mincg = cg;
-			minndir = fs->fs_cs(cg).cs_ndir;
+			minndir = fs->fs_cs(fs, cg).cs_ndir;
 		}
 	return (fs->fs_ipg * mincg);
 }
@@ -193,14 +193,14 @@ blkpref(dev)
 	fs = getfs(dev);
 	avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
 	for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
-		if (fs->fs_cs(cg).cs_nbfree >= avgbfree) {
+		if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
 			fs->fs_cgrotor = cg;
-			return (fs->fs_fpg * cg + FRAG);
+			return (fs->fs_fpg * cg + fs->fs_frag);
 		}
 	for (cg = 0; cg <= fs->fs_cgrotor; cg++)
-		if (fs->fs_cs(cg).cs_nbfree >= avgbfree) {
+		if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
 			fs->fs_cgrotor = cg;
-			return (fs->fs_fpg * cg + FRAG);
+			return (fs->fs_fpg * cg + fs->fs_frag);
 		}
 	return (0);
 }
@@ -264,18 +264,18 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 	int frags, bbase;
 	int i;
 
-	frags = nsize / FSIZE;
-	bbase = bprev % FRAG;
-	if (bbase > (bprev + frags - 1) % FRAG) {
+	frags = nsize / fs->fs_fsize;
+	bbase = bprev % fs->fs_frag;
+	if (bbase > (bprev + frags - 1) % fs->fs_frag) {
 		/* cannot extend across a block boundry */
 		return (0);
 	}
-	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
 	bno = bprev % fs->fs_fpg;
-	for (i = osize / FSIZE; i < frags; i++) {
+	for (i = osize / fs->fs_fsize; i < frags; i++) {
 		if (isclr(cgp->cg_free, bno + i))
 			break;
 	}
@@ -286,17 +286,17 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 		 * increase the count on the remaining fragment (if any)
 		 * allocate the extended piece
 		 */
-		for (i = frags; i < FRAG - bbase; i++)
+		for (i = frags; i < fs->fs_frag - bbase; i++)
 			if (isclr(cgp->cg_free, bno + i))
 				break;
-		cgp->cg_frsum[i - osize / FSIZE]--;
+		cgp->cg_frsum[i - osize / fs->fs_fsize]--;
 		if (i != frags)
 			cgp->cg_frsum[i - frags]++;
-		for (i = osize / FSIZE; i < frags; i++) {
+		for (i = osize / fs->fs_fsize; i < frags; i++) {
 			clrbit(cgp->cg_free, bno + i);
 			cgp->cg_cs.cs_nffree--;
 			fs->fs_cstotal.cs_nffree--;
-			fs->fs_cs(cg).cs_nffree--;
+			fs->fs_cs(fs, cg).cs_nffree--;
 		}
 		fs->fs_fmod++;
 		bdwrite(bp);
@@ -320,13 +320,13 @@ alloccg(dev, fs, cg, bpref, size)
 	int allocsiz;
 	register int i;
 
-	if (fs->fs_cs(cg).cs_nbfree == 0 && size == BSIZE)
+	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (0);
-	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
-	if (size == BSIZE) {
+	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
 		bdwrite(bp);
 		return (bno);
@@ -336,11 +336,11 @@ alloccg(dev, fs, cg, bpref, size)
 	 * allocsiz is the size which will be allocated, hacking
 	 * it down to a smaller size if necessary
 	 */
-	frags = size / FSIZE;
-	for (allocsiz = frags; allocsiz < FRAG; allocsiz++)
+	frags = size / fs->fs_fsize;
+	for (allocsiz = frags; allocsiz < fs->fs_frag; allocsiz++)
 		if (cgp->cg_frsum[allocsiz] != 0)
 			break;
-	if (allocsiz == FRAG) {
+	if (allocsiz == fs->fs_frag) {
 		/*
 		 * no fragments were available, so a block will be 
 		 * allocated, and hacked up
@@ -351,12 +351,12 @@ alloccg(dev, fs, cg, bpref, size)
 		}
 		bno = alloccgblk(fs, cgp, bpref);
 		bpref = bno % fs->fs_fpg;
-		for (i = frags; i < FRAG; i++)
+		for (i = frags; i < fs->fs_frag; i++)
 			setbit(cgp->cg_free, bpref + i);
-		i = FRAG - frags;
+		i = fs->fs_frag - frags;
 		cgp->cg_cs.cs_nffree += i;
 		fs->fs_cstotal.cs_nffree += i;
-		fs->fs_cs(cg).cs_nffree += i;
+		fs->fs_cs(fs, cg).cs_nffree += i;
 		cgp->cg_frsum[i]++;
 		bdwrite(bp);
 		return (bno);
@@ -368,7 +368,7 @@ alloccg(dev, fs, cg, bpref, size)
 		clrbit(cgp->cg_free, bno + i);
 	cgp->cg_cs.cs_nffree -= frags;
 	fs->fs_cstotal.cs_nffree -= frags;
-	fs->fs_cs(cg).cs_nffree -= frags;
+	fs->fs_cs(fs, cg).cs_nffree -= frags;
 	cgp->cg_frsum[allocsiz]--;
 	if (frags != allocsiz)
 		cgp->cg_frsum[allocsiz - frags]++;
@@ -390,12 +390,12 @@ alloccgblk(fs, cgp, bpref)
 	if (bpref == 0) {
 		bpref = cgp->cg_rotor;
 	} else {
-		bpref &= ~(FRAG - 1);
+		bpref &= ~(fs->fs_frag - 1);
 		bpref %= fs->fs_fpg;
 		/*
 		 * if the requested block is available, use it
 		 */
-		if (isblock(cgp->cg_free, bpref/FRAG)) {
+		if (isblock(fs, cgp->cg_free, bpref/fs->fs_frag)) {
 			bno = bpref;
 			goto gotit;
 		}
@@ -403,12 +403,12 @@ alloccgblk(fs, cgp, bpref)
 		 * check for a block available on the same cylinder
 		 * beginning with one which is rotationally optimal
 		 */
-		i = bpref * NSPF;
+		i = bpref * NSPF(fs);
 		cylno = i / fs->fs_spc;
 		cylbp = cgp->cg_b[cylno];
-		pos = (i + (ROTDELAY == 0) ?
-			0 : 1 + ROTDELAY * HZ * fs->fs_nsect / (NSPF * 1000)) %
-			fs->fs_nsect * NRPOS / fs->fs_nsect;
+		pos = (i + (fs->fs_rotdelay == 0) ? 0 :
+		       1 + fs->fs_rotdelay * HZ * fs->fs_nsect /
+		       (NSPF(fs) * 1000)) % fs->fs_nsect * NRPOS / fs->fs_nsect;
 		for (i = pos; i < NRPOS; i++)
 			if (cylbp[i] > 0)
 				break;
@@ -417,26 +417,26 @@ alloccgblk(fs, cgp, bpref)
 				if (cylbp[i] > 0)
 					break;
 		if (cylbp[i] > 0) {
-			bpref = cylno * fs->fs_spc / (NSPF * FRAG);
+			bpref = cylno * fs->fs_spc / NSPB(fs);
 			for (j = fs->fs_postbl[i]; j > -1; j = fs->fs_rotbl[j]) {
-				if (isblock(cgp->cg_free, bpref + j)) {
-					bno = (bpref + j) * FRAG;
+				if (isblock(fs, cgp->cg_free, bpref + j)) {
+					bno = (bpref + j) * fs->fs_frag;
 					goto gotit;
 				}
 			}
 			panic("alloccgblk: can't find blk in cyl");
 		}
 	}
-	bno = mapsearch(fs, cgp, bpref, FRAG);
+	bno = mapsearch(fs, cgp, bpref, fs->fs_frag);
 	if (bno == 0)
 		return (0);
 	cgp->cg_rotor = bno;
 gotit:
-	clrblock(cgp->cg_free, bno/FRAG);
+	clrblock(fs, cgp->cg_free, bno/fs->fs_frag);
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
-	fs->fs_cs(cgp->cg_cgx).cs_nbfree--;
-	i = bno * NSPF;
+	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;
+	i = bno * NSPF(fs);
 	cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
 	fs->fs_fmod++;
 	return (cgp->cg_cgx * fs->fs_fpg + bno);
@@ -454,9 +454,9 @@ ialloccg(dev, fs, cg, ipref, mode)
 	register struct cg *cgp;
 	int i;
 
-	if (fs->fs_cs(cg).cs_nifree == 0)
+	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (0);
-	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
@@ -481,12 +481,12 @@ gotit:
 	setbit(cgp->cg_iused, ipref);
 	cgp->cg_cs.cs_nifree--;
 	fs->fs_cstotal.cs_nifree--;
-	fs->fs_cs(cg).cs_nifree--;
+	fs->fs_cs(fs, cg).cs_nifree--;
 	fs->fs_fmod++;
 	if ((mode & IFMT) == IFDIR) {
 		cgp->cg_cs.cs_ndir++;
 		fs->fs_cstotal.cs_ndir++;
-		fs->fs_cs(cg).cs_ndir++;
+		fs->fs_cs(fs, cg).cs_ndir++;
 	}
 	bdwrite(bp);
 	return (cg * fs->fs_ipg + ipref);
@@ -503,63 +503,63 @@ fre(dev, bno, size)
 	int cg, blk, frags, bbase;
 	register int i;
 
-	if ((unsigned)size > BSIZE || size % FSIZE != 0)
-		panic("free: bad size");
 	fs = getfs(dev);
+	if ((unsigned)size > fs->fs_bsize || size % fs->fs_fsize != 0)
+		panic("free: bad size");
 	cg = dtog(bno, fs);
 	if (badblock(fs, bno))
 		return;
-	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
 	bno %= fs->fs_fpg;
-	if (size == BSIZE) {
-		if (isblock(cgp->cg_free, bno/FRAG))
+	if (size == fs->fs_bsize) {
+		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag))
 			panic("free: freeing free block");
-		setblock(cgp->cg_free, bno/FRAG);
+		setblock(fs, cgp->cg_free, bno/fs->fs_frag);
 		cgp->cg_cs.cs_nbfree++;
 		fs->fs_cstotal.cs_nbfree++;
-		fs->fs_cs(cg).cs_nbfree++;
-		i = bno * NSPF;
+		fs->fs_cs(fs, cg).cs_nbfree++;
+		i = bno * NSPF(fs);
 		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]++;
 	} else {
-		bbase = bno - (bno % FRAG);
+		bbase = bno - (bno % fs->fs_frag);
 		/*
 		 * decrement the counts associated with the old frags
 		 */
 		blk = ((cgp->cg_free[bbase / NBBY] >> (bbase % NBBY)) &
-		       (0xff >> (NBBY - FRAG)));
-		fragacct(blk, cgp->cg_frsum, -1);
+		       (0xff >> (NBBY - fs->fs_frag)));
+		fragacct(fs, blk, cgp->cg_frsum, -1);
 		/*
 		 * deallocate the fragment
 		 */
-		frags = size / FSIZE;
+		frags = size / fs->fs_fsize;
 		for (i = 0; i < frags; i++) {
 			if (isset(cgp->cg_free, bno + i))
 				panic("free: freeing free frag");
 			setbit(cgp->cg_free, bno + i);
 			cgp->cg_cs.cs_nffree++;
 			fs->fs_cstotal.cs_nffree++;
-			fs->fs_cs(cg).cs_nffree++;
+			fs->fs_cs(fs, cg).cs_nffree++;
 		}
 		/*
 		 * add back in counts associated with the new frags
 		 */
 		blk = ((cgp->cg_free[bbase / NBBY] >> (bbase % NBBY)) &
-		       (0xff >> (NBBY - FRAG)));
-		fragacct(blk, cgp->cg_frsum, 1);
+		       (0xff >> (NBBY - fs->fs_frag)));
+		fragacct(fs, blk, cgp->cg_frsum, 1);
 		/*
 		 * if a complete block has been reassembled, account for it
 		 */
-		if (isblock(cgp->cg_free, bbase / FRAG)) {
-			cgp->cg_cs.cs_nffree -= FRAG;
-			fs->fs_cstotal.cs_nffree -= FRAG;
-			fs->fs_cs(cg).cs_nffree -= FRAG;
+		if (isblock(fs, cgp->cg_free, bbase / fs->fs_frag)) {
+			cgp->cg_cs.cs_nffree -= fs->fs_frag;
+			fs->fs_cstotal.cs_nffree -= fs->fs_frag;
+			fs->fs_cs(fs, cg).cs_nffree -= fs->fs_frag;
 			cgp->cg_cs.cs_nbfree++;
 			fs->fs_cstotal.cs_nbfree++;
-			fs->fs_cs(cg).cs_nbfree++;
-			i = bbase * NSPF;
+			fs->fs_cs(fs, cg).cs_nbfree++;
+			i = bbase * NSPF(fs);
 			cgp->cg_b[i / fs->fs_spc]
 				 [i % fs->fs_nsect * NRPOS / fs->fs_nsect]++;
 		}
@@ -582,7 +582,7 @@ ifree(dev, ino, mode)
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		panic("ifree: range");
 	cg = itog(ino, fs);
-	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
@@ -592,11 +592,11 @@ ifree(dev, ino, mode)
 	clrbit(cgp->cg_iused, ino);
 	cgp->cg_cs.cs_nifree++;
 	fs->fs_cstotal.cs_nifree++;
-	fs->fs_cs(cg).cs_nifree++;
+	fs->fs_cs(fs, cg).cs_nifree++;
 	if ((mode & IFMT) == IFDIR) {
 		cgp->cg_cs.cs_ndir--;
 		fs->fs_cstotal.cs_ndir--;
-		fs->fs_cs(cg).cs_ndir--;
+		fs->fs_cs(fs, cg).cs_ndir--;
 	}
 	fs->fs_fmod++;
 	bdwrite(bp);
@@ -627,12 +627,13 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	else
 		start = cgp->cg_frotor / NBBY;
 	len = roundup(fs->fs_fpg - 1, NBBY) / NBBY - start;
-	loc = scanc(len, &cgp->cg_free[start], fragtbl, 1 << (allocsiz - 1));
+	loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
+		1 << (allocsiz - 1));
 	if (loc == 0) {
 		len = start - 1;
 		start = (cgdmin(cgp->cg_cgx, fs) -
 			 cgbase(cgp->cg_cgx, fs)) / NBBY;
-		loc = scanc(len, &cgp->cg_free[start], fragtbl,
+		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 			1 << (allocsiz - 1));
 		if (loc == 0) {
 			panic("alloccg: map corrupted");
@@ -645,12 +646,13 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	 * found the byte in the map
 	 * sift through the bits to find the selected frag
 	 */
-	for (i = 0; i < NBBY; i += FRAG) {
-		blk = (cgp->cg_free[bno / NBBY] >> i) & (0xff >> NBBY - FRAG);
+	for (i = 0; i < NBBY; i += fs->fs_frag) {
+		blk = (cgp->cg_free[bno / NBBY] >> i) &
+		      (0xff >> NBBY - fs->fs_frag);
 		blk <<= 1;
 		field = around[allocsiz];
 		subfield = inside[allocsiz];
-		for (pos = 0; pos <= FRAG - allocsiz; pos++) {
+		for (pos = 0; pos <= fs->fs_frag - allocsiz; pos++) {
 			if ((blk & field) == subfield) {
 				return (bno + i + pos);
 			}
@@ -666,7 +668,8 @@ mapsearch(fs, cgp, bpref, allocsiz)
  * update the frsum fields to reflect addition or deletion 
  * of some frags
  */
-fragacct(fragmap, fraglist, cnt)
+fragacct(fs, fragmap, fraglist, cnt)
+	struct fs *fs;
 	int fragmap;
 	long fraglist[];
 	int cnt;
@@ -675,14 +678,14 @@ fragacct(fragmap, fraglist, cnt)
 	register int field, subfield;
 	register int siz, pos;
 
-	inblk = (int)(fragtbl[fragmap]) << 1;
+	inblk = (int)(fragtbl[fs->fs_frag][fragmap]) << 1;
 	fragmap <<= 1;
-	for (siz = 1; siz < FRAG; siz++) {
+	for (siz = 1; siz < fs->fs_frag; siz++) {
 		if (((1 << siz) & inblk) == 0)
 			continue;
 		field = around[siz];
 		subfield = inside[siz];
-		for (pos = siz; pos <= FRAG; pos++) {
+		for (pos = siz; pos <= fs->fs_frag; pos++) {
 			if ((fragmap & field) == subfield) {
 				fraglist[siz] += cnt;
 				pos += siz;
@@ -805,16 +808,17 @@ update()
 				continue;
 			if (fs->fs_ronly != 0)
 				panic("update: rofs mod");
-			bp = getblk(mp->m_dev, SBLOCK, BSIZE);
+			bp = getblk(mp->m_dev, SBLOCK, MAXBSIZE);
 			fs->fs_fmod = 0;
 			fs->fs_time = TIME;
 			if (bp->b_un.b_fs != fs)
 				panic("update: bad b_fs");
 			bwrite(bp);
-			blks = howmany(cssize(fs), BSIZE);
+			blks = howmany(fs->fs_cssize, fs->fs_bsize);
 			for (i = 0; i < blks; i++) {
-				bp = getblk(mp->m_dev, csaddr(fs) + (i * FRAG),
-					BSIZE);
+				bp = getblk(mp->m_dev,
+				    fsbtodb(fs, fs->fs_csaddr + (i * fs->fs_frag)),
+				    fs->fs_bsize);
 				bwrite(bp);
 			}
 		}
@@ -835,4 +839,79 @@ update()
 	 * for all devices.
 	 */
 	bflush(NODEV);
+}
+
+/*
+ * block macros
+ */
+
+isblock(fs, cp, h)
+	struct fs *fs;
+	unsigned char *cp;
+	int h;
+{
+	unsigned char mask;
+
+	switch (fs->fs_frag) {
+	case 8:
+		return (cp[h] == 0xff);
+	case 4:
+		mask = 0x0f << ((h & 0x1) << 2);
+		return ((cp[h >> 1] & mask) == mask);
+	case 2:
+		mask = 0x03 << ((h & 0x3) << 1);
+		return ((cp[h >> 2] & mask) == mask);
+	case 1:
+		mask = 0x01 << (h & 0x7);
+		return ((cp[h >> 3] & mask) == mask);
+	default:
+		panic("isblock bad fs_frag");
+		return;
+	}
+}
+clrblock(fs, cp, h)
+	struct fs *fs;
+	unsigned char *cp;
+	int h;
+{
+	switch ((fs)->fs_frag) {
+	case 8:
+		cp[h] = 0;
+		return;
+	case 4:
+		cp[h >> 1] &= ~(0x0f << ((h & 0x1) << 2));
+		return;
+	case 2:
+		cp[h >> 2] &= ~(0x03 << ((h & 0x3) << 1));
+		return;
+	case 1:
+		cp[h >> 3] &= ~(0x01 << (h & 0x7));
+		return;
+	default:
+		panic("clrblock bad fs_frag");
+		return;
+	}
+}
+setblock(fs, cp, h)
+	struct fs *fs;
+	unsigned char *cp;
+	int h;
+{
+	switch (fs->fs_frag) {
+	case 8:
+		cp[h] = 0xff;
+		return;
+	case 4:
+		cp[h >> 1] |= (0x0f << ((h & 0x1) << 2));
+		return;
+	case 2:
+		cp[h >> 2] |= (0x03 << ((h & 0x3) << 1));
+		return;
+	case 1:
+		cp[h >> 3] |= (0x01 << (h & 0x7));
+		return;
+	default:
+		panic("setblock bad fs_frag");
+		return;
+	}
 }

@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)dumpfs.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.6 (Berkeley) %G%";
+
 #include "../h/param.h"
 #include "../h/fs.h"
 #include "../h/inode.h"
@@ -9,13 +10,13 @@ static	char *sccsid = "@(#)dumpfs.c	1.5 (Berkeley) %G%";
 
 union {
 	struct fs fs;
-	char pad[BSIZE];
+	char pad[MAXBSIZE];
 } fsun;
 #define	afs	fsun.fs
 
 union {
 	struct cg cg;
-	char pad[BSIZE];
+	char pad[MAXBSIZE];
 } cgun;
 #define	acg	cgun.cg
 
@@ -27,8 +28,8 @@ main(argc, argv)
 	close(0);
 	if (open(argv[1], 0) != 0)
 		perror(argv[1]), exit(1);
-	lseek(0, SBLOCK*FSIZE, 0);
-	if (read(0, &afs, BSIZE) != BSIZE)
+	lseek(0, SBLOCK * DEV_BSIZE, 0);
+	if (read(0, &afs, MAXBSIZE) != MAXBSIZE)
 		perror(argv[1]), exit(1);
 	printf("magic\t%x\n", afs.fs_magic);
 	printf("sblkno\t%d\n", afs.fs_sblkno);
@@ -36,6 +37,12 @@ main(argc, argv)
 	printf("size\t%d\n", afs.fs_size);
 	printf("blocks\t%d\n", afs.fs_dsize);
 	printf("ncg\t%d\n", afs.fs_ncg);
+	printf("bsize\t%d\n", afs.fs_bsize);
+	printf("fsize\t%d\n", afs.fs_fsize);
+	printf("frag\t%d\n", afs.fs_frag);
+	printf("minfree\t%d%%\n", afs.fs_minfree);
+	printf("rotdelay %dms\n", afs.fs_rotdelay);
+	printf("csaddr\t%d\n", afs.fs_csaddr);
 	printf("cssize\t%d\n", afs.fs_cssize);
 	printf("cgsize\t%d\n", afs.fs_cgsize);
 	printf("ntrak\t%d\nnsect\t%d\nspc\t%d\nncyl\t%d\n",
@@ -58,14 +65,15 @@ main(argc, argv)
 		}
 	}
 	printf("\ncs[].cs_(nbfree,ndir,nifree,nffree):\n\t");
-	for (i = 0; i < howmany(cssize(&afs), BSIZE); i++) {
-		afs.fs_csp[i] = (struct csum *)calloc(1, BSIZE);
-		lseek(0, (csaddr(&afs) + (i * FRAG)) * FSIZE, 0);
-		if (read(0, afs.fs_csp[i], BSIZE) != BSIZE)
+	for (i = 0; i < howmany(afs.fs_cssize, afs.fs_bsize); i++) {
+		afs.fs_csp[i] = (struct csum *)calloc(1, afs.fs_bsize);
+		lseek(0, fsbtodb(&afs, (afs.fs_csaddr + (i * afs.fs_frag))) *
+		    DEV_BSIZE, 0);
+		if (read(0, afs.fs_csp[i], afs.fs_bsize) != afs.fs_bsize)
 			perror(argv[1]), exit(1);
 	}
 	for (i = 0; i < afs.fs_ncg; i++) {
-		struct csum *cs = &afs.fs_cs(i);
+		struct csum *cs = &afs.fs_cs(&afs, i);
 		if (i && i % 4 == 0)
 			printf("\n\t");
 		printf("(%d,%d,%d,%d) ",
@@ -85,9 +93,9 @@ dumpcg(c)
 	int i,j;
 
 	printf("\ncg %d:\n", c);
-	lseek(0, cgtod(c,&afs)*FSIZE, 0);
+	lseek(0, fsbtodb(&afs, cgtod(c,&afs)) * DEV_BSIZE, 0);
 	printf("tell\t%x\n", tell(0));
-	if (read(0, (char *)&acg, afs.fs_cgsize) != afs.fs_cgsize) {
+	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
 		printf("\terror reading cg\n");
 		return;
 	}
@@ -99,7 +107,7 @@ dumpcg(c)
 	    acg.cg_cs.cs_nffree, acg.cg_cs.cs_nbfree);
 	printf("rotor\t%d\nirotor\t%d\nfrotor\t%d\nfrsum",
 	    acg.cg_rotor, acg.cg_irotor, acg.cg_frotor);
-	for (i = 1, j = 0; i < FRAG; i++) {
+	for (i = 1, j = 0; i < afs.fs_frag; i++) {
 		printf("\t%d", acg.cg_frsum[i]);
 		j += i * acg.cg_frsum[i];
 	}

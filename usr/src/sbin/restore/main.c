@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.7 %G%";
+char version[] = "@(#)main.c 1.8 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -36,8 +36,8 @@ struct odirect {
 	char	d_name[DIRSIZ];
 };
 
-#define	MWORD(m,i) (m[(unsigned)(i-1)/MLEN])
-#define	MBIT(i)	(1<<((unsigned)(i-1)%MLEN))
+#define	MWORD(m,i) (m[(unsigned)(i-1)/NBBY])
+#define	MBIT(i)	(1<<((unsigned)(i-1)%NBBY))
 #define	BIS(i,w)	(MWORD(w,i) |=  MBIT(i))
 #define	BIC(i,w)	(MWORD(w,i) &= ~MBIT(i))
 #define	BIT(i,w)	(MWORD(w,i) & MBIT(i))
@@ -89,9 +89,17 @@ struct xtrlist {
 } *xtrlist[MAXINO];
 int xtrcnt = 0;
 
-short	dumpmap[MSIZ];
-short	clrimap[MSIZ];
-char	clearedbuf[BSIZE];
+#ifdef STANDALONE
+#define msiz 8192
+char	dumpmap[msiz];
+char	clrimap[msiz];
+#else
+int	msiz;
+char	*dumpmap;
+char	*clrimap;
+#endif
+
+char	clearedbuf[MAXBSIZE];
 
 extern char *ctime();
 ino_t search();
@@ -197,8 +205,8 @@ doit(command, argc, argv)
 		mt = open(mbuf, 0);
 	} while (mt == -1);
 	magtape = mbuf;
-	blkclr(clearedbuf, BSIZE);
 #endif
+	blkclr(clearedbuf, MAXBSIZE);
 	switch(command) {
 #ifndef STANDALONE
 	case 't':
@@ -212,12 +220,12 @@ doit(command, argc, argv)
 	case 'x':
 		extractfiles(argc, argv);
 		return;
+#endif
 	case 'r':
 	case 'R':
 		restorfiles(command, argv);
 		return;
 	}
-#endif
 }
 
 #ifndef STANDALONE
@@ -228,6 +236,7 @@ extractfiles(argc, argv)
 	char	*ststore();
 	register struct xtrlist *xp;
 	struct xtrlist **xpp;
+	struct fs *fs;
 	ino_t	d;
 	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(), null();
 	int	mode;
@@ -240,6 +249,10 @@ extractfiles(argc, argv)
 	if (checkvol(&spcl, 1) == 0) {
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 	}
+	fs = getfs(dev);
+	msiz = roundup(howmany(fs->fs_ipg * fs->fs_ncg, NBBY), TP_BSIZE);
+	clrimap = (char *)calloc(msiz, sizeof(char));
+	dumpmap = (char *)calloc(msiz, sizeof(char));
 	pass1(1);  /* This sets the various maps on the way by */
 	while (argc--) {
 		if ((d = psearch(*argv)) == 0 || BIT(d,dumpmap) == 0) {
@@ -423,24 +436,26 @@ restorfiles(command, argv)
 	char mount[BUFSIZ + 1];
 	char *ptr[2];
 
-#ifndef STANDALONE
 	mount[0] = '\0';
 	strcpy(mount, "MOUNT=");
+#ifndef STANDALONE
 	strncat(mount, *argv, BUFSIZ);
+#else
+	fprintf(stderr, "Disk? ");
+	gets(&mount[6]);
+#endif
 	ptr[0] = mount;
 	ptr[1] = 0;
 	xmount(ptr);
+	mounted++;
 	iput(u.u_cdir); /* release root inode */
 	iput(u.u_rdir); /* release root inode */
-	mounted++;
-#else
-	do {
-		fprintf(stderr, "Disk? ");
-		gets(mount);
-		fi = open(mount, 2);
-	} while (fi == -1);
-#endif
+	fs = getfs(dev);
+	maxi = fs->fs_ipg * fs->fs_ncg;
 #ifndef STANDALONE
+	msiz = roundup(howmany(maxi, NBBY), TP_BSIZE);
+	clrimap = (char *)calloc(msiz, sizeof(char));
+	dumpmap = (char *)calloc(msiz, sizeof(char));
 	if (command == 'R') {
 		fprintf(stderr, "Enter starting volume number: ");
 		if (gets(tbf) == EOF) {
@@ -460,8 +475,6 @@ restorfiles(command, argv)
 							*argv);
 #endif
 	while (getchar() != '\n');
-	fs = getfs(dev);
-	maxi = fs->fs_ipg * fs->fs_ncg;
 	if (readhdr(&spcl) == 0) {
 		fprintf(stderr, "Missing volume record\n");
 		done(1);
@@ -813,30 +826,32 @@ getfile(f1, f2, size)
 	long	size;
 {
 	register int i;
-	char buf[BLKING * FRAG][TP_BSIZE];
+	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
 	union u_spcl addrblk;
+	register struct fs *fs;
 #	define addrblock addrblk.s_spcl
 
 	addrblock = spcl;
+	fs = getfs(dev);
 	for (;;) {
 		for (i = 0; i < addrblock.c_count; i++) {
 			if (addrblock.c_addr[i]) {
 				readtape(&buf[curblk++][0]);
-				if (curblk == BLKING * FRAG) {
+				if (curblk == BLKING(fs) * fs->fs_frag) {
 					(*f1)(buf, size > TP_BSIZE ?
-					     (long) (BLKING * FRAG * TP_BSIZE) :
+					     (long) (BLKING(fs) * fs->fs_frag * TP_BSIZE) :
 					     (curblk - 1) * TP_BSIZE + size);
 					curblk = 0;
 				}
-			}
-			else {
+			} else {
 				if (curblk > 0) {
 					(*f1)(buf, size > TP_BSIZE ?
 					     (long) (curblk * TP_BSIZE) :
 					     (curblk - 1) * TP_BSIZE + size);
 					curblk = 0;
 				}
-				(*f2)(clearedbuf, size > TP_BSIZE ? (long) TP_BSIZE : size);
+				(*f2)(clearedbuf, size > TP_BSIZE ?
+					(long) TP_BSIZE : size);
 			}
 			if ((size -= TP_BSIZE) <= 0) {
 eloop:
@@ -892,7 +907,8 @@ xtrcvtdir(buf, size)
 	struct odirect *buf;
 	long size;
 {
-	struct direct cvtbuf[BLKING * FRAG * TP_BSIZE / sizeof(struct odirect)];
+	struct direct
+		cvtbuf[MAXBSIZE / sizeof(struct odirect)];
 	struct odirect *odp, *edp;
 	struct direct *dp;
 
@@ -942,7 +958,8 @@ rstrcvtdir(buf, size)
 	struct odirect *buf;
 	long size;
 {
-	struct direct cvtbuf[BLKING * FRAG * TP_BSIZE / sizeof(struct odirect)];
+	struct direct
+		cvtbuf[MAXBSIZE / sizeof(struct odirect)];
 	struct odirect *odp, *edp;
 	struct direct *dp;
 
@@ -1113,7 +1130,7 @@ checktype(b, t)
  * read a bit mask from the tape into m.
  */
 readbits(m)
-	short	*m;
+	char	*m;
 {
 	register int i;
 
@@ -1121,7 +1138,7 @@ readbits(m)
 
 	while (i--) {
 		readtape((char *) m);
-		m += (TP_BSIZE/(MLEN/BITS));
+		m += (TP_BSIZE/(NBBY/BITS));
 	}
 	while (gethead(&spcl) == 0)
 		;
@@ -1195,7 +1212,7 @@ iexist(dev, ino)
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		return (0);
 	cg = itog(ino, fs);
-	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return(0);
 	cgp = bp->b_un.b_cg;

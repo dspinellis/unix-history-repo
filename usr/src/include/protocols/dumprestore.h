@@ -1,12 +1,23 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/* "@(#)dumprestore.h 1.2 %G%" */
+/* "@(#)dumprestore.h 1.3 %G%" */
 
+/*
+ * TP_BSIZE is the size of file blocks on the dump tapes.
+ * Note that TP_BSIZE must be a multiple of DEV_BSIZE.
+ *
+ * NTREC is the number of TP_BSIZE blocks that are written
+ * in each tape record.
+ *
+ * BLKING calculates the number of TP_BSIZE blocks in a file
+ * system frag.
+ *
+ * TP_NINDIR is the number of indirect pointers in a TS_INODE
+ * or TS_ADDR record. Note that it must be a power of two.
+ */
 #define TP_BSIZE	1024
 #define NTREC   	10
-#define MLEN    	16
-#define MSIZ    	4096
-#define BLKING		(FSIZE/TP_BSIZE)
+#define BLKING(fs)	((fs)->fs_fsize/TP_BSIZE)
 #define TP_NINDIR	(TP_BSIZE/2)
 
 #define TS_TAPE 	1
