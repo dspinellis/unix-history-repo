@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -50,7 +50,7 @@ savemail(e)
 	register struct passwd *pw;
 	register FILE *fp;
 	int state;
-	auto ADDRESS *q;
+	auto ADDRESS *q = NULL;
 	char buf[MAXLINE+1];
 	extern struct passwd *getpwnam();
 	register char *p;
@@ -298,7 +298,6 @@ savemail(e)
 			}
 			if (e->e_dfp != NULL)
 			{
-				auto ADDRESS *q;
 				bool oldverb = Verbose;
 
 				/* we have a home directory; open dead.letter */
