@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -682,9 +682,6 @@ dfopen(filename, omode, cmode)
 #ifdef ETXTBSY
 		  case ETXTBSY:		/* Apollo: net file locked */
 #endif
-			break;
-
-		  default:
 			continue;
 		}
 		break;
