@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	6.8 (Berkeley) %G%
+ *	@(#)if_uba.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -157,7 +157,7 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 	struct mbuf *top, **mp;
 	register struct mbuf *m;
 	int off = off0, len;
-	register caddr_t cp = ifr->ifrw_addr + ifu->iff_hlen;
+	register caddr_t cp = ifr->ifrw_addr + ifu->iff_hlen, p;
 
 	top = 0;
 	mp = &top;
@@ -176,7 +176,6 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 		} else
 			len = totlen;
 		if (len >= NBPG) {
-			struct mbuf *p;
 			struct pte *cpte, *ppte;
 			int x, *ip, i;
 
@@ -189,11 +188,10 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 				len = 0;
 				goto nopage;
 			}
-			MCLGET(p, 1);
-			if (p == 0)
+			MCLGET(m);
+			if (m->m_len != CLBYTES)
 				goto nopage;
 			m->m_len = MIN(len, CLBYTES);
-			m->m_off = (int)p - (int)m;
 			if (!claligned(cp))
 				goto copy;
 
@@ -201,6 +199,7 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			 * Switch pages mapped to UNIBUS with new page p,
 			 * as quick form of copy.  Remap UNIBUS and invalidate.
 			 */
+			p = mtod(m, char *);
 			cpte = &Mbmap[mtocl(cp)*CLSIZE];
 			ppte = &Mbmap[mtocl(p)*CLSIZE];
 			x = btop(cp - ifr->ifrw_addr);
@@ -213,7 +212,7 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 				mtpr(TBIS, cp);
 				cp += NBPG;
 				mtpr(TBIS, (caddr_t)p);
-				p += NBPG / sizeof (*p);
+				p += NBPG;
 			}
 			goto nocopy;
 		}
