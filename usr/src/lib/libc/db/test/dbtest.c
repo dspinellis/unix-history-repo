@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -541,6 +541,10 @@ setinfo(type, s)
 		}
 		if (!strcmp("bval", s)) {
 			rh.bval = strtoul(eq, NULL, 0);
+			return (&rh);
+		}
+		if (!strcmp("psize", s)) {
+			rh.psize = strtoul(eq, NULL, 0);
 			return (&rh);
 		}
 		break;
