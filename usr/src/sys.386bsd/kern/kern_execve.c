@@ -50,6 +50,13 @@
  * Significant limitations and lack of compatiblity with POSIX are
  * present with this version, to make its basic operation more clear.
  *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00024
+ * --------------------         -----   ----------------------
+ *
+ * 29 Jul 92	Mark Tinguely		Fixed execute permission enforcement
+ * 15 Aug 92    Terry Lambert           Fixed CMOS RAM size bug
  */
 
 #include "param.h"
@@ -120,7 +127,10 @@ execve(p, uap, retval)
 		goto exec_fail;
 
 	/* is it executable, and a regular file? */
-	if ((attr.va_mode & VEXEC) == 0 || attr.va_type != VREG) {
+	if ((ndp->ni_vp->v_mount->mnt_flag & MNT_NOEXEC) ||	/* 29 Jul 92*/
+		(VOP_ACCESS(ndp->ni_vp, VEXEC, p->p_ucred, p)) ||
+		((attr.va_mode & 0111) == 0) ||
+		(attr.va_type != VREG)) {
 		rv = EACCES;
 		goto exec_fail;
 	}
