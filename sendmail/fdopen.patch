@@ -1,0 +1,26 @@
+If your system doesn't buffer streams that are fdopen'd,
+apply the following patch.  It makes a tremendous difference.
+
+*** deliver.c.orig	Wed Jul 23 18:27:04 1986
+--- deliver.c	Tue Nov 24 14:39:10 1987
+***************
+*** 694,699 ****
+--- 694,700 ----
+  	FILE *mfile;
+  	FILE *rfile;
+  	extern FILE *fdopen();
++ 	static char mbuffer[BUFSIZ];
+  
+  # ifdef DEBUG
+  	if (tTd(11, 1))
+***************
+*** 910,915 ****
+--- 925,931 ----
+  
+  	(void) close(mpvect[0]);
+  	mfile = fdopen(mpvect[1], "w");
++ 	setbuffer(mfile, mbuffer, BUFSIZ);
+  	if (clever)
+  	{
+  		(void) close(rpvect[1]);
+
