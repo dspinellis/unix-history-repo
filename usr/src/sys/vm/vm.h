@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm.h	7.1 (Berkeley) %G%
+ *	@(#)vm.h	7.2 (Berkeley) %G%
  */
 
 #ifndef VM_H
@@ -16,8 +16,8 @@
 #include <vm/vm_inherit.h>
 #include <vm/vm_map.h>
 #include <vm/vm_object.h>
-#include <vm/vm_statistics.h>
 #include <vm/pmap.h>
+#include <sys/vmmeter.h>
 
 /*
  * Shareable process virtual address space.
