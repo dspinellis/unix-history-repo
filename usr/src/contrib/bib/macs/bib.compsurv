@@ -1,17 +1,24 @@
 #
-#	"@(#)bib.compsurv	2.1	%G%";
+#	"@(#)bib.compsurv	2.2	%G%";
 #
 #  Computing Surveys style references
 #
 I BMACLIB/bibinc.shortnames
 C4<\0>D-4
 SAD-2
-A
-E
+SAD-2
+AA
+AR
+AX
+EA
+AR
+AX
 .so \*(l]/bmac.std
 .ds m] "\&, and \&
 .ds ], ;\|
 .de s[   \" start reference
+.LP
+.in 0.5i
+.ti -0.5i
 .nh
-.IP [\\*([F] 10n
 ..
