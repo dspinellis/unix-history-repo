@@ -14,7 +14,7 @@
  * A file system is described by its super-block, which in turn
  * describes the cylinder groups.  The super-block is critical
  * data and is replicated in each cylinder group to protect against
- * catastrophic loss.  This is done at mkfs time and the critical
+ * catastrophic loss.  This is done at `newfs' time and the critical
  * super-block data does not change, so the copies need not be
  * referenced further unless disaster strikes.
  *
@@ -66,31 +66,8 @@
  * thus the root inode is 2. (inode 1 is no longer used for
  * this purpose, however numerous dump tapes make this
  * assumption, so we are stuck with it)
- * The lost+found directory is given the next available
- * inode when it is created by ``mkfs''.
  */
 #define	ROOTINO		((ino_t)2)	/* i number of all roots */
-#define LOSTFOUNDINO	(ROOTINO + 1)
-
-/*
- * Cylinder group related limits.
- *
- * For each cylinder we keep track of the availability of blocks at different
- * rotational positions, so that we can lay out the data to be picked
- * up with minimum rotational latency.  NRPOS is the number of rotational
- * positions which we distinguish.  With NRPOS 8 the resolution of our
- * summary information is 2ms for a typical 3600 rpm drive.
- */
-#define	NRPOS		8	/* number distinct rotational positions */
-
-/*
- * MAXIPG bounds the number of inodes per cylinder group, and
- * is needed only to keep the structure simpler by having the
- * only a single variable size element (the free bit map).
- *
- * N.B.: MAXIPG must be a multiple of INOPB(fs).
- */
-#define	MAXIPG		2048	/* max number inodes/cyl group */
 
 /*
  * MINBSIZE is the smallest allowable block size.
@@ -98,14 +75,10 @@
  * 2^32 with only two levels of indirection, MINBSIZE is set to 4096.
  * MINBSIZE must be big enough to hold a cylinder group block,
  * thus changes to (struct cg) must keep its size within MINBSIZE.
- * MAXCPG is limited only to dimension an array in (struct cg);
- * it can be made larger as long as that structures size remains
- * within the bounds dictated by MINBSIZE.
  * Note that super blocks are always of size SBSIZE,
  * and that both SBSIZE and MAXBSIZE must be >= MINBSIZE.
  */
 #define MINBSIZE	4096
-#define	MAXCPG		32	/* maximum fs_cpg */
 
 /*
  * The path name on which the file system is mounted is maintained
@@ -115,7 +88,7 @@
  * is defined by MAXCSBUFS. It is currently parameterized for a
  * maximum of two million cylinders.
  */
-#define MAXMNTLEN 384
+#define MAXMNTLEN 512
 #define MAXCSBUFS 32
 
 /*
@@ -212,9 +185,16 @@ struct	fs
 	long	fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	long	fs_cpc;			/* cyl per cycle in postbl */
-	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
+	short	fs_opostbl[16][8];	/* old rotation block list head */
+	long	fs_sparecon[56];	/* reserved for future constants */
+	quad	fs_qbmask;		/* ~fs_bmask - for use with quad size */
+	quad	fs_qfmask;		/* ~fs_fmask - for use with quad size */
+	long	fs_postblformat;	/* format of positional layout tables */
+	long	fs_nrpos;		/* number of rotaional positions */
+	long	fs_postbloff;		/* (short) rotation block list head */
+	long	fs_rotbloff;		/* (u_char) blocks for each rotation */
 	long	fs_magic;		/* magic number */
-	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
+	u_char	fs_space[1];		/* list of blocks for each rotation */
 /* actually longer */
 };
 /*
@@ -222,6 +202,23 @@ struct	fs
  */
 #define FS_OPTTIME	0	/* minimize allocation time */
 #define FS_OPTSPACE	1	/* minimize disk fragmentation */
+
+/*
+ * Rotational layout table format types
+ */
+#define FS_42POSTBLFMT		-1	/* 4.2BSD rotational table format */
+#define FS_DYNAMICPOSTBLFMT	1	/* dynamic rotational table format */
+/*
+ * Macros for access to superblock array structures
+ */
+#define fs_postbl(fs, cylno) \
+    (((fs)->fs_postblformat == FS_42POSTBLFMT) \
+    ? ((fs)->fs_opostbl[cylno]) \
+    : ((short *)((char *)(fs) + (fs)->fs_postbloff) + (cylno) * (fs)->fs_nrpos))
+#define fs_rotbl(fs) \
+    (((fs)->fs_postblformat == FS_42POSTBLFMT) \
+    ? ((fs)->fs_space) \
+    : ((u_char *)((char *)(fs) + (fs)->fs_rotbloff)))
 
 /*
  * Convert cylinder group to base address of its global summary info.
@@ -232,23 +229,12 @@ struct	fs
 	fs_csp[(indx) >> (fs)->fs_csshift][(indx) & ~(fs)->fs_csmask]
 
 /*
- * MAXBPC bounds the size of the rotational layout tables and
- * is limited by the fact that the super block is of size SBSIZE.
- * The size of these tables is INVERSELY proportional to the block
- * size of the file system. It is aggravated by sector sizes that
- * are not powers of two, as this increases the number of cylinders
- * included before the rotational pattern repeats (fs_cpc).
- * Its size is derived from the number of bytes remaining in (struct fs)
- */
-#define	MAXBPC	(SBSIZE - sizeof (struct fs))
-
-/*
  * Cylinder group block for a file system.
  */
 #define	CG_MAGIC	0x090255
 struct	cg {
 	struct	cg *cg_link;		/* linked list of cyl groups */
-	struct	cg *cg_rlink;		/*     used for incore cyl groups */
+	long	cg_magic;		/* magic number */
 	time_t	cg_time;		/* time last written */
 	long	cg_cgx;			/* we are the cgx'th cylinder group */
 	short	cg_ncyl;		/* number of cyl's this cg */
@@ -259,22 +245,61 @@ struct	cg {
 	long	cg_frotor;		/* position of last used frag */
 	long	cg_irotor;		/* position of last used inode */
 	long	cg_frsum[MAXFRAG];	/* counts of available frags */
-	long	cg_btot[MAXCPG];	/* block totals per cylinder */
-	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
-	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
+	long	cg_btotoff;		/* (long) block totals per cylinder */
+	long	cg_boff;		/* (short) free block positions */
+	long	cg_iusedoff;		/* (char) used inode map */
+	long	cg_freeoff;		/* (u_char) free block map */
+	long	cg_nextfreeoff;		/* (u_char) next available space */
+	long	cg_sparecon[16];	/* reserved for future use */
+	u_char	cg_space[1];		/* space for cylinder group maps */
+/* actually longer */
+};
+/*
+ * Macros for access to cylinder group array structures
+ */
+#define cg_blktot(cgp) \
+    (((cgp)->cg_magic != CG_MAGIC) \
+    ? (((struct ocg *)(cgp))->cg_btot) \
+    : ((long *)((char *)(cgp) + (cgp)->cg_btotoff)))
+#define cg_blks(fs, cgp, cylno) \
+    (((cgp)->cg_magic != CG_MAGIC) \
+    ? (((struct ocg *)(cgp))->cg_b[cylno]) \
+    : ((short *)((char *)(cgp) + (cgp)->cg_boff) + (cylno) * (fs)->fs_nrpos))
+#define cg_inosused(cgp) \
+    (((cgp)->cg_magic != CG_MAGIC) \
+    ? (((struct ocg *)(cgp))->cg_iused) \
+    : ((char *)((char *)(cgp) + (cgp)->cg_iusedoff)))
+#define cg_blksfree(cgp) \
+    (((cgp)->cg_magic != CG_MAGIC) \
+    ? (((struct ocg *)(cgp))->cg_free) \
+    : ((u_char *)((char *)(cgp) + (cgp)->cg_freeoff)))
+#define cg_chkmagic(cgp) \
+    ((cgp)->cg_magic == CG_MAGIC || ((struct ocg *)(cgp))->cg_magic == CG_MAGIC)
+
+/*
+ * The following structure is defined
+ * for compatibility with old file systems.
+ */
+struct	ocg {
+	struct	ocg *cg_link;		/* linked list of cyl groups */
+	struct	ocg *cg_rlink;		/*     used for incore cyl groups */
+	time_t	cg_time;		/* time last written */
+	long	cg_cgx;			/* we are the cgx'th cylinder group */
+	short	cg_ncyl;		/* number of cyl's this cg */
+	short	cg_niblk;		/* number of inode blocks this cg */
+	long	cg_ndblk;		/* number of data blocks this cg */
+	struct	csum cg_cs;		/* cylinder summary information */
+	long	cg_rotor;		/* position of last used block */
+	long	cg_frotor;		/* position of last used frag */
+	long	cg_irotor;		/* position of last used inode */
+	long	cg_frsum[8];		/* counts of available frags */
+	long	cg_btot[32];		/* block totals per cylinder */
+	short	cg_b[32][8];		/* positions of free blocks */
+	char	cg_iused[256];		/* used inode map */
 	long	cg_magic;		/* magic number */
 	u_char	cg_free[1];		/* free block map */
 /* actually longer */
 };
-
-/*
- * MAXBPG bounds the number of blocks of data per cylinder group,
- * and is limited by the fact that cylinder groups are at most one block.
- * Its size is derived from the size of blocks and the (struct cg) size,
- * by the number of remaining bits.
- */
-#define	MAXBPG(fs) \
-	(fragstoblks((fs), (NBBY * ((fs)->fs_bsize - (sizeof (struct cg))))))
 
 /*
  * Turn file system block numbers into disk block addresses.
@@ -325,7 +350,7 @@ struct	cg {
 #define cbtorpos(fs, bno) \
     (((bno) * NSPF(fs) % (fs)->fs_spc / (fs)->fs_nsect * (fs)->fs_trackskew + \
      (bno) * NSPF(fs) % (fs)->fs_spc % (fs)->fs_nsect * (fs)->fs_interleave) % \
-     (fs)->fs_nsect * NRPOS / (fs)->fs_npsect)
+     (fs)->fs_nsect * (fs)->fs_nrpos / (fs)->fs_npsect)
 
 /*
  * The following macros optimize certain frequently calculated
