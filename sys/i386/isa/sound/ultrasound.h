@@ -35,7 +35,7 @@
 #ifdef linux
 #include <linux/soundcard.h>
 #else
-#include <sys/soundcard.h>
+#include <machine/soundcard.h>
 #endif
 
 /*
