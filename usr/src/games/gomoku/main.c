@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -100,9 +100,9 @@ main(argc, argv)
 
 	if (!debug)
 #ifdef SVR4
-		srandom(time(0));
-#else
 		srand(time(0));
+#else
+		srandom(time(0));
 #endif
 	if (interactive)
 		cursinit();		/* initialize curses */
@@ -118,7 +118,7 @@ again:
 		signal(SIGINT, quit);
 #endif
 
-		if (test != 3) {
+		if (test == 0) {
 			for (;;) {
 				ask("black or white? ");
 				getline(buf, sizeof buf);
@@ -256,10 +256,26 @@ again:
 		clrtoeol();
 		bdisp();
 		if (i != RESIGN) {
+		replay:
 			ask("replay? ");
 			if (getline(buf, sizeof buf) &&
 			    buf[0] == 'y' || buf[0] == 'Y')
 				goto again;
+			if (strcmp(buf, "save") == 0) {
+				FILE *fp;
+
+				ask("save file name? ");
+				(void)getline(buf, sizeof buf);
+				if ((fp = fopen(buf, "w")) == NULL) {
+					log("cannot create save file");
+					goto replay;
+				}
+				for (i = 0; i < movenum - 1; i++)
+					fprintf(fp, "%s\n",
+						stoc(movelog[i]));
+				fclose(fp);
+				goto replay;
+			}
 		}
 	}
 	quit();
