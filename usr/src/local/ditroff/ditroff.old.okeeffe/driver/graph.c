@@ -1,4 +1,4 @@
-/* graph.c	1.4	83/07/08
+/* graph.c	1.5	83/07/08
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -553,7 +553,7 @@ int numpoints;
 	register int k;
 	register int nx;
 	register int ny;
-	int lx, ly,;
+	int lx, ly;
 
 
 	lx = (int) x[1];
