@@ -1,3 +1,12 @@
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00097
+# --------------------         -----   ----------------------
+#
+# 17 Feb 93	Julian Elischer		Added files for scsi
+# 10 Mar 93	Rodney W. Grimes	Added files for lpt and lpa
+#
 i386/i386/autoconf.c	standard device-driver
 i386/i386/cons.c		standard
 i386/isa/pccons.c	optional pc device-driver
@@ -25,3 +34,14 @@ i386/isa/as.c		optional as device-driver
 i386/i386/db_disasm.c	optional ddb
 i386/i386/db_interface.c	optional ddb
 i386/i386/db_trace.c	optional ddb
+i386/isa/aha1742.c	optional ahb
+i386/isa/aha1542.c	optional aha
+i386/isa/bt742a.c	optional bt
+i386/isa/ultra14f.c	optional uha
+scsi/scsiconf.c		optional scbus
+scsi/st.c		optional st
+scsi/sd.c		optional sd
+scsi/cd.c		optional cd
+scsi/ch.c		optional ch
+i386/isa/lpt.c	optional lpt
+i386/isa/lpa.c	optional lpa
