@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
- * from: hp300/hp300/machdep.c	7.35 (Berkeley) 12/28/92
+ * from: hp300/hp300/machdep.c   7.36 (Berkeley) 2/10/93
  *
- *	@(#)machdep.c	7.7 (Berkeley) %G%
+ *	@(#)machdep.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,6 +46,9 @@
 
 #define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
 #include <vm/vm_kern.h>
+
+/* the following is used externally (sysctl_hw) */
+char machine[] = "luna68k";		/* cpu "architecture" */
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
@@ -305,13 +308,23 @@ setregs(p, entry, retval)
 #endif
 }
 
+extern	char machine[];
+char	cpu_model[120];
+extern	char ostype[], osrelease[], version[];
+
 identifyfpu()
 {
-    if ( fpptype == -1 ) {
-	printf("unknow FPU type \n");
-	panic("startup");
-    }
-    printf("LUNA(20Mhz MC68030 CPU, 20Mhz MC6888%d FPU)\n",fpptype);
+	if ( fpptype == -1 ) {
+		printf("unknow FPU type \n");
+		panic("startup");
+	}
+
+	sprintf(cpu_model, "LUNA-I (20MHz MC68030 CPU+MMU, 20MHz MC6888%d FPU)", fpptype);
+	printf("%s\n", cpu_model);
+
+/*
+	printf("LUNA(20Mhz MC68030 CPU, 20Mhz MC6888%d FPU)\n",fpptype);
+ */
 }
 
 #define SS_RTEFRAME	1
