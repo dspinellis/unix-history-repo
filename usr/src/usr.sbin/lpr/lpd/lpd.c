@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -403,11 +403,17 @@ startup()
 	 * Restart the daemons.
 	 */
 	while (cgetnext(&buf, printcapdb) > 0) {
+		if (ckqueue() <= 0 ) {
+			free(buf);
+			continue;	/* no work to do for this printer */
+		}
 		for (cp = buf; *cp; cp++)
 			if (*cp == '|' || *cp == ':') {
 				*cp = '\0';
 				break;
 			}
+		if (lflag)
+			syslog(LOG_INFO, "work for %s", buf);
 		if ((pid = fork()) < 0) {
 			syslog(LOG_WARNING, "startup: cannot fork");
 			mcleanup(0);
@@ -416,8 +422,33 @@ startup()
 			printer = buf;
 			cgetclose();
 			printjob();
+			/* NOTREACHED */
 		}
+		else free(buf);
 	}
+}
+
+/*
+ * Make sure there's some work to do before forking off a child
+ */
+ckqueue()
+{
+	register struct dirent *d;
+	DIR *dirp;
+	char *spooldir;
+
+	if (cgetstr(bp, "sd", &spooldir) == -1)
+		spooldir = _PATH_DEFSPOOL;
+	if ((dirp = opendir(spooldir)) == NULL)
+		return (-1);
+	while ((d = readdir(dirp)) != NULL) {
+		if (d->d_name[0] != 'c' || d->d_name[1] != 'f')
+			continue;	/* daemon control files only */
+		closedir(dirp);
+		return (1);		/* found something */
+	}
+	closedir(dirp);
+	return (0);
 }
 
 #define DUMMY ":nobody::"
