@@ -36,7 +36,7 @@ static int wdtest = 0;
  * SUCH DAMAGE.
  *
  *	from: @(#)wx.c	7.2 (Berkeley) 5/9/91
- *	$Id: wx.c,v 1.3 1993/11/03 18:04:15 nate Exp $
+ *	$Id: wx.c,v 1.4 1993/11/18 05:02:24 rgrimes Exp $
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -1232,9 +1232,13 @@ wddump(dev_t dev)			/* dump core after a system crash */
 					   panic during the dump */
 #endif
 	wddoingadump = 1  ;  i = 100000 ;
+	/* must delay 5us to conform to ATA spec */
+	DELAY(5);
 	while ((inb(wdc+wd_status) & WDCS_BUSY) && (i-- > 0)) ;
 	outb(wdc+wd_sdh, WDSD_IBM | (unit << 4));
 	outb(wdc+wd_command, WDCC_RESTORE | WD_STEP);
+	/* must delay 5us to conform to ATA spec */
+	DELAY(5);
 	while (inb(wdc+wd_status) & WDCS_BUSY) ;
 
 	/* some compaq controllers require this ... */
@@ -1321,6 +1325,8 @@ wddump(dev_t dev)			/* dump core after a system crash */
 		if (inb(wdc+wd_status) & WDCS_DRQ) return(EIO) ;
 
 		/* wait for completion */
+		/* must delay 5us to conform to ATA spec */
+		DELAY(5);
 		for ( i = WDCTIMEOUT ; inb(wdc+wd_status) & WDCS_BUSY ; i--) {
 				if (i < 0) return (EIO) ;
 		}
@@ -1440,6 +1446,8 @@ wdwait(struct disk *du, u_char bits_wanted)
 	do {
 if (min_retries > retries || min_retries == 0)
 	min_retries = retries;
+		/* must delay 5us to conform to ATA spec */
+		DELAY(5);
 		du->dk_status = status = inb(wdc + wd_status);
 		if (!(status & WDCS_BUSY)) {
 			if (status & WDCS_ERR) {
