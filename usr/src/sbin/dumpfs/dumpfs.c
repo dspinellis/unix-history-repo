@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	2.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	2.4 (Berkeley) %G%";
 
 #ifndef SIMFS
 #include <sys/param.h>
@@ -40,23 +40,28 @@ main(argc, argv)
 	printf("magic\t%x\ttime\t%s", afs.fs_magic, ctime(&afs.fs_time));
 	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
 	    afs.fs_sblkno, afs.fs_cblkno, afs.fs_iblkno, afs.fs_dblkno);
-	printf("cgoffset\t%d\tcgmask\t0x%08x\n",
-	    afs.fs_cgoffset, afs.fs_cgmask);
-	printf("ncg\t%d\tsize\t%d\tblocks\t%d\tcgsize\t%d\n",
-	    afs.fs_ncg, afs.fs_size, afs.fs_dsize, afs.fs_cgsize);
+	printf("sbsize\t%d\tcgsize\t%d\tcgoffset %d\tcgmask\t0x%08x\n",
+	    afs.fs_sbsize, afs.fs_cgsize, afs.fs_cgoffset, afs.fs_cgmask);
+	printf("ncg\t%d\tsize\t%d\tblocks\t%d\n",
+	    afs.fs_ncg, afs.fs_size, afs.fs_dsize);
 	printf("bsize\t%d\tshift\t%d\tmask\t0x%08x\n",
 	    afs.fs_bsize, afs.fs_bshift, afs.fs_bmask);
 	printf("fsize\t%d\tshift\t%d\tmask\t0x%08x\n",
 	    afs.fs_fsize, afs.fs_fshift, afs.fs_fmask);
-	printf("frag\t%d\tminfree\t%d%%\tmaxbpg\t%d\n",
-	    afs.fs_frag, afs.fs_minfree, afs.fs_maxbpg);
+	printf("frag\t%d\tshift\t%d\tfsbtodb\t%d\n",
+	    afs.fs_frag, afs.fs_fragshift, afs.fs_fsbtodb);
+	printf("minfree\t%d%%\tmaxbpg\t%d\n",
+	    afs.fs_minfree, afs.fs_maxbpg);
 	printf("maxcontig %d\trotdelay %dms\trps\t%d\n",
 	    afs.fs_maxcontig, afs.fs_rotdelay, afs.fs_rps);
-	printf("csaddr\t%d\tcssize\t%d\n", afs.fs_csaddr, afs.fs_cssize);
+	printf("csaddr\t%d\tcssize\t%d\tshift\t%d\tmask\t0x%08x\n",
+	    afs.fs_csaddr, afs.fs_cssize, afs.fs_csshift, afs.fs_csmask);
 	printf("ntrak\t%d\tnsect\t%d\tspc\t%d\tncyl\t%d\n",
 	    afs.fs_ntrak, afs.fs_nsect, afs.fs_spc, afs.fs_ncyl);
 	printf("cpg\t%d\tbpg\t%d\tfpg\t%d\tipg\t%d\n",
 	    afs.fs_cpg, afs.fs_fpg / afs.fs_frag, afs.fs_fpg, afs.fs_ipg);
+	printf("nindir\t%d\tinopb\t%d\tnspf\t%d\n",
+	    afs.fs_nindir, afs.fs_inopb, afs.fs_nspf);
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
 	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_ndir,
 	    afs.fs_cstotal.cs_nifree, afs.fs_cstotal.cs_nffree);
