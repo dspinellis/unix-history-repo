@@ -59,98 +59,119 @@ static  int		pairpoints, runpoints;	/* globals from pairuns */
 
 
 /*
- * scorehand score the given hand of n cards and the starter card
- * n must be <= 4
+ * scorehand:
+ *	Score the given hand of n cards and the starter card.
+ *	n must be <= 4
  */
-
-scorehand( hand, starter, n, crb )
-
-    CARD		hand[];
-    CARD		starter;
-    int			n;
-    BOOLEAN		crb;			/* true if scoring crib */
+scorehand(hand, starter, n, crb, do_explain)
+register CARD		hand[];
+CARD			starter;
+int			n;
+BOOLEAN			crb;		/* true if scoring crib */
+BOOLEAN			do_explain;	/* true if must explain this hand */
 {
-	CARD			h[ (CINHAND + 1) ];
-	register  int		i, k;
-	int			score;
+	CARD			h[(CINHAND + 1)];
+	register int		i, k;
+	register int		score;
 	BOOLEAN			flag;
 	char			buf[32];
 
 	expl[0] = NULL;		/* initialize explanation */
 	score = 0;
-	flag = TRUE;
+	flag = !crb;
 	k = hand[0].suit;
-	for( i = 0; i < n; i++ )  {			/* check for flush */
-	    flag = flag  &&  ( hand[i].suit == k );
-	    if(  hand[i].rank == JACK  )  {		/* check for his nibs */
-		if(  hand[i].suit == starter.suit  )  {
-		    score += 1;
-		    strcat( expl, "His Nobs" );
+	for (i = 0; i < n; i++) {			/* check for flush */
+	    flag = (flag && (hand[i].suit == k));
+	    if (hand[i].rank == JACK)			/* check for his nibs */
+		if (hand[i].suit == starter.suit) {
+		    score++;
+		    if (do_explain)
+			strcat(expl, "His Nobs");
 		}
-	    }
 	    h[i] = hand[i];
 	}
-	if(  flag  &&  n >= CINHAND  )  {
-	    if(  expl[0] != NULL  )  strcat( expl, ", " );
-	    if(  starter.suit == k  )  {
+
+	if (flag && n >= CINHAND) {
+	    if (do_explain && expl[0] != NULL)
+		strcat(expl, ", ");
+	    if (starter.suit == k) {
 		score += 5;
-		strcat( expl, "Five-flush" );
+		if (do_explain)
+		    strcat(expl, "Five-flush");
 	    }
-	    else  if( !crb )  {
+	    else if (!crb) {
 		score += 4;
-		if(  expl[0] != NULL  )  strcat( expl, ", Four-flush" );
-		strcat( expl, "Four-flush" );
+		if (do_explain && expl[0] != NULL)
+		    strcat(expl, ", Four-flush");
+		else
+		    strcpy(expl, "Four-flush");
 	    }
 	}
-	if(  expl[0] != NULL  )  strcat( expl, ", " );
-	h[ n ] = starter;
-	sorthand( h, n + 1 );			/* sort by rank */
-	i = 2*fifteens( h, n + 1 );
+
+	if (do_explain && expl[0] != NULL)
+	    strcat(expl, ", ");
+	h[n] = starter;
+	sorthand(h, n + 1);			/* sort by rank */
+	i = 2 * fifteens(h, n + 1);
 	score += i;
-	if(  i > 0  )  {
-	    sprintf( buf, "%d points in fifteens", i );
-	    strcat( expl, buf );
-	}
-	else  {
-	    strcat( expl, "No fifteens" );
-	}
-	i = pairuns( h, n + 1 );
+	if (do_explain)
+	    if (i > 0) {
+		sprintf(buf, "%d points in fifteens", i);
+		strcat(expl, buf);
+	    }
+	    else
+		strcat(expl, "No fifteens");
+	i = pairuns(h, n + 1);
 	score += i;
-	if(  i > 0  )  {
-	    sprintf( buf, ", %d points in pairs, %d in runs", pairpoints, runpoints );
-	    strcat( expl, buf );
-	}
-	else  {
-	    strcat( expl, ", No pairs/runs" );
-	}
-	return( score );
+	if (do_explain)
+	    if (i > 0) {
+		sprintf(buf, ", %d points in pairs, %d in runs", pairpoints,
+		    runpoints);
+		strcat(expl, buf);
+	    }
+	    else
+		strcat(expl, ", No pairs/runs");
+	return score;
 }
 
-
-
 /*
- * return number of fifteens in hand of n cards
+ * fifteens:
+ *	Return number of fifteens in hand of n cards
  */
-
-fifteens( hand, n )
-
-    CARD		hand[];
-    int			n;
+fifteens(hand, n)
+register CARD		hand[];
+int			n;
 {
-	int			sums[ 15 ],  nsums[ 15 ];
-	register  int		i, j, k;
+	register int		*sp, *np;
+	register int		i;
+	register CARD		*endp;
+	static int		sums[15], nsums[15];
 
-	for( i = 0; i < 15; i++ )  nsums[i] = sums[i] = 0;
-	for( i = 0; i < n; i++ )  {
-	    k = hand[i].rank + 1;
-	    if( k > 10 )  k = 10;
-	    for( j = 1; j + k <= 15; j++ )  {
-		nsums[j + k - 1] += sums[j - 1];
-	    }
-	    nsums[ k - 1 ] += 1;		/* one way to make this */
-	    for( j = 0; j < 15; j++ )  sums[j] = nsums[j];
+	np = nsums;
+	sp = sums;
+	i = 16;
+	while (--i) {
+	    *np++ = 0;
+	    *sp++ = 0;
 	}
-	return(  sums[14]  );
+	for (endp = &hand[n]; hand < endp; hand++) {
+	    i = hand->rank + 1;
+	    if (i > 10)
+		i = 10;
+	    np = &nsums[i];
+	    np[-1]++;			/* one way to make this */
+	    sp = sums;
+	    while (i < 15) {
+		*np++ += *sp++;
+		i++;
+	    }
+	    sp = sums;
+	    np = nsums;
+	    i = 16;
+	    while (--i)
+		*sp++ = *np++;
+	}
+	return sums[14];
 }
 
 

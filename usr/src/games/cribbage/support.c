@@ -85,7 +85,7 @@ char		*s;
 
 	prhand(hand, CINHAND, Playwin);
 	sprintf(prompt, "Your %s scores ", s);
-	i = scorehand(hand, turnover, CINHAND, FALSE);	/* count */
+	i = scorehand(hand, turnover, CINHAND, FALSE, explain);	/* count */
 	if ((j = number(0, 29, prompt)) == 19)
 	    j = 0;
 	if (i != j) {
@@ -117,7 +117,7 @@ char		*s;
 {
 	register int		j;
 
-	j = scorehand(h, turnover, CINHAND, FALSE);
+	j = scorehand(h, turnover, CINHAND, FALSE, FALSE);
 	prhand(h, CINHAND, Compwin);
 	Hasread = FALSE;
 	msg("My %s scores %d", s, (j == 0 ? 19 : j));
@@ -216,7 +216,7 @@ cdiscard( mycrib )
 		remove( chand[i], h, FULLHAND );
 		remove( chand[j], h, FULLHAND - 1 );
 		for( k = 0; k < nc; k++ )  {
-		    sums[ns] += scorehand( h, d[k], CINHAND, TRUE );
+		    sums[ns] += scorehand( h, d[k], CINHAND, TRUE, FALSE );
 		    if( mycrib )  sums[ns] += adjust( cb, d[k] );
 		    else	  sums[ns] -= adjust( cb, d[k] );
 		}
