@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.7 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -257,13 +257,14 @@ newnodes++;
 #endif
 		vp->v_flag = 0;
 		vp->v_lastr = 0;
+		vp->v_ralen = 0;
+		vp->v_maxra = 0;
 		vp->v_lastw = 0;
 		vp->v_lasta = 0;
 		vp->v_cstart = 0;
 		vp->v_clen = 0;
 		vp->v_socket = 0;
 	}
-	vp->v_ralen = 1;
 	vp->v_type = VNON;
 	cache_purge(vp);
 	vp->v_tag = tag;
