@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rm.1	6.4 (Berkeley) %G%
+.\"     @(#)rm.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RM 1
@@ -14,27 +14,53 @@
 .Sh SYNOPSIS
 .Nm rm
 .Op Fl f Li \&| Fl i
-.Op Fl Rr
+.Op Fl dRr
 .Ar file ...
 .Sh DESCRIPTION
-The rm utility removes the directory entry specified by each
-file argument.
+The
+.Nm rm
+utility attempts to remove the non-directory type files specified on the
+command line.
+If the permissions of the file do not permit writing, and the standard
+input device is a terminal, the user is prompted for confirmation.
 .Pp
 The following options are available:
 .Tw 8n
+.Tp Fl d
+Attempt to remove directories as well as other types of files.
 .Tp Fl f
-Force each specified directory entry to be removed
-without prompting for confirmation, regardless of
-the permissions of the file to which it refers.
-Suppress diagnostic messages regarding non-existent
-operands.
+Attempt to remove the files without prompting for confirmation,
+regardless of the file's permissions.
+If the file does not exist, do not display a diagnostic message or modify
+the exit status to reflect an error.
+The
+.Fl f
+option overrides any previous
+.Fl i 
+options.
 .Tp Fl i
-Write a prompt to the standard error output
-requesting confirmation before removing each existing
-directory entry, regardless of the permissions
-of the file to which it refers.
+Request confirmation before attempting to remove each file, regardless of
+the file's permissions, or whether or not the standard input device is a
+terminal.
+The
+.Fl i
+option overrides any previous
+.Fl f 
+options.
 .Tp Fl R
-Permit directories to be removed (recursively).
+Attempt to remove the file hierarchy rooted in each file argument.
+The 
+.Fl R
+option implies the
+.Fl d
+option.
+If the
+.Fl i
+option is specified, the user is prompted for confirmation before 
+each directory's contents are processed (as well as before the attempt
+is made to remove the directory).
+If the user does not respond affirmatively, the file hierarchy rooted in
+that directory is skipped.
 .Pp
 .Tp Fl r
 Equivalent to
@@ -49,15 +75,26 @@ A pathname of a directory entry to be removed.
 .Pp
 The
 .Nm rm
+utility removes symbolic links, not the files referenced by the links.
+.Pp
+It is an error to attempt to remove the files ``.'' and ``..''.
+.Pp
+The
+.Nm rm
 utility exits with one of the following values:
 .Tw Ds
 .Tp Li 0
-All the named directory entries were removed.
+All the named files were removed or the
+.Fl f
+option was specified and some of the directory entries did not exist.
 .Tp Li >0
 An error occurred.
 .Tp
 .Sh SEE ALSO
-.Xr rmdir 1
+.Xr rmdir 1 ,
+.Xr stat 2 ,
+.Xr unlink 2 ,
+.Xr fts 3
 .Sh STANDARDS
 The
 .Nm rm
