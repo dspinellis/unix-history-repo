@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.19 (Berkeley) %G%
+ *	@(#)sysctl.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -69,7 +69,7 @@ struct ctlname {
 #define	KERN_OSRELEASE	 2		/* string: system release */
 #define	KERN_OSREV	 3		/* int: system revision */
 #define	KERN_VERSION	 4		/* string: compile time info */
-#define	KERN_POSIX1	 5		/* int: POSIX.1 version */
+#define	KERN_MAXVNODES	 5		/* int: max vnodes */
 #define	KERN_MAXPROC	 6		/* int: max simultaneous processes */
 #define	KERN_MAXFILES	 7		/* int: max open files */
 #define	KERN_ARGMAX	 8		/* int: max arguments to exec */
@@ -81,7 +81,8 @@ struct ctlname {
 #define	KERN_PROC	14		/* struct: process entries */
 #define	KERN_FILE	15		/* struct: file entries */
 #define	KERN_PROF	16		/* node: kernel profiling info */
-#define	KERN_MAXID	17		/* number of valid kern ids */
+#define	KERN_POSIX1	17		/* int: POSIX.1 version */
+#define	KERN_MAXID	18		/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -89,7 +90,7 @@ struct ctlname {
 	{ "osrelease", CTLTYPE_STRING }, \
 	{ "osrevision", CTLTYPE_INT }, \
 	{ "version", CTLTYPE_STRING }, \
-	{ "posix1version", CTLTYPE_INT }, \
+	{ "maxvnodes", CTLTYPE_INT }, \
 	{ "maxproc", CTLTYPE_INT }, \
 	{ "maxfiles", CTLTYPE_INT }, \
 	{ "argmax", CTLTYPE_INT }, \
@@ -101,6 +102,7 @@ struct ctlname {
 	{ "proc", CTLTYPE_STRUCT }, \
 	{ "file", CTLTYPE_STRUCT }, \
 	{ "profiling", CTLTYPE_NODE }, \
+	{ "posix1version", CTLTYPE_INT }, \
 }
 
 /* 
