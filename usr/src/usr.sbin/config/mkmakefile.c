@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	1.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	1.33 (Berkeley) %G%";
 #endif
 
 /*
@@ -448,7 +448,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
 				extras, np);
-			fprintf(f, "\t${C2} %ss | ../%s/asm |",
+			fprintf(f, "\t${C2} %ss | ../%s/inline/inline |",
 			    tp, machinename);
 			fprintf(f, " ${AS} -o %so\n", tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
@@ -467,7 +467,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
 				extras, np);
-			fprintf(f,"\t${C2} -i %ss | ../%s/asm |",
+			fprintf(f,"\t${C2} -i %ss | ../%s/inline/inline |",
 			    tp, machinename);
 			fprintf(f, " ${AS} -o %so\n", tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
@@ -493,7 +493,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\t${CC} -I. -c -S %s %s../%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
-			fprintf(f, "\t../%s/asm %ss | ${AS} -o %so\n",
+			fprintf(f, "\t../%s/inline/inline %ss | ${AS} -o %so\n",
 			    machinename, tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
@@ -549,7 +549,7 @@ do_systemspec(f, fl, first)
 
 	fprintf(f, "%s: makefile", fl->f_needs);
 	if (machine == MACHINE_VAX)
-		fprintf(f, " ../%s/asm", machinename);
+		fprintf(f, " ../%s/inline/inline", machinename);
 	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
@@ -598,7 +598,8 @@ do_swapspec(f, name)
 	case MACHINE_VAX:
 		fprintf(f, "\t${CC} -I. -c -S ${COPTS} ");
 		fprintf(f, "../%s/swapgeneric.c\n", machinename);
-		fprintf(f, "\t${C2} swapgeneric.s | ../%s/asm", machinename);
+		fprintf(f, "\t${C2} swapgeneric.s | ");
+		fprintf(f, "../%s/inline/inline", machinename);
 		fprintf(f, " | ${AS} -o swapgeneric.o\n");
 		fprintf(f, "\trm -f swapgeneric.s\n\n");
 		break;
