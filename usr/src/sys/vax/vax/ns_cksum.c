@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_cksum.c	6.3 (Berkeley) %G%
+ *	@(#)ns_cksum.c	6.4 (Berkeley) %G%
  */
-#include "../h/types.h"
-#include "../h/mbuf.h"
+#include "types.h"
+#include "mbuf.h"
 
 
 /*
