@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Computing Centre, University of British Columbia, 1985 
+ * Copyright (c) University of British Columbia, 1984
  * Copyright (c) 1990, 1992 The Regents of the University of California.
  * Copyright (C) Computer Science Department IV, 
  * 		 University of Erlangen-Nuremberg, Germany, 1992
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)x25.h	7.9 (Berkeley) %G%
+ *	@(#)x25.h	7.10 (Berkeley) %G%
  */
 
 #ifdef KERNEL
