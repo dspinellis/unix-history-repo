@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Sony Corp. and Kazumasa Utashiro of Software Research Associates, Inc.
@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fbbm_253.c,v 4.300 91/06/09 06:33:12 root Rel41 $ SONY;
  *
- *	@(#)fbbm_253.c	7.5 (Berkeley) %G%
+ *	@(#)fbbm_253.c	8.1 (Berkeley) %G%
  */
 
 /*
