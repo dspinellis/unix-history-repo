@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
@@ -30,14 +30,14 @@ void	rmtclose();
 #endif RDUMP
 
 int	atomic();
-void	doslave(), enslave(), flusht(), killall();
+void	doslave(), enslave(), flushtape(), killall();
 
 /*
  * Concurrent dump mods (Caltech) - disk block reading and tape writing
  * are exported to several slave processes.  While one slave writes the
  * tape, the others read disk blocks; they pass control of the tape in
  * a ring via flock().	The parent process traverses the filesystem and
- * sends spclrec()'s and lists of daddr's to the slaves via pipes.
+ * sends writeheader()'s and lists of daddr's to the slaves via pipes.
  */
 struct req {			/* instruction packets sent to slaves */
 	daddr_t dblk;
@@ -68,7 +68,7 @@ alloctape()
 	tenths = writesize/density + (cartridge ? 16 : density == 625 ? 5 : 8);
 	/*
 	 * Allocate tape buffer contiguous with the array of instruction
-	 * packets, so flusht() can write them together with one write().
+	 * packets, so flushtape() can write them together with one write().
 	 * Align tape buffer on page boundary to speed up tape write().
 	 */
 	req = (struct req *)malloc(reqsiz + writesize + pgoff);
@@ -81,7 +81,7 @@ alloctape()
 
 
 void
-taprec(dp)
+writerec(dp)
 	char *dp;
 {
 	req[trecno].dblk = (daddr_t)0;
@@ -91,11 +91,11 @@ taprec(dp)
 	trecno++;
 	spcl.c_tapea++;
 	if (trecno >= ntrec)
-		flusht();
+		flushtape();
 }
 
 void
-dmpblk(blkno, size)
+dumpblock(blkno, size)
 	daddr_t blkno;
 	int size;
 {
@@ -109,7 +109,7 @@ dmpblk(blkno, size)
 		trecno += avail;
 		spcl.c_tapea += avail;
 		if (trecno >= ntrec)
-			flusht();
+			flushtape();
 		dblkno += avail << (tp_bshift - dev_bshift);
 		tpblks -= avail;
 	}
@@ -144,22 +144,8 @@ sigpipe()
 	quit("Broken pipe\n");
 }
 
-#ifdef RDUMP
-/*
- * compatibility routine
- */
 void
-tflush(i)
-	int i;
-{
-
-	for (i = 0; i < ntrec; i++)
-		spclrec();
-}
-#endif RDUMP
-
-void
-flusht()
+flushtape()
 {
 	int siz = (char *)tblock - (char *)req;
 
@@ -174,7 +160,7 @@ flusht()
 	if (!pipeout && (blocksperfile ?
 	    (blockswritten >= blocksperfile) : (asize > tsize))) {
 		close_rewind();
-		otape();
+		startnewtape();
 	}
 	timeest();
 }
@@ -200,7 +186,7 @@ trewind()
 		return;
 	}
 #endif RDUMP
-	close(to);
+	close(tapefd);
 	while ((f = open(tape, 0)) < 0)
 		sleep (10);
 	close(f);
@@ -232,7 +218,7 @@ close_rewind()
  */
 
 void
-otape()
+startnewtape()
 {
 	int	parentpid;
 	int	childpid;
@@ -310,10 +296,11 @@ otape()
 			tapeno+1, parentpid, getpid());
 #endif TDEBUG
 #ifdef RDUMP
-		while ((to = (host ? rmtopen(tape, 2) :
-			pipeout ? 1 : creat(tape, 0666))) < 0)
+		while ((tapefd = (host ? rmtopen(tape, 2) :
+			pipeout ? 1 : open(tape, O_WRONLY|O_CREAT, 0666))) < 0)
 #else RDUMP
-		while ((to = pipeout ? 1 : creat(tape, 0666)) < 0)
+		while ((tapefd =
+			pipeout ? 1 : open(tape, O_WRONLY|O_CREAT, 0666)) < 0)
 #endif RDUMP
 		    {
 			msg("Cannot open output \"%s\".\n", tape);
@@ -335,11 +322,11 @@ otape()
 		spcl.c_volume++;
 		spcl.c_type = TS_TAPE;
 		spcl.c_flags |= DR_NEWHEADER;
-		spclrec();
+		writeheader(curino);
 		spcl.c_flags &=~ DR_NEWHEADER;
 		if (tapeno > 1)
-			msg("Tape %d begins with blocks from ino %d\n",
-				tapeno, ino);
+			msg("Tape %d begins with blocks from inode %d\n",
+				tapeno, curino);
 	}
 }
 
@@ -456,8 +443,11 @@ doslave(cmd, prev, next)
 {
 	register int nread, toggle = 0;
 
-	close(fi);
-	if ((fi = open(disk, 0)) < 0) 	/* Need our own seek pointer */
+	/*
+	 * Need our own seek pointer.
+	 */
+	close(diskfd);
+	if ((diskfd = open(disk, O_RDONLY)) < 0)
 		quit("slave couldn't reopen disk: %s\n", strerror(errno));
 	/*
 	 * Get list of blocks to dump, read the blocks into tape buffer
@@ -478,9 +468,9 @@ doslave(cmd, prev, next)
 
 #ifdef RDUMP
 		if ((host ? rmtwrite(tblock[0], writesize)
-			: write(to, tblock[0], writesize)) != writesize) {
+			: write(tapefd, tblock[0], writesize)) != writesize) {
 #else RDUMP
-		if (write(to, tblock[0], writesize) != writesize) {
+		if (write(tapefd, tblock[0], writesize) != writesize) {
 #endif RDUMP
 			kill(master, SIGUSR1);
 			for (;;)
