@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uupoll.8	6.2 (Berkeley) %G%
+.\"	@(#)uupoll.8	6.3 (Berkeley) %G%
 .\"
-.TH UUPOLL 8C ""
+.TH UUPOLL 8 ""
 .UC 6
 .SH NAME
 uupoll \- poll a remote \s-1UUCP\s+1 site
@@ -20,7 +20,7 @@ uupoll \- poll a remote \s-1UUCP\s+1 site
 .I Uupoll
 is used to force a poll of a remote system. It queues a null job for the
 remote system and then invokes
-.IR uucico (8C).
+.IR uucico (8).
 .PP
 The following options are available:
 .TP 8
@@ -72,4 +72,4 @@ when it runs five minutes later.
 /usr/spool/uucp/	Spool directory
 .fi
 .SH SEE ALSO
-uucp(1C), uux(1C), uucico(8C)
+uucp(1), uux(1), uucico(8)

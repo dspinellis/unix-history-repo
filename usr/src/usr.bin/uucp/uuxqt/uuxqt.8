@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uuxqt.8	6.1 (Berkeley) %G%
+.\"	@(#)uuxqt.8	6.2 (Berkeley) %G%
 .\"
-.TH UUXQT 8C ""
+.TH UUXQT 8 ""
 .UC 6
 .SH NAME
 uuxqt \- \s-1UUCP\s+1 execution file interpreter
@@ -18,9 +18,9 @@ uuxqt \- \s-1UUCP\s+1 execution file interpreter
 interprets
 .I "execution files"
 created on a remote system via
-.IR uux (1C)
+.IR uux (1)
 and transferred to the local system via
-.IR uucico (8C).
+.IR uucico (8).
 When a user uses
 .I uux
 to request remote command execution, it is
@@ -48,4 +48,4 @@ It copies intermediate files to this directory when necessary.
 /usr/spool/uucp/XTMP	\fIUuxqt\fP running directory
 .fi
 .SH SEE ALSO
-uucp(1C), uux(1C), L.cmds(5), USERFILE(5), uucico(8C)
+uucp(1), uux(1), L.cmds(5), USERFILE(5), uucico(8)

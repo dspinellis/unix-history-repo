@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.18	%G%
+#	@(#)Makefile	5.19	%G%
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
