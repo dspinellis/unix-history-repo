@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.31 (Berkeley) %G%
+ *	@(#)rtsock.c	7.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -634,11 +634,10 @@ rt_newaddrmsg(cmd, ifa, error, rt)
 	}
 }
 
-#include <sys/kinfo.h>
 /*
- * This is used in dumping the kernel table via getkinfo().
+ * This is used in dumping the kernel table via sysctl().
  */
-rt_dumpentry(rn, w)
+sysctl_dumpentry(rn, w)
 	struct radix_node *rn;
 	register struct walkarg *w;
 {
@@ -647,7 +646,7 @@ rt_dumpentry(rn, w)
 	int n, error = 0, size;
 	struct rt_addrinfo info;
 
-	if (w->w_op == KINFO_RT_FLAGS && !(rt->rt_flags & w->w_arg))
+	if (w->w_op == NET_RT_FLAGS && !(rt->rt_flags & w->w_arg))
 		return 0;
 	bzero((caddr_t)&info, sizeof(info));
 	dst = rt_key(rt);
@@ -672,7 +671,7 @@ rt_dumpentry(rn, w)
 	return (error);
 }
 
-kinfo_iflist(af, w)
+sysctl_iflist(af, w)
 	int	af;
 	register struct	walkarg *w;
 {
@@ -727,47 +726,57 @@ kinfo_iflist(af, w)
 	return (0);
 }
 
-kinfo_rtable(op, where, given, arg, needed)
-	int	op, arg;
+sysctl_rtable(name, namelen, where, given, new, newlen)
+	int	*name;
+	int	namelen;
 	caddr_t	where;
-	int	*given, *needed;
+	int	*given;
+	caddr_t	*new;
+	int	newlen;
 {
 	register struct radix_node_head *rnh;
 	int	i, s, error = EINVAL;
-	u_char  af = ki_af(op);
+	u_char  af;
 	struct	walkarg w;
 
+	if (new)
+		return (EPERM);
+	if (namelen != 3)
+		return (EINVAL);
+	af = name[0];
 	Bzero(&w, sizeof(w));
-	if ((w.w_where = where) && given)
-		w.w_given = *given;
+	w.w_where = where;
+	w.w_given = *given;
 	w.w_needed = 0 - w.w_given;
-	w.w_arg = arg;
-	w.w_op = op = ki_op(op);
+	w.w_op = name[1];
+	w.w_arg = name[2];
 
 	s = splnet();
-	switch (op) {
+	switch (w.w_op) {
 
-	case KINFO_RT_DUMP:
-	case KINFO_RT_FLAGS:
+	case NET_RT_DUMP:
+	case NET_RT_FLAGS:
 		for (i = 1; i <= AF_MAX; i++)
 			if ((rnh = rt_tables[i]) && (af == 0 || af == i) &&
 			    (error = rnh->rnh_walk(rnh->rnh_treetop,
-						  rt_dumpentry, &w)))
+						  sysctl_dumpentry, &w)))
 				break;
 		break;
 
-	case KINFO_RT_IFLIST:
-		error = kinfo_iflist(af, &w);
+	case NET_RT_IFLIST:
+		error = sysctl_iflist(af, &w);
 	}
 	splx(s);
 	if (w.w_tmem)
 		free(w.w_tmem, M_RTABLE);
 	w.w_needed += w.w_given;
-	if (where && given)
+	if (where) {
 		*given = w.w_where - where;
-	else
-		w.w_needed = (11 * w.w_needed) / 10;
-	*needed = w.w_needed;
+		if (*given < w.w_needed)
+			return (ENOMEM);
+	} else {
+		*given = (11 * w.w_needed) / 10;
+	}
 	return (error);
 }
 
@@ -783,6 +792,7 @@ struct protosw routesw[] = {
   raw_input,	route_output,	raw_ctlinput,	0,
   route_usrreq,
   raw_init,	0,		0,		0,
+  sysctl_rtable,
 }
 };
 
