@@ -79,7 +79,7 @@
 /
 / RETURN VALUE: none
 /
-/ MODULES CALLED: monstlist(), checkenemy(), ok_to_play(), activelist(), 
+/ MODULES CALLED: monstlist(), checkenemy(), activelist(), 
 /	throneroom(), checkbattle(), readmessage(), changestats(), writerecord(), 
 /	tradingpost(), adjuststats(), recallplayer(), displaystats(), checktampered(), 
 /	fabs(), rollnewplayer(), time(), exit(), sqrt(), floor(), wmove(), 
