@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.12
+ * %G% (Berkeley) @(#)setterm.c	1.13
  */
 
 # include	"curses.ext"
@@ -78,15 +78,12 @@ reg char	*type; {
 		LINES = tgetnum("li");
 	if (LINES <= 5)
 		LINES = 24;
-	else if (LINES > 48)
-		LINES = 48;
 
 	if (COLS == 0)
 		COLS = tgetnum("co");
 	if (COLS <= 4)
 		COLS = 80;
-	else if (COLS > 1000)
-		COLS = 1000;
+
 # ifdef DEBUG
 	fprintf(outf, "SETTERM: LINES = %d, COLS = %d\n", LINES, COLS);
 # endif
