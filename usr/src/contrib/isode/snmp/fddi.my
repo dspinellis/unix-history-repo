@@ -1,0 +1,1154 @@
+-- fddi.my - FDDI MIB
+
+-- $Header: /f/osi/snmp/RCS/fddi.my,v 7.4 91/03/01 11:43:02 mrose Exp $
+--
+-- 
+-- $Log:	fddi.my,v $
+-- Revision 7.4  91/03/01  11:43:02  mrose
+-- touch-up
+-- 
+-- Revision 7.3  91/02/22  09:43:16  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.2  90/09/26  19:20:45  mrose
+-- touch-up
+-- 
+-- Revision 7.1  90/09/02  18:36:41  mrose
+-- typo
+-- 
+-- Revision 7.0  90/08/30  01:32:41  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+               RFCxxxx-MIB DEFINITIONS ::= BEGIN
+
+               IMPORTS
+                       experimental, OBJECT-TYPE
+                           FROM RFC1155-SMI;
+
+--                       DisplayString ::=
+--                               OCTET STRING
+
+                       FddiTimerTwosComplement ::=
+                               OCTET STRING (SIZE (4))
+
+                       FddiTime ::=
+                               INTEGER (0..4294967295)
+
+                       FddiResourceId ::=
+                               INTEGER (0..65536)
+
+                       FddiTimeStamp ::=
+                               OCTET STRING (SIZE (8))
+
+                       FddiSMTStationIdType ::=
+                               OCTET STRING (SIZE (8))
+
+                       FddiMACLongAddressType ::=
+                               OCTET STRING (SIZE (6))
+
+               fddi    OBJECT IDENTIFIER ::= { experimental 8 }
+
+               snmpFddiSMT     OBJECT IDENTIFIER ::= { fddi 1 }
+
+               snmpFddiMAC     OBJECT IDENTIFIER ::= { fddi 2 }
+
+               snmpFddiPATH        OBJECT IDENTIFIER ::= { fddi 3 }
+
+               snmpFddiPORT        OBJECT IDENTIFIER ::= { fddi 4 }
+
+               snmpFddiATTACHMENT  OBJECT IDENTIFIER ::= { fddi 5 }
+
+
+               -- object types
+
+               -- the SMT Group
+
+               smtNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { snmpFddiSMT  1 }
+
+
+
+
+
+               -- the SMT Table
+
+               smtTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF SmtEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { snmpFddiSMT  2 }
+
+               smtEntry OBJECT-TYPE
+                       SYNTAX  SmtEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { smtTable  1 }
+
+               SmtEntry ::= SEQUENCE {
+                           snmpFddiSMTIndex
+                               INTEGER,
+                           snmpFddiSMTStationId
+                               FddiSMTStationIdType,
+                           snmpFddiSMTOpVersionId
+                               INTEGER,
+                           snmpFddiSMTHiVersionId
+                               INTEGER,
+                           snmpFddiSMTLoVersionId
+                               INTEGER,
+                           snmpFddiSMTMACCt
+                               INTEGER,
+                           snmpFddiSMTNonMasterCt
+                               INTEGER,
+                           snmpFddiSMTMasterCt
+                               INTEGER,
+                           snmpFddiSMTPathsAvailable
+                               INTEGER,
+                           snmpFddiSMTConfigCapabilities
+                               INTEGER,
+                           snmpFddiSMTConfigPolicy
+                               INTEGER,
+                           snmpFddiSMTConnectionPolicy
+                               INTEGER,
+                           snmpFddiSMTTNotify
+                               INTEGER,
+                           snmpFddiSMTStatusReporting
+                               INTEGER,
+                           snmpFddiSMTECMState
+                               INTEGER,
+                           snmpFddiSMTCFState
+                               INTEGER,
+                           snmpFddiSMTHoldState
+                               INTEGER,
+                           snmpFddiSMTRemoteDisconnectFlag
+                               INTEGER,
+
+
+
+
+
+                           snmpFddiSMTMsgTimeStamp
+                               FddiTimeStamp,
+                           snmpFddiSMTTransitionTimeStamp
+                               FddiTimeStamp,
+                           snmpFddiSMTSetInformation
+                               OCTET STRING,
+                           snmpFddiSMTLastSetStationId
+                               FddiSMTStationIdType
+                       }
+
+               snmpFddiSMTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  1 }
+
+               snmpFddiSMTStationId OBJECT-TYPE
+                       SYNTAX  FddiSMTStationIdType -- (OCTET STRING (SIZE (8)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  2 }
+
+               snmpFddiSMTOpVersionId OBJECT-TYPE
+                       SYNTAX  INTEGER (1..65536)
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { smtEntry  3 }
+
+               snmpFddiSMTHiVersionId OBJECT-TYPE
+                       SYNTAX  INTEGER (1..65536)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  4 }
+
+               snmpFddiSMTLoVersionId OBJECT-TYPE
+                       SYNTAX  INTEGER (1..65536)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  5 }
+
+               snmpFddiSMTMACCt OBJECT-TYPE
+                       SYNTAX  INTEGER (0..255)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  6 }
+
+               snmpFddiSMTNonMasterCt OBJECT-TYPE
+                       SYNTAX  INTEGER (0..2)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  7 }
+
+
+
+
+
+               snmpFddiSMTMasterCt OBJECT-TYPE
+                       SYNTAX  INTEGER (0..255)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  8 }
+
+               snmpFddiSMTPathsAvailable OBJECT-TYPE
+                       SYNTAX  INTEGER (0..255)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry  9 }
+
+               snmpFddiSMTConfigCapabilities OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 10 }
+
+               snmpFddiSMTConfigPolicy OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { smtEntry 11 }
+
+               snmpFddiSMTConnectionPolicy OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { smtEntry 12 }
+
+               snmpFddiSMTTNotify OBJECT-TYPE
+                       SYNTAX  INTEGER (1..65536 )
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { smtEntry 13 }
+
+               snmpFddiSMTStatusReporting OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 14 }
+
+               snmpFddiSMTECMState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       ec0 (1),        --Out
+                                       ec1 (2),        --In
+                                       ec2 (3),        --Trace
+                                       ec3 (4),        --Leave
+                                       ec4 (5),        --Path_Test
+
+
+
+
+
+                                       ec5 (6),        --Insert
+                                       ec6 (7),        --Check
+                                       ec7 (8)}        --Deinsert
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 15 }
+
+               snmpFddiSMTCFState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       cf0 (1),        --Isolated
+                                       cf1 (2),        --Wrap_S
+                                       cf2 (3),        --Wrap_A
+                                       cf3 (4),        --Wrap_B
+                                       cf4 (5),        --Wrap_AB
+                                       cf5 (6)}        --Thru
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 16 }
+
+               snmpFddiSMTHoldState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       not-implemented (1), -- holding not implemented
+                                       not-holding  (2),
+                                       holding-prm (3), --holding on primary
+                                       holding-sec  (4)} --holding on secondary
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 17 }
+
+               snmpFddiSMTRemoteDisconnectFlag OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 18 }
+
+               snmpFddiSMTMsgTimeStamp OBJECT-TYPE
+                       SYNTAX  FddiTimeStamp -- (OCTET STRING (SIZE (8)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { smtEntry 19 }
+
+               snmpFddiSMTTransitionTimeStamp OBJECT-TYPE
+                       SYNTAX  FddiTimeStamp -- (OCTET STRING (SIZE (8)))
+                       ACCESS  read-only
+                       STATUS  optional -- but mandatory if the SRF protocol is supported.
+                       ::= { smtEntry 20 }
+
+               snmpFddiSMTSetInformation OBJECT-TYPE
+                       SYNTAX  OCTET STRING (SIZE (12))
+
+
+
+
+
+                       ACCESS  read-only
+                       STATUS  optional -- but mandatory if the station supports the Parameter
+                                        -- Management SMT Frame Class.
+                       ::= { smtEntry 21 }
+
+               snmpFddiSMTLastSetStationId OBJECT-TYPE
+                       SYNTAX  FddiSMTStationIdType -- (OCTET STRING (SIZE (8)))
+                       ACCESS  read-only
+                       STATUS  optional -- but required if the station supports the Parameter
+                                        -- Management SMT Frame Class.
+                       ::= { smtEntry 22 }
+
+               -- the MAC Group
+
+               macNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { snmpFddiMAC  1 }
+
+               -- the MAC Table
+
+               macTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF MACEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { snmpFddiMAC  2 }
+
+               macEntry OBJECT-TYPE
+                       SYNTAX  MACEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { macTable  1 }
+
+               MACEntry ::= SEQUENCE {
+                               snmpFddiMACSMTIndex
+                                       INTEGER,
+                               snmpFddiMACIndex
+                                       INTEGER,
+                               snmpFddiMACFrameStatusCapabilities
+                                       INTEGER,
+                               snmpFddiMACTMaxGreatestLowerBound
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACTVXGreatestLowerBound
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACPathsAvailable
+                                       INTEGER,
+                               snmpFddiMACCurrentPath
+                                       INTEGER,
+                               snmpFddiMACUpstreamNbr
+                                       FddiMACLongAddressType,
+
+
+
+
+
+                               snmpFddiMACOldUpstreamNbr
+                                       FddiMACLongAddressType,
+                               snmpFddiMACDupAddrTest
+                                       INTEGER,
+                               snmpFddiMACPathsRequested
+                                       INTEGER,
+                               snmpFddiMacDownstreamPORTType
+                                       INTEGER,
+                               snmpFddiMACSMTAddress
+                                       FddiMACLongAddressType,
+                               snmpFddiMACT-Req
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACT-Neg
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACTMax
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACTvxValue
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACT-Min
+                                       FddiTimerTwosComplement,
+                               snmpFddiMACCurrentFrameStatus
+                                       INTEGER,
+                               snmpFddiMACFrameCt
+                                       Counter,
+                               snmpFddiMACErrorCt
+                                       Counter,
+                               snmpFddiMACLostCt
+                                       Counter,
+                               snmpFddiMACRMTState
+                                       INTEGER,
+                               snmpFddiMACDaFlag
+                                       INTEGER,
+                               snmpFddiMACFrameMACCondition
+                                       INTEGER
+                       }
+
+               snmpFddiMACSMTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  1 }
+
+               snmpFddiMACIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  2 }
+
+               snmpFddiMACFrameStatusCapabilities OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+
+
+
+
+
+                       STATUS  mandatory
+                       ::= { macEntry  3 }
+
+               snmpFddiMACTMaxGreatestLowerBound OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { macEntry  4 }
+
+               snmpFddiMACTVXGreatestLowerBound OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  5 }
+
+               snmpFddiMACPathsAvailable OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  6 }
+
+               snmpFddiMACCurrentPath OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       unknown         (1),
+                                       primary         (2),
+                                       secondary       (4),
+                                       local           (8),
+                                       isolated        (16) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  7 }
+
+               snmpFddiMACUpstreamNbr OBJECT-TYPE
+                       SYNTAX  FddiMACLongAddressType -- (OCTET STRING (SIZE (6)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  8 }
+
+               snmpFddiMACOldUpstreamNbr OBJECT-TYPE
+                       SYNTAX  FddiMACLongAddressType -- (OCTET STRING (SIZE (6)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry  9 }
+
+               snmpFddiMACDupAddrTest OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       none    (1),
+                                       pass    (2),
+                                       fail    (3) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+
+
+
+
+
+                       ::= { macEntry 10 }
+
+               snmpFddiMACPathsRequested OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { macEntry 11 }
+
+               snmpFddiMACDownstreamPORTType OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       a(0),
+                                       b(1),
+                                       s(2),
+                                       m(3) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 12 }
+
+               snmpFddiMACSMTAddress OBJECT-TYPE
+                       SYNTAX  FddiMACLongAddressType -- (OCTET STRING (SIZE (6)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 13 }
+
+               snmpFddiMACTReq OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { macEntry 14 }
+
+               snmpFddiMACTNeg OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 15 }
+
+               snmpFddiMACTMax OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { macEntry 16 }
+
+               snmpFddiMACTvxValue OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { macEntry 17 }
+
+               snmpFddiMACTMin OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-write
+
+
+
+
+
+                       STATUS  mandatory
+                       ::= { macEntry 18 }
+
+               snmpFddiMACCurrentFrameStatus OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { macEntry 19 }
+
+               snmpFddiMACFrameCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 20 }
+
+               snmpFddiMACErrorCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 21 }
+
+               snmpFddiMACLostCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 22 }
+
+               snmpFddiMACRMTState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               rm0 (1),        --Isolated
+                               rm1 (2),        --Non_Op
+                               rm2 (3),        --Ring_Op
+                               rm3 (4),        --Detect
+                               rm4 (5),        --Non_Op_Dup
+                               rm5 (6),        --Ring_Op_Dup
+                               rm6 (7),        --Directed
+                               rm7 (8)}        --Trace
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 23 }
+
+               snmpFddiMACDaFlag OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 24 }
+
+               snmpFddiMACFrameMACCondition OBJECT-TYPE
+                       SYNTAX  INTEGER {
+
+
+
+
+
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { macEntry 25 }
+
+               -- the PATH Group
+
+               -- the PATH Class Table
+
+               pathClassTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PATHClassEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { snmpFddiPATH  1 }
+
+               pathClassEntry OBJECT-TYPE
+                       SYNTAX PATHClassEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { pathClassTable  1 }
+
+               PATHClassEntry ::= SEQUENCE {
+                               snmpFddiPATHClassSMTIndex
+                                       INTEGER,
+                               snmpFddiPATHClassIndex
+                                       INTEGER,
+                               snmpFddiPATHClassTraceMaxExpiration
+                                       FddiTimerTwosComplement
+                       }
+
+               snmpFddiPATHClassSMTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathClassEntry  1 }
+
+               snmpFddiPATHClassIndex OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               local (1),
+                               non-local (2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathClassEntry  2 }
+
+               snmpFddiPATHClassTraceMaxExpiration OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pathClassEntry  3 }
+
+
+
+
+
+
+               -- the PATH Config Table
+
+               pathConfigTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PATHConfigEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { snmpFddiPATH  2 }
+
+               pathConfigEntry OBJECT-TYPE
+                       SYNTAX  PATHConfigEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { pathConfigTable  1 }
+
+               PATHConfigEntry ::= SEQUENCE {
+                               snmpFddiPATHConfigSMTIndex
+                                       INTEGER,
+                               snmpFddiPATHConfigIndex
+                                       INTEGER,
+                               snmpFddiPATHType
+                                       INTEGER,
+                               snmpFddiPATHPORTOrder
+                                       INTEGER,
+                               snmpFddiPATHSba
+                                       FddiTime,
+                               snmpFddiPATHSbaOverhead
+                                       INTEGER,
+                               snmpFddiPATHStatus
+                                       INTEGER,
+                               snmpFddiPATHConfiguration
+                                       SEQUENCE OF TROUBLE     -- don't forget to fix this
+                       }
+
+               snmpFddiPATHConfigSMTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  1 }
+
+               snmpFddiPATHConfigIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  2 }
+
+               snmpFddiPATHType OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  3 }
+
+
+
+
+
+
+               snmpFddiPATHPORTOrder OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               pathUnsupported (1),    --path not supported in station
+                               ascending       (2),    --PORTS in path numbered in
+                                                       --ascending order
+                               descending      (3)}    --PORTS in path numbered in
+                                                       --descending order
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  4 }
+
+               snmpFddiPATHSba OBJECT-TYPE
+                       SYNTAX  FddiTime
+                       ACCESS  read-write
+                               -- (for stations not supporting synchronous bandwidth,
+                               --  this is read-only)
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  5 }
+
+               snmpFddiPATHSbaOverhead OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                               -- (for stations not supporting synchronous bandwidth,
+                               --  this is read-only)
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  6 }
+
+               snmpFddiPATHStatus OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               wrapped (1),
+                               thru    (2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pathConfigEntry  7 }
+
+               snmpFddiPATHConfiguration OBJECT-TYPE
+                       SYNTAX  FddiPathConfig -- (SEQUENCE OF TROUBLE)
+                       ACCESS  read-only
+                       STATUS  mandatory       -- this variable class is broken and needs to be fixed
+                       ::= { pathConfigEntry  8 }
+
+               -- the PORT Group
+
+               portNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { snmpFddiPORT  1 }
+
+               -- the PORT Table
+
+
+
+
+
+
+               portTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PortEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { snmpFddiPORT  2 }
+
+               portEntry OBJECT-TYPE
+                       SYNTAX  PortEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { portTable  1 }
+
+               PortEntry ::= SEQUENCE {
+                               snmpFddiPORTSMTIndex
+                                       INTEGER,
+                               snmpFddiPORTIndex
+                                       INTEGER,
+                               snmpFddiPORTPCType
+                                       INTEGER,
+                               snmpFddiPORTPCNeighbor
+                                       INTEGER,
+                               snmpFddiPORTConnectionPolicies
+                                       INTEGER,
+                               snmpFddiPORTRemoteMACIndicated
+                                       INTEGER,
+                               snmpFddiPORTCEState
+                                       INTEGER,
+                               snmpFddiPORTPathsRequested
+                                       INTEGER,
+                               snmpFddiPORTMACPlacement
+                                       FddiResourceId,
+                               snmpFddiPORTAvailablePaths
+                                       INTEGER,
+                               snmpFddiPORTMACLoopTime
+                                       FddiTime,
+                               snmpFddiPORTTBMax
+                                       FddiTimerTwosComplement,
+                               snmpFddiPORTBSFlag
+                                       INTEGER,
+                               snmpFddiPORTLCTFailCt
+                                       Counter,
+                               snmpFddiPORTLerEstimate
+                                       INTEGER,
+                               snmpFddiPORTLemRejectCt
+                                       Counter,
+                               snmpFddiPORTLemCt
+                                       Counter,
+                               snmpFddiPORTBaseLerEstimate
+                                       INTEGER,
+                               snmpFddiPORTBaseLerRejectCt
+                                       Counter,
+
+
+
+
+
+                               snmpFddiPORTBaseLerCt
+                                       Counter,
+                               snmpFddiPORTBaseLerTimeStamp
+                                       FddiTimeStamp,
+                               snmpFddiPORTLerCutoff
+                                       INTEGER,
+                               snmpFddiPORTLerAlarm
+                                       INTEGER,
+                               snmpFddiPORTConnectState
+                                       INTEGER,
+                               snmpFddiPORTPCMState
+                                       INTEGER,
+                               snmpFddiPORTPCWithhold
+                                       INTEGER,
+                               snmpFddiPORTLerCondition
+                                       INTEGER
+                       }
+
+               snmpFddiPORTSMTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  1 }
+
+               snmpFddiPORTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  2 }
+
+               snmpFddiPORTPCType OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       a (1),
+                                       b (2),
+                                       s (3),
+                                       m (4) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  3 }
+
+               snmpFddiPORTPCNeighbor OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       a (1),
+                                       b (2),
+                                       s (3),
+                                       m (4),
+                                       unknown (5) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  4 }
+
+
+
+
+
+
+               snmpFddiPORTConnectionPolicies OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { portEntry  5 }
+
+               snmpFddiPORTRemoteMACIndicated OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  6 }
+
+               snmpFddiPORTCEState OBJECT-TYPE
+                       SYNTAX  -- FddiCEStateType ( -- INTEGER {
+                                       ce0     (1), -- Isolated
+                                       ce1     (2), -- Insert_P
+                                       ce2     (3), -- Insert_S
+                                       ce3     (4), -- Insert_X
+                                       ce4     (5)} -- Local )
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  7 }
+
+               snmpFddiPORTPathsRequested OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { portEntry  8 }
+
+               snmpFddiPORTMACPlacement OBJECT-TYPE
+                       SYNTAX  FddiResourceId -- (INTEGER (0..65536))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry  9 }
+
+               snmpFddiPORTAvailablePaths OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 10 }
+
+               snmpFddiPORTMACLoopTime OBJECT-TYPE
+                       SYNTAX  FddiTime -- (INTEGER (0..4294967295))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { portEntry 11 }
+
+               snmpFddiPORTTBMax OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+
+
+
+
+
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { portEntry 12 }
+
+               snmpFddiPORTBSFlag OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 13 }
+
+               snmpFddiPORTLCTFailCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 14 }
+
+               snmpFddiPORTLerEstimate OBJECT-TYPE
+                       SYNTAX  INTEGER (4..15)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 15 }
+
+               snmpFddiPORTLemRejectCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 16 }
+
+               snmpFddiPORTLemCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 17 }
+
+               snmpFddiPORTBaseLerEstimate OBJECT-TYPE
+                       SYNTAX  INTEGER (4..15)
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 18 }
+
+               snmpFddiPORTBaseLerRejectCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 19 }
+
+               snmpFddiPORTBaseLerCt OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+
+
+
+
+
+                       STATUS  mandatory
+                       ::= { portEntry 20 }
+
+               snmpFddiPORTBaseLerTimeStamp OBJECT-TYPE
+                       SYNTAX  FddiTimeStamp -- (OCTET STRING (SIZE (8)))
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 21 }
+
+               snmpFddiPORTLerCutoff OBJECT-TYPE
+                       SYNTAX  INTEGER (4..15)
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { portEntry 22 }
+
+               snmpFddiPORTLerAlarm OBJECT-TYPE
+                       SYNTAX  INTEGER (4..15)
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { portEntry 23 }
+
+               snmpFddiPORTConnectState OBJECT-TYPE
+                       SYNTAX  -- FddiPORTConnectState ( -- INTEGER {
+                                       disabled        (1),
+                                       connecting      (2),
+                                       standby         (3),
+                                       active          (4)  } -- )
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 24 }
+
+               snmpFddiPORTPCMState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       pc0 (1),        --Off
+                                       pc1 (2),        --Break
+                                       pc2 (3),        --Trace
+                                       pc3 (4),        --Connect
+                                       pc4 (5),        --Next
+                                       pc5 (6),        --Signal
+                                       pc6 (7),        --Join
+                                       pc7 (8),        --Verify
+                                       pc8 (9),        --Active
+                                       pc9 (10)}       --Maint
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 25 }
+
+               snmpFddiPORTPCWithhold OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                       none    (1),
+                                       m-m     (2),
+
+
+
+
+
+                                       other   (3) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 26 }
+
+               snmpFddiPORTLerCondition OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { portEntry 27 }
+
+               -- the ATTACHMENT Group
+
+               attachmentNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { snmpFddiATTACHMENT  1 }
+
+
+               -- the ATTACHMENT TABLE
+
+               attachmentTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF AttachmentEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { snmpFddiATTACHMENT  2 }
+
+               attachmentEntry OBJECT-TYPE
+                       SYNTAX  AttachmentEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { attachmentTable  1 }
+
+                       AttachmentEntry ::= SEQUENCE {
+                               snmpFddiATTACHMENTSMTIndex
+                                       INTEGER,
+                               snmpFddiATTACHMENTIndex
+                                       INTEGER,
+                               snmpFddiATTACHMENTClass
+                                       INTEGER,
+                               snmpFddiATTACHMENTOpticalBypassPresent
+                                       INTEGER,
+                               snmpFddiATTACHMENTIMaxExpiration
+                                       FddiTimeTwosComplement,
+                               snmpFddiATTACHMENTInsertedStatus
+                                       INTEGER,
+                               snmpFddiATTACHMENTInsertPolicy
+                                       INTEGER
+
+
+
+
+
+                       }
+
+               snmpFddiATTACHMENTSMTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { attachmentEntry  1 }
+
+               snmpFddiATTACHMENTIndex OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { attachmentEntry  2 }
+
+               snmpFddiATTACHMENTClass OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               single-attachment       (1),
+                               dual-attachment (2),
+                               concentrator    (3) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { attachmentEntry  3 }
+
+               snmpFddiATTACHMENTOpticalBypassPresent OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { attachmentEntry  4 }
+
+               snmpFddiATTACHMENTIMaxExpiration OBJECT-TYPE
+                       SYNTAX  FddiTimerTwosComplement -- (OCTET STRING (SIZE (4)))
+                       ACCESS  read-only
+                       STATUS  optional -- but mandatory if an optical bypass is present.
+                       ::= { attachmentEntry  5 }
+
+               snmpFddiATTACHMENTInsertedStatus OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-only
+                       STATUS  optional -- but mandatory if an optical bypass is present.
+                       ::= { attachmentEntry  6 }
+
+               snmpFddiATTACHMENTInsertPolicy OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                               true(1),
+                               false(2) }
+                       ACCESS  read-write
+                       STATUS  optional -- but mandatory if an optical bypass is present.
+
+
+
+
+
+                       ::= { attachmentEntry  7 }
+
+               END
