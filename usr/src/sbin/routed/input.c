@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -73,7 +73,7 @@ rip_input(from, size)
 			else
 				rt = 0;
 			n->rip_metric = rt == 0 ? HOPCNT_INFINITY :
-				min(rt->rt_metric+1, HOPCNT_INFINITY);
+				min(rt->rt_metric + 1, HOPCNT_INFINITY);
 			if (msg->rip_vers > 0) {
 				n->rip_dst.sa_family =
 					htons(n->rip_dst.sa_family);
@@ -160,8 +160,6 @@ rip_input(from, size)
 					ntohs(n->rip_dst.sa_family);
 				n->rip_metric = ntohl(n->rip_metric);
 			}
-			if ((unsigned) n->rip_metric > HOPCNT_INFINITY)
-				continue;
 			if (n->rip_dst.sa_family >= af_max ||
 			    (afp = &afswitch[n->rip_dst.sa_family])->af_hash ==
 			    (int (*)())0) {
@@ -182,8 +180,10 @@ rip_input(from, size)
 			/*
 			 * Adjust metric according to incoming interface.
 			 */
-			if ((unsigned)n->rip_metric < HOPCNT_INFINITY)
+			if ((unsigned) n->rip_metric < HOPCNT_INFINITY)
 				n->rip_metric += ifp->int_metric;
+			if ((unsigned) n->rip_metric > HOPCNT_INFINITY)
+				n->rip_metric = HOPCNT_INFINITY;
 			rt = rtlookup(&n->rip_dst);
 			if (rt == 0 ||
 			    (rt->rt_state & (RTS_INTERNAL|RTS_INTERFACE)) ==
@@ -220,10 +220,10 @@ rip_input(from, size)
 						    GARBAGE_TIME - EXPIRE_TIME;
 				} else if (rt->rt_metric < HOPCNT_INFINITY)
 					rt->rt_timer = 0;
-			} else if ((unsigned) (n->rip_metric) < rt->rt_metric ||
+			} else if ((unsigned) n->rip_metric < rt->rt_metric ||
 			    (rt->rt_timer > (EXPIRE_TIME/2) &&
 			    rt->rt_metric == n->rip_metric &&
-			    n->rip_metric < HOPCNT_INFINITY)) {
+			    (unsigned) n->rip_metric < HOPCNT_INFINITY)) {
 				rtchange(rt, from, n->rip_metric);
 				rt->rt_timer = 0;
 			}
