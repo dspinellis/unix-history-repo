@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.7 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -61,7 +61,7 @@ rexit()
  * and dispose of children.
  */
 exit(rv)
-	int rv;			/* should be union wait (XXX) */
+	int rv;
 {
 	register int i;
 	register struct proc *p, *q, *nq;
@@ -235,10 +235,10 @@ owait()
 	} *uap = (struct a *)u.u_ap;
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
-		uap->options = WSIGRESTART;
+		uap->options = 0;
 		uap->rusage = 0;
 	} else {
-		uap->options = u.u_ar0[R0] | WSIGRESTART;
+		uap->options = u.u_ar0[R0];
 		uap->rusage = (struct rusage *)u.u_ar0[R1];
 	}
 	uap->pid = WAIT_ANY;
@@ -276,15 +276,17 @@ wait4()
 	register struct proc *p, *q;
 	union wait status;
 
-	f = 0;
 	q = u.u_procp;
 	if (uap->pid == 0)
 		uap->pid = -q->p_pgid;
-	if (uap->options &~ (WUNTRACED|WNOHANG|WSIGRESTART)) {
+#ifdef notyet
+	if (uap->options &~ (WUNTRACED|WNOHANG)) {
 		u.u_error = EINVAL;
 		return;
 	}
+#endif
 loop:
+	f = 0;
 	for (p = q->p_cptr; p; p = p->p_osptr) {
 		if (uap->pid != WAIT_ANY &&
 		    p->p_pid != uap->pid && p->p_pgid != -uap->pid)
@@ -366,7 +368,7 @@ loop:
 		u.u_r.r_val1 = 0;
 		return;
 	}
-	if (uap->options & WSIGRESTART && setjmp(&u.u_qsave)) {
+	if (setjmp(&u.u_qsave)) {
 		p = u.u_procp;
 		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0) {
 			u.u_error = EINTR;
