@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -297,9 +297,8 @@ sendenvelope(e, mode)
 	bool oldverbose;
 	int pid;
 	register ADDRESS *q;
-#ifndef HASFLOCK
-	struct flock lfd;
-#endif
+	char *qf;
+	char *id;
 
 	/*
 	**  If we have had global, fatal errors, don't bother sending
@@ -332,18 +331,25 @@ sendenvelope(e, mode)
 
 # ifndef HASFLOCK
 		/*
-		**  Since fcntl lockin has the interesting semantic that
-		**  the lock is lost when we fork, we have to risk losing
-		**  the lock here by closing before the fork, and then
-		**  trying to get it back in the child.
+		**  Since fcntl locking has the interesting semantic that
+		**  the lock is owned by a process, not by an open file
+		**  descriptor, we have to flush this to the queue, and
+		**  then restart from scratch in the child.
 		*/
 
-		if (e->e_lockfp != NULL)
-		{
-			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
-			e->e_lockfp = NULL;
-		}
-# endif /* HASFLOCK */
+		/* save id for future use */
+		id = e->e_id;
+
+		/* now drop the envelope in the parent */
+		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+		dropenvelope(e);
+
+		/* and reacquire in the child */
+		(void) dowork(id, TRUE, FALSE, e);
+
+		return;
+
+# else /* HASFLOCK */
 
 		pid = fork();
 		if (pid < 0)
@@ -352,15 +358,11 @@ sendenvelope(e, mode)
 		}
 		else if (pid > 0)
 		{
-			/* be sure we leave the temp files to our child */
-			e->e_id = e->e_df = NULL;
-# ifdef HASFLOCK
 			if (e->e_lockfp != NULL)
 			{
 				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
 				e->e_lockfp = NULL;
 			}
-# endif
 
 			/* close any random open files in the envelope */
 			if (e->e_dfp != NULL)
@@ -383,31 +385,6 @@ sendenvelope(e, mode)
 		/* be sure we are immune from the terminal */
 		disconnect(1, e);
 
-# ifndef HASFLOCK
-		/*
-		**  Now try to get our lock back.
-		*/
-
-		lfd.l_type = F_WRLCK;
-		lfd.l_whence = lfd.l_start = lfd.l_len = 0;
-		e->e_lockfp = fopen(queuename(e, 'q'), "r+");
-		if (e->e_lockfp == NULL ||
-		    fcntl(fileno(e->e_lockfp), F_SETLK, &lfd) < 0)
-		{
-			/* oops....  lost it */
-			if (tTd(13, 1))
-				printf("sendenvelope: %s lost lock: lockfp=%x, %s\n",
-					e->e_id, e->e_lockfp, errstring(errno));
-
-# ifdef LOG
-			if (LogLevel > 29)
-				syslog(LOG_NOTICE, "%s: lost lock: %m",
-					e->e_id);
-# endif /* LOG */
-			exit(EX_OK);
-		}
-# endif /* HASFLOCK */
-
 		/*
 		**  Close any cached connections.
 		**
@@ -419,6 +396,8 @@ sendenvelope(e, mode)
 		*/
 
 		mci_flush(FALSE, NULL);
+
+# endif /* HASFLOCK */
 
 		break;
 	}
