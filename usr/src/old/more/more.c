@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.4 (Berkeley) 81/04/23";
+static	char *sccsid = "@(#)more.c	4.5 (Berkeley) 82/03/15";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -9,10 +9,6 @@ static	char *sccsid = "@(#)more.c	4.4 (Berkeley) 81/04/23";
 **	modified by John Foderaro, UCB to add -c and MORE environment variable
 */
 
-#include <whoami.h>
-#ifdef V6
-#include <retrofit.h>
-#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -26,17 +22,8 @@ static	char *sccsid = "@(#)more.c	4.4 (Berkeley) 81/04/23";
 
 /* Help file will eventually go in libpath(more.help) on all systems */
 
-#ifdef INGRES
-#define VI		"/usr/bin/vi"
-#define HELPFILE	"/mntp/doucette/more/more.help"
-#endif
-
-#ifndef INGRES
-#ifndef HELPFILE
 #define HELPFILE	libpath(more.help)
-#endif
 #define VI		binpath(vi)
-#endif
 
 #define Fopen(s,m)	(Currline = 0,file_pos=0,fopen(s,m))
 #define Ftell(f)	file_pos
@@ -44,13 +31,8 @@ static	char *sccsid = "@(#)more.c	4.4 (Berkeley) 81/04/23";
 #define Getc(f)		(++file_pos, getc(f))
 #define Ungetc(c,f)	(--file_pos, ungetc(c,f))
 
-#ifdef V6
-#define MBIT	RAW
-#define CBREAK	~RAW
-#else
 #define MBIT	CBREAK
 #define stty(fd,argp)	ioctl(fd,TIOCSETN,argp)
-#endif
 
 #define TBUFSIZ	1024
 #define LINSIZ	256
@@ -63,9 +45,7 @@ struct sgttyb 	otty;
 long		file_pos, file_size;
 int		fnum, no_intty, no_tty, slow_tty;
 int		dum_opt, dlines, onquit(), end_it();
-#ifdef SIGTSTP
 int		onsusp();
-#endif
 int		nscroll = 11;	/* Number of lines scrolled by 'd' */
 int		fold_opt = 1;	/* Fold long lines */
 int		stop_opt = 1;	/* Stop after form feeds */
@@ -182,12 +162,10 @@ char *argv[];
     if (!no_tty) {
 	signal(SIGQUIT, onquit);
 	signal(SIGINT, end_it);
-#ifdef SIGTSTP
 	if (signal (SIGTSTP, SIG_IGN) == SIG_DFL) {
 	    signal(SIGTSTP, onsusp);
 	    catch_susp++;
 	}
-#endif
 	stty (2, &otty);
     }
     if (no_intty) {
@@ -1230,9 +1208,7 @@ register int n;
     }
     if (feof (file)) {
 	if (!no_intty) {
-#ifdef V6
 	    file->_flag &= ~_IOEOF; /* why doesn't fseek do this ??!!??! */
-#endif
 	    Currline = saveln;
 	    Fseek (file, startline);
 	}
@@ -1261,17 +1237,13 @@ char *cmd, *args;
 	}
 	signal (SIGINT, SIG_IGN);
 	signal (SIGQUIT, SIG_IGN);
-#ifdef SIGTSTP
 	if (catch_susp)
 	    signal(SIGTSTP, SIG_DFL);
-#endif
 	wait (0);
 	signal (SIGINT, end_it);
 	signal (SIGQUIT, onquit);
-#ifdef SIGTSTP
 	if (catch_susp)
 	    signal(SIGTSTP, onsusp);
-#endif
 	set_tty ();
 	pr ("------------------------\n");
 	prompt (filename);
@@ -1607,7 +1579,6 @@ register FILE *f;
 
 /* Come here when we get a suspend signal from the terminal */
 
-#ifdef SIGTSTP
 onsusp ()
 {
     reset_tty ();
@@ -1622,4 +1593,3 @@ onsusp ()
     if (inwait)
 	    longjmp (restore);
 }
-#endif
