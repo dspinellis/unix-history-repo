@@ -236,24 +236,6 @@ getnewvnode(tag, mp, vops, vpp)
 			*vpp = 0;
 			return (ENFILE);
 		}
-		/*
-		 * Prefer a vnode with no attached buffers, so that thrashing
-		 * of the vnode cache doesn't necessarily thrash the buffer
-		 * cache.  It might be better to pick the first free vnode
-		 * and reassign the buffers.
-		 */
-		while (vp->v_dirtyblkhd || vp->v_cleanblkhd) {
-			vp = vp->v_freef;
-			if (vp == NULL) {
-				vp = vfreeh;
-				break;
-			}
-		}
-		if (vp != vfreeh) {
-			if (vp->v_type != VBAD)
-				vgone(vp);
-			vp = vfreeh;
-		}
 		if (vp->v_usecount)
 			panic("free vnode isn't");
 		if (vq = vp->v_freef)
