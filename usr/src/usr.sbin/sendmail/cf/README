@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.18 (Berkeley) %G%
+		@(#)README	8.19 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -238,12 +238,15 @@ uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		is for when you know that the UUCP mailer at the other
 		end can handle multiple recipients in one transfer.
 		When you invoke this, sendmail looks for all names in
-		the $=U class and sends them to the uucp mailer; all
-		names in the $=Y class are sent to suucp.  Note that
+		the $=U class and sends them to the uucp-old mailer; all
+		names in the $=Y class are sent to uucp-new; and all
+		names in the $=Z class are sent to uucp-uudom.  Note that
 		this is a function of what version of rmail runs on
 		the receiving end, and hence may be out of your control.
-		If smtp is defined, it also defines a "uucp-dom" mailer
-		that uses domain-style rewriting.
+		If smtp is defined, it also defines "uucp-dom" and
+		"uucp-uudom" mailers that use domain-style rewriting.
+		See the section below describing UUCP mailers in more
+		detail.
 
 usenet		Usenet (network news) delivery.  If this is specified,
 		an extra rule is added to ruleset 0 that forwards all
@@ -430,6 +433,92 @@ example:
 The second example demonstrates that you can use two names on the
 same line; these are usually aliases for the same host (or are at
 least in the same company).
+
+
++--------------------+
+| USING UUCP MAILERS |
++--------------------+
+
+It's hard to get UUCP mailers right because of the extremely ad hoc
+nature of UUCP addressing.  These config files are really designed
+for domain-based addressing, even for UUCP sites.
+
+There are four UUCP mailers available.  The choice of which one to
+use is partly a matter of local preferences and what is running at
+the other end of your UUCP connection.  Unlike good protocols that
+define what will go over the wire, UUCP uses the policy that you
+should do what is right for the other end; if they change, you have
+to change.  This makes it hard to do the right thing, and discourages
+people from updating their software.  In general, if you can avoid
+UUCP, please do.
+
+The major choice is whether to go for a domainized scheme or a
+non-domainized scheme.  This depends entirely on what the other
+end will recognize.  If at all possible, you should encourage the
+other end to go to a domain-based system -- non-domainized addresses
+don't work entirely properly.
+
+The four mailers are:
+
+    uucp-old (obsolete name: "uucp")
+	This is the oldest, the worst (but the closest to UUCP) way of
+	sending messages accros UUCP connections.  It does bangify
+	everything and prepends $U (your UUCP name) to the sender's
+	address (which can already be a bang path itself).  It can
+	only send to one address at a time, so it spends a lot of
+	time copying duplicates of messages.  Avoid this if at all
+	possible.
+
+    uucp-new (obsolete name: "suucp")
+	The same as above, except that it assumes that in one rmail
+	command you can specify several recipients.  It still has a
+	lot of other problems.
+
+    uucp-dom
+	This UUCP mailer keeps everything as domain addresses.
+	Basically, it uses the SMTP mailer rewriting rules.
+
+	Unfortunately, a lot of UUCP mailer transport agents require
+	bangified addresses in the envelope, although you can use
+	domain-based addresses in the message header.  (The envelope
+	shows up as the From_ line on UNIX mail.)  So....
+
+    uucp-uudom
+	This is a cross between uucp-new (for the envelope addresses)
+	and uucp-dom (for the header addresses).  It bangifies the
+	envelope sender (From_ line in messages) without adding the
+	local hostname, unless there is no host name on the address
+	at all (e.g., "wolf") or the host component is a UUCP host name
+	instead of a domain name ("somehost!wolf" instead of
+	"some.dom.ain!wolf").
+
+Examples:
+
+We are on host grasp.insa-lyon.fr (UUCP host name "grasp").  The
+following summarizes the sender rewriting for various mailers.
+
+Mailer          sender		rewriting in the envelope
+------		------		-------------------------
+uucp-{old,new}	wolf		grasp!wolf
+uucp-dom	wolf		wolf@grasp.insa-lyon.fr
+uucp-uudom	wolf		grasp.insa-lyon.fr!wolf
+
+uucp-{old,new}	wolf@fr.net	grasp!fr.net!wolf
+uucp-dom	wolf@fr.net	wolf@fr.net
+uucp-uudom	wolf@fr.net	fr.net!wolf
+
+uucp-{old,new}	somehost!wolf	grasp!somehost!wolf
+uucp-dom	somehost!wolf	somehost!wolf@grasp.insa-lyon.fr
+uucp-uudom	somehost!wolf	grasp.insa-lyon.fr!somehost!wolf
+
+If you are using one of the domainized UUCP mailers, you really want
+to convert all UUCP addresses to domain format -- otherwise, it will
+do it for you (and probably not the way you expected).  For example,
+if you have the address foo!bar!baz (and you are not sending to foo),
+the heuristics will add the @uucp.relay.name or @local.host.name to
+this address.  However, if you map foo to foo.host.name first, it
+will not add the local hostname.  You can do this using the uucpdomain
+feature.
 
 
 +-------------------+
@@ -1025,8 +1114,8 @@ RULESETS (* means built in to sendmail)
 MAILERS
 
    0	local, prog	local and program mailers
-   1	smtp		SMTP channel
-   2	uucp		UNIX-to-UNIX Copy Program
+   1	[e]smtp, relay	SMTP channel
+   2	uucp-*		UNIX-to-UNIX Copy Program
    3	netnews		Network News delivery
    4	fax		Sam Leffler's FlexFAX software
 
