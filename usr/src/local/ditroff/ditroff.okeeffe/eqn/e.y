@@ -1,4 +1,4 @@
-/*	e.y	(CWI)	1.1	85/03/01	*/
+/*	e.y	(CWI)	1.2	85/03/22	*/
 %{#
 #include "e.h"
 #
@@ -21,7 +21,7 @@ int	fromflg;
 %%
 
 stuff	: eqn 	{ putout($1); }
-	| error	{ error(!FATAL, "syntax error"); }
+	| error	{ error(FATAL, "syntax error"); }
 	|	{ eqnreg = 0; }
 	;
 
