@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.62 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2030,6 +2030,8 @@ hostsignature(m, host, e)
 #ifdef NAMED_BIND
 	int nmx;
 	auto int rcode;
+	char *hp;
+	char *endp;
 	char *mxhosts[MAXMXHOSTS + 1];
 	static char myhostbuf[MAXNAME];
 #endif
@@ -2068,36 +2070,57 @@ hostsignature(m, host, e)
 	if (myhostbuf[0] == '\0')
 		expand("\201j", myhostbuf, &myhostbuf[sizeof myhostbuf - 1], e);
 
-	nmx = getmxrr(host, mxhosts, myhostbuf, &rcode);
-
-	if (nmx <= 0)
+	for (hp = host; hp != NULL; hp = endp)
 	{
-		register MCI *mci;
-		extern int errno;
-		extern MCI *mci_get();
+		endp = strchr(hp, ':');
+		if (endp != NULL)
+			*endp = '\0';
 
-		/* update the connection info for this host */
-		mci = mci_get(host, m);
-		mci->mci_exitstat = rcode;
-		mci->mci_errno = errno;
+		nmx = getmxrr(hp, mxhosts, myhostbuf, &rcode);
 
-		/* and return the original host name as the signature */
-		s->s_hostsig = host;
-		return host;
-	}
+		if (nmx <= 0)
+		{
+			register MCI *mci;
+			extern int errno;
+			extern MCI *mci_get();
 
-	len = 0;
-	for (i = 0; i < nmx; i++)
-	{
-		len += strlen(mxhosts[i]) + 1;
-	}
-	s->s_hostsig = p = xalloc(len);
-	for (i = 0; i < nmx; i++)
-	{
-		if (i != 0)
+			/* update the connection info for this host */
+			mci = mci_get(hp, m);
+			mci->mci_exitstat = rcode;
+			mci->mci_errno = errno;
+
+			/* and return the original host name as the signature */
+			nmx = 1;
+			mxhosts[0] = hp;
+		}
+
+		len = 0;
+		for (i = 0; i < nmx; i++)
+		{
+			len += strlen(mxhosts[i]) + 1;
+		}
+		if (s->s_hostsig != NULL)
+			len += strlen(s->s_hostsig) + 1;
+		p = xalloc(len);
+		if (s->s_hostsig != NULL)
+		{
+			(void) strcpy(p, s->s_hostsig);
+			free(s->s_hostsig);
+			s->s_hostsig = p;
+			p += strlen(p);
 			*p++ = ':';
-		strcpy(p, mxhosts[i]);
-		p += strlen(p);
+		}
+		else
+			s->s_hostsig = p;
+		for (i = 0; i < nmx; i++)
+		{
+			if (i != 0)
+				*p++ = ':';
+			strcpy(p, mxhosts[i]);
+			p += strlen(p);
+		}
+		if (endp != NULL)
+			*endp++ = ':';
 	}
 	makelower(s->s_hostsig);
 #else
