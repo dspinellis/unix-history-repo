@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.2 %G%";
+static char *SccsId = "@(#)collect.c	2.3 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -103,7 +103,7 @@ collect(hp)
 			if (intty && value("ignoreeof") != NOSTR) {
 				if (++eof > 35)
 					break;
-				printf("Use \"%cq\" to terminate letter\n",
+				printf("Use \".\" to terminate letter\n",
 				    escape);
 				continue;
 			}
