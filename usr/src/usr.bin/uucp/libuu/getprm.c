@@ -1,14 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)getprm.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getprm.c	5.3 (Berkeley) %G%";
 #endif
 
-#include <stdio.h>
+#include "uucp.h"
 
 #define LQUOTE	'('
 #define RQUOTE ')'
 #define NOSYSPART	0
 #define HASSYSPART	1
 
+/*LINTLIBRARY*/
 
 /*
  *	get next parameter from s
@@ -21,7 +22,6 @@ getprm(s, prm)
 register char *s, *prm;
 {
 	register char *c;
-	char *index();
 
 	while (*s == ' ' || *s == '\t' || *s == '\n')
 		s++;
@@ -81,8 +81,7 @@ register char *name, *rest;
 char *sys;
 {
 	register char *c;
-	char *index(), *strcpy();
-	int i;
+	register int i;
 
 	if (*name == LQUOTE) {
 		if ((c = index(name + 1, RQUOTE)) != NULL) {
@@ -102,11 +101,10 @@ char *sys;
 		return NOSYSPART;
 	}
 
-	*c = '\0';
-	for (i = 0; i < 7; i++)
-		if ((*sys++ = *name++) == '\0')
-			break;
+	*c++ = '\0';
+	strncpy(sys, name, MAXBASENAME);
+	sys[MAXBASENAME] = '\0';
 
-	strcpy(rest, ++c);
+	strcpy(rest, c);
 	return HASSYSPART;
 }
