@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uuencode.1	6.2 (Berkeley) %G%
+.\"	@(#)uuencode.1	6.3 (Berkeley) %G%
 .\"
-.TH UUENCODE 1C ""
+.TH UUENCODE 1 ""
 .UC 4
 .SH NAME
 uuencode, uudecode \- encode/decode a binary file for transmission via mail
@@ -23,7 +23,7 @@ and
 are used to send a binary file via uucp (or other) mail.
 This combination can be used over indirect mail links
 even when
-.IR uusend (1C)
+.IR uusend (1)
 is not available.
 .PP
 .I Uuencode
@@ -62,7 +62,7 @@ user on the remote machine who can uudecode it manually.
 The encode file has an ordinary text form and can be edited
 by any text editor to change the mode or remote name.
 .SH SEE ALSO
-atob(n), uusend(1C), uucp(1C), uux(1C), mail(1), uuencode(5)
+atob(n), uusend(1), uucp(1), uux(1), mail(1), uuencode(5)
 .SH BUGS
 The file is expanded by 35% (3 bytes become 4 plus control information)
 causing it to take longer to transmit.

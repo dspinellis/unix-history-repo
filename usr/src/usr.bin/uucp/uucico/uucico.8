@@ -1,6 +1,10 @@
-.\"	@(#)uucico.8	6.3 (Berkeley) %G%
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
 .\"
-.TH UUCICO 8C ""
+.\"	@(#)uucico.8	6.4 (Berkeley) %G%
+.\"
+.TH UUCICO 8 ""
 .UC 6
 .SH NAME
 uucico, uucpd \- transfer files queued by uucp or uux
@@ -29,9 +33,9 @@ uucico, uucpd \- transfer files queued by uucp or uux
 .I Uucico
 performs the actual work involved in transferring files between
 systems. 
-.IR Uucp (1C)
+.IR Uucp (1)
 and
-.IR uux (1C)
+.IR uux (1)
 merely queue requests for data transfer which
 .I uucico
 processes.
@@ -214,8 +218,8 @@ this UID to a remote login would be an extreme security hazard.
 /usr/spool/uucppublic	Public access directory
 .fi
 .SH SEE ALSO
-uucp(1C), uuq(1C), uux(1C), L-devices(5), L-dialcodes(5), L.aliases(5),
-L.cmds(5), L.sys(5), uuclean(8C), uupoll(8C), uusnap(8C), uuxqt(8C)
+uucp(1), uuq(1), uux(1), L-devices(5), L-dialcodes(5), L.aliases(5),
+L.cmds(5), L.sys(5), uuclean(8), uupoll(8), uusnap(8), uuxqt(8)
 .PP
 D. A. Nowitz and M. E. Lesk,
 .IR "A Dial-Up Network of UNIX Systems" .
