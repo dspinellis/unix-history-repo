@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	7.1 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -208,7 +208,6 @@ ptcopen(dev, flag)
 		return (EIO);
 	tp->t_oproc = ptsstart;
 	(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-	tp->t_state |= TS_CARR_ON;
 	pti = &pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
 	pti->pt_send = 0;
@@ -223,6 +222,7 @@ ptcclose(dev)
 
 	tp = &pt_tty[minor(dev)];
 	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
+	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
 }
 
