@@ -50,6 +50,9 @@ print:
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
 
+action:
+	${ACTION}
+
 clean:
 	-rm errs makefile.bak ${ALLO} ${ALLEXE}
 
