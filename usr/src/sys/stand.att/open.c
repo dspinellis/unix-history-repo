@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)open.c	7.1 (Berkeley) %G%
+ *	@(#)open.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -307,7 +307,7 @@ readdir(dirp)
 			io->i_cc = dblksize(&io->i_fs, &io->i_ino, lbn);
 			if (devread(io) < 0) {
 				errno = io->i_error;
-				printf("bn %D: directory read error\n",
+				printf("bn %ld: directory read error\n",
 					io->i_bn);
 				return (NULL);
 			}
