@@ -89,7 +89,7 @@ larn: $(OBJS) ${LIBC}
 	$(CC) $(CFLAGS) $(OBJS) -o $@ $(TERMLIB)
 
 install:
-	-mkdir ${DESTDIR}/usr/games/lib/larnfiles > /dev/null 2>&1
+	-[ -d ${DESTDIR}/usr/games/lib/larnfiles ] || mkdir ${DESTDIR}/usr/games/lib/larnfiles
 	chmod 700 ${DESTDIR}/usr/games/lib/larnfiles
 	chown games.src ${DESTDIR}/usr/games/lib/larnfiles
 	install -s -o games -g bin -m 4700 larn ${DESTDIR}/usr/games/hide

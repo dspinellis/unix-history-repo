@@ -88,7 +88,7 @@ distribution: Makefile
 install:
 	install -s -o games -g bin -m 4700 hack ${DESTDIR}/usr/games/hide
 	(cd ${DESTDIR}/usr/games; rm -f hack; ln -s dm hack; chown games.bin hack)
-	-mkdir ${DESTDIR}/usr/games/lib/hackdir > /dev/null 2>&1
+	-[ -d ${DESTDIR}/usr/games/lib/hackdir ] || mkdir ${DESTDIR}/usr/games/lib/hackdir
 	chmod 700 ${DESTDIR}/usr/games/lib/hackdir
 	chown games.bin ${DESTDIR}/usr/games/lib/hackdir
 	install -c -o games -g bin -m 666 /dev/null ${DESTDIR}/usr/games/lib/hackdir/perm

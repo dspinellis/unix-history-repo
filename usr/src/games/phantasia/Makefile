@@ -94,7 +94,7 @@ phant.help:	phant.nr
 
 # Install game and documentation.  Initialize.
 install: FRC
-	-mkdir /usr/games/lib/phantasia
+	-[ -d ${DESTDIR}/usr/games/lib/phantasia ] || mkdir ${DESTDIR}/usr/games/lib/phantasia
 	chmod 700 /usr/games/lib/phantasia
 	chown games.bin /usr/games/lib/phantasia
 	install -s -o games -g bin -m 4700 phantasia ${DESTDIR}/usr/games/hide

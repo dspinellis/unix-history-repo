@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.4	(Berkeley)	%G%
+#	@(#)Makefile	4.5	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -22,7 +22,7 @@ depend: FRC
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: FRC
-	-mkdir ${DESTDIR}/usr/games/lib/quiz.k > /dev/null 2>&1
+	-[ -d ${DESTDIR}/usr/games/lib/quiz.k ] || mkdir ${DESTDIR}/usr/games/lib/quiz.k
 	chmod 700 ${DESTDIR}/usr/games/lib/quiz.k
 	chown games.bin ${DESTDIR}/usr/games/lib/quiz.k
 	cd quiz.k; install -c -o games -g bin -m 400 * ${DESTDIR}/usr/games/lib/quiz.k
