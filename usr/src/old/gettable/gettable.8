@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)gettable.8	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH GETTABLE 8C ""
+.\"	@(#)gettable.8	6.3 (Berkeley) %G%
+.\"
+.TH GETTABLE 8 ""
 .UC 5
 .SH NAME
 gettable \- get NIC format host tables from a host 
@@ -46,9 +57,7 @@ is best used in conjunction with the
 program which converts the NIC standard file format to
 that used by the network library lookup routines.
 .SH "SEE ALSO"
-intro(3N),
-htable(8),
-named(8)
+intro(3), htable(8), named(8)
 .SH BUGS
 If the name-domain system provided network name mapping well as host
 name mapping,
