@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_output.c	6.6 (Berkeley) %G%
+ *	@(#)ns_output.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,7 +34,7 @@ ns_output(m0, ro, flags)
 	int flags;
 {
 	register struct idp *idp = mtod(m0, struct idp *);
-	register struct ifnet *ifp;
+	register struct ifnet *ifp = 0;
 	int error = 0;
 	struct route idproute;
 	struct sockaddr_ns *dst;
@@ -46,10 +46,6 @@ ns_output(m0, ro, flags)
 		}
 		ns_lastout = m_copy(m0, 0, (int)M_COPYALL);
 	}
-	if (ns_copy_output) {
-		ns_watch_output(m0);
-	}
-
 	/*
 	 * Route packet.
 	 */
@@ -67,24 +63,13 @@ ns_output(m0, ro, flags)
 		 * short circuit routing lookup.
 		 */
 		if (flags & NS_ROUTETOIF) {
-			struct ns_ifaddr *ia;
-			struct ifaddr *ifa_ifwithdstaddr();
+			struct ns_ifaddr *ia = ns_iaonnetof(&idp->idp_dna);
 
-			ia = ns_iaonnetof(idp->idp_dna.x_net);
 			if (ia == 0) {
 				error = ENETUNREACH;
 				goto bad;
 			}
 			ifp = ia->ia_ifp;
-			if (ifp->if_flags & IFF_POINTOPOINT) {
-				ia = (struct ns_ifaddr *)
-					ifa_ifwithdstaddr(&ro->ro_dst);
-				if (ia == 0) {
-					error = ENETUNREACH;
-					goto bad;
-				}
-				ifp = ia->ia_ifp;
-			}
 			goto gotif;
 		}
 		rtalloc(ro);
@@ -122,12 +107,18 @@ gotif:
 
 	if (htons(idp->idp_len) <= ifp->if_mtu) {
 		ns_output_cnt++;
+		if (ns_copy_output) {
+			ns_watch_output(m0, ifp);
+		}
 		error = (*ifp->if_output)(ifp, m0, (struct sockaddr *)dst);
 		goto done;
 	} else error = EMSGSIZE;
 
 
 bad:
+	if (ns_copy_output) {
+		ns_watch_output(m0, ifp);
+	}
 	m_freem(m0);
 done:
 	if (ro == &idproute && (flags & NS_ROUTETOIF) == 0 && ro->ro_rt)
