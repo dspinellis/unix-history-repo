@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.9 (Berkeley) 84/05/08";
+static	char *sccsid = "@(#)input.c	1.10 (Berkeley) 84/09/25";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -363,6 +363,7 @@ Errorclass lint3()
 char	*F77_fatal[3] = {"Compiler", "error", "line"};
 char	*F77_error[3] = {"Error", "on", "line"};
 char	*F77_warning[3] = {"Warning", "on", "line"};
+char    *F77_no_ass[3] = {"Error.","No","assembly."};
 f77()
 {
 	char	**nwordv;
@@ -374,7 +375,12 @@ f77()
 	 *		Compiler error line %d of %s: %s
 	 *		Error on line %d of %s: %s
 	 *		Warning on line %d of %s: %s
+	 *		Error.  No assembly.
 	 */
+	if (wordc == 3 && wordvcmp(wordv+1, 3, F77_no_ass) == 0) {
+		wordc = 0;
+		return(C_SYNC);
+	}
 	if (wordc < 6)
 		return(C_UNKNOWN);
 	if (	(lastchar(wordv[6]) == ':')
