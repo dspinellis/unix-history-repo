@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-PROG=	expreserve
+PROG=	ex3.7preserve
 CFLAGS+=-I${.CURDIR}/..
 BINOWN=	root
 BINDIR=	/usr/libexec
