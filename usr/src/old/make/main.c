@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.11 (Berkeley) 88/09/13";
+static	char *sccsid = "@(#)main.c	4.12 (Berkeley) 90/03/26";
 # include "defs"
 /*
 command make to update programs.
