@@ -1,4 +1,4 @@
-/*	conf.c	4.18	83/04/30	*/
+/*	conf.c	4.19	83/07/06	*/
 
 #include "../machine/pte.h"
 
@@ -79,13 +79,15 @@ int	nullsys(), nullioctl();
 #if defined(VAX780) || defined(VAX750)
 int	hpstrategy(), hpopen(), hpioctl();
 #endif
+#if defined(VAX780) || defined(VAX750)
 int	upstrategy(), upopen(), upioctl();
+#endif
 int	rkstrategy(), rkopen(), rkioctl();
 int	rastrategy(), raopen(), raioctl();
+#if defined(VAX730)
 int	idcstrategy(), idcopen(), idcioctl();
-#if defined(VAX780) || defined(VAX750)
-int	rlstrategy(), rlopen(), rlioctl();
 #endif
+int	rlstrategy(), rlopen(), rlioctl();
 #ifndef BOOT
 int	tmstrategy(), tmopen(), tmclose();
 int	tsstrategy(), tsopen(), tsclose();
@@ -100,15 +102,15 @@ struct devsw devsw[] = {
 #if defined(VAX780) || defined(VAX750)
 	{ "hp",	hpstrategy,	hpopen,		nullsys,	hpioctl },
 #endif
+#if defined(VAX780) || defined(VAX750)
 	{ "up",	upstrategy,	upopen,		nullsys,	upioctl },
+#endif
 	{ "hk",	rkstrategy,	rkopen,		nullsys,	rkioctl },
 	{ "ra",	rastrategy,	raopen,		nullsys,	raioctl },
 #if defined(VAX730)
 	{ "rb",	idcstrategy,	idcopen,	nullsys,	idcioctl },
 #endif
-#if defined(VAX780) || defined(VAX750)
 	{ "rl",	rlstrategy,	rlopen,		nullsys,	rlioctl },
-#endif
 #ifndef BOOT
 	{ "ts",	tsstrategy,	tsopen,		tsclose,	nullioctl },
 #if defined(VAX780) || defined(VAX750)
