@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.9 83/08/26";
+static	char *sccsid = "@(#)wwwrite.c	3.10 83/09/14";
 #endif
 
 #include "ww.h"
@@ -9,7 +9,6 @@ register struct ww *w;
 register char *p;
 int n;
 {
-	char c;
 
 	if (w == 0 || w->ww_win == 0)
 	wwnwrite++;
@@ -17,15 +16,17 @@ int n;
 	if (hascursor = w->ww_hascursor)
 		wwcursor(w, 0);
 	while (n-- > 0) {
-		c = *p++ & 0x7f;
+			}
+			if (w->ww_cur.c >= w->ww_w.nc) {
+				w->ww_cur.c = 0;
+				goto lf;
+			}
+			continue;
+		}
+		n--;
 		switch (w->ww_wstate) {
 		case 0:
-				if (w->ww_insert) {
-					Winschars(w->ww_win, 1);
-				Wputc(c, w->ww_win);
-				break;
-			}
-			switch (c) {
+			switch (*p++) {
 			case '\n':
 				Wputc(c, w->ww_win);
 				if (w->ww_refresh)
@@ -44,7 +45,7 @@ int n;
 			break;
 		case 1:
 			w->ww_wstate = 0;
-			switch (c) {
+			switch (*p++) {
 			case '@':
 				w->ww_insert = 1;
 				break;

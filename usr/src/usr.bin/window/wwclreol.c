@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.7 83/08/18";
+static	char *sccsid = "@(#)wwclreol.c	3.8 83/09/14";
 #endif
 
 #include "ww.h"
@@ -25,44 +25,70 @@ char cleared;
 	int row = line - w->ww_scroll;
 	int srow = w->ww_w.t + row;
 	int scol = w->ww_w.l + col;
-	register union ww_char *s, *buf;
-	register char *smap, *win;
-	char *touched;
 	int nblank, ncleared;
 
-	if (row < 0 || row >= w->ww_w.nr) {
-		/* can't even see it, so just clear the buffer */
+	/*
+	 * Clear the buffer right off
+	 */
+	{
+		register union ww_char *buf;
+
 		buf = &w->ww_buf[line][col]; 
 		for (i = w->ww_w.nc - col; --i >= 0;)
 			buf++->c_w = ' ';
+	}
+
+	/*
+	 * If can't see it, just return.
+	 */
+	if (srow < w->ww_i.t || srow >= w->ww_i.b
+	    || w->ww_i.r <= 0 || w->ww_i.r <= scol)
 		return;
-	}
-	smap = &wwsmap[srow][scol];
-	s = &wwns[srow][scol];
-	touched = &wwtouched[srow];
-	win = &w->ww_win[row][col];
-	buf = &w->ww_buf[line][col];
-	ncleared = nblank = 0;
-	for (i = w->ww_w.nc - col; --i >= 0;) {
-		buf++->c_w = ' ';
-		if (*smap++ != w->ww_index) {
-			if (s++->c_w == ' ')
+
+	if (scol < w->ww_i.l)
+		scol = w->ww_i.l;
+	col = scol - w->ww_w.l;
+
+	/*
+	 * Now find out how much is actually cleared, and fix wwns.
+	 */
+	{
+		register union ww_char *s;
+		register char *smap, *win;
+		register char *touched;
+
+		smap = &wwsmap[srow][scol];
+		s = &wwns[srow][scol];
+		touched = &wwtouched[srow];
+		win = &w->ww_win[row][col];
+		ncleared = nblank = 0;
+
+		for (i = w->ww_i.r - scol; --i >= 0;) {
+			if (*smap++ != w->ww_index) {
+				if (s++->c_w == ' ')
+					nblank++;
+				win++;
+				continue;
+			}
+			ncleared++; 
+			*touched = 1;
+			if (*win == 0) {
 				nblank++;
-			win++;
-			continue;
+				s++->c_w = ' ';
+				win++;
+			} else
+				s++->c_w = ' ' | *win++ << WWC_MSHIFT;
 		}
-		ncleared++; 
-		*touched = 1;
-		if (*win == 0) {
-			nblank++;
-			s++->c_w = ' ';
-			win++;
-		} else
-			s++->c_w = ' ' | *win++ << WWC_MSHIFT;
 	}
+
+	/*
+	 * Can/Should we use clear eol?
+	 */
 	if (!cleared && tt.tt_clreol != 0
 	    && ncleared > wwncol - scol - nblank
 	    && nblank > (wwncol - scol) / 2) {
+		register union ww_char *s;
+
 		/* clear to the end */
 		(*tt.tt_move)(srow, scol);
 		(*tt.tt_clreol)();

@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.12 83/09/01		*/
+/*	@(#)ww.h	3.13 83/09/14		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -16,6 +16,7 @@ struct ww {
 	char ww_mode;		/* mode used to open this window */
 	char ww_wstate;		/* state for printing charcters */
 	struct ww_dim ww_w;	/* window dimemsions */
+	struct ww_dim ww_i;	/* the part inside the screen */
 	int ww_pty;		/* pty or socket pair */
 	int ww_tty;
 	int ww_pid;

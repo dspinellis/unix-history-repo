@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.4 83/09/01";
+static	char *sccsid = "@(#)cmd5.c	3.5 83/09/14";
 #endif
 
 #include "defs.h"
@@ -11,6 +11,9 @@ c_move(w)
 register struct ww *w;
 {
 	int col, row;
+	int mincol, minrow;
+	int maxcol, maxrow;
+	int curcol, currow;
 	struct ww *back = w->ww_back;
 
 	col = w->ww_w.l;
@@ -18,12 +21,15 @@ register struct ww *w;
 	wwadd(boxwin, framewin->ww_back);
 	for (;;) {
 		wwbox(boxwin, row - 1, col - 1, w->ww_w.nr + 2, w->ww_w.nc + 2);
-		wwsetcursor(row, col);
+		getminmax(row, w->ww_w.nr, 1, wwnrow,
+			&currow, &minrow, &maxrow);
+		getminmax(col, w->ww_w.nc, 0, wwncol,
+			&curcol, &mincol, &maxcol);
+		wwsetcursor(currow, curcol);
 		while (bpeekc() < 0)
 			bread();
 		wwunbox(boxwin);
-		switch (getpos(&row, &col, 1, 0,
-			wwnrow - w->ww_w.nr, wwncol - w->ww_w.nc)) {
+		switch (getpos(&row, &col, minrow, mincol, maxrow, maxcol)) {
 		case -1:
 			wwdelete(boxwin);
 			if (!terse)
@@ -41,10 +47,37 @@ register struct ww *w;
 		(void) wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);
 	wwdelete(w);
-	w->ww_w.t = row;
-	w->ww_w.l = col;
-	w->ww_w.b = row + w->ww_w.nr;
-	w->ww_w.r = col + w->ww_w.nc;
+	wwmove(w, row, col);
 	wwadd(w, back);
 	reframe();
+}
+
+/*
+ * Weird stufff, don't ask.
+ */
+getminmax(x, n, a, b, curx, minx, maxx)
+register x, n, a, b;
+int *curx, *minx, *maxx;
+{
+	if (x < a) {
+		*curx = x + n - 1;
+		*minx = 1 - n;
+		*maxx = a;
+	} else if (x == a) {
+		*curx = x;
+		*minx = 1 - n;
+		*maxx = b - n;
+	} else if (x < b - n) {
+		*curx = x;
+		*minx = a;
+		*maxx = b - n;
+	} else if (x == b - n) {
+		*curx = x;
+		*minx = a;
+		*maxx = b - 1;
+	} else {
+		*curx = x;
+		*minx = b - n;
+		*maxx = b - 1;
+	}
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelline.c	3.3 83/08/18";
+static	char *sccsid = "@(#)wwdelline.c	3.4 83/09/14";
 #endif
 
 #include "ww.h"
@@ -11,21 +11,21 @@ int line;
 	register i;
 	register union ww_char **cpp, **cqq;
 	register union ww_char *cp;
-	int srow, erow;
+	int row1, row2;
 	char deleted;
 	int visible;
 
 	/*
 	 * Scroll first.
 	 */
-	if ((srow = line - w->ww_scroll) < 0)
-		srow = 0;
-	if ((erow = w->ww_nline - w->ww_scroll - 1) >= w->ww_w.nr) {
-		erow = w->ww_w.nr - 1;
+	if ((row1 = line - w->ww_scroll) < w->ww_i.t - w->ww_w.t)
+		row1 = w->ww_i.t - w->ww_w.t;
+	if ((row2 = w->ww_nline - w->ww_scroll) > w->ww_i.b - w->ww_w.t) {
+		row2 = w->ww_i.b - w->ww_w.t;
 		visible = 0;
 	} else
 		visible = 1;
-	deleted = wwscroll1(w, srow, erow, 1, visible);
+	deleted = wwscroll1(w, row1, row2, 1, visible);
 
 	/*
 	 * Fix the buffer.
@@ -34,7 +34,7 @@ int line;
 	cpp = &w->ww_buf[line];
 	cqq = cpp + 1;
 	cp = *cpp;
-	for (i = w->ww_nline - line - 1; --i >= 0;)
+	for (i = w->ww_nline - line; --i > 0;)
 		*cpp++ = *cqq++;
 	*cpp = cp;
 

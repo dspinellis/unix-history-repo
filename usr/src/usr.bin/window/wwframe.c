@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.8 83/08/23";
+static	char *sccsid = "@(#)wwframe.c	3.9 83/09/14";
 #endif
 
 #include "ww.h"
@@ -99,7 +99,7 @@ register struct ww *w;
 
 	if (w->ww_w.b < wwnrow) {
 		r = w->ww_w.b;
-		c = w->ww_w.l - 1;
+		c = w->ww_i.l - 1;
 		smap = &wwsmap[r - 1][c + 1];
 		a1 = 0;
 		a2 = 0;
