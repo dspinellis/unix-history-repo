@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.11 (Berkeley) %G%
+#	@(#)Files.base	8.12 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -6,6 +6,11 @@ READ_ME
 RELEASE_NOTES
 doc/op/Makefile
 doc/op/op.me
+mail.local/Makefile
+mail.local/Makefile.dist
+mail.local/mail.local.8
+mail.local/mail.local.c
+mail.local/pathnames.h
 mailstats/Makefile
 mailstats/mailstats.c
 makemap/Makefile
