@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socketvar.h	6.9 (Berkeley) %G%
+ *	@(#)socketvar.h	6.10 (Berkeley) %G%
  */
 
 /*
@@ -93,14 +93,16 @@ struct socket {
 
 /* can we read something from so? */
 #define	soreadable(so) \
-    ((so)->so_rcv.sb_cc || ((so)->so_state & SS_CANTRCVMORE) || (so)->so_qlen)
+    ((so)->so_rcv.sb_cc || ((so)->so_state & SS_CANTRCVMORE) || \
+	(so)->so_qlen || (so)->so_error)
 
 /* can we write something to so? */
 #define	sowriteable(so) \
     (sbspace(&(so)->so_snd) > 0 && \
 	(((so)->so_state&SS_ISCONNECTED) || \
 	  ((so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || \
-     ((so)->so_state & SS_CANTSENDMORE))
+     ((so)->so_state & SS_CANTSENDMORE) || \
+     (so)->so_error)
 
 /* adjust counters in sb reflecting allocation of m */
 #define	sballoc(sb, m) { \
