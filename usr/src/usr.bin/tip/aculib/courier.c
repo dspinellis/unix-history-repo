@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)courier.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)courier.c	5.2 (Berkeley) %G%";
 #endif
 
 #define write cour_write
 /*
- * Routines for calling up on a Hayes Smartmodem
+ * Routines for calling up on a Courier modem.
+ * Derived from Hayes driver.
  */
 #include "tip.h"
 #include <stdio.h>
@@ -19,6 +20,7 @@ static char sccsid[] = "@(#)courier.c	5.1 (Berkeley) %G%";
 
 static	int sigALRM();
 static	int timeout = 0;
+static	int connected = 0;
 static	jmp_buf timeoutbuf, intbuf;
 static	int (*osigint)();
 
@@ -27,7 +29,6 @@ cour_dialer(num, acu)
 	char *acu;
 {
 	register char *cp;
-	register int connected = 0;
 #ifdef ACULOG
 	char line[80];
 #endif
@@ -39,12 +40,23 @@ cour_dialer(num, acu)
 	 * Get in synch.
 	 */
 	if (!coursync()) {
+badsynch:
 		printf("can't synchronize with courier\n");
 #ifdef ACULOG
 		logent(value(HOST), num, "courier", "can't synch up");
 #endif
 		return (0);
 	}
+	write(FD, "AT E0\r", 6);	/* turn off echoing */
+	sleep(1);
+#ifdef DEBUG
+	if (boolean(value(VERBOSE)))
+		verbose_read();
+#endif
+	ioctl(FD, TIOCFLUSH, 0);	/* flush any clutter */
+	write(FD, "AT C1 E0 H0 Q0 X6 V1\r", 21);
+	if (!cour_swallow("\r\nOK\r\n"))
+		goto badsynch;
 	fflush(stdout);
 	write(FD, "AT D", 4);
 	for (cp = num; *cp; cp++)
@@ -66,14 +78,19 @@ cour_dialer(num, acu)
 }
 
 cour_disconnect()
-  {
+{
+	 /* first hang up the modem*/
+	ioctl(FD, TIOCCDTR, 0);
+	sleep(1);
+	ioctl(FD, TIOCSDTR, 0);
+	coursync();				/* reset */
 	close(FD);
 }
 
 cour_abort()
-  {
-	write(FD, "\rAT Z\r", 6);
-	close(FD);
+{
+	write(FD, "\r", 1);	/* send anything to abort the call */
+	cour_disconnect();
 }
 
 static int
@@ -96,7 +113,7 @@ cour_swallow(match)
 	do {
 		if (*match =='\0') {
 			signal(SIGALRM, f);
-			return 1;
+			return (1);
 		}
 		if (setjmp(timeoutbuf)) {
 			signal(SIGALRM, f);
@@ -106,11 +123,15 @@ cour_swallow(match)
 		read(FD, &c, 1);
 		alarm(0);
 		c &= 0177;
+#ifdef DEBUG
 		if (boolean(value(VERBOSE)))
 			putchar(c);
+#endif
 	} while (c == *match++);
+#ifdef DEBUG
 	if (boolean(value(VERBOSE)))
 		fflush(stdout);
+#endif
 	signal(SIGALRM, SIG_DFL);
 	return (0);
 }
@@ -156,8 +177,11 @@ again:
 				break;
 			if (!dialer_buf[0])
 				goto again;
-			if (strcmp(dialer_buf, "RINGING") == 0) {
+			if (strcmp(dialer_buf, "RINGING") == 0 &&
+			    boolean(value(VERBOSE))) {
+#ifdef DEBUG
 				printf("%s\r\n", dialer_buf);
+#endif
 				goto again;
 			}
 			if (strncmp(dialer_buf, "CONNECT",
@@ -176,8 +200,10 @@ again:
 						goto error;
 					}
 					signal(SIGALRM, f);
+#ifdef DEBUG
 					if (boolean(value(VERBOSE)))
 						printf("%s\r\n", dialer_buf);
+#endif
 					return (1);
 				}
 			break;
@@ -197,46 +223,48 @@ error:
 
 /*
  * This convoluted piece of code attempts to get
- * the courier in sync.  If you don't have FIONREAD
- * there are gory ways to simulate this.
+ * the courier in sync.
  */
 static int
 coursync()
 {
 	int already = 0;
+	int len;
+	char buf[40];
 
-	/*
-	 * Toggle DTR to force anyone off that might have left
-	 * the modem connected, and insure a consistent state
-	 * to start from.
-	 *
-	 * If you don't have the ioctl calls to diddle directly
-	 * with DTR, you can always try setting the baud rate to 0.
-	 */
-	ioctl(FD, TIOCCDTR, 0);
-	sleep(2);
-	ioctl(FD, TIOCSDTR, 0);
 	while (already++ < MAXRETRY) {
 		ioctl(FD, TIOCFLUSH, 0);	/* flush any clutter */
 		write(FD, "\rAT Z\r", 6);	/* reset modem */
-		sleep(2);
-		verbose_read();
-		write(FD, "AT E0\r", 6);	/* turn off echoing */
-		sleep(2);
-		verbose_read();
-		ioctl(FD, TIOCFLUSH, 0);	/* flush any clutter */
+		bzero(buf, sizeof(buf));
 		sleep(1);
-		write(FD, "AT C1 E0 H0 Q0 X6 V1\r", 21);
-		if (cour_swallow("\r\nOK\r\n")) {
-			ioctl(FD, TIOCFLUSH, 0);
-			return 1;
+		ioctl(FD, FIONREAD, &len);
+		if (len) {
+			len = read(FD, buf, sizeof(buf));
+#ifdef DEBUG
+			buf[len] = '\0';
+			printf("coursync: (\"%s\")\n\r", buf);
+#endif
+			if (index(buf, '0') || 
+		   	   (index(buf, 'O') && index(buf, 'K')))
+				return(1);
 		}
-		sleep(2);
+		/*
+		 * If not strapped for DTR control,
+		 * try to get command mode.
+		 */
+		sleep(1);
 		write(FD, "+++", 3);
-		sleep(2);
+		sleep(1);
+		/*
+		 * Toggle DTR to force anyone off that might have left
+		 * the modem connected.
+		 */
+		ioctl(FD, TIOCCDTR, 0);
+		sleep(1);
+		ioctl(FD, TIOCSDTR, 0);
 	}
 	write(FD, "\rAT Z\r", 6);
-	return 0;
+	return (0);
 }
 
 #undef write
@@ -247,8 +275,10 @@ char *cp;
 int n;
 {
 	struct sgttyb sb;
+#ifdef notdef
 	if (boolean(value(VERBOSE)))
 		write(1, cp, n);
+#endif
 	ioctl(fd, TIOCGETP, &sb);
 	ioctl(fd, TIOCSETP, &sb);
 	cour_nap();
@@ -260,12 +290,12 @@ int n;
 	}
 }
 
+#ifdef DEBUG
 verbose_read()
 {
 	int n = 0;
 	char buf[BUFSIZ];
-	if (!boolean(value(VERBOSE)))
-		return;
+
 	if (ioctl(FD, FIONREAD, &n) < 0)
 		return;
 	if (n <= 0)
@@ -274,6 +304,7 @@ verbose_read()
 		return;
 	write(1, buf, n);
 }
+#endif
 
 /*
  * Code stolen from /usr/src/lib/libc/gen/sleep.c
