@@ -1,4 +1,4 @@
-# @(#)Makefile	1.2 (Berkeley) %G%
+# @(#)Makefile	1.3 (Berkeley) %G%
 # transcript/lib/Makefile.bsd
 #
 # Copyright (c) 1985 Adobe Systems Incorporated. All Rights Reserved. 
@@ -9,10 +9,10 @@ PSLIBDIR = /usr/local/lib/ps
 
 FILES = banner.pro enscript.pro pstext.pro \
 	ps4014.pro ps630.pro ps4014.pro pscat.pro psplot.pro psdit.pro \
-	ehandler.ps uartpatch.ps bogusmsg.ps \
+	ehandler.ps uartpatch.ps bogusmsg.ps ucseal.ps \
 	font.map
 
-PRG = psint.sh psbad.sh
+PRG = psint.sh psbad.sh loadseal.sh
 
 OWNER = bin
 GROUP = bin
@@ -30,9 +30,7 @@ install:
 		ln psint.sh psif; ln psint.sh psof; ln psint.sh psnf; \
 		ln psint.sh pstf; ln psint.sh psgf; ln psint.sh psvf; \
 		ln psint.sh psdf; ln psint.sh pscf; ln psint.sh psrf; \
-		ln psbad.sh psbad
-	-rm -rf $(PSLIBDIR)/troff.font $(PSLIBDIR)/ditroff.font
-	-mkdir $(PSLIBDIR)/troff.font $(PSLIBDIR)/ditroff.font
+		ln psbad.sh psbad; ln loadseal.sh loadseal
 	cd troff.font; make ${MFLAGS} install
 	cd ditroff.font; make ${MFLAGS} install
 
