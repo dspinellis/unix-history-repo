@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)scanner.c	3.1 83/11/22";
+static	char *sccsid = "@(#)scanner.c	3.2 83/11/22";
 #endif
 
 #include <stdio.h>
@@ -104,6 +104,7 @@ loop:
 			state = 4;
 			break;
 		case '0':
+			cx.x_val.v_num = 0;
 			state = 10;
 			break;
 		case '1': case '2': case '3': case '4':
