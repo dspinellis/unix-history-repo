@@ -1,4 +1,4 @@
-#	@(#)HP300	8.2 (Berkeley) %G%
+#	@(#)HP300	8.3 (Berkeley) %G%
 #
 # PICASSO (HP300)
 #
@@ -39,6 +39,11 @@ options		KTRACE
 options		"NKMEMCLUSTERS=512"
 options		KGDB,"KGDBDEV=15*256+0","KGDBRATE=19200"
 options		HPFPLIB
+options		ISO		# OSI networking
+options		TPIP
+options		EON
+#options	NS		# Xeros NS networking
+options		CCITT,HDLC,LLC	# CCITT networking
 
 config		vmunix root on sd0 swap on sd0b and rd0b
 config		vgvmunix root on sd0 swap on sd0d and sd1d and sd2d
@@ -89,5 +94,7 @@ pseudo-device	sl	4
 pseudo-device	bpfilter 16
 pseudo-device	pty
 pseudo-device	loop
+#pseudo-device	cd
 pseudo-device	ether
 pseudo-device	ite
+pseudo-device	vn
