@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.11 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -963,16 +963,17 @@ drop:
  *  Determine a reasonable value for maxseg size.
  *  If the route is known, use one that can be handled
  *  on the given interface without forcing IP to fragment.
- *  If bigger than a page (CLSIZE), round down to nearest pagesize
+ *  If bigger than a page (CLBYTES), round down to nearest pagesize
  *  to utilize pagesize mbufs.
  *  If interface pointer is unavailable, or the destination isn't local,
- *  use a conservative size (512 or the default IP max size),
+ *  use a conservative size (512 or the default IP max size, but no more
+ *  than the mtu of the interface through which we route),
  *  as we can't discover anything about intervening gateways or networks.
  *
  *  This is ugly, and doesn't belong at this level, but has to happen somehow.
  */
 tcp_mss(tp)
-register struct tcpcb *tp;
+	register struct tcpcb *tp;
 {
 	struct route *ro;
 	struct ifnet *ifp;
@@ -1002,7 +1003,7 @@ register struct tcpcb *tp;
 	if (mss > CLBYTES)
 		mss = mss / CLBYTES * CLBYTES;
 #endif
-	if (in_localaddr(tp->t_inpcb->inp_faddr))
-		return(mss);
+	if (in_localaddr(inp->inp_faddr))
+		return (mss);
 	return (MIN(mss, TCP_MSS));
 }
