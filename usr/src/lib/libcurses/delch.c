@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delch.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)delch.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -19,8 +19,6 @@ int
 wdelch(win)
 	register WINDOW *win;
 {
-
-	register int lch;
 	register char *end, *temp1, *temp2;
 
 	end = &win->_y[win->_cury][win->_maxx - 1];

@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delwin.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)delwin.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
+#include <stdlib.h>
 
 /*
  * delwin --

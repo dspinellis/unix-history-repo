@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)toucholap.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)toucholap.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -19,7 +19,7 @@ int
 touchoverlap(win1, win2)
 	register WINDOW *win1, *win2;
 {
-	register int x, y, endy, endx, starty, startx;
+	register int y, endy, endx, starty, startx;
 
 #ifdef DEBUG
 	__TRACE("touchoverlap: (%0.2o, %0.2o);\n", win1, win2);

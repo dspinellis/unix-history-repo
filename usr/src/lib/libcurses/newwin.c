@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -80,7 +80,7 @@ subwin(orig, num_lines, num_cols, begy, begx)
 	int num_lines, num_cols, begy, begx;
 {
 	register WINDOW *win;
-	register int by, bx, i, nl, nc;
+	register int by, bx, nl, nc;
 
 	by = begy;
 	bx = begx;
@@ -111,7 +111,8 @@ subwin(orig, num_lines, num_cols, begy, begx)
 /*
  * This code is shared with mvwin().
  */
-__set_subwin_(orig, win)
+void
+__set_subwin(orig, win)
 	register WINDOW *orig, *win;
 {
 	register int i, j, k;
@@ -126,7 +127,6 @@ __set_subwin_(orig, win)
 	win->_lastch = &orig->_lastch[j];
 	for (i = 0; i < win->_maxy; i++, j++)
 		win->_y[i] = &orig->_y[j][k];
-
 }
 
 /*
@@ -138,7 +138,7 @@ makenew(num_lines, num_cols, begy, begx)
 	int num_lines, num_cols, begy, begx;
 {
 	register WINDOW *win;
-	register int by, bx, i, nl, nc;
+	register int by, bx, nl, nc;
 
 	by = begy;
 	bx = begx;

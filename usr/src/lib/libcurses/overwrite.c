@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overwrite.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)overwrite.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
 #include <curses.h>
+#include <string.h>
 
 /*
  * overwrite --
@@ -21,7 +22,6 @@ overwrite(win1, win2)
 	register WINDOW *win1, *win2;
 {
 	register int x, y, endy, endx, starty, startx;
-	register char *sp, *end;
 
 #ifdef DEBUG
 	__TRACE("overwrite: (%0.2o, %0.2o);\n", win1, win2);
