@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.48 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.49 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -341,6 +341,15 @@ loop:
 			p->p_xstat = 0;
 			ruadd(&q->p_stats->p_cru, p->p_ru);
 			FREE(p->p_ru, M_ZOMBIE);
+
+			/*
+			 * Decrement the count of procs running with this uid.
+			 */
+			(void)chgproccnt(p->p_cred->p_ruid, -1);
+
+			/*
+			 * Free up credentials.
+			 */
 			if (--p->p_cred->p_refcnt == 0) {
 				crfree(p->p_cred->pc_ucred);
 				FREE(p->p_cred, M_SUBPROC);
