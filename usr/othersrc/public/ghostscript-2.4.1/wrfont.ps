@@ -1,0 +1,273 @@
+%    Copyright (C) 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% wrfont.ps
+% Write out a Type 1 font in readable, reloadable form.
+% Note that this does NOT work on protected fonts, such as Adobe fonts
+% (unless you have loaded unprot.ps first, in which case you may be
+% violating the Adobe license).
+
+% ------ Options ------ %
+
+% Define whether to write out the CharStrings in binary or in hex.
+% Binary takes less space on the file, but isn't guaranteed portable.
+   /binary false def
+
+% Define whether to use binary token encodings for the CharStrings.
+% Binary tokens are smaller and load faster, but are a Level 2 feature.
+   /binary_tokens false def
+
+% ------ Output utilities ------ %
+
+% By convention, the output file is named psfile.
+
+% Define some utilities for writing the output file.
+   /wtstring 100 string def
+   /wb {psfile exch write} bind def
+   /wnb {/wb load repeat} bind def
+   /ws {psfile exch writestring} bind def
+   /wl {ws (\n) ws} bind def
+   /wt {wtstring cvs ws ( ) ws} bind def
+   /wd		% Write a dictionary.
+    { dup length wt (dict dup begin) wl { we } forall
+      (end) ws
+    } bind def
+   /wld		% Write a large dictionary more efficiently.
+   		% Ignore the readonly attributes.
+    { dup length wt (dict dup begin) wl
+      0 exch
+       { exch wo wo
+	 1 add dup 200 eq
+	  { wo ({def} repeat) wl 0 }
+	 if
+       }
+      forall
+      dup 0 ne
+       { wo ({def} repeat) wl }
+       { pop }
+      ifelse
+      (end) ws
+    } bind def
+   /we		% Write a dictionary entry.
+    { exch wo wo /def cvx wo (\n) ws
+    } bind def
+
+% Construct the inversion of the system name table.
+   /SystemNames where
+    { pop /snit 256 dict def
+      0 1 255
+       { dup SystemNames exch get
+         dup null ne { exch snit 3 1 roll put } { pop pop } ifelse
+       }
+      for
+    }
+    { /snit 1 dict def
+    }
+   ifelse
+
+% Write an object, using binary tokens if requested and possible.
+   /woa		% write in ascii
+    { psfile exch write==only
+    } bind def
+	% Lookup table for ASCII output.
+   /intbytes	% int nbytes -> byte*
+    { exch { dup 255 and exch -8 bitshift } repeat pop
+    } bind def
+   /wotta 8 dict dup begin
+    { /booleantype /integertype /nulltype /realtype }
+    { { ( ) ws woa } def }
+   forall
+     /nametype
+      { dup xcheck { ( ) ws } if woa
+      } bind def
+    { /arraytype /packedarraytype /stringtype }
+    { { dup woa wop } def }
+   forall
+   end def
+	% Lookup table for binary output.
+   /wottb 8 dict dup begin
+   wotta currentdict copy pop
+     /integertype
+      { dup dup 127 le exch -128 ge and
+         { 136 wb 255 and wb
+	 }
+	 { ( ) ws woa
+	 }
+	ifelse
+      } bind def
+     /nametype
+      { dup snit exch known
+         { dup xcheck { 146 } { 145 } ifelse wb
+	   snit exch get wb
+	 }
+	 { wotta /nametype get exec
+	 }
+	ifelse
+      } bind def
+     /stringtype
+      { dup dup length dup 255 le { 142 2 } { 2 intbytes 143 3 } ifelse wnb
+        ws wop
+      } bind def
+   end def
+   /wop		% Write object protection
+     { wcheck not { /readonly cvx wo } if
+     } bind def
+   /wo		% Write an object.
+     { dup type binary_tokens { wottb } { wotta } ifelse
+       exch get exec
+     } bind def
+
+% Write a hex string for Subrs or CharStrings.
+   /wx		% string ->
+    { binary
+       { ws
+       }
+       { % Some systems choke on very long lines, so
+	 % we break up the hexstring into chunks of 50 characters.
+	  { dup length 25 le {exit} if
+	    dup 0 25 getinterval psfile exch writehexstring (\n) ws
+	    dup length 25 sub 25 exch getinterval
+	  } loop
+	 psfile exch writehexstring
+       } ifelse
+    } bind def
+
+% ------ The main program ------ %
+
+% Define the dictionary of actions for special entries in the dictionaries.
+% We lump the font and the Private dictionary together, because
+% the set of keys doesn't overlap.
+[/CharStrings /Encoding /FID /FontInfo /Metrics /Private /Subrs]
+dup length dict begin
+ { null cvx def } forall
+currentdict end /specialkeys exch def
+
+% Define the procedures for the Private dictionary.
+% These must be defined without being bound.
+4 dict begin
+ /-! {string currentfile exch readhexstring pop} def
+ /-| {string currentfile exch readstring pop} def
+ /|- {readonly def} def
+ /| {readonly put} def
+currentdict end /privateprocs exch def
+
+% Construct an inverse dictionary of encodings.
+3 dict begin
+ StandardEncoding /StandardEncoding def
+ ISOLatin1Encoding /ISOLatin1Encoding def
+ SymbolEncoding /SymbolEncoding def
+currentdict end /encodingnames exch def
+
+/writefont		% psfile -> [writes the current font]
+ { /psfile exch def
+   /Font currentfont def
+   /readproc binary { (-| ) } { (-! ) } ifelse def
+
+% Turn on binary tokens if relevant.
+   binary_tokens { (currentobjectformat 1 setobjectformat) wl } if
+
+% If the file has a UniqueID, write out a check against loading it twice.
+   Font /UniqueID known
+    { ({} FontDirectory) ws Font /FontName get dup wo ( known) wl
+      ( {) ws wo ( findfont dup /UniqueID known) wl
+      (    { dup /UniqueID get) ws Font /UniqueID get wo ( eq exch /FontType get 1 eq and }) wl
+      (    { pop false } ifelse) wl
+      (    { pop save /restore load } if) wl
+      ( } if) wl
+    }
+   if
+
+% Write out the creation of the font dictionary and FontInfo.
+   Font length 1 add wt (dict begin) wl		% +1 for FontFile
+   Font begin
+   (/FontInfo ) ws FontInfo wd ( readonly def) wl
+
+% Write out the other fixed entries in the font dictionary.
+   Font
+    { 1 index specialkeys exch known
+       { pop pop } { we } ifelse
+    } forall
+   /Encoding
+   encodingnames Encoding known
+    { encodingnames Encoding get cvx }
+    { Encoding }
+   ifelse we
+
+% Write out the Metrics, if any.
+   Font /Metrics known
+    { (/Metrics ) ws Metrics wld ( readonly def) wl
+    }
+   if
+
+% Close the font dictionary.
+   (currentdict end) wl
+
+% The rest of the file could be in eexec form, but we don't see any point
+% in doing this, because we aren't attempting to conceal it from anyone.
+
+% Create and initialize the Private dictionary.
+   Private dup length privateprocs length add dict copy begin
+   privateprocs { readonly def } forall
+   (dup /Private ) ws currentdict length 1 add wt (dict dup begin) wl
+   currentdict
+    { 1 index specialkeys exch known
+       { pop pop } { we } ifelse
+    } forall
+
+% Write the Subrs entries, if any.
+   currentdict /Subrs known
+    { (/Subrs ) ws Subrs length wt (array) wl
+      0 1 Subrs length 1 sub
+       { dup Subrs exch get dup null ne
+	  { /dup cvx wo exch wo dup length wo ( ) ws readproc ws wx ( |) wl }
+	  { pop pop }
+	 ifelse
+       } for
+      (readonly def) wl
+    }
+   if
+
+% Write the CharStrings entries.
+   (2 index /CharStrings ) ws
+   CharStrings length wt (dict dup begin) wl
+   CharStrings
+    { exch wo
+      binary_tokens
+       { % Suppress recognizing the readonly status of the string.
+         dup length string copy wo
+       }
+       { dup length wo ( ) ws readproc ws wx
+       }
+      ifelse ( |-) wl
+    } forall
+
+% Wrap up the private part of the font.
+   (end) wl		% CharStrings
+   (end) wl		% Private
+   end			% Private
+   (readonly put) wl	% CharStrings in font
+   (readonly put) wl	% Private in font
+   end			% Font
+
+% Terminate the output.
+   (dup /FontName get exch definefont pop) wl
+   Font /UniqueID known { (exec) wl } if
+   binary_tokens { (setobjectformat) wl } if
+
+ } bind def
