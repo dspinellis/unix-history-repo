@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.9 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.10 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -498,6 +498,8 @@ yylex(){
 		register struct lxdope *p;
 		register struct symtab *sp;
 		int id;
+		char *s;
+		static char sc[5];
 
 		switch( (p=lxcp[(lxchar=getchar())+1])->lxact ){
 
@@ -511,7 +513,20 @@ yylex(){
 			return( p->lxtok );
 
 		case A_ERR:
-			uerror( "illegal character: %03o (octal)", lxchar );
+			switch( lxchar ){
+			case '\\':	s = "\\\\"; break;
+			case '\0':	s = "\\0"; break;
+			default:
+				if( isgraph( lxchar ) ){
+					sc[0] = lxchar;
+					sc[1] = '\0';
+					}
+				else
+					sprintf( sc, "\\%03.3o", (unsigned char) lxchar );
+				s = sc;
+				break;
+				}
+			uerror( "illegal character: '%s'", s );
 			break;
 
 		case A_LET:
