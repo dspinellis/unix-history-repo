@@ -13,33 +13,35 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cabs.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cabs.c	1.2 (Berkeley) %G%";
 #endif not lint
 
-/* HYPOT(X,Y) 
- * RETURN THE SQUARE ROOT OF X^2 + Y^2
+/* CABS(Z)
+ * RETURN THE ABSOLUTE VALUE OF THE COMPLEX NUMBER  Z = X + iY
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 11/28/84.
+ * REVISED BY K.C. NG, 7/12/85.
  *
  * Required kernel function :
- *	cabs(x,y)
+ *	hypot(x,y)
  *
  * Method :
- *	hypot(x,y) = cabs(x,y) .
+ *	cabs(z) = hypot(x,y) .
  */
 
-double hypot(x,y)
-double x, y;
+double cabs(z)
+struct { double x, y;} z;
 {
-	double cabs();
-	return(cabs(x,y));
+	double hypot();
+	return(hypot(z.x,z.y));
 }
 
-/* CABS(REAL,IMAG)
- * RETURN THE ABSOLUTE VALUE OF THE COMPLEX NUMBER  REAL + i*IMAG
+
+/* HYPOT(X,Y)
+ * RETURN THE SQUARE ROOT OF X^2 + Y^2  WHERE Z=X+iY
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 11/28/84; 
- * REVISED BY K.C. NG on 2/7/85, 2/22/85, 3/7/85, 3/30/85, 4/16/85.
+ * REVISED BY K.C. NG, 7/12/85.
  *
  * Required system supported functions :
  *	copysign(x,y)
@@ -48,33 +50,33 @@ double x, y;
  *	sqrt(x)
  *
  * Method :
- *	1. replace real by |real| and imag by |imag|, and swap real and
- *	   imag if imag > real (hence real is never smaller than imag).
- *	2. Let X=real and Y=imag, cabs(X,Y) is computed by:
- *	   Case I, X/Y > 2
+ *	1. replace x by |x| and y by |y|, and swap x and
+ *	   y if y > x (hence x is never smaller than y).
+ *	2. Hypot(x,y) is computed by:
+ *	   Case I, x/y > 2
  *		
- *				       Y
- *		cabs = X + -----------------------------
+ *				       y
+ *		hypot = x + -----------------------------
  *			 		    2
- *			    sqrt ( 1 + [X/Y]  )  +  X/Y
+ *			    sqrt ( 1 + [x/y]  )  +  x/y
  *
- *	   Case II, X/Y <= 2 
- *				                   Y
- *		cabs = X + --------------------------------------------------
+ *	   Case II, x/y <= 2 
+ *				                   y
+ *		hypot = x + --------------------------------------------------
  *				          		     2 
- *				     			[X/Y]   -  2
- *			   (sqrt(2)+1) + (X-Y)/Y + -----------------------------
+ *				     			[x/y]   -  2
+ *			   (sqrt(2)+1) + (x-y)/y + -----------------------------
  *			 		    			  2
- *			    			  sqrt ( 1 + [X/Y]  )  + sqrt(2)
+ *			    			  sqrt ( 1 + [x/y]  )  + sqrt(2)
  *
  *
  *
  * Special cases:
- *	cabs(x,y) is INF if x or y is +INF or -INF; else
- *	cabs(x,y) is NAN if x or y is NAN.
+ *	hypot(x,y) is INF if x or y is +INF or -INF; else
+ *	hypot(x,y) is NAN if x or y is NAN.
  *
  * Accuracy:
- * 	cabs(x,y) returns the sqrt(x^2+y^2) with error less than 1 ulps (units
+ * 	hypot(x,y) returns the sqrt(x^2+y^2) with error less than 1 ulps (units
  *	in the last place). See Kahan's "Interval Arithmetic Options in the
  *	Proposed IEEE Floating Point Arithmetic Standard", Interval Mathematics
  *      1980, Edited by Karl L.E. Nickel, pp 99-128. (A faster but less accurate
@@ -106,8 +108,8 @@ r2p1lo =  1.2537167179050217666E-16   , /*Hex  2^-53   *  1.21165F626CDD5 */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
 #endif
 
-double cabs(real,imag)
-double real, imag;
+double hypot(x,y)
+double x, y;
 {
 	static double zero=0, one=1, 
 		      small=1.0E-18;	/* fl(1+small)==1 */
@@ -115,52 +117,52 @@ double real, imag;
 	double copysign(),scalb(),logb(),sqrt(),t,r;
 	int finite(), exp;
 
-	if(finite(real))
-	    if(finite(imag))
+	if(finite(x))
+	    if(finite(y))
 	    {	
-		real=copysign(real,one);
-		imag=copysign(imag,one);
-		if(imag > real) 
-		    { t=real; real=imag; imag=t; }
-		if(real == zero) return(zero);
-		if(imag == zero) return(real);
-		exp= logb(real);
-		if(exp-(int)logb(imag) > ibig ) 	
-			/* raise inexact flag and return |real| */
-		   { one+small; return(real); }
+		x=copysign(x,one);
+		y=copysign(y,one);
+		if(y > x) 
+		    { t=x; x=y; y=t; }
+		if(x == zero) return(zero);
+		if(y == zero) return(x);
+		exp= logb(x);
+		if(exp-(int)logb(y) > ibig ) 	
+			/* raise inexact flag and return |x| */
+		   { one+small; return(x); }
 
-	    /* start computing sqrt(real^2 + imag^2) */
-		r=real-imag;
-		if(r>imag) { 	/* real/imag > 2 */
-		    r=real/imag;
+	    /* start computing sqrt(x^2 + y^2) */
+		r=x-y;
+		if(r>y) { 	/* x/y > 2 */
+		    r=x/y;
 		    r=r+sqrt(one+r*r); }
-		else {		/* 1 <= real/imag <= 2 */
-		    r/=imag; t=r*(r+2.0);
+		else {		/* 1 <= x/y <= 2 */
+		    r/=y; t=r*(r+2.0);
 		    r+=t/(sqrt2+sqrt(2.0+t));
 		    r+=r2p1lo; r+=r2p1hi; }
 
-		r=imag/r;
-		return(real+r);
+		r=y/r;
+		return(x+r);
 
 	    }
 
-	    else if(imag==imag)   	   /* imag is +-INF */
-		     return(copysign(imag,one));
+	    else if(y==y)   	   /* y is +-INF */
+		     return(copysign(y,one));
 	    else 
-		     return(imag);	   /* imag is NaN and x is finite */
+		     return(y);	   /* y is NaN and x is finite */
 
-	else if(real==real) 		   /* real is +-INF */
-	         return (copysign(real,one));
-	else if(finite(imag))
-	         return(real);		   /* real is NaN, imag is finite */
-	else if(imag!=imag) return(imag);  /* real and imag is NaN */
-	else return(copysign(imag,one));   /* imag is INF */
+	else if(x==x) 		   /* x is +-INF */
+	         return (copysign(x,one));
+	else if(finite(y))
+	         return(x);		   /* x is NaN, y is finite */
+	else if(y!=y) return(y);  /* x and y is NaN */
+	else return(copysign(y,one));   /* y is INF */
 }
 
-/* A faster but less accurate version of cabs(real,imag) */
+/* A faster but less accurate version of cabs(x,y) */
 #if 0
-double cabs(real,imag)
-double real, imag;
+double hypot(x,y)
+double x, y;
 {
 	static double zero=0, one=1;
 		      small=1.0E-18;	/* fl(1+small)==1 */
@@ -168,34 +170,34 @@ double real, imag;
 	double copysign(),scalb(),logb(),sqrt(),temp;
 	int finite(), exp;
 
-	if(finite(real))
-	    if(finite(imag))
+	if(finite(x))
+	    if(finite(y))
 	    {	
-		real=copysign(real,one);
-		imag=copysign(imag,one);
-		if(imag > real) 
-		    { temp=real; real=imag; imag=temp; }
-		if(real == zero) return(zero);
-		if(imag == zero) return(real);
-		exp= logb(real);
-		real=scalb(real,-exp);
-		if(exp-(int)logb(imag) > ibig ) 
-			/* raise inexact flag and return |real| */
-		   { one+small; return(scalb(real,exp)); }
-		else imag=scalb(imag,-exp);
-		return(scalb(sqrt(real*real+imag*imag),exp));
+		x=copysign(x,one);
+		y=copysign(y,one);
+		if(y > x) 
+		    { temp=x; x=y; y=temp; }
+		if(x == zero) return(zero);
+		if(y == zero) return(x);
+		exp= logb(x);
+		x=scalb(x,-exp);
+		if(exp-(int)logb(y) > ibig ) 
+			/* raise inexact flag and return |x| */
+		   { one+small; return(scalb(x,exp)); }
+		else y=scalb(y,-exp);
+		return(scalb(sqrt(x*x+y*y),exp));
 	    }
 
-	    else if(imag==imag)   	   /* imag is +-INF */
-		     return(copysign(imag,one));
+	    else if(y==y)   	   /* y is +-INF */
+		     return(copysign(y,one));
 	    else 
-		     return(imag);	   /* imag is NaN and x is finite */
+		     return(y);	   /* y is NaN and x is finite */
 
-	else if(real==real) 		   /* real is +-INF */
-	         return (copysign(real,one));
-	else if(finite(imag))
-	         return(real);		   /* real is NaN, imag is finite */
-	else if(imag!=imag) return(imag);  /* real and imag is NaN */
-	else return(copysign(imag,one));   /* imag is INF */
+	else if(x==x) 		   /* x is +-INF */
+	         return (copysign(x,one));
+	else if(finite(y))
+	         return(x);		   /* x is NaN, y is finite */
+	else if(y!=y) return(y);  	/* x and y is NaN */
+	else return(copysign(y,one));   /* y is INF */
 }
 #endif

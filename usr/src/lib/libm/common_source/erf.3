@@ -1,8 +1,5 @@
 From Prof. Kahan at UC at Berkeley
-.EQ
-delim $$
-.EN
-.TH ERF 3M  "9 May 1985"
+.TH ERF 3M  "4 August 1985"
 .SH NAME
 erf, erfc \- error functions
 .SH SYNOPSIS
@@ -16,27 +13,19 @@ erf, erfc \- error functions
 .B double x;
 .fi
 .SH DESCRIPTION
-.I Erf(x)
-returns the error function of 
-.I x.
+Erf\|(x) returns the error function of x; where
+.if n \{\
 .PP
-.I Erfc(x)
-returns
-.I 1.0\-erf(x).
+erf(x) = 2/sqrt(pi)\(**\|integral from 0 to x of exp(\-t\(**t) dt. \}
+.if t \{\
+erf\|(x) := 
+(2/\(sr\(*p)\|\(is\d\s8\z0\s10\u\u\s8x\s10\d\|exp(\-t\u\s82\s10\d)\|dt. \}
 .PP
-.I Erf(x)
-is defined by
-${2 over sqrt {pi}} int from 0 to x e sup {-t sup 2} dt$.
+Erfc\|(x) returns 1.0\-erf\|(x).
 .PP
-The entry for
-.I erfc
-is provided because of the extreme loss of relative accuracy if
-.I erf(x)
-is called for large
-.I x
+The entry for erfc is provided because of the extreme loss
+of relative accuracy if erf\|(x) is called for large x
 and the result subtracted from 1.
-(e.g. for
-.I x
-= 10, 12 places are lost).
+(e.g. for x = 10, 12 places are lost).
 .SH SEE ALSO
 intro(3M)
