@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)core.5	8.1 (Berkeley) %G%
+.\"     @(#)core.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CORE 5
@@ -20,7 +20,7 @@ to disk for later examination by one of the aviailable debuggers.
 (See
 .Xr sigaction 2 . )
 This memory image is written to a file named
-.Nm core
+.Nm programname.core
 in the working directory;
 provided the terminated process had write permission in the directory,
 and provided the abnormality did not caused
@@ -29,13 +29,13 @@ a system crash.
 .Xr savecore 8 . )
 .Pp
 The maximum size of a
-.Nm core
+.Nm programname.core
 file is limited by
 .Xr setrlimit 2 .
 Files which would be larger than the limit are not created.
 .Pp
 The
-.Nm core
+.Nm programname.core
 file consists of the
 .Fa u .
 area, whose size (in pages) is
@@ -50,11 +50,11 @@ area starts with a
 structure as given in
 .Aq Pa sys/user.h .
 The remainder of the
-.Nm core
+.Nm programname.core
 file consists of the data pages followed by
 the stack pages of the process image.
 The amount of data space image in the
-.Nm core
+.Nm programname.core
 file is given (in pages) by the
 variable
 .Fa u_dsize
@@ -80,6 +80,6 @@ The size of a ``page'' is given by the constant
 .Xr setrlimit 2
 .Sh HISTORY
 A
-.Nm
+.Nm core
 file format appeared in
 .At v6 .
