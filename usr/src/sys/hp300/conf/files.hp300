@@ -4,6 +4,7 @@ hp300/hp300/conf.c		standard
 hp300/hp300/cons.c		standard
 hp300/hp300/dkbad.c		standard
 hp300/hp300/in_cksum.c		optional inet
+hp300/hp300/kgdb_glue.c		optional kgdb
 hp300/hp300/kgdb_stub.c		optional kgdb
 hp300/hp300/machdep.c		standard config-dependent
 hp300/hp300/mem.c		standard
