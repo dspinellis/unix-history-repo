@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -79,7 +79,6 @@ extern int errno;
 #define MAKEFLAGS  	".MAKEFLAGS"
 
 static char 	  	*progName;  	/* Our invocation name */
-static Boolean	  	lockSet;    	/* TRUE if we set the lock file */
 Lst			create;	    	/* Targets to be made */
 time_t			now;	    	/* Time at start of make */
 GNode			*DEFAULT;   	/* .DEFAULT node */
@@ -87,7 +86,6 @@ Boolean	    	    	allPrecious;	/* .PRECIOUS given on line by itself */
 
 static int              printGraph;	/* -p flag */
 static Boolean          noBuiltins;	/* -r flag */
-static Boolean	  	noLocking;      /* -l flag */
 static Lst  	    	makefiles;  	/* List of makefiles to read (in
 					 * order) */
 int		    	maxJobs;	/* -J argument */
@@ -120,9 +118,9 @@ static Boolean	    	ReadMakefile();
 static int  	initOptInd;
 
 #ifdef CAN_EXPORT
-#define OPTSTR "BCD:I:J:L:MPSVWXd:ef:iklnp:qrstvxh"
+#define OPTSTR "BCD:I:J:L:MPSVWXd:ef:iknp:qrstvxh"
 #else
-#define OPTSTR "BCD:I:J:L:MPSVWd:ef:iklnp:qrstvh"
+#define OPTSTR "BCD:I:J:L:MPSVWd:ef:iknp:qrstvh"
 #endif
 
 static char 	    *help[] = {
@@ -151,11 +149,6 @@ static char 	    *help[] = {
 "-i		Ignore errors from executed commands.",
 "-k		On error, continue working on targets that do not depend on\n\
 		the one for which an error was detected.",
-#ifdef DONT_LOCK
-"-l	    	Turn on locking of the current directory.",
-#else
-"-l	    	Turn off locking of the current directory.",
-#endif
 "-n	    	Don't execute commands, just print them.",
 "-p<num>    	Tell when to print the input graph: 1 (before processing),\n\
 		2 (after processing), or 3 (both).",
@@ -163,8 +156,7 @@ static char 	    *help[] = {
 "-r	    	Do not read the system makefile for pre-defined rules.",
 "-s	    	Don't print commands as they are executed.",
 "-t	    	Update targets by \"touching\" them (see touch(1)).",
-"-v	    	Be compatible with System V make. Implies -B, -V and no\n\
-		directory locking.",
+"-v	    	Be compatible with System V make. Implies -B, -V.",
 #ifdef CAN_EXPORT
 "-x	    	Allow exportation of commands.",
 #endif
@@ -315,14 +307,6 @@ MainParseArgs (argc, argv)
 		keepgoing = TRUE;
 		Var_Append(MAKEFLAGS, "-k", VAR_GLOBAL);
 		break;
-	    case 'l':
-#ifdef DONT_LOCK
-		noLocking = FALSE;
-#else
-		noLocking = TRUE;
-#endif
-		Var_Append(MAKEFLAGS, "-l", VAR_GLOBAL);
-		break;
 	    case 'n':
 		noExecute = TRUE;
 		Var_Append(MAKEFLAGS, "-n", VAR_GLOBAL);
@@ -349,7 +333,7 @@ MainParseArgs (argc, argv)
 		Var_Append(MAKEFLAGS, "-t", VAR_GLOBAL);
 		break;
 	    case 'v':
-		sysVmake = oldVars = backwards = noLocking = TRUE;
+		sysVmake = oldVars = backwards = TRUE;
 		Var_Append(MAKEFLAGS, "-v", VAR_GLOBAL);
 		break;
 	    case 'h':
@@ -391,7 +375,7 @@ MainParseArgs (argc, argv)
 	}
     }
 }
-
+
 /*-
  *----------------------------------------------------------------------
  * Main_ParseArgLine --
@@ -425,26 +409,7 @@ Main_ParseArgLine (line)
 
     Str_FreeVec(argc, argv);
 }
-
-/*-
- *-----------------------------------------------------------------------
- * MainUnlock --
- *	Unlock the current directory. Called as an ExitHandler.
- *
- * Results:
- *	None.
- *
- * Side Effects:
- *	The locking file LOCKFILE is removed.
- *
- *-----------------------------------------------------------------------
- */
-static void
-MainUnlock ()
-{
-    (void)unlink (LOCKFILE);
-}
-
+
 /*-
  *----------------------------------------------------------------------
  * main --
@@ -488,12 +453,6 @@ main (argc, argv)
     noBuiltins = FALSE;	      	/* Read the built-in rules */
     touchFlag = FALSE;	      	/* Actually update targets */
     usePipes = TRUE;	      	/* Catch child output in pipes */
-#ifndef DONT_LOCK
-    noLocking = FALSE;	      	/* Lock the current directory against other
-				 * pmakes */
-#else
-    noLocking = TRUE;
-#endif /* DONT_LOCK */
     debug = 0;	      	    	/* No debug verbosity, please. */
     noWarnings = FALSE;	    	/* Print warning messages */
     sysVmake = FALSE;	    	/* Don't be System V compatible */
@@ -527,7 +486,7 @@ main (argc, argv)
 	backwards = TRUE;     	/* Do things the old-fashioned way */
 	oldVars = TRUE;	      	/* Same with variables */
     } else if (strcmp(cp, "smake") == 0 || strcmp(cp, "vmake") == 0) {
-	sysVmake = oldVars = backwards = noLocking = TRUE;
+	sysVmake = oldVars = backwards = TRUE;
     } else {
 	amMake = FALSE;
 	backwards = FALSE;    	/* Do things MY way, not MAKE's */
@@ -574,64 +533,6 @@ main (argc, argv)
 #endif
     
     MainParseArgs (argc, argv);
-
-    /*
-     * If the user didn't tell us not to lock the directory, attempt to create
-     * the lock file. Complain if we can't, otherwise set up an exit handler
-     * to remove the lock file...
-     */
-    if (!noLocking) {
-	int	  	oldMask;    /* Previous signal mask */
-	int	  	lockID;     /* Stream ID of opened lock file */
-	
-#ifndef SYSV
-	oldMask = sigblock(sigmask(SIGINT));
-#else
-	oldMask = sighold(SIGINT);
-#endif
-	
-	lockID = open (LOCKFILE, O_CREAT | O_EXCL, 0666);
-	if (lockID < 0 && errno == EEXIST) {
-	    /*
-	     * Find out who owns the file. If the user who called us
-	     * owns it, then we ignore the lock file. Note that we also
-	     * do not install an exit handler to remove the file -- if the
-	     * lockfile is there from a previous make, it'll still be there
-	     * when we leave.
-	     */
-	    struct stat   fsa;    /* Attributes of the lock file */
-
-	    (void) stat (LOCKFILE,  &fsa);
-	    if (fsa.st_uid == getuid()) {
-		Error ("Lockfile owned by you -- ignoring it");
-		lockSet = FALSE;
-	    } else {
-		char  	lsCmd[40];
-		(void)sprintf (lsCmd, "ls -l %s", LOCKFILE);
-		(void)system(lsCmd);
-		Fatal ("This directory is already locked (%s exists)",
-		       LOCKFILE);
-	    }
-	} else if (lockID < 0) {
-	    Fatal ("Could not create lock file %s", LOCKFILE);
-	} else {
-	    extern exit();
-
-	    lockSet = TRUE;
-#ifdef sun
-	    on_exit(MainUnlock);
-#endif
-	    /* (void) Proc_SetExitHandler (MainUnlock, (ClientData)0); */
-	    signal(SIGINT, exit);
-	    (void)close (lockID);
-	}
-	
-#ifndef SYSV
-	(void) sigsetmask(oldMask);
-#else 
-	(void) sigrelse(SIGINT);
-#endif
-    }
 
     /*
      * Initialize archive, target and suffix modules in preparation for
@@ -821,7 +722,7 @@ main (argc, argv)
 	exit (0);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ReadMakefile  --
@@ -881,7 +782,7 @@ ReadMakefile (fname)
 	return (TRUE);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Error --
@@ -912,7 +813,7 @@ Error (fmt, arg1, arg2, arg3)
     fputs (estr, stderr);
     fflush (stderr);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Fatal --
@@ -944,7 +845,7 @@ Fatal (fmt, arg1, arg2)
     }
     exit (2);			/* Not 1 so -q can distinguish error */
 }
-
+
 /*
  *-----------------------------------------------------------------------
  * Punt --
@@ -969,7 +870,7 @@ Punt (fmt, arg1, arg2)
 
     DieHorribly();
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * DieHorribly --
@@ -994,7 +895,7 @@ DieHorribly()
     
     exit (2);			/* Not 1, so -q can distinguish error */
 }
-
+
 /*
  *-----------------------------------------------------------------------
  * Finish --
@@ -1019,9 +920,6 @@ Finish (errors)
 
 exit(status)
 {
-    if (lockSet) {
-	MainUnlock();
-    }
     _cleanup();
     _exit(status);
 }
