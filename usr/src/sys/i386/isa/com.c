@@ -1,34 +1,33 @@
 /*-
- * Copyright (c) 1982, 1986, 1990, 1991 The Regents of the University of
- * California. All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * the University of Utah and William Jolitz.
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)com.c	7.2 (Berkeley) %G%
+ *	@(#)com.c	7.3 (Berkeley) %G%
  */
 
 #include "com.h"
 #if NCOM > 0
 /*
- * COM driver, from hp300 dca.c 98626/98644/internal serial interface
+ * COM driver, based on HP dca driver
+ * uses National Semiconductor NS16450/NS16550AF UART
  */
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/proc.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
+#include "param.h"
+#include "systm.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "proc.h"
+#include "user.h"
+#include "conf.h"
+#include "file.h"
+#include "uio.h"
+#include "kernel.h"
+#include "syslog.h"
 
 #include "i386/isa/isa_device.h"
 #include "i386/isa/comreg.h"
-#include "i386/isa/ic/ns16450.h"
+#include "i386/isa/ic/ns16550.h"
 
 int 	comprobe(), comattach(), comintr(), comstart(), comparam();
 
@@ -38,9 +37,16 @@ struct	isa_driver comdriver = {
 
 int	comsoftCAR;
 int	com_active;
+int	com_hasfifo;
 int	ncom = NCOM;
+#ifdef COMCONSOLE
+int	comconsole = COMCONSOLE;
+#else
 int	comconsole = -1;
+#endif
+int	comconsinit;
 int	comdefaultrate = TTYDEF_SPEED;
+int	commajor;
 short com_addr[NCOM];
 struct	tty com_tty[NCOM];
 
@@ -67,6 +73,8 @@ struct speedtab comspeedtab[] = {
 
 extern	struct tty *constty;
 #ifdef KGDB
+#include "machine/remote-sl.h"
+
 extern int kgdb_dev;
 extern int kgdb_rate;
 extern int kgdb_debug_init;
@@ -77,9 +85,11 @@ extern int kgdb_debug_init;
 comprobe(dev)
 struct isa_device *dev;
 {
-	if ((inb(dev->id_iobase+com_iir) & 0xf8) == 0)
+	/*if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
 		return(1);
-	return(0);
+printf("base %x val %x ", dev->id_iobase,
+	inb(dev->id_iobase+com_iir));*/
+	return(1);
 
 }
 
@@ -92,40 +102,47 @@ struct isa_device *isdp;
 	u_char		unit;
 	int		port = isdp->id_iobase;
 
+	unit = isdp->id_unit;
 	if (unit == comconsole)
 		DELAY(100000);
-	unit = isdp->id_unit;
 	com_addr[unit] = port;
 	com_active |= 1 << unit;
-	/* comsoftCAR = isdp->id_flags; */
+	comsoftCAR |= 1 << unit;	/* XXX */
+
+	/* look for a NS 16550AF UART with FIFOs */
+	outb(port+com_fifo, FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14);
+	DELAY(100);
+	if ((inb(port+com_iir) & IIR_FIFO_MASK) == IIR_FIFO_MASK)
+		com_hasfifo |= 1 << unit;
+
 	outb(port+com_ier, 0);
 	outb(port+com_mcr, 0 | MCR_IENABLE);
 #ifdef KGDB
-	if (kgdb_dev == makedev(1, unit)) {
+	if (1/*kgdb_dev == makedev(commajor, unit)*/) {
 		if (comconsole == unit)
 			kgdb_dev = -1;	/* can't debug over console port */
 		else {
-			(void) cominit(unit);
-			comconsole = -2; /* XXX */
+			(void) cominit(unit, kgdb_rate);
 			if (kgdb_debug_init) {
-				printf("com%d: kgdb waiting...", unit);
-				/* trap into kgdb */
-				asm("trap #15;");
-				printf("connected.\n");
+				/*
+				 * Print prefix of device name,
+				 * let kgdb_connect print the rest.
+				 */
+				printf("com%d: ", unit);
+				kgdb_connect(1);
 			} else
 				printf("com%d: kgdb enabled\n", unit);
 		}
 	}
 #endif
 	/*
-	 * Need to reset baud rate, etc. of next print so reset comconsole.
+	 * Need to reset baud rate, etc. of next print so reset comconsinit.
 	 * Also make sure console is always "hardwired"
 	 */
 	if (unit == comconsole) {
-		comconsole = -1;
+		comconsinit = 0;
 		comsoftCAR |= (1 << unit);
 	}
-comsoftCAR |= (1 << unit);
 	return (1);
 }
 
@@ -153,11 +170,13 @@ comopen(dev, flag, mode, p)
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
-		tp->t_iflag = TTYDEF_IFLAG;
-		tp->t_oflag = TTYDEF_OFLAG;
-		tp->t_cflag = TTYDEF_CFLAG;
-		tp->t_lflag = TTYDEF_LFLAG;
-		tp->t_ispeed = tp->t_ospeed = comdefaultrate;
+		if (tp->t_ispeed == 0) {
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_ispeed = tp->t_ospeed = comdefaultrate;
+		}
 		comparam(tp, &tp->t_termios);
 		ttsetwater(tp);
 	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
@@ -194,7 +213,7 @@ comclose(dev, flag)
 	outb(com+com_cfcr, inb(com+com_cfcr) & ~CFCR_SBREAK);
 #ifdef KGDB
 	/* do not disable interrupts if debugging */
-	if (kgdb_dev != makedev(1, unit))
+	if (kgdb_dev != makedev(commajor, unit))
 #endif
 	outb(com+com_ier, 0);
 	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
@@ -220,7 +239,6 @@ comwrite(dev, uio, flag)
 	int unit = UNIT(dev);
 	register struct tty *tp = &com_tty[unit];
  
-#ifdef notyet
 	/*
 	 * (XXX) We disallow virtual consoles if the physical console is
 	 * a serial port.  This is in case there is a display attached that
@@ -229,7 +247,6 @@ comwrite(dev, uio, flag)
 	 */
 	if (constty && unit == comconsole)
 		constty = NULL;
-#endif
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
  
@@ -243,24 +260,40 @@ comintr(unit)
 	com = com_addr[unit];
 	while (1) {
 		code = inb(com+com_iir);
-		switch (code) {
+		switch (code & IIR_IMASK) {
 		case IIR_NOPEND:
 			return (1);
+		case IIR_RXTOUT:
 		case IIR_RXRDY:
-			/* do time-critical read in-line */
 			tp = &com_tty[unit];
-			code = inb(com+com_data);
-			if ((tp->t_state & TS_ISOPEN) == 0) {
+/*
+ * Process received bytes.  Inline for speed...
+ */
 #ifdef KGDB
-				if (kgdb_dev == makedev(1, unit) &&
-				    code == '!') {
-					printf("kgdb trap from com%d\n", unit);
-					/* trap into kgdb */
-					asm("trap #15;");
-				}
+#define	RCVBYTE() \
+			code = inb(com+com_data); \
+			if ((tp->t_state & TS_ISOPEN) == 0) { \
+				if (kgdb_dev == makedev(commajor, unit) && \
+				    code == FRAME_END) \
+					kgdb_connect(0); /* trap into kgdb */ \
+			} else \
+				(*linesw[tp->t_line].l_rint)(code, tp)
+#else
+#define	RCVBYTE() \
+			code = inb(com+com_data); \
+			if (tp->t_state & TS_ISOPEN) \
+				(*linesw[tp->t_line].l_rint)(code, tp)
 #endif
-			} else
-				(*linesw[tp->t_line].l_rint)(code, tp);
+
+			RCVBYTE();
+
+			if (com_hasfifo & (1 << unit))
+				while ((code = inb(com+com_lsr)) & LSR_RCV_MASK) {
+					if (code == LSR_RXRDY) {
+						RCVBYTE();
+					} else
+						comeint(unit, code, com);
+				}
 			break;
 		case IIR_TXRDY:
 			tp = &com_tty[unit];
@@ -271,7 +304,7 @@ comintr(unit)
 				comstart(tp);
 			break;
 		case IIR_RLS:
-			comeint(unit, com);
+			comeint(unit, inb(com+com_lsr), com);
 			break;
 		default:
 			if (code & IIR_NOPEND)
@@ -286,25 +319,21 @@ comintr(unit)
 	}
 }
 
-comeint(unit, com)
-	register int unit;
+comeint(unit, stat, com)
+	register int unit, stat;
 	register com;
 {
 	register struct tty *tp;
-	register int stat, c;
+	register int c;
 
 	tp = &com_tty[unit];
-	stat = inb(com+com_lsr);
 	c = inb(com+com_data);
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 #ifdef KGDB
 		/* we don't care about parity errors */
 		if (((stat & (LSR_BI|LSR_FE|LSR_PE)) == LSR_PE) &&
-		    kgdb_dev == makedev(1, unit) && c == '!') {
-			printf("kgdb trap from com%d\n", unit);
-			/* trap into kgdb */
-			asm("trap #15;");
-		}
+		    kgdb_dev == makedev(commajor, unit) && c == FRAME_END)
+			kgdb_connect(0); /* trap into kgdb */
 #endif
 		return;
 	}
@@ -445,6 +474,10 @@ comparam(tp, t)
 	if (cflag&CSTOPB)
 		cfcr |= CFCR_STOPB;
 	outb(com+com_cfcr, cfcr);
+
+	if (com_hasfifo & (1 << unit))
+		outb(com+com_fifo, FIFO_ENABLE | FIFO_TRIGGER_14);
+
 	return(0);
 }
  
@@ -476,6 +509,9 @@ comstart(tp)
 		c = getc(&tp->t_outq);
 		tp->t_state |= TS_BUSY;
 		outb(com+com_data, c);
+		if (com_hasfifo & (1 << unit))
+			for (c = 1; c < 16 && tp->t_outq.c_cc; ++c)
+				outb(com+com_data, getc(&tp->t_outq));
 	}
 out:
 	splx(s);
@@ -529,5 +565,124 @@ commctl(dev, bits, how)
 	}
 	(void) splx(s);
 	return(bits);
+}
+
+/*
+ * Following are all routines needed for COM to act as console
+ */
+#include "i386/i386/cons.h"
+
+comcnprobe(cp)
+	struct consdev *cp;
+{
+	int unit;
+	extern int comopen();
+
+	/* locate the major number */
+	for (commajor = 0; commajor < nchrdev; commajor++)
+		if (cdevsw[commajor].d_open == comopen)
+			break;
+
+	/* XXX: ick */
+	unit = CONUNIT;
+	com_addr[CONUNIT] = CONADDR;
+
+	/* make sure hardware exists?  XXX */
+
+	/* initialize required fields */
+	cp->cn_dev = makedev(commajor, unit);
+	cp->cn_tp = &com_tty[unit];
+#ifdef	COMCONSOLE
+	cp->cn_pri = CN_REMOTE;		/* Force a serial port console */
+#else
+	cp->cn_pri = CN_NORMAL;
+#endif
+}
+
+comcninit(cp)
+	struct consdev *cp;
+{
+	int unit = UNIT(cp->cn_dev);
+
+	cominit(unit, comdefaultrate);
+	comconsole = unit;
+	comconsinit = 1;
+}
+
+cominit(unit, rate)
+	int unit, rate;
+{
+	register int com;
+	int s;
+	short stat;
+
+#ifdef lint
+	stat = unit; if (stat) return;
+#endif
+	com = com_addr[unit];
+	s = splhigh();
+	outb(com+com_cfcr, CFCR_DLAB);
+	rate = ttspeedtab(comdefaultrate, comspeedtab);
+	outb(com+com_data, rate & 0xFF);
+	outb(com+com_ier, rate >> 8);
+	outb(com+com_cfcr, CFCR_8BITS);
+	outb(com+com_ier, IER_ERXRDY | IER_ETXRDY);
+	outb(com+com_fifo, FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14);
+	stat = inb(com+com_iir);
+	splx(s);
+}
+
+comcngetc(dev)
+{
+	register com = com_addr[UNIT(dev)];
+	short stat;
+	int c, s;
+
+#ifdef lint
+	stat = dev; if (stat) return(0);
+#endif
+	s = splhigh();
+	while (((stat = inb(com+com_lsr)) & LSR_RXRDY) == 0)
+		;
+	c = inb(com+com_data);
+	stat = inb(com+com_iir);
+	splx(s);
+	return(c);
+}
+
+/*
+ * Console kernel output character routine.
+ */
+comcnputc(dev, c)
+	dev_t dev;
+	register int c;
+{
+	register com = com_addr[UNIT(dev)];
+	register int timo;
+	short stat;
+	int s = splhigh();
+
+#ifdef lint
+	stat = dev; if (stat) return;
+#endif
+#ifdef KGDB
+	if (dev != kgdb_dev)
+#endif
+	if (comconsinit == 0) {
+		(void) cominit(UNIT(dev), comdefaultrate);
+		comconsinit = 1;
+	}
+	/* wait for any pending transmission to finish */
+	timo = 50000;
+	while (((stat = inb(com+com_lsr)) & LSR_TXRDY) == 0 && --timo)
+		;
+	outb(com+com_data, c);
+	/* wait for this transmission to complete */
+	timo = 1500000;
+	while (((stat = inb(com+com_lsr)) & LSR_TXRDY) == 0 && --timo)
+		;
+	/* clear any interrupts generated by this transmission */
+	stat = inb(com+com_iir);
+	splx(s);
 }
 #endif
