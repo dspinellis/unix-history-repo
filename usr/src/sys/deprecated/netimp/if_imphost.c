@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imphost.c	7.3 (Berkeley) %G%
+ *	@(#)if_imphost.c	7.4 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -200,12 +200,14 @@ hostslowtimo()
 {
 	register struct mbuf *m;
 	register struct host *hp, *lp;
+	struct imp_softc *sc;
 	struct hmbuf *hm;
 	int s = splimp(), unit, any;
 
 	for (unit = 0; unit < NIMP; unit++) {
 	    any = 0;
-	    for (m = imp_softc[unit].imp_hosts; m; m = m->m_next) {
+	    sc = &imp_softc[unit];
+	    for (m = sc->imp_hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
@@ -220,12 +222,15 @@ hostslowtimo()
 			if (hp->h_rfnm == 0 && hp->h_qcnt == 0) {
 				any = 1;
 				hostrelease(hp);
+				if (sc->imp_hostq == m)
+					sc->imp_hostq = 0;
 			}
 		    }
 		}
 	    }
-	    if (any)
+	    if (any) {
 		hostcompress(unit);
+	    }
 	}
 	splx(s);
 }
