@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -243,6 +243,11 @@ info(pw)
 	print(fp, pw);
 	(void)fflush(fp);
 
+	/*
+	 * give the file to the real user; setuid permissions
+	 * are discarded in edit()
+	 */
+	(void)fchown(fd, getuid(), getgid());
 	(void)fstat(fd, &begin);
 	rval = edit(tfile);
 	(void)unlink(tfile);
@@ -360,6 +365,8 @@ edit(file)
 	else
 		p = editor = "vi";
 	if (!(pid = vfork())) {
+		(void)setuid(getuid());
+		(void)setgid(getgid());
 		execlp(editor, p, file, NULL);
 		_exit(127);
 	}
