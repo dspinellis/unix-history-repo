@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.2 1994/04/16 20:37:01 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.3 1994/04/17 03:57:18 jkh Exp $
 
 
 Table of Contents
@@ -185,7 +185,7 @@ Buslogic             BT-445 Series <VLB> (*)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
 UltraStor            UH-14f Series <ISA>
-                     UH-34f Series <EISA>
+                     UH-34f Series <EISA/VLB>
 
 There is supposed to be a UltraStor 24f driver floating around, but we're
 not sure where (could someone please point us at it?).  Note that we do
@@ -445,6 +445,13 @@ options         SYSVMSG                 # enable for messaging
 Recompile and install.
 
 
+6.0.4:	Are there any utilities that make configuring a kernel easier?
+
+Well, yes and no.  Look in /sys/i386/doc/options.doc (/sys/doc on post 1.1
+systems) for a list of kernel options you can set, and what they do.  For
+a friendlier front-end to the process, see /usr/src/contrib/configit
+
+
 
 7.0 System Administration
 -------------------------
@@ -465,12 +472,8 @@ Yes, you can pick up Andreas Klemm's apsfilter package from:
 
 ftp.germany.eu.net:~ftp/pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.11.gz
 
-This is a compleate package for printing text, PS and DVI files.  It
-requires ghostscript and dvips.  For a smaller package where you just
-want to print simple text files and postscript or just plain want a
-simpler package, look in the file: /usr/src/contrib/FAQ/programs/printcap01.gz
-
-This includes a printcap for a epson printer and a filter for postscript.
+This is a complete package for printing text, PS and DVI files.  It
+requires ghostscript and dvips.
 
 NOTE: We're looking for printcap entrys for all printers.  If you have
 one, or a filter for one, please send it or mail us a pointer to
