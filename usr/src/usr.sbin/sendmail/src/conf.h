@@ -15,7 +15,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)conf.h	5.11 (Berkeley) %G%
+ *	@(#)conf.h	5.12 (Berkeley) %G%
  */
 
 /*
@@ -57,3 +57,4 @@
 # define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
 # define SETPROCTITLE	1	/* munge argv to display current status */
 /* # define WIZ		1	/* allow wizard mode */
+# define NAMED_BIND	1	/* use Berkeley Internet Domain Server */

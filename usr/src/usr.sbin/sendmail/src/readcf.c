@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -777,6 +777,10 @@ setoption(opt, val, sticky)
 			HelpFile = "sendmail.hf";
 		else
 			HelpFile = newstr(val);
+		break;
+
+	  case 'I':		/* use internet domain name server */
+		UseNameServer = atobool(val);
 		break;
 
 	  case 'i':		/* ignore dot lines in message */

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -26,8 +26,10 @@ static char sccsid[] = "@(#)deliver.c	5.22 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
+#ifdef NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
+#endif
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -78,11 +80,13 @@ deliver(e, firstto)
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
 		return (0);
 
+#ifdef NAMED_BIND
 	/* unless interactive, try twice, over a minute */
 	if (OpMode == MD_DAEMON || OpMode == MD_SMTP) {
 		_res.retrans = 30;
 		_res.retry = 2;
 	}
+#endif NAMED_BIND
 
 	m = to->q_mailer;
 	host = to->q_host;
@@ -373,17 +377,27 @@ deliver(e, firstto)
 
 	if (ctladdr == NULL)
 		ctladdr = &e->e_from;
+#ifdef NAMED_BIND
 	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
+#endif
 #ifdef SMTP
-	if (clever) {
+	if (clever)
+	{
 		expand("\001w", buf, &buf[sizeof(buf) - 1], e);
 		rcode = EX_OK;
-		if (host[0] == '[') {
+#ifdef NAMED_BIND
+		if (host[0] != '[')
+		{
+			Nmx = getmxrr(host, MxHosts, buf, &rcode);
+		}
+		else
+#endif
+		{
 			Nmx = 1;
 			MxHosts[0] = host;
-		} else
-			Nmx = getmxrr(host, MxHosts, buf, &rcode);
-		if (Nmx >= 0) {
+		}
+		if (Nmx >= 0)
+		{
 			message(Arpa_Info, "Connecting to %s (%s)...",
 			    MxHosts[0], m->m_name);
 			if ((rcode = smtpinit(m, pv)) == EX_OK) {
@@ -423,7 +437,9 @@ deliver(e, firstto)
 		message(Arpa_Info, "Connecting to %s (%s)...", host, m->m_name);
 		rcode = sendoff(e, m, pv, ctladdr);
 	}
+#ifdef NAMED_BIND
 	_res.options |= RES_DEFNAMES | RES_DNSRCH;	/* XXX */
+#endif
 
 	/*
 	**  Do final status disposal.
