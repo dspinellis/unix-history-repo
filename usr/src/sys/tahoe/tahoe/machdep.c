@@ -1,4 +1,4 @@
-/*	machdep.c	1.13	87/03/26	*/
+/*	machdep.c	1.14	87/06/06	*/
 
 #include "param.h"
 #include "systm.h"
@@ -20,6 +20,7 @@
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "quota.h"
+#include "malloc.h"
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/reg.h"
@@ -113,6 +114,8 @@ startup(firstaddr)
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
 	valloc(namecache, struct namecache, nchsize);
+	valloc(kmemmap, struct map, ekmempt - kmempt);
+	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
 #ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
@@ -238,6 +241,7 @@ startup(firstaddr)
 	    "usrpt", nproc);
 	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
+	kmeminit();		/* now safe to do malloc/free */
 	intenable = 1;		/* Enable interrupts from now on */
 
 	/*
