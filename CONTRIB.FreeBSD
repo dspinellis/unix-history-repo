@@ -132,7 +132,7 @@ James da Silva <jds@cs.umd.edu> et al
 Jay Fenlason <hack@datacube.com>
 Jim Wilson <wilson@moria.cygnus.com>
 Joerg Lohse <lohse@tech7.informatik.uni-hamburg.de>
-Joerg Wunsch
+Joerg Wunsch <joerg_wunsch@uriah.sax.de>
 John Dyson - <formerly dyson@ref.tfs.com>
 John Woods <jfw@eddie.mit.edu>
 Jordan K. Hubbard <jkh@whisker.lotus.ie>
@@ -179,4 +179,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.27 1994/02/13 02:59:49 jkh Exp $
+$Id: CONTRIB.FreeBSD,v 1.28 1994/02/13 13:35:03 davidg Exp $
