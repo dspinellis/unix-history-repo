@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)dmesg.c	4.2 (Berkeley) 83/01/02";
+static char *sccsid = "@(#)dmesg.c	4.3 (Berkeley) 85/03/05";
 /*
  *	Suck up system messages
  *	dmesg
@@ -42,15 +42,17 @@ char **argv;
 	}
 	if (sflg) {
 		of = open("/usr/adm/msgbuf", 2);
+		if (of < 0)
+			done("Can't open /usr/adm/msgbuf\n");
 		read(of, (char *)&omesg, sizeof(omesg));
 		lseek(of, 0L, 0);
 	}
 	sflg = 0;
 	nlist(argc>2? argv[2]:"/vmunix", nl);
 	if (nl[0].n_type==0)
-		done("No namelist\n");
+		done("Can't get kernel namelist\n");
 	if ((mem = open((argc>1? argv[1]: "/dev/kmem"), 0)) < 0)
-		done("No mem\n");
+		done("Can't read kernel memory\n");
 	lseek(mem, (long)nl[0].n_value, 0);
 	read(mem, &msgbuf, sizeof (msgbuf));
 	if (msgbuf.msg_magic != MSG_MAGIC)
