@@ -1,0 +1,19 @@
+dnl Process this file with autoconf to produce a configure script.
+M_INIT(src/fold.c)
+M_PROG_GCC
+M_PROG_INSTALL
+M_PROG_RANLIB
+M_ISC
+M_SIGTYPE
+M_STDC_HEADERS
+M_UNISTD_H
+M_USG
+M_CHAR_UNSIGNED
+M_REPLACE_FUNCS(bcopy memchr memcmp stpcpy)
+M_MISSING_FUNCS(strerror)
+M_VPRINTF
+M_ALLOCA
+M_ST_BLKSIZE
+M_MINIX
+M_XENIX
+M_OUTPUT(. lib src man)
