@@ -1,4 +1,4 @@
-/*	netisr.h	4.3	83/01/17	*/
+/*	netisr.h	4.4	83/07/06	*/
 
 /*
  * The networking code runs off software interrupts.
@@ -8,11 +8,7 @@
  * level for the clock (so you can enter the network in routines called
  * at timeout time).
  */
-#if sun
-#include "../sun/sir.h"
-#define	setsoftnet()	siron(SIR_NET)
-#else
-/* #include "../vax/mtpr.h" */
+#ifdef vax
 #define	setsoftnet()	mtpr(SIRR, 12)
 #endif
 

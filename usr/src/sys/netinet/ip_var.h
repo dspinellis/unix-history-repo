@@ -1,4 +1,4 @@
-/*	ip_var.h	4.10	83/05/12	*/
+/*	ip_var.h	4.11	83/07/06	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -37,10 +37,6 @@ struct	ipasfrag {
 #ifdef vax
 	u_char	ip_hl:4,
 		ip_v:4;
-#endif
-#ifdef sun
-	u_char	ip_v:4,
-		ip_hl:4;
 #endif
 	u_char	ipf_mff;		/* copied from (ip_off&IP_MF) */
 	short	ip_len;
