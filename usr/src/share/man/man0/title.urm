@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.11 (Berkeley) %G%
+.\"	@(#)title.urm	8.12 (Berkeley) %G%
 .\"
 .af % i
 .nr LL 6.5i
@@ -607,8 +607,10 @@ The new virtual memory implementation is derived from the MACH
 operating system developed at Carnegie-Mellon,
 and was ported to the BSD kernel at the University of Utah.
 The MACH virtual memory system call interface has been replaced with the
-``mmap''-based interface described in the ``Berkeley Software
-Architecture Manual''.
+``mmap''-based interface described in the
+``Berkeley Software Architecture Manual (4.4 Edition)''
+(see the UNIX Programmer's Manual,
+Supplementary Documents, PSD:5).
 The interface is similar to the interfaces shipped
 by several commercial vendors such as Sun, USL, and Convex Computer Corp.
 The integration of the new virtual memory is functionally complete,
@@ -633,7 +635,7 @@ and 802.3-based link-level support (hardware-compatible with Ethernet*).
 *Ethernet is a trademark of the Xerox Corporation.
 .FE
 We also include support for ISO Connection-Oriented Network Service,
-X.25, TP-0.
+X.25, and TP-0.
 The session and presentation layers are provided outside
 the kernel by the ISO development environment (ISODE).
 Included in this development environment are file
@@ -674,7 +676,7 @@ Such a filesystem could be mounted from a remote site via NFS or it
 could be a filesystem on removable media brought from some foreign
 location that uses a different password file.
 .PP
-In addition to the local ``fast filesystem'',
+In addition to the local ``fast filesystem,''
 we have added an implementation of the network filesystem (NFS)
 that fully interoperates with the NFS shipped by Sun and its licensees.
 Because our NFS implementation was implemented using only the
@@ -707,7 +709,7 @@ user and group quotas (simultaneously if desired).
 Quota expiration is based on time rather than
 the previous metric of number of logins over quota.
 This change makes quotas more useful on fileservers
-onto which users seldom login.
+onto which users seldom log in.
 .PP
 The system security has been greatly enhanced by the
 addition of additional file flags that permit a file to be
@@ -717,7 +719,7 @@ when the system is running single user.
 To protect against indiscriminate reading or writing of kernel
 memory, all writing and most reading of kernel data structures
 must be done using a new ``sysctl'' interface.
-The information to be access is described through an extensible
+The information to be accessed is described through an extensible
 ``Management Information Base'' (MIB).
 .EQ
 delim off
@@ -754,7 +756,7 @@ system software and allows compilation for multiple architectures
 from the same source tree (which may be mounted read-only).
 Notable additions to the libraries include functions to traverse a
 filesystem hierarchy, database interfaces to btree and hashing functions,
-a new, fast implementation of stdio and a radix sort function.
+a new, fast implementation of stdio, and a radix sort function.
 The additions to the utility suite include greatly enhanced versions of
 programs that display system status information, implementations of
 various traditional tools described in the IEEE Std1003.2 standard,
