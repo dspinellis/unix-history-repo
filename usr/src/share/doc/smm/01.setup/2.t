@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.19 (Berkeley) %G%
+.\"	@(#)2.t	6.20 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -624,7 +624,9 @@ Limitations
 There are several important limitations on the \*(4B distribution
 for the SPARC:
 .IP 1)
-You MUST have SunOS 4.1.x or Solaris to bring up \*(4B.
+You
+.B must
+have SunOS 4.1.x or Solaris to bring up \*(4B.
 There is no SPARCstation bootstrap code in this distribution.  The
 Sun-supplied boot loader will be used to boot \*(4B; you must copy
 this from your SunOS distribution.  This imposes several
@@ -988,7 +990,7 @@ ln /dev/xx /dev/mouse
 The 'xx' should be one of the following:
 .DS
 pm0	raw interface to PMAX graphics devices
-cfb0	raw interface to turbochannel PMAG-BA color frame buffer
+cfb0	raw interface to TURBOchannel PMAG-BA color frame buffer
 xcfb0	raw interface to maxine graphics devices
 mfb0	raw interface to mono graphics devices
 .DE
@@ -1033,7 +1035,7 @@ is set in the user's environment, all user programs report
 disk space in kilobytes, otherwise,
 disk sizes are always reported in units of 512-byte sectors\**.
 .FS
-You can thank System V intransigency and POSIX duplicity for
+You can thank System V intransigence and POSIX duplicity for
 requiring that 512-byte blocks be the units that programs report.
 .FE
 The
@@ -1401,7 +1403,7 @@ lw(2i) l.
 (this step may fail if it was done earlier)
 \fB#\fP \fIdate yymmddhhmm\fP	(set date, see \fIdate\fP\|(1))
 \&....
-\fB#\fP \fIpasswd root\fP	(set password for super-user)
+\fB#\fP \fIpasswd -l root\fP	(set password for super-user)
 \fBNew password:\fP	(password will not echo)
 \fBRetype new password:\fP
 \fB#\fP \fIhostname mysitename\fP	(set your hostname)
@@ -1412,14 +1414,20 @@ lw(2i) l.
 \fB#\fP \fIcd /var\fP	(make /var the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
+(this takes a few minutes)
 \fB#\fP \fInewfs r\*(Dk#p\fP	(create empty user filesystem)
 (as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number,
 \fIp\fP is the partition)
-\fB#\fP \fImount /dev/\*(Dk#p /usr\fP	(mount the usr filesystem)
-\fB#\fP \fIcd /usr\fP	(make /usr the current directory)
+\fB#\fP \fImount /dev/\*(Dk#p /mnt\fP	(mount the new /usr in tmp location)
+\fB#\fP \fIcd /mnt\fP	(make /mnt the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
 (this takes about 15-20 minutes)
+\fB#\fP \fIcd /\fP	(make / the current directory)
+\fB#\fP \fIumount /dev/\*(Dk#p\fP	(unmount from tmp mount point)
+(ignore ``fstab'' error message)
+\fB#\fP \fIrm -r /usr/*	(remove excess bootstrap binaries)
+\fB#\fP \fImount /dev/\*(Dk#p /usr\fP	(remount /usr)
 .TE
 .DE
 If no disk label has been installed on the disk, the
