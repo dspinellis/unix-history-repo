@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.3 (Berkeley) %G%
+ *	@(#)if_apx.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -30,28 +30,32 @@
 #include "net/if.h"
 #include "net/netisr.h"
 #include "net/if_types.h"
+#ifdef CCITT
 #include "netccitt/x25.h"
+int x25_rtrequest(), x25_ifoutput();
+#endif
 
 #include "if_apxreg.h"
 
 int	apxprobe(), apxattach(), apxstart(), apx_uprim(), apx_meminit();
-int	apxinit(), x25_ifoutput(), x25_rtrequest(), apxioctl(), apxreset();
-int	apxctr();
-void	apx_ifattach(), apxinput(), apxintr(), apxtint(), apaxrint();
+int	apxinit(), apxoutput(), apxioctl(), apxreset(), apxdebug = 1;
+void	apx_ifattach(), apxtest(), apxinput(), apxintr(), apxtint(), apxrint();
 
 struct apx_softc {
 	struct	ifnet apx_if;
-	caddr_t	apx_device;		/* e.g. isa_device */
-	u_short	apx_csr4;		/* byte gender, set in mach dep code */
+	caddr_t	apx_device;		/* e.g. isa_device, vme_device, etc. */
 	struct	apc_reg *apx_reg;	/* control regs for both subunits */
 	struct	apc_mem *apx_hmem;	/* Host addr for shared memory */
 	struct	apc_mem *apx_dmem;	/* Device (chip) addr for shared mem */
 	struct	sgcp *apx_sgcp;		/* IO control port for this subunit */
-	struct	apc_modes apx_modes;	/* Parameters, as amended by ioctls */
+	int	apx_flags;		/* Flags specific to this driver */
+#define APXF_CHIPHERE	0x01		/* mk5025 present */
 	int	apx_rxnum;		/* Last receiver dx we looked at */
 	int	apx_txnum;		/* Last tranmistter dx we stomped on */
 	int	apx_txcnt;		/* Number of packets queued for tx*/
-} apx_softc[2 * NAPX], *apx_lastsoftc = apx_softc;
+	u_short	apx_csr4;		/* byte gender, set in mach dep code */
+	struct	apc_modes apx_modes;	/* Parameters, as amended by ioctls */
+} apx_softc[2 * NAPX];
 
 struct apxstat {
 	int	nulltx;
@@ -102,28 +106,17 @@ apxprobe(id)
 	struct	apc_reg *reg = (struct apc_reg *)id->id_iobase;
 	register struct	apx_softc *apx = apx_softc + unit;
 
-	apx->apx_if.if_unit = unit;
-	apx->apx_reg = reg;
-	if (apxctr(apx) == 0) {
-		apxerror(apx, "no response from timer chip", 0);
-		return 0;			/* No board present */
-	}
 	for (subunit = 0; subunit < 2; subunit++, apx++) {
-		/* Set and read DTR mode to test present of SGS thompson chip */
-		apx->apx_if.if_unit = unit++;
-		apx->apx_sgcp = reg->axr_sgcp + subunit;
-		SG_WCSR(apx, 5, 0x08);
-		if (((SG_RCSR(apx, 5) & 0xff08) != 0x08)) {
-			apxerror(apx, "no mk5025 for channel", subunit);
-			continue;
-		}
 		moffset = subunit ? id->id_msize >> 1 : 0;
 		apx->apx_hmem	= (struct apc_mem *) (id->id_maddr + moffset);
 		apx->apx_dmem	= (struct apc_mem *) (moffset);
-		apx->apx_modes	= apx_default_modes;
 		apx->apx_device = (caddr_t) id;
 		apx->apx_reg	= reg;
-		apx->apx_csr4	= 0x0110;	/* no byte swapping for PC-AT */
+		apx->apx_sgcp	= reg->axr_sgcp + subunit;
+		apx->apx_csr4	= 0x0210;	/* no byte swapping for PC-AT */
+		apx->apx_modes	= apx_default_modes;
+		apx->apx_if.if_unit = unit++;
+		apxtest(apx);
 	}
 	return 1;
 }
@@ -131,11 +124,11 @@ apxprobe(id)
 apxattach(id)
 	register struct isa_device *id;
 {
-	int	unit = id->id_unit + id->id_unit;
+	int	unit = id->id_unit << 1;
 
 	apx_ifattach(unit);
 	apx_ifattach(unit + 1);
-	return (0);
+	return 0;
 }
 /* End bus & endian dependence */
 
@@ -153,16 +146,16 @@ apx_ifattach(unit)
 	 */
 	if (apx_softc[unit].apx_device == 0)
 		return;
-	ifp->if_name = "apc";
-	ifp->if_mtu = SGMTU;
-	ifp->if_init = apxinit;
-	ifp->if_output = x25_ifoutput;
-	ifp->if_start = apxstart;
-	ifp->if_ioctl = apxioctl;
-	ifp->if_reset = apxreset;
-	ifp->if_type = apx_default_modes.apm_iftype;
-	ifp->if_hdrlen = 5;
-	ifp->if_addrlen = 8;
+	ifp->if_name	= "apc";
+	ifp->if_mtu	= SGMTU;
+	ifp->if_init	= apxinit;
+	ifp->if_output	= apxoutput;
+	ifp->if_start	= apxstart;
+	ifp->if_ioctl	= apxioctl;
+	ifp->if_reset	= apxreset;
+	ifp->if_type	= apx_default_modes.apm_iftype;
+	ifp->if_hdrlen	= 5;
+	ifp->if_addrlen	= 8;
 	if_attach(ifp);
 }
 /*
@@ -186,12 +179,35 @@ apxinit(unit)
 apxctr(apx)
 	register struct apx_softc *apx;
 {
-	APX_WCSR(apx, axr_ccr, 0xb0); /* select ctr 2, write lsb+msb, mode 0 */
+	int i;
+	APX_WCSR(apx, axr_ccr, 0xB0); /* select ctr 2, write lsb+msb, mode 0 */
 	APX_WCSR(apx, axr_cnt2, 0x1);
 	APX_WCSR(apx, axr_cnt2, 0x0);
 	DELAY(50);
-	APX_WCSR(apx, axr_ccr, 0xD4); /* latch status, ctr 2; */
-	return APX_RCSR(apx, axr_cnt2);
+	APX_WCSR(apx, axr_ccr, 0xE8); /* latch status, ctr 2; */
+	return (APX_RCSR(apx, axr_cnt2));
+}
+
+void
+apxtest(apx)
+	register struct apx_softc *apx;
+{
+	int i =  0;
+
+	if ((apx->apx_if.if_unit & 1) == 0 && (i = apxctr(apx)) == 0)
+		apxerror(apx, "no response from timer chip", 0);
+	if (SG_RCSR(apx, 1) & 0x8000)
+		SG_WCSR(apx, 1, 0x8040);
+	SG_WCSR(apx, 4, apx->apx_csr4);
+	if (apxdebug && i) {
+		apxerror(apx, "counter 2 value", i);
+		apxerror(apx, "mk5025 csr4 value", SG_RCSR(apx, 4));
+	}
+	SG_WCSR(apx, 5, 0x08);		/* Set DTR mode in SGS thompson chip */
+	if (((i = SG_RCSR(apx, 5)) & 0xff08) != 0x08)
+		apxerror(apx, "no mk5025, csr5 high bits are", i);
+	else
+		apx->apx_flags |= APXF_CHIPHERE;
 }
 
 apxreset(unit)
@@ -234,10 +250,10 @@ apx_uprim(apx, request, ident)
 	int reply = SG_RCSR(apx, 1);
 
 	if (reply & 0x8040)
-		SG_WCRS(1, 0x8040); /* Magic! */
+		SG_WCSR(apx, 1, 0x8040); /* Magic! */
 	SG_WCSR(apx, 1, request | SG_UAV);
 	do {
-		reply = SG_RCRS(1);
+		reply = SG_RCSR(apx, 1);
 		if (timo++ >= TIMO | reply & 0x8000) {
 			apxerror(apx, ident, reply);
 			return 1;
@@ -315,12 +331,11 @@ apxstart(ifp)
 void
 apxintr()
 {
-	register struct apx_softc *apx = apx_lastsoftc;
-	struct apx_softc *apxlim = apx_softc + NAPX + NAPX;
+	register struct apx_softc *apx;
 	int reply;
 
-	do {
-		if (apx->apx_if.if_flags & IFF_UP)
+	for (apx = apx_softc + NAPX + NAPX; --apx >= apx_softc;) {
+		if (apx->apx_flags & APXF_CHIPHERE)
 		    /* Try to turn off interrupt cause */
 		    while ((reply = SG_RCSR(apx, 0)) & 0xff) {
 			SG_WCSR(apx, 0, SG_INEA | 0xfe);
@@ -336,9 +351,7 @@ apxintr()
 			if (reply & SG_PINT)
 				apxstat.pint++;
 		}
-		if (++apx >= apxlim)
-			apx = apx_softc;
-	} while (apx != apx_lastsoftc);
+	}
 }
 
 void
@@ -363,6 +376,7 @@ apxtint(apx)
 	apxstart(&apx->apx_if);
 }
 
+void
 apxrint(apx)
 	register struct apx_softc *apx;
 {
@@ -466,15 +480,19 @@ apxioctl(ifp, cmd, data)
 	struct apx_softc *apx = &apx_softc[ifp->if_unit];
 
 	switch (cmd) {
+
+	case SIOCSIFADDR:
+#ifdef CCITT
+		ifa->ifa_rtrequest = x25_rtrequest;
+		break;
+
 	case SIOCSIFCONF_X25:
+		ifp->if_output = x25_ifoutput;
 		ifp->if_flags |= IFF_UP;
 		error = hd_ctlinput(PRC_IFUP, ifa->ifa_addr);
 		if (error == 0)
 			apxinit(ifp->if_unit);
-		break;
-
-	case SIOCSIFADDR:
-		ifa->ifa_rtrequest = x25_rtrequest;
+#endif
 		break;
 
 	case SIOCSIFFLAGS:
@@ -504,4 +522,41 @@ apxerror(apx, msg, data)
 	log(LOG_WARNING, "apc%d: %s, stat=0x%x\n",
 		apx->apx_if.if_unit, msg, data);
 }
+/*
+ * For debugging loopback activity.
+ */
+static char pppheader[4] = { -1, 3, 0, 0x21 };
+
+apxoutput(ifp, m, dst, rt)
+register struct ifnet *ifp;
+register struct mbuf *m;
+struct sockaddr *dst;
+struct rtentry *rt;
+{
+	/*
+	 * Queue message on interface, and start output if interface
+	 * not yet active.
+	 */
+	int s = splimp(), error = 0;
+	M_PREPEND(m, sizeof pppheader, M_DONTWAIT);
+	if (m == 0) {
+		splx(s);
+		return ENOBUFS;
+	}
+	bcopy(pppheader, mtod(m, caddr_t), sizeof pppheader);
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+	    /* printf("%s%d: HDLC says OK to send but queue full, may hang\n",
+			ifp->if_name, ifp->if_unit);*/
+		m_freem(m);
+		error = ENOBUFS;
+	} else {
+		IF_ENQUEUE(&ifp->if_snd, m);
+		if ((ifp->if_flags & IFF_OACTIVE) == 0)
+			(*ifp->if_start)(ifp);
+	}
+	splx(s);
+	return (error);
+}
+
 #endif /* NAPX */
