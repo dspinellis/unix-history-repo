@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	6.5 (Berkeley) %G%
+ *	@(#)boot.c	6.6 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -48,7 +48,8 @@ char	devname[][2] = {
 #define PARTITIONMASK	0x7
 #define PARTITIONSHIFT	3
 
-char line[100] = "xx(00,0)vmunix";
+#define	UNIX	"vmunix"
+char line[100];
 
 int	retry = 0;
 
@@ -57,11 +58,12 @@ main()
 	register howto, devtype;	/* howto=r11, devtype=r10 */
 	int io;
 	register type, part, unit;
+	register char *cp;
 
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
-	printf("Boot\n");
+	printf("\nBoot\n");
 	loadpcs();
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
@@ -73,11 +75,17 @@ main()
 	if ((howto&RB_ASKNAME)==0) {
 		if (type >= 0 && type < sizeof(devname) / 2
 		    && devname[type][0]) {
-			line[0] = devname[type][0];
-			line[1] = devname[type][1];
-			line[3] = unit / 10 + '0';
-			line[4] = unit % 10 + '0';
-			line[6] = part + '0';
+			cp = line;
+			*cp++ = devname[type][0];
+			*cp++ = devname[type][1];
+			*cp++ = '(';
+			if (unit >= 10)
+				*cp++ = unit / 10 + '0';
+			*cp++ = unit % 10 + '0';
+			*cp++ = ',';
+			*cp++ = part + '0';
+			*cp++ = ')';
+			strcpy(cp, UNIX);
 		} else
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
