@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.4 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.5 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -76,6 +76,7 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 1
 #include "tp_stat.h"
 #include "tp_tpdu.h"
 #include "tp_clnp.h"
+#include "cltp_var.h"
 
 /*
  * CALLED FROM:
@@ -320,14 +321,7 @@ tpclnp_mtu(so, isop, size, negot )
 		*size, *negot, i, 0);
 	ENDTRACE
 
-	/* are we on the same LAN? if so, negotiate one tpdu size larger,
-	 * and actually send the real mtu size
-	 */
-	if (iso_localifa(isop->isop_faddr)) {
-		i++;
-	} else {
-		*size = 1<<i;
-	}
+	*size = 1<<i;
 	*negot = i;
 
 	IFDEBUG(D_CONN)
@@ -445,7 +439,6 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 	
 	return(err);
 }
-extern struct sockaddr_iso blank_siso;
 /*
  * CALLED FROM:
  * 	clnp's input routine, indirectly through the protosw.
@@ -454,14 +447,14 @@ extern struct sockaddr_iso blank_siso;
  * No return value.  
  */
 ProtoHook
-tpclnp_input(m, faddr, laddr, clnp_len)
-	struct mbuf *m;
-	struct iso_addr *faddr, *laddr;
+tpclnp_input(m, src, dst, clnp_len)
+	register struct mbuf *m;
+	struct sockaddr_iso *src, *dst;
 	int clnp_len;
 {
-	struct sockaddr_iso src, dst;
 	int s = splnet();
 	struct mbuf *tp_inputprep();
+	int tp_input(), cltp_input(), (*input)() = tp_input;
 
 	IncStat(ts_pkt_rcvd);
 
@@ -480,24 +473,24 @@ tpclnp_input(m, faddr, laddr, clnp_len)
 	m->m_data += clnp_len;
 
 	m = tp_inputprep(m);
+	if (m == 0)
+		return 0;
+	if (mtod(m, u_char *)[1] == UD_TPDU_type)
+		input = cltp_input;
 
 	IFDEBUG(D_TPINPUT)
 		dump_mbuf(m, "after tpclnp_input both pullups");
 	ENDDEBUG
 
-	src = blank_siso; dst = blank_siso;
-	bcopy((caddr_t)faddr, (caddr_t)&src.siso_addr, 1 + faddr->isoa_len);
-	bcopy((caddr_t)laddr, (caddr_t)&dst.siso_addr, 1 + laddr->isoa_len);
-
 	IFDEBUG(D_TPISO)
-		printf("calling tp_input: &src 0x%x  &dst 0x%x, src addr:\n", 
-			&src, &dst);
+		printf("calling %sinput : src 0x%x, dst 0x%x, src addr:\n", 
+			(input == tp_input ? "tp_" : "clts_"), src, dst);
+		dump_isoaddr(src);
 		printf(" dst addr:\n");
-		dump_isoaddr(&src);
-		dump_isoaddr(&dst);
+		dump_isoaddr(dst);
 	ENDDEBUG
 
-	(void) tp_input(m, (struct sockaddr *)&src, (struct sockaddr *)&dst,
+	(void) (*input)(m, (struct sockaddr *)src, (struct sockaddr *)dst,
 				0, tpclnp_output_dg);
 
 	IFDEBUG(D_QUENCH)
@@ -565,17 +558,6 @@ tpclnp_ctlinput(cmd, siso)
 	int cmd;
 	struct sockaddr_iso *siso;
 {
-	return tpclnp_ctlinput1(cmd, &siso->siso_addr);
-}
-
-/*
- *	Entry to ctlinput with argument of an iso_addr rather than a sockaddr
- */
-ProtoHook
-tpclnp_ctlinput1(cmd, isoa)
-	int cmd;
-	struct iso_addr	*isoa;
-{
 	extern u_char inetctlerrmap[];
 	extern ProtoHook tpiso_abort();
 	extern ProtoHook iso_rtchange();
@@ -583,32 +565,34 @@ tpclnp_ctlinput1(cmd, isoa)
 	void iso_pcbnotify();
 
 	IFDEBUG(D_TPINPUT)
-		printf("tpclnp_ctlinput1: cmd 0x%x addr: %s\n", cmd, 
-			clnp_iso_addrp(isoa));
+		printf("tpclnp_ctlinput1: cmd 0x%x addr: \n", cmd);
+		dump_isoaddr(siso);
 	ENDDEBUG
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return 0;
+	if (siso->siso_family != AF_ISO)
+		return 0;
 	switch (cmd) {
 
 		case	PRC_QUENCH2:
-			iso_pcbnotify(&tp_isopcb, isoa, 0, (int (*)())tpiso_decbit);
+			iso_pcbnotify(&tp_isopcb, siso, 0, (int (*)())tpiso_decbit);
 			break;
 
 		case	PRC_QUENCH:
-			iso_pcbnotify(&tp_isopcb, isoa, 0, (int (*)())tpiso_quench);
+			iso_pcbnotify(&tp_isopcb, siso, 0, (int (*)())tpiso_quench);
 			break;
 
 		case	PRC_TIMXCEED_REASS:
 		case	PRC_ROUTEDEAD:
-			iso_pcbnotify(&tp_isopcb, isoa, 0, tpiso_reset);
+			iso_pcbnotify(&tp_isopcb, siso, 0, tpiso_reset);
 			break;
 
 		case	PRC_HOSTUNREACH:
 		case	PRC_UNREACH_NET:
 		case	PRC_IFDOWN:
 		case	PRC_HOSTDEAD:
-			iso_pcbnotify(&tp_isopcb, isoa,
+			iso_pcbnotify(&tp_isopcb, siso,
 					(int)inetctlerrmap[cmd], iso_rtchange);
 			break;
 
@@ -627,10 +611,24 @@ tpclnp_ctlinput1(cmd, isoa)
 		case	PRC_TIMXCEED_INTRANS:
 		case	PRC_PARAMPROB:
 		*/
-		iso_pcbnotify(&tp_isopcb, isoa, (int)inetctlerrmap[cmd], tpiso_abort);
+		iso_pcbnotify(&tp_isopcb, siso, (int)inetctlerrmap[cmd], tpiso_abort);
 		break;
 	}
 	return 0;
+}
+/*
+ * XXX - Variant which is called by clnp_er.c with an isoaddr rather
+ * than a sockaddr_iso.
+ */
+
+static struct sockaddr_iso siso = {sizeof(siso), AF_ISO};
+tpclnp_ctlinput1(cmd, isoa)
+	int cmd;
+	struct iso_addr *isoa;
+{
+	bzero((caddr_t)&siso.siso_addr, sizeof(siso.siso_addr));
+	bcopy((caddr_t)isoa, (caddr_t)&siso.siso_addr, isoa->isoa_len);
+	tpclnp_ctlinput(cmd, &siso);
 }
 
 /*
@@ -670,4 +668,5 @@ tpiso_reset(isop)
 
 }
 
+#include "cltp_usrreq.c"
 #endif ISO
