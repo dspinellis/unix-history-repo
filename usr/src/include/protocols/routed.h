@@ -1,6 +1,10 @@
-/*	routed.h	82/05/24	4.2	*/
+/*	routed.h	82/05/26	4.3	*/
 /*
  * Routing Information Protocol
+ *
+ * Derived from Xerox NS Routing Information Protocol
+ * by changing 32-bit net numbers to sockaddr's and
+ * padding stuff to 32-bit boundaries.
  */
 struct netinfo {
 	struct	sockaddr rip_dst;	/* destination net/host */
@@ -18,10 +22,10 @@ struct rip {
 
 #define IPPORT_ROUTESERVER 	520	/* well-known port */
 #define	HOPCNT_INFINITY		16	/* per Xerox NS */
-#define	MAXPACKETSIZE		1024	/* max broadcast size */
+#define	MAXPACKETSIZE		512	/* max broadcast size */
 
 /*
- * Timer values used in managing the routing table "cache".
+ * Timer values used in managing the routing table.
  * Every update forces an entry's timer to be reset.  After
  * EXPIRE_TIME without updates, the entry is marked invalid,
  * but held onto until GARBAGE_TIME so that others may
