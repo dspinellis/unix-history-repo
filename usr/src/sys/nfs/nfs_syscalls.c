@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -208,7 +208,7 @@ async_daemon()
 		while (dp->b_actf == NULL) {
 			nfs_iodwant[myiod] = u.u_procp;
 			if (error = tsleep((caddr_t)&nfs_iodwant[myiod],
-			    PRIBIO | PCATCH, "nfsidl", 0))
+			    PWAIT | PCATCH, "nfsidl", 0))
 				RETURN (error);
 		}
 		/* Take one off the end of the list */
