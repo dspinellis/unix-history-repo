@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	8.5 (Berkeley) %G%
+ *	@(#)types.h	8.6 (Berkeley) %G%
  */
 
 #ifndef _SYS_TYPES_H_
@@ -38,6 +38,7 @@ typedef	u_int32_t	dev_t;		/* device number */
 typedef u_int32_t	fixpt_t;	/* fixed point number */
 typedef	u_int32_t	gid_t;		/* group id */
 typedef	u_int32_t	ino_t;		/* inode number */
+typedef	long		key_t;		/* IPC key (for Sys V IPC) */
 typedef	u_int16_t	mode_t;		/* permissions */
 typedef	u_int16_t	nlink_t;	/* link count */
 typedef	quad_t		off_t;		/* file offset */
