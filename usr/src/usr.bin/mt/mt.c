@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.5 (Berkeley) 83/01/02";
+static	char *sccsid = "@(#)mt.c	4.6 (Berkeley) 83/02/08";
 /*
  * mt --
  *   magnetic tape manipulation program
@@ -26,10 +26,6 @@ struct commands {
 	{ "offline",	MTOFFL,	1 },
 	{ "rewoffl",	MTOFFL,	1 },
 	{ "status",	MTNOP,	1 },
-	{ "tense",	MTTENSE,1 },
-	{ "tension",	MTTENSE,1 },
-	{ "retension",	MTTENSE,1 },
-	{ "erase",	MTERASE,1 },
 	{ 0 }
 };
 
