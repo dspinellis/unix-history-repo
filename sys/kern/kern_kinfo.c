@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_kinfo.c	7.17 (Berkeley) 6/26/91
- *	$Id: kern_kinfo.c,v 1.3 1993/10/16 15:24:18 rgrimes Exp $
+ *	$Id: kern_kinfo.c,v 1.4 1993/11/07 21:44:42 wollman Exp $
  */
 
 #include "param.h"
@@ -67,9 +67,10 @@ getkerninfo(p, uap, retval)
 	int bufsize;		/* max size of users buffer */
 	int needed, locked, (*server)(), error = 0;
 
-	if (error = copyin((caddr_t)uap->size, (caddr_t)&bufsize,
-	    sizeof (bufsize)))
-		goto done;
+	if(uap->size != (int *)NULL)
+		if (error = copyin((caddr_t)uap->size, (caddr_t)&bufsize,
+	    	sizeof (bufsize)))
+			goto done;
 
 	switch (ki_type(uap->op)) {
 
