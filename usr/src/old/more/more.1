@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)more.1	6.1 (Berkeley) %G%
+.\"	@(#)more.1	6.2 (Berkeley) %G%
 .\"
 .TH MORE 1 ""
 .UC 4
@@ -202,6 +202,12 @@ skip \fIi\|\fP lines and print a screenful of lines
 .PP
 .IP \fIi\|\fPf
 skip \fIi\fP screenfuls and print a screenful of lines
+.PP
+.IP \fIi\|\fPb
+skip back \fIi\fP screenfuls and print a screenful of lines
+.PP
+.IP \fIi\|\fP^B
+same as b
 .PP
 .IP "q or Q"
 Exit from
