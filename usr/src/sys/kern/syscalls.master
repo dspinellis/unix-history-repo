@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.7 (Berkeley) %G%
+	@(#)syscalls.master	7.8 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -74,14 +74,18 @@
 #else
 45	UNIMPL	0 nosys
 #endif
-46	OBSOL	0 setgid
+46	STD	3 sigaction
 47	STD	0 getgid
-48	OBSOL	0 sigsys
+48	STD	2 sigprocmask
 49	STD	2 getlogin
 50	STD	2 setlogin
 51	STD	1 sysacct acct
-52	OBSOL	0 set phys addr
-53	OBSOL	0 lock in core
+52	STD	0 sigpending
+#ifdef notyet
+53	STD	3 sigaltstack
+#else
+53	UNIMPL	3 sigaltstack
+#endif
 54	STD	3 ioctl
 55	STD	1 reboot
 56	OBSOL	0 mpxchan
@@ -136,10 +140,10 @@
 105	STD	5 setsockopt
 106	STD	2 listen
 107	OBSOL	0 vtimes
-108	STD	3 sigvec
-109	STD	1 sigblock
-110	STD	1 sigsetmask
-111	STD	1 sigpause
+108	COMPAT	3 sigvec
+109	COMPAT	1 sigblock
+110	COMPAT	1 sigsetmask
+111	STD	1 sigsuspend
 112	STD	2 sigstack
 113	COMPAT	3 recvmsg
 114	COMPAT	3 sendmsg
@@ -182,7 +186,7 @@
 143	STD	1 sethostid
 144	STD	2 getrlimit
 145	STD	2 setrlimit
-146	STD	2 killpg
+146	COMPAT	2 killpg
 147	STD	0 setsid
 148	STD	2 setquota
 149	STD	4 qquota quota
