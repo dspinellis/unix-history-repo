@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -350,7 +350,7 @@ main(argc, argv)
 			printf("%s: %s: not a character-special device\n",
 			    progname, special);
 		cp = strchr(argv[0], '\0') - 1;
-		if (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
+		if (cp == -1 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
 			fatal("%s: can't figure out file system partition",
 			    argv[0]);
 #ifdef COMPAT
