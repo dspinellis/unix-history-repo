@@ -1,4 +1,4 @@
-/*	socket.h	4.20	82/09/27	*/
+/*	socket.h	4.21	82/10/05	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -92,3 +92,6 @@ struct	socketopt {
 	int	so_optlen;
 	caddr_t	so_optdata;
 };
+
+#define	SOF_OOB		0x1
+#define	SOF_PREVIEW	0x2
