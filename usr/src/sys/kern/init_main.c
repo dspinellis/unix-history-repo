@@ -1,4 +1,4 @@
-/*	init_main.c	4.40	82/10/17	*/
+/*	init_main.c	4.41	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,10 +38,17 @@ extern	struct user u;		/* have to declare it somewhere! */
  *	     - process 2 to page out
  *	     - process 1 execute bootstrap
  *
- * loop at loc 13 (0xd) in user mode -- /etc/init
+ * loop at loc something in user mode -- /etc/init
  *	cannot be executed.
  */
+#ifdef vax
 main(firstaddr)
+	int firstaddr;
+#endif
+#ifdef sun
+main(regs)
+	struct regs regs;
+#endif
 {
 	register int i;
 	register struct proc *p;
@@ -49,7 +56,12 @@ main(firstaddr)
 
 	rqinit();
 #include "loop.h"
+#ifdef vax
 	startup(firstaddr);
+#endif
+#ifdef sun
+	startup();
+#endif
 
 	/*
 	 * set up system process 0 (swapper)
@@ -63,6 +75,9 @@ main(firstaddr)
 	p->p_nice = NZERO;
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
+#ifdef sun
+	u.u_ar0 = &regs.r0;
+#endif
 	u.u_cmask = CMASK;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = -1;
@@ -90,8 +105,8 @@ main(firstaddr)
 	loattach();			/* XXX */
 #endif
 	ifinit();
-	pfinit();			/* must follow interfaces */
 #endif
+	domaininit();
 	ihinit();
 	bhinit();
 	binit();
@@ -141,7 +156,13 @@ main(firstaddr)
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
 		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
+#ifdef NOPAGING
+		for (;;)
+			sleep((caddr_t)&u, PSLEP);
+#else
 		pageout();
+#endif
+		/*NOTREACHED*/
 	}
 
 	/*
@@ -153,9 +174,16 @@ main(firstaddr)
 	proc[1].p_stat = 0;
 	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
+#ifdef vax
 		expand(clrnd((int)btoc(szicode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
+#endif
+#ifdef sun
+		icode();
+		usetup();
+		regs.r_context = u.u_pcb.pcb_ctx->ctx_context;
+#endif
 		/*
 		 * Return goes to loc. 0 of user init
 		 * code just copied out.
