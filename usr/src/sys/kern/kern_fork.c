@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.29 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -61,7 +61,7 @@ fork1(p1, isvfork, retval)
 				count++;
 	}
 	/*
-	 * Although process entries are dynamically entries,
+	 * Although process entries are dynamically created,
 	 * we still keep a global limit on the maximum number
 	 * we will create.  Don't allow a nonprivileged user
 	 * to exceed its current limit or to bring us within one
