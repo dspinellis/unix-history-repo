@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -78,4 +78,4 @@ instrs.as: ${.CURDIR}/instrs
 
 .include <bsd.prog.mk>
 
-all .depend depend lint tags: astoks.h instrs.as
+.depend ${OBJS}: astoks.h instrs.as
