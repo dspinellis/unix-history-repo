@@ -1,6 +1,6 @@
 #
 # GENERIC System -- distribution
-# @(#)GENERIC.i386	1.1 %G%
+# @(#)GENERIC.i386	8.1 %G%
 #
 machine		"i386"
 cpu		"i386"
