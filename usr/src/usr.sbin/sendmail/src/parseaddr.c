@@ -1,6 +1,19 @@
-# include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.15		%G%);
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)parseaddr.c	4.16 (Berkeley) %G%";
+#endif not lint
+
+# include "sendmail.h"
 
 /*
 **  PARSEADDR -- Parse an address
@@ -735,7 +748,6 @@ rewrite(pvp, ruleset)
 			char **hbrvp;
 			char **xpvp;
 			int trsize;
-			int i;
 			char *olddelimchar;
 			char buf[MAXNAME + 1];
 			char *pvpb1[MAXATOM + 1];
@@ -774,7 +786,7 @@ rewrite(pvp, ruleset)
 			if (xpvp == NULL)
 			{
 				syserr("rewrite: cannot prescan canonical hostname: %s", buf);
-				return (NULL);
+				return;
 			}
 
 			/* append it to the token list */
@@ -1140,7 +1152,6 @@ remotename(name, m, senderaddress, canonical)
 {
 	register char **pvp;
 	char *fancy;
-	register char *p;
 	extern char *macvalue();
 	char *oldg = macvalue('g', CurEnv);
 	static char buf[MAXNAME];
