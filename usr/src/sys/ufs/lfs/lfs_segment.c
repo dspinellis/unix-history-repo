@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.22 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -583,6 +583,12 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 			if (bread(vp, ap->in_lbn, fs->lfs_bsize, NOCRED, &bp))
 				panic("lfs_updatemeta: bread bno %d",
 				    ap->in_lbn);
+			/*
+			 * Bread may create a new indirect block which needs
+			 * to get counted for the inode.
+			 */
+			if (bp->b_blkno == -1 && !(bp->b_flags & B_CACHE))
+				ip->i_blocks += btodb(fs->lfs_bsize);
 			bp->b_un.b_daddr[ap->in_off] = off;
 			VOP_BWRITE(bp);
 		}
