@@ -44,7 +44,7 @@
 creates a database in
 .Pa /var/run
 containing information about
-.Pa /vmunix
+.Pa /386bsd
 and
 perhaps other fairly static information about the current system.
 Various library routines consult this database.
@@ -53,9 +53,9 @@ used by the
 .Xr kvm_nlist 3
 function.
 .Sh FILES
-.Bl -tag -width /var/run/kvm_vmunix.{dir,pag} -compact
-.It Pa /vmunix
-.It Pa /var/run/kvm_vmunix.{dir,pag}
+.Bl -tag -width /var/run/kvm_386bsd.db -compact
+.It Pa /386bsd
+.It Pa /var/run/kvm_386bsd.db
 .El
 .Sh SEE ALSO
 .Xr kvm_nlist 3
