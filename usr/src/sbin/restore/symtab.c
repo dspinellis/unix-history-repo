@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.8	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)symtab.c	3.9	(Berkeley)	83/03/27";
 #endif
 
 /*
@@ -205,6 +205,7 @@ addentry(name, inum, type)
 		ep = lookupino(inum);
 		if (ep == NIL)
 			panic("link to non-existant name\n");
+		np->e_ino = inum;
 		np->e_links = ep->e_links;
 		ep->e_links = np;
 	} else if (inum != 0) {
