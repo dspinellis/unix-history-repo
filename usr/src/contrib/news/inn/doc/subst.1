@@ -1,0 +1,111 @@
+.TH SUBST 1 local
+.DA 25 Feb 1990
+.SH NAME
+subst \- substitute definitions into file(s)
+.SH SYNOPSIS
+.B subst
+[
+.B \-e
+editor
+]
+.B \-f
+substitutions
+victim ...
+.SH DESCRIPTION
+.I Subst
+makes substitutions into files, in a way that is suitable for customizing
+software to local conditions.
+Each
+.I victim
+file
+is altered according to the contents of
+the
+.I substitutions
+file.
+.PP
+The
+.I substitutions
+file contains one line per substitution.
+A line consists of two fields separated by one or more tabs.
+The first field is the \fIname\fP of the substitution, the second
+is the \fIvalue\fP.
+Neither should contain the character `#', and use of text-editor
+metacharacters like `&' and `\e' is also unwise;
+the name in particular is best restricted to be alphanumeric.
+A line starting with `#' is a comment and is ignored.
+.PP
+In the \fIvictim\fPs,
+each line on which a substitution is to be made
+(a \fItarget\fP line)
+must be preceded by a
+\fIprototype\fP line.
+The prototype line should be delimited in such a way that it will be
+taken as a comment by whatever program processes the file later.
+The prototype line must contain a ``prototype'' of the target line bracketed
+by `=()<' and `>()=';
+everything else on the prototype line is ignored.
+.I Subst
+extracts the prototype, changes all instances of substitution names
+bracketed by `@<' and `>@' to their values,
+and then replaces the target line with the result.
+.PP
+Substitutions are done using the
+.IR sed (1)
+editor, which must be found in either the
+.I /bin
+or
+.I /usr/bin
+directories.
+To specify a different executable, use the ``\-e'' flag.
+.SH EXAMPLE
+.PP
+If the \fIsubstitutions\fP file is
+.PP
+.RS
+.nf
+.ta \w'SECOND'u+4n
+FIRST	111
+SECOND	222
+.fi
+.RE
+.PP
+and the \fIvictim\fP file is
+.PP
+.RS
+.nf
+x = 2;
+/* =()<y = @<FIRST>@ + @<SECOND>@;>()= */
+y = 88 + 99;
+z = 5;
+.fi
+.RE
+.PP
+then ``\fBsubst \-f \fP\fIsubstitutions victim\fP'' changes \fIvictim\fP to:
+.PP
+.RS
+.nf
+x = 2;
+/* =()<y = @<FIRST>@ + @<SECOND>@;>()= */
+y = 111 + 222;
+z = 5;
+.fi
+.RE
+.SH FILES
+.ta \w'\fIvictimdir\fP/substtmp.old'u+4n
+\fIvictimdir\fP/substtmp.new	new version being built
+.br
+\fIvictimdir\fP/substtmp.old	old version during renaming
+.SH SEE ALSO
+sed(1)
+.SH DIAGNOSTICS
+Complains and halts if it is unable to create its temporary files
+or if they already exist.
+.SH HISTORY
+Written at U of Toronto by Henry Spencer.
+.PP
+Rich $alz added the ``\-e'' flag July, 1991.
+.SH BUGS
+When creating a file to be \fIsubst\fPed, it's easy to forget to insert
+a dummy target line after a prototype line;
+if you forget, \fIsubst\fP ends up deleting whichever line did in fact
+follow the prototype line.
