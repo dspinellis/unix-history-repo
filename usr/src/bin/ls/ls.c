@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -214,14 +214,12 @@ main(argc, argv)
 	statfcn =
 	    (f_longform || f_listdir || f_type) && !f_ignorelink ? lstat : stat;
 
-	if (!argc) {
-		static char dot[] = ".";
-
-		argc = 1;
-		argv[0] = dot;
-		argv[1] = NULL;
+	if (argc)
+		doargs(argc, argv);
+	else {
+		static char *dotav[] = { ".", NULL };
+		doargs(1, dotav);
 	}
-	doargs(argc, argv);
 	exit(0);
 }
 
