@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -377,7 +377,7 @@ save_core()
 	ifd = Open(ddname, O_RDONLY);
 	Lseek(ifd, (off_t)(dumplo + ok(dump_nl[X_DUMPSIZE].n_value)), L_SET);
 	Read(ifd, (char *)&dumpsize, sizeof (dumpsize));
-	sprintf(cp, "vmcore.%d", bounds);
+	(void)sprintf(cp, "vmcore.%d", bounds);
 	ofd = Create(path(cp), 0644);
 	Lseek(ifd, (off_t)dumplo, L_SET);
 	log(LOG_NOTICE, "Saving %d bytes of image in vmcore.%d\n",

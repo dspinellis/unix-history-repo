@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /* debug print routines */
@@ -31,7 +31,7 @@ print_request(cp, mp)
 	char tbuf[80], *tp;
 	
 	if (mp->type > NTYPES) {
-		sprintf(tbuf, "type %d", mp->type);
+		(void)sprintf(tbuf, "type %d", mp->type);
 		tp = tbuf;
 	} else
 		tp = types[mp->type];
@@ -46,12 +46,12 @@ print_response(cp, rp)
 	char tbuf[80], *tp, abuf[80], *ap;
 	
 	if (rp->type > NTYPES) {
-		sprintf(tbuf, "type %d", rp->type);
+		(void)sprintf(tbuf, "type %d", rp->type);
 		tp = tbuf;
 	} else
 		tp = types[rp->type];
 	if (rp->answer > NANSWERS) {
-		sprintf(abuf, "answer %d", rp->answer);
+		(void)sprintf(abuf, "answer %d", rp->answer);
 		ap = abuf;
 	} else
 		ap = answers[rp->answer];

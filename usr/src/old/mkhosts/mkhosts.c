@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkhosts.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkhosts.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
@@ -47,7 +47,7 @@ main(argc, argv)
 	}
 	umask(0);
 
-	sprintf(tempname, "%s.new", argv[1]);
+	(void)sprintf(tempname, "%s.new", argv[1]);
 	dp = dbm_open(tempname, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (dp == NULL) {
 		fprintf(stderr, "dbm_open failed: ");
@@ -108,14 +108,14 @@ main(argc, argv)
 	endhostent();
 	dbm_close(dp);
 
-	sprintf(tempname, "%s.new.pag", argv[1]);
-	sprintf(newname, "%s.pag", argv[1]);
+	(void)sprintf(tempname, "%s.new.pag", argv[1]);
+	(void)sprintf(newname, "%s.pag", argv[1]);
 	if (rename(tempname, newname) < 0) {
 		perror("rename .pag");
 		exit(1);
 	}
-	sprintf(tempname, "%s.new.dir", argv[1]);
-	sprintf(newname, "%s.dir", argv[1]);
+	(void)sprintf(tempname, "%s.new.dir", argv[1]);
+	(void)sprintf(newname, "%s.dir", argv[1]);
 	if (rename(tempname, newname) < 0) {
 		perror("rename .dir");
 		exit(1);
@@ -123,9 +123,9 @@ main(argc, argv)
 	printf("%d host entries, maximum length %d\n", entries, maxlen);
 	exit(0);
 err:
-	sprintf(tempname, "%s.new.pag", argv[1]);
+	(void)sprintf(tempname, "%s.new.pag", argv[1]);
 	unlink(tempname);
-	sprintf(tempname, "%s.new.dir", argv[1]);
+	(void)sprintf(tempname, "%s.new.dir", argv[1]);
 	unlink(tempname);
 	exit(1);
 }

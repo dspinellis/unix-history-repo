@@ -341,7 +341,7 @@ char *tagstring(tag)
 		case OKTOBUMP:		return("oktobump");
 		case ISET:		return("iset");
 		case ILSYM:		return("ilsym");
-		default:		sprintf(tagbuff,"%d", tag);
+		default:		(void)sprintf(tagbuff,"%d", tag);
 					return(tagbuff);
 	}
 }

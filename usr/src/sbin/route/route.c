@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -200,7 +200,7 @@ routename(sa)
 		else {
 #define C(x)	((x) & 0xff)
 			in.s_addr = ntohl(in.s_addr);
-			sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
+			(void)sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
 			   C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
 		}
 		break;
@@ -212,8 +212,8 @@ routename(sa)
 	default:
 	    {	u_short *s = (u_short *)sa->sa_data;
 
-		sprintf(line, "af %d: %x %x %x %x %x %x %x", sa->sa_family,
-			s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
+		(void)sprintf(line, "af %d: %x %x %x %x %x %x %x",
+		    sa->sa_family, s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
 		break;
 	    }
 	}
@@ -273,15 +273,15 @@ netname(sa)
 		if (cp)
 			strcpy(line, cp);
 		else if ((in.s_addr & 0xffffff) == 0)
-			sprintf(line, "%u", C(in.s_addr >> 24));
+			(void)sprintf(line, "%u", C(in.s_addr >> 24));
 		else if ((in.s_addr & 0xffff) == 0)
-			sprintf(line, "%u.%u", C(in.s_addr >> 24),
+			(void)sprintf(line, "%u.%u", C(in.s_addr >> 24),
 			    C(in.s_addr >> 16));
 		else if ((in.s_addr & 0xff) == 0)
-			sprintf(line, "%u.%u.%u", C(in.s_addr >> 24),
+			(void)sprintf(line, "%u.%u.%u", C(in.s_addr >> 24),
 			    C(in.s_addr >> 16), C(in.s_addr >> 8));
 		else
-			sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
+			(void)sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
 			    C(in.s_addr >> 16), C(in.s_addr >> 8),
 			    C(in.s_addr));
 		break;
@@ -294,8 +294,8 @@ netname(sa)
 	default:
 	    {	u_short *s = (u_short *)sa->sa_data;
 
-		sprintf(line, "af %d: %x %x %x %x %x %x %x", sa->sa_family,
-			s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
+		(void)sprintf(line, "af %d: %x %x %x %x %x %x %x",
+		    sa->sa_family, s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
 		break;
 	    }
 	}
@@ -488,10 +488,10 @@ struct sockaddr_ns *sns;
 	net.net_e  = work.x_net;
 	if (ns_nullhost(work) && net.long_e == 0) {
 		if (port ) {
-			sprintf(mybuf, "*.%xH", port);
+			(void)sprintf(mybuf, "*.%xH", port);
 			upHex(mybuf);
 		} else
-			sprintf(mybuf, "*.*");
+			(void)sprintf(mybuf, "*.*");
 		return (mybuf);
 	}
 
@@ -501,17 +501,17 @@ struct sockaddr_ns *sns;
 		host = "*";
 	} else {
 		q = work.x_host.c_host;
-		sprintf(chost, "%02x%02x%02x%02x%02x%02xH",
+		(void)sprintf(chost, "%02x%02x%02x%02x%02x%02xH",
 			q[0], q[1], q[2], q[3], q[4], q[5]);
 		for (p = chost; *p == '0' && p < chost + 12; p++);
 		host = p;
 	}
 	if (port)
-		sprintf(cport, ".%xH", htons(port));
+		(void)sprintf(cport, ".%xH", htons(port));
 	else
 		*cport = 0;
 
-	sprintf(mybuf,"%xH.%s%s", ntohl(net.long_e), host, cport);
+	(void)sprintf(mybuf,"%xH.%s%s", ntohl(net.long_e), host, cport);
 	upHex(mybuf);
 	return(mybuf);
 }

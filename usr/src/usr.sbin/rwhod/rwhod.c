@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -76,7 +76,7 @@ int	s, utmpf, kmemf = -1;
 #define	RWHODIR		"/usr/spool/rwho"
 
 int	onalrm();
-char	*strcpy(), *sprintf(), *malloc();
+char	*strcpy(), *malloc();
 long	lseek();
 int	getkmem();
 struct	in_addr inet_makeaddr();

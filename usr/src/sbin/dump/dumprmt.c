@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -80,7 +80,7 @@ rmtopen(tape, mode)
 {
 	char buf[256];
 
-	sprintf(buf, "O%s\n%d\n", tape, mode);
+	(void)sprintf(buf, "O%s\n%d\n", tape, mode);
 	rmtstate = TS_OPEN;
 	return (rmtcall(tape, buf));
 }
@@ -102,7 +102,7 @@ rmtread(buf, count)
 	int n, i, cc;
 	extern errno;
 
-	sprintf(line, "R%d\n", count);
+	(void)sprintf(line, "R%d\n", count);
 	n = rmtcall("read", line);
 	if (n < 0) {
 		errno = n;
@@ -123,7 +123,7 @@ rmtwrite(buf, count)
 {
 	char line[30];
 
-	sprintf(line, "W%d\n", count);
+	(void)sprintf(line, "W%d\n", count);
 	write(rmtape, line, strlen(line));
 	write(rmtape, buf, count);
 	return (rmtreply("write"));
@@ -134,7 +134,7 @@ rmtwrite0(count)
 {
 	char line[30];
 
-	sprintf(line, "W%d\n", count);
+	(void)sprintf(line, "W%d\n", count);
 	write(rmtape, line, strlen(line));
 }
 
@@ -158,7 +158,7 @@ rmtseek(offset, pos)
 {
 	char line[80];
 
-	sprintf(line, "L%d\n%d\n", offset, pos);
+	(void)sprintf(line, "L%d\n%d\n", offset, pos);
 	return (rmtcall("seek", line));
 }
 
@@ -185,7 +185,7 @@ rmtioctl(cmd, count)
 
 	if (count < 0)
 		return (-1);
-	sprintf(buf, "I%d\n%d\n", cmd, count);
+	(void)sprintf(buf, "I%d\n%d\n", cmd, count);
 	return (rmtcall("ioctl", buf));
 }
 

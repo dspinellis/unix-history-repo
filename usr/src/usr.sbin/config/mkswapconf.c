@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkswapconf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkswapconf.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -160,7 +160,7 @@ devtoname(dev)
 			break;
 	if (dp == 0)
 		dp = devtable;
-	sprintf(buf, "%s%d%c", dp->dev_name,
+	(void) sprintf(buf, "%s%d%c", dp->dev_name,
 		minor(dev) >> 3, (minor(dev) & 07) + 'a');
 	return (ns(buf));
 }
@@ -172,7 +172,7 @@ initdevtable()
 	register struct devdescription **dp = &devtable;
 	FILE *fp;
 
-	sprintf(buf, "../conf/devices.%s", machinename);
+	(void) sprintf(buf, "../conf/devices.%s", machinename);
 	fp = fopen(buf, "r");
 	if (fp == NULL) {
 		fprintf(stderr, "config: can't open %s\n", buf);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)announce.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)announce.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -72,7 +72,7 @@ announce_proc(request, remote_machine)
 	FILE *tf;
 	struct stat stbuf;
 
-	sprintf(full_tty, "/dev/%s", request->r_tty);
+	(void)sprintf(full_tty, "/dev/%s", request->r_tty);
 	if (access(full_tty, 0) != 0)
 		return (FAILED);
 	if ((tf = fopen(full_tty, "w")) == NULL)
@@ -121,26 +121,26 @@ print_mesg(tf, request, remote_machine)
 	max_size = 0;
 	gettimeofday(&clock, &zone);
 	localclock = localtime( &clock.tv_sec );
-	sprintf(line_buf[i], " ");
+	(void)sprintf(line_buf[i], " ");
 	sizes[i] = strlen(line_buf[i]);
 	max_size = max(max_size, sizes[i]);
 	i++;
-	sprintf(line_buf[i], "Message from Talk_Daemon@%s at %d:%02d ...",
+	(void)sprintf(line_buf[i], "Message from Talk_Daemon@%s at %d:%02d ...",
 	hostname, localclock->tm_hour , localclock->tm_min );
 	sizes[i] = strlen(line_buf[i]);
 	max_size = max(max_size, sizes[i]);
 	i++;
-	sprintf(line_buf[i], "talk: connection requested by %s@%s.",
+	(void)sprintf(line_buf[i], "talk: connection requested by %s@%s.",
 		request->l_name, remote_machine);
 	sizes[i] = strlen(line_buf[i]);
 	max_size = max(max_size, sizes[i]);
 	i++;
-	sprintf(line_buf[i], "talk: respond with:  talk %s@%s",
+	(void)sprintf(line_buf[i], "talk: respond with:  talk %s@%s",
 		request->l_name, remote_machine);
 	sizes[i] = strlen(line_buf[i]);
 	max_size = max(max_size, sizes[i]);
 	i++;
-	sprintf(line_buf[i], " ");
+	(void)sprintf(line_buf[i], " ");
 	sizes[i] = strlen(line_buf[i]);
 	max_size = max(max_size, sizes[i]);
 	i++;

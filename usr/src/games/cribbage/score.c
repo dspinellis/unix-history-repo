@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)score.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)score.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -125,7 +125,7 @@ BOOLEAN			do_explain;	/* true if must explain this hand */
 	score += i;
 	if (do_explain)
 	    if (i > 0) {
-		sprintf(buf, "%d points in fifteens", i);
+		(void)sprintf(buf, "%d points in fifteens", i);
 		strcat(expl, buf);
 	    }
 	    else
@@ -134,8 +134,8 @@ BOOLEAN			do_explain;	/* true if must explain this hand */
 	score += i;
 	if (do_explain)
 	    if (i > 0) {
-		sprintf(buf, ", %d points in pairs, %d in runs", pairpoints,
-		    runpoints);
+		(void)sprintf(buf, ", %d points in pairs, %d in runs",
+			pairpoints, runpoints);
 		strcat(expl, buf);
 	    }
 	    else
