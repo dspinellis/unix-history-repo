@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.10 (Berkeley) %G%
+ *	@(#)fs.h	8.11 (Berkeley) %G%
  */
 
 /*
@@ -211,9 +211,9 @@ struct fs {
 	int32_t	 fs_contigsumsize;	/* size of cluster summary array */ 
 	int32_t	 fs_maxsymlinklen;	/* max length of an internal symlink */
 	int32_t	 fs_inodefmt;		/* format of on-disk inodes */
-	u_quad_t fs_maxfilesize;	/* maximum representable file size */
-	quad_t	 fs_qbmask;		/* ~fs_bmask - for use with quad size */
-	quad_t	 fs_qfmask;		/* ~fs_fmask - for use with quad size */
+	u_int64_t fs_maxfilesize;	/* maximum representable file size */
+	int64_t	 fs_qbmask;		/* ~fs_bmask - for use with quad size */
+	int64_t	 fs_qfmask;		/* ~fs_fmask - for use with quad size */
 	int32_t	 fs_state;		/* validate fs_clean field */
 	int32_t	 fs_postblformat;	/* format of positional layout tables */
 	int32_t	 fs_nrpos;		/* number of rotational positions */
@@ -342,7 +342,7 @@ struct cg {
  */
 struct ocg {
 	int32_t	 cg_firstfield;		/* historic linked list of cyl groups */
-	int32_t	 unused_1;		/*     used for incore cyl groups */
+	int32_t	 cg_unused_1;		/*     used for incore cyl groups */
 	time_t	 cg_time;		/* time last written */
 	int32_t	 cg_cgx;		/* we are the cgx'th cylinder group */
 	int16_t	 cg_ncyl;		/* number of cyl's this cg */
@@ -442,7 +442,7 @@ struct ocg {
 
 /*
  * Determine the number of available frags given a
- * percentage to hold in reserve
+ * percentage to hold in reserve.
  */
 #define freespace(fs, percentreserved) \
 	(blkstofrags((fs), (fs)->fs_cstotal.cs_nbfree) + \
@@ -459,7 +459,6 @@ struct ocg {
 	(((lbn) >= NDADDR || (dip)->di_size >= ((lbn) + 1) << (fs)->fs_bshift) \
 	    ? (fs)->fs_bsize \
 	    : (fragroundup(fs, blkoff(fs, (dip)->di_size))))
-
 
 /*
  * Number of disk sectors per block/fragment; assumes DEV_BSIZE byte
