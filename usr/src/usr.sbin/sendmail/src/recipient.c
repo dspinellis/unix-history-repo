@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.82 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.83 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -895,7 +895,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		printf("include: old uid = %d/%d\n", getuid(), geteuid());
 
 	if (forwarding)
-		sfflags |= SFF_MUSTOWN;
+		sfflags |= SFF_MUSTOWN|SFF_ROOTOK|SFF_NOSLINK;
 
 	ca = getctladdr(ctladdr);
 	if (ca == NULL)
