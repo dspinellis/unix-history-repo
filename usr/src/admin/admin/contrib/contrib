@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.14 (Berkeley) %G%
+.\"	@(#)contrib	5.15 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -29,7 +29,7 @@ large subsystem.
 .sp
 .TS
 l l.
-386/486 port	Telemuse
+386/486 port	Bill Jolitz, TeleMuse
 ANSI C library	Chris Torek
 ANSI C prototypes	Donn Seeley, John Kohl
 Autoconfiguration	Robert Elz
