@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.67 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -845,9 +845,11 @@ main(argc, argv, envp)
 
 			if (m == NULL)
 				continue;
-			printf("mailer %d (%s): P=%s S=%d/%d R=%d/%d M=%ld F=", i, m->m_name,
+			printf("mailer %d (%s): P=%s S=%d/%d R=%d/%d M=%ld U=%d:%d F=",
+				i, m->m_name,
 				m->m_mailer, m->m_se_rwset, m->m_sh_rwset,
-				m->m_re_rwset, m->m_rh_rwset, m->m_maxsize);
+				m->m_re_rwset, m->m_rh_rwset, m->m_maxsize,
+				m->m_uid, m->m_gid);
 			for (j = '\0'; j <= '\177'; j++)
 				if (bitnset(j, m->m_flags))
 					(void) putchar(j);
