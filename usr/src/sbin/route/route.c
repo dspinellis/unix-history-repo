@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -73,10 +73,10 @@ void
 usage(cp)
 	char *cp;
 {
-	(void) fprintf(stderr,
-	    "usage: route [ -nqCv ] cmd [[ -<qualifers> ] args ]\n");
 	if (cp)
-		(void) fprintf(stderr, "(botched keyword: %s)\n", cp);
+		(void) fprintf(stderr, "route: botched keyword: %s\n", cp);
+	(void) fprintf(stderr,
+	    "usage: route [ -Cnqv ] cmd [[ -<qualifers> ] args ]\n");
 	exit(1);
 	/* NOTREACHED */
 }
@@ -99,32 +99,38 @@ quit(s)
 	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
-int
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
+	extern int optind;
+	int ch;
 	char *argvp;
 
 	if (argc < 2)
 		usage((char *)NULL);
-	argc--, argv++;
-	for (; argc >  0 && argv[0][0] == '-'; argc--, argv++) {
-		for (argvp = argv[0]++; *argvp; argvp++)
-			switch (*argv[0]) {
-			case 'n':
-				nflag++;
-				break;
-			case 'q':
-				qflag++;
-				break;
-			case 'C':
-				Cflag++; /* Use old ioctls */
-				break;
-			case 'v':
-				verbose++;
-			}
-	}
+
+	while ((ch = getopt(argc, argv, "Cnqv")) != EOF)
+		switch(ch) {
+		case 'C':
+			Cflag = 1;	/* Use old ioctls. */
+			break;
+		case 'n':
+			nflag = 1;
+			break;
+		case 'q':
+			qflag = 1;
+			break;
+		case 'v':
+			verbose = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
 	pid = getpid();
 	uid = getuid();
 	if (Cflag)
@@ -133,7 +139,8 @@ main(argc, argv)
 		s = socket(PF_ROUTE, SOCK_RAW, 0);
 	if (s < 0)
 		quit("socket");
-	if (argc > 0) switch (keyword(*argv)) {
+	if (*argv)
+		switch(keyword(*argv)) {
 		case K_GET:
 			uid = 0;
 			/* FALLTHROUGH */
@@ -148,7 +155,7 @@ main(argc, argv)
 			monitor();
 		case K_FLUSH:
 			flushroutes(argc, argv);
-	}
+		}
 	usage(*argv);
 	/* NOTREACHED */
 }
