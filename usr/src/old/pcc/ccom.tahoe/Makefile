@@ -1,5 +1,5 @@
 #
-#	Makefile	1.8	87/12/10
+#	Makefile	1.9	88/01/13
 #
 # Makefile for tahoe pcc
 #
@@ -14,6 +14,7 @@ MIP=	../../mip
 INCS=	-I. -I${MIP}
 CFLAGS=	-O
 LDFLAGS=
+LIBS=
 
 # c version
 OPTS=	-DONEPASS ${INCS}
@@ -33,13 +34,13 @@ FOBJS=	freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o ftable.o
 
 TESTDIR=.
 
-all:	./pcctokens ./pcclocal.h ccom f1
+all:	ccom f1
 
 #
 # 'ccom' is a one-pass C compiler.
 #
 ccom:	${OBJS} rel.o
-	${CC} ${LDFLAGS} -o ${TESTDIR}/ccom ${OBJS} rel.o
+	${CC} ${LDFLAGS} -o ${TESTDIR}/ccom ${OBJS} rel.o ${LIBS}
 trees.o: ${MIP}/trees.c
 	${CC} -c ${FLAGS} ${MIP}/trees.c
 optim.o: ${MIP}/optim.c
@@ -58,11 +59,11 @@ cgram.o: cgram.c
 	${CC} -c ${FLAGS} cgram.c
 rodata.o: rodata.c
 	${CC} -c ${FLAGS} -R rodata.c
-rodata.c cgram.c: ${MIP}/cgram.y ./pcctokens
+rodata.c cgram.c: ${MIP}/cgram.y pcctokens
 	cat pcctokens ${MIP}/cgram.y > gram.in
 	${YACC} gram.in
 	${RM} rodata.c
-	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	sh :yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cgram.c
 comm1.o: ${MIP}/common.c
 	ln ${MIP}/common.c comm1.c
@@ -87,7 +88,7 @@ allo.o: ${MIP}/allo.c
 # 'f1' is the f77 and pc code generator.
 #
 f1:	fort.o ${FOBJS}
-	${CC} ${LDFLAGS} -o ${TESTDIR}/f1 fort.o ${FOBJS}
+	${CC} ${LDFLAGS} -o ${TESTDIR}/f1 fort.o ${FOBJS} ${LIBS}
 fort.o: fort.h ${MIP}/fort.c
 	${CC} -c ${FFLAGS} ${MIP}/fort.c
 freader.o: ${MIP}/reader.c
@@ -123,13 +124,13 @@ install:
 	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
 	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/lib/f1
 
-./pcclocal.h: ../localdefs.h /usr/include/pcc.h
+pcclocal.h: ../localdefs.h /usr/include/pcc.h
 	${RM} pcclocal.h
 	cat /usr/include/pcc.h ../localdefs.h | \
 	    ${GREP} '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
 	    sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
 
-./pcctokens: ../localdefs.h /usr/include/pcc.h
+pcctokens: ../localdefs.h /usr/include/pcc.h
 	${RM} pcctokens
 	cat /usr/include/pcc.h ../localdefs.h | \
 	    ${GREP} '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
@@ -149,7 +150,7 @@ tags:	${SRCS}
 	ctags ${SRCS}
 
 # XXX this is less than complete
-depend: ${SRCS} ./pcclocal.h ./pcctokens
+depend: ${SRCS} pcclocal.h pcctokens
 	mkdep ${CFLAGS} ${INCS} ${SRCS}
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
