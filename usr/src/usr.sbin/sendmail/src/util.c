@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.39.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.49 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -494,49 +494,56 @@ safefile(fn, uid, gid, uname, flags, mode)
 			fn, uid, gid, flags, mode);
 	errno = 0;
 
-	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
+	if (!bitset(SFF_NOPATHCHECK, flags) ||
+	    (uid == 0 && !bitset(SFF_ROOTOK, flags)))
 	{
-		*p = '\0';
-		if (stat(fn, &stbuf) < 0)
-			break;
-		if (uid == 0 && !bitset(SFF_ROOTOK, flags))
+		/* check the path to the file for acceptability */
+		for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
 		{
-			if (bitset(S_IXOTH, stbuf.st_mode))
+			*p = '\0';
+			if (stat(fn, &stbuf) < 0)
+				break;
+			if (uid == 0 && !bitset(SFF_ROOTOK, flags))
+			{
+				if (bitset(S_IXOTH, stbuf.st_mode))
+					continue;
+				break;
+			}
+			if (stbuf.st_uid == uid &&
+			    bitset(S_IXUSR, stbuf.st_mode))
 				continue;
-			break;
-		}
-		if (stbuf.st_uid == uid && bitset(S_IXUSR, stbuf.st_mode))
-			continue;
-		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
-			continue;
-#ifndef NO_GROUP_SET
-		if (uname != NULL &&
-		    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
-		     (gr = getgrgid(stbuf.st_gid)) != NULL))
-		{
-			register char **gp;
-
-			for (gp = gr->gr_mem; gp != NULL && *gp != NULL; gp++)
-				if (strcmp(*gp, uname) == 0)
-					break;
-			if (gp != NULL && *gp != NULL &&
+			if (stbuf.st_gid == gid &&
 			    bitset(S_IXGRP, stbuf.st_mode))
 				continue;
-		}
-#endif
-		if (!bitset(S_IXOTH, stbuf.st_mode))
-			break;
-	}
-	if (p != NULL)
-	{
-		int ret = errno;
+#ifndef NO_GROUP_SET
+			if (uname != NULL &&
+			    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
+			     (gr = getgrgid(stbuf.st_gid)) != NULL))
+			{
+				register char **gp;
 
-		if (ret == 0)
-			ret = EACCES;
-		if (tTd(54, 4))
-			printf("\t[dir %s] %s\n", fn, errstring(ret));
-		*p = '/';
-		return ret;
+				for (gp = gr->gr_mem; gp != NULL && *gp != NULL; gp++)
+					if (strcmp(*gp, uname) == 0)
+						break;
+				if (gp != NULL && *gp != NULL &&
+				    bitset(S_IXGRP, stbuf.st_mode))
+					continue;
+			}
+#endif
+			if (!bitset(S_IXOTH, stbuf.st_mode))
+				break;
+		}
+		if (p != NULL)
+		{
+			int ret = errno;
+
+			if (ret == 0)
+				ret = EACCES;
+			if (tTd(54, 4))
+				printf("\t[dir %s] %s\n", fn, errstring(ret));
+			*p = '/';
+			return ret;
+		}
 	}
 
 #ifdef HASLSTAT

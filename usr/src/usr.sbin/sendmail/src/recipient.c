@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.44.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.62 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -907,6 +907,8 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 				if (setreuid(0, uid) < 0)
 					syserr("setreuid(0, %d) failure (real=%d, eff=%d)",
 						uid, getuid(), geteuid());
+				else
+					sfflags |= SFF_NOPATHCHECK;
 			}
 		}
 #endif                   
