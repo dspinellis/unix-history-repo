@@ -14,18 +14,19 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	wall.c
+SRCS=	ttymsg.c wall.c
+OBJS=	ttymsg.o wall.o
 MAN=	wall.0
 
 all: wall
 
-wall: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+wall: ${LIBC} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean:
 	rm -f ${OBJS} core wall
@@ -34,7 +35,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g tty -m 2755 wall ${DESTDIR}/usr/bin
