@@ -1,4 +1,4 @@
-/*	autoconf.c	4.9	81/02/21	*/
+/*	autoconf.c	4.10	81/02/22	*/
 
 /*
  * Configure the system for the current machine.
@@ -429,7 +429,7 @@ unifind(vubp, pubp, vumem, pumem)
 				ui->ui_addr = (caddr_t)reg;
 				ui->ui_physaddr = pumem + (addr&0x1fff);
 				if (ui->ui_dk && dkn < DK_NDRIVE)
-					ui->ui_dk = dkn;
+					ui->ui_dk = dkn++;
 				else
 					ui->ui_dk = -1;
 				ui->ui_mi = um;

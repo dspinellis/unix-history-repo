@@ -1,4 +1,4 @@
-/*	hp.c	4.10	81/02/21	*/
+/*	hp.c	4.11	81/02/22	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -172,7 +172,6 @@ hpustart(mi)
 		return (MBU_DODATA);
 	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL))
 		return (MBU_DODATA);
-	hpaddr->hpdc = bp->b_cylin;
 	st = &hpst[mi->mi_type];
 	bn = dkblock(bp);
 	sn = bn%st->nspc;
@@ -185,7 +184,8 @@ hpustart(mi)
 			dist += st->nsect;
 		if (dist > st->nsect - hpRDIST)
 			return (MBU_DODATA);
-	}
+	} else
+		hpaddr->hpdc = bp->b_cylin;
 	if (hpseek)
 		hpaddr->hpcs1 = SEEK|GO;
 	else {

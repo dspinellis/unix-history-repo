@@ -1,4 +1,4 @@
-/*	up.c	4.18	81/02/21	*/
+/*	up.c	4.19	81/02/22	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -70,7 +70,7 @@ struct	uba_dinfo *updinfo[NUP];
 struct	uba_dinfo *upip[NSC21][4];
 
 u_short	upstd[] = { 0776700, 0774400, 0776300, 0 };
-struct	uba_driver updriver =
+struct	uba_driver scdriver =
     { upprobe, upslave, upattach, updgo, upstd, "up", updinfo, "sc", upminfo };
 struct	buf	uputab[NUP];
 
@@ -86,15 +86,10 @@ struct	upst {
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
 };
 
-int	up_offset[16] =
-{
-	P400, M400, P400, M400,
-	P800, M800, P800, M800,
-	P1200, M1200, P1200, M1200,
-	0, 0, 0, 0,
-};
+u_char	up_offset[16] =
+  { P400,M400,P400,M400,P800,M800,P800,M800,P1200,M1200,P1200,M1200,0,0,0,0 };
 
-struct	buf	rupbuf;			/* GROT */
+struct	buf	rupbuf[NUP];
 
 #define	b_cylin b_resid
 
@@ -369,7 +364,7 @@ updgo(um)
  * their blocks to the ready queue in um->um_tab, and then restart
  * the controller if there is anything to do.
  */
-upintr(sc21)
+scintr(sc21)
 	register sc21;
 {
 	register struct buf *bp, *dp;
@@ -420,7 +415,7 @@ upintr(sc21)
 				return;
 			}
 		}
-		ubarelse(ui->ui_ubanum, &um->um_ubinfo);
+		ubadone(um);
 		if (um->um_tab.b_active) {
 			if (um->um_tab.b_errcnt >= 16) {
 				upaddr->upcs1 = RTC|GO|IE;
@@ -459,15 +454,25 @@ upintr(sc21)
 }
 
 upread(dev)
+	dev_t dev;
 {
+	register int unit = minor(dev) >> 3;
 
-	physio(upstrategy, &rupbuf, dev, B_READ, minphys);
+	if (unit >= NUP)
+		u.u_error = ENXIO;
+	else
+		physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys);
 }
 
 upwrite(dev)
+	dev_t dev;
 {
+	register int unit = minor(dev) >> 3;
 
-	physio(upstrategy, &rupbuf, dev, B_WRITE, minphys);
+	if (unit >= NUP)
+		u.u_error = ENXIO;
+	else
+		physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys);
 }
 
 /*
@@ -583,7 +588,7 @@ upreset(uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubarelse(um->um_ubanum, &um->um_ubinfo);
+			ubadone(um);
 		}
 		((struct device *)(um->um_addr))->upcs2 = CLR;
 		for (unit = 0; unit < NUP; unit++) {
