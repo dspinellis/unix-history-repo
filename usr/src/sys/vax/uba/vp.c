@@ -1,4 +1,4 @@
-/*	vp.c	4.9	81/04/02	*/
+/*	vp.c	4.10	81/11/18	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -83,6 +83,10 @@ vpprobe(reg)
 	register int br, cvec;		/* value-result */
 	register struct vpdevice *vpaddr = (struct vpdevice *)(reg-010);
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	vpintr(0);
+#endif
 	vpaddr->prcsr = VP_IENABLE|VP_DTCINTR;
 	vpaddr->pbaddr = 0;
 	vpaddr->pbxaddr = 0;

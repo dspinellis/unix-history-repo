@@ -1,4 +1,4 @@
-/*	dh.c	4.39	81/11/08	*/
+/*	dh.c	4.40	81/11/18	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -148,6 +148,7 @@ dhprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	dhrint(0); dhxint(0);
 #endif
 #ifndef notdef
 	dhaddr->un.dhcsr = DH_RIE|DH_MM|DH_RI;
@@ -189,6 +190,7 @@ dmprobe(reg)
 
 #ifdef lint
 	br = 0; vec = br; br = vec;
+	dmintr();
 #endif
 	dmaddr->dmcsr = DM_DONE|DM_IE;
 	DELAY(20);

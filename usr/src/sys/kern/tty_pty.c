@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.9	81/10/11	*/
+/*	tty_pty.c	4.10	81/11/18	*/
 
 /*
  * Pseudo-teletype Driver
@@ -174,7 +174,7 @@ ptcselect(dev)
 	if (tp->t_outq.c_cc)
 		return (1);
 	pti = &pt_ioctl[minor(dev)];
-	if ((p = pti->pti_selr) && p->p_wchan == (caddr_t)select)
+	if ((p = pti->pti_selr) && p->p_wchan == (caddr_t)&selwait)
 		pti->pti_flags |= PTCRCOLL;
 	else
 		pti->pti_selr = u.u_procp;
@@ -217,7 +217,6 @@ ptyioctl(dev, cmd, addr, flag)
 	dev_t dev;
 {
 	register struct tty *tp;
-	register int tbd;
 
 	tp = &pt_tty[minor(dev)];
 	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */

@@ -1,4 +1,4 @@
-/*	va.c	4.10	81/07/08	*/
+/*	va.c	4.11	81/11/18	*/
 
 #include "va.h"
 #if NVA > 0
@@ -82,6 +82,10 @@ vaprobe(reg)
 	register int br, cvec;		/* value-result */
 	register struct vadevice *vaaddr = (struct vadevice *)reg;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	vaintr(0);
+#endif
 	vaaddr->vacsl = VA_IENABLE;
 	vaaddr->vaba = 0;
 	vaaddr->vacsh = VAPLOT;

@@ -1,4 +1,4 @@
-/*	dn.c	4.1	81/11/04	*/
+/*	dn.c	4.2	81/11/18	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -47,20 +47,25 @@ struct uba_driver dndriver =
 
 /*
  * There's no good way to determine the correct number of dialers attached
- *  to a single device (especially when dialers such as Vadic-821 MACS
- *  exist which can address four chassis, each with its own dialer), so
- *  we take the "flags" value supplied by config as the number of devices
- *  attached (see dnintr).
+ * to a single device (especially when dialers such as Vadic-821 MACS
+ * exist which can address four chassis, each with its own dialer), so
+ * we take the "flags" value supplied by config as the number of devices
+ * attached (see dnintr).
  */
 dnprobe(reg)
 	caddr_t reg;
 {
-	register int br, cvec;	/* value-result, must be r11, r10 */
+	register int br, cvec;		/* value-result */
 	register struct dndevice *dnaddr = (struct dndevice *)reg;
+
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	dnintr(0);
+#endif
 
 	/*
 	 * If there's at least one dialer out there it better be
-	 *  at chassis 0.
+	 * at chassis 0.
 	 */
 	dnaddr->dn_reg[0] = MENABLE|IENABLE|DONE;
 	DELAY(5);
@@ -70,6 +75,7 @@ dnprobe(reg)
 dnattach(ui)
 	struct uba_device *ui;
 {
+
 	if (ui->ui_flags == 0)	/* no flags =>'s don't care */
 		ui->ui_flags = 4;
 	else if (ui->ui_flags > 4 || ui->ui_flags < 0) {
@@ -179,7 +185,7 @@ dnwrite(dev)
 
 /*
  * NOTE that the flags from the config file define the number
- *  of dialers attached to this controller.
+ * of dialers attached to this controller.
  */
 dnintr(dev)
 	dev_t dev;

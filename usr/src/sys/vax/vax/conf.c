@@ -1,4 +1,4 @@
-/*	conf.c	4.42	81/11/11	*/
+/*	conf.c	4.43	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,12 +19,11 @@ int	nodev();
 
 #include "hp.h"
 #if NHP > 0
-int	hpstrategy(),hpread(),hpwrite(),hpintr(),hpdump();
+int	hpstrategy(),hpread(),hpwrite(),hpdump();
 #else
 #define	hpstrategy	nodev
 #define	hpread		nodev
 #define	hpwrite		nodev
-#define	hpintr		nodev
 #define	hpdump		nodev
 #endif
  

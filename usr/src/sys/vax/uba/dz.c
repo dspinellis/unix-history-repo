@@ -1,9 +1,9 @@
-/*	dz.c	4.30	81/11/08	*/
+/*	dz.c	4.31	81/11/18	*/
 
 #include "dz.h"
 #if NDZ > 0
 /*
- *  DZ-11 Driver
+ * DZ-11 Driver
  *
  * This driver mimics dh.c; see it for explanation of common code.
  */
@@ -106,6 +106,7 @@ dzprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	dzrint(0); dzxint((struct tty *)0);
 #endif
 	dzaddr->dzcsr = DZ_TIE|DZ_MSE;
 	dzaddr->dztcr = 1;		/* enable any line */

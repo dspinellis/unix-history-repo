@@ -1,4 +1,4 @@
-/*	ct.c	4.6	81/07/05	*/
+/*	ct.c	4.7	81/11/18	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -49,6 +49,10 @@ ctprobe(reg)
 	register int br, cvec;		/* value-result */
 	register struct ctdevice *ctaddr = (struct ctdevice *)reg;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	ctintr(0);
+#endif
 	ctaddr->ctcsr = IENABLE;
 	DELAY(10000);
 	ctaddr->ctcsr = 0;
@@ -112,9 +116,6 @@ ctintr(dev)
 
 	if (ctaddr->ctcsr&DONE) {
 		if ((c = getc(&sc->sc_oq)) >= 0) {
-#if MH135A
-			c |= (c & 01) << 8;	/* for dr11c bug */
-#endif		
 			ctaddr->ctbuf = c;
 			if (sc->sc_oq.c_cc==0 || sc->sc_oq.c_cc==CATLOWAT)
 				wakeup(&sc->sc_oq);
