@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)string.c	3.8 %G%";
+static char sccsid[] = "@(#)string.c	3.9 %G%";
 #endif
 
 /*
@@ -11,7 +11,6 @@ static char sccsid[] = "@(#)string.c	3.8 %G%";
 #include "string.h"
 
 char *malloc();
-char *sprintf();
 
 char *
 str_cpy(s)

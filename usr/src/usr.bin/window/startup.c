@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	3.18 %G%";
+static char sccsid[] = "@(#)startup.c	3.19 %G%";
 #endif
 
 /*
@@ -22,9 +22,10 @@ doconfig()
 
 	if ((home = getenv("HOME")) == 0)
 		home = ".";
-	return dosource(sprintf(buf, "%.*s/%s",
+	sprintf(buf, "%.*s/%s",
 		(sizeof buf - sizeof runcom) / sizeof (char) - 1,
-		home, runcom));
+		home, runcom);
+	return dosource(buf);
 }
 
 /*
