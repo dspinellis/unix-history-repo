@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)find.1	6.11 (Berkeley) %G%
+.\"	@(#)find.1	6.12 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -11,14 +11,18 @@
 find \- walk a file hierarchy
 .SH SYNOPSIS
 .ft B
-find [ \-dsx ] [ \-f path ] [ path ] expression
+find [ \-dsx ] [ path ] expression
+.br
+find [ \-dsx ] [ \-f path ] expression
 .ft R
 .SH DESCRIPTION
 .I Find
 recursively descends the directory tree for each
 .I path
-listed, evaluating an ``expression'' (composed of the ``primaries''
-and ``operands'' listed below) in terms of each file in the tree.
+listed, evaluating an
+.I expression
+(composed of the ``primaries'' and ``operands'' listed below) in terms
+of each file in the tree.
 .PP
 The options are as follows:
 .TP
@@ -44,7 +48,7 @@ to traverse.
 If no
 .B \-f
 option is specified, the first operand after the options is
-expected to be the file to be traversed.
+expected to be the file hierarchy to be traversed.
 .TP
 .B \-s
 The
@@ -59,25 +63,10 @@ be for the link itself.
 .B \-x
 The
 .B \-x
-option causes
+option prevents
 .I find
-to not descend into directories that have a different device number
-than the file the descent began from.
-.PP
-Operands and primaries must each be a separate argument to
-.IR find .
-Primaries which themselves take arguments expect each argument
-to be a separate argument to
-.IR find .
-.PP
-All primaries which take a numeric argument allow the number to be
-preceded by a plus sign (``+'') or a minus sign (``\-'').
-A preceding plus sign means ``more than
-.BR n '',
-a preceding minus sign means ``less than
-.BR n ''
-and neither means ``exactly
-.BR n ''.
+from descending into directories that have a device number different
+than that of the file from which the descent began.
 .SH PRIMARIES
 .TP
 .B atime n
@@ -276,6 +265,15 @@ If
 is numeric and there is no such user name, then
 .B uname
 is treated as a user id.
+.PP
+All primaries which take a numeric argument allow the number to be
+preceded by a plus sign (``+'') or a minus sign (``\-'').
+A preceding plus sign means ``more than
+.BR n '',
+a preceding minus sign means ``less than
+.BR n ''
+and neither means ``exactly
+.BR n ''.
 .SH OPERATORS
 The primaries may be combined using the following operators.
 The operators are listed in order of decreasing precedence.
@@ -308,6 +306,12 @@ operator is the logical OR operator.
 The expression evaluates to true if either the first or the second expression
 is true.
 The second expression is not evaluated if the first expression is true.
+.PP
+All operands and primaries must be separate arguments to
+.IR find .
+Primaries which themselves take arguments expect each argument
+to be a separate argument to
+.IR find .
 .SH EXAMPLES
 .PP
 The following examples are shown as given to the shell:
