@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.27	82/08/24	*/
+/*	vfs_vnops.c	4.28	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,28 +23,22 @@
 openi(ip, mode)
 	register struct inode *ip;
 {
-	dev_t dev;
-	register unsigned int maj;
+	dev_t dev = (dev_t)ip->i_rdev;
+	register u_int maj = major(dev);
 
-	dev = (dev_t)ip->i_rdev;
-	maj = major(dev);
 	switch (ip->i_mode&IFMT) {
 
 	case IFCHR:
 		if (maj >= nchrdev)
-			goto bad;
-		(*cdevsw[maj].d_open)(dev, mode);
-		break;
+			return (ENXIO);
+		return ((*cdevsw[maj].d_open)(dev, mode));
 
 	case IFBLK:
 		if (maj >= nblkdev)
-			goto bad;
-		(*bdevsw[maj].d_open)(dev, mode);
+			return (ENXIO);
+		return ((*bdevsw[maj].d_open)(dev, mode));
 	}
-	return;
-
-bad:
-	u.u_error = ENXIO;
+	return (0);
 }
 
 /*
