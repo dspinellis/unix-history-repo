@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ln.1	6.1 (Berkeley) %G%
+.\"	@(#)ln.1	6.2 (Berkeley) %G%
 .\"
 .TH LN 1 ""
 .UC 4
@@ -13,10 +13,13 @@ ln \- make links
 [
 .B \-s
 ]
-name1 [ name2 ]
+sourcename [ targetname ]
 .br
 .B ln
-name ... directory
+[
+.B \-s
+]
+sourcename1 sourcename2 [ sourcename3 ... ] targetdirectory
 .SH DESCRIPTION
 A link is a directory entry referring
 to a file; the same file (together with
@@ -56,20 +59,22 @@ Symbolic links may span file systems and may refer to directories.
 Given one or two arguments,
 .I ln
 creates a link to an existing file
-.IR name1 .
+.IR sourcename .
 If
-.I name2
+.I targetname
 is given, the link has that name;
-.I name2
+.I targetname
 may also be a directory in which to place the link;
 otherwise it is placed in the current directory.
 If only the directory is specified, the link will be made
 to the last component of
-.IR name1 .
+.IR sourcename .
 .PP
 Given more than two arguments,
 .I ln
-makes links to all the named files in the named directory.
+makes links in 
+.I targetdirectory
+to all the named source files.
 The links made will have the same name as the files being linked to.
 .SH "SEE ALSO"
 rm(1), cp(1), mv(1), link(2), readlink(2), stat(2), symlink(2)
