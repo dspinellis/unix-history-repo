@@ -9,20 +9,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <grp.h>
 #include <pwd.h>
 #include <fts.h>
 #include <unistd.h>
 #include <tzfile.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "find.h"
 
@@ -193,8 +194,8 @@ f_exec(plan, entry)
 	FTSENT *entry;
 {
 	register int cnt;
-	union wait pstat;
-	pid_t pid, waitpid();
+	pid_t pid;
+	int status;
 	void brace_subst();
 
 	for (cnt = 0; plan->e_argv[cnt]; ++cnt)
@@ -207,18 +208,17 @@ f_exec(plan, entry)
 
 	switch(pid = vfork()) {
 	case -1:
-		(void)fprintf(stderr, "find: fork: %s.\n", strerror(errno));
+		error("fork", errno);
 		exit(1);
 		/* NOTREACHED */
 	case 0:
 		execvp(plan->e_argv[0], plan->e_argv);
-		(void)fprintf(stderr,
-		    "find: %s: %s.\n", plan->e_argv[0], strerror(errno));
+		error(plan->e_argv[0], errno);
 		exit(1);
 		/* NOTREACHED */
 	}
-	pid = waitpid(pid, &pstat, 0);
-	return(pid != -1 && !pstat.w_status);
+	pid = waitpid(pid, &status, 0);
+	return(pid != -1 && WIFEXITED(status) && !WEXITSTATUS(status));
 }
  
 /*
@@ -240,7 +240,7 @@ c_exec(argvp, isok)
 
 	if (!isrelative)
 		ftsoptions |= FTS_NOCHDIR;
-	isoutput = isstopdnx = 1;
+	isoutput = 1;
     
 	NEW(T_EXEC, f_exec);
 	new->flags = isok;
@@ -332,8 +332,7 @@ f_fstype(plan, entry)
 			p = NULL;
 
 		if (statfs(entry->fts_accpath, &sb)) {
-			(void)fprintf(stderr, "find: %s: %s.\n",
-			    entry->fts_accpath, strerror(errno));
+			error(entry->fts_accpath, errno);
 			exit(1);
 		}
 
@@ -559,8 +558,7 @@ c_newer(filename)
 	ftsoptions &= ~FTS_NOSTAT;
 
 	if (stat(filename, &sb)) {
-		(void)fprintf(stderr, "find: %s: %s.\n",
-		    filename, strerror(errno));
+		error(filename, errno);
 		exit(1);
 	}
 	NEW(T_NEWER, f_newer);
@@ -649,7 +647,7 @@ c_perm(perm)
 	char *perm;
 {
 	PLAN *new;
-	mode_t *set, *setmode();
+	mode_t *set;
 	void bad_arg();
 
 	ftsoptions &= ~FTS_NOSTAT;
@@ -707,8 +705,7 @@ f_prune(plan, entry)
 	extern FTS *tree;
 
 	if (fts_set(tree, entry, FTS_SKIP)) {
-		(void)fprintf(stderr,
-		    "find: %s: %s.\n", entry->fts_path, strerror(errno));
+		error(entry->fts_path, errno);
 		exit(1);
 	}
 	return(1);
