@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.2 (Berkeley) %G%
+ *	@(#)trap.c	7.3 (Berkeley) %G%
  */
 
 #include "cpu.h"
@@ -537,7 +537,6 @@ syscall(code, frame)
 	register int i;
 	register struct sysent *callp;
 	register struct proc *p = u.u_procp;
-	register struct user *up;
 	int error, opc, numsys;
 	struct timeval syst;
 	struct sysent *systab;
@@ -546,13 +545,12 @@ syscall(code, frame)
 	extern int hpuxnsysent, notimp();
 #endif
 
-	up = &u;		/* this should probably be deleted */
 	cnt.v_syscall++;
-	syst = up->u_ru.ru_stime;
+	syst = u.u_ru.ru_stime;
 	if (!USERMODE(frame.f_sr))
 		panic("syscall");
-	up->u_ar0 = frame.f_regs;
-	up->u_error = 0;
+	u.u_ar0 = frame.f_regs;
+	u.u_error = 0;
 	opc = frame.f_pc - 2;
 	systab = sysent;
 	numsys = nsysent;
@@ -572,7 +570,7 @@ syscall(code, frame)
 	else
 		callp = &systab[code];
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)up->u_arg, (u_int)i))) {
+	    (error = copyin(params, (caddr_t)u.u_arg, (u_int)i))) {
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
 			error = bsdtohpuxerrno(error);
@@ -589,15 +587,15 @@ syscall(code, frame)
         if (KTRPOINT(p, KTR_SYSCALL))
                 ktrsyscall(p->p_tracep, code, callp->sy_narg);
 #endif
-	up->u_r.r_val1 = 0;
-	up->u_r.r_val2 = frame.f_regs[D0];
+	u.u_r.r_val1 = 0;
+	u.u_r.r_val2 = frame.f_regs[D0];
 #ifdef HPUXCOMPAT
 	/* debug kludge */
 	if (callp->sy_call == notimp)
 		error = notimp(code, callp->sy_narg);
 	else
 #endif
-	error = (*(callp->sy_call))(up);
+	error = (*(callp->sy_call))(&u);
 	error = u.u_error;		/* XXX */
 	if (error == ERESTART)
 		frame.f_pc = opc;
@@ -609,17 +607,9 @@ syscall(code, frame)
 #endif
 			frame.f_regs[D0] = (u_char) error;
 			frame.f_sr |= PSL_C;	/* carry bit */
-#ifdef HPUXCOMPAT
-			/* there are some HPUX calls where we change u_ap */
-			/* is this still needed? */
-			if (up->u_ap != up->u_arg) {
-				up->u_ap = up->u_arg;
-				printf("syscall(%d): u_ap changed\n", code);
-			}
-#endif
 		} else {
-			frame.f_regs[D0] = up->u_r.r_val1;
-			frame.f_regs[D1] = up->u_r.r_val2;
+			frame.f_regs[D0] = u.u_r.r_val1;
+			frame.f_regs[D1] = u.u_r.r_val2;
 			frame.f_sr &= ~PSL_C;
 		}
 	}
@@ -631,22 +621,18 @@ done:
 	 * Reinitialize proc pointer `p' as it may be different
 	 * if this is a child returning from fork syscall.
 	 */
-	p = up->u_procp;
-#ifdef I_DONT_UNDERSTAND		/* XXX XXX */
+	p = u.u_procp;
 	/*
-	 * The check for sigreturn (code 103) ensures that we don't
+	 * XXX the check for sigreturn ensures that we don't
 	 * attempt to set up a call to a signal handler (sendsig) before
 	 * we have cleaned up the stack from the last call (sigreturn).
 	 * Allowing this seems to lock up the machine in certain scenarios.
 	 * What should really be done is to clean up the signal handling
 	 * so that this is not a problem.
 	 */
-	if (code != 103 && (p->p_cursig || ISSIG(p)))
-		psig();
-#else
-	if (i = CURSIG(p))
+#include "syscall.h"
+	if (code != SYS_sigreturn && (i = CURSIG(p)))
 		psig(i);
-#endif
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -659,23 +645,23 @@ done:
 		 */
 		(void) splclock();
 		setrq(p);
-		up->u_ru.ru_nivcsw++;
+		u.u_ru.ru_nivcsw++;
 		swtch();
 		if (i = CURSIG(p))
 			psig(i);
 	}
-	if (up->u_prof.pr_scale) {
+	if (u.u_prof.pr_scale) {
 		int ticks;
-		struct timeval *tv = &up->u_ru.ru_stime;
+		struct timeval *tv = &u.u_ru.ru_stime;
 
 		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
 			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks) {
 #ifdef PROFTIMER
 			extern int profscale;
-			addupc(frame.f_pc, &up->u_prof, ticks * profscale);
+			addupc(frame.f_pc, &u.u_prof, ticks * profscale);
 #else
-			addupc(frame.f_pc, &up->u_prof, ticks);
+			addupc(frame.f_pc, &u.u_prof, ticks);
 #endif
 		}
 	}
