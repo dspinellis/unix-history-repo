@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	6.25 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	6.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -33,14 +33,14 @@ int	dirchk = 0;
 #define	NHASH(h, i, d)	((unsigned)((h) + (i) + 13 * (int)(d)) & ((NCHHASH)-1))
 #endif
 
-union	nchash	{
-	union	nchash	*nch_head[2];
-	struct	nch	*nch_chain[2];
+union nchash {
+	union	nchash *nch_head[2];
+	struct	nch *nch_chain[2];
 } nchash[NCHHASH];
 #define	nch_forw	nch_chain[0]
 #define	nch_back	nch_chain[1]
 
-struct	nch	*nchhead, **nchtail;	/* LRU chain pointers */
+struct	nch *nchhead, **nchtail;	/* LRU chain pointers */
 struct	nchstats nchstats;		/* cache effectiveness statistics */
 
 /*
@@ -66,25 +66,25 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  *
  * Name caching works as follows:
  *
- *	names found by directory scans are retained in a cache
- *	for future reference.  It is managed LRU, so frequently
- *	used names will hang around.  Cache is indexed by hash value
- *	obtained from (ino,dev,name) where ino & dev refer to the
- *	directory containing name.
+ * Names found by directory scans are retained in a cache
+ * for future reference.  It is managed LRU, so frequently
+ * used names will hang around.  Cache is indexed by hash value
+ * obtained from (ino,dev,name) where ino & dev refer to the
+ * directory containing name.
  *
- *	For simplicity (and economy of storage), names longer than
- *	some (small) maximum length are not cached, they occur
- *	infrequently in any case, and are almost never of interest.
+ * For simplicity (and economy of storage), names longer than
+ * some (small) maximum length are not cached, they occur
+ * infrequently in any case, and are almost never of interest.
  *
- *	Upon reaching the last segment of a path, if the reference
- *	is for DELETE, or NOCACHE is set (rewrite), and the
- *	name is located in the cache, it will be dropped.
+ * Upon reaching the last segment of a path, if the reference
+ * is for DELETE, or NOCACHE is set (rewrite), and the
+ * name is located in the cache, it will be dropped.
  *
- *	We must be sure never to enter the name ".." into the cache
- *	because of the extremely kludgey way that rename() alters
- *	".." in a situation like
- *		mv a/x b/x
- *	where x is a directory, and x/.. is the ".." in question.
+ * We must be sure never to enter the name ".." into the cache
+ * because of the extremely kludgey way that rename() alters
+ * ".." in a situation like
+ * 	mv a/x b/x
+ * where x is a directory, and x/.. is the ".." in question.
  *
  * Overall outline of namei:
  *
@@ -270,10 +270,9 @@ dirloop2:
 			    ncp->nc_dev == dp->i_dev &&
 			    ncp->nc_nlen == ndp->ni_dent.d_namlen &&
 			    !bcmp(ncp->nc_name, ndp->ni_dent.d_name,
-				ncp->nc_nlen))
+				(unsigned)ncp->nc_nlen))
 				break;
 		}
-
 		if (ncp == (struct nch *)nhp) {
 			nchstats.ncs_miss++;
 			ncp = NULL;
@@ -283,17 +282,16 @@ dirloop2:
 			} else if (!makeentry) {
 				nchstats.ncs_badhits++;
 			} else {
-
-					/*
-					 * move this slot to end of LRU
-					 * chain, if not already there
-					 */
+				/*
+				 * move this slot to end of LRU
+				 * chain, if not already there
+				 */
 				if (ncp->nc_nxt) {
-						/* remove from LRU chain */
+					/* remove from LRU chain */
 					*ncp->nc_prev = ncp->nc_nxt;
 					ncp->nc_nxt->nc_prev = ncp->nc_prev;
 
-						/* and replace at end of it */
+					/* and replace at end of it */
 					ncp->nc_nxt = NULL;
 					ncp->nc_prev = nchtail;
 					*nchtail = ncp;
@@ -343,27 +341,21 @@ dirloop2:
 			 * the cache entry is invalid, or otherwise don't
 			 * want cache entry to exist.
 			 */
-
-				/* remove from LRU chain */
+			/* remove from LRU chain */
 			*ncp->nc_prev = ncp->nc_nxt;
 			if (ncp->nc_nxt)
 				ncp->nc_nxt->nc_prev = ncp->nc_prev;
 			else
 				nchtail = ncp->nc_prev;
-
-				/* remove from hash chain */
-			remque(ncp);
-
-				/* insert at head of LRU list (first to grab) */
+			remque(ncp);		/* remove from hash chain */
+			/* insert at head of LRU list (first to grab) */
 			ncp->nc_nxt = nchhead;
 			ncp->nc_prev = &nchhead;
 			nchhead->nc_prev = &ncp->nc_nxt;
 			nchhead = ncp;
-
-				/* and make a dummy hash chain */
+			/* and make a dummy hash chain */
 			ncp->nc_forw = ncp;
 			ncp->nc_back = ncp;
-
 			ncp = NULL;
 		}
 	}
@@ -430,7 +422,6 @@ searchloop:
 				goto bad;
 			entryoffsetinblock = 0;
 		}
-
 		/*
 		 * If still looking for a slot, and at a DIRBLKSIZE
 		 * boundary, have to start looking for free space again.
@@ -440,7 +431,6 @@ searchloop:
 			slotoffset = -1;
 			slotfreespace = 0;
 		}
-
 		/*
 		 * Get pointer to next entry.
 		 * Full validation checks are slow, so we only check
@@ -449,7 +439,7 @@ searchloop:
 		 * "dirchk" to be true.
 		 */
 		ep = (struct direct *)(bp->b_un.b_addr + entryoffsetinblock);
-		if (ep->d_reclen <= 0 ||
+		if (ep->d_reclen == 0 ||
 		    dirchk && dirbadentry(ep, entryoffsetinblock)) {
 			dirbad(dp, ndp->ni_offset, "mangled entry");
 			i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
@@ -493,7 +483,7 @@ searchloop:
 		if (ep->d_ino) {
 			if (ep->d_namlen == ndp->ni_dent.d_namlen &&
 			    !bcmp(ndp->ni_dent.d_name, ep->d_name,
-				ep->d_namlen))
+				(unsigned)ep->d_namlen))
 				goto found;
 		}
 		prevoff = ndp->ni_offset;
@@ -738,44 +728,38 @@ found:
 	}
 
 	/*
-	 * insert name into cache if appropriate
+	 * Insert name into cache if appropriate.
 	 */
 	if (makeentry) {
 		if (ncp != NULL)
 			panic("nami: duplicating cache");
-
-			/*
-			 * free the cache slot at head of lru chain
-			 */
+		/*
+		 * Free the cache slot at head of lru chain.
+		 */
 		if (ncp = nchhead) {
-				/* remove from lru chain */
+			/* remove from lru chain */
 			*ncp->nc_prev = ncp->nc_nxt;
 			if (ncp->nc_nxt)
 				ncp->nc_nxt->nc_prev = ncp->nc_prev;
 			else
 				nchtail = ncp->nc_prev;
-
-				/* remove from old hash chain */
-			remque(ncp);
-
-				/* grab the inode we just found */
+			remque(ncp);		/* remove from old hash chain */
+			/* grab the inode we just found */
 			ncp->nc_ip = dp;
-
-				/* fill in cache info */
+			/* fill in cache info */
 			ncp->nc_ino = pdp->i_number;	/* parents inum */
 			ncp->nc_dev = pdp->i_dev;	/* & device */
 			ncp->nc_idev = dp->i_dev;	/* our device */
 			ncp->nc_id = dp->i_id;		/* identifier */
 			ncp->nc_nlen = ndp->ni_dent.d_namlen;
-			bcopy(ndp->ni_dent.d_name, ncp->nc_name, ncp->nc_nlen);
-
-				/* link at end of lru chain */
+			bcopy(ndp->ni_dent.d_name, ncp->nc_name,
+			    (unsigned)ncp->nc_nlen);
+			/* link at end of lru chain */
 			ncp->nc_nxt = NULL;
 			ncp->nc_prev = nchtail;
 			*nchtail = ncp;
 			nchtail = &ncp->nc_nxt;
-
-				/* and insert on hash chain */
+			/* and insert on hash chain */
 			insque(ncp, nhp);
 		}
 	}
@@ -865,7 +849,6 @@ dirbad(ip, offset, how)
 /*
  * Do consistency checking on a directory entry:
  *	record length must be multiple of 4
- *	record length must not be non-negative
  *	entry must fit in rest of its DIRBLKSIZ block
  *	record must be large enough to contain entry
  *	name is not longer than MAXNAMLEN
@@ -877,7 +860,7 @@ dirbadentry(ep, entryoffsetinblock)
 {
 	register int i;
 
-	if ((ep->d_reclen & 0x3) != 0 || ep->d_reclen <= 0 ||
+	if ((ep->d_reclen & 0x3) != 0 ||
 	    ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1)) ||
 	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
 		return (1);
@@ -947,7 +930,6 @@ direnter(ip, ndp)
 	 */
 	if (ndp->ni_offset + ndp->ni_count > dp->i_size)
 		dp->i_size = ndp->ni_offset + ndp->ni_count;
-
 	/*
 	 * Get the block containing the space for the new directory
 	 * entry.  Should return error by result instead of u.u_error.
@@ -957,7 +939,6 @@ direnter(ip, ndp)
 		iput(dp);
 		return (u.u_error);
 	}
-
 	/*
 	 * Find space for the new entry.  In the simple case, the
 	 * entry at offset base will have the space.  If it does
@@ -1001,7 +982,7 @@ direnter(ip, ndp)
 	bwrite(bp);
 	dp->i_flag |= IUPD|ICHG;
 	if (ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
-		itrunc(dp, ndp->ni_endoff);
+		itrunc(dp, (u_long)ndp->ni_endoff);
 	iput(dp);
 	return (error);
 }
@@ -1127,7 +1108,7 @@ dirempty(ip, parentino)
 		if (error || count != 0)
 			return (0);
 		/* avoid infinite loops */
-		if (dp->d_reclen <= 0)
+		if (dp->d_reclen == 0)
 			return (0);
 		/* skip empty entries */
 		if (dp->d_ino == 0)
@@ -1218,19 +1199,15 @@ nchinit()
 
 	nchhead = 0;
 	nchtail = &nchhead;
-
 	for (ncp = nch; ncp < &nch[nchsize]; ncp++) {
 		ncp->nc_forw = ncp;			/* hash chain */
 		ncp->nc_back = ncp;
-
 		ncp->nc_nxt = NULL;			/* lru chain */
 		*nchtail = ncp;
 		ncp->nc_prev = nchtail;
 		nchtail = &ncp->nc_nxt;
-
 		/* all else is zero already */
 	}
-
 	for (nchp = nchash; nchp < &nchash[NCHHASH]; nchp++) {
 		nchp->nch_head[0] = nchp;
 		nchp->nch_head[1] = nchp;
@@ -1252,35 +1229,27 @@ nchinval(dev)
 
 	for (ncp = nchhead; ncp; ncp = nxtcp) {
 		nxtcp = ncp->nc_nxt;
-
 		if (ncp->nc_ip == NULL ||
 		    (ncp->nc_idev != dev && ncp->nc_dev != dev))
 			continue;
-
-			/* free the resources we had */
+		/* free the resources we had */
 		ncp->nc_idev = NODEV;
 		ncp->nc_dev = NODEV;
 		ncp->nc_id = NULL;
 		ncp->nc_ino = 0;
 		ncp->nc_ip = NULL;
-
-
-			/* remove the entry from its hash chain */
-		remque(ncp);
-			/* and make a dummy one */
-		ncp->nc_forw = ncp;
+		remque(ncp);		/* remove entry from its hash chain */
+		ncp->nc_forw = ncp;	/* and make a dummy one */
 		ncp->nc_back = ncp;
-
-			/* delete this entry from LRU chain */
+		/* delete this entry from LRU chain */
 		*ncp->nc_prev = nxtcp;
 		if (nxtcp)
 			nxtcp->nc_prev = ncp->nc_prev;
 		else
 			nchtail = ncp->nc_prev;
-
-			/* cause rescan of list, it may have altered */
+		/* cause rescan of list, it may have altered */
 		nxtcp = nchhead;
-			/* put the now-free entry at head of LRU */
+		/* put the now-free entry at head of LRU */
 		ncp->nc_nxt = nxtcp;
 		ncp->nc_prev = &nchhead;
 		nxtcp->nc_prev = &ncp->nc_nxt;
@@ -1295,7 +1264,6 @@ cacheinvalall()
 {
 	register struct nch *ncp;
 
-	for (ncp = nch; ncp < &nch[nchsize]; ncp++) {
+	for (ncp = nch; ncp < &nch[nchsize]; ncp++)
 		ncp->nc_id = 0;
-	}
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_bio.c	6.8 (Berkeley) %G%
+ *	@(#)vfs_bio.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -35,7 +35,7 @@ bread(dev, blkno, size)
 	bp = getblk(dev, blkno, size);
 	if (bp->b_flags&B_DONE) {
 		trace(TR_BREADHIT, pack(dev, size), blkno);
-		return(bp);
+		return (bp);
 	}
 	bp->b_flags |= B_READ;
 	if (bp->b_bcount > bp->b_bufsize)
@@ -44,7 +44,7 @@ bread(dev, blkno, size)
 	trace(TR_BREADMISS, pack(dev, size), blkno);
 	u.u_ru.ru_inblock++;		/* pay for read */
 	biowait(bp);
-	return(bp);
+	return (bp);
 }
 
 /*
@@ -202,7 +202,7 @@ brelse(bp)
 	/*
 	 * Stick the buffer back on a free list.
 	 */
-	s = spl6();
+	s = splbio();
 	if (bp->b_bufsize <= 0) {
 		/* block has no buffer ... put at front of unused buffer list */
 		flist = &bfreelist[BQ_EMPTY];
@@ -296,7 +296,7 @@ loop:
 		if (bp->b_blkno != blkno || bp->b_dev != dev ||
 		    bp->b_flags&B_INVAL)
 			continue;
-		s = spl6();
+		s = splbio();
 		if (bp->b_flags&B_BUSY) {
 			bp->b_flags |= B_WANTED;
 			sleep((caddr_t)bp, PRIBIO+1);
@@ -308,7 +308,7 @@ loop:
 		if (bp->b_bcount != size && brealloc(bp, size) == 0)
 			goto loop;
 		bp->b_flags |= B_CACHE;
-		return(bp);
+		return (bp);
 	}
 	if (major(dev) >= nblkdev)
 		panic("blkdev");
@@ -321,7 +321,7 @@ loop:
 	bp->b_error = 0;
 	if (brealloc(bp, size) == 0)
 		goto loop;
-	return(bp);
+	return (bp);
 }
 
 /*
@@ -347,7 +347,7 @@ loop:
 	bp->b_error = 0;
 	if (brealloc(bp, size) == 0)
 		goto loop;
-	return(bp);
+	return (bp);
 }
 
 /*
@@ -402,7 +402,7 @@ loop:
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
 		    ep->b_blkno + btodb(ep->b_bcount) <= start)
 			continue;
-		s = spl6();
+		s = splbio();
 		if (ep->b_flags&B_BUSY) {
 			ep->b_flags |= B_WANTED;
 			sleep((caddr_t)ep, PRIBIO+1);
@@ -433,7 +433,7 @@ getnewbuf()
 	int s;
 
 loop:
-	s = spl6();
+	s = splbio();
 	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
 		if (dp->av_forw != dp)
 			break;
@@ -465,7 +465,7 @@ biowait(bp)
 {
 	int s;
 
-	s = spl6();
+	s = splbio();
 	while ((bp->b_flags&B_DONE)==0)
 		sleep((caddr_t)bp, PRIBIO);
 	splx(s);
@@ -523,7 +523,7 @@ loop:
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
 		    ep->b_blkno + btodb(ep->b_bcount) <= start)
 			continue;
-		s = spl6();
+		s = splbio();
 		if (ep->b_flags&B_BUSY) {
 			ep->b_flags |= B_WANTED;
 			sleep((caddr_t)ep, PRIBIO+1);
@@ -554,7 +554,7 @@ bflush(dev)
 	int s;
 
 loop:
-	s = spl6();
+	s = splbio();
 	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++)
 	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
 		if ((bp->b_flags & B_DELWRI) == 0)

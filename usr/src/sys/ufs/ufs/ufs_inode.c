@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_inode.c	6.17 (Berkeley) %G%
+ *	@(#)ufs_inode.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -113,7 +113,6 @@ iget(dev, fs, ino)
 	register struct buf *bp;
 	register struct dinode *dp;
 	register struct inode *iq;
-
 
 loop:
 	ih = &ihead[INOHASH(dev, ino)];
@@ -379,11 +378,11 @@ itrunc(oip, length)
 	u_long length;
 {
 	register daddr_t lastblock;
-	daddr_t bn, lastiblock[NIADDR];
+	daddr_t bn, lbn, lastiblock[NIADDR];
 	register struct fs *fs;
 	register struct inode *ip;
 	struct buf *bp;
-	int offset, lbn, osize, size, count, level, s;
+	int offset, osize, size, count, level, s;
 	long nblocks, blocksreleased = 0;
 	register int i;
 	dev_t dev;
@@ -440,7 +439,7 @@ itrunc(oip, length)
 			brelse(bp);
 			return;
 		}
-		bzero(bp->b_un.b_addr + offset, size - offset);
+		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		bdwrite(bp);
 	}
 	/*
