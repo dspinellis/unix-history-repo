@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 COMFLAGS=-DBSD4_2 -O -DSACREDMEM=256000
 BIN=${DESTDIR}/usr/ucb
@@ -19,5 +19,8 @@ install: compress
 	ln $(BIN)/compress $(BIN)/uncompress
 	ln $(BIN)/compress $(BIN)/zcat
 
+# Temporarily don't delete USERMEM.  When chroot'ed to /nbsd, usermem.sh
+# fails totally.
 clean:
-	rm -f compress USERMEM core errs
+	rm -f compress core errs
+#	rm -f compress USERMEM core errs
