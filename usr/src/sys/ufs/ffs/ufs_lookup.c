@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.6 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -580,6 +580,8 @@ ufs_dirbadentry(dp, ep, entryoffsetinblock)
 		printf("First bad\n");
 		goto bad;
 	}
+	if (ep->d_ino == 0)
+		return (0);
 	for (i = 0; i < namlen; i++)
 		if (ep->d_name[i] == '\0') {
 			/*return (1); */
