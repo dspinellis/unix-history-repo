@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)inode.h	7.8 (Berkeley) %G%
+ *	@(#)inode.h	7.9 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -35,19 +35,16 @@ struct inode {
 	struct	inode *i_chain[2]; /* hash chain, MUST be first */
 	struct	vnode *i_vnode;	/* vnode associated with this inode */
 	struct	vnode *i_devvp;	/* vnode for block I/O */
-	u_short	i_flag;		/* see below */
+	u_long	i_flag;		/* see below */
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
-	struct	text *i_text;	/* text entry, if any (should be region) */
 	long	i_diroff;	/* offset in dir, where we found last entry */
 	off_t	i_endoff;	/* end of useful stuff in directory */
-	long	i_spare[5];
-	union {
-		daddr_t	if_lastr;	/* last read (read-ahead) */
-		struct	socket *is_socket;
-	} i_un;
+	long	i_spare0;
+	long	i_spare1;
+	long	i_spare2;
 	struct	dinode i_din;	/* the on-disk inode */
 };
 
@@ -68,8 +65,6 @@ struct inode {
 #define	i_rdev		i_din.di_db[0]
 #define i_flags		i_din.di_flags
 #define i_gen		i_din.di_gen
-#define	i_lastr		i_un.if_lastr
-#define	i_socket	i_un.is_socket
 #define	i_forw		i_chain[0]
 #define	i_back		i_chain[1]
 
