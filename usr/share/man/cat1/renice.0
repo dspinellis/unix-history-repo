@@ -1,0 +1,56 @@
+RENICE(8)                 BSD System Manager's Manual                RENICE(8)
+
+NNAAMMEE
+     rreenniiccee - alter priority of running processes
+
+SSYYNNOOPPSSIISS
+     rreenniiccee _p_r_i_o_r_i_t_y [[--pp] _p_i_d _._._.] [[--gg] _p_g_r_p _._._.] [[--uu] _u_s_e_r _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     RReenniiccee alters the scheduling priority of one or more running processes.
+     The following _w_h_o parameters are interpreted as process ID's, process
+     group ID's, or user names.  RReenniiccee'ing a process group causes all pro-
+     cesses in the process group to have their scheduling priority altered.
+     RReenniiccee'ing a user causes all processes owned by the user to have their
+     scheduling priority altered.  By default, the processes to be affected
+     are specified by their process ID's.
+
+     Options supported by rreenniiccee:
+
+     --gg      Force _w_h_o parameters to be interpreted as process group ID's.
+
+     --uu      Force the _w_h_o parameters to be interpreted as user names.
+
+     --pp      Resets the _w_h_o interpretation to be (the default) process ID's.
+
+     For example,
+
+     renice +1 987 -u daemon root -p 32
+
+     would change the priority of process ID's 987 and 32, and all processes
+     owned by users daemon and root.
+
+     Users other than the super-user may only alter the priority of processes
+     they own, and can only monotonically increase their ``nice value'' within
+     the range 0 to PRIO_MAX (20).  (This prevents overriding administrative
+     fiats.)  The super-user may alter the priority of any process and set the
+     priority to any value in the range PRIO_MIN (-20) to PRIO_MAX. Useful
+     priorities are: 20 (the affected processes will run only when nothing
+     else in the system wants to), 0 (the ``base'' scheduling priority), any-
+     thing negative (to make things go very fast).
+
+FFIILLEESS
+     /etc/passwd  to map user names to user ID's
+
+SSEEEE AALLSSOO
+     getpriority(2),  setpriority(2)
+
+BBUUGGSS
+     Non super-users can not increase scheduling priorities of their own pro-
+     cesses, even if they were the ones that decreased the priorities in the
+     first place.
+
+HHIISSTTOORRYY
+     The rreenniiccee command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 9, 1993                                1
