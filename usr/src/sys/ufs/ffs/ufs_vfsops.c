@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.28 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -421,7 +421,7 @@ ufs_sync(mp, waitfor)
 	register struct inode *ip;
 	register struct ufsmount *ump = VFSTOUFS(mp);
 	register struct fs *fs;
-	int error = 0;
+	int error, allerror = 0;
 	static int updlock = 0;
 
 	if (syncprt)
@@ -451,20 +451,21 @@ ufs_sync(mp, waitfor)
 	 */
 	for (vp = mp->m_mounth; vp; vp = vp->v_mountf) {
 		ip = VTOI(vp);
-		if ((ip->i_flag & ILOCKED) != 0 || ITOV(ip)->v_count == 0 ||
+		if ((ip->i_flag & ILOCKED) != 0 || vp->v_count == 0 ||
 		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
 			continue;
-		ILOCK(ip);
 		VREF(vp);
-		error = iupdat(ip, &time, &time, waitfor == MNT_WAIT);
-		iput(ip);
+		VOP_LOCK(vp);
+		if (error = VOP_FSYNC(vp, 0, NOCRED, waitfor))
+			allerror = error;
+		vput(vp);
 	}
 	updlock = 0;
 	/*
 	 * Force stale buffer cache information to be flushed.
 	 */
 	bflush(ump->um_devvp->v_mount);
-	return (error);
+	return (allerror);
 }
 
 /*
