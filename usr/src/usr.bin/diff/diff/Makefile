@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.4 (Berkeley) %G%
 #
 DIFF=	/bin/diff
 DIFFH=	/usr/lib/diffh
@@ -14,6 +25,7 @@ SRCS=	diff.c diffdir.c diffreg.c
 OBJS=	diff.o diffdir.o diffreg.o
 HSRCS=	diffh.c
 HOBJS=	diffh.o
+MAN=	diff.0
 
 all: diff diffh
 
@@ -23,45 +35,27 @@ diff: ${OBJS} ${LIBC}
 diffh: ${HOBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${HOBJS}
 
-clean: FRC
+clean:
 	rm -f ${HOBJS} ${OBJS} core diff diffh
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${HSRCS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 diff ${DESTDIR}/bin/diff
 	install -s -o bin -g bin -m 755 diffh ${DESTDIR}/usr/lib/diffh
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/diffh.0
+	ln ${DESTDIR}/usr/man/cat1/diff.0 ${DESTDIR}/usr/man/cat1/diffh.0
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 	lint ${CFLAGS} ${HSRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 	ctags ${HSRCS}
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-diffh.o: diffh.c /usr/include/stdio.h /usr/include/ctype.h
-diffh.o: /usr/include/sys/types.h /usr/include/sys/stat.h
-diff.o: diff.c diff.h /usr/include/stdio.h /usr/include/ctype.h
-diff.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
-diff.o: /usr/include/machine/machparam.h /usr/include/sys/stat.h
-diff.o: /usr/include/sys/dir.h /usr/include/signal.h
-diffdir.o: diffdir.c diff.h /usr/include/stdio.h /usr/include/ctype.h
-diffdir.o: /usr/include/sys/param.h /usr/include/sys/types.h
-diffdir.o: /usr/include/signal.h /usr/include/machine/machparam.h
-diffdir.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/signal.h
-diffdir.o: /usr/include/a.out.h /usr/include/sys/exec.h
-diffreg.o: diffreg.c diff.h /usr/include/stdio.h /usr/include/ctype.h
-diffreg.o: /usr/include/sys/param.h /usr/include/sys/types.h
-diffreg.o: /usr/include/signal.h /usr/include/machine/machparam.h
-diffreg.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/signal.h
-diffreg.o: /usr/include/a.out.h /usr/include/sys/exec.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
