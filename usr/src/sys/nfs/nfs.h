@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	7.9 (Berkeley) %G%
+ *	@(#)nfs.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,8 @@
 #define	NFS_WSIZE	8192		/* Def. write data size <= 8192 */
 #define	NFS_RSIZE	8192		/* Def. read data size <= 8192 */
 #define	NFS_MAXREADDIR	NFS_MAXDATA	/* Max. size of directory read */
-#define	NFS_MAXASYNCDAEMON 20	/* Max. number async_daemons runable */
+#define	NFS_MAXASYNCDAEMON 20		/* Max. number async_daemons runable */
+#define	NFS_DIRBLKSIZ	1024		/* Size of an NFS directory block */
 #define	NMOD(a)		((a) % nfs_asyncdaemons)
 
 /*
