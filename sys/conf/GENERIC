@@ -1,0 +1,56 @@
+#
+# GENERIC VAX
+#
+cpu		"VAX780"
+cpu		"VAX750"
+cpu		"VAX7ZZ"
+ident		GENERIC
+timezone	0
+maxusers	8
+
+config	generic	vmunix
+
+controller	mba0	at nexus ?
+controller	mba1	at nexus ?
+controller	mba2	at nexus ?
+controller	mba3	at nexus ?
+controller	uba0	at nexus ?
+controller	uba1	at nexus ?
+controller	uba2	at nexus ?
+controller	uba3	at nexus ?
+disk		hp0	at mba? drive 0
+disk		hp1	at mba? drive ?
+disk		hp2	at mba? drive ?
+disk		hp3	at mba? drive ?
+master		ht0	at mba? drive ?
+tape		tu0	at ht0 slave 0
+tape		tu1	at ht0 slave 1
+master		mt0	at mba? drive ?
+tape		mu0	at mt0 slave 0
+tape		mu1	at mt0 slave 1
+controller	hk0	at uba? csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+device		lp0	at uba? csr 0177514		vector lpintr
+controller	tm0	at uba? csr 0172520		vector tmintr
+tape		te0	at tm0 drive 0
+tape		te1	at tm0 drive 1
+controller	sc0	at uba? csr 0176700 		vector upintr
+disk		up0	at sc0 drive 0
+disk		up1	at sc0 drive 1
+controller	uda0	at uba? csr 0177550		vector udintr
+disk		ra0	at uda0 drive 0
+disk		ra1	at uda0 drive 1
+device		dn0	at uba? csr 0160020		vector dnintr
+device	 	dh0	at uba? csr 0160020		vector dhrint dhxint
+device	 	dh1	at uba? csr 0160040		vector dhrint dhxint
+device		dz0	at uba? csr 0160100 flags 0xff	vector dzrint dzxint
+device		dz1	at uba? csr 0160110 flags 0xff	vector dzrint dzxint
+device		dz2	at uba? csr 0160120 flags 0xff	vector dzrint dzxint
+device		dz3	at uba? csr 0160130 flags 0xff	vector dzrint dzxint
+device		dz4	at uba? csr 0160140 flags 0xff	vector dzrint dzxint
+device		dz5	at uba? csr 0160150 flags 0xff	vector dzrint dzxint
+device		dz6	at uba? csr 0160160 flags 0xff	vector dzrint dzxint
+device		dz7	at uba? csr 0160170 flags 0xff	vector dzrint dzxint
+controller	zs0	at uba? csr 0172520		vector tsintr
+device		ts0	at zs0 drive 0
