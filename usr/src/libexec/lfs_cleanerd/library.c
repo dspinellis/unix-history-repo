@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,66 +38,62 @@ int	 get_superblock __P((FS_INFO *, struct lfs *));
 int	 pseg_valid __P((FS_INFO *, SEGSUM *));
 
 /*
- * This function will get information on all mounted file systems
- * of a given type.
+ * This function will get information on a a filesystem which matches
+ * the name and type given.  If a "name" is in a filesystem of the given
+ * type, then buf is filled with that filesystem's info, and the
+ * a non-zero value is returned.
  */
 int
-fs_getmntinfo(buf, type)
+fs_getmntinfo(buf, name, type)
 	struct	statfs	**buf;
+	char	*name;
 	int	type;
 {
-	struct statfs *tstatfsp;
-	struct statfs *sbp;
-	int count, i, tcount;
+	/* allocate space for the filesystem info */
+	*buf = (struct statfs *)malloc(sizeof(struct statfs));
+	if (*buf == NULL)
+		return 0;
 
-	tcount = getmntinfo(&tstatfsp, MNT_NOWAIT);
-
-	if (tcount < 0) {
-		err(0, "getmntinfo failed");
-		return (-1);
+	/* grab the filesystem info */
+	if (statfs(name, *buf) < 0) {
+		free(*buf);
+		return 0;
 	}
 
-	for (count = 0, i = 0; i < tcount ; ++i)
-		if (tstatfsp[i].f_type == type)
-			++count;
-
-	if (count) {
-		if (!(*buf = (struct statfs *)
-			malloc(count * sizeof(struct statfs))))
-			err(1, "fs_getmntinfo: out of space");
-		for (i = 0, sbp = *buf; i < tcount ; ++i) {
-			if (tstatfsp[i].f_type == type) {
-				*sbp = tstatfsp[i];
-				++sbp;
-			}
-		}
+	/* check to see if it's the one we want */
+	if (((*buf)->f_type != type) ||
+	    strncmp(name, (*buf)->f_mntonname, MNAMELEN)) {
+		/* "this is not the filesystem you're looking for */
+		free(*buf);
+		return 0;
 	}
-	return (count);
+
+	return 1;
 }
 
 /*
  * Get all the information available on an LFS file system.
- * Returns an array of FS_INFO structures, NULL on error.
+ * Returns an pointer to an FS_INFO structure, NULL on error.
  */
 FS_INFO *
-get_fs_info (lstatfsp, count, use_mmap)
-	struct statfs *lstatfsp;	/* IN: array of statfs structs */
-	int count;			/* IN: number of file systems */
+get_fs_info (lstatfsp, use_mmap)
+	struct statfs *lstatfsp;	/* IN: pointer to statfs struct */
 	int use_mmap;			/* IN: mmap or read */
 {
-	FS_INFO	*fp, *fsp;
+	FS_INFO	*fsp;
 	int	i;
 	
-	fsp = (FS_INFO *)calloc(count, sizeof(FS_INFO));
+	fsp = (FS_INFO *)malloc(sizeof(FS_INFO));
+	if (fsp == NULL)
+		return NULL;
+	bzero(fsp, sizeof(FS_INFO));
 
-	for (fp = fsp, i = 0; i < count; ++i, ++fp) {
-		fp->fi_statfsp = lstatfsp++;
-		if (get_superblock (fp, &fp->fi_lfs))
-			err(1, "get_fs_info: get_superblock failed");
-		fp->fi_daddr_shift =
-		     fp->fi_lfs.lfs_bshift - fp->fi_lfs.lfs_fsbtodb;
-		get_ifile (fp, use_mmap);
-	}
+	fsp->fi_statfsp = lstatfsp;
+	if (get_superblock (fsp, &fsp->fi_lfs))
+		err(1, "get_fs_info: get_superblock failed");
+	fsp->fi_daddr_shift =
+	     fsp->fi_lfs.lfs_bshift - fsp->fi_lfs.lfs_fsbtodb;
+	get_ifile (fsp, use_mmap);
 	return (fsp);
 }
 
@@ -107,18 +103,15 @@ get_fs_info (lstatfsp, count, use_mmap)
  * refresh the file system information (statfs) info.
  */
 void
-reread_fs_info(fsp, count, use_mmap)
-	FS_INFO *fsp;	/* IN: array of fs_infos to free */
-	int count;	/* IN: number of file systems */
+reread_fs_info(fsp, use_mmap)
+	FS_INFO *fsp;	/* IN: prointer fs_infos to reread */
 	int use_mmap;
 {
 	int i;
 	
-	for (i = 0; i < count; ++i, ++fsp) {
-		if (statfs(fsp->fi_statfsp->f_mntonname, fsp->fi_statfsp))
-			err(0, "reread_fs_info: statfs failed");
-		get_ifile (fsp, use_mmap);
-	}
+	if (statfs(fsp->fi_statfsp->f_mntonname, fsp->fi_statfsp))
+		err(0, "reread_fs_info: statfs failed");
+	get_ifile (fsp, use_mmap);
 }
 
 /* 
