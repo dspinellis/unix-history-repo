@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.30 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -49,9 +49,9 @@ struct sysctl_args {
 	int	*name;
 	u_int	namelen;
 	void	*old;
-	u_int	*oldlenp;
+	size_t	*oldlenp;
 	void	*new;
-	u_int	newlen;
+	size_t	newlen;
 };
 
 sysctl(p, uap, retval)
@@ -154,9 +154,9 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
-	u_int newlen;
+	size_t newlen;
 	struct proc *p;
 {
 	int error, level;
@@ -221,9 +221,9 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
-	u_int newlen;
+	size_t newlen;
 	struct proc *p;
 {
 	extern char machine[], cpu_model[];
@@ -260,9 +260,9 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
  */
 sysctl_int(oldp, oldlenp, newp, newlen, valp)
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
-	u_int newlen;
+	size_t newlen;
 	int *valp;
 {
 	int error = 0;
@@ -284,7 +284,7 @@ sysctl_int(oldp, oldlenp, newp, newlen, valp)
  */
 sysctl_rdint(oldp, oldlenp, newp, val)
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
 	int val;
 {
@@ -306,9 +306,9 @@ sysctl_rdint(oldp, oldlenp, newp, val)
  */
 sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
-	u_int newlen;
+	size_t newlen;
 	char *str;
 	int maxlen;
 {
@@ -335,7 +335,7 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
  */
 sysctl_rdstring(oldp, oldlenp, newp, str)
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
 	char *str;
 {
@@ -358,9 +358,8 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
  */
 sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
 	void *oldp;
-	u_int *oldlenp;
-	void *newp;
-	void *sp;
+	size_t *oldlenp;
+	void *newp, *sp;
 	int len;
 {
 	int error = 0;
@@ -380,7 +379,7 @@ sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
  */
 sysctl_file(where, sizep)
 	char *where;
-	int *sizep;
+	size_t *sizep;
 {
 	int buflen, error;
 	struct file *fp;
@@ -431,9 +430,9 @@ sysctl_file(where, sizep)
 
 sysctl_doproc(name, namelen, where, sizep)
 	int *name;
-	int namelen;
+	u_int namelen;
 	char *where;
-	int *sizep;
+	size_t *sizep;
 {
 	register struct proc *p;
 	register struct kinfo_proc *dp = (struct kinfo_proc *)where;
@@ -599,7 +598,7 @@ getkerninfo(p, uap, retval)
 	u_int size;
 
 	if (uap->size &&
-	    error = copyin((caddr_t)uap->size, (caddr_t)&size, sizeof(size)))
+	    (error = copyin((caddr_t)uap->size, (caddr_t)&size, sizeof(size))))
 		return (error);
 
 	switch (uap->op & 0xff00) {
