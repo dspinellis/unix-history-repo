@@ -1,4 +1,4 @@
-/* in_pcb.c 4.4 81/11/20 */
+/* in_pcb.c 4.5 81/11/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,6 +70,10 @@ gotport:
 	inp->inp_lport = lport;
 	insque(head, inp);
 	so->so_pcb = (caddr_t)inp;
+	sin = (struct sockaddr_in *)&so->so_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = inp->inp_laddr;
+	sin->sin_port = inp->inp_lport;
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);

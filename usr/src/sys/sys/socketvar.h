@@ -1,4 +1,4 @@
-/* socketvar.h 4.6 81/11/20 */
+/* socketvar.h 4.7 81/11/20 */
 
 /*
  * Kernel structure per socket.
@@ -23,14 +23,14 @@ struct socket {
 		struct	proc *sb_sel;	/* process selecting read/write */
 		short	sb_flags;	/* flags, see below */
 	} so_rcv, so_snd;
-#define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
-#define	SB_WANT		0x02		/* someone is waiting to lock */
+#define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */ #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
 #define	SB_SEL		0x08		/* buffer is selected */
 #define	SB_COLL		0x10		/* collision selecting */
 	/* need something for async wakeup */
 	short	so_timeo;		/* connection timeout */
 	u_short	so_error;		/* error indicator */
+	struct	sockaddr so_addr;	/* socket address */
 };
 
 /*
