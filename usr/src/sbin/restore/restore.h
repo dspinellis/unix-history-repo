@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-/*	@(#)restore.h	3.5	(Berkeley)	83/03/27	*/
+/*	@(#)restore.h	3.6	(Berkeley)	83/04/11	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -64,6 +64,7 @@ extern struct entry *addentry();
 extern char *myname();
 extern char *savename();
 extern char *gentempname();
+extern char *flagvalues();
 extern ino_t lowerbnd();
 extern ino_t upperbnd();
 #define NIL ((struct entry *)(0))
