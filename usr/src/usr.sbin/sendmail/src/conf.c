@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.131 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.132 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -175,9 +175,11 @@ host_map_init(map, args)
 **  SETUPMAILERS -- initialize default mailers
 */
 
+void
 setupmailers()
 {
 	char buf[100];
+	extern void makemailer();
 
 	strcpy(buf, "prog, P=/bin/sh, F=lsoD, A=sh -c $u");
 	makemailer(buf);
@@ -210,6 +212,7 @@ setupmailers()
 		s->s_mapclass.map_store = store; \
 	}
 
+void
 setupmaps()
 {
 	register STAB *s;
@@ -789,6 +792,7 @@ ttypath()
 **		none (unless you include the usrerr stuff)
 */
 
+int
 checkcompat(to, e)
 	register ADDRESS *to;
 	register ENVELOPE *e;
@@ -856,6 +860,7 @@ setsignal(sig, handler)
 **		Arranges that signals are held.
 */
 
+void
 holdsigs()
 {
 }
@@ -874,6 +879,7 @@ holdsigs()
 **		Arranges that signals are released.
 */
 
+void
 rlsesigs()
 {
 }
@@ -888,6 +894,7 @@ rlsesigs()
 # include	<compat.h>
 #endif
 
+void
 init_md(argc, argv)
 	int argc;
 	char **argv;

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.35 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.36 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.35 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.36 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -536,7 +536,7 @@ smtprcpt(to, m)
 */
 
 static jmp_buf	CtxDataTimeout;
-static int	datatimeout();
+static void	datatimeout();
 
 smtpfinish(m, editfcn)
 	struct mailer *m;
@@ -647,7 +647,7 @@ smtpfinish(m, editfcn)
 }
 
 
-static int
+static void
 datatimeout()
 {
 	longjmp(CtxDataTimeout, 1);

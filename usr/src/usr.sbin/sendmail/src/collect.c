@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -43,7 +43,7 @@ char	*CollectErrorMessage;
 bool	CollectErrno;
 
 static jmp_buf	CtxCollectTimeout;
-static int	collecttimeout();
+static void	collecttimeout();
 static bool	CollectProgress;
 static EVENT	*CollectTimeout;
 
@@ -60,6 +60,7 @@ static EVENT	*CollectTimeout;
 #define MS_BODY		2	/* reading message body */
 
 
+void
 collect(fp, smtpmode, requeueflag, hdrp, e)
 	FILE *fp;
 	bool smtpmode;
@@ -71,7 +72,7 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
 	time_t dbto = smtpmode ? TimeOuts.to_datablock : 0;
 	register char *bp;
-	register int c;
+	int c = '\0';
 	bool inputerr = FALSE;
 	bool headeronly = FALSE;
 	char *buf;
@@ -83,6 +84,8 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 	char bufbuf[MAXLINE];
 	register int workbuflen;
 	extern bool isheader();
+	extern void eatheader();
+	extern void tferror();
 
 	CollectErrorMessage = NULL;
 	CollectErrno = 0;
@@ -291,10 +294,14 @@ nextstate:
 				istate, mstate, buf);
 		switch (mstate)
 		{
+			extern int chompheader();
+
 		  case MS_UFROM:
 			mstate = MS_HEADER;
 			if (strncmp(buf, "From ", 5) == 0)
 			{
+				extern void eatfrom();
+
 				bp = buf;
 				eatfrom(buf, e);
 				continue;
@@ -428,7 +435,11 @@ readerr:
 
 	/* collect statistics */
 	if (OpMode != MD_VERIFY)
+	{
+		extern void markstats();
+
 		markstats(e, (ADDRESS *) NULL);
+	}
 
 	/*
 	**  Add an Apparently-To: line if we have no recipient lines.
@@ -445,6 +456,8 @@ readerr:
 		/*    that or reject the message.... */
 		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
+			extern void addheader();
+
 			if (q->q_alias != NULL)
 				continue;
 			if (tTd(30, 3))
@@ -477,7 +490,7 @@ readerr:
 }
 
 
-static
+static void
 collecttimeout(timeout)
 	time_t timeout;
 {
@@ -503,6 +516,7 @@ collecttimeout(timeout)
 **		Arranges for following output to go elsewhere.
 */
 
+void
 tferror(tf, e)
 	FILE *tf;
 	register ENVELOPE *e;
@@ -577,6 +591,7 @@ char	*MonthList[] =
 	NULL
 };
 
+void
 eatfrom(fm, e)
 	char *fm;
 	register ENVELOPE *e;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2008,7 +2008,7 @@ user_map_lookup(map, key, av, statp)
 		return map_rewrite(map, key, strlen(key), NULL);
 	else
 	{
-		char *rwval;
+		char *rwval = NULL;
 		char buf[30];
 
 		switch (map->map_valcolno)

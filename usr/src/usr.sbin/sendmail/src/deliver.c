@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.123 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.124 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -39,6 +39,7 @@ extern char	SmtpError[];
 **			appropriate action.
 */
 
+void
 sendall(e, mode)
 	ENVELOPE *e;
 	char mode;
@@ -51,7 +52,7 @@ sendall(e, mode)
 	bool announcequeueup;
 	bool oldverbose = Verbose;
 	int pid;
-	char *qid;
+	extern void sendenvelope();
 
 	/*
 	**  If we have had global, fatal errors, don't bother sending
@@ -403,12 +404,12 @@ sendall(e, mode)
 	Verbose = oldverbose;
 }
 
+void
 sendenvelope(e, mode)
 	register ENVELOPE *e;
 	char mode;
 {
 	register ADDRESS *q;
-	char *qf;
 	bool didany;
 
 	/*
@@ -549,7 +550,7 @@ sendenvelope(e, mode)
 
 dofork()
 {
-	register int pid;
+	register int pid = -1;
 
 	DOFORK(fork);
 	return (pid);
@@ -579,6 +580,7 @@ dofork()
 **		The standard input is passed off to someone.
 */
 
+int
 deliver(firstto, editfcn)
 	ADDRESS *firstto;
 	int (*editfcn)();
@@ -593,10 +595,10 @@ deliver(firstto, editfcn)
 	register MCI *mci;
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
-	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
+	ADDRESS *tochain = NULL;	/* users chain in this mailer call */
 	int rcode;			/* response code */
 	char *firstsig;			/* signature of firstto */
-	int pid;
+	int pid = -1;
 	char *curhost;
 	time_t xstart;
 	int mpvect[2];
@@ -1011,7 +1013,7 @@ deliver(firstto, editfcn)
 	{
 #ifdef DAEMON
 		register int i;
-		register u_short port;
+		register u_short port = 0;
 
 		if (pv[0] == NULL || pv[1] == NULL || pv[1][0] == '\0')
 		{
@@ -1038,8 +1040,6 @@ deliver(firstto, editfcn)
 		}
 		if (pv[2] != NULL)
 			port = atoi(pv[2]);
-		else
-			port = 0;
 tryhost:
 			/* see if we already know that this host is fried */
 		st = stab(pvp[1], ST_HOST, ST_FIND);
@@ -2006,7 +2006,7 @@ mailfile(filename, ctladdr, e)
 	register ENVELOPE *e;
 {
 	register FILE *f;
-	register int pid;
+	register int pid = -1;
 	int mode;
 
 	if (tTd(11, 1))
