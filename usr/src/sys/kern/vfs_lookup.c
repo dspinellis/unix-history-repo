@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.41 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -272,12 +272,14 @@ dirloop:
 	if (*cp == '\0' && docache == 0)
 		cnp->cn_flags &= ~MAKEENTRY;
 	if (cnp->cn_namelen == 2 &&
-			cnp->cn_nameptr[1] == '.' && cnp->cn_nameptr[0] == '.')
+	    cnp->cn_nameptr[1] == '.' && cnp->cn_nameptr[0] == '.')
 		cnp->cn_flags |= ISDOTDOT;
-	else cnp->cn_flags &= ~ISDOTDOT;
+	else
+		cnp->cn_flags &= ~ISDOTDOT;
 	if (*ndp->ni_next == 0)
 		cnp->cn_flags |= ISLASTCN;
-	else cnp->cn_flags &= ~ISLASTCN;
+	else
+		cnp->cn_flags &= ~ISLASTCN;
 
 
 	/*
