@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.4 1993/10/16 18:18:03 rgrimes Exp $
+ *	$Id: ufs_vnops.c,v 1.5 1993/10/20 07:31:42 davidg Exp $
  */
 
 #include "param.h"
@@ -55,6 +55,9 @@
 #include "inode.h"
 #include "dir.h"
 #include "fs.h"
+
+/* Get the current value of _POSIX_CHOWN_RESTRICTED */
+#include "sys/unistd.h"		/* make sure to get sys/ version. */
 
 /*
  * Create a regular file
@@ -367,10 +370,16 @@ chown1(vp, uid, gid, p)
 	 * of the file, or are not a member of the target group,
 	 * the caller must be superuser or the call fails.
 	 */
+#ifdef _POSIX_CHOWN_RESTRICTED
 	if ((cred->cr_uid != ip->i_uid || uid != ip->i_uid ||
 	    !groupmember((gid_t)gid, cred)) &&
 	    (error = suser(cred, &p->p_acflag)))
 		return (error);
+#else
+	if ((cred->cr_uid != ip->i_uid || !groupmember((gid_t)gid, cred))
+	    && (error = suser(cred, &p->p_acflag)))
+		return error;
+#endif
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
 #ifdef QUOTA
