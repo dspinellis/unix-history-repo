@@ -1,4 +1,4 @@
-\"	@(#)gathering.me	1.6 %G%
+\"	@(#)gathering.me	1.7 %G%
 .sh 1 "Gathering Profile Data"
 .pp
 Routine calls or statement executions can be measured by having a
@@ -18,7 +18,9 @@ distributed around the code.
 In particular, a monitoring routine can easily be called from separately
 compiled programs.
 In addition, different monitoring routines can be linked into the
-program to assemble different profiling data without having to
+program
+being measured
+to assemble different profiling data without having to
 change the compiler or recompile the program.
 We have exploited this approach;
 our compilers for C, Fortran77, and Pascal can insert calls to a
@@ -94,7 +96,8 @@ information as each arc is identified.
 Therefore, the monitoring routine maintains a table of all the
 arcs discovered, with counts of the numbers of times each is
 traversed during execution.
-This table is accessed once per routine call, so access to it
+This table is accessed once per routine call.
+Access to it
 must be as fast as possible so as not to overwhelm the time
 required to execute the program.
 .pp
@@ -112,9 +115,9 @@ We are fortunate to be running in a virtual memory environment,
 and (for the sake of speed) were able to allocate enough space
 for the primary hash table to allow a one-to-one mapping from
 call site addresses to the primary hash table.
-Thus our hash function was trivial to calculate and collisions
-occurred only for call sites that called to multiple
-destinations (e.g. functional parameters and variables).
+Thus our hash function is trivial to calculate and collisions
+occur only for call sites that call multiple
+destinations (e.g. functional parameters and functional variables).
 A one level hash function using both call site and callee would
 result in an unreasonably large hash table.
 Further, the number of dynamic call sites and callees is not known during
@@ -124,16 +127,17 @@ Not all callers and callees can be identified by the monitoring
 routine.
 Routines that were compiled without the profiling augmentations
 will not call the monitoring routine as part of their prologue,
-and thus no arcs will be recorded whose heads are in these
+and thus no arcs will be recorded whose destinations are in these
 routines.
 One need not profile all the routines in a program.
 Routines that are not profiled run at full speed.
 Certain routines, notably exception handlers, are invoked by
 non-standard calling sequences.
-Thus the monitoring routine may know the head of an arc,
+Thus the monitoring routine may know the destination of an arc
+(the callee),
 but find it difficult or
-impossible to determine the tail of the arc.
-Often in these cases the apparent tail of the arc is not a call
+impossible to determine the source of the arc (the caller).
+Often in these cases the apparent source of the arc is not a call
 site at all.
 Such anomalous invocations are declared ``spontaneous''.
 .sh 2 "Execution Times"
@@ -182,10 +186,10 @@ This assumption may disguise that some calls
 such that its execution is faster (or slower)
 than the average time for that routine.
 .pp
-As the profiled program terminates, 
+When the profiled program terminates, 
 the arc table and the histogram of
 program counter samples is written to a file.
-The arc table is condensed to consist of the head and tail
+The arc table is condensed to consist of the source and destination
 addresses of the arc and the count of the number of times the arc
 was traversed by this execution of the program.
 The recorded histogram consists of counters of the number of
