@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hexdump.1	5.1 (Berkeley) %G%
+.\"	@(#)hexdump.1	5.2 (Berkeley) %G%
 .\"
 .TH HEXDUMP 1 ""
 .UC 7
@@ -284,8 +284,6 @@ output by an ``s'' conversion character with the same field width
 and precision as the original conversion character or conversion
 string but with any ``+'', `` '', or ``#'' conversion flag characters
 removed, and referencing a NULL string.
-Trailng spaces and tabs (possibly interspersed with newlines) are
-not output; the interspersed newlines are.
 .PP
 If no format strings are specified, the default display is equivalent
 to specifying the following format strings:

@@ -14,21 +14,22 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hexdump.h	5.1 (Berkeley) %G%
+ *	@(#)hexdump.h	5.2 (Berkeley) %G%
  */
 
 typedef struct _pr {
 	struct _pr *nextpr;		/* next print unit */
 #define	F_ADDRESS	0x001		/* print offset */
-#define	F_C		0x002		/* %_c */
-#define	F_CHAR		0x004		/* %c */
-#define	F_DBL		0x008		/* %[EefGf] */
-#define	F_INT		0x010		/* %[di] */
-#define	F_P		0x020		/* %_p */
-#define	F_STR		0x040		/* %s */
-#define	F_U		0x080		/* %_u */
-#define	F_UINT		0x100		/* %[ouXx] */
-#define	F_TEXT		0x200		/* no conversions */
+#define	F_BPAD		0x002		/* blank pad */
+#define	F_C		0x004		/* %_c */
+#define	F_CHAR		0x008		/* %c */
+#define	F_DBL		0x010		/* %[EefGf] */
+#define	F_INT		0x020		/* %[di] */
+#define	F_P		0x040		/* %_p */
+#define	F_STR		0x080		/* %s */
+#define	F_U		0x100		/* %_u */
+#define	F_UINT		0x200		/* %[ouXx] */
+#define	F_TEXT		0x400		/* no conversions */
 	u_int flags;			/* flag values */
 	int bcnt;			/* byte count */
 	char *cchar;			/* conversion character */
