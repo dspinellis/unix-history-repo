@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	1.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -45,8 +45,4 @@ cont(x,y){
 
 putch(c){
 	putc(c,stdout);
-}
-abs(a){
-	if(a < 0)return(-a);
-	return(a);
 }
