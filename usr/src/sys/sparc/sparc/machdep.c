@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.2 (Berkeley) %G%
+ *	@(#)machdep.c	8.3 (Berkeley) %G%
  *
- * from: $Header: machdep.c,v 1.42 93/09/29 05:40:34 torek Exp $
+ * from: $Header: machdep.c,v 1.44 93/10/31 05:28:36 torek Exp $
  */
 
 #include <sys/param.h>
@@ -195,9 +195,11 @@ cpu_startup()
 	bufinit();
 
 	/*
-	 * Configure the system.  The cpu code will turn on the cache.
+	 * Configure the system, then turn on the cache.  Should be able
+	 * to do this earlier, but then esp.c fails on SS1+ boxes (??).
 	 */
 	configure();
+	cache_enable();
 }
 
 /*
