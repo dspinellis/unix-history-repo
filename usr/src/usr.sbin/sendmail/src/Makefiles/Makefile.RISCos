@@ -7,14 +7,14 @@
 #
 #	For Mips RISC/os 4.52.
 #
-#	@(#)Makefile.RISCos	8.6 (Berkeley) %G%
+#	@(#)Makefile.RISCos	8.7 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
 O=	-O
 
 # be sure we are compiling in BSD mode
-CC=	cc -systype bsd43
+CC=	cc -systype bsd43 -Olimit 800
 
 # define the database mechanism used for alias lookups:
 #	-DNDBM -- use new DBM
@@ -26,7 +26,7 @@ CC=	cc -systype bsd43
 DBMDEF=	-DNDBM
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-DRISCOS -Olimit 800
+ENVDEF=	-DRISCOS
 
 # see also conf.h for additional compilation flags
 
