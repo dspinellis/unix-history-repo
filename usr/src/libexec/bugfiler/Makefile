@@ -3,31 +3,26 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 # Bug report processor and associated programs
 #
 
-BUGS_NAME = 4bsd-bugs
-BUGS_HOME = @ucbvax.BERKELEY.EDU
-DEFS = -DBUGS_NAME='"$(BUGS_NAME)"' -DBUGS_HOME='"$(BUGS_HOME)"'
-CFLAGS = -O -DUNIXCOMP $(DEFS)
-LIBDIR=	/usr/lib
+CFLAGS = -O -I.
 DESTDIR=
+OBJS=	bugfiler.o error.o gethead.o process.o redist.o reply.o
 
-all: bugfiler unixtomh
+all: bugfiler
 
-bugfiler: bugfiler.c
-	${CC} ${CFLAGS} -DUNIXTOMH='"${LIBDIR}/unixtomh"' -o bugfiler bugfiler.c
+bugfiler: ${OBJS}
+	${CC} ${CFLAGS} -o $@ ${OBJS}
 
-unixtomh: unixtomh.c
-	${CC} ${CFLAGS} -o unixtomh unixtomh.c
-
-install: bugfiler sendbug.sh bugformat unixtomh
-	install -s bugfiler ${DESTDIR}${LIBDIR}/bugfiler
+install: bugfiler sendbug.sh bugformat
+	install -s -m 4755 -o root -g staff bugfiler ${DESTDIR}/usr/lib/bugfiler
 	install -c sendbug.sh ${DESTDIR}/usr/ucb/sendbug
-	install -s unixtomh ${DESTDIR}${LIBDIR}/unixtomh
 	install -c -m 644 bugformat ${DESTDIR}/usr/lib/bugformat
 
 clean:
-	rm -f *.o bugfiler unixtomh
+	rm -f ${OBJS} core bugfiler
+
+${OBJS}: bug.h
