@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS=-O
 TAGSFILE=tags
@@ -24,7 +24,7 @@ install: all
 	install -m 644 libdbm.a $(DESTDIR)/usr/lib
 	install -m 644 libdbm_p.a $(DESTDIR)/usr/lib
 	-cmp -s dbm.h $(DESTDIR)/usr/include/dbm.h || \
-		install -c -m 644 dbm.h $(DESTDIR)/usr/include
+		install -c -m 444 dbm.h $(DESTDIR)/usr/include
 
 tags:
 	ctags -a -f ${TAGSFILE} `pwd`/dbm.c
