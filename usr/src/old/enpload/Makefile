@@ -14,13 +14,13 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	enpload.c
-MAN=
+MAN=	enpload.0
 
 all: enpload
 
@@ -38,6 +38,7 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 enpload ${DESTDIR}/etc/enpload
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8/tahoe
 	install -c -o bin -g bin -m 444 enpcode ${DESTDIR}/etc/enpcode
 
 lint: ${SRCS}
