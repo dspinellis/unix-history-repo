@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)operators.c 1.6 %G%";
+static char sccsid[] = "@(#)operators.c 1.7 %G%";
 /*
  * Tree node classes.
  */
@@ -153,7 +153,7 @@ public Opinfo opinfo[] ={
 /* O_ALIAS */		2,	null,		"alias",
 /* O_ASSIGN */		2,	BINARY,		" := ",
 /* O_CALL */		2,	null,		"call",
-/* O_CATCH */		0,	null,		"catch",
+/* O_CATCH */		1,	null,		"catch",
 /* O_CHFILE */		0,	null,		"file",
 /* O_CONT */		0,	null,		"cont",
 /* O_DEBUG */		0,	null,		"debug",
@@ -163,7 +163,7 @@ public Opinfo opinfo[] ={
 /* O_FUNC */		1,	null,		"func",
 /* O_GRIPE */		0,	null,		"gripe",
 /* O_HELP */		0,	null,		"help",
-/* O_IGNORE */		0,	null,		"ignore",
+/* O_IGNORE */		1,	null,		"ignore",
 /* O_LIST */		2,	null,		"list",
 /* O_PRINT */		1,	null,		"print",
 /* O_PSYM */		1,	null,		"psym",

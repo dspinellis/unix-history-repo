@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)eval.c	1.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)eval.c	1.13 (Berkeley) %G%";
 
 /*
  * Tree evaluation.
@@ -457,7 +457,7 @@ register Node p;
 	    } else if (n2 == nil) {
 		print_alias(n1->value.name);
 	    } else {
-		enter_alias(n1->value.name, n2->value.name);
+		enter_alias(n1->value.name, n2);
 	    }
 	    break;
 

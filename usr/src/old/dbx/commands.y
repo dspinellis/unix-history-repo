@@ -1,8 +1,7 @@
 %{
-
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.11 %G%";
+static char sccsid[] = "@(#)commands.y 1.12 %G%";
 /*
  * Yacc grammar for debugger commands.
  */
@@ -16,6 +15,7 @@ static char sccsid[] = "@(#)commands.y 1.11 %G%";
 #include "scanner.h"
 #include "names.h"
 #include "lists.h"
+#include <signal.h>
 
 private String curformat = "X";
 
@@ -70,7 +70,9 @@ private String curformat = "X";
 %type <y_node>	    event opt_exp_list opt_cond
 %type <y_node>	    exp_list exp term boolean_exp constant address
 %type <y_node>	    alias_command list_command line_number
-%type <y_node>	    search_command pattern
+%type <y_node>	    int_list alias_command list_command line_number
+%type <y_node>	    something search_command pattern
+%type <y_node>	    signal_list signal
 %type <y_cmdlist>   actions
 %type <y_list>      sourcepath
 
@@ -78,15 +80,32 @@ private String curformat = "X";
 
 input:
     input command_nl
+{
+	endshellmode();
+	startaliasing();
+}
 |
     /* empty */
 ;
+
 command_nl:
     command_line '\n'
+{
+	if (istty()) {
+		printf("(%s) ", cmdname);
+		fflush(stdout);
+	}
+}
 |
     command_line ';'
 |
     '\n'
+{
+	if (istty()) {
+		printf("(%s) ", cmdname);
+		fflush(stdout);
+	}
+}
 ;
 
 command_line:
@@ -96,6 +115,7 @@ command_line:
             if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
 	    eval($1);
 	}
+	startaliasing();
 }
 |
     rcommand redirectout
@@ -111,6 +131,7 @@ command_line:
 		eval($1);
 	    }
 	}
+	startaliasing();
 }
 ;
 redirectout:
@@ -134,14 +155,19 @@ command:
 	$$ = $1;
 }
 |
-    ASSIGN term '=' exp
+    ASSIGN stopaliasing term '=' exp
 {
-	$$ = build(O_ASSIGN, $2, $4);
+	$$ = build(O_ASSIGN, $3, $5);
 }
 |
-    CATCH INT
+    CATCH
 {
-	$$ = build(O_CATCH, $2);
+	$$ = build(O_CATCH, nil);
+}
+|
+    CATCH stopaliasing signal_list
+{
+	$$ = build(O_CATCH, $3);
 }
 |
     CONT
@@ -176,7 +202,7 @@ command:
 |
     FUNC symbol
 {
-	$$ = build(O_FUNC, $2);
+	$$ = build(O_FUNC, $3);
 }
 |
     GRIPE
@@ -189,9 +215,14 @@ command:
 	$$ = build(O_HELP);
 }
 |
-    IGNORE INT
+    IGNORE
 {
-	$$ = build(O_IGNORE, $2);
+	$$ = build(O_IGNORE, nil);
+}
+|
+    IGNORE stopaliasing signal_list
+{
+	$$ = build(O_IGNORE, $3);
 }
 |
     list_command
@@ -199,9 +230,9 @@ command:
 	$$ = $1;
 }
 |
-    PSYM term
+    PSYM stopaliasing term
 {
-	$$ = build(O_PSYM, $2);
+	$$ = build(O_PSYM, $3);
 }
 |
     QUIT
@@ -334,11 +365,50 @@ pattern:
 }
 ;
 
+int_list:
+    INT
+{
+	$$ = build(O_COMMA, build(O_LCON, $1), nil);
+}
+|
+    INT int_list
+{
+	$$ = build(O_COMMA, build(O_LCON, $1), $2);
+}
+;
+
+signal_list:
+     signal
+{
+	$$ = build(O_COMMA, $1, nil);
+}
+|
+    signal signal_list
+{
+	$$ = build(O_COMMA, $1, $2);
+}
+;
+
+signal:
+    INT
+{
+	if ($1 < 1 || $1 > NSIG)
+		error("Invalid signal %d.", $1);
+	$$ = build(O_LCON, $1);
+}
+|
+    NAME
+{
+	$$ = build(O_LCON, signalname(ident($1)));
+}
+;
+
 runcommand:
     run { arginit(); } arglist
 |
     run
 ;
+
 run:
     RUN shellmode
 {
@@ -351,7 +421,7 @@ arglist:
     arg
 ;
 arg:
-    NAME
+     NAME
 {
 	newarg(ident($1));
 }
@@ -367,22 +437,22 @@ arg:
 }
 ;
 step:
-    STEP
+    STEP stopaliasing
 {
 	$$ = build(O_STEP, true, false);
 }
 |
-    STEPI
+    STEPI stopaliasing
 {
 	$$ = build(O_STEP, false, false);
 }
 |
-    NEXT
+    NEXT stopaliasing
 {
 	$$ = build(O_STEP, true, true);
 }
 |
-    NEXTI
+    NEXTI stopaliasing
 {
 	$$ = build(O_STEP, false, true);
 }
@@ -433,9 +503,9 @@ cmd:
  * Redirectable commands.
  */
 rcommand:
-    PRINT exp_list
+    PRINT stopaliasing exp_list
 {
-	$$ = build(O_PRINT, $2);
+	$$ = build(O_PRINT, $3);
 }
 |
     WHERE
@@ -469,39 +539,51 @@ rcommand:
 }
 ;
 alias_command:
-    ALIAS name name
+    alias name something
 {
-	$$ = build(O_ALIAS, build(O_NAME, $2), build(O_NAME, $3));
+	$$ = build(O_ALIAS, build(O_NAME, $2), $3);
 }
 |
-    ALIAS name
+    alias name
 {
 	$$ = build(O_ALIAS, build(O_NAME, $2), nil);
 }
 |
-    ALIAS
+    alias
 {
 	$$ = build(O_ALIAS, nil, nil);
 }
 ;
+
+alias:
+     ALIAS stopaliasing
+;
+
+stopaliasing:
+    /* empty */
+{
+	stopaliasing();
+}
+;
+
 trace:
-    TRACE
+    TRACE stopaliasing
 {
 	$$ = O_TRACE;
 }
 |
-    TRACEI
+    TRACEI stopaliasing
 {
 	$$ = O_TRACEI;
 }
 ;
 stop:
-    STOP
+    STOP stopaliasing
 {
 	$$ = O_STOP;
 }
 |
-    STOPI
+    STOPI stopaliasing
 {
 	$$ = O_STOPI;
 }
@@ -562,7 +644,7 @@ opt_exp_list:
 }
 ;
 list_command:
-    LIST
+    list
 {
 	$$ = build(O_LIST,
 	    build(O_LCON, (long) cursrcline),
@@ -570,19 +652,19 @@ list_command:
 	);
 }
 |
-    LIST line_number
+    list line_number
 {
 	$$ = build(O_LIST, $2, $2);
 }
 |
-    LIST line_number ',' line_number
+    list line_number ',' line_number
 {
 	$$ = build(O_LIST, $2, $4);
 }
 |
     LIST symbol
 {
-	$$ = build(O_LIST, $2);
+	$$ = build(O_LIST, $2, nil);
 }
 ;
 line_number:
@@ -906,4 +988,21 @@ keyword:
     SH | SKIP | SOURCE | STATUS | STEP | STEPI |
     STOP | STOPI | TRACE | TRACEI |
     USE | WHATIS | WHEN | WHERE | WHEREIS | WHICH
+;
+
+something:
+    NAME
+{
+	$$ = build(O_NAME, $1);
+}
+|
+    keyword
+{
+	$$ = build(O_NAME, $1);
+}
+|
+    STRING
+{
+	$$ = build(O_SCON, $1);
+}
 ;
