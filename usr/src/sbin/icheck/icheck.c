@@ -1,6 +1,4 @@
-/*###1 [lint] static variable sccsid unused%%%*/
-/*###1 [lint] sccsid defined( icheck.c(1) ), but never used%%%*/
-static	char *sccsid = "@(#)icheck.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.8 (Berkeley) %G%";
 
 /*
  * icheck
@@ -147,8 +145,6 @@ char *file;
 		return;
 	}
 	for (n = 0; n < howmany(cssize(&sblock), BSIZE); n++) {
-/*###148 [lint] calloc value declared inconsistently llib-lc(58) :: icheck.c(148)%%%*/
-/*###148 [lint] calloc value used inconsistently llib-lc(58) :: icheck.c(148)%%%*/
 		sblock.fs_csp[n] = (struct csum *)calloc(1, BSIZE);
 		bread(csaddr(&sblock) + (n * FRAG),
 		      (char *)sblock.fs_csp[n], BSIZE);
@@ -267,10 +263,8 @@ pass1(ip)
 	register int i, j, k, siz;
 
 	i = ip->di_mode & IFMT;
-	if(i == 0) {
-		sblock.fs_nifree++;
+	if(i == 0)
 		return;
-	}
 	switch (i) {
 	case IFCHR:
 		ncfile++;
@@ -403,7 +397,6 @@ bread(bno, buf, cnt)
 	register i;
 
 	lseek(fi, bno*FSIZE, 0);
-/*###402 [lint] lseek value declared inconsistently llib-lc(31) :: icheck.c(402)%%%*/
 	if ((i = read(fi, buf, cnt)) != cnt) {
 		for(i=0; i<BSIZE; i++)
 			buf[i] = 0;

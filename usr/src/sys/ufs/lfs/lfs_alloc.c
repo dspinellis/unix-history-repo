@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.7 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.8 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -39,9 +39,11 @@ alloc(dev, ip, bpref, size)
 	if ((unsigned)size > BSIZE || size % FSIZE != 0)
 		panic("alloc: bad size");
 	fs = getfs(dev);
-	if (size == BSIZE &&
-	    (fs->fs_nbfree == 0 ||
-	    (!suser() && fs->fs_nbfree < fs->fs_nbfree * minfree / 100)))
+	if (size == BSIZE && fs->fs_cstotal.cs_nbfree == 0)
+		goto nospace;
+	if (u.u_uid != 0 &&
+	    fs->fs_cstotal.cs_nbfree * FRAG + fs->fs_cstotal.cs_nffree <
+	      fs->fs_dsize * minfree / 100)
 		goto nospace;
 	if (bpref == 0)
 		cg = itog(ip->i_number, fs);
@@ -77,6 +79,10 @@ realloccg(dev, ip, bprev, bpref, osize, nsize)
 	    (unsigned)nsize > BSIZE || nsize % FSIZE != 0)
 		panic("realloccg: bad size");
 	fs = getfs(dev);
+	if (u.u_uid != 0 &&
+	    fs->fs_cstotal.cs_nbfree * FRAG + fs->fs_cstotal.cs_nffree <
+	      fs->fs_dsize * minfree / 100)
+		goto nospace;
 	if (bprev == 0)
 		panic("realloccg: bad bprev");
 	else
@@ -104,6 +110,7 @@ realloccg(dev, ip, bprev, bpref, osize, nsize)
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return(bp);
 	}
+nospace:
 	/*
 	 * no space available
 	 */
@@ -125,7 +132,7 @@ ialloc(dev, ipref, mode)
 	int cg;
 	
 	fs = getfs(dev);
-	if (fs->fs_nifree == 0)
+	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 	cg = itog(ipref, fs);
 	ino = hashalloc(dev, fs, cg, (long)ipref, mode, ialloccg);
@@ -156,7 +163,7 @@ dirpref(dev)
 	int cg, minndir, mincg, avgifree;
 
 	fs = getfs(dev);
-	avgifree = fs->fs_nifree / fs->fs_ncg;
+	avgifree = fs->fs_cstotal.cs_nifree / fs->fs_ncg;
 	minndir = fs->fs_ipg;
 	mincg = 0;
 	for (cg = 0; cg < fs->fs_ncg; cg++)
@@ -178,7 +185,7 @@ blkpref(dev)
 	int cg, avgbfree;
 
 	fs = getfs(dev);
-	avgbfree = fs->fs_nbfree / fs->fs_ncg;
+	avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
 	for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
 		if (fs->fs_cs(cg).cs_nbfree >= avgbfree) {
 			fs->fs_cgrotor = cg;
@@ -280,8 +287,9 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 			cgp->cg_frsum[i - frags]++;
 		for (i = osize / FSIZE; i < frags; i++) {
 			clrbit(cgp->cg_free, bno + i);
-			cgp->cg_nffree--;
-			fs->fs_nffree--;
+			cgp->cg_cs.cs_nffree--;
+			fs->fs_cstotal.cs_nffree--;
+			fs->fs_cs(cg).cs_nffree--;
 		}
 		fs->fs_fmod++;
 		bdwrite(bp);
@@ -305,15 +313,13 @@ alloccg(dev, fs, cg, bpref, size)
 	int allocsiz;
 	register int i;
 
+	if (fs->fs_cs(cg).cs_nbfree == 0 && size == BSIZE)
+		return (0);
 	bp = bread(dev, cgtod(cg, fs), BSIZE);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
 	if (size == BSIZE) {
-		if (cgp->cg_nbfree == 0) {
-			brelse(bp);
-			return (0);
-		}
 		bno = alloccgblk(dev, fs, cgp, bpref);
 		bdwrite(bp);
 		return (bno);
@@ -332,7 +338,7 @@ alloccg(dev, fs, cg, bpref, size)
 		 * no fragments were available, so a block will be 
 		 * allocated, and hacked up
 		 */
-		if (cgp->cg_nbfree == 0) {
+		if (cgp->cg_cs.cs_nbfree == 0) {
 			brelse(bp);
 			return (0);
 		}
@@ -341,8 +347,9 @@ alloccg(dev, fs, cg, bpref, size)
 		for (i = frags; i < FRAG; i++)
 			setbit(cgp->cg_free, bpref + i);
 		i = FRAG - frags;
-		cgp->cg_nffree += i;
-		fs->fs_nffree += i;
+		cgp->cg_cs.cs_nffree += i;
+		fs->fs_cstotal.cs_nffree += i;
+		fs->fs_cs(cg).cs_nffree += i;
 		cgp->cg_frsum[i]++;
 		bdwrite(bp);
 		return (bno);
@@ -352,8 +359,9 @@ alloccg(dev, fs, cg, bpref, size)
 		return (0);
 	for (i = 0; i < frags; i++)
 		clrbit(cgp->cg_free, bno + i);
-	cgp->cg_nffree -= frags;
-	fs->fs_nffree -= frags;
+	cgp->cg_cs.cs_nffree -= frags;
+	fs->fs_cstotal.cs_nffree -= frags;
+	fs->fs_cs(cg).cs_nffree -= frags;
 	cgp->cg_frsum[allocsiz]--;
 	if (frags != allocsiz)
 		cgp->cg_frsum[allocsiz - frags]++;
@@ -419,8 +427,8 @@ alloccgblk(dev, fs, cgp, bpref)
 	cgp->cg_rotor = bno;
 gotit:
 	clrblock(cgp->cg_free, bno/FRAG);
-	cgp->cg_nbfree--;
-	fs->fs_nbfree--;
+	cgp->cg_cs.cs_nbfree--;
+	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(cgp->cg_cgx).cs_nbfree--;
 	i = bno * NSPF;
 	cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
@@ -440,14 +448,12 @@ ialloccg(dev, fs, cg, ipref, mode)
 	register struct cg *cgp;
 	int i;
 
+	if (fs->fs_cs(cg).cs_nifree == 0)
+		return (0);
 	bp = bread(dev, cgtod(cg, fs), BSIZE);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
-	if (cgp->cg_nifree == 0) {
-		brelse(bp);
-		return (0);
-	}
 	if (ipref) {
 		ipref %= fs->fs_ipg;
 		if (isclr(cgp->cg_iused, ipref))
@@ -467,12 +473,13 @@ ialloccg(dev, fs, cg, ipref, mode)
 	return (0);
 gotit:
 	setbit(cgp->cg_iused, ipref);
-	cgp->cg_nifree--;
-	fs->fs_nifree--;
+	cgp->cg_cs.cs_nifree--;
+	fs->fs_cstotal.cs_nifree--;
 	fs->fs_cs(cg).cs_nifree--;
 	fs->fs_fmod++;
 	if ((mode & IFMT) == IFDIR) {
-		cgp->cg_ndir++;
+		cgp->cg_cs.cs_ndir++;
+		fs->fs_cstotal.cs_ndir++;
 		fs->fs_cs(cg).cs_ndir++;
 	}
 	bdwrite(bp);
@@ -505,8 +512,8 @@ fre(dev, bno, size)
 		if (isblock(cgp->cg_free, bno/FRAG))
 			panic("free: freeing free block");
 		setblock(cgp->cg_free, bno/FRAG);
-		cgp->cg_nbfree++;
-		fs->fs_nbfree++;
+		cgp->cg_cs.cs_nbfree++;
+		fs->fs_cstotal.cs_nbfree++;
 		fs->fs_cs(cg).cs_nbfree++;
 		i = bno * NSPF;
 		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]++;
@@ -526,8 +533,9 @@ fre(dev, bno, size)
 			if (isset(cgp->cg_free, bno + i))
 				panic("free: freeing free frag");
 			setbit(cgp->cg_free, bno + i);
-			cgp->cg_nffree++;
-			fs->fs_nffree++;
+			cgp->cg_cs.cs_nffree++;
+			fs->fs_cstotal.cs_nffree++;
+			fs->fs_cs(cg).cs_nffree++;
 		}
 		/*
 		 * add back in counts associated with the new frags
@@ -539,10 +547,11 @@ fre(dev, bno, size)
 		 * if a complete block has been reassembled, account for it
 		 */
 		if (isblock(cgp->cg_free, bbase / FRAG)) {
-			cgp->cg_nffree -= FRAG;
-			fs->fs_nffree -= FRAG;
-			cgp->cg_nbfree++;
-			fs->fs_nbfree++;
+			cgp->cg_cs.cs_nffree -= FRAG;
+			fs->fs_cstotal.cs_nffree -= FRAG;
+			fs->fs_cs(cg).cs_nffree -= FRAG;
+			cgp->cg_cs.cs_nbfree++;
+			fs->fs_cstotal.cs_nbfree++;
 			fs->fs_cs(cg).cs_nbfree++;
 			i = bbase * NSPF;
 			cgp->cg_b[i / fs->fs_spc]
@@ -576,11 +585,12 @@ ifree(dev, ino, mode)
 	if (isclr(cgp->cg_iused, ino))
 		panic("ifree: freeing free inode");
 	clrbit(cgp->cg_iused, ino);
-	cgp->cg_nifree++;
-	fs->fs_nifree++;
+	cgp->cg_cs.cs_nifree++;
+	fs->fs_cstotal.cs_nifree++;
 	fs->fs_cs(cg).cs_nifree++;
 	if ((mode & IFMT) == IFDIR) {
-		cgp->cg_ndir--;
+		cgp->cg_cs.cs_ndir--;
+		fs->fs_cstotal.cs_ndir--;
 		fs->fs_cs(cg).cs_ndir--;
 	}
 	fs->fs_fmod++;
@@ -653,7 +663,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
  */
 fragacct(fragmap, fraglist, cnt)
 	int fragmap;
-	short fraglist[];
+	long fraglist[];
 	int cnt;
 {
 	int inblk;
