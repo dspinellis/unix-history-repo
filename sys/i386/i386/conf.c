@@ -41,7 +41,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)conf.c	5.8 (Berkeley) 5/12/91
- *	$Id: conf.c,v 1.26 1994/05/15 15:20:19 csgr Exp $
+ *	$Id: conf.c,v 1.27 1994/05/27 06:47:34 sos Exp $
  */
 
 #include "param.h"
@@ -286,7 +286,6 @@ d_close_t comclose;
 d_rdwr_t comread;
 d_rdwr_t comwrite;
 d_ioctl_t comioctl;
-d_select_t comselect;
 #define comreset	(d_reset_t *)enxio
 extern	struct tty *com_tty[];
 #else
@@ -296,7 +295,6 @@ extern	struct tty *com_tty[];
 #define comwrite	(d_rdwr_t *)enxio
 #define comioctl	(d_ioctl_t *)enxio
 #define comreset	(d_reset_t *)enxio
-#define comselect	(d_select_t *)enxio
 #define	com_tty		NULL
 #endif
 
@@ -542,7 +540,7 @@ struct cdevsw	cdevsw[] =
 	  logselect,	nommap,		NULL },
 	{ comopen,	comclose,	comread,	comwrite,	/*8*/
 	  comioctl,	nostop,		comreset,	com_tty, /* com */
-	  comselect,	nommap,		NULL },
+	  ttselect,	nommap,		NULL },
 	{ Fdopen,	fdclose,	rawread,	rawwrite,	/*9*/
 	  fdioctl,	nostop,		nullreset,	NULL,	/* Fd (!=fd) */
 	  seltrue,	nommap,		fdstrategy },
