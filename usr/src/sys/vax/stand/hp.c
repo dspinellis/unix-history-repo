@@ -1,4 +1,4 @@
-/*	hp.c	4.10	83/02/16	*/
+/*	hp.c	4.11	83/02/16	*/
 
 /*
  * RP??/RM?? disk driver
@@ -421,7 +421,7 @@ hpecc(io, flag)
 			byte++;
 			i++;
 			bit -= 8;
-			if ((io->i_flgs & F_ECCLIM) && ecccnt++ >= MAXECC)
+			if ((io->i_flgs & F_ECCLM) && ecccnt++ >= MAXECC)
 				return (1);
 		}
 		return(0);
