@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.18 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -1325,8 +1325,24 @@ optim2( p ) register NODE *p; {
 		 * Try to zap storage conversions of non-float items.
 		 */
 		r = p->in.right;
-		if (r->in.op == SCONV && !anyfloat(r->in.left, r)) {
+		if (r->in.op == SCONV) {
 			int wdest, wconv, wsrc;
+
+			if (anyfloat(r, r->in.left)) {
+				/* let the code table handle two cases */
+				if (p->in.left->in.type == UNSIGNED && 
+					   r->in.type == UNSIGNED) {
+					p->in.right = r->in.left;
+					r->in.op = FREE;
+				} else if ((p->in.left->in.type == FLOAT ||
+					    p->in.left->in.type == DOUBLE) &&
+					   p->in.left->in.type == r->in.type &&
+					   r->in.left->in.type == UNSIGNED) {
+					p->in.right = r->in.left;
+					r->in.op = FREE;
+				}
+				return;
+			}
 			wdest = tlen(p->in.left);
 			wconv = tlen(r);
 			/*
@@ -1340,18 +1356,6 @@ optim2( p ) register NODE *p; {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
 			}
-		} else if (p->in.left->in.type == UNSIGNED && 
-			   r->in.type == UNSIGNED) {
-			/* let the code table handle it */
-			p->in.right = r->in.left;
-			r->in.op = FREE;
-		} else if ((p->in.left->in.type == FLOAT ||
-			    p->in.left->in.type == DOUBLE) &&
-			   p->in.left->in.type == r->in.type &&
-			   r->in.left->in.type == UNSIGNED) {
-			/* let the code table handle it */
-			p->in.right = r->in.left;
-			r->in.op = FREE;
 		}
 		return;
 	}
