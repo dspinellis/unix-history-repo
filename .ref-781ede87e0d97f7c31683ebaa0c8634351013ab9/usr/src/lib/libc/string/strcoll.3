@@ -1,0 +1,41 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strcoll.3	5.3 (Berkeley) %G%
+.\"
+.TH STRCOLL 3 ""
+.UC 4
+.SH NAME
+strcoll \- compare strings according to current collation
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+strcoll(const char *s1, const char *s2);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strcoll
+compares null-terminated strings
+.I s1
+and
+.I s2
+according to the current locale collation
+and returns an integer greater than, equal to, or less than 0,
+according as
+.I s1
+is lexicographically greater than, equal to, or less than
+.IR s2 .
+.SH SEE ALSO
+bcmp(3), memcmp(3), setlocale(3), strcasecmp(3), strcmp(3), strcoll(3),
+strxfrm(3)
+.SH STANDARDS
+.B Strcoll
+conforms to ANSI X3.159-1989 (``ANSI C'').

@@ -1,0 +1,292 @@
+.\" Copyright (c) 1980, 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mount.2	6.10 (Berkeley) %G%
+.\"
+.TH MOUNT 2 ""
+.UC 4
+.SH NAME
+mount, unmount \- mount or remove file system
+.SH SYNOPSIS
+.nf
+#include <sys/mount.h>
+.sp
+.ft B
+mount(type, dir, flags, data)
+int type;
+char *dir;
+int flags;
+caddr_t data;
+.PP
+.ft B
+unmount(dir, flags)
+char *dir;
+int flags;
+.fi
+.SH DESCRIPTION
+.I Mount
+announces to the system that a file system has
+been mounted on the directory
+.IR dir ;
+following the mount, references to directory
+.I dir
+will refer to
+the root directory on the newly mounted file system.
+.I Dir
+is a pointer to a null-terminated string
+containing the appropriate path name
+which must be a directory that already exists.
+Its old contents are inaccessible while the
+file system is mounted.
+.PP
+The
+.I flag
+argument determines whether certain semantics should be
+suppressed when accessing the file system:
+.IP M_RDONLY 14
+The file system should be treated as read-only;
+no writing is allowed (even by the super-user).
+Physically write-protected and magnetic
+tape file systems must be mounted read-only or
+errors will occur when access times are updated,
+whether or not any
+explicit write is attempted.
+.IP M_NOEXEC 14
+Do not allow files to be executed from the file system.
+.IP M_NOSUID 14
+Do not honor setuid or setgid bits on files when executing them.
+.IP M_NODEV 14
+Do not interpret special files on the file system.
+.IP M_SYNCHRONOUS 14
+All I/O to the file system should be done synchronously.
+.PP
+The flag M_UPDATE indicates that the mount command is being applied 
+to an already mounted file system.
+This allows the mount flags to be changed without requiring
+that the file system be unmounted and remounted.
+Some file systems may not allow all flags to be changed.
+For example,
+most file systems will not allow a change from read-write to read-only.
+.PP
+The
+.I type
+argument defines the type of the file system.
+The types of file systems known to the system are defined in
+.IR mount.h .
+.I Data
+is a pointer to a structure that contains the type
+specific arguments to mount.
+The currently supported types of file systems and
+their type specific data are:
+.IP MOUNT_UFS 6
+.nf
+.ta \w'struct  'u +\w'nfsv2fh_t  'u +\w'sockaddr_in *addr  'u
+struct ufs_args {
+	char	*fspec;	/* Block special file to mount */
+	int	exflags;	/* export related flags */
+	uid_t	exroot;	/* mapping for root uid */
+};
+.fi
+.sp
+.IP MOUNT_NFS 6
+.nf
+struct nfs_args {
+	struct	sockaddr_in *addr;	/* file server address */
+	nfsv2fh_t	*fh;	/* File handle to be mounted */
+	int	flags;	/* flags */
+	int	wsize;	/* write size in bytes */
+	int	rsize;	/* read size in bytes */
+	int	timeo;	/* initial timeout in 0.1 secs */
+	int	retrans;	/* times to retry send */
+	char	*hostname;	/* server's name */
+};
+.fi
+.IP MOUNT_MFS 6
+.nf
+struct mfs_args {
+	char	*name;	/* name of backing process */
+	caddr_t	base;	/* base address of the file system */
+	u_long	size;	/* size of the file system */
+};
+.fi
+.sp
+.PP
+.I Umount
+announces to the system that the file system mounted at
+.I dir
+is no longer to contain that file system.
+The associated directory reverts to its ordinary interpretation.
+.PP
+The
+.I flags
+argument may have the following values:
+.IP MNT_NOFORCE 12
+The unmount should fail if any files are active on the file system.
+.IP MNT_FORCE 12
+The file system should be forcibly unmounted even if files are
+still active.
+Active special devices continue to work,
+but any further accesses to any other active files result in errors
+even if the file system is later remounted.
+.SH "RETURN VALUE
+.I Mount
+returns 0 if the action occurred, \-1 if an error occurred.
+The mount can fail if
+.I dir
+does not exist or is not a directory.
+For a
+.I ufs
+file system, the mount can fail if the special device
+specified in the ufs_args structure is
+inaccessible, is not an appropriate file, or is already mounted.
+A
+.I ufs
+or
+.I mfs
+mount can also fail if there are already too many
+file systems mounted.
+.PP
+.I Umount
+returns 0 if the action occurred; \-1 if an error occurred.
+The unmount will fail
+if there are active files in the mounted file system.
+.SH ERRORS
+.I Mount
+will fail when one of the following occurs:
+.TP 15
+[EPERM]
+The caller is not the super-user.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or the entire length of a path name exceeded 1023 characters.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating a pathname.
+.TP 15
+[ENOENT]
+A component of \fIdir\fP does not exist.
+.TP 15
+[ENOTDIR]
+A component of \fIname\fP is not a directory,
+or a path prefix of \fIspecial\fP is not a directory.
+.TP 15
+[EINVAL]
+A pathname contains a character with the high-order bit set.
+.TP 15
+[EBUSY]
+Another process currently holds a reference to
+.IR dir .
+.TP 15
+[EFAULT]
+\fIDir\fP points outside the process's allocated address space.
+.PP
+The following errors can occur for a
+.I ufs
+file system mount:
+.TP 15
+[ENODEV]
+A component of ufs_args \fIfspec\fP does not exist.
+.TP 15
+[ENOTBLK]
+.I Fspec
+is not a block device.
+.TP 15
+[ENXIO]
+The major device number of 
+.I fspec
+is out of range (this indicates no device driver exists
+for the associated hardware).
+.TP 15
+[EBUSY]
+\fIFspec\fP is already mounted.
+.TP 15
+[EMFILE]
+No space remains in the mount table.
+.TP 15
+[EINVAL]
+The super block for the file system had a bad magic
+number or an out of range block size.
+.TP 15
+[ENOMEM]
+Not enough memory was available to read the cylinder
+group information for the file system.
+.TP 15
+[EIO]
+An I/O error occurred while reading the super block or
+cylinder group information.
+.TP 15
+[EFAULT]
+\fIFspec\fP points outside the process's allocated address space.
+.PP
+The following errors can occur for a
+.I nfs
+file system mount:
+.TP 15
+[ETIMEDOUT]
+.I Nfs
+timed out trying to contact the server.
+.TP 15
+[EFAULT]
+Some part of the information described by nfs_args
+points outside the process's allocated address space.
+.PP
+The following errors can occur for a
+.I mfs
+file system mount:
+.TP 15
+[EMFILE]
+No space remains in the mount table.
+.TP 15
+[EINVAL]
+The super block for the file system had a bad magic
+number or an out of range block size.
+.TP 15
+[ENOMEM]
+Not enough memory was available to read the cylinder
+group information for the file system.
+.TP 15
+[EIO]
+An paging error occurred while reading the super block or
+cylinder group information.
+.TP 15
+[EFAULT]
+\fIName\fP points outside the process's allocated address space.
+.PP
+.I Umount
+may fail with one of the following errors:
+.TP 15
+[EPERM]
+The caller is not the super-user.
+.TP 15
+[ENOTDIR]
+A component of the path is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EINVAL]
+The requested directory is not in the mount table.
+.TP 15
+[EBUSY]
+A process is holding a reference to a file located
+on the file system.
+.TP 15
+[EIO]
+An I/O error occurred while writing cached file system information.
+.TP 15
+[EFAULT]
+\fIDir\fP points outside the process's allocated address space.
+.SH "SEE ALSO"
+mount(8), umount(8), mfs(8)
+.SH BUGS
+Some of the error codes need translation to more obvious messages.

@@ -1,0 +1,39 @@
+#print
+Each 'w' command typed so far has written the edited material
+back on the same file that it came from originally.
+This can be changed by giving a filename on the 'w' command:
+  w camden
+will write the current editor buffer
+on file 'camden'.  What does the following
+sequence of commands do?
+   ed old
+   w new
+   q
+As you can see, it picks up file 'old', and
+writes it on file 'new'.  It has the same effect
+as
+   cp old new
+does.
+
+In this directory there is a file named "old".
+Copy that file to file "new" with the editor, using
+the commands given above.  Check by printing
+both files with "cat" that they are the same.
+Type "ready" when done.
+#create Ref
+Four score and seven years ago our
+fathers brought forth on this continent
+a new nation, conceived in liberty and
+dedicated to the proposition that
+all men are created equal.
+#create old
+Four score and seven years ago our
+fathers brought forth on this continent
+a new nation, conceived in liberty and
+dedicated to the proposition that
+all men are created equal.
+#user
+#cmp old new
+#log
+#next
+12.2b 5

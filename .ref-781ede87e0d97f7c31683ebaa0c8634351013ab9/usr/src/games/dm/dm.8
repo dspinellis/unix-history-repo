@@ -1,0 +1,51 @@
+.\" Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dm.8	5.9 (Berkeley) %G%
+.\"
+.TH DM 8 ""
+.UC 8
+.SH NAME
+dm \- dungeon master
+.SH SYNOPSIS
+.B ln -s dm game
+.SH DESCRIPTION
+.I Dm
+is a program used to regulate game playing.
+.I Dm
+expects to be invoked with the name of a game that a user wishes to play.
+This is done by creating symbolic links to
+.IR dm ,
+in the directory ``/usr/games'' for all of the regulated games.
+The actual binaries for these games should be placed in a ``hidden''
+directory, ``/usr/games/hide'', that may only be accessed by the
+.I dm
+program.
+.I Dm
+determines if the requested game is available and, if so, runs it.
+The file ``/etc/dm.conf'' controls the conditions under which games may
+be run.
+.PP
+The file ``/etc/nogames'' may be used to ``turn off'' game playing.
+If the file exists, no game playing is allowed; the contents of the file
+will be displayed to any user requesting a game.
+.SH FILES
+.nf
+.ta \w'/var/log/games.log 'u
+/etc/dm.conf	\- configuration file
+/etc/nogames	\- turns off game playing
+/usr/games/hide	\- directory of ``real'' binaries
+/var/log/games.log	\- game logging file
+.SH SEE ALSO
+dm.conf(5)
+.SH BUGS
+Two problems result from \fIdm\fP running the games setuid ``games''.
+First, all games that allow users to run UNIX commands should carefully
+set both the real and effective user id's immediately before executing
+those commands.  Probably more important is that \fIdm\fP never be setuid
+anything but ``games'' so that compromising a game will result only in
+the user's ability to play games at will.  Secondly, games which previously
+had no reason to run setuid and which accessed user files may have to
+be modified.

@@ -1,0 +1,86 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)intro.4	5.1 (Berkeley) %G%
+.\"
+.TH INTRO 4 ""
+.UC 7
+.SH NAME
+intro \- introduction to special files and hardware support
+.SH DESCRIPTION
+This section describes the special files, related driver functions,
+and networking support
+available in the system.
+In this part of the manual, the SYNOPSIS section of
+each configurable device gives a sample specification
+for use in constructing a system description for the
+.IR config (8)
+program.
+The DIAGNOSTICS section lists messages which may appear on the console
+and/or in the system error log
+.I /usr/adm/messages
+due to errors in device operation;
+see
+.IR syslogd (8)
+for more information.
+.PP
+This section contains both devices
+which may be configured into the system, ``4'' entries,
+and network related information,
+``4N'', ``4P'', and ``4F'' entries;
+The networking support is introduced in
+.IR intro (4N).
+.SH "HP DEVICE SUPPORT"
+This section describes the hardware supported on the HP 9000/300 series.
+Software support for these devices comes in two forms.  A hardware
+device may be supported with a character or block
+.IR "device driver" ,
+or it may be used within the networking subsystem and have a
+.IR "network interface driver" .
+Block and character devices are accessed through files in the file
+system of a special type; c.f.
+.IR mknod (8).
+Network interfaces are indirectly accessed through the interprocess
+communication facilities provided by the system; see
+.IR socket (2).
+.PP
+A hardware device is identified to the system at configuration time
+and the appropriate device or network interface driver is then compiled
+into the system.  When the resultant system is booted, the
+autoconfiguration facilities in the system probe for the device
+and, if found, enable the software support for it.
+If a device does not respond at autoconfiguration
+time it is not accessible at any time afterwards.
+To enable a device which did not autoconfigure,
+the system will have to be rebooted.
+.PP
+The autoconfiguration system is described in
+.IR autoconf (4).
+A list of the supported devices is given below.
+.SH SEE ALSO
+intro(4),
+intro(4N),
+autoconf(4),
+config(8).
+.PP
+Building 4.3BSD UNIX Systems with \fIConfig\fP (SMM:2)
+.SH "LIST OF DEVICES"
+The devices listed below are supported in this incarnation of
+the system.  Pseudo-devices are not listed.
+Devices are indicated by their functional interface.
+Occasionally, new devices of a similar type may be added
+simply by creating appropriate table entries in the driver;
+e.g. new CS/80 drives.
+.sp
+.ta 1.0i
+.nf
+ct	7946/9144 CS/80 cartridge tape
+dca	98644 built-in serial interface
+dma	98620B DMA controller
+grf/ite	Topcat/Gatorbox/Renaissance frame buffer
+hil	HIL interface
+hpib	Built-in and 98625 HP-IB interface
+le	98643 Lance-based ethernet interface
+ppi	HP-IB printer/plotter interface
+rd	CS/80 disk interface

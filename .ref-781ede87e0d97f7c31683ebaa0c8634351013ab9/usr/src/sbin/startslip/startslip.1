@@ -1,0 +1,43 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)startslip.1	5.1 (Berkeley) %G%
+.\"
+.TH STARTSLIP 1 ""
+.UC 7
+.SH NAME
+startslip \- dial up and log in to a slip server
+.SH SYNOPSIS
+.B startslip
+[
+.B \-d
+] [
+.B \-s
+string
+]
+dev user passwd
+.SH DESCRIPTION
+.I Startslip
+opens the specified device.
+If the
+.B \-s
+option is specified, the optional string is written to the device.
+For a dialup modem,
+the string is used to specify a dial sequence.
+Once carrier is asserted
+.I startslip
+attempts to login as the specified user with the given password.
+If successful, it sets the device into the slip line discipline.
+If carrier drops and a SIGHUP is sent to
+.I startslip ,
+it closes the device and attempts to repeat the dialup and login sequence.
+.PP
+If the
+.B \-d
+option is specified,
+.B startslip
+prints out debugging information about what it is trying to do.
+.SH "SEE ALSO"
+sliplogin(8)

@@ -1,0 +1,41 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)echo.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ECHO 1
+.Os 4.4
+.Sh NAME
+.Nm echo
+.Nd write arguments to the standard output
+.Sh SYNOPSIS
+.Nm echo
+.Op Fl n
+.Op string\& ...
+.Sh DESCRIPTION
+The
+.Nm
+utility writes its arguments to standard output,
+followed by a <newline> character.
+If there are no arguments,
+only the <newline> character is written.
+.Pp
+The following option is available:
+.Tw Ds
+.Tp Fl n
+The output is not terminated with a newline.
+.Tp
+.Pp
+The argument
+.Ar string
+defines a string to be written to standard output.
+.Pp
+.Nm Echo
+utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
+The
+.Nm echo
+function is expected to be POSIX 1003.2 compatible.

@@ -1,0 +1,47 @@
+#print
+On the right side of a substitute, none of the other
+special characters mean anything unusual.  Thus, if you wanted to
+replace the letter 'a' by an asterisk, for example, the obvious
+com and would work:
+
+s/a/*/p
+
+Try, in the file "data", replacing the comma on the last line
+with a period.  Then rewrite the file and type "ready".
+#create Ref
+ Square Roots
+1.00 1.00
+2.00 1.42
+3.00 1.73
+4.00 2.00
+You really shouldn't be
+printing all of this file -
+did you forget that '$' is
+the address of the last
+line of a file?
+Use that instead of printing everything.
+5.00 2.23
+6.00 2.45
+7.00 2.65
+8.00 2.83
+#create data
+ Square Roots
+1.00 1.00
+2.00 1.42
+3.00 1.73
+4.00 2.00
+You really shouldn't be
+printing all of this file -
+did you forget that '$' is
+the address of the last
+line of a file?
+Use that instead of printing everything.
+5.00 2.23
+6.00 2.45
+7.00 2.65
+8.00 2,83
+#user
+#cmp data Ref
+#log
+#next
+36.2d 5

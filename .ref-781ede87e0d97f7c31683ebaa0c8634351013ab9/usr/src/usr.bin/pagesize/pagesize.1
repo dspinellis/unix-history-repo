@@ -1,0 +1,27 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pagesize.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PAGESIZE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm pagesize
+.Nd print system page size
+.Sh SYNOPSIS
+.Nm pagesize
+.Sh DESCRIPTION
+.Nm Pagesize
+prints the size of a page of memory in bytes, as
+returned by
+.Xr getpagesize  2  .
+This program is useful in constructing portable
+shell scripts.
+.Sh SEE ALSO
+.Xr getpagesize 2
+.Sh HISTORY
+.Nm Pagesize
+appeared in 4.2 BSD.

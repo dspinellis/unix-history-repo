@@ -1,0 +1,263 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)route.8	6.10 (Berkeley) %G%
+.\"
+.TH ROUTE 8 ""
+.UC 5
+.SH NAME
+route \- manually manipulate the routing tables (Interim)
+.SH SYNOPSIS
+.B route
+[
+.B \-n
+] [
+.B \-q
+] [
+.B \-v
+]
+.I command
+[ [
+.I modifiers
+]
+.I args
+]
+.SH DESCRIPTION
+.I Route
+is a program used to manually manipulate the network
+routing tables.  It normally is not needed, as the
+system routing table management daemon,
+.IR routed (8C),
+should tend to this task.
+.PP
+.I Route
+accepts six commands:
+.IR add ,
+to add a route,
+.IR flush ,
+to remove all routes,
+.IR delete ,
+to delete a specific route,
+.IR change ,
+to changes aspects of a route (such as its gateway),
+.IR get ,
+to lookup and display the route for a destination,
+and
+.IR monitor ,
+to continuously report any changes to the routing information base,
+routing lookup misses, or suspected network partionings.
+.PP
+The monitor command has the syntax
+.ti +0.25i
+.B route 
+[
+.B -n 
+]
+.B monitor
+.PP
+The flush command has the syntax
+.ti +0.25i
+.B route
+[
+.B -n
+]
+[
+.B -n
+]
+.B flush
+[
+.I family
+]
+.PP
+where the address family may be specified by any of the
+.BR -osi ,
+.BR -xns ,
+or
+.B -inet
+keywords.
+.PP
+The other commands have the following syntax:
+.PP
+.ti +0.25i
+.B route 
+[
+.I -n 
+]
+.I command
+[
+.B -net
+|
+.B -host
+]
+.I destination gateway
+.PP
+where
+.I destination
+is the destination host or network,
+.I gateway
+is the next-hop gateway to which packets should be addressed.
+Routes to a particular host are distinguished from those to
+a network by interpreting the Internet address associated with
+.IR destination .
+The optional keywords
+.B -net
+and
+.B -host
+force the destination to be interpreted as a network or a host, respectively.
+Otherwise, if the 
+.I destination
+has a ``local address part'' of INADDR_ANY,
+or if the
+.I destination
+is the symbolic name of a network, then the route is
+assumed to be to a network; otherwise, it is presumed to be a
+route to a host.
+.PP
+For example,
+128.32 is interpreted as
+.I -host
+128.0.0.32,
+128.32.130 is interpreted as
+.I -host
+128.32.0.130;
+.I -net 128.32
+is interpreted as
+128.32.0.0,
+and 
+.I -net 128.32.130
+is interpreted as
+128.32.130.0.
+.PP
+If the route is via an interface rather than
+via a gateway, the 
+.I -interface
+modifier should be specified;
+the gateway given is the address of this host on the common network,
+indicating the interface to be used for transmission.
+.PP
+The optional modifiers
+.I -xns,
+and
+.I -osi
+specify that all subsequent addresses are in the XNS or OSI address families,
+and the names must be numeric specifications rather than
+symbolic names.
+.PP
+The optional
+.I -netmask
+qualifier is intended
+to acheieve the effect of an OSI ESIS redirect with the netmask option.
+One specifies an additional ensuing address parameter
+(to be interpreted as a network mask).
+One can override the implicit network mask generated in the inet case
+by making sure this option follows the destination parameter.
+.PP
+The optional modifiers
+.IR -rtt ,
+.IR -rttvar ,
+.IR -sendpipe ,
+.IR -recvpipe ,
+.IR -mtu ,
+.IR -hopcount ,
+.IR -expire ,
+and
+.I -ssthresh 
+provide initial values to metrics maintained in the routing entry.
+These may be individually locked by preceding each such modifier to
+be locked by
+the
+.I -lock
+meta-modifier, or one can 
+specify that all ensuing metrics may be locked by the
+.I -lockrest
+meta-modifier.
+.PP
+In a
+.IR change or
+.I add
+command where the destination and gateway are not sufficient to specify
+the route (as in the ISO case where several interfaces may have the
+same address), the
+.IR -ifp or
+.I -ifa
+modifiers may be used to determine the interface or interface address.
+.PP
+All symbolic names specified for a
+.I destination 
+or 
+.I gateway
+are looked up first as a host name using
+.IR gethostbyname (3N).
+If this lookup fails,
+.IR getnetbyname (3N)
+is then used to interpret the name as that of a network.
+.PP
+.I Route
+uses a routing socket and the new message types
+RTM_ADD, RTM_DELETE, RTM_GET, and RTM_CHANGE.
+As such, only the super-user may modify
+the routing tables.
+.PP
+If the 
+.B flush
+command is specified, 
+.I route
+will ``flush'' the routing tables of all gateway entries.
+One can choose to flush only those routes whose destinations
+are of a given address family, by specifying an optional keyword
+describing which address family.
+.PP
+The
+.B \-n
+option prevents attempts to print host and network names symbolically
+when reporting actions.
+The
+.B \-v
+option causes additional details to be printed.
+The
+.B \-q
+option supresses all output.
+.SH DIAGNOSTICS
+``\fBadd [ host | network ] %s: gateway %s flags %x\fP''
+.br
+The specified route is being added to the tables.  The
+values printed are from the routing table entry supplied
+in the 
+.I ioctl
+call.
+If the gateway address used was not the primary address of the gateway
+(the first one returned by
+.IR gethostbyname ),
+the gateway address is printed numerically as well as symbolically.
+.PP
+``\fBdelete [ host | network ] %s: gateway %s flags %x\fP''
+.br
+As above, but when deleting an entry.
+.PP
+``\fB%s %s done\fP''
+.br
+When the 
+.B flush
+command is specified, each routing table entry deleted
+is indicated with a message of this form.
+.PP
+``\fBNetwork is unreachable\fP''
+.br
+An attempt to add a route failed because the gateway listed was not
+on a directly-connected network.
+The next-hop gateway must be given.
+.PP
+``\fBnot in table\fP''
+.br
+A delete operation was attempted for an entry which
+wasn't present in the tables.
+.PP
+``\fBrouting table overflow\fP''
+.br
+An add operation was attempted, but the system was
+low on resources and was unable to allocate memory
+to create the new entry.
+.SH "SEE ALSO"
+netintro(4), route(4), esis(4), routed(8), XNSrouted(8)

@@ -1,0 +1,148 @@
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lookbib.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LOOKBIB 1
+.Os BSD 4.2
+.Sh NAME
+.Nm indxbib , lookbib
+.Nd build inverted index for a bibliography,
+find references in a bibliography
+.Sh SYNOPSIS
+.Nm indxbib
+.Ar database ...
+.Nm lookbib
+.Op Fl n
+.Ar database
+.Sh DESCRIPTION
+.Nm Indxbib
+builds an inverted index to the named
+.Ar databases
+(or files), which can then be
+used by
+.Nm lookbib
+and
+.Xr refer  1  .
+The files are assumed to be
+.Xr refer
+style bibliographic databases
+(see
+.Xr addbib 1 ) .
+.Pp
+.Nm Indxbib
+is a shell script which calls
+.Nm mkey
+and
+.Nm inv .
+The first program,
+.Nm mkey ,
+truncates words to 6 characters,
+and maps upper case to lower case.
+It also discards words shorter than 3 characters,
+words among the 100 most common English words,
+and numbers (dates) < 1900 or > 2000.
+These parameters can be changed; see page 4 of a
+.Em Refer
+document by Mike Lesk (See the SEE ALSO section below).
+The second program,
+.Nm inv ,
+creates an entry file
+.Cx \&(
+.Ar file
+.Cx .ia),
+.Cx
+a posting file
+.Cx \&(
+.Ar file
+.Cx .ib),
+.Cx
+and a tag file
+.Cx \&(
+.Ar file
+.Cx .ic),
+.Cx
+all in the working directory.
+.Pp
+.Nm Lookbib
+uses an inverted index made by
+.Nm indxbib
+to find sets of bibliographic references.
+It reads keywords typed after the ``>'' prompt on the terminal,
+and retrieves records containing all these keywords.
+If nothing matches, nothing is returned except another ``>'' prompt.
+.Pp
+.Nm Lookbib
+will ask if you need instructions, and will print some brief information if
+you reply ``y''.  The
+.Fl n
+flag turns off the prompt for instructions.
+.Pp
+It is possible to search multiple databases,
+as long as they have a common index made by
+.Nm indxbib .
+In that case, only the first argument given to
+.Nm indxbib
+is specified to
+.Nm lookbib .
+.Pp
+If
+.Nm lookbib
+does not find the index files (the 
+.Cx \&(
+.Ar file
+.Cx .i[abc]
+.Cx
+files),
+it looks for a reference file with the same name as the argument,
+without the suffixes.
+It creates a file with a
+`.ig' suffix, suitable for use with
+.Xr fgrep 1 .
+It then uses this fgrep file to find references.
+This method is simpler to use, but the 
+.Cx Ar file
+.Cx .ig
+.Cx
+is slower to use
+than the 
+.Cx Ar file
+.Cx .i[abc]
+.Cx
+files, and does not allow the use of multiple reference files.
+.Sh FILES
+.Dw /usr/libexec/mkey
+.Di L
+.Dp Pa \&*.ia
+entry file
+.Dp Pa \&*.ib
+posting file
+.Dp Pa \&*.ic
+tag file
+.Dp Pa \&*.ig
+ascii file created if index files not found.
+.Dp Pa /usr/libexec/mkey
+make keys program
+.Dp Pa /usr/libexec/inv
+hash and invert program
+.Dp
+.Sh SEE ALSO
+.Xr refer 1 ,
+.Xr addbib 1 ,
+.Xr sortbib 1 ,
+.Xr roffbib 1 ,
+.Xr lookbib 1
+.Sh BUGS
+More than one blank line in between citations
+can wreak havoc.
+.Pp
+Probably all dates should be indexed,
+since many disciplines refer to literature
+written in the 1800s or earlier.
+.Sh HISTORY
+A
+.Nm lookbib
+appeared in Version 32 AT&T Unix.

@@ -1,0 +1,168 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strftime.3	5.8 (Berkeley) %G%
+.\"
+.TH STRFTIME 3 "%Q"
+.AT 3
+.SH NAME
+strftime \- format date and time
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <time.h>
+#include <string.h>
+
+size_t
+strftime(char *s, size_t maxsize, const char *format,
+	const struct tm *timeptr);
+.ft R
+.fi
+.SH DESCRIPTION
+The
+.I strftime
+function formats the information from
+.I timeptr
+into the buffer
+.I buf
+according to the string pointed to by
+.IR format .
+.PP
+The
+.I format
+string consists of zero or more conversion specifications and
+ordinary characters.
+All ordinary characters are copied directly into the buffer.
+A conversion specification consists of a percent sign (``%'')
+and one other character.
+.PP
+No more than
+.I maxsize
+characters will be placed into the array.
+If the total number of resulting characters, including the terminating
+null character, is not more than
+.IR maxsize ,
+.I strftime
+returns the number of characters in the array, not counting the
+terminating null.
+Otherwise, zero is returned.
+.PP
+Each conversion specification is replaced by the characters as
+follows which are then copied into the buffer.
+.TP
+.B %A
+is replaced by the full weekday name.
+.TP
+.B %a
+is replaced by the abbreviated weekday name, where the abbreviation
+is the first three characters.
+.TP
+.B %B
+is replaced by the full month name.
+.TP
+.B %b or %h
+is replaced by the abbreviated month name, where the abbreviation is
+the first three characters.
+.TP
+.B %C
+is equivalent to ``%a %b %e %H:%M:%S %Y'' (the format produced by
+.IR asctime (3).
+.TP
+.B %c
+is equivalent to ``%m/%d/%y''.
+.TP
+.B %D
+is replaced by the date in the format ``mm/dd/yy''.
+.TP
+.B %d
+is replaced by the day of the month as a decimal number (01-31).
+.TP
+.B %e
+is replaced by the day of month as a decimal number (1-31); single
+digits are preceded by a blank.
+.TP
+.B %H
+is replaced by the hour (24-hour clock) as a decimal number (00-23).
+.TP
+.B %I
+is replaced by the hour (12-hour clock) as a decimal number (01-12).
+.TP
+.B %j
+is replaced by the day of the year as a decimal number (001-366).
+.TP
+.B %k
+is replaced by the hour (24-hour clock) as a decimal number (0-23);
+single digits are preceded by a blank.
+.TP
+.B %l
+is replaced by the hour (12-hour clock) as a decimal number (01-12);
+single digits are preceded by a blank.
+.TP
+.B %M
+is replaced by the minute as a decimal number (00-59).
+.TP
+.B %m
+is replaced by the month as a decimal number (01-12).
+.TP
+.B %n
+is replaced by a newline.
+.TP
+.B %p
+is replaced by either ``AM'' or ``PM'' as appropriate.
+.TP
+.B %R
+is equivalent to ``%H:%M''.
+.TP
+.B %r
+is equivalent to ``%I:%M:%S %p''.
+.TP
+.B %t
+is replaced by a tab.
+.TP
+.B %S
+is replaced by the second as a decimal number (00-60).
+.TP
+.B %s
+is replaced by the number of seconds since the Epoch, UCT (see
+.IR mktime (3)).
+.TP
+.B %T or %X
+is equivalent to ``%H:%M:%S''.
+.TP
+.B %U
+is replaced by the week number of the year (Sunday as the first day of
+the week) as a decimal number (00-53).
+.TP
+.B %W
+is replaced by the week number of the year (Monday as the first day of
+the week) as a decimal number (00-53).
+.TP
+.B %w
+is replaced by the weekday (Sunday as the first day of the week)
+as a decimal number (0-6).
+.TP
+.B %x
+is equivalent to ``%m/%d/%y %H:%M:%S''.
+.TP
+.B %Y
+is replaced by the year with century as a decimal number.
+.TP
+.B %y
+is replaced by the year without century as a decimal number (00-99).
+.TP
+.B %Z
+is replaced by the time zone name.
+.TP
+.B %%
+is replaced by ``%''.
+.SH "SEE ALSO"
+date(1), ctime(3), printf(1), printf(3)
+.SH BUGS
+There is no conversion specification for the phase of the moon.
+.SH STANDARDS
+.B Strftime
+conforms to ANSI X3.159-1989 (``ANSI C'').
+The ``%s'' conversion specification is an extension.

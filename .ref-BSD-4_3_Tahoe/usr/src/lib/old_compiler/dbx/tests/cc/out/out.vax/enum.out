@@ -1,0 +1,10 @@
+reading symbolic information ...
+typedef enum { RED, GREEN, BLUE } Color;
+Color c;
+[1] stop in f
+[1] stopped in f at line 14
+   14       printf("c = %d\n", c);
+f(c = RED), line 14 in "enum.c"
+main(0x1, 0x7fffebe8, 0x7fffebf0), line 8 in "enum.c"
+RED 
+BLUE 

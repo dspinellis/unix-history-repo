@@ -1,0 +1,195 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)dc.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DC 1
+.Os ATT 7th
+.Sh NAME
+.Nm dc
+.Nd desk calculator
+.Sh SYNOPSIS
+.Nm dc
+.Op  file
+.Sh DESCRIPTION
+.Nm Dc
+is an arbitrary precision arithmetic package.
+Ordinarily it operates on decimal integers,
+but one may specify an input base, output base,
+and a number of fractional digits to be maintained.
+The overall structure of
+.Nm dc
+is
+a stacking (reverse Polish) calculator.
+If an argument is given,
+input is taken from that file until its end,
+then from the standard input.
+The following constructions are recognized:
+.Tw Fl
+.Tp Va number
+The value of the number is pushed on the stack.
+A number is an unbroken string of the digits 0-9.
+It may be preceded by an underscore _ to input a
+negative number.
+Numbers may contain decimal points.
+.Tp Li \&+  \&\- \&/  \&*  \&%  \&^
+The
+top two values on the stack are added
+(+),
+subtracted
+(\-),
+multiplied (*),
+divided (/),
+remaindered (%),
+or exponentiated (^).
+The two entries are popped off the stack;
+the result is pushed on the stack in their place.
+Any fractional part of an exponent is ignored.
+.Tc Ic s
+.Ar x
+.Cx
+The
+top of the stack is popped and stored into
+a register named
+.Ar x ,
+where
+.Ar x
+may be any character.
+If
+the
+.Ar s
+is capitalized,
+.Ar x
+is treated as a stack and the value is pushed on it.
+.Tc Ic l
+.Ar x
+.Cx
+The
+value in register
+.Ar x
+is pushed on the stack.
+The register
+.Ar x
+is not altered.
+All registers start with zero value.
+If the
+.Ar l
+is capitalized,
+register
+.Ar x
+is treated as a stack and its top value is popped onto the main stack.
+.Tp Ic d
+The
+top value on the stack is duplicated.
+.Tp Ic p
+The top value on the stack is printed.
+The top value remains unchanged.
+.Ar P
+interprets the top of the stack as an ascii string,
+removes it, and prints it.
+.Tp Ic f
+All values on the stack and in registers are printed.
+.Tp Ic q
+exits the program.
+If executing a string, the recursion level is
+popped by two.
+If
+.Ar q
+is capitalized,
+the top value on the stack is popped and the string execution level is popped
+by that value.
+.Tp Ic x
+treats the top element of the stack as a character string
+and executes it as a string of dc commands.
+.Tp Ic X
+replaces the number on the top of the stack with its scale factor.
+.Tp Op \&...
+puts the bracketed ascii string onto the top of the stack.
+.Tp Va \&<x  \&>x  \&=x
+The
+top two elements of the stack are popped and compared.
+Register
+.Ar x
+is executed if they obey the stated
+relation.
+.Tp Ic v
+replaces the top element on the stack by its square root.
+Any existing fractional part of the argument is taken
+into account, but otherwise the scale factor is ignored.
+.Tp Ic \&!
+interprets the rest of the line as a UNIX command.
+.Tp Ic c
+All values on the stack are popped.
+.Tp Ic i
+The top value on the stack is popped and used as the
+number radix for further input.
+.Ic I
+pushes the input base on the top of the stack.
+.Tp Ic o
+The top value on the stack is popped and used as the
+number radix for further output.
+.Tp Ic O
+pushes the output base on the top of the stack.
+.Tp Ic k
+the top of the stack is popped, and that value is used as
+a non-negative scale factor:
+the appropriate number of places
+are printed on output,
+and maintained during multiplication, division, and exponentiation.
+The interaction of scale factor,
+input base, and output base will be reasonable if all are changed
+together.
+.Tp Ic z
+The stack level is pushed onto the stack.
+.Tp Ic Z
+replaces the number on the top of the stack with its length.
+.Tp Ic \&?
+A line of input is taken from the input source (usually the terminal)
+and executed.
+.Tp Ic \&; \&:
+are used by
+.Ar bc
+for array operations.
+.Tp
+.Pp
+An example which prints the first ten values of
+.Ic n\&! :
+.Pp
+.Df I
+.Cx Op Li la1+dsa*pla10>y
+.Cx sy
+.Cx
+.De
+.Ds I
+.Li 0sa1
+.De
+.Ds I
+.Li lyx
+.De
+.Sh SEE ALSO
+.Xr bc 1 ,
+which is a preprocessor for
+.Nm dc
+providing infix notation and a C- like syntax
+which implements functions and reasonable control
+structures for programs.
+.Sh HISTORY
+.Nm Dc
+appeared in Version 6 AT&T Unix.
+.Sh DIAGNOSTICS
+.Tw Ar
+.Tp Li x is unimplemented
+where x is an octal number.
+.Tp Li stack empty
+for not enough elements on the stack to do what was asked.
+.Tp Li Out of space
+when the free list is exhausted (too many digits).
+.Tp Li Out of headers
+for too many numbers being kept around.
+.Tp Li Out of pushdown
+for too many items on the stack.
+.Tp Li Nesting Depth
+for too many levels of nested execution.
+.Tp

@@ -1,0 +1,32 @@
+#print
+Often, what you want to do is print an entire file,
+and often you don't know exactly how long it is.
+There is a special abbreviation for this purpose:
+the character
+  $
+refers to the last line in the file, and so
+1,$p prints all of a file.
+Here's a new file.  Print it out using the editor
+command 1,$p.  Then do the usual w, q, and ready.
+#create Ref
+1,$p
+w
+q
+#create file
+New York Mets Managers
+ Casey Stengel
+ Wes Westrum
+ Gil Hodges
+ Yogi Berra
+ Roy McMillan
+#copyin
+#pipe
+ed file
+#user
+#unpipe
+#uncopyin
+tail -3 .copy >X1
+#cmp X1 Ref
+#log
+#next
+10.1b 10

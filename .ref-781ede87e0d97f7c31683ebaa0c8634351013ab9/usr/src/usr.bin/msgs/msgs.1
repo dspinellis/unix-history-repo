@@ -1,0 +1,196 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)msgs.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MSGS 1
+.Os BSD 4
+.Sh NAME
+.Nm msgs
+.Nd system messages and junk mail program
+.Sh SYNOPSIS
+.Nm msgs
+.Op Fl fhlpq
+.Op Ar number
+.Op Ar \-number
+.Pp
+.Nm msgs
+.Op Fl s
+.Pp
+.Nm msgs
+.Op Fl c
+.Op \-days
+.Sh DESCRIPTION
+.Nm Msgs
+is used to read system messages.
+These messages are
+sent by mailing to the login `msgs' and should be short
+pieces of information which are suitable to be read once by most users
+of the system.
+.Pp
+.Nm Msgs
+is normally invoked each time you login, by placing it in the file
+.Pa \& .login
+(or
+.Pa \&.profile
+if you use
+.Xr sh 1 ) .
+It will then prompt you with the source and subject of each new message.
+If there is no subject line, the first few non-blank lines of the
+message will be displayed.
+If there is more to the message, you will be told how
+long it is and asked whether you wish to see the rest of the message.
+The possible responses are:
+.Tw Fl
+.Tp Fl y
+type the rest of the message.
+.Tp Ic RETURN
+synonym for y.
+.Tp Fl n
+skip this message
+and go on to the next message.
+.Tp Fl
+redisplay the last message.
+.Tp Fl q
+drops you out of
+.Nm msgs ;
+the next time you run the program it will pick up where you left off.
+.Tp Fl s
+append the current message to the file ``Messages'' in the current directory;
+`s\-' will save the previously displayed message. A `s' or `s\-' may
+be followed by a space and a file name to receive the message replacing
+the default ``Messages''.
+.Tp Fl m
+or `m\-' causes a copy of the specified message to be placed in a temporary
+mailbox and
+.Xr mail  1
+to be invoked on that mailbox.
+Both `m' and `s' accept a numeric argument in place of the `\-'.
+.Tp
+.Pp
+.Nm Msgs
+keeps track of the next message you will see by a number in the file
+.Pa \&.msgsrc
+in your home directory.
+In the directory
+.Pa /var/msgs
+it keeps a set of files whose names are the (sequential) numbers
+of the messages they represent.
+The file
+.Pa /var/msgs/bounds
+shows the low and high number of the messages in the directory
+so that
+.Nm msgs
+can quickly determine if there are no messages for you.
+If the contents of
+.Pa bounds
+is incorrect it can be fixed by removing it;
+.Nm msgs
+will make a new
+.Pa bounds
+file the next time it is run.
+.Pp
+The
+.Fl s
+option is used for setting up the posting of messages.  The line
+.Pp
+.Dl msgs: \&"\&| /usr/ucb/msgs \-s\&"
+.Pp
+should be included in
+.Pa /etc/aliases
+(see
+.Xr newaliases 1 )
+to enable posting of messages.
+.Pp
+The
+.Fl c
+option is used for performing cleanup on
+.Pa /var/msgs.
+An entry with the
+.Fl c
+option should be placed in
+.Pa /etc/crontab
+to run every night.  This will remove all messages over 21 days old.
+A different expiration may be specified on the command line to override
+the default.
+.Pp
+Options when reading messages include:
+.Tw Fl
+.Tp Fl f
+which causes it not to say ``No new messages.''.
+This is useful in your
+.Pa \& .login
+file since this is often the case here.
+.Tp Fl q
+Queries whether there are messages, printing
+``There are new messages.'' if there are.
+The command ``msgs \-q'' is often used in login scripts.
+.Tp Fl h
+causes
+.Nm msgs
+to print the first part of messages only.
+.Tp Fl l
+option causes only locally originated messages to be reported.
+.Tp Ar num
+A message number can be given
+on the command line, causing
+.Nm msgs
+to start at the specified message rather than at the next message
+indicated by your
+.Pa \&.msgsrc
+file.
+Thus
+.Pp
+.Dl msgs \-h 1
+.Pp
+prints the first part of all messages.
+.Tp Ar \-number
+will cause
+.Nm msgs
+to start
+.Ar number
+messages back from the one indicated by your
+.Pa \&.msgsrc
+file, useful for reviews of recent messages.
+.Tp Fl p
+causes long messages to be piped through
+.Xr more  1  .
+.Tp
+.Pp
+Within
+.Nm msgs
+you can also go to any specific message by typing its number when
+.Nm msgs
+requests input as to what to do.
+.Sh ENVIRONMENT
+.Nm Msgs
+uses the
+.Ev HOME
+and
+.Ev TERM
+environment variables for the default home directory and
+terminal type.
+.Sh FILES
+.Dw /usr/msgs/*
+.Di L
+.Dp Pa /usr/msgs/*
+database
+.Dp ~/.msgsrc
+number of next message to be presented
+.Dp
+.Sh AUTHORS
+William Joy
+.br
+David Wasley
+.Sh SEE ALSO
+.Xr aliases 5 ,
+.\".Xr crontab 5 ,
+.Xr mail 1 ,
+.Xr more 1
+.Sh HISTORY
+.Nm Msgs
+appeared in 3 BSD.
+.Sh BUGS

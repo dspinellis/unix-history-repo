@@ -1,0 +1,220 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)join.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt JOIN 1
+.Os BSD 4.4
+.Sh NAME
+.Nm join
+.Nd relational database operator
+.Sh SYNOPSIS
+.Nm join
+.Op Fl a Ar file_number
+.Op Fl e Ar string
+.Op Fl j Ar file_number field
+.if n .br
+.Op Fl o Ar list
+.Op Fl t Ar char
+.Op Fl v Ar file_number
+.Ob
+.Fl \&1
+.Ar field
+.Oe
+.Ob
+.Fl \&2
+.Ar field
+.Oe
+.Ar file1
+.if n .br
+.Ar file2
+.Sh DESCRIPTION
+The join utility performs an ``equality join'' on the files
+.Ar file1
+and
+.Ar file2 .
+The joined files are written to the standard
+output.
+.Pp
+The ``join field'' is a field in each file on which the
+files are compared.
+There is one line in the output for
+each pair of lines in
+.Ar file1
+and
+.Ar file2
+which have identical
+join fields.
+The output line by default consists of the
+join field, then the remaining fields from
+.Ar file1 ,
+then the
+remaining fields from
+.Ar file2 .
+This format can be changed by
+using the
+.Fl o
+option (see below).
+.Pp
+The files file1 and file2 should be ordered in the collating
+sequence of
+.Li sort -b
+on the fields on which they are to be
+joined, by default the first in each line; Otherwise, all
+join field matches need not be reported.
+.Pp
+The default input field separators are <blank>s.
+In this
+case, multiple separators count as one field separator, and
+leading separators are ignored.
+The default output field
+separator is a <space>.
+.Pp
+The following options are available:
+.Tw Fl
+.Tc Fl a
+.Ws
+.Ar file_number
+.Cx
+In addition to the default output, produce a line
+for each unpairable line in file
+.Ar file_number ,
+where
+.Ar file_number
+is 1 or 2.
+.Tc Fl e
+.Ws
+.Ar string
+.Cx
+Replace empty output fields by the string
+.Ar string .
+.Tc Fl j
+.Ws
+.Ar file_number field
+.Cx
+Join on the
+.Sf Ar field 'th
+field of file
+.Ar file_number .
+If
+.Ar file_number
+is missing, (i.e., the
+first digit of the option argument is neither 1 nor
+2), use the
+.Sf Ar field 'th
+field in each file.
+Fields are
+decimal integers starting with 1.
+.Tc Fl o
+.Ws
+.Ar list
+.Cx
+Each output line comprises the fields specified in
+.Ar list ,
+each element of which has the form
+.Ql file_number.field ,
+where
+.Ar file_number
+is a file
+number and field is a decimal integer field number.
+The elements of list are either comma or <space> separated.
+The list is written only for lines with matching join fields,
+and is not output unless specifically requested.
+.Tc Fl t
+.Ws
+.Ar char
+.Cx
+Use character
+.Ar char
+as a separator, for both input
+and output.
+Every appearance of char in a line is
+significant.
+When this option is specified, the
+collating sequence should be the same as sort
+without the
+.Fl b
+option.
+.Tc Fl v
+.Ws
+.Ar file_number
+.Cx
+Instead of the default output, produce a line only
+for each unpairable line in
+.Ar file_number ,
+where
+.Ar file_number
+is 1 or 2.
+.Tc Fl 1
+.Ws
+.Ar field
+.Cx
+Join on the
+.Sf Ar field 'th
+field of file 1.
+Fields are
+decimal integers starting with 1.
+.Tc Fl 2
+.Ws
+.Ar field
+.Cx
+Join on the
+.Sf Ar field 'th
+field of file 2.
+Fields are
+decimal integers starting with 1.
+.Tp
+.Pp
+If both
+.Ql \-a 1
+and
+.Ql \-a 2
+are specified, both sets of information
+are output,
+.Ql \-a 2
+always first, regardless of the specified
+order.
+.Pp
+The following arguments are required:
+.Dw Fl
+.Di L
+.Dp Ar file1
+.Dp Ar file2
+A pathname of a file to be joined.
+If either of
+the
+.Ar file1
+or
+.Ar file2
+arguments is
+.Sq Fl
+the standard
+input is used in its place.
+.Dp
+.Pp
+The
+.Nm join
+utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
+The
+.Nm join
+function is expected to be POSIX 1003.2 compatible.
+.Sh SEE ALSO
+.Xr awk 1
+.Xr comm 1 ,
+.Xr look 1
+.Xr sort 1 ,
+.Xr uniq 1 ,
+.Sh BUGS
+The conventions of
+.Nm join ,
+.Xr comm 1 ,
+.Xr sort 1 ,
+.Xr uniq 1 ,
+.Xr look 1
+and
+.Xr awk  1
+are wildly incongruous.

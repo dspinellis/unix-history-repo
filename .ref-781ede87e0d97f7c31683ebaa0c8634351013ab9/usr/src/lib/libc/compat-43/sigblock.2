@@ -1,0 +1,42 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sigblock.2	6.6 (Berkeley) %G%
+.\"
+.TH SIGBLOCK 2 ""
+.UC 5
+.SH NAME
+sigblock \- block signals
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+
+.B sigblock(mask);
+.B int mask;
+
+.B mask = sigmask(signum)
+.SH DESCRIPTION
+.B "This interface is made obsolete by sigprocmask(2).
+.LP
+.I Sigblock
+causes the signals specified in
+.I mask
+to be added to the set of signals currently
+being blocked from delivery.
+Signals are blocked if the
+corresponding bit in 
+.I mask
+is a 1; the macro
+.I sigmask
+is provided to construct the mask for a given
+.IR signum .
+.PP
+It is not possible to block SIGKILL
+or SIGSTOP; this restriction is silently
+imposed by the system.
+.SH "RETURN VALUE
+The previous set of masked signals is returned.
+.SH "SEE ALSO"
+kill(2), sigprocmask(2), sigaction(2), sigsetmask(2), sigsetops(3)

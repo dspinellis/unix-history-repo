@@ -1,0 +1,167 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pr.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PR 1
+.Os BSD 4.3+Reno
+.Sh NAME
+.Nm pr
+.Nd Print files.
+.Sh SYNOPSIS
+.Nm pr
+.Oo
+.Op Cm \&+ Ar page
+.Op Fl Ar column
+.Oo
+.Op Fl f
+.Op Fl hheader
+.Op Fl llines
+.Op Fl m
+.Oo
+.Op Fl s Ar char
+.Oo
+.Op Fl t
+.Oo
+.Op Fl w Ar width
+.Oo
+.Ar
+.Sh DESCRIPTION
+The
+.Nm pr
+utility is a printing and pagination filter.
+If multiple
+input files are specified, each is read, formatted,
+and written to standard output.
+By default, the input is
+separated into pages, each with a header that includes the
+page number, date, time, and the file's pathname.
+Text
+columns are of equal width, with at least one <blank>
+separation between text columns.
+Lines that do not fit into
+a text column are truncated.
+If standard output is associated
+with a terminal, diagnostic messages are suppressed
+until the
+.Nm
+utility has completed processing.
+.Pp
+The following options are available:
+.Tw Fl
+.Tc Cm \&+
+.Ar page
+.Cx
+Begin output at page number page of the
+formatted input.
+.Tc Fl
+.Ar column
+.Cx
+Produce output that is columns wide (default
+is 1) and is in text column rank order.
+This
+option should not be used with
+.Fl m .
+When
+used with
+.Fl t ,
+use the minimum number of lines
+to display the output.
+.Tp Fl f
+Use <form-feed> character for new pages,
+instead of the default behavior that uses a
+sequence of <newline> characters.
+Prior to
+displaying the first page of output an
+<alert> character is written to standard output.
+.Tp Cx  Fl h
+.Ar header
+.Cx
+Use the string header as the header to be
+printed instead of file.
+.Tp Cx Fl l
+.Ar lines
+.Cx
+Override the 66 line default and reset the
+page length to lines.
+If lines is smaller
+than the sum of both the header and trailer
+depths (in lines), the pr utility suppresses
+both the header and trailer, as if the
+.Fl t
+option were in effect.
+.Tp Fl m
+Merge files.
+Standard output is formatted so
+the
+.Nm pr
+utility writes one line from each file
+specified by a file operand, side by side
+into text columns of equal fixed widths, in
+terms of the number of column positions.
+.Tp Cx Fl s
+.Ar char
+.Cx
+Separate text columns by the single character
+char instead of by the appropriate number of
+<space>s (default for char is the <tab> character).
+.Tp Fl t
+Print neither the five-line identifying
+header nor the five-line trailer usually
+supplied for each page.
+Quit printing after the
+last line of each file without spacing to the
+end of the page.
+.Tp Cx Fl w
+.Ar width
+.Cx
+Set the width of the line to width column
+positions for multiple text-column output
+only (default is 72).
+.Tp
+.Pp
+The following operands are available:
+.Tw Fl
+.Tp Ar file
+A pathname of a file to be printed.
+.Tp
+.Pp
+If no file
+operands are specified, or if a file operand is
+.Sq Fl ,
+the standard input is used.
+.Pp
+The standard input is used only if no file operands are
+specified, or if a file operand is
+.Sq Fl .
+.Pp
+If pr receives an interrupt while printing to a terminal, it
+flushes all accumulated error messages to the screen before
+terminating.
+.Pp
+The pr utility output is a paginated version of the original
+file (or files).
+This pagination is optionally done using
+<form-feed>s or a sequence of <newline>s.
+Page headers are
+generated unless the
+.Fl t
+option is specified.
+.Pp
+The
+.Nm pr
+utility exits 0 on success, and >0 if an error occurs.
+.Pp
+Error
+messages are written to standard error during the printing
+process (if output is redirected) or after all successful
+file printing is complete (when printing to a terminal).
+.Sh SEE ALSO
+.Xr more 1
+.Sh STANDARDS
+The
+.Nm pr
+function is expected to be POSIX 1003.2 compatible.

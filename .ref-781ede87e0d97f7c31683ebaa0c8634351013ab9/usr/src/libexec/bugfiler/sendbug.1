@@ -1,0 +1,57 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)sendbug.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SENDBUG 1
+.Os BSD 4.2
+.Sh NAME
+.Nm sendbug
+.Nd mail a system bug report to 4bsd-bugs
+.Sh SYNOPSIS
+.Nm sendbug
+.Op Ar address
+.Sh DESCRIPTION
+Bug reports sent to `4bsd-bugs@Berkeley.EDU' are intercepted
+by a program which expects bug reports to conform to a standard format.
+.Nm Sendbug
+is a shell script to help the user compose and mail bug reports
+in the correct format.
+.Nm Sendbug
+works by invoking the editor specified by the environment variable
+.Ev EDITOR
+on a temporary copy of the bug report format outline. The user must fill in the
+appropriate fields and exit the editor.
+.Nm Sendbug
+then mails the completed report to `4bsd-bugs@Berkeley.EDU' or the
+.Ar address
+specified on the command line.
+.Sh ENVIRONMENT
+.Nm Sendbug
+will utilize the following environment variable if it exists:
+.Tw Fl
+.Tp Ev EDITOR
+Specifies the preferred editor. If
+.Ev EDITOR
+is not set,
+.Nm
+defaults to
+.Xr vi 1 .
+.Tp
+.Sh FILES
+.Dw /usr/share/misc/bugformat
+.Di L
+.Dp Pa /usr/share/misc/bugformat
+contains the bug report outline
+.Dp
+.Sh SEE ALSO
+.Xr vi 1 ,
+.Xr environ 7 ,
+.Xr bugfiler 8 ,
+.Xr sendmail 8
+.Sh HISTORY
+.Nm Sendbug
+appeared in 4.2 BSD.

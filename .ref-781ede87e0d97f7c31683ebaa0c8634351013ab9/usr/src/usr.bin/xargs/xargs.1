@@ -1,0 +1,89 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" John B. Roll Jr.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)xargs.1	5.1 (Berkeley) %G%
+.\"
+.TH XARGS 1 ""
+.UC 7
+.SH NAME
+xargs \- construct argument list(s) and execute utility.
+.SH SYNOPSIS
+.ft B
+xargs [\-t] [\-n number] [\-s size] [utility [argument ...]]
+.ft R
+.SH DESCRIPTION
+The
+.I xargs utility
+reads space, tab, and newline delimited arguments from the standard
+input and executes the specified
+.I utility
+with them as arguments.
+Any arguments specified on the command line are given to the
+.I utility
+upon each invocation, followed by some number of the arguments read
+from standard input.
+The
+.I utility
+is repeatedly executed until standard input is exhausted.
+.PP
+Spaces and tabs may be embedded in arguments using single (`` ' '') or
+double (``"'') quotes or backslashes (``\e'').
+Single or double quotes escape all characters to the next matching quote
+character, backslashes escape the next character.
+Newlines may not be escaped.
+.PP
+The following options are available:
+.TP
+-n number
+Set the maximum number of arguments used from standard input for
+each invocation of the utility.
+An invocation of
+.I utility
+will use less than
+.I number
+standard input arguments if the number of bytes accumulated (see the
+.I \-s
+option) exceeds the specified size or the last invocation of
+.I utility
+has fewer than
+.I number
+arguments remaining.
+The default value for
+.I number
+is 255.
+.TP
+-s size
+Set the maximum number of bytes to which the last component of the
+.I utility
+name, the command-line arguments, and the arguments read in from
+standard input may sum.
+The default value for
+.I size
+is 2048.
+.TP
+-t
+Echo the command to be executed to standard error immediately before it
+is executed.
+.PP
+If no
+.I utility
+is specified,
+.IR echo (1)
+is used.
+.PP
+.I Utility
+should never read from the standard input.
+.PP
+.I Xargs
+exits with 0 if no error occurred, and 1 otherwise.
+.SH "SEE ALSO"
+echo(1)
+.SH STANDARDS
+The
+.I xargs
+utility is expected to be POSIX 1003.2 compliant.

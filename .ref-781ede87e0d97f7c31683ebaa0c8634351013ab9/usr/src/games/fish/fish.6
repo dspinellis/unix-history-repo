@@ -1,0 +1,35 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)fish.6	6.1 (Berkeley) %G%
+.\"
+.TH FISH 6 ""
+.UC 4
+.SH NAME
+fish \- play ``Go Fish''
+.SH SYNOPSIS
+.B /usr/games/fish
+.SH DESCRIPTION
+.I Fish
+plays the game of \*(lqGo Fish\*(rq,
+a childrens' card game.  The Object is to
+accumulate `books' of 4 cards with the same face value.  The
+players alternate turns; each turn begins with one player
+selecting a card from his hand, and asking the other player for
+all cards of that face value.  If the other player has one or
+more cards of that face value in his hand, he gives them to the
+first player, and the first player makes another request.
+Eventually, the first player asks for a card which is not in
+the second player's hand: he replies `GO FISH!' The first
+player then draws a card from the `pool' of undealt cards.  If
+this is the card he had last requested, he draws again.  When a
+book is made, either through drawing or requesting, the cards
+are laid down and no further action takes place with that face
+value.
+.PP
+To play the computer, simply make guesses by typing a,
+2, 3, 4, 5, 6, 7, 8, 9, 10, j, q, or k when asked.  Hitting
+return gives you information about the size of my hand and the
+pool, and tells you about my books.  Saying `p' as a first
+guess puts you into `pro' level; The default is pretty dumb.

@@ -1,0 +1,74 @@
+.\" Copyright (c) 1987 Sun Microsystems
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)portmap.8	5.2 (Berkeley) %G%
+.\"
+.TH PORTMAP 8 ""
+.UC 6
+.SH NAME
+portmap \- DARPA port to RPC program number mapper
+.SH SYNOPSIS
+.B portmap
+[
+.B \-d
+]
+.SH DESCRIPTION
+.IX  "portmap command"  ""  "\fLportmap\fP \(em DARPA to RPC mapper"
+.IX  DARPA "to RPC mapper \(em \fLportmap\fP"
+.B Portmap
+is a server that converts
+.SM RPC
+program numbers into
+.SM DARPA
+protocol port numbers.
+It must be running in order to make
+.SM RPC
+calls.
+.PP
+When an
+.SM RPC
+server is started, it will tell
+.B portmap
+what port number it is listening to, and what
+.SM RPC
+program numbers it is prepared to serve.
+When a client wishes to make an
+.SM RPC
+call to a given program number,
+it will first contact
+.B portmap
+on the server machine to determine
+the port number where
+.SM RPC
+packets should be sent.
+.PP
+.B Portmap
+must be started before any
+.SM RPC
+servers are invoked.
+.PP
+Normally
+.B portmap
+forks and dissociates itself from the terminal
+like any other daemon.
+.B Portmap
+then logs errors using
+.IR syslog (3).
+The
+.B \-d
+(debug) option prevents
+.B portmap
+from running as a daemon,
+and causes errors and debugging information
+to be printed to the standard error output.
+.SH "SEE ALSO"
+inetd.conf(5),
+rpcinfo(8),
+inetd(8)
+.SH BUGS
+If
+.B portmap
+crashes, all servers must be restarted.

@@ -1,0 +1,47 @@
+#once #create message
+.ND
+.EQ
+delim $$
+.EN
+.LP
+The problem is really that we need a way to tell neqn
+that in spite of blanks, a group of things (like the $pi$
+and the +1) have to be kept together as a single superscript.
+The way that this is done is to enclose the group in
+braces - the characters { and } - like this:
+
+  .EQ
+  x sup {pi + 1}
+  .EN
+
+This tells neqn that everything inside the braces belongs
+to the superscript, in spite of blanks and tildes.
+(You don't need blanks before and after braces themselves -
+like tildes, they act as delimiters.)
+
+Modify the file "Example" so that the output looks like
+the following, then type "ready".
+(To get $==$, type "==".)
+.pl 1
+#once #create Ref
+.LP
+.EQ
+x sup {pi +1} == y sup z sup {alpha + beta}
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+5.1c 10
+5.2b 5

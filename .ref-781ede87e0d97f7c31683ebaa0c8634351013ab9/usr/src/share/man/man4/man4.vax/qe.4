@@ -1,0 +1,36 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)qe.4	6.3 (Berkeley) %G%
+.\"
+.TH QE 4 ""
+.UC 6
+.SH NAME
+qe \- DEC DEQNA Q-bus 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device qe0 at uba? csr 174440 vector qeintr"
+.SH DESCRIPTION
+The
+.B qe
+interface provides access to a 10 Mb/s Ethernet network through
+the DEC DEQNA Q-bus controller.
+.PP
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
+ioctl.  The
+.B qe
+interface employs the address resolution protocol described in
+arp(4)
+to map dynamically  between Internet and Ethernet addresses on the local
+network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.SH "SEE ALSO"
+netintro(4), inet(4), arp(4)

@@ -1,0 +1,9 @@
+dw console
+sp tty0
+sp tty1
+sp tty2
+sp tty3
+sp tty4
+sp tty5
+sp tty6
+sp tty7

@@ -1,0 +1,98 @@
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)shutdown.8	6.7 (Berkeley) %G%
+.\"
+.TH SHUTDOWN 8 ""
+.UC 4
+.SH NAME
+shutdown \- close down the system at a given time
+.SH SYNOPSIS
+.B shutdown
+[
+.B -
+] [
+.B \-fhkrn
+]
+time [ warning-message ... ]
+.SH DESCRIPTION
+.I Shutdown
+provides an automated shutdown procedure which a super-user
+can use to notify users nicely when the system is shutting down,
+saving them from system administrators, hackers, and gurus, who
+would otherwise not bother with such niceties.
+.PP
+.I Time
+is the time at which \fIshutdown\fP will bring the system down and
+may be the word \fInow\fP (indicating an immediate shutdown) or
+specify a future time in one of two formats: \fI+number\fP, or
+\fIyymmddhhmm\fP, where the year, month, and day may be defaulted
+to the current system values.  The first form brings the system down in
+\fInumber\fP minutes and the second at the absolute time specified.
+.PP
+Any other arguments comprise the warning message that is broadcast
+to users currently logged into the system; if a single dash (``-'')
+is supplied as an option, the warning message is read from the standard
+input.
+.PP
+At intervals, which get closer together as apocalypse approaches,
+starting at ten hours before shutdown, warning messages are displayed
+at the terminals of all users on the system.  Five minutes before
+shutdown, or immediately if shutdown is in less than 5 minutes,
+logins are disabled by creating \fI/etc/nologin\fP and copying the
+warning message there.  If this file exists when a user attempts to
+log in, \fIlogin\fP(1) prints its contents and exits.  The file is
+removed just before \fIshutdown\fP exits.
+.PP
+At shutdown time a message is written in the system log, containing the
+time of shutdown, who ran shutdown and the reason.  Then a terminate
+signal is sent to \fIinit\fP to bring the system down to single-user state.
+Alternatively, if
+.B \-r,
+.B \-h,
+or
+.B \-k
+is used, then
+.I shutdown
+will exec
+.IR reboot (8),
+.IR halt (8),
+or avoid shutting the system down (respectively).
+(If it isn't obvious,
+.B \-k
+is to make people
+.I think
+the system is going down!)
+.PP
+With the
+.B \-f
+option,
+.I shutdown
+arranges, in the manner of
+.IR fastboot (8),
+that when the system is rebooted the file systems will not
+be checked.  The
+.B \-n
+option prevents the normal
+.IR sync (2)
+before stopping.
+.PP
+The time of the shutdown and the warning message
+are placed in \fI/etc/nologin\fP and should be used to
+inform the users about when the system will be back up
+and why it is going down (or anything else).
+.SH FILES
+.TP 15
+/etc/nologin
+tells login not to let anyone log in
+.TP 15
+/fastboot
+tells /etc/rc not to run fsck when rebooting
+.SH "SEE ALSO"
+login(1), wall(1), fastboot(8), halt(8), reboot(8)
+.SH "BACKWARD COMPATIBILITY"
+The hours and minutes in the second time format may be separated by
+a colon (``:'') for backward compatibility.
+

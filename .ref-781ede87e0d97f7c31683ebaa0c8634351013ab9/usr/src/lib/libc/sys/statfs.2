@@ -1,0 +1,133 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)statfs.2	6.3 (Berkeley) %G%
+.\"
+.TH STATFS 2 ""
+.UC 7
+.SH NAME
+statfs \- get file system statistics
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mount.h>
+.LP
+.ft B
+statfs(path, buf)
+char *path;
+struct statfs *buf;
+.LP
+.ft B
+fstatfs(fd, buf)
+int fd;
+struct statfs *buf;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Statfs
+returns information about a mounted file system.
+.I path
+is the path name of any file within the mounted filesystem.
+.I Buf
+is a pointer to a
+.I statfs
+structure defined as follows:
+.IP
+.ta \w'#define\0\0'u +\w'fsid_t\0\0'u +\w'f_mntfromname[MNAMELEN]\0\0'u
+.nf
+typedef quad fsid_t;
+.sp 1
+#define MNAMELEN 32	/* length of buffer for returned name */
+.sp 1
+struct statfs {
+	short	f_type;	/* type of filesystem (see below) */
+	short	f_flags;	/* copy of mount flags */
+	long	f_fsize;	/* fundamental file system block size */
+	long	f_bsize;	/* optimal transfer block size */
+	long	f_blocks;	/* total data blocks in file system */
+	long	f_bfree;	/* free blocks in fs */
+	long	f_bavail;	/* free blocks avail to non-superuser */
+	long	f_files;	/* total file nodes in file system */
+	long	f_ffree;	/* free file nodes in fs */
+	fsid_t	f_fsid;	/* file system id */
+	long	f_spare[6];	/* spare for later */
+	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
+	char	f_mntfromname[MNAMELEN];	/* mounted filesystem */
+};
+/*
+ * File system types.
+ */
+#define	MOUNT_UFS	1
+#define	MOUNT_NFS	2
+#define	MOUNT_MFS	3
+#define	MOUNT_PC	4
+.fi
+.PP
+Fields that are undefined for a particular file system are set to \-1.
+.I Fstatfs
+returns the same information about an open file referenced by descriptor
+.IR fd .
+.SH RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Statfs
+fails if one or more of the following are true:
+.TP 15
+ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP 15
+EINVAL
+.I path
+contains a character with the high-order bit set.
+.TP 15
+ENAMETOOLONG
+The length of a component of
+.I path
+exceeds 255 characters,
+or the length of
+.I path
+exceeds 1023 characters.
+.TP 15
+ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP 15
+EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP 15
+ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP 15
+EFAULT
+.I Buf
+or
+.I path
+points to an invalid address.
+.TP 15
+EIO
+An I/O error occurred while reading from or writing to the file system.
+.PP
+.I Fstatfs
+fails if one or both of the following are true:
+.TP 15
+EBADF
+.I fd
+is not a valid open file descriptor.
+.TP 15
+EFAULT
+.I buf
+points to an invalid address.
+.TP 15
+EIO
+An I/O error occurred while reading from or writing to the file system.

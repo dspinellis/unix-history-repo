@@ -1,0 +1,116 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)reboot.2	6.4 (Berkeley) %G%
+.\"
+.TH REBOOT 2 ""
+.UC 4
+.SH NAME
+reboot \- reboot system or halt processor
+.SH SYNOPSIS
+.nf
+.B #include <sys/reboot.h>
+.PP
+.B reboot(howto)
+.B int howto;
+.fi
+.SH DESCRIPTION
+.I Reboot
+reboots the system.
+Only the super-user may reboot a machine on demand.
+However, a reboot is invoked
+automatically in the event of unrecoverable system failures.
+.PP
+.I Howto
+is a mask of options; the system call interface passes the following
+options, defined in the include file ``<sys/reboot.h>'', to be passed
+to the new kernel or the new bootstrap and init programs.
+.TP
+RB_AUTOBOOT
+The default, causing the system to reboot in its usual fashion.
+.TP
+RB_ASKNAME
+Interpreted by the bootstrap program itself, causing it to
+prompt on the console as to what file should be booted.
+Normally, the system is booted from the file ``\fIxx\fP(0,0)vmunix'',
+where \fIxx\fP is the default disk name,
+without prompting for the file name.
+.TP
+RB_DFLTROOT
+Use the compiled in root device.
+Normally, the system uses the device from which it was booted
+as the root device if possible.
+(The default behavior is dependent on the ability of the bootstrap program
+to determine the drive from which it was loaded, which is not possible
+on all systems.)
+.TP
+RB_DUMP
+Dump kernel memory before rebooting; see
+.IR savecore (8)
+for more information.
+.TP
+RB_HALT
+the processor is simply halted; no reboot takes place.
+This option should be used with caution.
+.TP
+RB_INITNAME
+An option allowing the specification of an init program (see
+.IR init (8)
+other than ``/sbin/init'' to be run when the system reboots.
+This switch is not currently available.
+.TP
+RB_KDB
+Load the symbol table and enable a built-in debugger in the system.
+This option will have no useful function if the kernel is not configured
+for debugging.
+Several other options have different meaning if combined
+with this option, although their use may not be possible
+via the
+.I reboot 
+call.
+See
+.IR kadb (4)
+for more information.
+.TP
+RB_NOSYNC
+Normally, the disks are sync'd (see
+.IR sync (8))
+before the processor is halted or rebooted.
+This option may be useful if file system changes have been made manually
+or if the processor is on fire.
+.TP
+RB_RDONLY
+Initially mount the root file system read-only.
+This is currently the default, and this option has been deprecated as
+a no-op.
+.TP
+RB_SINGLE
+Normally, the reboot procedure involves an automatic disk consistency
+check and then multi-user operations.
+RB_SINGLE prevents this, booting the system with a single-user shell
+on the console.
+RB_SINGLE is actually interpreted by the
+.IR init (8)
+program in the newly booted system.
+.PP
+When no options are given (i.e., RB_AUTOBOOT is used), the system is
+rebooted from file ``vmunix'' in the root file system of unit 0
+of a disk chosen in a processor specific way.
+An automatic consistency check of the disks is then normally performed
+(see
+.IR fsck (8)).
+.SH "RETURN VALUES"
+If successful, this call never returns.
+Otherwise, a \-1 is returned and an error is returned in the global
+variable
+.IR errno .
+.SH ERRORS
+.TP 15
+[EPERM]
+The caller is not the super-user.
+.SH "SEE ALSO"
+kadb(4), crash(8), halt(8), init(8), reboot(8), savecore(8)
+.SH BUGS
+The HP300 implementation supports neither RB_DFLTROOT or RB_KDB.

@@ -1,0 +1,154 @@
+.\" Copyright (c) 1990, 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"		@(#)ls.1	6.15 (Berkeley) %G%
+.\"
+.TH LS 1 "%Q"
+.UC
+.SH NAME
+ls \- list contents of directory
+.SH SYNOPSIS
+.B ls
+[
+.B \-1AaCcdFfgikLlqRrsTtu
+] [ file ... ]
+.br
+.SH DESCRIPTION
+For each directory argument,
+.I ls
+lists the contents of the directory;
+for each file argument,
+.I ls
+repeats its name and any other information requested.
+By default, the output is sorted alphabetically.
+When no argument is given, the current directory is listed.
+When several arguments are given,
+the arguments are first sorted appropriately,
+but file arguments are processed
+before directories and their contents.
+.PP
+The options are as follows:
+.TP
+.B \-1
+force one entry per line output format; this is the default when
+output is not to a terminal.
+.TP
+.B \-A
+List all entries except for ``.'' and ``..''.
+Always set for the super-user.
+.TP
+.B \-a
+List all entries; in the absence of this option, entries whose
+names begin with a period
+.RB ( . )
+are
+.I not
+listed.
+.TP
+.B \-C
+force multi-column output; this is the default when output is to a terminal.
+.TP
+.B \-c
+Use time when file status was last changed for sorting or printing.
+.TP
+.B \-d
+If argument is a directory, list only its name;
+often used with \fB\-l\fR to get the status of a directory.
+.TP
+.B \-f
+Don't sort the output.
+.TP
+.B \-F
+cause directories to be marked with a trailing `/',
+sockets with a trailing `=',
+symbolic links with a trailing `@', and executable
+files with a trailing `*'.
+.TP
+.B \-g
+Include the group ownership of the file in a long output.
+.TP
+.B \-i
+For each file, print the i-number in the first column of the report.
+.TP
+.B -k
+Modifies the
+.I -s
+option, causing the sizes to be reported in kilobytes.
+.TP
+.B \-L
+If argument is a symbolic link, list the file or directory the link references
+rather than the link itself.
+.TP
+.B \-l
+List in long format, giving type and mode (in the format described by
+.IR strmode (3)),
+number of links, owner, size in bytes, and time of last modification
+for each file.
+File times less than six months in the past are displayed as month,
+day, hour and minute, and file times more than six months in the past
+are displayed as month, day and year.
+If the file is a special file the size field will instead contain
+the major and minor device numbers.
+If the file is a symbolic link the pathname of
+the linked-to file is printed preceded by ``\->''.
+.TP
+.B \-q
+force printing of non-graphic characters in file names as
+the character `?'; this is the default when output is to a terminal.
+.TP
+.B \-R
+recursively list subdirectories encountered.
+.TP
+.B \-r
+Reverse the order of sort to get reverse alphabetic
+or oldest first as appropriate.
+.TP
+.B \-s
+Display the sizes of files and directories in 512-byte blocks.
+.TP
+.B \-T
+Display complete time information for the file, including
+month, day, hour, minute, second, and year.
+.TP
+.B \-t
+Sort by time modified (latest first) instead of
+by name.
+.TP
+.B \-u
+Use time of last access instead of last
+modification for sorting
+(with the \fB\-t\fP option)
+and/or printing (with the \fB\-l\fP option).
+.PP
+The
+.IR -1 ,
+.IR -C ,
+and
+.I -l
+options all override each other; the last one specified determines
+the format used.
+.PP
+The
+.IR -c ,
+and
+.I -u
+options override each other; the last one specified determines
+the file time used.
+.PP
+When the sizes of the files in a directory
+are listed, a total count of blocks,
+including indirect blocks is printed.
+.SH FILES
+/etc/passwd to get user id's for
+`ls \-l'.
+.br
+/etc/group to get group id's for
+`ls \-g'.
+.SH BUGS
+The option setting based on whether the output is a teletype is
+undesirable as ``ls\ \-s'' is much different than ``ls\ \-s\ |\ lpr''.
+On the other hand, not doing this setting would make old shell scripts
+which used
+.I ls
+almost certain losers.

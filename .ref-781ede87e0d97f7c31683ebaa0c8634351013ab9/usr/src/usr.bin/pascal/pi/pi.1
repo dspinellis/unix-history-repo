@@ -1,0 +1,164 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pi.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PI 1
+.UC
+.Sh NAME
+.Nm pi
+.Nd Pascal interpreter code translator
+.Sh SYNOPSIS
+.Nm pi
+.Op Fl blnpstuwz
+.Op Fl i Ar name ...
+.Ar name.p
+.Sh DESCRIPTION
+.Nm Pi
+translates the program in the file
+.Ar name.p
+leaving interpreter code in the file
+.Pa obj
+in the current directory.
+The interpreter code can be executed using
+.Nm px .
+.Nm Pix
+performs the functions of
+.Nm pi
+and
+.Nm px
+for `load and go' Pascal.
+.Pp
+The following flags are interpreted by
+.Nm pi ;
+the associated options can also be controlled in comments within the program
+as described in the
+.Em "Berkeley Pascal User's Manual."
+.Tw Fl
+.Tp Fl b
+Block buffer the file
+.Ar output .
+.Tp Fl i
+Enable the listing for
+any specified procedures and functions and while processing any specified
+.Ic include
+files.
+.Tp Fl l
+Make a program listing during translation.
+.Tp Fl n
+Begin each listed
+.Ic include
+file on a new page with a banner line.
+.Tp Fl p
+Suppress the post-mortem control flow backtrace
+if an error occurs;
+suppress statement limit counting.
+.Tp Fl s
+Accept standard Pascal only;
+non-standard constructs cause warning diagnostics.
+.Tp Fl t
+Suppress runtime tests of subrange variables and treat
+.Ic assert
+statements as comments.
+.Tp Fl u
+Card image mode;
+only the first 72 characters of input lines are used.
+.Tp Fl w
+Suppress warning diagnostics.
+.Tp Fl z
+Allow execution profiling with
+.Nm pxp
+by generating statement counters, and arranging for the
+creation of the profile data file
+.Pa pmon.out
+when the resulting object is executed.
+.Tp
+.Sh FILES
+.Dw /usr/lib/pi1.*strings
+.Di L
+.Dp Pa file.p
+input file
+.Dp Pa file.i
+include file(s)
+.Dp Pa /usr/lib/pi2.*strings
+text of the error messages
+.Dp Pa /usr/lib/how_pi*
+basic usage explanation
+.Dp Pa obj
+interpreter code output
+.Dp
+.Sh SEE ALSO
+.Em Berkeley Pascal User'.Xr s Manual
+.br
+.Xr pix 1 ,
+.Xr px 1 ,
+.Xr pxp 1 ,
+.Xr pxref 1
+.Sh DIAGNOSTICS
+For a basic explanation do
+.Pp
+.Df I
+.Nm pi
+.De
+.Pp
+In the diagnostic output of the translator,
+lines containing syntax errors are listed with a flag indicating the
+point of error.
+Diagnostic messages indicate the action which the recovery mechanism
+took in order to be able to continue parsing.
+Some diagnostics indicate only that the input is `malformed.'
+This occurs if the recovery can find no simple correction to make the input
+syntactically valid.
+.Pp
+Semantic error diagnostics indicate a line in the source text near the
+point of error.
+Some errors evoke more than one diagnostic to help pinpoint the error;
+the follow-up messages begin with an ellipsis `...'.
+.Pp
+.ne 8
+The first character of each error message indicates its class:
+.Pp
+.Dw Fl
+.Di L
+.Dp Li E
+Fatal error; no code will be generated.
+.Dp e
+Non-fatal error.
+.Dp w
+Warning \- a potential problem.
+.Dp s
+Non-standard Pascal construct warning.
+.Dp
+.Pp
+If a severe error occurs which inhibits further processing,
+the translator will give a diagnostic and then `QUIT'.
+.Sh AUTHORS
+Charles B. Haley, William N. Joy, and Ken Thompson
+.br
+Ported to VAX-11 by Peter Kessler
+.Sh BUGS
+The keyword
+.Ic packed
+is recognized but has no effect.
+.Pp
+For clarity,
+semantic errors should be flagged at an appropriate place in the source text,
+and multiple instances of the `same' semantic error should be summarized
+at the end of a
+.Ic procedure
+or
+.Ic function
+rather than evoking many diagnostics.
+.Pp
+When
+.Ic include
+files are present,
+diagnostics relating to the last procedure in one file may appear after the
+beginning of the listing of the next.
+.\" .Sh ENVIRONMENT
+.Sh HISTORY
+.Nm Pi
+appeared in 3 BSD.

@@ -1,0 +1,52 @@
+#print
+The file "amend" contains an erroneous copy of the first
+four amendments to the Constitution.  Find the line
+saying "suspicion" and change it to read
+"but upon probable cause, supported by oath or affirmation,"
+and then rewrite the file and type "ready".
+#create Ref
+1. Congress shall make no law respecting an establishment of religion,
+or prohibiting the free exercise thereof; or abridging the freedom of speech,
+or of the press; or the right of the people peaceably to assemble,
+and to petition the Government for a redress of grievances.
+
+2. A well regulated Militia, being necessary to the security
+of a free State, the right of the people to keep and bear arms
+shall not be infringed.
+
+3. No Soldier shall, in time of peace, be quartered
+in any house without the consent of the Owner, nor in time
+of war, but in a manner to be prescribed by law.
+
+4. The right of the people to be secure in their persons,
+houses, papers, and effects, against unreasonable searches and
+seizures, shall not be violated, and no Warrants shall issue,
+but upon probable cause, supported by oath or affirmation,
+and particularly describing the place to be searched, and the
+persons or things to be seized.
+#create amend
+1. Congress shall make no law respecting an establishment of religion,
+or prohibiting the free exercise thereof; or abridging the freedom of speech,
+or of the press; or the right of the people peaceably to assemble,
+and to petition the Government for a redress of grievances.
+
+2. A well regulated Militia, being necessary to the security
+of a free State, the right of the people to keep and bear arms
+shall not be infringed.
+
+3. No Soldier shall, in time of peace, be quartered
+in any house without the consent of the Owner, nor in time
+of war, but in a manner to be prescribed by law.
+
+4. The right of the people to be secure in their persons,
+houses, papers, and effects, against unreasonable searches and
+seizures, shall not be violated, and no Warrants shall issue,
+but upon suspicion,
+and particularly describing the place to be searched, and the
+persons or things to be seized.
+#user
+#cmp amend Ref
+#log
+#next
+51.1a 10
+51.2a 5

@@ -1,0 +1,9 @@
+./"ni_dirp"16t"segflg"16t"nameiop"nXDx++
++/"cdir"16t"rdir"16t"cred"nXXX
++/"pnbuf"16t"ptr"16t"next"16t"pathlen"nXXXD
++/"namelen"8t"loopcnt"8t"mkentry"8t"isdotdot"nddbb++
++/"vp"16t"dvp"nXX
++/"ni_dent.d_inum"8t"reclen"8t"namlen"8t"name"nDdd14C242+
++/"endoff"16t"base"16t"count"16t"iovec"nDXDX
++/"iovcnt"16t"offset"16t"resid"16t"segflag"nDDDD
++/"rwflag"16t"hash"nDX

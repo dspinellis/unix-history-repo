@@ -1,0 +1,71 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)icmp.4	6.5 (Berkeley) %G%
+.\"
+.TH ICMP 4 ""
+.UC 6
+.SH NAME
+icmp \- Internet Control Message Protocol
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <netinet/in.h>
+.PP
+.B s = socket(AF_INET, SOCK_RAW, proto);
+.SH DESCRIPTION
+ICMP is the error and control message protocol used
+by IP and the Internet protocol family.  It may be accessed
+through a \*(lqraw socket\*(rq for network monitoring
+and diagnostic functions.
+The
+.I proto
+parameter to the socket call to create an ICMP socket
+is obtained from
+.IR getprotobyname (3).
+ICMP sockets are connectionless,
+and are normally used with the
+.I sendto 
+and
+.I recvfrom 
+calls, though the
+.IR connect (2)
+call may also be used to fix the destination for future
+packets (in which case the 
+.IR read (2)
+or
+.IR recv (2)
+and 
+.IR write (2)
+or
+.IR send (2)
+system calls may be used).
+.PP
+Outgoing packets automatically have an IP header prepended to
+them (based on the destination address).
+Incoming packets are received with the IP header and options intact.
+.SH DIAGNOSTICS
+A socket operation may fail with one of the following errors returned:
+.TP 15
+[EISCONN]
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP 15
+[ENOTCONN]
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP 15
+[ENOBUFS]
+when the system runs out of memory for
+an internal data structure;
+.TP 15
+[EADDRNOTAVAIL]
+when an attempt is made to create a 
+socket with a network address for which no network interface
+exists.
+.SH SEE ALSO
+send(2), recv(2), intro(4), inet(4), ip(4)

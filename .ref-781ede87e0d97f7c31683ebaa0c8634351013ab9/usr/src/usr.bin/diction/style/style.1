@@ -1,0 +1,75 @@
+.\"	@(#)style.1	6.2 (Berkeley) %G%
+.\"
+.TH STYLE 1 ""
+.AT 3
+.SH NAME
+style  \-  analyze surface characteristics of a document
+.SH SYNOPSIS
+.B style
+[
+.B \-ml
+] [
+.B \-mm
+] [
+.B \-a
+] [
+.B \-e
+] [
+.B \-l
+num ] [
+.B \-r
+num ] [
+.B \-p
+] [
+.B \-P
+]
+file ...
+.LP
+.SH DESCRIPTION
+.I Style
+analyzes the surface characteristics of the writing style
+of a document.
+It reports on readability, sentence length and
+structure, word length and usage, verb type, and sentence openers.
+Because
+.I style
+runs
+.I deroff
+before looking at the text, formatting
+header files should be included as part of the input.
+The default macro package
+.B \-ms
+may be overridden with the flag
+.B \-mm.
+The flag
+.BR \-ml ,
+which causes 
+.B deroff
+to skip lists, should be used if the document contains many lists of
+non-sentences.
+The other options are used to locate sentences with certain characteristics.
+.TP
+.B \-a
+print all sentences with their length and readability index.
+.TP
+.B \-e
+print all sentences that begin with an expletive.
+.TP
+.B \-p
+print all sentences that contain a passive verb.
+.TP
+.BI \-l num
+print all sentences longer than
+.IR num .
+.TP
+.BI \-r num
+print all sentences whose readability index is greater than
+.IR num .
+.TP
+.B \-P
+print parts of speech of the words in the document.
+.SH "SEE ALSO"
+deroff(1), diction(1)
+.SH BUGS
+Use of non-standard formatting macros may cause
+incorrect sentence breaks.

@@ -1,0 +1,78 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strcpy.3	5.2 (Berkeley) %G%
+.\"
+.TH STRCPY 3 ""
+.UC 4
+.SH NAME
+strcpy \- copy strings
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strcpy(char *dst, const char *src);
+
+char *
+strncpy(char *dst, const char *src, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strcpy
+and
+.B strncpy
+copy string
+.I src
+to
+.IR dst ,
+stopping after the terminating '\e0' has been moved.
+.PP
+.B Strncpy
+writes exactly
+.I len
+characters into
+.IR dst ,
+appending '\e0' characters if
+.I src
+is less than
+.I len
+characters long, and
+.I not
+terminating
+.I dst
+if
+.I src
+is more than
+.I len
+characters long.
+.PP
+.B Strcpy
+and
+.B strncpy
+return
+.IR dst .
+.SH EXAMPLES
+The following sets ``chararray'' to ``abc\e0\e0\e0'':
+.sp
+.ti +0.5i
+(void)strncpy(chararray, "abc", 6).
+.PP
+The following sets ``chararray'' to ``abcdef'':
+.sp
+.RS
+(void)strncpy(chararray, "abcdefgh", 6);
+.RE
+.SH SEE ALSO
+bcopy(3), memccpy(3), memcpy(3), memmove(3)
+.SH STANDARDS
+.B Strcpy
+and
+.B strncpy
+conform to ANSI X3.159-1989 (``ANSI C'').

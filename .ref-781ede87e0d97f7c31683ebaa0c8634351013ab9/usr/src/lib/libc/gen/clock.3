@@ -1,0 +1,29 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)clock.3	5.2 (Berkeley) %G%
+.\"
+.TH CLOCK 3 ""
+.AT 3
+.SH NAME
+clock - determine processor time used
+.SH SYNOPSIS
+.nf
+#include <sys/types.h>
+
+clock_t
+clock()
+.fi
+.SH DESCRIPTION
+.I Clock
+returns the amount of processor time used since the process
+invocation, measured in
+.IR CLK_TCK 's.
+.PP
+On error,
+.I clock
+returns -1.
+.SH "SEE ALSO"
+getrusage(2)

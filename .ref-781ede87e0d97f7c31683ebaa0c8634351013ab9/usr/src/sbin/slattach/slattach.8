@@ -1,0 +1,48 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)slattach.8	6.3 (Berkeley) %G%
+.\"
+.TH SLATTACH 8 ""
+.UC 6
+.SH NAME
+slattach \- attach serial lines as network interfaces
+.SH SYOPNSIS
+.B slattach
+ttyname [
+.I baudrate
+]
+.SH DESCRIPTION
+.I Slattach
+is used to assign a tty line to a network interface,
+and to define the network source and destination addresses. The
+.I ttyname
+parameter is a string of the form ``ttyXX'', or ``/dev/ttyXX''.
+The optional
+.I baudrate
+parameter is used to set the speed of the connection. If not specified, the
+default of 9600 is used.
+.PP
+Only the super-user may attach a network interface.
+.PP
+To detach the interface, use `ifconfig
+.I interface-name
+down' after killing off the
+.I slattach
+process.
+.I interface-name
+is the name that is shown by
+.B netstat(1)
+.SH EXAMPLES
+.ta 8
+	slattach ttyh8
+.br
+	slattach /dev/tty01 4800
+.SH DIAGNOSTICS
+Messages indicating the specified interface does not exit, the
+requested address is unknown, the user is not privileged and
+tried to alter an interface's configuration.
+.SH "SEE ALSO"
+netstat(1), netintro(4), ifconfig(8), rc(8)

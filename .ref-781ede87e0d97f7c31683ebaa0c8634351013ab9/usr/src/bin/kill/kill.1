@@ -1,0 +1,87 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kill.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KILL 1
+.Os BSD 4.4
+.Sh NAME
+.Nm kill
+.Nd terminate or signal a process
+.Sh SYNOPSIS
+.Nm kill
+.Op Fl signal_name
+.Ar pid
+\&...
+.Nm kill
+.Op Fl l
+.Sh DESCRIPTION
+The kill utility sends a signal to the process(es) specified
+by each pid operand. It is used to kill runaway or misbegotten
+processes, such as those
+.Em backgrounded
+with
+.Sq Li \&& .
+.Nm Kill
+is intelligent about who owns a process.
+.Pp
+Options available:
+.Pp
+.Tw Ds
+.Tp Fl signal_name
+A symbolic signal name. To find out all the possible signal names
+do a
+.Li kill -l .
+.Tp Fl l
+Available signal names are listed and are as found in
+.Pa /usr/include/signal.h ,
+stripped of the common SIG prefix.
+.Tp Fl signal_number
+A (nonnegative) decimal integer, representing the signal
+to be used instead of TERM as the sig argument in
+the effective call to
+.Xr kill 2 .
+.Tp
+.Pp
+Some of the more commonly used signals with kill:
+.Ds I
+.Cw XXX TERM
+.Cl -1	-1	(broadcast to all processes, super user only)
+.Cl 0	0	(sh(1) only, signals all members of process group)
+.Cl 2	INT	(interupt)
+.Cl 3	QUIT	(quit)
+.Cl 6	ABRT	(abort)
+.Cl 9	KILL	(non-catchable non-ignorable kill)
+.Cl 14	ALRM	(alarm clock)
+.Cl 15	TERM	(software termination signal)
+.Cw
+.De
+.Pp
+.Nm Kill
+is a built-in to
+.Xr csh  1  ;
+it allows job specifiers of the form ``%...'' as arguments
+so process id's are not as often used as
+.Nm kill
+arguments.
+See
+.Xr csh  1
+for details.
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr ps 1 ,
+.Xr kill 2 ,
+.Xr sigvec 2
+.Sh HISTORY
+A
+.Nm kill
+command appeared in Version 6 AT&T Unix.
+.Sh BUGS
+A replacement for
+.Dq Li kill 0
+for
+.Xr csh  1
+users should be provided.

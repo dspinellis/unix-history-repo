@@ -1,0 +1,98 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strtol.3	5.1 (Berkeley) %G%
+.\"
+.TH STRTOL 3 ""
+.UC 7
+.SH NAME
+strtol \- convert a string to a long integer
+.SH SYNOPSIS
+.B #include <stdlib.h>
+.br
+.B #include <limits.h>
+.PP
+.B "long strtol(char *nptr, char **endptr, int base);
+.SH DESCRIPTION
+.B Strtol
+converts the string in
+.I nptr
+to a
+.B long
+value according to the given
+.IR base ,
+which must be between 2 and 36 inclusive,
+or be the special value 0.
+.PP
+The string may begin with an arbitrary amount of white space
+(as determined by
+.BR isspace ;
+see
+.IR ctype (3)),
+followed by a single optional `+' or `-' sign.
+If
+.I base
+is zero or 16,
+the string may then include a `0x' prefix,
+and the number will be read in base 16; otherwise, a zero
+.I base
+is taken as 10 (decimal) unless the next character is `0',
+in which case it is taken as 8 (octal).
+.PP
+The remainder of the string is converted to a
+.B long
+value in the obvious manner,
+stopping at the first character which is not a valid digit
+in the given base.
+(In bases above 10, the letter `A' in either upper or lower case
+represents 10, `B' represents 11, and so forth, with `Z' representing 35.)
+.PP
+If
+.I endptr
+is non nil,
+.B strtol
+stores the address of the first invalid character in
+.IR *endptr .
+If there were no digits at all, however,
+.B strtol
+stores the original value of
+.I nptr
+in
+.IR *endptr .
+(Thus, if
+.I *nptr
+is not '\e0' but
+.IR **endptr
+is '\e0' on return, the entire string was valid.)
+.SH RETURN VALUE
+.B Strtol
+returns the result of the conversion,
+unless the value would underflow or overflow.
+If an underflow occurs,
+.B strtol
+returns
+.BR LONG_MIN .
+If an overflow occurs,
+.B strtol
+returns
+.BR LONG_MAX .
+In both cases,
+.B errno
+is set to
+.BR ERANGE .
+.SH ERRORS
+.TP
+[ERANGE]
+The given string was out of range; the value converted has been clamped.
+.SH SEE ALSO
+atof(3), atoi(3), atol(3), strtod(3), strtoul(3)
+.SH STANDARDS
+.B Strtol
+conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH BUGS
+Ignores the current locale.

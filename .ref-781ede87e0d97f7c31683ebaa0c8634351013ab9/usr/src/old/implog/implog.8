@@ -1,0 +1,81 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)implog.8	6.6 (Berkeley) %G%
+.\"
+.TH IMPLOG 8 ""
+.UC 5
+.SH NAME
+implog \- IMP log interpreter
+.SH SYNOPSIS
+.B implog
+[
+.B \-DFLcfr
+] [
+.B \-h
+.I host#
+] [
+.B \-i
+.I imp#
+] [
+.B \-l
+.I link
+] [
+.B \-t
+.I message-type
+]
+.SH DESCRIPTION
+.I Implog
+is program which interprets the message log produced by
+.IR implogd (8).
+.PP
+If no arguments are specified, 
+.I implog
+interprets and prints every message present in the message file.
+Options may be specified to force printing only a subset of the logged
+messages.
+.TP
+.B \-D
+Do not show data messages. 
+.TP
+.B \-F
+Follow the logging process in action.
+This flag causes
+.I implog
+to check for, and display, new logged messages every 5 seconds.
+.TP
+.B \-L
+Show only those messages received on the link number of the
+IP protocol.
+.TP
+.B \-c
+In addition to printing any data messages logged, show the
+contents of the data in hexadecimal bytes.
+.TP
+.B \-f
+Follow the logging process in action as with
+.B \-F ,
+but print the current contents of the log file first.
+.TP
+.B \-h
+Show only those messages received from the specified host.
+(Usually specified in conjunction with an imp.)
+.TP
+.B \-i
+Show only those messages received from the specified imp.
+.TP
+.B \-l
+Show only those messages received on the specified ``link''.
+.TP
+.B \-r
+Print the raw imp leader, showing all fields,
+in addition to the formatted interpretation according to type.
+.TP
+.B \-t
+Show only those messages received of the specified message type.
+.SH "SEE ALSO"
+imp(4), implogd(8)
+.SH BUGS
+Cannot specify multiple hosts, imps, etc.

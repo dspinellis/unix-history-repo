@@ -1,0 +1,54 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Corbett.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fpr.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FPR 1
+.Os BSD 4.2
+.Sh NAME
+.Nm fpr
+.Nd print Fortran file
+.Sh SYNOPSIS
+.Nm fpr
+.Sh DESCRIPTION
+.Nm Fpr
+is a filter that transforms files formatted according to
+Fortran's carriage control conventions into files formatted
+according to UNIX line printer conventions.
+.Pp
+.Nm Fpr
+copies its input onto its output, replacing the carriage
+control characters with characters that will produce the intended
+effects when printed using
+.Xr lpr  1  .
+The first character of each line determines the vertical spacing as follows:
+.Ds I
+.Cw Character
+.Cl Blank	One line
+.Pp
+.Cl 0	Two lines
+.Cl 1	To first line of next page
+.Cl +	No advance
+.Cw
+.De
+.Pp
+A blank line is treated as if its first
+character is a blank. A blank that appears as a carriage control
+character is deleted. A zero is changed to a newline.  A one is
+changed to a form feed. The effects of a "+" are simulated using
+backspaces.
+.Sh EXAMPLES
+.Dl a.out \&| fpr \&| lpr
+.Pp
+.Dl fpr \&< f77.output \&| lpr
+.Sh HISTORY
+.Nm Fpr
+appeared in 4.2 BSD.
+.Sh BUGS
+Results are undefined for input lines longer than 170 characters.

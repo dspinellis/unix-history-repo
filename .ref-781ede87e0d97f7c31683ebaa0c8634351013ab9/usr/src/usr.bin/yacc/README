@@ -1,0 +1,15 @@
+Berkeley Yacc is an LALR(1) parser generator.  Berkeley Yacc has been made
+as compatible as possible with AT&T Yacc.  Berkeley Yacc can accept any
+input specification that conforms to the AT&T Yacc documentation.
+Specifications that take advantage of undocumented features of AT&T Yacc
+will probably be rejected.
+
+The data structures and algorithms used in Berkeley Yacc are all either
+taken from documents available to the general public or are inventions of
+the author.
+
+    Bugs may be reported to
+
+			  corbett@berkeley.edu
+
+Do not expect rapid responses.

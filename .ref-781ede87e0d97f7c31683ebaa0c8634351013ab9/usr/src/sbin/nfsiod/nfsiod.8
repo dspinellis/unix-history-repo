@@ -1,0 +1,36 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)nfsiod.8	5.5 (Berkeley) %G%
+.\"
+.TH NFSIOD 8 ""
+.UC 7
+.SH NAME
+nfsiod \- local NFS asynchronous I/O server
+.SH SYNOPSIS
+.B nfsiod
+[
+.B numdaemons
+]
+.SH DESCRIPTION
+.I Nfsiod
+runs on an
+.SM NFS
+client machine to service asynchronous I/O requests to its server.
+It improves performance but is not required for correct operation.
+The option
+.I numdaemons
+defines how many
+.I nfsiod
+daemons to start;
+if unspecified, only a single daemon will be started.
+A client should typically run enough daemons to handle
+their maximum level of concurrency,
+typically four to six.
+.SH SEE ALSO
+.IR nfsstat (1),
+.IR async_daemon (2),
+.IR mountd (8),
+.IR portmap (8)

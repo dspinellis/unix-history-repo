@@ -1,0 +1,54 @@
+     This version of Berkeley Yacc has been extensively reorganized and
+contains many new features.  It is an amalgam of three earlier versions
+of Berkeley Yacc.  It is largely untested, so expect it to contain bugs.
+When bugs are found report them to corbett@berkeley.edu.  Please
+include small examples if possible.
+
+     Despite my pleas not to be told of undocumented features of AT&T Yacc,
+I have received unsolicited descriptions of such features.  Telling me of
+such features places the public-domain status of Berkeley Yacc at risk.
+Please do not send me descriptions of undocumented features.  On the
+other hand, I would be very interested in learning of documented
+features I have not implemented.
+
+     The -l and -t options have been implemented.  The -l option tells
+Yacc not to include #line directives in the code it produces.  The -t
+option causes debugging code to be included in the compiled parser.
+
+     The code for error recovery has been changed to implement the same
+algorithm as AT&T Yacc.  There will still be differences in the way
+error recovery works because AT&T Yacc uses more default reductions
+than Berekeley Yacc.
+
+     The environment variable TMPDIR determines the directory where
+temporary files will be created.  If TMPDIR is defined, temporary files
+will be created in the directory whose pathname is the value of TMPDIR.
+By default, temporary files are created in /tmp.
+
+     The keywords are now case-insensitive.  For example, %nonassoc,
+%NONASSOC, %NonAssoc, and %nOnAsSoC are all equivalent.
+
+     Commas and semicolons that are not part of C code are treated as
+commentary.
+
+     Line-end comments, as in BCPL, are permitted.  Line-end comments
+begin with // and end at the next end-of-line.  Line-end comments are
+permitted in C code; they are converted to C comments on output.
+
+     The form of y.output files has been changed to look more like
+those produced by AT&T Yacc.
+
+     A new kind of declaration has been added.  The form of the declaration
+is
+
+	  %ident string
+
+where string is a sequence of characters begining with a double quote
+and ending with either a double quote or the next end-of-line, whichever
+comes first.  The declaration will cause a #ident directive to be written
+near the start of the output file.
+
+     If a parser has been compiled with debugging code, that code can be
+enabled by setting an environment variable.  If the environment variable
+YYDEBUG is set to 0, debugging output is suppressed.  If it is set to 1,
+debugging output is written to standard output.

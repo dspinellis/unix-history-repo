@@ -1,0 +1,39 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)atol.3	5.1 (Berkeley) %G%
+.\"
+.TH ATOL 3 ""
+.UC 7
+.SH NAME
+atol \- convert ASCII string to long integer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+long
+atol(const char *nptr);
+.ft R
+.fi
+.SH DESCRIPTION
+The
+.I atol
+function converts the initial portion of the string pointed to by
+.I nptr
+to
+.I long integer
+representation.
+.PP
+It is equivalent to:
+.sp
+.RS
+strtol(nptr, (char **)NULL, 10);
+.RE
+.SH SEE ALSO
+atof(3), atoi(3), strtod(3), strtol(3), strtoul(3)
+.SH STANDARDS
+.B Atol
+conforms to ANSI X3.159-1989 (``ANSI C'').

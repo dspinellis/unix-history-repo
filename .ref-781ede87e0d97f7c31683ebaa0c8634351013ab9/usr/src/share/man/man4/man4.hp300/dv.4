@@ -1,0 +1,116 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dv.4	5.1 (Berkeley) %G%
+.\"
+.TH DV 4 ""
+.UC 7
+.SH NAME
+dv \- HP98730 ``DaVinci'' device interface
+.SH DESCRIPTION
+This driver is for the HP98730 and 98731 graphics device, also known as
+the DaVinci.  This driver has not been tested with all possible
+combinations of frame buffer boards and scan boards installed in the device.
+The driver merely checks for the existence of the device and does minimal set
+up.
+.PP
+The DaVinci can be configured at either the ``internal'' address
+(frame buffer address 0x200000, control register space address 0x560000)
+or at an external select code less than 32.
+At the internal address it will be the ``preferred'' console device
+(see
+.IR cons (4)).
+The hardware installation manual describes the procedure for
+setting these values.
+.PP
+A user process communicates to the device initially by means of
+.IR ioctl (2)
+calls.  For the HP-UX ioctl calls supported, refer to HP-UX manuals.
+The BSD calls supported are:
+.TP
+GRFIOCGINFO
+Get Graphics Info
+.sp
+Get info about device, setting the entries in the
+.I grfinfo
+structure, as defined in <hpdev/grfioctl.h>.
+For the standard 98730, the number of planes should be 4.  The number of
+colors would therefore be 15, excluding black.  If one 98732A frame buffer
+board is installed, there will still be 4 planes, with the 4 planes on the
+colormap board becoming overlay planes.  With each additional 98732 frame
+buffer board 4 planes will be added up to a maximum of 32 planes total.
+.TP
+GRFIOCON
+Graphics On
+.sp
+Turn graphics on by enabling CRT output.  The screen will come on, displaying
+whatever is in the frame buffer, using whatever colormap is in place.
+.TP
+GRFIOCOFF
+Graphics Off
+.sp
+Turn graphics off by disabling output to the CRT.  The frame buffer contents
+are not affected.
+.TP
+GRFIOCMAP
+Map Device to user space
+.sp
+Map in control registers and framebuffer space. Once the device file is
+mapped, the frame buffer structure is accessible.  The structure describing
+the 98730 is defined in <hpdev/grf_dvreg.h>.
+.SH EXAMPLE
+This is a short segment of code showing how the device is opened and mapped
+into user process address space assuming that it is grf0:
+.DS
+{
+    struct dvboxfb *dvbox;
+    u_char *Addr, frame_buffer;
+    struct grfinfo gi;
+    int disp_fd;
+
+      disp_fd = open("/dev/grf0",1);
+
+      if (ioctl (disp_fd, GRFIOCGINFO, &gi) < 0) return -1;
+
+      (void) ioctl (disp_fd, GRFIOCON, 0);
+
+      Addr = (u_char *) 0;
+      if (ioctl (disp_fd, GRFIOCMAP, &Addr) < 0) {
+           (void) ioctl (disp_fd, GRFIOCOFF, 0);
+           return -1;
+      }
+      dvbox = (dvboxfb *) Addr;                       /* Control Registers   */
+      frame_buffer = (u_char *) Addr + gi.gd_regsize; /* Frame buffer memory */
+}
+.DE
+.SH SEE ALSO
+ioctl(2), grf(4).
+.SH FILES
+.ta \w'/dev/crt98730, /dev/ocrt98730  'u
+/dev/grf?	BSD special file
+.br
+/dev/crt98730, /dev/ocrt98730  HP-UX \fIstarbase\fP special files
+.br
+/dev/MAKEDEV.hpux	script for creating HP-UX special files
+.SH ERRORS
+.TP 15
+[ENODEV]
+no such device.
+.TP 15
+[EBUSY]
+Another process has the device open.
+.TP 15
+[EINVAL]
+Invalid ioctl specification.
+.SH BUGS
+Not tested for all configurations of scan board and frame buffer memory boards.
+.SH DIAGNOSTICS
+None under BSD.
+.br
+HP-UX CE.utilities must be used.

@@ -1,0 +1,184 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)nroff.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NROFF 1
+.Os BSD 4.2
+.Sh NAME
+.Nm nroff
+.Nd text formatting
+.Sh SYNOPSIS
+.Nm nroff
+.Op  option
+\&...
+.Op  file
+\&...
+.Sh DESCRIPTION
+.Nm Nroff
+formats text in the named
+.Ar files
+for typewriter-like devices.  See also
+.Xr troff 1  .
+The full capabilities of
+.Nm nroff
+are described in the
+.Em Nroff/Troff User's Manual .
+.Pp
+If no
+.Ar file
+argument is present, the standard input is read.
+An argument consisting of a single minus
+.Fl
+is taken to be a file name corresponding to the standard input.
+.Pp
+The options, which may appear in any order so long as they appear
+.Ar before
+the files, are:
+.Tw Fl
+.Tp Cx Fl o
+.Ar list
+.Cx
+Print only pages whose page numbers appear in the comma-separated
+.Ar list
+of numbers and ranges.  A range
+.Ar N\-M
+means pages
+.Ar N
+through
+.Ar M  ;
+an initial
+.Ar \-N
+means from the beginning to page
+.Ar N  ;
+and a final
+.Ar N\-
+means from
+.Ar N
+to the end.
+.Tp Cx Fl n
+.Ar N
+.Cx
+Number first generated page
+.Ar N  .
+.Tp Cx Fl s
+.Ar N
+.Cx
+Stop every
+.Ar N
+pages.
+.Nm Nroff
+will halt prior to every
+.Ar N
+pages (default
+.Cx Ar N
+.Cx =1)
+.Cx
+to allow paper loading or changing, and will resume upon receipt of a newline.
+.Tp Cx Fl m
+.Ar name
+.Cx
+Prepend the macro file
+.Pa /usr/share/tmac/tmac.name
+to the input
+.Ar files  .
+.Tp Cx Fl r
+.Ar aN
+.Cx
+Set register
+.Ar a
+(one-character) to
+.Ar N  .
+.Tp Fl i
+Read standard input after the input files are exhausted.
+.Tp Fl q
+Invoke the simultaneous input-output mode of the
+.Ar rd
+request.
+.Tp Cx Fl T
+.Ar name
+.Cx
+Prepare output for specified terminal.  Known
+.Ar names
+are:
+.Pp
+.Tw Cm
+.Tp Cm 37
+for the Teletype Corporation Model 37 terminal,
+.Tp Cm crt
+the default; linked to lpr and tn300, for the GE TermiNet 300 (or any
+terminal without reverse-line or half-line capability),
+.Tp Cm 300
+for the DTC 300,
+.Tp Cm 302
+for the DTC 302S and the DTC 300S,
+.Tp Cm 382
+for the DTC 382,
+.Tp Cm 450
+for the DTC 450 and the IPSI 1622,
+.Tp Cm 833
+for the AJ 832/833,
+.Tp Cm epson
+for the Epson FX80,
+.Tp Cm itoh
+for the C:ITOH Prowriter
+.Tp Cm nec
+for the NEC-55?0/77?0 Spinwriter, with the Courier-72/Manifold
+thimble,
+.Tp Cm nec-t
+for the NEC-55?0/77?0 Spinwriter, with the Tech-Math/Times-Roman
+thimble,
+.Tp Cm nec25-t
+for the NEC-5525/7725 Spinwriter, with the Tech-Math/Times-Roman
+thimble,
+.Tp Cm qume
+for the Qume Sprint 5 or 9,
+.Tp Cm x-ecs
+for the Xerox/Diablo 1730/630, extended character set,
+.Tp Cm xerox
+for the Xerox 17?0 or the Diablo 16?0.
+Most of these also have versions for 12 pitch.
+where did this file go? see
+.Pa /usr/libdata/term/README
+for more information.
+.Tp Fl e
+Produce equally-spaced words in adjusted lines, using full terminal resolution.
+.Tp Fl h
+Use output tabs during horizontal spacing
+to speed output and reduce output character count.
+Tab settings are assumed to be every 8 nominal character widths.
+.Tp
+.Sh FILES
+.Dw /usr/share/tmac/tmac.*
+.Di L
+.Dp Pa /tmp/ta*
+temporary file
+.Dp Pa /usr/share/tmac/tmac.*
+standard macro files
+.Dp Pa /usr/libdata/term/*
+terminal driving tables for
+.Nm nroff
+.br
+.Dp
+.Sh SEE ALSO
+J. F. Ossanna,
+.Em Nroff/ Troff user's manual
+.br
+B. W. Kernighan,
+.Em A TROFF Tutorial
+.br
+.Xr troff 1 ,
+.Xr eqn 1 ,
+.Xr tbl 1 ,
+.Xr ms 7 ,
+.Xr me 7 ,
+.Xr man 7 ,
+.Xr col 1
+.Sh HISTORY
+.Nm Nroff
+appeared in Version 6 AT&T UNIX.
+The version described here is
+Version 7.
+

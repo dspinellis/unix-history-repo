@@ -1,0 +1,66 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)df.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DF 1
+.Os BSD 4
+.Sh NAME
+.Nm df
+.Nd display free disk space
+.Sh SYNOPSIS
+.Nm df
+.Op Fl ikn
+.Op Ar file Li \&| Ar filesystem \&...
+.Sh DESCRIPTION
+.Nm Df
+displays statistics about the amount of free disk space on the
+filesystem
+.Ar filesystem
+or on the filesystem of which
+.Ar file
+is a part.
+If neither a file or a filesystem argument is given,
+statistics for every filesystem mounted is displayed.
+.Pp
+The following options are available:
+.Tw Ds
+.Tp Fl i
+Include statistics on the number of free inodes.
+.Tp Fl k
+By default, all reported numbers are in 512-byte blocks.
+This causes the numbers to be reported in kilobytes.
+.Tp Fl n
+Print out the previously obtained statistics from the filesystems.
+This option should be used
+if it is possible that one or more filesystems are
+in a state such that they will not be able
+to provide statistics without a long delay.
+When this option is specified,
+.Nm df
+will not request new statistics from the filesystems,
+but will respond with the possibly stale statistics
+that were previously obtained.
+.Sh BUGS
+The
+.Fl n
+flag is ignored if a file or filesystem is specified.
+.Sh SEE ALSO
+.Xr quota 1 ,
+.Xr statfs 2 ,
+.Xr fstatfs 2 ,
+.Xr getfsstat 2 ,
+.Xr getmntinfo 3 ,
+.Xr fstab 5 ,
+.Xr mount 8 ,
+.Xr quot 8
+.Sh HISTORY
+A
+.Nm df
+command appeared in Version 6 AT&T Unix as
+df(8) and in Version 7 AT&T Unix as df(1m).
+.\" Just for posterity and perspective, the date on the Version 6
+.\" release manual page was 1/20/73.

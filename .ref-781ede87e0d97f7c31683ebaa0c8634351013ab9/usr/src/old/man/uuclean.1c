@@ -1,0 +1,53 @@
+.\"	@(#)uuclean.1c	5.1 (Berkeley) %G%
+.\"
+.TH UUCLEAN 1C
+.AT 3
+.SH NAME
+uuclean \- uucp spool directory clean-up
+.SH SYNOPSIS
+.B uuclean
+[ option ] ...
+.SH DESCRIPTION
+.I Uuclean
+will scan the spool directory for files with the
+specified prefix and delete all those which are
+older than the specified number of hours.
+.PP
+The following options are available.
+.TP 8
+.BI \-p pre
+Scan for files with
+.I pre
+as the file prefix.
+Up to 10
+.B \-p
+arguments may be specified.
+A
+.B \-p
+without any
+.I pre
+following will cause all files older than the
+specified time to be deleted.
+.TP
+.BI \-n time
+Files whose age is more than
+.I time
+hours will be deleted if the prefix
+test is satisfied.
+(default time is 72 hours)
+.TP 8
+.B \-m
+Send mail to the owner of the file
+when it is deleted.
+.PP
+This program will typically be started by
+.IR cron (8).
+.SH FILES
+.TP 22
+/usr/lib/uucp
+directory with commands used by uuclean internally
+.TP
+/usr/lib/uucp/spool
+spool directory
+.SH SEE ALSO
+uucp(1C), uux(1C)

@@ -1,0 +1,106 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getfsstat.2	6.4 (Berkeley) %G%
+.\"
+.TH GETFSSTAT 2 ""
+.UC 7
+.SH NAME
+getfsstat \- get list of all mounted filesystems
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mount.h>
+.LP
+.ft B
+getfsstat(buf, bufsize, flags)
+struct statfs *buf[];
+long bufsize;
+int flags;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Getfsstat
+returns information about all mounted filesystems.
+.I Buf
+is a pointer to an array of
+.I statfs
+structures defined as follows:
+.IP
+.ta \w'#define\0\0'u +\w'fsid_t\0\0'u +\w'f_mntfromname[MNAMELEN]\0\0'u
+.nf
+typedef quad fsid_t;
+.sp 1
+#define MNAMELEN 32	/* length of buffer for returned name */
+.sp 1
+struct statfs {
+	short	f_type;	/* type of filesystem (see below) */
+	short	f_flags;	/* copy of mount flags */
+	long	f_fsize;	/* fundamental filesystem block size */
+	long	f_bsize;	/* optimal transfer block size */
+	long	f_blocks;	/* total data blocks in filesystem */
+	long	f_bfree;	/* free blocks in fs */
+	long	f_bavail;	/* free blocks avail to non-superuser */
+	long	f_files;	/* total file nodes in filesystem */
+	long	f_ffree;	/* free file nodes in fs */
+	fsid_t	f_fsid;	/* filesystem id */
+	long	f_spare[6];	/* spare for later */
+	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
+	char	f_mntfromname[MNAMELEN];	/* mounted filesystem */
+};
+/*
+ * File system types.
+ */
+#define	MOUNT_UFS	1
+#define	MOUNT_NFS	2
+#define	MOUNT_PC	3
+.fi
+.PP
+Fields that are undefined for a particular filesystem are set to \-1.
+The buffer is filled with an array of
+.I fsstat
+structures, one for each mounted filesystem
+up to the size specified by
+.I bufsize .
+.PP
+If
+.I buf
+is given as zero,
+.I getfsstat
+returns just the number of mounted filesystems.
+.PP
+Normally
+.I flags
+should be specified as MNT_WAIT.
+If
+.I flags
+is set to MNT_NOWAIT, then
+.I getfsstat
+will return the information it has available without requesting
+an update from each filesystem.
+Thus, some of the information will be out of date, but
+.I getfsstat
+will not block waiting for information from a filesystem that is
+unable to respond.
+.SH RETURN VALUE
+Upon successful completion, the number of 
+.I fsstat
+structures is returned.
+Otherwise, \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Getfsstat
+fails if one or more of the following are true:
+.TP 15
+EFAULT
+.I Buf
+points to an invalid address.
+.TP 15
+EIO
+An I/O error occurred while reading from or writing to the filesystem.
+.SH "SEE ALSO"
+statfs(2), fstab(5), mount(8)

@@ -1,0 +1,123 @@
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Elz at The University of Melbourne.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)quotacheck.8	6.6 (Berkeley) %G%
+.\"
+.TH QUOTACHECK 8 ""
+.UC 5
+.SH NAME
+quotacheck \- filesystem quota consistency checker
+.SH SYNOPSIS
+.B quotacheck
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+filesystem ...
+.br
+.B quotacheck
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+.B \-a
+.br
+.SH DESCRIPTION
+.I Quotacheck
+examines each filesystem,
+builds a table of current disk usage,
+and compares this table against that recorded
+in the disk quota file for the filesystem.
+If any inconsistencies are detected, both the
+quota file and the current system copy of the
+incorrect quotas are updated (the latter only
+occurs if an active filesystem is checked).
+By default both user and group quotas are checked.
+The optional \fI-g\fP flag specifies that only group quotas should be checked.
+The optional \fI-u\fP flag specifies that only user quotas should be checked.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+.PP
+If the
+.B \-a
+flag is supplied in place of any filesystem names,
+.I quotacheck
+will check all the filesystems indicated in
+.I /etc/fstab
+to be read-write with disk quotas.
+By default only the types of quotas listed in
+.I /etc/fstab
+are checked.
+The optional \fI-g\fP flag specifies that only group quotas listed in
+.I /etc/fstab
+should be checked.
+The optional \fI-u\fP flag specifies that only user quotas listed in
+.I /etc/fstab
+should be checked.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+Parallel passes are run on the filesystems required,
+using the pass numbers in
+.I /etc/fstab
+in an identical fashion to
+.IR fsck (8).
+.PP
+Normally
+.I quotacheck
+operates silently.
+If the
+.B \-v
+option is supplied,
+.I quotacheck
+will report discrepancies between the
+calculated and recorded disk quotas.
+.PP
+.I Quotacheck
+expects each filesystem to be checked to have a
+quota files named
+.I quota.user
+and
+.I quota.group
+which are located at the root of the associated file system.
+These defaults may be overridden in
+.I /etc/fstab .
+If a file is not present, 
+.I quotacheck
+will create it.
+.PP
+.I Quotacheck 
+is normally run at boot time from the
+.I /etc/rc.local
+file, see
+.IR rc (8),
+before enabling disk quotas with
+.IR quotaon (8).
+.PP
+.I Quotacheck
+accesses the raw device in calculating the actual
+disk usage for each user.
+Thus, the filesystems
+checked should be quiescent while
+.I quotacheck
+is running.
+.SH FILES
+.DT
+\fIquota.user\fP	at the filesystem root with user quotas
+.br
+\fIquota.group\fP	at the filesystem root with group quotas
+.br
+/etc/fstab	default filesystems
+.SH "SEE ALSO"
+quota(1),
+quotactl(2),
+fstab(5),
+edquota(8), fsck(8), quotaon(8), repquota(8)

@@ -1,0 +1,54 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getusershell.3	6.4 (Berkeley) %G%
+.\"
+.TH GETUSERSHELL 3  ""
+.UC 6
+.SH NAME
+getusershell, setusershell, endusershell \- get legal user shells
+.SH SYNOPSIS
+.nf
+.B char *getusershell()
+.PP
+.B setusershell()
+.PP
+.B endusershell()
+.fi
+.SH DESCRIPTION
+.I Getusershell
+returns a pointer to a legal user shell as defined by the
+system manager in the file 
+.IR /etc/shells .
+If 
+.I /etc/shells
+is unreadable or does not exist,
+.I getusershell
+behaves as if
+.I /bin/sh
+and
+.I /bin/csh
+were listed in the file.
+.PP
+.I Getusershell
+reads the next
+line (opening the file if necessary);
+.I setusershell
+rewinds the file;
+.I endusershell
+closes it.
+.SH FILES
+/etc/shells
+.SH "SEE ALSO"
+shells(5)
+.SH DIAGNOSTICS
+The routine
+.I getusershell
+returns a null pointer (0) on EOF.
+.SH BUGS
+All information
+is contained in a static area
+so it must be copied if it is
+to be saved.

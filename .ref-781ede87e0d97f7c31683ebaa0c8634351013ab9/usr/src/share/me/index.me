@@ -1,0 +1,93 @@
+.nr _0 \n(c.
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)index.me	2.11 (Berkeley) %G%
+.\"
+.\"	%beginstrip%
+.\"
+.de (x			\" *** begin index entry
+.if \n@>4 .tm >> (x, .z=\\n(.z
+.ds |X x
+.if \\n(.$>0 \
+.	ds |X \\$1
+.\" please note these cases MUST be in this order
+.ie !"\\n(.z"" \
+\{\
+.	ev 2			\" if in a diversion, save & process later
+\!.(x \\*(|X
+.rm |X
+.\}
+.el \
+\{\
+.	am %\\*(|X )x
+.	sp \\n(xsu
+.	ti -\\n(piu
+.\}
+..
+.de )x			\" *** end index entry
+.if \n@>4 .tm >> )x, .z=\\n(.z
+.ie "\\n(.z"" \
+\{\
+.	ds |x \\n%
+.	if \\n(.$>0 \
+.		ds |x \\$1
+.	if "\\*(|x"_" \
+.		ig ..
+.	am %\\*(|X ..
+.	if \w"\\$2">(\\n(.l-\\n(.i-\\n(.k) \
+.		ti +\\n(xuu
+\\\\a\\\\t\\$2\\*(|x
+...
+.	rm |x
+.	rm |X
+.\}
+.el \
+\{\
+\!.)x \\$1 \\$2
+.	br			\" if in a diversion, save & process later
+.	ev
+.\}
+..
+.de xp			\" *** print the index
+.br
+.@C 2
+.ls 1
+.vs \\n(.su*\\n($Ru
+.fi
+.in +\\n(piu
+.ds |X x
+.if \\n(.$>0 \
+.	ds |X \\$1
+.xl -(\\n(xuu+\w'...'u)
+.di |x
+.%\\*(|X
+.br
+.di
+.rm %\\*(|X
+.xl \\n($lu
+.rm |X
+.ev
+.nf
+.in 0
+.ta \\n(.lu-\\n(xuuR \\n(.luR
+.|x
+.fi
+.in
+.rm |x
+..
+.if \n(xu<=0 \
+.	nr xu 0.5i		\" index undent
+.nr c. \n(_0

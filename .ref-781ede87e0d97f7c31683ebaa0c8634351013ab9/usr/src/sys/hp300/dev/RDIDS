@@ -1,0 +1,20 @@
+Describe command returns 37 bytes:
+
+	bytes 6-8:	String (6 4-bit BCD digits)
+	bytes 9-10:	Bytes per sector
+	bytes 24-26:	Maximum cylinder number
+	byte  27:	Maximum head number
+	bytes 28-29:	Maximum sector number (in a track)
+	bytes 32-35:	Maximum sector number (on disk)
+	
+Note we can't use a structure due to alignment problems.
+
+NAME	CS80/ID	STRING	CYLS	HDS	SECT	BPS	MBS
+
+7914	20B	079140	 575	  7	  64	256	
+7933A	212	079330	 660	 13	  92	256
+7945	220	079450	 483	  7	  32	256
+7957	22A	079570	 506	  5	  63	256
+7958	22B	079580	 506	  8	  63	256
+9134L	222	091340	   0	  1	   1	256
+

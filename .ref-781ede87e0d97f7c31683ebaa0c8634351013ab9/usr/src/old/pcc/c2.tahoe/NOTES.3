@@ -1,0 +1,5 @@
+Problem: By returning p->forw, we kill the std's operand, which in turn
+causes the std to be deleted the next time around.
+We WANT this to occur, however, if there are no more
+uses of r0 or r1 between q and the original uses[r].
+So we must loop in flops() until we run out of uses.

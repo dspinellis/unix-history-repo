@@ -1,0 +1,29 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)postp2.pic	5.1 (Berkeley) %G%
+.\"
+.PS
+circle diam .3i "\(ci"
+circle diam .3i "\(ci" at 1st circle + (2i,0i)
+circle diam .3i "\(bu" at 1st circle + (0.5i,-0.5i)
+circle diam .3i "\(bu" at 2nd circle - (0.5i, 0.5i)
+circle diam .3i "\(ci" at 1st circle - (0i,1i)
+circle diam .3i "\(ci" at 5th circle + (1i,0i)
+circle diam .3i "\(ci" at 2nd circle - (0i,1i)
+circle diam .3i "\(ci" at 3rd circle - (0i,1i)
+circle diam .3i "\(ci" at 4th circle - (0i,1i)
+arrow from 1st circle to 3rd circle chop .15i chop .15i
+arrow from 1st circle to 4th circle chop .15i chop .15i
+arrow from 2nd circle to 4th circle chop .15i chop .15i
+spline -> from 3rd circle right .5i up .075i then right .5i down .075i  chop .15i chop .15i
+spline -> from 4th circle left .5i down .075i then left .5i up .075i chop .15i chop .15i
+arrow from 3rd circle to 5th circle chop .15i chop .15i
+arrow from 4th circle to 5th circle chop .15i chop .15i
+arrow from 4th circle to 6th circle chop .15i chop .15i
+arrow from 4th circle to 7th circle chop .15i chop .15i
+arrow from 5th circle to 8th circle chop .15i chop .15i
+arrow from 6th circle to 8th circle chop .15i chop .15i
+arrow from 6th circle to 9th circle chop .15i chop .15i
+.PE

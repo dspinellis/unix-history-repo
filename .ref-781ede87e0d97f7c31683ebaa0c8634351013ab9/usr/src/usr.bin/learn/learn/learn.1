@@ -1,0 +1,147 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)learn.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LEARN 1
+.Os ATT 7th
+.Sh NAME
+.Nm learn
+.Nd computer aided instruction about UNIX
+.Sh SYNOPSIS
+.Nm learn
+.Oo
+.Op Fl Ar directory
+.Oo
+.Ob Ar subject
+.Op Ar lesson
+.Oe
+.Sh DESCRIPTION
+.Nm Learn
+gives Computer Aided Instruction courses and
+practice in the use of UNIX, the C Shell,
+and the Berkeley text editors.
+To get started simply type
+.Nm learn  .
+If you had used
+.Nm learn
+before and left your last session without completing a subject,
+the program will use information in
+.Pa $HOME/.learnrc
+to start you up
+in the same place you left off.
+Your first time through,
+.Nm learn
+will ask questions to find out what you want to do.
+Some questions may be bypassed by naming a
+.Ar subject  ,
+and more yet by naming a
+.Ar lesson  .
+You may enter the
+.Ar lesson
+as a number that
+.Nm learn
+gave you in a previous session.
+If you do not know the lesson number,
+you may enter the
+.Ar lesson
+as a word, and
+.Nm learn
+will look for the first lesson containing it.
+If the
+.Ar lesson
+is
+.Sq Fl ,
+.Nm learn
+prompts for each lesson;
+this is useful for debugging.
+.Pp
+The
+.Sf Ar subject  \'s
+presently handled are
+.Pp
+.Ds I
+files
+editor
+vi
+morefiles
+macros
+eqn
+C
+.De
+.Pp
+There are a few special commands.
+The command `bye' terminates a
+.Nm learn
+session and `where' tells you of your progress,
+with `where\0m' telling you more.
+The command `again' re-displays the text of the lesson
+and `again\0
+.Sf Ar lesson \&'
+lets you review
+.Ar lesson  .
+There is no way for
+.Nm learn
+to tell you the answers it expects in English, however,
+the command `hint' prints the last part of the lesson script
+used to evaluate a response, while `hint m' prints the
+whole lesson script.
+This is useful for debugging
+lessons and might possibly give you an idea about what it expects.
+.Pp
+Normally, lesson scripts are found in the directory /usr/lib/learn.
+The
+.Fl  directory
+option allows one to specify a nonstandard place to look for scripts.
+.Sh FILES
+.Dw /usr/libdata/learn
+.Di L
+.Dp Pa /usr/lib/learn
+subtree for all dependent directories and files
+.Dp Pa /usr/tmp/pl\(**
+playpen directories
+.Dp $HOME/.learnrc
+startup information
+.Dp
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr ex 1
+.br
+B. W. Kernighan and M. E. Lesk,
+.Em LEARN \- Computer-Aided Instruction on UNIX
+.Sh BUGS
+The main strength of
+.Nm learn ,
+that it asks the student to use the real UNIX,
+also makes possible baffling mistakes.
+It is helpful, especially for nonprogrammers,
+to have a UNIX initiate near at hand during the first
+sessions.
+.Pp
+Occasionally lessons are incorrect, sometimes because the local version
+of a command operates in a non-standard way.
+Occasionally a lesson script does not recognize all the different
+correct responses, in which case the `hint' command may be useful.
+Such lessons may be skipped with the `skip' command,
+but it takes some sophistication to recognize the situation.
+.Pp
+To find a
+.Ar lesson
+given as a word,
+.Nm learn
+does a simple
+.Xr fgrep  1
+through the lessons.
+It is unclear whether this sort
+of subject indexing is better than none.
+.Pp
+Spawning a new shell is required for each of many
+user and internal functions.
+.Pp
+The `vi' lessons are provided separately from the others.
+To use them see your system administrator.
+.Sh HISTORY
+.Nm Learn
+appeared in Version 32 AT&T Unix.

@@ -1,0 +1,39 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)mem.4	5.1 (Berkeley) %G%
+.\"
+.TH MEM 4 ""
+.UC 7
+.SH NAME
+mem, kmem \- main memory
+.SH DESCRIPTION
+.lg
+.I Mem
+is a special file that is an image of the main memory
+of the computer.
+It may be used, for example, to examine
+(and even to patch) the system.
+.PP
+Byte addresses in
+.I mem
+are interpreted as physical memory addresses.
+References to non-existent locations cause errors to be returned.
+On the HP300, the last byte of physical memory is always
+0xFFFFFFFF.
+Hence, on an HP300 with 8Mb of memory, physical memory would
+start at 0xFF800000.
+.PP
+The file
+.I kmem
+is the same as 
+.I mem
+except that kernel virtual memory
+rather than physical memory is accessed.
+Only kernel virtual addresses that are mapped to memory are allowed.
+On the HP300, kernel virtual memory runs from 0 to about 0x2400000.
+.SH FILES
+/dev/mem
+.br
+/dev/kmem

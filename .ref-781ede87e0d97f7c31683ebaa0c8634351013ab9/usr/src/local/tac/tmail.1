@@ -1,0 +1,24 @@
+.\"	@(#)tmail.1	1.1 %G%
+.\"
+.TH TMAIL 1 ""
+.SH NAME
+tmail \- print out mail messages, most recent first
+.SH SYNOPSIS
+.B tmail
+[ username ]  [ mboxfile ]
+.SH DESCRIPTION
+.I Tmail
+prints Unix-style mail messages in reverse order (most recent first).
+If no argument is given it looks in your system maildrop
+.RI ( /usr/spool/mail/$USER ).
+An argument which is a valid
+.I username
+causes
+.I tmail
+to look in that person's maildrop;
+otherwise the argument should be the name of a Unix-style 
+``mailbox'' file.
+.SH SEE ALSO
+tac(1), cat(1).
+.SH BUGS
+Should handle multiple arguments.

@@ -1,0 +1,45 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sigpause.2	6.5 (Berkeley) %G%
+.\"
+.TH SIGPAUSE 2 ""
+.UC 4
+.SH NAME
+sigpause \- atomically release blocked signals and wait for interrupt
+.SH SYNOPSIS
+.ft B
+sigpause(sigmask)
+.br
+int sigmask;
+.ft R
+.SH DESCRIPTION
+.B "This interface is made obsolete by sigsuspend(2).
+.LP
+.I Sigpause
+assigns 
+.I sigmask
+to the set of masked signals
+and then waits for a signal to arrive;
+on return the set of masked signals is restored.
+.I Sigmask
+is usually 0 to indicate that no
+signals are now to be blocked.
+.I Sigpause
+always terminates by being interrupted, returning \-1 with
+.I errno
+set to EINTR.
+.PP
+In normal usage, a signal is blocked using
+.IR sigblock (2),
+to begin a critical section, variables modified on the occurrence
+of the signal are examined to determine that there is no work
+to be done, and the process pauses awaiting work by using
+.I sigpause
+with the mask returned by
+.IR sigblock .
+.SH SEE ALSO
+sigsuspend(2), kill(2), sigaction(2), sigprocmask(2),
+sigblock(2), sigvec(2)

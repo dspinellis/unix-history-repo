@@ -1,0 +1,79 @@
+.\" Copyright (c) 1987, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)install.1	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INSTALL 1
+.Os BSD 4.2
+.Sh NAME
+.Nm install
+.Nd install binaries
+.Sh SYNOPSIS
+.Nm install
+.Op Fl cs
+.Op.Fl m Ar mode
+.Op Fl o Ar owner
+.Op Fl g Ar group
+.Ar file1 file2
+.Nm install
+.Op Fl cs
+.Op.Fl m Ar mode
+.Op Fl o Ar owner
+.Op Fl g Ar group
+.Ar file1
+\&...
+.Ar fileN directory
+.Sh DESCRIPTION
+The file(s) are moved (or copied if the
+.Fl c
+option is specified) to the target file or directory.
+If the destination is a directory, then the
+.Ar file
+is moved into
+.Ar directory
+with its original filename.
+If the target file already exists, it is overwritten if permissions
+allow.
+.Pp
+.Tw Ds
+.Tp Fl m
+option may be used to specify an alternate mode.
+The default mode is set to 755.
+The specified mode may be either an octal or symbolic value; see
+.Xr chmod  1
+for a description of possible mode values.
+.Tp Fl o
+Specify an owner.
+.Tp Fl g
+Specify a group.
+.Tp Fl s
+.Nm Install
+exec's the command
+.Xr strip  1
+to strip binaries so that install can be portable over a large
+number of systems and binary types.
+.Tp
+.Pp
+.Nm Install
+refuses to move a file onto itself.
+.Pp
+Installing
+.Pa /dev/null
+creates an empty file.
+.Pp
+Upon successful completion a value of 0 is returned.
+Otherwise, a value of 1 is returned.
+.Sh SEE ALSO
+.Xr chgrp 1 ,
+.Xr chmod 1 ,
+.Xr cp 1 ,
+.Xr mv 1 ,
+.Xr strip 1 ,
+.Xr a.out 5 ,
+.Xr chown 8
+.Sh HISTORY
+.Nm Install
+appeared in 4.2 BSD.

@@ -1,0 +1,90 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Landon Curt Noll.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)factor.6	5.3 (Berkeley) %G%
+.\"
+.\"
+.\" By: Landon Curt Noll   chongo@toad.com,   ...!{sun,tolsoft}!hoptoad!chongo
+.\"
+.\"   chongo <for a good prime call: 391581 * 2^216193 - 1> /\oo/\
+.\"
+.TH FACTOR 6 ""
+.UC 7
+.SH NAME
+factor, primes \- factor a number, generate primes
+.SH SYNOPSIS
+.B factor
+[ number ] ...
+.PP
+.B primes
+[ start [ stop ]]
+.SH DESCRIPTION
+The
+.I factor
+utility will factor integers between -2147483648 and 2147483647 inclusive.
+When a number is factored, it is printed, followed by a ``:'',
+and the list of factors on a single line.
+Factors are listed in ascending order, and are preceded by a space.
+If a factor divides a value more than once, it will be printed
+more than once.
+.PP
+When
+.I factor
+is invoked with one or more arguments,
+each argument will be factored.
+.PP
+When
+.I factor
+is invoked with no arguments,
+.I factor
+reads numbers, one per line, from standard input, until end of file or error.
+Leading white-space and empty lines are ignored.
+Numbers may be preceded by a single - or +.
+Numbers are terminated by a non-digit character (such as a newline).
+After a number is read, it is factored.
+Input lines must not be longer than 255 characters.
+.PP
+The
+.I primes
+utility prints primes in ascending order, one per line, starting at or above
+.B start
+and continuing until, but not including
+.B stop.
+The
+.B start 
+value must be at least 0 and not greater than
+.B stop.\&
+The
+.B stop
+value must not be greater than 4294967295.
+The default value of
+.B stop
+is 4294967295.
+.PP
+When the
+.I primes
+utility is invoked with no arguments,
+.B start
+is read from standard input.
+.B Stop
+is taken to be 4294967295.
+The
+.B start
+value may be preceded by a single +.
+The
+.B start
+value is terminated by a non-digit character (such as a newline).
+The input line must not be longer than 255 characters.
+.SH DIAGNOSTICS
+Out of range or invalid input results in `ouch' being 
+written to standard error.
+.SH BUGS
+.I Factor
+cannot handle the ``10 most wanted'' factor list,
+.I primes
+won't get you a world record.

@@ -1,0 +1,168 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)mail.local.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DELIVERMAIL 8
+.Os ATT 7th
+.Sh NAME
+.Nm delivermail
+.Nd send or receive mail among users
+.Sh SYNOPSIS
+.Nm delivermail
+.Op Ic +
+.Op Fl i
+.Op Ar person
+.Op \&...
+.Nm delivermail
+.Op Ic +
+.Op Fl i
+.Fl f
+.Ar file
+.Pp
+.Sh DESCRIPTION
+Note: This is the old version 7 UNIX system mail program.  The default
+.Nm mail
+command is described in
+.Xr Mail  1  .
+.Pp
+.Nm Mail
+with no argument prints a user's mail, message-by-message,
+in last-in, first-out order; the optional argument
+.Ic +
+displays the mail messages in first-in, first-out order.
+For each message, it reads a line from the standard input
+to direct disposition of the message.
+.Tw Fl
+.Tp Li newline
+Go on to next message.
+.Tp Ic d
+Delete message and go on to the next.
+.Tp Ic p
+Print message again.
+.Tp Fl
+Go back to previous message.
+.Tc Ic s
+.Op Ar file
+.Cx \&...
+.Cx
+Save the message in the named
+.Ar files
+(`mbox' default).
+.Tc Ic w
+.Op Ar file
+.Cx \&...
+.Cx
+Save the message, without a header, in the named
+.Ar files ,
+.Pa mbox
+is the default.
+.Tc Ic m
+.Op Ar person
+.Cx \&...
+.Cx
+Mail the message to the named
+.Ar persons
+(yourself is default).
+.Tp Li EOT
+(control-D)
+Put unexamined mail back in the mailbox and stop.
+.Tp Ic q
+Same as
+.Li EOT .
+.Tc Ic \&!
+.Ar command
+.Cx
+Escape to the Shell to do
+.Ar command  .
+.Tp Ic \&*
+Print a command summary.
+.Tp
+.Pp
+An interrupt normally terminates the
+.Ar mail
+command; the mail file is unchanged.  The optional argument
+.Fl i
+tells
+.Ar mail
+to continue after interrupts.
+.Pp
+When
+.Ar persons
+are named,
+.Ar mail
+takes the standard input up to an end-of-file (or a line with just `.')
+and adds it to each
+.Sf Ar person \'s
+.Pa mail
+file.  The message is preceded by the sender's name and a postmark.
+Lines that look like postmarks are prepended with `>'.  A
+.Ar person
+is usually a user name recognized by
+.Xr login  1  .
+To denote a recipient on a remote system, prefix
+.Ar person
+by the system name and exclamation mark (see
+.Xr uucp  1  ) .
+.Pp
+The
+.Fl f
+option causes the named file, for example,
+.Pa mbox ,
+to be printed as if it were the mail file.
+.Pp
+When a user logs in he is informed of the presence of mail.
+.Sh ENVIRONMENT
+.Tw Fl
+.Tp Ev HOME
+The
+.Ev HOME
+variable is used by
+.Nm delivermail
+to find the file
+.Pa mbox.
+.Tp Ev HOSTALIASES
+Used to find host aliases.
+.Tp Ev NAME
+.Nm Delivermail
+extracts the users full name from the
+.Ev NAME
+variable.
+.Tp Ev TZ
+Used to set the appropriate time zone
+on the postmark.
+.Sh FILES
+.Dw /var/spool/mail/*
+.Di L
+.Dp Pa /etc/passwd
+to identify sender and locate persons
+.Dp Pa /var/spool/mail/*
+incoming mail for user *
+.Dp Pa mbox
+saved mail
+.Dp Pa /tmp/ma*
+temp file
+.Dp Pa dead.letter
+unmailable text
+.Dp
+.Sh SEE ALSO
+.Xr Mail 1 ,
+.Xr write 1 ,
+.Xr uucp 1 ,
+.Xr uux 1 ,
+.Xr xsend 1 ,
+.Xr sendmail 8
+.Sh HISTORY
+.Nm Delivermail
+appeared in Version 7 AT&T Unix as the program
+.Nm mail.
+.Sh BUGS
+Race conditions sometimes result in a failure to remove a lock file.
+.Pp
+Normally anybody can read your mail, unless it is sent by
+.Xr xsend  1  .
+An installation can overcome this by making
+.Nm mail
+a set-user-id command that owns the mail directory.

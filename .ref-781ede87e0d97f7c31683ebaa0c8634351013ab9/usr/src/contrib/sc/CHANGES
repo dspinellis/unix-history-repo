@@ -1,0 +1,159 @@
+CHANGES BETWEEN 6.1 and 6.7
+
+Dave Lewis - 
+	Found and fixed a null pointer derefrece in the 'R' command.
+
+Rob McMahon -
+	Changed the ctl() macro to work with ANSI style compilers.
+	Cleaned up some non-readonly text problems.
+
+Rick Linck -
+	Fixed a bug in lex.c - Ann Arbor Ambassadors have long ks and ke
+	termcap entries.
+
+Sam Drake -
+	A fix for undefined C_* symbols in AIX.
+
+Peter Brower -
+	Cleaned up the INTERNATIONAL ifdefs with more portable code.
+
+Glen Ditchfield
+	Cleaned up a problem in crypt.c when the encrypted file shrank.
+
+Bob Bond -
+	Vi style editing for the command line.
+	A bug in range name aliases.
+
+Jeff Buhrt -
+	-Added "~" filename expansion.
+	-702 columns (A-ZZ) and unlimited rows/cells based on max. memory
+	-fixed a few bugs
+	-slightly decreased CPU usage
+	-MAKES backup copies of files
+	-understands ~$HOME stuff
+
+CHANGES BETWEEN 5.1 and 6.1:
+
+Andy Valencia -
+	xmalloc aligns data to a double boundary.
+
+Lawrence Cipriani -
+	Fixed a bug in the "do you want to save this" sequence.
+
+Soren Lundsgaard -
+	A null pointer derefrence.
+
+Rick Perry -
+	Cleaned up a problem with modchk() in sc.c.
+
+Gregory Bond -
+	Added code for multi argument versions of @min and @max.
+
+Tad Mannes -
+	Added code to save/restore hidden rows and columns when the
+	data base is saved or restored.
+
+Marius Olafsson -
+	INTERNATIONAL changes.  Allows full 8 bit characters (if
+	curses supports them.)
+
+Kurt Horton -
+	Added support for @pv, @fv and @pmt financial functins.
+	Tested lots of different systems, linting.
+
+John Campbell -
+	Support for VMS.  See VMS_NOTES.
+
+Peter King -
+	 User selection of row or column order for recalculation.
+		Also affects order of traversing regions in /f and /r
+	 User setting of automatic or manual recalculation.
+	 User setting of number of times to try recalculation.
+	 + and - commands when in non-numeric mode to do 
+		increment and decrement operations.
+	@index, @stindex, @atan2, @lookup  functions.
+	Save/restore options.
+	Support for TeX, LaTeX, and better support for tbl in "T" cmd.
+	Provision of a copyent function to copy entries (same code repeated
+		in several locations)
+	Forwrow, backrow, forwcol, backcol functions to replace
+		repeated code
+	Correct interpretation of ESCAPE or ^G as an abort when in a 
+		two character command such as 'ar' or 'ac'
+	Cleanup in eval() - catches non-trap function errors.
+
+Bob Bond - 
+       Added search options to "g".
+       Added supression of hidden columns to "W"
+       Added the mod operator "%"
+       New help functions.
+       Constant prescale "$"
+       Added string matching to @lookup.
+       Some more bug fixes.
+       Testing, integration, documentation.
+
+Alan Silverstein-
+	Greatly revised the manual entry.
+	Added menus for ^E command and row/column commands, which
+	involved a bunch of code cleanup.
+
+	Changed top row display to clearly indicate string labels
+	versus number parts, and to distinguish string functions from
+	constant labels.
+
+	When the character cursor is on a cell (not topline), ^H
+	(backspace) is like ^B (move back one cell), rather than being
+	ignored.
+
+	When the character cursor is on a cell (not topline), ^I (tab)
+	is like ^F (move forward one cell), rather than being ignored.
+	^R is no longer identical with ^L.  Now ^R highlights all cells
+	which should be entered by a user because they contain constant
+	numeric values (not the result of a numeric expression).
+
+	Added a ^X command, similar to ^R, which highlights cells which
+	have expressions.  It also displays the expressions in the
+	highlighted cells as left-justified strings, instead of the
+	label and/or value of the cell.
+
+	Added indirection functions (@nval() and @sval()) for simple
+	table lookups.  Given a column name and row number, they return
+	the numeric or string value of the selected cell.
+
+	Added external functions (@ext()) for non-trivial
+	computations.  Given a command name and argument, it calls the
+	command and reads back one output line.
+
+	Added a ^T,e command to toggle enabling of external functions.
+
+	Changed ^T,t to only control the top line display, and added
+	^T,c to control current cell highlighting.  (Separated the
+	functions.)
+
+	"!" (shell escape) gives a vi-style warning if there were any
+	changes since the last write.  (No change to manual entry.)
+
+	Fixed some startup, error, and prompt messages to be cleaner
+	and/or more consistent.  (No changes to manual entry.)
+
+	Fixed a bug:  If @substr() upper bound (third parameter) is
+	past the end of the string operand, return the substring
+	through the end of the string, rather than returning a null
+	string.
+
+	Fixed a bug:  Reset SIGINT to default after forking before
+	calling shell escape program and before starting pipeline (for
+	commands which support this).  Didn't reset SIGINT before
+	calling crypt and external functions because in both cases it
+	should be irrelevant.  (No change to manual entry.)
+
+CHANGES BETWEEN 6.1 and 6.2:
+
+
+Chris Cole-
+	Compatibility with Lotus 1-2-3
+		a) @hlookup(expr,range,expr)
+		b) @vlookup(expr,range,expr)
+		c) @round(expr,expr)
+		d) @if(expr,expr,expr)
+		e) @abs(expr)

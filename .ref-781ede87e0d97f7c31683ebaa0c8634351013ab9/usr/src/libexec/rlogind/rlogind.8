@@ -1,0 +1,119 @@
+.\" Copyright (c) 1983, 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)rlogind.8	6.11 (Berkeley) %G%
+.\"
+.TH RLOGIND 8 ""
+.UC 5
+.SH NAME
+rlogind \- remote login server
+.SH SYNOPSIS
+.B rlogind
+[
+.B \-aln
+]
+.SH DESCRIPTION
+.I Rlogind
+is the server for the 
+.IR rlogin (1)
+program.  The server provides a remote login facility
+with authentication based on privileged port numbers from trusted hosts.
+.PP
+.I Rlogind
+listens for service requests at the port indicated in
+the ``login'' service specification; see
+.IR services (5).
+When a service request is received the following protocol
+is initiated:
+.IP 1)
+The server checks the client's source port.
+If the port is not in the range 512-1023, the server
+aborts the connection.
+.IP 2)
+The server checks the client's source address
+and requests the corresponding host name (see
+IR gethostbyaddr (3),
+.IR hosts (5)
+and
+.IR named (8)).
+If the hostname cannot be determined,
+the dot-notation representation of the host address is used.
+If the hostname is in the same domain as the server (according to
+the last two components of the domain name),
+or if the
+.B \-a
+option is given,
+the addresses for the hostname are requested,
+verifying that the name and address correspond.
+Normal authentication is bypassed if the address verification fails.
+.PP
+Once the source port and address have been checked, 
+.I rlogind
+proceeds with the authentication process described in
+.IR rshd (8).
+It then allocates a pseudo terminal (see 
+.IR pty (4)),
+and manipulates file descriptors so that the slave
+half of the pseudo terminal becomes the 
+.B stdin ,
+.B stdout ,
+and
+.B stderr 
+for a login process.
+The login process is an instance of the
+.IR login (1)
+program, invoked with the
+.B \-f
+option if authentication has succeeded.
+If automatic authentication fails, the user is
+prompted to log in as if on a standard terminal line.  The
+.B \-l
+option prevents any authentication based on the user's
+``.rhosts'' file, unless the user is logging in as the superuser.
+.PP
+The parent of the login process manipulates the master side of
+the pseudo terminal, operating as an intermediary
+between the login process and the client instance of the
+.I rlogin
+program.  In normal operation, the packet protocol described
+in
+.IR pty (4)
+is invoked to provide ^S/^Q type facilities and propagate
+interrupt signals to the remote programs.  The login process
+propagates the client terminal's baud rate and terminal type,
+as found in the environment variable, ``TERM''; see
+.IR environ (7).
+The screen or window size of the terminal is requested from the client,
+and window size changes from the client are propagated to the pseudo terminal.
+.PP
+Transport-level keepalive messages are enabled unless the
+.B \-n
+option is present.
+The use of keepalive messages allows sessions to be timed out
+if the client crashes or becomes unreachable.
+.SH DIAGNOSTICS
+All initial diagnostic messages are indicated
+by a leading byte with a value of 1,
+after which any network connections are closed.
+If there are no errors before
+.I login
+is invoked, a null byte is returned as in indication of success.
+.PP
+.B ``Try again.''
+.br
+A
+.I fork
+by the server failed.
+.SH "SEE ALSO"
+login(1), ruserok(3), rshd(8)
+.SH BUGS
+The authentication procedure used here assumes the integrity
+of each client machine and the connecting medium.  This is
+insecure, but is useful in an ``open'' environment.
+.PP
+A facility to allow all data exchanges to be encrypted should be
+present.
+.PP
+A more extensible protocol should be used.

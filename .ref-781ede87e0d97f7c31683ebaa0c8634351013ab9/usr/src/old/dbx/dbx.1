@@ -1,0 +1,846 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dbx.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DBX 1
+.Os BSD 4.2
+.Sh NAME
+.Nm dbx
+.Nd debugger
+.Sh SYNOPSIS
+.Nm Dbx
+.Op Fl r
+.Op Fl i
+.Op Fl k
+.Op Fl I Ar dir
+.Op Fl c Ar file
+.Op Ar objfile Op Ar coredump
+.Sh DESCRIPTION
+.Nm Dbx
+is a tool for source level debugging and execution of
+programs under UNIX.
+The
+.Ar objfile
+is an object file produced by a compiler
+with the appropriate flag (usually
+.Fl g )
+specified to produce symbol information in the object file.
+Currently,
+.Xr cc 1 ,
+.Xr f77 1 ,
+.Xr pc 1 ,
+and the DEC Western
+Research Laboratory Modula-2 compiler,
+.Xr mod l ,
+produce the appropriate source information.
+The machine level facilities of
+.Nm dbx
+can be used on any program.
+.Pp
+The object file contains a symbol table that includes the names of
+all the source files translated by the compiler to create it.
+These files are available for perusal while using the debugger.
+.Pp
+If a file named
+.Pa core
+exists in the current directory
+or a
+.Ar coredump
+file is specified,
+.Nm dbx
+can be used
+to examine the state of the program when it faulted.
+.Pp
+If the file
+.Pa .dbxinit
+exists in the current directory then the
+debugger commands in it are executed.
+.Nm Dbx
+also checks for a
+.Pa .dbxinit
+in the user's home directory
+if there isn't one in the current directory.
+.Pp
+The command line options and their meanings are:
+.Tw Fl
+.Tp Fl r
+Execute
+.Ar objfile
+immediately.
+If it terminates successfully
+.Nm dbx
+exits.
+Otherwise the reason for termination will be reported
+and the user offered the option of entering the debugger
+or letting the program fault.
+.Nm Dbx
+will read from
+.Pa /dev/tty
+when
+.Fl r
+is specified
+and standard input is not a terminal.
+.Tp Fl i
+Force
+.Nm dbx
+to act as though standard input is a terminal.
+.Tp Fl k
+Map memory addresses, useful for kernel debugging.
+.Tp Cx Fl I
+.Cx \&\ \&
+.Ar dir
+.Cx
+Add
+.Ar dir
+to the list of directories
+that are searched when looking for a source file.
+Normally
+.Nm dbx
+looks for source files in the current directory
+and in the directory where
+.Ar objfile
+is located.
+The directory search path can also be set with the
+.Ic use
+command.
+.Tp Cx Fl c
+.Cx \&\ \&
+.Ar file
+.Cx
+Execute the
+.Nm dbx
+commands in the
+.Ar file
+before
+reading from standard input.
+.Tp
+.Pp
+Unless
+.Fl r
+is specified,
+.Nm dbx
+just prompts and waits for a command.
+.Ss Execution and Tracing Commands
+.Dw Fl
+.Di L
+.Dp Cx Ic run
+.Cx \&\ \&
+.Op Ar args
+.Cx \&\ \&
+.Op Sy < Ar filename
+.Cx \&\ \&
+.Op Sy > Ar filename
+.Cx
+.Dp Cx Ic rerun
+.Cx \&\ \&
+.Op Ar args
+.Cx \&\ \&
+.Op Sy < Ar filename
+.Cx \&\ \&
+.Op Sy > Ar filename
+.Cx
+Start executing
+.Ar objfile  ,
+passing
+.Ar args
+as command line arguments;
+.Sy <
+or
+.Sy >
+can be used to redirect input or output in the usual manner.
+When
+.Ic rerun
+is used without any arguments the previous
+argument list is passed to the program;
+otherwise it is identical to
+.Ic run .
+If
+.Ar objfile
+has been written since the last time the symbolic information
+was read in,
+.Nm dbx
+will read in the new information.
+.Dp Cx Ic trace
+.Cx \&\ \&
+.Op Ic in Ar procedure/function
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+.Dp Cx Ic trace
+.Cx \&\ \&
+.Ar source-line-number
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+.Dp Cx Ic trace
+.Cx \&\ \&
+.Ar procedure/function
+.Cx \&\ \&
+.Op Ic in Ar procedure/function
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+.Dp Cx Ic trace
+.Cx \&\ \&
+.Ar expression
+.Cx \&\ \&
+.Ic at
+.Cx \&\ \&
+.Ar source-line-number
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+.Dp Cx Ic trace
+.Cx \&\ \&
+.Ar variable
+.Cx \&\ \&
+.Op Ic in Ar procedure/function
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+Have tracing information printed when the program is executed.
+A number is associated with the command that is used
+to turn the tracing off (see the
+.Ic delete
+command).
+.Pp
+The first argument describes what is to be traced.
+If it is a
+.Ar source-line-number ,
+then the line is printed
+immediately prior to being executed.
+Source line numbers in a file other than the current one
+must be preceded by the name of the file in quotes and a colon, e.g.
+"mumble.p":17.
+.Pp
+If the argument is a procedure or function name then
+every time it is called, information is printed telling
+what routine called it, from what source line it was called,
+and what parameters were passed to it.
+In addition, its return is noted, and if it's a function
+then the value it is returning is also printed.
+.Pp
+If the argument is an
+.Ar expression
+with an
+.Ic at
+clause
+then the value of the expression is printed whenever the
+identified source line is reached.
+.Pp
+If the argument is a variable then the name and value of the variable
+is printed whenever it changes.
+Execution is substantially slower during this form of tracing.
+.Pp
+If no argument is specified then all source lines are printed
+before they are executed.
+Execution is substantially slower during this form of tracing.
+.Pp
+The clause
+.Ic in
+.Ar procedure/function
+restricts tracing information
+to be printed only while executing inside the given procedure
+or function.
+.Pp
+.Ar Condition
+is a boolean expression and is
+evaluated prior to printing the tracing information;
+if it is false then the information is not printed.
+.Dp Cx Ic stop if
+.Cx \&\ \&
+.Ar condition
+.Cx
+.Dp Cx Ic stop at
+.Cx \&\ \&
+.Ar source-line-number
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+.Dp Cx Ic stop in
+.Cx \&\ \&
+.Ar source-line-number
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+.Dp Cx Ic stop
+.Cx \&\ \&
+.Ar variable
+.Cx \&\ \&
+.Op Ic if Ar condition
+.Cx
+Stop execution when the given line is reached, procedure or function
+called, variable changed, or condition true.
+.Dp Cx Ic status
+.Cx \&\ \&
+.Op Ic \&> Ar filename
+.Cx
+Print out the currently active
+.Ic trace
+and
+.Ic stop
+commands.
+.Dp Cx Ic delete
+.Cx \&\ \&
+.Ar command-number ...
+.Cx
+The traces or stops corresponding to the given numbers are removed.
+The numbers associated with traces and stops are printed by
+the
+.Ic status
+command.
+.Dp Cx Ic catch
+.Cx \&\ \&
+.Ar number
+.Cx
+.Dp Cx Ic catch
+.Cx \&\ \&
+.Ar signal-name
+.Cx
+.Dp Cx Ic ignore
+.Cx \&\ \&
+.Ar number
+.Cx
+.Dp Cx Ic ignore
+.Cx \&\ \&
+.Ar signal-name
+.Cx
+Start or stop trapping a signal before it is sent
+to the program.
+This is useful when a program being debugged
+handles signals such as interrupts.
+A signal may be specified by number or by a name
+(e.g., SIGINT).
+Signal names are case insensitive and the ``SIG'' prefix is optional.
+By default all signals are trapped except SIGCONT, SIGCHILD,
+SIGALRM and SIGKILL.
+.Dp Cx Ic cont
+.Cx \&\ \&
+.Ar integer
+.Cx
+.Dp Cx Ic cont
+.Cx \&\ \&
+.Ar signal-name
+.Cx
+Continue execution from where it stopped.
+If a signal is specified, the process continues as though
+it received the signal.
+Otherwise, the process is continued as though it had not been stopped.
+.Pp
+Execution cannot be continued if the process has ``finished'',
+that is, called the standard procedure ``exit''.
+.Nm Dbx
+does not allow the process to exit, thereby
+letting the user to examine the program state.
+.Dp Ic step
+Execute one source line.
+.Dp Ic next
+Execute up to the next source line.
+The difference between this and
+.Ic step
+is that
+if the line contains a call to a procedure or function
+the
+.Ic step
+command will stop at the beginning of that
+block, while the
+.Ic next
+command will not.
+.Dp Cx Ic return
+.Cx \&\ \&
+.Op Ar procedure
+.Cx
+Continue until a return to
+.Ar procedure
+is executed, or
+until the current procedure returns if none is specified.
+.Dp Cx Ic call
+.Cx \&\ \&
+.Ar procedure (parameters )
+.Cx
+Execute the object code associated with the named procedure or function.
+.Dp
+.Ss Printing Variables and Expressions
+Names are resolved first using the static scope of the current function,
+then using the dynamic scope if the name is not defined
+in the static scope.
+If static and dynamic searches do not yield a result,
+an arbitrary symbol is chosen and
+the message
+.Dq Li [using Ar qualified name]
+is printed.
+The name resolution procedure may be overridden by qualifying an identifier
+with a block name, e.g.,
+.Dq Li module.variable
+For C, source files are treated as modules named
+by the file name without ``.c''.
+.Pp
+Expressions are specified with an approximately
+common subset of C and Pascal (or equivalently Modula-2) syntax.
+Indirection can be denoted using either a prefix ``*'' or
+a postfix ``^'' and
+array expressions are subscripted by brackets
+.Cx (``
+.Op
+.Cx \'\').
+.Cx
+The field reference operator (``.'') can be used with pointers
+as well as records, making the C operator ``\->'' unnecessary
+(although it is supported).
+.Pp
+Types of expressions are checked;
+the type of an expression may be overridden
+by using
+.Cx ``
+.Ar type-name (expression)
+.Cx \'\'.
+.Cx
+When there is no corresponding named type
+the special constructs
+.Cx ``&
+.Ar type-name
+.Cx \'\'
+.Cx
+and
+.Cx ``$$
+.Ar tag-name
+.Cx \'\'
+.Cx
+can be used to represent a pointer to a named type or C structure tag.
+.Dw Fl
+.Di L
+.Dp Cx Ic assign
+.Cx \&\ \&
+.Ar variable
+.Ic =
+.Ar expression
+.Cx
+Assign the value of the expression to the variable.
+.Dp Cx Ic dump
+.Cx \&\ \&
+.Op Ar procedure
+.Cx \&\ \&
+.Op Ic > Ar filename
+.Cx
+Print the names and values of variables in the given procedure,
+or the current one if none is specified.
+If the procedure given is ``.'', then the all active variables
+are dumped.
+.Dp Cx Ic print
+.Cx \&\ \&
+.Ar expression
+.Cx \&\ \&
+.Op Ic \&, Ar expression ...
+.Cx
+Print out the values of the expressions.
+.Dp Cx Ic whatis
+.Cx \&\ \&
+.Ar name
+.Cx
+Print the declaration of the given name, which may be qualified
+with block names as above.
+.Dp Cx Ic which
+.Cx \&\ \&
+.Ar identifier
+.Cx
+Print the full qualification of the given identifer, i.e.
+the outer blocks that the identifier is associated with.
+.Dp Cx Ic up
+.Cx \&\ \&
+.Op Ar count
+.Cx
+.Dp Cx Ic down
+.Cx \&\ \&
+.Op Ar count
+.Cx
+Move the current function, which is used for resolving names,
+up or down the stack
+.Ar count
+levels.
+The default
+.Ar count
+is 1.
+.Dp Ic where
+Print out a list of the active procedures and function.
+.Dp Cx Ic whereis
+.Cx \&\ \&
+.Ar identifier
+.Cx
+Print the full qualification of all the symbols whose
+name matches the given identifier.
+The order in which the symbols are printed is not meaningful.
+.Dp
+.Ss Accessing Source Files
+.Pp
+.Di L
+.Dp Cx Ar /regular expression
+.Op /
+.Cx
+.Dp Cx Ar ?regular expression
+.Op ?
+.Cx
+Search forward or backward in the current source file
+for the given pattern.
+.Dp Cx Ic edit
+.Cx \&\ \&
+.Op Ar filename
+.Cx
+.Dp Cx Ic edit
+.Cx \&\ \&
+.Ar procedure/function-name
+.Cx
+Invoke an editor on
+.Ar filename
+or the current source file if none
+is specified.
+If a
+.Ar procedure
+or
+.Ar function
+name is specified,
+the editor is invoked on the file that contains it.
+Which editor is invoked by default depends on the installation.
+The default can be overridden by setting the environment variable
+.Ev EDITOR
+to the name of the desired editor.
+.Dp Cx Ic file
+.Cx \&\ \&
+.Op Ar filename
+.Cx
+Change the current source file name to
+.Ar filename  .
+If none is specified then the current source file name is printed.
+.Dp Cx Ic func
+.Cx \&\ \&
+.Op Ar procedure/function
+.Cx
+Change the current function.
+If none is specified then print the current function.
+Changing the current function implicitly changes the current source file
+to the one that contains the function; it also changes the current scope
+used for name resolution.
+.Dp Cx Ic list
+.Cx \&\ \&
+.Op Ar source-line-number Op Ic \&, Ar source-line-number
+.Cx
+.Dp Cx Ic list
+.Cx \&\ \&
+.Ar procedure/function
+.Cx
+List the lines in the current source file from the first line number to
+the second inclusive.
+If no lines are specified, the next 10 lines are listed.
+If the name of a procedure or function is given
+lines
+.Ar n-k
+to
+.Ar n+k
+are listed where
+.Ar n
+is the first statement
+in the procedure or function and
+.Ar k
+is small.
+.Dp Cx Ic use
+.Cx \&\ \&
+.Ar directory-list
+.Cx
+Set the list of directories to be searched
+when looking for source files.
+.Dp
+.Ss Command Aliases and Variables
+.Dw Fl
+.Di L
+.Dp Cx Ic alias
+.Cx \&\ \&
+.Ar name
+.Cx \&\ \&
+.Ar name
+.Cx
+.Dp Cx Ic alias
+.Cx \&\ \&
+.Ar name
+.Cx \&\ \&
+.Ar string
+.Cx
+.Dp Cx Ic alias
+.Cx \&\ \&
+.Ar name (parameters)
+.Cx \&\ \&
+.Cx ``
+.Ar string
+.Cx \'\'
+.Cx
+When commands are processed,
+dbx first checks to see if the word
+is an alias for either a command or a string.
+If it is an alias, then dbx treats the input as though
+the corresponding string (with values substituted for any parameters)
+had been entered.
+For example,
+to define an alias ``rr'' for the command ``rerun'',
+one can say
+.Pp
+.Dl alias rr rerun
+.Pp
+To define an alias called ``b'' that sets a stop at a particular line
+one can say
+.Pp
+.Dl alias b(x) ``stop at x''
+.Pp
+Subsequently, the command ``b(12)'' will expand to ``stop at 12''.
+.Pp
+.Dp Cx Ic set
+.Ws
+.Ar name
+.Op \&= Ar expression
+.Cx
+The
+.Ic set
+command defines values for debugger variables.
+The names of these variables cannot conflict with names in the program
+being debugged, and are expanded to the corresponding expression
+within other commands.
+The following variables have a special meaning:
+.Dw Ds
+.Di L
+.Dp Li $frame
+Setting this variable to an address causes dbx to use the stack frame
+pointed to by the address for
+doing stack traces and accessing local variables.
+This facility is of particular use for kernel debugging.
+.Dp Li $hexchars
+.Dp Li $hexints
+.Dp Li $hexoffsets
+.Dp Li $hexstrings
+When set, dbx prints out
+out characters, integers, offsets from registers, or character pointers
+respectively in hexadecimal.
+.Dp Li $listwindow
+The value of this variable specifies the number
+of lines to list around a function or when the
+.Ic list
+command
+is given without any parameters.
+Its default value is 10.
+.Dp Li $mapaddrs
+Setting (unsetting) this variable causes dbx to start (stop)
+mapping addresses.
+As with ``$frame'', this is useful for kernel debugging.
+.Dp Li $unsafecall
+.Dp Li $unsafeassign
+When ``$unsafecall'' is set,
+strict type checking is turned off for arguments to
+subroutine or function calls (
+.Ar e .g .
+in the
+.Ic call
+statement).
+When ``$unsafeassign'' is set,
+strict type checking between the two sides
+of an
+.Ic assign
+statement is turned off.
+These variables should be used only with great care,
+because they severely limit dbx's usefulness
+for detecting errors.
+.Dp
+.Dp Cx Ic unalias
+.Cx \&\ \&
+.Ar name
+.Cx
+Remove the alias with the given name.
+.Dp Cx Ic unset
+.Cx \&\ \&
+.Ar name
+.Cx
+Delete the debugger variable associated with
+.Ar name  .
+.Dp
+.Ss Machine Level Commands
+.Dw Fl
+.Di L
+.Dp Cx Ic tracei
+.Cx \&\ \&
+.Op Ar address
+.Cx \&\ \&
+.Op .Ic if Ar cond
+.Cx
+.Dp Cx Ic tracei
+.Cx \&\ \&
+.Op Ar variable
+.Cx \&\ \&
+.Op Ic at Ar address
+.Cx \&\ \&
+.Op Ic if Ar cond
+.Cx
+.Dp Cx Ic stopi
+.Cx \&\ \&
+.Op Ar address
+.Cx \&\ \&
+.Op Ic if Ar cond
+.Cx
+.Dp Cx Ic stopi
+.Cx \&\ \&
+.Op Ic at
+.Cx \&\ \&
+.Op Ar address
+.Cx \&\ \&
+.Op Ic if Ar cond
+.Cx
+Turn on tracing or set a stop using a machine instruction address.
+.Dp Ic stepi
+.Dp Ic nexti
+Single step as in
+.Ic step
+or
+.Ic next  ,
+but do a single instruction
+rather than source line.
+.Dp Cx Ar address
+.Cx \&,
+.Ar address
+.Cx \&/
+.Op Ar mode
+.Cx
+.Dp Cx Ar address
+.Cx \&/
+.Op Ar count
+.Op Ar mode
+.Cx
+Print the contents of memory starting at the first
+.Ar address
+and continuing up to the second
+.Ar address
+or until
+.Ar count
+items are printed.
+If the address is ``.'', the address following the one
+printed most recently is used.
+The
+.Ar mode
+specifies how memory is to be printed;
+if it is omitted the previous mode specified is used.
+The initial mode is ``X''.
+The following modes are supported:
+.Dw Cm
+.Dp Cm i
+print the machine instruction
+.Dp Cm d
+print a short word in decimal
+.Dp Cm D
+print a long word in decimal
+.Dp Cm o
+print a short word in octal
+.Dp Cm O
+print a long word in octal
+.Dp Cm x
+print a short word in hexadecimal
+.Dp Cm X
+print a long word in hexadecimal
+.Dp Cm b
+print a byte in octal
+.Dp Cm c
+print a byte as a character
+.Dp Cm s
+print a string of characters terminated by a null byte
+.Dp Cm f
+print a single precision real number
+.Dp Cm g
+print a double precision real number
+.Dp
+.Pp
+Symbolic addresses are specified by preceding the name with an ``&''.
+Registers are denoted by ``$rN'' where N is the number of the register.
+Addresses may be expressions made up of other addresses and
+the operators ``+'', ``-'', and indirection (unary ``*'').
+.Dp
+.Ss Miscellaneous Commands
+.Tw Ic
+.Tp Ic gripe
+Invoke a mail program to send a message to the person in charge of
+.Nm dbx  .
+.Tp Ic help
+Print out a synopsis of
+.Nm dbx
+commands.
+.Tp Ic quit
+Exit
+.Nm dbx  .
+.Tp Cx Ic sh
+.Cx \&\ \&
+.Ar command-line
+.Cx
+Pass the command line to the shell for execution.
+The SHELL environment variable determines which shell is used.
+.Tp Cx Ic source
+.Cx \&\ \&
+.Ar filename
+.Cx
+Read
+.Nm dbx
+commands from the given
+.Ar filename  .
+.Tp
+.Sh ENVIRONMENT
+.Nm Dbx
+utilizes the following environment variables:
+.Ds I
+EDITOR
+HOME
+PATH
+SHELL
+.De
+.Sh FILES
+.Dw .dbxinit
+.Di L
+.Dp Pa a.out
+object file
+.Dp Pa .dbxinit
+initial commands
+.Dp
+.Sh SEE ALSO
+.Xr cc 1 ,
+.Xr mod l ,
+.Xr f77 1 ,
+.Xr pc 1
+.Sh HISTORY
+.Nm Dbx
+appeared in 4.2 BSD.
+.Sh BUGS
+.Nm Dbx
+suffers from the same ``multiple include'' malady as did
+.Nm sdb  .
+If you have a program consisting of a number of object files
+and each is built from source files that include header files,
+the symbolic information for the header files is replicated in
+each object file.
+Since about one debugger start-up is done for each link,
+having the linker
+.Xr ld 1
+re-organize the symbol information
+would not save much time, though it would reduce some of the
+disk space used.
+.Pp
+This problem is an artifact of the unrestricted semantics
+of #include's in C; for example an include file can contain
+static declarations that are separate entities for each file
+in which they are included.
+However, even with Modula-2 there is a substantial amount of duplication
+of symbol information necessary for inter-module type checking.
+.Pp
+Some problems remain with the support for individual languages.
+Fortran problems include:
+inability to assign to logical, logical*2, complex
+and double complex variables;
+inability to represent parameter constants
+which are not type integer or real;
+peculiar representation for the values of dummy procedures
+(the value shown for a dummy procedure is actually
+the first few bytes of the procedure text;
+to find the location of the procedure,
+use ``&'' to take the address of the variable).

@@ -1,0 +1,92 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Adam S. Moskowitz.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)paste.1	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PASTE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm paste
+.Nd merge corresponding or subsequent lines of files
+.Sh SYNOPSIS
+.Nm paste
+.Op Fl s
+.Op Fl d Ar list
+.Ar file ...
+.Sh DESCRIPTION
+The
+.Nm paste
+utility concatenates the corresponding lines of the given input files,
+replacing all but the last file's newline characters with a single tab
+character, and writes the resulting lines to standard output.
+If end-of-file is reached on an input file while other input files
+still contain data, the file is treated as if it were an endless source
+of empty lines.
+.Pp
+The options are as follows:
+.Tw Fl
+.Tp Cx Fl d 
+.Ar list
+.Cx
+Use one or more of the provided characters to replace the newline
+characters instead of the default tab.
+The characters in
+.Ar list
+are used circularly, i.e., when
+.Ar list
+is exhausted the first character from
+.Ar list
+is reused.
+This continues until a line from the last input file (in default operation)
+or the last line in each file (using the -s option) is displayed, at which
+time
+.Nm paste
+begins selecting characters from the beginning of
+.Ar list
+again.
+.Pp
+The following special characters can also be used in list:
+.Tw Ds
+.Tp Li \en
+newline character
+.br
+.Tp Li \et
+tab character
+.br
+.Tp Li \e\e
+backslash character
+.br
+.Tp Li \e0
+Empty string (not a null character).
+.Pp
+Any other character preceded by a backslash is equivalent to the
+character itself.
+.Tp
+.Tp Fl s
+Concatenate all of the lines of each separate input file in command line
+order.
+The newline character of every line except the last line in each input
+file is replaced with the tab character, unless otherwise specified by
+the -d option.
+.Tp
+.Pp
+If ``-'' is specified for one or more of the input files, the standard
+input is used; standard input is read one line at a time, circularly,
+for each instance of ``-''.
+.Pp
+The
+.Nm paste
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr cut 1
+.Sh STANDARDS
+The
+.Nm paste
+function is expected to be POSIX 1003.2 compatible.

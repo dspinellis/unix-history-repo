@@ -1,0 +1,72 @@
+.TH LISZT 1 11/28/79
+.UC
+.SH NAME
+liszt \- compile a Franz Lisp program
+.SH SYNOPSIS
+.B liszt
+[
+.B \-w
+] [
+.B \-q
+] [
+.B \-o
+objfile
+] [
+.B \-m
+] [
+.B \-S
+] [ name ]
+.SH DESCRIPTION
+.I Liszt
+takes a file whose names ends in `.l' and compiles the F\s-2RANZ\s0 L\s-2ISP\s0
+code there leaving an object program on the file whose name is that of the
+source with `.o' substituted for `.l'.
+.PP
+The following options are interpreted by
+.I liszt.
+.TP
+.B \-w
+Suppress warning diagnostics.
+.TP
+.B \-q
+Make the output quieter by suppressing statistics about the compilation
+which are normally printed on the standard output.
+.TP
+.B \-o
+Put the object code in the specified file, rather than the default `.o' file.
+.TP
+.B \-m
+Compile a M\s-2ACLISP\s0 file, by changing the readtable to conform to
+\s-2MACLISP\s0 syntax and including a macro-defined compatibility package.
+.TP
+.B \-S
+Compile the named program and leave the assembler-language output on
+the corresponding file suffixed `.s'.
+.PP
+If 
+no source file is specified, then the compiler will run interactively.
+You will find yourself talking to the 
+.IR lisp (1)
+top-level command interpreter.
+You can compile a file by using the
+function
+.I liszt 
+(an nlambda) with the same arguments as you use on the command line.
+For example to compile `foo', a M\s-2ACLISP\s0 file, you would use:
+.IP
+(liszt \-m foo)
+.PP
+Note that
+.I liszt
+supplies the ``.l'' extension for you (since ``.'' is hard to type
+in an atom name to
+.I lisp.)
+.SH FILES
+.ta 2.4i
+/usr/lib/lisp/machacks.l	M\s-2ACLISP\s0 compatibility package
+.SH AUTHOR
+Tom London
+.br
+M\s-2ACLISP\s0 support was added by John Foderaro.
+.SH SEE ALSO
+lisp(1)

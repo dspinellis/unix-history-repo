@@ -1,0 +1,78 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Asa Romberger and Jerry Berkman.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fsplit.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FSPLIT 1
+.Os BSD 4.2
+.Sh NAME
+.Nm fsplit
+.Nd split a multi-routine Fortran file into individual files
+.Sh SYNOPSIS
+.Nm fsplit
+.Op Fl e Ar efile
+\&...
+.Op Ar file
+.Sh DESCRIPTION
+.Nm Fsplit
+takes as input either a file or standard input containing Fortran source code.
+It attempts to split the input into separate routine files of the
+form
+.Ar name.f ,
+where
+.Ar name
+is the name of the program unit (e.g. function, subroutine, block data or
+program).  The name for unnamed block data subprograms has the form
+.Ar blkdtaNNN.f
+where NNN is three digits and a file of this name does not already exist.
+For unnamed main programs the name has the form
+.Ar mainNNN.f .
+If there is an error in classifying a program unit, or if
+.Ar name.f
+already exists,
+the program unit will be put in a file of the form
+.Ar zzzNNN.f
+where
+.Ar zzzNNN.f
+does not already exist.
+.Pp
+.Tw Ar
+.Tc Fl e
+.Ws
+.Ar efile
+.Cx
+Normally each subprogram unit is split into a separate file.  When the
+.Fl e
+option is used, only the specified subprogram units are split into separate
+files.  E.g.:
+.Pp
+.Dl fsplit -e readit -e doit prog.f
+.Pp
+will split readit and doit into separate files.
+.Tp
+.Sh DIAGNOSTICS
+If names specified via the
+.Fl e
+option are not found, a diagnostic is written to
+standard error.
+.Sh HISTORY
+.Nm Fsplit
+appeared in 4.2 BSD.
+.Sh AUTHORS
+Asa Romberger and Jerry Berkman
+.Sh BUGS
+.Nm Fsplit
+assumes the subprogram name is on the first noncomment line of the subprogram
+unit.  Nonstandard source formats may confuse
+.Nm fsplit .
+.Pp
+It is hard to use
+.Fl e
+for unnamed main programs and block data subprograms since you must
+predict the created file name.

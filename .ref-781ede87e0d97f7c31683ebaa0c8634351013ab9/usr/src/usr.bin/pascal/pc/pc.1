@@ -1,0 +1,268 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pc.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PC 1
+.Os BSD 4
+.Sh NAME
+.Nm pc
+.Nd Pascal compiler
+.Sh SYNOPSIS
+.Nm pc
+.Op  option
+.Op Fl i Ar name \&...
+.Ar name \&...
+.Sh DESCRIPTION
+.Nm Pc
+is a Pascal compiler.
+If given an argument file ending with
+.Pa \&.p ,
+it will compile the file
+and load it
+into an executable file called, by default,
+.Pa a.out  .
+.Pp
+A program may be separated into more than one
+.Pa \&.p
+file.
+.Nm Pc
+will compile a number of argument
+.Pa \&.p
+files into object files (with
+the extension
+.Pa \&.o
+in place of
+.Pa \&.p ) .
+Object files may then be loaded
+into an executable
+.Pa a.out
+file.
+Exactly one object file must supply a
+.Ar program
+statement to successfully create an executable a.out file.
+The rest of the files must consist only of
+declarations which logically nest within the program.
+References to objects shared between separately compiled files
+are allowed if the objects are declared in
+.Ic included
+header files, whose names must end with
+.Pa \&.h .
+Header files may only be included at the outermost level,
+and thus declare only globally available objects.
+To allow
+.Cx Ic function
+.Cx s
+.Cx
+and
+.Cx Ic procedure
+.Cx s
+.Cx
+to be declared, an
+.Ic external
+directive has been added, whose use is similar to the
+.Ic forward
+directive but restricted to appear only in
+.Pa \&.h
+files.
+.Ic Function
+and
+.Ic procedure
+bodies may not appear in
+.Pa \&.h
+files.
+A binding phase of the compiler checks that declarations
+are used consistently, to enforce the type checking rules of Pascal.
+.Pp
+Object files
+created by other language processors may be loaded together with
+object files created by
+.Nm pc  .
+The
+.Cx Ic function
+.Cx s
+.Cx
+and
+.Cx Ic procedure
+.Cx s
+.Cx
+they define must have been declared
+in
+.Pa \&.h
+files included by all the
+.Pa \&.p
+files which call those
+routines.
+Calling conventions are as in C,
+with
+.Ic var
+parameters passed by address.
+.Pp
+See the Berkeley Pascal User's Manual for details.
+.Pp
+The following options have the same meaning as in
+.Xr cc  1
+and
+.Xr f77  1  .
+See
+.Xr ld  1
+for load-time options.
+.Tw Fl
+.Tp Fl c
+Suppress loading and produce `.o' file(s) from source file(s).
+.Tp Fl g
+Have the compiler produce additional symbol table information for
+.Xr dbx  1  .
+.Tp Fl w
+Suppress warning messages.
+.Tp Fl p
+Prepare object files for profiling, see
+.Xr prof  1  .
+.Tp Fl O
+Invoke an
+object-code improver.
+.Tp Fl S
+Compile the named program, and leave the
+assembler-language output on the corresponding file suffixed `.s'.
+(No `.o' is created.).
+.Tp Cx Fl o
+.Ws
+.Ar output
+.Cx
+Name the final output file
+.Ar output
+instead of
+.Pa a.out .
+.Tp
+.Pp
+The following options are peculiar to
+.Nm pc  .
+.Tw Fl
+.Tp Fl C
+Compile code to perform runtime checks,
+verify
+.Ic assert
+calls,
+and initialize all variables to zero as in
+.Nm pi  .
+.Tp Fl b
+Block buffer the file
+.Ar output .
+.Tp Fl i
+Produce a listing for
+the specified procedures, functions and
+.Ar include
+files.
+.Tp Fl l
+Make a program listing during translation.
+.Tp Fl s
+Accept standard Pascal only;
+non-standard constructs cause warning diagnostics.
+.Tp Cx Fl t
+.Ws
+.Ar directory
+.Cx
+Use the given
+.Ar directory
+for compiler temporary files.
+.Tp Fl z
+Allow execution profiling with
+.Nm pxp
+by generating statement counters, and arranging for the
+creation of the profile data file
+.Pa pmon.out
+when the resulting object is executed.
+.Pp
+.Tp
+Other arguments
+are taken
+to be loader option arguments,
+perhaps libraries of
+.Nm pc
+compatible routines.
+Certain flags can also be controlled in comments within the program
+as described in the
+.Em "Berkeley Pascal User's Manual."
+.Sh FILES
+.Dw /usr/lib.pc2.*strings
+.Di L
+.Dp Pa file.p
+pascal source files
+.Dp Pa /usr/lib/pc0
+compiler
+.Dp Pa /lib/f1
+code generator
+.Dp Pa /usr/lib/pc2
+runtime integrator (inline expander)
+.Dp Pa /lib/c2
+peephole optimizer
+.Dp Pa /usr/lib/pc3
+separate compilation consistency checker
+.Dp Pa /usr/lib/pc2.*strings
+text of the error messages
+.Dp Pa /usr/lib/how_pc
+basic usage explanation
+.Dp Pa /usr/lib/libpc.a
+intrinsic functions and I/O library
+.Dp Pa /usr/lib/libm.a
+math library
+.Dp Pa /lib/libc.a
+standard library, see
+.Xr intro 3
+.Dp
+.Sh SEE ALSO
+.Em Berkeley Pascal User's Manual
+.br
+.Xr pi 1 ,
+.Xr pxp 1 ,
+.Xr pxref 1 ,
+.\" .Xr sdb 1
+.Sh HISTORY
+.Nm Pc
+appeared in 4.0 BSD.
+.Sh DIAGNOSTICS
+For a basic explanation do
+.Pp
+.Df I
+.Nm pc
+.De 
+.Pp
+See
+.Xr pi  1  .
+for an explanation of the error message format.
+Internal errors cause messages containing the word SNARK.
+.Sh AUTHORS
+Charles B. Haley, William N. Joy, and Ken Thompson
+.br
+Retargetted to the second pass of the portable
+.Ar C
+compiler by Peter Kessler
+.br
+Runtime library and inline optimizer by M. Kirk McKusick
+.br
+Separate compilation consistency checking by Louise Madrid
+.Sh BUGS
+The keyword
+.Ic packed
+is recognized but has no effect.
+.Pp
+The binder is not as strict as described here,
+with regard to the rules about external declarations only
+in `.h' files and including `.h' files only at the outermost level.
+It will be made to perform these checks in its next incarnation,
+so users are warned not to be sloppy.
+.Pp
+The
+.Fl z
+flag doesn't work for separately compiled files.
+.Pp
+Because the
+.Fl s
+option is usurped by the compiler,
+it is not possible to pass the strip option to the loader.
+Thus programs which are to be stripped, must be run through
+.Xr strip  1
+after they are compiled.

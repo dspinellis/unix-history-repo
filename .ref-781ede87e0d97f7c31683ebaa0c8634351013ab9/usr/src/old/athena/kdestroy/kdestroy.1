@@ -1,0 +1,73 @@
+.\" $Source: /mit/kerberos/src/man/RCS/kdestroy.1,v $
+.\" $Author: jtkohl $
+.\" $Header: kdestroy.1,v 4.9 89/01/23 11:39:50 jtkohl Exp $
+.\" Copyright 1989 by the Massachusetts Institute of Technology.
+.\"
+.\" For copying and distribution information,
+.\" please see the file <mit-copyright.h>.
+.\"
+.TH KDESTROY 1 "Kerberos Version 4.0" "MIT Project Athena"
+.SH NAME
+kdestroy \- destroy Kerberos tickets
+.SH SYNOPSIS
+.B kdestroy
+[
+.B \-f
+]
+[
+.B \-q
+]
+.SH DESCRIPTION
+The
+.I kdestroy
+utility destroys the user's active
+Kerberos
+authorization tickets.
+If no tickets currently exist for the user,
+.I kdestroy
+displays a message to that effect.
+.PP
+The utility
+displays a message indicating the success or failure of the
+operation.
+If
+.I kdestroy
+is unable to destroy the tickets,
+the utility will warn you by making your terminal beep.
+.PP
+You can place the
+.I kdestroy
+command in your
+.I .logout
+file so that your tickets are destroyed automatically
+when you logout.
+.PP
+The options to
+.I kdestroy
+are as follows:
+.TP 7
+.B \-f
+.I kdestroy
+runs without displaying the status message.
+.TP
+.B \-q
+.I kdestroy
+will not make your terminal beep if it fails to destroy the tickets.
+.SH FILES
+KRBTKFILE environment variable if set, otherwise
+.br
+/tmp/tkt[uid]
+.SH SEE ALSO
+kerberos(1), kinit(1), klist(1)
+.SH BUGS
+.PP
+Only the tickets in the user's current ticket file are destroyed.
+Separate ticket files are used to hold root instance and password
+changing tickets.  These files should probably be destroyed too, or
+all of a user's tickets kept in a single ticket file.
+.SH AUTHORS
+Steve Miller, MIT Project Athena/Digital Equipment Corporation
+.br
+Clifford Neuman, MIT Project Athena
+.br
+Bill Sommerfeld, MIT Project Athena

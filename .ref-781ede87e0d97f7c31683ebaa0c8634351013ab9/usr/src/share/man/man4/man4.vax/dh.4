@@ -1,0 +1,59 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)dh.4	6.2 (Berkeley) %G%
+.\"
+.TH DH 4 ""
+.UC 4
+.SH NAME
+dh \- DH-11/DM-11 communications multiplexer
+.SH SYNOPSIS
+.B "device dh0 at uba0 csr 0160020 vector dhrint dhxint"
+.br
+.B "device dm0 at uba0 csr 0170500 vector dmintr"
+.SH DESCRIPTION
+A dh-11 provides 16 communication lines; dm-11's may be optionally
+paired with dh-11's to provide modem control for the lines.
+.PP
+Each line attached to the DH-11 communications multiplexer
+behaves as described in
+.IR tty (4).
+Input and output for each line may independently
+be set to run at any of 16 speeds;
+see
+.IR tty (4)
+for the encoding.
+.PP
+Bit
+.I i
+of flags may be specified for a dh to say that a line is not properly
+connected, and that the line should be treated as hard-wired with carrier
+always present.  Thus specifying ``flags 0x0004'' in the specification of dh0
+would cause line ttyh2 to be treated in this way.
+.PP
+The
+.I dh
+driver monitors the rate of input on each board,
+and switches between the use of character-at-a-time interrupts
+and input silos.
+While the silo is enabled during periods of high-speed input,
+the driver polls for input 30 times per second.
+.SH FILES
+/dev/tty[h-o][0-9a-f]
+.br
+/dev/ttyd[0-9a-f]
+.SH "SEE ALSO"
+tty(4)
+.SH DIAGNOSTICS
+\fBdh%d: NXM\fR.  No response from UNIBUS on a dma transfer
+within a timeout period.  This is often followed by a UNIBUS adapter
+error.  This occurs most frequently when the UNIBUS is heavily loaded
+and when devices which hog the bus (such as rk07's) are present.
+It is not serious.
+.PP
+\fBdh%d: silo overflow\fR.  The character input silo overflowed
+before it could be serviced.  This can happen if a hard error occurs
+when the CPU is running with elevated priority, as the system will
+then print a message on the console with interrupts disabled.
+It is not serious.

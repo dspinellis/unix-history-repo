@@ -1,0 +1,114 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mkdir.2	6.6 (Berkeley) %G%
+.\"
+.TH MKDIR 2 ""
+.UC 5
+.SH NAME
+mkdir \- make a directory file
+.SH SYNOPSIS
+.nf
+.ft B
+mkdir(path, mode)
+char *path;
+int mode;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Mkdir
+creates a new directory file with name
+.IR path .
+The mode of the new file
+is initialized from
+.IR mode .
+(The protection part of the mode
+is modified by the process's mode mask; see
+.IR umask (2)).
+.PP
+The directory's owner ID is set to the process's effective user ID.
+The directory's group ID is set to that of the parent directory in
+which it is created.
+.PP
+The low-order 9 bits of mode are modified by the process's
+file mode creation mask: all bits set in the process's file mode
+creation mask are cleared.  See
+.IR umask (2).
+.SH "RETURN VALUE
+A 0 return value indicates success.  A \-1 return value
+indicates an error, and an error code is stored in
+.I errno.
+.SH "ERRORS
+.I Mkdir
+will fail and no directory will be created if:
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+A component of the path prefix does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EPERM]
+The \fIpath\fP argument contains a byte with the high-order bit set.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[EEXIST]
+The named file exists.
+.TP 15
+[ENOSPC]
+The directory in which the entry for the new directory is being placed
+cannot be extended because there is no space left on the file
+system containing the directory.
+.TP 15
+[ENOSPC]
+The new directory cannot be created because there
+there is no space left on the file
+system that will contain the directory.
+.TP 15
+[ENOSPC]
+There are no free inodes on the file system on which the
+directory is being created.
+.TP 15
+[EDQUOT]
+The directory in which the entry for the new directory
+is being placed cannot be extended because the
+user's quota of disk blocks on the file system
+containing the directory has been exhausted.
+.TP 15
+[EDQUOT]
+The new directory cannot be created because the user's
+quota of disk blocks on the file system that will
+contain the directory has been exhausted.
+.TP 15
+[EDQUOT]
+The user's quota of inodes on the file system on
+which the directory is being created has been exhausted.
+.TP 15
+[EIO]
+An I/O error occurred while making the directory entry or allocating the inode.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
+.TP 15
+[EFAULT]
+.I Path
+points outside the process's allocated address space.
+.SH "SEE ALSO"
+chmod(2), stat(2), umask(2)

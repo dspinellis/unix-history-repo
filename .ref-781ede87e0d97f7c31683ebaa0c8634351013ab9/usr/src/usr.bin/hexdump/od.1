@@ -1,0 +1,50 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)od.1	5.5 (Berkeley) %G%
+.\"
+.Dd %Q
+.Os BSD 4.4
+.Dt OD 1
+.Sh NAME
+.Nm od
+.Nd octal, decimal, hex, ascii dump
+.Sh SYNOPSIS
+.Nm od
+.Op Fl aBbcDdeFfHhIiLlOovXx
+.Cx [
+.Op Sy \&+
+.Li offset
+.Op Sy \&.
+.Op Sy Bb
+.Cx ]
+.Cx
+.Ar file
+.Sh DESCRIPTION
+.Nm Od
+has been deprecated in favor of
+.Xr hexdump 1 .
+.Pp
+.Xr Hexdump ,
+if called as
+.Nm od ,
+provides compatibility for the options listed above.
+.Pp
+It does not provide compatibility for the
+.Fl s
+option (see
+.Xr strings 1)
+or the
+.Fl P ,
+.Fl p ,
+or
+.Fl w
+options, nor is compatibility provided for the ``label'' component
+of the offset syntax.
+.Sh SEE ALSO
+.Xr hexdump 1 ,
+.Xr strings 1
+.Sh BUGS
+Quite a few.

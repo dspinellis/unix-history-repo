@@ -1,0 +1,38 @@
+.TH SU 1 11/16/79
+.UC
+.SH NAME
+su \- substitute user id temporarily
+.SH SYNOPSIS
+.B su
+[ userid ]
+.SH DESCRIPTION
+.I Su
+demands the password of the specified
+.I userid,
+and if it is given,
+changes to that 
+.I userid
+and invokes the Shell
+.IR sh (1)
+without changing the current directory.
+The user environment
+is unchanged except for HOME and SHELL,
+which are taken from the password file
+for the user being substituted
+(see
+.IR environ (5)).
+The new user ID stays in force until the Shell exits.
+.PP
+If no 
+.I userid
+is specified, `root' is assumed.
+To remind the super-user of his responsibilities,
+the Shell substitutes `#' for its usual prompt.
+.SH "SEE ALSO"
+sh(1)
+.SH BUGS
+Local administrative rules cause restrictions to
+be placed on who can
+.I su
+to `root', even with the root password.
+These rules vary from site to site.

@@ -1,0 +1,158 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)st.4	5.1 (Berkeley) %G%
+.\"
+.TH ST 4 ""
+.UC 7
+.SH NAME
+st \- CCS SCSI tape driver
+.SH SYNOPSIS
+.B "tape st0 at scsi? slave ?"
+.SH DESCRIPTION
+The
+.I st
+driver was written especially to support the Exabyte EXB-8200 8MM Cartridge 
+Tape Subsystem.  It has several extensions specific to the Exabyte,
+but should support other tape drives as long has they follow
+the ANSI SCSI-I specification.  Besides extensive use with
+an Exabyte, the driver has been tested with an
+Archive QIC-24 tape drive.
+The
+.I st
+tape interface provides a standard tape drive interface 
+as described in
+.IR mtio (4)
+with the following exceptions:
+.TP 3
+1.
+Density is dependent on device type.  Current Exabyte hardware has
+only one density. The EXB-8500 drive, when released, will have a high
+density format of 5.6GB.
+On an Archive QIC-24 drive the driver reads both QIC-11 and QIC-24 formats
+but writes only QIC-24.
+.TP 3
+2.
+Only the ``raw'' interface is supported.
+.PP
+Special Exabyte Support:
+
+The MTIOCGET ioctl call on an Exabyte returns this structure:
+
+.nf
+struct	mtget {
+              short mt_type;   /* type of magtape device */
+              short mt_dsreg;  /* sc_flags */
+              short mt_erreg;  /* high 8 bytes error status */
+                               /* low  8 bytes percentage of Rewrites
+                                  if writing, ECC errors if reading */
+              short mt_resid;  /* Mbyte until end of tape */
+};
+.fi
+
+Bit 4 in the minor device number is used
+to select long filemarks or short filemarks. A long filemark occupies
+2.12 MBytes of space on the tape, while a short filemark occupies 488 KBytes.
+A long filemark includes an erase gap while the short filemark does not.
+The tape can be positioned on the BOT side of a long filemark allowing
+data to be appended with a write operation.  Since the short filemark does not
+contain an erase gap which would allow writing it is considered to be
+non-erasable.  If either type of filemark is followed by blank tape,
+data may be appended on its EOT side.
+
+Bit 5 in the minor device number selects fixed block mode with a block
+size of 1K.  Variable length records are the default if bit 5 is not
+set.
+
+For unit 0 here are the effects of minor device bits 2,3,4,5. For other
+units add the
+.I unit#
+to each of the device names.
+
+.(b M
+.nf
+       norewind    high density    short filemarks    fixed block mode
+rst0                                                   
+nrst0      X                                           
+rst8                      X                            
+nrst8      X              X                            
+rst16                                     X        
+nrst16     X                              X        
+rst24                     X               X        
+nrst24     X              X               X        
+rst32                                                        X
+nrst32     X                                                 X
+rst40                     X                                  X
+nrst40     X              X                                  X
+rst48                                     X                  X
+nrst48     X                              X                  X
+rst56                     X               X                  X
+nrst56     X              X               X                  X
+
+.fi
+.)b
+.SH BUGS
+
+The HP 98268 SCSI controller hardware can not do odd length DMA
+transfers.  If odd length DMA I/O is requested the driver will use the
+"Program Transfer Mode" of the Fujitsu MB87030 chip. Read requests are
+normally even length for which a DMA transfer is used. If, however, the
+driver detects that a odd length read has happened (when a even length
+was requested) it will issue the EIO error and the last byte of the read
+data will be 0x00. Odd length read requests must match the size of the
+requested data block on tape.
+
+The following only applies when using long filemarks. Short filemarks can
+not be overwritten.
+
+.(q
+.in +4
+Due to the helical scan and the erase mechanism, there is a writing
+limitation on Exabyte drives. "tar r" or "tar u" will not work ("tar c"
+is ok).  One can only start writing at  1) beginning of tape, 2) on the
+end of what was last written, 3) "front" side of a regular (long) filemark.
+Say you have a tape with 3 tar files on it, want to save the first
+file, and want to begin writing over the 2nd file.
+
+On a normal 1/4" or 1/2" drive you would do:
+
+"mt fsf 1; tar cf /dev/nrst0 ..."
+
+but for an Exabyte you need to do:
+
+"mt fsf 1; mt bsf 1; mt weof 1; tar cf /dev/nrst0 ..."
+
+The regular long filemark consists of an erased zone 3.8" long
+(needed to begin a write).  In this case, the first filemark is
+rewritten in place, which creates an erased zone AFTER it, clearing the
+way to write more on the tape.  The erase head is not helical.
+
+One can position a tape to the end of what was last written by reading
+until a "BLANK CHECK" error is returned.  Writing can be started at this
+point.  (This applies to both long and short filemarks.)  The tape does
+not become positioned somewhere down the "erased" area as does a
+conventional magtape.  One can issue multiple reads at the "BLANK
+CHECK" error, but the Exabyte stays positioned at the beginning of the
+blank area, ready to accept write commands.  File skip operations do
+not stop at blank tape and will run into old data or run to the end of
+the tape, so you have to be careful not to "mt fsf too_many".
+.in -4
+.q)
+
+Archive support gets confused if asked to moved more filemarks than there are
+on the tape.
+
+This man page needs some work.  Some of these are not really bugs,
+just unavoidable consequences of the hardware.
+.SH "SEE ALSO"
+mt(1),
+tar(1),
+mtio(4),
+
+.I "EXB-8200 8MM Cartridge Tape Subsystem Interface User Manual."

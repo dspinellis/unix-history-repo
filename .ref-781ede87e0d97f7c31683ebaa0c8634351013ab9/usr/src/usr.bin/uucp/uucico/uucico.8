@@ -1,0 +1,228 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)uucico.8	6.5 (Berkeley) %G%
+.\"
+.TH UUCICO 8 ""
+.UC 6
+.SH NAME
+uucico, uucpd \- transfer files queued by uucp or uux
+.SH SYNOPSIS
+.B /usr/lib/uucp/uucico
+[
+.BI \-d spooldir
+] [
+.BI \-g grade
+] [
+.BI \-r role
+] [
+.B \-R
+] [
+.BI \-s system
+] [
+.BI \-x debug
+] [
+.B \-L
+] [
+.BI \-t turnaround
+]
+.PP
+.B uucpd
+.SH DESCRIPTION
+.I Uucico
+performs the actual work involved in transferring files between
+systems. 
+.IR Uucp (1)
+and
+.IR uux (1)
+merely queue requests for data transfer which
+.I uucico
+processes.
+.PP
+The following options are available.
+.TP 8
+.BI \-d spooldir
+Use
+.I spooldir
+as the spool directory. The default is /var/spool/uucp.
+.TP 8
+.BI \-g grade
+Only send jobs of grade
+.I grade
+or higher this transfer.
+The grade of a job is specified when the job is queued by
+.I uucp
+or
+.IR uux .
+.TP 8
+.BI \-r role
+.I role
+is either 1 or 0; it indicates whether
+.I uucico
+is to start up in 
+master or slave role, respectively. 1 is used when running 
+.I uucico
+by hand or from
+.IR cron (8).
+0 is used when another system calls the local system.
+Slave role is the default.
+.TP 8
+.B \-R
+Reverse roles.  When used with the
+.B \-r1
+option, this tells the remote system to begin sending its
+jobs first, instead of waiting for the local machine to finish.
+.TP 8
+.BI \-s system
+Call only system
+.IR system .
+If 
+.B \-s
+is not specified, and \-r1 is specified,
+.I uucico
+will attempt to call all systems for which there is work.
+If
+.B \-s
+is specified, a call will be made even if there is
+no work for that system. This is useful for polling.
+.TP 8
+.BI \-x debug
+Turn on debugging at level
+.IR debug .
+Level 5 is a good start when trying to find out why a call
+failed. Level 9 is very detailed. Level 99 is absurdly verbose.
+If
+.I role
+is 1 (master), output is normally written to the standard message
+output
+.IR stderr .
+If
+.I stderr
+is unavailable, output is written to
+.RI /var/spool/uucp/AUDIT/ system.
+When
+.I role
+is 0 (slave), debugging output is always written to the AUDIT
+file.
+.TP 8
+.B \-L
+Only call ``local'' sites. A site is considered local if
+the device-type field in 
+.I L.sys
+is one of LOCAL, DIR or TCP.
+.TP 8
+.BI \-t turnaround
+Use
+.I turnaround
+as the line turnaround time (in minutes) instead of the default 30.  If 
+.I turnaround
+is missing or 0, line turnaround will be disabled.
+After
+.I uucico
+has been running in slave role for
+.I turnaround 
+minutes, it will attempt to run in master role by negotiating with the
+remote machine.
+In earlier versions of
+.IR uucico ,
+a transfer of many large files in one direction would hold up mail
+going in the other direction.
+With the turnaround code working, the message flow will be more
+bidirectional in the short term.
+This option only works with newer
+.IR uucico 's
+and is ignored by older ones.
+.PP
+If
+.I uucico
+receives a
+.B SIGFPE
+(see
+.IR kill (1)),
+it will toggle the debugging on or off.
+.PP
+.I Uucpd
+is the server for supporting uucp connections over networks.
+.I Uucpd
+listens for service requests at the port indicated in the ``uucp''
+service specification; see \fIservices\fP\|(5).
+The server provides login name and password authentication before starting up
+.I uucico
+for the rest of the transaction.
+.PP
+.I Uucico
+is commonly used either of two ways: as a daemon run periodically by
+.IR cron (8)
+to call out to remote systems, and as a ``shell'' for remote systems
+who call in.
+For calling out periodically, a typical line in
+.I crontab
+would be:
+.PP
+.nf
+	0	*	*	*	*	/usr/lib/uucp/uucico -r1
+.fi
+.PP
+This will run
+.I uucico
+every hour in master role. 
+For each system that has transfer requests queued, 
+.I uucico
+calls the system, logs in, and executes the transfers. The file
+.IR L.sys (5)
+is consulted for information about how to log in, while
+.IR L-devices (5)
+specifies available lines and modems for calling.
+.PP
+For remote systems to dial in, an entry in the
+.IR passwd (5)
+file must be created, with a login ``shell'' of
+.IR uucico .
+For example:
+.PP
+.nf
+	nuucp:Password:6:1::/var/spool/uucppublic:/usr/lib/uucp/uucico
+.fi
+.PP
+The UID for UUCP remote logins is not critical, so long as it differs from
+the UUCP Administrative login.
+The latter owns the UUCP files, and assigning
+this UID to a remote login would be an extreme security hazard. 
+.SH FILES
+.ta \w'/var/spool/uucp/D.hostnameX/  'u
+.nf
+/usr/lib/uucp/	UUCP internal files/utilities
+/usr/lib/uucp/L-devices	Local device descriptions
+/usr/lib/uucp/L-dialcodes	Phone numbers and prefixes
+/usr/lib/uucp/L.aliases	Hostname aliases
+/usr/lib/uucp/L.cmds	Remote command permissions list
+/usr/lib/uucp/L.sys	Host connection specifications
+/usr/lib/uucp/USERFILE	Remote directory tree permissions list
+.PP
+/var/spool/uucp/	Spool directory
+/var/spool/uucp/AUDIT/*	Debugging audit trails
+/var/spool/uucp/C./	Control files directory
+/var/spool/uucp/D./	Incoming data file directory
+/var/spool/uucp/D.hostname/	Outgoing data file directory
+/var/spool/uucp/D.hostnameX/	Outgoing execution file directory
+/var/spool/uucp/CORRUPT/	Place for corrupted C. and D. files
+/var/spool/uucp/ERRLOG	UUCP internal error log
+/var/spool/uucp/LOGFILE	UUCP system activity log
+/var/spool/uucp/LCK/LCK..*	Device lock files
+/var/spool/uucp/SYSLOG	File transfer statistics log
+/var/spool/uucp/STST/*	System status files
+/var/spool/uucp/TM./	File transfer temp directory
+/var/spool/uucp/X./	Incoming execution file directory
+.PP
+/var/spool/uucppublic	Public access directory
+.fi
+.SH SEE ALSO
+uucp(1), uuq(1), uux(1), L-devices(5), L-dialcodes(5), L.aliases(5),
+L.cmds(5), L.sys(5), uuclean(8), uupoll(8), uusnap(8), uuxqt(8)
+.PP
+D. A. Nowitz and M. E. Lesk,
+.IR "A Dial-Up Network of UNIX Systems" .
+.PP
+D. A. Nowitz,
+.IR "Uucp Implementation Description" .

@@ -1,0 +1,180 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)syslog.conf.5	5.2 (Berkeley) %G%
+.\"
+.TH SYSLOG.CONF 5 ""
+.UC 7
+.SH NAME
+syslog.conf \- syslogd configuration file
+.SH DESCRIPTION
+.I Syslog.conf
+is the configuration file for the
+.IR syslogd (8)
+program.
+It consists of lines with two fields: the
+.I selector
+field which specifies the types of messages and priorities to which the
+line applies, and an
+.I action
+field which specifies the action to be taken if a message
+.IR syslogd
+receives matches the selection criteria.
+The
+.I selector
+field is separated from the
+.I action
+field by one or more tab characters.
+.PP
+.I Selectors
+are encoded as a
+.IR facility ,
+a period (``.''), and a
+.IR level ,
+with no intervening white-space.
+Both the
+.I facility
+and the
+.I level
+are case insensitive.
+.PP
+The
+.I facility
+describes the part of the system generating the message, and is one of
+the following keywords: auth, authpriv, cron, daemon, kern, lpr, mail,
+mark, news, syslog, user, uucp and local0 through local7.
+These keywords (with the exception of mark) correspond to the
+similar ``LOG_'' values specified to the
+.I openlog
+and
+.I syslog
+library routines.
+.PP
+The
+.I level
+describes the severity of the message, and is a keyword from the
+following ordered list (higher to lower): emerg, alert, crit, err,
+warning, notice and debug.
+These keywords correspond to the
+similar ``LOG_'' values specified to the
+.I syslog
+library routine.
+.PP
+See
+.IR syslog (3)
+for a further descriptions of both the
+.I facility
+and
+.I level
+keywords and their significance.
+.PP
+If a received message matches the specified
+.I facility
+and is of the specified
+.I level
+.BR "(or a higher level)" ,
+the action specified in the
+.I action
+field will be taken.
+.PP
+Multiple
+.I selectors
+may be specified for a single
+.I action
+by separating them with semicolon (``;'') characters.
+It is important to note, however, that each
+.I selector
+can modify the ones preceding it.
+.PP
+Multiple
+.I facilities
+may be specified for a single
+.I level
+by separating them with comma (``,'') characters.
+.PP
+An asterisk (``*'') can be used to specify all
+.I facilities
+or all
+.IR levels .
+.PP
+The special
+.I facility
+``mark'' receives a message at priority ``info'' every 20 minutes
+(see
+.IR syslogd (8)).
+This is not enabled by a
+.I facility
+field containing an asterisk.
+.PP
+The special
+.I level
+``none'' disables a particular
+.IR facility .
+.PP
+The
+.I action
+field of each line specifies the action to be taken when the
+.I selector
+field selects a message.
+There are four forms:
+.IP \(bu 3n
+A pathname (beginning with a leading slash).
+Selected messages are appended to the file.
+.IP \(bu 3n
+A hostname (preceded by an at (``@'') sign).
+Selected messages are forwarded to the
+.I syslogd
+program on the named host.
+.IP \(bu 3n
+A comma separated list of users.
+Selected messages are written to those users
+if they are logged in.
+.IP \(bu 3n
+An asterisk.
+Selected messages are written to all logged-in users.
+.PP
+Blank lines and lines whose first non-blank character is a hash (``#'')
+character are ignored.
+.SH EXAMPLES
+.PP
+A configuration file might appear as follows:
+.sp
+.nf
+# Log all kernel messages, authentication messages of
+# level notice or higher and anything of level err or
+# higher to the console.
+# Don't log private authentication messages!
+*.err;kern.*;auth.notice;authpriv.none	/dev/console
+
+# Log anything (except mail) of level info or higher.
+# Don't log private authentication messages!
+*.info;mail.none;authpriv.none		/var/log/messages
+
+# The authpriv file has restricted access.
+authpriv.*						/var/log/secure
+
+# Log all the mail messages in one place.
+mail.*							/var/log/maillog
+
+# Everybody gets emergency messages, plus log them on another
+# machine.
+*.emerg							*
+*.emerg							@arpa.berkeley.edu
+
+# Root and Eric get alert and higher messages.
+*.alert							root,eric
+
+# Save mail and news errors of level err and higher in a
+# special file.
+uucp,news.crit						/var/log/spoolerr
+.fi
+.SH FILES
+/etc/syslog.conf	\fIsyslogd\fP(8) configuration file
+.SH BUGS
+The effects of multiple selectors are sometimes not intuitive.
+For example ``mail.crit,*.err'' will select ``mail'' facility messages at
+the level of ``err'' or higher, not at the level of ``crit'' or higher.
+.SH "SEE ALSO"
+syslog(3), syslogd(8)

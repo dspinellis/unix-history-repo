@@ -1,0 +1,32 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)genbuildname.3	5.2 (Berkeley) %G%
+.\"
+.TH GENBUILDNAME 3 ""
+.UC 7
+.SH NAME
+genbuildname - generate the pathname for a binary file
+.SH SYNOPSIS
+.nf
+.ft B
+char *genbuildname(name)
+char *name;
+.ft R
+.fi
+.SH DESCRIPTION
+.I Genbuildname
+takes the name of a file and returns a pointer to a pathname
+that should be used to create the file.
+It is intended for use of programs such as the loader
+to decide where to place binary output files.
+The intent is to allow multiple architectures to be compiled
+within a single source tree.
+The destination directory for the binary is set in the predefined
+.IR make (1)
+variable
+.SM OBJDIR.
+.SH "SEE ALSO"
+cc(1), as(1), ld(1), install(1), make(1)

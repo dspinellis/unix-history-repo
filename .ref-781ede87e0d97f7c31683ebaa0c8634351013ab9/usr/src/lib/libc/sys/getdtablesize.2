@@ -1,0 +1,26 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getdtablesize.2	6.4 (Berkeley) %G%
+.\"
+.TH GETDTABLESIZE 2 ""
+.UC 5
+.SH NAME
+getdtablesize \- get descriptor table size
+.SH SYNOPSIS
+.nf
+.ft B
+nfds = getdtablesize()
+int nfds;
+.fi
+.SH DESCRIPTION
+Each process has a fixed size descriptor table,
+which is guaranteed to have at least 20 slots.  The entries in
+the descriptor table are numbered with small integers starting at 0.
+The call
+.I getdtablesize
+returns the size of this table.
+.SH "SEE ALSO"
+close(2), dup(2), open(2), select(2)

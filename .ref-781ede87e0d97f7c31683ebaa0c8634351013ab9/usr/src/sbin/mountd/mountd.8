@@ -1,0 +1,45 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mountd.8	5.5 (Berkeley) %G%
+.\"
+.TH MOUNTD 8 ""
+.UC 7
+.SH NAME
+mountd \- service remote NFS mount requests
+.SH SYNOPSIS
+.B /sbin/mountd
+[
+.B \-n
+]
+[
+exportsfile
+]
+.SH DESCRIPTION
+.I Mountd
+is the server for
+.SM NFS
+mount requests from other client machines.
+.I Mountd
+listens for service requests at the port indicated in the
+.SM NFS
+server specification; see
+``Network File System Protocol Specification, RFC1094''.
+The \fB\-n\fR option allows non-root mount requests to be served.
+This should only be specified if there are clients such as PC's,
+that require it.
+The \fBexportsfile\fR argument specifies an alternate location
+for the exports file.
+Sending a SIGHUP signal to
+.I mountd
+will cause it to reread its exports file.
+.SH FILES
+/etc/exports
+.SH SEE ALSO
+.IR nfsstat (1),
+.IR exports (5),
+.IR nfsd (8),
+.IR portmap (8),
+.IR showmount (8)

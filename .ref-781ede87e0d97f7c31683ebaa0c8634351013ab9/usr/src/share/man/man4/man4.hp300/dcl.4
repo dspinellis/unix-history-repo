@@ -1,0 +1,73 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dcl.4	5.1 (Berkeley) %G%
+.\"
+.TH DCL 4 ""
+.UC 7
+.SH NAME
+dcl \- HP 98628A communications link
+.SH SYNOPSIS
+.B "device		dcl0	at scode? flags 0x1"
+.SH DESCRIPTION
+The 98628A is a buffered EIA RS-232C (CCITT V.28) communications interface.
+It has one port with full modem control.
+.PP
+Each line attached to the 98628A behaves as described in
+.IR tty (4).
+Input and output for each line may set to one of following baud rates;
+0, 50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800,
+9600, 19200. See 
+.IR tty (4)
+for the encoding.
+.PP
+.I Flags
+should be set to 1 if the line should be treated as hard-wired with
+carrier always present, or to 0 if modem control is desired.
+.PP
+Use HP cable "98626 & 98628 opts.002, RS232-C DCE CABLE, 5061-4216" to attach non-modem devices.
+Use HP cable "98626 & 98628 opts.001, RS232-C DTE CABLE, 5061-4215" to attach modems.
+.PP
+The 98628A has a 256 byte input silo and a 256 output silo. Input interrupts
+happen on a per character basis.
+.PP
+The high water and low water marks in the kernel tty routines are totally
+inappropriate for a device like this with a large input buffer.  Don't use
+tandem mode if possible.  A fast system can handle input at 19.2K baud without
+receive overflow.
+
+For output to devices that make heavy use of XON/XOFF a write size of less
+then 256 will improve performance marginally.
+.SH FILES
+/dev/ttyl[0-9]
+.SH "SEE ALSO"
+tty(4)
+.SH DIAGNOSTICS
+\fBdcl%d: error 0x%x RESET CARD\fR Where the errors are in coded as
+.DS
+0x06 card failure
+0x0d uart receive overflow
+0x0e receive overflow
+0x0f missing external clock
+0x10 cts false too long
+0x11 lost carrier
+0x12 activity timeout
+0x13 connection not established
+0x19 illegal databits/parity
+0x1a register address out of range
+0x1b register value out of range
+0x-- unknown error
+.DE
+.SH BUGS
+Breaks received at a faster rate then 1 break every second will be 
+recognized as a single break.
+
+Console use is not supported.
+
+The RS-422/423/499, MTS-DSN/DL modes of the card are not supported.

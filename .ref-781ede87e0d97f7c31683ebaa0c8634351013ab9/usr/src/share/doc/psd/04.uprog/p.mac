@@ -1,0 +1,36 @@
+.\"	@(#)p.mac	6.2 (Berkeley) %G%
+.\"
+.\"	@(#)p.mac	6.1 (Berkeley) 4/25/86
+.\"
+.de UC
+\&\\$3\s-1\\$1\\s0\&\\$2
+..
+.de IT
+\&\\$3\fI\\$1\fR\^\&\\$2
+..
+.de UL
+\%\&\\$3\f(CW\s-1\\$1\s0\fR\&\\$2
+..
+.de P1
+.DS I .5i
+.nf
+.ft CW
+.ps \\n(PS-1
+.vs \\n(VS-1
+..
+.de P2
+.ps \\n(PS
+.vs \\n(VS
+.ft R
+.DE
+..
+.hy 14	\"2=not last lines; 4= no -xx; 8=no xx-
+.am SH
+.ft R
+..
+.am NH
+.ft R
+..
+.am TL
+.ft R
+..

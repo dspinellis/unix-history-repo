@@ -1,0 +1,122 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Dave Yost.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)unifdef.1	6.3 (Berkeley) %G%
+.\"
+.TH UNIFDEF 1 ""
+.SH NAME
+unifdef \- remove ifdef'ed lines
+.SH SYNOPSIS
+\fBunifdef\fR
+[
+\fB\-t\fR
+\fB\-l\fR
+\fB\-c\fR
+\fB\-D\fR\fIsym\fR 
+\fB\-U\fR\fIsym\fR 
+\fB\-iD\fR\fIsym\fR
+\fB\-iD\fR\fIsym\fR
+] ...  [ file ]
+.SH DESCRIPTION
+\fIUnifdef\fR is useful for removing ifdef'ed lines
+from a file while otherwise leaving the file alone.
+\fIUnifdef\fR acts on
+#ifdef, #ifndef, #else, and #endif lines,
+and it knows only enough about C
+to know when one of these is inactive
+because it is inside
+a comment,
+or a single or double quote.
+Parsing for quotes is very simplistic:
+when it finds an open quote,
+it ignores everything (except escaped quotes)
+until it finds a close quote, and
+it will not complain if it gets
+to the end of a line and finds no backslash for continuation.
+.PP
+If you want to use \fIunifdef\fR
+for plain text (not C code),
+use the \fB\-t\fR option,
+which disables this parsing for
+C comments and quotes.
+.PP
+You specify which symbols you want defined
+(\fB\-D\fR\fIsym\fR)
+or undefined
+(\fB\-U\fR\fIsym\fR)
+and the lines inside those ifdefs will be copied to the output or removed as
+appropriate.
+The ifdef, ifndef, else, and endif lines associated with
+\fIsym\fR will also be removed.
+Ifdefs involving symbols you don't specify
+and ``#if'' control lines
+are untouched and copied out
+along with their associated
+ifdef, else, and endif lines.
+If an ifdef X occurs nested inside another ifdef X, then the
+inside ifdef is treated as if it were an unrecognized symbol.
+If the same symbol appears in more than one argument,
+the last occurrence dominates.
+.PP
+The \fB\-l\fR option causes \fIunifdef\fR
+to replace removed lines with blank lines
+instead of deleting them.
+.PP
+If your C code uses ifdefs to delimit non-C lines,
+such as comments
+or code which is under construction,
+then you must tell \fIunifdef\fR
+which symbols are used for that purpose so that it won't try to parse
+for quotes and comments
+inside those ifdefs.
+You specify ignored ifdefs with
+\fB\-iD\fR\fIsym\fR
+and
+\fB\-iU\fR\fIsym\fR
+similar to
+\fB\-D\fR\fIsym\fR
+and
+\fB\-U\fR\fIsym\fR
+above.
+.PP
+\fIUnifdef\fR copies its output to \fIstdout\fR
+and will take its input from \fIstdin\fR
+if no \fIfile\fR argument is given.
+If the \fB\-c\fR argument is specified,
+then the operation of \fIunifdef\fR is complemented,
+i.e. the lines that would have been removed or blanked
+are retained and vice versa.
+.PP
+\fIUnifdef\fR works nicely with the \fB\-D\fR\fIsym\fR option added
+to \fIdiff\fR(1) as of the 4.1 Berkeley Software Distribution.
+.SH "SEE ALSO"
+diff(1)
+.SH DIAGNOSTICS
+Inappropriate else or endif.
+.br
+Premature EOF with line numbers of the unterminated #ifdefs.
+.PP
+Exit status is 0 if output is exact copy of input, 1 if not, 2 if trouble.
+.SH AUTHOR
+Dave Yost for The Rand Corporation.
+.br
+Still maintained independently by Dave Yost as of 3/85
+.SH BUGS
+Should try to deal with ``#if'' lines.
+.br
+Doesn't work correctly if input contains null characters.

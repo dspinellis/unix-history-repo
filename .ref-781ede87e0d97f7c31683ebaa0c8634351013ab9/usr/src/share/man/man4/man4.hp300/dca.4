@@ -1,0 +1,45 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dca.4	5.1 (Berkeley) %G%
+.\"
+.TH DCA 4 ""
+.UC 7
+.SH NAME
+dca \- HP 98644A communications interface
+.SH SYNOPSIS
+.B "device		dca0	at scode9 flags 0x1"
+.SH DESCRIPTION
+The 98644A is a single port EIA RS-232C (CCITT V.28)
+communications interface with a single character buffer.
+Such an interface is built-in to all series 300 machines.
+.PP
+Each 98644A line behaves as described in
+.IR tty (4).
+Input and output for each line may set to one of following baud rates;
+50, 75, 110, 134.5, 150, 300, 600, 1200, 1800, 2400, 4800,
+9600, 19200. See 
+.IR tty (4)
+for the encoding.
+.PP
+Flags should be set to 1 if the line should be treated as hard-wired
+with carrier always present or 0 if modem control is desired.
+.SH FILES
+/dev/tty0
+.SH "SEE ALSO"
+tty(4)
+.SH DIAGNOSTICS
+\fBdca%d: silo overflow\fR.  The single-character input ``silo''
+has overflowed and incoming data has been lost.
+.SH BUGS
+Data loss is possible on busy systems with baud rates greater than 300.
+The
+.I dca
+has never been tested with modem control enabled or on anything but the
+built-in interface.

@@ -1,0 +1,52 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)comsat.8	6.4 (Berkeley) %G%
+.\"
+.TH COMSAT 8 ""
+.UC 5
+.SH NAME
+comsat \- biff server
+.SH SYNOPSIS
+.B comsat
+.SH DESCRIPTION
+.I Comsat
+is the server process which receives reports of incoming mail
+and notifies users if they have requested this service.
+.I Comsat
+receives messages on a datagram port associated with the ``biff'' service
+specification (see
+.IR services (5)
+and
+.IR inetd (8)).
+The one line messages are of the form
+.PP
+.ti +0.5i
+user@mailbox-offset
+.PP
+If the
+.I user
+specified is logged in to the system and the associated terminal has
+the owner execute bit turned on (by a ``biff y''), the
+.I offset
+is used as a seek offset into the appropriate mailbox file and
+the first 7 lines or 560 characters of the message are printed
+on the user's terminal.  Lines which appear to be part of
+the message header other than the ``From'', ``To'', ``Date'',
+or ``Subject'' lines are not included in the displayed message.
+.SH FILES
+.DT
+/var/run/utmp	to find out who's logged on and on what terminals
+.SH "SEE ALSO"
+biff(1), inetd(8)
+.SH BUGS
+The message header filtering is prone to error.
+The density of the information presented is near the theoretical minimum.
+.PP
+Users should be notified of mail which arrives on other
+machines than the one to which they are currently logged in.
+.PP
+The notification should appear in a separate window so it
+does not mess up the screen.

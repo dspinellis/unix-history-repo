@@ -1,0 +1,64 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ranlib.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RANLIB 1
+.BSD 4.4
+.Sh NAME
+.Nm ranlib
+.Nd preprocess archives for efficient linking
+.Sh SYNOPSIS
+.Nm ranlib
+.Op Fl t
+.Ar archive_file ...
+.Sh DESCRIPTION
+.Nm Ranlib
+is a preprocessor for the loading utility
+.Xr ld 1 .
+.Nm Ranlib
+creates a randomized library from the given
+.Ar archive_file
+with
+the file entry named
+.Sy \&__.SYMDEF
+prepended.
+The
+.Sy \&__.SYMDEF
+file entry is a dictionary the loader can detect and interpret
+to resolve external references at link time.
+To generate the library, the
+.Xr ar 1
+utility is used.
+.Tw 8n
+.Tp Fl t
+Ranlib only "touches" the archives and does not modify them.
+This is useful after copying an archive
+or using the
+.Fl t
+option of
+.Xr make  1
+in order to avoid having
+.Xr ld  1
+complain about
+an
+.Dq out of date
+symbol table.
+.Tp
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr ld 1 ,
+.Xr lorder 1 ,
+.Xr make 1 ,
+.Xr nm 1
+.Sh HISTORY
+.Nm Ranlib
+appeared in Version 7 AT&T UNIX.
+.Sh BUGS
+The archiving is a separate process and phase
+errors may occur (see the
+.Fl t
+option above).

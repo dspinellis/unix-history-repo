@@ -1,0 +1,175 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ndbm.3	6.8 (Berkeley) %G%
+.\"
+.TH NDBM 3  ""
+.UC 6
+.SH NAME
+dbm_open, dbm_close, dbm_fetch, dbm_store, dbm_delete, dbm_firstkey, dbm_nextkey, dbm_error, dbm_clearerr \- data base subroutines
+.SH SYNOPSIS
+.nf
+.PP
+.ft B
+#include <ndbm.h>
+.PP
+.ft B
+typedef struct {
+    char *dptr;
+    int dsize;
+} datum;
+.PP
+.ft B
+DBM *dbm_open(file, flags, mode)
+    char *file;
+    int flags, mode;
+.PP
+.ft B
+void dbm_close(db)
+    DBM *db;
+.PP
+.ft B
+datum dbm_fetch(db, key)
+    DBM *db;
+    datum key;
+.PP
+.ft B
+int dbm_store(db, key, content, flags)
+    DBM *db;
+    datum key, content;
+    int flags;
+.PP
+.ft B
+int dbm_delete(db, key)
+    DBM *db;
+    datum key;
+.PP
+.ft B
+datum dbm_firstkey(db)
+    DBM *db;
+.PP
+.ft B
+datum dbm_nextkey(db)
+    DBM *db;
+.PP
+.ft B
+int dbm_error(db)
+    DBM *db;
+.PP
+.ft B
+int dbm_clearerr(db)
+    DBM *db;
+.SH DESCRIPTION
+These functions maintain key/content pairs in a data base.
+The functions will handle very large (a billion blocks)
+databases and will access a keyed item in one or two file system accesses.
+This package replaces the earlier
+.IR dbm (3x)
+library, which managed only a single database.
+.PP
+.IR Key s
+and
+.IR content s
+are described by the
+.I datum
+typedef.  A
+.I datum
+specifies a string of
+.I dsize
+bytes pointed to by
+.I dptr.
+Arbitrary binary data, as well as normal ASCII strings, are allowed.
+The data base is stored in two files.
+One file is a directory containing a bit map and has `.dir' as its suffix.
+The second file contains all data and has `.pag' as its suffix.
+.PP
+Before a database can be accessed, it must be opened by
+.IR dbm_open .
+This will open and/or create the files
+.IB file .dir
+and
+.IB file .pag
+depending on the flags parameter (see
+.IR open (2)).
+.PP
+Once open, the data stored under a key is accessed by
+.I dbm_fetch
+and data is placed under a key by
+.IR dbm_store .
+The
+.I flags
+field can be either
+.B DBM_INSERT
+or
+.B DBM_REPLACE.
+.B DBM_INSERT
+will only insert new entries into the database and will not
+change an existing entry with the same key.
+.B DBM_REPLACE
+will replace an existing entry if it has the same key.
+A key (and its associated contents) is deleted by
+.IR dbm_delete .
+A linear pass through all keys in a database may be made,
+in an (apparently) random order, by use of
+.I dbm_firstkey
+and
+.IR dbm_nextkey .
+.I Dbm_firstkey
+will return the first key in the database.
+.I Dbm_nextkey
+will return the next key in the database.
+This code will traverse the data base:
+.IP
+.B for
+(key = dbm_firstkey(db); key.dptr != NULL; key = dbm_nextkey(db))
+.PP
+.I Dbm_error
+returns non-zero when an error has occurred reading or writing the database.
+.I Dbm_clearerr
+resets the error condition on the named database.
+.SH DIAGNOSTICS
+All functions that return an
+.I int
+indicate errors with negative values.  A zero return indicates ok.
+Routines that return a
+.I datum
+indicate errors with a null (0)
+.I dptr.
+If
+.IR dbm_store
+called with a
+.I flags
+value of
+.B DBM_INSERT
+finds an existing entry with the same key
+it returns 1.
+.SH BUGS
+The `.pag' file will contain holes so that its apparent size is about
+four times its actual content.  Older UNIX systems may create real
+file blocks for these holes when touched.  These files cannot be copied
+by normal means (cp, cat, tp, tar, ar) without filling in the holes.
+.PP
+.I Dptr
+pointers returned by these subroutines point into static storage that is
+changed by subsequent calls.  This storage is not necessarily aligned;
+stored ``longs'', for example, should be copied to a properly aligned
+block of memory before being accessed.
+.PP
+The sum of the sizes of a key/content pair must not exceed
+the internal block size (currently 1024 bytes).
+Moreover all key/content pairs that hash together must fit on a single block.
+.I Dbm_store
+will return an error in the event that a disk block fills with inseparable data.
+.PP
+.I Dbm_delete
+does not physically reclaim file space,
+although it does make it available for reuse.
+.PP
+The order of keys presented by
+.I dbm_firstkey
+and
+.I dbm_nextkey
+depends on a hashing function, not on anything interesting.
+.SH SEE ALSO
+dbm(3X)

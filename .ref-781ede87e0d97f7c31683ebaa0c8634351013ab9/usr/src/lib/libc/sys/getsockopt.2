@@ -1,0 +1,198 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getsockopt.2	6.6 (Berkeley) %G%
+.\"
+.TH GETSOCKOPT 2 ""
+.UC 5
+.SH NAME
+getsockopt, setsockopt \- get and set options on sockets
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+getsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int *optlen;
+.sp
+setsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int optlen;
+.fi
+.SH DESCRIPTION
+.I Getsockopt
+and
+.I setsockopt
+manipulate
+.I options
+associated with a socket.  Options may exist at multiple
+protocol levels; they are always present at the uppermost
+``socket'' level.
+.PP
+When manipulating socket options the level at which the
+option resides and the name of the option must be specified.
+To manipulate options at the ``socket'' level,
+.I level
+is specified as SOL_SOCKET.  To manipulate options at any
+other level the protocol number of the appropriate protocol
+controlling the option is supplied.  For example,
+to indicate that an option is to be interpreted by the TCP protocol,
+.I level
+should be set to the protocol number of TCP; see
+.IR getprotoent (3N).
+.PP
+The parameters
+.I optval
+and
+.I optlen
+are used to access option values for
+.IR setsockopt .
+For
+.I getsockopt
+they identify a buffer in which the value for the
+requested option(s) are to be returned.  For
+.IR getsockopt ,
+.I optlen
+is a value-result parameter, initially containing the
+size of the buffer pointed to by
+.IR optval ,
+and modified on return to indicate the actual size of
+the value returned.  If no option value is
+to be supplied or returned,
+.I optval
+may be supplied as 0.
+.PP
+.I Optname
+and any specified options are passed uninterpreted to the appropriate
+protocol module for interpretation.
+The include file
+.RI < sys/socket.h >
+contains definitions for ``socket'' level options, described below.
+Options at other protocol levels vary in format and
+name; consult the appropriate entries in section (4P).
+.PP
+Most socket-level options take an
+.I int
+parameter for
+.IR optval .
+For
+.IR setsockopt ,
+the parameter should non-zero to enable a boolean option,
+or zero if the option is to be disabled.
+SO_LINGER uses a
+.I struct linger
+parameter, defined in
+.RI < sys/socket.h >,
+which specifies the desired state of the option and the
+linger interval (see below).
+.PP
+The following options are recognized at the socket level.
+Except as noted, each may be examined with
+.I getsockopt
+and set with
+.IR setsockopt .
+.PP
+.RS
+.ta \w'SO_BROADCAST\ \ \ \ 'u
+.nf
+SO_DEBUG 	toggle recording of debugging information
+SO_REUSEADDR	toggle local address reuse
+SO_KEEPALIVE	toggle keep connections alive
+SO_DONTROUTE	toggle routing bypass for outgoing messages
+SO_LINGER 	linger on close if data present
+SO_BROADCAST	toggle permission to transmit broadcast messages
+SO_OOBINLINE	toggle reception of out-of-band data in band
+SO_SNDBUF	set buffer size for output
+SO_RCVBUF	set buffer size for input
+SO_TYPE	get the type of the socket (get only)
+SO_ERROR	get and clear error on the socket (get only)
+.fi
+.RE
+.PP
+SO_DEBUG enables debugging in the underlying protocol modules.
+SO_REUSEADDR indicates that the rules used in validating addresses supplied
+in a
+.IR bind (2)
+call should allow reuse of local addresses.  SO_KEEPALIVE enables the
+periodic transmission of messages on a connected socket.  Should the
+connected party fail to respond to these messages, the connection is
+considered broken and processes using the socket are notified via a
+SIGPIPE signal.  SO_DONTROUTE indicates that outgoing messages should
+bypass the standard routing facilities.  Instead, messages are directed
+to the appropriate network interface according to the network portion
+of the destination address.
+.PP
+SO_LINGER controls the action taken when unsent messags
+are queued on socket and a 
+.IR close (2)
+is performed.
+If the socket promises reliable delivery of data and SO_LINGER is set,
+the system will block the process on the 
+.I close
+attempt until it is able to transmit the data or until it decides it
+is unable to deliver the information (a timeout period, termed the
+linger interval, is specified in the
+.IR setsockopt 
+call when SO_LINGER is requested). 
+If SO_LINGER is disabled and a 
+.I close
+is issued, the system will process the close in a manner that allows
+the process to continue as quickly as possible.
+.PP
+The option SO_BROADCAST requests permission to send broadcast datagrams
+on the socket.
+Broadcast was a privileged operation in earlier versions of the system.
+With protocols that support out-of-band data, the SO_OOBINLINE option
+requests that out-of-band data be placed in the normal data input queue
+as received; it will then be accessible with
+.I recv
+or
+.I read
+calls without the MSG_OOB flag.
+SO_SNDBUF and SO_RCVBUF are options to adjust the normal
+buffer sizes allocated for output and input buffers, respectively.
+The buffer size may be increased for high-volume connections,
+or may be decreased to limit the possible backlog of incoming data.
+The system places an absolute limit on these values.
+Finally, SO_TYPE and SO_ERROR are options used only with
+.IR setsockopt .
+SO_TYPE returns the type of the socket, such as SOCK_STREAM;
+it is useful for servers that inherit sockets on startup.
+SO_ERROR returns any pending error on the socket and clears
+the error status.
+It may be used to check for asynchronous errors on connected
+datagram sockets or for other asynchronous errors.
+.SH "RETURN VALUE"
+A 0 is returned if the call succeeds, \-1 if it fails.
+.SH ERRORS
+The call succeeds unless:
+.TP 20
+[EBADF]
+The argument \fIs\fP is not a valid descriptor.
+.TP 20
+[ENOTSOCK]
+The argument \fIs\fP is a file, not a socket.
+.TP 20
+[ENOPROTOOPT]
+The option is unknown at the level indicated.
+.TP 20
+[EFAULT]
+The address pointed to by 
+.I optval
+is not in a valid part of the process address space.
+For
+.IR getsockopt ,
+this error may also be returned if
+.I optlen
+is not in a valid part of the process address space.
+.SH "SEE ALSO"
+ioctl(2), socket(2), getprotoent(3N)
+.SH BUGS
+Several of the socket options should be handled at lower levels of the system.

@@ -1,0 +1,1090 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)ed.1	6.5.1.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ED 1
+.Os ATT 7th
+.if t .ds q \(aa
+.if n .ds q '
+.Sh NAME
+.Nm ed
+.Nd text editor
+.Sh SYNOPSIS
+.Nm ed
+.Op Fl
+.Op Ar file
+.Sh DESCRIPTION
+.Nm Ed
+is the standard text editor.
+.Pp
+If a
+.Ar file
+argument is given,
+.Nm ed
+simulates an
+.Ic e
+command (see below) on the named file; that is to say,
+the file is read into
+.Nm ed 's
+buffer so that it can be edited.
+.Tw Ds
+.Tp Fl
+Suppresses the printing
+of explanatory output
+and should be used
+when the standard input is
+an editor script.
+.Tp
+.Pp
+.Nm Ed
+operates on a copy of any file it is editing; changes made
+in the copy have no effect on the file until a
+.Ic w
+(write) command is given.
+The copy of the text being edited resides
+in a temporary file called the
+.Ar buffer  .
+.Pp
+Commands to
+.Nm ed
+have a simple and regular structure: zero or
+more
+.Ar addresses
+followed by a single character
+.Ar command ,
+possibly
+followed by parameters to the command.
+These addresses specify one or more lines in the buffer.
+Missing addresses are supplied by default.
+.Pp
+In general, only one command may appear on a line.
+Certain commands allow the
+addition of text to the buffer.
+While
+.Nm ed
+is accepting text, it is said
+to be in
+.Ar input mode .
+In this mode, no commands are recognized;
+all input is merely collected.
+Input mode is left by typing a period
+.Sq Ic \&.
+alone at the
+beginning of a line.
+.Pp
+.Nm Ed
+supports a limited form of
+.Ar regular expression
+notation.
+A regular expression specifies
+a set of strings of characters.
+A member of this set of strings is said to be
+.Ar matched
+by the regular expression.
+In the following specification for regular expressions
+the word `character' means any character but newline.
+.Tw Ds
+.Tp 1.
+Any character except a special character
+matches itself.
+Special characters are
+the regular expression delimiter plus
+.Sq Cm \e\[.
+and sometimes
+.Sq Cm ^*$ .
+.Tp 2.
+A
+.Sq Cm \&.
+matches any character.
+.Tp 3.
+A
+.Sq Li \e
+followed by any character except a digit or
+.Li (\)
+matches that character.
+.Tp 4.
+A nonempty string
+.Op Ar s
+or
+.Oo
+.Cx \&(
+.Op Cm \&^ Ar s
+.Cx \&)
+.Cx
+.Oo
+matches any character in (or not in)
+.Ar s .
+In
+.Ar s ,
+.Sq Li \e
+has no special meaning, and
+may only appear as
+the first letter.
+A substring
+.Ar a\-b ,
+with
+.Ar a
+and
+.Ar b
+in ascending ASCII order, stands for the inclusive
+range of ASCII characters.
+.Tp 5.
+A regular expression of form 1\-4 followed by * matches a sequence of
+0 or more matches of the regular expression.
+.Tp 6.
+A regular expression,
+.Ar x ,
+of form 1\-8, bracketed
+.Cx Li \e(
+.Ar x
+.Li \e)
+.Cx
+matches what
+.Ar x
+matches.
+.Tp 7.
+A \e followed by a digit
+.Ar n
+matches a copy of the string that the
+bracketed regular expression beginning with the
+.Cx Ar n
+.Cx \'th
+.Cx
+.Li \e(
+matched.
+.Tp 8.
+A regular expression of form 1\-8,
+.Ar x ,
+followed by a regular expression of form 1\-7,
+.Ar y
+matches a match for
+.Ar x
+followed by a match for
+.Ar y ,
+with the
+.Ar x
+match being as long as possible while still permitting a
+.Ar y
+match.
+.Tp 9.
+A regular expression of form 1\-8 preceded by
+.Sq Li ^
+(or followed by
+.Sq Li $ ) ,
+is constrained to matches that
+begin at the left (or end at the right) end of a line.
+.Tp 10.
+A regular expression of form 1\-9 picks out the
+longest among the leftmost matches in a line.
+.Tp 11.
+An empty regular expression stands for a copy of the
+last regular expression encountered.
+.Tp
+.Pp
+Regular expressions are used in addresses to specify
+lines and in one command
+(see
+.Ar s
+below)
+to specify a portion of a line which is to be replaced.
+If it is desired to use one of
+the regular expression metacharacters as an ordinary
+character, that character may be preceded by
+.Sq Li \e .
+This also applies to the character bounding the regular
+expression (often
+.Sq Li \&/ )
+and to
+.Sq Li \e
+itself.
+.Pp
+To understand addressing in
+.Nm ed
+it is necessary to know that at any time there is a
+.Ar current line.
+Generally speaking, the current line is
+the last line affected by a command; however,
+the exact effect on the current line
+is discussed under the description of
+the command.
+Addresses are constructed as follows.
+.Tw Ds
+.Tp 1.
+The character
+.Sq Ic \&.
+addresses the current line.
+.Tp 2.
+The character
+.Cx `
+.Ic $
+.Cx \'
+.Cx
+addresses the last line of the buffer.
+.Tp 3.
+A decimal number
+.Ar n
+addresses the
+.Cx Ar n
+.Cx \'th
+.Cx
+line of the buffer.
+.Tp 4.
+.Cx `\(fm
+.Ar x
+.Cx \'
+.Cx
+addresses the line marked with the name
+.Ar x  ,
+which must be a lower-case letter.
+Lines are marked with the
+.Ar k
+command described below.
+.Tp 5.
+A regular expression enclosed in slashes
+.Cx `
+.Li /
+.Cx \'
+.Cx
+addresses
+the line found by searching forward from the current line
+and stopping at the first line containing a
+string that matches the regular expression.
+If necessary the search wraps around to the beginning of the
+buffer.
+.Tp 6.
+A regular expression enclosed in queries 
+.Cx `
+.Li ?
+.Cx \'
+.Cx
+addresses
+the line found by searching backward from the current line
+and stopping at the first line containing
+a string that matches the regular expression.
+If necessary
+the search wraps around to the end of the buffer.
+.Tp 7.
+An address followed by a plus sign
+.Cx `
+.Li +
+.Cx \'
+.Cx
+or a minus sign
+.Cx `
+.Li \-
+.Cx \'
+.Cx
+followed by a decimal number specifies that address plus
+(resp. minus) the indicated number of lines.
+The plus sign may be omitted.
+.Tp 8.
+If an address begins with
+.Cx `
+.Li +
+.Cx \'
+.Cx
+or
+.Cx `
+.Li \-
+.Cx \'
+.Cx
+the addition or subtraction is taken with respect to the current line;
+e.g.
+.Cx `
+.Li \-5
+.Cx \'
+.Cx
+is understood to mean
+.Cx `
+.Li .\-5
+.Cx \'
+.Cx
+.Nm .
+.Tp 9.
+If an address ends with
+.Cx `
+.Li +
+.Cx \'
+.Cx
+.Cx `
+.Li \-
+.Cx \',
+.Cx
+then 1 is added (resp. subtracted).
+As a consequence of this rule and rule 8,
+the address
+.Cx `
+.Li \-
+.Cx \'
+.Cx
+refers to the line before the current line.
+Moreover,
+trailing
+.Cx `
+.Li +
+.Cx \'
+.Cx
+and
+.Cx `
+.Li \-
+.Cx \'
+.Cx
+characters
+have cumulative effect, so
+.Cx `
+.Li \-\-
+.Cx \'
+.Cx
+refers to the current
+line less 2.
+.Tp 10.
+To maintain compatibility with earlier versions of the editor,
+the character
+.Cx `
+.Li ^
+.Cx \'
+.Cx
+in addresses is
+equivalent to
+.Cx `
+.Li \-
+.Cx \'.
+.Cx
+.Tp
+.Pp
+Commands may require zero, one, or two addresses.
+Commands which require no addresses regard the presence
+of an address as an error.
+Commands which accept one or two addresses
+assume default addresses when insufficient are given.
+If more addresses are given than such a command requires,
+the last one or two (depending on what is accepted) are used.
+.Pp
+Addresses are separated from each other typically by a comma
+.Cx `
+.Li ,
+.Cx \'
+.Cx
+They may also be separated by a semicolon
+.Cx `
+.Li ;
+.Cx \'
+.Cx
+In this case the current line 
+.Cx `
+.Li .
+.Cx \'
+.Cx
+.Nm .
+is set to
+the previous address before the next address is interpreted.
+This feature can be used to determine the starting
+line for forward and backward searches
+.Cx \&(`
+.Li /
+.Cx \'
+.Cx
+.Cx `
+.Li ?
+.Cx \').
+.Cx
+The second address of any two-address sequence
+must correspond to a line following the line corresponding to the first address.
+The special form
+.Cx `
+.Li \&%
+.Cx \'
+.Cx
+is an abbreviation for the address pair
+.Cx `
+.Li 1,$
+.Cx \'.
+.Cx
+.Pp
+In the following list of
+.Nm ed
+commands, the default addresses
+are shown in parentheses.
+The parentheses are not part of
+the address, but are used to show that the given addresses are
+the default.
+.Pp
+As mentioned, it is generally illegal for more than one
+command to appear on a line.
+However, most commands may be suffixed by `p'
+or by `l', in which case
+the current line is either
+printed or listed respectively
+in the way discussed below.
+Commands may also be suffixed by `n',
+meaning the output of the command is to
+be line numbered.
+These suffixes may be combined in any order.
+.Tw Ds
+.Tp Cx \&(
+.Ic .
+.Cx \&)
+.Ic a
+.Cx
+.Tp <text>
+.Tp Ic \&.
+The append command reads the given text
+and appends it after the addressed line.
+.Sq Ic \&.
+is left
+on the last line input, if there
+were any, otherwise at the addressed line.
+Address `0' is legal for this command; text is placed
+at the beginning of the buffer.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&c
+.Cx
+.Tp <text>
+.Tp Ic \&.
+The change
+command deletes the addressed lines, then accepts input
+text which replaces these lines.
+.Sq Ic \&.
+is left at the last line input; if there were none,
+it is left at the line preceding the deleted lines.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&d
+.Cx
+The delete command deletes the addressed lines from the buffer.
+The line originally after the last line deleted becomes the current line;
+if the lines deleted were originally at the end,
+the new last line becomes the current line.
+.Tp Cx Ic \&e
+.Cx \&\ \&
+.Ar filename
+.Cx
+The edit
+command causes the entire contents of the buffer to be deleted,
+and then the named file to be read in.
+.Sq Ic \&.
+is set to the last line of the buffer.
+The number of characters read is typed.
+.Ar filename
+is remembered for possible use as a default file name
+in a subsequent
+.Ic r
+or
+.Ic w
+command.
+If
+.Ar filename
+is missing, the remembered name is used.
+.Tp Cx Ic E
+.Cx \&\ \&
+.Ar filename
+.Cx
+This command is the same as
+.Ic e ,
+except that no diagnostic results when no
+.Ic w
+has been given since the last buffer alteration.
+.Tp Cx Ic f
+.Cx \&\ \&
+.Ar filename
+.Cx
+The filename command prints the currently remembered file name.
+If
+.Ar filename
+is given,
+the currently remembered file name is changed to
+.Ar filename .
+.Tp Cx \&(
+.Ic \&1
+.Cx \&,
+.Ic \&$
+.Cx \&)
+.Ic \&g
+.Ar/regular expression/command list
+.Cx
+In the global
+command, the first step is to mark every line which matches
+the given regular expression.
+Then for every such line, the
+given command list is executed with
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+initially set to that line.
+A single command or the first of multiple commands
+appears on the same line with the global command.
+All lines of a multi-line list except the last line must be ended with
+.Cx `
+.Ic \&\e
+.Cx \'.
+.Cx
+.Ic A ,
+.Ic i,
+and
+.Ic c
+commands and associated input are permitted;
+the
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+terminating input mode may be omitted if it would be on the
+last line of the command list.
+The commands
+.Ic g
+and
+.Ic v
+are not permitted in the command list.
+.Tp Cx \&(
+.Ic .
+.Cx \&)
+.Ic i
+.Cx
+.Tp <text>
+.Tp Ic \&.
+This command inserts the given text before the addressed line.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is left at the last line input, or, if there were none,
+at the line before the addressed line.
+This command differs from the
+.Ic a
+command only in the placement of the
+text.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.+1
+.Cx \&)
+.Ic \&j
+.Cx
+This command joins the addressed lines into a single line;
+intermediate newlines simply disappear.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is left at the resulting line.
+.Tp Cx \&(
+.Ic .
+.Cx \&)
+.Ic k
+.Ar x
+.Cx
+The mark command marks the addressed line with
+name
+.Ar x ,
+which must be a lower-case letter.
+The address form
+.Cx `\(fm
+.Ar x
+.Cx \'
+.Cx
+then addresses this line.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&l
+.Cx
+The list command
+prints the addressed lines in an unambiguous way:
+non-graphic characters are
+printed in two-digit octal,
+and long lines are folded.
+The
+.Ar l
+command may be placed on the same line after any non-i/o
+command.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&m
+.Ar a
+.Cx
+The move command repositions the addressed lines after the line
+addressed by
+.Ar a  .
+The last of the moved lines becomes the current line.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&p
+.Cx
+The print command prints the addressed lines.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is left at the last line printed.
+The
+.Ic p
+command
+may
+be placed on the same line after any non-i/o command.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&P
+.Cx
+This command is a synonym for
+.Ic p .
+.Tp Ic q
+The quit command causes
+.Nm ed
+to exit.
+No automatic write
+of a file is done.
+.Tp Ic Q
+This command is the same as
+.Ic q ,
+except that no diagnostic results when no
+.Ic w
+has been given since the last buffer alteration.
+.Tp Cx \&(
+.Ic $
+.Cx \&)
+.Ic r
+.Cx \&\ \&
+.Ar filename
+.Cx
+The read command
+reads in the given file after the addressed line.
+If no file name is given,
+the remembered file name, if any, is used
+(see
+.Ic e
+and
+.Ic f
+commands).
+The file name is remembered if there was no
+remembered file name already.
+Address `0' is legal for
+.Ic r
+and causes the
+file to be read at the beginning of the buffer.
+If the read is successful, the number of characters
+read is typed.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is left at the last line read in from the file.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&s
+.Ar/regular expression/replacement/
+.Cx \&\tor
+.Cx
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&s
+.Ar/regular expression/replacement/
+.Ic \&g
+.Cx
+The substitute command searches each addressed
+line for an occurrence of the specified regular expression.
+On each line in which a match is found,
+all matched strings are replaced by the replacement specified,
+if the global replacement indicator
+.Ic \&g
+appears after the command.
+If the global indicator does not appear, only the first occurrence
+of the matched string is replaced.
+It is an error for the substitution to fail on all addressed lines.
+Any punctuation character
+may be used instead of
+.Cx `
+.Ic \&/
+.Cx \'
+.Cx
+to delimit the regular expression
+and the replacement.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is left at the last line substituted.
+An ampersand
+.Cx `
+.Ic \&&
+.Cx \'
+.Cx
+appearing in the replacement
+is replaced by the string matching the regular expression.
+The special meaning of
+.Cx `
+.Ic \&&
+.Cx \'
+.Cx
+in this context may be
+suppressed by preceding it by
+.Cx `
+.Ic \&\e
+.Cx \'.
+.Cx
+The characters
+.Cx `
+.Ic \&\e
+.Ar n
+.Cx \'
+.Cx
+where
+.Ar n
+is a digit,
+are replaced by the text matched by the
+.Cx Ar n
+.Cx \'th
+.Cx
+regular subexpression
+enclosed between
+.Cx `
+.Ic \&\e\&(
+.Cx \'.
+.Cx
+and
+.Cx `
+.Ic \&\e\&)
+.Cx \'.
+.Cx
+When
+nested, parenthesized subexpressions
+are present,
+.Ar n
+is determined by counting occurrences of
+.Cx `
+.Ic \&\e\&(
+.Cx \'.
+.Cx
+starting from the left.
+Lines may be split by substituting new-line characters into them.
+The new-line in the
+replacement string
+must be escaped by preceding it by
+.Cx `
+.Ic \&\e
+.Cx \'.
+.Cx
+One or two trailing delimiters may be omitted,
+implying the
+.Ic p
+suffix.
+The special form
+.Ic s
+followed by
+.Ar no
+delimiters
+repeats the most recent substitute command
+on the addressed lines.
+The
+.Ic s
+may be followed by the letters
+.Ic r
+(use the most recent regular expression for the
+left hand side, instead of the most recent
+left hand side of a substitute command),
+.Ic p
+(complement the setting of the
+.Ic p
+suffix from the previous substitution), or
+.Ic g
+(complement the setting of the
+.Ic g
+suffix).
+These letters may be combined in any order.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&t
+.Ar a
+.Cx
+This command acts just like the
+.Ic m
+command, except that a copy of the addressed lines is placed
+after address
+.Ad a
+(which may be 0).
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is left on the last line of the copy.
+.Tp Cx \&(
+.Ic \&.
+.Cx \&,
+.Ic \&.
+.Cx \&)
+.Ic \&u
+.Cx
+The undo command restores the buffer to it's state
+before the most recent buffer modifying command.
+The current line is also restored.
+Buffer modifying commands are
+.Ic a , c , d , g , i , k , m , r , s , t ,
+and
+.Ic v .
+For purposes of undo,
+.Ic g
+and
+.Ic v
+are considered to be a single buffer modifying command.
+Undo is its own inverse.
+When
+.Nm ed
+runs out of memory
+(at about 8000 lines on any 16 bit mini-computer
+such as the PDP-11)
+This full undo is not possible, and
+.Ic u
+can only undo the effect of the most recent
+substitute on the current line.
+This restricted undo also applies to editor scripts
+when
+.Nm ed
+is invoked with the
+.Fl
+option.
+.Tp Cx \&(
+.Ic \&1
+.Cx \&,
+.Ic \&$
+.Cx \&)
+.Ic \&v
+.Ar/regular expression/command list
+.Cx
+This command is the same as the global command
+.Ic g
+except that the command list is executed
+.Ic g
+with
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+initially set to every line
+.Em except
+those
+matching the regular expression.
+(1, $)\w filename
+.Tp Cx \&(
+.Ic \&1
+.Cx \&,
+.Ic \&$
+.Cx \&)
+.Ic \&w
+.Cx \&\ \&
+.Ar filename
+.Cx
+The write command writes the addressed lines onto
+the given file.
+If the file does not exist,
+it is created.
+The file name is remembered if there was no
+remembered file name already.
+If no file name is given,
+the remembered file name, if any, is used
+(see
+.Ic e
+and
+.Ic f
+commands).
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is unchanged.
+If the command is successful, the number of characters written is
+printed.
+.Tp Cx \&(
+.Ic \&1
+.Cx \&,
+.Ic \&$
+.Cx \&)
+.Ic \&W
+.Cx \&\ \&
+.Ar filename
+.Cx
+This command is the same as
+.Ic w ,
+except that the addressed lines are appended to the file.
+.Tp Cx \&(
+.Ic \&1
+.Cx \&,
+.Ic \&$
+.Cx \&)
+.Ic \&wq
+.Cx \&\ \&
+.Ar filename
+.Cx
+This command is the same as
+.Ic w
+except that afterwards a
+.Ic q
+command is done,
+exiting the editor
+after the file is written.
+.Ic \&1
+.Ic \&+1
+.Cx \&)
+.Ic \&z
+.Cx \&\ \ \&or,
+.Cx
+.Tp Cx \&(
+.Ic \&1
+.Ic \&+1
+.Cx \&)
+.Ic \&z
+.Ar n
+.Cx
+This command scrolls through the buffer starting at the addressed line.
+22 (or
+.Ar n ,
+if given)
+lines are printed.
+The last line printed becomes the current line.
+The value
+.Ar n
+is sticky, in that it becomes the default for
+future
+.Ic z
+commands.
+.Tp Cx \&(
+.Ic \&$
+.Cx \&)
+.Ic \&=
+.Cx
+The line number of the addressed line is typed.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is unchanged by this command.
+.Tp Cx Ic \&!
+.Cx <shell\ command>
+.Cx
+The remainder of the line after the `!' is sent
+to
+.Xr sh  1
+to be interpreted as a command.
+.Cx `
+.Ic \&.
+.Cx \'
+.Cx
+is unchanged.
+.Tp Cx \&(
+.Ic \&.+1
+.Cx \&,
+.Ic \&.+1
+.Cx \&)
+.Cx <newline>
+.Cx
+An address alone on a line causes the addressed line to be printed.
+A blank line alone is equivalent to
+.Ic .+1
+it is useful
+for stepping through text.
+If two addresses are present with no
+intervening semicolon,
+.Nm ed
+prints the range of lines.
+If they are separated by a semicolon,
+the second line is printed.
+.Tp
+.Pp
+If an interrupt signal (ASCII DEL) is sent,
+.Nm ed
+prints
+.Sq Li ?interrupted
+and returns to its command level.
+.Pp
+Some size limitations:
+512 characters per line,
+256 characters per global command list,
+64 characters per file name,
+and, on mini computers,
+128K characters in the temporary file.
+The limit on the number of lines depends on the amount of core:
+each line takes 2 words.
+.Pp
+When reading a file,
+.Nm ed
+discards ASCII NUL characters
+and all characters after the last newline.
+It refuses to read files containing non-ASCII characters.
+.Sh FILES
+.Dw edhup
+.Di L
+.Dp Pa /tmp/e*
+.Dp Pa edhup
+work is saved here if terminal hangs up
+.Dp
+.Sh SEE ALSO
+.Xr ex 1 ,
+.Xr sed 1 ,
+.Xr crypt 1
+.br
+B. W. Kernighan,
+.Em A Tutorial Introduction to the ED Text Editor
+.br
+B. W. Kernighan,
+.Em Ar Advanced editing on UNIX
+.Sh HISTORY
+The
+.Nm ed
+command appeared in Version 6 AT&T UNIX.
+.Sh DIAGNOSTICS
+.Sq Li name
+for inaccessible file;
+.Sq Li ?self-explanatory message
+for other errors.
+.Pp
+To protect against throwing away valuable work,
+a
+.Ic q
+or
+.Ic e
+command is considered to be in error, unless a
+.Ic w
+has occurred since the last buffer change.
+A second
+.Ic q
+or
+.Ic e
+will be obeyed regardless.
+.Sh BUGS
+The
+.Ic l
+command mishandles
+.Li DEL .
+.br
+The
+.Ic undo
+command causes marks to be lost on affected lines.

@@ -1,0 +1,30 @@
+.TH FOLD 1 2/24/79
+.UC
+.SH NAME
+fold \- fold long lines for finite width output device
+.SH SYNOPSIS
+.B fold
+[
+\-width
+] [
+file ...
+]
+.SH DESCRIPTION
+.I Fold
+is a filter which will fold the contents of the specified files,
+or the standard input if no files are specified,
+breaking the lines to have maximum width
+.I width.
+The default for
+.I width
+is 80.
+.I Width
+should be a multiple of 8 if tabs are present, or the tabs should
+be expanded using
+.IR expand (1)
+before coming to
+.I fold.
+.SH SEE\ ALSO
+expand(1)
+.SH BUGS
+If underlining is present it may be messed up by folding.

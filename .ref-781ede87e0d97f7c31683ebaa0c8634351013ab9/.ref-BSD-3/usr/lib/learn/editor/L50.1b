@@ -1,0 +1,31 @@
+#print
+You can use all the special characters in the
+search commands.  For example,
+ /^cat/p
+prints the first line that BEGINS with 'cat'.
+You can even leave out the 'p':
+ /^cat/
+does the same thing.
+
+Now go into file 'text' with the editor and
+print the first line that ENDS with 'dog'.
+Then leave the editor and type 'ready'.
+#create text
+This is a file which
+contains several occurrences
+of the word 'dog' in several
+places.  It would be a doggone
+shame if you didn't find
+the right dog
+to print out.
+#copyout
+#user
+#uncopyout
+grep 'dog$' text >X1
+grep 'dog' .ocopy >X3
+tail -1 X3 >X2
+#cmp X1 X2
+#log
+#next
+50.1c 10
+50.2c 5

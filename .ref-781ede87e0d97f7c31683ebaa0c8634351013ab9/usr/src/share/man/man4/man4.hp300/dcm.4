@@ -1,0 +1,54 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dcm.4	5.1 (Berkeley) %G%
+.\"
+.TH DCM 4 ""
+.UC 7
+.SH NAME
+dcm \- HP 98642A communications multiplexer
+.SH SYNOPSIS
+.B "device		dcm0	at scode? flags 0xe"
+.SH DESCRIPTION
+The 98642A is a four port EIA RS-232C (CCITT V.28) communications
+multiplexer. The 98642A has three direct-connect ports and one port with
+full modem control.
+.PP
+Each line attached to the 98642A behaves as described in
+.IR tty (4).
+Input and output for each line may set to one of following baud rates;
+50, 75, 110, 134.5, 150, 300, 600, 1200, 1800, 2400, 4800,
+9600, 19200, 38400. See 
+.IR tty (4)
+for the encoding.
+.PP
+Flags is usually specified as 0xe since 3 of the 4 ports (1-3) do not support
+modem control and should be treated as hard-wired with carrier always present.
+If port 0 does not have the need for modem control then flags can be specified
+as 0xf.
+.PP
+Each port on the 98642A has a 128 byte input silo and a 16 byte output silo.
+Interrupts happen on a per character basis unless the interrupt
+rate for the card reaches 70 interrupts per second at which time the
+driver changes to a 16.7ms (60 interrupts per second) polling scheme until 
+the interrupt rate drops.
+.SH FILES
+/dev/tty0[0-9a-f]
+.SH "SEE ALSO"
+tty(4)
+.SH DIAGNOSTICS
+\fBdcm%d port%d: silo overflow\fR Input Silo has overflowed and incoming data
+has been lost.
+.PP
+\fBdcm%d port%d: uart overflow\fR The 3 character buffer in the uart has
+overflowed.
+.SH BUGS
+Total throughput per card, all ports together, is limited to 76800 bits per
+second continuous input rate.
+

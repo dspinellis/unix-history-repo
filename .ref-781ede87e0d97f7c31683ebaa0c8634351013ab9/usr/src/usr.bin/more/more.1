@@ -1,0 +1,324 @@
+.\" Copyright (c) 1988, 1990 The Regents of the University of California.
+.\" Copyright (c) 1988 Mark Nudleman
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)more.1	5.13 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MORE 1
+.Sh NAME
+.Nm more
+.Nd file perusal filter for crt viewing
+.Sh SYNOPSIS
+.Nm more
+.Op Fl ceinus
+.Op Fl t Ar tag
+.Op Fl x Ar tabs
+.Op Fl / Ar pattern
+.Op Fl #
+.Ar
+.Sh DESCRIPTION
+.Nm More
+is a filter for paging through text one screenful at a time.  It
+uses
+.Xr termcap  3
+so it can run on a variety of terminals.  There is even limited support
+for hardcopy terminals.  (On a hardcopy terminal, lines which should be
+printed at the top of the screen are prefixed with an up-arrow.)
+.Ar File
+may be a single dash (``-''), implying stdin.
+.Sh OPTIONS
+Command line options are described below.
+Options are also taken from the environment variable
+.Ev MORE
+(make sure to precede them with a dash (``-'')) but command
+line options will override them.
+.Tw Fl
+.Tp Fl c
+Normally,
+.Nm more
+will repaint the screen by scrolling from the bottom of the screen.
+If the
+.Fl c
+option is set, when
+.Nm more
+needs to change the entire display, it will paint from the top line down.
+.Tp Fl e
+Normally, if displaying a single file,
+.Nm more
+exits as soon as it reaches end-of-file.  The
+.Fl e
+option tells more to
+exit if it reaches end-of-file twice without an intervening operation.
+If the file is shorter than a single screen
+.Nm more
+will exit at end-of-file regardless.
+.Tp Fl i
+The
+.Fl i
+option causes searches to ignore case; that is,
+uppercase and lowercase are considered identical.
+.Tp Fl n
+The
+.Fl n
+flag suppresses line numbers.
+The default (to use line numbers) may cause
+.Nm more
+to run more slowly in some cases, especially with a very large input file.
+Suppressing line numbers with the
+.Fl n
+flag will avoid this problem.
+Using line numbers means: the line number will be displayed in the
+.Cm =
+command, and the
+.Cm v
+command will pass the current line number to the editor.
+.Tp Fl s
+The
+.Fl s
+option causes
+consecutive blank lines to be squeezed into a single blank line.
+.Tp Fl t
+The
+.Fl t
+option, followed immediately by a tag, will edit the file
+containing that tag.  For more information, see the
+.Xr ctags  1
+command.
+.Tp Fl u
+By default,
+.Nm more
+treats backspaces and CR-LF sequences specially.  Backspaces which appear
+adjacent to an underscore character are displayed as underlined text.
+Backspaces which appear between two identical characters are displayed
+as emboldened text.  CR-LF sequences are compressed to a single linefeed
+character.  The
+.Fl u
+option causes backspaces to always be displayed as
+control characters, i.e. as the two character sequence ``^H'', and CR-LF
+to be left alone.
+.Tp Fl x
+The
+.Fl x
+option sets tab stops every
+.Ar N
+positions. The default for
+.Ar N
+is 8.
+.Tp Fl \&/
+The
+.Fl \&/
+option specifies a string that will be searched for before
+each file is displayed.
+.Sh COMMANDS
+Interactive commands for
+.Nm more
+are based on
+.Xr vi  1  .
+Some commands may be preceeded by a decimal number, called N in the
+descriptions below.
+In the following descriptions, ^X means control-X.
+.Pp
+.Tw Ic
+.Tp Ic h
+help: display a summary of these commands.
+If you forget all the other commands, remember this one.
+.Tp Cx Ic SPACE
+.Ws
+.Cx or
+.Ws
+.Ic f
+.Ws
+.Cx or
+.Ws
+.Ic \&^F
+.Cx
+Scroll forward N lines, default one window.
+If N is more than the screen size, only the final screenful is displayed.
+.Tp Cx Ic b
+.Ws
+.Cx or
+.Ws
+.Ic \&^B
+.Cx
+Scroll backward N lines, default one window (see option -z below).
+If N is more than the screen size, only the final screenful is displayed.
+.Tp Cx Ic j
+.Ws
+.Cx or
+.Ws
+.Ic RETURN
+.Cx
+Scroll forward N lines, default 1.
+The entire N lines are displayed, even if N is more than the screen size.
+.Tp Ic k
+Scroll backward N lines, default 1.
+The entire N lines are displayed, even if N is more than the screen size.
+.Tp Cx Ic d
+.Ws
+.Cx or
+.Ws
+.Ic \&^D
+.Cx
+Scroll forward N lines, default one half of the screen size.
+If N is specified, it becomes the new default for
+subsequent d and u commands.
+.Tp Cx Ic u
+.Ws
+.Cx or
+.Ws
+.Ic \&^U
+.Cx
+Scroll backward N lines, default one half of the screen size.
+If N is specified, it becomes the new default for
+subsequent d and u commands.
+.Tp Ic g
+Go to line N in the file, default 1 (beginning of file).
+.Tp Ic G
+Go to line N in the file, default the end of the file.
+.Tp Cx Ic p
+.Ws
+.Cx or
+.Ws
+.Ic \&%
+.Cx
+Go to a position N percent into the file.  N should be between 0
+and 100.  (This works if standard input is being read, but only if
+.Nm more
+has already read to the end of the file.  It is always fast, but
+not always useful.)
+.Tp Cx Ic r
+.Ws
+.Cx or
+.Ws
+.Ic \&^L
+.Cx
+Repaint the screen.
+.Tp Ic R
+Repaint the screen, discarding any buffered input.
+Useful if the file is changing while it is being viewed.
+.Tp Ic m
+Followed by any lowercase letter,
+marks the current position with that letter.
+.Tp Ic \&\'
+(Single quote.)
+Followed by any lowercase letter, returns to the position which
+was previously marked with that letter.
+Followed by another single quote, returns to the postion at
+which the last "large" movement command was executed, or the
+beginning of the file if no such movements have occurred.
+All marks are lost when a new file is examined.
+.Tp Cx Ic \&/
+.Ar pattern
+.Cx
+Search forward in the file for the N-th line containing the pattern.
+N defaults to 1.
+The pattern is a regular expression, as recognized by
+.Xr ed .
+The search starts at the second line displayed.
+.Tp Cx Ic \&\?
+.Ar pattern
+.Cx
+Search backward in the file for the N-th line containing the pattern.
+The search starts at the line immediately before the top line displayed.
+.Tp Cx Ic \&/\&!
+.Ar pattern
+.Cx
+Like /, but the search is for the N-th line
+which does NOT contain the pattern.
+.Tp Cx Ic \&?\&!
+.Ar pattern
+.Cx
+Like ?, but the search is for the N-th line
+which does NOT contain the pattern.
+.Tp Ic n
+Repeat previous search, for N-th line containing the last pattern
+(or NOT containing the last pattern, if the previous search
+was /! or ?!).
+.Tp Cx Ic E
+.Ws
+.Op Ar filename
+.Cx
+Examine a new file.
+If the filename is missing, the "current" file (see the N and P commands
+below) from the list of files in the command line is re-examined.
+If the filename is a pound sign (#), the previously examined file is
+re-examined.
+.Tp Cx Ic N
+.Ws
+.Cx or
+.Ws
+.Ic \&:n
+.Cx
+Examine the next file (from the list of files given in the command line).
+If a number N is specified (not to be confused with the command N),
+the N-th next file is examined.
+.Tp Cx Ic P
+.Ws
+.Cx or
+.Ws
+.Ic \&:p
+.Cx
+Examine the previous file.
+If a number N is specified, the N-th previous file is examined.
+.Tp Ic \&:t
+Go to supplied tag.
+.Tp Ic v
+Invokes an editor to edit the current file being viewed.
+The editor is taken from the environment variable
+.Ev EDITOR ,
+or defaults to
+.Xr vi  1  .
+.Tp Cx Ic \&=
+.Ws
+.Cx or
+.Ws
+.Ic \&^G
+.Cx
+These options print out the number of the file currently being displayed
+relative to the total number of files there are to display, the current
+line number, the current byte number and the total bytes to display, and
+what percentage of the file has been displayed.  If
+.Nm more
+is reading from stdin, or the file is shorter than a single screen, some
+of these items may not be available.  Note, all of these items reference
+the first byte of the last line displayed on the screen.
+.Tp Cx Ic q
+.Ws
+.Cx or
+.Ws
+.Ic \&:q
+.Ws
+.Cx or
+.Ws
+.Ic ZZ
+.Cx
+Exits
+.Nm more .
+.Tp
+.Sh ENVIRONMENT
+.Nm More
+utilizes the following environment variables, if they exist:
+.Tw Fl
+.Tp Ev MORE
+This variable may be set with favored options to
+.Nm more .
+.Tp Ev EDITOR
+Specify default editor.
+.Tp Ev SHELL
+Current shell in use (normally set by the shell at login time).
+.Tp Ev TERM
+Specifies terminal type, used by more to get the terminal
+characteristics necessary to manipulate the screen.
+.Tp
+.Sh SEE ALSO
+.Xr ctags 1 ,
+.Xr vi 1
+.Sh AUTHOR
+This software is derived from software contributed to Berkeley
+by Mark Nudleman.
+.Sh HISTORY
+.Nm more
+appeared in 3 BSD.

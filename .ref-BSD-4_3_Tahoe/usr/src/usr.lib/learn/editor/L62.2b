@@ -1,0 +1,32 @@
+#print
+ You can of course use any kind of addresses for the three addresses
+in the 'm' command.  Think of the command as
+  "from address-1 until address-2 gather up and MOVE to address-3".
+OK.  In the file "story" move the lines from the line
+that contains "back" until the line containing "prevail" to the
+end of the file.  Then rewrite "story" and type "ready".
+#create Ref
+   Only twice in the nation's history has daylight-savings time been
+uniformly observed throughout the land -- during World War I, the first
+DST was tried, and again during World War II.  Immediately after
+both wars, however, many areas abandoned DST altogether.
+   Last week the House voted 292 to 93 to require all states to move
+their clocks ahead an hour on the last Sunday in April, and set them
+back again on the last Sunday in October -- unless a state legislature
+specifically votes to stay on standard time.  In that case, local
+options are out and standard time must prevail through the state.
+#create story
+   Only twice in the nation's history has daylight-savings time been
+uniformly observed throughout the land -- during World War I, the first
+DST was tried, and again during World War II.  Immediately after
+both wars, however, many areas abandoned DST altogether.
+back again on the last Sunday in October -- unless a state legislature
+specifically votes to stay on standard time.  In that case, local
+options are out and standard time must prevail through the state.
+   Last week the House voted 292 to 93 to require all states to move
+their clocks ahead an hour on the last Sunday in April, and set them
+#user
+#cmp story Ref
+#log
+#next
+62.2c 5

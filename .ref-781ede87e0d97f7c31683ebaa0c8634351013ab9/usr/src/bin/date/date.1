@@ -1,0 +1,161 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)date.1	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DATE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm date
+.Nd display or set date and time
+.Sh SYNOPSIS
+.Nm date
+.Op Fl nu
+.Op Fl d Ar dst
+.Op Fl t Ar minutes_west
+.Op +format
+.Op [yy[mm[dd[hh]]]]mm[\&.ss]
+.Sh DESCRIPTION
+.Nm Date
+displays the current date and time when invoked without arguments.
+Providing arguments will format the date and time in a user-defined
+way or set the date.
+Only the superuser may set the date.
+.Pp
+Options are:
+.Pp
+.Tw Ds
+.Tp Fl d
+Set the kernel's values for daylight savings time.
+If
+.Ar dst
+is non-zero, future calls
+to
+.Xr gettimeofday 2
+will return a non-zero
+.Ql tz_dsttime  .
+.Tp Fl n
+The utility
+.Xr timed 8
+is used to synchronize the clocks of groups of machines.
+By default, if
+.Xr timed
+is running,
+.Nm date
+will set the time on all of the machines in the local group.
+The
+.Fl n
+option stops
+.Nm date
+from setting the time for other than the current machine.
+.Tp Fl t
+Set the kernel's values for minutes west of GMT.
+.Ar Minutes_west
+specifies the number of minutes returned in
+.Ql tz_minuteswest  
+by future calls to
+.Xr gettimeofday 2 .
+.Tp Fl u
+Display or set the date in UCT (universal) time.
+.Tp
+.Pp
+An operand with a leading plus (``+'') sign signals a user-defined format
+string which specifies the format in which to display the date and time.
+The format string may contain any of the conversion specifications described
+in the 
+.Xr strftime 3
+manual page, as well as any arbitrary text.
+The format string for the default display is:
+.Pp
+.Dl ``%a %b %e %H:%M:%S %Z %Y\en''.
+.Pp
+If an operand does not have a leading plus sign, it is interpreted as
+a value for setting the system's notion of the current date and time.
+The canonical representation for setting the date and time:
+.Dw Ds
+.Dp Ar yy
+Year in abbreviated form (.e.g 89 for 1989).
+.Dp Ar mm
+Numeric month.
+A number from 1 to 12.
+.Dp Ar dd
+Day, a number from 1 to 31.
+.Dp Ar hh
+Hour, a number from 0 to 24.
+.Dp Ar mm
+Minutes, a number from 0 to 60.
+.Dp Ar .ss
+Seconds, a number from 0 to 60.
+.Dp
+.Pp
+Everything but the minutes are optional.
+.Pp
+Time changes for Daylight Saving and Standard time and leap seconds
+and years are handled automatically.
+.Sh EXAMPLES
+The command:
+.Pp
+.Dl date +DATE: %m/%d/%y%nTIME: %H:%M:%S\en
+.Pp
+will display:
+.Pp
+.Dl DATE: 11/21/87
+.Dl TIME: 13:36:16
+.Pp
+The command:
+.Pp
+.Dl date 8506131627
+.Pp
+sets the date to June 13 1985, 4:27 PM.
+.Pp
+The command:
+.Pp
+.Dl date 1432
+.Pp
+sets the time to 2:32 PM, without modifying the date.
+.Sh FILES
+.Dw /var/log/messages
+.Di L
+.Dp Pa /var/log/wtmp
+A record of date resets and time changes.
+.Dp Pa /var/log/messages
+A record of the user setting the time.
+.Sh SEE ALSO
+.Xr gettimeofday 2 ,
+.Xr strftime 3 ,
+.Xr utmp 5 ,
+.Xr timed 8
+.br
+.Em TSP:\ The\ Time\ Synchronization Protocol
+.Em for UNIX 4.3BSD ,
+R. Gusella
+and\ S.\ Zatti
+.Sh HISTORY
+.Nm Date
+appeared in Version 6 AT&T UNIX.
+.Sh DIAGNOSTICS
+Exit status is 0 on success, 1 on if unable to set the date, and 2 on
+if able to set the local date but failing to set it globally.
+.Pp
+Occasionally, when
+.Xr timed
+synchronizes the time on many hosts, the setting of a new time value may
+require more than a few seconds.
+On these occasions,
+.Nm date
+prints: `Network time being set'.
+The message `Communication error with timed' occurs when the communication
+between
+.Nm date
+and
+.Xr timed
+fails.
+.Sh BUGS
+The system attempts to keep the date in a format closely compatible
+with VMS.
+VMS, however, uses local time (rather than GMT) and does not understand
+daylight-saving time.
+Thus, if you use both UNIX and VMS, VMS will be running on GMT.

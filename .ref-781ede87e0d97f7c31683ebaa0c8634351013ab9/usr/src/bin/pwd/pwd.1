@@ -1,0 +1,35 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pwd.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PWD 1
+.Os BSD 4
+.Sh NAME
+.Nm pwd
+.Nd return working directory name
+.Sh SYNOPSIS
+.Nm pwd
+.Sh DESCRIPTION
+.Nm Pwd
+writes the absolute pathname of the current working directory to
+the standard output.
+.Pp
+The pwd utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
+The pwd function is expected to be POSIX 1003.2 compatible
+.Sh SEE ALSO
+.Xr cd 1 ,
+.Xr csh 1 ,
+.Xr getwd 3
+.Sh BUGS
+In
+.Xr csh  1
+the command
+.Ic dirs
+is always faster (although it can give a different answer in the rare case
+that the current directory or a containing directory was moved after
+the shell descended into it).

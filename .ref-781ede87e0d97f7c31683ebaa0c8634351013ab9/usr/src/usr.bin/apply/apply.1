@@ -1,0 +1,94 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"
+.\"     @(#)apply.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt APPLY 1
+.Os BSD 4.2
+.Sh NAME
+.Nm apply
+.Nd apply a command to a set of arguments
+.Sh SYNOPSIS
+.Nm apply
+.Op Fl ac
+.Op Fl n
+.Ar command args ...
+.Sh DESCRIPTION
+.Nm Apply
+runs the named
+.Ar command
+on each
+argument
+.Ar arg
+in turn.
+Normally arguments are chosen singly; the optional number
+.Fl n
+specifies the number of arguments to be passed to
+.Ar command .
+If
+.Fl n
+is zero,
+.Ar command
+is run without arguments once for each
+.Ar arg
+Character sequences of the form
+.Cx %
+.Ar d
+.Cx
+in
+.Ar command ,
+where
+.Ar d
+is a digit from 1 to 9,
+are replaced by the
+.Ar d\'th
+following unused
+.Ar arg .
+If any such sequences occur,
+.Fl n
+is ignored,
+and the number of arguments passed to
+.Ar command
+is the maximum value of
+.Ar d
+in
+.Ar command .
+The character `%' may be changed by the
+.Fl a
+option.
+.SH ENVIRONMENT
+.Nm apply
+checks the environment variable
+.Ev SHELL
+to find out which shell to use.
+.Sh EXAMPLES
+.Ds
+.Tw apply \-2 cmp a1 b1 a2 b2 ...
+.Tp Li apply echo a*
+is similar to ls(1);
+.Tp Li apply \-2 cmp a1 b1 a2 b2 ...
+compares the `a' files to the `b' files;
+.Tp Li apply \-0 who 1 2 3 4 5
+runs who(1) 5 times; and
+.Tp Li apply \(aaln %1 /usr/joe\(aa *
+links all files in the current directory to the directory
+.Pa /usr/joe .
+.Tp
+.De
+.Sh SEE ALSO
+.Xr sh 1
+.Sh HISTORY
+.Nm Apply
+appeared in 4.2BSD.
+.Sh AUTHOR
+Rob Pike
+.Sh BUGS
+Shell metacharacters in
+.Ar command
+may have bizarre effects; it is best to enclose complicated
+commands in single quotes (\(aa\ \(aa).
+.Pp
+There is no way to pass a literal `%2' if `%' is the
+argument expansion character.

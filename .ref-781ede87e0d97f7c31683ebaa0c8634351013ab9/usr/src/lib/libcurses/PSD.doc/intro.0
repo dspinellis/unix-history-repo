@@ -1,0 +1,80 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)intro.0	6.2 (Berkeley) %G%
+.\"
+.tp
+.(l C
+.ps 12
+.ft B
+Screen Updating and Cursor Movement Optimization:
+.fl
+A Library Package
+.ft
+.ps
+.sp
+.i "Kenneth C. R. C. Arnold"
+.sp
+Computer Science Division
+Department of Electrical Engineering and Computer Science
+University of California, Berkeley
+Berkeley, California  94720
+.sp 3
+.bi ABSTRACT
+.sp 2
+.)l
+.(q
+.pp
+This document describes a package of C library functions
+which allow the user to:
+.ie t .ip \ \ \ \(bu
+.el .ip 1)
+update a screen with reasonable optimization,
+.ie t .ip \ \ \ \(bu
+.el .ip 2)
+get input from the terminal
+in a screen-oriented fashion,
+and
+.ie t .ip \ \ \ \(bu
+.el .ip 3)
+independent from the above, move the cursor optimally
+from one point to another.
+.pp
+These routines all use the
+\*(tc \*(db to describe the capabilities of the terminal.
+.)q
+.b Acknowledgements
+.pp
+This package would not exist
+without the work of Bill Joy,
+who,
+in writing his editor,
+created the capability to generally describe terminals,
+wrote the routines which read this \*(db,
+and, most importantly,
+those which implement optimal cursor movement,
+which routines I have simply lifted nearly intact.
+Doug Merritt and Kurt Shoens also were extremely important,
+as were both willing to waste time listening to me rant and rave.
+The help and/or support of
+Ken Abrams,
+Alan Char,
+Mark Horton,
+and
+Joe Kalash,
+was, and is,
+also greatly appreciated.
+.sp 2
+Revised 16 April 1986

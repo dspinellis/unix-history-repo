@@ -1,0 +1,76 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)autoconf.4	5.1 (Berkeley) %G%
+.\"
+.TH AUTOCONF 4 ""
+.UC 7
+.SH NAME
+autoconf \- diagnostics from the autoconfiguration code
+.SH DESCRIPTION
+When UNIX bootstraps it probes the innards of the machine
+on which it is running
+and locates controllers, drives, and other devices, printing out
+what it finds on the console.  This procedure is driven by a system
+configuration table which is processed by
+.IR config (8)
+and compiled into each kernel.
+.PP
+Autoconfiguration on the HP300s is similar to that on the VAX,
+the primary difference is in the naming conventions.
+On the HP300,
+if devices exist which are not configured they will be ignored;
+if devices exist of unsupported type they will be ignored.
+.PP
+Normally, the system uses the disk from which it was loaded as the root
+filesystem.
+If that is not possible,
+a generic system will use ``rd0'' if it exists.
+If such a system is booted with the RB_ASKNAME option (see
+.IR reboot (2)),
+then the name of the root device is read from the console terminal at boot
+time, and any available device may be used.
+.SH SEE ALSO
+intro(4), boot(8), config(8)
+.br
+\fI4.3BSD for the HP300\fR in the distribution documentation package.
+.SH DIAGNOSTICS
+\fBCPU type not configured\fR
+.br
+You tried to boot UNIX on a cpu type which it doesn't
+(or at least this compiled version of UNIX doesn't) understand.
+.PP
+\fBhpib%d at sc%d, ipl %d\fR
+.br
+An HP-IB was found at sc%d (the select code)
+with ipl%d (interrupt priority level).
+UNIX will call it hpib%d.
+.PP
+\fB%s%d: %s\fR
+.br
+\fB%s%d at hpib%d, slave %d\fR
+.br
+An HP-IB disk or tape controller was found.
+For disks %s%d will look like ``rd0'',
+for tapes like ``ct0''.
+The %s in the first line will be a product type like ``7945A'' or ``9144''.
+The slave number comes from the address select switches on the drive.
+.PP
+\fBgrf0 csr 0x560000\fR
+.br
+\fBgrf%d at sc%d\fR
+.br
+A bit mapped display was found either at the ``internal'' address (first case)
+or at some ``external'' select code (second case).
+If it exists, the internal display will always be unit 0.
+.PP
+\fB%s%d at sc%d, ipl %d flags %d\fR
+.br
+Another peripheral controller was found at the indicated select code
+and with indicated interrupt priority level.
+%s will be one of
+``dca'' (single-port serial interfaces),
+``dcm'' (four-port serial interfaces), or
+``le'' (LAN cards).
+The slave number comes from the address select switches on the interface card.

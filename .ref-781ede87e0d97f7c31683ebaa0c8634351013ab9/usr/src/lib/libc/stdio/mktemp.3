@@ -1,0 +1,76 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mktemp.3	6.7 (Berkeley) %G%
+.\"
+.TH MKTEMP 3  ""
+.AT 3
+.SH NAME
+mktemp \- create a unique file name
+.SH SYNOPSIS
+.nf
+.ft B
+char *
+mktemp(template)
+char *template;
+.sp
+mkstemp(template)
+char *template;
+.ft R
+.fi
+.SH DESCRIPTION
+.I Mktemp
+takes a file name template and overwrites it to create a unique file
+name for use by the application.
+The template may be any file name with some number of X's appended
+to it, for example ``/tmp/temp.XXXX''.
+The trailing X's are replaced with the current process number and/or a
+unique letter combination.
+The number of unique file names
+.I mktemp
+can return depends on the number of X's provided; six X's will
+result in
+.I mktemp
+testing roughly 26 ** 6 combinations.
+.PP
+.I Mkstemp
+makes the same replacement to the template and creates the template file,
+mode 0600, returning a file descriptor opened for reading and writing.
+This avoids the race between testing for a file's existence and opening it
+for use.
+.SH "RETURN VALUE"
+.I Mktemp
+returns a pointer to the template on success and NULL on failure.
+.I Mkstemp
+returns -1 if no suitable file could be created.
+If either call fails an error code is placed in the global location
+.IR errno .
+.SH ERRORS
+.I Mktemp
+and
+.I mkstemp
+may set
+.I errno
+to one of the following values:
+.TP
+[ENOTDIR]
+The pathname portion of the template is not an existing directory.
+.PP
+.I Mktemp
+and
+.I mkstemp
+may also set
+.I errno
+to any value specified by the
+.IR stat (2)
+function.
+.I Mkstemp
+may also set
+.I errno
+to any value specified by the
+.IR open (2)
+function.
+.SH "SEE ALSO"
+chmod(2), getpid(2), open(2), stat(2)

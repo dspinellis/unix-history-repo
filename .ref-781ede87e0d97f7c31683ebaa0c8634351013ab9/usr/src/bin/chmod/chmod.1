@@ -1,0 +1,231 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)chmod.1	6.10 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CHMOD 1
+.Os BSD 4.4
+.Sh NAME
+.Nm chmod
+change file modes
+.Sh SYNOPSIS
+.Nm chmod
+.Op Fl fR
+.Ar mode
+.Ar file ...
+.Sh DESCRIPTION
+The
+.Nm chmod
+utility modifies the file mode bits of the listed files
+as specified by the
+.Ar mode
+operand.
+.Pp
+The options are as follows:
+.Tw Ds
+.Tp Fl f
+.Nm chmod
+will still exit 0 and not complain if it fails to change the mode
+on a file.
+.Tp Fl R
+Traverse a file hierarchy.
+For each file that is of type directory,
+.Nm chmod
+changes the mode of all files in the file hierarchy below it followed
+by the mode of the directory itself.
+.Tp
+.Pp
+Symbolic links are not indirected through, nor are their modes altered.
+.Pp
+Only the owner of a file or the super-user is permitted to change
+the mode of a file.
+.Pp
+The
+.Nm chmod
+utility exits 0 on success, and >0 if an error occurs.
+.Sh MODES
+Modes may be absolute or symbolic.
+An absolute mode is an octal number constructed by
+.Cx Ar or
+.Cx 'ing
+.Cx
+the following values:
+.Df I
+.Dw Fl
+.Dp Li 4000
+set-user-ID-on-execution
+.Dp Li 2000
+set-group-ID-on-execution
+.Dp Li 1000
+sticky bit, see chmod(2)
+.Dp Li 0400
+read by owner
+.Dp Li 0200
+write by owner
+.Dp Li 0100
+execute (or search for directories) by owner
+.Dp Li 0070
+read, write, execute/search by group
+.Dp Li 0007
+read, write, execute/search by others
+.Dp
+.De
+.Pp
+The read, write, and execute/search values for group and others
+are encoded as described for owner.
+.Pp
+The symbolic mode is described by the following grammar:
+.Dp Li mode
+::= clause
+.Op  \&, clause
+...
+.Dp Li clause
+::=
+.Op  who ...
+.Op  action ...
+last_action
+.Dp Li action
+::= op perm ...
+.Dp Li last_action
+::= op
+.Op  perm ...
+.Dp Li who
+.Li ::= a | u | g | o
+.Dp Li op
+.Li ::= + |  - |  =
+.Dp Li perm
+.Li ::= r |  s |  t |  w |  X |  x
+.Dp
+.Pp
+The
+.Ar who
+symbols ``u'', ``g'', and ``o'' specify the user, group, and other parts
+of the mode bits, respectively.
+The
+.Ar who
+symbol ``a'' is equivalent to ``ugo''.
+.Pp
+The
+.Ar perm
+symbols represent the portions of the mode bits as follows:
+.Dw Ds
+.Dp r
+The read bits.
+.Dp s
+The set-user-ID-on-execution and set-group-ID-on-execution bits.
+.Dp t
+The sticky bit.
+.Dp w
+The write bits.
+.Dp x
+The execute/search bits.
+.Dp X
+The execute/search bits if the file is a directory or any of the
+execute/search bits are set in the original (unmodified) mode.
+Operations with the
+.Ar perm
+symbol ``X'' are only meaningful in conjunction with the
+.Ar op
+symbol ``+'', and it is ignored in all other cases.
+.Dp
+.Pp
+The
+.Ar op
+symbols represent the operation performed, as follows:
+.Tw Ds
+.Tp \&+
+If no value is supplied for
+.Ar perm ,
+the ``+'' operation has no effect.
+If no value is supplied for
+.Ar who ,
+each permission bit specified in
+.Ar perm ,
+for which the corresponding bit in the file mode creation mask
+is clear, is set.
+Otherwise, the mode bits represented by the specified
+.Ar who
+and
+.Ar perm
+values are set.
+.Tp \&-
+If no value is supplied for
+.Ar perm ,
+the ``-'' operation has no effect.
+If no value is supplied for
+.Ar who ,
+the mode bits represented by
+.Ar perm
+are cleared for the owner, group and other permissions.
+Otherwise, the mode bits represented by the specified
+.Ar who
+and
+.Ar perm
+values are cleared.
+.Tp \&=
+The mode bits specified by the
+.Ar who
+value are cleared, or, if no who value is specified, the owner, group
+and other mode bits are cleared.
+Then, if no value is supplied for
+.Ar who ,
+each permission bit specified in
+.Ar perm ,
+for which the corresponding bit in the file mode creation mask
+is clear, is set.
+Otherwise, the mode bits represented by the specified
+.Ar who
+and
+.Ar perm
+values are set.
+.Tp
+.Pp
+Each
+.Ar clause
+specifies one or more operations to be performed on the mode
+bits, and each operation is applied to the mode bits in the
+order specified.
+.Pp
+Operations upon the other permissions only (specified by the symbol
+``o'' by itself), in combination with the
+.Ar perm
+symbols ``s'' or ``t'', are ignored.
+.Sh EXAMPLES
+.Tw Ar
+.Tp ``644''
+make a file readable by anyone and writable by the owner only.
+.Tp ``go-w''
+deny write permission to group and others.
+.Tp ``=rw,+X''
+set the read and write permissions to the usual defaults, but
+retain any execute permissions that are currently set.
+.Tp ``+X''
+make a directory or file searchable/executable by everyone if it is
+already searchable/executable by anyone.
+.Tp ``755'' or ``u=rwx,go=rx''
+make a file readable/executable by everyone and writeable by the owner only.
+.Tp ``go=''
+clear all mode bits for group and others.
+.Tp
+.Sh BUGS
+There's no
+.Ar perm
+option for the naughty bits.
+.Sh SEE ALSO
+.Xr install 1 ,
+.Xr chmod 2 ,
+.Xr fts 2 ,
+.Xr stat 2 ,
+.Xr umask 2 ,
+.Xr setmode 3 ,
+.Xr chown 8
+.Sh STANDARDS
+The
+.Nm chmod
+utility is expected to be POSIX 1003.2 compatible with the exception
+of the
+.Ar perm
+symbols ``t'' and ``X'' which are not included in that standard.

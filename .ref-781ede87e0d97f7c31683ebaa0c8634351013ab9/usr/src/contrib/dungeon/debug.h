@@ -1,0 +1,5 @@
+C
+	COMMON /DEBUG/ DBGFLG,PRSFLG,GDTFLG
+#ifdef debug
+	LOGICAL DFLAG
+#endif debug

@@ -1,0 +1,16 @@
+reading symbolic information ...
+[1] stop at 20
+[1] stopped in $b1 at line 20
+   20   	j = j + i;
+$b1, line 20 in "nested.c"
+sub(), line 20 in "nested.c"
+main(0x1, 0x7fffebe4, 0x7fffebec), line 10 in "nested.c"
+1 0 
+[3] stop at 24
+[3] stopped in sub at line 24
+   24   	j = j + i;
+sub(), line 24 in "nested.c"
+main(0x1, 0x7fffebe4, 0x7fffebec), line 10 in "nested.c"
+11 0 
+3 
+

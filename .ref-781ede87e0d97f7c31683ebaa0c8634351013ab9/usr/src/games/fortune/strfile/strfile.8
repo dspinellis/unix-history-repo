@@ -1,0 +1,108 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\" 
+.\" This code is derived from software contributed to Berkeley by
+.\" Ken Arnold.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strfile.8	5.8 (Berkeley) %G%
+.\"
+.TH STRFILE 8 ""
+.UC 4
+.SH NAME
+strfile, unstr \- create a random access file for storing strings
+.SH SYNOPSIS
+.B strfile [
+.I \-iorsx
+.B ] [
+.I \-c char
+.B ]
+.I source_file
+.B [
+.I output_file
+.B ]
+.br
+.B unstr
+.I source_file
+.SH DESCRIPTION
+.I Strfile
+reads a file containing groups of lines separated by a line containing
+a single percent (``%'') sign and creates a data file which contains
+a header structure and a table of file offsets for each group of lines.
+This allows random access of the strings.
+.PP
+The output file, if not specified on the command line, is named
+\fIsource_file\fB.out\fR.
+.PP
+The options are as follows:
+.TP
+.BI \-c \ char
+Change the delimiting character from the percent sign to
+.IR char .
+.TP
+.B \-i
+Ignore case when ordering the strings.
+.TP
+.B \-o
+Order the strings in alphabetical order.
+The offset table will be sorted in the alphabetical order of the
+groups of lines referenced.
+Any initial non-alphanumeric characters are ignored.
+This option causes the STR_ORDERED bit in the header
+.I str_flags
+field to be set.
+.TP
+.B \-r
+Randomize access to the strings.
+Entries in the offset table will be randomly ordered.
+This option causes the STR_RANDOM bit in the header
+.I str_flags
+field to be set.
+.TP
+.B \-s
+Run silently; don't give a summary message when finished.
+.TP
+.B \-x
+Note that each alphabetic character in the groups of lines is rotated
+13 positions in a simple caesar cypher.
+This option causes the STR_ROTATED bit in the header
+.I str_flags
+field to be set.
+.PP
+The format of the header is:
+.in +5
+.nf
+#define	VERSION	1
+unsigned long	str_version;	/* version number */
+unsigned long	str_numstr;	/* # of strings in the file */
+unsigned long	str_longlen;	/* length of longest string */
+unsigned long	str_shortlen;	/* length of shortest string */
+#define	STR_RANDOM	0x1	/* randomized pointers */
+#define	STR_ORDERED	0x2	/* ordered pointers */
+#define	STR_ROTATED	0x4	/* rot-13'd text */
+unsigned long	str_flags;	/* bit field for flags */
+char str_delim;			/* delimiting character */
+.fi
+.PP
+All fields are written in network byte order.
+.PP
+The purpose of
+.I unstr
+is to undo the work of
+.IR strfile .
+It prints out the strings contained in the file
+.I source_file
+in the order that they are listed in
+the header file
+.IB source_file .dat
+to standard output.
+It is possible to create sorted versions of input files by using
+.B \-o
+when
+.I strfile
+is run and then using
+.I unstr
+to dump them out in the table order.
+.SH "SEE ALSO"
+byteorder(3), fortune(6)

@@ -1,0 +1,37 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)bcopy.3	5.1 (Berkeley) %G%
+.\"
+.TH BCOPY 3 ""
+.UC 7
+.SH NAME
+bcopy \- copy byte string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+void
+bcopy(const char *src, char *dst, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Bcopy
+copies
+.I len
+bytes from string
+.I src
+to string
+.IR dst .
+The two strings may overlap.
+If
+.I len
+is zero, no bytes are copied.
+.SH SEE ALSO
+memccpy(3), memcpy(3), memmove(3), strcpy(3), strncpy(3)

@@ -1,0 +1,105 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)truncate.2	6.8 (Berkeley) %G%
+.\"
+.TH TRUNCATE 2 ""
+.UC 5
+.SH NAME
+truncate \- truncate a file to a specified length
+.SH SYNOPSIS
+.nf
+.ft B
+truncate(path, length)
+char *path;
+off_t length;
+.PP
+.ft B
+ftruncate(fd, length)
+int fd;
+off_t length;
+.fi
+.SH DESCRIPTION
+.I Truncate
+causes the file named by
+.I path
+or referenced by
+.I fd
+to be truncated to at most
+.I length
+bytes in size.  If the file previously
+was larger than this size, the extra data
+is lost.
+With
+.IR ftruncate ,
+the file must be open for writing.
+.SH "RETURN VALUES
+A value of 0 is returned if the call succeeds.  If the call
+fails a \-1 is returned, and the global variable \fIerrno\fP
+specifies the error.
+.SH "ERRORS
+.I Truncate
+succeeds unless:
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[EACCES]
+The named file is not writable by the user.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EISDIR]
+The named file is a directory.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[ETXTBSY]
+The file is a pure procedure (shared text) file that is being executed.
+.TP 15
+[EIO]
+An I/O error occurred updating the inode.
+.TP 15
+[EFAULT]
+.I Path
+points outside the process's allocated address space.
+.PP
+.I Ftruncate
+succeeds unless:
+.TP 15
+[EBADF]
+The
+.I fd
+is not a valid descriptor.
+.TP 15
+[EINVAL]
+The
+.I fd
+references a socket, not a file.
+.TP 15
+[EINVAL]
+The
+.I fd
+is not open for writing.
+.SH "SEE ALSO"
+open(2)
+.SH BUGS
+These calls should be generalized to allow ranges
+of bytes in a file to be discarded.

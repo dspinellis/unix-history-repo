@@ -1,0 +1,76 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lisp.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LISP 1
+.Os BSD 4
+.Sh NAME
+.Nm lisp
+.Nd lisp interpreter
+.Sh SYNOPSIS
+.Nm lisp
+.Sh DESCRIPTION
+.Nm Lisp
+is a lisp interpreter for a dialect which
+closely resembles MIT's MACLISP.
+This lisp, known as FRANZ
+LISP, features
+an I/O facility which allows the user to change the input
+and output syntax, add
+macro characters, and maintain compatibility with upper-case
+only lisp systems;
+infinite precision integer arithmetic, and
+an error facility which allows the user to trap system errors in
+many different ways.
+Interpreted functions may be mixed with code compiled by
+.Xr liszt  1
+and both may be debugged using the
+``Joseph Lister'' trace package.
+A
+.Nm lisp
+containing compiled and interpreted code may be dumped into
+a file for later use.
+.Pp
+There are too many functions to list here; one should refer to the
+manuals listed below.
+.Sh AUTHORS
+An early version was written by Jeff Levinsky, Mike Curry, and John Breedlove.
+Keith Sklower wrote and is maintaining the current version,
+with the assistance of John Foderaro.
+The garbage collector was implemented by Bill Rowan.
+.Sh ENVIRONMENT
+.Nm Lisp
+checks these
+environment variables;
+.Ev PATH ,
+.Ev SHELL
+and
+.Ev TERM .
+.Sh FILES
+.Dw /usr/lib/lisp/toplevel.l
+.Di L
+.Dp Pa /usr/lib/lisp/trace.l
+Joseph Lister trace package
+.Dp Pa /usr/lib/lisp/toplevel.l
+top level read-eval-print loop
+.Dp
+.Sh SEE ALSO
+.Xr liszt 1 ,
+.Xr lxref 1
+.br
+.Em FRANZ LISP  Manual,
+Version 1
+by John K.
+Foderaro
+.br
+MACLISP Manual
+.Sh HISTORY
+.Nm Lisp
+appeared in 3 BSD.
+.Sh BUGS
+The error system is in a state of flux and not all error messages are
+as informative as they could be.

@@ -1,0 +1,60 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)rmdir.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RMDIR 1
+.Os BSD 4.4
+.Sh NAME
+.Nm rmdir
+.Nd remove directories
+.Sh SYNOPSIS
+.Nm rmdir
+.Op Fl p
+.Ar directory ...
+.Sh DESCRIPTION
+The rmdir utility removes the directory entry specified by
+each
+.Ar directory
+argument, provided it is empty.
+.Pp
+Arguments are processed in the order given.
+In order to remove both a parent directory and a subdirectory
+of that parent, the subdirectory
+must be specified first so the parent directory
+is empty when
+.Nm rmdir
+tries to remove it.
+.\" .Pp
+.\" The following option is available:
+.\" .Tw Ds
+.\" .Tp Fl p
+.\" Each
+.\" .Ar directory
+.\" argument is treated as a pathname of which all
+.\" components will be removed, if they are empty,
+.\" starting with the last most component.
+.\" (See
+.\" .Xr rm 1
+.\" for fully non-discriminant recursive removal).
+.Pp
+The
+.Nm rmdir
+utility exits with one of the following values:
+.Tw Ds
+.Tp Li \&0
+Each directory entry specified by a dir operand
+referred to an empty directory and was removed
+successfully.
+.Tp Li \&>\&0
+An error occurred.
+.Tp
+.Sh SEE ALSO
+.Xr rm 1
+.Sh STANDARDS
+The
+.Nm rmdir
+function is expected to be POSIX 1003.2 compatible.

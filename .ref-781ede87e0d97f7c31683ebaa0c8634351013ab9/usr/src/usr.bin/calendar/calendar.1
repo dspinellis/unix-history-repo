@@ -1,0 +1,124 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)calendar.1	6.10 (Berkeley) %G%
+.\"
+.Dd 
+.\"
+.Dt CALENDAR 1
+.Os BSD 4.4
+.Sh NAME
+.Nm calendar
+.Nd reminder service
+.Sh SYNOPSIS
+.Nm calendar
+.Op  \-a
+.Sh DESCRIPTION
+.Nm Calendar
+checks the current directory for a file named named
+.Li calendar
+and displays lines that begin with either today's date
+or tomorrow's.
+On Fridays, events on Friday through Monday are displayed.
+.Pp
+The following options are available:
+.Tp Fl a
+Process the ``calendar'' files of all users and mail the results
+to them.
+This requires super-user privileges.
+.Tp
+.Pp
+A month and day should begin lines.
+They may be entered in almost any format, either numeric or as character
+strings.
+A single asterisk (``*'') matches every month.
+A day without a month matches that day of every week.
+A month without a day matches the first of that month.
+Two numbers default to the month followed by the day.
+Lines with leading tabs default to the last entered date, allowing
+multiple line specifications for a single date.
+By convention, dates followed by an asterisk are not fixed, i.e. change
+from year to year.
+.Pp
+The ``calendar'' file is preprocessed by
+.Xr cpp 1 ,
+allowing the inclusion of shared files such as company holidays or
+meetings.
+If the shared file is not referenced by a full pathname,
+.Xr cpp 1
+searches in the current (or home) directory first, and then in the
+directory
+.Pa /usr/share/calendar .
+Empty lines and lines protected by the C commenting syntax (/* ... */)
+are ignored.
+.Pp
+Some possible calendar entries:
+.Pp
+.Ds I
+#include	<calendar.usholiday>
+#include	<calendar.birthday>
+
+6/15		... June 15 (if ambiguous, will default to month/day).
+Jun. 15	... June 15.
+15 June	... June 15.
+Thursday	... Every Thursday.
+June		... Every June 1st.
+15 *		... 15th of every month.
+.De
+.Pp
+.Sh FILES
+The following default calendar files are provided:
+.Dw calendar.christian
+.Di L
+.Dp Pa calendar.birthday
+Births and deaths of famous (and not-so-famous) people.
+.Dp Pa calendar.christian
+Christian holidays.
+This calendar should be updated yearly by the local system administrator
+so that roving holidays are set correctly for the current year.
+.Dp Pa calendar.computer
+Days of special significance to computer people.
+.Dp Pa calendar.history
+Everything  else,  mostly  U. S. historical events.
+.Dp Pa calendar.holiday
+Other  holidays,  including  the  not-well-known,  obscure, and
+.Em really
+obscure.
+.Dp Pa calendar.judaic
+Jewish holidays.
+This calendar should be updated yearly by the local system administrator
+so that roving holidays are set correctly for the current year.
+.Dp Pa calendar.music
+Musical  events,  births, and deaths.
+Strongly  oriented  toward  rock ' n' roll.
+.Dp Pa calendar.usholiday
+U.S. holidays.
+This calendar should be updated yearly by the local system administrator
+so that roving holidays are set correctly for the current year.
+.Dp
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr cpp 1 ,
+.Xr cron 8
+.Xr mail 1 ,
+.Sh COMPATIBILITY
+The
+.Nm calendar
+program previously selected lines which had the correct date anywhere
+in the line.
+This is no longer true, the date is only recognized when it occurs
+first on the line.
+.Sh HISTORY
+A
+.Nm
+command appeared in Version 7 AT&T UNIX.
+The version of
+.Nm calendar
+released with this man page
+is unrelated.
+.Sh BUGS
+.Nm Calendar
+doesn't handle events that move around from year to year, i.e.
+``the last Monday in April''.

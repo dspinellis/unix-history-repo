@@ -1,0 +1,100 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getsubopt.3	5.1 (Berkeley) %G%
+.\"
+.TH GETSUBOPT 3 ""
+.UC 7
+.SH NAME
+getsubopt \- get sub options from an argument
+.SH SYNOPSIS
+.nf
+.ft B
+int getsubopt(char **optionp, char *tokens[], char **valuep);
+
+extern char *suboptarg;
+.SH DESCRIPTION
+.I Getsubopt
+parses a string containing tokens delimited by one or more tab, space or
+comma (``,'') characters.
+It is intended for use in parsing groups of option arguments provided
+as part of a utility command line.
+.PP
+.I Optionp
+is a pointer to a pointer to the string.
+.I Tokens
+is a pointer to a NULL-terminated array of pointers to strings.
+.PP
+.I Getsubopt
+returns the zero-based offset of the pointer in the
+.I tokens
+array referencing a string which matches the first token
+in the string, or, -1 if the string contains no tokens or
+.I tokens
+does not contain a matching string.
+.PP
+If the token is of the form ``name=value'', the location referenced by
+.I valuep
+will be set to point to the start of the ``value'' portion of the token.
+.PP
+On return from
+.IR getsubopt ,
+.I optionp
+will be set to point to the start of the next token in the string,
+or the null at the end of the string if no more tokens are present.
+The external variable
+.I suboptarg
+will be set to point to the start of the current token, or NULL if no
+tokens were present.
+.I Valuep
+will be set to point to the ``value'' portion of the token, or NULL
+if no ``value'' portion was present.
+.SH EXAMPLE
+.nf
+.RS
+char *tokens[] = {
+	#define	ONE	0
+		"one",
+	#define	TWO	1
+		"two",
+	NULL
+};
+
+\&...
+
+extern char *optarg, *suboptarg;
+char *options, *value;
+
+while ((ch = getopt(argc, argv, "ab:")) != -1) {
+	switch(ch) {
+	case 'a':
+		/* process ``a'' option */
+		break;
+	case 'b':
+		options = optarg;
+		while (*options) {
+			switch(getsubopt(&options, tokens, &value)) {
+			case ONE:
+				/* process ``one'' sub option */
+				break;
+			case TWO:
+				/* process ``two'' sub option */
+				if (!value)
+					error("no value for two");
+				i = atoi(value);
+				break;
+			case -1:
+				if (suboptarg)
+					error("illegal sub option %s",
+					    suboptarg);
+				else
+					error("missing sub option");
+				break;
+		}
+		break;
+	}
+.fi
+.SH SEE\ ALSO
+getopt(3), strsep(3)
