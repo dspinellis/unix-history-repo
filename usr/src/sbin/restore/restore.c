@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.14	(Berkeley)	83/05/14";
+static char sccsid[] = "@(#)restore.c	3.15	(Berkeley)	83/05/15";
 #endif
 
 #include "restore.h"
@@ -153,6 +153,7 @@ nodeupdates(name, ino, type)
 {
 	register struct entry *ep, *np, *ip;
 	long descend = GOOD;
+	int lookuptype = 0;
 	int key = 0;
 		/* key values */
 #		define ONTAPE	0x1	/* inode is on the tape */
@@ -166,37 +167,59 @@ nodeupdates(name, ino, type)
 	 * directory hierarchy, with a full path name.
 	 * The "type" value is incorrectly specified as LEAF for
 	 * directories that are not on the dump tape.
+	 *
+	 * Check to see if the file is on the tape.
 	 */
 	if (BIT(ino, dumpmap))
 		key |= ONTAPE;
+	/*
+	 * Check to see if the name exists, and if the name is a link.
+	 */
 	np = lookupname(name);
-	if (np != NIL)
+	if (np != NIL) {
 		key |= NAMEFND;
+		ip = lookupino(np->e_ino);
+		if (ip == NULL)
+			panic("corrupted symbol table\n");
+		if (ip != np)
+			lookuptype = LINK;
+	}
+	/*
+	 * Check to see if the inode exists, and if one of its links
+	 * corresponds to the name (if one was found).
+	 */
 	ip = lookupino(ino);
 	if (ip != NIL) {
 		key |= INOFND;
-		for (ep = ip; ep != NIL; ep = ep->e_links)
+		for (ep = ip->e_links; ep != NIL; ep = ep->e_links) {
 			if (ep == np) {
 				ip = ep;
 				break;
 			}
+		}
 	}
 	/*
-	 * If both a name and an inode are found, but they do
-	 * not correspond to the same file, then both the inode
-	 * which has been found and the inode corresponding to
-	 * the name which has been found need to be renamed.
-	 * The current pathname is the new name for the inode
-	 * which has been found. Since all files to be
-	 * deleted have already been removed, the file found by
-	 * name must live under a new name in this dump level.
-	 * For the time being it is given a temporary name in anticipation
-	 * that it will be renamed when it is later found by inode number.
+	 * If both a name and an inode are found, but they do not
+	 * correspond to the same file, then both the inode that has
+	 * been found and the inode corresponding to the name that
+	 * has been found need to be renamed. The current pathname
+	 * is the new name for the inode that has been found. Since
+	 * all files to be deleted have already been removed, the
+	 * named file is either a now unneeded link, or it must live
+	 * under a new name in this dump level. If it is a link, it
+	 * can be removed. If it is not a link, it is given a
+	 * temporary name in anticipation that it will be renamed
+	 * when it is later found by inode number.
 	 */
 	if (((key & (INOFND|NAMEFND)) == (INOFND|NAMEFND)) && ip != np) {
-		dprintf(stdout, "name/inode conflict, mktempname %s\n",
-			myname(np));
-		mktempname(np);
+		if (lookuptype == LINK) {
+			removeleaf(np);
+			freeentry(np);
+		} else {
+			dprintf(stdout, "name/inode conflict, mktempname %s\n",
+				myname(np));
+			mktempname(np);
+		}
 		np = NIL;
 		key &= ~NAMEFND;
 	}
@@ -229,15 +252,21 @@ nodeupdates(name, ino, type)
 	 * A file on the tape has a name which is the same as a name
 	 * corresponding to a different file in the previous dump.
 	 * Since all files to be deleted have already been removed,
-	 * this file must live under a new name in this dump level.
-	 * For the time being it is given a temporary name in anticipation
-	 * that it will be renamed when it is later found by inode number
-	 * (see INOFND case below). The entry is then treated as a new
-	 * file.
+	 * this file is either a now unneeded link, or it must live
+	 * under a new name in this dump level. If it is a link, it
+	 * can simply be removed. If it is not a link, it is given a
+	 * temporary name in anticipation that it will be renamed
+	 * when it is later found by inode number (see INOFND case
+	 * below). The entry is then treated as a new file.
 	 */
 	case ONTAPE|NAMEFND:
 	case ONTAPE|NAMEFND|MODECHG:
-		mktempname(np);
+		if (lookuptype == LINK) {
+			removeleaf(np);
+			freeentry(np);
+		} else {
+			mktempname(np);
+		}
 		/* fall through */
 
 	/*
@@ -296,7 +325,7 @@ nodeupdates(name, ino, type)
 	 * A previously known file which is to be updated.
 	 */
 	case ONTAPE|INOFND|NAMEFND:
-		if (type == LEAF)
+		if (type == LEAF && lookuptype != LINK)
 			np->e_flags |= EXTRACT;
 		np->e_flags |= KEEP;
 		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
@@ -533,8 +562,8 @@ createleaves(symtabfile)
 }
 
 /*
- * This is the routine used to extract files for the 'x' command.
- * Efficiently extract a subset of the files on a tape
+ * This is the routine used to extract files for the 'x' and 'i' commands.
+ * Efficiently extract a subset of the files on a tape.
  */
 createfiles()
 {
@@ -660,6 +689,8 @@ checkrestore()
 	for (i = ROOTINO; i < maxino; i++) {
 		for (ep= lookupino(i); ep != NIL; ep = ep->e_links) {
 			ep->e_flags &= ~KEEP;
+			if (ep->e_type == NODE)
+				ep->e_flags &= ~NEW;
 			if (ep->e_flags != NULL)
 				badentry(ep, "incomplete operations");
 		}
