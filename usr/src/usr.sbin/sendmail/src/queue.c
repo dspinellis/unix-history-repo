@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.65		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.66		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.65		%G%);
+SCCSID(@(#)queue.c	3.66		%G%);
 
 /*
 **  Work queue.
@@ -191,7 +191,8 @@ runqueue(forkflag)
 **		none.
 **
 **	Returns:
-**		none.
+**		The number of request in the queue (not necessarily
+**		the number of requests in WorkQ however).
 **
 **	Side Effects:
 **		Sets WorkQ to the queue of available work, in order.
@@ -215,7 +216,7 @@ orderq()
 	register WORK **wp;		/* parent of w */
 	DIR *f;
 	register int i;
-	WORK wlist[WLSIZE];
+	WORK wlist[WLSIZE+1];
 	int wn = -1;
 	extern workcmpf();
 
@@ -294,7 +295,7 @@ orderq()
 	**  Sort the work directory.
 	*/
 
-	qsort(wlist, wn, sizeof *wlist, workcmpf);
+	qsort(wlist, min(wn, WLSIZE), sizeof *wlist, workcmpf);
 
 	/*
 	**  Convert the work list into canonical form.
@@ -302,7 +303,7 @@ orderq()
 	*/
 
 	wp = &WorkQ;
-	for (i = 0; i < wn; i++)
+	for (i = min(wn, WLSIZE); --i >= 0; )
 	{
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
@@ -330,15 +331,13 @@ orderq()
 **		b -- the second argument.
 **
 **	Returns:
-**		-1 if a < b
+**		1 if a < b
 **		0 if a == b
-**		1 if a > b
+**		-1 if a > b
 **
 **	Side Effects:
 **		none.
 */
-
-# define PRIFACT	1800		/* bytes each priority point is worth */
 
 workcmpf(a, b)
 	register WORK *a;
@@ -347,9 +346,9 @@ workcmpf(a, b)
 	if (a->w_pri == b->w_pri)
 		return (0);
 	else if (a->w_pri > b->w_pri)
-		return (1);
-	else
 		return (-1);
+	else
+		return (1);
 }
 /*
 **  DOWORK -- do a work request.
