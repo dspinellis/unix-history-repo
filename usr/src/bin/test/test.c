@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -109,7 +109,8 @@ main(argc, argv)
 		return (1);
 		break;
 	case 1:				/* % test arg */
-		return (*argv[1] == '\0') ? 1 : 0;
+		/* MIPS machine returns NULL of '[ ]' is called. */
+		return (argv[1] == 0 || *argv[1] == '\0') ? 1 : 0;
 		break;
 	case 2:				/* % test op arg */
 		opname = argv[1];
