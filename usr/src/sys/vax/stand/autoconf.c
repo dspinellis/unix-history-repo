@@ -1,4 +1,4 @@
-/*	autoconf.c	4.1	81/03/15	*/
+/*	autoconf.c	4.2	81/03/21	*/
 
 #include "../h/param.h"
 #include "../h/cpu.h"
@@ -27,11 +27,20 @@ struct	mba_regs *mbaddr780[] = { MTR(8), MTR(9), MTR(10), MTR(11) };
 
 struct	uba_regs *ubaddr750[] = { UTR(8), UTR(9) };
 caddr_t	umaddr750[] = { UMA(0), UMA(1) };
-struct	mba_regs *mbaddr750[] = { MTR(3), MTR(4), MTR(5), MTR(6) };
+struct	mba_regs *mbaddr750[] = { MTR(4), MTR(5), MTR(6), MTR(7) };
 
 #undef	UTR
 #undef	UMA
 #undef	MTR
+
+#define	UTR(i)	((struct uba_regs *)(NEX730+(i)))
+#define	UMA	((caddr_t)UMEM730)
+
+struct	uba_regs *ubaddr730[] = { UTR(3) };
+caddr_t	umaddr730[] = { UMA };
+
+#undef	UTR
+#undef	UMA
 
 configure()
 {
@@ -44,15 +53,18 @@ configure()
 	case VAX_780:
 		mbaddr = mbaddr780;
 		ubaddr = ubaddr780;
-/*###47 [cc] warning: illegal pointer combination %%%*/
 		umaddr = umaddr780;
 		break;
 
 	case VAX_750:
 		mbaddr = mbaddr750;
 		ubaddr = ubaddr750;
-/*###53 [cc] warning: illegal pointer combination %%%*/
 		umaddr = umaddr750;
+		break;
+
+	case VAX_730:
+		ubaddr = ubaddr730;
+		umaddr = umaddr730;
 		break;
 	}
 }
