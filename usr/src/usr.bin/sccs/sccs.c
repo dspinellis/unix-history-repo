@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.18 %G%";
+static char SccsId[] = "@(#)sccs.c	1.19 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -439,7 +439,7 @@ clean(really)
 		if (pfp != NULL)
 		{
 			while (fgets(pline, sizeof pline, pfp) != NULL)
-				printf("%12s: being editted: %s", basefile, pline);
+				printf("%12s: being edited: %s", basefile, pline);
 			fclose(pfp);
 			gotedit = TRUE;
 			continue;
@@ -456,7 +456,7 @@ clean(really)
 
 	fclose(dirfd);
 	if (!gotedit && !really)
-		printf("Nothing being editted\n");
+		printf("Nothing being edited\n");
 }
 /*
 **  UNEDIT -- unedit a file
@@ -465,7 +465,7 @@ clean(really)
 **	the file and arranges that s/he is not editting it.
 **
 **	Parameters:
-**		fn -- the name of the file to be uneditted.
+**		fn -- the name of the file to be unedited.
 **
 **	Returns:
 **		none.
@@ -509,7 +509,7 @@ unedit(fn)
 	pfp = fopen(pfn, "r");
 	if (pfp == NULL)
 	{
-		printf("%12s: not being editted\n", fn);
+		printf("%12s: not being edited\n", fn);
 		return;
 	}
 
@@ -573,7 +573,7 @@ unedit(fn)
 	}
 	else
 	{
-		printf("%12s: not being editted by you\n", fn);
+		printf("%12s: not being edited by you\n", fn);
 	}
 }
 /*
