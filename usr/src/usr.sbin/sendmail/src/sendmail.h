@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.37 (Berkeley) %G%
+ *	@(#)sendmail.h	5.38 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.37		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.38		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -368,12 +368,13 @@ MCI
 	short		mci_flags;	/* flag bits, see below */
 	short		mci_errno;	/* error number on last connection */
 	short		mci_exitstat;	/* exit status from last connection */
+	short		mci_state;	/* SMTP state */
 	FILE		*mci_in;	/* input side of connection */
 	FILE		*mci_out;	/* output side of connection */
 	int		mci_pid;	/* process id of subordinate proc */
-	short		mci_state;	/* SMTP state */
 	char		*mci_phase;	/* SMTP phase string */
 	struct mailer	*mci_mailer;	/* ptr to the mailer for this conn */
+	char		*mci_host;	/* host name */
 	time_t		mci_lastuse;	/* last usage time */
 };
 
