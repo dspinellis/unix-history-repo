@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.16 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,7 +49,19 @@ int tp_incoming();
 
 extern	struct ifnet loif;
 struct llinfo_x25 llinfo_x25 = {&llinfo_x25, &llinfo_x25};
+#ifndef _offsetof
+#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
+#endif
 struct sockaddr *x25_dgram_sockmask;
+struct sockaddr_x25 x25_dgmask = {
+ _offsetof(struct sockaddr_x25, x25_udata[1]),			/* _len */
+ 0,								/* _family */
+ 0,								/* _net */
+ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}, /* _addr */
+ {0},								/* opts */
+ -1,								/* _udlen */
+ {-1}								/* _udata */
+};
  
 struct if_x25stats {
 	int	ifx_wrongplen;
@@ -380,6 +392,13 @@ struct sockaddr *dst;
 	register struct sockaddr_x25 *sa =(struct sockaddr_x25 *)rt->rt_gateway;
 	register struct pklcd *lcp;
 
+	/* would put this pk_init, except routing table doesn't
+	   exist yet. */
+	if (x25_dgram_sockmask == 0) {
+		struct radix_node *rn_addmask();
+		x25_dgram_sockmask =
+			SA(rn_addmask((caddr_t)&x25_dgmask, 0, 4)->rn_key);
+	}
 	if (rt->rt_flags & RTF_GATEWAY) {
 		if (rt->rt_llinfo)
 			RTFREE((struct rtentry *)rt->rt_llinfo);
@@ -613,18 +632,6 @@ register struct x25_ifaddr *ia;
 	if (sa && (rt = rtalloc1(sa, 1)))
 		rt->rt_refcnt--;
 }
-#ifndef _offsetof
-#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
-#endif
-struct sockaddr_x25 x25_dgmask = {
- _offsetof(struct sockaddr_x25, x25_udata[1]),			/* _len */
- 0,								/* _family */
- 0,								/* _net */
- { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}, /* _addr */
- {0},								/* opts */
- -1,								/* _udlen */
- {-1}								/* _udata */
-};
 int x25_startproto = 1;
 
 pk_init()
@@ -633,9 +640,6 @@ pk_init()
 	 * warning, sizeof (struct sockaddr_x25) > 32,
 	 * but contains no data of interest beyond 32
 	 */
-	struct radix_node *rn_addmask();
-	x25_dgram_sockmask =
-		SA(rn_addmask((caddr_t)&x25_dgmask, 0, 4)->rn_key);
 	if (x25_startproto) {
 		pk_protolisten(0xcc, 1, x25_dgram_incoming);
 		pk_protolisten(0x81, 1, x25_dgram_incoming);
