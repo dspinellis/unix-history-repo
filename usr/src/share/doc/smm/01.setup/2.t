@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.4 (Berkeley) %G%
+.\"	@(#)2.t	6.5 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -151,7 +151,7 @@ The \fIpartition\fP field is interpreted differently for tapes
 and disks: for disks it is a disk partition (in the range 0-7),
 and for tapes it is a file number offset on the tape.
 Thus, partition 2 of a SCSI disk drive at target 3 on SCSI bus 1
-would be ``sd(1,0,3,2)''.
+would be ``sd(1,3,0,2)''.
 If you have only one of any type bus adaptor, you may omit the adaptor
 and controller numbers;
 e.g. ``sd(0,2)'' could be used instead of ``sd(0,0,0,2)''.
@@ -417,6 +417,46 @@ described starting in section 2.5 below.
 Booting the SPARC
 .NH 3
 Supported hardware
+.LP
+The hardware supported by \*(4B for the SPARC is as follows:
+.TS
+center box;
+lw(1i) lw(4i).
+CPUs    T{
+SPARCstation 1 series (1, 1+, SLC, IPC) and
+SPARCstation 2 series (2, IPX).
+T}
+_
+DISKs	T{
+SCSI.
+T}
+_
+TAPEs	T{
+none.
+T}
+_
+NETWORK	T{
+SPARCstation Lance (le).
+T}
+_
+GRAPHICS	T{
+bwtwo and cgthree.
+T}
+_
+INPUT	T{
+Keyboard and mouse.
+T}
+_
+MISC	T{
+Battery-backed real time clock,
+built-in serial devices,
+Sbus SCSI controller,
+and audio device.
+T}
+.TE
+.LP
+Major items not supported include the GX (cgnine) display,
+the floppy disk, and SCSI tapes.
 .NH 3
 Limitations
 .LP
