@@ -1,4 +1,4 @@
-/*	if_acc.c	4.7	82/02/27	*/
+/*	if_acc.c	4.8	82/03/12	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -184,7 +184,7 @@ COUNT(ACCINIT);
 	x = 500;
 	while (x-- > 0) {
 		if ((addr->icsr & IN_HRDY) ||
-		    (addr->icsr & (IN_RMR | IN_IMPBSY) == 0))
+		    (addr->icsr & (IN_RMR | IN_IMPBSY)) == 0)
 			break;
 		addr->icsr = IN_MRDY | IN_WEN;
 		DELAY(5000);			/* keep turning IN_RMR off */
