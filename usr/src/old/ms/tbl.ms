@@ -69,11 +69,11 @@
 .ne \\n(BHu+\\n(.Vu
 .nr BQ \\n(.u
 .nf
+.nr BW +2*\\n(BI
 .if \\n(BC>0 .in +(\\n(.lu-\\n(BWu)/2u
 .in +\\n(BIu
 .BB
 .in -\\n(BIu
-.nr BW +2*\\n(BI
 .sp -1
 \l'\\n(BWu\(ul'\L'-\\n(BHu'\l'|0\(ul'\h'|0'\L'\\n(BHu'
 .if \\n(BC>0 .in -(\\n(.lu-\\n(BWu)/2u
