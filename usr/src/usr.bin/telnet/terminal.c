@@ -43,16 +43,16 @@ int drop;
 {
     int n;
 
-    if ((n = ring_unsent_consecutive(&ttyoring)) > 0) {
+    if ((n = ring_full_consecutive(&ttyoring)) > 0) {
 	if (drop) {
 	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
 	} else {
-	    n = TerminalWrite(tout, ttyoring.send, n);
+	    n = TerminalWrite(tout, ttyoring.consume, n);
 	}
     }
     if (n >= 0) {
-	ring_sent_acked(&ttyoring, n);
+	ring_consumed(&ttyoring, n);
     }
     return n > 0;
 }

@@ -8,16 +8,16 @@
 
 #endif	/* !defined(TN3270) */
 
-#define	NETADD(c)	{ *netoring.add = c; ring_added(&netoring, 1); }
+#define	NETADD(c)	{ *netoring.supply = c; ring_supplied(&netoring, 1); }
 #define	NET2ADD(c1,c2)	{ NETADD(c1); NETADD(c2); }
-#define	NETBYTES()	(ring_unsent_count(&netoring))
+#define	NETBYTES()	(ring_full_count(&netoring))
 #define	NETROOM()	(ring_empty_count(&netoring))
 
 #define	TTYADD(c)	if (!(SYNCHing||flushout)) { \
-				*ttyoring.add = c; \
-				ring_added(&ttyoring, 1); \
+				*ttyoring.supply = c; \
+				ring_supplied(&ttyoring, 1); \
 			}
-#define	TTYBYTES()	(ring_unsent_count(&ttyoring))
+#define	TTYBYTES()	(ring_full_count(&ttyoring))
 #define	TTYROOM()	(ring_empty_count(&ttyoring))
 
 /*	Various modes */
