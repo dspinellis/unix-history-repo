@@ -1,5 +1,4 @@
-/*	telnetd.c	4.2	82/03/01	*/
-
+static char sccsid[] = "@(#)telnetd.c	4.3 (Berkeley) %G%";
 /*
  * Stripped-down telnet server.
  */
