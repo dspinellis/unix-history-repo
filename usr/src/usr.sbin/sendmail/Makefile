@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	3.10		%G%
+#		@(#)Makefile	3.11		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -17,11 +17,11 @@ LN=	ln -s
 CP=	cp
 
 all:
-	cd lib; make
-	cd src; m4 Makefile.m4 > Makefile; make
-	cd aux; m4 Makefile.m4 > Makefile; make
-	cd cf;  make
-#	cd doc; make
+	cd lib; make ${MFLAGS}
+	cd src; m4 Makefile.m4 > Makefile; make ${MFLAGS}
+	cd aux; m4 Makefile.m4 > Makefile; make ${MFLAGS}
+	cd cf;  make ${MFLAGS}
+#	cd doc; make ${MFLAGS}
 
 install: $(ALL) $(DIRS)
 	install -o 1		aux/syslog	$(DESTDIR)/etc/syslog
@@ -42,21 +42,21 @@ install: $(ALL) $(DIRS)
 	$(LN)			$(SENDMAIL)	$(DESTDIR)/usr/ucb/mailq
 
 src/sendmail:
-	cd src; make sendmail
+	cd src; make ${MFLAGS} sendmail
 
 aux/syslog:
-	cd aux; make syslog
+	cd aux; make ${MFLAGS} syslog
 
 $(DESTDIR)/usr/spool/mqueue:
 	mkdir			$(DESTDIR)/usr/spool/mqueue
 	chmod	777		$(DESTDIR)/usr/spool/mqueue
 
 clean:
-	cd src; make clean
-	cd cf;  make clean
-	cd aux; make clean
-	cd lib; make clean
-	cd doc; make clean
+	cd src; make ${MFLAGS} clean
+	cd cf;  make ${MFLAGS} clean
+	cd aux; make ${MFLAGS} clean
+	cd lib; make ${MFLAGS} clean
+	cd doc; make ${MFLAGS} clean
 
 dirs:
 	mkdir $(SRCROOT)
