@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -70,11 +70,7 @@ Key_schedule	schedule;
 int		encrypt = 0, retval, use_kerberos = 0, vacuous = 0;
 int		do_krb_login();
 
-#define		OLD_RCMD		0x00
-#define		KERB_RCMD		0x00
-#define		KERB_RCMD_MUTUAL	0x03
-
-#define		ARGSTR			"lnkv"
+#define		ARGSTR			"lnkvx"
 #else
 #define		ARGSTR			"ln"
 #endif	/* KERBEROS */
@@ -119,6 +115,9 @@ main(argc, argv)
 			break;
 		case 'v':
 			vacuous = 1;
+			break;
+		case 'x':
+			encrypt = 1;
 			break;
 #endif
 		case '?':
@@ -167,27 +166,11 @@ doit(f, fromp)
 	alarm(60);
 	read(f, &c, 1);
 
-#ifdef	KERBEROS
-	/*
-	 * XXX: 1st char tells us which client we're talking to
-	 */
-	switch (c) {
-
-	case OLD_RCMD:		/* NB: OLD_RCMD == KERB_RCMD */
-		if (vacuous)
-			fatal(f, "Remote host requires Kerberos authentication");
-		break;
-
-	case KERB_RCMD_MUTUAL:
-		encrypt = 1;
-		break;
-
-	default:
-		fatal(f, "Remote protocol error");
-	}
-#else
-	if (c != 0)
+	if(c != 0)
 		exit(1);
+#ifdef	KERBEROS
+	if(vacuous)
+		fatal(f, "Remote host requires Kerberos authentication");
 #endif
 
 	alarm(0);
