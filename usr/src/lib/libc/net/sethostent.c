@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sethostent.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sethostent.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -13,6 +13,19 @@ static char sccsid[] = "@(#)sethostent.c	1.1 (Berkeley) %G%";
  * to compile and work with the BIND name server
  */
 
-sethostent()	{}
+sethostent(stayopen)
+{
+#ifdef lint
+stayopen = stayopen;
+#endif
+}
 
 endhostent()	{}
+
+sethostfile(name)
+char *name;
+{
+#ifdef lint
+name = name;
+#endif
+}
