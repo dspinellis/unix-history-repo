@@ -1,9 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)CHR.c 1.1 %G%";
+static char sccsid[] = "@(#)CHR.c 1.2 %G%";
 
 #include "h01errs.h"
 
+char
 CHR(value)
 
 	long	value;
@@ -12,5 +13,5 @@ CHR(value)
 		ERROR(ECHR, value);
 		return;
 	}
-	return value;
+	return (char)value;
 }

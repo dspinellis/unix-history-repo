@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.2 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.3 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -17,13 +17,14 @@ static char sccsid[] = "@(#)GETNAME.c 1.2 %G%";
  */
 
 struct iorec *
-GETNAME(filep, name, maxnamlen, datasize)
+GETNAME(filep, name, namlim, datasize)
 
 	register struct iorec	*filep;
 	char			*name;
-	int			maxnamlen;
-	int			datasize;
+	long			namlim;
+	long			datasize;
 {
+	int		maxnamlen = namlim;
 	struct iorec	*prev;
 	struct iorec	*next;
 	register int	cnt;
@@ -71,9 +72,7 @@ GETNAME(filep, name, maxnamlen, datasize)
 		filep->fchain = next;
 		prev->fchain = filep;
 	} else {
-		if (filep->funit & FDEF) {
-			filep->funit &= (TEMP | FTEXT);
-		} else {
+		if ((filep->funit & FDEF) == 0) {
 			/*
 			 * have a previous buffer, close associated file
 			 */
@@ -95,8 +94,8 @@ GETNAME(filep, name, maxnamlen, datasize)
 				ERROR(EREMOVE, filep->pfname);
 				return;
 			}
-			filep->funit &= (TEMP | FTEXT);
 		}
+		filep->funit &= (TEMP | FTEXT);
 	}
 	/*
 	 * get the filename associated with the buffer

@@ -1,11 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)CTTOT.c 1.1 %G%";
+static char sccsid[] = "@(#)CTTOT.c 1.2 %G%";
 
+#include "whoami.h"
 #include "h00vars.h"
 #include "h01errs.h"
 
 long	_mask[] = {	
+#		ifdef DEC11
 		    0xffffffff , 0xfffffffe , 0xfffffffc , 0xfffffff8 ,
 		    0xfffffff0 , 0xffffffe0 , 0xffffffc0 , 0xffffff80 ,
 		    0xffffff00 , 0xfffffe00 , 0xfffffc00 , 0xfffff800 ,
@@ -15,37 +17,51 @@ long	_mask[] = {
 		    0xff000000 , 0xfe000000 , 0xfc000000 , 0xf8000000 ,
 		    0xf0000000 , 0xe0000000 , 0xc0000000 , 0x80000000 ,
 		    0x00000000
-		 };
+#		else
+		    0xffffffff , 0xfeffffff , 0xfcffffff , 0xf8ffffff ,
+		    0xf0ffffff , 0xe0ffffff , 0xc0ffffff , 0x80ffffff ,
+		    0x00ffffff , 0x00feffff , 0x00fcffff , 0x00f8ffff ,
+		    0x00f0ffff , 0x00e0ffff , 0x00c0ffff , 0x0080ffff ,
+		    0x0000ffff , 0x0000feff , 0x0000fcff , 0x0000f8ff ,
+		    0x0000f0ff , 0x0000e0ff , 0x0000c0ff , 0x000080ff ,
+		    0x000000ff , 0x000000fe , 0x000000fc , 0x000000f8 ,
+		    0x000000f0 , 0x000000e0 , 0x000000c0 , 0x00000080 ,
+		    0x00000000
+#		endif DEC11
+	    };
 /*
  * Constant set constructor
  */
 
 long *
-CTTOT(result, lowerbnd, upperbnd, paircnt, singcnt, data)
+CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, data)
 
-	long	*result;	/* pointer to final set */
-	int	lowerbnd;	/* lower bound of set */
-	int	upperbnd;	/* upper - lower of set */
-	int	paircnt;	/* number of pairs to construct */
-	int	singcnt;	/* number of singles to construct */
-	int	data;		/* paircnt plus singcnt sets of data */
+	long	*result0;	/* pointer to final set */
+	long	lwrbnd;		/* lower bound of set */
+	long	uprbnd;		/* upper - lower of set */
+	long	paircnt;	/* number of pairs to construct */
+	long	singcnt;	/* number of singles to construct */
+	long	data;		/* paircnt plus singcnt sets of data */
 {
-	register int	lower;
-	register int	lowerdiv;
-	register int	lowermod;
-	register int	upper;
+	register long	*result = result0;
+	register long	*dataptr = &data;
+	int		lowerbnd = lwrbnd;
+	int		upperbnd = uprbnd;
+	register long	*lp;
+	register char	*cp;
+	register long	temp;
+	long		*limit;
+	int		lower;
+	int		lowerdiv;
+	int		lowermod;
+	int		upper;
 	int		upperdiv;
 	int		uppermod;
-	register int	*dataptr;
-	register long	*lp;
-	long		*limit;
-	long		temp;
-	long		cnt;
+	int		cnt;
 
-	limit = &result[(upperbnd + 1 + BITSPERLONG - 1) / BITSPERLONG];
+	limit = &result[(upperbnd + 1 + BITSPERLONG - 1) >> LG2BITSLONG];
 	for (lp = result; lp < limit; )
 		*lp++ = 0;
-	dataptr = &data;
 	for (cnt = 0; cnt < paircnt; cnt++) {
 		upper = *dataptr++ - lowerbnd;
 		if (upper < 0 || upper > upperbnd) {
@@ -60,10 +76,10 @@ CTTOT(result, lowerbnd, upperbnd, paircnt, singcnt, data)
 		if (lower > upper) {
 			continue;
 		}
-		lowerdiv = lower / BITSPERLONG;
-		lowermod = lower % BITSPERLONG;
-		upperdiv = upper / BITSPERLONG;
-		uppermod = upper % BITSPERLONG;
+		lowerdiv = lower >> LG2BITSLONG;
+		lowermod = lower & MSKBITSLONG;
+		upperdiv = upper >> LG2BITSLONG;
+		uppermod = upper & MSKBITSLONG;
 		temp = _mask [lowermod];
 		if ( lowerdiv == upperdiv ) {
 			temp &= ~_mask[ uppermod + 1 ];
@@ -77,15 +93,13 @@ CTTOT(result, lowerbnd, upperbnd, paircnt, singcnt, data)
 			result[ upperdiv ] |= ~_mask[ uppermod + 1 ];
 		}
 	}
-	for (cnt = 0; cnt < singcnt; cnt++) {
+	for (cnt = 0, cp = (char *)result; cnt < singcnt; cnt++) {
 		lower = *dataptr++ - lowerbnd;
 		if (lower < 0 || lower > upperbnd) {
 			ERROR(ECTSNG, *--dataptr);
 			return;
 		}
-		lowerdiv = lower / BITSPERLONG;
-		lowermod = lower % BITSPERLONG;
-		result[ lowerdiv ] |= ( 1 << lowermod );
+		cp[ lower >> LG2BITSBYTE ] |= (1 << (lower & MSKBITSBYTE));
 	}
 	return(result);
 }

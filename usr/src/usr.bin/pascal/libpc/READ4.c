@@ -1,15 +1,17 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ4.c 1.3 %G%";
+static char sccsid[] = "@(#)READ4.c 1.4 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
 
+long
 READ4(curfile)
 
 	register struct iorec	*curfile;
 {
-	int			data, retval;
+	long			data;
+	int			retval;
 
 	if (curfile->funit & FWRITE) {
 		ERROR(EREADIT, curfile->pfname);

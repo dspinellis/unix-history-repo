@@ -1,26 +1,35 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.4 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.5 %G%"; */
 
 #include <stdio.h>
+#include "whoami.h"
 
 #define PXPFILE		"pmon.out"
 #define	BITSPERBYTE	8
 #define	BITSPERLONG	(BITSPERBYTE * sizeof(long))
+#define LG2BITSBYTE	03
+#define MSKBITSBYTE	07
+#define LG2BITSLONG	05
+#define MSKBITSLONG	037
 #define HZ		60
-#define	TRUE		1
-#define	FALSE		0
 #define	MAXLVL		20
 #define MAXERRS		75
 #define NAMSIZ		76
 #define MAXFILES	32
 #define PREDEF		2
+#ifdef VAX
 #define STDLVL		((struct iorec *)(0x7ffffff1))
 #define GLVL		((struct iorec *)(0x7ffffff0))
+#else
+#define STDLVL		((struct iorec *)(0xfff1))
+#define GLVL		((struct iorec *)(0xfff0))
+#endif VAX
 #define FILNIL		((struct iorec *)(0))
 #define INPUT		((struct iorec *)(&input))
 #define OUTPUT		((struct iorec *)(&output))
 #define ERR		((struct iorec *)(&_err))
+typedef enum {FALSE, TRUE} bool;
 
 /*
  * runtime display structure

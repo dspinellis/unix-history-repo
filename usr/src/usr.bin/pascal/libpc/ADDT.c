@@ -1,16 +1,17 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ADDT.c 1.1 %G%";
+static char sccsid[] = "@(#)ADDT.c 1.2 %G%";
 
 long *
-ADDT(result0, left, right, size)
+ADDT(result0, left, right, siz)
 
 	long		*result0;
 	register long	*left;
 	register long	*right;
-	register int	size;
+	long		siz;
 {
 	register long	*result = result0;
+	register int	size = siz;
 
 	do {
 		*result++ = *left++ | *right++;

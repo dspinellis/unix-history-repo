@@ -1,15 +1,16 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)MAX.c 1.1 %G%";
+static char sccsid[] = "@(#)MAX.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
 
+long
 MAX(width, reduce, min)
 
-	register int	width;		/* requested width */
-	int		reduce;		/* amount of extra space required */
-	int		min;		/* minimum amount of space needed */
+	register long	width;		/* requested width */
+	long		reduce;		/* amount of extra space required */
+	long		min;		/* minimum amount of space needed */
 {
 	if (width < 0) {
 		ERROR(EFMTSIZE, width);

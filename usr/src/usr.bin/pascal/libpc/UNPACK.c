@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)UNPACK.c 1.1 %G%";
+static char sccsid[] = "@(#)UNPACK.c 1.2 %G%";
 
 #include "h01errs.h"
 
@@ -15,13 +15,13 @@ static char sccsid[] = "@(#)UNPACK.c 1.1 %G%";
 
 UNPACK(i, a, z, size_a, lb_a, ub_a, size_z)
 
-	int	i;	/* subscript into a to begin packing */
+	long	i;	/* subscript into a to begin packing */
 	char	*a;	/* pointer to structure a */
 	char	*z;	/* pointer to structure z */
-	int	size_a;	/* sizeof(a_type) */
-	int	lb_a;	/* lower bound of structure a */
-	int	ub_a;	/* (upper bound of a) - (lb_a + sizeof(z_type)) */
-	int	size_z;	/* sizeof(z_type) */
+	long	size_a;	/* sizeof(a_type) */
+	long	lb_a;	/* lower bound of structure a */
+	long	ub_a;	/* (upper bound of a) - (lb_a + sizeof(z_type)) */
+	long	size_z;	/* sizeof(z_type) */
 {
 	int		subscr;
 	register char	*cp;

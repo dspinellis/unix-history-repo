@@ -1,21 +1,22 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)IN.c 1.1 %G%";
+static char sccsid[] = "@(#)IN.c 1.2 %G%";
 
 #include "h00vars.h"
 
+bool
 IN(element, lower, upper, setptr)
 
-	int	element;	/* element to check */
-	int	lower;		/* lowest element of set */
-	int	upper;		/* upper - lower of set */
+	long	element;	/* element to check */
+	long	lower;		/* lowest element of set */
+	long	upper;		/* upper - lower of set */
 	char	setptr[];	/* pointer to set */
 {
-	int	indx;
+	register int	indx;
 
 	if ((indx = element - lower) < 0 || indx > upper)
 		return FALSE;
-	if (setptr[indx / BITSPERBYTE] & (1 << (indx % BITSPERBYTE)))
+	if (setptr[indx >> LG2BITSBYTE] & (1 << (indx & MSKBITSBYTE)))
 		return TRUE;
 	return FALSE;
 }

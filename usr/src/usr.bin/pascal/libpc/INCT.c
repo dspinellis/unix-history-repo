@@ -1,20 +1,20 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)INCT.c 1.1 %G%";
+static char sccsid[] = "@(#)INCT.c 1.2 %G%";
 
 #include "h00vars.h"
 
+bool
 INCT(element, paircnt, singcnt, data)
 
-	register int	element;	/* element to find */
-	int		paircnt;	/* number of pairs to check */
-	int		singcnt;	/* number of singles to check */
-	int		data;		/* paircnt plus singcnt bounds */
+	register long	element;	/* element to find */
+	long		paircnt;	/* number of pairs to check */
+	long		singcnt;	/* number of singles to check */
+	long		data;		/* paircnt plus singcnt bounds */
 {
-	register int	*dataptr;
+	register long	*dataptr = &data;
 	register int	cnt;
 
-	dataptr = &data;
 	for (cnt = 0; cnt < paircnt; cnt++) {
 		if (element > *dataptr++) {
 			dataptr++;
