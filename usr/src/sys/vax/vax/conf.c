@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.10 (Berkeley) %G%
+ *	@(#)conf.c	7.7.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -531,69 +531,12 @@ int	qvopen(), qvclose(), qvread(), qvwrite(), qvioctl(), qvstop(),
 #define qvcons_init	nodev
 #endif
 
-#include "qd.h"
-#if NQD > 0
-int	qdopen(), qdclose(), qdread(), qdwrite(), qdioctl(), qdstop(),
-	qdreset(), qdselect(), qdcons_init();
-#else
-#define qdopen	nodev
-#define qdclose	nodev
-#define qdread	nodev
-#define qdwrite	nodev
-#define qdioctl	nodev
-#define qdstop	nodev
-#define qdreset	nulldev
-#define qdselect	nodev
-#define qdcons_init	nodev
-#endif
-
 #if defined(INGRES)
 int	iiioctl(), iiclose(), iiopen();
 #else
 #define iiopen nodev
 #define iiclose nodev
 #define iiioctl nodev
-#endif
-
-#ifdef	DATAKIT
-#include "datakit.h"
-#include "dktty.h"
-#include "kmc.h"
-#endif
-
-#if !defined(NDATAKIT) || NDATAKIT == 0
-#define	dkopen	nodev
-#define	dkclose	nodev
-#define	dkread	nodev
-#define	dkwrite	nodev
-#define	dkioctl	nodev
-#else
-int	dkopen(),dkclose(),dkread(),dkwrite(),dkioctl();
-#endif
-
-#if !defined(NDKTTY) || NDKTTY == 0
-#define	dktopen		nodev
-#define	dktclose	nodev
-#define	dktread		nodev
-#define	dktwrite	nodev
-#define	dktioctl	nodev
-#define	dktstop		nulldev
-#define	dkt		0
-#else
-int	dktopen(),dktclose(),dktread(),dktwrite(),dktioctl(), dktstop();
-struct tty dkt[];
-#endif
-
-#if NKMC > 0
-int kmcopen(), kmcclose(), kmcwrite(), kmcioctl(), kmcread();
-int kmcrint(), kmcload(), kmcset(), kmcdclr();
-#else
-#define kmcopen nodev
-#define kmcclose nodev
-#define kmcwrite nodev
-#define kmcioctl nodev
-#define kmcread nodev
-#define kmcdclr nodev
 #endif
 
 int	ttselect(), seltrue();
@@ -724,25 +667,15 @@ struct cdevsw	cdevsw[] =
 	qvopen,		qvclose,	qvread, 	qvwrite,	/*40*/
 	qvioctl,	qvstop,		qvreset,	0,
 	qvselect,	nodev,
-	qdopen,		qdclose,	qdread, 	qdwrite,	/*41*/
-	qdioctl,	qdstop,		qdreset,	0,
-	qdselect,	nodev,
+	nodev,		nodev,		nodev,		nodev,		/*41*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
 /* 42-50 reserved to local sites */
 	nodev,		nodev,		nodev,		nodev,		/*42*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
 	iiopen,		iiclose,	nulldev,	nulldev,	/*43*/
 	iiioctl,	nulldev,	nulldev,	0,
-	seltrue,	nodev,
-	/* Datakit major devices */
-	dkopen, 	dkclose,	dkread, 	dkwrite,	/* 44*/
-	dkioctl,	nulldev,	nulldev,	0,
-	seltrue,	nodev,
-	dktopen, 	dktclose,	dktread, 	dktwrite,	/* 45*/
-	dktioctl,	dktstop,	nulldev,	dkt,
-	ttselect,	nodev,
-	kmcopen,	kmcclose,	kmcread,	kmcwrite,	/* 46*/
-	kmcioctl,	nulldev,	kmcdclr,	0,
 	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
