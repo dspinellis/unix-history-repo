@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.g	4.1 (Berkeley) %G%
+.\"	@(#)csh.g	5.1 (Berkeley) %G%
 .\"
 .SH
 Glossary
