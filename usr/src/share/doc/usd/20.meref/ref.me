@@ -1,4 +1,13 @@
-.nr MO 25			\" mod number
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ref.me	6.1 (Berkeley) %G%
+.\"
+.ll 6.5i
+.lt 6.5i
+.pn 0
+.ds MO 2.26\"		\" mod number
 .de TL			\" *** title line
 .lp
 .di XX
@@ -17,7 +26,7 @@
 .ds N \s-1NROFF\s0
 .ds T \s-1TROFF\s0
 .nr DI 1.5i
-.he '\-ME REFERENCE MANUAL''%'
+\".he '\-ME REFERENCE MANUAL''%'
 .de NR
 .b "\en\\$1" "\\$2"
 ..
@@ -25,17 +34,26 @@
 .b "\e*\\$1" "\\$2"
 ..
 .sc
+.eh 'USD:23-%''\-me Reference Manual'
+.oh '\-me Reference Manual''USD:23-%'
 .+c
 .ce 20
 .sz 14
 .b "\-ME REFERENCE MANUAL"
 .sz
 .sp
-.i "Release 1.1/\n(MO"
+.i "Release \*(MO"
 .sp 2
 .ul
-Eric P. Allman
+Eric P. Allman*
+.(f
+*Author's current address:
+Britton Lee, Inc.,
+1919 Addison Suite 105,
+Berkeley, California 94704.
+.)f
 .sp
+Project INGRES
 Electronics Research Laboratory
 University of California, Berkeley
 Berkeley, California  94720
@@ -50,12 +68,12 @@ of the
 macro package
 for version seven \*N/\*T\*(dg.
 .(f
-\(dg\*N and \*T are Trademarks of Bell Laboratories.
+\(dg\*N and \*T may be trademarks of AT&T Bell Laboratories.
 .)f
 Some familiarity is assumed
 with
-those programs,
-specifically,
+those programs.
+Specifically,
 the reader should understand
 breaks,
 fonts,
@@ -78,13 +96,15 @@ Writing Papers with \*N using \-me.
 There are a number of macro parameters
 that may be adjusted.
 Fonts may be set to a font number only.
-In \*N font 8
-is underlined,
-and is set in bold font in \*T
-(although font
-3,
-bold in \*T,
-is not underlined in \*N).
+Font 8 means bold font in \*T;
+in \*N font 8
+is underlined
+unless the
+.b \-rb3
+flag is specified to use
+.q "true bold"
+font
+(most versions of \*N do not interpret bold font nicely).
 Font 0 is no font change;
 the font of the surrounding text
 is used instead.
@@ -160,12 +180,20 @@ one eighth inch
 This is normally too small for easy readability,
 so the default is to space one sixth inch.
 .pp
+The
+.b \-rv1
+flag will indicates that this is
+.i not
+being output on a C/A/T
+phototypesetter;
+this changes the page offset.
+.pp
 This documentation was
 .if n \*N'ed
 .if t \*T'ed
 on \*(td
 and applies to version
-1.1/\n(MO
+\*(MO
 of the \-me macros.
 .sh 1 "Paragraphing"
 .pp
@@ -295,10 +323,17 @@ or
 The current paragraph number
 is in
 .NR ($p .
+.TL
+.b .bu
+.DE
+Like
+.b .np
+except that paragraphs are marked with bullets (\(bu).
+Leading space is eliminated to create compact lists.
 .sh 1 "Section Headings"
 .pp
 Numbered sections
-are similiar to paragraphs
+are similar to paragraphs
 except that a
 section number
 is automatically
@@ -484,7 +519,7 @@ but may be used
 to automatically put
 every section title
 into the table of contents
-or for some similiar function.
+or for some similar function.
 .i T
 is the section title
 for the section title which was just printed,
@@ -684,7 +719,7 @@ as in
 A normally undefined macro
 which is called
 at the top of each page
-(after outputing
+(after putting out
 the header,
 initial saved floating keeps,
 etc.);
@@ -698,7 +733,7 @@ and the like.
 .pp
 All displays except centered blocks
 and block quotes
-are preceeded and followed
+are preceded and followed
 by an extra
 .NR (bs
 [same as
@@ -733,7 +768,7 @@ is
 .b I
 the list is indented by
 .NR (bi
-[4n];
+[4m];
 if
 .b M
 the list is indented to the left margin;
@@ -775,7 +810,7 @@ on both sides
 by
 .NR (qi
 [4n],
-preceeded and followed
+preceded and followed
 by
 .NR (qs
 [same as
@@ -829,7 +864,7 @@ is
 .b L ,
 indented by
 .NR (bi
-[4n]
+[4m]
 if
 .i m
 is
@@ -868,7 +903,7 @@ to the bottom of the page
 or the top of the next page.
 Therefore,
 its position relative to the text changes.
-The floating keep is preceeded and followed
+The floating keep is preceded and followed
 by
 .NR (zs
 [1v]
@@ -941,7 +976,7 @@ and size
 .NR (fp
 [8p].
 Each entry
-is preceeded by
+is preceded by
 .NR (fs
 [0.2v]
 space,
@@ -954,7 +989,7 @@ and is indented
 [0]
 from the right margin.
 Footnotes line up underneath
-two columned output.
+two column output.
 If the text of the footnote
 will not all fit on one page
 it will be carried over
@@ -973,7 +1008,7 @@ if they have been referenced.
 .TL
 .b .$s
 .DE
-The macro to output the footnote seperator.
+The macro to output the footnote separator.
 This macro may be redefined
 to give other size lines or other types
 of separators.
@@ -990,7 +1025,7 @@ Index entries are saved in the index
 .b x ]
 until called up with
 .b .xp.
-Each entry is preceeded
+Each entry is preceded
 by a
 .NR (xs
 [0.2v]
@@ -1039,7 +1074,7 @@ Print index
 .i x
 [\c
 .b x ].
-The index is formated in the font, size, and so forth
+The index is formatted in the font, size, and so forth
 in effect at the time it is printed,
 rather than at the time it is collected.
 .sh 1 "Columned Output"
@@ -1071,7 +1106,7 @@ Actually,
 the request enters
 .i N
 [2]
-columned output.
+column output.
 .TL
 .b .1c
 .DE
@@ -1106,6 +1141,32 @@ is stored in
 .NR ($R
 (although this is not used by
 .b .sz ).
+This size is
+.i not
+sticky beyond many macros:
+in particular,
+.NR (pp
+(paragraph pointsize)
+modifies the pointsize every time a new paragraph is begun
+using the
+.b \&.pp ,
+.b \&.lp ,
+.b \&.ip ,
+.b \&.np ,
+or
+.b \&.bu
+macros.
+Also,
+.NR (fp
+(footnote pointsize),
+.NR (qp
+(quote pointsize),
+.NR (sp
+(section header pointsize),
+and
+.NR (tp
+(title pointsize)
+may modify the pointsize.
 .TL
 .b .r
 .i W
@@ -1251,6 +1312,17 @@ if
 is spread or broken (including hyphenated).
 In other words,
 it is safe in nofill mode only.
+.TL
+.b sm
+.i W
+.i X
+.DE
+Sets
+.i W
+in a smaller pointsize,
+with
+.i X
+appended.
 .sh 1 "Roff Support"
 .TL
 .b .ix
@@ -1290,7 +1362,7 @@ Equivalent to
 .TL
 .b .ar
 .DE
-Set page number in arabic.
+Set page number in Arabic.
 Equivalent to
 .b ".af % 1" .
 .TL
@@ -1349,7 +1421,7 @@ is
 or omitted,
 indented
 .NR (bi
-[4n]
+[4m]
 if
 .i m
 is
@@ -1441,6 +1513,61 @@ with the requests
 .b .(z
 and
 .b .)z .
+.TL
+.b .PS
+.i h
+.i w
+.DE
+Begin
+.i pic
+picture.
+.i H
+is the height and
+.i w
+is the width,
+both in basic units.
+.i Ditroff
+only.
+.TL
+.b .PE
+.DE
+End picture.
+.TL
+.b .IS
+.DE
+Begin
+.i ideal
+picture.
+.TL
+.b .IE
+.DE
+End
+.i ideal
+picture.
+.TL
+.b .IF
+.DE
+End
+.i ideal
+picture (alternate form).
+.TL
+.b GS
+.DE
+Begin
+.i gremlin
+picture.
+.TL
+.b GE
+.DE
+End
+.i gremlin
+picture.
+.TL
+.b GF
+.DE
+End
+.i gremlin
+picture (alternate form).
 .sh 1 "Miscellaneous"
 .TL
 .b .re
@@ -1498,7 +1625,7 @@ to
 [6.0i].
 This should not be used
 after output has begun,
-and particularly not in two-columned output.
+and particularly not in two-column output.
 The current line length is stored in
 .NR ($l .
 .TL
@@ -1511,6 +1638,18 @@ inside floating keeps
 to differentiate
 between the text
 and the figure.
+.TL
+.b .lh
+.DE
+Print a letterhead at the current position on the page.
+The format of the letterhead must be defined
+in the file
+.b /usr/lib/me/letterhead.me
+by your local systems staff.
+Some environments may require
+.i ditroff
+for this macro
+to function properly.
 .TL
 .b .lo
 .DE
@@ -1534,7 +1673,7 @@ or digit.
 Begin title page.
 Spacing at the top of the page
 can occur,
-and headers and footers are supressed.
+and headers and footers are suppressed.
 Also,
 the page number
 is not incremented
@@ -1617,7 +1756,7 @@ type
 .b ".++ RA \(aa\(aa\(aa\e\e\e\en(ch.%\(aa" .
 Each section
 (chapter, appendix, etc.)
-should be preceeded by the
+should be preceded by the
 .b .+c
 request.
 It should be mentioned
@@ -1625,7 +1764,7 @@ that it is easier when using
 \*T to put the front material
 at the end of the paper,
 so that the table of contents
-can be collected and output;
+can be collected and put out;
 this material can then be physically
 moved to the beginning of the paper.
 .TL
@@ -1715,7 +1854,7 @@ This macro
 (short for
 .b .acm )
 sets up the \*N environment
-for photo-ready papers
+for camera-ready papers
 as used by the ACM.
 This format is 25% larger,
 and has no headers or footers.
@@ -1734,10 +1873,10 @@ which may later be augmented with other macros
 useful for printing papers
 for ACM conferences.
 It should be noted
-that this macro will not work correctly in \*T,
+that this macro will not work correctly in version 7 \*T,
 since it sets the page length
 wider than the physical width
-of the phototypesetter roll.
+of the C/A/T phototypesetter roll.
 .sh 1 "Predefined Strings"
 .TL
 .ST *
@@ -1840,7 +1979,9 @@ Right quote.
 .TL
 .ST \-
 .DE
-\(34 em dash in \*T;
+.ie \w'\(34'>0 \(34
+.el 3/4
+em dash in \*T;
 two hyphens in \*N.
 .sh 1 "Special Characters and Marks"
 .pp
@@ -1859,9 +2000,9 @@ Define special characters and diacritical marks, as described
 in the remainder of this section.
 This macro must be stated
 before initialization.
-.pp
 The special characters available
 are listed below.
+.in +4n
 .ta 15 +5 +6
 .nf
 Name	Usage	Example
@@ -1877,6 +2018,7 @@ There exists	\e*(qe		\*(qe
 For all	\e*(qa		\*(qa
 .fi
 .sp 1i
+.in 0
 .b Acknowledgments
 .pp
 I would like to thank
@@ -1891,5 +2033,323 @@ Ricki Blau,
 Pamela Humphrey,
 and Jim Joyce
 for their help with the documentation phase;
+peter kessler
+for numerous complaints,
+most accompanied by fixes;
 and the plethora of people who have contributed ideas
 and have given support for the project.
+.bp
+.b Summary
+.pp
+This alphabetical list summarizes all macros, strings, and number registers
+available in the \-me macros.
+Selected
+.i troff
+commands, registers, and functions are included as well;
+those listed can generally be used with impunity.
+.pp
+The columns are the name of the
+command, macro, register, or string;
+the type of the object,
+and the description.
+Types are
+.b M
+for macro or builtin command
+(invoked with
+.b \&.
+or
+.b \&\'
+in the first input column),
+.b S
+for a string
+(invoked with
+.b \e*
+or
+.b \e*( ),
+.b R
+for a number register
+(invoked with
+.b \en
+or
+.b \en( ),
+and
+.b F
+for a
+.i troff
+builtin function
+(invoked by preceding it with a single backslash).
+.pp
+Lines marked with \(sc are
+.i troff
+internal codes.
+Lines marked with \(dg or \(dd
+may be defined by the user to get special functions;
+\(dd indicates that these are defined by default
+and changing them may have unexpected side effects.
+Lines marked with \(de
+are specific to
+.i ditroff
+(device-independent
+.i troff ).
+.de $H
+.ev 1
+.ta \w'\e(space)\(sc\ 'u +\w'TYPE  'u
+NAME	TYPE	DESCRIPTION
+.ev
+..
+.(l
+.$H
+\e(space)	F\(sc	unpaddable space
+\e"	F\(sc	comment (to end of line)
+\e*#	S	optional delayed text tag string
+\e$\fI\&N\fP	F\(sc	interpolate argument \fI\&N\fP
+\en($0	R	section depth
+\&.$0	M\(dg	invoked after section title printed
+\en($1	R	first section number
+\&.$1	M\(dg	invoked before printing depth 1 section
+\en($2	R	second section number
+\&.$2	M\(dg	invoked before printing depth 2 section
+\en($3	R	third section number
+\&.$3	M\(dg	invoked before printing depth 3 section
+\en($4	R	fourth section number
+\&.$4	M\(dg	invoked before printing depth 4 section
+\en($5	R	fifth section number
+\&.$5	M\(dg	invoked before printing depth 5 section
+\en($6	R	sixth section number
+\&.$6	M\(dg	invoked before printing depth 6 section
+\&.$C	M\(dg	called at beginning of chapter
+\&.$H	M\(dg	text header
+\en($R	R\(dd	relative vertical spacing in displays
+\en($c	R	current column number
+\&.$c	M\(dd	print chapter title
+\en($d	R	delayed text number
+\en($f	R	footnote number
+\&.$f	M\(dd	print footer
+\&.$h	M\(dd	print header
+\en($i	R	paragraph base indent
+\en($l	R	column width
+\en($m	R	number of columns in effect
+\e*($n	S	section name
+\en($p	R	numbered paragraph number
+\&.$p	M\(dd	print section heading (internal macro)
+\en($r	R\(dd	relative vertical spacing in text
+\en($s	R	column indent
+\&.$s	M\(dd	footnote separator (from text)
+\en%	R\(sc	current page number
+\e&	F\(sc	zero width character, useful for hiding controls
+\e(\fI\&xx\fP	F\(sc	interpolate special character \fI\&xx\fP
+\&.(b	M	begin block
+\&.(c	M	begin centered block
+\&.(d	M	begin delayed text
+\&.(f	M	begin footnote
+\&.(l	M	begin list
+\&.(q	M	begin quote
+\&.(x	M	begin index entry
+\&.(z	M	begin floating keep
+\&.)b	M	end block
+\&.)c	M	end centered block
+\&.)d	M	end delayed text
+\&.)f	M	end footnote
+\&.)l	M	end list
+\&.)q	M	end quote
+\&.)x	M	end index entry
+\&.)z	M	end floating keep
+\e*\fI\&x\fP	F\(sc	interpolate string \fI\&x\fP
+\e*(\fI\&xx\fP	F\(sc	interpolate string \fI\&xx\fP
+\e**	S	optional footnote tag string
+\&.++	M	set paper section type
+\&.+c	M	begin chapter
+\e*,	S	cedilla
+\e\-	F\(sc	minus sign
+\e*\-	S	3/4 em dash
+\e0	F\(sc	unpaddable digit-width space
+\&.1c	M	revert to single column output
+\&.2c	M	begin two column output
+\e*:	S	umlat
+\e*<	S	begin subscript
+\e*>	S	end subscript
+\&.EN	M	end equation
+\&.EQ	M	begin equation
+\eL\'\fI\&d\fP\'	F\(sc	vertical line drawing function for distance \fI\&d\fP
+\&.GE	M\(de	end \fIgremlin\fP picture
+\&.GF	M\(de	end \fIgremlin\fP picture (with flyback)
+\&.GS	M\(de	start \fIgremlin\fP picture
+\&.IE	M\(de	end \fIideal\fP picture
+\&.IF	M\(de	end \fIideal\fP picture (with flyback)
+\&.IS	M\(de	start \fIideal\fP picture
+\&.PE	M\(de	end \fIpic\fP picture
+\&.PF	M\(de	end \fIpic\fP picture (with flyback)
+\&.PS	M\(de	start \fIpic\fP picture
+\&.TE	M	end table
+\&.TH	M	end header of table
+\&.TS	M	begin table
+\e*[	S	begin superscript
+\en(\&.$	R\(sc	number of arguments to macro
+\en(\&.i	R\(sc	current indent
+\en(\&.l	R\(sc	current line length
+\en(\&.s	R\(sc	current point size
+\e*(\&\'	S	acute accent
+\e*(\&\`	S	grave accent
+\e(\'	F\(sc	acute accent
+\e(\`	F\(sc	grave accent
+\e*]	S	end superscript
+\e^	F\(sc	1/12 em narrow space
+\e*^	S	caret
+\&.ac	M	ACM mode
+\&.ad	M\(sc	set text adjustment
+\&.af	M\(sc	assign format to register
+\&.am	M\(sc	append to macro
+\&.ar	M	set page numbers in Arabic
+\&.as	M\(sc	append to string
+\&.b	M	bold font
+\&.ba	M	set base indent
+\&.bc	M	begin new column
+\&.bi	M	bold italic
+\en(bi	R	display (block) indent
+\&.bl	M	blank lines (even at top of page)
+\en(bm	R	bottom title margin
+\&.bp	M\(sc	begin page
+\&.br	M\(sc	break (start new line)
+\en(bs	R	display (block) pre/post spacing
+\en(bt	R	block keep threshold
+\&.bx	M	boxed
+\ec	F\(sc	continue input
+\&.ce	M\(sc	center lines
+\en(ch	R	current chapter number
+\&.de	M\(sc	define macro
+\en(df	R	display font
+\&.ds	M\(sc	define string
+\en(dw	R\(sc	current day of week
+\e*(dw	S	current day of week
+\en(dy	R\(sc	day of month
+\ee	F\(sc	printable version of \e
+\&.ef	M	set footer (even numbered pages only)
+\&.eh	M	set header (even numbered pages only)
+\&.el	M\(sc	else part of conditional
+\&.ep	M	end page
+\en(es	R	equation pre/post space
+\ef\fI\&f\fP	F\(sc	inline font change to font \fI\&f\fP
+\ef(\fI\&ff\fP	F\(sc	inline font change to font \fI\&ff\fP
+\&.fc	M\(sc	set field characters
+\en(ff	R	footnote font
+\&.fi	M\(sc	fill output lines
+\en(fi	R	footnote indent (first line only)
+\en(fm	R	footer margin
+\&.fo	M	set footer
+\en(fp	R	footnote pointsize
+\en(fs	R	footnote prespace
+\en(fu	R	footnote undent (from right margin)
+\eh\'\fI\&d\fP\'	F\(sc	local horizontal motion for distance \fI\&d\fP
+\&.hc	M\(sc	set hyphenation character
+\&.he	M	set header
+\&.hl	M	draw horizontal line
+\en(hm	R	header margin
+\&.hx	M	suppress headers and footers on next page
+\&.hy	M\(sc	set hyphenation mode
+\&.i	M	italic font
+\&.ie	M\(sc	conditional with else
+\&.if	M\(sc	conditional
+\en(ii	R	indented paragraph indent
+\&.in	M\(sc	indent (transient, use .ba for pervasive)
+\&.ip	M	begin indented paragraph
+\&.ix	M	indent, no break
+\el\'\fI\&d\fP\'	F\(sc	horizontal line drawing function for distance \fI\&d\fP
+\&.lc	M\(sc	set leader repetition character
+\&.lh	M\(de	interpolate local letterhead
+\&.ll	M	set line length
+\&.lo	M	load local macros
+\&.lp	M	begin left justified paragraph
+\e*(lq	S	left quote marks
+\&.ls	M\(sc	set multi-line spacing
+\&.m1	M	set space from top of page to header
+\&.m2	M	set space from header to text
+\&.m3	M	set space from text to footer
+\&.m4	M	set space from footer to bottom of page
+\&.mc	M\(sc	insert margin character
+\&.mk	M\(sc	mark vertical position
+\en(mo	R\(sc	month of year
+\e*(mo	S	current month
+\en\fI\&x\fP	F\(sc	interpolate number register \fI\&x\fP
+\en(\fI\&xx\fP	F\(sc	interpolate number register \fI\&xx\fP
+\&.n1	M	number lines in margin
+\&.n2	M	number lines in margin
+\&.na	M\(sc	turn off text adjustment
+\&.ne	M\(sc	need vertical space
+\&.nf	M\(sc	don't fill output lines
+\&.nh	M\(sc	turn off hyphenation
+\&.np	M	begin numbered paragraph
+\&.nr	M\(sc	set number register
+\&.ns	M\(sc	no space mode
+\e*o	S	circle (e.g., for Norse A\*o)
+\&.of	M	set footer (odd numbered pages only)
+\&.oh	M	set header (odd numbered pages only)
+\&.pa	M	begin page
+\&.pd	M	print delayed text
+\en(pf	R	paragraph font
+\en(pi	R	paragraph indent
+\&.pl	M\(sc	set page length
+\&.pn	M\(sc	set next page number
+\&.po	M\(sc	page offset
+\en(po	R	simulated page offset
+\&.pp	M	begin paragraph
+\en(pp	R	paragraph pointsize
+\en(ps	R	paragraph prespace
+\&.q	M	quoted
+\e*(qa	S	for all
+\e*(qe	S	there exists
+\en(qi	R	quote indent (also shortens line)
+\en(qp	R	quote pointsize
+\en(qs	R	quote pre/post space
+\&.r	M	roman font
+\&.rb	M	real bold font
+\&.re	M	reset tabs
+\&.rm	M\(sc	remove macro or string
+\&.rn	M\(sc	rename macro or string
+\&.ro	M	set page numbers in roman
+\e*(rq	S	right quote marks
+\&.rr	M\(sc	remove register
+\&.rs	M\(sc	restore spacing
+\&.rt	M\(sc	return to vertical position
+\es\fI\&S\fP	F\(sc	inline size change to size \fI\&S\fP
+\&.sc	M	load special characters
+\en(sf	R	section title font
+\&.sh	M	begin numbered section
+\en(si	R	relative base indent per section depth
+\&.sk	M	skip next page
+\&.sm	M	set argument in a smaller pointsize
+\&.so	M\(sc	source input file
+\en(so	R	additional section title offset
+\&.sp	M\(sc	vertical space
+\en(sp	R	section title pointsize
+\en(ss	R	section prespace
+\&.sx	M	change section depth
+\&.sz	M	set pointsize and vertical spacing
+\&.ta	M\(sc	set tab stops
+\&.tc	M\(sc	set tab repetition character
+\e*(td	S	today's date
+\en(tf	R	title font
+\&.th	M	set thesis mode
+\&.ti	M\(sc	temporary indent (next line only)
+\&.tl	M\(sc	three part title
+\en(tm	R	top title margin
+\&.tp	M	begin title page
+\en(tp	R	title pointsize
+\&.tr	M\(sc	translate
+\&.u	M	underlined
+\&.uh	M	unnumbered section
+\&.ul	M\(sc	underline next line
+\ev\'\fI\&d\fP\'	F\(sc	local vertical motion for distance \fI\&d\fP
+\e*v	S	inverted `v' for czeck ``e\*v''
+\ew\'\fI\&S\fP\'	F\(sc	return width of string \fI\&S\fP
+\&.xl	M	set line length (local)
+\&.xp	M	print index
+\en(xs	R	index entry prespace
+\en(xu	R	index undent (from right margin)
+\en(yr	R\(sc	year (last two digits only)
+\en(zs	R	floating keep pre/post space
+\e{	F\(sc	begin conditional group
+\e|	F\(sc	1/6 em narrow space
+\e}	F\(sc	end conditional group
+\e*~	S	tilde
+.)l
+.rm $H
