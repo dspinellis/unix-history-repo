@@ -1,10 +1,8 @@
-#	@(#)Makefile	7.3 (Berkeley) %G%
-
-COMM=	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] ../netns/*.[ch] \
-	../netiso/*.[ch] ../netccitt/*.[ch] \
-	../kern/*.c ../ufs/*.[ch] ../nfs/*.[ch] ../vm/*.[ch] ../sys/*.h
+#	@(#)Makefile	7.4 (Berkeley) %G%
 
 # Makefile for hp300 tags file
+
+.include "../kern/Make.tags.inc"
 
 all:
 	@echo "make tags or links only"
@@ -17,7 +15,7 @@ AHP300=	../hp300/hp300/*.s
 # Directories in which to place hp300 tags links
 DHP300=	dev hpux include
 
-tags:
+tags: FRC
 	-ctags -dtf ${THP300} ${COMM} ${SHP300}
 	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${AHP300} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
@@ -27,3 +25,5 @@ tags:
 links:
 	-for i in ${DHP300}; do \
 	    cd ../$$i && rm -f tags; ln -s ../tags tags; done
+
+FRC:

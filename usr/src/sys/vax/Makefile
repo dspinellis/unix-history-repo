@@ -1,6 +1,8 @@
-#	@(#)Makefile	7.3 (Berkeley) %G%
+#	@(#)Makefile	7.4 (Berkeley) %G%
 
 # Makefile for vax tags file
+
+.include "../kern/Make.tags.inc"
 
 all:
 	@echo "make tags or links only"
@@ -13,7 +15,7 @@ AVAX=	../vax/vax/*.s
 # Directories in which to place vax tags links
 DVAX=	if mba uba bi include
 
-tags:
+tags: FRC
 	-ctags -dtf ${TVAX} ${COMM} ${SVAX}
 	egrep "^SCBVEC(.*)" ${AVAX} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
@@ -26,3 +28,5 @@ tags:
 links:
 	-for i in ${DVAX}; do \
 	    cd $$i && rm -f tags; ln -s ../tags tags; done
+
+FRC:
