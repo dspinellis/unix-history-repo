@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.69	83/01/13	*/
+/*	uipc_socket.c	4.70	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -133,9 +133,9 @@ soclose(so, exiting)
 
 	if (so->so_options & SO_ACCEPTCONN) {
 		while (so->so_q0 != so)
-			(void) soclose(so->so_q0, 1);
+			(void) soabort(so->so_q0);
 		while (so->so_q != so)
-			(void) soclose(so->so_q, 1);
+			(void) soabort(so->so_q);
 	}
 	if (so->so_pcb == 0)
 		goto discard;
@@ -171,10 +171,25 @@ drop:
 		}
 	}
 discard:
+	if (so->so_state & SS_NOFDREF)
+		panic("soclose: NOFDREF");
 	so->so_state |= SS_NOFDREF;
 	sofree(so);
 	splx(s);
 	return (0);
+}
+
+/*
+ * Must be called at splnet...
+ */
+soabort(so)
+	struct socket *so;
+{
+	int error;
+
+	error = (*so->so_proto->pr_usrreq)(so, PRU_ABORT,
+	   (struct mbuf *)0, (struct mbuf *)0);
+	return (error);
 }
 
 /*ARGSUSED*/
@@ -196,6 +211,8 @@ soaccept(so, nam)
 	int s = splnet();
 	int error;
 
+	if ((so->so_state & SS_NOFDREF) == 0)
+		panic("soaccept: !NOFDREF");
 	so->so_state &= ~SS_NOFDREF;
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT,
 	    (struct mbuf *)0, nam);
