@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	8.1 (Berkeley) %G%
+ *	@(#)systm.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +46,7 @@ extern int nswap;		/* size of swap space */
 
 extern int selwait;		/* select timeout address */
 
-extern u_char curpri;		/* priority of current process */
+extern u_char curpriority;	/* priority of current process */
 
 extern int maxmem;		/* max memory per process */
 extern int physmem;		/* physical memory */
