@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	7.12 (Berkeley) %G%
+ *	@(#)ufsmount.h	7.13 (Berkeley) %G%
  */
 
 struct buf;
@@ -31,6 +31,8 @@ struct ufsmount {
 	time_t	um_btime[MAXQUOTAS];		/* block quota time limit */
 	time_t	um_itime[MAXQUOTAS];		/* inode quota time limit */
 	char	um_qflags[MAXQUOTAS];		/* quota specific flags */
+	struct	netaddrhash um_defexported;	/* Default export */
+	struct	netaddrhash *um_netaddr[NETHASHSZ+1]; /* Net addr hash lists */
 };
 /*
  * Flags describing the state of quotas.
