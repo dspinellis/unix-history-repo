@@ -1,3 +1,0 @@
-Mvis	vis.c	/^main(argc, argv) $/
-foldit	foldit.c	/^foldit(chunk, col, max)$/
-process	vis.c	/^process(fp, filename)$/
