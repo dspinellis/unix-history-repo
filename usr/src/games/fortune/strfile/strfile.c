@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -46,15 +46,15 @@ static char sccsid[] = "@(#)strfile.c	5.7 (Berkeley) %G%";
  * pointers to the start of the strings, and the strings, each terminated
  * by a null byte.  Usage:
  *
- *	% strfile [-iorsv] [ -cC ] sourcefile [ datafile ]
+ *	% strfile [-iorsx] [ -cC ] sourcefile [ datafile ]
  *
  *	c - Change delimiting character from '%' to 'C'
  *	s - Silent.  Give no summary of data processed at the end of
  *	    the run.
- *	v - Verbose.  Give summary of data processed.  (Default)
  *	o - order the strings in alphabetic order
  *	i - if ordering, ignore case 
  *	r - randomize the order of the strings
+ *	x - set rotated bit
  *
  *		Ken Arnold	Sept. 7, 1978 --
  *
@@ -100,6 +100,7 @@ int	Sflag		= FALSE;	/* silent run flag */
 int	Oflag		= FALSE;	/* ordering flag */
 int	Iflag		= FALSE;	/* ignore case flag */
 int	Rflag		= FALSE;	/* randomize order flag */
+int	Xflag		= FALSE;	/* set rotated bit */
 int	Num_pts		= 0;		/* number of pointers/strings */
 
 off_t	*Seekpts;
@@ -200,6 +201,9 @@ char	**av;
 	else if (Rflag)
 		randomize();
 
+	if (Xflag)
+		Tbl.str_flags |= STR_ROTATED;
+
 	(void) fseek(outf, (off_t) 0, 0);
 	(void) fwrite((char *) &Tbl, sizeof Tbl, 1, outf);
 	if (STORING_PTRS)
@@ -232,7 +236,7 @@ char	**argv;
 	extern int	optind;
 	int	ch;
 
-	while ((ch = getopt(argc, argv, "c:iors")) != EOF)
+	while ((ch = getopt(argc, argv, "c:iorsx")) != EOF)
 		switch(ch) {
 		case 'c':			/* new delimiting char */
 			Delimch = *optarg;
@@ -247,11 +251,14 @@ char	**argv;
 		case 'o':			/* order strings */
 			Oflag++;
 			break;
-		case 'r':			/* ignore case in ordering */
+		case 'r':			/* randomize pointers */
 			Rflag++;
 			break;
 		case 's':			/* silent */
 			Sflag++;
+			break;
+		case 'x':			/* set the rotated bit */
+			Xflag++;
 			break;
 		case '?':
 		default:
@@ -277,7 +284,7 @@ char	**argv;
 usage()
 {
 	(void) fprintf(stderr,
-	    "strfile [-iors] [-c char] sourcefile [datafile]\n");
+	    "strfile [-iorsx] [-c char] sourcefile [datafile]\n");
 	exit(1);
 }
 

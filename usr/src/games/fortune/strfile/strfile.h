@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)strfile.h	5.4 (Berkeley) %G%
+ *	@(#)strfile.h	5.5 (Berkeley) %G%
  */
 
 # ifndef	__STRFILE__
@@ -30,6 +30,7 @@
 
 # define	STR_RANDOM	0x1
 # define	STR_ORDERED	0x2
+# define	STR_ROTATED	0x4
 
 # define	STR_ENDSTRING(line,tbl)	((line)[0] == (tbl).str_delim && (line)[1] == '\n')
 

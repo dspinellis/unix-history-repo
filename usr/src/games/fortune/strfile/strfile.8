@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strfile.8	5.4 (Berkeley) %G%
+.\"	@(#)strfile.8	5.5 (Berkeley) %G%
 .\"
 .TH STRFILE 8 ""
 .UC 4
@@ -25,7 +25,7 @@ strfile, unstr \- create a random access file for storing strings
 .SH SYNOPSIS
 .B strfile
 [
-.B \-iors
+.B \-iorsx
 ] [
 .B \-c char
 ]
@@ -82,12 +82,17 @@ field of the header.
 .TP
 .B \-s
 Run silently; don't give a summary of data at the end.
+.TP
+.B \-x
+Set the rotated bit in the header to indicate the the fortunes
+are rotated 13 positions in a simply caesar cypher.
 .PP
 The format of the header is:
 .sp
 .nf
 #define	STR_RANDOM	0x1
 #define	STR_ORDERED	0x2
+#define	STR_ROTATED	0x4
 
 unsigned long	str_numstr;	/* # of strings in the file */
 unsigned long	str_longlen;	/* length of longest string */
@@ -102,6 +107,8 @@ will have the bit STR_RANDOM set if the
 .B \-r
 flag was specified, or STR_ORDERED if the
 .B \-o
+flag was specified, or STR_ROTATED if the
+.B \-x
 flag was specified.
 .PP
 The purpose of

@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -169,7 +169,6 @@ char	*av[];
 #ifdef	OK_TO_WRITE_DISK
 	int	fd;
 #endif	/* OK_TO_WRITE_DISK */
-	char	line[BUFSIZ];
 
 	getargs(ac, av);
 
@@ -185,13 +184,7 @@ char	*av[];
 	} while ((Short_only && fortlen() > SLEN) ||
 		 (Long_only && fortlen() <= SLEN));
 
-	open_fp(Fortfile);
-	(void) fseek(Fortfile->inf, Seekpts[0], 0);
-	for (Fort_len = 0; fgets(line, sizeof line, Fortfile->inf) != NULL &&
-			   !STR_ENDSTRING(line, Fortfile->tbl);
-	     Fort_len++)
-		fputs(line, stdout);
-	(void) fflush(stdout);
+	display(Fortfile);
 
 #ifdef	OK_TO_WRITE_DISK
 	if ((fd = creat(Fortfile->posfile, 0666)) < 0) {
@@ -220,6 +213,27 @@ char	*av[];
 	}
 	exit(0);
 	/* NOTREACHED */
+}
+
+display(fp)
+FILEDESC	*fp;
+{
+	register char	*p, ch;
+	char	line[BUFSIZ];
+
+	open_fp(fp);
+	(void) fseek(fp->inf, Seekpts[0], 0);
+	for (Fort_len = 0; fgets(line, sizeof line, fp->inf) != NULL &&
+	    !STR_ENDSTRING(line, fp->tbl); Fort_len++) {
+		if (fp->tbl.str_flags & STR_ROTATED)
+			for (p = line; ch = *p; ++p)
+				if (isupper(ch))
+					*p = 'A' + (ch - 'A' + 13) % 26;
+				else if (islower(ch))
+					*p = 'a' + (ch - 'a' + 13) % 26;
+		fputs(line, stdout);
+	}
+	(void) fflush(stdout);
 }
 
 /*
