@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.27 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -1394,11 +1394,12 @@ nfsrv_access(vp, flags, cred)
 		 * unless the file is a socket or a block or character
 		 * device resident on the file system.
 		 */
-		if ((vp->v_mount->mnt_flag & (MNT_RDONLY | MNT_EXRDONLY)) &&
-			vp->v_type != VCHR &&
-			vp->v_type != VBLK &&
-			vp->v_type != VSOCK)
+		if (vp->v_mount->mnt_flag & (MNT_RDONLY | MNT_EXRDONLY)) {
+			switch (vp->v_type) {
+			case VREG: case VDIR: case VLNK:
 				return (EROFS);
+			}
+		}
 		/*
 		 * If there's shared text associated with
 		 * the inode, try to free it up once.  If
@@ -1408,15 +1409,11 @@ nfsrv_access(vp, flags, cred)
 			xrele(vp);
 		if (vp->v_flag & VTEXT)
 			return (ETXTBSY);
-		if (error = VOP_GETATTR(vp, &vattr, cred))
-			return (error);
-		if (cred->cr_uid == vattr.va_uid)
-			return (0);
-	} else {
-		if (error = VOP_GETATTR(vp, &vattr, cred))
-			return (error);
-		if (cred->cr_uid == vattr.va_uid)
-			return (0);
 	}
-	return (VOP_ACCESS(vp, flags, cred));
+	if (error = VOP_GETATTR(vp, &vattr, cred))
+		return (error);
+	if ((error = VOP_ACCESS(vp, flags, cred)) &&
+	    cred->cr_uid != vattr.va_uid)
+		return (error);
+	return (0);
 }
