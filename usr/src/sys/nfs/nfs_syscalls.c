@@ -38,7 +38,6 @@
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsrvcache.h"
-#include "tsleep.h"
 
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
@@ -121,9 +120,9 @@ nfssvc()
 	 */
 	if (error = suser(u.u_cred, &u.u_acflag))
 		RETURN (error);
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
+		RETURN (error);
 	so = (struct socket *)fp->f_data;
 	cr = u.u_cred = crcopy(u.u_cred);	/* Copy it so others don't see changes */
 	msk = uap->ormask;
@@ -134,7 +133,10 @@ nfssvc()
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
 		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr, msk, mtch)) {
-			m_freem(nam);
+			if (nam)
+				m_freem(nam);
+			if (error == ERESTART || error == EINTR)
+				RETURN (EINTR);
 			continue;
 		}
 		switch (nfsrv_getcache(nam, retxid, procid, &mreq)) {
@@ -205,8 +207,9 @@ async_daemon()
 	for (;;) {
 		while (dp->b_actf == NULL) {
 			nfs_iodwant[myiod] = u.u_procp;
-			tsleep((caddr_t)&nfs_iodwant[myiod], PZERO+1, 
-				SLP_NFS_IOD, 0);
+			if (error = tsleep((caddr_t)&nfs_iodwant[myiod],
+			    PRIBIO | PCATCH, "nfsidl", 0))
+				RETURN (error);
 		}
 		/* Take one off the end of the list */
 		bp = dp->b_actl;
