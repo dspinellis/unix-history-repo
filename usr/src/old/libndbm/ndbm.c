@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -496,7 +496,7 @@ additem(buf, item, item1)
 	if (i2 > 0)
 		i1 = sp[i2];
 	i1 -= item.dsize + item1.dsize;
-	if (i1 <= (i2+3) * sizeof(short))
+	if (i1 <= (i2+3) * (int)sizeof(short))
 		return (0);
 	sp[0] += 2;
 	sp[++i2] = i1 + item1.dsize;
