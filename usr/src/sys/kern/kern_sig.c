@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.8	84/11/20	*/
+/*	kern_sig.c	6.9	84/12/31	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -408,6 +408,7 @@ psignal(p, sig)
 		case SIGIO:
 		case SIGURG:
 		case SIGCHLD:
+		case SIGWINCH:
 			/*
 			 * These signals are special in that they
 			 * don't get propogated... if the process
@@ -607,6 +608,7 @@ issig()
 			case SIGCHLD:
 			case SIGURG:
 			case SIGIO:
+			case SIGWINCH:
 				/*
 				 * These signals are normally not
 				 * sent if the action is the default.
