@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -169,6 +169,7 @@ int	pflag;
 int	rflag;
 int	sflag;
 int	tflag;
+int	dflag;
 int	interval;
 char	*interface;
 int	unit;
@@ -189,7 +190,7 @@ main(argc, argv)
 	struct protox *name2protox();	/* for -p */
 	int ch;
 
-	while ((ch = getopt(argc, argv, "AI:af:himnp:rstu")) != EOF)
+	while ((ch = getopt(argc, argv, "AI:af:himnp:drstu")) != EOF)
 		switch((char)ch) {
 		case 'A':
 			Aflag++;
@@ -205,6 +206,9 @@ main(argc, argv)
 		}
 		case 'a':
 			aflag++;
+			break;
+		case 'd':
+			dflag++;
 			break;
 		case 'f':
 			if (strcmp(optarg, "ns") == 0)
