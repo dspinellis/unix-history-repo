@@ -151,14 +151,13 @@ since this would allow anyone to change the authorizations.
 These commands are always run as the real user.
 .SH EXAMPLES
 .de BX
+.PP
 .nf
 .in +0.5i
-.sp 0.3
 ..
 .de EX
 .fi
-.in -0.5i
-.sp 0.3
+.PP
 ..
 To get a file for editing,
 edit it,
@@ -187,7 +186,6 @@ from an
 file if it does not already exist:
 .BX
 SRCS = <list of source files>
-.sp 0.4
 $(SRCS):
 	sccs get $(REL) $@
 .EX
@@ -201,9 +199,11 @@ help(SCCS),
 prt(SCCS),
 rmdel(SCCS),
 sccsdiff(SCCS),
-what(SCCS),
-.SH AUTHOR
-Eric Allman
+what(SCCS)
+.br
+Eric Allman,
+.ul
+An Introduction to the Source Code Control System
 .SH DISCLAIMER
 Since it is not yet clear
 what this program should do,
