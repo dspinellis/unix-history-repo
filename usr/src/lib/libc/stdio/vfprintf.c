@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.49 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -115,21 +115,19 @@ static int cvt();
 /*
  * Flags used during conversion.
  */
-#define	LONGINT		0x01		/* long integer */
-#define	LONGDBL		0x02		/* long double; unimplemented */
-#define	SHORTINT	0x04		/* short integer */
-#define	ALT		0x08		/* alternate form */
-#define	LADJUST		0x10		/* left adjustment */
-#define	ZEROPAD		0x20		/* zero (as opposed to blank) pad */
-#define	HEXPREFIX	0x40		/* add 0x or 0X prefix */
+#define	ALT		0x001		/* alternate form */
+#define	HEXPREFIX	0x002		/* add 0x or 0X prefix */
+#define	LADJUST		0x004		/* left adjustment */
+#define	LONGDBL		0x008		/* long double; unimplemented */
+#define	LONGINT		0x010		/* long integer */
+#define	QUADINT		0x020		/* quad integer */
+#define	SHORTINT	0x040		/* short integer */
+#define	ZEROPAD		0x080		/* zero (as opposed to blank) pad */
 
 int
 vfprintf(fp, fmt0, ap)
 	FILE *fp;
 	const char *fmt0;
-#if tahoe
- register /* technically illegal, since we do not know what type va_list is */
-#endif
 	va_list ap;
 {
 	register char *fmt;	/* format string */
@@ -147,7 +145,7 @@ vfprintf(fp, fmt0, ap)
 	double _double;		/* double precision arguments %[eEfgG] */
 	int fpprec;		/* `extra' floating precision in [eEfgG] */
 #endif
-	u_long _ulong;		/* integer arguments %[diouxX] */
+	u_quad_t _uquad;	/* integer arguments %[diouxX] */
 	enum { OCT, DEC, HEX } base;/* base for [diouxX] conversion */
 	int dprec;		/* a copy of prec if [diouxX], 0 otherwise */
 	int fieldsz;		/* field size expanded by sign, etc */
@@ -161,9 +159,9 @@ vfprintf(fp, fmt0, ap)
 	char ox[2];		/* space for 0x hex-prefix */
 
 	/*
-	 * Choose PADSIZE to trade efficiency vs size.  If larger
-	 * printf fields occur frequently, increase PADSIZE (and make
-	 * the initialisers below longer).
+	 * Choose PADSIZE to trade efficiency vs. size.  If larger printf
+	 * fields occur frequently, increase PADSIZE and make the initialisers
+	 * below longer.
 	 */
 #define	PADSIZE	16		/* pad chunk size */
 	static char blanks[PADSIZE] =
@@ -206,11 +204,13 @@ vfprintf(fp, fmt0, ap)
 	 * argument extraction methods.
 	 */
 #define	SARG() \
-	(flags&LONGINT ? va_arg(ap, long) : \
+	(flags&QUADINT ? va_arg(ap, quad_t) : \
+	    flags&LONGINT ? va_arg(ap, long) : \
 	    flags&SHORTINT ? (long)(short)va_arg(ap, int) : \
 	    (long)va_arg(ap, int))
 #define	UARG() \
-	(flags&LONGINT ? va_arg(ap, u_long) : \
+	(flags&QUADINT ? va_arg(ap, u_quad_t) : \
+	    flags&LONGINT ? va_arg(ap, u_long) : \
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    (u_long)va_arg(ap, u_int))
 
@@ -324,6 +324,9 @@ reswitch:	switch (ch) {
 		case 'l':
 			flags |= LONGINT;
 			goto rflag;
+		case 'q':
+			flags |= QUADINT;
+			goto rflag;
 		case 'c':
 			*(cp = buf) = va_arg(ap, int);
 			size = 1;
@@ -334,9 +337,9 @@ reswitch:	switch (ch) {
 			/*FALLTHROUGH*/
 		case 'd':
 		case 'i':
-			_ulong = SARG();
-			if ((long)_ulong < 0) {
-				_ulong = -_ulong;
+			_uquad = SARG();
+			if ((quad_t)_uquad < 0) {
+				_uquad = -_uquad;
 				sign = '-';
 			}
 			base = DEC;
@@ -389,7 +392,9 @@ reswitch:	switch (ch) {
 			break;
 #endif /* FLOATING_POINT */
 		case 'n':
-			if (flags & LONGINT)
+			if (flags & QUADINT)
+				*va_arg(ap, quad_t *) = ret;
+			else if (flags & LONGINT)
 				*va_arg(ap, long *) = ret;
 			else if (flags & SHORTINT)
 				*va_arg(ap, short *) = ret;
@@ -400,7 +405,7 @@ reswitch:	switch (ch) {
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 'o':
-			_ulong = UARG();
+			_uquad = UARG();
 			base = OCT;
 			goto nosign;
 		case 'p':
@@ -412,7 +417,7 @@ reswitch:	switch (ch) {
 			 *	-- ANSI X3J11
 			 */
 			/* NOSTRICT */
-			_ulong = (u_long)va_arg(ap, void *);
+			_uquad = (u_quad_t)va_arg(ap, void *);
 			base = HEX;
 			xdigs = "0123456789abcdef";
 			flags |= HEXPREFIX;
@@ -443,7 +448,7 @@ reswitch:	switch (ch) {
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 'u':
-			_ulong = UARG();
+			_uquad = UARG();
 			base = DEC;
 			goto nosign;
 		case 'X':
@@ -451,10 +456,10 @@ reswitch:	switch (ch) {
 			goto hex;
 		case 'x':
 			xdigs = "0123456789abcdef";
-hex:			_ulong = UARG();
+hex:			_uquad = UARG();
 			base = HEX;
 			/* leading 0x/X only if non-zero */
-			if (flags & ALT && _ulong != 0)
+			if (flags & ALT && _uquad != 0)
 				flags |= HEXPREFIX;
 
 			/* unsigned conversions */
@@ -473,18 +478,18 @@ number:			if ((dprec = prec) >= 0)
 			 *	-- ANSI X3J11
 			 */
 			cp = buf + BUF;
-			if (_ulong != 0 || prec != 0) {
+			if (_uquad != 0 || prec != 0) {
 				/*
-				 * unsigned mod is hard, and unsigned mod
+				 * Unsigned mod is hard, and unsigned mod
 				 * by a constant is easier than that by
 				 * a variable; hence this switch.
 				 */
 				switch (base) {
 				case OCT:
 					do {
-						*--cp = to_char(_ulong & 7);
-						_ulong >>= 3;
-					} while (_ulong);
+						*--cp = to_char(_uquad & 7);
+						_uquad >>= 3;
+					} while (_uquad);
 					/* handle octal leading 0 */
 					if (flags & ALT && *cp != '0')
 						*--cp = '0';
@@ -492,18 +497,18 @@ number:			if ((dprec = prec) >= 0)
 
 				case DEC:
 					/* many numbers are 1 digit */
-					while (_ulong >= 10) {
-						*--cp = to_char(_ulong % 10);
-						_ulong /= 10;
+					while (_uquad >= 10) {
+						*--cp = to_char(_uquad % 10);
+						_uquad /= 10;
 					}
-					*--cp = to_char(_ulong);
+					*--cp = to_char(_uquad);
 					break;
 
 				case HEX:
 					do {
-						*--cp = xdigs[_ulong & 15];
-						_ulong >>= 4;
-					} while (_ulong);
+						*--cp = xdigs[_uquad & 15];
+						_uquad >>= 4;
+					} while (_uquad);
 					break;
 
 				default:

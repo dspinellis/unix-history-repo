@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)printf.3	6.14 (Berkeley) %G%
+.\"     @(#)printf.3	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PRINTF 3
@@ -146,9 +146,9 @@ the following appear in sequence:
 .Bl -bullet
 .It
 Zero or more of the following flags:
-.Bl -hyphen -offset indent
+.Bl -hyphen
 .It
-a
+A
 .Cm #
 character
 specifying that the value should be converted to an ``alternate form''.
@@ -238,7 +238,7 @@ produced by a signed conversion
 or
 .Cm i ) .
 .It
-a
+A
 .Sq Cm +
 character specifying that a sign always be placed before a
 number produced by a signed conversion.
@@ -317,6 +317,26 @@ argument, or that a following
 .Cm n
 conversion corresponds to a pointer to a
 .Em long int
+argument.
+.It
+The optional character
+.Cm q ,
+specifying that a following
+.Cm d ,
+.Cm i ,
+.Cm o ,
+.Cm u ,
+.Cm x ,
+or
+.Cm X
+conversion corresponds to a
+.Em quad int
+or
+.Em unsigned quad int
+argument, or that a following
+.Cm n
+conversion corresponds to a pointer to a
+.Em quad int
 argument.
 .It
 The character
