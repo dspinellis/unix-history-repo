@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exec.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)sh.exec.c	5.7 (Berkeley) 5/27/90";
 #endif
 
 #include "sh.h"
@@ -67,7 +67,7 @@ doexec(t)
 	char *sav;
 	register char *dp, **pv, **av;
 	register struct varent *v;
-	bool slash = any('/', t->t_dcom[0]);
+	bool slash = (bool)index(t->t_dcom[0], '/');
 	int hashval, hashval1, i;
 	char *blk[2];
 
@@ -93,7 +93,7 @@ doexec(t)
 	gflag = 0; av = &t->t_dcom[1];
 	tglob(av);
 	if (gflag) {
-		av = glob(av);
+		av = globall(av);
 		if (av == 0)
 			error("No match");
 	}

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)dol.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)sh.dol.c	5.5 (Berkeley) 1/15/88";
 #endif
 
 #include "sh.h"
@@ -96,15 +96,12 @@ Dfix1(cp)
 Dfix2(v)
 	char **v;
 {
-	char *agargv[GAVSIZ];
-
-	ginit(agargv);			/* Initialize glob's area pointers */
+	ginit();			/* Initialize glob's area pointers */
 	Dvp = v; Dcp = "";		/* Setup input vector for Dreadc */
 	unDgetC(0); unDredc(0);		/* Clear out any old peeks (at error) */
 	dolp = 0; dolcnt = 0;		/* Clear out residual $ expands (...) */
 	while (Dword())
 		continue;
-	gargv = copyblk(gargv);
 }
 
 /*
@@ -430,7 +427,7 @@ syntax:
 
 			while (digit(*np))
 				i = i * 10 + *np++ - '0';
-			if ((i < 0 || i > upb) && !any(*np, "-*")) {
+			if ((i < 0 || i > upb) && !index("-*", *np)) {
 oob:
 				setname(vp->v_name);
 				error("Subscript out of range");
@@ -486,7 +483,7 @@ eatmod:
 			c = DgetC(0), dolmcnt = 1;
 			if (c == 'g')
 				c = DgetC(0), dolmcnt = 10000;
-			if (!any(c, "htrqxe"))
+			if (!index("htrqxe", c))
 				error("Bad : mod in $");
 			dolmod = c;
 			if (c == 'q')
@@ -645,7 +642,7 @@ heredoc(term)
 			/* \ quotes \ $ ` here */
 			if (c =='\\') {
 				c = DgetC(0);
-				if (!any(c, "$\\`"))
+				if (!index("$\\`", c))
 					unDgetC(c | QUOTE), c = '\\';
 				else
 					c |= QUOTE;
@@ -662,7 +659,7 @@ heredoc(term)
 		 * If any ` in line do command substitution
 		 */
 		mbp = mbuf;
-		if (any('`', mbp)) {
+		if (index(mbp, '`')) {
 			/*
 			 * 1 arg to dobackp causes substitution to be literal.
 			 * Words are broken only at newlines so that all blanks
