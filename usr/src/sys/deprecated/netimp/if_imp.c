@@ -1,4 +1,4 @@
-/*	if_imp.c	4.46	82/12/17	*/
+/*	if_imp.c	4.47	83/02/10	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -17,6 +17,8 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
+#include "../h/time.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"

@@ -1,4 +1,4 @@
-/*	vp.c	4.22	82/12/17	*/
+/*	vp.c	4.23	83/02/10	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -20,6 +20,7 @@
 #include "../h/map.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
