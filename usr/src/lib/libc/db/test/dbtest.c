@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -503,45 +503,45 @@ setinfo(type, s)
 	case DB_HASH:
 		if (!strcmp("bsize", s)) {
 			ih.bsize = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&ih);
 		}
 		if (!strcmp("ffactor", s)) {
 			ih.ffactor = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&ih);
 		}
 		if (!strcmp("nelem", s)) {
 			ih.nelem = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&ih);
 		}
 		if (!strcmp("cachesize", s)) {
 			ih.cachesize = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&ih);
 		}
 		if (!strcmp("lorder", s)) {
 			ih.lorder = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&ih);
 		}
 		break;
 	case DB_RECNO:
 		if (!strcmp("flags", s)) {
 			rh.flags = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&rh);
 		}
 		if (!strcmp("cachesize", s)) {
 			rh.cachesize = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&rh);
 		}
 		if (!strcmp("lorder", s)) {
 			rh.lorder = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&rh);
 		}
 		if (!strcmp("reclen", s)) {
 			rh.reclen = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&rh);
 		}
 		if (!strcmp("bval", s)) {
 			rh.bval = strtoul(eq, NULL, 0);
-			return (&ib);
+			return (&rh);
 		}
 		break;
 	}
