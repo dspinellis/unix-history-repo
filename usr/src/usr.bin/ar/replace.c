@@ -9,15 +9,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
+#include <unistd.h>
 #include <ar.h>
 #include <stdio.h>
 #include "archive.h"
@@ -84,11 +84,11 @@ replace(argv)
 			if (options & AR_V)
 			     (void)printf("r - %s\n", chdr.name);
 
+			/* Read from disk, write to an archive; pad on write */
 			SETCF(sfd, file, curfd, tname, WPAD);
-			put_header(&cf, &sb);
-			copyfile(&cf, sb.st_size);
+			put_object(&cf, &sb);
 			(void)close(sfd);
-			SKIP(afd, chdr.size, archive);
+			skipobj(afd);
 			continue;
 		}
 
@@ -96,15 +96,15 @@ replace(argv)
 			mods = 0;
 			if (options & AR_B)
 				curfd = tfd2;
+			/* Read and write to an archive; pad on both. */
 			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
-			put_header(&cf, (struct stat *)NULL);
-			copyfile(&cf, chdr.size);
+			put_object(&cf, (struct stat *)NULL);
 			if (options & AR_A)
 				curfd = tfd2;
 		} else {
+			/* Read and write to an archive; pad on both. */
 useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
-			put_header(&cf, (struct stat *)NULL);
-			copyfile(&cf, chdr.size);
+			put_object(&cf, (struct stat *)NULL);
 		}
 	}
 
@@ -126,16 +126,16 @@ append:	while (file = *argv++) {
 			continue;
 		}
 		(void)fstat(sfd, &sb);
+		/* Read from disk, write to an archive; pad on write. */
 		SETCF(sfd, file,
 		    options & (AR_A|AR_B) ? tfd1 : tfd2, tname, WPAD);
-		put_header(&cf, &sb);
-		copyfile(&cf, sb.st_size);
+		put_object(&cf, &sb);
 		(void)close(sfd);
 	}
 	
 	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
 
-	SETCF(tfd1, tname, afd, archive, 0);
+	SETCF(tfd1, tname, afd, archive, NOPAD);
 	if (tfd1 != -1) {
 		tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
 		(void)lseek(tfd1, (off_t)0, SEEK_SET);
