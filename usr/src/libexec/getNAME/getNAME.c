@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)getNAME.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getNAME.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,14 +22,23 @@ static char sccsid[] = "@(#)getNAME.c	5.4 (Berkeley) %G%";
  *	other	apropos database
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int tocrc;
 int intro;
 
+void doname __P((char *));
+void dorefname __P((char *));
+void getfrom __P((char *));
+void split __P((char *, char *));
+void trimln __P((char *));
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern int optind;
 	int ch;
@@ -57,6 +66,7 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 getfrom(name)
 	char *name;
 {
@@ -115,6 +125,7 @@ getfrom(name)
 	printf("\n");
 }
 
+void
 trimln(cp)
 	register char *cp;
 {
@@ -125,6 +136,7 @@ trimln(cp)
 		*cp = 0;
 }
 
+void
 doname(name)
 	char *name;
 {
@@ -148,13 +160,14 @@ again:
 	putchar(' ');
 }
 
+void
 split(line, name)
 	char *line, *name;
 {
 	register char *cp, *dp;
 	char *sp, *sep;
 
-	cp = index(line, '-');
+	cp = strchr(line, '-');
 	if (cp == 0)
 		return;
 	sp = cp + 1;
@@ -164,7 +177,7 @@ split(line, name)
 	while (*sp && (*sp == ' ' || *sp == '\t'))
 		sp++;
 	for (sep = "", dp = line; dp && *dp; dp = cp, sep = "\n") {
-		cp = index(dp, ',');
+		cp = strchr(dp, ',');
 		if (cp) {
 			register char *tp;
 
@@ -180,6 +193,7 @@ split(line, name)
 	}
 }
 
+void
 dorefname(name)
 	char *name;
 {
@@ -201,6 +215,7 @@ again:
 		putchar (*dp++);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: getNAME [-it] file ...\n");
