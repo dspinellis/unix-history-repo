@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds2.c	5.1 %G%";
+static char *sccsid = "@(#)ex_cmds2.c	6.1 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -74,6 +74,10 @@ error(str, i)
 
 	error0();
 	merror(str, i);
+	if (writing) {
+		serror(" [Warning - %s is incomplete]", file);
+		writing = 0;
+	}
 	error1(str);
 }
 

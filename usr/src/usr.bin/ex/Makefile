@@ -25,12 +25,12 @@ LIBDIR=	/usr/lib
 FOLD=	${BINDIR}/fold
 CTAGS=	${BINDIR}/ctags
 XSTR=	${BINDIR}/xstr
-DEBUGFLAGS=	-DTRACE -g
+DEBUGFLAGS=	-DMDEBUG -DTRACE -g
 NONDEBUGFLAGS=	-O
 DEB=	${NONDEBUGFLAGS}	# or ${DEBUGFLAGS} to to debug
-CFLAGS=	-DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX ${DEB}
+CFLAGS=	-DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DTIMEBOMB ${DEB}
 LDFLAGS=	-z		# or -i or -n
-TERMLIB=	-ltermlib
+TERMLIB=	-ltermcap
 MKSTR=	${BINDIR}/mkstr
 CXREF=	${BINDIR}/cxref
 INCLUDE=/usr/include
@@ -38,14 +38,14 @@ PR=	pr
 OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o \
 	ex_data.o ex_get.o ex_io.o ex_put.o ex_re.o \
 	ex_set.o ex_subr.o ex_temp.o ex_tty.o ex_unix.o \
-	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voperate.o \
+	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voper.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
 	printf.o bcopy.o strings.o
 HDRS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h
 SRC1=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c
 SRC2=	ex_data.c ex_get.c ex_io.c ex_put.c ex_re.c
 SRC3=	ex_set.c ex_subr.c ex_temp.c ex_tty.c ex_unix.c
-SRC4=	ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voperate.c
+SRC4=	ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voper.c
 SRC5=	ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c
 SRC6=	printf.c bcopy.c expreserve.c exrecover.c
 MISC=	makefile READ_ME :rofix
@@ -53,9 +53,13 @@ VGRIND=	csh /usr/ucb/vgrind
 VHDR=	"Ex Version ${VERSION}"
 
 .c.o:
-#	${MKSTR} - ex${VERSION}strings x $*.c
+# ifdef VMUNIX
 	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+# else
+#	${MKSTR} - ex${VERSION}strings x $*.c
+#	${CC} -E ${CFLAGS} x$*.c | ${XSTR} -c -
 #	rm -f x$*.c
+# endif
 	${CC} ${CFLAGS} -c x.c 
 	mv x.o $*.o
 
@@ -111,6 +115,7 @@ ninstall: a.out
 
 # install in standard place (/usr/ucb)
 install: a.out exrecover expreserve
+	strip a.out
 	-rm -f ${DESTDIR}${BINDIR}/ex
 	-rm -f ${DESTDIR}${BINDIR}/vi
 	-rm -f ${DESTDIR}${BINDIR}/view
@@ -129,7 +134,7 @@ install: a.out exrecover expreserve
 	cp expreserve ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
 	chmod 4755 ${DESTDIR}${LIBDIR}/ex${VERSION}recover ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
 # The following line normally fails.  This is OK.
-	mkdir ${DESTDIR}/usr/preserve
+	-mkdir ${DESTDIR}/usr/preserve
 
 # move from /usr/new to /usr/ucb
 newucb: a.out
@@ -176,42 +181,3 @@ vgrind:
 	${VGRIND} -h ${VHDR} ${SRC6}
 	${VGRIND} -n -h ${VHDR} ${MISC}
 	${VGRIND} -i -h ${VHDR} index
-
-ex.c: SCCS/s.ex.c ${HDRS}; rm -f ex.c; sccs get ex.c 
-ex.h: SCCS/s.ex.h; rm -f ex.h; sccs get ex.h 
-ex_addr.c: SCCS/s.ex_addr.c; rm -f ex_addr.c; sccs get ex_addr.c 
-ex_argv.h: SCCS/s.ex_argv.h; rm -f ex_argv.h; sccs get ex_argv.h 
-ex_cmds.c: SCCS/s.ex_cmds.c; rm -f ex_cmds.c; sccs get ex_cmds.c 
-ex_cmds2.c: SCCS/s.ex_cmds2.c; rm -f ex_cmds2.c; sccs get ex_cmds2.c 
-ex_cmdsub.c: SCCS/s.ex_cmdsub.c; rm -f ex_cmdsub.c; sccs get ex_cmdsub.c 
-ex_data.c: SCCS/s.ex_data.c; rm -f ex_data.c; sccs get ex_data.c 
-ex_get.c: SCCS/s.ex_get.c; rm -f ex_get.c; sccs get ex_get.c 
-ex_io.c: SCCS/s.ex_io.c; rm -f ex_io.c; sccs get ex_io.c 
-ex_put.c: SCCS/s.ex_put.c; rm -f ex_put.c; sccs get ex_put.c 
-ex_re.c: SCCS/s.ex_re.c; rm -f ex_re.c; sccs get ex_re.c 
-ex_re.h: SCCS/s.ex_re.h; rm -f ex_re.h; sccs get ex_re.h 
-ex_set.c: SCCS/s.ex_set.c; rm -f ex_set.c; sccs get ex_set.c 
-ex_subr.c: SCCS/s.ex_subr.c; rm -f ex_subr.c; sccs get ex_subr.c 
-ex_temp.c: SCCS/s.ex_temp.c; rm -f ex_temp.c; sccs get ex_temp.c 
-ex_temp.h: SCCS/s.ex_temp.h; rm -f ex_temp.h; sccs get ex_temp.h 
-ex_tty.c: SCCS/s.ex_tty.c; rm -f ex_tty.c; sccs get ex_tty.c 
-ex_tty.h: SCCS/s.ex_tty.h; rm -f ex_tty.h; sccs get ex_tty.h 
-ex_tune.h: SCCS/s.ex_tune.h; rm -f ex_tune.h; sccs get ex_tune.h 
-ex_unix.c: SCCS/s.ex_unix.c; rm -f ex_unix.c; sccs get ex_unix.c
-ex_v.c: SCCS/s.ex_v.c; rm -f ex_v.c; sccs get ex_v.c 
-ex_vadj.c: SCCS/s.ex_vadj.c; rm -f ex_vadj.c; sccs get ex_vadj.c 
-ex_vars.h: SCCS/s.ex_vars.h; rm -f ex_vars.h; sccs get ex_vars.h 
-ex_vget.c: SCCS/s.ex_vget.c; rm -f ex_vget.c; sccs get ex_vget.c 
-ex_vis.h: SCCS/s.ex_vis.h; rm -f ex_vis.h; sccs get ex_vis.h 
-ex_vmain.c: SCCS/s.ex_vmain.c; rm -f ex_vmain.c; sccs get ex_vmain.c 
-ex_voperate.c: SCCS/s.ex_voperate.c; rm -f ex_voperate.c; sccs get ex_voperate.c
-ex_vops.c: SCCS/s.ex_vops.c; rm -f ex_vops.c; sccs get ex_vops.c 
-ex_vops2.c: SCCS/s.ex_vops2.c; rm -f ex_vops2.c; sccs get ex_vops2.c 
-ex_vops3.c: SCCS/s.ex_vops3.c; rm -f ex_vops3.c; sccs get ex_vops3.c 
-ex_vput.c: SCCS/s.ex_vput.c; rm -f ex_vput.c; sccs get ex_vput.c 
-ex_vwind.c: SCCS/s.ex_vwind.c; rm -f ex_vwind.c; sccs get ex_vwind.c 
-expreserve.c: SCCS/s.expreserve.c; rm -f expreserve.c; sccs get expreserve.c 
-exrecover.c: SCCS/s.exrecover.c; rm -f exrecover.c; sccs get exrecover.c 
-makeoptions: SCCS/s.makeoptions; rm -f makeoptions; sccs get makeoptions 
-bcopy.c: SCCS/s.bcopy.c; rm -f bcopy.c; sccs get bcopy.c
-printf.c: SCCS/s.printf.c; rm -f printf.c; sccs get printf.c 

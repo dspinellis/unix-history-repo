@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vget.c	5.1 %G%";
+static char *sccsid = "@(#)ex_vget.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -251,7 +251,7 @@ readecho(c)
 		vglobp = INS;
 	}
 	OP = Pline; Pline = normline;
-	ignore(vgetline(0, genbuf + 1, &waste));
+	ignore(vgetline(0, genbuf + 1, &waste, c));
 	if (Outchar == termchar)
 		putchar('\n');
 	vscrap();

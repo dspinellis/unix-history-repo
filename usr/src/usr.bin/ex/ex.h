@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex.h	5.1 %G%  */
+/* sccs id:	@(#)ex.h	6.1 %G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -204,12 +204,14 @@ int	ppid;			/* Process id of parent (e.g. main ex proc) */
 jmp_buf	resetlab;		/* For error throws to top level (cmd mode) */
 int	rpid;			/* Pid returned from wait() */
 bool	ruptible;		/* Interruptible is normal state */
+bool	seenprompt;		/* 1 if have gotten user input */
 bool	shudclob;		/* Have a prompt to clobber (e.g. on ^D) */
 int	status;			/* Status returned from wait() */
 int	tchng;			/* If nonzero, then [Modified] */
 short	tfile;			/* Temporary file unit */
 bool	vcatch;			/* Want to catch an error (open/visual) */
 jmp_buf	vreslab;		/* For error throws to a visual catch */
+bool	writing;		/* 1 if in middle of a file write */
 int	xchng;			/* Suppresses multiple "No writes" in !cmd */
 
 /*

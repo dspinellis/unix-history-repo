@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_subr.c	5.1 %G%";
+static char *sccsid = "@(#)ex_subr.c	6.1 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -541,7 +541,7 @@ save(a1, a2)
 	more = (a2 - a1 + 1) - (unddol - dol);
 	while (more > (endcore - truedol))
 		if (morelines() < 0)
-			error("Out of memory@saving lines for undo - try using ed or re");
+			error("Out of memory@saving lines for undo - try using ed");
 	if (more)
 		(*(more > 0 ? copywR : copyw))(unddol + more + 1, unddol + 1,
 		    (truedol - unddol));
@@ -698,6 +698,7 @@ syserror()
 
 	dirtcnt = 0;
 	putchar(' ');
+	edited = 0;	/* for temp file errors, for example */
 	if (e >= 0 && errno <= std_nerrs)
 		error(std_errlist[e]);
 	else

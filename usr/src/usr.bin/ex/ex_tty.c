@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	5.1 %G%";
+static char *sccsid = "@(#)ex_tty.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -119,7 +119,9 @@ setterm(type)
 	if (tgoto(CM, 2, 2)[0] == 'O')	/* OOPS */
 		CA = 0, CM = 0;
 	else
-		CA = 1, costCM = strlen(tgoto(CM, 8, 10));
+		CA = 1, costCM = cost(tgoto(CM, 8, 10));
+	costSR = cost(SR);
+	costAL = cost(AL);
 	PC = xPC ? xPC[0] : 0;
 	aoftspace = tspace;
 	CP(ttytype, longname(ltcbuf, type));
@@ -130,6 +132,8 @@ setterm(type)
 	gettmode();
 	value(REDRAW) = AL && DL;
 	value(OPTIMIZE) = !CA && !GT;
+	if (ospeed == B1200 && !value(REDRAW))
+		value(SLOWOPEN) = 1;	/* see also gettmode above */
 	if (unknown)
 		serror("%s: Unknown terminal type", type);
 }
@@ -182,4 +186,34 @@ fkey(i)
 		return(*fkeys[i]);
 	else
 		return(NOSTR);
+}
+
+/*
+ * cost figures out how much (in characters) it costs to send the string
+ * str to the terminal.  It takes into account padding information, as
+ * much as it can, for a typical case.  (Right now the typical case assumes
+ * the number of lines affected is the size of the screen, since this is
+ * mainly used to decide if AL or SR is better, and this always happens
+ * at the top of the screen.  We assume cursor motion (CM) has little
+ * padding, if any, required, so that case, which is really more important
+ * than AL vs SR, won't be really affected.)
+ */
+static int costnum;
+cost(str)
+char *str;
+{
+	int countnum();
+
+	if (str == NULL)
+		return 10000;	/* infinity */
+	costnum = 0;
+	tputs(str, LINES, countnum);
+	return costnum;
+}
+
+/* ARGSUSED */
+countnum(ch)
+char ch;
+{
+	costnum++;
 }

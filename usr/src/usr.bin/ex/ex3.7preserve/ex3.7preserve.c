@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	5.1 %G%";
+static char *sccsid = "@(#)ex3.7preserve.c	6.1 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -172,7 +172,7 @@ copyout(name)
 	if (read(0, (char *) &H, sizeof H) != sizeof H) {
 format:
 		if (name == 0)
-			fprintf(stderr, "Buffer format error\n");
+			fprintf(stderr, "Buffer format error\t");
 		return (-1);
 	}
 
@@ -289,7 +289,7 @@ whoops:
 		if (dcp[-1] == 'z') {
 			dcp[-1] = 'a';
 			if (dcp[-2] == 'z')
-				fprintf(stderr, "Can't find a name\n");
+				fprintf(stderr, "Can't find a name\t");
 			dcp[-2]++;
 		} else
 			dcp[-1]++;
@@ -320,13 +320,18 @@ notify(uid, fname, flag)
 	if (fname[0] == 0) {
 		fprintf(mf,
 "A copy of an editor buffer of yours was saved when %s.\n",
-		flag ? "the system went down" : "your phone was hung up");
+		flag ? "the system went down" : "the editor was killed");
 		fprintf(mf,
 "No name was associated with this buffer so it has been named \"LOST\".\n");
 	} else
 		fprintf(mf,
 "A copy of an editor buffer of your file \"%s\"\nwas saved when %s.\n", fname,
-		flag ? "the system went down" : "your phone was hung up");
+		/*
+		 * "the editor was killed" is perhaps still not an ideal
+		 * error message.  Usually, either it was forcably terminated
+		 * or the phone was hung up, but we don't know which.
+		 */
+		flag ? "the system went down" : "the editor was killed");
 	fprintf(mf,
 "This buffer can be retrieved using the \"recover\" command of the editor.\n");
 	fprintf(mf,

@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_argv.h	5.1 %G%  */
+/* sccs id:	@(#)ex_argv.h	6.1 %G%  */
 /*
  * The current implementation of the argument list is poor,
  * using an argv even for internally done "next" commands.

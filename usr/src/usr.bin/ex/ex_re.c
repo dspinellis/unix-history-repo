@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_re.c	5.1 %G%";
+static char *sccsid = "@(#)ex_re.c	6.1 %G%";
 #include "ex.h"
 #include "ex_re.h"
 
@@ -81,9 +81,22 @@ out:
 		if (a1 >= addr1 && a1 <= addr2 && execute(0, a1) == k)
 			*a1 |= 01;
 	}
-	/* should use gdelete from ed to avoid n**2 here on g/.../d */
+	/*
+	 * Special case: g/.../d (avoid n^2 algorithm)
+	 */
+	if (globuf[0]=='d' && globuf[1]=='\n' && globuf[2]=='\0') {
+		gdelete();
+		return;
+	}
 	if (inopen)
 		inopen = -1;
+	/*
+	 * Now for each marked line, set dot there and do the commands.
+	 * Note the n^2 behavior here for lots of lines matching.
+	 * This is really needed: in some cases you could delete lines,
+	 * causing a marked line to be moved before a1 and missed if
+	 * we didn't restart at zero each time.
+	 */
 	for (a1 = one; a1 <= dol; a1++) {
 		if (*a1 & 01) {
 			*a1 &= ~01;
@@ -105,6 +118,37 @@ out:
 	}
 }
 
+/*
+ * gdelete: delete inside a global command. Handles the
+ * special case g/r.e./d. All lines to be deleted have
+ * already been marked. Squeeze the remaining lines together.
+ * Note that other cases such as g/r.e./p, g/r.e./s/r.e.2/rhs/,
+ * and g/r.e./.,/r.e.2/d are not treated specially.  There is no
+ * good reason for this except the question: where to you draw the line?
+ */
+gdelete()
+{
+	register line *a1, *a2, *a3;
+
+	a3 = dol;
+	/* find first marked line. can skip all before it */
+	for (a1=zero; (*a1&01)==0; a1++)
+		if (a1>=a3)
+			return;
+	/* copy down unmarked lines, compacting as we go. */
+	for (a2=a1+1; a2<=a3;) {
+		if (*a2&01) {
+			a2++;		/* line is marked, skip it */
+			dot = a1;	/* dot left after line deletion */
+		} else
+			*a1++ = *a2++;	/* unmarked, copy it */
+	}
+	dol = a1-1;
+	if (dot>dol)
+		dot = dol;
+	change();
+}
+
 bool	cflag;
 int	scount, slines, stotal;
 
@@ -113,7 +157,7 @@ substitute(c)
 {
 	register line *addr;
 	register int n;
-	int gsubf;
+	int gsubf, hopcount = 0;
 
 	gsubf = compsub(c);
 	if(FIXUNDO)
@@ -125,17 +169,16 @@ substitute(c)
 		if (dosubcon(0, addr) == 0)
 			continue;
 		if (gsubf) {
-#ifdef notdef
 			/*
-			 * should check but loc2 is already munged.
-			 * This needs a fancier check later.
+			 * The loop can happen from s/\</&/g
+			 * but we don't want to break other, reasonable cases.
 			 */
-			if (loc1 == loc2)
-				error("substitution loop");
-#endif
-			while (*loc2)
+			while (*loc2) {
+				if (++hopcount > sizeof linebuf)
+					error("substitution loop");
 				if (dosubcon(1, addr) == 0)
 					break;
+			}
 		}
 		if (scount) {
 			stotal += scount;
@@ -223,7 +266,7 @@ comprhs(seof)
 {
 	register char *rp, *orp;
 	register int c;
-	char orhsbuf[LBSIZE / 2];
+	char orhsbuf[RHSSIZE];
 
 	rp = rhsbuf;
 	CP(orhsbuf, rp);
@@ -251,7 +294,7 @@ comprhs(seof)
 magic:
 			if (c == '~') {
 				for (orp = orhsbuf; *orp; *rp++ = *orp++)
-					if (rp >= &rhsbuf[LBSIZE / 2 + 1])
+					if (rp >= &rhsbuf[RHSSIZE - 1])
 						goto toobig;
 				continue;
 			}
@@ -271,9 +314,11 @@ magic:
 				goto magic;
 			break;
 		}
-		if (rp >= &rhsbuf[LBSIZE / 2 - 1])
+		if (rp >= &rhsbuf[RHSSIZE - 1]) {
 toobig:
+			*rp = 0;
 			error("Replacement pattern too long@- limit 256 characters");
+		}
 		*rp++ = c;
 	}
 endrhs:

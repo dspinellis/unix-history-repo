@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_re.h	5.1 %G%  */
+/* sccs id:	@(#)ex_re.h	6.1 %G%  */
 /*
  * Regular expression definitions.
  * The regular expressions in ex are similar to those in ed,

@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	5.3 %G%";
+static char *sccsid = "@(#)ex_vmain.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -61,6 +61,7 @@ vmain()
 		vglobp = 0;
 		vreg = 0;
 		hold = 0;
+		seenprompt = 1;
 		wcursor = 0;
 		Xhadcnt = hadcnt = 0;
 		Xcnt = cnt = 1;
@@ -146,8 +147,10 @@ reread:
 				ungetkey(c);
 				goto looptop;
 			}
-			if (!value(REMAP))
+			if (!value(REMAP)) {
+				c = op;
 				break;
+			}
 			if (++maphopcnt > 256)
 				error("Infinite macro loop");
 		} while (c != op);
@@ -389,7 +392,9 @@ reread:
 		case CTRL(f):
 			vsave();
 			if (vcnt > 2) {
-				dot += (vcnt - vcline) - 2 + (cnt-1)*basWLINES;
+				addr = dot + (vcnt - vcline) - 2 + (cnt-1)*basWLINES;
+				forbid(addr > dol);
+				dot = addr;
 				vcnt = vcline = 0;
 			}
 			vzop(0, 0, '+');
@@ -402,7 +407,9 @@ reread:
 		case CTRL(b):
 			vsave();
 			if (one + vcline != dot && vcnt > 2) {
-				dot -= vcline - 2 + (cnt-1)*basWLINES;
+				addr = dot - vcline - 2 + (cnt-1)*basWLINES;
+				forbid (addr <= zero);
+				dot = addr;
 				vcnt = vcline = 0;
 			}
 			vzop(0, 0, '^');
@@ -490,8 +497,8 @@ reread:
 		 */
 		case 'O':
 		case 'o':
-			voOpen(c, cnt);
 			vmacchng(1);
+			voOpen(c, cnt);
 			continue;
 
 		/*
@@ -852,7 +859,8 @@ gogo:
 #ifdef SIGTSTP
 		/*
 		 * ^Z:	suspend editor session and temporarily return
-		 * 	to shell.  Only works on Berkeley tty driver.
+		 * 	to shell.  Only works with Berkeley/IIASA process
+		 *	control in kernel.
 		 */
 		case CTRL(z):
 			forbid(dosusp == 0 || !ldisc);
