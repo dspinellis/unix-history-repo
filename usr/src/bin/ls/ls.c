@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -196,13 +196,13 @@ main(argc, argv)
 	}
 
 	if (argc)
-		args(argc, argv);
+		doargs(argc, argv);
 	else
-		curdir();
+		dodot();
 	exit(0);
 }
 
-curdir()
+dodot()
 {
 	LS local, *stats;
 	int num;
@@ -212,14 +212,14 @@ curdir()
 		(void)fprintf(stderr, "ls: .: %s\n", strerror(errno));
 		exit(1);
 	}
-	if (num = buildstats(&local, &stats, &names))
-		ls(stats, num);
+	if (num = tabdir(&local, &stats, &names))
+		displaydir(stats, num);
 }
 
 static char path[MAXPATHLEN + 1];
 static char *endofpath = path;
 
-args(argc, argv)
+doargs(argc, argv)
 	int argc;
 	char **argv;
 {
@@ -268,18 +268,18 @@ args(argc, argv)
 	if (regcnt) {
 		/*
 		 * for -f flag -- switch above treats all -f operands as
-		 * regular files; this code uses buildstats() to read
+		 * regular files; this code uses tabdir() to read
 		 * them as directories.
 		 */
 		if (f_specialdir) {
 			for (cnt = regcnt; cnt--;) {
-				if (num = buildstats(rstats++, &stats, &names))
-					ls(stats, num);
+				if (num = tabdir(rstats++, &stats, &names))
+					displaydir(stats, num);
 				(void)free((char *)stats);
 				(void)free((char *)names);
 			}
 		} else
-			ls(rstats, regcnt);
+			displaydir(rstats, regcnt);
 	}
 	/* display directories */
 	if (dircnt) {
@@ -292,7 +292,7 @@ args(argc, argv)
 		for (cnt = 0; cnt < dircnt; ++dstats) {
 			for (endofpath = path, p = dstats->name;
 			    *endofpath = *p++; ++endofpath);
-			ls_dir(dstats, regcnt, regcnt || dircnt > 1);
+			subdir(dstats, regcnt, regcnt || dircnt > 1);
 			if (++cnt < dircnt && chdir(top)) {
 				(void)fprintf(stderr, "ls: %s: %s\n",
 				    top, strerror(errno));
@@ -302,7 +302,7 @@ args(argc, argv)
 	}
 }
 
-ls(stats, num)
+displaydir(stats, num)
 	LS *stats;
 	register int num;
 {
@@ -325,13 +325,13 @@ ls(stats, num)
 			if (endofpath != path && endofpath[-1] != '/')
 				*endofpath++ = '/';
 			for (; *endofpath = *p++; ++endofpath);
-			ls_dir(lp, 1, 1);
+			subdir(lp, 1, 1);
 			*(endofpath = savedpath) = '\0';
 		}
 	}
 }
 
-ls_dir(lp, newline, tag)
+subdir(lp, newline, tag)
 	LS *lp;
 	int newline, tag;
 {
@@ -357,8 +357,8 @@ ls_dir(lp, newline, tag)
 		    lp->name, strerror(errno));
 		return;
 	}
-	if (num = buildstats(lp, &stats, &names))
-		ls(stats, num);
+	if (num = tabdir(lp, &stats, &names))
+		displaydir(stats, num);
 	(void)free((char *)stats);
 	(void)free((char *)names);
 	if (chdir("..")) {
@@ -368,7 +368,7 @@ ls_dir(lp, newline, tag)
 }
 
 static
-buildstats(lp, s_stats, s_names)
+tabdir(lp, s_stats, s_names)
 	LS *lp, **s_stats;
 	char **s_names;
 {
