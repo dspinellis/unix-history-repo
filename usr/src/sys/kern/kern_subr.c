@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_subr.c	7.8 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,34 +104,6 @@ again:
 	uio->uio_resid--;
 	uio->uio_offset++;
 	return (0);
-}
-
-strcat(src, append)
-	register char *src, *append;
-{
-
-	for (; *src; ++src)
-		continue;
-	while (*src++ = *append++)
-		continue;
-}
-
-strcpy(to, from)
-	register char *to, *from;
-{
-
-	for (; *to = *from; ++from, ++to)
-		continue;
-}
-
-strncpy(to, from, cnt)
-	register char *to, *from;
-	register int cnt;
-{
-
-	for (; cnt && (*to = *from); --cnt, ++from, ++to)
-		continue;
-	*to = '\0';
 }
 
 #ifdef vax	/* unused except by ct.c, other oddities XXX */
