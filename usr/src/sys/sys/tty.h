@@ -1,4 +1,4 @@
-/*	tty.h	4.8	82/01/20	*/
+/*	tty.h	4.9	82/01/30	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
