@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.15 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.16 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -201,7 +201,8 @@ struct anode *e3() { /* parse parens and predicates */
 		nouser(), nogroup(), ls(), dummy();
 	struct anode *p1;
 	int i;
-	register char *a, *b, s;
+	register char *a, *b;
+	register int s;
 
 	a = nxtarg();
 	if(EQ(a, "(")) {
