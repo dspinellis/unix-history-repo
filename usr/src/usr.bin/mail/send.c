@@ -11,12 +11,13 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	1.1 %G%";
+static char *SccsId = "@(#)send.c	1.2 %G%";
 
 /*
  * Send message described by the passed pointer to the
  * passed output buffer.  Return -1 on error, but normally
- * the number of lines written.
+ * the number of lines written.  Adjust the status: field
+ * if need be.
  */
 
 send(mailp, obuf)
@@ -27,21 +28,65 @@ send(mailp, obuf)
 	register int t;
 	unsigned int c;
 	FILE *ibuf;
-	int lc;
+	char line[LINESIZE];
+	int lc, ishead;
 
 	mp = mailp;
 	ibuf = setinput(mp);
 	c = msize(mp);
+	ishead = (mailp->m_flag & MSTATUS) != 0;
 	lc = 0;
-	while (c-- > 0) {
-		putc(t = getc(ibuf), obuf);
-		if (t == '\n')
-			lc++;
+	while (c > 0) {
+		fgets(line, LINESIZE, ibuf);
+		c -= strlen(line);
+		lc++;
+		if (ishead) {
+			if (line[0] == '\n') {
+				statusput(mailp, obuf);
+				ishead = 0;
+				goto writeit;
+			}
+			if (index(line, ':') == 0)
+				goto writeit;
+			if (icisname(line, "status", 6)) {
+				statusput(mailp, obuf);
+				ishead = 0;
+				continue;
+			}
+		}
+writeit:
+		fputs(line, obuf);
 		if (ferror(obuf))
 			return(-1);
 	}
+	if (ferror(obuf))
+		return(-1);
+	if (ishead && (mailp->m_flag & MSTATUS))
+		printf("failed to fix up status field\n");
 	return(lc);
 }
+
+/*
+ * Output a reasonable looking status field.
+ */
+
+statusput(mp, obuf)
+	register struct message *mp;
+	register FILE *obuf;
+{
+	char statout[3];
+
+	if ((mp->m_flag & (MNEW|MREAD)) == MNEW)
+		return;
+	if (mp->m_flag & MREAD)
+		strcpy(statout, "R");
+	else
+		strcpy(statout, "");
+	if ((mp->m_flag & MNEW) == 0)
+		strcat(statout, "O");
+	fprintf(obuf, "Status: %s\n", statout);
+}
+
 
 /*
  * Interface between the argument list and the mail1 routine
