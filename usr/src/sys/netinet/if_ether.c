@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.10 (Berkeley) %G%
+ *	@(#)if_ether.c	6.11 (Berkeley) %G%
  */
 
 /*
@@ -52,21 +52,6 @@ int	arpt_age;		/* aging timer */
 
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 extern struct ifnet loif;
-
-/*
- * Local addresses in the range oldmap to infinity are
- * mapped according to the old mapping scheme.  That is,
- * mapping of Internet to Ethernet addresses is performed
- * by taking the high three bytes of the network interface's
- * address and the low three bytes of the local address part.
- * This only allows boards from the same manufacturer to
- * communicate unless the on-board address is overridden
- * (not possible in many manufacture's hardware).
- *
- * NB: setting oldmap to zero completely disables ARP
- *     (i.e. identical to setting IFF_NOARP with an ioctl).
- */
-int	oldmap = 1024;
 
 /*
  * Timeout routine.  Age arp_tab entries once a minute.
@@ -173,7 +158,7 @@ arpresolve(ac, m, destip, desten)
 	s = splimp();
 	ARPTAB_LOOK(at, destip->s_addr);
 	if (at == 0) {			/* not found */
-		if ((ifp->if_flags & IFF_NOARP) || lna >= oldmap) {
+		if (ifp->if_flags & IFF_NOARP) {
 			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten, 3);
 			desten[3] = (lna >> 16) & 0x7f;
 			desten[4] = (lna >> 8) & 0xff;
