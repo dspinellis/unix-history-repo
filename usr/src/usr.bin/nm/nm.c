@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)nm.c 4.5 %G%";
+static	char sccsid[] = "@(#)nm.c 4.6 %G%";
 #endif
 /*
  * nm - print name list; VAX string table version
@@ -99,13 +99,13 @@ namelist()
 	fread((char *)&mag_un, 1, sizeof(mag_un), fi);
 	if (mag_un.mag_exp.a_magic == OARMAG) {
 		error(0, "old archive");
-		return;
+		goto out;
 	}
 	if (strncmp(mag_un.mag_armag, ARMAG, SARMAG)==0)
 		archive++;
 	else if (N_BADMAG(mag_un.mag_exp)) {
 		error(0, "bad format");
-		return;
+		goto out;
 	}
 	fseek(fi, 0L, 0);
 	if (archive) {
