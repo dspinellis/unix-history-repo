@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: machdep.c 1.51 89/11/28$
+ * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.12 (Berkeley) %G%
+ *	@(#)machdep.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,12 +70,13 @@ int	bufpages = BUFPAGES;
 int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
+int	maxmem;			/* max memory per process */
 int	physmem = MAXMEM;	/* max supported memory, changes to actual */
 /*
  * safepri is a safe priority for sleep to set for a spin-wait
  * during autoconfiguration or after a panic.
  */
-int   safepri = PSL_LOWIPL;
+int	safepri = PSL_LOWIPL;
 
 extern	u_int lowram;
 
@@ -311,7 +312,6 @@ setregs(p, entry, retval)
 	u_long entry;
 	int retval[2];
 {
-
 	p->p_regs[PC] = entry & ~1;
 #ifdef FPCOPROC
 	/* restore a null state frame */
@@ -533,6 +533,7 @@ sendsig(catcher, sig, mask, code)
 	register struct sigacts *ps = p->p_sigacts;
 	register short ft;
 	int oonstack, fsize;
+	extern short exframesize[];
 	extern char sigcode[], esigcode[];
 
 	frame = (struct frame *)p->p_regs;
@@ -607,23 +608,23 @@ sendsig(catcher, sig, mask, code)
 		kfp->sf_state.ss_frame.f_format = frame->f_format;
 		kfp->sf_state.ss_frame.f_vector = frame->f_vector;
 		bcopy((caddr_t)&frame->F_u,
-		      (caddr_t)&kfp->sf_state.ss_frame.F_u,
-		      (ft == FMT9) ? FMT9SIZE :
-		      (ft == FMTA) ? FMTASIZE : FMTBSIZE);
+		      (caddr_t)&kfp->sf_state.ss_frame.F_u, exframesize[ft]);
 		/*
-		 * Gag!  Leave an indicator that we need to clean up the
-		 * kernel stack.  We do this by setting the "pad word"
-		 * above the hardware stack frame.  "bexit" in locore
-		 * will then know that it must compress the kernel stack
-		 * and create a normal four word stack frame.
+		 * Leave an indicator that we need to clean up the kernel
+		 * stack.  We do this by setting the "pad word" above the
+		 * hardware stack frame to the amount the stack must be
+		 * adjusted by.
+		 *
+		 * N.B. we increment rather than just set f_stackadj in
+		 * case we are called from syscall when processing a
+		 * sigreturn.  In that case, f_stackadj may be non-zero.
 		 */
-		frame->f_stackadj = -1;
+		frame->f_stackadj += exframesize[ft];
+		frame->f_format = frame->f_vector = 0;
 #ifdef DEBUG
 		if (sigdebug & SDB_FOLLOW)
 			printf("sendsig(%d): copy out %d of frame %d\n",
-			       p->p_pid,
-			       (ft == FMT9) ? FMT9SIZE :
-			       (ft == FMTA) ? FMTASIZE : FMTBSIZE, ft);
+			       p->p_pid, exframesize[ft], ft);
 #endif
 	}
 #ifdef FPCOPROC
@@ -720,6 +721,7 @@ sigreturn(p, uap, retval)
 	struct sigcontext tsigc;
 	struct sigstate tstate;
 	int flags;
+	extern short exframesize[];
 
 	scp = uap->sigcntxp;
 #ifdef DEBUG
@@ -805,6 +807,11 @@ sigreturn(p, uap, retval)
 		printf("sigreturn(%d): sc_ap %x flags %x\n",
 		       p->p_pid, rf, flags);
 #endif
+	/*
+	 * fuword failed (bogus sc_ap value).
+	 */
+	if (flags == -1)
+		return (EINVAL);
 	if (flags == 0 || copyin((caddr_t)rf, (caddr_t)&tstate, sizeof tstate))
 		return (EJUSTRETURN);
 #ifdef DEBUG
@@ -830,16 +837,9 @@ sigreturn(p, uap, retval)
 		
 		/* grab frame type and validate */
 		sz = tstate.ss_frame.f_format;
-		if (sz == FMT9)
-			sz = FMT9SIZE;
-		else if (sz == FMTA)
-			sz = FMTASIZE;
-		else if (sz == FMTB) {
-			sz = FMTBSIZE;
-			/* no k-stack adjustment necessary */
-			frame->f_stackadj = 0;
-		} else
+		if (sz > 15 || (sz = exframesize[sz]) < 0)
 			return (EINVAL);
+		frame->f_stackadj -= sz;
 		frame->f_format = tstate.ss_frame.f_format;
 		frame->f_vector = tstate.ss_frame.f_vector;
 		bcopy((caddr_t)&tstate.ss_frame.F_u, (caddr_t)&frame->F_u, sz);
@@ -935,6 +935,7 @@ boot(howto)
 
 int	dumpmag = 0x8fca0101;	/* magic number for savecore */
 int	dumpsize = 0;		/* also for savecore */
+long	dumplo = 0;
 
 dumpconf()
 {
@@ -1038,10 +1039,12 @@ initcpu()
 	parityenable();
 }
 
-straytrap(addr)
-	register int addr;
+straytrap(pc, evec)
+	int pc;
+	u_short evec;
 {
-	printf("stray trap, addr 0x%x\n", addr);
+	printf("unexpected trap (vector offset %x) from %x\n",
+	       evec & 0xFFF, pc);
 }
 
 int	*nofault;
@@ -1165,7 +1168,17 @@ nmihand(frame)
 {
 	if (kbdnmi()) {
 #ifdef PANICBUTTON
-		printf("Got a keyboard NMI\n");
+		static int innmihand = 0;
+
+		/*
+		 * Attempt to reduce the window of vulnerability for recursive
+		 * NMIs (e.g. someone holding down the keyboard reset button).
+		 */
+		if (innmihand == 0) {
+			innmihand = 1;
+			printf("Got a keyboard NMI\n");
+			innmihand = 0;
+		}
 		if (panicbutton) {
 			if (crashandburn) {
 				crashandburn = 0;
@@ -1187,7 +1200,7 @@ nmihand(frame)
 /*
  * Parity error section.  Contains magic.
  */
-#define PARREG		((volatile short *)IOV(0x5B0000))
+#define PARREG		((volatile short *)IIOV(0x5B0000))
 static int gotparmem = 0;
 #ifdef DEBUG
 int ignorekperr = 0;	/* ignore kernel parity errors */
