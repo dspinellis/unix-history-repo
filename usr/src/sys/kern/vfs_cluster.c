@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.47 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.48 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -232,6 +232,14 @@ bwrite(bp)
 	}
 	return (error);
 }
+
+int
+vn_bwrite(ap)
+	struct vop_bwrite_args *ap;
+{
+	return bwrite (ap->a_bp);
+}
+
 
 /*
  * Delayed write.
