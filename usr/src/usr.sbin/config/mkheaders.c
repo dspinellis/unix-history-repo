@@ -1,11 +1,12 @@
 /*
- *	mkheaders.c	1.7	82/03/28
+ *	mkheaders.c	1.8	82/07/21
  * Make all the .h files for the optional entries
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include "config.h"
+#include "y.tab.h"
 
 /*
  * This macro reads a line of the form
@@ -50,6 +51,10 @@ bool search;
     for (count = 0,dp = dtab; dp != NULL; dp = dp->d_next)
 	if (dp->d_unit != -1 && eq(dp->d_name, dev))
 	{
+	    if (dp->d_type == PSEUDO_DEVICE) {
+		count = dp->d_slave != UNKNOWN ? dp->d_slave : 1;
+		break;
+	    }
 	    count++;
 	    /*
 	     * Allow holes in unit numbering,
