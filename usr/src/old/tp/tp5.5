@@ -1,6 +1,6 @@
-.\"	@(#)tp5.5	4.1 (Berkeley) %G%
+.\"	@(#)tp5.5	5.1 (Berkeley) %G%
 .\"
-.TH TP 5 
+.TH TP 5  "15 January 1983"
 .AT 3
 .SH NAME
 tp \- DEC/mag tape formats
@@ -49,7 +49,7 @@ It is at most 32 bytes long and ends in a null byte.
 Mode, uid, gid, size and time modified
 are the same as described under i-nodes 
 (see file system
-.IR filsys (5)).
+.IR fs (5)).
 The tape address is the tape block number of the start of
 the contents of the file.
 Every file
@@ -64,7 +64,7 @@ Blocks above 25 (resp. 63) are available for file storage.
 A fake entry
 has a size of zero.
 .SH "SEE ALSO"
-filsys(5), tp(1)
+fs(5), tp(1)
 .SH BUGS
 The
 .I pathname, uid, gid,
