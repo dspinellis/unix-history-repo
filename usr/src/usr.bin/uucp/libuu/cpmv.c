@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpmv.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cpmv.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -21,7 +21,7 @@ char *f1, *f2;
 	register int len;
 	register FILE *fp1, *fp2;
 	char *lastpart();
-	char full[100];
+	char full[MAXFULLNAME];
 	struct stat s;
 
 	if ((fp1 = fopen(subfile(f1), "r")) == NULL)

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -69,6 +69,15 @@ int ventopn(), ventcls();
 #include <UNET/tcp.h>
 int unetopn(), unetcls();
 #endif UNET
+#ifdef TCPNET
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#ifndef	IPPORT_UUCP
+#define	IPPORT_UUCP	251
+#endif	IPPORT_UUCP
+int tcpopn(), tcpcls();
+#endif TCPNET
 #ifdef VADIC
 int vadopn(), vadcls();
 #endif VADIC
@@ -90,6 +99,9 @@ struct condev condevs[] = {
 #ifdef	UNET
 { "UNET", "UNET", unetopn, nulldev, unetcls },
 #endif UNET
+#ifdef	TCPNET
+{ "NET", "tcpnet", tcpopn, nulldev, tcpcls },
+#endif TCPNET
 #ifdef MICOM
 { "MICOM", "micom", micopn, nulldev, miccls },
 #endif MICOM
@@ -351,6 +363,71 @@ register int fd;
 	}
 }
 #endif UNET
+
+#ifdef	TCPNET
+/***
+ *	tcpopn - establish a network connection to the remote system
+ *
+ *	return codes:
+ *		>= 0	file descriptor for remote connection
+ *		FAIL	unable to establish remote connection
+ */
+
+tcpopn(flds)
+char	*flds[];
+{
+	register struct hostent	*hp;
+	struct sockaddr_in	hisaddr;
+	int		nfd, port;
+	extern int	errno;
+	int  tcpcls();
+
+	hp = gethostbyname(flds[F_NAME]);
+	if (hp == NULL) {
+		DEBUG(4, "netcall: Unknown host (%s)\n", flds[F_NAME]);
+		logent(flds[F_NAME], "Unknown Host");
+		return FAIL;
+	}
+	port = atoi(flds[F_PHONE]);
+	if (port == 0)
+		port = IPPORT_UUCP;
+	bzero((char *)&hisaddr, sizeof(hisaddr));
+	bcopy(hp->h_addr, (char *)&hisaddr.sin_addr, hp->h_length);
+	hisaddr.sin_family = hp->h_addrtype;
+	hisaddr.sin_port = htons(port);
+	DEBUG(4, "Connect to %s ", hp->h_name);
+	DEBUG(4, "port %d... ", port);
+	nfd = socket(hp->h_addrtype, SOCK_STREAM, 0);
+	if (nfd < 0) {
+		DEBUG(4, "failed, no local sockets (%d)\n", errno);
+		return FAIL;
+	}
+	if (connect(nfd, (char *)&hisaddr, sizeof(hisaddr)) < 0) {
+		DEBUG(4, "failed, connect error (%d)\n", errno);
+		return FAIL;
+	}
+	DEBUG(4, "succeeded\n", 0);
+	CU_end = tcpcls;
+	return nfd;
+}
+
+/*
+ * tcpcls -- close TCP connection.
+ */
+tcpcls(fd)
+register int fd;
+{
+	DEBUG(4, "TCP CLOSE called\n", 0);
+	if (fd > 0) {
+		/* disable this until a timeout is put in
+		if (ioctl(fd, UIOCCLOSE, STBNULL))
+			logent("TCP CLOSE", "FAILED");
+		 */
+		close(fd);
+		DEBUG(4, "closed fd %d\n", fd);
+	}
+}
+#endif	TCPNET
 
 #ifdef MICOM
 
@@ -1244,6 +1321,7 @@ struct Devices *dev;
 	int	i, ok, er = 0, delay;
 	extern errno;
 	char dcname[20];
+	char ntelno[64];
 
 	sprintf(dcname, "/dev/%s", dev->D_line);
 	if (setjmp(Sjbuf)) {
@@ -1268,20 +1346,22 @@ struct Devices *dev;
 		}
 	fixline(dh, dev->D_speed);
 
+/* add a delay at the end of the number for the local phone switch */
+	sprintf(ntelno, "%s=", telno);
 /* translate - to K for Vadic */
-	DEBUG(4, "calling %s -> ", telno);
+	DEBUG(4, "calling %s -> ", ntelno);
 	delay = 0;
-	for (i = 0; i < strlen(telno); ++i) {
-		switch(telno[i]) {
+	for (i = 0; i < strlen(ntelno); ++i) {
+		switch(ntelno[i]) {
 		case '=':	/* await dial tone */
 		case '-':	/* delay */
 		case '<':
-			telno[i] = 'K';
+			ntelno[i] = 'K';
 			delay += 5;
 			break;
 		}
 	}
-	DEBUG(4, "%s\n", telno);
+	DEBUG(4, "%s\n", ntelno);
 	for(i = 0; i < 5; ++i) {	/* make 5 tries */
 		/* wake up Vadic */
 		sendthem("\005\\d", dh);
@@ -1299,8 +1379,8 @@ struct Devices *dev;
 			continue;
 
 	/* send telno, send \r */
-		sendthem(telno, dh);
-		ok = expect(telno, dh);
+		sendthem(ntelno, dh);
+		ok = expect(ntelno, dh);
 		if (ok == 0)
 			ok = expect("\r\n", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
