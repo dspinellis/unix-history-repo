@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,6 +31,86 @@ static off_t address;			/* address/offset in stream */
 static off_t eaddress;			/* end address */
 static off_t savaddress;		/* saved address/offset in stream */
 
+#define PRINT { \
+	switch(pr->flags) { \
+	case F_ADDRESS: \
+		(void)printf(pr->fmt, address); \
+		break; \
+	case F_BPAD: \
+		(void)printf(pr->fmt, ""); \
+		break; \
+	case F_C: \
+		conv_c(pr, bp); \
+		break; \
+	case F_CHAR: \
+		(void)printf(pr->fmt, *bp); \
+		break; \
+	case F_DBL: { \
+		double dval; \
+		float fval; \
+		switch(pr->bcnt) { \
+		case 4: \
+			bcopy((char *)bp, (char *)&fval, sizeof(fval)); \
+			(void)printf(pr->fmt, fval); \
+			break; \
+		case 8: \
+			bcopy((char *)bp, (char *)&dval, sizeof(dval)); \
+			(void)printf(pr->fmt, dval); \
+			break; \
+		} \
+		break; \
+	} \
+	case F_INT: { \
+		int ival; \
+		short sval; \
+		switch(pr->bcnt) { \
+		case 1: \
+			(void)printf(pr->fmt, (int)*bp); \
+			break; \
+		case 2: \
+			bcopy((char *)bp, (char *)&sval, sizeof(sval)); \
+			(void)printf(pr->fmt, (int)sval); \
+			break; \
+		case 4: \
+			bcopy((char *)bp, (char *)&ival, sizeof(ival)); \
+			(void)printf(pr->fmt, ival); \
+			break; \
+		} \
+		break; \
+	} \
+	case F_P: \
+		(void)printf(pr->fmt, isprint(*bp) ? *bp : '.'); \
+		break; \
+	case F_STR: \
+		(void)printf(pr->fmt, (char *)bp); \
+		break; \
+	case F_TEXT: \
+		(void)printf(pr->fmt); \
+		break; \
+	case F_U: \
+		conv_u(pr, bp); \
+		break; \
+	case F_UINT: { \
+		u_int ival; \
+		u_short sval; \
+		switch(pr->bcnt) { \
+		case 1: \
+			(void)printf(pr->fmt, (u_int)*bp); \
+			break; \
+		case 2: \
+			bcopy((char *)bp, (char *)&sval, sizeof(sval)); \
+			(void)printf(pr->fmt, (u_int)sval); \
+			break; \
+		case 4: \
+			bcopy((char *)bp, (char *)&ival, sizeof(ival)); \
+			(void)printf(pr->fmt, ival); \
+			break; \
+		} \
+		break; \
+	} \
+	} \
+}
+
 display()
 {
 	extern FU *endfu;
@@ -44,28 +124,24 @@ display()
 
 	while (bp = get())
 	    for (fs = fshead, savebp = bp, saveaddress = address; fs;
-		fs = fs->nextfs, bp = savebp, address = saveaddress) {
+		fs = fs->nextfs, bp = savebp, address = saveaddress)
 		    for (fu = fs->nextfu; fu; fu = fu->nextfu) {
 			if (fu->flags&F_IGNORE)
 				break;
 			for (cnt = fu->reps; cnt; --cnt)
 			    for (pr = fu->nextpr; pr; address += pr->bcnt,
 				bp += pr->bcnt, pr = pr->nextpr) {
-				    if (eaddress && address >= eaddress) {
-					    bpad(fu, pr, bp);
-					    goto nextfs;
-				    }
+				    if (eaddress && address >= eaddress)
+					    bpad(fu, pr);
 				    if (cnt == 1 && pr->nospace) {
 					savech = *pr->nospace;
 					*pr->nospace = '\0';
 				    }
-				    print(pr, bp);
+				    PRINT;
 				    if (cnt == 1 && pr->nospace)
 					*pr->nospace = savech;
 			    }
 		    }
-nextfs:		;
-		}
 	if (endfu) {
 		/*
 		 * if eaddress not set, file size was multiple of blocksize,
@@ -82,89 +158,6 @@ nextfs:		;
 				(void)printf(pr->fmt);
 				break;
 			}
-	}
-}
-
-print(pr, bp)
-	PR *pr;
-	u_char *bp;
-{
-	switch(pr->flags) {
-	case F_ADDRESS:
-		(void)printf(pr->fmt, address);
-		break;
-	case F_C:
-		conv_c(pr, bp);
-		break;
-	case F_CHAR:
-		(void)printf(pr->fmt, *bp);
-		break;
-	case F_DBL: {
-		double dval;
-		float fval;
-
-		switch(pr->bcnt) {
-		case 4:
-			bcopy((char *)bp, (char *)&fval, sizeof(fval));
-			(void)printf(pr->fmt, fval);
-			break;
-		case 8:
-			bcopy((char *)bp, (char *)&dval, sizeof(dval));
-			(void)printf(pr->fmt, dval);
-			break;
-		}
-		break;
-	}
-	case F_INT: {
-		int ival;
-		short sval;
-
-		switch(pr->bcnt) {
-		case 1:
-			(void)printf(pr->fmt, (int)*bp);
-			break;
-		case 2:
-			bcopy((char *)bp, (char *)&sval, sizeof(sval));
-			(void)printf(pr->fmt, (int)sval);
-			break;
-		case 4:
-			bcopy((char *)bp, (char *)&ival, sizeof(ival));
-			(void)printf(pr->fmt, ival);
-			break;
-		}
-		break;
-	}
-	case F_P:
-		(void)printf(pr->fmt, isprint(*bp) ? *bp : '.');
-		break;
-	case F_STR:
-		(void)printf(pr->fmt, (char *)bp);
-		break;
-	case F_TEXT:
-		(void)printf(pr->fmt);
-		break;
-	case F_U:
-		conv_u(pr, bp);
-		break;
-	case F_UINT: {
-		u_int ival;
-		u_short sval;
-
-		switch(pr->bcnt) {
-		case 1:
-			(void)printf(pr->fmt, (u_int)*bp);
-			break;
-		case 2:
-			bcopy((char *)bp, (char *)&sval, sizeof(sval));
-			(void)printf(pr->fmt, (u_int)sval);
-			break;
-		case 4:
-			bcopy((char *)bp, (char *)&ival, sizeof(ival));
-			(void)printf(pr->fmt, ival);
-			break;
-		}
-		break;
-	}
 	}
 }
 
