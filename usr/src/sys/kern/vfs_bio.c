@@ -1,4 +1,4 @@
-/*	vfs_bio.c	3.10	%G%	*/
+/*	vfs_bio.c	3.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -587,12 +587,14 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		bp->b_bcount = c;
 		bp->b_blkno = dblkno;
 		bp->b_dev = dev;
+		if (flag & B_DIRTY) {
+			swpf[bp - swbuf] = pfcent;
+			swsize[bp - swbuf] = nbytes;
+		}
 		(*bdevsw[major(dev)].d_strategy)(bp);
 		if (flag & B_DIRTY) {
 			if (c < nbytes)
 				panic("big push");
-			swsize[bp - swbuf] = nbytes;
-			swpf[bp - swbuf] = pfcent;
 			return;
 		}
 		(void) spl6();
