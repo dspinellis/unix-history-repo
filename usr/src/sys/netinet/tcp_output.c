@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.49	82/12/14	*/
+/*	tcp_output.c	4.50	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,8 +21,6 @@
 #include "../netinet/tcpip.h"
 #include "../netinet/tcp_debug.h"
 #include <errno.h>
-
-char *tcpstates[]; /* XXX */
 
 /*
  * Initial options.
@@ -142,7 +140,7 @@ send:
 	 * the template for sends on this connection.
 	 */
 	MGET(m, M_DONTWAIT, MT_DATA);
-	if (m == 0)
+	if (m == INADDR_ANY)
 		return (ENOBUFS);
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
@@ -223,7 +221,7 @@ noopt:
 	/*
 	 * If anything to send and we can send it all, set PUSH.
 	 * (This will keep happy those implementations which only
-	 * give data to the user when a buffer fills or a PUSH comes in.
+	 * give data to the user when a buffer fills or a PUSH comes in.)
 	 */
 	if (len && off+len == so->so_snd.sb_cc)
 		ti->ti_flags |= TH_PUSH;

@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.37	82/12/14	*/
+/*	in_pcb.c	4.38	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@ in_pcballoc(so, head)
 	register struct inpcb *inp;
 
 	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == 0)
+	if (m == NULL)
 		return (ENOBUFS);
 	inp = mtod(m, struct inpcb *);
 	inp->inp_head = head;
@@ -45,14 +45,14 @@ in_pcbbind(inp, nam)
 
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
-	if (inp->inp_lport || inp->inp_laddr.s_addr)
+	if (inp->inp_lport || inp->inp_laddr.s_addr != INADDR_ANY)
 		return (EINVAL);
 	if (nam == 0)
 		goto noname;
 	sin = mtod(nam, struct sockaddr_in *);
 	if (nam->m_len != sizeof (*sin))
 		return (EINVAL);
-	if (sin->sin_addr.s_addr) {
+	if (sin->sin_addr.s_addr != INADDR_ANY) {
 		int tport = sin->sin_port;
 
 		sin->sin_port = 0;		/* yech... */
@@ -105,9 +105,9 @@ in_pcbconnect(inp, nam)
 		return (EINVAL);
 	if (sin->sin_family != AF_INET)
 		return (EAFNOSUPPORT);
-	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
+	if (sin->sin_addr.s_addr == INADDR_ANY || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
-	if (inp->inp_laddr.s_addr == 0) {
+	if (inp->inp_laddr.s_addr == INADDR_ANY) {
 		ifp = if_ifonnetof(in_netof(sin->sin_addr));
 		if (ifp == 0) {
 			/*
@@ -129,7 +129,7 @@ in_pcbconnect(inp, nam)
 	    inp->inp_lport,
 	    0))
 		return (EADDRINUSE);
-	if (inp->inp_laddr.s_addr == 0)
+	if (inp->inp_laddr.s_addr == INADDR_ANY)
 		inp->inp_laddr = ifaddr->sin_addr;
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
@@ -140,7 +140,7 @@ in_pcbdisconnect(inp)
 	struct inpcb *inp;
 {
 
-	inp->inp_faddr.s_addr = 0;
+	inp->inp_faddr.s_addr = INADDR_ANY;
 	inp->inp_fport = 0;
 	if (inp->inp_socket->so_state & SS_NOFDREF)
 		in_pcbdetach(inp);
@@ -217,23 +217,23 @@ in_pcblookup(head, faddr, fport, laddr, lport, flags)
 		if (inp->inp_lport != lport)
 			continue;
 		wildcard = 0;
-		if (inp->inp_laddr.s_addr != 0) {
-			if (laddr.s_addr == 0)
+		if (inp->inp_laddr.s_addr != INADDR_ANY) {
+			if (laddr.s_addr == INADDR_ANY)
 				wildcard++;
 			else if (inp->inp_laddr.s_addr != laddr.s_addr)
 				continue;
 		} else {
-			if (laddr.s_addr != 0)
+			if (laddr.s_addr != INADDR_ANY)
 				wildcard++;
 		}
-		if (inp->inp_faddr.s_addr != 0) {
-			if (faddr.s_addr == 0)
+		if (inp->inp_faddr.s_addr != INADDR_ANY) {
+			if (faddr.s_addr == INADDR_ANY)
 				wildcard++;
 			else if (inp->inp_faddr.s_addr != faddr.s_addr ||
 			    inp->inp_fport != fport)
 				continue;
 		} else {
-			if (faddr.s_addr != 0)
+			if (faddr.s_addr != INADDR_ANY)
 				wildcard++;
 		}
 		if (wildcard && (flags & INPLOOKUP_WILDCARD) == 0)

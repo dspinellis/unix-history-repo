@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.28	82/10/20	*/
+/*	tcp_timer.c	4.29	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -103,7 +103,6 @@ tcp_canceltimers(tp)
 
 float	tcp_backoff[TCP_MAXRXTSHIFT] =
     { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0 };
-int	tcprexmtprint = 0;
 int	tcpexprexmtbackoff = 0;
 /*
  * TCP timer processing.
@@ -147,8 +146,6 @@ tcp_timers(tp, timer)
 			        tcp_backoff[tp->t_rxtshift - 1],
 			    TCPTV_MIN, TCPTV_MAX);
 		}
-if (tcprexmtprint)
-printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);
