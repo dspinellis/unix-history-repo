@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tr.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,10 @@ static int string1[NCHARS] = {
 	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
 }, string2[NCHARS];
 
-static void setup __P((int *, char *, STR *, int, u_int));
+STR s1 = { STRING1, NORMAL, 0, OOBCH, { 0, OOBCH }, NULL, NULL };
+STR s2 = { STRING2, NORMAL, 0, OOBCH, { 0, OOBCH }, NULL, NULL };
+
+static void setup __P((int *, char *, STR *, int));
 static void usage __P((void));
 
 int
@@ -49,7 +52,6 @@ main(argc, argv)
 	char **argv;
 {
 	register int ch, cnt, lastch, *p;
-	STR s1, s2;
 	int cflag, dflag, sflag, isstring2;
 
 	cflag = dflag = sflag = 0;
@@ -84,11 +86,6 @@ main(argc, argv)
 		break;
 	}
 
-	if (argv[0][0] == '\0')
-		err("empty string1");
-	if (isstring2 && argv[1][0] == '\0')
-		err("empty string2");
-	
 	/*
 	 * tr -ds [-c] string1 string2
 	 * Delete all characters (or complemented characters) in string1.
@@ -98,8 +95,8 @@ main(argc, argv)
 		if (!isstring2)
 			usage();
 
-		setup(string1, argv[0], &s1, cflag, T_CLASS | T_UL);
-		setup(string2, argv[1], &s2, 0, T_CLASS | T_SEQ | T_UL);
+		setup(string1, argv[0], &s1, cflag);
+		setup(string2, argv[1], &s2, 0);
 		
 		for (lastch = OOBCH; (ch = getchar()) != EOF;)
 			if (!string1[ch] && (!string2[ch] || lastch != ch)) {
@@ -117,7 +114,7 @@ main(argc, argv)
 		if (isstring2)
 			usage();
 
-		setup(string1, argv[0], &s1, cflag, T_CLASS | T_UL);
+		setup(string1, argv[0], &s1, cflag);
 
 		while ((ch = getchar()) != EOF)
 			if (!string1[ch])
@@ -130,7 +127,7 @@ main(argc, argv)
 	 * Squeeze all characters (or complemented characters) in string1.
 	 */
 	if (sflag && !isstring2) {
-		setup(string1, argv[0], &s1, cflag, T_CLASS | T_UL);
+		setup(string1, argv[0], &s1, cflag);
 
 		for (lastch = OOBCH; (ch = getchar()) != EOF;)
 			if (!string1[ch] || lastch != ch) {
@@ -150,52 +147,33 @@ main(argc, argv)
 		usage();
 
 	s1.str = argv[0];
-	s1.state = NORMAL;
-	s1.lastch = OOBCH;
-	s1.type = T_CLASS | T_UL;
-
 	s2.str = argv[1];
-	s2.state = NORMAL;
-	s2.lastch = OOBCH;
-	s2.type = T_SEQ;
 
-	if (cflag) {
+	if (cflag)
 		for (cnt = NCHARS, p = string1; cnt--;)
 			*p++ = OOBCH;
-		/*
-		 * More than a single character is meaningless with -c, but
-		 * allow "tr abc [\n*]".
-		 */
-		if (!next(&s2))
-			err("empty string2");
-		for (ch = s2.lastch; next(&s2) && s2.state != INFINITE;);
-		if (ch != s2.lastch)
-			err("-c option and string2 has multiple characters");
-		while (next(&s1))
+
+	if (!next(&s2))
+		err("empty string2");
+
+	/* If string2 runs out of characters, use the last one specified. */
+	if (sflag)
+		while (next(&s1)) {
+			ch = s2.lastch;
 			string1[s1.lastch] = ch;
-		if (sflag)
 			string2[ch] = 1;
+			(void)next(&s2);
+		}
+	else
+		while (next(&s1)) {
+			ch = s2.lastch;
+			string1[s1.lastch] = ch;
+			(void)next(&s2);
+		}
+
+	if (cflag)
 		for (cnt = 0, p = string1; cnt < NCHARS; ++p, ++cnt)
 			*p = *p == OOBCH ? ch : cnt;
-	} else {
-		s2.type |= T_UL;
-		while (next(&s1)) {
-			/*
-			 * If the second string runs out of characters, just
-			 * use the last one specified.
-			 */
-			if (!next(&s2))
-				err("empty string2");
-			if ((s1.state == ULSET || s2.state == ULSET) &&
-			    s1.state != s2.state)
-				err("mismatched lower/upper classes");
-			string1[s1.lastch] = s2.lastch;
-			if (sflag)
-				string2[s2.lastch] = 1;
-		}
-		if (*s2.str)
-			err("string2 longer than string1");
-	}
 
 	if (sflag)
 		for (lastch = OOBCH; (ch = getchar()) != EOF;) {
@@ -212,20 +190,15 @@ main(argc, argv)
 }
 
 static void
-setup(string, arg, str, cflag, type)
+setup(string, arg, str, cflag)
 	int *string;
 	char *arg;
 	STR *str;
 	int cflag;
-	u_int type;
 {
 	register int cnt, *p;
 
 	str->str = arg;
-	str->state = NORMAL;
-	str->lastch = OOBCH;
-	str->type = type;
-
 	bzero(string, NCHARS * sizeof(int));
 	while (next(str))
 		string[str->lastch] = 1;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -73,7 +73,6 @@ next(s)
 		}
 		return (1);
 	case SET:
-	case ULSET:
 		if ((s->lastch = s->set[s->cnt++]) == OOBCH) {
 			s->state = NORMAL;
 			return (next(s));
@@ -134,23 +133,22 @@ int isalnum __P((int)),
 typedef struct {
 	char *name;
 	int (*func) __P((int));
-	u_int type;
 	int *set;
 } CLASS;
 
 static CLASS classes[] = {
-	{ "alnum",  isalnum,  T_CLASS, },
-	{ "alpha",  isalpha,  T_CLASS, },
-	{ "blank",  isblank,  T_CLASS, },
-	{ "cntrl",  iscntrl,  T_CLASS, },
-	{ "digit",  isdigit,  T_CLASS, },
-	{ "graph",  isgraph,  T_CLASS, },
-	{ "lower",  islower,  T_UL, },
-	{ "print",  isupper,  T_CLASS, },
-	{ "punct",  ispunct,  T_CLASS, },
-	{ "space",  isspace,  T_CLASS, },
-	{ "upper",  isupper,  T_UL, },
-	{ "xdigit", isxdigit, T_CLASS, },
+	{ "alnum",  isalnum,  },
+	{ "alpha",  isalpha,  },
+	{ "blank",  isblank,  },
+	{ "cntrl",  iscntrl,  },
+	{ "digit",  isdigit,  },
+	{ "graph",  isgraph,  },
+	{ "lower",  islower,  },
+	{ "print",  isupper,  },
+	{ "punct",  ispunct,  },
+	{ "space",  isspace,  },
+	{ "upper",  isupper,  },
+	{ "xdigit", isxdigit, },
 };
 
 static void
@@ -165,19 +163,17 @@ genclass(s)
 	if ((cp = (CLASS *)bsearch(&tmp, classes, sizeof(classes) /
 	    sizeof(CLASS), sizeof(CLASS), c_class)) == NULL)
 		err("unknown class %s", s->str);
-	if (!(cp->type | s->type))
-		err("class %s illegally used");
 
 	if ((cp->set = p = malloc((NCHARS + 1) * sizeof(int))) == NULL)
 		err("%s", strerror(errno));
-	bzero(p, NCHARS);
+	bzero(p, (NCHARS + 1) * sizeof(int));
 	for (cnt = 0, func = cp->func; cnt < NCHARS; ++cnt)
 		if ((func)(cnt))
 			*p++ = cnt;
 	*p = OOBCH;
 
 	s->cnt = 0;
-	s->state = cp->type & T_UL ? ULSET : SET;
+	s->state = SET;
 	s->set = cp->set;
 }
 
@@ -196,21 +192,19 @@ static void
 genequiv(s)
 	STR *s;
 {
-	static int val[2] = { 0, OOBCH };
-
 	if (*++s->str == '\\') {
-		val[0] = backslash(s);
+		s->equiv[0] = backslash(s);
 		if (*s->str != '=')
 			err("misplaced equivalence equals sign");
 	} else {
-		val[0] = s->str[0];
+		s->equiv[0] = s->str[0];
 		if (s->str[1] != '=')
 			err("misplaced equivalence equals sign");
 	}
 	s->str += 2;
 	s->cnt = 0;
 	s->state = SET;
-	s->set = val;
+	s->set = s->equiv;
 }
 
 static int
@@ -238,8 +232,8 @@ genseq(s)
 {
 	char *ep;
 
-	if (!(s->type & T_SEQ))
-		err("sequences only valid in string1");
+	if (s->which == STRING1)
+		err("sequences only valid in string2");
 
 	if (*s->str == '\\')
 		s->lastch = backslash(s);
@@ -271,7 +265,7 @@ genseq(s)
 	s->state = s->cnt ? SEQUENCE : INFINITE;
 }
 
-/* Use the #defines here, DON'T use them above. */
+/* Use the #defines isXXX() here, DON'T use them above. */
 #include <ctype.h>
 
 /*
