@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)diffdir.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)diffdir.c	4.8 (Berkeley) %G%";
 
 #include "diff.h"
 /*
@@ -397,8 +397,12 @@ useless(cp)
 register char *cp;
 {
 
-	if (cp[0] == '.')
-		return (1);
+	if (cp[0] == '.') {
+		if (cp[1] == '\0')
+			return (1);	/* directory "." */
+		if (cp[1] == '.' && cp[2] == '\0')
+			return (1);	/* directory ".." */
+	}
 	if (start && strcmp(start, cp) > 0)
 		return (1);
 	return (0);
