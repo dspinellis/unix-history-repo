@@ -12,13 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/file.h>
 #include <sys/mbuf.h>
 #include <sys/kinfo.h>
 
@@ -27,11 +26,13 @@ static char sccsid[] = "@(#)route.c	5.32 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <netns/ns.h>
 #include <netiso/iso.h>
-
+#include <arpa/inet.h>
 #include <netdb.h>
+
 #include <errno.h>
-#include <ctype.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <paths.h>
@@ -51,8 +52,11 @@ union	sockunion {
 	struct	sockaddr_ns sns;
 	struct	sockaddr_iso siso;
 	struct	sockaddr_dl sdl;
-} so_dst, so_gate, so_mask, so_genmask, so_ifa, so_ifp, *so_addrs[] =
-{ &so_dst, &so_gate, &so_mask, &so_genmask, &so_ifp, &so_ifa, 0}; 
+} so_dst, so_gate, so_mask, so_genmask, so_ifa, so_ifp;
+
+union sockunion *so_addrs[] =
+	{ &so_dst, &so_gate, &so_mask, &so_genmask, &so_ifp, &so_ifa, 0}; 
+
 typedef union sockunion *sup;
 int	pid, rtm_addrs, uid;
 int	s;
@@ -140,21 +144,30 @@ main(argc, argv)
 	if (s < 0)
 		quit("socket");
 	if (*argv)
-		switch(keyword(*argv)) {
+		switch (keyword(*argv)) {
 		case K_GET:
 			uid = 0;
 			/* FALLTHROUGH */
+
 		case K_CHANGE:
 			if (Cflag)
 				usage("change or get with -C");
 			/* FALLTHROUGH */
+
 		case K_ADD:
 		case K_DELETE:
 			newroute(argc, argv);
+			exit(0);
+			/* NOTREACHED */
+
 		case K_MONITOR:
 			monitor();
+			/* NOTREACHED */
+
 		case K_FLUSH:
 			flushroutes(argc, argv);
+			exit(0);
+			/* NOTREACHED */
 		}
 	usage(*argv);
 	/* NOTREACHED */
@@ -174,18 +187,29 @@ flushroutes(argc, argv)
 	register struct rt_msghdr *rtm;
 
 	if (uid)
-		usage("must be root to alter routing table");
+		quit("must be root to alter routing table");
 	shutdown(s, 0); /* Don't want to read back our messages */
 	if (argc > 1) {
 		argv++;
-		if (argc == 2 && **argv == '-') switch (keyword(1 + *argv)) {
-			case K_INET:	af = AF_INET;	break;
-			case K_XNS:	af = AF_NS;	break;
-			case K_LINK:	af = AF_LINK;	break;
-			case K_ISO: case K_OSI:	af = AF_ISO; break;
-			default: goto bad;
+		if (argc == 2 && **argv == '-')
+		    switch (keyword(*argv + 1)) {
+			case K_INET:
+				af = AF_INET;
+				break;
+			case K_XNS:
+				af = AF_NS;
+				break;
+			case K_LINK:
+				af = AF_LINK;
+				break;
+			case K_ISO:
+			case K_OSI:
+				af = AF_ISO;
+				break;
+			default:
+				goto bad;
 		} else
-			bad: usage(*argv);
+bad:			usage(*argv);
 	}
 	if ((needed = getkerninfo(KINFO_RT_DUMP, 0, 0, 0)) < 0)
 		quit("route-getkerninfo-estimate");
@@ -201,6 +225,7 @@ flushroutes(argc, argv)
 			continue;
 		if (af) {
 			struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
+
 			if (sa->sa_family != af)
 				continue;
 		}
@@ -228,8 +253,6 @@ flushroutes(argc, argv)
 			(void) printf("done\n");
 		}
 	}
-	exit(0);
-	/* NOTREACHED */
 }
 	
 char *
@@ -261,7 +284,7 @@ routename(sa)
 		if (in.s_addr == INADDR_ANY)
 			cp = "default";
 		if (cp == 0 && !nflag) {
-			hp = gethostbyaddr(&in, sizeof (struct in_addr),
+			hp = gethostbyaddr((char *)&in, sizeof (struct in_addr),
 				AF_INET);
 			if (hp) {
 				if ((cp = index(hp->h_name, '.')) &&
@@ -436,7 +459,7 @@ newroute(argc, argv)
 	struct hostent *hp = 0;
 
 	if (uid)
-		usage("must be root to alter routing table");
+		quit("must be root to alter routing table");
 	cmd = argv[0];
 	if (*cmd != 'g')
 		shutdown(s, 0); /* Don't want to read back our messages */
@@ -606,8 +629,6 @@ newroute(argc, argv)
 		}
 		(void) printf(": %s\n", err);
 	}
-	exit(0);
-	/* NOTREACHED */
 }
 
 void
@@ -947,16 +968,17 @@ print_getmsg(rtm, msglen)
 	}
 	(void) printf("RTM_GET: errno %d, flags:", rtm->rtm_errno); 
 	bprintf(stdout, rtm->rtm_flags, routeflags);
-	(void) printf("\nmetric values:\n\n");
-#define metric(f, e) printf("\t%s:\t%d\n", "f", rtm->rtm_rmx.e)
-	metric(RTV_RPIPE, rmx_recvpipe);
-	metric(RTV_SPIPE, rmx_sendpipe);
-	metric(RTV_SSTHRESH, rmx_ssthresh);
-	metric(RTV_RTT, rmx_rtt);
-	metric(RTV_RTTVAR, rmx_rttvar);
-	metric(RTV_HOPCOUNT, rmx_hopcount);
-	metric(RTV_MTU, rmx_mtu);
-	metric(RTV_EXPIRE, rmx_expire);
+	(void) printf("\nmetric values:\n  ");
+#define metric(f, e)\
+    printf("%s: %d%s", __STRING(f), rtm->rtm_rmx.__CONCAT(rmx_,f), e)
+	metric(recvpipe, ", ");
+	metric(sendpipe, ", ");
+	metric(ssthresh, ", ");
+	metric(rtt, "\n  ");
+	metric(rttvar, ", ");
+	metric(hopcount, ", ");
+	metric(mtu, ", ");
+	metric(expire, "\n");
 #undef metric
 	pmsg_common(rtm);
 }
