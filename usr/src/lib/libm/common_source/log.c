@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <math.h>
@@ -70,12 +70,12 @@ static char sccsid[] = "@(#)log.c	5.11 (Berkeley) %G%";
  * Values for log(F) were generated using error < 10^-57 absolute
  * with the bc -l package.
 */
-double	A1 = 	  .08333333333333178827;
-double	A2 = 	  .01250000000377174923;
-double	A3 =	 .002232139987919447809;
-double	A4 =	.0004348877777076145742;
+static double	A1 = 	  .08333333333333178827;
+static double	A2 = 	  .01250000000377174923;
+static double	A3 =	 .002232139987919447809;
+static double	A4 =	.0004348877777076145742;
 
-double logF_head[N+1] = {
+static double logF_head[N+1] = {
 	0.,
 	.007782140442060381246,
 	.015504186535963526694,
@@ -207,7 +207,7 @@ double logF_head[N+1] = {
 	.693147180560117703862
 };
 
-double logF_tail[N+1] = {
+static double logF_tail[N+1] = {
 	0.,
 	-.00000000000000543229938420049,
 	 .00000000000000172745674997061,
