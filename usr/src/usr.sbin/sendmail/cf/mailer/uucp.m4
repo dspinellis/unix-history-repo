@@ -8,17 +8,18 @@ PUSHDIVERT(-1)
 #
 
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
+ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
 POPDIVERT
 #####################################
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.11 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.12 (Berkeley) %G%')
 
-Msuucp,		P=UUCP_MAILER_PATH, F=mDFMhuU, S=12, R=22, M=100000,
+Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
 
-Muucp,		P=UUCP_MAILER_PATH, F=DFMhuU, S=12, R=22, M=100000,
+Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
 
 # sender rewriting
