@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)errno.h	7.10 (Berkeley) %G%
+ *	@(#)errno.h	7.11 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -117,6 +117,8 @@ extern int errno;			/* global error number */
 
 #define	ENOLCK		77		/* No locks available */
 #define	ENOSYS		78		/* Function not implemented */
+
+#define	EBADFORMAT	79		/* Incorrect format */
 
 #ifdef KERNEL
 /* pseudo-errors returned inside kernel to modify return to process */
