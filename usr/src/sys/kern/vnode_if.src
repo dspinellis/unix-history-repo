@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.5 (Berkeley) %G%
+#	@(#)vnode_if.src	8.6 (Berkeley) %G%
 #
 
 #
@@ -46,6 +46,16 @@ vop_create {
 	OUT struct vnode **vpp;
 	IN struct componentname *cnp;
 	IN struct vattr *vap;
+};
+
+#
+#% whiteout	dvp	L L L
+#% whiteout	cnp	- - -
+#% whiteout	flag	- - -
+vop_whiteout {
+	IN WILLRELE struct vnode *dvp;
+	IN struct componentname *cnp;
+	IN int flags;
 };
 
 #
