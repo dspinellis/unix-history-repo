@@ -2,14 +2,14 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
- *
  * This code is derived from software contributed to Berkeley by
- * J.Q. Johnson at Cornell University.
+ * J.Q. Johnson.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ns_addr.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns_addr.c	6.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
