@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.12 (Berkeley) %G%
+ *	@(#)ip_input.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -181,16 +181,28 @@ next:
 
 		if (IA_SIN(ia)->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto ours;
-		if ((ia->ia_ifp->if_flags & IFF_BROADCAST) &&
-		    satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
-			ip->ip_dst.s_addr)
-			    goto ours;
-		/*
-		 * Look for all-0's host part (old broadcast addr).
-		 */
-		if ((ia->ia_ifp->if_flags & IFF_BROADCAST) &&
-		    ia->ia_subnet == ntohl(ip->ip_dst.s_addr))
-			goto ours;
+		if (
+#ifdef	DIRECTED_BROADCAST
+		    ia->ia_ifp == ifp &&
+#endif
+		    (ia->ia_ifp->if_flags & IFF_BROADCAST)) {
+			u_long i;
+
+			if (satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
+			    ip->ip_dst.s_addr)
+				goto ours;
+			if (ip->ip_dst.s_addr == ia->ia_netbroadcast.s_addr)
+				goto ours;
+			/*
+			 * Look for all-0's host part (old broadcast addr),
+			 * either for subnet or net.
+			 */
+			i = ntohl(ip->ip_dst.s_addr);
+			if (i == ia->ia_subnet)
+				goto ours;
+			if (i == ia->ia_net)
+				goto ours;
+		}
 	}
 	if (ip->ip_dst.s_addr == (u_long)INADDR_BROADCAST)
 		goto ours;
