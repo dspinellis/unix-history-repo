@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)md-sparc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)md-sparc.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>

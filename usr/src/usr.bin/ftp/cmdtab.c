@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1985, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
