@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RESET.c 1.7 %G%";
+static char sccsid[] = "@(#)RESET.c 1.8 %G%";
 
 #include "h00vars.h"
 
@@ -12,7 +12,7 @@ RESET(filep, name, maxnamlen, datasize)
 	long			datasize;
 {
 	if (name == NULL && filep == INPUT && filep->fname[0] == '\0') {
-		if (fseek(filep->fbuf, (long)0, 0)) {
+		if (fseek(filep->fbuf, (long)0, 0) == -1) {
 			PERROR("Could not reset ", filep->pfname);
 			return;
 		}
