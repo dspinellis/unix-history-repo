@@ -1,4 +1,4 @@
-/*	init_main.c	4.32	82/07/15	*/
+/*	init_main.c	4.33	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,6 +23,7 @@
 #ifdef INET
 #include "../h/protosw.h"
 #endif
+#include "../h/quota.h"
 
 /*
  * Initialization code.
@@ -78,6 +79,10 @@ main(firstaddr)
 			continue;
 		}
 	p->p_maxrss = INFINITY/NBPG;
+#ifdef QUOTA
+	qtinit();
+	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
+#endif
 	clkstart();
 
 	/*
@@ -154,6 +159,22 @@ main(firstaddr)
 		 */
 		return;
 	}
+#ifdef MUSH
+	/*
+	 * start MUSH daemon
+	 *			pid == 3
+	 */
+	if (newproc(0)) {
+		expand(clrnd((int)btoc(szmcode)), P0BR);
+		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
+		(void) copyout((caddr_t)mcode, (caddr_t)0, (unsigned)szmcode);
+		/*
+		 * Return goes to loc. 0 of user mush
+		 * code just copied out.
+		 */
+		return;
+	}
+#endif
 	proc[0].p_szpt = 1;
 	sched();
 }
