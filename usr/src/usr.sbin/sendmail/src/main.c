@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.4.1.1 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -24,7 +24,7 @@ static char	SccsId[] = "@(#)main.c	5.5 (Berkeley) %G%";
 # include "sendmail.h"
 
 # ifdef lint
-char	edata;
+char	edata, end;
 # endif lint
 
 /*
@@ -66,6 +66,20 @@ int		NextMailer;	/* "free" index into Mailer struct */
 char		*FullName;	/* sender's full name */
 ENVELOPE	BlankEnvelope;	/* a "blank" envelope */
 ENVELOPE	MainEnvelope;	/* the envelope around the basic letter */
+ADDRESS		NullAddress =	/* a null address */
+		{ "", "", "" };
+
+/*
+**  Pointers for setproctitle.
+**	This allows "ps" listings to give more useful information.
+**	These must be kept out of BSS for frozen configuration files
+**		to work.
+*/
+
+# ifdef SETPROCTITLE
+char		**Argv = NULL;		/* pointer to argument vector */
+char		*LastArgv = NULL;	/* end of argv */
+# endif SETPROCTITLE
 
 #ifdef DAEMON
 #ifndef SMTP
@@ -98,6 +112,15 @@ main(argc, argv, envp)
 	extern bool safefile();
 	extern time_t convtime();
 
+# ifdef SETPROCTITLE
+	/*
+	**  Save start and extent of argv for setproctitle.
+	*/
+
+	Argv = argv;
+	LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);
+# endif SETPROCTITLE
+
 	/*
 	**  Be sure we have enough file descriptors.
 	*/
@@ -110,7 +133,9 @@ main(argc, argv, envp)
 	BlankEnvelope.e_puthdr = putheader;
 	BlankEnvelope.e_putbody = putbody;
 	BlankEnvelope.e_xfp = NULL;
+	STRUCTCOPY(NullAddress, BlankEnvelope.e_from);
 	CurEnv = &BlankEnvelope;
+	STRUCTCOPY(NullAddress, MainEnvelope.e_from);
 
 	/*
 	**  Do a quick prescan of the argument list.
@@ -266,7 +291,7 @@ main(argc, argv, envp)
 				syserr("More than one \"from\" person");
 				break;
 			}
-			from = p;
+			from = newstr(p);
 			break;
 
 		  case 'F':	/* set full name */
@@ -277,7 +302,7 @@ main(argc, argv, envp)
 				av--;
 				break;
 			}
-			FullName = p;
+			FullName = newstr(p);
 			break;
 
 		  case 'h':	/* hop count */
@@ -583,7 +608,11 @@ main(argc, argv, envp)
 
 	if (OpMode != MD_ARPAFTP && *av == NULL && !GrabTo)
 	{
-		usrerr("Usage: /usr/lib/sendmail [flags] addr...");
+		usrerr("Recipient names must be specified");
+
+		/* collect body for UUCP return */
+		if (OpMode != MD_VERIFY)
+			collect(FALSE);
 		finis();
 	}
 	if (OpMode == MD_VERIFY)

@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.2 (Berkeley) %G%
+**	@(#)sendmail.h	5.1.1.1 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.2		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.1.1.1		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -34,6 +34,13 @@ static char SmailSccsId[] =	"@(#)sendmail.h	5.2		%G%";
 # ifdef LOG
 # include <sys/syslog.h>
 # endif LOG
+
+# ifdef DAEMON
+# ifdef VMUNIX
+# include <sys/socket.h>
+# include <netinet/in.h>
+# endif VMUNIX
+# endif DAEMON
 
 
 # define PSBUFSIZE	(MAXNAME + MAXATOM)	/* size of prescan buffer */
@@ -186,7 +193,6 @@ extern struct hdrinfo	HdrInfo[];
 # define H_FORCE	00100	/* force this field, even if default */
 # define H_TRACE	00200	/* this field contains trace information */
 # define H_FROM		00400	/* this is a from-type field */
-# define H_VALID	01000	/* this field has a validated value */
 /*
 **  Envelope structure.
 **	This structure defines the message itself.  There is usually
@@ -235,7 +241,8 @@ EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 **	by the message priority and the amount of time the message
 **	has been sitting around.  Each priority point is worth
 **	WKPRIFACT bytes of message, and each time we reprocess a
-**	message the size gets reduced by WKTIMEFACT.
+**	message the size gets reduced by WKTIMEFACT.  Recipients are
+**	worth WKRECIPFACT.
 **
 **	WKTIMEFACT is negative since jobs that fail once have a high
 **	probability of failing again.  Making it negative tends to force
@@ -259,6 +266,7 @@ EXTERN int		NumPriorities;	/* pointer into Priorities */
 
 # define WKPRIFACT	1800		/* bytes each pri point is worth */
 # define WKTIMEFACT	(-600)		/* bytes each reprocessing is worth */
+# define WKRECIPFACT	1000		/* bytes each recipient is worth */
 /*
 **  Rewrite rules.
 */
@@ -305,6 +313,32 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 
 /* \001 is also reserved as the macro expansion character */
 /*
+**  Information about hosts that we have looked up recently.
+**
+**	This stuff is 4.2/3bsd specific.
+*/
+
+# ifdef DAEMON
+# ifdef VMUNIX
+
+# define HOSTINFO	struct hostinfo
+
+HOSTINFO
+{
+	char		*ho_name;	/* name of this host */
+	struct in_addr	ho_inaddr;	/* internet address */
+	short		ho_flags;	/* flag bits, see below */
+	short		ho_errno;	/* error number on last connection */
+	short		ho_exitstat;	/* exit status from last connection */
+};
+
+
+/* flag bits */
+#define HOF_VALID	00001		/* this entry is valid */
+
+# endif VMUNIX
+# endif DAEMON
+/*
 **  Symbol table definitions
 */
 
@@ -315,10 +349,13 @@ struct symtab
 	struct symtab	*s_next;	/* pointer to next in chain */
 	union
 	{
-		BITMAP	sv_class;	/* bit-map of word classes */
-		ADDRESS	*sv_addr;	/* pointer to address header */
-		MAILER	*sv_mailer;	/* pointer to mailer */
-		char	*sv_alias;	/* alias */
+		BITMAP		sv_class;	/* bit-map of word classes */
+		ADDRESS		*sv_addr;	/* pointer to address header */
+		MAILER		*sv_mailer;	/* pointer to mailer */
+		char		*sv_alias;	/* alias */
+# ifdef HOSTINFO
+		HOSTINFO	sv_host;	/* host information */
+# endif HOSTINFO
 	}	s_value;
 };
 
@@ -330,11 +367,13 @@ typedef struct symtab	STAB;
 # define ST_ADDRESS	2	/* an address in parsed format */
 # define ST_MAILER	3	/* a mailer header */
 # define ST_ALIAS	4	/* an alias */
+# define ST_HOST	5	/* host information */
 
 # define s_class	s_value.sv_class
 # define s_address	s_value.sv_addr
 # define s_mailer	s_value.sv_mailer
 # define s_alias	s_value.sv_alias
+# define s_host		s_value.sv_host
 
 extern STAB	*stab();
 
@@ -428,6 +467,7 @@ EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
+EXTERN bool	ForkQueueRuns;	/* fork for each job when running the queue */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
 EXTERN time_t	TimeOut;	/* time until timeout */
@@ -446,6 +486,9 @@ EXTERN int	LineNumber;	/* line number in current input */
 EXTERN time_t	ReadTimeout;	/* timeout on reads */
 EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
+EXTERN int	QueueLA;	/* load average starting forced queueing */
+EXTERN int	RefuseLA;	/* load average refusing connections are */
+EXTERN int	QueueFactor;	/* slope of queue function */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
 EXTERN char	*AliasFile;	/* location of alias file */
@@ -453,13 +496,18 @@ EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*StatFile;	/* location of statistics summary */
 EXTERN char	*QueueDir;	/* location of queue directory */
 EXTERN char	*FileName;	/* name to print on error messages */
-EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
+EXTERN char	*SmtpPhase;	/* current phase in SMTP processing */
+EXTERN char	*RealHostName;	/* name of host we are talking to */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
-extern char	SpaceSub;	/* substitution for <lwsp> [conf.c] */
+extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
+EXTERN char	SpaceSub;	/* substitution for <lwsp> */
+EXTERN int	CheckPointLimit;	/* deliveries before checkpointing */
+EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
+EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 /*
 **  Trace information
 */
@@ -487,6 +535,8 @@ EXTERN u_char	tTdvect[100];
 
 /* make a copy of a string */
 #define newstr(s)	strcpy(xalloc(strlen(s) + 1), s)
+
+#define STRUCTCOPY(s, d)	d = s
 
 
 /*

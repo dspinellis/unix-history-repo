@@ -16,12 +16,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.4 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)usersmtp.c	5.3.1.1 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)usersmtp.c	5.3.1.1 (Berkeley) %G%";
 # endif not lint
 
 
@@ -90,6 +90,7 @@ smtpinit(m, pvp)
 	SmtpIn = SmtpOut = NULL;
 	SmtpState = SMTP_CLOSED;
 	SmtpError[0] = '\0';
+	SmtpPhase = "user open";
 	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
@@ -131,6 +132,7 @@ smtpinit(m, pvp)
 	if (setjmp(CtxGreeting) != 0)
 		goto tempfail;
 	gte = setevent((time_t) 300, greettimeout, 0);
+	SmtpPhase = "greeting wait";
 	r = reply(m);
 	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
@@ -142,6 +144,7 @@ smtpinit(m, pvp)
 	*/
 
 	smtpmessage("HELO %s", m, HostName);
+	SmtpPhase = "HELO wait";
 	r = reply(m);
 	if (r < 0)
 		goto tempfail;
@@ -186,6 +189,7 @@ smtpinit(m, pvp)
 		smtpmessage("MAIL From:<@%s%c%s>", m, HostName,
 			buf[0] == '@' ? ',' : ':', buf);
 	}
+	SmtpPhase = "MAIL wait";
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		goto tempfail;
@@ -240,6 +244,7 @@ smtprcpt(to, m)
 
 	smtpmessage("RCPT To:<%s>", m, remotename(to->q_user, m, FALSE, TRUE));
 
+	SmtpPhase = "RCPT wait";
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -282,6 +287,7 @@ smtpfinish(m, editfcn)
 
 	/* send the command and check ok to proceed */
 	smtpmessage("DATA", m);
+	SmtpPhase = "DATA wait";
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -302,6 +308,7 @@ smtpfinish(m, editfcn)
 		nmessage(Arpa_Info, ">>> .");
 
 	/* check for the results of the transaction */
+	SmtpPhase = "result wait";
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -413,7 +420,7 @@ reply(m)
 				pause();
 # endif DEBUG
 # ifdef LOG
-			syslog(LOG_ERR, "%s", &MsgBuf[4]);
+			syslog(LOG_MAIL, "%s", &MsgBuf[4]);
 # endif LOG
 			SmtpState = SMTP_CLOSED;
 			smtpquit(m);

@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.7 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.5.1.1 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.5.1.1 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -78,11 +78,9 @@ static struct cmd	CmdTab[] =
 # ifdef DEBUG
 	"showq",	CMDDBGQSHOW,
 	"debug",	CMDDBGDEBUG,
-# endif DEBUG
-# ifdef WIZ
 	"kill",		CMDDBGKILL,
-# endif WIZ
 	"wiz",		CMDDBGWIZ,
+# endif DEBUG
 	NULL,		CMDERROR,
 };
 
@@ -90,7 +88,6 @@ bool	IsWiz = FALSE;			/* set if we are a wizard */
 char	*WizWord;			/* the wizard word to compare against */
 bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
-char	*RealHostName = NULL;		/* verified hostname, set in daemon.c */
 
 #define EX_QUIT		22		/* special code for QUIT command */
 
@@ -112,6 +109,8 @@ smtp()
 	extern char *arpadate();
 	extern char *macvalue();
 	extern ADDRESS *recipient();
+	extern ENVELOPE BlankEnvelope;
+	extern ENVELOPE *newenvelope();
 
 	hasmail = FALSE;
 	rcps = 0;
@@ -124,6 +123,7 @@ smtp()
 	settime();
 	expand("\001e", inp, &inp[sizeof inp], CurEnv);
 	message("220", inp);
+	SmtpPhase = "startup";
 	for (;;)
 	{
 		/* arrange for backout */
@@ -175,6 +175,7 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
+			SmtpPhase = "HELO";
 			if (sameword(p, HostName))
 			{
 				/* connected to an echo server */
@@ -196,6 +197,8 @@ smtp()
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
+			SmtpPhase = "MAIL";
+
 			/* force a sending host even if no HELO given */
 			if (RealHostName != NULL && macvalue('s', CurEnv) == NULL)
 				define('s', RealHostName, CurEnv);
@@ -232,6 +235,7 @@ smtp()
 			break;
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
+			SmtpPhase = "RCPT";
 			if (setjmp(TopFrame) > 0)
 			{
 				CurEnv->e_flags &= ~EF_FATALERRS;
@@ -263,18 +267,20 @@ smtp()
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */
+			SmtpPhase = "DATA";
 			if (!hasmail)
 			{
 				message("503", "Need MAIL command");
 				break;
 			}
-			else if (rcps <= 0)
+			else if (CurEnv->e_nrcpts <= 0)
 			{
 				message("503", "Need RCPT (recipient)");
 				break;
 			}
 
 			/* collect the text of the message */
+			SmtpPhase = "collect";
 			collect(TRUE);
 			if (Errors != 0)
 				break;
@@ -297,7 +303,8 @@ smtp()
 			**	We goose error returns by clearing error bit.
 			*/
 
-			if (rcps != 1)
+			SmtpPhase = "delivery";
+			if (CurEnv->e_nrcpts != 1)
 			{
 				HoldErrs = TRUE;
 				ErrorMode = EM_MAIL;
@@ -321,6 +328,13 @@ smtp()
 			/* if in a child, pop back to our parent */
 			if (InChild)
 				finis();
+
+			/* clean up a bit */
+			hasmail = 0;
+			rcps = 0;
+			dropenvelope(CurEnv);
+			CurEnv = newenvelope(CurEnv);
+			CurEnv->e_flags = BlankEnvelope.e_flags;
 			break;
 
 		  case CMDRSET:		/* rset -- reset state */
@@ -406,9 +420,7 @@ smtp()
 			tTflag(p);
 			message("200", "Debug set");
 			break;
-# endif DEBUG
 
-# ifdef WIZ
 		  case CMDDBGKILL:	/* kill the parent */
 			if (!iswiz())
 				break;
@@ -434,12 +446,7 @@ smtp()
 			}
 			message("500", "You are no wizard!");
 			break;
-
-# else WIZ
-		  case CMDDBGWIZ:	/* try to become a wizard */
-			message("500", "You wascal wabbit!  Wandering wizards won't win!");
-			break;
-# endif WIZ
+# endif DEBUG
 
 		  case CMDERROR:	/* unknown command */
 			message("500", "Command unrecognized");
@@ -573,7 +580,7 @@ help(topic)
 **		Prints a 500 exit stat if we are not a wizard.
 */
 
-#ifdef WIZ
+#ifdef DEBUG
 
 bool
 iswiz()
@@ -583,7 +590,7 @@ iswiz()
 	return (IsWiz);
 }
 
-#endif WIZ
+#endif DEBUG
 /*
 **  RUNINCHILD -- return twice -- once in the child, then in the parent again
 **
@@ -630,9 +637,11 @@ runinchild(label)
 		{
 			/* child */
 			InChild = TRUE;
-			clearenvelope(CurEnv);
 		}
 	}
+
+	/* child (or ONEX command specified) */
+	clearenvelope(CurEnv);
 
 	/* open alias database */
 	initaliases(AliasFile, FALSE);

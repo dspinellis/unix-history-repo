@@ -9,11 +9,14 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.3.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
 # include <sys/ioctl.h>
+# ifdef sun
+# include <sys/param.h>
+# endif sun
 # include "sendmail.h"
 
 /*
@@ -113,12 +116,34 @@ char	*FreezeFile =	"/usr/lib/sendmail.fc";	/* frozen version of above */
 
 
 /*
-**  Some other configuration....
+**  Miscellaneous stuff.
 */
 
-char	SpaceSub;		/* character to replace <lwsp> in addrs */
-int	QueueLA;		/* load avg > QueueLA -> just queue */
-int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
+int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
+/*
+**  SETDEFAULTS -- set default values
+**
+**	Because of the way freezing is done, these must be initialized
+**	using direct code.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Initializes a bunch of global variables to their
+**		default values.
+*/
+
+setdefaults()
+{
+	QueueLA = 8;
+	QueueFactor = 10000;
+	RefuseLA = 12;
+	SpaceSub = ' ';
+}
 
 # ifdef V6
 /*
@@ -346,8 +371,7 @@ username()
 			if(getuid() != pw->pw_uid)
 			{
 				pw = getpwuid(getuid());
-				if (pw != NULL)
-					myname = pw->pw_name;
+				myname = pw->pw_name;
 			}
 		}
 		if (myname == NULL || myname[0] == '\0')
@@ -527,11 +551,15 @@ struct	nlist Nl[] =
 getla()
 {
 	static int kmem = -1;
+# ifdef sun
+	long avenrun[3];
+# else
 	double avenrun[3];
+# endif
 
 	if (kmem < 0)
 	{
-		kmem = open("/dev/kmem", 0, 0);
+		kmem = open("/dev/kmem", 0);
 		if (kmem < 0)
 			return (-1);
 		(void) ioctl(kmem, (int) FIOCLEX, (char *) 0);
@@ -539,13 +567,17 @@ getla()
 		if (Nl[0].n_type == 0)
 			return (-1);
 	}
-	if (lseek(kmem, (off_t) Nl[X_AVENRUN].n_value, 0) == -1 ||
+	if (lseek(kmem, (off_t) Nl[X_AVENRUN].n_value, 0) < 0 ||
 	    read(kmem, (char *) avenrun, sizeof(avenrun)) < sizeof(avenrun))
 	{
 		/* thank you Ian */
 		return (-1);
 	}
+# ifdef sun
+	return ((int) (avenrun[0] + FSCALE/2) >> FSHIFT);
+# else
 	return ((int) (avenrun[0] + 0.5));
+# endif
 }
 
 #else VMUNIX
@@ -556,3 +588,68 @@ getla()
 }
 
 #endif VMUNIX
+/*
+**  SHOULDQUEUE -- should this message be queued or sent?
+**
+**	Compares the message cost to the load average to decide.
+**
+**	Parameters:
+**		pri -- the priority of the message in question.
+**
+**	Returns:
+**		TRUE -- if this message should be queued up for the
+**			time being.
+**		FALSE -- if the load is low enough to send this message.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+shouldqueue(pri)
+	long pri;
+{
+	int la;
+
+	la = getla();
+	if (la < QueueLA)
+		return (FALSE);
+	return (pri > (QueueFactor / (la - QueueLA + 1)));
+}
+/*
+**  SETPROCTITLE -- set process title for ps
+**
+**	Parameters:
+**		fmt -- a printf style format string.
+**		a, b, c -- possible parameters to fmt.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Clobbers argv of our main procedure so ps(1) will
+**		display the title.
+*/
+
+/*VARARGS1*/
+setproctitle(fmt, a, b, c)
+	char *fmt;
+{
+# ifdef SETPROCTITLE
+	register char *p;
+	extern char **Argv;
+	extern char *LastArgv;
+
+	p = Argv[0];
+
+	/* make ps print "(sendmail)" */
+	*p++ = '-';
+
+	(void) sprintf(p, fmt, a, b, c);
+	p += strlen(p);
+
+	/* avoid confusing ps */
+	while (p < LastArgv)
+		*p++ = ' ';
+# endif SETPROCTITLE
+}

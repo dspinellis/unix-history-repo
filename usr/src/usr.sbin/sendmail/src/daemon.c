@@ -14,20 +14,17 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.8 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.4.1.1 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
-# include <sys/socket.h>
-# include <netinet/in.h>
 # include <netdb.h>
-# include <sys/signal.h>
 # include <sys/wait.h>
 # include <sys/time.h>
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.8 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.4.1.1 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -85,8 +82,8 @@ char	*NetName;			/* name of home (local?) network */
 getrequests()
 {
 	int t;
+	union wait status;
 	register struct servent *sp;
-	extern reapchild();
 
 	/*
 	**  Set up the address for the mailer.
@@ -128,10 +125,7 @@ getrequests()
 #ifdef DEBUG
 	/* turn on network debugging? */
 	if (tTd(15, 15))
-	{
-		int on = 1;
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
-	}
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, 0, 0);
 #endif DEBUG
 
 	if (bind(DaemonSocket, &SendmailAddress, sizeof SendmailAddress) < 0)
@@ -146,8 +140,6 @@ getrequests()
 		(void) close(DaemonSocket);
 		goto severe;
 	}
-
-	signal(SIGCHLD, reapchild);
 
 # ifdef DEBUG
 	if (tTd(15, 1))
@@ -201,7 +193,6 @@ getrequests()
 		{
 			extern struct hostent *gethostbyaddr();
 			register struct hostent *hp;
-			extern char *RealHostName;	/* srvrsmtp.c */
 			char buf[MAXNAME];
 
 			/*
@@ -249,30 +240,27 @@ getrequests()
 			return;
 		}
 
+		/*
+		**  PARENT -- wait for child to terminate.
+		**	Perhaps we should allow concurrent processing?
+		*/
+
+# ifdef DEBUG
+		if (tTd(15, 2))
+		{
+			sleep(2);
+			printf("getreq: parent waiting\n");
+		}
+# endif DEBUG
+
 		/* close the port so that others will hang (for a while) */
 		(void) close(t);
+
+		/* pick up old zombies */
+		while (wait3(&status, WNOHANG, (struct rusage *) 0) > 0)
+			continue;
 	}
 	/*NOTREACHED*/
-}
-/*
-**  REAPCHILD -- pick up the body of my child, lest it become a zombie
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Picks up zombies.
-*/
-
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, (struct rusage *) NULL) > 0)
-		continue;
 }
 /*
 **  CLRDAEMON -- reset the daemon connection
@@ -346,11 +334,6 @@ makeconnection(host, port, outfile, infile)
 	{
 		register struct hostent *hp = gethostbyname(host);
 
-		if (errno == ETIMEDOUT)
-		{
-			CurEnv->e_flags &= ~EF_FATALERRS;
-			return (EX_TEMPFAIL);
-		}
 		if (hp == NULL)
 			return (EX_NOHOST);
 		bcopy(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
@@ -400,10 +383,7 @@ makeconnection(host, port, outfile, infile)
 
 	/* turn on network debugging? */
 	if (tTd(16, 14))
-	{
-		int on = 1;
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
-	}
+		(void) setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0);
 # endif DEBUG
 	(void) fflush(CurEnv->e_xfp);			/* for debugging */
 	errno = 0;					/* for debugging */
