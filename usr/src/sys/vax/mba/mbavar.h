@@ -1,4 +1,4 @@
-/*	mbavar.h	3.4	%G%	*/
+/*	mbavar.h	3.5	%G%	*/
 
 /*
  * VAX Massbus adapter registers
@@ -18,9 +18,9 @@ struct mba_regs
 };
 
 #define	MBAINIT		0x1
-#define MBAIE		0x4
+#define	MBAIE		0x4
 
-#define MBAEBITS	0xe0770
+#define	MBAEBITS	0xe0770
 
 #define	PHYSMBA0	((struct mba_regs *)0x20010000)
 #define	PHYSMBA1	((struct mba_regs *)0x20012000)
@@ -35,8 +35,8 @@ struct mba_info
 	struct	pte *mi_map;		/* page table base for nexus */
 };
 
-#define MBA0		((struct mba_regs *)0x80064000)
-#define MBA1		((struct mba_regs *)0x80066000)
+#define	MBA0		((struct mba_regs *)0x80064000)
+#define	MBA1		((struct mba_regs *)0x80066000)
 
 int	mbanum[];
 struct	mba_info mbainfo[];

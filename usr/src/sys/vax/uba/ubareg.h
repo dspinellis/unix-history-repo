@@ -1,4 +1,4 @@
-/*	ubareg.h	3.4	%G%	*/
+/*	ubareg.h	3.5	%G%	*/
 
 /*
  * Unibus adapter
@@ -76,9 +76,9 @@
  
 /* Map Register, MR */
 #define	MRV		0x80000000	/* Map Register Valid */
-#define	BO		0x2000000		/* Byte Offset Bit */
-#define	DPDB		0x1e00000		/* Data Path Designator Field */
-#define	SBIPFN		0xfffff			/* SBI Page Address Field */
+#define	BO		0x2000000	/* Byte Offset Bit */
+#define	DPDB		0x1e00000	/* Data Path Designator Field */
+#define	SBIPFN		0xfffff		/* SBI Page Address Field */
 
 /*
  * Unibus maps
