@@ -4,6 +4,7 @@
 
 #include "include.h"
 
+
 /************************************************************************
 /
 / FUNCTION NAME: movelevel()
@@ -1436,11 +1437,9 @@ readmessage()
 /************************************************************************/
 
 error(whichfile)
-char	*whichfile;
+	char	*whichfile;
 {
-extern int errno;
-extern printw(), printf();
-int	(*funcp)();
+	int	(*funcp)();
 
     if (Windows)
 	{
