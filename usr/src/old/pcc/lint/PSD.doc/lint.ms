@@ -1,10 +1,12 @@
-.\"	@(#)lint.ms	5.1 (Berkeley) %G%
+.\"	@(#)lint.ms	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'PS1:9-%''Lint, a C Program Checker'
+.OH 'Lint, a C Program Checker''PS1:9-%'
+.\".RP
 .ND "July 26, 1978"
 .OK
-Program Portability
-Strong Type Checking
+.\"Program Portability
+.\"Strong Type Checking
 .TL
 Lint, a C Program Checker
 .AU "MH 2C-559" 3968
@@ -1022,7 +1024,7 @@ with the aid of
 .I lint ,
 the desirable properties of universality and portability.
 .SG MH-1273-SCJ-unix
-.bp
+.\".bp
 .[
 $LIST$
 .]
