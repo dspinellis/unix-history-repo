@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -751,6 +751,7 @@ unifind(uhp0, pumem)
 			continue;
 		}
 		printf("vec %o, ipl %x\n", cvec, br);
+		csralloc(ualloc, addr, i);
 		um->um_alive = 1;
 		um->um_ubanum = numuba;
 		um->um_hd = &uba_hd[numuba];
@@ -832,8 +833,7 @@ unifind(uhp0, pumem)
 			continue;
 		}
 		printf("vec %o, ipl %x\n", cvec, br);
-		while (--i >= 0)
-			ualloc[ubdevreg(addr+i)] = 1;
+		csralloc(ualloc, addr, i);
 		ui->ui_hd = &uba_hd[numuba];
 		for (ivec = ui->ui_intr; *ivec; ivec++) {
 			ui->ui_hd->uh_vec[cvec/4] =
@@ -887,6 +887,31 @@ unifind(uhp0, pumem)
 #endif
 
 	wmemfree(ualloc, 8*1024);
+}
+
+/*
+ * Mark addresses starting at "addr" and continuing
+ * "size" bytes as allocated in the map "ualloc".
+ * Warn if the new allocation overlaps a previous allocation.
+ */
+static
+csralloc(ualloc, addr, size)
+	caddr_t ualloc;
+	u_short addr;
+	register int size;
+{
+	register caddr_t p;
+	int warned = 0;
+
+	p = &ualloc[ubdevreg(addr+size)];
+	while (--size >= 0) {
+		if (*--p && !warned) {
+			printf(
+	"WARNING: device registers overlap those for a previous device!\n");
+			warned = 1;
+		}
+		*p = 1;
+	}
 }
 
 /*
