@@ -44,33 +44,40 @@
 
 # msdos versus unix defines
 O	= .o
-PC_O	= .obj
+#PC_O	= .obj
 
 X	=
-PC_X	= .exe
+#PC_X	= .exe
+
+L	=
+#PC_L	= -link
 
 CC	= cc
-PC_CC	= cl
+#PC_CC	= cl
 
 MV	= mv
-PC_MV	= rename
+#PC_MV	= rename
 
 RM	= rm -f
-PC_RM= erase
+#PC_RM= erase
 
 LINT_ARGS =
-PC_LINT_ARGS = -DLINT_ARGS
+#PC_LINT_ARGS = -DLINT_ARGS
 
 DEBUG_FLAGS = -g
-PC_DEBUG_FLAGS = -Zi -Od
+#PC_DEBUG_FLAGS = -Zi -Od
 
 AR	= ar
-C	=
-PC_AR	= lib
-PC_C	= +
+AR1	= cr
+AR2	=
+AR3	=
+#PC_AR	= lib
+#PC_AR1	=
+#PC_AR2	= +
+#PC_AR3	= ";"
 
 RANLIB	= ranlib
-PC_RANLIB = echo "Done with "
+#PC_RANLIB = echo "Done with "
 
 
 PRINT	= print
@@ -99,6 +106,9 @@ MANDIR		= $(DESTDIR)/usr/man/man
 LIBCURSES	= -lcurses
 LIBTERM		= -ltermlib
 
+#PC_LIBCURSES	=
+#PC_LIBTERM	=
+
 # The source files...
 ALLH = telnet.ext
 
@@ -114,8 +124,8 @@ ALLPRINT =	${ALLH} ${ALLC}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak README
 
-SYS	= sys
-PC_SYS	= sys_dos
+SYS	= sys_curses
+#PC_SYS	= sys_dos
 
 # The places where the various components live...
 
@@ -147,10 +157,20 @@ FRC:
 
 tn3270$X:	telnet$O ${SUBLIB}
 	${CC} ${CFLAGS} -o tn3270 telnet$O \
-		${SUBLIB} apilib/apilib.a $(LIBCURSES) $(LIBTERM)
+		$L ${SUBLIB} apilib/apilib.a $(LIBCURSES) $(LIBTERM)
+
+#PC_tn3270$X:
+	link <@<
+	telnet
+	telnet
+	nul
+	${SUBLIB} apilib/apilib.a+
+	\lib\ublib\ubtcp
+	_PC_<
+
 
 mset$X:	mset$O ascii/map3270$O
-	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O apilib/apilib.a
+	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L apilib/apilib.a
 
 telnet$O:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
@@ -210,8 +230,9 @@ lint:
 
 makefiles.pc:
 	for i in . ${SUBDIR} ${EXTRADIR}; \
-	do (sed -e "s/lib\.a/.lib/g" -e "s/^PC_//" < $$i/makefile | \
-			    mkmake | sed -e "sx/x\\\\x" > $$i/makefile.mak); \
+	do (sed -e "s/lib\.a/.lib/g" -e "s/^#PC_//" < $$i/makefile | \
+		mkmake | \
+		sed -e "sx/x\\\\xg" -e "s/[ 	]*_PC_//" > $$i/makefile.mak); \
 	    done
 
 .DEFAULT:
