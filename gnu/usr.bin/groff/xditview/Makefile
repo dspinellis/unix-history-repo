@@ -1,4 +1,4 @@
-.if exists(/usr/X386)
+.if exists(${DESTDIR}/usr/X386)
 
 BINDIR=		/usr/X386/bin
 MANDIR=		/usr/X386/man/man
