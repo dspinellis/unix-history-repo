@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rcp.1	6.14 (Berkeley) %G%
+.\"	@(#)rcp.1	6.14.1.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RCP 1
@@ -13,11 +13,11 @@
 .Nd remote file copy
 .Sh SYNOPSIS
 .Nm rcp
-.Op Fl px
+.Op Fl p
 .Op Fl k Ar realm
 .Ar file1 file2
 .Nm rcp
-.Op Fl px
+.Op Fl p
 .Op Fl r
 .Op Fl k Ar realm
 .Ar file ...
@@ -62,17 +62,6 @@ for the remote host in realm
 .Ar realm
 instead of the remote host's realm as determined by
 .Xr krb_realmofhost  3  .
-.It Fl x
-The
-.Fl x
-option turns on
-.Tn DES
-encryption for all data passed by
-.Nm rcp .
-This may impact response time and
-.Tn CPU
-utilization, but provides
-increased security.
 .El
 .Pp
 If

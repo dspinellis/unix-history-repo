@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rsh.1	6.10 (Berkeley) %G%
+.\"	@(#)rsh.1	6.10.1.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RSH 1
@@ -13,7 +13,7 @@
 .Nd remote shell
 .Sh SYNOPSIS
 .Nm rsh
-.Op Fl Kdnx
+.Op Fl Kdn
 .Op Fl k Ar realm
 .Op Fl l Ar username
 .Ar host
@@ -72,13 +72,6 @@ option redirects input from the special device
 (see the
 .Sx BUGS
 section of this manual page).
-.It Fl x
-The
-.Fl x
-option turns on
-.Tn DES
-encryption for all data exchange.
-This may introduce a significant delay in response time.
 .El
 .Pp
 If no
