@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rmdir.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)rmdir.c	4.2 (Berkeley) %G%";
 /*
  * Remove directory
  */
@@ -36,8 +36,25 @@ char *d;
 	struct	direct	dir;
 
 	strcpy(name, d);
+
+	/* eat trailing slashes */
+	np = &(name[strlen(name)-1]);
+	while (*np == '/' && np != name) {
+		*np = '\0';
+		np--;
+	}
+
+	/* point after last slash */
 	if((np = rindex(name, '/')) == NULL)
 		np = name;
+	else
+		np++;
+
+	if(!strcmp(np, ".") || !strcmp(np, "..")) {
+		fprintf(stderr, "rmdir: cannot remove . or ..\n");
+		++Errors;
+		return;
+	}
 	if(stat(name,&st) < 0) {
 		fprintf(stderr, "rmdir: %s non-existent\n", name);
 		++Errors;
@@ -73,11 +90,6 @@ char *d;
 		return;
 	}
 	close(fd);
-	if(!strcmp(np, ".") || !strcmp(np, "..")) {
-		fprintf(stderr, "rmdir: cannot remove . or ..\n");
-		++Errors;
-		return;
-	}
 	strcat(name, "/.");
 	if((access(name, 0)) < 0) {		/* name/. non-existent */
 		strcat(name, ".");
