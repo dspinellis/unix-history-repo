@@ -75,12 +75,12 @@
 %{
 
 /*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.19 (Berkeley) %G%
+ *	@(#)config.y	8.1 (Berkeley) %G%
  */
 
 #include "config.h"
