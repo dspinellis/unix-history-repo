@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsockopt.2	6.11 (Berkeley) %G%
+.\"     @(#)getsockopt.2	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSOCKOPT 2
@@ -218,10 +218,10 @@ In general, receive calls will block until any (non-zero) amount of data
 is received, then return with smaller of the amount available or the amount
 requested.
 The default value for
-.Dv SO_SNDLOWAT
+.Dv SO_RCVLOWAT
 is 1.
 If 
-.Dv SO_SNDLOWAT
+.Dv SO_RCVLOWAT
 is set to a larger value, blocking receive calls normally
 wait until they have received the smaller of the low water mark value
 or the requested amount.
