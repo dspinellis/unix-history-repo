@@ -1,13 +1,13 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.local.8	6.7 (Berkeley) %G%
+.\"	@(#)mail.local.8	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL.LOCAL 8
-.Os ATT 7th
+.Os
 .Sh NAME
 .Nm mail.local
 .Nd store mail in a mailbox
@@ -15,11 +15,10 @@
 .Nm mail.local
 .Op Fl f Ar from
 .Ar user ...
-.Pp
 .Sh DESCRIPTION
 .Nm Mail.local
 reads the standard input up to an end-of-file and appends it to each
-.Sf Ar user \'s
+.Ar user 's
 .Pa mail
 file.
 The
@@ -27,13 +26,10 @@ The
 must be a valid user name.
 .Pp
 The options are as follows:
-.Tw Fl
-.Tc Fl f
-.Ws
-.Ar from
-.Cx
+.Bl -tag -width xxxfrom
+.It Fl f Ar from
 Specify the sender's name.
-.Tp
+.El
 .Pp
 Individual mail messages in the mailbox are delimited by an empty
 line followed by a line beginning with the string ``From ''.
@@ -55,17 +51,17 @@ The
 .Nm mail.local
 utility exits 0 on success, and >0 if an error occurs.
 .Sh ENVIRONMENT
-.Tw Fl
-.Tp Ev TZ
+.Bl -tag -width indent
+.It Ev TZ
 Used to set the appropriate time zone on the timestamp.
+.El
 .Sh FILES
-.Dw /tmp/local.XXXXXX
-.Di L
-.Dp Pa /tmp/local.XXXXXX
+.Bl -tag -width /tmp/local.XXXXXX -compact
+.It Pa /tmp/local.XXXXXX
 temporary files
-.Dp Pa /var/mail/user
+.It Pa /var/mail/user
 user's mailbox directory
-.Dp
+.El
 .Sh SEE ALSO
 .Xr mail 1 ,
 .Xr xsend 1 ,
@@ -77,5 +73,7 @@ user's mailbox directory
 A superset of
 .Nm mail.local
 (handling mailbox reading as well as mail delivery)
-appeared in Version 7 AT&T Unix as the program
+appeared in
+.At v7 .
+as the program
 .Nm mail .
