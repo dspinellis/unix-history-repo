@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)dm.c	5.13 (Berkeley) %G%";
 #include <ctype.h>
 #include "pathnames.h"
 
+extern int errno;
 static time_t	now;			/* current time value */
 static int	priority = 0;		/* priority game runs at */
 static char	*game,			/* requested game */
@@ -73,7 +74,6 @@ static
 play(args)
 	char **args;
 {
-	extern int errno;
 	char pbuf[MAXPATHLEN], *strcpy(), *strerror();
 
 	(void)strcpy(pbuf, _PATH_HIDE);
@@ -230,11 +230,13 @@ load()
 static
 users()
 {
+	
 	register int nusers, utmp;
 	struct utmp buf;
 
-	if ((utmp = open("/etc/utmp", O_RDONLY, 0)) < 0) {
-		perror("dm: /etc/utmp");
+	if ((utmp = open(_PATH_UTMP, O_RDONLY, 0)) < 0) {
+		(void)fprintf(stderr, "dm: %s: %s\n",
+		    _PATH_UTMP, strerror(errno));
 		exit(1);
 	}
 	for (nusers = 0; read(utmp, (char *)&buf, sizeof(struct utmp)) > 0;)
