@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.18 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.19 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.18 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.19 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -58,11 +58,9 @@ getmxrr(host, mxhosts, localhost, rcode)
 	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
 	if (n < 0)
 	{
-#ifdef DEBUG
 		if (tTd(8, 1))
 			printf("getmxrr: res_search failed (errno=%d, h_errno=%d)\n",
 			    errno, h_errno);
-#endif
 		switch (h_errno)
 		{
 		  case NO_DATA:
@@ -109,11 +107,9 @@ getmxrr(host, mxhosts, localhost, rcode)
  		cp += sizeof(u_short) + sizeof(u_long);
 		GETSHORT(n, cp);
 		if (type != T_MX)  {
-#ifdef DEBUG
 			if (tTd(8, 1) || _res.options & RES_DEBUG)
 				printf("unexpected answer type %d, size %d\n",
 				    type, n);
-#endif
 			cp += n;
 			continue;
 		}
@@ -199,11 +195,9 @@ loop:
 	n = res_search(host, C_IN, T_CNAME, (char *)&answer, sizeof(answer));
 # endif
 	if (n < 0) {
-#ifdef DEBUG
 		if (tTd(8, 1))
 			printf("getcanonname:  res_search failed (errno=%d, h_errno=%d)\n",
 			    errno, h_errno);
-#endif
 		return;
 	}
 
@@ -213,10 +207,8 @@ loop:
 
 	/* we don't care about errors here, only if we got an answer */
 	if (ancount == 0) {
-#ifdef DEBUG
 		if (tTd(8, 1))
 			printf("rcode = %d, ancount=%d\n", hp->rcode, ancount);
-#endif
 		return;
 	}
 	cp = (u_char *)&answer + sizeof(HEADER);

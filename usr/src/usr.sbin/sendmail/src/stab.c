@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stab.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)stab.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -57,10 +57,8 @@ stab(name, type, op)
 	register char *p;
 	extern char lower();
 
-# ifdef DEBUG
 	if (tTd(36, 5))
 		printf("STAB: %s %d ", name, type);
-# endif DEBUG
 
 	/*
 	**  Compute the hashing function
@@ -72,10 +70,8 @@ stab(name, type, op)
 	for (p = name; *p != '\0'; p++)
 		hfunc = (((hfunc << 7) | lower(*p)) & 077777) % STABSIZE;
 
-# ifdef DEBUG
 	if (tTd(36, 9))
 		printf("(hfunc=%d) ", hfunc);
-# endif DEBUG
 
 	ps = &SymTab[hfunc];
 	while ((s = *ps) != NULL && (strcasecmp(name, s->s_name) || s->s_type != type))
@@ -87,7 +83,6 @@ stab(name, type, op)
 
 	if (s != NULL || op == ST_FIND)
 	{
-# ifdef DEBUG
 		if (tTd(36, 5))
 		{
 			if (s == NULL)
@@ -100,7 +95,6 @@ stab(name, type, op)
 					s->s_type, lp[0], lp[1], lp[2], lp[3]);
 			}
 		}
-# endif DEBUG
 		return (s);
 	}
 
@@ -108,10 +102,8 @@ stab(name, type, op)
 	**  Make a new entry and link it in.
 	*/
 
-# ifdef DEBUG
 	if (tTd(36, 5))
 		printf("entered\n");
-# endif DEBUG
 
 	/* make new entry */
 	s = (STAB *) xalloc(sizeof *s);

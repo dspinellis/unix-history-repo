@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -59,13 +59,11 @@ sendtolist(list, ctladdr, sendq)
 	bool selfref;		/* set if this list includes ctladdr */
 	char delimiter;		/* the address delimiter */
 
-# ifdef DEBUG
 	if (tTd(25, 1))
 	{
 		printf("sendto: %s\n   ctladdr=", list);
 		printaddr(ctladdr, FALSE);
 	}
-# endif DEBUG
 
 	/* heuristic to determine old versus new style addresses */
 	if (ctladdr == NULL &&
@@ -164,13 +162,11 @@ recipient(a, sendq)
 	CurEnv->e_to = a->q_paddr;
 	m = a->q_mailer;
 	errno = 0;
-# ifdef DEBUG
 	if (tTd(26, 1))
 	{
 		printf("\nrecipient: ");
 		printaddr(a, FALSE);
 	}
-# endif DEBUG
 
 	/* break aliasing loops */
 	if (AliasLevel > MAXRCRSN)
@@ -224,13 +220,11 @@ recipient(a, sendq)
 	{
 		if (!ForceMail && sameaddr(q, a))
 		{
-# ifdef DEBUG
 			if (tTd(26, 1))
 			{
 				printf("%s in sendq: ", a->q_paddr);
 				printaddr(q, FALSE);
 			}
-# endif DEBUG
 			if (!bitset(QDONTSEND, a->q_flags))
 				message(Arpa_Info, "duplicate suppressed");
 			if (!bitset(QPRIMARY, q->q_flags))
