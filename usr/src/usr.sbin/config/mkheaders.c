@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkheaders.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkheaders.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -131,7 +131,7 @@ do_header(dev, hname, count)
 		exit(1);
 	}
 	for (fl = fl_head; fl != 0; fl = fl->f_next) {
-		fprintf(outf, "#define %s %d\n",
+		fprintf(outf, "#define %s %u\n",
 		    fl->f_fn, count ? fl->f_type : 0);
 		free((char *)fl);
 	}
