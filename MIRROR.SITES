@@ -35,7 +35,7 @@ Russia		ftp.kiae.su:/FreeBSD
 		<arcman@kiae.su>
 
 UK		src.doc.ic.ac.uk:/packages/FreeBSD
-		<unknown>
+		<wizards@doc.ic.ac.uk>
 
 USA		gatekeeper.dec.com:/pub/BSD/FreeBSD
 		<hubbard@gatekeeper.dec.com>
@@ -44,4 +44,4 @@ USA		freebsd.uml.edu:/FreeBSD
 		<oneill@cs.uml.edu>
 
 
-$Id: MIRROR.SITES,v 1.10 1994/04/20 12:06:50 jkh Exp $
+$Id: MIRROR.SITES,v 1.11 1994/04/21 01:00:47 rgrimes Exp $
