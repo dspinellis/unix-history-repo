@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.75	83/02/22	*/
+/*	tcp_usrreq.c	1.76	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -205,6 +205,8 @@ tcp_usrreq(so, req, m, nam)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
 #endif
 		error = tcp_output(tp);
+		if (error == ENOBUFS)		/* XXX */
+			error = 0;		/* XXX */
 		break;
 
 	/*
