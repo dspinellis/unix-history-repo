@@ -1,4 +1,4 @@
-/*	if_en.c	4.31	82/01/30	*/
+/*	if_en.c	4.32	82/02/03	*/
 
 #include "en.h"
 
@@ -112,6 +112,7 @@ COUNT(ENATTACH);
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
 	es->es_if.if_ubareset = enreset;
+	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16;
 	if_attach(&es->es_if);
 }
 
@@ -250,11 +251,11 @@ COUNT(ENXINT);
 		es->es_if.if_oerrors++;
 		printf("en%d: output error\n", unit);
 	}
+	if (es->es_ifuba.ifu_xtofree) {
+		m_freem(es->es_ifuba.ifu_xtofree);
+		es->es_ifuba.ifu_xtofree = 0;
+	}
 	if (es->es_if.if_snd.ifq_head == 0) {
-		if (es->es_ifuba.ifu_xtofree) {
-			m_freem(es->es_ifuba.ifu_xtofree);
-			es->es_ifuba.ifu_xtofree = 0;
-		}
 		es->es_lastx = 0;
 		return;
 	}
