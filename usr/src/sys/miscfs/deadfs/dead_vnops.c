@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.6 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -172,6 +172,7 @@ dead_strategy(bp)
 
 	if (bp->b_vp == NULL || !chkvnlock(bp->b_vp)) {
 		bp->b_flags |= B_ERROR;
+		biodone(bp);
 		return (EIO);
 	}
 	return (VOP_STRATEGY(bp));
