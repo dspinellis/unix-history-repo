@@ -8,11 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.16 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)pstat.c	5.17 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Print system stuff
@@ -140,90 +140,77 @@ u_long	getword();
 off_t	mkphys();
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	register char *argp;
-	int allflags;
+	extern char *optarg;
+	extern int optind;
+	int ch;
 
-	argc--, argv++;
-	while (argc > 0 && **argv == '-') {
-		argp = *argv++;
-		argp++;
-		argc--;
-		while (*argp++)
-		switch (argp[-1]) {
-
+	while ((ch = getopt(argc, argv, "Tafikptu:sx")) != EOF)
+		switch((char)ch) {
 		case 'T':
 			totflg++;
 			break;
-
 		case 'a':
 			allflg++;
-			break;
-
-		case 'i':
-			inof++;
-			break;
-
-		case 'k':
-			kflg++;
-			fcore = fmem = "/vmcore";
-			break;
-
-		case 'x':
-			txtf++;
-			break;
-
+			/*FALLTHROUGH*/
 		case 'p':
 			prcf++;
 			break;
-
+		case 'f':
+			filf++;
+			break;
+		case 'i':
+			inof++;
+			break;
+		case 'k':			/* undocumented */
+			kflg++;
+			fcore = fmem = "/vmcore";
+			break;
 		case 't':
 			ttyf++;
 			break;
-
 		case 'u':
-			if (argc == 0)
-				break;
-			argc--;
 			usrf++;
-			sscanf( *argv++, "%x", &ubase);
-			break;
-
-		case 'f':
-			filf++;
+			sscanf(optarg, "%x", &ubase);
 			break;
 		case 's':
 			swpf++;
 			break;
+		case 'x':
+			txtf++;
+			break;
+		case '?':
 		default:
-			usage();
+			printf("usage: pstat -[Tafiptsx] [-u [ubase]] [system] [core]\n");
 			exit(1);
 		}
-	}
+	argc -= optind;
+	argv += optind;
+
 	if (argc>1) {
 		fcore = fmem = argv[1];
 		kflg++;
 	}
-	if ((fc = open(fcore, 0)) < 0) {
-		printf("Can't find %s\n", fcore);
+	if ((fc = open(fcore, O_RDONLY, 0)) < 0) {
+		perror(fcore);
 		exit(1);
 	}
-	if ((fm = open(fmem, 0)) < 0) {
-		printf("Can't find %s\n", fmem);
+	if ((fm = open(fmem, O_RDONLY, 0)) < 0) {
+		perror(fmem);
 		exit(1);
 	}
 	if (argc>0)
 		fnlist = argv[0];
 	nlist(fnlist, nl);
-	usrpt = (struct pte *)nl[USRPT].n_value;
-	Usrptma = (struct pte *)nl[USRPTMA].n_value;
 	if (nl[0].n_type == 0) {
-		printf("no namelist\n");
+		printf("pstat: no namelist.\n");
 		exit(1);
 	}
-	allflags = filf | totflg | inof | prcf | txtf | ttyf | usrf | swpf;
-	if (allflags == 0) {
+	usrpt = (struct pte *)nl[USRPT].n_value;
+	Usrptma = (struct pte *)nl[USRPTMA].n_value;
+	if (!(filf | totflg | inof | prcf | txtf | ttyf | usrf | swpf)) {
 		printf("pstat: one or more of -[aixptfsu] is required\n");
 		exit(1);
 	}
@@ -241,12 +228,6 @@ char **argv;
 		dousr();
 	if (swpf||totflg)
 		doswap();
-}
-
-usage()
-{
-
-	printf("usage: pstat -[aixptfs] [-u [ubase]] [system] [core]\n");
 }
 
 doinode()
