@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.34 (Berkeley) %G%
+.\"	@(#)op.me	6.35 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.34
+Version 6.35
 .sp
-For Sendmail Version 6.51
+For Sendmail Version 6.52
 .)l
 .sp 2
 .pp
@@ -2059,6 +2059,19 @@ the input is rewritten to the
 The
 .i comments
 are ignored.
+.pp
+Macro expansions of the form
+.b $ \c
+.i x
+are performed when the configuration file is read.
+Expansions of the form
+.b $& \c
+.i x
+are performed at run time using a somewhat less general algorithm.
+This for is intended only for referencing internally defined macros
+such as
+.b $h
+that are changed at runtime.
 .sh 4 "The left hand side"
 .pp
 The left hand side of rewriting rules contains a pattern.
@@ -2449,12 +2462,16 @@ using the construct
 where
 .i x
 is the name of the macro to be interpolated.
-In particular,
-lower case letters are reserved to have
-special semantics,
-used to pass information in or out of sendmail,
-and some special characters are reserved to
-provide conditionals, etc.
+This interpolation is done when the configuration file is read,
+except in
+.b M
+lines.
+The special construct
+.b $& \c
+.i x
+can be used in
+.b R
+lines to get deferred interpolation.
 .pp
 Conditionals can be specified using the syntax:
 .(b
@@ -2473,6 +2490,18 @@ The
 (\c
 .b $| )
 clause may be omitted.
+.pp
+Lower case macro names are reserved to have
+special semantics,
+used to pass information in or out of sendmail,
+and special characters are reserved to
+provide conditionals, etc.
+Upper case names
+(that is,
+.b $A
+through
+.b $Z )
+are specifically reserved for configuration file authors.
 .pp
 The following macros
 .i must
@@ -5935,7 +5964,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.34
+.\"Version 6.35
 .\".ce 0
 .pn 2
 .bp
