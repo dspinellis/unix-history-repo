@@ -1,0 +1,41 @@
+For more information while running calc, type  help  followed by one of the
+following topics:
+
+	topic		description
+	-----		-----------
+	intro		a brief introduction to calc
+	command		top level commands
+	expression	expression sequences
+	define		how to define functions
+	variable	variables and variable declarations
+	statement	flow control and declaration statements
+	operator	math, relational, logic and variable access operators
+	types		builtin data types
+	obj		user defined data types
+	mat		using matrices
+	list		using lists
+	file		using files
+	builtin		builtin functions
+	config		configuration parameters
+	interrupt	how interrupts are handled
+	history		command history
+	usage		how to invoke the calc command
+	todo		needed enhancements
+	credit		who wrote calc, and who helped, copyright
+	full		all of the above topics
+	help		this file
+	overview	brief overview of calc
+	stdlib		description of some lib files shipped with calc
+	environment	how environment variables effect calc
+	bindings	input & history character bindings
+
+For example:
+
+	help usage
+
+will print the calc command usage information.  One can obtain calc help
+without invoking any startup code by running calc as follows:
+
+	calc -q help topic
+
+where 'topic' is one of the topics listed above.

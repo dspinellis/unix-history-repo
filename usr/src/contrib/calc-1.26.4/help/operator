@@ -1,0 +1,78 @@
+Operators
+
+	The operators are similar to C, but the precedence of most of
+	the operators differs.  In addition, there are several additional
+	operators, and some C operators are missing.  The following list
+	gives the operators arranged in order of precedence, from the
+	least tightly binding to the most tightly binding.
+
+
+	,	Comma operator.
+		For situations in which a comma is used for another purpose
+		(function arguments, array indexing, and the print statement),
+		parenthesis must be used around the comma operator.
+
+	a?:b:c	Conditional value.
+		The test for 'a' is identical to an if test.
+
+	=  +=  -=  *=  /=  %=  //=  &=  |=  <<=  >>=  ^=  **=
+		Assignments.
+
+	||	Conditional OR.
+		Unlike C, the result is the first non-zero expression or 0,
+		instead of just 0 or 1.
+
+	&&	Conditional AND.
+		Unlike C, the result is the last expression or 0,
+		instead of just 0 or 1.
+
+	==  !=  <=  >=  <  >
+		Relations.
+
+	+  -
+		Binary plus and minus.
+
+	*  /  //  %
+		Multiply, divide. and modulo.
+		Please Note: The '/' operator is a fractional divide,
+		whereas the '//' is an integral divide.  Thus think of '/'
+		as division of real numbers, and think of '//' as division
+		of integers (e.g., 8 / 3 is 8/3 whereas 8 // 3 is 2).
+		The '%' is integral or fractional modulus (e.g., 11%4 is 3,
+		and 10%pi() is ~.575222).
+
+	|	Logical OR.
+		The signs of numbers do not affect the bit value.
+
+	&	Logical AND.
+		The signs of numbers do not affect the bit value.
+
+	^  **  <<  >>
+		Powers and shifts.
+		The '^' and '**' are both exponentiation (e.g., 2^3 is 8).
+		The signs of numbers do not affect the bit values of shifts.
+		These operators associate rightward (e.g., 1<<3^2 is 512).
+
+	+  -  !
+		Unary operators.
+		The '!' is the logical NOT operator.  Be careful about
+		using this as the first character of a top level command,
+		since it is also used for executing shell commands.
+
+	++  --
+		Pre or post indexing.
+		These are applicable only to variables.
+
+	[ ]  [[ ]]  .  ( )
+		Indexing, double-bracket indexing, element references,
+		and function calls.  Indexing can only be applied to matrices,
+		element references can only be applied to objects, but
+		double-bracket indexing can be applied to matrices, objects,
+		or lists.
+
+	variables  constants  .  ( )
+		These are variable names and constants, the special '.' symbol,
+		or a parenthesized expression.  Variable names begin with a
+		letter, but then can contain letters, digits, or underscores.
+		Constants are numbers in various formats, or strings inside
+		either single or double quote marks.

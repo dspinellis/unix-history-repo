@@ -1,0 +1,77 @@
+Needed enhancements
+
+	Send calc comments, suggestions, bug fixes, enhancements and
+	interesting calc scripts that you would like you see included in
+	future distributions to:
+
+		chongo@toad.com
+		(David I. Bell does not currently have an email address)
+
+	The following items are in the calc wish list.  Programs like this
+	can be extended and improved forever.
+
+
+	The following changes are currently planned to be implemented in
+	the next release of calc.
+
+	*  Add initializers for matrices, similarly to:
+		mat yummo[] = {2, 3, 5, 7, 13, 17, 19, 31, 61, 89, 107};
+
+	*  Add a "static" keyword to allow permanent variables to be
+	   defined which are local either to a file or to a function.
+
+	*  Add a "association" type of value, which is an associative array.
+	   Such values can be "indexed" by arbitrary values using hash
+	   tables, as in:
+	   	fred['hello'] = 9;
+
+	*  Implement an autoload feature.  Associate a calc library filename
+	   with a function or global variable.  On the first reference of
+	   such item, perform an automatic load of that file.
+
+
+	The following is a list of changes which might be done someday.
+
+	*  Use faster multiply and divide algorithms for large numbers.
+
+	*  Add error handling statements, so that QUITs, errors from the 
+	   'eval' function, division by zeroes, and so on can be caught.
+	   This should be done using syntax similar to:
+
+		    ONERROR statement DO statement;
+
+	   Something like signal isn't versatile enough.
+
+	*  Add a debugging capability so that functions can be single stepped,
+	   breakpoints inserted, variables displayed, and so on.
+
+	*  Figure out how to write all variables out to a file, including
+	   deeply nested arrays, lists, and objects.
+
+	*  Implement pointers.
+
+	*  Eliminate the need for the define keyword by doing smarter parsing.
+
+	*  Allow results of a command (or all commands) to be re-directed to a 
+	   file or piped into a command.
+
+	*  Add some kind of #include and #define facility.  Perhaps use
+	   the C pre-processor itself?
+
+	*  Allow one to undefine anything.  Allow one to test if anything
+	   is defined.
+
+	*  Support a more general input and output base mode other than
+	   just dec, hex or octal.
+
+	*  Allow support of POSIX bc via a translator reads bc commands, 
+	   converts it to calc and pipes it into calc.
+
+	*  Implement a form of symbolic algebra.  Work on this has already
+	   begun.  This will use backquotes to define expressions, and new
+	   functions will be able to act on expressions.  For example:
+	   	x = `hello * strlen(mom)`;
+		x = sub(x, `hello`, `hello + 1`);
+		x = sub(x, `hello`, 10, `mom`, "curds");
+		eval(x);
+	   prints 55.
