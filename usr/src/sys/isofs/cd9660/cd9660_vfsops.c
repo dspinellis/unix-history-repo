@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.10 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -91,7 +91,7 @@ cd9660_mountroot()
 		free(mp, M_MOUNT);
 		return (error);
 	}
-	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
 	imp = VFSTOISOFS(mp);
