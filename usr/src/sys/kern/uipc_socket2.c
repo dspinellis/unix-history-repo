@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.13 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -457,6 +457,29 @@ sbappend(sb, m)
 	}
 	sbcompress(sb, m, n);
 }
+
+#ifdef SOCKBUF_DEBUG
+sbcheck(sb)
+	register struct sockbuf *sb;
+{
+	register struct mbuf *m;
+	register int len = 0, mbcnt = 0;
+
+	for (m = sb->sb_mb; m; m = m->m_next) {
+		len += m->m_len;
+		mbcnt += MSIZE;
+		if (m->m_flags & M_EXT)
+			mbcnt += m->m_ext.ext_size;
+		if (m->m_nextpkt)
+			panic("sbcheck nextpkt");
+	}
+	if (len != sb->sb_cc || mbcnt != sb->sb_mbcnt) {
+		printf("cc %d != %d || mbcnt %d != %d\n", len, sb->sb_cc,
+		    mbcnt, sb->sb_mbcnt);
+		panic("sbcheck");
+	}
+}
+#endif
 
 /*
  * As above, except the mbuf chain
