@@ -11,7 +11,7 @@ int		plodput();
  * as formatting of lines (printing of control characters,
  * line numbering and the like).
  *
- * @(#)cr_put.c	1.5 (Berkeley) %G%
+ * @(#)cr_put.c	1.6 (Berkeley) %G%
  */
 
 /*
@@ -43,11 +43,11 @@ fgoto()
 	reg char	*cgp;
 	reg int		l, c;
 
-	if (destcol > COLS - 1) {
+	if (destcol >= COLS) {
 		destline += destcol / COLS;
 		destcol %= COLS;
 	}
-	if (outcol > COLS - 1) {
+	if (outcol >= COLS) {
 		l = (outcol + 1) / COLS;
 		outline += l;
 		outcol %= COLS;
@@ -71,7 +71,7 @@ fgoto()
 			outline = LINES - 1;
 		}
 	}
-	if (destline > LINES - 1) {
+	if (destline >= LINES) {
 		l = destline;
 		destline = LINES - 1;
 		if (outline < LINES - 1) {
@@ -81,7 +81,7 @@ fgoto()
 			fgoto();
 			destcol = c;
 		}
-		while (l > LINES - 1) {
+		while (l >= LINES) {
 			/*
 			 * The following linefeed (or simulation thereof)
 			 * is supposed to scroll up the screen, since we
@@ -111,8 +111,7 @@ fgoto()
 	}
 	if (destline < outline && !(CA || UP))
 		destline = outline;
-	if (CA)
-	{
+	if (CA) {
 		cgp = tgoto(CM, destcol, destline);
 		if (plod(strlen(cgp)) > 0)
 			plod(0);
@@ -258,7 +257,10 @@ plod(cnt)
 		else
 			plodput('\r');
 		if (NC) {
-			put_nl();
+			if (NL)
+				tputs(NL, 0, plodput);
+			else
+				plodput('\n');
 			outline++;
 		}
 		outcol = 0;
@@ -266,7 +268,10 @@ plod(cnt)
 dontcr:
 	while (outline < destline) {
 		outline++;
-		put_nl();
+		if (NL)
+			tputs(NL, 0, plodput);
+		else
+			plodput('\n');
 		if (plodcnt < 0)
 			goto out;
 		if (NONL || _pfast == 0)
@@ -374,21 +379,4 @@ int col, ts;
 	else
 		offset = 0;
 	return col + ts - (col % ts) + offset;
-}
-
-/*
- * put out a newline appropriately, twice if necessary (uck)
- */
-static
-put_nl()
-{
-	if (NL)
-		tputs(NL, 0, plodput);
-	else
-		plodput('\n');
-	if (AM && XN && outcol == COLS - 1)
-		if (NL)
-			tputs(NL, 0, plodput);
-		else
-			plodput('\n');
 }

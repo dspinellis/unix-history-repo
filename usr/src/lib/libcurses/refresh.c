@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * @(#)refresh.c	1.9 (Berkeley) %G%
+ * @(#)refresh.c	1.10 (Berkeley) %G%
  */
 
 # include	"curses.ext"
@@ -256,9 +256,21 @@ short		wy;
 			if (lx == wx + win->_begx)	/* if no change */
 				break;
 			lx = wx + win->_begx;
+			if (lx >= COLS && AM) {
+				lx = 0;
+				ly++;
+				/*
+				 * xn glitch: chomps a newline after auto-wrap.
+				 * we just feed it now and forget about it.
+				 */
+				if (XN) {
+					_putchar('\n');
+					_putchar('\r');
+				}
+			}
 		}
-		else if (wx < lch)
-			while (*nsp == *csp && wx < lch) {
+		else if (wx <= lch)
+			while (*nsp == *csp && wx <= lch) {
 				nsp++;
 				if (!curwin)
 					csp++;
