@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -134,8 +134,11 @@ pass1()
 					zlnhead = zlnp;
 				}
 			}
-			statemap[inumber] =
-			    (dp->di_mode & IFMT) == IFDIR ? DSTATE : FSTATE;
+			if ((dp->di_mode & IFMT) == IFDIR) {
+				statemap[inumber] = DSTATE;
+				cacheino(dp, inumber);
+			} else
+				statemap[inumber] = FSTATE;
 			badblk = dupblk = 0;
 			idesc.id_number = inumber;
 			(void)ckinode(dp, &idesc);

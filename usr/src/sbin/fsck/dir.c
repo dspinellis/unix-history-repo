@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,7 +49,7 @@ descend(parentino, inumber)
 	if (statemap[inumber] != DSTATE)
 		errexit("BAD INODE %d TO DESCEND", statemap[inumber]);
 	statemap[inumber] = DFOUND;
-	dp = ginode(inumber);
+	dp = getcacheino(inumber);
 	if (dp->di_size == 0) {
 		direrror(inumber, "ZERO LENGTH DIRECTORY");
 		if (reply("REMOVE") == 1)
@@ -59,8 +59,11 @@ descend(parentino, inumber)
 	if (dp->di_size < MINDIRSIZE) {
 		direrror(inumber, "DIRECTORY TOO SHORT");
 		dp->di_size = MINDIRSIZE;
-		if (reply("FIX") == 1)
+		if (reply("FIX") == 1) {
+			dp = ginode(inumber);
+			dp->di_size = MINDIRSIZE;
 			inodirty();
+		}
 	}
 	if ((dp->di_size & (DIRBLKSIZ - 1)) != 0) {
 		pwarn("DIRECTORY %s: LENGTH %d NOT MULTIPLE OF %d",
@@ -68,8 +71,11 @@ descend(parentino, inumber)
 		dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
 		if (preen)
 			printf(" (ADJUSTED)\n");
-		if (preen || reply("ADJUST") == 1)
+		if (preen || reply("ADJUST") == 1) {
+			dp = ginode(inumber);
+			dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
 			inodirty();
+		}
 	}
 	curino.id_type = DATA;
 	curino.id_func = parentino->id_func;
