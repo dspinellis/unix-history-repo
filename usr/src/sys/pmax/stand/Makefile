@@ -1,12 +1,12 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	8.4 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
 INCPATH=-I. -I/sys
 VPATH=	${STAND}
 
-# RELOC=80200000 allows for boot prog up to 1D0000 (1900544) bytes long
-RELOC=	80200000
+# RELOC=80300000 allows for boot prog up to 2D0000 (2949120) bytes long
+RELOC=	80300000
 
 DEFS= -DSTANDALONE -DSMALL
 CFLAGS=	-O2 ${INCPATH} ${DEFS}
@@ -23,8 +23,6 @@ ALL=	boot mkboot mkboottape dec_label
 	    ${AS} -o ${.TARGET}
 
 all: ${ALL}
-
-boot: ${LIBS}
 
 libsa/libsa.a::
 	cd libsa; make
