@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.6	(Berkeley)	83/03/05";
+static char sccsid[] = "@(#)tape.c	3.7	(Berkeley)	83/03/06";
 #endif
 
 #include "restore.h"
@@ -144,7 +144,7 @@ setup()
 	}
 	maxino = (spcl.c_count * TP_BSIZE * NBBY) + 1;
 	dprintf(stderr, "maxino = %d\n", maxino);
-	map = (char *)calloc(1, (int)howmany(maxino, NBBY));
+	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == (char *)NIL)
 		panic("no memory for file removal list\n");
 	curfile.action = USING;
@@ -154,7 +154,7 @@ setup()
 		fprintf(stderr, "Cannot find file dump list\n");
 		done(1);
 	}
-	map = (char *)calloc(1, (int)howmany(maxino, NBBY));
+	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == (char *)NULL)
 		panic("no memory for file dump list\n");
 	curfile.action = USING;
@@ -234,7 +234,8 @@ gethdr:
 		goto again;
 	}
 	if (tmpbuf.c_date != dumpdate || tmpbuf.c_ddate != dumptime) {
-		fprintf(stderr, "Wrong dump date (%s)\n", ctime(tmpbuf.c_date));
+		fprintf(stderr, "Wrong dump date (%s)\n",
+			ctime(&tmpbuf.c_date));
 		volno = 0;
 		goto again;
 	}
@@ -498,7 +499,8 @@ readtape(b)
 	char *b;
 {
 	register long i;
-	long rd, cnt, newvol;
+	long rd, newvol;
+	int cnt;
 
 	if (bct >= NTREC) {
 		for (i = 0; i < NTREC; i++)
@@ -715,7 +717,7 @@ good:
 accthdr(header)
 	struct s_spcl *header;
 {
-	static ino_t previno = 0xffffffff;
+	static ino_t previno = 0x7fffffff;
 	static int prevtype;
 	static long predict;
 	long blks, i;
@@ -724,7 +726,7 @@ accthdr(header)
 		fprintf(stderr, "Volume header\n");
 		return;
 	}
-	if (previno == 0xffffffff)
+	if (previno == 0x7fffffff)
 		goto newcalc;
 	switch (prevtype) {
 	case TS_BITS:
@@ -852,9 +854,9 @@ onintr()
 	if (pipein || reply("restore interrupted, continue") == FAIL)
 		done(1);
 	if (signal(SIGINT, onintr) == SIG_IGN)
-		signal(SIGINT, SIG_IGN);
+		(void) signal(SIGINT, SIG_IGN);
 	if (signal(SIGTERM, onintr) == SIG_IGN)
-		signal(SIGTERM, SIG_IGN);
+		(void) signal(SIGTERM, SIG_IGN);
 }
 
 /*
