@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -245,12 +245,12 @@ main(argc, argv)
 static void
 usage()
 {
-	(void)fprintf(stderr, "usage:\t%s%s%s%s%s",
-	    "restore tfhsvy [file ...]\n",
-	    "\trestore xfhmsvy [file ...]\n",
-	    "\trestore ifhmsvy\n",
-	    "\trestore rfsvy\n",
-	    "\trestore Rfsvy\n");
+	(void)fprintf(stderr, "usage:\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n",
+	  "restore -i [-chmvy] [-b blocksize] [-f file] [-s fileno]",
+	  "restore -r [-cvy] [-b blocksize] [-f file] [-s fileno]",
+	  "restore -R [-cvy] [-b blocksize] [-f file] [-s fileno]",
+	  "restore -x [-chmvy] [-b blocksize] [-f file] [-s fileno] [file ...]",
+	  "restore -t [-chvy] [-b blocksize] [-f file] [-s fileno] [file ...]");
 	done(1);
 }
 
