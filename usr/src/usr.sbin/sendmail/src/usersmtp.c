@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.20.1.2 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.21 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.20.1.2 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.21 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -34,7 +34,16 @@ static char sccsid[] = "@(#)usersmtp.c	5.20.1.2 (Berkeley) %G% (without SMTP)";
 char	SmtpMsgBuffer[MAXLINE];		/* buffer for commands */
 char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
 char	SmtpError[MAXLINE] = "";	/* save failure error messages */
+FILE	*SmtpOut;			/* output file */
+FILE	*SmtpIn;			/* input file */
 int	SmtpPid;			/* pid of mailer */
+
+/* following represents the state of the SMTP connection */
+int	SmtpState;			/* connection state, see below */
+
+#define SMTP_CLOSED	0		/* connection is closed */
+#define SMTP_OPEN	1		/* connection is open for business */
+#define SMTP_SSD	2		/* service shutting down */
 /*
 **  SMTPINIT -- initialize SMTP.
 **
@@ -55,35 +64,36 @@ int	SmtpPid;			/* pid of mailer */
 
 jmp_buf	CtxGreeting;
 
-smtpinit(m, mci, pvp)
+smtpinit(m, pvp)
 	struct mailer *m;
-	MCONINFO *mci;
 	char **pvp;
+	ENVELOPE *e;
 {
 	register int r;
 	EVENT *gte;
-	register STAB *st;
-	char buf[MAXNAME];
+	MCONINFO *mci;
 	static int greettimeout();
 	extern STAB *stab();
-	extern MCONINFO *openmailer();
 
 	/*
 	**  Open the connection to the mailer.
 	*/
 
-	if (mci->mci_state == MCIS_OPEN)
-		syserr("smtpinit: already open");
-
-	mci->mci_state = MCIS_CLOSED;
+	if (SmtpState == SMTP_OPEN)
 	SmtpError[0] = '\0';
-	mci = openmailer(m, pvp, (ADDRESS *) NULL, TRUE);
-	if (SmtpPid < 0)
+	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
+	if (mci == NULL)
+		return NULL;
+	if (mci->mci_state != MCIS_OPENING && mci->mci_state != MCIS_CLOSED)
+		return mci;
+	mci->mci_phase = "user open";
+	mci->mci_state = MCIS_OPENING;
+	if (mci->mci_pid < 0)
 	{
 		if (tTd(18, 1))
 			printf("smtpinit: cannot open %s: stat %d errno %d\n",
 			   pvp[0], ExitStat, errno);
-		if (CurEnv->e_xfp != NULL)
+		if (e->e_xfp != NULL)
 		{
 			register char *p;
 			extern char *errstring();
@@ -92,22 +102,23 @@ smtpinit(m, mci, pvp)
 			if (errno == 0)
 			{
 				p = statstring(ExitStat);
-				fprintf(CurEnv->e_xfp,
+				fprintf(e->e_xfp,
 					"%.3s %s.%s... %s\n",
 					p, pvp[1], m->m_name, p);
 			}
 			else
 			{
 				r = errno;
-				fprintf(CurEnv->e_xfp,
+				fprintf(e->e_xfp,
 					"421 %s.%s... Deferred: %s\n",
 					pvp[1], m->m_name, errstring(errno));
 				errno = r;
 			}
 		}
-		return (ExitStat);
+		mci->mci_exitstat = ExitStat;
+		return mci;
 	}
-	mci->mci_state = MCIS_OPEN;
+	SmtpState = SMTP_OPEN;
 
 	/*
 	**  Get the greeting message.
@@ -118,7 +129,6 @@ smtpinit(m, mci, pvp)
 	if (setjmp(CtxGreeting) != 0)
 		goto tempfail1;
 	gte = setevent((time_t) 300, greettimeout, 0);
-	r = reply(m, mci);
 	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
@@ -128,8 +138,6 @@ smtpinit(m, mci, pvp)
 	**	My mother taught me to always introduce myself.
 	*/
 
-	smtpmessage("HELO %s", m, MyHostName);
-	r = reply(m, mci);
 	if (r < 0)
 		goto tempfail1;
 	else if (REPLYTYPE(r) == 5)
@@ -145,17 +153,40 @@ smtpinit(m, mci, pvp)
 	if (bitnset(M_INTERNAL, m->m_flags))
 	{
 		/* tell it to be verbose */
-		smtpmessage("VERB", m);
-		r = reply(m, mci);
 		if (r < 0)
 			goto tempfail2;
 
 		/* tell it we will be sending one transaction only */
-		smtpmessage("ONEX", m);
-		r = reply(m, mci);
 		if (r < 0)
 			goto tempfail2;
 	}
+
+	mci->mci_state = MCIS_OPEN;
+	return mci;
+
+  tempfail1:
+  tempfail2:
+	mci->mci_exitstat = EX_TEMPFAIL;
+	mci->mci_errno = errno;
+	smtpquit(m, mci, e);
+	mci->mci_state = MCIS_TEMPFAIL;
+	return mci;
+
+  unavailable:
+	mci->mci_exitstat = EX_UNAVAILABLE;
+	mci->mci_errno = errno;
+	smtpquit(m, mci, e);
+	mci->mci_state = MCIS_ERROR;
+	return mci;
+}
+
+smtpmailfrom(m, mci, e)
+	struct mailer *m;
+	MCONINFO *mci;
+	ENVELOPE *e;
+{
+	int r;
+	char buf[MAXNAME];
 
 	/*
 	**  Send the MAIL command.
@@ -163,42 +194,47 @@ smtpinit(m, mci, pvp)
 	*/
 
 	(void) expand("$g", buf, &buf[sizeof buf - 1]);
-	if (CurEnv->e_from.q_mailer == LocalMailer ||
+	mci->mci_state = MCIS_ACTIVE;
+
+	expand("\001<", buf, &buf[sizeof buf - 1], e);
+	if (e->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>", m, buf);
+		smtpmessage("MAIL From:<%s>", m, mci, buf);
 	}
 	else
 	{
-		smtpmessage("MAIL From:<@%s%c%s>", m, MyHostName,
+		smtpmessage("MAIL From:<@%s%c%s>", m, mci, MyHostName,
 			buf[0] == '@' ? ',' : ':', buf);
 	}
-	r = reply(m, mci);
 	if (r < 0 || REPLYTYPE(r) == 4)
-		goto tempfail2;
+	{
+		mci->mci_exitstat = EX_TEMPFAIL;
+		mci->mci_errno = errno;
+		smtpquit(m, mci, e);
+		mci->mci_state = MCIS_TEMPFAIL;
+		return EX_TEMPFAIL;
+	}
 	else if (r == 250)
-		return (EX_OK);
+	{
+		mci->mci_exitstat = EX_OK;
+		return EX_OK;
+	}
 	else if (r == 552)
-		goto unavailable;
+	{
+		/* signal service unavailable */
+		mci->mci_exitstat = EX_UNAVAILABLE;
+		smtpquit(m, mci, e);
+		mci->mci_state = MCIS_ERROR;
+		return EX_UNAVAILABLE;
+	}
 
 	/* protocol error -- close up */
-	smtpquit(m, mci);
-	return (EX_PROTOCOL);
-
-  tempfail1:
-	/* log this as an error to avoid sure-to-be-void connections */
-	mci->mci_exitstat = EX_TEMPFAIL;
-	mci->mci_errno = errno;
-
-  tempfail2:
-	/* signal a temporary failure */
-	smtpquit(m, mci);
-	return (EX_TEMPFAIL);
-
-  unavailable:
-	/* signal service unavailable */
-	smtpquit(m, mci);
-	return (EX_UNAVAILABLE);
+	smtpquit(m);
+	smtpquit(m, mci, e);
+	mci->mci_exitstat = EX_PROTOCOL;
+	mci->mci_state = MCIS_ERROR;
+	return EX_PROTOCOL;
 }
 
 
@@ -222,17 +258,15 @@ greettimeout()
 **		Sends the mail via SMTP.
 */
 
-smtprcpt(to, m, mci)
+smtprcpt(to, m)
 	ADDRESS *to;
 	register MAILER *m;
-	MCONINFO *mci;
 {
 	register int r;
 	extern char *remotename();
 
-	smtpmessage("RCPT To:<%s>", m, to->q_user);
+	smtpmessage("RCPT To:<%s>", m, mci, to->q_user);
 
-	r = reply(m, mci);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (REPLYTYPE(r) == 2)
@@ -260,7 +294,6 @@ smtprcpt(to, m, mci)
 
 smtpfinish(m, editfcn)
 	struct mailer *m;
-	register MCONINFO *mci;
 	int (*editfcn)();
 {
 	register int r;
@@ -274,8 +307,6 @@ smtpfinish(m, editfcn)
 	*/
 
 	/* send the command and check ok to proceed */
-	smtpmessage("DATA", m);
-	r = reply(m, mci);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 554)
@@ -285,18 +316,23 @@ smtpfinish(m, editfcn)
 	(*editfcn)(SmtpOut, m, TRUE);
 
 	/* now output the actual message */
-	(*e->e_puthdr)(mci->mci_out, m, CurEnv);
-	putline("\n", mci->mci_out, m);
-	(*e->e_putbody)(mci->mci_out, m, CurEnv);
+	(*e->e_puthdr)(SmtpOut, m, CurEnv);
+	putline("\n", SmtpOut, m);
+	(*e->e_putbody)(SmtpOut, m, CurEnv);
 
 	/* terminate the message */
-	fprintf(mci->mci_out, ".%s", m->m_eol);
+	fprintf(SmtpOut, ".%s", m->m_eol);
 	if (Verbose && !HoldErrs)
 		nmessage(Arpa_Info, ">>> .");
 
 	/* check for the results of the transaction */
-	r = reply(m, mci);
-	if (r < 0 || REPLYTYPE(r) == 4)
+	mci->mci_phase = "result wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
+	if (r < 0)
+		return (EX_TEMPFAIL);
+	mci->mci_state = MCIS_OPEN;
+	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 250)
 		return (EX_OK);
@@ -317,27 +353,29 @@ smtpfinish(m, editfcn)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(mci, m)
-	register MCONINFO *mci;
+smtpquit(m)
 	register MAILER *m;
 {
 	int i;
 
 	/* if the connection is already closed, don't bother */
-	if (mci->mci_state == MCIS_CLOSED)
+	if (SmtpIn == NULL)
 		return;
 
 	/* send the quit message if not a forced quit */
-	if (mci->mci_state == MCIS_OPEN || mci->mci_state == MCIS_SSD)
+	if (SmtpState == SMTP_OPEN || SmtpState == SMTP_SSD)
 	{
-		smtpmessage("QUIT", m);
-		(void) reply(m, mci);
-		if (mci->mci_state == MCIS_CLOSED)
 			return;
 	}
 
-	/* now actually close the connection and pick up the zombie */
-	i = endmailer(mci, m->m_argv[0]);
+	/* now actually close the connection */
+	(void) fclose(SmtpIn);
+	(void) fclose(SmtpOut);
+	SmtpIn = SmtpOut = NULL;
+	SmtpState = SMTP_CLOSED;
+
+	/* and pick up the zombie */
+	i = endmailer(SmtpPid, m->m_argv[0]);
 	if (i != EX_OK)
 		syserr("smtpquit %s: stat %d", m->m_argv[0], i);
 }
@@ -354,11 +392,12 @@ smtpquit(mci, m)
 **		flushes the mail file.
 */
 
-reply(mci, m)
-	MCONINFO *mci;
+reply(m)
 	MAILER *m;
+	MCONINFO *mci;
+	ENVELOPE *e;
 {
-	(void) fflush(mci->mci_out);
+	(void) fflush(SmtpOut);
 
 	if (tTd(18, 1))
 		printf("reply\n");
@@ -371,17 +410,18 @@ reply(mci, m)
 	{
 		register int r;
 		register char *p;
+		extern time_t curtime();
 
 		/* actually do the read */
-		if (CurEnv->e_xfp != NULL)
-			(void) fflush(CurEnv->e_xfp);	/* for debugging */
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);	/* for debugging */
 
 		/* if we are in the process of closing just give the code */
-		if (mci->mci_state == MCIS_CLOSED)
+		if (SmtpState == SMTP_CLOSED)
 			return (SMTPCLOSING);
 
 		/* get the line from the other side */
-		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, mci->mci_in);
+		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
 		if (p == NULL)
 		{
 			extern char MsgBuf[];		/* err.c */
@@ -402,21 +442,21 @@ reply(mci, m)
 # ifdef LOG
 			syslog(LOG_INFO, "%s", &MsgBuf[4]);
 # endif LOG
-			mci->mci_state = MCIS_CLOSED;
-			smtpquit(m);
+			SmtpState = SMTP_CLOSED;
+			smtpquit(m, mci, e);
 			return (-1);
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
 
-		if (CurEnv->e_xfp != NULL && index("45", SmtpReplyBuffer[0]) != NULL)
+		if (e->e_xfp != NULL && index("45", SmtpReplyBuffer[0]) != NULL)
 		{
 			/* serious error -- log the previous command */
 			if (SmtpMsgBuffer[0] != '\0')
-				fprintf(CurEnv->e_xfp, ">>> %s\n", SmtpMsgBuffer);
+				fprintf(e->e_xfp, ">>> %s\n", SmtpMsgBuffer);
 			SmtpMsgBuffer[0] = '\0';
 
 			/* now log the message as from the other side */
-			fprintf(CurEnv->e_xfp, "<<< %s\n", SmtpReplyBuffer);
+			fprintf(e->e_xfp, "<<< %s\n", SmtpReplyBuffer);
 		}
 
 		/* display the input for verbose mode */
@@ -435,11 +475,11 @@ reply(mci, m)
 			continue;
 
 		/* reply code 421 is "Service Shutting Down" */
-		if (r == SMTPCLOSING && mci->mci_state != MCIS_SSD)
+		if (r == SMTPCLOSING && SmtpState != SMTP_SSD)
 		{
 			/* send the quit protocol */
-			mci->mci_state = MCIS_SSD;
-			smtpquit(m);
+			SmtpState = SMTP_SSD;
+			smtpquit(m, mci, e);
 		}
 
 		/* save temporary failure messages for posterity */
@@ -461,20 +501,19 @@ reply(mci, m)
 **		none.
 **
 **	Side Effects:
-**		writes message to mci->mci_out.
+**		writes message to SmtpOut.
 */
 
 /*VARARGS1*/
-smtpmessage(f, m, mci, a, b, c)
+smtpmessage(f, m, a, b, c)
 	char *f;
 	MAILER *m;
-	MCONINFO *mci;
 {
 	(void) sprintf(SmtpMsgBuffer, f, a, b, c);
 	if (tTd(18, 1) || (Verbose && !HoldErrs))
 		nmessage(Arpa_Info, ">>> %s", SmtpMsgBuffer);
-	if (mci->mci_out != NULL)
-		fprintf(mci->mci_out, "%s%s", SmtpMsgBuffer,
+	if (SmtpOut != NULL)
+		fprintf(SmtpOut, "%s%s", SmtpMsgBuffer,
 			m == 0 ? "\r\n" : m->m_eol);
 }
 

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.30.1.2 (Berkeley) %G%
+ *	@(#)sendmail.h	5.33 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.30.1.2		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.33		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -305,6 +305,10 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 # define HOSTBEGIN	'\035'	/* hostname lookup begin */
 # define HOSTEND	'\036'	/* hostname lookup end */
 
+/* bracket characters for generalized lookup */
+# define LOOKUPBEGIN	'\005'	/* generalized lookup begin */
+# define LOOKUPEND	'\006'	/* generalized lookup end */
+
 /* \001 is also reserved as the macro expansion character */
 
 /* external <==> internal mapping table */
@@ -344,6 +348,8 @@ typedef struct symtab	STAB;
 # define s_address	s_value.sv_addr
 # define s_mailer	s_value.sv_mailer
 # define s_alias	s_value.sv_alias
+# define s_mci		s_value.sv_mci
+# undef s_host
 
 extern STAB	*stab();
 
