@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.12 (Berkeley) %G%
+ *	@(#)asc.c	7.13 (Berkeley) %G%
  */
 
 /* 
@@ -663,10 +663,9 @@ asc_startcmd(asc, target)
 	/*
 	 * Copy command data to the DMA buffer.
 	 */
-	len = scsicmd->cmdlen + 1;
+	len = scsicmd->cmdlen;
 	state->dmalen = len;
-	state->dmaBufAddr[0] = SCSI_DIS_REC_IDENTIFY;
-	bcopy(scsicmd->cmd, state->dmaBufAddr + 1, len);
+	bcopy(scsicmd->cmd, state->dmaBufAddr, len);
 
 	/* check for simple SCSI command with no data transfer */
 	if ((state->buflen = scsicmd->buflen) == 0) {
@@ -705,6 +704,10 @@ asc_startcmd(asc, target)
 	if (++asc_logp >= &asc_log[NLOG])
 		asc_logp = asc_log;
 #endif
+
+	/* preload the FIFO with the message to be sent */
+	regs->asc_fifo = SCSI_DIS_REC_IDENTIFY;
+	MachEmptyWriteBuffer();
 
 	/* initialize the DMA */
 	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_WRITE);
@@ -1841,10 +1844,15 @@ asic_dma_end(asc, state, flag)
 {
 	register volatile u_int *ssr = (volatile u_int *)
 		ASIC_REG_CSR(asic_base);
+	register volatile u_int *dmap = (volatile u_int *)
+		ASIC_REG_SCSI_DMAPTR(asic_base);
+	register u_short *to;
+	register int w;
 	int nb;
 
 	*ssr &= ~ASIC_CSR_DMAEN_SCSI;
-	*((volatile int *)ASIC_REG_SCSI_DMAPTR(asic_base)) = -1;
+	to = (u_short *)MACH_PHYS_TO_CACHED(*dmap >> 3);
+	*dmap = -1;
 	*((volatile int *)ASIC_REG_SCSI_DMANPTR(asic_base)) = -1;
 	MachEmptyWriteBuffer();
 
@@ -1853,11 +1861,8 @@ asic_dma_end(asc, state, flag)
 		    MACH_UNCACHED_TO_PHYS(state->dmaBufAddr)), state->dmalen);
 		if (nb = *((int *)ASIC_REG_SCSI_SCR(asic_base))) {
 			/* pick up last upto6 bytes, sigh. */
-			register u_short *to;
-			register int w;
 	
 			/* Last byte really xferred is.. */
-			to = (u_short *)(state->dmaBufAddr + state->dmalen - (nb << 1));
 			w = *(int *)ASIC_REG_SCSI_SDR0(asic_base);
 			*to++ = w;
 			if (--nb > 0) {
