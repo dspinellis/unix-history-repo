@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,6 +47,22 @@ p_login(p, pw, ep)
 		fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
+	return(0);
+}
+
+/* ARGSUSED */
+p_passwd(p, pw, ep)
+	char *p;
+	struct passwd *pw;
+	struct entry *ep;
+{
+	if (!*p)
+		pw->pw_passwd = "";	/* "NOLOGIN"; */
+	else if (!(pw->pw_passwd = strdup(p))) {
+		fprintf(stderr, "chpass: can't save password entry");
+		return(1);
+	}
+	
 	return(0);
 }
 

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,11 +41,12 @@ static char sccsid[] = "@(#)chpass.c	5.5 (Berkeley) %G%";
 char e1[] = ": ";
 char e2[] = ":,";
 
-int p_login(), p_uid(), p_gid(), p_hdir(), p_shell(), p_change(), p_class();
-int p_expire(), p_gecos();
+int p_change(), p_class(), p_expire(), p_gecos(), p_gid(), p_hdir();
+int p_login(), p_passwd(), p_shell(), p_uid();
 
 struct entry list[] = {
 	{ "Login",		p_login,  1,   5, e1,   },
+	{ "Password",		p_passwd, 1,   8, e1,   },
 	{ "Uid",		p_uid,    1,   3, e1,   },
 	{ "Gid",		p_gid,    1,   3, e1,   },
 	{ "Class",		p_class,  1,   5, e1,   },
@@ -331,7 +332,7 @@ copy(pw, fp)
 	}
 	if (!done)
 		fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
-		    pw->pw_name, "NOLOGIN", pw->pw_uid, pw->pw_gid,
+		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
 		    pw->pw_dir, pw->pw_shell);
 	return(1);
