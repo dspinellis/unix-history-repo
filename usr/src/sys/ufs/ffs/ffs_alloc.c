@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_alloc.c	7.18 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -100,7 +100,7 @@ alloc(ip, lbn, bpref, size, bnp)
 		return (0);
 	}
 nospace:
-	fserr(fs, "file system full");
+	fserr(fs, cred->cr_uid, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
 	return (ENOSPC);
 }
@@ -245,7 +245,7 @@ nospace:
 	/*
 	 * no space available
 	 */
-	fserr(fs, "file system full");
+	fserr(fs, cred->cr_uid, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
 	return (ENOSPC);
 }
@@ -312,7 +312,7 @@ ialloc(pip, ipref, mode, cred, ipp)
 	ip->i_gen = nextgennumber;
 	return (0);
 noinodes:
-	fserr(fs, "out of inodes");
+	fserr(fs, cred->cr_uid, "out of inodes");
 	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
 	return (ENOSPC);
 }
@@ -870,6 +870,7 @@ blkfree(ip, bno, size)
 	struct buf *bp;
 	int error, cg, blk, frags, bbase;
 	register int i;
+	struct ucred *cred = u.u_cred;	/* XXX */
 
 	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
@@ -878,8 +879,9 @@ blkfree(ip, bno, size)
 		panic("blkfree: bad size");
 	}
 	cg = dtog(fs, bno);
-	if (badblock(fs, bno)) {
+	if ((unsigned)bno >= fs->fs_size) {
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
+		fserr(fs, cred->cr_uid, "bad block");
 		return;
 	}
 #ifdef SECSIZE
@@ -1086,31 +1088,16 @@ mapsearch(fs, cgp, bpref, allocsiz)
 }
 
 /*
- * Check that a specified block number is in range.
- */
-badblock(fs, bn)
-	register struct fs *fs;
-	daddr_t bn;
-{
-
-	if ((unsigned)bn >= fs->fs_size) {
-		printf("bad block %d, ", bn);
-		fserr(fs, "bad block");
-		return (1);
-	}
-	return (0);
-}
-
-/*
  * Fserr prints the name of a file system with an error diagnostic.
  * 
  * The form of the error message is:
  *	fs: error message
  */
-fserr(fs, cp)
+fserr(fs, uid, cp)
 	struct fs *fs;
+	uid_t uid;
 	char *cp;
 {
 
-	log(LOG_ERR, "%s: %s\n", fs->fs_fsmnt, cp);
+	log(LOG_ERR, "uid %d on %s: %s\n", uid, fs->fs_fsmnt, cp);
 }
