@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	8.6 (Berkeley) %G%
+ *	@(#)vm_map.h	8.7 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -133,7 +133,7 @@ typedef struct {
  *		Perform locking on the data portion of a map.
  */
 
-extern struct proc *curproc;	/* XXX */
+#include <sys/proc.h>	/* XXX for curproc and p_pid */
 #define LOCKPID (curproc ? curproc->p_pid : LK_KERNPROC)
 
 #define	vm_map_lock(map) { \
