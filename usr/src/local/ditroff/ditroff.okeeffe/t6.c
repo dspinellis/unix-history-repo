@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t6.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)t6.c	2.2 (CWI) 87/07/10";
 #endif lint
 /*
  * t6.c
@@ -349,7 +349,12 @@ register int	i;
 				/*
 				fprintf(ptid, "x xxx installed %s on %d\n", name ,k);
 				*/
-				fontlab[k] = i;	/* install the name */
+					/* now install the name */
+				fontlab[k] = i;
+					/*
+					 * and remember accociated with
+					 * this font, ligature info etc.
+					*/
 				return(k);
 			}
 		}
@@ -654,8 +659,11 @@ tchar i;
 	tchar j, k;
 	register int lf;
 
-	if ((lf = fontbase[fbits(i)]->ligfont) == 0) /* font lacks ligatures */
+		/* remember to map the font */
+	if ((lf = fontbase[fbits(i) > NFONT ? 0 : fbits(i)]->ligfont) == 0) {
+		/* font lacks ligatures */
 		return(i);
+	}
 	j = getch0();
 	if (cbits(j) == 'i' && (lf & LFI))
 		j = LIG_FI;
@@ -734,6 +742,7 @@ char *truename;
 	}
 	n = fontbase[pos]->nwfont & BYTEMASK;
 	read(k, (char *) fontbase[pos], 3*n + nchtab + 128 - 32 + sizeof(struct Font));
+
 	kerntab[pos] = (char *) fontab[pos] + (fontbase[pos]->nwfont & BYTEMASK);
 	/* have to reset the fitab pointer because the width may be different */
 	fitab[pos] = (char *) fontab[pos] + 3 * (fontbase[pos]->nwfont & BYTEMASK);
