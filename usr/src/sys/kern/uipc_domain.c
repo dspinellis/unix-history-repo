@@ -1,10 +1,10 @@
-/*	uipc_domain.c	5.7	82/12/30	*/
+/*	uipc_domain.c	5.8	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/domain.h"
-#include <time.h>
+#include "../h/time.h"
 #include "../h/kernel.h"
 
 #define	ADDDOMAIN(x)	{ \
