@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hk.4	6.1 (Berkeley) %G%
+.\"	@(#)hk.4	6.2 (Berkeley) %G%
 .\"
 .TH HK 4 ""
 .UC 4
@@ -45,7 +45,9 @@ RK07 partitions:
 	hk?a	0	15884	0-240
 	hk?b	15906	10032	241-392
 	hk?c	0	53790	0-814
-	hk?g	26004	27786	393-813
+	hk?d	25938	15884	393-633
+	hk?f	41844	11792	634-814
+	hk?g	25938	27786	393-813
 .PP
 RK06 partitions
 	disk	start	length	cyl
@@ -71,7 +73,8 @@ is used as a single large file system.
 .SH SEE ALSO
 hp(4),
 uda(4),
-up(4)
+up(4),
+syslogd(8)
 .SH DIAGNOSTICS
 \fBrk%d%c: hard error sn%d cs2=%b ds=%b er=%b\fR.  An unrecoverable
 error occurred during transfer of the specified sector of the specified
@@ -132,3 +135,5 @@ present reduced form) is needed.
 The partition tables for the file systems should be read off of each
 pack, as they are never quite what any single installation would prefer,
 and this would make packs more portable.
+.PP
+The rk07 g partition size in rk.c disagrees with that in /etc/disktab.
