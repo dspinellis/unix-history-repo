@@ -5,13 +5,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.21 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
