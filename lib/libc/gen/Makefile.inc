@@ -38,6 +38,9 @@ SRCS+=	udiv.s urem.s
 SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	udiv.s urem.s
 .endif
+.if defined (PW_COMPACT)
+CFLAGS+=-DPW_COMPACT
+.endif
 
 MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
 	gen/ctype.3 gen/directory.3 gen/err.3 gen/exec.3 gen/fnmatch.3 \
