@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.72 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.73 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,8 +67,7 @@ union _qcvt {
  * Create a regular file
  */
 int
-ufs_create(dvp, vpp, cnp, vap)   /* converted to CN.   */
-/* was: ufs_create(ndp, vap, p) */
+ufs_create(dvp, vpp, cnp, vap)
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -87,8 +86,7 @@ ufs_create(dvp, vpp, cnp, vap)   /* converted to CN.   */
  */
 /* ARGSUSED */
 int
-ufs_mknod(dvp, vpp, cnp, vap)   /* converted to CN.   */
-/* was: ufs_mknod(ndp, vap, cred, p) */
+ufs_mknod(dvp, vpp, cnp, vap)
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -538,8 +536,7 @@ ufs_seek(vp, oldoff, newoff, cred)
  * in unlinking directories.
  */
 int
-ufs_remove(dvp, vp, cnp)   /* converted to CN.   */
-/* old: ufs_remove(ndp, p) */
+ufs_remove(dvp, vp, cnp)
 	struct vnode *dvp, *vp;
 	struct componentname *cnp;
 {
@@ -565,8 +562,7 @@ ufs_remove(dvp, vp, cnp)   /* converted to CN.   */
  * link vnode call
  */
 int
-ufs_link(vp, tdvp, cnp)   /* converted to CN.   */
-/* old: ufs_link(vp, ndp, p) */
+ufs_link(vp, tdvp, cnp)
 	register struct vnode *vp;   /* source vnode */
 	struct vnode *tdvp;
 	struct componentname *cnp;
@@ -608,7 +604,7 @@ ufs_link(vp, tdvp, cnp)   /* converted to CN.   */
  *    Used by lookup to re-aquire things.
  */
 int
-relookup(dvp, vpp, cnp)   /* converted to CN */
+relookup(dvp, vpp, cnp)
 	struct vnode *dvp, **vpp;
 	struct componentname *cnp;
 {
@@ -644,7 +640,7 @@ relookup(dvp, vpp, cnp)   /* converted to CN */
 	 * the name set the SAVENAME flag. When done, they assume
 	 * responsibility for freeing the pathname buffer.
 	 */
-/* NEEDWORK: is hash computed needed */
+#ifdef NAMEI_DIAGNOSTIC
 	newhash = 0;
 	for (cp = cnp->cn_nameptr; *cp != 0 && *cp != '/'; cp++)
 		newhash += (unsigned char)*cp;
@@ -652,28 +648,10 @@ relookup(dvp, vpp, cnp)   /* converted to CN */
 		panic("relookup: bad hash");
 	if (cnp->cn_namelen != cp - cnp->cn_nameptr)
 		panic ("relookup: bad len");
-	if (cnp->cn_namelen >= NAME_MAX) {
-		error = ENAMETOOLONG;
-		goto bad;
-	}
-#ifdef NAMEI_DIAGNOSTIC   /* NEEDSWORK: should go */
 	{ char c = *cp;
 	*cp = '\0';
 	printf("{%s}: ", cnp->cn_nameptr);
 	*cp = c; }
-#endif
-#if 0
-	cnp->cn_pathlen -= cnp->cn_namelen;
-	ndp->ni_next = cp;
-#endif
-#if 0
-	cnp->cn_flags |= MAKEENTRY;
-	if (*cp == '\0' && docache == 0)
-		cnp->cn_flags &= ~MAKEENTRY;
-	if (cnp->cn_namelen == 2 &&
-			cnp->ni_nameptr[1] == '.' && cnp->cn_nameptr[0] == '.')
-		cnp->cn_flags |= ISDOTDOT;
-	else cnp->cn_flags &= ~ISDOTDOT;
 #endif
 
 	/*
@@ -698,37 +676,6 @@ relookup(dvp, vpp, cnp)   /* converted to CN */
 		return (0);
 	}
 
-	/*
-	 * Handle "..": two special cases.
-	 * 1. If at root directory (e.g. after chroot)
-	 *    then ignore it so can't get out.
-	 * 2. If this vnode is the root of a mounted
-	 *    filesystem, then replace it with the
-	 *    vnode which was mounted on so we take the
-	 *    .. in the other file system.
-	 */
-#if 0
-	/* This shouldn't happen because rename throws out .. */
-	/* NEEDSWORK: what to do about this? */
-	if (cnp->cn_flags & ISDOTDOT) {
-		for (;;) {
-			if (dp == ndp->ni_rootdir) {
-				ndp->ni_dvp = dp;
-				ndp->ni_vp = dp;
-				VREF(dp);
-				goto nextname;
-			}
-			if ((dp->v_flag & VROOT) == 0 ||
-			    (cnp->cn_flags & NOCROSSMOUNT))
-				break;
-			tdp = dp;
-			dp = dp->v_mount->mnt_vnodecovered;
-			vput(tdp);
-			VREF(dp);
-			VOP_LOCK(dp);
-		}
-	}
-#endif
 	if (cnp->cn_flags & ISDOTDOT)
 		panic ("relookup: lookup on dot-dot");
 
@@ -759,24 +706,12 @@ relookup(dvp, vpp, cnp)   /* converted to CN */
 		 * doesn't currently exist, leaving a pointer to the
 		 * (possibly locked) directory inode in ndp->ni_dvp.
 		 */
-#ifdef JOHNH
-		/*
-		 * no need because we don't need to do another lookup.
-		 * NEEDSWORK: don't do release.
-		 * but wait...let's try it a different way.
-		 */
 		if (cnp->cn_flags & SAVESTART) {
-#if 0
-			ndp->ni_startdir = ndp->ni_dvp;
-			VREF(ndp->ni_startdir);
-#else
 			/*
 			 * startdir == dvp, always
 			 */
 			VREF(dvp);
-#endif
 		}
-#endif
 		return (0);
 	}
 #ifdef NAMEI_DIAGNOSTIC
@@ -784,16 +719,10 @@ relookup(dvp, vpp, cnp)   /* converted to CN */
 #endif
 
 	dp = *vpp;
+#ifdef DIAGNOSTIC
 	/*
 	 * Check for symbolic link
 	 */
-#if 0
-	if ((dp->v_type == VLNK) &&
-	    ((cnp->cn_flags & FOLLOW) || *ndp->ni_next == '/')) {
-		cnp->cn_flags |= ISSYMLINK;
-		return (0);
-	}
-#endif
 	if (dp->v_type == VLNK) {
 		panic ("relookup: symlink found.\n");
 	};
@@ -802,46 +731,10 @@ relookup(dvp, vpp, cnp)   /* converted to CN */
 	 * Check to see if the vnode has been mounted on;
 	 * if so find the root of the mounted file system.
 	 */
-#if 0
-	/* NEEDSWORK: mounts should not be crossed in cnlookup */
-	/*
-	 * Checked for in rename (returns EXDEV).
-	 */
-mntloop:
-	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
-	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
-		if (mp->mnt_flag & MNT_MLOCK) {
-			mp->mnt_flag |= MNT_MWAIT;
-			sleep((caddr_t)mp, PVFS);
-			goto mntloop;
-		}
-		if (error = VFS_ROOT(dp->v_mountedhere, &tdp))
-			goto bad2;
-		vput(dp);
-		ndp->ni_vp = dp = tdp;
-	}
 #endif
-	if (dp->v_type == VDIR && (dp->v_mountedhere))
-	    panic ("relookup: mount point encountered.");
 
 
 nextname:
-	/*
-	 * Not a symbolic link.  If more pathname,
-	 * continue at next component, else return.
-	 */
-#if 0	
-	if (*ndp->ni_next == '/') {
-		cnp->cn_nameptr = ndp->ni_next;
-		while (*cnp->cn_nameptr == '/') {
-			ndp->ni_nameptr++;
-			ndp->ni_pathlen--;
-		}
-		vrele(ndp->ni_dvp);
-		goto dirloop;
-	}
-#endif
-
 	/*
 	 * Check for read-only file systems.
 	 */
@@ -858,10 +751,6 @@ nextname:
 		}
 	}
 	if (cnp->cn_flags & SAVESTART) {
-#if 0
-		ndp->ni_startdir = ndp->ni_dvp;
-		VREF(ndp->ni_startdir);
-#endif
 		/* ASSERT(dvp==ndp->ni_startdir) */
 		VREF(dvp);
 	}
@@ -909,8 +798,7 @@ bad:
  */
 int
 ufs_rename(fdvp, fvp, fcnp,
-	   tdvp, tvp, tcnp)   /* converted to CN.   */
-/* old: ufs_rename(fndp, tndp, p) */
+	   tdvp, tvp, tcnp)
 	struct vnode *fdvp, *fvp;
 	struct componentname *fcnp;
 	struct vnode *tdvp, *tvp;
@@ -1231,8 +1119,7 @@ static struct dirtemplate mastertemplate = {
  * Mkdir system call
  */
 int
-ufs_mkdir(dvp, vpp, cnp, vap)   /* converted to CN.   */
-/* was: ufs_mkdir(cnp, vap) */
+ufs_mkdir(dvp, vpp, cnp, vap)
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -1340,9 +1227,9 @@ bad:
  * Rmdir system call.
  */
 int
-ufs_rmdir(dvp, vp, cnp)   /* converted to CN.   */
-/* old: ufs_rmdir(ndp, p) */
-	struct vnode *dvp, *vp;
+ufs_rmdir(dvp, vp, cnp)
+	struct vnode *dvp;
+	struct vnode *vp;
 	struct componentname *cnp;
 {
 	register struct inode *ip, *dp;
@@ -1408,8 +1295,7 @@ out:
  * symlink -- make a symbolic link
  */
 int
-ufs_symlink(dvp, vpp, cnp, vap, target)   /* converted to CN.   */
-/* old: ufs_symlink(ndp, vap, target, p) */
+ufs_symlink(dvp, vpp, cnp, vap, target)
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -1474,7 +1360,7 @@ ufs_readlink(vp, uiop, cred)
  */
 /* ARGSUSED */
 int
-ufs_abortop(dvp, cnp)    /* converted to CN.   */
+ufs_abortop(dvp, cnp)
 	struct vnode *dvp;
 	struct componentname *cnp;
 {
@@ -1849,8 +1735,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
  * Allocate a new inode.
  */
 int
-ufs_makeinode(mode, dvp, vpp, cnp)   /* converted to CN */
-/* OLD: ufs_makeinode(mode, ndp, vpp) */
+ufs_makeinode(mode, dvp, vpp, cnp)
 	int mode;
 	struct vnode *dvp;
 	struct vnode **vpp;
