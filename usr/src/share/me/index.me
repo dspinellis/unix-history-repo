@@ -1,15 +1,19 @@
 .nr _0 \n(c.
-.\"	@(#)index.me	2.3	%G%
+.\"	@(#)index.me	2.4	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
-.ie !"\\n(.z"" \!.(x \\$1
-.el \
+.ie "\\n(.z"" \
 \{\
 .	ds |X x
 .	if \\n(.$ \
 .		ds |X \\$1
 .	am %\\*(|X )x
 .	sp \\n(xsu
+.\}
+.el \
+\{\
+.	ev 2
+\!.(x \\$1
 .\}
 ..
 .de )x			\" *** end index entry
@@ -28,7 +32,12 @@
 .	rm |x
 .	rm |X
 .\}
-.el \!.)x \\$1 \\$2
+.el \
+\{\
+.	br
+\!.)x \\$1 \\$2
+.	ev
+.\}
 ..
 .de xp			\" *** print the index
 .br
