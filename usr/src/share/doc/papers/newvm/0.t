@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	1.2 (Berkeley) %G%
+.\"	@(#)0.t	1.3 (Berkeley) %G%
 .\"
 .rm CM
 .TL
@@ -30,16 +30,16 @@ to keep track of the contents of the swap space to avoid multiple fetches
 of the same data from the file system.
 .PP
 The new implementation should also add new functionality.  Processes
-should be allowed to have a large sparse address space, to map files
-into their address space, to map device memory into their address
-space, and to share memory with other processes. The shared address
+should be allowed to have large sparse address spaces, to map files
+into their address spaces, to map device memory into their address
+spaces, and to share memory with other processes. The shared address
 space may either be obtained by mapping a file into (possibly
 different) parts of their address space, or by arranging to share
-``anonymous memory'' (that is memory that is zero fill on demand, and
+``anonymous memory'' (that is, memory that is zero fill on demand, and
 whose contents are lost when the last process unmaps the memory) with
 another process as is done in System V.
 .PP
-One use of shared memory is to provide a high speed
+One use of shared memory is to provide a high-speed
 Inter-Process Communication (IPC) mechanism between two or more
 cooperating processes. To insure the integrity of data structures
 in a shared region, processes must be able to use semaphores to
@@ -50,9 +50,9 @@ IPC to that of existing IPC mechanisms.  We are proposing a scheme
 that places the semaphores in the shared memory segment, so that
 machines that have a test-and-set instruction can handle the usual
 uncontested lock and unlock without doing a system call. Only in
-the unusual case of trying to lock an already locked lock or in
+the unusual case of trying to lock an already-locked lock or in
 releasing a wanted lock will a system call be required.  The
-interface will allow a user level implementation of the System V
+interface will allow a user-level implementation of the System V
 semaphore interface on most machines with a much lower runtime cost.
 .AE
 .LP

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	1.2 (Berkeley) %G%
+.\"	@(#)a.t	1.3 (Berkeley) %G%
 .\"
 .sp 2
 .ne 2i
@@ -23,27 +23,26 @@ Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 #define	PROT_WRITE	0x02	/* pages can be written */
 #define	PROT_EXEC	0x01	/* pages can be executed */
 .DE
-.sp
 .DS
+.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
 /* flags contain mapping type, sharing type and options */
 /* mapping type; choose one */
 #define MAP_FILE	0x0001	/* mapped from a file or device */
 #define MAP_ANON	0x0002	/* allocated from memory, swap space */
 #define MAP_TYPE	0x000f	/* mask for type field */
 .DE
-.sp
 .DS
+.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
 /* sharing types; choose one */
 #define	MAP_SHARED	0x0010	/* share changes */
 #define	MAP_PRIVATE	0x0000	/* changes are private */
 .DE
-.sp
 .DS
+.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
 /* other flags */
 #define MAP_FIXED	0x0020	/* map addr must be exactly as requested */
-#define MAP_NOEXTEND	0x0040	/* for MAP_FILE, don't change file size */
+#define MAP_INHERIT	0x0040	/* region is retained after exec */
 #define MAP_HASSEMAPHORE	0x0080	/* region may contain semaphores */
-#define MAP_INHERIT	0x0100	/* region is retained after exec */
 .DE
 The cpu-dependent size of a page is returned by the
 \fIgetpagesize\fP system call:
@@ -51,7 +50,7 @@ The cpu-dependent size of a page is returned by the
 pagesize = getpagesize();
 result int pagesize;
 .DE
-.PP
+.LP
 The call:
 .DS
 maddr = mmap(addr, len, prot, flags, fd, pos);
@@ -68,6 +67,8 @@ in which case the exact address will be used or the call will fail.
 The actual amount mapped is returned in \fIlen\fP.
 The \fIaddr\fP, \fIlen\fP, and \fIpos\fP parameters
 must all be multiples of the pagesize.
+A successful \fImmap\fP will \fImunmap\fP any previous mapping
+in the allocated address range.
 The parameter \fIprot\fP specifies the accessibility
 of the mapped pages.
 The parameter \fIflags\fP specifies
@@ -82,7 +83,7 @@ mapping a regular file or character-special device memory,
 and MAP_ANON, which maps memory not associated with any specific file.
 The file descriptor used for creating MAP_ANON regions is used only
 for naming, and may be given as \-1 if no name
-is associated with the region\(dg.
+is associated with the region.\(dg
 .FS
 \(dg The current design does not allow a process
 to specify the location of swap space.
@@ -90,11 +91,9 @@ In the future we may define an additional mapping type, MAP_SWAP,
 in which the file descriptor argument specifies a file
 or device to which swapping should be done.
 .FE
-The MAP_NOEXTEND flag prevents the mapped file from being extended
-despite rounding because of the granularity of mapping.
+The MAP_INHERIT flag allows a region to be inherited after an \fIexec\fP.
 The MAP_HASSEMAPHORE flag allows special handling for
 regions that may contain semaphores.
-The MAP_INHERIT flag allows a region to be inherited after an \fIexec\fP.
 .PP
 A facility is provided to synchronize a mapped region with the file
 it maps; the call
@@ -108,7 +107,8 @@ If \fIlen\fP is 0, all modified pages within the region containing \fIaddr\fP
 will be flushed;
 if \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
 succeeding locations will be examined.
-Any required invalidation of memory caches will also take place at this time.
+Any required synchronization of memory caches
+will also take place at this time.
 Filesystem operations on a file that is mapped for shared modifications
 are unpredictable except after an \fImsync\fP.
 .PP
@@ -117,7 +117,7 @@ A mapping can be removed by the call
 munmap(addr, len);
 caddr_t addr; int len;
 .DE
-This call deletes the region containing the address range given,
+This call deletes the mappings for the specified address range,
 and causes further references to addresses within the range
 to generate invalid memory references.
 .SH
