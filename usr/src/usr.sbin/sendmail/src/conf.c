@@ -98,7 +98,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.8	%G%";
+static char SccsId[] = "@(#)conf.c	3.9	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -197,17 +197,17 @@ static char	*BerkArgv[] =
 	"...berk%mail",
 	"-m",
 	"$h",
-	"-t",
-	"$u",
 	"-h",
 	"$c",
+	"-t",
+	"$u",
 	NULL
 };
 
 static struct mailer	BerkMailer =
 {
 	"berk",		"/usr/net/bin/sendberkmail",
-	M_FOPT|M_ARPAFMT|M_STRIPQ|M_MUSER,
+	M_FOPT|M_ARPAFMT|M_STRIPQ,
 	EX_UNAVAILABLE,	"$B:$f",	BerkArgv,	NULL,
 };
 
@@ -232,16 +232,15 @@ static struct mailer	ArpaMailer =
 static char	*UucpArgv[] =
 {
 	"...uucp%mail",
-# ifndef DUMBMAIL
-	"-d",
-# endif DUMBMAIL
-	"$h!$u",
+	"-",
+	"$h!rmail",
+	"($u)",
 	NULL
 };
 
 static struct mailer	UucpMailer =
 {
-	"uucp",		"/bin/mail",
+	"uucp",		"/usr/bin/uux",
 	M_ROPT|M_STRIPQ|M_ARPAFMT|M_MUSER,
 	EX_NOUSER,	"$U!$f",	UucpArgv,	NULL,
 };

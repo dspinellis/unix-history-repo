@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.8	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.9	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -844,4 +844,36 @@ sameaddr(a, b, wildflg)
 		return (FALSE);
 
 	return (TRUE);
+}
+/*
+**  PRINTADDR -- print address (for debugging)
+**
+**	Parameters:
+**		a -- the address to print
+**		follow -- follow the q_next chain.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+printaddr(a, follow)
+	register ADDRESS *a;
+	bool follow;
+{
+	while (a != NULL)
+	{
+		printf("addr@%x: ", a);
+		fflush(stdout);
+		printf("%s: mailer %d (%s), host `%s', user `%s'\n", a->q_paddr,
+		       a->q_mailer, Mailer[a->q_mailer]->m_name, a->q_host, a->q_user);
+		printf("\tnext=%x flags=%o, rmailer %d\n", a->q_next,
+		       a->q_flags, a->q_rmailer);
+
+		if (!follow)
+			return;
+		a = a->q_next;
+	}
 }

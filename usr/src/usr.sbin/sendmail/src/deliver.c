@@ -7,21 +7,10 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.6	%G%";
+static char SccsId[] = "@(#)deliver.c	3.7	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
-**
-**	Algorithm:
-**		Compute receiving network (i.e., mailer), host, & user.
-**		If local, see if this is really a program name.
-**		Build argument for the mailer.
-**		Create pipe through edit fcn if appropriate.
-**		Fork.
-**			Child: call mailer
-**		Parent: call editfcn if specified.
-**		Wait for mailer to finish.
-**		Interpret exit status.
 **
 **	Parameters:
 **		to -- the address to deliver the message to.
@@ -35,130 +24,226 @@ static char SccsId[] = "@(#)deliver.c	3.6	%G%";
 **
 **	Side Effects:
 **		The standard input is passed off to someone.
-**
-**	WARNING:
-**		The standard input is shared amongst all children,
-**		including the file pointer.  It is critical that the
-**		parent waits for the child to finish before forking
-**		another child.
 */
 
 deliver(to, editfcn)
 	ADDRESS *to;
 	int (*editfcn)();
 {
-	register struct mailer *m;
 	char *host;
 	char *user;
 	extern struct passwd *getpwnam();
 	char **pvp;
-	extern char **buildargv();
-	auto int st;
-	register int i;
+	register char **mvp;
 	register char *p;
-	int pid;
-	int pvect[2];
-	extern FILE *fdopen();
+	register struct mailer *m;
+	register int i;
 	extern int errno;
-	FILE *mfile;
 	extern putmessage();
-	extern pipesig();
 	extern char *index();
 	extern bool checkcompat();
+	char *pv[MAXPV+1];
+	extern char *newstr();
+	char tobuf[MAXLINE];
+	char buf[MAXNAME];
+	extern char *expand();
+	bool firstone;
 
-	/*
-	**  Compute receiving mailer, host, and to addreses.
-	**	Do some initialization first.  To is the to address
-	**	for error messages.
-	**	Also, define the standard per-address macros.
-	*/
+	if (bitset(QDONTSEND, to->q_flags))
+		return (0);
 
-	To = to->q_paddr;
-	m = Mailer[to->q_mailer];
-	user = to->q_user;
-	host = to->q_host;
-	Errors = 0;
-	errno = 0;
-	define('u', user);		/* to user */
-	define('h', host);		/* to host */
-	define('g', m->m_from);		/* translated from address */
 # ifdef DEBUG
 	if (Debug)
-		printf("deliver(%s [%d, `%s', `%s'])\n", To, m, host, user);
+		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
+			to->q_mailer, to->q_host, to->q_user);
 # endif DEBUG
 
 	/*
-	**  Check to see that these people are allowed to talk to each other.
+	**  Do initial argv setup.
+	**	Insert the mailer name.  Notice that $x expansion is
+	**	NOT done on the mailer name.  Then, if the mailer has
+	**	a picky -f flag, we insert it as appropriate.  This
+	**	code does not check for 'pv' overflow; this places a
+	**	manifest lower limit of 4 for MAXPV.
 	*/
 
-	if (!checkcompat(to))
-		return(giveresponse(EX_UNAVAILABLE, TRUE, m));
+	m = Mailer[to->q_mailer];
+	host = to->q_host;
+	define('g', m->m_from);		/* translated from address */
+	define('h', host);		/* to host */
+	Errors = 0;
+	errno = 0;
+	pvp = pv;
+	*pvp++ = m->m_argv[0];
 
-	/*
-	**  Remove quote bits from user/host.
-	*/
-
-	for (p = user; (*p++ &= 0177) != '\0'; )
-		continue;
-	if (host != NULL)
-		for (p = host; (*p++ &= 0177) != '\0'; )
-			continue;
-	
-	/*
-	**  Strip quote bits from names if the mailer wants it.
-	*/
-
-	if (bitset(M_STRIPQ, m->m_flags))
+	/* insert -f or -r flag as appropriate */
+	if (bitset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
 	{
-		stripquotes(user);
-		stripquotes(host);
+		if (bitset(M_FOPT, m->m_flags))
+			*pvp++ = "-f";
+		else
+			*pvp++ = "-r";
+		expand("$g", buf, &buf[sizeof buf - 1]);
+		*pvp++ = newstr(buf);
 	}
 
 	/*
-	**  See if this user name is "special".
-	**	If the user is a program, diddle with the mailer spec.
-	**	If the user name has a slash in it, assume that this
-	**		is a file -- send it off without further ado.
-	**		Note that this means that editfcn's will not
-	**		be applied to the message.
+	**  Append the other fixed parts of the argv.  These run
+	**  up to the first entry containing "$u".  There can only
+	**  be one of these, and there are only a few more slots
+	**  in the pv after it.
 	*/
 
-	if (m == Mailer[0])
+	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
-		if (*user == '|')
+		while ((p = index(p, '$')) != NULL)
+			if (*++p == 'u')
+				break;
+		if (p != NULL)
+			break;
+
+		/* this entry is safe -- go ahead and process it */
+		expand(*mvp, buf, &buf[sizeof buf - 1]);
+		*pvp++ = newstr(buf);
+		if (pvp >= &pv[MAXPV - 3])
 		{
-			user++;
-			m = Mailer[1];
+			syserr("Too many parameters to %s before $u", pv[0]);
+			return (-1);
 		}
-		else
+	}
+	if (*mvp == NULL)
+		syserr("No $u in mailer argv for %s", pv[0]);
+
+	/*
+	**  At this point *mvp points to the argument with $u.  We
+	**  run through our address list and append all the addresses
+	**  we can.  If we run out of space, do not fret!  We can
+	**  always send another copy later.
+	*/
+
+	tobuf[0] = '\0';
+	firstone = TRUE;
+	To = tobuf;
+	for (; to != NULL; to = to->q_next)
+	{
+		/* avoid sending multiple recipients to dumb mailers */
+		if (!firstone && !bitset(M_MUSER, m->m_flags))
+			break;
+
+		/* if already sent or not for this host, don't send */
+		if (bitset(QDONTSEND, to->q_flags) || strcmp(to->q_host, host) != 0)
+			continue;
+		user = to->q_user;
+		To = to->q_paddr;
+		to->q_flags |= QDONTSEND;
+		firstone = FALSE;
+
+# ifdef DEBUG
+		if (Debug)
+			printf("   send to `%s'\n", user);
+# endif DEBUG
+
+		/*
+		**  Check to see that these people are allowed to
+		**  talk to each other.
+		*/
+
+		if (!checkcompat(to))
+		{
+			giveresponse(EX_UNAVAILABLE, TRUE, m);
+			continue;
+		}
+
+		/*
+		**  Remove quote bits from user/host.
+		*/
+
+		for (p = user; (*p++ &= 0177) != '\0'; )
+			continue;
+		if (host != NULL)
+			for (p = host; (*p++ &= 0177) != '\0'; )
+				continue;
+		
+		/*
+		**  Strip quote bits from names if the mailer wants it.
+		*/
+
+		if (bitset(M_STRIPQ, m->m_flags))
+		{
+			stripquotes(user);
+			stripquotes(host);
+		}
+
+		/*
+		**  See if this user name is "special".
+		**	If the user name has a slash in it, assume that this
+		**	is a file -- send it off without further ado.
+		**	Note that this means that editfcn's will not
+		**	be applied to the message.  Also note that
+		**	this type of addresses is not processed along
+		**	with the others, so we fudge on the To person.
+		*/
+
+		if (m == Mailer[0])
 		{
 			if (index(user, '/') != NULL)
 			{
 				i = mailfile(user);
 				giveresponse(i, TRUE, m);
-				return (i);
+				continue;
 			}
 		}
-	}
 
-	/*
-	**  See if the user exists.
-	**	Strictly, this is only needed to print a pretty
-	**	error message.
-	**
-	**	>>>>>>>>>> This clause assumes that the local mailer
-	**	>> NOTE >> cannot do any further aliasing; that
-	**	>>>>>>>>>> function is subsumed by postbox.
-	*/
+		/*
+		**  See if the user exists.
+		**	Strictly, this is only needed to print a pretty
+		**	error message.
+		**
+		**	>>>>>>>>>> This clause assumes that the local mailer
+		**	>> NOTE >> cannot do any further aliasing; that
+		**	>>>>>>>>>> function is subsumed by postbox.
+		*/
 
-	if (m == Mailer[0])
-	{
-		if (getpwnam(user) == NULL)
+		if (m == Mailer[0])
 		{
-			giveresponse(EX_NOUSER, TRUE, m);
-			return (EX_NOUSER);
+			if (getpwnam(user) == NULL)
+			{
+				giveresponse(EX_NOUSER, TRUE, m);
+				continue;
+			}
+		}
+
+		/* create list of users for error messages */
+		if (tobuf[0] != '\0')
+			strcat(tobuf, ",");
+		strcat(tobuf, to->q_paddr);
+		define('u', user);		/* to user */
+
+		/* expand out this user */
+		expand(user, buf, &buf[sizeof buf - 1]);
+		*pvp++ = newstr(buf);
+		if (pvp >= &pv[MAXPV - 2])
+		{
+			/* allow some space for trailing parms */
+			break;
 		}
 	}
+
+	/* print out messages as full list */
+	To = tobuf;
+
+	/*
+	**  Fill out any parameters after the $u parameter.
+	*/
+
+	while (*++mvp != NULL)
+	{
+		expand(*mvp, buf, &buf[sizeof buf - 1]);
+		*pvp++ = newstr(buf);
+		if (pvp >= &pv[MAXPV])
+			syserr("deliver: pv overflow after $u for %s", pv[0]);
+	}
+	*pvp++ = NULL;
 
 	/*
 	**  Call the mailer.
@@ -167,12 +252,49 @@ deliver(to, editfcn)
 	**	appropriate.
 	*/
 
-	pvp = buildargv(m, host, user, From.q_paddr);
-	if (pvp == NULL)
+	if (editfcn == NULL)
+		editfcn = putmessage;
+	i = sendoff(m, pv, editfcn);
+
+	return (i);
+}
+/*
+**  SENDOFF -- send off call to mailer & collect response.
+**
+**	Parameters:
+**		m -- mailer descriptor.
+**		pvp -- parameter vector to send to it.
+**		editfcn -- function to pipe it through.
+**
+**	Returns:
+**		exit status of mailer.
+**
+**	Side Effects:
+**		none.
+*/
+
+sendoff(m, pvp, editfcn)
+	struct mailer *m;
+	char **pvp;
+	int (*editfcn)();
+{
+	auto int st;
+	register int i;
+	int pid;
+	int pvect[2];
+	FILE *mfile;
+	extern putmessage();
+	extern pipesig();
+	extern FILE *fdopen();
+
+# ifdef DEBUG
+	if (Debug)
 	{
-		usrerr("name too long");
-		return (-1);
+		printf("Sendoff:\n");
+		printav(pvp);
 	}
+# endif DEBUG
+
 	rewind(stdin);
 
 	/* create a pipe to shove the mail through */
@@ -495,10 +617,6 @@ pipesig()
 **
 **	Side Effects:
 **		none.
-**
-**	Called By:
-**		main
-**		alias
 */
 
 sendto(list, copyf)
@@ -547,10 +665,6 @@ sendto(list, copyf)
 **
 **	Side Effects:
 **		none.
-**
-**	Called By:
-**		sendto
-**		main
 */
 
 recipient(a)
@@ -609,7 +723,7 @@ recipient(a)
 
 		/* add address on list */
 		q = pq;
-		q->q_next = NULL;
+		q->q_next = a;
 	}
 	a->q_next = NULL;
 
@@ -622,111 +736,6 @@ recipient(a)
 		setbit(QDONTSEND, a->q_flags);
 
 	return;
-}
-/*
-**  BUILDARGV -- Build an argument vector for a mail server.
-**
-**	Using a template defined in config.c, an argv is built.
-**	The format of the template is already a vector.  The
-**	items of this vector are copied, unless a dollar sign
-**	is encountered.  In this case, the next character
-**	specifies something else to copy in.  These can be
-**	any macros.  System defined macros are:
-**		$f	The from address.
-**		$h	The host.
-**		$u	The user.
-**		$c	The hop count.
-**	among others.
-**	The vector is built in a local buffer.  A pointer to
-**	the static argv is returned.
-**
-**	Parameters:
-**		m -- a pointer to the mailer descriptor.
-**		host -- the host name to send to.
-**		user -- the user name to send to.
-**		from -- the person this mail is from.
-**
-**	Returns:
-**		A pointer to an argv.
-**
-**	Side Effects:
-**		none
-**
-**	WARNING:
-**		Since the argv is staticly allocated, any subsequent
-**		calls will clobber the old argv.
-**
-**	Called By:
-**		deliver
-*/
-
-char **
-buildargv(m, host, user, from)
-	struct mailer *m;
-	char *host;
-	char *user;
-	char *from;
-{
-	register char *p;
-	static char *pv[MAXPV+1];
-	char **pvp;
-	char **mvp;
-	static char buf[512];
-	extern char *expand();
-	extern char *newstr();
-
-	/*
-	**  Do initial argv setup.
-	**	Insert the mailer name.  Notice that $x expansion is
-	**	NOT done on the mailer name.  Then, if the mailer has
-	**	a picky -f flag, we insert it as appropriate.  This
-	**	code does not check for 'pv' overflow; this places a
-	**	manifest lower limit of 4 for MAXPV.
-	*/
-
-	pvp = pv;
-	*pvp++ = m->m_argv[0];
-
-	/* insert -f or -r flag as appropriate */
-	if (bitset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
-	{
-		if (bitset(M_FOPT, m->m_flags))
-			*pvp++ = "-f";
-		else
-			*pvp++ = "-r";
-		expand(from, buf, &buf[sizeof buf - 1]);
-		*pvp++ = newstr(buf);
-	}
-
-	/*
-	**  Build the rest of argv.
-	**	For each prototype parameter, the prototype is
-	**	scanned character at a time.  Buffer overflow is
-	**	checked.
-	*/
-
-	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
-	{
-		if (pvp >= &pv[MAXPV])
-		{
-			syserr("Too many parameters to %s", pv[0]);
-			return (NULL);
-		}
-		expand(p, buf, &buf[sizeof buf - 1]);
-		*pvp++ = newstr(buf);
-	}
-	*pvp = NULL;
-
-# ifdef DEBUG
-	if (Debug)
-	{
-		printf("Interpolated argv is:\n");
-		for (mvp = pv; *mvp != NULL; mvp++)
-			printf("\t%s\n", *mvp);
-	}
-# endif DEBUG
-
-	return (pv);
 }
 /*
 **  MAILFILE -- Send a message to a file.
