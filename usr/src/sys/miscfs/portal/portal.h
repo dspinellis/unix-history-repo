@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal.h	8.2 (Berkeley) %G%
+ *	@(#)portal.h	8.3 (Berkeley) %G%
  *
  * $Id: portal.h,v 1.3 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -26,11 +26,6 @@ struct portal_cred {
 };
 
 #ifdef KERNEL
-
-#ifndef VT_PORTAL
-#define VT_PORTAL VT_UFS
-#endif
-
 struct portalmount {
 	struct vnode	*pm_root;	/* Root node */
 	struct file	*pm_server;	/* Held reference to server socket */
