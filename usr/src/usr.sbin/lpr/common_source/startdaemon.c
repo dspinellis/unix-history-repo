@@ -1,45 +1,63 @@
-/*	startdaemon.c	4.5	83/06/02	*/
+/*	startdaemon.c	4.6	83/06/29	*/
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
 
-#include "lp.h"
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include "lp.local.h"
 
-startdaemon(ahost)
-	char *ahost;
+startdaemon(printer)
+	char *printer;
 {
-	register int rem, i, err = 0;
+	struct sockaddr_un sun;
+	register int s, n;
 	char buf[BUFSIZ];
 
-	rem = getport(ahost);
-	if (rem < 0) {
-		perr();
+	s = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (s < 0) {
+		perr("socket");
+		return(0);
+	}
+	sun.sun_family = AF_UNIX;
+	strcpy(sun.sun_path, SOCKETNAME);
+	if (connect(s, &sun, strlen(sun.sun_path) + 2) < 0) {
+		perr("connect");
+		(void) close(s);
 		return(0);
 	}
 	(void) sprintf(buf, "\1%s\n", printer);
-	i = strlen(buf);
-	if (write(rem, buf, i) != i) {
-		perr();
-		(void) close(rem);
+	n = strlen(buf);
+	if (write(s, buf, n) != n) {
+		perr("write");
+		(void) close(s);
 		return(0);
 	}
-	while ((i = read(rem, buf, sizeof(buf))) > 0) {
-		(void) fwrite(buf, 1, i, stdout);
-		err++;
+	if (read(s, buf, 1) == 1) {
+		if (buf[0] == '\0') {		/* everything is OK */
+			(void) close(s);
+			return(1);
+		}
+		putchar(buf[0]);
 	}
-	if (i < 0)
-		perr();
-	(void) close(rem);
-	return(i == 0 && err == 0);
+	while ((n = read(s, buf, sizeof(buf))) > 0)
+		fwrite(buf, 1, n, stdout);
+	(void) close(s);
+	return(0);
 }
 
 static
-perr()
+perr(msg)
+	char *msg;
 {
+	extern char *name;
 	extern int sys_nerr;
 	extern char *sys_errlist[];
+	extern int errno;
 
-	printf("%s: ", name);
+	printf("%s: %s: ", name, msg);
 	fputs(errno < sys_nerr ? sys_errlist[errno] : "Unknown error" , stdout);
 	putchar('\n');
 }

@@ -1,4 +1,4 @@
-/*	lp.local.h	4.2	83/06/17	*/
+/*	lp.local.h	4.3	83/06/29	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -60,6 +60,11 @@
 #define HEIGHT	9		/* height of characters */
 #define WIDTH	8		/* width of characters */
 #define DROP	3		/* offset to drop characters with descenders */
+
+/*
+ * path name of socket created by lpd.
+ */
+#define SOCKETNAME "/dev/printer"
 
 /*
  * Some utilities used by printjob.

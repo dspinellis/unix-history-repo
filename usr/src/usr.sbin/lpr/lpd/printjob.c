@@ -1,4 +1,4 @@
-/*	printjob.c	4.9	83/06/22	*/
+/*	printjob.c	4.10	83/06/29	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -42,6 +42,7 @@ printjob()
 	extern int onintr();
 
 	init();					/* set up capabilities */
+	(void) write(1, "", 1);			/* ack that daemon is started */
 	(void) close(1);			/* set up log file */
 	(void) close(2);
 	if (open(LF, O_WRONLY|O_APPEND) < 0)
