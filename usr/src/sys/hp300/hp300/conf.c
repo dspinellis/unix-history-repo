@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	7.15 (Berkeley) %G%
+ *      @(#)conf.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -12,6 +12,7 @@
 #include <sys/buf.h>
 #include <sys/ioctl.h>
 #include <sys/proc.h>
+#include <sys/vnode.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
 
@@ -316,3 +317,88 @@ int	mem_no = 2; 	/* major device number of memory special file */
  * provided as a character (raw) device.
  */
 dev_t	swapdev = makedev(3, 0);
+
+/*
+ * Routine that identifies /dev/mem and /dev/kmem.
+ *
+ * A minimal stub routine can always return 0.
+ */
+iskmemdev(dev)
+	dev_t dev;
+{
+
+	if (major(dev) == 2 && (minor(dev) == 0 || minor(dev) == 1))
+		return (1);
+	return (0);
+}
+
+/*
+ * Routine to determine if a device is a disk.
+ *
+ * A minimal stub routine can always return 0.
+ */
+isdisk(dev, type)
+	dev_t dev;
+	int type;
+{
+
+	switch (major(dev)) {
+	case 2:
+	case 4:
+	case 5:
+	case 6:
+		if (type == VBLK)
+			return (1);
+		return (0);
+	case 8:
+	case 9:
+	case 17:
+	case 19:
+		if (type == VCHR)
+			return (1);
+		/* fall through */
+	default:
+		return (0);
+	}
+	/* NOTREACHED */
+}
+
+#define MAXDEV	21
+static int chrtoblktbl[MAXDEV] =  {
+      /* VCHR */      /* VBLK */
+	/* 0 */		NODEV,
+	/* 1 */		NODEV,
+	/* 2 */		NODEV,
+	/* 3 */		NODEV,
+	/* 4 */		NODEV,
+	/* 5 */		NODEV,
+	/* 6 */		NODEV,
+	/* 7 */		0,
+	/* 8 */		4,
+	/* 9 */		2,
+	/* 10 */	NODEV,
+	/* 11 */	NODEV,
+	/* 12 */	NODEV,
+	/* 13 */	NODEV,
+	/* 14 */	NODEV,
+	/* 15 */	NODEV,
+	/* 16 */	NODEV,
+	/* 17 */	5,
+	/* 18 */	NODEV,
+	/* 19 */	6,
+	/* 20 */	7,
+};
+/*
+ * Routine to convert from character to block device number.
+ *
+ * A minimal stub routine can always return NODEV.
+ */
+chrtoblk(dev)
+	dev_t dev;
+{
+	int blkmaj;
+
+	if (major(dev) >= MAXDEV || (blkmaj = chrtoblktbl[major(dev)]) == NODEV)
+		return (NODEV);
+	return (makedev(blkmaj, minor(dev)));
+}
