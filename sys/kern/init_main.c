@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.16 1994/04/14 07:50:06 davidg Exp $
+ *	$Id: init_main.c,v 1.17 1994/06/07 23:27:52 phk Exp $
  */
 
 #include "param.h"
@@ -366,7 +366,7 @@ main()
 		/*NOTREACHED*/
 	}
 
-#if 1
+#if 0
 	/*
 	 * Start page scanner daemon (process 3).
 	 */
