@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -411,7 +411,7 @@ static TokTypeTab[256] =
 char **
 prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 	char *addr;
-	char delim;
+	int delim;
 	char pvpbuf[];
 	char **delimptr;
 {
