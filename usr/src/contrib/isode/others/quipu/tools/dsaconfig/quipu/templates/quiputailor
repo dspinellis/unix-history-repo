@@ -1,0 +1,68 @@
+########################################################################
+#
+# quiputailor - ISODE QUIPU Directory Service Specific Tailoring File
+#
+#	for PSI White Pages Pilot
+#
+#	QUIPU tailoring for a Level-1 DSA
+#
+########################################################################
+
+
+# this line must occur first
+oidtable	oidtable
+
+mydsaname	"c=@(country)@cn=@(dsa)"
+
+# DSAs to contact if we need a referral to a parent
+#parent	"@(rootDSA)"		@(rootDSAaddress)
+#parent	"@(otherDSA)"		@(otherDSAaddress)
+parent	"@(countryDSA)"		@(countryDSAaddress)
+
+# shadow alias entries, and a few others
+shadow		aliasedObjectName
+shadow		roleOccupant
+shadow		seeAlso
+#shadow		masterDSA
+#shadow		slaveDSA
+
+# select which attributes you want to index
+optimize_attr	commonName
+optimize_attr	surName
+
+# select which part of the DIT to index
+index_subtree	"c=@(country)@o=@(organization)"
+
+# minimal logging, but full statistics
+dsaplog		level=exceptions sflags=close dflags=tty file=dsap.log
+stats		level=all sflags=close dflags=tty file=stats.log
+
+# logging directory
+logdir		@(etcdir)quipu/@(wildlife)/
+
+# default tree directory
+treedir		@(etcdir)quipu/@(wildlife)/
+
+# slave updates
+update		off
+
+# level below which users can search
+searchlevel	2
+
+# allow addition of "last modified by" attributes...
+lastmodified 	on
+
+# read-only DSA
+readonly	off
+
+# DSP chaining
+dspchaining	on
+
+# limits...
+adminsize	50
+admintime	240
+cachetime	21600
+conntime	300
+nsaptime	45
+retrytime	3600
+slavetime	21600
