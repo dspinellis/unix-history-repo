@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.50 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.51 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -247,6 +247,13 @@ struct wait_args {
 };
 
 #ifdef COMPAT_43
+#ifdef hp300
+#include <machine/frame.h>
+#define GETPS(rp)	((struct frame *)(rp))->f_sr
+#else
+#define GETPS(rp)	(rp)[PS]
+#endif
+
 owait(p, uap, retval)
 	struct proc *p;
 	register struct wait_args *uap;
@@ -254,7 +261,7 @@ owait(p, uap, retval)
 {
 
 #ifdef PSL_ALLCC
-	if ((p->p_md.md_regs[PS] & PSL_ALLCC) != PSL_ALLCC) {
+	if ((GETPS(p->p_md.md_regs) & PSL_ALLCC) != PSL_ALLCC) {
 		uap->options = 0;
 		uap->rusage = NULL;
 	} else {
