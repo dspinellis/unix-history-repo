@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)whereis.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)whereis.c	4.8 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -31,21 +31,27 @@ static char *mandirs[] = {
 	0
 };
 static char *srcdirs[]  = {
-	"/usr/src/etc",
 	"/usr/src/bin",
 	"/usr/src/usr.bin",
-	"/usr/src/games",
-	"/usr/src/lib",
-	"/usr/src/lib/libc/gen",
-	"/usr/src/lib/libc/stdio",
-	"/usr/src/lib/libc/sys",
+	"/usr/src/etc",
 	"/usr/src/ucb",
-	"/usr/src/ucb/netser",
-	"/usr/src/ucb/arpanet",
+	"/usr/src/games",
 	"/usr/src/usr.lib",
+	"/usr/src/lib",
 	"/usr/src/local",
 	"/usr/src/new",
 	"/usr/src/old",
+	"/usr/src/lib/libc/gen",
+	"/usr/src/lib/libc/stdio",
+	"/usr/src/lib/libc/sys",
+	"/usr/src/lib/libc/net/common",
+	"/usr/src/lib/libc/net/inet",
+	"/usr/src/lib/libc/net/misc",
+	"/usr/src/ucb/netser",
+	"/usr/src/ucb/netser/misc",
+	"/usr/src/ucb/arpanet",
+	"/usr/src/ucb/pascal",
+	"/usr/src/ucb/pascal/utilities",
 	"/usr/src/undoc",
 	0
 };
@@ -266,7 +272,7 @@ findin(dir, cp)
 		if (itsit(cp, dp->d_name)) {
 			count++;
 			if (print)
-				printf(" %s/%.14s", dir, dp->d_name);
+				printf(" %s/%s", dir, dp->d_name);
 		}
 	}
 	closedir(dirp);
@@ -275,7 +281,7 @@ findin(dir, cp)
 itsit(cp, dp)
 	register char *cp, *dp;
 {
-	register int i = 14;
+	register int i = strlen(dp);
 
 	if (dp[0] == 's' && dp[1] == '.' && itsit(cp, dp+2))
 		return (1);
