@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.8 (Berkeley) %G%
+ *	@(#)iso.c	7.9 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -64,6 +64,7 @@ static char *rcsid = "$Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $";
 
 int	iso_interfaces = 0;		/* number of external interfaces */
 extern	struct ifnet loif;	/* loopback interface */
+int ether_output(), llc_rtrequest();
 
 
 /*
@@ -81,13 +82,10 @@ extern	struct ifnet loif;	/* loopback interface */
 struct radix_node_head *iso_rnhead;
 iso_init()
 {
-	extern struct spna_cache	iso_snpac[];
-	extern u_int 				iso_snpac_size;
 	static iso_init_done;
 
 	if (iso_init_done == 0) {
 		iso_init_done++;
-		bzero((caddr_t)iso_snpac, iso_snpac_size * sizeof(struct snpa_cache));
 		rn_inithead(&iso_rnhead, 40, AF_ISO);
 	}
 }
@@ -570,8 +568,10 @@ iso_ifscrub(ifp, ia)
 	register struct ifnet *ifp;
 	register struct iso_ifaddr *ia;
 {
+	int nsellength = ia->ia_addr.siso_tlen;
 	if ((ia->ia_flags & IFA_ROUTE) == 0)
 		return;
+	ia->ia_addr.siso_tlen = 0;
 	if (ifp->if_flags & IFF_LOOPBACK)
 		rtinit(&(ia->ia_ifa), (int)RTM_DELETE, RTF_HOST);
 	else if (ifp->if_flags & IFF_POINTOPOINT)
@@ -579,6 +579,7 @@ iso_ifscrub(ifp, ia)
 	else {
 		rtinit(&(ia->ia_ifa), (int)RTM_DELETE, 0);
 	}
+	ia->ia_addr.siso_tlen = nsellength;
 	ia->ia_flags &= ~IFA_ROUTE;
 }
 
@@ -592,7 +593,7 @@ iso_ifinit(ifp, ia, siso, scrub)
 	struct sockaddr_iso *siso;
 {
 	struct sockaddr_iso oldaddr;
-	int s = splimp(), error;
+	int s = splimp(), error, nsellength;
 
 	oldaddr = ia->ia_addr;
 	ia->ia_addr = *siso;
@@ -611,9 +612,18 @@ iso_ifinit(ifp, ia, siso, scrub)
 		iso_ifscrub(ifp, ia);
 		ia->ia_ifa.ifa_addr = (struct sockaddr *)&ia->ia_addr;
 	}
+	/* XXX -- The following is here temporarily out of laziness
+	   in not changing every ethernet driver's if_ioctl routine */
+	if (ifp->if_output == ether_output) {
+		ia->ia_ifa.ifa_rtrequest = llc_rtrequest;
+		ia->ia_ifa.ifa_flags |= RTF_CLONING;
+		ia->ia_ifa.ifa_llinfolen = sizeof(struct llinfo_llc);
+	}
 	/*
 	 * Add route for the network.
 	 */
+	nsellength = ia->ia_addr.siso_tlen;
+	ia->ia_addr.siso_tlen = 0;
 	if (ifp->if_flags & IFF_LOOPBACK) {
 		ia->ia_ifa.ifa_dstaddr = ia->ia_ifa.ifa_addr;
 		error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
@@ -625,6 +635,7 @@ iso_ifinit(ifp, ia, siso, scrub)
 			ia->ia_ifa.ifa_netmask);
 		error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_UP);
 	}
+	ia->ia_addr.siso_tlen = nsellength;
 	ia->ia_flags |= IFA_ROUTE;
 	splx(s);
 	return (error);

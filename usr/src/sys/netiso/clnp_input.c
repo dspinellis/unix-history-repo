@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.11 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.12 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -141,9 +141,18 @@ next:
 
 	if (m == 0)		/* nothing to do */
 		return;
-	if ((m->m_flags & M_PKTHDR) == 0) {
+	if ((m->m_flags & M_PKTHDR) == 0 || m->m_pkthdr.rcvif == 0) {
 		m_freem(m);
 		goto next;
+	} else {
+		register struct ifaddr *ifa;
+		for (ifa = m->m_pkthdr.rcvif->if_addrlist; ifa; ifa = ifa->ifa_next)
+			if (ifa->ifa_addr->sa_family == AF_ISO)
+				break;
+		if (ifa == 0) {
+			m_freem(m);
+			goto next;
+		}
 	}
 	bzero((caddr_t)&sh, sizeof(sh));
 	sh.snh_flags = m->m_flags & (M_MCAST|M_BCAST);
@@ -431,7 +440,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		extern short esis_holding_time;
 
 		esis_shoutput(shp->snh_ifp, ESIS_ESH, esis_holding_time,
-			shp->snh_shost, 6);
+			shp->snh_shost, 6, &dst);
 	}
 
 	/*

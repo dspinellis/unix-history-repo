@@ -24,7 +24,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)iso_snpac.h	7.5 (Berkeley) %G% */
+/*	@(#)iso_snpac.h	7.6 (Berkeley) %G% */
+
 #define	MAX_SNPALEN		8			/* curiously equal to sizeof x.121 (
 										plus 1 for nibble len) addr */
 struct snpa_req {
@@ -36,27 +37,10 @@ struct snpa_req {
 	u_short			sr_ht;			/* holding time */
 };
 
-/*
- *	Structure of the SNPA cache
- */
-struct snpa_cache {
-	struct snpa_req	sc_sr;
-#define	sc_nsap		sc_sr.sr_isoa		/* this could be a NET if entry is
-											for an IS */
-#define sc_len		sc_sr.sr_len
-#define sc_snpa		sc_sr.sr_snpa
-#define sc_ht		sc_sr.sr_ht
-#define sc_flags	sc_sr.sr_flags
-	struct ifnet	*sc_ifp;
 #define	SNPA_VALID		0x01
 #define	SNPA_ES			0x02
 #define SNPA_IS			0x04
 #define	SNPA_PERM		0x10
-
-	/* redirects only */
-	struct iso_addr sc_da;		/* DA from RD */
-	struct rtentry *sc_rt;
-};
 
 struct systype_req {
 	short	sr_holdt;		/* holding timer */
@@ -77,21 +61,17 @@ struct llinfo_llc {
 	struct	llinfo_llc *lc_next;	/* keep all llc routes linked */
 	struct	llinfo_llc *lc_prev;	/* keep all llc routes linked */
 	struct	rtentry *lc_rt;			/* backpointer to route */
-	struct	rtentry *lc_rtgate;		/* route to (RTF_GATEWAY ? ll : iface) */ 
 	struct	esis_req lc_er;			/* holding time, etc */
 #define lc_ht		lc_er.er_ht
 #define lc_flags	lc_er.er_flags
 };
 
+
 /* ISO arp IOCTL data structures */
 
-#define	SIOCSISOMAP	_IOW('a',30, struct snpa_req)	/* set arp entry */
-#define	SIOCGISOMAP	_IOWR('a',38, struct snpa_req)/* get arp entry */
-#define	SIOCDISOMAP	_IOW('a',31, struct snpa_req)	/* delete arp entry */
 #define	SIOCSSTYPE 	_IOW('a', 39, struct systype_req) /* set system type */
 #define	SIOCGSTYPE 	_IOW('a', 40, struct systype_req) /* set system type */
 
 #ifdef	KERNEL
-struct snpa_cache *snpac_look(/* struct iso_addr *isoa */);
 struct llinfo_llc llinfo_llc;	/* head for linked lists */
 #endif	KERNEL
