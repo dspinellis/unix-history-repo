@@ -1,137 +1,182 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
-/* LOG(X)
- * RETURN THE LOGARITHM OF x 
- * DOUBLE PRECISION (VAX D FORMAT 56 bits or IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 1/19/85;
- * REVISED BY K.C. NG on 2/7/85, 3/7/85, 3/24/85, 4/16/85.
+#include <math.h>
+#include <errno.h>
+
+#include "log_table.h"
+#include "dmath.h"
+
+/* Table-driven natural logarithm.
  *
- * Required system supported functions:
- *	scalb(x,n)
- *	copysign(x,y)
- *	logb(x)	
- *	finite(x)
+ * This code was derived, with minor modifications, from:
+ *	Peter Tang, "Table-Driven Implementation of the
+ *	Logarithm in IEEE Floating-Point arithmetic." ACM Trans.
+ *	Math Software, vol 16. no 4, pp 378-400, Dec 1990).
  *
- * Required kernel function:
- *	log__L(z) 
+ * Calculates log(2^m*F*(1+f/F)), |f/j| <= 1/256,
+ * where F = j/128 for j an integer in [0, 128].
  *
- * Method :
- *	1. Argument Reduction: find k and f such that 
- *			x = 2^k * (1+f), 
- *	   where  sqrt(2)/2 < 1+f < sqrt(2) .
+ * log(2^m) = log2_hi*m + log2_tail*m
+ * since m is an integer, the dominant term is exact.
+ * m has at most 10 digits (for subnormal numbers),
+ * and log2_hi has 11 trailing zero bits.
  *
- *	2. Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
- *		 = 2s + 2/3 s**3 + 2/5 s**5 + .....,
- *	   log(1+f) is computed by
+ * log(F) = logF_hi[j] + logF_lo[j] is in tabular form in log_table.h
+ * logF_hi[] + 512 is exact.
  *
- *	     		log(1+f) = 2s + s*log__L(s*s)
- *	   where
- *		log__L(z) = z*(L1 + z*(L2 + z*(... (L6 + z*L7)...)))
- *
- *	   See log__L() for the values of the coefficients.
- *
- *	3. Finally,  log(x) = k*ln2 + log(1+f).  (Here n*ln2 will be stored
- *	   in two floating point number: n*ln2hi + n*ln2lo, n*ln2hi is exact
- *	   since the last 20 bits of ln2hi is 0.)
+ * log(1+f/F) = 2*f/(2*F + f) + 1/12 * (2*f/(2*F + f))**3 + ...
+ * the leading term is calculated to extra precision in two
+ * parts, the larger of which adds exactly to the dominant
+ * m and F terms.
+ * There are two cases:
+ *	1. when m, j are non-zero (m | j), use absolute
+ *	   precision for the leading term.
+ *	2. when m = j = 0, |1-x| < 1/256, and log(x) ~= (x-1).
+ *	   In this case, use a relative precision of 24 bits.
+ * (This is done differently in the original paper)
  *
  * Special cases:
- *	log(x) is NaN with signal if x < 0 (including -INF) ; 
- *	log(+INF) is +INF; log(0) is -INF with signal;
- *	log(NaN) is that NaN with no signal.
- *
- * Accuracy:
- *	log(x) returns the exact log(x) nearly rounded. In a test run with
- *	1,536,000 random arguments on a VAX, the maximum observed error was
- *	.826 ulps (units in the last place).
- *
- * Constants:
- * The hexadecimal values are the intended ones for the following constants.
- * The decimal values may be used, provided that the compiler will convert
- * from decimal to binary accurately enough to produce the hexadecimal values
- * shown.
- */
+ *	0	return signalling -Inf
+ *	neg	return signalling NaN
+ *	+Inf	return +Inf
+*/
 
-#include <errno.h>
-#include "mathimpl.h"
-
-vc(ln2hi, 6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
-vc(ln2lo, 1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
-vc(sqrt2, 1.4142135623730950622E0   ,04f3,40b5,de65,33f9,   1, .B504F333F9DE65)
-
-ic(ln2hi, 6.9314718036912381649E-1,   -1, 1.62E42FEE00000)
-ic(ln2lo, 1.9082149292705877000E-10, -33, 1.A39EF35793C76)
-ic(sqrt2, 1.4142135623730951455E0,     0, 1.6A09E667F3BCD)
-
-#ifdef vccast
-#define	ln2hi	vccast(ln2hi)
-#define	ln2lo	vccast(ln2lo)
-#define	sqrt2	vccast(sqrt2)
+#if defined(vax) || defined(tahoe)
+#define _IEEE	0
+#define TRUNC(x) (double) (float) (x)
+#else
+#define _IEEE	1
+#define TRUNC(x) *(((int *) &x) + 1) &= 0xf8000000
+#define infnan(x) 0.0
 #endif
 
-
-double log(x)
-double x;
+double
+#ifdef _ANSI_SOURCE
+log(double x)
+#else
+log(x) double x;
+#endif
 {
-	const static double zero=0.0, negone= -1.0, half=1.0/2.0;
-	double s,z,t;
-	int k,n;
+	int m, j;
+	double F, f, g, q, u, u2, v, zero = 0.0, one = 1.0;
+	double logb(), ldexp();
+	volatile double u1;
 
-#if !defined(vax)&&!defined(tahoe)
-	if(x!=x) return(x);	/* x is NaN */
-#endif	/* !defined(vax)&&!defined(tahoe) */
-	if(finite(x)) {
-	   if( x > zero ) {
-
-	   /* argument reduction */
-	      k=logb(x);   x=scalb(x,-k);
-	      if(k == -1022) /* subnormal no. */
-		   {n=logb(x); x=scalb(x,-n); k+=n;} 
-	      if(x >= sqrt2 ) {k += 1; x *= half;}
-	      x += negone ;
-
-	   /* compute log(1+x)  */
-              s=x/(2+x); t=x*x*half;
-	      z=k*ln2lo+s*(t+log__L(s*s));
-	      x += (z - t) ;
-
-	      return(k*ln2hi+x);
-	   }
-	/* end of if (x > zero) */
-
-	   else {
-#if defined(vax)||defined(tahoe)
-		if ( x == zero )
-		    return (infnan(-ERANGE));	/* -INF */
+	/* Catch special cases */
+	if (x <= 0)
+		if (_IEEE && x == zero)	/* log(0) = -Inf */
+			return (-one/zero);
+		else if (_IEEE)		/* log(neg) = NaN */
+			return (zero/zero);
+		else if (x == zero)	/* NOT REACHED IF _IEEE */
+			return (infnan(-ERANGE));
 		else
-		    return (infnan(EDOM));	/* NaN */
-#else	/* defined(vax)||defined(tahoe) */
-		/* zero argument, return -INF with signal */
-		if ( x == zero )
-		    return( negone/zero );
+			return (infnan(EDOM));
+	else if (!finite(x))
+		if (_IEEE)		/* x = NaN, Inf */
+			return (x+x);
+		else
+			return (infnan(ERANGE));
+	
+	/* Argument reduction: 1 <= g < 2; x/2^m = g;	*/
+	/* y = F*(1 + f/F) for |f| <= 2^-8		*/
 
-		/* negative argument, return NaN with signal */
-		else 
-		    return ( zero / zero );
-#endif	/* defined(vax)||defined(tahoe) */
-	    }
+	m = logb(x);
+	g = ldexp(x, -m);
+	if (_IEEE && m == -1022) {
+		j = logb(g), m += j;
+		g = ldexp(g, -j);
 	}
-    /* end of if (finite(x)) */
-    /* NOTREACHED if defined(vax)||defined(tahoe) */
+	j = N*(g-1) + .5;
+	F = (1.0/N) * j + 1;	/* F*128 is an integer in [128, 512] */
+	f = g - F;
 
-    /* log(-INF) is NaN with signal */
-	else if (x<0) 
-	    return(zero/zero);      
+	/* Approximate expansion for log(1+f/F) ~= u + q */
+	g = 1/(2*F+f);
+	u = 2*f*g;
+	v = u*u;
+	q = u*v*(A1 + v*(A2 + v*(A3 + v*A4)));
 
-    /* log(+INF) is +INF */
-	else return(x);      
+    /* case 1: u1 = u rounded to 2^-43 absolute.  Since u < 2^-8,
+     * 	       u1 has at most 35 bits, and F*u1 is exact, as F has < 8 bits.
+     *         It also adds exactly to |m*log2_hi + log_F_head[j] | < 750
+    */
+	if (m | j)
+		u1 = u + 513, u1 -= 513;
 
+    /* case 2:	|1-x| < 1/256. The m- and j- dependent terms are zero;
+     * 		u1 = u to 24 bits.
+    */
+	else
+		u1 = u, TRUNC(u1);
+	u2 = (2.0*(f - F*u1) - u1*f) * g;
+			/* u1 + u2 = 2f/(2F+f) to extra precision.	*/
+
+	/* log(x) = log(2^m*F*(1+f/F)) =				*/
+	/* (m*log2_hi+logF_head[j]+u1) + (m*log2_lo+logF_tail[j]+q);	*/
+	/* (exact) + (tiny)						*/
+
+	u1 += m*logF_head[N] + logF_head[j];		/* exact */
+	u2 = (u2 + logF_tail[j]) + q;			/* tiny */
+	u2 += logF_tail[N]*m;
+	return (u1 + u2);
+}
+
+/* Extra precision variant, returning
+ * struct {double a, b;}; log(x) = a+b to 63 bits, with
+ * a is rounded to 26 bits.
+ */
+struct Double
+#ifdef _ANSI_SOURCE
+log__D(double x)
+#else
+log__D(x) double x;
+#endif
+{
+	int m, j;
+	double F, f, g, q, u, v, u2;
+	double logb(), ldexp();
+	volatile double u1;
+	struct Double r;
+
+	/* Argument reduction: 1 <= g < 2; x/2^m = g;	*/
+	/* y = F*(1 + f/F) for |f| <= 2^-8		*/
+
+	m = logb(x);
+	g = ldexp(x, -m);
+	if (_IEEE && m == -1022) {
+		j = logb(g), m += j;
+		g = ldexp(g, -j);
+	}
+	j = N*(g-1) + .5;
+	F = (1.0/N) * j + 1;
+	f = g - F;
+
+	g = 1/(2*F+f);
+	u = 2*f*g;
+	v = u*u;
+	q = u*v*(A1 + v*(A2 + v*(A3 + v*A4)));
+	if (m | j)
+		u1 = u + 513, u1 -= 513;
+	else
+		u1 = u, TRUNC(u1);
+	u2 = (2.0*(f - F*u1) - u1*f) * g;
+
+	u1 += m*logF_head[N] + logF_head[j];
+
+	u2 +=  logF_tail[j]; u2 += q;
+	u2 += logF_tail[N]*m;
+	r.a = u1 + u2;			/* Only difference is here */
+	TRUNC(r.a);
+	r.b = (u1 - r.a) + u2;
+	return (r);
 }
