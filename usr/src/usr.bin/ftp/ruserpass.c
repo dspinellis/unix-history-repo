@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruserpass.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -118,8 +118,9 @@ next:
 			if (strcmp(*aname, "anonymous") &&
 			    fstat(fileno(cfile), &stb) >= 0 &&
 			    (stb.st_mode & 077) != 0) {
-	fprintf(stderr, "Error - .netrc file not correct mode.\n");
-	fprintf(stderr, "Remove password or correct mode.\n");
+	fprintf(stderr, "Error: .netrc file is readable by others.\n");
+	fprintf(stderr, 
+		"Remove password or make file unreadable by others.\n\n");
 				goto bad;
 			}
 			if (token() && *apass == 0) {
@@ -130,8 +131,9 @@ next:
 		case ACCOUNT:
 			if (fstat(fileno(cfile), &stb) >= 0
 			    && (stb.st_mode & 077) != 0) {
-	fprintf(stderr, "Error - .netrc file not correct mode.\n");
-	fprintf(stderr, "Remove account or correct mode.\n");
+	fprintf(stderr, "Error: .netrc file is readable by others.\n");
+	fprintf(stderr, 
+		"Remove account or make file unreadable by others.\n\n");
 				goto bad;
 			}
 			if (token() && *aacct == 0) {
@@ -219,7 +221,7 @@ token()
 	int c;
 	struct toktab *t;
 
-	if (feof(cfile))
+	if (feof(cfile) || ferror(cfile))
 		return (0);
 	while ((c = getc(cfile)) != EOF &&
 	    (c == '\n' || c == '\t' || c == ' ' || c == ','))
