@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.3 (Berkeley) 3/9/81";
+static	char *sccsid = "@(#)iostat.c	4.5 (Berkeley) 81/04/01";
 /*
  * iostat
  */
