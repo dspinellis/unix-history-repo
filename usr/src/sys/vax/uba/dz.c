@@ -1,9 +1,9 @@
-/*	dz.c	4.32	82/01/14	*/
+/*	dz.c	4.33	82/02/08	*/
 
 #include "dz.h"
 #if NDZ > 0
 /*
- * DZ-11 Driver
+ *  DZ-11 and DZ32 Driver
  *
  * This driver mimics dh.c; see it for explanation of common code.
  */
@@ -38,30 +38,57 @@ struct	uba_driver dzdriver =
  * Registers and bits
  */
 
-/* Bits in dzlpr */
-#define	BITS7	020
-#define	BITS8	030
-#define	TWOSB	040
+/* bits in dzlpr */
+#define	BITS7	0020
+#define	BITS8	0030
+#define	TWOSB	0040
 #define	PENABLE	0100
 #define	OPAR	0200
 
-/* Bits in dzrbuf */
+/* bits in dzrbuf */
 #define	DZ_PE	010000
 #define	DZ_FE	020000
 #define	DZ_DO	040000
 
-/* Bits in dzcsr */
-#define	DZ_CLR	020		/* Reset dz */
-#define	DZ_MSE	040		/* Master Scan Enable */
-#define	DZ_RIE	0100		/* Receiver Interrupt Enable */
+/* bits in dzcsr */
+#define	DZ_32	000001		/* DZ32 mode */
+#define	DZ_MIE	000002		/* Modem Interrupt Enable */
+#define	DZ_CLR	000020		/* Reset dz */
+#define	DZ_MSE	000040		/* Master Scan Enable */
+#define	DZ_RIE	000100		/* Receiver Interrupt Enable */
+#define DZ_MSC	004000		/* Modem Status Change */
 #define	DZ_SAE	010000		/* Silo Alarm Enable */
 #define	DZ_TIE	040000		/* Transmit Interrupt Enable */
-#define	DZ_IEN	(DZ_MSE|DZ_RIE|DZ_TIE|DZ_SAE)
+#define	DZ_IEN	(DZ_32|DZ_MIE|DZ_MSE|DZ_RIE|DZ_TIE|DZ_SAE)
 
-/* Flags for modem-control */
-#define	DZ_ON	1
+/* flags for modem-control */
+#define	DZ_ON	DZ_DTR
 #define	DZ_OFF	0
+
+/* bits in dzlcs */
+#define DZ_ACK	0100000		/* ACK bit in dzlcs */
+#define DZ_RTS	0010000		/* Request To Send */
+#define	DZ_ST	0004000		/* Secondary Transmit */
+#define	DZ_BRK	0002000		/* Break */
+#define DZ_DTR	0001000		/* Data Terminal Ready */
+#define	DZ_LE	0000400		/* Line Enable */
+#define	DZ_DSR	0000200		/* Data Set Ready */
+#define	DZ_RI	0000100		/* Ring Indicate */
+#define DZ_CD	0000040		/* Carrier Detect */
+#define	DZ_CTS	0000020		/* Clear To Send */
+#define	DZ_SR	0000010		/* Secondary Receive */
  
+/* bits in dm lsr, copied from dh.c */
+#define	DML_DSR		0000400		/* data set ready, not a real DM bit */
+#define	DML_RNG		0000200		/* ring */
+#define	DML_CAR		0000100		/* carrier detect */
+#define	DML_CTS		0000040		/* clear to send */
+#define	DML_SR		0000020		/* secondary receive */
+#define	DML_ST		0000010		/* secondary transmit */
+#define	DML_RTS		0000004		/* request to send */
+#define	DML_DTR		0000002		/* data terminal ready */
+#define	DML_LE		0000001		/* line enable */
+
 int	dzstart(), dzxint(), dzdma();
 int	ttrstrt();
 struct	tty dz_tty[NDZLINE];
@@ -69,23 +96,44 @@ int	dz_cnt = { NDZLINE };
 int	dzact;
 
 struct device {
-	short	dzcsr;		/* control-status register */
-	short	dzrbuf;		/* receiver buffer */
-#define	dzlpr	dzrbuf		/* line parameter reg is write of dzrbuf */
-	char	dztcr;		/* transmit control register */
-	char	dzdtr;		/* data terminal ready */
-	char	dztbuf;		/* transmit buffer */
-	char	dzbrk;		/* break control */
-#define	dzmsr	dzbrk		/* modem status register */
+	short dzcsr;
+	short dzrbuf;
+	union {
+		struct {
+			char	dztcr0;
+			char	dzdtr0;
+			char	dztbuf0;
+			char	dzbrk0;
+		} dz11;
+		struct {
+			short	dzlcs0;
+			char	dztbuf0;
+			char	dzlnen0;
+		} dz32;
+	} dzun;
 };
+
+#define dzlpr	dzrbuf
+#define dzmsr	dzun.dz11.dzbrk0
+#define dztcr	dzun.dz11.dztcr0
+#define dzdtr	dzun.dz11.dzdtr0
+#define dztbuf	dzun.dz11.dztbuf0
+#define dzlcs	dzun.dz32.dzlcs0
+#define	dzbrk	dzmsr
+#define dzlnen	dzun.dz32.dzlnen0
+#define dzmtsr	dzun.dz32.dztbuf0;
+
+#define dzwait(x)	while (((x)->dzlcs & DZ_ACK) == 0)
+
 /*
  * Software copy of dzbrk since it isn't readable
  */
 char	dz_brk[NDZ];
 char	dzsoftCAR[NDZ];
+char	dz_lnen[NDZ];	/* saved line enable bits for DZ32 */
 
 /*
- * The dz doesn't interrupt on carrier transitions, so
+ * The dz11 doesn't interrupt on carrier transitions, so
  * we have to use a timer to watch it.
  */
 char	dz_timer;		/* timer started? */
@@ -108,10 +156,13 @@ dzprobe(reg)
 	br = 0; cvec = br; br = cvec;
 	dzrint(0); dzxint((struct tty *)0);
 #endif
-	dzaddr->dzcsr = DZ_TIE|DZ_MSE;
-	dzaddr->dztcr = 1;		/* enable any line */
+	dzaddr->dzcsr = DZ_TIE|DZ_MSE|DZ_32;
+	if (dzaddr->dzcsr & DZ_32)
+		dzaddr->dzlnen = 1;
+	else
+		dzaddr->dztcr = 1;		/* enable any line */
 	DELAY(100000);
-	dzaddr->dzcsr = DZ_CLR;		/* reset everything */
+	dzaddr->dzcsr = DZ_CLR|DZ_32;		/* reset everything */
 	if (cvec && cvec != 0x200)
 		cvec -= 4;
 	return (1);
@@ -164,7 +215,7 @@ dzopen(dev, flag)
 		u.u_error = EBUSY;
 		return;
 	}
-	dzmodem(unit, DZ_ON);
+	dzmctl(dev, DZ_ON, DMSET);
 	(void) spl5();
 	while ((tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
@@ -180,16 +231,20 @@ dzclose(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
-	int dz;
+	register struct device *dzaddr;
+	int dz, s;
  
 	unit = minor(dev);
 	dz = unit >> 3;
 	tp = &dz_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp);
-	((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
-	    (dz_brk[dz] &= ~(1 << (unit&07)));
-	if (tp->t_state & TS_HUPCLS)
-		dzmodem(unit, DZ_OFF);
+	dzaddr = dzpdma[unit].p_addr;
+	if (dzaddr->dzcsr&DZ_32)
+		dzmctl(dev, DZ_BRK, DMBIC);
+	else
+		dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
+	if ((tp->t_state&TS_HUPCLS) || (tp->t_state&TS_ISOPEN) == 0)
+		dzmctl(dev, DZ_OFF, DMSET);
 	ttyclose(tp);
 }
  
@@ -227,6 +282,31 @@ dzrint(dz)
 	unit = dz * 8;
 	dzaddr = dzpdma[unit].p_addr;
 	tp0 = &dz_tty[unit];
+	dzaddr->dzcsr &= ~(DZ_RIE|DZ_MIE);	/* the manual says this song */
+	dzaddr->dzcsr |= DZ_RIE|DZ_MIE;		/*   and dance is necessary */
+	while (dzaddr->dzcsr & DZ_MSC) {	/* DZ32 modem change interrupt */
+		c = dzaddr->dzmtsr;
+		tp = tp0 + (c&7);
+		if (tp >= &dz_tty[dz_cnt])
+			break;
+		dzaddr->dzlcs = c&7;	/* get status of modem lines */
+		dzwait(dzaddr);		/* wait for them */
+		if (c & DZ_CD)		/* carrier status change? */
+		if (dzaddr->dzlcs & DZ_CD) {	/* carrier up? */
+			if ((tp->t_state&TS_CARR_ON) == 0) {
+				wakeup((caddr_t)&tp->t_rawq);
+				tp->t_state |= TS_CARR_ON;
+			}
+		} else {	/* no carrier */
+			if (tp->t_state&TS_CARR_ON) {
+				gsignal(tp->t_pgrp, SIGHUP);
+				gsignal(tp->t_pgrp, SIGCONT);
+				dzaddr->dzlcs = DZ_ACK|(c&7);
+				flushtty(tp, FREAD|FWRITE);
+			}
+			tp->t_state &= ~TS_CARR_ON;
+		}
+	}
 	while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
 		tp = tp0 + ((c>>8)&07);
 		if (tp >= &dz_tty[dz_cnt])
@@ -241,7 +321,7 @@ dzrint(dz)
 			else
 				c = tun.t_intrc;
 		if (c&DZ_DO && overrun == 0) {
-			printf("dz%d: silo overflow\n", dz);
+			/* printf("dz%d,%d: silo overflow\n", dz, (c>>8)&7); */
 			overrun = 1;
 		}
 		if (c&DZ_PE)	
@@ -266,6 +346,8 @@ dzioctl(dev, cmd, addr, flag)
 	register struct tty *tp;
 	register int unit = minor(dev);
 	register int dz = unit >> 3;
+	register struct device *dzaddr;
+	int temp;
  
 	tp = &dz_tty[unit];
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
@@ -277,22 +359,77 @@ dzioctl(dev, cmd, addr, flag)
 	} else switch(cmd) {
 
 	case TIOCSBRK:
-		((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
-			(dz_brk[dz] |= 1 << (unit&07));
+		dzaddr = ((struct pdma *)(tp->t_addr))->p_addr;
+		if (dzaddr->dzcsr&DZ_32)
+			dzmctl(dev, DZ_BRK, DMBIS);
+		else
+			dzaddr->dzbrk = (dz_brk[dz] |= 1 << (unit&07));
 		break;
 	case TIOCCBRK:
-		((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
-			(dz_brk[dz] &= ~(1 << (unit&07)));
+		dzaddr = ((struct pdma *)(tp->t_addr))->p_addr;
+		if (dzaddr->dzcsr&DZ_32)
+			dzmctl(dev, DZ_BRK, DMBIC);
+		else
+			dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
 		break;
 	case TIOCSDTR:
-		dzmodem(unit, DZ_ON);
+		dzmctl(dev, DZ_DTR|DZ_RTS, DMBIS);
 		break;
 	case TIOCCDTR:
-		dzmodem(unit, DZ_OFF);
+		dzmctl(dev, DZ_DTR|DZ_RTS, DMBIC);
+		break;
+	case TIOCMSET:
+		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
+			u.u_error = EFAULT;
+		else
+			dzmctl(dev, dmtodz(temp), DMSET);
+		break;
+	case TIOCMBIS:
+		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
+			u.u_error = EFAULT;
+		else
+			dzmctl(dev, dmtodz(temp), DMBIS);
+		break;
+	case TIOCMBIC:
+		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
+			u.u_error = EFAULT;
+		else
+			dzmctl(dev, dmtodz(temp), DMBIC);
+		break;
+	case TIOCMGET:
+		temp = dztodm(dzmctl(dev, 0, DMGET));
+		if (copyout((caddr_t) &temp, addr, sizeof(temp)))
+			u.u_error = EFAULT;
 		break;
 	default:
 		u.u_error = ENOTTY;
 	}
+}
+
+dmtodz(bits)
+	register int bits;
+{
+	register int b;
+
+	b = (bits >>1) & 0370;
+	if (bits & DML_ST) b |= DZ_ST;
+	if (bits & DML_RTS) b |= DZ_RTS;
+	if (bits & DML_DTR) b |= DZ_DTR;
+	if (bits & DML_LE) b |= DZ_LE;
+	return(b);
+}
+
+dztodm(bits)
+	register int bits;
+{
+	register int b;
+
+	b = (bits << 1) & 0360;
+	if (bits & DZ_DSR) b |= DML_DSR;
+	if (bits & DZ_DTR) b |= DML_DTR;
+	if (bits & DZ_ST) b |= DML_ST;
+	if (bits & DZ_RTS) b |= DML_RTS;
+	return(b);
 }
  
 dzparam(unit)
@@ -307,7 +444,7 @@ dzparam(unit)
 	dzaddr->dzcsr = DZ_IEN;
 	dzact |= (1<<(unit>>3));
 	if (tp->t_ispeed == 0) {
-		dzmodem(unit, DZ_OFF);		/* hang up line */
+		dzmctl(unit, DZ_OFF, DMSET);	/* hang up line */
 		return;
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
@@ -326,21 +463,28 @@ dzxint(tp)
 	register struct tty *tp;
 {
 	register struct pdma *dp;
-	register s;
+	register s, dz, unit;
  
 	s = spl5();		/* block pdma interrupts */
 	dp = (struct pdma *)tp->t_addr;
 	tp->t_state &= ~TS_BUSY;
 	if (tp->t_state & TS_FLUSH)
 		tp->t_state &= ~TS_FLUSH;
-	else
+	else {
 		ndflush(&tp->t_outq, dp->p_mem-tp->t_outq.c_cf);
+		dp->p_end = dp->p_mem = tp->t_outq.c_cf;
+	}
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
 	else
 		dzstart(tp);
+	dz = minor(tp->t_dev) >> 3;
+	unit = minor(tp->t_dev) & 7;
 	if (tp->t_outq.c_cc == 0 || (tp->t_state&TS_BUSY)==0)
-		dp->p_addr->dztcr &= ~(1 << (minor(tp->t_dev)&07));
+		if (dp->p_addr->dzcsr & DZ_32)
+			dp->p_addr->dzlnen = (dz_lnen[dz] &= ~(1<<unit));
+		else
+			dp->p_addr->dztcr &= ~(1<<unit);
 	splx(s);
 }
 
@@ -350,7 +494,7 @@ dzstart(tp)
 	register struct pdma *dp;
 	register struct device *dzaddr;
 	register int cc;
-	int s;
+	int s, dz, unit;
  
 	dp = (struct pdma *)tp->t_addr;
 	dzaddr = dp->p_addr;
@@ -370,7 +514,7 @@ dzstart(tp)
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
+	if ((tp->t_flags&RAW) || (tp->t_local&LLITOUT))
 		cc = ndqb(&tp->t_outq, 0);
 	else {
 		cc = ndqb(&tp->t_outq, 0200);
@@ -384,7 +528,12 @@ dzstart(tp)
 	tp->t_state |= TS_BUSY;
 	dp->p_end = dp->p_mem = tp->t_outq.c_cf;
 	dp->p_end += cc;
-	dzaddr->dztcr |= 1 << (minor(tp->t_dev) & 07);	/* force intr */
+	dz = minor(tp->t_dev) >> 3;
+	unit = minor(tp->t_dev) & 7;
+	if (dzaddr->dzcsr & DZ_32)
+		dzaddr->dzlnen = (dz_lnen[dz] |= (1<<unit));
+	else
+		dzaddr->dztcr |= (1<<unit);
 out:
 	splx(s);
 }
@@ -409,18 +558,60 @@ dzstop(tp, flag)
 	splx(s);
 }
  
-dzmodem(unit, flag)
-	register int unit;
+dzmctl(dev, bits, how)
+	dev_t dev;
+	int bits, how;
 {
 	register struct device *dzaddr;
-	register char bit;
- 
+	register int unit, mbits;
+	int b, s;
+
+	unit = minor(dev);
+	b = 1<<(unit&7);
 	dzaddr = dzpdma[unit].p_addr;
-	bit = 1<<(unit&07);
-	if (flag == DZ_OFF)
-		dzaddr->dzdtr &= ~bit;
-	else
-		dzaddr->dzdtr |= bit;
+	s = spl5();
+	if (dzaddr->dzcsr & DZ_32) {
+		dzwait(dzaddr)
+		DELAY(100);		/* IS 100 TOO MUCH? */
+		dzaddr->dzlcs = unit&7;
+		DELAY(100);
+		dzwait(dzaddr)
+		DELAY(100);
+		mbits = dzaddr->dzlcs;
+		mbits &= 0177770;
+	} else {
+		mbits = (dzaddr->dzdtr & b) ? DZ_DTR : 0;
+		mbits |= (dzaddr->dzmsr & b) ? DZ_CD : 0;
+		mbits |= (dzaddr->dztbuf & b) ? DZ_RI : 0;
+	}
+	switch (how) {
+	case DMSET:
+		mbits = bits;
+		break;
+
+	case DMBIS:
+		mbits |= bits;
+		break;
+
+	case DMBIC:
+		mbits &= ~bits;
+		break;
+
+	case DMGET:
+		(void) splx(s);
+		return(mbits);
+	}
+	if (dzaddr->dzcsr & DZ_32) {
+		mbits |= DZ_ACK|(unit&7);
+		dzaddr->dzlcs = mbits;
+	} else {
+		if (mbits & DZ_DTR)
+			dzaddr->dzdtr |= b;
+		else
+			dzaddr->dzdtr &= ~b;
+	}
+	(void) splx(s);
+	return(mbits);
 }
  
 dzscan()
@@ -429,6 +620,7 @@ dzscan()
 	register struct device *dzaddr;
 	register bit;
 	register struct tty *tp;
+	register car;
  
 	for (i = 0; i < dz_cnt ; i++) {
 		dzaddr = dzpdma[i].p_addr;
@@ -436,7 +628,16 @@ dzscan()
 			continue;
 		tp = &dz_tty[i];
 		bit = 1<<(i&07);
-		if ((dzsoftCAR[i>>3]&bit) || (dzaddr->dzmsr&bit)) {
+		car = 0;
+		if (dzsoftCAR[i>>3]&bit)
+			car = 1;
+		else if (dzaddr->dzcsr & DZ_32) {
+			dzaddr->dzlcs = i&07;
+			dzwait(dzaddr);
+			car = dzaddr->dzlcs & DZ_CD;
+		} else
+			car = dzaddr->dzmsr&bit;
+		if (car) {
 			/* carrier present */
 			if ((tp->t_state & TS_CARR_ON) == 0) {
 				wakeup((caddr_t)&tp->t_rawq);
@@ -487,7 +688,7 @@ dzreset(uban)
 		tp = &dz_tty[unit];
 		if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
 			dzparam(unit);
-			dzmodem(unit, DZ_ON);
+			dzmctl(unit, DZ_ON, DMSET);
 			tp->t_state &= ~TS_BUSY;
 			dzstart(tp);
 		}
