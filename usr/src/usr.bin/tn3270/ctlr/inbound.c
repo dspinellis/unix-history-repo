@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inbound.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inbound.c	4.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -279,6 +279,15 @@ Home()
 
     i = SetBufferAddress(OptHome, 0);
     j = WhereLowByte(i);
+    /*
+     * If the initial value of i points to the field attribute of
+     * an unprotected field, we need to return the address of the
+     * first data byte in the field (assuming there are any!).
+     */
+    if (IsStartField(i) && IsUnProtected(j)) {
+	CursorAddress = j;
+	return;
+    }
     do {
 	if (IsUnProtected(i)) {
 	    CursorAddress = i;
