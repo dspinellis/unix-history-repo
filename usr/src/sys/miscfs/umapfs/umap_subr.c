@@ -8,9 +8,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_subr.c	8.3 (Berkeley) %G%
+ *	@(#)umap_subr.c	8.4 (Berkeley) %G%
  *
- * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
+ * $Id: lofs_subr.c, v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
 #include <sys/param.h>
@@ -25,7 +25,7 @@
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NUMAPNODECACHE 16
-#define	UMAP_NHASH(vp) ((((u_long)vp)>>LOG2_SIZEVNODE) & (NUMAPNODECACHE-1))
+#define	UMAP_NHASH(vp) ((((u_long) vp)>>LOG2_SIZEVNODE) & (NUMAPNODECACHE-1))
 
 /*
  * Null layer cache:
@@ -64,10 +64,58 @@ umapfs_init()
  */
 static struct umap_node_cache *
 umap_node_hash(targetvp)
-struct vnode *targetvp;
+	struct vnode *targetvp;
 {
 
 	return (&umap_node_cache[UMAP_NHASH(targetvp)]);
+}
+
+/*
+ * umap_findid is called by various routines in umap_vnodeops.c to
+ * find a user or group id in a map.
+ */
+static u_long
+umap_findid(id, map, nentries)
+	u_long id;
+	u_long map[][2];
+	int nentries;
+{
+	int i;
+
+	/* Find uid entry in map */
+	i = 0;
+	while ((i<nentries) && ((map[i][0]) != id))
+		i++;
+
+	if (i < nentries)
+		return (map[i][1]);
+	else
+		return (-1);
+
+}
+
+/*
+ * umap_reverse_findid is called by umap_getattr() in umap_vnodeops.c to
+ * find a user or group id in a map, in reverse.
+ */
+u_long
+umap_reverse_findid(id, map, nentries)
+	u_long id;
+	u_long map[][2];
+	int nentries;
+{
+	int i;
+
+	/* Find uid entry in map */
+	i = 0;
+	while ((i<nentries) && ((map[i][1]) != id))
+		i++;
+
+	if (i < nentries)
+		return (map[i][0]);
+	else
+		return (-1);
+
 }
 
 /*
@@ -105,7 +153,9 @@ umap_node_find(mp, targetvp)
 			 * the lower node.
 			 */
 			if (vget(vp, 0)) {
-				printf ("null_node_find: vget failed.\n");
+#ifdef UMAPFS_DIAGNOSTIC
+				printf ("umap_node_find: vget failed.\n");
+#endif
 				goto loop;
 			}
 			return (vp);
@@ -269,11 +319,14 @@ umap_checkvp(vp, fil, lno)
 
 /* umap_mapids maps all of the ids in a credential, both user and group. */
 
-umap_mapids(v_mount,credp)
+void
+umap_mapids(v_mount, credp)
 	struct mount *v_mount;
 	struct ucred *credp;
 {
-	int i,gid,uid,unentries,gnentries,*groupmap,*usermap;
+	int i, unentries, gnentries, *groupmap, *usermap;
+	uid_t uid;
+	gid_t gid;
 
 	unentries =  MOUNTTOUMAPMOUNT(v_mount)->info_nentries;
 	usermap =  &(MOUNTTOUMAPMOUNT(v_mount)->info_mapdata[0][0]);
@@ -282,83 +335,37 @@ umap_mapids(v_mount,credp)
 
 	/* Find uid entry in map */
 
-	uid = umap_findid(credp->cr_uid,usermap,unentries);
+	uid = (uid_t) umap_findid(credp->cr_uid, usermap, unentries);
 
-	if (uid != -1) {
-		credp->cr_uid =
-			(u_short)uid;
-	} else 
-		credp->cr_uid = (u_short)NOBODY;
+	if (uid != -1)
+		credp->cr_uid = uid;
+	else
+		credp->cr_uid = (uid_t) NOBODY;
+
+#ifdef notdef
+	/* cr_gid is the same as cr_groups[0] in 4BSD */
 
 	/* Find gid entry in map */
 
-	gid = umap_findid(credp->cr_gid,groupmap,gnentries);
+	gid = (gid_t) umap_findid(credp->cr_gid, groupmap, gnentries);
 
-	if (gid != -1) {
-		credp->cr_gid =
-			(u_short)gid;
-	} else 
-		credp->cr_gid = (u_short)NULLGROUP;
+	if (gid != -1)
+		credp->cr_gid = gid;
+	else
+		credp->cr_gid = NULLGROUP;
+#endif
 
 	/* Now we must map each of the set of groups in the cr_groups 
 		structure. */
 
 	i = 0;
-	while (credp->cr_groups[i] != 0)
-	{
-		gid = umap_findid(credp->cr_groups[i],groupmap,
-			gnentries);
-		
-		if (gid != -1) 
-			credp->cr_groups[i++] = (u_short)gid;
+	while (credp->cr_groups[i] != 0) {
+		gid = (gid_t) umap_findid(credp->cr_groups[i],
+					groupmap, gnentries);
+
+		if (gid != -1)
+			credp->cr_groups[i++] = gid;
 		else
-			credp->cr_groups[i++] = (u_short)NULLGROUP;
-
+			credp->cr_groups[i++] = NULLGROUP;
 	}
-}
-
-/* umap_findid is called by various routines in umap_vnodeops.c to
- * find a user or group id in a map.
- */
-
-umap_findid(id,map,nentries)
-	ushort id;
-	int map[][2];
-	int nentries;
-{
-	int i;
-
-	/* Find uid entry in map */
-	i = 0;
-	while ((i<nentries) && ((u_short)(map[i][0] ) != id))
-		i++;
-
-	if ( i < nentries )
-		return (map[i][1]);
-	else
-		return (-1);
-
-}
-
-/* umap_reverse_findid is called by umap_getattr() in umap_vnodeops.c to
- * find a user or group id in a map, in reverse.
- */
-
-umap_reverse_findid(id,map,nentries)
-	ushort id;
-	int map[][2];
-	int nentries;
-{
-	int i;
-
-	/* Find uid entry in map */
-	i = 0;
-	while ((i<nentries) && ((u_short)(map[i][1] ) != id))
-		i++;
-
-	if ( i < nentries )
-		return (map[i][0]);
-	else
-		return (-1);
-
 }

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap.h	8.1 (Berkeley) %G%
+ *	@(#)umap.h	8.2 (Berkeley) %G%
  *
  * @(#)null_vnops.c       1.5 (Berkeley) 7/10/92
  */
@@ -22,18 +22,18 @@ struct umap_args {
 	char		*target;	/* Target of loopback  */
 	int 		nentries;       /* # of entries in user map array */
 	int 		gnentries;	/* # of entries in group map array */
-	int 		*mapdata;       /* pointer to array of user mappings */
-	int 		*gmapdata;	/* pointer to array of group mappings */
+	u_long 		(*mapdata)[2];	/* pointer to array of user mappings */
+	u_long 		(*gmapdata)[2];	/* pointer to array of group mappings */
 };
 
 struct umap_mount {
 	struct mount	*umapm_vfs;
 	struct vnode	*umapm_rootvp;	/* Reference to root umap_node */
 	int             info_nentries;  /* number of uid mappings */
-	int		info_gnentries; /* number of gid mappings */
-	int             info_mapdata[MAPFILEENTRIES][2]; /* mapping data for 
+	int		info_gnentries;	/* number of gid mappings */
+	u_long		info_mapdata[MAPFILEENTRIES][2]; /* mapping data for 
 	    user mapping in ficus */
-	int		info_gmapdata[GMAPFILEENTRIES] [2]; /*mapping data for 
+	u_long		info_gmapdata[GMAPFILEENTRIES][2]; /*mapping data for 
 	    group mapping in ficus */
 };
 
@@ -49,6 +49,8 @@ struct umap_node {
 };
 
 extern int umap_node_create __P((struct mount *mp, struct vnode *target, struct vnode **vpp));
+extern u_long umap_reverse_findid __P((u_long id, u_long map[][2], int nentries));
+extern void umap_mapids __P((struct mount *v_mount, struct ucred *credp));
 
 #define	MOUNTTOUMAPMOUNT(mp) ((struct umap_mount *)((mp)->mnt_data))
 #define	VTOUMAP(vp) ((struct umap_node *)(vp)->v_data)
