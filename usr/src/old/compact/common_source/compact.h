@@ -1,13 +1,12 @@
-/*	compact.h	4.1	83/02/11	*/
+/*	compact.h	4.2	83/02/23	*/
 
 #define VAX 11/780
 
 
-#ifdef VAX
+#if defined(vax) || defined(sun)
 typedef int longint;
 #else
 typedef long longint;
-#include <retrofit.h>
 #endif
 
 #include <sys/types.h>
@@ -26,13 +25,16 @@ typedef long longint;
 #define NC 0401
 
 struct charac {
-	char lob;
-	char hib;
+#if defined(vax) || defined(pdp11)
+	char lob, hib;
+#else
+	char hib, lob;
+#endif
 };
 
 union cio {
 	struct charac chars;
-	int integ;
+	short integ;
 };
 
 struct fpoint {
