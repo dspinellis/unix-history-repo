@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	8.2 (Berkeley) %G%
+ *	@(#)vm_fault.c	8.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -242,16 +242,14 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 			vm_page_lock_queues();
 			if (m->flags & PG_INACTIVE) {
-				queue_remove(&vm_page_queue_inactive, m,
-						vm_page_t, pageq);
+				TAILQ_REMOVE(&vm_page_queue_inactive, m, pageq);
 				m->flags &= ~PG_INACTIVE;
 				cnt.v_inactive_count--;
 				cnt.v_reactivated++;
 			} 
 
 			if (m->flags & PG_ACTIVE) {
-				queue_remove(&vm_page_queue_active, m,
-						vm_page_t, pageq);
+				TAILQ_REMOVE(&vm_page_queue_active, m, pageq);
 				m->flags &= ~PG_ACTIVE;
 				cnt.v_active_count--;
 			}

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	8.3 (Berkeley) %G%
+ *	@(#)vm_pager.c	8.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -232,18 +232,15 @@ vm_pager_unmap_page(kva)
 }
 
 vm_pager_t
-vm_pager_lookup(list, handle)
-	register queue_head_t *list;
+vm_pager_lookup(pglist, handle)
+	register struct pagerlst *pglist;
 	caddr_t handle;
 {
 	register vm_pager_t pager;
 
-	pager = (vm_pager_t) queue_first(list);
-	while (!queue_end(list, (queue_entry_t)pager)) {
+	for (pager = pglist->tqh_first; pager; pager = pager->pg_list.tqe_next)
 		if (pager->pg_handle == handle)
 			return(pager);
-		pager = (vm_pager_t) queue_next(&pager->pg_list);
-	}
 	return(NULL);
 }
 
