@@ -1,4 +1,4 @@
-#	@(#)rc	5.23 (Berkeley) %G%
+#	@(#)rc	5.24 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -95,8 +95,7 @@ quotaon -a
 
 # build ps databases
 kvm_mkdb /vmunix
-ls -l /dev | awk '/^[bc]/ { print substr($1, 1, 1), $4, $5, $9 }' > \
-	/var/run/devdatabase
+dev_mkdb
 
 chmod 666 /dev/tty[pqrs]*
 
