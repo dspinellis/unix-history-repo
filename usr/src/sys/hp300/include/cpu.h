@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  *
- *	@(#)cpu.h	7.8 (Berkeley) %G%
+ *	@(#)cpu.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +46,7 @@
  * leaves on the stack.
  */
 typedef struct intrframe {
-	int	pc;
+	char	*pc;
 	int	ps;
 } clockframe;
 
