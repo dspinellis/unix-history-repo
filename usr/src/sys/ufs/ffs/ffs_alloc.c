@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)ffs_alloc.c 1.5 %G%";
+static char vers[] = "@(#)ffs_alloc.c 1.6 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -14,9 +14,11 @@ static char vers[] = "@(#)ffs_alloc.c 1.5 %G%";
 #include "../h/dir.h"
 #include "../h/user.h"
 
-long	hashalloc();
-long	alloccg();
-long	ialloccg();
+extern long		hashalloc();
+extern long		alloccg();
+extern long		ialloccg();
+extern int		inside[], around[];
+extern unsigned char	fragtbl[];
 
 struct buf *
 alloc(dev, ip, bpref, size)
