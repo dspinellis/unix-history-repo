@@ -1,18 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpd.c	5.5	(Berkeley) %G%";
 #endif
 
 /*
- * 4.2BSD or 2.9BSD TCP/IP server for uucico
+ * 4.2BSD TCP/IP server for uucico
  * uucico's TCP channel causes this server to be run at the remote end.
  */
 
 #include "uucp.h"
 #include <netdb.h>
-#ifdef BSD2_9
-#include <sys/localopts.h>
-#include <sys/file.h>
-#endif BSD2_9
 #include <signal.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -21,13 +17,6 @@ static char sccsid[] = "@(#)uucpd.c	5.4 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <pwd.h>
 #include <lastlog.h>
-
-#if !defined(BSD4_2) && !defined(BSD2_9)
---- You must have either BSD4_2 or BSD2_9 defined for this to work
-#endif !BSD4_2 && !BSD2_9
-#if defined(BSD4_2) && defined(BSD2_9)
---- You may not have both BSD4_2 and BSD2_9 defined for this to work
-#endif	/* check for stupidity */
 
 char lastlog[] = "/usr/adm/lastlog";
 struct	sockaddr_in hisctladdr;
@@ -115,32 +104,6 @@ char **argv;
 	}
 #endif BSD4_2
 
-#ifdef BSD2_9
-	for(;;) {
-		signal(SIGCHLD, dologout);
-		s = socket(SOCK_STREAM, 0,  &myctladdr,
-			SO_ACCEPTCONN|SO_KEEPALIVE);
-		if (s < 0) {
-			perror("uucpd: socket");
-			exit(1);
-		}
-		if (accept(s, &hisctladdr) < 0) {
-			if (errno == EINTR) {
-				close(s);
-				continue;
-			}
-			perror("uucpd: accept");
-			exit(1);
-		}
-		if (fork() == 0) {
-			close(0); close(1); close(2);
-			dup(s); dup(s); dup(s);
-			close(s);
-			doit(&hisctladdr);
-			exit(1);
-		}
-	}
-#endif BSD2_9
 #endif	!BSDINETD
 }
 
@@ -192,10 +155,6 @@ struct sockaddr_in *sinp;
 #ifdef BSD4_2
 	execl(UUCICO, "uucico", (char *)0);
 #endif BSD4_2
-#ifdef BSD2_9
-	sprintf(passwd, "-h%s", inet_ntoa(sinp->sin_addr));
-	execl(UUCICO, "uucico", passwd, (char *)0);
-#endif BSD2_9
 	perror("uucico server: execl");
 }
 
@@ -223,11 +182,6 @@ register int n;
 #include <fcntl.h>
 #endif BSD4_2
 
-#ifdef BSD2_9
-#define O_APPEND	0 /* kludge */
-#define wait3(a,b,c)	wait2(a,b)
-#endif BSD2_9
-
 #define	SCPYN(a, b)	strncpy(a, b, sizeof (a))
 
 struct	utmp utmp;
@@ -248,9 +202,6 @@ dologout()
 			SCPYN(utmp.ut_name, "");
 			SCPYN(utmp.ut_host, "");
 			(void) time(&utmp.ut_time);
-#ifdef BSD2_9
-			(void) lseek(wtmp, 0L, 2);
-#endif BSD2_9
 			(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 			(void) close(wtmp);
 		}
@@ -284,9 +235,6 @@ struct sockaddr_in *sin;
 		SCPYN(utmp.ut_name, pw->pw_name);
 		SCPYN(utmp.ut_host, remotehost);
 		time(&utmp.ut_time);
-#ifdef BSD2_9
-		(void) lseek(wtmp, 0L, 2);
-#endif BSD2_9
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 		(void) close(wtmp);
 	}
