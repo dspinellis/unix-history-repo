@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -223,6 +223,7 @@ main(argc, argv)
 			continue;
 		}
 		(void) gettimeofday(&now, (struct timezone *)NULL);
+		omask = sigblock(sigmask(SIGALRM));
 #ifdef doesntwork
 /*
 printf("s %d, ibits %x index %d, mod %d, sh %x, or %x &ibits %x\n",
@@ -241,6 +242,7 @@ printf("s %d, ibits %x index %d, mod %d, sh %x, or %x &ibits %x\n",
 #endif
 			process(s);
 		/* handle ICMP redirects */
+		sigsetmask(omask);
 	}
 }
 
@@ -270,11 +272,15 @@ process(fd)
 	int fd;
 {
 	struct sockaddr from;
-	int fromlen, cc, omask;
+	int fromlen, cc;
+	union {
+		char	buf[MAXPACKETSIZE+1];
+		struct	rip rip;
+	} inbuf;
 
 	for (;;) {
 		fromlen = sizeof (from);
-		cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
+		cc = recvfrom(fd, &inbuf, sizeof (inbuf), 0, &from, &fromlen);
 		if (cc <= 0) {
 			if (cc < 0 && errno != EWOULDBLOCK)
 				perror("recvfrom");
@@ -282,9 +288,7 @@ process(fd)
 		}
 		if (fromlen != sizeof (struct sockaddr_in))
 			break;
-		omask = sigblock(sigmask(SIGALRM));
-		rip_input(&from, cc);
-		sigsetmask(omask);
+		rip_input(&from, &inbuf.rip, cc);
 	}
 }
 

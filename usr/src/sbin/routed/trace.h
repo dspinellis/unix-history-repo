@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)trace.h	5.6 (Berkeley) %G%
+ *	@(#)trace.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -62,15 +62,15 @@ FILE	*ftrace;		/* output trace file */
 	  if (traceactions) \
 		tracenewmetric(ftrace, route, newmetric); \
 	}
-#define	TRACE_INPUT(ifp, src, size) { \
+#define	TRACE_INPUT(ifp, src, pack, size) { \
 	  if (tracehistory) { \
 		ifp = if_iflookup(src); \
 		if (ifp) \
-			trace(&ifp->int_input, src, packet, size, \
+			trace(&ifp->int_input, src, pack, size, \
 				ntohl(ifp->int_metric)); \
 	  } \
 	  if (tracepackets) \
-		dumppacket(ftrace, "from", src, packet, size, &now); \
+		dumppacket(ftrace, "from", src, pack, size, &now); \
 	}
 #define	TRACE_OUTPUT(ifp, dst, size) { \
 	  if (tracehistory && ifp) \
