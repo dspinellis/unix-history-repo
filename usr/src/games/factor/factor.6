@@ -1,47 +1,100 @@
-.TH FACTOR 1 
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Landon Curt Noll.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)factor.6	5.2 (Berkeley) %G%
+.\"
+.\"
+.\" By: Landon Curt Noll   chongo@toad.com,   ...!{sun,tolsoft}!hoptoad!chongo
+.\"
+.\"   chongo <for a good prime call: 391581 * 2^216193 - 1> /\oo/\
+.\"
+.TH FACTOR 6 ""
+.UC 7
 .SH NAME
-factor, primes \- factor a number, generate large primes
+factor, primes \- factor a number, generate primes
 .SH SYNOPSIS
 .B factor
-[ number ]
+[ number ] ...
 .PP
 .B primes
+[ start [ stop ]]
 .SH DESCRIPTION
+The
+.I factor
+utility will factor integers between -2147483648 and 2147483647 inclusive.
+When a number is factored, it is printed, followed by a ``:'',
+and the list of factors on a single line.
+Factors are listed in ascending order, and are preceded by a space.
+If a factor divides a value more than once, it will be printed
+more than once.
+.PP
 When
 .I factor
-is invoked without an argument, it waits for a number to be typed in.
-If you type in a positive
-number less than 2\u\s756\s0\d (about
-.if n 7.2e16)
-.if t 7.2\(mu10\u\s716\s0\d\|)
-it will factor the number and print its prime factors; each one is printed
-the proper number of times.
-Then it waits for another number.
-It exits if it encounters a zero or any non-numeric character.
-.PP
-If
-.I factor
-is invoked with an argument, it factors the number
-as above and then exits.
-.PP
-Maximum time to factor is proportional to
-.if n sqrt(n)
-.if t \(sr\o'\fIn\fR\(rn'
-and occurs when
-.I n
-is prime
-or the square of a prime.
-It takes 1 minute to factor a prime
-near
-10\u\s714\s0\d
-on a PDP11.
+is invoked with one or more arguments,
+each argument will be factored.
 .PP
 When
+.I factor
+is invoked with no arguments,
+.I factor
+reads numbers, one per line, from standard input, until end of file or error.
+Leading white-space and empty lines are ignored.
+Numbers may be preceded by a single - or +.
+Numbers are terminated by a non-digit character (such as a newline).
+After a number is read, it is factored.
+Input lines must not be longer than 255 characters.
+.PP
+The
 .I primes
-is invoked, it waits for a number to be typed in.
-If you type in a positive
-number less than 2\u\s756\s0\d
-it will print all primes greater than or
-equal to this number.
+utility prints primes in ascending order, one per line, starting at or above
+.B start
+and continuing until, but not including
+.B stop.
+The
+.B start 
+value must be at least 0 and not greater than
+.B stop.\&
+The
+.B stop
+value must not be greater than 4294967295.
+The default value of
+.B stop
+is 4294967295.
+.PP
+When the
+.I primes
+utility is invoked with no arguments,
+.B start
+is read from standard input.
+.B Stop
+is taken to be 4294967295.
+The
+.B start
+value may be preceded by a single +.
+The
+.B start
+value is terminated by a non-digit character (such as a newline).
+The input line must not be longer than 255 characters.
 .SH DIAGNOSTICS
-`Ouch.' for input out of range or for garbage input.
+Out of range or invalid input results in `ouch' being 
+written to standard error.
+.SH BUGS
+.I Factor
+cannot handle the ``10 most wanted'' factor list,
+.I primes
+won't get you a world record.
