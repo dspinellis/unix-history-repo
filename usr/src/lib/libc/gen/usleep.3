@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)@(#)usleep.3	6.1 (Berkeley) %G%
+.\"	@(#)@(#)usleep.3	6.2 (Berkeley) %G%
 .\"
 .TH USLEEP 3  ""
 .UC 6
@@ -26,7 +26,7 @@ If the sleep time exceeds the time to the expiration of the
 previous timer,
 the process sleeps only until the signal would have occurred, and the
 signal is sent 2 system clock ticks later.
-.sh BUGS
+.SH BUGS
 This routine is expensive to use because it is implemented using 
 .IR setitimer (2)
 and does eight system calls each time it is invoked.
