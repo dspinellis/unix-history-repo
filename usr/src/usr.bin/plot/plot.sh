@@ -2,7 +2,7 @@
 #
 # %sccs.include.proprietary.sh%
 #
-#	@(#)plot.sh	4.7 (Berkeley) %G%
+#	@(#)plot.sh	8.1 (Berkeley) %G%
 #
 
 PATH=/bin:/usr/bin:/usr/libexec/plot
