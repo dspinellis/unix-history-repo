@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.20 %G%";
+static char sccsid[] = "@(#)put.c 1.21 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)put.c 1.20 %G%";
 #include "objfmt.h"
 #ifdef PC
 #   include	"pc.h"
+#   include	"align.h"
 #endif PC
 
 short	*obufp	= obuf;
@@ -438,14 +439,8 @@ listnames(ap)
 	    ap->value[ NL_ELABEL ] = lc;
 #	endif OBJ
 #	ifdef PC
-#	    ifdef vax
-		putprintf("	.data", 0);
-		putprintf("	.align 1", 0);
-#	    endif vax
-#	    ifdef mc68000
-		putprintf("	.data", 0);
-		putprintf("	.even", 0);
-#	    endif mc68000
+	    putprintf("	.data", 0);
+	    aligndot(A_STRUCT);
 	    ap -> value[ NL_ELABEL ] = getlab();
 	    putlab( ap -> value[ NL_ELABEL ] );
 #	endif PC
