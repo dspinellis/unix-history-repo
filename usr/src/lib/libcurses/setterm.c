@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -143,7 +143,7 @@ zap()
 #endif
 	tmp[2] = '\0';
 
-	namp = "ambsdadbeohchzinmimsncnsosulxbxnxtxsxx";
+	namp = "ambsdaeohchzinmimsncnsosulxbxnxtxsxx";
 	fp = sflags;
 	do {
 		*tmp = *namp;
