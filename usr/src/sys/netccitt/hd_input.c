@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_input.c	7.6 (Berkeley) %G%
+ *	@(#)hd_input.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,7 +136,7 @@ register struct mbuf *fbuf;
 		hdp->hd_state = ABM;
 		hd_message (hdp, "Link level operational");
 		/* Notify the packet level - to send RESTART. */
-		(void) pk_ctlinput (PRC_LINKUP, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKUP, hdp->hd_pkp);
 		break;
 
 	case SABM + SABM_SENT: 
@@ -155,7 +155,7 @@ register struct mbuf *fbuf;
 		hd_flush (hdp->hd_ifp);
 		hd_writeinternal (hdp, UA, pf);
 		hd_initvars (hdp);
-		(void) pk_ctlinput (PRC_LINKRESET, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKRESET, hdp->hd_pkp);
 		hdp->hd_resets++;
 		break;
 
@@ -168,7 +168,7 @@ register struct mbuf *fbuf;
 #ifdef HDLCDEBUG
 		hd_dumptrace (hdp);
 #endif
-		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_pkp);
 		hd_flush (hdp->hd_ifp);
 	case DM + DM_SENT: 
 	case DM + WAIT_SABM: 
@@ -196,7 +196,7 @@ register struct mbuf *fbuf;
 
 	case DISC + ABM: 
 		hd_message (hdp, "DISC received: link down");
-		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_pkp);
 	case DISC + WAIT_SABM: 
 		hd_writeinternal (hdp, UA, pf);
 		hdp->hd_state = DM_SENT;
@@ -205,7 +205,7 @@ register struct mbuf *fbuf;
 
 	case UA + ABM: 
 		hd_message (hdp, "UA received: link down");
-		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_pkp);
 	case UA + WAIT_SABM: 
 		hd_writeinternal (hdp, DM, pf);
 		hdp->hd_state = DM_SENT;
@@ -226,7 +226,7 @@ register struct mbuf *fbuf;
 
 	case FRMR + ABM: 
 		hd_message (hdp, "FRMR received: link down");
-		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_pkp);
 #ifdef HDLCDEBUG
 		hd_dumptrace (hdp);
 #endif
@@ -272,7 +272,7 @@ register struct mbuf *fbuf;
 
 	case ILLEGAL + ABM: 
 		hd_message (hdp, "Unknown frame received: link down");
-		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_xcp);
+		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_pkp);
 	case ILLEGAL + WAIT_SABM:
 		hdp->hd_unknown++;
 #ifdef HDLCDEBUG
@@ -341,8 +341,8 @@ register struct Hdlc_iframe *frame;
 	 *  it is queued for the packet level.
 	 */
 
-	if (ns != (hdp->hd_lasttxnr + hdp->hd_xcp->xc_lwsize) % MODULUS) {
-		hdp->hd_vr = (hdp->hd_vr + 1) % MODULUS;
+	if (ns != (hdp -> hd_lasttxnr + hdp -> hd_xcp -> xc_lwsize) % MODULUS) {
+		hdp -> hd_vr = (hdp -> hd_vr + 1) % MODULUS;
 		if (pf == 1) {
 			/* Must generate a RR or RNR with final bit on. */
 			hd_writeinternal (hdp, RR, POLLON);
@@ -358,6 +358,7 @@ register struct Hdlc_iframe *frame;
 		fbuf -> m_data += HDHEADERLN;
 		fbuf -> m_len -= HDHEADERLN;
 		fbuf -> m_pkthdr.len -= HDHEADERLN;
+		fbuf -> m_pkthdr.rcvif = (struct ifnet *)hdp -> hd_pkp;
 #ifdef BSD4_3
 		fbuf->m_act = 0;	/* probably not necessary */
 #else
@@ -369,7 +370,7 @@ register struct Hdlc_iframe *frame;
 			m -> m_act = (struct mbuf *) 1;
 		}
 #endif
-		pk_input (fbuf, hdp->hd_xcp);
+		pk_input (fbuf);
 		queued = TRUE;
 		hd_start (hdp);
 	} else {
