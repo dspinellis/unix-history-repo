@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.10 (Berkeley) %G%";
 #endif not lint
 
 #ifndef STANDALONE
@@ -14,9 +14,11 @@ static char sccsid[] = "@(#)mkfs.c	6.9 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
-#include <sys/dir.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
+#include <ufs/dir.h>
 #include <sys/disklabel.h>
 #include <machine/endian.h>
 

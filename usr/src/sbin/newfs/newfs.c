@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,8 +19,8 @@ static char sccsid[] = "@(#)newfs.c	6.17 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/fs.h>
-#include <sys/dir.h>
+#include <ufs/fs.h>
+#include <ufs/dir.h>
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
 #include <sys/file.h>
