@@ -812,12 +812,11 @@ host_map_lookup(map, name, av, statp)
 			  case TRY_AGAIN:
 				if (UseNameServer)
 				{
-					extern char MsgBuf[];
-
-					message("%s: Name server timeout",
+					sprintf(hbuf, "%s: Name server timeout",
 						shortenstring(name, 33));
+					message("%s", hbuf);
 					if (CurEnv->e_message == NULL)
-						CurEnv->e_message = newstr(MsgBuf + 4);
+						CurEnv->e_message = newstr(hbuf);
 				}
 				*statp = EX_TEMPFAIL;
 				break;
