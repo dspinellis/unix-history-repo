@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ranlib.c 4.2 %G%";
+static	char sccsid[] = "@(#)ranlib.c 4.3 %G%";
 /*
  * ranlib - create table of contents for archive; string table version
  */
@@ -67,7 +67,7 @@ char **argv;
 				continue;
 			if (exp.a_syms == 0) {
 				fprintf(stderr, "ranlib: warning: %s(%s): no symbol table\n", *argv, archdr.ar_name);
-				exit(1);
+				continue;
 			}
 			o = N_STROFF(exp) - sizeof (struct exec);
 			if (ftell(fi)+o+sizeof(ssiz) >= off) {
