@@ -1,4 +1,4 @@
-/*	dz.c	4.10	%G%	*/
+/*	dz.c	4.11	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -37,9 +37,8 @@
 int	dzcntrlr(), dzslave(), dzrint();
 struct	uba_dinfo *dzinfo[NDZ11];
 u_short	dzstd[] = { 0 };
-int	(*dzivec[])() = { dzrint, 0 }; /* omit dzxint so we can do it here */
 struct	uba_driver dzdriver =
-	{ dzcntrlr, dzslave, (int (*)())0, 0, 0, dzstd, dzinfo, dzivec };
+	{ dzcntrlr, dzslave, (int (*)())0, 0, 0, dzstd, "dz", dzinfo };
 
 #define NDZ 	(NDZ11*8)
  
@@ -48,6 +47,7 @@ struct	uba_driver dzdriver =
 #define TWOSB	040
 #define PENABLE	0100
 #define OPAR	0200
+#define	CLR	020		/* Reset dz */
 #define MSE	040		/* Master Scan Enable */
 #define RIE	0100		/* Receiver Interrupt Enable */
 #define	SAE	010000		/* Silo Alarm Enable */
@@ -90,9 +90,16 @@ dzcntrlr(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
+	int	i;		/* NB: NOT REGISTER */
+	struct	device *dzaddr = (struct device *)reg;
 
-	((struct device *)reg)->dzcsr |= IENABLE;
-	/* get it to interrupt */
+	dzaddr->dzcsr = TIE|MSE;
+	dzaddr->dztcr = 1;		/* enable any line */
+	for (i = 0; i < 1000000; i++)
+		;
+	dzaddr->dzcsr = CLR;		/* reset everything */
+	asm("cmpl r10,$0x200;beql 1f;subl2 $4,r10;1:;");
+	return(1);
 }
 
 dzslave(ui, reg, slaveno, uban)
@@ -102,9 +109,7 @@ dzslave(ui, reg, slaveno, uban)
 	register struct pdma *pdp = &dzpdma[ui->ui_unit*8];
 	register struct tty *tp = &dz_tty[ui->ui_unit*8];
 	register int cnt;
-	register int *urk = (int *)(&reg - 24);	/* white magic */
 	caddr_t cp;
-	int urk2;
 
 	for (cnt = 0; cnt < 8; cnt++) {
 		pdp->p_addr = (struct device *)reg;
@@ -112,15 +117,6 @@ dzslave(ui, reg, slaveno, uban)
 		pdp->p_fcn = dzxint;
 		pdp++, tp++;
 	}
-	if ((cp = calloc(12)) == 0)
-		panic("dz iv nm\n");
-	uba_hd[uban].uh_vec[*urk] = (int (*)())cp;	/* more white magic */
-	*cp++ = 0xbb; *cp++ = 0xff; *cp++ = 0xd0;	/* black magic */
-	*cp++ = ui->ui_unit&0x3f; *cp++ = 0x50;
-	*cp++ = 0x17; *cp++ = 0x9f;
-	urk2 = (int)dzdma;
-	for (cnt = 0; cnt < 4; cnt++)
-		*cp++ = urk2, urk2 >>= 4;		/* the spell ends */
 	return (1);
 }
 
@@ -234,11 +230,7 @@ dzrint(dz)
 				if (tp->t_flags & RAW)
 					c = 0;		/* null for getty */
 				else
-#ifdef IIASA
-					continue;
-#else
 					c = tun.t_intrc;
-#endif
 			if (c&OVERRUN)
 				printf("o");
 			if (c&PERROR)	
@@ -309,23 +301,12 @@ dzparam(unit)
 		return;
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
-#ifndef IIASA
 	if ((tp->t_local&LLITOUT) || (tp->t_flags&RAW))
 		lpr |= BITS8;
 	else
 		lpr |= (BITS7|PENABLE);
 	if ((tp->t_flags & EVENP) == 0)
 		lpr |= OPAR;
-#else IIASA
-	if ((tp->t_flags & (EVENP|ODDP)) == (EVENP|ODDP))
-		lpr |= BITS8;
-	else if (tp->t_flags & EVENP)
-		lpr |= (BITS7|PENABLE);
-	else if (tp->t_flags & ODDP)
-		lpr |= (BITS7|OPAR|PENABLE);
-	else
-		lpr |= BITS7;
-#endif IIASA
 	if (tp->t_ispeed == 3)
 		lpr |= TWOSB; 			/* 110 baud: 2 stop bits */
 	dzaddr->dzlpr = lpr;
@@ -396,7 +377,6 @@ out:
  
 /*
  * Stop output on a line.
- * Assume call is made at spl6.
  */
 /*ARGSUSED*/
 dzstop(tp, flag)
@@ -440,7 +420,11 @@ dzscan()
 		dzaddr = dzpdma[i].p_addr;
 		tp = &dz_tty[i];
 		bit = 1<<(i&07);
-		if (dzaddr->dzmsr & bit || (i == 6 || i == 7)) {
+#ifdef BERT
+		if (dzaddr->dzmsr & bit || i == 6 || i == 7) {
+#else
+		if (dzaddr->dzmsr & bit) {
+#endif
 			/* carrier present */
 			if ((tp->t_state & CARR_ON) == 0) {
 				wakeup((caddr_t)&tp->t_rawq);
@@ -473,14 +457,21 @@ dztimer()
  * Reset parameters and restart transmission on open lines.
  */
 dzreset(uban)
+	int uban;
 {
 	register int unit;
 	register struct tty *tp;
+	register struct uba_dinfo *ui;
+	int any = 0;
 
-	/*** WE SHOULD LOOK TO SEE IF WE CARE ABOUT UBA BEING RESET ***/
-
-	printf(" dz");
 	for (unit = 0; unit < NDZ; unit++) {
+		ui = dzinfo[unit >> 3];
+		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
+			continue;
+		if (any == 0) {
+			printf(" dz");
+			any++;
+		}
 		tp = &dz_tty[unit];
 		if (tp->t_state & (ISOPEN|WOPEN)) {
 			dzparam(unit);
