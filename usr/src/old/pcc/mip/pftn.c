@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.12 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.13 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1047,7 +1047,7 @@ doinit( p ) register NODE *p; {
 
 	/* note: size of an individual initializer is assumed to fit into an int */
 
-	if( iclass < 0 ) goto leave;
+	if( iclass < 0 || pstk == 0 ) goto leave;
 	if( iclass == EXTERN || iclass == UNAME ){
 		uerror( "cannot initialize extern or union" );
 		iclass = -1;
