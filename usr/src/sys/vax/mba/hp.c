@@ -1,4 +1,4 @@
-/*	hp.c	6.2	83/09/25	*/
+/*	hp.c	6.3	84/03/22	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -192,7 +192,15 @@ struct	mba_driver hpdriver =
 	  hptypes, "hp", 0, hpinfo };
 
 /*
- * Beware, sdist and rdist are not well tuned
+ * These variable are all measured in sectors.  
+ * Sdist is how much to "lead" in the search for a desired sector
+ * (i.e. if want N, search for N-sdist.)
+ * Maxdist and mindist define the region right before our desired sector within
+ * which we don't bother searching.  We don't search when we are already less
+ * then maxdist and more than mindist sectors "before" our desired sector.
+ * Maxdist should be >= sdist.
+ * 
+ * Beware, sdist, mindist and maxdist are not well tuned
  * for many of the drives listed in this table.
  * Try patching things with something i/o intensive
  * running and watch iostat.
@@ -204,22 +212,23 @@ struct hpst {
 	short	ncyl;		/* # cylinders */
 	struct	size *sizes;	/* partition tables */
 	short	sdist;		/* seek distance metric */
-	short	rdist;		/* rotational distance metric */
+	short	maxdist;	/* boundaries of non-searched area */
+	short	mindist;	/* preceding the target sector */
 } hpst[] = {
-	{ 32,	5,	32*5,	823,	rm03_sizes,	3, 4 },	/* RM03 */
-	{ 32,	19,	32*19,	823,	rm05_sizes,	3, 4 },	/* RM05 */
-	{ 22,	19,	22*19,	815,	rp06_sizes,	3, 4 },	/* RP06 */
-	{ 31,	14, 	31*14,	559,	rm80_sizes,	3, 4 },	/* RM80 */
-	{ 22,	19,	22*19,	411,	rp05_sizes,	3, 4 },	/* RP04 */
-	{ 22,	19,	22*19,	411,	rp05_sizes,	3, 4 },	/* RP05 */
-	{ 50,	32,	50*32,	630,	rp07_sizes,	7, 8 },	/* RP07 */
-	{ 1,	1,	1,	1,	0,		0, 0 },	/* ML11A */
-	{ 1,	1,	1,	1,	0,		0, 0 },	/* ML11B */
-	{ 32,	40,	32*40,	843,	cdc9775_sizes,	3, 4 },	/* 9775 */
-	{ 32,	10,	32*10,	823,	cdc9730_sizes,	3, 4 },	/* 9730 */
-	{ 32,	16,	32*16,	1024,	capricorn_sizes,7, 8 },	/* Capricorn */
-	{ 48,	20,	48*20,	842,	eagle_sizes,	7, 8 },	/* EAGLE */
-	{ 32,	19,	32*19,	815,	ampex_sizes,	3, 4 },	/* 9300 */
+    { 32, 5,	32*5,	823,	rm03_sizes,	7, 4, 1 },	/* RM03 */
+    { 32, 19,	32*19,	823,	rm05_sizes,	7, 4, 1 },	/* RM05 */
+    { 22,19,	22*19,	815,	rp06_sizes,	7, 4, 1 },	/* RP06 */
+    { 31, 14, 	31*14,	559,	rm80_sizes,	7, 4, 1 },	/* RM80 */
+    { 22, 19,	22*19,	411,	rp05_sizes,	7, 4, 1 },	/* RP04 */
+    { 22, 19,	22*19,	411,	rp05_sizes,	7, 4, 1 },	/* RP05 */
+    { 50, 32,	50*32,	630,	rp07_sizes,    15, 8, 3 },	/* RP07 */
+    { 1, 1,	1,	1,	0,		0, 0, 0 },	/* ML11A */
+    { 1, 1,	1,	1,	0,		0, 0, 0 },	/* ML11B */
+    { 32, 40,	32*40,	843,	cdc9775_sizes,	7, 4, 1 },	/* 9775 */
+    { 32, 10,	32*10,	823,	cdc9730_sizes,	7, 4, 1 },	/* 9730 */
+    { 32, 16,	32*16,	1024,	capricorn_sizes,10,4, 3 },	/* Capricorn */
+    { 48, 20,	48*20,	842,	eagle_sizes,   15, 8, 3 },	/* EAGLE */
+    { 32, 19,	32*19,	815,	ampex_sizes,	7, 4, 1 },	/* 9300 */
 };
 
 u_char	hp_offset[16] = {
@@ -488,20 +497,20 @@ hpustart(mi)
 		return (MBU_DODATA);
 	bn = dkblock(bp);
 	sn = bn%st->nspc;
-	sn = (sn + st->nsect - st->sdist) % st->nsect;
 	if (bp->b_cylin == MASKREG(hpaddr->hpdc)) {
 		if (sc->sc_doseeks)
 			return (MBU_DODATA);
-		dist = (MASKREG(hpaddr->hpla) >> 6) - st->nsect + 1;
+		dist = sn - (MASKREG(hpaddr->hpla) >> 6) - 1;
 		if (dist < 0)
 			dist += st->nsect;
-		if (dist > st->nsect - st->rdist)
+		if (dist > st->maxdist || dist < st->mindist)
 			return (MBU_DODATA);
 	} else
 		hpaddr->hpdc = bp->b_cylin;
 	if (sc->sc_doseeks)
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 	else {
+		sn = (sn + st->nsect - st->sdist) % st->nsect;
 		hpaddr->hpda = sn;
 		hpaddr->hpcs1 = HP_SEARCH|HP_GO;
 	}
@@ -647,7 +656,7 @@ hard:
 			return (MBD_RESTARTED);
 		}
 		if (retry)
-			return (MBD_RETRY);
+			sc->sc_recal = 2;
 	}
 #ifdef HPDEBUG
 	else
@@ -673,10 +682,10 @@ hard:
 			goto donerecal;
 		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-		sc->sc_recal++;
-		return (MBD_RESTARTED);
+		while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) != HPDS_DRY)
+			;
+		mbclrattn(mi);
 	donerecal:
-	case 3:
 		sc->sc_recal = 0;
 		return (MBD_RETRY);
 	}
@@ -688,7 +697,7 @@ hard:
 		 * bother with interrupts.
 		 */
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
-		while (hpaddr->hpds & HPDS_PIP)
+		while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) != HPDS_DRY)
 			;
 		mbclrattn(mi);
 	}
