@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.23 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -383,7 +383,7 @@ nopages:
 				if (atomic && top == 0 && len < mlen)
 					MH_ALIGN(m, len);
 			}
-			error = uiomove(mtod(m, caddr_t), len, uio);
+			error = uiomove(mtod(m, caddr_t), (int)len, uio);
 			resid = uio->uio_resid;
 			m->m_len = len;
 			*mp = m;
@@ -436,7 +436,7 @@ out:
  * we splx() while doing the actual copy to user space.
  * Although the sockbuf is locked, new data may still be appended,
  * and thus we must maintain consistency of the sockbuf during that time.
- * 
+ *
  * The caller may receive the data as a single mbuf chain by supplying
  * an mbuf **mp0 for use in returning the chain.  The uio is then used
  * only for the count in uio_resid.
@@ -462,7 +462,7 @@ soreceive(so, paddr, uio, mp0, controlp, flagsp)
 		*controlp = 0;
 	if (flagsp)
 		flags = *flagsp &~ MSG_EOR;
-	else 
+	else
 		flags = 0;
 	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
@@ -502,7 +502,7 @@ restart:
 	 * we have to do the receive in sections, and thus risk returning
 	 * a short count if a timeout or signal occurs after we start.
 	 */
-	if (m == 0 || so->so_rcv.sb_cc < uio->uio_resid && 
+	if (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
 	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
 	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat))) {
 #ifdef DIAGNOSTIC
@@ -596,7 +596,6 @@ restart:
 		else if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
 			panic("receive 3");
 #endif
-		type = m->m_type;
 		so->so_state &= ~SS_RCVATMARK;
 		len = uio->uio_resid;
 		if (so->so_oobmark && len > so->so_oobmark - offset)
@@ -860,7 +859,7 @@ sogetopt(so, level, optname, mp)
 		if (so->so_proto && so->so_proto->pr_ctloutput) {
 			return ((*so->so_proto->pr_ctloutput)
 				  (PRCO_GETOPT, so, level, optname, mp));
-		} else 
+		} else
 			return (ENOPROTOOPT);
 	} else {
 		m = m_get(M_WAIT, MT_SOOPTS);
