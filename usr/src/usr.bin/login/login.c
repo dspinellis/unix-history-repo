@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.32.1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,13 +50,6 @@ static char sccsid[] = "@(#)login.c	5.34 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <strings.h>
-
-#ifdef	KERBEROS
-#include <kerberos/krb.h>
-#include <sys/termios.h>
-char	realm[REALM_SZ];
-int	kerror = KSUCCESS, notickets = 1;
-#endif
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
 
@@ -235,32 +228,6 @@ main(argc, argv)
 		p = crypt(pp, salt);
 		setpriority(PRIO_PROCESS, 0, 0);
 
-#ifdef	KERBEROS
-
-		/*
-		 * If not present in pw file, act as we normally would.
-		 * If we aren't Kerberos-authenticated, try the normal
-		 * pw file for a password.  If that's ok, log the user
-		 * in without issueing any tickets.
-		 */
-
-		if (pwd && !krb_get_lrealm(realm,1)) {
-			/* get TGT for local realm
-			 * be careful about uid's here for ticket
-			 * file ownership
-			 */
-			(void) setreuid(geteuid(),pwd->pw_uid);
-			kerror = krb_get_pw_in_tkt(
-				pwd->pw_name, "", realm,
-				"krbtgt", realm, DEFAULT_TKT_LIFE, pp);
-			(void) setuid(0);
-			if (kerror == INTK_OK) {
-				bzero(pp, strlen(pp));
-				notickets = 0;	/* user got ticket */
-				break;
-			}
-		}
-#endif
 		(void) bzero(pp, strlen(pp));
 		if (pwd && !strcmp(p, pwd->pw_passwd))
 			break;
@@ -318,11 +285,6 @@ main(argc, argv)
 		pwd->pw_dir = "/";
 		printf("Logging in with home = \"/\".\n");
 	}
-
-#ifdef KERBEROS
-	if (notickets)
-		printf("Warning: no Kerberos tickets issued\n");
-#endif
 
 #define	TWOWEEKS	(14*24*60*60)
 	if (pwd->pw_change || pwd->pw_expire)
