@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.45	82/11/13	*/
+/*	kern_clock.c	4.46	82/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,9 @@
 #include "../h/psl.h"
 #include "../h/vm.h"
 #include "../h/text.h"
+#ifdef vax
+#include "../vax/mtpr.h"
+#endif
 #ifdef MUSH
 #include "../h/quota.h"
 #include "../h/share.h"
@@ -125,7 +128,7 @@ hardclock(regs)
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
-		 * interval timer.
+		 * interval timer. 
 		 */
 		bumptime(&u.u_ru.ru_utime, tick);
 		if (timerisset(&u.u_timer[ITIMER_VIRTUAL].it_value) &&
@@ -249,6 +252,13 @@ softclock(sirret, regs)
 		callfree = p1;
 		splx(s);
 		(*func)(arg, a);
+	}
+	/*
+	 * If trapped user-mode, give it a profiling tick.
+	 */
+	if (USERMODE(ps) && u.u_prof.pr_scale) {
+		u.u_procp->p_flag |= SOWEUPC;
+		aston();
 	}
 }
 

@@ -1,4 +1,4 @@
-/*	trap.c	4.24	82/11/13	*/
+/*	trap.c	4.25	82/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../h/psl.h"
 #include "../h/pte.h"
 #include "../h/acct.h"
+#include "../h/kernel.h"
 #ifdef SYSCALLTRACE
 #include "../sys/syscalls.c"
 #endif
@@ -55,7 +56,9 @@ trap(sp, type, code, pc, psl)
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
 	register struct proc *p;
+	struct timeval syst;
 
+	syst = u.u_ru.ru_stime;
 	if (USERMODE(locr0[PS])) {
 		type |= USER;
 		u.u_ar0 = locr0;
@@ -82,6 +85,10 @@ trap(sp, type, code, pc, psl)
 
 	case T_ASTFLT+USER:
 		astoff();
+		if ((u.u_procp->p_flag & SOWEUPC) && u.u_prof.pr_scale) {
+			addupc(pc, &u.u_prof, 1);
+			u.u_procp->p_flag &= ~SOWEUPC;
+		}
 		goto out;
 
 	case T_ARITHTRAP+USER:
@@ -148,6 +155,15 @@ out:
 		u.u_ru.ru_nivcsw++;
 		swtch();
 	}
+	if (u.u_prof.pr_scale) {
+		int ticks;
+		struct timeval *tv = &u.u_ru.ru_stime;
+
+		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
+			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
+		if (ticks)
+			addupc(locr0[PC], &u.u_prof, ticks);
+	}
 	curpri = p->p_pri;
 }
 
@@ -167,7 +183,9 @@ syscall(sp, type, code, pc, psl)
 	register struct sysent *callp;
 	register struct proc *p;
 	int opc;
+	struct timeval syst;
 
+	syst = u.u_ru.ru_stime;
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
@@ -256,6 +274,15 @@ bad:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
+	}
+	if (u.u_prof.pr_scale) {
+		int ticks;
+		struct timeval *tv = &u.u_ru.ru_stime;
+
+		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
+			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
+		if (ticks)
+			addupc(locr0[PC], &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
 }
