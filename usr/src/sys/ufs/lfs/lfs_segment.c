@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.9 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -215,14 +215,15 @@ lfs_segwrite(mp, flags)
 		LFS_CLEANERINFO(cip, fs, bp);
 		clean = cip->clean;
 		brelse(bp);
-		if (clean <= 2) {
+		if (clean <= 2 || fs->lfs_avail <= 0) {
 			/* printf ("segs clean: %d\n", clean); */
 			wakeup(&lfs_allclean_wakeup);
+			wakeup(&fs->lfs_nextseg);
 			if (error = tsleep(&fs->lfs_avail, PRIBIO + 1,
 			    "lfs writer", 0))
 				return (error);
 		}
-	} while (clean <= 2 );
+	} while (clean <= 2 || fs->lfs_avail <= 0);
 
 	/*
 	 * Allocate a segment structure and enough space to hold pointers to
@@ -624,6 +625,8 @@ lfs_updatemeta(sp)
 				/* XXX -- Change to a panic. */
 				printf("lfs: negative bytes (segment %d)\n",
 				    datosn(fs, daddr));
+				printf("lfs: bp = 0x%x, addr = 0x%x\n",
+						bp, bp->b_un.b_addr);
 				panic ("Negative Bytes");
 			}
 #endif
@@ -653,6 +656,7 @@ lfs_initseg(fs)
 	if (!LFS_PARTIAL_FITS(fs)) {
 		/* Wake up any cleaning procs waiting on this file system. */
 		wakeup(&lfs_allclean_wakeup);
+		wakeup(&fs->lfs_nextseg);
 
 		lfs_newseg(fs);
 		repeat = 1;
@@ -768,7 +772,6 @@ lfs_writeseg(fs, sp)
 	struct vop_strategy_args vop_strategy_a;
 	u_short ninos;
 	char *p;
-long *lp;
 
 	/*
 	 * If there are no buffers other than the segment summary to write
@@ -866,7 +869,6 @@ long *lp;
 					panic("lfs_writeseg: copyin failed");
 			} else
 				bcopy(bp->b_data, p, bp->b_bcount);
-
 			p += bp->b_bcount;
 			cbp->b_bcount += bp->b_bcount;
 			if (bp->b_flags & B_LOCKED)
@@ -1110,18 +1112,29 @@ lfs_vref(vp)
 	return (vget(vp, 0, p));
 }
 
+/*
+ * This is vrele except that we do not want to VOP_INACTIVE this vnode. We
+ * inline vrele here to avoid the vn_lock and VOP_INACTIVE call at the end.
+ */
 void
 lfs_vunref(vp)
 	register struct vnode *vp;
 {
-	extern int lfs_no_inactive;
+	struct proc *p = curproc;				/* XXX */
+	extern struct simplelock vnode_free_list_slock;		/* XXX */
+	extern TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* XXX */
 
+	simple_lock(&vp->v_interlock);
+	vp->v_usecount--;
+	if (vp->v_usecount > 0) {
+		simple_unlock(&vp->v_interlock);
+		return;
+	}
 	/*
-	 * This is vrele except that we do not want to VOP_INACTIVE
-	 * this vnode. Rather than inline vrele here, we use a global
-	 * flag to tell lfs_inactive not to run. Yes, its gross.
+	 * insert at tail of LRU list
 	 */
-	lfs_no_inactive = 1;
-	vrele(vp);
-	lfs_no_inactive = 0;
+	simple_lock(&vnode_free_list_slock);
+	TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_freelist);
+	simple_unlock(&vnode_free_list_slock);
+	simple_unlock(&vp->v_interlock);
 }
