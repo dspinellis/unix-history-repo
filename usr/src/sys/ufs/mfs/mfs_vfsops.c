@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.4 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,8 +24,9 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
-#include "../ufs/ufsmount.h"
 #include "../ufs/inode.h"
+#include "../ufs/ufsmount.h"
+#include "../ufs/mfsnode.h"
 #include "../ufs/fs.h"
 
 extern struct vnodeops mfs_vnodeops;
@@ -58,6 +59,7 @@ struct vfsops mfs_vfsops = {
  *
  * mount system call
  */
+/* ARGSUSED */
 mfs_mount(mp, path, data, ndp)
 	struct mount *mp;
 	char *path;
@@ -68,6 +70,7 @@ mfs_mount(mp, path, data, ndp)
 	struct mfs_args args;
 	struct ufsmount *ump;
 	register struct fs *fs;
+	register struct mfsnode *mfsp;
 	static int mfs_minor;
 	u_int size;
 	int error;
@@ -81,12 +84,17 @@ mfs_mount(mp, path, data, ndp)
 	}
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct mfs_args)))
 		return (error);
-	if ((error = bdevvp(NODEV, &devvp)) != 0)
+	error = getnewvnode(VT_MFS, (struct mount *)0, &mfs_vnodeops, &devvp);
+	if (error)
 		return (error);
-	devvp->v_op = &mfs_vnodeops;
+	devvp->v_type = VBLK;
 	devvp->v_rdev = makedev(255, mfs_minor++);
-	VTOI(devvp)->i_diroff = (long)args.base;
-	VTOI(devvp)->i_endoff = args.size;
+	mfsp = VTOMFS(devvp);
+	mfsp->mfs_baseoff = args.base;
+	mfsp->mfs_size = args.size;
+	mfsp->mfs_vnode = devvp;
+	mfsp->mfs_pid = u.u_procp->p_pid;
+	mfsp->mfs_buflist = (struct buf *)0;
 	error = mountfs(devvp, mp);
 	if (error) {
 		vrele(devvp);
@@ -115,11 +123,11 @@ mfs_start(mp, flags)
 	int flags;
 {
 	register struct vnode *vp = VFSTOUFS(mp)->um_devvp;
-	register struct inode *ip = VTOI(vp);
+	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
 	register caddr_t base;
 
-	base = (caddr_t)ip->i_diroff;
+	base = mfsp->mfs_baseoff;
 	if (setjmp(&u.u_qsave)) {
 		/*
 		 * We have received a signal, so try to unmount.
@@ -128,9 +136,9 @@ mfs_start(mp, flags)
 	} else {
 		sleep((caddr_t)vp, PWAIT);
 	}
-	while (ip->i_spare[0] != -1) {
-		while (bp = (struct buf *)ip->i_spare[0]) {
-			ip->i_spare[0] = (long)bp->av_forw;
+	while (mfsp->mfs_buflist != (struct buf *)(-1)) {
+		while (bp = mfsp->mfs_buflist) {
+			mfsp->mfs_buflist = bp->av_forw;
 			mfs_doio(bp, base);
 			wakeup((caddr_t)bp);
 		}
