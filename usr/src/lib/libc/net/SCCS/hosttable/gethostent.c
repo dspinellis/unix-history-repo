@@ -1,4 +1,4 @@
-/*	gethostent.c	4.3	82/11/14	*/
+/*	gethostent.c	4.4	82/12/17	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -12,7 +12,7 @@
 #define	MAXALIASES	35
 #define	MAXADDRSIZE	14
 
-static char HOSTDB[] = "/usr/lib/hosts";
+static char HOSTDB[] = "/etc/hosts";
 static FILE *hostf = NULL;
 static char line[BUFSIZ+1];
 static char hostaddr[MAXADDRSIZE];

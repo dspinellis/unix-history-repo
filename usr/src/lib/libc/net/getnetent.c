@@ -1,4 +1,4 @@
-/*	getnetent.c	4.5	82/11/14	*/
+/*	getnetent.c	4.6	82/12/17	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -7,7 +7,7 @@
 
 #define	MAXALIASES	35
 
-static char *NETDB = "/usr/lib/networks";
+static char NETDB[] = "/etc/networks";
 static FILE *netf = NULL;
 static char line[BUFSIZ+1];
 static struct netent net;

@@ -1,4 +1,4 @@
-/*	getprotoent.c	4.3	82/11/14	*/
+/*	getprotoent.c	4.4	82/12/17	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -7,7 +7,7 @@
 
 #define	MAXALIASES	35
 
-static char *PROTODB = "/usr/lib/protocols";
+static char PROTODB[] = "/etc/protocols";
 static FILE *protof = NULL;
 static char line[BUFSIZ+1];
 static struct protoent proto;
