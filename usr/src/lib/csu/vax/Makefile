@@ -1,4 +1,4 @@
-# @(#)Makefile	1.2 (Berkeley) %G%
+# @(#)Makefile	4.1 (Berkeley) %G%
 
 OBJS=	crt0.o mcrt0.o gcrt0.o
 
