@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.7 84/03/03";
+static	char *sccsid = "@(#)error.c	3.8 84/04/08";
 #endif
 
 #include "defs.h"
 #include "value.h"
 #include "context.h"
+#include "char.h"
 
 #define ERRLINES 10			/* number of lines for errwin */
 
@@ -16,7 +17,7 @@ char *fmt;
 
 	if (cx.x_type != X_FILE) {
 		if (terse)
-			wwputc(CTRL(g), cmdwin);
+			wwputc(ctrl(g), cmdwin);
 		else {
 			wwprintf(cmdwin, fmt, a, b, c, d, e, f, g, h);
 			wwputs("  ", cmdwin);

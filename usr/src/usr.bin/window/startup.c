@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.9 84/03/03";
+static	char *sccsid = "@(#)startup.c	3.10 84/04/08";
 #endif
 
 #include "defs.h"
 #include "value.h"
 #include "var.h"
+#include "char.h"
 
 doconfig()
 {
@@ -39,14 +40,14 @@ bad:
 
 setvars()
 {
-	/* try to use a good ordering to balance the tree */
+	/* try to use a random ordering to balance the tree */
 	(void) var_setnum("nrow", wwnrow);
 	(void) var_setnum("ncol", wwncol);
-	(void) var_setnum("availmodes", wwavailmodes);
 	(void) var_setnum("baud", wwbaud);
 	(void) var_setnum("m_rev", WWM_REV);
 	(void) var_setnum("m_blk", WWM_BLK);
 	(void) var_setnum("m_ul", WWM_UL);
 	(void) var_setnum("m_grp", WWM_GRP);
 	(void) var_setstr("term", wwterm);
+	(void) var_setnum("modes", wwavailmodes);
 }

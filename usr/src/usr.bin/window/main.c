@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.20 84/04/06";
+static	char *sccsid = "@(#)main.c	3.21 84/04/08";
 #endif
 
 #include "defs.h"
 #include <sys/signal.h>
 #include <stdio.h>
+#include "char.h"
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
@@ -60,7 +61,7 @@ char **argv;
 			(void) usage();
 	}
 	nbufline = 48;				/* compatible */
-	escapec = CTRL(p);	
+	escapec = ctrl(p);	
 	if ((shell = getenv("SHELL")) == 0)
 		shell = "/bin/csh";
 	if (shellname = rindex(shell, '/'))
@@ -89,6 +90,7 @@ char **argv;
 		goto bad;
 	}
 	cmdwin->ww_nointr = 1;
+	cmdwin->ww_noupdate = 1;
 	if ((framewin = wwopen(WWO_GLASS|WWO_FRAME, wwnrow, wwncol, 0, 0, 0))
 	    == 0) {
 		(void) wwflush();

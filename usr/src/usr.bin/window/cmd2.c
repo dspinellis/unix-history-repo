@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.26 84/04/07";
+static	char *sccsid = "@(#)cmd2.c	3.27 84/04/08";
 #endif
 
 #include "defs.h"
@@ -55,8 +55,8 @@ c_help()
 		error("Can't open help window: %s.", wwerror());
 		return;
 	}
-	wwprintf(w, "The escape character is %s, which gets you into command mode.\n\n",
-		unctrl(escapec));
+	wwprintf(w, "The escape character is %c, which gets you into command mode.\n\n",
+		escapec);
 	if (help_print(w, "Short commands", help_shortcmd) >= 0)
 		(void) help_print(w, "Long commands", help_longcmd);
 	closeiwin(w);

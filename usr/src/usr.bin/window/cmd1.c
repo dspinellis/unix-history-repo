@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.22 84/03/23";
+static	char *sccsid = "@(#)cmd1.c	3.23 84/04/08";
 #endif
 
 #include "defs.h"
+#include "char.h"
 
 c_window()
 {
@@ -120,7 +121,7 @@ int maxrow, maxcol;
 		case 'K':
 			*row = minrow;
 			break;
-		case CTRL([):
+		case ctrl([):
 			if (!terse)
 				wwputs("\r\nCancelled.  ", cmdwin);
 			return 3;
@@ -129,7 +130,7 @@ int maxrow, maxcol;
 		default:
 			if (!terse)
 				wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
-			wwputc(CTRL(g), cmdwin);
+			wwputc(ctrl(g), cmdwin);
 		}
 	}
 	return oldrow != *row || oldcol != *col;

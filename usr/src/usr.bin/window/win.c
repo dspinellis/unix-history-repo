@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)win.c	3.6 84/04/07";
+static	char *sccsid = "@(#)win.c	3.7 84/04/08";
 #endif
 
 #include "defs.h"
+#include "char.h"
 
 /*
  * Higher level routines for dealing with windows.
@@ -112,6 +113,8 @@ char *label;
 	w->ww_mapnl = 1;
 	w->ww_hasframe = 1;
 	w->ww_nointr = 1;
+	w->ww_noupdate = 1;
+	w->ww_unctrl = 1;
 	w->ww_id = -1;
 	w->ww_center = 1;
 	(void) setlabel(w, label);
@@ -228,23 +231,30 @@ register struct ww *w;
 char always;
 {
 	int c;
+	char uc = w->ww_unctrl;
 
 	if (!always && w->ww_cur.r < w->ww_w.b - 2)
 		return 0;
 	c = waitnl1(w, "[Type escape to abort, any other key to continue]");
+	w->ww_unctrl = 0;
 	wwputs("\033E", w);
-	return c == CTRL([) ? 2 : 1;
+	w->ww_unctrl = uc;
+	return c == ctrl([) ? 2 : 1;
 }
 
 waitnl1(w, prompt)
 register struct ww *w;
 char *prompt;
 {
+	char uc = w->ww_unctrl;
+
+	w->ww_unctrl = 0;
 	front(w, 0);
 	wwprintf(w, "\033Y%c%c\033p%s\033q ",
 		w->ww_w.nr - 1 + ' ', ' ', prompt);	/* print on last line */
 	wwcurtowin(w);
 	while (wwpeekc() < 0)
 		wwiomux();
+	w->ww_unctrl = uc;
 	return wwgetc();
 }

@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd6.c	3.8 84/03/03";
+static	char *sccsid = "@(#)cmd6.c	3.9 84/04/08";
 #endif
 
 #include "defs.h"
 #include "string.h"
+#include "char.h"
 
 /*
  * Debugging commands.
@@ -42,7 +43,7 @@ c_debug()
 			wwdumpwin(w);
 		break;
 	default:
-		wwputc(CTRL(g), cmdwin);
+		wwputc(ctrl(g), cmdwin);
 	}
 }
 

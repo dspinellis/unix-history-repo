@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.10 83/12/02";
+static	char *sccsid = "@(#)wwlabel.c	3.11 84/04/08";
 #endif
 
 #include "ww.h"
+#include "char.h"
 
 /*
  * Label window w on f,

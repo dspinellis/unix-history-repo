@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	3.5 83/12/02";
+static	char *sccsid = "@(#)wwmisc.c	3.6 84/04/08";
 #endif
 
 #include "ww.h"
@@ -21,29 +21,4 @@ register struct ww *w;
 	    && wwsmap[w->ww_cur.r][w->ww_cur.c] == w->ww_index)
 		nvis++;
 	return nvis == w->ww_i.nr * w->ww_i.nc;
-}
-
-char *
-unctrl(c)
-register c;
-{
-	static char buf[5];
-	register char *p = buf;
-
-	c = (unsigned)(unsigned char)c;
-	if (c == DEL) {
-		*p++ = '^';
-		*p++ = '?';
-	} else if (c < ' ') {
-		*p++ = '^';
-		*p++ = c + '@';
-	} else if (c > DEL) {
-		*p++ = '\\';
-		*p++ = (c >> 6 & 3) + '0';
-		*p++ = (c >> 3 & 7) + '0';
-		*p++ = (c & 7) + '0';
-	} else
-		*p++ = c;
-	*p = 0;
-	return buf;
 }

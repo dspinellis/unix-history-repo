@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.26 84/04/07";
+static	char *sccsid = "@(#)cmd.c	3.27 84/04/08";
 #endif
 
 #include "defs.h"
+#include "char.h"
 
 docmd()
 {
@@ -20,15 +21,15 @@ docmd()
 					goto foo;
 				break;
 			case 'h': case 'j': case 'k': case 'l':
-			case CTRL(y):
-			case CTRL(e):
-			case CTRL(u):
-			case CTRL(d):
-			case CTRL(b):
-			case CTRL(f):
-			case CTRL(s):
-			case CTRL(q):
-			case CTRL([):
+			case ctrl(y):
+			case ctrl(e):
+			case ctrl(u):
+			case ctrl(d):
+			case ctrl(b):
+			case ctrl(f):
+			case ctrl(s):
+			case ctrl(q):
+			case ctrl([):
 			foo:
 				if (selwin == 0) {
 					error("No window.");
@@ -50,7 +51,7 @@ docmd()
 				if ((w = getwin()) != 0)
 					setselwin(w);
 				break;
-			case CTRL(^):
+			case ctrl(^):
 				if (lastselwin != 0) {
 					setselwin(lastselwin);
 					if (checkproc(selwin) >= 0)
@@ -89,43 +90,43 @@ docmd()
 			case 'l':
 				(void) wwwrite(selwin, "\033C", 2);
 				break;
-			case CTRL(e):
+			case ctrl(e):
 				wwscroll(selwin, 1);
 				break;
-			case CTRL(y):
+			case ctrl(y):
 				wwscroll(selwin, -1);
 				break;
-			case CTRL(d):
+			case ctrl(d):
 				wwscroll(selwin, selwin->ww_w.nr / 2);
 				break;
-			case CTRL(u):
+			case ctrl(u):
 				wwscroll(selwin, - selwin->ww_w.nr / 2);
 				break;
-			case CTRL(f):
+			case ctrl(f):
 				wwscroll(selwin, selwin->ww_w.nr);
 				break;
-			case CTRL(b):
+			case ctrl(b):
 				wwscroll(selwin, - selwin->ww_w.nr);
 				break;
-			case CTRL(s):
+			case ctrl(s):
 				(void) write(selwin->ww_pty,
 					&wwwintty.ww_tchars.t_stopc, 1);
 				break;
-			case CTRL(q):
+			case ctrl(q):
 				(void) write(selwin->ww_pty,
 					&wwwintty.ww_tchars.t_startc, 1);
 				break;
-			case CTRL(l):
+			case ctrl(l):
 				wwredraw();
 				break;
 			case '?':
 				c_help();
 				break;
-			case CTRL([):
+			case ctrl([):
 				if (checkproc(selwin) >= 0)
 					out = 1;
 				break;
-			case CTRL(z):
+			case ctrl(z):
 				wwsuspend();
 				break;
 			case 'q':
@@ -146,7 +147,7 @@ docmd()
 					}
 				} else {
 					if (!terse)
-						wwputc(CTRL(g), cmdwin);
+						wwputc(ctrl(g), cmdwin);
 					error("Type ? for help.");
 				}
 			}
@@ -186,7 +187,7 @@ getwin()
 	else if (c >= '1' && c < NWINDOW + '1')
 		w = window[c - '1'];
 	if (w == 0)
-		wwputc(CTRL(g), cmdwin);
+		wwputc(ctrl(g), cmdwin);
 	if (!terse)
 		wwputs("\r\n", cmdwin);
 	return w;

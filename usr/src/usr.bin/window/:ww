@@ -1,5 +1,4 @@
-./"forw"16t"back"16t"state"8t"wstate"8t"modes"nppbbb
-+/"xxx"8t"index"8t"order"nbbb++
+./"forw"16t"back"16t"state"8t"index"8t"order"nppbbb+
 +/"w.nr"16t"w.nc"nDD
 +/"w.t"16t"w.b"16t"w.l"16t"w.r"nDDDD
 +/"b.nr"16t"b.nc"nDD
@@ -8,6 +7,9 @@
 +/"i.t"16t"i.b"16t"i.l"16t"i.r"nDDDD
 +/"cur.r"16t"cur.c"nDD
 +/"win"16t"buf"16t"fmap"16t"nvis"npppp
++/"wstate"8t"modes"8t"insert"8t"mapnl"8t"noupd"n5b
++/"unctrl"8t"nointr"8t"hascurs"8t"hasframe"n4b3+
 +/"pty"16t"pid"16t"ttyname"nDD11C+
 +/"ob"16t"obe"16t"obp"16t"obc"n3pD
-+/"stopped"nb
++/"stopped"nb3+
++/"center"8t"id"8t"label"16t"altpos.r"16t"altpos.c"n2b2+pDD

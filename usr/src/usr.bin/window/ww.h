@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.27 84/03/23	
+ *	@(#)ww.h	3.28 84/04/08	
  */
 
 #include <sgtty.h>
@@ -23,17 +23,11 @@ struct ww_pos {
 
 	/* the window structure */
 struct ww {
+		/* information for overlap */
 	struct ww *ww_forw;	/* doubly linked list, for overlapping info */
 	struct ww *ww_back;
-	char ww_state;		/* state of window creation */
-	char ww_wstate;		/* state for printing charcters */
-	char ww_modes;		/* current printing modes */
-	char ww_insert :1;	/* insert mode, for printing */
-	char ww_mapnl :1;	/* map \n to \r\n */
-	char ww_hascursor :1;	/* has fake cursor */
-	char ww_hasframe :1;	/* frame it */
-	char ww_nointr : 1;	/* wwwrite() not interruptable */
-	char ww_index;		/* the index, for wwindex[] */
+	char ww_state;		/* state of window */
+	char ww_index;		/* the window index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 
 		/* sizes and positions */
@@ -48,6 +42,17 @@ struct ww {
 	char **ww_fmap;		/* map for frame and box windows */
 	short *ww_nvis;		/* how many ww_buf chars are visible per row */
 
+		/* information for wwwrite() and company */
+	char ww_wstate;		/* state for outputting characters */
+	char ww_modes;		/* current display modes */
+	char ww_insert;		/* insert mode */
+	char ww_mapnl;		/* map \n to \r\n */
+	char ww_noupdate;	/* don't do updates in wwwrite() */
+	char ww_unctrl;		/* expand control characters */
+	char ww_nointr;		/* wwwrite() not interruptable */
+	char ww_hascursor;	/* has fake cursor */
+	char ww_hasframe;	/* frame it */
+
 		/* things for the window process and io */
 	int ww_pty;		/* file descriptor of pty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
@@ -60,7 +65,7 @@ struct ww {
 
 		/* things for the user, they really don't belong here */
 	char ww_center;		/* center the label */
-	int ww_id;		/* the user window id */
+	char ww_id;		/* the user window id */
 	char *ww_label;		/* the user supplied label */
 	struct ww_pos ww_altpos;/* alternate position */
 };
@@ -211,10 +216,8 @@ char *wwibq;		/* current write position in buffer */
 
 	/* our functions */
 struct ww *wwopen();
-struct ww *wwfind();
 int wwchild();
 int wwsuspend();
-char *unctrl();
 char **wwalloc();
 char *wwerror();
 
@@ -232,11 +235,6 @@ char *sprintf();
 #undef MAX
 #define MIN(x, y)	((x) > (y) ? (y) : (x))
 #define MAX(x, y)	((x) > (y) ? (x) : (y))
-
-#undef CTRL
-#define CTRL(c)		('c'&0x1f)
-#define DEL		0x7f
-#define ISCTRL(c)	((c) < ' ' & (c) != '\t' || (c) >= DEL)
 
 #if defined(O_4_1A)||defined(O_4_1C)
 int (*sigset)();

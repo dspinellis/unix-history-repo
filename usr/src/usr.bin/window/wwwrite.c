@@ -1,10 +1,20 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.18 84/03/03";
+static	char *sccsid = "@(#)wwwrite.c	3.19 84/04/08";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+#include "char.h"
 
+/*
+ * To support control character expansion, we save the old
+ * p and q values in r and s, and point p at the beginning
+ * of the expanded string, and q at some safe place beyond it
+ * (p + 10).  At strategic points in the loops, we check
+ * for (r && !*p) and restore the saved values back into
+ * p and q.  Essentially, we implement a stack of depth 2,
+ * to avoid recursion, which might be a better idea.
+ */
 wwwrite(w, p, n)
 register struct ww *w;
 register char *p;
@@ -13,11 +23,20 @@ int n;
 	char hascursor;
 	char *savep = p;
 	char *q = p + n;
+	char *r = 0;
+	char *s;
 
 	if (hascursor = w->ww_hascursor)
 		wwcursor(w, 0);
 	while (p < q && !w->ww_stopped && (!wwinterrupt() || w->ww_nointr)) {
-		if (w->ww_wstate == 0 && !ISCTRL(*p)) {
+		if (r && !*p) {
+			p = r;
+			q = s;
+			r = 0;
+			continue;
+		}
+		if (w->ww_wstate == 0 && (isprt(*p)
+		    || w->ww_unctrl && isunctrl(*p))) {
 			register i;
 			register union ww_char *bp;
 			int col, col1;
@@ -29,6 +48,12 @@ int n;
 						(w->ww_cur.c - w->ww_w.l & 7);
 					goto chklf;
 				}
+				if (!isprt(*p)) {
+					r = p + 1;
+					s = q;
+					p = unctrl(*p);
+					q = p + 10;
+				}
 				wwinschar(w, w->ww_cur.r, w->ww_cur.c,
 					*p++ | w->ww_modes << WWC_MSHIFT);
 				goto right;
@@ -36,23 +61,32 @@ int n;
 
 			bp = &w->ww_buf[w->ww_cur.r][w->ww_cur.c];
 			i = w->ww_cur.c;
-			while (i < w->ww_w.r && p < q && !ISCTRL(*p))
-				if (*p == '\t') {
+			while (i < w->ww_w.r && p < q)
+				if (!*p && r) {
+					p = r;
+					q = s;
+					r = 0;
+				} else if (*p == '\t') {
 					register tmp = 8 - (i - w->ww_w.l & 7);
 					p++;
 					i += tmp;
 					bp += tmp;
-				} else {
+				} else if (isprt(*p)) {
 					bp++->c_w = *p++
 						| w->ww_modes << WWC_MSHIFT;
 					i++;
-				}
-
+				} else if (w->ww_unctrl && isunctrl(*p)) {
+					r = p + 1;
+					s = q;
+					p = unctrl(*p);
+					q = p + 10;
+				} else
+					break;
 			col = MAX(w->ww_cur.c, w->ww_i.l);
 			col1 = MIN(i, w->ww_i.r);
 			w->ww_cur.c = i;
-			if (w->ww_cur.r >= w->ww_i.t && w->ww_cur.r < w->ww_i.b)
-			{
+			if (w->ww_cur.r >= w->ww_i.t
+			    && w->ww_cur.r < w->ww_i.b) {
 				register union ww_char *ns = wwns[w->ww_cur.r];
 				register char *smap = &wwsmap[w->ww_cur.r][col];
 				register char *win = w->ww_win[w->ww_cur.r];
@@ -67,7 +101,9 @@ int n;
 					}
 				if (nchanged > 0) {
 					wwtouched[w->ww_cur.r] |= WWU_TOUCHED;
-					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
+					if (!w->ww_noupdate)
+						wwupdate1(w->ww_cur.r,
+							w->ww_cur.r + 1);
 				}
 			}
 			
@@ -103,10 +139,10 @@ int n;
 			case '\r':
 				w->ww_cur.c = w->ww_w.l;
 				break;
-			case CTRL(g):
-				ttputc(CTRL(g));
+			case ctrl(g):
+				ttputc(ctrl(g));
 				break;
-			case CTRL([):
+			case ctrl([):
 				w->ww_wstate = 1;
 				break;
 			}

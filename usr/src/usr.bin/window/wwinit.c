@@ -1,11 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.16 84/03/23";
+static	char *sccsid = "@(#)wwinit.c	3.17 84/04/08";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 #include <sys/signal.h>
 #include <fcntl.h>
+#include "char.h"
 
 wwinit()
 {
