@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.53	82/02/19	*/
+/*	tcp_input.c	1.54	82/02/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -325,6 +325,15 @@ trimthenstep6:
 	}
 
 	/*
+	 * If a segment is received on a connection after the
+	 * user processes are gone, then RST the other end.
+	 */
+	if (so->so_state & SS_USERGONE) {
+		tcp_close(tp);
+		goto dropwithreset;
+	}
+
+	/*
 	 * If the RST bit is set examine the state:
 	 *    SYN_RECEIVED STATE:
 	 *	If passive open, return to LISTEN state.
@@ -426,12 +435,28 @@ trimthenstep6:
 		if (SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropafterack;
 		acked = ti->ti_ack - tp->snd_una;
+
+		/*
+		 * If transmit timer is running and timed sequence
+		 * number was acked, update smoothed round trip time.
+		 */
+		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
+			if (tp->t_srtt == 0)
+				tp->t_srtt = tp->t_rtt;
+			else
+				tp->t_srtt =
+				    tcp_alpha * tp->t_srtt +
+				    (1 - tcp_alpha) * tp->t_rtt;
+/* printf("rtt %d srtt*100 now %d\n", tp->t_rtt, (int)(tp->t_srtt*100)); */
+			tp->t_rtt = 0;
+		}
+
 		if (ti->ti_ack == tp->snd_max)
 			tp->t_timer[TCPT_REXMT] = 0;
 		else {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-			tp->t_rtt = 0;
+			tp->t_rtt = 1;
 			tp->t_rxtshift = 0;
 		}
 		if (acked > so->so_snd.sb_cc) {
@@ -447,20 +472,6 @@ trimthenstep6:
 		tp->snd_una = ti->ti_ack;
 		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
 			tp->snd_nxt = tp->snd_una;
-
-		/*
-		 * If transmit timer is running and timed sequence
-		 * number was acked, update smoothed round trip time.
-		 */
-		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
-			if (tp->t_srtt == 0)
-				tp->t_srtt = tp->t_rtt;
-			else
-				tp->t_srtt =
-				    tcp_alpha * tp->t_srtt +
-				    (1 - tcp_alpha) * tp->t_rtt;
-			tp->t_rtt = 0;
-		}
 
 		switch (tp->t_state) {
 
@@ -526,9 +537,6 @@ step6:
 	if (SEQ_LT(tp->snd_wl1, ti->ti_seq) || tp->snd_wl1 == ti->ti_seq &&
 	    (SEQ_LT(tp->snd_wl2, ti->ti_ack) ||
 	     tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd)) {
-/*
-printf("wl1 %x seq %x wl2 %x ack %x win %x wnd %x\n", tp->snd_wl1, ti->ti_seq, tp->snd_wl2, ti->ti_ack, ti->ti_win, tp->snd_wnd);
-*/
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
