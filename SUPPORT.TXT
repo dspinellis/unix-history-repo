@@ -29,6 +29,21 @@ distribution sets on floppy.  Please email info@radon.gbdata.com or call for
 rates and information.
 
 
+Cronyx Ltd.
+Research Computer Center,
+Moscow State University,
+Moscow 199899, Russia
+Phone: +7-095-939-5678
+Email: info@cronyx.msk.su
+
+Cronyx Ltd. provides support for FreeBSD including installation,
+configuration, Relcom network connection via UUCP, dialup and leased
+line IP.  We also provide X Windows configuration and localization,
+as well as additional packages installation.  Distribution sets on
+floppies and tape cartridges available.  System software development
+including drivers for non-standard equipment.
+
+
 Guy Helmer <ghelmer@alpha.dsu.edu>
 519 West Ave. South
 Madison, SD  57042
@@ -90,4 +105,4 @@ Public Domain Copies:
 
 
 
-$Id$
+$Id: SUPPORT.TXT,v 1.1 1994/01/16 00:27:31 rgrimes Exp $
