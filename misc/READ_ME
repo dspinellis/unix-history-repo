@@ -1,0 +1,18 @@
+Sat Apr 21 15:50:44 PST 1979
+
+These are miscellaneous files:
+
+	access.*	files to add access() system call
+
+	ar*		newer archiver which can be used
+			to extract this tape if the old archiver
+			is still used on your system
+
+	fetchi.sys	info to add fetchi() system call
+
+	getc.s putc.s	old i/o routines, for pascal in v7
+
+	mail.c		sample mail program which hooks into msgs.
+
+	ttytype ttytype.v6
+			sample ttytype files for v6 and v7
