@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.107 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.108 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2013,8 +2013,8 @@ mailfile(filename, ctladdr, e)
 			mcibuf.mci_flags |= MCIF_7BIT;
 
 		putfromline(&mcibuf, e);
-		(*e->e_puthdr)(&mcibuf, e->e_header, e);
-		(*e->e_putbody)(&mcibuf, e, NULL);
+		(*e->e_puthdr)(&mcibuf, e->e_header, e, 0);
+		(*e->e_putbody)(&mcibuf, e, NULL, 0);
 		putline("\n", &mcibuf);
 		if (ferror(f))
 		{

@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -137,7 +137,7 @@ mime8to7(mci, header, e, boundary)
 			sprintf(buf, "--%s", bbuf);
 			putline(buf, mci);
 			collect(e->e_dfp, FALSE, FALSE, &hdr, e);
-			putheader(mci, hdr, e);
+			putheader(mci, hdr, e, 0);
 			bt = mime8to7(mci, hdr, e, bbuf);
 		}
 		sprintf(buf, "--%s--", bbuf);
