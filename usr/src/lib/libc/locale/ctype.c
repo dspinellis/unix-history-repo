@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ctype.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctype.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include	<ctype.h>
@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)ctype.c	5.2 (Berkeley) %G%";
 char _ctype_[1 + 256] = {
 	0,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
-	_C,	_S,	_S,	_S,	_S,	_S,	_C,	_C,
+	_C,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C,	_C,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
 	_S|_B,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
