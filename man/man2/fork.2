@@ -1,0 +1,32 @@
+.pa 1
+.he 'FORK (II)'3/15/72'FORK (II)'
+.ti 0
+NAME		fork  --  spawn new process
+.sp
+.ti 0
+SYNOPSIS	sys fork  / fork = 2.
+.br
+(new process return)
+.br
+(old process return)
+.sp
+.ti 0
+DESCRIPTION	fork____
+is the only way new processes are created.
+The new process's core image is a copy of
+that of the caller of fork____; the only distinction
+is the return location and the fact
+that r0 in the old process contains the process ID
+of the new process.
+This process ID is used by wait____.
+.sp
+.ti 0
+SEE ALSO	wait(II), exec(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set in the old process if a new process
+could not be created because of lack of process space.
+.sp
+.ti 0
+BUGS		See wait(II) for a subtile bug in process destruction.
