@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)telnetd.c	4.30 (Berkeley) %G%";
+static	char sccsid[] = "@(#)telnetd.c	4.31 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,6 +8,7 @@ static	char sccsid[] = "@(#)telnetd.c	4.30 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
 
@@ -76,27 +77,32 @@ doit(f, who)
 	struct sockaddr_in *who;
 {
 	char *cp = line, *host, *inet_ntoa();
-	int i, p, cc, t;
+	int i, p, t;
 	struct sgttyb b;
 	struct hostent *hp;
+	char *pqrs;
 
-	for (i = 0; i < 16; i++) {
-		cp[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
-		p = open(cp, 2);
-		if (p > 0)
-			goto gotpty;
+	t = strlen("/dev/ptyp");
+	for (pqrs = "pqrs"; *pqrs; pqrs++) {
+		cp[t] = *pqrs;
+		for (i = 0; i < 16; i++) {
+			cp[t] = "0123456789abcdef"[i];
+			p = open(cp, O_RDWR);
+			if (p > 0)
+				goto gotpty;
+		}
 	}
 	fatal(f, "All network ports in use");
 	/*NOTREACHED*/
 gotpty:
 	dup2(f, 0);
 	cp[strlen("/dev/")] = 't';
-	t = open("/dev/tty", 2);
+	t = open("/dev/tty", O_RDWR);
 	if (t >= 0) {
 		ioctl(t, TIOCNOTTY, 0);
 		close(t);
 	}
-	t = open(cp, 2);
+	t = open(cp, O_RDWR);
 	if (t < 0)
 		fatalperror(f, cp, errno);
 	ioctl(t, TIOCGETP, &b);
@@ -133,7 +139,7 @@ fatal(f, msg)
 {
 	char buf[BUFSIZ];
 
-	(void) sprintf(buf, "telnetd: %s.\n", msg);
+	(void) sprintf(buf, "telnetd: %s.\r\n", msg);
 	(void) write(f, buf, strlen(buf));
 	exit(1);
 }
@@ -146,7 +152,7 @@ fatalperror(f, msg, errno)
 	char buf[BUFSIZ];
 	extern char *sys_errlist[];
 
-	(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	(void) sprintf(buf, "%s: %s\r\n", msg, sys_errlist[errno]);
 	fatal(f, buf);
 }
 
@@ -184,11 +190,11 @@ telnet(f, p)
 		 * Never look for input if there's still
 		 * stuff in the corresponding output buffer
 		 */
-		if (nfrontp - nbackp)
+		if (nfrontp - nbackp || pcc > 0)
 			obits |= (1 << f);
 		else
 			ibits |= (1 << p);
-		if (pfrontp - pbackp)
+		if (pfrontp - pbackp || ncc > 0)
 			obits |= (1 << p);
 		else
 			ibits |= (1 << f);
@@ -306,7 +312,8 @@ telrcv()
 			 * Are You There?
 			 */
 			case AYT:
-				*pfrontp++ = BELL;
+				strcpy(nfrontp, "\r\n[Yes]\r\n");
+				nfrontp += 9;
 				break;
 
 			/*
@@ -569,12 +576,12 @@ rmut()
 	register f;
 	int found = 0;
 
-	f = open(utmp, 2);
+	f = open(utmp, O_RDWR);
 	if (f >= 0) {
 		while(read(f, (char *)&wtmp, sizeof (wtmp)) == sizeof (wtmp)) {
 			if (SCMPN(wtmp.ut_line, line+5) || wtmp.ut_name[0]==0)
 				continue;
-			lseek(f, -(long)sizeof (wtmp), 1);
+			lseek(f, -(long)sizeof (wtmp), L_INCR);
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
@@ -584,13 +591,12 @@ rmut()
 		close(f);
 	}
 	if (found) {
-		f = open(wtmpf, 1);
+		f = open(wtmpf, O_WRONLY|O_APPEND);
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, line+5);
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
-			lseek(f, (long)0, 2);
 			write(f, (char *)&wtmp, sizeof (wtmp));
 			close(f);
 		}
