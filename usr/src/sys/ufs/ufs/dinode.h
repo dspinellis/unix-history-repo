@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dinode.h	7.4 (Berkeley) %G%
+ *	@(#)dinode.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@ struct inode {
 	struct	text *i_text;	/* text entry, if any (should be region) */
 	struct	inode *i_devlst;/* list of block device inodes */
 	off_t	i_endoff;	/* end of useful stuff in directory */
+	long	i_spare[4];
 	union {
 		daddr_t	if_lastr;	/* last read (read-ahead) */
 		struct	socket *is_socket;
