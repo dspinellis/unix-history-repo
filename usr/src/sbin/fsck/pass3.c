@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass3.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass3.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -40,8 +40,7 @@ pass3()
 				dp = ginode(orphan);
 				idesc.id_parent = 0;
 				idesc.id_number = orphan;
-				(void)ckinode(dp, &idesc);
-				if (idesc.id_parent == 0)
+				if ((ckinode(dp, &idesc) & FOUND) == 0)
 					break;
 				if (loopcnt >= sblock.fs_cstotal.cs_ndir)
 					break;
