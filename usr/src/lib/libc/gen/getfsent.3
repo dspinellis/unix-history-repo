@@ -1,8 +1,19 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)getfsent.3	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getfsent.3	6.5 (Berkeley) %G%
 .\"
 .TH GETFSENT 3  ""
 .UC 4
@@ -22,7 +33,7 @@ getfsent, getfsspec, getfsfile, setfsent, endfsent \- get file system descriptor
 .PP
 .B int setfsent()
 .PP
-.B int endfsent()
+.B void endfsent()
 .fi
 .SH DESCRIPTION
 .IR Getfsent ,
@@ -55,7 +66,7 @@ The fields have meanings described in
 reads the next line of the file, opening the file if necessary.
 .PP
 .I Setfsent
-opens and rewinds the file.
+opens the file, or rewinds it if it is already open.
 .PP
 .I Endfsent
 closes the file.
@@ -74,8 +85,15 @@ are ignored.
 .SH "SEE ALSO"
 fstab(5)
 .SH DIAGNOSTICS
-Null pointer
-(0) returned on EOF or error.
+.IR Getfsent ,
+.IR getfsspec ,
+and
+.I getfsfile
+return a null pointer (0) on EOF or error.
+.I Setfsent
+returns 0 on success, 1 on failure.
+.I Endfsent
+returns nothing.
 .SH BUGS
 All information is contained in a static area so it must be copied if it is
 to be saved.
