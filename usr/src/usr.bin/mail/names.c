@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)names.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)names.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -156,14 +156,25 @@ yankword(ap, wbuf)
 {
 	register char *cp, *cp2;
 
+	cp = ap;
 	do {
-		for (cp = ap; *cp && any(*cp, " \t,"); cp++)
-			;
+		while (*cp && any(*cp, " \t,"))
+			cp++;
 		if (*cp == '(') {
-			while (*cp && *cp != ')')
-				cp++;
-			if (*cp)
-				cp++;
+			register int nesting = 0;
+
+			while (*cp != '\0') {
+				switch (*cp++) {
+				case '(':
+					nesting++;
+					break;
+				case ')':
+					--nesting;
+					break;
+				}
+				if (nesting <= 0)
+					break;
+			}
 		}
 		if (*cp == '\0')
 			return(NOSTR);
