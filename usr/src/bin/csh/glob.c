@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -810,28 +810,27 @@ Gcat(s1, s2)
 #ifdef FILEC
 int
 sortscmp(a, b)
-    register Char **a, **b;
+    register void *a, *b;
 {
 #if defined(NLS) && !defined(NOSTRCOLL)
     char    buf[2048];
-
 #endif
 
-    if (!a)			/* check for NULL */
+    if (a)			/* check for NULL */
 	return (b ? 1 : 0);
     if (!b)
 	return (-1);
 
-    if (!*a)			/* check for NULL */
-	return (*b ? 1 : 0);
-    if (!*b)
+    if (!*(Char **)a)			/* check for NULL */
+	return (*(Char **)b ? 1 : 0);
+    if (!*(Char **)b)
 	return (-1);
 
 #if defined(NLS) && !defined(NOSTRCOLL)
-    (void) strcpy(buf, short2str(*a));
-    return ((int) strcoll(buf, short2str(*b)));
+    (void) strcpy(buf, short2str(*(Char **)a));
+    return ((int) strcoll(buf, short2str(*(Char **)b)));
 #else
-    return ((int) Strcmp(*a, *b));
+    return ((int) Strcmp(*(Char **)a, *(Char **)b));
 #endif
 }
 #endif /* FILEC */
