@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwtty.c	3.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -51,7 +51,7 @@ bad:
 wwsettty(d, t, o)
 register struct ww_tty *t, *o;
 {
-	if (ioctl(d, TIOCSETN, (char *)&t->ww_sgttyb) < 0)
+	if (ioctl(d, TIOCSETP, (char *)&t->ww_sgttyb) < 0)
 		goto bad;
 	if (ioctl(d, TIOCSETC, (char *)&t->ww_tchars) < 0)
 		goto bad;

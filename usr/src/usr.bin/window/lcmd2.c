@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -33,13 +33,19 @@ struct value *v, *a;
 {
 	register struct ww *w;
 
-	if ((w = openiwin(14, "IO Statistics")) == 0) {
+	if ((w = openiwin(16, "IO Statistics")) == 0) {
 		error("Can't open statistics window: %s.", wwerror());
 		return;
 	}
 	wwprintf(w, "ttflush\twrite\terror\tzero\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
 		wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc);
+	wwprintf(w, "token\tuse\tsaving\ttotal\tbaud\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d/%d\n",
+		wwzc0, wwzc1, wwzcsave, wwzctotal,
+		wwzctotal - wwzcsave ?
+			wwbaud * wwzctotal / (wwzctotal - wwzcsave) : wwbaud,
+		wwnwrc ? wwbaud * (wwnwrc + wwzcsave) / wwnwrc : wwbaud);
 	wwprintf(w, "wwwrite\tattempt\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\n",
 		wwnwwr, wwnwwra, wwnwwrc);

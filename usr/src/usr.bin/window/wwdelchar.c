@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwdelchar.c	3.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwdelchar.c	3.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -94,9 +94,7 @@ register struct ww *w;
 	if (tt.tt_delchar != 0 && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
-		(*tt.tt_move)(row, col);
-		(*tt.tt_delchar)();
-
+		xxdelchar(row, col);
 		p = &wwos[row][col];
 		q = p + 1;
 		for (i = wwncol - col; --i > 0;)

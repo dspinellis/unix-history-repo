@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwend.c	3.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwend.c	3.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -33,7 +33,7 @@ wwend()
 	if (tt.tt_modes)
 		(*tt.tt_setmodes)(0);
 	if (tt.tt_scroll_down)
-		(*tt.tt_scroll_down)();
+		(*tt.tt_scroll_down)(1);
 	(*tt.tt_move)(tt.tt_nrow - 1, 0);
 	(*tt.tt_end)();
 	ttflush();

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tth29.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tth29.c	3.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -38,8 +38,8 @@ kC|h29|heath-29|z29|zenith-29:\
  *
  */
 
-#define pc(c)	ttputc('c')
-#define esc()	pc(\033)
+#define pc(c)	ttputc(c)
+#define esc()	pc('\033')
 
 h29_setmodes(new)
 register new;
@@ -57,14 +57,14 @@ register new;
 	if (new & WWM_USR)
 		modes += 0x10;
 	esc();
-	pc(s);
-	ttputc(modes);
+	pc('s');
+	pc(modes);
 	if (new & WWM_GRP) {
 		if ((tt.tt_modes & WWM_GRP) == 0)
-			esc(), pc(F);
+			esc(), pc('F');
 	} else
 		if (tt.tt_modes & WWM_GRP)
-			esc(), pc(G);
+			esc(), pc('G');
 	tt.tt_modes = new;
 }
 

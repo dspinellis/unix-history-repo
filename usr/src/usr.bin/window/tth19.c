@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tth19.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)tth19.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -50,17 +50,17 @@ extern struct tt_str *gen_VE;
 
 int h19_msp10c;
 
-#define pc(c)	ttputc('c')
-#define esc()	pc(\033)
+#define pc(c)	ttputc(c)
+#define esc()	pc('\033')
 #define PAD(ms10) { \
 	register i; \
 	for (i = ((ms10) + 5) / h19_msp10c; --i >= 0;) \
-		pc(\0); \
+		pc('\0'); \
 }
 #define ICPAD() PAD((NCOL - tt.tt_col) * 1)	/* 0.1 ms per char */
 #define ILPAD() PAD((NROW - tt.tt_row) * 10)	/* 1 ms per char */
 
-#define H19_SETINSERT(m) (esc(), (tt.tt_insert = (m)) ? pc(@) : pc(O))
+#define H19_SETINSERT(m) (esc(), (tt.tt_insert = (m)) ? pc('@') : pc('O'))
 
 h19_setinsert(new)
 {
@@ -76,32 +76,36 @@ register new;
 	if (diff & WWM_REV) {
 		esc();
 		if (new & WWM_REV)
-			pc(p);
+			pc('p');
 		else
-			pc(q);
+			pc('q');
 	}
 	if (diff & WWM_GRP) {
 		esc();
 		if (new & WWM_GRP)
-			pc(F);
+			pc('F');
 		else
-			pc(G);
+			pc('G');
 	}
 	tt.tt_modes = new;
 }
 
-h19_insline()
+h19_insline(n)
 {
-	esc();
-	pc(L);
-	ILPAD();
+	while (--n >= 0) {
+		esc();
+		pc('L');
+		ILPAD();
+	}
 }
 
-h19_delline()
+h19_delline(n)
 {
-	esc();
-	pc(M);
-	ILPAD();
+	while (--n >= 0) {
+		esc();
+		pc('M');
+		ILPAD();
+	}
 }
 
 h19_putc(c)
@@ -111,7 +115,7 @@ register char c;
 		(*tt.tt_setmodes)(tt.tt_nmodes);
 	if (tt.tt_ninsert != tt.tt_insert)
 		H19_SETINSERT(tt.tt_ninsert);
-	ttputc(c);
+	pc(c);
 	if (tt.tt_insert)
 		ICPAD();
 	if (++tt.tt_col == NCOL)
@@ -128,7 +132,7 @@ register n;
 		H19_SETINSERT(tt.tt_ninsert);
 	if (tt.tt_insert) {
 		while (--n >= 0) {
-			ttputc(*p++);
+			pc(*p++);
 			ICPAD();
 			tt.tt_col++;
 		}
@@ -147,39 +151,39 @@ register char row, col;
 		if (tt.tt_col == col)
 			return;
 		if (col == 0) {
-			pc(\r);
+			pc('\r');
 			goto out;
 		}
 		if (tt.tt_col == col - 1) {
 			esc();
-			pc(C);
+			pc('C');
 			goto out;
 		}
 		if (tt.tt_col == col + 1) {
-			pc(\b);
+			pc('\b');
 			goto out;
 		}
 	}
 	if (tt.tt_col == col) {
 		if (tt.tt_row == row + 1) {
 			esc();
-			pc(A);
+			pc('A');
 			goto out;
 		}
 		if (tt.tt_row == row - 1) {
-			pc(\n);
+			pc('\n');
 			goto out;
 		}
 	}
 	if (col == 0 && row == 0) {
 		esc();
-		pc(H);
+		pc('H');
 		goto out;
 	}
 	esc();
-	pc(Y);
-	ttputc(' ' + row);
-	ttputc(' ' + col);
+	pc('Y');
+	pc(' ' + row);
+	pc(' ' + col);
 out:
 	tt.tt_col = col;
 	tt.tt_row = row;
@@ -190,9 +194,9 @@ h19_init()
 	if (gen_VS)
 		ttxputs(gen_VS);
 	esc();
-	pc(w);
+	pc('w');
 	esc();
-	pc(E);
+	pc('E');
 	tt.tt_col = tt.tt_row = 0;
 	tt.tt_ninsert = tt.tt_insert = 0;
 	tt.tt_nmodes = tt.tt_modes = 0;
@@ -203,44 +207,49 @@ h19_end()
 	if (gen_VE)
 		ttxputs(gen_VE);
 	esc();
-	pc(v);
+	pc('v');
 }
 
 h19_clreol()
 {
 	esc();
-	pc(K);
+	pc('K');
 }
 
 h19_clreos()
 {
 	esc();
-	pc(J);
+	pc('J');
 }
 
 h19_clear()
 {
 	esc();
-	pc(E);
+	pc('E');
 }
 
-h19_delchar()
+h19_delchar(n)
 {
-	esc();
-	pc(N);
+	while (--n >= 0) {
+		esc();
+		pc('N');
+	}
 }
 
-h19_scroll_down()
+h19_scroll_down(n)
 {
 	h19_move(NROW - 1, 0);
-	pc(\n);
+	while (--n >= 0)
+		pc('\n');
 }
 
-h19_scroll_up()
+h19_scroll_up(n)
 {
 	h19_move(0, 0);
-	esc();
-	pc(I);
+	while (--n >= 0) {
+		esc();
+		pc('I');
+	}
 }
 
 tt_h19()
@@ -270,7 +279,6 @@ tt_h19()
 
 	tt.tt_ncol = NCOL;
 	tt.tt_nrow = NROW;
-	tt.tt_hasinsert = 1;
 	tt.tt_availmodes = WWM_REV|WWM_GRP;
 	tt.tt_frame = h19_frame;
 	return 0;

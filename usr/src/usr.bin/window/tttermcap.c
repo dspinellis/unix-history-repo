@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tttermcap.c	3.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tttermcap.c	3.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tt.h"
@@ -77,6 +77,13 @@ tttgoto(s, col, row)
 	ttputs(tgoto(p, col, row));
 	for (p += s->ts_n; *--p == 0;)
 		ttputc(0);
+}
+
+ttpgoto(s, col, row, n)
+	struct tt_str *s;
+{
+
+	tputs(tgoto(s->ts_str, col, row), n, tttputc);
 }
 
 ttstrcmp(a, b)
