@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -318,7 +318,7 @@ gethdr:
 	/*
 	 * Skip up to the beginning of the next record
 	 */
-	if (tmpbuf.c_type == TS_TAPE)
+	if (tmpbuf.c_type == TS_TAPE && (tmpbuf.c_flags & DR_NEWHEADER))
 		for (i = tmpbuf.c_count; i > 0; i--)
 			readtape(buf);
 	(void) gethead(&spcl);
@@ -870,7 +870,6 @@ good:
 			buf->c_addr[i]++;
 		break;
 
-	case TS_OTAPE:
 	case TS_TAPE:
 	case TS_END:
 		buf->c_inumber = 0;
@@ -900,7 +899,7 @@ accthdr(header)
 	static long predict;
 	long blks, i;
 
-	if (header->c_type == TS_TAPE || header->c_type == TS_OTAPE) {
+	if (header->c_type == TS_TAPE) {
 		fprintf(stderr, "Volume header\n");
 		previno = 0x7fffffff;
 		return;
