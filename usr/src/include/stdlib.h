@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.11 (Berkeley) %G%
+ *	@(#)stdlib.h	5.12 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -77,7 +77,11 @@ int	 setenv __P((const char *, const char *, int));
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 void	*alloca __P((size_t));	/* built-in for gcc */
+extern	 char *optarg;			/* getopt(3) external variables */
+extern	 int optind;
+extern	 int opterr;
 int	 getopt __P((int, char * const *, const char *));
+extern	 char *suboptarg;		/* getsubopt(3) external variable */
 int	 getsubopt __P((char **, char * const *, char **));
 char	*initstate __P((unsigned, char *, int));
 int	 radixsort __P((const u_char **, int, const u_char *, u_char));
