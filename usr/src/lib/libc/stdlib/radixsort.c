@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -133,7 +133,7 @@ radixsort(l1, nmemb, tab, endbyte)
 	 */
 	t1 = ((__rspartition + 1) * (NBUCKETS - 2)) >> 1;
 	for (i = 0, t2 = nmemb; t2 > __rspartition; i += NBUCKETS - 1)
-		t2 = (++t2 >> 1) - t1;
+		t2 = ((t2 + 1) >> 1) - t1;
 	if (i) {
 		if (!(stack = stackp = (CONTEXT *)malloc(i * sizeof(CONTEXT))))
 			return(-1);
