@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)init.c	4.2 (Berkeley) 83/07/07";
+static char sccsid[] = "@(#)init.c	4.3 (Berkeley) 83/07/09";
 #endif
 
 /*
@@ -16,7 +16,7 @@ extern	struct ltchars ltc;
 extern	char hostname[];
 
 struct	gettystrs gettystrs[] = {
-	{ "nx", "default" },		/* next table */
+	{ "nx" },			/* next table */
 	{ "cl" },			/* screen clear characters */
 	{ "im" },			/* initial message */
 	{ "lm", "login: " },		/* login message */
