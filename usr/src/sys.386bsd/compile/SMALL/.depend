@@ -1,0 +1,1163 @@
+init_main.o : ../../kern/init_main.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/filedesc.h ../../sys/kernel.h \
+  ../../sys/mount.h ../../sys/proc.h machine/proc.h ../../sys/resourcevar.h \
+  ../../sys/signalvar.h ../../sys/systm.h ../../sys/vnode.h ../../sys/conf.h \
+  ../../sys/buf.h ../../sys/malloc.h ../../sys/protosw.h ../../sys/reboot.h \
+  ../../sys/user.h machine/pcb.h machine/tss.h machine/npx.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../ufs/quota.h \
+  machine/cpu.h machine/frame.h machine/segments.h sl.h loop.h 
+init_sysent.o : ../../kern/init_sysent.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h 
+kern_acct.o : ../../kern/kern_acct.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/namei.h \
+  ../../sys/resourcevar.h ../../sys/proc.h machine/proc.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/termios.h ../../sys/ttydefaults.h ../../sys/tty.h \
+  ../../sys/vnode.h ../../sys/mount.h ../../sys/kernel.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/acct.h ../../sys/syslog.h 
+kern_clock.o : ../../kern/kern_clock.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/dkstat.h \
+  ../../sys/callout.h ../../sys/kernel.h ../../sys/proc.h machine/proc.h \
+  ../../sys/resourcevar.h machine/cpu.h machine/frame.h machine/segments.h 
+kern_descrip.o : ../../kern/kern_descrip.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/filedesc.h ../../sys/kernel.h ../../sys/vnode.h ../../sys/proc.h \
+  machine/proc.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/socket.h ../../sys/socketvar.h ../../sys/stat.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/malloc.h ../../sys/syslog.h ../../sys/resourcevar.h 
+kern_execve.o : ../../kern/kern_execve.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/proc.h machine/proc.h ../../sys/mount.h ../../sys/namei.h \
+  ../../sys/vnode.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/exec.h ../../sys/stat.h ../../sys/wait.h ../../sys/signalvar.h \
+  ../../sys/mman.h ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h \
+  ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h \
+  ../../vm/vm_map.h ../../vm/vm_object.h ../../vm/vm_pager.h \
+  ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h ../../vm/vm_kern.h \
+  machine/reg.h 
+kern_exit.o : ../../kern/kern_exit.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/tty.h ../../sys/termios.h ../../sys/ttydefaults.h \
+  ../../sys/kernel.h ../../sys/proc.h machine/proc.h ../../sys/buf.h \
+  ../../sys/wait.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/vnode.h ../../sys/syslog.h ../../sys/malloc.h \
+  ../../sys/resourcevar.h machine/cpu.h machine/frame.h machine/segments.h \
+  machine/reg.h machine/psl.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_kern.h 
+kern_fork.o : ../../kern/kern_fork.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/filedesc.h \
+  ../../sys/kernel.h ../../sys/malloc.h ../../sys/proc.h machine/proc.h \
+  ../../sys/resourcevar.h ../../sys/vnode.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/acct.h ../../sys/ktrace.h 
+kern_kinfo.o : ../../kern/kern_kinfo.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/kinfo.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h ../../sys/buf.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h \
+  ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h \
+  ../../vm/vm_map.h ../../vm/vm_object.h ../../vm/vm_pager.h \
+  ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../sys/kinfo_proc.h 
+kern_ktrace.o : ../../kern/kern_ktrace.c 
+kern_malloc.o : ../../kern/kern_malloc.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/proc.h \
+  machine/proc.h ../../sys/kernel.h ../../sys/malloc.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../vm/vm_kern.h 
+kern__physio.o : ../../kern/kern__physio.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/buf.h ../../sys/conf.h ../../sys/proc.h machine/proc.h \
+  ../../sys/malloc.h ../../sys/vnode.h ../../sys/specdev.h 
+kern_proc.o : ../../kern/kern_proc.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/kernel.h \
+  ../../sys/proc.h machine/proc.h ../../sys/buf.h ../../sys/acct.h \
+  ../../sys/wait.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../kern/../ufs/quota.h ../../sys/malloc.h ../../sys/mbuf.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h 
+kern_prot.o : ../../kern/kern_prot.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/acct.h ../../sys/systm.h \
+  ../../sys/proc.h machine/proc.h ../../sys/timeb.h ../../sys/times.h \
+  ../../sys/malloc.h 
+kern_resource.o : ../../kern/kern_resource.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/resourcevar.h \
+  ../../sys/malloc.h ../../sys/proc.h machine/proc.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h 
+kern_sig.o : ../../kern/kern_sig.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/signalvar.h \
+  ../../sys/resourcevar.h ../../sys/namei.h ../../sys/vnode.h \
+  ../../sys/proc.h machine/proc.h ../../sys/systm.h ../../sys/timeb.h \
+  ../../sys/times.h ../../sys/buf.h ../../sys/acct.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/kernel.h ../../sys/wait.h \
+  ../../sys/ktrace.h machine/cpu.h machine/frame.h machine/segments.h \
+  ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/user.h \
+  machine/pcb.h machine/tss.h machine/npx.h 
+kern_subr.o : ../../kern/kern_subr.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/proc.h \
+  machine/proc.h 
+kern_synch.o : ../../kern/kern_synch.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/proc.h \
+  machine/proc.h ../../sys/kernel.h ../../sys/buf.h ../../sys/signalvar.h \
+  ../../sys/resourcevar.h machine/cpu.h machine/frame.h machine/segments.h 
+kern_time.o : ../../kern/kern_time.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/resourcevar.h \
+  ../../sys/kernel.h ../../sys/proc.h machine/proc.h machine/cpu.h \
+  machine/frame.h machine/segments.h 
+kern_xxx.o : ../../kern/kern_xxx.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/kernel.h \
+  ../../sys/proc.h machine/proc.h ../../sys/reboot.h 
+dead_vnops.o : ../../kern/dead_vnops.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/vnode.h \
+  ../../sys/namei.h ../../sys/buf.h 
+spec_vnops.o : ../../kern/spec_vnops.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/systm.h ../../sys/kernel.h ../../sys/conf.h ../../sys/buf.h \
+  ../../sys/mount.h ../../sys/namei.h ../../sys/vnode.h ../../sys/specdev.h \
+  ../../sys/stat.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/disklabel.h 
+subr_log.o : ../../kern/subr_log.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/vnode.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/msgbuf.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h 
+subr_prf.o : ../../kern/subr_prf.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/conf.h ../../sys/reboot.h ../../sys/msgbuf.h ../../sys/proc.h \
+  machine/proc.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/vnode.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h ../../sys/tprintf.h ../../sys/syslog.h \
+  ../../sys/malloc.h machine/stdarg.h 
+subr_rlist.o : ../../kern/subr_rlist.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/malloc.h ../../sys/rlist.h 
+subr_xxx.o : ../../kern/subr_xxx.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h machine/cpu.h \
+  machine/frame.h machine/segments.h 
+sys_generic.o : ../../kern/sys_generic.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/filedesc.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/socketvar.h ../../sys/proc.h machine/proc.h \
+  ../../sys/kernel.h ../../sys/stat.h ../../sys/malloc.h 
+sys_process.o : ../../kern/sys_process.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/proc.h \
+  machine/proc.h ../../sys/vnode.h ../../sys/buf.h ../../sys/ptrace.h \
+  machine/reg.h machine/psl.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../sys/user.h machine/pcb.h machine/tss.h \
+  machine/npx.h ../../sys/resourcevar.h ../../sys/signalvar.h \
+  ../../sys/kinfo_proc.h 
+sys_socket.o : ../../kern/sys_socket.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/mbuf.h ../../sys/malloc.h \
+  ../../sys/protosw.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/stat.h ../../net/if.h ../../net/../sys/time.h \
+  ../../net/../net/if_arp.h ../../net/route.h ../../net/radix.h 
+tty.o : ../../kern/tty.c ../../sys/param.h ../../sys/types.h machine/ansi.h \
+  machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h ../../sys/errno.h \
+  ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h ../../sys/uio.h \
+  ../../sys/signal.h machine/trap.h machine/param.h machine/endian.h \
+  machine/limits.h ../../sys/systm.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/tty.h ../../sys/termios.h ../../sys/ttydefaults.h \
+  ../../sys/proc.h machine/proc.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/conf.h ../../sys/dkstat.h ../../sys/kernel.h \
+  ../../sys/vnode.h ../../sys/syslog.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h 
+tty_compat.o : ../../kern/tty_compat.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/tty.h ../../sys/termios.h ../../sys/ttydefaults.h \
+  ../../sys/proc.h machine/proc.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/conf.h ../../sys/dkstat.h ../../sys/kernel.h \
+  ../../sys/syslog.h 
+tty_conf.o : ../../kern/tty_conf.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h ../../sys/conf.h tb.h sl.h 
+tty_pty.o : ../../kern/tty_pty.c pty.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/tty.h ../../sys/termios.h ../../sys/ttydefaults.h \
+  ../../sys/conf.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/proc.h machine/proc.h ../../sys/kernel.h ../../sys/vnode.h 
+tty_ring.o : ../../kern/tty_ring.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h 
+tty_tty.o : ../../kern/tty_tty.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/conf.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h ../../sys/proc.h machine/proc.h ../../sys/vnode.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h 
+vfs__bio.o : ../../kern/vfs__bio.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/vnode.h ../../sys/buf.h ../../sys/specdev.h ../../sys/mount.h \
+  ../../sys/malloc.h ../../sys/resourcevar.h 
+vfs_cache.o : ../../kern/vfs_cache.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/mount.h \
+  ../../sys/vnode.h ../../sys/namei.h ../../sys/malloc.h 
+vfs_conf.o : ../../kern/vfs_conf.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/mount.h 
+vfs_lookup.o : ../../kern/vfs_lookup.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/namei.h ../../sys/vnode.h \
+  ../../sys/mount.h ../../sys/malloc.h ../../sys/filedesc.h ../../sys/proc.h \
+  machine/proc.h 
+vfs_subr.o : ../../kern/vfs_subr.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/mount.h ../../sys/vnode.h ../../sys/specdev.h ../../sys/namei.h \
+  ../../sys/buf.h ../../sys/malloc.h 
+vfs_syscalls.o : ../../kern/vfs_syscalls.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/namei.h ../../sys/filedesc.h ../../sys/kernel.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/stat.h ../../sys/vnode.h \
+  ../../sys/mount.h ../../sys/proc.h machine/proc.h ../../sys/malloc.h 
+vfs_vnops.o : ../../kern/vfs_vnops.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/kernel.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/stat.h \
+  ../../sys/buf.h ../../sys/proc.h machine/proc.h ../../sys/mount.h \
+  ../../sys/namei.h ../../sys/vnode.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/tty.h ../../sys/termios.h ../../sys/ttydefaults.h 
+uipc_domain.o : ../../kern/uipc_domain.c ../../sys/cdefs.h \
+  ../../sys/param.h ../../sys/types.h machine/ansi.h machine/types.h \
+  ../../sys/syslimits.h ../../sys/errno.h ../../sys/time.h \
+  ../../sys/resource.h ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h \
+  machine/trap.h machine/param.h machine/endian.h machine/limits.h \
+  ../../sys/socket.h ../../sys/protosw.h ../../sys/domain.h ../../sys/mbuf.h \
+  ../../sys/malloc.h ../../sys/kernel.h imp.h 
+uipc_mbuf.o : ../../kern/uipc_mbuf.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/malloc.h ../../sys/mbuf.h ../../sys/kernel.h ../../sys/syslog.h \
+  ../../sys/domain.h ../../sys/protosw.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h 
+uipc_proto.o : ../../kern/uipc_proto.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/socket.h ../../sys/protosw.h \
+  ../../sys/domain.h ../../sys/mbuf.h ../../sys/malloc.h 
+uipc_socket.o : ../../kern/uipc_socket.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/proc.h \
+  machine/proc.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/malloc.h ../../sys/mbuf.h ../../sys/domain.h ../../sys/kernel.h \
+  ../../sys/protosw.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/resourcevar.h 
+uipc_socket2.o : ../../kern/uipc_socket2.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/proc.h machine/proc.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/buf.h ../../sys/malloc.h ../../sys/mbuf.h \
+  ../../sys/protosw.h ../../sys/socket.h ../../sys/socketvar.h 
+uipc_syscalls.o : ../../kern/uipc_syscalls.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/filedesc.h \
+  ../../sys/proc.h machine/proc.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/buf.h ../../sys/malloc.h ../../sys/mbuf.h \
+  ../../sys/protosw.h ../../sys/socket.h ../../sys/socketvar.h 
+uipc_usrreq.o : ../../kern/uipc_usrreq.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/proc.h \
+  machine/proc.h ../../sys/filedesc.h ../../sys/domain.h ../../sys/protosw.h \
+  ../../sys/socket.h ../../sys/socketvar.h ../../sys/unpcb.h ../../sys/un.h \
+  ../../sys/namei.h ../../sys/vnode.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/stat.h ../../sys/mbuf.h ../../sys/malloc.h 
+kern_lock.o : ../../vm/kern_lock.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../vm/vm_param.h machine/vmparam.h \
+  ../../vm/lock.h ../../sys/proc.h machine/proc.h 
+vm_fault.o : ../../vm/vm_fault.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../vm/vm_pageout.h 
+vm_glue.o : ../../vm/vm_glue.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/proc.h \
+  machine/proc.h ../../sys/resourcevar.h ../../sys/buf.h ../../sys/user.h \
+  machine/pcb.h machine/tss.h machine/npx.h ../../sys/signalvar.h \
+  ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../vm/vm_page.h \
+  ../../vm/vm_kern.h ../../vm/../vm/vm_pageout.h 
+vm_init.o : ../../vm/vm_init.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../vm/vm_kern.h 
+vm_kern.o : ../../vm/vm_kern.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../vm/vm_pageout.h ../../vm/vm_kern.h 
+vm_map.o : ../../vm/vm_map.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/malloc.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../vm/vm_page.h 
+vm_meter.o : ../../vm/vm_meter.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/systm.h ../../sys/kernel.h ../../vm/vm_param.h machine/vmparam.h \
+  ../../sys/vmmeter.h 
+vm_mmap.o : ../../vm/vm_mmap.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/filedesc.h \
+  ../../sys/proc.h machine/proc.h ../../sys/vnode.h ../../sys/specdev.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/mman.h \
+  ../../sys/conf.h ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h \
+  ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h \
+  ../../vm/vm_map.h ../../vm/vm_object.h ../../vm/vm_pager.h \
+  ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h 
+vm_object.o : ../../vm/vm_object.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/malloc.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../vm/vm_page.h 
+vm_page.o : ../../vm/vm_page.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../vm/vm_pageout.h 
+vm_pageout.o : ../../vm/vm_pageout.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../vm/vm_pageout.h 
+vm_pager.o : ../../vm/vm_pager.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/malloc.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../vm/vm_page.h ../../vm/vm_kern.h \
+  swappager.h vnodepager.h devpager.h 
+vm_swap.o : ../../vm/vm_swap.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/conf.h ../../sys/proc.h machine/proc.h ../../sys/namei.h \
+  ../../sys/dmap.h ../../sys/vnode.h ../../sys/specdev.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/rlist.h 
+vm_unix.o : ../../vm/vm_unix.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/proc.h \
+  machine/proc.h ../../sys/resourcevar.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h 
+vm_user.o : ../../vm/vm_user.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/proc.h \
+  machine/proc.h ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h \
+  ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h \
+  ../../vm/vm_map.h ../../vm/vm_object.h ../../vm/vm_pager.h \
+  ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h ../../vm/vm_page.h 
+device_pager.o : ../../vm/device_pager.c devpager.h ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/conf.h \
+  ../../sys/mman.h ../../sys/malloc.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h \
+  ../../vm/vm_page.h ../../vm/vm_kern.h ../../vm/device_pager.h 
+swap_pager.o : ../../vm/swap_pager.c swappager.h ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/proc.h \
+  machine/proc.h ../../sys/buf.h ../../sys/systm.h ../../sys/specdev.h \
+  ../../sys/vnode.h ../../sys/malloc.h ../../vm/queue.h ../../sys/rlist.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/vm_prot.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_page.h \
+  ../../vm/vm_pageout.h ../../vm/swap_pager.h 
+vnode_pager.o : ../../vm/vnode_pager.c vnodepager.h ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/proc.h \
+  machine/proc.h ../../sys/malloc.h ../../sys/vnode.h ../../sys/mount.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_object.h ../../vm/vm_pager.h \
+  ../../vm/vm_page.h ../../vm/vnode_pager.h 
+ufs_alloc.o : ../../ufs/ufs_alloc.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/proc.h machine/proc.h ../../sys/vnode.h ../../sys/kernel.h \
+  ../../sys/syslog.h ../../ufs/quota.h ../../ufs/inode.h \
+  ../../ufs/../ufs/dinode.h ../../ufs/fs.h 
+ufs_bmap.o : ../../ufs/ufs_bmap.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/proc.h machine/proc.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/vnode.h ../../ufs/quota.h ../../ufs/inode.h \
+  ../../ufs/../ufs/dinode.h ../../ufs/fs.h 
+ufs_disksubr.o : ../../ufs/ufs_disksubr.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/buf.h ../../sys/disklabel.h ../../sys/syslog.h 
+ufs_inode.o : ../../ufs/ufs_inode.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/mount.h \
+  ../../sys/proc.h machine/proc.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/buf.h ../../sys/vnode.h ../../sys/kernel.h \
+  ../../sys/malloc.h ../../ufs/quota.h ../../ufs/inode.h \
+  ../../ufs/../ufs/dinode.h ../../ufs/fs.h ../../ufs/ufsmount.h 
+ufs_lockf.o : ../../ufs/ufs_lockf.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/kernel.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/proc.h \
+  machine/proc.h ../../sys/vnode.h ../../sys/malloc.h ../../ufs/lockf.h \
+  ../../ufs/quota.h ../../ufs/inode.h ../../ufs/../ufs/dinode.h 
+ufs_lookup.o : ../../ufs/ufs_lookup.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/namei.h ../../sys/buf.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/vnode.h \
+  ../../ufs/quota.h ../../ufs/inode.h ../../ufs/../ufs/dinode.h \
+  ../../ufs/dir.h ../../ufs/fs.h 
+ufs_subr.o : ../../ufs/ufs_subr.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../ufs/../ufs/fs.h 
+ufs_tables.o : ../../ufs/ufs_tables.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h 
+ufs_vfsops.o : ../../ufs/ufs_vfsops.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/namei.h \
+  ../../sys/proc.h machine/proc.h ../../sys/kernel.h ../../sys/vnode.h \
+  ../../sys/specdev.h ../../sys/mount.h ../../sys/buf.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/disklabel.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/malloc.h ../../ufs/quota.h ../../ufs/fs.h \
+  ../../ufs/ufsmount.h ../../ufs/inode.h ../../ufs/../ufs/dinode.h 
+ufs_vnops.o : ../../ufs/ufs_vnops.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/namei.h \
+  ../../sys/resourcevar.h ../../sys/kernel.h ../../sys/file.h \
+  ../../sys/fcntl.h ../../sys/unistd.h ../../sys/stat.h ../../sys/buf.h \
+  ../../sys/proc.h machine/proc.h ../../sys/conf.h ../../sys/mount.h \
+  ../../sys/vnode.h ../../sys/specdev.h fifo.h ../../sys/malloc.h \
+  ../../ufs/lockf.h ../../ufs/quota.h ../../ufs/inode.h \
+  ../../ufs/../ufs/dinode.h ../../ufs/dir.h ../../ufs/fs.h 
+af.o : ../../net/af.c ../../sys/param.h ../../sys/types.h machine/ansi.h \
+  machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h ../../sys/errno.h \
+  ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h ../../sys/uio.h \
+  ../../sys/signal.h machine/trap.h machine/param.h machine/endian.h \
+  machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h ../../sys/protosw.h \
+  ../../sys/socket.h ../../sys/socketvar.h ../../net/af.h 
+if.o : ../../net/if.c ../../sys/param.h ../../sys/types.h machine/ansi.h \
+  machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h ../../sys/errno.h \
+  ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h ../../sys/uio.h \
+  ../../sys/signal.h machine/trap.h machine/param.h machine/endian.h \
+  machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h ../../sys/systm.h \
+  ../../sys/socket.h ../../sys/socketvar.h ../../sys/protosw.h \
+  ../../sys/proc.h machine/proc.h ../../sys/kernel.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../net/if.h ../../net/../sys/time.h ../../net/../net/if_arp.h \
+  ../../net/af.h ../../net/if_dl.h ../../net/if_types.h ether.h \
+  ../../net/route.h ../../net/radix.h 
+if_ethersubr.o : ../../net/if_ethersubr.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/kernel.h ../../sys/malloc.h ../../sys/mbuf.h ../../sys/protosw.h \
+  ../../sys/socket.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/syslog.h ../../net/if.h \
+  ../../net/../sys/time.h ../../net/../net/if_arp.h ../../net/netisr.h \
+  ../../net/route.h ../../net/radix.h ../../net/if_llc.h ../../net/if_dl.h \
+  machine/mtpr.h ../../net/../netinet/in.h ../../net/../netinet/in_var.h \
+  ../../net/../netinet/if_ether.h 
+if_loop.o : ../../net/if_loop.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/mbuf.h \
+  ../../sys/malloc.h ../../sys/socket.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../net/../net/if.h ../../net/../net/../sys/time.h \
+  ../../net/../net/../net/if_arp.h ../../net/../net/if_types.h \
+  ../../net/../net/netisr.h ../../net/../net/route.h ../../net/../net/radix.h \
+  machine/mtpr.h ../../net/../netinet/in.h ../../net/../netinet/in_systm.h \
+  ../../net/../netinet/in_var.h ../../net/../netinet/ip.h 
+if_sl.o : ../../net/if_sl.c sl.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/mbuf.h ../../sys/malloc.h ../../sys/buf.h ../../sys/dkstat.h \
+  ../../sys/socket.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h ../../sys/kernel.h ../../sys/conf.h ../../net/if.h \
+  ../../net/../sys/time.h ../../net/../net/if_arp.h ../../net/if_types.h \
+  ../../net/netisr.h ../../net/route.h ../../net/radix.h ../../netinet/in.h \
+  ../../netinet/in_systm.h ../../netinet/in_var.h ../../netinet/ip.h \
+  machine/mtpr.h ../../net/slcompress.h ../../net/if_slvar.h 
+raw_cb.o : ../../net/raw_cb.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/mbuf.h \
+  ../../sys/malloc.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/domain.h ../../sys/protosw.h ../../net/if.h \
+  ../../net/../sys/time.h ../../net/../net/if_arp.h ../../net/route.h \
+  ../../net/radix.h ../../net/raw_cb.h ../../net/../netinet/in.h \
+  machine/mtpr.h 
+raw_usrreq.o : ../../net/raw_usrreq.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h \
+  ../../sys/domain.h ../../sys/protosw.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../net/if.h ../../net/../sys/time.h \
+  ../../net/../net/if_arp.h ../../net/route.h ../../net/radix.h \
+  ../../net/netisr.h ../../net/raw_cb.h machine/mtpr.h 
+radix.o : ../../net/radix.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../net/radix.h ../../sys/malloc.h 
+route.o : ../../net/route.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/proc.h \
+  machine/proc.h ../../sys/mbuf.h ../../sys/malloc.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../sys/domain.h ../../sys/protosw.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../net/if.h ../../net/../sys/time.h \
+  ../../net/../net/if_arp.h ../../net/af.h ../../net/route.h \
+  ../../net/radix.h ../../net/raw_cb.h ../../net/../netinet/in.h \
+  ../../net/../netinet/in_var.h machine/mtpr.h ../../net/netisr.h 
+rtsock.o : ../../net/rtsock.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h \
+  ../../sys/proc.h machine/proc.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/domain.h ../../sys/protosw.h ../../net/af.h ../../net/if.h \
+  ../../net/../sys/time.h ../../net/../net/if_arp.h ../../net/route.h \
+  ../../net/radix.h ../../net/raw_cb.h machine/mtpr.h ../../sys/kinfo.h 
+slcompress.o : ../../net/slcompress.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/tcp.h ../../net/slcompress.h 
+if_ether.o : ../../netinet/if_ether.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/socket.h ../../sys/kernel.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/syslog.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/in_var.h \
+  ../../netinet/ip.h ../../netinet/if_ether.h 
+in.o : ../../netinet/in.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/mbuf.h ../../sys/malloc.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../netinet/in_systm.h ../../net/if.h \
+  ../../net/../sys/time.h ../../net/../net/if_arp.h ../../net/route.h \
+  ../../net/radix.h ../../net/af.h ../../netinet/in.h ../../netinet/in_var.h 
+in_pcb.o : ../../netinet/in_pcb.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/protosw.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/../net/route.h ../../netinet/../net/radix.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/in_var.h 
+in_proto.o : ../../netinet/in_proto.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/socket.h ../../sys/protosw.h \
+  ../../sys/domain.h ../../sys/mbuf.h ../../sys/malloc.h ../../netinet/in.h \
+  ../../netinet/in_systm.h imp.h 
+ip_icmp.o : ../../netinet/ip_icmp.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/protosw.h ../../sys/socket.h ../../sys/kernel.h \
+  ../../netinet/../net/route.h ../../netinet/../net/radix.h \
+  ../../netinet/../net/if.h ../../netinet/../net/../sys/time.h \
+  ../../netinet/../net/../net/if_arp.h ../../netinet/in.h \
+  ../../netinet/in_systm.h ../../netinet/in_var.h ../../netinet/ip.h \
+  ../../netinet/ip_icmp.h ../../netinet/icmp_var.h 
+ip_input.o : ../../netinet/ip_input.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/domain.h ../../sys/protosw.h ../../sys/socket.h \
+  ../../sys/kernel.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/../net/route.h ../../netinet/../net/radix.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/in_var.h ../../netinet/ip_var.h \
+  ../../netinet/ip_icmp.h 
+ip_output.o : ../../netinet/ip_output.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/malloc.h ../../sys/mbuf.h \
+  ../../sys/protosw.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../netinet/../net/if.h ../../netinet/../net/../sys/time.h \
+  ../../netinet/../net/../net/if_arp.h ../../netinet/../net/route.h \
+  ../../netinet/../net/radix.h ../../netinet/in.h ../../netinet/in_systm.h \
+  ../../netinet/ip.h ../../netinet/in_pcb.h ../../netinet/in_var.h \
+  ../../netinet/ip_var.h 
+raw_ip.o : ../../netinet/raw_ip.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/malloc.h ../../sys/mbuf.h \
+  ../../sys/socket.h ../../sys/protosw.h ../../sys/socketvar.h \
+  ../../netinet/../net/if.h ../../netinet/../net/../sys/time.h \
+  ../../netinet/../net/../net/if_arp.h ../../netinet/../net/route.h \
+  ../../netinet/../net/radix.h ../../netinet/../net/raw_cb.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/ip_var.h ../../netinet/in_pcb.h 
+tcp_debug.o : ../../netinet/tcp_debug.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/mbuf.h \
+  ../../sys/malloc.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/protosw.h ../../netinet/../net/route.h \
+  ../../netinet/../net/radix.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/ip_var.h ../../netinet/tcp.h \
+  ../../netinet/tcp_fsm.h ../../netinet/tcp_seq.h ../../netinet/tcp_timer.h \
+  ../../netinet/tcp_var.h ../../netinet/tcpip.h ../../netinet/tcp_debug.h 
+tcp_input.o : ../../netinet/tcp_input.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/protosw.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/../net/route.h ../../netinet/../net/radix.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/ip_var.h ../../netinet/tcp.h \
+  ../../netinet/tcp_fsm.h ../../netinet/tcp_seq.h ../../netinet/tcp_timer.h \
+  ../../netinet/tcp_var.h ../../netinet/tcpip.h ../../netinet/tcp_debug.h 
+tcp_output.o : ../../netinet/tcp_output.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/malloc.h ../../sys/mbuf.h ../../sys/protosw.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../netinet/../net/route.h \
+  ../../netinet/../net/radix.h ../../netinet/in.h ../../netinet/in_systm.h \
+  ../../netinet/ip.h ../../netinet/in_pcb.h ../../netinet/ip_var.h \
+  ../../netinet/tcp.h ../../netinet/tcp_fsm.h ../../netinet/tcp_seq.h \
+  ../../netinet/tcp_timer.h ../../netinet/tcp_var.h ../../netinet/tcpip.h \
+  ../../netinet/tcp_debug.h 
+tcp_subr.o : ../../netinet/tcp_subr.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/protosw.h ../../netinet/../net/route.h \
+  ../../netinet/../net/radix.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/ip_var.h ../../netinet/ip_icmp.h \
+  ../../netinet/tcp.h ../../netinet/tcp_fsm.h ../../netinet/tcp_seq.h \
+  ../../netinet/tcp_timer.h ../../netinet/tcp_var.h ../../netinet/tcpip.h 
+tcp_timer.o : ../../netinet/tcp_timer.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/socket.h ../../sys/socketvar.h \
+  ../../sys/protosw.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/../net/route.h ../../netinet/../net/radix.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/ip_var.h ../../netinet/tcp.h \
+  ../../netinet/tcp_fsm.h ../../netinet/tcp_seq.h ../../netinet/tcp_timer.h \
+  ../../netinet/tcp_var.h ../../netinet/tcpip.h 
+tcp_usrreq.o : ../../netinet/tcp_usrreq.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/malloc.h ../../sys/mbuf.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../sys/protosw.h ../../sys/stat.h \
+  ../../netinet/../net/if.h ../../netinet/../net/../sys/time.h \
+  ../../netinet/../net/../net/if_arp.h ../../netinet/../net/route.h \
+  ../../netinet/../net/radix.h ../../netinet/in.h ../../netinet/in_systm.h \
+  ../../netinet/ip.h ../../netinet/in_pcb.h ../../netinet/ip_var.h \
+  ../../netinet/tcp.h ../../netinet/tcp_fsm.h ../../netinet/tcp_seq.h \
+  ../../netinet/tcp_timer.h ../../netinet/tcp_var.h ../../netinet/tcpip.h \
+  ../../netinet/tcp_debug.h 
+udp_usrreq.o : ../../netinet/udp_usrreq.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/malloc.h \
+  ../../sys/mbuf.h ../../sys/protosw.h ../../sys/socket.h \
+  ../../sys/socketvar.h ../../sys/stat.h ../../netinet/../net/if.h \
+  ../../netinet/../net/../sys/time.h ../../netinet/../net/../net/if_arp.h \
+  ../../netinet/../net/route.h ../../netinet/../net/radix.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/ip.h \
+  ../../netinet/in_pcb.h ../../netinet/ip_var.h ../../netinet/ip_icmp.h \
+  ../../netinet/udp.h ../../netinet/udp_var.h 
+autoconf.o : ../../i386/i386/autoconf.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/buf.h \
+  ../../sys/dkstat.h ../../sys/conf.h ../../sys/dmap.h ../../sys/reboot.h \
+  machine/pte.h isa.h 
+cons.o : ../../i386/i386/cons.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/user.h machine/pcb.h machine/tss.h machine/npx.h \
+  ../../sys/resourcevar.h ../../sys/signalvar.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/systm.h \
+  ../../sys/buf.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/tty.h ../../sys/termios.h \
+  ../../sys/ttydefaults.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/conf.h ../../i386/i386/cons.h com.h 
+pccons.o : ../../i386/isa/pccons.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/conf.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/proc.h machine/proc.h ../../sys/user.h machine/pcb.h \
+  machine/tss.h machine/npx.h ../../sys/resourcevar.h ../../sys/signalvar.h \
+  ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/tty.h \
+  ../../sys/termios.h ../../sys/ttydefaults.h ../../i386/isa/isa_device.h \
+  ../../sys/callout.h ../../sys/systm.h ../../sys/kernel.h ../../sys/syslog.h \
+  ../../i386/isa/icu.h ../../i386/i386/cons.h machine/stdarg.h 
+clock.o : ../../i386/isa/clock.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/kernel.h machine/segments.h \
+  ../../i386/isa/icu.h ../../i386/isa/isa.h ../../i386/isa/rtc.h 
+in_cksum.o : ../../i386/i386/in_cksum.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h \
+  ../../netinet/in.h ../../netinet/in_systm.h 
+machdep.o : ../../i386/i386/machdep.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/signalvar.h \
+  ../../sys/kernel.h ../../sys/proc.h machine/proc.h ../../sys/user.h \
+  machine/pcb.h machine/tss.h machine/npx.h ../../sys/resourcevar.h \
+  ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/buf.h \
+  ../../sys/reboot.h ../../sys/conf.h ../../sys/file.h ../../sys/fcntl.h \
+  ../../sys/unistd.h ../../sys/callout.h ../../sys/malloc.h ../../sys/mbuf.h \
+  ../../sys/msgbuf.h ../../net/netisr.h ../../vm/vm_kern.h ../../vm/vm_page.h \
+  machine/cpu.h machine/frame.h machine/segments.h machine/reg.h \
+  machine/psl.h machine/specialreg.h ../../i386/isa/rtc.h isa.h 
+mem.o : ../../i386/i386/mem.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/conf.h ../../sys/buf.h \
+  ../../sys/systm.h ../../sys/malloc.h machine/cpu.h machine/frame.h \
+  machine/segments.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h ../../vm/vm_prot.h 
+pmap.o : ../../i386/i386/pmap.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/proc.h machine/proc.h \
+  ../../sys/malloc.h ../../sys/user.h machine/pcb.h machine/tss.h \
+  machine/npx.h ../../sys/resourcevar.h ../../sys/signalvar.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../vm/vm_kern.h \
+  ../../vm/vm_page.h ../../i386/isa/isa.h ../../sys/msgbuf.h 
+sys_machdep.o : ../../i386/i386/sys_machdep.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/proc.h machine/proc.h ../../sys/kernel.h ../../sys/mtio.h \
+  ../../sys/buf.h ../../sys/trace.h 
+trap.o : ../../i386/i386/trap.c machine/cpu.h machine/frame.h \
+  machine/segments.h machine/psl.h machine/reg.h ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/proc.h machine/proc.h ../../sys/user.h machine/pcb.h \
+  machine/tss.h machine/npx.h ../../sys/resourcevar.h ../../sys/signalvar.h \
+  ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/acct.h \
+  ../../sys/kernel.h ../../sys/vmmeter.h isa.h 
+vm_machdep.o : ../../i386/i386/vm_machdep.c ../../sys/param.h \
+  ../../sys/types.h machine/ansi.h machine/types.h ../../sys/syslimits.h \
+  ../../sys/cdefs.h ../../sys/errno.h ../../sys/time.h ../../sys/resource.h \
+  ../../sys/ucred.h ../../sys/uio.h ../../sys/signal.h machine/trap.h \
+  machine/param.h machine/endian.h machine/limits.h ../../sys/systm.h \
+  ../../sys/proc.h machine/proc.h ../../sys/malloc.h ../../sys/buf.h \
+  ../../sys/user.h machine/pcb.h machine/tss.h machine/npx.h \
+  ../../sys/resourcevar.h ../../sys/signalvar.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h \
+  ../../i386/i386/../include/cpu.h machine/frame.h machine/segments.h \
+  ../../vm/vm_kern.h 
+if_we.o : ../../i386/isa/if_we.c we.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/mbuf.h ../../sys/malloc.h \
+  ../../sys/socket.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/syslog.h ../../net/if.h \
+  ../../net/../sys/time.h ../../net/../net/if_arp.h ../../net/netisr.h \
+  ../../netinet/in.h ../../netinet/in_systm.h ../../netinet/in_var.h \
+  ../../netinet/ip.h ../../netinet/if_ether.h ../../i386/isa/if_wereg.h \
+  ../../i386/isa/isa_device.h 
+wd.o : ../../i386/isa/wd.c wd.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/dkbad.h ../../sys/systm.h \
+  ../../sys/conf.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/stat.h ../../sys/ioctl.h ../../sys/ioctl_compat.h \
+  ../../sys/ttychars.h ../../sys/ttydev.h ../../sys/disklabel.h \
+  ../../sys/buf.h ../../i386/isa/isa_device.h ../../i386/isa/icu.h \
+  ../../i386/isa/wdreg.h ../../sys/syslog.h ../../vm/vm.h ../../vm/vm_param.h \
+  machine/vmparam.h ../../vm/lock.h ../../vm/queue.h ../../vm/vm_prot.h \
+  ../../vm/vm_inherit.h ../../vm/vm_map.h ../../vm/vm_object.h \
+  ../../vm/vm_pager.h ../../vm/vm_statistics.h ../../vm/pmap.h machine/pmap.h 
+fd.o : ../../i386/isa/fd.c fd.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/dkbad.h ../../sys/systm.h \
+  ../../sys/conf.h ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h \
+  ../../sys/ioctl.h ../../sys/ioctl_compat.h ../../sys/ttychars.h \
+  ../../sys/ttydev.h ../../sys/buf.h ../../i386/isa/isa_device.h \
+  ../../i386/isa/fdreg.h ../../sys/../i386/isa/ic/nec765.h \
+  ../../i386/isa/icu.h 
+isa.o : ../../i386/isa/isa.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/conf.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/buf.h \
+  ../../sys/syslog.h machine/segments.h ../../i386/isa/isa_device.h \
+  ../../i386/isa/icu.h sl.h 
+com.o : ../../i386/isa/com.c com.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  ../../sys/tty.h ../../sys/termios.h ../../sys/ttydefaults.h \
+  ../../sys/proc.h machine/proc.h ../../sys/user.h machine/pcb.h \
+  machine/tss.h machine/npx.h ../../sys/resourcevar.h ../../sys/signalvar.h \
+  ../../vm/vm.h ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h \
+  ../../vm/queue.h ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/conf.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/kernel.h \
+  ../../sys/syslog.h ../../i386/isa/isa_device.h ../../i386/isa/comreg.h \
+  ../../i386/isa/ic/ns16550.h ../../i386/i386/cons.h 
+npx.o : ../../i386/isa/npx.c npx.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/systm.h ../../sys/conf.h \
+  ../../sys/file.h ../../sys/fcntl.h ../../sys/unistd.h ../../sys/proc.h \
+  machine/proc.h machine/cpu.h machine/frame.h machine/segments.h \
+  machine/pcb.h machine/tss.h machine/npx.h ../../sys/ioctl.h \
+  ../../sys/ioctl_compat.h ../../sys/ttychars.h ../../sys/ttydev.h \
+  machine/specialreg.h ../../i386/isa/isa_device.h ../../i386/isa/icu.h 
+swap386bsd.o : swap386bsd.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/conf.h 
+ioconf.o : ioconf.c machine/pte.h ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/cdefs.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/signal.h machine/trap.h machine/param.h \
+  machine/endian.h machine/limits.h ../../sys/buf.h \
+  ../../i386/isa/isa_device.h ../../i386/isa/isa.h ../../i386/isa/icu.h 
+genassym.o : ../../i386/i386/genassym.c ../../sys/param.h ../../sys/types.h \
+  machine/ansi.h machine/types.h ../../sys/syslimits.h ../../sys/signal.h \
+  machine/trap.h ../../sys/cdefs.h machine/param.h machine/endian.h \
+  machine/limits.h ../../sys/buf.h ../../sys/vmmeter.h ../../sys/proc.h \
+  machine/proc.h ../../sys/user.h machine/pcb.h machine/tss.h machine/npx.h \
+  ../../sys/errno.h ../../sys/time.h ../../sys/resource.h ../../sys/ucred.h \
+  ../../sys/uio.h ../../sys/resourcevar.h ../../sys/signalvar.h ../../vm/vm.h \
+  ../../vm/vm_param.h machine/vmparam.h ../../vm/lock.h ../../vm/queue.h \
+  ../../vm/vm_prot.h ../../vm/vm_inherit.h ../../vm/vm_map.h \
+  ../../vm/vm_object.h ../../vm/vm_pager.h ../../vm/vm_statistics.h \
+  ../../vm/pmap.h machine/pmap.h ../../sys/kinfo_proc.h ../../sys/mbuf.h \
+  ../../sys/malloc.h ../../sys/msgbuf.h machine/cpu.h machine/frame.h \
+  machine/segments.h machine/psl.h machine/reg.h ../../sys/syscall.h 
