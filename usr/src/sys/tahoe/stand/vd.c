@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vd.c	7.13 (Berkeley) %G%
+ *	@(#)vd.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -25,15 +25,17 @@
  */
 #include "machine/mtpr.h"
 
-#include "param.h"
-#include "inode.h"
-#include "fs.h"
-#include "buf.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/vnode.h"
+#include "ufs/inode.h"
+#include "ufs/fs.h"
+#include "sys/buf.h"
+#include "sys/disklabel.h"
 #include "saio.h"
 
-#include "../tahoevba/vdreg.h"
-#include "../tahoevba/vbaparam.h"
+#include "tahoevba/vdreg.h"
+#include "tahoevba/vbaparam.h"
 
 #define	COMPAT_42	1
 

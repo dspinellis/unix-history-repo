@@ -1,4 +1,4 @@
-/*	cy.c	7.8	89/04/25	*/
+/*	cy.c	7.9	90/06/22	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -6,15 +6,17 @@
 #include "machine/pte.h"
 #include "machine/mtpr.h"
 
-#include "param.h"
-#include "inode.h"
-#include "fs.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/vnode.h"
+#include "ufs/inode.h"
+#include "ufs/fs.h"
 
 #include "saio.h"
 
 #define CYERROR
-#include "../tahoevba/cyreg.h"
-#include "../tahoevba/vbaparam.h"
+#include "tahoevba/cyreg.h"
+#include "tahoevba/vbaparam.h"
 
 /*
  * NB: this driver assumes unit 0 throughout.

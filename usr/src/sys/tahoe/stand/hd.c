@@ -17,18 +17,20 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.6 (Berkeley) %G%
+ *	@(#)hd.c	7.7 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "inode.h"
-#include "fs.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/vnode.h"
+#include "ufs/inode.h"
+#include "ufs/fs.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"
+#include "sys/disklabel.h"
 #include "saio.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoevba/hdreg.h"
+#include "tahoe/mtpr.h"
+#include "tahoevba/hdreg.h"
 
 static struct registers *hdc_regs[HDC_MAXCTLR][HDC_MAXBUS];
 static struct disklabel dklabel[HDC_MAXDRIVE][HDC_MAXCTLR][HDC_MAXBUS];
