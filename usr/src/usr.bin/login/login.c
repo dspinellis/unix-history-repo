@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.29 (Berkeley) 1/20/89";
 #endif /* not lint */
 
 /*
@@ -50,6 +50,15 @@ static char sccsid[] = "@(#)login.c	5.29 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <strings.h>
+
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+#include <sys/termios.h>
+char	inst[INST_SZ];
+char	realm[REALM_SZ];
+int	kerror = KSUCCESS, notickets = 1;
+#define	LIFE		96	/* ticket lifetime in 5-min units */
+#endif
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
 
@@ -86,7 +95,7 @@ main(argc, argv)
 	extern char *optarg, **environ;
 	struct group *gr;
 	register int ch;
-	register char *p;
+	register char *p, *pp;
 	int ask, fflag, hflag, pflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn;
@@ -217,12 +226,34 @@ main(argc, argv)
 		 * If no pre-authentication and a password exists
 		 * for this user, prompt for one and verify it.
 		 */
-		if (!passwd_req || pwd && !*pwd->pw_passwd)
+		if (!passwd_req || (pwd && !*pwd->pw_passwd))
 			break;
 
 		setpriority(PRIO_PROCESS, 0, -4);
-		p = crypt(getpass("Password:"), salt);
+		pp = getpass("Password:");
+		p = crypt(pp, salt);
 		setpriority(PRIO_PROCESS, 0, 0);
+
+#ifdef	KERBEROS
+
+		/*
+		 * If we aren't Kerberos-authenticated, try the normal
+		 * pw file for a password.  If that's ok, log the user
+		 * in without issueing any tickets.
+		 */
+
+		if(!get_krbrlm(realm,1)) {
+			/* get TGT for local realm */
+			kerror = get_in_tkt(pwd->pw_name, inst, realm,
+				"krbtgt", realm, LIFE, pp);
+			if(kerror == KSUCCESS) {
+				bzero(pp, strlen(pp));
+				notickets = 0;	/* user got ticket */
+				break;
+			}
+		}
+#endif
+		(void) bzero(pp, strlen(pp));
 		if (pwd && !strcmp(p, pwd->pw_passwd))
 			break;
 
@@ -282,6 +313,11 @@ main(argc, argv)
 		pwd->pw_dir = "/";
 		printf("Logging in with home = \"/\".\n");
 	}
+
+#ifdef	KERBEROS
+	if(notickets)
+		printf("Warning: no Kerberos tickets issued\n");
+#endif
 
 	/* nothing else left to fail -- really log in */
 	{
