@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)swapon.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)swapon.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -16,24 +16,20 @@ main(argc, argv)
 		exit(1);
 	}
 	if (argc == 1 && !strcmp(*argv, "-a")) {
-		FILE	*fs_file;
-		struct	fstab	fs;
-		if ((fs_file = fopen(FSTAB, "r")) == NULL){
-			perror(FSTAB);
-			exit(1);
-		}
-		while (!feof(fs_file)){
-			fscanf(fs_file, FSTABFMT, FSTABARG(&fs));
-			if (strcmp(fs.fs_type, "sw"))
+		struct	fstab	*fsp;
+		if (setfsent() == 0)
+			perror(FSTAB), exit(1);
+		while ( (fsp = getfsent()) != 0){
+			if (strcmp(fsp->fs_type, FSTAB_SW) != 0)
 				continue;
-			fprintf(stderr, "Adding %s as swap device\n",
-			    fs.fs_spec);
-			if (syscall(VSWAPON, fs.fs_spec) == -1) {
-				perror(fs.fs_spec);
+			fprintf(stdout, "Adding %s as swap device\n",
+			    fsp->fs_spec);
+			if (syscall(VSWAPON, fsp->fs_spec) == -1) {
+				perror(fsp->fs_spec);
 				stat = 1;
 			}
 		}
-		fclose(fs_file);
+		endfsent();
 		exit(stat);
 	}
 	do {
