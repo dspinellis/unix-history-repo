@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.16 (Berkeley) 87/03/04
+#	@(#)Makefile	5.17 (Berkeley) 87/05/12
 #
 # Doing a make install builds /usr/include
 #
@@ -31,7 +31,7 @@ LINKS=	errno.h signal.h syslog.h
 MACHINE=tahoe
 MACHDEP=${MACHINE} tahoeif tahoevba tahoemath
 NETDIRS=net netimp netinet netns
-SYSDIRS=${NETDIRS} stand ${MACHDEP}
+SYSDIRS=${NETDIRS} ${MACHDEP}
 SHARED=	symlinks
 TAGSFILE=tags
 
