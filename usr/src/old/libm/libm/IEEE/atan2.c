@@ -13,14 +13,14 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)atan2.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)atan2.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 /* ATAN2(Y,X)
  * RETURN ARG (X+iY)
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 1/8/85; 
- * REVISED BY K.C. NG on 2/7/85, 2/13/85, 3/7/85, 3/30/85.
+ * REVISED BY K.C. NG on 2/7/85, 2/13/85, 3/7/85, 3/30/85, 6/29/85.
  *
  * Required system supported functions :
  *	copysign(x,y)
@@ -137,7 +137,7 @@ double  y,x;
 {  
 	static double zero=0, one=1, small=1.0E-9, big=1.0E18;
 	double copysign(),logb(),scalb(),t,z,signy,signx,hi,lo;
-	int finite(), k;
+	int finite(), k,m;
 
     /* if x or y is NAN */
 	if(x!=x) return(x); if(y!=y) return(y);
@@ -169,7 +169,8 @@ double  y,x;
     /* compute y/x */
 	x=copysign(x,one); 
 	y=copysign(y,one); 
-	if((k=logb(y))-logb(x) > 60) t=big+big; 
+	if((m=(k=logb(y))-logb(x)) > 60) t=big+big; 
+	    else if(m < -80 ) t=y/x;
 	    else { t = y/x ; y = scalb(y,-k); x=scalb(x,-k); }
 
     /* begin argument reduction */

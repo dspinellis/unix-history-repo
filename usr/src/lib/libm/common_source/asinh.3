@@ -1,6 +1,7 @@
 From Prof. Kahan at UC at Berkeley
-.TH ASINH 3M "8 May 1985"
+.TH ASINH 3M "4 August 1985"
 .UC 4
+.ds up \fIulp\fR
 .SH NAME
 asinh, acosh, atanh \- inverse hyperbolic functions
 .SH SYNOPSIS
@@ -20,13 +21,16 @@ asinh, acosh, atanh \- inverse hyperbolic functions
 These functions compute the designated inverse hyperbolic functions for real
 arguments.
 .SH SEE ALSO
-intro(3M)
+intro(3M), exp(3M), infnan(3M)
+.SH ERROR (due to Roundoff etc.)
+These functions inherit much of their error from log1p described in
+exp(3M).  On a VAX, acosh is accurate to about 3 \*(ups,
+asinh and atanh to about 2 \*(ups.
+An \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace carried.
 .SH DIAGNOSTICS
-.I Acosh
-returns the reserved operand on the VAX if the argument is less than 1.
+Acosh returns the reserved operand on a VAX if the argument is less than 1.
 .PP
-.I Atanh
-returns the reserved operand on the VAX if the argument has absolute value
-bigger than or equal to 1.
+Atanh returns the reserved operand on a VAX if the argument has absolute
+value bigger than or equal to 1.
 .SH AUTHOR
-W. Kahan, Kwok-Choi Ng
+W. Kahan, Kwok\-Choi Ng
