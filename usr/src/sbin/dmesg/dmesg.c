@@ -12,17 +12,20 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
 #include <sys/msgbuf.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <time.h>
 #include <nlist.h>
 #include <kvm.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
+#include <unistd.h>
+#include <vis.h>
 
 struct nlist nl[] = {
 #define	X_MSGBUF	0
@@ -30,17 +33,23 @@ struct nlist nl[] = {
 	{ NULL },
 };
 
-void usage(), vputc();
 void err __P((const char *, ...));
+void usage __P((void));
 
+#define	KREAD(addr, var) \
+	kvm_read(kd, addr, (void *)&var, sizeof(var)) != sizeof(var)
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register int ch, newl, skip;
 	register char *p, *ep;
 	struct msgbuf *bufp, cur;
 	char *memf, *nlistf;
+	kvm_t *kd;
+	char buf[_POSIX2_LINE_MAX];
 
 	memf = nlistf = NULL;
 	while ((ch = getopt(argc, argv, "M:N:")) != EOF)
@@ -66,15 +75,17 @@ main(argc, argv)
 		setgid(getgid());
 
 	/* Read in kernel message buffer, do sanity checks. */
-	if (kvm_openfiles(nlistf, memf, NULL) == -1)
-		err("kvm_openfiles: %s", kvm_geterr());
-	if (kvm_nlist(nl) == -1)
-		err("kvm_nlist: %s", kvm_geterr());
+	buf[0] = 0;
+	kd = kvm_open(nlistf, memf, NULL, O_RDONLY, buf);
+	if (kd == NULL)
+		err("kvm_open: %s", buf);
+	if (kvm_nlist(kd, nl) == -1)
+		err("kvm_nlist: %s", kvm_geterr(kd));
 	if (nl[X_MSGBUF].n_type == 0)
 		err("%s: msgbufp not found", nlistf ? nlistf : "namelist");
-
-        kvm_read((void *)nl[X_MSGBUF].n_value, (void *)&bufp, sizeof(bufp));
-        kvm_read((void *)bufp, (void *)&cur, sizeof(cur));
+	if (KREAD(nl[X_MSGBUF].n_value, bufp) || KREAD((long)bufp, cur))
+		err("kvm_read: %s", kvm_geterr(kd));
+	kvm_close(kd);
 	if (cur.msg_magic != MSG_MAGIC)
 		err("magic number incorrect");
 	if (cur.msg_bufx >= MSG_BSIZE)
@@ -102,33 +113,16 @@ main(argc, argv)
 		}
 		if (ch == '\0')
 			continue;
-		newl = (ch = *p) == '\n';
-		vputc(ch);
+		newl = ch == '\n';
+		(void) vis(buf, ch, 0, 0);
+		if (buf[1] == 0)
+			(void) putchar(buf[0]);
+		else
+			(void) fputs(buf, stdout);
 	}
 	if (!newl)
 		(void)putchar('\n');
 	exit(0);
-}
-
-void
-vputc(ch)
-	register int ch;
-{
-	int meta;
-
-	if (!isascii(ch)) {
-		(void)putchar('M');
-		(void)putchar('-');
-		ch = toascii(ch);
-		meta = 1;
-	} else
-		meta = 0;
-	if (isprint(ch) || !meta && (ch == ' ' || ch == '\t' || ch == '\n'))
-		(void)putchar(ch);
-	else {
-		(void)putchar('^');
-		(void)putchar(ch == '\177' ? '?' : ch | 0100);
-	}
 }
 
 #if __STDC__
