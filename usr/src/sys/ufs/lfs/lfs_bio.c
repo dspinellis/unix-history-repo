@@ -4,9 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	5.1 (Berkeley) %G%
+ *	@(#)lfs_bio.c	5.2 (Berkeley) %G%
  */
 
+#ifdef LOGFS
 #include "param.h"
 #include "proc.h"
 #include "buf.h"
@@ -18,17 +19,21 @@
 #include "lfs.h"
 
 /*
- * lfs_bwrite --
- *	LFS version of bawrite, bdwrite, bwrite.  Set the delayed write flag
- *	and use reassignbuf to move the buffer from the clean list to the
- *	dirty one.  Then unlock the buffer.
+ * LFS version of bawrite, bdwrite, bwrite.  Set the delayed write flag and
+ * use reassignbuf to move the buffer from the clean list to the dirty one,
+ * then unlock the buffer.
  */
 lfs_bwrite(bp)
 	register BUF *bp;
 {
+#ifdef DO_ACCOUNTING
+	Not included as this gets called from lots of places where the
+	current proc structure is probably wrong.  Ignore for now.
 	curproc->p_stats->p_ru.ru_oublock++;	/* XXX: no one paid yet */
-	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
-	bp->b_flags |= B_DELWRI;
-	reassignbuf(bp, bp->b_vp);		/* XXX: do this inline */
+#endif
+	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR);
+	bp->b_flags |= B_WRITE | B_DELWRI;
+	reassignbuf(bp, bp->b_vp);		/* XXX: do this inline? */
 	brelse(bp);
 }
+#endif /* LOGFS */

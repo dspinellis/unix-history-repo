@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	5.4 (Berkeley) %G%
+ *	@(#)lfs.h	5.5 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -33,7 +33,7 @@ typedef struct finfo FINFO;
 struct finfo {
 	u_long	fi_nblocks;		/* number of blocks */
 	u_long	fi_version;		/* version number */
-	ino_t	fi_ino;			/* inode number */
+	u_long	fi_ino;			/* inode number */
 	long	fi_blocks[1];		/* array of logical block numbers */
 };
 
@@ -43,6 +43,8 @@ struct segment {
 	SEGMENT	*nextp;			/* Links segments together */
 	BUF	**bpp;			/* Pointer to buffer array */
 	BUF	**cbpp;			/* Pointer to next available bp */
+	BUF	*ibp;			/* Buffer pointer to inode page */
+	BUF	*sbp;			/* Segment summary buffer pointer */
 	void	*segsum;		/* Segment Summary info */
 	u_long	sum_bytes_left;		/* Bytes left in summary */
 	u_long	seg_bytes_left;		/* Bytes left in segment */
