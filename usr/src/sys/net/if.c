@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.18 (Berkeley) %G%
+ *	@(#)if.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -183,7 +183,7 @@ ifa_ifwithdstaddr(addr)
 
 /*
  * Find an interface on a specific network.  If many, choice
- * is first found.
+ * is most specific found.
  */
 struct ifaddr *
 ifa_ifwithnet(addr)
@@ -191,10 +191,10 @@ ifa_ifwithnet(addr)
 {
 	register struct ifnet *ifp;
 	register struct ifaddr *ifa;
+	struct ifaddr *ifa_maybe = (struct ifaddr *) 0;
 	u_int af = addr->sa_family;
+	char *addr_data = addr->sa_data, *cplim;
 
-	if (af >= AF_MAX)
-		return (0);
 	if (af == AF_LINK) {
 	    register struct sockaddr_dl *sdl = (struct sockaddr_dl *)addr;
 	    if (sdl->sdl_index && sdl->sdl_index <= if_index)
@@ -203,20 +203,21 @@ ifa_ifwithnet(addr)
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 	    for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next) {
 		register char *cp, *cp2, *cp3;
-		register char *cplim;
+
 		if (ifa->ifa_addr->sa_family != af || ifa->ifa_netmask == 0)
-			continue;
-		cp = addr->sa_data;
+			next: continue;
+		cp = addr_data;
 		cp2 = ifa->ifa_addr->sa_data;
 		cp3 = ifa->ifa_netmask->sa_data;
 		cplim = ifa->ifa_netmask->sa_len + (char *)ifa->ifa_netmask;
-		for (; cp3 < cplim; cp3++)
-			if ((*cp++ ^ *cp2++) & *cp3)
-				break;
-		if (cp3 == cplim)
-			return (ifa);
+		while (cp3 < cplim)
+			if ((*cp++ ^ *cp2++) & *cp3++)
+				goto next;
+		if (ifa_maybe == 0 ||
+		    rn_refines(ifa->ifa_netmask, ifa_maybe->ifa_netmask))
+			ifa_maybe = ifa;
 	    }
-	return ((struct ifaddr *)0);
+	return (ifa_maybe);
 }
 
 /*
