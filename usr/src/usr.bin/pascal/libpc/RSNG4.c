@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RSNG4.c 1.4 %G%";
+static char sccsid[] = "@(#)RSNG4.c 1.5 %G%";
 
 extern char ERANG[];	/* ERANG is defined in RANG4.c */
 
@@ -11,7 +11,6 @@ RSNG4(value, upper)
 {
 	if (value > upper) {
 		ERROR(ERANG, value);
-		return;
 	}
 	return	value;
 }

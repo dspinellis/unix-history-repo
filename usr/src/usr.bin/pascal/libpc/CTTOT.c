@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)CTTOT.c 1.4 %G%";
+static char sccsid[] = "@(#)CTTOT.c 1.5 %G%";
 
 #include "whoami.h"
 #include "h00vars.h"
@@ -29,21 +29,43 @@ long	_mask[] = {
 #		endif DEC11
 	    };
 /*
- * Constant set constructor
+ * Constant set constructors.
+ *
+ * CTTOT is called from compiled Pascal.  It takes the list of ranges
+ * and single elements on the stack, varargs style.
+ *
+ * CTTOTA is called from the px interpreter.  It takes a pointer to the
+ * list of ranges and single elements.
+ *
+ * This was easier than changing the compiler to pass a pointer into
+ * its own partially-constructed stack, while working to make px portable.
  */
 
-long *
-CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, data)
+long *CTTOTA();
 
-	long	*result0;	/* pointer to final set */
+long *
+CTTOT(result, lwrbnd, uprbnd, paircnt, singcnt, data)
+
+	long	*result;	/* pointer to final set */
 	long	lwrbnd;		/* lower bound of set */
 	long	uprbnd;		/* upper - lower of set */
 	long	paircnt;	/* number of pairs to construct */
 	long	singcnt;	/* number of singles to construct */
 	long	data;		/* paircnt plus singcnt sets of data */
 {
-	register long	*result = result0;
-	register long	*dataptr = &data;
+	return CTTOTA(result, lwrbnd, uprbnd, paircnt, singcnt, &data);
+}
+
+long *
+CTTOTA(result, lwrbnd, uprbnd, paircnt, singcnt, dataptr)
+
+	register long	*result;	/* pointer to final set */
+	long	lwrbnd;			/* lower bound of set */
+	long	uprbnd;			/* upper - lower of set */
+	long	paircnt;		/* number of pairs to construct */
+	long	singcnt;		/* number of singles to construct */
+	register long	*dataptr;	/* ->paircnt plus singcnt data values */
+{
 	int		lowerbnd = lwrbnd;
 	int		upperbnd = uprbnd;
 	register long	*lp;
@@ -66,13 +88,11 @@ CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, data)
 		if (upper < 0 || upper > upperbnd) {
 			ERROR("Range upper bound of %D out of set bounds\n",
 				*--dataptr);
-			return;
 		}
 		lower = *dataptr++ - lowerbnd;
 		if (lower < 0 || lower > upperbnd) {
 			ERROR("Range lower bound of %D out of set bounds\n",
 				*--dataptr);
-			return;
 		}
 		if (lower > upper) {
 			continue;
@@ -98,7 +118,6 @@ CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, data)
 		lower = *dataptr++ - lowerbnd;
 		if (lower < 0 || lower > upperbnd) {
 			ERROR("Value of %D out of set bounds\n", *--dataptr);
-			return;
 		}
 		cp[ lower >> LG2BITSBYTE ] |= (1 << (lower & MSKBITSBYTE));
 	}

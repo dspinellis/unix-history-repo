@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)NIL.c 1.3 %G%";
+static char sccsid[] = "@(#)NIL.c 1.4 %G%";
 
 #include "h00vars.h"
 
@@ -12,7 +12,6 @@ NIL(ptr)
 {
 	if (ptr > _maxptr || ptr < _minptr) {
 		ERROR(ENIL, 0);
-		return;
 	}
 	return ptr;
 }
