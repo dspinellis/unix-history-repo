@@ -19,30 +19,13 @@
  */
 #define METOO
 
-#include <sys/file.h>
-#define GET_LOCK { \
-	if (flock(lfd,LOCK_EX)) { \
-		perror(LOCK_FILE); \
-		exit(ERR); \
-	} \
-}
-
-#define REL_LOCK { \
-	if (flock(lfd,LOCK_UN)) { \
-		perror(LOCK_FILE); \
-		exit(ERR); \
-	} \
-}
-
 /* files */
-#define ACK_FILE	".ack"			/* acknowledge file */
-#define DEF_DIR		"mail"			/* top-level directory */
-#define DIST_FILE	".redist"		/* redistribution file */
+#define ACK_FILE	"bug:ack"		/* acknowledge file */
+#define DIST_FILE	"bug:redist"		/* redistribution file */
 #define ERROR_FILE	"log"			/* error file */
 #define LOCK_FILE	"bug:lock"		/* lock file name */
 #define SUMMARY_FILE	"summary"		/* summary file */
 #define TMP_BUG		"errors/BUG_XXXXXX"	/* tmp bug report */
-#define TMP_FILE	"/tmp/BUG_XXXXXX"	/* tmp file name */
 
 /* permissions */
 #define DIR_MODE	0750		/* directory creation mode */
@@ -65,6 +48,7 @@ typedef struct {
 	char	*tag,			/* leading tag */
 		*line;			/* actual line */
 } HEADER;
+extern HEADER	mailhead[];
 
 #define DATE_TAG	0		/* "Date:" offset */
 #define FROM_TAG	1		/* "From " offset */
@@ -78,4 +62,8 @@ typedef struct {
 
 /* so sizeof doesn't return 0 */
 #include <sys/param.h>
-extern char	bfr[MAXBSIZE];		/* general I/O buffer */
+#include <sys/dir.h>
+extern char	bfr[MAXBSIZE],			/* general I/O buffer */
+		dir[MAXNAMLEN],			/* subject and folder */
+		folder[MAXNAMLEN],
+		tmpname[sizeof(TMP_BUG) + 5];	/* temp bug file */
