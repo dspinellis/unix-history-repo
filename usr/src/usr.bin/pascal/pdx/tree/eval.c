@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.3 %G%";
+static char sccsid[] = "@(#)eval.c 1.4 %G%";
 
 /*
  * Parse tree evaluation.
@@ -60,11 +60,15 @@ register NODE *p;
 	    SYM *s, *f;
 
 	    s = p->nameval;
-	    f = container(s);
-	    if (!isactive(f)) {
-		error("\"%s\" is not active", name(f));
+	    if (!isvariable(s)) {
+		error("cannot evaluate a %s", classname(s));
+	    } else {
+		f = container(s);
+		if (!isactive(f)) {
+		    error("\"%s\" is not active", name(f));
+		}
+		push(int, address(s, NIL));
 	    }
-	    push(int, address(s, NIL));
 	    break;
 	}
 
