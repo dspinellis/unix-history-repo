@@ -88,7 +88,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.13	%G%";
+static char SccsId[] = "@(#)conf.c	3.14	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -133,6 +133,21 @@ static struct mailer	ProgMailer =
 	"prog",		"/bin/csh",
 	M_NOHOST|M_ARPAFMT,
 	EX_UNAVAILABLE, "$f",		ProgArgv,	NULL,
+};
+
+/* user-private mailers -- must be #2 */
+static char	*PrivArgv[] =
+{
+	"...priv%mail",
+	"$u",
+	NULL
+};
+
+static struct mailer	PrivMailer =
+{
+	"priv",		NULL,
+	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,
+	EX_UNAVAILABLE,	"$f",		PrivArgv,	NULL,
 };
 
 /* local berkeley mail */
@@ -193,17 +208,17 @@ struct mailer	*Mailer[] =
 {
 	&LocalMailer,		/* 0 -- must be 0 */
 	&ProgMailer,		/* 1 -- must be 1 */
-	&BerkMailer,		/* 2 */
-	&ArpaMailer,		/* 3 */
-	&UucpMailer,		/* 4 */
+	&PrivMailer,		/* 2 -- must be 2 */
+	&BerkMailer,		/* 3 */
+	&ArpaMailer,		/* 4 */
+	&UucpMailer,		/* 5 */
 	NULL
 };
 
-# define M_LOCAL	0
-# define M_PROG		1
-# define M_BERK		2
-# define M_ARPA		3
-# define M_UUCP		4
+/* offsets for arbitrary mailers */
+# define M_BERK		2	/* berknet */
+# define M_ARPA		3	/* arpanet */
+# define M_UUCP		4	/* UUCPnet */
 
 
 

@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.8	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.9	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -61,6 +61,7 @@ savemail()
 			finis();
 		}
 	}
+	To = NULL;
 
 	/*
 	**  If called from Eric Schmidt's network, do special mailback.
@@ -150,14 +151,17 @@ savemail()
 	setuid(getuid());
 	setgid(getgid());
 	setpwent();
-	if (From.q_mailer == 0 && (pw = getpwnam(From.q_user)) != NULL)
+	p = NULL;
+	if (From.q_mailer == M_LOCAL)
 	{
-		/* user has a home directory */
-		p = pw->pw_dir;
+		if (From.q_home != NULL)
+			p = From.q_home;
+		else if ((pw = getpwnam(From.q_user)) != NULL)
+			p = pw->pw_dir;
 	}
-	else
+	if (p == NULL)
 	{
-		syserr("Can't return mail to %s (pw=%u)", From.q_paddr, pw);
+		syserr("Can't return mail to %s", From.q_paddr);
 # ifdef DEBUG
 		p = "/usr/tmp";
 # else
@@ -167,11 +171,12 @@ savemail()
 	if (p != NULL)
 	{
 		/* we have a home directory; open dead.letter */
-		strcpy(buf, p);
-		strcat(buf, "/dead.letter");
+		message("050", "Saving message in dead.letter");
+		define('z', p);
+		expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
 		i = mailfile(buf);
-		giveresponse(i, TRUE, Mailer[0]);
+		giveresponse(i, TRUE, Mailer[M_LOCAL]);
 	}
 
 	/* add terminator to writeback message */

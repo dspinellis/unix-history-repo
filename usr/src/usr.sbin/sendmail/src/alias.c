@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)alias.c	3.6	%G%";
+static char SccsId[] = "@(#)alias.c	3.7	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -209,7 +209,7 @@ alias()
 				continue;
 
 			/* only alias local users */
-			if (q->q_mailer != 0)
+			if (q->q_mailer != M_LOCAL)
 				continue;
 
 			/* create a key for fetch */
@@ -266,28 +266,16 @@ bool
 forward(user)
 	ADDRESS *user;
 {
-	register struct passwd *pw;
-	char buf[50];
+	char buf[60];
 	register FILE *fp;
 	register char *p;
-	extern struct passwd *getpwnam();
 	extern char *index();
 
-	if (user->q_mailer != 0)
+	if (user->q_mailer != M_LOCAL || bitset(QBADADDR, user->q_flags))
 		return (FALSE);
-
-	/* find the user's home directory */
-	pw = getpwnam(user->q_user);
-	if (pw == NULL)
-	{
-		/* bad address -- mark it */
-		user->q_flags |= QBADADDR;
-		return (FALSE);
-	}
 
 	/* good address -- look for .forward file in home */
-	user->q_flags |= QGOODADDR;
-	sprintf(buf, "%s/.forward", pw->pw_dir);
+	expand("$z/.forward", buf, &buf[sizeof buf - 1]);
 	fp = fopen(buf, "r");
 	if (fp == NULL)
 		return (FALSE);
