@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.10 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -46,10 +46,17 @@ static char sccsid[] = "@(#)acucntrl.c	5.9 (Berkeley) %G%";
 /* #define SENSECARRIER */
 
 #include "uucp.h"
+#ifdef DIALINOUT
 #include <sys/buf.h>
 #include <signal.h>
 #include <sys/conf.h>
-#include "/sys/vaxuba/ubavar.h"
+#ifdef vax
+#ifdef BSD4_2
+#include <vaxuba/ubavar.h>
+#else
+#include <sys/ubavar.h>
+#endif
+#endif /* vax */
 #include <sys/stat.h>
 #include <nlist.h>
 #include <sgtty.h>
@@ -168,8 +175,10 @@ int argc; char *argv[];
 
 	opnttys(device);
 
+#ifdef vax
 	/* Get nlist info */
 	nlist("/vmunix", nl);
+#endif vax
 
 	/* Chdir to /dev */
 	if(chdir(Devhome) < 0) {
@@ -224,13 +233,23 @@ int argc; char *argv[];
 		exit(2);
 	}
 
+#ifndef sequent
 	/* Disable modem control */
 	if (setmodem(device, DISABLE) < 0) {
 		fprintf(stderr, "Unable to disable modem control\n");
 		exit(1);
 	}
+#endif !sequent
 
 	if (enable) {
+#ifdef sequent
+		if (setmodem(device, ENABLE) < 0) {
+			fprintf(stderr, "Cannot Enable modem control\n");
+			(void)setmodem(device, i);
+			exit(1);
+		}
+#endif sequent
+#ifndef sequent
 		if((devfile = open(device, 1)) < 0) {
 			fprintf(stderr, "On open of %s: %s\n",
 				device, sys_errlist[errno]);
@@ -252,13 +271,16 @@ int argc; char *argv[];
 			    "Cannot set hangup on close on %s: %s\n",
 				device, sys_errlist[errno]);
 
+#endif !sequent
 		i = resetmodem;
 
+#ifndef sequent
 		if (setmodem(device, ENABLE) < 0) {
 			fprintf(stderr, "Cannot Enable modem control\n");
 			(void)setmodem(device, i);
 			exit(1);
 		}
+#endif sequent
 		resetmodem=i;
 
 		if (settys(ENABLE)) {
@@ -307,6 +329,13 @@ int argc; char *argv[];
 			pokeinit(device, Uname, enable);
 		}
 		post(device, Uname);
+#ifdef sequent
+	/* Disable modem control */
+	if (setmodem(device, DISABLE) < 0) {
+		fprintf(stderr, "Unable to disable modem control\n");
+		exit(1);
+	}
+#endif sequent
 		if((devfile = open(device, O_RDWR|O_NDELAY)) < 0) {
 			fprintf(stderr, "On %s open: %s\n",
 				device, sys_errlist[errno]);
@@ -545,6 +574,10 @@ char *device;
 			*p = '\0';
 		if(strncmp(device, &linebuf[2], ndevice) == 0) {
 			(void)fclose(ttysfile);
+#ifdef sequent
+			/* Why is the sequent off by one? */
+			utmploc += sizeof(utmp);
+#endif sequent
 			return;
 		}
 		ttyslnbeg += lnsiz;
@@ -586,6 +619,17 @@ int enable;
 }
 #endif !BSD4_3
 
+#ifdef sequent
+setmodem(ttyline, enable)
+char *ttyline; int enable;
+{
+	char *sysbuf[BUFSIZ];
+	sprintf(sysbuf,"/etc/ttyconfig /dev/%s -special %s", ttyline,
+		enable ? "-carrier" : "-nocarrier");
+	system(sysbuf);
+}
+#endif /* sequent */
+#ifdef vax
 /*
  * Excerpted from (June 8, 1983 W.Sebok)
  * > ttymodem.c - enable/disable modem control for tty lines.
@@ -713,6 +757,7 @@ char *ttyline; int enable;
 	}
 	return(0);
 }
+#endif /* vax */
 
 prefix(s1, s2)
 	register char *s1, *s2;
@@ -724,3 +769,4 @@ prefix(s1, s2)
 			return (1);
 	return (c == '\0');
 }
+#endif /* DIALINOUT */
