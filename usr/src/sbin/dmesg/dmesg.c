@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -37,7 +37,7 @@ void err __P((const char *, ...));
 void usage __P((void));
 
 #define	KREAD(addr, var) \
-	kvm_read(kd, addr, (void *)&var, sizeof(var)) != sizeof(var)
+	kvm_read(kd, addr, &var, sizeof(var)) != sizeof(var)
 
 int
 main(argc, argv)
