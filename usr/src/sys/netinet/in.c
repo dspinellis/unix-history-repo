@@ -1,23 +1,21 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.16 (Berkeley) %G%
+ *	@(#)in.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "ioctl.h"
 #include "mbuf.h"
-#include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "user.h"
 #include "in_systm.h"
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/af.h"
+#include "net/if.h"
+#include "net/route.h"
+#include "net/af.h"
 #include "in.h"
 #include "in_var.h"
 
@@ -256,8 +254,8 @@ in_control(so, cmd, data, ifp)
 	case SIOCSIFADDR:
 	case SIOCSIFNETMASK:
 	case SIOCSIFDSTADDR:
-		if (error = suser(u.u_cred, &u.u_acflag))
-			return (error);
+		if ((so->so_state & SS_PRIV) == 0)
+			return (EPERM);
 
 		if (ifp == 0)
 			panic("in_control");
@@ -295,8 +293,8 @@ in_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCSIFBRDADDR:
-		if (error = suser(u.u_cred, &u.u_acflag))
-			return (error);
+		if ((so->so_state & SS_PRIV) == 0)
+			return (EPERM);
 		/* FALLTHROUGH */
 
 	case SIOCGIFADDR:
