@@ -24,8 +24,12 @@ searching for device and font description files. */
 
 /* Minimum and maximum values a `signed int' can hold.  */
 /*
+#ifndef INT_MIN
 #define INT_MIN (-INT_MAX-1)
+#endif
+#ifndef INT_MAX
 #define INT_MAX 2147483647
+#endif
 */
 
 #define CHAR_TABLE_SIZE 307
