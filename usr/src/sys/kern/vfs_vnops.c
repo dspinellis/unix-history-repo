@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.13 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -417,7 +417,7 @@ again:
 		if (cmd & LOCK_NB)
 			return (EWOULDBLOCK);
 		vp->v_flag |= VLWAIT;
-		sleep((caddr_t)&vp->v_exlockc, priority);
+		tsleep((caddr_t)&vp->v_exlockc, priority, SLP_EXLCK, 0);
 	}
 	if ((cmd & LOCK_EX) && (vp->v_flag & VSHLOCK)) {
 		/*
@@ -434,7 +434,7 @@ again:
 		if (cmd & LOCK_NB)
 			return (EWOULDBLOCK);
 		vp->v_flag |= VLWAIT;
-		sleep((caddr_t)&vp->v_shlockc, PLOCK);
+		tsleep((caddr_t)&vp->v_shlockc, PLOCK, SLP_SHLCK, 0);
 		goto again;
 	}
 	if (fp->f_flag & FEXLOCK)
