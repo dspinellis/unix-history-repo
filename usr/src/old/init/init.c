@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c	4.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.10 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -51,13 +51,38 @@ int	idle();
 char	*strcpy(), *strcat();
 long	lseek();
 
+#ifndef sun
 main()
 {
 	register int r11;		/* passed thru from boot */
+#else sun
+main(argc, argv)
+	char **argv;
+{
+#endif sun
 	int howto, oldhowto;
 
 	time0 = time(0);
+#ifndef sun
 	howto = r11;
+#else sun
+	if (argc > 1 && argv[1][0] == '-') {
+		char *cp;
+
+		howto = 0;
+		cp = &argv[1][1];
+		while (*cp) switch (*cp++) {
+		case 'a':
+			howto |= RB_ASKNAME;
+			break;
+		case 's':
+			howto |= RB_SINGLE;
+			break;
+		}
+	} else {
+		howto = RB_SINGLE;
+	}
+#endif sun
 	setjmp(sjbuf);
 	signal(SIGTERM, reset);
 	signal(SIGTSTP, idle);
