@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.19 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.19.1.1 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.19 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.19.1.1 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -550,6 +550,130 @@ cnameloop:
 	host[hbsize - 1] = '\0';
 	return TRUE;
 }
+/*
+**  MAILB_LOOKUP -- do DNS mailbox lookup
+*/
+
+#ifdef DNS_MAILB
+
+mailb_lookup(addr)
+	char *addr;
+{
+	/*
+	**  Convert addr to DNS form (user.host).
+	*/
+
+	/* figure out how much space it needs */
+	atp = strchr(addr, '@');
+	if (atp == NULL)
+		atp = &addr(strlen(addr));
+	i = strlen(addr);
+	for (p = addr; (p = strchr(p, '.')) != NULL; p++)
+	{
+		if (p > atp)
+			break;
+		i++;
+	}
+	if (i < sizeof abuf)
+		bufp = abuf;
+	else
+		bufp = xalloc(i + 1);
+
+	lhsmode = TRUE;
+	for (p = addr, q = bufp; (c = *p++) != '\0'; )
+	{
+		if (c == '.' && lhsmode)
+			*q++ = '\\';
+		if (c == '@')
+			lhsmode = FALSE;
+		*q++ = c;
+	}
+	*q = '\0';
+
+	/*
+	**  Now do a MAILB lookup.
+	*/
+
+retry:
+	if (res_query(bufp, C_IN, T_MAILB, (char *) &answer, sizeof answer < 0)
+	{
+		/* no match -- just continue as usual */
+		return FALSE;
+	}
+
+	/* find first satisfactory answer */
+	hp = (HEADER *)&answer;
+	ap = (u_char *)&answer + sizeof(HEADER);
+	eom = (u_char *)&answer + n;
+	for (qdcount = ntohs(hp->qdcount); qdcount--; ap += n + QFIXEDSZ)
+		if ((n = dn_skipname(ap, eom)) < 0)
+			return FALSE;
+	for (ancount = ntohs(hp->ancount); --ancount >= 0 && ap < eom; ap += n)
+	{
+		n = dn_expand((u_char *)&answer, eom, ap, (u_char *)bp, buflen);
+		if (n < 0)
+			break;
+		ap += n;
+		GETSHORT(type, ap);
+ 		ap += SHORTSIZE + LONGSIZE;
+		GETSHORT(n, ap);
+		switch (type)
+		{
+		  case T_MR:
+			/* rename: try again */
+			i = dn_expand((u_char *) &answer, eom, ap,
+					(u_char) abuf, sizeof abuf);
+			if (i < 0)
+				break;
+			if (bufp != abuf)
+			{
+				free(bufp);
+				bufp = abuf;
+			}
+			goto retry;
+
+		  case T_MB:
+			i = dn_expand((u_char *) &answer, eom, ap,
+					(u_char) hbuf, sizeof hbuf);
+			if (i < 0)
+				break;
+
+			/* hbuf now has the host to deliver to */
+			break;
+
+		  case T_MG:
+			i = dn_expand((u_char *) &answer, eom, ap,
+					(u_char) gbuf, sizeof gbuf);
+			if (i < 0)
+				break;
+			AliasLevel++;
+			naddrs += sendtolist(ubuf, a, sendq, e);
+			AliasLevel--;
+			break;
+
+		  case T_MINFO:
+			/* bleach */
+			XXX;
+		}
+
+
+
+		if (type != T_MX)
+		{
+			if (tTd(8, 8) || _res.options & RES_DEBUG)
+				printf("unexpected answer type %d, size %d\n",
+				    type, n);
+			cp += n;
+			continue;
+		}
+		GETSHORT(pref, cp);
+		if ((n = dn_expand((u_char *)&answer, eom, cp,
+				   (u_char *)bp, buflen)) < 0)
+			break;
+		cp += n;
+
+
+#endif /* DNS_MAILB */
 
 #else /* not NAMED_BIND */
 
