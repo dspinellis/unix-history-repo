@@ -1,4 +1,4 @@
-/*	if_en.c	4.32	82/02/03	*/
+/*	if_en.c	4.33	82/02/05	*/
 
 #include "en.h"
 
@@ -146,7 +146,7 @@ eninit(unit)
 	int s;
 
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
-	    sizeof (struct en_header), (int)btop(ENMTU)) == 0) { 
+	    sizeof (struct en_header), (int)btoc(ENMTU)) == 0) { 
 		printf("en%d: can't initialize\n", unit);
 		return;
 	}
