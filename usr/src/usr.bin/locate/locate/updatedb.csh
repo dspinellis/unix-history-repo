@@ -1,6 +1,6 @@
 #!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.5	(Berkeley)	85/03/24
+#	@(#)updatedb.csh	4.6	(Berkeley)	85/04/22
 #
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/lib/find		# for subprograms
@@ -22,7 +22,8 @@ set errs = /tmp/f.errs$$
 nice +10
 find ${SRCHPATHS} -print | tr '/' '\001' | \
    (sort -f; echo $status > $errs) | \
-   tr '\001' '/' | tee $filelist | $LIBDIR/bigram | \
+   tr '\001' '/' >$filelist
+$LIBDIR/bigram <$filelist | \
    (sort; echo $status >> $errs) | uniq -c | sort -nr | \
    awk '{ if (NR <= 128) print $2 }' | tr -d '\012' > $bigrams
 
