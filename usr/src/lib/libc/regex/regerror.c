@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regerror.c	8.2 (Berkeley) %G%
+ *	@(#)regerror.c	8.3 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regerror.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)regerror.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 /* === regerror.c === */
-static char *regatoi(const regex_t *preg, char *localbuf);
+static char *regatoi __P((const regex_t *preg, char *localbuf));
 
 #ifdef __cplusplus
 }
