@@ -1,5 +1,5 @@
 #
-#	Makefile	4.5	%G%
+#	Makefile	4.6	%G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -25,22 +25,22 @@ OBJS=	alloc.o doprnt.o printf.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
 .c.o:
 	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
 	${CC} -c ${CFLAGS} x.c 
-	mv x.o $*.o
+	mv -f x.o $*.o
 	rm -f x.c
 
 csh: sh.o ${OBJS} sh.local.h
 	rm -f csh
-	cc sh.o ${OBJS} -o csh ${LIBES}
+	${CC} sh.o ${OBJS} -o csh ${LIBES}
 
 # To make csh.prof: put -pg in CFLAGS, make clean, make csh.prof
 csh.prof: sh.prof.o ${OBJS} sh.local.h
 	rm -f csh.prof
-	cc -pg sh.prof.o ${OBJS} ${LIBES} -o csh.prof
+	${CC} -pg sh.prof.o ${OBJS} ${LIBES} -o csh.prof
 
 sh.prof.o: sh.c
 	${CC} -E ${CFLAGS} -DPROF sh.c | ${XSTR} -c -
-	cc -c ${CFLAGS} -DPROF x.c
-	mv x.o sh.prof.o
+	${CC} -c ${CFLAGS} -DPROF x.c
+	mv -f x.o sh.prof.o
 	rm -f x.c
 
 .DEFAULT:
@@ -48,21 +48,21 @@ sh.prof.o: sh.c
 
 # need an old doprnt, whose output we can trap
 doprnt.o: doprnt.c
-	cc -E doprnt.c > doprnt.s
-	as -o doprnt.o doprnt.s
+	${CC} -E doprnt.c > doprnt.s
+	${AS} -o doprnt.o doprnt.s
 	rm -f doprnt.s
 
 # strings.o and sh.init.o are specially processed to be shared
 strings.o: strings
 	${XSTR}
 	${CC} -c -R xs.c
-	mv xs.o strings.o
+	mv -f xs.o strings.o
 	rm -f xs.c
 
 sh.init.o:
 	${CC} -E ${CFLAGS} sh.init.c | ${XSTR} -c -
 	${CC} ${CFLAGS} -c -R x.c
-	mv x.o sh.init.o
+	mv -f x.o sh.init.o
 	rm -f x.c
 	
 lint:
