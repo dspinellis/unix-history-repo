@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.51		%G%);
+SCCSID(@(#)collect.c	3.52		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -37,7 +37,6 @@ collect(sayok)
 	char buf[MAXFIELD+2];
 	register char *p;
 	extern char *hvalue();
-	extern char *macvalue();
 
 	/*
 	**  Create the temp file name and create the file.

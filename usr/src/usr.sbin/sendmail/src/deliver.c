@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.112		%G%);
+SCCSID(@(#)deliver.c	3.113		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -621,7 +621,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # ifdef DEBUG
 	if (tTd(11, 1))
 	{
-		printf("openmailer:\n");
+		printf("openmailer:");
 		printav(pvp);
 	}
 # endif DEBUG
@@ -1004,7 +1004,6 @@ putheader(fp, m)
 	extern char *arpadate();
 	bool anyheader = FALSE;
 	extern char *capitalize();
-	extern char *hvalue();
 	extern bool samefrom();
 	char obuf[MAXLINE];
 	register char *obp;

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.16		%G%);
+SCCSID(@(#)macro.c	3.17		%G%);
 
 char	*Macro[128];
 
@@ -31,6 +31,7 @@ expand(s, buf, buflim)
 	register char *xp = xbuf;
 	bool skipping;		/* set if conditionally skipping output */
 	bool gotone = FALSE;	/* set if any expansion done */
+	extern char *macvalue();
 
 # ifdef DEBUG
 	if (tTd(35, 4))
@@ -204,8 +205,9 @@ define(n, v)
 */
 
 char *
-macvalue(n)
+macvalue(n, e)
 	char n;
+	register ENVELOPE *e;
 {
 	return (Macro[n & 0177]);
 }
