@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.h	8.1 (Berkeley) %G%
+ *	@(#)route.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@ struct ortentry {
 	struct	ifnet *rt_ifp;		/* the answer: interface to use */
 };
 
-#define	RTF_UP		0x1		/* route useable */
+#define	RTF_UP		0x1		/* route usable */
 #define	RTF_GATEWAY	0x2		/* destination is a gateway */
 #define	RTF_HOST	0x4		/* host entry (net otherwise) */
 #define	RTF_REJECT	0x8		/* host or net unreachable */
@@ -122,7 +122,7 @@ struct	rtstat {
  */
 struct rt_msghdr {
 	u_short	rtm_msglen;	/* to skip over non-understood messages */
-	u_char	rtm_version;	/* future binary compatability */
+	u_char	rtm_version;	/* future binary compatibility */
 	u_char	rtm_type;	/* message type */
 	u_short	rtm_index;	/* index for associated ifp */
 	int	rtm_flags;	/* flags, incl. kern & message, e.g. DONE */

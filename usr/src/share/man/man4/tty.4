@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)tty.4	8.2 (Berkeley) %G%
+.\"     @(#)tty.4	8.3 (Berkeley) %G%
 .\"
 .Dd August 14, 1992
 .Dt TTY 4
@@ -182,7 +182,7 @@ This is the underlying call that implements the
 .Fn tcgetattr
 call.
 .It Dv TIOCSETA Fa struct termios *term
-Set the termios state associated with the device immediatly.
+Set the termios state associated with the device immediately.
 This is the underlying call that implements the
 .Xr termios 4
 .Fn tcsetattr
@@ -216,7 +216,7 @@ Simulate typed input.  Pretend as if the terminal received the
 character pointed to by
 .Fa cp .
 .It Dv TIOCNOTTY Fa void
-This call is obsolete but left for compatability.  In the past, when
+This call is obsolete but left for compatibility.  In the past, when
 a process that didn't have a controlling terminal (see
 .Em The Controlling Terminal
 in
@@ -246,7 +246,7 @@ and call the
 .Fn setsid
 system call which will place the process into its own session - which
 has the effect of disassociating it from the controlling terminal.  This
-is the new and prefered method for programs to lose their controlling
+is the new and preferred method for programs to lose their controlling
 terminal.
 .It Dv TIOCSTOP Fa void
 Stop output on the terminal (like typing ^S at the keyboard).
@@ -261,7 +261,7 @@ Wait until all output is drained.
 Set exclusive use on the terminal.  No further opens are permitted
 except by root.  Of course, this means that programs that are run by
 root (or setuid) will not obey the exclusive setting - which limits
-the usefullness of this feature.
+the usefulness of this feature.
 .It Dv TIOCNXCL Fa void
 Clear exclusive use of the terminal.  Further opens are permitted.
 .It Dv TIOCFLUSH Fa int *what
