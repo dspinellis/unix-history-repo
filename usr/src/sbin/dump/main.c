@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -21,16 +21,13 @@ static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/dir.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
+#include <ufs/fs.h>
 #else
 #include <sys/param.h>
 #include <sys/time.h>
-#include <ufs/ufs/dinode.h>
-#endif
 #include <ufs/ffs/fs.h>
+#endif
+#include <ufs/ufs/dinode.h>
 #include <protocols/dumprestore.h>
 #include <signal.h>
 #ifdef __STDC__
@@ -70,12 +67,12 @@ main(argc, argv)
 	register struct	fstab *dt;
 	register char *map;
 	register char *cp;
-	int i, anydirskipped, bflag = 0;
+	int i, anydirskipped, bflag = 0, Tflag = 0;
 	float fetapes;
 	ino_t maxino;
 
 	spcl.c_date = 0;
-	time(&(spcl.c_date));
+	(void) time((time_t *) &(spcl.c_date));
 
 	tsize = 0;	/* Default later, based on 'c' option for cart tapes */
 	tape = _PATH_DEFTAPE;
@@ -93,11 +90,11 @@ main(argc, argv)
 
 		case 'w':
 			lastdump('w');	/* tell us only what has to be done */
-			exit(0);
+			(void) exit(0);
 
 		case 'W':		/* what to do */
 			lastdump('W');	/* tell us state of what is done */
-			exit(0);	/* do nothing else */
+			(void) exit(0);	/* do nothing else */
 
 		case 'f':		/* output file */
 			if (argc < 1)
@@ -111,7 +108,8 @@ main(argc, argv)
 				break;
 			density = atoi(*argv) / 10;
 			if (density < 1) {
-				fprintf(stderr, "bad density \"%s\"\n", *argv);
+				(void) fprintf(stderr, "bad density \"%s\"\n",
+				    *argv);
 				Exit(X_ABORT);
 			}
 			argc--;
@@ -125,12 +123,28 @@ main(argc, argv)
 				break;
 			tsize = atol(*argv);
 			if (tsize < 1) {
-				fprintf(stderr, "bad size \"%s\"\n", *argv);
+				(void) fprintf(stderr, "bad size \"%s\"\n",
+				    *argv);
 				Exit(X_ABORT);
 			}
 			argc--;
 			argv++;
 			tsize *= 12 * 10;
+			continue;
+
+		case 'T':		/* time of last dump */
+			if (argc < 1)
+				break;
+			spcl.c_ddate = unctime(*argv);
+			if (spcl.c_ddate < 0) {
+				(void) fprintf(stderr, "bad time \"%s\"\n",
+				    *argv);
+				Exit(X_ABORT);
+			}
+			Tflag++;
+			lastlevel = '?';
+			argc--;
+			argv++;
 			continue;
 
 		case 'b':		/* blocks per tape write */
@@ -139,7 +153,7 @@ main(argc, argv)
 			bflag++;
 			ntrec = atoi(*argv);
 			if (ntrec < 1) {
-				fprintf(stderr, "%s \"%s\"\n",
+				(void) fprintf(stderr, "%s \"%s\"\n",
 				    "bad number of blocks per write ", *argv);
 				Exit(X_ABORT);
 			}
@@ -152,7 +166,7 @@ main(argc, argv)
 				break;
 			blocksperfile = atol(*argv);
 			if (blocksperfile < 1) {
-				fprintf(stderr, "%s \"%s\"\n",
+				(void) fprintf(stderr, "%s \"%s\"\n",
 				    "bad number of blocks per file ", *argv);
 				Exit(X_ABORT);
 			}
@@ -186,24 +200,29 @@ main(argc, argv)
 			continue;
 
 		default:
-			fprintf(stderr, "bad key '%c'\n", *cp);
+			(void) fprintf(stderr, "bad key '%c'\n", *cp);
 			Exit(X_ABORT);
 		}
-		fprintf(stderr, "missing argument to '%c'\n", *cp);
+		(void) fprintf(stderr, "missing argument to '%c'\n", *cp);
 		Exit(X_ABORT);
 	}
 	if (argc < 1) {
-		fprintf(stderr, "Must specify disk or filesystem\n");
+		(void) fprintf(stderr, "Must specify disk or filesystem\n");
 		Exit(X_ABORT);
 	} else {
 		disk = *argv++;
 		argc--;
 	}
 	if (argc >= 1) {
-		fprintf(stderr, "Unknown arguments to dump:");
+		(void) fprintf(stderr, "Unknown arguments to dump:");
 		while (argc--)
-			fprintf(stderr, " %s", *argv++);
-		fprintf(stderr, "\n");
+			(void) fprintf(stderr, " %s", *argv++);
+		(void) fprintf(stderr, "\n");
+		Exit(X_ABORT);
+	}
+	if (Tflag && uflag) {
+	        (void) fprintf(stderr,
+		    "You cannot use the T and u flags together.\n");
 		Exit(X_ABORT);
 	}
 	if (strcmp(tape, "-") == 0) {
@@ -235,13 +254,13 @@ main(argc, argv)
 		*tape++ = 0;
 #ifdef RDUMP
 		if (rmthost(host) == 0)
-			exit(X_ABORT);
+			(void) exit(X_ABORT);
 #else
-		fprintf(stderr, "remote dump not enabled\n");
-		exit(X_ABORT);
+		(void) fprintf(stderr, "remote dump not enabled\n");
+		(void) exit(X_ABORT);
 #endif
 	}
-	setuid(getuid());	/* rmthost() is the only reason to be setuid */
+	(void) setuid(getuid()); /* rmthost() is the only reason to be setuid */
 
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		signal(SIGHUP, sighup);
@@ -269,17 +288,19 @@ main(argc, argv)
 	dt = fstabsearch(disk);
 	if (dt != 0) {
 		disk = rawname(dt->fs_spec);
-		strncpy(spcl.c_dev, dt->fs_spec, NAMELEN);
-		strncpy(spcl.c_filesys, dt->fs_file, NAMELEN);
+		(void) strncpy(spcl.c_dev, dt->fs_spec, NAMELEN);
+		(void) strncpy(spcl.c_filesys, dt->fs_file, NAMELEN);
 	} else {
-		strncpy(spcl.c_dev, disk, NAMELEN);
-		strncpy(spcl.c_filesys, "an unlisted file system", NAMELEN);
+		(void) strncpy(spcl.c_dev, disk, NAMELEN);
+		(void) strncpy(spcl.c_filesys, "an unlisted file system",
+		    NAMELEN);
 	}
-	strcpy(spcl.c_label, "none");
-	gethostname(spcl.c_host, NAMELEN);
+	(void) strcpy(spcl.c_label, "none");
+	(void) gethostname(spcl.c_host, NAMELEN);
 	spcl.c_level = level - '0';
 	spcl.c_type = TS_TAPE;
-	getdumptime();		/* /etc/dumpdates snarfed */
+	if (!Tflag)
+	        getdumptime();		/* /etc/dumpdates snarfed */
 
 	msg("Date of this level %c dump: %s", level,
 		spcl.c_date == 0 ? "the epoch\n" : ctime(&spcl.c_date));
@@ -298,8 +319,8 @@ main(argc, argv)
 		Exit(X_ABORT);
 	}
 	sync();
-	sblock = (struct fs *)buf;
-	bread(SBOFF, sblock, SBSIZE);
+	sblock = (struct fs *)sblock_buf;
+	bread(SBOFF, (char *) sblock, SBSIZE);
 	if (sblock->fs_magic != FS_MAGIC)
 		quit("bad sblock magic number\n");
 	dev_bsize = sblock->fs_fsize / fsbtodb(sblock, 1);
@@ -312,9 +333,9 @@ main(argc, argv)
 	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
 	mapsize = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
 		TP_BSIZE);
-	usedinomap = (char *)calloc(mapsize, sizeof(char));
-	dumpdirmap = (char *)calloc(mapsize, sizeof(char));
-	dumpinomap = (char *)calloc(mapsize, sizeof(char));
+	usedinomap = (char *)calloc((unsigned) mapsize, sizeof(char));
+	dumpdirmap = (char *)calloc((unsigned) mapsize, sizeof(char));
+	dumpinomap = (char *)calloc((unsigned) mapsize, sizeof(char));
 	tapesize = 3 * (howmany(mapsize * sizeof(char), TP_BSIZE) + 1);
 
 	msg("mapping (Pass I) [regular files]\n");
@@ -371,10 +392,14 @@ main(argc, argv)
 		msg("estimated %ld tape blocks on %3.2f tape(s).\n",
 		    tapesize, fetapes);
 
-	alloctape();			/* Allocate tape buffer */
+	/*
+	 * Allocate tape buffer
+	 */
+	if (!alloctape())
+		quit("can't allocate tape buffers - try a smaller blocking factor.\n");
 
 	startnewtape(1);
-	time(&(tstart_writing));
+	(void) time((time_t *)&(tstart_writing));
 	dumpmap(usedinomap, TS_CLRI, maxino);
 
 	msg("dumping (Pass III) [directories]\n");
@@ -392,7 +417,7 @@ main(argc, argv)
 		dp = getino(ino);
 		if ((dp->di_mode & IFMT) != IFDIR)
 			continue;
-		dumpino(dp, ino);
+		(void) dumpino(dp, ino);
 	}
 
 	msg("dumping (Pass IV) [regular files]\n");
@@ -410,7 +435,7 @@ main(argc, argv)
 		dp = getino(ino);
 		if ((dp->di_mode & IFMT) == IFDIR)
 			continue;
-		dumpino(dp, ino);
+		(void) dumpino(dp, ino);
 	}
 
 	spcl.c_type = TS_END;
@@ -435,10 +460,10 @@ sigAbort()
 	if (pipeout)
 		quit("Unknown signal, cannot recover\n");
 	msg("Rewriting attempted as response to unknown signal.\n");
-	fflush(stderr);
-	fflush(stdout);
+	(void) fflush(stderr);
+	(void) fflush(stdout);
 	close_rewind();
-	exit(X_REWRITE);
+	(void) exit(X_REWRITE);
 }
 
 void	sighup(){	msg("SIGHUP()  try rewriting\n"); sigAbort();}
@@ -460,10 +485,10 @@ rawname(cp)
 	if (dp == 0)
 		return (0);
 	*dp = 0;
-	strcpy(rawbuf, cp);
+	(void) strcpy(rawbuf, cp);
 	*dp = '/';
-	strcat(rawbuf, "/r");
-	strcat(rawbuf, dp+1);
+	(void) strcat(rawbuf, "/r");
+	(void) strcat(rawbuf, dp+1);
 	return (rawbuf);
 }
 
