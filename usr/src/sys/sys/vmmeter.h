@@ -1,4 +1,3 @@
-
 /*	vmmeter.h	4.7	%G%	*/
 
 /*
@@ -34,7 +33,8 @@ struct vmmeter
 	unsigned v_rev;		/* revolutions of the hand */
 	unsigned v_seqfree;	/* pages taken from sequential programs */
 	unsigned v_dfree;	/* pages freed by daemon */
-#define	v_last v_dfree
+	unsigned v_fastpgrec;	/* fast reclaims in locore */
+#define	v_last v_fastpgrec
 	unsigned v_swpin;	/* swapins */
 	unsigned v_swpout;	/* swapouts */
 };
