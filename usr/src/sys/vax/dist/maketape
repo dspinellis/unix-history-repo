@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.18 (Berkeley) %G%
+#	@(#)maketape	4.19 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -31,7 +31,7 @@ cat tsboot htboot tmboot mtboot utboot noboot noboot /tmp/tape.$$ | \
 cd /nbsd
 sync
 echo "Add dump of mini-root file system"
-dd if=/dev/r${miniroot} ${remote+"$remote dd"} of=${tape} bs=20b count=205 conv=sync
+dd if=/dev/r${miniroot} | ${remote+"$remote dd"} of=${tape} bs=20b count=205 conv=sync
 echo "Add full dump of real file system"
 /etc/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
 echo "Add tar image of system sources"
