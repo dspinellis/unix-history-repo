@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)who.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)who.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -48,13 +48,13 @@ main(argc, argv)
 		if (tp)
 			tp = rindex(tp, '/') + 1;
 		else {	/* no tty - use best guess from passwd file */
-			strcpy(utmp.ut_line, "tty??");
+			(void)strcpy(utmp.ut_line, "tty??");
 			guess();
 			exit(0);
 		}
 	}
-	if ((fi = fopen(s, "r")) == NULL) {
-		puts("who: cannot open utmp");
+	if (!(fi = fopen(s, "r"))) {
+		fprintf(stderr, "who: cannot read %s.\n", s);
 		exit(1);
 	}
 	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {
