@@ -1,4 +1,14 @@
-/*	cyvar.h	1.2	86/12/18	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)cyvar.h	1.3 (Berkeley) %G%
+ */
 
 #define TM_ATTENTION(addr,x) 	movob(addr,x)	/* also known as: GO */
 

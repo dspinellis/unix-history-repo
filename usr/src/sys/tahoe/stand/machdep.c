@@ -1,4 +1,14 @@
-/*	machdep.c	1.5	90/12/16	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)machdep.c	1.6 (Berkeley) %G%
+ */
 
 #include "../tahoe/mem.h"
 #include "../include/mtpr.h"

@@ -1,6 +1,13 @@
-/*
- *	@(#)mtpr.h	7.1 (Berkeley) %G%
- *	from mtpr.h	4.5	82/11/05
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)mtpr.h	7.2 (Berkeley) %G%
  */
 
 /*
