@@ -5,11 +5,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.167 (Berkeley) %G%
+ *	@(#)conf.h	8.168 (Berkeley) %G%
  */
 
 /*
 **  CONF.H -- All user-configurable parameters for sendmail
+**
+**	Send updates to sendmail@CS.Berkeley.EDU so they will be
+**	included in the next release.
 */
 
 struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
