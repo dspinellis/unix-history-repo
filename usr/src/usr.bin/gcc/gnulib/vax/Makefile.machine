@@ -1,0 +1,2 @@
+MACHINE_SRCS=	fixdfsi.s fixunsdfsi.s lshlsi3.s lshrsi3.s modsi3.s udivsi3.s \
+		umodsi3.s umulsi3.s
