@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	6.9	85/01/10	*/
+/*	lfs_alloc.c	6.10	85/01/10	*/
 
 #include "param.h"
 #include "systm.h"
@@ -709,10 +709,15 @@ ialloccg(ip, cg, ipref, mode)
 	len = howmany(fs->fs_ipg - cgp->cg_irotor, NBBY);
 	loc = skpc(0xff, len, &cgp->cg_iused[start]);
 	if (loc == 0) {
-		printf("cg = %s, irotor = %d, fs = %s\n",
-		    cg, cgp->cg_irotor, fs->fs_fsmnt);
-		panic("ialloccg: map corrupted");
-		/* NOTREACHED */
+		len = start + 1;
+		start = 0;
+		loc = skpc(0xff, len, &cgp->cg_iused[0]);
+		if (loc == 0) {
+			printf("cg = %s, irotor = %d, fs = %s\n",
+			    cg, cgp->cg_irotor, fs->fs_fsmnt);
+			panic("ialloccg: map corrupted");
+			/* NOTREACHED */
+		}
 	}
 	i = start + len - loc;
 	map = cgp->cg_iused[i];
@@ -919,14 +924,14 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	if (loc == 0) {
 		len = start + 1;
 		start = 0;
-		loc = scanc((unsigned)len, (caddr_t)&cgp->cg_free[start],
+		loc = scanc((unsigned)len, (caddr_t)&cgp->cg_free[0],
 			(caddr_t)fragtbl[fs->fs_frag],
 			(int)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 		if (loc == 0) {
 			printf("start = %d, len = %d, fs = %s\n",
 			    start, len, fs->fs_fsmnt);
 			panic("alloccg: map corrupted");
-			return (-1);
+			/* NOTREACHED */
 		}
 	}
 	bno = (start + len - loc) * NBBY;
