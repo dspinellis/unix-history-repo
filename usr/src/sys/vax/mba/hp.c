@@ -1,4 +1,4 @@
-/*	hp.c	6.5	84/08/29	*/
+/*	hp.c	6.6	84/08/29	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -20,25 +20,25 @@ int	hpbdebug;
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dk.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/map.h"
+#include "param.h"
+#include "systm.h"
+#include "dk.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "map.h"
 #include "../vax/mtpr.h"
-#include "../h/vm.h"
-#include "../h/cmap.h"
-#include "../h/dkbad.h"
-#include "../h/ioctl.h"
-#include "../h/uio.h"
+#include "vm.h"
+#include "cmap.h"
+#include "dkbad.h"
+#include "ioctl.h"
+#include "uio.h"
 
 #include "../vax/dkio.h"
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/mbavar.h"
-#include "../vaxmba/hpreg.h"
+#include "mbareg.h"
+#include "mbavar.h"
+#include "hpreg.h"
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct	size {

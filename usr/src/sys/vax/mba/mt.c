@@ -1,4 +1,4 @@
-/*	mt.c	6.1	83/07/29	*/
+/*	mt.c	6.2	84/08/29	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -14,23 +14,23 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/file.h"
-#include "../h/user.h"
-#include "../h/map.h"
-#include "../h/ioctl.h"
-#include "../h/mtio.h"
-#include "../h/cmap.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "file.h"
+#include "user.h"
+#include "map.h"
+#include "ioctl.h"
+#include "mtio.h"
+#include "cmap.h"
+#include "uio.h"
 
 #include "../vax/cpu.h"
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/mbavar.h"
-#include "../vaxmba/mtreg.h"
+#include "mbareg.h"
+#include "mbavar.h"
+#include "mtreg.h"
 
 struct	buf	rmtbuf[NMT];
 struct	buf	cmtbuf[NMT];
