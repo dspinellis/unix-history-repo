@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)relocate.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)relocate.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -14,7 +14,7 @@ relocate()
 	extern boolean	is_formatted();
 
 	cur.state = rel;
-	print("Adding flaws to bad setor map on ");
+	print("Adding flaws to bad sector map on ");
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
 	printf("type %s.\n",CURRENT->vc_name);
 
@@ -159,7 +159,7 @@ get_new_relocations()
 			else
 				goto bad;
 		}
-		else if(!strncmp(ptr, "star", 4)) {
+		else if(!strncmp(ptr, "start", 4)) {
 			exdent(1);
 			break;
 		}
@@ -343,7 +343,9 @@ bs_entry	entry;
 	format_sectors(&reloc, &phys, ALT_SECTOR, (long)1);
 	status = access_dsk((char *)save, &temp.err_adr, WD, 1, 1);
 	if(!((status & ALTACC) && !(status & (HRDERR |SFTERR)))) {
-		print("Sector relocation failed.  Status = 0x%x.\n", status);
+		print(
+		"Sector relocation failed (c %d t %d s %d).  Status = 0x%x.\n",
+		    phys.cylinder, phys.track, phys.sector, status);
 		print_unix_block(phys);
 	}
 }
