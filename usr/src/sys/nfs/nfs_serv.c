@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.63 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.64 (Berkeley) %G%
  */
 
 /*
@@ -165,8 +165,6 @@ nfsrv_setattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
 		nfsm_reply(0);
 	nqsrv_getl(vp, NQL_WRITE);
-	if (error = nfsrv_access(vp, VWRITE, cred, rdonly, nfsd->nd_procp))
-		goto out;
 	VATTR_NULL(vap);
 	/*
 	 * Nah nah nah nah na nah
@@ -200,6 +198,24 @@ nfsrv_setattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 		fxdr_nqtime(&sp->sa_nqatime, &vap->va_atime);
 		fxdr_nqtime(&sp->sa_nqmtime, &vap->va_mtime);
 		vap->va_flags = fxdr_unsigned(u_long, sp->sa_nqflags);
+	}
+
+	/*
+	 * If the size is being changed write acces is required, otherwise
+	 * just check for a read only file system.
+	 */
+	if (vap->va_size == ((u_quad_t)((quad_t) -1))) {
+		if (rdonly || (vp->v_mount->mnt_flag & MNT_RDONLY)) {
+			error = EROFS;
+			goto out;
+		}
+	} else {
+		if (vp->v_type == VDIR) {
+			error = EISDIR;
+			goto out;
+		} else if (error = nfsrv_access(vp, VWRITE, cred, rdonly,
+			nfsd->nd_procp))
+			goto out;
 	}
 	if (error = VOP_SETATTR(vp, vap, cred, nfsd->nd_procp)) {
 		vput(vp);
