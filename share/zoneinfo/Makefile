@@ -138,7 +138,7 @@ install: maninstall ${DATA} ${REDO}
 	(cd ${.CURDIR}/datfiles; \
 	    ../${OBJ}/zic -d ${TZDIR} -p ${POSIXRULES})
 	/bin/rm -f ${DESTDIR}/etc/localtime
-	ln -s ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
+	ln -s /usr/share/zoneinfo/${LOCALTIME} ${DESTDIR}/etc/localtime
 	chown -R ${BINOWN}.${BINGRP} ${TZDIR}
 	chmod -R a-w ${TZDIR}
 
