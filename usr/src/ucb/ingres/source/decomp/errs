@@ -1,0 +1,68 @@
+sccs get  SCCS/s.globs.h
+Clock may be set wrong! (co11)
+7.3
+170 lines
+cc -I../h -O -c qryproc.c
+cc -I../h -O -c de_init.c
+cc -I../h -O -c ret_unique.c
+cc -I../h -O -c aggregate.c
+cc -I../h -O -c ageval.c
+cc -I../h -O -c byeval.c
+cc -I../h -O -c makenode.c
+cc -I../h -O -c mapvar.c
+cc -I../h -O -c decomp.c
+cc -I../h -O -c pull_sq.c
+cc -I../h -O -c exec_sq.c
+cc -I../h -O -c tempvar.c
+cc -I../h -O -c reformat.c
+cc -I../h -O -c decision.c
+cc -I../h -O -c reduction.c
+cc -I../h -O -c openrs.c
+cc -I../h -O -c error.c
+cc -I../h -O -c prlinks.c
+cc -I../h -O -c rangetable.c
+cc -I../h -O -c rnum.c
+cc -I../h -O -c reinit.c
+cc -I../h -O -c selectv.c
+cc -I../h -O -c setvar.c
+cc -I../h -O -c usubr.c
+cc -I../h -O -c lockit.c
+cc -I../h -O -c pull_const.c
+cc -I../h -O -c call_ovqp.c
+/usr/include/sys/param.h: 71: NULL redefined
+cc -I../h -O -c mklist.c
+cc -I../h -O -c call_dbu.c
+ar rvu decomplib qryproc.o de_init.o ret_unique.o aggregate.o ageval.o byeval.o makenode.o mapvar.o decomp.o pull_sq.o exec_sq.o tempvar.o reformat.o decision.o reduction.o openrs.o error.o prlinks.o rangetable.o rnum.o reinit.o selectv.o setvar.o usubr.o lockit.o pull_const.o call_ovqp.o mklist.o call_dbu.o
+r - qryproc.o
+r - de_init.o
+r - ret_unique.o
+r - aggregate.o
+r - ageval.o
+r - byeval.o
+r - makenode.o
+r - mapvar.o
+r - decomp.o
+r - pull_sq.o
+r - exec_sq.o
+r - tempvar.o
+r - reformat.o
+r - decision.o
+r - reduction.o
+r - openrs.o
+r - error.o
+r - prlinks.o
+r - rangetable.o
+r - rnum.o
+r - reinit.o
+r - selectv.o
+r - setvar.o
+r - usubr.o
+r - lockit.o
+r - pull_const.o
+r - call_ovqp.o
+r - mklist.o
+r - call_dbu.o
+chmod 664 decomplib
+ranlib decomplib
+cp decomplib ../../lib/decomp
+ranlib ../../lib/decomp
