@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -292,7 +292,7 @@ lfs_unmount(mp, mntflags, p)
 
 	flags = 0;
 	if (mntflags & MNT_FORCE) {
-		if (!doforce || mp == rootfs)
+		if (!doforce || (mp->mnt_flag & MNT_ROOTFS))
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
@@ -320,7 +320,7 @@ lfs_unmount(mp, mntflags, p)
 	fs->lfs_clean = 1;
 	if (error = VFS_SYNC(mp, 1, p->p_ucred, p))
 		return (error);
-	if (fs->lfs_ivnode->v_dirtyblkhd.le_next)
+	if (fs->lfs_ivnode->v_dirtyblkhd.lh_first)
 		panic("lfs_unmount: still dirty blocks on ifile vnode\n");
 	vrele(fs->lfs_ivnode);
 	vgone(fs->lfs_ivnode);
