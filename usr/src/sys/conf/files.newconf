@@ -1,4 +1,4 @@
-#	@(#)files.newconf	7.1 (Berkeley) %G%
+#	@(#)files.newconf	7.2 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -115,15 +115,20 @@ file	net/route.c
 file	net/rtsock.c
 file	net/slcompress.c	sl
 file	netccitt/ccitt_proto.c	ccitt
-file	netccitt/hd_debug.c	ccitt
-file	netccitt/hd_input.c	ccitt
-file	netccitt/hd_output.c	ccitt
-file	netccitt/hd_subr.c	ccitt
-file	netccitt/hd_timer.c	ccitt
+file	netccitt/llc_input.c	llc
+file	netccitt/llc_output.c	llc
+file	netccitt/llc_subr.c	llc
+file	netccitt/llc_timer.c	llc
+file	netccitt/hd_debug.c	hdlc
+file	netccitt/hd_input.c	hdlc
+file	netccitt/hd_output.c	hdlc
+file	netccitt/hd_subr.c	hdlc
+file	netccitt/hd_timer.c	hdlc
 file	netccitt/if_x25subr.c	ccitt
 file	netccitt/pk_acct.c	ccitt
 file	netccitt/pk_debug.c	ccitt
 file	netccitt/pk_input.c	ccitt
+file	netccitt/pk_llcsubr.c	llc hdlc
 file	netccitt/pk_output.c	ccitt
 file	netccitt/pk_subr.c	ccitt
 file	netccitt/pk_timer.c	ccitt
@@ -132,13 +137,13 @@ file	netimp/if_imp.c		imp needs-count
 file	netimp/if_imphost.c	imp needs-count
 file	netimp/raw_imp.c	imp
 file	netinet/if_ether.c	ether
-file	netinet/igmp.c		multicast
+file	netinet/igmp.c		inet
 file	netinet/in.c		inet
 file	netinet/in_pcb.c	inet
 file	netinet/in_proto.c	inet
 file	netinet/ip_icmp.c	inet
 file	netinet/ip_input.c	inet
-file	netinet/ip_mroute.c	inet multicast mrouting
+file	netinet/ip_mroute.c	inet
 file	netinet/ip_output.c	inet
 file	netinet/raw_ip.c	inet
 file	netinet/tcp_debug.c	inet
@@ -160,6 +165,7 @@ file	netiso/clnp_timer.c	iso
 file	netiso/cltp_usrreq.c	iso
 file	netiso/esis.c		iso
 file	netiso/if_eon.c		eon
+file	netiso/idrp_usrreq.c	iso
 file	netiso/iso.c		iso
 file	netiso/iso_chksum.c	iso
 file	netiso/iso_pcb.c	iso
@@ -180,6 +186,9 @@ file	netiso/tp_subr2.c	iso tpip
 file	netiso/tp_timer.c	iso tpip
 file	netiso/tp_trace.c	iso tpip
 file	netiso/tp_usrreq.c	iso tpip
+file	netiso/tuba_subr.c	iso tuba
+file	netiso/tuba_table.c	iso tuba
+file	netiso/tuba_usrreq.c	iso tuba
 file	netns/idp_usrreq.c	ns
 file	netns/ns.c		ns
 file	netns/ns_error.c	ns
