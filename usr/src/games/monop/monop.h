@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)monop.h	5.1 (Berkeley) %G%
+ *	@(#)monop.h	5.2 (Berkeley) %G%
  */
 
 # include	<stdio.h>
@@ -37,7 +37,10 @@
 # define	SAFE	3	/* safe spot				*/
 # define	CC	4	/* community chest			*/
 # define	CHANCE	5	/* chance (surprise!!!)			*/
-# define	SPEC	6	/* special				*/
+# define	INC_TAX	6	/* Income tax */
+# define	GOTO_J	7	/* Go To Jail! */
+# define	LUX_TAX	8	/* Luxury tax */
+# define	IN_JAIL	9	/* In jail */
 
 # define	JAIL	40	/* JAIL square number			*/
 
@@ -54,7 +57,7 @@ struct sqr_st {			/* structure for square			*/
 	char	*name;			/* place name			*/
 	shrt	owner;			/* owner number			*/
 	shrt	type;			/* place type			*/
-	char	*desc;			/* description struct		*/
+	struct prp_st	*desc;		/* description struct		*/
 	int	cost;			/* cost				*/
 };
 
@@ -68,11 +71,16 @@ struct mon_st {			/* monopoly descriptin structure	*/
 	shrt	h_cost;			/* price of houses		*/
 	char	*not_m;			/* name if not monopoly		*/
 	char	*mon_n;			/* name if a monopoly		*/
+	char	sqnum[3];		/* Square numbers (used to init)*/
 	SQUARE	*sq[3];			/* list of squares in monop	*/
 };
 
 typedef struct mon_st	MON;
 
+/*
+ * This struct describes a property.  For railroads and utilities, only
+ * the "morg" member is used.
+ */
 struct prp_st {			/* property description structure	*/
 	bool	morg;			/* set if mortgaged		*/
 	bool	monop;			/* set if monopoly		*/
@@ -100,13 +108,9 @@ struct plr_st {			/* player description structure		*/
 	OWN	*own_list;		/* start of propery list	*/
 };
 
-struct rr_st {			/* railroad description structure	*/
-	bool	morg;			/* set if morgaged		*/
-};
-
 typedef struct plr_st	PLAY;
 typedef struct prp_st	PROP;
-typedef struct rr_st	RR_S;
-typedef struct rr_st	UTIL_S;
+typedef struct prp_st	RR_S;
+typedef struct prp_st	UTIL_S;
 
 int	cc(), chance(), lux_tax(), goto_jail(), inc_tax();

@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)monop.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)monop.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.def"
@@ -136,6 +136,6 @@ init_monops() {
 	for (mp = mon; mp < &mon[N_MON]; mp++) {
 		mp->name = mp->not_m;
 		for (i = 0; i < mp->num_in; i++)
-			mp->sq[i] = &board[(int)(mp->sq[i])];
+			mp->sq[i] = &board[mp->sqnum[i]];
 	}
 }

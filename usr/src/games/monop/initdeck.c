@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)initdeck.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)initdeck.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<stdio.h>
@@ -43,7 +43,8 @@ static char sccsid[] = "@(#)initdeck.c	5.1 (Berkeley) %G%";
 char	*infile		= "cards.inp",		/* input file		*/
 	*outfile	= "cards.pck";		/* "packed" file	*/
 
-long	ftell();
+extern long	ftell();
+extern char *calloc();
 
 DECK	deck[2];
 
@@ -62,8 +63,8 @@ char	*av[]; {
 	/*
 	 * allocate space for pointers.
 	 */
-	CC_D.offsets = calloc(CC_D.num_cards + 1, sizeof (long));
-	CH_D.offsets = calloc(CH_D.num_cards + 1, sizeof (long));
+	CC_D.offsets = (long *)calloc(CC_D.num_cards + 1, sizeof (long));
+	CH_D.offsets = (long *)calloc(CH_D.num_cards + 1, sizeof (long));
 	fseek(inf, 0L, 0);
 	if ((outf = fopen(outfile, "w")) == NULL) {
 		perror(outfile);

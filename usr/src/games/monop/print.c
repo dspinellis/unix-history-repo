@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.ext"
@@ -64,13 +64,14 @@ reg bool	eoln; {
 
 	sqp = &board[sqn];
 	printf("%-10.10s", sqp->name);
-	if (sqn == JAIL)
-		goto spec;
 	switch (sqp->type) {
 	  case SAFE:
 	  case CC:
 	  case CHANCE:
-	  case SPEC:
+	  case INC_TAX:
+	  case GOTO_J:
+	  case LUX_TAX:
+	  case IN_JAIL:
 spec:
 		if (!eoln)
 			printf("                        ");

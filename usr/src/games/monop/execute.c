@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)execute.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)execute.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.ext"
@@ -108,10 +108,15 @@ show_move() {
 		printf("That is a safe place\n");
 		break;
 	  case CC:
+		cc(); break;
 	  case CHANCE:
-	  case SPEC:
-		(*((int (*)())(sqp->desc)))();
-		break;
+		chance(); break;
+	  case INC_TAX:
+		inc_tax(); break;
+	  case GOTO_J:
+		goto_jail(); break;
+	  case LUX_TAX:
+		lux_tax(); break;
 	  case PRPTY:
 	  case RR:
 	  case UTIL:
