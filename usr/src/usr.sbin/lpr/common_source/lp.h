@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- * 	@(#)lp.h	8.1 (Berkeley) %G%
+ * 	@(#)lp.h	8.2 (Berkeley) %G%
  */
 
 
@@ -59,7 +59,7 @@ extern char	*printer;	/* printer name */
 				/* host machine name */
 extern char	host[MAXHOSTNAMELEN];
 extern char	*from;		/* client's machine name */
-extern int	sendtorem;	/* are we sending to a remote? */
+extern int	remote;		/* true if sending files to a remote host */
 extern char	*printcapdb[];  /* printcap database array */
 /*
  * Structure used for building a sorted list of control files.
@@ -81,7 +81,7 @@ void     displayq __P((int));
 void     dump __P((char *, char *, int));
 void	 fatal __P((const char *, ...));
 int	 getline __P((FILE *));
-int	 getport __P((char *));
+int	 getport __P((char *, int));
 int	 getq __P((struct queue *(*[])));
 void     header __P((void));
 void     inform __P((char *));
@@ -97,4 +97,5 @@ void     rmremote __P((void));
 void     show __P((char *, char *, int));
 int      startdaemon __P((char *));
 void     warn __P((void));
+void     delay __P((int));
 __END_DECLS

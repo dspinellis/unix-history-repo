@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -69,7 +69,6 @@ static int	 ofilter;	/* id of output filter, if any */
 static int	 pfd;		/* prstatic inter file descriptor */
 static int	 pid;		/* pid of lpd process */
 static int	 prchild;	/* id of pr process */
-static int	 remote;	/* true if sending files to remote */
 static char	 title[80];	/* ``pr'' title */
 static int	 tof;		/* true if at top of form */
 
@@ -91,6 +90,9 @@ static int        dofork __P((int));
 static int        dropit __P((int));
 static void       init __P((void));
 static void       openpr __P((void));
+static void       opennet __P((char *));
+static void       opentty __P((void));
+static void       openrem __P((void));
 static int        print __P((int, char *));
 static int        printit __P((char *));
 static void       pstatus __P((const char *, ...));
@@ -1029,13 +1031,16 @@ sendmail(user, bombed)
 		switch (bombed) {
 		case OK:
 			printf("\ncompleted successfully\n");
+			cp = "OK";
 			break;
 		default:
 		case FATALERR:
 			printf("\ncould not be printed\n");
+			cp = "FATALERR";
 			break;
 		case NOACCT:
 			printf("\ncould not be printed without an account on %s\n", host);
+			cp = "NOACCT";
 			break;
 		case FILTERERR:
 			if (stat(tempfile, &stb) < 0 || stb.st_size == 0 ||
@@ -1047,9 +1052,11 @@ sendmail(user, bombed)
 			while ((i = getc(fp)) != EOF)
 				putchar(i);
 			(void) fclose(fp);
+			cp = "FILTERERR";
 			break;
 		case ACCESS:
 			printf("\nwas not printed because it was not linked to the original file\n");
+			cp = "ACCESS";
 		}
 		fflush(stdout);
 		(void) close(1);
@@ -1057,6 +1064,8 @@ sendmail(user, bombed)
 	(void) close(p[0]);
 	(void) close(p[1]);
 	wait(&s);
+	syslog(LOG_INFO, "mail sent to user %s about job %s on printer %s (%s)",
+		user, *jobname ? jobname : "<unknown>", printer, cp);
 }
 
 /*
@@ -1195,60 +1204,27 @@ init()
 static void
 openpr()
 {
-	register int i, n;
-	int resp;
+	register int i;
+	char *cp;
 
-	if (!sendtorem && *LP) {
-		for (i = 1; ; i = i < 32 ? i << 1 : i) {
-			pfd = open(LP, RW ? O_RDWR : O_WRONLY);
-			if (pfd >= 0)
-				break;
-			if (errno == ENOENT) {
-				syslog(LOG_ERR, "%s: %m", LP);
-				exit(1);
-			}
-			if (i == 1)
-				pstatus("waiting for %s to become ready (offline ?)", printer);
-			sleep(i);
-		}
-		if (isatty(pfd))
-			setty();
-		pstatus("%s is ready and printing", printer);
-	} else if (RM != NULL) {
-		for (i = 1; ; i = i < 256 ? i << 1 : i) {
-			resp = -1;
-			pfd = getport(RM);
-			if (pfd >= 0) {
-				(void) sprintf(line, "\2%s\n", RP);
-				n = strlen(line);
-				if (write(pfd, line, n) == n &&
-				    (resp = response()) == '\0')
-					break;
-				(void) close(pfd);
-			}
-			if (i == 1) {
-				if (resp < 0)
-					pstatus("waiting for %s to come up", RM);
-				else {
-					pstatus("waiting for queue to be enabled on %s", RM);
-					i = 256;
-				}
-			}
-			sleep(i);
-		}
-		pstatus("sending to %s", RM);
-		remote = 1;
+	if (!remote && *LP) {
+		if (cp = index(LP, '@'))
+			opennet(cp);
+		else
+			opentty();
+	} else if (remote) {
+		openrem();
 	} else {
 		syslog(LOG_ERR, "%s: no line printer device or host name",
 			printer);
 		exit(1);
 	}
+
 	/*
 	 * Start up an output filter, if needed.
 	 */
 	if (!remote && OF) {
 		int p[2];
-		char *cp;
 
 		pipe(p);
 		if ((ofilter = dofork(DOABORT)) == 0) {	/* child */
@@ -1271,6 +1247,113 @@ openpr()
 		ofd = pfd;
 		ofilter = 0;
 	}
+}
+
+/*
+ * Printer connected directly to the network
+ * or to a terminal server on the net
+ */
+static void
+opennet(cp)
+	char *cp;
+{
+	register int i;
+	int resp, port;
+
+	*cp++ = '\0';
+	port = atoi(cp);
+	if (port <= 0) {
+		syslog(LOG_ERR, "%s: bad port number: %s", printer, cp);
+		exit(1);
+	}
+
+	for (i = 1; ; i = i < 256 ? i << 1 : i) {
+		resp = -1;
+		pfd = getport(LP, port);
+		if (pfd < 0 && errno == ECONNREFUSED)
+			resp = 1;
+		else if (pfd >= 0) {
+			/*
+			 * need to delay a bit for rs232 lines
+			 * to stabilize in case printer is
+			 * connected via a terminal server
+			 */
+			delay(500);
+			break;
+		}
+		if (i == 1) {
+		   if (resp < 0)
+			pstatus("waiting for %s to come up", LP);
+		   else
+			pstatus("waiting for access to printer on %s", LP);
+		}
+		sleep(i);
+	}
+	pstatus("sending to %s port %d", LP, port);
+	*(--cp) = '@';	/* restore LP parameter in case we are called again */
+}
+
+/*
+ * Printer is connected to an RS232 port on this host
+ */
+static void
+opentty()
+{
+	register int i;
+	int resp, port;
+
+	for (i = 1; ; i = i < 32 ? i << 1 : i) {
+		pfd = open(LP, RW ? O_RDWR : O_WRONLY);
+		if (pfd >= 0) {
+			delay(500);
+			break;
+		}
+		if (errno == ENOENT) {
+			syslog(LOG_ERR, "%s: %m", LP);
+			exit(1);
+		}
+		if (i == 1)
+			pstatus("waiting for %s to become ready (offline ?)",
+				printer);
+		sleep(i);
+	}
+	if (isatty(pfd))
+		setty();
+	pstatus("%s is ready and printing", printer);
+}
+
+/*
+ * Printer is on a remote host
+ */
+static void
+openrem()
+{
+	register int i, n;
+	int resp, port;
+
+	for (i = 1; ; i = i < 256 ? i << 1 : i) {
+		resp = -1;
+		pfd = getport(RM, 0);
+		if (pfd >= 0) {
+			(void) sprintf(line, "\2%s\n", RP);
+			n = strlen(line);
+			if (write(pfd, line, n) == n &&
+			    (resp = response()) == '\0')
+				break;
+			(void) close(pfd);
+		}
+		if (i == 1) {
+			if (resp < 0)
+				pstatus("waiting for %s to come up", RM);
+			else {
+				pstatus("waiting for queue to be enabled on %s",
+					RM);
+				i = 256;
+			}
+		}
+		sleep(i);
+	}
+	pstatus("sending to %s", RM);
 }
 
 struct bauds {
