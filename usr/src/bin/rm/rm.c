@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.18 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.19 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -184,19 +184,21 @@ rm(arg, level)
 		return (1);
 	}
 
-	if (iflg) {
-		printf("rm: remove %s? ", arg);
-		if (!yes())
-			return (0);
-	} else if (!fflg) {
+	if (!fflg) {
 		if ((buf.st_mode&S_IFMT) != S_IFLNK && access(arg, W_OK) < 0) {
 			printf("rm: override protection %o for %s? ",
 				buf.st_mode&0777, arg);
 			if (!yes())
 				return (0);
+			goto rm;
 		}
 	}
-	if (unlink(arg) < 0) {
+	if (iflg) {
+		printf("rm: remove %s? ", arg);
+		if (!yes())
+			return (0);
+	}
+rm:	if (unlink(arg) < 0) {
 		if (!fflg || iflg) {
 			fprintf(stderr, "rm: %s not removed\n", arg);
 			errcode++;
