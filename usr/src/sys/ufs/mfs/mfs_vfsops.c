@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -78,9 +78,9 @@ mfs_mountroot()
 		panic("mfs_mountroot: can't setup bdevvp's");
 
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
+	bzero((char *)mp, (u_long)sizeof(struct mount));
 	mp->mnt_op = &mfs_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
-	mp->mnt_mounth = NULLVP;
 	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
 	rootvp->v_data = mfsp;
 	rootvp->v_op = mfs_vnodeop_p;
@@ -101,9 +101,8 @@ mfs_mountroot()
 		free(mfsp, M_MFSNODE);
 		return (error);
 	}
-	rootfs = mp;
-	mp->mnt_next = mp;
-	mp->mnt_prev = mp;
+	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
