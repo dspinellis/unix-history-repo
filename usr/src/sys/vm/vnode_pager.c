@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	8.2 (Berkeley) %G%
+ *	@(#)vnode_pager.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -144,7 +144,7 @@ vnode_pager_alloc(handle, size, prot, foff)
 		pager->pg_handle = handle;
 		pager->pg_type = PG_VNODE;
 		pager->pg_ops = &vnodepagerops;
-		pager->pg_data = (caddr_t)vnp;
+		pager->pg_data = vnp;
 		vp->v_vmdata = (caddr_t)pager;
 	} else {
 		/*
