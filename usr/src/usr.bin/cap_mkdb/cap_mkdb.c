@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	1.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -103,6 +103,7 @@ db_build(inputfiles)
 	size_t lastlen, bplen;
 	int st;
 	char *cp, *np, *bp, *nf, namebuf[NBUFSIZ];
+	int i;
 
 	if ((capdbp = dbopen(capdb, O_CREAT | O_TRUNC | O_WRONLY, 
             DEFFILEMODE, DB_HASH, NULL)) == NULL)
@@ -113,6 +114,7 @@ db_build(inputfiles)
 	nf = NULL;
 	data.data = NULL;
 	key.data = NULL;
+	i = 1;
 	while((st = cgetnext(&bp, inputfiles)) > 0) {
 		getnamefield(&nf, bp);
 		if ((bplen = strlen(bp)) > lastlen) {
@@ -123,35 +125,29 @@ db_build(inputfiles)
 		}
 
 		/*
-		 * Store record under primary name.
+		 * Store record under name field.
 		 */
 		((char *)(data.data))[0] = RECORD;
 		(void)strcpy(&((char *)(data.data))[1], bp);
 		data.size = bplen + 2;
-		key.data = namebuf;
-		np = namebuf;
-		cp = nf;
-		for (;;) {
-			if (*cp == ':' || *cp == '|') {
-                                *np = '\0';
-                                key.size = strlen(namebuf) + 1;
-                                if (capdbp->put(capdbp, &key, &data, 0) < 0)
-					err("put: %s", strerror(errno));
-				cp++;
-				break;
-			}
-			*np++ = *cp++;
-		}
+		key.data = nf;
+		key.size = strlen(nf) + 1;
+		if (capdbp->put(capdbp, &key, &data, 0) < 0)
+			err("put: %s", strerror(errno));
+		
+		printf("Hashed %d records.\r", i++);
+		fflush(stdout);
 
 		/*
 		 * Store references for other names.
 		 */
 		((char *)(data.data))[0] = REFERENCE;
-		(void)strcpy(&((char *)(data.data))[1], namebuf);
+		(void)strcpy(&((char *)(data.data))[1], nf);
 
 		data.size = key.size + 1;	/* need extra byte for tag */
-
-		for (np = namebuf; *cp != '\0'; cp++) {
+		key.data = namebuf;
+		np = namebuf;
+		for (cp = nf; *cp != '\0'; cp++) {
 			if (*cp == ':' || *cp == '|') {
 				*np = '\0';
 				key.size = strlen(namebuf) + 1;
@@ -172,6 +168,7 @@ db_build(inputfiles)
 	free(data.data);
 	free(nf);
 	free(bp);
+	printf("\n");
 }
 
 void
