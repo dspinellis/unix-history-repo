@@ -1,4 +1,4 @@
-/*	hp.c	4.22	81/03/06	*/
+/*	hp.c	4.23	81/03/06	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -332,7 +332,7 @@ hpecc(mi, rm80sse)
 	}
 #endif
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("hp%d%c: soft ecc bn%d\n", dkunit(bp),
+	printf("hp%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rp->hpec2&0xffff;
 	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
