@@ -6,31 +6,29 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getusershell.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)getusershell.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>
-#include <ctype.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#define SHELLS "/etc/shells"
+#include <paths.h>
 
 /*
- * Do not add local shells here.  They should be added in /etc/shells
+ * Local shells should NOT be added here.  They should be added in
+ * /etc/shells.
  */
-static char *okshells[] =
-    { "/bin/sh", "/bin/csh", 0 };
 
-static char **shells, *strings;
-static char **curshell = NULL;
-extern char **initshells();
+static char *okshells[] = { _PATH_BSHELL, _PATH_CSHELL, NULL };
+static char **curshell, **shells, *strings;
+static char **initshells __P((void));
 
 /*
- * Get a list of shells from SHELLS, if it exists.
+ * Get a list of shells from _PATH_SHELLS, if it exists.
  */
 char *
 getusershell()
@@ -50,7 +48,7 @@ endusershell()
 {
 	
 	if (shells != NULL)
-		free((char *)shells);
+		free(shells);
 	shells = NULL;
 	if (strings != NULL)
 		free(strings);
@@ -73,27 +71,27 @@ initshells()
 	struct stat statb;
 
 	if (shells != NULL)
-		free((char *)shells);
+		free(shells);
 	shells = NULL;
 	if (strings != NULL)
 		free(strings);
 	strings = NULL;
-	if ((fp = fopen(SHELLS, "r")) == (FILE *)0)
-		return(okshells);
+	if ((fp = fopen(_PATH_SHELLS, "r")) == NULL)
+		return (okshells);
 	if (fstat(fileno(fp), &statb) == -1) {
 		(void)fclose(fp);
-		return(okshells);
+		return (okshells);
 	}
-	if ((strings = malloc((unsigned)statb.st_size)) == NULL) {
+	if ((strings = malloc((u_int)statb.st_size)) == NULL) {
 		(void)fclose(fp);
-		return(okshells);
+		return (okshells);
 	}
-	shells = (char **)calloc((unsigned)statb.st_size / 3, sizeof (char *));
+	shells = calloc((unsigned)statb.st_size / 3, sizeof (char *));
 	if (shells == NULL) {
 		(void)fclose(fp);
 		free(strings);
 		strings = NULL;
-		return(okshells);
+		return (okshells);
 	}
 	sp = shells;
 	cp = strings;
@@ -107,7 +105,7 @@ initshells()
 			cp++;
 		*cp++ = '\0';
 	}
-	*sp = (char *)0;
+	*sp = NULL;
 	(void)fclose(fp);
 	return (shells);
 }
