@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.24	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.25	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.24	%G%
+.\"	@(#)tmac.orig_me	2.25	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -43,7 +43,7 @@
 .nr _F \\n(.f
 .nr _I \\n(.i
 .ev \\$1
-.ps \\n(_Su
+.ps \\n(_S
 .vs \\n(_Vu
 .ft \\n(_F
 'in \\n(_Iu
@@ -525,7 +525,7 @@
 .ce 0
 .fi
 .@F \\n(pf
-.sz \\n(ppu
+.sz \\n(pp
 .sp \\n(psu
 .ne \\n(.Lv+\\n(.Vu
 .ns
@@ -550,7 +550,7 @@
 .	el \
 .		ti +\\n(sou
 .	@F \\n(sf
-.	sz \\n(spu
+.	sz \\n(sp
 .	if \\$3>0 \
 .		$\\$3
 .	if \w"\\$2">0 \\$2.
@@ -559,7 +559,7 @@
 .el \
 .	sp \\n(psu
 .@F \\n(pf
-.sz \\n(ppu
+.sz \\n(pp
 ..
 .de uh			\" *** unnumbered section heading
 .rn uh @T
