@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_xxx.c	8.2 (Berkeley) %G%
+ *	@(#)subr_xxx.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -67,6 +67,17 @@ eopnotsupp()
 {
 
 	return (EOPNOTSUPP);
+}
+
+/*
+ * Return error for an inval operation
+ * on a specific object or file type.
+ */
+int
+einval()
+{
+
+	return (EINVAL);
 }
 
 /*
