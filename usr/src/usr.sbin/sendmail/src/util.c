@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -454,6 +454,8 @@ int
 **			SFF_MUSTOWN -- "uid" must own this file.
 **			SFF_NOSLINK -- file cannot be a symbolic link.
 **		mode -- mode bits that must match.
+**		st -- if set, points to a stat structure that will
+**			get the stat info for the file.
 **
 **	Returns:
 **		0 if fn exists, is owned by uid, and matches mode.
@@ -477,14 +479,17 @@ int
 # define S_IXUSR	(S_IEXEC)
 #endif
 
+#define ST_MODE_NOFILE	0171147		/* unlikely to occur */
+
 int
-safefile(fn, uid, gid, uname, flags, mode)
+safefile(fn, uid, gid, uname, flags, mode, st)
 	char *fn;
 	uid_t uid;
 	gid_t gid;
 	char *uname;
 	int flags;
 	int mode;
+	struct stat *st;
 {
 	register char *p;
 	register struct group *gr = NULL;
@@ -494,6 +499,8 @@ safefile(fn, uid, gid, uname, flags, mode)
 		printf("safefile(%s, uid=%d, gid=%d, flags=%x, mode=%o):\n",
 			fn, uid, gid, flags, mode);
 	errno = 0;
+	if (st == NULL)
+		st = &stbuf;
 
 	if (!bitset(SFF_NOPATHCHECK, flags) ||
 	    (uid == 0 && !bitset(SFF_ROOTOK, flags)))
@@ -548,10 +555,10 @@ safefile(fn, uid, gid, uname, flags, mode)
 	}
 
 #ifdef HASLSTAT
-	if ((bitset(SFF_NOSLINK, flags) ? lstat(fn, &stbuf)
-					: stat(fn, &stbuf)) < 0)
+	if ((bitset(SFF_NOSLINK, flags) ? lstat(fn, st)
+					: stat(fn, st)) < 0)
 #else
-	if (stat(fn, &stbuf) < 0)
+	if (stat(fn, st) < 0)
 #endif
 	{
 		int ret = errno;
@@ -560,29 +567,73 @@ safefile(fn, uid, gid, uname, flags, mode)
 			printf("\t%s\n", errstring(ret));
 
 		errno = 0;
+		if (!bitset(SFF_CREAT, flags))
+			return ret;
+
+		/* check to see if legal to create the file */
+		p = strrchr(fn, '/');
+		if (p == NULL)
+			return ENOTDIR;
+		*p = '\0';
+		if (stat(fn, &stbuf) >= 0)
+		{
+			int md = S_IWRITE|S_IEXEC;
+			if (stbuf.st_uid != uid)
+				md >>= 6;
+			if ((stbuf.st_mode & md) != md)
+				errno = EACCES;
+		}
+		ret = errno;
+		if (tTd(54, 4))
+			printf("\t[final dir %s uid %d mode %o] %s\n",
+				fn, stbuf.st_uid, stbuf.st_mode,
+				errstring(ret));
+		*p = '/';
+		st->st_mode = ST_MODE_NOFILE;
 		return ret;
 	}
 
 #ifdef S_ISLNK
-	if (bitset(SFF_NOSLINK, flags) && S_ISLNK(stbuf.st_mode))
+	if (bitset(SFF_NOSLINK, flags) && S_ISLNK(st->st_mode))
 	{
 		if (tTd(54, 4))
-			printf("\t[slink mode %o]\tEPERM\n", stbuf.st_mode);
+			printf("\t[slink mode %o]\tEPERM\n", st->st_mode);
 		return EPERM;
 	}
 #endif
 
+	if (bitset(S_IWUSR|S_IWGRP|S_IWOTH, mode) && bitset(0111, st->st_mode))
+	{
+		if (tTd(29, 5))
+			printf("failed (mode %o: x bits)\n", st->st_mode);
+		errno = EPERM;
+		return FALSE;
+	}
+
+	if (bitset(SFF_SETUIDOK, flags))
+	{
+		if (bitset(S_ISUID, st->st_mode) &&
+		    (st->st_uid != 0 || bitset(SFF_ROOTOK, flags)))
+		{
+			uid = st->st_uid;
+			uname = NULL;
+		}
+		if (bitset(S_ISGID, st->st_mode) &&
+		    (st->st_gid != 0 || bitset(SFF_ROOTOK, flags)))
+			gid = st->st_gid;
+	}
+
 	if (uid == 0 && !bitset(SFF_ROOTOK, flags))
 		mode >>= 6;
-	else if (stbuf.st_uid != uid)
+	else if (st->st_uid != uid)
 	{
 		mode >>= 3;
-		if (stbuf.st_gid == gid)
+		if (st->st_gid == gid)
 			;
 #ifndef NO_GROUP_SET
 		else if (uname != NULL &&
-			 ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
-			  (gr = getgrgid(stbuf.st_gid)) != NULL))
+			 ((gr != NULL && gr->gr_gid == st->st_gid) ||
+			  (gr = getgrgid(st->st_gid)) != NULL))
 		{
 			register char **gp;
 
@@ -598,10 +649,10 @@ safefile(fn, uid, gid, uname, flags, mode)
 	}
 	if (tTd(54, 4))
 		printf("\t[uid %d, stat %o, mode %o] ",
-			stbuf.st_uid, stbuf.st_mode, mode);
-	if ((stbuf.st_uid == uid || stbuf.st_uid == 0 ||
+			st->st_uid, st->st_mode, mode);
+	if ((st->st_uid == uid || st->st_uid == 0 ||
 	     !bitset(SFF_MUSTOWN, flags)) &&
-	    (stbuf.st_mode & mode) == mode)
+	    (st->st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
 			printf("\tOK\n");
@@ -610,6 +661,81 @@ safefile(fn, uid, gid, uname, flags, mode)
 	if (tTd(54, 4))
 		printf("\tEACCES\n");
 	return EACCES;
+}
+/*
+**  SAFEFOPEN -- do a file open with extra checking
+**
+**	Parameters:
+**		fn -- the file name to open.
+**		omode -- the open-style mode flags.
+**		cmode -- the create-style mode flags.
+**		sff -- safefile flags.
+**
+**	Returns:
+**		Same as fopen.
+*/
+
+FILE *
+safefopen(fn, omode, cmode, sff)
+	char *fn;
+	int omode;
+	int cmode;
+	int sff;
+{
+	int rval;
+	FILE *fp;
+	int smode;
+	struct stat stb, sta;
+	extern char RealUserName[];
+
+	if (bitset(O_CREAT, omode))
+		sff |= SFF_CREAT;
+	smode = 0;
+	switch (omode & O_ACCMODE)
+	{
+	  case O_RDONLY:
+		smode = S_IREAD;
+		break;
+
+	  case O_WRONLY:
+		smode = S_IWRITE;
+		break;
+
+	  case O_RDWR:
+		smode = S_IREAD|S_IWRITE;
+		break;
+
+	  default:
+		smode = 0;
+		break;
+	}
+	rval = safefile(fn, RealUid, RealGid, RealUserName, sff, smode, &stb);
+	if (rval != 0)
+	{
+		errno = rval;
+		return NULL;
+	}
+	if (stb.st_mode == ST_MODE_NOFILE)
+		omode |= O_EXCL;
+
+	fp = dfopen(fn, omode, cmode);
+	if (fp == NULL)
+		return NULL;
+	if (bitset(O_EXCL, omode))
+		return fp;
+	if (fstat(fileno(fp), &sta) < 0 ||
+	    sta.st_nlink != stb.st_nlink ||
+	    sta.st_dev != stb.st_dev ||
+	    sta.st_ino != stb.st_ino ||
+	    sta.st_uid != stb.st_uid ||
+	    sta.st_gid != stb.st_gid)
+	{
+		syserr("554 cannot open: file %s changed after open", fn);
+		errno = EPERM;
+		fclose(fp);
+		return NULL;
+	}
+	return fp;
 }
 /*
 **  FIXCRLF -- fix <CR><LF> in line.

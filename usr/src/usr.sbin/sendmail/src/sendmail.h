@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.94 (Berkeley) %G%
+ *	@(#)sendmail.h	8.95 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.94		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.95		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -812,6 +812,8 @@ struct prival
 #define SFF_NOSLINK		0x0002	/* file cannot be a symbolic link */
 #define SFF_ROOTOK		0x0004	/* ok for root to own this file */
 #define SFF_NOPATHCHECK		0x0010	/* don't bother checking dir path */
+#define SFF_SETUIDOK		0x0020	/* setuid files are ok */
+#define SFF_CREAT		0x0040	/* ok to create file if necessary */
 
 
 /*
@@ -1076,6 +1078,7 @@ extern void		readaliases __P((MAP *, FILE *, bool, bool));
 extern void		finis __P(());
 extern void		clrevent __P((EVENT *));
 extern void		setsender __P((char *, ENVELOPE *, char **, bool));
+extern FILE		*safefopen __P((char *, int, int, int));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.137 (Berkeley) %G%
+ *	@(#)conf.h	8.138 (Berkeley) %G%
  */
 
 /*
@@ -1259,11 +1259,14 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 #if !defined(S_ISLNK) && defined(S_IFLNK)
 # define S_ISLNK(foo)	((foo & S_IFMT) == S_IFLNK)
 #endif
+#ifndef S_IWUSR
+# define S_IWUSR		0200
+#endif
 #ifndef S_IWGRP
-#define S_IWGRP		020
+# define S_IWGRP		0020
 #endif
 #ifndef S_IWOTH
-#define S_IWOTH		002
+# define S_IWOTH		0002
 #endif
 
 /*

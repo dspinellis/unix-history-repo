@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.69 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.70 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -406,7 +406,7 @@ recipient(a, sendq, aliaslevel, e)
 			usrerr("550 Address %s is unsafe for mailing to files",
 				a->q_alias->q_paddr);
 		}
-		else if (!writable(buf, getctladdr(a), SFF_ANYFILE))
+		else if (!writable(buf, getctladdr(a), SFF_CREAT))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias,
@@ -685,32 +685,9 @@ writable(filename, ctladdr, flags)
 	int bits;
 	register char *p;
 	char *uname;
-	struct stat stb;
-	extern char RealUserName[];
 
 	if (tTd(29, 5))
 		printf("writable(%s, %x)\n", filename, flags);
-
-#ifdef HASLSTAT
-	if ((bitset(SFF_NOSLINK, flags) ? lstat(filename, &stb)
-					: stat(filename, &stb)) < 0)
-#else
-	if (stat(filename, &stb) < 0)
-#endif
-	{
-		/* file does not exist -- see if directory is safe */
-		p = strrchr(filename, '/');
-		if (p == NULL)
-		{
-			errno = ENOTDIR;
-			return FALSE;
-		}
-		*p = '\0';
-		errno = safefile(filename, RealUid, RealGid, RealUserName,
-				 SFF_MUSTOWN, S_IWRITE|S_IEXEC);
-		*p = '/';
-		return errno == 0;
-	}
 
 #ifdef SUID_ROOT_FILES_OK
 	/* really ought to be passed down -- and not a good idea */
@@ -721,14 +698,6 @@ writable(filename, ctladdr, flags)
 	**  File does exist -- check that it is writable.
 	*/
 
-	if (bitset(0111, stb.st_mode))
-	{
-		if (tTd(29, 5))
-			printf("failed (mode %o: x bits)\n", stb.st_mode);
-		errno = EPERM;
-		return (FALSE);
-	}
-
 	if (ctladdr != NULL && geteuid() == 0)
 	{
 		euid = ctladdr->q_uid;
@@ -738,6 +707,8 @@ writable(filename, ctladdr, flags)
 #ifdef RUN_AS_REAL_UID
 	else
 	{
+		extern char RealUserName[];
+
 		euid = RealUid;
 		egid = RealGid;
 		uname = RealUserName;
@@ -761,23 +732,9 @@ writable(filename, ctladdr, flags)
 	if (egid == 0)
 		egid = DefGid;
 	if (geteuid() == 0)
-	{
-		if (bitset(S_ISUID, stb.st_mode) &&
-		    (stb.st_uid != 0 || bitset(SFF_ROOTOK, flags)))
-		{
-			euid = stb.st_uid;
-			uname = NULL;
-		}
-		if (bitset(S_ISGID, stb.st_mode) &&
-		    (stb.st_gid != 0 || bitset(SFF_ROOTOK, flags)))
-			egid = stb.st_gid;
-	}
+		flags |= SFF_SETUIDOK;
 
-	if (tTd(29, 5))
-		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",
-			euid, egid, stb.st_uid, stb.st_gid);
-
-	errno = safefile(filename, euid, egid, uname, flags, S_IWRITE);
+	errno = safefile(filename, euid, egid, uname, flags, S_IWRITE, NULL);
 	return errno == 0;
 }
 /*
@@ -818,10 +775,6 @@ writable(filename, ctladdr, flags)
 
 static jmp_buf	CtxIncludeTimeout;
 static void	includetimeout();
-
-#ifndef S_IWOTH
-# define S_IWOTH	(S_IWRITE >> 6)
-#endif
 
 int
 include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
@@ -931,7 +884,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		ev = NULL;
 
 	/* the input file must be marked safe */
-	rval = safefile(fname, uid, gid, uname, sfflags, S_IREAD);
+	rval = safefile(fname, uid, gid, uname, sfflags, S_IREAD, NULL);
 	if (rval != 0)
 	{
 		/* don't use this :include: file */
