@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.19	82/01/19	*/
+/*	uipc_socket2.c	4.20	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -318,7 +318,7 @@ sbappendaddr(sb, asa, m0)
 	}
 	if (len > sbspace(sb))
 		return (0);
-	m = m_get(0);
+	m = m_get(M_DONTWAIT);
 	if (m == 0)
 		return (0);
 	m->m_off = MMINOFF;
