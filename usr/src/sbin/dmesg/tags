@@ -1,0 +1,3 @@
+KREAD	dmesg.c	/^#define	KREAD(addr, var) \\$/
+Mdmesg	dmesg.c	/^main(argc, argv)$/
+usage	dmesg.c	/^usage()$/
