@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.52 (Berkeley) %G%
+.\"	@(#)contrib	5.53 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -149,6 +149,7 @@ l l.
 HCX device drivers	Harris Corporation
 Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
 	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
+ISO-9660 filesystem	Pace Willisson, Atsushi Murai
 .TE
 .TS
 l l l l.
