@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -126,9 +126,10 @@ main(argc, argv)
 		 * off the append/immutable bits -- if we fail, go ahead,
 		 * it might work.
 		 */
-		if (to_sb.st_flags & (UF_IMMUTABLE | UF_APPEND))
+#define	NOCHANGEBITS	(UF_IMMUTABLE | UF_APPEND | SF_IMMUTABLE | SF_APPEND)
+		if (to_sb.st_flags & NOCHANGEBITS)
 			(void)chflags(to_name,
-			    to_sb.st_flags & ~(UF_APPEND | UF_IMMUTABLE));
+			    to_sb.st_flags & ~(NOCHANGEBITS));
 		(void)unlink(to_name);
 	}
 	install(*argv, to_name, fset, iflags);
@@ -173,8 +174,9 @@ install(from_name, to_name, fset, flags)
 	 * off the append/immutable bits -- if we fail, go ahead,
 	 * it might work.
 	 */
-	if (stat(to_name, &to_sb) == 0 && to_sb.st_flags & (UF_APPEND | UF_IMMUTABLE))
-		(void)chflags(to_name, to_sb.st_flags & ~(UF_APPEND | UF_IMMUTABLE));
+	if (stat(to_name, &to_sb) == 0 &&
+	    to_sb.st_flags & (NOCHANGEBITS))
+		(void)chflags(to_name, to_sb.st_flags & ~(NOCHANGEBITS));
 	(void)unlink(to_name);
 
 	/* Create target. */
