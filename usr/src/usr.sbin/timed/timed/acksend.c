@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acksend.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)acksend.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -63,6 +63,12 @@ struct netinfo *net;
 		tout.tv_usec = USECFORACK;
 		answer  = readmsg(ack, name, &tout, net);
 		if (answer != NULL) {
+			if (answer->tsp_seq != sequence) {
+				if (trace)
+					fprintf(fd, "acksend: seq # %d != %d\n",
+					    answer->tsp_seq, sequence);
+				continue;
+			}
 			flag = RECEIVED;
 		} else {
 			flag = LOST;
