@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.50 1994/05/14 20:01:00 ache Exp $
+#	$Id: Makefile,v 1.51 1994/05/25 18:28:01 phk Exp $
 #
 
 SUBDIR=
@@ -67,7 +67,7 @@ CLEANDIR=
 CLEANDIR=	cleandir
 .endif
 
-# Where is the c-compier source.  Change this, and gnu/usr.bin/Makefile if you
+# Where is the c-compiler source.  Change this, and gnu/usr.bin/Makefile if you
 # want to use another cc (gcc-2.5.8 for instance)
 CCDIR=		${.CURDIR}/gnu/usr.bin/cc
 #CCDIR=		${.CURDIR}/gnu/usr.bin/cc25
