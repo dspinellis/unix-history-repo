@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)mkdep.sh	5.13 (Berkeley) %G%
+#	@(#)mkdep.sh	5.14 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
@@ -80,7 +80,5 @@ END {
 	print rec
 }' > $TMP
 
-# copy to preserve permissions
-cp $TMP $D
-rm -f $TMP
+mv $TMP $D
 exit 0
