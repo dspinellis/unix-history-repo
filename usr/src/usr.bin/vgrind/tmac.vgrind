@@ -40,14 +40,12 @@
 'ft 2
 'ds +K
 'ds -K
-'ss 12
 ..
 'de -C
 'nr cm 0
 'ft 1
 'ds +K \f3
 'ds -K \fP
-'ss 23
 ..
 '+C
 '-C
