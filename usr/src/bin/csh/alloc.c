@@ -6,7 +6,7 @@
 
 #ifndef lint
 /* From "@(#)malloc.c	5.5 (Berkeley) 2/25/86"; */
-static char *sccsid = "@(#)alloc.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)alloc.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -266,6 +266,7 @@ realloc(cp, nbytes)
 	union overhead *op;
   	char *res;
 	int was_alloced = 0;
+	static int findbucket();
 
   	if (cp == NULL)
   		return (malloc(nbytes));

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.16 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.17 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -42,7 +42,7 @@ bool	enterhist = 0;
 extern	gid_t getegid(), getgid();
 extern	uid_t geteuid(), getuid();
 
-static void srcunit();
+void pintr(), pchild(), srcunit();
 
 main(argc, argv)
 	int argc;
@@ -625,6 +625,7 @@ char	*jobargv[2] = { "jobs", 0 };
  * and finally go through the normal error mechanism, which
  * gets a chance to make the shell go away.
  */
+void
 pintr()
 {
 	pintr1(1);
