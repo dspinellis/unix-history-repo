@@ -31,44 +31,41 @@ tools:
 all:	${ALLEXE}
 	@echo done.
 
-prt3270:	prt3270.o ../general/globals.o ../ascii/ebctab.o \
-				../ascii/astosc.o ../ctlr/kbd.out
+prt3270:	prt3270.o ../general/globals.o ../apilib/asc_ebc.o \
+				../apilib/astosc.o ../ctlr/kbd.out
 	${CC} ${CFLAGS} -o prt3270 prt3270.o ../general/globals.o \
-					../ascii/ebctab.o ../ascii/astosc.o
+					../apilib/asc_ebc.o ../apilib/astosc.o
 
-mkastosc:	mkastosc.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
+mkastosc:	mkastosc.o dohits.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
 	$(CC) $(CFLAGS) -o mkastosc mkastosc.o dohits.o \
-			../ascii/asctab.o ../ctlr/ebc_disp.o
+			../apilib/asc_ebc.o ../apilib/ebc_disp.o
 
-mkastods:	mkastods.o ../ascii/asctab.o ../ctlr/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkastods mkastods.o ../ascii/asctab.o \
-						../ctlr/ebc_disp.o
+mkastods:	mkastods.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
+	$(CC) $(CFLAGS) -o mkastods mkastods.o ../apilib/asc_ebc.o \
+						../apilib/ebc_disp.o
 
-mkdstoas:	mkdstoas.o ../ascii/ebctab.o ../ctlr/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkdstoas mkdstoas.o ../ascii/ebctab.o \
-						../ctlr/ebc_disp.o
+mkdstoas:	mkdstoas.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
+	$(CC) $(CFLAGS) -o mkdstoas mkdstoas.o ../apilib/asc_ebc.o \
+						../apilib/ebc_disp.o
 
-mkhits:	mkhits.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkhits mkhits.o dohits.o ../ascii/asctab.o \
-						../ctlr/ebc_disp.o
+mkhits:	mkhits.o dohits.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
+	$(CC) $(CFLAGS) -o mkhits mkhits.o dohits.o ../apilib/asc_ebc.o \
+						../apilib/ebc_disp.o
 
-mkdctype:	mkdctype.o ../ctlr/ebc_disp.o ectype.o
-	$(CC) $(CFLAGS) -o mkdctype mkdctype.o ../ctlr/ebc_disp.o ectype.o
+mkdctype:	mkdctype.o ../apilib/ebc_disp.o ectype.o
+	$(CC) $(CFLAGS) -o mkdctype mkdctype.o ../apilib/ebc_disp.o ectype.o
 
-../ascii/astosc.o:
-	(cd ../ascii; make astosc.o)
+../apilib/astosc.o:
+	(cd ../apilib; make astosc.o)
 
-../ascii/ebctab.o:
-	(cd ../ascii; make ebctab.o)
+../apilib/asc_ebc.o:
+	(cd ../apilib; make asc_ebc.o)
 
 ../ctlr/kbd.out:
 	(cd ../ctlr; make kbd.out)
 
-../ctlr/ebc_disp.o:
-	(cd ../ctlr; make ebc_disp.o)
-
-../ascii/asctab.o:
-	(cd ../ascii; make asctab.o)
+../apilib/ebc_disp.o:
+	(cd ../apilib; make ebc_disp.o)
 
 ../general/globals.o:
 	(cd ../general; make globals.o)
@@ -88,6 +85,8 @@ action:
 
 clean:
 	-rm errs makefile.bak ${ALLO} ${ALLEXE}
+	sccs clean
+	-sccs get makefile
 
 lint:
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 \
@@ -115,14 +114,14 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-dohits.o: ../general/general.h ../ascii/ascebc.h ../ctlr/ebc_disp.h
+dohits.o: ../general/general.h ../apilib/asc_ebc.h ../apilib/ebc_disp.h
 dohits.o: ../ctlr/function.h dohits.h
 ectype.o: ectype.h
-mkastosc.o: ../general/general.h ../ascii/ascebc.h
-mkastosc.o: ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
-mkdctype.o: ../ctlr/ebc_disp.h ectype.h
-mkastods.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h
-mkdstoas.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h
-mkhits.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
-prt3270.o: ../general/general.h ../ascii/ascebc.h ../ctlr/hostctlr.h
-prt3270.o: ../ctlr/screen.h ../general/globals.h
+mkastods.o: ../apilib/asc_ebc.h ../apilib/ebc_disp.h
+mkastosc.o: ../general/general.h ../ctlr/function.h dohits.h
+mkdctype.o: ../apilib/ebc_disp.h ectype.h
+mkdstoas.o: ../apilib/asc_ebc.h ../apilib/ebc_disp.h
+mkhits.o: ../ctlr/function.h dohits.h
+prt3270.o: ../general/general.h ../apilib/asc_ebc.h ../ctlr/hostctlr.h
+prt3270.o: ../ctlr/screen.h ../ctlr/function.h ../apilib/astosc.h
+prt3270.o: ../general/globals.h ../ctlr/kbd.out

@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "apilib.h"
+#include <apilib/apilib.h>
+
 #include "tncomp.h"
 
 

@@ -5,8 +5,8 @@
 #include <string.h>
 #endif	/* defined(unix) */
 #include <ctype.h>
-#include "../ascii/ascebc.h"
-#include "../ctlr/ebc_disp.h"
+#include "../apilib/asc_ebc.h"
+#include "../apilib/ebc_disp.h"
 
 
 int
@@ -21,7 +21,7 @@ main()
 	if ((i%8) == 0) {
 	    printf("\n");
 	}
-	printf("\t0x%02x,", ebc_disp[ascebc[0][i]]);
+	printf("\t0x%02x,", ebc_disp[asc_ebc[i]]);
     }
     for (i = sizeof disp_ebc; i < 256; i++) {
 	if ((i%8) == 0) {
