@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 # Files are:
 #	/etc/remote		remote host description file
@@ -27,10 +27,11 @@
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
+#	CONNECT			enable ~C command (connect pgm to remote)
 
 PROG=	tip
 CFLAGS+=-I${.CURDIR} -DV831 -DVENTEL -DHAYES -DCOURIER -DDEFBR=1200 \
-	-DDEFFS=BUFSIZ -DACULOG -DPRISTINE
+	-DDEFFS=BUFSIZ -DACULOG -DPRISTINE -DCONNECT
 .PATH:	${.CURDIR}/aculib
 BINOWN=	uucp
 BINGRP=	dialer
