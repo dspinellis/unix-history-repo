@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.4	82/04/19	*/
+/*	lfs_alloc.c	2.5	82/05/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,8 +51,11 @@ alloc(ip, bpref, size)
 	int cg;
 	
 	fs = ip->i_fs;
-	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
+	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
+		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
+		    ip->i_dev, fs->fs_bsize, size, fs->fs_fsmnt);
 		panic("alloc: bad size");
+	}
 	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
 		goto nospace;
 	if (u.u_uid != 0 &&
@@ -99,14 +102,20 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	
 	fs = ip->i_fs;
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
-	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0)
+	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0) {
+		printf("dev = 0x%x, bsize = %d, osize = %d, nsize = %d, fs = %s\n",
+		    ip->i_dev, fs->fs_bsize, osize, nsize, fs->fs_fsmnt);
 		panic("realloccg: bad size");
+	}
 	if (u.u_uid != 0 &&
 	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
 	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
-	if (bprev == 0)
+	if (bprev == 0) {
+		printf("dev = 0x%x, bsize = %d, bprev = %d, fs = %s\n",
+		    ip->i_dev, fs->fs_bsize, bprev, fs->fs_fsmnt);
 		panic("realloccg: bad bprev");
+	}
 	cg = dtog(fs, bprev);
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
@@ -185,8 +194,11 @@ ialloc(pip, ipref, mode)
 		ifree(ip, ino, 0);
 		return (NULL);
 	}
-	if (ip->i_mode)
+	if (ip->i_mode) {
+		printf("mode = 0%o, inum = %d, fs = %s\n",
+		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
 		panic("ialloc: dup alloc");
+	}
 	return (ip);
 noinodes:
 	fserr(fs, "out of inodes");
@@ -530,8 +542,11 @@ alloccgblk(fs, cgp, bpref)
 		 */
 		pos = cylno % fs->fs_cpc;
 		bno = (cylno - pos) * fs->fs_spc / NSPB(fs);
-		if (fs->fs_postbl[pos][i] == -1)
+		if (fs->fs_postbl[pos][i] == -1) {
+			printf("pos = %d, i = %d, fs = %s\n",
+			    pos, i, fs->fs_fsmnt);
 			panic("alloccgblk: cyl groups corrupted");
+		}
 		for (i = fs->fs_postbl[pos][i];; ) {
 			if (isblock(fs, cgp->cg_free, bno + i)) {
 				bno = (bno + i) * fs->fs_frag;
@@ -542,6 +557,7 @@ alloccgblk(fs, cgp, bpref)
 				break;
 			i += delta;
 		}
+		printf("pos = %d, i = %d, fs = %s\n", pos, i, fs->fs_fsmnt);
 		panic("alloccgblk: can't find blk in cyl");
 	}
 norot:
@@ -646,8 +662,11 @@ fre(ip, bno, size)
 	register int i;
 
 	fs = ip->i_fs;
-	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
+	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
+		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
+		    ip->i_dev, fs->fs_bsize, size, fs->fs_fsmnt);
 		panic("free: bad size");
+	}
 	cg = dtog(fs, bno);
 	if (badblock(fs, bno)) {
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
@@ -662,7 +681,8 @@ fre(ip, bno, size)
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
 		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag)) {
-			printf("free block %d, fs %s\n", bno, fs->fs_fsmnt);
+			printf("dev = 0x%x, block = %d, fs = %s\n",
+			    ip->i_dev, bno, fs->fs_fsmnt);
 			panic("free: freeing free block");
 		}
 		setblock(fs, cgp->cg_free, bno/fs->fs_frag);
@@ -684,8 +704,11 @@ fre(ip, bno, size)
 		 */
 		frags = numfrags(fs, size);
 		for (i = 0; i < frags; i++) {
-			if (isset(cgp->cg_free, bno + i))
+			if (isset(cgp->cg_free, bno + i)) {
+				printf("dev = 0x%x, block = %d, fs = %s\n",
+				    ip->i_dev, bno + i, fs->fs_fsmnt);
 				panic("free: freeing free frag");
+			}
 			setbit(cgp->cg_free, bno + i);
 		}
 		cgp->cg_cs.cs_nffree += i;
@@ -731,8 +754,11 @@ ifree(ip, ino, mode)
 	int cg;
 
 	fs = ip->i_fs;
-	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
+	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg) {
+		printf("dev = 0x%x, ino = %d, fs = %s\n",
+		    ip->i_dev, ino, fs->fs_fsmnt);
 		panic("ifree: range");
+	}
 	cg = itog(fs, ino);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
@@ -741,8 +767,11 @@ ifree(ip, ino, mode)
 		return;
 	}
 	ino %= fs->fs_ipg;
-	if (isclr(cgp->cg_iused, ino))
+	if (isclr(cgp->cg_iused, ino)) {
+		printf("dev = 0x%x, ino = %d, fs = %s\n",
+		    ip->i_dev, ino, fs->fs_fsmnt);
 		panic("ifree: freeing free inode");
+	}
 	clrbit(cgp->cg_iused, ino);
 	cgp->cg_cs.cs_nifree++;
 	fs->fs_cstotal.cs_nifree++;
@@ -790,6 +819,8 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 			1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
 		if (loc == 0) {
+			printf("start = %d, len = %d, fs = %s\n",
+			    start, len, fs->fs_fsmnt);
 			panic("alloccg: map corrupted");
 			return (-1);
 		}
@@ -812,6 +843,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
 			subfield <<= 1;
 		}
 	}
+	printf("bno = %d, fs = %s\n", bno, fs->fs_fsmnt);
 	panic("alloccg: block not in map");
 	return (-1);
 }
@@ -886,10 +918,13 @@ getfs(dev)
 		if (mp->m_bufp == NULL || mp->m_dev != dev)
 			continue;
 		fs = mp->m_bufp->b_un.b_fs;
-		if (fs->fs_magic != FS_MAGIC)
+		if (fs->fs_magic != FS_MAGIC) {
+			printf("dev = 0x%x, fs = %s\n", dev, fs->fs_fsmnt);
 			panic("getfs: bad magic");
+		}
 		return (fs);
 	}
+	printf("dev = 0x%x\n", dev);
 	panic("getfs: no fs");
 	return (NULL);
 }
@@ -962,11 +997,15 @@ update(flag)
 		fs = mp->m_bufp->b_un.b_fs;
 		if (fs->fs_fmod == 0)
 			continue;
-		if (fs->fs_ronly != 0)
+		if (fs->fs_ronly != 0) {
+			printf("fs = %s\n", fs->fs_fsmnt);
 			panic("update: rofs mod");
+		}
 		bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
-		if (bp->b_un.b_fs != fs || fs->fs_magic != FS_MAGIC)
+		if (bp->b_un.b_fs != fs || fs->fs_magic != FS_MAGIC) {
+			printf("fs = %s\n", fs->fs_fsmnt);
 			panic("update: bad b_fs");
+		}
 		fs->fs_fmod = 0;
 		fs->fs_time = time;
 		bwrite(bp);
