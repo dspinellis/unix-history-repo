@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.21 (Berkeley) %G%
+ *	@(#)mount.h	7.22 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -114,6 +114,7 @@ struct mount {
 /*
  * Operations supported on mounted file system.
  */
+#ifdef KERNEL
 #ifdef __STDC__
 struct nameidata;
 #endif
@@ -148,6 +149,7 @@ struct vfsops {
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->mnt_op->vfs_sync)(MP, WAITFOR)
 #define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, VPP)
 #define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
+#endif /* KERNEL */
 
 /*
  * Flags for various system call interfaces.
