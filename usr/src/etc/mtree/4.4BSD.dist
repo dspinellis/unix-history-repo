@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.4 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.5 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1425,6 +1425,12 @@ cat8
 ..
 
 # ./usr/share/man
+..
+
+
+# ./usr/share/me
+me
+# ./usr/share/me
 ..
 
 
