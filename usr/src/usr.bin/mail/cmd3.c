@@ -202,10 +202,10 @@ respond(msgvec)
 	mp = &message[msgvec[0] - 1];
 	dot = mp;
 	rcv = NOSTR;
-	cp = nameof(mp, 1);
+	cp = skin(nameof(mp, 1));
 	if (cp != NOSTR)
 	    rcv = cp;
-	cp = hfield("from", mp);
+	cp = skin(hfield("from", mp));
 	if (cp != NOSTR)
 	    rcv = cp;
 	replyto = skin(hfield("reply-to", mp));
@@ -213,7 +213,7 @@ respond(msgvec)
 	if (replyto != NOSTR)
 		strcpy(buf, replyto);
 	else {
-		cp = hfield("to", mp);
+		cp = skin(hfield("to", mp));
 		if (cp != NOSTR)
 			strcpy(buf, cp);
 	}
@@ -229,10 +229,10 @@ respond(msgvec)
 		for (ap = altnames; *ap; ap++)
 			np = delname(np, *ap, icequal);
 	head.h_seq = 1;
-	cp = detract(np, GCOMMA);		/* do it with commas */
+	cp = detract(np, 0);
 	if (cp != NOSTR && replyto == NOSTR) {
 		strcpy(buf, cp);
-		strcat(buf, ", ");
+		strcat(buf, " ");
 		strcat(buf, rcv);
 	}
 	else {
@@ -673,10 +673,10 @@ Respond(msgvec)
 	for (s = 0, ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
 		dot = mp;
-		if ((cp = hfield("from", mp)) != NOSTR)
+		if ((cp = skin(hfield("from", mp))) != NOSTR)
 		    s+= strlen(cp) + 1;
 		else
-		    s += strlen(nameof(mp, 2)) + 1;
+		    s += strlen(skin(nameof(mp, 2))) + 1;
 	}
 	if (s == 0)
 		return(0);
@@ -684,8 +684,8 @@ Respond(msgvec)
 	head.h_to = cp;
 	for (ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
-		if ((cp2 = hfield("from", mp)) == NOSTR)
-		    cp2 = nameof(mp, 2);
+		if ((cp2 = skin(hfield("from", mp))) == NOSTR)
+		    cp2 = skin(nameof(mp, 2));
 		cp = copy(cp2, cp);
 		*cp++ = ' ';
 	}
