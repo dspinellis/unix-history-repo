@@ -1,65 +1,98 @@
-/*
- * Copyright (c) 1987, 1989 Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/stdc.h>
+#include <string.h>
 
 /*
- * bcopy -- copy memory block, handling overlap of source and destination
- *	(vax movc3 instruction)
+ * sizeof(word) MUST BE A POWER OF TWO
+ * SO THAT wmask BELOW IS ALL ONES
  */
+typedef	int word;		/* "word" used for optimal copy speed */
 
-typedef int word;		/* size of "word" used for optimal copy speed */
+#define	wsize	sizeof(word)
+#define	wmask	(wsize - 1)
 
-bcopy(src, dst, length)
-	register char *src, *dst;
-	register int length;
+/*
+ * Copy a block of memory, handling overlap.
+ * This is the routine that actually implements
+ * (the portable versions of) bcopy, memcpy, and memmove.
+ */
+void
+bcopy(src0, dst0, length)
+	char *dst0;
+	const char *src0;
+	register size_t length;
 {
-	if (length && src != dst)
-		if ((u_int)dst < (u_int)src)
-			if (((int)src | (int)dst | length) & (sizeof(word) - 1))
-				do	/* copy by bytes */
-					*dst++ = *src++;
-				while (--length);
-			else {
-				length /= sizeof(word);
-				do {	/* copy by words */
-					*(word *)dst = *(word *)src;
-					src += sizeof(word);
-					dst += sizeof(word);
-				} while (--length);
-			}
-		else {			/* copy backwards */
-			src += length;
-			dst += length;
-			if (((int)src | (int)dst | length) & (sizeof(word) - 1))
-				do	/* copy by bytes */
-					*--dst = *--src;
-				while (--length);
-			else {
-				length /= sizeof(word);
-				do {	/* copy by words */
-					src -= sizeof(word);
-					dst -= sizeof(word);
-					*(word *)dst = *(word *)src;
-				} while (--length);
-			}
+	register char *dst = dst0;
+	register const char *src = src0;
+	register size_t t;
+
+	if (length == 0 || dst == src)		/* nothing to do */
+		return;
+
+	/*
+	 * Macros: loop-t-times; and loop-t-times, t>0
+	 */
+#define	TLOOP(s) if (t) TLOOP1(s)
+#define	TLOOP1(s) do { s; } while (--t)
+
+	if ((unsigned long)dst < (unsigned long)src) {
+		/*
+		 * Copy forward.
+		 */
+		t = (int)src;	/* only need low bits */
+		if ((t | (int)dst) & wmask) {
+			/*
+			 * Try to align operands.  This cannot be done
+			 * unless the low bits match.
+			 */
+			if ((t ^ (int)dst) & wmask || length < wsize)
+				t = length;
+			else
+				t = wsize - (t & wmask);
+			length -= t;
+			TLOOP1(*dst++ = *src++);
 		}
+		/*
+		 * Copy whole words, then mop up any trailing bytes.
+		 */
+		t = length / wsize;
+		TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
+		t = length & wmask;
+		TLOOP(*dst++ = *src++);
+	} else {
+		/*
+		 * Copy backwards.  Otherwise essentially the same.
+		 * Alignment works as before, except that it takes
+		 * (t&wmask) bytes to align, not wsize-(t&wmask).
+		 */
+		src += length;
+		dst += length;
+		t = (int)src;
+		if ((t | (int)dst) & wmask) {
+			if ((t ^ (int)dst) & wmask || length <= wsize)
+				t = length;
+			else
+				t &= wmask;
+			length -= t;
+			TLOOP1(*--dst = *--src);
+		}
+		t = length / wsize;
+		TLOOP(src -= wsize; dst -= wsize; *(word *)dst = *(word *)src);
+		t = length & wmask;
+		TLOOP(*--dst = *--src);
+	}
+	return;
 }
