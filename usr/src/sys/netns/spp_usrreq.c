@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1984, 1985, 1986 Regents of the University of California.
+ * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	7.2 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,6 +58,7 @@ spp_input(m, nsp, ifp)
 	int dropsocket = 0;
 
 
+	sppstat.spps_rcvtotal++;
 	if (nsp == 0) {
 		panic("No nspcb in spp_input\n");
 		return;
@@ -68,7 +69,7 @@ spp_input(m, nsp, ifp)
 
 	if (m->m_len < sizeof(*si)) {
 		if ((m = m_pullup(m, sizeof(*si))) == 0) {
-			spp_istat.hdrops++;
+			sppstat.spps_rcvshort++;
 			return;
 		}
 		si = mtod(m, struct spidp *);
@@ -83,9 +84,10 @@ spp_input(m, nsp, ifp)
 		spp_savesi = *si;
 	}
 	if (so->so_options & SO_ACCEPTCONN) {
+		struct sppcb *ocb = cb;
+		struct socket *oso = so;
 		so = sonewconn(so);
 		if (so == 0) {
-			spp_istat.nonucn++;
 			goto drop;
 		}
 		/*
@@ -103,6 +105,12 @@ spp_input(m, nsp, ifp)
 		nsp = (struct nspcb *)so->so_pcb;
 		nsp->nsp_laddr = si->si_dna;
 		cb = nstosppcb(nsp);
+		cb->s_mtu = ocb->s_mtu;		/* preserve sockopts */
+		cb->s_flags = ocb->s_flags;	/* preserve sockopts */
+		if (so->so_snd.sb_hiwat != oso->so_snd.sb_hiwat) /*XXX*/
+			sbreserve(&so->so_snd, oso->so_snd.sb_hiwat);
+		if (so->so_rcv.sb_hiwat != oso->so_rcv.sb_hiwat) /*XXX*/
+			sbreserve(&so->so_rcv, oso->so_rcv.sb_hiwat);
 		cb->s_state = TCPS_LISTEN;
 	}
 
@@ -154,8 +162,9 @@ spp_input(m, nsp, ifp)
 #define THREEWAYSHAKE
 #ifdef THREEWAYSHAKE
 		cb->s_state = TCPS_SYN_RECEIVED;
-		cb->s_force = 1 + TCPT_REXMT;
-		cb->s_timer[TCPT_REXMT] = 2 * TCPTV_MIN;
+		cb->s_force = 1 + TCPT_KEEP;
+		sppstat.spps_accepts++;
+		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
 		}
 		break;
 	/*
@@ -164,7 +173,7 @@ spp_input(m, nsp, ifp)
 	 * It is probably logically unnecessary in this
 	 * implementation.
 	 */
-	 case TCPS_SYN_RECEIVED:
+	 case TCPS_SYN_RECEIVED: {
 		if (si->si_did!=cb->s_sid) {
 			spp_istat.wrncon++;
 			goto drop;
@@ -175,6 +184,8 @@ spp_input(m, nsp, ifp)
 		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
 		soisconnected(so);
 		cb->s_state = TCPS_ESTABLISHED;
+		sppstat.spps_accepts++;
+		}
 		break;
 
 	/*
@@ -191,14 +202,24 @@ spp_input(m, nsp, ifp)
 			spp_istat.notme++;
 			goto drop;
 		}
+		sppstat.spps_connects++;
 		cb->s_did = si->si_sid;
 		cb->s_rack = si->si_ack;
 		cb->s_ralo = si->si_alo;
 		cb->s_dport = nsp->nsp_fport =  si->si_sport;
 		cb->s_timer[TCPT_REXMT] = 0;
-		cb->s_flags |= SF_AK;
+		cb->s_flags |= SF_ACKNOW;
 		soisconnected(so);
 		cb->s_state = TCPS_ESTABLISHED;
+		/* Use roundtrip time of connection request for initial rtt */
+		if (cb->s_rtt) {
+			cb->s_srtt = cb->s_rtt << 3;
+			cb->s_rttvar = cb->s_rtt << 1;
+			TCPT_RANGESET(cb->s_rxtcur,
+			    ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1,
+			    TCPTV_MIN, TCPTV_REXMTMAX);
+			    cb->s_rtt = 0;
+		}
 	}
 	if (so->so_options & SO_DEBUG || traceallspps)
 		spp_trace(SA_INPUT, (u_char)ostate, cb, &spp_savesi, 0);
@@ -209,7 +230,9 @@ spp_input(m, nsp, ifp)
 	if (spp_reass(cb, si)) {
 		m_freem(m);
 	}
-	(void) spp_output(cb, (struct mbuf *)0);
+	if (cb->s_force || (cb->s_flags & (SF_ACKNOW|SF_WIN|SF_RXT)))
+		(void) spp_output(cb, (struct mbuf *)0);
+	cb->s_flags &= ~(SF_WIN|SF_RXT);
 	return;
 
 dropwithreset:
@@ -225,10 +248,13 @@ dropwithreset:
 
 drop:
 bad:
-	if (cb == 0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
+	if (cb == 0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG ||
+            traceallspps)
 		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	m_freem(m);
 }
+
+int spprexmtthresh = 3;
 
 /*
  * This is structurally similar to the tcp reassembly routine
@@ -241,11 +267,10 @@ register struct spidp *si;
 {
 	register struct spidp_q *q;
 	register struct mbuf *m;
-	struct socket *so = cb->s_nspcb->nsp_socket;
-	struct sockbuf *sb = & (so->so_rcv);
+	register struct socket *so = cb->s_nspcb->nsp_socket;
 	char packetp = cb->s_flags & SF_HI;
+	int incr;
 	char wakeup = 0;
-
 
 	if (si == SI(0))
 		goto present;
@@ -253,82 +278,192 @@ register struct spidp *si;
 	 * Update our news from them.
 	 */
 	if (si->si_cc & SP_SA)
-		cb->s_flags |= (spp_use_delack ? SF_DELACK : SF_AK);
-	if (SSEQ_GT(si->si_ack, cb->s_rack)) {
-		cb->s_rack = si->si_ack;
-		/*
-		 * If there are other packets outstanding,
-		 * restart the timer for them.
-		 */
-		if (SSEQ_GEQ(cb->s_snt, si->si_ack)) {
-			TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
-				tcp_beta * cb->s_srtt, TCPTV_MIN,
-				TCPTV_MAX);
-			cb->s_rxtshift = 0;
-		} else
-			cb->s_timer[TCPT_REXMT] = 0;
-		/*
-		 * If transmit timer is running and timed sequence
-		 * number was acked, update smoothed round trip time.
-		 */
-		if (cb->s_rtt && SSEQ_GT(si->si_ack, cb->s_rtseq)) {
-			if (cb->s_srtt == 0)
-				cb->s_srtt = cb->s_rtt;
-			else
-				cb->s_srtt =
-				    tcp_alpha * cb->s_srtt +
-				    (1 - tcp_alpha) * cb->s_rtt;
-			cb->s_rtt = 0;
-		}
-	}
-	if (SSEQ_GT(si->si_alo, cb->s_ralo)) {
-		cb->s_ralo = si->si_alo;
-		cb->s_timer[TCPT_PERSIST] = 0;
-	}
-	/*
-	 * If this is a system packet, we don't need to
-	 * queue it up, and won't update acknowledge #
-	 */
-	if (si->si_cc & SP_SP) {
-		m_freem(dtom(si));
-		return (0);
-	}
+		cb->s_flags |= (spp_use_delack ? SF_DELACK : SF_ACKNOW);
+	if (SSEQ_GT(si->si_alo, cb->s_ralo))
+		cb->s_flags |= SF_WIN;
+	if (SSEQ_LEQ(si->si_ack, cb->s_rack)) {
+		if ((si->si_cc & SP_SP) && cb->s_rack != cb->s_smax) {
+			sppstat.spps_rcvdupack++;
+			/*
+			 * If this is a completely duplicate ack
+			 * and other conditions hold, we assume
+			 * a packet has been dropped and retransmit
+			 * it exactly as in tcp_input().
+			 */
+			if (si->si_ack != cb->s_rack ||
+			    si->si_alo != cb->s_ralo)
+				cb->s_dupacks = 0;
+			else if (++cb->s_dupacks == spprexmtthresh) {
+				u_short onxt = cb->s_snxt;
+				int cwnd = cb->s_cwnd;
 
+				cb->s_snxt = si->si_ack;
+				cb->s_cwnd = CUNIT;
+				cb->s_force = 1 + TCPT_REXMT;
+				(void) spp_output(cb, 0);
+				cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+				cb->s_rtt = 0;
+				if (cwnd >= 4 * CUNIT)
+					cb->s_cwnd = cwnd / 2;
+				if (SSEQ_GT(onxt, cb->s_snxt))
+					cb->s_snxt = onxt;
+				return (1);
+			}
+		} else
+			cb->s_dupacks = 0;
+		goto update_window;
+	}
+	cb->s_dupacks = 0;
 	/*
-	 * If this packet number has a sequence number less
-	 * than that of the first packet not yet seen coming
-	 * from them, this must be a duplicate, so drop.
+	 * If our correspondent acknowledges data we haven't sent
+	 * TCP would drop the packet after acking.  We'll be a little
+	 * more permissive
 	 */
-	if (SSEQ_LT(si->si_seq, cb->s_ack)) {
-		spp_istat.bdreas++;
-		if (si->si_seq == cb->s_ack-1)
-			spp_istat.lstdup++;
-		return (1);
+	if (SSEQ_GT(si->si_ack, (cb->s_smax + 1))) {
+		sppstat.spps_rcvacktoomuch++;
+		si->si_ack = cb->s_smax + 1;
+	}
+	sppstat.spps_rcvackpack++;
+	/*
+	 * If transmit timer is running and timed sequence
+	 * number was acked, update smoothed round trip time.
+	 * See discussion of algorithm in tcp_input.c
+	 */
+	if (cb->s_rtt && SSEQ_GT(si->si_ack, cb->s_rtseq)) {
+		sppstat.spps_rttupdated++;
+		if (cb->s_srtt != 0) {
+			register short delta;
+			delta = cb->s_rtt - (cb->s_srtt >> 3);
+			if ((cb->s_srtt += delta) <= 0)
+				cb->s_srtt = 1;
+			if (delta < 0)
+				delta = -delta;
+			delta -= (cb->s_rttvar >> 2);
+			if ((cb->s_rttvar += delta) <= 0)
+				cb->s_rttvar = 1;
+		} else {
+			/*
+			 * No rtt measurement yet
+			 */
+			cb->s_srtt = cb->s_rtt << 3;
+			cb->s_rttvar = cb->s_rtt << 1;
+		}
+		cb->s_rtt = 0;
+		cb->s_rxtshift = 0;
+		TCPT_RANGESET(cb->s_rxtcur,
+			((cb->s_srtt >> 2) + cb->s_rttvar) >> 1,
+			TCPTV_MIN, TCPTV_REXMTMAX);
+	}
+	/*
+	 * If all outstanding data is acked, stop retransmit
+	 * timer and remember to restart (more output or persist).
+	 * If there is more data to be acked, restart retransmit
+	 * timer, using current (possibly backed-off) value;
+	 */
+	if (si->si_ack == cb->s_smax + 1) {
+		cb->s_timer[TCPT_REXMT] = 0;
+		cb->s_flags |= SF_RXT;
+	} else if (cb->s_timer[TCPT_PERSIST] == 0)
+		cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+	/*
+	 * When new data is acked, open the congestion window.
+	 * If the window gives us less than ssthresh packets
+	 * in flight, open exponentially (maxseg at a time).
+	 * Otherwise open linearly (maxseg^2 / cwnd at a time).
+	 */
+	incr = CUNIT;
+	if (cb->s_cwnd > cb->s_ssthresh)
+		incr = MAX(incr * incr / cb->s_cwnd, 1);
+	cb->s_cwnd = MIN(cb->s_cwnd + incr, cb->s_cwmx);
+	/*
+	 * Trim Acked data from output queue.
+	 */
+	for (m = so->so_snd.sb_mb; m; m = m->m_act) {
+		if (SSEQ_LT((mtod(m, struct spidp *))->si_seq, si->si_ack))
+			sbdroprecord(&so->so_snd);
+		else
+			break;
+	}
+	if ((so->so_snd.sb_flags & SB_WAIT) || so->so_snd.sb_sel)
+		 sowwakeup(so);
+	cb->s_rack = si->si_ack;
+update_window:
+	if (SSEQ_LT(cb->s_snxt, cb->s_rack))
+		cb->s_snxt = cb->s_rack;
+	if (SSEQ_LT(cb->s_swl1, si->si_seq) || cb->s_swl1 == si->si_seq &&
+	    (SSEQ_LT(cb->s_swl2, si->si_ack) ||
+	     cb->s_swl2 == si->si_ack && SSEQ_LT(cb->s_ralo, si->si_alo))) {
+		/* keep track of pure window updates */
+		if ((si->si_cc & SP_SP) && cb->s_swl2 == si->si_ack
+		    && SSEQ_LT(cb->s_ralo, si->si_alo)) {
+			sppstat.spps_rcvwinupd++;
+			sppstat.spps_rcvdupack--;
+		}
+		cb->s_ralo = si->si_alo;
+		cb->s_swl1 = si->si_seq;
+		cb->s_swl2 = si->si_ack;
+		cb->s_swnd = (1 + si->si_alo - si->si_ack);
+		if (cb->s_swnd > cb->s_smxw)
+			cb->s_smxw = cb->s_swnd;
+		cb->s_flags |= SF_WIN;
 	}
 	/*
 	 * If this packet number is higher than that which
 	 * we have allocated refuse it, unless urgent
 	 */
 	if (SSEQ_GT(si->si_seq, cb->s_alo)) {
+		if (si->si_cc & SP_SP) {
+			sppstat.spps_rcvwinprobe++;
+			return (1);
+		} else
+			sppstat.spps_rcvpackafterwin++;
 		if (si->si_cc & SP_OB) {
 			if (SSEQ_GT(si->si_seq, cb->s_alo + 60)) {
 				ns_error(dtom(si), NS_ERR_FULLUP, 0);
 				return (0);
 			} /* else queue this packet; */
 		} else {
+			/*register struct socket *so = cb->s_nspcb->nsp_socket;
+			if (so->so_state && SS_NOFDREF) {
+				ns_error(dtom(si), NS_ERR_NOSOCK, 0);
+				(void)spp_close(cb);
+			} else
+				       would crash system*/
 			spp_istat.notyet++;
-			return (1);
+			ns_error(dtom(si), NS_ERR_FULLUP, 0);
+			return (0);
 		}
 	}
-
+	/*
+	 * If this is a system packet, we don't need to
+	 * queue it up, and won't update acknowledge #
+	 */
+	if (si->si_cc & SP_SP) {
+		return (1);
+	}
+	/*
+	 * We have already seen this packet, so drop.
+	 */
+	if (SSEQ_LT(si->si_seq, cb->s_ack)) {
+		spp_istat.bdreas++;
+		sppstat.spps_rcvduppack++;
+		if (si->si_seq == cb->s_ack - 1)
+			spp_istat.lstdup++;
+		return (1);
+	}
 	/*
 	 * Loop through all packets queued up to insert in
 	 * appropriate sequence.
 	 */
-
 	for (q = cb->s_q.si_next; q!=&cb->s_q; q = q->si_next) {
-	    if (si->si_seq == SI(q)->si_seq) return (1); /*duplicate */
-	    if (SSEQ_LT(si->si_seq, SI(q)->si_seq)) break;
+		if (si->si_seq == SI(q)->si_seq) {
+			sppstat.spps_rcvduppack++;
+			return (1);
+		}
+		if (SSEQ_LT(si->si_seq, SI(q)->si_seq)) {
+			sppstat.spps_rcvoopack++;
+			break;
+		}
 	}
 	insque(si, q->si_prev);
 	/*
@@ -352,21 +487,22 @@ present:
 			m = dtom(q);
 			if (SI(q)->si_cc & SP_OB) {
 				cb->s_oobflags &= ~SF_IOOB;
-				if (sb->sb_cc)
-					so->so_oobmark = sb->sb_cc;
+				if (so->so_rcv.sb_cc)
+					so->so_oobmark = so->so_rcv.sb_cc;
 				else
 					so->so_state |= SS_RCVATMARK;
 			}
 			q = q->si_prev;
 			remque(q->si_next);
 			wakeup = 1;
+			sppstat.spps_rcvpack++;
 			if (packetp) {
-				sbappendrecord(sb, m);
+				sbappendrecord(&so->so_rcv, m);
 			} else {
 				cb->s_rhdr = *mtod(m, struct sphdr *);
 				m->m_off += SPINC;
 				m->m_len -= SPINC;
-				sbappend(sb, m);
+				sbappend(&so->so_rcv, m);
 			}
 		  } else
 			break;
@@ -381,7 +517,7 @@ spp_ctlinput(cmd, arg)
 {
 	struct ns_addr *na;
 	extern u_char nsctlerrmap[];
-	extern spp_abort();
+	extern spp_abort(), spp_quench();
 	extern struct nspcb *idp_drop();
 	struct ns_errp *errp;
 	struct nspcb *nsp;
@@ -395,8 +531,7 @@ spp_ctlinput(cmd, arg)
 	switch (cmd) {
 
 	case PRC_ROUTEDEAD:
-	case PRC_QUENCH:
-		break;
+		return;
 
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
@@ -430,7 +565,23 @@ spp_ctlinput(cmd, arg)
 			else
 				(void) idp_drop(nsp, (int)nsctlerrmap[cmd]);
 		}
+		break;
+
+	case NS_ERR_FULLUP:
+		ns_pcbnotify(na, 0, spp_quench, (long) 0);
 	}
+}
+/*
+ * When a source quench is received, close congestion window
+ * to one packet.  We will gradually open it again as we proceed.
+ */
+spp_quench(nsp)
+	struct nspcb *nsp;
+{
+	struct sppcb *cb = nstosppcb(nsp);
+
+	if (cb)
+		cb->s_cwnd = CUNIT;
 }
 
 #ifdef notdef
@@ -482,8 +633,6 @@ register struct nspcb *nsp;
 }
 #endif
 
-int spp_output_cnt = 0;
-
 spp_output(cb, m0)
 	register struct sppcb *cb;
 	struct mbuf *m0;
@@ -491,9 +640,11 @@ spp_output(cb, m0)
 	struct socket *so = cb->s_nspcb->nsp_socket;
 	register struct mbuf *m;
 	register struct spidp *si = (struct spidp *) 0;
-	register struct sockbuf *sb = &(so->so_snd);
-	register int len = 0;
-	int error = 0;
+	register struct sockbuf *sb = &so->so_snd;
+	int len = 0, win, rcv_win;
+	short span, off;
+	u_short alo, oalo;
+	int error = 0, idle, sendalot;
 	u_short lookfor = 0;
 	struct mbuf *mprev;
 	extern int idpcksum;
@@ -572,7 +723,8 @@ spp_output(cb, m0)
 		m->m_len = sizeof (struct spidp);
 		m->m_next = m0;
 		si = mtod(m, struct spidp *);
-		*si = cb->s_shdr;
+		si->si_i = *cb->s_idp;
+		si->si_s = cb->s_shdr;
 		if ((cb->s_flags & SF_PI) && (cb->s_flags & SF_HO)) {
 			register struct sphdr *sh;
 			if (m0->m_len < sizeof (*sh)) {
@@ -612,149 +764,235 @@ spp_output(cb, m0)
 		sbappendrecord(sb, m);
 		cb->s_seq++;
 	}
+	idle = (cb->s_smax == (cb->s_rack - 1));
+again:
+	sendalot = 0;
+	off = cb->s_snxt - cb->s_rack;
+	win = MIN(cb->s_swnd, (cb->s_cwnd/CUNIT));
+
 	/*
-	 * update window
+	 * If in persist timeout with window of 0, send a probe.
+	 * Otherwise, if window is small but nonzero
+	 * and timer expired, send what we can and go into
+	 * transmit state.
 	 */
-	{
-		register struct sockbuf *sb2 = &so->so_rcv;
-		int credit = ((((int)sb2->sb_mbmax) - (int)sb2->sb_mbcnt) /
-						((short)cb->s_mtu));
-		int alo = cb->s_ack + (credit > 0 ? credit : 0) - 1;
-
-		if (cb->s_alo < alo) {
-			/* If the amount we are raising the window
-			   is more than his remaining headroom, tell
-			   him about it.  In particular, if he is at
-			   his limit, any amount at all will do! */
-			u_short raise = alo - cb->s_alo;
-			u_short headroom = 1 + cb->s_alo - cb->s_ack;
-
-			if(SSEQ_LT(headroom, raise))
-				cb->s_flags |= SF_AK;
-			cb->s_alo = alo;
+	if (cb->s_force == 1 + TCPT_PERSIST) {
+		if (win != 0) {
+			cb->s_timer[TCPT_PERSIST] = 0;
+			cb->s_rxtshift = 0;
 		}
 	}
+	span = cb->s_seq - cb->s_rack;
+	len = MIN(span, win) - off;
 
+	if (len < 0) {
+		/*
+		 * Window shrank after we went into it.
+		 * If window shrank to 0, cancel pending
+		 * restransmission and pull s_snxt back
+		 * to (closed) window.  We will enter persist
+		 * state below.  If the widndow didn't close completely,
+		 * just wait for an ACK.
+		 */
+		len = 0;
+		if (win == 0) {
+			cb->s_timer[TCPT_REXMT] = 0;
+			cb->s_snxt = cb->s_rack;
+		}
+	}
+	if (len > 1)
+		sendalot = 1;
+	rcv_win = sbspace(&so->so_rcv);
+
+	/*
+	 * Send if we owe peer an ACK.
+	 */
 	if (cb->s_oobflags & SF_SOOB) {
 		/*
 		 * must transmit this out of band packet
 		 */
 		cb->s_oobflags &= ~ SF_SOOB;
-	} else {
-		/*
-		 * Decide what to transmit:
-		 * If it is time to retransmit a packet,
-		 * send that.
-		 * If we have a new packet, send that
-		 * (So long as it is in our allocation)
-		 * Otherwise, see if it time to bang on them
-		 * to ask for our current allocation.
-		 */
-		if (cb->s_force == (1+TCPT_REXMT)) {
-			lookfor = cb->s_rack;
-		} else if (SSEQ_LT(cb->s_snt, cb->s_ralo)) {
-			lookfor = cb->s_snt + 1;
-		} else if (SSEQ_LT(cb->s_ralo, cb->s_seq)) {
-			lookfor = 0;
-			if (cb->s_timer[TCPT_PERSIST] == 0) {
-				spp_setpersist(cb);
-				/* tcp has cb->s_rxtshift = 0; here */
-			}
-		}
-		m = sb->sb_mb;
-		while (m) {
-			si = mtod(m, struct spidp *);
-			m = m->m_act;
-			if (SSEQ_LT(si->si_seq, cb->s_rack)) {
-				if ((sb->sb_flags & SB_WAIT)
-				     || so->so_snd.sb_sel)
-					 sowwakeup(so);
-				sbdroprecord(sb);
-				si = 0;
-				continue;
-			} 
-			if (SSEQ_LT(si->si_seq, lookfor))
-				continue;
-			break;
-		}
-		if (si && (si->si_seq != lookfor))
-			si = 0;
+		sendalot = 1;
+		sppstat.spps_sndurg++;
+		goto found;
 	}
-	cb->s_want = lookfor;
+	if (cb->s_flags & SF_ACKNOW)
+		goto send;
+	if (cb->s_state < TCPS_ESTABLISHED)
+		goto send;
+	/*
+	 * Silly window can't happen in spp.
+	 * Code from tcp deleted.
+	 */
+	if (len)
+		goto send;
+	/*
+	 * Compare available window to amount of window
+	 * known to peer (as advertised window less
+	 * next expected input.)  If the difference is at least two
+	 * packets or at least 35% of the mximum possible window,
+	 * then want to send a window update to peer.
+	 */
+	if (rcv_win > 0) {
+		u_short delta =  1 + cb->s_alo - cb->s_ack;
+		int adv = rcv_win - (delta * cb->s_mtu);
+		
+		if ((so->so_rcv.sb_cc == 0 && adv >= (2 * cb->s_mtu)) ||
+		    (100 * adv / so->so_rcv.sb_hiwat >= 35)) {
+			sppstat.spps_sndwinup++;
+			cb->s_flags |= SF_ACKNOW;
+			goto send;
+		}
+
+	}
+	/*
+	 * Many comments from tcp_output.c are appropriate here
+	 * including . . .
+	 * If send window is too small, there is data to transmit, and no
+	 * retransmit or persist is pending, then go to persist state.
+	 * If nothing happens soon, send when timer expires:
+	 * if window is nonzero, transmit what we can,
+	 * otherwise send a probe.
+	 */
+	if (so->so_snd.sb_cc && cb->s_timer[TCPT_REXMT] == 0 &&
+		cb->s_timer[TCPT_PERSIST] == 0) {
+			cb->s_rxtshift = 0;
+			spp_setpersist(cb);
+	}
+	/*
+	 * No reason to send a packet, just return.
+	 */
+	cb->s_outx = 1;
+	return (0);
+
+send:
+	/*
+	 * Find requested packet.
+	 */
+	si = 0;
+	if (len > 0) {
+		cb->s_want = cb->s_snxt;
+		for (m = sb->sb_mb; m; m = m->m_act) {
+			si = mtod(m, struct spidp *);
+			if (SSEQ_LEQ(cb->s_snxt, si->si_seq))
+				break;
+		}
+	found:
+		if (si) {
+			if (si->si_seq == cb->s_snxt)
+					cb->s_snxt++;
+				else
+					sppstat.spps_sndvoid++, si = 0;
+		}
+	}
+	/*
+	 * update window
+	 */
+	if (rcv_win < 0)
+		rcv_win = 0;
+	oalo = alo = cb->s_ack - 1 + (rcv_win / ((short)cb->s_mtu));
+	if (SSEQ_LT(alo, cb->s_alo)) 
+		alo = cb->s_alo;
 
 	if (si) {
 		/*
 		 * must make a copy of this packet for
 		 * idp_output to monkey with
 		 */
-		 m = m_copy(dtom(si), 0, (int)M_COPYALL);
-		 if (m == NULL)
+		m = m_copy(dtom(si), 0, (int)M_COPYALL);
+		if (m == NULL) {
 			return (ENOBUFS);
-		 m0 = m;
-		 si = mtod(m, struct spidp *);
-	} else if (cb->s_force || cb->s_flags & SF_AK) {
+		}
+		m0 = m;
+		si = mtod(m, struct spidp *);
+		if (SSEQ_LT(si->si_seq, cb->s_smax))
+			sppstat.spps_sndrexmitpack++;
+		else
+			sppstat.spps_sndpack++;
+	} else if (cb->s_force || cb->s_flags & SF_ACKNOW) {
 		/*
 		 * Must send an acknowledgement or a probe
 		 */
+		if (cb->s_force)
+			sppstat.spps_sndprobe++;
+		if (cb->s_flags & SF_ACKNOW)
+			sppstat.spps_sndacks++;
 		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0)
+		if (m == 0) {
 			return (ENOBUFS);
+		}
 		/*
 		 * Fill in mbuf with extended SP header
 		 * and addresses and length put into network format.
+		 * Allign beginning of packet to long to prepend
+		 * ifp's on loopback, or NSIP encaspulation for fussy cpu's.
 		 */
-		m->m_off = MMAXOFF - sizeof (struct spidp);
+		m->m_off = MMAXOFF - sizeof (struct spidp) - 2;
 		m->m_len = sizeof (*si);
 		m->m_next = 0;
 		si = mtod(m, struct spidp *);
-		*si = cb->s_shdr;
-		si->si_seq = cb->s_snt + 1;
+		si->si_i = *cb->s_idp;
+		si->si_s = cb->s_shdr;
+		si->si_seq = cb->s_smax + 1;
 		si->si_len = htons(sizeof (*si));
 		si->si_cc |= SP_SP;
+	} else {
+		cb->s_outx = 3;
+		if (so->so_options & SO_DEBUG || traceallspps)
+			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
+		return (0);
 	}
 	/*
 	 * Stuff checksum and output datagram.
 	 */
-	if (si) {
-		if (cb->s_flags & (SF_AK|SF_DELACK))
-			cb->s_flags &= ~(SF_AK|SF_DELACK);
-		/*
-		 * If we are almost out of allocation
-		 * or one of the timers has gone off
-		 * request an ack.
-		 */
-		if (SSEQ_GEQ(cb->s_seq, cb->s_ralo))
-			si->si_cc |= SP_SA;
-		if (cb->s_force) {
-			si->si_cc |= SP_SA;
-			cb->s_force = 0;
-		}
-		/*
-		 * If this is a new packet (and not a system packet),
-		 * and we are not currently timing anything,
-		 * time this one and ask for an ack.
-		 */
-		if (SSEQ_LT(cb->s_snt, si->si_seq) && (!(si->si_cc & SP_SP))) {
-			cb->s_snt = si->si_seq;
-			if (cb->s_rtt == 0) {
-				cb->s_rtseq = si->si_seq;
-				cb->s_rtt = 1;
-				si->si_cc |= SP_SA;
+	if ((si->si_cc & SP_SP) == 0) {
+		if (cb->s_force != (1 + TCPT_PERSIST) ||
+		    cb->s_timer[TCPT_PERSIST] == 0) {
+			/*
+			 * If this is a new packet and we are not currently 
+			 * timing anything, time this one.
+			 */
+			if (SSEQ_LT(cb->s_smax, si->si_seq)) {
+				cb->s_smax = si->si_seq;
+				if (cb->s_rtt == 0) {
+					sppstat.spps_segstimed++;
+					cb->s_rtseq = si->si_seq;
+					cb->s_rtt = 1;
+				}
 			}
 			/*
-			 * If the retransmit timer has not been set
-			 * and this is a real packet
-			 * then start the retransmit timer
+			 * Set rexmt timer if not currently set,
+			 * Initial value for retransmit timer is smoothed
+			 * round-trip time + 2 * round-trip time variance.
+			 * Initialize shift counter which is used for backoff
+			 * of retransmit time.
 			 */
-			if (cb->s_timer[TCPT_REXMT] == 0) {
-				TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
-					tcp_beta * cb->s_srtt, TCPTV_MIN,
-					TCPTV_MAX);
-				cb->s_rxtshift = 0;
+			if (cb->s_timer[TCPT_REXMT] == 0 &&
+			    cb->s_snxt != cb->s_rack) {
+				cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+				if (cb->s_timer[TCPT_PERSIST]) {
+					cb->s_timer[TCPT_PERSIST] = 0;
+					cb->s_rxtshift = 0;
+				}
 			}
+		} else if (SSEQ_LT(cb->s_smax, si->si_seq)) {
+			cb->s_smax = si->si_seq;
 		}
+	} else if (cb->s_state < TCPS_ESTABLISHED) {
+		if (cb->s_rtt == 0)
+			cb->s_rtt = 1; /* Time initial handshake */
+		if (cb->s_timer[TCPT_REXMT] == 0)
+			cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+	}
+	{
+		/*
+		 * Do not request acks when we ack their data packets or
+		 * when we do a gratuitous window update.
+		 */
+		if (((si->si_cc & SP_SP) == 0) || cb->s_force)
+				si->si_cc |= SP_SA;
 		si->si_seq = htons(si->si_seq);
-		si->si_alo = htons(cb->s_alo);
+		si->si_alo = htons(alo);
 		si->si_ack = htons(cb->s_ack);
 
 		if (idpcksum) {
@@ -766,22 +1004,54 @@ spp_output(cb, m0)
 		} else
 			si->si_sum = 0xffff;
 
+		cb->s_outx = 4;
 		if (so->so_options & SO_DEBUG || traceallspps)
 			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
-		spp_output_cnt++;
+
 		if (so->so_options & SO_DONTROUTE)
 			error = ns_output(m, (struct route *)0, NS_ROUTETOIF);
 		else
 			error = ns_output(m, &cb->s_nspcb->nsp_route, 0);
-		if (traceallspps && sppconsdebug) {
-			printf("spp_out: %x\n", error);
-		}
-		if (so->so_options & SO_DEBUG || traceallspps)
-			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 	}
-	return (error);
+	if (error) {
+		return (error);
+	}
+	sppstat.spps_sndtotal++;
+	/*
+	 * Data sent (as far as we can tell).
+	 * If this advertises a larger window than any other segment,
+	 * then remember the size of the advertized window.
+	 * Any pending ACK has now been sent.
+	 */
+	cb->s_force = 0;
+	cb->s_flags &= ~(SF_ACKNOW|SF_DELACK);
+	if (SSEQ_GT(alo, cb->s_alo))
+		cb->s_alo = alo;
+	if (sendalot)
+		goto again;
+	cb->s_outx = 5;
+	return (0);
 }
 
+int spp_do_persist_panics = 0;
+
+spp_setpersist(cb)
+	register struct sppcb *cb;
+{
+	register t = ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1;
+	extern int spp_backoff[];
+
+	if (cb->s_timer[TCPT_REXMT] && spp_do_persist_panics)
+		panic("spp_output REXMT");
+	/*
+	 * Start/restart persistance timer.
+	 */
+	TCPT_RANGESET(cb->s_timer[TCPT_PERSIST],
+	    t*spp_backoff[cb->s_rxtshift],
+	    TCPTV_PERSMIN, TCPTV_PERSMAX);
+	if (cb->s_rxtshift < TCP_MAXRXTSHIFT)
+		cb->s_rxtshift++;
+}
 /*ARGSUSED*/
 spp_ctloutput(req, so, level, name, value)
 	int req;
@@ -842,7 +1112,7 @@ spp_ctloutput(req, so, level, name, value)
 		case SO_DEFAULT_HEADERS:
 			m->m_len = sizeof(struct spidp);
 			m->m_off = MMAXOFF - sizeof(struct sphdr);
-			*mtod(m, struct sphdr *) = cb->s_shdr.si_s;
+			*mtod(m, struct sphdr *) = cb->s_shdr;
 			break;
 
 		default:
@@ -908,6 +1178,8 @@ spp_usrreq(so, req, m, nam, rights)
 	register struct sppcb *cb;
 	int s = splnet();
 	int error = 0, ostate;
+	struct mbuf *mm;
+	register struct sockbuf *sb;
 
 	if (req == PRU_CONTROL)
                 return (ns_control(so, (int)m, (caddr_t)nam,
@@ -936,24 +1208,44 @@ spp_usrreq(so, req, m, nam, rights)
 		error = ns_pcballoc(so, &nspcb);
 		if (error)
 			break;
-		error = soreserve(so, 2048, 2048);
+		error = soreserve(so, 3072, 3072);
 		if (error)
 			break;
 		nsp = sotonspcb(so);
-		{
-			struct mbuf *mm = m_getclr(M_DONTWAIT, MT_PCB);
 
-			if (mm == NULL) {
-				error = ENOBUFS;
-				break;
-			}
-			cb = mtod(mm, struct sppcb *);
-			cb->s_state = TCPS_LISTEN;
-			cb->s_snt = -1;
-			cb->s_q.si_next = cb->s_q.si_prev = &cb->s_q;
-			cb->s_nspcb = nsp;
-			nsp->nsp_pcb = (caddr_t) cb; 
+		mm = m_getclr(M_DONTWAIT, MT_PCB);
+		sb = &so->so_snd;
+
+		if (mm == NULL) {
+			error = ENOBUFS;
+			break;
 		}
+		cb = mtod(mm, struct sppcb *);
+		mm = m_getclr(M_DONTWAIT, MT_HEADER);
+		if (mm == NULL) {
+			m_free(dtom(m));
+			error = ENOBUFS;
+			break;
+		}
+		cb->s_idp = mtod(mm, struct idp *);
+		cb->s_state = TCPS_LISTEN;
+		cb->s_smax = -1;
+		cb->s_swl1 = -1;
+		cb->s_q.si_next = cb->s_q.si_prev = &cb->s_q;
+		cb->s_nspcb = nsp;
+		cb->s_mtu = 576 - sizeof (struct spidp);
+		cb->s_cwnd = sbspace(sb) * CUNIT / cb->s_mtu;
+		cb->s_ssthresh = cb->s_cwnd;
+		cb->s_cwmx = sb->sb_mbmax * CUNIT /
+				(2 * sizeof (struct spidp));
+		/* Above is recomputed when connecting to account
+		   for changed buffering or mtu's */
+		cb->s_rtt = TCPTV_SRTTBASE;
+		cb->s_rttvar = TCPTV_SRTTDFLT << 2;
+		TCPT_RANGESET(cb->s_rxtcur,
+		    ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
+		    TCPTV_MIN, TCPTV_REXMTMAX);
+		nsp->nsp_pcb = (caddr_t) cb; 
 		break;
 
 	case PRU_DETACH:
@@ -994,6 +1286,7 @@ spp_usrreq(so, req, m, nam, rights)
 		if (error)
 			break;
 		soisconnecting(so);
+		sppstat.spps_connattempt++;
 		cb->s_state = TCPS_SYN_SENT;
 		cb->s_did = 0;
 		spp_template(cb);
@@ -1050,7 +1343,9 @@ spp_usrreq(so, req, m, nam, rights)
 	 * updating allocation.
 	 */
 	case PRU_RCVD:
+		cb->s_flags |= SF_RVD;
 		(void) spp_output(cb, (struct mbuf *) 0);
+		cb->s_flags &= ~SF_RVD;
 		break;
 
 	case PRU_ABORT:
@@ -1095,6 +1390,7 @@ spp_usrreq(so, req, m, nam, rights)
 
 	case PRU_SLOWTIMO:
 		cb = spp_timers(cb, (int)nam);
+		req |= ((int)nam) << 8;
 		break;
 
 	case PRU_FASTTIMO:
@@ -1137,18 +1433,24 @@ spp_usrreq_sp(so, req, m, nam, rights)
  * minimizing the amount of work necessary when the connection is used.
  */
 spp_template(cb)
-	struct sppcb *cb;
+	register struct sppcb *cb;
 {
 	register struct nspcb *nsp = cb->s_nspcb;
-	register struct spidp *n = &(cb->s_shdr);
+	register struct idp *idp = cb->s_idp;
+	register struct sockbuf *sb = &(nsp->nsp_socket->so_snd);
 
-	cb->s_mtu = 576 - sizeof (struct spidp);
-	n->si_pt = NSPROTO_SPP;
-	n->si_sna = nsp->nsp_laddr;
-	n->si_dna = nsp->nsp_faddr;
-	n->si_sid = htons(spp_iss);
+	idp->idp_pt = NSPROTO_SPP;
+	idp->idp_sna = nsp->nsp_laddr;
+	idp->idp_dna = nsp->nsp_faddr;
+	cb->s_sid = htons(spp_iss);
 	spp_iss += SPP_ISSINCR/2;
-	n->si_alo = 1;
+	cb->s_alo = 1;
+	cb->s_cwnd = (sbspace(sb) * CUNIT) / cb->s_mtu;
+	cb->s_ssthresh = cb->s_cwnd; /* Try to expand fast to full complement
+					of large packets */
+	cb->s_cwmx = (sb->sb_mbmax * CUNIT) / (2 * sizeof(struct spidp));
+	cb->s_cwmx = MAX(cb->s_cwmx, cb->s_cwnd);
+		/* But allow for lots of little packets as well */
 }
 
 /*
@@ -1173,10 +1475,12 @@ spp_close(cb)
 		remque(s->si_prev);
 		m_freem(m);
 	}
+	(void) m_free(dtom(cb->s_idp));
 	(void) m_free(dtom(cb));
 	nsp->nsp_pcb = 0;
 	soisdisconnected(so);
 	ns_pcbdetach(nsp);
+	sppstat.spps_closed++;
 	return ((struct sppcb *)0);
 }
 /*
@@ -1212,10 +1516,12 @@ spp_drop(cb, errno)
 	 * we will generate error protocol packets
 	 * announcing that the socket has gone away.
 	 */
-	/*if (TCPS_HAVERCVDSYN(tp->t_state)) {
-		tp->t_state = TCPS_CLOSED;
-		(void) tcp_output(tp);
-	}*/
+	if (TCPS_HAVERCVDSYN(cb->s_state)) {
+		sppstat.spps_drops++;
+		cb->s_state = TCPS_CLOSED;
+		/*(void) tcp_output(cb);*/
+	} else
+		sppstat.spps_conndrops++;
 	so->so_error = errno;
 	return (spp_close(cb));
 }
@@ -1227,26 +1533,11 @@ spp_abort(nsp)
 	(void) spp_close((struct sppcb *)nsp->nsp_pcb);
 }
 
-spp_setpersist(cb)
-	register struct sppcb *cb;
-{
-
-	/*if (cb->s_timer[TCPT_REXMT])
-		panic("spp_output REXMT");*/
-	/*
-	 * Start/restart persistance timer.
-	 */
-	TCPT_RANGESET(cb->s_timer[TCPT_PERSIST],
-	    ((int)(tcp_beta * cb->s_srtt)) << cb->s_rxtshift,
-	    TCPTV_PERSMIN, TCPTV_MAX);
-	cb->s_rxtshift++;
-	if (cb->s_rxtshift >= TCP_MAXRXTSHIFT)
-		cb->s_rxtshift = 0;
-}
+long	spp_backoff[TCP_MAXRXTSHIFT+1] =
+    { 1, 2, 4, 8, 16, 32, 64, 64, 64, 64, 64, 64, 64 };
 /*
  * Fast timeout routine for processing delayed acks
  */
-int spp_ftcnt;
 spp_fasttimo()
 {
 	register struct nspcb *nsp;
@@ -1254,13 +1545,13 @@ spp_fasttimo()
 	int s = splnet();
 
 	nsp = nspcb.nsp_next;
-	spp_ftcnt++;
 	if (nsp)
 	for (; nsp != &nspcb; nsp = nsp->nsp_next)
 		if ((cb = (struct sppcb *)nsp->nsp_pcb) &&
 		    (cb->s_flags & SF_DELACK)) {
 			cb->s_flags &= ~SF_DELACK;
-			cb->s_flags |= SF_AK;
+			cb->s_flags |= SF_ACKNOW;
+			sppstat.spps_delack++;
 			(void) spp_output(cb, (struct mbuf *) 0);
 		}
 	splx(s);
@@ -1309,10 +1600,6 @@ tpgone:
 	spp_iss += SPP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 	splx(s);
 }
-
-float	spp_backoff[TCP_MAXRXTSHIFT] =
-    { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0 };
-int sppexprexmtbackoff = 0;
 /*
  * SPP timer processing.
  */
@@ -1321,43 +1608,64 @@ spp_timers(cb, timer)
 	register struct sppcb *cb;
 	int timer;
 {
+	long rexmt;
+	int win;
 
 	cb->s_force = 1 + timer;
 	switch (timer) {
 
 	/*
-	 * 2 MSL timeout in shutdown went off.  Delete connection
+	 * 2 MSL timeout in shutdown went off.  TCP deletes connection
 	 * control block.
 	 */
 	case TCPT_2MSL:
-		cb = spp_close(cb);
+		printf("spp: TCPT_2MSL went off for no reason\n");
+		cb->s_timer[timer] = 0;
 		break;
 
 	/*
 	 * Retransmission timer went off.  Message has not
 	 * been acked within retransmit interval.  Back off
-	 * to a longer retransmit interval and retransmit all
-	 * unacknowledged messages in the window.
+	 * to a longer retransmit interval and retransmit one packet.
 	 */
 	case TCPT_REXMT:
-		cb->s_rxtshift++;
-		if (cb->s_rxtshift > TCP_MAXRXTSHIFT) {
+		if (++cb->s_rxtshift > TCP_MAXRXTSHIFT) {
+			cb->s_rxtshift = TCP_MAXRXTSHIFT;
+			sppstat.spps_timeoutdrop++;
 			cb = spp_drop(cb, ETIMEDOUT);
 			break;
 		}
-		(void) spp_output(cb, (struct mbuf *) 0);
-		TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
-		    (int)cb->s_srtt, TCPTV_MIN, TCPTV_MAX);
-		if (sppexprexmtbackoff) {
-			TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
-			    cb->s_timer[TCPT_REXMT] << cb->s_rxtshift,
-			    TCPTV_MIN, TCPTV_MAX);
-		} else {
-			TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
-			    cb->s_timer[TCPT_REXMT] *
-			        spp_backoff[cb->s_rxtshift - 1],
-			    TCPTV_MIN, TCPTV_MAX);
+		sppstat.spps_rexmttimeo++;
+		rexmt = ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1;
+		rexmt *= spp_backoff[cb->s_rxtshift];
+		TCPT_RANGESET(cb->s_rxtcur, rexmt, TCPTV_MIN, TCPTV_REXMTMAX);
+		cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+		/*
+		 * If we have backed off fairly far, our srtt
+		 * estimate is probably bogus.  Clobber it
+		 * so we'll take the next rtt measurement as our srtt;
+		 * move the current srtt into rttvar to keep the current
+		 * retransmit times until then.
+		 */
+		if (cb->s_rxtshift > TCP_MAXRXTSHIFT / 4 ) {
+			cb->s_rttvar += (cb->s_srtt >> 2);
+			cb->s_srtt = 0;
 		}
+		cb->s_snxt = cb->s_rack;
+		/*
+		 * If timing a packet, stop the timer.
+		 */
+		cb->s_rtt = 0;
+		/*
+		 * See very long discussion in tcp_timer.c about congestion
+		 * window and sstrhesh
+		 */
+		win = MIN(cb->s_swnd, (cb->s_cwnd/CUNIT)) / 2;
+		if (win < 2)
+			win = 2;
+		cb->s_cwnd = CUNIT;
+		cb->s_ssthresh = win;
+		(void) spp_output(cb, (struct mbuf *) 0);
 		break;
 
 	/*
@@ -1365,8 +1673,9 @@ spp_timers(cb, timer)
 	 * Force a probe to be sent.
 	 */
 	case TCPT_PERSIST:
-		(void) spp_output(cb, (struct mbuf *) 0);
+		sppstat.spps_persisttimeo++;
 		spp_setpersist(cb);
+		(void) spp_output(cb, (struct mbuf *) 0);
 		break;
 
 	/*
@@ -1374,19 +1683,24 @@ spp_timers(cb, timer)
 	 * or drop connection if idle for too long.
 	 */
 	case TCPT_KEEP:
+		sppstat.spps_keeptimeo++;
 		if (cb->s_state < TCPS_ESTABLISHED)
 			goto dropit;
 		if (cb->s_nspcb->nsp_socket->so_options & SO_KEEPALIVE) {
 		    	if (cb->s_idle >= TCPTV_MAXIDLE)
 				goto dropit;
+			sppstat.spps_keepprobe++;
 			(void) spp_output(cb, (struct mbuf *) 0);
 		} else
 			cb->s_idle = 0;
 		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
 		break;
 	dropit:
+		sppstat.spps_keepdrops++;
 		cb = spp_drop(cb, ETIMEDOUT);
 		break;
 	}
 	return (cb);
 }
+int SppcbSize = sizeof (struct sppcb);
+int NspcbSize = sizeof (struct nspcb);
