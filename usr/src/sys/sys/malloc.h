@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.30 (Berkeley) %G%
+ *	@(#)malloc.h	7.31 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -74,6 +74,10 @@
 #define	M_NFSSVC	50	/* Nfs server structure */
 #define	M_NFSUID	51	/* Nfs uid mapping structure */
 #define	M_NFSD		52	/* Nfs server daemon structure */
+#define	M_IPMOPTS	53	/* internet multicast options */
+#define	M_IPMADDR	54	/* internet multicast address */
+#define	M_IFMADDR	55	/* link-level multicast address */
+#define	M_MRTABLE	56	/* multicast routing tables */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -131,6 +135,10 @@
 	"NFS srvsock",	/* 50 M_NFSSVC */ \
 	"NFS uid",	/* 51 M_NFSUID */ \
 	"NFS daemon",	/* 52 M_NFSD */ \
+	"ip_moptions",	/* 53 M_IPMOPTS */ \
+	"in_multi",	/* 54 M_IPMADDR */ \
+	"ether_multi",	/* 55 M_IFMADDR */ \
+	"mrt",		/* 56 M_MRTABLE */ \
 	NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
