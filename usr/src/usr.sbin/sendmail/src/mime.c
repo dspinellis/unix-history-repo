@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -448,6 +448,19 @@ mime8to7(mci, header, e, boundaries, flags)
 		/* use quoted-printable encoding */
 		int c1, c2;
 		int fromstate;
+		BITMAP badchars;
+
+		/* set up map of characters that must be mapped */
+		clrbitmap(badchars);
+		for (c1 = 0x00; c1 < 0x20; c1++)
+			setbitn(c1, badchars);
+		clrbitn('\t', badchars);
+		for (c1 = 0x7f; c1 < 0x100; c1++)
+			setbitn(c1, badchars);
+		setbitn('=', badchars);
+		if (bitnset(M_EBCDIC, mci->mci_mailer->m_flags))
+			for (p = "!\"#$@[\\]^`{|}~"; *p != '\0'; p++)
+				setbitn(*p, badchars);
 
 		putline("Content-Transfer-Encoding: quoted-printable", mci);
 		if (tTd(43, 36))
@@ -499,7 +512,7 @@ mime8to7(mci, header, e, boundaries, flags)
 				fputc('.', mci->mci_out);
 				linelen++;
 			}
-			if ((c1 < 0x20 && c1 != '\t') || c1 >= 0x7f || c1 == '=')
+			if (bitnset(c1 & 0xff, badchars))
 			{
 				fputc('=', mci->mci_out);
 				fputc(Base16Code[(c1 >> 4) & 0x0f], mci->mci_out);
