@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)plottoa.c	4.2 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)plottoa.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Convert the standard plot input into a readable form for debugging.

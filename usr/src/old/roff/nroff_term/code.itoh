@@ -1,4 +1,9 @@
-/*	code.itoh	4.2	88/07/22	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)code.itoh	4.3 (Berkeley) %G%
+ */
+
 /* terminal driver codes for the C.Itoh Prowriter */
 /* codetab */
 "\001 ",	/*space*/

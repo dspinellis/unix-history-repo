@@ -1,4 +1,8 @@
-/*	what..c	4.2	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)what..c	4.3 (Berkeley) %G%
+ */
 
 #include <stdio.h>
 #include <ctype.h>

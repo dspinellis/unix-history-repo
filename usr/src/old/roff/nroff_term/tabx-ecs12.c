@@ -1,4 +1,9 @@
-/*	tabx-ecs12.c	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tabx-ecs12.c	4.2 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * DIABLO 630 12 pitch ECS

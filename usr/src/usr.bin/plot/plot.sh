@@ -1,6 +1,10 @@
-#!/bin/sh
-#	@(#)plot.sh	4.6	(Berkeley)	%G%
+#!/bin/sh -
 #
+# %sccs.include.proprietary.sh%
+#
+#	@(#)plot.sh	4.7 (Berkeley) %G%
+#
+
 PATH=/bin:/usr/bin:/usr/libexec/plot
 case $1 in
 -T*)	t=$1

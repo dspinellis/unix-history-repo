@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char *sccsid = "@(#)lookbib.c	4.6 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)lookbib.c	4.7 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 #include <ctype.h>

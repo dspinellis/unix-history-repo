@@ -1,15 +1,20 @@
-/*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1989, 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)iso.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * $Header: iso.c,v 3.3 88/12/08 14:44:49 hagens Exp $
  * $Source: /usr/argo/src/ucb/netstat/RCS/iso.c,v $
  */
 /*******************************************************************************
-		          Copyright IBM Corporation 1987
+	          Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -32,9 +37,8 @@ SOFTWARE.
 *******************************************************************************/
 
 /*
- *	ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
+ * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-static char sccsid[] = "@(#)iso.c	5.4 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mbuf.h>

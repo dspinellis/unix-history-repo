@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)ntab.c	4.1 %G%";
-#endif lint
+static char sccsid[] = "@(#)ntab.c	4.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #define BYTE 8
 #define PAIR(A,B) (A|(B<<BYTE))

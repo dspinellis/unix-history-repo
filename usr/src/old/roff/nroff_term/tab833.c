@@ -1,4 +1,9 @@
-/*	tab833.c	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tab833.c	4.2 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * AJ 833 or 832 10 pitch

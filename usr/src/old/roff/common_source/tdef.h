@@ -1,4 +1,11 @@
-/*	tdef.h	4.8	87/04/30	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tdef.h	4.9 (Berkeley) %G%
+ */
 
 #include <sys/param.h>
 #undef CMASK			/* XXX */

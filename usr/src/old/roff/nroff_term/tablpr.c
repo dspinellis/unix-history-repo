@@ -1,4 +1,9 @@
-/*	tablpr.c	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tablpr.c	4.2 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * LPR or CRT 10 Pitch

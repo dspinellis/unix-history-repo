@@ -1,4 +1,9 @@
-/*	tabxerox.c	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tabxerox.c	4.2 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * XEROX 17x0 or DIABLO 16x0 10 pitch
