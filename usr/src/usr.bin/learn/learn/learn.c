@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)learn.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)learn.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -34,13 +34,10 @@ char *argv[];
 {
 	extern hangup(), intrpt();
 	extern char * getlogin();
-	char *malloc();
 
 	speed = 0;
 	more = 1;
 	pwline = getlogin();
-	setbuf(stdout, malloc(BUFSIZ));
-	setbuf(stderr, malloc(BUFSIZ));
 	selsub(argc, argv);
 	chgenv();
 	signal(SIGHUP, hangup);
