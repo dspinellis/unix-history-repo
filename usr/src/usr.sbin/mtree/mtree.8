@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mtree.8	5.9 (Berkeley) %G%
+.\"     @(#)mtree.8	5.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MTREE 8
@@ -31,7 +31,7 @@ characteristics do not match those of the specification, or which are
 missing from either the specification or the tree.
 .Pp
 The options are as follows:
-.Bl -tag -width Fl c
+.Bl -tag -width flag
 .It Fl c
 Print a specification for the tree to standard output.
 .It Fl d
@@ -89,7 +89,7 @@ The file a symbolic link is expected to reference.
 The last modification time of the file.
 .It Cm type
 The type of the file; may be set to any one of the following:
-.Bl -tag -width Cm
+.Bl -tag -width Cm -compact
 .It Cm block
 block special device
 .It Cm char
