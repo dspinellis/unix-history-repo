@@ -1,11 +1,19 @@
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-COMFLAGS=-DBSD4_2 -O -DSACREDMEM=256000
-BIN=${DESTDIR}/usr/ucb
+#	@(#)Makefile	5.7	(Berkeley)	%G%
+#
+CFLAGS=	-O -DBSD4_2 -DSACREDMEM=256000
+LIBC=	/lib/libc.a
+SRCS=	compress.c
+OBJS=	compress.o
 
-compress: compress.c USERMEM
-	cc $(COMFLAGS) -DUSERMEM=`cat USERMEM` -o compress compress.c
+all: compress
+
+compress: USERMEM ${OBJS} ${LIBC}
+	${CC} ${CFLAGS} -DUSERMEM=`cat USERMEM` -o $@ ${OBJS}
 
 # USERMEM may have to be set by hand.  It should contain the amount of
 # available user memory in bytes.  Set it to zero, for physical memory
@@ -13,16 +21,34 @@ compress: compress.c USERMEM
 USERMEM:
 	sh usermem.sh > USERMEM
 
-install: compress
-	install -s compress $(BIN)
-	rm -f $(BIN)/uncompress $(BIN)/zcat
-	ln $(BIN)/compress $(BIN)/uncompress
-	ln $(BIN)/compress $(BIN)/zcat
-
 # Temporarily don't delete USERMEM.  When chroot'ed to /nbsd, usermem.sh
 # fails totally.
-clean:
-	rm -f compress core errs
-#	rm -f compress USERMEM core errs
+clean: FRC
+	rm -f ${OBJS} core compress
+#	rm -f ${OBJS} core compress USERMEM
 
-depend:
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+install: FRC
+	install -s -o bin -g bin -m 755 compress ${DESTDIR}/usr/ucb/compress
+	rm -f ${DESTDIR}/usr/ucb/uncompress ${DESTDIR}/usr/ucb/zcat
+	ln ${DESTDIR}/usr/ucb/compress ${DESTDIR}/usr/ucb/uncompress
+	ln ${DESTDIR}/usr/ucb/compress ${DESTDIR}/usr/ucb/zcat
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+compress.o: compress.c /usr/include/stdio.h /usr/include/ctype.h
+compress.o: /usr/include/signal.h /usr/include/sys/types.h
+compress.o: /usr/include/sys/stat.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
