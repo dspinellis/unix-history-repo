@@ -1,4 +1,4 @@
-/* mbuf.h 4.10 81/12/23 */
+/* mbuf.h 4.11 82/01/24 */
 
 /*
  * Constants related to memory allocator.
@@ -41,6 +41,9 @@ struct mbuf {
 #define	MPG_MBUFS	0		/* put new mbufs on free list */
 #define	MPG_CLUSTERS	1		/* put new clusters on free list */
 #define	MPG_SPACE	2		/* don't free; caller wants space */
+
+/* length to m_copy to copy all */
+#define	M_COPYALL	1000000000
 
 #define	MGET(m, i) \
 	{ int ms = splimp(); \
