@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <signal.h>
@@ -367,7 +367,6 @@ deliver(e, firstto)
 # ifdef SMTP
 	if (clever)
 	{
-# ifdef MXDOMAIN
 		expand("\001w", buf, &buf[sizeof buf - 1], e);
 		if (host[0] == '[')
 		{
@@ -389,11 +388,6 @@ deliver(e, firstto)
 		}
 		else
 			rcode = EX_OK;
-#else MXDOMAIN
-		Nmx = 1;
-		MxHosts[0] = q->q_host;
-		rcode = EX_OK;
-#endif
 		/* send the initial SMTP protocol */
 		if (rcode == EX_OK)
 			rcode = smtpinit(m, pv);
