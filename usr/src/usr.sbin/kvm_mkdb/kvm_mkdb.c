@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1990, 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,39 +7,41 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1990, 1993 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+
 #include <db.h>
+#include <err.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <paths.h>
 
 #include "extern.h"
 
-static void usage __P(());
+static void usage __P((void));
 
 int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	DB *db;
 	int ch;
 	char *p, *nlistpath, *nlistname, dbtemp[MAXPATHLEN], dbname[MAXPATHLEN];
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case '?':
 		default:
 			usage();
@@ -63,35 +65,16 @@ main(argc, argv)
 	(void)snprintf(dbname, sizeof(dbname), "%skvm_%s.db",
 	    _PATH_VARDB, nlistname);
 	(void)umask(0);
-	db = dbopen(dbtemp, O_CREAT|O_EXLOCK|O_TRUNC|O_RDWR,
-	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, DB_HASH, NULL);
-	if (!db) {
-		(void)fprintf(stderr,
-		    "kvm_mkdb: %s: %s\n", dbtemp, strerror(errno));
-		exit(1);
-	}
+	db = dbopen(dbtemp, O_CREAT | O_EXLOCK | O_TRUNC | O_RDWR,
+	    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, DB_HASH, NULL);
+	if (db == NULL)
+		err(1, "%s", dbtemp);
 	create_knlist(nlistpath, db);
-	(void)(db->close)(db);
-	if (rename(dbtemp, dbname)) {
-		(void)fprintf(stderr, "kvm_mkdb: %s to %s: %s.\n",
-		    dbtemp, dbname, strerror(errno));
-		exit(1);
-	}
+	if (db->close(db))
+		err(1, "%s", dbtemp);
+	if (rename(dbtemp, dbname))
+		err(1, "rename %s to %s", dbtemp, dbname);
 	exit(0);
-}
-
-void
-error(n)
-	char *n;
-{
-	int sverr;
-
-	sverr = errno;
-	(void)fprintf(stderr, "kvm_mkdb: ");
-	if (n)
-		(void)fprintf(stderr, "%s: ", n);
-	(void)fprintf(stderr, "%s\n", strerror(sverr));
-	exit(1);
 }
 
 void
