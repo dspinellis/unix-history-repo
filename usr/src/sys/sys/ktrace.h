@@ -14,19 +14,20 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ktrace.h	7.1 (Berkeley) %G%
+ *	@(#)ktrace.h	7.2 (Berkeley) %G%
  */
 
 /*
- * operations to ktrace system call  (op & 0x3)
+ * operations to ktrace system call  (KTROP(op))
  */
-#define KTROP_SET		0	/* set traces */
-#define KTROP_CLEAR		1	/* clear traces */
+#define KTROP_SET		0	/* set trace points */
+#define KTROP_CLEAR		1	/* clear trace points */
 #define KTROP_CLEARFILE		2	/* stop all tracing to file */
+#define	KTROP(o)		((o)&3)	/* macro to extract operation */
 /*
- * flags to OR in with operation
+ * flags (ORed in with operation)
  */
-#define KTROP_INHERITFLAG	4	/* pass to children flag */
+#define KTRFLAG_DESCEND		4	/* perform op on all children too */
 
 /*
  * ktrace record header
@@ -46,13 +47,13 @@ struct ktr_header {
 #define KTRPOINT(p, type)	((p)->p_traceflag & (1<<(type)))
 
 /*
- * ktrace record types - add new ones here
+ * ktrace record types
  */
 
 /*
  * KTR_SYSCALL - system call record
  */
-#define KTR_SYSCALL	0x1
+#define KTR_SYSCALL	1
 struct ktr_syscall {
 	short	ktr_code;		/* syscall number */
 	short	ktr_narg;		/* number of arguments */
@@ -64,7 +65,7 @@ struct ktr_syscall {
 /*
  * KTR_SYSRET - return from system call record
  */
-#define KTR_SYSRET	0x2
+#define KTR_SYSRET	2
 struct ktr_sysret {
 	short	ktr_code;
 	short	ktr_eosys;
@@ -75,13 +76,13 @@ struct ktr_sysret {
 /*
  * KTR_NAMEI - namei record
  */
-#define KTR_NAMEI	0x3
+#define KTR_NAMEI	3
 	/* record contains pathname */
 
 /*
  * KTR_GENIO - trace generic process i/o
  */
-#define KTR_GENIO	0x4
+#define KTR_GENIO	4
 struct ktr_genio {
 	int	ktr_fd;
 	enum	uio_rw ktr_rw;
@@ -91,9 +92,22 @@ struct ktr_genio {
 };
 
 /*
- * kernel trace facilities
+ * KTR_PSIG - trace processed signal
+ */
+#define	KTR_PSIG	5
+struct ktr_psig {
+	int	signo;
+	sig_t	action;
+	int	mask;
+	int	code;
+};
+
+/*
+ * kernel trace points
  */
 #define KTRFAC_SYSCALL	(1<<KTR_SYSCALL)
 #define KTRFAC_SYSRET	(1<<KTR_SYSRET)
 #define KTRFAC_NAMEI	(1<<KTR_NAMEI)
 #define KTRFAC_GENIO	(1<<KTR_GENIO)
+#define	KTRFAC_PSIG	(1<<KTR_PSIG)
+#define KTRFAC_INHERIT	0x80000000
