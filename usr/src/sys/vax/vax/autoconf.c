@@ -1,4 +1,4 @@
-/*	autoconf.c	4.36	82/04/11	*/
+/*	autoconf.c	4.37	82/05/06	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -422,6 +422,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	*(int *)(&vubp->uba_map[0]) = UBAMR_MRV;
 
 #define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x3ffff))
+#define	ubdevreg(addr)	(addr&0x1fff|0760000)
 	/*
 	 * Check each unibus mass storage controller.
 	 * For each one which is potentially on this uba,
@@ -483,7 +484,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 				ui->ui_ubanum = numuba;
 				ui->ui_hd = &uba_hd[numuba];
 				ui->ui_addr = (caddr_t)reg;
-				ui->ui_physaddr = pumem + (addr&0x1fff);
+				ui->ui_physaddr = pumem + ubdevreg(addr);
 				if (ui->ui_dk && dkn < DK_NDRIVE)
 					ui->ui_dk = dkn++;
 				else
@@ -545,7 +546,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		ui->ui_alive = 1;
 		ui->ui_ubanum = numuba;
 		ui->ui_addr = (caddr_t)reg;
-		ui->ui_physaddr = pumem + (addr&0x1fff);
+		ui->ui_physaddr = pumem + ubdevreg(addr);
 		ui->ui_dk = -1;
 		/* ui_type comes from driver */
 		udp->ud_dinfo[ui->ui_unit] = ui;
