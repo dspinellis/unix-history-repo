@@ -1,0 +1,24 @@
+#
+#	"%W%	%G%";
+#
+#	LONG listing; includes more information from database
+#  standard alphabetic format, abbreviated, includes
+#  %W information for knowing where to find it,
+#  %K information for categorization,
+#  %X for miscellaneous notes (e.g. why is this ref included).
+#
+I bibinc.shortnames
+SAD-2
+CAD-2
+.so \*(l]/bmac.std
+.de s[   \" start reference
+.nh		\" no hyphenation
+.IP [\\*([F] 7n
+..
+.de e[   \" end reference
+.if !"\\*([W"" \s-2[W: \\*([W]\s+2
+.if !"\\*([K"" \s-2[K: \\*([K]\s+2
+.if !"\\*([X"" \s-2[X: \\*([X]\s+2
+.[-
+.hy 14  \" fully restricted hyphenation allowed
+..
