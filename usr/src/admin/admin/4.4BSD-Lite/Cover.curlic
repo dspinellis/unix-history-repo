@@ -1,4 +1,4 @@
-.\"	@(#)Cover.curlic	1.1 (Berkeley) %G%
+.\"	@(#)Cover.curlic	1.2 (Berkeley) %G%
 .\" use psroff -ms -Plz Cover.curlic
 .\"
 .so HEADERS
@@ -105,8 +105,8 @@ How to obtain 4.4BSD-Lite Release 2
 As you are already a licensee of 4.4BSD-Lite,
 you do \fBnot\fP need to execute a new license agreement.
 To obtain 4.4BSD-Lite Release 2,
-we require a copy of the first and last pages
-of your executed Berkeley License Agreement (3/94).
+we require a copy of your executed Berkeley License Agreement (3/94)
+for 4.4BSD-Lite.
 In addition, foreign licensees must include a copy of
 your signed Addendum Number One for Foreign Licensees.
 Further, you are eligible for a 50% discount off the
@@ -123,8 +123,8 @@ Specifically, for 4.4BSD-Lite Release 2,
 we must receive from your organization the
 following material before the distribution can be sent:
 .IP \(bu
-A copy of the first and last page of
-the Berkeley License Agreement (3/95) between your company
+A copy of the Berkeley License Agreement (3/94) for 4.4BSD-Lite
+between your company
 or institution and The Regents of the University of California
 along with Exhibit A properly filled out.
 For Foreign licensees, you must include a copy of your Addendum to
@@ -142,7 +142,7 @@ If this is not possible,
 insert and initial in the body of the Purchase Order the following clause:
 ``The terms and conditions of this Purchase Order
 are not accepted by The Regents of the University of California.
-The revised Berkeley License Agreement (3/95) prevails.''
+The revised Berkeley License Agreement (3/94) prevails.''
 Wire transfers are strongly discouraged.
 .IP \(bu
 The attached Site Information Form completely filled out.
@@ -162,8 +162,9 @@ All the above material must be sent to:
 Pauline Schwartz, Distribution Coordinator
 Computer Systems Research Group
 Computer Science Division, EECS
+317 Soda Hall
 University of California
-Berkeley, California 94720
+Berkeley, California 94720-1776
 .DE
 Once all these items have been received and are in proper order,
 the distribution will be sent to the technical address listed on the
