@@ -1,0 +1,26 @@
+% Redefine pathforall for tracing.
+% Can't be used recursively.
+
+/# {( )print} def
+
+/-pathforall /pathforall load def
+/-dict 5 dict def
+
+/pathforall
+ { -dict begin
+   /-close exch def  /-curve exch def  /-line exch def  /-move exch def
+   end
+   {2 copy exch =only # =only ( moveto\n)print   -dict /-move get exec}
+   {2 copy exch =only # =only ( lineto\n)print   -dict /-line get exec}
+   {6 copy 6 -1 roll =only # 5 -1 roll =only #
+    4 -1 roll =only # 3 -1 roll =only # exch =only # =only ( curveto\n)print
+    -dict /-curve get exec}
+   {(closepath\n)print   -dict /-close get exec}
+   -pathforall flush
+  }
+ def
+
+% Just print the current path
+
+/printpath
+ { {pop pop} {pop pop} {pop pop pop pop pop pop} {} pathforall } def
