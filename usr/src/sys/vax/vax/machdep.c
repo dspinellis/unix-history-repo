@@ -1,4 +1,4 @@
-/*	machdep.c	3.18	%G%	*/
+/*	machdep.c	3.19	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.18) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.19) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -115,9 +115,9 @@ time_t base;
 	deltat = time - base;
 	if (deltat < 0)
 		deltat = -deltat;
-	if ((deltat < 0 ? -deltat : deltat) >= 2*SECDAY)
+	if (deltat >= 2*SECDAY)
 		printf("warning: %s %d days; check the date\n",
-		    deltat < 0 ? "lost" : "gained", deltat / SECDAY);
+		    time < base ? "lost" : "gained", deltat / SECDAY);
 }
 
 clkset()
