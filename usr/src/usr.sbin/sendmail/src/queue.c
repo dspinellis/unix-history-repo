@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.31 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.32 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.31 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.32 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -547,7 +547,13 @@ orderq(doall)
 		    !strcontainedin(QueueLimitId, d->d_name))
 			continue;
 
-		if (strlen(d->d_name) != 10)
+		/*
+		**  Check queue name for plausibility.  This handles
+		**  both old and new type ids.
+		*/
+
+		i = strlen(d->d_name);
+		if (i != 9 && i != 10)
 		{
 			if (Verbose)
 				printf("orderq: bogus qf name %s\n", d->d_name);
