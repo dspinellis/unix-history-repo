@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -453,7 +453,7 @@ tt_generic()
 		tt.tt_availmodes |= WWM_GRP;
 	if (gen_XS)
 		tt.tt_availmodes |= WWM_USR;
-	tt.tt_hasinsert = gen_IM != 0;
+	tt.tt_hasinsert = gen_IM || gen_IC;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;
 	tt.tt_ncol = gen_CO;
