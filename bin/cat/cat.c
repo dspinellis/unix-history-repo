@@ -58,9 +58,13 @@ int bflag, eflag, nflag, sflag, tflag, vflag;
 int rval;
 char *filename;
 
-void cook_args(), cook_buf(), raw_args(), raw_cat();
-void err __P((int, const char *, ...));
+void cook_args	__P((char **));
+void cook_buf	__P((FILE *));
+void raw_args	__P((char **));
+void raw_cat	__P((int));
+void err	__P((int, const char *, ...));
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -68,7 +72,7 @@ main(argc, argv)
 	extern int optind;
 	int ch;
 
-	while ((ch = getopt(argc, argv, "benstuv")) != EOF)
+	while ((ch = getopt(argc, argv, "benstuv")) != -1)
 		switch (ch) {
 		case 'b':
 			bflag = nflag = 1;	/* -b implies -n */
@@ -91,6 +95,7 @@ main(argc, argv)
 		case 'v':
 			vflag = 1;
 			break;
+		default:
 		case '?':
 			(void)fprintf(stderr,
 			    "usage: cat [-benstuv] [-] [file ...]\n");
@@ -188,7 +193,7 @@ cook_buf(fp)
 			break;
 	}
 	if (ferror(fp)) {
-		err(0, "%s: %s", strerror(errno));
+		err(0, "%s: %s", filename, strerror(errno));
 		clearerr(fp);
 	}
 	if (ferror(stdout))
