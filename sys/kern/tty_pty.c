@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *	$Id: tty_pty.c,v 1.11 1994/04/03 19:40:01 ache Exp $
+ *	$Id: tty_pty.c,v 1.12 1994/04/05 10:12:41 ache Exp $
  */
 
 /*
@@ -59,6 +59,8 @@
 #endif
 
 #define BUFSIZ 100		/* Chunk size iomoved to/from user */
+#define	PTCREAD_SLEEP_ADDR(tp)	((caddr_t)&tp->t_out + 1)
+#define	PTCWRITE_SLEEP_ADDR(tp)	((caddr_t)&tp->t_raw + 1)
 
 static void ptcwakeup(struct tty *, int);
 
@@ -254,7 +256,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selr = 0;
 			pti->pt_flags &= ~PF_RCOLL;
 		}
-		wakeup((caddr_t)&tp->t_out->rb_tl);
+		wakeup(PTCREAD_SLEEP_ADDR(tp));
 	}
 	if (flag & FWRITE) {
 		if (pti->pt_selw) {
@@ -262,7 +264,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selw = 0;
 			pti->pt_flags &= ~PF_WCOLL;
 		}
-		wakeup((caddr_t)&tp->t_raw->rb_hd);
+		wakeup(PTCWRITE_SLEEP_ADDR(tp));
 	}
 }
 
@@ -368,8 +370,8 @@ ptcread(dev, uio, flag)
 			return (0);	/* EOF */
 		if (flag & IO_NDELAY)
 			return (EWOULDBLOCK);
-		if (error = tsleep((caddr_t)&tp->t_out->rb_tl, TTIPRI | PCATCH,
-		    ttyin, 0))
+		if (error = tsleep(PTCREAD_SLEEP_ADDR(tp), TTIPRI | PCATCH,
+		    "ptcin", 0))
 			return (error);
 	}
 	if (pti->pt_flags & (PF_PKT|PF_UCNTL))
@@ -576,8 +578,8 @@ block:
 			return (EWOULDBLOCK);
 		return (0);
 	}
-	if (error = tsleep((caddr_t)&tp->t_raw->rb_hd, TTOPRI | PCATCH,
-	    ttyout, 0)) {
+	if (error = tsleep(PTCWRITE_SLEEP_ADDR(tp), TTOPRI | PCATCH,
+	    "ptcout", 0)) {
 		/* adjust for data copied in but not written */
 		uio->uio_resid += cc;
 		return (error);
