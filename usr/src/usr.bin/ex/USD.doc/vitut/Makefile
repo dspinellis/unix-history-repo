@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	6.6 (Berkeley) %G%
 
 DIR=	usd/12.vi
 SRCS=	vi.in vi.chars
@@ -12,6 +12,6 @@ summary.ps: vi.summary
 	${TBL} vi.summary | ${ROFF}  > ${.TARGET}
 
 viapwh.ps: vi.apwh.ms
-	${ROFF} vi.viapwh > ${.TARGET}
+	${ROFF} vi.apwh.ms > ${.TARGET}
 
 .include <bsd.doc.mk>
