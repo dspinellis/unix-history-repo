@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.6	%G%	*/
+/*	vfs_vnops.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,12 +29,6 @@ register int f;
 		u.u_error = EBADF;
 		return (NULL);
 	}
-#ifdef UCBIPC
-	if (u.u_pofile[f] & ISPORT) {
-		u.u_error = EISPORT;
-		return (NULL);
-	}
-#endif
 	return (fp);
 }
 
@@ -257,9 +251,6 @@ struct	file *lastf;
  * and a file structure.
  * Initialize the descriptor
  * to point at the file structure.
- *
- * no file -- if there are no available
- * 	file structures.
  */
 struct file *
 falloc()
@@ -278,7 +269,7 @@ falloc()
 	for (fp = file; fp < lastf; fp++)
 		if (fp->f_count == 0)
 			goto slot;
-	printf("no file\n");
+	tablefull("file");
 	u.u_error = ENFILE;
 	return (NULL);
 slot:
