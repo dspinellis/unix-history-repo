@@ -1,8 +1,10 @@
-/*	vdreg.h	1.10	87/04/02	*/
+/*	vdreg.h	1.11	87/06/30	*/
 
 /*
  * Versabus VDDC/SMDE disk controller definitions.
  */
+#define	VDDC_SECSIZE	512	/* sector size for VDDC */
+#define	VD_MAXSECSIZE	1024	/* max sector size for SMD/E */
 
 /*
  * Controller communications block.
@@ -108,6 +110,25 @@ struct vddevice {
 #define	DIA_ARE	0x100		/* auto rebuild enable */
 #define	DIA_CEN	0x200		/* call enable flag */
 #define	DIA_KEY	0xAA550000	/* reset enable key */
+
+/*
+ * Hardware interface flags, in dcb.devselect and d_devflags
+ */
+#define VD_ESDI	0x10		/* drive is on ESDI interface */
+#define	d_devflags	d_drivedata[0]		/* in disk label */
+
+/*
+ * Error recovery flags.
+ */
+#define	VDRF_RTZ	0x0001	/* return to zero */
+#define	VDRF_OCF	0x0002	/* on cylinder false */
+#define	VDRF_OSP	0x0004	/* offset plus */
+#define	VDRF_OSM	0x0008	/* offset minus */
+#define	VDRF_DSE	0x0080	/* data strobe early */
+#define	VDRF_DSL	0x0100	/* data strobe late */
+
+#define	VDRF_NONE	0
+#define	VDRF_NORMAL	(VDRF_RTZ|VDRF_OCF|VDRF_OSP|VDRF_OSM|VDRF_DSE|VDRF_DSE)
 
 /*
  * Perform a reset on the controller.
