@@ -1,0 +1,198 @@
+%{
+#include "defs"
+ptr bgnexec(), addexec(), bgnproc(), mkvar(), mkcomm(), mkstruct(), mkarrow();
+ptr mkiost(), mkioitem(), mkiogroup(), mkformat();
+ptr funcinv(), extrfield(), typexpr(), strucelt(), mkfield();
+ptr esizeof(), elenof(), mkilab();
+ptr ifthen(), doloop();
+struct varblock *subscript();
+%}
+
+%start graal
+%union { int ival; ptr pval; char *cval; }
+
+%left COLON
+%left COMMA
+%right ASGNOP	/* = +- -= ...  */
+%right REPOP	/*  $  */
+%left OR	/*  |  ||  */
+%left AND	/*  &  &&  */
+%left NOT
+%nonassoc RELOP	/*  LT GT LE GE EQ NE  */
+%left ADDOP	/* +  -  */
+%left MULTOP	/* *  /  */
+%right POWER	/*   **  ^  */
+%left ARROW QUALOP	/*  ->  .  */
+
+%type <pval> dcl stat exec stats proc args arg varname comname structname
+%type <pval> dcl1 dcls1 dcl dcls specs equivlist attrs attr comclass
+%type <pval> dim dimbound bounds bound ubound vars varlist var
+%type <pval> specarray spec deftype struct
+%type <pval> expr lhs parexprs iostat sizeof lengthof lhs1 lhsname exprlist
+%type <pval> beginexec control until lablist parlablist compgotoindex
+%type <pval> do exprnull fortest iostat iounit iolist ioitem iobrace
+%type <pval> format
+%type <ival> stype sclass prec logcon logval brk blocktype letter iokwd label
+%token <pval> CONST OPTNAME COMNAME STRUCTNAME NAME ESCAPE
+%token <ival> RELOP ASGNOP OR AND NOT ADDOP MULTOP POWER DOUBLEADDOP
+%token <ival> LETTER TRUE FALSE
+
+%{
+extern int prevv;
+extern YYSTYPE prevl;
+ptr p;
+ptr procattrs;
+int i,n;
+static int imptype;
+static int ininit =NO;
+
+%}
+
+%%
+
+
+graal:
+		{ graal = PARSEOF; }
+	| option endchunk
+		{ graal = PARSOPT; }
+	| dcl endchunk
+		{ graal = PARSDCL; doinits($1);  frchain( & $1); }
+	| procst EOS stats end
+		{ endproc(); graal = PARSPROC; }
+	| define endchunk
+		{ graal = PARSDEF; }
+	| exec endchunk
+		{ graal = PARSERR; }
+	| error
+		{ graal = PARSERR;
+		  errmess("Syntax error", "", "");
+		}
+	;
+
+endchunk:  EOS	{ eofneed = 1; }
+
+stat:	  dcl EOS
+		{ if(!dclsect)
+			warn("declaration amid executables");
+		    $$ = bgnexec();
+		   TEST fprintf(diagfile,"stat: dcl\n");
+		  doinits($1); frchain( & $1); }
+	| exec EOS 
+		{ if(dclsect && $1->tag!=TSTFUNCT)
+			dclsect = 0;
+		    TEST fprintf(diagfile, "stat: exec\n"); }
+	| define EOS
+		{ $$ = bgnexec(); }
+	| error EOS
+		{ yyerrok;
+		  errmess("Syntax error", "", "");
+		  $$ = bgnexec();
+		}
+	;
+
+stats:
+		{ $$ = bgnexec(); }
+	| stats   { thisexec->copylab = 1; }   stat
+		{ $$ = addexec(); thisexec->copylab = 0; }
+	;
+
+procst:	  oproc
+		{ procname = 0; thisargs = 0;
+		  if(procclass == 0) procclass = PRMAIN;
+		  goto proctype;
+		}
+	| oproc procname
+		{ thisargs = 0; goto proctype; }
+	| oproc procname LPAR RPAR
+		{ thisargs = 0; goto proctype; }
+	| oproc procname LPAR args RPAR
+		{ thisargs = $4;
+	proctype:
+		if(procattrs)
+			if(procname == 0)
+				dclerr("attributes on unnamed procedure", "");
+			else	{
+				attvars(procattrs, mkchain(procname,CHNULL));
+				procclass = PRFUNCT;
+				}
+		fprintf(diagfile, "Procedure %s:\n", procnm() );
+		if(verbose)
+			fprintf(diagfile, "    Pass 1\n");
+		}
+	;
+
+procname:  NAME
+		{ procname = mkvar($1);
+		  extname(procname);
+		}
+	;
+
+oproc:	  proc
+		{ procattrs = 0; }
+	| attrs proc
+		{ procattrs = $1;
+		  if(procclass == 0) procclass = PRFUNCT;
+		}
+	;
+
+proc:	  PROCEDURE
+		{ $$ = bgnproc(); procclass = 0; }
+	| BLOCKDATA
+		{ $$ = bgnproc(); procclass = PRBLOCK; }
+	;
+
+args:	  arg
+		{ $$ = mkchain($1,CHNULL); }
+	| args COMMA arg
+		{ hookup($1, mkchain($3,CHNULL) ); }
+	;
+
+arg:	  varname
+		{ if($1->vclass == CLUNDEFINED)
+			$1->vclass = CLARG;
+		  else dclerr("argument already used", $1->sthead->namep);
+		}
+	;
+
+option:	  optson optionnames   { optneed = 0; }
+	;
+
+optson:	  OPTION
+		{ if(blklevel > 0)
+			{
+			execerr("Option statement inside procedure", "");
+			execerr("procedure %s terminated prematurely", procnm());
+			endproc();
+			}
+		  optneed = 1;
+		  }
+	;
+
+optionnames:
+	| optionnames optelt
+	| optionnames optelt COMMA
+	;
+
+optelt:	  OPTNAME
+		{ setopt($1,CNULL); cfree($1); }
+	| OPTNAME ASGNOP OPTNAME
+		{ setopt($1,$3); cfree($1); cfree($3); }
+	| OPTNAME ASGNOP CONST
+		{ setopt($1,$3->leftp); cfree($1); cfree($3); }
+	;
+
+
+define:	  DEFINE   { defneed = 1; }
+	;
+
+end:	  END
+		{ if(thisctl->subtype != STPROC)
+			execerr("control stack not empty upon END", "");
+		  exnull();
+		  popctl();
+		}
+	;
+
+contnu:
+		{ igeol=1; /* continue past newlines  */ }
+	;
