@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.8	81/04/24	*/
+/*	vm_meter.c	4.9	81/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -54,7 +54,7 @@ setupclock()
 	 * Strategy of 4/22/81:
 	 *	lotsfree is 1/4 of memory free.
 	 *	desfree is 200k bytes, but at most 1/8 of memory
-	 *	minfree is 32k bytes.
+	 *	minfree is 64k bytes, but at most 1/2 of desfree
 	 */
 	if (lotsfree == 0)
 		lotsfree = LOOPPAGES / 4;
@@ -63,8 +63,11 @@ setupclock()
 		if (desfree > LOOPPAGES / 8)
 			desfree = LOOPPAGES / 8;
 	}
-	if (minfree == 0)
-		minfree = (32*1024) / NBPG;
+	if (minfree == 0) {
+		minfree = (64*1024) / NBPG;
+		if (minfree > desfree/2)
+			minfree = desfree / 2;
+	}
 
 	/*
 	 * Maxpgio thresholds how much paging is acceptable.
@@ -155,17 +158,13 @@ sched()
 	register struct bigp *bp, *nbp;
 	int biggot, gives;
 
-	/*
-	 * Check if paging rate is too high, or average of
-	 * free list very low and if so, adjust multiprogramming
-	 * load by swapping someone out.
-	 */
 loop:
 	wantin = 0;
 	deservin = 0;
 	sleeper = 0;
 	p = 0;
 	/*
+	 * See if paging system is overloaded; if so swap someone out.
 	 * Conditions for hard outswap are:
 	 *	if need kernel map (mix it up).
 	 * or
