@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -885,14 +885,13 @@ sfgets(buf, siz, fp, timeout, during)
 
 	/* try to read */
 	p = NULL;
-	while (p == NULL && !feof(fp) && !ferror(fp))
+	while (!feof(fp) && !ferror(fp))
 	{
 		errno = 0;
 		p = fgets(buf, siz, fp);
-		if (errno == EINTR)
-			clearerr(fp);
-		else if (errno == EBADF)
+		if (p != NULL || errno != EINTR)
 			break;
+		clearerr(fp);
 	}
 
 	/* clear the event if it has not sprung */
