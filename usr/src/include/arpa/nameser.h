@@ -1,4 +1,4 @@
-/*	nameser.h	4.2	85/03/18	*/
+/*	nameser.h	4.3	85/03/27	*/
 /*
  * Define constants based on rfc883
  */
@@ -127,3 +127,6 @@ struct rrec {
 	int	r_size;			/* size of data area */
 	char	*r_data;		/* pointer to data */
 };
+
+extern	u_short	getshort();
+extern	u_long	getlong();
