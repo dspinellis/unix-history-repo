@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pclval.c 1.1 %G%";
+static	char sccsid[] = "@(#)pclval.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -113,7 +113,9 @@ pclvalue( r , modflag , required )
 	 * Loop and handle each
 	 * qualification on the name
 	 */
-	if ( c == NIL && ( modflag & ASGN ) && p -> value[ NL_FORV ] ) {
+	if ( c == NIL &&
+	    ( modflag & ASGN ) &&
+	    ( p -> value[ NL_FORV ] & FORBOUND ) ) {
 		error("Can't modify the for variable %s in the range of the loop", p -> symbol);
 		return (NIL);
 	}
@@ -202,15 +204,19 @@ pclvalue( r , modflag , required )
 		}
 	}
 	if (f) {
-		putLV( firstsymbol , firstbn , o , p2type( p -> type ) );
+		if ( required == LREQ ) {
+		    putLV( firstsymbol , firstbn , o , p2type( p -> type ) );
+		} else {
+		    putRV( firstsymbol , firstbn , o , p2type( p -> type ) );
+		}
 	} else {
 		if (o) {
 		    putleaf( P2ICON , o , 0 , P2INT , 0 );
 		    putop( P2PLUS , P2INT );
 		}
-	}
-	if ( required == RREQ ) {
-	    putop( P2UNARY P2MUL , p2type( p -> type ) );
+		if ( required == RREQ ) {
+		    putop( P2UNARY P2MUL , p2type( p -> type ) );
+		}
 	}
 	return ( p -> type );
 }
