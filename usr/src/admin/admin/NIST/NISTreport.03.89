@@ -1,11 +1,11 @@
-.\"	@(#)NISTreport.03.89	1.1	89/05/18
+.\"	@(#)NISTreport.03.89	1.2	89/05/22
 .\" *troff -me
 .sp 2
 .ce 100
 \fB\s+2Interim Report on Operating Systems Research
 in the DASH and Berkeley UNIX Projects\s-2\fP
 .sp
-March 31, 1989
+October 1, 1988 \- March 31, 1989
 .sp 2
 Susan L. Graham
 Domenico Ferrari
@@ -13,16 +13,45 @@ David P. Anderson
 Marshall Kirk McKusick
 Michael J. Karels
 Keith Sklower
-Marc Teitelbaum
 .ce 0
 .sp 2
 .ce
 \fB\s+2DASH Project\s0\fP
 .pp
-The DASH project was not funded by this grant during the period of
-this report.
-The funds were applied to a no-cost extension for the Berkeley UNIX Project
-during the period January to March 1989.
+Since September, 1988 the main research direction of the DASH project
+has been integrated multimedia network communication
+(i.e., the ability to redirect streams of digital audio/video
+between I/O devices, processes, hosts, and permanent storage).
+To this end, we designed an IPC abstraction called "channels" which
+(unlike datagrams and virtual circuits) has performance,
+reliability, and security parameters.
+This has spawned three research efforts:
+1) the design of a protocol hierarchy that uses channel parameters
+to eliminate or optimize protocol functions such as flow control,
+checksumming and encryption;
+2) the design of an OS kernel that uses channel parameters to optimally
+schedule local resources such as CPU time, buffers space, and network
+transmission order;
+3) the design of algorithms for implementing channels
+(channel establishment and packet switching) in large networks.
+.pp
+The implementation of the DASH kernel has progressed significantly.
+The major kernel components (virtual memory, network communication,
+multiprocessor deadline scheduling) are now working.
+The DASH kernel was ported to the Sequent Symmetry last fall.
+We now have the ability to load files and programs from a UNIX-based server,
+and have a DASH shell running.
+We have demonstrated and measured two important system capabilities.
+First, we illustrate the channel architecture
+with demonstration in which two DASH hosts communicate streams of
+full-motion video intermixed with other traffic, over a 10 Mbps Ethernet.
+The correct video frame rate is maintained
+while other communication gracefully degrades.
+Second, the DASH VM system provides high-speed data movement
+between virtual address spaces using remapping.
+A study of its performance has shown that it can move data
+at an effective speed of 40 MB/sec on a Sun 3/50,
+an order of magnitude faster than Unix or MACH.
 .sp 2
 .ce
 \fB\s+2Berkeley UNIX Project\s0\fP
@@ -69,7 +98,9 @@ We are continuing our participation in the IEEE P1003 standardization
 efforts for portable operating systems, with particular attention to
 networking.
 We are continuing to convert the Berkeley UNIX system
-to comply with the P1003.1 standard.
+to comply with the P1003.1 (POSIX) standard.
+The POSIX terminal interface and job control mechanism are now
+fully operational, and are in daily use on our development system.
 .pp
 We also are participating in the IETF OSI interoperability working group.
 .pp
