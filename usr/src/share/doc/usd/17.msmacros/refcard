@@ -1,6 +1,6 @@
-.\"	@(#)refcard	5.1 (Berkeley) %G%
+.\"	@(#)refcard	6.1 (Berkeley) %G%
 .\"
-.fp 3 H
+.fp 3 gB
 .po .5i
 .de I
 .ft 2
