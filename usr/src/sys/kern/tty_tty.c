@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.8	82/01/24	*/
+/*	tty_tty.c	4.9	82/03/31	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -74,5 +74,5 @@ syselect(dev, flag)
 		u.u_error = ENXIO;
 		return (0);
 	}
-	return ((*cdevsw[major(u.u_ttyd)].d_select)(dev, flag));
+	return ((*cdevsw[major(u.u_ttyd)].d_select)(u.u_ttyd, flag));
 }
