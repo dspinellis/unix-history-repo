@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.3 %G%";
+static char sccsid[] = "@(#)source.c 1.4 %G%";
 
 /*
  * Source file management.
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)source.c 1.3 %G%";
  *  we don't want an upper bound on # of lines in a file
  *  we don't know how many lines there are
  *
- * The solution is a "dirty" hash table.  We have NSLOTS pointers to
+ * The solution is a sparse array. We have NSLOTS pointers to
  * arrays of NLINESPERSLOT addresses.  To find the source address of
  * a particular line we find the slot, allocate space if necessary,
  * and then find its location within the pointed to array.
@@ -39,10 +39,10 @@ typedef int SEEKADDR;
 #define NSLOTS 40
 #define NLINESPERSLOT 500
 
-#define slotno(line)    ((line)/NLINESPERSLOT)
-#define index(line) ((line)%NLINESPERSLOT)
-#define slot_alloc()    alloc(NLINESPERSLOT, SEEKADDR)
-#define srcaddr(line)   seektab[(line)/NLINESPERSLOT][(line)%NLINESPERSLOT]
+#define slotno(line)	((line)/NLINESPERSLOT)
+#define index(line)	((line)%NLINESPERSLOT)
+#define slot_alloc()	alloc(NLINESPERSLOT, SEEKADDR)
+#define srcaddr(line)	seektab[(line)/NLINESPERSLOT][(line)%NLINESPERSLOT]
 
 LOCAL SEEKADDR *seektab[NSLOTS];
 
@@ -98,7 +98,7 @@ skimsource(file)
 char *file;
 {
     register int c;
-    register LINENO count;
+    register SEEKADDR count;
     register FILE *fp;
     register LINENO linenum;
     register SEEKADDR lastaddr;
