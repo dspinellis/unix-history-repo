@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utimes.2	5.1 (Berkeley) %G%
+.\"	@(#)utimes.2	6.1 (Berkeley) %G%
 .\"
-.TH UTIMES 2 "2 July 1983"
+.TH UTIMES 2 ""
 .UC 4
 .SH NAME
 utimes \- set file times
@@ -16,7 +16,7 @@ utimes \- set file times
 .ft B
 utimes(file, tvp)
 char *file;
-struct timeval *tvp[2];
+struct timeval tvp[2];
 .fi
 .SH DESCRIPTION
 The
