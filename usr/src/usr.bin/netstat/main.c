@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.10 84/03/12";
+static char sccsid[] = "@(#)main.c	4.11 (Berkeley) 84/06/03";
 #endif
 
 #include <sys/param.h>
@@ -42,9 +42,16 @@ struct nlist nl[] = {
 	{ "_icmpstat" },
 #define	N_RTSTAT	14
 	{ "_rtstat" },
+#define	N_NFILE		15
+	{ "_nfile" },
+#define	N_FILE		16
+	{ "_file" },
+#define	N_UNIXSW	17
+	{ "_unixsw" },
 	"",
 };
 
+/* internet protocols */
 extern	int protopr();
 extern	int tcp_stats(), udp_stats(), ip_stats(), icmp_stats();
 
@@ -83,8 +90,9 @@ int	nflag;
 int	rflag;
 int	sflag;
 int	tflag;
+int	uflag;
 int	interval;
-char	usage[] = "[ -Aaihmnrst ] [ interval ] [ system ] [ core ]";
+char	usage[] = "[ -Aaihmnrstu ] [ interval ] [ system ] [ core ]";
 
 main(argc, argv)
 	int argc;
@@ -136,6 +144,10 @@ main(argc, argv)
 			tflag++;
 			break;
 
+		case 'u':
+			uflag++;
+			break;
+
 		default:
 use:
 			printf("usage: %s %s\n", name, usage);
@@ -184,6 +196,11 @@ use:
 	}
 	if (mflag) {
 		mbpr(nl[N_MBSTAT].n_value);
+		exit(0);
+	}
+	if (uflag) {
+		unixpr(nl[N_NFILE].n_value, nl[N_FILE].n_value,
+		    nl[N_UNIXSW].n_value);
 		exit(0);
 	}
 	/*
