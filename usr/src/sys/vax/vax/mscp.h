@@ -1,5 +1,4 @@
-/*	mscp.h	4.1	81/11/04	*/
-
+/*	mscp.h	4.2	82/05/26	*/
 /*
  * Definitions for the Mass Storage Control Protocol
  */
@@ -301,14 +300,10 @@ struct mslg {
 	quad	mslg_unitid;		/* unit id */
 	u_char	mslg_unitsvr;		/* unit software version */
 	u_char	mslg_unithvr;		/* unit hardware version */
-	short	mslg_group;		/* group */
+	short	mslg_group;		/* group; retry + level */
 	long	mslg_volser;		/* volume serial number */
-	long	mslg_cylinder;		/* cylinder */
-	short	mslg_track;		/* track */
-	short	mslg_sector;		/* sector */
-	long	mslg_lbn;		/* logical block number */
-	u_char	mslg_level;		/* level */
-	u_char	mslg_retry;		/* retry */
+	long	mslg_hdr;		/* header */
+	char	mslg_sdistat[12];	/* SDI status information */
 };
 
 #define	mslg_busaddr	mslg_unitid
