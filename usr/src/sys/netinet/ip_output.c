@@ -1,4 +1,4 @@
-/*	ip_output.c	1.20	81/11/26	*/
+/*	ip_output.c	1.21	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -17,9 +17,11 @@ ip_output(m, opt)
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
-	int len, hlen = ip->ip_hl << 2, off;
+	int len, hlen = sizeof (struct ip), off;
 
 COUNT(IP_OUTPUT);
+	if (opt)				/* XXX */
+		m_free(opt);			/* XXX */
 	/*
 	 * Fill in IP header.
 	 */
@@ -42,8 +44,10 @@ COUNT(IP_OUTPUT);
 	 * If small enough for interface, can just send directly.
 	 */
 	if (ip->ip_len <= ifp->if_mtu) {
+#if vax
 		ip->ip_len = htons((u_short)ip->ip_len);
 		ip->ip_off = htons((u_short)ip->ip_off);
+#endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
 		return ((*ifp->if_output)(ifp, m, PF_INET));
