@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.1 (Berkeley) %G%
+	@(#)syscalls.master	7.2 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -45,8 +45,8 @@
 18	OBSOL	0 stat
 19	STD	3 lseek
 20	STD	0 getpid
-21	STD	3 smount mount
-22	STD	1 umount
+21	STD	4 mount
+22	STD	2 unmount
 23	OBSOL	0 setuid
 24	STD	0 getuid
 25	OBSOL	0 stime
@@ -187,6 +187,14 @@
 148	STD	2 setquota
 149	STD	4 qquota quota
 150	COMPAT	3 getsockname
+151	UNIMPL	0 nosys
+152	UNIMPL	0 nosys
+153	UNIMPL	0 nosys
+154	UNIMPL	0 nosys
+155	UNIMPL	0 nosys
+156	STD	4 getdirentries
+157	STD	2 statfs
+158	STD	2 fstatfs
 
 ; Syscalls 151-180 inclusive are reserved for vendor-specific
 ; system calls.  (This includes various calls added for compatibity
