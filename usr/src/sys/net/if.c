@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.26 (Berkeley) %G%
+ *	@(#)if.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,8 +22,6 @@
 #include <net/if_dl.h>
 #include <net/if_types.h>
 
-#include "ether.h"
-
 int	ifqmaxlen = IFQ_MAXLEN;
 void	if_slowtimo __P((void *arg));
 
@@ -33,7 +31,7 @@ void	if_slowtimo __P((void *arg));
  * Routines with ifa_ifwith* names take sockaddr *'s as
  * parameters.
  */
-
+void
 ifinit()
 {
 	register struct ifnet *ifp;
@@ -48,6 +46,7 @@ ifinit()
 /*
  * Call each interface on a Unibus reset.
  */
+void
 ifubareset(uban)
 	int uban;
 {
@@ -61,7 +60,7 @@ ifubareset(uban)
 
 int if_index = 0;
 struct ifaddr **ifnet_addrs;
-static char *sprint_d();
+static char *sprint_d __P((u_int, char *, int));
 
 /*
  * Attach an interface to the
@@ -215,7 +214,8 @@ ifa_ifwithnet(addr)
 			if ((*cp++ ^ *cp2++) & *cp3++)
 				goto next;
 		if (ifa_maybe == 0 ||
-		    rn_refines(ifa->ifa_netmask, ifa_maybe->ifa_netmask))
+		    rn_refines((caddr_t)ifa->ifa_netmask,
+		    (caddr_t)ifa_maybe->ifa_netmask))
 			ifa_maybe = ifa;
 	    }
 	return (ifa_maybe);
@@ -312,6 +312,7 @@ link_rtrequest(cmd, rt, sa)
  * the transition.
  * NOTE: must be called at splnet or eqivalent.
  */
+void
 if_down(ifp)
 	register struct ifnet *ifp;
 {
@@ -329,6 +330,7 @@ if_down(ifp)
  * the transition.
  * NOTE: must be called at splnet or eqivalent.
  */
+void
 if_up(ifp)
 	register struct ifnet *ifp;
 {
@@ -346,6 +348,7 @@ if_up(ifp)
 /*
  * Flush an interface queue.
  */
+void
 if_qflush(ifq)
 	register struct ifqueue *ifq;
 {
@@ -426,6 +429,7 @@ ifunit(name)
 /*
  * Interface ioctls.
  */
+int
 ifioctl(so, cmd, data, p)
 	struct socket *so;
 	int cmd;
@@ -441,17 +445,6 @@ ifioctl(so, cmd, data, p)
 	case SIOCGIFCONF:
 	case OSIOCGIFCONF:
 		return (ifconf(cmd, data));
-
-#if defined(INET) && NETHER > 0
-	case SIOCSARP:
-	case SIOCDARP:
-		if (error = suser(p->p_ucred, &p->p_acflag))
-			return (error);
-		/* FALL THROUGH */
-	case SIOCGARP:
-	case OSIOCGARP:
-		return (arpioctl(cmd, data));
-#endif
 	}
 	ifr = (struct ifreq *)data;
 	ifp = ifunit(ifr->ifr_name);
@@ -568,6 +561,7 @@ ifioctl(so, cmd, data, p)
  * other information.
  */
 /*ARGSUSED*/
+int
 ifconf(cmd, data)
 	int cmd;
 	caddr_t data;

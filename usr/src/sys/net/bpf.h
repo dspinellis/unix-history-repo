@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.h	7.4 (Berkeley) %G%
+ *      @(#)bpf.h	7.5 (Berkeley) %G%
  *
  * @(#) $Header: bpf.h,v 1.24 91/10/27 21:22:32 mccanne Exp $ (LBL)
  */
@@ -205,10 +205,18 @@ struct bpf_insn {
 #define BPF_JUMP(code, k, jt, jf) { (u_short)(code), jt, jf, k }
 
 #ifdef KERNEL
-extern u_int bpf_filter();
-extern void bpfattach();
-extern void bpf_tap();
-extern void bpf_mtap();
+int	 bpf_validate __P((struct bpf_insn *, int));
+int	 bpfopen __P((dev_t, int));
+int	 bpfclose __P((dev_t, int));
+int	 bpfread __P((dev_t, struct uio *));
+int	 bpfwrite __P((dev_t, struct uio *));
+int	 bpfioctl __P((dev_t, int, caddr_t, int));
+int	 bpf_select __P((dev_t, int, struct proc *));
+void	 bpf_tap __P((caddr_t, u_char *, u_int));
+void	 bpf_mtap __P((caddr_t, struct mbuf *));
+void	 bpfattach __P((caddr_t *, struct ifnet *, u_int, u_int));
+void	 bpfilterattach __P((int));
+u_int	 bpf_filter __P((struct bpf_insn *, u_char *, u_int, u_int));
 #endif
 
 /*
