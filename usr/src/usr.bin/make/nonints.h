@@ -1,3 +1,5 @@
+char **brk_string(), *emalloc(), *str_concat();
+
 ReturnStatus	Arch_ParseArchive ();
 void	Arch_Touch ();
 void	Arch_TouchLib ();
@@ -72,9 +74,6 @@ int	Targ_PrintCmd ();
 char *	Targ_FmtTime ();
 void	Targ_PrintType ();
 char *	Str_Concat ();
-char **	Str_BreakString ();
-void	Str_FreeVec ();
-char *	Str_FindSubstring();
 int	Str_Match();
 void	Var_Delete();
 void	Var_Set ();
@@ -86,3 +85,4 @@ char *	Var_Subst ();
 char *	Var_GetTail();
 char *	Var_GetHead();
 void	Var_Init ();
+char *	Str_FindSubstring();
