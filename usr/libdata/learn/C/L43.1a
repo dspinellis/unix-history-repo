@@ -1,0 +1,70 @@
+#print
+Write a function 
+	cubrt(x)
+that returns the cube root of a floating point number.
+Put it on a file named "cubrt.c"; compile and test it,
+then type "ready".
+(If you don't know how to compute cube roots, try Newton's method).
+#once #create reldif.c
+double reldif(a,b)
+ double a,b;
+{
+double c,d;
+if (a==0. && b==0.) return(0.);
+c = a>0 ? a : -a;
+d = b>0 ? b : -b;
+c = c>d ? c : d;
+return( (a-b)/c );
+}
+#once #create tzaqc.c
+main()
+{
+	double cubrt();
+	double reldif();
+	double a, b, eps;
+
+	a = 8.;
+	b = 2.;
+	eps = 1e-5;
+	if (reldif(cubrt(a), b) > eps)
+		exit(1);
+
+	a = 0.;
+	b = 0.;
+	if (reldif(cubrt(a), b) > eps)
+		exit(1);
+
+	a = 1e6;
+	b = 1e2;
+	if (reldif(cubrt(a), b) > eps)
+		exit(1);
+	exit(0);
+}
+#user
+cc tzaqc.c cubrt.o reldif.c
+a.out
+#succeed
+/* one way */
+double cubrt(x)
+double x;
+{
+	/* Newton's method:    x <- x - (x**3-a)/(3*x*x) */
+	double y, yn, dabs();
+	y = 0.;
+	yn = x;
+	while (dabs(y-yn) > y*1.e-8) {
+		y = yn;
+		yn = y - (y*y*y-x)/(3*y*y);
+	}
+	return(yn);
+}
+
+double dabs(x)
+double x;
+{
+	return(x>0 ? x : -x);
+}
+#log
+#next
+50.1a 10
+43.1b 5

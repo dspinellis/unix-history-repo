@@ -1,0 +1,48 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+You sometimes have to make explicit what you
+mean when you say "bar", by putting in braces
+to enclose the parts that you want the bar
+to be over. 
+For example, what has to be done to make
+the output
+.EQ
+{x sub i} bar
+.EN
+Find out (by putting braces in the right place
+if necessary) in the file "Example", then
+type "ready" after you have successfully modified it.
+.pl 1
+#once #create Ref
+.EQ
+delim $$
+.EN
+.LP
+.EQ
+{x sub i} bar
+.EN
+.pl 1
+#once #create Example
+.EQ
+delim $$
+.EN
+.LP
+.EQ
+x sub i bar
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+10.1a 10
+9.2b 5

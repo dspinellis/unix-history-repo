@@ -1,0 +1,38 @@
+#print
+Using the familar "getnum.o" routine
+write a program that reads numbers one per line and determines
+for each if it is prime. Print "prime"
+for a prime number and "composite" for a non-prime number.
+Compile, test, and type "ready".
+#once #create Ref
+10039
+17947
+#once #create Ref1
+prime
+composite
+#once cp %s/getnum.o .
+#user
+a.out <Ref >x1
+#cmp x1 Ref1
+#succeed
+/* A slow but sure prime-tester */
+main()
+{
+	int p, i, comp;
+
+	while ((p = getnum()) >= 0) {
+		comp = 0;
+		for (i = 2; i*i <= p; i++)
+			if (p%i == 0) {
+				comp = 1;
+				break;
+			}
+		if (comp)
+			printf("composite\n");
+		else
+			printf("prime\n");
+	}
+}
+#log
+#next
+15.1a 10
