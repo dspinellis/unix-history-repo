@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -97,7 +97,7 @@ main(argc, argv)
 		case '?':
 		default:
 			usage();
-			break;
+			exit(2);
 		}
 
 	argc -= optind;
@@ -135,7 +135,7 @@ doit(fromp)
 	struct passwd *pwd;
 	int s;
 	struct hostent *hp;
-	char *hostname;
+	char *hostname, *errorstr = NULL, *errorhost;
 	short port;
 	int pv[2], pid, cc;
 	int nfd;
@@ -157,7 +157,8 @@ doit(fromp)
 #endif
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	if (fromp->sin_family != AF_INET) {
-		syslog(LOG_ERR, "malformed from address\n");
+		syslog(LOG_ERR, "malformed \"from\" address (af %d)\n",
+		    fromp->sin_family);
 		exit(1);
 	}
 #ifdef IP_OPTIONS
@@ -203,7 +204,8 @@ doit(fromp)
 		for (cp = optbuf; optsize > 0; cp++, optsize--, lp += 3)
 			sprintf(lp, " %2.2x", *cp);
 		syslog(LOG_NOTICE,
-		    "Connection received using IP options (ignored):%s", lbuf);
+		    "Connection received from %s using IP options (ignored):%s",
+		    inet_ntoa(fromp->sin_addr), lbuf);
 		if (setsockopt(0, ipproto, IP_OPTIONS,
 		    (char *)NULL, &optsize) != 0) {
 			syslog(LOG_ERR, "setsockopt IP_OPTIONS NULL: %m");
@@ -261,16 +263,21 @@ doit(fromp)
 		 * in a remote net; look up the name and check that this
 		 * address corresponds to the name.
 		 */
-		if (check_all || (!use_kerberos && local_domain(hp->h_name))) {
+#ifdef	KERBEROS
+		if (!use_kerberos)
+#endif
+		if (check_all || local_domain(hp->h_name)) {
 			strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
 			remotehost[sizeof(remotehost) - 1] = 0;
+			errorhost = remotehost;
 			hp = gethostbyname(remotehost);
 			if (hp == NULL) {
 				syslog(LOG_INFO,
 				    "Couldn't look up address for %s",
 				    remotehost);
-				error("Couldn't look up address for your host\n");
-				exit(1);
+				errorstr = 
+				"Couldn't look up address for your host (%s)\n";
+				hostname = inet_ntoa(fromp->sin_addr);
 			}
 #ifdef h_addr	/* 4.2 hack */
 			for (; ; hp->h_addr_list++) {
@@ -279,13 +286,17 @@ doit(fromp)
 					  "Host addr %s not listed for host %s",
 					    inet_ntoa(fromp->sin_addr),
 					    hp->h_name);
-					error("Host address mismatch\n");
-					exit(1);
+					errorstr =
+					    "Host address mismatch for %s\n";
+					hostname = inet_ntoa(fromp->sin_addr);
+					break;
 				}
 				if (!bcmp(hp->h_addr_list[0],
 				    (caddr_t)&fromp->sin_addr,
-				    sizeof(fromp->sin_addr)))
+				    sizeof(fromp->sin_addr))) {
+					hostname = hp->h_name;
 					break;
+				}
 			}
 #else
 			if (bcmp(hp->h_addr, (caddr_t)&fromp->sin_addr,
@@ -299,9 +310,8 @@ doit(fromp)
 			}
 #endif
 		}
-		hostname = hp->h_name;
 	} else
-		hostname = inet_ntoa(fromp->sin_addr);
+		errorhost = hostname = inet_ntoa(fromp->sin_addr);
 
 	getstr(remuser, sizeof(remuser), "remuser");
 	getstr(locuser, sizeof(locuser), "locuser");
@@ -309,8 +319,9 @@ doit(fromp)
 	setpwent();
 	pwd = getpwnam(locuser);
 	if (pwd == NULL) {
-		error("Login incorrect.\n");
-		exit(1);
+		if (errorstr == NULL)
+			errorstr = "Login incorrect.\n";
+		goto fail;
 	}
 	if (chdir(pwd->pw_dir) < 0) {
 		(void) chdir("/");
