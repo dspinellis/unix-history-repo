@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.9 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,7 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
-#include "../ufs/inode.h"
+#include "stat.h"
 #include "errno.h"
 
 int	blk_lookup(),
@@ -41,21 +41,15 @@ int	blk_lookup(),
 	blk_badop(),
 	blk_nullop();
 
-int	ufs_getattr(),
-	ufs_setattr(),
-	ufs_access(),
-	ufs_inactive(),
-	ufs_reclaim();
-
 struct vnodeops blk_vnodeops = {
 	blk_lookup,
 	blk_badop,
 	blk_badop,
 	blk_open,
 	blk_close,
-	ufs_access,
-	ufs_getattr,
-	ufs_setattr,
+	blk_badop,
+	blk_badop,
+	blk_badop,
 	blk_read,
 	blk_write,
 	blk_ioctl,
@@ -72,8 +66,8 @@ struct vnodeops blk_vnodeops = {
 	blk_badop,
 	blk_badop,
 	blk_badop,
-	ufs_inactive,
-	ufs_reclaim,
+	blk_nullop,
+	blk_nullop,
 	blk_lock,
 	blk_unlock,
 	blk_badop,
@@ -115,26 +109,14 @@ blk_open(vp, mode, cred)
 	case VCHR:
 		if ((u_int)maj >= nchrdev)
 			return (ENXIO);
-		return ((*cdevsw[maj].d_open)(dev, mode, IFCHR));
+		return ((*cdevsw[maj].d_open)(dev, mode, S_IFCHR));
 
 	case VBLK:
 		if ((u_int)maj >= nblkdev)
 			return (ENXIO);
-		return ((*bdevsw[maj].d_open)(dev, mode, IFBLK));
+		return ((*bdevsw[maj].d_open)(dev, mode, S_IFBLK));
 	}
 	return (0);
-}
-
-/*
- * Check access permissions for a block device.
- */
-blk_access(vp, mode, cred)
-	struct vnode *vp;
-	int mode;
-	struct ucred *cred;
-{
-
-	return (iaccess(VTOI(vp), mode, cred));
 }
 
 /*
@@ -239,23 +221,20 @@ blk_strategy(bp)
 	return (0);
 }
 
+/*
+ * At the moment we do not do any locking.
+ */
 blk_lock(vp)
 	struct vnode *vp;
 {
-	register struct inode *ip = VTOI(vp);
 
-	if (ip)
-		ILOCK(ip);
 	return (0);
 }
 
 blk_unlock(vp)
 	struct vnode *vp;
 {
-	register struct inode *ip = VTOI(vp);
 
-	if (ip)
-		IUNLOCK(ip);
 	return (0);
 }
 
@@ -268,13 +247,9 @@ blk_close(vp, flag, cred)
 	int flag;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
 	dev_t dev = vp->v_rdev;
 	int (*cfunc)();
 	int error, mode;
-
-	if (vp->v_count > 1 && !(ip->i_flag & ILOCKED))
-		ITIMES(ip, &time, &time);
 
 	switch (vp->v_type) {
 
@@ -282,7 +257,7 @@ blk_close(vp, flag, cred)
 		if (vp->v_count > 1)
 			return (0);
 		cfunc = cdevsw[major(dev)].d_close;
-		mode = IFCHR;
+		mode = S_IFCHR;
 		break;
 
 	case VBLK:
@@ -296,7 +271,7 @@ blk_close(vp, flag, cred)
 			return (0);
 		/*
 		 * We don't want to really close the device if it is still
-		 * in use. Since every use (buffer, inode, swap, cmap)
+		 * in use. Since every use (buffer, vnode, swap, cmap)
 		 * holds a reference to the vnode, and because we ensure
 		 * that there cannot be more than one vnode per device,
 		 * we need only check that we are down to the last
@@ -305,14 +280,13 @@ blk_close(vp, flag, cred)
 		if (vp->v_count > 1)
 			return (0);
 		cfunc = bdevsw[major(dev)].d_close;
-		mode = IFBLK;
+		mode = S_IFBLK;
 		break;
 
 	default:
 		panic("blk_close: not special");
 	}
 
-	/* XXX what is this doing below the vnode op call */
 	if (setjmp(&u.u_qsave)) {
 		/*
 		 * If device close routine is interrupted,
