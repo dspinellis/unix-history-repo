@@ -1,48 +1,38 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vlp.1	6.2 (Berkeley) %G%
+.\"     @(#)vlp.1	6.3 (Berkeley) %G%
 .\"
-.TH VLP 1 ""
-.UC 5
-.SH NAME
-vlp \- Format Lisp programs to be printed with nroff, vtroff, or troff
-.SH SYNOPSIS
-.B vlp
-[
-.B \-p
-.I pointsize
-] [
-.B \-d
-] [
-.B \-f
-] [
-.B \-l
-] [
-.B \-v
-] [
-.B \-T
-.I title1
-] file1 [
-.B \-T
-.I title2
-] file2 ...
-.SH DESCRIPTION
-\fIVlp\fR
-formats the named files so that they can be run through nroff, vtroff, or
-troff to produce listings that line-up and are attractive.
+.Dd 
+.Dt VLP 1
+.Os BSD 4.2
+.Sh NAME
+.Nm vlp
+.Nd Format Lisp programs to
+be printed with nroff, vtroff, or troff
+.Sh SYNOPSIS
+.Nm vlp
+.Op Fl d
+.Op Fl f
+.Op Fl l
+.Op Fl p Ar pointsize
+.Op Fl v
+.Op Fl T Ar title1
+.Ar file1
+.Bk -words
+.Op Fl T Ar title2
+.Ek
+.Ar file2 Ar ...
+.Sh DESCRIPTION
+.Nm Vlp
+formats the named files so that they can be run through
+.Xr nroff 1 ,
+.Xr vtroff 1 ,
+or
+.Xr troff 1
+to produce listings that line-up and are attractive.
 The first non-blank character of each line is lined-up vertically,
 as in the source file.
 Comments (text beginning with a semicolon)
@@ -50,71 +40,101 @@ are printed in italics.
 Each function's name is printed in bold face next to the function.
 This format makes Lisp code look attractive when it is printed with a 
 variable width font.
-.PP
+.Pp
 Normally,
-\fIvlp\fR works as a filter and sends its output to the standard output.
+.Nm vlp
+works as a filter and sends its output to the standard output.
 However,
 the 
-.B \-v
+.Fl v
 switch pipes the output directly to vtroff.
 If no files are specified,
-then \fIvlp\fR reads from the standard input.
-.PP
+then
+.Nm vlp
+reads from the standard input.
+.Pp
 The following options are available:
-.TP
-.B \-p
-The
-.B \-p
-switch changes the size of the text from its default value of 8 points
-to one of 6, 8, 10, or 12 points.
-Once set, the point size is used for all subsequent files.
-This point size does not apply to embedded text (see \fI\-f\fR below).
-.TP
-.B \-d
+.Bl -tag -width Ds
+.It Fl d
 The 
-.B \-d
-switch puts \fIvlp\fR into debugging mode.
-.TP
-.B \-f
-.I Vlp
+.Fl d
+switch puts
+.Nm vlp
+into debugging mode.
+.It Fl f
+.Nm Vlp
 has a filtered mode
 in which all lines are passed unmodified,
-except those lines between the directives \fB.Ls\fR and \fB.Le\fR.
+except those lines between the directives
+.Sy .Ls
+and
+.Sy .Le .
 This mode can be used to format Lisp code that is embedded in a document.
-The directive \fB.Ls\fR takes an optional argument that gives the point
+The directive
+.Sy .Ls
+takes an optional argument that gives the point
 size for the embedded code.
 If not size is specified,
 the size of the surrounding text is used.
-.TP
-.B \-l
+.It Fl l
 The
-.B \-l
-switch prevents \fIvlp\fR from placing labels next to functions.
+.Fl l
+switch prevents
+.Nm vlp
+from placing labels next to functions.
 This switch is useful for embedded Lisp code,
 where the labels would be distracting.
-.TP
-.B \-v
-This switch cause \fIvlp\fR to send its output to vtroff rather than the
+.It Fl p Ar pointsize
+The
+.Fl p
+switch changes the size of the text from its default value of 8 points
+to one of 6, 8, 10, or 12 points.
+Once set, the point size is used for all subsequent files.
+This point size does not apply to embedded text (see
+.Fl f
+above).
+.It Fl v
+This switch cause
+.Nm vlp
+to send its output to vtroff rather than the
 standard output.
-.TP
-.B \-T
+.It Fl T Ar title
 A title to be printed on each page may be specified by using the 
-.B \-T
+.Fl T
 switch.
 The 
-.B \-T
-switch applies only to the next file name given.
+.Fl T
+switch applies only to the next
+.Ar file
+name given.
 Titles are not printed for embedded text (see 
-.BR \-f ,
+.Fl f ,
 above).
-This switch may not be used if \fIvlp\fR is reading from the standard input.
-.SH FILES
-/usr/lib/vlpmacs		troff/nroff macros
-.SH AUTHOR
-Originally written by John K. Foderaro, with additional changes by
-Kevin Layer and James Larus.
-.SH SEE ALSO
-vgrind(1), lisp(1)
-.SH BUGS
-\fIvlp\fR transforms \\ into \\\\ so that it will be printed out.
-Hence, troff commands cannot be embedded in Lisp code.
+This switch may not be used if
+.Nm vlp
+is reading from the standard input.
+.El
+.Sh FILES
+.Bl -tag -width Pa
+.It Pa /usr/lib/vlpmacs
+.Xr troff/nroff
+macros
+.El
+.Sh SEE ALSO
+.Xr vgrind 1 ,
+.Xr lisp 1
+.Sh BUGS
+.Nm vlp
+transforms
+.Ql \e
+into
+.Ql \e\e
+so that it will be printed out.
+Hence,
+.Xr troff
+commands cannot be embedded in Lisp code.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .
