@@ -1,9 +1,11 @@
-/*	uipc_proto.c	4.22	82/06/20	*/
+/*	uipc_proto.c	4.23	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/mbuf.h"
+#include <time.h>
+#include "../h/kernel.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 
@@ -142,6 +144,8 @@ pfinit()
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_init)
 			(*pr->pr_init)();
+	pffasttimo();
+	pfslowtimo();
 }
 
 /*
@@ -200,6 +204,7 @@ pfslowtimo()
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_slowtimo)
 			(*pr->pr_slowtimo)();
+	timeout(pfslowtimo, 0, hz / PR_SLOWHZ);
 }
 
 pffasttimo()
@@ -209,4 +214,5 @@ pffasttimo()
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_fasttimo)
 			(*pr->pr_fasttimo)();
+	timeout(pffasttimo, 0, hz / PR_FASTHZ);
 }
