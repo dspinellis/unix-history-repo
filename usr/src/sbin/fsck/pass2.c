@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass2.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)pass2.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -189,7 +189,7 @@ again:
 				break;
 			if ((dp = ginode(dirp->d_ino)) == NULL)
 				break;
-			statemap[dirp->d_ino] = DIRCT ? DSTATE : FSTATE;
+			statemap[dirp->d_ino] = DIRCT(dp) ? DSTATE : FSTATE;
 			goto again;
 
 		case FSTATE:

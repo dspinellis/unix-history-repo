@@ -1,4 +1,4 @@
-/* @(#)fsck.h	3.1 (Berkeley) %G% */
+/* @(#)fsck.h	3.2 (Berkeley) %G% */
 
 /* RECONSTRUCT ONLY BAD CG IN PASS 6 */
 
@@ -13,10 +13,6 @@ typedef	int	(*SIG_TYP)();
 #define BUFSIZ 1024
 #endif
 
-#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
-#define	MAXINOPB	(MAXBSIZE / sizeof (struct dinode))
-#define	SPERB		(MAXBSIZE / sizeof(short))
-
 #define	USTATE	0		/* inode not allocated */
 #define	FSTATE	01		/* inode is file */
 #define	DSTATE	02		/* inode is directory */
@@ -25,9 +21,14 @@ typedef	int	(*SIG_TYP)();
 typedef struct dinode	DINODE;
 typedef struct direct	DIRECT;
 
-#define	ALLOC	((dp->di_mode & IFMT) != 0)
-#define	DIRCT	((dp->di_mode & IFMT) == IFDIR)
-#define	SPECIAL	((dp->di_mode & IFMT) == IFBLK || (dp->di_mode & IFMT) == IFCHR)
+#define	ALLOC(dip)	(((dip)->di_mode & IFMT) != 0)
+#define	DIRCT(dip)	(((dip)->di_mode & IFMT) == IFDIR)
+#define	SPECIAL(dip) \
+	(((dip)->di_mode & IFMT) == IFBLK || ((dip)->di_mode & IFMT) == IFCHR)
+
+#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
+#define	MAXINOPB	(MAXBSIZE / sizeof (struct dinode))
+#define	SPERB		(MAXBSIZE / sizeof(short))
 
 struct bufarea {
 	struct bufarea	*b_next;		/* must be first */
@@ -67,8 +68,10 @@ struct filecntl {
 	int	mod;
 } dfile;			/* file descriptors for filesys */
 
+enum fixstate {DONTKNOW, NOFIX, FIX};
+
 struct inodesc {
-	char id_type;		/* type of descriptor, DATA or ADDR */
+	enum fixstate id_fix;	/* policy on fixing errors */
 	int (*id_func)();	/* function to be applied to blocks of inode */
 	ino_t id_number;	/* inode number described */
 	ino_t id_parent;	/* for DATA nodes, their parent */
@@ -77,8 +80,9 @@ struct inodesc {
 	long id_filesize;	/* for DATA nodes, the size of the directory */
 	int id_loc;		/* for DATA nodes, current location in dir */
 	int id_entryno;		/* for DATA nodes, current entry number */
-	DIRECT *id_dirp;	/* for data nodes, ptr to current entry */
-	enum {DONTKNOW, NOFIX, FIX} id_fix; /* policy on fixing errors */
+	DIRECT *id_dirp;	/* for DATA nodes, ptr to current entry */
+	char *id_name;		/* for DATA nodes, name to find or enter */
+	char id_type;		/* type of descriptor, DATA or ADDR */
 };
 /* file types */
 #define	DATA	1
@@ -99,7 +103,6 @@ char	yflag;			/* assume a yes response */
 int	bflag;			/* location of alternate super block */
 int	debug;			/* output debugging info */
 char	preen;			/* just fix normal inconsistencies */
-char	rplyflag;		/* any questions asked? */
 char	hotroot;		/* checking root device */
 char	fixcg;			/* corrupted free list bit maps */
 
@@ -108,16 +111,15 @@ char	*freemap;		/* ptr to secondary blk allocation map */
 char	*statemap;		/* ptr to inode state table */
 short	*lncntp;		/* ptr to link count table */
 
-char	*srchname;		/* name being searched for in dir */
 char	pathname[BUFSIZ];	/* current pathname */
 char	*pathp;			/* pointer to pathname position */
 char	*endpathname;
 
-char	*lfname;
-
+daddr_t	fmax;			/* number of blocks in the volume */
 ino_t	imax;			/* number of inodes */
 ino_t	lastino;		/* hiwater mark of inodes */
-ino_t	lfdir;			/* lost & found directory */
+ino_t	lfdir;			/* lost & found directory inode number */
+char	*lfname;		/* lost & found directory name */
 
 off_t	maxblk;			/* largest logical blk in file */
 off_t	bmapsz;			/* num chars in blockmap */
@@ -128,7 +130,6 @@ daddr_t	n_blks;			/* number of blocks used */
 daddr_t	n_files;		/* number of files seen */
 daddr_t	n_index;
 daddr_t	n_bad;
-daddr_t	fmax;			/* number of blocks in the volume */
 
 daddr_t	badblk;
 daddr_t	dupblk;

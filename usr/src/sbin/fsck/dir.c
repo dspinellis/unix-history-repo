@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -108,7 +108,7 @@ fsck_readdir(idesc)
 		dp->d_ino = 0;
 		dp->d_namlen = 0;
 		dp->d_name[0] = '\0';
-		if (dofix(idesc))
+		if (dofix(idesc, "DIRECTORY CORRUPTED"))
 			dirty(&fileblk);
 		return (dp);
 	}
@@ -127,7 +127,7 @@ dpok:
 		dp->d_reclen += size;
 		idesc->id_loc += size;
 		idesc->id_filesize -= size;
-		if (dofix(idesc))
+		if (dofix(idesc, "DIRECTORY CORRUPTED"))
 			dirty(&fileblk);
 	}
 	return (dp);
@@ -175,7 +175,7 @@ direrr(ino, s)
 	pinode(ino);
 	printf("\n");
 	if ((dp = ginode(ino)) != NULL && ftypeok(dp))
-		pfatal("%s=%s\n", DIRCT?"DIR":"FILE", pathname);
+		pfatal("%s=%s\n", DIRCT(dp) ? "DIR" : "FILE", pathname);
 	else
 		pfatal("NAME=%s\n", pathname);
 }
@@ -193,15 +193,15 @@ adjust(idesc, lcnt)
 			clri(idesc, "UNREF", 0);
 	}
 	else {
-		pwarn("LINK COUNT %s",
-			(lfdir==idesc->id_number)?lfname:(DIRCT?"DIR":"FILE"));
+		pwarn("LINK COUNT %s", (lfdir == idesc->id_number) ? lfname :
+			(DIRCT(dp) ? "DIR" : "FILE"));
 		pinode(idesc->id_number);
 		printf(" COUNT %d SHOULD BE %d",
 			dp->di_nlink, dp->di_nlink-lcnt);
 		if (preen) {
 			if (lcnt < 0) {
 				printf("\n");
-				preendie();
+				pfatal("LINK COUNT INCREASING");
 			}
 			printf(" (ADJUSTED)\n");
 		}
@@ -260,7 +260,7 @@ linkup(orphan, pdir)
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	if ((dp = ginode(orphan)) == NULL)
 		return (0);
-	lostdir = DIRCT;
+	lostdir = DIRCT(dp);
 	pwarn("UNREF %s ", lostdir ? "DIR" : "FILE");
 	pinode(orphan);
 	if (preen && dp->di_size == 0)
@@ -276,7 +276,7 @@ linkup(orphan, pdir)
 	if (lfdir == 0) {
 		if ((dp = ginode(ROOTINO)) == NULL)
 			return (0);
-		srchname = lfname;
+		idesc.id_name = lfname;
 		idesc.id_type = DATA;
 		idesc.id_func = findino;
 		idesc.id_number = ROOTINO;
@@ -289,7 +289,7 @@ linkup(orphan, pdir)
 		}
 	}
 	if ((dp = ginode(lfdir)) == NULL ||
-	     !DIRCT || statemap[lfdir] != FSTATE) {
+	     !DIRCT(dp) || statemap[lfdir] != FSTATE) {
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);

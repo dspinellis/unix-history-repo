@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)utilities.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -38,7 +38,6 @@ reply(s)
 
 	if (preen)
 		pfatal("INTERNAL ERROR: GOT TO reply()");
-	rplyflag = 1;
 	printf("\n%s? ", s);
 	if (nflag || dfile.wfdes < 0) {
 		printf(" no\n\n");
@@ -103,10 +102,20 @@ flush(fcp, bp)
 	struct filecntl *fcp;
 	register BUFAREA *bp;
 {
+	register int i, j;
 
-	if (bp->b_dirty)
-		(void)bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
+	if (!bp->b_dirty)
+		return;
 	bp->b_dirty = 0;
+	(void)bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
+	if (bp != &sblk)
+		return;
+	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
+		(void)bwrite(&dfile, (char *)sblock.fs_csp[j],
+		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
+		    sblock.fs_cssize - i < sblock.fs_bsize ?
+		    sblock.fs_cssize - i : sblock.fs_bsize);
+	}
 }
 
 rwerr(s, blk)
@@ -179,14 +188,23 @@ catch()
 /*
  * determine whether an inode should be fixed.
  */
-dofix(idesc)
+dofix(idesc, msg)
 	register struct inodesc *idesc;
+	char *msg;
 {
 
 	switch (idesc->id_fix) {
 
 	case DONTKNOW:
-		direrr(idesc->id_number, "DIRECTORY CORRUPTED");
+		if (idesc->id_type == DATA)
+			direrr(idesc->id_number, msg);
+		else
+			pwarn(msg);
+		if (preen) {
+			printf(" (SALVAGED)\n");
+			idesc->id_fix = FIX;
+			return (ALTERED);
+		}
 		if (reply("SALVAGE") == 0) {
 			idesc->id_fix = NOFIX;
 			return (0);
@@ -207,18 +225,10 @@ dofix(idesc)
 }
 
 /* VARARGS1 */
-error(s1, s2, s3, s4)
-	char *s1;
-{
-
-	printf(s1, s2, s3, s4);
-}
-
-/* VARARGS1 */
 errexit(s1, s2, s3, s4)
 	char *s1;
 {
-	error(s1, s2, s3, s4);
+	printf(s1, s2, s3, s4);
 	exit(8);
 }
 
@@ -235,16 +245,11 @@ pfatal(s, a1, a2, a3)
 		printf("%s: ", devname);
 		printf(s, a1, a2, a3);
 		printf("\n");
-		preendie();
+		printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n",
+			devname);
+		exit(8);
 	}
 	printf(s, a1, a2, a3);
-}
-
-preendie()
-{
-
-	printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n", devname);
-	exit(8);
 }
 
 /*
@@ -269,7 +274,7 @@ panic(s)
 	char *s;
 {
 
-	pfatal("INTERNAL INCONSISTENCY: %s\n", s);
-	exit(12);
+	pfatal("INTERNAL INCONSISTENCY:");
+	errexit(s);
 }
 #endif
