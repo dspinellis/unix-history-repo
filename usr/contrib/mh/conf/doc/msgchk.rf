@@ -1,0 +1,55 @@
+.\"	@(MHWARNING)
+.TH MSGCHK 1 "April 22, 1986" MH [mh.6]
+.UC 6
+.SH NAME
+msgchk \- check for messages
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+msgchk
+\%[users\ ...]
+@BEGIN: POP
+\%[\-host\ host] \%[\-user\ user]
+\%[\-rpop] \%[\-norpop]
+@END: POP
+\%[\-help]
+.in -.5i
+.SH DESCRIPTION
+The \fImsgchk\fR program checks all known mail drops for mail waiting
+for you to receive.
+For those drops which have mail for you,
+\fImsgchk\fR will indicate if it believes that you have seen the mail
+in question before.
+@BEGIN: POP
+
+If the local host is configured as a POP client,
+or if the `\-host\ host' switch is given,
+\fImsgchk\fR will query the POP service host as to the status of mail waiting.
+The `\-user\ user' switch may be given to specify the name of the POP
+subscriber you wish to check mail for on the POP service host.
+The `\-rpop' switch uses the UNIX \fIrPOP\fR
+(authentication done via trusted connections).
+In contrast, the `\-norpop' switch uses the ARPA \fIPOP\fR
+(in which case \fImsgchk\fR will prompt for a password).
+@END: POP
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+^@(MHETCPATH)/mtstailor~^tailor file
+^@(MHDROPLOC)~^Location of mail drop
+.Pr
+None
+.Sa
+@BEGIN: POP
+\fIPost Office Protocol (revised)\fR (aka RFC\-819 with revisions),
+.br
+@END: POP
+inc(1)
+.De
+`user' defaults to the current user
+@BEGIN: POP
+.Ds
+`\-rpop'
+@END: POP
+.Co
+None
+.En

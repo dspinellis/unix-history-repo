@@ -1,0 +1,38 @@
+.\"	@(MHWARNING)
+.TH RMAIL 8 "April 22, 1986" MH [mh.6]
+.UC 6
+.SH NAME
+rmail \- UUCP interface to mail
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+rmail
+address\ ...
+.in -.5i
+.SH DESCRIPTION
+\fIRmail\fR is intended as a replacement for those systems without
+\fISendMail\fR or \fIMMDF\fR.
+It is normally invoked by \fIuux\fR on behalf of the remote \fIUUCP\fR site.
+For each address, it decides where to send it:
+either locally, via another \fIUUCP\fR link, or via the Internet.
+
+\fIRmail\fR implements a crude access control facility by consulting the
+files \fBRmail.OkHosts\fR and \fBRmail.OkDests\fR in the \fB@(MHETCPATH)/\fR
+directory.
+Hosts listed in the former file can send messages to anywhere they please.
+Hosts listed in the latter file can receive messages from anywhere.
+Note that a host listed in the first file is implicitly listed in the second
+file.
+.Fi
+^@(MHETCPATH)/mtstailor~^tailor file
+^@(MHETCPATH)/Rmail.OkHosts~^list of privileged hosts
+^@(MHETCPATH)/Rmail.OkDests~^list of privileged destinations
+.Pr
+None
+.Sa
+mf(1)
+.De
+None
+.Co
+None
+.En
