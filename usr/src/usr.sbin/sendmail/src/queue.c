@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.18 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.19 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.18 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.19 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -112,7 +112,8 @@ queueup(e, queueall, announce)
 
 	/*
 	**  Output future work requests.
-	**	Priority should be first, since it is read by orderq.
+	**	Priority and creation time should be first, since
+	**	they are required by orderq.
 	*/
 
 	/* output message priority */
@@ -154,6 +155,12 @@ queueup(e, queueall, announce)
 			}
 #endif DEBUG
 		}
+	}
+
+	/* output list of error recipients */
+	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
+	{
+		fprintf(tfp, "E%s\n", q->q_paddr);
 	}
 
 	/*
@@ -357,7 +364,8 @@ runqueue(forkflag)
 **		Sets WorkQ to the queue of available work, in order.
 */
 
-# define WLSIZE		120	/* max size of worklist per sort */
+# define NEED_P		001
+# define NEED_T		002
 
 # ifndef DIR
 # define DIR		FILE
@@ -375,7 +383,7 @@ orderq(doall)
 	register WORK *w;
 	DIR *f;
 	register int i;
-	WORK wlist[WLSIZE+1];
+	WORK wlist[QUEUESIZE+1];
 	int wn = -1;
 	extern workcmpf();
 
@@ -418,7 +426,7 @@ orderq(doall)
 			continue;
 
 		/* yes -- open control file (if not too many files) */
-		if (++wn >= WLSIZE)
+		if (++wn >= QUEUESIZE)
 			continue;
 		cf = fopen(d->d_name, "r");
 		if (cf == NULL)
@@ -434,31 +442,35 @@ orderq(doall)
 			wn--;
 			continue;
 		}
-		wlist[wn].w_name = newstr(d->d_name);
+		w = &wlist[wn];
+		w->w_name = newstr(d->d_name);
 
 		/* make sure jobs in creation don't clog queue */
-		wlist[wn].w_pri = 0x7fffffff;
-		wlist[wn].w_ctime = 0;
+		w->w_pri = 0x7fffffff;
+		w->w_ctime = 0;
 
 		/* extract useful information */
-		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
+		i = NEED_P | NEED_T;
+		while (i != 0 && fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
 			extern long atol();
 
 			switch (lbuf[0])
 			{
 			  case 'P':
-				wlist[wn].w_pri = atol(&lbuf[1]);
+				w->w_pri = atol(&lbuf[1]);
+				i &= ~NEED_P;
 				break;
 
 			  case 'T':
-				wlist[wn].w_ctime = atol(&lbuf[1]);
+				w->w_ctime = atol(&lbuf[1]);
+				i &= ~NEED_T;
 				break;
 			}
 		}
 		(void) fclose(cf);
 
-		if (!doall && shouldqueue(wlist[wn].w_pri))
+		if (!doall && shouldqueue(w->w_pri))
 		{
 			/* don't even bother sorting this job in */
 			wn--;
@@ -471,7 +483,7 @@ orderq(doall)
 	**  Sort the work directory.
 	*/
 
-	qsort((char *) wlist, min(wn, WLSIZE), sizeof *wlist, workcmpf);
+	qsort((char *) wlist, min(wn, QUEUESIZE), sizeof *wlist, workcmpf);
 
 	/*
 	**  Convert the work list into canonical form.
@@ -479,7 +491,7 @@ orderq(doall)
 	*/
 
 	WorkQ = NULL;
-	for (i = min(wn, WLSIZE); --i >= 0; )
+	for (i = min(wn, QUEUESIZE); --i >= 0; )
 	{
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
@@ -699,6 +711,10 @@ readqf(e, full)
 			(void) sendto(&buf[1], 1, (ADDRESS *) NULL, 0);
 			break;
 
+		  case 'E':		/* specify error recipient */
+			sendtolist(&buf[1], (ADDRESS *) NULL, &e->e_errorqueue);
+			break;
+
 		  case 'H':		/* header */
 			if (full)
 				(void) chompheader(&buf[1], FALSE);
@@ -791,8 +807,8 @@ printqueue()
 	}
 
 	printf("\t\tMail Queue (%d request%s", nrequests, nrequests == 1 ? "" : "s");
-	if (nrequests > WLSIZE)
-		printf(", only %d printed", WLSIZE);
+	if (nrequests > QUEUESIZE)
+		printf(", only %d printed", QUEUESIZE);
 	if (Verbose)
 		printf(")\n--QID-- --Size-- -Priority- ---Q-Time--- -----------Sender/Recipient-----------\n");
 	else

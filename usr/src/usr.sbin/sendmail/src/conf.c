@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.11 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -66,8 +66,10 @@ struct hdrinfo	HdrInfo[] =
 		/* originator fields, most to least significant  */
 	"resent-sender",	H_FROM|H_RESENT,
 	"resent-from",		H_FROM|H_RESENT,
+	"resent-reply-to",	H_FROM|H_RESENT,
 	"sender",		H_FROM,
 	"from",			H_FROM,
+	"reply-to",		H_FROM,
 	"full-name",		H_ACHECK,
 	"return-receipt-to",	H_FROM,
 	"errors-to",		H_FROM,
