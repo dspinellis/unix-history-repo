@@ -2,11 +2,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.21 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "user.h"
+#include "proc.h"
+#include "filedesc.h"
 #include "domain.h"
 #include "protosw.h"
 #include "socket.h"
@@ -546,6 +548,7 @@ unp_drain()
 unp_externalize(rights)
 	struct mbuf *rights;
 {
+	struct filedesc *fdp = u.u_procp->p_fd;		/* XXX */
 	register int i;
 	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
 	register struct file **rp = (struct file **)(cm + 1);
@@ -553,7 +556,7 @@ unp_externalize(rights)
 	int newfds = (cm->cmsg_len - sizeof(*cm)) / sizeof (int);
 	int f;
 
-	if (newfds > ufavail()) {
+	if (newfds > ufavail(fdp)) {
 		for (i = 0; i < newfds; i++) {
 			fp = *rp;
 			unp_discard(fp);
@@ -562,10 +565,10 @@ unp_externalize(rights)
 		return (EMSGSIZE);
 	}
 	for (i = 0; i < newfds; i++) {
-		if (ufalloc(0, &f))
+		if (ufalloc(fdp, 0, &f))
 			panic("unp_externalize");
 		fp = *rp;
-		u.u_ofile[f] = fp;
+		OFILE(fdp, f) = fp;
 		fp->f_msgcount--;
 		unp_rights--;
 		*(int *)rp++ = f;
@@ -576,6 +579,7 @@ unp_externalize(rights)
 unp_internalize(control)
 	struct mbuf *control;
 {
+	struct filedesc *fdp = u.u_procp->p_fd;		/* XXX */
 	register struct cmsghdr *cm = mtod(control, struct cmsghdr *);
 	register struct file **rp;
 	register struct file *fp;
@@ -589,12 +593,12 @@ unp_internalize(control)
 	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
 		fd = *(int *)rp++;
-		if ((unsigned)fd >= NOFILE || u.u_ofile[fd] == NULL)
+		if ((unsigned)fd >= fdp->fd_maxfiles || OFILE(fdp, fd) == NULL)
 			return (EBADF);
 	}
 	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
-		fp = u.u_ofile[*(int *)rp];
+		fp = OFILE(fdp, *(int *)rp);
 		*rp++ = fp;
 		fp->f_count++;
 		fp->f_msgcount++;

@@ -3,12 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.31 (Berkeley) %G%
+ *	@(#)init_main.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "user.h"
+#include "filedesc.h"
 #include "kernel.h"
 #include "mount.h"
 #include "map.h"
@@ -55,6 +56,7 @@ main(firstaddr)
 	register int i;
 	register struct proc *p;
 	register struct pgrp *pg;
+	register struct filedesc *fdp;
 	int s;
 
 	rqinit();
@@ -126,8 +128,16 @@ main(firstaddr)
 	 */
 	ndinit(&u.u_nd);
 
-	u.u_cmask = cmask;
-	u.u_lastfile = -1;
+	/*
+	 * Create the file descriptor table for process 0.
+	 */
+	fdp = (struct filedesc *)malloc(sizeof(*fdp), M_FILE, M_WAITOK);
+	bzero((char *)fdp, sizeof(struct filedesc));
+	p->p_fd = fdp;
+	fdp->fd_refcnt = 1;
+	fdp->fd_cmask = cmask;
+	fdp->fd_lastfile = -1;
+	fdp->fd_maxfiles = NDFILE;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
 		    RLIM_INFINITY;
@@ -202,14 +212,14 @@ main(firstaddr)
 		panic("cannot mount root");
 	/*
 	 * Get vnode for '/'.
-	 * Setup rootdir and u.u_cdir to point to it.
+	 * Setup rootdir and fdp->fd_cdir to point to it.
 	 */
 	if (VFS_ROOT(rootfs, &rootdir))
 		panic("cannot find root vnode");
-	u.u_cdir = rootdir;
-	VREF(u.u_cdir);
+	fdp->fd_cdir = rootdir;
+	VREF(fdp->fd_cdir);
 	VOP_UNLOCK(rootdir);
-	u.u_rdir = NULL;
+	fdp->fd_rdir = NULL;
 	boottime = u.u_start =  time;
 
 	/*

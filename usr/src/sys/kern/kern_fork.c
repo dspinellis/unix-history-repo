@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.22 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
 #include "user.h"
+#include "filedesc.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vnode.h"
@@ -96,7 +97,6 @@ newproc(isvfork)
 	int isvfork;
 {
 	register struct proc *rpp, *rip;
-	register int n;
 	register struct file *fp;
 	static int pidchecked = 0;
 
@@ -217,19 +217,11 @@ again:
 	/*
 	 * Increase reference counts on shared objects.
 	 */
-	for (n = 0; n <= u.u_lastfile; n++) {
-		fp = u.u_ofile[n];
-		if (fp == NULL)
-			continue;
-		fp->f_count++;
-	}
+	rpp->p_fd = fddup(rip->p_fd, 0);
 #ifdef SYSVSHM
 	if (rip->p_shm)
 		shmfork(rip, rpp, isvfork);
 #endif
-	VREF(u.u_cdir);
-	if (u.u_rdir)
-		VREF(u.u_rdir);
 	crhold(u.u_cred);
 
 	/*

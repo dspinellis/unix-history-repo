@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.29 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -92,16 +92,8 @@ exit(p, rv)
 			sleep((caddr_t)p, PZERO - 1);
 		p->p_flag &= ~SVFDONE;
 	}
-	for (i = 0; i <= u.u_lastfile; i++) {
-		struct file *f;
-
-		f = u.u_ofile[i];
-		if (f) {
-			u.u_ofile[i] = NULL;
-			u.u_pofile[i] = 0;
-			(void) closef(f);
-		}
-	}
+	fdrele(p->p_fd);
+	p->p_fd = (struct filedesc *)0;
 	if (SESS_LEADER(p)) {
 		register struct session *sp = p->p_session;
 
@@ -123,12 +115,6 @@ exit(p, rv)
 			 */
 		}
 		sp->s_leader = 0;
-	}
-	VOP_LOCK(u.u_cdir);
-	vput(u.u_cdir);
-	if (u.u_rdir) {
-		VOP_LOCK(u.u_rdir);
-		vput(u.u_rdir);
 	}
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	(void) acct(p);

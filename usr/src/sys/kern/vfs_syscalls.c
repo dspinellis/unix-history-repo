@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.61 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.62 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "user.h"
+#include "filedesc.h"
 #include "kernel.h"
 #include "file.h"
 #include "stat.h"
@@ -30,7 +31,7 @@
  */
 /* ARGSUSED */
 mount(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	type;
 		char	*dir;
@@ -178,7 +179,7 @@ update:
  */
 /* ARGSUSED */
 unmount(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*pathp;
 		int	flags;
@@ -253,7 +254,7 @@ dounmount(mp, flags)
  */
 /* ARGSUSED */
 sync(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args *uap;
 	int *retval;
 {
@@ -282,7 +283,7 @@ sync(p, uap, retval)
  */
 /* ARGSUSED */
 quotactl(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char *path;
 		int cmd;
@@ -310,7 +311,7 @@ quotactl(p, uap, retval)
  */
 /* ARGSUSED */
 statfs(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char *path;
 		struct statfs *buf;
@@ -341,7 +342,7 @@ statfs(p, uap, retval)
  */
 /* ARGSUSED */
 fstatfs(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int fd;
 		struct statfs *buf;
@@ -353,7 +354,7 @@ fstatfs(p, uap, retval)
 	register struct statfs *sp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	mp = ((struct vnode *)fp->f_data)->v_mount;
 	sp = &mp->mnt_stat;
@@ -367,7 +368,7 @@ fstatfs(p, uap, retval)
  * get statistics on all filesystems
  */
 getfsstat(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		struct statfs *buf;
 		long bufsize;
@@ -418,18 +419,19 @@ getfsstat(p, uap, retval)
  */
 /* ARGSUSED */
 fchdir(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		int	fd;
 	} *uap;
 	int *retval;
 {
 	register struct nameidata *ndp = &u.u_nd;
+	register struct filedesc *fdp = p->p_fd;
 	register struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(fdp, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -441,8 +443,8 @@ fchdir(p, uap, retval)
 	if (error)
 		RETURN (error);
 	VREF(vp);
-	vrele(ndp->ni_cdir);
-	ndp->ni_cdir = vp;
+	vrele(fdp->fd_cdir);
+	fdp->fd_cdir = vp;
 	RETURN (0);
 }
 
@@ -451,13 +453,14 @@ fchdir(p, uap, retval)
  */
 /* ARGSUSED */
 chdir(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		char	*fname;
 	} *uap;
 	int *retval;
 {
 	register struct nameidata *ndp = &u.u_nd;
+	register struct filedesc *fdp = p->p_fd;
 	int error;
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
@@ -465,8 +468,8 @@ chdir(p, uap, retval)
 	ndp->ni_dirp = uap->fname;
 	if (error = chdirec(ndp))
 		RETURN (error);
-	vrele(ndp->ni_cdir);
-	ndp->ni_cdir = ndp->ni_vp;
+	vrele(fdp->fd_cdir);
+	fdp->fd_cdir = ndp->ni_vp;
 	RETURN (0);
 }
 
@@ -475,13 +478,14 @@ chdir(p, uap, retval)
  */
 /* ARGSUSED */
 chroot(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		char	*fname;
 	} *uap;
 	int *retval;
 {
 	register struct nameidata *ndp = &u.u_nd;
+	register struct filedesc *fdp = p->p_fd;
 	int error;
 
 	if (error = suser(ndp->ni_cred, &u.u_acflag))
@@ -491,9 +495,9 @@ chroot(p, uap, retval)
 	ndp->ni_dirp = uap->fname;
 	if (error = chdirec(ndp))
 		RETURN (error);
-	if (ndp->ni_rdir != NULL)
-		vrele(ndp->ni_rdir);
-	ndp->ni_rdir = ndp->ni_vp;
+	if (fdp->fd_rdir != NULL)
+		vrele(fdp->fd_rdir);
+	fdp->fd_rdir = ndp->ni_vp;
 	RETURN (0);
 }
 
@@ -525,7 +529,7 @@ chdirec(ndp)
  * and call the device open routine if any.
  */
 open(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	mode;
@@ -534,17 +538,18 @@ open(p, uap, retval)
 	int *retval;
 {
 	struct nameidata *ndp = &u.u_nd;
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	int fmode, cmode;
 	struct file *nfp;
 	int indx, error;
 	extern struct fileops vnops;
 
-	if (error = falloc(&nfp, &indx))
+	if (error = falloc(p, &nfp, &indx))
 		RETURN (error);
 	fp = nfp;
 	fmode = uap->mode - FOPEN;
-	cmode = ((uap->crtmode &~ u.u_cmask) & 07777) &~ S_ISVTX;
+	cmode = ((uap->crtmode &~ fdp->fd_cmask) & 07777) &~ S_ISVTX;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	p->p_dupfd = -indx - 1;			/* XXX check for fdopen */
@@ -553,13 +558,13 @@ open(p, uap, retval)
 		fp->f_count--;
 		if (error == ENODEV &&		/* XXX from fdopen */
 		    p->p_dupfd >= 0 &&
-		    (error = dupfdopen(indx, p->p_dupfd, fmode)) == 0) {
+		    (error = dupfdopen(fdp, indx, p->p_dupfd, fmode)) == 0) {
 			*retval = indx;
 			RETURN (0);
 		}
 		if (error == ERESTART)
 			error = EINTR;
-		u.u_ofile[indx] = NULL;
+		OFILE(fdp, indx) = NULL;
 		RETURN (error);
 	}
 	fp->f_flag = fmode & FMASK;
@@ -600,7 +605,7 @@ ocreat(p, uap, retval)
  */
 /* ARGSUSED */
 mknod(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	fmode;
@@ -641,7 +646,7 @@ mknod(p, uap, retval)
 		error = EINVAL;
 		goto out;
 	}
-	vattr.va_mode = (uap->fmode & 07777) &~ u.u_cmask;
+	vattr.va_mode = (uap->fmode & 07777) &~ p->p_fd->fd_cmask;
 	vattr.va_rdev = uap->dev;
 out:
 	if (!error) {
@@ -663,7 +668,7 @@ out:
  */
 /* ARGSUSED */
 mkfifo(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	fmode;
@@ -693,7 +698,7 @@ mkfifo(p, uap, retval)
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VFIFO;
-	vattr.va_mode = (uap->fmode & 07777) &~ u.u_cmask;
+	vattr.va_mode = (uap->fmode & 07777) &~ p->p_fd->fd_cmask;
 	RETURN (VOP_MKNOD(ndp, &vattr, ndp->ni_cred));
 #endif /* FIFO */
 }
@@ -703,7 +708,7 @@ mkfifo(p, uap, retval)
  */
 /* ARGSUSED */
 link(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*target;
 		char	*linkname;
@@ -757,7 +762,7 @@ out1:
  */
 /* ARGSUSED */
 symlink(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*target;
 		char	*linkname;
@@ -788,7 +793,7 @@ symlink(p, uap, retval)
 		goto out;
 	}
 	VATTR_NULL(&vattr);
-	vattr.va_mode = 0777 &~ u.u_cmask;
+	vattr.va_mode = 0777 &~ p->p_fd->fd_cmask;
 	error = VOP_SYMLINK(ndp, &vattr, target);
 out:
 	FREE(target, M_NAMEI);
@@ -802,7 +807,7 @@ out:
  */
 /* ARGSUSED */
 unlink(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		char	*fname;
 	} *uap;
@@ -847,7 +852,7 @@ out:
  * Seek system call
  */
 lseek(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	fdes;
 		off_t	off;
@@ -856,12 +861,13 @@ lseek(p, uap, retval)
 	off_t *retval;
 {
 	struct ucred *cred = u.u_nd.ni_cred;
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	struct vattr vattr;
 	int error;
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		RETURN (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		RETURN (ESPIPE);
@@ -894,7 +900,7 @@ lseek(p, uap, retval)
  */
 /* ARGSUSED */
 saccess(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	fmode;
@@ -942,7 +948,7 @@ out1:
  */
 /* ARGSUSED */
 stat(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		struct stat *ub;
@@ -971,7 +977,7 @@ stat(p, uap, retval)
  */
 /* ARGSUSED */
 lstat(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		struct stat *ub;
@@ -1000,7 +1006,7 @@ lstat(p, uap, retval)
  */
 /* ARGSUSED */
 readlink(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*name;
 		char	*buf;
@@ -1044,7 +1050,7 @@ out:
  */
 /* ARGSUSED */
 chflags(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	flags;
@@ -1079,7 +1085,7 @@ out:
  */
 /* ARGSUSED */
 fchflags(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	fd;
 		int	flags;
@@ -1091,7 +1097,7 @@ fchflags(p, uap, retval)
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1112,7 +1118,7 @@ out:
  */
 /* ARGSUSED */
 chmod(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	fmode;
@@ -1147,7 +1153,7 @@ out:
  */
 /* ARGSUSED */
 fchmod(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	fd;
 		int	fmode;
@@ -1159,7 +1165,7 @@ fchmod(p, uap, retval)
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1180,7 +1186,7 @@ out:
  */
 /* ARGSUSED */
 chown(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		int	uid;
@@ -1217,7 +1223,7 @@ out:
  */
 /* ARGSUSED */
 fchown(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	fd;
 		int	uid;
@@ -1230,7 +1236,7 @@ fchown(p, uap, retval)
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1252,7 +1258,7 @@ out:
  */
 /* ARGSUSED */
 utimes(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		struct	timeval *tptr;
@@ -1291,7 +1297,7 @@ out:
  */
 /* ARGSUSED */
 truncate(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 		off_t	length;
@@ -1329,7 +1335,7 @@ out:
  */
 /* ARGSUSED */
 ftruncate(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	fd;
 		off_t	length;
@@ -1341,7 +1347,7 @@ ftruncate(p, uap, retval)
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	if ((fp->f_flag & FWRITE) == 0)
 		RETURN (EINVAL);
@@ -1366,7 +1372,7 @@ out:
  */
 /* ARGSUSED */
 fsync(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		int	fd;
 	} *uap;
@@ -1376,7 +1382,7 @@ fsync(p, uap, retval)
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1393,7 +1399,7 @@ fsync(p, uap, retval)
  */
 /* ARGSUSED */
 rename(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*from;
 		char	*to;
@@ -1475,7 +1481,7 @@ out1:
  */
 /* ARGSUSED */
 mkdir(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*name;
 		int	dmode;
@@ -1504,7 +1510,7 @@ mkdir(p, uap, retval)
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VDIR;
-	vattr.va_mode = (uap->dmode & 0777) &~ u.u_cmask;
+	vattr.va_mode = (uap->dmode & 0777) &~ p->p_fd->fd_cmask;
 	error = VOP_MKDIR(ndp, &vattr);
 	if (!error)
 		vput(ndp->ni_vp);
@@ -1516,7 +1522,7 @@ mkdir(p, uap, retval)
  */
 /* ARGSUSED */
 rmdir(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		char	*name;
 	} *uap;
@@ -1566,7 +1572,7 @@ out:
  * Read a block of directory entries in a file system independent format
  */
 getdirentries(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		int	fd;
 		char	*buf;
@@ -1582,7 +1588,7 @@ getdirentries(p, uap, retval)
 	off_t off;
 	int error, eofflag;
 
-	if (error = getvnode(u.u_ofile, uap->fd, &fp))
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		RETURN (error);
 	if ((fp->f_flag & FREAD) == 0)
 		RETURN (EBADF);
@@ -1613,15 +1619,16 @@ getdirentries(p, uap, retval)
  */
 mode_t
 umask(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	struct args {
 		int	mask;
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 
-	*retval = u.u_cmask;
-	u.u_cmask = uap->mask & 07777;
+	*retval = fdp->fd_cmask;
+	fdp->fd_cmask = uap->mask & 07777;
 	RETURN (0);
 }
 
@@ -1631,7 +1638,7 @@ umask(p, uap, retval)
  */
 /* ARGSUSED */
 revoke(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		char	*fname;
 	} *uap;
@@ -1664,14 +1671,15 @@ out:
 	RETURN (error);
 }
 
-getvnode(ofile, fdes, fpp)
-	struct file *ofile[];
+getvnode(fdp, fdes, fpp)
+	struct filedesc *fdp;
 	struct file **fpp;
 	int fdes;
 {
 	struct file *fp;
 
-	if ((unsigned)fdes >= NOFILE || (fp = ofile[fdes]) == NULL)
+	if ((unsigned)fdes >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, fdes)) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (EINVAL);

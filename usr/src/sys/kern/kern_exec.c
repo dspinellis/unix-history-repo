@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exec.c	7.34 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "user.h"
+#include "filedesc.h"
 #include "kernel.h"
 #include "proc.h"
 #include "mount.h"
@@ -64,9 +65,12 @@ execve(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register nc;
-	register char *cp;
+	register struct ucred *cred = u.u_cred;
+	register struct nameidata *ndp = &u.u_nd;
+	register struct filedesc *fdp = p->p_fd;
 	int na, ne, ucp, ap, cc;
+	register char *cp;
+	register int nc;
 	unsigned len;
 	int indir, uid, gid;
 	char *sharg;
@@ -84,8 +88,6 @@ execve(p, uap, retval)
 #ifdef HPUXCOMPAT
 	struct hpux_exec hhead;
 #endif
-	register struct ucred *cred = u.u_cred;
-	register struct nameidata *ndp = &u.u_nd;
 	int resid, error, flags = 0;
 	vm_offset_t execargs;
 #ifdef SECSIZE
@@ -394,16 +396,16 @@ execve(p, uap, retval)
 
 	execsigs(p);
 
-	for (nc = u.u_lastfile; nc >= 0; --nc) {
-		if (u.u_pofile[nc] & UF_EXCLOSE) {
-			(void) closef(u.u_ofile[nc]);
-			u.u_ofile[nc] = NULL;
-			u.u_pofile[nc] = 0;
+	for (nc = fdp->fd_lastfile; nc >= 0; --nc) {
+		if (OFILEFLAGS(fdp, nc) & UF_EXCLOSE) {
+			(void) closef(OFILE(fdp, nc));
+			OFILE(fdp, nc) = NULL;
+			OFILEFLAGS(fdp, nc) = 0;
 		}
-		u.u_pofile[nc] &= ~UF_MAPPED;
+		OFILEFLAGS(fdp, nc) &= ~UF_MAPPED;
 	}
-	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
-		u.u_lastfile--;
+	while (fdp->fd_lastfile >= 0 && OFILE(fdp, fdp->fd_lastfile) == NULL)
+		fdp->fd_lastfile--;
 	setregs(exdata.ex_exec.a_entry, retval);
 	/*
 	 * Install sigcode at top of user stack.
