@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.14 (Berkeley) %G%
+.\"	@(#)2.t	6.15 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -229,19 +229,36 @@ Label the disks with the
 .Xr disklabel (8)
 program.
 .NH 4
-Step 1: formatting a disk.
+Step 1: selecting and formatting a disk.
 .PP
 For your first system you will have to obtain a formatted disk
 of a type given in the ``supported hardware'' list above.
+If you want to load an entire binary system
+(i.e., everything except /usr/src),
+on the single disk you will need a minimum of 290MB,
+ruling out anything smaller than a 7959B disk.
+The disklabel included in the bootstrap root image is layed out
+to accomodate this scenerio.
+Note that an HP SCSI magneto-optical disk will work fine for this case.
+\*(4B will boot and run (albeit slowly) using one.
+If you want to load source on a single disk system,
+you will need at least 640MB (at least a 2213A SCSI or 2203A HP-IB disk).
+A disk as small as the 7945A (54MB) can be used for the bootstrap
+procedure but will hold only the root and primary swap partitions.
+If you plan to use multiple disks,
+refer to section 2.5 for suggestions on paritioning.
+.PP
+After selecting a disk, you may need to format it.
 Since most HP disk drives come pre-formatted
-(with the exception of optical media),
-there should be nothing to do.
-If necessary, you can format a disk under HP-UX using the
+(with the exception of optical media)
+you probably won't but if necessary,
+you can format a disk under HP-UX using the
 .Xr mediainit (1m)
 program.
 Once you have \*(4B up and running on one machine you can use the
 .Xr scsiformat (8)
 program to format additional SCSI disks.
+Any additional HP-IB disks will have to be formatted using HP-UX.
 .NH 4
 Step 2: copying the root filesystem from tape to disk
 .PP
@@ -264,9 +281,7 @@ and
 .Xr disk (7)
 man pages for details.
 .PP
-Note that an HP SCSI magneto-optical disk will work fine as a second disk.
-\*(4B will boot and run (albeit slowly) from one.
-Also note that if you have a SCSI disk, you don't necessarily have to use
+Note that if you have a SCSI disk, you don't necessarily have to use
 HP-UX (or an HP) to create the boot disk.
 Any machine and operating system that will allow you to copy the
 raw disk image out to block 0 of the disk will do.
@@ -310,6 +325,8 @@ lw(2i) l.
 .DE
 .LP
 This copy will likely take 30 minutes or more.
+Unfortunately, this won't work for a SCSI DAT tape since \*(4B includes
+no standalone driver for SCSI tapes.
 .NH 4
 Step 3: booting the root filesystem
 .PP
@@ -396,14 +413,20 @@ to ask you for the name of the root filesystem to use.
 This happens because the distribution system is a \fIgeneric\fP
 system, i.e., it can be bootstrapped on a cpu with its root device
 and paging area on any available disk drive.
-You should respond to the root device question with ``sd0''
-if you are booting from a SCSI disk;
-you should respond to the root device question with ``rd0''
-if you are booting from an HP-IB disk.
+You will most likely respond to the root device question with ``sd0''
+if you are booting from a SCSI disk,
+or with ``rd0'' if you are booting from an HP-IB disk.
 This response indicates that that the disk it is running
 on is drive 0 of type ``sd'' or ``rd'' respectively.
+If you have other disks attached to the system,
+it is possible that the drive you are using will not be configured
+as logical drive 0.
+Check the autoconfiguration messages printed out by the kernel to
+make sure.
+These messages will reveal the type of every logical drive
+and their associated controller and slave addresses.
 You will later build a system tailored to your configuration
-that will not ask this question when it is bootstrapped.
+that will not prompt you for a root device when it is bootstrapped.
 .DS
 \fBroot device?\fP \fI\*(Dk0\fP
 WARNING: preposterous time in filesystem \-\- CHECK AND RESET THE DATE!
@@ -416,13 +439,32 @@ The \*(lqerase ...\*(rq message is part of the
 that was executed by the root shell when it started.  This message
 is present to inform you as to what values the character erase,
 line erase, and interrupt characters have been set.
-.NH 4
-Step 4: (optional) restoring the root filesystem
 .PP
 UNIX is now running,
 and the \fIUNIX Programmer's Manual\fP applies.  The ``#'' is the prompt
 from the Bourne shell, and lets you know that you are the super-user,
 whose login name is \*(lqroot\*(rq.
+.PP
+At this point, the root filesystem is mounted read-only.
+Before continuing the installation, the filesystem needs to be ``updated''
+to allow writing and device special files for the following steps need
+to be created.
+This is done as follows:
+.DS
+.TS
+lw(2i) l.
+\fB#\fP \fImount_mfs -s 1000 -T type /dev/null /tmp	(create a writable filesystem)
+(\fItype\fP is the disk type as determined from /etc/disktab)
+\fB#\fP \fIcd /tmp\fP	(go to that filesystem)
+\fB#\fP \fI../dev/MAKEDEV \*(Dk#\fP	(create special files for root disk)
+(\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number)
+\fB#\fP \fImount -u /tmp/\*(Dk#a /\fP	(read-write mount root filesystem)
+\fB#\fP \fIcd /dev\fP	(go to device directory)
+\fB#\fP \fI./MAKEDEV \*(Dk#\fP	(create permanent special files for root disk)
+.TE
+.DE
+.NH 4
+Step 4: (optional) restoring the root filesystem
 .PP
 The root filesystem that you are currently running on is complete,
 however it probably is not optimally laid out for the disk on
@@ -444,6 +486,8 @@ To actually create the root filesystem on drive 1
 you should first label the disk as described in step 5 below.
 Then run the following commands:
 .DS
+\fB#\fP \fIcd /dev\fP
+\fB#\fP \fI./MAKEDEV \*(Dk1a\fP
 \fB#\fP\|\fInewfs /dev/r\*(Dk1a\fP
 \fB#\fP\|\fImount /dev/\*(Dk1a /mnt\fP
 \fB#\fP\|\fIcd /mnt\fP
@@ -458,19 +502,53 @@ you just created following the procedure in step (3) above.
 .NH 4
 Step 5: placing labels on the disks
 .PP
-\*(4B uses disk labels in the first sector of each disk to contain
-information about the geometry of the drive and the partition layout.
+For each disk on the HP300, \*(4B places information about the geometry
+of the drive and the partition layout at byte offset 1024.
 This information is written with
 .Xr disklabel (8).
 .PP
-For each disk that you wish to label, run the following command:
+The root image just loaded includes a ``generic'' label intended to allow
+easy installation of / and /usr and may not be suitable for the actual
+disk on which it was installed.
+In particular,
+it may make your disk appear larger or smaller than it actually is.
+In the latter case, some of the partitions may include non-existent
+space leading to errors if those partitions are used.
+It is also possible that the defined geometry will interact poorly with
+the filesystem code resulting in reduced performance.
+.PP
+At this time you can edit this label and fill in correct geometry
+information from
+.Pn /etc/disklabel .
+You may also want to rework the ``e'' and ``f'' partitions used for
+loading /usr and /var.
+You should not attempt to, and
+.Xr disklabel
+will not let you, modify the ``a'', ``b'' and ``d'' partitions.
+Since you must use
+.Xr ed (1)
+for this step, consider carefully whether you really want to do this.
+To edit a label:
 .DS
-\fB#\|\fP\fIdisklabel  -rw  \fBXX#  type\fP  \fI"optional_pack_name"\fP
+\fB#\fP \fIEDITOR=ed\fP
+\fB#\fP \fexport EDITOR\fP
+\fB#\fP \fIdisklabel -r -e /dev/r\fBXX#\fPd
 .DE
-The \fBXX\fP is either ``sd'' for a SCSI disk or ``rd'' for an HP-IB disk;
-the \fB#\fP is the unit number.
-The \fBtype\fP is the HP300 disk device name as listed in
-section 2.2.1 or any other name listed in
+where \fBXX#\fP is the type and \fB#\fP is the logical drive number; e.g.
+.Pn /dev/rsd0d
+or
+.Pn /dev/rrd0d .
+Note the use of the ``d'' partition.
+This allows you to change the size of the ``c'' partition
+(the partition normally used by
+.Xr disklabel ).
+.PP
+If you wish to label any addtional disks, run the following command for each:
+.DS
+\fB#\|\fP\fIdisklabel -rw \fBXX# type\fP \fI"optional_pack_name"\fP
+.DE
+where \fBXX#\fP is the same as in the previous command
+and \fBtype\fP is the HP300 disk device name as listed in
 .Pn /etc/disktab .
 The optional information may contain any descriptive name for the
 contents of a disk, and may be up to 16 characters long.  This procedure
@@ -529,7 +607,9 @@ and audio device.
 T}
 .TE
 .LP
-Major items which are not supported include the GX (cgnine) display,
+Major items which are not supported include
+anything VME-based,
+the GX (cgsix) display,
 the floppy disk, and SCSI tapes.
 .NH 3
 Limitations
@@ -604,7 +684,7 @@ to enable disk-based booting:
 # mount /dev/sd3a /mnt
 # cp /boot /mnt/boot
 # umount /dev/sd3a
-# /usr/kvm/mdec/installboot installboot bootsd /dev/rsd3a
+# /usr/kvm/mdec/installboot /mnt/boot bootsd /dev/rsd3a
 .DE
 The SunOS
 .Pn /boot
@@ -630,8 +710,8 @@ mount it, and restore it:
 .DS
 .ft CW
 # halt
-ok boot disk3 -s			[for old proms] OR
-ok boot sd(0,3)vmunix -s		[for new proms]
+ok boot sd(0,3)vmunix -s		[for old proms] OR
+ok boot disk3 -s			[for new proms]
 \&... [\*(4B boot messages]
 # ifconfig le0 [your address, subnet, etc, as needed]
 # newfs /dev/rsd0g
@@ -1263,6 +1343,13 @@ Then do the following:
 .DS
 .TS
 lw(2i) l.
+\fB#\fP \fImount_mfs -s 1000 -T type /tmp	(create a writable filesystem)
+(\fItype\fP is disk type as determined from /etc/disktab)
+\fB#\fP \fIcd /tmp\fP	(go to writable filesystem)
+\fB#\fP \fI../dev/MAKEDEV \*(Dk#\fP	(create special files for root disk)
+\fB#\fP \fImount -u /tmp/\*(Dk#a /\fP	(read-write mount root filesystem)
+\fB#\fP \fIcd /dev\fP	(go to device directory)
+\fB#\fP \fI./MAKEDEV \*(Dk#\fP	(create permanent special files for root disk)
 \fB#\fP \fIdate yymmddhhmm\fP	(set date, see \fIdate\fP\|(1))
 \&....
 \fB#\fP \fIpasswd root\fP	(set password for super-user)
