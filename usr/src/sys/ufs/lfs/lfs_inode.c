@@ -1,4 +1,4 @@
-/*	lfs_inode.c	6.2	84/02/07	*/
+/*	lfs_inode.c	6.3	84/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -270,12 +270,8 @@ irele(ip)
 		}
 		ip->i_freef = NULL;
 		ifreet = &ip->i_freef;
-	} else if ((ip->i_flag & (IUPD|IACC|ICHG)) &&
-	    ((ip->i_flag & ILOCKED) == 0)) {
-		ip->i_flag |= ILOCKED;
-		iupdat(ip, &time, &time, 0);
-		iunlock(ip);
-	}
+	} else if (!(ip->i_flag & ILOCKED))
+		ITIMES(ip, &time, &time);
 	ip->i_count--;
 }
 
@@ -297,7 +293,7 @@ iupdat(ip, ta, tm, waitfor)
 	register struct fs *fp;
 
 	fp = ip->i_fs;
-	if ((ip->i_flag & (IUPD|IACC|ICHG)) != 0) {
+	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) != 0) {
 		if (fp->fs_ronly)
 			return;
 		bp = bread(ip->i_dev, fsbtodb(fp, itod(fp, ip->i_number)),
@@ -312,7 +308,7 @@ iupdat(ip, ta, tm, waitfor)
 			ip->i_mtime = tm->tv_sec;
 		if (ip->i_flag&ICHG)
 			ip->i_ctime = time.tv_sec;
-		ip->i_flag &= ~(IUPD|IACC|ICHG);
+		ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 		dp = bp->b_un.b_dino + itoo(fp, ip->i_number);
 		dp->di_ic = ip->i_ic;
 		if (waitfor)
