@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)error.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)error.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 /*
  * pi - Pascal interpreter code translator
@@ -68,8 +68,10 @@ error(a1, a2, a3, a4)
 */
 #endif
 
-	if (errpfx == 'w' && opt('w') != 0)
+	if (errpfx == 'w' && opt('w') != 0) {
+		errpfx == 'E';
 		return;
+	}
 #ifdef PXP
 /*
 	flush();
