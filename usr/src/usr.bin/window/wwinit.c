@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	1.6 83/07/26";
+static	char *sccsid = "@(#)wwinit.c	1.7 83/07/29";
 #endif
 
 #include "ww.h"
@@ -37,7 +37,6 @@ wwinit()
 	wwnewtty.ww_sgttyb.sg_flags |= CBREAK;
 	wwnewtty.ww_sgttyb.sg_flags &= ~(ECHO|CRMOD);
 	wwnewtty.ww_lmode |= LLITOUT;
-	wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
 	if (wwsettty(0, &wwnewtty) < 0)
 		return -1;
 	if (Winit(2, 1) != 0)
@@ -75,16 +74,19 @@ register char *cap;
 {
 	static char tbuf[512];
 	static char *tp = tbuf;
-	register char *str;
+	register char *str, *p;
 	char *tgetstr();
 
 	if ((str = tgetstr(cap, &tp)) != 0) {
 		while (*kp++ = *cap++)
 			;
 		kp[-1] = '=';
-		while (*kp++ = *str++)
-			;
-		kp[-1] = ':';
+		while (*str) {
+			for (p = unctrl(*str++); *kp++ = *p++;)
+				;
+			kp--;
+		}
+		*kp++ = ':';
 		*kp = 0;
 	}
 }
