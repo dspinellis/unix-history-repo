@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.43 (Berkeley) %G%
+		@(#)README	8.44 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1216,6 +1216,9 @@ confSEPARATE_PROC	False		OY	Run all deliveries in a
 						separate process.
 confWORK_CLASS_FACTOR	(undefined)	Oz	Priority multiplier for class.
 confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
+confQUEUE_SORT_ORDER	Priority	O QueueSortOrder
+						Queue sort algorithm:
+						Priority or Host.
 confCW_FILE		/etc/sendmail.cw	Name of file used to get the
 					Fw	local additions to the $=w
 						class.
