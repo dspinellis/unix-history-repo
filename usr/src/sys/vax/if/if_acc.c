@@ -1,4 +1,4 @@
-/*	if_acc.c	4.16	82/06/14	*/
+/*	if_acc.c	4.17	82/06/14	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -85,8 +85,7 @@ COUNT(ACCPROBE);
 	addr->ocsr = OUT_BBACK; DELAY(5000);
 	addr->owc = 0;
 	addr->ocsr = ACC_IE | ACC_GO; DELAY(5000);
-	addr->icsr = ACC_RESET; DELAY(5000);
-	addr->ocsr = ACC_RESET; DELAY(5000);
+	addr->ocsr = 0;
 	if (cvec && cvec != 0x200)	/* transmit -> receive */
 		cvec -= 4;
 #ifdef ECHACK
@@ -294,13 +293,12 @@ COUNT(ACCXINT);
 	if (sc->acc_ic->ic_oactive == 0) {
 		printf("acc%d: stray xmit interrupt, csr=%b\n", unit,
 			addr->ocsr, ACC_OUTBITS);
-		addr->ocsr  = ACC_RESET; 
 		return;
 	}
 	acctrace("ocsr", addr->ocsr);
 	sc->acc_if->if_opackets++;
 	sc->acc_ic->ic_oactive = 0;
-	if (addr->ocsr & (ACC_ERR|OUT_TMR)) {
+	if (addr->ocsr & ACC_ERR) {
 		printf("acc%d: output error, ocsr=%b, icsr=%b\n", unit,
 			addr->ocsr, ACC_OUTBITS, addr->icsr, ACC_INBITS);
 		sc->acc_if->if_oerrors++;
@@ -309,8 +307,11 @@ COUNT(ACCXINT);
 		m_freem(sc->acc_ifuba.ifu_xtofree);
 		sc->acc_ifuba.ifu_xtofree = 0;
 	}
-	if (sc->acc_if->if_snd.ifq_head)
-		accstart(unit);
+	if (sc->acc_if->if_snd.ifq_head == 0) {
+		addr->ocsr &= ~ACC_IE;		/* hardware funky? */
+		return;
+	}
+	accstart(unit);
 }
 
 /*
@@ -325,11 +326,6 @@ accrint(unit)
 
 COUNT(ACCRINT);
 	addr = (struct accdevice *)accinfo[unit]->ui_addr;
-	if ((addr->icsr & ACC_RDY) == 0) {
-		printf("acc%d: stray input interrupt\n", unit);
-		accinputreset(addr, unit);
-		goto setup;
-	}
 	sc->acc_if->if_ipackets++;
 
 	/*
@@ -338,12 +334,10 @@ COUNT(ACCRINT);
 	if (sc->acc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->acc_ifuba.ifu_uba, sc->acc_ifuba.ifu_r.ifrw_bdp);
 	acctrace("rint", addr->icsr);
-	if (addr->icsr & (ACC_ERR|IN_RMR)) {
+	if (addr->icsr & ACC_ERR) {
 		printf("acc%d: input error, icsr=%b, ocsr=%b\n", unit,
 		    addr->icsr, ACC_INBITS, addr->ocsr, ACC_OUTBITS);
 		sc->acc_if->if_ierrors++;
-		if (addr->icsr & IN_RMR)
-			accinputreset(addr, unit);
 		sc->acc_flush = 1;
 	}
 
