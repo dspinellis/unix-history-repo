@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.25 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.26 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.25 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.26 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -270,6 +270,7 @@ smtp(e)
 					"Host %s didn't use HELO protocol",
 					RealHostName);
 			}
+#ifdef PICKY_HELO_CHECK
 			if (strcasecmp(sendinghost, RealHostName) != 0 &&
 			    (strcasecmp(RealHostName, "localhost") != 0 ||
 			     strcasecmp(sendinghost, MyHostName) != 0))
@@ -277,6 +278,7 @@ smtp(e)
 				auth_warning(e, "Host %s claimed to be %s",
 					RealHostName, sendinghost);
 			}
+#endif
 
 			if (protocol == NULL)
 				protocol = "SMTP";
