@@ -1,4 +1,4 @@
-/*	tcp_subr.c	6.3	84/11/01	*/
+/*	tcp_subr.c	6.4	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -159,6 +159,7 @@ tcp_newtcpcb(inp)
 	tp->t_flags = 0;		/* sends options! */
 	tp->t_inpcb = inp;
 	tp->t_srtt = TCPTV_SRTTBASE;
+	tp->snd_cwnd = sbspace(&inp->inp_socket->so_snd);
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
 }
@@ -236,6 +237,7 @@ tcp_ctlinput(cmd, arg)
 {
 	struct in_addr *sin;
 	extern u_char inetctlerrmap[];
+	int tcp_quench();
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
@@ -245,6 +247,8 @@ tcp_ctlinput(cmd, arg)
 		break;
 
 	case PRC_QUENCH:
+		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in_pcbnotify(&tcb, sin, 0, tcp_quench);
 		break;
 
 	/* these are handled by ip */
@@ -257,4 +261,16 @@ tcp_ctlinput(cmd, arg)
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
 		in_pcbnotify(&tcb, sin, (int)inetctlerrmap[cmd], tcp_abort);
 	}
+}
+
+/*
+ * When a source quench is received, close congestion window
+ * to 80% of the outstanding data (but not less than one segment).
+ */
+tcp_quench(inp)
+	struct inpcb *inp;
+{
+	struct tcpcb *tp = intotcpcb(inp);
+
+	tp->snd_cwnd = MAX(8 * (tp->snd_nxt - tp->snd_una) / 10, tp->t_maxseg);
 }
