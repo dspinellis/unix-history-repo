@@ -1,4 +1,4 @@
-/*	Locore.c	4.11	81/05/15	*/
+/*	Locore.c	4.12	81/08/29	*/
 
 #include "dz.h"
 
@@ -209,7 +209,7 @@ spl7() { return (0); }
 splx(s) int s; { }
 
 /*ARGSUSED*/
-bcopy(to, from, count) caddr_t to, from; unsigned count; { ; }
+bcopy(from, to, count) caddr_t from, to; unsigned count; { ; }
 
 /*ARGSUSED*/
 ffs(i) { return (0); }
