@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.5 (Berkeley) 81/04/01";
+static	char *sccsid = "@(#)iostat.c	4.6 (Berkeley) 81/04/21";
 /*
  * iostat
  */
@@ -211,11 +211,12 @@ read_names()
 
 	mp = (struct mba_device *) nl[X_MBDINIT].n_value;
 	up = (struct uba_device *) nl[X_UBDINIT].n_value;
-	if (mp == 0 || up == 0)
+	if (up == 0)
 	{
 		fprintf(stderr, "iostat: Disk init info not in namelist\n");
 		exit(1);
 	}
+	if (mp)
 	while(1)
 	{
 		steal(mp++, mdev);
