@@ -484,12 +484,11 @@ alloccg(ip, cg, bpref, size)
 		return (NULL);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC ||
+	    (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)) {
 		brelse(bp);
 		return (NULL);
 	}
-	if (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)
-		return (NULL);
 	cgp->cg_time = time.tv_sec;
 	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
@@ -528,8 +527,10 @@ alloccg(ip, cg, bpref, size)
 		return (bno);
 	}
 	bno = mapsearch(fs, cgp, bpref, allocsiz);
-	if (bno < 0)
+	if (bno < 0) {
+		brelse(bp);
 		return (NULL);
+	}
 	for (i = 0; i < frags; i++)
 		clrbit(cgp->cg_free, bno + i);
 	cgp->cg_cs.cs_nffree -= frags;
@@ -678,12 +679,11 @@ ialloccg(ip, cg, ipref, mode)
 		return (NULL);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC ||
+	    cgp->cg_cs.cs_nifree == 0) {
 		brelse(bp);
 		return (NULL);
 	}
-	if (cgp->cg_cs.cs_nifree == 0)
-		return (NULL);
 	cgp->cg_time = time.tv_sec;
 	if (ipref) {
 		ipref %= fs->fs_ipg;
