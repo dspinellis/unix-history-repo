@@ -1,12 +1,19 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.12 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)syslog.c	5.13 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
+
 
 /*
  * SYSLOG -- print message on log file
@@ -37,6 +44,7 @@ static char sccsid[] = "@(#)syslog.c	5.12 (Berkeley) %G%";
 #define NULL	0			/* manifest */
 
 #define PRIFAC(p)	(((p) & LOG_FACMASK) >> 3)
+					/* XXX should be in <syslog.h> */
 #define IMPORTANT 	LOG_ERR
 
 static char	logname[] = "/dev/log";
@@ -64,8 +72,9 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if (pri <= 0 || PRIFAC(pri) >= LOG_NFACILITIES ||
-	    (LOG_MASK(pri) & LogMask) == 0)
+	if ((unsigned) PRIFAC(pri) >= LOG_NFACILITIES ||
+	    (LOG_MASK(pri & LOG_PRIMASK) & LogMask) == 0 ||
+	    (pri &~ (LOG_PRIMASK|LOG_PRIMASK)) != 0)
 		return;
 	if (LogFile < 0)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
@@ -159,8 +168,8 @@ openlog(ident, logstat, logfac)
 	if (ident != NULL)
 		LogTag = ident;
 	LogStat = logstat;
-	if (logfac != 0)
-		LogFacility = logfac & LOG_FACMASK;
+	if (logfac != 0 && (logfac &~ LOG_FACMASK) == 0)
+		LogFacility = logfac;
 	if (LogFile >= 0)
 		return;
 	SyslogAddr.sa_family = AF_UNIX;
