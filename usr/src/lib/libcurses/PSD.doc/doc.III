@@ -2,8 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)doc.III	5.1 (Berkeley) %G%
+.\"	@(#)doc.III	6.1 (Berkeley) %G%
 .\"
+.Ds
+.Fd baudrate "" \*m
+.De
+Returns the output baud rate of the terminal.
+This is a system dependent constant
+(defined in
+.b <sys/tty.h>
+on BSD systems,
+which is included by
+.b <curses.h> ).
 .Ds
 .Fd delwin win
 WINDOW	*win;
@@ -37,6 +47,24 @@ This is especially useful for resetting tty stats
 when trapping rubouts via
 .b signal (2).
 .Ds
+.Fd erasechar "" \*m
+.De
+Returns the erase character
+for the terminal,
+.i i.e. ,
+the character used by the user to erase a single character from the input.
+.Ds
+.Fd getcap str "" "char *"
+char	*str;
+.De
+Return a pointer to the
+.b termcap
+capability described by
+.Vn str
+(see
+.b termcap (5)
+for details).
+.Ds
 .Fd getyx win\*,y\*,x \*m
 WINDOW	*win;
 int	y\*,x;
@@ -56,21 +84,19 @@ and
 .Vn x .
 .Ds
 .Fd inch "" \*m
-.sp .5
 .Fd winch win \*m
 WINDOW	*win;
 .De
 Returns the character at the current \*(y
 on the given window.
 This does not make any changes to the window.
-\*(Nm
 .Ds
 .Fd initscr
 .De
 Initialize the screen routines.
 This must be called before any of the screen routines are used.
 It initializes the terminal-type data and such,
-and without it, none of the routines can operate.
+and without it none of the routines can operate.
 If standard input is not a tty,
 it sets the specifications to the terminal
 whose name is pointed to by
@@ -81,6 +107,21 @@ If the boolean
 is true,
 .Vn Def\*_term
 is always used.
+If the system supports the
+.b TIOCGWINSZ
+.Fn ioctl "" "" 2
+call,
+it is used to get the number of lines and columns for the terminal,
+otherwise it is taken from the
+.b termcap
+description.
+.Ds
+.Fd killchar "" \*m
+.De
+Returns the line kill character
+for the terminal,
+.i i.e. ,
+the character used by the user to erase an entire line from the input.
 .Ds
 .Fd leaveok win\*,boolf \*m
 WINDOW	*win;
@@ -102,19 +143,29 @@ retains its value until changed by the user.
 .Ds
 .Fd longname termbuf\*,name
 char	*termbuf\*,*name;
+.Fd fullname termbuf\*,name
+char	*termbuf\*,*name;
 .De
-Fills in
+.Fn longname
+fills in
 .Vn name
-with the long (full) name of the terminal described by the termcap entry in
+with the long name of the terminal described by the
+.b termcap
+entry in
 .Vn termbuf .
 It is generally of little use,
 but is nice for telling the user in a readable format what terminal
 we think he has.
 This is available in the global variable
 .Vn ttytype .
-.Vn Termbuf
+.Vn termbuf
 is usually set via the termlib routine
 .Fn tgetent .
+.Fn fullname
+is the same as
+.Fn longname ,
+except that it gives the fullest name given in the entry,
+which can be quite verbose.
 .Ds
 .Fd mvwin win\*,y\*,x
 WINDOW	*win;
@@ -129,6 +180,11 @@ If that would put part or all of the window
 off the edge of the terminal screen,
 .Fn mvwin
 returns ERR and does not change anything.
+For subwindows,
+.Fn mvwin
+also returns ERR if you attempt to move it off its main window.
+If you move a main window,
+all subwindows are moved along with it.
 .Ds
 .Fd newwin lines\*,cols\*,begin\*_y\*,begin\*_x "" "WINDOW *"
 int	lines\*,cols\*,begin\*_y\*,begin\*_x;
@@ -157,11 +213,11 @@ use
 .Fn newwin . "" 0\*,0\*,0\*,0
 .Ds
 .Fd nl "" \*m
-.sp .5
 .Fd nonl "" \*m
 .De
 Set or unset the terminal to/from nl mode,
-i.e., start/stop the system from mapping
+.i i.e. ,
+start/stop the system from mapping
 .b <RETURN>
 to
 .b <LINE-FEED> .
@@ -180,6 +236,33 @@ If
 is FALSE, scrolling is not allowed.
 This is its default setting.
 .Ds
+.Fd touchline win\*,y\*,startx\*,endx
+WINDOW	*win;
+int	y\*,startx\*,endx;
+.De
+This function performs a function similar to
+.Fn touchwin
+on a single line.
+It marks the first change for the given line
+to be
+.Vn startx ,
+if it is before the current first change mark,
+and
+the last change mark is set to be
+.Vn endx
+if it is currently less than
+.Vn endx .
+.Ds
+.Fd touchoverlap win1\*,win2
+WINDOW	*win1, *win2;
+.De
+Touch the window
+.Vn win2
+in the area which overlaps with
+.Vn win1 .
+If they do not overlap,
+no changes are made.
+.Ds
 .Fd touchwin win
 WINDOW	*win;
 .De
@@ -197,7 +280,7 @@ lines and
 .Vn cols
 columns starting at position
 .Vn begin\*_y\*,begin\*_x ) (
-in the middle of the window
+inside the window
 .i win .
 This means that any change made to either window
 in the area covered
@@ -228,6 +311,6 @@ Control characters become their upper-case equivalents preceded by a "^".
 Other letters stay just as they are.
 To use
 .Fn unctrl ,
-you must have
+you may have to have
 .b #include\ <unctrl.h>
 in your file.
