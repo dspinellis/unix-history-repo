@@ -1,4 +1,4 @@
-#	@(#)bsd.doc.mk	5.4 (Berkeley) %G%
+#	@(#)bsd.doc.mk	5.5 (Berkeley) %G%
 
 PRINTER=psc
 
@@ -22,6 +22,10 @@ print: paper.${PRINTER}
 
 .if !target(manpages)
 manpages:
+.endif
+
+.if !target(obj)
+obj:
 .endif
 
 clean cleandir:
