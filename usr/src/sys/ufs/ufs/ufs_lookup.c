@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.40 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -365,6 +365,7 @@ searchloop:
 		cnp->cn_flags |= SAVENAME;
 		if (!lockparent)
 			IUNLOCK(dp);
+		return (EJUSTRETURN);
 	}
 	/*
 	 * Insert name into cache (as non-existent) if appropriate.
