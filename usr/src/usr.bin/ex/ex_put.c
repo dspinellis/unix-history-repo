@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	6.2 %G%";
+static char *sccsid = "@(#)ex_put.c	6.3 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -1031,20 +1031,6 @@ setty(f)
 	if (tty.c_lflag & ICANON)
 		ttcharoff();
 	tty = f;
-#endif
-#ifdef TIMEBOMB
-	/*
-	 * The following is a TEMPORARY hack to help track down a bug.
-	 * It is never intended to get off Ernie CoVax.
-	 */
-	if (f == normf && nlttyc.t_suspc == '\377') {
-		printf("\r\n\nPlease tell mark suspc is 377, and let him know\r\n");
-		printf("what you just did.  Did you hit del?\r\n");
-		nlttyc.t_suspc = CTRL(z);
-		nlttyc.t_dsuspc = CTRL(y);
-		nlttyc.t_flushc = CTRL(o);
-		nlttyc.t_lnextc = CTRL(v);
-	}
 #endif
 	sTTY(1);
 	return (ot);
