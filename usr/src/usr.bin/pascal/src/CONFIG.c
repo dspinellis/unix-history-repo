@@ -4,12 +4,12 @@
      *	editing config.c won't work
      */
 
-static	char *sccsid = "@(#)CONFIG.c	1.1 (Berkeley) 82/03/31";
+static	char *sccsid = "@(#)CONFIG.c	2.1 (Berkeley) 82/03/31";
 
     /*
      *	the version of translator
      */
-char	*version = "1.1 (VERSION %G%)";
+char	*version = "2.1 (VERSION %G%)";
 
     /*
      *	the location of the error strings
