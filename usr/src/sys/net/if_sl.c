@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.22 (Berkeley) %G%
+ *	@(#)if_sl.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Header: if_sl.c,v 1.7 89/05/31 02:24:52 van Exp $ */
+/* $Header: /usr/src/sys/net/RCS/if_sl.c,v 1.1 91/08/30 11:14:57 william Exp Locker: william $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
@@ -280,14 +280,15 @@ sltioctl(tp, cmd, data, flag)
 		break;
 
 	case SLIOCGFLAGS:
-		*(int *)data = sc->sc_flags;
+		*(int *)data = sc->sc_if.if_flags;
 		break;
 
 	case SLIOCSFLAGS:
-#define	SC_MASK	0xffff
+#define	LLC_MASK	(IFF_LLC0|IFF_LLC1|IFF_LLC2)
 		s = splimp();
-		sc->sc_flags =
-		    (sc->sc_flags &~ SC_MASK) | ((*(int *)data) & SC_MASK);
+		sc->sc_if.if_flags =
+			(sc->sc_if.if_flags &~ LLC_MASK)
+			| ((*(int *)data) & LLC_MASK);
 		splx(s);
 		break;
 
@@ -339,7 +340,7 @@ sloutput(ifp, m, dst)
 		} else
 			p = 0;
 
-		if (sc->sc_flags & SC_COMPRESS) {
+		if (sc->sc_if.if_flags & SC_COMPRESS) {
 			/*
 			 * The last parameter turns off connection id
 			 * compression for background traffic:  Since
@@ -350,7 +351,7 @@ sloutput(ifp, m, dst)
 			p = sl_compress_tcp(m, ip, &sc->sc_comp, p);
 			*mtod(m, u_char *) |= p;
 		}
-	} else if (sc->sc_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
+	} else if (sc->sc_if.if_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
 		m_freem(m);
 		return (0);
 	}
@@ -413,6 +414,7 @@ slstart(tp)
 		if (m == NULL)
 			return;
 		sc->sc_if.if_lastchange = time;
+
 		/*
 		 * If system is getting low on clists, just flush our
 		 * output queue (if the stuff was important, it'll get
@@ -423,7 +425,6 @@ slstart(tp)
 			sc->sc_if.if_collisions++;
 			continue;
 		}
-
 		/*
 		 * The extra FRAME_END will start up a new packet, and thus
 		 * will flush any accumulated garbage.  We do this whenever
@@ -570,7 +571,7 @@ slinput(c, tp)
 	c &= 0xff;			/* XXX */
 
 #ifdef ABT_ESC
-	if (sc->sc_flags & SC_ABORT) {
+	{
 		/* if we see an abort after "idle" time, count it */
 		if (c == ABT_ESC && time.tv_sec >= sc->sc_lasttime + ABT_WAIT) {
 			sc->sc_abortcount++;
@@ -630,18 +631,18 @@ slinput(c, tp)
 			 * it's a reasonable packet, decompress it and then
 			 * enable compression.  Otherwise, drop it.
 			 */
-			if (sc->sc_flags & SC_COMPRESS) {
+			if (sc->sc_if.if_flags & SC_COMPRESS) {
 				len = sl_uncompress_tcp(&sc->sc_buf, len,
 							(u_int)c, &sc->sc_comp);
 				if (len <= 0)
 					goto error;
-			} else if ((sc->sc_flags & SC_AUTOCOMP) &&
+			} else if ((sc->sc_if.if_flags & SC_AUTOCOMP) &&
 			    c == TYPE_UNCOMPRESSED_TCP && len >= 40) {
 				len = sl_uncompress_tcp(&sc->sc_buf, len,
 							(u_int)c, &sc->sc_comp);
 				if (len <= 0)
 					goto error;
-				sc->sc_flags |= SC_COMPRESS;
+				sc->sc_if.if_flags |= SC_COMPRESS;
 			} else
 				goto error;
 		}

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_slvar.h	7.7 (Berkeley) %G%
+ *	@(#)if_slvar.h	7.8 (Berkeley) %G%
  *
  * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
  */
@@ -35,9 +35,9 @@ struct sl_softc {
 };
 
 /* visible flags */
-#define	SC_COMPRESS	0x0002		/* compress TCP traffic */
-#define	SC_NOICMP	0x0004		/* supress ICMP traffic */
-#define	SC_AUTOCOMP	0x0008		/* auto-enable TCP compression */
+#define	SC_COMPRESS	IFF_LLC0	/* compress TCP traffic */
+#define	SC_NOICMP	IFF_LLC1	/* supress ICMP traffic */
+#define	SC_AUTOCOMP	IFF_LLC2	/* auto-enable TCP compression */
 /* internal flags (should be separate) */
 #define	SC_ABORT	0x10000		/* have been sent an abort request */
 
