@@ -1,4 +1,4 @@
-/*	@(#)uucp.h	5.14	%G%	*/
+/*	@(#)uucp.h	5.15	%G%	*/
 
 #include <stdio.h>
 
@@ -42,16 +42,6 @@
 /* #define GETMYHNAME	/**/
 /* If the above fails ... */
 #define	MYNAME	"erehwon"
-
-/*
- * If you have it, include <sysexits.h> to use exit
- * codes that will be understood by sendmail.
- * Otherwise, define EX_NOHOST, EX_CANTCREAT, and EX_NOINPUT.
- */
-#include <sysexits.h>
-/*#define EX_NOINPUT	66	/**/
-/*#define EX_NOHOST	68	/**/
-/*#define EX_CANTCREAT	73	/**/
 
 /*
  * Define the various kinds of connections to include.
