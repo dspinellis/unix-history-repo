@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.33	82/08/14	*/
+/*	kern_proc.c	4.34	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,8 +51,6 @@ exece()
 	swblk_t bno;
 	char cfname[MAXNAMLEN + 1];
 	char cfarg[SHSIZE];
-	struct uio uio;
-	struct iovec iovec;
 	int resid;
 
 	if ((ip = namei(uchar, 0, 1)) == NULL)
@@ -92,16 +90,18 @@ exece()
 	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
 	 * THE ASCII LINE.
 	 */
-	u.u_error = readip1(ip, (caddr_t)&u.u_exdata, sizeof (u.u_exdata),
+	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&u.u_exdata, sizeof (u.u_exdata),
 	    0, 1, &resid);
 	if (u.u_error)
 		goto bad;
 	u.u_count = resid;
+#ifndef lint
 	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
 	    u.u_exdata.ux_shell[0] != '#') {
 		u.u_error = ENOEXEC;
 		goto bad;
 	}
+#endif
 	switch (u.u_exdata.ux_mag) {
 
 	case 0407:
@@ -155,7 +155,7 @@ exece()
 			}
 		}
 		bcopy((caddr_t)u.u_dent.d_name, (caddr_t)cfname,
-		    u.u_dent.d_namlen + 1);
+		    (unsigned)(u.u_dent.d_namlen + 1));
 		indir = 1;
 		iput(ip);
 		ip = namei(schar, 0, 1);
@@ -228,7 +228,7 @@ exece()
 	if (indir) {
 		u.u_dent.d_namlen = strlen(cfname);
 		bcopy((caddr_t)cfname, (caddr_t)u.u_dent.d_name,
-		    u.u_dent.d_namlen + 1);
+		    (unsigned)(u.u_dent.d_namlen + 1));
 	}
 	getxfile(ip, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
@@ -354,8 +354,11 @@ register struct inode *ip;
 	vgetvm(ts, ds, ss);
 
 	if (pagi == 0)
-		u.u_error = readip1(ip, (char*)ctob(ts), u.u_exdata.ux_dsize,
-		    sizeof(u.u_exdata)+u.u_exdata.ux_tsize, 0, 0);
+		u.u_error =
+		    rdwri(UIO_READ, ip,
+			(char*)ctob(ts), (int)u.u_exdata.ux_dsize,
+			(int)(sizeof(u.u_exdata)+u.u_exdata.ux_tsize),
+			0, (int *)0);
 	xalloc(ip, pagi);
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
@@ -438,7 +441,7 @@ setregs()
 	 */
 	u.u_acflag &= ~AFORK;
 	bcopy((caddr_t)u.u_dent.d_name, (caddr_t)u.u_comm,
-	    u.u_dent.d_namlen + 1);
+	    (unsigned)(u.u_dent.d_namlen + 1));
 }
 
 /*
@@ -799,11 +802,23 @@ register struct proc *top;
  * Is p an inferior of the current process?
  */
 inferior(p)
-register struct proc *p;
+	register struct proc *p;
 {
 
 	for (; p != u.u_procp; p = p->p_pptr)
 		if (p->p_ppid == 0)
 			return (0);
 	return (1);
+}
+
+struct proc *
+pfind(pid)
+	int pid;
+{
+	register struct proc *p;
+
+	for (p = &proc[pidhash[PIDHASH(pid)]]; p != &proc[0]; p = &proc[p->p_idhash])
+		if (p->p_pid == pid)
+			return (p);
+	return ((struct proc *)0);
 }
