@@ -1,4 +1,4 @@
-/* main.c	(Berkeley)	1.2	83/08/09	*/
+/* main.c	(Berkeley)	1.3	83/08/15	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -27,8 +27,10 @@ int	hvmode	= R_DIR;	/* R => join left to right, D => top to bottom, etc. */
 
 int	codegen	= 0;	/* 1=>output for this picture; 0=>no output */
 
-float	deltx	= 6;	/* max x value in output, for scaling */
-float	delty	= 6;	/* max y value in output, for scaling */
+float	deltx	= 6.0;	/* max x value in output, for scaling */
+float	delty	= 6.0;	/* max y value in output, for scaling */
+float	xbound	= 8.0;	/* max allowed x value in output */
+float	ybound	= 10.0;	/* max allowed y value in output */
 int	dbg	= 0;
 extern	FILE	*yyin,	/* input file pointer */
 		*skeldb; /* output pointer for dbg messeges */
@@ -73,6 +75,12 @@ main(argc, argv)
 			break;
 		case 'D':
 			useDline = !useDline;
+			break;
+		case 'x':
+			xbound = atof(&argv[1][2]);
+			break;
+		case 'y':
+			ybound = atof(&argv[1][2]);
 			break;
 		}
 		argc--;

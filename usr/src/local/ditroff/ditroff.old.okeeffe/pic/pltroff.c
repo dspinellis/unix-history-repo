@@ -1,4 +1,4 @@
-/* pltroff.c	(Berkeley)	1.3	83/08/09
+/* pltroff.c	(Berkeley)	1.4	83/08/15
  *	This version has code generators to drive the old-style troff
  *	that produces output for the Graphic Systems C/A/T.  
  *	Very few people actually have a C/A/T; they instead typically
@@ -64,6 +64,8 @@ int	vmax;		/* top of output (down is positive) */
 
 extern	float	deltx;
 extern	float	delty;
+extern	float	xbound;
+extern	float	ybound;
 extern	float	xmin, ymin, xmax, ymax, sxmin, symin, sxmax, symax;
 extern	int	crop;
 
@@ -74,11 +76,16 @@ openpl(s)	/* initialize device */
 
 	hpos = vpos = 0;
 	hmax = vmax = 6 * res;	/* default = 6 x 6 */
-	maxdelt = max(deltx, delty);
-	if (maxdelt > 8) {	/* 8 inches */
+	if (deltx > xbound) {		/* default 8 inches */
 		fprintf(stderr, "pic: %g X %g picture shrunk to", deltx, delty);
-		deltx *= 8/maxdelt;
-		delty *= 8/maxdelt;
+		deltx *= xbound/deltx;
+		delty *= xbound/deltx;
+		fprintf(stderr, " %g X %g\n", deltx, delty);
+	}
+	if (delty > ybound) {		/* default 10 inches */
+		fprintf(stderr, "pic: %g X %g picture shrunk to", deltx, delty);
+		deltx *= ybound/delty;
+		delty *= ybound/delty;
 		fprintf(stderr, " %g X %g\n", deltx, delty);
 	}
 	if (deltx > 0 && delty > 0) {	/* have to change default size */
