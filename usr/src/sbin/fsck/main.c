@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	2.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)fsck.c	2.4 (Berkeley) 4/15/82";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -6,7 +6,7 @@ static	char *sccsid = "@(#)main.c	2.4 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/inode.h>
-#include <ndir.h>
+#include <dir.h>
 #else
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -112,6 +112,7 @@ char	pathname[BUFSIZ];
 char	*lfname = "lost+found";
 
 ino_t	inum;			/* inode we are currently working on */
+ino_t	dnum;			/* directory inode currently being worked on */
 ino_t	imax;			/* number of inodes */
 ino_t	parentdir;		/* i number of parent directory */
 ino_t	lastino;		/* hiwater mark of inodes */
@@ -775,21 +776,26 @@ ckinode(dp, flg)
 	register daddr_t *ap;
 	register ret;
 	int (*func)(), n, ndb, size, offset;
+	ino_t number = inum;
+	DINODE dino;
 
 	if (SPECIAL)
 		return (KEEPON);
+	dino = *dp;
 	func = (flg == ADDR) ? pfunc : dirscan;
-	ndb = howmany(dp->di_size, sblock.fs_bsize);
-	for (ap = &dp->di_db[0]; ap < &dp->di_db[NDADDR]; ap++) {
-		if (--ndb == 0 && (offset = blkoff(&sblock, dp->di_size)) != 0)
+	ndb = howmany(dino.di_size, sblock.fs_bsize);
+	for (ap = &dino.di_db[0]; ap < &dino.di_db[NDADDR]; ap++) {
+		if (--ndb == 0 && (offset = blkoff(&sblock, dino.di_size)) != 0)
 			size = numfrags(&sblock, fragroundup(&sblock, offset));
 		else
 			size = sblock.fs_frag;
+		dnum = number;
 		if (*ap && (ret = (*func)(*ap, size)) & STOP)
 			return (ret);
 	}
-	for (ap = &dp->di_ib[0], n = 1; n <= 2; ap++, n++) {
-		if (*ap && (ret = iblock(*ap, n, flg, dp->di_size - sblock.fs_bsize * NDADDR)) & STOP)
+	for (ap = &dino.di_ib[0], n = 1; n <= 2; ap++, n++) {
+		dnum = number;
+		if (*ap && (ret = iblock(*ap, n, flg, dino.di_size - sblock.fs_bsize * NDADDR)) & STOP)
 			return (ret);
 	}
 	return (KEEPON);
@@ -1059,6 +1065,7 @@ struct dirstuff {
 	int loc;
 	int blkno;
 	int blksiz;
+	ino_t number;
 };
 
 dirscan(blk, nf)
@@ -1078,6 +1085,7 @@ dirscan(blk, nf)
 	dirp.loc = 0;
 	dirp.blkno = blk;
 	dirp.blksiz = blksiz;
+	dirp.number = dnum;
 	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
 		dsize = dp->d_reclen;
 		copy(dp, dbuf, dsize);
@@ -1119,7 +1127,7 @@ readdir(dirp)
 		    (ndp->d_ino > imax || ndp->d_namlen > MAXNAMLEN ||
 		    ndp->d_reclen <= 0 || 
 		    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ))) {
-			pwarn("DIRECTORY CORRUPTED");
+			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
 			if (preen)
 				printf(" (SALVAGED)\n");
 			else if (reply("SALVAGE") == 0) {
