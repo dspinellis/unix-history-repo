@@ -1,0 +1,27 @@
+.pa 1
+.he 'CLOSE (II)'3/15/72'CLOSE (II)'
+.ti 0
+NAME		close  --  close a file
+.sp
+.ti 0
+SYNOPSIS	(file descriptor in r0)
+.br
+sys close  / close = 6.
+.sp
+.ti 0
+DESCRIPTION	Given
+a file descriptor such as returned from an open or creat call,
+close_____ closes the associated file.
+A close of all files is automatic on exit, but since
+processes are limited to 10 simultaneously open files,
+close_____ is necessary for programs which deal with many files.
+.sp
+.ti 0
+SEE ALSO	creat(II), open(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set for an unknown file descriptor.
+.sp
+.ti 0
+BUGS		--
