@@ -1,4 +1,4 @@
-/*	cmds.c	4.2	81/05/31	*/
+/*	cmds.c	4.3	81/06/02	*/
 #include "tip.h"
 /*
  * tip
@@ -217,6 +217,12 @@ sendfile(cc)
 		return;
 	}
 	transmit(fd, value(EOFWRITE), NULL);
+	if (!boolean(value(ECHOCHECK))) {
+		struct sgttyb buf;
+
+		ioctl(FD, TIOCGETP, &buf);	/* this does a */
+		ioctl(FD, TIOCSETP, &buf);	/*   wflushtty */
+	}
 }
 
 /*
@@ -239,7 +245,15 @@ transmit(fd, eofchars, command)
 	if (command != NULL) {
 		for (pc = command; *pc; pc++)
 			send(*pc);
-		read(FD, (char *)&c, 1);	/* trailing \n */
+		if (boolean(value(ECHOCHECK)))
+			read(FD, (char *)&c, 1);	/* trailing \n */
+		else {
+			struct sgttyb buf;
+
+			ioctl(FD, TIOCGETP, &buf);	/* this does a */
+			ioctl(FD, TIOCSETP, &buf);	/*   wflushtty */
+			sleep(5); /* wait for remote stty to take effect */
+		}
 	}
 	lcount = 0;
 	lastc = '\0';
@@ -272,18 +286,20 @@ transmit(fd, eofchars, command)
 		} while (c != '\r');
 		if (boolean(value(VERBOSE)))
 			printf("\r%d", ++lcount);
-		alarm(10);
-		timedout = 0;
-		do {	/* wait for prompt */
-			read(FD, (char *)&c, 1);
-			if (timedout || stop) {
-				if (timedout)
-					printf("\r\ntimed out at eol\r\n");
-				alarm(0);
-				goto out;
-			}
-		} while ((c&0177) != character(value(PROMPT)));
-		alarm(0);
+		if (boolean(value(ECHOCHECK))) {
+			alarm(10);
+			timedout = 0;
+			do {	/* wait for prompt */
+				read(FD, (char *)&c, 1);
+				if (timedout || stop) {
+					if (timedout)
+						printf("\r\ntimed out at eol\r\n");
+					alarm(0);
+					goto out;
+				}
+			} while ((c&0177) != character(value(PROMPT)));
+			alarm(0);
+		}
 	}
 out:
 	if (lastc != '\n')
@@ -321,7 +337,10 @@ cu_put(cc)
 		printf("%s: cannot open\r\n", argv[0]);
 		return;
 	}
-	sprintf(line, "cat>'%s'\r", argv[1]);
+	if (boolean(value(ECHOCHECK)))
+		sprintf(line, "cat>'%s'\r", argv[1]);
+	else
+		sprintf(line, "stty -echo;cat>'%s';stty echo\r", argv[1]);
 	transmit(fd, "\04", line);
 }
 
@@ -337,6 +356,8 @@ send(c)
 
 	cc = c;
 	write(FD, (char *)&cc, 1);
+	if (!boolean(value(ECHOCHECK)))
+		return;
 tryagain:
 	timedout = 0;
 	alarm(10);
