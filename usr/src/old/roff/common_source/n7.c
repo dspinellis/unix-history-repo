@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n7.c	4.3 %G%";
+static char sccsid[] = "@(#)n7.c	4.4 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -438,10 +438,8 @@ nl1:
 nlpn:
 	if(v.pn == pfrom){
 		print++;
-		pfrom = -1;
 	}else if(opn == pto || v.pn > pto){
 		print = 0;
-		opn = -1;
 		chkpn();
 		goto nlpn;
 		}
@@ -479,15 +477,19 @@ int a;
 	return(i);
 }
 chkpn(){
-	pto = *(pnp++);
-	pfrom = pto & ~MOT;
+	pfrom = pto = *(pnp++);
 	if(pto == -1){
 		flusho();
 		done1(0);
 	}
-	if(pto & MOT){
-		pto &= ~MOT;
+	if(pto == -2){
 		print++;
+		pfrom = 0;
+		pto = 10000;
+	}
+	else if(pto & MOT){
+		print++;
+		pto &= ~MOT;
 		pfrom = 0;
 	}
 }
