@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ed.1	5.9 (Berkeley) %G%
+.\"	@(#)ed.1	5.10 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .SH NAME
@@ -459,8 +459,9 @@ as indicated in the brackets:
 backslash (`\e\\'),
 horizontal tab (\et), form feed (\ef).
 return (\er), vertical tab (\ev), and backspace (\eb).
-Long lines will be broken base on the type of terminal currently in
-use.
+Long lines will be broken based on the type of terminal currently in
+use and will likely be ragged at the right side if text and octal are
+mixed on the same line.
 .B Current
 is set to the last line printed.
 The

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)l.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)l.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -66,8 +66,10 @@ l(inputt, errnum)
 			SIGINT_ACTION;
 		for (l_cnt = 0; l_cnt < current->len; l_cnt++, l_len += 2) {
 			/* Check if line needs to be broken first. */
-			if ((l_len) % line_length == 0)
+			if (l_len > line_length) {
 				putchar('\n');
+				l_len = 0;
+			}
 			else switch (text[l_cnt]) {
 			case '\b':	/* backspace (cntl-H) */
 				fwrite("\\b", sizeof(char), 2, stdout);
@@ -91,9 +93,11 @@ l(inputt, errnum)
 				if ((text[l_cnt] < 32) ||
 				    (text[l_cnt] > 126)) {
 					putchar('\\');
-					putchar(text[l_cnt] / 64 + '0');
-					putchar(text[l_cnt] / 8 + '0');
-					putchar(text[l_cnt] % 8 + '0');
+					putchar(((text[l_cnt] & 0xC0) >> 6)
+					    + '0');
+					putchar(((text[l_cnt] & 0x38) >> 3)
+					    + '0');
+					putchar((text[l_cnt] & 0x07) + '0');
 					l_len += 2;
 				} else if (text[l_cnt] == '\\')
 					fwrite("\\\\", sizeof(char), 2, stdout);

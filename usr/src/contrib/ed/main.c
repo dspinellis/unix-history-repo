@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -106,6 +106,7 @@ main(argc, argv)
 		line_length = win.ws_col;
 	if (line_length == 0)
 		line_length = 78;
+	line_length -= 3;	/* for the octal to break properly in 'l' */
 
 	Start = End = NULL;
 	top = bottom = NULL;
