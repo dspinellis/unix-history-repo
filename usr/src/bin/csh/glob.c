@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
@@ -37,31 +37,29 @@ short gargc = 0;
  * globbing if needed ?*[
  *
  * Csh type globbing is handled in globexpand() and the rest is
- * handled in glob() which is part of the 4.4BSD libc. To do the
- * 'No match' checking, we try to glob everything without checking
- * and then we look if the string still contains globbing characters.
- * If it does, then globbing failed for at least one component of the
- * block.
+ * handled in glob() which is part of the 4.4BSD libc.
  * 
  */
 
 
 static char *
-globtilde(s)
-char *s;
+globtilde(nv, s)
+char **nv, *s;
 {
 	char gbuf[MAXPATHLEN], *gstart, *b, *u;
 
 	gstart = gbuf;
 	*gstart++ = *s++;
-	for (u = s, b = gstart; alnum(*s) || *s == '-'; *b++ = *s++)
+	for (u = s, b = gstart; *s != '\0' && *s != '/'; *b++ = *s++)
 		 continue;
 	*b = EOS;
 	if (*s == EOS || *s == '/') {
 		if (s == u) 
 			gstart = strcpy(gbuf, value("home"));
-		else if (gethdir(gstart)) 
+		else if (gethdir(gstart)) {
+			blkfree(nv);
 			error("Unknown user: %s", gstart);
+		}
 		b = &gstart[strlen(gstart)];
 	}
 	while (*s) *b++ = *s++;
@@ -203,17 +201,13 @@ globexpand(v)
 		return(nv);
 
 	/*
-	 * Step 2: expand tilde and braces
+	 * Step 2: expand braces
 	 */
 	el = vl;
 	vl = nv;
 	for (s = *vl; s; s = *++vl) {
 		char *b;
 		char **vp, **bp;
-		if (*s == '~') {
-			*vl = globtilde(s);
-			xfree(s);
-		}
 		if (b = index(s, LBRC)) {
 			char **bl;
 			int i, len;
@@ -252,8 +246,16 @@ globexpand(v)
 		}
     
 	}
+	/*
+	 * Step 3 expand tilde
+	 */
 	vl = nv;
-	return(vl);
+	for (s = *vl; s; s = *++vl)
+		if (*s == '~') {
+			*vl = globtilde(nv, s);
+			xfree(s);
+		}
+	return(nv);
 }
 
 char * 
