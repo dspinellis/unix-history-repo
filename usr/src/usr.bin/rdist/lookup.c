@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lookup.c	4.5 (Berkeley) 84/02/16";
+static	char *sccsid = "@(#)lookup.c	4.6 (Berkeley) 85/02/04";
 #endif
 
 #include "defs.h"
@@ -92,6 +92,7 @@ lookup(name, action, value)
 	register unsigned n;
 	register char *cp;
 	register struct syment *s;
+	char buf[256];
 
 	if (debug)
 		printf("lookup(%s, %d, %x)\n", name, action, value);
@@ -105,14 +106,18 @@ lookup(name, action, value)
 		if (strcmp(name, s->s_name))
 			continue;
 		if (action != LOOKUP) {
-			if (action != INSERT || s->s_type != CONST)
-				fatal("%s redefined\n", name);
+			if (action != INSERT || s->s_type != CONST) {
+				sprintf(buf, "%s redefined", name);
+				yyerror(buf);
+			}
 		}
 		return(s->s_value);
 	}
 
-	if (action == LOOKUP)
-		fatal("%s not defined", name);
+	if (action == LOOKUP) {
+		yyerror(sprintf(buf, "%s undefined", name));
+		return(NULL);
+	}
 
 	s = ALLOC(syment);
 	if (s == NULL)
