@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch16.n	6.1 (Berkeley) %G%
+.\"	@(#)ch16.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: /na/franz/doc/RCS/ch16.n,v 1.1 83/01/31 07:08:55 jkf Exp $
 .Lc The\ LISP\ Editor 16
 
-.sh 2 The\ Editors 16
+.sh 2 The\ Editors \n(ch 1
 
 It is quite possible to use VI, Emacs or other standard editors to edit your
 lisp programs, and many people do just that.

@@ -2,11 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch14.n	6.1 (Berkeley) %G%
+.\"	@(#)ch14.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: /na/franz/doc/RCS/ch14.n,v 1.1 83/01/31 07:08:43 jkf Exp $
 .Lc The\ LISP\ Stepper 14
-.sh 2 Simple\ Use\ Of\ Stepping 14
+.sh 2 Simple\ Use\ Of\ Stepping \n(ch 1
 .Lf step "s_arg1..."
 .No
 The LISP "stepping" package is intended to give the LISP programmer

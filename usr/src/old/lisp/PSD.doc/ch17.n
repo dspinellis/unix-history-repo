@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch17.n	6.1 (Berkeley) %G%
+.\"	@(#)ch17.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: ch17.n,v 40.1 84/08/08 21:36:08 layer Exp $
 ." (c) Copyright 1984, Franz Inc., Berkeley California
 .Lc Hash\ Tables 17
-.sh 2 Overview
+.sh 2 Overview \n(ch 1
 .pp
 A hash table is an object that can efficiently map a given object to another.
 Each hash table is a collection of entries,

@@ -2,11 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch15.n	6.1 (Berkeley) %G%
+.\"	@(#)ch15.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: /na/franz/doc/RCS/ch15.n,v 1.1 83/01/31 07:08:47 jkf Exp $
 .Lc The\ FIXIT\ Debugger 15
-.sh 2 Introduction 15
+.sh 2 Introduction \n(ch 1
 FIXIT is a debugging environment for
 .Fr
 users doing program development.  This documentation and FIXIT
