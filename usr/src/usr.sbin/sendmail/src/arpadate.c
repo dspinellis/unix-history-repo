@@ -6,7 +6,7 @@
 # endif
 # include "useful.h"
 
-SCCSID(@(#)arpadate.c	3.10		%G%);
+SCCSID(@(#)arpadate.c	3.11		%G%);
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -82,13 +82,13 @@ arpadate(ud)
 	else
 		*q++ = *p++;
 	*q++ = *p++;
-	*q++ = '-';
+	*q++ = ' ';
 
 	p = &ud[4];		/* Sep */
 	*q++ = *p++;
 	*q++ = *p++;
 	*q++ = *p++;
-	*q++ = '-';
+	*q++ = ' ';
 
 	p = &ud[22];		/* 1979 */
 	*q++ = *p++;
@@ -124,7 +124,7 @@ arpadate(ud)
 	}
 	else
 	{
-		*q++ = '-';
+		*q++ = ' ';
 		*q++ = *p++;
 		*q++ = *p++;
 		*q++ = *p++;
