@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)ntohs.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)ntohs.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /* hostorder = ntohs(netorder) */
@@ -17,6 +17,6 @@
 #include "DEFS.h"
 
 ENTRY(ntohs)
-	movzwl	4(sp),%eax
-	xchg	%al,%ah
+	movzwl	4(%esp),%eax
+	xchgb	%al,%ah
 	ret
