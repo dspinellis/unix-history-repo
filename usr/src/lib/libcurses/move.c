@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include	"curses.ext"
@@ -21,6 +21,8 @@ reg int		y, x; {
 # ifdef DEBUG
 	fprintf(outf, "MOVE to (%d, %d)\n", y, x);
 # endif
+	if (x < 0 || y < 0)
+		return ERR;
 	if (x >= win->_maxx || y >= win->_maxy)
 		return ERR;
 	win->_curx = x;
