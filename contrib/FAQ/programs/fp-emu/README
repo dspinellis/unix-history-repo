@@ -1,0 +1,40 @@
+This is my first try to integrate linux's 387 emulator into NetBSD.
+
+Files:	README - this file
+	npx_h.dif - a diff to /sys/arch/i386/include/npx.h
+	file.i386.add - add this to files.i386
+	fpem.tar - untar from /sys/arch/i386/i386, it will create a dir
+		   named fpemul.
+
+Changes:
+	in npx.h the padding in the save87 struct had to be increased to 
+	the size of the i387_union in the emulator. This diff
+	may be made to be #ifdef MATH_EMULATE as a space saver.
+	Also instead of the magic number it would be nicer to calculate
+	it with some sizeof's. 
+	I removed that ifndef dontdef, that was crazy!
+
+	For changes in the emulator itself se the Changelog file
+	there. That some 40 files that the emulator is, may be cat-ed
+	together if this bothers someone, and if someone is willing to do.
+
+	When adding the files to files.i386 don't forget to uncomment
+	the old emulator - math_emulate.c -.
+
+testing:
+	Since i don't have (yet) that deep knowledge in the NetBSD 
+	internals, it is possible thet something really stupid has been
+	done. Nevertheless, my system looks ok. (it's a 2 week old
+	current) i have ran some simple tests, they did work. Someone
+	should try paranoia.
+	Speed increases from 1.5 up to 8 times have been measured.
+
+	It's worth noting that i did *not* look inside the actulal math
+	routines, nor i know how they work, but i think those have been 
+	well tested.
+
+
+	Hope this helps.
+
+		Szabolcs Szigeti (pink@fsz.bme.hu)
+

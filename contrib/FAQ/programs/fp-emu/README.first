@@ -1,0 +1,11 @@
+This is the New Linux math emulator as ported to NetBSD.
+It runs fine and allows you to run programs such as ghostscript and other
+floating point intensive programs.  Read the file README for more information
+on this packages history.
+
+To install run the program emu_install.  This program assumes that you
+have your sources in the standard place. (/sys/*)
+
+Gary Clark II
+gclarkii@freefall.cdrom.com
+FreeBSD-FAQ maintainer

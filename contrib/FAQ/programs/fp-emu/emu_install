@@ -1,0 +1,13 @@
+#!/bin/sh 
+
+
+patch -d /sys/i386/include < npx_h.diff
+wait
+cat files.i386.add >> /sys/i386/conf/files.i386
+wait
+cp fpem.tar /sys/i386/i386
+cd /sys/i386/i386
+tar xvf fpem.tar
+rm fpem.tar
+wait
+
