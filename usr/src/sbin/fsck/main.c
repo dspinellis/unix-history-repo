@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -156,7 +156,7 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	ufs_daddr_t n_ffree, n_bfree;
 	struct dups *dp;
 	struct zlncnt *zlnp;
-	int cylno;
+	int cylno, flags;
 
 	if (preen && child)
 		(void)signal(SIGQUIT, voidquit);
@@ -269,7 +269,19 @@ checkfilesys(filesys, mntpt, auxdata, child)
 			bwrite(fswritefd, (char *)&sblock,
 			    fsbtodb(&sblock, cgsblock(&sblock, cylno)), SBSIZE);
 	}
-	ckfini(1);
+	if (!hotroot) {
+		ckfini(1);
+	} else {
+		struct statfs stfs_buf;
+		/*
+		 * Check to see if root is mounted read-write.
+		 */
+		if (statfs("/", &stfs_buf) == 0)
+			flags = stfs_buf.f_flags;
+		else
+			flags = 0;
+		ckfini(flags & MNT_RDONLY);
+	}
 	free(blockmap);
 	free(statemap);
 	free((char *)lncntp);
@@ -278,25 +290,20 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	if (!preen)
 		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
 	if (hotroot) {
-		struct statfs stfs_buf;
+		struct ufs_args args;
+		int ret;
 		/*
 		 * We modified the root.  Do a mount update on
 		 * it, unless it is read-write, so we can continue.
 		 */
-		if (statfs("/", &stfs_buf) == 0) {
-			long flags = stfs_buf.f_flags;
-			struct ufs_args args;
-			int ret;
-
-			if (flags & MNT_RDONLY) {
-				args.fspec = 0;
-				args.export.ex_flags = 0;
-				args.export.ex_root = 0;
-				flags |= MNT_UPDATE | MNT_RELOAD;
-				ret = mount("ufs", "/", flags, &args);
-				if (ret == 0)
-					return(0);
-			}
+		if (flags & MNT_RDONLY) {
+			args.fspec = 0;
+			args.export.ex_flags = 0;
+			args.export.ex_root = 0;
+			flags |= MNT_UPDATE | MNT_RELOAD;
+			ret = mount("ufs", "/", flags, &args);
+			if (ret == 0)
+				return (0);
 		}
 		if (!preen)
 			printf("\n***** REBOOT NOW *****\n");
