@@ -1,4 +1,4 @@
-/*	conf.c	4.69	83/05/18	*/
+/*	conf.c	4.70	83/06/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -285,6 +285,11 @@ struct	tty dmf_tty[];
 
 #if VAX780
 int	flopen(),flclose(),flread(),flwrite();
+#else
+#define	flopen	nodev
+#define	flclose	nodev
+#define	flread	nodev
+#define	flwrite	nodev
 #endif
 
 #include "dz.h"
@@ -468,15 +473,9 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	swread,		swwrite,	/*7*/
 	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,
-#if VAX780
 	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
-#else
-	nodev,		nodev,		nodev,		nodev,		/*8*/
-	nodev,		nodev,		nodev,		0,
-	nodev,		nodev,
-#endif
 	udopen,		nulldev,	udread,		udwrite,	/*9*/
 	nodev,		nodev,		udreset,		0,
 	seltrue,	nodev,
