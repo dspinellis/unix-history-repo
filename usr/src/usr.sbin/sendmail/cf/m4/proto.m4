@@ -8,13 +8,17 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.41 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.42 (Berkeley) %G%')
 
 MAILER(local)dnl
 
-ifdef(`_OLD_SENDMAIL_', `dnl',
+ifdef(`_OLD_SENDMAIL_',
+`define(`_SET_96_', 6)dnl
+define(`_SET_97_', 7)dnl',
 `# level 4 config file format
-V4')
+V4
+define(`_SET_96_', 96)dnl
+define(`_SET_97_', 97)dnl')
 
 ##################
 #   local info   #
@@ -306,7 +310,7 @@ Tuucp
 #########################
 
 H?P?Return-Path: $g
-HReceived: $?sfrom $s $.$?_($_) $.by $j ($v/$Z) id $i; $b
+HReceived: $?sfrom $s $.$?_($_) $.by $j ($v/$Z)$?r with $r$. id $i; $b
 H?D?Resent-Date: $a
 H?D?Date: $a
 H?F?Resent-From: $q
@@ -347,37 +351,37 @@ R$*<$+>$*		$2				basic RFC821/822 parsing
 R@ $+ , $+		@ $1 : $2			change all "," to ":"
 
 # localize and dispose of route-based addresses
-R@ $+ : $+		$@ $>6 < @$1 > : $2		handle <route-addr>
+R@ $+ : $+		$@ $>_SET_96_ < @$1 > : $2		handle <route-addr>
 
 # find focus for list syntax
-R $+ : $* ; @ $+	$@ $>6 $1 : $2 ; < @ $3 >	list syntax
+R $+ : $* ; @ $+	$@ $>_SET_96_ $1 : $2 ; < @ $3 >	list syntax
 R $+ : $* ;		$@ $1 : $2;			list syntax
 
 # find focus for @ syntax addresses
 R$+ @ $+		$: $1 < @ $2 >			focus on domain
 R$+ < $+ @ $+ >		$1 $2 < @ $3 >			move gaze right
-R$+ < @ $+ >		$@ $>6 $1 < @ $2 >		already canonical
+R$+ < @ $+ >		$@ $>_SET_96_ $1 < @ $2 >		already canonical
 
 ifdef(`_NO_UUCP_', `dnl',
 `# convert old-style addresses to a domain-based address
-R$- ! $+		$@ $>6 $2 < @ $1 .UUCP >	resolve uucp names
-R$+ . $- ! $+		$@ $>6 $3 < @ $1 . $2 >		domain uucps
-R$+ ! $+		$@ $>6 $2 < @ $1 .UUCP >	uucp subdomains')
+R$- ! $+		$@ $>_SET_96_ $2 < @ $1 .UUCP >	resolve uucp names
+R$+ . $- ! $+		$@ $>_SET_96_ $3 < @ $1 . $2 >		domain uucps
+R$+ ! $+		$@ $>_SET_96_ $2 < @ $1 .UUCP >	uucp subdomains')
 
 # if we have % signs, take the rightmost one
 R$* % $*		$1 @ $2				First make them all @s.
 R$* @ $* @ $*		$1 % $2 @ $3			Undo all but the last.
-R$* @ $*		$@ $>6 $1 < @ $2 >		Insert < > and finish
+R$* @ $*		$@ $>_SET_96_ $1 < @ $2 >		Insert < > and finish
 
 # else we must be a local name
 
 
-###############################################
-###  Ruleset 6 -- bottom half of ruleset 3  ###
-###############################################
+################################################
+###  Ruleset _SET_96_ -- bottom half of ruleset 3  ###
+################################################
 
 #  At this point, everything should be in a "local_part<@domain>extra" format.
-S6
+S`'_SET_96_
 
 # handle special cases for local names
 R$* < @ localhost > $*		$: $1 < @ $j . > $2		no domain at all
@@ -445,12 +449,12 @@ R$+ % $=w @ $=w		$1 @ $j				u%host@host => u@host
 
 
 
-#############################################################
-###   Ruleset 7 -- recanonicalize and call ruleset zero   ###
-###		   (used for recursive calls)		  ###
-#############################################################
+##############################################################
+###   Ruleset _SET_97_ -- recanonicalize and call ruleset zero   ###
+###		   (used for recursive calls)		   ###
+##############################################################
 
-S7
+S`'_SET_97_
 R$*			$: $>3 $1
 R$*			$@ $>0 $1
 
@@ -471,9 +475,9 @@ R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec',
 `dnl')
 
 # now delete the local info -- note $=O to find characters that cause forwarding
-R$* < @ > $*		$@ $>7 $1			user@ => user
-R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
-R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
+R$* < @ > $*		$@ $>_SET_97_ $1			user@ => user
+R< @ $=w . > : $*	$@ $>_SET_97_ $2			@here:... -> ...
+R$* $=O $* < @ $=w . >	$@ $>_SET_97_ $1 $2 $3			...@here -> ...
 ifdef(`MAILER_TABLE',
 `
 # try mailer table lookup
@@ -482,9 +486,9 @@ R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 @ $3 $4	found a match',
 
 # short circuit local delivery so forwarded email works
 ifdef(`_LOCAL_NOT_STICKY_',
-`R$=L < @ $j . >		$#local $: @ $1			special local names
-R$+ < @ $j . >		$#local $: $1			dispose directly',
-`R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
+`R$=L < @ $=w . >		$#local $: @ $1			special local names
+R$+ < @ $=w . >		$#local $: $1			dispose directly',
+`R$+ < @ $=w . >		$: $1 < @ $2 @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
 `R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 $2		yep ....
 R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 $2		yep ....
@@ -553,13 +557,13 @@ R$=L			$#local $: $1			special local names
 R$+			$: $1 < @ $R >			append relay
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
 R$+ < @ >		$#local $: $1			no relay or hub: local
-R$+ < @ $j  >		$#local $: $1			we are relay/hub: local
+R$+ < @ $=w  >		$#local $: $1			we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		deliver to relay/hub
 R$+ < @ $+ >		$#relay $@ $2 $: $1		deliver to relay/hub',
 
 `# if this is quoted, strip the quotes and try again
 R$+			$: $(dequote $1 $)		strip quotes
-R$* $=O $*		$@ $>7 $1 $2 $3			try again
+R$* $=O $*		$@ $>_SET_97_ $1 $2 $3			try again
 
 # handle locally delivered names
 R$=L			$#local $: @ $1			special local names
@@ -575,7 +579,7 @@ S5
 # see if we have a relay or a hub
 R$+			$: $1 < @ $R >
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
-R$+ < @ $j >		$@ $1				we are relay/hub: local
+R$+ < @ $=w >		$@ $1				we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		send to relay or hub
 ifdef(`_MAILER_smtp_',
 `R$+ < @ $+ >		$#relay $@ $2 $: $1		send to relay or hub')')
@@ -590,7 +594,7 @@ ifdef(`MAILER_TABLE',
 S90
 R<$- . $+ > $*		$: < $(mailertable .$2 $: $) > $3	lookup
 R<$- : $+ > $*		$# $1 $@ $2 $: $3		check -- resolved?
-R<$- . $+ > $*		$@ $>99 <$2> $3			no -- strip & try again
+R<$- . $+ > $*		$@ $>90 <$2> $3			no -- strip & try again
 R<$*> $*		$@ $2				no match',
 `dnl')
 #
