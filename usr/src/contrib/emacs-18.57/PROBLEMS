@@ -1,0 +1,629 @@
+This file describes various problems that have been encountered
+in compiling, installing and running GNU Emacs.
+
+* Emacs fails to get default settings from X Windows server.
+
+The X library in X11R4 has a bug; it interchanges the 2nd and 3rd
+arguments to XGetDefaults.  Define the macro XBACKWARDS in config.h to
+tell Emacs to compensate for this.
+
+I don't believe there is any way Emacs can determine for itself
+whether this problem is present on a given system.
+
+* Keyboard input gets confused after a beep when using a DECserver
+  as a concentrator.
+
+This problem seems to be a matter of configuring the DECserver to use
+7 bit characters rather than 8 bit characters.
+
+* M-x shell persistently reports "Process shell exited abnormally with code 1".
+
+This happened on Suns as a result of what is said to be a bug in Sunos
+version 4.0.x.  The only fix was to reboot the machine. 
+
+* Programs running under terminal emulator do not recognize `emacs'
+  terminal type.
+
+The cause of this is a shell startup file that sets the TERMCAP
+environment variable.  The terminal emulator uses that variable to
+provide the information on the special terminal type that Emacs
+emulates.
+
+Rewrite your shell startup file so that it does not change TERMCAP
+in such a case.  You could use the following conditional which sets
+it only if it is undefined.
+
+    if ( ! ${?TERMCAP} ) setenv TERMCAP ~/my-termcap-file
+
+Or you could set TERMCAP only when you set TERM--which should not
+happen in a non-login shell.
+
+* Error compiling sysdep.c, "sioctl.h: no such file or directory".
+
+Among USG systems with TIOCGWINSZ, some require sysdep.c to include
+the file sioctl.h; on others, sioctl.h does not exist.  We don't know
+how to distinguish these two kind of systems, so currently we try to
+include sioctl.h on all of them.  If this #include gets an error, just
+delete it.
+
+* X Windows doesn't work if DISPLAY uses a hostname.
+
+People have reported kernel bugs in certain systems that cause Emacs
+not to work with X Windows if DISPLAY is set using a host name.  But
+the problem does not occur if DISPLAY is set to `unix:0.0'.  I think
+the bug has to do with SIGIO or FIONREAD.
+
+You may be able to compensate for the bug by doing (set-input-mode nil nil).
+However, that has the disadvantage of turning off interrupts, so that
+you are unable to quit out of a Lisp program by typing C-g.
+
+The easy way to do this is to put 
+
+  (setq x-sigio-bug t)
+
+in your site-init.el file.
+
+* Problem with remote X server on Suns.
+
+On a Sun, running Emacs on one machine with the X server on another
+may not work if you have used the unshared system libraries.  This
+is because the unshared libraries fail to use YP for host name lookup.
+As a result, the host name you specify may not be recognized.
+
+* Copying text between Emacs and Xterm windows fails in X11R3 or X11R4.
+
+According to Thomas Narten:
+Most X clients now use selections instead of (well, superceding) cut buffers.
+If there is a selection around, Xterms will use that instead of the cut
+buffer.  Emacs doesn't know about selections, but you can convince Xterm to
+always use the cut buffer instead of selections by adding this to you
+.Xdefaults: 
+
+! emacs only copies to cut buffer 0.  xterm by default 
+! wants to paste from the PRIMARY selection 
+XTerm*VT100.Translations: #override ~Meta <Btn2Up>: insert-selection(CUT_BUFFER0)
+
+(Emacs 19 has been changed to use selections.)
+
+* Watch out for .emacs files and EMACSLOADPATH environment vars
+
+These control the actions of Emacs.
+~/.emacs is your Emacs init file.
+EMACSLOADPATH overrides which directories the function
+"load" will search.
+
+If you observe strange problems, check for these and get rid
+of them, then try again.
+
+* Shell mode ignores interrupts on Apollo Domain
+
+You may find that M-x shell prints the following message:
+
+   Warning: no access to tty; thus no job control in this shell...
+
+This can happen if there are not enough ptys on your system.
+Here is how to make more of them.
+
+    % cd /dev
+    % ls pty*
+    # shows how many pty's you have. I had 8, named pty0 to pty7)
+    % /etc/crpty 8
+    # creates eight new pty's
+
+* Fatal signal in the command  temacs -l loadup inc dump
+
+This command is the final stage of building Emacs.  It is run by the
+Makefile in the src subdirectory, or by build.com on VMS.
+
+It has been known to get fatal errors due to insufficient swapping
+space available on the machine.
+
+On 68000's, it has also happened because of bugs in the
+subroutine `alloca'.  Verify that `alloca' works right, even
+for large blocks (many pages).
+
+* test-distrib says that the distribution has been clobbered
+* or, temacs prints "Command key out of range 0-127"
+* or, temacs runs and dumps xemacs, but xemacs totally fails to work.
+* or, temacs gets errors dumping xemacs
+
+This can be because the .elc files have been garbled.  Do not be
+fooled by the fact that most of a .elc file is text: these are
+binary files and can contain all 256 byte values.
+
+In particular `shar' cannot be used for transmitting GNU Emacs.
+It typically truncates "lines".  What appear to be "lines" in
+a binary file can of course be of any length.  Even once `shar'
+itself is made to work correctly, `sh' discards null characters
+when unpacking the shell archive.
+
+I have also seen character \177 changed into \377.  I do not know
+what transfer means caused this problem.  Various network
+file transfer programs are suspected of clobbering the high bit.
+
+The only verified ways to transfer GNU Emacs are `tar', kermit (in
+binary mode on Unix), and rcp or internet ftp between two Unix systems,
+or chaosnet cftp using raw mode.
+
+If you have a copy of Emacs that has been damaged in its
+nonprinting characters, you can fix them:
+
+ 1) Record the names of all the .elc files.
+ 2) Delete all the .elc files.
+ 3) Recompile alloc.c with a value of PURESIZE twice as large.
+     You might as well save the old alloc.o.
+ 4) Remake xemacs.  It should work now.
+ 5) Running xemacs, do Meta-x byte-compile-file repeatedly
+  to recreate all the .elc files that used to exist.
+  You may need to increase the value of the variable
+  max-lisp-eval-depth to succeed in running the compiler interpreted
+  on certain .el files.  400 was sufficient as of last report.
+ 6) Reinstall the old alloc.o (undoing changes to alloc.c if any)
+  and remake temacs.
+ 7) Remake xemacs.  It should work now, with valid .elc files.
+
+* temacs prints "Pure Lisp storage exhausted"
+
+This means that the Lisp code loaded from the .elc and .el
+files during  temacs -l loadup inc dump  took up more
+space than was allocated.
+
+This could be caused by
+ 1) adding code to the preloaded Lisp files
+ 2) adding more preloaded files in loadup.el
+ 3) having a site-init.el or site-load.el which loads files.
+   Note that ANY site-init.el or site-load.el is nonstandard;
+   if you have received Emacs from some other site
+   and it contains a site-init.el or site-load.el file, consider
+   deleting that file.
+ 4) getting the wrong .el or .elc files
+   (not from the directory you expected).
+ 5) deleting some .elc files that are supposed to exist.
+   This would cause the source files (.el files) to be
+   loaded instead.  They take up more room, so you lose.
+ 6) a bug in the Emacs distribution which underestimates
+   the space required.
+
+If the need for more space is legitimate, change the definition
+of PURESIZE in config.h.
+
+But in some of the cases listed above, this problem is a consequence
+of something else that is wrong.  Be sure to check and fix the real
+problem.
+
+* Changes made to .el files do not take effect.
+
+You may have forgotten to recompile them into .elc files.
+Then the old .elc files will be loaded, and your changes
+will not be seen.  To fix this, do M-x byte-recompile-directory
+and specify the directory that contains the Lisp files.
+
+* The dumped Emacs (xemacs) crashes when run, trying to write pure data.
+
+Two causes have been seen for such problems.
+
+1) On a system where getpagesize is not a system call, it is defined
+as a macro.  If the definition (in both unexec.c and malloc.c) is wrong,
+it can cause problems like this.  You might be able to find the correct
+value in the man page for a.out (5).
+
+2) Some systems allocate variables declared static among the
+initialized variables.  Emacs makes all initialized variables in most
+of its files pure after dumping, but the variables declared static and
+not initialized are not supposed to be pure.  On these systems you
+may need to add "#define static" to the m- or the s- file.
+
+* Compilation errors on VMS.
+
+You will get warnings when compiling on VMS because there are
+variable names longer than 32 (or whatever it is) characters.
+This is not an error.  Ignore it.
+
+VAX C does not support #if defined(foo).  Uses of this construct
+were removed, but some may have crept back in.  They must be rewritten.
+
+There is a bug in the C compiler which fails to sign extend characters
+in conditional expressions.  The bug is:
+	char c = -1, d = 1;
+	int i;
+
+	i = d ? c : d;
+The result is i == 255;  the fix is to typecast the char in the
+conditional expression as an (int).  Known occurrences of such
+constructs in Emacs have been fixed.
+
+* rmail gets error getting new mail
+
+rmail gets new mail from /usr/spool/mail/$USER using a program
+called `movemail'.  This program interlocks with /bin/mail using
+the protocol defined by /bin/mail.
+
+There are two different protocols in general use.  One of them uses
+the `flock' system call.  The other involves creating a lock file;
+`movemail' must be able to write in /usr/spool/mail in order to do
+this.  You control which one is used by defining, or not defining,
+the macro MAIL_USE_FLOCK in config.h or the m- or s- file it includes.
+IF YOU DON'T USE THE FORM OF INTERLOCKING THAT IS NORMAL ON YOUR
+SYSTEM, YOU CAN LOSE MAIL!
+
+If your system uses the lock file protocol, and fascist restrictions
+prevent ordinary users from writing the lock files in /usr/spool/mail,
+you may need to make `movemail' setgid to a suitable group such as
+`mail'.  You can use these commands (as root):
+
+	chgrp mail movemail
+	chmod 2755 movemail
+
+* Emacs won't work with X-windows if the value of DISPLAY is HOSTNAME:0.
+
+Some people have found that Emacs was unable to connect to the local
+host by name, as in DISPLAY=prep:0 if you are running on prep, but
+could handle DISPLAY=unix:0.  Here is what tale@rpi.edu said:
+
+      Seems as
+    though gethostbyname was bombing somewhere along the way.  Well, we
+    had just upgrade from SunOS 3.5 (which X11 was built under) to SunOS
+    4.0.1.  Any new X applications which tried to be built with the pre
+    OS-upgrade libraries had the same problems which Emacs was having.
+    Missing /etc/resolv.conf for a little while (when one of the libraries
+    was built?) also might have had a hand in it.
+
+    The result of all of this (with some speculation) was that we rebuilt
+    X and then rebuilt Emacs with the new libraries.  Works as it should
+    now.  Hoorah.
+
+* Emacs spontaneously displays "I-search: " at the bottom of the screen.
+
+This means that Control-S/Control-Q "flow control" is being used.
+C-s/C-q flow control is bad for Emacs editors because it takes away
+C-s and C-q as user commands.  Since editors do not output long streams
+of text without user commands, there is no need for a user-issuable
+"stop output" command in an editor; therefore, a properly designed
+flow control mechanism would transmit all possible input characters
+without interference.  Designing such a mechanism is easy, for a person
+with at least half a brain.
+
+There are three possible reasons why flow control could be taking place:
+
+  1) Terminal has not been told to disable flow control
+  2) Insufficient padding for the terminal in use
+  3) Some sort of terminal concentrator or line switch is responsible
+
+First of all, many terminals have a set-up mode which controls
+whether they generate flow control characters.  This must be
+set to "no flow control" in order for Emacs to work.  Sometimes
+there is an escape sequence that the computer can send to turn
+flow control off and on.  If so, perhaps the termcap `ti' string
+should turn flow control off, and the `te' string should turn it on.
+
+Once the terminal has been told "no flow control", you may find it
+needs more padding.  The amount of padding Emacs sends is controlled
+by the termcap entry for the terminal in use, and by the output baud
+rate as known by the kernel.  The shell command `stty' will print
+your output baud rate; `stty' with suitable arguments will set it if
+it is wrong.  Setting to a higher speed causes increased padding.  If
+the results are wrong for the correct speed, there is probably a
+problem in the termcap entry.  You must speak to a local Unix wizard
+to fix this.  Perhaps you are just using the wrong terminal type.
+
+For terminals that lack a "no flow control" mode, sometimes just
+giving lots of padding will prevent actual generation of flow control
+codes.  You might as well try it.
+
+If you are really unlucky, your terminal is connected to the computer
+through a concentrator which sends flow control to the computer, or it
+insists on sending flow control itself no matter how much padding you
+give it.  You are screwed!  You should replace the terminal or
+concentrator with a properly designed one.  In the mean time,
+some drastic measures can make Emacs semi-work.
+
+One drastic measure to ignore C-s and C-q, while sending enough
+padding that the terminal will not really lose any output.
+Ignoring C-s and C-q can be done by using keyboard-translate-table
+to map them into an undefined character such as C-^ or C-\.  Sending
+lots of padding is done by changing the termcap entry.  Here is how
+to make such a keyboard-translate-table:
+
+    (let ((the-table (make-string 128 0)))
+      ;; Default is to translate each character into itself.
+      (let ((i 0))
+	(while (< i 128)
+	  (aset the-table i i)
+	  (setq i (1+ i))))
+      ;; Swap C-s with C-\
+      (aset the-table ?\C-\\ ?\C-s)
+      (aset the-table ?\C-s ?\C-\\)
+      ;; Swap C-q with C-^
+      (aset the-table ?\C-^ ?\C-q)
+      (aset the-table ?\C-q ?\C-^)
+      (setq keyboard-translate-table the-table))
+
+An even more drastic measure is to make Emacs use flow control.
+To do this, evaluate the Lisp expression (set-input-mode nil t).
+Emacs will then interpret C-s and C-q as flow control commands.  (More
+precisely, it will allow the kernel to do so as it usually does.)  You
+will lose the ability to use them for Emacs commands.  Also, as a
+consequence of using CBREAK mode, the terminal's Meta-key, if any,
+will not work, and C-g will be liable to cause a loss of output which
+will produce garbage on the screen.  (These problems apply to 4.2BSD;
+they may not happen in 4.3 or VMS, and I don't know what would happen
+in sysV.)  You can use keyboard-translate-table, as shown above,
+to map two other input characters (such as C-^ and C-\) into C-s and
+C-q, so that you can still search and quote.
+
+I have no intention of ever redisigning the Emacs command set for
+the assumption that terminals use C-s/C-q flow control.  This
+flow control technique is a bad design, and terminals that need
+it are bad merchandise and should not be purchased.  If you can
+get some use out of GNU Emacs on inferior terminals, I am glad,
+but I will not make Emacs worse for properly designed systems
+for the sake of inferior systems.
+
+* Control-S and Control-Q commands are ignored completely.
+
+For some reason, your system is using brain-damaged C-s/C-q flow
+control despite Emacs's attempts to turn it off.  Perhaps your
+terminal is connected to the computer through a concentrator
+that wants to use flow control.
+
+You should first try to tell the concentrator not to use flow control.
+If you succeed in this, try making the terminal work without
+flow control, as described in the preceding section.
+
+If that line of approach is not successful, map some other characters
+into C-s and C-q using keyboard-translate-table.  The example above
+shows how to do this with C-^ and C-\.
+
+* Screen is updated wrong, but only on one kind of terminal.
+
+This could mean that the termcap entry you are using for that
+terminal is wrong, or it could mean that Emacs has a bug handing
+the combination of features specified for that terminal.
+
+The first step in tracking this down is to record what characters
+Emacs is sending to the terminal.  Execute the Lisp expression
+(open-termscript "./emacs-script") to make Emacs write all
+terminal output into the file ~/emacs-script as well; then do
+what makes the screen update wrong, and look at the file
+and decode the characters using the manual for the terminal.
+There are several possibilities:
+
+1) The characters sent are correct, according to the terminal manual.
+
+In this case, there is no obvious bug in Emacs, and most likely you
+need more padding, or possibly the terminal manual is wrong.
+
+2) The characters sent are incorrect, due to an obscure aspect
+ of the terminal behavior not described in an obvious way
+ by termcap.
+
+This case is hard.  It will be necessary to think of a way for
+Emacs to distinguish between terminals with this kind of behavior
+and other terminals that behave subtly differently but are
+classified the same by termcap; or else find an algorithm for
+Emacs to use that avoids the difference.  Such changes must be
+tested on many kinds of terminals.
+
+3) The termcap entry is wrong.
+
+See the file etc/TERMS for information on changes
+that are known to be needed in commonly used termcap entries
+for certain terminals.
+
+4) The characters sent are incorrect, and clearly cannot be
+ right for any terminal with the termcap entry you were using.
+
+This is unambiguously an Emacs bug, and can probably be fixed
+in termcap.c, tparam.c, term.c, scroll.c, cm.c or dispnew.c.
+
+* Output from Control-V is slow.
+
+On many bit-map terminals, scrolling operations are fairly slow.
+Often the termcap entry for the type of terminal in use fails
+to inform Emacs of this.  The two lines at the bottom of the screen
+before a Control-V command are supposed to appear at the top after
+the Control-V command.  If Emacs thinks scrolling the lines is fast,
+it will scroll them to the top of the screen.
+
+If scrolling is slow but Emacs thinks it is fast, the usual reason is
+that the termcap entry for the terminal you are using does not
+specify any padding time for the `al' and `dl' strings.  Emacs
+concludes that these operations take only as much time as it takes to
+send the commands at whatever line speed you are using.  You must
+fix the termcap entry to specify, for the `al' and `dl', as much
+time as the operations really take.
+
+Currently Emacs thinks in terms of serial lines which send characters
+at a fixed rate, so that any operation which takes time for the
+terminal to execute must also be padded.  With bit-map terminals
+operated across networks, often the network provides some sort of
+flow control so that padding is never needed no matter how slow
+an operation is.  You must still specify a padding time if you want
+Emacs to realize that the operation takes a long time.  This will
+cause padding characters to be sent unnecessarily, but they do
+not really cost much.  They will be transmitted while the scrolling
+is happening and then discarded quickly by the terminal.
+
+Most bit-map terminals provide commands for inserting or deleting
+multiple lines at once.  Define the `AL' and `DL' strings in the
+termcap entry to say how to do these things, and you will have
+fast output without wasted padding characters.  These strings should
+each contain a single %-spec saying how to send the number of lines
+to be scrolled.  These %-specs are like those in the termcap
+`cm' string.
+
+You should also define the `IC' and `DC' strings if your terminal
+has a command to insert or delete multiple characters.  These
+take the number of positions to insert or delete as an argument.
+
+A `cs' string to set the scrolling region will reduce the amount
+of motion you see on the screen when part of the screen is scrolled.
+
+* You type Control-H (Backspace) expecting to delete characters.
+
+Put `stty dec' in your .login file and your problems will disappear
+after a day or two.
+
+The choice of Backspace for erasure was based on confusion, caused by
+the fact that backspacing causes erasure (later, when you type another
+character) on most display terminals.  But it is a mistake.  Deletion
+of text is not the same thing as backspacing followed by failure to
+overprint.  I do not wish to propagate this confusion by conforming
+to it.
+
+For this reason, I believe `stty dec' is the right mode to use,
+and I have designed Emacs to go with that.  If there were a thousand
+other control characters, I would define Control-h to delete as well;
+but there are not very many other control characters, and I think
+that providing the most mnemonic possible Help character is more
+important than adapting to people who don't use `stty dec'.
+
+If you are obstinate about confusing buggy overprinting with deletion,
+you can redefine Backspace in your .emacs file:
+  (global-set-key "\b" 'delete-backward-char)
+You may then wish to put the function  help-command  on some
+other key.  I leave to you the task of deciding which key.
+
+* Editing files through RFS gives spurious "file has changed" warnings.
+It is possible that a change in Emacs 18.37 gets around this problem,
+but in case not, here is a description of how to fix the RFS bug that
+causes it.
+
+    There was a serious pair of bugs in the handling of the fsync() system
+    call in the RFS server.
+
+    The first is that the fsync() call is handled as another name for the
+    close() system call (!!).  It appears that fsync() is not used by very
+    many programs; Emacs version 18 does an fsync() before closing files
+    to make sure that the bits are on the disk.
+
+    This is fixed by the enclosed patch to the RFS server.
+
+    The second, more serious problem, is that fsync() is treated as a
+    non-blocking system call (i.e., it's implemented as a message that
+    gets sent to the remote system without waiting for a reply).  Fsync is
+    a useful tool for building atomic file transactions.  Implementing it
+    as a non-blocking RPC call (when the local call blocks until the sync
+    is done) is a bad idea; unfortunately, changing it will break the RFS
+    protocol.  No fix was supplied for this problem.
+
+    (as always, your line numbers may vary)
+
+    % rcsdiff -c -r1.2 serversyscall.c
+    RCS file: RCS/serversyscall.c,v
+    retrieving revision 1.2
+    diff -c -r1.2 serversyscall.c
+    *** /tmp/,RCSt1003677   Wed Jan 28 15:15:02 1987
+    --- serversyscall.c     Wed Jan 28 15:14:48 1987
+    ***************
+    *** 163,169 ****
+	    /*
+	     * No return sent for close or fsync!
+	     */
+    !       if (syscall == RSYS_close || syscall == RSYS_fsync)
+		    proc->p_returnval = deallocate_fd(proc, msg->m_args[0]);
+	    else
+	    {
+    --- 166,172 ----
+	    /*
+	     * No return sent for close or fsync!
+	     */
+    !       if (syscall == RSYS_close)
+		    proc->p_returnval = deallocate_fd(proc, msg->m_args[0]);
+	    else
+	    {
+
+* ld complains because `alloca' is not defined on your system.
+
+Alloca is a library function in 4.2bsd, which is used very heavily by
+GNU Emacs.  Use of malloc instead is very difficult, as you would have
+to arrange for the storage to be freed, and do so even in the case of
+a longjmp happening inside a subroutine.  Many subroutines in Emacs
+can do longjmp.
+
+If your system does not support alloca, try defining the symbol
+C_ALLOCA in the m-...h file for that machine.  This will enable the use
+in Emacs of a portable simulation for alloca.  But you will find that
+Emacs's performance and memory use improve if you write a true
+alloca in assembler language.
+
+alloca (N) should return the address of an N-byte block of memory
+added dynamically to the current stack frame.
+
+* Vax C compiler bugs affecting Emacs.
+
+You may get one of these problems compiling Emacs:
+
+   foo.c line nnn: compiler error: no table entry for op STASG
+   foo.c: fatal error in /lib/ccom
+
+These are due to bugs in the C compiler; the code is valid C.
+Unfortunately, the bugs are unpredictable: the same construct
+may compile properly or trigger one of these bugs, depending
+on what else is in the source file being compiled.  Even changes
+in header files that should not affect the file being compiled
+can affect whether the bug happens.  In addition, sometimes files
+that compile correctly on one machine get this bug on another machine.
+
+As a result, it is hard for me to make sure this bug will not affect
+you.  I have attempted to find and alter these constructs, but more
+can always appear.  However, I can tell you how to deal with it if it
+should happen.  The bug comes from having an indexed reference to an
+array of Lisp_Objects, as an argument in a function call:
+  Lisp_Object *args;
+  ...
+   ... foo (5, args[i], ...)...
+putting the argument into a temporary variable first, as in
+  Lisp_Object *args;
+  Lisp_Object tem;
+  ...
+   tem = args[i];
+   ... foo (r, tem, ...)...
+causes the problem to go away.
+The `contents' field of a Lisp vector is an array of Lisp_Objects,
+so you may see the problem happening with indexed references to that.
+
+* 68000 C compiler problems
+
+Various 68000 compilers have different problems.
+These are some that have been observed.
+
+** Using value of assignment expression on union type loses.
+This means that  x = y = z;  or  foo (x = z);  does not work
+if x is of type Lisp_Object.
+
+** "cannot reclaim" error.
+
+This means that an expression is too complicated.  You get the correct
+line number in the error message.  The code must be rewritten with
+simpler expressions.
+
+** XCONS, XSTRING, etc macros produce incorrect code.
+
+If temacs fails to run at all, this may be the cause.
+Compile this test program and look at the assembler code:
+
+struct foo { char x; unsigned int y : 24; };
+
+lose (arg)
+     struct foo arg;
+{
+  test ((int *) arg.y);
+}
+
+If the code is incorrect, your compiler has this problem.
+In the XCONS, etc., macros in lisp.h you must replace (a).u.val with
+((a).u.val + coercedummy) where coercedummy is declared as int.
+
+This problem will not happen if the m-...h file for your type
+of machine defines NO_UNION_TYPE.  That is the recommended setting now.
+
+* C compilers lose on returning unions
+
+I hear that some C compilers cannot handle returning
+a union type.  Most of the functions in GNU Emacs return
+type Lisp_Object, which is currently defined as a union.
+
+This problem will not happen if the m-...h file for your type
+of machine defines NO_UNION_TYPE.  That is the recommended setting now.
+
