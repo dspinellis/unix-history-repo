@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.26 1994/05/19 17:32:33 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.27 1994/05/20 05:42:05 jkh Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both.
@@ -625,6 +625,13 @@ disk            fd0     at fdc0 drive 0
 disk            fd1     at fdc0 drive 1
 #tape           ft0     at fdc0 drive 2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You will have a device called /dev/ft0, which you can write to through
+a special program to manage it called `ft' - see the man page on ft for
+further details.  Versions previous to -current also had some trouble dealing
+wiht bad tape media; if you have trouble where ft seems to go back and forth
+over the same spot, try grabbing the latest version of ft from /usr/src/sbin/ft 
+in current and try that.
 
 
 6.3:  Does FreeBSD support IPC primitives like those in System V?
