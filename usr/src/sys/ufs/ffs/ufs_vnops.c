@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -178,7 +178,7 @@ ufs_access(ap)
 	register struct vnode *vp = ap->a_vp;
 	register struct inode *ip = VTOI(vp);
 	register struct ucred *cred = ap->a_cred;
-	mode_t mode = ap->a_mode;
+	mode_t mask, mode = ap->a_mode;
 	register gid_t *gp;
 	int i, error;
 
@@ -208,41 +208,39 @@ ufs_access(ap)
 	if (cred->cr_uid == 0)
 		return (0);
 
+	mask = 0;
+
 	/* Otherwise, check the owner. */
-	if (cred->cr_uid == ip->i_uid)
-		switch (mode) {
-		case VEXEC:
-			return (ip->i_mode & S_IXUSR ? 0 : EACCES);
-		case VREAD:
-			return (ip->i_mode & S_IRUSR ? 0 : EACCES);
-		case VWRITE:
-			return (ip->i_mode & S_IWUSR ? 0 : EACCES);
-		}
+	if (cred->cr_uid == ip->i_uid) {
+		if (mode & VEXEC)
+			mask |= S_IXUSR;
+		if (mode & VREAD)
+			mask |= S_IRUSR;
+		if (mode & VWRITE)
+			mask |= S_IWUSR;
+		return ((ip->i_mode & mask) == mask ? 0 : EACCES);
+	}
 
 	/* Otherwise, check the groups. */
 	for (i = 0, gp = cred->cr_groups; i < cred->cr_ngroups; i++, gp++)
-		if (ip->i_gid == *gp)
-			switch (mode) {
-			case VEXEC:
-				return (ip->i_mode & S_IXGRP ? 0 : EACCES);
-			case VREAD:
-				return (ip->i_mode & S_IRGRP ? 0 : EACCES);
-			case VWRITE:
-				return (ip->i_mode & S_IWGRP ? 0 : EACCES);
-			}
+		if (ip->i_gid == *gp) {
+			if (mode & VEXEC)
+				mask |= S_IXGRP;
+			if (mode & VREAD)
+				mask |= S_IRGRP;
+			if (mode & VWRITE)
+				mask |= S_IWGRP;
+			return ((ip->i_mode & mask) == mask ? 0 : EACCES);
+		}
 
 	/* Otherwise, check everyone else. */
-	switch (mode) {
-	case VEXEC:
-		return (ip->i_mode & S_IXOTH ? 0 : EACCES);
-	case VREAD:
-		return (ip->i_mode & S_IROTH ? 0 : EACCES);
-	case VWRITE:
-		return (ip->i_mode & S_IWOTH ? 0 : EACCES);
-	}
-
-	panic("ufs_access: unknown mode %x\n", mode);
-	/* NOTREACHED */
+	if (mode & VEXEC)
+		mask |= S_IXOTH;
+	if (mode & VREAD)
+		mask |= S_IROTH;
+	if (mode & VWRITE)
+		mask |= S_IWOTH;
+	return ((ip->i_mode & mask) == mask ? 0 : EACCES);
 }
 
 /* ARGSUSED */
