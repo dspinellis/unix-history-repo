@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diff.c 4.5 %G%";
+static	char sccsid[] = "@(#)diff.c 4.6 %G%";
 
 #include "diff.h"
 /*
@@ -176,7 +176,8 @@ max(a,b)
 
 done()
 {
-	unlink(tempfile);
+	if (tempfile)
+		unlink(tempfile);
 	exit(status);
 }
 
