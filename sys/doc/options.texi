@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.6 1994/03/07 17:41:42 wollman Exp $
+$Id: options.texi,v 1.1 1994/03/30 20:36:34 wollman Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -118,6 +118,8 @@ The @samp{CCITT} option enables support for the ITU-T X.25(1980)
 network-layer protocol.  Nobody we know has a direct X.25 connection to
 anything, so this code has never been tested.
 
+This option will likely be removed in a future release of FreeBSD.
+
 @item options "COMPAT_42"
 @findex COMPAT_42
 @cindex UDP Checksums
@@ -130,6 +132,9 @@ stuck trying to communicate with an old 4.2BSD machine, or one running
 something derived from 4.2 like SunOS 3.5 or Ultrix 2.0, this may be
 necessary in order to successfully receive UDP packets.
 
+This option will be replaced by run-time configuration in a future
+release of FreeBSD.
+
 @item options "COMPAT_43"
 @findex COMPAT_43
 @cindex 4.3 Compatibility
@@ -140,6 +145,16 @@ not be turned off, as many utilities and library routines still depend
 on these obsolescent system calls being present.  At some future date,
 this will probably be split up into two separate options, one for binary
 compatibility and one for the old but useful system calls.
+
+@item options "COMPAT_102"
+@findex COMPAT_102
+@cindex FreeBSD 1.0.2 compatibility
+@cindex 1.0.2 Compatibility
+@cindex Compatibility options
+This option, which is not yet implemented, will control whether certain
+entry points which were system calls in FreeBSD 1.0.2 but have been
+replaced with library routines, are supported in the kernel for
+backwards compatiblity.
 
 @item options "DIRECTED_BROADCAST"
 @findex DIRECTED_BROADCAST
@@ -152,6 +167,9 @@ on subnets @samp{132.198.3} and @samp{132.198.4}, and the
 @samp{132.198.3} side receives a packet addressed to
 @samp{132.198.4.255}, it will forward the packet as a broadcast on that
 subnet.
+
+This option will likely be replaced by run-time configuration in a
+future release of FreeBSD.
 
 @item pseudo-device ether
 @findex ether
@@ -172,6 +190,8 @@ Connectionless-Mode Network Protocol, tunnelled through IP version 4.
 @samp{eon} interfaces are created automatically once initially
 configured by adding ISO routes with IP destinations.  At present, both
 the pseudo-device and option declaration are necessary.
+
+This option will likely be removed in a future release of FreeBSD.
 
 @item options FIFO
 @findex FIFO
@@ -202,6 +222,9 @@ forwarded or not; @var{value} should be either @samp{0} or @samp{1}.
 @samp{ipsendredirects} variable (default is one, but should be changed
 to zero); its @var{value} should also be either @samp{0} or @samp{1}.
 
+This option will be replaced by run-time configuration in a future
+release of FreeBSD.
+
 @item options INET
 @findex INET
 @cindex IP
@@ -230,7 +253,10 @@ These options control the inclusion of ISO OSI networking protocols.
 The TPIP option includes just enough support to run ISO Transport
 Protocol class 4 over IP, supporing the @samp{SOCK_SEQPACKET}
 abstraction.  The ISO option includes support for CLNP, TP class 0,
-ISO 9542 ESIS, and IEEE 802.2 logical link control class 0 (for CLNP only).
+ISO 9542 ESIS, and IEEE 802.2 logical link control class 0 (for CLNP
+only).
+
+This option will likely be removed in a future release of FreeBSD.
 
 @item options ISOFS
 @findex ISOFS
@@ -248,11 +274,13 @@ filesystem, including RockRidge extensions.
 This option controls whether ISO 9542 ESIS is run over ITU-T X.25 link
 layers.  This requires the @samp{CCITT} option to be enabled as well.
 
+This option will likely be removed in a future release of FreeBSD.
+
 @item options KTRACE
 @findex KTRACE
 @cindex Kernel tracing
 This option enables the tracing of several classes of internal kernel
-events.  See the @samp{ktrace} command for more details.
+events.  See the @samp{ktrace} command for more details.  Recommended.
 
 @item pseudo-device log
 @findex log
@@ -313,16 +341,17 @@ Service protocol family.  At the present time, it is not known whether
 this code even works; testers are welcome.  The @samp{NSIP} option
 enables encapsulation of XNS IDP over IP.
 
-@item options PANICDELAY
-@itemx options PANICWAIT
-@findex PANICDELAY
-@findex PANICWAIT
+These options will likely be removed in a future release of FreeBSD.
+
+@item options "PANIC_REBOOT_WAIT_TIME=@var{time}"
+@findex PANIC_REBOOT_WAIT_TIME
 @cindex Kernel panics
-These options control whether the system waits after a panic.  This is
-necessary on some systems which do not support crash dumps, so that the
-actual panic message can be read.  The @samp{PANICDELAY} option inserts
-a delay of twenty seconds before self-destructing; the @samp{PANICWAIT}
-option instead waits for a key to be pressed on the console.
+This option controls how long the system waits after a panic before it
+reboots.  If a @var{time} of zero is specified, it reboots immediately;
+otherwise, @var{time} is the number of seconds to wait before rebooting.
+If, during the waiting period, a key is hit on the console, the
+countdown stops and the system will wait for the user to copy down the
+panic message and hit another key before rebooting.
 
 @item options PCFS
 @findex PCFS
@@ -395,22 +424,6 @@ under this mechanism.  The @samp{SYSVSEM} option provides emulation of
 System V-compatible semaphores, and likewise @samp{SYSVMSG} for message
 queues.
 
-@item options RMP
-@findex RMP
-@cindex Remote maintenance protocol
-@cindex Networking domains
-This option should control the inclusion of support for HP's remote
-maintenance protocol, but the source code is not included in FreeBSD at
-present, so enabling it will not result in any good.
-
-@item pseudo-device tb
-@findex tb
-@cindex Tablet line discipline
-The @samp{tb} pseudo-device provides support for the `tablet' line
-discipline.  Nobody on the FreeBSD team actually has one of the tablets
-in question, so we have no idea if this actually works or not.  It may
-not even compile.
-
 @item options "TCP_COMPAT_42"
 @findex TCP_COMPAT_42
 @cindex 4.2 Compatibility
@@ -419,6 +432,9 @@ not even compile.
 This option controls the perpetuation of several bugs inherited from the
 4.2BSD implementation of TCP.  It should only be defined in the
 circumstances outlined for @samp{COMPAT_42}, above.
+
+This option will likely be replaced by run-time configuration in a
+future release of FreeBSD.
 
 @item pseudo-device tun
 @findex tun
@@ -436,20 +452,7 @@ to do both at some time in the past.
 This option allows any old user to grab kernel output away from the
 console and send it to the tty of their choice.  It presents an
 incredile security hole for some systems, but is necessary in order to
-allow programs like @samp{xconsole} to operate.  (The alternative,
-making @samp{xconsole} set-uid root, opens the exact same security
-hole.)
-
-@item options XE
-@findex XE
-@cindex X.25
-@cindex IEEE 802.2 LLC
-@cindex Network interfaces
-@cindex Ethernet
-This option should control the inclusion of support for running X.25
-over IEEE 802.2 LLC class 2, but that code was not included in the
-Networking/2 release, so enabling it will disable kernel compilation.
-Requires @samp{CCITT}.
+allow programs like @samp{xconsole} to operate.
 
 @item options XSERVER
 @findex XSERVER
@@ -521,16 +524,12 @@ over a serial connection.  The present code does not work, but users are
 invited to hack on it and contribute the changes back to the FreeBSD
 team.
 
-@item options MCLSHIFT=@var{value}
-@findex MCLSHIFT
-@cindex Network parameters
-This option controls the number of bytes in an mbuf cluster, which is
-one of the basic units through which network data is managed.  It is
-equal to the log base two of @samp{MCLBYTES}, the size of an mbuf
-cluster, and defaults to twelve (for an @samp{MCLBYTES} of 4096).  It is
-unlikely you will ever need to change this, but in previous releases
-some performance gain could be had by increasing it from the
-then-default values.
+@item options MAXMEM=@var{size}
+@findex MAXMEM
+The @samp{MAXMEM} option controls how much memory the kernel will
+recognize on bootup, specified in kilobytes.  This may be useful for
+dealing with certain broken attachment busses (or the adapters thereon)
+which are unable to deal with memory beyond a certain address.
 
 @item options SUBNETSARELOCAL
 @findex SUBNETSARELOCAL
@@ -551,6 +550,15 @@ statically allocated in the debugger source code to hold the kernel
 symbol table that @samp{dbsym} sticks there.  Eventually this will be
 dynamically allocated at load time.  The default @var{value} is 63000
 bytes.
+
+@item options "UPDATE_INTERVAL=@var{value}"
+@findex UPDATE_INTERVAL
+@cindex Update process
+This option controls the wait time between successive @samp{sync}
+operations run by the @samp{update} system process (pid 3).  This option
+will be replaced by run-time configuration in a future release of
+FreeBSD.
+
 @end table
 
 @node Devices, Internals, Performance, Top
