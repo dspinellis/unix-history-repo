@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.4 81/11/29 */
+/* tcp_timer.c 4.5 81/12/02 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,6 +53,9 @@ COUNT(TCP_SLOWTIMO);
 				    PRU_SLOWTIMO, (struct mbuf *)0,
 				    (caddr_t)i);
 		}
+		tp->t_idle++;
+		if (tp->t_rtt)
+			tp->t_rtt++;
 	}
 	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 	splx(s);
@@ -72,7 +75,7 @@ COUNT(TCP_CANCELTIMERS);
 }
 
 /*
- * TCP timer went off processing.
+ * TCP timer processing.
  */
 tcp_timers(tp, timer)
 	register struct tcpcb *tp;
@@ -82,29 +85,54 @@ tcp_timers(tp, timer)
 COUNT(TCP_TIMERS);
 	switch (timer) {
 
+	/*
+	 * 2 MSL timeout in shutdown went off.  Delete connection
+	 * control block.
+	 */
 	case TCPT_2MSL:
 		tcp_close(tp);
 		return;
 
+	/*
+	 * Retransmission timer went off.  Message has not
+	 * been acked within retransmit interval.  Back off
+	 * to a longer retransmit interval and retransmit all
+	 * unacknowledged messages in the window.
+	 */
 	case TCPT_REXMT:
-#if 0
-		tp->t_xmtime <<= 1;
-		if (tp->t_xmtime > TCPSC_TOOLONG) {
+		tp->t_rxtshift++;
+		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+		    ((int)(2 * tp->t_srtt)) << tp->t_rxtshift,
+		    TCPTV_MIN, TCPTV_MAX);
+		tp->snd_nxt = tp->snd_una;
+		/* this only transmits one segment! */
+		(void) tcp_output(tp);
+		return;
+
+	/*
+	 * Persistance timer into zero window.
+	 * Force a byte to be output, if possible.
+	 */
+	case TCPT_PERSIST:
+		tp->t_force = 1;
+		(void) tcp_output(tp);
+		tp->t_force = 0;
+		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
+		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
+		return;
+
+	/*
+	 * Keep-alive timer went off; send something
+	 * or drop connection if idle for too long.
+	 */
+	case TCPT_KEEP:
+		if (tp->t_state < TCPS_ESTABLISHED ||
+		    tp->t_idle >= TCPTV_MAXIDLE) {
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
-#endif
-		tcp_output(tp);
-		return;
-
-	case TCPT_PERSIST:
-		if (tcp_output(tp) == 0)
-			tp->snd_wnd++, (void) tcp_output(tp), tp->snd_wnd--;
-		/* reset? */
-		return;
-
-	case TCPT_KEEP:
-		/* reset? */
+		tcp_respond(tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
+		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;
 	}
 }

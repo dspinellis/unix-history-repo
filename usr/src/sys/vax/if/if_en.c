@@ -1,4 +1,4 @@
-/*	if_en.c	4.15	81/11/29	*/
+/*	if_en.c	4.16	81/12/02	*/
 
 #include "en.h"
 
@@ -105,6 +105,7 @@ COUNT(ENATTACH);
 	es->es_if.if_output = enoutput;
 	es->es_if.if_init = eninit;
 	es->es_if.if_ubareset = enreset;
+	if_attach(&es->es_if);
 }
 
 /*
@@ -215,7 +216,7 @@ restart:
 	 */
 	UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_w.ifrw_bdp);
 	addr = (struct endevice *)ui->ui_addr;
-	addr->en_oba = (int)es->es_ifuba.ifu_w.ifrw_addr;
+	addr->en_oba = (int)es->es_ifuba.ifu_w.ifrw_info;
 	addr->en_odelay = es->es_delay;
 	addr->en_owc = -((es->es_olen + 1) >> 1);
 	addr->en_ostat = EN_IEN|EN_GO;

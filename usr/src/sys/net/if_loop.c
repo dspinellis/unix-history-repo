@@ -1,4 +1,4 @@
-/*	if_loop.c	4.1	81/11/29	*/
+/*	if_loop.c	4.2	81/12/02	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -29,7 +29,7 @@ loattach()
 	ifp->if_net = LONET;
 	ifp->if_output = looutput;
 	ifp->if_next = ifnet;
-	ifnet = ifp;
+	if_attach(ifp);
 }
 
 looutput(ifp, m0, pf)

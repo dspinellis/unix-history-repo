@@ -1,27 +1,28 @@
-/*	tcp_var.h	4.10	81/11/29	*/
+/*	tcp_var.h	4.11	81/12/02	*/
 
 /*
  * Kernel variables for tcp.
  */
 
 /*
- * Tcp control block.
+ * Tcp control block, one per tcp; fields:
  */
 struct tcpcb {
 	struct	tcpiphdr *seg_next;	/* sequencing queue */
 	struct	tcpiphdr *seg_prev;
 	int	t_state;		/* state of this connection */
-	int	t_seqcnt;		/* count of chars in seq queue */
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
+	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
 	struct	mbuf *t_tcpopt;		/* tcp options */
 	struct	mbuf *t_ipopt;		/* ip options */
 	short	t_maxseg;		/* maximum segment size */
+	short	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
 #define	TF_ACKNOW	0x01			/* ack peer immediately */
 #define	TF_DELACK	0x02			/* ack, but try to delay it */
 #define	TF_PUSH		0x04			/* push mode */
 #define	TF_URG		0x08			/* urgent mode */
-#define	TF_KEEP		0x10			/* use keep-alives */
+#define	TF_DONTKEEP	0x10			/* don't use keep-alives */
 	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
 	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
@@ -49,9 +50,11 @@ struct tcpcb {
 /* retransmit variables */
 	tcp_seq	snd_max;		/* highest sequence number sent
 					   used to recognize retransmits */
-	tcp_seq	rxt_seq;
-	short	rxt_time;
-	short	rxt_cnt;
+/* transmit timing stuff */
+	short	t_idle;			/* inactivity time */
+	short	t_rtt;			/* round trip time */
+	tcp_seq	t_rtseq;		/* sequence number being timed */
+	float	t_srtt;			/* smoothed round-trip time */
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)

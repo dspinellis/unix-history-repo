@@ -1,8 +1,9 @@
-/*	tcp_output.c	4.20	81/11/29	*/
+/*	tcp_output.c	4.21	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
+#include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../net/in.h"
@@ -46,10 +47,12 @@ COUNT(TCP_OUTPUT);
 	 * to send, then transmit; otherwise, investigate further.
 	 */
 	off = tp->snd_nxt - tp->snd_una;
-	len = MIN(so->so_snd.sb_cc, tp->snd_wnd) - off;
+	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
 	flags = tcp_outflags[tp->t_state];
+	if (len < so->so_snd.sb_cc)
+		flags &= ~TH_FIN;
 	if (len || (flags & (TH_SYN|TH_RST)))
 		goto send;
 
@@ -153,15 +156,42 @@ send:
 	tp->snd_nxt += len;
 
 	/*
-	 * Arrange for retransmit and time this transmit if
-	 * not already a retransmit and sending either data,
-	 * SYN or FIN.
+	 * If this transmission closes the window,
+	 * start persistance timer at 2 round trip
+	 * times but at least TCPTV_PERSMIN ticks.
 	 */
-	if (SEQ_GT(tp->snd_nxt, tp->snd_max)) {
-		tp->rxt_seq = tp->snd_nxt - len;
-		tp->rxt_time = 0;
-		tp->rxt_cnt = 0;
-		tp->t_timer[TCPT_REXMT] = 0;		/* XXX */
+	if (tp->snd_una + tp->snd_wnd >= tp->snd_nxt &&
+	    tp->t_timer[TCPT_PERSIST] == 0) {
+		tp->t_timer[TCPT_PERSIST] = 2 * tp->t_srtt;
+		if (tp->t_timer[TCPT_PERSIST] < TCPTV_PERSMIN)
+			tp->t_timer[TCPT_PERSIST] = TCPTV_PERSMIN;
+		if (tp->t_timer[TCPT_PERSIST] > TCPTV_MAX)
+			tp->t_timer[TCPT_PERSIST] = TCPTV_MAX;
+	}
+
+	/*
+	 * Time this transmission if not a retransmission and
+	 * not currently timing anything.
+	 */
+	if (SEQ_GT(tp->snd_nxt, tp->snd_max) && tp->t_rtt == 0) {
+		tp->t_rtt = 1;
+		tp->t_rtseq = tp->snd_nxt - len;
+	}
+
+	/*
+	 * Set retransmit timer if not currently set.
+	 * Initial value for retransmit timer to tcp_beta*tp->t_srtt,
+	 * with a minimum of TCPTV_MIN and a max of TCPTV_MAX.
+	 * Initialize shift counter which is used for exponential
+	 * backoff of retransmit time.
+	 */
+	if (tp->t_timer[TCPT_REXMT] == 0) {
+		tp->t_timer[TCPT_REXMT] = tcp_beta * tp->t_srtt;
+		if (tp->t_timer[TCPT_REXMT] < TCPTV_MIN)
+			tp->t_timer[TCPT_REXMT] = TCPTV_MIN;
+		if (tp->t_timer[TCPT_REXMT] > TCPTV_MAX)
+			tp->t_timer[TCPT_REXMT] = TCPTV_MAX;
+		tp->t_rxtshift = 0;
 	}
 
 	/*

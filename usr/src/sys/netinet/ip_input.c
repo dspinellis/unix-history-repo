@@ -1,4 +1,4 @@
-/* ip_input.c 1.20 81/11/29 */
+/* ip_input.c 1.21 81/12/02 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,7 +17,8 @@
 u_char	ip_protox[IPPROTO_MAX];
 
 /*
- * Ip initialization.
+ * Ip initialization: fill in IP protocol switch table.
+ * All protocols not implemented in kernel go to raw IP protocol handler.
  */
 ip_init()
 {
@@ -40,10 +41,6 @@ COUNT(IP_INIT);
 
 u_char	ipcksum = 1;
 struct	ip *ip_reass();
-
-/*
- * Ip input routines.
- */
 
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
@@ -74,12 +71,14 @@ next:
 	    m_pullup(m, sizeof (struct ip)) == 0)
 		goto bad;
 	ip = mtod(m, struct ip *);
-	if ((hlen = ip->ip_hl << 2) > m->m_len &&
-	    m_pullup(m, hlen) == 0)
-		goto bad;
+	if ((hlen = ip->ip_hl << 2) > m->m_len) {
+		if (m_pullup(m, hlen) == 0)
+			goto bad;
+		ip = mtod(m, struct ip *);
+	}
 	if (ipcksum)
 		if ((ip->ip_sum = in_cksum(m, hlen)) != 0xffff) {
-			printf("ip_sum %x\n", ip->ip_sum);
+			printf("ip_sum %x\n", ip->ip_sum);	/* XXX */
 			ipstat.ips_badsum++;
 			goto bad;
 		}
@@ -98,12 +97,15 @@ next:
 	 * Drop packet if shorter than we expect.
 	 */
 	i = 0;
-	for (m0 = m; m != NULL; m = m->m_next)
+	m0 = m;
+	for (; m != NULL; m = m->m_next)
 		i += m->m_len;
 	m = m0;
 	if (i != ip->ip_len) {
-		if (i < ip->ip_len)
+		if (i < ip->ip_len) {
+			ipstat.ips_tooshort++;
 			goto bad;
+		}
 		m_adj(m, ip->ip_len - i);
 	}
 
@@ -212,6 +214,8 @@ COUNT(IP_REASS);
 		fp->ipq_next = fp->ipq_prev = (struct ipasfrag *)fp;
 		fp->ipq_src = ((struct ip *)ip)->ip_src;
 		fp->ipq_dst = ((struct ip *)ip)->ip_dst;
+		q = (struct ipasfrag *)fp;
+		goto insert;
 	}
 
 	/*
@@ -253,6 +257,7 @@ COUNT(IP_REASS);
 		ip_deq(q->ipf_prev);
 	}
 
+insert:
 	/*
 	 * Stick new segment in its place;
 	 * check for complete reassembly.

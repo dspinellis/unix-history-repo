@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.4 81/11/29 */
+/* tcp_subr.c 4.5 81/12/02 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,6 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/tcp.h"
-#define TCPFSTAB
 #include "../net/tcp_fsm.h"
 #include "../net/tcp_seq.h"
 #include "../net/tcp_timer.h"
@@ -30,6 +29,8 @@ tcp_init()
 COUNT(TCP_INIT);
 	tcp_iss = 1;		/* wrong */
 	tcb.inp_next = tcb.inp_prev = &tcb;
+	tcp_alpha = TCP_ALPHA;
+	tcp_beta = TCP_BETA;
 }
 
 /*
@@ -73,24 +74,44 @@ COUNT(TCP_TEMPLATE);
 }
 
 /*
- * Send a reset message back to send of TCP segment ti,
- * with ack, seq and flags fields as specified by parameters.
+ * Send a single message to the TCP at address specified by
+ * the given TCP/IP header.  If flags==0, then we make a copy
+ * of the tcpiphdr at ti and send directly to the addressed host.
+ * This is used to force keep alive messages out using the TCP
+ * template for a connection tp->t_template.  If flags are given
+ * then we send a message back to the TCP which originated the
+ * segment ti, and discard the mbuf containing it and any other
+ * attached mbufs.
+ *
+ * In any case the ack and sequence number of the transmitted
+ * segment are as specified by the parameters.
  */
 tcp_respond(ti, ack, seq, flags)
 	register struct tcpiphdr *ti;
 	tcp_seq ack, seq;
 	int flags;
 {
-	struct mbuf *m = dtom(ti);
+	struct mbuf *m;
 
 COUNT(TCP_RESPOND);
-	m_freem(m->m_next);
-	m->m_next = 0;
-	m->m_len = sizeof(struct tcpiphdr);
+	if (flags == 0) {
+		m = m_get(0);
+		if (m == 0)
+			return;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof (struct tcpiphdr);
+		*mtod(m, struct tcpiphdr *) = *ti;
+		ti = mtod(m, struct tcpiphdr *);
+		flags = TH_ACK;
+	} else {
+		m_freem(m->m_next);
+		m->m_next = 0;
+		m->m_len = sizeof (struct tcpiphdr);
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
-	xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
-	xchg(ti->ti_dport, ti->ti_sport, u_short);
+		xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
+		xchg(ti->ti_dport, ti->ti_sport, u_short);
 #undef xchg
+	}
 	ti->ti_next = ti->ti_prev = 0;
 	ti->ti_x1 = 0;
 	ti->ti_len = htons(sizeof (struct tcphdr));
@@ -148,6 +169,7 @@ COUNT(TCP_DROP);
 	}
 	so->so_error = errno;
 	tcp_close(tp);
+	in_pcbdetach(tp->t_inpcb);
 }
 
 /*
@@ -172,10 +194,10 @@ COUNT(TCP_CLOSE);
 		(void) m_free(dtom(tp->t_tcpopt));
 	if (tp->t_ipopt)
 		(void) m_free(dtom(tp->t_ipopt));
-	in_pcbfree(tp->t_inpcb);
 	(void) m_free(dtom(tp));
 	socantrcvmore(so);
 	socantsendmore(so);
+	in_pcbdisconnect(tp->t_inpcb);
 }
 
 tcp_drain()

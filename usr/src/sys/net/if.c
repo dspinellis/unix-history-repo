@@ -1,10 +1,19 @@
-/*	if.c	4.4	81/11/29	*/
+/*	if.c	4.5	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
+
+if_attach(ifp)
+	struct ifnet *ifp;
+{
+
+COUNT(IF_ATTACH);
+	ifp->if_next = ifnet;
+	ifnet = ifp;
+}
 
 /*ARGSUSED*/
 struct ifnet *
