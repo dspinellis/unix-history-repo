@@ -1,7 +1,21 @@
-static char *sccsid = "@(#)cu.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)cu.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
+
+/*
+ * defs that come from uucp.h
+ */
+#define NAMESIZE 15
+#define FAIL -1
+#define SAME 0
+#define SLCKTIME 5400	/* system/device timeout (LCK.. files) in seconds */
+#define ASSERT(e, f, v) if (!(e)) {\
+	fprintf(stderr, "AERROR - (%s) ", "e");\
+	fprintf(stderr, f, v);\
+	cleanup(FAIL);\
+}
+
 /*
  *	cu telno [-t] [-s speed] [-l line] [-a acu]
  *
@@ -40,7 +54,8 @@ char	*connmsg[] = {
 	"acu access",
 	"tty access",
 	"tty hung",
-	"usage: cu telno [-t] [-s speed] [-l line] [-a acu]"
+	"usage: cu telno [-t] [-s speed] [-l line] [-a acu]",
+	"lock failed: line busy"
 };
 
 rdc(ds) {
@@ -83,6 +98,7 @@ sig14()
 int	dout;
 int	nhup;
 int	dbflag;
+int	nullbrk;	/* turn breaks (nulls) into dels */
 
 /*
  *	main: get connection, set speed for line.
@@ -109,6 +125,9 @@ char *av[];
 		case 't':
 			dout = 1;
 			--ac;
+			continue;
+		case 'b':
+			nullbrk++;
 			continue;
 		case 'd':
 			dbflag++;
@@ -137,7 +156,7 @@ char *av[];
 	ln = conn(devcul, devcua, telno);
 	if (ln < 0) {
 		prf("Connect failed: %s",connmsg[-ln]);
-		exit(-ln);
+		cleanup(-ln);
 	}
 	switch(atoi(lspeed)) {
 	case 110:
@@ -170,7 +189,7 @@ char *av[];
 		chwrsig();
 		rd();
 		prf("\007Lost carrier");
-		exit(3);
+		cleanup(3);
 	}
 	mode(1);
 	efk = fk;
@@ -182,7 +201,7 @@ char *av[];
 	stbuf.sg_ospeed = 0;
 	ioctl(ln, TIOCSETP, &stbuf);
 	prf("Disconnected");
-	exit(0);
+	cleanup(0);
 }
 
 /*
@@ -200,9 +219,22 @@ char *dev, *acu, *telno;
 	struct sgttyb stbuf;
 	extern errno;
 	char *p, *q, b[30];
+	char *ltail, *atail;
+	char *rindex();
 	int er, fk, dn, dh, t;
 	er=0; 
 	fk=(-1);
+	atail = rindex(acu, '/')+1;
+	if (mlock(atail) == FAIL) {
+		er = 9;
+		goto X;
+	}
+	ltail = rindex(dev, '/')+1;
+	if (mlock(ltail) == FAIL) {
+		er = 9;
+		delock(atail);
+		goto X;
+	}
 	if ((dn=open(acu,1))<0) {
 		er=(errno == 6? 1:5); 
 		goto X;
@@ -244,7 +276,7 @@ char *dev, *acu, *telno;
 		er=(errno == 4? 3:6); 
 		goto X;
 	}
-	ioctl(ln, TIOCGETP, &stbuf);
+	ioctl(dh, TIOCGETP, &stbuf);
 	stbuf.sg_flags &= ~ECHO;
 	xalarm(10);
 	ioctl(dh, TIOCSETP, &stbuf);
@@ -252,6 +284,7 @@ char *dev, *acu, *telno;
 	xalarm(0);
 X: 
 	if (er) close(dn);
+	delock(atail);
 	if (fk!=(-1)) {
 		kill(fk, SIGKILL);
 		xalarm(10);
@@ -270,6 +303,7 @@ X:
  *	~$proc	execute proc locally, send output to line
  *	~%cmd	execute builtin cmd (put and take)
  *	~#	send 1-sec break
+ *	~^Z	suspend cu process.
  */
 
 wr()
@@ -281,7 +315,7 @@ wr()
 		while (rdc(0) == 1) {
 			if (p == b) lcl=(c == '~');
 			if (p == b+1 && b[0] == '~') lcl=(c!='~');
-			/* if (c == 0) oc=c=0177; fake break kludge */
+			if (nullbrk && c == 0) oc=c=0177; /* fake break kludge */
 			if (!lcl) {
 				c = oc;
 				if (wrc(ln) == 0) {
@@ -647,4 +681,235 @@ char *devname;
 		return(1);
 	prf("%s does not exist", devname);
 	return(0);
+}
+
+cleanup(code)
+{
+	rmlock(NULL);
+	exit(code);
+}
+
+/*
+ * This code is taken directly from uucp and follows the same
+ * conventions.  This is important since uucp and cu should
+ * respect each others locks.
+ */
+
+	/*  ulockf 3.2  10/26/79  11:40:29  */
+/* #include "uucp.h" */
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
+
+/*******
+ *	ulockf(file, atime)
+ *	char *file;
+ *	time_t atime;
+ *
+ *	ulockf  -  this routine will create a lock file (file).
+ *	If one already exists, the create time is checked for
+ *	older than the age time (atime).
+ *	If it is older, an attempt will be made to unlink it
+ *	and create a new one.
+ *
+ *	return codes:  0  |  FAIL
+ */
+
+ulockf(file, atime)
+char *file;
+time_t atime;
+{
+	struct stat stbuf;
+	time_t ptime;
+	int ret;
+	static int pid = -1;
+	static char tempfile[NAMESIZE];
+
+	if (pid < 0) {
+		pid = getpid();
+		sprintf(tempfile, "/usr/spool/uucp/LTMP.%d", pid);
+	}
+	if (onelock(pid, tempfile, file) == -1) {
+		/* lock file exists */
+		/* get status to check age of the lock file */
+		ret = stat(file, &stbuf);
+		if (ret != -1) {
+			time(&ptime);
+			if ((ptime - stbuf.st_ctime) < atime) {
+				/* file not old enough to delete */
+				return(FAIL);
+			}
+		}
+		ret = unlink(file);
+		ret = onelock(pid, tempfile, file);
+		if (ret != 0)
+			return(FAIL);
+	}
+	stlock(file);
+	return(0);
+}
+
+
+#define MAXLOCKS 10	/* maximum number of lock files */
+char *Lockfile[MAXLOCKS];
+int Nlocks = 0;
+
+/***
+ *	stlock(name)	put name in list of lock files
+ *	char *name;
+ *
+ *	return codes:  none
+ */
+
+stlock(name)
+char *name;
+{
+	char *p;
+	extern char *calloc();
+	int i;
+
+	for (i = 0; i < Nlocks; i++) {
+		if (Lockfile[i] == NULL)
+			break;
+	}
+	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS %d", i);
+	if (i >= Nlocks)
+		i = Nlocks++;
+	p = calloc(strlen(name) + 1, sizeof (char));
+	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR %s", name);
+	strcpy(p, name);
+	Lockfile[i] = p;
+	return;
+}
+
+
+/***
+ *	rmlock(name)	remove all lock files in list
+ *	char *name;	or name
+ *
+ *	return codes: none
+ */
+
+rmlock(name)
+char *name;
+{
+	int i;
+
+	for (i = 0; i < Nlocks; i++) {
+		if (Lockfile[i] == NULL)
+			continue;
+		if (name == NULL
+		|| strcmp(name, Lockfile[i]) == SAME) {
+			unlink(Lockfile[i]);
+			free(Lockfile[i]);
+			Lockfile[i] = NULL;
+		}
+	}
+	return;
+}
+
+
+/*  this stuff from pjw  */
+/*  /usr/pjw/bin/recover - check pids to remove unnecessary locks */
+/*	isalock(name) returns 0 if the name is a lock */
+/*	unlock(name)  unlocks name if it is a lock*/
+/*	onelock(pid,tempfile,name) makes lock a name
+	on behalf of pid.  Tempfile must be in the same
+	file system as name. */
+/*	lock(pid,tempfile,names) either locks all the
+	names or none of them */
+isalock(name) char *name;
+{
+	struct stat xstat;
+	if(stat(name,&xstat)<0) return(0);
+	if(xstat.st_size!=sizeof(int)) return(0);
+	return(1);
+}
+unlock(name) char *name;
+{
+	if(isalock(name)) return(unlink(name));
+	else return(-1);
+}
+onelock(pid,tempfile,name) char *tempfile,*name;
+{	int fd;
+	fd=creat(tempfile,0444);
+	if(fd<0) return(-1);
+	write(fd,(char *) &pid,sizeof(int));
+	close(fd);
+	if(link(tempfile,name)<0)
+	{	unlink(tempfile);
+		return(-1);
+	}
+	unlink(tempfile);
+	return(0);
+}
+lock(pid,tempfile,names) char *tempfile,**names;
+{	int i,j;
+	for(i=0;names[i]!=0;i++)
+	{	if(onelock(pid,tempfile,names[i])==0) continue;
+		for(j=0;j<i;j++) unlink(names[j]);
+		return(-1);
+	}
+	return(0);
+}
+
+#define LOCKPRE "/usr/spool/uucp/LCK."
+
+/***
+ *	delock(s)	remove a lock file
+ *	char *s;
+ *
+ *	return codes:  0  |  FAIL
+ */
+
+delock(s)
+char *s;
+{
+	char ln[30];
+
+	sprintf(ln, "%s.%s", LOCKPRE, s);
+	rmlock(ln);
+}
+
+
+/***
+ *	mlock(sys)	create system lock
+ *	char *sys;
+ *
+ *	return codes:  0  |  FAIL
+ */
+
+mlock(sys)
+char *sys;
+{
+	char lname[30];
+	sprintf(lname, "%s.%s", LOCKPRE, sys);
+	return(ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : 0);
+}
+
+
+
+/***
+ *	ultouch()	update access and modify times for lock files
+ *
+ *	return code - none
+ */
+
+ultouch()
+{
+	time_t time();
+	int i;
+	struct ut {
+		time_t actime;
+		time_t modtime;
+	} ut;
+
+	ut.actime = time(&ut.modtime);
+	for (i = 0; i < Nlocks; i++) {
+		if (Lockfile[i] == NULL)
+			continue;
+		utime(Lockfile[i], &ut);
+	}
+	return;
 }
