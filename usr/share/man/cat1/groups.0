@@ -1,0 +1,22 @@
+GROUPS(1)                    BSD Reference Manual                    GROUPS(1)
+
+NNAAMMEE
+     ggrroouuppss - show group memberships
+
+SSYYNNOOPPSSIISS
+     ggrroouuppss [_u_s_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggrroouuppss utility has been obsoleted by the id(1) utility, and is equiv-
+     alent to ``iidd --GGnn [_u_s_e_r]''. The command ``iidd --pp'' is suggested for normal
+     interactive use.
+
+     The ggrroouuppss utility displays the groups to which you (or the optionally
+     specified user) belong.
+
+     The ggrroouuppss utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     id(1)
+
+                                 June 6, 1993                                1

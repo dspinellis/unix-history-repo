@@ -1,0 +1,26 @@
+HEAD(1)                      BSD Reference Manual                      HEAD(1)
+
+NNAAMMEE
+     hheeaadd - display first lines of a file
+
+SSYYNNOOPPSSIISS
+     hheeaadd [--nn _c_o_u_n_t] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     This filter displays the first _c_o_u_n_t lines of each of the specified
+     files, or of the standard input if no files are specified.  If _c_o_u_n_t is
+     omitted it defaults to 10.
+
+     If more than a single file is specified, each file is preceded by a head-
+     er consisting of the string ``==> XXX <=='' where ``XXX'' is the name of
+     the file.
+
+     The hheeaadd utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     tail(1)
+
+HHIISSTTOORRYY
+     The hheeaadd command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1
