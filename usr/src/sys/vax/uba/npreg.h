@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)npreg.h	7.2 (Berkeley) %G%
+ *	@(#)npreg.h	7.3 (Berkeley) %G%
  *
  * Merged header file for MICOM-Interlan NP100.
  */
