@@ -1,10 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.20 84/01/11";
+static	char *sccsid = "@(#)ttgeneric.c	3.21 84/03/02";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
+char PC, *BC, *UP;
+short ospeed;
 char *tgoto();
 
 short gen_frame[16] = {
@@ -315,15 +317,10 @@ tt_generic()
 	if (gen_BC == 0 && gen_BS)
 		gen_BC = "\b";
 
-	{
-		extern char PC, *BC, *UP;
-		extern short ospeed;
-
-		PC = gen_PC ? *gen_PC : 0;
-		BC = gen_BC;
-		UP = gen_UP;
-		ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
-	}
+	PC = gen_PC ? *gen_PC : 0;
+	BC = gen_BC;
+	UP = gen_UP;
+	ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
 
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
