@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.7 83/08/19";
+static	char *sccsid = "@(#)wwupdate.c	3.8 83/09/15";
 #endif
 
 #include "ww.h"
@@ -34,13 +34,13 @@ wwupdate()
 			if (j > wwncol)
 				break;
 			p = buf;
-			m = ns[-1].c_m;
+			m = ns[-1].c_m & tt.tt_availmodes;
 			c = j - 1;
 			os[-1] = ns[-1];
 			*p++ = ns[-1].c_c;
 			x = 5;
 			q = p;
-			while (j < wwncol && ns->c_m == m) {
+			while (j < wwncol && (ns->c_m&tt.tt_availmodes) == m) {
 				*p++ = ns->c_c;
 				if (ns->c_w == os->c_w) {
 					if (--x <= 0)
@@ -55,27 +55,22 @@ wwupdate()
 				}
 				j++;
 			}
+			tt.tt_nmodes = m;
+			(*tt.tt_move)(i, c);
 			if (wwwrap
 			    && i == wwnrow - 1 && q - buf + c == wwncol) {
-				if (tt.tt_setinsert != 0) {
+				if (tt.tt_hasinsert) {
+					(*tt.tt_write)(buf + 1, q - buf - 1);
 					(*tt.tt_move)(i, c);
-					(*tt.tt_setmodes)(m);
-					(*tt.tt_write)(buf + 1, q - 1);
-					(*tt.tt_move)(i, c);
-					(*tt.tt_setinsert)(1);
-					(*tt.tt_write)(buf, buf);
-					(*tt.tt_setinsert)(0);
+					tt.tt_ninsert = 1;
+					(*tt.tt_write)(buf, 1);
+					tt.tt_ninsert = 0;
 				} else {
 					os[-1] = lastc;
-					(*tt.tt_move)(i, c);
-					(*tt.tt_setmodes)(m);
-					(*tt.tt_write)(buf, q - 2);
+					(*tt.tt_write)(buf, q - buf - 1);
 				}
-			} else {
-				(*tt.tt_move)(i, c);
-				(*tt.tt_setmodes)(m);
-				(*tt.tt_write)(buf, q - 1);
-			}
+			} else
+				(*tt.tt_write)(buf, q - buf);
 			didit++;
 		}
 		if (!didit)

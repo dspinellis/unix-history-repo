@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdata.c	3.5 83/09/15";
+static	char *sccsid = "@(#)wwdata.c	3.6 83/09/15";
 #endif
 
 #include "ww.h"
@@ -19,8 +19,8 @@ struct ww_tty wwnewtty = {
 int tt_h19();
 int tt_generic();
 struct tt_tab tt_tab[] = {
-	{ "h19", 3, tt_h19 },
-	{ "generic", 0, tt_generic },
+	{ "h19",	3, tt_h19 },
+	{ "generic",	0, tt_generic },
 	0
 };
 char *tt_strp = tt_strings;

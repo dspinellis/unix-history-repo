@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.15 83/08/24";
+static	char *sccsid = "@(#)ttgeneric.c	3.16 83/09/15";
 #endif
 
 #include "ww.h"
@@ -13,10 +13,6 @@ char gen_frame[16] = {
 	'-', '+', '-', '+',
 	'+', '+', '+', '+'
 };
-
-int gen_row, gen_col;
-char gen_modes, gen_nmodes;
-char gen_insert, gen_ninsert;
 
 char *gen_CM;
 char *gen_IM;
@@ -58,37 +54,23 @@ int gen_SG;
 #define ps(s) fputs((s), stdout)
 
 gen_setinsert(new)
-{
-	gen_ninsert = new;
-}
-
-gen_setinsert1(new)
 char new;
 {
-	if (gen_insert == new)
-		return;
 	if (new) {
 		if (gen_IM)
 			ps(gen_IM);
 	} else
 		if (gen_EI)
 			ps(gen_EI);
-	gen_insert = new;
+	tt.tt_insert = new;
 }
 
 gen_setmodes(new)
-char new;
-{
-	gen_nmodes = new & tt.tt_availmodes;
-}
-
-gen_setmodes1(new)
 register new;
 {
 	register diff;
 
-	if ((diff = new ^ gen_modes) == 0)
-		return;
+	diff = new ^ tt.tt_modes;
 	if (diff & WWM_REV) {
 		if (new & WWM_REV) {
 			if (gen_SO)
@@ -105,130 +87,107 @@ register new;
 			if (gen_UE)
 				ps(gen_UE);
 	}
-	gen_modes = new;
+	tt.tt_modes = new;
 }
 
 gen_insline()
 {
-	if (gen_modes)			/* for concept 100 */
-		gen_setmodes1(0);
+	if (tt.tt_modes)			/* for concept 100 */
+		gen_setmodes(0);
 	if (gen_AL)
-		tt_tputs(gen_AL, gen_LI - gen_row);
+		tt_tputs(gen_AL, gen_LI - tt.tt_row);
 }
 
 gen_delline()
 {
-	if (gen_modes)			/* for concept 100 */
-		gen_setmodes1(0);
+	if (tt.tt_modes)			/* for concept 100 */
+		gen_setmodes(0);
 	if (gen_DL)
-		tt_tputs(gen_DL, gen_LI - gen_row);
+		tt_tputs(gen_DL, gen_LI - tt.tt_row);
 }
 
 gen_putc(c)
 register char c;
 {
-	gen_setinsert1(gen_ninsert);
-	gen_setmodes1(gen_nmodes);
-	if (gen_insert) {
+	if (tt.tt_ninsert != tt.tt_insert)
+		gen_setinsert(tt.tt_ninsert);
+	if (tt.tt_nmodes != tt.tt_modes)
+		gen_setmodes(tt.tt_nmodes);
+	if (tt.tt_insert) {
 		if (gen_IC)
-			tt_tputs(gen_IC, gen_CO - gen_col);
+			tt_tputs(gen_IC, gen_CO - tt.tt_col);
 		putchar(c);
 		if (gen_IP)
-			tt_tputs(gen_IP, gen_CO - gen_col);
+			tt_tputs(gen_IP, gen_CO - tt.tt_col);
 	} else
 		putchar(c);
-	if (++gen_col == gen_CO)
+	if (++tt.tt_col == gen_CO)
 		if (gen_AM)
-			gen_col = 0, gen_row++;
+			tt.tt_col = 0, tt.tt_row++;
 		else
-			gen_col--;
+			tt.tt_col--;
 }
 
-gen_write(start, end)
-register char *start, *end;
-{
-	gen_setinsert1(gen_ninsert);
-	gen_setmodes1(gen_nmodes);
-	if (gen_insert) {
-		while (start <= end) {
-			if (gen_IC)
-				tt_tputs(gen_IC, gen_CO - gen_col);
-			putchar(*start++);
-			if (gen_IP)
-				tt_tputs(gen_IP, gen_CO - gen_col);
-			gen_col++;
-		}
-	} else {
-		gen_col += end - start + 1;
-		while (start <= end)
-			putchar(*start++);
-	}
-	if (gen_col == gen_CO)
-		if (gen_AM)
-			gen_col = 0, gen_row++;
-		else
-			gen_col--;
-}
-
-gen_blank(n)
+gen_write(p, n)
+register char *p;
 register n;
 {
-	if (n <= 0)
-		return;
-	gen_setinsert1(gen_ninsert);
-	gen_setmodes1(gen_nmodes);
-	if (gen_insert) {
+	if (tt.tt_ninsert != tt.tt_insert)
+		gen_setinsert(tt.tt_ninsert);
+	if (tt.tt_nmodes != tt.tt_modes)
+		gen_setmodes(tt.tt_nmodes);
+	if (tt.tt_insert) {
 		while (--n >= 0) {
 			if (gen_IC)
-				tt_tputs(gen_IC, gen_CO - gen_col);
-			putchar(' ');
+				tt_tputs(gen_IC, gen_CO - tt.tt_col);
+			putchar(*p++);
 			if (gen_IP)
-				tt_tputs(gen_IP, gen_CO - gen_col);
-			gen_col++;
+				tt_tputs(gen_IP, gen_CO - tt.tt_col);
+			tt.tt_col++;
 		}
 	} else {
-		gen_col += n;
+		tt.tt_col += n;
 		while (--n >= 0)
-			putchar(' ');
+			putchar(*p++);
 	}
-	if (gen_col == gen_CO)
+	if (tt.tt_col == gen_CO)
 		if (gen_AM)
-			gen_col = 0, gen_row++;
+			tt.tt_col = 0, tt.tt_row++;
 		else
-			gen_col--;
+			tt.tt_col--;
 }
 
 gen_move(row, col)
 register char row, col;
 {
-	if (gen_row == row && gen_col == col)
+	if (tt.tt_row == row && tt.tt_col == col)
 		return;
-	if (!gen_MI && gen_insert)
-		gen_setinsert1(0);
-	if (!gen_MS && gen_modes)
-		gen_setmodes1(0);
-	if (gen_row == row) {
-		if (gen_col == col)
+	if (!gen_MI && tt.tt_insert)
+		gen_setinsert(0);
+	if (!gen_MS && tt.tt_modes)
+		gen_setmodes(0);
+	if (tt.tt_row == row) {
+		if (tt.tt_col == col)
 			return;
-		if (gen_col == col - 1) {
+		if (tt.tt_col == col - 1) {
 			if (gen_ND) {
 				ps(gen_ND);
 				goto out;
 			}
-		} else if (gen_col == col + 1) {
+		} else if (tt.tt_col == col + 1) {
 			if (gen_BC) {
 				ps(gen_BC);
 				goto out;
 			}
 		}
 	}
-	if (gen_col == col) {
-		if (gen_row == row + 1) {
+	if (tt.tt_col == col) {
+		if (tt.tt_row == row + 1) {
 			if (gen_UP) {
 				ps(gen_UP);
 				goto out;
 			}
-		} else if (gen_row == row + 1) {
+		} else if (tt.tt_row == row + 1) {
 			if (gen_NL) {
 				ps(gen_NL);
 				goto out;
@@ -241,8 +200,8 @@ register char row, col;
 	}
 	ps(tgoto(gen_CM, col, row));
 out:
-	gen_col = col;
-	gen_row = row;
+	tt.tt_col = col;
+	tt.tt_row = row;
 }
 
 gen_init()
@@ -253,15 +212,15 @@ gen_init()
 		ps(gen_TI);
 	if (gen_CL)
 		ps(gen_CL);
-	gen_col = gen_row = 0;
-	gen_ninsert = gen_insert = 0;
-	gen_nmodes = gen_modes = 0;
+	tt.tt_col = tt.tt_row = 0;
+	tt.tt_ninsert = tt.tt_insert = 0;
+	tt.tt_nmodes = tt.tt_modes = 0;
 }
 
 gen_end()
 {
-	gen_setmodes1(0);
-	gen_setinsert1(0);
+	gen_setmodes(0);
+	gen_setinsert(0);
 	if (gen_TE)
 		ps(gen_TE);
 	if (gen_VE)
@@ -270,24 +229,24 @@ gen_end()
 
 gen_clreol()
 {
-	if (gen_modes)			/* for concept 100 */
-		gen_setmodes1(0);
+	if (tt.tt_modes)			/* for concept 100 */
+		gen_setmodes(0);
 	if (gen_CE)
-		tt_tputs(gen_CE, gen_CO - gen_col);
+		tt_tputs(gen_CE, gen_CO - tt.tt_col);
 }
 
 gen_clreos()
 {
-	if (gen_modes)			/* for concept 100 */
-		gen_setmodes1(0);
+	if (tt.tt_modes)			/* for concept 100 */
+		gen_setmodes(0);
 	if (gen_CD)
-		tt_tputs(gen_CD, gen_LI - gen_row);
+		tt_tputs(gen_CD, gen_LI - tt.tt_row);
 }
 
 gen_clear()
 {
-	if (gen_modes)			/* for concept 100 */
-		gen_setmodes1(0);
+	if (tt.tt_modes)			/* for concept 100 */
+		gen_setmodes(0);
 	if (gen_CL)
 		ps(gen_CL);
 }
@@ -295,7 +254,7 @@ gen_clear()
 gen_delchar()
 {
 	if (gen_DC)
-		tt_tputs(gen_DC, gen_CO - gen_col);
+		tt_tputs(gen_DC, gen_CO - tt.tt_col);
 }
 
 tt_generic()
@@ -354,8 +313,6 @@ tt_generic()
 		ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
 	}
 
-	if (gen_IM)
-		tt.tt_setinsert = gen_setinsert;
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
 	if (gen_AL)
@@ -376,14 +333,13 @@ tt_generic()
 		tt.tt_availmodes |= WWM_REV;
 	if (gen_US)
 		tt.tt_availmodes |= WWM_UL;
+	tt.tt_hasinsert = gen_IM != 0;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;
 	tt.tt_ncol = gen_CO;
 	tt.tt_nrow = gen_LI;
 	tt.tt_init = gen_init;
 	tt.tt_end = gen_end;
-	tt.tt_setmodes = gen_setmodes;
-	tt.tt_blank = gen_blank;
 	tt.tt_write = gen_write;
 	tt.tt_putc = gen_putc;
 	tt.tt_move = gen_move;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinschar.c	3.8 83/09/15";
+static	char *sccsid = "@(#)wwinschar.c	3.9 83/09/15";
 #endif
 
 #include "ww.h"
@@ -78,14 +78,14 @@ short c;
 	/*
 	 * Can/Should we use delete character?
 	 */
-	if (tt.tt_setinsert != 0 && nvis > (wwncol - col) / 2) {
+	if (tt.tt_hasinsert && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
-		(*tt.tt_setinsert)(1);
+		tt.tt_ninsert = 1;
+		tt.tt_nmodes = c >> WWC_MSHIFT & tt.tt_availmodes;
 		(*tt.tt_move)(row, col);
-		(*tt.tt_setmodes)(c >> WWC_MSHIFT);
 		(*tt.tt_putc)(c & WWC_CMASK);
-		(*tt.tt_setinsert)(0);
+		tt.tt_ninsert = 0;
 
 		p = &wwos[row][wwncol];
 		q = p - 1;
