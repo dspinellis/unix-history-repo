@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_input.c	7.8 (Berkeley) %G%
+ *	@(#)ip_input.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -230,43 +230,53 @@ next:
 
 ours:
 	/*
-	 * Look for queue of fragments
-	 * of this datagram.
+	 * If offset or IP_MF are set, must reassemble.
+	 * Otherwise, nothing need be done.
+	 * (We could look in the reassembly queue to see
+	 * if the packet was previously fragmented,
+	 * but it's not worth the time; just let them time out.)
 	 */
-	for (fp = ipq.next; fp != &ipq; fp = fp->next)
-		if (ip->ip_id == fp->ipq_id &&
-		    ip->ip_src.s_addr == fp->ipq_src.s_addr &&
-		    ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
-		    ip->ip_p == fp->ipq_p)
-			goto found;
-	fp = 0;
+	if (ip->ip_off &~ IP_DF) {
+		/*
+		 * Look for queue of fragments
+		 * of this datagram.
+		 */
+		for (fp = ipq.next; fp != &ipq; fp = fp->next)
+			if (ip->ip_id == fp->ipq_id &&
+			    ip->ip_src.s_addr == fp->ipq_src.s_addr &&
+			    ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
+			    ip->ip_p == fp->ipq_p)
+				goto found;
+		fp = 0;
 found:
 
-	/*
-	 * Adjust ip_len to not reflect header,
-	 * set ip_mff if more fragments are expected,
-	 * convert offset of this to bytes.
-	 */
-	ip->ip_len -= hlen;
-	((struct ipasfrag *)ip)->ipf_mff = 0;
-	if (ip->ip_off & IP_MF)
-		((struct ipasfrag *)ip)->ipf_mff = 1;
-	ip->ip_off <<= 3;
+		/*
+		 * Adjust ip_len to not reflect header,
+		 * set ip_mff if more fragments are expected,
+		 * convert offset of this to bytes.
+		 */
+		ip->ip_len -= hlen;
+		((struct ipasfrag *)ip)->ipf_mff = 0;
+		if (ip->ip_off & IP_MF)
+			((struct ipasfrag *)ip)->ipf_mff = 1;
+		ip->ip_off <<= 3;
 
-	/*
-	 * If datagram marked as having more fragments
-	 * or if this is not the first fragment,
-	 * attempt reassembly; if it succeeds, proceed.
-	 */
-	if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
-		ipstat.ips_fragments++;
-		ip = ip_reass((struct ipasfrag *)ip, fp);
-		if (ip == 0)
-			goto next;
-		m = dtom(ip);
+		/*
+		 * If datagram marked as having more fragments
+		 * or if this is not the first fragment,
+		 * attempt reassembly; if it succeeds, proceed.
+		 */
+		if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
+			ipstat.ips_fragments++;
+			ip = ip_reass((struct ipasfrag *)ip, fp);
+			if (ip == 0)
+				goto next;
+			m = dtom(ip);
+		} else
+			if (fp)
+				ip_freef(fp);
 	} else
-		if (fp)
-			ip_freef(fp);
+		ip->ip_len -= hlen;
 
 	/*
 	 * Switch out to protocol's input routine.
