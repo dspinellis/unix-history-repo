@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tmac.s	1.2 (Berkeley) %G%
+.\"	@(#)tmac.s	8.1 (Berkeley) %G%
 .\"
 .\" If groff, use groff -ms, else use local -ms (w/ditroff, troff, nroff)
 .ie \n(.g \{\

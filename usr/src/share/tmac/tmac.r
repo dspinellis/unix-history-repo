@@ -1,9 +1,9 @@
-.\" Copyright (c) 1979 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1979, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tmac.r	5.2 (Berkeley) %G%
+.\"	@(#)tmac.r	8.1 (Berkeley) %G%
 .\"
 
 .de HD
