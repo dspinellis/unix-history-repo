@@ -1,4 +1,4 @@
-static char *SCCS_ID = "@(#)more.c	4.1 (Berkeley) %G%";
+static char *SCCS_ID = "@(#)more.c	4.2 (Berkeley) 3/27/81";
 /*
 ** more.c - General purpose tty output filter and file perusal program
 **
@@ -74,7 +74,7 @@ int		bad_so;	/* True if overwriting does not turn off standout */
 int		inwait, Pause, errors;
 int		within;	/* true if we are within a file,
 			false if we are between files */
-int		hard, dumb, noscroll, hardtabs;
+int		hard, dumb, noscroll, hardtabs,clreol;
 int		catch_susp;	/* We should catch the SIGTSTP signal */
 char		**fnames;	/* The list of file names */
 int		nfiles;		/* Number of files left to process */
@@ -88,10 +88,15 @@ int		Lpp = 24;	/* lines per page */
 char		*Clear;		/* clear screen */
 char		*eraseln;	/* erase line */
 char		*Senter, *Sexit;/* enter and exit standout mode */
+char		*Home;		/* go to home */
+char		*cursorm;	/* cursor movement */
+char		cursorhome[40];	/* contains cursor movement to home */
+char		*Cleareod;	/* clear rest of screen */
 char		*tgetstr();
 int		Mcol = 80;	/* number of columns */
 int		Wrap = 1;	/* set if automargins */
 long		fseek();
+char		*getenv();
 struct {
     long chrctr, line;
 } context, screen_start;
@@ -119,17 +124,10 @@ char *argv[];
     nfiles = argc;
     fnames = argv;
     initterm ();
+    if(s = getenv("MORE")) argscan(s);
     while (--nfiles > 0) {
 	if ((ch = (*++fnames)[0]) == '-') {
-	    for (s = fnames[0] + 1, dlines = 0; *s != '\0'; s++)
-		if (isdigit(*s))
-		    dlines = dlines*10 + *s - '0';
-		else if (*s == 'd')
-		    dum_opt = 1;
-		else if (*s == 'l')
-		    stop_opt = 0;
-		else if (*s == 'f')
-		    fold_opt = 0;
+	    argscan(*fnames+1);
 	}
 	else if (ch == '+') {
 	    s = *fnames;
@@ -149,6 +147,16 @@ char *argv[];
 	}
 	else break;
     }
+    /* allow clreol only if Home and eraseln and Cleareod strings are
+     *  defined, and in that case, make sure we are in noscroll mode
+     */
+    if(clreol)
+    {
+	if((*Home == '\0') || (*eraseln == '\0') || (*Cleareod == '\0'))
+	   clreol = 0;
+	else noscroll = 1;
+    }
+
     if (dlines == 0)
 	dlines = Lpp - (noscroll ? 1 : 2);
     left = dlines;
@@ -181,11 +189,16 @@ char *argv[];
 		doclear ();
 	    else {
 		Ungetc (ch, f);
-		if (noscroll)
-		    doclear ();
+		if (noscroll && (ch != EOF))
+		{ if(clreol) home();
+		  else doclear ();
+		}
 	    }
 	    if (srchopt)
+	    {
 		search (initbuf, stdin, 1);
+		if(noscroll) left--;
+	    }
 	    else if (initopt)
 		skiplns (initline, stdin);
 	    screen (stdin, left);
@@ -203,7 +216,10 @@ char *argv[];
 	    if (firstf) {
 		firstf = 0;
 		if (srchopt)
+		{
 		    search (initbuf, f, 1);
+		    if(noscroll) left--;
+		}
 		else if (initopt)
 		    skiplns (initline, f);
 	    }
@@ -212,15 +228,21 @@ char *argv[];
 		left = command (fnames[fnum], f);
 	    }
 	    if (left != 0) {
-		if (noscroll || clearit)
-		    doclear ();
+		if((noscroll  || clearit) && (file_size != 0x7fffffffffffffffL))
+		    if(clreol) home();
+		    else doclear ();
 		if (prnames) {
 		    if (bad_so)
 			erase (0);
+		    if(clreol)cleareol();
 		    pr("::::::::::::::");
 		    if (promptlen > 14)
 			erase (14);
-		    printf ("\n%s\n::::::::::::::\n", fnames[fnum]);
+		    printf ("\n");
+		    if(clreol) cleareol();
+		    printf("%s\n", fnames[fnum]);
+		    if(clreol) cleareol();
+		    printf("::::::::::::::\n", fnames[fnum]);
 		    if (left > Lpp - 4)
 			left = Lpp - 4;
 		}
@@ -245,7 +267,27 @@ char *argv[];
     exit(0);
 }
 
+argscan(s)
+char *s;
+{
+	    for (dlines = 0; *s != '\0'; s++)
+		if (isdigit(*s))
+		    dlines = dlines*10 + *s - '0';
+		else if (*s == 'd')
+		    dum_opt = 1;
+		else if (*s == 'l')
+		    stop_opt = 0;
+		else if (*s == 'f')
+		    fold_opt = 0;
+		else if (*s == 'p')
+		    noscroll++;
+		else if (*s == 'c')
+		    clreol++;
+}
+
+
 /*
+
 ** Check whether the file named by fs is an ASCII file which the user may
 ** access.  If it is, return the opened file. Otherwise return NULL.
 */
@@ -261,6 +303,7 @@ int *clearfirst;
 
     if (stat (fs, &stbuf) == -1) {
 	fflush(stdout);
+	if(clreol)cleareol();
 	perror(fs);
 	return (NULL);
     }
@@ -328,9 +371,13 @@ register int num_lines;
     for (;;) {
 	while (num_lines > 0 && !Pause) {
 	    if ((nchars = getline (f, &length)) == EOF)
+	    {
+		if(clreol) cleareod();
 		return;
+	    }
 	    if (bad_so || (Senter && *Senter == ' ') && promptlen > 0)
 		erase (0);
+	    if (clreol) cleareol();
 	    prbuf (Line, length);
 	    if (nchars < promptlen)
 		erase (nchars);	/* erase () sets promptlen to 0 */
@@ -343,7 +390,13 @@ register int num_lines;
 	}
 	fflush(stdout);
 	if ((c = Getc(f)) == EOF)
+	{
+	    if(clreol) cleareod();
 	    return;
+	}
+
+	if(Pause && clreol) cleareod();
+
 	Ungetc (c, f);
 	setjmp (restore);
 	Pause = 0; startup = 0;
@@ -352,7 +405,10 @@ register int num_lines;
 	if (hard && promptlen > 0)
 		erase (0);
 	if (noscroll && num_lines == dlines)
-		doclear ();
+	{ 
+	    if(clreol) home();
+	    else doclear ();
+	}
 	screen_start.line = Currline;
 	screen_start.chrctr = Ftell (f);
     }
@@ -390,7 +446,8 @@ end_it ()
 {
 
     reset_tty ();
-    if (promptlen > 0) {
+    if(clreol) { putchar('\r'); cleareod(); fflush(stdout); }
+    else if (!clreol && (promptlen > 0)) {
 	kill_line ();
 	fflush (stdout);
     }
@@ -526,12 +583,14 @@ register char *string;
 prompt (filename)
 char *filename;
 {
-    if (promptlen > 0)
+    if(clreol)cleareol();
+    else if (promptlen > 0)
 	kill_line ();
     if (!hard) {
 	promptlen = 8;
 	if (Senter && Sexit)
 	    tputs (Senter, 1, putch);
+	if(clreol)cleareol();
 	pr("--More--");
 	if (filename != NULL) {
 	    promptlen += printf ("(Next file: %s)", filename);
@@ -668,6 +727,19 @@ kill_line ()
 }
 
 /*
+ * force clear to end of line
+ */
+cleareol()
+{
+    tputs(eraseln,1,putch);
+}
+
+cleareod()
+{
+    tputs(Cleareod,1,putch);
+}
+
+/*
 **  Print string and return number of characters
 */
 
@@ -708,6 +780,14 @@ doclear()
 	putchar ('\r');
 	promptlen = 0;
     }
+}
+
+/*
+ * Go to home position
+ */
+home()
+{
+    tputs(Home,1,putch);
 }
 
 static int lastcmd, lastarg, lastp;
@@ -787,11 +867,21 @@ register FILE *f;
 		nlines *= dlines;
 	    putchar ('\r');
 	    erase (0);
-	    printf("\n...skipping %d line", nlines);
+	    printf("\n");
+	    if(clreol)cleareol();
+	    printf("...skipping %d line", nlines);
 	    if (nlines > 1)
-		pr("s\n\n");
+	    {
+		pr("s\n");
+	        if(clreol)cleareol();
+		pr("\n");
+	    }
 	    else
-		pr("\n\n");
+	    {
+		pr("\n");
+	        if(clreol)cleareol();
+		pr("\n");
+	    }
 	    while (nlines > 0) {
 		while ((c = Getc (f)) != '\n')
 		    if (c == EOF) {
@@ -854,7 +944,7 @@ register FILE *f;
 		write (2, "\r", 1);
 		search (cmdbuf, f, nlines);
 	    }
-	    ret (dlines);
+	    ret (dlines-1);
 	case '!':
 	    do_shell (filename);
 	    break;
@@ -1033,13 +1123,31 @@ register int n;
 	if ((rv = re_exec (Line)) == 1)
 		if (--n == 0) {
 		    if (lncount > 3 || (lncount > 1 && no_intty))
-			pr ("\n...skipping\n");
+		    {
+			pr ("\n");
+			if(clreol) cleareol();
+			pr("...skipping\n");
+		    }
 		    if (!no_intty) {
 			Currline -= (lncount >= 3 ? 3 : lncount);
 			Fseek (file, line3);
+			if(noscroll)
+			  if(clreol)
+			  {
+			     home(); 
+			     cleareol();
+			  } 
+			  else doclear();
 		    }
 		    else {
 			kill_line ();
+			if(noscroll)
+			  if(clreol)
+			  {
+			     home(); 
+			     cleareol();
+			  } 
+			  else doclear();
 			pr (Line);
 			putchar ('\n');
 		    }
@@ -1133,10 +1241,14 @@ register int nskip;
     fnum += nskip;
     if (fnum < 0)
 	fnum = 0;
-    pr ("\n...Skipping ");
+    pr ("\n");
+    if (clreol) cleareol();
+    pr ("...Skipping ");
     pr (nskip > 0 ? "to file " : "back to file ");
     pr (fnames[fnum]);
-    pr ("\n\n");
+    pr ("\n");
+    if (clreol) cleareol();
+    pr ("\n");
     --fnum;
 }
 
@@ -1147,7 +1259,6 @@ initterm ()
     char	buf[TBUFSIZ];
     char	clearbuf[100];
     char	*clearptr, *padstr;
-    char	*getenv();
     int		ldisc;
 
     setbuf(stdout, obuf);
@@ -1173,6 +1284,16 @@ initterm ()
 	    Sexit = tgetstr("se", &clearptr);
 	    if (padstr = tgetstr("pc", &clearptr))
 		PC = *padstr;
+	    Home = tgetstr("ho",&clearptr);
+	    if(*Home == '\0')
+	    {
+	       if(*(cursorm = tgetstr("cm",&clearptr)))
+	       {
+		    strcpy(cursorhome,tgoto(cursorm,0,0));
+		    Home = cursorhome;
+	       }
+	    }
+	    Cleareod = tgetstr("cd",&clearptr);
 	}
 	if ((shell = getenv("SHELL")) == NULL)
 	    shell = "/bin/sh";
@@ -1344,7 +1465,8 @@ register char ch;
 error (mess)
 char *mess;
 {
-    kill_line ();
+    if(clreol)cleareol();
+    else kill_line ();
     promptlen += strlen (mess);
     if (Senter && Sexit) {
 	tputs (Senter, 1, putch);
