@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.8	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.9	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -663,7 +663,7 @@ clocal(p) NODE *p; {
 		/* assume conversion takes place; type is inherited */
 		t = p->in.type;
 		tl = p->in.left->in.type;
-		if( aflag && (tl==LONG||tl==ULONG) && (t!=LONG&&t!=ULONG) ){
+		if( aflag && (tl==LONG||tl==ULONG) && (t!=LONG&&t!=ULONG&&t!=UNDEF) ){
 			werror( "long assignment may lose accuracy" );
 			}
 		if( aflag>=2 && (tl!=LONG&&tl!=ULONG) && (t==LONG||t==ULONG) && p->in.left->in.op != ICON ){
