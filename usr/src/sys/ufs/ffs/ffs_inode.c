@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.11 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -31,12 +31,6 @@
 
 static int ffs_indirtrunc __P((struct inode *, ufs_daddr_t, ufs_daddr_t,
 	    ufs_daddr_t, int, long *));
-
-int
-ffs_init()
-{
-	return (ufs_init());
-}
 
 /*
  * Update the access, modified, and inode change times as specified by the
