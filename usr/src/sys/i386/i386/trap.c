@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	8.1 (Berkeley) %G%
+ *	@(#)trap.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -263,7 +263,7 @@ out:
 #endif
 		}
 	}
-	curpri = p->p_pri;
+	curpriority = p->p_pri;
 	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
 }
 
@@ -380,7 +380,7 @@ done:
 #endif
 		}
 	}
-	curpri = p->p_pri;
+	curpriority = p->p_pri;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);

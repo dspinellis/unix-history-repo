@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	8.1 (Berkeley) %G%
+ *	@(#)trap.c	8.2 (Berkeley) %G%
  *
  * from: $Header: trap.c,v 1.34 93/05/28 04:34:50 torek Exp $
  */
@@ -168,7 +168,7 @@ userret(struct proc *p, int pc, u_quad_t oticks)
 	if (p->p_flag & SPROFIL)
 		addupc_task(p, pc, (int)(p->p_sticks - oticks));
 
-	curpri = p->p_pri;
+	curpriority = p->p_pri;
 }
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.12 (Berkeley) %G%
+ *	@(#)trap.c	7.13 (Berkeley) %G%
  */
 
 #include "../include/psl.h"
@@ -173,7 +173,7 @@ out:
 		if (ticks)
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
-	curpri = p->p_pri;
+	curpriority = p->p_pri;
 }
 
 /*
@@ -276,7 +276,7 @@ done:
 		if (ticks)
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
-	curpri = p->p_pri;
+	curpriority = p->p_pri;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);
