@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,7 +29,6 @@ static char sccsid[] = "@(#)fstat.c	5.31 (Berkeley) %G%";
 #include <machine/pte.h>
 #include <sys/vmmac.h>
 #endif
-#include <sys/text.h>
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
