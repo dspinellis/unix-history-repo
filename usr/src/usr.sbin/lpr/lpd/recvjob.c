@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)recvjob.c	5.8 (Berkeley) %G%";
  */
 
 #include "lp.h"
-#include <sys/fs.h>
+#include <ufs/fs.h>
 #include "pathnames.h"
 
 char	*sp = "";
