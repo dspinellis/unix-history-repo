@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -405,7 +405,7 @@ portselector()
 
 	alarm(5*60);
 	for (len = 0; len < sizeof (baud) - 1; len++) {
-		if (read(0, &c, 1) <= 0)
+		if (read(STDIN_FILENO, &c, 1) <= 0)
 			break;
 		c &= 0177;
 		if (c == '\n' || c == '\r')
@@ -446,7 +446,7 @@ autobaud()
 	if (select(32, (fd_set *)&rfds, (fd_set *)NULL,
 	    (fd_set *)NULL, &timeout) <= 0)
 		return (type);
-	if (read(0, &c, sizeof(char)) != sizeof(char))
+	if (read(STDIN_FILENO, &c, sizeof(char)) != sizeof(char))
 		return (type);
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 20;
