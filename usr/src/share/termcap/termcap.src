@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.26	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.27	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -555,18 +555,31 @@ Mt|terak|Terak emulating Datamedia 1520:\
 	:tc=dm1520:
 Mu|sun|Sun Microsystems Workstation console:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:\
+	:am:bs:mi:ms:pt:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
 Mu|sun-e|Sun Microsystems Workstation console hacked for emacs:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:\
+	:am:bs:mi:ms:pt:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:dc=\E[P:
+M0|sun-48|Sun 48-line window:\
+	:li#48:co#80:tc=sun:
+M1|sun-34|Sun 34-line window:\
+	:li#34:co#80:tc=sun:
+M1|sun-24|Sun 24-line window:\
+	:li#24:co#80:tc=sun:
+M2|sun-17|Sun 17-line window:\
+	:li#17:co#80:tc=sun:
+M3|sun-12|Sun 12-line window:\
+	:li#12:co#80:tc=sun:
+M4|sun-1|Sun 1-line window for sysline:\
+	:li#1:co#80:\
+	:es:hs:ts=\r:fs=\E[K:ds=^L:tc=sun:
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
@@ -1107,6 +1120,23 @@ X8|4025-17ws|4027-17ws|tek 4025 17 line window in workspace:\
 X9|4025ex|4027ex|tek 4025 w/!:\
 	:ti=\41com 31\r:te=^_com 33\r:\
 	:is=^_com 33\r\n\41sto 9,17,25,33,41,49,57,65,73\r:tc=4025:
+# From jcoker @ ucbic
+Xp|4107|tek4107|Tektronix 4107 graphics terminal with memory:\
+	:ti=\E[?6l\E[H\E[J:\
+	:te=\E[?6h\E%!0\ELBP0\E%!1\E[32;1f:\
+	:is=\E%!0\ELBP0\E%!1\E[H\E[2g\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[J:\
+	:li#32:cr=^M:do=^J:nl=^J:bl=^G:al=3\E[L:xn:am:le=^H:bs:cd=\E[J:\
+	:ce=5\E[K:cl=156\E[H\E[J:cm=\E[%i%d;%dH:co#80:dc=4\E[P:dl=3\E[M:\
+	:ho=\E[H:ic=4\E[@:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:ku=\EM:\
+	:kd=\ED:kl=\E[D:kr=\E[C:kh=\E[H:\
+	:ul:ei=:im=:pt:bw:bt=\E[Z:mi:nd=\E[C:se=\E[m:so=\E[7m:\
+	:ue=\E[m:us=\E[4m:up=\EM:
+#  Tektronix 4107 with sysline
+Xq|4107-s|tek4107-s|Tektronix 4107 with sysline but no memory:\
+	:is=\E%!1\E[2;32r\E[132D\E[2g\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[J:\
+	:es:hs:i2=\E7\E[?6l\E[2K\E[?6h\E8:ts=\E7\E[?6l\E[2K\E[;%i%df:\
+	:fs=\E[?6h\E8:\
+	:ds=\E7\E[?6l\E[2K\E[?6h\E8:tc=4107:
 # From cbosg!teklabs!davem Wed Sep 16 21:11:41 1981
 # Here's the comamnd file that I use to get rogue to work on the 4025.
 # It should work with any program using the old curses (e.g. it better
