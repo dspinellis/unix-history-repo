@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -825,7 +825,7 @@ main(argc, argv, envp)
 				exit(0);
 
 			/* disconnect from our controlling tty */
-			disconnect(TRUE);
+			disconnect(TRUE, CurEnv);
 		}
 
 		dtype[0] = '\0';
@@ -1260,14 +1260,15 @@ thaw(freezefile, binfile)
 **		the controlling tty.
 */
 
-disconnect(fulldrop)
+disconnect(fulldrop, e)
 	bool fulldrop;
+	register ENVELOPE *e;
 {
 	int fd;
 
 	if (tTd(52, 1))
-		printf("disconnect: In %d Out %d\n", fileno(InChannel),
-						fileno(OutChannel));
+		printf("disconnect: In %d Out %d, e=%x\n",
+			fileno(InChannel), fileno(OutChannel), e);
 	if (tTd(52, 5))
 	{
 		printf("don't\n");
@@ -1298,13 +1299,15 @@ disconnect(fulldrop)
 		(void) fclose(OutChannel);
 		OutChannel = stdout;
 	}
-	if (CurEnv->e_xfp == NULL)
-		CurEnv->e_xfp = fopen("/dev/null", "w");
+	if (e->e_xfp == NULL)
+		fd = open("/dev/null", O_WRONLY, 0666);
+	else
+		fd = fileno(e->e_xfp);
 	(void) fflush(stdout);
-	(void) close(1);
-	(void) close(2);
-	while ((fd = dup(fileno(CurEnv->e_xfp))) < 2 && fd > 0)
-		continue;
+	dup2(fd, STDOUT_FILENO);
+	dup2(fd, STDERR_FILENO);
+	if (e->e_xfp == NULL)
+		close(fd);
 
 	/* drop our controlling TTY completely if possible */
 	if (fulldrop)
