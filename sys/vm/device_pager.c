@@ -106,7 +106,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	vm_prot_t prot;
 	vm_offset_t foff;
 {
-	unsigned long dev;
+	dev_t dev;
 	vm_pager_t pager;
 	int (*mapfunc)();
 	vm_object_t object;
@@ -129,8 +129,8 @@ dev_pager_alloc(handle, size, prot, foff)
 	/*
 	 * Make sure this device can be mapped.
 	 */
-	dev = (u_long)handle;
-	mapfunc = cdevsw[major((dev_t)dev)].d_mmap;
+	dev = (dev_t)(u_long)handle;
+	mapfunc = cdevsw[major(dev)].d_mmap;
 	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
 		return(NULL);
 
@@ -257,7 +257,7 @@ dev_pager_getpage(pager, m, sync)
 	register vm_object_t object;
 	vm_offset_t offset, paddr;
 	vm_page_t page;
-	unsigned long dev;
+	dev_t dev;
 	int (*mapfunc)(), prot;
 
 #ifdef DEBUG
@@ -266,10 +266,10 @@ dev_pager_getpage(pager, m, sync)
 #endif
 
 	object = m->object;
-	dev = (u_long)pager->pg_handle;
+	dev = (dev_t)(u_long)pager->pg_handle;
 	offset = m->offset + object->paging_offset;
 	prot = PROT_READ;	/* XXX should pass in? */
-	mapfunc = cdevsw[major((dev_t)dev)].d_mmap;
+	mapfunc = cdevsw[major(dev)].d_mmap;
 
 	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
 		panic("dev_pager_getpage: no map function");
