@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	8.1 (Berkeley) %G%
+#	@(#)bsd.prog.mk	8.2 (Berkeley) %G%
 
 .if !defined(NOINCLUDE) && exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -95,12 +95,12 @@ all: ${PROG} ${MANALL} _PROGSUBDIR
 
 .if !target(clean)
 clean: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core.${PROG} ${PROG} ${OBJS} ${CLEANFILES}
+	rm -f a.out [Ee]rrs mklog ${PROG}.core ${PROG} ${OBJS} ${CLEANFILES}
 .endif
 
 .if !target(cleandir)
 cleandir: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core.${PROG} ${PROG} ${OBJS} ${CLEANFILES}
+	rm -f a.out [Ee]rrs mklog ${PROG}.core ${PROG} ${OBJS} ${CLEANFILES}
 	rm -f .depend ${MANALL}
 .endif
 
