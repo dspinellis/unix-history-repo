@@ -1,10 +1,9 @@
-#	@(#)Makefile	1.5 (Berkeley) %G%
+#	@(#)Makefile	1.6 (Berkeley) %G%
 
 PROG=	pi
 SRCDIR=	${.CURDIR}/../src
 CFLAGS=	-I. -I${.CURDIR} -I${SRCDIR}
 .PATH:	${SRCDIR}
-NOMAN=	noman
 
 EYACC=	/usr/libexec/pascal/eyacc
 
