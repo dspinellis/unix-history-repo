@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	6.14 (Berkeley) %G%
+ *	@(#)in.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -259,12 +259,25 @@ in_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCSIFDSTADDR:
+	    {
+		struct sockaddr oldaddr;
+
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
 			return (EINVAL);
-		if (ifp->if_ioctl &&
-		    (error = (*ifp->if_ioctl)(ifp, SIOCSIFDSTADDR, ia)))
-			return (error);
+		oldaddr = ia->ia_dstaddr;
 		ia->ia_dstaddr = ifr->ifr_dstaddr;
+		if (ifp->if_ioctl &&
+		    (error = (*ifp->if_ioctl)(ifp, SIOCSIFDSTADDR, ia))) {
+			ia->ia_dstaddr = oldaddr;
+			return (error);
+		}
+		if (ia->ia_flags & IFA_ROUTE) {
+			rtinit(&oldaddr, &ia->ia_addr, (int)SIOCDELRT,
+			    RTF_HOST);
+			rtinit(&ia->ia_dstaddr, &ia->ia_addr, (int)SIOCADDRT,
+			    RTF_HOST|RTF_UP);
+		}
+	    }
 		break;
 
 	case SIOCSIFBRDADDR:
@@ -304,10 +317,11 @@ in_ifinit(ifp, ia, sin)
 	struct sockaddr_in *sin;
 {
 	register u_long i = ntohl(sin->sin_addr.s_addr);
-	struct sockaddr_in tmpaddr;
+	struct sockaddr oldaddr;
+	struct sockaddr_in netaddr;
 	int s = splimp(), error;
 
-	tmpaddr = *(struct sockaddr_in *)&ia->ia_addr;
+	oldaddr = ia->ia_addr;
 	ia->ia_addr = *(struct sockaddr *)sin;
 
 	/*
@@ -317,23 +331,27 @@ in_ifinit(ifp, ia, sin)
 	 */
 	if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
 		splx(s);
-		ia->ia_addr = *(struct sockaddr *)&tmpaddr;
+		ia->ia_addr = oldaddr;
 		return (error);
 	}
 
-	bzero((caddr_t)&tmpaddr, sizeof (tmpaddr));
-	tmpaddr.sin_family = AF_INET;
 	/*
 	 * Delete any previous route for an old address.
 	 */
+	bzero((caddr_t)&netaddr, sizeof (netaddr));
+	netaddr.sin_family = AF_INET;
 	if (ia->ia_flags & IFA_ROUTE) {
-		if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
-		    tmpaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
-		    rtinit((struct sockaddr *)&tmpaddr, &ia->ia_addr, 
+		if (ifp->if_flags & IFF_LOOPBACK)
+			rtinit(&oldaddr, &oldaddr, (int)SIOCDELRT, RTF_HOST);
+		else if (ifp->if_flags & IFF_POINTOPOINT)
+			rtinit(&ia->ia_dstaddr, &oldaddr, (int)SIOCDELRT,
+			    RTF_HOST);
+		else {
+			netaddr.sin_addr = in_makeaddr(ia->ia_subnet,
+			    INADDR_ANY);
+			rtinit((struct sockaddr *)&netaddr, &oldaddr, 
 			    (int)SIOCDELRT, 0);
-		} else
-		    rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
-			    (int)SIOCDELRT, RTF_HOST);
+		}
 		ia->ia_flags &= ~IFA_ROUTE;
 	}
 	if (IN_CLASSA(i))
@@ -360,13 +378,17 @@ in_ifinit(ifp, ia, sin)
 	/*
 	 * Add route for the network.
 	 */
-	if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
-		tmpaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
-		rtinit((struct sockaddr *)&tmpaddr, &ia->ia_addr,
-			(int)SIOCADDRT, RTF_UP);
-	} else
-		rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
-			(int)SIOCADDRT, RTF_HOST|RTF_UP);
+	if (ifp->if_flags & IFF_LOOPBACK)
+		rtinit(&ia->ia_addr, &ia->ia_addr, (int)SIOCADDRT,
+		    RTF_HOST|RTF_UP);
+	else if (ifp->if_flags & IFF_POINTOPOINT)
+		rtinit(&ia->ia_dstaddr, &ia->ia_addr, (int)SIOCADDRT,
+		    RTF_HOST|RTF_UP);
+	else {
+		netaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
+		rtinit((struct sockaddr *)&netaddr, &ia->ia_addr,
+		    (int)SIOCADDRT, RTF_UP);
+	}
 	ia->ia_flags |= IFA_ROUTE;
 	return (0);
 }
