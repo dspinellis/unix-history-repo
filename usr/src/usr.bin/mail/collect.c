@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -438,6 +438,7 @@ mespipe(fp, cmd)
 	FILE *nf;
 	sig_t sigint = signal(SIGINT, SIG_IGN);
 	extern char tempEdit[];
+	char *shell;
 
 	if ((nf = Fopen(tempEdit, "w+")) == NULL) {
 		perror(tempEdit);
@@ -448,8 +449,10 @@ mespipe(fp, cmd)
 	 * stdin = current message.
 	 * stdout = new message.
 	 */
-	if (run_command(cmd,
-	    0, fileno(fp), fileno(nf), NOSTR, NOSTR, NOSTR) < 0) {
+	if ((shell = value("SHELL")) == NOSTR)
+		shell = _PATH_CSHELL;
+	if (run_command(shell,
+	    0, fileno(fp), fileno(nf), "-c", cmd, NOSTR) < 0) {
 		(void) Fclose(nf);
 		goto out;
 	}
