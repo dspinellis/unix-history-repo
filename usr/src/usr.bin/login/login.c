@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.52 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,6 @@ static char sccsid[] = "@(#)login.c	5.51 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <ufs/quota.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -108,7 +107,6 @@ main(argc, argv)
 	(void)signal(SIGQUIT, SIG_IGN);
 	(void)signal(SIGINT, SIG_IGN);
 	(void)setpriority(PRIO_PROCESS, 0, 0);
-	(void)quota(Q_SETUID, 0, 0, 0);
 
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
@@ -324,22 +322,6 @@ main(argc, argv)
 	/* paranoia... */
 	endpwent();
 
-	if (quota(Q_SETUID, pwd->pw_uid, 0, 0) < 0 && errno != EINVAL) {
-		switch(errno) {
-		case EUSERS:
-			(void)fprintf(stderr,
-		"Too many users logged on already.\nTry again later.\n");
-			break;
-		case EPROCLIM:
-			(void)fprintf(stderr,
-			    "You have too many processes running.\n");
-			break;
-		default:
-			perror("quota (Q_SETUID)");
-		}
-		sleepexit(0);
-	}
-
 	if (chdir(pwd->pw_dir) < 0) {
 		(void)printf("No directory %s!\n", pwd->pw_dir);
 		if (chdir("/"))
@@ -426,8 +408,6 @@ main(argc, argv)
 	(void)setgid(pwd->pw_gid);
 
 	initgroups(username, pwd->pw_gid);
-
-	quota(Q_DOWARN, pwd->pw_uid, (dev_t)-1, 0);
 
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
