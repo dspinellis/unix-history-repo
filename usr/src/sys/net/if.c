@@ -1,4 +1,4 @@
-/*	if.c	4.18	82/06/23	*/
+/*	if.c	4.19	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,6 +29,7 @@ ifinit()
 			if (ifp->if_snd.ifq_maxlen == 0)
 				ifp->if_snd.ifq_maxlen = ifqmaxlen;
 		}
+	if_slowtimo();
 }
 
 /*
@@ -143,6 +144,7 @@ if_ifwithaf(af)
 if_down(ifp)
 	register struct ifnet *ifp;
 {
+
 	ifp->if_flags &= ~IFF_UP;
 	pfctlinput(PRC_IFDOWN, (caddr_t)&ifp->if_addr);
 }
@@ -165,4 +167,5 @@ if_slowtimo()
 			}
 			(*ifp->if_watchdog)(ifp->if_unit);
 		}
+	timeout(if_slowtimo, 0, hz / IFNET_SLOWHZ);
 }
