@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_en.c	7.2 (Berkeley) %G%
+ *	@(#)if_en.c	7.3 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -74,7 +74,7 @@ struct	uba_driver endriver =
 	{ enprobe, 0, enattach, 0, enstd, "en", eninfo };
 #define	ENUNIT(x)	minor(x)
 
-int	eninit(),enoutput(),enreset(),enioctl();
+int	eninit(),oldenoutput(),enreset(),enioctl(), enstart();
 
 #ifdef notdef
 /*
@@ -146,7 +146,8 @@ enattach(ui)
 	es->es_if.if_mtu = ENMTU;
 	es->es_if.if_flags = IFF_BROADCAST;
 	es->es_if.if_init = eninit;
-	es->es_if.if_output = enoutput;
+	es->es_if.if_output = oldenoutput;
+	es->es_if.if_start = enstart;
 	es->es_if.if_ioctl = enioctl;
 	es->es_if.if_reset = enreset;
 	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16 | UBA_CANTWAIT;
@@ -451,14 +452,6 @@ enrint(unit)
 	m = if_rubaget(&es->es_ifuba, len, off, &es->es_if);
 	if (m == 0)
 		goto setup;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
 	switch (en->en_type) {
 
 #ifdef INET
@@ -521,7 +514,7 @@ setup:
  * Use trailer local net encapsulation if enough data in first
  * packet leaves a multiple of 512 bytes of data in remainder.
  */
-enoutput(ifp, m0, dst)
+oldenoutput(ifp, m0, dst)
 	struct ifnet *ifp;
 	struct mbuf *m0;
 	struct sockaddr *dst;
@@ -552,13 +545,14 @@ enoutput(ifp, m0, dst)
 			error = EPERM;		/* ??? */
 			goto bad;
 		}
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		off = m->m_pkthdr.len - m->m_len;
 		/* need per host negotiation */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
+		    (m->m_flags & M_EXT) == 0 &&
+		    m->m_data >= m->m_pktdat + 2 * sizeof (u_short)) {
 			type = ENTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
+			m->m_data -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons((u_short)ENTYPE_IP);
 			*(mtod(m, u_short *) + 1) = ntohs((u_short)m->m_len);
@@ -621,20 +615,9 @@ gottype:
 	 * Add local net header.  If no space in first mbuf,
 	 * allocate another.
 	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct en_header) > m->m_off) {
-		MGET(m, M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct en_header);
-	} else {
-		m->m_off -= sizeof (struct en_header);
-		m->m_len += sizeof (struct en_header);
-	}
+	M_PREPEND(m, sizeof (struct en_header), M_DONTWAIT);
+	if (m == NULL)
+		return (ENOBUFS);
 	en = mtod(m, struct en_header *);
 	/* add en_shost later */
 	en->en_dhost = dest;

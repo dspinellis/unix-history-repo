@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_hy.c	7.2 (Berkeley) %G%
+ *	@(#)if_hy.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -601,22 +601,11 @@ hyoutput(ifp, m0, dst)
 	 * No extra space for headers is allocated.
 	 */
 	mp = mtod(m, char *);	/* save pointer to real message */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof(struct hym_hdr) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			m = m0;
-			error = ENOBUFS;
-			goto drop;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof(struct hym_hdr);
-	} else {
-		m->m_off -= sizeof(struct hym_hdr);
-		m->m_len += sizeof(struct hym_hdr);
+	M_PREPEND(m, sizeof(struct hym_hdr), M_DONTWAIT);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto bad;
 	}
-
 	dlen += sizeof(struct hym_hdr) - HYM_SWLEN;
 
 	hym = mtod(m, struct hym_hdr *);
@@ -1168,18 +1157,12 @@ hyrecvdata(ui, hym, len)
 	default:
 	rawlinkin:
 		{
-			struct mbuf *m0;
-
-			MGET(m0, M_DONTWAIT, MT_DATA);
-			if (m0 == 0) {
+			M_PREPEND(m, sizeof(struct hym_hdr), M_DONTWAIT);
+			if (m == 0) {
 				m_freem(m);
 				return;
 			}
-			m0->m_off = MMINOFF;
-			m0->m_len = sizeof(struct hym_hdr);
-			m0->m_next = m;
-			bcopy((caddr_t)hym, mtod(m0, caddr_t), sizeof(struct hym_hdr));
-			m = m0;
+			bcopy((caddr_t)hym, mtod(m, caddr_t), sizeof(struct hym_hdr));
 			hypproto.sp_protocol = 0;
 			hypdst.sin_addr = is->hy_addr;
 			hypsrc.sin_addr = is->hy_addr;
