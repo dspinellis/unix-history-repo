@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -52,7 +52,7 @@ spec()
 				set(&ginfo);
 				continue;
 			case 'u':
-				if (strncmp(p + 1, "unset"))
+				if (strcmp(p + 1, "unset"))
 					break;
 				unset(&ginfo);
 				continue;
