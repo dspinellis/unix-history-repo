@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -23,6 +23,8 @@ static char sccsid[] = "@(#)deliver.c	5.19 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -75,6 +77,12 @@ deliver(firstto, editfcn)
 	errno = 0;
 	if (bitset(QDONTSEND, to->q_flags))
 		return (0);
+
+	/* unless interactive, try twice, over a minute */
+	if (OpMode == MD_DAEMON || OpMode == MD_SMTP) {
+		_res.retrans = 30;
+		_res.retry = 2;
+	}
 
 # ifdef DEBUG
 	if (tTd(10, 1))
@@ -369,42 +377,47 @@ deliver(firstto, editfcn)
 		editfcn = putmessage;
 	if (ctladdr == NULL)
 		ctladdr = &e->e_from;
-			message(Arpa_Info, "Connecting to %s.%s...", MxHosts[0],
-			    m->m_name);
-			/* send the recipient list */
-			tobuf[0] = '\0';
-			for (to = tochain; to; to = to->q_tchain) {
-				register int i;
-				register char *t = tobuf;
+	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
+		} else
+			Nmx = getmxrr(host, MxHosts, buf, &rcode);
+		if (Nmx >= 0) {
+			message(Arpa_Info, "Connecting to %s (%s)...",
+			    MxHosts[0], m->m_name);
+			if ((rcode = smtpinit(m, pv)) == EX_OK) {
+				/* send the recipient list */
+				tobuf[0] = '\0';
+				for (to = tochain; to; to = to->q_tchain) {
+					register int i;
+					register char *t = tobuf;
 
-				e->e_to = to->q_paddr;
-				i = smtprcpt(to, m);
-				if (i != EX_OK) {
-					markfailure(e, to, i);
-					giveresponse(i, m, e);
+					e->e_to = to->q_paddr;
+					if ((i = smtprcpt(to, m)) != EX_OK) {
+						markfailure(e, to, i);
+						giveresponse(i, m, e);
+					}
+					else {
+						*t++ = ',';
+						for (p = to->q_paddr; *p; *t++ = *p++);
+					}
 				}
+
+				/* now send the data */
+				if (tobuf[0] == '\0')
+					e->e_to = NULL;
 				else {
-					*t++ = ',';
-					for (p = to->q_paddr; *p; *t++ = *p++);
+					e->e_to = tobuf + 1;
+					rcode = smtpdata(m, e);
 				}
-			}
 
-			/* now send the data */
-			if (tobuf[0] == '\0')
-				e->e_to = NULL;
-			else {
-				e->e_to = tobuf + 1;
-				rcode = smtpdata(m, e);
+				/* now close the connection */
+				smtpquit(m);
 			}
-
-			/* now close the connection */
-			smtpquit(m);
 		}
 	}
 	else
 #endif /* SMTP */
 	{
-		message(Arpa_Info, "Connecting to %s.%s...", host, m->m_name);
+		message(Arpa_Info, "Connecting to %s (%s)...", host, m->m_name);
 		i = sendoff(m, pv, editfcn, ctladdr);
 
 	/*
@@ -551,7 +564,7 @@ dofork()
 **	Side Effects:
 **		none.
 */
-
+static
 sendoff(m, pvp, editfcn, ctladdr)
 sendoff(e, m, pvp, ctladdr)
 	register ENVELOPE *e;
