@@ -1,9 +1,9 @@
-.\" Copyright (c) 1989, 1991 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1989, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)crypt.3	6.7.1.1 (Berkeley) %G%
+.\"     @(#)crypt.3	8.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CRYPT 3
@@ -135,8 +135,9 @@ If the value of
 is 0,
 the argument
 .Fa block
-is encrypted, otherwise it fails.
-The encryption is returned in the original
+is encrypted, otherwise it
+is decrypted.
+The encryption or decryption is returned in the original
 array
 .Fa block
 after using the
@@ -162,7 +163,9 @@ significant bit in each character is ignored and the next 7 bits of each
 character are concatenated to yield a 56-bit key.
 The function
 .Fn des_cipher
-encrypts the 64-bits stored in the 8 characters at
+encrypts (or decrypts if
+.Fa count
+is negative) the 64-bits stored in the 8 characters at
 .Fa in
 using
 .Xr abs 3

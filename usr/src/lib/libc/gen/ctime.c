@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1987, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1987, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Arthur David Olson of the National Cancer Institute.
@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	8.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
