@@ -1,13 +1,15 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
-/* @(#)inline.h	1.1	(Berkeley)	%G%	*/
+/* @(#)inline.h	1.2	(Berkeley)	%G%	*/
 
 /*
  * COMMENTCHAR is the character delimiting comments in the assembler.
  * LABELCHAR is the character that separates labels from instructions.
+ * ARGSEPCHAR is the character that separates arguments in instructions.
  */
 #define COMMENTCHAR	'#'
 #define LABELCHAR	':'
+#define ARGSEPCHAR	','
 
 /*
  * Expansion parameters:
@@ -37,18 +39,36 @@ char line[QUEUESIZE][MAXLINELEN];
 #define PRED(qindex) ((qindex) - 1 < 0 ? QUEUESIZE - 1 : (qindex) - 1)
 
 /*
- * The hash table should be twice as big as the number of patterns.
- * It must be a power of two.
+ * Hash table headers should be twice as big as the number of patterns.
+ * They must be a power of two.
  */
 #define HSHSIZ	128
 
+/*
+ * These tables specify the substitutions that are to be done.
+ */
 struct pats {
 	char	*name;
 	char	*replace;
 	struct	pats *next;
 	int	size;
 };
-struct pats *hashhdr[HSHSIZ];
+struct pats *patshdr[HSHSIZ];
 extern struct pats language_ptab[], libc_ptab[], machine_ptab[];
-struct pats **hash();
+
+/*
+ * This table defines the set of instructions that demark the
+ * end of a basic block.
+ */
+struct inststoptbl {
+	char	*name;
+	struct	inststoptbl *next;
+	int	size;
+};
+struct inststoptbl *inststoptblhdr[HSHSIZ];
+extern struct inststoptbl inststoptable[];
+
+/*
+ * Miscellaneous functions.
+ */
 char *newline(), *copyline(), *doreplaceon();
