@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.10 (Berkeley) %G%
+#	@(#)Makefile	7.11 (Berkeley) %G%
 #
 # Put the ../sys stuff near the end so that subroutine definitions win when
 # there is a struct tag with the same name (eg., vmmeter).  The real
@@ -37,16 +37,21 @@ SHP300=	../hp300/hpux/*.[ch] ../hp300/dev/*.[ch] ../hp300/hp300/*.[ch] \
 	../hp300/include/*.h
 AHP300=	../hp300/hp300/*.s
 
+TI386=	../i386/tags
+SI386=	../i386/isa/*.[ch] ../i386/i386/*.[ch] ../i386/include/*.h
+AI386=	../i386/i386/*.s
+
 # Directories in which to place tags links (other than primary T$MACH)
 DGEN=	kern sys net netimp netinet netns ufs
 DVAX=	vax/if vax/mba vax/uba vax/bi vax/vax vax/include
 DTAHOE=	tahoe/if tahoe/vba tahoe/align tahoe/math tahoe/include tahoe/tahoe
 DHP300=	hp300/dev hp300/hpux hp300/hp300 hp300/include
+DI386=	i386/isa i386/i386 i386/include
 
 all:
 	@echo "make tags or links only"
 
-tags: tahoetags vaxtags hp300tags
+tags: tahoetags vaxtags hp300tags i386tags
 
 tahoetags:
 	-ctags -dtf ${TTAHOE} ${COMM} ${STAHOE}
@@ -57,6 +62,7 @@ sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
 sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> ${TTAHOE}
 	sort -o ${TTAHOE} ${TTAHOE}
+	-ln -s /sys/tahoe/tags /var/db/sys_tags
 
 vaxtags:
 	-ctags -dtf ${TVAX} ${COMM} ${SVAX}
@@ -67,6 +73,7 @@ sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
 sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> ${TVAX}
 	sort -o ${TVAX} ${TVAX}
+	-ln -s /sys/vax/tags /var/db/sys_tags
 
 hp300tags:
 	-ctags -dtf ${THP300} ${COMM} ${SHP300}
@@ -74,6 +81,15 @@ hp300tags:
 sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> ${THP300}
 	sort -o ${THP300} ${THP300}
+	-ln -s /sys/hp300/tags /var/db/sys_tags
+
+i386tags:
+	-ctags -dtf ${TI386} ${COMM} ${SI386}
+	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${AI386} | \
+sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+		>> ${TI386}
+	sort -o ${TI386} ${TI386}
+	-ln -s /sys/i386/tags /var/db/sys_tags
 
 links:
 	-for i in ${DVAX}; do \
@@ -82,9 +98,12 @@ links:
 	    rm -f ../$$i/tags; ln -s ../tags ../$$i/tags; done
 	-for i in ${DHP300}; do \
 	    rm -f ../$$i/tags; ln -s ../tags ../$$i/tags; done
+	-for i in ${DI386}; do \
+	    rm -f ../$$i/tags; ln -s ../tags ../$$i/tags; done
 	-for i in ${DGEN}; do \
 	    rm -f ../$$i/tags; \
-	    ln -s ../machine/tags ../$$i/tags; done
+	    ln -s ../tags ../$$i/tags; done
+	-ln -s /var/db/sys_tags ../tags
 
 init_sysent.c syscalls.c ../sys/syscall.h: makesyscalls.sh syscalls.master
 	-mv -f init_sysent.c init_sysent.c.bak
