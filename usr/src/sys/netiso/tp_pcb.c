@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.12 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -842,4 +842,106 @@ tp_detach(tpcb)
 		printf( "end of detach, NOT single, tpcb 0x%x\n", tpcb);
 	ENDDEBUG
 	/* free((caddr_t)tpcb, M_PCB); WHere to put this ? */
+}
+
+struct que {
+	struct tp_pcb *next;
+	struct tp_pcb *prev;
+} tp_bound_pcbs =
+{(struct tp_pcb *)&tp_bound_pcbs, (struct tp_pcb *)&tp_bound_pcbs};
+
+u_short tp_unique;
+
+tp_tselinuse(tlen, tsel, siso, reuseaddr)
+caddr_t tsel;
+register struct sockaddr_iso *siso;
+{
+	struct tp_pcb *b = tp_bound_pcbs.next, *l = tp_listeners;
+	register struct tp_pcb *t;
+
+	for (;;) {
+		if (b != (struct tp_pcb *)&tp_bound_pcbs) {
+			t = b; b = t->tp_next;
+		} else if (l) {
+			t = l; l = t->tp_nextlisten;
+		} else
+			break;
+		if (tlen == t->tp_lsuffixlen && bcmp(tsel, t->tp_lsuffix, tlen) == 0) {
+			if (t->tp_flags & TPF_GENERAL_ADDR) {
+				if (siso == 0 || reuseaddr == 0)
+					return 1;
+			} else if (siso) {
+				if (siso->siso_family == t->tp_domain &&
+					t->tp_nlproto->nlp_cmpnetaddr(t->tp_npcb, siso, TP_LOCAL))
+						return 1;
+			} else if (reuseaddr == 0)
+						return 1;
+		}
+	}
+	return 0;
+
+}
+
+
+tp_pcbbind(tpcb, nam)
+register struct tp_pcb *tpcb;
+register struct mbuf *nam;
+{
+	register struct sockaddr_iso *siso = 0;
+	int tlen = 0, wrapped = 0;
+	caddr_t tsel;
+	u_short tutil;
+
+	if (tpcb->tp_state != TP_CLOSED)
+		return (EINVAL);
+	if (nam) {
+		siso = mtod(nam, struct sockaddr_iso *);
+		switch (siso->siso_family) {
+		default:
+			return (EAFNOSUPPORT);
+#ifdef ISO
+		case AF_ISO:
+			tlen = siso->siso_tlen;
+			tsel = TSEL(siso);
+			if (siso->siso_nlen == 0)
+				siso = 0;
+			break;
+#endif
+#ifdef INET
+		case AF_INET:
+			tsel = (caddr_t)&tutil;
+			if (tutil =  ((struct sockaddr_in *)siso)->sin_port) {
+				tlen = 2;
+			}
+			if (((struct sockaddr_in *)siso)->sin_addr.s_addr == 0)
+				siso = 0;
+		}
+#endif
+	}
+	if (tpcb->tp_lsuffixlen == 0) {
+		if (tlen) {
+			if (tp_tselinuse(tsel, tlen, siso,
+								tpcb->tp_sock->so_options & SO_REUSEADDR))
+				return (EINVAL);
+		} else for (tsel = (caddr_t)&tp_unique, tlen = 2;;){
+			if (tp_unique++ < ISO_PORT_RESERVED ||
+				tp_unique > ISO_PORT_USERRESERVED) {
+					if (wrapped++)
+						return ESRCH;
+					tp_unique = ISO_PORT_RESERVED;
+			}
+			if (tp_tselinuse(tsel, tlen, siso, 0) == 0)
+				break;
+		}
+		bcopy(tsel, tpcb->tp_lsuffix, (tpcb->tp_lsuffixlen = tlen));
+		insque(tpcb, &tp_bound_pcbs);
+	} else {
+		if (tlen || siso == 0)
+			return (EINVAL);
+	}
+	if (siso == 0) {
+		tpcb->tp_flags |= TPF_GENERAL_ADDR;
+		return (0);
+	}
+	return tpcb->tp_nlproto->nlp_pcbbind(tpcb->tp_npcb, nam);
 }
