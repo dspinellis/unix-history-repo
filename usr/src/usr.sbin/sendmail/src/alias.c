@@ -1,9 +1,9 @@
 # include <stdio.h>
 # include <ctype.h>
 # include <pwd.h>
-# include "postbox.h"
+# include "sendmail.h"
 
-static char SccsId[] = "@(#)alias.c	3.3	%G%";
+static char SccsId[] = "@(#)alias.c	3.4	%G%";
 
 /*
 **  ALIAS -- Compute aliases.

@@ -1,9 +1,9 @@
 # include <stdio.h>
 # include <pwd.h>
-# include "postbox.h"
+# include "sendmail.h"
 
 /*
-**  CONF.C -- Postbox Configuration Tables.
+**  CONF.C -- Sendmail Configuration Tables.
 **
 **	Defines the configuration of this installation.
 **
@@ -39,7 +39,7 @@
 **				and possibly (but not necessarily) if
 **				the -f argument matches the real sender.
 **				The effect is that if the "-f" option
-**				is given to postbox then it will be
+**				is given to sendmail then it will be
 **				passed through (as arguments 1 & 2) to
 **				the mailer.
 **			   M_ROPT -- identical to M_FOPT, except uses
@@ -98,7 +98,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.9	%G%";
+static char SccsId[] = "@(#)conf.c	3.10	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */

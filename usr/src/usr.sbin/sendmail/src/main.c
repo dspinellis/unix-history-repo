@@ -2,29 +2,29 @@
 # include <signal.h>
 # include <ctype.h>
 # include <pwd.h>
-# include "postbox.h"
+# include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.6	%G%";
+static char	SccsId[] = "@(#)main.c	3.7	%G%";
 
 /*
-**  POSTBOX -- Post mail to a set of destinations.
+**  SENDMAIL -- Post mail to a set of destinations.
 **
 **	This is the basic mail router.  All user mail programs should
-**	call this routine to actually deliver mail.  Postbox in
+**	call this routine to actually deliver mail.  Sendmail in
 **	turn calls a bunch of mail servers that do the real work of
 **	delivering the mail.
 **
-**	Postbox is driven by tables defined in conf.c.  This
+**	Sendmail is driven by tables defined in conf.c.  This
 **	file will be different from system to system, but the rest
 **	of the code will be the same.  This table could be read in,
 **	but it seemed nicer to have it compiled in, since deliver-
 **	mail will potentially be exercised a lot.
 **
 **	Usage:
-**		/etc/postbox [-f name] [-a] [-q] [-v] [-n] [-m] addr ...
+**		/etc/sendmail [-f name] [-a] [-q] [-v] [-n] [-m] addr ...
 **
 **	Positional Parameters:
 **		addr -- the address to deliver the mail to.  There
@@ -86,7 +86,7 @@ static char	SccsId[] = "@(#)main.c	3.6	%G%";
 **		cc -n -s *.o -lS
 **		chown root a.out
 **		chmod 755 a.out
-**		mv a.out postbox
+**		mv a.out sendmail
 **
 **	Deficiencies:
 **		It ought to collect together messages that are
@@ -169,7 +169,7 @@ main(argc, argv)
 	signal(SIGTERM, finis);
 	setbuf(stdout, (char *) NULL);
 # ifdef LOG
-	openlog("postbox", 0);
+	openlog("sendmail", 0);
 # endif LOG
 # ifdef DEBUG
 # ifdef DEBUGFILE
@@ -185,7 +185,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
-	cfname = "postbox.cf";
+	cfname = "sendmail.cf";
 
 	/*
 	** Crack argv.
@@ -449,12 +449,12 @@ main(argc, argv)
 # endif DEBUG
 
 	if (argc <= 0)
-		usrerr("Usage: /etc/postbox [flags] addr...");
+		usrerr("Usage: /etc/sendmail [flags] addr...");
 
 	/*
 	**  Process Hop count.
 	**	The Hop count tells us how many times this message has
-	**	been processed by postbox.  If it exceeds some
+	**	been processed by sendmail.  If it exceeds some
 	**	fairly large threshold, then we assume that we have
 	**	an infinite forwarding loop and die.
 	*/
@@ -541,7 +541,7 @@ main(argc, argv)
 **		never
 **
 **	Side Effects:
-**		exits postbox
+**		exits sendmail
 **
 **	Called By:
 **		main

@@ -1,10 +1,10 @@
 # include <stdio.h>
-# include "postbox.h"
+# include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.2	%G%";
+static char	SccsId[] = "@(#)err.c	3.3	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -44,7 +44,7 @@ syserr(fmt, a, b, c, d, e)
 		else
 			sprintf(p, ": error %d", errno);
 	}
-	printf("postbox: %s\n", errbuf);
+	printf("sendmail: %s\n", errbuf);
 	fflush(stdout);
 	Errors++;
 
