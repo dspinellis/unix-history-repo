@@ -13,14 +13,14 @@ char rcsid_kerberos5_c[] = "$Id: kerberos5.c,v 1.3 91/07/19 16:37:57 jtkohl Exp 
 #endif /* lint */
 
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kerberos5.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)kerberos5.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*

@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1980, 1986 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)grnplot.h	6.2 (Berkeley) %G%
+ *	@(#)grnplot.h	8.1 (Berkeley) %G%
  */
 
 /*
