@@ -35,7 +35,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	5.4 (Berkeley) 7/15/92";
+static char sccsid[] = "@(#)jobs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -93,7 +93,7 @@ STATIC int waitproc();
 #endif
 
 
- 
+
 /*
  * Turn job control on and off.
  *
@@ -833,7 +833,7 @@ waitproc(block, status)
  */
 int job_warning = 0;
 int
-stoppedjobs() 
+stoppedjobs()
 {
 	register int jobno;
 	register struct job *jp;
