@@ -14,52 +14,17 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
-CFLAGS=	-O
+SUBDIR=	aard chess compat ddl zork
 
-# Programs that live in subdirectories, and have makefiles of their own.
-#
-SUBDIR=	aard ching compat ddl zork
-
-# C sources that live in the current directory
-#
-SRCS=	chess.c
-
-# C programs that live in the current directory and do not need
-# explicit make lines.
-#
-STD=	chess
-
-all: ${SUBDIR} ${STD}
+all: ${SUBDIR}
 
 ${SUBDIR}: FRC
-	cd $@; make ${MFLAGS}
+	cd $@; make ${MFLAGS} DESTDIR=${DESTDIR}
 
-${STD}:
-	${CC} ${CFLAGS} -o $@ $@.c
-
-install: FRC
+clean cleandir depend install lint tags: FRC
 	-for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	-for i in ${STD}; do \
-		(install -s -o bin -g bin -m 755 $$i ${DESTDIR}/usr/games/$$i); \
-	done
-	install -c -o bin -g bin -m 444 chess.bin ${DESTDIR}/usr/games/lib/chess
-
-clean: FRC
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f ${STD} a.out core *.s *.o
-
-depend: FRC
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
-	mkdep ${CFLAGS} ${SRCS}
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
 FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-chess.o: chess.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
