@@ -3,15 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vba.c	1.11.1.1 (Berkeley) %G%
+ *	@(#)vba.c	1.12 (Berkeley) %G%
  */
 
 /*
  * Tahoe VERSAbus adapator support routines.
  */
-
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
 
 #include "param.h"
 #include "buf.h"
@@ -28,9 +25,10 @@
 #include "syslog.h"
 #include "malloc.h"
 
-#include "../tahoevba/vbavar.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoe/pte.h"
 
-#define	kvtopte(v) (&Sysmap[btop((int)(v) &~ KERNBASE)])
+#include "../tahoevba/vbavar.h"
 
 /*
  * Allocate private page map and intermediate buffer
