@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.67 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.68 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.67 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.68 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -285,7 +285,7 @@ gothostent:
 			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN ||
 			    (errno == ECONNREFUSED && UseNameServer))
 			{
-				mci->mci_status = "466";
+				mci->mci_status = "4.4.3";
 				return (EX_TEMPFAIL);
 			}
 #endif
