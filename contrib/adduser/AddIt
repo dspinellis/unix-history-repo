@@ -1,8 +1,8 @@
-#/usr/local/bin/perl
+#!/usr/local/bin/perl
 
 #  Copyright (c) 1994 GB Data Consulting
 #  All rights reserved.
-#  VERSION 0.1 BETA 
+#  VERSION 0.1.1 BETA 
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
 #  are met:
@@ -156,7 +156,7 @@ if ($usershell eq "\/bin\/csh" || $usershell eq "\/usr\/local\/bin\/tcsh")
    {
    system "cp dot.cshrc $userdir\/.cshrc";
    }
-system  "chmod -R 644 $userdir";
+system  "chmod -R 654 $userdir";
 system  "chown -R $userid.$groupid $userdir";
 
 #
