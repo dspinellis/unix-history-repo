@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.12	%G%
+#	@(#)makefile	1.13	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -108,10 +108,6 @@ Intro:	Intro.tx
 wup:	Intro.tx
 	@nroff -ms Intro.tx | ul | more
 
-tape:	
-	@tar cbf 20 $(TAPE) mkvers.c mkindx.c \
-	Makefile READ_ME NEWS Intro.tx Intro $(SOURCES)
-
 order:
 	@rm -f order
 	@lorder $(OBJECTS) | tsort >order
@@ -122,3 +118,110 @@ tags:	$(SOURCES)
 libI66.a:	yes_66.o
 	@rm -f libI66.a
 	@cp yes_66.o libI66.a
+
+# End of Makefile
+# Below this line is nor normally distributed ...
+
+Makefile:	makefile
+	@sed -n -e "1,/End of Makefile/p" makefile > Makefile
+
+tape:	Makefile
+	@tar cbf 20 $(TAPE) mkvers.c mkindx.c \
+	Makefile READ_ME NEWS Intro.tx Intro $(SOURCES)
+
+
+# below here is SCCS stuff ...
+
+backspace.c:	s.backspace.c
+	@rm -f backspace.c
+	get s.backspace.c
+close.c:	s.close.c
+	@rm -f close.c
+	get s.close.c
+dballoc.c:	s.dballoc.c
+	@rm -f dballoc.c
+	get s.dballoc.c
+dfe.c:	s.dfe.c
+	@rm -f dfe.c
+	get s.dfe.c
+due.c:	s.due.c
+	@rm -f due.c
+	get s.due.c
+endfile.c:	s.endfile.c
+	@rm -f endfile.c
+	get s.endfile.c
+err.c:	s.err.c
+	@rm -f err.c
+	get s.err.c
+fmt.c:	s.fmt.c
+	@rm -f fmt.c
+	get s.fmt.c
+fmtlib.c:	s.fmtlib.c
+	@rm -f fmtlib.c
+	get s.fmtlib.c
+iio.c:	s.iio.c
+	@rm -f iio.c
+	get s.iio.c
+inquire.c:	s.inquire.c
+	@rm -f inquire.c
+	get s.inquire.c
+lwrite.c:	s.lwrite.c
+	@rm -f lwrite.c
+	get s.lwrite.c
+lread.c:	s.lread.c
+	@rm -f lread.c
+	get s.lread.c
+dolio.c:	s.dolio.c
+	@rm -f dolio.c
+	get s.dolio.c
+open.c:	s.open.c
+	@rm -f open.c
+	get s.open.c
+rdfmt.c:	s.rdfmt.c
+	@rm -f rdfmt.c
+	get s.rdfmt.c
+rewind.c:	s.rewind.c
+	@rm -f rewind.c
+	get s.rewind.c
+sfe.c:	s.sfe.c
+	@rm -f sfe.c
+	get s.sfe.c
+sue.c:	s.sue.c
+	@rm -f sue.c
+	get s.sue.c
+douio.c:	s.douio.c
+	@rm -f douio.c
+	get s.douio.c
+util.c:	s.util.c
+	@rm -f util.c
+	get s.util.c
+wrtfmt.c:	s.wrtfmt.c
+	@rm -f wrtfmt.c
+	get s.wrtfmt.c
+dofio.c:	s.dofio.c
+	@rm -f dofio.c
+	get s.dofio.c
+f_errlist.c:	s.f_errlist.c
+	@rm -f f_errlist.c
+	get s.f_errlist.c
+yes_66.c:	s.yes_66.c
+	@rm -f yes_66.c
+	get s.yes_66.c
+no_66.c:	s.no_66.c
+	@rm -f no_66.c
+	get s.no_66.c
+f_errno.h:	s.f_errno.h
+	@rm -f f_errno.h
+	get s.f_errno.h
+fiodefs.h:	s.fiodefs.h
+	@rm -f fiodefs.h
+	get s.fiodefs.h
+fio.h:	s.fio.h
+	@rm -f fio.h
+	get s.fio.h
+format.h:	s.format.h
+	@rm -f format.h
+	get s.format.h
+lio.h:	s.lio.h
+	@rm -f lio.h
+	get s.lio.h
