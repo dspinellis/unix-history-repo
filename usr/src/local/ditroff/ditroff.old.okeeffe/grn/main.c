@@ -1,4 +1,4 @@
-/*	main.c	1.4	(Berkeley) 83/08/12
+/*	main.c	1.5	(Berkeley) 83/08/12
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -61,7 +61,7 @@ char *doinput();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.4	83/08/12";
+char	SccsId[] = "main.c	1.5	83/08/12";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -514,7 +514,7 @@ char *line;
 
     sscanf(line, "%s%s", &str1[0], &str2[0]);
     for (chr = &str1[0]; *chr; chr++)		/* convert command to */
-	if(isupper(*chr) *chr = tolower(*chr);		/* lower case */
+	if(isupper(*chr)) *chr = tolower(*chr);		/* lower case */
     switch (str1[0]) {
 
 	case '1':
