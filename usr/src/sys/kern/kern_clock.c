@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.23	81/07/09	*/
+/*	kern_clock.c	4.24	81/08/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -188,8 +188,10 @@ softclock(pc, ps)
 	if (panicstr == 0) {
 		for (;;) {
 			s = spl7();
-			if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0)
+			if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0) {
+				splx(s);
 				break;
+			}
 			calltodo.c_next = p1->c_next;
 			arg = p1->c_arg;
 			func = p1->c_func;
