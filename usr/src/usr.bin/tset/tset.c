@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -95,7 +95,12 @@ static char sccsid[] = "@(#)tset.c	5.3 (Berkeley) %G%";
 **			the kill character is untouched; however, if
 **			not specified and the kill character is NULL
 **			(zero byte), the kill character is set to '@'.
-**		-iC -- reserved for setable interrupt character.
+**		-iC -- set the interupt character to C on all terminals.
+			Default for C is Delete.  If not specified, the
+			interupt character is untouched; however, if
+			not specified and the kill character is NULL
+			(zero byte), the interupt character is set to
+			Delete.
 **		-qC -- reserved for setable quit character.
 **		-m -- map the system identified type to some user
 **			specified type. The mapping can be baud rate
@@ -272,13 +277,17 @@ static char sccsid[] = "@(#)tset.c	5.3 (Berkeley) %G%";
 #  define rindex strrchr
 #  define curerase mode.c_cc[VERASE]
 #  define curkill mode.c_cc[VKILL]
+#  define curintr mode.c_cc[VINTR]
 #  define olderase oldmode.c_cc[VERASE]
 #  define oldkill oldmode.c_cc[VKILL]
+#  define oldintr oldmode.c_cc[VINTR]
 # else
 #  define curerase mode.sg_erase
 #  define curkill mode.sg_kill
+#  define curintr tchar.t_intrc
 #  define olderase oldmode.sg_erase
 #  define oldkill oldmode.sg_kill
+#  define oldintr oldtchar.t_intrc
 # endif
 
 # ifndef V6
@@ -308,6 +317,7 @@ static char sccsid[] = "@(#)tset.c	5.3 (Berkeley) %G%";
 # define	isalnum(c)	(c > ' ' && !(index("<@=>!:|\177", c)) )
 # define	OLDERASE	'#'
 # define	OLDKILL		'@'
+# define	OLDINTR		'\177'	/* del */
 
 # define	FILEDES		2	/* do gtty/stty on this descriptor */
 # define	STDOUT		1	/* output of -s/-S to this descriptor */
@@ -427,6 +437,7 @@ int VirTermNo = -2;
 
 char	Erase_char;		/* new erase character */
 char	Kill_char;		/* new kill character */
+char	Intr_char;		/* new interupt character */
 char	Specialerase;		/* set => Erase_char only on terminals with backspace */
 
 # ifdef	GTTYN
@@ -473,6 +484,8 @@ struct delay
 # ifndef USG
 struct sgttyb	mode;
 struct sgttyb	oldmode;
+struct tchars	tchar;
+struct tchars	oldtchar;
 # else
 struct termio	mode;
 struct termio	oldmode;
@@ -538,6 +551,10 @@ char	*argv[];
 		exit(1);
 	}
 	bmove(&mode, &oldmode, sizeof mode);
+# ifdef TIOCGETC
+	(void)ioctl(FILEDES, TIOCGETC, &tchar);
+	bmove(&tchar, &oldtchar, sizeof tchar);
+# endif
 # ifndef USG
 	ospeed = mode.sg_ospeed & 017;
 # else
@@ -600,7 +617,7 @@ char	*argv[];
 		ioctl(FILEDES, TCGETA, &mode);
 		curerase = CHK(curerase, OLDERASE);
 		curkill = CHK(curkill, OLDKILL);
-		mode.c_cc[VINTR] = CHK(mode.c_cc[VINTR], CTRL('?'));
+		curintr = CHK(curintr, CTRL('?'));
 		mode.c_cc[VQUIT] = CHK(mode.c_cc[VQUIT], CTRL('\\'));
 		mode.c_cc[VEOF] = CHK(mode.c_cc[VEOF], CTRL('D'));
 
@@ -666,6 +683,21 @@ char	*argv[];
 					p++;
 				}
 				continue;
+
+# if defined(USG) || defined(TIOCGETC)
+			  case 'i':	/* erase character */
+				if (*p == NULL)
+					Intr_char = CTRL('C');
+				else
+				{
+					if (*p == '^' && p[1] != NULL)
+						Intr_char = CTRL(*++p);
+					else
+						Intr_char = *p;
+					p++;
+				}
+				continue;
+# endif
 
 			  case 'k':	/* kill character */
 				if (*p == NULL)
@@ -997,6 +1029,11 @@ ask:
 		if (Erase_char != 0)
 			curerase = Erase_char;
 
+		if (curintr == 0)
+			curintr = OLDKILL;
+		if (Intr_char != 0)
+			curintr = Intr_char;
+
 		if (curkill == 0)
 			curkill = OLDKILL;
 		if (Kill_char != 0)
@@ -1115,7 +1152,8 @@ ask:
 		/* Set window size */
 		if (DoSetenv) {
 			ioctl(FILEDES, TIOCGWINSZ, &win);
-			if (win.ws_row == 0 && win.ws_col == 0) {
+			if (win.ws_row == 0 && win.ws_col == 0 &&
+			    lines > 0 && columns > 0) {
 				win.ws_row = lines;
 				win.ws_col = columns;
 				ioctl(FILEDES, TIOCSWINSZ, &win);
@@ -1266,9 +1304,10 @@ ask:
 	if (RepOnly)
 		exit(0);
 
-	/* tell about changing erase and kill characters */
+	/* tell about changing erase, kill and interupt characters */
 	reportek("Erase", curerase, olderase, OLDERASE);
 	reportek("Kill", curkill, oldkill, OLDKILL);
+	reportek("Interupt", curintr, oldintr, OLDINTR);
 
 # ifdef V6
 	/* update htmp */
@@ -1355,17 +1394,30 @@ int	flag;
 # else
 	struct termio *ttymode;
 # endif
+# ifdef TIOCGETC
+	struct tchars *ttytchars;
+# endif
 
-	if (flag < 0)	/* unconditionally reset oldmode (called from init) */
+	if (flag < 0) { /* unconditionally reset oldmode (called from init) */
 		ttymode = &oldmode;
-	else if (!bequal(&mode, &oldmode, sizeof mode))
+# ifdef TIOCGETC
+		ttytchars = &oldtchar;
+# endif
+	} else if (!bequal(&mode, &oldmode, sizeof mode)) {
 		ttymode = &mode;
-	else		/* don't need it */
+# ifdef TIOCGETC
+		ttytchars = &tchar;
+# endif
+	} else	{	/* don't need it */
 # ifndef USG
 	ttymode = (struct sgttyb *)0;
 # else
 	ttymode = (struct termio *)0;
 # endif
+# ifdef TIOCGETC
+	ttytchars = (struct tchars *)0;
+# endif
+	}
 	
 	if (ttymode)
 	{
@@ -1379,6 +1431,11 @@ int	flag;
 #  endif
 # endif
 	}
+# ifdef TIOCGETC
+	if (ttytchars) {
+		ioctl(FILEDES, TIOCSETC, ttytchars);
+	}
+# endif
 # ifdef CBVIRTTERM
 	if (VirTermNo != -2) {
 		int r1, r2;
