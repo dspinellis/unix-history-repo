@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.9	85/03/18	*/
+/*	ip_icmp.c	6.10	85/04/16	*/
 
 #include "param.h"
 #include "systm.h"
@@ -269,6 +269,7 @@ icmp_input(m)
 reflect:
 	ip->ip_len += hlen;		/* since ip_input deducts this */
 	icmpstat.icps_reflect++;
+	icmpstat.icps_outhist[icp->icmp_type]++;
 	icmp_reflect(ip);
 	return;
 free:
