@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: ipcp.c,v 1.3 1994/02/14 04:45:31 paulus Exp $";
+static char rcsid[] = "$Id: ipcp.c,v 1.2 1994/03/30 09:31:29 jkh Exp $";
 #endif
 
 /*
@@ -46,13 +46,13 @@ static char rcsid[] = "$Id: ipcp.c,v 1.3 1994/02/14 04:45:31 paulus Exp $";
 
 
 /* global vars */
-ipcp_options ipcp_wantoptions[NPPP];	/* Options that we want to request */
-ipcp_options ipcp_gotoptions[NPPP];	/* Options that peer ack'd */
-ipcp_options ipcp_allowoptions[NPPP];	/* Options we allow peer to request */
-ipcp_options ipcp_hisoptions[NPPP];	/* Options that we ack'd */
+ipcp_options ipcp_wantoptions[_NPPP];	/* Options that we want to request */
+ipcp_options ipcp_gotoptions[_NPPP];	/* Options that peer ack'd */
+ipcp_options ipcp_allowoptions[_NPPP];	/* Options we allow peer to request */
+ipcp_options ipcp_hisoptions[_NPPP];	/* Options that we ack'd */
 
 /* local vars */
-static int cis_received[NPPP];		/* # Conf-Reqs received */
+static int cis_received[_NPPP];		/* # Conf-Reqs received */
 
 /*
  * Callbacks for fsm code.  (CI = Configuration Information)
@@ -68,7 +68,7 @@ static void ipcp_up __ARGS((fsm *));		/* We're UP */
 static void ipcp_down __ARGS((fsm *));		/* We're DOWN */
 
 
-fsm ipcp_fsm[NPPP];		/* IPCP fsm structure */
+fsm ipcp_fsm[_NPPP];		/* IPCP fsm structure */
 
 static fsm_callbacks ipcp_callbacks = { /* IPCP callback routines */
     ipcp_resetci,		/* Reset our Configuration Information */

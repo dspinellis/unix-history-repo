@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: upap.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
+static char rcsid[] = "$Id: upap.c,v 1.2 1994/03/30 09:31:42 jkh Exp $";
 #endif
 
 /*
@@ -35,7 +35,7 @@ static char rcsid[] = "$Id: upap.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
 #include "upap.h"
 
 
-upap_state upap[NPPP];		/* UPAP state; one for each unit */
+upap_state upap[_NPPP];		/* UPAP state; one for each unit */
 
 
 static void upap_timeout __ARGS((caddr_t));

@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: chap.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
+static char rcsid[] = "$Id: chap.c,v 1.2 1994/03/30 09:31:23 jkh Exp $";
 #endif
 
 /*
@@ -36,7 +36,7 @@ static char rcsid[] = "$Id: chap.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
 #include "chap.h"
 #include "md5.h"
 
-chap_state chap[NPPP];		/* CHAP state; one for each unit */
+chap_state chap[_NPPP];		/* CHAP state; one for each unit */
 
 static void ChapChallengeTimeout __ARGS((caddr_t));
 static void ChapResponseTimeout __ARGS((caddr_t));

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: fsm.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
+static char rcsid[] = "$Id: fsm.c,v 1.2 1994/03/30 09:31:25 jkh Exp $";
 #endif
 
 /*
@@ -49,7 +49,7 @@ static void fsm_sconfreq __ARGS((fsm *, int));
 
 #define PROTO_NAME(f)	((f)->callbacks->proto_name)
 
-int peer_mru[NPPP];
+int peer_mru[_NPPP];
 
 
 /*

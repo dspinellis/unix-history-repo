@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * $Id: pppd.h,v 1.1 1993/11/11 03:54:25 paulus Exp $
+ * $Id: pppd.h,v 1.2 1994/03/30 09:31:41 jkh Exp $
  */
 
 /*
@@ -29,7 +29,7 @@
 
 #include <sys/param.h>		/* for MAXPATHLEN and BSD4_4, if defined */
 
-#define NPPP	1		/* One PPP interface supported (per process) */
+#define _NPPP	1		/* One PPP interface supported (per process) */
 
 /*
  * Limits.

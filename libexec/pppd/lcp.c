@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: lcp.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
+static char rcsid[] = "$Id: lcp.c,v 1.2 1994/03/30 09:31:31 jkh Exp $";
 #endif
 
 /*
@@ -50,11 +50,11 @@ static char rcsid[] = "$Id: lcp.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
 #include "ipcp.h"
 
 /* global vars */
-fsm lcp_fsm[NPPP];			/* LCP fsm structure (global)*/
-lcp_options lcp_wantoptions[NPPP];	/* Options that we want to request */
-lcp_options lcp_gotoptions[NPPP];	/* Options that peer ack'd */
-lcp_options lcp_allowoptions[NPPP];	/* Options we allow peer to request */
-lcp_options lcp_hisoptions[NPPP];	/* Options that we ack'd */
+fsm lcp_fsm[_NPPP];			/* LCP fsm structure (global)*/
+lcp_options lcp_wantoptions[_NPPP];	/* Options that we want to request */
+lcp_options lcp_gotoptions[_NPPP];	/* Options that peer ack'd */
+lcp_options lcp_allowoptions[_NPPP];	/* Options we allow peer to request */
+lcp_options lcp_hisoptions[_NPPP];	/* Options that we ack'd */
 
 /*
  * Callbacks for fsm code.  (CI = Configuration Information)
