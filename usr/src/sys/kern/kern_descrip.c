@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.20	82/12/17	*/
+/*	kern_descrip.c	5.21	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,11 +48,10 @@ getdprop()
 		return;
 	adtype.dt_type = 0;		/* XXX */
 	adtype.dt_protocol = 0;		/* XXX */
-	if (copyout((caddr_t)&adtype, (caddr_t)uap->dtypeb,
-	    sizeof (struct dtype)) < 0) {
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&adtype, (caddr_t)uap->dtypeb,
+	    sizeof (struct dtype)); 
+	if (u.u_error)
 		return;
-	}
 }
 
 getdopt()
@@ -160,11 +159,10 @@ wrap()
 	fp = getf(uap->d);
 	if (fp == 0)
 		return;
-	if (copyin((caddr_t)uap->dtypeb, (caddr_t)&adtype,
-	    sizeof (struct dtype)) < 0) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->dtypeb, (caddr_t)&adtype,
+	    sizeof (struct dtype));
+	if (u.u_error)
 		return;
-	}
 	/* DO WRAP */
 }
 
@@ -193,11 +191,10 @@ select()
 
 #define	getbits(name, x) \
 	if (uap->name) { \
-		if (copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
-		    sizeof (ibits[x]))) { \
-			u.u_error = EFAULT; \
+		u.u_error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
+		    sizeof (ibits[x])); \
+		if (u.u_error) \
 			goto done; \
-		} \
 	} else \
 		ibits[x] = 0;
 	getbits(in, 0);
@@ -206,10 +203,10 @@ select()
 #undef	getbits
 
 	if (uap->tv) {
-		if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (atv))) {
-			u.u_error = EFAULT;
+		u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
+			sizeof (atv));
+		if (u.u_error)
 			goto done;
-		}
 		if (itimerfix(&atv)) {
 			u.u_error = EINVAL;
 			goto done;
@@ -253,9 +250,10 @@ retry:
 done:
 #define	putbits(name, x) \
 	if (uap->name) { \
-		if (copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
-		    sizeof (obits[x]))) \
-			u.u_error = EFAULT; \
+		int error = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
+		    sizeof (obits[x])); \
+		if (error) \
+			u.u_error = error; \
 	}
 	putbits(in, 0);
 	putbits(ou, 1);

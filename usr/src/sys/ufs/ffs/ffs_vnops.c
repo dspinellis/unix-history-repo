@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.45	82/12/24	*/
+/*	ffs_vnops.c	4.46	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -509,8 +509,7 @@ stat1(ip, ub)
 	else
 		ds.st_blksize = ip->i_fs->fs_bsize;
 	ds.st_spare4[0] = ds.st_spare4[1] = ds.st_spare4[2] = 0;
-	if (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)) < 0)
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds));
 }
 
 /*
@@ -738,9 +737,8 @@ outime()
 	uap = (struct a *)u.u_ap;
 	if ((ip = owner(1)) == NULL)
 		return;
-	if (copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof(tv))) {
-		u.u_error = EFAULT;
-	} else {
+	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof(tv));
+	if (u.u_error == 0) {
 		ip->i_flag |= IACC|IUPD|ICHG;
 		tv0.tv_sec = tv[0]; tv0.tv_usec = 0;
 		tv1.tv_sec = tv[1]; tv1.tv_usec = 0;

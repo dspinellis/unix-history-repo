@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.28	82/12/28	*/
+/*	sys_generic.c	5.29	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,11 +60,10 @@ readv()
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
-	if (copyin((caddr_t)uap->iovp, (caddr_t)aiov,
-	    (unsigned)(uap->iovcnt * sizeof (struct iovec)))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
+	    (unsigned)(uap->iovcnt * sizeof (struct iovec)));
+	if (u.u_error)
 		return;
-	}
 	rwuio(&auio, UIO_READ);
 }
 
@@ -104,11 +103,10 @@ writev()
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
-	if (copyin((caddr_t)uap->iovp, (caddr_t)aiov,
-	    (unsigned)(uap->iovcnt * sizeof (struct iovec)))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
+	    (unsigned)(uap->iovcnt * sizeof (struct iovec)));
+	if (u.u_error)
 		return;
-	}
 	rwuio(&auio, UIO_WRITE);
 }
 
@@ -350,7 +348,7 @@ uiomove(cp, n, rw, uio)
 			else
 				error = copyin(iov->iov_base, cp, cnt);
 			if (error)
-				return (EFAULT);	/* XXX */
+				return (error);
 			break;
 
 		case 1:
@@ -513,10 +511,9 @@ ioctl()
 		return;
 	}
 	if (com&IOC_IN && size) {
-		if (copyin(uap->cmarg, (caddr_t)data, (u_int)size)) {
-			u.u_error = EFAULT;
+		u.u_error = copyin(uap->cmarg, (caddr_t)data, (u_int)size);
+		if (u.u_error)
 			return;
-		}
 	} else
 		*(caddr_t *)data = uap->cmarg;
 	/*
@@ -556,9 +553,8 @@ returndata:
 	 * Copy any data to user, size was
 	 * already set and checked above.
 	 */
-	if (u.u_error == 0 && (com&IOC_OUT))
-		if (size && copyout(data, uap->cmarg, (u_int)size))
-			u.u_error = EFAULT;
+	if (u.u_error == 0 && (com&IOC_OUT) && size)
+		u.u_error = copyout(data, uap->cmarg, (u_int)size);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.13	82/12/17	*/
+/*	kern_prot.c	5.14	82/12/28	*/
 
 /*
  * System calls related to processes and protection
@@ -75,11 +75,10 @@ getgroups()
 		return;
 	}
 	uap->gidsetsize = gp - u.u_groups;
-	if (copyout((caddr_t)u.u_groups, (caddr_t)uap->gidset,
-	    uap->gidsetsize * sizeof (u.u_groups[0]))) {
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)u.u_groups, (caddr_t)uap->gidset,
+	    uap->gidsetsize * sizeof (u.u_groups[0]));
+	if (u.u_error)
 		return;
-	}
 	u.u_r.r_val1 = uap->gidsetsize;
 }
 
@@ -226,11 +225,10 @@ setgroups()
 		u.u_error = EINVAL;
 		return;
 	}
-	if (copyin((caddr_t)uap->gidset, (caddr_t)u.u_groups,
-	    uap->gidsetsize * sizeof (u.u_groups[0]))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->gidset, (caddr_t)u.u_groups,
+	    uap->gidsetsize * sizeof (u.u_groups[0]));
+	if (u.u_error)
 		return;
-	}
 	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
 		*gp = -1;
 }

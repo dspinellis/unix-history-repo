@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.38	82/12/14	*/
+/*	uipc_syscalls.c	4.39	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -121,10 +121,10 @@ accept()
 
 	if (uap->name == 0)
 		goto noname;
-	if (copyin((caddr_t)uap->anamelen, (caddr_t)&namelen, sizeof (namelen))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->anamelen, (caddr_t)&namelen,
+		sizeof (namelen));
+	if (u.u_error)
 		return;
-	}
 	if (useracc((caddr_t)uap->name, (u_int)namelen, B_WRITE) == 0) {
 		u.u_error = EFAULT;
 		return;
@@ -362,10 +362,10 @@ recvfrom()
 	struct mbuf *from;
 	int fromlen;
 
-	if (copyin((caddr_t)uap->fromlenaddr, (caddr_t)&fromlen, sizeof (fromlen))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->fromlenaddr, (caddr_t)&fromlen,
+		sizeof (fromlen));
+	if (u.u_error)
 		return;
-	}
 	fp = getf(uap->s);
 	if (fp == 0)
 		return;
@@ -393,16 +393,15 @@ recvfrom()
 	else {
 		if (fromlen > from->m_len)
 			fromlen = from->m_len;
-		if (copyout(mtod(from, caddr_t), uap->from, (u_int)fromlen)) {
-			u.u_error = EFAULT;
+		u.u_error = copyout(mtod(from, caddr_t), uap->from,
+			(u_int)fromlen);
+		if (u.u_error)
 			goto bad;
-		}
 	}
-	if (copyout((caddr_t)&fromlen, (caddr_t)uap->fromlenaddr,
-	    sizeof (fromlen))) {
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&fromlen, (caddr_t)uap->fromlenaddr,
+	    sizeof (fromlen));
+	if (u.u_error)
 		goto bad;
-	}
 	u.u_r.r_val1 = uap->len - auio.uio_resid;
 bad:
 	if (from)
@@ -535,8 +534,8 @@ ssocketaddr()
 		(*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0);
 	if (u.u_error)
 		goto bad;
-	if (copyout(mtod(m, caddr_t), (caddr_t)uap->asa, sizeof (struct sockaddr)))
-		u.u_error = EFAULT;
+	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa,
+		sizeof (struct sockaddr));
 bad:
 	m_freem(m);
 }
@@ -547,17 +546,18 @@ sockname(aname, name, namelen)
 	int namelen;
 {
 	register struct mbuf *m;
+	int error;
 
 	if (namelen > MLEN)
 		return (EINVAL);
 	m = m_get(M_WAIT, MT_SONAME);
 	m->m_len = namelen;
-	if (copyin(name, mtod(m, caddr_t), (u_int)namelen)) {
+	error = copyin(name, mtod(m, caddr_t), (u_int)namelen);
+	if (error)
 		(void) m_free(m);
-		return (EFAULT);
-	}
-	*aname = m;
-	return (0);
+	else
+		*aname = m;
+	return (error);
 }
 
 sockopt(so, opt)
@@ -565,21 +565,24 @@ sockopt(so, opt)
 	caddr_t opt;
 {
 	register struct mbuf *m;
+	int error;
 
 	if (opt == 0) {
 		so->so_optlen = 0;
 		so->so_optdata = 0;
 		return (0);
 	}
-	if (copyin((caddr_t)opt, (caddr_t)so, sizeof (struct socketopt)))
-		return (EFAULT);
+	error = copyin((caddr_t)opt, (caddr_t)so, sizeof (struct socketopt));
+	if (error)
+		return (error);
 	if (so->so_optlen < 0 || so->so_optlen > MLEN)
 		return (EINVAL);
 	m = m_get(M_WAIT, MT_SOOPTS);
 	m->m_len = so->so_optlen;
-	if (copyin(so->so_optdata, mtod(m, caddr_t), (u_int)m->m_len)) {
+	error = copyin(so->so_optdata, mtod(m, caddr_t), (u_int)m->m_len);
+	if (error) {
 		(void) m_free(m);
-		return (EFAULT);
+		return (error);
 	}
 	so->so_optdata = mtod(m, caddr_t);
 	return (0);

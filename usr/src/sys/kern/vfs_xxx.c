@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	4.3	82/12/28	*/
+/*	vfs_xxx.c	4.4	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -122,7 +122,6 @@ ostat1(ip, ub)
 	ds.ost_atime = (int)ip->i_atime;
 	ds.ost_mtime = (int)ip->i_mtime;
 	ds.ost_ctime = (int)ip->i_ctime;
-	if (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)) < 0)
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds));
 }
 #endif
