@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsproto.h	7.10 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -92,8 +92,9 @@
 #define	NQNFSPROC_GETLEASE	19
 #define	NQNFSPROC_VACATED	20
 #define	NQNFSPROC_EVICTED	21
+#define	NQNFSPROC_ACCESS	22
 
-#define	NFS_NPROCS		22
+#define	NFS_NPROCS		23
 /* Conversion macros */
 extern int		vttoif_tab[];
 #define	vtonfs_mode(t,m) \

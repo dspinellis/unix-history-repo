@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.92 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.93 (Berkeley) %G%
  */
 
 /*
@@ -107,7 +107,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_mknod_desc, spec_mknod },	/* mknod */
 	{ &vop_open_desc, spec_open },		/* open */
 	{ &vop_close_desc, nfsspec_close },	/* close */
-	{ &vop_access_desc, nfs_access },	/* access */
+	{ &vop_access_desc, nfsspec_access },	/* access */
 	{ &vop_getattr_desc, nfs_getattr },	/* getattr */
 	{ &vop_setattr_desc, nfs_setattr },	/* setattr */
 	{ &vop_read_desc, nfsspec_read },	/* read */
@@ -155,7 +155,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_mknod_desc, fifo_mknod },	/* mknod */
 	{ &vop_open_desc, fifo_open },		/* open */
 	{ &vop_close_desc, nfsfifo_close },	/* close */
-	{ &vop_access_desc, nfs_access },	/* access */
+	{ &vop_access_desc, nfsspec_access },	/* access */
 	{ &vop_getattr_desc, nfs_getattr },	/* getattr */
 	{ &vop_setattr_desc, nfs_setattr },	/* setattr */
 	{ &vop_read_desc, nfsfifo_read },	/* read */
@@ -201,7 +201,7 @@ void nqnfs_clientlease();
  * Global variables
  */
 extern u_long nfs_procids[NFS_NPROCS];
-extern u_long nfs_prog, nfs_vers;
+extern u_long nfs_prog, nfs_vers, nfs_true, nfs_false;
 extern char nfsiobuf[MAXPHYS+NBPG];
 struct buf nfs_bqueue;		/* Queue head for nfsiod's */
 struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
@@ -229,7 +229,9 @@ nfs_null(vp, cred, procp)
 
 /*
  * nfs access vnode op.
- * Essentially just get vattr and then imitate iaccess()
+ * For nfs, just return ok. File accesses may fail later.
+ * For nqnfs, use the access rpc to check accessibility. If file modes are
+ * changed on the server, accesses might still fail later.
  */
 int
 nfs_access(ap)
@@ -240,41 +242,39 @@ nfs_access(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	register struct vattr *vap;
-	register gid_t *gp;
-	register struct ucred *cred = ap->a_cred;
-	mode_t mode = ap->a_mode;
-	struct vattr vattr;
-	register int i;
-	int error;
+	register struct vnode *vp = ap->a_vp;
+	register u_long *tl;
+	register caddr_t cp;
+	caddr_t bpos, dpos;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	/*
-	 * If you're the super-user,
-	 * you always get access.
+	 * There is no way to check accessibility via. ordinary nfs, so if
+	 * access isn't allowed they will get burned later.
 	 */
-	if (cred->cr_uid == 0)
-		return (0);
-	vap = &vattr;
-	if (error = VOP_GETATTR(ap->a_vp, vap, cred, ap->a_p))
+	if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) {
+		nfsstats.rpccnt[NQNFSPROC_ACCESS]++;
+		nfsm_reqhead(vp, NQNFSPROC_ACCESS, NFSX_FH + 3 * NFSX_UNSIGNED);
+		nfsm_fhtom(vp);
+		nfsm_build(tl, u_long *, 3 * NFSX_UNSIGNED);
+		if (ap->a_mode & VREAD)
+			*tl++ = nfs_true;
+		else
+			*tl++ = nfs_false;
+		if (ap->a_mode & VWRITE)
+			*tl++ = nfs_true;
+		else
+			*tl++ = nfs_false;
+		if (ap->a_mode & VEXEC)
+			*tl = nfs_true;
+		else
+			*tl = nfs_false;
+		nfsm_request(vp, NQNFSPROC_ACCESS, ap->a_p, ap->a_cred);
+		nfsm_reqdone;
 		return (error);
-	/*
-	 * Access check is based on only one of owner, group, public.
-	 * If not owner, then check group. If not a member of the
-	 * group, then check public access.
-	 */
-	if (cred->cr_uid != vap->va_uid) {
-		mode >>= 3;
-		gp = cred->cr_groups;
-		for (i = 0; i < cred->cr_ngroups; i++, gp++)
-			if (vap->va_gid == *gp)
-				goto found;
-		mode >>= 3;
-found:
-		;
-	}
-	if ((vap->va_mode & mode) != 0)
+	} else
 		return (0);
-	return (EACCES);
 }
 
 /*
@@ -2322,6 +2322,57 @@ nfs_update(ap)
 	/* Use nfs_setattr */
 	printf("nfs_update: need to implement!!");
 	return (EOPNOTSUPP);
+}
+
+/*
+ * nfs special file access vnode op.
+ * Essentially just get vattr and then imitate iaccess() since the device is
+ * local to the client.
+ */
+int
+nfsspec_access(ap)
+	struct vop_access_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	register struct vattr *vap;
+	register gid_t *gp;
+	register struct ucred *cred = ap->a_cred;
+	mode_t mode = ap->a_mode;
+	struct vattr vattr;
+	register int i;
+	int error;
+
+	/*
+	 * If you're the super-user,
+	 * you always get access.
+	 */
+	if (cred->cr_uid == 0)
+		return (0);
+	vap = &vattr;
+	if (error = VOP_GETATTR(ap->a_vp, vap, cred, ap->a_p))
+		return (error);
+	/*
+	 * Access check is based on only one of owner, group, public.
+	 * If not owner, then check group. If not a member of the
+	 * group, then check public access.
+	 */
+	if (cred->cr_uid != vap->va_uid) {
+		mode >>= 3;
+		gp = cred->cr_groups;
+		for (i = 0; i < cred->cr_ngroups; i++, gp++)
+			if (vap->va_gid == *gp)
+				goto found;
+		mode >>= 3;
+found:
+		;
+	}
+	if ((vap->va_mode & mode) != 0)
+		return (0);
+	return (EACCES);
 }
 
 /*

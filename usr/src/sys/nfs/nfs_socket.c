@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.37 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.38 (Berkeley) %G%
  */
 
 /*
@@ -105,7 +105,7 @@ static int nfsrv_errmap[ELAST] = {
  * 4 - write
  */
 static int proct[NFS_NPROCS] = {
-	0, 1, 0, 0, 2, 3, 3, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0,
+	0, 1, 0, 0, 2, 3, 3, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0,
 };
 
 /*
@@ -151,7 +151,8 @@ int	nfsrv_null(),
 	nfsrv_noop(),
 	nqnfsrv_readdirlook(),
 	nqnfsrv_getlease(),
-	nqnfsrv_vacated();
+	nqnfsrv_vacated(),
+	nqnfsrv_access();
 
 int (*nfsrv_procs[NFS_NPROCS])() = {
 	nfsrv_null,
@@ -175,6 +176,8 @@ int (*nfsrv_procs[NFS_NPROCS])() = {
 	nqnfsrv_readdirlook,
 	nqnfsrv_getlease,
 	nqnfsrv_vacated,
+	nfsrv_noop,
+	nqnfsrv_access,
 };
 
 struct nfsreq nfsreqh;

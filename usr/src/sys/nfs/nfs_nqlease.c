@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -90,6 +90,7 @@ int nqnfs_piggy[NFS_NPROCS] = {
 	NQL_READ,
 	0,
 	NQL_READ,
+	0,
 	0,
 	0,
 	0,
@@ -392,11 +393,9 @@ nqsrv_cmpnam(slp, nam, lph)
 	else
 		addr = slp->ns_nam;
 	if (lph->lph_flag & LC_UDP)
-		ret = netaddr_match(AF_INET, &lph->lph_haddr,
-			(union nethostaddr *)0, addr);
+		ret = netaddr_match(AF_INET, &lph->lph_haddr, addr);
 	else if (lph->lph_flag & LC_CLTP)
-		ret = netaddr_match(AF_ISO, &lph->lph_claddr,
-			(union nethostaddr *)0, addr);
+		ret = netaddr_match(AF_ISO, &lph->lph_claddr, addr);
 	else {
 		if ((lph->lph_slp->ns_flag & SLP_VALID) == 0)
 			return (0);
@@ -405,8 +404,7 @@ nqsrv_cmpnam(slp, nam, lph)
 			lhaddr.had_inetaddr = saddr->sin_addr.s_addr;
 		else
 			lhaddr.had_nam = lph->lph_slp->ns_nam;
-		ret = netaddr_match(saddr->sin_family, &lhaddr,
-			(union nethostaddr *)0, addr);
+		ret = netaddr_match(saddr->sin_family, &lhaddr, addr);
 	}
 	return (ret);
 }

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.59 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.60 (Berkeley) %G%
  */
 
 /*
@@ -58,6 +58,44 @@ extern u_long nfs_xdrneg1;
 extern u_long nfs_false, nfs_true;
 nfstype nfs_type[9] = { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON,
 		      NFCHR, NFNON };
+
+/*
+ * nqnfs access service
+ */
+nqnfsrv_access(nfsd, mrep, md, dpos, cred, nam, mrq)
+	struct nfsd *nfsd;
+	struct mbuf *mrep, *md;
+	caddr_t dpos;
+	struct ucred *cred;
+	struct mbuf *nam, **mrq;
+{
+	struct vnode *vp;
+	nfsv2fh_t nfh;
+	fhandle_t *fhp;
+	register u_long *tl;
+	register long t1;
+	caddr_t bpos;
+	int error = 0, rdonly, cache, mode = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2, *mreq;
+	u_quad_t frev;
+
+	fhp = &nfh.fh_generic;
+	nfsm_srvmtofh(fhp);
+	nfsm_dissect(tl, u_long *, 3 * NFSX_UNSIGNED);
+	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
+		nfsm_reply(0);
+	if (*tl++ == nfs_true)
+		mode |= VREAD;
+	if (*tl++ == nfs_true)
+		mode |= VWRITE;
+	if (*tl == nfs_true)
+		mode |= VEXEC;
+	error = nfsrv_access(vp, mode, cred, rdonly, nfsd->nd_procp);
+	vput(vp);
+	nfsm_reply(0);
+	nfsm_srvdone;
+}
 
 /*
  * nfs getattr service
