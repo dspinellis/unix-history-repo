@@ -297,7 +297,6 @@ putScp(os)
 {
     register char *s = os;		/* pointer to unmatched string */
     char dummy[BUFSIZ];			/* dummy to be used by expmatch */
-    int xfld = 0;
     char *comptr;			/* end of a comment delimiter */
     char *strptr;			/* end of a string delimiter */
     char *chrptr;			/* end of a character const delimiter */
@@ -321,18 +320,6 @@ putScp(os)
     } 
 skip:
     do {
-	if (index) {
-	    if (*s == ' ' || *s == '\t') {
-		if (xfld == 0)	
-		    printf("");
-		printf("\t");
-		xfld = 1;
-		while (*s == ' ' || *s == '\t')
-		    s++;
-		continue;
-	    }
-	}
-
 	/* check for string, comment, blockstart, etc */
 	if (!incomm && !instr && !inchr) {
 
@@ -463,8 +450,20 @@ putKcp (start, end, force)
     boolean	force;		/* true if we should force nokeyw */
 {
     int i;
+    int xfld = 0;
 
     while (start <= end) {
+	if (index) {
+	    if (*start == ' ' || *start == '\t') {
+		if (xfld == 0)	
+		    printf("");
+		printf("\t");
+		xfld = 1;
+		while (*start == ' ' || *start == '\t')
+		    start++;
+		continue;
+	    }
+	}
 
 	/* take care of nice tab stops */
 	if (*start == '\t') {
