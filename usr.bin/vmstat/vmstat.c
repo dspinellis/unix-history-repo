@@ -550,15 +550,16 @@ dotimes()
 }
 #endif
 
+int
 pct(top, bot)
-	long top, bot;
+	u_long top, bot;
 {
 	if (bot == 0)
 		return(0);
-	return((top * 100) / bot);
+	return (int)((100.0 * top) / bot);
 }
 
-#define	PCT(top, bot) pct((long)(top), (long)(bot))
+#define	PCT(top, bot) pct((u_long)(top), (u_long)(bot))
 
 #if defined(tahoe)
 #include <machine/cpu.h>
