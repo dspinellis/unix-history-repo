@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)connect.2	6.3 (Berkeley) %G%
+.\"	@(#)connect.2	6.4 (Berkeley) %G%
 .\"
 .TH CONNECT 2 ""
 .UC 5
@@ -25,9 +25,10 @@ The parameter
 .I s
 is a socket.
 If it is of type SOCK_DGRAM,
-then this call permanently specifies the peer to which
-datagrams are to be sent;
-if it is of type SOCK_STREAM,
+then this call specifies the peer with which the socket is to be associated;
+this address is that to which datagrams are to be sent,
+and the only address from which datagrams are to be received.
+If the socket is of type SOCK_STREAM,
 then this call attempts to make a connection to
 another socket.
 The other socket is specified by
@@ -36,6 +37,13 @@ which is an address in the communications space of the socket.
 Each communications space interprets the
 .I name
 parameter in its own way.
+Generally, stream sockets may successfully
+.I connect
+only once; datagram sockets may use
+.I connect
+multiple times to change their association.
+Datagram sockets may dissolve the association
+by connecting to an invalid address, such as a null address.
 .SH "RETURN VALUE
 If the connection or binding succeeds, then 0 is returned.
 Otherwise a \-1 is returned, and a more specific error
@@ -83,10 +91,14 @@ be completed immediately.
 It is possible to
 .IR select (2)
 the socket while it is connecting by selecting it for writing.
-.PP
+.TP 20
+[EINPROGRESS]
+The socket is non-blocking
+and a previous connection attempt
+has not yet completed.
 .PP
 The following errors are specific to connecting names in the UNIX domain.
-These errors may not apply in future versions of the UNIX ipc domain.
+These errors may not apply in future versions of the UNIX IPC domain.
 .TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
@@ -103,6 +115,9 @@ The named socket does not exist.
 .TP 15
 [EACCES]
 Search permission is denied for a component of the path prefix.
+.TP 15
+[EACCES]
+Write access to the named socket is denied.
 .TP 15
 [ELOOP]
 Too many symbolic links were encountered in translating the pathname.
