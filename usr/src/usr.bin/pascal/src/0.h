@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.12 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.13 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -237,7 +237,7 @@ struct	nl {
 	char	*symbol;
 	char	class, nl_flags;
 #ifdef PC
-	char	ext_flags;	/* an extra flag is used for externals */
+	char	extra_flags;	/* for where things are */
 #endif PC
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
@@ -253,7 +253,7 @@ struct {
 	char	*symbol;
 	char	class, nl_flags;
 #ifdef PC
-	char	ext_flags;
+	char	extra_flags;
 #endif
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
@@ -264,7 +264,7 @@ struct {
 	char	*symbol;
 	char	class, nl_block;
 #ifdef PC
-	char	ext_flags;
+	char	extra_flags;
 #endif
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
@@ -275,7 +275,7 @@ struct {
 	char	*symbol;
 	char	class, nl_flags;
 #ifdef PC
-	char	ext_flags;
+	char	extra_flags;
 #endif
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
@@ -307,7 +307,11 @@ struct {
 #define	NFILES	0200
 #ifdef PC
 #define NEXTERN 0001	/* flag used to mark external funcs and procs */
-#endif
+#define	NLOCAL	0002	/* variable is a local */
+#define	NPARAM	0004	/* variable is a parameter */
+#define	NGLOBAL	0010	/* variable is a global */
+#define	NREGVAR	0020	/* or'ed in if variable is in a register */
+#endif PC
 
 /*
  * used to mark value[ NL_FORV ] for loop variables
@@ -349,13 +353,13 @@ struct {
 
 #define	ISUNDEF		1
 
-/*
- * Variables may reside on the stack as formals or as locals,
- * or as register temporaries
- */
+    /*
+     *	variables come in three flavors: globals, parameters, locals;
+     *	they can also hide in registers, but that's a different flag
+     */
 #define PARAMVAR	1
 #define LOCALVAR	2
-#define REGVAR		3
+#define	GLOBALVAR	3
 
 /*
  * NAMELIST CLASSES
@@ -734,7 +738,7 @@ long		leven();
 long		aryconst();
 long		a8tol();
 long		roundup();
-long		tmpalloc();
+struct nl 	*tmpalloc();
 struct nl 	*lookup();
 double		atof();
 int		*tree();
