@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.1 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -158,5 +158,6 @@ void vattr_null(vap)
 		vap->va_bytes = vap->va_bytes1 =
 		vap->va_atime.tv_sec = vap->va_atime.tv_usec =
 		vap->va_mtime.tv_sec = vap->va_mtime.tv_usec =
-		vap->va_ctime.tv_sec = vap->va_ctime.tv_usec = VNOVAL;
+		vap->va_ctime.tv_sec = vap->va_ctime.tv_usec =
+		vap->va_flags = vap->va_gen = VNOVAL;
 }
