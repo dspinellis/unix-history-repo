@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)isa.c	7.1 (Berkeley) %G%
+ *	@(#)isa.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -135,17 +135,15 @@ isa_defaultirq() {
 }
 
 /* stuff needed for virtual to physical calculations */
-extern char Sysbase;
-static unsigned long sbase = (unsigned long) &Sysbase;
 
 struct buf *dma_bounce[8];
 #define MAXDMASZ 512
 
-/* XXX temporary */
+/* XXX temporary crud */
 kernel_space(x)
 unsigned long x;
 {
-	if ((x >= sbase) & (x < sbase + 0x800000)) return 1;
+	if (x >= KERNBASE) return 1;
 	else return 0;
 }
 
