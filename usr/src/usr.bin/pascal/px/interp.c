@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.25 %G%";
+static char sccsid[] = "@(#)interp.c 1.26 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -1466,7 +1466,7 @@ interpreter(base)
 			tcp = popaddr();	/* ptr to ptr being new'ed */
 			NEW(tcp, tl);
 			if (_runtst) {
-				blkclr(*tcp, tl);
+				blkclr(*((char **)(tcp)), tl);
 			}
 			continue;
 		case O_DISPOSE:
