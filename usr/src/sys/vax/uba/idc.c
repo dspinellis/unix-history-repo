@@ -1,4 +1,4 @@
-/*	idc.c	6.1	83/07/29	*/
+/*	idc.c	6.2	84/08/29	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -20,24 +20,24 @@ int	*trp = idctrb;
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/map.h"
-#include "../h/vm.h"
-#include "../h/dk.h"
-#include "../h/cmap.h"
-#include "../h/dkbad.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "map.h"
+#include "vm.h"
+#include "dk.h"
+#include "cmap.h"
+#include "dkbad.h"
+#include "uio.h"
+#include "kernel.h"
 
 #include "../vax/cpu.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/idcreg.h"
+#include "ubareg.h"
+#include "ubavar.h"
+#include "idcreg.h"
 
 struct idc_softc {
 	int	sc_bcnt;	/* number of bytes to transfer */

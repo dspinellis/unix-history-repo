@@ -1,4 +1,4 @@
-/*	tm.c	6.3	83/09/25	*/
+/*	tm.c	6.4	84/08/29	*/
 
 #include "te.h"
 #include "ts.h"
@@ -15,25 +15,25 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/dir.h"
-#include "../h/conf.h"
-#include "../h/user.h"
-#include "../h/file.h"
-#include "../h/map.h"
-#include "../h/vm.h"
-#include "../h/ioctl.h"
-#include "../h/mtio.h"
-#include "../h/cmap.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "dir.h"
+#include "conf.h"
+#include "user.h"
+#include "file.h"
+#include "map.h"
+#include "vm.h"
+#include "ioctl.h"
+#include "mtio.h"
+#include "cmap.h"
+#include "uio.h"
+#include "kernel.h"
 
 #include "../vax/cpu.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/tmreg.h"
+#include "ubareg.h"
+#include "ubavar.h"
+#include "tmreg.h"
 
 /*
  * There is a ctmbuf per tape controller.

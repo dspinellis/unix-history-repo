@@ -1,4 +1,4 @@
-/*	ps.c	6.1	83/08/13	*/
+/*	ps.c	6.2	84/08/29	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -16,19 +16,19 @@
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/ioctl.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "ioctl.h"
+#include "map.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "uio.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/psreg.h"
+#include "ubareg.h"
+#include "ubavar.h"
+#include "psreg.h"
 
 int	psprobe(), psattach(), psintr();
 struct	uba_device *psdinfo[NPS];

@@ -1,17 +1,17 @@
-/*	lpa.c	6.1	83/07/29	*/
+/*	lpa.c	6.2	84/08/29	*/
 
 #include "lpa.h"
 #if NLPA > 0
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/proc.h"
-#include "../h/ioctl.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "proc.h"
+#include "ioctl.h"
+#include "uio.h"
 
-#include "../vaxuba/ubavar.h"
+#include "ubavar.h"
 
 /*
  * LPA driver for -- Asa Romberger

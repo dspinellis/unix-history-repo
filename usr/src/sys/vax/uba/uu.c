@@ -1,4 +1,4 @@
-/*	uu.c	6.1	83/07/29	*/
+/*	uu.c	6.2	84/08/29	*/
 
 #include "uu.h"
 #if NUU > 0
@@ -23,22 +23,22 @@
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/errno.h"
-#include "../h/file.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "time.h"
+#include "kernel.h"
+#include "errno.h"
+#include "file.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
 #include "../vax/rsp.h"
 
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/uureg.h"
+#include "ubavar.h"
+#include "ubareg.h"
+#include "uureg.h"
 
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */
 #define	WRV     01              /* bit in minor dev => write w. read verify */

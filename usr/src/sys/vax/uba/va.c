@@ -1,4 +1,4 @@
-/*	va.c	6.1	83/07/29	*/
+/*	va.c	6.2	84/08/29	*/
 
 #include "va.h"
 #if NVA > 0
@@ -7,19 +7,19 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/ioctl.h"
-#include "../h/vcmd.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "systm.h"
+#include "map.h"
+#include "ioctl.h"
+#include "vcmd.h"
+#include "uio.h"
+#include "kernel.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "ubareg.h"
+#include "ubavar.h"
 
 int	vadebug = 0;
 #define	dprintf	if(vadebug)printf
