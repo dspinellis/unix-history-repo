@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
  * FTP User Program -- Command Interface.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
@@ -14,18 +14,22 @@ static char sccsid[] = "@(#)main.c	4.4 (Berkeley) %G%";
 #include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <pwd.h>
 
 #include "ftp.h"
 #include "ftp_var.h"
 
 int	intr();
 int	lostpeer();
+extern	char *home;
 
 main(argc, argv)
 	char *argv[];
 {
 	register char *cp;
 	int top;
+	struct passwd *pw;
+	char homedir[MAXPATHLEN];
 
 	sp = getservbyname("ftp", "tcp");
 	if (sp == 0) {
@@ -82,6 +86,16 @@ main(argc, argv)
 	strcpy(bytename, "8"), bytesize = 8;
 	if (fromatty)
 		verbose++;
+	/*
+	 * Set up the home directory in case we're globbing.
+	 */
+	pw = getpwnam(getlogin());
+	if (pw == NULL)
+		pw = getpwuid(getuid());
+	if (pw != NULL) {
+		home = homedir;
+		strcpy(home, pw->pw_dir);
+	}
 	if (argc > 0) {
 		if (setjmp(toplevel))
 			exit(0);
