@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.56 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.57 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -302,8 +302,9 @@ ffs_truncate (ap)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	vinvalbuf(ovp, (ap->a_length > 0));
-	allerror = VOP_UPDATE(ovp, &time, &time, MNT_WAIT);
+	allerror = vinvalbuf(ovp, ap->a_length > 0, ap->a_cred, ap->a_p);
+	if (error = VOP_UPDATE(ovp, &time, &time, MNT_WAIT))
+		allerror = error;
 
 	/*
 	 * Indirect blocks first.
