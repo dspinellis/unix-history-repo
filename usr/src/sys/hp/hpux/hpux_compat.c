@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.55 92/12/26$
  *
- *	@(#)hpux_compat.c	7.33 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.34 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,9 @@
  */
 
 #ifdef HPUXCOMPAT
+#ifndef COMPAT_43
+#define COMPAT_43
+#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
