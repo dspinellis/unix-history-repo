@@ -1,4 +1,4 @@
-/*	machdep.c	3.25	%G%	*/
+/*	machdep.c	3.26	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,8 +13,10 @@
 #include "../h/proc.h"
 #include "../h/psl.h"
 #include "../h/uba.h"
+#include "../h/cons.h"
+#include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.25) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.26) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -22,8 +24,8 @@ int	icode[] =
 	0xbc5c5ed0,	/* movl sp,ap; chmk */
 	0x2ffe110b,	/* $exec; brb .; "/ */
 	0x2f637465,	/* etc/ */
-	0x74696e69,	/* init */
-	0x006d762e,	/* .vm";  0 */
+	0x74696e69,	/* init" */
+	0x00000000,	/* \0\0\0";  0 */
 	0x00000014,	/* [&"init", */
 	0x00000000,	/* 0] */
 };
@@ -357,4 +359,35 @@ unhang()
 		printf("HANG ");
 		ubareset();
 	}
+}
+
+int	waittime = -1;
+
+boot(panic, arghowto)
+	int panic, arghowto;
+{
+	register int howto;		/* r11 == how to boot */
+	register int devtype;		/* r10 == major of root dev */
+
+	howto = arghowto;
+	printf("howto %d\n", howto);
+	if ((howto&RB_NOSYNC)==0 && waittime < 0) {
+		waittime = 0;
+		update();
+		printf("updating (wait");
+		while (++waittime <= 10) {
+			printf(".");
+			sleep((caddr_t)&lbolt, PZERO);
+		}
+		printf(") done\n");
+	}
+	splx(0x1f);			/* extreme priority */
+	devtype = major(rootdev);
+	if ((howto&RB_HALT)==0) {
+		while ((mfpr(TXCS)&TXCS_RDY) == 0)
+			continue;
+		mtpr(TXDB, panic == RB_PANIC ? TXDB_AUTOR : TXDB_BOOT);
+	}
+	for (;;)
+		asm("halt");
 }
