@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redir.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)redir.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -286,39 +286,17 @@ clearredir() {
 
 
 /*
- * Copy a file descriptor, like the F_DUPFD option of fcntl.  Returns -1
+ * Copy a file descriptor to be >= to.  Returns -1
  * if the source file descriptor is closed, EMPTY if there are no unused
  * file descriptors left.
  */
 
 int
 copyfd(from, to) {
-#ifdef F_DUPFD
 	int newfd;
 
 	newfd = fcntl(from, F_DUPFD, to);
 	if (newfd < 0 && errno == EMFILE)
 		return EMPTY;
 	return newfd;
-#else
-	char toclose[32];
-	int i;
-	int newfd;
-	int e;
-
-	for (i = 0 ; i < to ; i++)
-		toclose[i] = 0;
-	INTOFF;
-	while ((newfd = dup(from)) >= 0 && newfd < to)
-		toclose[newfd] = 1;
-	e = errno;
-	for (i = 0 ; i < to ; i++) {
-		if (toclose[i])
-			close(i);
-	}
-	INTON;
-	if (newfd < 0 && e == EMFILE)
-		return EMPTY;
-	return newfd;
-#endif
 }
