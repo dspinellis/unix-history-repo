@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -223,8 +223,14 @@ main(argc, argv)
 			(void)fprintf(stderr, "ls: -f requires operands.\n");
 			exit(1);
 		}
-		for (; *argv; ++argv)
+		for (;;) {
+			if (argc > 1)
+				(void)printf("%s:\n", *argv);
 			dodir(*argv);
+			if (!*++argv)
+				break;
+			putchar('\n');
+		}
 	} else if (argc)
 		doargs(argc, argv);
 	else
@@ -240,7 +246,7 @@ dodir(name)
 	char *names;
 
 	if (lstat(local.name = name, &local.lstat)) {
-		(void)fprintf(stderr, "ls: .: %s\n", strerror(errno));
+		(void)fprintf(stderr, "ls: %s: %s\n", name, strerror(errno));
 		return;
 	}
 	if (num = tabdir(&local, &stats, &names))
