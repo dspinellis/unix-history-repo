@@ -1,0 +1,43 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)atexit.3	5.1 (Berkeley) %G%
+.\"
+.TH ATEXIT 3 ""
+.UC 7
+.SH NAME
+atexit \- register a function to be called on exit
+.SH SYNOPSIS
+.B #include <stdlib.h>
+.PP
+.B "atexit(void (*function)())
+.SH DESCRIPTION
+.B Atexit
+registers the given
+.I function
+to be called at program exit, whether via
+.IR exit (3)
+or via return from the program's
+.BR main .
+Functions so registered are called in reverse order;
+no arguments are passed.
+At least 32 functions can always be registered,
+and more are allowed as long as sufficient memory can be allocated.
+.SH RETURN VALUE
+.B Atexit
+returns 0 on success, \-1 on error.
+.SH ERRORS
+.TP
+[ENOMEM]
+No memory was available to add the function to the list.
+The existing list of functions is unmodified.
+.SH SEE ALSO
+exit(3)
+.SH STANDARDS
+.B Atexit
+conforms to ANSI X3.159-1989 (``ANSI C'').
