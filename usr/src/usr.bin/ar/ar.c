@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ar.c 3.2 %G%";
+static	char sccsid[] = "@(#)ar.c 4.1 %G%";
 /*
  * ar - portable (ascii) format version
  */

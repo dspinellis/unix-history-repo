@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)arcv.c 3.2 %G%";
+static	char sccsid[] = "@(#)arcv.c 4.1 %G%";
 /*
  * arcv - convert old to new archive format
  */

@@ -9,7 +9,7 @@
 #include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	1.2	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.1	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 

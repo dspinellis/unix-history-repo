@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)symorder.c	3.2 (Berkeley) %G%;
+static char *sccsid = "@(#)symorder.c	4.1 (Berkeley) %G%;
 /*
  * symorder - reorder symbol table
  */
