@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -101,7 +101,6 @@ struct hdrinfo	HdrInfo[] =
 **  Location of system files/databases/etc.
 */
 
-char	*ConfFile =	_PATH_SENDMAILCF;	/* runtime configuration */
 char	*PidFile =	_PATH_SENDMAILPID;	/* stores daemon proc id */
 
 
@@ -1614,4 +1613,17 @@ lockfile(fd, filename, ext, type)
 	if (tTd(55, 60))
 		printf("FAIL\n");
 	return FALSE;
+}
+/*
+**  GETCFNAME -- return the name of the .cf file.
+**
+**	Some systems (e.g., NeXT) determine this dynamically.
+*/
+
+char *
+getcfname()
+{
+	if (ConfFile != NULL)
+		return ConfFile;
+	return _PATH_SENDMAILCF;
 }
