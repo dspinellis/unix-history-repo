@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.1 (Berkeley) 86/11/25";
+static char sccsid[] = "@(#)process.c	5.2 (Berkeley) 87/01/28";
 #endif not lint
 
 #include <bug.h>
 #include <sys/file.h>
 #include <sys/dir.h>
+#include <sys/time.h>
 #include <stdio.h>
 
 extern HEADER	mailhead[];			/* mail headers */
@@ -27,6 +28,9 @@ char	pfile[MAXPATHLEN];			/* permanent file name */
 process()
 {
 	register int	rval;			/* read return value */
+	struct timeval	tp;			/* time of day */
+	struct timezone	tzp;
+	char	*ctime();
 
 	/* copy report to permanent file */
 	sprintf(pfile,"%s/%s/%d",dir,folder,getnext());
@@ -43,8 +47,11 @@ process()
 	GET_LOCK;
 	if (!(freopen(bfr,"a",stdout)))
 		error("unable to append to summary file %s.",bfr);
-	else
-		printf("\n%s\n\t%s\t%s\tOwner: Bugs Bunny\n\tStatus: Received\n",pfile,mailhead[INDX_TAG].line,mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
+	else {
+		if (gettimeofday(&tp,&tzp))
+			error("unable to get time of day.",CHN);
+		printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tComment: Received\n",pfile,ctime(&tp.tv_sec),mailhead[INDX_TAG].line,mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
+	}
 	REL_LOCK;
 	fclose(stdout);
 }
