@@ -1,5 +1,5 @@
 #!/bin/sh
-#	dumpdev.sh	1.4	%G%
+#	dumpdev.sh	1.5	%G%
 #	shell script to dump a single device
 #	the script is called with a single
 #	parameter - which is the device to be dumped
@@ -16,7 +16,7 @@ labelchk="t"
 dev=$1
 if [ "$1" = "" ]
 then
-	echo	'Usage: doadump device-name'
+	echo	'Usage: dumpdev device-name'
 	exit 1
 fi
 chkflg=no
@@ -71,7 +71,7 @@ fi
 #
 #	Now we need the dump information from the cycle file
 #
-awkprog="/^$dev/ { if ($NEXTSTATE == \$2) print \$4,\$5	}"
+awkprog="/^$dev/ { if ($NEXTSTATE == \$2) print \$4,\$5,\$6	}"
 decodethis=`awk "$awkprog" < $dumpcycle`
 if [ "$decodethis" = "" ]
 then
@@ -82,19 +82,27 @@ fi
 #
 #	This is really nasty - but
 #	now finally set the dump level and the tape range
-LEVEL=`expr "$decodethis" : '^\(.*\) '`
-TAPE=`expr "$decodethis" : '^.* \(.*\)$'`
-if [ "$chkflg" = yes ]
-then
-	echo "DUMP of /dev/$dev at level ${LEVEL} to tapes $TAPE"
-	exit 1
-fi
-$dump ou${labelchk}${LEVEL} $TAPE /dev/$dev
+echo $decodethis | (
+	read LEVEL TAPESTEM TAPECYCLE
+	if [ "$chkflg" = yes ]
+	then
+		echo "DUMP of /dev/$dev at level ${LEVEL} to tapes $TAPESTEM $TAPECYCLE"
+		exit 1
+	fi
+	if [ "$TAPECYCLE" = "" ]
+	then
+		$dump oul${labelchk}${LEVEL} $TAPESTEM /dev/$dev
+		retval=$?
+	else
+		$dump oulm${labelchk}${LEVEL} $TAPESTEM $TAPECYCLE /dev/$dev
+		retval=$?
+	fi
 #
-#	dump returns 1 on a successful dump
+#	dump returns 0 on a successful dump
 #
-if [ $? = 1 ]
-then
-	echo $NEXTSTATE > $statefile
-fi
+	if [ $retval = 0 ]
+	then
+		echo $NEXTSTATE > $statefile
+	fi
+)
 exit 0
