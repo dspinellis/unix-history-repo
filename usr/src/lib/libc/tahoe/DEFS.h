@@ -1,4 +1,4 @@
-/*	DEFS.h	5.2	86/08/01	*/
+/*	DEFS.h	5.3	86/08/01	*/
 
 /*
  * Macros used to define entry points
@@ -6,12 +6,18 @@
  */
 #if defined(GPROF) || defined(PROF)
 #define	ENTRY(name, regs) \
-	.globl _/**/name; .align 2; _/**/name: .word regs; callf $4,mcount
+	.globl _/**/name; .align 2; _/**/name: .word regs; \
+	.data; .align 2; 1: .long 0; .text; \
+	pushal 1b; callf $8,mcount;
 #define	ASENTRY(name, regs) \
-	.globl name; .align 2; name: .word regs; callf $4,mcount
+	.globl name; .align 2; name: .word regs; \
+	.data; .align 2; 1: .long 0; .text; \
+	pushal 1b; callf $8,mcount;
 #define	XENTRY(name, regs) \
 	.globl _/**/name; .globl X/**/name; .align 2; \
-	_/**/name: X/**/name: .word regs; callf $4,mcount
+	_/**/name: X/**/name: .word regs; \
+	.data; .align 2; 1: .long 0; .text; \
+	pushal 1b; callf $8,mcount
 #else
 #define	ENTRY(name, regs) \
 	.globl _/**/name; .align 2; _/**/name: .word regs
