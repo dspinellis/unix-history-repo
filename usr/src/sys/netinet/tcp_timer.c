@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.1 81/11/24 */
+/* tcp_timer.c 4.2 81/11/25 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,7 +46,7 @@ COUNT(TCP_TIMEO);
 	for (ip = tcb.inp_next; ip != &tcb; ip = ip->inp_next) {
 		tp = intotcpcb(ip);
 		tmp = &tp->t_init;
-		for (i = 0; i < TNTIMERS; i++) {
+		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (*tmp && --*tmp == 0)
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
@@ -55,86 +55,51 @@ COUNT(TCP_TIMEO);
 		}
 		tp->t_xmt++;
 	}
-	tcp_iss += ISSINCR/2;		/* increment iss */
+	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 	splx(s);
 }
 
 /*
- * Cancel all timers for tcp tp.
+ * Cancel all timers for TCP tp.
  */
 tcp_tcancel(tp)
 	struct tcpcb *tp;
 {
-	register short *tmp = &tp->t_init;
 	register int i;
 
-	for (i = 0; i < TNTIMERS; i++)
-		*tmp++ = 0;
+	for (i = 0; i < TCPT_NTIMERS; i++)
+		tp->t_timer[i] = 0;
 }
 
 /*
  * TCP timer went off processing.
  */
-tcp_timers(tp, timertype)
+tcp_timers(tp, timer)
 	register struct tcpcb *tp;
-	int timertype;
+	int timer;
 {
 
 COUNT(TCP_TIMERS);
 	switch (timertype) {
 
-	case TFINACK:		/* fin-ack timer */
-		switch (tp->t_state) {
+	case TCPT_2MSL:
+		tcp_close(tp);
+		return;
 
-		case TIME_WAIT:
-			/*
-			 * We can be sure our ACK of foreign FIN was rcvd,
-			 * and can close if no data left for user.
-			 */
-			if (rcv_empty(tp)) {
-				tcp_disconnect(tp);
-				return (CLOSED);
-			}
-			return (RCV_WAIT);			/* 17 */
-
-		case CLOSING:
-			tp->tc_flags |= TC_WAITED_2_ML;
-			return (SAME);
-
-		default:
-			return (SAME);
+	case TCPT_REXMT:
+		tp->t_xmtime <<= 1;
+		if (tp->t_xmtime > TCPT_TOOLONG) {
+			tcp_drop(tp, ETIMEDOUT);
+			return;
 		}
+		tcp_output(tp);
+		return;
 
-	case TREXMT:		/* retransmission timer */
-		if (tp->t_rexmt_val > tp->snd_una) {	 	/* 34 */
-			/*
-			 * Set so for a retransmission, increase rexmt time
-			 * in case of multiple retransmissions.
-			 */
-			tp->snd_nxt = tp->snd_una;
-			tp->tc_flags |= TC_REXMT;
-			tp->t_xmtime = tp->t_xmtime << 1;
-			if (tp->t_xmtime > T_REMAX)
-				tp->t_xmtime = T_REMAX;
-			(void) tcp_send(tp);
-		}
-		return (SAME);
+	case TCPT_PERSIST:
+		if (tcp_output(tp) == 0)
+			tp->snd_wnd++, (void) tcp_output(tp), tp->snd_wnd--;
 
-	case TREXMTTL:		/* retransmit too long */
-		if (tp->t_rtl_val > tp->snd_una) {		/* 36 */
-			tcp_error(tp, ETIMEDOUT);
-			return (CLOSED);
-		}
-		return (SAME);
-
-	case TPERSIST:		/* persist timer */
-		/*
-		 * Force a byte send through closed window.
-		 */
-		tp->tc_flags |= TC_FORCE_ONE;
-		(void) tcp_send(tp);
-		return (SAME);
+	case TCPT_KEEP:
+		return;
 	}
-	panic("tcp_timers");
-	/*NOTREACHED*/
 }

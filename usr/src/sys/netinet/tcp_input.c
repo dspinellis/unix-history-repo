@@ -1,4 +1,4 @@
-/* tcp_input.c 1.30 81/11/24 */
+/*	tcp_input.c	1.31	81/11/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -412,8 +412,10 @@ step6:
 	 * therefore can't validate drop the segment.  Otherwise ACK
 	 * the FIN and let the user know that the connection is closing.
 	 */
-	if ((tiflags & TH_FIN) && TCPS_HAVERCVDSYN(tp->t_state)) {
-		tcp_usrclosing(tp);
+	if (tiflags & TH_FIN) {
+		if (TCPS_HAVERCVDSYN(tp->t_state) == 0)
+			goto drop;
+		socantrcvmore(so);
 		tp->t_flags |= TF_ACKNOW;
 		tp->rcv_nxt++;
 		switch (tp->t_state) {
@@ -450,7 +452,7 @@ step6:
 		 */
 		case TCPS_FIN_WAIT_2:
 			tp->t_state = TCPS_FIN_WAIT_2;
-			tcp_canceltimers(tp, 0);
+			tcp_canceltimers(tp);
 			tp->t_timer[TCPT_FINACK] = TCPSC_2MSL;
 			break;
 
@@ -562,7 +564,7 @@ tcp_reass(tp, ti, endp)
 			if (q->ti_len)
 				break;
 			if (q == ti)
-				panic("tcp_text dropall");
+				panic("tcp_reass dropall");
 			q = (struct tcpiphdr *)q->ti_prev;
 			remque(q->ti_next);
 		}
@@ -594,7 +596,10 @@ present:
 			panic("tcp_reass");
 		ti = (struct tcpiphdr *)ti->ti_next;
 	}
-	sorwakeup(so);
+	if (so->so_state & SS_CANTRCVMORE)
+		sbflush(&so->so_rcv);
+	else
+		sorwakeup(so);
 	return (flags);
 drop:
 	m_freem(dtom(ti));

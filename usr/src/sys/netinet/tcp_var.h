@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.7	81/11/24	*/
+/*	tcp_var.h	4.8	81/11/25	*/
 
 /*
  * Kernel variables for tcp.
@@ -43,31 +43,29 @@ struct tcpiphdr {
  * Definitions of the TCP timers.  These timers are counted
  * down PR_SLOWHZ times a second.
  */
-#define	TCPT_NTIMERS	7
+#define	TCPT_NTIMERS	4
 
-#define	TCPT_INIT	0		/* initialization */
-#define	TCPT_REXMT	1		/* retransmit */
-#define	TCPT_REXMTTL	2		/* retransmit too long */
+#define	TCPT_REXMT	0		/* retransmit */
+#define	TCPT_2MSL	1		/* 2*msl quiet time timer */
+#define	TCPT_PERSIST	2		/* retransmit persistance */
 #define	TCPT_KEEP	3		/* keep alive */
-#define	TCPT_KEEPTTL	4		/* keep alive too long */
-#define	TCPT_PERSIST	5		/* retransmit persistance */
-#define	TCPT_2MSL	6		/* 2*msl quiet time timer */
 
 /*
  * Tcp control block.
  */
 struct tcpcb {
-	struct	tcpiphdr *seg_next,*seg_prev;	/* seq queue */
-	short	seqcnt;			/* count of chars in seq queue */
-	u_char	t_state;		/* state of this connection */
+	struct	tcpiphdr *seg_next;	/* sequencing queue */
+	struct	tcpiphdr *seg_prev;
+	int	t_state;		/* state of this connection */
+	int	seqcnt;			/* count of chars in seq queue */
 	short	t_timers[TCPT_NTIMERS];	/* tcp timers */
-	u_char	t_options;		/* connection options: */
+	short	t_options;		/* connection options: */
 #define	TO_PUSH		0x01			/* push mode */
 #define	TO_URG		0x02			/* urgent mode */
 #define	TO_KEEP		0x04			/* use keep-alives */
 	u_char	t_flags;
 #define	TF_OWEACK	0x01			/* owe ack to peer */
-	struct	mbuf *seg_unack;	/* unacked message queue */
+#define	TF_DELACK	0x02			/* delaying ack to peer */
 	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
 	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
@@ -90,44 +88,31 @@ struct tcpcb {
 /*
  * Additional variables for this implementation.
  */
-/* send variables */
-	tcp_seq	snd_off;	/*??*/	/* seq # of first datum in send buf */
-	tcp_seq	seq_fin;	/*??*/	/* seq # of FIN sent */
-	tcp_seq	snd_hi;		/*??*/	/* highest seq # sent */
-	tcp_seq	snd_end;	/*??*/	/* send eol pointer */
-	tcp_seq	snd_lst;	/*??*/	/* seq # of last sent datum */
-	tcp_seq	snd_wl;		/*??*/	/* seq # of last sent window */
-	tcp_seq	snd_wnd;	/*??*/	/* send window max */
-/* retransmit variables */
-	tcp_seq	t_rexmt_val;	/*??*/	/* val saved in rexmt timer */
-	tcp_seq	t_rtl_val;	/*??*/	/* val saved in rexmt too long timer */
-	tcp_seq	t_xmt_val;	/*??*/	/* seq # sent when xmt timer started */
-	u_char	t_xmtime;	/*??*/	/* current rexmt time */
-	short	t_xmt;		/*??*/	/* round trip transmission time */
 /* receive variables */
-	tcp_seq	rcv_end;	/*??*/	/* rcv eol pointer */
-	tcp_seq	rcv_adv;	/*??*/	/* advertised window */
+	tcp_seq	rcv_adv;		/* advertised window */
+/* retransmit variables */
+	tcp_seq	snd_max;		/* highest sequence number sent */
+					   used to recognize retransmits */
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
 #define	sototcpcb(so)	(intotcpcb(sotoinpcb(so)))
 
 #define	ISSINCR		128		/* increment for iss each second */
-#define	TCPSIZE		20		/* size of TCP leader (bytes) */
 
-#define	TCP_TTL		30		/* time to live for TCP segs: 30s */
+#define	TCP_TTL		60		/* time to live for TCP segs */
 /*
  * TCPSC constants give various timeouts in ``slow-clock'' ticks.
  */
-#define	TCPSC_MSL	(TCP_TTL*PR_SLOWHZ)	/* max seg lifetime */
-#define	TCPSC_REXMT	(1*PR_SLOWHZ)		/* base retransmit time */
-#define	TCPSC_REXMTTL	(TCP_TTL*2*PR_SLOWHZ)	/* retransmit too long */
-#define	TCPSC_KEEP	(TCP_TTL*4*PR_SLOWHZ)	/* keep alive */
-#define	TCPSC_KEEPTTL	(4*TCPSC_KEEP)		/* keep alive too long */
-#define	TCPSC_PERSIST	(5*PR_SLOWHZ)		/* retransmit persistance */
-#define	TCPSC_2MSL	(TCP_TTL*2*PR_SLOWHZ)	/* 2*msl quiet time timer */
+#define	TCPSC_MSL	(120*PR_SLOWHZ)		/* max seg lifetime */
+#define	TCPSC_REXMT	(  1*PR_SLOWHZ)		/* base retransmit time */
+#define	TCPSC_KEEP	(240*PR_SLOWHZ)		/* keep alive */
+#define	TCPSC_PERSIST	(  5*PR_SLOWHZ)		/* retransmit persistance */
 
-#define	TCPSC_REMAX	(TCP_TTL*PR_SLOWHZ)	/* maximum rexmt time */
+#define	TCPSC_KEEPTTL	(  4*TCPSC_KEEP)	/* keep alive too long */
+#define	TCPSC_2MSL	(  2*TCPSC_MSL)		/* 2*msl quiet time timer */
+
+#define	TCPSC_TOOLONG	(480*PR_SLOWHZ)
 
 struct	tcpstat {
 	int	tcps_badsum;
