@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.17 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.18 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.17 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.18 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -451,7 +451,7 @@ runqueue(forkflag)
 	*/
 
 	CurEnv = &QueueEnvelope;
-	e = newenvelope(&QueueEnvelope);
+	e = newenvelope(&QueueEnvelope, CurEnv);
 	e->e_flags = BlankEnvelope.e_flags;
 
 	/*

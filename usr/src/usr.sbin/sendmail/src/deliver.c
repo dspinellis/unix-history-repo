@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1593,7 +1593,6 @@ sendall(e, mode)
 		if (owner != NULL && otherowners > 0)
 		{
 			register ENVELOPE *ee;
-			extern ENVELOPE *newenvelope();
 			extern HDR *copyheader();
 			extern ADDRESS *copyqueue();
 
