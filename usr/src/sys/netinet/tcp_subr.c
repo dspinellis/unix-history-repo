@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.14	82/01/19	*/
+/*	tcp_subr.c	4.15	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,7 @@ tcp_template(tp)
 	register struct tcpiphdr *n;
 
 COUNT(TCP_TEMPLATE);
-	m = m_get(1);
+	m = m_get(M_WAIT);
 	if (m == 0)
 		return (0);
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
@@ -150,7 +150,7 @@ struct tcpcb *
 tcp_newtcpcb(inp)
 	struct inpcb *inp;
 {
-	struct mbuf *m = m_getclr(0);
+	struct mbuf *m = m_getclr(M_DONTWAIT);
 	register struct tcpcb *tp;
 COUNT(TCP_NEWTCPCB);
 

@@ -1,4 +1,4 @@
-/* in_pcb.c 4.15 81/12/21 */
+/*	in_pcb.c	4.16	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,7 +79,7 @@ COUNT(IN_PCBATTACH);
 	}
 	if (ifp == 0)
 		return (EADDRNOTAVAIL);
-	m = m_getclr(0);
+	m = m_getclr(M_DONTWAIT);
 	if (m == 0)
 		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, sndcc) == 0)

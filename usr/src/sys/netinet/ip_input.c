@@ -1,4 +1,4 @@
-/* ip_input.c 1.29 81/12/23 */
+/*	ip_input.c	1.30	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -210,7 +210,7 @@ COUNT(IP_REASS);
 	 * If first fragment to arrive, create a reassembly queue.
 	 */
 	if (fp == 0) {
-		if ((t = m_get(1)) == NULL)
+		if ((t = m_get(M_WAIT)) == NULL)
 			goto dropfrag;
 		t->m_off = MMINOFF;
 		fp = mtod(t, struct ipq *);
