@@ -16,13 +16,13 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.8 (Berkeley) %G%
+.\"	@(#)more.1	5.9 (Berkeley) %G%
 .\"
 .TH MORE 1
 .SH NAME
 more \- file perusal filter for crt viewing
 .SH SYNOPSIS
-.B "more [-ceinpus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]"
+.B "more [-ceinus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]"
 .SH DESCRIPTION
 .I More
 is a filter for paging through text one screenful at a time.  It
@@ -61,9 +61,6 @@ to run more slowly in some cases, especially with a very large input file.
 Suppressing line numbers with the -n flag will avoid this problem.
 Using line numbers means: the line number will be displayed in the 
 = command, and the v command will pass the current line number to the editor.
-.IP -p
-The -p option gives you a colon (``:'') for a prompt, rather than
-the more verbose traditional prompt.
 .IP -s
 The -s option causes
 consecutive blank lines to be squeezed into a single blank line.

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -33,7 +33,6 @@ int quit_at_eof;
 int squeeze;			/* Squeeze multiple blank lines into one */
 int tabstop = 8;		/* Tab settings */
 int tagoption;
-int terseprompt;
 
 char *firstsearch;
 extern int sc_height;
@@ -55,7 +54,7 @@ option(argc, argv)
 			(*a)[0] = '-';
 
 	optind = 1;		/* called twice, re-init getopt. */
-	while ((ch = getopt(argc, argv, "0123456789/:ceinpst:ux:")) != EOF)
+	while ((ch = getopt(argc, argv, "0123456789/:ceinst:ux:")) != EOF)
 		switch((char)ch) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
@@ -87,9 +86,6 @@ option(argc, argv)
 		case 'n':
 			linenums = 0;
 			break;
-		case 'p':
-			terseprompt = 1;
-			break;
 		case 's':
 			squeeze = 1;
 			break;
@@ -108,7 +104,7 @@ option(argc, argv)
 		case '?':
 		default:
 			fprintf(stderr,
-			    "usage: less [-ceinpus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]\n");
+			    "usage: less [-ceinus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]\n");
 			exit(1);
 		}
 	return(optind);
