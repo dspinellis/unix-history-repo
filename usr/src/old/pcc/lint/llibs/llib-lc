@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.46 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.47 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -204,12 +204,12 @@ datum	dbm_firstkey(db) DBM *db; { datum key; return key; }
 datum	dbm_nextkey(db) DBM *db; { datum key; return key; }
 char *	ecvt(v, n, d, s) double v; int *d, *s; { return(""); }
 	encrypt(s, i) char *s; {}
-int	endfsent() { return 0; }
-int	endgrent() { ; }
+void	endfsent() {}
+void	endgrent() { ; }
 	endhostent() { ; }
 	endnetent() { ; }
 	endprotoent() { ; }
-	endpwent() {}
+void	endpwent() {}
 	endservent() { ; }
 	endttyent() { ; }
 	endusershell() { ; }
@@ -343,7 +343,7 @@ int	setlogmask(m) { return(0); }
 	setnetent(stayopen) { ; }
 	setprotoent(stayopen) { ; }
 	setpwent() {}
-	setpwfile(file) char *file; {}
+void	setpwfile(file) char *file; {}
 int	setrgid(rgid) gid_t rgid; { return 0; }
 int	setruid(ruid) uid_t ruid; { return 0; }
 	setservent(stayopen) { ; }
@@ -438,7 +438,7 @@ int	putw(w, f) FILE *f; { return 0;}
 	setbuffer( f, b, s ) FILE *f; char *b; {;}
 	setlinebuf( f ) FILE *f; {;}
 	/* VARARGS2 */
-int	sprintf( s, f ) char *s, *f; { return(s);}
+int	sprintf( s, f ) char *s, *f; { return(1);}
 	/* VARARGS2 */
 	sscanf( s, f ) char *s, *f; { return(1); }
 	ungetc( c, f ) FILE *f; {  return(c); }
