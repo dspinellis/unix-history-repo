@@ -1,4 +1,4 @@
-/*	socket.h	4.7	81/11/21	*/
+/*	socket.h	4.8	81/11/26	*/
 
 /*
  * Externally visible attributes of sockets.

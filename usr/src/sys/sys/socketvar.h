@@ -1,4 +1,4 @@
-/*	socketvar.h	4.8	81/11/20	*/
+/*	socketvar.h	4.9	81/11/26	*/
 
 /*
  * Kernel structure per socket.
@@ -70,7 +70,7 @@ struct socket {
 	(sb)->sb_cc += (m)->m_len; \
 	(sb)->sb_mbcnt += MSIZE; \
 	if ((m)->m_off > MMAXOFF) \
-		(sb)->sb_mbcnt += PGSIZE; \
+		(sb)->sb_mbcnt += CLBYTES; \
 }
 
 /* adjust counters in sb reflecting freeing of m */
@@ -78,7 +78,7 @@ struct socket {
 	(sb)->sb_cc -= (m)->m_len; \
 	(sb)->sb_mbcnt -= MSIZE; \
 	if ((m)->m_off > MMAXOFF) \
-		(sb)->sb_mbcnt -= PGSIZE; \
+		(sb)->sb_mbcnt -= CLBYTES; \
 }
 
 /* set lock on sockbuf sb */

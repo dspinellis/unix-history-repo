@@ -1,4 +1,4 @@
-/*	param.h	4.13	81/11/18	*/
+/*	param.h	4.14	81/11/26	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -81,8 +81,12 @@
  *
  * NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE
  */
-#define	CLSIZE	2
+#define	CLSIZE		2
+#define	CLBYTES		(CLSIZE*NBPG)
 #define	CLOFSET		(CLSIZE*NBPG-1)	/* for clusters, like PGOFSET */
+#define	claligned(x)	((((int)(x))&CLOFSET)==0)
+#define	CLOFF		CLOFSET
+#define	CLSHIFT		(PGSHIFT+1)
 
 /* give the base virtual address (first of CLSIZE) */
 #define	clbase(i)	((i) &~ (CLSIZE-1))
