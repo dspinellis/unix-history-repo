@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ctime.3	6.11 (Berkeley) %G%
+.\"	@(#)ctime.3	6.12 (Berkeley) %G%
 .\"
 .TH CTIME 3 ""
 .SH NAME
@@ -414,20 +414,20 @@ is the offset (in seconds) of the time represented
 from UTC, with positive values indicating east
 of the Prime Meridian.
 .SH FILES
-.ta \w'/etc/zoneinfo/posixrules\0\0'u
-/etc/zoneinfo	time zone information directory
+.ta \w'/usr/share/zoneinfo/posixrules\0\0'u
+/usr/share/zoneinfo	time zone information directory
 .br
-/etc/zoneinfo/localtime	local time zone file
+/usr/share/zoneinfo/localtime	local time zone file
 .br
-/etc/zoneinfo/posixrules	used in converting POSIX-style TZ's
+/usr/share/zoneinfo/posixrules	used in converting POSIX-style TZ's
 .br
-/etc/zoneinfo/GMT	for UTC leap seconds
+/usr/share/zoneinfo/GMT	for UTC leap seconds
 .sp
 If
-.I /etc/zoneinfo/GMT
+.I /usr/share/zoneinfo/GMT
 is absent,
 UTC leap seconds are loaded from
-.IR /etc/zoneinfo/posixrules .
+.IR /usr/share/zoneinfo/posixrules .
 .SH SEE ALSO
 time(2), getenv(3), tzfile(5)
 .SH NOTES
