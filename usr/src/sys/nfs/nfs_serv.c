@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.32 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.33 (Berkeley) %G%
  */
 
 /*
@@ -675,7 +675,11 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat)
 		goto out;
 	}
 	if (vp->v_flag & VTEXT)
+#ifdef NVM
 		(void) vnode_pager_uncache(vp);
+#else
+		xrele(vp);	/* try once to free text */
+#endif
 out:
 	if (!error) {
 		error = VOP_REMOVE(ndp);
@@ -1402,8 +1406,15 @@ nfsrv_access(vp, flags, cred)
 		 * the inode, try to free it up once.  If
 		 * we fail, we can't allow writing.
 		 */
+#ifdef NVM
 		if ((vp->v_flag & VTEXT) && !vnode_pager_uncache(vp))
 			return (ETXTBSY);
+#else
+		if (vp->v_flag & VTEXT)
+			xrele(vp);
+		if (vp->v_flag & VTEXT)
+			return (ETXTBSY);
+#endif
 	}
 	if (error = VOP_GETATTR(vp, &vattr, cred))
 		return (error);
