@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.17 81/10/30 */
+/* tcp_usrreq.c 1.18 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -116,7 +116,7 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case SSS_SND:				/* 40,41 */
-		nstate = sss_send(tp, mp);
+		nstate = tcp_usrsend(tp, mp);
 		break;
 
 	case SSS_RCV:				/* 42 */
@@ -276,7 +276,7 @@ COUNT(T_CLOSE);
         	to_user(up, state);
 }
 
-sss_send(tp, m0)
+tcp_usrsend(tp, m0)
 	register struct tcb *tp;
 	struct mbuf *m0;
 {
@@ -321,7 +321,7 @@ COUNT(SSS_SEND);
 		tp->snd_urp = last+1;
 		tp->tc_flags |= TC_SND_URG;
 	}
-	send(tp);
+	tcp_send(tp);
 	return (SAME);
 }
 
@@ -373,7 +373,7 @@ COUNT(TCP_TIMERS);
 			tp->t_xmtime = tp->t_xmtime << 1;
 			if (tp->t_xmtime > T_REMAX)
 				tp->t_xmtime = T_REMAX;
-			send(tp);
+			tcp_send(tp);
 		}
 		return (SAME);
 
@@ -394,7 +394,7 @@ COUNT(TCP_TIMERS);
 		 * Force a byte send through closed window.
 		 */
 		tp->tc_flags |= TC_FORCE_ONE;
-		send(tp);
+		tcp_send(tp);
 		return (SAME);
 	}
 	panic("tcp_timers");

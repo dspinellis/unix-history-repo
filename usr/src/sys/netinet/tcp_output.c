@@ -1,4 +1,4 @@
-/* tcp_output.c 4.1 81/10/30 */
+/* tcp_output.c 4.2 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,7 +12,70 @@
 #include "../inet/tcp.h"
 #include "../inet/tcp_fsm.h"
 
-send(tp)                        /* send data */
+/*
+ * Special routines to send control messages.
+ */
+tcp_sndctl(tp)
+	struct tcb *tp;
+{
+COUNT(TCP_SNDCTL);
+
+        if (tcp_send(tp))
+		return (1);
+	tcp_sndnull(tp);
+	return(0);
+}
+
+tcp_sndwin(tp)
+	struct tcb *tp;
+{
+	int ihave, hehas;
+COUNT(TCP_SNDWIN);
+
+	if (tp->rcv_adv) {
+		ihave = tp->t_ucb->uc_rhiwat -
+		    (tp->t_ucb->uc_rcc + tp->seqcnt);
+		hehas = tp->rcv_adv - tp->rcv_nxt;
+		if (hehas > 32 &&
+		   (100*(ihave-hehas)/tp->t_ucb->uc_rhiwat) < 35)
+			return;
+	}
+        if (tcp_send(tp))
+		return (1);
+	tcp_sndnull(tp);
+	return (0);
+}
+
+tcp_sndnull(tp)
+	register struct tcb *tp;
+{
+COUNT(TCP_SNDNULL);
+
+	tcp_output(tp, 0, 0, (struct mbuf *)0);
+        tp->tc_flags &= ~TC_ACK_DUE;
+}
+
+tcp_sndrst(tp, n)
+	register struct tcb *tp;
+	register struct th *n;
+{
+COUNT(TCP_SNDRST);
+
+        /* don't send a reset in response to a reset */
+	if (n->th_flags&TH_RST)
+		return;
+	tp->tc_flags |= TC_SND_RST;
+	if (n->th_flags&TH_ACK)
+		tp->snd_nxt = n->t_ackno;
+	tp->tc_flags &= ~TC_SYN_RCVD;
+	tcp_sndnull(tp);
+	tp->tc_flags &= ~TC_SND_RST;
+}
+
+/*
+ * Tcp segment output routine.
+ */
+tcp_send(tp)
 	register struct tcb *tp;
 {
 	register struct ucb *up;
@@ -22,190 +85,71 @@ send(tp)                        /* send data */
 	struct mbuf *tcp_sndcopy();
 	int len;
 
-COUNT(SEND);
+COUNT(TCP_SEND);
 	up = tp->t_ucb;
 	tp->snd_lst = tp->snd_nxt;
 	forced = 0;
 	m = NULL;
-
-	if (tp->snd_nxt == tp->iss) {           /* first data to be sent */
+	if (tp->snd_nxt == tp->iss) {
 		flags |= TH_SYN;
 		tp->snd_lst++;
 	}
-
-	/* get seq # of last datum in send buffer */
-
 	last = tp->snd_off;
 	for (m = up->uc_sbuf; m != NULL; m = m->m_next)
 		last += m->m_len;
-
-        /* no data to send in buffer */
-
 	if (tp->snd_nxt > last) {
-
-		/* should we send FIN?  don't unless haven't already sent one */
-
 		if ((tp->tc_flags&TC_SND_FIN) &&
 		    (tp->seq_fin == tp->iss || tp->snd_nxt <= tp->seq_fin)) {
 
 			flags |= TH_FIN;
 			tp->seq_fin = tp->snd_lst++;
 		}
-
-	} else {                                  /* there is data to send */
-
-		/* send data only if there is a window defined */
-
+	} else {
 		if (tp->tc_flags&TC_SYN_ACKED) {
-
 			wind = tp->snd_una + tp->snd_wnd;
-
-			/* use window to limit send */
-
 			tp->snd_lst = min(last, wind);
-
-			/* make sure we don't do ip fragmentation */
-
 			if ((len = tp->snd_lst - tp->snd_nxt) > 1024)
 				tp->snd_lst -= len - 1024;
-
-			/* set persist timer */
-
 			if (tp->snd_lst >= wind)
 				tp->t_persist = T_PERS;
 		}
-
-		/* check if window is closed and must force a byte out */
-
 		if ((tp->tc_flags&TC_FORCE_ONE) && (tp->snd_lst == wind)) {
 			tp->snd_lst = tp->snd_nxt + 1;
 			forced = 1;
 		}
-
-		/* copy data to send from send buffer */
-
 		m = tcp_sndcopy(tp, max(tp->iss+1,tp->snd_nxt), tp->snd_lst);
-
-		/* see if EOL should be sent */
-
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
 			flags |= TH_EOL;
-
-		/* must send FIN and no more data left to send after this */
-
 		if ((tp->tc_flags&TC_SND_FIN) && !forced &&
 		    tp->snd_lst == last &&
 		    (tp->seq_fin == tp->iss || tp->snd_nxt <= tp->seq_fin)) {
-
 			flags |= TH_FIN;
 			tp->seq_fin = tp->snd_lst++;
 		}
 	}
-
-	if (tp->snd_nxt < tp->snd_lst) {        /* something to send */
-
-		if (tp->tc_flags & TC_SND_URG)
-			flags |= TH_URG;
-		sent = tcp_output(tp, flags, tp->snd_lst - tp->snd_nxt, m);
-		/* set timers for retransmission if necessary */
-
-		if (!forced) {
-			tp->t_rexmt = tp->t_xmtime;
-			tp->t_rexmt_val = tp->snd_lst;
-
-			if ((tp->tc_flags&TC_REXMT) == 0) {
-				tp->t_rexmttl = T_REXMTTL;
-				tp->t_rtl_val = tp->snd_lst;
-			}
-
+	if (tp->snd_nxt >= tp->snd_lst)
+		return (0);
+	if (tp->tc_flags & TC_SND_URG)
+		flags |= TH_URG;
+	sent = tcp_output(tp, flags, tp->snd_lst - tp->snd_nxt, m);
+	if (!forced) {
+		tp->t_rexmt = tp->t_xmtime;
+		tp->t_rexmt_val = tp->snd_lst;
+		if ((tp->tc_flags&TC_REXMT) == 0) {
+			tp->t_rexmttl = T_REXMTTL;
+			tp->t_rtl_val = tp->snd_lst;
 		}
-
-		/* update seq for next send if this one got out */
-
-		if (sent)
-			tp->snd_nxt = tp->snd_lst;
-
-
-		/* if last timed message has been acked, start timing
-		   this one */
-
-		if ((tp->tc_flags&TC_SYN_ACKED) && tp->snd_una > tp->t_xmt_val) {
-			tp->t_xmt = 0;
-			tp->t_xmt_val = tp->snd_lst;
-		}
-
-		tp->tc_flags &= ~(TC_ACK_DUE|TC_REXMT|TC_FORCE_ONE);
-		tp->snd_hi = max(tp->snd_nxt, tp->snd_hi);
-		return (1);
 	}
-
-	return(0);
-}
-
-tcp_sndctl(tp)                            /* send a control msg */
-	struct tcb *tp;
-{
-COUNT(SEND_CTL);
-        if (!send(tp)) {
-		tcp_sndnull(tp);
-		return(0);
+	if (sent)
+		tp->snd_nxt = tp->snd_lst;
+	if ((tp->tc_flags&TC_SYN_ACKED) &&
+	    tp->snd_una > tp->t_xmt_val) {
+		tp->t_xmt = 0;
+		tp->t_xmt_val = tp->snd_lst;
 	}
-	return(1);
-}
-
-int	printhave = 0;
-
-tcp_sndwin(tp)
-	struct tcb *tp;
-{
-	int ihave;
-	int hehas;
-
-	if (tp->rcv_adv) {
-		/* figure out window we would advertise */
-		ihave = tp->t_ucb->uc_rhiwat -
-		    (tp->t_ucb->uc_rcc + tp->seqcnt);
-		hehas = tp->rcv_adv - tp->rcv_nxt;
-		if (printhave)
-		printf("ihave %d, hehas %d\n", ihave, hehas);
-		if (hehas > 32 &&
-		   (100*(ihave-hehas)/tp->t_ucb->uc_rhiwat) < 35)
-			return;
-		if (printhave)
-		printf("update him\n");
-	}
-        if (send(tp))
-		return (1);
-	tcp_sndnull(tp);
-	return (0);
-}
-tcp_sndnull(tp)				/* send only control information */
-	register struct tcb *tp;
-{
-COUNT(SEND_NULL);
-
-	tcp_output(tp, 0, 0, (struct mbuf *)0);
-        tp->tc_flags &= ~TC_ACK_DUE;
-}
-
-tcp_sndrst(tp, n)                         /* send a reset */
-	register struct tcb *tp;
-	register struct th *n;
-{
-COUNT(SEND_RST);
-        /* don't send a reset in response to a reset */
-
-	if (n->th_flags&TH_RST)
-		return;
-
-	tp->tc_flags |= TC_SND_RST;
-
-	if (n->th_flags&TH_ACK)
-		tp->snd_nxt = n->t_ackno;
-
-	tp->tc_flags &= ~TC_SYN_RCVD;
-	tcp_sndnull(tp);
-	tp->tc_flags &= ~TC_SND_RST;
+	tp->tc_flags &= ~(TC_ACK_DUE|TC_REXMT|TC_FORCE_ONE);
+	tp->snd_hi = max(tp->snd_nxt, tp->snd_hi);
+	return (1);
 }
 
 /*
@@ -315,13 +259,6 @@ COUNT(SEND_TCP);
 	ip->ip_off = 0;
 	ip->ip_ttl = MAXTTL;
 	i = ip_send(ip);
-#ifdef notdef
-	if (tp->t_ucb->uc_flags & UDEBUG) {
-		w.w_dat = (char *)t;
-		w.w_stype = i;
-		tcp_debug(tp, &w, INRECV, -1);
-	}
-#endif
 	return(i);
 }
 
@@ -339,8 +276,6 @@ COUNT(FIRSTEMPTY);
 	return (t_end(p) + 1);
 }
 
-/* SHOULD BE A MACRO, AFTER KEEP TRACK OF ASS Q SPACE */
-
 struct mbuf *
 tcp_sndcopy(tp, start, end)
 	struct tcb *tp;
@@ -353,9 +288,6 @@ tcp_sndcopy(tp, start, end)
 	struct mbuf *top, *p;
 COUNT(SND_COPY);
 
-/*
-	printf("st %x end %x off %x\n", start, end, tp->snd_off);
-*/
 	if (start >= end)    
 		return(NULL);
 	off = tp->snd_off;
