@@ -1,0 +1,47 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)autoconf.4	6.1 (Berkeley) %G%
+.\"
+.TH AUTOCONF 4 ""
+.UC 7
+.SH NAME
+autoconf \- diagnostics from autoconfiguartion code
+.SH DESCRIPTION
+When UNIX bootstraps it probes the innards of the machine it is running
+on and locates controllers, drives, and other devices, printing out
+what it finds on the console.  This procedure is driven by a system
+configuration table which is processed by
+.IR config (8)
+and compiled into each kernel.
+.PP
+VERSABUS devices are located by probing to see if their control-status
+registers respond.  If not, they are silently ignored.  If the control
+status register responds but the device cannot be made to interrupt,
+a diagnostic warning will be printed on the console and the device
+will not be available to the system.
+.PP
+A generic system may be built which picks its root device at boot time
+as the ``best'' available device.
+If such a system is booted with the RB_ASKNAME option of (see
+.IR reboot (2v)),
+then the name of the root device is read from the console terminal at boot
+time, and any available device may be used.
+.SH SEE ALSO
+config(8)
+.SH DIAGNOSTICS
+.PP
+\fB%s%d at vba address %o vec %o\fR.  The device %s%d, e.g. fsd0
+was found on the bus at control-status register address %o and with
+device vector %o.
+.PP
+\fB%s%d at vba address %o didn't interrupt\fR.  The device did not interrupt,
+likely because it is broken, hung, or not the kind of device it is advertised
+to be.
+.PP
+\fB%s%d at %s%d slave %d\fR.
+Which would look like ``smd0 at vd0 slave 0'',
+where \fBsmd0\fR is the name of a disk drive and \fBvd0\fR is the name
+of the controller.
+.SH BUGS
