@@ -1,0 +1,25 @@
+.TH INTRO 4 "1 April 1981"
+.UC 4
+.SH NAME
+intro \- introduction to special files and hardware support
+.SH DESCRIPTION
+This section describes the special files, related driver functions,
+and networking support
+available on the system.
+In this section the SYNOPSIS section gives a sample specification
+of the related driver or network interface
+for use in a system description to the
+.IR config (8)
+program.
+The DIAGNOSTICS section lists messages which may appear on the console
+and in the system error log
+.I /usr/adm/messages
+due to errors in device operation.
+.PP
+This section has been broken up according to machine independent
+device interfaces, ``4'' entries; VAX specific devices,
+``4V'' entries; and Sun specific devices, ``4S'' entries.
+An introduction to the network device interfaces may found in
+.IR intro (4N).
+.SH SEE ALSO
+intro(4N), intro(4V), intro(4S), config(8)
