@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)icmp_var.h	7.6 (Berkeley) %G%
+ *	@(#)icmp_var.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,17 @@ struct	icmpstat {
 	u_long	icps_reflect;		/* number of responses */
 	u_long	icps_inhist[ICMP_MAXTYPE + 1];
 };
+
+/*
+ * Names for ICMP sysctl objects
+ */
+#define	ICMPCTL_MASKREPL	1	/* allow replies to netmask requests */
+#define ICMPCTL_MAXID		2
+
+#define ICMPCTL_NAMES { \
+	{ 0, 0 }, \
+	{ "maskrepl", CTLTYPE_INT }, \
+}
 
 #ifdef KERNEL
 struct	icmpstat icmpstat;
