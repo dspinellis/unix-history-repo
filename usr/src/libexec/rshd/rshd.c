@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.17.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -312,10 +312,11 @@ doit(f, fromp)
 		setpgrp(0, getpid());
 		(void) close(s); (void) close(pv[0]);
 		dup2(pv[1], 2);
+		close(pv[1]);
 	}
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = "/bin/sh";
-	(void) close(f);
+	/* (void) close(f); */
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid((uid_t)pwd->pw_uid);
