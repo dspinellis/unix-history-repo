@@ -10,7 +10,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.9 %G%";
+ * Sccs Id = "@(#)def.h	2.10 %G%";
  */
 
 /*
@@ -285,15 +285,15 @@ char	*rindex();
 char	*rpair();
 char	*salloc();
 char	*savestr();
-char	*savestr();
 char	*skin();
 char	*snarf();
+char	*strcat();
+char	*strcpy();
 char	*value();
 char	*vcopy();
 char	*yankword();
 off_t	fsize();
 int	(*sigset())();
-int	icequal();
 struct	cmd	*lex();
 struct	grouphead	*findgroup();
 struct	name	*cat();
@@ -308,3 +308,5 @@ struct	name	*usermap();
 struct	name	*verify();
 struct	var	*lookup();
 long	transmit();
+int	icequal();
+int	cmpdomain();
