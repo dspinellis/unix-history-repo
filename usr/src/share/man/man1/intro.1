@@ -1,45 +1,47 @@
-.\" Copyright (c) 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"     @(#)intro.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
 .\"
-.TH INTRO 1 "April 29, 1985"
-.AT 3
-.SH NAME
-intro \- introduction to commands
-.SH DESCRIPTION
-This section describes publicly accessible commands in alphabetic order.
-Certain distinctions of purpose are made in the headings:
-.TP
-(1)
-Commands of general utility.
-.TP
-(1C)
-Commands for communication with other systems.
-.TP
-(1G)
-Commands used primarily for graphics and computer-aided design.
-.PP
-N.B.: Commands related to system maintenance used to appear in
-section 1 manual pages and were distinguished by (1M) at the top of the
-page.  These manual pages now appear in section 8.
-.SH SEE ALSO
-Section (6) for computer games.
-.PP
-.I How to get started,
-in the Introduction.
-.SH DIAGNOSTICS
-Upon termination each command returns two bytes of status,
-one supplied by the system giving the cause for
-termination, and (in the case of `normal' termination)
-one supplied by the program, see
-.I wait
-and
-.IR exit (2).
-The former byte is 0 for normal termination, the latter
-is customarily 0 for successful execution, nonzero
-to indicate troubles such as erroneous parameters, bad or inaccessible data,
-or other inability to cope with the task at hand.
-It is called variously `exit code', `exit status' or
-`return code', and is described only where special conventions are involved.
+.\"     @(#)intro.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INTRO 1
+.Os
+.Sh NAME
+.Nm intro
+.Nd introduction to general commands (tools and utilities)
+.Sh DESCRIPTION
+Section one of the manual contains most of the commands
+which comprise the
+.Bx
+enviroment.
+These commands are text editors, command shells,
+searching and sorting tools,
+system status commands,
+communication tools (remote commands, mail),
+compilers and compiler tools,
+file manoevering commands, output formatting tools,
+printer commands and so on.
+.Pp
+All commands set a status value upon exit which may be tested
+to see if the command completed normally.
+The values and their meanings are explained in the individual
+manuals.  Traditionally, the value 0 signifies
+normal completetion of the command or success.
+.Sh SEE ALSO
+.Xr man 1
+.Xr intro 2
+.Xr intro 3
+.Xr intro 3
+.Xr intro 4
+.Xr intro 8
+.Pp
+Tutorials in the
+.%T "UNIX User's Manual Supplementary Documents" .
+.Sh HISTORY
+A
+.Nm intro
+manual appeared in
+.At v6 .
+
