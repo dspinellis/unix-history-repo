@@ -1,4 +1,4 @@
-/*	dn11.c	4.6	81/07/11	*/
+/*	dn11.c	4.7	81/07/23	*/
 
 #if DN11
 /*
@@ -81,8 +81,6 @@ char *num, *acu;
 alarmtr()
 {
 	alarm(0);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
 	longjmp(jmpbuf, 1);
 }
 
