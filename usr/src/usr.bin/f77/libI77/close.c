@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)close.c	5.2	%G%
+ *	@(#)close.c	5.3	%G%
  */
 
 /*
@@ -68,9 +68,9 @@ f_exit()
 	}
 }
 
-t_runc (b, flag, str)
+t_runc (b, flg, str)
 unit	*b;
-ioflag	flag;
+ioflag	flg;
 char	*str;
 {
 	long	loc;
@@ -81,8 +81,8 @@ char	*str;
 		return (OK);	/* don't truncate direct access files, etc. */
 	loc = ftell (b->ufd);
 	if (truncate (b->ufnm, loc) != 0)
-		err (flag, errno, str)
+		err (flg, errno, str)
 	if (b->uwrt && ! nowreading(b))
-		err (flag, errno, str)
+		err (flg, errno, str)
 	return (OK);
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sue.c	5.1	%G%
+ *	@(#)sue.c	5.2	%G%
  */
 
 /*
@@ -47,7 +47,7 @@ s_wsue(a) cilist *a;
 }
 
 LOCAL
-c_sue(a,flag) cilist *a;
+c_sue(a,flg) cilist *a;
 {	int n;
 	external = sequential = YES;
 	formatted = NO;
@@ -58,7 +58,7 @@ c_sue(a,flag) cilist *a;
 	lunit = a->ciunit;
 	if(not_legal(lunit)) err(errflag,F_ERUNIT,rsue+5)
 	curunit = &units[lunit];
-	if(!curunit->ufd && (n=fk_open(flag,SEQ,UNF,(ftnint)lunit)))
+	if(!curunit->ufd && (n=fk_open(flg,SEQ,UNF,(ftnint)lunit)))
 		err(errflag,n,rsue+5)
 	cf = curunit->ufd;
 	elist = YES;

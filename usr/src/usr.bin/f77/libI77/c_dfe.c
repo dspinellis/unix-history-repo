@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)c_dfe.c	5.2	%G%
+ *	@(#)c_dfe.c	5.3	%G%
  */
 
 /*
@@ -12,7 +12,7 @@
 
 #include "fio.h"
 
-c_dfe(a,flag,str) cilist *a; char *str;
+c_dfe(a,flg,str) cilist *a; char *str;
 {	int n;
 	sequential = NO;
 	external = YES;
@@ -28,7 +28,7 @@ c_dfe(a,flag,str) cilist *a; char *str;
 	lunit = a->ciunit;
 	if(not_legal(lunit)) err(errflag,F_ERUNIT,str);
 	curunit = &units[lunit];
-	if(!curunit->ufd && (n=fk_open(flag,DIR,FMT,(ftnint)lunit)))
+	if(!curunit->ufd && (n=fk_open(flg,DIR,FMT,(ftnint)lunit)))
 		err(errflag,n,str)
 	cf = curunit->ufd;
 	elist = YES;

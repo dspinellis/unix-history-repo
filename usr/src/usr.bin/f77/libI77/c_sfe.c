@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)c_sfe.c	5.2	%G%
+ *	@(#)c_sfe.c	5.3	%G%
  */
 
 /*
@@ -12,7 +12,7 @@
 
 #include "fio.h"
 
-c_sfe(a,flag,mode,str) cilist *a; char *str; /* check */
+c_sfe(a,flg,mode,str) cilist *a; char *str; /* check */
 {	unit *p;
 	int n;
 
@@ -26,7 +26,7 @@ c_sfe(a,flag,mode,str) cilist *a; char *str; /* check */
 	lunit = a->ciunit;
 	if(not_legal(lunit)) err(errflag,F_ERUNIT,str);
 	curunit = p = &units[lunit];
-	if(!p->ufd && (n=fk_open(flag,mode,FMT,(ftnint)lunit)) )
+	if(!p->ufd && (n=fk_open(flg,mode,FMT,(ftnint)lunit)) )
 		err(errflag,n,str)
 	cf = curunit->ufd;
 	elist = YES;
