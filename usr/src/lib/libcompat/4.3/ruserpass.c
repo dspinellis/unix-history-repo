@@ -16,15 +16,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ruserpass.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
-#include <utmp.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <utmp.h>
+#include <ctype.h>
+#include <stdio.h>
 
 char	*renvlook(), *malloc(), *index(), *getenv(), *getpass(), *getlogin();
 struct	utmp *getutmp();
