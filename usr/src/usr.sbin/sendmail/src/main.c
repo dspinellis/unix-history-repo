@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.115		%G%);
+SCCSID(@(#)main.c	3.116		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -183,10 +183,36 @@ main(argc, argv)
 	initmacros();
 
 	/*
+	**  Do initial configuration.
+	**	This involves deciding what our configuration file will
+	**	be and then running it.  Later we will parse the rest of
+	**	the arguments, some of which may override the configuration
+	**	file.
+	**		Notice the problem here: user configuration files
+	**		will override the command line options.  Ugh.
+	*/
+
+	if (argc > 1 && (p = *++argv)[0] == '-')
+	{
+		/* trim off special leading parameters */
+		if (p[1] == 'C')
+		{
+			/* set configuration file */
+			ConfFile = &p[2];
+			if (ConfFile[0] == '\0')
+				ConfFile = "sendmail.cf";
+			safecf = FALSE;
+		}
+	}
+
+	/* now run the system configuration file */
+	readcf(ConfFile, safecf);
+
+	/*
 	** Crack argv.
 	*/
 
-	while (--argc > 0 && (p = *++argv)[0] == '-')
+	for (; --argc > 0 && (p = *argv)[0] == '-'; argv++)
 	{
 		switch (p[1])
 		{
@@ -289,11 +315,6 @@ main(argc, argv)
 			break;
 
 		  case 'C':	/* select configuration file */
-			if (p[2] == '\0')
-				ConfFile = "sendmail.cf";
-			else
-				ConfFile = &p[2];
-			safecf = FALSE;
 			break;
 
 		  case 'A':	/* select alias file */
@@ -424,7 +445,6 @@ main(argc, argv)
 	if (LogLevel > 10)
 		syslog(LOG_DEBUG, "entered, uid=%d, pid=%d", getuid(), getpid());
 # endif LOG
-	readcf(ConfFile, safecf);
 
 	/* our name for SMTP codes */
 	expand("$j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);

@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.88		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.89		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -381,17 +381,6 @@ EXTERN char	Mode;		/* operation mode, see below */
 #define MD_VERIFY	'v'		/* verify: don't collect or deliver */
 
 #define MD_DEFAULT	MD_DELIVER	/* default operation mode */
-/*
-**  Options
-**
-**	These are assorted options that can be set from the configuration
-**	file.
-*/
-
-EXTERN char	*Option[128];	/* miscellaneous option values */
-
-/* option values */
-# define	OPT_QUEUEALL	'q'	/* force all messages to queue */
 /*
 **  Global variables.
 */

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.32		%G%);
+SCCSID(@(#)readcf.c	3.33		%G%);
 
 /*
 **  READCF -- read control file.
@@ -195,10 +195,7 @@ readcf(cfname, safe)
 			break;
 
 		  case 'O':		/* set option */
-			if (buf[2] == '\0')
-				Option[buf[1]] = "";
-			else
-				Option[buf[1]] = newstr(&buf[2]);
+			setoption(buf[1], &buf[2]);
 			break;
 
 		  case 'P':		/* set precedence */
@@ -512,4 +509,107 @@ mfdecode(flags, f)
 		}
 	}
 	putc('?', f);
+}
+/*
+**  SETOPTION -- set global processing option
+**
+**	Parameters:
+**		opt -- option name.
+**		val -- option value (as a text string).
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Sets options as implied by the arguments.
+*/
+
+setoption(opt, val)
+	char opt;
+	char *val;
+{
+	time_t tval;
+	int ival;
+	extern char *HelpFile;			/* defined in conf.c */
+
+# ifdef DEBUG
+	if (tTd(37, 1))
+		printf("setoption %c=%s\n", opt, val);
+# endif DEBUG
+
+	/*
+	**  First encode this option as appropriate.
+	*/
+
+	if (index("rT", opt) != NULL)
+		tval = convtime(val);
+	else if (index("gLu", opt) != NULL)
+		ival = atoi(val);
+	else if (val[0] == '\0')
+		val = "";
+	else
+		val = newstr(val);
+
+	/*
+	**  Now do the actual assignment.
+	*/
+
+	switch (opt)
+	{
+	  case 'A':		/* set default alias file */
+		AliasFile = val;
+		break;
+
+# ifdef V6
+	  case 'd':		/* dst timezone name */
+		DstTimeZone = val;
+		break;
+# endif V6
+
+	  case 'g':		/* default gid */
+		DefGid = ival;
+		break;
+
+	  case 'H':		/* help file */
+		HelpFile = val;
+		break;
+
+	  case 'L':		/* log level */
+		LogLevel = ival;
+		break;
+
+	  case 'Q':		/* queue directory */
+		QueueDir = val;
+		break;
+
+	  case 'r':		/* read timeout */
+		ReadTimeout = tval;
+		break;
+
+	  case 'S':		/* status file */
+		StatFile = val;
+		break;
+
+# ifdef V6
+	  case 's':		/* standard time time zone */
+		StdTimeZone = val;
+		break;
+# endif V6
+
+	  case 'T':		/* queue timeout */
+		TimeOut = tval;
+		break;
+
+	  case 'u':		/* set default uid */
+		DefUid = ival;
+		break;
+
+	  case 'X':		/* transcript file template */
+		XcriptFile = val;
+		break;
+
+	  default:
+		syserr("setoption: line %d: illegal option %c", LineNumber, opt);
+		break;
+	}
 }
