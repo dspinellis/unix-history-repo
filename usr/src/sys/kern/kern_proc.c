@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.28	82/07/24	*/
+/*	kern_proc.c	4.29	82/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -370,6 +370,8 @@ register struct inode *ip;
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
 	mtpr(TBIA, 0);
 
+	if (u.u_error)
+		swkill(u.u_procp, "i/o error mapping pages");
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
