@@ -1,4 +1,5 @@
-# @(#)europe	7.6
+# $Id$
+# From ado's: @(#)europe	7.6
 
 # International country codes are used to identify countries' rules and
 # zones
@@ -328,7 +329,6 @@ Rule	W-SU	1981	max	-	Sep	lastSun	2:00s	0	-
 
 # Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
 Zone	WET		0:00	W-Eur		WET%s
-Zone	Iceland		0:00	-		WET
 Zone	Portugal	0:00	W-Eur		WET%s	1992 Sep 27 1:00s
 			1:00	M-Eur		MET%s
 Zone	MET		1:00	M-Eur		MET%s
@@ -336,6 +336,11 @@ Zone	Poland		1:00	W-Eur		MET%s
 Zone	EET		2:00	E-Eur		EET%s
 Zone	Turkey		3:00	Turkey		EET%s
 Zone	W-SU		3:00	M-Eur		????
+
+# Per Adam David <adam@veda.is>, Iceland uses WET but computers generally
+# label it GMT so that it not be confused with the WET used in Europe which
+# observes summer time.			- Garrett Wollman@freefall.cdrom.com
+Zone	Iceland		0:00	-		GMT
 
 # Tom Hoffman says that MET is also known as Central European Time
 
