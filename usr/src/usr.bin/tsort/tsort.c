@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tsort.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tsort.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -168,7 +168,7 @@ add_arc(s1, s2)
 {
 	register NODE *n1;
 	NODE *n2;
-	int bsize;
+	int bsize, i;
 
 	n1 = get_node(s1);
 
@@ -178,9 +178,13 @@ add_arc(s1, s2)
 	n2 = get_node(s2);
 
 	/*
-	 * could check to see if this arc is here already, but it isn't
-	 * worth the bother -- there usually isn't and it doesn't hurt if
-	 * there is (I think :-).
+	 * Check if this arc is already here.
+	 */
+	for (i = 0; i < n1->n_narcs; i++)
+		if (n1->n_arcs[i] == n2)
+			return;
+	/*
+	 * Add it.
 	 */
 	if (n1->n_narcs == n1->n_arcsize) {
 		if (!n1->n_arcsize)
@@ -270,7 +274,7 @@ tsort()
 
 		if (!cycle_buf) {
 			/*
-			 * allocate space for two cycle logs - one to be used
+			 * Allocate space for two cycle logs - one to be used
 			 * as scratch space, the other to save the longest
 			 * cycle.
 			 */
