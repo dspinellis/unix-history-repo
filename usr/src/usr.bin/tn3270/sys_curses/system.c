@@ -86,7 +86,7 @@ char	*message;
     struct storage_descriptor sd;
     int length = strlen(message);
 
-    if (api_exch_outcommand(EXCH_REJECTED) == -1) {
+    if (api_exch_outcommand(EXCH_CMD_REJECTED) == -1) {
 	return -1;
     }
     sd.length = htons(length);
@@ -121,7 +121,7 @@ doassociate()
 	return -1;
     }
     sprintf(promptbuf, "Enter password for user %s:", pwent->pw_name);
-    if (api_exch_outcommand(EXCH_SEND_AUTH) == -1) {
+    if (api_exch_outcommand(EXCH_CMD_SEND_AUTH) == -1) {
 	return -1;
     }
     sd.length = htons(strlen(promptbuf));
@@ -139,7 +139,7 @@ doassociate()
 			strlen(pwent->pw_name), pwent->pw_name) == -1) {
 	return -1;
     }
-    if (api_exch_incommand(EXCH_AUTH) == -1) {
+    if (api_exch_incommand(EXCH_CMD_AUTH) == -1) {
 	return -1;
     }
     if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
@@ -170,7 +170,7 @@ doassociate()
 	}
     }
     if (strcmp(crypt(buffer, pwent->pw_passwd), pwent->pw_passwd) == 0) {
-	if (api_exch_outcommand(EXCH_ASSOCIATED) == -1) {
+	if (api_exch_outcommand(EXCH_CMD_ASSOCIATED) == -1) {
 	    return -1;
 	} else {
 	    return 1;
@@ -199,7 +199,7 @@ freestorage()
 	return;
     }
     storage_must_send = 0;
-    if (api_exch_outcommand(EXCH_HEREIS) == -1) {
+    if (api_exch_outcommand(EXCH_CMD_HEREIS) == -1) {
 	kill_connection();
 	return;
     }
@@ -234,7 +234,7 @@ getstorage(address, length)
 	quit();
     }
     storage_must_send = 0;
-    if (api_exch_outcommand(EXCH_GIMME) == -1) {
+    if (api_exch_outcommand(EXCH_CMD_GIMME) == -1) {
 	kill_connection();
 	return -1;
     }
@@ -246,7 +246,7 @@ getstorage(address, length)
 	kill_connection();
 	return -1;
     }
-    if (api_exch_incommand(EXCH_HEREIS) == -1) {
+    if (api_exch_incommand(EXCH_CMD_HEREIS) == -1) {
 	fprintf(stderr, "Bad data from other side.\n");
 	fprintf(stderr, "(Encountered at %s, %s.)\n", __FILE__, __LINE__);
 	return -1;
@@ -386,6 +386,8 @@ doconnect()
 int
 shell_continue()
 {
+    int i;
+
     switch (state) {
     case DEAD:
 	pause();			/* Nothing to do */
@@ -395,11 +397,11 @@ shell_continue()
 	    kill_connection();
 	    return -1;
 	}
-	if (api_exch_init(sock, "client") == -1) {
+	if (api_exch_init(sock, "server") == -1) {
 	    return -1;
 	}
 	while (state == UNCONNECTED) {
-	    if (api_exch_incommand(EXCH_ASSOCIATE) == -1) {
+	    if (api_exch_incommand(EXCH_CMD_ASSOCIATE) == -1) {
 		kill_connection();
 		return -1;
 	    } else {
@@ -416,29 +418,38 @@ shell_continue()
 	}
 	break;
     case CONNECTED:
-	if (api_exch_incommand(EXCH_REQUEST) == -1) {
-	    kill_connection();
-	} else if (api_exch_intype(EXCH_TYPE_REGS, sizeof inputRegs,
-				(char *)&inputRegs) == -1) {
-	    kill_connection();
-	} else if (api_exch_intype(EXCH_TYPE_SREGS, sizeof inputSregs,
-				(char *)&inputSregs) == -1) {
-	    kill_connection();
-	} else if (nextstore() == -1) {
-	    kill_connection();
-	} else {
-	    handle_api(&inputRegs, &inputSregs);
-	    freestorage();			/* Send any storage back */
-	    if (api_exch_outcommand(EXCH_REPLY) == -1) {
+	switch (i = api_exch_nextcommand()) {
+	case EXCH_CMD_REQUEST:
+	    if (api_exch_intype(EXCH_TYPE_REGS, sizeof inputRegs,
+				    (char *)&inputRegs) == -1) {
 		kill_connection();
-	    } else if (api_exch_outtype(EXCH_TYPE_REGS, sizeof inputRegs,
-				(char *)&inputRegs) == -1) {
+	    } else if (api_exch_intype(EXCH_TYPE_SREGS, sizeof inputSregs,
+				    (char *)&inputSregs) == -1) {
 		kill_connection();
-	    } else if (api_exch_outtype(EXCH_TYPE_SREGS, sizeof inputSregs,
-				(char *)&inputSregs) == -1) {
+	    } else if (nextstore() == -1) {
 		kill_connection();
+	    } else {
+		handle_api(&inputRegs, &inputSregs);
+		freestorage();			/* Send any storage back */
+		if (api_exch_outcommand(EXCH_CMD_REPLY) == -1) {
+		    kill_connection();
+		} else if (api_exch_outtype(EXCH_TYPE_REGS, sizeof inputRegs,
+				    (char *)&inputRegs) == -1) {
+		    kill_connection();
+		} else if (api_exch_outtype(EXCH_TYPE_SREGS, sizeof inputSregs,
+				    (char *)&inputSregs) == -1) {
+		    kill_connection();
+		}
+		/* Done, and it all worked! */
 	    }
-	    /* Done, and it all worked! */
+	    break;
+	case EXCH_CMD_DISASSOCIATE:
+	    kill_connection();
+	    break;
+	default:
+	    fprintf(stderr, "Looking for a REQUEST or DISASSOCIATE command\n");
+	    fprintf(stderr, "\treceived 0x%02x.\n", i);
+	    kill_connection();
 	}
     }
     return shell_active;
