@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -27,9 +27,9 @@ static char sccsid[] = "@(#)rec_open.c	8.2 (Berkeley) %G%";
 #include "recno.h"
 
 DB *
-__rec_open(fname, flags, mode, openinfo)
+__rec_open(fname, flags, mode, openinfo, dflags)
 	const char *fname;
-	int flags, mode;
+	int flags, mode, dflags;
 	const RECNOINFO *openinfo;
 {
 	BTREE *t;
@@ -57,9 +57,9 @@ __rec_open(fname, flags, mode, openinfo)
 		btopeninfo.prefix = NULL;
 		btopeninfo.lorder = openinfo->lorder;
 		dbp = __bt_open(openinfo->bfname,
-		    O_RDWR, S_IRUSR | S_IWUSR, &btopeninfo);
+		    O_RDWR, S_IRUSR | S_IWUSR, &btopeninfo, dflags);
 	} else
-		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, NULL);
+		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, NULL, dflags);
 	if (dbp == NULL)
 		goto err;
 
@@ -187,6 +187,13 @@ __rec_fd(dbp)
 
 	t = dbp->internal;
 
+	/* Toss any page pinned across calls. */
+	if (t->bt_pinned != NULL) {
+		mpool_put(t->bt_mp, t->bt_pinned, 0);
+		t->bt_pinned = NULL;
+	}
+
+	/* In-memory database can't have a file descriptor. */
 	if (ISSET(t, R_INMEM)) {
 		errno = ENOENT;
 		return (-1);
