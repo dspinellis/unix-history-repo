@@ -1,9 +1,10 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.2 83/03/18
+# Makefile	@(#)Makefile	1.3 83/03/18
 #
 CC= cc
+CTAGS= ctags -w
 CFLAGS= -O
 DFILES= driver1.c driver2.c driver3.c grap.c
 DOBJS= driver1.o driver2.o driver3.o grap.o
@@ -15,15 +16,20 @@ COMMONFILES= assorted.c boarders.c game.c globals.c\
 	main.c parties.c screen.c machdep.c
 COMMONOBJS= assorted.o boarders.o game.o globals.o\
 	main.o parties.o screen.o machdep.o
-OTHERFILES= Makefile externs.h player.h machdep.h sail.m
+HDRS= externs.h player.h machdep.h
+OTHERFILES= Makefile sail.m
+CTAGFILES= ${DFILES} ${PFILES} ${LFILES} ${COMMONFILES}
 JUNKFILES= sail driver sail.log sail.doc junk arch tags
 PLIBS= -lcurses -ltermlib machdep.o
 DLIBS=
 LLIBS=
+SAILMASTER= daemon
 SAIL= SAIL
 DRIVER= .driver
 SAIL.LOG= SAIL.log
 SAIL.DOC= SAIL.doc
+SHIPSLOG= .shipslog
+PUBLIC= /usr/public
 
 ..c.o:; ${CC} ${CFLAGS} -c $<
 
@@ -43,9 +49,15 @@ sail.log: ${LOBJS} globals.o
 sail.doc: sail.m
 	nroff -man sail.m > sail.doc
 
+tags: ${CTAGFILES}
+	${CTAGS} ${CTAGFILES}
+
+${HDRS} ${CTAGFILES}:
+	sccs get $@;
+
 arch:	sail.ar
 	ar uv sail.ar ${PFILES} ${COMMONFILES} ${OTHERFILES} \
-	${DFILES} ${LFILES}
+	${DFILES} ${LFILES} ${HDRS}
 
 driveprofile: ${COMMONOBJS} ${DOBJS}
 	cc -i -p ${COMMONOBJS} ${DOBJS} ${CFLAGS} ${DLIBS} -o DRIVE.pro
@@ -54,25 +66,16 @@ profile: ${COMMONOBJS} ${POBJS} ${DOBJS}
 	cc -i -p ${COMMONOBJS} ${POBJS} ${CFLAGS} ${PLIBS} -o SAIL.pro
 	cc -i -p ${COMMONOBJS} ${DOBJS} ${CFLAGS} ${DLIBS} -o DRIVE.pro
 
-install: ${BIN}/${SAIL} ${BIN}/${DRIVER} ${BIN}/${SAIL.LOG} ${MAN}/${SAIL.DOC}
-${BIN}/${SAIL}: sail
-	rm -f ${BIN}/${SAIL}
-	cp sail ${BIN}/${SAIL}
-	chmod 711 ${BIN}/${SAIL}
-${BIN}/${DRIVER}: driver
-	rm -f ${BIN}/${DRIVER}
-	cp driver ${BIN}/${DRIVER}
-	chmod 711 ${BIN}/${DRIVER}
-${BIN}/${SAIL.LOG}: sail.log
-	rm -f ${BIN}/${SAIL.LOG}
-	cp sail.log ${BIN}/${SAIL.LOG}
-	chmod 710 ${BIN}/${SAIL.LOG}
-	strip ${BIN}/${SAIL.LOG}
-${MAN}/${SAIL.DOC}: sail.doc
-	rm -f ${MAN}/${SAIL.DOC}
-	cp sail.doc ${MAN}/${SAIL.DOC}
-	chmod 640 ${MAN}/${SAIL.DOC}
-
 clean: 
 	rm -f ${DOBJS} ${POBJS} ${LOBJS} ${COMMONOBJS} ${JUNKFILES}
 
+install: sail driver sail.log sail.doc ${PUBLIC}/${SHIPSLOG}
+	install -s -m 4711 -o ${SAILMASTER} sail ${PUBLIC}/${SAIL}
+	install -s -m 4711 -o ${SAILMASTER} driver ${PUBLIC}/${DRIVER}
+	install -s -m 711 sail.log ${PUBLIC}/${SAIL.LOG}
+	cp sail.doc ${PUBLIC}/${SAIL.DOC}
+
+${PUBLIC}/${SHIPSLOG}:
+	cp /dev/null ${PUBLIC}/${SHIPSLOG}
+	chown ${SAILMASTER} ${PUBLIC}/${SHIPSLOG}
+	chmod 644 ${PUBLIC}/${SHIPSLOG}
