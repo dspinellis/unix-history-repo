@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 OBJ1=	bt_close.o bt_conv.o bt_debug.o bt_delete.o bt_get.o bt_open.o \
 	bt_overflow.o bt_page.o bt_put.o bt_search.o bt_seq.o bt_split.o \
@@ -18,17 +18,17 @@ db.a: ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${COMP}
 	ranlib $@
 
 ${OBJ1}:
-	${CC} -c -O -I../btree -I../include ../btree/$*.c
+	${CC} -c -O -I. -I../btree -I../include ../btree/$*.c
 ${OBJ2}:
-	${CC} -c -O -I../db -I../include ../db/$*.c
+	${CC} -c -O -I. -I../db -I../include ../db/$*.c
 ${OBJ3}:
-	${CC} -c -O -I../hash -I../include ../hash/$*.c
+	${CC} -c -O -I. -I../hash -I../include ../hash/$*.c
 ${OBJ4}:
-	${CC} -c -O -I../mpool -I../include ../mpool/$*.c
+	${CC} -c -O -I. -I../mpool -I../include ../mpool/$*.c
 ${OBJ5}:
-	${CC} -c -O -I../recno -I../include ../recno/$*.c
-${COMP}:
-	${CC} -c -O -I../port -I../include ../port/$*.c
+	${CC} -c -O -I. -I../recno -I../include ../recno/$*.c
+${COMP} X:
+	${CC} -c -O -I. -I../port -I../include ../port/$*.c
 
 clean:
 	rm -f db.a ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${COMP}
