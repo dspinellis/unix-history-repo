@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -11,25 +22,30 @@ SRCS=	t0.c t1.c t2.c t3.c t4.c t5.c t6.c t7.c t8.c t9.c tb.c tc.c te.c \
 	tf.c tg.c ti.c tm.c ts.c tt.c tu.c tv.c
 OBJS=	t0.o t1.o t2.o t3.o t4.o t5.o t6.o t7.o t8.o t9.o tb.o tc.o te.o \
 	tf.o tg.o ti.o tm.o ts.o tt.o tu.o tv.o
+MAN=	tbl.0
 
 all: tbl
 
 tbl: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core tbl
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 tbl ${DESTDIR}/usr/bin/tbl
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 
 test:
@@ -86,31 +102,3 @@ test:
 ichk: /usr/bin/tbl
 	/usr/bin/tbl sample1 >junk1
 	cmp -s junk1 out1
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-t0.o: t0.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t1.o: t1.c t..c /usr/include/stdio.h /usr/include/ctype.h /usr/include/signal.h
-t2.o: t2.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t3.o: t3.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t4.o: t4.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t5.o: t5.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t6.o: t6.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t7.o: t7.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t8.o: t8.c t..c /usr/include/stdio.h /usr/include/ctype.h
-t9.o: t9.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tb.o: tb.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tc.o: tc.c t..c /usr/include/stdio.h /usr/include/ctype.h
-te.o: te.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tf.o: tf.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tg.o: tg.c t..c /usr/include/stdio.h /usr/include/ctype.h
-ti.o: ti.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tm.o: tm.c t..c /usr/include/stdio.h /usr/include/ctype.h
-ts.o: ts.c
-tt.o: tt.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tu.o: tu.c t..c /usr/include/stdio.h /usr/include/ctype.h
-tv.o: tv.c t..c /usr/include/stdio.h /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
