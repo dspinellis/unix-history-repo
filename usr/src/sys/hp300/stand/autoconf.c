@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.9 89/10/07$
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 #include "samachdep.h"
@@ -22,10 +22,27 @@
 
 struct hp_hw sc_table[MAX_CTLR];
 
+extern int internalhpib;
+
+#if 0
+#include "rominfo.h"
+printrominfo()
+{
+	struct rominfo *rp = (struct rominfo *)ROMADDR;
+	printf("boottype %x, name %s, lowram %x, sysflag %x\n",
+	       rp->boottype, rp->name, rp->lowram, rp->sysflag&0xff);
+	printf("rambase %x, ndrives %x, sysflag2 %x, msus %x\n",
+	       rp->rambase, rp->ndrives, rp->sysflag2&0xff, rp->msus);
+}
+#endif
+
 configure()
 {
 	find_devs();
 	cninit();
+#if 0
+	printrominfo();
+#endif
 	hpibinit();
 	scsiinit();
 }
@@ -33,13 +50,11 @@ configure()
 sctoaddr(sc)
 	int sc;
 {
-	extern int internalhpib;
-
 	if (sc == -2)
 		return(0x1000000);
 	if (sc == -1)
 		return(GRFIADDR);
-	if (sc == 7)
+	if (sc == 7 && internalhpib)
 		return(internalhpib);
 	if (sc < 32)
 		return(0x600000+(0x10000*sc));
@@ -68,7 +83,21 @@ find_devs()
 		hw->hw_id = id_reg[1] & 0xff;
 		hw->hw_sc = sc;
 
+		/*
+		 * Not all internal HP-IBs respond rationally to id requests
+		 * so we just go by the "internal HPIB" indicator in SYSFLAG.
+		 */
+		if (sc == 7 && internalhpib) {
+			hw->hw_type = HPIB;
+			hw++;
+			continue;
+		}
+
 		switch (hw->hw_id) {
+		case 5:		/* 98642A */
+		case 128+5:	/* 98642A remote */
+			hw->hw_type = COMMDCM;
+			break;
 		case 8:		/* 98625B */
 		case 128:	/* 98624A */
 			hw->hw_type = HPIB;

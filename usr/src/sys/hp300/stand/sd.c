@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: sd.c 1.2 90/01/23$
  *
- *	@(#)sd.c	7.1 (Berkeley) %G%
+ *	@(#)sd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -112,7 +112,7 @@ retry:
 	else
 		stat = scsi_tt_write(unit, io->i_ma, io->i_cc, blk, nblk);
 	if (stat) {
-		printf("sd(%d,?) err: 0x%x", unit, stat);
+		printf("sd(%d,?) err: 0x%x\n", unit, stat);
 		if (++ss->sc_retry > SDRETRY)
 			return(-1);
 		else
