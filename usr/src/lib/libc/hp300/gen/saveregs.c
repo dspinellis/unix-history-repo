@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)saveregs.c	5.1 (Berkeley) %G%"
+static char sccsid[] = "@(#)saveregs.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 __builtin_saveregs()
