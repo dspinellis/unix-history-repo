@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.109 (Berkeley) %G%
  */
 
 /*
@@ -1603,7 +1603,7 @@ nfs_readdirrpc(vp, uiop, cred)
 		while (more_dirs && siz < uiop->uio_resid) {
 			savoff = off;		/* Hold onto offset and dp */
 			savdp = dp;
-			nfsm_dissecton(tl, u_long *, 2 * NFSX_UNSIGNED);
+			nfsm_dissect(tl, u_long *, 2 * NFSX_UNSIGNED);
 			dp = (struct dirent *)tl;
 			dp->d_fileno = fxdr_unsigned(u_long, *tl++);
 			len = fxdr_unsigned(int, *tl);
@@ -1625,7 +1625,7 @@ nfs_readdirrpc(vp, uiop, cred)
 				nfsm_adv(tlen - len);
 				len = tlen;
 			}
-			nfsm_dissecton(tl, u_long *, 2 * NFSX_UNSIGNED);
+			nfsm_dissect(tl, u_long *, 2 * NFSX_UNSIGNED);
 			off = fxdr_unsigned(u_long, *tl);
 			*tl++ = 0;	/* Ensures null termination of name */
 			more_dirs = fxdr_unsigned(int, *tl);
@@ -1636,7 +1636,7 @@ nfs_readdirrpc(vp, uiop, cred)
 		 * If at end of rpc data, get the eof boolean
 		 */
 		if (!more_dirs) {
-			nfsm_dissecton(tl, u_long *, NFSX_UNSIGNED);
+			nfsm_dissect(tl, u_long *, NFSX_UNSIGNED);
 			more_dirs = (fxdr_unsigned(int, *tl) == 0);
 
 			/*

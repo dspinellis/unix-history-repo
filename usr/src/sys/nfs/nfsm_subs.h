@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	8.1 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -65,19 +65,7 @@ extern struct mbuf *nfsm_reqh();
 		if (t1 >= (s)) { \
 			(a) = (c)(dpos); \
 			dpos += (s); \
-		} else if (error = nfsm_disct(&md, &dpos, (s), t1, TRUE, &cp2)) { \
-			m_freem(mrep); \
-			goto nfsmout; \
-		} else { \
-			(a) = (c)cp2; \
-		} }
-
-#define	nfsm_dissecton(a,c,s) \
-		{ t1 = mtod(md, caddr_t)+md->m_len-dpos; \
-		if (t1 >= (s)) { \
-			(a) = (c)(dpos); \
-			dpos += (s); \
-		} else if (error = nfsm_disct(&md, &dpos, (s), t1, FALSE, &cp2)) { \
+		} else if (error = nfsm_disct(&md, &dpos, (s), t1, &cp2)) { \
 			m_freem(mrep); \
 			goto nfsmout; \
 		} else { \
