@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.12 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -506,9 +506,19 @@ funcend(fp, bundle, endline)
 	patch4(fp->entloc);
 	/*
 	 * Put out the block entrance code and the block name.
-	 * the CONG is overlaid by a patch later!
+	 * HDRSZE is the number of bytes of info in the static
+	 * BEG data area exclusive of the proc name. It is
+	 * currently defined as:
+	/*	struct hdr {
+	/*		long framesze;	/* number of bytes of local vars */
+	/*		long nargs;	/* number of bytes of arguments */
+	/*		short tests;	/* TRUE => perform runtime tests */
+	/*		short offset;	/* offset of procedure in source file */
+	/*		char name[1];	/* name of active procedure */
+	/*	};
 	 */
-	var = put(2, (lenstr(fp->symbol,0) << 8)
+#	define HDRSZE 12
+	var = put(2, (lenstr(fp->symbol,0) + HDRSZE << 8)
 			| (cbn == 1 && opt('p') == 0 ? O_NODUMP: O_BEG), 0);
 	    /*
 	     *  output the number of bytes of arguments
