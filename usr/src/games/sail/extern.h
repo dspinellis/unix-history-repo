@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	2.5 85/03/04
+ * @(#)extern.h	2.6 85/04/22
  */
 #include <stdio.h>
 #include <signal.h>
@@ -16,8 +16,9 @@ jmp_buf restart;
 
 	/* command line flags */
 char debug;				/* -D */
-char randomize;				/* -x */
-char longfmt;				/* -l */
+char randomize;				/* -x, give first available ship */
+char longfmt;				/* -l, print score in long format */
+char nobells;				/* -b, don't ring bell before Signal */
 
 	/* other initial modes */
 char issetuid;				/* running setuid */
