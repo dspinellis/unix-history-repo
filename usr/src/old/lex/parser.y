@@ -9,7 +9,7 @@
 
 %{
 #ifndef lint
-static char sccsid[] = "@(#)parser.y	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.y	4.3 (Berkeley) %G%";
 #endif
 
 # include "ldefs.c"
@@ -242,9 +242,9 @@ yylex(){
 						i = treesize*(sizeof(*name)+sizeof(*left)+
 							sizeof(*right)+sizeof(*nullstr)+sizeof(*parent))+ALITTLEEXTRA;
 						p = myalloc(i,1);
-						if(c == 0)
+						if(p == 0)
 							error("Too little core for parse tree");
-						cfree(p,i,1);
+						free(p);
 						name = (int *)myalloc(treesize,sizeof(*name));
 						left = (int *)myalloc(treesize,sizeof(*left));
 						right = (int *)myalloc(treesize,sizeof(*right));
@@ -293,7 +293,7 @@ yylex(){
 					case 'k': case 'K': /* overriden packed char classes */
 						while (*p && !digit(*p))p++;
 						if (report==2) report=1;
-						cfree(pchar, pchlen, sizeof(*pchar));
+						free(pchar);
 						pchlen = siconv(p);
 # ifdef DEBUG
 						if (debug) printf( "Size classes (%%k) now %d\n",pchlen);
