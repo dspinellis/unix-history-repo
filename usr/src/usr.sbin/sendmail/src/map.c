@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.54 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -739,19 +739,20 @@ bt_map_open(map, mode)
 	}
 #if !OLD_NEWDB
 	fd = db->fd(db);
-# if HASFLOCK
-#  if !defined(O_EXLOCK)
+# if defined(O_EXLOCK) && HASFLOCK
+	if (fd >= 0)
+	{
+		if (mode == O_RDONLY)
+			(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
+		else
+			map->map_mflags |= MF_LOCKED;
+	}
+# else
 	if (mode == O_RDWR && fd >= 0)
 	{
 		if (lockfile(fd, map->map_file, ".db", LOCK_EX))
 			map->map_mflags |= MF_LOCKED;
 	}
-#  else
-	if (mode == O_RDONLY && fd >= 0)
-		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
-	else
-		map->map_mflags |= MF_LOCKED;
-#  endif
 # endif
 #endif
 
@@ -826,19 +827,20 @@ hash_map_open(map, mode)
 	}
 #if !OLD_NEWDB
 	fd = db->fd(db);
-# if HASFLOCK
-#  if !defined(O_EXLOCK)
+# if defined(O_EXLOCK) && HASFLOCK
+	if (fd >= 0)
+	{
+		if (mode == O_RDONLY)
+			(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
+		else
+			map->map_mflags |= MF_LOCKED;
+	}
+# else
 	if (mode == O_RDWR && fd >= 0)
 	{
 		if (lockfile(fd, map->map_file, ".db", LOCK_EX))
 			map->map_mflags |= MF_LOCKED;
 	}
-#  else
-	if (mode == O_RDONLY && fd >= 0)
-		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
-	else
-		map->map_mflags |= MF_LOCKED;
-#  endif
 # endif
 #endif
 
