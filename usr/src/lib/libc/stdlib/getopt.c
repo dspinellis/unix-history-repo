@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getopt.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -41,22 +41,22 @@ getopt(nargc, nargv, ostr)
 		optreset = 0;
 		if (optind >= nargc || *(place = nargv[optind]) != '-') {
 			place = EMSG;
-			return (EOF);
+			return (-1);
 		}
 		if (place[1] && *++place == '-') {	/* found "--" */
 			++optind;
 			place = EMSG;
-			return (EOF);
+			return (-1);
 		}
 	}					/* option letter okay? */
 	if ((optopt = (int)*place++) == (int)':' ||
 	    !(oli = strchr(ostr, optopt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
-		 * assume it means EOF.
+		 * assume it means -1.
 		 */
 		if (optopt == (int)'-')
-			return (EOF);
+			return (-1);
 		if (!*place)
 			++optind;
 		if (opterr && *ostr != ':')
