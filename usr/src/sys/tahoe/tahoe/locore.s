@@ -1,4 +1,4 @@
-/*	locore.s	1.2	86/01/05	*/
+/*	locore.s	1.3	86/01/12	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -13,13 +13,10 @@
 #include "syscall.h"
 #include "cmap.h"
 
-	.set	HIGH,0x1f	# mask for total disable
-	.set	BERVEC,0x80	# offset into scb of the bus error vector 
-	.set	RESTVEC,0x8	# offset into scb of the restart vector 
-
-	.set	NISP,3		# number of interrupt stack pages
-	.set	SYSTEM,0xC0000000 # virtual address of system start
-	.set	PPAGES,0x100000  # Number of possible pages in P0,P1, etc.
+	.set	HIGH,0x1f		# mask for total disable
+	.set	NISP,3			# number of interrupt stack pages
+	.set	SYSTEM,0xC0000000	# virtual address of system start
+	.set	PPAGES,0x100000  	# possible pages in P0,P1, etc.
 
 /* ACBL for non-negative '_add' */
 #define ACBL(_limit,_add,_index,_displ) \
@@ -200,7 +197,7 @@ _X/**/name
 #define	MSG(msg) .data; 1: .asciz msg; .text
 /*
  * r0-r2 are saved across all faults and interrupts.
- * Routines below and those hidden in ubglue.s (device
+ * Routines below and those hidden in vbglue.s (device
  * interrupts) invoke the PUSHR/POPR macros to execute
  * this.  Also, certain stack frame offset calculations
  * (such as in hardclock) understand this, using the
@@ -309,25 +306,25 @@ SCBVEC(buserr):
 
 SCBVEC(powfail):			# We should be on interrupt stack now.
 	SAVEpwfl()			# save machine state
-	moval	_Xdoadump-SYSTEM,_scb+RESTVEC
+	moval	_Xdoadump-SYSTEM,_scb+SCB_DOADUMP
 	halt
 
 SCBVEC(stray):
-	PUSHR; PRINTF(0, "stray interrupt\n"); POPR;
 	rei
 
 #include "../net/netisr.h"
 	.globl	_netisr
 SCBVEC(netintr):
 	CHECK_SFE(4)
-	SAVE_FPSTAT(4)
-	PUSHR
-	bbc	$NETISR_RAW,_netisr,1f
-	andl2	$~(1<<NETISR_RAW),_netisr	
-	callf	$4,_rawintr	
+	SAVE_FPSTAT(4); PUSHR
+#include "imp.h"
+#if NIMP > 0
+	bbc	$NETISR_IMP,_netisr,1f;
+	andl2	$~(1<<NETISR_IMP),_netisr
+	callf	$4,_impintr;
 1:
+#endif
 #ifdef INET
-#include "../netinet/in_systm.h"
 	bbc	$NETISR_IP,_netisr,1f	
 	andl2	$~(1<<NETISR_IP),_netisr
 	callf	$4,_ipintr	
@@ -339,41 +336,20 @@ SCBVEC(netintr):
 	callf	$4,_nsintr	
 1:
 #endif
-	POPR; 
-	REST_FPSTAT
-	rei
-SCBVEC(soft15):
-SCBVEC(soft14):
-SCBVEC(soft13):
-SCBVEC(soft11):
-SCBVEC(soft10):
-#ifndef SIMIO
-SCBVEC(soft9):
-#endif
-SCBVEC(soft7):
-SCBVEC(soft6):
-SCBVEC(soft5):
-SCBVEC(soft4):
-#ifndef SIMIO
-SCBVEC(soft3):
-SCBVEC(soft2):
-SCBVEC(soft1):
-#endif
-	PUSHR; PRINTF(0, "stray software interrupt\n"); POPR;
+	bbc	$NETISR_RAW,_netisr,1f
+	andl2	$~(1<<NETISR_RAW),_netisr	
+	callf	$4,_rawintr	
+1:
+	incl	_cnt+V_SOFT
+	POPR; REST_FPSTAT
 	rei
 
-#ifdef SIMIO
-SCBVEC(soft2):
-#endif
 SCBVEC(cnrint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
 	pushl $CPCONS; callf $8,_cnrint; incl _cnt+V_INTR
 	POPR; REST_FPSTAT;
 	rei
-#ifdef SIMIO
-SCBVEC(soft3):
-#endif
 SCBVEC(cnxint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
@@ -392,9 +368,6 @@ SCBVEC(rmtxint):
 	pushl $CPREMOT; callf $8,_cnxint; incl _cnt+V_INTR
 	POPR; REST_FPSTAT;
 	rei
-#ifdef SIMIO
-SCBVEC(soft9):
-#endif
 
 #define PUSHPCPSL	pushl 4+FPSPC+REGSPC(sp); pushl 4+FPSPC+REGSPC(sp);
 
@@ -417,6 +390,51 @@ SCBVEC(softclock):
 	callf	$12,_softclock			# softclock(pc,psl)
 	POPR; REST_FPSTAT
 	rei
+
+/*
+ * Stray VERSAbus interrupt catch routines
+ */
+	.data
+#define	PJ	.align 2; callf $4,_Xvstray
+	.globl	_catcher
+_catcher:
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+
+	.align	2
+	.globl	_cold
+_cold:	.long	0x3
+
+	.text
+SCBVEC(vstray):
+	.word	0
+	bbc	$0,_cold,2f		# system running?
+	bbc	$1,_cold,1f		# doing autoconfig?
+	jbr	3f			# random interrupt, ignore
+1:
+	mfpr	$IPL,r12		# ...setup br and cvec
+	subl3	$_catcher+7,-8(fp),r11; shar $3,r11,r11
+	addl2	$SCB_DEVBASE,r11
+	jbr	3f
+2:
+	PUSHR
+	subl3	$_catcher+7,-8(fp),r0; shar $3,r0,r0
+	addl3	$SCB_DEVBASE,r0,-(sp);
+	mfpr	$IPL,-(sp)
+	PRINTF(2, "stray intr ipl %x vec %x\n")
+	POPR
+3:	moval	0f,-8(fp); ret		# pop callf frame...
+0:	rei				# ...and return
 
 /*
  * Trap and fault vector routines
@@ -538,42 +556,48 @@ SCBVEC(syscall):
 
 /*
  * System page table
+ * Mbmap and Usrptmap are enlarged by CLSIZE entries
+ * as they are managed by resource maps starting with index 1 or CLSIZE.
  */ 
 #define	vaddr(x)	((((x)-_Sysmap)/4)*NBPG+SYSTEM)
 #define	SYSMAP(mname, vname, npte)			\
 _/**/mname:	.globl	_/**/mname;		\
-	.space	npte*4;				\
+	.space	(npte)*4;			\
 	.globl	_/**/vname;			\
 	.set	_/**/vname,vaddr(_/**/mname)
 
 	.data
 	.align	2
 	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE	)
-	SYSMAP(VMEMbeg	,vmembeg	,0		)
-	SYSMAP(VMEMmap	,vmem		,IOSIZE 	)
-	SYSMAP(ACE0map	,ace0utl	,(ACEBPTE+1)	)
-	SYSMAP(ACE1map	,ace1utl	,(ACEBPTE+1)	)
-	SYSMAP(VMEMend	,vmemend	,0		)
-	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)
 	SYSMAP(Xswapmap	,xswaputl	,UPAGES		)
 	SYSMAP(Xswap2map,xswap2utl	,UPAGES		)
 	SYSMAP(Swapmap	,swaputl	,UPAGES		)
 	SYSMAP(Pushmap	,pushutl	,UPAGES		)
 	SYSMAP(Vfmap	,vfutl		,UPAGES		)
-	SYSMAP(VD0map	,vd0utl		,(MAXBPTE+1)	)
-	SYSMAP(VD1map	,vd1utl		,(MAXBPTE+1)	)
-	SYSMAP(VD2map	,vd2utl		,(MAXBPTE+1)	)
-	SYSMAP(VD3map	,vd3utl		,(MAXBPTE+1)	)
-	SYSMAP(CY0map	,cy0utl		,(TBUFSIZ+1)	)
-	SYSMAP(CY1map	,cy1utl		,(TBUFSIZ+1)	)
 	SYSMAP(CMAP1	,CADDR1		,1		)
 	SYSMAP(CMAP2	,CADDR2		,1		)
 	SYSMAP(mmap	,vmmap		,1		)
+	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
+	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
 	SYSMAP(camap	,cabase		,16*CLSIZE	)
+#ifdef	GPROF
+	SYSMAP(profmap	,profbase	,600*CLSIZE	)
+#endif
 	SYSMAP(ecamap	,calimit	,0		)
-	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE)
+	SYSMAP(VMEMbeg	,vmembeg	,0		)
+	SYSMAP(VMEMmap	,vmem		,IOSIZE 	)
+	SYSMAP(ACE0map	,ace0utl	,ACEBPTE+1	)
+	SYSMAP(ACE1map	,ace1utl	,ACEBPTE+1	)
+	SYSMAP(VMEMend	,vmemend	,0		)
+	SYSMAP(VD0map	,vd0utl		,MAXBPTE+1	)
+	SYSMAP(VD1map	,vd1utl		,MAXBPTE+1	)
+	SYSMAP(VD2map	,vd2utl		,MAXBPTE+1	)
+	SYSMAP(VD3map	,vd3utl		,MAXBPTE+1	)
+	SYSMAP(CY0map	,cy0utl		,TBUFSIZ+1	)
+	SYSMAP(CY1map	,cy1utl		,TBUFSIZ+1	)
+	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 eSysmap:
 	.globl	_Syssize
 	.set	_Syssize,(eSysmap-_Sysmap)/4
@@ -617,6 +641,7 @@ start:
 	orw2	$0x01fff,_syscall
 	orw2	$0x01fff,_fpemulate
 	orw2	$0x01ffc,_panic			# for debugging (no r0|r1)
+	callf	$4,_fixctlrmask			# setup for autoconfig
 /* initialize system page table: scb and int stack writeable */
 	clrl	r2
 	movab	eintstack,r1 
@@ -779,15 +804,15 @@ _szicode:
 ENTRY(badaddr, R3|R4)
 	mfpr	$IPL,r1
 	mtpr	$HIGH,$IPL
-	movl	_scb+BERVEC,r2
+	movl	_scb+SCB_BUSERR,r2
 	movl	4(fp),r3
 	movl	8(fp),r4
-	movab	9f,_scb+BERVEC
+	movab	9f,_scb+SCB_BUSERR
 	bbc	$0,r4,1f; tstb	(r3)
 1:	bbc	$1,r4,1f; tstw	(r3)
 1:	bbc	$2,r4,1f; tstl	(r3)
 1:	clrl	r0
-2:	movl	r2,_scb+BERVEC
+2:	movl	r2,_scb+SCB_BUSERR
 	mtpr	r1,$IPL
 	ret
 

@@ -1,4 +1,4 @@
-/*	machdep.c	1.2	86/01/05	*/
+/*	machdep.c	1.3	86/01/12	*/
 
 #include "../tahoe/reg.h"
 #include "../tahoe/pte.h"
@@ -115,8 +115,7 @@ startup(firstaddr)
 		if (physmem < (2 * 1024 * 1024))
 			bufpages = physmem / 10 / CLSIZE;
 		else
-			bufpages =
-			    ((2 * 1024 * 1024) / 5 + physmem / 5) / CLSIZE;
+			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
 		if (nbuf < 16)
@@ -224,7 +223,7 @@ startup(firstaddr)
 		nbuf, bufpages * CLBYTES);
 	rminit(kernelmap, (long)USRPTSIZE, (long)1,
 	    "usrpt", nproc);
-	rminit(mbmap, (long)((nmbclusters - 1) * CLSIZE), (long)CLSIZE,
+	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
 	intenable = 1;		/* Enable interrupts from now on */
 

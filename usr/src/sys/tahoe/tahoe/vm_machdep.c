@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.2	86/01/05	*/
+/*	vm_machdep.c	1.3	86/01/12	*/
 
 #include "../machine/pte.h"
 
@@ -60,12 +60,15 @@ mapout(pte, size)
 
 /*
  * Check for valid program size
+ * NB - Check data and data growth separately as they may overflow 
+ * when summed together.
  */
 chksize(ts, ids, uds, ss)
 	register unsigned ts, ids, uds, ss;
 {
+	extern int maxtsize;
 
-	if (ts > maxtsize ||
+	if (ctob(ts) > maxtsize ||
 	    ctob(ids) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
@@ -223,8 +226,10 @@ vtopte(p, v)
 
 	if ((v & 0x300000) == 0x300000)
 		return (struct pte *)(mfpr(SBR) + 0xc0000000 + (v&0xfffff)*4);
-	if (p == 0)
+	if (p == 0) {
+		printf("vtopte v %x\n", v);		/* XXX */
 		panic("vtopte (no proc)");
+	}
 	if (v < p->p_tsize + p->p_dsize)
 		return (p->p_p0br + v);
 	return (p->p_p0br + (p->p_szpt*NPTEPG + v - (BTOPUSRSTACK + UPAGES)));

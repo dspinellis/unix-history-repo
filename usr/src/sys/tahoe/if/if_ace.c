@@ -1,4 +1,4 @@
-/*	if_ace.c	1.2	86/01/05	*/
+/*	if_ace.c	1.3	86/01/12	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -18,29 +18,31 @@
 #include "ioctl.h"
 #include "errno.h"
 #include "vmparam.h"
+#include "syslog.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+#ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#endif
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
+#endif
 
 #include "../tahoe/mtpr.h"
 #include "../tahoeif/if_acereg.h"
 #include "../tahoevba/vbavar.h"
 
-#define	LONET	124
-
 /*
  * Configuration table, for 2 units (should be defined by config)
  */
-#define	ACEVECTOR	0x90
-long	acestd[] = { 0x0ff0000, 0xff0100 };		/* controller */
-
 extern	char ace0utl[], ace1utl[];			/* dpm */
 char	*acemap[]= { ace0utl, ace1utl };
 extern	struct pte ACE0map[], ACE1map[];
@@ -59,6 +61,7 @@ short random_mask_tbl[16] = {
 
 int	aceprobe(), aceattach(), acerint(), acecint();
 struct	vba_device *aceinfo[NACE];
+long	acestd[] = { 0x0ff0000, 0xff0100, 0 };
 struct	vba_driver acedriver =
 	{ aceprobe, 0,aceattach,0,acestd,"ace",aceinfo,"v/eiu",0 };
 	
@@ -91,22 +94,40 @@ struct	ace_softc {
 	struct	ace_stats is_stats;	/* holds board statistics */
 	short	is_xcnt;		/* count xmitted segments to be acked 
 					   by the controller */
+	long	is_ivec;		/* autoconfig interrupt vector base */
 } ace_softc[NACE];
 extern	struct ifnet loif;
 
-aceprobe(reg)
+aceprobe(reg, vi)
 	caddr_t reg;
+	struct vba_device *vi;
 {
-	register struct acedevice *addr = (struct acedevice *)reg;
+	register br, cvec;		/* must be r12, r11 */
+	struct acedevice *ap = (struct acedevice *)reg;
+	struct ace_softc *is = &ace_softc[vi->ui_unit];
 
 #ifdef lint
 	acerint(0); acecint(0);
 #endif
 	if (badaddr(reg, 2))
-		return(0);
-	movow(&addr->csr, CSR_RESET);
+		return (0);
+	movow(&ap->csr, CSR_RESET);
 	DELAY(10000);
-	return (sizeof (struct acedevice));
+#ifdef notdef
+	/*
+	 * Select two spaces for the interrupts aligned to an
+	 * eight vector boundary and fitting in 8 bits (as
+	 * required by the controller) -- YECH.  The controller
+	 * will be notified later at initialization time.
+	 */
+	if ((vi->ui_hd->vh_lastiv -= 2) > 0xff)
+		vi->ui_hd->vh_lastiv  = 0x200;
+	is->is_ivec = vi->ui_hd->vh_lastiv = vi->ui_hd->vh_lastiv &~ 0x7;
+#else
+	is->is_ivec = 0x90+vi->ui_unit*8;
+#endif
+	br = 0x14, cvec = is->is_ivec;		/* XXX */
+	return (sizeof (*ap));
 }
 
 /*
@@ -214,12 +235,8 @@ aceinit(unit)
 		movow(&addr->csr, CSR_GO);
 		Csr = addr->csr;
 		if (Csr & CSR_ACTIVE) {
-			movow(&addr->ivct, ACEVECTOR + unit*8);
+			movow(&addr->ivct, is->is_ivec);
 			Csr |= CSR_IENA | is->is_promiscuous;
-#ifdef notdef
-			if (ifp->if_net == LONET)
-				Csr |= CSR_LOOP3;
-#endif
 			movow(&addr->csr, Csr);
 			is->is_flags = 0;
 			is->is_xcnt = 0;
@@ -298,7 +315,7 @@ acecint(unit)
 	short eostat;
 
 	if (is->is_xcnt <= 0)  {
-		printf("ace%d: stray xmit interrupt, xcnt %d\n",
+		log(LOG_ERR, "ace%d: stray xmit interrupt, xcnt %d\n",
 		    unit, is->is_xcnt);
 		is->is_xcnt = 0;
 		if (is->is_if.if_snd.ifq_head)
@@ -410,12 +427,16 @@ again:
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = aceget(unit, (u_char *)rxseg->rx_data, len, off);
+	m = aceget((u_char *)rxseg->rx_data, len, off, &is->is_if);
 	if (m == 0)
 		goto setup;
 	if (off) {
+		struct ifnet *ifp;
+
+		ifp = *(mtod(m, struct ifnet **));
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
 	switch (ace->ether_type) {
 
@@ -424,11 +445,11 @@ again:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
+#endif
 
 	case ETHERTYPE_ARP:
 		arpinput(&is->is_ac, m);
 		goto setup;
-#endif
 #ifdef NS
 	case ETHERTYPE_NS:
 		schednetisr(NETISR_NS);
@@ -473,6 +494,10 @@ aceoutput(ifp, m0, dst)
 	u_char edst[6];
 	struct in_addr idst;
 
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -512,7 +537,6 @@ aceoutput(ifp, m0, dst)
 		off = 0;
 		goto gottype;
 #endif
-
 	case AF_UNSPEC:
 		ace = (struct ether_header *)dst->sa_data;
 		bcopy((caddr_t)ace->ether_dhost, (caddr_t)edst, sizeof (edst));
@@ -520,7 +544,7 @@ aceoutput(ifp, m0, dst)
 		goto gottype;
 
 	default:
-		printf("ace%d: can't handle af%d\n",
+		log(LOG_ERR, "ace%d: can't handle af%d\n",
 		    ifp->if_unit, dst->sa_family);
 		error = EAFNOSUPPORT;
 		goto bad;
@@ -620,12 +644,12 @@ aceStart(unit)
  */
 /*ARGSUSED*/
 aceput(unit, txbuf, m)
-	int unit;			/* for statistics collection */
+	int unit;
 	char *txbuf;
 	struct mbuf *m;
 {
-	register u_char *bp, *mcp;	/* known to be r12, r11 */
-	register short *s1, *s2;	/* known to be r10, r9 */
+	register u_char *bp, *mcp;
+	register short *s1, *s2;
 	register u_int len;
 	register struct mbuf *mp;
 	int total;
@@ -670,12 +694,12 @@ aceput(unit, txbuf, m)
  */
 /*ARGSUSED*/
 struct mbuf *
-aceget(unit, rxbuf, totlen, off0)
-	int unit;			/* for statistics collection */
+aceget(rxbuf, totlen, off0, ifp)
 	u_char *rxbuf;
 	int totlen, off0;
+	struct ifnet *ifp;
 {
-	register u_char *cp, *mcp;	/* known to be r12, r11 */
+	register u_char *cp, *mcp;
 	register int tlen;
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
@@ -699,6 +723,8 @@ aceget(unit, rxbuf, totlen, off0)
 #endif
 		} else
 			len = totlen;
+		if (ifp)
+			len += sizeof(ifp);
 		if (len >= CLBYTES) {
 			struct mbuf *p;
 
@@ -715,6 +741,15 @@ aceget(unit, rxbuf, totlen, off0)
 			m->m_off = MMINOFF;
 		}
 		mcp = mtod(m, u_char *);
+		if (ifp) {
+			/*
+			 * Prepend interface pointer to first mbuf.
+			 */
+			*(mtod(m, struct ifnet **)) = ifp;
+			mcp += sizeof(ifp);
+			len -= sizeof(ifp);
+			ifp = (struct ifnet *)0;
+		}
 		/*bcopy((caddr_t)cp, (caddr_t)mcp, len);*/
 		/*cp += len; mcp += len;*/
 		tlen = len;
@@ -787,35 +822,58 @@ aceioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
+	struct acedevice *addr;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
-		aceinit(ifp->if_unit);
-		((struct arpcom *)ifp)->ac_ipaddr = IA_SIN(ifa)->sin_addr;
-		arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
-		break;
-
-#ifdef notdef
-	case SIOCSETETADDR: {		/* set Ethernet station address */
-		struct vba_device *ui;
-		struct acedevice *addr;
-		struct sockaddr_in *sin;
-
-		ifp->if_flags &= ~IFF_RUNNING | IFF_UP;
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		ui = aceinfo[ifp->if_unit];
-		addr = (struct acedevice *)ui->ui_addr;
-		movow(&addr->csr, CSR_RESET);
-		DELAY(10000);
-		/* set station address and copy addr to arp struct */
-		acesetetaddr(ifp->if_unit, addr, &sin->sin_zero[2]);
-		aceinit(ifp->if_unit);		/* Re-initialize */
-		break;
-	}
+		switch (ifa->ifa_addr.sa_family) {
+#ifdef INET
+		case AF_INET:
+			aceinit(ifp->if_unit);	/* before arpwhohas */
+			((struct arpcom *)ifp)->ac_ipaddr =
+				IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
 #endif
+#ifdef NS
+		case AF_NS: {
+			struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+
+			if (!ns_nullhost(*ina)) {
+				ifp->if_flags &= ~IFF_RUNNING;
+				sin = (struct sockaddr_in *)&ifr->ifr_addr;
+				addr = (struct acedevice *)
+				    (aceinfo[ifp->if_unit]->ui_addr);
+				movow(&addr->csr, CSR_RESET);
+				DELAY(10000);
+				/* set station address & copy addr to arp */
+				acesetetaddr(ifp->if_unit, addr, 
+				    ina->x_host.c_host);
+			} else
+				ina->x_host = *(union ns_host *)(es->es_addr);
+			aceinit(ifp->if_unit);
+			break;
+		}
+#endif
+		default:
+			aceinit(ifp->if_unit);
+			break;
+		}
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags&IFF_UP) == 0 && ifp->if_flags&IFF_RUNNING) {
+			addr = (struct acedevice *)
+			    (aceinfo[ifp->if_unit]->ui_addr);
+			movow(&addr->csr, CSR_RESET);
+			ifp->if_flags &= ~IFF_RUNNING;
+		} else if (ifp->if_flags&IFF_UP &&
+		    (ifp->if_flags&IFF_RUNNING) == 0)
+			aceinit(ifp->if_unit);
+		break;
 
 	default:
 		error = EINVAL;
@@ -833,7 +891,7 @@ aceclean(unit)
 	register short i;
 	register char *pData1;
 
-	ioaccess(ACEmap[unit], ACEmapa[unit], ACEBPTE);
+	vbaaccess(ACEmap[unit], ACEmapa[unit], ACEBPTE);
 	is->is_dpm = acemap[unit];		/* init dpm */
 	bzero((char *)is->is_dpm, 16384*2);
 
