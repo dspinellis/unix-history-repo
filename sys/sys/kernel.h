@@ -75,6 +75,9 @@ extern const char ostype[];	/* operating system type */
 extern const char osrelease[];	/* operating system release */
 extern const int osbuild;	/* operating system build number */
 extern const char osconfig[];	/* operating system configuration name */
+extern const char machine[];	/* machine type */
+extern const char *cpu_model;	/* CPU model */
+
 extern int nblkdev;		/* number of entries in bdevsw */
 extern int nchrdev;		/* number of entries in cdevsw */
 extern int nswdev;		/* number of swap devices */
