@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.8 %G%";
+static char *SccsId = "@(#)fio.c	1.9 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -286,14 +286,15 @@ remove(name)
 
 /*
  * Terminate an editing session by attempting to write out the user's
- * file from the temporary.
+ * file from the temporary.  Save any new stuff appended to the file.
  */
-
 edstop()
 {
 	register int gotcha, c;
 	register struct message *mp;
-	FILE *obuf;
+	FILE *obuf, *ibuf;
+	struct stat statb;
+	char tempname[30];
 
 	if (readonly)
 		return;
@@ -309,6 +310,31 @@ edstop()
 	}
 	if (!gotcha)
 		return;
+	ibuf = NULL;
+	if (stat(editfile, &statb) >= 0 && statb.st_size > mailsize) {
+		strcpy(tempname, "/tmp/mboxXXXXXX");
+		mktemp(tempname);
+		if ((obuf = fopen(tempname, "w")) == NULL) {
+			perror(tempname);
+			reset(0);
+		}
+		if ((ibuf = fopen(editfile, "r")) == NULL) {
+			perror(editfile);
+			fclose(obuf);
+			remove(tempname);
+			reset(0);
+		}
+		while ((c = getc(ibuf)) != EOF)
+			putc(c, obuf);
+		fclose(ibuf);
+		fclose(obuf);
+		if ((ibuf = fopen(tempname, "r")) == NULL) {
+			perror(tempname);
+			remove(tempname);
+			reset(0);
+		}
+		remove(tempname);
+	}
 	printf("\"%s\" ", editfile);
 	flush();
 	if ((obuf = fopen(editfile, "w")) == NULL) {
@@ -325,12 +351,19 @@ edstop()
 			reset(0);
 		}
 	}
+	gotcha = (c == 0 && ibuf == NULL);
+	if (ibuf != NULL) {
+		while ((c = getc(ibuf)) != EOF)
+			putc(c, obuf);
+		fclose(ibuf);
+	}
 	fflush(obuf);
 	if (ferror(obuf)) {
 		perror(editfile);
 		reset(0);
 	}
-	if (c == 0) {
+	fclose(obuf);
+	if (gotcha) {
 		remove(editfile);
 		printf("removed\n");
 	}
