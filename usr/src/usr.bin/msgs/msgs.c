@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -365,7 +365,7 @@ int argc; char *argv[];
 		if (nextmsg > lastmsg+1) {
 			printf("Warning: bounds have been reset (%d, %d)\n",
 				firstmsg, lastmsg);
-			ftruncate(fileno(msgsrc), 0);
+			truncate(fname, 0);
 			newrc = YES;
 		}
 		else if (!rcfirst)
