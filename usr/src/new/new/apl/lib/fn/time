@@ -1,0 +1,6 @@
+time prog; FtiFm
+FtiFm { NB21
+E prog
+L { ''
+L { 'execution time is',(,B (.01XS((BN21)-FtiFm)%.6)), ' secs.'
+''
