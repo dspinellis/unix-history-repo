@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	7.6	%G%";
+static char *sccsid = "@(#)ex_vadj.c	7.7	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -746,7 +746,7 @@ vdellin(p, cnt, l)
 		/* vt100: fake DL by changing scrolling region */
 		vputp(SC, 1);	/* Save since CS homes stupid cursor */
 		vputp(tgoto(CS, LINES-1, p), 1);
-		vputp(tgoto(CM, 0, 23), 1);	/* Go to lower left corner */
+		vputp(tgoto(CM, 0, LINES-1), 1);/* Go to lower left corner */
 		for (i=0; i<cnt; i++)		/* .. and scroll cnt times */
 			putch('\n');		/* should check NL too */
 		vputp(tgoto(CS, LINES-1, 0), 1);/* restore scrolling region */
