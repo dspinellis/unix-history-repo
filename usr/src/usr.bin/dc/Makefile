@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.3	(Berkeley)	83/03/30
+#	@(#)Makefile	1.4	(Berkeley)	83/06/30
 #
 DESTDIR=
 SRCS=	dc.c dc.h
@@ -10,8 +10,8 @@ all: dc
 dc:	dc.c dc.h
 	${CC} ${CFLAGS} dc.c -o dc
 
-install:
+install: dc
 	install -s dc ${DESTDIR}/usr/bin/dc
 
 clean:
-	rm -f *.o
+	rm -f *.o dc a.out errs core

@@ -1,4 +1,4 @@
-/*	llib-lc	1.5	83/06/02	*/
+/*	llib-lc	1.6	83/06/30	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <sgtty.h>
 #include <signal.h>
-#include <time.h>
-#include <resource.h>
-#include <wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
@@ -135,7 +135,7 @@ int	unlink(s) char *s; { return(0); }
 int	utimes( f, t ) char *f; struct timeval *t[2]; { return 0 ;}
 int	vfork() { return(0); }
 int	wait(s) union wait *s; { return(1); }
-int	wait3( s, o, r) union wait s; struct rusage *r; { return 1;}
+int	wait3( s, o, r) union wait *s; struct rusage *r; { return 1;}
 int	write(f, b, l) char *b; { return(l); }
 int	writev( f, v, l) struct iovec *v; { return l; }
 
@@ -252,7 +252,7 @@ int	fflush(f) FILE *f; {return(0);}
 int	fgetc(f)  FILE *f; {return 0; }
 char *	fgets( s, l, f ) char *s; FILE *f; { return(s); }
 int	_filbuf( f ) FILE *f; { return 0; }
-int	_flsbuf( c, f ) FILE *f; { return c; }
+int	_flsbuf( c, f ) FILE *f; { return 0; }
 FILE *	fopen(s,m) char *s, *m; { return(stdin); }
 	/* VARARGS */
 	fprintf( f, s ) FILE *f; char *s; {;}

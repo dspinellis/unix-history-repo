@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.4	(Berkeley)	83/02/11
+#	@(#)Makefile	4.5	(Berkeley)	83/06/30
 #
 #	make file for STYLE and DICTION
 #
@@ -71,7 +71,7 @@ endlex.c: end.l
 
 diction: dprog
 dprog: diction.c
-	cc -O $(DICT) diction.c -i -o dprog
+	cc -O $(DICT) diction.c -o dprog
 
 srcs:	sources
 
