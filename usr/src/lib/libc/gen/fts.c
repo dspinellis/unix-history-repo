@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.40 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -23,6 +23,7 @@ static FTSENT	*fts_alloc __P((FTS *, char *, int));
 static FTSENT	*fts_build __P((FTS *, int));
 static void	 fts_lfree __P((FTSENT *));
 static void	 fts_load __P((FTS *, FTSENT *));
+static size_t	 fts_maxarglen __P((char * const *));
 static void	 fts_padjust __P((FTS *, void *));
 static int	 fts_palloc __P((FTS *, size_t));
 static FTSENT	*fts_sort __P((FTS *, FTSENT *, int));
@@ -49,7 +50,7 @@ fts_open(argv, options, compar)
 {
 	register FTS *sp;
 	register FTSENT *p, *root;
-	register int nitems, maxlen;
+	register int nitems;
 	FTSENT *parent, *tmp;
 	int len;
 
@@ -71,10 +72,10 @@ fts_open(argv, options, compar)
 		SET(FTS_NOCHDIR);
 
 	/*
-	 * Start out with more than 1K of path space, and enough, in any
-	 * case, to hold the user's paths.
+	 * Start out with 1K of path space, and enough, in any case,
+	 * to hold the user's paths.
 	 */
-	if (fts_palloc(sp, MAX(maxlen, MAXPATHLEN)))
+	if (fts_palloc(sp, MAX(fts_maxarglen(argv), MAXPATHLEN)))
 		goto mem1;
 
 	/* Allocate/initialize root's parent. */
@@ -83,14 +84,12 @@ fts_open(argv, options, compar)
 	parent->fts_level = FTS_ROOTPARENTLEVEL;
 
 	/* Allocate/initialize root(s). */
-	for (root = NULL, maxlen = nitems = 0; *argv; ++argv, ++nitems) {
+	for (root = NULL, nitems = 0; *argv; ++argv, ++nitems) {
 		/* Don't allow zero-length paths. */
 		if ((len = strlen(*argv)) == 0) {
 			errno = ENOENT;
 			goto mem3;
 		}
-		if (maxlen < len)
-			maxlen = len;
 
 		p = fts_alloc(sp, *argv, len);
 		p->fts_level = FTS_ROOTLEVEL;
@@ -226,8 +225,8 @@ fts_close(sp)
  * Special case a root of "/" so that slashes aren't appended which would
  * cause paths to be written as "//foo".
  */
-#define	NAPPEND(p) \
-	(p->fts_level == FTS_ROOTLEVEL && p->fts_pathlen == 1 && \
+#define	NAPPEND(p)							\
+	(p->fts_level == FTS_ROOTLEVEL && p->fts_pathlen == 1 &&	\
 	    p->fts_path[0] == '/' ? 0 : p->fts_pathlen)
 
 FTSENT *
@@ -896,9 +895,9 @@ fts_padjust(sp, addr)
 {
 	FTSENT *p;
 
-#define	ADJUST(p) { \
-	(p)->fts_accpath = addr + ((p)->fts_accpath - (p)->fts_path); \
-	(p)->fts_path = addr; \
+#define	ADJUST(p) {							\
+	(p)->fts_accpath = addr + ((p)->fts_accpath - (p)->fts_path);	\
+	(p)->fts_path = addr;						\
 }
 	/* Adjust the current set of children. */
 	for (p = sp->fts_child; p; p = p->fts_link)
@@ -909,4 +908,16 @@ fts_padjust(sp, addr)
 		ADJUST(p);
 		p = p->fts_link ? p->fts_link : p->fts_parent;
 	}
+}
+
+static size_t
+fts_maxarglen(argv)
+	char * const *argv;
+{
+	size_t len, max;
+
+	for (max = 0; *argv; ++argv)
+		if ((len = strlen(*argv)) > max)
+			max = len;
+	return (max);
 }
