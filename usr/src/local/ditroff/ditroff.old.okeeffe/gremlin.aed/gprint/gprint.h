@@ -1,5 +1,4 @@
-/* gprint.h -
- *
+/*	gprint.h	1.2	83/03/02
  *
  * This file contains standard definitions used by the gprint program.
  */
@@ -9,29 +8,28 @@
 #define Xmax 511
 #define xorn(x,y) Orientation ? (y) : (x) 
 #define yorn(x,y) Orientation ? (Ymax - ((x) - poffset)) : (y) 
-#define    mapx(x)    ((DevRange*(((x) * scale)-botx)/del)+centx)
-#define    mapy(y)    ((DevRange*(del-((y) * scale)+boty)/del)-centy)
+#define mapx(x) ((DevRange*(((x) * scale)-botx)/del)+centx)
+#define mapy(y) ((DevRange*(del-((y) * scale)+boty)/del)-centy)
 #define STYLES 6
 #define SIZES 4
 #define FONTS 4
 #define SOLID -1
-#define DOTTED 004   /* 014 */
-#define DASHED 020   /* 034 */
-#define DOTDASHED 024 /* 054 */
+#define DOTTED 004	/* 014 */
+#define DASHED 020	/* 034 */
+#define DOTDASHED 024	/* 054 */
 #define LONGDASHED 074
-#define    SETSTATE    (('v'<<8)+1)
 
 #include <stdio.h>
 #include <math.h>
 
-#define TRUE  1
-#define FALSE 0
+#define TRUE	1
+#define FALSE	0
 
-#define nullelt -1
-#define nullpt  -1
-#define nullun   NULL
+#define nullelt	-1
+#define nullpt	-1
+#define nullun	NULL
 
-#define BOTLEFT 0
+#define BOTLEFT	0
 #define BOTRIGHT 1
 #define CENTCENT 2
 #define VECTOR 3
@@ -60,31 +58,26 @@
 #define DELETE 2
 #define MOD 3
 
-typedef struct point
-        {
-               float x, y;
-               struct point *nextpt;
-        } POINT;
+typedef struct point {
+	float x, y;
+	struct point *nextpt;
+} POINT;
 
-typedef struct elmt
-        {
-               int type, brushf, size, textlength;
-               char *textpt;
-               POINT *ptlist;
-               struct elmt *nextelt, *setnext;
-        } ELT;
+typedef struct elmt {
+	int type, brushf, size, textlength;
+	char *textpt;
+	POINT *ptlist;
+	struct elmt *nextelt, *setnext;
+} ELT;
 
-
-typedef struct unlt
-        {
-             int action;
-             ELT *(*dbase), *oldelt, *newelt;
-             struct unlt *nextun;
-        } UNELT;
+typedef struct unlt {
+	int action;
+	ELT *(*dbase), *oldelt, *newelt;
+	struct unlt *nextun;
+} UNELT;
 
 typedef struct {
-    int tx_x;		/* First column of field */
-    int tx_y;		/* Row containing field */
-    int tx_size;	/* Size of field in characters */
-    } TXFIELD;
- 
+	int tx_x;	/* First column of field */
+	int tx_y;	/* Row containing field */
+	int tx_size;	/* Size of field in characters */
+} TXFIELD;
