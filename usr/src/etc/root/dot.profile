@@ -4,9 +4,6 @@ export PATH
 BLOCKSIZE=1k
 export BLOCKSIZE
 
-HOME=/root
-export HOME
-
 export TERM
 echo 'erase ^H, kill ^U, intr ^C status ^T'
 stty erase '^H' kill '^U' intr '^C' status '^T' crt
