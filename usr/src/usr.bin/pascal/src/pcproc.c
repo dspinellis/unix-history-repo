@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.4 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.5 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -55,6 +55,7 @@ pcproc(r)
 	char	*readname;
 	long	tempoff;
 	long	readtype;
+	struct tmps soffset;
 
 #define	CONPREC 4
 #define	VARPREC 8
@@ -454,7 +455,7 @@ pcproc(r)
 				case NIL:
 					field = 21;
 					prec = 14;
-					fmt = 'E';
+					fmt = 'e';
 					fmtspec = CONWIDTH + CONPREC;
 					break;
 				case CONWIDTH:
@@ -464,11 +465,11 @@ pcproc(r)
 					if (prec < 1)
 						prec = 1;
 					fmtspec += CONPREC;
-					fmt = 'E';
+					fmt = 'e';
 					break;
 				case VARWIDTH:
 					fmtspec += VARPREC;
-					fmt = 'E';
+					fmt = 'e';
 					break;
 				case CONWIDTH + CONPREC:
 				case CONWIDTH + VARPREC:
@@ -602,12 +603,9 @@ pcproc(r)
 					 */
 				    if ( ( typ == TDOUBLE && al[3] == NIL )
 					|| typ == TSTR ) {
-					sizes[ cbn ].om_off -= sizeof( int );
-					tempoff = sizes[ cbn ].om_off;
-					putlbracket( ftnno , -tempoff );
-					if ( tempoff < sizes[ cbn ].om_max ) {
-					    sizes[ cbn ].om_max = tempoff;
-					}
+					soffset = sizes[cbn].curtmps;
+					tempoff = tmpalloc(sizeof(long),
+						nl+T4INT, REGOK);
 					putRV( 0 , cbn , tempoff , P2INT );
 					ap = stkrval( al[2] , NIL , RREQ );
 					putop( P2ASSIGN , P2INT );
@@ -648,7 +646,7 @@ pcproc(r)
 						, ADDTYPE( P2FTN | P2INT , P2PTR )
 						, "_MAX" );
 					    putRV( 0 , cbn , tempoff , P2INT );
-					    sizes[ cbn ].om_off += sizeof( int );
+					    tmpfree(&soffset);
 					    putleaf( P2ICON , 8 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
 					    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
@@ -772,6 +770,7 @@ pcproc(r)
 					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2COLON , P2INT );
 					putop( P2QUEST , P2INT );
+					tmpfree(&soffset);
 				} else {
 					if (   ( fmtspec & SKIP )
 					    && ( strfmt & CONWIDTH ) ) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.4 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.5 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -227,6 +227,9 @@ bool	Enoline;
  * the string table; see the routines in the file "lookup.c" and also "fdec.c"
  * especially "funcend".
  */
+extern struct	nl *Fp;
+extern int	pnumcnt;
+
 #ifdef PTREE
 #   include	"pTree.h"
 #endif PTREE
@@ -455,9 +458,15 @@ short	line;
  * numbers are thereby changed if necessary.
  */
 struct om {
-	long	om_off;
 	long	om_max;
+	long	reg_max;
+	struct tmps {
+		long	om_off;
+		long	reg_off;
+	} curtmps;
 } sizes[DSPLYSZ];
+#define NOREG 0
+#define REGOK 1
 
     /*
      *	the following structure records whether a level declares

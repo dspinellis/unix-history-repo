@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fdec.c 1.16 %G%";
+static char sccsid[] = "@(#)fdec.c 1.17 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -89,7 +89,7 @@ funcbody(fp)
 		error("Too many levels of function/procedure nesting");
 		pexit(ERRS);
 	}
-	sizes[cbn].om_max = sizes[cbn].om_off = -DPOFF1;
+	sizes[cbn].om_max = sizes[cbn].curtmps.om_off = -DPOFF1;
 	gotos[cbn] = NIL;
 	errcnt[cbn] = syneflg;
 	parts[ cbn ] = NIL;
@@ -115,8 +115,8 @@ funcbody(fp)
 		enter(fp->ptr[NL_FVAR]);
 #		ifdef PC
 		    q = fp -> ptr[ NL_FVAR ];
-		    sizes[cbn].om_off -= lwidth( q -> type );
-		    sizes[cbn].om_max = sizes[cbn].om_off;
+		    sizes[cbn].curtmps.om_off -= lwidth( q -> type );
+		    sizes[cbn].om_max = sizes[cbn].curtmps.om_off;
 #		endif PC
 	}
 #	ifdef PTREE
@@ -209,7 +209,7 @@ level1()
 #	endif PC
 
 	cbn++;
-	sizes[cbn].om_max = sizes[cbn].om_off = -DPOFF1;
+	sizes[cbn].om_max = sizes[cbn].curtmps.om_off = -DPOFF1;
 	gotos[cbn] = NIL;
 	errcnt[cbn] = syneflg;
 	parts[ cbn ] = NIL;

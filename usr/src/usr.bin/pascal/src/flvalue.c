@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.5 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -85,20 +85,13 @@ flvalue( r , formalp )
 			 *		struct dispsave	disp[2*MAXLVL];
 			 *	};
 			 */
-		    sizes[ cbn ].om_off -=	  sizeof (long (*)())
-						+ sizeof (long)
-						+ 2*bn*sizeof (struct dispsave);
-		    tempoff = sizes[ cbn ].om_off;
-		    if ( sizes[ cbn ].om_off < sizes[ cbn ].om_max ) {
-			sizes[ cbn ].om_max = tempoff;
-		    }
+		    tempoff = tmpalloc(sizeof (long (*)()) + sizeof (long)
+			+ 2*bn*sizeof (struct dispsave), nl+TSTR, NOREG);
 #		    ifdef OBJ
 			put(2 , O_LV | cbn << 8 + INDX , (int)tempoff );
-			/* put(2, O_FSAV | bn << 8 + INDX, (long)p->entloc); */
 			put(2, O_FSAV | bn << 8, (long)p->entloc);
 #		    endif OBJ
 #		    ifdef PC
-			putlbracket( ftnno , -tempoff );
 			putleaf( P2ICON , 0 , 0 ,
 			    ADDTYPE( P2PTR , ADDTYPE( P2FTN , P2PTR|P2STRTY ) ) ,
 			    "_FSAV" );

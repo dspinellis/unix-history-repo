@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.7 %G%";
+static char sccsid[] = "@(#)proc.c 1.8 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -51,6 +51,7 @@ proc(r)
 	int *pua, *pui, *puz;
 	int i, j, k;
 	int itemwidth;
+	struct tmps soffset;
 
 #define	CONPREC 4
 #define	VARPREC 8
@@ -491,9 +492,9 @@ proc(r)
 			if (fmtspec & VARWIDTH) {
 				if ( ( typ == TDOUBLE && fmtspec == VARWIDTH )
 				    || typ == TSTR ) {
-					i = sizes[cbn].om_off -= sizeof(long);
-					if (i < sizes[cbn].om_max)
-						sizes[cbn].om_max = i;
+					soffset = sizes[cbn].curtmps;
+					i = tmpalloc(sizeof(long),
+						nl+T4INT, REGOK);
 					put(2, O_LV | cbn << 8 + INDX, i);
 				}
 				ap = stkrval(al[2], NIL , RREQ );
@@ -522,6 +523,7 @@ proc(r)
 						stkcnt += sizeof(int);
 						put(2, O_RV4 | cbn << 8 + INDX, i);
 						fmtspec += VARPREC;
+						tmpfree(&soffset);
 					}
 					put(3, O_MAX, 1, 1);
 					break;
@@ -585,6 +587,7 @@ proc(r)
 					put(2, O_RV4 | cbn << 8 + INDX , i );
 					put(2, O_MIN, strnglen);
 					convert(nl+T4INT, INT_TYP);
+					tmpfree(&soffset);
 				} else {
 					if ((fmtspec & SKIP) &&
 					   (strfmt & CONWIDTH)) {
