@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.43 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.44 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.43 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.44 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -636,9 +636,9 @@ smtpdata(m, mci, e)
 	}
 
 	timeout = e->e_msgsize / 16;
-	if (timeout < (time_t) 60)
-		timeout = (time_t) 60;
-	timeout += e->e_nrcpts * 90;
+	if (timeout < (time_t) 600)
+		timeout = (time_t) 600;
+	timeout += e->e_nrcpts * 300;
 	ev = setevent(timeout, datatimeout, 0);
 
 	/*
