@@ -1,5 +1,5 @@
 #!/bin/sh
-#	cleanvolumes.sh	1.3	%G%
+#	cleanvolumes.sh	1.4	%G%
 #	shell script to clean dumplog file
 #
 PATH=:/etc/:/bin:/usr/bin:
@@ -17,7 +17,7 @@ sed -e 's/:.*$//' $DL |
 	awk	'{	if ($1 != 1)
 			{	
 				for (i = 0; i < $1-1; i++)
-					printf "1\n/%s/d\n", $2
+					printf "$\n/%s/d\n", $2
 			}
 		}' > $DE
 if [ -s $DE ]
