@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogind.8	6.4 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.5 (Berkeley) %G%
 .\"
 .TH RLOGIND 8 ""
 .UC 5
@@ -22,12 +22,12 @@ rlogind \- remote login server
 .SH SYNOPSIS
 .B /etc/rlogind
 [
-.B \-d
+.B \-dl
 ]
 .SH DESCRIPTION
 .I Rlogind
 is the server for the 
-.IR rlogin (1C)
+.IR rlogin (1)
 program.  The server provides a remote login facility
 with authentication based on privileged port numbers from trusted hosts.
 .PP
@@ -44,7 +44,7 @@ aborts the connection.
 .IP 2)
 The server checks the client's source address
 and requests the corresponding host name (see
-.IR gethostbyaddr (3N),
+.IR gethostbyaddr (3),
 .IR hosts (5)
 and
 .IR named (8)).
@@ -68,9 +68,12 @@ program, invoked with the
 .B \-r
 option.  The login process then proceeds with the authentication
 process as described in
-.IR rshd (8C),
+.IR rshd (8),
 but if automatic authentication fails, it reprompts the user
-to login as one finds on a standard terminal line.
+to login as one finds on a standard terminal line.  The
+.I -p
+option prevents any authentication based on the user's
+``.rhosts'' file.
 .PP
 The parent of the login process manipulates the master side of
 the pseduo terminal, operating as an intermediary
@@ -102,6 +105,8 @@ by the server failed.
 .B ``/bin/sh: ...''
 .br
 The user's login shell could not be started.
+.SH "SEE ALSO"
+ruserok(3), rshd(8)
 .SH BUGS
 The authentication procedure used here assumes the integrity
 of each client machine and the connecting medium.  This is
