@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.9 (Berkeley) 84/03/21";
+static	char *sccsid = "@(#)files.c	4.10 (Berkeley) 85/04/16";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -133,15 +133,20 @@ char *builtin[] =
 	0 };
 
 #include "defs"
-
-
-TIMETYPE exists(filename)
-char *filename;
-{
 #include <sys/stat.h>
+
+
+
+TIMETYPE 
+exists(pname)
+struct nameblock *pname;
+{
 struct stat buf;
-register char *s;
+register char *s, *filename;
 TIMETYPE lookarch();
+extern char *findfl();
+
+filename = pname->namep;
 
 for(s = filename ; *s!='\0' && *s!='(' ; ++s)
 	;
@@ -150,7 +155,16 @@ if(*s == '(')
 	return(lookarch(filename));
 
 if (stat(filename, &buf) < 0)
+{
+	s = findfl(filename);
+	if(s != (char *)-1)
+	{
+		pname->alias = copys(s);
+		if(stat(pname->alias, &buf) == 0)
+			return(buf.st_mtime);
+	}
 	return(0);
+}
 else	return(buf.st_mtime);
 }
 
@@ -183,7 +197,8 @@ struct nameblock *q;
 struct depblock *thisdbl;
 struct dirhdr *od;
 struct pattern *patp;
-
+struct varblock *cp, *varptr();
+char *path, pth[100], *strcpy();
 struct direct *dptr;
 
 
@@ -205,16 +220,31 @@ for(p=pat; *p!='\0'; ++p)
 
 if(endir==0)
 	{
-	dirname = ".";
 	dirpref = "";
 	filepat = pat;
+	cp = varptr("VPATH");
+	if (*cp->varval == 0) path = ".";
+	else {
+	       path = pth; 
+	       *path = '\0';
+	       if (*cp->varval != '.') strcpy(pth,".:");
+	       strcat(pth, cp->varval);
+	       }
 	}
 else	{
-	dirname = pat;
 	*endir = '\0';
-	dirpref = concat(dirname, "/", temp);
+	path = strcpy(pth, pat);
+	dirpref = concat(pat, "/", temp);
 	filepat = endir+1;
 	}
+
+while (*path) {			/* Loop thru each VPATH directory */
+  dirname = path;
+  for (; *path; path++)
+    if (*path == ':') {
+      *path++ = '\0';
+      break;
+      }
 
 dirf = NULL;
 cldir = NO;
@@ -277,6 +307,7 @@ if(cldir) {
 	closedir(dirf);
 	dirf = NULL;
 }
+} /* End of VPATH loop */
 return(thisdbl);
 }
 
@@ -535,4 +566,83 @@ for(i = 0 ; i < n ; ++i)
 	if(*a++ != *b++)
 		return(NO);
 return(YES);
+}
+
+
+/*
+ *	findfl(name)	(like execvp, but does path search and finds files)
+ */
+static char fname[128];
+
+char *execat();
+
+char *findfl(name)
+register char *name;
+{
+	register char *p;
+	register struct varblock *cp;
+	struct stat buf;
+
+	for (p = name; *p; p++) 
+		if(*p == '/') return(name);
+
+	cp = varptr("VPATH");
+	if(cp->varval == NULL || *cp->varval == 0)
+		p = ":";
+	else
+		p = cp->varval;
+
+	do
+	{
+		p = execat(p, name, fname);
+		if(stat(fname,&buf) >= 0)
+			return(fname);
+	} while (p);
+	return((char *)-1);
+}
+
+char *execat(s1, s2, si)
+register char *s1, *s2;
+char *si;
+{
+	register char *s;
+
+	s = si;
+	while (*s1 && *s1 != ':' && *s1 != '-')
+		*s++ = *s1++;
+	if (si != s)
+		*s++ = '/';
+	while (*s2)
+		*s++ = *s2++;
+	*s = '\0';
+	return(*s1? ++s1: 0);
+}
+
+
+/* copy s to d, changing file names to file aliases */
+fixname(s, d)
+char *s, *d;
+{
+	register char *r, *q;
+	struct nameblock *pn;
+	char name[100];
+
+	while (*s) {
+		if (isspace(*s)) *d++ = *s++;
+		else {
+			r = name;
+			while (*s) {
+				if (isspace(*s)) break; 
+				*r++ = *s++;
+				}
+			*r = '\0';
+ 		
+			if (((pn = srchname(name)) != 0) && (pn->alias))
+				q = pn->alias;
+			else q = name;
+	
+			while (*q) *d++ = *q++;
+			}
+		}
+	*d = '\0';
 }

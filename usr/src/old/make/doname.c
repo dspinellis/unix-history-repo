@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.5 (Berkeley) 85/01/09";
+static	char *sccsid = "@(#)doname.c	4.6 (Berkeley) 85/04/16";
 #include "defs"
 #include <strings.h>
 
@@ -53,7 +53,7 @@ errstat = 0;
 tdep = 0;
 implcom = 0;
 explcom = 0;
-ptime = exists(p->namep);
+ptime = exists(p); 
 ptime1 = 0;
 didwork = NO;
 p->done = 1;	/* avoid infinite loops */
@@ -123,6 +123,7 @@ for(lp = sufflist ; lp ; lp = lp->nxtlineblock)
 	pnamep = suffp->depname->namep;
 	if(suffix(p->namep , pnamep , prefix))
 		{
+
 		srchdir( concat(prefix,"*",temp) , NO, (struct depblock *) NULL);
 		for(lp1 = sufflist ; lp1 ; lp1 = lp1->nxtlineblock)
 		    for(suffp1=lp1->depp ; suffp1 ; suffp1 = suffp1->nxtdepblock)
@@ -137,7 +138,8 @@ for(lp = sufflist ; lp ; lp = lp->nxtlineblock)
 if(dbgflag) printf("TIME(%s)=%ld\n", p2->namep, td);
 				if(td > tdep) tdep = td;
 				setvar("*", prefix);
-				setvar("<", copys(sourcename));
+				if (p2->alias) setvar("<", copys(p2->alias));
+				else setvar("<", copys(p2->namep));
 				for(lp2=p1->linep ; lp2 ; lp2 = lp2->nxtlineblock)
 					if(implcom = lp2->shp) break;
 				goto endloop;
@@ -165,7 +167,8 @@ if(errstat==0 && (ptime<tdep || (ptime==0 && tdep==0) ) )
 	else if(p->septype == 0)
 		if(p1=srchname(".DEFAULT"))
 			{
-			setvar("<", p->namep);
+			if (p->alias) setvar("<", p->alias);
+			else setvar("<", p->namep);
 			for(lp2 = p1->linep ; lp2 ; lp2 = lp2->nxtlineblock)
 				if(implcom = lp2->shp)
 					{
@@ -182,7 +185,7 @@ if(errstat==0 && (ptime<tdep || (ptime==0 && tdep==0) ) )
 			fatal1(" Don't know how to make %s", p->namep);
 
 	setvar("@", (char *) NULL);
-	if(noexflag || (ptime = exists(p->namep)) == 0)
+	if(noexflag || (ptime = exists(p)) == 0)
 		ptime = prestime();
 	}
 
@@ -209,6 +212,7 @@ char *s;
 struct varblock *varptr();
 int ign, nopr;
 char string[OUTMAX];
+char string2[OUTMAX];
 
 ++ndocoms;
 if(questflag)
@@ -225,7 +229,8 @@ if(touchflag)
 
 else for( ; q ; q = q->nxtshblock )
 	{
-	subst(q->shbp,string);
+	subst(q->shbp,string2);
+	fixname(string2, string);
 
 	ign = ignerr;
 	nopr = NO;
