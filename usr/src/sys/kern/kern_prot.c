@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.4	82/08/24	*/
+/*	kern_prot.c	5.5	82/08/24	*/
 
 /*
  * System calls related to processes and protection
@@ -216,7 +216,7 @@ leavegroup(gid)
 found:
 	for (; gp < &u.u_groups[NGROUPS-1]; gp++)
 		*gp = *(gp+1);
-	*gp = 0;
+	*gp = -1;
 }
 
 entergroup(gid)
