@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netisr.h	7.8 (Berkeley) %G%
+ *	@(#)netisr.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,7 @@
 #define	NETISR_NS	6		/* same as AF_NS */
 #define	NETISR_ISO	7		/* same as AF_ISO */
 #define	NETISR_CCITT	10		/* same as AF_CCITT */
+#define	NETISR_ARP	18		/* same as AF_LINK */
 
 #define	schednetisr(anisr)	{ netisr |= 1<<(anisr); setsoftnet(); }
 
