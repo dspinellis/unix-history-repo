@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_input.c	7.17 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.15.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
