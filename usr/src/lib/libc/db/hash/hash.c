@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -91,10 +91,10 @@ long hash_accesses, hash_collisions, hash_expansions, hash_overflows;
 
 extern	DB *
 hash_open ( file, flags, mode, info )
-char	*file;
+const char	*file;
 int	flags;
 int	mode;
-HASHINFO	*info;		/* Special directives for create */
+const HASHINFO	*info;		/* Special directives for create */
 {
     int		buckets;
     int		bpages;
@@ -220,7 +220,7 @@ HASHINFO	*info;		/* Special directives for create */
     }
     dbp->internal = (char *)hashp;
     dbp->close = hash_close;
-    dbp->delete = hash_delete;
+    dbp->del = hash_delete;
     dbp->get = hash_get;
     dbp->put = hash_put;
     dbp->seq = hash_seq;
