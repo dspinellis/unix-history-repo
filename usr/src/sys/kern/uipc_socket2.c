@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket2.c	7.16 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
