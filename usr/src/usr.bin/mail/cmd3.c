@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	2.1 %G%";
+static char *SccsId = "@(#)cmd3.c	2.2 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -188,7 +188,7 @@ respond(msgvec)
 	int *msgvec;
 {
 	struct message *mp;
-	char *cp, buf[2 * LINESIZE], *rcv, *replyto;
+	char *cp, buf[2 * LINESIZE], *rcv, *replyto, **ap;
 	struct name *np;
 	struct header head;
 	char *netmap();
@@ -212,7 +212,14 @@ respond(msgvec)
 	np = elide(extract(buf, GTO));
 	/* rcv = rename(rcv); */
 	mapf(np, rcv);
+	/*
+	 * Delete my name from the reply list,
+	 * and with it, all my alternate names.
+	 */
 	np = delname(np, myname);
+	if (altnames != 0)
+		for (ap = altnames; *ap; ap++)
+			np = delname(np, *ap);
 	head.h_seq = 1;
 	cp = detract(np, 0);
 	if (cp != NOSTR && replyto == NOSTR) {
@@ -740,5 +747,35 @@ endifcmd()
 		return(1);
 	}
 	cond = CANY;
+	return(0);
+}
+
+/*
+ * Set the list of alternate names.
+ */
+alternates(namelist)
+	char **namelist;
+{
+	register int c;
+	register char **ap, **ap2, *cp;
+
+	c = argcount(namelist) + 1;
+	if (c == 1) {
+		if (altnames == 0)
+			return(0);
+		for (ap = altnames; *ap; ap++)
+			printf("%s ", *ap);
+		printf("\n");
+		return(0);
+	}
+	if (altnames != 0)
+		cfree((char *) altnames);
+	altnames = (char **) calloc(c, sizeof (char *));
+	for (ap = namelist, ap2 = altnames; *ap; ap++, ap2++) {
+		cp = (char *) calloc(strlen(*ap) + 1, sizeof (char));
+		strcpy(cp, *ap);
+		*ap2 = cp;
+	}
+	*ap2 = 0;
 	return(0);
 }
