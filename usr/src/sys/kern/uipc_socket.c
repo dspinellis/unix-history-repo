@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.29 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -501,7 +501,7 @@ restart:
 	 * we have to do the receive in sections, and thus risk returning
 	 * a short count if a timeout or signal occurs after we start.
 	 */
-	while (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
+	if (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
 	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
 	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)))
 		if (m && (m->m_nextpkt || (m->m_flags & M_EOR) ||
@@ -513,7 +513,7 @@ restart:
 #endif
 		if (so->so_error) {
 			if (m)
-				break;
+				goto dontblock;
 			error = so->so_error;
 			if ((flags & MSG_PEEK) == 0)
 				so->so_error = 0;
@@ -521,7 +521,7 @@ restart:
 		}
 		if (so->so_state & SS_CANTRCVMORE) {
 			if (m)
-				break;
+				goto dontblock;
 			else
 				goto release;
 		}
@@ -857,6 +857,7 @@ sosetopt(so, level, optname, m0)
 			error = ENOPROTOOPT;
 			break;
 		}
+		m = 0;
 		if (error == 0 && so->so_proto && so->so_proto->pr_ctloutput)
 			(void) ((*so->so_proto->pr_ctloutput)
 				  (PRCO_SETOPT, so, level, optname, &m0));
