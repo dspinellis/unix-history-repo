@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.26 (Berkeley) %G%
+#	@(#)security	5.27 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -212,17 +212,16 @@ if grep -w uudecode /etc/aliases; then
 	printf "\nThere is an entry for uudecode in the /etc/aliases file.\n"
 fi
 
-# Files that should not have + signs or empty lines.
+# Files that should not have + signs.
 list="/etc/hosts.equiv /etc/hosts.lpd"
 for f in $list ; do
-	if egrep '\+|^$' $f > /dev/null ; then
-		printf "\nEmpty line or + in $f file.\n"
+	if egrep '\+' $f > /dev/null ; then
+		printf "\nPlus sign in $f file.\n"
 	fi
 done
 
 # Check for special users with .rhosts files.  Only root and toor should
-# have a .rhosts files.  Also, .rhosts files should not have blank lines
-# or plus signs.
+# have a .rhosts files.  Also, .rhosts files should not plus signs.
 awk -F: '$1 != "root" && $1 != "toor" && \
 	($3 < 100 || $1 == "ftp" || $1 == "uucp") \
 		{ print $1 " " $6 }' /etc/passwd |
@@ -240,8 +239,8 @@ fi
 awk -F: '{ print $1 " " $6 }' /etc/passwd | \
 while read uid homedir; do
 	if [ -f ${homedir}/.rhosts ] && \
-	    egrep '\+|^$' ${homedir}/.rhosts > /dev/null ; then
-		printf "$uid: empty line or + in .rhosts file.\n"
+	    egrep '\+' ${homedir}/.rhosts > /dev/null ; then
+		printf "$uid: + in .rhosts file.\n"
 	fi
 done > $OUTPUT
 if [ -s $OUTPUT ] ; then
