@@ -1,6 +1,9 @@
-# Copyright (c) 1983 Regents of the University of California
 #
-#	@(#)newversion.awk	2.2	(Berkeley)	84/02/08
+# Copyright (c) 1983 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)newversion.awk	5.1 (Berkeley) %G%
 #
 /^VERSION = /	{
 		    n = split( $3, version, ".")

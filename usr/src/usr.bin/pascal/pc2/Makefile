@@ -1,4 +1,9 @@
-#	@(#)Makefile	1.1	(Berkeley)	84/08/18
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O

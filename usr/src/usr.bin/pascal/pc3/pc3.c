@@ -1,7 +1,18 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static	char sccsid[] = "@(#)pc3.c	1.13 (Berkeley) %G%";
-#endif
-    /* Copyright (c) 1980 Regents of the University of California */
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)pc3.c	5.1 (Berkeley) %G%";
+#endif not lint
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation

@@ -1,8 +1,15 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)sccsmakefile	5.1 (Berkeley) %G%
+#
 #	this makefile knows about all
 #	the sccs related things for the
 #	berkeley pascal system.
 
-SCCSID = "sccsmakefile 2.2 %G% 11:43:43"
+SCCSID = "sccsmakefile 5.1 %G% 16:20:52"
 
 PSCCSDIR = /usr/src/ucb/pascal/src
 PIDIR = ../pi

@@ -1,6 +1,10 @@
-/* Copyright (c) 1979 Regents of the University of California */
-
-/* static	char sccsid[] = "@(#)pcwhoami.h 2.1 %G%"; */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)pcwhoami.h	5.1 (Berkeley) %G%
+ */
 
 /*
  *	am i generating an obj file (OBJ),
