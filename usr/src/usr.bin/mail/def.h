@@ -36,14 +36,14 @@
 
 
 #define	ESCAPE		'~'		/* Default escape for sending */
-#define	NMLSIZE		20		/* max names in a message list */
-#define	PATHSIZE	100		/* Size of pathnames throughout */
-#define	NAMESIZE	20		/* Max size of user name */
-#define	HSHSIZE		19		/* Hash size for aliases and vars */
+#define	NMLSIZE		1024		/* max names in a message list */
+#define	PATHSIZE	1024		/* Size of pathnames throughout */
+#define	NAMESIZE	32		/* Max size of user name */
+#define	HSHSIZE		59		/* Hash size for aliases and vars */
 #define	HDRFIELDS	3		/* Number of header fields */
 #define	LINESIZE	BUFSIZ		/* max readable line width */
 #define	STRINGSIZE	((unsigned) 128)/* Dynamic allocation units */
-#define	MAXARGC		20		/* Maximum list of raw strings */
+#define	MAXARGC		1024		/* Maximum list of raw strings */
 #define	NOSTR		((char *) 0)	/* Null string pointer */
 #define	MAXEXP		25		/* Maximum expansion of aliases */
 #define	equal(a, b)	(strcmp(a,b)==0)/* A nice function to string compare */
@@ -219,7 +219,7 @@ struct ignore {
 #define TPLUS	10			/* A '+' */
 
 #define	REGDEP	2			/* Maximum regret depth. */
-#define	STRINGLEN	64		/* Maximum length of string token */
+#define	STRINGLEN	1024		/* Maximum length of string token */
 
 /*
  * Constants for conditional commands.  These describe whether
