@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -907,7 +907,7 @@ getfiles(abuf, alen)
 void
 swapmode()
 {
-	char *header;
+	char *header, *p;
 	int hlen, nswap, nswdev, dmmax, nswapmap, niswap, niswdev;
 	int s, e, div, i, l, avail, nfree, npfree, used;
 	struct swdevt *sw;
@@ -1009,10 +1009,11 @@ swapmode()
 	for (i = 0; i < nswdev; i++) {
 		int xsize, xfree;
 
-		if (!totalflag)
-			(void)printf("/dev/%-6s %*d ",
-			    devname(sw[i].sw_dev, S_IFBLK),
+		if (!totalflag) {
+			p = devname(sw[i].sw_dev, S_IFBLK);
+			(void)printf("/dev/%-6s %*d ", p == NULL ? "??" : p,
 			    hlen, sw[i].sw_nblks / div);
+		}
 
 		/*
 		 * Don't report statistics for partitions which have not
