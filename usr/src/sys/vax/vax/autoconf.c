@@ -1,4 +1,4 @@
-/*	autoconf.c	6.4	84/02/02	*/
+/*	autoconf.c	6.5	84/02/03	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -720,7 +720,9 @@ ubaaccess(pumem, pte)
 }
 
 #define	DMMIN	32
+#ifndef	DMMAX
 #define	DMMAX	1024
+#endif
 #define	DMTEXT	1024
 #define	MAXDUMP	(10*2048)
 /*
