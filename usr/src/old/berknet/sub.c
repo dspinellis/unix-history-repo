@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)sub.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)sub.c	4.2	(Berkeley)	%G%";
 
 /*
 	sub.c
@@ -276,6 +276,7 @@ gothru(from,to){
 	case 'e':	i = configE[chtoinx(to)]; break;
 	case 'f':	i = configF[chtoinx(to)]; break;
 	case 'g':	i = configG[chtoinx(to)]; break;
+	case 'h':	i = configH[chtoinx(to)]; break;
 	case 'i':	i = configI[chtoinx(to)]; break;
 	case 'j':	i = configJ[chtoinx(to)]; break;
 	case 'k':	i = configK[chtoinx(to)]; break;
@@ -288,7 +289,9 @@ gothru(from,to){
 	case 'r':	i = configR[chtoinx(to)]; break;
 	case 's':	i = configS[chtoinx(to)]; break;
 	case 't':	i = configT[chtoinx(to)]; break;
+	case 'u':	i = configU[chtoinx(to)]; break;
 	case 'v':	i = configV[chtoinx(to)]; break;
+	case 'w':	i = configW[chtoinx(to)]; break;
 	case 'x':	i = configX[chtoinx(to)]; break;
 	case 'y':	i = configY[chtoinx(to)]; break;
 	case 'z':	i = configZ[chtoinx(to)]; break;
