@@ -58,6 +58,7 @@ dowhatis()
 /* make the paging of a file interruptible */
 static int got_intrup;
 
+void
 intruph(){
 	got_intrup++;
 }
@@ -68,7 +69,7 @@ FILE *fp;
 int strip;	/* nr of chars to be stripped from each line (0 or 1) */
 {
 	register char *bufr, *ep;
-	int (*prevsig)() = signal(SIGINT, intruph);
+	sig_t prevsig = signal(SIGINT, intruph);
 
 	set_pager(0);
 	bufr = (char *) alloc((unsigned) CO);

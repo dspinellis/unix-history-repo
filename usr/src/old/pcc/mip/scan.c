@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.15 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.16 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -63,7 +63,7 @@ char * lxgcp;
 
 extern int proflg;
 extern int gdebug;
-extern int fpe();
+extern void fpe();
 struct sigvec fpe_sigvec;
 int oldway;		/* allocate storage so lint will compile as well */
 #ifndef LINT
