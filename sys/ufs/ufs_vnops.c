@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.5 1993/10/20 07:31:42 davidg Exp $
+ *	$Id: ufs_vnops.c,v 1.6 1993/11/10 05:33:56 wollman Exp $
  */
 
 #include "param.h"
@@ -730,7 +730,7 @@ ufs_link(vp, ndp, p)
 	register struct inode *ip = VTOI(vp);
 	int error;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((ndp->ni_nameiop & HASBUF) == 0)
 		panic("ufs_link: no name");
 #endif
@@ -789,7 +789,7 @@ ufs_rename(fndp, tndp, p)
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
 	int error = 0;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((tndp->ni_nameiop & HASBUF) == 0 ||
 	    (fndp->ni_nameiop & HASBUF) == 0)
 		panic("ufs_rename: no name");
@@ -1106,7 +1106,7 @@ ufs_mkdir(ndp, vap, p)
 	int error;
 	int dmode;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((ndp->ni_nameiop & HASBUF) == 0)
 		panic("ufs_mkdir: no name");
 #endif
@@ -1617,7 +1617,7 @@ maknode(mode, ndp, ipp)
 	ino_t ipref;
 	int error;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((ndp->ni_nameiop & HASBUF) == 0)
 		panic("maknode: no name");
 #endif
