@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 PROG=	more
 DPADD=	${LIBTERM} ${LIBCOMPAT}
@@ -8,6 +8,6 @@ LINKS=	${BINDIR}/more ${BINDIR}/page
 
 beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/more.help \
-	    ${DESTDIR}/usr/share/misc
+	    ${DESTDIR}/usr/share/misc/omore.help
 
 .include <bsd.prog.mk>
