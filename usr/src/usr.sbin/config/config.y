@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
 %token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA MINUS
 %{
-/*	config.y	1.11	81/05/22	*/
+/*	config.y	1.12	82/07/13	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -46,13 +46,13 @@ Config_spec:
 	TIMEZONE NUMBER DST = { timezone = 60 * $2; dst = 1; check_tz(); } |
 	TIMEZONE FPNUMBER = { timezone = $2; check_tz(); } |
 	TIMEZONE FPNUMBER DST = { timezone = $2; dst = 1; check_tz(); } |
-	MINUS TIMEZONE NUMBER =
+	TIMEZONE MINUS NUMBER =
 	    { timezone = -60 * $3; check_tz(); } |
-	MINUS TIMEZONE NUMBER DST =
+	TIMEZONE MINUS NUMBER DST =
 	    { timezone = -60 * $3; dst = 1; check_tz(); } |
-	MINUS TIMEZONE FPNUMBER =
+	TIMEZONE MINUS FPNUMBER =
 	    { timezone = -$3; check_tz(); } |
-	MINUS TIMEZONE FPNUMBER DST =
+	TIMEZONE MINUS FPNUMBER DST =
 	    { timezone = -$3; dst = 1; check_tz(); } |
 	MAXUSERS NUMBER = { maxusers = $2; }
 	;
