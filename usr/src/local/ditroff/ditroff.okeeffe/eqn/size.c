@@ -1,49 +1,73 @@
 #ifndef lint
-static char *sccsid = "size.c	(CWI)	1.1	85/03/01";
-#endif
+static char sccsid[] = "@(#)size.c	2.1 (CWI) 85/07/18";
+#endif lint
 # include "e.h"
+# include <ctype.h>
 
 setsize(p)	/* set size as found in p */
-char *p;
+	char *p;
 {
-	if (*p == '+')
+	nszstack++;
+	szstack[nszstack] = 0;		/* assume relative */
+	if (*p == '+') {
 		ps += atoi(p+1);
-	else if (*p == '-')
+		if (szstack[nszstack-1] != 0)	/* propagate absolute size */
+			szstack[nszstack] = ps;
+	} else if (*p == '-') {
 		ps -= atoi(p+1);
-	else
-		ps = atoi(p);
-	if(dbg)printf(".\tsetsize %s; ps = %d\n", p, ps);
+		if (szstack[nszstack-1] != 0)
+			szstack[nszstack] = ps;
+	} else if (isdigit(*p)) {
+		szstack[nszstack] = ps = atoi(p);
+		printf(".nr %d \\n(.s\n", 99-nszstack);
+	} else {
+		error(!FATAL, "illegal size %s ignored", p);
+	}
+	dprintf(".\tsetsize %s; ps = %d\n", p, ps);
 }
 
-size(p1, p2) int p1, p2; {
+size(p1, p2)
+	int p1, p2;
+{
 		/* old size in p1, new in ps */
-	int effps, effp1;
-
 	yyval = p2;
-	if(dbg)printf(".\tb:sb: S%d <- \\s%d S%d \\s%d; b=%d, h=%d\n", 
+	dprintf(".\tS%d <- \\s%d %d \\s%d; b=%g, h=%g\n", 
 		yyval, ps, p2, p1, ebase[yyval], eht[yyval]);
-	effps = EFFPS(ps);
-	effp1 = EFFPS(p1);
-	printf(".ds %d \\s%d\\*(%d\\s%d\n", 
-		yyval, effps, p2, effp1);
+	if (szstack[nszstack] != 0) {
+		/* sizes ought to be generated from macro as \s(dd */
+		printf(".ds %d \\s%d\\*(%d\\s\\n(%d\n", yyval, ps, p2, 99-nszstack);
+	} else
+		printf(".ds %d %s\\*(%d%s\n", yyval, DPS(p1,ps), p2, DPS(ps,p1));
+	nszstack--;
 	ps = p1;
 }
 
-globsize() {
+globsize()
+{
 	char temp[20];
 
-	getstr(temp, 20);
-	if (temp[0] == '+')
+	getstr(temp, sizeof(temp));
+	if (temp[0] == '+') {
 		gsize += atoi(temp+1);
-	else if (temp[0] == '-')
+		if (szstack[0] != 0)
+			szstack[0] = gsize;
+	} else if (temp[0] == '-') {
 		gsize -= atoi(temp+1);
-	else
+		if (szstack[0] != 0)
+			szstack[0] = gsize;
+	} else  if (isdigit(temp[0])) {
 		gsize = atoi(temp);
+		szstack[0] = gsize;
+		printf(".nr 99 \\n(.s\n");
+	} else {
+		error(!FATAL, "illegal gsize %s ignored", temp);
+	}
 	yyval = eqnreg = 0;
-	setps(gsize);
 	ps = gsize;
-	if (gsize >= 12)	/* sub and sup size change */
+	if (gsize < 12)		/* sub and sup size change */
+		deltaps = gsize / 3;
+	else if (gsize < 20)
 		deltaps = gsize / 4;
 	else
-		deltaps = gsize / 3;
+		deltaps = gsize / 5;
 }

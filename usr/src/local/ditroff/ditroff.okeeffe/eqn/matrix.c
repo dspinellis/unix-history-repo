@@ -1,65 +1,83 @@
 #ifndef lint
-static char *sccsid = "matrix.c	(CWI)	1.1	85/03/01";
-#endif
+static char sccsid[] = "@(#)matrix.c	2.1 (CWI) 85/07/18";
+#endif lint
 #include "e.h"
 
-column(type, p1) int type, p1; {
-	int i;
+startcol(type)	/* mark start of column in lp[] array */
+	int type;
+{
+	int oct = ct;
 
-	lp[p1] = ct - p1 - 1;
-	if( dbg ){
-		printf(".\t%d column of", type);
-		for( i=p1+1; i<ct; i++ )
-			printf(" S%d", lp[i]);
-		printf(", rows=%d\n",lp[p1]);
-	}
 	lp[ct++] = type;
+	lp[ct++] = 0;	/* count, to come */
+	lp[ct++] = 0;	/* separation, to come */
+	return oct;
 }
 
-matrix(p1) int p1; {
-	int nrow, ncol, i, j, k, hb, b, val[100];
+column(oct, sep)	/* remember end of column that started at lp[oct] */
+	int oct, sep;
+{
+	int i, type;
+
+	lp[oct+1] = ct - oct - 3;
+	lp[oct+2] = sep;
+	type = lp[oct];
+	if (dbg) {
+		printf(".\t%d column of", type);
+		for (i = oct+3; i < ct; i++ )
+			printf(" S%d", lp[i]);
+		printf(", rows=%d, sep=%d\n", lp[oct+1], lp[oct+2]);
+	}
+}
+
+matrix(oct)	/* matrix is list of columns */
+	int oct;
+{
+	int nrow, ncol, i, j, k, val[100];
+	float b, hb;
 	char *space;
 
-	space = "\\ \\ ";
-	nrow = lp[p1];	/* disaster if rows inconsistent */
+	space = "\\ \\ ";	/* between columns of matrix */
+	nrow = lp[oct+1];	/* disaster if rows inconsistent */
+				/* also assumes just columns */
+				/* fix when add other things */
 	ncol = 0;
-	for( i=p1; i<ct; i += lp[i]+2 ){
+	for (i = oct+1; i < ct; i += lp[i]+3 ) {
 		ncol++;
-		if(dbg)printf(".\tcolct=%d\n",lp[i]);
+		dprintf(".\tcolct=%d\n", lp[i]);
 	}
-	for( k=1; k<=nrow; k++ ) {
+	for (k=1; k <= nrow; k++) {
 		hb = b = 0;
-		j = p1 + k;
-		for( i=0; i<ncol; i++ ) {
+		j = oct + k + 2;
+		for (i=0; i < ncol; i++) {
 			hb = max(hb, eht[lp[j]]-ebase[lp[j]]);
 			b = max(b, ebase[lp[j]]);
-			j += nrow + 2;
+			j += nrow + 3;
 		}
-		if(dbg)printf(".\trow %d: b=%d, hb=%d\n", k, b, hb);
-		j = p1 + k;
-		for( i=0; i<ncol; i++ ) {
+		dprintf(".\trow %d: b=%g, hb=%g\n", k, b, hb);
+		j = oct + k + 2;
+		for (i=0; i<ncol; i++) {
 			ebase[lp[j]] = b;
 			eht[lp[j]] = b + hb;
-			j += nrow + 2;
+			j += nrow + 3;
 		}
 	}
-	j = p1;
-	for( i=0; i<ncol; i++ ) {
-		lpile(lp[j+lp[j]+1], j+1, j+lp[j]+1);
+	j = oct;
+	for (i=0; i<ncol; i++) {
+		pile(j);
 		val[i] = yyval;
-		j += nrow + 2;
+		j += nrow + 3;
 	}
-	yyval = oalloc();
+	yyval = salloc();
 	eht[yyval] = eht[val[0]];
 	ebase[yyval] = ebase[val[0]];
 	lfont[yyval] = rfont[yyval] = 0;
-	if(dbg)printf(".\tmatrix S%d: r=%d, c=%d, h=%d, b=%d\n",
+	dprintf(".\tmatrix S%d: r=%d, c=%d, h=%g, b=%g\n",
 		yyval,nrow,ncol,eht[yyval],ebase[yyval]);
 	printf(".ds %d \"", yyval);
 	for( i=0; i<ncol; i++ )  {
 		printf("\\*(%d%s", val[i], i==ncol-1 ? "" : space);
-		ofree(val[i]);
+		sfree(val[i]);
 	}
 	printf("\n");
-	ct = p1;
 }

@@ -1,6 +1,6 @@
 #ifndef lint
-static char *sccsid = "lex.c	(CWI)	1.1	85/03/01";
-#endif
+static char sccsid[] = "@(#)lex.c	2.1 (CWI) 85/07/18";
+#endif lint
 #include "e.h"
 #include "e.def"
 #include "ctype.h"
@@ -8,62 +8,19 @@ static char *sccsid = "lex.c	(CWI)	1.1	85/03/01";
 #define	SSIZE	400
 char	token[SSIZE];
 int	sp;
-#define	putbak(c)	*ip++ = c;
-#define	PUSHBACK	300	/* maximum pushback characters */
-char	ibuf[PUSHBACK+SSIZE];	/* pushback buffer for definitions, etc. */
-char	*ip	= ibuf;
 
-gtc() {
-  loop:
-	if (ip > ibuf)
-		return(*--ip);	/* already present */
-	lastchar = getc(curfile);
-	if (lastchar=='\n')
-		linect++;
-	if (lastchar != EOF)
-		return(lastchar);
-	if (++ifile > svargc) {
-		return(EOF);
-	}
-	if (curfile != stdin)
-		fclose(curfile);
-	linect = 1;
-	if (strcmp(svargv[ifile], "-") == 0) {
-		curfile = stdin;
-		goto loop;
-	}
-	if ((curfile=fopen(svargv[ifile], "r")) != NULL)
-		goto loop;
-	error(FATAL, "can't open file %s", svargv[ifile]);
-	return(EOF);
-}
-
-pbstr(str)
-register char *str;
+yylex()
 {
-	register char *p;
-
-	p = str;
-	while (*p++);
-	--p;
-	if (ip >= &ibuf[PUSHBACK])
-		error( FATAL, "pushback overflow");
-	while (p > str)
-		putbak(*--p);
-}
-
-yylex() {
 	register int c;
-	tbl *tp, *lookup();
-	extern tbl **keytbl, **deftbl;
+	tbl *tp;
 
-  beg:
-	while ((c=gtc())==' ' || c=='\n')
+  begin:
+	while ((c=input()) == ' ' || c == '\n')
 		;
-	yylval=c;
-	switch(c) {
-
+	yylval = c;
+	switch (c) {
 	case EOF:
+		error(!FATAL, "unexpected end of input inside equation");
 		return(EOF);
 	case '~':
 		return(SPACE);
@@ -76,90 +33,125 @@ yylex() {
 	case '}':
 		return('}');
 	case '"':
-		for (sp=0; (c=gtc())!='"' && c != '\n'; ) {
+		for (sp = 0; (c=input())!='"' && c != '\n'; ) {
 			if (c == '\\')
-				if ((c = gtc()) != '"')
+				if ((c = input()) != '"')
 					token[sp++] = '\\';
 			token[sp++] = c;
-			if (sp>=SSIZE)
+			if (sp >= SSIZE)
 				error(FATAL, "quoted string %.20s... too long", token);
 		}
-		token[sp]='\0';
+		token[sp] = '\0';
 		yylval = (int) &token[0];
 		if (c == '\n')
 			error(!FATAL, "missing \" in %.20s", token);
 		return(QTEXT);
 	}
-	if (c==righteq)
+	if (!display && c == righteq)
 		return(EOF);
 
-	putbak(c);
+	unput(c);
 	getstr(token, SSIZE);
-	if (dbg)printf(".\tlex token = |%s|\n", token);
-	if ((tp = lookup(&deftbl, token, NULL)) != NULL) {
-		putbak(' ');
-		pbstr(tp->defn);
-		putbak(' ');
-		if (dbg)
-			printf(".\tfound %s|=%s|\n", token, tp->defn);
+	dprintf(".\tlex token = |%s|\n", token);
+	if ((tp = lookup(deftbl, token, NULL)) != NULL) {	/* defined term */
+		c = input();
+		unput(c);
+		if (c == '(')	/* macro with args */
+			dodef(tp);
+		else {		/* no args */
+			unput(' ');
+			pbstr(tp->defn);
+			dprintf(".\tfound %s|=%s|\n", token, tp->defn);
+		}
+		goto begin;
 	}
-	else if ((tp = lookup(&keytbl, token, NULL)) == NULL) {
-		if(dbg)printf(".\t%s is not a keyword\n", token);
-		return(CONTIG);
-	}
-	else if (tp->defn == (char *) DEFINE || tp->defn == (char *) NDEFINE || tp->defn == (char *) TDEFINE)
+
+	if ((tp = lookup(keytbl, token, NULL)) == NULL)	/* not a keyword */
+		return CONTIG;
+
+	switch ((int) tp->defn) {		/* some kind of keyword */
+	case DEFINE: case TDEFINE: case NDEFINE:
 		define(tp->defn);
-	else if (tp->defn == (char *) DELIM)
+		break;
+	case IFDEF:
+		ifdef();
+		break;
+	case DELIM:
 		delim();
-	else if (tp->defn == (char *) GSIZE)
+		break;
+	case GSIZE:
 		globsize();
-	else if (tp->defn == (char *) GFONT)
+		break;
+	case GFONT:
 		globfont();
-	else if (tp->defn == (char *) INCLUDE)
+		break;
+	case INCLUDE:
 		include();
-	else if (tp->defn == (char *) SPACE)
+		break;
+	case SPACE:
 		space();
-	else {
-		return((int) tp->defn);
+		break;
+	case DOTEQ:
+			/* .EQ inside equation -- should warn if at bottom level */
+		break;
+	case DOTEN:
+		if (curfile == infile)
+			return EOF;
+		/* else ignore nested .EN */
+		break;
+	default:
+		return (int) tp->defn;
 	}
-	goto beg;
+	goto begin;
 }
 
-getstr(s, n) char *s; register int n; {
+getstr(s, n)
+	char *s;
+	register int n;
+{
 	register int c;
 	register char *p;
 
 	p = s;
-	while ((c = gtc()) == ' ' || c == '\n')
+	while ((c = input()) == ' ' || c == '\n')
 		;
 	if (c == EOF) {
 		*s = 0;
 		return;
 	}
 	while (c != ' ' && c != '\t' && c != '\n' && c != '{' && c != '}'
-	  && c != '"' && c != '~' && c != '^' && c != righteq) {
+	    && c != '"' && c != '~' && c != '^') {
+		if (!display && c == righteq)
+			break;
+		if (c == '(' && p > s) {	/* might be defined(...) */
+			*p = '\0';
+			if (lookup(deftbl, s, NULL) != NULL)
+				break;
+		}
 		if (c == '\\')
-			if ((c = gtc()) != '"')
+			if ((c = input()) != '"')
 				*p++ = '\\';
 		*p++ = c;
 		if (--n <= 0)
 			error(FATAL, "token %.20s... too long", s);
-		c = gtc();
+		c = input();
 	}
-	if (c=='{' || c=='}' || c=='"' || c=='~' || c=='^' || c=='\t' || c==righteq)
-		putbak(c);
+	unput(c);
 	*p = '\0';
 	yylval = (int) s;
 }
 
-cstr(s, quote, maxs) char *s; int quote; {
+cstr(s, quote, maxs)
+	char *s;
+	int quote;
+{
 	int del, c, i;
 
 	s[0] = 0;
-	while((del=gtc()) == ' ' || del == '\t')
+	while ((del=input()) == ' ' || del == '\t')
 		;
 	if (quote)
-		for (i=0; (c=gtc()) != del && c != EOF;) {
+		for (i=0; (c=input()) != del && c != EOF;) {
 			s[i++] = c;
 			if (i >= maxs)
 				return(1);	/* disaster */
@@ -168,8 +160,8 @@ cstr(s, quote, maxs) char *s; int quote; {
 		if (del == '\n')
 			return(1);
 		s[0] = del;
-		for (i=1; (c=gtc())!=' ' && c!= '\t' && c!='\n' && c!=EOF;) {
-			s[i++]=c;
+		for (i=1; (c=input())!=' ' && c!= '\t' && c!='\n' && c!=EOF;) {
+			s[i++] = c;
 			if (i >= maxs)
 				return(1);	/* disaster */
 		}
@@ -180,10 +172,10 @@ cstr(s, quote, maxs) char *s; int quote; {
 	return(0);
 }
 
-define(type) int type; {
-	char *strsave(), *p1, *p2;
-	tbl *lookup();
-	extern tbl **deftbl;
+define(type)
+	int type;
+{
+	char *p1, *p2;
 
 	getstr(token, SSIZE);	/* get name */
 	if (type != DEFINE) {
@@ -194,25 +186,36 @@ define(type) int type; {
 	if (cstr(token, 1, SSIZE))
 		error(FATAL, "Unterminated definition at %.20s", token);
 	p2 = strsave(token);
-	lookup(&deftbl, p1, p2);
-	if (dbg)printf(".\tname %s defined as %s\n", p1, p2);
+	lookup(deftbl, p1, p2);
+	dprintf(".\tname %s defined as %s\n", p1, p2);
+}
+
+ifdef()		/* do body if name is defined */
+{
+	tbl *tp;
+	char name[100], *p;
+
+	getstr(name, sizeof(name));	/* get name */
+	cstr(token, 1, SSIZE);		/* and body */
+	if ((tp = lookup(deftbl, name, NULL)) != NULL) {	/* found it */
+		p = strsave(token);
+		pushsrc(Free, p);
+		pushsrc(String, p);
+	}
 }
 
 char	*spaceval	= NULL;
 
 space()	/* collect line of form "space amt" to replace \x in output */
 {
-	char *strsave();
-
 	getstr(token, SSIZE);
 	spaceval = strsave(token);
-	if (dbg) printf(".\tsetting space to %s\n", token);
+	dprintf(".\tsetting spaceval to %s\n", token);
 }
 
 char *strsave(s)
-char *s;
+	char *s;
 {
-	char *malloc();
 	register char *q;
 
 	q = malloc(strlen(s)+1);
@@ -222,11 +225,30 @@ char *s;
 	return(q);
 }
 
-include() {
-	error(!FATAL, "Include not yet implemented");
+include()
+{
+	char name[100];
+	FILE *fin;
+	int c;
+	extern int errno;
+
+	while ((c = input()) == ' ')
+		;
+	unput(c);
+	cstr(name, c == '"', sizeof(name));	/* gets it quoted or not */
+	if ((fin = fopen(name, "r")) == NULL)
+		fatal("can't open file %s", name);
+	errno = 0;
+	curfile++;
+	curfile->fin = fin;
+	curfile->fname = strsave(name);
+	curfile->lineno = 0;
+	printf(".lf 1 %s\n", curfile->fname);
+	pushsrc(File, curfile);
 }
 
-delim() {
+delim()
+{
 	yyval = eqnreg = 0;
 	if (cstr(token, 0, SSIZE))
 		error(FATAL, "Bizarre delimiters");

@@ -1,20 +1,23 @@
 #ifndef lint
-static char *sccsid = "mark.c	(CWI)	1.1	85/03/01";
-#endif
+static char sccsid[] = "@(#)mark.c	2.1 (CWI) 85/07/18";
+#endif lint
 #include "e.h"
 
-mark(p1) int p1; {
+mark(p1)
+	int p1;
+{
 	markline = 1;
-	printf(".ds %d \\k(97\\*(%d\n", p1, p1);
+	printf(".ds %d \\k(09\\*(%d\n", p1, p1);
 	yyval = p1;
-	if(dbg)printf(".\tmark %d\n", p1);
+	dprintf(".\tmark %d\n", p1);
 }
 
-lineup(p1) {
+lineup(p1)
+{
 	markline = 2;
 	if (p1 == 0) {
-		yyval = oalloc();
-		printf(".ds %d \\h'|\\n(97u'\n", yyval);
+		yyval = salloc();
+		printf(".ds %d \\h'|\\n(09u'\n", yyval);
 	}
-	if(dbg)printf(".\tlineup %d\n", p1);
+	dprintf(".\tlineup %d\n", p1);
 }
