@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -31,7 +31,6 @@ static char sccsid[] = "@(#)dm.c	5.3 (Berkeley) %G%";
 #define	LOGFILE		"/usr/adm/dm.log"
 #endif
 
-static FILE	*cfp;
 static time_t	now;			/* current time value */
 static int	priority = 0;		/* priority game runs at */
 static char	*game,			/* requested game */
@@ -41,30 +40,24 @@ main(argc, argv)
 	int	argc;
 	char	**argv;
 {
-	char	*C, *rindex();
-	double	load();
+	char	*cp, *rindex(), *ttyname();
+	time_t	time();
 
 	nogamefile();
+	game = (cp = rindex(*argv, '/')) ? ++cp : *argv;
 
-	if (!strcmp(*argv, "dm"))
+	if (!strcmp(game, "dm"))
 		exit(0);
 
-	if (!(cfp = fopen(CONTROL, "r"))) {
-		fprintf(stderr, "dm: unable to read %s.\n", CONTROL);
-		exit(1);
-	}
-
-	read_days();
-	read_ttys();
-
-	game = (C = rindex(*argv, '/')) ? ++C : *argv;
-	read_games();
+	gametty = ttyname(0);
+	(void)time(&now);
+	read_config();
 
 #ifdef LOG
 	logfile();
 #endif
 	play(argv);
-/*NOTREACHED*/
+	/*NOTREACHED*/
 }
 
 /*
@@ -79,125 +72,133 @@ play(args)
 		perror("dm: chdir");
 		exit(1);
 	}
-	if (priority > 0 && setpriority(PRIO_PROCESS, 0, priority) < 0)
-		fputs("dm: unable to set priority!\n", stderr);
+	if (priority > 0)	/* < 0 requires root */
+		(void)setpriority(PRIO_PROCESS, 0, priority);
 	setgid(getgid());	/* we run setgid kmem; lose it */
 	execv(game, args);
 	perror("dm");
 	exit(1);
 }
 
-#define	lcontrol(buf)	(buf[0] == '%' && buf[1] == '%')
-#define	lignore(buf)	(buf[0] == '\n' || buf[0] == '#')
 /*
- * read_days --
- *	read through days listed in the control file, decide
- *	if current time is an okay play time.
+ * read_config --
+ *	read through config file, looking for key words.
  */
 static
-read_days()
+read_config()
+{
+	FILE	*cfp;
+	char	lbuf[BUFSIZ], f1[40], f2[40], f3[40], f4[40], f5[40];
+
+	if (!(cfp = fopen(CONTROL, "r"))) {
+		fprintf(stderr, "dm: unable to read %s.\n", CONTROL);
+		exit(1);
+	}
+	while (fgets(lbuf, sizeof(lbuf), cfp))
+		switch(*lbuf) {
+		case 'b':		/* badtty */
+			if (sscanf(lbuf, "%s%s", f1, f2) != 2 ||
+			    strcasecmp(f1, "badtty"))
+				break;
+			c_tty(f2);
+			break;
+		case 'g':		/* game */
+			if (sscanf(lbuf, "%s%s%s%s%s",
+			    f1, f2, f3, f4, f5) != 5 || strcasecmp(f1, "game"))
+				break;
+			c_game(f2, f3, f4, f5);
+			break;
+		case 't':		/* time */
+			if (sscanf(lbuf, "%s%s%s%s", f1, f2, f3, f4) != 4 ||
+			    strcasecmp(f1, "time"))
+				break;
+			c_day(f2, f3, f4);
+		}
+	(void)fclose(cfp);
+}
+
+/*
+ * c_day --
+ *	if day is today, see if okay to play
+ */
+static
+c_day(s_day, s_start, s_stop)
+	char	*s_day, *s_start, *s_stop;
 {
 	static char	*days[] = {
 		"sunday", "monday", "tuesday", "wednesday",
 		"thursday", "friday", "saturday",
 	};
-	struct tm	*ct;
-	register char	*dp;
+	static struct tm	*ct;
 	int	start, stop;
-	char	lbuf[BUFSIZ], f1[40], f2[40], f3[40];
-	time_t	time();
 
-	(void)time(&now);
-	ct = localtime(&now);
-	dp = days[ct->tm_wday];
-
-	while (fgets(lbuf, sizeof(lbuf), cfp)) {
-		if (lignore(lbuf))
-			continue;
-		if (lcontrol(lbuf))
-			return;
-		if (sscanf(lbuf, "%s%s%s", f1, f2, f3) != 3)
-			continue;
-		if (!strcasecmp(dp, f1)) {
-			if (!isdigit(*f2) || !isdigit(*f3))
-				continue;
-			start = atoi(f2);
-			stop = atoi(f3);
-			if (ct->tm_hour >= start && ct->tm_hour <= stop) {
-				fputs("dm: Sorry, games are not available from ", stderr);
-				hour(start);
-				fputs(" to ", stderr);
-				hour(stop);
-				fputs(" today.\n", stderr);
-				exit(0);
-			}
-			continue;
-		}
+	if (!ct)
+		ct = localtime(&now);
+	if (strcasecmp(s_day, days[ct->tm_wday]))
+		return;
+	if (!isdigit(*s_start) || !isdigit(*s_stop))
+		return;
+	start = atoi(s_start);
+	stop = atoi(s_stop);
+	if (ct->tm_hour >= start && ct->tm_hour <= stop) {
+		fputs("dm: Sorry, games are not available from ", stderr);
+		hour(start);
+		fputs(" to ", stderr);
+		hour(stop);
+		fputs(" today.\n", stderr);
+		exit(0);
 	}
 }
 
 /*
- * read_ttys --
- *	read through ttys listed in the control file, decide if this
- *	tty can be used for games.
+ * c_tty --
+ *	decide if this tty can be used for games.
  */
 static
-read_ttys()
+c_tty(tty)
+	char	*tty;
 {
-	register char	*p_tty;
-	char	lbuf[BUFSIZ], f1[40], f2[40],
-		*ttyname(), *rindex();
+	static int	first = 1;
+	static char	*p_tty;
+	char	*rindex();
 
-	gametty = ttyname(0);
-	if (p_tty = rindex(gametty, '/'))
-		++p_tty;
-	while (fgets(lbuf, sizeof(lbuf), cfp)) {
-		if (lignore(lbuf))
-			continue;
-		if (lcontrol(lbuf))
-			return;
-		if (sscanf(lbuf, "%s%s", f1, f2) != 2)
-			continue;
-		if (strcasecmp("badtty", f1))
-			continue;
-		if (!strcmp(gametty, f2) || p_tty && !strcmp(p_tty, f2)) {
-			fprintf(stderr, "dm: Sorry, you may not play games on %s.\n", gametty);
-			exit(0);
-		}
+	if (first) {
+		p_tty = rindex(gametty, '/');
+		first = 0;
+	}
+
+	if (!strcmp(gametty, tty) || p_tty && !strcmp(p_tty, tty)) {
+		fprintf(stderr, "dm: Sorry, you may not play games on %s.\n", gametty);
+		exit(0);
 	}
 }
 
 /*
- * read_games --
- *	read through games listed in the control file, decide if this
- *	game can be played now.
+ * c_game --
+ *	see if game can be played now.
  */
 static
-read_games()
+c_game(s_game, s_load, s_users, s_priority)
+	char	*s_game, *s_load, *s_users, *s_priority;
 {
-	char	lbuf[BUFSIZ], f1[40], f2[40], f3[40], f4[40];
+	static int	found;
+	double	load();
 
-	while (fgets(lbuf, sizeof(lbuf), cfp)) {
-		if (lignore(lbuf))
-			continue;
-		if (lcontrol(lbuf))
-			return;
-		if (sscanf(lbuf, "%s%s%s%s", f1, f2, f3, f4) != 4)
-			break;
-		if (!strcmp(game, f1) || !strcasecmp("default", f1)) {
-			if (isdigit(*f2) && atoi(f2) < load()) {
-				fputs("dm: Sorry, the load average is too high right now.\n", stderr);
-				exit(0);
-			}
-			if (isdigit(*f3) && atoi(f3) <= users()) {
-				fputs("dm: Sorry, there are too many users logged on right now.\n", stderr);
-				exit(0);
-			}
-			if (isdigit(*f4))
-				priority = atoi(f3);
-			return;
-		}
+	if (found)
+		return;
+	if (strcmp(game, s_game) && strcasecmp("default", s_game))
+		return;
+	++found;
+	if (isdigit(*s_load) && atoi(s_load) < load()) {
+		fputs("dm: Sorry, the load average is too high right now.\n", stderr);
+		exit(0);
 	}
+	if (isdigit(*s_users) && atoi(s_users) <= users()) {
+		fputs("dm: Sorry, there are too many users logged on right now.\n", stderr);
+		exit(0);
+	}
+	if (isdigit(*s_priority))
+		priority = atoi(s_priority);
 }
 
 static struct	nlist nl[] = {
@@ -226,13 +227,15 @@ load()
 		exit(1);
 	}
 	(void)lseek(kmem, (long)nl[X_AVENRUN].n_value, L_SET);
-	(void)read(kmem, avenrun, sizeof(avenrun));
+	(void)read(kmem, (char *)avenrun, sizeof(avenrun));
 	return(avenrun[2]);
 }
 
 /*
  * users --
  *	return current number of users
+ *	todo: check idle time; if idle more than X minutes, don't
+ *	count them.
  */
 static
 users()
