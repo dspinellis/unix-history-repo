@@ -3,23 +3,23 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)drtest.c	7.1 (Berkeley) %G%
+ *	@(#)drtest.c	7.2 (Berkeley) %G%
  */
 
 /*
  * Standalone program to test a disk and driver
  * by reading the disk a track at a time.
  */
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+
 #include "saio.h"
 
 #define SECTSIZ	512
 
 extern	int end;
 char	*malloc();
-char	*prompt();
 
 main()
 {
@@ -30,11 +30,10 @@ main()
 
 	printf("Testprogram for stand-alone driver\n\n");
 again:
-	cp = prompt("Enable debugging (1=bse, 2=ecc, 3=bse+ecc)? ");
-	debug = atoi(cp);
+	debug = getdebug("Enable debugging (1=bse, 2=ecc, 3=bse+ecc)? ");
 	if (debug < 0)
 		debug = 0;
-	fd = getdevice();
+	fd = getfile("Device to read?", 2);
 	ioctl(fd, SAIODEVDATA, (char *)&st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
 		st.ncyl, st.ntrak, st.nsect);
@@ -43,7 +42,7 @@ again:
 	bp = malloc(tracksize);
 	printf("Reading in %d byte records\n", tracksize);
 	printf("Start ...make sure drive is on-line\n");
-	lseek(fd, 0, 0);
+	lseek(fd, 0, L_SET);
 	lastsector = st.ncyl * st.nspc;
 	for (sector = 0; sector < lastsector; sector += st.nsect) {
 		if (sector && (sector % (st.nspc * 10)) == 0)
@@ -53,36 +52,14 @@ again:
 	goto again;
 }
 
-/*
- * Prompt and verify a device name from the user.
- */
-getdevice()
-{
-	register char *cp;
-	register struct devsw *dp;
-	int fd;
-
-top:
-	cp = prompt("Device to read? ");
-	if ((fd = open(cp, 2)) < 0) {
-		printf("Known devices are: ");
-		for (dp = devsw; dp->dv_name; dp++)
-			printf("%s ",dp->dv_name);
-		printf("\n");
-		goto top;
-	}
-	return (fd);
-}
-
-char *
-prompt(msg)
+getdebug(msg)
 	char *msg;
 {
-	static char buf[132];
+	char buf[132];
 
 	printf("%s", msg);
 	gets(buf);
-	return (buf);
+	return (atoi(buf));
 }
 
 /*
