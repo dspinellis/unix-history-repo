@@ -1,14 +1,15 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
+#include "pathnames.h"
 
 /*
  *	This is from /usr/include/grp.h
@@ -23,8 +24,8 @@ struct	Group { /* see getgrent(3) */
 };
 struct	Group *getgrnam();
 /*
- *	Query the operator; This fascist piece of code requires
- *	an exact response.
+ *	Query the operator; This previously-fascist piece of code
+ *	no longer requires an exact response.
  *	It is intended to protect dump aborting by inquisitive
  *	people banging on the console terminal to see what is
  *	happening which might cause dump to croak, destroying
@@ -42,8 +43,8 @@ query(question)
 	int	back;
 	FILE	*mytty;
 
-	if ( (mytty = fopen("/dev/tty", "r")) == NULL){
-		msg("fopen on /dev/tty fails\n");
+	if ( (mytty = fopen(_PATH_TTY, "r")) == NULL){
+		msg("fopen on %s fails\n", _PATH_TTY);
 		abort();
 	}
 	attnmessage = question;
@@ -55,17 +56,16 @@ query(question)
 				clearerr(mytty);
 				continue;
 			}
-		} else if ( (strcmp(replybuffer, "yes\n") == 0) ||
-			    (strcmp(replybuffer, "Yes\n") == 0)){
+		} else if (replybuffer[0] == 'y' || replybuffer[0] == 'Y') {
 				back = 1;
 				goto done;
-		} else if ( (strcmp(replybuffer, "no\n") == 0) ||
-			    (strcmp(replybuffer, "No\n") == 0)){
+		} else if (replybuffer[0] == 'n' || replybuffer[0] == 'N') {
 				back = 0;
 				goto done;
 		} else {
-			msg("\"Yes\" or \"No\"?\n");
-			alarmcatch();
+			fprintf(stderr, "  DUMP: \"Yes\" or \"No\"?\n");
+			fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
+			    question);
 		}
 	}
     done:
@@ -78,16 +78,29 @@ query(question)
 	fclose(mytty);
 	return(back);
 }
+
+char lastmsg[100];
+
 /*
  *	Alert the console operator, and enable the alarm clock to
  *	sleep for 2 minutes in case nobody comes to satisfy dump
  */
 alarmcatch()
 {
-	if (timeout)
-		msgtail("\n");
-	msg("NEEDS ATTENTION: %s: (\"yes\" or \"no\") ",
-		attnmessage);
+	if (notify == 0) {
+		if (timeout == 0)
+			fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
+			    attnmessage);
+		else
+			msgtail("\7\7");
+	} else {
+		if (timeout) {
+			msgtail("\n");
+			broadcast("");		/* just print last msg */
+		}
+		fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
+		    attnmessage);
+	}
 	signal(SIGALRM, alarmcatch);
 	alarm(120);
 	timeout = 1;
@@ -100,7 +113,6 @@ interrupt()
 	msg("Interrupt received.\n");
 	if (query("Do you want to abort dump?"))
 		dumpabort();
-	signal(SIGINT, interrupt);
 }
 
 /*
@@ -120,7 +132,7 @@ set_operators()
 	gp = getgrnam(OPGRENT);
 	endgrent();
 	if (gp == (struct Group *)0){
-		msg("No entry in /etc/group for %s.\n",
+		msg("No group entry for %s.\n",
 			OPGRENT);
 		notify = 0;
 		return;
@@ -160,8 +172,8 @@ broadcast(message)
 	clock = time(0);
 	localclock = localtime(&clock);
 
-	if((f_utmp = fopen("/etc/utmp", "r")) == NULL) {
-		msg("Cannot open /etc/utmp\n");
+	if((f_utmp = fopen(_PATH_UTMP, "r")) == NULL) {
+		msg("Cannot open %s\n", _PATH_UTMP);
 		return;
 	}
 
@@ -197,24 +209,30 @@ sendmes(tty, message)
 {
 	char t[50], buf[BUFSIZ];
 	register char *cp;
-	register int c, ch;
-	int	msize;
+	int lmsg = 1;
 	FILE *f_tty;
 
-	msize = strlen(message);
-	strcpy(t, "/dev/");
+	strcpy(t, _PATH_DEV);
 	strcat(t, tty);
 
 	if((f_tty = fopen(t, "w")) != NULL) {
 		setbuf(f_tty, buf);
-		fprintf(f_tty, "\nMessage from the dump program to all operators at %d:%02d ...\r\n\n"
+		fprintf(f_tty, "\n\07\07\07Message from the dump program to all operators at %d:%02d ...\r\n\n  DUMP: NEEDS ATTENTION: "
 		       ,localclock->tm_hour
 		       ,localclock->tm_min);
-		for (cp = message, c = msize; c-- > 0; cp++) {
-			ch = *cp;
-			if (ch == '\n')
+		for (cp = lastmsg; ; cp++) {
+			if (*cp == '\0') {
+				if (lmsg) {
+					cp = message;
+					if (*cp == '\0')
+						break;
+					lmsg = 0;
+				} else
+					break;
+			}
+			if (*cp == '\n')
 				putc('\r', f_tty);
-			putc(ch, f_tty);
+			putc(*cp, f_tty);
 		}
 		fclose(f_tty);
 	}
@@ -272,6 +290,7 @@ msg(fmt, a1, a2, a3, a4, a5)
 	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
 	fflush(stdout);
 	fflush(stderr);
+	sprintf(lastmsg, fmt, a1, a2, a3, a4, a5);
 }
 
 	/* VARARGS1 */
@@ -323,7 +342,7 @@ getfstab()
 	register struct pfstab *pf;
 
 	if (setfsent() == 0) {
-		msg("Can't open %s for dump table information.\n", FSTAB);
+		msg("Can't open %s for dump table information.\n", _PATH_FSTAB);
 		return;
 	}
 	while (fs = getfsent()) {
