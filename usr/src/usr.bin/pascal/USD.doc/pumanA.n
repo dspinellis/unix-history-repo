@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pumanA.n	6.1 (Berkeley) %G%
+.\"	@(#)pumanA.n	6.2 (Berkeley) %G%
 .\"
-.if \n(xx .bp
 .if !\n(xx \{\
 .so tmac.p \}
 .ND
@@ -927,3 +926,13 @@ and
 as the first two files in the
 .B program
 statement.
+.sp 2
+.SH
+Acknowledgments
+.PP
+The financial support of William Joy and Susan Graham by
+the National Science Foundation under grants
+MCS74-07644-A04, MCS78-07291, and MCS80-05144,
+and the William Joy by an
+.SM IBM
+Graduate Fellowship are gratefully acknowledged.
