@@ -6,19 +6,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)instr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)instr.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
 #include <sys/stat.h>
-#include <unistd.h>
+
+#include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "deck.h"
+#include "cribbage.h"
 #include "pathnames.h"
 
+void
 instructions()
 {
 	extern int errno;
@@ -32,7 +38,7 @@ instructions()
 		    strerror(errno));
 		exit(1);
 	}
-	switch(pid = vfork()) {
+	switch (pid = vfork()) {
 	case -1:
 		(void)fprintf(stderr, "cribbage: %s.\n", strerror(errno));
 		exit(1);
