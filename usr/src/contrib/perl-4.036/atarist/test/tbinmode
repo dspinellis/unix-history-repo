@@ -1,0 +1,12 @@
+open(FP, ">bintest") || die "Can't open bintest for write\n";
+binmode FP;
+print FP pack("C*", 0xaa, 0x55, 0xaa, 0x55,
+                    0xff, 0x0d, 0x0a);
+close FP;
+
+open(FP, "<bintest") || die "Can't open bintest for read\n";
+binmode FP;
+@got = unpack("C*", <FP>);
+close FP;
+printf "expect:\t7 elements: aa 55 aa 55 ff 0d 0a\n";
+printf "got:\t%d elements: %x %x %x %x %x %02x %02x\n", $#got+1-$[, @got;
