@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.17 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.18 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -805,29 +805,28 @@ chkpun(p) register NODE *p; {
 			}
 		}
 	else {
-		d1 = p->in.left->fn.cdim;
-		d2 = p->in.right->fn.cdim;
-		for( ;; ){
-			if( t1 == t2 ) {;
-				if( p->in.left->fn.csiz != p->in.right->fn.csiz ) {
-					werror( "illegal structure pointer combination" );
-					}
+		if( t1 == t2 ) {
+			if( p->in.left->fn.csiz != p->in.right->fn.csiz ) {
+				werror( "illegal structure pointer combination" );
 				return;
 				}
-			if( ISARY(t1) || ISPTR(t1) ){
-				if( !ISARY(t2) && !ISPTR(t2) ) break;
-				if( ISARY(t1) && ISARY(t2) && dimtab[d1] != dimtab[d2] ){
-					werror( "illegal array size combination" );
-					return;
+			d1 = p->in.left->fn.cdim;
+			d2 = p->in.right->fn.cdim;
+			for( ;; ){
+				if( ISARY(t1) ){
+					if( dimtab[d1] != dimtab[d2] ){
+						werror( "illegal array size combination" );
+						return;
+						}
+					++d1;
+					++d2;
 					}
-				if( ISARY(t1) ) ++d1;
-				if( ISARY(t2) ) ++d2;
+				else if( !ISPTR(t1) ) break;
+				t1 = DECREF(t1);
 				}
-			else break;
-			t1 = DECREF(t1);
-			t2 = DECREF(t2);
 			}
-		werror( "illegal pointer combination" );
+		else
+			werror( "illegal pointer combination" );
 		}
 
 	}
