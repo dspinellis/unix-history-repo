@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.102 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
