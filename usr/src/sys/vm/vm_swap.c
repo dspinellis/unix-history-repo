@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_swap.c	7.1 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.1.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,6 +16,7 @@
 #include "map.h"
 #include "uio.h"
 #include "file.h"
+#include "stat.h"
 
 struct	buf rswbuf;
 /*
@@ -24,8 +25,8 @@ struct	buf rswbuf;
 swstrategy(bp)
 	register struct buf *bp;
 {
-	int sz, off, seg;
-	dev_t dev;
+	int sz, off, seg, index;
+	register struct swdevt *sp;
 
 #ifdef GENERIC
 	/*
@@ -41,26 +42,31 @@ swstrategy(bp)
 	sz = howmany(bp->b_bcount, DEV_BSIZE);
 	if (bp->b_blkno+sz > nswap) {
 		bp->b_flags |= B_ERROR;
-		iodone(bp);
+		biodone(bp);
 		return;
 	}
 	if (nswdev > 1) {
 		off = bp->b_blkno % dmmax;
 		if (off+sz > dmmax) {
 			bp->b_flags |= B_ERROR;
-			iodone(bp);
+			biodone(bp);
 			return;
 		}
 		seg = bp->b_blkno / dmmax;
-		dev = swdevt[seg % nswdev].sw_dev;
+		index = seg % nswdev;
 		seg /= nswdev;
 		bp->b_blkno = seg*dmmax + off;
 	} else
-		dev = swdevt[0].sw_dev;
-	bp->b_dev = dev;
-	if (dev == 0)
+		index = 0;
+	sp = &swdevt[index];
+#ifdef SECSIZE
+	bp->b_blkno <<= sp->sw_bshift;
+	bp->b_blksize = sp->sw_blksize;
+#endif SECSIZE
+	bp->b_dev = sp->sw_dev;
+	if (bp->b_dev == 0)
 		panic("swstrategy");
-	(*bdevsw[major(dev)].d_strategy)(bp);
+	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
 }
 
 swread(dev, uio)
@@ -119,12 +125,16 @@ swapon()
 				u.u_error = EBUSY;
 				return;
 			}
-			swfree(sp - swdevt);
+			u.u_error = swfree(sp - swdevt);
 			return;
 		}
 	u.u_error = EINVAL;
 }
 
+#ifdef SECSIZE
+long	argdbsize;		/* XXX */
+
+#endif SECSIZE
 /*
  * Swfree(index) frees the index'th portion of the swap map.
  * Each of the nswdev devices provides 1/nswdev'th of the swap
@@ -134,16 +144,20 @@ swapon()
 swfree(index)
 	int index;
 {
+	register struct swdevt *sp;
 	register swblk_t vsbase;
 	register long blk;
 	dev_t dev;
 	register swblk_t dvbase;
 	register int nblks;
+	int error;
 
-	dev = swdevt[index].sw_dev;
-	(*bdevsw[major(dev)].d_open)(dev, FREAD|FWRITE);
-	swdevt[index].sw_freed = 1;
-	nblks = swdevt[index].sw_nblks;
+	sp = &swdevt[index];
+	dev = sp->sw_dev;
+	if (error = (*bdevsw[major(dev)].d_open)(dev, FREAD|FWRITE, S_IFBLK))
+		return (error);
+	sp->sw_freed = 1;
+	nblks = sp->sw_nblks;
 	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
 		blk = nblks - dvbase;
 		if ((vsbase = index*dmmax + dvbase*nswdev) >= nswap)
@@ -156,16 +170,31 @@ swfree(index)
 			 * but need some space for argmap so use 1/2 this
 			 * hunk which needs special treatment anyways.
 			 */
-			argdev = swdevt[0].sw_dev;
+			argdev = sp->sw_dev;
+#ifdef SECSIZE
+			argdbsize = sp->sw_blksize;
+			rminit(argmap,
+			   ((blk / 2) * DEV_BSIZE - CLBYTES) / argdbsize,
+			   CLBYTES / argdbsize, "argmap", ARGMAPSIZE);
+#else SECSIZE
 			rminit(argmap, (long)(blk/2-ctod(CLSIZE)),
 			    (long)ctod(CLSIZE), "argmap", ARGMAPSIZE);
+#endif SECSIZE
 			/*
 			 * First of all chunks... initialize the swapmap
 			 * the second half of the hunk.
 			 */
 			rminit(swapmap, (long)blk/2, (long)blk/2,
 			    "swap", nswapmap);
+		} else if (dvbase == 0) {
+			/*
+			 * Don't use the first cluster of the device
+			 * in case it starts with a label or boot block.
+			 */
+			rmfree(swapmap, blk - ctod(CLSIZE),
+			    vsbase + ctod(CLSIZE));
 		} else
 			rmfree(swapmap, blk, vsbase);
 	}
+	return (0);
 }

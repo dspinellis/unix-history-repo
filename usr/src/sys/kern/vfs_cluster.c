@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_cluster.c	7.1 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.1.1.1 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -23,16 +23,27 @@
  * Read in (if necessary) the block and return a buffer pointer.
  */
 struct buf *
+#ifdef SECSIZE
+bread(dev, blkno, size, secsize)
+#else SECSIZE
 bread(dev, blkno, size)
+#endif SECSIZE
 	dev_t dev;
 	daddr_t blkno;
 	int size;
+#ifdef SECSIZE
+	long secsize;
+#endif SECSIZE
 {
 	register struct buf *bp;
 
 	if (size == 0)
 		panic("bread: size 0");
+#ifdef SECSIZE
+	bp = getblk(dev, blkno, size, secsize);
+#else SECSIZE
 	bp = getblk(dev, blkno, size);
+#endif SECSIZE
 	if (bp->b_flags&B_DONE) {
 		trace(TR_BREADHIT, pack(dev, size), blkno);
 		return (bp);
@@ -52,9 +63,16 @@ bread(dev, blkno, size)
  * read-ahead block (which is not allocated to the caller)
  */
 struct buf *
+#ifdef SECSIZE
+breada(dev, blkno, size, secsize, rablkno, rabsize)
+#else SECSIZE
 breada(dev, blkno, size, rablkno, rabsize)
+#endif SECSIZE
 	dev_t dev;
 	daddr_t blkno; int size;
+#ifdef SECSIZE
+	long secsize;
+#endif SECSIZE
 	daddr_t rablkno; int rabsize;
 {
 	register struct buf *bp, *rabp;
@@ -66,7 +84,11 @@ breada(dev, blkno, size, rablkno, rabsize)
 	 * for a cache hit).
 	 */
 	if (!incore(dev, blkno)) {
+#ifdef SECSIZE
+		bp = getblk(dev, blkno, size, secsize);
+#else SECSIZE
 		bp = getblk(dev, blkno, size);
+#endif SECSIZE
 		if ((bp->b_flags&B_DONE) == 0) {
 			bp->b_flags |= B_READ;
 			if (bp->b_bcount > bp->b_bufsize)
@@ -83,7 +105,11 @@ breada(dev, blkno, size, rablkno, rabsize)
 	 * on it also (as above).
 	 */
 	if (rablkno && !incore(dev, rablkno)) {
+#ifdef SECSIZE
+		rabp = getblk(dev, rablkno, rabsize, secsize);
+#else SECSIZE
 		rabp = getblk(dev, rablkno, rabsize);
+#endif SECSIZE
 		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
 			trace(TR_BREADHITRA, pack(dev, rabsize), blkno);
@@ -103,7 +129,11 @@ breada(dev, blkno, size, rablkno, rabsize)
 	 * above, and just wait for it.
 	 */
 	if (bp == NULL)
+#ifdef SECSIZE
+		return (bread(dev, blkno, size, secsize));
+#else SECSIZE
 		return (bread(dev, blkno, size));
+#endif SECSIZE
 	biowait(bp);
 	return (bp);
 }
@@ -149,12 +179,10 @@ bwrite(bp)
 bdwrite(bp)
 	register struct buf *bp;
 {
-	register int flags;
 
 	if ((bp->b_flags&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
-	flags = bdevsw[major(bp->b_dev)].d_flags;
-	if(flags & B_TAPE)
+	if (bdevsw[major(bp->b_dev)].d_flags & B_TAPE)
 		bawrite(bp);
 	else {
 		bp->b_flags |= B_DELWRI | B_DONE;
@@ -244,14 +272,25 @@ incore(dev, blkno)
 }
 
 struct buf *
+#ifdef SECSIZE
+baddr(dev, blkno, size, secsize)
+#else SECSIZE
 baddr(dev, blkno, size)
+#endif SECSIZE
 	dev_t dev;
 	daddr_t blkno;
 	int size;
+#ifdef SECSIZE
+	long secsize;
+#endif SECSIZE
 {
 
 	if (incore(dev, blkno))
+#ifdef SECSIZE
+		return (bread(dev, blkno, size, secsize));
+#else SECSIZE
 		return (bread(dev, blkno, size));
+#endif SECSIZE
 	return (0);
 }
 
@@ -265,10 +304,17 @@ baddr(dev, blkno, size)
  * want to lower the ipl back to 0.
  */
 struct buf *
+#ifdef SECSIZE
+getblk(dev, blkno, size, secsize)
+#else SECSIZE
 getblk(dev, blkno, size)
+#endif SECSIZE
 	dev_t dev;
 	daddr_t blkno;
 	int size;
+#ifdef SECSIZE
+	long secsize;
+#endif SECSIZE
 {
 	register struct buf *bp, *dp;
 	int s;
@@ -317,6 +363,9 @@ loop:
 	bremhash(bp);
 	binshash(bp, dp);
 	bp->b_dev = dev;
+#ifdef SECSIZE
+	bp->b_blksize = secsize;
+#endif SECSIZE
 	bp->b_blkno = blkno;
 	bp->b_error = 0;
 	if (brealloc(bp, size) == 0)
@@ -344,6 +393,9 @@ loop:
 	flist = &bfreelist[BQ_AGE];
 	binshash(bp, flist);
 	bp->b_dev = (dev_t)NODEV;
+#ifdef SECSIZE
+	bp->b_blksize = DEV_BSIZE;
+#endif SECSIZE
 	bp->b_error = 0;
 	if (brealloc(bp, size) == 0)
 		goto loop;
@@ -364,7 +416,7 @@ brealloc(bp, size)
 	int s;
 
 	/*
-	 * First need to make sure that all overlaping previous I/O
+	 * First need to make sure that all overlapping previous I/O
 	 * is dispatched with.
 	 */
 	if (size == bp->b_bcount)
@@ -392,7 +444,11 @@ brealloc(bp, size)
 	 * when two buffer are trying to get the same set of disk blocks.
 	 */
 	start = bp->b_blkno;
+#ifdef SECSIZE
+	last = start + size/bp->b_blksize - 1;
+#else SECSIZE
 	last = start + btodb(size) - 1;
+#endif SECSIZE
 	dp = BUFHASH(bp->b_dev, bp->b_blkno);
 loop:
 	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
@@ -400,7 +456,11 @@ loop:
 			continue;
 		/* look for overlap */
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
+#ifdef SECSIZE
+		    ep->b_blkno + ep->b_bcount/ep->b_blksize <= start)
+#else SECSIZE
 		    ep->b_blkno + btodb(ep->b_bcount) <= start)
+#endif SECSIZE
 			continue;
 		s = splbio();
 		if (ep->b_flags&B_BUSY) {
@@ -501,11 +561,18 @@ biodone(bp)
 
 /*
  * Insure that no part of a specified block is in an incore buffer.
+#ifdef SECSIZE
+ * "size" is given in device blocks (the units of b_blkno).
+#endif SECSIZE
  */
 blkflush(dev, blkno, size)
 	dev_t dev;
 	daddr_t blkno;
+#ifdef SECSIZE
+	int size;
+#else SECSIZE
 	long size;
+#endif SECSIZE
 {
 	register struct buf *ep;
 	struct buf *dp;
@@ -513,7 +580,11 @@ blkflush(dev, blkno, size)
 	int s;
 
 	start = blkno;
+#ifdef SECSIZE
+	last = start + size - 1;
+#else SECSIZE
 	last = start + btodb(size) - 1;
+#endif SECSIZE
 	dp = BUFHASH(dev, blkno);
 loop:
 	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
@@ -521,7 +592,11 @@ loop:
 			continue;
 		/* look for overlap */
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
+#ifdef SECSIZE
+		    ep->b_blkno + ep->b_bcount / ep->b_blksize <= start)
+#else SECSIZE
 		    ep->b_blkno + btodb(ep->b_bcount) <= start)
+#endif SECSIZE
 			continue;
 		s = splbio();
 		if (ep->b_flags&B_BUSY) {

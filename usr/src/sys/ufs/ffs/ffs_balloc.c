@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_balloc.c	7.1 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.1.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -161,7 +161,12 @@ gotit:
 	 * fetch through the indirect blocks
 	 */
 	for (; j <= NIADDR; j++) {
+#ifdef SECSIZE
+		bp = bread(ip->i_dev, fsbtodb(fs, nb), (int)fs->fs_bsize,
+		    fs->fs_dbsize);
+#else SECSIZE
 		bp = bread(ip->i_dev, fsbtodb(fs, nb), (int)fs->fs_bsize);
+#endif SECSIZE
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return ((daddr_t)0);

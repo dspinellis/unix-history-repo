@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_subr.c	7.3 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.3.1.1 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -116,10 +116,22 @@ syncip(ip)
 	fs = ip->i_fs;
 	lastlbn = howmany(ip->i_size, fs->fs_bsize);
 	if (lastlbn < nbuf / 2) {
+#ifdef SECSIZE
+		lastlbn--;
+		s = fsbtodb(fs, fs->fs_frag);
+		for (lbn = 0; lbn < lastlbn; lbn++) {
+			blkno = fsbtodb(fs, bmap(ip, lbn, B_READ));
+			blkflush(ip->i_dev, blkno, s);
+		}
+		if (lastlbn >= 0)
+			blkflush(ip->i_dev, blkno, (int)fsbtodb(fs,
+			    blksize(fs, ip, lbn) / fs->fs_fsize));
+#else SECSIZE
 		for (lbn = 0; lbn < lastlbn; lbn++) {
 			blkno = fsbtodb(fs, bmap(ip, lbn, B_READ));
 			blkflush(ip->i_dev, blkno, blksize(fs, ip, lbn));
 		}
+#endif SECSIZE
 	} else {
 		lastbufp = &buf[nbuf];
 		for (bp = buf; bp < lastbufp; bp++) {

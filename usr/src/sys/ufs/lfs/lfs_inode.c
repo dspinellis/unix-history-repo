@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_inode.c	7.1 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.1.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -185,7 +185,12 @@ loop:
 #ifdef QUOTA
 	dqrele(ip->i_dquot);
 #endif
+#ifdef SECSIZE
+	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize,
+	    fs->fs_dbsize);
+#else SECSIZE
 	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize);
+#endif SECSIZE
 	/*
 	 * Check I/O errors
 	 */
@@ -334,14 +339,19 @@ iupdat(ip, ta, tm, waitfor)
 {
 	register struct buf *bp;
 	struct dinode *dp;
-	register struct fs *fp;
+	register struct fs *fs;
 
-	fp = ip->i_fs;
+	fs = ip->i_fs;
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) != 0) {
-		if (fp->fs_ronly)
+		if (fs->fs_ronly)
 			return;
-		bp = bread(ip->i_dev, fsbtodb(fp, itod(fp, ip->i_number)),
-			(int)fp->fs_bsize);
+#ifdef SECSIZE
+		bp = bread(ip->i_dev, fsbtodb(fs, itod(fs, ip->i_number)),
+			(int)fs->fs_bsize, fs->fs_dbsize);
+#else SECSIZE
+		bp = bread(ip->i_dev, fsbtodb(fs, itod(fs, ip->i_number)),
+			(int)fs->fs_bsize);
+#endif SECSIZE
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return;
@@ -353,7 +363,7 @@ iupdat(ip, ta, tm, waitfor)
 		if (ip->i_flag&ICHG)
 			ip->i_ctime = time.tv_sec;
 		ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
-		dp = bp->b_un.b_dino + itoo(fp, ip->i_number);
+		dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
 		dp->di_ic = ip->i_ic;
 		if (waitfor)
 			bwrite(bp);
@@ -382,13 +392,12 @@ itrunc(oip, length)
 	register struct fs *fs;
 	register struct inode *ip;
 	struct buf *bp;
-	int offset, osize, size, count, level, s;
+	int offset, osize, size, count, level;
 	long nblocks, blocksreleased = 0;
 	register int i;
 	dev_t dev;
 	struct inode tip;
 	extern long indirtrunc();
-	extern struct cmap *mfind();
 
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
@@ -425,13 +434,14 @@ itrunc(oip, length)
 			return;
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
-		count = howmany(size, DEV_BSIZE);
+		count = howmany(size, CLBYTES);
 		dev = oip->i_dev;
-		s = splimp();
-		for (i = 0; i < count; i += CLSIZE)
-			if (mfind(dev, bn + i))
-				munhash(dev, bn + i);
-		splx(s);
+		for (i = 0; i < count; i++)
+#ifdef SECSIZE
+			munhash(dev, bn + i * CLBYTES / fs->fs_dbsize);
+#else SECSIZE
+			munhash(dev, bn + i * CLBYTES / DEV_BSIZE);
+#endif SECSIZE
 		bp = bread(dev, bn, size);
 		if (bp->b_flags & B_ERROR) {
 			u.u_error = EIO;
@@ -586,7 +596,12 @@ indirtrunc(ip, bn, lastbn, level)
 	 * and update on disk copy first.
 	 */
 	copy = geteblk((int)fs->fs_bsize);
+#ifdef SECSIZE
+	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
+	    fs->fs_dbsize);
+#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize);
+#endif SECSIZE
 	if (bp->b_flags&B_ERROR) {
 		brelse(copy);
 		brelse(bp);
@@ -627,17 +642,10 @@ indirtrunc(ip, bn, lastbn, level)
 }
 
 /*
- * remove any inodes in the inode cache belonging to dev
+ * Remove any inodes in the inode cache belonging to dev.
  *
  * There should not be any active ones, return error if any are found
- * (nb: this is a user error, not a system err)
- *
- * Also, count the references to dev by block devices - this really
- * has nothing to do with the object of the procedure, but as we have
- * to scan the inode table here anyway, we might as well get the
- * extra benefit.
- *
- * this is called from sumount()/sys3.c when dev is being unmounted
+ * (nb: this is a user error, not a system err).
  */
 #ifdef QUOTA
 iflush(dev, iq)
@@ -649,7 +657,6 @@ iflush(dev)
 #endif
 {
 	register struct inode *ip;
-	register open = 0;
 
 	for (ip = inode; ip < inodeNINODE; ip++) {
 #ifdef QUOTA
@@ -658,7 +665,7 @@ iflush(dev)
 		if (ip->i_dev == dev)
 #endif
 			if (ip->i_count)
-				return(-1);
+				return (EBUSY);
 			else {
 				remque(ip);
 				ip->i_forw = ip;
@@ -677,11 +684,8 @@ iflush(dev)
 				ip->i_dquot = NODQUOT;
 #endif
 			}
-		else if (ip->i_count && (ip->i_mode&IFMT)==IFBLK &&
-		    ip->i_rdev == dev)
-			open++;
 	}
-	return (open);
+	return (0);
 }
 
 /*
