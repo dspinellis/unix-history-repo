@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.21 (Berkeley) %G%
+#	@(#)Makefile	5.22 (Berkeley) %G%
 
 PROG=	dbx
-CFLAGS+=-I. -I${.CURDIR} -I/sys
+CFLAGS+=-I. -I${.CURDIR}
 HDRS=	asm.h events.h c.h check.h coredump.h debug.h eval.h fortran.h \
 	keywords.h languages.h lists.h machine.h main.h mappings.h \
 	modula-2.h names.h object.h operators.h pascal.h printsym.h \

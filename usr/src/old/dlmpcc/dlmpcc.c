@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dlmpcc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dlmpcc.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)dlmpcc.c	5.5 (Berkeley) %G%";
  */
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <tahoevba/mpreg.h>
+#include <tahoe/vba/mpreg.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
