@@ -1,4 +1,4 @@
-/* @(#)fseek.c	4.1 (Berkeley) %G% */
+/* @(#)fseek.c	4.2 (Berkeley) %G% */
 /*
  * Seek for standard library.  Coordinates with buffering.
  */
@@ -24,7 +24,8 @@ long offset;
 				p += c - lseek(fileno(iop),0L,1);
 			else
 				offset -= c;
-			if(c>0&&p<=c&&p>=iop->_base-iop->_ptr){
+			if(!(iop->_flag&_IORW) && c>0&&p<=c
+			    && p>=iop->_base-iop->_ptr){
 				iop->_ptr += (int)p;
 				iop->_cnt -= (int)p;
 				return(0);
@@ -32,13 +33,22 @@ long offset;
 			resync = offset&01;
 		} else 
 			resync = 0;
+		if (iop->_flag & _IORW) {
+			iop->_ptr = iop->_base;
+			iop->_flag &= ~_IOREAD;
+		}
 		p = lseek(fileno(iop), offset-resync, ptrname);
 		iop->_cnt = 0;
 		if (resync)
 			getc(iop);
 	}
-	else if (iop->_flag&_IOWRT) {
+	else if (iop->_flag & (_IOWRT|_IORW)) {
 		fflush(iop);
+		if (iop->_flag & _IORW) {
+			iop->_cnt = 0;
+			iop->_flag &= ~_IOWRT;
+			iop->_ptr = iop->_base;
+		}
 		p = lseek(fileno(iop), offset, ptrname);
 	}
 	return(p==-1?-1:0);

@@ -1,4 +1,4 @@
-/* @(#)fdopen.c	4.1 (Berkeley) %G% */
+/* @(#)fdopen.c	4.2 (Berkeley) %G% */
 /*
  * Unix routine to do an "fopen" on file descriptor
  * The mode has to be repeated because you can't query its
@@ -16,7 +16,7 @@ register char *mode;
 	register FILE *iop;
 	extern FILE *_lastbuf;
 
-	for (iop = _iob; iop->_flag&(_IOREAD|_IOWRT); iop++)
+	for (iop = _iob; iop->_flag&(_IOREAD|_IOWRT|_IORW); iop++)
 		if (iop >= _lastbuf)
 			return(NULL);
 	iop->_cnt = 0;
@@ -27,5 +27,9 @@ register char *mode;
 			lseek(fd, 0L, 2);
 	} else
 		iop->_flag |= _IOREAD;
+	if (mode[1] == '+') {
+		iop->_flag &= ~(_IOREAD|_IOWRT);
+		iop->_flag |= _IORW;
+	}
 	return(iop);
 }
