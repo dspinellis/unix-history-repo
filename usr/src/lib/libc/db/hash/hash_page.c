@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -170,20 +170,21 @@ int nbucket;
 	register BUFHEAD *old_bufp;
 	register u_short *ino;
 	register char	*np;
+	int n;
+	int ndx;
+	int retval;
 	char	*op;
 
 	u_short copyto = (u_short)hashp->BSIZE;
-	u_short off = (u_short)hashp->BSIZE;
-	int n;
 	u_short diff;
+	u_short off = (u_short)hashp->BSIZE;
 	u_short moved;
-	int ndx;
 
 	old_bufp = __get_buf ( obucket, NULL, 0 );
 	new_bufp = __get_buf ( nbucket, NULL, 0 );
 
-	old_bufp->flags |= BUF_MOD;
-	new_bufp->flags |= BUF_MOD;
+	old_bufp->flags |= (BUF_MOD|BUF_PIN);
+	new_bufp->flags |= (BUF_MOD|BUF_PIN);
 
 	ino = (u_short *)(op = old_bufp->page);
 	np = new_bufp->page;
@@ -192,8 +193,12 @@ int nbucket;
 
 	for (n = 1, ndx = 1; n < ino[0]; n+=2) {
 		if ( ino[n+1] < REAL_KEY ) {
-		    return ( ugly_split( obucket, old_bufp, new_bufp, 
-					 copyto, moved ) );
+		    retval = ugly_split( obucket, old_bufp, new_bufp, 
+					 copyto, moved );
+		    old_bufp->flags &= ~BUF_PIN;
+		    new_bufp->flags &= ~BUF_PIN;
+		    return(retval);
+		    
 		}
 		key.data = op + ino[n]; 
 		key.size = off - ino[n];
@@ -229,16 +234,25 @@ int nbucket;
 	       ((u_short *) np)[0] / 2,
 	       ((u_short *) op)[0] / 2);
 #endif
+	/* unpin both pages */
+	old_bufp->flags &= ~BUF_PIN;
+	new_bufp->flags &= ~BUF_PIN;
 	return(0);
 }
 /*
     0 ==> success
     -1 ==> failure
 
-    Called when we encounter an overflow page during split handling.
-    this is special cased since we have to begin checking whether
+    Called when we encounter an overflow or big key/data page during 
+    split handling.
+    This is special cased since we have to begin checking whether
     the key/data pairs fit on their respective pages and because
     we may need overflow pages for both the old and new pages
+
+    The first page might be a page with regular key/data pairs
+    in which case we have a regular overflow condition and just
+    need to go on to the next page or it might be a big key/data 
+    pair in which case we need to fix the big key/data pair.
 */
 static int
 ugly_split( obucket, old_bufp, new_bufp, copyto, moved )
@@ -311,6 +325,7 @@ int	moved;		/* number of pairs moved to new page */
 	}
 	
 
+	/* Move regular sized pairs of there are any */
 	off = hashp->BSIZE;
 	for ( n = 1; (n < ino[0]) && (ino[n+1] >= REAL_KEY); n += 2 ) {
 	    cino = (char *)ino;
@@ -483,7 +498,7 @@ int	is_bitmap;
     fd = hashp->fp;
     size = hashp->BSIZE;
 
-    if ( !fd || (hashp->new_file && !is_disk) ) {
+    if ( (fd == -1) || (hashp->new_file && !is_disk) ) {
 	PAGE_INIT(p);
 	return(0);
     }
@@ -541,7 +556,7 @@ int	is_bitmap;
     int	wsize;
 
     size = hashp->BSIZE;
-    if ( !hashp->fp && open_temp() ) return (1);
+    if ( (hashp->fp == -1) && open_temp() ) return (1);
     fd = hashp->fp;
 
     if ( hashp->LORDER != BYTE_ORDER ) {
