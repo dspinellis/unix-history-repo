@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.1 (Berkeley) %G%
+#	@(#)Makefile.vax	7.2 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -83,7 +83,7 @@ clock.o machdep.o autoconf.o conf.o cons.o cpudata.o : Makefile
 crl.o flp.o mba.o uba.o vaxcpu.o : Makefile
 
 # depend on network configuration
-af.o uipc_proto.o locore.o: Makefile
+af.o uipc_proto.o uipc_domain.o locore.o: Makefile
 
 # depend on maxusers
 assym.s: Makefile
