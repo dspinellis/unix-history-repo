@@ -6,14 +6,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)psignal.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)psignal.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
  * Print the name of the signal indicated
  * along with the supplied message.
  */
-#include <signal.h>
+#include <sys/signal.h>
+#include <unistd.h>
 
 extern	char *sys_siglist[];
 
@@ -30,9 +31,9 @@ psignal(sig, s)
 		c = "Unknown signal";
 	n = strlen(s);
 	if (n) {
-		(void)write(2, s, n);
-		(void)write(2, ": ", 2);
+		(void)write(STDERR_FILENO, s, n);
+		(void)write(STDERR_FILENO, ": ", 2);
 	}
-	(void)write(2, c, strlen(c));
-	(void)write(2, "\n", 1);
+	(void)write(STDERR_FILENO, c, strlen(c));
+	(void)write(STDERR_FILENO, "\n", 1);
 }

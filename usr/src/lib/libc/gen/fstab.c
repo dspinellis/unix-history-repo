@@ -6,12 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/errno.h>
 #include <fstab.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
@@ -100,10 +102,7 @@ fstabscan()
 			return(1);
 
 bad:		/* no way to distinguish between EOF and syntax error */
-		(void)write(STDERR_FILENO, "fstab: ", 7);
-		(void)write(STDERR_FILENO, _PATH_FSTAB,
-		    sizeof(_PATH_FSTAB) - 1);
-		(void)write(STDERR_FILENO, ": syntax error.\n", 16);
+		write(EBADFORMAT);
 	}
 	/* NOTREACHED */
 }
@@ -144,7 +143,10 @@ setfsent()
 		rewind(_fs_fp);
 		return(1);
 	}
-	return((_fs_fp = fopen(_PATH_FSTAB, "r")) != NULL);
+	if (_fs_fp = fopen(_PATH_FSTAB, "r"))
+		return(1);
+	error(errno);
+	return(0);
 }
 
 void
@@ -154,4 +156,17 @@ endfsent()
 		(void)fclose(_fs_fp);
 		_fs_fp = NULL;
 	}
+}
+
+static
+error(err)
+	int err;
+{
+	char *p;
+
+	(void)write(STDERR_FILENO, "fstab: ", 7);
+	(void)write(STDERR_FILENO, _PATH_FSTAB, sizeof(_PATH_FSTAB) - 1);
+	p = strerror(err);
+	(void)write(STDERR_FILENO, p, strlen(p));
+	(void)write(STDERR_FILENO, "\n", 1);
 }
