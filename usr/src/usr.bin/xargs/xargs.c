@@ -15,20 +15,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <limits.h>
 #include "pathnames.h"
 
 #define	DEF_ARGC	255
 
 int tflag;
+int fflag;
 
 main(argc, argv)
 	int argc;
@@ -39,12 +42,12 @@ main(argc, argv)
 	register int ch;
 	register char *p, *bp, *endbp, **bxp, **endxp, **xp;
 	int cnt, indouble, insingle, nargs, nline;
-	char *mark, *prog, **xargs, *malloc();
+	char *mark, *prog, **xargs;
 
 	nargs = DEF_ARGC;
 	nline = _POSIX2_LINE_MAX;
 
-	while ((ch = getopt(argc, argv, "n:s:t")) != EOF)
+	while ((ch = getopt(argc, argv, "n:s:tf")) != EOF)
 		switch(ch) {
 		case 'n':
 			if ((nargs = atoi(optarg)) <= 0) {
@@ -62,6 +65,9 @@ main(argc, argv)
 			break;
 		case 't':
 			tflag = 1;
+			break;
+		case 'f':
+			fflag = 1;
 			break;
 		case '?':
 		default:
@@ -103,6 +109,7 @@ main(argc, argv)
 			if (p == bp)		/* nothing to display */
 				exit(0);
 			if (mark == p) {	/* nothing since last arg end */
+				*xp = NULL;
 				run(prog, xargs);
 				exit(0);
 			}
@@ -123,6 +130,7 @@ addarg:			*xp++ = mark;
 					   "xargs: unterminated quote.\n");
 					exit(1);
 				}
+				*xp = NULL;
 				run(prog, xargs);
 				if (ch == EOF)
 					exit(0);
@@ -203,7 +211,7 @@ run(prog, argv)
 		   "xargs: waitpid: %s.\n", strerror(errno));
 		exit(1);
 	}
-	if (pstat.w_status)
+	if (!fflag && pstat.w_status)
 		exit(1);
 }
 
@@ -216,6 +224,6 @@ enomem()
 usage()
 {
 	(void)fprintf(stderr,
-	    "xargs: [-t] [-n number] [-s size] [utility [argument ...]]\n");
+	    "xargs: [-t] [-f] [-n number] [-s size] [utility [argument ...]]\n");
 	exit(1);
 }
