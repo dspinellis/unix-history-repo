@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)commands.c	1.11 (Berkeley) %G%";
 
 char	*hostname;
 
-#define Ambiguous(s)	((char *)s == ambiguous)
+#define Ambiguous(s)	((char **)s == &ambiguous)
 static char *ambiguous;		/* special return value for command routines */
 
 typedef struct {
@@ -58,6 +58,37 @@ static char *margv[20];
 /*
  * Various utility routines.
  */
+
+#if	!defined(BSD) || (BSD <= 43)
+
+char	*h_errlist[] = {
+	"Error 0",
+	"Unknown host",				/* 1 HOST_NOT_FOUND */
+	"Host name lookup failure",		/* 2 TRY_AGAIN */
+	"Unknown server error",			/* 3 NO_RECOVERY */
+	"No address associated with name",	/* 4 NO_ADDRESS */
+};
+int	h_nerr = { sizeof(h_errlist)/sizeof(h_errlist[0]) };
+
+extern int	h_errno;
+
+/*
+ * herror --
+ *	print the error indicated by the h_errno value.
+ */
+herror(s)
+	char *s;
+{
+	if (s && *s) {
+		fprintf(stderr, "%s: ", s);
+	}
+	if ((h_errno < 0) || (h_errno >= h_nerr)) {
+		fprintf(stderr, "Unknown error\n");
+	} else {
+		fprintf(stderr, "%s\n", h_errlist[h_errno]);
+	}
+}
+#endif	/* !define(BSD) || (BSD <= 43) */
 
 static void
 makeargv()
@@ -120,7 +151,7 @@ char	**(*next)();	/* routine to return next entry in table */
 		}
 	}
 	if (nmatches > 1)
-		return (char **)ambiguous;
+		return &ambiguous;
 	return (found);
 }
 
@@ -561,8 +592,6 @@ char	*argv[];
 		    printf("%s %s.\n", *c->variable? "Will" : "Won't",
 							c->actionexplanation);
 		}
-		printf("%s %s.\n", *c->variable? "Will" : "Won't",
-							c->actionexplanation);
 	    }
 	    if (c->handler) {
 		retval &= (*c->handler)(c);
