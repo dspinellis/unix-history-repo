@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -384,6 +384,10 @@ globone(str, action)
 	 */
 	vo = globexpand(v);
 	if (noglob || (gflag & G_GLOB) == 0) {
+	    if (vo[0] == NULL) {
+		xfree((ptr_t) vo);
+		return (Strsave(STRNULL));
+	    }
 	    if (vo[1] != NULL)
 		return (handleone(str, vo, action));
 	    else {
@@ -405,13 +409,17 @@ globone(str, action)
 	setname(short2str(str));
 	stderror(ERR_NAME | ERR_NOMATCH);
     }
-    else if (vl[1])
+    if (vl[0] == NULL) {
+	xfree((ptr_t) vl);
+	return (Strsave(STRNULL));
+    }
+    if (vl[1] != NULL)
 	return (handleone(str, vl, action));
     else {
 	str = strip(*vl);
 	xfree((ptr_t) vl);
+	return (str);
     }
-    return (str);
 }
 
 Char  **
