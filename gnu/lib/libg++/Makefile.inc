@@ -1,4 +1,7 @@
-# $Id: Makefile.inc,v 1.4 1994/05/27 00:01:14 jkh Exp $
+# $Id: Makefile.inc,v 1.5 1994/05/27 12:37:25 csgr Exp $
 
 CPLUSPLUSLIB=   yes
+
+SHLIB_MAJOR=1
+SHLIB_MINOR=1
 
