@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.4 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.5 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -36,7 +36,7 @@ CFLAGS=	-O ${COPTS}
 %LOAD
 
 clean:
-	rm -f eddep *vmunix tags *.o locore.i [a-tv-z]*.s \
+	rm -f eddep *vmunix tags *.o locore.i [a-uw-z]*.s \
 		errs linterrs makelinks
 
 lint: /tmp
