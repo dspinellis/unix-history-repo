@@ -1,4 +1,4 @@
-/*	machdep.c	4.20	81/02/28	*/
+/*	machdep.c	4.21	81/03/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.20) 81/02/28 14:46:46 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.21) 81/03/03 11:04:57 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -44,7 +44,6 @@ int	icode[] =
 	0x00000000,	/* 0] */
 };
 int	szicode = sizeof(icode);
-int	memchk();
  
 /*
  * Machine-dependent startup code
@@ -146,8 +145,6 @@ startup(firstaddr)
 	 */
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
-
-	timeout(memchk, (caddr_t)0, hz);	/* it will pick its own intvl */
 }
 
 /*
@@ -299,7 +296,11 @@ sendsig(p, n)
 		goto bad;
 #endif
 	*usp++ = n;
-	*usp++ = n == SIGILL ? u.u_cfcode : 0;
+	if (n == SIGILL || n == SIGFPE) {
+		*usp++ = u.u_code;
+		u.u_code = 0;
+	} else
+		*usp++ = 0;
 	*usp++ = (int)p;
 	*usp++ = regs[PC];
 	*usp++ = regs[PS];
@@ -348,51 +349,71 @@ dorti()
 }
 
 /*
- * Check memory controller for memory parity errors
+ * Memenable enables the memory controlle corrected data reporting.
+ * This runs at regular intervals, turning on the interrupt.
+ * The interrupt is turned off, per memory controller, when error
+ * reporting occurs.  Thus we report at most once per memintvl.
  */
 int	memintvl = MEMINTVL;
 
-memchk()
+memenable()
 {
 	register struct mcr *mcr;
 	register int m;
-	int error;
 
 	for (m = 0; m < nmcr; m++) {
 		mcr = mcraddr[m];
 		switch (cpu) {
 #if VAX780
 		case VAX_780:
-			error = mcr->mc_reg[2] & M780_ERLOG;
+			M780_ENA(mcr);
 			break;
 #endif
 #if VAX750
 		case VAX_750:
-			error = mcr->mc_reg[0] & M750_ERLOG;
-			break;
-#endif
-		default:
-			error = 0;
-		}
-		if (error)
-			printf("MEMERR %d: %x %x %x\n", m,
-			    mcr->mc_reg[0], mcr->mc_reg[1], mcr->mc_reg[2]);
-		switch (cpu) {
-#if VAX780
-		case VAX_780:
-			mcr->mc_reg[2] = M780_ERLOG|M780_HIERR;
-			break;
-#endif
-#if VAX750
-		case VAX_750:
-			mcr->mc_reg[0] = M750_ERLOG;
-			mcr->mc_reg[1] = 0;
+			M750_ENA(mcr);
 			break;
 #endif
 		}
 	}
 	if (memintvl > 0)
-		timeout(memchk, (caddr_t)0, memintvl);
+		timeout(memenable, (caddr_t)0, memintvl);
+}
+
+/*
+ * Memerr is the interrupt routine for corrected read data
+ * interrupts.  It looks to see which memory controllers have
+ * unreported errors, reports them, and disables further
+ * reporting for a time on those controller.
+ */
+memerr()
+{
+	register struct mcr *mcr;
+	register int m;
+
+	for (m = 0; m < nmcr; m++) {
+		mcr = mcraddr[m];
+		switch (cpu) {
+#if VAX780
+		case VAX_780:
+			if (M780_ERR(mcr)) {
+				printf("memerr mcr%d addr %x syn %x\n",
+				    m, M780_ADDR(mcr), M780_SYN(mcr));
+				M780_INH(mcr);
+			}
+			break;
+#endif
+#if VAX750
+		case VAX_750:
+			if (M750_ERR(mcr)) {
+				printf("memerr mcr%d addr %x syn %x\n",
+				    m, M750_ADDR(mcr), M750_SYN(mcr));
+				M750_INH(mcr);
+			}
+			break;
+#endif
+		}
+	}
 }
 
 /*
@@ -476,11 +497,35 @@ dumpsys()
 	if ((minor(dumpdev)&07) != 1)
 		return;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
-	printf("dump %s\n",
-	    (*bdevsw[major(dumpdev)].d_dump)(dumpdev) ?
-		"failed" : "succeeded");
+	printf("dump ");
+	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) {
+
+	case ENXIO:
+		printf("device bad\n");
+		break;
+
+	case EFAULT:
+		printf("device not ready\n");
+		break;
+
+	case EINVAL:
+		printf("area improper\n");
+		break;
+
+	case EIO:
+		printf("i/o error");
+		break;
+
+	default:
+		printf("succeeded");
+		break;
+	}
 }
 
+/*
+ * Machine check error recovery code.
+ * Print out the machine check frame and then give up.
+ */
 char *mc780[] = {
 	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
 	"cp rdtimo", 	"cp rds",	"ucode lost",	0,
@@ -488,35 +533,38 @@ char *mc780[] = {
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
 
+/*
+ * Frame for a 780
+ */
 struct mc780frame {
-	int	mc8_bcnt;
-	int	mc8_summary;
-	int	mc8_cpues;
-	int	mc8_upc;
-	int	mc8_vaviba;
-	int	mc8_dreg;
-	int	mc8_tber0;
-	int	mc8_tber1;
-	int	mc8_timo;
-	int	mc8_parity;
-	int	mc8_sbier;
-	int	mc8_pc;
-	int	mc8_psl;
+	int	mc8_bcnt;		/* byte count == 28 */
+	int	mc8_summary;		/* summary parameter (as above) */
+	int	mc8_cpues;		/* cpu error status */
+	int	mc8_upc;		/* micro pc */
+	int	mc8_vaviba;		/* va/viba register */
+	int	mc8_dreg;		/* d register */
+	int	mc8_tber0;		/* tbuf error reg 0 */
+	int	mc8_tber1;		/* tbuf error reg 1 */
+	int	mc8_timo;		/* timeout address divided by 4 */
+	int	mc8_parity;		/* parity */
+	int	mc8_sbier;		/* sbi error register */
+	int	mc8_pc;			/* trapped pc */
+	int	mc8_psl;		/* trapped psl */
 };
 struct mc750frame {
-	int	mc5_bcnt;
-	int	mc5_summary;
-	int	mc5_va;
-	int	mc5_errpc;
+	int	mc5_bcnt;		/* byte count == 28 */
+	int	mc5_summary;		/* summary parameter (as above) */
+	int	mc5_va;			/* virtual address register */
+	int	mc5_errpc;		/* error pc */
 	int	mc5_mdr;
-	int	mc5_svmode;
-	int	mc5_rdtimo;
-	int	mc5_tbgpar;
-	int	mc5_cacherr;
-	int	mc5_buserr;
-	int	mc5_mcesr;
-	int	mc5_pc;
-	int	mc5_psl;
+	int	mc5_svmode;		/* saved mode register */
+	int	mc5_rdtimo;		/* read lock timeout */
+	int	mc5_tbgpar;		/* tb group parity error register */
+	int	mc5_cacherr;		/* cache error register */
+	int	mc5_buserr;		/* bus error register */
+	int	mc5_mcesr;		/* machine check status register */
+	int	mc5_pc;			/* trapped pc */
+	int	mc5_psl;		/* trapped psl */
 };
 
 machinecheck(cmcf)
