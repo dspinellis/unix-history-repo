@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)code.c	1.1 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.2 (Berkeley) %G%";
 # include "mfile1"
 # include <sys/types.h>
 # include <a.out.h>
@@ -171,15 +171,6 @@ bfcode( a, n ) int a[]; {
 	/* routine prolog */
 
 	printf( "	.word	L%d\n", ftnno);
-	if (gdebug) {
-#ifdef STABDOT
-		pstabdot(N_SLINE, lineno);
-#else
-		pstab(NULLNAME, N_SLINE);
-		printf("0,%d,LL%d\n", lineno, labelno);
-		printf("LL%d:\n", labelno++);
-#endif
-	}
 	ftlab1 = getlab();
 	ftlab2 = getlab();
 	printf( "	jbr 	L%d\n", ftlab1);
@@ -218,6 +209,15 @@ bfcode( a, n ) int a[]; {
 			}
 
 		}
+	if (gdebug) {
+#ifdef STABDOT
+		pstabdot(N_SLINE, lineno);
+#else
+		pstab(NULLNAME, N_SLINE);
+		printf("0,%d,LL%d\n", lineno, labelno);
+		printf("LL%d:\n", labelno++);
+#endif
+	}
 	fdefflag = 1;
 	}
 
