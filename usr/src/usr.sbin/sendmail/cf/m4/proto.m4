@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.3 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.4 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -211,9 +211,6 @@ CONCAT(Ou, confDEF_USER_ID)
 
 # list of locations of user database file (null means no lookup)
 CONCAT(OU, ifdef(`USERDB_SPEC', `USERDB_SPEC'))
-
-# can we guarantee no wildcard MX records matching our domain?
-CONCAT(Ow, confNO_WILDCARD_MX)
 
 # load average at which we just queue messages
 CONCAT(Ox, confQUEUE_LA)
