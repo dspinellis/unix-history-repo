@@ -1,0 +1,12 @@
+.../doc
+
+This directory has the INGRES documentation.
+
+unix
+	Documentation for commands to be executed from the
+	shell.
+quel
+	Documentation for commands to be executed from within
+	INGRES; some of these are actually generalities.
+other
+	Miscellaneous documentation.
