@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,7 +35,7 @@ rtlookup(dst)
 	struct afhash h;
 	int doinghost = 1;
 
-	if (dst->sa_family >= AF_MAX)
+	if (dst->sa_family >= af_max)
 		return (0);
 	(*afswitch[dst->sa_family].af_hash)(dst, &h);
 	hash = h.afh_hosthash;
@@ -70,7 +70,7 @@ rtfind(dst)
 	int af = dst->sa_family;
 	int doinghost = 1, (*match)();
 
-	if (af >= AF_MAX)
+	if (af >= af_max)
 		return (0);
 	(*afswitch[af].af_hash)(dst, &h);
 	hash = h.afh_hosthash;
@@ -109,7 +109,7 @@ rtadd(dst, gate, metric, state)
 	int af = dst->sa_family, flags;
 	u_int hash;
 
-	if (af >= AF_MAX)
+	if (af >= af_max)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
 	flags = (*afswitch[af].af_ishost)(dst) ? RTF_HOST : 0;

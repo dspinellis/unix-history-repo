@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)af.h	5.1 (Berkeley) %G%
+ *	@(#)af.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,7 @@ struct afswitch {
 	int	(*af_checkhost)();	/* tells if address for host or net */
 	int	(*af_ishost)();		/* tells if address is valid */
 	int	(*af_canon)();		/* canonicalize address for compares */
+	char	*(*af_format)();	/* convert address to string */
 };
 
 /*
@@ -32,4 +33,5 @@ struct afhash {
 	u_int	afh_nethash;		/* network based hash */
 };
 
-struct	afswitch afswitch[AF_MAX];	/* table proper */
+struct	afswitch afswitch[];		/* table proper */
+int	af_max;				/* number of entries in table */

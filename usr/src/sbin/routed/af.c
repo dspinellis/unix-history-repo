@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -13,23 +13,20 @@ static char sccsid[] = "@(#)af.c	5.2 (Berkeley) %G%";
 /*
  * Address family support routines
  */
-int	null_hash(), null_netmatch(), null_output(),
-	null_portmatch(), null_portcheck(),
-	null_checkhost(), null_ishost(), null_canon();
 int	inet_hash(), inet_netmatch(), inet_output(),
 	inet_portmatch(), inet_portcheck(),
 	inet_checkhost(), inet_ishost(), inet_canon();
-#define NIL \
-	{ null_hash,		null_netmatch,		null_output, \
-	  null_portmatch,	null_portcheck,		null_checkhost, \
-	  null_ishost,		null_canon }
+char	*inet_format();
+#define NIL	{ 0 }
 #define	INET \
 	{ inet_hash,		inet_netmatch,		inet_output, \
 	  inet_portmatch,	inet_portcheck,		inet_checkhost, \
-	  inet_ishost,		inet_canon }
+	  inet_ishost,		inet_canon, 		inet_format }
 
 struct afswitch afswitch[AF_MAX] =
-	{ NIL, NIL, INET, INET, NIL, NIL, NIL, NIL, NIL, NIL, NIL };
+	{ NIL, NIL, INET, };
+
+int af_max = sizeof(afswitch) / sizeof(afswitch[0]);
 
 struct sockaddr_in inet_default = { AF_INET, INADDR_ANY };
 
@@ -132,69 +129,11 @@ inet_canon(sin)
 	sin->sin_port = 0;
 }
 
-/*ARGSUSED*/
-null_hash(addr, hp)
-	struct sockaddr *addr;
-	struct afhash *hp;
+char *
+inet_format(sin)
+	struct sockaddr_in *sin;
 {
+	char *inet_ntoa();
 
-	hp->afh_nethash = hp->afh_hosthash = 0;
-}
-
-/*ARGSUSED*/
-null_netmatch(a1, a2)
-	struct sockaddr *a1, *a2;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-null_output(s, f, a1, n)
-	int s, f;
-	struct sockaddr *a1;
-	int n;
-{
-
-	;
-}
-
-/*ARGSUSED*/
-null_portmatch(a1)
-	struct sockaddr *a1;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-null_portcheck(a1)
-	struct sockaddr *a1;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-null_ishost(a1)
-	struct sockaddr *a1;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-null_checkhost(a1)
-	struct sockaddr *a1;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-null_canon(a1)
-	struct sockaddr *a1;
-{
-
-	;
+	return (inet_ntoa(sin->sin_addr));
 }
