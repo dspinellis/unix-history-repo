@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1251,7 +1251,7 @@ vsprintf(s, fmt, ap)
 #endif
 
 #ifdef HASSTATFS
-# if defined(sgi) || defined(apollo)
+# if defined(sgi) || defined(apollo) || defined(_SCO_unix_)
 #  include <sys/statfs.h>
 # else
 #  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE)
@@ -1280,6 +1280,9 @@ enoughspace(msize)
 #  else
 	struct statfs fs;
 #   define FSBLOCKSIZE	fs.f_bsize
+#   if defined(_SCO_UNIX_)
+#    define f_bavail f_bfree
+#   endif
 #  endif
 # endif
 	extern int errno;
