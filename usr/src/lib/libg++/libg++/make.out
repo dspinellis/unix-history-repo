@@ -1,0 +1,161 @@
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/AllocRing.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Obstack.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/File.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/ostream.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/istream.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/streambuf.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/filebuf.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Filebuf.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/open.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/PlotFile.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/SFile.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/builtin.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/regex.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Regex.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/String.cc
+/usr/src/lib/libg++/libg++/String.cc: In method void String::error (const char *)const :
+/usr/src/lib/libg++/libg++/String.cc:43: warning: `volatile' function does return
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Integer.cc
+/usr/src/lib/libg++/libg++/Integer.cc: In method void Integer::error (const char *)const :
+/usr/src/lib/libg++/libg++/Integer.cc:2303: warning: `volatile' function does return
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Rational.cc
+/usr/src/lib/libg++/libg++/Rational.cc: In method void Rational::error (const char *)const :
+/usr/src/lib/libg++/libg++/Rational.cc:36: warning: `volatile' function does return
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Complex.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Random.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/BitSet.cc
+/usr/src/lib/libg++/libg++/BitSet.cc: In method void BitSet::error (const char *)const :
+/usr/src/lib/libg++/libg++/BitSet.cc:40: warning: `volatile' function does return
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/BitString.cc
+/usr/src/lib/libg++/libg++/BitString.cc: In method void BitString::error (const char *)const :
+/usr/src/lib/libg++/libg++/BitString.cc:40: warning: `volatile' function does return
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/LogNorm.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/SmplHist.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/SmplStat.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Normal.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/NegExp.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Weibull.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Erlang.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/DiscUnif.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Uniform.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Poisson.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/HypGeom.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Geom.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Binomial.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/max.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/min.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/RNG.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/ACG.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/MLCG.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/RndInt.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Fix.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Fix16.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/Fix24.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/CursesW.cc
+/usr/src/lib/libg++/libg++/CursesW.cc: In method int CursesWindow::scanw (const char *, ...):
+/usr/src/lib/libg++/libg++/CursesW.cc:62: warning: implicit declaration of function `vsscanf'
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/GetOpt.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/EH.cc
+cc -O -c /usr/src/lib/libg++/libg++/EH2.c 
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/xyzzy.cc
+cc -O -c /usr/src/lib/libg++/libg++/gnulib3.c 
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/new.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/delete.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/chr.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/dtoa.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/error.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/form.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/gcd.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/hash.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/itoa.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/lg.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/fmtq.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/ioob.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/pow.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/sqrt.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/str.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/timer.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/compare.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/ctype.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/curses.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/math.cc
+g++ -O -felide-constructors -I/usr/src/lib/libg++/libg++/../g++-include -DHAVE_VPRINTF -DHAVE_VSCANF  -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE -c /usr/src/lib/libg++/libg++/std.cc
+building standard g++ library
+nm: Filebuf.o: no name list.
+nm: max.o: no name list.
+nm: min.o: no name list.
+nm: ctype.o: no name list.
+nm: math.o: no name list.
+nm: std.o: no name list.
+ranlib libg++.a
+make: don't know how to make AllocRing.po (continuing)
+make: don't know how to make Obstack.po (continuing)
+make: don't know how to make File.po (continuing)
+make: don't know how to make ostream.po (continuing)
+make: don't know how to make istream.po (continuing)
+make: don't know how to make streambuf.po (continuing)
+make: don't know how to make filebuf.po (continuing)
+make: don't know how to make Filebuf.po (continuing)
+make: don't know how to make open.po (continuing)
+make: don't know how to make PlotFile.po (continuing)
+make: don't know how to make SFile.po (continuing)
+make: don't know how to make builtin.po (continuing)
+make: don't know how to make regex.po (continuing)
+make: don't know how to make Regex.po (continuing)
+make: don't know how to make String.po (continuing)
+make: don't know how to make Integer.po (continuing)
+make: don't know how to make Rational.po (continuing)
+make: don't know how to make Complex.po (continuing)
+make: don't know how to make Random.po (continuing)
+make: don't know how to make BitSet.po (continuing)
+make: don't know how to make BitString.po (continuing)
+make: don't know how to make LogNorm.po (continuing)
+make: don't know how to make SmplHist.po (continuing)
+make: don't know how to make SmplStat.po (continuing)
+make: don't know how to make Normal.po (continuing)
+make: don't know how to make NegExp.po (continuing)
+make: don't know how to make Weibull.po (continuing)
+make: don't know how to make Erlang.po (continuing)
+make: don't know how to make DiscUnif.po (continuing)
+make: don't know how to make Uniform.po (continuing)
+make: don't know how to make Poisson.po (continuing)
+make: don't know how to make HypGeom.po (continuing)
+make: don't know how to make Geom.po (continuing)
+make: don't know how to make Binomial.po (continuing)
+make: don't know how to make max.po (continuing)
+make: don't know how to make min.po (continuing)
+make: don't know how to make RNG.po (continuing)
+make: don't know how to make ACG.po (continuing)
+make: don't know how to make MLCG.po (continuing)
+make: don't know how to make RndInt.po (continuing)
+make: don't know how to make Fix.po (continuing)
+make: don't know how to make Fix16.po (continuing)
+make: don't know how to make Fix24.po (continuing)
+make: don't know how to make CursesW.po (continuing)
+make: don't know how to make GetOpt.po (continuing)
+make: don't know how to make EH.po (continuing)
+cc -p -O -c /usr/src/lib/libg++/libg++/EH2.c -o EH2.po
+make: don't know how to make xyzzy.po (continuing)
+cc -p -O -c /usr/src/lib/libg++/libg++/gnulib3.c -o gnulib3.po
+make: don't know how to make new.po (continuing)
+make: don't know how to make delete.po (continuing)
+make: don't know how to make chr.po (continuing)
+make: don't know how to make dtoa.po (continuing)
+make: don't know how to make error.po (continuing)
+make: don't know how to make form.po (continuing)
+make: don't know how to make gcd.po (continuing)
+make: don't know how to make hash.po (continuing)
+make: don't know how to make itoa.po (continuing)
+make: don't know how to make lg.po (continuing)
+make: don't know how to make fmtq.po (continuing)
+make: don't know how to make ioob.po (continuing)
+make: don't know how to make pow.po (continuing)
+make: don't know how to make sqrt.po (continuing)
+make: don't know how to make str.po (continuing)
+make: don't know how to make timer.po (continuing)
+make: don't know how to make compare.po (continuing)
+make: don't know how to make ctype.po (continuing)
+make: don't know how to make curses.po (continuing)
+make: don't know how to make math.po (continuing)
+make: don't know how to make std.po (continuing)
+`all' not remade because of errors.
