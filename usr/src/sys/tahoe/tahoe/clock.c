@@ -1,4 +1,4 @@
-/*	clock.c	1.3	86/12/06	*/
+/*	clock.c	1.4	86/12/23	*/
 
 #include "param.h"
 #include "time.h"
@@ -28,22 +28,25 @@
 startrtclock()
 {
 	register int t;
-	struct cphdr cpclock;
+	static struct cphdr cpclock;	/* must be in data space */
 	
 	cpclock.cp_unit = CPCLOCK;
 	cpclock.cp_comm = CPWRITE;
 	if (hz == 0) {
+		extern int tickadj;		/* XXX */
 		hz = 60;
+		tick = 1000000 / hz;
+		tickadj = 240000 / (60 * hz);
 		printf("clock set to %dhz\n", hz);
 	}
 	cpclock.cp_count = hztocount(hz);
-	/* try to insure last cmd completed */
 	if (cnlast) {
+		/* try to insure last cmd was taken by cp */
 		for (t = 30000; (cnlast->cp_unit&CPTAKE) == 0 && t > 0; t--)
 			uncache(&cnlast->cp_unit);
 		cnlast = 0;
 	}
-	mtpr(CPMDCB, &cpclock);
+	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)&cpclock));
 	for (t = 30000; (cpclock.cp_unit&CPDONE) == 0 && t > 0; t--)
 		uncache(&cpclock.cp_unit);
 }
