@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -468,8 +468,11 @@ regexec_e(preg, string, eflags, nomatch, slen)
 	} else
 		defpreg = preg;
 
+	/* Set anchors, discounting trailing newline (if any). */
+	if (slen > 0 && string[slen - 1] == '\n')
+		slen--;
 	match[0].rm_so = 0;
-	match[0].rm_eo = slen - 1;	/* Length minus trailing newline. */
+	match[0].rm_eo = slen;
 	
 	eval = regexec(defpreg, string,
 	    nomatch ? 0 : maxnsub + 1, match, eflags | REG_STARTEND);
