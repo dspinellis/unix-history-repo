@@ -1,0 +1,32 @@
+# This is an example of a quiputailor file used to start a DSA the
+# example database in this directory.
+# The database holds a SLAVE copy of the root of the DIT, and 
+# hold the MASTER copy of C=GB.
+
+# which oid tables to use, keep this as the first entry in the tailor file.
+# The patch can be absolute, or relative to the defined ETCDIR as in this case.
+oidtable	oidtable
+
+
+# Name of the DSA to start, there must be an entry of a similar name in ./EDB
+mydsaname	CN=toucan
+
+
+# default tree directory (This directory = `.')
+treedir		./
+
+
+# DSA to contact if we need a referral to a parent.
+# You may want to change this to a DSA closer to you.
+# Giant Tortoise is held at University of London Computer Centre
+parent "cn=Giant Tortoise" Internet=128.86.8.55+17003|IXI=20433450400255|X121+23421920014855|Janet=000040010550
+
+# write logs in this directory.
+logdir		/tmp/
+
+
+# The following line gives full logging to the users screen, 
+# comment it out
+# by placing a '#' in front of the entry, if full logging is not required.
+# NOTE Full logging slows the DSA down.
+dsaplog		level=all sflags=tty
