@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass1b.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)pass1b.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -22,6 +22,8 @@ pass1b()
 	inumber = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		for (i = 0; i < sblock.fs_ipg; i++, inumber++) {
+			if (inumber < ROOTINO)
+				continue;
 			dp = ginode(inumber);
 			if (dp == NULL)
 				continue;
