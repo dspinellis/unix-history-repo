@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -43,7 +43,7 @@ main(argc, argv)
 		case '?':
 		default:
 			fputs("usage: tty [-s]\n", stderr);
-			exit(1);
+			exit(2);
 		}
 
 	t = ttyname(0);
