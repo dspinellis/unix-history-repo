@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.24 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -1367,11 +1367,11 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	args.fspec = 0;
 	args.exflags = exflags;
 	args.anon = *anoncrp;
+	bzero((char *)&sin, sizeof(sin));
+	bzero((char *)&imask, sizeof(imask));
 	sin.sin_family = AF_INET;
-	sin.sin_port = 0;
 	sin.sin_len = sizeof(sin);
 	imask.sin_family = AF_INET;
-	imask.sin_port = 0;
 	imask.sin_len = sizeof(sin);
 	if (grp->gr_type == GT_HOST)
 		addrp = (u_long **)grp->gr_ptr.gt_hostent->h_addr_list;
