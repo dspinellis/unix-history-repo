@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1991 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.20 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -12,7 +12,6 @@
 #include "conf.h"
 #include "reboot.h"
 #include "msgbuf.h"
-#include "user.h"
 #include "proc.h"
 #include "ioctl.h"
 #include "vnode.h"
@@ -81,26 +80,21 @@ int	(*v_console)() = cnputc;	/* routine to putc on virtual console */
  *
  *	printf("prefix: %r, other stuff\n", fmt, &arg1);
  */
-#if defined(tahoe)
-int	consintr;
-#endif
+
+int	consintr = 1;			/* ok to handle console interrupts? */
 
 /*VARARGS1*/
 printf(fmt, args)
 	char *fmt;
 	unsigned args;
 {
-#if defined(tahoe)
 	register int savintr;
 
 	savintr = consintr, consintr = 0;	/* disable interrupts */
-#endif
 	prf(fmt, &args, TOCONS | TOLOG, (struct tty *)NULL);
 	if (!panicstr)
 		logwakeup();
-#if defined(tahoe)
 	consintr = savintr;			/* reenable interrupts */
-#endif
 }
 
 /*
@@ -121,22 +115,23 @@ uprintf(fmt, args)
 }
 
 tpr_t
-tprintf_open()
+tprintf_open(p)
+	register struct proc *p;
 {
-	register struct proc *p = curproc;
 
 	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
 		SESSHOLD(p->p_session);
-		return ((tpr_t)p->p_session);
+		return ((tpr_t) p->p_session);
 	} else
-		return ((tpr_t)NULL);
+		return ((tpr_t) NULL);
 }
 
+void
 tprintf_close(sess)
 	tpr_t sess;
 {
 	if (sess)
-		SESSRELE(sess);
+		SESSRELE((struct session *) sess);
 }
 
 /*
@@ -144,21 +139,26 @@ tprintf_close(sess)
  * with the given session.  
  */
 /*VARARGS2*/
-tprintf(sess, fmt, args)
-	register tpr_t sess;
+tprintf(tpr, fmt, args)
+	tpr_t tpr;
 	char *fmt;
 	unsigned args;
 {
+	register struct session *sess = (struct session *)tpr;
+	struct tty *tp = NULL;
 	int flags = TOLOG;
 
 	logpri(LOG_INFO);
 
-	if (sess && sess->s_ttyvp && ttycheckoutq(sess->s_ttyp, 0))
+	if (sess && sess->s_ttyvp && ttycheckoutq(sess->s_ttyp, 0)) {
 		flags |= TOTTY;
-	prf(fmt, &args, flags, sess->s_ttyp);
+		tp = sess->s_ttyp;
+	}
+	prf(fmt, &args, flags, tp);
 	logwakeup();
 }
 
+extern	int log_open;
 
 /*
  * Log writes to the log buffer,
@@ -171,7 +171,6 @@ log(level, fmt, args)
 	unsigned args;
 {
 	register s = splhigh();
-	extern int log_open;
 
 	logpri(level);
 	prf(fmt, &args, TOLOG, (struct tty *)NULL);
