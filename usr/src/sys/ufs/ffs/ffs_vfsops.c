@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vfsops.c	7.7 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -161,7 +161,6 @@ mountfs(dev, ronly, ip)
 		dpart.part->p_fsize = fs->fs_fsize;
 		dpart.part->p_frag = fs->fs_frag;
 		dpart.part->p_cpg = fs->fs_cpg;
-		fs->fs_dbsize = size;
 	}
 #ifdef SECSIZE
 	/*
@@ -223,7 +222,8 @@ mountfs(dev, ronly, ip)
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
 	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
-
+	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
+		fs->fs_nrpos = 8;				/* XXX */
 
 	return (fs);
 out:
@@ -314,6 +314,9 @@ sbupdate(mp)
 	bp = getblk(mp->m_dev, SBLOCK, (int)fs->fs_sbsize);
 #endif SECSIZE
 	bcopy((caddr_t)fs, bp->b_un.b_addr, (u_int)fs->fs_sbsize);
+	/* Restore compatibility to old file systems.		   XXX */
+	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
+		bp->b_un.b_fs->fs_nrpos = -1;			/* XXX */
 #ifdef SECSIZE
 #ifdef tahoe
 	/* restore standard fsbtodb shift */
