@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	6.7 (Berkeley) %G%
+.\"	@(#)stat.2	6.8 (Berkeley) %G%
 .\"
 .TH STAT 2 ""
 .UC 4
@@ -50,40 +50,42 @@ returns information about the file the link references.
 .I Fstat
 obtains the same information about an open file
 referenced by the argument descriptor, such as would
-be obtained by an \fIopen\fP call.
+be obtained by an
+.I open
+call.
 .PP
 .I Buf
 is a pointer to a
 .I stat
 structure into which information is placed concerning the file.
 The contents of the structure pointed to by
-.I buf
+.IR buf :
 .PP
 .nf
-.ta 1i 1.7i 2.5i
-     struct stat {
-	dev_t	st_dev;	/* device inode resides on */
-	ino_t	st_ino;	/* this inode's number */
-	u_short	st_mode;	/* protection */
-	short	st_nlink;	/* number or hard links to the file */
-	uid_t	st_uid;	/* user-id of owner */
-	gid_t	st_gid;	/* group-id of owner */
-	dev_t	st_rdev;	/* the device type, for inode that is device */
-	off_t	st_size;	/* total size of file */
-	time_t	st_atime;	/* file last access time */
-	int	st_spare1;
-	time_t	st_mtime;	/* file last modify time */
-	int	st_spare2;
-	time_t	st_ctime;	/* file last status change time */
-	int	st_spare3;
-	long	st_blksize;	/* optimal blocksize for file system i/o ops */
-	long	st_blocks;	/* actual number of blocks allocated */
-	long	st_spare4[2];
+    struct stat {
+        dev_t    st_dev;      /* device inode resides on */
+        ino_t    st_ino;      /* inode's number */
+        u_short  st_mode;     /* inode protection mode */
+        short    st_nlink;    /* number or hard links to the file */
+        uid_t    st_uid;      /* user-id of owner */
+        gid_t    st_gid;      /* group-id of owner */
+        dev_t    st_rdev;     /* device type, for special file inode */
+        off_t    st_size;     /* file size, in bytes */
+        time_t   st_atime;    /* time of last access */
+        int      st_spare1;
+        time_t   st_mtime;    /* time of last data modification */
+        int      st_spare2;
+        time_t   st_ctime;    /* time of last file status change */
+        int      st_spare3;
+        long     st_blksize;  /* optimal file system I/O ops blocksize */
+        long     st_blocks;   /* blocks allocated for file */
+        u_long   st_flags;    /* user defined flags for file */
+        u_long   st_gen;      /* file generation number */
     };
 .fi
 .DT
 .PP
-.TP 12
+.TP
 st_atime
 Time when file data was last accessed.  Changed by the following system
 calls:
@@ -94,7 +96,7 @@ and
 For reasons of efficiency, 
 st_atime is not set when a directory
 is searched, although this would be more logical.
-.TP 12
+.TP
 st_mtime
 Time when data was last modified.
 It is not set by changes of owner, group, link count, or mode.
@@ -102,7 +104,7 @@ Changed by the following system calls:
 .IR mknod (2),
 .IR utimes (2),
 .IR write (2).
-.TP 12
+.TP
 st_ctime
 Time when file status was last changed.
 It is set both both by writing and changing the i-node.
@@ -115,6 +117,9 @@ Changed by the following system calls:
 .IR unlink (2),
 .IR utimes (2),
 .IR write (2).
+.TP
+st_blocks
+The actual number of blocks allocated for the file in 512-byte units.
 .PP
 The status information word \fIst_mode\fP has bits:
 .nf
