@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tmpnam.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tmpnam.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -19,10 +19,12 @@ char *
 tmpnam(s)
 	char *s;
 {
+	static unsigned long tmpcount;
 	static char buf[L_tmpnam];
 
 	if (s == NULL)
 		s = buf;
-	(void)snprintf(s, L_tmpnam, "%stmp.XXXXXX", P_tmpdir);
-	return(mktemp(s));
+	(void)snprintf(s, L_tmpnam, "%s/tmp.%lu.XXXXXX", P_tmpdir, tmpcount);
+	++tmpcount;
+	return (mktemp(s));
 }
