@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -201,7 +201,7 @@ dropenvelope(e)
 	*/
 
 	if (bitset(EF_PM_NOTIFY, e->e_flags) && PostMasterCopy != NULL &&
-	    !bitset(EF_RESPONSE, e->e_flags))
+	    !bitset(EF_RESPONSE, e->e_flags) && e->e_class >= 0)
 	{
 		auto ADDRESS *rlist = NULL;
 
