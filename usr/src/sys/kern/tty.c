@@ -1,4 +1,4 @@
-/*	tty.c	6.16	85/05/27	*/
+/*	tty.c	6.17	85/06/03	*/
 
 #include "../machine/reg.h"
 
@@ -532,7 +532,7 @@ ttselect(dev, rw)
 
 	case FREAD:
 		nread = ttnread(tp);
-		if (nread > 0)
+		if ((nread > 0) || ((tp->t_state & TS_CARR_ON) == 0))
 			goto win;
 		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
@@ -688,13 +688,13 @@ ttyinput(c, tp)
 	 */
 	if (tp->t_line == NTTYDISC) {
 		if (c == tp->t_lnextc) {
-			if (tp->t_flags&ECHO)
+			if (t_flags&ECHO)
 				ttyout("^\b", tp);
 			tp->t_state |= TS_LNCH;
 			goto endcase;
 		}
 		if (c == tp->t_flushc) {
-			if (tp->t_flags&FLUSHO)
+			if (t_flags&FLUSHO)
 				tp->t_flags &= ~FLUSHO;
 			else {
 				ttyflush(tp, FWRITE);
@@ -706,7 +706,7 @@ ttyinput(c, tp)
 			goto startoutput;
 		}
 		if (c == tp->t_suspc) {
-			if ((tp->t_flags&NOFLSH) == 0)
+			if ((t_flags&NOFLSH) == 0)
 				ttyflush(tp, FREAD);
 			ttyecho(c, tp);
 			gsignal(tp->t_pgrp, SIGTSTP);
@@ -734,7 +734,7 @@ ttyinput(c, tp)
 	 * Look for interrupt/quit chars.
 	 */
 	if (c == tp->t_intrc || c == tp->t_quitc) {
-		if ((tp->t_flags&NOFLSH) == 0)
+		if ((t_flags&NOFLSH) == 0)
 			ttyflush(tp, FREAD|FWRITE);
 		ttyecho(c, tp);
 		gsignal(tp->t_pgrp, c == tp->t_intrc ? SIGINT : SIGQUIT);
@@ -772,7 +772,7 @@ ttyinput(c, tp)
 		goto endcase;
 	}
 	if (c == tp->t_kill) {
-		if (tp->t_flags&CRTKIL &&
+		if (t_flags&CRTKIL &&
 		    tp->t_rawq.c_cc == tp->t_rocount) {
 			while (tp->t_rawq.c_cc)
 				ttyrub(unputc(&tp->t_rawq), tp);
@@ -847,7 +847,7 @@ ttyinput(c, tp)
 		}
 		i = tp->t_col;
 		ttyecho(c, tp);
-		if (c == tp->t_eofc && tp->t_flags&ECHO) {
+		if (c == tp->t_eofc && t_flags&ECHO) {
 			i = MIN(2, tp->t_col - i);
 			while (i > 0) {
 				(void) ttyoutput('\b', tp);
@@ -860,7 +860,7 @@ endcase:
 	 * If DEC-style start/stop is enabled don't restart
 	 * output until seeing the start character.
 	 */
-	if (tp->t_flags&DECCTQ && tp->t_state&TS_TTSTOP &&
+	if (t_flags&DECCTQ && tp->t_state&TS_TTSTOP &&
 	    tp->t_startc != tp->t_stopc)
 		return;
 restartoutput:
@@ -1199,27 +1199,23 @@ ttwrite(tp, uio)
 	int i, hiwat, cnt, error, s;
 	char obuf[OBUFSIZ];
 
-	if ((tp->t_state&TS_CARR_ON) == 0)
-		return (EIO);
 	hiwat = TTHIWAT(tp);
 	cnt = uio->uio_resid;
 	error = 0;
 loop:
+	if ((tp->t_state&TS_CARR_ON) == 0)
+		return (EIO);
 	/*
 	 * Hang the process if it's in the background.
 	 */
 #define bit(a) (1<<(a-1))
-	while (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
+	if (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 	    (tp->t_flags&TOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
 	    !(u.u_procp->p_sigignore & bit(SIGTTOU)) &&
-	    !(u.u_procp->p_sigmask & bit(SIGTTOU))
-/*
-					     &&
-	    (u.u_procp->p_flag&SDETACH)==0) {
-*/
-	    ) {
+	    !(u.u_procp->p_sigmask & bit(SIGTTOU))) {
 		gsignal(u.u_procp->p_pgrp, SIGTTOU);
 		sleep((caddr_t)&lbolt, TTIPRI);
+		goto loop;
 	}
 #undef	bit
 
@@ -1238,7 +1234,7 @@ loop:
 		if (cc == 0) {
 			uio->uio_iovcnt--;
 			uio->uio_iov++;
-			if (uio->uio_iovcnt < 0)
+			if (uio->uio_iovcnt <= 0)
 				panic("ttwrite");
 			continue;
 		}
@@ -1266,6 +1262,13 @@ loop:
 					ttstart(tp);
 					sleep((caddr_t)&lbolt, TTOPRI);
 					tp->t_rocount = 0;
+					if (cc != 0) {
+						uio->uio_iov->iov_base -= cc;
+						uio->uio_iov->iov_len += cc;
+						uio->uio_resid += cc;
+						uio->uio_offset -= cc;
+					}
+					goto loop;
 				}
 				--cc;
 				if (tp->t_outq.c_cc > hiwat)
@@ -1295,10 +1298,16 @@ loop:
 				if (ce == 0) {
 					tp->t_rocount = 0;
 					if (ttyoutput(*cp, tp) >= 0) {
-						/* no c-lists, wait a bit */
-						ttstart(tp);
-						sleep((caddr_t)&lbolt, TTOPRI);
-						continue;
+					    /* no c-lists, wait a bit */
+					    ttstart(tp);
+					    sleep((caddr_t)&lbolt, TTOPRI);
+					    if (cc != 0) {
+					        uio->uio_iov->iov_base -= cc;
+					        uio->uio_iov->iov_len += cc;
+					        uio->uio_resid += cc;
+						uio->uio_offset -= cc;
+					    }
+					    goto loop;
 					}
 					cp++, cc--;
 					if (tp->t_flags&FLUSHO ||
@@ -1324,6 +1333,11 @@ loop:
 				/* out of c-lists, wait a bit */
 				ttstart(tp);
 				sleep((caddr_t)&lbolt, TTOPRI);
+				uio->uio_iov->iov_base -= cc;
+				uio->uio_iov->iov_len += cc;
+				uio->uio_resid += cc;
+				uio->uio_offset -= cc;
+				goto loop;
 			}
 			if (tp->t_flags&FLUSHO || tp->t_outq.c_cc > hiwat)
 				goto ovhiwat;
