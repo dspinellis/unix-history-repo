@@ -1,4 +1,4 @@
-#	@(#)Makefile.pmax	7.4 (Berkeley) %G%
+#	@(#)Makefile.pmax	7.5 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -31,7 +31,7 @@ TOUCH=	touch -f -c
 S=	../..
 PMAX=	$S/pmax
 
-INCLUDES= -I. -I$S -I$S/sys
+INCLUDES= -I. -I$S
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL
 CFLAGS=	-O ${COPTS}
 AFLAGS=	-O2 -DLOCORE ${COPTS}
