@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.33 89/12/22$
  *
- *	@(#)hil.c	7.10 (Berkeley) %G%
+ *	@(#)hil.c	7.11 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -645,11 +645,7 @@ hilselect(dev, rw, p)
 			splx(s);
 			return (1);
 		}
-		if (dptr->hd_selr &&
-		    dptr->hd_selr->p_wchan == (caddr_t)&selwait)
-			dptr->hd_flags |= HIL_SELCOLL;
-		else
-			dptr->hd_selr = p;
+		selrecord(p, &dptr->hd_selr);
 		splx(s);
 		return (0);
 	}
@@ -683,10 +679,7 @@ hilselect(dev, rw, p)
 			return (1);
 		}
 
-	if (dptr->hd_selr && dptr->hd_selr->p_wchan == (caddr_t)&selwait)
-		dptr->hd_flags |= HIL_SELCOLL;
-	else
-		dptr->hd_selr = p;
+	selrecord(p, &dptr->hd_selr);
 	splx(s);
 	return (0);
 }
@@ -889,17 +882,9 @@ hilevent(hilp)
 	/*
 	 * Wake up anyone selecting on this device or the loop itself
 	 */
-	if (dptr->hd_selr) {
-		selwakeup(dptr->hd_selr, dptr->hd_flags & HIL_SELCOLL);
-		dptr->hd_selr = NULL;
-		dptr->hd_flags &= ~HIL_SELCOLL;
-	}
+	selwakeup(&dptr->hd_selr);
 	dptr = &hilp->hl_device[HILLOOPDEV];
-	if (dptr->hd_selr) {
-		selwakeup(dptr->hd_selr, dptr->hd_flags & HIL_SELCOLL);
-		dptr->hd_selr = NULL;
-		dptr->hd_flags &= ~HIL_SELCOLL;
-	}
+	selwakeup(&dptr->hd_selr);
 }
 
 #undef HQFULL
@@ -941,11 +926,7 @@ hpuxhilevent(hilp, dptr)
 		dptr->hd_flags &= ~HIL_ASLEEP;
 		wakeup((caddr_t)dptr);
 	}
-	if (dptr->hd_selr) {
-		selwakeup(dptr->hd_selr, dptr->hd_flags & HIL_SELCOLL);
-		dptr->hd_selr = NULL;
-		dptr->hd_flags &= ~HIL_SELCOLL;
-	}
+	selwakeup(&dptr->hd_selr);
 }
 
 /*
