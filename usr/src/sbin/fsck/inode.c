@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.5 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.6 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -252,4 +252,73 @@ blkerr(ino, s, blk)
 		errexit("BAD STATE %d TO BLKERR", statemap[ino]);
 		/* NOTREACHED */
 	}
+}
+
+/*
+ * allocate an unused inode
+ */
+ino_t
+allocino(request, type)
+	ino_t request;
+	int type;
+{
+	register ino_t ino;
+	register DINODE *dp;
+
+	if (request == 0)
+		request = ROOTINO;
+	else if (statemap[request] != USTATE)
+		return (0);
+	for (ino = request; ino < imax; ino++)
+		if (statemap[ino] == USTATE)
+			break;
+	if (ino == imax)
+		return (0);
+	switch (type & IFMT) {
+	case IFDIR:
+		statemap[ino] = DSTATE;
+		break;
+	case IFREG:
+	case IFLNK:
+		statemap[ino] = FSTATE;
+		break;
+	default:
+		return (0);
+	}
+	dp = ginode(ino);
+	dp->di_db[0] = allocblk(1);
+	if (dp->di_db[0] == 0) {
+		statemap[ino] = USTATE;
+		return (0);
+	}
+	dp->di_mode = type;
+	time(&dp->di_atime);
+	dp->di_mtime = dp->di_ctime = dp->di_atime;
+	dp->di_size = sblock.fs_fsize;
+	dp->di_blocks = btodb(sblock.fs_fsize);
+	n_files++;
+	inodirty();
+	return (ino);
+}
+
+/*
+ * deallocate an inode
+ */
+freeino(ino)
+	ino_t ino;
+{
+	struct inodesc idesc;
+	extern int pass4check();
+	DINODE *dp;
+
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = ADDR;
+	idesc.id_func = pass4check;
+	idesc.id_number = ino;
+	dp = ginode(ino);
+	(void)ckinode(dp, &idesc);
+	zapino(dp);
+	inodirty();
+	statemap[ino] = USTATE;
+	n_files--;
 }
