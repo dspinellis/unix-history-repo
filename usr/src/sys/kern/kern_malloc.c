@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)kern_malloc.c	7.7 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,7 +49,7 @@ malloc(size, type, flags)
 	s = splimp();
 again:
 #ifdef KMEMSTATS
-	while (ksp->ks_inuse >= ksp->ks_limit) {
+	while (ksp->ks_memuse >= ksp->ks_limit) {
 		if (flags & M_NOWAIT) {
 			splx(s);
 			return (0);
@@ -125,8 +125,8 @@ out:
 	kbp->kb_calls++;
 	ksp->ks_inuse++;
 	ksp->ks_calls++;
-	if (ksp->ks_inuse > ksp->ks_maxused)
-		ksp->ks_maxused = ksp->ks_inuse;
+	if (ksp->ks_memuse > ksp->ks_maxused)
+		ksp->ks_maxused = ksp->ks_memuse;
 #else
 out:
 #endif
@@ -144,7 +144,7 @@ free(addr, type)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
-	long alloc, s;
+	long alloc, size, s;
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 #endif
@@ -152,7 +152,8 @@ free(addr, type)
 	kup = btokup(addr);
 	kbp = &bucket[kup->ku_indx];
 	s = splimp();
-	if (1 << kup->ku_indx > MAXALLOCSAVE) {
+	size = 1 << kup->ku_indx;
+	if (size > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
 		(void) memfree(&kmempt[alloc], kup->ku_pagecnt, 0);
 		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc + CLSIZE);
@@ -161,10 +162,12 @@ free(addr, type)
 			wantkmemmap = 0;
 		}
 #ifdef KMEMSTATS
-		ksp->ks_memuse -= kup->ku_pagecnt << PGSHIFT;
+		size = kup->ku_pagecnt << PGSHIFT;
+		ksp->ks_memuse -= size;
 		kup->ku_indx = 0;
 		kup->ku_pagecnt = 0;
-		if (ksp->ks_inuse == ksp->ks_limit)
+		if (ksp->ks_memuse + size >= ksp->ks_limit &&
+		    ksp->ks_memuse < ksp->ks_limit)
 			wakeup((caddr_t)ksp);
 		ksp->ks_inuse--;
 		kbp->kb_total -= 1;
@@ -180,10 +183,11 @@ free(addr, type)
 		else if (kbp->kb_totalfree > kbp->kb_highwat)
 			kbp->kb_couldfree++;
 	kbp->kb_totalfree++;
-	if (ksp->ks_inuse == ksp->ks_limit)
+	ksp->ks_memuse -= size;
+	if (ksp->ks_memuse + size >= ksp->ks_limit &&
+	    ksp->ks_memuse < ksp->ks_limit)
 		wakeup((caddr_t)ksp);
 	ksp->ks_inuse--;
-	ksp->ks_memuse -= 1 << kup->ku_indx;
 #endif
 	*(caddr_t *)addr = kbp->kb_next;
 	kbp->kb_next = addr;
