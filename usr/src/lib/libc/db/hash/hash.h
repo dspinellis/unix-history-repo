@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hash.h	5.3 (Berkeley) %G%
+ *	@(#)hash.h	5.4 (Berkeley) %G%
  */
 
 /* Operations */
@@ -21,7 +21,7 @@ struct _bufhead {
     BUFHEAD	*prev;		/* LRU links */
     BUFHEAD	*next;		/* LRU links */
     BUFHEAD	*ovfl;		/* Overflow page buffer header */
-    int		addr;		/* Address of this page */
+    u_int	 addr;		/* Address of this page */
     char	*page;		/* Actual page data */
     char	flags;	
 #define	BUF_MOD		0x0001
@@ -74,7 +74,6 @@ typedef struct htab {	/* Memory resident data structure */
 	int save_file;	/* Indicates whether we need to flush file at exit */
 	u_long *mapp[NCACHED];	/* Pointers to page maps */
 	int nmaps;	/* Initial number of bitmaps */
-	int exmaps;	/* Number of extra allocated bitmaps */
 	int nbufs;	/* Number of buffers left to allocate */
 	BUFHEAD	bufhead; /* Header of buffer lru list */
 	SEGMENT	 *dir;	/* Hash Bucket directory */
@@ -135,7 +134,7 @@ typedef struct htab {	/* Memory resident data structure */
 #define SPLITMASK	0x7FF
 #define SPLITNUM(N)	(((unsigned)N) >> SPLITSHIFT)
 #define OPAGENUM(N)	(N & SPLITMASK)
-#define	OADDR_OF(S,O)	((S << SPLITSHIFT) + O)
+#define	OADDR_OF(S,O)	((unsigned)((unsigned)S << SPLITSHIFT) + O)
 
 #define BUCKET_TO_PAGE(B) \
 	B + hashp->HDRPAGES + (B ? hashp->SPARES[__log2(B+1)-1] : 0)
