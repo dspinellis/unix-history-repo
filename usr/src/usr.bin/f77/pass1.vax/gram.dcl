@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.dcl	5.5 (Berkeley) %G%
+ *	@(#)gram.dcl	5.1.1.1 (Berkeley) %G%
  */
 
 /*
