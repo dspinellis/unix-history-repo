@@ -130,21 +130,8 @@ drawvert(start, end, c, lwid){
 		if(epb)
 			printf("\\v'%dp'", epb);
 		printf("\\s\\n(%d", LSIZE);
-		if(linsize)
-			printf("\\v'-\\n(%dp/6u'", LSIZE);
- 		/*
-		 * adjustment for T450 nroff boxes
-		 *
-		 * Changed by JNA, the register #~ will contain in general
-		 * the device dependency adjustment for vertical lines
-		 */
-		printf("\\h'-\\n(#~u'");
-		/*
-		 * Extra corrections for double lines
-		 * Works OK on the HARRIS, probably needed for all devices
-		 */
-		if(device == HARRIS && ln == 1)
-			printf("\\h'-\\n(#~u'");
+		printf("\\v'-\\n(%dp/6u'", LSIZE);
+		printf("\\h'-\\n(#~n/100u'");
 		
 		printf("\\L'|\\n(#%cu-%s",
 			linestop[start] + 'a' -1, vm == 'v' ? "1v" : "\\n(35u");
@@ -155,19 +142,20 @@ drawvert(start, end, c, lwid){
 		pos = ept - epb;
 		if(pos)
 			printf("%s%dp", pos >= 0 ? "+" : "", pos);
+		printf("'");
 		/*
 		 * the string #d is either "nl" or ".d" depending on diversions;
 	   	 * on GCOS not the same
 		 */
-		printf("'\\s0\\v'\\n(\\*(#du-\\n(#%cu+%s",
+		printf("\\h'-\\n(#~n/100u'");
+		printf("\\s0\\v'\\n(\\*(#du-\\n(#%cu+%s",
 			linestop[start] + 'a' -1, vm == 'v' ? "1v" : "\\n(35u");
 		if(ext)
 			printf("+%s", ext);
 		if(ept)
 			printf("%s%dp", (-ept) > 0 ? "+" : "", (-ept));
 		printf("'");
-		if(linsize)
-			printf("\\v'\\n(%dp/6u'", LSIZE);
+		printf("\\v'\\n(%dp/6u'", LSIZE);
 	}
 }
 

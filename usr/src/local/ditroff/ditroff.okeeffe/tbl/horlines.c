@@ -145,9 +145,7 @@ drawline(i, cl, cr, lintype, noheight, shortl)
 		} else
 			printf("\\h'|\\n(%du'", reg(cl, CLEFT));
 		printf("\\s\\n(%d", LSIZE);
-		if(linsize)
-			printf("\\v'-\\n(%dp/6u'", LSIZE);
-		printf("\\v'-\\n(#|u'");
+		printf("\\v'-\\n(#|n/100u'");
 		if(shortl)
 			printf("\\l'|\\n(%du'", reg(cr, CRIGHT));
 		else {
@@ -161,9 +159,7 @@ drawline(i, cl, cr, lintype, noheight, shortl)
 						reg(cr, CRIGHT),
 						reg(cr + 1, CLEFT), exhr, lnch);
 		}
-		if(linsize)
-			printf("\\v'\\n(%dp/6u'", LSIZE);
-		printf("\\v'\\n(#|u'");
+		printf("\\v'\\n(#|n/100u'");
 		printf("\\s0");
 	}
 	if(oldpos != 0)
