@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	8.4 (Berkeley) %G%
+ *	@(#)specdev.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -85,12 +85,12 @@ int	spec_fsync __P((struct  vop_fsync_args *));
 #define spec_abortop ((int (*) __P((struct  vop_abortop_args *)))spec_badop)
 #define spec_inactive ((int (*) __P((struct  vop_inactive_args *)))nullop)
 #define spec_reclaim ((int (*) __P((struct  vop_reclaim_args *)))nullop)
-int	spec_lock __P((struct vop_lock_args *));
-int	spec_unlock __P((struct vop_unlock_args *));
+#define spec_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
+#define spec_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
 int	spec_bmap __P((struct vop_bmap_args *));
 int	spec_strategy __P((struct vop_strategy_args *));
 int	spec_print __P((struct vop_print_args *));
-#define spec_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define spec_islocked ((int(*) __P((struct vop_islocked_args *)))vop_noislocked)
 int	spec_pathconf __P((struct vop_pathconf_args *));
 int	spec_advlock __P((struct vop_advlock_args *));
 #define spec_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))spec_badop)
