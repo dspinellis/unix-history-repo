@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sysline.1	5.1 (Berkeley) %G%
+.\"	@(#)sysline.1	6.1 (Berkeley) %G%
 .\"
-.TH SYSLINE 1 "3 August 1983"
+.TH SYSLINE 1 ""
 .UC 5
 .SH NAME
 sysline \- display system status on status line of a terminal
 .SH SYNOPSIS
 .B sysline
 [
-.B \-bcdehDilmpqrsj
+.B \-bcdewhDilmpqrsj
 ] [
 .B \-H\ remote
 ] [
@@ -66,10 +66,15 @@ useful for putting the output of
 .I sysline
 onto the mode line of an emacs window.
 .TP
+.B \-w
+Window mode -- print the status on the current line of the terminal,
+suitable for use inside a one line window.
+.TP
 .B \-H remote
 Print the load average on the remote host \fIremote\fP [VAX only].
 If the host is down, or is not sending out \fIrwhod\fP packets, then
-the down time is printed instead.
+the down time is printed instead.  If the prefix "ucb" is present,
+then it is removed.
 .TP
 .B \-h
 Print out the host machine's name after the time [VAX only].
