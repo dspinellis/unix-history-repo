@@ -1,4 +1,4 @@
-/*	if_en.c	4.47	82/03/31	*/
+/*	if_en.c	4.48	82/04/01	*/
 
 #include "en.h"
 #include "imp.h"
@@ -119,7 +119,7 @@ COUNT(ENATTACH);
 	if_attach(&es->es_if);
 #if NIMP == 0
 	/* here's one for you john baby.... */
-	enlhinit(&es->es_if, (ui->ui_flags &~ 0xff) | 0x0a);
+	enlhinit((ui->ui_flags &~ 0xff) | 0x0a);
 #endif
 }
 
