@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.12 83/09/14";
+static	char *sccsid = "@(#)cmd2.c	3.13 83/11/02";
 #endif
 
 #include "defs.h"
@@ -50,6 +50,7 @@ dohelp()
 	closewin(w);
 }
 
+#ifndef O_4_1A
 dotime(flag)
 {
 	register struct ww *w;
@@ -118,6 +119,7 @@ register struct timeval *t;
 		t->tv_sec, t->tv_usec / 10000);
 	return buf;
 }
+#endif
 
 dostat()
 {

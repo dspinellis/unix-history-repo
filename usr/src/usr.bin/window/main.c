@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.12 83/09/19";
+static	char *sccsid = "@(#)main.c	3.13 83/11/02";
 #endif
 
 #include "defs.h"
@@ -17,6 +17,7 @@ char **argv;
 	char fflag = 0;
 	char dflag = 0;
 	char xflag = 0;
+#ifndef O_4_1A
 	int wwchild();
 	char *rindex();
 	char *getenv();
@@ -59,6 +60,7 @@ char **argv;
 		shellname++;
 	else
 		shellname = shell;
+#ifndef O_4_1A
 	gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
 		fflush(stdout);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwsuspend.c	3.2 83/08/15";
+static	char *sccsid = "@(#)wwsuspend.c	3.3 83/11/02";
 #endif
 
 #include "ww.h"
@@ -7,10 +7,9 @@ static	char *sccsid = "@(#)wwsuspend.c	3.2 83/08/15";
 #include <signal.h>
 
 #define mask(s)	(1<<(SIG/**/s-1))
-
 wwsuspend()
 {
-	int oldmask;
+	int (*oldsig)();
 
 	oldmask = sigblock(mask(TSTP));
 	wwend();
