@@ -1,7 +1,7 @@
 # Count the number of buffers in the buffer cache for which
 # bp->b_flags & $bufcount_match is non-0.
 #
-#	@(#)bdump	7.2 (Berkeley) %G%
+#	@(#)bdump	8.1 (Berkeley) %G%
 
 set $bufcount_match=0x020000
 define bufcount
