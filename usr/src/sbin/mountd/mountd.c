@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.11 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -746,6 +746,7 @@ get_exportlist()
 				    if (get_host(hst, grp)) {
 					syslog(LOG_ERR, "Bad netgroup %s", cp);
 					getexp_err(ep, tgrp);
+					endnetgrent();
 					goto nextline;
 				    }
 				} else if (get_host(cp, grp)) {
@@ -1251,7 +1252,7 @@ get_host(cp, grp)
 		if (isdigit(*cp)) {
 			saddr = inet_addr(cp);
 			if (saddr == -1) {
-				syslog(LOG_ERR, "Inet_addr failed");
+				syslog(LOG_ERR, "Inet_addr failed for %s", cp);
 				return (1);
 			}
 			if ((hp = gethostbyaddr((caddr_t)&saddr, sizeof (saddr),
@@ -1265,7 +1266,7 @@ get_host(cp, grp)
 				aptr[1] = (char *)NULL;
 			}
 		} else {
-			syslog(LOG_ERR, "Gethostbyname failed");
+			syslog(LOG_ERR, "Gethostbyname failed for %s", cp);
 			return (1);
 		}
 	}
