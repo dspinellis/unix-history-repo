@@ -1,4 +1,4 @@
-/*	tty.c	3.3	%H%	*/
+/*	tty.c	3.4	%H%	*/
 
 /*
  * general TTY subroutines
@@ -83,14 +83,13 @@ register struct tty *tp;
 	if(pp->p_pgrp == 0) {
 		u.u_ttyp = tp;
 		u.u_ttyd = dev;
-		if (tp->t_pgrp==0)
-			tp->t_pgrp = pp->p_pid;
+		tp->t_pgrp = pp->p_pid;
 		pp->p_pgrp = tp->t_pgrp;
 	}
 	tp->t_state &= ~WOPEN;
 	tp->t_state |= ISOPEN;
+	tp->t_line = 0;		/* conservative */
 }
-
 
 /*
  * set default control characters.
@@ -98,6 +97,7 @@ register struct tty *tp;
 ttychars(tp)
 register struct tty *tp;
 {
+
 	tun.t_intrc = CINTR;
 	tun.t_quitc = CQUIT;
 	tun.t_startc = CSTART;
@@ -106,6 +106,19 @@ register struct tty *tp;
 	tun.t_brkc = CBRK;
 	tp->t_erase = CERASE;
 	tp->t_kill = CKILL;
+/* begin local */
+	tlun.t_suspc = 0377;
+	tlun.t_dstopc = 0377;
+	tlun.t_rprntc = CTRL(r);
+	tlun.t_flushc = CTRL(o);
+	tlun.t_werasc = CTRL(w);
+	tlun.t_lnextc = CTRL(v);
+	tlun.t_lintr = CTRL(c);
+	tlun.t_lerase = CTRL(h);
+	tlun.t_lkill = CTRL(u);
+	tp->t_local = 0;
+	tp->t_lstate = 0;
+/* end local */
 }
 
 /*
@@ -118,6 +131,7 @@ register struct tty *tp;
 	tp->t_pgrp = 0;
 	wflushtty(tp);
 	tp->t_state = 0;
+	tp->t_line = 0;
 }
 
 /*
@@ -180,7 +194,15 @@ ioctl()
 	ip = fp->f_inode;
 	fmt = ip->i_mode & IFMT;
 	if (fmt != IFCHR && fmt != IFMPC) {
-		u.u_error = ENOTTY;
+/* begin local */
+		if (uap->cmd==FIONREAD && (fmt == IFREG || fmt == IFDIR)) {
+			off_t nread = ip->i_size - fp->f_un.f_offset;
+
+			if (copyout((caddr_t)&nread, uap->cmarg, sizeof(off_t)))
+				u.u_error = EFAULT;
+		} else
+/* end local */
+			u.u_error = ENOTTY;
 		return;
 	}
 	dev = ip->i_un.i_rdev;
@@ -196,9 +218,8 @@ register struct tty *tp;
 caddr_t addr;
 {
 	unsigned t;
-	struct ttiocb iocb;
+	struct sgttyb iocb;
 	extern int nldisp;
-	register s;
 
 	switch(com) {
 
@@ -223,14 +244,14 @@ caddr_t addr;
 			u.u_error = ENXIO;
 			break;
 		}
-		s = spl5();
+		(void) spl5();
 		if (tp->t_line)
 			(*linesw[tp->t_line].l_close)(tp);
 		if (t)
 			(*linesw[t].l_open)(dev, tp, addr);
 		if (u.u_error==0)
 			tp->t_line = t;
-		splx(s);
+		(void) spl0();
 		break;
 
 	/*
@@ -248,34 +269,61 @@ caddr_t addr;
 	 * Set new parameters
 	 */
 	case TIOCSETP:
-		wflushtty(tp);
-	case TIOCSETN:
+	case TIOCSETN: {
+		struct clist tq;
+		register c;
+
 		if (copyin(addr, (caddr_t)&iocb, sizeof(iocb))) {
 			u.u_error = EFAULT;
 			return(1);
 		}
 		(void) spl5();
-		while (canon(tp)>=0) 
-			;
-		if ((tp->t_state&SPEEDS)==0) {
-			tp->t_ispeed = iocb.ioc_ispeed;
-			tp->t_ospeed = iocb.ioc_ospeed;
+		if (tp->t_line == 0) {
+			if (com == TIOCSETP)
+				wflushtty(tp);
+			while (canon(tp)>=0) 
+				;
+		} else if (tp->t_line == NTTYDISC) {
+			if (tp->t_flags&RAW || iocb.sg_flags&RAW ||
+			    com == TIOCSETP)
+				wflushtty(tp);
+			else if ((tp->t_flags&CBREAK) != (iocb.sg_flags&CBREAK)) {
+				if (iocb.sg_flags & CBREAK) {
+					catq(&tp->t_rawq, &tp->t_canq);
+					tq = tp->t_rawq;
+					tp->t_rawq = tp->t_canq;
+					tp->t_canq = tq;
+				} else {
+					tp->t_local |= LPENDIN;
+					if (tp->t_canq.c_cc)
+						panic("ioccom canq");
+					if (tp->t_chan)
+						(void) sdata(tp->t_chan);
+					else
+						wakeup((caddr_t)&tp->t_rawq);
+				}
+			}
 		}
-		tp->t_erase = iocb.ioc_erase;
-		tp->t_kill = iocb.ioc_kill;
-		tp->t_flags = iocb.ioc_flags;
+		if ((tp->t_state&SPEEDS)==0) {
+			tp->t_ispeed = iocb.sg_ispeed;
+			tp->t_ospeed = iocb.sg_ospeed;
+		}
+		tp->t_erase = iocb.sg_erase;
+		tp->t_kill = iocb.sg_kill;
+		tp->t_flags = iocb.sg_flags;
 		(void) spl0();
 		break;
+		}
 
 	/*
 	 * send current parameters to user
 	 */
 	case TIOCGETP:
-		iocb.ioc_ispeed = tp->t_ispeed;
-		iocb.ioc_ospeed = tp->t_ospeed;
-		iocb.ioc_erase = tp->t_erase;
-		iocb.ioc_kill = tp->t_kill;
-		iocb.ioc_flags = tp->t_flags;
+		iocb.sg_ispeed = tp->t_ispeed;
+		iocb.sg_ospeed = tp->t_ospeed;
+		iocb.sg_erase = tp->t_erase;
+		iocb.sg_kill = tp->t_kill;
+		iocb.sg_flags = tp->t_flags;
 		if (copyout((caddr_t)&iocb, addr, sizeof(iocb)))
 			u.u_error = EFAULT;
 		break;
@@ -305,15 +353,69 @@ caddr_t addr;
 	 * set and fetch special characters
 	 */
 	case TIOCSETC:
-		if (copyin(addr, (caddr_t)&tun, sizeof(struct tc)))
+		if (copyin(addr, (caddr_t)&tun, sizeof(struct tchars)))
 			u.u_error = EFAULT;
 		break;
 
 	case TIOCGETC:
-		if (copyout((caddr_t)&tun, addr, sizeof(struct tc)))
+		if (copyout((caddr_t)&tun, addr, sizeof(struct tchars)))
 			u.u_error = EFAULT;
 		break;
 
+/* local ioctls */
+	case TIOCSLTC:
+		if (copyin(addr, (caddr_t)&tlun, sizeof (struct ltchars)))
+			u.u_error = EFAULT;
+		break;
+
+	case TIOCGLTC:
+		if (copyout((caddr_t)&tlun, addr, sizeof (struct ltchars)))
+			u.u_error = EFAULT;
+		break;
+
+	case FIONREAD: {
+		off_t nread = tp->t_canq.c_cc;
+
+		if (tp->t_flags & (RAW|CBREAK))
+			nread += tp->t_rawq.c_cc;
+		if (copyout((caddr_t)&nread, addr, sizeof (off_t)))
+			u.u_error = EFAULT;
+		break;
+		}
+
+	/*
+	 * Should allow SPGRP and GPGRP only if tty open for reading.
+	 */
+	case TIOCSPGRP:
+		tp->t_pgrp = (int)addr;
+		break;
+
+	case TIOCGPGRP:
+		if (copyout((caddr_t)&tp->t_pgrp, addr, sizeof(tp->t_pgrp)))
+			u.u_error = EFAULT;
+		break;
+
+	/*
+	 * Modify local mode word.
+	 */
+	case TIOCLBIS:
+		tp->t_local |= (int)addr;
+		break;
+
+	case TIOCLBIC:
+		tp->t_local &= ~(int)addr;
+		break;
+
+	case TIOCLSET:
+		tp->t_local = (int)addr;
+		break;
+
+	case TIOCLGET:
+		if (copyout((caddr_t)&tp->t_local, addr, sizeof(tp->t_local)))
+			u.u_error = EFAULT;
+		break;
+
+/* end of locals */
 	default:
 		return(0);
 	}
@@ -357,6 +459,8 @@ register struct tty *tp;
 	while (getc(&tp->t_rawq) >= 0)
 		;
 	tp->t_delct = 0;
+	tp->t_rocount = 0;		/* local */
+	tp->t_lstate = 0;	/* reset */
 	splx(s);
 }
 
@@ -502,7 +606,7 @@ register struct tty *tp;
 			if (tp->t_chan)
 				scontrol(tp->t_chan, M_SIG, c);
 			else
-				signal(tp->t_pgrp, c);
+				gsignal(tp->t_pgrp, c);
 			return;
 		}
 		if (c=='\r' && t_flags&CRMOD)
@@ -815,8 +919,6 @@ register struct tty *tp;
 			tp->t_col+=ce;
 			cp+=ce;
 			cc-=ce;
-			if (i == 0)
-				continue;
 check:
 			if (tp->t_outq.c_cc > TTHIWAT) {
 				(void) spl5();
