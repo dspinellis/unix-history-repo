@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c	4.3 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -52,8 +52,7 @@ struct	tchars tc = {
 	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
 };
 struct	ltchars ltc = {
-	CTRL(z), CTRL(y), CTRL(r), CTRL(o), CTRL(w), CTRL(v), CTRL(h), CTRL(u),
-	CTRL(c)
+	CTRL(z), CTRL(y), CTRL(r), CTRL(o), CTRL(w), CTRL(v)
 };
 
 main(argc, argv)
