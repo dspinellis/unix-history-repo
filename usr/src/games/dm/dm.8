@@ -18,7 +18,7 @@ of the regulated games.  The actual binaries for these games should be
 placed in a ``hidden'' directory, \fI/usr/games/hide\fP, that may only be
 accessed by the \fIdm\fP program.  \fIDm\fP determines if the requested
 game is available and, if so, runs it.  The file \fI/usr/games/dm.config\fP
-controls the times when games may be run.
+controls the conditions under which games may be run.
 .PP
 The file \fI/usr/games/nogames\fP may be used to ``turn off'' game
 playing.  If the file exists, no game playing is allowed; the contents
@@ -32,9 +32,11 @@ of the file will be displayed to any user requesting a game.
 .SH SEE ALSO
 dm.config(5)
 .SH BUGS
-Since \fIdm\fP must run the games setuid ``games'', it is very important
-that all games allowing users to run UNIX commands carefully set both
-the real and effective user id's immediately before executing those commands.
-It is possibly more important that \fIdm\fP never be setuid anything
-except ``games'' so that compromising a game will result only in the user's
-ability to play games at will.
+Two problems result from \fIdm\fP running the games setuid ``games''.
+First, all games that allow users to run UNIX commands should carefully
+set both the real and effective user id's immediately before executing
+those commands.  Probably more important is that \fIdm\fP never be setuid
+anything but ``games'' so that compromising a game will result only in
+the user's ability to play games at will.  Secondly, games which previously
+had no reason to run setuid and which accessed user files may have to
+be modified.
