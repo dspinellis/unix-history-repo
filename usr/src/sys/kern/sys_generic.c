@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.30 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -94,7 +94,7 @@ readv(p, uap, retval)
 	register struct filedesc *fdp = p->p_fd;
 	struct uio auio;
 	register struct iovec *iov;
-	struct iovec *saveiov;
+	struct iovec *needfree;
 	struct iovec aiov[UIO_SMALLIOV];
 	long i, cnt, error = 0;
 	unsigned iovlen;
@@ -112,9 +112,11 @@ readv(p, uap, retval)
 		if (uap->iovcnt > UIO_MAXIOV)
 			return (EINVAL);
 		MALLOC(iov, struct iovec *, iovlen, M_IOV, M_WAITOK);
-		saveiov = iov;
-	} else
+		needfree = iov;
+	} else {
 		iov = aiov;
+		needfree = NULL;
+	}
 	auio.uio_iov = iov;
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_READ;
@@ -160,8 +162,8 @@ readv(p, uap, retval)
 #endif
 	*retval = cnt;
 done:
-	if (uap->iovcnt > UIO_SMALLIOV)
-		FREE(saveiov, M_IOV);
+	if (needfree)
+		FREE(needfree, M_IOV);
 	return (error);
 }
 
@@ -239,7 +241,7 @@ writev(p, uap, retval)
 	register struct filedesc *fdp = p->p_fd;
 	struct uio auio;
 	register struct iovec *iov;
-	struct iovec *saveiov;
+	struct iovec *needfree;
 	struct iovec aiov[UIO_SMALLIOV];
 	long i, cnt, error = 0;
 	unsigned iovlen;
@@ -257,9 +259,11 @@ writev(p, uap, retval)
 		if (uap->iovcnt > UIO_MAXIOV)
 			return (EINVAL);
 		MALLOC(iov, struct iovec *, iovlen, M_IOV, M_WAITOK);
-		saveiov = iov;
-	} else
+		needfree = iov;
+	} else {
 		iov = aiov;
+		needfree = NULL;
+	}
 	auio.uio_iov = iov;
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_WRITE;
@@ -308,8 +312,8 @@ writev(p, uap, retval)
 #endif
 	*retval = cnt;
 done:
-	if (uap->iovcnt > UIO_SMALLIOV)
-		FREE(saveiov, M_IOV);
+	if (needfree)
+		FREE(needfree, M_IOV);
 	return (error);
 }
 
@@ -547,42 +551,29 @@ selscan(p, ibits, obits, nfd, retval)
 	int nfd, *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
-	register int which, i, j;
+	register int msk, i, j, fd;
 	register fd_mask bits;
-	int flag;
 	struct file *fp;
-	int error = 0, n = 0;
+	int n = 0;
+	static int flag[3] = { FREAD, FWRITE, 0 };
 
-	for (which = 0; which < 3; which++) {
-		switch (which) {
-
-		case 0:
-			flag = FREAD; break;
-
-		case 1:
-			flag = FWRITE; break;
-
-		case 2:
-			flag = 0; break;
-		}
+	for (msk = 0; msk < 3; msk++) {
 		for (i = 0; i < nfd; i += NFDBITS) {
-			bits = ibits[which].fds_bits[i/NFDBITS];
-			while ((j = ffs(bits)) && i + --j < nfd) {
+			bits = ibits[msk].fds_bits[i/NFDBITS];
+			while ((j = ffs(bits)) && (fd = i + --j) < nfd) {
 				bits &= ~(1 << j);
-				fp = fdp->fd_ofiles[i + j];
-				if (fp == NULL) {
-					error = EBADF;
-					break;
-				}
-				if ((*fp->f_ops->fo_select)(fp, flag, p)) {
-					FD_SET(i + j, &obits[which]);
+				fp = fdp->fd_ofiles[fd];
+				if (fp == NULL)
+					return (EBADF);
+				if ((*fp->f_ops->fo_select)(fp, flag[msk], p)) {
+					FD_SET(fd, &obits[msk]);
 					n++;
 				}
 			}
 		}
 	}
 	*retval = n;
-	return (error);
+	return (0);
 }
 
 /*ARGSUSED*/
