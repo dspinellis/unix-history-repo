@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_syscalls.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1113,7 +1113,7 @@ maknode(mode, ndp)
 	ip->i_nlink = 1;
 	ip->i_uid = u.u_uid;
 	ip->i_gid = pdir->i_gid;
-	if (ip->i_mode & ISGID && !groupmember(ip->i_gid))
+	if (ip->i_mode & ISGID && !groupmember(ip->i_gid) && !suser())
 		ip->i_mode &= ~ISGID;
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);
