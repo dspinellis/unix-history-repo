@@ -1,4 +1,4 @@
-/*	conf.c	6.1	83/07/29	*/
+/*	conf.c	6.2	84/07/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,7 +62,7 @@ int	tmioctl(),tmdump(),tmreset();
 #define	tmwrite		nodev
 #define	tmioctl		nodev
 #define	tmdump		nodev
-#define	tmreset		nodev
+#define	tmreset		nulldev
 #endif
 
 #include "ts.h"
@@ -77,7 +77,7 @@ int	tsioctl(),tsdump(),tsreset();
 #define	tswrite		nodev
 #define	tsioctl		nodev
 #define	tsdump		nodev
-#define	tsreset		nodev
+#define	tsreset		nulldev
 #endif
 
 #include "mu.h"
@@ -406,7 +406,7 @@ int	ikopen(),ikclose(),ikread(),ikwrite(),ikioctl(),ikreset();
 #define ikread nodev
 #define ikwrite nodev
 #define ikioctl nodev
-#define ikreset nodev
+#define ikreset nulldev
 #endif
 
 #include "ps.h"
@@ -419,7 +419,7 @@ int	psopen(),psclose(),psread(),pswrite(),psioctl(),psreset();
 #define pswrite nodev
 #define psopen nodev
 #define psioctl nodev
-#define psreset nodev
+#define psreset nulldev
 #endif
 
 #include "ib.h"
@@ -440,8 +440,10 @@ int	adopen(),adclose(),adioctl(),adreset();
 #define adopen nodev
 #define adclose nodev
 #define adioctl nodev
-#define adreset nodev
+#define adreset nulldev
 #endif
+
+int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	ttselect(), seltrue();
 
@@ -508,10 +510,10 @@ struct cdevsw	cdevsw[] =
 	mtioctl,	nodev,		nodev,		0,
 	seltrue,	nodev,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
-	ptyioctl,	ptsstop,	nodev,		pt_tty,
+	ptyioctl,	ptsstop,	nulldev,	pt_tty,
 	ttselect,	nodev,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
-	ptyioctl,	nulldev,	nodev,		pt_tty,
+	ptyioctl,	nulldev,	nulldev,	pt_tty,
 	ptcselect,	nodev,
 	dmfopen,	dmfclose,	dmfread,	dmfwrite,	/*22*/
 	dmfioctl,	dmfstop,	dmfreset,	dmf_tty,
@@ -520,11 +522,11 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		idcreset,	0,
 	seltrue,	nodev,
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
-	nodev,		nodev,		nodev,		0,
+	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 /* 25-29 reserved to local sites */
 	gpibopen,	gpibclose,	gpibread,	gpibwrite,	/*25*/
-	gpibioctl,	nulldev,	nodev,		0,
+	gpibioctl,	nulldev,	nulldev,	0,
 	seltrue,	nodev,
 	lpaopen,	lpaclose,	lparead,	lpawrite,	/*26*/
 	lpaioctl,	nodev,		nulldev,	0,
@@ -533,7 +535,7 @@ struct cdevsw	cdevsw[] =
 	psioctl,	nodev,		psreset,	0,
 	seltrue,	nodev,
 	ibopen,		ibclose,	ibread,		ibwrite,	/*28*/
-	ibioctl,	nodev,		nodev,		0,
+	ibioctl,	nodev,		nulldev,	0,
 	seltrue,	nodev,
 	adopen,		adclose,	nodev,		nodev,		/*29*/
 	adioctl,	nodev,		adreset,	0,
@@ -547,6 +549,9 @@ struct cdevsw	cdevsw[] =
 	rlopen,		nodev,		rlread,		rlwrite,	/* 32 */
 	nodev,		nodev,		rlreset,	0,
 	seltrue,	nodev,
+	logopen,	logclose,	logread,	nodev,		/* 33 */
+	logioctl,	nodev,		nulldev,	0,
+	logselect,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
