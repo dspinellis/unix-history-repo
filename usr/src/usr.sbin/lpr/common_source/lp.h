@@ -1,4 +1,4 @@
-/*	lp.h	4.5	83/06/29	*/
+/*	lp.h	4.6	83/07/01	*/
 /*
  * Global definitions for the line printer system.
  */
@@ -14,7 +14,7 @@
 #include <netdb.h>
 #include <pwd.h>
 #include <signal.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <sgtty.h>
 #include <ctype.h>
 #include <errno.h>
