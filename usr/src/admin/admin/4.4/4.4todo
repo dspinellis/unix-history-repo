@@ -1,4 +1,4 @@
-#	@(#)4.4todo	5.5 (Berkeley) %G%
+#	@(#)4.4todo	5.6 (Berkeley) %G%
 
 Target for alpha tape release: May 31.
 Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
@@ -8,6 +8,7 @@ NFS update			Kirk		1	1 week	07 Feb	done
 32-bit uid/gid			Kirk		1	2 day	11 Feb
 64-bit file sizes		Kirk		2	3 day	14 Feb
 32-bit dev			Kirk		3	1 week	21 Feb
+Symlinks (sys calls & utils)	Kirk/TK		4
 VM				Kirk
 	Merged buffer pool
 	kern_exec.c
@@ -18,15 +19,15 @@ Getloadinfo			Kirk/TK
 Getsysinfo/uname		Kirk/TK
 Pathconf			Kirk
 
-Block size in environment	TK		1	1 day	06 Feb
-Generate man page info/printout	TK		2	1 day	01 Mar
-Vi				TK		3	1 mo	16 Mar
-LFS				TK		4	1 mo	13 Apr
-Mpool(3) interface		TK		5	2 wk	27 Apr
-Bug list pass			TK/Marc		6	2 wk	04 May
-ANSI C compatibility		TK/Chris	7	1 wk	18 May
-make				TK		8	2 wk	31 May
-subr_rmap.c			TK		9
+Block size in environment	TK		1	1 day
+Generate man page info/printout	TK		2	1 day
+Vi				TK		3	1 mo
+LFS				TK		4	1 mo
+Mpool(3) interface		TK		5	2 wk
+Bug list pass			TK/Marc		6	2 wk
+ANSI C compatibility		TK/Chris	7	1 wk
+make				TK		8	2 wk
+subr_rmap.c			TK		9	1 wk
 
 Routed update			Keith
 
