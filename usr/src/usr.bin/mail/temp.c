@@ -8,7 +8,7 @@
  * Give names to all the temporary files that we will need.
  */
 
-static char *SccsId = "@(#)temp.c	2.1 %G%";
+static char *SccsId = "@(#)temp.c	2.2 %G%";
 
 char	tempMail[14];
 char	tempQuit[14];
@@ -53,7 +53,6 @@ tinit()
 		else
 			copy(uname, myname);
 	}
-	mailname = mailspace;
 	cp = value("HOME");
 	if (cp == NOSTR)
 		cp = ".";
