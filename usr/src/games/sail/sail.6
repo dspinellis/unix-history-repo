@@ -1,4 +1,4 @@
-.. @(#)sail.6	2.3 83/11/18
+.. @(#)sail.6	2.4 85/03/19
 .TH SAIL PUBLIC 
 .UC 4
 .SH NAME
@@ -6,6 +6,12 @@ sail \- multi-user wooden ships and iron men
 .SH SYNOPSIS
 .B sail
 [
+.B \-s
+[
+.B \-l
+] ] [
+.B \-x
+] [
 .B num
 ]
 .br
@@ -31,12 +37,23 @@ In addition to fighting the enemy, he must harness the powers of the wind
 and sea to make them work for him.  The outcome of many battles during the
 age of sail was decided by the ability of one captain to hold the `weather
 gage.'
+.PP
+The flags are:
+.TP
+.B \-s
+Print the names and ships of the top ten sailors.
+.TP
+.B \-l
+Show the login name.  Only effective with \fB-s\fP.
+.TP
+.B \-x
+Play the first available ship instead of prompting for a choice.
 .SH IMPLEMENTATION
 .I Sail
 is really two programs in one.  Each player starts up a process which
 runs his own ship.  In addition, a
 .I driver
-program is execl'd (by the first player) to run the computer ships
+process is forked (by the first player) to run the computer ships
 and take care of global bookkeeping.
 .PP
 Because the
