@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)fio.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -233,7 +233,7 @@ edstop()
 	register struct message *mp;
 	FILE *obuf, *ibuf, *readstat;
 	struct stat statb;
-	char tempname[30], *id;
+	char tempname[30];
 	char *mktemp();
 
 	if (readonly)
@@ -251,6 +251,8 @@ edstop()
 		if (mp->m_flag & (MODIFY|MDELETED|MSTATUS))
 			gotcha++;
 		if (Tflag != NOSTR && (mp->m_flag & (MREAD|MDELETED)) != 0) {
+			char *id;
+
 			if ((id = hfield("article-id", mp)) != NOSTR)
 				fprintf(readstat, "%s\n", id);
 		}
@@ -396,7 +398,7 @@ fsize(iob)
  */
 char *
 expand(name)
-	char name[];
+	register char *name;
 {
 	char xname[BUFSIZ];
 	char cmdbuf[BUFSIZ];
@@ -408,7 +410,7 @@ expand(name)
 
 	switch (*name) {
 	case '%':
-		return cp = savestr(findmail(name[1] ? name + 1 : myname));
+		return savestr(findmail(name[1] ? name + 1 : myname));
 	case '#':
 		if (name[1] != 0)
 			break;
@@ -416,8 +418,7 @@ expand(name)
 			printf("No previous file\n");
 			return NOSTR;
 		}
-		cp = savestr(prevfile);
-		return cp;
+		return savestr(prevfile);
 	case '&':
 		if (name[1] == 0 && (name = value("mbox")) == NOSTR) {
 			sprintf(xname, "%s/mbox", homedir);
@@ -430,10 +431,10 @@ expand(name)
 		name = savestr(xname);
 	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
-		return(name);
+		return name;
 	if (pipe(pivec) < 0) {
 		perror("pipe");
-		return(name);
+		return name;
 	}
 	sprintf(cmdbuf, "echo %s", name);
 	if ((pid = vfork()) == 0) {
@@ -452,7 +453,7 @@ expand(name)
 		perror("fork");
 		close(pivec[0]);
 		close(pivec[1]);
-		return(NOSTR);
+		return NOSTR;
 	}
 	close(pivec[1]);
 	l = read(pivec[0], xname, BUFSIZ);
@@ -461,32 +462,29 @@ expand(name)
 		;
 	if (s.w_status != 0 && s.w_termsig != SIGPIPE) {
 		fprintf(stderr, "\"Echo\" failed\n");
-		goto err;
+		return NOSTR;
 	}
 	if (l < 0) {
 		perror("read");
-		goto err;
+		return NOSTR;
 	}
 	if (l == 0) {
 		fprintf(stderr, "\"%s\": No match\n", name);
-		goto err;
+		return NOSTR;
 	}
 	if (l == BUFSIZ) {
 		fprintf(stderr, "Buffer overflow expanding \"%s\"\n", name);
-		goto err;
+		return NOSTR;
 	}
 	xname[l] = 0;
 	for (cp = &xname[l-1]; *cp == '\n' && cp > xname; cp--)
 		;
-	*++cp = '\0';
+	cp[1] = '\0';
 	if (any(' ', xname) && stat(xname, &sbuf) < 0) {
 		fprintf(stderr, "\"%s\": Ambiguous\n", name);
-		goto err;
+		return NOSTR;
 	}
-	return(savestr(xname));
-
-err:
-	return(NOSTR);
+	return savestr(xname);
 }
 
 /*

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)quit.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -38,7 +38,6 @@ quit()
 	register int c;
 	extern char tempQuit[], tempResid[];
 	struct stat minfo;
-	char *id;
 	char *mbox;
 
 	/*
@@ -122,18 +121,17 @@ quit()
 		if (mp->m_flag & MODIFY)
 			modify++;
 		if (Tflag != NOSTR && (mp->m_flag & (MREAD|MDELETED)) != 0) {
-			id = hfield("article-id", mp);
-			if (id != NOSTR)
+			char *id;
+
+			if ((id = hfield("article-id", mp)) != NOSTR)
 				fprintf(readstat, "%s\n", id);
 		}
 	}
 	if (Tflag != NOSTR)
 		fclose(readstat);
 	if (p == msgCount && !modify && !anystat) {
-		if (p == 1)
-			printf("Held 1 message in %s\n", mailname);
-		else
-			printf("Held %2d messages in %s\n", p, mailname);
+		printf("Held %d message%s in %s\n",
+			p, p == 1 ? "" : "s", mailname);
 		fclose(fbuf);
 		return;
 	}

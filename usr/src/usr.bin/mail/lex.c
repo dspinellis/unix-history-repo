@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)lex.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.13 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -572,13 +572,10 @@ stop(s)
  * give the message count, and print a header listing.
  */
 
-announce(pr)
+announce()
 {
 	int vec[2], mdot;
-	extern char *version;
 
-	if (pr && value("quiet") == NOSTR)
-		printf( "Mail version %s.  Type ? for help.\n", version);
 	mdot = newfileinfo();
 	vec[0] = mdot;
 	vec[1] = 0;
