@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)touch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)touch.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -107,7 +107,7 @@ main(argc, argv)
 			if (!cflag) {
 				/* Create the file. */
 				fd = open(*argv,
-				    O_WRONLY | O_CREAT | O_TRUNC, DEFFILEMODE);
+				    O_WRONLY | O_CREAT, DEFFILEMODE);
 				if (fd == -1 || fstat(fd, &sb) || close(fd)) {
 					rval = 1;
 					warn("%s", *argv);
