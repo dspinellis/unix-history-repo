@@ -1,4 +1,4 @@
-/*	if_imphost.c	6.1	83/07/29	*/
+/*	if_imphost.c	6.2	84/08/29	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -10,14 +10,14 @@
  * from the IMP protocol code (if_imp.c), or
  * interlocks with the code at splimp.
  */
-#include "../h/param.h"
-#include "../h/mbuf.h"
+#include "param.h"
+#include "mbuf.h"
 
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 
-#include "../netimp/if_imp.h"
-#include "../netimp/if_imphost.h"
+#include "if_imp.h"
+#include "if_imphost.h"
 
 /*
  * Head of host table hash chains.

@@ -1,4 +1,4 @@
-/*	if_imp.c	6.1	83/07/29	*/
+/*	if_imp.c	6.2	84/08/29	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -12,17 +12,17 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/errno.h"
-#include "../h/ioctl.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
+#include "time.h"
+#include "kernel.h"
+#include "errno.h"
+#include "ioctl.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -38,8 +38,8 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 /* define IMPLEADERS here to get leader printing code */
-#include "../netimp/if_imp.h"
-#include "../netimp/if_imphost.h"
+#include "if_imp.h"
+#include "if_imphost.h"
 
 /*
  * IMP software status per interface.
