@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -151,13 +151,15 @@ addrouteforif(ifp)
 		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
 		dst = (struct sockaddr *)&net;
 	}
+	rt = rtlookup(dst);
+	if (rt && equal(&ifp->int_addr, &rt->rt_router))
+		return;
 	if (ifp->int_transitions++ > 0)
 		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
-	rt = rtlookup(dst);
-	rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 	if (rt)
 		rtdelete(rt);
+	rtadd(dst, &ifp->int_addr, ifp->int_metric,
+		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 }
 
 /*
