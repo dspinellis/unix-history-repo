@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.43 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.44 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.43 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.44 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -639,7 +639,7 @@ smtp(e)
 			if (vrfy)
 				e->e_flags |= EF_VRFYONLY;
 			while (*p != '\0' && isascii(*p) && isspace(*p))
-				*p++;
+				p++;
 			if (*p == '\0')
 			{
 				message("501 Argument required");
