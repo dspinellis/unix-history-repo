@@ -1,4 +1,4 @@
-/*	machdep.c	1.14	87/06/06	*/
+/*	machdep.c	1.15	87/06/30	*/
 
 #include "param.h"
 #include "systm.h"
@@ -429,6 +429,7 @@ boot(arghowto)
 	register long dummy;		/* r12 is reserved */
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
+	extern char *panicstr;
 
 	howto = arghowto;
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -441,7 +442,8 @@ boot(arghowto)
 		/*
 		 * Release inodes held by texts before update.
 		 */
-		xumount(NODEV);
+		if (panicstr == 0)
+			xumount(NODEV);
 		update();
 
 		for (iter = 0; iter < 20; iter++) {
