@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.21 (Berkeley) %G%
+#	@(#)Makefile.inc	5.22 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -128,6 +128,7 @@ MLINKS+=mount.2 unmount.2
 MLINKS+=read.2 readv.2
 MLINKS+=recv.2 recvfrom.2 recv.2 recvmsg.2
 MLINKS+=send.2 sendmsg.2 send.2 sendto.2
+MLINKS+=setuid.2 setegid.2 setuid.2 seteuid.2 setuid.2 setgid.2
 MLINKS+=stat.2 fstat.2 stat.2 lstat.2
 MLINKS+=statfs.2 fstatfs.2
 MLINKS+=truncate.2 ftruncate.2
