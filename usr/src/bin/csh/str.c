@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -303,23 +303,24 @@ s_strncmp(str1, str2, n)
     if (n == 0)
 	return (0);
     do {
-        if (*str1 == '\0' || *str1 != *str2)
+	if (*str1 != *str2) {
+	    /*
+	     * The following case analysis is necessary so that characters 
+	     * which look negative collate low against normal characters
+	     * but high against the end-of-string NUL.
+	     */
+	    if (*str1 == '\0')
+		return (-1);
+	    else if (*str2 == '\0')
+		return (1);
+	    else
+		return (*str1 - *str2);
 	    break;
+	}
+        if (*str1 == '\0')
+	    return(0);
 	str1++, str2++;
     } while (--n != 0);
-    /*
-     * The following case analysis is necessary so that characters which look
-     * negative collate low against normal characters but high against the
-     * end-of-string NUL.
-     */
-    if (*str1 == '\0' && *str2 == '\0')
-	return (0);
-    else if (*str1 == '\0')
-	return (-1);
-    else if (*str2 == '\0')
-	return (1);
-    else
-	return (*str1 - *str2);
     return(0);
 }
 
