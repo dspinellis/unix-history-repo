@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)halt.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)halt.c	4.5 (Berkeley) %G%";
 /*
  * Halt
  */
@@ -126,6 +126,8 @@ log_entry()
 	time(&now);
 	tm = localtime(&now);
 	fp = fopen(SHUTDOWNLOG, "a");
+	if (fp == NULL)
+		return;
 	fseek(fp, 0L, 2);
 	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Halted.\n", tm->tm_hour,
 		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
