@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.70 (Berkeley) %G%
+ *	@(#)conf.h	8.71 (Berkeley) %G%
  */
 
 /*
@@ -169,7 +169,9 @@
 
 # ifdef SOLARIS
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
-			/* see also __svr4__ defines below */
+#  ifndef __svr4__
+#   define __svr4__		/* use all System V Releae 4 defines below */
+#  endif
 #  include <sys/time.h>
 #  define gethostbyname	solaris_gethostbyname	/* get working version */
 #  define gethostbyaddr	solaris_gethostbyaddr	/* get working version */
