@@ -1,0 +1,98 @@
+Tweaking the PCC to provide 64-bit integers
+-------------------------------------------
+
+A 64-bit integer data type would be nice to have to implement data
+structures such as millisecond time values, multi-gigabyte disk
+addresses and so on.
+
+Since the number of bits in the type field of the compiler type word is
+only 16 and all 16 types are used, it makes sense to pick a type which
+is not useful and overload it for the 64-bit type.  Thus we'll use LONG
+and ULONG types to represent signed and unsigned 64-bit integers
+internally.  Externally we must provide some name other than 'long' for
+the type or else all hell will break loose with standard width
+definitions; it's been suggested that we use 'quad', following its use
+in VAX assembler.  (I suppose a flag could be used to signal the
+compiler that 'long' really should be 64 bits, so we can eventually
+convert existing code to appropriately handle three integer sizes in
+legal C.)
+
+Data structures
+---------------
+
+It's probably simplest to just punt on quad constants for the time
+being.  This would eliminate the only situation in which the compiler's
+own data structures would need to be adjusted to handle 64-bit
+integers.  Once the compiler has been bootstrapped for 64-bit
+variables, 64-bit constants should follow with reasonable ease.
+
+Parameters in header files
+--------------------------
+
+The size and alignment of LONG and ULONG will need to change in
+macdefs.h.  This shouldn't cause any problems (famous last words).
+
+Algorithm changes, file by file
+-------------------------------
+
+cgram.y
+	The production for switch statements may need to change if we
+	want to allow quad type switch expressions.  Do PDP-11
+	compilers permit long switch expressions?  I doubt it...
+pftn.c
+    dclstruct
+	We will probably have to permit quad size enums eventually.
+	Since the plan is to hold off on quad size constants, we can
+	punt for now.
+code.c
+    type_move
+	MOVL must become MOVQ.  Since this code is intended for
+	handling register variables, and we likely won't allow register
+	quads, we don't need to worry too hard about this.
+local.c
+    clocal
+	PCONV and SCONV code may need be changed to know about quads.
+	The SCONV code is primarily concerned with constants (again).
+    cisreg
+	LONG and ULONG will no longer be permitted types for register
+	variables.
+    ctype
+	This routine converts 'unsupported' types into INT; now that
+	LONG and ULONG have a separate meaning from INT, the routine
+	becomes an identity function.
+    tlen
+	LONG and ULONG now have size 2.  Cthulhu knows how much code
+	assumes int types will always fit in 1 register.
+local2.c
+    tlen
+	Same as the first pass tlen.
+    prtype
+	Prints the letter ([blwfd]) which is appended to VAX
+	instructions for operations of a particular type.  We need to
+	add 'q' for LONG and ULONG, although we won't be using prtype
+	very much!
+    zzzcode
+	The tough code generation issues get tougher...  The 'A'
+	conversion code gets considerably more complex.  The 'C' stack
+	count code needs a little adjustment to work from SZINT instead
+	of SZLONG.
+    collapsible
+	Again, conversions are a lot tougher with quads.
+    shumul
+	Pointers and arrays of quads need to be handled right.
+order.c
+    setbin
+    setasop
+	It won't be quite so simple to rewrite quads into register to
+	make a stuck tree work.
+    sucomp
+	We need to take another look at the special case hacking for
+	various flavors of integers.
+stab.c
+    inittypes
+	Add the 'quad' type.  Does dbx know what to do with 64-bit
+	integers?  I sure doubt it.
+table.c
+    Oof.  Here is where the real work is.  We get to use EMUL to
+    calculate 64-bit products (the architecture handbook conveniently
+    provides the algorithm) and other kinds of fun.
