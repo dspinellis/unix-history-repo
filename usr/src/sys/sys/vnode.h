@@ -4,12 +4,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.68 (Berkeley) %G%
+ *	@(#)vnode.h	7.69 (Berkeley) %G%
  */
 
-#ifndef KERNEL
-#include <machine/endian.h>
-#endif
 #include <sys/queue.h>
 
 /*
