@@ -1,0 +1,11 @@
+August 18, 1977
+
+Contents of this directory are as follows:
+
+opc.d		Description of machine opcodes.
+OPnames.h	Opcode data for put.c - comes from opc.d via makeopc.
+opcode.h	Opcode #defines - made from opc.d by makeopc.
+picture		Pretty picture of abstract machine opcodes.
+trdata		Data pertaining to the parse tree.
+tree.h		Tree defines from trdata out of maketrdata.
+TRdata.c	Tree description and printing names of operators.
