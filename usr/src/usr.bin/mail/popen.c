@@ -4,7 +4,7 @@
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.3 %G%";
+static	char	*sccsid = "@(#)popen.c	1.4 %G%";
 
 FILE *
 popen(cmd,mode)
@@ -20,6 +20,7 @@ char	*mode;
 	hisside = tst(p[RDR], p[WTR]);
 	if((pid = vfork()) == 0) {
 		/* myside and hisside reverse roles in child */
+		sigchild();
 		close(myside);
 		dup2(hisside, tst(0, 1));
 		close(hisside);
