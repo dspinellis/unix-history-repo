@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.15 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -280,6 +280,9 @@ vn_stat(vp, sb)
 	case VSOCK:
 		mode |= S_IFSOCK;
 		break;
+	case VFIFO:
+		mode |= S_IFIFO;
+		break;
 	default:
 		return (EBADF);
 	};
@@ -331,6 +334,7 @@ vn_ioctl(fp, com, data)
 	default:
 		return (ENOTTY);
 
+	case VFIFO:
 	case VCHR:
 	case VBLK:
 		u.u_r.r_val1 = 0;
@@ -356,7 +360,8 @@ vn_select(fp, which)
 	struct file *fp;
 	int which;
 {
-	return(VOP_SELECT(((struct vnode *)fp->f_data), which, u.u_cred));
+	return(VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
+		u.u_cred));
 }
 
 /*
