@@ -1,4 +1,4 @@
-.\"	@(#)cron.8	6.3 (Berkeley) %G%
+.\"	@(#)cron.8	6.4 (Berkeley) %G%
 .\"
 .TH CRON 8 ""
 .AT 3
@@ -28,21 +28,49 @@ The
 crontab files
 consist of lines of seven fields each.
 The fields are separated by spaces or tabs.
-The first five are integer patterns to
-specify the
-minute (0-59),
-hour (0-23),
-day of the month (1-31),
-month of the year (1-12),
-and day of the week (1-7 with 1=Monday).
-Each of these patterns may
-contain a number in the range above;
-two numbers separated by
-a minus
-meaning a range inclusive;
+The first five are integer patterns to specify:
+.in +2m
+.TP 2m
+\(bu
+minute (0-59)
+.nr .0 \n()Pu
+.nr )P 0
+.TP 2m
+\(bu
+hour (0-23)
+.TP 2m
+\(bu
+day of the month (1-31)
+.TP 2m
+\(bu
+month of the year (1-12)
+.TP 2m
+\(bu
+day of the week (1-7 with 1 = Monday)
+.nr )P \n(.0u
+.in -2m
+.LP
+Each of these patterns may contain:
+.in +2m
+.TP 2m
+\(bu
+a number in the range above
+.nr .0 \n()Pu
+.nr )P 0
+.TP 2m
+\(bu
+two numbers separated by a minus
+meaning a range inclusive
+.TP 2m
+\(bu
 a list of numbers separated by
-commas meaning any of the numbers;
-or an asterisk meaning all legal values.
+commas meaning any of the numbers
+.TP 2m
+\(bu
+an asterisk meaning all legal values
+.nr )P \n(.0u
+.in -2m
+.LP
 The sixth field is a user name: the
 command will be run ``as'' that user.
 The seventh field consists of all the text
