@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -480,11 +480,21 @@ kernfs_readdir(ap)
 		struct vnode *a_vp;
 		struct uio *a_uio;
 		struct ucred *a_cred;
+		int *a_eofflag;
+		u_long *a_cookies;
+		int a_ncookies;
 	} */ *ap;
 {
 	struct uio *uio = ap->a_uio;
 	int i;
 	int error;
+
+	/*
+	 * We don't allow exporting kernfs mounts, and currently local
+	 * requests do not need cookies.
+	 */
+	if (ap->a_ncookies)
+		panic("kernfs_readdir: not hungry");
 
 	i = uio->uio_offset / UIO_MX;
 	error = 0;
