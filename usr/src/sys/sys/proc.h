@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.6 (Berkeley) %G%
+ *	@(#)proc.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -52,11 +52,15 @@ struct	proc {
 	int	p_sigignore;	/* signals being ignored */
 	int	p_sigcatch;	/* signals being caught by user */
 	int	p_flag;
-	uid_t	p_uid;		/* user id, used to direct tty signals */
+	uid_t	p_uid;		/* effective user id */
+	uid_t	p_ruid;		/* real user id */
+	uid_t	p_svuid;	/* saved effective user id */
+	gid_t	p_rgid;		/* real group id */
+	gid_t	p_svgid;	/* saved effective group id */
 	pid_t	p_pid;		/* unique process id */
 	pid_t	p_ppid;		/* process id of parent */
 	u_short	p_xstat;	/* Exit status for wait */
-	struct	rusage *p_ru;	/* mbuf holding exit information */
+	struct	rusage *p_ru;	/* exit information */
 	short	p_poip;		/* page outs in progress */
 	short	p_szpt;		/* copy of page table size */
 	size_t	p_tsize;	/* size of text (clicks) */
@@ -70,7 +74,7 @@ struct	proc {
 	struct	text *p_textp;	/* pointer to text structure */
 	struct	pte *p_p0br;	/* page table base P0BR */
 	struct	proc *p_xlink;	/* linked list of procs sharing same text */
-	short	p_cpticks;	/* ticks of cpu time */
+	int	p_cpticks;	/* ticks of cpu time */
 	fixpt_t	p_pctcpu;	/* %cpu for this process during p_time */
 	short	p_ndx;		/* proc index for memall (because of vfork) */
 	short	p_idhash;	/* hashed based on p_pid for kill+exit+... */
@@ -137,7 +141,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SKEEP	0x0000100	/* another flag to prevent swap out */
 #define	SOMASK	0x0000200	/* restore old mask after taking signal */
 #define	SWEXIT	0x0000400	/* working on exiting */
-#define	SPHYSIO	0x0000800	/* doing physical i/o (bio.c) */
+#define	SPHYSIO	0x0000800	/* doing physical i/o */
 #define	SVFORK	0x0001000	/* process resulted from vfork() */
 #define	SVFDONE	0x0002000	/* another vfork flag */
 #define	SNOVM	0x0004000	/* no vm, parent in a vfork() */
@@ -145,8 +149,8 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSEQL	0x0010000	/* user warned of sequential vm behavior */
 #define	SUANOM	0x0020000	/* user warned of random vm behavior */
 #define	STIMO	0x0040000	/* timing out during sleep */
-/* was SDETACH */
-#define	SOUSIG	0x0100000	/* using old signal mechanism */
+#define	SNOCLDSTOP 0x0080000	/* no SIGCHLD when children stop */
+/* was SOUSIG	0x0100000	/* using old signal mechanism */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
