@@ -1,6 +1,6 @@
-/* Copyright (c) 1982 Regents of the University of California */
-
-static char sccsid[] = "@(#)gcore.c	4.2	(Berkeley)	%G%";
+#ifndef lint
+static char sccsid[] = "@(#)gcore.c	4.3 (Berkeley) %G%";
+#endif
 
 /*
  * gcore - get core images of running processes
@@ -59,6 +59,10 @@ struct	nlist nl[] = {
 #define	X_NSWAP		3
 	{ "_nproc" },
 #define	X_NPROC		4
+	{ "_dmmin" },
+#define	X_DMMIN		5
+	{ "_dmmax" },
+#define	X_DMMAX		6
 	{ 0 },
 };
 
@@ -79,6 +83,7 @@ union {
 
 int	nproc;
 int	nswap;
+int	dmmin, dmmax;
 struct	pte *Usrptmap, *usrpt;
 char	coref[20];
 int	kmem, mem, swap, cor;
@@ -103,6 +108,8 @@ main(argc, argv)
 	procbase = getw(nl[X_PROC].n_value);
 	nproc = getw(nl[X_NPROC].n_value);
 	nswap = getw(nl[X_NSWAP].n_value);
+	dmmin = getw(nl[X_DMMIN].n_value);
+	dmmax = getw(nl[X_DMMAX].n_value);
 	while (--argc > 0) {
 		if ((pid = atoi(*++argv)) <= 0 || setjmp(cont_frame))
 			continue;
@@ -347,14 +354,14 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	struct dmap *dmp;
 	register struct dblock *dbp;
 {
-	register int blk = DMMIN;
+	register int blk = dmmin;
 	register swblk_t *ip = dmp->dm_map;
 
 	if (vsbase < 0 || vsbase + vssize > dmp->dm_size)
 		panic("can't make sense out of virtual memory (gcore probably needs to be recompiled)");
 	while (vsbase >= blk) {
 		vsbase -= blk;
-		if (blk < DMMAX)
+		if (blk < dmmax)
 			blk *= 2;
 		ip++;
 	}
