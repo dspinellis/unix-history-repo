@@ -8,7 +8,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)mean.awk	5.2 (Berkeley) %G%
+#	@(#)mean.awk	8.1 (Berkeley) %G%
 #
 /^ *[0-9]/	{
 	# print out the average time to each hop along a route.
