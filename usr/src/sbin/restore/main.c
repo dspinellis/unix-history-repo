@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.9	(Berkeley)	83/04/19";
+static char sccsid[] = "@(#)main.c	3.10	(Berkeley)	83/05/15";
 #endif
 
 /*
@@ -355,6 +355,18 @@ loop:
 		}
 		fprintf(stderr, "verbose mode on\n");
 		vflag++;
+		break;
+	/*
+	 * Turn on debugging.
+	 */
+	case 'D':
+		if (dflag) {
+			fprintf(stderr, "debugging mode off\n");
+			dflag = 0;
+			break;
+		}
+		fprintf(stderr, "debugging mode on\n");
+		dflag++;
 		break;
 	/*
 	 * Unknown command.
