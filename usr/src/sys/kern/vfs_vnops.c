@@ -4,20 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.27 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "kernel.h"
 #include "file.h"
 #include "stat.h"
 #include "buf.h"
 #include "proc.h"
-#include "uio.h"
-#include "socket.h"
-#include "socketvar.h"
 #include "mount.h"
 #include "vnode.h"
 #include "ioctl.h"

@@ -4,18 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	7.34 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "proc.h"
 #include "buf.h"
 #include "vnode.h"
 #include "specdev.h"
 #include "mount.h"
 #include "trace.h"
-#include "ucred.h"
+#include "resourcevar.h"
 
 /*
  * Find the block in the buffer pool.
