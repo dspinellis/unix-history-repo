@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)apply.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)apply.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*%cc -s -O %
@@ -48,7 +48,7 @@ main(argc, argv)
 		--argc; ++argv;
 	}
 	if(argc<2){
-		fprintf(stderr, "usage: apply [-14] [-a%] cmd arglist\n");
+		fprintf(stderr, "usage: apply [-#] [-ac] cmd arglist\n");
 		exit(1);
 	}
 	argc -= 2;
