@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.13 (Berkeley) %G%
+ *	@(#)iso.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,7 +48,6 @@ SOFTWARE.
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "user.h"
 #include "errno.h"
 
 #include "../net/if.h"
@@ -438,8 +437,8 @@ iso_control(so, cmd, data, ifp)
 			    SAME_ISOADDR(&ia->ia_addr, &ifra->ifra_addr))
 				break;
 		}
-		if (error = suser(u.u_cred, &u.u_acflag))
-			return (error);
+		if ((so->so_state & SS_PRIV) == 0)
+			return (EPERM);
 		if (ifp == 0)
 			panic("iso_control");
 		if (ia == (struct iso_ifaddr *)0) {
@@ -478,7 +477,7 @@ iso_control(so, cmd, data, ifp)
 #define cmdbyte(x)	(((x) >> 8) & 0xff)
 	default:
 		if (cmdbyte(cmd) == 'a')
-			return (snpac_ioctl(cmd, data));
+			return (snpac_ioctl(so, cmd, data));
 		if (ia == (struct iso_ifaddr *)0)
 			return (EADDRNOTAVAIL);
 		break;
