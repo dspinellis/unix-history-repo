@@ -34,9 +34,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00007
+ * CURRENT PATCH LEVEL:         2       00026
  * --------------------         -----   ----------------------
  *
+ * 27 Nov 92	Bruce Evans		Fixed access()
  * 20 Aug 92	David Greenman		Fixed incorrect setting of B_AGE after
  *					each read to improve cache performance
  */
@@ -201,7 +202,7 @@ ufs_access(vp, mode, cred, p)
 found:
 		;
 	}
-	if ((ip->i_mode & mode) != 0)
+	if ((ip->i_mode & mode) == mode)
 		return (0);
 	return (EACCES);
 }
