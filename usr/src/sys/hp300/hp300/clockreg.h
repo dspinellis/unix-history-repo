@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clockreg.h 1.14 91/01/18$
  *
- *	@(#)clockreg.h	7.3 (Berkeley) %G%
+ *	@(#)clockreg.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -65,10 +65,6 @@ struct clkreg {
 #define CLK_RESOLUTION	4	/* 4 usec resolution (250Khz) */
 #define	CLK_INTERVAL	2500	/* 10msec interval at 250KHz */
 /* #define CLK_INTERVAL	5000	/* 20msec interval at 250Khz */
-
-#ifndef PRF_INTERVAL
-#define PRF_INTERVAL    CLK_INTERVAL
-#endif
 
 /*
  * HP300 battery-backed clock
