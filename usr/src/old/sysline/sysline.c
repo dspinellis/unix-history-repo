@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1185,10 +1185,13 @@ initterm()
 	columns = tgetnum("co") - 1;
 	if (window) {
 		strcpy(to_status_line, "\r");
-		strcpy(from_status_line, "");
 		cp = dis_status_line;	/* use the clear line sequence */
 		*cp++ = '\r';
 		tgetstr("ce", &cp);
+		if (leftline)
+			strcpy(from_status_line, dis_status_line + 1);
+		else
+			strcpy(from_status_line, "");
 	} else {
 		cp = to_status_line;
 		tgetstr("ts", &cp);
