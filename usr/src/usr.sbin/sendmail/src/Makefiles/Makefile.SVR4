@@ -9,7 +9,7 @@
 #	<kim@grendel.lut.fi> -- I haven't tested this myself.  It may
 #	work on other SVR4 ports.
 #
-#	@(#)Makefile.SVR4	8.5 (Berkeley) %G%
+#	@(#)Makefile.SVR4	8.6 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -113,3 +113,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -7,7 +7,7 @@
 #
 #  This has been tested on Altos System V.
 #
-#	@(#)Makefile.Altos	8.2 (Berkeley) %G%
+#	@(#)Makefile.Altos	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -104,3 +104,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -11,7 +11,7 @@
 #  Makefile is likely to require a lot of customization.  Read it over
 #  carefully before proceeding.
 #
-#	@(#)Makefile.Linux	8.12 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.13 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -120,3 +120,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

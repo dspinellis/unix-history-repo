@@ -8,7 +8,7 @@
 #  This has been tested on HP-UX 10.x.  Changes for 10.0 contributed
 #  by John Beck of Hewlett-Packard.
 #
-#	@(#)Makefile.HP-UX.10	8.4 (Berkeley) %G%
+#	@(#)Makefile.HP-UX.10	8.5 (Berkeley) %G%
 #
 
 # if running the unbundled compiler, uncomment the following
@@ -110,3 +110,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -11,7 +11,7 @@
 #	instead.  I compiled it with gcc 1.40a.  The -lseq is to pick
 #	up getopt.''
 #
-#	@(#)Makefile.Dynix	8.5 (Berkeley) %G%
+#	@(#)Makefile.Dynix	8.6 (Berkeley) %G%
 #
 
 CC= gcc
@@ -113,3 +113,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -7,7 +7,7 @@
 #
 #  This has been tested on NEXTSTEP 3.3.
 #
-#	@(#)Makefile.NEXTSTEP	8.1 (Berkeley) %G%
+#	@(#)Makefile.NEXTSTEP	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -123,3 +123,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

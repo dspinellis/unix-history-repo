@@ -7,7 +7,7 @@
 #
 #  This has been tested on Solaris 2.5.
 #
-#	@(#)Makefile.SunOS.5.5	8.2 (Berkeley) %G%
+#	@(#)Makefile.SunOS.5.5	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -118,3 +118,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

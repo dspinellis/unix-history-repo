@@ -7,7 +7,7 @@
 #
 #  This has been tested on NEWS-OS 6.0.3
 #
-#	@(#)Makefile.NEWS-OS.6.x	8.2 (Berkeley) %G%
+#	@(#)Makefile.NEWS-OS.6.x	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -129,3 +129,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -8,7 +8,7 @@
 #	NCR 3000 support from Kevin Darcy <kevin@tech.mis.cfc.com>
 #		and Tom Moore <tmoore@fievel.DaytonOH.NCR.COM>.
 #
-#	@(#)Makefile.NCR3000	8.9 (Berkeley) %G%
+#	@(#)Makefile.NCR3000	8.10 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -109,3 +109,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

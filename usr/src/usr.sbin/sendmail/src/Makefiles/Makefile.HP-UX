@@ -8,7 +8,7 @@
 #  This has been tested on HP-UX 9.05 on 7xx series and HP-UX 9.04
 #  on 8xx series.
 #
-#	@(#)Makefile.HP-UX	8.11 (Berkeley) %G%
+#	@(#)Makefile.HP-UX	8.12 (Berkeley) %G%
 #
 
 # if running the unbundled compiler, uncomment the following
@@ -110,3 +110,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

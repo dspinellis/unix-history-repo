@@ -7,7 +7,7 @@
 #
 #	UnixWare 1.1 Makefile from John Warburton <jwarb@SACBH.com.au>.
 #
-#	@(#)Makefile.UNIX_SV.4.x.i386	8.3 (Berkeley) %G%
+#	@(#)Makefile.UNIX_SV.4.x.i386	8.4 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -111,3 +111,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -8,7 +8,7 @@
 #
 #  --Paul Southworth <pauls@cic.net>
 #
-#	@(#)Makefile.CLIX	8.3 (Berkeley) %G%
+#	@(#)Makefile.CLIX	8.4 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -115,3 +115,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -8,7 +8,7 @@
 #  By Janet Jackson <janet@dialix.oz.au> 1994-11-24
 #	This has been tested on (uname -a output) uts bsuts systemV 2.1.5 5890
 #
-#	@(#)Makefile.uts.systemV	8.3 (Berkeley) %G%
+#	@(#)Makefile.uts.systemV	8.4 (Berkeley) %G%
 #
 
 #  Sendmail 8 on UTS requires BIND 4.9's include files and lib44bsd and
@@ -185,3 +185,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:
