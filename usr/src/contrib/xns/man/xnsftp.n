@@ -1,0 +1,602 @@
+.TH XNSFTP 1 Cornell
+.\" $Header: xnsftp.n,v 1.5 87/04/01 13:56:53 ed Exp $
+.UC 4
+.SH NAME
+xnsftp \- file transfer program
+.SH SYNOPSIS
+.B ftp
+[ 
+.B \-v
+] [
+.B \-d
+] [
+.B \-i
+] [
+.B \-g
+] [
+.B \-F
+] [
+.B "\-c commands"
+] [
+.B host
+]
+.SH DESCRIPTION
+.I Xnsftp
+is a user interface to the XNS Courier FilingSubset and Filing protocols.
+The program allows a user to transfer files to and from a
+remote network site running FilingSubset (version 1) or Filing (version 4) 
+server software, typically a Xerox file server.
+.PP
+The server host with which 
+.I xnsftp
+is to communicate may be specified on the command line.
+If this is done,
+.I xnsftp
+will immediately attempt to establish a connection to a Filing
+server on that host; otherwise, 
+.I xnsftp
+will enter its command interpreter and await instructions
+from the user.  When 
+.I xnsftp
+is awaiting commands from the user the prompt \*(lqxnsftp>\*(rq
+is provided the user.  The following commands are recognized
+by
+.IR xnsftp :
+.TP
+.B \&!
+Invoke a shell on the local machine.
+.TP
+\fBarchive\fP \fIremote-file\fP [ \fIlocal-file\fP ]
+Serialize the file named in \fIremote-file\fP into \fIlocal-file\fP on the
+local host. If \fIremote-file\fP is a directory, then the directory and all
+descendants will be serialized. The serialized data format will maintain
+both contents and attributes for the file and descendants. Useful for 
+\*(lqarchiving\*(rq remote directories.
+.TP
+\fBappend\fP \fIlocal-file\fP [ \fIremote-file\fP ]
+Not yet implemented!
+Append a local file to a file on the remote machine.
+If
+.I remote-file
+is left unspecified, the local file name is used in naming the
+remote file.  File transfer uses the current setting
+.IR type .
+.TP
+.B ascii
+Set the file transfer 
+.I type
+to network ASCII.  This type is appropriate for
+transferring 7-bit ascii text files.
+Files stored using this transfer type are given the Filing attribute
+tText.
+.TP
+.B bell
+Arrange that a bell be sounded after each file transfer
+command is completed.
+.TP
+.B binary
+Set the file transfer
+.I type
+to support binary image transfer.
+This is the appropriate type for transferring 8-bit binary data, e.g. Interlisp
+DCOM files or XDE BCD files.
+Files stored using this transfer type are given the Filing type attribute
+tUnspecified.
+.TP
+.B bye
+Terminate the FTP session with the remote server
+and exit
+.IR xnsftp .
+.TP
+.BI cd " remote-directory"
+Change the working directory on the remote machine
+to 
+.IR remote-directory .
+.TP
+.B close
+Terminate the FTP session with the remote server, and
+return to the command interpreter.
+.TP
+\fBcopy\fP [ \fIfrom\fP ] [ \fIto\fP ]
+Copy the file \fIfrom\fP to the file \fIto\fP on the remote machine. If \fIfrom\fP
+is a directory, a copy of the directory and its contents will be made. If \fIto\fP
+specifies a file, the resulting copy will have that name. If \fIto\fP
+is a directory, a copy with the same name as the original will be made in 
+the directory specified by \fIto\fP.
+.I Copy 
+will not implicitly create directories; therefore, any directories specified
+in \fIto\fP must already exist.
+The \fIcopy\fP command is not available when the session is using the 
+FilingSubset protocol.
+.TP
+.BI delete " remote-file"
+Delete the file
+.I remote-file
+on the remote machine.
+If the remote file is a directory a confirmation will be required.
+.TP
+\fBdebug\fP [ \fIdebug-value\fP ]
+Toggle debugging mode.  If an optional
+.I debug-value
+is specified it is used to set the debugging level.
+.TP
+\fBdir\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
+Print a listing of the directory contents in the
+directory,
+.IR remote-directory ,
+and, optionally, place the output in
+.IR local-file .
+If no directory is specified, the current working
+directory on the remote machine is used.  If no local
+file is specified, output comes to the terminal.
+.TP
+\fBget\fP \fIremote-file\fP [ \fIlocal-file\fP ]
+Retrieve the 
+.I remote-file
+and store it on the local machine.  If the local
+file name is not specified, it is given the same
+name it has on the remote machine.
+The current setting for 
+.I type
+is used while transferring the file.
+.TP
+.B guess
+Determine the type of the file being transferred either by examining the
+contents (\fIput\fP) or by querying the remote service (\fIget\fP). This
+type will then be used for determining if a conversion of content should
+occur during file transfer and also specify the file type to be retained on
+the service, during a \fIput\fP. This is the default type and is appropriate
+for most file transfers. A file type may be forced to be of a given type by
+using one of the
+.IR ascii ,
+.I binary 
+or
+.I type
+commands. A \fIput\fP command can currently distinguish between
+.IR ascii , 
+.IR binary ,
+.I interpress
+and 
+.IR vpcanvas (res)
+file types. [\fINote\fP: the file type used may impose a translation
+of contents during transfer, see \fIFILE TRANSFER PARAMETERS\fP].
+.TP
+\fBhash\fP
+Toggle hash-sign (``#'') printing for each data block
+transferred.  Data blocks vary depending on implementation, but
+are typically 534 bytes long.
+.TP
+.B glob
+Toggle file name globbing.  With file name globbing enabled,
+each local file or pathname is processed for 
+.IR csh (1)
+metacharacters.  These characters include ``*?[]~{}''.
+Remote files specified in mutliple item commands, e.g.
+.IR mput ,
+are globbed by the remote server.  With globbing disabled
+all files and pathnames are treated literally.
+.TP
+\fBhelp\fP [ \fIcommand\fP ]
+Print an informative message about the meaning of
+.IR command .
+If no argument is given, 
+.I xnsftp
+prints a list of the known commands.
+.TP
+\fBlcd\fP [ \fIdirectory\fP ]
+Change the working directory on the local machine.  If
+no 
+.I directory
+is specified, the user's home directory is used.
+.TP
+\fBls\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
+Print an abbreviated listing (containing remote path names) of the contents of a
+directory on the remote machine.  If
+.I remote-directory
+is left unspecified, the current working directory
+is used.  If no local file is specified, the output
+is sent to the terminal.
+.TP
+\fBmdelete\fP \fIremote-files\fP
+Delete the specified files on the remote machine.  If globbing
+is enabled, the specification of remote files will first be
+expanded using
+.IR ls .
+.TP
+\fBmdir\fP \fIremote-files\fP \fIlocal-file\fP
+Obtain a directory listing of multiple files on the remote
+machine and place the result in
+.IR local-file .
+.TP
+\fBmget\fP \fIremote-files\fP
+Retrieve the specified files from the remote machine and
+place them in the current local directory.  If globbing
+is enabled, the specification of remote files will first be
+expanding using
+.IR ls .
+The local file names will be identical with the name attribute of
+the remote file names i.e. with the last component of the remote pathname.
+.TP
+\fBmkdir\fP \fIdirectory-name\fP
+Make a directory on the remote machine.
+.TP
+\fBmls\fP \fIremote-files\fP \fIlocal-file\fP
+Obtain an abbreviated listing of multiple files on the remote
+machine and place the result in
+.IR local-file .
+.TP
+\fBmove\fP [ \fIfrom\fP ] [ \fIto\fP ]
+Move the file \fIfrom\fP
+to the file \fIto\fP on the remote machine. If \fIfrom\fP
+is a directory, the directory and its contents will be moved. If \fIto\fP
+specifies a file, the file will be renamed during the move. If \fIto\fP
+is a directory, the resulting file will have the same name as the original.
+.I move 
+will not implicitly create directories; therefore, any directories specified
+in \fIto\fP must already exist.
+The \fImove\fP command is not available when the session is using the 
+FilingSubset protocol.
+.TP
+\fBmput\fP \fIlocal-files\fP
+Transfer multiple local files from the current local directory
+to the current working directory on the remote machine.
+.TP
+\fBopen\fP [\fB-F\fP] \fIhost\fP [ \fIport\fP ]
+Establish a Courier connection to the specified
+.I host
+Filing server.
+Note that
+.I host
+must be the Clearinghouse name of a Filing server, e.g. 
+\*(lqcornellfs1:computer\ science:cornell-univ\*(rq; if the domain
+and organization components of the name are not specified, they default
+to the local domain and organization.
+Unless auto-login has been disabled,
+.I Xnsftp
+will also attempt to automatically log the user in to
+the Filing server (see \*(lquser\*(rq below). The \fB-F\fP option allows the
+Filing Protocol to be used instead of the FilingSubset protocol when logging 
+onto the service.
+.TP
+.B prompt
+Toggle interactive prompting.  Interactive prompting
+occurs during multiple file transfers to allow the
+user to selectively retrieve or store files.  If
+prompting is turned off (default), any
+.I mget
+or
+.I mput
+will transfer all files.
+.TP
+\fBput\fP \fIlocal-file\fP [ \fIremote-file\fP ]
+Store a local file on the remote machine.  If 
+.I remote-file
+is left unspecified, the local file name is used
+in naming the remote file.  File transfer uses the
+current setting for
+.IR type .
+.TP
+.B pwd
+Print the name of the current working directory on the remote
+machine.
+.TP
+.B quit
+A synonym for bye.
+.TP
+\fBrename\fP [ \fIfrom\fP ] [ \fIto\fP ]
+Rename the file \fIfrom\fP on the remote machine, to the file  \fIto\fP.
+If \fIto\fP includes a directory specification, the action taken will
+be identical to the \fImove\fP command. If no directory specification is
+given, then \fIto\fP will be created in the same directory as \fIfrom\fP.
+.I Rename 
+will not implicitly create directories; therefore, any directories specified
+in \fIto\fP must already exist.
+The \fIrename\fP command is not available when the session is using the 
+FilingSubset protocol.
+.TP
+\fBrestore\fP \fIlocal-file\fP [ \fIremote-file\fP ]
+Deserialize the file named in \fIrlocal-file\fP into \fIremote-file\fP on the
+remote service. If the contents of \fIlocal-file\fP includes a directory,
+then the directory and all
+descendants will be deserialized. The serialized data format will maintain
+both contents and attributes for the file and descendants. Used in 
+conjunction with \fIarchive\fP..
+.TP
+.BI rmdir " directory-name"
+Delete a directory on the remote machine.
+.TP
+\fBsend\fP \fIlocal-file\fP [ \fIremote-file\fP ]
+A synonym for put.
+.TP
+.B status
+Show the current status of
+.IR xnsftp .
+.TP
+.B trace
+Toggle packet tracing.
+.TP
+\fBtype\fP [ \fItype-name\fP ]
+Set the file transfer
+.I type
+to
+.IR type-name .
+If no type is specified, the current type
+is printed.  The default type is \*(lq\fIguess\fP\*(rq, where xnsftp will
+attempt to determine the type from the file being transferred.
+.I "Type-name"
+may specify one of the following file types
+.IR ascii , 
+.IR binary , 
+.IR guess ,
+.IR viewpoint "(Viewpoint document),"
+.IR interpress ,
+.IR vpcanvas "(res),"
+.IR vpdictionary ,
+.IR vpmailnote , 
+.IR vpreference , 
+.IR serialized (tSerialized)
+or
+.IR value ,
+a decimal number which is the numeric value for the type of the file 
+(i.e., 7 for tAsciiText). [\fINote\fP: the Viewpoint file types
+.IR viewpoint , 
+.IR vpdictionary ,
+.I vpmailnote
+and 
+.I vpreference 
+will only set the type attribute
+of the file. Their use does not guarantee interoperability with Viewpoint at
+this time since essential file attributes are not maintained when the file is
+transferred to a Unix system.]
+.TP
+\fBunify\fP \fIdirectory\fP
+Unify the access lists for \fIdirectory\fP and all descendants.
+.TP
+\fBuser\fP \fIuser-name\fP [ \fIpassword\fP ]
+Identify yourself to the remote Filing server.  If the
+password is not specified,
+.I xnsftp
+will prompt the user for it (after disabling local echo).
+Unless
+.I xnsftp
+is invoked with \*(lqauto-login\*(rq disabled, this
+process is done automatically on initial connection to
+the Filing server.
+The user name should be a standard XNS Clearinghouse name or alias, e.g.
+\*(lqj.q.\ johnson:computer\ science:cornell-univ\*(rq; if the domain
+and organization components of the name are not specified, they default
+to the local domain and organization.
+.PP
+If \*(lqauto-login\*(rq is used, credentials are determined either from
+the environment variables XNSNAME and XNSPASSWD or, if not defined, by
+prompting the user.
+.TP
+.B verbose
+Toggle verbose mode.  In verbose mode, all responses from
+the Filing server are displayed to the user.  In addition,
+if verbose is on, when a file transfer completes, statistics
+regarding the efficiency of the transfer are reported.  By default,
+verbose is on.
+.TP
+\fBwhatis\fP \fIlocal-file\fP
+Make an educated guess as to the type of the file identified by 
+\fIlocal-file\fP by examining the contents of the file. 
+This is the determined type which would be used if the
+.I guess
+type is in effect when transferring the file to the file service. If the user
+wishes to transfer the file as a different type, the appropriate
+.IR ascii ,
+.I binary
+or
+.I type
+command should be used prior to transferring the file. 
+.TP
+\fB?\fP [ \fIcommand\fP ]
+A synonym for help.
+.PP
+Command arguments which have embedded spaces may be quoted with
+quote (") marks.
+.PP
+.SH "FILE NAMING CONVENTIONS"
+Files specified as arguments to
+.I xnsftp
+commands are processed according to the following rules.
+.TP
+1)
+If the file name \*(lq\-\*(rq is specified, the
+.B stdin
+(for reading) or
+.B stdout
+(for writing) is used.
+.TP
+2)
+If the first character of the file name is \*(lq|\*(rq, the
+remainder of the argument is interpreted as a shell command.
+.I Xnsftp
+then forks a shell, using 
+.IR popen (3)
+with the argument supplied, and reads (writes) from the stdout
+(stdin).  If the shell command includes spaces, the argument
+must be quoted; e.g. \*(lq"| ls -lt"\*(rq.  A particularly
+useful example of this mechanism is: \*(lqdir |more\*(rq.
+.TP
+3)
+Failing the above checks, if ``globbing'' is enabled, 
+local file names are expanded
+according to the rules used in the 
+.IR csh (1);
+c.f. the 
+.I glob
+command. 
+.TP
+4)
+Remote file names whose first character is \*(lq/\*(rq (slash) are interpreted
+as absolute pathnames.  Other remote file names are interpreted as pathnames
+relative to the current connected directory.
+.SH "FILE TRANSFER PARAMETERS"
+A \fItype\fP attribute is maintained by the service once a file is stored and
+may be determined by listing the file via the \fIdir\fP command.
+.I Xnsftp
+allows the type of file being transferred to be determined from the content
+of the file (\fIput\fP), from the file service (\fIget\fP) or explicitly
+overridden by the user (\fIascii\fP, \fIbinary\fP or \fItype\fP).
+.PP
+By default, 
+.I xnsftp
+will attempt the discern the type of the local file when storing a file
+on a remote service. Currently, the types
+.IR ascii ,
+.IR binary ,
+.I interpress 
+and
+.IR vpcanvas "(res)"
+can be determined by examining the contents of the file. A user can override 
+this \*(lqguessed\*(rq type or set a type explicitly through the use of the
+.IR ascii ,
+.I binary 
+or
+.I type
+commands. The
+.I type
+command allows specification of several common Filing and Viewpoint defined
+file types (\fIascii\fP(tText),
+.IR binary "(tUnspecified),"
+.IR serialized "(tSerialized),"
+.IR viewpoint "(Viewpoint document),"
+.IR interpress ,
+.IR vpcanvas "(res),"
+.IR vpdictionary ,
+.IR vpmailnote or
+.IR vpreference )
+as well as specification of a decimal value for file types not included in 
+this list.
+.PP
+When retrieving files from a remote service, the file type is not retained
+locally. However,
+.I xnsftp
+may query the service for the file type, since it may affect the actual
+file transfer. Once again, the user may override the type with one of the
+above type-setting commands.
+.PP
+For some file types it is appropriate to convert the file between
+\*(lqnetwork format\*(rq and Unix standard format; therefore the \fItype\fP 
+of a file being transferred may directly affect the transfer of
+the contents of that file to or from a remote service.
+In particular, it is generally appropriate to use
+the following translation when transferring files of type \fIascii\fP or
+\fIvpmailnote\fP: Unix EOL characters
+(\\n) are translated to and from Xerox EOL characters (\\r), Xerox left
+arrow characters are translated to underscore, etc. All other values for
+.I type
+imply no translation will take place during file transfer. For files of the
+types supported by
+.I xnsftp, the default transfer type of \fIguess\fP will perform the
+correct translation. Specification of a parameter other than \fIguess\fP on
+the \fItype\fP command can be used to force or inhibit a translation as
+necessary.
+.PP
+Although several Viewpoint related types are indeed allowed on the \fItype\fP
+command, use of these files within Viewpoint is not guaranteed since essential
+attributes expected by Viewpoint are not maintained when a file is transferred
+to a Unix system with
+.IR xnsftp .
+.SH OPTIONS
+Options may be specified at the command line, or to the 
+command interpreter.
+.PP
+The
+.B \-v
+(verbose on) option forces
+.I xnsftp
+to show all responses from the remote server, as well
+as report on data transfer statistics.
+.PP
+The
+.B \-n
+option restrains 
+.I xnsftp
+from attempting \*(lqauto-login\*(rq upon initial connection.
+.PP
+The
+.B \-i
+option turns off interactive prompting during
+mutliple file transfers.
+.PP
+The
+.B \-d
+option enables debugging.
+.PP
+The
+.B \-g
+option disables file name globbing.
+.PP
+The
+.B \-c
+option allows a list of commands to be passed directly to \fIxnsftp\fP. The 
+list is a sequence of commands separated by semi-colons (;). If a semi-colon
+follows the last command in the list, \fIxnsftp\fP will enter prompt mode
+following the execution of the command sequence. This provides a simple
+command-line interface to \fIxnsftp\fP for use by other programs. For example,
+to list all files in the directory \*(lqpublic\*(rq on FS1, the following 
+command could be used:
+.nf
+	xnsftp -c "dir /public/*" FS1
+.fi
+.PP
+The
+.B \-F
+option allows the Filing Protocol to be used instead of the FilingSubset 
+Protocol. This allows 
+.I xnsftp
+to be used with existing Xerox file services and enables use of the
+.IR copy ,
+.I move
+and
+.I rename
+commands.
+.SH NOTES
+.I Xnsftp
+will attempt to use the FilingSubset Protocol when establishing a session 
+with a remote file service. To assure compatibility with Xerox file servers
+which are currently running Filing Protocol (version 4),
+.I xnsftp 
+will attempt to use Filing when the intended service rejects the FilingSubset
+connection. If the connection is established under this request, the use of
+Filing will be identical to that of the FilingSubset and therefore transparent
+to the user (with the exception of the
+.IR copy ,
+.I move 
+and
+.I rename
+commands which are not available in a FilingSubset session).
+.PP
+The
+.B \-F 
+switch may be used to override the use of the FilingSubset Protocol and 
+attempt the connection with Filing directly.
+.SH BUGS
+Append is not yet implemented.
+.PP
+Many interesting features of the Filing protocol, e.g.
+remote searches using the Find RPC, are not supported.
+Also, only version 4 of Filing is supported.
+.PP
+Serialization and deserialization is supported to the extent that the stream
+is read from or written to a single local file. At this time, there is no
+convenient way to recreate the structure of a serialized stream locally or
+to serialize a local directory for transfer to a remote service.
+.PP
+There may be pathological cases where
+.I xnsftp
+may not determine the correct type of the file when the \fIguess\fP type is 
+in effect. In addition, most but not all files of type tUnspecified should be
+transferred in binary mode when retrieved from a service. In these cases,
+the \fItype\fP command may need to be used to guarantee
+the correct file transfer mode.
+.PP
+Aborting a file
+transfer does not work right; if one attempts this the connection to
+the remote server will likely have to be reopened.
+.PP
+The Filing defined type of tAsciiText format is not implemented yet.
+
