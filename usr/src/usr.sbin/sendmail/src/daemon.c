@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.19 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.20 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.19 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.20 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -895,8 +895,8 @@ anynet_ntoa(sap)
 	{
 #ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
 	  case AF_UNIX:
-	  	if (sap->sun.sun_path[0] != '\0')
-	  		sprintf(buf, "[UNIX: %.64s]", sap->sun.sun_path);
+	  	if (sap->sunix.sun_path[0] != '\0')
+	  		sprintf(buf, "[UNIX: %.64s]", sap->sunix.sun_path);
 	  	else
 	  		sprintf(buf, "[UNIX: localhost]");
 		return buf;
