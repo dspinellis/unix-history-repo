@@ -1,0 +1,101 @@
+statement too long
+syntax error in type statement
+redeclaration
+missing ( in array declarator
+syntax error in dimension statement
+inappropriate or gratuitous array declarator
+syntax error in subscript bound
+illegal character
+common variable is a parameter or already in common
+common syntax error
+subroutine/blockdata/function not first statement
+subroutine/function syntax error
+block data syntax error
+redeclaration in external
+external syntax error
+implicit syntax error
+subscript on non-array
+incorrect subscript count
+subscript out of range
+subscript syntax error
+DATA syntax error
+DATA semantics error
+equivalence inconsistency
+equivalence syntax error
+separate common blocks equivalenced
+common block illegally extended by equivalence
+common inconsistency created by equivalence
+DATA table overflow
+() imbalance in expression
+expression syntax error
+illegal variable in equivalence
+Storage initialized twice by DATA
+non array/function used with subscripts/arguments
+
+goto syntax error
+
+illegal return
+continue, return, stop, call, end, or pause syntax error
+assign syntax error
+if syntax error
+I/O syntax error
+do or I/O iteration error
+do end missing
+
+
+
+
+
+
+illegal statement in block data
+multiply defined labels
+undefined label
+dimension mismatch
+expression syntax error
+end of statement in hollerith constant
+array too large
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+B table overflow
+
+unrecognized statement
