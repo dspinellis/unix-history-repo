@@ -5,8 +5,10 @@ CFLAGS+=-I${.CURDIR}
 SRCS=	ch.c command.c decode.c help.c input.c line.c linenum.c main.c \
 	option.c os.c output.c position.c prim.c screen.c signal.c tags.c \
 	ttyin.c
-DPADD=	${LIBTERM} ${LIBCOMPAT}
+DPADD=	${LIBTERM}
 LDADD=	-ltermcap
+MLINKS=	more.1 page.1
+LINKS=	${BINDIR}/more ${BINDIR}/page
 
 beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/more.help \
