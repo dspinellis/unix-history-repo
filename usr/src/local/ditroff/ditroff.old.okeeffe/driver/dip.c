@@ -1,4 +1,4 @@
-/*	dip.c	1.10	(Berkeley)	84/05/17
+/*	dip.c	1.11	(Berkeley)	84/06/01
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -1015,12 +1015,16 @@ register int number;
 	laststipmem = number;		/* must be set before call to polygon */
 
 	if (!number || number < fs->first || number > fs->last) {
+nostipbits:
 		fs = savefs;		/* forget it if it's out of range */
 		laststipmem = 0;	/* force NO stipple */
 		return;
 	}
 	if (fs->chused[number] == 0) {		/* stipple not down-loaded */
-		totglyph += glspace(par = &(fs->glyph[number]));
+		par = &(fs->glyph[number]);
+		if (!par->g_bitp)
+		    goto nostipbits;
+		totglyph += glspace(par);
 		putc(ABGLY, tf);
 		putint((fam << 7) | number, tf);
  		putint(par->g_pwidth, tf);
