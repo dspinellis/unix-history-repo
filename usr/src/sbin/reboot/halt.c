@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)halt.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)halt.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -110,7 +110,7 @@ main(argc, argv)
 		setalarm(5);
 		pause();
 	}
-	syscall(55, howto);
+	reboot(howto);
 	perror("halt");
 }
 
