@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)win.c	3.5 84/04/05";
+static	char *sccsid = "@(#)win.c	3.6 84/04/07";
 #endif
 
 #include "defs.h"
@@ -48,9 +48,14 @@ char *label;
 	if (label != 0 && setlabel(w, label) < 0)
 		error("No memory for label.");
 	wwcursor(w, 1);
+	/*
+	 * We have to do this little maneuver to make sure
+	 * addwin() puts w at the top, so we don't waste an
+	 * insert and delete operation.
+	 */
+	setselwin((struct ww *)0);
 	addwin(w, 0);
-	selwin = w;
-	reframe();
+	setselwin(w);
 	wwupdate();
 	wwflush();
 	if (wwspawn(w, shell, shellname, (char *)0) < 0) {
@@ -148,6 +153,7 @@ char doreframe;
 
 /*
  * Add a window at the top of normal windows or foreground windows.
+ * For normal windows, we put it behind the current window.
  */
 addwin(w, fg)
 register struct ww *w;
@@ -158,7 +164,8 @@ char fg;
 		if (fgwin == framewin)
 			fgwin = w;
 	} else
-		wwadd(w, fgwin);
+		wwadd(w, selwin != 0 && selwin != w && !isfg(selwin)
+				? selwin : fgwin);
 }
 
 /*
