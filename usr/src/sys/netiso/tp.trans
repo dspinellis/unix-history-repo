@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.22 (Berkeley) %G%
+ *	@(#)tp.trans	8.1 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.22 (Berkeley) %G% */
+/* @(#)tp.trans	8.1 (Berkeley) %G% */
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
