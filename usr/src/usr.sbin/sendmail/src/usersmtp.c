@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.12 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.13 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.12 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.13 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -114,9 +114,11 @@ smtpinit(m, pvp)
 			}
 			else
 			{
+				r = errno;
 				fprintf(CurEnv->e_xfp,
 					"421 %s.%s... Deferred: %s\n",
 					pvp[1], m->m_name, errstring(errno));
+				errno = r;
 			}
 		}
 		return (ExitStat);
