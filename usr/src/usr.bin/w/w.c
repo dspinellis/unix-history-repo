@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -322,28 +322,28 @@ pr_header(nowp, nusers)
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_BOOTTIME;
 	size = sizeof(boottime);
-	if (sysctl(mib, 2, &boottime, &size, NULL, 0) == -1)
-		err(1, "cannot get kernel bootime");
-
-	uptime = now - boottime.tv_sec;
-	uptime += 30;
-	days = uptime / SECSPERDAY;
-	uptime %= SECSPERDAY;
-	hrs = uptime / SECSPERHOUR;
-	uptime %= SECSPERHOUR;
-	mins = uptime / SECSPERMIN;
-	(void)printf(" up");
-	if (days > 0)
-		(void)printf(" %d day%s,", days, days > 1 ? "s" : "");
-	if (hrs > 0 && mins > 0)
-		(void)printf(" %2d:%02d,", hrs, mins);
-	else {
-		if (hrs > 0)
-			(void)printf(" %d hr%s,",
-			    hrs, hrs > 1 ? "s" : "");
-		if (mins > 0)
-			(void)printf(" %d min%s,",
-			    mins, mins > 1 ? "s" : "");
+	if (sysctl(mib, 2, &boottime, &size, NULL, 0) != -1 &&
+	    boottime.tv_sec != 0) {
+		uptime = now - boottime.tv_sec;
+		uptime += 30;
+		days = uptime / SECSPERDAY;
+		uptime %= SECSPERDAY;
+		hrs = uptime / SECSPERHOUR;
+		uptime %= SECSPERHOUR;
+		mins = uptime / SECSPERMIN;
+		(void)printf(" up");
+		if (days > 0)
+			(void)printf(" %d day%s,", days, days > 1 ? "s" : "");
+		if (hrs > 0 && mins > 0)
+			(void)printf(" %2d:%02d,", hrs, mins);
+		else {
+			if (hrs > 0)
+				(void)printf(" %d hr%s,",
+				    hrs, hrs > 1 ? "s" : "");
+			if (mins > 0)
+				(void)printf(" %d min%s,",
+				    mins, mins > 1 ? "s" : "");
+		}
 	}
 
 	/* Print number of users logged in to system */
