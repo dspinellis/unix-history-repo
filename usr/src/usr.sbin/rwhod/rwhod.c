@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,23 +21,25 @@ static char sccsid[] = "@(#)rwhod.c	5.22 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/ioctl.h>
 #include <sys/kinfo.h>
-#include <sys/file.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/route.h>
 #include <netinet/in.h>
-
-#include <nlist.h>
-#include <errno.h>
-#include <utmp.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <syslog.h>
 #include <protocols/rwhod.h>
-#include <stdio.h>
-#include <unistd.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <nlist.h>
 #include <paths.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <utmp.h>
 
 /*
  * Alarm interval. Don't forget to change the down time check in ruptime
@@ -56,10 +58,9 @@ struct	nlist nl[] = {
 };
 
 /*
- * We communicate with each neighbor in
- * a list constructed at the time we're
- * started up.  Neighbors are currently
- * directly connected via a hardware interface.
+ * We communicate with each neighbor in a list constructed at the time we're
+ * started up.  Neighbors are currently directly connected via a hardware
+ * interface.
  */
 struct	neighbor {
 	struct	neighbor *n_next;
@@ -76,25 +77,34 @@ int	s, utmpf, kmemf = -1;
 
 #define	WHDRSIZE	(sizeof (mywd) - sizeof (mywd.wd_we))
 
-extern int errno;
-char	*strcpy(), *malloc();
-void	getkmem(), onalrm();
-struct	in_addr inet_makeaddr();
+int	 configure __P((int));
+void	 getkmem __P((int));
+void	 onalrm __P((int));
+void	 quit __P((char *));
+void	 rt_xaddrs __P((caddr_t, caddr_t, struct rt_addrinfo *));
+int	 verify __P((char *));
+#ifdef DEBUG
+char	*interval __P((int, char *));
+void	 sendto __P((int, char *, int, int, char *, int));
+#endif
 
-main()
+int
+main(argc, argv)
+	int argc;
+	char argv[];
 {
 	struct sockaddr_in from;
 	struct stat st;
 	char path[64];
 	int on = 1;
-	char *cp, *index(), *strerror();
+	char *cp;
 
 	if (getuid()) {
 		fprintf(stderr, "rwhod: not super user\n");
 		exit(1);
 	}
 	sp = getservbyname("who", "udp");
-	if (sp == 0) {
+	if (sp == NULL) {
 		fprintf(stderr, "rwhod: udp/who: unknown service\n");
 		exit(1);
 	}
@@ -123,7 +133,7 @@ main()
 		syslog(LOG_ERR, "%s: %m", _PATH_UTMP);
 		exit(1);
 	}
-	getkmem();
+	getkmem(0);
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		syslog(LOG_ERR, "socket: %m");
 		exit(1);
@@ -141,7 +151,7 @@ main()
 	if (!configure(s))
 		exit(1);
 	signal(SIGALRM, onalrm);
-	onalrm();
+	onalrm(0);
 	for (;;) {
 		struct whod wd;
 		int cc, whod, len = sizeof (from);
@@ -209,6 +219,7 @@ main()
  * and other funnies before allowing a file
  * to be created.  Sorry, but blanks aren't allowed.
  */
+int
 verify(name)
 	register char *name;
 {
@@ -229,19 +240,20 @@ struct	utmp *utmp;
 int	alarmcount;
 
 void
-onalrm()
+onalrm(signo)
+	int signo;
 {
 	register struct neighbor *np;
 	register struct whoent *we = mywd.wd_we, *wlast;
 	register int i;
 	struct stat stb;
-	int cc;
 	double avenrun[3];
-	time_t now = time((time_t *)NULL);
-	char *strerror();
+	time_t now;
+	int cc;
 
+	now = time(NULL);
 	if (alarmcount % 10 == 0)
-		getkmem();
+		getkmem(0);
 	alarmcount++;
 	(void) fstat(utmpf, &stb);
 	if ((stb.st_mtime != utmptime) || (stb.st_size > utmpsize)) {
@@ -315,7 +327,8 @@ done:
 }
 
 void
-getkmem()
+getkmem(signo)
+	int signo;
 {
 	static ino_t vmunixino;
 	static time_t vmunixctime;
@@ -351,7 +364,7 @@ loop:
 
 void
 quit(msg)
-char *msg;
+	char *msg;
 {
 	syslog(LOG_ERR, msg);
 	exit(1);
@@ -382,13 +395,13 @@ rt_xaddrs(cp, cplim, rtinfo)
  * Figure out device configuration and select
  * networks which deserve status information.
  */
+int
 configure(s)
 	int s;
 {
 	register struct neighbor *np;
 	register struct if_msghdr *ifm;
 	register struct ifa_msghdr *ifam;
-	struct sockaddr_in *sin;
 	struct sockaddr_dl *sdl;
 	int needed, rlen = 0, flags = 0, len;
 	char *buf, *lim, *next;
@@ -450,6 +463,7 @@ configure(s)
 }
 
 #ifdef DEBUG
+void
 sendto(s, buf, cc, flags, to, tolen)
 	int s;
 	char *buf;
@@ -460,7 +474,6 @@ sendto(s, buf, cc, flags, to, tolen)
 	register struct whod *w = (struct whod *)buf;
 	register struct whoent *we;
 	struct sockaddr_in *sin = (struct sockaddr_in *)to;
-	char *interval();
 
 	printf("sendto %x.%d\n", ntohl(sin->sin_addr), ntohs(sin->sin_port));
 	printf("hostname %s %s\n", w->wd_hostname,
