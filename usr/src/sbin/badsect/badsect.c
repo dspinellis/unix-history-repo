@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)badsect.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)badsect.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,11 +28,15 @@ static char sccsid[] = "@(#)badsect.c	5.11 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+
 #include <ufs/ffs/fs.h>
 #include <ufs/ufs/dinode.h>
-#include <unistd.h>
-#include <stdio.h>
+
+#include <fcntl.h>
 #include <paths.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 union {
 	struct	fs fs;
@@ -51,7 +55,10 @@ long	dev_bsize = 1;
 
 char buf[MAXBSIZE];
 
+void	rdfs __P((daddr_t, int, char *));
+int	chkuse __P((daddr_t, int));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -60,7 +67,6 @@ main(argc, argv)
 	struct stat stbuf, devstat;
 	register struct direct *dp;
 	DIR *dirp;
-	int fd;
 	char name[BUFSIZ];
 
 	if (argc < 3) {
@@ -112,6 +118,7 @@ main(argc, argv)
 	exit(errs);
 }
 
+int
 chkuse(blkno, cnt)
 	daddr_t blkno;
 	int cnt;
@@ -154,6 +161,7 @@ chkuse(blkno, cnt)
 /*
  * read a block from the file system
  */
+void
 rdfs(bno, size, bf)
 	daddr_t bno;
 	int size;

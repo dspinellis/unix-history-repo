@@ -15,23 +15,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)clri.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)clri.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
+
+#include <err.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 
-char *fs;
-
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register struct fs *sbp;
 	register struct dinode *ip;
@@ -40,7 +44,7 @@ main(argc, argv)
 	long generation, bsize;
 	off_t offset;
 	int inonum;
-	char sblock[SBSIZE];
+	char *fs, sblock[SBSIZE];
 
 	if (argc < 3) {
 		(void)fprintf(stderr, "usage: clri filesystem inode ...\n");
@@ -51,9 +55,9 @@ main(argc, argv)
 
 	/* get the superblock. */
 	if ((fd = open(fs, O_RDWR, 0)) < 0)
-		error();
+		err(1, "%s", fs);
 	if (lseek(fd, (off_t)(SBLOCK * DEV_BSIZE), SEEK_SET) < 0)
-		error();
+		err(1, "%s", fs);
 	if (read(fd, sblock, sizeof(sblock)) != sizeof(sblock)) {
 		(void)fprintf(stderr,
 		    "clri: %s: can't read the superblock.\n", fs);
@@ -86,31 +90,25 @@ main(argc, argv)
 
 		/* seek and read the block */
 		if (lseek(fd, offset, SEEK_SET) < 0)
-			error();
-		if (read(fd, (char *)ibuf, bsize) != bsize)
-			error();
+			err(1, "%s", fs);
+		if (read(fd, ibuf, bsize) != bsize)
+			err(1, "%s", fs);
 
 		/* get the inode within the block. */
 		ip = &ibuf[itoo(sbp, inonum)];
 
 		/* clear the inode, and bump the generation count. */
 		generation = ip->di_gen + 1;
-		bzero((char *)ip, sizeof *ip);
+		memset(ip, 0, sizeof(*ip));
 		ip->di_gen = generation;
 
 		/* backup and write the block */
 		if (lseek(fd, (off_t)-bsize, SEEK_CUR) < 0)
-			error();
-		if (write(fd, (char *)ibuf, bsize) != bsize)
-			error();
+			err(1, "%s", fs);
+		if (write(fd, ibuf, bsize) != bsize)
+			err(1, "%s", fs);
 		(void)fsync(fd);
 	}
 	(void)close(fd);
 	exit(0);
-}
-
-error()
-{
-	(void)fprintf(stderr, "clri: %s: %s\n", fs, strerror(errno));
-	exit(1);
 }
