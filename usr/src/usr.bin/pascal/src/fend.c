@@ -1,8 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-#ifndef lint
-static char sccsid[] = "@(#)fend.c 2.1 %G%";
-#endif
+static char sccsid[] = "@(#)fend.c 1.22.1.1 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -29,8 +27,6 @@ int	cntpatch;
 int	nfppatch;
 #endif OBJ
 
-#include "tree_ty.h"
-
 struct	nl *Fp;
 int	pnumcnt;
 /*
@@ -46,22 +42,18 @@ int	pnumcnt;
  */
 funcend(fp, bundle, endline)
 	struct nl *fp;
-	struct tnode *bundle;
+	int *bundle;
 	int endline;
 {
 	register struct nl *p;
 	register int i, b;
-	int inp, out;
-	struct tnode *blk;
+	int var, inp, out, *blk;
 	bool chkref;
 	struct nl *iop;
 	char *cp;
 	extern int cntstat;
 #	ifdef PC
 	    struct entry_exit_cookie	eecookie;
-#	endif PC
-#	ifndef PC
-	int var;
 #	endif PC
 
 	cntstat = 0;
@@ -70,7 +62,7 @@ funcend(fp, bundle, endline)
  */
 	if (program != NIL)
 		line = program->value[3];
-	blk = bundle->stmnt_blck.stmnt_list;
+	blk = bundle[2];
 	if (fp == NIL) {
 		cbn--;
 #		ifdef PTREE
@@ -83,7 +75,7 @@ funcend(fp, bundle, endline)
 	 * Patch the branch to the
 	 * entry point of the function
 	 */
-	patch4((PTR_DCL) fp->value[NL_ENTLOC]);
+	patch4(fp->value[NL_ENTLOC]);
 	/*
 	 * Put out the block entrance code and the block name.
 	 * HDRSZE is the number of bytes of info in the static
@@ -104,15 +96,15 @@ funcend(fp, bundle, endline)
 	     *  output the number of bytes of arguments
 	     *  this is only checked on formal calls.
 	     */
-	(void) put(2, O_CASE4, cbn == 1 ? (long)0 : (long)(fp->value[NL_OFFS]-DPOFF2));
+	put(2, O_CASE4, cbn == 1 ? (long)0 : (long)(fp->value[NL_OFFS]-DPOFF2));
 	    /*
 	     *	Output the runtime test mode for the routine
 	     */
-	(void) put(2, sizeof(bool) == 2 ? O_CASE2 : O_CASE4, opt('t') ? TRUE : FALSE);
+	put(2, sizeof(bool) == 2 ? O_CASE2 : O_CASE4, opt('t') ? TRUE : FALSE);
 	    /*
 	     *	Output line number and routine name
 	     */
-	(void) put(2, O_CASE2, bundle->stmnt_blck.line_no);
+	put(2, O_CASE2, bundle[1]);
 	putstr(fp->symbol, 0);
 #endif OBJ
 #ifdef PC
@@ -134,25 +126,22 @@ funcend(fp, bundle, endline)
 	    codeformain();
 	    ftnno = fp -> value[NL_ENTLOC];
 	    prog_prologue(&eecookie);
-	    stabfunc( "program" , fp -> class ,
-		bundle->stmnt_blck.line_no , (long) 0 );
+	    stabline(bundle[1]);
+	    stabfunc(fp, "program", bundle[1] , 0 );
 	} else {
 	    ftnno = fp -> value[NL_ENTLOC];
 	    fp_prologue(&eecookie);
-	    stabfunc( fp -> symbol , fp -> class , 
-		bundle->stmnt_blck.line_no , (long) (cbn - 1) );
+	    stabline(bundle[1]);
+	    stabfunc(fp, fp->symbol, bundle[1], cbn - 1);
 	    for ( p = fp -> chain ; p != NIL ; p = p -> chain ) {
-		stabparam( p -> symbol , p2type( p -> type )
-			    , p -> value[ NL_OFFS ] ,
-				 (int) lwidth( p -> type ) );
+		stabparam(p, p->value[NL_OFFS], lwidth(p->type));
 	    }
 	    if ( fp -> class == FUNC ) {
 		    /*
 		     *	stab the function variable
 		     */
 		p = fp -> ptr[ NL_FVAR ];
-		stablvar( p -> symbol , p2type( p -> type ) , cbn 
-			, p -> value[ NL_OFFS ] , (int) lwidth( p -> type ) );
+		stablvar(p, p->value[NL_OFFS], lwidth(p->type));
 	    }
 		/*
 		 *	stab local variables
@@ -164,14 +153,14 @@ funcend(fp, bundle, endline)
 			break;
 		    }
 		    /*
-		     *	stab local variables
-		     *	that's named variables, but not params
+		     *	stab locals (not parameters)
 		     */
-		    if (   ( p -> symbol != NIL ) 
-			&& ( p -> class == VAR )
-			&& ( p -> value[ NL_OFFS ] < 0 ) ) {
-			stablvar( p -> symbol , p2type( p -> type ) , cbn 
-			    , p -> value[ NL_OFFS ] , (int) lwidth( p -> type ) );
+		    if (p->symbol != NIL) {
+			if (p->class == VAR && p->value[NL_OFFS] < 0) {
+			    stablvar(p, p->value[NL_OFFS], lwidth(p->type));
+			} else if (p->class == CONST) {
+			    stabconst(p);
+			}
 		    }
 		}
 	    }
@@ -198,13 +187,13 @@ funcend(fp, bundle, endline)
 		 */
 #		ifdef OBJ
 		    if (opt('b') != 1)
-			    (void) put(1, O_BUFF | opt('b') << 8);
+			    put(1, O_BUFF | opt('b') << 8);
 #		endif OBJ
 #		ifdef PC
 		    if ( opt( 'b' ) != 1 ) {
 			putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2INT , P2PTR ) , "_BUFF" );
-			putleaf( P2ICON , opt( 'b' ) , 0 , P2INT , (char *) 0 );
+			putleaf( P2ICON , opt( 'b' ) , 0 , P2INT , 0 );
 			putop( P2CALL , P2INT );
 			putdot( filename , line );
 		    }
@@ -212,11 +201,11 @@ funcend(fp, bundle, endline)
 		inp = 0;
 		out = 0;
 		for (p = fp->chain; p != NIL; p = p->chain) {
-			if (pstrcmp(p->symbol, input->symbol) == 0) {
+			if (strcmp(p->symbol, input->symbol) == 0) {
 				inp++;
 				continue;
 			}
-			if (pstrcmp(p->symbol, output->symbol) == 0) {
+			if (strcmp(p->symbol, output->symbol) == 0) {
 				out++;
 				continue;
 			}
@@ -237,13 +226,13 @@ funcend(fp, bundle, endline)
 				continue;
 			}
 #			ifdef OBJ
-			    (void) put(2, O_CON24, text(iop->type) ? 0 : width(iop->type->type));
+			    put(2, O_CON24, text(iop->type) ? 0 : width(iop->type->type));
 			    i = lenstr(p->symbol,0);
-			    (void) put(2, O_CON24, i);
-			    (void) put(2, O_LVCON, i);
+			    put(2, O_CON24, i);
+			    put(2, O_LVCON, i);
 			    putstr(p->symbol, 0);
-			    (void) put(2, O_LV | bn<<8+INDX, (int)iop->value[NL_OFFS]);
-			    (void) put(1, O_DEFNAME);
+			    put(2, O_LV | bn<<8+INDX, (int)iop->value[NL_OFFS]);
+			    put(1, O_DEFNAME);
 #			endif OBJ
 #			ifdef PC
 			    putleaf( P2ICON , 0 , 0
@@ -255,11 +244,11 @@ funcend(fp, bundle, endline)
 				    , LREQ );
 			    putop( P2LISTOP , P2INT );
 			    putleaf( P2ICON , strlen( p -> symbol )
-				    , 0 , P2INT , (char *) 0 );
+				    , 0 , P2INT , 0 );
 			    putop( P2LISTOP , P2INT );
 			    putleaf( P2ICON
 				, text(iop->type) ? 0 : width(iop->type->type)
-				, 0 , P2INT , (char *) 0 );
+				, 0 , P2INT , 0 );
 			    putop( P2LISTOP , P2INT );
 			    putop( P2CALL , P2INT );
 			    putdot( filename , line );
@@ -269,8 +258,8 @@ funcend(fp, bundle, endline)
 	/*
 	 * Process the prog/proc/func body
 	 */
-	noreach = FALSE;
-	line = bundle->stmnt_blck.line_no;
+	noreach = 0;
+	line = bundle[1];
 	statlist(blk);
 #	ifdef PTREE
 	    {
@@ -280,17 +269,17 @@ funcend(fp, bundle, endline)
 	    }
 #	endif PTREE
 #	ifdef OBJ
-	    if (cbn== 1 && monflg != FALSE) {
-		    patchfil((PTR_DCL) (cntpatch - 2), (long)cnts, 2);
-		    patchfil((PTR_DCL) (nfppatch - 2), (long)pfcnt, 2);
+	    if (cbn== 1 && monflg != 0) {
+		    patchfil(cntpatch - 2, (long)cnts, 2);
+		    patchfil(nfppatch - 2, (long)pfcnt, 2);
 	    }
 #	endif OBJ
 #	ifdef PC
 	    if ( fp -> class == PROG && monflg ) {
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PMFLUSH" );
-		putleaf( P2ICON , cnts , 0 , P2INT , (char *) 0 );
-		putleaf( P2ICON , pfcnt , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , cnts , 0 , P2INT , 0 );
+		putleaf( P2ICON , pfcnt , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
 		putLV( PCPCOUNT , 0 , 0 , NGLOBAL , P2INT );
 		putop( P2LISTOP , P2INT );
@@ -312,7 +301,7 @@ funcend(fp, bundle, endline)
 	}
 	b = cbn;
 	Fp = fp;
-	chkref = (syneflg == errcnt[cbn] && opt('w') == 0)?TRUE:FALSE;
+	chkref = syneflg == errcnt[cbn] && opt('w') == 0;
 	for (i = 0; i <= 077; i++) {
 		for (p = disptab[i]; p != NIL && (p->nl_block & 037) == b; p = p->nl_next) {
 			/*
@@ -366,11 +355,7 @@ funcend(fp, bundle, endline)
 			switch (p->class) {
 				case BADUSE:
 					cp = "s";
-					/* This used to say ud_next
-					   that is not a member of nl so
-					   i changed it to nl_next,
-					   which may be wrong */
-					if (p->chain->nl_next == NIL)
+					if (p->chain->ud_next == NIL)
 						cp++;
 					eholdnl();
 					if (p->value[NL_KINDS] & ISUNDEF)
@@ -378,7 +363,7 @@ funcend(fp, bundle, endline)
 					else
 						nerror("%s improperly used on line%s", p->symbol, cp);
 					pnumcnt = 10;
-					pnums((struct udinfo *) p->chain);
+					pnums(p->chain);
 					pchr('\n');
 					break;
 
@@ -412,7 +397,7 @@ funcend(fp, bundle, endline)
 	}
 
 #	ifdef OBJ
-	    (void) put(1, O_END);
+	    put(1, O_END);
 #	endif OBJ
 #	ifdef PC
 	    fp_exitcode(&eecookie);
@@ -435,7 +420,7 @@ funcend(fp, bundle, endline)
 	    }
 #	endif PC
 #ifdef DEBUG
-	dumpnl(fp->ptr[2], (int) fp->symbol);
+	dumpnl(fp->ptr[2], fp->symbol);
 #endif
 
 #ifdef OBJ
@@ -443,7 +428,7 @@ funcend(fp, bundle, endline)
 	 * save the namelist for the debugger pdx
 	 */
 
-	savenl(fp->ptr[2], (int) fp->symbol);
+	savenl(fp->ptr[2], fp->symbol);
 #endif
 
 	/*
@@ -465,7 +450,7 @@ funcend(fp, bundle, endline)
 	if (Fp == NIL)
 		elineon();
 #	ifdef OBJ
-	    patchfil((PTR_DCL) var, leven(-sizes[cbn].om_max), 2);
+	    patchfil(var, leven(-sizes[cbn].om_max), 2);
 #	endif OBJ
 	cbn--;
 	if (inpflist(fp->symbol)) {
@@ -538,25 +523,26 @@ prog_prologue(eecookiep)
 	/*
 	 *	register save mask
 	 */
-    eecookiep -> savlabel = (int) getlab();
-    putprintf("	.word	%s%d", 0, (int) SAVE_MASK_LABEL , eecookiep -> savlabel );
+    eecookiep -> savlabel = getlab();
+    putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL , eecookiep -> savlabel );
 }
 
 fp_prologue(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
+    int		ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
 
     sextname( eecookiep -> extname, eecookiep -> nlp -> symbol , cbn - 1 );
     putprintf( "	.text" , 0 );
     putprintf( "	.align	1" , 0 );
-    putprintf( "	.globl	%s%s", 0, (int) FORMALPREFIX, (int) eecookiep -> extname );
-    putprintf( "	.globl	%s" , 0 , (int) eecookiep -> extname );
-    putprintf( "%s:" , 0 , (int) eecookiep -> extname );
+    putprintf( "	.globl	%s%s", 0, FORMALPREFIX, eecookiep -> extname );
+    putprintf( "	.globl	%s" , 0 , eecookiep -> extname );
+    putprintf( "%s:" , 0 , eecookiep -> extname );
 	/*
 	 *	register save mask
 	 */
-    eecookiep -> savlabel = (int) getlab();
-    putprintf("	.word	%s%d", 0, (int) SAVE_MASK_LABEL , eecookiep -> savlabel );
+    eecookiep -> savlabel = getlab();
+    putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL , eecookiep -> savlabel );
 }
 
     /*
@@ -567,26 +553,26 @@ fp_entrycode(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
     int	ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
-    int	proflabel = (int) getlab();
-    int	setjmp0 = (int) getlab();
+    int	proflabel = getlab();
+    int	setjmp0 = getlab();
 
 	/*
 	 *	top of code;  destination of jump from formal entry code.
 	 */
-    eecookiep -> toplabel = (int) getlab();
-    (void) putlab( (char *) eecookiep -> toplabel );
-    putprintf("	subl2	$%s%d,sp" , 0 , (int) FRAME_SIZE_LABEL, ftnno );
+    eecookiep -> toplabel = getlab();
+    putlab( eecookiep -> toplabel );
+    putprintf("	subl2	$%s%d,sp" , 0 , FRAME_SIZE_LABEL, ftnno );
     if ( profflag ) {
 	    /*
 	     *	call mcount for profiling
 	     */
 	putprintf( "	moval	" , 1 );
-	putprintf( PREFIXFORMAT , 1 , (int) LABELPREFIX , proflabel );
+	putprintf( PREFIXFORMAT , 1 , LABELPREFIX , proflabel );
 	putprintf( ",r0" , 0 );
 	putprintf( "	jsb	mcount" , 0 );
 	putprintf( "	.data" , 0 );
 	putprintf( "	.align	2" , 0 );
-	(void) putlab( (char *) proflabel );
+	putlab( proflabel );
 	putprintf( "	.long	0" , 0 );
 	putprintf( "	.text" , 0 );
     }
@@ -599,14 +585,14 @@ fp_entrycode(eecookiep)
 	     *	save old display 
 	     */
 	putprintf( "	movq	%s+%d,%d(%s)" , 0
-		, (int) DISPLAYNAME , cbn * sizeof(struct dispsave)
-		, DSAVEOFFSET , (int) P2FPNAME );
+		, DISPLAYNAME , cbn * sizeof(struct dispsave)
+		, DSAVEOFFSET , P2FPNAME );
 	    /*
 	     *	set up new display by saving AP and FP in appropriate
 	     *	slot in display structure.
 	     */
 	putprintf( "	movq	%s,%s+%d" , 0
-		, (int) P2APNAME , (int) DISPLAYNAME , cbn * sizeof(struct dispsave) );
+		, P2APNAME , DISPLAYNAME , cbn * sizeof(struct dispsave) );
     }
 	/*
 	 *	set underflow checking if runtime tests
@@ -621,9 +607,9 @@ fp_entrycode(eecookiep)
     if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
 	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 		, "_blkclr" );
-	putLV((char *) 0 , cbn , (int) sizes[ cbn ].om_max , NLOCAL , P2CHAR );
-	putleaf( P2ICON ,  (int) (( -sizes[ cbn ].om_max ) - DPOFF1)
-		, 0 , P2INT ,(char *) 0 );
+	putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
+	putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
+		, 0 , P2INT , 0 );
 	putop( P2LISTOP , P2INT );
 	putop( P2CALL , P2INT );
 	putdot( filename , line );
@@ -634,11 +620,11 @@ fp_entrycode(eecookiep)
     if ( parts[ cbn ] & NONLOCALGOTO ) {
 	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 		, "_setjmp" );
-	putLV( (char *) 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
 	putop( P2CALL , P2INT );
-	putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+	putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 	putop( P2NE , P2INT );
-	putleaf( P2ICON , setjmp0 , 0 , P2INT , (char *) 0 );
+	putleaf( P2ICON , setjmp0 , 0 , P2INT , 0 );
 	putop( P2CBRANCH , P2INT );
 	putdot( filename , line );
 	    /*
@@ -646,7 +632,7 @@ fp_entrycode(eecookiep)
 	     *	be branched to.
 	     */
 	putprintf( "	jmp	(r0)" , 0 );
-	(void) putlab((char *) setjmp0);
+	putlab(setjmp0);
     }
 }
 
@@ -660,7 +646,7 @@ fp_exitcode(eecookiep)
     if ( dfiles[ cbn ] ) {
 	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 		, "_PCLOSE" );
-	putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , (char *) 0 );
+	putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , 0 );
 	putop( P2CALL , P2INT );
 	putdot( filename , line );
     }
@@ -686,28 +672,28 @@ fp_exitcode(eecookiep)
 		putRV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
-			(int) fvartype );
-		putop( P2FORCE , (int) fvartype );
+			fvartype );
+		putop( P2FORCE , fvartype );
 		break;
 	    default:
-		label = (int) getlab();
+		label = getlab();
 		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , label );
 		putprintf( "	.data" , 0 );
 		aligndot(A_STRUCT);
 		putprintf( "	.lcomm	%s,%d" , 0 ,
-			    (int) labelname , (int) lwidth( fvar -> type ) );
+			    labelname , lwidth( fvar -> type ) );
 		putprintf( "	.text" , 0 );
-		putleaf( P2NAME , 0 , 0 , (int) fvartype , labelname );
+		putleaf( P2NAME , 0 , 0 , fvartype , labelname );
 		putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
-			(int) fvartype );
-		putstrop( P2STASG , (int) ADDTYPE(fvartype, P2PTR) ,
-			(int) lwidth( fvar -> type ) ,
+			fvartype );
+		putstrop( P2STASG , ADDTYPE(fvartype, P2PTR) ,
+			lwidth( fvar -> type ) ,
 			align( fvar -> type ) );
 		putdot( filename , line );
-		putleaf( P2ICON , 0 , 0 , (int) ADDTYPE(fvartype, P2PTR), labelname );
-		putop( P2FORCE , (int) ADDTYPE(fvartype, P2PTR) );
+		putleaf( P2ICON , 0 , 0 , ADDTYPE(fvartype, P2PTR), labelname );
+		putop( P2FORCE , ADDTYPE(fvartype, P2PTR) );
 		break;
 	}
 	putdot( filename , line );
@@ -720,20 +706,21 @@ fp_exitcode(eecookiep)
 	     *	restore old display entry from save area
 	     */
 	putprintf( "	movq	%d(%s),%s+%d" , 0
-	    , DSAVEOFFSET , (int) P2FPNAME
-	    , (int) DISPLAYNAME , cbn * sizeof(struct dispsave) );
+	    , DSAVEOFFSET , P2FPNAME
+	    , DISPLAYNAME , cbn * sizeof(struct dispsave) );
     }
 }
 
 fp_epilogue(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
+    stabline(line);
     putprintf("	ret" , 0 );
 	/*
 	 *	set the register save mask.
 	 */
     putprintf("	.set	%s%d,0x%x", 0,
-		(int) SAVE_MASK_LABEL, eecookiep -> savlabel, savmask());
+		SAVE_MASK_LABEL, eecookiep -> savlabel, savmask());
 }
 
 fp_formalentry(eecookiep)
@@ -741,17 +728,17 @@ fp_formalentry(eecookiep)
 {
 
     putprintf("	.align 1", 0);
-    putprintf("%s%s:" , 0 , (int) FORMALPREFIX , (int) eecookiep -> extname );
-    putprintf("	.word	%s%d", 0, (int) SAVE_MASK_LABEL, eecookiep -> savlabel );
+    putprintf("%s%s:" , 0 , FORMALPREFIX , eecookiep -> extname );
+    putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL, eecookiep -> savlabel );
     putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_FCALL" );
-    putRV((char *) 0 , cbn ,
+    putRV( 0 , cbn ,
 	eecookiep -> nlp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
 	NPARAM , P2PTR | P2STRTY );
-    putRV((char *) 0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, P2PTR|P2STRTY);
+    putRV(0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, P2PTR|P2STRTY);
     putop( P2LISTOP , P2INT );
     putop( P2CALL , P2INT );
     putdot( filename , line );
-    putjbr( (long) eecookiep -> toplabel );
+    putjbr( eecookiep -> toplabel );
 }
 #endif vax
 
@@ -812,14 +799,14 @@ fp_prologue(eecookiep)
 fp_entrycode(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
-    char *proflabel = getlab();
-    char *setjmp0 = getlab();
+    int	proflabel = getlab();
+    int	setjmp0 = getlab();
 
 	/*
 	 *	fill in the label cookie
 	 */
     eecookiep -> toplabel = getlab();
-    (void) putlab(eecookiep -> toplabel);
+    putlab(eecookiep -> toplabel);
 	/*
 	 *	call mcount if we are profiling.
 	 */
@@ -828,7 +815,7 @@ fp_entrycode(eecookiep)
 	putprintf("	jsr	mcount", 0);
 	putprintf("	.data", 0);
 	putprintf("	.even", 0);
-	(void) putlab(proflabel);
+	putlab(proflabel);
 	putprintf("	.long	0", 0);
 	putprintf("	.text", 0);
     }
@@ -883,7 +870,7 @@ fp_entrycode(eecookiep)
 	     */
 	putprintf("	movl	d0,a0", 0);
 	putprintf("	jmp	a0@", 0);
-	(void) putlab(setjmp0);
+	putlab(setjmp0);
     }
 }
 
@@ -910,7 +897,7 @@ fp_exitcode(eecookiep)
     if ( eecookiep -> nlp -> class == FUNC ) {
 	struct nl	*fvar = eecookiep -> nlp -> ptr[ NL_FVAR ];
 	long		fvartype = p2type( fvar -> type );
-	char		*label;
+	long		label;
 	char		labelname[ BUFSIZ ];
 
 	switch ( classify( fvar -> type ) ) {
@@ -988,3 +975,4 @@ fp_formalentry(eecookiep)
 }
 #endif mc68000
 #endif PC
+
