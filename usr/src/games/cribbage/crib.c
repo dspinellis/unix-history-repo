@@ -69,9 +69,11 @@ char	*argv[];
 	}
 	playing = TRUE;
 	do {
-	    makeboard();
 	    msg(quiet ? "L or S? " : "Long (to 121) or Short (to 61)? ");
-	    glimit = (getuchar() == 'S' ? SGAME : LGAME);
+	    if (glimit == SGAME)
+		glimit = (getuchar() == 'L' ? LGAME : SGAME);
+	    else
+		glimit = (getuchar() == 'S' ? SGAME : LGAME);
 	    game();
 	    msg("Another game? ");
 	    playing = (getuchar() == 'Y');
@@ -105,8 +107,6 @@ bye()
  */
 makeboard()
 {
-    extern int	Lastscore[];
-
     mvaddstr(SCORE_Y + 0, SCORE_X, "+---------------------------------------+");
     mvaddstr(SCORE_Y + 1, SCORE_X, "|                 YOU                   |");
     mvaddstr(SCORE_Y + 2, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
@@ -116,6 +116,17 @@ makeboard()
     mvaddstr(SCORE_Y + 6, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 7, SCORE_X, "|                  ME                   |");
     mvaddstr(SCORE_Y + 8, SCORE_X, "+---------------------------------------+");
+    gamescore();
+}
+
+/*
+ * gamescore:
+ *	Print out the current game score
+ */
+gamescore()
+{
+    extern int	Lastscore[];
+
     if (pgames || cgames) {
 	    mvprintw(SCORE_Y + 1, SCORE_X + 28, "Games: %3d", pgames);
 	    mvprintw(SCORE_Y + 7, SCORE_X + 28, "Games: %3d", cgames);
@@ -135,6 +146,7 @@ game()
 	BOOLEAN			flag;
 	BOOLEAN			compcrib;
 
+	makeboard();
 	makedeck(deck);
 	shuffle(deck);
 	if (gamecount == 0) {
@@ -167,6 +179,10 @@ game()
 	    } while (flag);
 	}
 	else {
+	    werase(Tablewin);
+	    wrefresh(Tablewin);
+	    werase(Compwin);
+	    wrefresh(Compwin);
 	    msg("Loser (%s) gets first crib.",  (iwon ? "you" : "me"));
 	    compcrib = !iwon;
 	}
@@ -210,7 +226,7 @@ game()
 	    }
 	    iwon = TRUE;
 	}
-	msg("I have won %d games, you have won %d", cgames, pgames);
+	gamescore();
 }
 
 /*
