@@ -1,41 +1,61 @@
-/* @(#)sleep.c	4.1 (Berkeley) %G% */
+/*	@(#)sleep.c	4.2 (Berkeley) %G%	*/
+
 #include <signal.h>
 #include <setjmp.h>
+#include <time.h>
 
 static jmp_buf jmp;
 
-sleep(n)
-unsigned n;
-{
-	int sleepx();
-	unsigned altime;
-	int (*alsig)() = SIG_DFL;
+#define	mask(s)	(1<<((s)-1))
+#define	setvec(vec, a) \
+	vec.sv_handler = a; vec.sv_mask = vec.sv_onstack = 0
 
-	if (n==0)
+sleep(n)
+	unsigned n;
+{
+	int sleepx(), omask;
+	struct itimerval itv, oitv;
+	register struct itimerval *itp = &itv;
+	struct sigvec vec, ovec;
+
+	if (n == 0)
 		return;
-	altime = alarm(1000);	/* time to maneuver */
+	timerclear(&itp->it_interval);
+	timerclear(&itp->it_value);
+	if (setitimer(ITIMER_REAL, itp, &oitv) < 0)
+		return;
+	setvec(ovec, SIG_DFL);
 	if (setjmp(jmp)) {
-		signal(SIGALRM, alsig);
-		alarm(altime);
+		(void) sigvec(SIGALRM, &ovec, (struct sigvec *)0);
+		(void) setitimer(ITIMER_REAL, &oitv, (struct itimerval *)0);
 		return;
 	}
-	if (altime) {
-		if (altime > n)
-			altime -= n;
+	omask = sigblock(0);
+	itp->it_value.tv_sec = n;
+	if (timerisset(&oitv.it_value)) {
+		if (timercmp(&oitv.it_value, &itp->it_value, >))
+			oitv.it_value.tv_sec -= itp->it_value.tv_sec;
 		else {
-			n = altime;
-			altime = 1;
+			itp->it_value = oitv.it_value;
+			/*
+			 * Set the reset value to the smallest possible,
+			 * the system will round it to the clock resolution.
+			 */
+			oitv.it_value.tv_sec = 0;
+			oitv.it_value.tv_usec = 1;
 		}
 	}
-	alsig = signal(SIGALRM, sleepx);
-	alarm(n);
-	for(;;)
-		pause();
+	setvec(vec, sleepx);
+	(void) sigvec(SIGALRM, &vec, &ovec);
+	if (setitimer(ITIMER_REAL, itp, (struct itimerval *)0) < 0)
+		longjmp(jmp, 1);
+	sigpause(omask &~ mask(SIGALRM));
 	/*NOTREACHED*/
 }
 
 static
 sleepx()
 {
+
 	longjmp(jmp, 1);
 }
