@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)source.h	5.1 (Berkeley) %G%
+ *	@(#)source.h	5.2 (Berkeley) %G%
  */
 
-*
+/*
  * Definitions for interfacing with source management routines.
  */
 
