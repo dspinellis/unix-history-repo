@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -27,17 +27,11 @@ OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 MAN=	sendmail.0 newaliases.0 aliases.0
 
 CFLAGS=	-O -I. -I../include -DVMUNIX
-ASMSED=	../include/asm.sed.${MACHINE}
 
 GET=	sccs get
 DELTA=	sccs delta
 WHAT=	what
 PRT=	sccs prt
-
-.c.o:
-	cc -S ${CFLAGS} $*.c
-	sed -f ${ASMSED} $*.s | as -o $*.o
-	rm -f $*.s
 
 sendmail: ${OBJS} Version.o
 	${CC} ${COPTS} -o $@ Version.o ${OBJS} -ldbm
@@ -51,6 +45,8 @@ install: ${MAN}
 	install -c -s -o root -g kmem -m 6755 sendmail ${DESTDIR}/usr/lib
 	install -c -o bin -g bin -m 644 /dev/null ${DESTDIR}/usr/lib/sendmail.fc
 	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/lib/sendmail.st
+	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/lib/sendmail.st
+	install -c -o bin -g bin -m 444 sendmail.hf /usr/lib/sendmail.hf
 	install -c -o bin -g bin -m 444 sendmail.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 aliases.0 ${DESTDIR}/usr/man/cat5
 	install -c -o bin -g bin -m 444 newaliases.0 ${DESTDIR}/usr/man/cat1
