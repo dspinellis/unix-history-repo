@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -437,10 +437,11 @@ returntosender(msg, returnq, sendbody, e)
 	openxscript(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
-		if (bitset(QDONTSEND, q->q_flags))
+		if (bitset(QBADADDR, q->q_flags))
 			continue;
 
-		ee->e_nrcpts++;
+		if (!bitset(QDONTSEND, q->q_flags))
+			ee->e_nrcpts++;
 
 		if (!DontPruneRoutes && pruneroute(q->q_paddr))
 			parseaddr(q->q_paddr, q, 0, '\0', NULL, e);
