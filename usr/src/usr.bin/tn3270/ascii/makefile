@@ -18,11 +18,15 @@ KBD	= unix.kbd
 
 
 # The source files...
-ALLH = astosc.h ascebc.h disp_asc.h state.h
+ALLH = astosc.h ascebc.h disp_asc.h map3270.ext state.h termin.ext
 
 ALLC = astosc.c map3270.c termin.c asctab.c ebctab.c
 
 ALLO	= astosc.o map3270.o termin.o asctab.o ebctab.o disp_asc.o
+
+ALLPRINT = default.map ${ALLH} ${ALLC}
+
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
@@ -35,8 +39,12 @@ clean:
 	rm -f $(ALLO) astosc.out disp_asc.out asc_disp.out \
 				errs makefile.bak ascii.lib
 
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
+
 print:
-	${PRINT} ${ALLH} ${ALLC}
+	${PRINT} ${ALLPRINT}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
