@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -1290,8 +1290,8 @@ struct Devices *dev;
 			continue;
 
 		write(dh, "D\r", 2); /* "D" (enter number) command */
-		DEBUG(4, "wanted %s ", "NUMBER?");
-		ok = expect("NUMBER?", dh);
+		DEBUG(4, "wanted %s ", "NUMBER?\\r\\n");
+		ok = expect("NUMBER?\r\n", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
 		if (ok != 0)
 			continue;
@@ -1301,6 +1301,8 @@ struct Devices *dev;
 		sleep(1);
 		write(dh, "\r", 1);
 		ok = expect(telno, dh);
+		if (ok == 0)
+			ok = expect("\r\n", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
 		if (ok != 0)
 			continue;
@@ -1314,11 +1316,9 @@ struct Devices *dev;
 	}
 
 	if (ok == 0) {
-		/* send telno, send \r */
-		write(dh, telno, strlen(telno));
-		write(dh, "\r", 1);
-		DEBUG(4, "wanted %s ", "ON LINE");
-		ok = expect("ON LINE", dh);
+		sleep(10 + delay);	/* give vadic some time */
+		DEBUG(4, "wanted ON LINE\\r\\n ", 0);
+		ok = expect("ON LINE\r\n", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
 	}
 
