@@ -1,0 +1,4 @@
+cfree (ptr)
+{
+free(ptr);
+}

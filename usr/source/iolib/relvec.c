@@ -1,0 +1,4 @@
+relvec (ptr)
+{
+free(ptr);
+}
