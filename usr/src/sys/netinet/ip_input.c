@@ -1,4 +1,4 @@
-/*	ip_input.c	1.34	82/03/23	*/
+/*	ip_input.c	1.35	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,9 +13,13 @@
 #include "../net/ip_var.h"
 #include "../net/ip_icmp.h"
 #include "../net/tcp.h"
+#include "../net/route.h"
+
+#define	IPTTLDEC	5		/* doesn't belong here */
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
+struct	ifnet *ifinet;			/* first inet interface */
 
 /*
  * IP initialization: fill in IP protocol switch table.
@@ -39,10 +43,13 @@ COUNT(IP_INIT);
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time & 0xffff;
 	ipintrq.ifq_maxlen = ipqmaxlen;
+	ifinet = if_ifwithaf(AF_INET);
 }
 
 u_char	ipcksum = 1;
 struct	ip *ip_reass();
+int	ipforwarding = 0;
+struct	sockaddr_in ipaddr = { AF_INET };
 
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
@@ -121,27 +128,52 @@ next:
 	 */
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
-	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
-	    if_ifwithaddr(ip->ip_dst) == 0) {
 
-		goto bad;
-#ifdef notdef
-		printf("ip->ip_dst %x ip->ip_ttl %x\n",
-		    ip->ip_dst, ip->ip_ttl);
-		if (--ip->ip_ttl == 0) {
+	/*
+	 * Fast check on the first interface in the list.
+	 */
+	if (ifinet) {
+		struct sockaddr_in *sin;
+
+		sin = (struct sockaddr_in *)&ifinet->if_addr;
+		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr)
+			goto ours;
+	}
+	ipaddr.sin_addr = ip->ip_dst;
+	if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0) {
+		register struct rtentry *rt;
+
+printf("forward: dst %x ttl %x\n", ip->ip_dst, ip->ip_ttl);
+		if (ipforwarding == 0)
+			goto bad;
+		if (ip->ip_ttl < IPTTLDEC) {
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			goto next;
 		}
+		ip->ip_ttl -= IPTTLDEC;
 		mopt = m_get(M_DONTWAIT);
 		if (mopt == 0)
 			goto bad;
 		ip_stripoptions(ip, mopt);
+
+		/*
+		 * Check the routing table in case we should
+		 * munge the src address before it gets passed on.
+		 */
+		ipaddr.sin_addr = ip->ip_src;
+		rt = reroute(&ipaddr);
+		if (rt && (rt->rt_flags & RTF_MUNGE)) {
+			struct sockaddr_in *sin;
+
+			sin = (struct sockaddr_in *)&rt->rt_dst;
+			ip->ip_src = sin->sin_addr;
+		}
 		/* 0 here means no directed broadcast */
-		(void) ip_output(m0, mopt, 0);
+		(void) ip_output(m0, mopt, 0, 0);
 		goto next;
-#endif
 	}
 
+ours:
 	/*
 	 * Look for queue of fragments
 	 * of this datagram.
@@ -454,7 +486,8 @@ COUNT(IP_DOOPTIONS);
 			if (cp[2] < 4 || cp[2] > optlen - (sizeof (long) - 1))
 				break;
 			sin = (struct in_addr *)(cp + cp[2]);
-			ifp = if_ifwithaddr(*sin);
+			ipaddr.sin_addr = *sin;
+			ifp = if_ifwithaddr((struct sockaddr *)&ipaddr);
 			if (ifp == 0) {
 				if (opt == IPOPT_SSRR)
 					goto bad;
@@ -465,7 +498,8 @@ COUNT(IP_DOOPTIONS);
 			if (cp[2] > optlen - (sizeof (long) - 1))
 				break;
 			ip->ip_dst = sin[1];
-			if (opt == IPOPT_SSRR && if_ifonnetof(ip->ip_dst)==0)
+			if (opt == IPOPT_SSRR &&
+			    if_ifonnetof(ip->ip_dst.s_net) == 0)
 				goto bad;
 			break;
 
@@ -487,12 +521,14 @@ COUNT(IP_DOOPTIONS);
 			case IPOPT_TS_TSANDADDR:
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
-				/* stamp with ``first'' interface address */
-				*sin++ = ifnet->if_addr;
+				if (ifinet == 0)
+					goto bad;	/* ??? */
+				*sin++ = ((struct sockaddr_in *)&ifinet->if_addr)->sin_addr;
 				break;
 
 			case IPOPT_TS_PRESPEC:
-				if (if_ifwithaddr(*sin) == 0)
+				ipaddr.sin_addr = *sin;
+				if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
 					continue;
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;

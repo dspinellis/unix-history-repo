@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.19	82/03/24	*/
+/*	tcp_subr.c	4.20	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,6 +18,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
+#include "../net/route.h"
 #include "../errno.h"
 
 /*
@@ -141,7 +142,7 @@ COUNT(TCP_RESPOND);
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + tlen);
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + tlen;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	(void) ip_output(m, (struct mbuf *)0, 0);
+	(void) ip_output(m, (struct mbuf *)0, 0, 0);
 }
 
 /*

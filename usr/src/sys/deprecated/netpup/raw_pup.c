@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.8	82/03/13	*/
+/*	raw_pup.c	4.9	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -16,13 +16,6 @@
  * Raw PUP protocol interface.
  */
 
-/*ARGSUSED*/
-rpup_ctlinput(m)
-	struct mbuf *m;
-{
-COUNT(RPUP_CTLINPUT);
-}
-
 /*
  * Encapsulate packet in PUP header which is supplied by the
  * user.  This is done to allow user to specify PUP identifier.
@@ -36,7 +29,6 @@ rpup_output(m, so)
 	int len;
 	struct mbuf *n;
 	struct sockaddr_pup *spup;
-	struct in_addr in;
 	struct ifnet *ifp;
 
 COUNT(RPUP_OUTPUT);
@@ -61,11 +53,10 @@ COUNT(RPUP_OUTPUT);
 	spup = (struct sockaddr_pup *)&rp->rcb_addr;
 	pup->pup_dport = spup->spup_addr;
 
-	in.s_net = spup->spup_addr.pp_net;
-	ifp = if_ifonnetof(in);
+	ifp = if_ifonnetof(pup->pup_dnet);
 	if (ifp == 0)
 		goto bad;
-	return (enoutput(ifp, m, PF_PUP));
+	return (enoutput(ifp, m, (struct sockaddr *)spup));
 
 bad:
 	m_freem(m);

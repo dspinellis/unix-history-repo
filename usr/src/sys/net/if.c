@@ -1,12 +1,22 @@
-/*	if.c	4.10	82/03/15	*/
+/*	if.c	4.11	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/socket.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
+#include "../net/af.h"
 
 int	ifqmaxlen = IFQ_MAXLEN;
+
+/*
+ * Network interface utility routines.
+ *
+ * Routines with if_ifwith* names take sockaddr *'s as
+ * parameters.  Other routines take value parameters,
+ * e.g. if_ifwithnet takes the network number.
+ */
 
 ifinit()
 {
@@ -14,12 +24,15 @@ ifinit()
 
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 		if (ifp->if_init) {
-			(*ifp->if_init)();
+			(*ifp->if_init)(ifp->if_unit);
 			if (ifp->if_snd.ifq_maxlen == 0)
 				ifp->if_snd.ifq_maxlen = ifqmaxlen;
 		}
 }
 
+/*
+ * Call each interface on a Unibus reset.
+ */
 ifubareset(uban)
 	int uban;
 {
@@ -30,6 +43,10 @@ ifubareset(uban)
 			(*ifp->if_ubareset)(uban);
 }
 
+/*
+ * Attach an interface to the
+ * list of "active" interfaces.
+ */
 if_attach(ifp)
 	struct ifnet *ifp;
 {
@@ -41,48 +58,86 @@ COUNT(IF_ATTACH);
 	*p = ifp;
 }
 
+/*
+ * Locate an interface based on a complete address.
+ */
 /*ARGSUSED*/
 struct ifnet *
-if_ifwithaddr(in)
-	struct in_addr in;
+if_ifwithaddr(addr)
+	struct sockaddr *addr;
 {
 	register struct ifnet *ifp;
 
 COUNT(IF_IFWITHADDR);
-	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (in.s_addr == ifp->if_addr.s_addr ||
-		    (ifp->if_broadaddr.s_addr != 0 &&
-		     in.s_addr == ifp->if_broadaddr.s_addr))
+#define	equal(a1, a2) \
+	(bcmp((caddr_t)((a1)->sa_data), (caddr_t)((a2)->sa_data), 14) == 0)
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (ifp->if_addr.sa_family != addr->sa_family)
+			continue;
+		if (equal(&ifp->if_addr, addr))
 			break;
+		if ((ifp->if_flags & IFF_BROADCAST) &&
+		    equal(&ifp->if_broadaddr, addr))
+			break;
+	}
 	return (ifp);
 }
 
-/*ARGSUSED*/
+/*
+ * Find an interface on a specific network.  If many, choice
+ * is first found.
+ */
 struct ifnet *
-if_ifonnetof(in)
-	struct in_addr in;
+if_ifwithnet(addr)
+	register struct sockaddr *addr;
 {
 	register struct ifnet *ifp;
-	int net;
+	register int af = addr->sa_family;
+	register int (*netmatch)() = afswitch[af].af_netmatch;
 
-COUNT(IF_IFONNETOF);
-	net = in.s_net;			/* XXX */
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (af != ifp->if_addr.sa_family)
+			continue;
+		if ((*netmatch)(addr, &ifp->if_addr))
+			break;
+	}
+	return (ifp);
+}
+
+/*
+ * As above, but parameter is network number.
+ */
+struct ifnet *
+if_ifonnetof(net)
+	register int net;
+{
+	register struct ifnet *ifp;
+
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 		if (ifp->if_net == net)
 			break;
 	return (ifp);
 }
 
-/*ARGSUSED*/
+/*
+ * Find an interface using a specific address family
+ */
 struct ifnet *
-if_gatewayfor(addr)
-	struct in_addr addr;
+if_ifwithaf(af)
+	register int af;
 {
+	register struct ifnet *ifp;
 
-COUNT(IF_GATEWAYFOR);
-	return (0);
+	for (ifp = ifnet; ifp; ifp = ifp->if_next)
+		if (ifp->if_addr.sa_family == af)
+			break;
+	return (ifp);
 }
 
+/*
+ * Formulate an Internet address from network + host.  Used in
+ * building addresses stored in the ifnet structure.
+ */
 struct in_addr
 if_makeaddr(net, host)
 	int net, host;

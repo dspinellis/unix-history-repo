@@ -1,4 +1,4 @@
-/*	if_en.c	4.43	82/03/19	*/
+/*	if_en.c	4.44	82/03/28	*/
 
 #include "en.h"
 
@@ -94,6 +94,7 @@ enattach(ui)
 	struct uba_device *ui;
 {
 	register struct en_softc *es = &en_softc[ui->ui_unit];
+	register struct sockaddr_in *sin;
 COUNT(ENATTACH);
 
 	es->es_if.if_unit = ui->ui_unit;
@@ -101,17 +102,14 @@ COUNT(ENATTACH);
 	es->es_if.if_mtu = ENMTU;
 	es->es_if.if_net = ui->ui_flags;
 	es->es_if.if_host[0] =
-	    (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
-#ifdef ENKLUDGE
-	if (es->es_if.if_net == 10) {
-		es->es_if.if_host[0] <<= 16;
-		es->es_if.if_host[0] |= 0x4e;
-	}
-#endif
-	es->es_if.if_addr =
-	    if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
-	es->es_if.if_broadaddr =
-	    if_makeaddr(es->es_if.if_net, 0);
+	 (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
+	sin = (struct sockaddr_in *)&es->es_if.if_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
+	sin = (struct sockaddr_in *)&es->es_if.if_broadaddr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(es->es_if.if_net, 0);
+	es->es_if.if_flags = IFF_BROADCAST;
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
 	es->es_if.if_ubareset = enreset;
@@ -151,6 +149,7 @@ eninit(unit)
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
 	    sizeof (struct en_header), (int)btoc(ENMTU)) == 0) { 
 		printf("en%d: can't initialize\n", unit);
+		es->es_if.if_flags &= ~IFF_UP;
 		return;
 	}
 	addr = (struct endevice *)ui->ui_addr;
@@ -165,6 +164,7 @@ eninit(unit)
 	addr->en_iwc = -(sizeof (struct en_header) + ENMTU) >> 1;
 	addr->en_istat = EN_IEN|EN_GO;
 	es->es_oactive = 1;
+	es->es_if.if_flags |= IFF_UP;
 	enxint(unit);
 	splx(s);
 }
@@ -222,7 +222,8 @@ restart:
 	 * Have request mapped to UNIBUS for transmission.
 	 * Purge any stale data from this BDP, and start the otput.
 	 */
-	UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_w.ifrw_bdp);
+	if (es->es_ifuba.ifu_flags & UBA_NEEDBDP)
+		UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_w.ifrw_bdp);
 	addr = (struct endevice *)ui->ui_addr;
 	addr->en_oba = (int)es->es_ifuba.ifu_w.ifrw_info;
 	addr->en_odelay = es->es_delay;
@@ -270,7 +271,7 @@ COUNT(ENXINT);
 /*
  * Collision on ethernet interface.  Do exponential
  * backoff, and retransmit.  If have backed off all
- * the way printing warning diagnostic, and drop packet.
+ * the way print warning diagnostic, and drop packet.
  */
 encollide(unit)
 	int unit;
@@ -337,7 +338,8 @@ COUNT(ENRINT);
 	/*
 	 * Purge BDP; drop if input error indicated.
 	 */
-	UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_r.ifrw_bdp);
+	if (es->es_ifuba.ifu_flags & UBA_NEEDBDP)
+		UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_r.ifrw_bdp);
 	if (addr->en_istat&EN_IERROR) {
 		es->es_if.if_ierrors++;
 		if (es->es_if.if_ierrors % 100 == 0)
@@ -370,16 +372,18 @@ COUNT(ENRINT);
 
 #ifdef INET
 	case ENPUP_IPTYPE:
-		len = htons((u_short)endataaddr(en, off ? off+2 : 0, struct ip *)->ip_len);
+		len = htons((u_short)endataaddr(en,
+			off ? off + sizeof (u_short) : 0, struct ip *)->ip_len);
 		if (off)
-			len += 2;
+			len += sizeof (u_short);
 		break;
 #endif
 #ifdef PUP
 	case ENPUP_PUPTYPE:
-		len = endataaddr(en, off, struct pup_header *)->pup_length;
+		len = endataaddr(en, off ? off + sizeof (u_short) : 0,
+			struct pup_header *)->pup_length;
 		if (off)
-			len -= 2;
+			len -= sizeof (u_short);
 		break;
 #endif
 		
@@ -400,8 +404,8 @@ COUNT(ENRINT);
 	if (m == 0)
 		goto setup;
 	if (off) {
-		m->m_off += 2;
-		m->m_len -= 2;
+		m->m_off += sizeof (u_short);
+		m->m_len -= sizeof (u_short);
 	}
 	switch (en->en_type) {
 
@@ -411,6 +415,7 @@ COUNT(ENRINT);
 		inq = &ipintrq;
 		break;
 #endif
+#ifdef PUP
 	case ENPUP_PUPTYPE: {
 		struct pup_header *pup = mtod(m, struct pup_header *);
 
@@ -418,13 +423,15 @@ COUNT(ENRINT);
 		pupdst.spup_addr = pup->pup_dport;
 		pupsrc.spup_addr = pup->pup_sport;
 		raw_input(m, &pupproto, (struct sockaddr *)&pupdst,
-		 (struct sockaddr *)&pupsrc);
+		  (struct sockaddr *)&pupsrc);
 		goto setup;
-		}
 	}
+#endif
+	}
+
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
-		(void) m_freem(m);
+		m_freem(m);
 	} else
 		IF_ENQUEUE(inq, m);
 
@@ -443,63 +450,55 @@ setup:
  * Use trailer local net encapsulation if enough data in first
  * packet leaves a multiple of 512 bytes of data in remainder.
  */
-enoutput(ifp, m0, pf)
+enoutput(ifp, m0, dst)
 	struct ifnet *ifp;
 	struct mbuf *m0;
-	int pf;
+	struct sockaddr *dst;
 {
-	int type, dest, s, off;
+	int type, dest, s;
 	register struct mbuf *m = m0;
 	register struct en_header *en;
+	register int off;
 
 COUNT(ENOUTPUT);
-	switch (pf) {
+	switch (dst->sa_family) {
 
 #ifdef INET
-	case PF_INET: {
-		register struct ip *ip = mtod(m0, struct ip *);
-
-#ifndef ENKLUDGE
-		dest = ip->ip_dst.s_addr >> 24;
-#else
-		dest = (ip->ip_dst.s_addr >> 8) & 0xff;
-#endif
-		off = ntohs((u_short)ip->ip_len) - m->m_len;
-#ifndef ENKLUDGE
-		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
+	case AF_INET:
+		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr >> 24;
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		if (off > 0 && (off & 0x1ff) == 0 &&
+		    m->m_off >= MMINOFF + sizeof (u_short)) {
 			type = ENPUP_TRAIL + (off>>9);
-			m->m_off -= 2;
-			m->m_len += 2;
+			m->m_off -= sizeof (u_short);
+			m->m_len += sizeof (u_short);
 			*mtod(m, u_short *) = ENPUP_IPTYPE;
 			goto gottrailertype;
 		}
-#endif
 		type = ENPUP_IPTYPE;
 		off = 0;
 		goto gottype;
-		}
 #endif
 #ifdef PUP
-	case PF_PUP: {
-		register struct pup_header *pup = mtod(m, struct pup_header *);
-
-		dest = pup->pup_dhost;
-		off = pup->pup_length - m->m_len;
-		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
+	case AF_PUP:
+		dest = ((struct sockaddr_pup *)dst)->spup_addr.pp_host;
+		off = mtod(m, struct pup_header *)->pup_length - m->m_len;
+		if (off > 0 && (off & 0x1ff) == 0 &&
+		    m->m_off >= MMINOFF + sizeof (u_short)) {
 			type = ENPUP_TRAIL + (off>>9);
-			m->m_off -= 2;
-			m->m_len += 2;
+			m->m_off -= sizeof (u_short);
+			m->m_len += sizeof (u_short);
 			*mtod(m, u_short *) = ENPUP_PUPTYPE;
 			goto gottrailertype;
 		}
 		type = ENPUP_PUPTYPE;
 		off = 0;
 		goto gottype;
-		}
 #endif
 
 	default:
-		printf("en%d: can't encapsulate pf%d\n", ifp->if_unit, pf);
+		printf("en%d: can't handle af%d\n", ifp->if_unit,
+			dst->sa_family);
 		m_freem(m0);
 		return (0);
 	}

@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.8	82/03/15	*/
+/*	raw_ip.c	4.9	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -16,9 +16,9 @@
  * Raw interface to IP protocol.
  */
 
-static struct sockaddr_in ripdst = { PF_INET };
-static struct sockaddr_in ripsrc = { PF_INET };
-static struct sockproto ripproto = { AF_INET };
+static struct sockaddr_in ripdst = { AF_INET };
+static struct sockaddr_in ripsrc = { AF_INET };
+static struct sockproto ripproto = { PF_INET };
 
 /*
  * Setup generic address and protocol structures
@@ -36,13 +36,6 @@ COUNT(RIP_INPUT);
 	ripsrc.sin_addr = ip->ip_src;
 	raw_input(m, &ripproto, (struct sockaddr *)&ripdst,
 	  (struct sockaddr *)&ripsrc);
-}
-
-/*ARGSUSED*/
-rip_ctlinput(m)
-	struct mbuf *m;
-{
-COUNT(RIP_CTLINPUT);
 }
 
 /*
@@ -85,35 +78,5 @@ COUNT(RIP_OUTPUT);
 	ip->ip_src =
 		((struct sockaddr_in *)&so->so_addr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0, 1));
-}
-
-/*
- * Intercept control operations related to
- * handling of IP options.  Otherwise,
- * just pass things on to the raw_usrreq
- * routine for setup and tear down of
- * raw control block data structures.
- */
-rip_usrreq(so, req, m, addr)
-	struct socket *so;
-	int req;
-	struct mbuf *m;
-	caddr_t addr;
-{
-	register struct rawcb *rp = sotorawcb(so);
-
-COUNT(RAW_USRREQ);
-	if (rp == 0 && req != PRU_ATTACH)
-		return (EINVAL);
-
-	switch (req) {
-	
-	/*
-	 * SHOULD HAVE CONTROL TO SET PROTOCOL NUMBER (e.g. GGP)
-	 */
-	case PRU_CONTROL:
-		return (EOPNOTSUPP);
-	}
-	return (raw_usrreq(so, req, m, addr));
+	return (ip_output(m, (struct mbuf *)0, 0, 1));
 }

@@ -1,4 +1,4 @@
-/*	if.h	4.10	82/03/19	*/
+/*	if.h	4.11	82/03/28	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -9,21 +9,20 @@
  * received from its medium.
  *
  * Output occurs when the routine if_output is called, with three parameters:
- *	(*ifp->if_output)(ifp, m, pf)
- * Here m is the mbuf chain to be sent and pf is the protocol family
- * of the internetwork datagram format in which the data is wrapped
- * (e.g. PF_PUP or PF_INET).  The output routine encapsulates the
- * supplied datagram if necessary, and then transmits it on its medium.
+ *	(*ifp->if_output)(ifp, m, dst)
+ * Here m is the mbuf chain to be sent and dst is the destination address.
+ * The output routine encapsulates the supplied datagram if necessary,
+ * and then transmits it on its medium.
  *
  * On input, each interface unwraps the data received by it, and either
  * places it on the input queue of a internetwork datagram routine
  * and posts the associated software interrupt, or passes the datagram to a raw
  * packet input routine.
  *
- * Routines exist for locating interfaces by their internet addresses
+ * Routines exist for locating interfaces by their addresses
  * or for locating a interface on a certain network, as well as more general
  * routing and gateway routines maintaining information used to locate
- * interfaces.  These routines live in the files if.c and ip_ggp.c.
+ * interfaces.  These routines live in the files if.c and route.c
  */
 
 /*
@@ -36,9 +35,10 @@ struct ifnet {
 	short	if_unit;		/* sub-unit for lower level driver */
 	short	if_mtu;			/* maximum transmission unit */
 	short	if_net;			/* network number of interface */
+	short	if_flags;		/* up/down, broadcast, etc. */
 	int	if_host[2];		/* local net host number */
-	struct	in_addr if_addr;	/* internet address of interface */
-	struct	in_addr if_broadaddr;	/* broadcast address of interface */
+	struct	sockaddr if_addr;	/* internet address of interface */
+	struct	sockaddr if_broadaddr;	/* broadcast address of interface */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
 		struct	mbuf *ifq_tail;
@@ -59,6 +59,10 @@ struct ifnet {
 /* end statistics */
 	struct	ifnet *if_next;
 };
+
+#define	IFF_UP		0x1		/* interface is up */
+#define	IFF_BROADCAST	0x2		/* broadcast address valid */
+#define	IFF_DEBUG	0x4		/* turn on debugging */
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
@@ -97,11 +101,12 @@ struct ifnet {
 #define	IFQ_MAXLEN	50
 
 #ifdef KERNEL
-struct	ifqueue rawintrq;		/* raw packet input queue */
 #ifdef INET
 struct	ifqueue	ipintrq;		/* ip packet input queue */
 #endif
+struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet *ifnet;
-struct	ifnet *if_ifwithaddr(), *if_ifonnetof(), *if_gatewayfor();
+struct	ifnet *if_ifwithaddr(), *if_ifwithnet(), *if_ifwithaf();
+struct	ifnet *if_ifonnetof();
 struct	in_addr if_makeaddr();
 #endif

@@ -1,4 +1,4 @@
-/*	if_uba.c	4.9	82/02/03	*/
+/*	if_uba.c	4.10	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/cmap.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
+#include "../h/socket.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"

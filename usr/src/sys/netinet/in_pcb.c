@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.21	82/03/23	*/
+/*	in_pcb.c	4.22	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -69,7 +69,7 @@ COUNT(IN_PCBATTACH);
 		if (sin->sin_family != AF_INET)
 			return (EAFNOSUPPORT);
 		if (sin->sin_addr.s_addr &&
-		    if_ifwithaddr(sin->sin_addr) == 0)
+		    if_ifwithaddr((struct sockaddr *)sin) == 0)
 			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
 		if (lport) {
@@ -131,6 +131,7 @@ in_pcbconnect(inp, sin)
 	struct sockaddr_in *sin;
 {
 	struct ifnet *ifp;
+	struct sockaddr_in *ifaddr;
 
 COUNT(IN_PCBCONNECT);
 	if (sin->sin_family != AF_INET)
@@ -138,14 +139,18 @@ COUNT(IN_PCBCONNECT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
 	if (inp->inp_laddr.s_addr == 0) {
-		ifp = if_ifonnetof(sin->sin_addr);
-		if (ifp == 0)
-			ifp = ifnet;
+		ifp = if_ifonnetof(sin->sin_addr.s_net);
+		if (ifp == 0) {
+			ifp = if_ifwithaf(AF_INET);
+			if (ifp == 0)
+				return (EADDRNOTAVAIL);		/* XXX */
+		}
+		ifaddr = (struct sockaddr_in *)&ifp->if_addr;
 	}
 	if (in_pcblookup(inp->inp_head,
 	    sin->sin_addr,
 	    sin->sin_port,
-	    inp->inp_laddr.s_addr ? inp->inp_laddr : ifp->if_addr,
+	    inp->inp_laddr.s_addr ? inp->inp_laddr : ifaddr->sin_addr,
 	    inp->inp_lport,
 	    0))
 		return (EADDRINUSE);
@@ -153,7 +158,7 @@ COUNT(IN_PCBCONNECT);
 		struct sockaddr_in *sin2 =
 		    (struct sockaddr_in *)&inp->inp_socket->so_addr;
 
-		inp->inp_laddr = ifp->if_addr;
+		inp->inp_laddr = ifaddr->sin_addr;
 		sin2->sin_addr = inp->inp_laddr;
 	}
 	inp->inp_faddr = sin->sin_addr;

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.22	82/03/15	*/
+/*	udp_usrreq.c	4.23	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -14,6 +14,7 @@
 #include "../net/ip_var.h"
 #include "../net/udp.h"
 #include "../net/udp_var.h"
+#include "../net/route.h"
 
 /*
  * UDP protocol implementation.
@@ -159,7 +160,7 @@ COUNT(UDP_OUTPUT);
 	ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len);
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
-	(void) ip_output(m, (struct mbuf *)0,
+	(void) ip_output(m, (struct mbuf *)0, 0,
 	    inp->inp_socket->so_state & SS_PRIV);
 	return;
 bad:

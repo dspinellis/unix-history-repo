@@ -1,4 +1,4 @@
-/*	if_imp.c	4.19	82/03/19	*/
+/*	if_imp.c	4.20	82/03/28	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -9,7 +9,6 @@
  * hardware specifics to the lower level interface driver.
  *
  * TODO:
- *	rethink coupling between this module and device driver
  *	pass more error indications up to protocol modules
  */
 #include "../h/param.h"
@@ -79,6 +78,7 @@ impattach(ui)
 {
 	struct imp_softc *sc = &imp_softc[ui->ui_unit];
 	register struct ifnet *ifp = &sc->imp_if;
+	struct sockaddr_in *sin;
 
 COUNT(IMPATTACH);
 	/* UNIT COULD BE AMBIGUOUS */
@@ -87,37 +87,15 @@ COUNT(IMPATTACH);
 	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
 	ifp->if_net = ui->ui_flags;
 	/* the host and imp fields will be filled in by the imp */
-	ifp->if_addr = if_makeaddr(ifp->if_net, 0);
+	sin = (struct sockaddr_in *)&ifp->if_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(ifp->if_net, 0);
 	ifp->if_init = impinit;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
 	if_attach(ifp);
-	/* kludge to hand pointers back to hardware attach routine */
 	return ((int)&sc->imp_if);
 }
-
-#ifdef notdef
-/*
- * Timer routine to keep priming the IMP until it sends
- * us the noops we need.  Since we depend on the host and
- * imp values returned in the noop messages, we must wait
- * for them before we allow any outgoing traffic.
- */
-imptimer(sc)
-	register struct imp_softc *sc;
-{
-	int s = splimp();
-
-	if (sc->imp_state != IMPS_INIT) {
-		splx(s);
-		return;
-	}
-	sc->imp_dropcnt = IMP_DROPCNT;
-	impnoops(sc);
-	timeout(imptimer, (caddr_t)sc, 30 * hz);
-	splx(s);
-}
-#endif
 
 /*
  * IMP initialization routine: call hardware module to
@@ -131,15 +109,12 @@ impinit(unit)
 
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
+		sc->imp_if.if_flags &= ~IFF_UP;
 		return;
 	}
 	sc->imp_state = IMPS_INIT;
-#ifdef notdef
-	imptimer(sc);
-#else
 	sc->imp_dropcnt = IMP_DROPCNT;
 	impnoops(sc);
-#endif
 }
 
 struct sockproto impproto = { PF_IMPLINK };
@@ -164,6 +139,7 @@ impinput(unit, m)
 	struct control_leader *cp;
 	struct in_addr addr;
 	struct mbuf *next;
+	struct sockaddr_in *sin;
 
 COUNT(IMPINPUT);
 	/* verify leader length. */
@@ -246,9 +222,7 @@ COUNT(IMPINPUT);
 	 * Compare the local address with that in the message.
 	 * Reset the local address notion if it doesn't match.
 	 */
-	case IMPTYPE_NOOP: {
-		register struct in_addr *sin;
-
+	case IMPTYPE_NOOP:
 		if (sc->imp_state == IMPS_DOWN) {
 			sc->imp_state = IMPS_INIT;
 			sc->imp_dropcnt = IMP_DROPCNT;
@@ -256,15 +230,15 @@ COUNT(IMPINPUT);
 		if (sc->imp_state != IMPS_INIT || --sc->imp_dropcnt > 0)
 			goto drop;
 		sc->imp_state = IMPS_UP;
-		sin = &sc->imp_if.if_addr;
-		sc->imp_if.if_host[0] = sin->s_host = ip->il_host;
-		sin->s_imp = ip->il_imp;
+		sc->imp_if.if_flags |= IFF_UP;
+		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
+		sc->imp_if.if_host[0] = sin->sin_addr.s_host = ip->il_host;
+		sin->sin_addr.s_imp = ip->il_imp;
 		impmsg(sc, "reset (host %d/imp %d)", (u_int)ip->il_host,
 			ntohs(ip->il_imp));
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
 		goto drop;
-	}
 
 	/*
 	 * RFNM or INCOMPLETE message, record in
@@ -341,7 +315,8 @@ COUNT(IMPINPUT);
 	default:
 	rawlinkin:
 		impproto.sp_protocol = ip->il_link;
-		impdst.sin_addr = sc->imp_if.if_addr;
+		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
+		impdst.sin_addr = sin->sin_addr;;
 		impsrc.sin_addr.s_net = ip->il_network;
 		impsrc.sin_addr.s_host = ip->il_host;
 		impsrc.sin_addr.s_imp = ip->il_imp;
@@ -368,6 +343,7 @@ impdown(sc)
 {
 
 	sc->imp_state = IMPS_DOWN;
+	sc->imp_if.if_flags &= ~IFF_UP;
 	impmsg(sc, "marked down");
 	/* notify protocols with messages waiting? */
 }
@@ -390,9 +366,10 @@ impmsg(sc, fmt, a1, a2)
  * transmission to the imp.  Sets up the header and calls impsnd to
  * enqueue the message for this IMP's hardware driver.
  */
-impoutput(ifp, m0, pf)
+impoutput(ifp, m0, dst)
 	register struct ifnet *ifp;
 	struct mbuf *m0;
+	struct sockaddr *dst;
 {
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
@@ -406,25 +383,27 @@ COUNT(IMPOUTPUT);
 	if (x == IMPS_DOWN || x == IMPS_GOINGDOWN)
 		goto drop;
 
-	switch (pf) {
+	switch (dst->sa_family) {
 
 #ifdef INET
-	case PF_INET: {
-		register struct ip *ip = mtod(m0, struct ip *);
+	case AF_INET: {
+		struct ip *ip = mtod(m0, struct ip *);
+		struct sockaddr_in *sin = (struct sockaddr_in *)dst;
 
-		dhost = ip->ip_dst.s_host;
-		dimp = ip->ip_dst.s_impno;
+		dhost = sin->sin_addr.s_host;
+		dimp = sin->sin_addr.s_impno;
 		dlink = IMPLINK_IP;
 		dnet = 0;
 		len = ntohs((u_short)ip->ip_len);
 		break;
 	}
 #endif
-	case PF_IMPLINK:
+	case AF_IMPLINK:
 		goto leaderexists;
 
 	default:
-		printf("imp%d: can't encapsulate pf%d\n", ifp->if_unit, pf);
+		printf("imp%d: can't handle af%d\n", ifp->if_unit, 
+			dst->sa_family);
 		goto drop;
 	}
 
