@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.25 (Berkeley) %G%
+#       @(#)makesendmail	8.26 (Berkeley) %G%
 #
 
 #
@@ -198,6 +198,8 @@ else
 	echo "Creating $obj using $makefile"
 	mkdir $obj
 	(cd $obj; ln -s ../*.[ch158] ../sendmail.hf .; ln -s ../Makefiles/$makefile Makefile)
+	echo "Making dependencies in $obj"
+	(cd $obj; ${MAKE-make} depend)
 fi
 
 if [ "$mflag" ]
