@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)maketape	4.13	%G%
+#	@(#)maketape	4.14	%G%
 #
 miniroot=hp0g
 #
@@ -30,15 +30,15 @@ cd /nbsd/usr; tar cf /dev/rmt12 adm bin dict doc games \
 	guest hosts include lib local man mdec msgs new \
 	preserve pub spool tmp ucb
 echo "Add varian fonts"
-cd /usr/lib/vfont; tar cFFf /dev/rmt12 .
+cd /usr/lib/vfont; tar cf /dev/rmt12 .
 echo "Done, rewinding first tape"
 mt rew
 echo "Mount second tape and hit return when ready"; read x
 echo "Add user source code"
-cd /nbsd/usr/src; tar cFFf /dev/rmt12 .
+cd /nbsd/usr/src; tar cf /dev/rmt12 .
 echo "Add user contributed software"
-cd /nbsd/a/new; tar cFFf /dev/rmt12 .
+cd /nbsd/a/new; tar cf /dev/rmt12 .
 echo "Add ingres source"
-cd /nbsd/usr/ingres; tar cFFf /dev/rmt12 .
+cd /nbsd/usr/ingres; tar cf /dev/rmt12 .
 echo "Done, rewinding second tape"
 mt rew
