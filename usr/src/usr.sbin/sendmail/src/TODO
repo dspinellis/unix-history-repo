@@ -1,4 +1,4 @@
-(Version 8.1 of %G%)
+(Version 8.2 of %G%)
 
 *****	Database (keyed lookup) locking and rebuild.
 
@@ -14,3 +14,43 @@
 
 *	WIN/3B support (non-atomic rename, no h_addr_list, others?)
 	(Bruce Lilly <blilly!bruce@uu.psi.com>)
+
+*	Sun YBTS daemon uses -ba.  [Martin Kiff <MGK@newton.npl.co.uk>]
+
+*	EXPN adds @domain to all mailers, including prog.  Is this right?
+	[Bob Henry]
+
+*	EXPN adds @localhost instead of @$M.  [Pel Emanuelsson]
+
+**	[AEJ] You can use symbolic links to point into protected directories.
+
+*	Change body put code to time out around individual puts.  This will
+	make the timeout algorithm more responsive and more resilient.
+	Unfortunately, it's also a pain in the butt.
+
+***	Dynamically allocate MAXNAME buffers for headers.
+
+***	Should have new mailer flags to override LocalMailer stuff:
+	- M_ALIASABLE (A) -- can use as the LHS of an alias.
+	- M_HASPWENT (w) -- should have a /etc/passwd entry.  If not found
+	  there, implies user unknown.  Also implies .forward and UDB
+	  searching, search for |, /, and :include:, etc.).
+	- Actually, UDB searching and |, /, and :include: mapping should
+	  probably be on another flag.  (Cannot be 'l' for back compat
+	  reasons.)
+	- Need for $@host part of triple and Return-Receipt-To: processing
+	  should also be split apart.
+
+*	Some way to relay unfound local users to another site.
+
+*	Disable all default RW sets except mailer-specific?
+
+**	Extend OI to allow separate settings for canonification, MX, and A
+	lookups.
+
+**	Add $!x class to match any number of words not in class x [KRE].
+
+****	Change NoReturn to be an envelope flag.
+
+****	Add M_NOLOOPBACKCHK (k) mailer flag to turn off check of name in
+	HELO command.
