@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
  */
 #include "defs.h"
 #include <sys/ioctl.h>
-#include <sys/time.h>
+#include <sys/file.h>
 
 #include <net/if.h>
 
@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
 int	supplier = -1;		/* process should supply updates */
 int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
 int	debug = 0;
+int	bufspace = 127*1024;	/* max. input buffer size to request */
 
 struct	rip *msg = (struct rip *)packet;
 int	hup(), rtdeleteall(), sigtrace();
@@ -49,8 +50,11 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int cc;
+	int n, cc, nfd, omask, tflags = 0;
 	struct sockaddr from;
+	struct timeval *tvp, waittime;
+	struct itimerval itval;
+	fd_set ibits;
 	u_char retry;
 	
 	argv0 = argv;
@@ -80,12 +84,7 @@ main(argc, argv)
 			continue;
 		}
 		if (strcmp(*argv, "-t") == 0) {
-			if (tracehistory == 0)
-				tracehistory++;
-			else {
-				tracehistory = 0;
-				tracepackets++;
-			}
+			tflags++;
 			setlogmask(LOG_DEBUG);
 			argv++, argc--;
 			continue;
@@ -105,7 +104,8 @@ main(argc, argv)
 			"usage: routed [ -s ] [ -q ] [ -t ] [ -g ]\n");
 		exit(1);
 	}
-	if (tracepackets == 0 && debug == 0) {
+
+	if (debug == 0) {
 		int t;
 
 		if (fork())
@@ -128,6 +128,10 @@ main(argc, argv)
 	 */
 	if (argc > 0)
 		traceon(*argv);
+	while (tflags-- > 0)
+		bumploglevel();
+
+	(void) gettimeofday(&now, (struct timezone *)NULL);
 	/*
 	 * Collect an initial view of the world by
 	 * checking the interface configuration and the gateway kludge
@@ -144,10 +148,11 @@ main(argc, argv)
 		supplier = 0;
 	msg->rip_cmd = RIPCMD_REQUEST;
 	msg->rip_vers = RIPVERSION;
-	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
-	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
-	msg->rip_nets[0].rip_dst.sa_family = htons(AF_UNSPEC);
-	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
+	if (sizeof(msg->rip_nets[0].rip_dst.sa_family) > 1)	/* XXX */
+		msg->rip_nets[0].rip_dst.sa_family = htons((u_short)AF_UNSPEC);
+	else
+		msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
+	msg->rip_nets[0].rip_metric = htonl((u_long)HOPCNT_INFINITY);
 	toall(sendmsg);
 	signal(SIGALRM, timer);
 	signal(SIGHUP, hup);
@@ -155,19 +160,109 @@ main(argc, argv)
 	signal(SIGINT, rtdeleteall);
 	signal(SIGUSR1, sigtrace);
 	signal(SIGUSR2, sigtrace);
-	timer();
+	itval.it_interval.tv_sec = TIMER_RATE;
+	itval.it_value.tv_sec = TIMER_RATE;
+	itval.it_interval.tv_usec = 0;
+	itval.it_value.tv_usec = 0;
+	srandom(getpid());
+	if (setitimer(ITIMER_REAL, &itval, (struct itimerval *)NULL) < 0)
+		syslog(LOG_ERR, "setitimer: %m\n");
 
+	FD_ZERO(&ibits);
+	nfd = s + 1;			/* 1 + max(fd's) */
 	for (;;) {
-		int ibits;
-		register int n;
-
-		ibits = 1 << s;
-		n = select(20, &ibits, 0, 0, 0);
-		if (n < 0)
+		FD_SET(s, &ibits);
+		/*
+		 * If we need a dynamic update that was held off,
+		 * needupdate will be set, and nextbcast is the time
+		 * by which we want select to return.  Compute time
+		 * until dynamic update should be sent, and select only
+		 * until then.  If we have already passed nextbcast,
+		 * just poll.
+		 */
+		if (needupdate) {
+			waittime = nextbcast;
+			timevalsub(&waittime, &now);
+			if (waittime.tv_sec < 0) {
+				waittime.tv_sec = 0;
+				waittime.tv_usec = 0;
+			}
+			if (traceactions)
+				fprintf(ftrace,
+				 "select until dynamic update %d/%d sec/usec\n",
+				    waittime.tv_sec, waittime.tv_usec);
+			tvp = &waittime;
+		} else
+			tvp = (struct timeval *)NULL;
+		n = select(nfd, &ibits, 0, 0, tvp);
+		if (n <= 0) {
+			/*
+			 * Need delayed dynamic update if select returned
+			 * nothing and we timed out.  Otherwise, ignore
+			 * errors (e.g. EINTR).
+			 */
+			if (n < 0) {
+				if (errno == EINTR)
+					continue;
+				syslog(LOG_ERR, "select: %m");
+			}
+			omask = sigblock(sigmask(SIGALRM));
+			if (n == 0 && needupdate) {
+				if (traceactions)
+					fprintf(ftrace,
+					    "send delayed dynamic update\n");
+				(void) gettimeofday(&now,
+					    (struct timezone *)NULL);
+				toall(supply, RTS_CHANGED,
+				    (struct interface *)NULL);
+				lastbcast = now;
+				needupdate = 0;
+				nextbcast.tv_sec = 0;
+			}
+			sigsetmask(omask);
 			continue;
-		if (ibits & (1 << s))
+		}
+		(void) gettimeofday(&now, (struct timezone *)NULL);
+#ifdef doesntwork
+/*
+printf("s %d, ibits %x index %d, mod %d, sh %x, or %x &ibits %x\n",
+	s,
+	ibits.fds_bits[0],
+	(s)/(sizeof(fd_mask) * 8),
+	((s) % (sizeof(fd_mask) * 8)),
+	(1 << ((s) % (sizeof(fd_mask) * 8))),
+	ibits.fds_bits[(s)/(sizeof(fd_mask) * 8)] & (1 << ((s) % (sizeof(fd_mask) * 8))),
+	&ibits
+	);
+*/
+		if (FD_ISSET(s, &ibits))
+#else
+		if (ibits.fds_bits[s/32] & (1 << s))
+#endif
 			process(s);
 		/* handle ICMP redirects */
+	}
+}
+
+timevaladd(t1, t2)
+	struct timeval *t1, *t2;
+{
+
+	t1->tv_sec += t2->tv_sec;
+	if ((t1->tv_usec += t2->tv_usec) > 1000000) {
+		t1->tv_sec++;
+		t1->tv_usec -= 1000000;
+	}
+}
+
+timevalsub(t1, t2)
+	struct timeval *t1, *t2;
+{
+
+	t1->tv_sec -= t2->tv_sec;
+	if ((t1->tv_usec -= t2->tv_usec) < 0) {
+		t1->tv_sec--;
+		t1->tv_usec += 1000000;
 	}
 }
 
@@ -175,54 +270,62 @@ process(fd)
 	int fd;
 {
 	struct sockaddr from;
-	int fromlen = sizeof (from), cc, omask;
-	time_t now;
+	int fromlen, cc, omask;
 
-	cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
-	if (cc <= 0) {
-		if (cc < 0 && errno != EINTR)
-			perror("recvfrom");
-		return;
+	for (;;) {
+		fromlen = sizeof (from);
+		cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
+		if (cc <= 0) {
+			if (cc < 0 && errno != EWOULDBLOCK)
+				perror("recvfrom");
+			break;
+		}
+		if (fromlen != sizeof (struct sockaddr_in))
+			break;
+		omask = sigblock(sigmask(SIGALRM));
+		rip_input(&from, cc);
+		sigsetmask(omask);
 	}
-	if (fromlen != sizeof (struct sockaddr_in))
-		return;
-	if (traceactions && !tracepackets) {
-		(void) time(&now);
-		curtime = ctime(&now);
-	}
-	omask = sigblock(sigmask(SIGALRM));
-	rip_input(&from, cc);
-	sigsetmask(omask);
 }
 
 getsocket(domain, type, sin)
 	int domain, type;
 	struct sockaddr_in *sin;
 {
-	int s, on = 1;
+	int sock, on = 1;
 
-	if ((s = socket(domain, type, 0)) < 0) {
+	if ((sock = socket(domain, type, 0)) < 0) {
 		perror("socket");
 		syslog(LOG_ERR, "socket: %m");
 		return (-1);
 	}
 #ifdef SO_BROADCAST
-	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
+	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
-		close(s);
+		close(sock);
 		return (-1);
 	}
 #endif
 #ifdef SO_RCVBUF
-	on = 48*1024;
-	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &on, sizeof (on)) < 0)
-		syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+	for (on = bufspace; ; on -= 1024) {
+		if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
+		    &on, sizeof (on)) == 0)
+			break;
+		if (on <= 8*1024) {
+			syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+			break;
+		}
+	}
+	if (traceactions)
+		fprintf(ftrace, "recv buf %d\n", on);
 #endif
-	if (bind(s, sin, sizeof (*sin), 0) < 0) {
+	if (bind(sock, sin, sizeof (*sin), 0) < 0) {
 		perror("bind");
 		syslog(LOG_ERR, "bind: %m");
-		close(s);
+		close(sock);
 		return (-1);
 	}
-	return (s);
+	if (fcntl(sock, F_SETFL, FNDELAY) == -1)
+		syslog(LOG_ERR, "fcntl FNDELAY: %m\n");
+	return (sock);
 }

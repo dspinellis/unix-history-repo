@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,7 +36,7 @@ rip_input(from, size)
 	register struct netinfo *n;
 	register struct interface *ifp;
 	struct interface *if_ifwithdstaddr();
-	int newsize;
+	int count, changes = 0;
 	register struct afswitch *afp;
 	static struct sockaddr badfrom, badfrom2;
 
@@ -49,22 +49,30 @@ rip_input(from, size)
 		    from->sa_family, msg->rip_cmd);
 		return;
 	}
+	if (msg->rip_vers == 0) {
+		syslog(LOG_ERR,
+		    "RIP version 0 packet received from %s! (cmd %d)",
+		    (*afswitch[from->sa_family].af_format)(from), msg->rip_cmd);
+		return;
+	}
 	switch (msg->rip_cmd) {
 
 	case RIPCMD_REQUEST:
-		newsize = 0;
-		size -= 4 * sizeof (char);
 		n = msg->rip_nets;
-		while (size > 0) {
-			if (size < sizeof (struct netinfo))
+		count = size - ((char *)n - (char *)msg);
+		if (count < sizeof (struct netinfo))
+			return;
+		for (; count > 0; n++) {
+			if (count < sizeof (struct netinfo))
 				break;
-			size -= sizeof (struct netinfo);
+			count -= sizeof (struct netinfo);
 
-			if (msg->rip_vers > 0) {
+#if BSD < 198810
+			if (sizeof(n->rip_dst.sa_family) > 1)/* XXX */
 				n->rip_dst.sa_family =
 					ntohs(n->rip_dst.sa_family);
-				n->rip_metric = ntohl(n->rip_metric);
-			}
+#endif
+			n->rip_metric = ntohl(n->rip_metric);
 			/* 
 			 * A single entry with sa_family == AF_UNSPEC and
 			 * metric ``infinity'' means ``all routes''.
@@ -73,9 +81,9 @@ rip_input(from, size)
 			 * (eg, query).
 			 */
 			if (n->rip_dst.sa_family == AF_UNSPEC &&
-			    n->rip_metric == HOPCNT_INFINITY && size == 0) {
+			    n->rip_metric == HOPCNT_INFINITY && count == 0) {
 			    	if (supplier || (*afp->af_portmatch)(from) == 0)
-					supply(from, 0, 0);
+					supply(from, 0, 0, 0);
 				return;
 			}
 			if (n->rip_dst.sa_family < af_max &&
@@ -85,18 +93,14 @@ rip_input(from, size)
 				rt = 0;
 			n->rip_metric = rt == 0 ? HOPCNT_INFINITY :
 				min(rt->rt_metric + 1, HOPCNT_INFINITY);
-			if (msg->rip_vers > 0) {
-				n->rip_dst.sa_family =
-					htons(n->rip_dst.sa_family);
-				n->rip_metric = htonl(n->rip_metric);
-			}
-			n++, newsize += sizeof (struct netinfo);
+#if BSD < 198810
+			if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
+			    n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
+#endif
+			n->rip_metric = htonl(n->rip_metric);
 		}
-		if (newsize > 0) {
-			msg->rip_cmd = RIPCMD_RESPONSE;
-			newsize += sizeof (int);
-			(*afp->af_output)(s, 0, from, newsize);
-		}
+		msg->rip_cmd = RIPCMD_RESPONSE;
+		(*afp->af_output)(s, 0, from, size);
 		return;
 
 	case RIPCMD_TRACEON:
@@ -174,11 +178,12 @@ rip_input(from, size)
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {
 			if (size < sizeof (struct netinfo))
 				break;
-			if (msg->rip_vers > 0) {
+#if BSD < 198810
+			if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
 				n->rip_dst.sa_family =
 					ntohs(n->rip_dst.sa_family);
-				n->rip_metric = ntohl(n->rip_metric);
-			}
+#endif
+			n->rip_metric = ntohl(n->rip_metric);
 			if (n->rip_dst.sa_family >= af_max ||
 			    (afp = &afswitch[n->rip_dst.sa_family])->af_hash ==
 			    (int (*)())0) {
@@ -237,6 +242,7 @@ rip_input(from, size)
 				    if (rt && equal(from, &rt->rt_router))
 					    continue;
 				    rtadd(&n->rip_dst, from, n->rip_metric, 0);
+				    changes++;
 				}
 				continue;
 			}
@@ -249,6 +255,7 @@ rip_input(from, size)
 			if (equal(from, &rt->rt_router)) {
 				if (n->rip_metric != rt->rt_metric) {
 					rtchange(rt, from, n->rip_metric);
+					changes++;
 					rt->rt_timer = 0;
 					if (rt->rt_metric >= HOPCNT_INFINITY)
 						rt->rt_timer =
@@ -260,9 +267,66 @@ rip_input(from, size)
 			    rt->rt_timer > (EXPIRE_TIME/2) &&
 			    (unsigned) n->rip_metric < HOPCNT_INFINITY)) {
 				rtchange(rt, from, n->rip_metric);
+				changes++;
 				rt->rt_timer = 0;
 			}
 		}
-		return;
+		break;
+	}
+
+	/*
+	 * If changes have occurred, and if we have not sent a broadcast
+	 * recently, send a dynamic update.  This update is sent only
+	 * on interfaces other than the one on which we received notice
+	 * of the change.  If we are within MIN_WAITTIME of a full update,
+	 * don't bother sending; if we just sent a dynamic update
+	 * and set a timer (nextbcast), delay until that time.
+	 * If we just sent a full update, delay the dynamic update.
+	 * Set a timer for a randomized value to suppress additional
+	 * dynamic updates until it expires; if we delayed sending
+	 * the current changes, set needupdate.
+	 */
+	if (changes && supplier &&
+	   now.tv_sec - lastfullupdate.tv_sec < SUPPLY_INTERVAL-MAX_WAITTIME) {
+		u_long delay;
+		extern long random();
+
+		if (now.tv_sec - lastbcast.tv_sec >= MIN_WAITTIME &&
+		    timercmp(&nextbcast, &now, <)) {
+			if (traceactions)
+				fprintf(ftrace, "send dynamic update\n");
+			toall(supply, RTS_CHANGED, ifp);
+			lastbcast = now;
+			needupdate = 0;
+			nextbcast.tv_sec = 0;
+		} else {
+			needupdate++;
+			if (traceactions)
+				fprintf(ftrace, "delay dynamic update\n");
+		}
+#define RANDOMDELAY()	(MIN_WAITTIME * 1000000 + \
+		(u_long)random() % ((MAX_WAITTIME - MIN_WAITTIME) * 1000000))
+
+		if (nextbcast.tv_sec == 0) {
+			delay = RANDOMDELAY();
+			if (traceactions)
+				fprintf(ftrace,
+				    "inhibit dynamic update for %d usec\n",
+				    delay);
+			nextbcast.tv_sec = delay / 1000000;
+			nextbcast.tv_usec = delay % 1000000;
+			timevaladd(&nextbcast, &now);
+			/*
+			 * If the next possibly dynamic update
+			 * is within MIN_WAITTIME of the next full update,
+			 * force the delay past the full update,
+			 * or we might send a dynamic update just before
+			 * the full update.
+			 */
+			if (nextbcast.tv_sec > lastfullupdate.tv_sec +
+			    SUPPLY_INTERVAL - MIN_WAITTIME)
+				nextbcast.tv_sec = lastfullupdate.tv_sec +
+				    SUPPLY_INTERVAL + 1;
+		}
 	}
 }

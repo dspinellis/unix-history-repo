@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.6 (Berkeley) %G%
+ *	@(#)defs.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -23,8 +23,9 @@
  * protocol specs with mods relevant to more
  * general addressing scheme.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 #include <net/route.h>
 #include <netinet/in.h>
@@ -47,7 +48,6 @@
 
 #define equal(a1, a2) \
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
-#define	min(a,b)	((a)>(b)?(b):(a))
 
 struct	sockaddr_in addr;	/* address of daemon's socket */
 
@@ -58,7 +58,11 @@ int	install;		/* if 1 call kernel */
 int	lookforinterfaces;	/* if 1 probe kernel for new up interfaces */
 int	performnlist;		/* if 1 check if /vmunix has changed */
 int	externalinterfaces;	/* # of remote and local interfaces */
-int	timeval;		/* local idea of time */
+struct	timeval now;		/* current idea of time */
+struct	timeval lastbcast;	/* last time all/changes broadcast */
+struct	timeval lastfullupdate;	/* last time full table broadcast */
+struct	timeval nextbcast;	/* time to wait before changes broadcast */
+int	needupdate;		/* true if we need update at nextbcast */
 
 char	packet[MAXPACKETSIZE+1];
 struct	rip *msg;

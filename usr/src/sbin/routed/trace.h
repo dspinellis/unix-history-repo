@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)trace.h	5.5 (Berkeley) %G%
+ *	@(#)trace.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
  * Trace record format.
  */
 struct	iftrace {
-	time_t	ift_stamp;		/* time stamp */
+	struct	timeval ift_stamp;	/* time stamp */
 	struct	sockaddr ift_who;	/* from/to */
 	char	*ift_packet;		/* pointer to packet */
 	short	ift_size;		/* size of packet */
@@ -49,10 +49,10 @@ struct	ifdebug {
  * Packet tracing stuff.
  */
 int	tracepackets;		/* watch packets as they go by */
+int	tracecontents;		/* watch packet contents as they go by */
 int	traceactions;		/* on/off */
 int	tracehistory;		/* on/off */
 FILE	*ftrace;		/* output trace file */
-char	*curtime;		/* current timestamp string */
 
 #define	TRACE_ACTION(action, route) { \
 	  if (traceactions) \
@@ -69,18 +69,12 @@ char	*curtime;		/* current timestamp string */
 			trace(&ifp->int_input, src, packet, size, \
 				ntohl(ifp->int_metric)); \
 	  } \
-	  if (tracepackets) { \
-		time_t t; \
-		t = time(0); \
-		dumppacket(stdout, "from", src, packet, size, &t); \
-	  } \
+	  if (tracepackets) \
+		dumppacket(ftrace, "from", src, packet, size, &now); \
 	}
 #define	TRACE_OUTPUT(ifp, dst, size) { \
 	  if (tracehistory && ifp) \
 		trace(&ifp->int_output, dst, packet, size, ifp->int_metric); \
-	  if (tracepackets) { \
-		time_t t; \
-		t = time(0); \
-		dumppacket(stdout, "to", dst, packet, size, &t); \
-	  } \
+	  if (tracepackets) \
+		dumppacket(ftrace, "to", dst, packet, size, &now); \
 	}
