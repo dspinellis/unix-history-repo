@@ -1,4 +1,4 @@
-/*	vm_meter.c	6.3	84/08/29	*/
+/*	vm_meter.c	6.4	85/02/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -54,8 +54,11 @@ setupclock()
 	 *	minfree		is minimal amount of free memory which is
 	 *			tolerable.
 	 */
-	if (lotsfree == 0)
-		lotsfree = LOOPPAGES / LOTSFREEFRACT;
+	if (lotsfree == 0) {
+		lotsfree = LOTSFREE / NBPG;
+		if (lotsfree > LOOPPAGES / LOTSFREEFRACT)
+			lotsfree = LOOPPAGES / LOTSFREEFRACT;
+	}
 	if (desfree == 0) {
 		desfree = DESFREE / NBPG;
 		if (desfree > LOOPPAGES / DESFREEFRACT)
