@@ -1,8 +1,7 @@
-#
-# @(#)Makefile 1.1 %G%
+#	Makefile	1.2	83/07/02
 #
 
-CFLAGS=-O -Dunix=1 -Dvax=1 -DFLEXNAMES
+CFLAGS=-O -Dunix=1 -DFLEXNAMES
 
 cpp :	cpp.o cpy.o rodata.o
 	$(CC) $(CFLAGS) -o cpp rodata.o cpp.o cpy.o  
