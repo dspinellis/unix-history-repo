@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.8 90/10/14$
  *
- *      @(#)st.c	7.3 (Berkeley) %G%
+ *      @(#)st.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -64,8 +64,9 @@
 #include "device.h"
 #include "stvar.h"
 
+/*
 #define ADD_DELAY
-
+*/
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();
 extern int scsiustart();
@@ -207,6 +208,7 @@ stinit(hd)
 	sc->sc_type = stident(sc, hd);
 	if (sc->sc_type < 0)
 		return(0);
+
 	sc->sc_dq.dq_ctlr = hd->hp_ctlr;
 	sc->sc_dq.dq_unit = hd->hp_unit;
 	sc->sc_dq.dq_slave = hd->hp_slave;
@@ -251,11 +253,25 @@ stident(sc, hd)
 	if (stat == -1)
 		goto failed;
 
-	if (st_inqbuf.inqbuf.type != 0x01 ||  /* sequential access device */
+	if ((st_inqbuf.inqbuf.type != 0x01 ||  /* sequential access device */
 	    st_inqbuf.inqbuf.qual != 0x80 ||  /* removable media */
 	    (st_inqbuf.inqbuf.version != 0x01 && /* current ANSI SCSI spec */
-	     st_inqbuf.inqbuf.version != 0x02))  /* 0x02 is for HP DAT */
+	     st_inqbuf.inqbuf.version != 0x02)) /* 0x02 is for HP DAT */
+	    &&
+	    (st_inqbuf.inqbuf.type != 0x01 ||	/* M4 ??! */
+	     /*
+	      * the M4 is a little too smart (ass?) for its own good:
+	      * qual codes:
+	      * 0x80: you can take the tape out (unit not online)
+	      * 0xf8: online and at 6250bpi
+	      * 0xf9: online and at 1600bpi
+	      */
+	     st_inqbuf.inqbuf.version != 0x09))	/* M4 tape */
+{
+printf("st: wrong specs: type %x qual %x version %d\n", st_inqbuf.inqbuf.type,
+st_inqbuf.inqbuf.qual, st_inqbuf.inqbuf.version);
 		goto failed;
+}
 
 	/* now get additonal info */
 	inqlen = 0x05 + st_inqbuf.inqbuf.len;
@@ -317,6 +333,12 @@ stident(sc, hd)
 		sc->sc_datalen[CMD_INQUIRY] = 36;
 		sc->sc_datalen[CMD_MODE_SELECT] = 12;
 		sc->sc_datalen[CMD_MODE_SENSE] = 12;
+	} else if (bcmp("123107 SCSI", &idstr[8], 11) == 0) {
+		sc->sc_tapeid = MT_ISMFOUR;
+		sc->sc_datalen[CMD_REQUEST_SENSE] = 8;
+		sc->sc_datalen[CMD_INQUIRY] = 5;
+		sc->sc_datalen[CMD_MODE_SELECT] = 12;
+		sc->sc_datalen[CMD_MODE_SENSE] = 12;
 	} else {
 		if (idstr[8] == '\0')
 			printf("st%d: No ID, assuming Archive\n", hd->hp_unit);
@@ -361,6 +383,7 @@ stopen(dev, flag, type, p)
 	struct mode_select_data msd;
 	struct mode_sense mode;
 	int modlen;
+	int error;
 	static struct scsi_fmt_cdb modsel = {
 		6,
 		CMD_MODE_SELECT, 0, 0, 0, sizeof(msd), 0
@@ -416,6 +439,9 @@ stopen(dev, flag, type, p)
 	case MT_ISPYTHON:
 		sc->sc_blklen = 512;
 		break;
+	case MT_ISMFOUR:
+		sc->sc_blklen = 0;
+		break;
 	default:
 		if ((mode.md.blklen2 << 16 |
 		     mode.md.blklen1 << 8 |
@@ -443,7 +469,13 @@ stopen(dev, flag, type, p)
 	msd.blklen1 = (sc->sc_blklen >> 8) & 0xff;
 	msd.blklen0 = sc->sc_blklen & 0xff;
 
+	/*
+	 * Do we have any density problems?
+	 */
+
 	switch (sc->sc_tapeid) {
+	case MT_ISMFOUR:
+		break;
 	case MT_ISAR:
 		if (minor(dev) & STDEV_HIDENSITY)
 			msd.density = 0x5;
@@ -518,7 +550,9 @@ retryselect:
 			uprintf("SCSI bus timeout\n");
 			return(EBUSY);
 		}
-		sleep((caddr_t)&lbolt, PZERO+1);
+		if (error = tsleep((caddr_t)&lbolt, PZERO | PCATCH, 
+		    "st_scsiwait", 0))
+			return (error);
 		goto retryselect;
 	}
 
@@ -543,6 +577,7 @@ retryselect:
 			else 
 				prtkey(UNIT(dev), sc);
 			break;
+		case MT_ISMFOUR:
 		case MT_ISAR:
 			if (xsense->sc_xsense.key & XSK_UNTATTEN)
 				stat = scsi_test_unit_rdy(ctlr, slave, unit);
@@ -943,7 +978,10 @@ stintr(unit, stat)
 			sc->sc_filepos++;
 			break;
 		}
-		if (xp->sc_xsense.key) {
+		if (xp->sc_xsense.key != XSK_NOSENCE
+		    && xp->sc_xsense.key != XSK_NOTUSED1
+		    && xp->sc_xsense.key != XSK_NOTUSEDC
+		    && xp->sc_xsense.key != XSK_NOTUSEDE) {
 			sterror(unit, sc, stat);
 			bp->b_flags |= B_ERROR;
 			bp->b_error = EIO;
@@ -975,7 +1013,9 @@ stintr(unit, stat)
 			 * Variable length and odd, may require special
 			 * handling.
 			 */
-			if (bp->b_resid & 1 && sc->sc_tapeid != MT_ISAR) {
+			if (bp->b_resid & 1
+			   && (sc->sc_tapeid != MT_ISAR 
+			      || sc->sc_tapeid != MT_ISMFOUR)) {
 				/*
 				 * Normal behavior, treat as an error.
 				 */
