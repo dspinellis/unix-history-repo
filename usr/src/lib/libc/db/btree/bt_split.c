@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -90,14 +90,14 @@ __bt_split(t, sp, key, data, flags, ilen, skip)
 	 */
 	h->linp[skip] = h->upper -= ilen;
 	dest = (char *)h + h->upper;
-	if (ISSET(t, BTF_RECNO))
+	if (ISSET(t, R_RECNO))
 		WR_RLEAF(dest, data, flags)
 	else
 		WR_BLEAF(dest, key, data, flags)
 
 	/* If the root page was split, make it look right. */
 	if (sp->pgno == P_ROOT &&
-	    (ISSET(t, BTF_RECNO) ?
+	    (ISSET(t, R_RECNO) ?
 	    bt_rroot(t, sp, l, r) : bt_broot(t, sp, l, r)) == RET_ERROR)
 		goto err2;
 
@@ -253,7 +253,7 @@ __bt_split(t, sp, key, data, flags, ilen, skip)
 
 		/* If the root page was split, make it look right. */
 		if (sp->pgno == P_ROOT &&
-		    (ISSET(t, BTF_RECNO) ?
+		    (ISSET(t, R_RECNO) ?
 		    bt_rroot(t, sp, l, r) : bt_broot(t, sp, l, r)) == RET_ERROR)
 			goto err1;
 
@@ -661,7 +661,7 @@ bt_psplit(t, h, l, r, pskip, ilen)
 	 * one.  If the cursor is on the right page, it is decremented by the
 	 * number of records split to the left page.
 	 *
-	 * Don't bother checking for the BTF_SEQINIT flag, the page number will
+	 * Don't bother checking for the B_SEQINIT flag, the page number will
 	 * be P_INVALID.
 	 */
 	c = &t->bt_bcursor;
