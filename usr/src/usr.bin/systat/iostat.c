@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	1.6 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)iostat.c	1.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,17 +11,11 @@ static char sccsid[] = "@(#)iostat.c	1.6 (Lucasfilm) %G%";
 #include <sys/file.h>
 #include <nlist.h>
 
-#define WBASEROW        4
-#define WBASECOL        5
-
 WINDOW *
 openiostat()
 {
-        static WINDOW *w = NULL;
 
-        if (w == NULL)
-                w = newwin(LINES - 1 - WBASEROW, 0, WBASEROW, WBASECOL);
-        return (w);
+	return (subwin(stdscr, LINES-1-5, 0, 5, 0));
 }
 
 closeiostat(w)
@@ -30,10 +24,9 @@ closeiostat(w)
 
         if (w == NULL)
                 return;
-        move(WBASEROW, 0);
-        clrtobot();
         wclear(w);
         wrefresh(w);
+	delwin(w);
 }
 
 static struct nlist nlst[] = {
@@ -115,6 +108,8 @@ fetchiostat()
         read(kmem, s.cp_time, sizeof s.cp_time);
 }
 
+#define	INSET	10
+
 labeliostat()
 {
         int row;
@@ -123,14 +118,14 @@ labeliostat()
                 error("No dk_busy defined.");
                 return;
         }
-        row = WBASEROW + 1;
-        move(row, 0); clrtobot();
-        mvaddstr(row++, WBASECOL + 5, 
+        row = 0;
+        wmove(wnd, row, 0); wclrtobot(wnd);
+        mvwaddstr(wnd, row++, INSET, 
             "/0   /10  /20  /30  /40  /50  /60  /70  /80  /90  /100");
-        mvaddstr(row++, 0, "cpu  user|");
-        mvaddstr(row++, 0, "     nice|");
-        mvaddstr(row++, 0, "   system|");
-        mvaddstr(row++, 0, "     idle|");
+        mvwaddstr(wnd, row++, 0, "cpu  user|");
+        mvwaddstr(wnd, row++, 0, "     nice|");
+        mvwaddstr(wnd, row++, 0, "   system|");
+        mvwaddstr(wnd, row++, 0, "     idle|");
         if (numbers)
                 row = numlabels(row + 1);
         else
@@ -143,12 +138,12 @@ numlabels(row)
         int i, col, regions;
 
 #define COLWIDTH        14
-#define DRIVESPERLINE   ((COLS - WBASECOL) / COLWIDTH)
+#define DRIVESPERLINE   ((wnd->_maxx - INSET) / COLWIDTH)
         regions = howmany(ndrives, DRIVESPERLINE);
         /*
          * Deduct -regions for blank line after each scrolling region.
          */
-        linesperregion = (CMDLINE - row - regions) / regions;
+        linesperregion = (wnd->_maxy - row - regions) / regions;
         /*
          * Minimum region contains space for two
          * label lines and one line of statistics.
@@ -158,13 +153,13 @@ numlabels(row)
         col = 0;
         for (i = 0; i < DK_NDRIVE; i++)
                 if (dk_select[i] && dk_mspw[i] != 0.0) {
-                        if (col + COLWIDTH >= COLS - WBASECOL) {
+                        if (col + COLWIDTH >= wnd->_maxx - INSET) {
                                 col = 0, row += linesperregion + 1;
-                                if (row > CMDLINE - (linesperregion + 1))
+                                if (row > wnd->_maxy - (linesperregion + 1))
                                         break;
                         }
-                        mvwaddstr(wnd, row - WBASEROW, col + 4, dr_name[i]);
-                        mvwaddstr(wnd, row + 1 - WBASEROW, col, "bps tps msps");
+                        mvwaddstr(wnd, row, col + 4, dr_name[i]);
+                        mvwaddstr(wnd, row + 1, col, "bps tps msps");
                         col += COLWIDTH;
                 }
         if (col)
@@ -178,17 +173,17 @@ barlabels(row)
 {
         int i;
 
-        mvaddstr(row++, 10,
+        mvwaddstr(wnd, row++, INSET,
             "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50");
         linesperregion = 2 + msps;
         for (i = 0; i < DK_NDRIVE; i++)
                 if (dk_select[i] && dk_mspw[i] != 0.0) {
-                        if (row > CMDLINE - linesperregion)
+                        if (row > wnd->_maxy - linesperregion)
                                 break;
-                        mvprintw(row++, 0, "%3.3s   bps|", dr_name[i]);
-                        mvaddstr(row++, 0, "      tps|");
+                        mvwprintw(wnd, row++, 0, "%3.3s   bps|", dr_name[i]);
+                        mvwaddstr(wnd, row++, 0, "      tps|");
                         if (msps)
-                                mvaddstr(row++, 0, "     msps|");
+                                mvwaddstr(wnd, row++, 0, "     msps|");
                 }
         return (row);
 }
@@ -212,16 +207,16 @@ showiostat()
         if (etime == 0.0)
                 etime = 1.0;
         etime /= (float) hz;
-        row = 2;
+        row = 1;
         for (i = 0; i < CPUSTATES; i++)
                 stat1(row++, i);
         if (!numbers) {
                 row += 2;
                 for (i = 0; i < DK_NDRIVE; i++)
                         if (dk_select[i] && dk_mspw[i] != 0.0) {
-                                if (row > CMDLINE - linesperregion - WBASEROW)
+                                if (row > wnd->_maxy - linesperregion)
                                         break;
-                                row = stats(row, 10 - WBASECOL, i);
+                                row = stats(row, INSET, i);
                         }
                 return;
         }
@@ -232,10 +227,9 @@ showiostat()
         winsertln(wnd);
         for (i = 0; i < DK_NDRIVE; i++)
                 if (dk_select[i] && dk_mspw[i] != 0.0) {
-                        if (col + COLWIDTH >= COLS - WBASECOL) {
+                        if (col + COLWIDTH >= wnd->_maxx) {
                                 col = 0, row += linesperregion + 1;
-                                if (row + WBASEROW >
-                                    CMDLINE - (linesperregion + 1))
+                                if (row > wnd->_maxy - (linesperregion + 1))
                                         break;
                                 wmove(wnd, row + linesperregion, 0);
                                 wdeleteln(wnd);
@@ -293,7 +287,7 @@ stat1(row, o)
                 time += s.cp_time[i];
         if (time == 0.0)
                 time = 1.0;
-        wmove(wnd, row, 5);
+        wmove(wnd, row, INSET);
 #define CPUSCALE        0.5
         histogram(100 * s.cp_time[o] / time, 50, CPUSCALE);
 }
@@ -338,11 +332,11 @@ cmdiostat(cmd, args)
                 numbers = 0;
                 goto fixdisplay;
         }
-        if (prefix(cmd, "display")) {
+        if (prefix(cmd, "display") || prefix(cmd, "add")) {
                 dkselect(args, 1, dk_select);
                 goto fixdisplay;
         }
-        if (prefix(cmd, "ignore")) {
+        if (prefix(cmd, "ignore") || prefix(cmd, "delete")) {
                 dkselect(args, 0, dk_select);
                 goto fixdisplay;
         }
@@ -356,7 +350,6 @@ cmdiostat(cmd, args)
         return (0);
 fixdisplay:
         wclear(wnd);
-        wrefresh(wnd);
         labeliostat();
         refresh();
         return (1);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	1.6 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)pigs.c	1.7 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
@@ -14,11 +14,8 @@ static char sccsid[] = "@(#)pigs.c	1.6 (Lucasfilm) %G%";
 WINDOW *
 openpigs()
 {
-	static WINDOW *w = NULL;
 
-	if (w == NULL)
-		w = newwin(20, 0, 3, 0);
-        return (w);
+	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
 
 closepigs(w)
@@ -27,10 +24,9 @@ closepigs(w)
 
 	if (w == NULL)
 		return;
-	move(5, 20);
-	clrtobot();
 	wclear(w);
 	wrefresh(w);
+	delwin(w);
 }
 
 int	maxind;
@@ -76,8 +72,10 @@ showpigs()
                 total = 1.0;
         factor = 50.0/total;
 
-        /* Find the top ten by executing a "bubble pass" ten times. */
-        y = numprocs + 1 < 15 ? numprocs + 1 : 15;
+        /* Find the top few by executing a "bubble pass" ten times. */
+	y = numprocs + 1;
+	if (y > wnd->_maxy-1)
+		y = wnd->_maxy-1;
         for (i = 0; i < y; i++) {
                 ptptr = &pt[i];
                 max = -10000.0;
@@ -95,11 +93,11 @@ showpigs()
                         pt[maxind] = temppt;
                 }
         }
-
-        /* Display the top fifteen. */
-        y = 4;
+        y = 1;
         ptptr = pt;
-        i = numprocs+1 < 15 ? numprocs+1 : 15;
+	i = numprocs + 1;
+	if (i > wnd->_maxy-1)
+		i = wnd->_maxy-1;
         for (; i > 0 && ptptr->pt_pctcpu > 0.01; i--) {
                 /* Find the user's name. */
                 knptr = known;
@@ -133,11 +131,7 @@ showpigs()
                         waddch(wnd, 'X');
                 ptptr++;
         }
-
-        while (y < 19) {
-                wmove(wnd, y++, 0);
-                wclrtoeol(wnd);
-        }
+	wmove(wnd, y, 0); wclrtobot(wnd);
 }
 
 static struct nlist nlst[] = {
@@ -215,7 +209,7 @@ fetchpigs()
 labelpigs()
 {
 
-        move(5, 0); clrtoeol();
-        mvaddstr(5, 20,
+	wmove(wnd, 0, 0); wclrtoeol(wnd);
+        mvwaddstr(wnd, 0, 20,
                 "/0   /10  /20  /30  /40  /50  /60  /70  /80  /90  /100");
 }
