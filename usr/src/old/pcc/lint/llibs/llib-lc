@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.41 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.42 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -205,7 +205,7 @@ datum	dbm_nextkey(db) DBM *db; { datum key; return key; }
 char *	ecvt(v, n, d, s) double v; int *d, *s; { return(""); }
 	encrypt(s, i) char *s; {}
 int	endfsent() { return 0; }
-int	endgrent() { return 0; }
+int	endgrent() { ; }
 	endhostent() { ; }
 	endnetent() { ; }
 	endprotoent() { ; }
