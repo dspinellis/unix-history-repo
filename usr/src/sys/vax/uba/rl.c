@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	6.5 (Berkeley) %G%
+ *	@(#)rl.c	6.6 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -215,8 +215,10 @@ rlstrategy(bp)
 	}
 	if (bp->b_blkno < 0 ||
 	    (bn = bp->b_blkno)+sz > rl02.sizes[partition].nblocks) {
-		if (bp->b_blkno == rl02.sizes[partition].nblocks + 1)
+		if (bp->b_blkno == rl02.sizes[partition].nblocks) {
+		    bp->b_resid = bp->b_bcount;
 		    goto done;
+		}
 		bp->b_error = EINVAL;
 		goto bad;
 	}

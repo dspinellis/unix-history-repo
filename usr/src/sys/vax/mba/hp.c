@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.12 (Berkeley) %G%
+ *	@(#)hp.c	6.13 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -420,7 +420,7 @@ hpstrategy(bp)
 	register struct mba_device *mi;
 	register struct hpst *st;
 	register int unit;
-	long sz, bn;
+	long sz;
 	int xunit = minor(bp->b_dev) & 07;
 	int s;
 
@@ -442,21 +442,25 @@ hpstrategy(bp)
 
 		if (bp->b_blkno < 0 ||
 		    bp->b_blkno+sz > sc->sc_mlsize) {
-			if (bp->b_blkno == sc->sc_mlsize + 1)
+			if (bp->b_blkno == sc->sc_mlsize) {
+			    bp->b_resid = bp->b_bcount;
 			    goto done;
+			}
 			bp->b_error = EINVAL;
 			goto bad;
 		}
 		bp->b_cylin = 0;
 	} else {
 		if (bp->b_blkno < 0 ||
-		    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
-			if (bp->b_blkno == st->sizes[xunit].nblocks + 1)
+		    bp->b_blkno+sz > st->sizes[xunit].nblocks) {
+			if (bp->b_blkno == st->sizes[xunit].nblocks) {
+			    bp->b_resid = bp->b_bcount;
 			    goto done;
+			}
 			bp->b_error = EINVAL;
 			goto bad;
 		}
-		bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
+		bp->b_cylin = bp->b_blkno/st->nspc + st->sizes[xunit].cyloff;
 	}
 	s = spl5();
 	disksort(&mi->mi_tab, bp);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	6.8 (Berkeley) %G%
+ *	@(#)idc.c	6.9 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -234,8 +234,10 @@ idcstrategy(bp)
 	st = &idcst[ui->ui_type];
 	if (bp->b_blkno < 0 ||
 	    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
-		if (bp->b_blkno == st->sizes[xunit].nblocks + 1)
+		if (bp->b_blkno == st->sizes[xunit].nblocks) {
+			bp->b_resid = bp->b_bcount;
 			goto done;
+		}
 		bp->b_error = EINVAL;
 		goto bad;
 	}
