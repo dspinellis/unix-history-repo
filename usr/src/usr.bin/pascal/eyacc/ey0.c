@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ey0.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ey0.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -126,5 +126,4 @@ int oflag = 0;  /* optimization flag */
 int ndefout = 3;  /* number of defined symbols output */
 int nerrors = 0;	/* number of errors */
 int fatfl = 1;  	/* if on, error is fatal */
-int machine;   /* has a number describing the machine */
 

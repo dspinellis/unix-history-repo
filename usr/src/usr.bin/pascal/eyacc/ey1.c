@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ey1.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ey1.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include "ey.h"
@@ -78,7 +78,6 @@ extern char *symnam();
 main(argc,argv) int argc; char *argv[]; {
   auto int n;
 
-  whereami();
   setup(argc,argv); /* initialize and read productions */
   tbitset = (nterms+16)/16;
   cpres(); /* make table of which productions yield a given nonterminal */
@@ -88,67 +87,7 @@ main(argc,argv) int argc; char *argv[]; {
   output();  /* write the states and the tables */
   go2out();
   summary();
-  windup();
-  }
-
-whereami(){ /* sets the variable machine to UNIX, GCOS, or IBM */
-
-  int i;
-
-  i = 1;
-  i = i << 30;
-  if( i == 0 ) {
-    machine = UNIX;
-    return;
-    }
-  i = i << 4;
-  if( i == 0 ){
-    machine = IBM;
-    return;
-    }
-  machine = GCOS;
-  }
-
-windup(){
-  /* no errors, do the optimization if appropriate */
-  char *cp;
-  int i;
-
-  if( !oflag ) cexit(0);
-
-  switch( machine ){
-
-  case GCOS:
-    if( rflag ){
-      if( foutput<0 ) system( "./yopt -r" );
-      else system( "./yopt -rv" );
-      }
-    else {
-      if( foutput<0 ) system( "./yopt" );
-      else system( "./yopt -v" );
-      }
-    cexit(0);  /* terminate */
-
-  case UNIX:
-    cp = "/usr/nlib/yaccopt";
-    if( rflag ) execl( cp, cp, (foutput<0)?"-r":"-rv", 0 );
-    else if( foutput<0 ) execl( cp, cp, 0 );
-    else execl( cp, cp, "-v", 0 );
-    error( "optimization execl call fails" );
-
-  case IBM:
-    if( rflag ){
-      if( foutput<0 ) system( "MH2019.yaccopt -r" );
-      else system( "MH2019.yaccopt -rv" );
-      }
-    else {
-      if( foutput<0 ) system( "MH2019.yaccopt" );
-      else system( "MH2019.yaccopt -v" );
-      }
-    cexit(0);
-
-    }
-
+  exit(0);
   }
 
 settty()
