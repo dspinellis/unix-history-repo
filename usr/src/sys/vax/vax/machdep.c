@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.15 (Berkeley) %G%
+ *	@(#)machdep.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -39,6 +39,7 @@
 #include "mtpr.h"
 #include "rpb.h"
 #include "ka630.h"
+#include "ka650.h"
 
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
@@ -603,7 +604,16 @@ boot(howto)
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
 	if (howto&RB_HALT) {
+		switch (cpu) {
+
 		/* 630 can be told to halt, but how? */
+#if VAX650
+		case VAX_650:
+			ka650ssc.ssc_cpmbx &= ~CPMB650_HALTACT;
+			ka650ssc.ssc_cpmbx |= CPMB650_HALT;
+			asm("halt");
+#endif
+		}
 		printf("halting (in tight loop); hit\n\t^P\n\tHALT\n\n");
 		for (;;)
 			;
@@ -640,6 +650,14 @@ vaxboot()
 		break;
 #endif
 
+#ifdef VAX650
+	case VAX_650:
+		/* set boot-on-halt flag in "console mailbox" */
+		ka650ssc.ssc_cpmbx &= ~CPMB650_HALTACT;
+		ka650ssc.ssc_cpmbx |= CPMB650_REBOOT;
+		break;
+#endif
+
 	default:
 		tocons(TXDB_BOOT);
 	}
@@ -663,13 +681,12 @@ tocons(c)
 
 	switch (cpu) {
 
-#if VAX8200 || VAX780 || VAX750 || VAX730 || VAX630 || VAX650
+#if VAX8200 || VAX780 || VAX750 || VAX730 || VAX630
 	case VAX_8200:
 	case VAX_780:
 	case VAX_750:
 	case VAX_730:
 	case VAX_630:
-	case VAX_650:
 		c |= TXDB_CONS;
 		break;
 #endif
@@ -680,6 +697,12 @@ tocons(c)
 		while ((mfpr(TXCS) & TXCS_RDY) == 0)
 			continue;
 		break;
+#endif
+
+#if VAX650
+	case VAX_650:
+		/* everything is a real console terminal character on ka650 */
+		return;
 #endif
 	}
 
