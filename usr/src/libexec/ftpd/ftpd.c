@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -478,6 +478,7 @@ pass(passwd)
 		if (logging)
 			syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
 			    remotehost, passwd);
+		home = "/";		/* guest home dir for globbing */
 	} else {
 		reply(230, "User %s logged in.", pw->pw_name);
 #ifdef SETPROCTITLE
@@ -487,8 +488,8 @@ pass(passwd)
 		if (logging)
 			syslog(LOG_INFO, "FTP LOGIN FROM %s, %s",
 			    remotehost, pw->pw_name);
+		home = pw->pw_dir;	/* home dir for globbing */
 	}
-	home = pw->pw_dir;		/* home dir for globbing */
 	(void) umask(defumask);
 	return;
 bad:
@@ -1080,8 +1081,6 @@ dolog(sin)
 {
 	struct hostent *hp = gethostbyaddr((char *)&sin->sin_addr,
 		sizeof (struct in_addr), AF_INET);
-	time_t t, time();
-	extern char *ctime();
 
 	if (hp)
 		(void) strncpy(remotehost, hp->h_name, sizeof (remotehost));
@@ -1093,11 +1092,8 @@ dolog(sin)
 	setproctitle(proctitle);
 #endif /* SETPROCTITLE */
 
-	if (logging) {
-		t = time((time_t *) 0);
-		syslog(LOG_INFO, "connection from %s at %s",
-		    remotehost, ctime(&t));
-	}
+	if (logging)
+		syslog(LOG_INFO, "connection from %s", remotehost);
 }
 
 /*
@@ -1146,8 +1142,8 @@ myoob()
 
 /*
  * Note: a response of 425 is not mentioned as a possible response to
- * 	the PASV command in RFC959. However, it has been blessed as
- * 	a legitimate response by Jon Postel in a telephone conversation
+ *	the PASV command in RFC959. However, it has been blessed as
+ *	a legitimate response by Jon Postel in a telephone conversation
  *	with Rick Adams on 25 Jan 89.
  */
 passive()

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	5.24 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.25 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -209,7 +209,7 @@ cmd:		USER SP username CRLF
 		}
 	|	NLST check_login SP STRING CRLF
 		= {
-			if ($2 && $4 != NULL) 
+			if ($2 && $4 != NULL)
 				send_file_list((char *) $4);
 			if ($4 != NULL)
 				free((char *) $4);
@@ -474,7 +474,7 @@ rcmd:		RNFR check_login SP pathname CRLF
 			}
 		}
 	;
-		
+
 username:	STRING
 	;
 
@@ -488,7 +488,7 @@ password:	/* empty */
 byte_size:	NUMBER
 	;
 
-host_port:	NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA 
+host_port:	NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA
 		NUMBER COMMA NUMBER
 		= {
 			register char *a, *p;
@@ -795,24 +795,36 @@ getline(s, n, iop)
 	if (c == EOF && cs == s)
 		return (NULL);
 	*cs++ = '\0';
-	if (debug)
-		syslog(LOG_DEBUG, "command: %s", s);
+	if (debug) {
+		if (!guest && strncasecmp("pass ", s, 5) == 0) {
+			/* Don't syslog passwords */
+			syslog(LOG_DEBUG, "command: %.5s ???", s);
+		} else {
+			register char *cp;
+			register int len;
+
+			/* Don't syslog trailing CR-LF */
+			len = strlen(s);
+			cp = s + len - 1;
+			while (cp >= s && (*cp == '\n' || *cp == '\r')) {
+				--cp;
+				--len;
+			}
+			syslog(LOG_DEBUG, "command: %.*s", len, s);
+		}
+	}
 	return (s);
 }
 
 static void
 toolong()
 {
-	time_t now;
 
 	reply(421,
-	  "Timeout (%d seconds): closing control connection.", timeout);
-	(void) time(&now);
-	if (logging) {
-		syslog(LOG_INFO,
-			"User %s timed out after %d seconds at %s",
-			(pw ? pw -> pw_name : "unknown"), timeout, ctime(&now));
-	}
+	    "Timeout (%d seconds): closing control connection.", timeout);
+	if (logging)
+		syslog(LOG_INFO, "User %s timed out after %d seconds",
+		    (pw ? pw -> pw_name : "unknown"), timeout);
 	dologout(1);
 }
 
