@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.8	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -28,7 +28,8 @@ register char *p; for (p = d; *p != '\0';)\
 struct timeb Now;
 
 main(argc, argv)
-char *argv[];
+int argc;
+char **argv;
 {
 	char cfile[NAMESIZE];	/* send commands for files from here */
 	char dfile[NAMESIZE];	/* used for all data files from here */
@@ -61,13 +62,15 @@ char *argv[];
 	FILE *fprx, *fpc, *fpd, *fp;
 	extern char *getprm(), *lastpart();
 	extern FILE *ufopen();
-	int uid, ret;
+	int uid, ret, c;
 	char redir = '\0';
 	int nonoti = 0;
 	int nonzero = 0;
 	int link_failed;
 	char *ReturnTo = NULL;
 	extern int LocalOnly;
+	extern char *optarg;
+	extern int optind;
 
 	strcpy(Progname, "uux");
 	uucpname(Myname);
@@ -77,10 +80,14 @@ char *argv[];
 #ifdef	VMS
 	arg_fix(argc, argv);
 #endif
-	while (argc>1 && argv[1][0] == '-') {
-		switch(argv[1][1]){
+	while ((c = getopt(argc, argv, "prclCg:x:nzLa:")) != EOF ||
+		*argv[optind] == '-')
+		switch (c) {
+		case EOF:
+			/* getopt doesn't like "-" as an argument... */
+			optind++;	
+			/* NO BREAK */
 		case 'p':
-		case '\0':
 			pipein = 1;
 			break;
 		case 'r':
@@ -99,12 +106,12 @@ char *argv[];
 			Linkit = 0;
 			break;
 		case 'g':
-			Grade = argv[1][2];
-			Gradedelta = atol(&argv[1][3]);
+			Grade = *optarg;
+			Gradedelta = atol(optarg+1);
 			break;
 		case 'x':
 			chkdebug();
-			Debug = atoi(&argv[1][2]);
+			Debug = atoi(optarg);
 			if (Debug <= 0)
 				Debug = 1;
 			break;
@@ -118,16 +125,16 @@ char *argv[];
 			LocalOnly++;
 			break;
 		case 'a':
-			ReturnTo = &argv[1][2];
+			ReturnTo = optarg;
 			if (prefix(Myname, ReturnTo) && ReturnTo[strlen(Myname)]				== '!')
 				ReturnTo = index(ReturnTo, '!') + 1;
 			break;
+		case '?':
 		default:
-			fprintf(stderr, "unknown flag %s\n", argv[1]);
-				break;
+			fprintf(stderr, "unknown flag %s\n", argv[optind-1]);
+			break;
 		}
-		--argc;  argv++;
-	}
+
 	ap = getwd(Wrkdir);
 	if (ap == 0) {
 		fprintf(stderr, "can't get working directory; will try to continue\n");
@@ -137,17 +144,19 @@ char *argv[];
 	DEBUG(4, "\n\n** %s **\n", "START");
 
 	inargs[0] = '\0';
-	for (argv++; argc > 1; argc--) {
-		DEBUG(4, "arg - %s:", *argv);
+	while (optind < argc) {
+		DEBUG(4, "arg - %s:", argv[optind]);
 		strcat(inargs, " ");
-		strcat(inargs, *argv++);
+		strcat(inargs, argv[optind++]);
 	}
 	DEBUG(4, "arg - %s\n", inargs);
-	ret = subchdir(Spool);
-	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
+	if (subchdir(Spool) < 0) {
+		syslog(LOG_WARNING, "chdir(%s) failed: %m", Spool);
+		cleanup(1);
+	}
 	uid = getuid();
 	if (guinfo(uid, User, path) != SUCCESS) {
-		assert("Can't find username for ", "uid", uid);
+		syslog(LOG_WARNING, "Can't find username for uid %d", uid);
 		DEBUG(1, "Using username", "uucp");
 		strcpy(User, "uucp");
 	}
@@ -157,10 +166,16 @@ char *argv[];
 	*cmdp = '\0';
 	gename(DATAPRE, local, 'X', rxfile);
 	fprx = ufopen(rxfile, "w");
-	ASSERT(fprx != NULL, "CAN'T OPEN", rxfile, 0);
+	if (fprx == NULL) {
+		syslog(LOG_WARNING, "fopen(%s) failed: %m", rxfile);
+		cleanup(1);
+	}
 	gename(DATAPRE, local, 'T', tcfile);
 	fpc = ufopen(tcfile, "w");
-	ASSERT(fpc != NULL, "CAN'T OPEN", tcfile, 0);
+	if (fpc == NULL) {
+		syslog(LOG_WARNING, "fopen(%s) failed: %m", tcfile);
+		cleanup(1);
+	}
 	fprintf(fprx, "%c %s %s\n", X_USER, User, local);
 	if (nonoti)
 		fprintf(fprx, "%c\n", X_NONOTI);
@@ -198,7 +213,10 @@ char *argv[];
 	if (pipein) {
 		gename(DATAPRE, local, 'B', dfile);
 		fpd = ufopen(dfile, "w");
-		ASSERT(fpd != NULL, "CAN'T OPEN", dfile, 0);
+		if (fpd == NULL) {
+			syslog(LOG_WARNING, "fopen(%s) failed: %m", dfile);
+			cleanup(1);
+		}
 		while (!feof(stdin)) {
 			ret = fread(buf, 1, BUFSIZ, stdin);
 			fwrite(buf, 1, ret, fpd);
@@ -346,7 +364,11 @@ char *argv[];
 			strcpy(dfile, tfile);
 			dfile[0] = DATAPRE;
 			fp = ufopen(tfile, "w");
-			ASSERT(fp != NULL, "CAN'T OPEN", tfile, 0);
+			if (fp == NULL) {
+				syslog(LOG_WARNING, "fopen(%s) failed: %m",
+					tfile);
+				cleanup(1);
+			}
 			if (ckexpf(rest))
 				cleanup(EX_CANTCREAT);
 			GENRCV(fp, rest, dfile, User);
@@ -374,7 +396,11 @@ char *argv[];
 			strcpy(tfile, dfile);
 			tfile[0] = CMDPRE;
 			fpd = ufopen(dfile, "w");
-			ASSERT(fpd != NULL, "CAN'T OPEN", dfile, 0);
+			if (fpd == NULL) {
+				syslog(LOG_WARNING, "fopen(%s) failed: %m",
+					dfile);
+				cleanup(1);
+			}
 			gename(DATAPRE, local, 'T', t2file);
 			GENRCV(fpd, rest, t2file, User);
 			fclose(fpd);
