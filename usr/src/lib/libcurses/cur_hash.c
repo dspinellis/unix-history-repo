@@ -6,25 +6,31 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cur_hash.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cur_hash.c	5.2 (Berkeley) %G%";
 #endif	/* not lint */
+
+#include <sys/types.h>
+
 
 /*
  * __hash() is "hashpjw" from the Dragon Book, Aho, Sethi & Ullman, p.436.
  */
 u_int
-__hash(s)
+__hash(s, len)
 	char *s;
+	int len;
 {
-        register u_int	h, g;
+        register u_int	h, g, i;
 
 	h = 0;
-        while (*s) {
-                h = (h << 4) + *s++;
+	i = 0;
+        while (i < len) {
+                h = (h << 4) + s[i];
                 if (g = h & 0xf0000000) {
                         h = h ^ (g >> 24);
                         h = h ^ g;
                 }
+		i++;
 	}
         return h;
 }
