@@ -1,6 +1,7 @@
-\"	@(#)postp.me	1.14 %G%
+.\"	@(#)postp.me	1.15 (Berkeley) %G%
+.\"
 .EQ
-delim ##
+delim $$
 gsize 11
 .EN
 .sh 1 "Post Processing"
@@ -26,7 +27,7 @@ after a single traversal of each arc in the call graph.
 Each parent receives some fraction of a child's time.
 Thus time is charged to the
 caller in addition to being charged to the callee.
-.(z C
+.(z
 .TS
 center;
 c c c c c.
@@ -49,26 +50,26 @@ Figure 1.
 .ce 0
 .)z
 .pp
-Let #C sub e# be the number of calls to some routine,
-#e#, and #C sub e sup r# be the number of
-calls from a caller #r# to a callee #e#.
+Let $C sub e$ be the number of calls to some routine,
+$e$, and $C sub e sup r$ be the number of
+calls from a caller $r$ to a callee $e$.
 Since we are assuming each call to a routine takes the
 average amount of time for all calls to that routine,
 the caller is accountable for
-#C sub e sup r / C sub e#
+$C sub e sup r / C sub e$
 of the time spent by the callee.
-Let the #S sub e# be the #selftime# of a routine, #e#.
+Let the $S sub e$ be the $selftime$ of a routine, $e$.
 The selftime of a routine can be determined from the
 timing information gathered during profiled program execution.
-The total time, #T sub r#, we wish to account to a routine
-#r#, is then given by the recurrence equation:
+The total time, $T sub r$, we wish to account to a routine
+$r$, is then given by the recurrence equation:
 .EQ
 T sub r ~ = ~ {S sub r} ~ + ~
                    sum from {r ~ roman CALLS ~ e}
                    {T sub e times {{C sub e sup r} over {C sub e}}}
 .EN
-where #r ~ roman CALLS ~ e# is a relation showing all routines
-#e# called by a routine #r#.
+where $r ~ roman CALLS ~ e$ is a relation showing all routines
+$e$ called by a routine $r$.
 This relation is easily available from the call graph.
 .pp
 However, if the execution contains recursive calls,
@@ -117,7 +118,7 @@ in which the nodes labelled 3 and 7 in Figure 1 are mutually
 recursive.
 The topologically sorted graph after the cycle is collapsed is
 given in Figure 3.
-.(z C
+.(z
 .TS
 center;
 c c c c c.
@@ -139,7 +140,7 @@ Cycle to be collapsed.
 Figure 2.
 .ce 0
 .)z
-.(z C
+.(z
 .TS
 center;
 c c c c c.
