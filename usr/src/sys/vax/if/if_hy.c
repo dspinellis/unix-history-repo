@@ -1,4 +1,4 @@
-/*	if_hy.c	4.1	83/02/20	*/
+/*	if_hy.c	4.2	83/02/21	*/
 
 #include "hy.h"
 #if NHY > 0
