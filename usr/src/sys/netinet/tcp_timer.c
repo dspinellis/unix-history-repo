@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.21 82/06/06 */
+/*	tcp_timer.c	4.21	82/06/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -164,8 +164,6 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->t_force = 1;
 		(void) tcp_output(tp);
 		tp->t_force = 0;
-		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
-		    tcp_beta * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
 		return;
 
 	/*
