@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -216,7 +216,7 @@ Push3270()
     if (save) {
 	if (Ifrontp+save > Ibuf+sizeof Ibuf) {
 	    if (Ibackp != Ibuf) {
-		memcpy(Ibuf, Ibackp, Ifrontp-Ibackp);
+		memmove(Ibuf, Ibackp, Ifrontp-Ibackp);
 		Ifrontp -= (Ibackp-Ibuf);
 		Ibackp = Ibuf;
 	    }
