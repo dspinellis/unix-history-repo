@@ -1,0 +1,1 @@
+#define NGPIB 0

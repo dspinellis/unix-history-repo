@@ -1,0 +1,1 @@
+#define NPS 0
