@@ -1,4 +1,9 @@
-#	Makefile	5.2	87/06/06
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.2	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -31,9 +36,11 @@ gmon.o:	gmon.c
 	${AS} -o gmon.o gmon.s
 
 install: all
-	install -m 444 crt0.o ${DESTDIR}/lib/crt0.o
-	install -m 444 mcrt0.o ${DESTDIR}/lib/mcrt0.o
-	install -m 444 gcrt0.o ${DESTDIR}/usr/lib/gcrt0.o
+	install -o bin -g bin -m 444 crt0.o ${DESTDIR}/lib/crt0.o
+	install -o bin -g bin -m 444 mcrt0.o ${DESTDIR}/lib/mcrt0.o
+	install -o bin -g bin -m 444 gcrt0.o ${DESTDIR}/usr/lib/gcrt0.o
 
 clean:
 	rm -f ${OBJS} *mon.s moncrt0.o mon.o gmon.o a.out errs core
+
+depend:
