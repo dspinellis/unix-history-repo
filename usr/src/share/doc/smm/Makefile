@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 # The following modules do not build/install:
 # 10.named, 13.amd
@@ -6,7 +6,7 @@
 # Missing: 03.kdebug 09.uucpimpl 12.uchanges 13.kchanges 17.security
 #	   18.password 19.porttour 21.uucpnet
 BINDIR=	/usr/share/doc/smm
-FILES=	00.contents Makefile Title
+FILES=	Makefile Title
 SUBDIR=	02.config 04.quotas 05.fsck 06.lpd 07.sendmailop \
 	08.timedop 10.newsop 11.named \
 	14.fastfs 15.net 16.sendmail \
