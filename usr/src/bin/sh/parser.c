@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -54,6 +54,7 @@ int needprompt;			/* true if interactive and at start of line */
 int lasttoken;			/* last token read */
 MKINIT int tokpushback;		/* last token pushed back */
 char *wordtext;			/* text of last word returned by readtoken */
+int checkkwd;               /* 1 == check for kwds, 2 == also eat newlines */
 struct nodelist *backquotelist;
 union node *redirnode;
 struct heredoc *heredoc;
@@ -68,44 +69,22 @@ static const char types[] = "}-+?=";
 #endif
 
 
-#ifdef __STDC__
-STATIC union node *list(int);
-STATIC union node *andor(void);
-STATIC union node *pipeline(void);
-STATIC union node *command(void);
-STATIC union node *simplecmd(void);
-STATIC void parsefname(void);
-STATIC void parseheredoc(void);
-STATIC void checkkwd(void);
-STATIC int readtoken(void);
-STATIC int readtoken1(int, char const *, char *, int);
-STATIC void attyline(void);
-STATIC int noexpand(char *);
-STATIC void synexpect(int);
-STATIC void synerror(char *);
-#else
-STATIC union node *list();
-STATIC union node *andor();
-STATIC union node *pipeline();
-STATIC union node *command();
-STATIC union node *simplecmd();
-STATIC void parsefname();
-STATIC void parseheredoc();
-STATIC void checkkwd();
-STATIC int readtoken();
-STATIC int readtoken1();
-STATIC void attyline();
-STATIC int noexpand();
-STATIC void synexpect();
-STATIC void synerror();
-#endif
+STATIC union node *list __P((int));
+STATIC union node *andor __P((void));
+STATIC union node *pipeline __P((void));
+STATIC union node *command __P((void));
+STATIC union node *simplecmd __P((void));
+STATIC void parsefname __P((void));
+STATIC void parseheredoc __P((void));
+STATIC int readtoken __P((void));
+STATIC int readtoken1 __P((int, char const *, char *, int));
+STATIC void attyline __P((void));
+STATIC int noexpand __P((char *));
+STATIC void synexpect __P((int));
+STATIC void synerror __P((char *));
 
 #if ATTY
-#ifdef __STDC__
-STATIC void putprompt(char *);
-#else
-STATIC void putprompt();
-#endif
+STATIC void putprompt __P((char *));
 #else /* not ATTY */
 #define putprompt(s)	out2str(s)
 #endif
@@ -139,8 +118,8 @@ STATIC union node *
 list(nlflag) {
 	union node *n1, *n2, *n3;
 
-	checkkwd();
-	if (nlflag == 0 && tokendlist[lasttoken])
+	checkkwd = 2;
+	if (nlflag == 0 && tokendlist[peektoken()])
 		return NULL;
 	n1 = andor();
 	for (;;) {
@@ -169,8 +148,8 @@ tsemi:	    case TSEMI:
 			} else {
 				tokpushback++;
 			}
-			checkkwd();
-			if (tokendlist[lasttoken])
+			checkkwd = 2;
+			if (tokendlist[peektoken()])
 				return n1;
 			n2 = andor();
 			n3 = (union node *)stalloc(sizeof (struct nbinary));
@@ -258,7 +237,7 @@ command() {
 	union node *redir, **rpp;
 	int t;
 
-	checkkwd();
+	checkkwd = 2;
 	switch (readtoken()) {
 	case TIF:
 		n1 = (union node *)stalloc(sizeof (struct nif));
@@ -285,20 +264,24 @@ command() {
 		}
 		if (readtoken() != TFI)
 			synexpect(TFI);
-		checkkwd();
+		checkkwd = 1;
 		break;
 	case TWHILE:
-	case TUNTIL:
+	case TUNTIL: {
+		int got;
 		n1 = (union node *)stalloc(sizeof (struct nbinary));
 		n1->type = (lasttoken == TWHILE)? NWHILE : NUNTIL;
 		n1->nbinary.ch1 = list(0);
-		if (readtoken() != TDO)
+		if ((got=readtoken()) != TDO) {
+TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			synexpect(TDO);
+		}
 		n1->nbinary.ch2 = list(0);
 		if (readtoken() != TDONE)
 			synexpect(TDONE);
-		checkkwd();
+		checkkwd = 1;
 		break;
+	}
 	case TFOR:
 		if (readtoken() != TWORD || quoteflag || ! goodname(wordtext))
 			synerror("Bad for loop variable");
@@ -331,7 +314,7 @@ command() {
 		}
 		if (lasttoken != TNL && lasttoken != TSEMI)
 			synexpect(-1);
-		checkkwd();
+		checkkwd = 2;
 		if ((t = readtoken()) == TDO)
 			t = TDONE;
 		else if (t == TBEGIN)
@@ -341,7 +324,7 @@ command() {
 		n1->nfor.body = list(0);
 		if (readtoken() != t)
 			synexpect(t);
-		checkkwd();
+		checkkwd = 1;
 		break;
 	case TCASE:
 		n1 = (union node *)stalloc(sizeof (struct ncase));
@@ -357,7 +340,7 @@ command() {
 		if (lasttoken != TWORD || ! equal(wordtext, "in"))
 			synerror("expecting \"in\"");
 		cpp = &n1->ncase.cases;
-		while (checkkwd(), readtoken() == TWORD) {
+		while (checkkwd = 2, readtoken() == TWORD) {
 			*cpp = cp = (union node *)stalloc(sizeof (struct nclist));
 			cp->type = NCLIST;
 			app = &cp->nclist.pattern;
@@ -385,7 +368,7 @@ command() {
 		*cpp = NULL;
 		if (lasttoken != TESAC)
 			synexpect(TESAC);
-		checkkwd();
+		checkkwd = 1;
 		break;
 	case TLP:
 		n1 = (union node *)stalloc(sizeof (struct nredir));
@@ -394,13 +377,13 @@ command() {
 		n1->nredir.redirect = NULL;
 		if (readtoken() != TRP)
 			synexpect(TRP);
-		checkkwd();
+		checkkwd = 1;
 		break;
 	case TBEGIN:
 		n1 = list(0);
 		if (readtoken() != TEND)
 			synexpect(TEND);
-		checkkwd();
+		checkkwd = 1;
 		break;
 	case TWORD:
 	case TREDIR:
@@ -559,48 +542,60 @@ parseheredoc() {
 	}
 }
 
-
-
-/*
- * This routine is called to tell readtoken that we are at the beginning
- * of a command, so newlines should be ignored and keywords should be
- * checked for.  We munge things here rather than setting a flag for
- * readtoken.
- */
-
-STATIC void
-checkkwd() {
-	register char *const *pp;
+STATIC int
+peektoken() {
 	int t;
 
-	while ((t = readtoken()) == TNL)
-		parseheredoc();
-	if (t == TWORD && quoteflag == 0) {
-		for (pp = parsekwd ; *pp ; pp++) {
-			if (**pp == *wordtext && equal(*pp, wordtext)) {
-				lasttoken = pp - parsekwd + KWDOFFSET;
-				break;
-			}
-		}
-	}
+	t = readtoken();
 	tokpushback++;
+	return (t);
 }
-
-
 
 STATIC int xxreadtoken();
 
 STATIC int
 readtoken() {
 	int t;
+#ifdef DEBUG
+	int alreadyseen = tokpushback;
+#endif
+	
+	t = xxreadtoken();
 
-	if (tokpushback) {
-		return xxreadtoken();
-	} else {
-		t = xxreadtoken();
-		TRACE(("token %s %s\n", tokname[t], t == TWORD ? wordtext : ""));
-		return t;
+	if (checkkwd) {
+		/*
+		 * eat newlines
+		 */
+		if (checkkwd == 2) {
+			checkkwd = 0;
+			while (t == TNL) {
+				parseheredoc();
+				t = xxreadtoken();
+			}
+		} else
+			checkkwd = 0;
+		/*
+		 * check for keywords
+		 */
+		if (t == TWORD && !quoteflag) {
+			register char **pp;
+
+			for (pp = parsekwd; *pp; pp++) {
+				if (**pp == *wordtext && equal(*pp, wordtext)) {
+					lasttoken = t = pp - parsekwd + KWDOFFSET;
+					TRACE(("keyword %s recognized\n", tokname[t]));
+					break;
+				}
+			}
+		}
 	}
+#ifdef DEBUG
+	if (!alreadyseen)
+	    TRACE(("token %s %s\n", tokname[t], t == TWORD ? wordtext : ""));
+	else
+	    TRACE(("reread token %s %s\n", tokname[t], t == TWORD ? wordtext : ""));
+#endif
+	return (t);
 }
 
 
