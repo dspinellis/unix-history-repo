@@ -1,4 +1,4 @@
-/*	tm.c	4.37	81/04/28	*/
+/*	tm.c	4.38	81/05/09	*/
 
 #include "te.h"
 #include "ts.h"
@@ -222,13 +222,19 @@ get:
 		goto get;
 	}
 	sc->sc_dens = olddens;
-	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR) ||
-	    (flag&FWRITE) && (sc->sc_erreg&TMER_WRL) ||
-	    (sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
-		dens != sc->sc_dens) {
-		/*
-		 * Not online or density switch in mid-tape or write locked.
-		 */
+	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR)) {
+		uprintf("te%d: not online\n", teunit);
+		u.u_error = EIO;
+		return;
+	}
+	if ((flag&FWRITE) && (sc->sc_erreg&TMER_WRL)) {
+		uprintf("te%d: no write ring\n", teunit);
+		u.u_error = EIO;
+		return;
+	}
+	if ((sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
+	    dens != sc->sc_dens) {
+		uprintf("te%d: can't change density in mid-tape\n", teunit);
 		u.u_error = EIO;
 		return;
 	}
