@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.52 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.53 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,6 +28,8 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+
+#define	p_devtmp	p_logname[11]
 
 #undef RETURN
 #define RETURN(val)	{ u.u_error = (val); if (u.u_spare[0] != 0) panic("lock count"); return (u.u_error); }
@@ -558,11 +560,13 @@ open(p, uap, retval)
 	cmode = ((uap->crtmode &~ u.u_cmask) & 07777) &~ S_ISVTX;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	u.u_r.u_rv.R_val1 = indx;		/* XXX for fdopen() */
+	p->p_devtmp = -1;			/* XXX check for fdopen */
 	if (error = vn_open(ndp, fmode, cmode)) {
 		crfree(fp->f_cred);
 		fp->f_count--;
-		if (error == EJUSTRETURN) {	/* XXX from fdopen */
+		if (error == ENODEV &&		/* XXX from fdopen */
+		    p->p_devtmp >= 0 &&
+		    (error = dupfdopen(indx, p->p_devtmp, fmode)) == 0) {
 			*retval = indx;
 			RETURN (0);
 		}
