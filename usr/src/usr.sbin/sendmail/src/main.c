@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.22	%G%";
+static char	SccsId[] = "@(#)main.c	3.23	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -164,7 +164,9 @@ main(argc, argv)
 	char tbuf[10];			/* holds "current" time */
 	char cbuf[5];			/* holds hop count */
 	char dbuf[30];			/* holds ctime(tbuf) */
+	char ybuf[10];			/* holds tty id */
 	bool aliasinit = FALSE;
+	extern char *ttyname();
 	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -372,6 +374,16 @@ main(argc, argv)
 
 	/* version */
 	define('v', Version);
+
+	/* tty name */
+	p = ttyname(2);
+	if (p != NULL)
+	{
+		if (rindex(p, '/') != NULL)
+			p = rindex(p, '/') + 1;
+		strcpy(ybuf, p);
+		define('y', ybuf);
+	}
 
 	readcf(cfname);
 
