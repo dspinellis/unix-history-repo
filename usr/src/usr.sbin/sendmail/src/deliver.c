@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -210,7 +210,6 @@ sendall(e, mode)
 			ee->e_from.q_flags |= QDONTSEND;
 			ee->e_dfp = NULL;
 			ee->e_xfp = NULL;
-			ee->e_lockfp = NULL;
 			ee->e_df = NULL;
 			ee->e_errormode = EM_MAIL;
 			ee->e_sibling = splitenv;
@@ -1064,9 +1063,6 @@ tryhost:
 			(void) setsignal(SIGINT, SIG_IGN);
 			(void) setsignal(SIGHUP, SIG_IGN);
 			(void) setsignal(SIGTERM, SIG_DFL);
-
-			/* close any other cached connections */
-			mci_flush(FALSE, mci);
 
 			/* reset user and group */
 			if (!bitnset(M_RESTR, m->m_flags))
