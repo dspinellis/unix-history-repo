@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.47 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.48 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,7 +30,7 @@
 #include "malloc.h"
 
 #undef RETURN
-#define RETURN(val)	{ scp->u_error = (val); if (scp->u_spare[0] != 0) panic("lock count"); return; }
+#define RETURN(val)	{ u.u_error = (val); if (u.u_spare[0] != 0) panic("lock count"); return (u.u_error); }
 
 /*
  * Virtual File System System Calls
@@ -39,16 +39,18 @@
 /*
  * mount system call
  */
-mount(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/* ARGSUSED */
+mount(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	type;
 		char	*dir;
 		int	flags;
 		caddr_t	data;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	register struct mount *mp;
 	int error, flag;
@@ -56,7 +58,7 @@ mount(scp)
 	/*
 	 * Must be super user
 	 */
-	if (error = suser(scp->sc_cred, &scp->sc_acflag))
+	if (error = suser(ndp->ni_cred, &u.u_acflag))
 		RETURN (error);
 	/*
 	 * Get vnode to be covered
@@ -185,22 +187,24 @@ update:
  * Note: unmount takes a path to the vnode mounted on as argument,
  * not special file (as before).
  */
-unmount(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+unmount(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*pathp;
 		int	flags;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct vnode *vp;
-	register struct nameidata *ndp = &scp->sc_nd;
+	register struct nameidata *ndp = &u.u_nd;
 	struct mount *mp;
 	int error;
 
 	/*
 	 * Must be super user
 	 */
-	if (error = suser(scp->sc_cred, &scp->sc_acflag))
+	if (error = suser(ndp->ni_cred, &u.u_acflag))
 		RETURN (error);
 
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
@@ -259,8 +263,10 @@ dounmount(mp, flags)
  * Sync each mounted filesystem.
  */
 /* ARGSUSED */
-sync(scp)
-	struct syscontext *scp;
+sync(p, uap, retval)
+	register struct proc *p;
+	struct args *uap;
+	int *retval;
 {
 	register struct mount *mp;
 	struct mount *omp;
@@ -285,17 +291,19 @@ sync(scp)
 /*
  * operate on filesystem quotas
  */
-quotactl(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+quotactl(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char *path;
 		int cmd;
 		int uid;
 		caddr_t arg;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct mount *mp;
-	register struct nameidata *ndp = &scp->sc_nd;
+	register struct nameidata *ndp = &u.u_nd;
 	int error;
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
@@ -311,15 +319,17 @@ quotactl(scp)
 /*
  * get filesystem statistics
  */
-statfs(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+statfs(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char *path;
 		struct statfs *buf;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct mount *mp;
-	register struct nameidata *ndp = &scp->sc_nd;
+	register struct nameidata *ndp = &u.u_nd;
 	register struct statfs *sp;
 	int error;
 
@@ -337,19 +347,24 @@ statfs(scp)
 	RETURN (copyout((caddr_t)sp, (caddr_t)uap->buf, sizeof(*sp)));
 }
 
-fstatfs(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/*
+ * get filesystem statistics
+ */
+/* ARGSUSED */
+fstatfs(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int fd;
 		struct statfs *buf;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	struct file *fp;
 	struct mount *mp;
 	register struct statfs *sp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	mp = ((struct vnode *)fp->f_data)->v_mount;
 	sp = &mp->mnt_stat;
@@ -362,14 +377,15 @@ fstatfs(scp)
 /*
  * get statistics on all filesystems
  */
-getfsstat(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+getfsstat(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		struct statfs *buf;
 		long bufsize;
 		int flags;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct mount *mp;
 	register struct statfs *sp;
 	caddr_t sfsp;
@@ -402,52 +418,57 @@ getfsstat(scp)
 		mp = mp->mnt_prev;
 	} while (mp != rootfs);
 	if (sfsp && count > maxcount)
-		scp->sc_retval1 = maxcount;
+		*retval = maxcount;
 	else
-		scp->sc_retval1 = count;
+		*retval = count;
 	RETURN (0);
 }
 
 /*
  * Change current working directory to a given file descriptor.
  */
-fchdir(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+fchdir(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		int	fd;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
 	if (vp->v_type != VDIR)
 		error = ENOTDIR;
 	else
-		error = VOP_ACCESS(vp, VEXEC, scp->sc_cred);
+		error = VOP_ACCESS(vp, VEXEC, ndp->ni_cred);
 	VOP_UNLOCK(vp);
 	if (error)
 		RETURN (error);
 	VREF(vp);
-	vrele(scp->sc_cdir);
-	scp->sc_cdir = vp;
+	vrele(ndp->ni_cdir);
+	ndp->ni_cdir = vp;
 	RETURN (0);
 }
 
 /*
  * Change current working directory (``.'').
  */
-chdir(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+chdir(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		char	*fname;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	int error;
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
@@ -455,33 +476,35 @@ chdir(scp)
 	ndp->ni_dirp = uap->fname;
 	if (error = chdirec(ndp))
 		RETURN (error);
-	vrele(scp->sc_cdir);
-	scp->sc_cdir = ndp->ni_vp;
+	vrele(ndp->ni_cdir);
+	ndp->ni_cdir = ndp->ni_vp;
 	RETURN (0);
 }
 
 /*
  * Change notion of root (``/'') directory.
  */
-chroot(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+chroot(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		char	*fname;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	int error;
 
-	if (error = suser(scp->sc_cred, &scp->sc_acflag))
+	if (error = suser(ndp->ni_cred, &u.u_acflag))
 		RETURN (error);
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = chdirec(ndp))
 		RETURN (error);
-	if (scp->sc_rdir != NULL)
-		vrele(scp->sc_rdir);
-	scp->sc_rdir = ndp->ni_vp;
+	if (ndp->ni_rdir != NULL)
+		vrele(ndp->ni_rdir);
+	ndp->ni_rdir = ndp->ni_vp;
 	RETURN (0);
 }
 
@@ -509,97 +532,95 @@ chdirec(ndp)
 
 /*
  * Open system call.
- */
-open(scp)
-	register struct syscontext *scp;
-{
-	struct a {
-		char	*fname;
-		int	mode;
-		int	crtmode;
-	} *uap = (struct a *) scp->sc_ap;
-	struct nameidata *ndp = &scp->sc_nd;
-
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	RETURN (copen(scp, uap->mode-FOPEN, uap->crtmode &~ scp->sc_cmask, ndp,
-		&scp->sc_retval1));
-}
-
-/*
- * Creat system call.
- */
-creat(scp)
-	register struct syscontext *scp;
-{
-	struct a {
-		char	*fname;
-		int	fmode;
-	} *uap = (struct a *)scp->sc_ap;
-	struct nameidata *ndp = &scp->sc_nd;
-
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	RETURN (copen(scp, FWRITE|FCREAT|FTRUNC, uap->fmode &~ scp->sc_cmask,
-		ndp, &scp->sc_retval1));
-}
-
-/*
- * Common code for open and creat.
  * Check permissions, allocate an open file structure,
  * and call the device open routine if any.
  */
-copen(scp, fmode, cmode, ndp, resultfd)
-	register struct syscontext *scp;
-	int fmode, cmode;
-	struct nameidata *ndp;
-	int *resultfd;
+open(p, uap, retval)
+	register struct proc *p;
+	register struct args {
+		char	*fname;
+		int	mode;
+		int	crtmode;
+	} *uap;
+	int *retval;
 {
+	struct nameidata *ndp = &u.u_nd;
 	register struct file *fp;
+	int fmode, cmode;
 	struct file *nfp;
 	int indx, error;
 	extern struct fileops vnops;
 
 	if (error = falloc(&nfp, &indx))
-		return (error);
+		RETURN (error);
 	fp = nfp;
-	scp->sc_retval1 = indx;	/* XXX for fdopen() */
-	if (error = vn_open(ndp, fmode, (cmode & 07777) &~ S_ISVTX)) {
+	fmode = uap->mode - FOPEN;
+	cmode = ((uap->crtmode &~ u.u_cmask) & 07777) &~ S_ISVTX;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	u.u_r.u_rv.R_val1 = indx;		/* XXX for fdopen() */
+	if (error = vn_open(ndp, fmode, cmode)) {
 		crfree(fp->f_cred);
 		fp->f_count--;
-		if (error == EJUSTRETURN)	/* XXX from fdopen */
-			return (0);		/* XXX from fdopen */
+		if (error == EJUSTRETURN) {	/* XXX from fdopen */
+			*retval = indx;
+			RETURN (0);
+		}
 		if (error == ERESTART)
 			error = EINTR;
-		scp->sc_ofile[indx] = NULL;
-		return (error);
+		u.u_ofile[indx] = NULL;
+		RETURN (error);
 	}
 	fp->f_flag = fmode & FMASK;
 	fp->f_type = DTYPE_VNODE;
 	fp->f_ops = &vnops;
 	fp->f_data = (caddr_t)ndp->ni_vp;
-	if (resultfd)
-		*resultfd = indx;
-	return (0);
+	*retval = indx;
+	RETURN (0);
+}
+
+/*
+ * Creat system call.
+ */
+creat(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		char	*fname;
+		int	fmode;
+	} *uap;
+	int *retval;
+{
+	struct args {
+		char	*fname;
+		int	mode;
+		int	crtmode;
+	} openuap;
+
+	openuap.fname = uap->fname;
+	openuap.crtmode = uap->fmode;
+	openuap.mode = O_WRONLY | O_CREAT | O_TRUNC;
+	RETURN (open(p, &openuap, retval));
 }
 
 /*
  * Mknod system call
  */
-mknod(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/* ARGSUSED */
+mknod(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	fmode;
 		int	dev;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
 
-	if (error = suser(scp->sc_cred, &scp->sc_acflag))
+	if (error = suser(ndp->ni_cred, &u.u_acflag))
 		RETURN (error);
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -627,7 +648,7 @@ mknod(scp)
 		error = EINVAL;
 		goto out;
 	}
-	vattr.va_mode = (uap->fmode & 07777) &~ scp->sc_cmask;
+	vattr.va_mode = (uap->fmode & 07777) &~ u.u_cmask;
 	vattr.va_rdev = uap->dev;
 out:
 	if (error)
@@ -640,14 +661,16 @@ out:
 /*
  * Mkfifo system call
  */
-mkfifo(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/* ARGSUSED */
+mkfifo(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	fmode;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	struct vattr vattr;
 	int error;
 
@@ -665,7 +688,7 @@ mkfifo(scp)
 	} else {
 		VATTR_NULL(&vattr);
 		vattr.va_type = VFIFO;
-		vattr.va_mode = (uap->fmode & 07777) &~ scp->sc_cmask;
+		vattr.va_mode = (uap->fmode & 07777) &~ u.u_cmask;
 	}
 	RETURN (VOP_MKNOD(ndp, &vattr, ndp->ni_cred));
 #endif /* FIFO */
@@ -674,14 +697,16 @@ mkfifo(scp)
 /*
  * link system call
  */
-link(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/* ARGSUSED */
+link(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*target;
 		char	*linkname;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp, *xp;
 	int error;
 
@@ -692,7 +717,7 @@ link(scp)
 		RETURN (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type == VDIR &&
-	    (error = suser(scp->sc_cred, &scp->sc_acflag)))
+	    (error = suser(ndp->ni_cred, &u.u_acflag)))
 		goto out1;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_dirp = (caddr_t)uap->linkname;
@@ -719,14 +744,16 @@ out1:
 /*
  * symlink -- make a symbolic link
  */
-symlink(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+symlink(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*target;
 		char	*linkname;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	char *target;
@@ -747,7 +774,7 @@ symlink(scp)
 	}
 	vp = ndp->ni_dvp;
 	VATTR_NULL(&vattr);
-	vattr.va_mode = 0777 &~ scp->sc_cmask;
+	vattr.va_mode = 0777 &~ u.u_cmask;
 out:
 	if (error)
 		VOP_ABORTOP(ndp);
@@ -763,13 +790,15 @@ out1:
  * Hard to avoid races here, especially
  * in unlinking directories.
  */
-unlink(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+unlink(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		char	*fname;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	int error;
 
@@ -780,7 +809,7 @@ unlink(scp)
 		RETURN (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type == VDIR &&
-	    (error = suser(scp->sc_cred, &scp->sc_acflag)))
+	    (error = suser(ndp->ni_cred, &u.u_acflag)))
 		goto out;
 	/*
 	 * Don't unlink a mounted file.
@@ -802,20 +831,22 @@ out:
 /*
  * Seek system call
  */
-lseek(scp)
-	register struct syscontext *scp;
-{
-	register struct file *fp;
-	register struct a {
+lseek(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	fdes;
 		off_t	off;
 		int	sbase;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	off_t *retval;
+{
+	struct ucred *cred = u.u_nd.ni_cred;
+	register struct file *fp;
 	struct vattr vattr;
 	int error;
 
 	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = scp->sc_ofile[uap->fdes]) == NULL)
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
 		RETURN (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		RETURN (ESPIPE);
@@ -827,7 +858,7 @@ lseek(scp)
 
 	case L_XTND:
 		if (error = VOP_GETATTR((struct vnode *)fp->f_data,
-		    &vattr, scp->sc_cred))
+		    &vattr, cred))
 			RETURN (error);
 		fp->f_offset = uap->off + vattr.va_size;
 		break;
@@ -839,28 +870,31 @@ lseek(scp)
 	default:
 		RETURN (EINVAL);
 	}
-	scp->sc_offset = fp->f_offset;
+	*retval = fp->f_offset;
 	RETURN (0);
 }
 
 /*
  * Access system call
  */
-saccess(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/* ARGSUSED */
+saccess(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	fmode;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
+	register struct ucred *cred = ndp->ni_cred;
 	register struct vnode *vp;
 	int error, mode, svuid, svgid;
 
-	svuid = scp->sc_uid;
-	svgid = scp->sc_gid;
-	scp->sc_uid = scp->sc_ruid;
-	scp->sc_gid = scp->sc_rgid;
+	svuid = cred->cr_uid;
+	svgid = cred->cr_groups[0];
+	cred->cr_uid = p->p_ruid;
+	cred->cr_groups[0] = p->p_rgid;
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
@@ -883,44 +917,57 @@ saccess(scp)
 	}
 	vput(vp);
 out1:
-	scp->sc_uid = svuid;
-	scp->sc_gid = svgid;
+	cred->cr_uid = svuid;
+	cred->cr_groups[0] = svgid;
 	RETURN (error);
 }
 
 /*
  * Stat system call.  This version follows links.
  */
-stat(scp)
-	struct syscontext *scp;
+/* ARGSUSED */
+stat(p, uap, retval)
+	register struct proc *p;
+	register struct args {
+		char	*fname;
+		struct stat *ub;
+	} *uap;
+	int *retval;
 {
+	register struct nameidata *ndp = &u.u_nd;
+	struct stat sb;
+	int error;
 
-	stat1(scp, FOLLOW);
+	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	if (error = namei(ndp))
+		RETURN (error);
+	error = vn_stat(ndp->ni_vp, &sb);
+	vput(ndp->ni_vp);
+	if (error)
+		RETURN (error);
+	error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
+	RETURN (error);
 }
 
 /*
  * Lstat system call.  This version does not follow links.
  */
-lstat(scp)
-	struct syscontext *scp;
-{
-
-	stat1(scp, NOFOLLOW);
-}
-
-stat1(scp, follow)
-	register struct syscontext *scp;
-	int follow;
-{
-	register struct a {
+/* ARGSUSED */
+lstat(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		struct stat *ub;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	struct stat sb;
 	int error;
 
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | follow;
+	ndp->ni_nameiop = LOOKUP | LOCKLEAF | NOFOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = namei(ndp))
@@ -936,15 +983,17 @@ stat1(scp, follow)
 /*
  * Return target name of a symbolic link
  */
-readlink(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/* ARGSUSED */
+readlink(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*name;
 		char	*buf;
 		int	count;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct iovec aiov;
 	struct uio auio;
@@ -971,21 +1020,23 @@ readlink(scp)
 	error = VOP_READLINK(vp, &auio, ndp->ni_cred);
 out:
 	vput(vp);
-	scp->sc_retval1 = uap->count - auio.uio_resid;
+	*retval = uap->count - auio.uio_resid;
 	RETURN (error);
 }
 
 /*
  * Change flags of a file given path name.
  */
-chflags(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+chflags(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	flags;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1011,19 +1062,21 @@ out:
 /*
  * Change flags of a file given a file descriptor.
  */
-fchflags(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+fchflags(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	fd;
 		int	flags;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	VATTR_NULL(&vattr);
 	vattr.va_flags = uap->flags;
@@ -1042,14 +1095,16 @@ out:
 /*
  * Change mode of a file given path name.
  */
-chmod(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+chmod(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	fmode;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1075,19 +1130,21 @@ out:
 /*
  * Change mode of a file given a file descriptor.
  */
-fchmod(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+fchmod(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	fd;
 		int	fmode;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	VATTR_NULL(&vattr);
 	vattr.va_mode = uap->fmode & 07777;
@@ -1106,15 +1163,17 @@ out:
 /*
  * Set ownership given a path name.
  */
-chown(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+chown(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	uid;
 		int	gid;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1141,20 +1200,22 @@ out:
 /*
  * Set ownership given a file descriptor.
  */
-fchown(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+fchown(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	fd;
 		int	uid;
 		int	gid;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
@@ -1171,14 +1232,19 @@ out:
 	RETURN (error);
 }
 
-utimes(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+/*
+ * Set the access and modification times of a file.
+ */
+/* ARGSUSED */
+utimes(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		struct	timeval *tptr;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct timeval tv[2];
 	struct vattr vattr;
@@ -1208,14 +1274,16 @@ out:
 /*
  * Truncate a file given its path name.
  */
-truncate(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+truncate(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		off_t	length;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1244,19 +1312,21 @@ out:
 /*
  * Truncate a file given a file descriptor.
  */
-ftruncate(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+ftruncate(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	fd;
 		off_t	length;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	if ((fp->f_flag & FWRITE) == 0)
 		RETURN (EINVAL);
@@ -1279,17 +1349,19 @@ out:
 /*
  * Synch an open file.
  */
-fsync(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+fsync(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		int	fd;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct vnode *vp;
 	struct file *fp;
 	int error;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1304,15 +1376,17 @@ fsync(scp)
  * Source and destination must either both be directories, or both
  * not be directories.  If target is a directory, it must be empty.
  */
-rename(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+rename(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*from;
 		char	*to;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct vnode *tvp, *fvp, *tdvp;
-	register struct nameidata *ndp = &scp->sc_nd;
+	register struct nameidata *ndp = &u.u_nd;
 	struct nameidata tond;
 	int error;
 
@@ -1371,14 +1445,16 @@ out1:
 /*
  * Mkdir system call
  */
-mkdir(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+mkdir(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*name;
 		int	dmode;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1395,7 +1471,7 @@ mkdir(scp)
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VDIR;
-	vattr.va_mode = (uap->dmode & 0777) &~ scp->sc_cmask;
+	vattr.va_mode = (uap->dmode & 0777) &~ u.u_cmask;
 	error = VOP_MKDIR(ndp, &vattr);
 	if (!error)
 		vput(ndp->ni_vp);
@@ -1405,13 +1481,15 @@ mkdir(scp)
 /*
  * Rmdir system call.
  */
-rmdir(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+rmdir(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		char	*name;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	int error;
 
@@ -1448,15 +1526,16 @@ out:
 /*
  * Read a block of directory entries in a file system independent format
  */
-getdirentries(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+getdirentries(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	fd;
 		char	*buf;
 		unsigned count;
 		long	*basep;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 	register struct vnode *vp;
 	struct file *fp;
 	struct uio auio;
@@ -1464,7 +1543,7 @@ getdirentries(scp)
 	off_t off;
 	int error, eofflag;
 
-	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
+	if (error = getvnode(u.u_ofile, uap->fd, &fp))
 		RETURN (error);
 	if ((fp->f_flag & FREAD) == 0)
 		RETURN (EBADF);
@@ -1486,22 +1565,24 @@ getdirentries(scp)
 	if (error)
 		RETURN (error);
 	error = copyout((caddr_t)&off, (caddr_t)uap->basep, sizeof(long));
-	scp->sc_retval1 = uap->count - auio.uio_resid;
+	*retval = uap->count - auio.uio_resid;
 	RETURN (error);
 }
 
 /*
  * mode mask for creation of files
  */
-umask(scp)
-	register struct syscontext *scp;
-{
-	register struct a {
+mode_t
+umask(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		int	mask;
-	} *uap = (struct a *)scp->sc_ap;
+	} *uap;
+	int *retval;
+{
 
-	scp->sc_retval1 = scp->sc_cmask;
-	scp->sc_cmask = uap->mask & 07777;
+	*retval = u.u_cmask;
+	u.u_cmask = uap->mask & 07777;
 	RETURN (0);
 }
 
@@ -1509,14 +1590,16 @@ umask(scp)
  * Void all references to file by ripping underlying filesystem
  * away from vnode.
  */
-revoke(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+/* ARGSUSED */
+revoke(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		char	*fname;
 		int	flags;
-	} *uap = (struct a *)scp->sc_ap;
-	register struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
+	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1531,10 +1614,10 @@ revoke(scp)
 		error = EINVAL;
 		goto out;
 	}
-	if (error = VOP_GETATTR(vp, &vattr, scp->sc_cred))
+	if (error = VOP_GETATTR(vp, &vattr, ndp->ni_cred))
 		goto out;
-	if (scp->sc_uid != vattr.va_uid ||
-	    (error = suser(scp->sc_cred, &scp->sc_acflag)))
+	if (ndp->ni_cred->cr_uid != vattr.va_uid ||
+	    (error = suser(ndp->ni_cred, &u.u_acflag)))
 		goto out;
 	if (vp->v_usecount > 1 || (vp->v_flag & VALIASED))
 		vgoneall(vp);
