@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -106,7 +106,7 @@ main(argc, argv, arge)
 	retrycnt = DEF_RETRY;
 	if (argc <= 1)
 		Usage(argc, argv);
-	while ((c = getopt(argc, argv, "bsiTpMlqdckF:R:r:w:t:x:g:a:L:D:Km:"))
+	while ((c = getopt(argc, argv, "bsiTpMlqdckPF:R:r:w:t:x:g:a:L:D:Km:"))
 		!= EOF)
 		switch (c) {
 		case 'b':
@@ -143,6 +143,9 @@ main(argc, argv, arge)
 			break;
 		case 'k':
 			nfsargsp->flags |= NFSMNT_NQLOOKLEASE;
+			break;
+		case 'P':
+			nfsargsp->flags |= NFSMNT_RESVPORT;
 			break;
 		case 'F':
 			if ((num = atoi(optarg)) != 0)
