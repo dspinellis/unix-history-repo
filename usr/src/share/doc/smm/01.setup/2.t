@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.21 (Berkeley) %G%
+.\"	@(#)2.t	6.22 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -337,7 +337,8 @@ destroying the HP-UX disk.
 If you used a cartridge tape for booting you should also unload the tape
 at this point.
 Whether you booted from tape or copied from disk you should now reboot
-the machine and do another assisted boot, this time with SYS_TBOOT.
+the machine and do another attended boot (see previous section),
+this time with SYS_TBOOT.
 Once loaded and running the boot program will display the CPU type and
 prompt for a kernel file to boot:
 .DS
