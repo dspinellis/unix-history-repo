@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.7 (Berkeley) %G%
+ *	@(#)clock.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,6 +27,7 @@
 #endif
 
 int    clkstd[1];
+int    profhz;
 
 static int month_days[12] = {
 	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -75,6 +76,9 @@ startrtclock()
 	clk->clk_lsb3 = 0;
 	clk->clk_cr2 = CLK_CR1;
 	clk->clk_cr1 = CLK_IENAB;
+
+	tick = CLK_INTERVAL * CLK_RESOLUTION;
+	hz = 1000000 / (CLK_INTERVAL * CLK_RESOLUTION);
 }
 
 /*
@@ -324,6 +328,7 @@ initprofclock()
 	if (profint > CLK_INTERVAL || (CLK_INTERVAL % profint) != 0)
 		profint = CLK_INTERVAL;
 	profscale = CLK_INTERVAL / profint;
+	profhz = hz * profscale;
 }
 
 startprofclock()
