@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.11	(Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.12	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -223,26 +223,30 @@ doprocess:
 		strcpy(sysout, Myname);
 		badfiles = 0;
 		while (fgets(buf, BUFSIZ, xfp) != NULL) {
-	if(buf[0] != '\0' && buf[0] != '#' &&
-		buf[1] != ' ' && buf[1] != '\0' && buf[1] != '\n') {
-		char *bnp, cfilename[BUFSIZ];
-		DEBUG(4, "uuxqt: buf = %s\n", buf);
-		bnp = rindex(xfile, '/');
-		sprintf(cfilename, "%s/%s", CORRUPT,
-			bnp ? bnp + 1 : xfile);
-		DEBUG(4, "uuxqt: move %s to ", xfile);
-		DEBUG(4, "%s\n", cfilename);
-		xmv(xfile, cfilename);
-		syslog(LOG_WARNING, "%s: X. FILE CORRUPTED", xfile);
-		fclose(xfp);
-		goto doprocess;
-		
-	}
+			if(buf[0] != '\0' && buf[0] != '#' &&
+			    buf[1] != ' ' && buf[1] != '\0' && buf[1] != '\n') {
+				char *bnp, cfilename[BUFSIZ];
+				DEBUG(4, "uuxqt: buf = %s\n", buf);
+				bnp = rindex(xfile, '/');
+				sprintf(cfilename, "%s/%s", CORRUPT,
+					bnp ? bnp + 1 : xfile);
+				DEBUG(4, "uuxqt: move %s to ", xfile);
+				DEBUG(4, "%s\n", cfilename);
+				xmv(xfile, cfilename);
+				syslog(LOG_WARNING, "%s: X. FILE CORRUPTED",
+					xfile);
+				fclose(xfp);
+				goto doprocess;
+			}
 			switch (buf[0]) {
-			case X_USER:
+			case X_USER: {
+				char ORmtname[MAXFULLNAME];
+				strcpy(ORmtname, Rmtname);
 				sscanf(&buf[1], "%s %s", user, Rmtname);
 				sprintf(UU_MACHINE, "UU_MACHINE=%s", Rmtname);
-				break;
+				if (strcmp(ORmtname, Rmtname) != 0)
+					logcls();
+				break;}
 			case X_RETURNTO:
 				sscanf(&buf[1], "%s", user);
 				break;
