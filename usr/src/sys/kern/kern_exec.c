@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.43 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -539,7 +539,11 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		goto badmap;
 	}
 	size = round_page(MAXSSIZ);		/* XXX */
+#ifdef	i386
+	addr = trunc_page(USRSTACK - size) - NBPG;	/* XXX */
+#else
 	addr = trunc_page(USRSTACK - size);
+#endif
 	if (vm_allocate(&vm->vm_map, &addr, size, FALSE)) {
 		uprintf("Cannot allocate stack space\n");
 		error = ENOMEM;			/* XXX */
