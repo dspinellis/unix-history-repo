@@ -6,9 +6,9 @@ BINDIR?=	/usr/bin
 
 #CFLAGS=-g -DDEBUG
 #CFLAGS+=-pg
-CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/../include -I${.CURDIR}/../curses -I${.CURDIR}/ex -I${.CURDIR}/vi -I${.CURDIR}/../regex
+CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/../include -I${.CURDIR}/../curses -I${.CURDIR}/ex.d -I${.CURDIR}/vi.d -I${.CURDIR}/../regex
 #STRIP=
-.PATH:	${.CURDIR}/ex ${.CURDIR}/sex ${.CURDIR}/vi ${.CURDIR}/svi \
+.PATH:	${.CURDIR}/ex.d ${.CURDIR}/sex ${.CURDIR}/vi.d ${.CURDIR}/svi \
 	${.CURDIR}/xaw
 CLEANFILES+=ex
 
@@ -54,13 +54,13 @@ LDADD+=	-L${.CURDIR}/../curses/obj -L${.CURDIR}/../curses \
 	-lregex -lcurses -ltermlib -lutil
 SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
-LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/view
+LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view
 
 all: vi vi.1
 
 warn:: ${SRCS}
 	-(cd ${.CURDIR} && \
-	    gcc -Wall -O -DDEBUG -Iobj -Ivi -Iex -I. ${.ALLSRC} \
+	    gcc -Wall -O -DDEBUG -Iobj -Ivi.d -Iex.d -I. ${.ALLSRC} \
 	    -lcurses -ltermlib 2>&1 | \
 	    sed -e "/warning: .*sccsid.*defined but not used/d" \
 	    	-e "/warning: suggest parentheses around/d" \
@@ -86,13 +86,13 @@ options.h: options.h.stub options.c # Makefile
 
 excmd.h: excmd.h.stub excmd.c # Makefile
 	rm -f excmd.h
-	cp ${.CURDIR}/ex/excmd.h.stub excmd.h
+	cp ${.CURDIR}/ex.d/excmd.h.stub excmd.h
 	chmod 664 excmd.h
 	(echo '/^\/\* C_[0-9A-Z_]* \*\/$$/ {'; \
 	 echo 'printf("#define %s %d\n", $$2, cnt++)'; \
 	 echo 'next'; \
 	 echo '}') > /tmp/__vi.excmd.h
-	 awk -f /tmp/__vi.excmd.h ${.CURDIR}/ex/excmd.c >> excmd.h
+	 awk -f /tmp/__vi.excmd.h ${.CURDIR}/ex.d/excmd.c >> excmd.h
 	 rm -f /tmp/__vi.excmd.h
 
 .include <bsd.prog.mk>

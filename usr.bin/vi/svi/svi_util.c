@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)svi_util.c	8.26 (Berkeley) 12/9/93";
 #include <unistd.h>
 
 #include "vi.h"
-#include "../vi/vcmd.h"
+#include "vcmd.h"
 #include "excmd.h"
 #include "svi_screen.h"
 
