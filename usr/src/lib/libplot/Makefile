@@ -1,14 +1,20 @@
-#	Makefile	4.7	83/11/11
+#	Makefile	4.8	85/05/30
 #
-ALL=	libplot lib300 lib300s lib4014 lib450 libvt0 \
+ALL=	libf77plot libplot lib300 lib300s lib4013 lib4014 lib450 libvt0 \
 	libplotaed libplotbg libplotdumb libplotgigi libplot2648 libplot7221
-SUBDIRS=plot t4014 t300 t300s t450 vt0 \
+SUBDIRS=tf77 plot t4013 t4014 t300 t300s t450 vt0 \
 	aed bitgraph dumb gigi hp2648 hp7221
 
 all:	${ALL}
 
+libf77plot: FRC
+	cd tf77; make ${MFLAGS}
+
 libplot: FRC
 	cd plot; make ${MFLAGS}
+
+lib4013: FRC
+	cd t4013; make ${MFLAGS}
 
 lib4014: FRC
 	cd t4014; make ${MFLAGS}
