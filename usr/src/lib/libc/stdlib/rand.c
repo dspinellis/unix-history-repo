@@ -1,22 +1,29 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rand.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)rand.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
-static	long	randx = 1;
+#include <sys/types.h>
+#include <sys/stdc.h>
+#include <stdlib.h>
 
-srand(x)
-unsigned x;
-{
-	randx = x;
-}
+static u_long next = 1;
 
+int
 rand()
 {
-	return((randx = randx * 1103515245 + 12345) & 0x7fffffff);
+	return ((next = next * 1103515245 + 12345) % RAND_MAX);
+}
+
+void
+srand(seed)
+u_int seed;
+{
+	next = seed;
 }
