@@ -1,4 +1,4 @@
-/* ip_output.c 1.3 81/10/21 */
+/* ip_output.c 1.4 81/10/23 */
 
 #include "../h/param.h"
 #include "../bbnnet/net.h"
@@ -83,7 +83,7 @@ COUNT(IP_OUTPUT);
 				n->m_next = NULL;
 				mm->m_next = m;
 				m = mm;
-				m->m_off = MSIZE - hlen - adj;
+				m->m_off = MMAXOFF - hlen - adj;
 				m->m_len = hlen + adj;
 
 				/* copy old header to new */
@@ -188,7 +188,7 @@ int len;
 	register struct ip *ip;
 COUNT(IP_SETUP);
 
-	m->m_off = MSIZE - sizeof(struct ip);
+	m->m_off = MMAXOFF - sizeof(struct ip);
 	m->m_len = sizeof(struct ip);
 
 	ip = (struct ip *)((int)m + m->m_off);
