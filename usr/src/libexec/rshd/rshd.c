@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.11 83/01/22";
+static char sccsid[] = "@(#)rshd.c	4.12 83/02/10";
 #endif
 
 #include <sys/ioctl.h>
@@ -141,7 +141,7 @@ doit(f, fromp)
 	(void) signal(SIGINT, SIG_DFL);
 	(void) signal(SIGQUIT, SIG_DFL);
 	(void) signal(SIGTERM, SIG_DFL);
-#ifndef DEBUG
+#ifdef DEBUG
 	{ int t = open("/dev/tty", 2);
 	  if (t >= 0) {
 		ioctl(t, TIOCNOTTY, (char *)0);
@@ -183,14 +183,7 @@ doit(f, fromp)
 			exit(1);
 		}
 		fromp->sin_port = htons((u_short)port);
-		for (backoff = 1; backoff != 0; backoff <<= 1) {
-			(void) alarm(60);
-			if (connect(s, fromp, sizeof (*fromp), 0) >= 0)
-				break;
-			(void) alarm(0);
-			sleep(backoff);
-		}
-		if (backoff == 0) {
+		if (connect(s, fromp, sizeof (*fromp), 0) < 0) {
 			perror("rshd: connect");
 			exit(1);
 		}
