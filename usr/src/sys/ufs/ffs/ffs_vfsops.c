@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.34 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,10 +106,12 @@ ufs_mountroot()
 	mp->m_vnodecovered = (struct vnode *)0;
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
+	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
 	fs->fs_fsmnt[0] = '/';
-	bzero(fs->fs_fsmnt + 1, sizeof(fs->fs_fsmnt) - 1);
-	(void) copystr(ROOTNAME, ump->um_mntname, MNAMELEN - 1, &size);
-	bzero(ump->um_mntname + size, MNAMELEN - size);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->m_stat.f_mntonname, MNAMELEN);
+	(void) copystr(ROOTNAME, mp->m_stat.f_mntfromname, MNAMELEN - 1, &size);
+	bzero(mp->m_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) ufs_statfs(mp, &mp->m_stat);
 	vfs_unlock(mp);
 	inittodr(fs->fs_time);
 	return (0);
@@ -121,7 +123,7 @@ ufs_mountroot()
  * mount system call
  */
 ufs_mount(mp, path, data, ndp)
-	struct mount *mp;
+	register struct mount *mp;
 	char *path;
 	caddr_t data;
 	struct nameidata *ndp;
@@ -159,8 +161,11 @@ ufs_mount(mp, path, data, ndp)
 	fs = ump->um_fs;
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
-	(void) copyinstr(args.fspec, ump->um_mntname, MNAMELEN - 1, &size);
-	bzero(ump->um_mntname + size, MNAMELEN - size);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->m_stat.f_mntonname, MNAMELEN);
+	(void) copyinstr(args.fspec, mp->m_stat.f_mntfromname, MNAMELEN - 1, 
+		&size);
+	bzero(mp->m_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) ufs_statfs(mp, &mp->m_stat);
 	return (0);
 }
 
@@ -281,10 +286,8 @@ mountfs(devvp, mp)
 		bp = NULL;
 	}
 	mp->m_data = (qaddr_t)ump;
-	mp->m_bsize = fs->fs_bsize;
-	mp->m_fsize = fs->fs_fsize;
-	mp->m_fsid.val[0] = (long)dev;
-	mp->m_fsid.val[1] = MOUNT_UFS;
+	mp->m_stat.f_fsid.val[0] = (long)dev;
+	mp->m_stat.f_fsid.val[1] = MOUNT_UFS;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
@@ -411,9 +414,12 @@ ufs_statfs(mp, sbp)
 		(fs->fs_dsize - sbp->f_bfree);
 	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)&sbp->f_mntonname[0], MNAMELEN);
-	bcopy((caddr_t)ump->um_mntname, (caddr_t)&sbp->f_mntfromname[0],
-		MNAMELEN);
+	if (sbp != &mp->m_stat) {
+		bcopy((caddr_t)mp->m_stat.f_mntonname,
+			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
+		bcopy((caddr_t)mp->m_stat.f_mntfromname,
+			(caddr_t)&sbp->f_mntfromname[0], MNAMELEN);
+	}
 	return (0);
 }
 
