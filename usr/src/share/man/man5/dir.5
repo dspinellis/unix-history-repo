@@ -1,93 +1,125 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)dir.5	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH DIR 5  ""
-.UC 5
-.SH NAME
-dir \- format of directories
-.SH SYNOPSIS
-.B #include <sys/types.h>
-.br
-.B #include <sys/dir.h>
-.SH DESCRIPTION
-A directory behaves exactly like an ordinary file, save that no
-user may write into a directory.
-The fact that a file is a directory is indicated by
-a bit in the flag word of its i-node entry; see
-.IR fs (5).
-The structure of a directory entry as given in the include file is:
-.RS
-.ta 8n +10n +10n
-.PP
-.nf
+.\"     @(#)dir.5	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DIR 5
+.Os BSD 4.2
+.Sh NAME
+.Nm dir ,
+.Nm dirent
+.Nd directory file format
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/dir.h>
+.Sh DESCRIPTION
+Directories provide a convienent hierarchical method of grouping
+files while obscuring the underlying details of the storage medium.
+A directory file is differentiated from a plain file
+by a flag in its
+.Xr inode 5
+entry.
+It consists of records (directory entries) each of which contain
+information about a file and a pointer to the file itself.
+Directory entries may contain other directories
+as well as plain files; such nested directories are refered to as
+subdirectories. 
+A hierarchy of directories and files is formed in this manner
+and is called a file system (or refered to as a file system tree).
+.\" An entry in this tree,
+.\" nested or not nested,
+.\" is a pathname.
+.Pp
+Each directory file contains two special directory entries; one is a pointer
+to the directory itself
+called dot
+.Ql \&.
+and the other a pointer to its parent directory called dot-dot
+.Ql \&.. .
+Dot and dot-dot
+are valid pathnames, however,
+the system root directory
+.Ql / ,
+has no parent and dot-dot points to itself like dot.
+.Pp
+File system nodes are ordinary directory files on which has
+been grafted a file system object, such as a physical disk or a
+partitioned area of such a disk.
+(See
+.Xr mount 1
+and
+.Xr mount 8 . )
+.Pp
+The directory entry format is defined in the file
+.Aq dirent.h :
+.Bd -literal
+#ifndef _DIRENT_H_
+#define _DIRENT_H_
+
 /*
- * A directory consists of some number of blocks of DIRBLKSIZ
- * bytes, where DIRBLKSIZ is chosen such that it can be transferred
- * to disk in a single atomic operation (e.g. 512 bytes on most machines).
- *
- * Each DIRBLKSIZ byte block contains some number of directory entry
- * structures, which are of variable length.  Each directory entry has
- * a struct direct at the front of it, containing its inode number,
- * the length of the entry, and the length of the name contained in
- * the entry.  These are followed by the name padded to a 4 byte boundary
- * with null bytes.  All names are guaranteed null terminated.
- * The maximum length of a name in a directory is MAXNAMLEN.
- *
- * The macro DIRSIZ(dp) gives the amount of space required to represent
- * a directory entry.  Free space in a directory is represented by
- * entries which have dp->d_reclen > DIRSIZ(dp).  All DIRBLKSIZ bytes
- * in a directory block are claimed by the directory entries.  This
- * usually results in the last entry in a directory having a large
- * dp->d_reclen.  When entries are deleted from a directory, the
- * space is returned to the previous entry in the same directory
- * block by increasing its dp->d_reclen.  If the first entry of
- * a directory block is free, then its dp->d_ino is set to 0.
- * Entries other than the first in a directory do not normally have
- * dp->d_ino set to 0.
- */
-#ifdef KERNEL
-#define DIRBLKSIZ DEV_BSIZE
+* A directory entry has a struct dirent at the front of it, containing its
+* inode number, the length of the entry, and the length of the name
+* contained in the entry.  These are followed by the name padded to a 4
+* byte boundary with null bytes.  All names are guaranteed null terminated.
+* The maximum length of a name in a directory is MAXNAMLEN.
+*/
+
+struct dirent {
+	u_long	d_fileno;	/* file number of entry */
+	u_short	d_reclen;	/* length of this record */
+	u_short	d_namlen;	/* length of string in d_name */
+#ifdef _POSIX_SOURCE
+	char	d_name[MAXNAMLEN + 1];	/* maximum name length */
 #else
-#define	DIRBLKSIZ 512
+#define MAXNAMLEN       255
+	char    d_name[MAXNAMLEN + 1];  /* maximum name length */
 #endif
 
-#define MAXNAMLEN 255
-
-/*
- * The DIRSIZ macro gives the minimum record length which will hold
- * the directory entry.  This requires the amount of space in struct direct
- * without the d_name field, plus enough space for the name with a terminating
- * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
- */
-#undef DIRSIZ
-#define DIRSIZ(dp) \e
-    ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
-
-struct	direct {
-	u_long	d_ino;
-	short	d_reclen;
-	short	d_namlen;
-	char	d_name[MAXNAMLEN + 1];
-	/* typically shorter */
 };
 
-struct _dirdesc {
-	int	dd_fd;
-	long	dd_loc;
-	long	dd_size;
-	char	dd_buf[DIRBLKSIZ];
-};
-.fi
-.RE
-.PP
-By convention, the first two entries in each directory
-are for `.' and `..'.  The first is an entry for the
-directory itself.  The second is for the parent directory.
-The meaning of `..' is modified for the root directory
-of the master file system (\*(lq/\*(rq),
-where `..' has the same meaning as `.'.
-.SH "SEE ALSO"
-fs(5)
+#ifdef _POSIX_SOURCE
+typedef void *	DIR;
+#else
+
+#define	d_ino		d_fileno	/* backward compatibility */
+
+/* definitions for library routines operating on directories. */
+#define	DIRBLKSIZ	1024
+
+/* structure describing an open directory. */
+typedef struct _dirdesc {
+	int	dd_fd;    /* file descriptor associated with directory */
+	long	dd_loc;	  /* offset in current buffer */
+	long	dd_size;  /* amount of data returned by getdirentries */
+	char	*dd_buf;  /* data buffer */
+	int	dd_len;   /* size of data buffer */
+	long	dd_seek;  /* magic cookie returned by getdirentries */
+} DIR;
+
+#define	dirfd(dirp)	((dirp)->dd_fd)
+
+#ifndef NULL
+#define	NULL	0
+#endif
+
+#endif /* _POSIX_SOURCE */
+
+#ifndef KERNEL
+
+#include <sys/cdefs.h>
+
+#endif /* !KERNEL */
+
+#endif /* !_DIRENT_H_ */
+.Ed
+.Sh SEE ALSO
+.Xr fs 5
+.Xr inode 5
+.Sh HISTORY
+A
+.Nm
+file format appeared in
+.At v7 .
