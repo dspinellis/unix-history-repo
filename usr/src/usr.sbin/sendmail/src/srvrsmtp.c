@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.79 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.80 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.79 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.80 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -432,7 +432,7 @@ smtp(e)
 				/* NOTREACHED */
 			}
 				
-			if (!enoughspace(e->e_msgsize))
+			if (!enoughdiskspace(e->e_msgsize))
 			{
 				message("452 Insufficient disk space; try again later");
 				break;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -595,7 +595,7 @@ tferror(tf, e)
 				st.st_size);
 		fprintf(tf, "*** at %s due to lack of disk space for temp file.\n",
 			MyHostName);
-		avail = freespace(QueueDir, &bsize);
+		avail = freediskspace(QueueDir, &bsize);
 		if (avail > 0)
 		{
 			if (bsize > 1024)
