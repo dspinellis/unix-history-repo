@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.h	6.10 (Berkeley) %G%
+ *	@(#)if.h	6.11 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@ struct ifnet {
 	short	if_mtu;			/* maximum transmission unit */
 	short	if_flags;		/* up/down, broadcast, etc. */
 	short	if_timer;		/* time 'til if_watchdog called */
+	int	if_metric;		/* routing metric (external only) */
 	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
@@ -69,12 +70,12 @@ struct ifnet {
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_DEBUG	0x4		/* turn on debugging */
-/* was	IFF_ROUTE	0x8		/* routing entry installed */
+#define	IFF_LOOPBACK	0x8		/* is a loopback net */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
 #define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 #define	IFF_RUNNING	0x40		/* resources allocated */
 #define	IFF_NOARP	0x80		/* no address resolution protocol */
-					/* flags set internally only: */
+/* flags set internally only: */
 #define	IFF_CANTCHANGE	(IFF_BROADCAST | IFF_POINTOPOINT | IFF_RUNNING)
 
 /*
@@ -172,12 +173,14 @@ struct	ifreq {
 		struct	sockaddr ifru_dstaddr;
 		struct	sockaddr ifru_broadaddr;
 		short	ifru_flags;
+		int	ifru_metric;
 		caddr_t	ifru_data;
 	} ifr_ifru;
 #define	ifr_addr	ifr_ifru.ifru_addr	/* address */
 #define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
 #define	ifr_broadaddr	ifr_ifru.ifru_broadaddr	/* broadcast address */
 #define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
+#define	ifr_metric	ifr_ifru.ifru_metric	/* metric */
 #define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 };
 
