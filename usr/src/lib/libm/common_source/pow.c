@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pow.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pow.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /* POW(X,Y)  
@@ -84,12 +84,13 @@ static char sccsid[] = "@(#)pow.c	5.8 (Berkeley) %G%";
 #include "mathimpl.h"
 
 #if (defined(vax) || defined(tahoe))
-		x = (double) (float) x
-#	define _IEEE	0
+#define TRUNC(x)	x = (double) (float) x
+#define _IEEE		0
 #else
-#	define _IEEE	1
-#	define TRUNC(x)  *(((int *) &x)+1)  &= 0xf8000000
-#	define infnan(x) ((x == EDOM)? zero/zero : ((x < 0) ? -one/zero : one/zero))
+#define _IEEE		1
+#define endian		(((*(int *) &one)) ? 1 : 0)
+#define TRUNC(x) 	*(((int *) &x)+endian) &= 0xf8000000
+#define infnan(x)	0.0
 #endif		/* vax or tahoe */
 
 const static double zero=0.0, one=1.0, two=2.0, negone= -1.0;
