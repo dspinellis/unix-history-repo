@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)malloc.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -264,11 +264,11 @@ free(cp)
  * back.  We have to search all the free lists for the block in order
  * to determine its bucket: 1st we make one pass thru the lists
  * checking only the first block in each; if that fails we search
- * ``realloc_srchlen'' blocks in each list for a match (the variable
+ * ``__realloc_srchlen'' blocks in each list for a match (the variable
  * is extern so the caller can modify it).  If that fails we just copy
  * however many bytes was given to realloc() and hope it's not huge.
  */
-int realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
+int __realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
 
 void *
 realloc(cp, nbytes)
@@ -294,7 +294,7 @@ realloc(cp, nbytes)
 		 * Search for the old block of memory on the
 		 * free list.  First, check the most common
 		 * case (last element free'd), then (this failing)
-		 * the last ``realloc_srchlen'' items free'd.
+		 * the last ``__realloc_srchlen'' items free'd.
 		 * If all lookups fail, then assume the size of
 		 * the memory block being realloc'd is the
 		 * largest possible (so that all "nbytes" of new
@@ -303,7 +303,7 @@ realloc(cp, nbytes)
 		 * is gibbous.  However, that is very unlikely.
 		 */
 		if ((i = findbucket(op, 1)) < 0 &&
-		    (i = findbucket(op, realloc_srchlen)) < 0)
+		    (i = findbucket(op, __realloc_srchlen)) < 0)
 			i = NBUCKETS;
 	}
 	onb = 1 << (i + 3);
