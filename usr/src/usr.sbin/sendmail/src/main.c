@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.9	%G%";
+static char	SccsId[] = "@(#)main.c	3.10	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -70,6 +70,8 @@ static char	SccsId[] = "@(#)main.c	3.9	%G%";
 **				containing just dot.
 **		-s		Save UNIX-like "From" lines on the
 **				front of messages.
+**		-v		Give blow-by-blow description of
+**				everything that happens.
 **
 **	Return Codes:
 **		As defined in <sysexits.h>.
@@ -116,6 +118,7 @@ bool	MeToo;		/* send to the sender also if in a group expansion */
 bool	SaveFrom;	/* save From lines on the front of messages */
 bool	IgnrDot;	/* if set, ignore dot when collecting mail */
 bool	SuprErrs;	/* supress errors if set */
+bool	Verbose;	/* set if blow-by-blow desired */
 int	Errors;		/* count of errors */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
@@ -292,6 +295,10 @@ main(argc, argv)
 		
 		  case 's':	/* save From lines in headers */
 			SaveFrom++;
+			break;
+
+		  case 'v':	/* give blow-by-blow description */
+			Verbose++;
 			break;
 
 		  default:
