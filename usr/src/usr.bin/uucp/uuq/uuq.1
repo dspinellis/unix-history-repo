@@ -1,92 +1,100 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1988, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" This code is derived from software contributed to Berkeley by
-.\" Rick Adams.
+.\" %sccs.include.redist.roff%
 .\"
-.\" %sccs.include.redist.man%
+.\"     @(#)uuq.1	6.6 (Berkeley) %G%
 .\"
-.\"	@(#)uuq.1	6.5 (Berkeley) %G%
-.\"
-.TH UUQ 1 ""
-.UC 6
-.SH NAME
-uuq \- examine or manipulate the uucp queue
-.SH SYNOPSIS
-.B uuq
-[
-.B -l
-] [
-.B -h
-] [
-.BI -s system
-] [
-.BI -u user
-] [
-.BI -d jobno
-] [
-.BI -r sdir
-] [
-.BI -b baud
-]
-.SH DESCRIPTION
-.I Uuq
+.Dd 
+.Dt UUQ 1
+.Os BSD 4.3
+.Sh NAME
+.Nm uuq
+.Nd examine or manipulate the uucp queue
+.Sh SYNOPSIS
+.Nm uuq
+.Op Fl l
+.Op Fl h
+.Op Fl s Ns Ar system
+.Op Fl u Ns Ar user
+.Op Fl d Ns Ar jobno
+.Op Fl r Ns Ar sdir
+.Op Fl b Ns Ar baud
+.Sh DESCRIPTION
+.Nm Uuq
 is used to examine (and possibly delete) entries in the uucp queue.
-.PP
+.Pp
 When listing jobs,
-.I uuq
+.Nm uuq
 uses a format reminiscent of
-.IR ls .
+.Xr ls .
 For the long format,
 information for each job listed includes
 job number, number of files to transfer, user who
 spooled the job, number of bytes to send, type of command requested
 (S for sending files, R for receiving files, X for remote uucp),
 and file or command desired.
-.PP
+.Pp
 Several options are available:
-.TP 10
-.B \-h
+.Bl -tag -width Ar
+.It Fl h
 Print only the summary lines for each system.  Summary lines give system
 name, number of jobs for the system, and total number of bytes to send.
-.TP 10
-.B \-l
+.It Fl l
 Specifies a long format listing.  The default is to list only the
 job numbers sorted across the page.
-.TP 10
-.BI \-s system
-Limit output to jobs for systems whose system names begin with \fIsystem\fP.
-.TP 10
-.BI \-u user
-Limit output to jobs for users whose login names begin with \fIuser\fP.
-.TP 10
-.BI \-d jobno
-Delete job number \fIjobno\fP (as obtained from a previous \fIuuq\fP command)
+.It Fl s Ns Ar system
+Limit output to jobs for systems whose system names begin with
+.Ar system .
+.It Fl u Ns Ar user
+Limit output to jobs for users whose login names begin with
+.Ar user .
+.It Fl d Ns Ar jobno
+Delete job number
+.Ar jobno
+(as obtained from a previous
+.Nm uuq
+command)
 from the uucp queue.
-Only the UUCP Administrator is permitted to delete jobs.
-.TP 10
-.BI \-r sdir
-Look for files in the spooling directory \fIsdir\fP instead of the default
+Only the
+.Tn UUCP
+Administrator is permitted to delete jobs.
+.It Fl r Ns Ar sdir
+Look for files in the spooling directory
+.Ar sdir
+instead of the default
 directory.
-.TP 10
-.BI \-b baud
-Use \fIbaud\fP to compute the transfer time instead of the default
+.It Fl b Ns Ar baud
+Use
+.Ar baud
+to compute the transfer time instead of the default
 1200 baud.
-.SH FILES
-.ta \w'/var/spool/uucp/D.hostname/D.*   'u
-/var/spool/uucp/	Default spool directory
-/var/spool/uucp/C./C.*	Control files
-.br
-/var/spool/uucp/D\fIhostname\fP./D.*	Outgoing data files
-/var/spool/uucp/X./X.*	Outgoing execution files
-.SH SEE ALSO
-uucp(1), uux(1), uulog(1), uusnap(8)
-.SH BUGS
+.El
+.Sh FILES
+.Bl -tag -width /usr/spool/uucp/Dhostname./D.x -compact
+.It Pa /usr/spool/uucp/
+Default spool directory
+.It Pa /usr/spool/uucp/C./C.*
+Control files
+.It Pa /usr/spool/uucp/D Ns Em hostname ./D.*
+Outgoing data files
+.It Pa /usr/spool/uucp/X./X.*
+Outgoing execution files
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 ,
+.Xr uulog 1 ,
+.Xr uusnap 8
+.Sh BUGS
 No information is available on work requested by the remote machine.
-.PP
+.Pp
 The user who requests a remote uucp command is unknown.
-.PP
-.B "Uuq -l"
+.Pp
+.Dq Li uq \-l
 can be horrendously slow.
-.SH AUTHOR
-Lou Salkind, New York University
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .
