@@ -1,4 +1,4 @@
-/*	param.h	1.7	87/04/02	*/
+/*	param.h	1.8	87/05/12	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -23,8 +23,8 @@
 #define	htonl(x)	(x)
 #define	htons(x)	(x)
 #else
-u_short	ntohs(), htons();
-u_long	ntohl(), htonl();
+unsigned short	ntohs(), htons();
+unsigned long	ntohl(), htonl();
 #endif
 
 #define	NBPG		1024		/* bytes/page */
