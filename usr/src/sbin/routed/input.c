@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,7 +16,7 @@ rip_input(from, size)
 {
 	struct rt_entry *rt;
 	struct netinfo *n;
-	struct interface *ifp;
+	struct interface *ifp, *if_ifwithdstaddr();
 	int newsize;
 	struct afswitch *afp;
 
@@ -130,9 +130,11 @@ rip_input(from, size)
 			 * Update if from gateway and different,
 			 * shorter, or getting stale and equivalent.
 			 */
-			if ((equal(from, &rt->rt_router) &&
-			    n->rip_metric != rt->rt_metric ) ||
-			    (unsigned) (n->rip_metric) < rt->rt_metric ||
+			if (equal(from, &rt->rt_router)) {
+				if (n->rip_metric != rt->rt_metric)
+					rtchange(rt, from, n->rip_metric);
+				rt->rt_timer = 0;
+			} else if ((unsigned) (n->rip_metric) < rt->rt_metric ||
 			    (rt->rt_timer > (EXPIRE_TIME/2) &&
 			    rt->rt_metric == n->rip_metric)) {
 				rtchange(rt, from, n->rip_metric);
