@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asscan.h 4.6 %G%
+ *	@(#)asscan.h 4.7 %G%
  */
 /*
  *	The character scanner is called to fill up one token buffer
@@ -98,7 +98,7 @@ extern	ptrall tokub;	/*current upper bound in the current buffer*/
  *	We have a third string of nulls so that the .skip can be 
  *	handled in the same way as strings.
  */
-#define MAXSTRLG	2048
+#define MAXSTRLG	4000
 
 struct strdesc {
 	unsigned short	str_lg;
