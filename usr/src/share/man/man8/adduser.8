@@ -1,19 +1,9 @@
 .\" Copyright (c) 1980 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)adduser.8	6.6 (Berkeley) %G%
+.\"	@(#)adduser.8	6.7 (Berkeley) %G%
 .\"
 .TH ADDUSER 8 ""
 .UC 4
@@ -22,7 +12,7 @@ adduser \- procedure for adding new users
 .SH DESCRIPTION
 A new user must choose a login name, which must not already appear in
 .IR /etc/passwd or
-.IR /usr/lib/aliases .
+.IR /etc/aliases .
 It must also not begin with the hyphen (``-'') character.
 It is strongly recommended that it be all lower-case, and not contain
 the dot (``.'') character, as that tends to confuse mailers.
@@ -55,7 +45,7 @@ and
 .I \&.login
 if they use \*(lq/bin/csh\*(rq.
 The directory
-\*(lq/usr/skel\*(rq contains skeletal definitions of such files.
+\*(lq/usr/share/skel\*(rq contains skeletal definitions of such files.
 New users should be given copies of these files which, for instance,
 use
 .IR tset (1)
@@ -64,7 +54,7 @@ automatically at each login.
 .ta 2i
 /etc/master.passwd	user database
 .br
-/usr/skel	skeletal login directory
+/usr/share/skel	skeletal login directory
 .SH SEE ALSO
 chpass(1), finger(1), passwd(1), aliases(5), passwd(5), mkpasswd(8), vipw(8)
 .SH BUGS
