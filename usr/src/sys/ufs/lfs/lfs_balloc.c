@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.18 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,12 +16,12 @@
 #include <sys/specdev.h>
 #include <sys/trace.h>
 
-#include <ufs/quota.h>
-#include <ufs/inode.h>
-#include <ufs/ufsmount.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
 
-#include <lfs/lfs.h>
-#include <lfs/lfs_extern.h>
+#include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 /*
  * Bmap converts a the logical block number of a file to its physical block
@@ -34,7 +34,7 @@ lfs_bmap(ip, bn, bnp)
 	register daddr_t bn;
 	daddr_t	*bnp;
 {
-	register LFS *fs;
+	register struct lfs *fs;
 	register daddr_t nb;
 	struct vnode *devvp, *vp;
 	struct buf *bp;
