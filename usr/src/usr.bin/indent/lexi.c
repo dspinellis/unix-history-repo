@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -445,12 +445,14 @@ lexi()
 	    else if (*buf_ptr == '=')
 		/* check for operator += */
 		*tok++ = *buf_ptr++;
-	    else if (*buf_ptr == '>') {
+	    else if (token[0] == '-' && *buf_ptr == '>') {
 		/* check for operator -> */
 		*tok++ = *buf_ptr++;
-		code = unary_op;
-		unary_delim = false;
-		ps.want_blank = false;
+		if (!pointer_as_binop) {
+		    code = unary_op;
+		    unary_delim = false;
+		    ps.want_blank = false;
+		}
 	    }
 	    /* buffer overflow will be checked at end of switch */
 

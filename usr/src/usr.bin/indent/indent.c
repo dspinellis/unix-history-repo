@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -576,6 +576,9 @@ check_type:
 				else if (token[1] == 0)
 				    res = "\\(br";
 				break;
+			    case '-':
+				if (token[1] == '>')
+				    res = "\\(->";
 			}
 		    for (t_ptr = res; *t_ptr; ++t_ptr)
 			*e_code++ = *t_ptr;	/* move the operator */

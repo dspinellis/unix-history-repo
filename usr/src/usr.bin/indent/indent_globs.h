@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)indent_globs.h	5.3 (Berkeley) %G%
+ *	@(#)indent_globs.h	5.4 (Berkeley) %G%
  */
 
 /*-
@@ -94,6 +94,8 @@ int     code_lines;/* count of lines with code */
 int     had_eof;   /* set to true when input is exhausted */
 int     line_no;   /* the current line number. */
 int     max_col;   /* the maximum allowable line length */
+int     pointer_as_binop;	/* when true, "->" is treated as a binary
+				   operator (giving, e.g., "p -> f") */
 int     verbose;   /* when true, non-essential error messages are printed 
 		   */
 int	cuddle_else;		/* true if else should cuddle up to '}' */
