@@ -30,7 +30,7 @@ static	char	sccsid[] = "@(#)options.c	3.1  10/29/86";
 
 #include "options.h"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 #include "options.ext"
 
 void

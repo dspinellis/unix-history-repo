@@ -26,18 +26,18 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 #include <stdio.h>
 
-#include "../general.h"
+#include "../general/general.h"
 
 #include "hostctlr.h"
 #include "screen.h"
 #include "ebc_disp.h"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 #include "options.ext"
 #include "../telnet.ext"
 #include "inbound.ext"
 #include "outbound.ext"
-#include "../system/bsubs.ext"
+#include "../general/bsubs.ext"
 
 #define SetHighestLowest(position) { \
 					if (position < Lowest) { \
