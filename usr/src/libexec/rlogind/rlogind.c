@@ -47,28 +47,24 @@ static char sccsid[] = "@(#)rlogind.c	5.51 (Berkeley) %G%";
 #define	FD_SETSIZE	16		/* don't need many bits for select */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <sys/file.h>
 #include <sys/ioctl.h>
-#if BSD > 43
-#include <sys/termios.h>
-#endif
-#include <sys/signal.h>
-#include <sys/ioctl.h>
-#include <sys/termios.h>
+#include <signal.h>
+#include <termios.h>
 
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
-
-#include <errno.h>
-#include <pwd.h>
+#include <arpa/inet.h>
 #include <netdb.h>
+
+#include <pwd.h>
 #include <syslog.h>
-#include <string.h>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
 
 #ifndef TIOCPKT_WINDOW
@@ -84,10 +80,7 @@ int	keepalive = 1;
 int	check_all = 0;
 int	check_all = 0;
 
-extern	int errno;
-int	reapchild();
-struct	passwd *getpwnam(), *pwd;
-char	*malloc();
+struct	passwd *pwd;
 
 main(argc, argv)
 	int argc;
@@ -139,7 +132,7 @@ main(argc, argv)
 	}
 #endif
 	fromlen = sizeof (from);
-	if (getpeername(0, &from, &fromlen) < 0) {
+	if (getpeername(0, (struct sockaddr *)&from, &fromlen) < 0) {
 		syslog(LOG_ERR, "Couldn't get peer name of remote host: %m");
 		fatalperror("Can't get peer name of remote host");
 	}
@@ -153,7 +146,7 @@ main(argc, argv)
 }
 
 int	child;
-int	cleanup();
+void	cleanup();
 int	netf;
 char	line[MAXPATHLEN];
 int	confirmed;
@@ -185,7 +178,7 @@ doit(f, fromp)
 
 	alarm(0);
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
-	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
+	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof(struct in_addr),
 		fromp->sin_family);
 	if (hp == 0) {
 		/*
@@ -228,7 +221,7 @@ doit(f, fromp)
 	if (use_kerberos) {
 		if (!hostok)
 			fatal(f, "rlogind: Host address mismatch.", 0);
-		retval = do_krb_login(hp->h_name, fromp, encrypt);
+		retval = do_krb_login(hp->h_name, fromp);
 		if (retval == 0)
 			authenticated++;
 		else if (retval > 0)
@@ -470,6 +463,7 @@ protocol(f, p)
 	}
 }
 
+void
 cleanup()
 {
 	char *p;
@@ -477,10 +471,10 @@ cleanup()
 	p = line + sizeof(_PATH_DEV) - 1;
 	if (logout(p))
 		logwtmp(p, "", "");
-	(void)chmod(line, 0666);
+	(void)chmod(line, DEFFILEMODE);
 	(void)chown(line, 0, 0);
 	*p = 'p';
-	(void)chmod(line, 0666);
+	(void)chmod(line, DEFFILEMODE);
 	(void)chown(line, 0, 0);
 	shutdown(netf, 2);
 	exit(1);
