@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.53	83/03/22	*/
+/*	vfs_syscalls.c	4.54	83/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -597,16 +597,10 @@ chmod1(ip, mode)
 	ip->i_mode &= ~07777;
 	if (u.u_uid) {
 		mode &= ~ISVTX;
-		if (u.u_gid == ip->i_gid)
-			goto ok;
-		for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
-			if (*gp == ip->i_gid)
-				goto ok;
-		mode &= ~ISGID;
-ok:
-		;
+		if (!groupmember(ip->i_gid))
+			mode &= ~ISGID;
 #ifdef MUSH
-		if (u.u_quota->q_syflags & QF_UMASK && u.u_uid != 0 &&
+		if (u.u_quota->q_syflags & QF_UMASK && 
 		    (ip->i_mode & IFMT) != IFCHR)
 			mode &= ~u.u_cmask;
 #endif
@@ -630,9 +624,9 @@ chown()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	if (!suser() || (ip = owner(0)) == NULL)
+	if ((ip = owner(0)) == NULL)
 		return;
-	chown1(ip, uap->uid, uap->gid);
+	u.u_error = chown1(ip, uap->uid, uap->gid);
 	iput(ip);
 }
 
@@ -658,10 +652,10 @@ fchown()
 		return;
 	}
 	ip = fp->f_inode;
-	if (!suser())
+	if (ip->i_uid != u.u_uid && !suser())
 		return;
 	ilock(ip);
-	chown1(ip, uap->uid, uap->gid);
+	u.u_error = chown1(ip, uap->uid, uap->gid);
 	iunlock(ip);
 }
 
@@ -675,7 +669,15 @@ chown1(ip, uid, gid)
 {
 #ifdef QUOTA
 	register long change;
+#endif
 
+	if (uid == -1)
+		uid = ip->i_uid;
+	if (gid == -1)
+		gid = ip->i_gid;
+	if (u.u_uid && ip->i_gid != gid && !groupmember(gid))
+		return (EPERM);
+#ifdef QUOTA
 	/*
 	 * This doesn't allow for holes in files (which hopefully don't
 	 * happen often in files that we chown), and is not accurate anyway
@@ -704,14 +706,8 @@ chown1(ip, uid, gid)
 	(void)chkiq(ip->i_dev, ip, ip->i_uid, 1);
 	dqrele(ip->i_dquot);
 #endif
-	/*
-	 * keep uid/gid's in sane range -- no err,
-	 * so chown(file, uid, -1) will do something useful
-	 */
-	if (uid >= 0 && uid <= 32767)	/* should have a constant */
-		ip->i_uid = uid;
-	if (gid >= 0 && gid <= 32767)	/* same here */
-		ip->i_gid = gid;
+	ip->i_uid = uid;
+	ip->i_gid = gid;
 	ip->i_flag |= ICHG;
 	if (u.u_ruid != 0)
 		ip->i_mode &= ~(ISUID|ISGID);
@@ -719,9 +715,12 @@ chown1(ip, uid, gid)
 	ip->i_dquot = inoquota(ip);
 	(void)chkdq(ip, change, 1);
 	(void)chkiq(ip->i_dev, (struct inode *)NULL, uid, 1);
+	return (u.u_error);
 #endif
+	return (0);
 }
 
+#ifndef NOCOMPAT
 /*
  * Set IUPD and IACC times on file.
  * Can't set ICHG.
@@ -731,20 +730,39 @@ outime()
 	register struct a {
 		char	*fname;
 		time_t	*tptr;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
 	register struct inode *ip;
 	time_t tv[2];
 	struct timeval tv0, tv1;
 
-	uap = (struct a *)u.u_ap;
 	if ((ip = owner(1)) == NULL)
 		return;
-	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof(tv));
+	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
 	if (u.u_error == 0) {
 		ip->i_flag |= IACC|IUPD|ICHG;
 		tv0.tv_sec = tv[0]; tv0.tv_usec = 0;
 		tv1.tv_sec = tv[1]; tv1.tv_usec = 0;
 		iupdat(ip, &tv0, &tv1, 0);
+	}
+	iput(ip);
+}
+#endif
+
+utimes()
+{
+	register struct a {
+		char	*fname;
+		struct	timeval *tptr;
+	} *uap = (struct a *)u.u_ap;
+	register struct inode *ip;
+	struct timeval tv[2];
+
+	if ((ip = owner(1)) == NULL)
+		return;
+	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
+	if (u.u_error == 0) {
+		ip->i_flag |= IACC|IUPD|ICHG;
+		iupdat(ip, &tv[0], &tv[1], 0);
 	}
 	iput(ip);
 }
@@ -1182,6 +1200,8 @@ maknode(mode)
 	ip->i_nlink = 1;
 	ip->i_uid = u.u_uid;
 	ip->i_gid = u.u_pdir->i_gid;
+	if (ip->i_mode & ISGID && !groupmember(ip->i_gid))
+		ip->i_mode &= ~ISGID;
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);
 #endif
