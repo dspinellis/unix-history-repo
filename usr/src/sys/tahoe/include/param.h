@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.2 (Berkeley) %G%
+ *	@(#)param.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -50,7 +50,7 @@
 
 #define	SSIZE		2		/* initial stack size/NBPG */
 #define	SINCR		2		/* increment of stack/NBPG */
-#define	UPAGES		6		/* pages of u-area (2 stack pages) */
+#define	UPAGES		8		/* pages of u-area (2 stack pages) */
 
 /*
  * Constants related to network buffer management.
