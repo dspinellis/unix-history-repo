@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.129 (Berkeley) %G%
+ *	@(#)sendmail.h	8.130 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.129		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.130		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -233,6 +233,7 @@ typedef struct mailer	MAILER;
 # define M_TRYRULESET5	'5'	/* use ruleset 5 after local aliasing */
 # define M_7BITS	'7'	/* use 7-bit path */
 # define M_8BITS	'8'	/* force "just send 8" behaviour */
+# define M_MAKE8BIT	'9'	/* convert 7 -> 8 bit if appropriate */
 # define M_CHECKINCLUDE	':'	/* check for :include: files */
 # define M_CHECKPROG	'|'	/* check for |program addresses */
 # define M_CHECKFILE	'/'	/* check for /file addresses */
@@ -330,6 +331,7 @@ MCI
 #define MCIF_CVT8TO7	0x0400		/* convert from 8 to 7 bits */
 #define MCIF_DSN	0x0800		/* DSN extension supported */
 #define MCIF_8BITOK	0x1000		/* OK to send 8 bit characters */
+#define MCIF_CVT7TO8	0x2000		/* convert from 7 to 8 bits */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
