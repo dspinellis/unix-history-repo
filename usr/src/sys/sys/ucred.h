@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ucred.h	7.2 (Berkeley) %G%
+ *	@(#)ucred.h	7.3 (Berkeley) %G%
  */
 
 #ifndef _UCRED_
@@ -28,11 +28,6 @@ struct ucred {
 	uid_t	cr_uid;			/* effective user id */
 	short	cr_ngroups;		/* number of groups */
 	gid_t	cr_groups[NGROUPS];	/* groups */
-	/*
-	 * The following either should not be here,
-	 * or should be treated as opaque
-	 */
-	uid_t	cr_ruid;		/* real uid */
 };
 #define cr_gid cr_groups[0]
 #define NOCRED ((struct ucred *)-1)
