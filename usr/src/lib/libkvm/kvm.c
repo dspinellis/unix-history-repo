@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -463,6 +463,14 @@ kvm_read(kd, kva, buf, len)
 				_kvm_syserr(kd, kd->program, "kvm_read");
 				break;
 			}
+			/*
+			 * If kvm_kvatop returns a bogus value or our core
+			 * file is truncated, we might wind up seeking beyond
+			 * the end of the core file in which case the read will
+			 * return 0 (EOF).
+			 */
+			if (cc == 0)
+				break;
 			(char *)cp += cc;
 			kva += cc;
 			len -= cc;
