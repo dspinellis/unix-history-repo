@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.52.1.1 %G%";
+static char SccsId[] = "@(#)sccs.c	1.53 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -1154,32 +1154,8 @@ dodiff(getv, gfile)
 	auto int st;
 	extern int errno;
 	int (*osig)();
-	register char *p;
-	register char **ap;
-	bool makescript = FALSE;
 
-	for (ap = getv; *ap != NULL; ap++)
-	{
-		p = *ap;
-		if (p[0] == '-')
-		{
-			switch (p[1])
-			{
-			  case 'E':
-				p[1] = 'e';
-				makescript = TRUE;
-				break;
-			}
-		}
-	}
-
-	if (makescript)
-	{
-		printf("sccs edit %s\n", gfile);
-		printf("ed - %s << 'xxEOFxx'\n", gfile);
-	}
-	else
-		printf("\n------- %s -------\n", gfile);
+	printf("\n------- %s -------\n", gfile);
 	fflush(stdout);
 
 	/* create context for diff to run in */
@@ -1216,15 +1192,6 @@ dodiff(getv, gfile)
 		}
 		command(&getv[1], FALSE, "-diff:elsfhbC");
 	}
-
-	if (makescript)
-	{
-		printf("w\n");
-		printf("q\n");
-		printf("'xxEOFxx'\n");
-		printf("sccs delta %s\n", gfile);
-	}
-
 	return (rval);
 }
 
@@ -1393,6 +1360,8 @@ username()
 	}
 	return (pw->pw_name);
 # else
+	extern char *getlogin();
+
 	return (getlogin());
 # endif UIDUSER
 }
