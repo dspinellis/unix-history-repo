@@ -6,7 +6,7 @@ BINDIR?=	/usr/bin
 
 #CFLAGS=-g -DDEBUG
 #CFLAGS+=-pg
-CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/../include -I${.CURDIR}/ex.d -I${.CURDIR}/vi.d
+CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/include -I${.CURDIR}/ex.d -I${.CURDIR}/vi.d
 #STRIP=
 .PATH:	${.CURDIR}/ex.d ${.CURDIR}/sex ${.CURDIR}/vi.d ${.CURDIR}/svi \
 	${.CURDIR}/xaw
