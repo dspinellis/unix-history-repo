@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -721,6 +721,7 @@ pmax_ioconf()
 		exit(1);
 	}
 	fprintf(fp, "#include \"sys/types.h\"\n");
+	fprintf(fp, "#include \"sys/time.h\"\n");
 	fprintf(fp, "#include \"pmax/dev/device.h\"\n\n");
 	fprintf(fp, "#define C (char *)\n\n");
 
