@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.8 83/11/23";
+static	char *sccsid = "@(#)wwlabel.c	3.9 83/12/02";
 #endif
 
 #include "ww.h"
@@ -9,7 +9,7 @@ struct ww *w;
 register char *l;
 {
 	register i;
-	register char *p;
+	int jj;
 	char ulc, top, urc, left, right, llc, bottom, lrc;
 
 	if (w->ww_i.nrow == w->ww_w.nrow)	/* not framed */
