@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.13 (Berkeley) %G%
+ *	@(#)nameser.h	5.14 (Berkeley) %G%
  */
 
 /*
@@ -123,7 +123,7 @@ typedef struct {
 	u_char	unused:2;	/* unused bits */
 	u_char	rcode:4;	/* response code */
 #else
-#if defined (vax) || defined (BIT_ZERO_ON_RIGHT)
+#if defined (vax) || defined(ns32000) || defined (BIT_ZERO_ON_RIGHT)
 	/* Bit zero on right:  VAX */
 			/* fields in third byte */
 	u_char	rd:1;		/* recursion desired */
