@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.16 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.17 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -108,7 +108,7 @@ Ac|dtc|ps|dtc382|382:\
 	:bs:co#80:ce=^P^U:cl=20^P^]:cm=%r^P^Q%.%.:dc=^X:\
 	:dl=^P^S:ei=^Pi:ho=^P^R:im=^PI:ve=^Pb:vs=^PB:pc=\177:te=20^P^]:\
 	:li#24:nd=^PR:.se=^P \200:.so=^P \002^PF:us=^P \020:ue=^P \200:\
-	:up=^P^L:nc:nl=\n:xr:xs:da:db:.pt:cr=^P^M:cd=^P^U^P^S^P^S:
+	:up=^P^L:nc:xr:xs:da:db:.pt:cr=^P^M:cd=^P^U^P^S^P^S:
 Ad|dtc300s|300|300s|dtc 300s:\
 	:ct=\E3:st=\E1:do=^J:\
 	:kb=^h:le=^H:bs:co#132:hc:hu=\EH:hd=\Eh:os:pt:up=^Z:
@@ -2055,7 +2055,7 @@ y6|t1061|teleray 1061:\
 y7|t10|teleray 10 special:\
 	:so@:se@:us@:ue@:\
 	:al=\EL:bs:cd=\EJ:ce=\EK:cl=30\Ej:cm=\EY%+ %+ :co#80:\
-	:dc=\EQ:dl=\EM:ei=:ho=\EH:ic=\EP:im=:km:li#24:nd=\EC:nl=\n:pc=\200:pt:\
+	:dc=\EQ:dl=\EM:ei=:ho=\EH:ic=\EP:im=:km:li#24:nd=\EC:pc=\200:pt:\
 	:se=\ER@:so=\ERD:sf=\Eq:sg#2:sr=\Ep:up=\EA:ug#1:ue=\ER@:us=\ERH:\
 	:xs:xt:
 yf|t1061f|teleray 1061 with fast PROMs:\
