@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	8.2 (Berkeley) %G%
+ *	@(#)malloc.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _SYS_MALLOC_H_
@@ -78,6 +78,8 @@
 #define	M_IPMADDR	54	/* internet multicast address */
 #define	M_IFMADDR	55	/* link-level multicast address */
 #define	M_MRTABLE	56	/* multicast routing tables */
+#define M_ISOFSMNT	57	/* ISOFS mount structure */
+#define M_ISOFSNODE	58	/* ISOFS vnode private part */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -139,7 +141,8 @@
 	"in_multi",	/* 54 M_IPMADDR */ \
 	"ether_multi",	/* 55 M_IFMADDR */ \
 	"mrt",		/* 56 M_MRTABLE */ \
-	NULL, NULL, \
+	"ISOFS mount",	/* 57 M_ISOFSMNT */ \
+	"ISOFS node",	/* 58 M_ISOFSNODE */ \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
