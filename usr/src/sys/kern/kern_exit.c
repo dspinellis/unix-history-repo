@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.14 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,7 +63,7 @@ exit(rv)
 {
 	register int i;
 	register struct proc *p, *q, *nq;
-	register int x;
+	register struct proc **pp;
 
 #ifdef PGINPROF
 	vmsizmon();
@@ -150,18 +150,13 @@ exit(rv)
 	multprog--;
 	p->p_stat = SZOMB;
 	noproc = 1;
-	i = PIDHASH(p->p_pid);
-	x = p - proc;
-	if (pidhash[i] == x)
-		pidhash[i] = p->p_idhash;
-	else {
-		for (i = pidhash[i]; i != 0; i = proc[i].p_idhash)
-			if (proc[i].p_idhash == x) {
-				proc[i].p_idhash = p->p_idhash;
-				goto done;
-			}
-		panic("exit");
-	}
+	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)
+		if (*pp == p) {
+			*pp = p->p_hash;
+			goto done;
+		}
+	panic("exit");
+done:
 	if (p->p_pid == 1) {
 		if (p->p_dsize == 0) {
 			printf("Can't exec init (errno %d)\n", WEXITSTATUS(rv));
@@ -170,7 +165,6 @@ exit(rv)
 		} else
 			panic("init died");
 	}
-done:
 	p->p_xstat = rv;
 	*p->p_ru = u.u_ru;
 	ruadd(p->p_ru, &u.u_cru);
