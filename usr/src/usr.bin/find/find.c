@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+
+#include <err.h>
+#include <errno.h>
 #include <fts.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "find.h"
 
 /*
@@ -48,7 +51,7 @@ find_formplan(argv)
 	 * by c_name() with an argument of foo and `-->' represents the
 	 * plan->next pointer.
 	 */
-	for (plan = NULL; *argv;) {
+	for (plan = tail = NULL; *argv;) {
 		if (!(new = find_create(&argv)))
 			continue;
 		if (plan == NULL)
@@ -101,7 +104,7 @@ find_formplan(argv)
 	plan = paren_squish(plan);		/* ()'s */
 	plan = not_squish(plan);		/* !'s */
 	plan = or_squish(plan);			/* -o's */
-	return(plan);
+	return (plan);
 }
  
 FTS *tree;			/* pointer to top of FTS hierarchy */
@@ -120,7 +123,7 @@ find_execute(plan, paths)
 	PLAN *p;
     
 	if (!(tree = fts_open(paths, ftsoptions, (int (*)())NULL)))
-		err("ftsopen: %s", strerror(errno));
+		err(1, "ftsopen");
 
 	while (entry = fts_read(tree)) {
 		switch(entry->fts_info) {
@@ -136,15 +139,13 @@ find_execute(plan, paths)
 		case FTS_ERR:
 		case FTS_NS:
 			(void)fflush(stdout);
-			(void)fprintf(stderr, "find: %s: %s\n", 
-			    entry->fts_path, strerror(errno));
+			warn("%s", entry->fts_path);
 			continue;
 		}
 #define	BADCH	" \t\n\\'\""
 		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
 			(void)fflush(stdout);
-			(void)fprintf(stderr,
-			    "find: illegal path: %s\n", entry->fts_path);
+			warnx("%s: illegal path", entry->fts_path);
 			continue;
 		}
 		 

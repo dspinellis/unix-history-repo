@@ -9,11 +9,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)operator.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)operator.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
+#include <err.h>
+#include <fts.h>
 #include <stdio.h>
+
 #include "find.h"
     
 /*
@@ -27,10 +31,10 @@ yanknode(planp)
 	PLAN *node;		/* top node removed from the plan */
     
 	if ((node = (*planp)) == NULL)
-		return(NULL);
+		return (NULL);
 	(*planp) = (*planp)->next;
 	node->next = NULL;
-	return(node);
+	return (node);
 }
  
 /*
@@ -51,7 +55,7 @@ yankexpr(planp)
     
 	/* first pull the top node from the plan */
 	if ((node = yanknode(planp)) == NULL)
-		return(NULL);
+		return (NULL);
     
 	/*
 	 * If the node is an '(' then we recursively slurp up expressions
@@ -62,7 +66,7 @@ yankexpr(planp)
 	if (node->type == N_OPENPAREN)
 		for (tail = subplan = NULL;;) {
 			if ((next = yankexpr(planp)) == NULL)
-				err("%s: %s", "(", "missing closing ')'");
+				err(1, "(: missing closing ')'");
 			/*
 			 * If we find a closing ')' we store the collected
 			 * subplan in our '(' node and convert the node to
@@ -72,8 +76,7 @@ yankexpr(planp)
 			 */
 			if (next->type == N_CLOSEPAREN) {
 				if (subplan == NULL)
-					err("%s: %s",
-					    "()", "empty inner expression");
+					errx(1, "(): empty inner expression");
 				node->p_data[0] = subplan;
 				node->type = N_EXPR;
 				node->eval = f_expr;
@@ -88,7 +91,7 @@ yankexpr(planp)
 				tail->next = NULL;
 			}
 		}
-	return(node);
+	return (node);
 }
  
 /*
@@ -115,7 +118,7 @@ paren_squish(plan)
 		 * '(' someplace.
 		 */
 		if (expr->type == N_CLOSEPAREN)
-			err("%s: %s", ")", "no beginning '('");
+			errx(1, "): no beginning '('");
 
 		/* add the expression to our result plan */
 		if (result == NULL)
@@ -126,7 +129,7 @@ paren_squish(plan)
 		}
 		tail->next = NULL;
 	}
-	return(result);
+	return (result);
 }
  
 /*
@@ -166,9 +169,9 @@ not_squish(plan)
 				node = yanknode(&plan);
 			}
 			if (node == NULL)
-				err("%s: %s", "!", "no following expression");
+				errx(1, "!: no following expression");
 			if (node->type == N_OR)
-				err("%s: %s", "!", "nothing between ! and -o");
+				errx(1, "!: nothing between ! and -o");
 			if (notlevel % 2 != 1)
 				next = node;
 			else
@@ -184,7 +187,7 @@ not_squish(plan)
 		}
 		tail->next = NULL;
 	}
-	return(result);
+	return (result);
 }
  
 /*
@@ -220,12 +223,12 @@ or_squish(plan)
 		 */
 		if (next->type == N_OR) {
 			if (result == NULL)
-				err("%s: %s", "-o", "no expression before -o");
+				errx(1, "-o: no expression before -o");
 			next->p_data[0] = result;
 			next->p_data[1] = or_squish(plan);
 			if (next->p_data[1] == NULL)
-				err("%s: %s", "-o", "no expression after -o");
-			return(next);
+				errx(1, "-o: no expression after -o");
+			return (next);
 		}
 
 		/* add the node to our result plan */
@@ -237,5 +240,5 @@ or_squish(plan)
 		}
 		tail->next = NULL;
 	}
-	return(result);
+	return (result);
 }

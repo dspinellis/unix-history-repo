@@ -6,17 +6,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
-#include <fts.h>
+
+#include <err.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <fts.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
 #include "find.h"
 
 time_t now;			/* time find was run */
@@ -82,7 +85,7 @@ main(argc, argv)
 	*p = NULL;
 
 	if ((dotfd = open(".", O_RDONLY, 0)) < 0)
-		err(".: %s", strerror(errno));
+		err(1, ".:");
 
 	find_execute(find_formplan(argv), start);
 	exit(0);
