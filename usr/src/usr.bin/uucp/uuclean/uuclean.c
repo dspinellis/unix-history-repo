@@ -1,9 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuclean.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuclean.c	5.5 (Berkeley) %G%";
 #endif
 
-#include "uucp.h"
 #include <signal.h>
+#include "uucp.h"
 #include <pwd.h>
 #include <sys/stat.h>
 #ifdef	NDIR
@@ -12,11 +12,9 @@ static char sccsid[] = "@(#)uuclean.c	5.4 (Berkeley) %G%";
 #include <sys/dir.h>
 #endif
 
-extern time_t time();
-
-/*******
+/*
  *
- *	uuclean  -  this program will search through the spool
+ *	this program will search through the spool
  *	directory (Spool) and delete all files with a requested
  *	prefix which are older than (nomtime) seconds.
  *	If the -m option is set, the program will try to
