@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1990, 1993
+ * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	8.4 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.5 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -34,9 +34,6 @@
 #include <netinet/tcp_debug.h>
 
 int	tcprexmtthresh = 3;
-int	tcppredack;	/* XXX debugging: times hdr predict ok for acks */
-int	tcppreddat;	/* XXX # times header prediction ok for data packets */
-int	tcppcbcachemiss;
 struct	tcpiphdr tcp_saveti;
 struct	inpcb *tcp_last_inpcb = &tcb;
 
@@ -300,7 +297,7 @@ findpcb:
 		    ti->ti_dst, ti->ti_dport, INPLOOKUP_WILDCARD);
 		if (inp)
 			tcp_last_inpcb = inp;
-		++tcppcbcachemiss;
+		++tcpstat.tcps_pcbcachemiss;
 	}
 
 	/*
@@ -415,7 +412,7 @@ findpcb:
 				/*
 				 * this is a pure ack for outstanding data.
 				 */
-				++tcppredack;
+				++tcpstat.tcps_predack;
 				if (ts_present)
 					tcp_xmit_timer(tp, tcp_now-ts_ecr+1);
 				else if (tp->t_rtt &&
@@ -456,7 +453,7 @@ findpcb:
 			 * with nothing on the reassembly queue and
 			 * we have enough buffer space to take it.
 			 */
-			++tcppreddat;
+			++tcpstat.tcps_preddat;
 			tp->rcv_nxt += ti->ti_len;
 			tcpstat.tcps_rcvpack++;
 			tcpstat.tcps_rcvbyte += ti->ti_len;
