@@ -1,0 +1,23 @@
+			  FreeBSD 1.0
+		        Contributor List
+
+		        Rodney W. Grimes
+
+
+Derived Software Contributors
+
+This software was derived from William F. Jolitz's 386BSD release 0.1, please
+see the file CONTRIB.386BSD for a list of contributors to that release.
+
+Also included in this release is all the patches from patch kit 0.2.4 the
+names of contributors from the patch kit is listed below in a seperate
+section.
+
+Hardware Contributors
+
+A special thanks to Robert Bruce and Jack Velte of Walnut Creek CDROM for
+providing a 486/DX2-66 EISA/VL system that was T-1 internet connected
+for the developement work.  It would have been imposible for us to get
+this release done with out them.
+
+PATCH KIT PATCH CONTRIBUTORS:
