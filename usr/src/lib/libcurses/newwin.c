@@ -1,7 +1,7 @@
 /*
  * allocate space for and set up defaults for a new window
  *
- * %G% (Berkeley) %W
+ * %G% (Berkeley) @(#)newwin.c	1.5
  */
 
 # include	"curses.ext"
@@ -73,14 +73,18 @@ int		num_lines, num_cols, begy, begx; {
 # endif
 	if (by < orig->_begy || bx < orig->_begx
 	    || by + nl > orig->_maxy + orig->_begy
-	    || bx + nc > orig->_maxx + orig->_begx)
+	    || bx + nc > orig->_maxx + orig->_begx) {
+		fprintf(stderr, "returning ERR (1)\n");
 		return ERR;
+	}
 	if (nl == 0)
 		nl = orig->_maxy + orig->_begy - by;
 	if (nc == 0)
 		nc = orig->_maxx + orig->_begx - bx;
-	if ((win = makenew(nl, nc, by, bx)) == NULL)
+	if ((win = makenew(nl, nc, by, bx)) == NULL) {
+		fprintf(stderr, "returning ERR (2)\n");
 		return ERR;
+	}
 	j = by - orig->_begy;
 	k = bx - orig->_begx;
 	for (i = 0; i < nl; i++)

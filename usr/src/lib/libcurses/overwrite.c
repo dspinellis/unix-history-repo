@@ -10,7 +10,7 @@
 overwrite(win1, win2)
 reg WINDOW	*win1, *win2; {
 
-	reg int		x, y, minx, miny, starty;
+	reg int		x, y, minx, miny, startx, starty;
 
 # ifdef DEBUG
 	fprintf(outf, "OVERWRITE(0%o, 0%o);\n", win1, win2);
@@ -21,8 +21,11 @@ reg WINDOW	*win1, *win2; {
 	fprintf(outf, "OVERWRITE:\tminx = %d,  miny = %d\n", minx, miny);
 # endif
 	starty = win1->_begy - win2->_begy;
+	startx = win1->_begx - win2->_begx;
+	if (startx < 0)
+		startx = 0;
 	for (y = 0; y < miny; y++)
-		if (wmove(win2, y + starty, 0) != ERR)
+		if (wmove(win2, y + starty, startx) != ERR)
 			for (x = 0; x < minx; x++)
 				waddch(win2, win1->_y[y][x]);
 }

@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.11
+ * %G% (Berkeley) @(#)setterm.c	1.12
  */
 
 # include	"curses.ext"
@@ -57,8 +57,8 @@ gettmode() {
 setterm(type)
 reg char	*type; {
 
-	reg int	unknown;
-	char	genbuf[1024];
+	reg int		unknown;
+	static char	genbuf[1024];
 
 # ifdef DEBUG
 	fprintf(outf, "SETTERM(\"%s\")\n", type);

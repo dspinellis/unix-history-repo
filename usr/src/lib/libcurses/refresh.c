@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.5
+ * %G% (Berkeley) @(#)refresh.c	1.6
  */
 
 # include	"curses.ext"
@@ -88,7 +88,7 @@ reg WINDOW	*win;
 			win->_cury = win->_curx = 0;
 	}
 	else {
-		mvcur(ly, lx, win->_cury + win->_begy, win->_curx + win->_begx);
+		domvcur(ly, lx, win->_cury+win->_begy, win->_curx+win->_begx);
 		curscr->_cury = win->_cury + win->_begy;
 		curscr->_curx = win->_curx + win->_begx;
 	}
@@ -131,7 +131,7 @@ short		wy;
 		ce = NULL;
 	while (wx <= lch) {
 		if (*nsp != *csp) {
-			mvcur(ly, lx, y, wx + win->_begx);
+			domvcur(ly, lx, y, wx + win->_begx);
 # ifdef DEBUG
 			fprintf(outf, "MAKECH: 1: wx = %d, lx = %d\n", wx, lx);
 # endif	
@@ -179,11 +179,12 @@ short		wy;
 				wx++;
 				if (wx >= win->_maxx && wy == win->_maxy - 1)
 					if (win->_scroll) {
-					    if ((win->_flags&(_ENDLINE|_STANDOUT)) == (_ENDLINE|_STANDOUT))
-						if (!MS) {
-						    _puts(SE);
-						    win->_flags &= ~_STANDOUT;
-						}
+					    if ((curscr->_flags&_STANDOUT) &&
+					        (win->_flags & _ENDLINE))
+						    if (!MS) {
+							_puts(SE);
+							curscr->_flags &= ~_STANDOUT;
+						    }
 					    if (!curwin)
 						putchar((*csp = *nsp) & 0177);
 					    else
@@ -209,10 +210,6 @@ short		wy;
 				}
 				nsp++;
 			}
-			if (!MS && (*nsp & _STANDOUT)  && (*csp & _STANDOUT)) {
-				_puts(SE);
-				win->_flags &= ~_STANDOUT;
-			}
 # ifdef DEBUG
 			fprintf(outf, "MAKECH: 2: wx = %d, lx = %d\n", wx, lx);
 # endif	
@@ -234,9 +231,19 @@ short		wy;
 # endif	
 	}
 ret:
-	if ((win->_flags & _STANDOUT) && !MS) {
-		_puts(SE);
-		win->_flags &= ~_STANDOUT;
-	}
 	return OK;
+}
+
+/*
+ * perform a mvcur, leaving standout mode if necessary
+ */
+static
+domvcur(oy, ox, ny, nx)
+int	oy, ox, ny, nx; {
+
+	if (curscr->_flags & _STANDOUT && !MS) {
+		_puts(SE);
+		curscr->_flags &= ~_STANDOUT;
+	}
+	mvcur(oy, ox, ny, nx);
 }
