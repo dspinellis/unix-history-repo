@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)lofs_vnops.c	7.2 (Berkeley) %G%
  *
  * $Id: lofs_vnops.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -665,13 +665,13 @@ lofs_mkdir(ap)
 
 	xdvp = dvp;
 	dvp = LOFSVP(xdvp);
-	/*VREF(dvp);*/
+	VREF(dvp);
 
 	error = VOP_MKDIR(dvp, &newvp, ap->a_cnp, ap->a_vap);
 
 	if (error) {
 		*ap->a_vpp = NULLVP;
-		/*vrele(xdvp);*/
+		vrele(xdvp);
 		return (error);
 	}
 
