@@ -1,5 +1,5 @@
 /*
-char id_dfe[] = "@(#)dfe.c	1.3";
+char id_dfe[] = "@(#)dfe.c	1.4";
  *
  * direct formatted external i/o
  */
@@ -117,11 +117,13 @@ y_tab()
 {	int n;
 	if(curunit->url==1)
 	{
-		if(cursor < 0 && -cursor > ftell(cf)) return(F_ERBREC);
+		if(cursor < 0 && -cursor > ftell(cf)) rewind(cf);
+		else	fseek(cf,(long)cursor,1);
+		return(cursor=0);
 	}
 	else
 	{	if(reclen < recpos) reclen = recpos;
-		if((recpos + cursor) < 0) return(F_ERBREC);
+		if((recpos + cursor) < 0) cursor = -recpos;	/* BOR */
 		n = reclen - recpos;		/* n >= 0 */
 		if(!reading && (cursor-n) > 0)
 		{	recpos = reclen;
