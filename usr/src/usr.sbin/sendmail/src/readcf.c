@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.86 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.87 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1464,24 +1464,25 @@ setoption(opt, val, sticky)
 	  case '8':		/* handling of 8-bit input */
 		switch (*val)
 		{
-		  case 'r':		/* reject 8-bit, don't convert MIME */
-			MimeMode = 0;
-			break;
-
 		  case 'm':		/* convert 8-bit, convert MIME */
 			MimeMode = MM_CVTMIME|MM_MIME8BIT;
 			break;
 
-		  case 'j':		/* "just send 8" */
-			MimeMode = MM_PASS8BIT;
-			break;
-
 		  case 'p':		/* pass 8 bit, convert MIME */
-			MimeMode = MM_PASS8BIT|MM_CVTMIME;
+			MimeMode = MM_CVTMIME|MM_PASS8BIT;
 			break;
 
 		  case 's':		/* strict adherence */
 			MimeMode = MM_CVTMIME;
+			break;
+
+#if 0
+		  case 'r':		/* reject 8-bit, don't convert MIME */
+			MimeMode = 0;
+			break;
+
+		  case 'j':		/* "just send 8" */
+			MimeMode = MM_PASS8BIT;
 			break;
 
 		  case 'a':		/* encode 8 bit if available */
@@ -1491,6 +1492,7 @@ setoption(opt, val, sticky)
 		  case 'c':		/* convert 8 bit to MIME, never 7 bit */
 			MimeMode = MM_MIME8BIT;
 			break;
+#endif
 
 		  default:
 			syserr("Unknown 8-bit mode %c", *val);
