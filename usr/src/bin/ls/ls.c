@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.3 82/03/15";
+static	char *sccsid = "@(#)ls.c	4.4 82/03/27";
 #endif
 
 /*
@@ -440,7 +440,7 @@ fmtentry(fp)
 	static char fmtres[BUFSIZ];
 	register char *cp, *dp;
 
-	(void) sprintf(fmtres, "%s%s%s%s",
+	(void) sprintf(fmtres, "%s%s%s",
 	    iflg ? fmtinum(fp) : "",
 	    sflg ? fmtsize(fp) : "",
 	    lflg ? fmtlstuff(fp) : "");
