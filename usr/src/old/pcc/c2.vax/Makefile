@@ -3,10 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 CFLAGS=	-DCOPYCODE -DC2 -O
-ASDIR=	../../../usr.bin/as/as.${MACHINE}
+ASDIR=	../../../pgrm/as/as.${MACHINE}
 SRCS=	c20.c c21.c c22.c
 OBJS=	c20.o c21.o c22.o
 
