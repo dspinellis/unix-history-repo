@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.13	%G%	*/
+/*	kern_synch.c	3.14	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -308,7 +308,7 @@ retry:
 	rip = u.u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_clktim = 0;
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SDETACH));
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SDETACH|SNUSIG));
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
 		rpp->p_ndx = rip->p_ndx;
