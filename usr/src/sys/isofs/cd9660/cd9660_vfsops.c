@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.14 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,8 +67,11 @@ cd9660_mountroot()
 	/*
 	 * Get vnodes for swapdev and rootdev.
 	 */
-	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
-		panic("cd9660_mountroot: can't setup bdevvp's");
+	if ((error = bdevvp(swapdev, &swapdev_vp)) ||
+	    (error = bdevvp(rootdev, &rootvp))) {
+		printf("cd9660_mountroot: can't setup bdevvp's");
+		return (error);
+	}
 
 	if (error = vfs_rootmountalloc("cd9660", "root_device", &mp))
 		return (error);
