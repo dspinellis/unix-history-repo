@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.85 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.86 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.85 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.86 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -264,6 +264,8 @@ getrequests()
 
 			/* determine host name */
 			p = hostnamebyanyaddr(&RealHostAddr);
+			if (strlen(p) > MAXNAME)
+				p[MAXNAME] = '\0';
 			RealHostName = newstr(p);
 			setproctitle("startup with %s", p);
 
