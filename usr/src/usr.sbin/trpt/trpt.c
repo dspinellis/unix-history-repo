@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	4.3 82/11/14";
+static char sccsid[] = "@(#)trpt.c	4.4 83/01/13";
 #endif
 
 #include <sys/param.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)trpt.c	4.3 82/11/14";
 #define	TANAMES
 #include <netinet/tcp_debug.h>
 
+#include <stdio.h>
 #include <errno.h>
 #include <nlist.h>
 
@@ -44,7 +45,9 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int i;
+	int i, mask = 0;
+	caddr_t tcpcb = 0;
+	char *system = "/vmunix", *core = "/dev/kmem";
 
 	argc--, argv++;
 again:
@@ -52,25 +55,56 @@ again:
 		sflag++, argc--, argv++;
 		goto again;
 	}
-	nlist(argc > 0 ? *argv : "/vmunix", nl);
+	if (argc > 0 && !strcmp(*argv, "-p")) {
+		if (argc < 1) {
+			fprintf(stderr, "-p: missing tcpcb address\n");
+			exit(1);
+		}
+		argc--, argv++;
+		sscanf(*argv, "%x", &tcpcb);
+		argc--, argv++;
+		goto again;
+	}
+	if (argc > 0) {
+		system = *argv;
+		argc--, argv++;
+		mask++;
+	}
+	if (argc > 0) {
+		core = *argv;
+		argc--, argv++;
+		mask++;
+	}
+	(void) nlist(system, nl);
 	if (nl[0].n_value == 0) {
-		printf("no namelist\n");
+		fprintf(stderr, "trpt: %s: no namelist\n", system);
 		exit(1);
 	}
-	close(0);
-	open(argc > 1 ? argv[1] : "/dev/kmem", 0);
-	if (argc > 1) {
+	(void) close(0);
+	if (open(core, 0) < 0) {
+		fprintf(stderr, "trpt: "); perror(core);
+		exit(2);
+	}
+	if (mask) {
 		nl[0].n_value &= 0x7fffffff;
 		nl[1].n_value &= 0x7fffffff;
 	}
-	lseek(0, nl[1].n_value, 0);
-	read(0, &tcp_debx, sizeof (tcp_debx));
+	(void) lseek(0, nl[1].n_value, 0);
+	if (read(0, &tcp_debx, sizeof (tcp_debx)) != sizeof (tcp_debx)) {
+		fprintf(stderr, "trpt: "); perror("tcp_debx");
+		exit(3);
+	}
 	printf("tcp_debx=%d\n", tcp_debx);
-	lseek(0, nl[0].n_value, 0);
-	read(0, tcp_debug, sizeof (tcp_debug));
+	(void) lseek(0, nl[0].n_value, 0);
+	if (read(0, tcp_debug, sizeof (tcp_debug)) != sizeof (tcp_debug)) {
+		fprintf(stderr, "trpt: "); perror("tcp_debug");
+		exit(3);
+	}
 	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
 		struct tcp_debug *td = &tcp_debug[i];
 
+		if (tcpcb && td->td_tcb != tcpcb)
+			continue;
 		ntime = ntohl(td->td_time);
 		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
 		    &td->td_ti, td->td_req);
@@ -78,6 +112,8 @@ again:
 	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
 		struct tcp_debug *td = &tcp_debug[i];
 
+		if (tcpcb && td->td_tcb != tcpcb)
+			continue;
 		ntime = ntohl(td->td_time);
 		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
 		    &td->td_ti, td->td_req);
@@ -109,14 +145,12 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 		ack = ti->ti_ack;
 		len = ti->ti_len;
 		win = ti->ti_win;
-#if vax || pdp11
 		if (act == TA_OUTPUT) {
 			seq = ntohl(seq);
 			ack = ntohl(ack);
 			len = ntohs(len);
 			win = ntohs(win);
 		}
-#endif
 		if (act == TA_OUTPUT)
 			len -= sizeof (struct tcphdr);
 		if (len)
@@ -148,8 +182,10 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 	printf("\n");
 	if (sflag) {
 		printf("\trcv_nxt %x rcv_wnd %d snd_una %x snd_nxt %x snd_max %x\n",
-		    tp->rcv_nxt, tp->rcv_wnd, tp->snd_una, tp->snd_nxt, tp->snd_max);
-		printf("\tsnd_wl1 %x snd_wl2 %x snd_wnd %x\n", tp->snd_wl1, tp->snd_wl2, tp->snd_wnd);
+		    tp->rcv_nxt, tp->rcv_wnd, tp->snd_una, tp->snd_nxt,
+		    tp->snd_max);
+		printf("\tsnd_wl1 %x snd_wl2 %x snd_wnd %x\n", tp->snd_wl1,
+		    tp->snd_wl2, tp->snd_wnd);
 	}
 }
 
