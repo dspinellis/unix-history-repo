@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.4 (Berkeley) %G%
+ *	@(#)machdep.c	7.5 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -90,6 +90,7 @@ mach_init(argc, argv)
 	register int i;
 	register unsigned firstaddr;
 	register caddr_t v;
+	caddr_t start;
 	extern char edata[], end[];
 	extern char MachUTLBMiss[], MachUTLBMissEnd[];
 	extern char MachException[], MachExceptionEnd[];
@@ -97,8 +98,8 @@ mach_init(argc, argv)
 	extern char *pmap_attributes;
 #endif
 
-	/* clear BSS segment, pages for u, and proc[0] page table */
-	v = (caddr_t)pmax_round_page(end) + 2 * UPAGES * NBPG;
+	/* clear the BSS segment */
+	v = (caddr_t)pmax_round_page(end);
 	bzero(edata, v - edata);
 
 #ifdef DS5000
@@ -118,7 +119,7 @@ mach_init(argc, argv)
 #ifdef GENERIC
 	boothowto = RB_SINGLE | RB_ASKNAME;
 #else
-	boothowto = RB_SINGLE | RB_DFLTROOT;
+	boothowto = RB_SINGLE;
 #endif
 #ifdef KADB
 	boothowto |= RB_KDB;
@@ -127,39 +128,52 @@ mach_init(argc, argv)
 		for (i = 1; i < argc; i++) {
 			for (cp = argv[i]; *cp; cp++) {
 				switch (*cp) {
-				case '-':
-					continue;
-
 				case 'a': /* autoboot */
 					boothowto &= ~RB_SINGLE;
 					break;
 
+				case 'd': /* use compiled in default root */
+					boothowto |= RB_DFLTROOT;
+					break;
+
+				case 'm': /* mini root present in memory */
+					boothowto |= RB_MINIROOT;
+					break;
+
 				case 'n': /* ask for names */
 					boothowto |= RB_ASKNAME;
-					boothowto &= ~RB_DFLTROOT;
 					break;
 
 				case 'N': /* don't ask for names */
 					boothowto &= ~RB_ASKNAME;
-					boothowto |= RB_DFLTROOT;
 				}
 			}
 		}
 	}
 
+#ifdef MFS
+	/*
+	 * Check to see if a mini-root was loaded into memory. It resides
+	 * at the start of the next page just after the end of BSS.
+	 */
+	if (boothowto & RB_MINIROOT)
+		v += mfs_initminiroot(v);
+#endif
+
 	/*
 	 * Init mapping for u page(s) for proc[0], pm_tlbpid 1.
 	 */
-	firstaddr = MACH_CACHED_TO_PHYS(pmax_round_page(end));
-	curproc->p_addr = proc0paddr = (struct user *)
-		MACH_PHYS_TO_CACHED(firstaddr);
+	start = v;
+	curproc->p_addr = proc0paddr = (struct user *)v;
 	curproc->p_md.md_regs = proc0paddr->u_pcb.pcb_regs;
+	firstaddr = MACH_CACHED_TO_PHYS(v);
 	for (i = 0; i < UPAGES; i++) {
 		MachTLBWriteIndexed(i,
 			(UADDR + (i << PGSHIFT)) | (1 << VMMACH_TLB_PID_SHIFT),
 			curproc->p_md.md_upte[i] = firstaddr | PG_V | PG_M);
 		firstaddr += NBPG;
 	}
+	v += UPAGES * NBPG;
 	MachSetPID(1);
 
 	/*
@@ -167,12 +181,16 @@ mach_init(argc, argv)
 	 * init mapping for u page(s), pm_tlbpid 0
 	 * This could be used for an idle process.
 	 */
-	nullproc.p_md.md_regs =
-		((struct user *)MACH_PHYS_TO_CACHED(firstaddr))->u_pcb.pcb_regs;
+	nullproc.p_addr = (struct user *)v;
+	nullproc.p_md.md_regs = ((struct user *)v)->u_pcb.pcb_regs;
 	for (i = 0; i < UPAGES; i++) {
 		nullproc.p_md.md_upte[i] = firstaddr | PG_V | PG_M;
 		firstaddr += NBPG;
 	}
+	v += UPAGES * NBPG;
+
+	/* clear pages for u areas */
+	bzero(start, v - start);
 
 	/*
 	 * Copy down exception vector code.
@@ -270,7 +288,7 @@ mach_init(argc, argv)
 	case 5:	/* DS5800 Isis */
 	case 6:	/* DS5400 MIPSfair */
 	default:
-		printf("Unknown Box: systype 0x%x\n", i);
+		printf("kernel not configured for systype 0x%x\n", i);
 		boot(RB_HALT | RB_NOSYNC);
 	}
 
@@ -292,7 +310,7 @@ mach_init(argc, argv)
 	 * because physical memory is directly addressable. We don't have
 	 * to map these into virtual address space.
 	 */
-	cp = (char *)v;
+	start = v;
 
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
@@ -335,7 +353,7 @@ mach_init(argc, argv)
 	 * Clear allocated memory.
 	 */
 	v = (caddr_t)pmax_round_page(v);
-	bzero((caddr_t)cp, v - (caddr_t)cp);
+	bzero(start, v - start);
 
 	/*
 	 * Initialize the virtual memory system.
@@ -500,7 +518,7 @@ setregs(p, entry, retval)
 	p->p_md.md_regs[PS] = PSL_USERSET;
 	p->p_md.md_flags & ~MDP_FPUSED;
 	if (machFPCurProcPtr == p)
-		machFPCurProcPtr == (struct proc *)0;
+		machFPCurProcPtr = (struct proc *)0;
 }
 
 /*
@@ -570,10 +588,8 @@ sendsig(catcher, sig, mask, code)
 		extern struct proc *machFPCurProcPtr;
 
 		/* if FPU has current state, save it first */
-		if (p == machFPCurProcPtr) {
+		if (p == machFPCurProcPtr)
 			MachSaveCurFPState(p);
-			machFPCurProcPtr = (struct proc *)0;
-		}
 		bcopy((caddr_t)&p->p_md.md_regs[F0], (caddr_t)ksc.sc_fpregs,
 			sizeof(ksc.sc_fpregs));
 	}
