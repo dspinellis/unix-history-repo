@@ -22,11 +22,13 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.31 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.32 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.31 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.32 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
+
+int la;	/* load average */
 
 #ifdef DAEMON
 
@@ -298,7 +300,8 @@ again:
 		int on = 1;
 		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
 	}
-	(void) fflush(CurEnv->e_xfp);			/* for debugging */
+	if (CurEnv->e_xfp != NULL)
+		(void) fflush(CurEnv->e_xfp);		/* for debugging */
 	errno = 0;					/* for debugging */
 #ifdef NVMUNIX
 	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
@@ -344,8 +347,12 @@ again:
 			return (EX_TEMPFAIL);
 
 		  default:
-			message(Arpa_Info, "%s", errstring(sav_errno));
-			return (EX_UNAVAILABLE);
+			{
+				extern char *errstring();
+
+				message(Arpa_Info, "%s", errstring(sav_errno));
+				return (EX_UNAVAILABLE);
+			}
 		}
 	}
 
