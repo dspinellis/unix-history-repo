@@ -2,6 +2,9 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
  * duplicated in all such forms and that any documentation,
@@ -14,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.5 (Berkeley) %G%
+ *	@(#)mp.c	7.6 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -235,7 +238,7 @@ mpclose(dev, flag)
 	mb = mp_softc[MPUNIT(unit)].ms_mb;
 	mp = &mb->mb_port[port];
 	s = spl8();
-	if (mp->mp_flags & MP_PROGRESS) {		/* close in progress */
+	if (mp->mp_flags & MP_PROGRESS) {	/* close in progress??? */
 		if (mp->mp_flags & MP_REMBSY) {
 			mp->mp_flags &= ~MP_REMBSY;
 			splx(s);
@@ -858,7 +861,7 @@ mpxintr(unit, list)
 				mp->mp_on = mp->mp_off = mp->mp_nextrcv = 0;
 				mp->mp_flags &= ~MP_PROGRESS;
 				mp->mp_proto = MPPROTO_UNUSED;
-				wakeup((caddr_t)&tp->t_canq);	/* ??? */
+				wakeup((caddr_t)&tp->t_canq);
 				goto done;
 			case EVCMD_IOCTL:
 				/*
@@ -871,10 +874,9 @@ mpxintr(unit, list)
 				 * state and restart output.
 				 */
 				tp->t_state &= ~TS_BUSY;
-				if (tp->t_state & TS_FLUSH) {
+				if (tp->t_state & TS_FLUSH)
 					tp->t_state &= ~TS_FLUSH;
-					wakeup((caddr_t)&tp->t_state);
-				} else {
+				else {
 					register int cc = 0, n;
 					struct hxmtl *hxp;
 
