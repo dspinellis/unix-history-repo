@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6	{Berkeley}	%G%
+#	@(#)Makefile	5.7	{Berkeley}	%G%
 #
 LIBC=	/lib/libc.a
 LIBS=	-ltermlib
@@ -32,7 +32,7 @@ teachgammon: ${TOBJS} ${LIBC}
 
 # Update message.
 message.c: FRC
-	ex - message.c < Mesgfix
+	-[ ! -w message.c ] || ex - message.c < Mesgfix
 
 # Documentation
 backgammon.doc: backgammon.src
