@@ -1,4 +1,4 @@
-/*	subr_prf.c	6.1	83/07/29	*/
+/*	subr_prf.c	6.2	84/07/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,10 @@
 #ifdef vax
 #include "../vax/mtpr.h"
 #endif
+
+#define TOCONS	0x1
+#define TOTTY	0x2
+#define TOLOG	0x4
 
 /*
  * In case console is off,
@@ -48,7 +52,8 @@ printf(fmt, x1)
 	unsigned x1;
 {
 
-	prf(fmt, &x1, 0);
+	prf(fmt, &x1, TOCONS | TOLOG, (struct tty *)0);
+	logwakeup();
 }
 
 /*
@@ -62,12 +67,43 @@ uprintf(fmt, x1)
 	unsigned x1;
 {
 
-	prf(fmt, &x1, 2);
+	prf(fmt, &x1, TOTTY, u.u_ttyp);
 }
 
-prf(fmt, adx, touser)
+/*VARARGS2*/
+tprintf(ttyp, fmt, x1)
+	struct tty *ttyp;
+	char *fmt;
+	unsigned x1;
+{
+
+	prf(fmt, &x1, TOTTY, ttyp);
+}
+
+/*
+ * Log writes to the log buffer,
+ * guarantees not to sleep (so can be called by interrupt routines)
+ * and does no watermark checking - (so no verbose messages).
+ */
+/*VARARGS2*/
+log(level, fmt, x1)
+	char *fmt;
+	unsigned x1;
+{
+	register s = splhigh();
+
+	putchar('<', TOLOG, (struct tty *)0);
+	printn(level, 10, TOLOG, (struct tty *)0);
+	putchar('>', TOLOG, (struct tty *)0);
+	prf(fmt, &x1, TOLOG, (struct tty *)0);
+	splx(s);
+	logwakeup();
+}
+
+prf(fmt, adx, flags, ttyp)
 	register char *fmt;
 	register u_int *adx;
+	struct tty *ttyp;
 {
 	register int b, c, i;
 	char *s;
@@ -75,9 +111,9 @@ prf(fmt, adx, touser)
 
 loop:
 	while ((c = *fmt++) != '%') {
-		if(c == '\0')
+		if (c == '\0')
 			return;
-		putchar(c, touser);
+		putchar(c, flags, ttyp);
 	}
 again:
 	c = *fmt++;
@@ -96,45 +132,45 @@ again:
 	case 'o': case 'O':
 		b = 8;
 number:
-		printn((u_long)*adx, b, touser);
+		printn((u_long)*adx, b, flags, ttyp);
 		break;
 	case 'c':
 		b = *adx;
 		for (i = 24; i >= 0; i -= 8)
 			if (c = (b >> i) & 0x7f)
-				putchar(c, touser);
+				putchar(c, flags, ttyp);
 		break;
 	case 'b':
 		b = *adx++;
 		s = (char *)*adx;
-		printn((u_long)b, *s++, touser);
+		printn((u_long)b, *s++, flags, ttyp);
 		any = 0;
 		if (b) {
-			putchar('<', touser);
+			putchar('<', flags, ttyp);
 			while (i = *s++) {
 				if (b & (1 << (i-1))) {
 					if (any)
-						putchar(',', touser);
+						putchar(',', flags, ttyp);
 					any = 1;
 					for (; (c = *s) > 32; s++)
-						putchar(c, touser);
+						putchar(c, flags, ttyp);
 				} else
 					for (; *s > 32; s++)
 						;
 			}
 			if (any)
-				putchar('>', touser);
+				putchar('>', flags, ttyp);
 		}
 		break;
 
 	case 's':
 		s = (char *)*adx;
 		while (c = *s++)
-			putchar(c, touser);
+			putchar(c, flags, ttyp);
 		break;
 
 	case '%':
-		putchar('%', touser);
+		putchar('%', flags, ttyp);
 		break;
 	}
 	adx++;
@@ -145,14 +181,15 @@ number:
  * Printn prints a number n in base b.
  * We don't use recursion to avoid deep kernel stacks.
  */
-printn(n, b, touser)
+printn(n, b, flags, ttyp)
 	u_long n;
+	struct tty *ttyp;
 {
 	char prbuf[11];
 	register char *cp;
 
 	if (b == 10 && (int)n < 0) {
-		putchar('-', touser);
+		putchar('-', flags, ttyp);
 		n = (unsigned)(-(int)n);
 	}
 	cp = prbuf;
@@ -161,7 +198,7 @@ printn(n, b, touser)
 		n /= b;
 	} while (n);
 	do
-		putchar(*--cp, touser);
+		putchar(*--cp, flags, ttyp);
 	while (cp > prbuf);
 }
 
@@ -214,14 +251,15 @@ harderr(bp, cp)
  * are saved in msgbuf for inspection later.
  */
 /*ARGSUSED*/
-putchar(c, touser)
+putchar(c, flags, ttyp)
 	register int c;
+	struct tty *ttyp;
 {
 
-	if (touser) {
-		register struct tty *tp = u.u_ttyp;
+	if (flags & TOTTY) {
+		register struct tty *tp = ttyp;
 
-		if (tp && (tp->t_state&TS_CARR_ON)) {
+		if (tp && (tp->t_state & TS_CARR_ON)) {
 			register s = spl6();
 			if (c == '\n')
 				(void) ttyoutput('\r', tp);
@@ -229,9 +267,8 @@ putchar(c, touser)
 			ttstart(tp);
 			splx(s);
 		}
-		return;
 	}
-	if (c != '\0' && c != '\r' && c != 0177
+	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177
 #ifdef vax
 	    && mfpr(MAPEN)
 #endif
@@ -239,8 +276,8 @@ putchar(c, touser)
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			register int i;
 
-			msgbuf.msg_bufx = 0;
 			msgbuf.msg_magic = MSG_MAGIC;
+			msgbuf.msg_bufx = msgbuf.msg_bufr = 0;
 			for (i=0; i < MSG_BSIZE; i++)
 				msgbuf.msg_bufc[i] = 0;
 		}
@@ -248,7 +285,6 @@ putchar(c, touser)
 			msgbuf.msg_bufx = 0;
 		msgbuf.msg_bufc[msgbuf.msg_bufx++] = c;
 	}
-	if (c == 0)
-		return;
-	cnputc(c);
+	if ((flags & TOCONS) && c != '\0')
+		cnputc(c);
 }
