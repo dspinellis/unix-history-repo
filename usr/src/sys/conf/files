@@ -80,6 +80,7 @@ nfs/nfs_client.c	optional nfs
 nfs/nfs_node.c		optional nfs
 nfs/nfs_serv.c		optional nfs
 nfs/nfs_socket.c	optional nfs
+nfs/nfs_srvcache.c	optional nfs
 nfs/nfs_subs.c		optional nfs
 nfs/nfs_syscalls.c	optional nfs
 nfs/nfs_vfsops.c	optional nfs
