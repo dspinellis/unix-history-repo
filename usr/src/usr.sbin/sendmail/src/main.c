@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -779,7 +779,7 @@ main(argc, argv, envp)
 				exit(0);
 
 			/* disconnect from our controlling tty */
-			disconnect(TRUE);
+			disconnect(TRUE, CurEnv);
 		}
 
 		dtype[0] = '\0';
