@@ -1,4 +1,4 @@
-/*	mba.c	4.4	81/02/08	*/
+/*	mba.c	4.5	81/02/10	*/
 
 /*
  * Massbus driver; arbitrates massbusses through device driver routines
@@ -116,7 +116,7 @@ loop:
 	default:
 		panic("mbustart");
 	}
-#if VAX==780
+}
 
 /*
  * Start an i/o operation on the massbus specified by the argument.
@@ -230,7 +230,7 @@ mbintr(mbanum)
 		if ((mbastat & MBS_DTCMP) == 0) {
 			printf("mbintr(%d),b_active,no DTCMP!\n", mbanum);
 			goto doattn;
-#include "../h/buf.h"
+		}
 		/*
 		 * Clear attention status for drive whose data
 		 * transfer completed, and give the dtint driver
