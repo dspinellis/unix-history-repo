@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -193,7 +193,7 @@ __bt_open(fname, flags, mode, openinfo)
 		if (m.m_psize < MINPSIZE || m.m_psize > MAX_PAGE_OFFSET ||
 		    m.m_psize & sizeof(index_t) - 1)
 			goto eftype;
-		if (m.m_flags | ~SAVEMETA)
+		if (m.m_flags & ~SAVEMETA)
 			goto eftype;
 		b.psize = m.m_psize;
 		t->bt_flags |= m.m_flags;
