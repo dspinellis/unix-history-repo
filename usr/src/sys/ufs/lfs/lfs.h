@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	5.6 (Berkeley) %G%
+ *	@(#)lfs.h	5.7 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -23,7 +23,7 @@ typedef struct vnode	VNODE;
 typedef struct segusage SEGUSE;
 struct segusage {
 	u_long	su_nbytes;		/* number of live bytes */
-	u_long	su_lastmod;		/* last modified timestamp */
+	u_long	su_lastmod;		/* SEGUSE last modified timestamp */
 #define	SEGUSE_DIRTY	0x1		/* XXX fill in comment */
 	u_long	su_flags;
 };
@@ -46,12 +46,12 @@ struct segment {
 	BUF	*ibp;			/* buffer pointer to inode page */
 	BUF	*sbp;			/* segment summary buffer pointer */
 	void	*segsum;		/* segment Summary info */
-	u_long	sum_bytes_left;		/* bytes left in summary */
 	u_long	seg_bytes_left;		/* bytes left in segment */
+	u_long	sum_bytes_left;		/* bytes left in summary block */
 	daddr_t	saddr;			/* current disk address */
 	daddr_t	sum_addr;		/* address of current summary */
 	u_long	ninodes;		/* number of inodes in this segment */
-	u_long	sum_num;		/* number of current summary block */
+	u_long	nsums;			/* number of SEGSUMs in this segment */
 	u_long	seg_number;		/* number of this segment */
 	FINFO	*fip;			/* current fileinfo pointer */
 };
@@ -142,12 +142,13 @@ struct lfs {
  */
 #define	di_inum	di_spare[0]
 
-/*
- * Logical block numbers of indirect blocks.
- */
+/* Logical block numbers of indirect blocks. */
 #define S_INDIR	-1
 #define D_INDIR -2
 #define T_INDIR -3
+
+/* Unassigned disk address. */
+#define	UNASSIGNED	-1
 
 typedef struct ifile IFILE;
 struct ifile {
@@ -206,7 +207,9 @@ struct segsum {
 #define	lblktosize(fs, blk)	((blk) << (fs)->lfs_bshift)
 #define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
 	((loc) >> (fs)->lfs_bshift)
-#define satosn(fs, saddr) \
-	((int)((saddr - fs->lfs_sboffs[0]) / fsbtodb(fs, fs->lfs_ssize)))
-#define sntosa(fs, sn) \
-	((daddr_t)(sn * (fs->lfs_ssize << fs->lfs_fsbtodb) + fs->lfs_sboffs[0]))
+
+#define	datosn(fs, daddr)	/* disk address to segment number */ \
+	(((daddr) - (fs)->lfs_sboffs[0]) / fsbtodb((fs), (fs)->lfs_ssize))
+#define sntoda(fs, sn) 		/* segment number to disk address */ \
+	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) + \
+	    (fs)->lfs_sboffs[0]))
