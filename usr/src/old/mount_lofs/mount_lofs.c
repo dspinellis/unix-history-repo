@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_lofs.c	8.1 (Berkeley) %G%
+ *	@(#)mount_lofs.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
