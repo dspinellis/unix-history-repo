@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_temp.c	7.6 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_temp.c	7.6.1.1 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -183,10 +183,6 @@ getblock(atl, iof)
 	int iof;
 {
 	register int bno, off;
-#ifdef CRYPT
-        register char *p1, *p2;
-        register int n;
-#endif
 	
 	bno = (atl >> OFFBTS) & BLKMSK;
 	off = (atl << SHFT) & LBTMSK;
