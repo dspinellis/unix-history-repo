@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	7.3 (Berkeley) %G%
+ *	@(#)dmz.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -122,7 +122,7 @@ dmzattach(ui)
 	}
 
 	cbase[ui->ui_ubanum] = -1;
-	dmz_uballoc[ui->ui_unit] = -1;
+	dmz_uballoc[ui->ui_ubanum] = -1;
 }
 
 /*
