@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #define USE_OLD_TTY
@@ -61,9 +61,7 @@ char	*ttyname();
 #define	TABBUFSIZ	512
 
 char	defent[TABBUFSIZ];
-char	defstrs[TABBUFSIZ];
 char	tabent[TABBUFSIZ];
-char	tabstrs[TABBUFSIZ];
 
 char	*env[128];
 
@@ -171,7 +169,7 @@ main(argc, argv)
 	    }
 	}
 
-	gettable("default", defent, defstrs);
+	gettable("default", defent);
 	gendefaults();
 	tname = "default";
 	if (argc > 1)
@@ -179,7 +177,7 @@ main(argc, argv)
 	for (;;) {
 		int off;
 
-		gettable(tname, tabent, tabstrs);
+		gettable(tname, tabent);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
 		setdefaults();
