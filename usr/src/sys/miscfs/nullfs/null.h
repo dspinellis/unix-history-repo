@@ -13,37 +13,37 @@
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
-struct lofs_args {
+struct null_args {
 	char		*target;	/* Target of loopback  */
 };
 
-struct lofsmount {
-	struct mount	*looped_vfs;
-	struct vnode	*rootvp;	/* Reference to root lofsnode */
+struct null_mount {
+	struct mount	*nullm_vfs;
+	struct vnode	*nullm_rootvp;	/* Reference to root null_node */
 };
 
 #ifdef KERNEL
 /*
  * A cache of vnode references
  */
-struct lofsnode {
-	struct lofsnode	*a_forw;	/* Hash chain */
-	struct lofsnode	*a_back;
-	struct vnode	*a_lofsvp;	/* Aliased vnode - VREFed once */
-	struct vnode	*a_vnode;	/* Back pointer to vnode/lofsnode */
+struct null_node {
+	struct null_node	*null_forw;	/* Hash chain */
+	struct null_node	*null_back;
+	struct vnode	*null_lowervp;	/* Aliased vnode - VREFed once */
+	struct vnode	*null_vnode;	/* Back pointer to vnode/null_node */
 };
 
-extern int make_lofs __P((struct mount *mp, struct vnode **vpp));
+extern int make_null_node __P((struct mount *mp, struct vnode **vpp));
 
-#define	VFSTOLOFS(mp) ((struct lofsmount *)((mp)->mnt_data))
-#define	LOFSP(vp) ((struct lofsnode *)(vp)->v_data)
-#ifdef LOFS_DIAGNOSTIC
-extern struct vnode *lofs_checkvp __P((struct vnode *vp, char *fil, int lno));
-#define	LOFSVP(vp) lofs_checkvp(vp, __FILE__, __LINE__)
+#define	MOUNTTONULLMOUNT(mp) ((struct null_mount *)((mp)->mnt_data))
+#define	VTONULLNODE(vp) ((struct null_node *)(vp)->v_data)
+#ifdef NULLFS_DIAGNOSTIC
+extern struct vnode *null_checkvp __P((struct vnode *vp, char *fil, int lno));
+#define	NULLTOLOWERVP(vp) null_checkvp(vp, __FILE__, __LINE__)
 #else
-#define	LOFSVP(vp) (LOFSP(vp)->a_lofsvp)
+#define	NULLTOLOWERVP(vp) (VTONULLNODE(vp)->null_lowervp)
 #endif
 
-extern int (**lofs_vnodeop_p)();
-extern struct vfsops lofs_vfsops;
+extern int (**null_vnodeop_p)();
+extern struct vfsops null_vfsops;
 #endif /* KERNEL */
