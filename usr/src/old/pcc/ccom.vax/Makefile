@@ -1,5 +1,5 @@
 #
-#	Makefile	1.20	89/05/11
+#	Makefile	1.21	89/08/15
 #
 # Makefile for PCC
 #
@@ -16,8 +16,8 @@ SCOPTS = -DONEPASS -DSPRECC $(CFLAGS)
 FOPTS = -DFORT $(CFLAGS)
 LDFLAGS =
 
-RM=	/bin/rm -f
-LN=	/bin/ln -s
+RM=	rm -f
+LN=	ln -s
 
 SFILES=	strees.c slocal.c slocal2.c sallo.c sorder.c stable.c
 SOBJS=	strees.o slocal.o slocal2.o sallo.o sorder.o stable.o
