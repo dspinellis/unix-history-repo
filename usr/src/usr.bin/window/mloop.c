@@ -9,9 +9,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mloop.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mloop.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
 #include "defs.h"
 
 mloop()
@@ -39,7 +40,8 @@ mloop()
 			if ((n = p - wwibp) > 0) {
 				if (!w->ww_ispty && w->ww_stopped)
 					startwin(w);
-#ifdef sun
+#if defined(sun) && !defined(BSD)
+				/* workaround for SunOS pty bug */
 				while (--n >= 0)
 					(void) write(w->ww_pty, wwibp++, 1);
 #else
