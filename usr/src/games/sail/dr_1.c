@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.8 83/10/28";
+static	char *sccsid = "@(#)dr_1.c	1.9 83/10/31";
 #endif
 
 #include "driver.h"
@@ -175,21 +175,20 @@ int key;
 		fromcap = from;
 	if (tocap == 0)
 		tocap = to;
+	if (key) { 
+		if (!menfrom) {		 /* if crew surprised */
+			if (fromcap == from)
+				menfrom = from->specs->crew1
+					+ from->specs->crew2
+					+ from->specs->crew3;
+			else
+				menfrom = from->file->pcrew;
+		} else {
+			menfrom *= 2;	/* DBP's fight at an advantage */
+		}
+	}
 	fromstrength = menfrom * fromcap->specs->qual;
 	strengthto = mento * tocap->specs->qual;
-	/*
-	 * Don't have surprised crews fight at a disadvantage 
-	 *
-	if (key && !menfrom) {
-		if (fromcap == from)
-			menfrom = from->specs->crew1
-				+ from->specs->crew2 + from->specs->crew3;
-		else
-			menfrom = from->file->pcrew;
-		fromstrength = -1;
-		strengthto *= 2;
-	}
-	*/
 	for (count = 0;
 	     (fromstrength < strengthto * 3 && strengthto < fromstrength * 3
 	      || fromstrength == -1) && count < 4;
@@ -268,7 +267,7 @@ resolve()
 		if (sp->file->dir == 0)
 			continue;
 		thwart = 2;
-		foreachship(sq)
+		for (sq = sp + 1; sq < ls; sq++)
 			if (sq->file->dir && meleeing(sp, sq) && meleeing(sq, sp))
 				(void) fightitout(sp, sq, 0);
 		foreachship(sq) {
