@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.8 (Berkeley) %G%
+.\"     @(#)doc	5.9 (Berkeley) %G%
 .\"
 .\" .mdoc-parse - attempt to parse troff request arguments
 .\"     %beginstrip%
@@ -2554,8 +2554,7 @@
 .		\}
 .\" .	\}
 .	if \\n(fC>1 \{\
-.		as b1 \&\f\\n(cF\s\\n(cZ,\\*(S\\n(aP\\*(fA\\*(A\\n(aP\fP\s0
-.\" .		as b1 \&\\,\\*(S\\n(aP\fP\s0\\*(fA\\*(A\\n(aP\fP\s0
+.		as b1 \&\f\\n(cF\s\\n(cZ\|,\\*(fA\\*(S\\n(aP\\*(A\\n(aP\fP\s0
 .	\}
 .	if \\n(fC==1 \{\
 .		as b1 \&\|\\*(fA\\*(A\\n(aP\fP\s0
