@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.13 %G%";
+static char sccsid[] = "@(#)asmain.c 4.14 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)asmain.c 4.13 %G%";
 #include "asscan.h"
 #include "asexpr.h"
 
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.13"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.14"
 /*
  *	variables to manage reading the assembly source files
  */
@@ -28,6 +28,7 @@ int	ninfiles;	/*how many interesting files there are*/
 int	silent = 0;	/*don't complain about any errors*/
 int	savelabels = 0;	/*write the labels to the a.out file*/
 int 	d124 = 4;	/*default allocate 4 bytes for unknown pointers*/
+int 	maxalign = 2;	/*default .align maximum*/
 int	anyerrs = 0;	/*no errors yet*/
 int	anywarnings=0;	/*no warnings yet*/
 int	orgwarn = 0;	/*Bad origins*/
@@ -253,6 +254,15 @@ argprocess(argc, argv)
 					if ( (d124 != 1) && (d124 != 2) && 
 					     (d124 != 4)){
 						yyerror("-d[124] only");
+						exit(1);
+					}
+					break;
+				 case 'a':
+					maxalign = atoi(cp+1);
+					for (cp++; isdigit(*cp); cp++)
+						/*VOID*/;
+					if ( (maxalign > 16) || (maxalign < 0)){
+						yyerror("-a: 0<=align<=16");
 						exit(1);
 					}
 					break;
