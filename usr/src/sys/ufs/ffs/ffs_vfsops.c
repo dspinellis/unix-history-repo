@@ -1,4 +1,4 @@
-/*	ffs_vfsops.c	6.1	83/07/29	*/
+/*	ffs_vfsops.c	6.2	84/01/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@ smount()
 	if (u.u_error)
 		return;
 	u.u_dirp = (caddr_t)uap->freg;
-	ip = namei(uchar, LOOKUP, 1);
+	ip = namei(uchar, LOOKUP | NOCACHE, 1);
 	if (ip == NULL)
 		return;
 	if (ip->i_count!=1 || (ip->i_mode&IFMT) != IFDIR) {
@@ -165,6 +165,7 @@ unmount1(forcibly)
 	return (EINVAL);
 found:
 	xumount(dev);	/* remove unused sticky files from text table */
+	nchinval(dev);	/* flush the name cache */
 	update();
 #ifdef QUOTA
 	if ((stillopen = iflush(dev, mp->m_qinod)) < 0 && !forcibly)

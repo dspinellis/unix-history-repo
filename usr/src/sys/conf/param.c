@@ -1,4 +1,4 @@
-/*	param.c	6.1	83/07/29	*/
+/*	param.c	6.2	84/01/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../h/clist.h"
 #include "../h/cmap.h"
 #include "../h/mbuf.h"
+#include "../h/nami.h"
 #include "../h/quota.h"
 #include "../h/kernel.h"
 /*
@@ -43,6 +44,7 @@ int	ncallout = 16 + NPROC;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
+int	nchsize = 60 + 3 * MAXUSERS;
 #ifdef QUOTA
 int	nquota = (MAXUSERS * 9)/7 + 3;
 int	ndquot = (MAXUSERS*NMOUNT)/4 + NPROC;
@@ -69,6 +71,7 @@ short	*swsize;
 int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
+struct	nch *nch;
 #ifdef QUOTA
 struct	quota *quota, *quotaNQUOTA;
 struct	dquot *dquot, *dquotNDQUOT;

@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.3	83/12/03	*/
+/*	vfs_lookup.c	6.4	84/01/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,6 +15,36 @@
 
 struct	buf *blkatoff();
 int	dirchk = 0;
+
+/*
+ * Structures associated with name cacheing.
+ */
+#define	NCHHASH		32	/* size of hash table */
+
+#if	((NCHHASH)&((NCHHASH)-1)) != 0
+#define	NHASH(h, i, d)	((unsigned)((h) + (i) + 13 * (int)(d)) % (NCHHASH))
+#else
+#define	NHASH(h, i, d)	((unsigned)((h) + (i) + 13 * (int)(d)) & ((NCHHASH)-1))
+#endif
+
+union	nchash	{
+	union	nchash	*nch_head[2];
+	struct	nch	*nch_chain[2];
+} nchash[NCHHASH];
+#define	nch_forw	nch_chain[0]
+#define	nch_back	nch_chain[1]
+
+struct	nch	*nchhead, **nchtail;		/* LRU chain pointers */
+
+struct	nchstats {		/* stats on usefulness */
+	long	ncs_goodhits;		/* hits that we can reall use */
+	long	ncs_badhits;		/* hits we must drop */
+	long	ncs_miss;		/* misses */
+	long	ncs_long;		/* long names that ignore cache */
+	long	ncs_pass2;		/* names found with passes == 2 */
+	long	ncs_2passes;		/* number of times we attempt it */
+} nchstats;
+
 /*
  * Convert a pathname into a pointer to a locked inode,
  * with side effects usable in creating and removing files.
@@ -36,7 +66,29 @@ int	dirchk = 0;
  * The follow argument is 1 when symbolic links are to be followed
  * when they occur at the end of the name translation process.
  *
- * Overall outline:
+ * Name caching works as follows:
+ *
+ *	names found by directory scans are retained in a cache
+ *	for future reference.  It is managed LRU, so frequently
+ *	used names will hang around.  Cache is indexed by hash value
+ *	obtained from (ino,dev,name) where ino & dev refer to the
+ *	directory containing name.
+ *
+ *	For simplicity (and economy of storage), names longer than
+ *	some (small) maximum length are not cached, they occur
+ *	infrequently in any case, and are almost never of interest.
+ *
+ *	Upon reaching the last segment of a path, if the reference
+ *	is for DELETE, or NOCACHE is set (rewrite), and the
+ *	name is located in the cache, it will be dropped.
+ *
+ *	We must be sure never to enter the name ".." into the cache
+ *	because of the extremely kludgey way that rename() alters
+ *	".." in a situation like
+ *		mv a/x b/x
+ *	where x is a directory, and x/.. is the ".." in question.
+ *
+ * Overall outline of namei:
  *
  *	copy in name
  *	get starting directory
@@ -45,15 +97,19 @@ int	dirchk = 0;
  * dirloop2:
  *	copy next component of name to u.u_dent
  *	handle degenerate case where name is null string
+ *	look for name in cache, if found, then if at end of path
+ *	  and deleting or creating, drop it, else to haveino
  *	search for name in directory, to found or notfound
  * notfound:
  *	if creating, return locked directory, leaving info on avail. slots
  *	else return error
  * found:
  *	if at end of path and deleting, return information to allow delete
- *	if at end of path and rewriting (create and LOCKPARENT), lock targe
+ *	if at end of path and rewriting (create and LOCKPARENT), lock target
  *	  inode and return info to allow rewrite
  *	if .. and on mounted filesys, look in mount table for parent
+ *	if not at end, if neither creating nor deleting, add name to cache
+ * haveino:
  *	if symbolic link, massage name in buffer and continue at dirloop
  *	if more components of name, do next level at dirloop
  *	return the answer as locked inode
@@ -68,6 +124,7 @@ namei(func, flag, follow)
 	register char *cp;		/* pointer into pathname argument */
 /* these variables refer to things which must be freed or unlocked */
 	register struct inode *dp = 0;	/* the directory we are searching */
+	register struct nch *ncp;	/* cache slot for entry */
 	register struct fs *fs;		/* file system that directory is in */
 	register struct buf *bp = 0;	/* a buffer of directory entries */
 	register struct direct *ep;	/* the current directory entry */
@@ -87,16 +144,23 @@ namei(func, flag, follow)
 	struct inode *pdp;		/* saved dp during symlink work */
 	int i;
 	int lockparent;
+	int docache;
+	unsigned hash;			/* value of name hash for entry */
+	union nchash *nhp;		/* cache chain head for entry */
+	int isdotdot;			/* != 0 if current name is ".." */
 
 	lockparent = flag & LOCKPARENT;
-	flag &= ~LOCKPARENT;
+	docache = (flag & NOCACHE) ^ NOCACHE;
+	flag &= ~(LOCKPARENT|NOCACHE);
+	if (flag == DELETE)
+		docache = 0;
 	/*
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
 	 */
 	nbp = geteblk(MAXPATHLEN);
 	for (cp = nbp->b_un.b_addr; *cp = (*func)(); ) {
-		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != 2) {
+		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != LOOKUP) {
 			u.u_error = EPERM;
 			goto bad;
 		}
@@ -145,12 +209,14 @@ dirloop2:
 	/*
 	 * Copy next component of name to u.u_dent.
 	 */
+	hash = 0;
 	for (i = 0; *cp != 0 && *cp != '/'; cp++) {
 		if (i >= MAXNAMLEN) {
 			u.u_error = ENOENT;
 			goto bad;
 		}
 		u.u_dent.d_name[i++] = *cp;
+		hash += (unsigned char)*cp * i;
 	}
 	u.u_dent.d_namlen = i;
 	u.u_dent.d_name[i] = 0;
@@ -161,12 +227,112 @@ dirloop2:
 	 * e.g. like "/." or ".".
 	 */
 	if (u.u_dent.d_name[0] == 0) {
-		if (flag || lockparent) {
+		if (flag != LOOKUP || lockparent) {
 			u.u_error = EISDIR;
 			goto bad;
 		}
 		brelse(nbp);
 		return (dp);
+	}
+
+	/*
+	 * We now have a segment name to search for, and a directory to search.
+	 *
+	 * Before tediously performing a linear scan of the directory,
+	 * check the name cache to see if the directory/name pair
+	 * we are looking for is known already.  We don't do this
+	 * if the segment name is long, simply so the cache can avoid
+	 * holding long names (which would either waste space, or
+	 * add greatly to the complexity).
+	 */
+	if (u.u_dent.d_namlen > NCHNAMLEN) {
+		nchstats.ncs_long++;
+		docache = 0;
+	} else {
+		nhp = &nchash[NHASH(hash, dp->i_number, dp->i_dev)];
+		for (ncp = nhp->nch_forw; ncp != (struct nch *)nhp;
+		    ncp = ncp->nc_forw) {
+			if (ncp->nc_ino == dp->i_number &&
+			    ncp->nc_dev == dp->i_dev &&
+			    ncp->nc_nlen == u.u_dent.d_namlen &&
+			    !bcmp(ncp->nc_name, u.u_dent.d_name, ncp->nc_nlen))
+				break;
+		}
+
+		if (ncp == (struct nch *)nhp) {
+			nchstats.ncs_miss++;
+			ncp = NULL;
+		} else {
+			if (*cp == '/' || docache) {
+
+				nchstats.ncs_goodhits++;
+
+					/*
+					 * move this slot to end of LRU
+					 * chain, if not already there
+					 */
+				if (ncp->nc_nxt) {
+						/* remove from LRU chain */
+					*ncp->nc_prev = ncp->nc_nxt;
+					ncp->nc_nxt->nc_prev = ncp->nc_prev;
+
+						/* and replace at end of it */
+					ncp->nc_nxt = NULL;
+					ncp->nc_prev = nchtail;
+					*nchtail = ncp;
+					nchtail = &ncp->nc_nxt;
+				}
+
+				pdp = dp;
+				dp = ncp->nc_ip;
+				if (dp == NULL)
+					panic("nami: null cache ino");
+				if (pdp != dp) {
+					ilock(dp);
+					dp->i_count++;
+					iunlock(pdp);
+				} else
+					dp->i_count++;
+
+				u.u_dent.d_ino = dp->i_number;
+				/* u_dent.d_reclen is garbage ... */
+
+				goto haveino;
+			}
+
+			/*
+			 * last segment and we are renaming or deleting
+			 * or otherwise don't want cache entry to exist
+			 */
+
+			nchstats.ncs_badhits++;
+
+				/* remove from LRU chain */
+			*ncp->nc_prev = ncp->nc_nxt;
+			if (ncp->nc_nxt)
+				ncp->nc_nxt->nc_prev = ncp->nc_prev;
+			else
+				nchtail = ncp->nc_prev;
+
+				/* remove from hash chain */
+			remque(ncp);
+
+				/* release ref on the inode */
+			irele(ncp->nc_ip);
+			ncp->nc_ip = NULL;
+
+				/* insert at head of LRU list (first to grab) */
+			ncp->nc_nxt = nchhead;
+			ncp->nc_prev = &nchhead;
+			nchhead->nc_prev = &ncp->nc_nxt;
+			nchhead = ncp;
+
+				/* and make a dummy hash chain */
+			ncp->nc_forw = ncp;
+			ncp->nc_back = ncp;
+
+			ncp = NULL;
+		}
 	}
 
 	/*
@@ -184,7 +350,7 @@ dirloop2:
 	/*
 	 * If this is the same directory that this process
 	 * previously searched, pick up where we last left off.
-	 * We cache only lookups as these are the most common,
+	 * We cache only lookups as these are the most common
 	 * and have the greatest payoff. Caching CREATE has little
 	 * benefit as it usually must search the entire directory
 	 * to determine that the entry does not exist. Caching the
@@ -196,7 +362,7 @@ dirloop2:
 		u.u_offset = 0;
 		numdirpasses = 1;
 	} else {
-		if (dp->i_mtime >= u.u_ncache.nc_time) {
+		if ((dp->i_flag & ICHG) || dp->i_ctime >= u.u_ncache.nc_time) {
 			u.u_ncache.nc_prevoffset &= ~(DIRBLKSIZ - 1);
 			u.u_ncache.nc_time = time.tv_sec;
 		}
@@ -208,6 +374,7 @@ dirloop2:
 				goto bad;
 		}
 		numdirpasses = 2;
+		nchstats.ncs_2passes++;
 	}
 	endsearch = roundup(dp->i_size, DIRBLKSIZ);
 
@@ -303,8 +470,9 @@ searchloop:
 		u.u_offset += ep->d_reclen;
 		entryoffsetinblock += ep->d_reclen;
 	}
+/* notfound: */
 	/*
-	 * If we started in the middle of the directory and failed 
+	 * If we started in the middle of the directory and failed
 	 * to find our target, we must check the beginning as well.
 	 */
 	if (numdirpasses == 2) {
@@ -313,7 +481,6 @@ searchloop:
 		endsearch = u.u_ncache.nc_prevoffset;
 		goto searchloop;
 	}
-/* notfound: */
 	/*
 	 * If creating, and at end of pathname and current
 	 * directory has not been removed, then can consider
@@ -359,6 +526,8 @@ searchloop:
 	u.u_error = ENOENT;
 	goto bad;
 found:
+	if (numdirpasses == 2)
+		nchstats.ncs_pass2++;
 	/*
 	 * Check that directory length properly reflects presence
 	 * of this entry.
@@ -371,7 +540,7 @@ found:
 
 	/*
 	 * Found component in pathname.
-	 * If final component of path name, save information
+	 * If the final component of path name, save information
 	 * in the cache as to where the entry was found.
 	 */
 	if (*cp == '\0' && flag == LOOKUP) {
@@ -421,6 +590,20 @@ found:
 					iput(u.u_pdir);
 					goto bad;
 				}
+				/*
+				 * If directory is setuid, then user must own
+				 * the directory, or the file in it, else he
+				 * may not delete it (unless he's root). This
+				 * implements append-only directories.
+				 */
+				if ((u.u_pdir->i_mode & ISUID) &&
+				    u.u_uid != 0 &&
+				    u.u_uid != u.u_pdir->i_uid &&
+				    dp->i_uid != u.u_uid) {
+					iput(u.u_pdir);
+					u.u_error = EPERM;
+					goto bad;
+				}
 			}
 		}
 		brelse(nbp);
@@ -432,8 +615,9 @@ found:
 	 * file system: indirect .. in root inode to reevaluate
 	 * in directory file system was mounted on.
 	 */
-	if (u.u_dent.d_name[0] == '.' && u.u_dent.d_name[1] == '.' &&
-	    u.u_dent.d_name[2] == '\0') {
+	isdotdot = 0;
+	if (bcmp(u.u_dent.d_name, "..", 3) == 0) {
+		isdotdot++;
 		if (dp == u.u_rdir)
 			u.u_dent.d_ino = dp->i_number;
 		else if (u.u_dent.d_ino == ROOTINO &&
@@ -500,7 +684,7 @@ found:
 	 * that point backwards in the directory structure.
 	 */
 	pdp = dp;
-	if (bcmp(u.u_dent.d_name, "..", 3) == 0) {
+	if (isdotdot) {
 		iunlock(pdp);	/* race to get the inode */
 		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
 		if (dp == NULL)
@@ -513,6 +697,58 @@ found:
 		if (dp == NULL)
 			goto bad2;
 	}
+
+	/*
+	 * insert name into cache (if we want it, and it isn't "." or "..")
+	 *
+	 * all other cases where making a cache entry would be wrong
+	 * have already departed from the code sequence somewhere above.
+	 */
+	if (bcmp(u.u_dent.d_name, ".", 2) != 0 && !isdotdot && docache) {
+		if (ncp != NULL)
+			panic("nami: duplicating cache");
+
+			/*
+			 * free the cache slot at head of lru chain
+			 */
+		if (ncp = nchhead) {
+				/* remove from lru chain */
+			*ncp->nc_prev = ncp->nc_nxt;
+			if (ncp->nc_nxt)
+				ncp->nc_nxt->nc_prev = ncp->nc_prev;
+			else
+				nchtail = ncp->nc_prev;
+
+				/* remove from old hash chain */
+			remque(ncp);
+
+				/* drop hold on inode (if we had one) */
+			if (ncp->nc_ip)
+				irele(ncp->nc_ip);
+
+				/* grab the inode we just found */
+			ncp->nc_ip = dp;
+			dp->i_count++;
+
+				/* fill in cache info */
+			ncp->nc_ino = pdp->i_number;	/* parents inum */
+			ncp->nc_dev = pdp->i_dev;	/* & device */
+			ncp->nc_idev = dp->i_dev;	/* our device */
+			ncp->nc_nlen = u.u_dent.d_namlen;
+			bcopy(u.u_dent.d_name, ncp->nc_name, ncp->nc_nlen);
+
+				/* link at end of lru chain */
+			ncp->nc_nxt = NULL;
+			ncp->nc_prev = nchtail;
+			*nchtail = ncp;
+			nchtail = &ncp->nc_nxt;
+
+				/* and insert on hash chain */
+			insque(ncp, nhp);
+		}
+	}
+
+haveino:
 	fs = dp->i_fs;
 
 	/*
@@ -576,6 +812,7 @@ bad:
 	brelse(nbp);
 	return (NULL);
 }
+
 
 dirbad(ip, how)
 	struct inode *ip;
@@ -893,4 +1130,84 @@ out:
 	if (ip != NULL)
 		iput(ip);
 	return (error);
+}
+
+/*
+ * Name cache initialization, from main() when we are booting
+ */
+nchinit()
+{
+	register union nchash *nchp;
+	register struct nch *ncp;
+
+	nchhead = 0;
+	nchtail = &nchhead;
+
+	for (ncp = nch; ncp < &nch[nchsize]; ncp++) {
+		ncp->nc_forw = ncp;			/* hash chain */
+		ncp->nc_back = ncp;
+
+		ncp->nc_nxt = NULL;			/* lru chain */
+		*nchtail = ncp;
+		ncp->nc_prev = nchtail;
+		nchtail = &ncp->nc_nxt;
+
+		/* all else is zero already */
+	}
+
+	for (nchp = nchash; nchp < &nchash[NCHHASH]; nchp++) {
+		nchp->nch_head[0] = nchp;
+		nchp->nch_head[1] = nchp;
+	}
+}
+
+/*
+ * Cache flush, called when filesys is umounted to
+ * remove entries that would now be invalid
+ *
+ * The line "nxtcp = nchhead" near the end is to avoid potential problems
+ * if the cache lru chain is modified while we are dumping the
+ * inode.  This makes the algorithm O(n^2), but do you think I care?
+ */
+nchinval(dev)
+	register dev_t dev;
+{
+	register struct nch *ncp, *nxtcp;
+
+	for (ncp = nchhead; ncp; ncp = nxtcp) {
+		nxtcp = ncp->nc_nxt;
+
+		if (ncp->nc_ip == NULL ||
+		    (ncp->nc_idev != dev && ncp->nc_dev != dev))
+			continue;
+
+		ncp->nc_idev = NODEV;
+		ncp->nc_dev = NODEV;
+		ncp->nc_ino = 0;
+
+			/* remove the entry from its hash chain */
+		remque(ncp);
+			/* and make a dummy one */
+		ncp->nc_forw = ncp;
+		ncp->nc_back = ncp;
+
+			/* delete this entry from LRU chain */
+		*ncp->nc_prev = nxtcp;
+		if (nxtcp)
+			nxtcp->nc_prev = ncp->nc_prev;
+		else
+			nchtail = ncp->nc_prev;
+
+			/* free the inode we had */
+		irele(ncp->nc_ip);
+		ncp->nc_ip = NULL;
+
+			/* cause rescan of list, it may have altered */
+		nxtcp = nchhead;
+			/* put the now-free entry at head of LRU */
+		ncp->nc_nxt = nxtcp;
+		ncp->nc_prev = &nchhead;
+		nxtcp->nc_prev = &ncp->nc_nxt;
+		nchhead = ncp;
+	}
 }

@@ -1,4 +1,4 @@
-/*	machdep.c	6.2	83/10/02	*/
+/*	machdep.c	6.3	84/01/03	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -23,6 +23,7 @@
 #include "../h/cmap.h"
 #include "../h/mbuf.h"
 #include "../h/msgbuf.h"
+#include "../h/nami.h"
 #include "../h/quota.h"
 
 #include "../vax/frame.h"
@@ -154,6 +155,7 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
+	valloc(nch, struct nch, nchsize);
 #ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
