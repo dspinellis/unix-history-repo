@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -327,7 +327,7 @@ recipient(a, sendq, e)
 			{
 #ifdef LOG
 				if (LogLevel > 2)
-					syslog(LOG_NOTICE, "%s: include %s: transient error: %e",
+					syslog(LOG_ERR, "%s: include %s: transient error: %e",
 						e->e_id, a->q_user);
 #endif
 				a->q_flags |= QQUEUEUP|QDONTSEND;
@@ -377,6 +377,7 @@ recipient(a, sendq, e)
 	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags))
 	{
 		extern int udbexpand();
+		extern int errno;
 
 		if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
 		{
@@ -385,10 +386,11 @@ recipient(a, sendq, e)
 				e->e_message = newstr("Deferred: user database error");
 # ifdef LOG
 			if (LogLevel > 8)
-				syslog(LOG_INFO, "%s: deferred: udbexpand",
+				syslog(LOG_INFO, "%s: deferred: udbexpand: %e",
 					e->e_id);
 # endif
-			message("queued (user database error)");
+			message("queued (user database error): %s",
+				errstring(errno));
 			e->e_nrcpts++;
 			return (a);
 		}
