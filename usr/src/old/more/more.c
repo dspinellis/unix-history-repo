@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.15 (Berkeley) 83/07/07";
+static	char *sccsid = "@(#)more.c	4.16 (Berkeley) 83/08/26";
 #endif
 
 /*
@@ -1597,8 +1597,11 @@ register FILE *f;
 
 onsusp ()
 {
+    /* ignore SIGTTOU so we don't get stopped if csh grabs the tty */
+    signal(SIGTTOU, SIG_IGN);
     reset_tty ();
     fflush (stdout);
+    signal(SIGTTOU, SIG_DFL);
     /* Send the TSTP signal to suspend our process group */
     signal(SIGTSTP, SIG_DFL);
     sigsetmask(0);
