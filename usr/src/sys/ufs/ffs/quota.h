@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quota.h	7.9 (Berkeley) %G%
+ *	@(#)quota.h	7.10 (Berkeley) %G%
  */
 
 #ifndef _QUOTA_
@@ -17,21 +17,20 @@
  * Definitions for disk quotas imposed on the average user
  * (big brother finally hits UNIX).
  *
- * The following constants define the amount of time given a user
- * before the soft limits are treated as hard limits (usually resulting
- * in an allocation failure). The timer is started when the user crosses
- * their soft limit, it is reset when they go below their soft limit.
+ * The following constants define the amount of time given a user before the
+ * soft limits are treated as hard limits (usually resulting in an allocation
+ * failure). The timer is started when the user crosses their soft limit, it
+ * is reset when they go below their soft limit.
  */
 #define	MAX_IQ_TIME	(7*24*60*60)	/* 1 week */
 #define	MAX_DQ_TIME	(7*24*60*60)	/* 1 week */
 
 /*
- * The following constants define the usage of the quota file array
- * in the ufsmount structure and dquot array in the inode structure.
- * The semantics of the elements of these arrays are defined in the
- * routine getinoquota; the remainder of the quota code treats them
- * generically and need not be inspected when changing the size of
- * the array.
+ * The following constants define the usage of the quota file array in the
+ * ufsmount structure and dquot array in the inode structure.  The semantics
+ * of the elements of these arrays are defined in the routine getinoquota;
+ * the remainder of the quota code treats them generically and need not be
+ * inspected when changing the size of the array.
  */
 #define	MAXQUOTAS	2
 #define	USRQUOTA	0	/* element used for user quotas */
@@ -45,14 +44,13 @@
 	"group",	/* GRPQUOTA */ \
 	"undefined", \
 };
-#define QUOTAFILENAME "quota"
-#define QUOTAGROUP "operator"
+#define	QUOTAFILENAME	"quota"
+#define	QUOTAGROUP	"operator"
 
 /*
- * Command definitions for the 'quotactl' system call.
- * The commands are broken into a main command defined below
- * and a subcommand that is used to convey the type of
- * quota that is being manipulated (see above).
+ * Command definitions for the 'quotactl' system call.  The commands are
+ * broken into a main command defined below and a subcommand that is used
+ * to convey the type of quota that is being manipulated (see above).
  */
 #define SUBCMDMASK	0x00ff
 #define SUBCMDSHIFT	8
@@ -83,7 +81,6 @@ struct	dqblk {
 	time_t	dqb_itime;	/* time limit for excessive files */
 };
 
-#ifdef KERNEL
 /*
  * The following structure records disk usage for a user or group on a
  * filesystem. There is one allocated for each quota that exists on any
@@ -123,9 +120,9 @@ struct	dquot {
 #define	dq_itime	dq_dqb.dqb_itime
 
 /*
- * If the system has never checked for a quota for this file,
- * then it is set to NODQUOT. Once a write attempt is made
- * the inode pointer is set to reference a dquot structure.
+ * If the system has never checked for a quota for this file, then it is set
+ * to NODQUOT.  Once a write attempt is made the inode pointer is set to
+ * reference a dquot structure.
  */
 #define	NODQUOT		((struct dquot *) 0)
 
@@ -138,19 +135,47 @@ struct	dquot {
 /*
  * Macros to avoid subroutine calls to trivial functions.
  */
-#ifndef DIAGNOSTIC
-#define	DQREF(dq)	(dq)->dq_cnt++
-#else
+#ifdef DIAGNOSTIC
 #define	DQREF(dq)	dqref(dq)
-#endif /* DIAGNOSTIC */
-
 #else
+#define	DQREF(dq)	(dq)->dq_cnt++
+#endif
 
 #include <sys/cdefs.h>
 
+struct dquot;
+struct inode;
+struct mount;
+struct proc;
+struct ucred;
+struct ufsmount;
+struct vnode;
 __BEGIN_DECLS
-int	quotactl __P((const char *, int, int, void *));
+int	chkdq __P((struct inode *, long, struct ucred *, int));
+int	chkdqchg __P((struct inode *, long, struct ucred *, int));
+int	chkiq __P((struct inode *, long, struct ucred *, int));
+int	chkiqchg __P((struct inode *, long, struct ucred *, int));
+void	dqflush __P((struct vnode *));
+int	dqget __P((struct vnode *,
+	    u_long, struct ufsmount *, int, struct dquot **));
+void	dqinit __P((void));
+void	dqref __P((struct dquot *));
+void	dqrele __P((struct vnode *, struct dquot *));
+int	dqsync __P((struct vnode *, struct dquot *));
+int	getinoquota __P((struct inode *));
+int	getquota __P((struct mount *, u_long, int, caddr_t));
+int	qsync __P((struct mount *mp));
+int	quotaoff __P((struct proc *, struct mount *, int));
+int	quotaon __P((struct proc *, struct mount *, int, caddr_t));
+int	setquota __P((struct mount *, u_long, int, caddr_t));
+int	setuse __P((struct mount *, u_long, int, caddr_t));
+int	ufs_quotactl __P((struct mount *, int, u_int, caddr_t, struct proc *));
 __END_DECLS
 
-#endif /* KERNEL */
+#ifdef DIAGNOSTIC
+__BEGIN_DECLS
+void	chkdquot __P((struct inode *));
+__END_DECLS
+#endif
+
 #endif /* _QUOTA_ */
