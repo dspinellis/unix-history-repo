@@ -1,19 +1,37 @@
-#	@(#)README.68040	7.1 (Berkeley) %G%
+#	@(#)README.68040	7.2 (Berkeley) %G%
 
-In order to do floating point on the 68040 you need to incorporate the HP-UX
-7.05 version of Motorola's FP emulation library as hpux_float.o in this
-directory.  Unfortunately, we cannot distribute this file.  To roll your own:
+In order to do floating point on the 68040 you need to incorporate the
+HP-UX 7.05 version of Motorola's FP emulation library as hpux_float.o
+in this directory.
 
-1. Extract m68040_float.o from /etc/conf/libkreq.a on an HP-UX 7.05 machine
-   (you may be able to use a version of the file from more recent PUXen,
-   but it hasn't been tried).  Note that you must do this under HP-UX since
-   the archive format is slightly different.
+To build a new kernel using this library, set the option HPFPLIB in the
+config file.  You can build a kernel without the FP library by configuring
+a kernel without the HPFPLIB option, but be warned that many binaries will
+not run.
 
-2. Convert it to a.out format with "hpcvt".
+We are required by Hewlett-Packard and Motorola to state the following
+items.
 
-3. Move it to /sys/hp300/hp300/hpux_float.o
+1. No source code is being licensed.
 
-4. Build a new kernel with the option HPFPLIB in the config file.
+2. The object code can only be used for operation on Motorola M68040
+   based systems, and NOT ported to other architectures.
 
-You can build a kernel without the FP library by configuring a kernel without
-the HPFPLIB option, but be warned that many binaries will not run.
+3. Recipients of the code will not reverse compile or disassemble the
+   code, except to the extent that such restrictions may be prohibited
+   by law.
+
+4. The Motorola Inc. and Hewlett-Packard Company copyright notices will
+   be reproduced in the relevant bootup code.
+
+5. The code is provided ``AS IS'' without warranty or obligation of any
+   kind.  THERE SHALL BE NO LIABILITY FOR INCIDENTAL OR CONSEQUENTIAL
+   DAMAGE ARISING FROM OR RELATED TO USE OR POSSESSION OF THE CODE.  THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR
+   PURPOSE ARE EXPRESSLY DISCLAIMED.
+
+6. Recipients of the code will adhere to the U.S. Export Administration
+   Laws and Regulations and will not export or re-export the code or any
+   technical data related to the code to any proscribed country listed in
+   the U.S. Export Administration Regulations unless properly authorized
+   as may be required by the U.S. Government.
