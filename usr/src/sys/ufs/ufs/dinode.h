@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	8.7 (Berkeley) %G%
+ *	@(#)dinode.h	8.8 (Berkeley) %G%
  */
 
 /*
