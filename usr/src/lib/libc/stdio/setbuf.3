@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setbuf.3	6.3 (Berkeley) %G%
+.\"	@(#)setbuf.3	6.4 (Berkeley) %G%
 .\"
-.TH SETBUF 3S  ""
+.TH SETBUF 3  ""
 .UC 4
 .SH NAME
 setbuf, setbuffer, setlinebuf \- assign buffering to a stream
@@ -44,7 +44,7 @@ when it is line buffered characters are saved up until a newline is
 encountered or input is read from stdin.
 .I Fflush
 (see 
-.IR fclose (3S))
+.IR fclose (3))
 may be used to force the block out early.
 Normally all files are block buffered.
 A buffer is obtained from
@@ -52,7 +52,7 @@ A buffer is obtained from
 upon the first
 .I getc
 or
-.IR  putc (3S)
+.IR  putc (3)
 on the file.
 If the standard stream
 .B stdout
@@ -110,7 +110,7 @@ A file can be changed from unbuffered or line buffered to block buffered
 by using
 .I freopen
 (see
-.IR fopen (3S)).
+.IR fopen (3)).
 A file can be changed from block buffered or line buffered to unbuffered
 by using
 .I freopen
@@ -120,14 +120,14 @@ with a buffer argument of
 .SM
 .BR NULL .
 .SH "SEE ALSO"
-fopen(3S),
-getc(3S),
-putc(3S),
+fopen(3),
+getc(3),
+putc(3),
 malloc(3),
-fclose(3S),
-puts(3S),
-printf(3S),
-fread(3S)
+fclose(3),
+puts(3),
+printf(3),
+fread(3)
 .SH BUGS
 The
 .I setbuffer

@@ -1,6 +1,6 @@
-.\"	@(#)putc.3	6.2 (Berkeley) %G%
+.\"	@(#)putc.3	6.3 (Berkeley) %G%
 .\"
-.TH PUTC 3S  ""
+.TH PUTC 3  ""
 .AT 3
 .SH NAME
 putc, putchar, fputc, putw \- put character or word on a stream
@@ -56,18 +56,18 @@ It returns the word written.
 .I Putw
 neither assumes nor causes special alignment in the file.
 .SH "SEE ALSO"
-fopen(3S),
-fclose(3S),
-getc(3S),
-puts(3S),
-printf(3S),
-fread(3S)
+fopen(3),
+fclose(3),
+getc(3),
+puts(3),
+printf(3),
+fread(3)
 .SH DIAGNOSTICS
 These functions return the constant
 .SM
 .B EOF
 upon error.  Since this is a good integer,
-.IR  ferror (3S)
+.IR  ferror (3)
 should be used to detect 
 .I putw
 errors.

@@ -1,6 +1,6 @@
-.\"	@(#)getc.3	6.2 (Berkeley) %G%
+.\"	@(#)getc.3	6.3 (Berkeley) %G%
 .\"
-.TH GETC 3S  ""
+.TH GETC 3  ""
 .AT 3
 .SH NAME
 getc, getchar, fgetc, getw \- get character or word from stream
@@ -53,19 +53,19 @@ upon end of file or error, but since that is a good
 integer value,
 .I feof
 and
-.IR  ferror (3S)
+.IR  ferror (3)
 should be used to check the success of
 .IR getw .
 .I Getw
 assumes no special alignment in the file.
 .SH "SEE ALSO"
-clearerr(3S),
-fopen(3S),
-putc(3S),
-gets(3S),
-scanf(3S),
-fread(3S),
-ungetc(3S)
+clearerr(3),
+fopen(3),
+putc(3),
+gets(3),
+scanf(3),
+fread(3),
+ungetc(3)
 .SH DIAGNOSTICS
 These functions return the integer constant
 .SM
@@ -78,7 +78,7 @@ even on a terminal,
 and all subsequent attempts to read will return
 .B EOF
 until the condition is cleared with
-.IR clearerr (3S).
+.IR clearerr (3).
 .SH BUGS
 Because it is implemented as a macro,
 .I getc

@@ -1,6 +1,6 @@
-.\"	@(#)ungetc.3	6.1 (Berkeley) %G%
+.\"	@(#)ungetc.3	6.2 (Berkeley) %G%
 .\"
-.TH UNGETC 3S  ""
+.TH UNGETC 3  ""
 .AT 3
 .SH NAME
 ungetc \- push character back into input stream
@@ -27,12 +27,12 @@ One character of pushback is guaranteed provided
 something has been read from the stream and the stream is actually buffered.
 Attempts to push EOF are rejected.
 .PP
-.IR  Fseek (3S)
+.IR  Fseek (3)
 erases all memory of pushed back characters.
 .SH "SEE ALSO"
-getc(3S),
-setbuf(3S),
-fseek(3S)
+getc(3),
+setbuf(3),
+fseek(3)
 .SH DIAGNOSTICS
 .I Ungetc
 returns
