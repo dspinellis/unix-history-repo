@@ -1,3 +1,7 @@
+/*	@(#)i386-opcode.h	6.2 (Berkeley) %G%
+
+Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+
 /* i386-opcode.h -- Intel 80386 opcode table
    Copyright (C) 1989, Free Software Foundation.
 
@@ -251,7 +255,7 @@ template i386_optab[] = {
 {"call", 1, 0xe8, _, JumpDword, Disp32, 0, 0},
 {"call", 1, 0xff, 2, Modrm, Reg|Mem|JumpAbsolute, 0, 0},
 #define CALL_FAR_IMMEDIATE 0x9a
-{"lcall", 2, 0x9a, _, JumpInterSegment, Imm16, Abs32, 0},
+{"lcall", 2, 0x9a, _, JumpInterSegment, Imm16, Imm32, 0},
 {"lcall", 1, 0xff, 3, Modrm, Mem, 0, 0},
 
 #define JUMP_PC_RELATIVE 0xeb
