@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	7.10 (Berkeley) %G%
+ *	@(#)specdev.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,6 @@ int	spec_print __P((struct vop_print_args *));
 #define spec_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
 int	spec_advlock __P((struct vop_advlock_args *));
 #define spec_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))spec_badop)
-#define spec_vget ((int (*) __P((struct  vop_vget_args *)))spec_badop)
 #define spec_valloc ((int (*) __P((struct  vop_valloc_args *)))spec_badop)
 #define spec_vfree ((int (*) __P((struct  vop_vfree_args *)))spec_badop)
 #define spec_truncate ((int (*) __P((struct  vop_truncate_args *)))nullop)
