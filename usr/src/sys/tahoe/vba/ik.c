@@ -1,4 +1,6 @@
-/*	ik.c	7.1	88/05/21	*/
+/*
+ *	@(#)ik.c	1.6 (Berkeley) %G%
+ */
 
 #include "ik.h"
 #if NIK > 0
@@ -672,7 +674,8 @@ ikioctl(dev, cmd, data, flag)
 		}
 		splx(s);
 		bp->b_flags = B_BUSY | B_WRITE;
-		error = copyin(lp->pl_name, sc->is_buf, (unsigned)lp->pl_len);
+		error = copyin(lp->pl_name, (caddr_t)sc->is_buf,
+		    (unsigned)lp->pl_len);
 		if (error == 0) {
 			if (lp->pl_len&1)
 				sc->is_buf[lp->pl_len] = '\0';
