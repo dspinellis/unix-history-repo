@@ -1,0 +1,1673 @@
+.nr DR 1
+.he 'SENDMAIL''%'
+.if \n(DR .fo 'For Your Eyes Only'\*-DRAFT\*-'\*(td'
+.ls 2
+.+c
+.(l C
+.sz 12
+SENDMAIL \*- An Internet Mail Router
+.sz
+.sp
+Eric Allman
+.i
+Project INGRES
+Electronics Research Lab
+University of California
+Berkeley, California  94720
+.)l
+.(f
+This is
+.if \n(DR draft
+version 3.1,
+last modified on %G%.
+.if \n(DR Please do not distribute this version without permission
+.if \n(DR of the author.
+.)f
+.sp 2
+.pp
+.i Sendmail
+implements a general internetwork mail routing facility.
+Features include aliasing and forwarding,
+automatic routing to network gateways,
+and flexible configuration.
+.pp
+Section 1 discusses the design goals for
+.i sendmail .
+Section 2 gives an overview of the basic functions of the system.
+In section 3,
+details of usage are discussed.
+A detailed description of the configuration file
+is given in section 4,
+including a walkthrough of a specific configuration file.
+Section 5 compares
+.i sendmail
+to other internet mail routers,
+and an evaluation of
+.i sendmail
+is given in section 6,
+including future plans.
+.sh 1 "DESIGN GOALS"
+.pp
+.i Sendmail
+was an outgrowth of
+.i delivermail,
+a previous incarnation of a UNIX internetwork mail router.
+.i Delivermail
+was written relatively quickly.
+The first version only knew about taking apart addresses
+for explicit forwarding
+and limited aliasing;
+automatic forwarding and other features
+came later.
+.pp
+Design goals for
+.i delivermail
+included:
+.np
+Compatibility with the existing mail system,
+including Bell version 6 mail,
+Bell version 7 mail,
+Berkeley mail,
+BerkNet mail,
+and hopefully UUCP mail.
+ARPANET mail was also required,
+and the difference in format
+drove the decision to put all such formatting
+into the low-level mailer.
+.np
+Because of time constraints,
+utilize as much existing software as possible.
+The changes to the existing software were minimal:
+Berkeley mail,
+BerkNet,
+UUCP, and the ARPANET FTP server
+had to be modified to call
+.i delivermail
+as their server instead of
+/bin/mail
+(or in the case of the ARPANET,
+writing the mail into a file
+which has no meaning to standard UNIX mailers).
+The only major modifications
+were to /bin/mail,
+which was maintained both as a user interface sender
+and as a
+.i delivermail
+mailer.
+As a sender,
+it calls
+.i delivermail .
+.i Delivermail
+calls it in turn to do local delivery,
+so a
+.b \-d
+flag was added to avoid loops.
+.np
+Reliability was considered essential
+because of the emphasis on mail in our environment.
+This turned out to be one of the hardest goals to satisfy,
+especially in the face of the many anomalous message formats
+produced by various ARPANET sites.
+For example,
+MIT and CMU allow mail from people who are not logged in
+(and which have meaningless from addresses),
+which caused error message loops.
+WHARTON changes our host name from
+.q Berkeley
+to
+.q Berkel-
+which creates interesting problems under certain circumstances \*-
+not to mention rendering any
+.q reply
+feature unworkable.
+CMU puts blanks in names,
+which created amazing problems,
+since many UNIX mail programs assume that an address
+is one word.
+And at least one person lists his address as
+.q "From: the TTY of ..." ,
+giving a
+.q Sender:
+field with his real address.
+In summary,
+the obscure aspects of the ARPANET mail protocol
+really are used,
+are difficult to support,
+but must be supported.
+.pp
+There were certain non-goals in
+.i delivermail
+also.
+Many of these resulted from the expectation that
+it would only be used at Berkeley,
+and probably only at a few sites at Berkeley.
+.np
+It was fair game to compile configuration information
+into the code,
+even to assume that they were running BerkNet.
+.np
+The problem of multiple connections to a single network
+was not foreseen.
+For example,
+on a host with no UUCP connection,
+all UUCP mail was sent to a single host.
+In fact,
+Berkeley is running UUCP on at least three hosts.
+.np
+No attempt was made to reduce the volume of mail across a network link.
+Besides the difficulty of doing this,
+we failed to appreciate how much volume there would be.
+.pp
+.i Sendmail
+maintained the goals of
+.i delivermail.
+Time was less of a constraint,
+but not reimplementing the wheel
+(or other mailers)
+had proven to be a wise move in many ways.
+For example,
+many internet mailers deliver local mail directly.
+This is more efficient,
+but builds in the design decisions
+of the local mailer,
+and makes it difficult to concentrate
+on the
+.q "real problems"
+(such as locking).
+Other design goals were:
+.np
+.i Sendmail
+should operate in more complex environments,
+including multiple
+(but not equivalent)
+connections to a single network.
+This required that the contents of a host field
+be considered,
+as well as just the syntax of an address.
+This results both from a desire to simplify use by other sites,
+and to anticipate the environment Berkeley is moving towards.
+.np
+Configuration should not be compiled into the code.
+A single binary should be able to run as is at any site
+(modulo such basic changes as the CPU type or the operating system).
+We have found this apparently unimportant goal
+to be critical in real life.
+.np
+.i Delivermail
+only knows about one alias file.
+Berkeley is a sufficiently open environment
+that this can be writable by everyone,
+but other environments are not so lax.
+Thus,
+.i sendmail
+must be able to let various groups maintain their own mailing lists,
+and individuals their own forwarding,
+without writing the system alias file.
+.np
+Customized incoming mailers should be supported.
+.np
+Network traffic should be minimized
+by batching addresses to a single host where possible,
+without assistance by the user.
+.sh 1 "OVERVIEW"
+.sh 2 "System Organization"
+.pp
+.i Sendmail
+neither interfaces with the user
+nor does actual mail delivery.
+Rather,
+it collects a message
+generated by a user interface program (UIP),
+does editing as required by the internet environment,
+and calls appropriate mailers
+to do mail delivery or queueing for network transmission
+(the exception is when mailing to a file).
+This discipline allows the insertion of new mailers
+at minimum cost.
+In this sense it is like the Message Processing Module (MPM)
+of [1].
+.(d
+[1] Postel -- internet message structure
+.)d
+See Figure 1.
+.(z
+.(c
+	       +-------+
+	       | user  |
+	       +-------+
+		   |
+	        +-----+
+	        | UIP |
+	        +-----+
+		   |
+             +-----------+
+             | sendmail  |
+             +-----------+
+		|  |  |
+     +----------+  +  +----------+
+     |  	   |             |
++---------+   +---------+   +---------+
+| mailer  |   | mailer  |   | mailer  |
++---------+   +---------+   +---------+
+.)c
+
+.ce
+Figure 1 \*- System Structure.
+.)z
+.sh 2 "Operational Description"
+.sh 3 "Argument processing and address parsing"
+.pp
+The arguments are first scanned,
+and flag arguments are processed.
+The remaining arguments are addresses.
+They are parsed in turn,
+and a list of recipients is created.
+Aliasing is done at this step.
+As much validity checking of the addresses as possible
+is done at this step.
+Syntax is checked, and local addresses can be verified,
+but detailed checking of host names and addresses
+is not checked until later.
+Forwarding is also done
+as the local addresses are verified.
+.pp
+As each address is parsed,
+it is appended to the recipient list.
+When a name is aliased or forwarded,
+the old name is not removed from the list,
+but a flag is set in the address header
+that tells the delivery phase
+to not actually deliver the message to this recipient.
+This list is kept without duplicates,
+preventing alias loops
+and eliminating people receiving two copies of a message,
+as might happen if a person were in two groups.
+.pp
+The recipient list is kept partitioned by mailer;
+this simplifies the task of sending one copy of a message
+across network links.
+.sh 3 "Message collection"
+.pp
+The message is then collected from the standard input.
+Parsing of the message header is done at this point.
+The header is stored in memory,
+and the body of the message is saved
+in a temp file.
+.pp
+Collection occurs even if no addresses were valid
+to simplify program interface.
+The message will be returned with an error.
+.sh 3 "Message delivery"
+.pp
+For each mailer known to the system,
+the part of the recipient list for this mailer is scanned.
+For each unique host,
+a call is made to the mailer.
+Each call contains the users on that host.
+Mailers that only accept one recipient at a time
+are handled properly.
+.pp
+.i Sendmail
+then forks a process for each mailer
+with a non-empty send list.
+The message is then sent to the mailer
+(which must read its standard input)
+prepended by a customized header.
+The exit code is caught and checked,
+and a suitable error message given as appropriate.
+The exit code must conform to a system standard
+or a meaningless message
+(\c
+.q "Service unavailable" )
+is given.
+.pp
+Delivery to files is handled directly.
+.sh 3 "Return to sender"
+.pp
+If errors occurred during processing,
+the message is returned to the sender for retransmission.
+The letter can be mailed back
+or written in the file
+.q dead.letter
+in the sender's home directory.
+.sh 2 "Configuration File"
+.pp
+Almost all configuration information is read at runtime
+from an ASCII file.
+Information encoded in this file includes
+macro definitions,
+header declarations,
+mailer definitions,
+and address rewriting rules.
+.sh 3 Macros
+.pp
+Macros can be used in three ways.
+Certain macros transmit
+unstructured textual information
+into the mail system,
+such as the name
+.i sendmail
+will use to identify itself in error messages.
+Other macros transmit information from
+.i sendmail
+to the configuration file
+for use in creating other fields
+(such as argument vectors to mailers);
+examples of these are the name of the sender and the host and user
+of the recipient.
+Other macros are unused internally,
+and can be used as shorthand in the configuration file.
+.sh 3 "Header declarations"
+.pp
+Header declarations declare to
+.i sendmail
+the set of known header lines.
+Knowledge of a few header lines
+is built into
+.i sendmail ,
+such as the
+.q From:
+and
+.q Date:
+lines.
+.pp
+Most headers declared in the configuration file
+will be automatically inserted
+in the outgoing message
+if they don't exist in the incoming message.
+Certain headers are suppressed by some mailers.
+.sh 3 "Mailer declarations"
+.pp
+Mailer declarations tell
+.i sendmail
+of the various mailers available to it.
+The definition includes the internal name of the mailer,
+the pathname of the program to call,
+some flags associated with the mailer,
+and an argument vector to be used on the call;
+this vector is macro expanded before use.
+.sh 3 "Address rewriting rules"
+.pp
+The heart of address parsing in
+.i sendmail
+is the rewriting rules.
+These are an ordered list of pattern-replacement rules.
+Each address is applied successively to these rules
+until it resolves into a canonical address
+(i.e.,
+a [mailer, host, user]
+3-tuple),
+or it falls off the end.
+When a pattern matches,
+the rule is reapplied until it fails.
+.sh 2 "Message Header Editing"
+.pp
+Certain editing of the message header
+occurs automatically.
+Header lines can be inserted
+under control of the configuration file.
+Some lines can be merged;
+for example,
+a
+.q From:
+line and a
+.q Full-name:
+line can be merged under certain circumstances.
+.sh 1 USAGE
+.sh 2 "Arguments"
+.pp
+Arguments must be presented with flags before addresses.
+The flags are:
+.nr ii 1i
+.ip "\-f addr"
+The mail is from
+.i addr .
+This flag is ignored unless the real user
+is root,
+network,
+or uucp,
+or if
+.i addr
+contains an exclamation point
+(because of certain restrictions in UUCP).
+.ip "\-r addr"
+An obsolete form of
+.b \-f .
+.ip "\-h cnt"
+Sets the
+.q "hop count"
+to
+.i cnt .
+This represents the number of times this message has been processed
+by
+.i sendmail
+(to the extent that it is supported by the underlying networks).
+.i Cnt
+is incremented during processing,
+and if it reaches
+MAXHOP
+(currently 30)
+.i sendmail
+throws away the message with an error.
+.ip "\-F\&name"
+Sets the full name of this user to
+.i name .
+.ip \-e\&p
+Print error messages (default).
+.ip \-e\&q
+Throw away error messages.
+The only response is the exit status.
+.ip \-e\&m
+Mail back errors.
+.ip \-e\&w
+.q Write
+back errors \*- or mail them if the user is not logged in.
+.ip \-e\&e
+Do special error processing for BerkNet.
+This involves mailing back the errors
+but always returning a zero exit status.
+.ip \-n
+Don't do aliasing or forwarding.
+.ip \-m
+Include me in alias expansions.
+Normally
+.i sendmail
+suppresses the sender
+if in a group being sent to.
+.ip \-i
+Don't take a dot to end a message.
+.ip \-t
+Read the header for
+.q To: ,
+.q Cc: ,
+and
+.q Bcc:
+lines, and send to everyone listed in those lists.
+The
+.q Bcc:
+line will be deleted before sending.
+.ip \-a\&m
+Do special processing for the
+ARPANET.
+This includes taking the
+.q "From:"
+person from the header,
+printing
+ARPANET
+style messages
+(preceded by three digits),
+and ending lines with <CRLF>.
+.ip \-a\&f
+Same as
+.b \-a\&m ,
+except print out message numbers appropriate for the MLFL command.
+.ip \-s
+Save UNIX-style
+.q From
+lines at the beginning of headers.
+Normally they are assumed redundant
+and discarded.
+.ip \-v
+Give a blow-by-blow description of function.
+This gives information of interest to the user
+rather than for the
+.i sendmail
+maintainer;
+for example,
+aliases are printed as expanded
+and mailer functions are printed as they run.
+.ip \-C\&file
+Use a different configuration file.
+.ip \-A\&file
+Use a different alias file.
+.ip \-I
+Initialize the DBM version
+of the alias file.
+If
+.b \-I
+is given,
+no delivery is attempted.
+.ip \-V
+Verify the addresses only.
+Only partial verification is done:
+syntax is checked, and local names are verified,
+but no checking normally done by the mailer is attempted.
+.ip \-d\&level
+Set debugging level.
+.ip \-D\&x\&val
+Define macro
+.i x
+to have value
+.i val .
+.nr ii 5n
+.pp
+Following flag arguments,
+address arguments may be given.
+These follow the syntax in RFC733
+[7]
+.(d
+[7] RFC733
+.)d
+for ARPANET
+address formats.
+In brief, the format is:
+.np
+Anything in parentheses is thrown away
+(as a comment).
+.np
+Anything in angle brackets (\ <>\ ) is preferred
+over anything else.
+.np
+Double quotes
+(\ "\ )
+quote phrases;
+backslashes quote characters.
+Backslashes are more powerful \*- for example,
+.i user
+and
+.i
+"user"
+.r
+are equivalent,
+but
+.i \euser
+is different from either of them.
+.np
+The word
+.q at
+is converted to
+.q @ .
+.pp
+All other processing is controlled by the rewriting rules
+(disclaimer: some special processing is done
+after rewriting local names).
+Parentheses, angle brackets, and double quotes
+must be properly balanced and nested.
+.sh 2 "Aliasing, Forwarding, Inclusion"
+.pp
+.i Sendmail
+supports three methods for implicitly rerouting mail.
+Aliasing applies system wide.
+Forwarding allows each user to reroute incoming mail
+destined for that account.
+Inclusion directs
+.i sendmail
+to read a file for a list of addresses,
+and would normal be used
+in conjunction with aliasing.
+.sh 3 "Aliasing"
+.pp
+Aliasing uses a system-wide file
+mapping names to address lists.
+This file is inverted to speed access.
+Only names that appear to be local
+are allowed as aliases;
+this guarantees a unique key.
+.pp
+The inverted form of the file
+must be recreated when the text copy is changed.
+The
+.b \-I
+option to
+.i sendmail
+rebuilds the database.
+.sh 3 "Forwarding"
+.pp
+After aliasing,
+users that are found to be local and valid
+are checked for the existence of a
+.q .forward
+file in their home directory.
+If it exists,
+the message is
+.i not
+sent to that user,
+but rather to the list of users in that file.
+The expectation is that this will normally
+be one user only,
+and the use will be for network mail forwarding.
+.pp
+Forwarding also permits a user to specify a private incoming mailer.
+For example,
+forwarding to:
+.(b
+"\^|\|/usr/local/newmail myname"
+.)b
+will use a different incoming mailer.
+.sh 3 "Inclusion"
+.pp
+Inclusion is specified in ARPANET syntax:
+.(b
+:Include: pathname
+.)b
+An address of this form reads the file specified by
+.i pathname
+and sends to all users listed in that file.
+.pp
+The intent is
+.i not
+to support direct use of this feature,
+but rather to use this as a subset of aliasing.
+For example,
+an alias of the form:
+.(b
+project: :include:/usr/project/userlist
+.)b
+is a method of letting a project maintain a mailing list
+without interaction with the system administration,
+even if the alias file is protected.
+.pp
+It is not necessary to rebuild the alias database
+when a :include: list is changed.
+.sh 2 "Exit Status"
+.pp
+An exit status is returned that corresponds to the system standard
+used by the other mailers.
+.sh 1 CONFIGURATION
+.pp
+Configuration is controlled primarily by the file
+/usr/lib/sendmail.cf.
+.i Sendmail
+should not need to be recomplied except
+.np
+To change operating systems
+(V6, V7/32V, 4BSD).
+.np
+To remove or insert the DBM library.
+.np
+To change ARPANET reply codes.
+.np
+To add headers requiring special processing.
+.lp
+Adding mailers or changing parsing or routing information
+does not require recompilation.
+.pp
+If the mail is being sent by a local user,
+and the file
+.q .mailcf
+exists in the sender's home directory,
+that file is read as a configuration file
+after the system configuration file.
+The primary use of this is to add header lines.
+.sh 2 "Configuration File Description"
+.pp
+The configuration file is formatted
+as a series of text lines,
+each beginning with a character describing its semantics.
+Blank lines and lines beginning with a sharp sign
+(#)
+are ignored.
+.pp
+See figure 2 for an example configuration file.
+.(z
+##########################################
+# sendmail configuration file
+#	@(#)sendmail.cf	3.6	8/17/81
+##########################################
+
+### local hosts on various nets
+DABerkeley
+DBIngVAX
+DUucbvax
+
+### special macros
+# my name
+D\&n\&MAILER-DAEMON
+# UNIX header format
+D\&l\&From $g  $d
+# delimiter (operator) characters
+D\&o\&.:%@!^
+
+### format of headers:
+H\&Date: $a
+H\&From: $g$?x ($x)$.
+H\&Full-Name: $x
+H\&Message-Id: <$t.$p.$B@$A>
+H\&Posted-Date: $a
+
+### name classifications
+# arpanet hostnames
+C\&A\&ucb berkeley
+# list of local host names
+C\&B\&j IngVax
+# berknet hosts on the arpanet
+C\&C\&i ingres ing70
+# uucp hostnames
+C\&U\&ucbvax ernie
+
+###  mailers
+# local mail -- must be zero
+M\&local	/bin/mail		rlsAmn	$f	...local\&mail -d $u
+# program mail -- must be one
+M\&prog	/bin/csh		lA	$f	...prog\&mail -fc $u
+# berkeley net mail
+M\&berk	/usr/net/bin/sendberkmail fxs	$B:$f	...berk\&mail -m $h -h $c -t $u
+# arpanet mail
+M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpa\&mail $f $h $u
+# uucp mail
+M\&uucp	/usr/bin/uux		rsDxm	$U!$f	...uucp\&mail - $h!rmail ($u)
+
+### rewriting rules
+R\&$-h.$+u	$+h:$+u			change "." to ":"
+R\&$=C:$+u@$-h	$+u@$+h			delete ing70: on arpanet addresses
+R\&$+u@$=A	ing70:$+u		delete local arpa hosts
+R\&$+u@$-h	$#berk$@ing70$:$+u@$+h	send arpa mail to ing70
+R\&$+h^$+u	$+h!$+u			change "^" to "!"
+R\&$-x!$=U!$+y	csvax:$+y		delete uucp loops through csvax
+R\&$-h!$+u	csvax:$+h!$+u		send uucp mail to csvax
+R\&$-x:$-h:$+u	$+h:$+u			delete multiple berk hosts
+R\&$=B:$+u	$+u			delete local berk hosts
+R\&$-h:$+u	$#berk$@$+h$:$+u	resolve berk mail
+R\&$+u		$#local$:$+u		resolve local mail
+
+### rewriting rules for from host
+S\&1
+R\&ing70:$+u@$-h	$+u@$+h			arpanet mail is automatic
+R\&CSVAX:$-h!$+u	$+h!$+u			uucp mail is automatic
+
+
+.ce
+Figure 2.  Sample configuration file.
+.)z
+.sh 3 "D \*- define macro"
+.pp
+This line defines a macro.
+Macros have single character names.
+They can be interpolated using the escape
+.b $\c
+.i x ,
+where
+.i x
+is the macro name.
+By convention,
+all upper-case letters are unused by
+.i sendmail
+and may be used freely by the user;
+all other names are reserved for use by sendmail.
+Certain macros
+.i must
+be defined,
+and are used internally.
+These are:
+.(b
+$l	UNIX-style \*(lqFrom\*(rq line.
+$n	My address in error messages.
+$o	\*(lqOperators\*(rq in addresses.
+.)b
+The
+.b $l
+macro is expanded when
+.i sendmail
+wants to insert a UNIX-style
+.q From
+line on messages.
+This typically expands to something like:
+.(b
+From joe  Wed Aug 12 09:15:13 1981
+.)b
+The
+.b $n
+macro is used as the name of this process
+when error messages are being mailed back.
+Typically,
+it is wise to include an alias
+so that mail to this address will be sent to root.
+The
+.b $o
+macro defines the characters
+that will separate words when addresses are being broken up.
+Each of these becomes a word by itself when scanned.
+Blanks and tabs are built-in separators
+but are ignored,
+i.e., are not turned into words.
+For example, the input:
+.(b
+Ing70:ZRM @ MIT-MC SRI-KL
+.)b
+Is broken up into the six words:
+.(b
+Ing70, :, ZRM, @, MIT-MC, SRI-KL
+.)b
+assuming that colon and at-sign are operators
+(but hyphen is not).
+.pp
+A number of macros are defined by
+.i sendmail
+for use as primitives.
+These are:
+.(l
+$a	The date in ARPANET format.
+$c	The hop count.
+$d	The date in UNIX (ctime) format.
+$f	The sender's (from) address.
+$g	The sender's address translated by the mailer.
+$h	The host of the recipient.
+$p	The process id of sendmail in decimal.
+$t	The time in seconds in decimal.
+$u	The user part of the recipient.
+$v	The version number of sendmail.
+$x	The full name of the sender.
+$y	The id of the sender's terminal.
+$z	The home directory of the recipient.
+.)l
+.pp
+The
+.b $p
+and
+.b $t
+macros are used to create unique strings.
+The
+.b $f
+macro is the id of the sender
+as originally determined;
+when mailing to a specific person,
+the
+.b $g
+macro is the address of the sender
+with respect to the receiver.
+For example,
+if I send to
+.q csvax:samwise
+the
+.b $f
+and
+.b $g
+macros are:
+.(b
+$f	eric
+$g	IngVAX:eric
+.)b
+This only applies to the first step in the link.
+For example,
+sending to Ing70:drb@bbn-unix,
+we have
+.b $f
+and
+.b $g
+as above for the transfer to Ing70, but:
+.(b
+$f	IngVAX:eric
+$g	IngVAX:eric@Berkeley
+.)b
+For transfer to the ARPANET.
+When sending, the
+.b $u ,
+.b $h ,
+and
+.b $z
+macros get set to the user, host, and home directory
+(respectively)
+of the receiver.
+The host is only set if the user is not local,
+and the home directory is only set if the user is local.
+.pp
+A primitive conditional is available during macro expansion.
+The construct:
+.(b
+$?x text1 $: text2 $.
+.)b
+tests if macro
+.b $\c
+.i x
+is defined.
+If it is,
+text1 is interpolated;
+otherwise,
+text2 is interpolated.
+.sh 3 "H \*- define header"
+.pp
+The remainder of the
+.b H
+line looks like a regular header line,
+except that the field value is macro expanded
+before use.
+All headers mentioned in this way
+are automatically inserted
+into every message
+except for headers mentioned in the compile-time
+configuration file
+.i conf.c .
+These headers are
+Date,
+From,
+Full-Name,
+Message-Id,
+and
+Received-Date.
+To get these fields the appropriate flag
+must be specified
+for the receiving mailer.
+.pp
+Since the file
+.q ".mailcf"
+in the sender's home directory is read and processed,
+it is possible to add customized header lines.
+For example,
+the .mailcf consisting of:
+.(b
+H\&Phone: (415) 642-7520
+.)b
+will add that line to every outgoing message.
+.sh 3 "M \*- define mailer"
+.pp
+This line is structured into fields
+separated by white space (spaces or tabs).
+The fields are:
+.np
+The internal name of the mailer,
+referred to in the rewriting rules.
+.np
+The pathname of the program to execute for this mailer.
+.np
+The flags for this mailer,
+described below.
+.np
+The macro string to become the
+.b $g
+macro (translated sender)
+for this mailer.
+.np
+The argument vector passed to the mailer
+(macro expanded).
+.pp
+The flags are a series of characters:
+.ls 1
+.ip f
+The mailer wants a
+.b \-f
+.i from
+flag,
+but only if this is a network forward operation
+(i.e.,
+the mailer will give an error
+if the executing user does not have special permissions).
+.ip r
+Same as
+.b f ,
+but sends a
+.b \-r
+flag.
+.ip q
+Don't print errors \*- the mailer will do it for us.
+.ip S
+Don't reset your userid before calling the mailer.
+This would be used in a secure environment where
+.i sendmail
+ran as a special user.
+This could be used to prevent
+(or at least complicate)
+forged addresses.
+.ip n
+This mailer does not want a UNIX-style
+.q From
+line on the message.
+.ip l
+This mailer is local,
+so no host will be specified.
+.ip s
+Strip quote characters off of addresses
+before calling the mailer.
+.ip m
+This mailer can send to multiple users
+(on the same host)
+in one call.
+.ip F
+This mailer wants a
+.q From:
+header line.
+.ip D
+This mailer wants a
+.q Date:
+header line.
+.ip M
+This mailer wants a
+.q Message-Id:
+header line.
+.ip x
+This mailer wants a
+.q Full-Name:
+header line.
+.ip u
+Upper case should be preserved in user names.
+.ip h
+Upper case should be preserved in host names.
+.ip A
+This mailer wants an ARPANET standard header
+(equivalent to the
+.b F
+and
+.b D
+flags).
+.ls
+.sh 3 "S \*- use rewriting set"
+.pp
+There are two sets of rewriting rules.
+Set zero is used to rewrite recipient addresses.
+Set one is used to rewrite sender addresses.
+Set one can be used to eliminate implicit links.
+For example,
+if there exists a site on on the BerkNet called
+.q Ing70
+which is an ARPANET gateway,
+and we are on a site called
+.q IngVAX ,
+ARPANET mail coming into
+.q Ing70
+for someone on
+.q IngVAX
+will read:
+.(b
+From: Ing70:auser@ahost
+.)b
+Rewriting set one can rewrite this as:
+.(b
+From: auser@ahost
+.)b
+since
+.q Ing70
+will be implied.
+.pp
+When you change to a new set,
+the previous content of that set is cleared.
+.sh 3 "R \*- rewriting rule"
+.pp
+The heart of parsing is the rewriting rules.
+The process is essentially textual.
+First,
+the address to be rewritten is broken up into words.
+Words are defined as strings of non-special characters
+separated by white space or single special characters
+as defined by the
+.b $o
+macro.
+Then,
+the words are rewritten using simple pattern matching.
+Words in the pattern match themselves
+unless they begin with dollar sign.
+The dollar escapes have the following meanings\**:
+.(f
+\**These dollar escapes have nothing to do with macro expansion.
+.)f
+.(b
+$-x	Match a single word (and call it x).
+$+x	Match one or more words (and call them x).
+$=c	Match any word in class c (see below).
+.)b
+The case of letters is ignored in pattern matching
+(including class comparisons).
+.pp
+When a pattern (also called a left hand side or LHS)
+matches,
+the input is rewritten as defined by the right hand side (RHS).
+Acceptable escapes in the RHS are:
+.(b
+$+x	Replace from corresponding match in LHS.
+$#word	Canonical mailer name.
+$@word	Canonical host name.
+$:word	Canonical user name.
+.)b
+Patterns are reexecuted until it either resolves to
+a canonical name
+(i.e.,
+.q "$#mailer$@host$:user" )
+or fails.
+As soon as the input resolves to a canonical name,
+matching ends;
+otherwise,
+the next pattern is tried.
+The
+.q "$@host"
+part is not needed
+if the mailer does not require a host.
+The special mailer
+.q error
+causes the user part to be printed as an error.
+.sh 3 "C \*- define word class"
+.pp
+There are twenty six word classes,
+represented as
+.q A
+through
+.q Z .
+For example:
+.(b
+CVcsvax ingvax esvax
+.)b
+defines the words
+.q csvax ,
+.q ingvax ,
+and
+.q esvax
+to all be in class
+.q V ,
+so that
+.q $=V
+on the LHS of a rewriting rule
+will match any of these words.
+.sh 2 "A Detailed Example"
+.pp
+We will now follow the configuration file
+in figure 2
+through in detail.
+.sh 3 "Macro definitions"
+.(b
+DABerkeley
+DBIngVAX
+DUucbvax
+DnMAILER-DAEMON
+DlFrom $g  $d
+Do.:%@!^
+.)b
+The first three macros are for convenience only,
+and are used to define the local host names
+on the ARPANET, BerkNet, and the UUCP net
+respectively.
+.pp
+Macro
+.b n
+defines the name of this entity
+when error messages are sent.
+Macro
+.b l
+defines what the first line
+of a message in UNIX format looks like,
+in this case the version 7 standard of:
+.(b
+From sender-name  time-of-submission
+.)b
+The
+.b o
+macro
+tells what characters will be distinct from names
+when scanning addresses.
+In this case,
+dot and colon will be used
+to distinguish BerkNet addresses,
+at sign for ARPANET addresses,
+and exclamation point and caret for UUCP addresses.
+.sh 3 "Header definitions"
+.(b
+H\&Date: $a
+H\&From: $g$?x ($x)$.
+H\&Full-Name: $x
+H\&Message-Id: <$t.$p.$B@$A>
+H\&Posted-Date: $a
+.)b
+These define the headers
+that may be added to a message.
+The
+.q Date:
+is just the ARPANET idea of the date.
+The
+.q From:
+line is the translated version of the sender,
+followed by the sender's full name if known.
+The
+.q Message-Id:
+field has the time and process id's concatenated
+with the BerkNet and ARPANET addresses
+to make a unique string.
+Finally, the
+.q Posted-Date:
+is the date in ARPANET format;
+it differs from
+.q Date:
+in that it is always output as soon as the message is submitted,
+and hence indicates the time that the message first enters
+the mail delivery system [4].
+.(d
+[4] NBS standard
+.)d
+.sh 3 "Name classifications"
+.(b
+C\&A\&ucb berkeley
+C\&B\&j IngVax
+C\&C\&i ingres ing70
+C\&U\&ucbvax ernie
+.)b
+These commands put the words
+.q ucb
+and
+.q berkeley
+into class
+.q A ,
+the valid names of this site on the ARPANET.
+Words
+.q j
+and
+.q ingvax
+are in class
+.q B ,
+the local names on BerkNet.
+Class
+.q C ,
+the names of the site which has the ARPANET link,
+has the words
+.q i ,
+.q ingres ,
+and
+.q ing70 .
+Finally,
+.q ucbvax
+and
+.q ernie
+are the UUCP names of our UUCP gateway,
+and are in class
+.q U .
+.pp
+The classes will be used in the patterns of the rewriting rules
+as described below.
+.sh 3 "Mailer definitions"
+.(b
+M\&local	/bin/mail		rlsAmn	$f	...localmail -d $u
+M\&prog	/bin/csh		lA	$f	...progmail -fc $u
+M\&berk	/usr/net/bin/sendberkmail fxs	$B:$f	...berkmail -m $h -h $c -t $u
+M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpamail $f $h $u
+M\&uucp	/usr/bin/uux		rsDxm	$U!$f	...uucpmail - $h!rmail ($u)
+.)b
+Five mailers are known in the configuration file.
+The first two
+.i must
+be declared as
+.b local
+and
+.b prog
+and must come as the first and second mailers respectively.
+.pp
+Local mail is sent using
+/bin/mail.
+It takes a
+.b \-r
+flag,
+is local,
+quote characters are stripped before sending,
+takes ARPANET standard headers,
+can deliver to multiple recipients at once,
+and does not want a UNIX-style
+.q From
+line since it will add one itself.
+The translated from address is the same as the raw from address,
+since no network hops are made.
+The argument vector has a program name,
+a
+.b \-d
+flag (\c
+.q "really deliver" ,
+which must be added to /bin/mail),
+and the list of recipients \*- one recipient per argument.
+.pp
+Mail piped through programs
+is interpreted by /bin/csh.
+It does not take a
+.b \-r
+flag,
+quotes should be left,
+it can only deal with one user,
+and it does want a UNIX-style
+.q From
+line,
+but is still local and still wants an ARPANET style header.
+.pp
+BerkNet mail is processed by
+/usr/net/bin/sendberkmail.
+It takes a
+.b \-f
+flag,
+wants a
+.q Full-Name:
+header line,
+and wants quotes stripped.
+The
+.q Full-Name:
+is used here because if it were given as a comment
+in a
+.q From:
+line it might be discarded by later instantiations of
+.i sendmail .
+The from address as seen by the receiver is
+.q IngVAX:sender ,
+and it takes a flag-oriented
+rather than a positional
+command list.
+.pp
+The ARPANET wants quotes stripped,
+ARPANET standard headers,
+and wants the user name left with case intact.
+It takes a positional command list.
+.pp
+UUCP mail calls
+.i uux
+with a
+.b \-r
+flag,
+quotes stripped,
+a
+.q Date:
+line,
+a
+.q Full-Name:
+line,
+and with multiple users listed.
+.sh 3 "Rewriting rules for recipient addresses"
+.(b
+R\&$-h.$+u	$+h:$+u			change "." to ":"
+R\&$=C:$+u@$-h	$+u@$+h			delete ing70: on arpanet addresses
+R\&$+u@$=A	ing70:$+u		delete local arpa hosts
+R\&$+u@$-h	$#berk$@ing70$:$+u@$+h	send arpa mail to ing70
+R\&$+h^$+u	$+h!$+u			change "^" to "!"
+R\&$-x!$=U!$+y	csvax:$+y		delete uucp loops through csvax
+R\&$-h!$+u	csvax:$+h!$+u		send uucp mail to csvax
+R\&$-x:$-h:$+u	$+h:$+u			delete multiple berk hosts
+R\&$=B:$+u	$+u			delete local berk hosts
+R\&$-h:$+u	$#berk$@$+h$:$+u	resolve berk mail
+R\&$+u		$#local$:$+u		resolve local mail
+.)b
+Dots in addresses are translated to colons
+in the first rule.
+Redundant explicit routing to the ARPANET is deleted
+in the second rule.
+Hops out over the ARPANET
+back to us are deleted in the third rule \*-
+note that the host that we would have come in on
+is inserted.
+Real ARPANET mail is resolved immediately with no further ado \*-
+it is sent out over the BerkNet to the ing70,
+and further rewriting stops immediately.
+.pp
+Carets are changed to exclamation points
+for UUCP addresses in the fifth rule.
+The sixth rule deletes loops out into UUCP land
+and back to us \*- noting that we will be left on CSVAX.
+Multiple BerkNet hosts are deleted in rule seven \*-
+this can occur internally quite easily
+as a side effect of a rewriting rule.
+Rule eight deletes local BerkNet hosts.
+The last two rules resolve BerkNet and local mail.
+.pp
+Consider the following examples:
+.(b
+	esvax.asa
+[1]	esvax:asa
+[10]	$#berk$@esvax$:asa
+.)b
+.(b
+	research^vax135^dmr
+[5]	research!vax135^dmr
+[5]	research!vax135!dmr
+[7]	$#berk$@csvax$:research!vax135!dmr
+.)b
+.(b
+	research!ucbvax!j:eric
+[6]	csvax:j:eric
+[8]	j:eric
+[9]	eric
+[11]	$#local$:eric
+.)b
+.(b
+	ing70:wnj@Berkeley
+[2]	wnj@Berkeley
+[3]	ing70:wnj
+[10]	$#berk$@ing70$:wnj
+.)b
+.sh 3 "Rewriting rules for sender addresses"
+.(b
+S\&1
+R\&ing70:$+u@$-h	$+u@$+h			arpanet mail is automatic
+R\&CSVAX:$-h!$+u	$+h!$+u			uucp mail is automatic
+.)b
+The
+.b S
+line starts putting the rules into set one.
+These rules strip off the
+.q ing70:
+from incoming ARPANET mail
+and the
+.q CSVAX:
+off of incoming UUCP mail.
+.sh 1 "COMPARISON WITH OTHER MAILERS"
+.sh 2 "Delivermail"
+.pp
+.i Sendmail
+is an outgrowth of
+.i delivermail .
+The primary differences are:
+.np
+Configuration information is not compiled in.
+This simplifies many of the problems
+of moving to other machines.
+It also allows easy debugging of new mailers.
+.np
+Address parsing is more flexible.
+For example,
+.i delivermail
+only supported one gateway to any network,
+whereas
+.i sendmail
+can be sensitive to host names
+and reroute to different gateways.
+.np
+Forwarding and
+:include:
+support eliminate the requirement that the system alias file
+be writable by any user
+(or that an update program be written,
+or that the system administration make all changes).
+.np
+.i Sendmail
+supports message batching across networks
+when a message is being sent to multiple recipients.
+.sh 2 "MMDF"
+.pp
+MMDF [ref]
+spans a much wider problem set than
+.i sendmail .
+For example,
+MMDF includes a
+.q "phone network"
+mailer, whereas
+.i sendmail
+calls on preexisting mailers in most cases.
+.i Sendmail
+is approximately equivalent to the
+SUBMIT and DELIVER phases of MMDF.
+Because of this difference in design goals,
+some of the important features of MMDF
+(queueing, retransmission, and two-phase timeout)
+are unimplemented by
+.i sendmail .
+.pp
+MMDF and
+.i sendmail
+both support aliasing,
+customized mailers,
+message batching,
+and automatic forwarding to gateways.
+.sh 2 "Message Processing Module"
+.pp
+The Message Processing Module (MPM)
+discussed by Postel [ref]
+matches
+.i sendmail
+closely in terms of its basic architecture.
+However,
+like MMDF,
+the MPM includes the network interface software
+as part of its domain.
+.pp
+MPM also postulates a duplex channel to the receiver,
+as does MMDF.
+This allows simpler handling of errors
+by the mailer
+than possible in
+.i sendmail ;
+when a message queued by
+.i sendmail
+is sent,
+any errors must be returned to the sender
+by the mailer itself.
+Both MPM and MMDF mailers
+can return an immediate error response,
+and a single error processor can create an appropriate response.
+.pp
+MPM prefers passing the message as a structured message,
+with type-length-value tuples.
+This implies a much higher degree of cooperation
+between mailers than required by
+.i sendmail .
+MPM also assumes a universally agreed upon internet name space
+(with each address a net-host-user tuple),
+which
+.i sendmail
+does not.
+.sh 1 "EVALUATIONS AND FUTURE PLANS"
+.pp
+.i Sendmail
+is designed to work in a nonhomogeneous environment.
+Every attempt is made to avoid imposing any constraints
+on the underlying mailers.
+This goal has driven much of the design.
+One of the major problems
+has been the lack of a uniform address space,
+as postulated in [IP]
+.(d
+[IP] -- internet protocol
+.)d
+and [PostelIMS].
+.(d
+[PostelIMS] -- Internet Message Structure
+.)d
+.pp
+A nonuniform address space implies that path will be specified
+in all addresses,
+either explicitly (as part of the address)
+or implicitly
+(as with implied forwarding to gateways).
+This has the unpleasant effect of making replying to messages
+exceedingly difficult,
+since there is no one
+.q address
+for any person,
+but only a way to get there from wherever you are.
+.pp
+Interfacing to mail programs
+that were not initially intended to be applied
+in an internet environment
+has been amazingly successful,
+and has reduced the job to a manageable task.
+.pp
+However,
+many of these mailers implement their own queueing and retransmission.
+In networks that support store-and-forward file transfer,
+such as BerkNet and UUCP,
+this feature must be supplied already.
+However,
+networks that transfer in real time,
+such as the ARPANET or an Ether-based network
+[ref],
+generally do not provide these features.
+Also,
+networks which provide these generally do not understand
+timeouts or returning the text of the message on error,
+both highly desirable features\**.
+.(f
+\**We have implemented an ARPANET mailer which
+returns the message on error and does one-stage timeout
+(returning the message after three days).
+.)f
+Such queueing, retransmission, and two-phase timeout
+may be integrated into
+.i sendmail
+if it seems desirable.
+.pp
+.i Sendmail
+has knowledge of a few difficult environments
+built in.
+It generates ARPANET FTP compatible error messages
+(prepended with three-digit numbers
+[FTP1, FTP2])
+.(d
+[FTP1] -- FTP description
+.)d
+.(d
+[FTP2] -- revised FTP codes
+.)d
+as necessary,
+optionally generates UNIX-style
+.q From
+lines on the front of messages for some mailers,
+and knows how to parse the same lines on input.
+Although it still adds and understands ARPANET-style
+.q From:
+lines,
+this can be inconvenient to sites which have abandoned UNIX mail.
+Also,
+error handling has an option customized for BerkNet.
+.pp
+One surprisingly major annoyance in most internet mailers
+(such as MMDF)
+is that the location and format of local mail is built in\**.
+.(f
+\**For example,
+MMDF puts local mail in the file
+.q .mail
+\*- useful if you are running version 6.
+.)f
+.i Sendmail
+eliminates all knowledge of location
+and can function successfully with different formats.
+.pp
+The ability to automatically generate a response to incoming mail
+(by forwarding mail to a program)
+seems useful
+(\c
+.q "I am on vacation until late August...." )
+but can create problems
+such as forwarding loops
+(two people on vacation whose programs send notes back and forth,
+for instance)
+if these programs are not well written.
+It might be desirable to implement some form of load limiting.
+I am unaware of any mail system that addresses this problem.
+.pp
+.i Sendmail
+should be modified to run as a daemon,
+reading an MPX file
+(or other IPC scheme)
+to receive mail and process it.
+This would reduce the cost of sending mail to writing the message
+into a known file.
+.i Sendmail
+would be modified to have a very different argument structure.
+It already has an option to read the recipients
+from the message header.
+A more palatable technique for giving error messages
+would also have to be devised.
+.pp
+The configuration file is currently practically inscrutable;
+considerable convenience could be realized
+with a higher-level format.
+For example, a description might read:
+.(b
+(MACRO name value)
+(HEADER name value
+	(OPTION option) ...
+	(NEEDS option) ... )
+(MAILER name path xlatstring
+	(OPTION option) ...
+	(ARGV arg ... ))
+(CLASS name word ...)
+(REWRITE setname
+	(RULE lhs rhs) ... )
+.)b
+.pp
+Many other nice features could be implemented.
+For example,
+if we were sure that the alias file were writable by the effective user
+(i.e., if
+.i sendmail
+were to run setuid)
+then the inverted form could be rebuilt automatically when the
+text copy was changed.
+However, this appears to be little more than frosting.
+.sp 2i
+.pd
