@@ -1,4 +1,4 @@
-/*	tm.c	4.9	82/12/17	*/
+/*	tm.c	4.10	83/03/02	*/
 
 /*
  * TM11/TE??
@@ -66,19 +66,21 @@ retry:
 		tmaddr->tmcs = com | func | TM_GO;
 	for (;;) {
 		word = tmaddr->tmcs;
-		if (word&TM_CUR)
+		if (word & TM_CUR)
 			break;
 	}
 	ubafree(io, info);
 	word = tmaddr->tmer;
-	if (word&TMER_EOT)
-		return(0);
-	if (word < 0) {
+	if (word & TMER_EOT)
+		return (0);
+	if (word & TM_ERR) {
+		if (word & TMER_EOF)
+			return (0);
 		if (errcnt == 0)
-			printf("te error: er=%b", tmaddr->tmer, TMER_BITS);
-		if (errcnt==10) {
+			printf("te error: er=%b", word, TMER_BITS);
+		if (errcnt == 10) {
 			printf("\n");
-			return(-1);
+			return (-1);
 		}
 		errcnt++;
 		tmstrategy(io, TM_SREV);
@@ -86,7 +88,9 @@ retry:
 	}
 	if (errcnt)
 		printf(" recovered by retry\n");
-	return (io->i_cc+tmaddr->tmbc);
+	if (word & TMER_EOF)
+		return (0);
+	return (io->i_cc + tmaddr->tmbc);
 }
 
 tmquiet(tmaddr)
