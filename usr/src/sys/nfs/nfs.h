@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	7.10 (Berkeley) %G%
+ *	@(#)nfs.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -86,9 +86,11 @@ struct nfsreq {
  * can be removed by nfs_inactive()
  */
 struct sillyrename {
-	int	s_flag;
 	nfsv2fh_t s_fh;
-	struct nameidata s_namei;
+	struct	ucred *s_cred;
+	struct	vnode *s_dvp;
+	u_short	s_namlen;
+	char	s_name[20];
 };
 
 /* And its flag values */

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.31 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -142,7 +142,6 @@ nfs_inactive(vp, p)
 	struct proc *p;
 {
 	register struct nfsnode *np;
-	register struct nameidata *ndp;
 	register struct sillyrename *sp;
 	struct nfsnode *dnp;
 	extern int prtactive;
@@ -157,14 +156,14 @@ nfs_inactive(vp, p)
 		/*
 		 * Remove the silly file that was rename'd earlier
 		 */
-		ndp = &sp->s_namei;
 		if (!nfs_nget(vp->v_mount, &sp->s_fh, &dnp)) {
-			ndp->ni_dvp = NFSTOV(dnp);
-			nfs_removeit(ndp, p);
-			nfs_nput(ndp->ni_dvp);
+			sp->s_dvp = NFSTOV(dnp);
+			nfs_removeit(sp, p);
+			nfs_nput(sp->s_dvp);
 		}
-		crfree(ndp->ni_cred);
-		free((caddr_t)sp, M_TEMP);
+		crfree(sp->s_cred);
+		vrele(sp->s_dvp);
+		free((caddr_t)sp, M_NFSREQ);
 	}
 	nfs_unlock(vp);
 	np->n_flag &= NMODIFIED;
