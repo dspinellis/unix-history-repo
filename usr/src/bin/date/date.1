@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date.1	6.4 (Berkeley) %G%
+.\"	@(#)date.1	6.5 (Berkeley) %G%
 .\"
 .TH DATE 1 ""
 .UC 4
@@ -10,14 +10,16 @@
 date \- print and set the date
 .SH SYNOPSIS
 .B date
-.RB "[ -n ] [ -u ] [ yymmddhhmm [ " . "ss ] ]"
+.RB "[-nu] [-d dst] [-t timezone] [yymmddhhmm [" . "ss] ]"
 .SH DESCRIPTION
 If no arguments are given, the current date and time are printed.
-Providing an argument will set the desired date.
-Only the superuser can set the date.
-The
-.I -u
-flag is used to display or set the date in GMT (universal) time.
+Providing an argument will set the desired date; only the superuser
+can set the date.  The \fI-d\fP and \fI-t\fP flags set the kernel's
+values for daylight savings time and minutes west of GMT.  If \fIdst\fP
+is non-zero, future calls to \fIgettimeofday\fP(2) will return a non-zero
+\fItz_dsttime\fP.  \fITimezone\fP provides the number of minutes returned
+by future calls to \fIgettimeofday\fP(2) in \fItz_minuteswest\fP.  The
+\fI-u\fP flag is used to display or set the date in GMT (universal) time.
 .I yy
 represents the last two digits of the year;
 the first
@@ -36,12 +38,9 @@ For example:
 .IP
 date 8506131627
 .PP
-sets the date to June 13 1985, 4:27 PM.
-The year, month and day may be omitted; the default
-values will be the current ones.
-The system operates in GMT.
-.I Date
-takes care of the conversion to and from
+sets the date to June 13 1985, 4:27 PM.  The year, month and day may
+be omitted; the default values will be the current ones.  The system
+operates in GMT.  \fIDate\fP takes care of the conversion to and from
 local standard and daylight-saving time.
 .PP
 If 
@@ -64,8 +63,6 @@ R. Gusella and S. Zatti
 Exit status is 0 on success, 1 on complete failure to set the date,
 and 2 on successfully setting the local date but failing globally.
 .PP
-`You are not superuser: date not set' if you try to change the date
-but are not the super-user.
 Occasionally, when \fItimed\fP synchronizes the time on many hosts, 
 the setting of a new time value may require more than a few seconds.
 On these occasions, \fIdate\fP prints: `Network time being set'.
