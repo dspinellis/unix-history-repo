@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,7 +35,8 @@ struct queue_entry head;
  *	tag2 <-> record <-> record <-> record
  */
 void
-config()
+config(fname)
+	char *fname;
 {
 	ENTRY *ep, *qp;
 	FILE *cfp;
@@ -43,14 +44,16 @@ config()
 	int lcnt;
 	char *p, *t;
 
-	if ((cfp = fopen(_PATH_MANCONF, "r")) == NULL)
-		err(1, "%s", _PATH_MANCONF);
+	if (fname == NULL)
+		fname = _PATH_MANCONF;
+	if ((cfp = fopen(fname, "r")) == NULL)
+		err(1, "%s", fname);
 	queue_init(&head);
 	for (lcnt = 1; (p = fgetline(cfp, &len)) != NULL; ++lcnt) {
 		if (!len)			/* Skip empty lines. */
 			continue;
 		if (p[len - 1] != '\n') {	/* Skip corrupted lines. */
-			warnx("%s: line %d corrupted", _PATH_MANCONF, lcnt);
+			warnx("%s: line %d corrupted", fname, lcnt);
 			continue;
 		}
 		p[len - 1] = '\0';		/* Terminate the line. */
