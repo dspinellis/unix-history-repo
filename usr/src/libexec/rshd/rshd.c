@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.5 82/11/15";
+static char sccsid[] = "@(#)rshd.c	4.6 82/12/25";
 #endif
 
 #include <sys/ioctl.h>
@@ -58,7 +58,7 @@ main(argc, argv)
 	  }
 	}
 #endif
-	sin.sin_port = htons(sp->s_port);
+	sin.sin_port = sp->s_port;
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d")) {
 		int port = atoi(argv[0]);
@@ -67,7 +67,7 @@ main(argc, argv)
 			fprintf(stderr, "%s: bad port #\n", argv[0]);
 			exit(1);
 		}
-		sin.sin_port = htons(port);
+		sin.sin_port = htons((u_short)port);
 		argc--, argv++;
 	}
 	f = socket(AF_INET, SOCK_STREAM, 0, 0);

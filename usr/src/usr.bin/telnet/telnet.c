@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.14 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -166,8 +166,8 @@ tn(argc, argv)
 			printf("%s: bad port number\n", argv[2]);
 			return;
 		}
+		sin.sin_port = htons(sin.sin_port);
 	}
-	sin.sin_port = htons(sin.sin_port);
 	net = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (net < 0) {
 		perror("telnet: socket");
