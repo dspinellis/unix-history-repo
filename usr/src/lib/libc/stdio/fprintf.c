@@ -1,8 +1,8 @@
-/* @(#)fprintf.c	4.3 (Berkeley) %G% */
+/* @(#)fprintf.c	4.4 (Berkeley) %G% */
 #include	<stdio.h>
 
 fprintf(iop, fmt, args)
-FILE *iop;
+register FILE *iop;
 char *fmt;
 {
 	char localbuf[BUFSIZ];

@@ -1,4 +1,4 @@
-/* @(#)wbuf.c	4.8 (Berkeley) %G% */
+/* @(#)wbuf.c	4.9 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -72,7 +72,7 @@ tryagain:
 }
 
 fflush(iop)
-register struct _iobuf *iop;
+register FILE *iop;
 {
 	register char *base;
 	register n;
@@ -89,21 +89,8 @@ register struct _iobuf *iop;
 	return(0);
 }
 
-/*
- * Flush buffers on exit
- */
-
-_cleanup()
-{
-	register struct _iobuf *iop;
-	extern struct _iobuf *_lastbuf;
-
-	for (iop = _iob; iop < _lastbuf; iop++)
-		fclose(iop);
-}
-
 fclose(iop)
-	register struct _iobuf *iop;
+	register FILE *iop;
 {
 	register int r;
 

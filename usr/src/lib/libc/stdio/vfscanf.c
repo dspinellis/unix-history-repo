@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)vfscanf.c	4.2	(Berkeley)	82/12/03";
+static char sccsid[] = "@(#)vfscanf.c	4.3	(Berkeley)	85/02/13";
 
 /* @(#)doscan.c	4.1 (Berkeley) 12/21/80 */
 #include <stdio.h>
@@ -13,9 +13,9 @@ static char sccsid[] = "@(#)vfscanf.c	4.2	(Berkeley)	82/12/03";
 #define	INT	0
 #define	FLOAT	1
 
-char	*_getccl();
+static char *_getccl();
 
-char	_sctab[128] = {
+static char _sctab[256] = {
 	0,0,0,0,0,0,0,0,
 	0,SPC,SPC,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,
@@ -97,9 +97,10 @@ register int **argp;
 	}
 }
 
+static
 _innum(ptr, type, len, size, iop, eofptr)
 int **ptr, *eofptr;
-struct _iobuf *iop;
+FILE *iop;
 {
 	extern double atof();
 	register char *np;
@@ -205,9 +206,10 @@ struct _iobuf *iop;
 	return(1);
 }
 
+static
 _instr(ptr, type, len, iop, eofptr)
 register char *ptr;
-register struct _iobuf *iop;
+register FILE *iop;
 int *eofptr;
 {
 	register ch;
@@ -221,9 +223,8 @@ int *eofptr;
 	ignstp = 0;
 	if (type=='s')
 		ignstp = SPC;
-	while (_sctab[ch = getc(iop)] & ignstp)
-		if (ch==EOF)
-			break;
+	while ((ch = getc(iop)) != EOF && _sctab[ch] & ignstp)
+		;
 	ignstp = SPC;
 	if (type=='c')
 		ignstp = 0;
@@ -250,9 +251,9 @@ int *eofptr;
 	return(0);
 }
 
-char *
+static char *
 _getccl(s)
-register char *s;
+register unsigned char *s;
 {
 	register c, t;
 
@@ -261,18 +262,31 @@ register char *s;
 		t++;
 		s++;
 	}
-	for (c = 0; c < 128; c++)
+	for (c = 0; c < (sizeof _sctab / sizeof _sctab[0]); c++)
 		if (t)
 			_sctab[c] &= ~STP;
 		else
 			_sctab[c] |= STP;
-	while (((c = *s++)&0177) != ']') {
+	if ((c = *s) == ']' || c == '-') {	/* first char is special */
 		if (t)
-			_sctab[c++] |= STP;
+			_sctab[c] |= STP;
 		else
-			_sctab[c++] &= ~STP;
-		if (c==0)
-			return(--s);
+			_sctab[c] &= ~STP;
+		s++;
 	}
-	return(s);
+	while ((c = *s++) != ']') {
+		if (c==0)
+			return((char *)--s);
+		else if (c == '-' && *s != ']' && s[-2] < *s) {
+			for (c = s[-2] + 1; c < *s; c++)
+				if (t)
+					_sctab[c] |= STP;
+				else
+					_sctab[c] &= ~STP;
+		} else if (t)
+			_sctab[c] |= STP;
+		else
+			_sctab[c] &= ~STP;
+	}
+	return((char *)s);
 }
