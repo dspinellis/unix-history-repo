@@ -1,4 +1,4 @@
-/*	ioctl.h	4.29	83/03/19	*/
+/*	ioctl.h	4.30	83/03/19	*/
 /*
  * Ioctl definitions
  */
@@ -192,20 +192,20 @@ struct ltchars {
 #define	FIOASYNC	_IOW(f, 125, int)	/* set/clear async i/o */
 
 /* socket i/o controls */
-#define	SIOCSHIWAT	_IOW(s, 0, int)		/* set high water mark */
-#define	SIOCGHIWAT	_IOR(s, 1, int)		/* get high water mark */
-#define	SIOCSLOWAT	_IOW(s, 2, int)		/* set low water mark */
-#define	SIOCGLOWAT	_IOR(s, 3, int)		/* get low water mark */
-#define	SIOCATMARK	_IOR(s, 7, int)		/* at out of band mark? */
-#define	SIOCSPGRP	_IOW(s, 8, int)		/* set process group */
-#define	SIOCGPGRP	_IOR(s, 9, int)		/* get process group */
-#define	SIOCADDRT	_IOW(s,10, struct rtentry)/* add route */
-#define	SIOCDELRT	_IOW(s,11, struct rtentry)/* delete route */
-#define	SIOCSIFADDR	_IOW(s,12, struct ifreq)/* set interface address */
-#define	SIOCGIFADDR	_IOR(s,13, struct ifreq)/* get interface address */
-#define	SIOCSIFDSTADDR	_IOW(s,14, struct ifreq)/* set point-point address */
-#define	SIOCGIFDSTADDR	_IOR(s,15, struct ifreq)/* get point-point address */
-#define	SIOCSIFFLAGS	_IOW(s,16, struct ifreq)/* set interface flags */
-#define	SIOCGIFFLAGS	_IOR(s,17, struct ifreq)/* get interface flags */
-#define	SIOCGIFCONF	_IOWR(s,20,struct ifconf)/* get interface list */
+#define	SIOCSHIWAT	_IOW(s,  0, int)		/* set high watermark */
+#define	SIOCGHIWAT	_IOR(s,  1, int)		/* get high watermark */
+#define	SIOCSLOWAT	_IOW(s,  2, int)		/* set low watermark */
+#define	SIOCGLOWAT	_IOR(s,  3, int)		/* get low watermark */
+#define	SIOCATMARK	_IOR(s,  7, int)		/* at oob mark? */
+#define	SIOCSPGRP	_IOW(s,  8, int)		/* set process group */
+#define	SIOCGPGRP	_IOR(s,  9, int)		/* get process group */
+#define	SIOCADDRT	_IOW(s, 10, struct rtentry)	/* add route */
+#define	SIOCDELRT	_IOW(s, 11, struct rtentry)	/* delete route */
+#define	SIOCSIFADDR	_IOW(s, 12, struct ifreq)	/* set ifnet address */
+#define	SIOCGIFADDR	_IOWR(s,13, struct ifreq)	/* get ifnet address */
+#define	SIOCSIFDSTADDR	_IOW(s, 14, struct ifreq)	/* set p-p address */
+#define	SIOCGIFDSTADDR	_IOWR(s,15, struct ifreq)	/* get p-p address */
+#define	SIOCSIFFLAGS	_IOW(s, 16, struct ifreq)	/* set ifnet flags */
+#define	SIOCGIFFLAGS	_IOWR(s,17, struct ifreq)	/* get ifnet flags */
+#define	SIOCGIFCONF	_IOWR(s,20, struct ifconf)	/* get ifnet list */
 #endif
