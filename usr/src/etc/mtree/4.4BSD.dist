@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.14 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.15 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1810,7 +1810,13 @@ uucppublic       mode=0777
 
 
 # ./var/tmp
-tmp               mode=01777
+tmp        mode=01777
+
+# ./var/tmp/vi.recover
+vi.recover	 mode=01777
+# ./var/tmp/vi.recover
+..
+
 # ./var/tmp
 ..
 
