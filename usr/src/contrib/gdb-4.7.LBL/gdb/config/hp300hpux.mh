@@ -1,0 +1,16 @@
+# Host: Hewlett-Packard 9000 series 300, running HPUX
+# The following is true because gcc uses a different .o file format
+# than the native HPUX compiler
+#msg If you compile GDB with GCC on HPUX, you must make sure
+#msg that the `nm' used in `munch' is GNU nm
+#msg
+
+# The headers in the directory hp-include override system headers
+# and tell GDB to use BSD executable file format (hence -Ihp-include)
+XDEPFILES= infptrace.o inftarg.o fork-child.o hp300ux-xdep.o
+XM_FILE= xm-hp300hpux.h
+SYSV_DEFINE=-DSYSV
+REGEX=regex.o
+REGEX1=regex.o
+ALLOCA=alloca.o
+ALLOCA1=alloca.o
