@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.8	84/07/02	*/
+/*	vfs_lookup.c	6.9	84/07/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -212,6 +212,8 @@ dirloop2:
 	}
 	u.u_dent.d_namlen = i;
 	u.u_dent.d_name[i] = 0;
+	isdotdot = (i == 2 &&
+		u.u_dent.d_name[0] == '.' && u.u_dent.d_name[1] == '.');
 
 	/*
 	 * Check for degenerate name (e.g. / or "")
@@ -255,11 +257,11 @@ dirloop2:
 			nchstats.ncs_miss++;
 			ncp = NULL;
 		} else {
-			if (ncp->nc_id != ncp->nc_ip->i_id)
+			if (ncp->nc_id != ncp->nc_ip->i_id) {
 				nchstats.ncs_falsehits++;
-			else if (*cp == '/' || docache) {
-
-				nchstats.ncs_goodhits++;
+			} else if (*cp == '\0' && !docache) {
+				nchstats.ncs_badhits++;
+			} else {
 
 					/*
 					 * move this slot to end of LRU
@@ -277,6 +279,11 @@ dirloop2:
 					nchtail = &ncp->nc_nxt;
 				}
 
+				/*
+				 * Get the next inode in the path.
+				 * See comment above other `iunlock' code for
+				 * an explaination of the locking protocol.
+				 */
 				pdp = dp;
 				dp = ncp->nc_ip;
 				if (dp == NULL)
@@ -285,19 +292,40 @@ dirloop2:
 					dp->i_count++;
 				else if (dp->i_count) {
 					dp->i_count++;
-					ilock(dp);
-					iunlock(pdp);
+					if (isdotdot) {
+						iunlock(pdp);
+						ilock(dp);
+					} else {
+						ilock(dp);
+						iunlock(pdp);
+					}
 				} else {
-					igrab(dp);
-					iunlock(pdp);
+					if (isdotdot) {
+						iunlock(pdp);
+						igrab(dp);
+					} else {
+						igrab(dp);
+						iunlock(pdp);
+					}
 				}
 
-				u.u_dent.d_ino = dp->i_number;
-				/* u_dent.d_reclen is garbage ... */
-
-				goto haveino;
-			} else
-				nchstats.ncs_badhits++;
+				/*
+				 * Verify that the inode that we got
+				 * did not change while we were waiting
+				 * for it to be locked.
+				 */
+				if (ncp->nc_id != ncp->nc_ip->i_id) {
+					iput(dp);
+					ilock(pdp);
+					dp = pdp;
+					nchstats.ncs_falsehits++;
+				} else {
+					u.u_dent.d_ino = dp->i_number;
+					/* u_dent.d_reclen is garbage ... */
+					nchstats.ncs_goodhits++;
+					goto haveino;
+				}
+			}
 
 			/*
 			 * Last component and we are renaming or deleting,
@@ -602,9 +630,7 @@ found:
 	 * file system: indirect .. in root inode to reevaluate
 	 * in directory file system was mounted on.
 	 */
-	isdotdot = 0;
-	if (bcmp(u.u_dent.d_name, "..", 3) == 0) {
-		isdotdot++;
+	if (isdotdot) {
 		if (dp == u.u_rdir)
 			u.u_dent.d_ino = dp->i_number;
 		else if (u.u_dent.d_ino == ROOTINO &&
@@ -1103,7 +1129,8 @@ checkpath(source, target)
 		if (error != 0)
 			break;
 		if (dirbuf.dotdot_namlen != 2 ||
-		    bcmp(dirbuf.dotdot_name, "..", 3) != 0) {
+		    dirbuf.dotdot_name[0] != '.' ||
+		    dirbuf.dotdot_name[1] != '.') {
 			error = ENOTDIR;
 			break;
 		}
@@ -1178,9 +1205,13 @@ nchinval(dev)
 		    (ncp->nc_idev != dev && ncp->nc_dev != dev))
 			continue;
 
+			/* free the resources we had */
 		ncp->nc_idev = NODEV;
 		ncp->nc_dev = NODEV;
+		ncp->nc_id = NULL;
 		ncp->nc_ino = 0;
+		ncp->nc_ip = NULL;
+
 
 			/* remove the entry from its hash chain */
 		remque(ncp);
@@ -1194,10 +1225,6 @@ nchinval(dev)
 			nxtcp->nc_prev = ncp->nc_prev;
 		else
 			nchtail = ncp->nc_prev;
-
-			/* free the inode we had */
-		irele(ncp->nc_ip);
-		ncp->nc_ip = NULL;
 
 			/* cause rescan of list, it may have altered */
 		nxtcp = nchhead;
