@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.10 (Berkeley) 83/02/17";
+static	char *sccsid = "@(#)more.c	4.11 (Berkeley) 83/03/17";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -263,23 +263,39 @@ char *argv[];
 argscan(s)
 char *s;
 {
-	    for (dlines = 0; *s != '\0'; s++)
-		if (isdigit(*s))
-		    dlines = dlines*10 + *s - '0';
-		else if (*s == 'd')
-		    dum_opt = 1;
-		else if (*s == 'l')
-		    stop_opt = 0;
-		else if (*s == 'f')
-		    fold_opt = 0;
-		else if (*s == 'p')
-		    noscroll++;
-		else if (*s == 'c')
-		    clreol++;
-		else if (*s == 's')
-		    ssp_opt = 1;
-		else if (*s == 'u')
-		    ul_opt = 0;
+	for (dlines = 0; *s != '\0'; s++)
+	{
+		switch (*s)
+		{
+		  case '0': case '1': case '2':
+		  case '3': case '4': case '5':
+		  case '6': case '7': case '8':
+		  case '9':
+			dlines = dlines*10 + *s - '0';
+			break;
+		  case 'd':
+			dum_opt = 1;
+			break;
+		  case 'l':
+			stop_opt = 0;
+			break;
+		  case 'f':
+			fold_opt = 0;
+			break;
+		  case 'p':
+			noscroll++;
+			break;
+		  case 'c':
+			clreol++;
+			break;
+		  case 's':
+			ssp_opt = 1;
+			break;
+		  case 'u':
+			ul_opt = 0;
+			break;
+		}
+	}
 }
 
 
@@ -550,16 +566,16 @@ int n;
 char *str;
 {
     sptr = str;
-    sprintf (n);
+    Sprintf (n);
     *sptr = '\0';
 }
 
-sprintf (n)
+Sprintf (n)
 {
     int a;
 
     if (a = n/10)
-	sprintf (a);
+	Sprintf (a);
     *sptr++ = n % 10 + '0';
 }
 
