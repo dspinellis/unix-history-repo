@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.69 (Berkeley) %G%
+#	@(#)READ_ME	8.70 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -539,6 +539,10 @@ IRIX
 	when compiling map.c; this is not important because the
 	function being prototyped is not used in that file.
 
+	In order to compile sendmail you will have had to install
+	the developers' option in order to get the necessary include
+	files.
+
 NeXT
 	If you are compiling on NeXT, you will have to create an empty
 	file "unistd.h" and create a file "dirent.h" containing:
@@ -876,4 +880,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.69, last update %G% 06:41:53)
+(Version 8.70, last update %G% 18:07:44)
