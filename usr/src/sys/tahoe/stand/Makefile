@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.10 (Berkeley) %G%
+#	@(#)Makefile	7.11 (Berkeley) %G%
 #
 
 RELOC=		800
@@ -27,7 +27,7 @@ LDTOPT=		-T ${RELOC} -e _entry -x
 DESTDIR=
 VPATH=	../stand
 LIBS=	libsa.a ${DESTDIR}/lib/libc.a
-COPTS=	-O -I. -I../stand -I../h
+COPTS=	-O -I. -I../stand -I..
 CFLAGS=	-DSTANDALONE -DCOMPAT_42 -DTAHOE -DRELOC=0x${RELOC} ${COPTS}
 SUBDIR=	vdformat
 ALL=	boot cat copy ls

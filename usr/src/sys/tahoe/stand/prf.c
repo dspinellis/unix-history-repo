@@ -1,10 +1,10 @@
-/*	prf.c	1.5	89/04/25	*/
+/*	prf.c	1.6	90/06/22	*/
 /*	prf.c	4.3	81/05/05	*/
 
 #include "machine/mtpr.h"
 
-#include "param.h"
-#include "../tahoe/cp.h"
+#include "sys/param.h"
+#include "tahoe/cp.h"
 
 /*
  * Scaled down version of C Library printf.
