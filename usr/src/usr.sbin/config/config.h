@@ -4,13 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.11 (Berkeley) %G%
+ *	@(#)config.h	5.12 (Berkeley) %G%
  */
 
 /*
  * Config.
  */
 #include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	NODEV	((dev_t)-1)
 
@@ -138,12 +140,6 @@ char	*path();
 char	*raise();
 
 int	do_trace;
-
-char	*index();
-char	*rindex();
-char	*malloc();
-char	*strcpy();
-char	*strcat();
 
 #if MACHINE_VAX
 int	seen_mba, seen_uba;
