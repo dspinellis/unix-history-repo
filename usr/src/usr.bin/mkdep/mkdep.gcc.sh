@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)mkdep.gcc.sh	5.4 (Berkeley) %G%
+#	@(#)mkdep.gcc.sh	5.5 (Berkeley) %G%
 #
 
 PATH=/bin:/usr/bin:/usr/ucb
@@ -13,7 +13,7 @@ export PATH
 
 D=.depend			# default dependency file is .depend
 append=0
-SED=
+RM_DOT_O=
 
 while :
 	do case "$1" in
@@ -30,7 +30,7 @@ while :
 		# the -p flag produces "program: program.c" style dependencies
 		# so .o's don't get produced
 		-p)
-			SED=p
+			RM_DOT_O="-e 's;\.o :; :;'"
 			shift ;;
 		*)
 			break ;;
@@ -46,11 +46,7 @@ TMP=/tmp/mkdep$$
 
 trap 'rm -f $TMP ; exit 1' 1 2 3 13 15
 
-if [ "$SED"x = x ]; then
-	cpp -M $* > $TMP
-else
-	cpp -M $* | sed 's;\.o :; :;' > $TMP
-fi
+cpp -M $* | sed $RM_DOT_O -e 's; \./; ;g' > $TMP
 
 if [ $? != 0 ]; then
 	echo 'mkdep: compile failed.'
