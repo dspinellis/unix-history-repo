@@ -1,4 +1,4 @@
-/*	ip_var.h	6.1	83/07/29	*/
+/*	ip_var.h	6.2	84/08/29	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -59,9 +59,9 @@ struct	ipstat {
 
 #ifdef KERNEL
 /* flags passed to ip_output as last parameter */
-#define	IP_FORWARDING		0x1	/* most of ip header exists */
-#define	IP_ROUTETOIF		0x10	/* same as SO_DONTROUTE */
-#define	IP_ALLOWBROADCAST	SS_PRIV	/* can send broadcast packets */
+#define	IP_FORWARDING		0x1		/* most of ip header exists */
+#define	IP_ROUTETOIF		SO_DONTROUTE	/* bypass routing tables */
+#define	IP_ALLOWBROADCAST	SO_BROADCAST	/* can send broadcast packets */
 
 struct	ipstat	ipstat;
 struct	ipq	ipq;			/* ip reass. queue */
