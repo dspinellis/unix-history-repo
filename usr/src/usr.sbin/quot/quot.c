@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	4.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,11 +20,10 @@ static char sccsid[] = "@(#)quot.c	4.20 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
-#include <sys/file.h>
 #include <ufs/dinode.h>
 #include <ufs/fs.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <paths.h>
@@ -185,14 +184,14 @@ check(file, fsdir)
 		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++, ino++) {
 			if (ino < ROOTINO)
 				continue;
-			acct(&itab[j]);
+			qacct(&itab[j]);
 		}
 	}
 	close(fd);
 	return (0);
 }
 
-acct(ip)
+qacct(ip)
 	register struct dinode *ip;
 {
 	register struct du *dp;
