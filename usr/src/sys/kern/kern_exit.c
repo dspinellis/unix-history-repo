@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.46 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.47 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,7 +63,6 @@ exit(p, rv)
 	register struct proc *q, *nq;
 	register struct proc **pp;
 	register struct vmspace *vm;
-	struct timeval tv;
 	int s;
 
 	if (p->p_pid == 1)
@@ -193,14 +192,10 @@ done:
 
 	/*
 	 * Save exit status and final rusage info, adding in child rusage
-	 * info and self times.  Add its most recent runtime here; we are
-	 * not going to reach the usual code in swtch().
+	 * info and self times.
 	 */
 	p->p_xstat = rv;
 	*p->p_ru = p->p_stats->p_ru;
-	microtime(&tv);
-	timevalsub(&tv, &runtime);
-	timevaladd(&p->p_rtime, &tv);
 	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
 	ruadd(p->p_ru, &p->p_stats->p_cru);
 
