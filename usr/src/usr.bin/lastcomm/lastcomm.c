@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -42,6 +42,8 @@ main(argc, argv)
 	register struct acct *acp;
 	int fd;
 	struct stat sb;
+	long lseek();
+	char *strcpy(), *ctime();
 
 	fd = open("/usr/adm/acct", O_RDONLY);
 	if (fd < 0) {
@@ -50,7 +52,7 @@ main(argc, argv)
 	}
 	fstat(fd, &sb);
 	for (bn = btodb(sb.st_size); bn >= 0; bn--) {
-		lseek(fd, dbtob(bn), L_SET);
+		(void)lseek(fd, (off_t)dbtob(bn), L_SET);
 		cc = read(fd, buf, DEV_BSIZE);
 		if (cc < 0) {
 			perror("read");
@@ -72,10 +74,11 @@ main(argc, argv)
 				continue;
 			x = expand(acp->ac_utime) + expand(acp->ac_stime);
 			printf("%-*.*s %s %-*s %-*s %6.2f secs %.16s\n",
-				fldsiz(acct, ac_comm), fldsiz(acct, ac_comm),
-				acp->ac_comm,
-				flagbits(acp->ac_flag),
-				fldsiz(utmp, ut_name), getname(acp->ac_uid),
+				fldsiz(acct, ac_comm),
+				fldsiz(acct, ac_comm),
+				acp->ac_comm, flagbits(acp->ac_flag),
+				fldsiz(utmp, ut_name),
+				(cp = getname(acp->ac_uid)) ? cp : "",
 				fldsiz(utmp, ut_line), getdev(acp->ac_tty),
 				x / (double)AHZ, ctime(&acp->ac_btime));
 		}
@@ -120,10 +123,11 @@ ok(argc, argv, acp)
 	register struct acct *acp;
 {
 	register int j;
+	register char *cp;
 
 	for (j = 1; j < argc; j++)
-		if (strcmp(getname(acp->ac_uid), argv[j]) &&
-		    strcmp(getdev(acp->ac_tty), argv[j]) &&
+		if ((!(cp = getname(acp->ac_uid)) || strcmp(cp, argv[j])) &&
+		    (!(cp = getdev(acp->ac_tty)) || strcmp(cp, argv[j])) &&
 		    strncmp(acp->ac_comm, argv[j], fldsiz(acct, ac_comm)))
 			break;
 	return (j == argc);
@@ -142,14 +146,15 @@ int	outrangeuid = -1;
 
 char *
 getname(uid)
+	uid_t uid;
 {
 	register struct passwd *pw;
 	static init;
 	struct passwd *getpwent();
 
-	if (uid >= 0 && uid < NUID && names[uid][0])
+	if (uid < NUID && names[uid][0])
 		return (&names[uid][0]);
-	if (uid >= 0 && uid == outrangeuid)
+	if (uid == outrangeuid)
 		return (outrangename);
 	if (init == 2) {
 		if (uid < NUID)
@@ -208,15 +213,16 @@ setupdevs()
 	register struct devhash * hashtab;
 	register ndevs = NDEVS;
 	struct direct * dp;
+	char *malloc();
 
-	if ((fd = opendir("/dev")) == NULL) {
-		perror("/dev");
-		return;
-	}
+	/*NOSTRICT*/
 	hashtab = (struct devhash *)malloc(NDEVS * sizeof(struct devhash));
 	if (hashtab == (struct devhash *)0) {
-		fprintf(stderr, "No mem for dev table\n");
-		closedir(fd);
+		fputs("No mem for dev table\n", stderr);
+		return;
+	}
+	if ((fd = opendir("/dev")) == NULL) {
+		perror("/dev");
 		return;
 	}
 	while (dp = readdir(fd)) {
@@ -245,6 +251,7 @@ getdev(dev)
 	static dev_t lastdev = (dev_t) -1;
 	static char *lastname;
 	static int init = 0;
+	char *strcpy(), *strcat();
 
 	if (dev == NODEV)
 		return ("__");
