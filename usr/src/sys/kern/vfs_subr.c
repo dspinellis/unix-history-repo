@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.67 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.67.1.1 (Berkeley) %G%
  */
 
 /*
@@ -647,6 +647,8 @@ vget(vp)
 	return (0);
 }
 
+int bug_refs = 0;
+
 /*
  * Vnode reference, just increment the count
  */
@@ -655,6 +657,10 @@ void vref(vp)
 {
 
 	vp->v_usecount++;
+	if (vp->v_type != VBLK && curproc)
+		curproc->p_spare[0]++;
+	if (bug_refs)
+		vprint("vref: ");
 }
 
 /*
@@ -681,6 +687,10 @@ void vrele(vp)
 		panic("vrele: null vp");
 #endif
 	vp->v_usecount--;
+	if (vp->v_type != VBLK && curproc)
+		curproc->p_spare[0]--;
+	if (bug_refs)
+		vprint("vref: ");
 	if (vp->v_usecount > 0)
 		return;
 #ifdef DIAGNOSTIC
