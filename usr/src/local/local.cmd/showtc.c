@@ -1,17 +1,18 @@
 #ifndef LINT
-static char *sccsid="@(#)showtc.c	1.3	(Berkeley) %G%";
+static char *sccsid="@(#)showtc.c	1.4	(Berkeley) %G%";
 #endif
 
 /*
 ** show termcap entries
 **
 ** where:
+**	-D	look for duplicate names and print termcap file
 **	-S	sort entries before display
+**	-T	trace (-DDEBUG only)
 **	-b	show bare entries
-**	-d	look for duplicate names
+**	-d	-D and stop
 **	-f	following arg is FULL PATHNAME of termcap file
 **	-g	sort on generic names
-**	-n	-d and stop
 **	-s	don't print two char name at the front of every line
 **	-x	expand tc= capabilities
 **	[ent]	display specific entry. tc= will be expanded.
@@ -39,7 +40,7 @@ struct TcName {
 	long	file_pos;
 } tcNames[NOENTRIES];
 
-#define NOCAPS	94
+#define NOCAPS	95
 
 struct Caps {
 	char	*cap;
@@ -92,6 +93,7 @@ struct Caps {
 	"in",	"Insert mode distinguishes nulls on display",
 	"ip",	"Insert pad after character inserted",
 	"is",	"Initialization string",
+	"i2",	"Alternate initialization string",
 	"kb",	"Sent by backspace key",
 	"kd",	"Sent down arrow key",
 	"ke",	"Out of \"keypad transmit\" mode",
@@ -203,12 +205,12 @@ main(argc, argv, envp)
 					break;
 
 				/* only check for dup names */
-				case 'n':
+				case 'd':
 					nflag = YES;
 					/* fall thru */
 
 				/* look for duplicated names */
-				case 'd':
+				case 'D':
 					dflag = YES;
 					continue;
 
@@ -223,7 +225,7 @@ main(argc, argv, envp)
 					continue;
 
 #ifdef DEBUG
-				case 'D':
+				case 'T':
 					Dflag = YES;
 					continue;
 #endif
@@ -674,5 +676,5 @@ getdesc(key)
 	for (i = 0; i <= NOCAPS; i++)
 		if (strncmp(key, capList[i].cap, 2) == 0)
 			return (capList[i].desc);
-	return("Unknown capability");
+	return("");
 }
