@@ -1,0 +1,49 @@
+Makefile.in
+			blockframe.c
+			breakpoint.c
+			buildsym.c -> stabsread.c (ask van about "maybe" patch)
+			c-exp.y (none)
+			command.c (apparently fixed)
+			configure.in
+			createtags (none)
+			dbxread.c (check against current gcc!)
+			defs.h
+			eval.c
+			exec.c
+			findvar.c
+			infcmd.c (clear breakpoints on detach)
+			inferior.h
+			infrun.c
+			kcore.c
+			kernel.c
+			language.c (none)
+			language.h (none)
+			m2-exp.y
+		main.c
+			printcmd.c
+			remote.c
+			remote-sl.c
+			solib.c (apparently fixed)
+			source.c
+			source.h (no longer exists)
+			sparc-tcmn.c (FIX POLLUTION)
+			sparc-tdep.c
+			sparc-xdep.c (now is sparc-nat.c)
+sparcbsd-tdep.c (CHECK BYTE SWAPS)
+sparcbsd-xdep.c
+			stack.c
+			symfile.c
+symtab.c
+tm-hp300bsd.h
+tm-sparc.h
+tm-sun4bsd.h
+tm-sun4os4.h
+			utils.c
+			valarith.c
+			valops.c
+			valprint.c
+			xgdb.c
+xm-hp300bsd.h
+xm-sparc.h
+xm-sun4bsd.h
+xm-sun4os4.h
