@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fgets.3	6.5 (Berkeley) %G%
+.\"	@(#)fgets.3	6.6 (Berkeley) %G%
 .\"
 .TH FGETS 3 ""
 .UC 7
@@ -49,8 +49,6 @@ of
 except that the newline character (if any) is not stored in the string.
 It is the caller's responsibility to ensure that the input line,
 if any, is sufficiently short to fit in the string.
-.SH "SEE ALSO"
-feof(3), ferror(3), fgetline(3)
 .SH "RETURN VALUE"
 .PP
 Upon successful completion,
@@ -87,6 +85,13 @@ may also fail and set
 .I errno
 for any of the errors specified for the routine
 .IR getchar (3).
+.SH "SEE ALSO"
+feof(3), ferror(3), fgetline(3)
+.SH STANDARDS
+.I Fgets
+and
+.I gets
+conform to ANSI X3.159-1989 (``ANSI C'').
 .SH BUGS
 Since it is usually impossible to ensure that the next input line
 is less than some arbitrary length, and because overflowing the
@@ -97,8 +102,3 @@ use
 .IR gets .
 .I Gets
 exists purely to conform to ANSI X3.159-1989.
-.SH STANDARDS
-.I Fgets
-and
-.I gets
-conform to ANSI X3.159-1989 (``ANSI C'').

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fgetln.3	5.1 (Berkeley) %G%
+.\"	@(#)fgetln.3	5.2 (Berkeley) %G%
 .\"
 .TH FGETLINE 3 ""
 .UC 7
@@ -22,15 +22,12 @@ fgetline(FILE *stream, size_t *len);
 .I Fgetline
 returns a pointer to the next line from the stream pointed to by
 .IR stream .
-The newline character at the end of the line is replaced by a '\e0'
-character.
+The newline character at the end of the line is replaced by a NUL.
 .PP
 If
 .I len
 is non-NULL, the length of the line, not counting the terminating
 NUL, is stored in the memory location it references.
-.SH "SEE ALSO"
-ferror(3), fgets(3), fopen(3), putc(3)
 .SH "RETURN VALUE"
 Upon successful completion a pointer is returned;
 this pointer becomes invalid after the next I/O operation on
@@ -52,9 +49,6 @@ subsequent attempts to read will return NULL until the condition is
 cleared with
 .IR clearerr .
 .PP
-It is not possible to tell whether the final line of an input file
-was terminated with a newline.
-.PP
 The text to which the returned pointer points may be modified,
 provided that no changes are made beyond the terminating NUL.
 These changes are lost as soon as the pointer becomes invalid.
@@ -74,3 +68,8 @@ for any of the errors specified for the routines
 .IR stat (2),
 or
 .IR realloc (3).
+.SH "SEE ALSO"
+ferror(3), fgets(3), fopen(3), putc(3)
+.SH BUGS
+It is not possible to tell whether the final line of an input file
+was terminated with a newline.
