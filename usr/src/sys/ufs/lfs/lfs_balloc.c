@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.36 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -84,7 +84,7 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 	INDIR a[NIADDR], *xap;
 	daddr_t *bap, daddr;
 	long metalbn;
-	int error, num, off;
+	int bb, error, num, off;
 	struct vop_strategy_args vop_strategy_a;
 
 	ip = VTOI(vp);
@@ -151,8 +151,15 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 			trace(TR_BREADMISS, pack(vp, size), metalbn);
 			bzero(bp->b_un.b_addr, fs->lfs_bsize);
 			*bnp = UNASSIGNED;
-			ip->i_blocks += fsbtodb(fs, 1);
-			fs->lfs_bfree -= fsbtodb(fs, 1);
+			bb = fsbtodb(fs, 1);
+			/* XXX Need to figure out how to get a cred */
+			if (!ISSPACE_XXX(fs, bb)) {
+				bp->b_flags |= B_INVAL;
+				brelse (bp);
+				return (ENOSPC);
+			}
+			ip->i_blocks += bb;
+			fs->lfs_bfree -= bb;
 			daddr = bp->b_un.b_daddr[xap->in_off];
 			if (error = VOP_BWRITE(bp))
 				return (error);
@@ -281,7 +288,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	struct inode *ip;
 	struct lfs *fs;
 	daddr_t daddr;
-	int error;
+	int bb, error;
 
 	ip = VTOI(vp);
 	fs = ip->i_lfs;
@@ -304,13 +311,19 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	if (daddr == UNASSIGNED || iosize == fs->lfs_bsize) {
 		*bpp = bp = getblk(vp, lbn, fs->lfs_bsize);
 		if (daddr == UNASSIGNED && !(bp->b_flags & B_CACHE)) {
-			ip->i_blocks += btodb(fs->lfs_bsize);
-			fs->lfs_bfree -= btodb(fs->lfs_bsize);
+			bb = fsbtodb(fs, 1);
+			if (!ISSPACE_XXX(fs, bb)) {
+				bp->b_flags |= B_INVAL;
+				*bpp = NULL;
+				brelse(bp);
+				return (ENOSPC);
+			}
+			ip->i_blocks += bb;
+			fs->lfs_bfree -= bb;
 			if (iosize != fs->lfs_bsize)
 				clrbuf(bp);
 		}
 		return (0);
 	}
 	return (bread(vp, lbn, fs->lfs_bsize, NOCRED, bpp));
-
 }
