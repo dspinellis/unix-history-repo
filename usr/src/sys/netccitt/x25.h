@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)x25.h	7.2 (Berkeley) %G%
+ *	@(#)x25.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -47,15 +47,41 @@ struct x25_sockaddr {		/* obsolete - use sockaddr_x25 */
 };
 
 /*
+ *  X.25 Socket address structure.  It contains the network id, X.121
+ *  address, facilities information, higher level protocol value (first four
+ *  bytes of the User Data field), and up to 12 characters of User Data.
+ */
+
+struct	sockaddr_x25 {
+	u_char	x25_len;
+	u_char	x25_family;	/* must be AF_CCITT */
+	short	x25_net;	/* network id code (usually a dnic) */
+	char	x25_addr[16];	/* X.121 address (null terminated) */
+	struct	x25opts {
+		char	op_flags;	/* miscellaneous options */
+					/* pk_var.h defines other lcd_flags */
+#define X25_REVERSE_CHARGE	0x01	/* remote DTE pays for call */
+#define X25_DBIT		0x02	/* not yet supported */
+#define X25_MQBIT		0x04	/* prepend M&Q bit status byte to packet data */
+#define X25_OLDSOCKADDR		0x08	/* uses old sockaddr structure */
+		char	op_psize;	/* requested packet size */
+#define X25_PS128		7
+#define X25_PS256		8
+#define X25_PS512		9
+		char	op_wsize;	/* window size (1 .. 7) */
+		char	op_speed;	/* throughput class */
+	} x25_opts;
+	short	x25_udlen;	/* user data field length */
+	char	x25_udata[16];	/* user data field */
+};
+
+/*
  * network configuration info
  * this structure must be 16 bytes long
  */
 
 struct	x25config {
-	u_short	xc_family;	/* always AF_CCITT */
-	u_short	xc_net;		/* network id (usually a dnic) */
-	char	xc_ntnlen;
-	char	xc_ntn[5];	/* network specific address (in bcd) */
+	struct	sockaddr_x25 xc_addr;
 	/* link level parameters */
 	u_short	xc_lproto:4,	/* link level protocol eg. CCITTPROTO_HDLC */
 		xc_lptype:4,	/* protocol type eg. HDLCPROTO_LAPB */
@@ -73,34 +99,15 @@ struct	x25config {
 #define X25_BASIC	4
 		xc_ptrace:1,	/* packet level tracing flag */
 		xc_rsvd2:5;
-	u_char	xc_maxlcn;	/* max logical channels */
-	u_char	xc_rsvd3;
+	u_short	xc_maxlcn;	/* max logical channels */
+	u_short	xc_dg_idletimo;	/* timeout for idle datagram circuits.
 };
 
-/*
- *  X.25 Socket address structure.  It contains the network id, X.121
- *  address, facilities information, higher level protocol value (first four
- *  bytes of the User Data field), and up to 12 characters of User Data.
- */
-
-struct	sockaddr_x25 {
-	u_char	x25_len;
-	u_char	x25_family;	/* must be AF_CCITT */
-	short	x25_net;	/* network id code (usually a dnic) */
-	struct	x25opts {
-		char	op_flags;	/* miscellaneous options */
-#define X25_REVERSE_CHARGE	0x01	/* remote DTE pays for call */
-#define X25_DBIT		0x02	/* not yet supported */
-#define X25_MQBIT		0x04	/* prepend M&Q bit status byte to packet data */
-#define X25_OLDSOCKADDR		0x08	/* uses old sockaddr structure */
-		char	op_psize;	/* requested packet size */
-#define X25_PS128		7
-#define X25_PS256		8
-#define X25_PS512		9
-		char	op_wsize;	/* window size (1 .. 7) */
-		char	op_speed;	/* throughput class */
-	} x25_opts;
-	char	x25_addr[16];	/* X.121 address (null terminated) */
-	short	x25_udlen;	/* user data field length */
-	char	x25_udata[16];	/* user data field */
+#ifdef IFNAMSIZ
+struct ifreq_x25 {
+	char	ifr_name[IFNAMSIZ];		/* if name, e.g. "en0" */
+	struct	x25config ifr_xc;
 };
+#define	SIOCSIFCONF_X25	_IOW('i', 12, struct ifreq_x25)	/* set ifnet config */
+#define	SIOCGIFCONF_X25	_IOWR('i',13, struct ifreq_x25)	/* get ifnet config */
+#endif

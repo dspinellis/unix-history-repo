@@ -9,23 +9,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.2 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.3 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "protosw.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
 
-#include "../netccitt/x25.h"
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
-#include "../netccitt/x25err.h"
+#include "x25.h"
+#include "pk.h"
+#include "pk_var.h"
+#include "x25err.h"
 
 int     pk_sendspace = 1024 * 2 + 8;
 int     pk_recvspace = 1024 * 2 + 8;
@@ -100,8 +100,10 @@ register struct pklcd *lcp;
 
 	default: 
 		pk_acct (lcp);
-		soisdisconnecting (so);
-		sbflush (&so -> so_rcv);
+		if (so) {
+			soisdisconnecting (so);
+			sbflush (&so -> so_rcv);
+		}
 		pk_clear (lcp);
 
 	}
@@ -153,8 +155,7 @@ int lcn, type;
 	 * of the packet level header with the hope that this will
 	 * be enough room for the link level to insert its header.
 	 */
-/* XXX does the above still apply? */
-	m -> m_off = MMINOFF + 4;
+	m -> m_data += 4;
 	m -> m_len = PKHEADERLN;
 
 	xp = mtod (m, struct x25_packet *);
@@ -185,6 +186,8 @@ int restart_cause;
 	register int i;
 
 	/* Restart all logical channels. */
+	if (pkp->pk_chan == 0)
+		return;
 	for (i = 1; i <= pkp->pk_maxlcn; ++i)
 		if ((lcp = pkp->pk_chan[i]) != NULL) {
 			if (lcp -> lcd_so)
@@ -344,7 +347,8 @@ struct mbuf *nam;
 		return (ENOBUFS);
 	lcp -> lcd_ceaddr = mtod (m, struct sockaddr_x25 *);
 	pk_assoc (pkp, lcp, lcp -> lcd_ceaddr);
-	soisconnecting (lcp -> lcd_so);
+	if (lcp -> so)
+		soisconnecting (lcp -> lcd_so);
 	lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
 	pk_callrequest (lcp, m, pkp -> pk_xcp);
 	pk_output (lcp);
@@ -451,6 +455,8 @@ register struct pkcb *pkp;
 {
 	register int i;
 
+	if (pkp->pk_chan == 0)
+		return (0);
 	for (i = pkp -> pk_maxlcn; i > 0; --i)
 		if (pkp -> pk_chan[i] == NULL)
 			break;
@@ -520,11 +526,11 @@ register struct pklcd *lcp;
 	lcp -> lcd_ssn = 0;
 	lcp -> lcd_output_window = lcp -> lcd_input_window =
 		lcp -> lcd_last_transmitted_pr = 0;
-	so = lcp -> lcd_so;
-	so -> so_error = ECONNRESET;
-	sbflush (&so -> so_rcv);
-	sbflush (&so -> so_snd);
-
+	if (so = lcp -> lcd_so)  {
+		so -> so_error = ECONNRESET;
+		sbflush (&so -> so_rcv);
+		sbflush (&so -> so_snd);
+	}
 	xp = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET);
 	(dtom (xp)) -> m_len += 2;
 	xp -> packet_data = 0;
@@ -589,8 +595,10 @@ unsigned pr;
 	if (lcp -> lcd_window_condition == TRUE)
 		lcp -> lcd_window_condition = FALSE;
 
-	if ((so -> so_snd.sb_flags & SB_WAIT) || so -> so_snd.sb_sel)
+	if (so && ((so -> so_snd.sb_flags & SB_WAIT) || so -> so_snd.sb_sel))
 		sowwakeup (so);
+	if (lcp -> lcd_downq.pq_unblock)
+		(*lcp -> lcd_downq.pq_unblock)(lcp);
 
 	return (PACKET_OK);
 }
