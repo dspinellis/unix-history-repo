@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strerror.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)strerror.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
@@ -17,7 +17,7 @@ strerror(errnum)
 {
 	extern int sys_nerr;
 	extern char *sys_errlist[];
-	static char ebuf[20];
+	static char ebuf[40];		/* 64-bit number + slop */
 
 	if ((unsigned int)errnum < sys_nerr)
 		return(sys_errlist[errnum]);
