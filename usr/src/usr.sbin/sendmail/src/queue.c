@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.8		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.9		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.8		%G%);
+SCCSID(@(#)queue.c	3.9		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -36,6 +36,7 @@ queueup(df)
 	register HDR *h;
 	register ADDRESS *q;
 	extern char *mktemp();
+	register int i;
 
 	/*
 	**  Create control file.
@@ -72,6 +73,16 @@ queueup(df)
 	/* output message priority */
 	fprintf(f, "P%ld\n", MsgPriority);
 
+	/* output macro definitions */
+	for (i = 0; i < 128; i++)
+	{
+		extern char *Macro[128];
+		register char *p = Macro[i];
+
+		if (p != NULL && i != (int) 'b')
+			fprintf(f, "M%c%s\n", i, p);
+	}
+
 	/* output list of recipient addresses */
 	for (q = SendQueue; q != NULL; q = q->q_next)
 	{
@@ -94,16 +105,7 @@ queueup(df)
 		fprintf(f, "H");
 		if (h->h_mflags != 0 && bitset(H_CHECK|H_ACHECK, h->h_flags))
 			mfdecode(h->h_mflags, f);
-		fprintf(f, "%s: ", h->h_field);
-		if (bitset(H_DEFAULT, h->h_flags))
-		{
-			char buf[MAXLINE];
-
-			(void) expand(h->h_value, buf, &buf[sizeof buf]);
-			fprintf(f, "%s\n", buf);
-		}
-		else
-			fprintf(f, "%s\n", h->h_value);
+		fprintf(f, "%s: %s\n", h->h_field, h->h_value);
 	}
 
 	/*
@@ -536,6 +538,10 @@ readqf(cf)
 
 			/* make sure that big things get sent eventually */
 			MsgPriority -= WKTIMEFACT;
+			break;
+
+		  case 'M':		/* define macro */
+			define(buf[1], newstr(&buf[2]));
 			break;
 
 		  default:
