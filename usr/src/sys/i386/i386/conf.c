@@ -7,10 +7,8 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)conf.c	5.2 (Berkeley) %G%
+ *	@(#)conf.c	5.3 (Berkeley) %G%
  */
-
-/*	conf.c	1.9	87/03/28	*/
 
 #include "param.h"
 #include "systm.h"
@@ -37,8 +35,52 @@ int	wddump(),wdsize();
 #define	wdsize		0
 #endif
 
-int fdstrategy(),fdopen(),fdclose(),fdread(),fdwrite();
+#include "xd.h"
+#if NXD > 0
+int	xdopen(),xdclose(),xdstrategy(),xdread(),xdwrite(),xdioctl();
+int	xddump(),xdsize();
+#else
+#define	xdopen		nodev
+#define	xdclose		nodev
+#define	xdstrategy	nodev
+#define	xdread		nodev
+#define	xdwrite		nodev
+#define	xdioctl		nodev
+#define	xddump		nodev
+#define	xdsize		0
+#endif
 
+#include "wt.h"
+#if NWT > 0
+int	wtopen(),wtclose(),wtstrategy(),wtread(),wtwrite(),wtioctl();
+int	wtdump(),wtsize();
+#else
+#define	wtopen		nodev
+#define	wtclose		nodev
+#define	wtstrategy	nodev
+#define	wtread		nodev
+#define	wtwrite		nodev
+#define	wtioctl		nodev
+#define	wtdump		nodev
+#define	wtsize		0
+#endif
+
+#include "fd.h"
+#if NFD > 0
+int	fdopen(),fdclose(),fdstrategy(),fdread(),fdwrite();
+#define	fdioctl		nodev
+#define	fddump		nodev
+#define	fdsize		0
+#else
+#define	fdopen		nodev
+#define	fdclose		nodev
+#define	fdstrategy	nodev
+#define	fdread		nodev
+#define	fdwrite		nodev
+#define	fdioctl		nodev
+#define	fddump		nodev
+#define	fdsize		0
+#endif
 
 int	swstrategy(),swread(),swwrite();
 
@@ -48,8 +90,12 @@ struct bdevsw	bdevsw[] =
 	  wddump,	wdsize,		0 },
 	{ nodev,	nodev,		swstrategy,	nodev,		/*1*/
 	  nodev,	nodev,		0 },
-	{ fdopen,	fdclose,	fdstrategy,	nulldev,	/*2*/
-	  nodev,	nodev,		0 },
+	{ fdopen,	fdclose,	fdstrategy,	fdioctl,	/*2*/
+	  fddump,	fdsize,		0 },
+	{ wtopen,	wtclose,	wtstrategy,	wtioctl,	/*3*/
+	  wtdump,	wtsize,		B_TAPE },
+	{ xdopen,	xdclose,	xdstrategy,	xdioctl,	/*4*/
+	  xddump,	xdsize,		0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -82,13 +128,25 @@ struct	tty pt_tty[];
 #define	ptsstop		nulldev
 #endif
 
+#include "com.h"
+#if NCOM > 0
+int	comopen(),comclose(),comread(),comwrite(),comioctl();
+int	comreset();
+extern	struct tty com_tty[];
+#else
+#define comopen		nodev
+#define comclose	nodev
+#define comread		nodev
+#define comwrite	nodev
+#define comioctl	nodev
+#define comreset	nodev
+#define	com_tty		0
+#endif
+
 int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	ttselect(), seltrue();
 
-int	comopen(),comclose(),comread(),comwrite(),comioctl();
-int	comreset();
-extern	struct tty com_tty[];
 
 struct cdevsw	cdevsw[] =
 {
@@ -119,8 +177,14 @@ struct cdevsw	cdevsw[] =
 	comopen,	comclose,	comread,	comwrite,	/*8*/
 	comioctl,	nodev,		comreset,	com_tty,
 	ttselect,	nodev,
-	fdopen,		nulldev,	fdread,		fdwrite,	/*9*/
-	nulldev,	nodev,		nulldev,	0,
+	fdopen,		fdclose,	fdread,		fdwrite,	/*9*/
+	fdioctl,	nodev,		nulldev,	0,
+	seltrue,	nodev,
+	wtopen,		wtclose,	wtread,		wtwrite,	/*A*/
+	wtioctl,	nodev,		nulldev,	0,
+	seltrue,	nodev,
+	xdopen,		xdclose,	xdread,		xdwrite,	/*B*/
+	xdioctl,	nodev,		nulldev,	0,
 	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
