@@ -1,0 +1,36 @@
+Mg++	g++.c	/^main (argc, argv)$/
+SWITCH_TAKES_ARG	g++.c	/^#define SWITCH_TAKES_ARG(CHAR)      \\$/
+WORD_SWITCH_TAKES_ARG	g++.c	/^#define WORD_SWITCH_TAKES_ARG(STR) (!strcmp (STR, /
+_obstack_allocated_p	../../gcc/cc1/obstack.c	/^_obstack_allocated_p (h, obj)$/
+_obstack_begin	../../gcc/cc1/obstack.c	/^_obstack_begin (h, size, alignment, chunkfun, free/
+_obstack_free	../../gcc/cc1/obstack.c	/^_obstack_free (h, obj)$/
+_obstack_newchunk	../../gcc/cc1/obstack.c	/^_obstack_newchunk (h, length)$/
+choose_temp_base	g++.c	/^choose_temp_base ()$/
+clear_args	g++.c	/^clear_args ()$/
+clear_failure_queue	g++.c	/^clear_failure_queue ()$/
+concat	g++.c	/^concat (s1, s2, s3)$/
+delete_failure_queue	g++.c	/^delete_failure_queue ()$/
+delete_temp_files	g++.c	/^delete_temp_files ()$/
+do_spec	g++.c	/^do_spec (spec)$/
+do_spec_1	g++.c	/^do_spec_1 (spec, inswitch)$/
+error	g++.c	/^error (va_alist) $/
+execute	g++.c	/^execute ()$/
+fancy_abort	g++.c	/^fancy_abort ()$/
+fatal	g++.c	/^fatal (va_alist)$/
+fatal_error	g++.c	/^fatal_error (signum)$/
+find_exec_file	g++.c	/^find_exec_file (prog)$/
+find_file	g++.c	/^find_file (name)$/
+give_switch	g++.c	/^give_switch (switchnum)$/
+handle_braces	g++.c	/^handle_braces (p)$/
+perror_exec	g++.c	/^perror_exec (name)$/
+perror_with_name	g++.c	/^perror_with_name (name)$/
+pexecute	g++.c	/^pexecute (func, program, argv, not_last)$/
+pfatal_with_name	g++.c	/^pfatal_with_name (name)$/
+process_command	g++.c	/^process_command (argc, argv)$/
+record_temp_file	g++.c	/^record_temp_file (filename, always_delete, fail_de/
+save_string	g++.c	/^save_string (s, len)$/
+store_arg	g++.c	/^store_arg (arg, delete_always, delete_failure)$/
+validate_all_switches	g++.c	/^validate_all_switches ()$/
+validate_switches	g++.c	/^validate_switches (start)$/
+xmalloc	g++.c	/^xmalloc (size)$/
+xrealloc	g++.c	/^xrealloc (ptr, size)$/

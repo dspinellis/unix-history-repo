@@ -1,0 +1,2 @@
+Mbanner	banner.c	/^main(argc, argv)$/
+dir	banner.c	/^#define dir(f) "\/e1\/mrh\/ucb\/lib\/f"$/
