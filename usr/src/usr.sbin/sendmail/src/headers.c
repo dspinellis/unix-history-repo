@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -107,6 +107,10 @@ chompheader(line, def, e)
 	/* see if this is a resent message */
 	if (!def && bitset(H_RESENT, hi->hi_flags))
 		e->e_flags |= EF_RESENT;
+
+	/* if this is an Errors-To: header keep track of it now */
+	if (UseErrorsTo && !def && bitset(H_ERRORSTO, hi->hi_flags))
+		(void) sendtolist(fvalue, NULLADDR, &e->e_errorqueue, 0, e);
 
 	/* if this means "end of header" quit now */
 	if (bitset(H_EOH, hi->hi_flags))
@@ -432,11 +436,6 @@ eatheader(e, full)
 		/* see if this is a return-receipt header */
 		if (bitset(H_RECEIPTTO, h->h_flags))
 			e->e_receiptto = h->h_value;
-
-		/* see if this is an errors-to header */
-		if (UseErrorsTo && bitset(H_ERRORSTO, h->h_flags))
-			(void) sendtolist(h->h_value, NULLADDR,
-					  &e->e_errorqueue, 0, e);
 	}
 	if (tTd(32, 1))
 		printf("----------------------------\n");
