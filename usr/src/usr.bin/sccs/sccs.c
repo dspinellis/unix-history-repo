@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.22 %G%";
+static char SccsId[] = "@(#)sccs.c	1.23 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -291,6 +291,7 @@ callprog(progpath, flags, argv, forkflag)
 	extern char *makefile();
 	register int i;
 	auto int st;
+	register char **nav;
 
 	if (*argv == NULL)
 		return (-1);
@@ -323,12 +324,18 @@ callprog(progpath, flags, argv, forkflag)
 	*/
 
 	/* copy program filename arguments and flags */
+	nav = &argv[1];
 	av = argv;
 	while ((p = *++av) != NULL)
 	{
 		if (!bitset(NO_SDOT, flags) && *p != '-')
-			*av = makefile(p);
+			*nav = makefile(p);
+		else
+			*nav = p;
+		if (*nav != NULL)
+			nav++;
 	}
+	*nav = NULL;
 
 	/*
 	**  Set protection as appropriate.
@@ -346,7 +353,31 @@ callprog(progpath, flags, argv, forkflag)
 	perror(progpath);
 	exit(EX_UNAVAILABLE);
 }
-
+/*
+**  MAKEFILE -- make filename of SCCS file
+**
+**	If the name passed is already the name of an SCCS file,
+**	just return it.  Otherwise, munge the name into the name
+**	of the actual SCCS file.
+**
+**	There are cases when it is not clear what you want to
+**	do.  For example, if SccsPath is an absolute pathname
+**	and the name given is also an absolute pathname, we go
+**	for SccsPath (& only use the last component of the name
+**	passed) -- this is important for security reasons (if
+**	sccs is being used as a setuid front end), but not
+**	particularly intuitive.
+**
+**	Parameters:
+**		name -- the file name to be munged.
+**
+**	Returns:
+**		The pathname of the sccs file.
+**		NULL on error.
+**
+**	Side Effects:
+**		none.
+*/
 
 char *
 makefile(name)
@@ -357,32 +388,60 @@ makefile(name)
 	char buf[512];
 	struct stat stbuf;
 	extern char *malloc();
+	extern char *rindex();
+	extern bool safepath();
+
+	p = rindex(name, '/');
+	if (p == NULL)
+		p = name;
+	else
+		p++;
 
 	/*
-	**  See if this filename should be used as-is.
-	**	There are three conditions where this can occur.
-	**	1. The name already begins with "s.".
-	**	2. The name has a "/" in it somewhere.
-	**	3. The name references a directory.
+	**  Check to see that the path is "safe", i.e., that we
+	**  are not letting some nasty person use the setuid part
+	**  of this program to look at or munge some presumably
+	**  hidden files.
 	*/
 
-	if (strncmp(name, "s.", 2) == 0)
-		return (name);
-	for (p = name; (c = *p) != '\0'; p++)
+	if (SccsPath[0] == '/' && !safepath(name))
+		return (NULL);
+
+	/*
+	**  Create the eventual pathname.
+	*/
+
+	if (SccsPath[0] == '/')
 	{
-		if (c == '/')
+		strcpy(buf, SccsPath);
+		strcat(buf, "/");
+	}
+	else
+		strcpy(buf, "");
+	if (strncmp(p, "s.", 2) != 0)
+	{
+		strncat(buf, name, p - name);
+		if (SccsPath[0] != '/')
+		{
+			strcat(buf, SccsPath);
+			strcat(buf, "/");
+		}
+		strcat(buf, "s.");
+		strcat(buf, p);
+	}
+	else
+	{
+		if (SccsPath[0] != '/')
+			return (name);
+		strcat(buf, name);
+	}
+
+	if (stat(buf, &stbuf) >= 0 && (stbuf.st_mode & S_IFMT) == S_IFDIR)
+	{
+		if (SccsPath[0] != '/')
 			return (name);
 	}
-	if (stat(name, &stbuf) >= 0 && (stbuf.st_mode & S_IFMT) == S_IFDIR)
-		return (name);
 
-	/*
-	**  Prepend the path of the sccs file.
-	*/
-
-	strcpy(buf, SccsPath);
-	strcat(buf, "/s.");
-	strcat(buf, name);
 	p = malloc(strlen(buf) + 1);
 	if (p == NULL)
 	{
@@ -391,6 +450,44 @@ makefile(name)
 	}
 	strcpy(p, buf);
 	return (p);
+}
+/*
+**  SAFEPATH -- determine whether a pathname is "safe"
+**
+**	"Safe" pathnames only allow you to get deeper into the
+**	directory structure, i.e., full pathnames and ".." are
+**	not allowed.
+**
+**	Parameters:
+**		p -- the name to check.
+**
+**	Returns:
+**		TRUE -- if the path is safe.
+**		FALSE -- if the path is not safe.
+**
+**	Side Effects:
+**		Prints a message if the path is not safe.
+*/
+
+bool
+safepath(p)
+	register char *p;
+{
+	extern char *index();
+
+	if (*p != '/')
+	{
+		while (strncmp(p, "../", 3) != 0 && strcmp(p, "..") != 0)
+		{
+			p = index(p, '/');
+			if (p == NULL)
+				return (TRUE);
+			p++;
+		}
+	}
+
+	printf("You may not use full pathnames or \"..\"\n");
+	return (FALSE);
 }
 /*
 **  CLEAN -- clean out recreatable files
@@ -506,10 +603,12 @@ unedit(fn)
 
 	/* make "s." filename & find the trailing component */
 	pfn = makefile(fn);
-	q = &pfn[strlen(pfn) - 1];
-	while (q > pfn && *q != '/')
-		q--;
-	if (q <= pfn && (q[0] != 's' || q[1] != '.'))
+	if (pfn == NULL)
+		return (FALSE);
+	q = rindex(pfn, '/');
+	if (q == NULL)
+		q = &pfn[-1];
+	if (q[1] != 's' || q[2] != '.')
 	{
 		fprintf(stderr, "Sccs: bad file name \"%s\"\n", fn);
 		return (FALSE);
