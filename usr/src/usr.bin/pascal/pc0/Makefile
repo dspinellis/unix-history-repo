@@ -51,6 +51,7 @@ OBJS =	ato.o \
 	yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o yyseman.o yytree.o
 
 a.out: ${OBJS} version
+	${RM} Version.[oc]
 	./version > Version.c
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} Version.c
 
@@ -62,7 +63,8 @@ ${SRCS} ${HDRS} ${OTHERS}:
 .c.o:
 	${RM} ${TMPDIR}/$*.c
 	${MKSTR} - ${ERRORSTRINGS} ${TMPDIR}/ $*.c
-	cd ${TMPDIR} ; ${CC} ${CFLAGS} -I.. -c $*.c ; mv $*.o  ../$*.o
+	cd ${TMPDIR}; ${CC} ${CFLAGS} -I.. -c $*.c;\
+		rm -f ../$*.o; mv $*.o  ../$*.o
 	${RM} ${TMPDIR}/$*.c
 
 whoami.h:
@@ -70,11 +72,13 @@ whoami.h:
 	mv piwhoami.h whoami.h
 
 y.tab.h: pas.y gram
+	${RM} y.tab.h y.tab.c
 	${EYACC} pas.y > /dev/null
 	ex - y.tab.c <gram
 	@echo that makes y.tab.h and y.tab.c
 
 opcode.h: OPnames.h opc.c
+	${RM} opcode.h
 	cc opc.c -o opc
 	opc >opcode.h
 	${RM} opc
