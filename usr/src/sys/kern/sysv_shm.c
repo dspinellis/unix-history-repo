@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.5 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -333,6 +333,7 @@ shmmapin(mp, off)
 /*
  * Increment attach count on fork
  */
+/* ARGSUSED */
 shmfork(mp, ischild)
 	register struct mapmem *mp;
 {
@@ -343,10 +344,10 @@ shmfork(mp, ischild)
 /*
  * Detach from shared memory segment on exit (or exec)
  */
-shmexit(mp)
-	register struct mapmem *mp;
+shmexit(p, mp)
+	struct proc *p;
+	struct mapmem *mp;
 {
-	struct proc *p = u.u_procp;		/* XXX */
 
 	return (shmufree(p, mp));
 }
