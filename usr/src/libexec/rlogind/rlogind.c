@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.22.1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -164,7 +164,9 @@ doit(f, fromp)
 		 */
 		hp = &hostent;
 		hp->h_name = inet_ntoa(fromp->sin_addr);
+#ifndef OLD_LOGIN
 		hostok++;
+#endif
 	}
 #ifndef OLD_LOGIN
 	else if (local_domain(hp->h_name)) {
@@ -207,33 +209,6 @@ doit(f, fromp)
 			    inet_ntoa(fromp->sin_addr));
 		    fatal(f, "Permission denied");
 	    }
-#ifdef IP_OPTIONS
-	    {
-	    u_char optbuf[BUFSIZ/3], *cp;
-	    char lbuf[BUFSIZ], *lp;
-	    int optsize = sizeof(optbuf), ipproto;
-	    struct protoent *ip;
-
-	    if ((ip = getprotobyname("ip")) != NULL)
-		    ipproto = ip->p_proto;
-	    else
-		    ipproto = IPPROTO_IP;
-	    if (getsockopt(0, ipproto, IP_OPTIONS, (char *)optbuf,
-		&optsize) == 0 && optsize != 0) {
-		    lp = lbuf;
-		    for (cp = optbuf; optsize > 0; cp++, optsize--, lp += 3)
-			    sprintf(lp, " %2.2x", *cp);
-		    syslog(LOG_NOTICE,
-			"Connection received using IP options (ignored):%s",
-			lbuf);
-		    if (setsockopt(0, ipproto, IP_OPTIONS,
-			(char *)NULL, &optsize) != 0) {
-			    syslog(LOG_ERR, "setsockopt IP_OPTIONS NULL: %m");
-			    exit(1);
-		    }
-	        }
-	    }
-#endif
 	    write(f, "", 1);
     
 	    if (do_rlogin(hp->h_name) == 0) {
