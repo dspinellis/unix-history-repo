@@ -1,4 +1,0 @@
-ENC	uuencode.c	/^#define	ENC(c) ((c) ? ((c) & 077) + ' ': '`')$/
-Muuencode	uuencode.c	/^main(argc, argv)$/
-encode	uuencode.c	/^encode()$/
-usage	uuencode.c	/^usage()$/
