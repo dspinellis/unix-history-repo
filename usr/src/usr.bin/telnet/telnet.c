@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)telnet.c	5.8 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 
 #include <netinet/in.h>
 
@@ -33,6 +34,25 @@ static char sccsid[] = "@(#)telnet.c	5.8 (Berkeley) %G%";
 #include <setjmp.h>
 #include <netdb.h>
 
+
+
+/*
+ * The following is defined just in case someone should want to run
+ * this telnet on a 4.2 system.
+ *
+ * This has never been tested, so good luck...
+ */
+#ifndef	FD_SETSIZE
+
+typedef long	fd_set;
+
+#define	FD_SET(n, p)	(*(p) |= (1<<(n)))
+#define	FD_CLR(n, p)	(*(p) &= ~(1<<(n)))
+#define	FD_ISSET(n, p)	(*(p) & (1<<(n)))
+#define FD_ZERO(p)	(*(p) = 0)
+
+#endif
+
 #define	strip(x)	((x)&0177)
 
 char	ttyobuf[BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
@@ -111,14 +131,16 @@ char	hnamebuf[32];
 
 /*
  * The following are some clocks used to decide how to interpret
- * the relationship between various varibles.
+ * the relationship between various variables.
  */
 
 struct {
     int
 	system,			/* what the current time is */
 	echotoggle,		/* last time user entered echo character */
-	modenegotiated;		/* last time operating mode negotiated */
+	modenegotiated,		/* last time operating mode negotiated */
+	didnetreceive,		/* last time we read data from network */
+	gotDM;			/* when did we last see a data mark */
 } times;
 
 #define	settimer(x)	times.x = times.system++
@@ -377,7 +399,16 @@ mode(f)
  * of various global variables).
  */
 
-setconnmode()
+char *modedescriptions[] = {
+	"telnet command mode",					/* 0 */
+	"character-at-a-time mode",				/* 1 */
+	"character-at-a-time mode (local echo)",		/* 2 */
+	"line-by-line mode (remote echo)",			/* 3 */
+	"line-by-line mode",					/* 4 */
+	"line-by-line mode (local echoing suppressed)",		/* 5 */
+};
+
+getconnmode()
 {
     static char newmode[8] = { 4, 5, 3, 3, 2, 2, 1, 1 };
     int index = 0;
@@ -391,7 +422,12 @@ setconnmode()
     if (dontlecho && (times.echotoggle > times.modenegotiated)) {
 	index += 1;
     }
-    mode(newmode[index]);
+    return newmode[index];
+}
+
+setconnmode()
+{
+    mode(getconnmode());
 }
 
 
@@ -416,6 +452,9 @@ telnet()
 	tout = fileno(stdout);
 	setconnmode();
 	ioctl(net, FIONBIO, &on);
+#if	defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY)
+	ioctl(net, asdf, asdf);		/* handle urgent data in band */
+#endif	/* defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
 	if (telnetport && !hisopts[TELOPT_SGA]) {
 		willoption(TELOPT_SGA);
 	}
@@ -470,17 +509,74 @@ telnet()
 		 * Something to read from the network...
 		 */
 		if (FD_ISSET(net, &ibits)) {
-			scc = read(net, sibuf, sizeof (sibuf));
-			if (scc < 0 && errno == EWOULDBLOCK)
-				scc = 0;
-			else {
-				if (scc <= 0)
-					break;
-				sbp = sibuf;
-				if (netdata) {
-					Dump('<', sbp, scc);
+#if	!defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY)
+			/*
+			 * In 4.2 (and some early 4.3) systems, the
+			 * OOB indication and data handling in the kernel
+			 * is such that if two separate TCP Urgent requests
+			 * come in, one byte of TCP data will be overlaid.
+			 * This is fatal for Telnet, but we try to live
+			 * with it.
+			 *
+			 * In addition, in 4.2 (and...), a special protocol
+			 * is needed to pick up the TCP Urgent data in
+			 * the correct sequence.
+			 *
+			 * What we do is:  if we think we are in urgent
+			 * mode, we look to see if we are "at the mark".
+			 * If we are, we do an OOB receive.  If we run
+			 * this twice, we will do the OOB receive twice,
+			 * but the second will fail, since the second
+			 * time we were "at the mark", but there wasn't
+			 * any data there (the kernel doesn't reset
+			 * "at the mark" until we do a normal read).
+			 * Once we've read the OOB data, we go ahead
+			 * and do normal reads.
+			 *
+			 * There is also another problem, which is that
+			 * since the OOB byte we read doesn't put us
+			 * out of OOB state, and since that byte is most
+			 * likely the TELNET DM (data mark), we would
+			 * stay in the TELNET SYNCH (flushing) state.
+			 * So, clocks to the rescue.  If we've "just"
+			 * received a DM, then we test for the
+			 * presence of OOB data when the receive OOB
+			 * fails (and AFTER we did the normal mode read
+			 * to clear "at the mark").
+			 */
+		    if (flushing) {
+			int atmark;
+
+			ioctl(net, SIOCATMARK, &atmark);
+			if (atmark) {
+			    scc = recv(net, sibuf, sizeof (sibuf), MSG_OOB);
+			    if ((scc == -1) && (errno == EINVAL)) {
+				scc = read(net, sibuf, sizeof (sibuf));
+				if (times.didnetreceive < times.gotDM) {
+				    flushing = stilloob();
 				}
+			    }
+			} else {
+			    scc = read(net, sibuf, sizeof (sibuf));
 			}
+		    } else {
+			scc = read(net, sibuf, sizeof (sibuf));
+		    }
+		    settimer(didnetreceive);
+#else	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+		    scc = read(net, sibuf, sizeof (sibuf));
+#endif	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+		    if (scc < 0 && errno == EWOULDBLOCK)
+			scc = 0;
+		    else {
+			if (scc <= 0) {
+			    break;
+			}
+			sbp = sibuf;
+			if (netdata) {
+			    Dump('<', sbp, scc);
+			}
+		    }
 		}
 
 		/*
@@ -668,6 +764,7 @@ telrcv()
 				flushing = 1;
 				ttyflush();
 				flushing = stilloob(net);
+				settimer(gotDM);
 				break;
 
 			case NOP:
@@ -815,14 +912,21 @@ int
 stilloob(s)
 int	s;		/* socket number */
 {
-    struct timeval *timeout = { 0 };
-    long	excepts = (1<<s);
+    static struct timeval timeout = { 0 };
+    fd_set	excepts;
+    int value;
 
-    if (select(s+1, 0, 0, &excepts, timeout) < 0) {
+    do {
+	FD_ZERO(&excepts);
+	FD_SET(s, &excepts);
+	value = select(s+1, 0, 0, &excepts, &timeout);
+    } while ((value >= 0) || ((value == -1) && (errno = EINTR)));
+
+    if (value < 0) {
 	perror("select");
 	quit();
     }
-    if (excepts) {
+    if (FD_ISSET(s, &excepts)) {
 	return 1;
     } else {
 	return 0;
@@ -881,7 +985,19 @@ netflush(fd)
 	    n = write(fd, nbackp, n);	/* normal write */
 	} else {
 	    n = neturg - nbackp;
-	    n = send(fd, nbackp, n, MSG_OOB);	/* URGENT data (SYNCH) */
+	    /*
+	     * In 4.2 (and 4.3) systems, there is some question about
+	     * what byte in a sendOOB operation is the "OOB" data.
+	     * To make ourselves compatible, we only send ONE byte
+	     * out of band, the one WE THINK should be OOB (though
+	     * we really have more the TCP philosophy of urgent data
+	     * rather than the Unix philosophy of OOB data).
+	     */
+	    if (n > 1) {
+		n = send(fd, nbackp, n-1, 0);	/* send URGENT all by itself */
+	    } else {
+		n = send(fd, nbackp, n, MSG_OOB);	/* URGENT data */
+	    }
 	}
     }
     if (n < 0) {
@@ -1178,7 +1294,7 @@ localecho()
 }
 
 /*VARARGS*/
-setcrmod()
+togcrmod()
 {
 
     crmod = !crmod;
@@ -1186,7 +1302,7 @@ setcrmod()
     fflush(stdout);
 }
 
-setdebug()
+togdebug()
 {
 
     debug = debug ? 0 : 1;
@@ -1199,7 +1315,7 @@ setdebug()
 }
 
 static
-setnetdata()
+tognetdata()
 {
 
     netdata = !netdata;
@@ -1207,7 +1323,7 @@ setnetdata()
 	    netdata ? "Will" : "Wont");
 }
 
-setoptions()
+togoptions()
 {
 
     showoptions = !showoptions;
@@ -1219,27 +1335,69 @@ int togglehelp();
 
 char	crmodhelp[] =	"toggle mapping of received carriage returns";
 
-struct cmd togglelist[] = {
-    { "localchars", "toggle local recognition of control characters",
-								lclsigs, 1 },
-    { "echochar", "toggle recognition of echo toggle character", localecho, 1 },
-    { "crmod",	crmodhelp,	setcrmod, 1, 0 },
+struct togglelist {
+    char	*name;		/* name of toggle */
+    char	*help;		/* help message */
+    int	(*handler)();	/* routine to do actual setting */
+    int		dohelp;		/* should we display help information */
+    int		*variable;
+    char	*actionexplanation;
+};
+
+struct togglelist Togglelist[] = {
+    { "localchars",
+	"toggle local recognition of control characters",
+	    lclsigs,
+		1,
+		    &localsigs,
+			"recognize interrupt/quit characters" },
+    { "echochar",
+	"toggle recognition of echo toggle character",
+	    localecho,
+		1,
+		    &doechocharrecognition,
+			"recognize echo toggle character" },
+    { "crmod",
+	crmodhelp,
+	    togcrmod,
+		1,
+		    &crmod,
+			"map carriage return on output" },
     { " ", "", 0, 1 },		/* empty line */
-    { "debug", "(debugging) toggle debugging", setdebug, 1 },
-    { "options", "(debugging) toggle viewing of options processing",
-								setoptions, 1 },
-    { "netdata", "(debugging) toggle printing of hexadecimal network data",
-								setnetdata, 1 },
-    { "?", "display help information", togglehelp, 1 },
-    { "help", "display help information", togglehelp, 0 },
+    { "debug",
+	"(debugging) toggle debugging",
+	    togdebug,
+		1,
+		    &debug,
+			"turn on socket level debugging" },
+    { "options",
+	"(debugging) toggle viewing of options processing",
+	    togoptions,
+		1,
+		    &showoptions,
+			"show option processing" },
+    { "netdata",
+	"(debugging) toggle printing of hexadecimal network data",
+	    tognetdata,
+		1,
+		    &netdata,
+			"print hexadecimal representation of network traffic" },
+    { "?",
+	"display help information",
+	    togglehelp,
+		1 },
+    { "help",
+	"display help information",
+	    togglehelp,
+		0 },
     { 0 }
 };
 
 togglehelp()
 {
-    struct cmd *c;
+    struct togglelist *c;
 
-    for (c = togglelist; c->name; c++) {
+    for (c = Togglelist; c->name; c++) {
 	if (c->dohelp) {
 	    printf("%s\t%s\n", c->name, c->help);
 	}
@@ -1250,16 +1408,17 @@ char **
 getnexttoggle(name)
 char *name;
 {
-    struct cmd *c = (struct cmd *) name;
+    struct togglelist *c = (struct togglelist *) name;
 
     return (char **) (c+1);
 }
 
-struct cmd *
+struct togglelist *
 gettoggle(name)
 char *name;
 {
-    return (struct cmd *) genget(name, (char **) togglelist, getnexttoggle);
+    return (struct togglelist *)
+			genget(name, (char **) Togglelist, getnexttoggle);
 }
 
 toggle(argc, argv)
@@ -1267,7 +1426,7 @@ int	argc;
 char	*argv[];
 {
     char *name;
-    struct cmd *c;
+    struct togglelist *c;
 
     if (argc < 2) {
 	fprintf(stderr,
@@ -1279,7 +1438,7 @@ char	*argv[];
     while (argc--) {
 	name = *argv++;
 	c = gettoggle(name);
-	if (c == (struct cmd *) -1) {
+	if (c == (struct togglelist *) -1) {
 	    fprintf(stderr, "'%s': ambiguous argument ('toggle ?' for help).\n",
 					name);
 	} else if (c == 0) {
@@ -1295,13 +1454,13 @@ char	*argv[];
  * The following perform the "set" command.
  */
 
-struct chartab {
-    char *label;			/* name */
+struct setlist {
+    char *name;				/* name */
     char *help;				/* help information */
     char *charp;			/* where it is located at */
 };
 
-struct chartab Chartab[] = {
+struct setlist Setlist[] = {
     { "echo", 	"character to toggle local echoing on/off", &echoc },
     { "escape",	"character to escape back to telnet command mode", &escape },
     { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
@@ -1312,19 +1471,19 @@ struct chartab Chartab[] = {
 };
 
 char **
-getnextchar(name)
+getnextset(name)
 char *name;
 {
-    struct chartab *c = (struct chartab *)name;
+    struct setlist *c = (struct setlist *)name;
 
     return (char **) (c+1);
 }
 
-struct chartab *
-getchartab(name)
+struct setlist *
+getset(name)
 char *name;
 {
-    return (struct chartab *) genget(name, (char **) Chartab, getnextchar);
+    return (struct setlist *) genget(name, (char **) Setlist, getnextset);
 }
 
 setcmd(argc, argv)
@@ -1332,22 +1491,22 @@ int	argc;
 char	*argv[];
 {
     int value;
-    struct chartab *ct;
+    struct setlist *ct;
 
     /* XXX back we go... sigh */
     if (argc != 3) {
 	printf("Format is 'set Name Value', where 'Name' is one of:\n\n");
-	for (ct = Chartab; ct->label; ct++) {
-	    printf("%s\t%s\n", ct->label, ct->help);
+	for (ct = Setlist; ct->name; ct++) {
+	    printf("%s\t%s\n", ct->name, ct->help);
 	}
 	return;
     }
 
-    ct = getchartab(argv[1]);
+    ct = getset(argv[1]);
     if (ct == 0) {
 	fprintf(stderr, "'%s': unknown argument ('set ?' for help).\n",
 			argv[1]);
-    } else if (ct == (struct chartab *) -1) {
+    } else if (ct == (struct setlist *) -1) {
 	fprintf(stderr, "'%s': ambiguous argument ('set ?' for help).\n",
 			argv[1]);
     } else {
@@ -1357,7 +1516,7 @@ char	*argv[];
 	    value = -1;
 	}
 	*(ct->charp) = value;
-	printf("%s character is '%s'.\n", ct->label, control(*(ct->charp)));
+	printf("%s character is '%s'.\n", ct->name, control(*(ct->charp)));
     }
 }
 
@@ -1432,6 +1591,58 @@ char	*argv[];
 }
 
 /*
+ * The following data structures and routines implement the
+ * "display" command.
+ */
+
+display(argc, argv)
+int	argc;
+char	*argv[];
+{
+#define	dotog(tl)	if (tl->variable && tl->actionexplanation) { \
+			    if (*tl->variable) { \
+				printf("will"); \
+			    } else { \
+				printf("won't"); \
+			    } \
+			    printf(" %s.\n", tl->actionexplanation); \
+			}
+
+#define	doset(sl)	printf("[%s]\t%s.\n", control(*sl->charp), sl->name);
+
+    struct togglelist *tl;
+    struct setlist *sl;
+
+    if (argc == 1) {
+	for (tl = Togglelist; tl->name; tl++) {
+	    dotog(tl);
+	}
+	for (sl = Setlist; sl->name; sl++) {
+	    doset(sl);
+	}
+    } else {
+	int i;
+
+	for (i = 1; i < argc; i++) {
+	    sl = getset(argv[i]);
+	    tl = gettoggle(argv[i]);
+	    if ((tl && sl) || (sl == (struct setlist *) -1) ||
+				(tl == (struct togglelist *) -1)) {
+		printf("?Ambiguous argument '%s'.\n", argv[i]);
+	    } else if (!sl && !tl) {
+		printf("?Unknown argument '%s'.\n", argv[i]);
+	    } else if (tl) {
+		dotog(tl);
+	    } else {
+		doset(sl);
+	    }
+	}
+    }
+#undef	doset(sl)
+#undef	dotog(tl)
+}
+
+/*
  * The following are the data structures, and many of the routines,
  * relating to command processing.
  */
@@ -1496,17 +1707,23 @@ quit()
 /*
  * Print status about the connection.
  */
-/*VARARGS*/
-status()
+status(argc, argv)
+int	argc;
+char	*argv[];
 {
-	if (connected) {
-		printf("Connected to %s.\n", hostname);
-		/* XXX should print out line modes, etc. */
-	} else {
-		printf("No connection.\n");
+    if (connected) {
+	printf("Connected to %s.\n", hostname);
+	if (argc < 2) {
+	    printf("Operating in %s.\n", modedescriptions[getconnmode()]);
+	    if (localsigs || ((!donelclsigs) && (getconnmode() >= 3))) {
+		printf("Catching signals locally.\n");
+	    }
 	}
-	printf("Escape character is '%s'.\n", control(escape));
-	fflush(stdout);
+    } else {
+	printf("No connection.\n");
+    }
+    printf("Escape character is '%s'.\n", control(escape));
+    fflush(stdout);
 }
 
 tn(argc, argv)
@@ -1604,7 +1821,7 @@ tn(argc, argv)
 		}
 		connected++;
 	} while (connected == 0);
-	call(status, "status", 0);
+	call(status, "status", "notmuch", 0);
 	if (setjmp(peerdied) == 0)
 		telnet();
 	fprintf(stderr, "Connection closed by foreign host.\n");
@@ -1621,10 +1838,12 @@ char	zhelp[] =	"suspend telnet";
 char	escapehelp[] =	"set escape character";
 char	statushelp[] =	"print status information";
 char	helphelp[] =	"print help information";
-char	togglestring[] = "toggle various options ('toggle ?' for more)";
 char	sendhelp[] =	"transmit special characters ('send ?' for more)";
-char	sethelp[] = 	"set various special characters ('set ?' for more)";
-char	modehelp[] =	"change operating mode ('mode ?' for more)";
+char	sethelp[] = 	"set operating parameters ('set ?' for more)";
+char	togglestring[] ="toggle operating parameters ('toggle ?' for more)";
+char	displayhelp[] =	"display operating parameters";
+char	modehelp[] =
+		"try to enter line-by-line or character-at-a-time mode";
 
 int	help();
 
@@ -1635,13 +1854,14 @@ struct cmd cmdtab[] = {
 	{ "z",		zhelp,		suspend,	1, 0 },
 	{ "escape",	escapehelp,	setescape,	1, 0 },
 	{ "status",	statushelp,	status,		1, 0 },
-	{ "crmod",	crmodhelp,	setcrmod,	1, 0 },
+	{ "crmod",	crmodhelp,	togcrmod,	1, 0 },
 	{ "send",	sendhelp,	sendcmd,	1, 1 },
-	{ "set",	sethelp,	setcmd,		1, 0 },
-	{ "mode",	modehelp,	modecmd,	1, 1 },
 	{ "transmit",	sendhelp,	sendcmd,	0, 1 },
 	{ "xmit",	sendhelp,	sendcmd,	0, 1 },
+	{ "set",	sethelp,	setcmd,		1, 0 },
 	{ "toggle",	togglestring,	toggle,		1, 0 },
+	{ "display",	displayhelp,	display,	1, 0 },
+	{ "mode",	modehelp,	modecmd,	1, 1 },
 	{ "?",		helphelp,	help,		1, 0 },
 	{ "help",	helphelp,	help,		0, 0 },
 	0
