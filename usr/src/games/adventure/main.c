@@ -1,29 +1,40 @@
 /*      Re-coding of advent in C: main program                          */
 
+#include <sys/file.h>
+#include <stdio.h>
 #include "hdr.h"
+#include "pathnames.h"
 
-static char sccsid[] = "	main.c	4.1	82/05/11	";
+static char sccsid[] = "	main.c	4.2	89/03/05	";
 
 int	datfd = -1;
 main(argc,argv)
 int argc;
 char **argv;
-{       register int i;
+{
+	extern int errno;
+	register int i;
 	int rval,ll;
 	struct text *kk;
 	extern trapdel();
+	char *strerror();
 	static reenter;
-	if ((datfd = getcmd(argv[0])) < 0) {
-		write(2, "No adventure just now\n", 22);
-		exit(1);
-	}
+
 	reenter++;
-	setuid(getuid());
 	switch (setup) {
 	case 0:
-		init(argv[0]);          /* set up initial variables     */
+		if ((datfd = open(*argv, O_RDONLY, 0)) < 0) {
+			fprintf(stderr, "adventure: can't init\n");
+			exit(1);
+		}
+		init(*argv);
 		/* NOTREACHED */
 	case 1:
+		if ((datfd = open(_PATH_ADVENTURE, O_RDONLY, 0)) < 0) {
+			fprintf(stderr, "adventure: %s: %s\n", _PATH_ADVENTURE,
+			    strerror(errno));
+			exit(1);
+		}
 		startup();		/* prepare for a user           */
 		signal(2,trapdel);
 		break;
