@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.17 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -556,6 +556,7 @@ register struct pklcd *lcp;
 	register struct mbuf *m = pk_template (lcp -> lcd_lcn, X25_CLEAR);
 
 	m -> m_len += 2;
+	m -> m_pkthdr.len += 2;
 	mtod (m, struct x25_packet *) -> packet_data = 0;
 	mtod (m, octet *)[4] = diagnostic;
 	if (lcp -> lcd_facilities) {
