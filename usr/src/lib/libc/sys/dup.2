@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dup.2	6.1 (Berkeley) %G%
+.\"	@(#)dup.2	6.2 (Berkeley) %G%
 .\"
 .TH DUP 2 ""
 .UC 4
@@ -25,9 +25,9 @@ The argument \fIoldd\fP is a small non-negative integer index in
 the per-process descriptor table.  The value must be less
 than the size of the table, which is returned by
 .IR getdtablesize (2).
-The new descriptor
-.I newd
-returned by the call is the lowest numbered descriptor which is
+The new descriptor returned by the call,
+.I newd,
+is the lowest numbered descriptor that is
 not currently in use by the process.
 .PP
 The object referenced by the descriptor does not distinguish
