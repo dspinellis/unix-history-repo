@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.26 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -80,7 +80,7 @@ struct mmap_args {
 	off_t	pos;
 };
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 struct getpagesize_args {
 	int	dummy;
 };
@@ -95,7 +95,9 @@ ogetpagesize(p, uap, retval)
 	*retval = PAGE_SIZE;
 	return (0);
 }
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
+#ifdef COMPAT_43
 struct osmmap_args {
 	caddr_t	addr;
 	int	len;
