@@ -62,4 +62,6 @@
 55	conf.c		lockfile
 59	Extended Load Average implementation from Christophe Wolfhugel
 60	map.c
+80			content length
+81			sun remote mode
 91	mci.c		syslogging of MCI cache information
