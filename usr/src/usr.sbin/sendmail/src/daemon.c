@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.49 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.50 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.49 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.50 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -442,7 +442,12 @@ maphostname(hbuf, hbsize, avp)
 		{
 			/* found a match -- add the trailing dot */
 			if (ConfigLevel >= 2)
-				(void) strcat(hbuf, ".");
+			{
+				int i = strlen(hbuf) - 1;
+
+				if (hbuf[i] != '.')
+					(void) strcpy(&hbuf[++i], ".");
+			}
 			return hbuf;
 		}
 		else
