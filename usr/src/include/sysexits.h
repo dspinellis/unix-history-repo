@@ -49,11 +49,17 @@
 **		and the request should be reattempted later.
 **	EX_PROTOCOL -- the remote system returned something that
 **		was "not possible" during a protocol exchange.
+**	EX_NOPERM -- You did not have sufficient permission to
+**		perform the operation.  This is not intended for
+**		file system problems, which should use NOINPUT or
+**		CANTCREAT, but rather for higher level permissions.
+**		For example, kre uses this to restrict who students
+**		can send mail to.
 **
 **	Maintained by Eric Allman (eric@berkeley, ucbvax!eric) --
 **		please mail changes to me.
 **
-**			@(#)sysexits.h	4.1		%G%
+**			@(#)sysexits.h	4.2		%G%
 */
 
 # define EX_OK		0	/* successful termination */
@@ -73,3 +79,4 @@
 # define EX_IOERR	74	/* input/output error */
 # define EX_TEMPFAIL	75	/* temp failure; user is invited to retry */
 # define EX_PROTOCOL	76	/* remote error in protocol */
+# define EX_NOPERM	77	/* permission denied */
