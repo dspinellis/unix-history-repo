@@ -1,4 +1,4 @@
-/*	locore.s	4.71	82/10/13	*/
+/*	locore.s	4.72	82/10/31	*/
 
 #include "../vax/mtpr.h"
 #include "../vax/trap.h"
@@ -291,7 +291,7 @@ SCBVEC(ustray):
 /*
  * Trap and fault vector routines
  */ 
-#define	TRAP(a)	pushl $a; jbr alltraps
+#define	TRAP(a)	pushl $T_/**/a; jbr alltraps
 
 /*
  * Ast delivery (profiling and/or reschedule)
