@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	1.1	%G%
+#	@(#)MAKEDEV	1.2	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -44,32 +44,25 @@ cy*)
 	esac
 	case $unit in
 	0|1|2|3|4|5|6|7)
-#		four=`expr $unit + 4` ; eight=`expr $unit + 8`
+		four=`expr $unit + 4` ; eight=`expr $unit + 8`
 #		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
-#		/etc/mknod mt$unit	b $blk $unit
-#		/etc/mknod mt$four	b $blk $four
-#		/etc/mknod mt$eight	b $blk $eight
-#		/etc/mknod mt$twelve	b $blk $twelve
-#		/etc/mknod nmt$unit	b $blk $four ;: sanity w/pdp11 v7
-#		/etc/mknod nmt$eight	b $blk $twelve ;: ditto
-#		/etc/mknod nrmt$unit	c $chr $four ;: sanity w/pdp11 v7
-#		/etc/mknod nrmt$eight	c $chr $twelve ;: ditto
-#		/etc/mknod rmt$unit	c $chr $unit
-#		/etc/mknod rmt$four	c $chr $four
-#		/etc/mknod rmt$eight	c $chr $eight
-#		/etc/mknod rmt$twelve	c $chr $twelve
+		/etc/mknod mt$unit	b $blk $unit
+		/etc/mknod mt$four	b $blk $four
+		/etc/mknod mt$eight	b $blk $eight
+		/etc/mknod mt$twelve	b $blk $twelve
+		ln mt$four nmt$unit		;: sanity
+		ln mt$twelve nmt$eight		;: ditto
+		/etc/mknod rmt$unit	c $chr $unit
+		/etc/mknod rmt$four	c $chr $four
+		/etc/mknod rmt$eight	c $chr $eight
+		/etc/mknod rmt$twelve	c $chr $twelve
+		ln rmt$four nrmt$unit		;: sanity
+		ln rmt$twelve nrmt$eight	;: ditto
 #		if [ $i = ut ] 
 #		then
 #			/etc/mknod mt$twenty	b $blk $twenty
 #			/etc/mknod rmt$twenty	c $chr $twenty
 #		fi
-		u8=`expr $unit + 128`
-		/etc/mknod cy"$unit"s	b $blk $unit; ln cy"$unit"s mt$unit
-		/etc/mknod ncy"$unit"s	b $blk $u8; ln ncy"$unit"s nmt$unit
-			ln ncy"$unit"s mt12
-		/etc/mknod rcy"$unit"s	c $chr $unit; ln rcy"$unit"s rmt$unit
-		/etc/mknod rncy"$unit"s c $chr $u8; ln rncy"$unit"s nrmt$unit
-			ln rncy"$unit"s rmt12
 		umask 77
 		;;
 	*)
@@ -150,10 +143,11 @@ pty*)
 	0) offset=0 name=p;;
 	1) offset=16 name=q;;
 	2) offset=32 name=r;;
+	3) offset=32 name=s;;
 	*) echo bad unit for pty in: $i;;
 	esac
 	case $class in
-	0|1|2)
+	0|1|2|3)
 		umask 0
 		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
 			for (i = 0; i < 16; i++)
