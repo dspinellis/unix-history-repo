@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.5	(Berkeley)	%G%
+#	@(#)Makefile	1.6	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -30,7 +30,7 @@ fortunes.dat: fortunes strfile
 fortunes: scene obscene
 	(cat scene; echo "%-"; cat obscene) > fortunes
 
-clean: FRC
+clean:
 	rm -f fortune fortunes fortunes.dat strfile unstr core *.o
 	rm -f Oscene Oobscene
 
@@ -53,7 +53,7 @@ lint: ${SRCS}
 tags: ${SRCS}
 	ctags ${SRCS}
 
-troff: FRC
+troff:
 	./Do_troff scene ${TROFF}
 	./Do_troff obscene ${TROFF}
 
