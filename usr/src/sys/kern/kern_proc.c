@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.20	%G%	*/
+/*	kern_proc.c	3.21	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,6 +18,7 @@
 #include "../h/text.h"
 #include "../h/psl.h"
 #include "../h/vlimit.h"
+#include "../h/file.h"
 
 /*
  * exec system call, with and without environments.
@@ -177,7 +178,7 @@ register struct inode *ip;
 {
 	register sep;
 	register size_t ts, ds, ss;
-	register int overlay;
+	int overlay;
 	int pagi = 0;
 
 	/*
@@ -242,8 +243,13 @@ register struct inode *ip;
 		goto bad;
 	}
 	if(u.u_exdata.ux_tsize!=0 && (ip->i_flag&ITEXT)==0 && ip->i_count!=1) {
-		u.u_error = ETXTBSY;
-		goto bad;
+		register struct file *fp;
+
+		for (fp = file; fp < &file[NFILE]; fp++)
+			if (fp->f_inode == ip && (fp->f_flag&FWRITE)) {
+				u.u_error = ETXTBSY;
+				goto bad;
+			}
 	}
 
 	/*
