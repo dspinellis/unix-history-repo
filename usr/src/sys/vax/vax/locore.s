@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.26 (Berkeley) %G%
+ *	@(#)locore.s	7.27 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -386,7 +386,7 @@ SCBVEC(netintr):
 #ifdef ISO
 	bbcc	$NETISR_ISO,_netisr,1f; calls $0,_clnlintr; 1:
 #endif
-#ifdef ISO
+#ifdef CCITT
 	bbcc	$NETISR_CCITT,_netisr,1f; calls $0,_hdintr; 1:
 #endif
 	POPR
@@ -540,10 +540,8 @@ dpxcheck:
 	beql	dpxcall			# no, go call dpxint
 	tstw	6(r1)			# get dptdsr, sender starved ?
 	blss	dpxcall			# yes, go call dpxint
-	movb	(r4)+,6(r1)		# dptbuf = *p_mem++
+	movzbw	(r4)+,6(r1)		# dptbuf = *p_mem++, turn off XSM.
 	movl	r4,4(r3)		# put back adjusted count
-	bitw	$0x4,4(r1)	# check if board has a full tummy
-	bneq	dpprei		# still hungry, don't increment
 	incl	12(r3)		# positive indication we did everything
 	#addl2	$20,r3			# check if input ready
 	#movw	(r1),r2			# get dprcsr
