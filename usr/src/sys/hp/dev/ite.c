@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite.c 1.1 90/07/09$
+ * from: Utah $Hdr: ite.c 1.24 92/01/21$
  *
- *	@(#)ite.c	7.10 (Berkeley) %G%
+ *	@(#)ite.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -35,40 +35,13 @@
 #include "systm.h"
 #include "malloc.h"
 
+#include "grfioctl.h"
+#include "grfvar.h"
 #include "itevar.h"
-#include "iteioctl.h"
 #include "kbdmap.h"
-
-#include "machine/cpu.h"
 
 #define set_attr(ip, attr)	((ip)->attribute |= (attr))
 #define clr_attr(ip, attr)	((ip)->attribute &= ~(attr))
-
-extern  int nodev();
-
-int topcat_scroll(),	topcat_init(),		topcat_deinit();
-int topcat_clear(),	topcat_putc(),	 	topcat_cursor();
-int gatorbox_scroll(),	gatorbox_init(),	gatorbox_deinit();
-int gatorbox_clear(),	gatorbox_putc(), 	gatorbox_cursor();
-int rbox_scroll(),	rbox_init(),		rbox_deinit();
-int rbox_clear(),	rbox_putc(), 		rbox_cursor();
-int dvbox_scroll(),	dvbox_init(),		dvbox_deinit();
-int dvbox_clear(),	dvbox_putc(), 		dvbox_cursor();
-
-struct itesw itesw[] =
-{
-	topcat_init,		topcat_deinit,		topcat_clear,
-	topcat_putc,		topcat_cursor,		topcat_scroll,
-
-	gatorbox_init,		gatorbox_deinit,	gatorbox_clear,
-	gatorbox_putc,		gatorbox_cursor,	gatorbox_scroll,
-
-	rbox_init,		rbox_deinit,		rbox_clear,
-	rbox_putc,		rbox_cursor,		rbox_scroll,
-
-	dvbox_init,		dvbox_deinit,		dvbox_clear,
-	dvbox_putc,		dvbox_cursor,		dvbox_scroll,
-};
 
 /*
  * # of chars are output in a single itestart() call.
@@ -122,7 +95,7 @@ iteon(dev, flag)
 		return(0);
 	if (kbd_tty == NULL || kbd_tty == tp) {
 		kbd_tty = tp;
-		kbdenable();
+		kbdenable(unit);
 	}
 	iteinit(dev);
 	return(0);
@@ -142,8 +115,8 @@ iteinit(dev)
 	ip->cursorx = 0;
 	ip->cursory = 0;
 
-	(*itesw[ip->type].ite_init)(ip);
-	(*itesw[ip->type].ite_cursor)(ip, DRAW_CURSOR);
+	(*ip->isw->ite_init)(ip);
+	(*ip->isw->ite_cursor)(ip, DRAW_CURSOR);
 
 	ip->attribute = 0;
 	if (ip->attrbuf == NULL)
@@ -172,7 +145,7 @@ iteoff(dev, flag)
 		return;
 	if ((flag & 1) ||
 	    (ip->flags & (ITE_INGRF|ITE_ISCONS|ITE_INITED)) == ITE_INITED)
-		(*itesw[ip->type].ite_deinit)(ip);
+		(*ip->isw->ite_deinit)(ip);
 	if ((flag & 2) == 0)
 		ip->flags &= ~ITE_ACTIVE;
 }
@@ -398,7 +371,7 @@ iteputchar(c, dev)
 {
 	int unit = UNIT(dev);
 	register struct ite_softc *ip = &ite_softc[unit];
-	register struct itesw *sp = &itesw[ip->type];
+	register struct itesw *sp = ip->isw;
 	register int n;
 
 	if ((ip->flags & (ITE_ACTIVE|ITE_INGRF)) != ITE_ACTIVE)
@@ -638,7 +611,7 @@ ignore:
 
 	case CTRL('G'):
 		if (&ite_tty[unit] == kbd_tty)
-			kbdbell();
+			kbdbell(unit);
 		break;
 
 	case ESC:
@@ -745,9 +718,10 @@ ite_clrtoeos(ip, sp)
 /*
  * Console functions
  */
-#include "../hp300/cons.h"
-#include "grfioctl.h"
-#include "grfvar.h"
+#include "cons.h"
+#ifdef hp300
+#include "grfreg.h"
+#endif
 
 #ifdef DEBUG
 /*
@@ -762,7 +736,7 @@ itecnprobe(cp)
 	struct consdev *cp;
 {
 	register struct ite_softc *ip;
-	int i, maj, unit, pri;
+	int i, sw, maj, unit, pri;
 
 	/* locate the major number */
 	for (maj = 0; maj < nchrdev; maj++)
@@ -783,29 +757,20 @@ itecnprobe(cp)
 			continue;
 		ip->flags = (ITE_ALIVE|ITE_CONSOLE);
 
-		/* XXX - we need to do something about mapping these */
-		switch (gp->g_type) {
+		/* locate the proper switch table. */
+		for (sw = 0; sw < nitesw; sw++)
+			if (itesw[sw].ite_hwid == gp->g_sw->gd_hwid)
+				break;
 
-		case GT_TOPCAT:
-		case GT_LRCATSEYE:
-		case GT_HRCCATSEYE:
-		case GT_HRMCATSEYE:
-			ip->type = ITE_TOPCAT;
-			break;
-		case GT_GATORBOX:
-			ip->type = ITE_GATORBOX;
-			break;
-		case GT_RENAISSANCE:
-			ip->type = ITE_RENAISSANCE;
-			break;
-		case GT_DAVINCI:
-			ip->type = ITE_DAVINCI;
-			break;
-		}
+		if (sw == nitesw)
+			continue;
 #ifdef DEBUG
 		if (i < whichconsole)
 			continue;
 #endif
+		ip->isw = &itesw[sw];
+		ip->grf = gp;
+#ifdef hp300
 		if ((int)gp->g_display.gd_regaddr == GRFIADDR) {
 			pri = CN_INTERNAL;
 			unit = i;
@@ -813,6 +778,14 @@ itecnprobe(cp)
 			pri = CN_NORMAL;
 			unit = i;
 		}
+#endif
+#ifdef hp800
+		/* XXX use the first one for now */
+		if (unit < 0) {
+			pri = CN_INTERNAL;
+			unit = i;
+		}
+#endif
 	}
 
 	/* initialize required fields */
@@ -840,7 +813,7 @@ itecngetc(dev)
 	register int c;
 	int stat;
 
-	c = kbdgetc(&stat);
+	c = kbdgetc(0, &stat);	/* XXX always read from keyboard 0 for now */
 	switch ((stat >> KBD_SSHIFT) & KBD_SMASK) {
 	case KBD_SHIFT:
 		c = kbd_shiftmap[c & KBD_CHARMASK];

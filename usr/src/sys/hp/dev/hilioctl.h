@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hilioctl.h 1.1 90/07/09$
+ * from: Utah $Hdr: hilioctl.h 1.10 92/01/21$
  *
- *	@(#)hilioctl.h	7.4 (Berkeley) %G%
+ *	@(#)hilioctl.h	7.5 (Berkeley) %G%
  */
 
 struct _hilbell {
@@ -52,14 +52,17 @@ struct hilqinfo {
  * Note that some are not defined as in HPUX
  * due to the difference in the definitions of IOC_VOID.
  */
+#ifdef hp800
+#define _IOHpux(x,y)	_IO(x,y)
+#else
 #define _IOHpux(x,y)	(IOC_IN|((x)<<8)|y)	/* IOC_IN is IOC_VOID */
+#endif
 
 #ifdef ORIGINAL_HP_CODE_ASSUMES_COMPILER_PADS_TO_EVEN
 #define HILID	_IOR('h',0x03, struct _hilbuf11) /* Identify & describe */
 #else
 #define HILID   0x400c6803
 #endif
-
 #define HILSC	_IOR('h',0x33, struct _hilbuf16) /* Security code */
 #define HILRN	_IOR('h',0x30, struct _hilbuf16) /* Report name */
 #define HILRS	_IOR('h',0x31, struct _hilbuf16) /* Report status */
@@ -90,20 +93,22 @@ struct hilqinfo {
 #define EFTSBP  _IOW('H',0xc4,struct _hilbuf4)	/* Send data to the beeper. */
 #define EFTRLC  _IOR('H',0x12,char)		/* Read the language code. */
 #define EFTRCC  _IOR('H',0x11,char)		/* Read configuration code. */
-#ifdef ORIGINAL_HP_CODE_ASSUMES_COMPILER_PADS_TO_EVEN
-#define EFTRRT  _IOR('H',0x31,struct _hilbuf5)/* Read the real time. */
-#else
+/*#define EFTRRT  _IOR('H',0x31,struct _hilbuf5)/* Read the real time. */
 #define EFTRRT	0x40064831
-#endif
 #define EFTRT   _IOR('H',0xf4,struct _hilbuf4)	/* Read the timers for the
 	                                              four voices. */
+#ifdef hp800
+#define EFTSBI  _IOW('H',0xa3,char)		/* Do the beep thing. */
+#else
 #define EFTSBI  _IOW('H',0xa3,struct _hilbuf2)	/* Set the bell information. */
+#endif
 
 /*
  * BSD ioctls.
  * Mostly the same as the HPUX versions except for shared-queue ioctls.
  */
 #define HILIOCID	_IOR('h',0x03, struct _hilbuf11)
+#define OHILIOCID	HILID
 #define HILIOCSC	_IOR('h',0x33, struct _hilbuf16)
 #define HILIOCRN	_IOR('h',0x30, struct _hilbuf16)
 #define HILIOCRS	_IOR('h',0x31, struct _hilbuf16)

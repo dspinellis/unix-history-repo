@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
+ * from: Utah $Hdr: hpux_compat.c 1.42 92/01/20$
  *
- *	@(#)hpux_compat.c	7.20 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -57,6 +57,10 @@ struct hpuxutsname protoutsname = {
 };
 
 /* 6.0 and later style context */
+#if defined(HP380)
+char hpux040context[] =
+    "standalone HP-MC68040 HP-MC68881 HP-MC68020 HP-MC68010 localroot default";
+#endif
 #ifdef FPCOPROC
 char hpuxcontext[] =
 	"standalone HP-MC68881 HP-MC68020 HP-MC68010 localroot default";
@@ -497,6 +501,46 @@ hpuxutssys(p, uap, retval)
 	return (error);
 }
 
+hpuxsysconf(p, uap, retval)
+	struct proc *p;
+	struct args {
+		int	name;
+	} *uap;
+	int *retval;
+{
+	switch (uap->name) {
+
+	/* open files */
+	case HPUX_SYSCONF_OPENMAX:
+		*retval = NOFILE;
+		break;
+
+	/* architecture */
+	case HPUX_SYSCONF_CPUTYPE:
+		switch (machineid) {
+		case HP_320:
+		case HP_330:
+		case HP_350:
+			*retval = HPUX_SYSCONF_CPUM020;
+			break;
+		case HP_340:
+		case HP_360:
+		case HP_370:
+		case HP_375:
+			*retval = HPUX_SYSCONF_CPUM030;
+			break;
+		case HP_380:
+			*retval = HPUX_SYSCONF_CPUM040;
+			break;
+		}
+		break;
+	default:
+		uprintf("HPUX sysconf(%d) not implemented\n", uap->name);
+		return (EINVAL);
+	}
+	return (0);
+}
+
 hpuxstat(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -826,6 +870,24 @@ hpuxstat1(fname, hsb, follow)
 }
 
 #include "grf.h"
+#if NGRF > 0
+#ifdef __STDC__
+extern int grfopen(dev_t dev, int oflags, int devtype, struct proc *p);
+#else
+extern int grfopen();
+#endif
+#endif
+
+#define	NHIL	1	/* XXX */
+#if NHIL > 0
+#ifdef __STDC__
+extern int hilopen(dev_t dev, int oflags, int devtype, struct proc *p);
+#else
+extern int hilopen();
+#endif
+#endif
+
+#include "conf.h"
 
 bsdtohpuxstat(sb, hsb)
 	struct stat *sb;
@@ -840,12 +902,18 @@ bsdtohpuxstat(sb, hsb)
 	ds.hst_nlink = sb->st_nlink;
 	ds.hst_uid = (u_short)sb->st_uid;
 	ds.hst_gid = (u_short)sb->st_gid;
-#if NGRF > 0
 	/* XXX: I don't want to talk about it... */
-	if ((sb->st_mode & S_IFMT) == S_IFCHR && major(sb->st_rdev) == 10)
-		ds.hst_rdev = grfdevno(sb->st_rdev);
-	else
+	if ((sb->st_mode & S_IFMT) == S_IFCHR) {
+#if NGRF > 0
+		if (cdevsw[major(sb->st_rdev)].d_open == grfopen)
+			ds.hst_rdev = grfdevno(sb->st_rdev);
 #endif
+#if NHIL > 0
+		if (cdevsw[major(sb->st_rdev)].d_open == hilopen)
+			ds.hst_rdev = hildevno(sb->st_rdev);
+#endif
+		;
+	} else
 		ds.hst_rdev = bsdtohpuxdev(sb->st_rdev);
 	if (sb->st_size < (quad_t)1 << 32)
 		ds.hst_size = (long)sb->st_size;
@@ -1036,6 +1104,16 @@ hpuxgetcontext(p, uap, retval)
 	int error = 0;
 	register int len;
 
+#if defined(HP380)
+	if (machineid == HP_380) {
+		len = MIN(uap->len, sizeof(hpux040context));
+		if (len)
+			error = copyout(hpux040context, uap->buf, len);
+		if (error == 0)
+			*retval = sizeof(hpux040context);
+		return (error);
+	}
+#endif
 	len = MIN(uap->len, sizeof(hpuxcontext));
 	if (len)
 		error = copyout(hpuxcontext, uap->buf, (u_int)len);
@@ -1400,8 +1478,6 @@ hpuxdumpu(vp, cred)
  * to avoid HPUXCOMPAT dependencies in those files and to make sure that
  * HP-UX compatibility still works even when COMPAT is not defined.
  */
-/* #ifdef COMPAT */
-
 #define HPUX_HZ	50
 
 #include "sys/times.h"
@@ -1696,6 +1772,4 @@ ohpuxstat1(vp, ub)
 	ds.ohst_ctime = (int)vattr.va_ctime.tv_sec;
 	return (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)));
 }
-/* #endif */
-
 #endif

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hilvar.h 1.1 90/07/09$
+ * from: Utah $Hdr: hilvar.h 1.3 92/01/21$
  *
- *	@(#)hilvar.h	7.3 (Berkeley) %G%
+ *	@(#)hilvar.h	7.4 (Berkeley) %G%
  */
 
 #ifndef TRUE
@@ -28,11 +28,17 @@
 #define HILLOOPDEV	0		/* loop device index */
 
 /*
- * XXX: HPUX minor numbers are of the form "D0" where D is the device number
- * BSD uses "0D".  For compatibility we accept either.  Maybe we should just
- * use the HPUX numbering.
+ * Minor device numbers.
+ * HP-UX uses 12 bits of the form:
+ *	LLLLDDDD0000
+ * where L is 4 bits of loop number, D 4 bits of device and 4 bits of 0.
+ * BSD uses 8 bits:
+ *	LLLLDDDD
+ * Device files are in BSD format, we map device numbers to HP-UX format
+ * on stat calls.
  */
-#define HILUNIT(d)	(((((d)>>4)&7)==0)?((d)&7):(((d)>>4)&7))
+#define HILUNIT(d)	((d) & 0xF)
+#define HILLOOP(d)	(((d)>>4) & 0xF)
 
 #define	hildevmask(d)	(1 << (d))
 #define	hilqmask(q)	(1 << (q))

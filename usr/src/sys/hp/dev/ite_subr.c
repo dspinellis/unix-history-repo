@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_subr.c 1.1 90/07/09$
+ * from: Utah $Hdr: ite_subr.c 1.4 92/01/21$
  *
- *	@(#)ite_subr.c	7.4 (Berkeley) %G%
+ *	@(#)ite_subr.c	7.5 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -29,21 +29,13 @@
 
 #include "machine/cpu.h"
 
-ite_devinfo(ip)
+ite_fontinfo(ip)
 	struct ite_softc *ip;
 {
-	struct fontinfo *fi;
-	struct font *fd;
+	u_long fontaddr = getword(ip, getword(ip, FONTROM) + FONTADDR);
 
-	fi = (struct fontinfo *) ((*FONTROM << 8 | *(FONTROM + 2)) + REGADDR);
-	fd = (struct font *) ((fi->haddr << 8 | fi->laddr) + REGADDR);
-
-	ip->ftheight = fd->fh;
-	ip->ftwidth  = fd->fw;
-	ip->fbwidth  = ITEREGS->fbwidth_h << 8 | ITEREGS->fbwidth_l;
-	ip->fbheight = ITEREGS->fbheight_h << 8 | ITEREGS->fbheight_l;
-	ip->dwidth   = ITEREGS->dispwidth_h << 8 | ITEREGS->dispwidth_l;
-	ip->dheight  = ITEREGS->dispheight_h << 8 | ITEREGS->dispheight_l;
+	ip->ftheight = getbyte(ip, fontaddr + FONTHEIGHT);
+	ip->ftwidth  = getbyte(ip, fontaddr + FONTWIDTH);
 	ip->rows     = ip->dheight / ip->ftheight;
 	ip->cols     = ip->dwidth / ip->ftwidth;
 
@@ -72,40 +64,61 @@ ite_devinfo(ip)
 ite_fontinit(ip)
 	register struct ite_softc *ip;
 {
-	struct fontinfo *fi;
-	struct font *fd;
-	register u_char *fbmem, *dp;
+	int bytewidth = (((ip->ftwidth - 1) / 8) + 1);
+	int glyphsize = bytewidth * ip->ftheight;
+	u_char fontbuf[500];		/* XXX malloc not initialize yet */
+	u_char *dp, *fbmem;
+	int c, i, romp;
+
+	romp = getword(ip, getword(ip, FONTROM) + FONTADDR) + FONTDATA;
+	for (c = 0; c < 128; c++) {
+		fbmem = (u_char *)
+		    (FBBASE +
+		     (ip->fonty + (c / ip->cpl) * ip->ftheight) * ip->fbwidth +
+		     (ip->fontx + (c % ip->cpl) * ip->ftwidth));
+		dp = fontbuf;
+		for (i = 0; i < glyphsize; i++) {
+			*dp++ = getbyte(ip, romp);
+			romp += 2;
+		}
+		writeglyph(ip, fbmem, fontbuf);
+	}
+}
+
+/*
+ * Display independent versions of the readbyte and writeglyph routines.
+ */
+u_char
+ite_readbyte(ip, disp)
+	struct ite_softc *ip;
+	int disp;
+{
+	return((u_char) *(((u_char *)ip->regbase) + disp));
+}
+
+ite_writeglyph(ip, fbmem, glyphp)
+	register struct ite_softc *ip;
+	register u_char *fbmem, *glyphp;
+{
 	register int bn;
 	int c, l, b;
 
-	fi = (struct fontinfo *) ((*FONTROM << 8 | *(FONTROM + 2)) + REGADDR);
-	fd = (struct font *) ((fi->haddr << 8 | fi->laddr) + REGADDR);
-
-	dp = fd->data;
-
-	for (c = 0; c < 128; c++) {
-		fbmem = (u_char *) FBBASE +
-			(ip->fonty + (c / ip->cpl) * ip->ftheight) *
-			ip->fbwidth;
-		fbmem += ip->fontx + (c % ip->cpl) * ip->ftwidth;
-		for (l = 0; l < ip->ftheight; l++) {
-			bn = 7;
-			for (b = 0; b < ip->ftwidth; b++) {
-				if ((1 << bn) & *dp)
-					*fbmem++ = 1;
-				else
-					*fbmem++ = 0;
-				if (--bn < 0) {
-					bn = 7;
-					dp += 2;
-				}
+	for (l = 0; l < ip->ftheight; l++) {
+		bn = 7;
+		for (b = 0; b < ip->ftwidth; b++) {
+			if ((1 << bn) & *glyphp)
+				*fbmem++ = 1;
+			else
+				*fbmem++ = 0;
+			if (--bn < 0) {
+				bn = 7;
+				glyphp++;
 			}
-			if (bn < 7)
-				dp += 2;
-			fbmem -= ip->ftwidth;
-			fbmem += ip->fbwidth;
 		}
+		if (bn < 7)
+			glyphp++;
+		fbmem -= ip->ftwidth;
+		fbmem += ip->fbwidth;
 	}
-
 }
 #endif

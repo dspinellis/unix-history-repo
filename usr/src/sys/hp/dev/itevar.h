@@ -9,25 +9,38 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: itevar.h 1.1 90/07/09$
+ * from: Utah $Hdr: itevar.h 1.14 92/01/21$
  *
- *	@(#)itevar.h	7.2 (Berkeley) %G%
+ *	@(#)itevar.h	7.3 (Berkeley) %G%
  */
 
 #define UNIT(dev)       minor(dev)
 
 struct itesw {
+	int	ite_hwid;		/* Hardware id */
 	int	(*ite_init)();
 	int	(*ite_deinit)();
 	int	(*ite_clear)();
 	int	(*ite_putc)();
 	int	(*ite_cursor)();
 	int	(*ite_scroll)();
+	u_char	(*ite_readbyte)();
+	int	(*ite_writeglyph)();
 };
+
+#define getbyte(ip, offset) \
+	((*(ip)->isw->ite_readbyte)(ip, offset))
+
+#define getword(ip, offset) \
+	((getbyte(ip, offset) << 8) | getbyte(ip, (offset) + 2))
+
+#define writeglyph(ip, offset, fontbuf) \
+	((*(ip)->isw->ite_writeglyph)((ip), (offset), (fontbuf)))
 
 struct ite_softc {
 	int	flags;
-	int	type;
+	struct  itesw *isw;
+	struct  grf_softc *grf;
 	caddr_t regbase, fbbase;
 	short	curx, cury;
 	short   cursorx, cursory;
@@ -43,6 +56,7 @@ struct ite_softc {
 	short	planemask;
 	short	pos;
 	char	imode, escape, fpd, hold;
+	caddr_t	devdata;			/* display dependent data */
 };
 
 /* Flags */
@@ -52,12 +66,6 @@ struct ite_softc {
 #define ITE_ISCONS	0x08	/* device is console */
 #define ITE_ACTIVE	0x10	/* device is being used as ITE */
 #define ITE_INGRF	0x20	/* device in use as non-ITE */
-
-/* Types - indices into itesw */
-#define	ITE_TOPCAT	0
-#define	ITE_GATORBOX	1
-#define	ITE_RENAISSANCE	2
-#define ITE_DAVINCI	3
 
 #define attrloc(ip, y, x) \
 	(ip->attrbuf + ((y) * ip->cols) + (x))
@@ -84,6 +92,23 @@ struct ite_softc {
 
 #define	charY(ip,c)	\
 	(((c) / (ip)->cpl) * (ip)->ftheight + (ip)->fonty)
+
+/*
+ * The cursor is just an inverted space.
+ */
+#define draw_cursor(ip) { \
+	WINDOWMOVER(ip, ip->cblanky, ip->cblankx, \
+		    ip->cury * ip->ftheight, \
+		    ip->curx * ip->ftwidth, \
+		    ip->ftheight, ip->ftwidth, RR_XOR); \
+        ip->cursorx = ip->curx; \
+	ip->cursory = ip->cury; }
+
+#define erase_cursor(ip) \
+  	WINDOWMOVER(ip, ip->cblanky, ip->cblankx, \
+		    ip->cursory * ip->ftheight, \
+		    ip->cursorx * ip->ftwidth, \
+		    ip->ftheight, ip->ftwidth, RR_XOR);
 
 /* Character attributes */
 #define ATTR_NOR        0x0             /* normal */
@@ -130,4 +155,6 @@ struct ite_softc {
 
 #ifdef KERNEL
 extern	struct ite_softc ite_softc[];
+extern	struct itesw itesw[];
+extern	int nitesw;
 #endif

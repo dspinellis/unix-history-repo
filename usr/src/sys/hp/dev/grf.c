@@ -9,15 +9,15 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf.c 1.31 91/01/21$
+ * from: Utah $Hdr: grf.c 1.32 92/01/21$
  *
- *	@(#)grf.c	7.10 (Berkeley) %G%
+ *	@(#)grf.c	7.11 (Berkeley) %G%
  */
 
 /*
- * Graphics display driver for the HP300.
+ * Graphics display driver for HP 300/400/700/800 machines.
  * This is the hardware-independent portion of the driver.
- * Hardware access is through the grfdev routines below.
+ * Hardware access is through the machine dependent grf switch routines.
  */
 
 #include "grf.h"
@@ -29,9 +29,9 @@
 #include "file.h"
 #include "malloc.h"
 
-#include "device.h"
 #include "grfioctl.h"
 #include "grfvar.h"
+#include "grfreg.h"
 
 #include "machine/cpu.h"
 
@@ -54,31 +54,6 @@
 #define	iteoff(u,f)
 #endif
 
-int	grfprobe();
-int	tc_init(), tc_mode();
-int	gb_init(), gb_mode();
-int	rb_init(), rb_mode();
-int	dv_init(), dv_mode();
-
-struct grfdev grfdev[] = {
-	GID_TOPCAT,	GRFBOBCAT,	tc_init,	tc_mode,
-	"topcat",
-	GID_GATORBOX,	GRFGATOR,	gb_init,	gb_mode,
-	"gatorbox",
-	GID_RENAISSANCE,GRFRBOX,	rb_init,	rb_mode,
-	"renaissance",
-	GID_LRCATSEYE,	GRFCATSEYE,	tc_init,	tc_mode,
-	"lo-res catseye",
-	GID_HRCCATSEYE,	GRFCATSEYE,	tc_init,	tc_mode,
-	"hi-res catseye",
-	GID_HRMCATSEYE,	GRFCATSEYE,	tc_init,	tc_mode,
-	"hi-res catseye",
-	GID_DAVINCI,    GRFDAVINCI,	dv_init,	dv_mode,
-	"davinci",
-};
-int	ngrfdev = sizeof(grfdev) / sizeof(grfdev[0]);
-
-struct	driver grfdriver = { grfprobe, "grf" };
 struct	grf_softc grf_softc[NGRF];
 
 #ifdef DEBUG
@@ -88,95 +63,6 @@ int grfdebug = 0;
 #define GDB_IOMAP	0x04
 #define GDB_LOCK	0x08
 #endif
-
-/*
- * XXX: called from ite console init routine.
- * Does just what configure will do later but without printing anything.
- */
-grfconfig()
-{
-	register caddr_t addr;
-	register struct hp_hw *hw;
-	register struct hp_device *hd, *nhd;
-
-	for (hw = sc_table; hw->hw_type; hw++) {
-	        if (!HW_ISDEV(hw, D_BITMAP))
-			continue;
-		/*
-		 * Found one, now match up with a logical unit number
-		 */
-		nhd = NULL;		
-		addr = hw->hw_kva;
-		for (hd = hp_dinit; hd->hp_driver; hd++) {
-			if (hd->hp_driver != &grfdriver || hd->hp_alive)
-				continue;
-			/*
-			 * Wildcarded.  If first, remember as possible match.
-			 */
-			if (hd->hp_addr == NULL) {
-				if (nhd == NULL)
-					nhd = hd;
-				continue;
-			}
-			/*
-			 * Not wildcarded.
-			 * If exact match done searching, else keep looking.
-			 */
-			if (sctova(hd->hp_addr) == addr) {
-				nhd = hd;
-				break;
-			}
-		}
-		/*
-		 * Found a match, initialize
-		 */
-		if (nhd && grfinit(addr, nhd->hp_unit))
-			nhd->hp_addr = addr;
-	}
-}
-
-/*
- * Normal init routine called by configure() code
- */
-grfprobe(hd)
-	struct hp_device *hd;
-{
-	struct grf_softc *gp = &grf_softc[hd->hp_unit];
-
-	if ((gp->g_flags & GF_ALIVE) == 0 &&
-	    !grfinit(hd->hp_addr, hd->hp_unit))
-		return(0);
-	printf("grf%d: %d x %d ", hd->hp_unit,
-	       gp->g_display.gd_dwidth, gp->g_display.gd_dheight);
-	if (gp->g_display.gd_colors == 2)
-		printf("monochrome");
-	else
-		printf("%d color", gp->g_display.gd_colors);
-	printf(" %s display\n", grfdev[gp->g_type].gd_desc);
-	return(1);
-}
-
-grfinit(addr, unit)
-	caddr_t addr;
-{
-	struct grf_softc *gp = &grf_softc[unit];
-	struct grfreg *gr;
-	register struct grfdev *gd;
-
-	gr = (struct grfreg *) addr;
-	if (gr->gr_id != GRFHWID)
-		return(0);
-	for (gd = grfdev; gd < &grfdev[ngrfdev]; gd++)
-		if (gd->gd_hardid == gr->gr_id2)
-			break;
-	if (gd < &grfdev[ngrfdev] && (*gd->gd_init)(gp, addr)) {
-		gp->g_display.gd_id = gd->gd_softid;
-		gp->g_type = gd - grfdev;
-		gp->g_flags = GF_ALIVE;
-		return(1);
-	}
-	return(0);
-}
 
 /*ARGSUSED*/
 grfopen(dev, flags)
@@ -244,11 +130,6 @@ grfioctl(dev, cmd, data, flag, p)
 #endif
 	error = 0;
 	switch (cmd) {
-
-	/* XXX: compatibility hack */
-	case OGRFIOCGINFO:
-		bcopy((caddr_t)&gp->g_display, data, sizeof(struct ogrfinfo));
-		break;
 
 	case GRFIOCGINFO:
 		bcopy((caddr_t)&gp->g_display, data, sizeof(struct grfinfo));
@@ -496,8 +377,9 @@ grfon(dev)
 	 * of the dev arg.
 	 */
 	iteoff(unit, 3);
-	return((*grfdev[gp->g_type].gd_mode)
-			(gp, (dev&GRFOVDEV) ? GM_GRFOVON : GM_GRFON));
+	return((*gp->g_sw->gd_mode)(gp,
+				    (dev&GRFOVDEV) ? GM_GRFOVON : GM_GRFON,
+				    (caddr_t)0));
 }
 
 grfoff(dev)
@@ -508,8 +390,9 @@ grfoff(dev)
 	int error;
 
 	(void) grfunmmap(dev, (caddr_t)0, curproc);
-	error = (*grfdev[gp->g_type].gd_mode)
-			(gp, (dev&GRFOVDEV) ? GM_GRFOVOFF : GM_GRFOFF);
+	error = (*gp->g_sw->gd_mode)(gp,
+				     (dev&GRFOVDEV) ? GM_GRFOVOFF : GM_GRFOFF,
+				     (caddr_t)0);
 	/* XXX: see comment for iteoff above */
 	iteon(unit, 2);
 	return(error);
@@ -547,7 +430,7 @@ grfdevno(dev)
 {
 	int unit = GRFUNIT(dev);
 	struct grf_softc *gp = &grf_softc[unit];
-	int newdev, sc;
+	int newdev;
 
 	if (unit >= NGRF || (gp->g_flags&GF_ALIVE) == 0)
 		return(bsdtohpuxdev(dev));
@@ -555,7 +438,7 @@ grfdevno(dev)
 	newdev = 12 << 24;
 	/* now construct minor number */
 	if (gp->g_display.gd_regaddr != (caddr_t)GRFIADDR) {
-		sc = patosc(gp->g_display.gd_regaddr);
+		int sc = patosc(gp->g_display.gd_regaddr);
 		newdev |= (sc << 16) | 0x200;
 	}
 	if (dev & GRFIMDEV)
