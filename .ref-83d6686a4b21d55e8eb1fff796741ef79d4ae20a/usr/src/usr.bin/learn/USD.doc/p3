@@ -1,0 +1,221 @@
+.\"	@(#)p3	6.1 (Berkeley) %G%
+.\"
+.NH
+Scripts.
+.PP
+As mentioned above, the present scripts try
+at most
+to follow a three-track theory.  Thus little
+of the potential complexity of the possible directed graph
+is employed, since
+care must be taken in lesson construction to see
+that every necessary fact is presented in
+every possible path through the units.  In addition,
+it is desirable that every unit have alternate successors
+to deal with student errors.
+.PP
+In most existing courses, the first few lessons
+are devoted to checking prerequisites.  For example,
+before the student is allowed to proceed through the editor
+script the script verifies that the student understands files
+and is able to type.
+It is felt that the sooner lack of student preparation
+is detected, the easier it will be on the student.
+Anyone proceeding through the scripts
+should be getting mostly correct answers; otherwise, the
+system will be unsatisfactory both because the wrong
+habits are being learned and because the
+scripts make little effort to deal with wrong answers.
+Unprepared students should not be encouraged
+to continue with scripts.
+.PP
+There are some preliminary items which the student must
+know before any scripts can be tried.  In particular,
+the student must know how to connect to
+a
+.UX
+system,
+set the terminal properly,
+log in,
+and execute simple commands (e.g.,
+.ul
+learn
+itself).
+In addition, the character erase and line kill conventions
+(# and @) should be known.
+It is hard to see how this much could be taught by
+computer-aided instruction, since a student who
+does not know these basic skills will not be able
+to run the learning program.
+A brief description on paper is provided (see Appendix A), although
+assistance will be needed for the first few
+minutes.  This assistance, however, need not be highly skilled.
+.PP
+The first script in the current set deals with files.  It assumes
+the basic knowledge above and teaches the student about
+the
+.I ls ,
+.I cat ,
+.I mv ,
+.I rm ,
+.I cp
+and
+.I diff
+commands.
+.tr ~
+It also deals with the abbreviation characters *, ?, and [\ ]
+in file names.
+It does not cover pipes or I/O redirection,
+nor does it present the many options
+on the
+.ul
+ls
+command.
+.PP
+This script contains 31 lessons
+in the fast track;
+two are
+intended as prerequisite checks,
+seven are review exercises.
+There are a total of 75 lessons in all three tracks,
+and the instructional passages typed at the student
+to begin each lesson total 4,476 words.  The average
+lesson thus begins with a 60-word message.
+In general, the fast track lessons have somewhat longer
+introductions, and the slow tracks somewhat shorter ones.
+The longest message is 144 words and the shortest 14.
+.PP
+The second script trains students in the use
+of the
+.UX
+context editor
+.I ed ,
+a sophisticated editor
+using regular expressions for searching.
+.[
+ritchie thompson unix  seventh edition 1978
+%O See section \f2ed\f1 (1).
+.]
+All editor
+features except encryption, mark names and `;' in addressing
+are covered.
+The fast track contains 2 prerequisite checks,
+93 lessons, and a review lesson.
+It is supplemented by 146 additional lessons in other tracks.
+.PP
+A comparison of sizes may be of interest.  The
+.ul
+ed
+description
+in the reference manual is 2,572 words long.  The
+.ul
+ed
+tutorial
+.[
+kernighan editor tutorial 1974
+.]
+is 6,138 words long.  
+The fast track through
+the
+.ul
+ed
+script is 7,407 words of explanatory messages, and the
+total
+.ul
+ed
+script, 242 lessons, 
+has 15,615 words.
+The average
+.ul
+ed
+lesson is thus also about 60 words; the largest
+is 171 words and the smallest 10.
+The
+original
+.ul
+ed
+script represents about three man-weeks of effort.
+.PP
+The advanced file handling script deals with
+.ul
+ls
+options,
+I/O diversion, pipes, and supporting programs like
+.I pr ,
+.I wc ,
+.I tail ,
+.I spell
+and
+.I grep .
+(The basic file handling script is a prerequisite.)
+It is not as refined as the first two scripts;
+this is reflected at least partly in the fact that
+it provides much less of a full three-track sequence
+than they do.
+On the other hand,
+since it is perceived as ``advanced,''
+it is hoped that the student will have somewhat
+more sophistication
+and be better able to cope with it at a reasonably
+high level of performance.
+.PP
+A fourth script covers the
+.ul
+eqn
+language for typing mathematics.
+This script must be run on a terminal capable of printing
+mathematics, for instance the DASI 300 and similar Diablo-based
+terminals, or the nearly extinct Model 37 teletype.
+Again, this script is relatively short of tracks:
+of 76 lessons, only 17 are in the second track and 2
+in the third track.
+Most of these provide additional practice for students
+who are having trouble in the first track.
+.PP
+The
+.I \-ms
+script for formatting macros
+is a short one-track only script.
+The macro package it describes is no longer the standard,
+so this script will undoubtedly be superseded
+in the future.
+Furthermore, the linear style of a single learn script is somewhat
+inappropriate for the macros, since the macro package is composed of many
+independent features, and few users need all of them.
+It would be better to have a selection of short lesson
+sequences dealing with the features independently.
+.PP
+The script on C is in a state of transition.
+It was originally designed to follow
+a tutorial on C,
+but that document has since become obsolete.
+The current script has been partially converted
+to follow the order of presentation in
+.ul
+The C Programming Language,
+.[
+ritchie kernighan programming 1978 prentice hall
+.]
+but this job is not complete.
+The C script was never intended to teach C;
+rather it is supposed to be a series of exercises
+for which the computer provides checking and
+(upon success) a suggested solution.
+.PP
+This combination of scripts covers much of the material which any
+.UX
+user
+will need to know
+to make effective use of the system.
+With enlargement of the advanced files
+course to include more on the command interpreter, there
+will be a relatively complete introduction to
+.UX
+available via
+.ul
+learn.
+Although we make no pretense that 
+.ul
+learn
+will replace other instructional materials,
+it should provide a useful supplement to existing tutorials and reference manuals.

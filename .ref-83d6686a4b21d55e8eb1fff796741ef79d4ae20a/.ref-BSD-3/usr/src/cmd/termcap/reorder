@@ -1,0 +1,13 @@
+/|adm3|/;.,/^[^	]/-m0
+/|h19|/;.,/^[^	]/-m0
+/|mime|/;.,/^[^	]/-m0
+/|c100|/;.,/^[^	]/-m0
+/|c100rv|/;.,/^[^	]/-m0
+/|2621|/;.,/^[^	]/-m0
+/|adm3a|/;.,/^[^	]/-m0
+1,/^#  ---/g/^s/.m0
+0a
+# Mail changes to vax:mark (or research!ucbvax!mark) or lose them!
+.
+w termcap.obj
+q

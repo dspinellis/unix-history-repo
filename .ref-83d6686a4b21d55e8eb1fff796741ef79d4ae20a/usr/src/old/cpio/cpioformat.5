@@ -1,0 +1,48 @@
+.\"	@(#)cpioformat.5	5.2 (Berkeley) %G%
+.\"
+.TH CPIO 5 ""
+.UC 7
+.SH NAME
+cpio - format of cpio archive
+.SH DESCRIPTION
+The header structure, when the -c option of cpio(1) is not used, is:
+.sp 1
+.nf
+	struct {
+		short	h_magic,
+				h_dev;
+		ushort	h_ino,
+				h_mode,
+				h_uid,
+				h_gid;
+		short	h_nlink,
+				h_rdev,
+				h_mtime[2],
+				h_namesize,
+				h_filesize[2];
+		char	h_name[h_namesize rounded to word];
+	} Hdr;
+.sp 2
+When the -c option is used, the header information is described by:
+.sp
+	sscanf(Chdr,"%6o%6o%6o%6o%6o%6o%6o%6o%11lo%6o%11lo%s",
+		&Hdr.h_magic, &Hdr.h_dev, &Hdr.h_ino, &Hdr.h_mode,
+		&Hdr.h_uid, &Hdr.h_gid, &Hdr.h_nlink, &Hdr.h_rdev,
+		&Longtime, &Hdr.h_namesize,&Longfile,Hdr.h_name);
+.fi
+.sp
+Longtime and Longfile are equivalent to Hdr.h_mtime and
+Hdr.h_filesize, respectively.  The contents of each file are
+recorded in an element of the array of varying lenght
+structures, archive, together with other items describing
+the file.  Every instance of h_magic contains the constant
+070707 (octal).  The itimes h_dev through h_mtime have
+meanings explained in stat(2).  The length of the null-
+terminated path name H_name, icluding the null byte, is
+given by h_namesize.
+.sp
+The last record of the archive always contains the name
+TRAILER!!!.  Special files, directories, and the trailer are
+recorded with H_filesize equal to zero.
+.SH SEE ALSO
+cpio(1), find(1), stat(2)

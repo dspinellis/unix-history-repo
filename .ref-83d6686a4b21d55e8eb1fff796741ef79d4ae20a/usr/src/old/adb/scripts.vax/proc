@@ -1,0 +1,14 @@
+./"link"16t"rlink"16t"next"16t"prev"n4Xn
++/"addr"16t"upri"8t"pri"8t"cpu"8t"stat"8t"time"nX5b
++/"nice"8t"slp"8t"cursig"16t"sig"n3b16tX
++/"mask"16t"ignore"16t"catch"n3X
++/"flag"16t"uid"8t"pgrp"8t"pid"8t"ppid"nX4d
++/"xstat"16t"ru"16t"poip"8t"szpt"8t"tsize"nx2+16tX2xX
++/"dsize"16t"ssize"16t"rssize"16t"maxrss"n4X
++/"swrss"16t"swaddr"16t"wchan"16t"textp"n4X
++/"p0br"16t"xlink"16t"ticks"n2Xd2+
++/"%cpu"16t" "16t"ndx"8t"idhash"8t"pptr"nf16t2xX
++/"cptr"16t"osptr"16t"ysptr"n3X
++/"real itimer"n4D
++/"quota"16tX
++,<9-1$<proc

@@ -1,0 +1,21 @@
+#print
+So far you've only appended to empty files.  If the file
+you are appending to has something in it, you have to
+decide where you want the new material to be placed.
+You can give a line address with 'a', and the append
+command will place the new material after that line.
+For example,
+  3a
+  input
+  .
+places 'input' after line 3.  What will be the line
+number of the input line?  Type 'answer N', as usual.
+#pipe
+#copyin
+#user
+#uncopyin
+#unpipe
+#match 4
+#log
+#next
+16.1c 10

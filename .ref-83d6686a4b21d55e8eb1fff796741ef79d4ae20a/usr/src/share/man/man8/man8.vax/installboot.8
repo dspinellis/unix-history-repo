@@ -1,0 +1,41 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)installboot.8	7.1 (Berkeley) %G%
+.\"
+.TH INSTALLBOOT 8V ""
+.UC 7
+.SH NAME
+installboot \- installs a boot program in a file system
+.SH SYNOPSIS
+.B /usr/mdec/installboot
+bootblock bootprog special
+.SH DESCRIPTION
+.I Installboot
+concatentates
+.I bootblock
+and
+.I bootprog
+and writes at most BBSIZE bytes (from <sys/fs.h>)
+of them on the first bytes of
+.IR special .
+.SH FILES
+/usr/mdec/??boot	boot blocks
+.br
+/usr/mdec/boot??	boot programs
+.SH SEE ALSO
+newfs(8), dd(1)
+.SH EXAMPLES
+cd /usr/mdec
+.br
+installboot raboot bootra /dev/ra0a
+.SH HISTORY
+.I Installboot
+comes undocumented with 4.2BSD.
+This manual page was written by Geoff Collyer.
+.SH BUGS
+There is no convenient way to determine the names of the boot blocks
+and boot programs without
+.I "a priori"
+knowledge of one's make of disk.

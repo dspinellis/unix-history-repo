@@ -1,0 +1,198 @@
+
+
+
+
+
+
+
+
+
+                      Yacc Differences
+
+
+
+
+
+This document gives a short list of differences between  the
+new Yacc and earlier Yaccs.
+
+_B_u_g_s _F_i_x_e_d
+
+1.   There was a bug which caused  Yacc  to  silently  steal
+     away in the night if an action had mismatched '' in it;
+     this is fixed.
+
+2.   A number of table size overflow conditions used  to  be
+     checked incorrectly or not at all; this is now better.
+
+3.   A bug which suppressed the printing of some rules  with
+     empty RHS's on the y.output file has been fixed.
+
+_S_p_e_e_d_u_p_s, _S_h_r_i_n_k_s, _a_n_d _D_i_d_d_l_e_s
+
+1.   The old optimizer (-o) flag is now the default in Yacc.
+     At the same time, the Yacc process itself has been sped
+     up; the result is that Yacc takes  about  the  same  or
+     slightly  longer on short inputs, but is much faster on
+     long inputs.
+
+2.   The optimized parsers produced by Yacc are likely to be
+     2-3  times  faster  and 1-2k bytes smaller than the old
+     ones, for medium/large grammars.  The time to parse  is
+     now  essentially  independent  of  the grammar size; it
+     used to grow as the size of the grammar did.
+
+3.   The y.output file has been considerably reformatted, to
+     make  it easier to read.  The old "goto" table is gone;
+     the goto's for nonterminal symbols are now  printed  in
+     the  states  where  they  occur.   Rules  which  can be
+     reduced in a state have their rule number printed after
+     them,  in  ().   This makes it much easier to interpret
+     the "reduce n" actions.  The message "same  as  n"  has
+     been  removed; duplicate states are in fact duplicated,
+     saving shuffling and cross-referencing.
+
+4.   Various table sizes are somewhat bigger.
+
+5.   The form feed character, and the construction '\f', are
+     now  recognized;  form feed is ignored (=whitespace) on
+     input.
+
+
+
+
+                      January 14, 1977
+
+
+
+
+
+                           - 2 -
+
+
+
+6.   The arrays "yysterm" and "yysnter" are no  longer  pro-
+     duced  on  output; they were little used, and took up a
+     surprising amount of space in the parser.
+
+7.   Rules in the input which are not reduced are  now  com-
+     plained  about; they may represent unreachable parts of
+     the grammar, botched precedence,  or  duplicate  rules.
+     As  with  conflicts,  a summary complaint, "n rules not
+     reduced", appears at the terminal; more information  is
+     on the y.output file.
+
+_N_e_w _F_e_a_t_u_r_e_s
+
+1.   The actions are now  copied  into  the  middle  of  the
+     parser, rather than being gathered into a separate rou-
+     tine.  It's faster.  Also, you can return a value  from
+     yyparse (and stop parsing...) by saying `return(x);' in
+     an action.  There are  macros  which  simulate  various
+     interesting parsing actions:
+
+     YYERROR  causes the parser to behave as if a syntax
+     error had been encountered (i.e., do error recovery)
+     YYACCEPT causes a return from yyparse with a value of 0
+     YYABORT  causes a return from yyparse with a value of 1
+
+
+2.   The repositioning of the actions may cause scope  prob-
+     lems  for  some people who include lexical analyzers in
+     funny places.  This can probably be  avoided  by  using
+     another  new  feature:  the `-d' option.  Invoking Yacc
+     with the -d option causes  the  #defines  generated  by
+     Yacc  to  be  written out onto a file called "y.tab.h",
+     (as well as on the "y.tab.c" file).  This can  then  be
+     included as desired in lexical analyzers, etc.
+
+3.   Actions  are  now  permitted  within  rules;  for  such
+     actions,  $$, $1, $2, etc. continue to have their usual
+     meanings.  An error  message  is  returned  if  any  $n
+     refers  to  a value lying to the right of the action in
+     the rule.  These internal actions are assumed to return
+     a  value,  which  is accessed through the $n mechanism.
+     In the y.output file, the actions are  referred  to  by
+     created  nonterminal  names  of  the  form  $$nnn.  All
+     actions within rules are assumed to  be  distinct.   If
+     some   actions   are   the   same,  Yacc  might  report
+     reduce/reduce conflicts  which  could  be  resolved  by
+     explicitly  identifying  identical actions; does anyone
+     have a good idea for a syntax to do this?  The  =  sign
+     may  now be omitted in action constructions of the form
+     ={  ...   }.
+
+
+
+
+
+
+                      January 14, 1977
+
+
+
+
+
+                           - 3 -
+
+
+
+4.   As a result of the rearrangement of rules,  people  who
+     thought they knew what $1 really turned into, and wrote
+     programs which referred to yypv[1], etc., are in  trou-
+     ble.  See Steve Johnson if you are really suffering.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      January 14, 1977
+
+

@@ -1,0 +1,25 @@
+#print
+To compare two files, you can use the command
+"diff" (differences); the line
+  diff xx yy
+will compare the files xx and yy and tell you about
+any differences between them.  If the files are the same,
+the command says nothing.  Are the files
+"tom" and "dick" the same in this directory?
+Find out (print them if you feel insecure)
+and reply "yes" or "no".
+#create dick
+This stuff is not only in
+file tom but also
+in file dick
+#create tom
+This stuff is not only in
+file tom but also
+in file dick
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+12.2b 5

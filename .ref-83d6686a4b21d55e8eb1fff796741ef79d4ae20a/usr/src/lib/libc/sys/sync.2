@@ -1,0 +1,32 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)sync.2	6.2 (Berkeley) %G%
+.\"
+.TH SYNC 2 ""
+.UC 4
+.SH NAME
+sync \- update super-block
+.SH SYNOPSIS
+.B sync()
+.SH DESCRIPTION
+.I Sync
+causes all information in core
+memory that should be on disk to be written out.
+This includes modified super blocks,
+modified i-nodes, and delayed block I/O.
+.PP
+.I Sync
+should be used by programs that examine a file system,
+for example
+.I "fsck, df,"
+etc.
+.I Sync
+is mandatory before a boot.
+.SH "SEE ALSO"
+fsync(2), sync(8), update(8)
+.SH BUGS
+The writing, although scheduled, is not necessarily
+complete upon return from 
+.IR sync .

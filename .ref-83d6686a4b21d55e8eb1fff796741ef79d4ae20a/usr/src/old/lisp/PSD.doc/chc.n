@@ -1,0 +1,129 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)chc.n	6.1 (Berkeley) %G%
+.\"
+." $Header: /na/franz/doc/RCS/chc.n,v 1.1 83/01/31 07:11:44 jkf Exp $
+.Ap 3 Short\ Subjects.
+.sp 2v
+.tl ''\fB\s+2The Garbage Collector\s0\fP'
+.pp
+The garbage collector is invoked automatically whenever a collectable
+data type runs out.
+All data types are collectable except strings and atoms are not.
+After a garbage collection finishes, the collector will call the function 
+.i gcafter
+which should be a lambda of one argument.
+The argument passed to 
+.i gcafter
+is the name of the data type which ran out and caused the garbage collection.
+It is 
+.i gcafter 's
+responsibility to 
+allocate more pages of free space.
+The default 
+.i gcafter 
+makes its decision based on the percentage of space still in 
+use after the garbage collection.
+If there is a large percentage of space still in use, 
+.i gcafter
+allocates a larger amount of free space than if only a small percentage of
+space is still in use.
+The default 
+.i gcafter
+will also print a summary of the space in use if the variable 
+.i $gcprint
+is non nil.
+The summary always includes the state of the list and fixnum space and 
+will include another type if it caused the garbage collection.
+The type which caused the garbage collection is preceded by an asterisk.
+.sp 4v
+.tl ''\s+2\fBDebugging\fP\s0''
+.pp
+There are two simple functions to help you debug your programs:
+.i baktrace 
+and 
+.i showstack .
+When an error occurs (or when you type the interrupt character),
+you will be left at a break level with the state of the computation
+frozen in the stack.
+At this point, calling  the function
+.i showstack
+will cause the contents of the lisp evaluation stack to be printed in
+reverse chronological order (most recent first).
+When the programs you are running are interpreted or traced, the output
+of 
+.i showstack 
+can be very verbose.
+The function
+.i baktrace
+prints a summary of what 
+.i showstack 
+prints.
+That is, if showstack would print a list, 
+.i baktrace
+would only print the first element of the list.
+If you are running compiled code with the \fI(status\ translink)\fP non
+nil, then fast links are being made.
+In this case, 
+there is not enough information on the stack for 
+.i showstack
+and 
+.i baktrace .
+Thus, if you are debugging compiled code you should probably do 
+\fI(sstatus\ translink\ nil)\fP.
+.pp
+If the contents of the stack don't tell you enough about your problem, the
+next thing you may 
+want to try is to run your program with
+certain functions traced.
+You can direct the trace package to stop program execution when it enters
+a function, allowing you to examine the contents of variables or 
+call other functions.
+The trace package is documented in Chapter 11.
+.pp
+It is also possible to single step the evaluator and to look at stack
+frames within lisp.
+The programs which 
+perform these actions are described in Chapters 14 and 15.
+.bp
+.tl ''\fB\s+2The Interpreter\'s Top Level\s0\fP''
+.pp
+The default top level interpreter for Franz, named 
+.i franz-top-level
+is defined in /usr/lib/lisp/toplevel.l
+It is given control when the lisp system starts up because the 
+variable top-level is bound to the symbol
+.i franz-top-level .
+The first action 
+.i franz-top-level 
+takes is to print out the name of the current
+version of the lisp system.
+Then it loads the file .lisprc from the HOME directory of the person
+invoking the lisp system if that file exists.
+The .lisprc file allows you to set up your own defaults, read in files,
+set up autoloading  or anything else you might want to do to personalize
+the lisp system.
+Next, the top level goes into a prompt-read-eval-print loop.
+Each time around the loop, before printing the prompt it checks 
+if the variable user-top-level is bound.
+If so, then the value of user-top-level will be 
+.i funcall ed.
+This provides a convenient way for a user to introduce his own top level
+(Liszt, the lisp compiler, is an example of a program which uses this).
+If the user types a ^D (which is the end of file character), and  the
+standard input is not from a keyboard, the lisp system will exit.
+If the standard input is a keyboard and if the value of 
+.i "(status\ ignoreeof)"
+is nil, the lisp system will also exit.
+Otherwise the end of file will be ignored.
+When a 
+.i reset 
+is done
+the current value of 
+.i errlist
+is saved away and control is thrown back up to the top level where 
+.i eval
+is mapped over the saved value of 
+.i errlist.

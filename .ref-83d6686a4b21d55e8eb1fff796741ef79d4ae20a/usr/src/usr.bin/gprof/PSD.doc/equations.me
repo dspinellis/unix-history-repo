@@ -1,0 +1,91 @@
+\"	@(#)equations.me	1.1 %G%
+.EQ
+delim ##
+.EN
+.sh 1 "Notation"
+.pp
+Given a program, #P#, and an ordered list of instructions, #I#,
+composing #P#,
+.EQ
+P ~ = ~ {I sub 1} ^ {I sub 2} ^ ... ^ {I sub m}
+.EN
+define the address of an instruction to be its index in the program.
+Given a namelist, #N#,  that associates names with distinguished
+addresses, called entry points, sorted by increasing entry point values,
+.EQ
+N ~ = ~ "{" ( n sub 1 , ~ e sub 1 ) ,..., ( n sub r , ~ e sub r ) "}"
+.EN
+#N# partitions the addresses of #P# into ranges, called routines,
+such that
+.EQ
+R sub 0 ~ mark = ~ "{" 1 ,..., {e sub 1} - 1 "}"
+.EN C
+.EQ
+R sub i ~ lineup = ~ "{" e sub i ,..., {e sub i} - 1 "}" ~
+for ~ 1 <= i < r
+.EN C
+.EQ
+R sub r ~ lineup = ~ "{" e sub r ,..., m "}"
+.EN
+.(q
+<<<watch out.  we have only one entry point per routine.  not
+everybody does.>>>
+.)q
+A profilable program consists of the instructions and a namelist.
+.pp
+Given a histogram of address samples, #H#, ordered such that the
+#i sup th# sample is the count for the #i sup th#
+instruction, define the #selftime#, #S#, of each of the #r# routines
+as
+.EQ
+S sub i ~ = ~ sum from {j ~ \(mo ~ {R sub i}} {H sub j}
+.EN
+.pp
+Given a set of arcs, #A#, gathered during the profiled execution of 
+the program, where #A# consists of ordered triples,
+#(tail, ~ head, ~ count)#, giving the address of the 
+tail and head of the arc, and a count of the number of times the
+execution of the program traversed this arc from instruction 
+#I sub tail# to instruction #I sub head#,
+the number of calls to the #i sup th# routine can be calculated
+as
+.EQ
+C sub i ~ = ~ sum from { ( tail , ~ head , ~ count ) ~ \(mo ~ A }
+                       "{" count | head ~ \(mo ~ R sub i "}"
+.EN
+and the number of calls to the #i sup th# routine from the
+#j sup th# routine as
+.EQ
+C sub i sup j ~ = ~ sum from { ( tail , ~ head , ~ count ) ~ \(mo ~ A }
+                                  "{" count | tail ~ \(mo ~ R sub i ,
+                                  head ~ \(mo ~ R sub j "}"
+.EN
+.pp
+If there is an arc with #tail ~ \(mo ~ R sub i# and 
+#head ~ \(mo ~ R sub j#, then #R sub j# is a child of
+#R sub i#, denoted #R sub i ~ Child ~ R sub j#.
+#R sub i# has as a child #R sub j#.
+The transitive closure of the #Child# relation is called the 
+#Descendants# relation.
+The inverse of the #Child# relation is the #Parent# relation.
+For example, if #R sub i ~ Child ~ R sub j# then
+#R sub j ~ Parent ~ R sub i#.
+The transitive closure of the #Parent# relation is called the
+#Ancestor# relation.
+.pp
+We are interested in computing the following recurrence, which
+gives the time for a routine based on its selftime and an
+appropriate fraction of the time of its descendants.
+.EQ
+T sub i ~ = ~ S sub i + sum from {i ~ Child ~ j}
+                        {T sub j \(mu {C sub i sup j} over {C sub i}}
+.EN
+This recurrence can be trivially solved for leaves of the call
+graph, e.g. those with no children.
+In the general case, however, it is necessary to order the nodes
+of the graph so that the times for all children of a routine
+are known before computing the time for the routine itself.
+Such an order could be imposed by a depth-first numbering of the
+routines with a single traversal of each of the arcs in #A#.
+<<<this falls off here because i don't know if we want to continue
+with this, and it's hard to type.>>>

@@ -1,0 +1,49 @@
+#print
+In this directory is a file "word" which should be in alphabetical
+order but is not; put it in order by picking up a block of lines
+and relocating them.  Then rewrite the file and type "ready".
+#create Ref
+bands
+becomes
+course
+dissolve
+events
+for
+have
+human
+in
+it
+necessary
+of
+one
+people
+political
+the
+to
+when
+which
+#create word
+bands
+becomes
+course
+in
+it
+necessary
+of
+one
+people
+political
+dissolve
+events
+for
+have
+human
+the
+to
+when
+which
+#user
+#cmp word Ref
+#log
+#next
+63.1a 10

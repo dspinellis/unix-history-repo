@@ -1,0 +1,5 @@
+.>5
+*.>6
+<5/"next"16t"prev"16t"head"16t"socket"nXXXXn"faddr"8t"net"8t"host"24t"port"nXxxxxn"laddr"8t"net"8t"host"24t"port"nXxxxxn"ppcb"16tXn
+<5+0t44$<<route
+<5+0t64/"lstdst"8t"net"8t"host"24t"port"nXxxxxn"param"16t"flags"8t"dpt/rpt"nXxxn

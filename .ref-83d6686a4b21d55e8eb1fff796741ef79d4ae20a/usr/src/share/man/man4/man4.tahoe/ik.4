@@ -1,0 +1,102 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ik.4	6.2 (Berkeley) %G%
+.\"
+.TH IK 4 "November 21, 1986"
+.UC 5
+.SH NAME
+ik \- Evans and Sutherland Picture System 300 graphics device interface
+.SH SYNOPSIS
+.B "device ik0 at vba? csr 0xfffb100 vector ikintr"
+.SH DESCRIPTION
+The
+.I ik
+driver provides access
+to an Evans and
+Sutherland Picture System 300 through an Ikon DR-11W
+interface card.
+Each two minor device numbers are a different PS300;
+within a pair of device numbers the odd valued
+device is used for ``diagnostic'' purposes.   That is,
+for even numbered minor devices, opening the device results
+in a PS300 ``attach'' request being performed while for
+odd numbered minor devices the attach request is not performed.
+.PP
+All operations between the host and the PS300 utilize DMA.
+The driver currently supports only ``physical i/o'' operations
+when reading and writing; this makes the device useless with
+standard Evans and Sutherland software.
+.PP
+The interface provided by the interface is as UNIX-like as possible.
+When a device is opened a PS300 attach request is automatically
+performed.  When a device is closed a detach is performed.  Reads
+and writes result in physical i/o requests, but hide all the details
+of the physical i/o protocol.  This is programming style is completely
+different from the VMS-oriented qio-style interface supplied by Evans
+and Sutherland.
+.PP
+Reads and writes to the device result in a physical i/o request
+to the PS300.  If a
+.IR readv (2)
+or
+.IR writev (2)
+call is used, each i/o request results in a single physical i/o
+request (i.e. the scatter-gather facilities are not supported).
+In normal operation, the address used in a physical i/o request
+is the current file offset as specified explicitly with
+.IR lseek (2)
+or implictly as a result of reading or writing the device.
+To specify an address to be used with each physical i/o request,
+the
+.I ik
+driver interprets the
+.I iov
+entries in a non-standard way.  If
+.I iov_len
+is zero, then
+.I iov_base
+is interpreted as an address to be used in the physical i/o
+request.  If the address has the PSIO_SYNC flag or-d into it,
+the physical i/o request is made as a ``write with sync''.
+All addresses and data presented to the driver should be in
+the byte order of the host; any byte swapping required to converse
+with the PS300 is performed in the driver/controller.
+.PP
+In addition to reading and writing, the following
+.I ioctl
+requests are available:
+.TP
+PSIOLOOKUP
+.br
+Perform a ``name lookup'' request.  The
+.I pslookup
+structure passed indicates the symbol name to be looked up
+and contains the address returned by the PS300.  A zero
+address return indicates the symbol was undefined.
+.TP
+PSIOGETERROR
+.br
+In the event of an error, this request may be made to
+return a more detailed and, sometimes PS300-specific,
+error code.
+.SH FILES
+/dev/ik[0-7]	auto-attach devices
+.br
+/dev/ik[0-7]d	diagnostic interfaces to devices
+.SH DIAGNOSTICS
+\fBik%d: bad cmd %x\fP.
+An unknown or unsupported command was received by the host.
+.PP
+\fBik%d: spurious interrupt, code %x\fP.
+An unexpected interrupt was received from the PS300; the
+attention code from the PS300 is printed.
+.PP
+\fBik%d: timeout\fP.
+A command failed to elicit a response within a reasonable
+time; the PS300 probably crashed.
+.SH BUGS
+An invalid access (e.g. illegal address) to the PS300 can
+cause the PS300 to crash.  It is not always possible to unwedge
+the PS300 interface hardware hung by an i/o request.

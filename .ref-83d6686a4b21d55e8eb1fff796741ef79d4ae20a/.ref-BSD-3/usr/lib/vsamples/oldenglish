@@ -1,0 +1,50 @@
+.lg 0
+.nh
+.na
+.ps 18
+.vs 20
+Old English, 8, 14, and 18 point only.
+(This font is called "oldenglish" on line.)
+.sp .5i
+.ft 1
+.ps 8
+.vs 10
+8 point
+
+ABCDE FGHIJ KLMNO PQRST UVWXY abcde fghij klmno pqrst uvwxyz 01234 56789
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ _ \e | @ ` ; + / ? . > , < 
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is never found again; and what we call time enough,
+always proves little enough: Let us then up and be doing, and doing
+to the purpose; so by diligence shall we do more with less perplexity.
+.sp 1i
+.ps 14
+.vs 16
+14 point
+
+ABCDE FGHIJ KLMNO PQRST UVWXY abcde fghij klmno pqrst uvwxyz 01234 56789 
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ _ \e | @ ` ; + / ? . > , < 
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is never found again; and what we call time enough,
+always proves little enough: Let us then up and be doing, and doing
+to the purpose; so by diligence shall we do more with less perplexity.
+.sp 1i
+.ps 18
+.vs 20
+18 point
+
+ABCDE FGHIJ KLMNO PQRST UVWXYZ abcde fghij klmno pqrst uvwxyz 01234 56789
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ - \e | ` ; + / ? . > , <
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is nver found again; and what we call time enough,
+always proves little enough: and I think I'm wasting time typing all
+this stuff

@@ -1,0 +1,150 @@
+  As you've probably noticed, this Toolchest product has been delivered
+  in multiple directories, "src" with source code, and "fmt" or "unfmt" for
+  formatted or unformatted documentation.  This file outlines the steps
+  needed to install the product on an AT&T 3B20 computer running UNIX(r)
+  System V Release 2.  Installation on other machines may differ and
+  is the responsibility of the installer to reconcile.
+
+
+Product:
+	ksh-i - Korn Shell-International
+
+Prerequisites:
+	This package requires the following facilities to
+	be available on your machine, before installation and use:
+
+	This package requires no special UNIX System facilities.
+
+To read before installing:
+	After unbundling, please scan the documentation and any
+	included README files.  These will contain useful infor-
+	mation needed to build the product.
+
+To make the source:
+	We recommend expanding and building tools in two separate
+	directories, one for source and one for documents.
+
+	Begin by unbundling the source files.  The following script
+	can be used to expand a bundle type:
+
+		for i in *.b
+		do
+			sh ./$i
+		done
+
+	Edit the makefile and change any references
+	to values that match your installation's needs.
+
+	Execute:
+		make
+
+	and wait a while.
+
+To create the documentation:
+	The documents, if requested in nroff format, can be created
+	by issuing the following commands:
+
+		nroff -mm sh.memo | col > sh.memo.M
+		nroff -man sh.1 | col > sh.1.M
+
+File Sizes:
+	The following is output from "wc" and can be checked against
+	the files you received:
+
+    Dir: .
+              119    938   5405 COMPATIBILITY
+               54    235   1537 INSTALL
+              162    767   4743 Makefile
+               90    856   4950 README
+              247   1822  10722 RELEASE
+               55    129    886 getopts
+              197    551   3938 ksh.mk
+              197    551   3938 makefile
+               31    116    651 substring
+    Dir: ./jsh
+               28     68    440 defs.c
+               48    109    859 defs.h
+              152    308   2369 jsh.c
+               29     55    394 makefile
+               99    205   1470 mpx.c
+    Dir: ./sh
+              112    307   1985 Makefile
+              105    222   1913 apollo.c
+              587   1384  10694 args.c
+              217    482   3778 blok.c
+               77    234   1565 brkincr.h
+             1313   2799  24531 builtin.c
+              122    401   2954 builtins.h
+              839   1920  14997 cmd.c
+              227   1213   4849 ctype.c
+               89    229   1624 defs.c
+              377   1173   8300 defs.h
+              100    227   1590 echo.c
+             1139   3079  21384 edit.c
+              131    584   3588 edit.h
+              210    493   3551 editlib.c
+             1124   2594  19525 emacs.c
+              195    481   3575 error.c
+              329    702   5290 expand.c
+              242    487   3792 fault.c
+               35    111    755 flags.h
+              818   2121  15275 history.c
+               80    288   1864 history.h
+              752   1703  12374 io.c
+              134    412   2819 io.h
+             1411   3167  24743 jobs.c
+              127    440   2555 jobs.h
+              848   1780  14100 macro.c
+              698   1756  13551 main.c
+              443   1061   7553 makefile
+               31     93    627 makelib
+              175    676   4808 makesh
+              157    335   2313 mode.h
+              633   2045  15403 msg.c
+             1025   2344  18976 name.c
+              175    784   5254 name.h
+               67    214   1434 national.h
+              274    642   4281 print.c
+              918   2206  16946 service.c
+              116    374   2890 shtype.h
+              113    227   1776 stak.c
+               96    315   1918 stak.h
+              291    671   4755 stdio.c
+              157    415   2546 string.c
+              398   1315   8729 suid_exec.c
+              115    342   2247 sym.h
+               27    111    657 syscall.s
+              310    627   5149 test.c
+               44    124    860 test.h
+               31    108    681 timeout.h
+              245    632   5205 vfork.c
+             2456   6775  45522 vi.c
+              516   1226   9056 word.c
+              863   1952  17846 xec.c
+    Dir: ./shlib
+              138    370   2620 adjust.c
+              328    833   5664 arith.c
+              322    976   6794 assign.c
+              114    325   2234 assnum.c
+              122    401   2954 builtins.h
+               95    273   1666 cannon.c
+               81    233   1454 chkid.c
+               85    228   1418 convert.c
+               74    210   1293 failed.c
+              336   1066   7309 findnod.c
+               35    111    755 flags.h
+               68    218   1446 gettree.c
+              204    487   3542 gmatch.c
+              158    547   3484 growaray.c
+               62    143    917 gsort.c
+              151    463   3098 linknod.c
+              144    251   2029 makefile
+              175    784   5254 name.h
+              140    437   2893 namscan.c
+               67    214   1434 national.h
+               94    276   1696 rjust.c
+              116    374   2890 shtype.h
+              186    493   3443 tilde.c
+              103    296   2053 unassign.c
+              118    365   2212 utos.c
+              115    374   2536 valup.c

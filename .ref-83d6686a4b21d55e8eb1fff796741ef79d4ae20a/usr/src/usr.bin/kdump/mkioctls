@@ -1,0 +1,32 @@
+nawk '
+BEGIN {
+	print "#include <sys/param.h>"
+	print "#include <sys/socket.h"
+	print "#include <sys/socketvar.h>"
+	print "#include <net/route.h>"
+	print "#include <net/if.h>"
+	print "#include <sys/termios.h>"
+	print ""
+	print "char *"
+	print "ioctlname(val)"
+	print "{"
+	print ""
+	print "	switch(val) {"
+}
+
+/^#[ 	]*define[ 	]*(TIO|FIO|SIO|OSIO)[A-Z]*[ 	]*_IO/ {
+	
+	# find where the name starts
+	for (i = 1; i <= NF; i++)
+		if ($i ~ /^.define/)
+			break;
+	++i;
+	# 
+	printf("\tcase %s:\n\t\treturn(\"%s\");\n", $i, $i);
+
+}
+END {
+	print "\t};\n\treturn(NULL);"
+	print "}"
+}
+' /sys/h/ioctl.h

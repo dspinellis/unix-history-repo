@@ -1,0 +1,59 @@
+Important changes since 4.2:
+	Now uses 4.2 filesystem correctly and removes files between lessons.
+	Tee'd output to the .ocopy file works.  No more infinite loop on EOF.
+	Now maintains a .learnrc file to start you where you left off last
+	session.  The undocumented and dubious "xyzzy" command has become
+	the documented and dubious "hint" command.  Miscellaneous typos.
+
+Note that play directories are created in /tmp, no longer
+in /usr/lib/learn/play.  The C script is not complete;
+use at your own risk.  The editor script still smacks of ed.
+
+Lessons are in (vi lessons are on user-contributed-software tape)
+	/usr/lib/learn/*
+and auxilliary programs are in
+	/usr/lib/learn/bin
+
+Lesson directories may be protected.
+
+Learn keeps a log file for each script in the .../learn/log
+directory (files, editor, etc.) containing an entry for each
+lesson attempted.  These files will grow without bound,
+unless they are periodically truncated. 
+The log files should have general write permission.
+If you don't want logging (a sensible position to take),
+set the variable "logging" to zero in source/learn.c
+before making learn, or remove the log directory, or just
+turn off write permission for a particular log file.
+
+Learn requires about 1500 blocks to make itself,
+and about 1000 when completely made.
+
+The best way to get ex to prompt within learn was to modify
+the user's environment variables PATH and EXINIT.
+
+Due to inane assumptions in the VAX versions of csh -i and ex
+when stdin and stdout are not terminals, kludges have been
+added with #if's.  In particular, I use the old terminal driver
+to keep #copyout working and make sh -i masquerade as
+a csh -i (by setting PS1=% ) to keep #pipe working.
+
+"#create" can now end in an incomplete last line by making '#'
+the last character on the line.  On input the string %s is
+converted to the lesson directory (useful for debugging).
+On output with "#copyout", prompt signs ("% ") are removed.
+"#cmp" now takes a trailing NUMBER specifying that only NUMBER
+many lines are to be compared.
+
+The new command "hint" prints the "answer" (i.e. the last part
+of the lesson).  With an argument it prints the whole lesson text.
+A new routine called getlesson tries to construct a valid
+lesson number from in invalid one before giving up.
+The commands "where", "skip", and "again" are also new.
+Greeting, closing, and reminder messages have been expanded.
+
+The "vi" lessons are packaged separately as part of the user-
+contributed software.  Ask the system administrator to install them.
+
+Please report problems, bad lessons, contributions, etc.,
+to John Kunze, jak@ernie.Berkeley.EDU.  Thanks.

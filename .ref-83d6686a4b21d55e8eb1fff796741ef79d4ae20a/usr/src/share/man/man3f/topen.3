@@ -1,0 +1,188 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)topen.3	6.1 (Berkeley) %G%
+.\"
+.TH TOPEN 3F ""
+.UC 5
+.SH NAME
+topen, tclose, tread, twrite, trewin, tskipf, tstate \- f77 tape I/O
+.SH SYNOPSIS
+.B integer function topen 
+(tlu, devnam, label)
+.br
+.B integer
+tlu
+.br
+.B character*(*)
+devnam
+.br
+.B logical
+label
+.sp 1
+.B integer function tclose
+(tlu)
+.br
+.B integer
+tlu
+.sp 1
+.B integer function tread
+(tlu, buffer)
+.br
+.B integer
+tlu
+.br
+.B character*(*)
+buffer
+.sp 1
+.B integer function twrite
+(tlu, buffer)
+.br
+.B integer
+tlu
+.br
+.B character*(*)
+buffer
+.sp 1
+.B integer function trewin
+(tlu)
+.br
+.B integer
+tlu
+.sp 1
+.B integer function tskipf
+(tlu, nfiles, nrecs)
+.br
+.B integer
+tlu, nfiles, nrecs
+.sp 1
+.B integer function tstate
+(tlu, fileno, recno, errf, eoff, eotf, tcsr)
+.br
+.B integer
+tlu, fileno, recno, tcsr
+.br
+.B logical
+errf, eoff, eotf
+.SH DESCRIPTION
+These functions provide a simple interface between f77 and magnetic
+tape devices.
+A ``tape logical unit'',
+.IR tlu ,
+is ``topen''ed in much the same way as a normal f77 logical unit
+is ``open''ed.
+All other operations are performed via the
+.IR tlu .
+The
+.I tlu
+has no relationship at all to any normal f77 logical unit.
+.PP
+.I Topen
+associates a device name with a
+.IR tlu .
+.I Tlu
+must be in the range 0 to 3.
+The logical argument
+.I label
+should indicate whether the tape includes a tape label.
+This is used by
+.I trewin
+below.
+.I Topen
+does not move the tape.
+The normal returned value is 0.
+If the value of the function is negative, an error has occured.
+See
+.IR perror (3F)
+for details.
+.PP
+.I Tclose
+closes the tape device channel and removes its association with
+.IR tlu .
+The normal returned value is 0.
+A negative value indicates an error.
+.PP
+.I Tread
+reads the next physical record from tape to
+.IR buffer .
+.I Buffer
+.B must
+be of type
+.BR character .
+The size of
+.I buffer
+should be large enough to hold the largest physical record to be read.
+The actual number of bytes read will be returned as the value of the
+function.
+If the value is 0, the end-of-file has been detected.
+A negative value indicates an error.
+.PP
+.I Twrite
+writes a physical record to tape from
+.IR buffer .
+The physical record length will be the size of
+.IR buffer .
+.I Buffer
+.B must
+be of type
+.BR character .
+The number of bytes written will be returned.
+A value of 0 or negative indicates an error.
+.PP
+.I Trewin
+rewinds the tape associated with
+.I tlu
+to the beginning of the first data file.
+If the tape is a labelled tape
+(see
+.I topen
+above)
+then the label is skipped over after rewinding.
+The normal returned value is 0.
+A negative value indicates an error.
+.PP
+.I Tskipf
+allows the user to skip over files and/or records.
+First,
+.I nfiles
+end-of-file marks are skipped. If the current file is at
+EOF, this counts as 1 file to skip.
+(Note: This is the way to reset the EOF status for a
+.IR tlu .)
+Next,
+.I nrecs
+physical records are skipped over.
+The normal returned value is 0.
+A negative value indicates an error.
+.PP
+Finally,
+.I tstate
+allows the user to determine the logical state of the tape I/O channel
+and to see the tape drive control status register.
+The values of
+.I fileno
+and
+.I recno
+will be returned and indicate the current file and record number.
+The logical values
+.IR errf ,
+.IR eoff ,
+and
+.I eotf
+indicate an error has occurred, the current file is at EOF,
+or the tape has reached logical end-of-tape.
+End-of-tape (EOT) is indicated by an empty file, often
+referred to as a double EOF mark.
+It is not allowed to read past EOT although it is allowed to write.
+The value of
+.I tcsr
+will reflect the tape drive control status register.
+See
+.IR ht (4)
+for details.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+ht(4), perror(3F), rewind(1)

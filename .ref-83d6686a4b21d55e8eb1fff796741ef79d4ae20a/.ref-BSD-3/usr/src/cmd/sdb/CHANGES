@@ -1,0 +1,53 @@
+
+New features in sdb
+
+Version 2.5  December 7, 1979
+	
+	Sdb prints a warning if the object file is newer than the core
+	file or if any source files are newer than the object file.
+
+	The diagnostics for unknown variable names have been improved.
+	
+Version 2.4  December 2, 1979
+
+	A bug which caused breakpoints to be ignored when the first
+	argument to an r command was a number greater that 1 has been
+	fixed.
+
+	I/O redirection with the r command has been fixed.
+
+Version 2.3  November 11, 1979
+
+	The ! command for setting values of variables has been fixed.
+
+	A bug with displaying register variables has been fixed.
+
+	Internal changes to provide compatibility with VM/UNIX have been
+	made.
+
+Version 2.2  October 3, 1979
+
+	The 'linenumber g' command has been added which continues execution at
+	the specified line number.
+
+	Internal changes to provide compatibility with UNIX/TS have been
+	made.
+
+Version 2.1  September 17, 1979
+
+	The `s' and `a' formats now accept optional integers which specify a
+	length.
+	For example, `string/10s' prints 10 characters pointed to by string.
+	Strings printed without a length specification are truncated at
+	length 128.
+
+	A new format `p' interprets the value as a pointer to a procedure
+	and prints the name of the procedure pointed to.
+
+	The shell metacharacters `*' and `?' may be used for matching
+	procedure and variable names.
+
+	A number of bugs with F77 programs have been fixed.
+
+
+Mon Jun 25 21:25:16 EDT 1979

@@ -1,0 +1,29 @@
+.TH BASENAME 1 
+.SH NAME
+basename \- strip filename affixes
+.SH SYNOPSIS
+.B basename
+string [ suffix ]
+.SH DESCRIPTION
+.I Basename
+deletes any prefix ending in `/' and the
+.I suffix,
+if present in
+.I string,
+from
+.I string,
+and prints the result on the standard output.
+It is normally used inside substitution marks \`\ \`
+in shell procedures.
+.PP
+This shell procedure invoked with the argument
+.I /usr/src/cmd/cat.c
+compiles the named file and moves the output to
+.I cat
+in the current directory:
+.IP "" 15n
+cc $1
+.br
+mv a.out \`basename $1 .c\`
+.SH "SEE ALSO"
+sh(1)

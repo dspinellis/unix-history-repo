@@ -1,0 +1,15 @@
+/*
+ *	@(#)inbound.ext	3.1  10/29/86
+ */
+
+/*
+ * Defines of global variables and routines from inbound.c.
+ */
+
+extern void
+	DoReadModified(),
+	DoReadBuffer(),
+	SendToIBM();
+
+extern int
+	DataFrom3270();

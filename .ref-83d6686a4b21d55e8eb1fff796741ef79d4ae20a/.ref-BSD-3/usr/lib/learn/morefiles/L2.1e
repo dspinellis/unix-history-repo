@@ -1,0 +1,25 @@
+#print
+If you make a mistake and type something like
+
+   xxxxx >precious
+
+where "xxxxx" is not___ the name of a legal UNIX
+command, what happens to the file "precious"?
+
+In this directory, there are several precious files.
+Experiment to see what happens.  When you have decided,
+type "answer harmless" if nothing happens to the files,
+or "answer disaster" if the file is clobbered.
+#create precious
+I am precious.
+#create precious1
+So am I.
+#create precious2
+Me too.
+#copyin
+#user
+#uncopyin
+#match disaster
+#log
+#next
+2.1f 10

@@ -1,0 +1,42 @@
+#print
+To create a second copy of a file, the easiest
+way is to use the "cp" (copy) command.
+If you tell the computer
+  cp x y
+a copy of file "x" is made and named "y".
+Note that this is similar to "mv" in that a new
+file named "y" appears, but the difference is
+that the old file is not removed.
+(If there was already a file named "y", though, the
+old contents are lost; be careful.)
+
+In this directory there is a file which has
+a five letter name whose first four letters
+are "part".
+Print it out; it will tell you to copy
+it and what to call the copy.
+Do that and then type "ready".
+#create X1
+#create george
+#create part00
+this is not the right file and you shouldn't
+have printed it.  Use
+ part?
+not
+ part*
+in this example.
+#create part3
+This is the file "part3".  I hope you
+used a command like
+  ls part?
+or
+  cat part?
+to find it.
+Make a copy of this file on file "george".
+#user
+#cmp george part3
+#log
+#next
+12.1a 10
+12.2a 5
+12.3a 2

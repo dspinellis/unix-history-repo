@@ -1,0 +1,44 @@
+The IDEAL program puts out a code that is intended to be device-independent.
+It looks like TROFF comments so that IDEAL output may be NROFFed safely,
+or it may be filtered to produce TROFF commands to draw the picture.
+It may also be run through filters that throw away all text but what
+appears between .IS and .IE, in which case only the pictures in the
+document will be run through the plot filter.
+
+Elements of the output:
+
+.IS
+	start a picture;
+
+...minx x
+	x becomes the logical x-coordinate of the upper left corner
+...maxy y
+	y becomes the logical y-coordinate of the upper left corner
+...maxx x
+	x becomes the logical x-coordinate of the lower right corner
+...miny y
+	y becomes the logical y-coordinate of the lower right corner
+...width w
+	scale the picture to be w inches wide
+...colwid w
+	center the picture in a column w inches wide
+...line x1 y1 x2 y2
+	draw a line segment from (x1,y1) to (x2,y2)
+...circle x0 y0 r
+	draw a circle of radius r centered at (x0,y0)
+...arc x0 y0 x1 y1 x2 y2 theta1 theta2 r
+	draw a counterclockwise arc of radius r centered at (x0,y0),
+	starting at (x1,y1), at an angle theta1,
+	ending at (x2,y2), at an angle theta2
+...spline x0 y0 x1 y1 x2 y2 ...
+	draw a spline through the points named
+...left x0 y0 'string
+	write string so it starts at (x0,y0)
+...center x0 y0 'string
+	write string so it is centered at (x0,y0)
+...right x0 y0 'string
+	write string so it ends at (x0,y0)
+.IE
+	end picture
+.IF
+	end picture

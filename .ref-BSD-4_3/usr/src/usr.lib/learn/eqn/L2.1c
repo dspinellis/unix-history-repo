@@ -1,0 +1,57 @@
+#once #create message
+.nf
+.EQ
+delim $$
+.EN
+Several of the examples we did earlier had Greek letters
+and other mathematical symbols in them.
+The way to get things like $pi$ and $sum$ and $int$ is
+rather easy - you just spell out their names, like this:
+
+$pi$ is pi
+
+$sum$ is sum
+
+$int$ is int
+
+and so on.
+The main thing you must always remember about these names
+is that when they appear in an equation, they must be
+separated from surrounding symbols by blanks or tildes,
+OR THEY WILL NOT BE RECOGNIZED.
+
+For practice, modify "Example" so the symbol $partial$
+is replaced by $sum$ everywhere it appears.
+Type "ready" when you're done.
+.pl 1
+#once #create Ref
+.PP
+The symbol
+.EQ
+sum
+.EN
+often appears in lines like
+.EQ
+{ sum x } over { sum y } = y over x
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1  &
+#once neqn message | nroff -T$term
+#once #create Example
+.PP
+The symbol
+.EQ
+partial
+.EN
+often appears in lines like
+.EQ
+{ partial x } over { partial y } = y over x
+.EN
+.pl 1
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+2.1d 10

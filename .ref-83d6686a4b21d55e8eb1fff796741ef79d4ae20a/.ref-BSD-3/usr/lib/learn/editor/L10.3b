@@ -1,0 +1,36 @@
+#print
+You can print an entire file making use
+of the fact that "$" refers to the last line.
+The command
+  1,$p
+prints from the first line to the last one,
+or the whole file.  Try printing this
+whole file with this command, and
+then typing w, q and ready.  Your commands
+should look like
+  1,$p
+  w
+  q
+  ready
+#create Ref
+1,$p
+w
+q
+#create file
+New York Mets Managers
+ Casey Stengel
+ Wes Westrum
+ Gil Hodges
+ Yogi Berra
+ Roy McMillan
+#copyin
+#pipe
+ed file
+#user
+#unpipe
+#uncopyin
+tail -3 .copy >X1
+#cmp X1 Ref
+#log
+#next
+10.2b 10
