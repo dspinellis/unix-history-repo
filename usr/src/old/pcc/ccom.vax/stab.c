@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)stab.c	1.9 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.10 (Berkeley) %G%";
 #endif
 /*
  * Symbolic debugging info interface.
@@ -463,6 +463,7 @@ int size;
 	    printf("%s:%d,", field->sname, field->offset);
 	    i++;
 	}
+	putchar(';');
 	break;
 
     default:
