@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)grp.h	4.3 (Berkeley) %G%
+ *	@(#)grp.h	4.4 (Berkeley) %G%
  */
 
 #define	_PATH_GROUP		"/etc/group"
@@ -26,6 +26,20 @@ struct group {
 	char	**gr_mem;		/* group members */
 };
 
-struct group *getgrent(), *getgrgid(), *getgrnam();
-void endgrent(), setgrfile();
-int setgroupent(), setgrent();
+#ifdef __STDC__
+extern struct group *getgrent(void);
+extern struct group *getgrgid(gid_t);
+extern struct group *getgrnam(const char *);
+extern int setgrent(void);
+extern int endgrent(void);
+extern int setgrfile(const char *);
+extern int setgroupent(int);
+#else
+extern struct group *getgrent();
+extern struct group *getgrgid();
+extern struct group *getgrnam();
+extern int setgrent();
+extern int endgrent();
+extern int setgrfile();
+extern int setgroupent();
+#endif

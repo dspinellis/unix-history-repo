@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fcntl.h	5.2 (Berkeley) %G%
+ *	@(#)fcntl.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -37,4 +37,10 @@
 #define	FCREAT		01000		/* create if nonexistant */
 #define	FTRUNC		02000		/* truncate to zero length */
 #define	FEXCL		04000		/* error if already created */
+#endif
+
+#ifdef __STDC__
+extern int fcntl(int, int, int);
+#else
+extern int fcntl();
 #endif

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nlist.h	5.2 (Berkeley) %G%
+ *	@(#)nlist.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -44,3 +44,9 @@ struct	nlist {
  * Format for namelist values.
  */
 #define	N_FORMAT	"%08x"
+
+#ifdef __STDC__
+extern int nlist(const char *, struct nlist *);
+#else
+extern int nlist();
+#endif

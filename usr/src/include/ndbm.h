@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ndbm.h	5.1 (Berkeley) %G%
+ *	@(#)ndbm.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -52,11 +52,22 @@ typedef struct {
 #define DBM_INSERT	0
 #define DBM_REPLACE	1
 
-DBM	*dbm_open();
-void	dbm_close();
-datum	dbm_fetch();
-datum	dbm_firstkey();
-datum	dbm_nextkey();
-long	dbm_forder();
-int	dbm_delete();
-int	dbm_store();
+#ifdef __STDC__
+extern DBM *dbm_open(const char *, int, int);
+extern void dbm_close(DBM *);
+extern datum dbm_fetch(DBM *, datum);
+extern datum dbm_firstkey(DBM *);
+extern datum dbm_nextkey(DBM *);
+extern long dbm_forder(DBM *, datum);
+extern int dbm_delete(DBM *, datum);
+extern int dbm_store(DBM *, datum, datum, int);
+#else
+extern DBM *dbm_open();
+extern void dbm_close();
+extern datum dbm_fetch();
+extern datum dbm_firstkey();
+extern datum dbm_nextkey();
+extern long dbm_forder();
+extern int dbm_delete();
+extern int dbm_store();
+#endif

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pwd.h	5.0 (Berkeley) %G%
+ *	@(#)pwd.h	5.1 (Berkeley) %G%
  */
 
 #define	_PATH_PASSWD		"/etc/passwd"
@@ -40,6 +40,20 @@ struct passwd {
 	u_long	pw_expire;			/* account expiration */
 };
 
-struct passwd *getpwent(), *getpwuid(), *getpwnam();
-void endpwent(), setpwfile();
-int setpassent(), setpwent();
+#ifdef __STDC__
+struct passwd *getpwent(void);
+struct passwd *getpwuid(int);
+struct passwd *getpwnam(const char *);
+int setpwent(void);
+int endpwent(void);
+int setpwfile(const char *);
+int setpassent(int);
+#else
+struct passwd *getpwent();
+struct passwd *getpwuid();
+struct passwd *getpwnam();
+int setpwent();
+int endpwent();
+int setpwfile();
+int setpassent();
+#endif
