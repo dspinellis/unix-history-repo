@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1985, 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1985, 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.5 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)tcopy.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 #include <signal.h>
@@ -33,7 +39,6 @@ int	maxblk = MAXREC;
 int	filen;
 long	record, lastrec;
 int	intr();
-long	itol();
 char	*malloc();
 long	size, tsize;
 int	nfile;
@@ -42,7 +47,8 @@ int	copy;
 extern	int errno;
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
 	register nread, nw, inp, outp;
 	struct mtop op;
@@ -86,9 +92,9 @@ usage:
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, intr);
-	buff = malloc(maxblk);
+	buff = malloc((u_int)maxblk);
 	if (buff == NULL) {
-		fprintf("tcopy: no memory\n");
+		fprintf(stderr, "tcopy: no memory\n");
 		exit(11);
 	}
 	lastread = NOCOUNT;
@@ -100,13 +106,13 @@ usage:
 				maxblk -= 1024;
 				continue;
 			}
-			fprintf(stderr, "read error, file %d, record %d: ",
+			fprintf(stderr, "read error, file %d, record %ld: ",
 			    filen, record);
 			perror("");
 		} else if (nread != lastread) {
 			if (lastread != 0 && lastread != NOCOUNT) {
 				if (lastrec == 0 && nread == 0)
-					printf("%d records\n", record);
+					printf("%ld records\n", record);
 				else if (record - lastrec > 1)
 					printf("records %ld to %ld\n",
 					    lastrec, record);
@@ -116,7 +122,7 @@ usage:
 			if (nread != 0)
 				printf("file %d: block size %d: ",
 				    filen, nread);
-			fflush(stdout);
+			(void) fflush(stdout);
 			lastrec = record;
 		}
 		guesslen = 0;
@@ -134,7 +140,7 @@ usage:
 				nw = write(outp, buff, nread);
 				if (nw != nread) {
 				    fprintf(stderr,
-					"write error, file %d, record %d: ",
+					"write error, file %d, record %ld: ",
 					filen, record);
 				    if (nw == -1)
 					perror("");
