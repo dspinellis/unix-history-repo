@@ -377,8 +377,13 @@ endmsg()
 	Msgbuf[0] = toupper(Msgbuf[0]);
     mp = Msgbuf;
     len = strlen(mp);
-    if (len / MSG_X + Lineno >= MSG_Y)
+    if (len / MSG_X + Lineno >= MSG_Y) {
+	while (Lineno < MSG_Y) {
+	    wmove(Msgwin, Lineno++, 0);
+	    wclrtoeol(Msgwin);
+	}
 	Lineno = 0;
+    }
     mvaddch(Lineno + Y_MSG_START, SCORE_X, '*');
     lastline = Lineno;
     do {
@@ -397,7 +402,7 @@ endmsg()
 	    Lineno = 0;
     } while (len > MSG_X);
     wclrtoeol(Msgwin);
-    Mpos = Newpos % MSG_X;
+    Mpos = len;
     Newpos = 0;
     wrefresh(Msgwin);
     refresh();
