@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.3.1.1 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -164,6 +164,8 @@ out:
 		swtch();
 		if (ISSIG(p))
 			psig();
+		if (ISSIG(p))
+			psig();
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -191,7 +193,7 @@ syscall(sp, type, code, pc, psl)
 	register caddr_t params;		/* known to be r10 below */
 	register int i;				/* known to be r9 below */
 	register struct sysent *callp;
-	register struct proc *p;
+	register struct proc *p = u.u_procp;
 	int opc;
 	struct timeval syst;
 
