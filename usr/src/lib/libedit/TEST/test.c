@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Christos Zoulas of Cornell University.
@@ -9,13 +9,13 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1992, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)test.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	8.1 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
