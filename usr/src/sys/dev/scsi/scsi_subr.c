@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi_subr.c	5.2 (Berkeley) %G%
+ *	@(#)scsi_subr.c	5.3 (Berkeley) %G%
  *
- * from: $Header: scsi_subr.c,v 1.7 92/06/11 17:55:48 torek Exp $ (LBL)
+ * from: $Header: scsi_subr.c,v 1.9 92/11/19 04:18:23 torek Exp $ (LBL)
  */
 
 /*
@@ -27,8 +27,8 @@
 #include <sys/buf.h>
 #include <sys/device.h>
 
-#include "scsi.h"
-#include "scsivar.h"
+#include <dev/scsi/scsi.h>
+#include <dev/scsi/scsivar.h>
 
 /*
  * General subroutines, and scsi data.
