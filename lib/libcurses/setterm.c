@@ -172,8 +172,8 @@ setterm(type)
 		case EXTA: ospeed = 14; break;
 		case EXTB: ospeed = 15; break;
 		case B57600: ospeed = 16; break;
+		default:
 		case B115200: ospeed = 17; break;
-		default: ospeed = 18; break;
 	}
 
 	aoftspace = tspace;
