@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -56,6 +56,8 @@ vn_open(ndp, fmode, cmode)
 			VATTR_NULL(vap);
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
+			if (fmode & O_EXCL)
+				vap->va_vaflags |= VA_EXCLUSIVE;
 			VOP_LEASE(ndp->ni_dvp, p, cred, LEASE_WRITE);
 			if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
 			    &ndp->ni_cnd, vap))
