@@ -1,4 +1,4 @@
-/*	if_uba.c	4.5	81/12/09	*/
+/*	if_uba.c	4.6	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -109,7 +109,6 @@ if_rubaget(ifu, totlen, off0)
 
 COUNT(IF_RUBAGET);
 
-printf("if_rubaget totlen %d off0 %d cp %x\n", totlen, off0, cp);
 	top = 0;
 	mp = &top;
 	while (totlen > 0) {
@@ -121,7 +120,6 @@ printf("if_rubaget totlen %d off0 %d cp %x\n", totlen, off0, cp);
 			cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen + off;
 		} else
 			len = totlen;
-printf("m %x len %d off %d cp %x\n", m, len, off, cp);
 		if (len >= CLBYTES) {
 			struct mbuf *p;
 			struct pte *cpte, *ppte;
@@ -158,9 +156,7 @@ printf("m %x len %d off %d cp %x\n", m, len, off, cp);
 nopage:
 		m->m_len = MIN(MLEN, len);
 		m->m_off = MMINOFF;
-printf("nopage m->m_len %d, m %x\n", m->m_len, len);
 copy:
-printf("copy %d from %x to %x", m->m_len, cp, mtod(m, caddr_t));
 		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
 		cp += m->m_len;
 nocopy:
