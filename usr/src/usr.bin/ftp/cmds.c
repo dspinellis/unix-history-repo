@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -991,6 +991,11 @@ ls(argc, argv)
 	if (strcmp(argv[2], "-") && !globulize(&argv[2])) {
 		code = -1;
 		return;
+	}
+	if (strcmp(argv[2], "-") && *argv[2] != '|')
+		if (!globulize(&argv[2]) || !confirm("output to local-file:", argv[2])) {
+			code = -1;
+			return;
 	}
 	recvrequest(cmd, argv[2], argv[1], "w");
 }
