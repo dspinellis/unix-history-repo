@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 # Flag BSD4_2 means 4.2 or later.
 CFLAGS=	-O -DBSD4_2
@@ -14,7 +14,7 @@ SRCS=	copy.c dounit.c getlesson.c learn.c list.c mem.c makpipe.c maktee.c \
 OBJS=	copy.o dounit.o getlesson.o learn.o list.o mem.o makpipe.o maktee.o \
 	mysys.o selsub.o selunit.o start.o whatnow.o wrapup.o
 
-all: learn lrntee lcount
+all: learn lrntee lcount getline.o getnum.o
 
 learn: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
@@ -26,27 +26,34 @@ lrntee: lrntee.c ${LIBC}
 	${CC} ${CFLAGS} -o $@ lrntee.c
 
 clean: FRC
-	rm -f ${OBJS} core learn lrntee lcount
+	rm -f ${OBJS} core learn lrntee lcount getline.o getnum.o
 
 depend: FRC
-	mkdep ${CFLAGS} ${SRCS} lcount.c lrntee.c
+	mkdep ${CFLAGS} ${SRCS} lcount.c lrntee.c getline.c getnum.c
 
 install: FRC
 	install -c -s -o bin -g bin -m 755 learn ${DESTDIR}/usr/bin/learn
 	install -s -o bin -g bin -m 755 learn ${LLIB}/learn
 	install -s -o bin -g bin -m 755 lrntee ${LLIB}/lrntee
 	install -s -o bin -g bin -m 755 lcount ${LLIB}/lcount
+	install -o bin -g bin -m 644 getline.o ${LLIB}/getline.o
+	install -o bin -g bin -m 644 getnum.o ${LLIB}/getnum.o
+	cd ${LLIB}; rm -f ../C/get*.o; ln getline.o getnum.o ../C
+	install -o bin -g bin -m 644 getline.c ${LLIB}/../C/getline.c
+	install -o bin -g bin -m 644 getnum.c ${LLIB}/../C/getnum.c
 	chmod 755 ${LLIB}/../*/Init
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
 	lint ${CFLAGS} lcount.c
 	lint ${CFLAGS} lrntee.c
+	lint ${CFLAGS} getline.c getnum.c
 
 tags: FRC
 	ctags ${SRCS}
 	ctags -a lcount.c
 	ctags -a lrntee.c
+	ctags -a getline.c getnum.c
 	sort -o tags tags
 
 FRC:
