@@ -1,4 +1,4 @@
-/*	if_imphost.h	4.5	82/03/09	*/
+/*	if_imphost.h	4.6	82/04/25	*/
 
 /*
  * Host structure used with IMP's.
@@ -11,10 +11,25 @@
 struct host {
 	struct	mbuf *h_q;		/* holding queue */
 	struct	in_addr h_addr;		/* host's address */
-	short	h_qcnt;          	/* size of holding q */
+	u_char	h_qcnt;          	/* size of holding q */
+	u_char	h_timer;		/* used to stay off deletion */
 	u_char	h_rfnm;			/* # outstanding rfnm's */
-	u_char	h_refcnt;		/* reference count */
+	u_char	h_flags;		/* see below */
 };
+
+/*
+ * A host structure is kept around (even when there are no
+ * references to it) for a spell to avoid constant reallocation
+ * and also to reflect IMP status back to sites which aren't
+ * directly connected to the IMP.  When structures are marked
+ * free, a timer is started; when the timer expires the structure
+ * is scavenged.
+ */
+#define	HF_INUSE	0x1
+#define	HF_DEAD		(1<<IMPTYPE_HOSTDEAD)
+#define	HF_UNREACH	(1<<IMPTYPE_HOSTUNREACH)
+
+#define	HOSTTIMER	128		/* keep structure around awhile */
 
 /*
  * Host structures, as seen inside an mbuf.

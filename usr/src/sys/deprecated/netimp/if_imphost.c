@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.9	82/03/16	*/
+/*	if_imphost.c	4.10	82/04/25	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -30,16 +30,20 @@ hostlookup(addr)
 	register struct host *hp;
 	register struct mbuf *m;
 	register int hash = HOSTHASH(addr);
+	int s = splnet();
 
 COUNT(HOSTLOOKUP);
 	for (m = hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-		if (hp->h_refcnt == 0)
-			continue;
-	        if (hp->h_addr.s_addr == addr.s_addr)
-			return (hp);
+	        if (hp->h_addr.s_addr == addr.s_addr) {
+			hp->h_flags |= HF_INUSE;
+			goto found;
+		}
 	}
-	return (0);
+	hp = 0;
+found:
+	splx(s);
+	return (hp);
 }
 
 /*
@@ -54,13 +58,16 @@ hostenter(addr)
 	register struct mbuf *m, **mprev;
 	register struct host *hp, *hp0 = 0;
 	register int hash = HOSTHASH(addr);
+	int s = splnet();
 
 COUNT(HOSTENTER);
 	mprev = &hosts;
 	while (m = *mprev) {
 		mprev = &m->m_next;
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-		if (hp->h_refcnt == 0) {
+		if ((hp->h_flags & HF_INUSE) == 0) {
+			if (hp->h_addr.s_addr == addr.s_addr)
+				goto foundhost;
 			if (hp0 == 0)
 				hp0 = hp;
 			continue;
@@ -76,8 +83,10 @@ COUNT(HOSTENTER);
 	 */
 	if (hp0 == 0) {
 		m = m_getclr(M_DONTWAIT);
-		if (m == 0)
+		if (m == 0) {
+			splx(s);
 			return (0);
+		}
 		*mprev = m;
 		m->m_off = MMINOFF;
 		hp0 = &mtod(m, struct hmbuf *)->hm_hosts[hash];
@@ -85,30 +94,32 @@ COUNT(HOSTENTER);
 	mtod(dtom(hp0), struct hmbuf *)->hm_count++;
 	hp = hp0;
 	hp->h_addr = addr;
-	hp->h_qcnt = 0;
+	hp->h_timer = 0;
 
 foundhost:
-	hp->h_refcnt++;		/* know new structures have 0 val */
+	hp->h_flags |= HF_INUSE;
+	splx(s);
 	return (hp);
 }
 
 /*
- * Free a reference to a host.  If this causes the
- * host structure to be released do so.
+ * Mark a host structure free and set it's
+ * timer going.
  */
 hostfree(hp)                               
 	register struct host *hp;
 {
+	int s = splnet();
+
 COUNT(HOSTFREE);
-	if (--hp->h_refcnt)
-		return;
-	hostrelease(hp);
+	hp->h_flags &= ~HF_INUSE;
+	hp->h_timer = HOSTTIMER;
+	hp->h_rfnm = 0;
+	splx(s);
 }
 
 /*
  * Reset a given network's host entries.
- * This involves clearing all packet queue's
- * and releasing host structures.
  */
 hostreset(net)	    
 	int net;
@@ -116,28 +127,28 @@ hostreset(net)
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
-	int x;
+	int s = splnet();
 
 COUNT(HOSTRESET);
-	x = splimp();
 	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
-		while (hm->hm_count != 0 && hp < lp) {
+		while (hm->hm_count > 0 && hp < lp) {
 			if (hp->h_addr.s_net == net) {
-				hp->h_refcnt = 0;
+				hp->h_flags &= ~HF_INUSE;
 				hostrelease(hp);
 			}
 			hp++;
 		}
 	}
-	splx(x);
+	splx(s);
 }
 
 /*
  * Remove a host structure and release
  * any resources it's accumulated.
+ * This routine is always called at splnet.
  */
 hostrelease(hp)
 	register struct host *hp;
@@ -163,8 +174,7 @@ COUNT(HOSTRELEASE);
 	mprev = &hosts;
 	while ((m = *mprev) != mh)
 		mprev = &m->m_next;
-	*mprev = mh->m_next;
-	(void) m_free(mh);
+	*mprev = m_free(mh);
 }
 
 /*
@@ -184,4 +194,34 @@ hostdeque(hp)
 	if (hp->h_rfnm == 0)
 		hostfree(hp);
 	return (0);
+}
+
+/*
+ * Host data base timer routine.
+ * Decrement timers on structures which are
+ * waiting to be deallocated.  On expiration
+ * release resources, possibly deallocating
+ * mbuf associated with structure.
+ */
+hostslowtimo()
+{
+	register struct mbuf *m;
+	register struct host *hp, *lp;
+	struct hmbuf *hm;
+	int s = splnet();
+
+COUNT(HOSTSLOWTIMO);
+	for (m = hosts; m; m = m->m_next) {
+		hm = mtod(m, struct hmbuf *);
+		hp = hm->hm_hosts; 
+		lp = hp + HPMBUF;
+		while (hm->hm_count > 0 && hp < lp) {
+			if (hp->h_flags & HF_INUSE)
+				continue;
+			if (hp->h_timer && --hp->h_timer == 0)
+				hostrelease(hp);
+			hp++;
+		}
+	}
+	splx(s);
 }
