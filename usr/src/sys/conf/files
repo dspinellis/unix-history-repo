@@ -1,3 +1,10 @@
+isofs/isofs_bmap.c	optional isofs
+isofs/isofs_lookup.c	optional isofs
+isofs/isofs_node.c	optional isofs
+isofs/isofs_rrip.c	optional isofs
+isofs/isofs_util.c	optional isofs
+isofs/isofs_vfsops.c	optional isofs
+isofs/isofs_vnops.c	optional isofs
 kdb/kdb_access.c	optional kadb
 kdb/kdb_command.c	optional kadb
 kdb/kdb_ctype.c		optional kadb
