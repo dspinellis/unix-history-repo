@@ -1,4 +1,4 @@
-/*	hp.c	4.8	83/02/02	*/
+/*	hp.c	4.9	83/02/10	*/
 
 /*
  * RP??/RM?? disk driver
@@ -76,6 +76,13 @@ struct st hpst[] = {
 };
 struct dkbad hpbad[MAXNMBA*8];
 int sectsiz;
+
+/*
+ * When awaiting command completion, don't
+ * hang on to the status register since
+ * this ties up the controller.
+ */
+#define	HPWAIT(addr)	while ((((addr)->hpds)&HPDS_DRY)==0) DELAY(500);
 
 hpopen(io)
 	register struct iob *io;
@@ -213,8 +220,7 @@ restart:
 	tn = sn/st->nsect;
 	sn = sn%st->nsect + ssect;
 
-	while ((hpaddr->hpds & HPDS_DRY) == 0)
-		;
+	HPWAIT(hpaddr);
 	mba->mba_sr = -1;
 	if (ML11)
 		hpaddr->hpda = bn;
@@ -224,9 +230,7 @@ restart:
 	}
 	if (mbastart(io, func) != 0)		/* start transfer */
 		return (-1);
-
-	while ((hpaddr->hpds & HPDS_DRY) == 0)
-		;
+	HPWAIT(hpaddr);
 	if (((hpaddr->hpds&HPDS_ERR) | (mba->mba_sr&MBSR_EBITS)) == 0 )
 		return(bytecnt);
 
@@ -306,7 +310,7 @@ skipsect:
 		ssect=1;
 		goto success;
 	} else if ((er1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
-		if ( hpecc(io, ECC) == 0)
+		if (hpecc(io, ECC) == 0)
 			goto success;
 		else {
 			io->i_error = EECC;
@@ -320,8 +324,7 @@ skipsect:
 	/* fall thru to retry */
 
 	hpaddr->hpcs1 = HP_DCLR|HP_GO;
-	while ((hpaddr->hpds & HPDS_DRY) == 0)
-		;
+	HPWAIT(hpaddr);
 	if (((io->i_errcnt&07) == 4) ) {
 		hpaddr->hpcs1 = HP_RECAL|HP_GO;
 		hprecal = 1;
@@ -334,6 +337,7 @@ skipsect:
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 		hprecal++;
 		goto try_again;
+
 	case 2:
 		if (io->i_errcnt < 16 || (io->i_flgs & F_READ) == 0)
 			goto donerecal;
@@ -341,6 +345,7 @@ skipsect:
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
 		hprecal++;
 		goto try_again;
+
 	donerecal:
 	case 3:
 		hprecal = 0;
@@ -368,6 +373,7 @@ try_again:		/* re-read same block */
 	}
 	return (bytecnt);
 }
+
 hpecc(io, flag)
 	register struct iob *io;
 	int flag;
@@ -385,8 +391,7 @@ hpecc(io, flag)
 	npf = (bcr + io->i_cc)/sectsiz;		/* number of sectors read */
 	bn = io->i_bn + npf + ssect;		/* bn is physical block number*/
 	switch (flag) {
-	case ECC:
-		{
+	case ECC: {
 		register int i;
 		caddr_t addr;
 		int bit, byte, mask, ecccnt = 0;
@@ -421,14 +426,12 @@ hpecc(io, flag)
 	case SSE:	/* skip sector error */
 			/* set skip-sector-inhibit and read next sector */
 		rp->hpcs1 = HP_DCLR | HP_GO;
-		while(rp->hpds & HPDS_DRY == 0)
-			;			/* avoid RMR error */
+		HPWAIT(rp);
 		rp->hpof |= HPOF_SSEI;
 		return(0);	
 
 #ifndef NOBADSECT
-	case BSE:
-		{
+	case BSE: {
 		int bbn;
 		rp->hpcs1 = HP_DCLR | HP_GO;
 #ifdef HPDEBUG
@@ -458,12 +461,8 @@ hpecc(io, flag)
 		rp->hpda = (tn<<8) + sn;
 		mbastart(io,io->i_flgs);
 		io->i_errcnt = 0;	/* error has been corrected */
-		while(rp->hpds & HPDS_DRY == 0)
-			;		/* wait for the read to complete */
-		if (rp->hpds&HPDS_ERR)
-			return(1);
-		else
-			return(0);
+		HPWAIT(rp);
+		return (rp->hpds&HPDS_ERR);
 		}
 	}
 }
@@ -473,7 +472,6 @@ hpioctl(io, cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-
 	register unit = io->i_unit;
 	struct st *st = &hpst[hp_type[unit]], *tmp;
 	struct mba_drv *drv = mbadrv(unit);
@@ -486,8 +484,7 @@ hpioctl(io, cmd, arg)
 			*tmp = *st;
 			return(0);
 		}
-		else 
-			return(ECMD);
+		return(ECMD);
 
 	case SAIOSSI:			/* set the skip-sector-inhibit flag */
 		if ((drv->mbd_dt&MBDT_TAP) == 0) {
@@ -497,8 +494,8 @@ hpioctl(io, cmd, arg)
 				st->nspc += st->ntrak;
 			}
 			return(0);
-		} else
-			return(ECMD);
+		}
+		return(ECMD);
 
 	case SAIONOSSI:			/* remove the skip-sector-inh. flag */
 		if (io->i_flgs & F_SSI) {
@@ -509,16 +506,12 @@ hpioctl(io, cmd, arg)
 		}
 		return(0);
 
-	case SAIOSSDEV:			/* return null if device has skip sector
-					 * handling, otherwise return ECMD
-					 */
+	case SAIOSSDEV:			/* drive have skip sector? */
 		if (RM80)
 			return(0);
-		else
-			return(ECMD);
+		return(ECMD);
 
 	default:
 		return (ECMD);
 	}
 }
-
