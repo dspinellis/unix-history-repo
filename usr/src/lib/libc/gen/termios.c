@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -61,11 +61,11 @@ tcsetpgrp(fd, pgrp)
 pid_t
 tcgetpgrp(fd)
 {
-	pid_t pgrp;
+	int s;
 
-	if (ioctl(fd, TIOCGPGRP, &pgrp) < 0)
-		return(-1);
-	return(pgrp);
+	if (ioctl(fd, TIOCGPGRP, &s) < 0)
+		return((pid_t)-1);
+	return((pid_t)s);
 }
 
 speed_t
