@@ -267,7 +267,6 @@ read_number(fn)
  */
 rcleanup()
 {
-	register int i;
 
 	if (tfname[0])
 		(void) unlink(tfname);
@@ -275,9 +274,9 @@ rcleanup()
 		do {
 			do
 				(void) unlink(dfname);
-			while (dfname[i]-- != 'A');
-			dfname[i] = 'z';
-		} while (dfname[i-2]-- != 'd');
+			while (dfname[2]-- != 'A');
+			dfname[2] = 'z';
+		} while (dfname[0]-- != 'd');
 }
 
 frecverr(msg, a1, a2)
