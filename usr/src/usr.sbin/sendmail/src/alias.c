@@ -10,11 +10,8 @@
 # include <sys/stat.h>
 # include <signal.h>
 # include "sendmail.h"
-# include <sys/file.h>
-# include <pwd.h>
-# ifdef LOCKF
 # include <fcntl.h>
-# endif
+# include <pwd.h>
 
 # ifdef DBM
 ERROR: DBM is no longer supported -- use NDBM instead.
@@ -31,15 +28,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.5 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.6 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.5 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.6 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.5 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.6 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.5 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.6 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */

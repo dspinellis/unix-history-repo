@@ -13,14 +13,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
 #include <unistd.h>
-#include <sys/file.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <sgtty.h>
