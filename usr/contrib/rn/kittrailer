@@ -1,0 +1,31 @@
+#! /bin/sh
+# $Header: kittrailer,v 4.3 85/05/01 11:42:11 lwall Exp $
+#
+# $Log:	kittrailer,v $
+# Revision 4.3  85/05/01  11:42:11  lwall
+# Baseline for release with 4.3bsd.
+# 
+
+rangelist=`range 1 $3`
+cat >>$1 <<EOT
+echo ""
+echo "End of kit $2 (of $3)"
+cat /dev/null >kit${2}isdone
+config=true
+for iskit in $rangelist; do
+    if test -f kit\${iskit}isdone; then
+	echo "You have run kit \${iskit}."
+    else
+	echo "You still need to run kit \${iskit}."
+	config=false
+    fi
+done
+case \$config in
+    true)
+	echo "You have run all your kits.  Please read README and then type Configure."
+	chmod 755 Configure
+	;;
+esac
+: I do not append .signature, but someone might mail this.
+exit
+EOT
