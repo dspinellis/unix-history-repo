@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getrlimit.2	6.8 (Berkeley) %G%
+.\"     @(#)getrlimit.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETRLIMIT 2
@@ -31,30 +31,39 @@ The
 .Fa resource
 parameter is one of the following:
 .Bl -tag -width RLIMIT_FSIZEAA
-.It Dv RLIMIT_CPU
-the maximum amount of cpu time (in seconds) to be used by
+.It Li RLIMIT_CORE
+The largest size (in bytes)
+.Xr core
+file that may be created.
+.It Li RLIMIT_CPU
+The maximum amount of cpu time (in seconds) to be used by
 each process.
-.It Dv RLIMIT_FSIZE
-the largest size, in bytes, of any single file that may be created.
-.It Dv RLIMIT_DATA
-the maximum size, in bytes, of the data segment for a process;
+.It Li RLIMIT_DATA
+The maximum size (in bytes) of the data segment for a process;
 this defines how far a program may extend its break with the
 .Xr sbrk 2
 system call.
-.It Dv RLIMIT_STACK
-the maximum size, in bytes, of the stack segment for a process;
+.It Li RLIMIT_FSIZE
+The largest size (in bytes) file that may be created.
+.It Li RLIMIT_MEMLOCK
+The maximum size (in bytes) which a process may lock into memory
+using the
+.Xr mlock 2
+function.
+.It Li RLIMIT_NOFILE
+The maximum number of open files for this process.
+.It Li RLIMIT_NPROC
+The maximum number of simultaneous processes for this user id.
+.It Li RLIMIT_RSS
+The maximum size (in bytes) to which a process's resident set size may
+grow.
+This imposes a limit on the amount of physical memory to be given to
+a process; if memory is tight, the system will prefer to take memory
+from processes that are exceeding their declared resident set size.
+.It Li RLIMIT_STACK
+The maximum size (in bytes) of the stack segment for a process;
 this defines how far a program's stack segment may be extended.
 Stack extension is performed automatically by the system.
-.It Dv RLIMIT_CORE
-the largest size, in bytes, of a 
-.Xr core
-file that may be created.
-.It Dv RLIMIT_RSS
-the maximum size, in bytes, to which a process's resident set size may
-grow.  This imposes a limit on the amount of physical memory
-to be given to a process; if memory is tight, the system will
-prefer to take memory from processes that are exceeding their
-declared resident set size.
 .El
 .Pp
 A resource limit is specified as a soft limit and a hard limit.  When a
@@ -66,8 +75,8 @@ its resource limit).  The
 structure is used to specify the hard and soft limits on a resource,
 .Bd -literal -offset indent
 struct rlimit {
-	int	rlim_cur;	/* current (soft) limit */
-	int	rlim_max;	/* hard limit */
+	quad_t	rlim_cur;	/* current (soft) limit */
+	quad_t	rlim_max;	/* hard limit */
 };
 .Ed
 .Pp
@@ -82,8 +91,7 @@ or (irreversibly) lower
 An
 .Dq infinite
 value for a limit is defined as
-.Dv RLIM_INFINITY
-(0x7\&f\&f\&f\&f\&f\&f\&f).
+.Dv RLIM_INFINITY .
 .Pp
 Because this information is stored in the per-process information,
 this system call must be executed directly by the shell if it
@@ -138,7 +146,8 @@ raised the maximum limit value, and the caller is not the super-user.
 .Xr csh 1 ,
 .Xr quota 2 ,
 .Xr sigaltstack 2 ,
-.Xr sigvec 2
+.Xr sigvec 2 ,
+.Xr sysctl 3
 .Sh BUGS
 There should be 
 .Ic limit
