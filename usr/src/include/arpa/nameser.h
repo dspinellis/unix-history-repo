@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.9 (Berkeley) %G%
+ *	@(#)nameser.h	5.10 (Berkeley) %G%
  */
 
 /*
@@ -82,6 +82,7 @@
  */
 
 #define C_IN		1		/* the arpa internet */
+#define C_CHAOS		3		/* for chaos net at MIT */
 	/* Query class values which do not appear in resource records */
 #define C_ANY		255		/* wildcard match */
 
