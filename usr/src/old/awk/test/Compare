@@ -1,0 +1,11 @@
+for i
+do
+	echo $i:
+	awk -f $i foo >junk1 
+	a.out -f $i foo >junk2 
+	if cmp -s junk1 junk2
+	then echo $i: good
+	else echo $i:	BAD
+	fi
+	diff -b junk1 junk2 | ind
+done
