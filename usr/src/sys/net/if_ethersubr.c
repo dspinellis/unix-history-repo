@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.6 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -92,7 +92,7 @@ ether_output(ifp, m0, dst, rt)
  		if (!arpresolve(ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
-		    mcopy = m_copy(m, 0, (int)M_COPYALL);
+			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = m->m_pkthdr.len - m->m_len;
 		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    (m->m_flags & M_EXT) == 0 &&
@@ -116,7 +116,7 @@ ether_output(ifp, m0, dst, rt)
 		if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost, sizeof(edst)))
 			return(looutput(&loif, m, dst));
 		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
-		    mcopy = m_copy(m, 0, (int)M_COPYALL);
+			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		goto gottype;
 #endif
 #ifdef	ISO
@@ -160,6 +160,17 @@ ether_output(ifp, m0, dst, rt)
 		ENDDEBUG
 		} goto gottype;
 #endif	ISO
+#ifdef RMP
+	case AF_RMP:
+		/*
+		 *  This is IEEE 802.3 -- the Ethernet `type' field is
+		 *  really a `length' field.
+		 */
+		type = m->m_len;
+ 		bcopy((caddr_t)dst->sa_data, (caddr_t)edst, sizeof(edst));
+		break;
+#endif
+
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
  		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
