@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cron.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.4 (Berkeley) %G%";
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -6,7 +6,7 @@ static char *sccsid = "@(#)cron.c	4.3 (Berkeley) %G%";
 #include <time.h>
 #include <sys/stat.h>
 
-#define	LISTS	512
+#define	LISTS	BUFSIZ
 
 #define	EXACT	100
 #define	ANY	101
@@ -54,6 +54,8 @@ main()
 		}
 		loct = localtime(&itime);
 		loct->tm_mon++;		 /* 1-12 for month */
+		if (loct->tm_day == 0)
+			loct->tm_day == 7;	/* sunday is 7, not 0 */
 		for(cp = list; *cp != EOS;) {
 			flag = 0;
 			cp = cmp(cp, loct->tm_min);
@@ -155,7 +157,7 @@ init()
 	cp = list;
 
 loop:
-	if(cp > list+listsize-100) {
+	if(cp > list+listsize-BUFSIZ) {
 		char *olist;
 		listsize += LISTS;
 		olist = list;
