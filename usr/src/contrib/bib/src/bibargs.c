@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.6	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.7	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -70,15 +70,19 @@ static char sccsid[] = "@(#)bibargs.c	2.6	%G%";
 
    numfiles = 0;
    style = true;
-   wordstuff("BMACLIB", BMACLIB);
-   fputs(".ds l] ",tfd);
-   fputs(BMACLIB, tfd);
-   fputs("\n", tfd);
+   newbibdir(BMACLIB);
 
    for (i = 1; i < argc; i++)
       if (argv[i][0] == '-')
          switch(argv[i][1]) {
-
+			case 'd':
+				if (argv[i][2])
+					p = &argv[i][2];
+				else {  /* take next arg */
+					i++;
+					p = argv[i];
+			}
+			newbibdir(p);
             case 'a':  for (p = &argv[i][2]; *p; p++)
                           if (*p == 'a' || *p == 0)
                              abbrev = true;
@@ -210,6 +214,16 @@ static char sccsid[] = "@(#)bibargs.c	2.6	%G%";
    if (style) incfile( defstyle );
    return(numfiles);
 
+}
+
+newbibdir(name)
+	char *name;
+{
+	strreplace(COMFILE, BMACLIB, name);
+	strreplace(DEFSTYLE, BMACLIB, name);
+	strcpy(BMACLIB, name);
+	wordstuff("BMACLIB", BMACLIB);
+	fprintf(tfd, ".ds l] %s\n", BMACLIB);
 }
 
 /* incfile - read in an included file  */
@@ -344,6 +358,7 @@ incfile(np)
 {
   fprintf(stderr,"`%s', line %d: ", bibfname, biblineno);
   fprintf(stderr, msg, a1, a2);
+  fprintf(stderr, "\n");
 }
 
 /* error - report unrecoverable error message */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)listrefs.c	2.4	%G%";
+static char sccsid[] = "@(#)listrefs.c	2.5	%G%";
 #endif not lint
 /*
         Listrefs - list references for bib system
@@ -45,6 +45,10 @@ main(argc, argv)
    char **argv;
 {  char defult[120];
    int  i, rcomp(), intr();
+
+   strcpy(BMACLIB, N_BMACLIB);
+   strcpy(COMFILE, N_COMFILE);
+   strcpy(DEFSTYLE, N_DEFSTYLE);
 
    signal(SIGINT, intr);
    tfd = stdout;
