@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)portal_vfsops.c	8.4 (Berkeley) %G%
  *
  * $Id: portal_vfsops.c,v 1.5 1992/05/30 10:25:27 jsp Exp jsp $
  */
@@ -36,9 +36,8 @@
 #include <sys/un.h>
 #include <miscfs/portal/portal.h>
 
-static u_short portal_mntid;
-
-int portal_init()
+int
+portal_init()
 {
 
 #ifdef PORTAL_DIAGNOSTIC
@@ -56,13 +55,13 @@ portal_mount(mp, path, data, ndp, p)
 	struct nameidata *ndp;
 	struct proc *p;
 {
-	int error = 0;
-	struct portal_args args;
-	u_int size;
-	struct portalmount *fmp;
-	struct vnode *rvp;
 	struct file *fp;
+	struct portal_args args;
+	struct portalmount *fmp;
 	struct socket *so;
+	struct vnode *rvp;
+	u_int size;
+	int error;
 
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_mount(mp = %x)\n", mp);
@@ -106,10 +105,10 @@ portal_mount(mp, path, data, ndp, p)
 	mp->mnt_data = (qaddr_t) fmp;
 	getnewfsid(mp, MOUNT_PORTAL);
 
-	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
+	(void)copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
-	(void) copyinstr(args.pa_config, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
-		&size);
+	(void)copyinstr(args.pa_config,
+	    mp->mnt_stat.f_mntfromname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 
 #ifdef notdef
@@ -119,7 +118,7 @@ portal_mount(mp, path, data, ndp, p)
 
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_mount: config %s at %s\n",
-			mp->mnt_stat.f_mntfromname, mp->mnt_stat.f_mntonname);
+	    mp->mnt_stat.f_mntfromname, mp->mnt_stat.f_mntonname);
 #endif
 	return (0);
 }
