@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -15,10 +15,11 @@ static char sccsid[] = "@(#)ttyname.c	5.13 (Berkeley) %G%";
 #include <dirent.h>
 #include <sgtty.h>
 #include <db.h>
-#include <unistd.h>
+#include <string.h>
 #include <paths.h>
 
 static char buf[sizeof(_PATH_DEV) + MAXNAMLEN] = _PATH_DEV;
+static char *oldttyname __P((int, struct stat *));
 
 char *
 ttyname(fd)
@@ -32,14 +33,13 @@ ttyname(fd)
 		mode_t type;
 		dev_t dev;
 	} bkey;
-	static char *__oldttyname();
 
 	/* Must be a terminal. */
 	if (ioctl(fd, TIOCGETP, &ttyb) < 0)
-		return(NULL);
+		return (NULL);
 	/* Must be a character device. */
 	if (fstat(fd, &sb) || !S_ISCHR(sb.st_mode))
-		return(NULL);
+		return (NULL);
 
 	if (db = dbopen(_PATH_DEVDB, O_RDONLY, 0, DB_HASH, NULL)) {
 		bkey.type = S_IFCHR;
@@ -50,25 +50,24 @@ ttyname(fd)
 			bcopy(data.data,
 			    buf + sizeof(_PATH_DEV) - 1, data.size);
 			(void)(db->close)(db);
-			return(buf);
+			return (buf);
 		}
 		(void)(db->close)(db);
 	}
-	return(__oldttyname(fd, &sb));
+	return (oldttyname(fd, &sb));
 }
 
 static char *
-__oldttyname(fd, sb)
+oldttyname(fd, sb)
 	int fd;
 	struct stat *sb;
 {
 	register struct dirent *dirp;
 	register DIR *dp;
 	struct stat dsb;
-	char *strcpy();
 
 	if ((dp = opendir(_PATH_DEV)) == NULL)
-		return(NULL);
+		return (NULL);
 
 	while (dirp = readdir(dp)) {
 		if (dirp->d_fileno != sb->st_ino)
@@ -79,8 +78,8 @@ __oldttyname(fd, sb)
 		    sb->st_ino != dsb.st_ino)
 			continue;
 		(void)closedir(dp);
-		return(buf);
+		return (buf);
 	}
 	(void)closedir(dp);
-	return(NULL);
+	return (NULL);
 }
