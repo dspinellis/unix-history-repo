@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.8	81/11/26	*/
+/*	uipc_proto.c	4.9	81/11/30	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -31,54 +31,54 @@ int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq(),tcp_sense();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_ctlinput();
-int	rip_usrreq(),rip_sense();
+int	rip_input(),rip_output(),rip_ctlinput();
+int	rip_usrreq(),rip_slowtimo();
 
 struct protosw protosw[] = {
-{ SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED,
+{ SOCK_STREAM,	PF_UNIX,	0,		PR_CONNREQUIRED,
   0,		0,		0,		0,
-  piusrreq,	0,		0,
-  0,		0,		0,		0,
-},
-{ SOCK_DGRAM,	PF_LOCAL,	0,		PR_ATOMIC|PR_ADDR,
-  0,		0,		0,		0,
-  piusrreq,	0,		0,
+  piusrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RDM,	PF_LOCAL,	0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_DGRAM,	PF_UNIX,	0,		PR_ATOMIC|PR_ADDR,
   0,		0,		0,		0,
-  piusrreq,	0,		0,
+  piusrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RAW,	PF_LOCAL,	0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_RDM,	PF_UNIX,	0,		PR_ATOMIC|PR_ADDR,
   0,		0,		0,		0,
-  piusrreq,	0,		0,
+  piusrreq,
+  0,		0,		0,		0,
+},
+{ SOCK_RAW,	PF_UNIX,	0,		PR_ATOMIC|PR_ADDR,
+  0,		0,		0,		0,
+  piusrreq,
   0,		0,		0,		0,
 },
 { 0,		0,		0,		0,
   0,		ip_output,	0,		0,
-  0,		0,		0,
+  0,
   ip_init,	0,		ip_slowtimo,	ip_drain,
 },
 { 0,		0,		IPPROTO_ICMP,	0,
   icmp_input,	0,		0,		0,
-  0,		0,		0,
+  0,
   0,		0,		0,		icmp_drain,
 },
 { SOCK_DGRAM,	PF_INET,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp_input,	0,		udp_ctlinput,	0,
-  udp_usrreq,	udp_sense,	MLEN,
+  udp_usrreq,
   udp_init,	0,		0,		0,
 },
 { SOCK_STREAM,	PF_INET,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
   tcp_input,	0,		tcp_ctlinput,	0,
-  tcp_usrreq,	tcp_sense,	MLEN,
+  tcp_usrreq,
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
 { SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  rip_input,	0,		rip_ctlinput,	0,
-  rip_usrreq,	rip_sense,	MLEN,
-  0,		0,		0,		0,
+  rip_input,	rip_output,	rip_ctlinput,	0,
+  rip_usrreq,
+  0,		0,		rip_slowtimo,	0,
 }
 };
 

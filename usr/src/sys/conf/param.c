@@ -1,4 +1,4 @@
-/*	param.c	4.10	81/11/14	*/
+/*	param.c	4.11	81/11/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,7 +34,7 @@ int	nfile = 8 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + MAXUSERS;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
-int     nmbpages = NMBPAGES;
+int     nmbclusters = NMBCLUSTERS;
 
 /*
  * These are initialized at bootstrap time
