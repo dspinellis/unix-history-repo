@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	8.2 (Berkeley) %G%
+ *	@(#)tuba_table.c	8.3 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -63,7 +63,7 @@ tuba_lookup(siso, wait)
 	struct tuba_cache **new;
 	int dupentry = 0, sum_a = 0, sum_b = 0, old_size, i;
 
-	if ((rn = rn_match((caddr_t)&siso->siso_addr, tuba_tree->rnh_treetop))
+	if ((rn = rn_match((caddr_t)&siso->siso_addr, tuba_tree))
 	     && ((rn->rn_flags & RNF_ROOT) == 0)) {
 		tc = (struct tuba_cache *)rn;
 		tc->tc_time = time.tv_sec;
