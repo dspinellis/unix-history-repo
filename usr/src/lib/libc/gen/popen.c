@@ -1,13 +1,14 @@
-/* @(#)popen.c	4.5 (Berkeley) %G% */
+/* @(#)popen.c	4.6 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <signal.h>
+#include <sys/param.h>
 
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0
 #define	WTR	1
 
-static	int popen_pid[20];
+static	int popen_pid[NOFILE];
 
 FILE *
 popen(cmd,mode)
