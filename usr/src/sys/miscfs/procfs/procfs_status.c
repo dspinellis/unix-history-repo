@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_status.c	8.2 (Berkeley) %G%
+ *	@(#)procfs_status.c	8.3 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_status.c,v 3.1 1993/12/15 09:40:17 jsp Exp $
@@ -79,17 +79,17 @@ procfs_dostatus(curp, p, pfs, uio)
 		ps += sprintf(ps, "noflags");
 
 	if (p->p_flag & P_INMEM)
-		ps += sprintf(ps, " %d %d",
+		ps += sprintf(ps, " %d,%d",
 			p->p_stats->p_start.tv_sec,
 			p->p_stats->p_start.tv_usec);
 	else
-		ps += sprintf(ps, " -1 -1");
+		ps += sprintf(ps, " -1,-1");
 	
 	{
 		struct timeval ut, st;
 
 		calcru(p, &ut, &st, (void *) 0);
-		ps += sprintf(ps, " %d %d %d %d",
+		ps += sprintf(ps, " %d,%d %d,%d",
 			ut.tv_sec,
 			ut.tv_usec,
 			st.tv_sec,
@@ -101,9 +101,9 @@ procfs_dostatus(curp, p, pfs, uio)
 
 	cr = p->p_ucred;
 
-	ps += sprintf(ps, " %d %d", cr->cr_uid, cr->cr_gid);
+	ps += sprintf(ps, " %d", cr->cr_uid, cr->cr_gid);
 	for (i = 0; i < cr->cr_ngroups; i++)
-		ps += sprintf(ps, " %d", cr->cr_groups[i]);
+		ps += sprintf(ps, ",%d", cr->cr_groups[i]);
 	ps += sprintf(ps, "\n");
 
 	xlen = ps - psbuf;
