@@ -134,7 +134,6 @@ char *malloc();
 char *realloc();
 char *strcpy();
 char *strcat();
-char *sprintf();		/* usually */
 long atol();
 long lseek();
 char *mktemp();
