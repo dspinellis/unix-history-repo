@@ -1,45 +1,59 @@
 /*
+ * Copyright (c) 1990 W. Jolitz
+ * @(#)npx.c	1.2 (Berkeley) %G%
+ */
+#include "npx.h"
+#if	NNPX > 0
+
+#include "param.h"
+#include "systm.h"
+#include "conf.h"
+#include "file.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "vm.h"
+#include "machine/pte.h"
+#include "machine/isa/isa_device.h"
+#include "icu.h"
+/*
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.
- * @(#)npx.c	1.1 (Berkeley) %G%
  */
 
 int	npxprobe(), npxattach(), npxintr();
-struct	driver npxdriver = {
+struct	isa_driver npxdriver = {
 	npxprobe, npxattach, "npx",
 };
 
 struct proc	*npxproc;	/* process who owns device, otherwise zero */
-struct user	*npxutl;	/* owners user structure */
-struct pte	*Npxmap;	/* kernel ptes mapping owner's user structure */
+extern struct user npxutl;	/* owners user structure */
+extern struct pte Npxmap[];	/* kernel ptes mapping owner's user structure */
 
 /*
  * Probe routine - look device, otherwise set emulator bit
  */
 npxprobe(dvp)
-	struct device *dvp;
-{
-	register status;
+	struct isa_device *dvp;
+{	static status, control;
 
 #ifdef lint
 	npxintr();
 #endif
-/* insure EM bit off */
-	asm("	fninit");	/* put device in known state */
+
+	/* insure EM bit off */
+	asm("	fninit ");	/* put device in known state */
 
 	/* check for a proper status of zero */
 	status = 0xa5a5;	
-	asm("	movw	%1,%%ax ; fnstsw %%ax ;  movw %%ax, %0"
-		: "=g" (status) : "g" (status) : "ax");
+	asm ("	fnstsw	%0 " : "=m" (status) : "m" (status) );
 
 	if (status == 0) {
-		register control;
 
 		/* good, now check for a proper control word */
 		control = 0xa5a5;	
-		asm("	movw	%1,%%ax ; fnstcw %%ax ;  movw %%ax, %0"
-			: "=g" (control) : "g" (control) : "ax");
+		asm ("	fnstcw %0 " : "=m" (control) : "m" (control));
 
-		if (control&0x103f == 0x3f) {
+		if ((control&0x103f) == 0x3f) {
 			/* then we have a numeric coprocessor */
 		/* XXX should force an exception here to generate an intr */
 			return (1);
@@ -54,26 +68,21 @@ npxprobe(dvp)
  * Attach routine - announce which it is, and wire into system
  */
 npxattach(dvp)
-	struct device *dvp;
+	struct isa_device *dvp;
 {
-	int unit = dvp->unit;
 
-	npxinit();
+	npxinit(0x262);
 	/* check for ET bit to decide 387/287 */
-	INTREN(IRQ13);
 	/*outb(0xb1,0);		/* reset processor */
 }
 
 /*
  * Initialize floating point unit, usually after an error
  */
-npxinit() {
-	register control;
+npxinit(control) {
 
 	asm ("	fninit");
-	control = XXX;
-	asm("	movw	%0,%%ax ; fldcw %%ax "
-			: "g" (control) : "ax");
+	asm("	fldcw %0" : : "g" (control));
 
 }
 
@@ -85,7 +94,7 @@ npxload() {
 	if (npxproc) panic ("npxload");
 	npxproc = u.u_procp;
 	uaccess(npxproc, Npxmap, &npxutl);
-	asm("	frstor %0 " : "g" (u.u_pcb.pcb_savefpu) );
+	asm("	frstor %0 " : : "g" (u.u_pcb.pcb_savefpu) );
 }
 
 /*
@@ -94,7 +103,7 @@ npxload() {
 npxunload() {
 
 	if (npxproc == 0) panic ("npxunload");
-	asm("	fsave %0 " : "g" (npxutl.u_pcb.pcb_savefpu) );
+	asm("	fsave %0 " : : "g" (npxutl.u_pcb.pcb_savefpu) );
 	npxproc = 0 ;
 }
 
@@ -105,7 +114,7 @@ npxexcept() {
 
 	/* save state in appropriate user structure */
 	if (npxproc == 0) panic ("npxexcept");
-	asm ("	fsave %0 " : "g" (npxutl.u_pcb.pcb_savefpu) );
+	asm ("	fsave %0 " : : "g" (npxutl.u_pcb.pcb_savefpu) );
 
 	/*
 	 * encode the appropriate u_code for detailed information
@@ -132,3 +141,4 @@ npxintr() {
  */
 npxdna() {
 }
+#endif
