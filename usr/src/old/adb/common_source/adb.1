@@ -1,9 +1,9 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.man%
+.\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)adb.1	5.10 (Berkeley) %G%
+.\"	@(#)adb.1	5.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ADB 1
@@ -15,9 +15,7 @@
 .Nm adb
 .Op Fl w
 .Op Fl k
-.Oo
-.Op Fl I Ar dir
-.Oo
+.Op Fl I Ns Ar dir
 .Op Ar objfil Op Ar corfil
 .Sh DESCRIPTION
 .Nm Adb
@@ -59,10 +57,14 @@ The
 .Fl k
 option makes
 .Nm adb
-do UNIX kernel memory
+do
+.Ux
+kernel memory
 mapping; it should be used when
 .Pa core
-is a UNIX crash dump
+is a
+.Ux
+crash dump
 or
 .Pa /dev/mem .
 .Pp
@@ -87,12 +89,12 @@ command.
 In general requests to
 .Nm adb
 are of the form
-.Pp
-.ti +\n(Dsu
+.Bd -filled -offset indent
 .Op Ad address
 .Op \&, Va count
 .Op Ic command
 .Op \&;
+.Ed
 .Pp
 If
 .Ad address
@@ -123,23 +125,23 @@ the kernel virtual addresses which start at
 .Li \&0x80000000
 (on the VAX); see ADDRESSES below.
 .Sh EXPRESSIONS
-.Tw Li
-.Tp Sy \&\.
+.Bl -tag -width integer
+.It Sy \&\.
 The value of
 .Ad dot .
-.Tp  Sy \&\+
+.It  Sy \&\+
 The value of
 .Ad dot
 incremented by the current increment.
-.Tp Sy \&^
+.It Sy \&^
 The value of
 .Ad dot
 decremented by the current increment.
-.Tp Sy \&"
+.It Sy \&"
 The last
 .Ad address
 typed.
-.Tp Va integer
+.It Va integer
 A number.  The prefixes
 .Li \&0o
 and
@@ -177,20 +179,21 @@ digit would otherwise be an alphabetic character must have a
 (or
 .Li 0X )
 prefix (or a leading zero if the default radix is hexadecimal).
-.Tp Va integer.fraction
+.It Va integer.fraction
 A 32 bit floating point number.
-.Tp Li \'cccc\'
+.It Li \'cccc\'
 The ASCII value of up to 4 characters.
 .Li \e
 may be used to escape a
 .Li \' .
-.Tp Va < name
+.It Va < name
 The value of
 .Va name ,
 which is either a variable name or a register name.
 .Nm Adb
 maintains a number of variables (see
-VARIABLES below)
+.Sx VARIABLES
+below)
 named by single letters or digits.
 If
 .Va name
@@ -200,7 +203,7 @@ the system header in
 The register names are those printed by the
 .Ic $r
 command.
-.Tp Va symbol
+.It Va symbol
 A
 .Va symbol
 is a sequence of upper or lower case letters, underscores or
@@ -215,12 +218,12 @@ An initial
 will be prepended to
 .Va symbol
 if needed.
-.Tp Va _symbol
+.It Va _symbol
 In C, the `true name' of an external symbol begins with
 .Li \_ .
 It may be necessary to utter this name to distinguish it
 from internal or hidden variables of a program.
-.Tp Va routine.name
+.It Va routine.name
 The address of the variable
 .Va name
 in the specified C routine.  Both
@@ -242,83 +245,50 @@ of the most recently activated C stack frame
 corresponding to
 .Va routine
 (this much works).
-.Tp (exp)
-.\" .Tp Cx \&(\&
-.\" .Va exp
-.\" .Cx \&)\&
+.It Pq Va exp
 The value of the expression
-.Va exp .
-.Tp
-.Pp
+.Ar exp .
+.El
 .Ss Monadic Operators
-.Pp
-.Dp Cx Li \&*
-.Va exp
-.Cx
+.Bl -tag -width flag -compact
+.It Li \&* Ns Va exp 
 The contents of the location addressed by
 .Va exp
 in
 .Ar corfil .
-.Dp Cx Li \&@
-.Va exp
-.Cx
+.It Li \&@ Ns Va exp 
 The contents of the location addressed by
 .Va exp
 in
 .Ar objfil .
-.Dp Cx Li \&\-
-.Va exp
-.Cx
+.It Li \&\- Ns Va exp 
 Integer negation.
-.Dp Cx Li \&~
-.Va exp
-.Cx
+.It Li \&~ Ns Va exp 
 Bitwise complement.
-.Dp Cx Li \&#
-.Va exp
-.Cx
+.It Li \&# Ns Va exp 
 Logical negation.
-.Dp
+.El
 .Ss Dyadic operators
-are left associative and are less binding than monadic operators.
-.Dp Cx Va e1
-.Li \&\+
-.Va e2
-.Cx
+Are left associative and are less binding than monadic operators.
+.Pp
+.Bl -tag -width xxXxx -compact
+.It Va e1 Ns Li \&\+ Ns Va e2 
 Integer addition.
-.Dp Cx Va e1
-.Li \&\-
-.Va e2
-.Cx
+.It Va e1 Ns Li \&\- Ns Va e2 
 Integer subtraction.
-.Dp Cx Va e1
-.Li \&*
-.Va e2
-.Cx
+.It Va e1 Ns Li \&* Ns Va e2 
 Integer multiplication.
-.Dp Cx Va e1
-.Li \&%
-.Va e2
-.Cx
+.It Va e1 Ns Li \&% Ns Va e2 
 Integer division.
-.Dp Cx Va e1
-.Li &
-.Va e2
-.Cx
+.It Va e1 Ns Li & Ns Va e2 
 Bitwise conjunction.
-.Dp Cx Va e1
-.Li \&|
-.Va e2
-.Cx
+.It Va e1 Ns Li \&| Ns Va e2 
 Bitwise disjunction.
-.Dp Cx Va e1
-.Li #
-.Va e2
-.Cx
+.It Va e1 Ns Li # Ns Va e2 
 .Va E1
 rounded up to the next multiple of
 .Va e2 .
-.Dp
+.El
 .Sh COMMANDS
 Most commands consist of a verb followed by a modifier or list of modifiers.
 The following verbs are available.
@@ -329,12 +299,11 @@ and
 may be followed by
 .Li * ;
 see the
-ADDRESSES section
+.Sx ADDRESSES
+section
 for further details.)
-.Tw XXX
-.Tp Cx Ic ?
-.Va f
-.Cx
+.Bl -tag -width flag
+.It Ic ? Ns Va f 
 Locations starting at
 .Ad address
 in
@@ -343,9 +312,7 @@ are printed according to the format
 .Va f .
 .Ad dot
 is incremented by the sum of the increments for each format letter (q.v.).
-.Tp Cx Ic /
-.Va f
-.Cx
+.It Ic / Ns Va f 
 Locations starting at
 .Ad address
 in
@@ -356,9 +323,7 @@ and
 .Ad dot
 is incremented as for
 .Ic ? .
-.Tp Cx Ic =
-.Va f
-.Cx
+.It Ic = Ns Va f 
 The value of
 .Ad address
 itself is printed in the styles indicated by the format
@@ -368,7 +333,7 @@ itself is printed in the styles indicated by the format
 format zero values are assumed
 for the parts of the instruction that reference
 subsequent words.)
-.Tp
+.El
 .Pp
 A
 .Va format
@@ -381,234 +346,135 @@ is incremented by the amount given for each format letter.
 If no format is given then the last format is used.
 The format characters available are as follows.
 Note that a backslash
-.Cx (
-.Li \e
-.Cx )
-.Cx
+.Pq Li \e
 must be used
 to quote the three numeric formats.
-.Dw \&M_____\&M
-.Dp Cx Ic 1
-.Cx \&\ \ \&
-.Va 1
-.Cx
+.Pp
+.Bl -tag -width \&M_____\&M -compact
+.It Ic 1 Va 1 
 Print 1 byte in the current radix
 (which may be either signed or unsigned; see the
 .Ic $d
 command).
-.Dp Cx Ic 2
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic 2 Va 2 
 Print 2 bytes in the current radix.
-.Dp Cx Ic 4
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic 4 Va 4 
 Print 4 bytes in the current radix.
-.Dp Cx Ic v
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic v Va 2 
 Print 2 bytes in the signed variant of the current radix.
-.Dp Cx Ic V
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic V Va 4 
 Print 4 bytes in the signed variant of the current radix.
-.Dp Cx Ic o
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic o Va 2 
 Print 2 bytes in unsigned octal.  All octal numbers output by
 .Nm adb
 are preceded by 0.
-.Dp Cx Ic O
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic O Va 4 
 Print 4 bytes in unsigned octal.
-.Dp Cx Ic q
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic q Va 2 
 Print 2 bytes in signed octal.
-.Dp Cx Ic Q
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic Q Va 4 
 Print 4 bytes in signed octal.
-.Dp Cx Ic u
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic u Va 2 
 Print 2 bytes in unsigned decimal.
-.Dp Cx Ic U
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic U Va 4 
 Print 4 bytes in long unsigned decimal.
-.Dp Cx Ic d
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic d Va 2 
 Print 2 bytes in signed decimal.
-.Dp Cx Ic D
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic D Va 4 
 Print 4 bytes in long signed decimal.
-.Dp Cx Ic x
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic x Va 2 
 Print 2 bytes in unsigned hexadecimal.
-.Dp Cx Ic X
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic X Va 4 
 Print 4 bytes in unsigned hexadecimal.
-.Dp Cx Ic z
-.Cx \&\ \ \&
-.Va 2
-.Cx
+.It Ic z Va 2 
 Print 2 bytes in signed hexadecimal.
-.Dp Cx Ic Z
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic Z Va 4 
 Print 4 bytes in signed hexadecimal.
-.Dp Cx Ic f
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic f Va 4 
 Print 4 bytes as a floating point number.
-.Dp Cx Ic F
-.Cx \&\ \ \&
-.Va 8
-.Cx
+.It Ic F Va 8 
 Print 8 bytes as a double floating point number.
-.Dp Cx Ic b
-.Cx \&\ \ \&
-.Va 1
-.Cx
+.It Ic b Va 1 
 Print 1 byte in unsigned octal.
-.Dp Cx Ic c
-.Cx \&\ \ \&
-.Va 1
-.Cx
+.It Ic c Va 1 
 Print 1 byte as a character.
-.Dp Cx Ic C
-.Cx \&\ \ \&
-.Va 1
-.Cx
+.It Ic C Va 1 
 Print 1 byte as a character, using
 the standard escape convention where control characters
 are printed as
-.Cx \&^ Ar X
-.Cx
-and the delete character is printed as ^?.
-.Dp Cx Ic s
-.Cx \&\ \ \&
-.Va n
-.Cx
+.Ql \&^X
+and the delete character is printed as
+.Ql ^? .
+.It Ic s Va n 
 Print the addressed characters until a zero character is reached.
-.Dp Cx Ic S
-.Cx \&\ \ \&
-.Va n
-.Cx
+.It Ic S Va n 
 Print a string using the
-.Cx \&^ Ar X
-.Cx
+.Ql ^X
 escape convention (see
 .Ar C
 above).
 .Ar n
 is the length of the string including its zero terminator.
-.Dp Cx Ic Y
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.It Ic Y Va 4 
 Print 4 bytes in date format (see
 .Xr ctime 3 ) .
-.Dp Cx Ic i
-.Cx \&\ \ \&
-.Va n
-.Cx
+.It Ic i Va n 
 Print as machine instructions.
 .Ar n
 is the number of bytes occupied by the instruction.
 This style of printing causes the numeric variables 1, 2, ... to be set
 according to the offset parts of the arguments, if any, of the instruction
-(up to 6 on the VAX).
-.Dp Cx Ic a
-.Cx \&\ \ \&
-.Va 0
-.Cx
+(up to 6 on the
+.Tn VAX ) .
+.It Ic a Va 0 
 Print the value of
 .Ad dot
 in symbolic form.
 Symbols are checked to ensure that they have an appropriate
 type as indicated below.
-.Dw AAAA
-.Dp Va /
+.Bl -tag -width flag -compact
+.It Va /
 local or global data symbol
-.Dp Va \&?
-.Cx
+.It Va \&?
 local or global text symbol
-.Dp Va \&=
-.Cx
+.It Va \&=
 local or global absolute symbol
-.Dp
-.Dp Cx Ic p
-.Cx \&\ \ \&
-.Va 4
-.Cx
+.El
+.It Ic p Va 4 
 Print the addressed value in symbolic form using
 the same rules for symbol lookup as
 .Ic a .
-.Dp Cx Ic t
-.Cx \&\ \ \&
-.Va 0
-.Cx
+.It Ic t Va 0 
 When preceded by an integer tabs to the next appropriate tab stop.
 For example,
 .Li 8t
 moves to the next 8-space tab stop.
-.Dp Cx Ic r
-.Cx \&\ \ \&
-.Va 0
-.Cx
+.It Ic r Va 0 
 Print a space.
-.Dp Cx Ic n
-.Cx \&\ \ \&
-.Va 0
-.Cx
+.It Ic n Va 0 
 Print a newline.
-.Dp Ic \*(Lq...\*(Rq
-.Va 0
-.br
+.It Ic \*(Lq...\*(Rq Va 0
 Print the enclosed string.
-.Dp Ic \&^
+.It Ic \&^
 .Ad Dot
 is decremented by the current increment.  Nothing is printed.
-.Dp Ic \&+
+.It Ic \&+
 .Ad Dot
 is incremented by 1.  Nothing is printed.
-.Dp Ic \&\-
+.It Ic \&\-
 .Ad Dot
 is decremented by 1.  Nothing is printed.
-.Dp newline
+.It newline
 Repeat the previous command with a
 .Va count
 of 1.
-.Dp
+.El
 .Pp
-.Tw $modifier
-.Tp Cx Op Ic ?/
-.Ic l\ \&
-.Va value mask
-.Cx
+.Bl -tag -width $modifier
+.It Xo
+.Oo Ic ?/ Oc Ns Ic l
+.Va "value mask"
+.Xc
 Words starting at
 .Ad dot
 are masked with
@@ -628,10 +494,10 @@ is set to the matched location.
 If
 .Va mask
 is omitted then all bits are compared.
-.Tp Cx Op Ic ?/
-.Ic w\ \&
-.Va value ...
-.Cx
+.It Xo
+.Oo Ic ?/ Oc Ns Ic w
+.Va "value ..."
+.Xc
 Write the 2-byte
 .Va value
 into the addressed location.  If the command is
@@ -641,13 +507,12 @@ Odd addresses
 .Em are
 allowed
 when writing to the subprocess address space.
-.Tp Cx Op Ic ?/
-.Ic m\ \&
-.Ad b1 e1 f1
-.Op Ic ?/
-.Cx
+.It Xo
+.Oo Ic ?/ Oc Ns Ic m
+.Ad b1 e1 f1 Ns Op Ic ?/ 
+.Xc
 New values for
-.Pf \&( Ad b1 , e1 , f1 )
+.Pq Ad b1 , e1 , f1
 are recorded.  If less than three expressions are given then
 the remaining map parameters are left unchanged.
 If the
@@ -658,14 +523,14 @@ is followed by
 .Li *
 then
 the second segment
-.Pf \&( Ad b2 , e2 , f2 )
+.Pq Ad b2 , e2 , f2
 of the mapping is changed.
 If the list is terminated by
 .Ic ?
 or
 .Ic /
 then the file
-.Pf \&( Ar objfil
+.Pf ( Ar objfil
 or
 .Ar corfil
 respectively) is used for subsequent requests.
@@ -675,26 +540,20 @@ will cause
 .Ic /
 to refer to
 .Ar objfil .
-.Tp Cx Ic >
-.Va name
-.Cx
+.It Ic > Ns Va name 
 .Ad Dot
 is assigned to the variable or register named.
-.Tp Ic \&!
+.It Ic \&!
 A shell
-.Pf \&( Pa /bin/sh )
+.Pq Pa /bin/sh
 is called to read the rest of the line following
 .Ic \&! .
-.Tp Cx Cm $
-.Va modifier
-.Cx
+.It Cm $ Ns Va modifier 
 Miscellaneous commands.  The available
 .Va modifiers
 are:
-.Tw fil
-.Tp Cx Cm <
-.Va file
-.Cx
+.Bl -tag -width filexx
+.It Cm < Ns Va file 
 Read commands from
 .Va file
 If this command is executed in a file, further commands
@@ -709,9 +568,7 @@ The value of the count will be placed in variable
 before the first command in
 .Va file
 is executed.
-.Tp Cx Cm <<
-.Va file
-.Cx
+.It Cm << Ns Va file 
 Similar to
 .Cm <
 except it can be used in a file of commands without
@@ -721,32 +578,28 @@ is saved during the execution of this command, and restored when it completes.
 There is a (small) finite limit to the number of
 .Cm <<
 files that can be open at once.
-.Tp Cx Cm >
-.Va file
-.Cx
+.It Cm > Ns Va file 
 Append output to the file
 .Va file ,
 which is created if it does not exist.  If
 .Va file
 is omitted, output is returned to the terminal.
-.Tp Cx Cm ?
-.Va file
-.Cx
+.It Cm ? Ns Va file 
 Print process id, the signal which caused stoppage or termination,
 as well as the registers as
 .Ic $r .
 This is the default if
 .Va modifier
 is omitted.
-.Tp Cm r
+.It Cm r
 Print the general registers and the instruction addressed by
 .Nm pc .
 .Ad Dot
 is set to
 .Nm pc .
-.Tp Cm b
+.It Cm b
 Print all breakpoints and their associated counts and commands.
-.Tp Cm c
+.It Cm c
 C stack backtrace.  If
 .Ad address
 is given then it is taken as the address of the current frame
@@ -759,7 +612,7 @@ and static variables are printed for each active function
 is given then only the first
 .Va count
 frames are printed.
-.Tp Cm d
+.It Cm d
 Set the default radix to
 .Ad address
 and report the new value.  If no
@@ -772,27 +625,30 @@ will be treated as signed; otherwise they are treated as unsigned.
 Note that
 .Ad address
 is interpreted in the (old) current radix.
-Thus \*(lq10$d\*(rq simply changes the default radix to unsigned.
-To make signed decimal the default radix, use \*(lq-0t10$d\*(rq.
-.Tp Cm e
+Thus
+.Dq "10$d"
+simply changes the default radix to unsigned.
+To make signed decimal the default radix, use
+.Dq "-0t10$d"
+.It Cm e
 The names and values of external variables are printed.
-.Tp Cm w
+.It Cm w
 Set the page width for output to
 .Ad address
 (default 80).
-.Tp Cm s
+.It Cm s
 Set the limit for symbol matches to
 .Ad address
 (default 1024).
-.Tp Cm q
+.It Cm q
 Exit from
 .Nm adb .
-.Tp Cm v
+.It Cm v
 Print all non zero variables in octal.
-.Tp Cm m
+.It Cm m
 Print the address map.
-.Tp Cm p
-.Pf \&( Em Kernel debugging )
+.It Cm p
+.Pq Em Kernel debugging
 Change the current kernel memory mapping to map the designated
 .Sy user structure
 to the address given by the symbol
@@ -800,15 +656,11 @@ to the address given by the symbol
 The
 .Ad address
 argument is the address of the user's user page table entries.
-.Tp
-.Tp Cx Cm :
-.Va modifier
-.Cx
+.El
+.It Cm : Ns Va modifier 
 Manage a subprocess.  Available modifiers are:
-.Tw Ds
-.Tp Cx Cm b
-.Va c
-.Cx
+.Bl -tag -width Ds
+.It Cm b Ns Va c 
 Set breakpoint at
 .Ad address .
 The breakpoint is executed
@@ -821,12 +673,12 @@ is executed.  If this command is omitted or sets
 .Ad dot
 to zero, the breakpoint causes a stop immediately,
 regardless of any remaining count.
-.Tp Cm d
+.It Cm d
 Delete breakpoint at
 .Ad address .
-.Tp Cm D
+.It Cm D
 Delete all breakpoints.
-.Tp Cm r
+.It Cm r
 Run
 .Ar objfil
 as a subprocess.  If
@@ -838,9 +690,7 @@ specifies how many breakpoints are to be ignored before stopping.
 Arguments to the subprocess may be supplied on the same line as the command.
 An argument starting with < or > causes the standard
 input or output to be established for the command.
-.Tp Cx Cm c
-.Va s
-.Cx
+.It Cm c Ns Va s 
 The subprocess is continued with signal
 .Va s
 see
@@ -852,9 +702,7 @@ If no signal is specified then the signal
 that caused the subprocess to stop is sent.
 Breakpoint skipping is the same as for
 .Cm r .
-.Tp Cx Cm s
-.Va s
-.Cx
+.It Cm s Ns Va s 
 As for
 .Cm c
 except that the subprocess is single stepped
@@ -865,10 +713,10 @@ is run as a subprocess as for
 .Cm r .
 In this case no signal can be sent; the remainder of the line
 is treated as arguments to the subprocess.
-.Tp Cm k
+.It Cm k
 The current subprocess, if any, is terminated.
-.Tp
-.Tp
+.El
+.El
 .Sh VARIABLES
 .Nm Adb
 provides a number of variables.
@@ -876,18 +724,20 @@ Named variables are set initially by
 .Nm adb
 but are not used subsequently.
 Numbered variables are reserved for communication as follows.
-.Dw Ds
-.Di L
-.Dp \&0
+.Pp
+.Bl -tag -width Ds -compact
+.It \&0
 The last value printed.
-.Dp \&1
+.It \&1
 The last offset part of an instruction source.
-This continues up through at most 6 on the VAX.
+This continues up through at most 6 on the
+.Tn VAX .
 For a three-operand instruction, variable 2 is the second source offset
 and variable 3 the destination offset part.
-.Dp \&9
+.It \&9
 The count on the last $< or $<< command.
-.Dp
+.El
+.Pp
 On entry the following are set from the system header in the
 .Ar corfil .
 If
@@ -896,69 +746,43 @@ does not appear to be a
 .Pa core
 file then these values are set from
 .Ar objfil .
-.Dw Ds
-.Di L
-.Dp b
+.Pp
+.Bl -tag -width Ds -compact
+.It b
 The base address of the data segment.
-.Dp d
+.It d
 The data segment size.
-.Dp e
+.It e
 The entry point.
-.Dp m
+.It m
 The `magic' number (0407, 0410 or 0413).
-.Dp s
+.It s
 The stack segment size.
-.Dp t
+.It t
 The text segment size.
 .Sh ADDRESSES
 The address in a file associated with
 a written address is determined by a mapping associated with that file.
 Each mapping is represented by two triples
-.Pf \&( Ad b1 , e1 , f1 )
+.Pq Ad b1 , e1 , f1
 and
-.Pf \&( Ad b2 , e2 , f2 )
+.Pq Ad b2 , e2 , f2
 and the
 .Ad file
 .Ad address
 corresponding to a written
 .Ad address
 is calculated as follows.
+.Bd -filled -offset indent
+\*(aDb1\*(sY\*(<=\*(aRaddress \*(sY\(->
+\*(aRfile address\*(dF=\*(aRaddress\*(sY+\*(aDf1\*(sY-\*(aDf1,
+otherwise
+.Ed
 .Pp
-.Ds I
-.Cx Ad b1
-.Sy \&\*(<=
-.Ad address
-.Sy <
-.Ad e1
-.Sy \ \&\(->\ \&
-.Ad file address
-.Sy =
-.Ad address
-.Sy +
-.Ad f1
-.Sy \-
-.Ad b1 ,
-.Cx \ \&
-.Cx otherwise,
-.Cx
-.De
-.Pp
-.Ds I
-.Cx Ad b2
-.Sy \&\*(<=
-.Ad address
-.Sy <
-.Ad e2
-.Sy \ \&\(->\ \&
-.Ad file address
-.Sy =
-.Ad address
-.Sy +
-.Ad f2
-.Sy \-
-.Ad b2 ,
-.Cx
-.De
+.Bd -filled -offset indent
+\*(aDb1\*(sY\*(<=\*(aRaddress \*(sY\(->
+\*(aRfile address\*(dF=\*(aRaddress\*(sY+\*(aDf2\*(sY-\*(aDf2\*(dF
+.Ed
 .Pp
 otherwise, the requested
 .Ar address
@@ -984,13 +808,11 @@ is set to the maximum file size and
 .Ad f1
 is set to 0; in this way the whole
 file can be examined with no address translation.
-.Pp
 .Sh FILES
-.Dw a.out
-.Di L
-.Dp Pa a.out
-.Dp Pa core
-.Dp
+.Bl -tag -width a.out -compact
+.It Pa a.out
+.It Pa core
+.El
 .Sh SEE ALSO
 .Xr cc 1 ,
 .Xr dbx 1 ,
@@ -999,7 +821,9 @@ file can be examined with no address translation.
 .Xr core 5
 .Sh HISTORY
 .Nm Adb
-was first released with Version 7 AT&T UNIX.  The version
+was first released with
+.At v7 .
+The version
 of
 .Nm adb
 this man page describes
