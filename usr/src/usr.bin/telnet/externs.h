@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	1.23 (Berkeley) %G%
+ *	@(#)externs.h	1.24 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -60,6 +60,9 @@ extern int
     dontlecho,		/* do we suppress local echoing right now? */
     crmod,
     netdata,		/* Print out network data flow */
+#ifdef	KERBEROS
+    kerberized,		/* Try to use Kerberos */
+#endif
     prettydump,		/* Print "netdata" output in user readable format */
 #if	defined(unix)
 #if	defined(TN3270)
