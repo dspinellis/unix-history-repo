@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)func.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)func.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include <sys/ioctl.h>
+#include "pathnames.h"
 
 /*
  * C shell
@@ -175,7 +176,7 @@ dologin(v)
 	islogin();
 	rechist();
 	(void) signal(SIGTERM, parterm);
-	execl("/bin/login", "login", v[1], 0);
+	execl(_PATH_LOGIN, "login", v[1], 0);
 	untty();
 	exit(1);
 }
