@@ -1,4 +1,4 @@
-/*	if_acc.c	4.10	82/03/19	*/
+/*	if_acc.c	4.11	82/03/19	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -163,7 +163,7 @@ COUNT(ACCINIT);
 	 * would asssume we handle it on input and output.
 	 */
 	if (if_ubainit(&sc->acc_ifuba, ui->ui_ubanum, 0,
-	     (int)btoc(IMP_MTU)) == 0) {
+	     (int)btoc(IMPMTU)) == 0) {
 		printf("acc%d: can't initialize\n", unit);
 		goto down;
 	}
@@ -200,12 +200,12 @@ COUNT(ACCINIT);
 	 * Put up a read.  We can't restart any outstanding writes
 	 * until we're back in synch with the IMP (i.e. we've flushed
 	 * the NOOPs it throws at us).
-	 * Note: IMP_MTU includes the leader.
+	 * Note: IMPMTU includes the leader.
 	 */
 	x = spl5();
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
-	addr->iwc = -(IMP_MTU >> 1);
+	addr->iwc = -(IMPMTU >> 1);
 #ifdef LOOPBACK
 	addr->ocsr |= OUT_BBACK;
 #endif
@@ -325,8 +325,8 @@ COUNT(ACCRINT);
 			sc->acc_flush = 0;
 		goto setup;
 	}
-	len = IMP_MTU + (addr->iwc << 1);
-	if (len < 0 || len > IMP_MTU) {
+	len = IMPMTU + (addr->iwc << 1);
+	if (len < 0 || len > IMPMTU) {
 		printf("acc%d: bad length=%d\n", len);
 		sc->acc_if->if_ierrors++;
 		goto setup;
@@ -359,7 +359,7 @@ setup:
 	 */
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
-	addr->iwc = -(IMP_MTU >> 1);
+	addr->iwc = -(IMPMTU >> 1);
 	addr->icsr =
 		IN_MRDY | ACC_IE | IN_WEN | ((info & 0x30000) >> 12) | ACC_GO;
 }
