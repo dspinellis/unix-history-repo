@@ -1,4 +1,4 @@
-$Id: Changes,v 1.4 1994/01/05 00:22:32 nate Exp $
+$Id: Changes,v 1.5 1994/01/16 11:45:11 ats Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.
@@ -36,6 +36,9 @@ Since 1.0.2:
   file. Done it this way, because i don't know how widespread this cards
   are. (ats)
 
+- Add extended formats set to floppy driver, improve autoconfiguration,
+  add "fdformat" utility for floppy formatting.
+  (ache, joerg, vak)
 
 Between 1.0.2 and 1.0:
 
