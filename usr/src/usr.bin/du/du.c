@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)du.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.8 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -126,6 +126,8 @@ descend(base, name)
 	if (chdir(name) < 0) {
 		perror(base);
 		*ebase0 = 0;
+		closedir(dirp);
+		dirp = NULL;
 		return (0);
 	}
 	while (dp = readdir(dirp)) {
