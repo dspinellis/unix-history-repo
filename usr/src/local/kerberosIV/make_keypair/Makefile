@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	make_keypair
 MAN8=	make_keypair.0
