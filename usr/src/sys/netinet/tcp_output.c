@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	7.26 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -465,6 +465,12 @@ send:
 	 * the template, but need a way to checksum without them.
 	 */
 	m->m_pkthdr.len = hdrlen + len;
+#ifdef TUBA
+	if (tp->t_tuba_pcb)
+		error = tuba_output(m, tp);
+	else
+#endif
+    {
 	((struct ip *)ti)->ip_len = m->m_pkthdr.len;
 	((struct ip *)ti)->ip_ttl = tp->t_inpcb->inp_ip.ip_ttl;	/* XXX */
 	((struct ip *)ti)->ip_tos = tp->t_inpcb->inp_ip.ip_tos;	/* XXX */
@@ -476,6 +482,7 @@ send:
 	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
 	    so->so_options & SO_DONTROUTE);
 #endif
+    }
 #else
 	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
 			  so->so_options & SO_DONTROUTE);

@@ -4,9 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_timer.c	7.20 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.21 (Berkeley) %G%
  */
 
+#ifndef TUBA_INCLUDE
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -34,6 +35,7 @@
 int	tcp_keepidle = TCPTV_KEEP_IDLE;
 int	tcp_keepintvl = TCPTV_KEEPINTVL;
 int	tcp_maxidle;
+#endif /* TUBA_INCLUDE */
 /*
  * Fast timeout routine for processing delayed acks
  */
@@ -105,6 +107,7 @@ tpgone:
 	tcp_now++;					/* for timestamps */
 	splx(s);
 }
+#ifndef TUBA_INCLUDE
 
 /*
  * Cancel all timers for TCP tp.
@@ -279,3 +282,4 @@ tcp_timers(tp, timer)
 	}
 	return (tp);
 }
+#endif /* TUBA_INCLUDE */

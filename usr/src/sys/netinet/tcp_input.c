@@ -4,9 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.32 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.33 (Berkeley) %G%
  */
 
+#ifndef TUBA_INCLUDE
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -39,15 +40,16 @@ int	tcppcbcachemiss;
 struct	tcpiphdr tcp_saveti;
 struct	inpcb *tcp_last_inpcb = &tcb;
 
+struct	tcpcb *tcp_newtcpcb();
+
+extern u_long sb_max;
+
+#endif /* TUBA_INCLUDE */
 #define TCP_PAWS_IDLE	(24 * 24 * 60 * 60 * PR_SLOWHZ)
 
 /* for modulo comparisons of timestamps */
 #define TSTMP_LT(a,b)	((int)((a)-(b)) < 0)
 #define TSTMP_GEQ(a,b)	((int)((a)-(b)) >= 0)
-
-struct	tcpcb *tcp_newtcpcb();
-
-extern u_long sb_max;
 
 
 /*
@@ -76,6 +78,7 @@ extern u_long sb_max;
 		tp->t_flags |= TF_ACKNOW; \
 	} \
 }
+#ifndef TUBA_INCLUDE
 
 tcp_reass(tp, ti, m)
 	register struct tcpcb *tp;
@@ -233,6 +236,7 @@ tcp_input(m, iphlen)
 		tcpstat.tcps_rcvbadsum++;
 		goto drop;
 	}
+#endif /* TUBA_INCLUDE */
 
 	/*
 	 * Check that TCP offset makes sense,
@@ -1305,6 +1309,7 @@ drop:
 	if (dropsocket)
 		(void) soabort(so);
 	return;
+#ifndef TUBA_INCLUDE
 }
 
 tcp_dooptions(tp, cp, cnt, ti, ts_present, ts_val, ts_ecr)
@@ -1630,6 +1635,7 @@ tcp_mss(tp, offer)
 #endif /* RTV_MTU */
 	return (mss);
 }
+#endif /* TUBA_INCLUDE */
 
 #if BSD<43
 /* XXX this belongs in netinet/in.c */
