@@ -1,19 +1,20 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.15	%G%
+#	@(#)makefile	1.16	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
+DESTDIR =
 LIB = libI77.a
 CFLAGS = -O
 LPR = lpr
 
 # for CFO 11's
 #ENV = ucb
-#LIBDIR = /usr/$(ENV)/lib
+#LIBDIR = ${DESTDIR}/usr/$(ENV)/lib
 #TAPE = /dev/nrmt1
 
 # for Vax
-LIBDIR = /usr/lib
+LIBDIR = ${DESTDIR}/usr/lib
 TAPE = /dev/rnmt0.1600
 
 SOURCES = backspace.c close.c dfe.c due.c endfile.c err.c fmt.c \
@@ -31,18 +32,20 @@ OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 all:	$(LIB)
 
 $(LIB):	$(OBJECTS) Version
-	@echo Loading
 	@rm -f $(LIB)
-	@ar rc $(LIB) $(OBJECTS) Version
+	ar rc $(LIB) $(OBJECTS) Version
 	@chmod 664 $(LIB)
-	@echo "" > /dev/tty
 
-install:	$(LIB) libI66.a
+install:	$(LIBDIR)/$(LIB) $(LIBDIR)/libI66.a
+
+$(LIBDIR)/$(LIB):	$(LIB)
 	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
-	chmod 644 $(LIBDIR)/$(LIB)
-	@mv libI66.a $(LIBDIR)
+	@chmod 644 $(LIBDIR)/$(LIB)
+
+$(LIBDIR)/libI66.a:	yes_66.o
+	cp yes_66.o $(LIBDIR)/libI66.a
 	@chmod 644 $(LIBDIR)/libI66.a
 
 backspace.o:	fio.h backspace.c
@@ -89,7 +92,7 @@ mkvers:	mkvers.c
 	@cc mkvers.c -o mkvers
 
 clean:
-	rm -f *.o $(LIB) libI66.a tags
+	rm -f $(OBJECTS) $(LIB) libI66.o
 
 index:	$(SOURCES) mkindx
 	@./mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
@@ -114,12 +117,9 @@ order:
 tags:	$(SOURCES)
 	@ctags $(SOURCES)
 
-libI66.a:	yes_66.o
-	@rm -f libI66.a
-	@cp yes_66.o libI66.a
 
 # End of Makefile
-# Below this line is nor normally distributed ...
+# Below this line normally is not distributed ...
 
 Makefile:	makefile
 	@sed -n -e "1,/End of Makefile/p" makefile > Makefile
@@ -131,93 +131,123 @@ tape:	Makefile
 
 # below here is SCCS stuff ...
 
-backspace.c:	s.backspace.c
+backspace.c:	SCCS/s.backspace.c
 	@rm -f backspace.c
-	get s.backspace.c
-close.c:	s.close.c
+	get SCCS/s.backspace.c
+
+close.c:	SCCS/s.close.c
 	@rm -f close.c
-	get s.close.c
-dfe.c:	s.dfe.c
+	get SCCS/s.close.c
+
+dfe.c:	SCCS/s.dfe.c
 	@rm -f dfe.c
-	get s.dfe.c
-due.c:	s.due.c
+	get SCCS/s.dfe.c
+
+due.c:	SCCS/s.due.c
 	@rm -f due.c
-	get s.due.c
-endfile.c:	s.endfile.c
+	get SCCS/s.due.c
+
+endfile.c:	SCCS/s.endfile.c
 	@rm -f endfile.c
-	get s.endfile.c
-err.c:	s.err.c
+	get SCCS/s.endfile.c
+
+err.c:	SCCS/s.err.c
 	@rm -f err.c
-	get s.err.c
-fmt.c:	s.fmt.c
+	get SCCS/s.err.c
+
+fmt.c:	SCCS/s.fmt.c
 	@rm -f fmt.c
-	get s.fmt.c
-fmtlib.c:	s.fmtlib.c
+	get SCCS/s.fmt.c
+
+fmtlib.c:	SCCS/s.fmtlib.c
 	@rm -f fmtlib.c
-	get s.fmtlib.c
-iio.c:	s.iio.c
+	get SCCS/s.fmtlib.c
+
+iio.c:	SCCS/s.iio.c
 	@rm -f iio.c
-	get s.iio.c
-inquire.c:	s.inquire.c
+	get SCCS/s.iio.c
+
+inquire.c:	SCCS/s.inquire.c
 	@rm -f inquire.c
-	get s.inquire.c
-lwrite.c:	s.lwrite.c
+	get SCCS/s.inquire.c
+
+lwrite.c:	SCCS/s.lwrite.c
 	@rm -f lwrite.c
-	get s.lwrite.c
-lread.c:	s.lread.c
+	get SCCS/s.lwrite.c
+
+lread.c:	SCCS/s.lread.c
 	@rm -f lread.c
-	get s.lread.c
-dolio.c:	s.dolio.c
+	get SCCS/s.lread.c
+
+dolio.c:	SCCS/s.dolio.c
 	@rm -f dolio.c
-	get s.dolio.c
-open.c:	s.open.c
+	get SCCS/s.dolio.c
+
+open.c:	SCCS/s.open.c
 	@rm -f open.c
-	get s.open.c
-rdfmt.c:	s.rdfmt.c
+	get SCCS/s.open.c
+
+rdfmt.c:	SCCS/s.rdfmt.c
 	@rm -f rdfmt.c
-	get s.rdfmt.c
-rewind.c:	s.rewind.c
+	get SCCS/s.rdfmt.c
+
+rewind.c:	SCCS/s.rewind.c
 	@rm -f rewind.c
-	get s.rewind.c
-sfe.c:	s.sfe.c
+	get SCCS/s.rewind.c
+
+sfe.c:	SCCS/s.sfe.c
 	@rm -f sfe.c
-	get s.sfe.c
-sue.c:	s.sue.c
+	get SCCS/s.sfe.c
+
+sue.c:	SCCS/s.sue.c
 	@rm -f sue.c
-	get s.sue.c
-douio.c:	s.douio.c
+	get SCCS/s.sue.c
+
+douio.c:	SCCS/s.douio.c
 	@rm -f douio.c
-	get s.douio.c
-util.c:	s.util.c
+	get SCCS/s.douio.c
+
+util.c:	SCCS/s.util.c
 	@rm -f util.c
-	get s.util.c
-wrtfmt.c:	s.wrtfmt.c
+	get SCCS/s.util.c
+
+wrtfmt.c:	SCCS/s.wrtfmt.c
 	@rm -f wrtfmt.c
-	get s.wrtfmt.c
-dofio.c:	s.dofio.c
+	get SCCS/s.wrtfmt.c
+
+dofio.c:	SCCS/s.dofio.c
 	@rm -f dofio.c
-	get s.dofio.c
-f_errlist.c:	s.f_errlist.c
+	get SCCS/s.dofio.c
+
+f_errlist.c:	SCCS/s.f_errlist.c
 	@rm -f f_errlist.c
-	get s.f_errlist.c
-yes_66.c:	s.yes_66.c
+	get SCCS/s.f_errlist.c
+
+yes_66.c:	SCCS/s.yes_66.c
 	@rm -f yes_66.c
-	get s.yes_66.c
-no_66.c:	s.no_66.c
+	get SCCS/s.yes_66.c
+
+no_66.c:	SCCS/s.no_66.c
 	@rm -f no_66.c
-	get s.no_66.c
-f_errno.h:	s.f_errno.h
+	get SCCS/s.no_66.c
+
+f_errno.h:	SCCS/s.f_errno.h
 	@rm -f f_errno.h
-	get s.f_errno.h
-fiodefs.h:	s.fiodefs.h
+	get SCCS/s.f_errno.h
+
+fiodefs.h:	SCCS/s.fiodefs.h
 	@rm -f fiodefs.h
-	get s.fiodefs.h
-fio.h:	s.fio.h
+	get SCCS/s.fiodefs.h
+
+fio.h:	SCCS/s.fio.h
 	@rm -f fio.h
-	get s.fio.h
-format.h:	s.format.h
+	get SCCS/s.fio.h
+
+format.h:	SCCS/s.format.h
 	@rm -f format.h
-	get s.format.h
-lio.h:	s.lio.h
+	get SCCS/s.format.h
+
+lio.h:	SCCS/s.lio.h
 	@rm -f lio.h
-	get s.lio.h
+	get SCCS/s.lio.h
+
