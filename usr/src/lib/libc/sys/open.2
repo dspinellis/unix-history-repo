@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)open.2	5.1 (Berkeley) %G%
+.\"	@(#)open.2	6.1 (Berkeley) %G%
 .\"
-.TH OPEN 2 "2 July 1983"
+.TH OPEN 2 ""
 .UC 4
 .SH NAME
 open \- open a file for reading or writing, or create a new file
@@ -60,6 +60,9 @@ file exists, the file is truncated to zero length.
 If O_EXCL is set with O_CREAT, then if the file already
 exists, the open returns an error.  This can be used to
 implement a simple exclusive access locking mechanism.
+If O_EXCL is set and the last component of the pathname is
+a symbolic link, the open will fail even if the symbolic
+link points to a non-existent name.
 If the O_NDELAY flag is specified and the open call would result
 in the process being blocked for some reason (e.g. waiting for
 carrier on a dialup line), the open returns immediately. 
