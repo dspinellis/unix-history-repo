@@ -53,7 +53,7 @@
 /usr/src/lib/libc/stdio/ferror.3
 /usr/src/lib/libc/stdio/fflush.3
 /usr/src/lib/libc/string/ffs.3
-/usr/src/lib/libc/stdio/fgetline.3
+/usr/src/lib/libc/stdio/fgetln.3
 /usr/src/lib/libc/stdio/fgets.3
 /usr/src/lib/libm/common_source/floor.3
 /usr/src/lib/libm/common_source/fmod.3
