@@ -3,7 +3,7 @@
 /*
  *	This routine erases everything on the window.
  *
- * %G% (Berkeley) @(#)erase.c	1.1
+ * %G% (Berkeley) @(#)erase.c	1.2
  */
 werase(win)
 reg WINDOW	*win; {
@@ -12,6 +12,9 @@ reg WINDOW	*win; {
 	reg char	*sp, *end, *start, *maxx;
 	reg int		minx;
 
+# ifdef DEBUG
+	fprintf(outf, "WERASE(%0.2o)\n", win);
+# endif
 	for (y = 0; y < win->_maxy; y++) {
 		minx = _NOCHANGE;
 		start = win->_y[y];
