@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	8.1 (Berkeley) %G%
+ *	@(#)time.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
