@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -242,44 +242,6 @@ makech(win, wy)
 		lx = wx + win->begx;
 		while ((force || memcmp(nsp, csp, sizeof(__LDATA)) != 0) 
 		    && wx <= lch) {
-#ifdef notdef
-			/* XXX
-			 * The problem with this code is that we can't count on
-			 * terminals wrapping around after the 
-			 * last character on the previous line has been output
-			 * In effect, what then could happen is that the CE 
-			 * clear the previous line and do nothing to the
-			 * next line.
-			 */
-			if (ce != NULL && wx >= nlsp && 
-			    nsp->ch == ' ') {
-				/* Check for clear to end-of-line. */
-				ce = &curscr->lines[wy]->line[COLS - 1];
-				while (ce->ch == ' ' && ce->attr = 0)
-					if (ce-- <= csp)
-						break;
-				clsp = ce - curscr->lines[wy]->line - 
-				       win->begx * __LDATASIZE;
-#ifdef DEBUG
-			__TRACE("makech: clsp = %d, nlsp = %d\n", clsp, nlsp);
-#endif
-				if (clsp - nlsp >= strlen(CE) 
-				    && clsp < win->maxx * __LDATASIZE) {
-#ifdef DEBUG
-					__TRACE("makech: using CE\n");
-#endif
-					tputs(CE, 0, __cputchar);
-					lx = wx + win->begx;
-					while (wx++ <= clsp) {
-						csp->ch = ' ';
-						csp->attr = 0;
-						csp++;
-					}
-					return (OK);
-				}
-				ce = NULL;
-			}
-#endif
 
 			/* Enter/exit standout mode as appropriate. */
 			if (SO && (nsp->attr & __STANDOUT) !=
@@ -309,10 +271,7 @@ makech(win, wy)
 						putchar(csp->ch = nsp->ch);
 					} else
 						putchar(nsp->ch);
-#ifdef notdef /* XXX why is this here? */
-					if (win->flags & __FULLWIN && !curwin)
-						scroll(curscr);
-#endif
+
 					if (wx + win->begx < curscr->maxx) {
 						domvcur(ly, wx + win->begx, 
 						    win->begy + win->maxy - 1,
@@ -349,20 +308,9 @@ makech(win, wy)
 			break;
 		lx = wx + win->begx;
 		if (lx >= COLS && AM) {
-			/*
-			 * xn glitch: chomps a newline after auto-wrap.
-			 * we just feed it now and forget about it.
-			 */
-			if (XN) {
-				lx = 0;
-				ly++;
-				putchar('\n');
-				putchar('\r');
-			} else {
-				if (wy != LINES)
-					win->lines[wy]->flags |= __ISPASTEOL;
-				lx = COLS - 1;
-			}
+			if (wy != LINES)
+				win->lines[wy]->flags |= __ISPASTEOL;
+			lx = COLS - 1;
 		} else if (wx >= win->maxx) {
 			if (wy != win->maxy)
 				win->lines[wy]->flags |= __ISPASTEOL;
