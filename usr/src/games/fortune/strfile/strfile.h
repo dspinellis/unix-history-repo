@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)strfile.h	5.6 (Berkeley) %G%
+ *	@(#)strfile.h	5.7 (Berkeley) %G%
  */
 
 #define	STR_ENDSTRING(line,tbl) \
@@ -33,5 +33,6 @@ typedef struct {				/* information table */
 #define	STR_ORDERED	0x2			/* ordered pointers */
 #define	STR_ROTATED	0x4			/* rot-13'd text */
 	unsigned long	str_flags;		/* bit field for flags */
-	unsigned char	str_delim;		/* delimiting character */
+	unsigned char	stuff[4];		/* long aligned space */
+#define	str_delim	stuff[0]		/* delimiting character */
 } STRFILE;
