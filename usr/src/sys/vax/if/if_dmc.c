@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_dmc.c	7.1 (Berkeley) %G%
+ *	@(#)if_dmc.c	7.2 (Berkeley) %G%
  */
 
 #include "dmc.h"
@@ -56,15 +56,16 @@
 #include "../h/time.h"
 #include "../h/kernel.h"
 
-int	dmctimer;			/* timer started? */
-int	dmc_timeout = 8;		/* timeout value */
-int	dmcwatch();
+/*
+ * output timeout value, sec.; should depend on line speed.
+ */
+int	dmc_timeout = 20;
 
 /*
  * Driver information for auto-configuration stuff.
  */
 int	dmcprobe(), dmcattach(), dmcinit(), dmcioctl();
-int	dmcoutput(), dmcreset();
+int	dmcoutput(), dmcreset(), dmctimeout();
 struct	uba_device *dmcinfo[NDMC];
 u_short	dmcstd[] = { 0 };
 struct	uba_driver dmcdriver =
@@ -116,21 +117,20 @@ struct dmcbufs {
  */
 struct dmc_softc {
 	struct	ifnet sc_if;		/* network-visible interface */
-	struct	dmcbufs sc_rbufs[NRCV];	/* receive buffer info */
-	struct	dmcbufs sc_xbufs[NXMT];	/* transmit buffer info */
-	struct	ifubinfo sc_ifuba;	/* UNIBUS resources */
-	struct	ifrw sc_ifr[NRCV];	/* UNIBUS receive buffer maps */
-	struct	ifxmt sc_ifw[NXMT];	/* UNIBUS receive buffer maps */
 	short	sc_oused;		/* output buffers currently in use */
 	short	sc_iused;		/* input buffers given to DMC */
 	short	sc_flag;		/* flags */
-	int	sc_nticks;		/* seconds since last interrupt */
 	int	sc_ubinfo;		/* UBA mapping info for base table */
 	int	sc_errors[4];		/* non-fatal error counters */
 #define sc_datck sc_errors[0]
 #define sc_timeo sc_errors[1]
 #define sc_nobuf sc_errors[2]
 #define sc_disc  sc_errors[3]
+	struct	dmcbufs sc_rbufs[NRCV];	/* receive buffer info */
+	struct	dmcbufs sc_xbufs[NXMT];	/* transmit buffer info */
+	struct	ifubinfo sc_ifuba;	/* UNIBUS resources */
+	struct	ifrw sc_ifr[NRCV];	/* UNIBUS receive buffer maps */
+	struct	ifxmt sc_ifw[NXMT];	/* UNIBUS receive buffer maps */
 	/* command queue stuff */
 	struct	dmc_command sc_cmdbuf[NCMDS];
 	struct	dmc_command *sc_qhead;	/* head of command queue */
@@ -142,11 +142,10 @@ struct dmc_softc {
 } dmc_softc[NDMC];
 
 /* flags */
-#define DMC_ALLOC	0x01		/* unibus resources allocated */
+#define DMC_RUNNING	0x01		/* device initialized */
 #define DMC_BMAPPED	0x02		/* base table mapped */
 #define DMC_RESTART	0x04		/* software restart in progress */
-#define DMC_ACTIVE	0x08		/* device active */
-#define DMC_RUNNING	0x20		/* device initialized */
+#define DMC_ONLINE	0x08		/* device running (had a RDYO) */
 
 struct dmc_base {
 	short	d_base[128];		/* DMC base table */
@@ -217,13 +216,10 @@ dmcattach(ui)
 	sc->sc_if.if_output = dmcoutput;
 	sc->sc_if.if_ioctl = dmcioctl;
 	sc->sc_if.if_reset = dmcreset;
+	sc->sc_if.if_watchdog = dmctimeout;
 	sc->sc_if.if_flags = IFF_POINTOPOINT;
 	sc->sc_ifuba.iff_flags = UBA_CANTWAIT;
 
-	if (dmctimer == 0) {
-		dmctimer = 1;
-		timeout(dmcwatch, (caddr_t) 0, hz);
-	}
 	if_attach(&sc->sc_if);
 }
 
@@ -299,7 +295,12 @@ dmcinit(unit)
 		}
 		ifp->if_flags |= IFF_RUNNING;
 	}
+	sc->sc_flag &= ~DMC_ONLINE;
 	sc->sc_flag |= DMC_RUNNING;
+	/*
+	 * Limit packets enqueued until we see if we're on the air.
+	 */
+	ifp->if_snd.ifq_maxlen = 3;
 
 	/* initialize buffer pool */
 	/* receives */
@@ -347,7 +348,6 @@ dmcinit(unit)
 		dmcload(sc, DMC_CNTLI, 0, DMC_HDPLX | DMC_SEC);
 
 	/* enable operation done interrupts */
-	sc->sc_flag &= ~DMC_ACTIVE;
 	while ((addr->bsel2 & DMC_IEO) == 0)
 		addr->bsel2 |= DMC_IEO;
 	s = spl5();
@@ -368,10 +368,9 @@ dmcinit(unit)
  *
  * Must be called at spl 5
  */
-dmcstart(dev)
-	dev_t dev;
+dmcstart(unit)
+	int unit;
 {
-	int unit = minor(dev);
 	register struct dmc_softc *sc = &dmc_softc[unit];
 	struct mbuf *m;
 	register struct dmcbufs *rp;
@@ -396,7 +395,8 @@ dmcstart(dev)
 			 */
 			rp->cc = if_ubaput(&sc->sc_ifuba, &sc->sc_ifw[n], m);
 			rp->cc &= DMC_CCOUNT;
-			sc->sc_oused++;
+			if (++sc->sc_oused == 1)
+				sc->sc_if.if_timer = dmc_timeout;
 			dmcload(sc, DMC_WRITE, rp->ubinfo, 
 				rp->cc | ((rp->ubinfo>>2)&DMC_XMEM));
 		}
@@ -652,16 +652,29 @@ dmcxint(unit)
 				ifxp->ifw_xtofree = 0;
 			}
 			rp->flags &= ~DBUF_DMCS;
-			sc->sc_oused--;
-			sc->sc_nticks = 0;
-			sc->sc_flag |= DMC_ACTIVE;
+			if (--sc->sc_oused == 0)
+				sc->sc_if.if_timer = 0;
+			else
+				sc->sc_if.if_timer = dmc_timeout;
+			if ((sc->sc_flag & DMC_ONLINE) == 0) {
+				extern int ifqmaxlen;
+
+				/*
+				 * We're on the air.
+				 * Open the queue to the usual value.
+				 */
+				sc->sc_flag |= DMC_ONLINE;
+				ifp->if_snd.ifq_maxlen = ifqmaxlen;
+			}
 			break;
 
 		case DMC_CNTLO:
 			arg &= DMC_CNTMASK;
 			if (arg & DMC_FATAL) {
-				log(LOG_ERR, "dmc%d: fatal error, flags=%b\n",
-				    unit, arg, CNTLO_BITS);
+				if (arg != DMC_START)
+					log(LOG_ERR,
+					    "dmc%d: fatal error, flags=%b\n",
+					    unit, arg, CNTLO_BITS);
 				dmcrestart(unit);
 				break;
 			}
@@ -728,6 +741,11 @@ dmcoutput(ifp, m0, dst)
 	register struct mbuf *m = m0;
 	register struct dmc_header *dh;
 	register int off;
+
+	if ((ifp->if_flags & IFF_UP) == 0) {
+		error = ENETDOWN;
+		goto bad;
+	}
 
 	switch (dst->sa_family) {
 #ifdef	INET
@@ -843,11 +861,9 @@ dmcioctl(ifp, cmd, data)
 		
 	case SIOCSIFFLAGS:
 		if ((ifp->if_flags & IFF_UP) == 0 &&
-		    sc->sc_flag & DMC_RUNNING) {
-			((struct dmcdevice *)
-			   (dmcinfo[ifp->if_unit]->ui_addr))->bsel1 = DMC_MCLR;
-			sc->sc_flag &= ~DMC_RUNNING;
-		} else if (ifp->if_flags & IFF_UP &&
+		    sc->sc_flag & DMC_RUNNING)
+			dmcdown(ifp->if_unit);
+		else if (ifp->if_flags & IFF_UP &&
 		    (sc->sc_flag & DMC_RUNNING) == 0)
 			dmcrestart(ifp->if_unit);
 		break;
@@ -867,23 +883,24 @@ dmcrestart(unit)
 	int unit;
 {
 	register struct dmc_softc *sc = &dmc_softc[unit];
-	register struct uba_device *ui = dmcinfo[unit];
 	register struct dmcdevice *addr;
-	register struct ifxmt *ifxp;
 	register int i;
+	int s;
 	
-	addr = (struct dmcdevice *)ui->ui_addr;
 #ifdef DEBUG
 	/* dump base table */
 	printf("dmc%d base table:\n", unit);
 	for (i = 0; i < sizeof (struct dmc_base); i++)
 		printf("%o\n" ,dmc_base[unit].d_base[i]);
 #endif
+
+	dmcdown(unit);
+
 	/*
 	 * Let the DMR finish the MCLR.	 At 1 Mbit, it should do so
 	 * in about a max of 6.4 milliseconds with diagnostics enabled.
 	 */
-	addr->bsel1 = DMC_MCLR;
+	addr = (struct dmcdevice *)(dmcinfo[unit]->ui_addr);
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
 	/* Did the timer expire or did the DMR finish? */
@@ -892,48 +909,55 @@ dmcrestart(unit)
 		return;
 	}
 
+	/* restart DMC */
+	dmcinit(unit);
+	sc->sc_flag &= ~DMC_RESTART;
+	s = spl5();
+	dmcstart(unit);
+	splx(s);
+	sc->sc_if.if_collisions++;	/* why not? */
+}
+
+/*
+ * Reset a device and mark down.
+ * Flush output queue and drop queue limit.
+ */
+dmcdown(unit)
+	int unit;
+{
+	register struct dmc_softc *sc = &dmc_softc[unit];
+	register struct ifxmt *ifxp;
+
+	((struct dmcdevice *)(dmcinfo[unit]->ui_addr))->bsel1 = DMC_MCLR;
+	sc->sc_flag &= ~(DMC_RUNNING | DMC_ONLINE);
+
 	for (ifxp = sc->sc_ifw; ifxp < &sc->sc_ifw[NXMT]; ifxp++) {
 		if (ifxp->ifw_xtofree) {
 			(void) m_freem(ifxp->ifw_xtofree);
 			ifxp->ifw_xtofree = 0;
 		}
 	}
-
-	/* restart DMC */
-	dmcinit(unit);
-	sc->sc_flag &= ~DMC_RESTART;
-	sc->sc_if.if_collisions++;	/* why not? */
+	if_qflush(&sc->sc_if.if_snd);
 }
 
 /*
- * Check to see that transmitted packets don't
- * lose interrupts.  The device has to be active.
+ * Watchdog timeout to see that transmitted packets don't
+ * lose interrupts.  The device has to be online (the first
+ * transmission may block until the other side comes up).
  */
-dmcwatch()
+dmctimeout(unit)
+	int unit;
 {
-	register struct uba_device *ui;
 	register struct dmc_softc *sc;
 	struct dmcdevice *addr;
-	register int i;
 
-	for (i = 0; i < NDMC; i++) {
-		sc = &dmc_softc[i];
-		if ((sc->sc_flag & DMC_ACTIVE) == 0)
-			continue;
-		if ((ui = dmcinfo[i]) == 0 || ui->ui_alive == 0)
-			continue;
-		if (sc->sc_oused) {
-			sc->sc_nticks++;
-			if (sc->sc_nticks > dmc_timeout) {
-				sc->sc_nticks = 0;
-				addr = (struct dmcdevice *)ui->ui_addr;
-				log(LOG_ERR, "dmc%d hung: bsel0=%b bsel2=%b\n",
-				    i, addr->bsel0 & 0xff, DMC0BITS,
-				    addr->bsel2 & 0xff, DMC2BITS);
-				dmcrestart(i);
-			}
-		}
+	sc = &dmc_softc[unit];
+	if (sc->sc_flag & DMC_ONLINE) {
+		addr = (struct dmcdevice *)(dmcinfo[unit]->ui_addr);
+		log(LOG_ERR, "dmc%d: output timeout, bsel0=%b bsel2=%b\n",
+		    unit, addr->bsel0 & 0xff, DMC0BITS,
+		    addr->bsel2 & 0xff, DMC2BITS);
+		dmcrestart(unit);
 	}
-	timeout(dmcwatch, (caddr_t) 0, hz);
 }
 #endif
