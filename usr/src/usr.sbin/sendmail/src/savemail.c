@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -418,6 +418,30 @@ errhdr(fp, m, xdot)
 	extern char *macvalue();
 	char *oldfmac;
 	char *oldgmac;
+
+	/*
+	**  Output error message header (if specified and available).
+	*/
+
+	if (ErrMsgFile != NULL)
+	{
+		if (*ErrMsgFile == '/')
+		{
+			xfile = fopen(ErrMsgFile, "r");
+			if (xfile != NULL)
+			{
+				while (fgets(buf, sizeof buf, xfile) != NULL)
+					putline(buf, fp, m);
+				(void) fclose(xfile);
+				fprintf(fp, "\n");
+			}
+		}
+		else
+		{
+			putline(ErrMsgFile, fp, m);
+			fprintf(fp, "\n");
+		}
+	}
 
 	/*
 	**  Output transcript of errors
