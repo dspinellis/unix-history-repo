@@ -1,4 +1,9 @@
-#	Makefile	4.8	85/01/08
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -26,13 +31,13 @@ libc.a libc_p.a: ${MACHINE}/csu ${ALL}
 	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib); done
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr libc.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
-	ar ma flsbuf.o libc.a exit.o
+	ar ma findiop.o libc.a exit.o
 	ar ma exit.o libc.a fakcu.o
 	rm -f t1 tmp/*
 	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib_p); done
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr libc_p.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
-	ar ma flsbuf.o libc_p.a exit.o
+	ar ma findiop.o libc_p.a exit.o
 	ar ma exit.o libc_p.a fakcu.o
 	rm -rf t1 tmp
 
