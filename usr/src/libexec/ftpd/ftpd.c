@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ftpd.c	4.32 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpd.c	4.33 (Berkeley) %G%";
 #endif
 
 /*
@@ -714,17 +714,17 @@ dologout(status)
 	int status;
 {
 
-	if (!logged_in)
-		return;
-	seteuid(0);
-	if (wtmp < 0)
-		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
-	if (wtmp >= 0) {
-		SCPYN(utmp.ut_name, "");
-		SCPYN(utmp.ut_host, "");
-		utmp.ut_time = time(0);
-		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
-		(void) close(wtmp);
+	if (logged_in) {
+		(void) seteuid(0);
+		if (wtmp < 0)
+			wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+		if (wtmp >= 0) {
+			SCPYN(utmp.ut_name, "");
+			SCPYN(utmp.ut_host, "");
+			utmp.ut_time = time(0);
+			(void) write(wtmp, (char *)&utmp, sizeof (utmp));
+			(void) close(wtmp);
+		}
 	}
 	/* beware of flushing buffers after a SIGPIPE */
 	_exit(status);
