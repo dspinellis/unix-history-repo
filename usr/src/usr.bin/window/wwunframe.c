@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwunframe.c	3.7 83/08/19";
+static	char *sccsid = "@(#)wwunframe.c	3.8 83/09/15";
 #endif
 
 #include "ww.h"
@@ -12,11 +12,12 @@ register struct ww *w;
 	register char *fmap;
 	register struct ww *wp;
 
-	for (i = w->ww_w.t; i < w->ww_w.b; i++) {
-		win = w->ww_win[i - w->ww_w.t];
+	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
+		j = w->ww_i.l;
+		win = &w->ww_win[i][j];
 		if (w->ww_fmap)
-			fmap = w->ww_fmap[i];
-		for (j = w->ww_w.l; j < w->ww_w.r; j++) {
+			fmap = &w->ww_fmap[i][j];
+		for (; j < w->ww_i.r; j++) {
 			if (*win & WWM_GLS) {
 				win++;
 				fmap++;

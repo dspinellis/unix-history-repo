@@ -1,18 +1,15 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinschar.c	3.7 83/09/14";
+static	char *sccsid = "@(#)wwinschar.c	3.8 83/09/15";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
-wwinschar(w, line, col, c)
+wwinschar(w, row, col, c)
 register struct ww *w;
 short c;
 {
 	register i;
-	int row = line - w->ww_scroll;
-	int srow = row + w->ww_w.t;
-	int scol = col + w->ww_w.l;
 	int nvis;
 
 	/*
@@ -21,9 +18,9 @@ short c;
 	{
 		register union ww_char *p, *q;
 
-		p = &w->ww_buf[line][w->ww_w.nc];
+		p = &w->ww_buf[row][w->ww_b.r];
 		q = p - 1;
-		for (i = w->ww_w.nc - col - 1; --i >= 0;)
+		for (i = w->ww_b.r - col; --i > 0;)
 			*--p = *--q;
 		q->c_w = c;
 	}
@@ -31,13 +28,12 @@ short c;
 	/*
 	 * If can't see it, just return.
 	 */
-	if (srow < w->ww_i.t || srow >= w->ww_i.b
-	    || w->ww_i.r <= 0 || w->ww_i.r <= scol)
+	if (row < w->ww_i.t || row >= w->ww_i.b
+	    || w->ww_i.r <= 0 || w->ww_i.r <= col)
 		return;
 
-	if (scol < w->ww_i.l)
-		scol = w->ww_i.l;
-	col = scol - w->ww_w.l;
+	if (col < w->ww_i.l)
+		col = w->ww_i.l;
 
 	/*
 	 * Now find out how much is actually changed, and fix wwns.
@@ -50,15 +46,15 @@ short c;
 		char *touched;
 
 		nvis = 0;
-		smap = &wwsmap[srow][scol];
-		for (i = w->ww_i.r - scol; i > 0 && *smap++ != w->ww_index; i--)
-			col++, scol++;
+		smap = &wwsmap[row][col];
+		for (i = w->ww_i.r - col; i > 0 && *smap++ != w->ww_index; i--)
+			col++;
 		if (i <= 0)
 			return;
-		buf = &w->ww_buf[line][col];
+		buf = &w->ww_buf[row][col];
 		win = &w->ww_win[row][col];
-		ns = &wwns[srow][scol];
-		touched = &wwtouched[srow];
+		ns = &wwns[row][col];
+		touched = &wwtouched[row];
 		c = buf->c_w ^ *win << WWC_MSHIFT;
 		for (; --i >= 0;) {
 			if (*win) {
@@ -82,18 +78,18 @@ short c;
 	/*
 	 * Can/Should we use delete character?
 	 */
-	if (tt.tt_setinsert != 0 && nvis > (wwncol - scol) / 2) {
+	if (tt.tt_setinsert != 0 && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
 		(*tt.tt_setinsert)(1);
-		(*tt.tt_move)(srow, scol);
+		(*tt.tt_move)(row, col);
 		(*tt.tt_setmodes)(c >> WWC_MSHIFT);
 		(*tt.tt_putc)(c & WWC_CMASK);
 		(*tt.tt_setinsert)(0);
 
-		p = &wwos[srow][wwncol];
+		p = &wwos[row][wwncol];
 		q = p - 1;
-		for (i = wwncol - scol; --i > 0;)
+		for (i = wwncol - col; --i > 0;)
 			*--p = *--q;
 		q->c_w = c;
 	}

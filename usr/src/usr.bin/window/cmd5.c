@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.5 83/09/14";
+static	char *sccsid = "@(#)cmd5.c	3.6 83/09/15";
 #endif
 
 #include "defs.h"
@@ -59,25 +59,22 @@ getminmax(x, n, a, b, curx, minx, maxx)
 register x, n, a, b;
 int *curx, *minx, *maxx;
 {
-	if (x < a) {
+	if (x < 0)
 		*curx = x + n - 1;
+	else
+		*curx = x;
+
+	if (x <= a)
 		*minx = 1 - n;
-		*maxx = a;
-	} else if (x == a) {
-		*curx = x;
-		*minx = 1 - n;
-		*maxx = b - n;
-	} else if (x < b - n) {
-		*curx = x;
+	else if (x <= b - n)
 		*minx = a;
-		*maxx = b - n;
-	} else if (x == b - n) {
-		*curx = x;
-		*minx = a;
-		*maxx = b - 1;
-	} else {
-		*curx = x;
+	else
 		*minx = b - n;
+
+	if (x >= b - n)
 		*maxx = b - 1;
-	}
+	else if (x >= a)
+		*maxx = b - n;
+	else
+		*maxx = a;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.10 83/09/14";
+static	char *sccsid = "@(#)wwwrite.c	3.11 83/09/15";
 #endif
 
 #include "ww.h"
@@ -17,8 +17,8 @@ int n;
 		wwcursor(w, 0);
 	while (n-- > 0) {
 			}
-			if (w->ww_cur.c >= w->ww_w.nc) {
-				w->ww_cur.c = 0;
+			if (w->ww_cur.c >= w->ww_w.r) {
+				w->ww_cur.c = w->ww_w.l;
 				goto lf;
 			}
 			continue;
@@ -59,11 +59,6 @@ int n;
 				Wcurright(w->ww_win, 1);
 				break;
 			case 'E':
-				w->ww_scroll = 0;
-				WWcursor(w->ww_win, 0, 0);
-				Wclear(w->ww_win, 2);
-				/* always refresh */
-				Wrefresh(1);
 				break;
 			case 'H':
 				WWcursor(w->ww_win, 0, 0);
@@ -110,7 +105,8 @@ int n;
 		case 2:
 			WWcursor(w->ww_win, (c - ' ') % w->ww_i.nrow,
 				w->ww_win->w_cursor.col);
-			w->ww_wstate++;
+			w->ww_cur.r = w->ww_w.t + (*p++ - ' ') % w->ww_w.nr;
+			w->ww_wstate = 3;
 			break;
 		case 3:
 			WWcursor(w->ww_win, w->ww_win->w_cursor.row,
