@@ -1,5 +1,7 @@
 #! /bin/sh -
-#	@(#)makesyscalls.sh	7.4 (Berkeley) %G%
+#	@(#)makesyscalls.sh	7.5 (Berkeley) %G%
+
+set -e
 
 # name of compat option:
 compat=COMPAT_43
@@ -13,6 +15,8 @@ syssw="init_sysent.c"
 sysdcl="sysent.dcl"
 syscompat="sysent.compat"
 sysent="sysent.switch"
+
+trap "rm $sysdcl $syscompat $sysent" 0
 
 case $# in
     0)	echo "Usage: $0 input-file" 1>&2
@@ -28,6 +32,7 @@ awk < $1 "
 		sysnames = \"$sysnames\"
 		syshdr = \"$syshdr\"
 		compat = \"$compat\"
+		infile = \"$1\"
 		"'
 
 		printf "/*\n * System call switch table.\n *\n" > sysdcl
@@ -83,7 +88,9 @@ awk < $1 "
 		next
 	}
 	syscall != $1 {
-		printf "syscall number out of sync at %d; line is:\n", syscall
+		printf "%s: line %d: syscall number out of sync at %d\n", \
+		   infile, NR, syscall
+		printf "line is:\n"
 		print
 		exit 1
 	}
@@ -101,15 +108,30 @@ awk < $1 "
 		    $5, syscall, $5) > sysnames
 		printf("#define\tSYS_%s\t%d\n", \
 		    $5, syscall) > syshdr
+		syscall++
+		next
 	}
 	$2 == "COMPAT" {
 		printf("int\to%s();\n", $4) > syscompat
 		printf("\tcompat(%d,%s),\t\t/* %d = old %s */\n", \
 		    $3, $4, syscall, $5) > sysent
-		printf("\t\"old_%s\",\t\t/* %d = old %s */\n", \
+		printf("\t\"old.%s\",\t\t/* %d = old %s */\n", \
 		    $5, syscall, $5) > sysnames
-		printf("\t\t\t\t/* %d is old_%s */\n", \
+		printf("\t\t\t\t/* %d is old %s */\n", \
 		    syscall, comment) > syshdr
+		syscall++
+		next
+	}
+	$2 == "LIBCOMPAT" {
+		printf("int\to%s();\n", $4) > syscompat
+		printf("\tcompat(%d,%s),\t\t/* %d = old %s */\n", \
+		    $3, $4, syscall, $5) > sysent
+		printf("\t\"old.%s\",\t\t/* %d = old %s */\n", \
+		    $5, syscall, $5) > sysnames
+		printf("#define\tSYS_%s\t%d\t/* compatibility; still used by libc */\n", \
+		    $5, syscall) > syshdr
+		syscall++
+		next
 	}
 	$2 == "OBSOL" {
 		printf("\t0, nosys,\t\t\t/* %d = obsolete %s */\n", \
@@ -118,14 +140,21 @@ awk < $1 "
 		    $4, syscall, comment) > sysnames
 		printf("\t\t\t\t/* %d is obsolete %s */\n", \
 		    syscall, comment) > syshdr
+		syscall++
+		next
 	}
 	$2 == "UNIMPL" {
 		printf("\t0, nosys,\t\t\t/* %d = %s */\n", \
 		    syscall, comment) > sysent
 		printf("\t\"#%d\",\t\t\t/* %d = %s */\n", \
 		    syscall, syscall, comment) > sysnames
+		syscall++
+		next
 	}
-	{ syscall++ }
+	{
+		printf "%s: line %d: unrecognized keyword %s\n", infile, NR, $2
+		exit 1
+	}
 	END {
 		printf("\n#else /* %s */\n", compat) > syscompat
 		printf("#define compat(n, name) 0, nosys\n") > syscompat
@@ -138,6 +167,5 @@ awk < $1 "
 	} '
 
 cat $sysdcl $syscompat $sysent >$syssw
-rm $sysdcl $syscompat $sysent
 
 chmod 444 $sysnames $syshdr $syssw
