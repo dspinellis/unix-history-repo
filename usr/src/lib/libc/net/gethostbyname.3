@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.7 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.8 (Berkeley) %G%
 .\"
 .TH GETHOSTBYNAME 3N ""
 .UC 5
@@ -38,7 +38,8 @@ gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent \- get network 
 and
 .I gethostbyaddr
 each return a pointer to an object with the
-following structure.
+following structure describing an internet host
+referenced by name or by address, respectively.
 This structure contains either the information obtained from the name server,
 .IR named (8),
 or broken-out fields from a line in 
@@ -82,8 +83,19 @@ Host addresses are returned in network byte order.
 h_addr
 The first address in h_addr_list; this is for backward compatiblity.
 .PP
+When using the nameserver,
+.I gethostbyname
+will search for the named host in the current domain and its parents
+unless the name ends in a dot.
+If the name contains no dot, and if the environment variable ``HOSTALAIASES''
+contains the name of an alias file, the alias file will first be searched
+for an alias matching the input name.
+See
+.IR hostname (7)
+for the domain search procedure and the alias file format.
+.PP
 .I Sethostent
-allows a request for the use of a connected socket using TCP for queries.
+may be used to request the use of a connected TCP socket for queries.
 If the
 .I stayopen
 flag is non-zero,
@@ -92,6 +104,7 @@ and to retain the connection after each call to
 .I gethostbyname
 or
 .IR gethostbyaddr .
+Otherwise, queries are performed using UDP datagrams.
 .PP
 .I Endhostent
 closes the TCP connection.
