@@ -1,4 +1,4 @@
-/*	tip.c	4.13	83/05/17	*/
+/*	tip.c	4.14	83/06/15	*/
 
 /*
  * tip - UNIX link to other systems
@@ -7,6 +7,8 @@
  *  cu phone-number [-s speed] [-l line] [-a acu]
  */
 #include "tip.h"
+
+static char *sccsid = "@(#)tip.c	4.14 %G%";
 
 /*
  * Baud rate mapping table
@@ -101,8 +103,8 @@ notnumber:
 	 *  because locking mechanism on the tty and the accounting
 	 *  will be bypassed.
 	 */
-	setuid(getuid());
 	setgid(getgid());
+	setuid(getuid());
 
 	/*
 	 * Kludge, their's no easy way to get the initialization
@@ -111,6 +113,7 @@ notnumber:
 	if ((PH = getenv("PHONES")) == NOSTR)
 		PH = "/etc/phones";
 	vinit();				/* init variables */
+	setparity();				/* set the parity table */
 	if ((i = speed(number(value(BAUDRATE)))) == NULL) {
 		printf("tip: bad baud rate %d\n", number(value(BAUDRATE)));
 		delock(uucplock);
@@ -274,14 +277,18 @@ tipin()
 			continue;
 		} else if (gch == '\r') {
 			bol = 1;
-			write(FD, &gch, 1);
+			pwrite(FD, &gch, 1);
+			if (boolean(value(HALFDUPLEX)))
+				printf("\r\n");
 			continue;
 		} else if (!cumode && gch == character(value(FORCE)))
 			gch = getchar()&0177;
 		bol = any(gch, value(EOL));
 		if (boolean(value(RAISE)) && islower(gch))
-			toupper(gch);
-		write(FD, &gch, 1);
+			gch = toupper(gch);
+		pwrite(FD, &gch, 1);
+		if (boolean(value(HALFDUPLEX)))
+			printf("%c", gch);
 	}
 }
 
@@ -307,7 +314,7 @@ escape()
 		}
 	/* ESCAPE ESCAPE forces ESCAPE */
 	if (c != gch)
-		write(FD, &c, 1);
+		pwrite(FD, &c, 1);
 	return(gch);
 }
 
@@ -412,7 +419,10 @@ ttysetup(speed)
 #endif
 
 	arg.sg_ispeed = arg.sg_ospeed = speed;
-	arg.sg_flags = TANDEM|RAW;
+	if (boolean(value(TAND)))
+		arg.sg_flags = TANDEM|RAW;
+	else
+		arg.sg_flags = RAW;
 	ioctl(FD, TIOCSETP, (char *)&arg);
 #ifdef VMUNIX
 	ioctl(FD, TIOCLBIS, (char *)&bits);
@@ -433,4 +443,64 @@ sname(s)
 		if (*s++ == '/')
 			p = s;
 	return (p);
+}
+
+extern char chartab[];
+static char partab[0200];
+
+/*
+ * do a write to the remote machine with the correct parity
+ * we are doing 8 bit wide output, so we just generate a character
+ * with the right parity and output it.
+ */
+pwrite(fd, buf, n)
+	int fd;
+	char *buf;
+	register int n;
+{
+	register int i;
+	register char *bp = buf;
+
+	for (i = 0, bp = buf; i < n; i++, bp++) {
+		*bp = partab[(*bp) & 0177];
+	}
+	write(fd, buf, n);
+}
+
+/*
+ * build a parity table with the right high-order bit
+ * copy an even-parity table and doctor it
+ */
+setparity()
+{
+	int i;
+	char *parity;
+
+	if (value(PARITY) == NOSTR)
+		value(PARITY) = "even";
+
+	parity = value(PARITY);
+
+	for (i = 0; i < 0200; i++)
+		partab[i] = chartab[i];
+
+	if (equal(parity, "odd")) {
+		for (i = 0; i < 0200; i++)
+			partab[i] ^= 0200;	/* reverse bit 7 */
+	}
+	else if (equal(parity, "none") || equal(parity, "zero")) {
+		for (i = 0; i < 0200; i++)
+			partab[i] &= ~0200;	/* turn off bit 7 */
+	}
+	else if (equal(parity, "one")) {
+		for (i = 0; i < 0200; i++)
+			partab[i] |= 0200;	/* turn on bit 7 */
+	}
+	else if (equal(parity, "even")) {
+		/* table is already even parity */
+	}
+	else {
+		fprintf(stderr, "parity value %s unknown\n", PA);
+		fflush(stderr);
+	}
 }

@@ -1,8 +1,9 @@
-/*	value.c	4.3	81/11/29	*/
+/*	value.c	4.4	83/06/15	*/
 #include "tip.h"
 
 #define MIDDLE	35
 
+static char *sccsid = "@(#)value.c	4.4 %G%";
 static value_t *vlookup();
 static int col = 0;
 
@@ -123,6 +124,7 @@ vtoken(s)
 {
 	register value_t *p;
 	register char *cp;
+	char *expand();
 
 	if (cp = index(s, '=')) {
 		*cp = '\0';
@@ -130,8 +132,11 @@ vtoken(s)
 			cp++;
 			if (p->v_type&NUMBER)
 				vassign(p, atoi(cp));
-			else
+			else {
+				if (strcmp(s, "record") == 0)
+					cp = expand(cp);
 				vassign(p, cp);
+			}
 			return;
 		}
 	} else if (cp = index(s, '?')) {
@@ -178,7 +183,7 @@ vprint(p)
 		printf("%s=", p->v_name);
 		col++;
 		if (p->v_value) {
-			cp = interp(p->v_value);
+			cp = interp(p->v_value, NULL);
 			col += size(cp);
 			printf("%s", cp);
 		}
@@ -281,4 +286,28 @@ vinterp(s, stop)
 		}
 	*p = '\0';
 	return (c == stop ? s-1 : NULL);
+}
+
+/*
+ * assign variable s with value v (for NUMBER or STRING or CHAR types)
+ */
+
+vstring(s,v)
+	register char *s;
+	register char *v;
+{
+	register value_t *p;
+	char *expand();
+
+	if (p = vlookup(s)) {
+		if (p->v_type&NUMBER)
+			vassign(p, atoi(v));
+		else {
+			if (strcmp(s, "record") == 0)
+				v = expand(v);
+			vassign(p, v);
+		}
+		return(0);
+	} else
+		return(1);
 }

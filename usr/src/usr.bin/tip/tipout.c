@@ -1,4 +1,4 @@
-/*	tipout.c	4.6	82/01/06	*/
+/*	tipout.c	4.7	83/06/15	*/
 #include "tip.h"
 /*
  * tip
@@ -6,6 +6,8 @@
  * lower fork of tip -- handles passive side
  *  reading from the remote host
  */
+
+static char *sccsid = "@(#)tipout.c	4.7 %G%";
 
 /*
  * TIPOUT wait state routine --
@@ -103,7 +105,7 @@ tipout()
 				continue;
 			}
 			for (cp = buf; cp < buf + cnt; cp++) {
-				if (*cp < ' ' && !any(*cp, value(EXCEPTIONS)))
+				if ((*cp < ' ' || *cp > '~') && !any(*cp, value(EXCEPTIONS)))
 					continue;
 				putc(*cp, fscript);
 			}

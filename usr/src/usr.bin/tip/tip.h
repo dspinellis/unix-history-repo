@@ -1,4 +1,4 @@
-/*	tip.h	4.9	83/05/17	*/
+/*	tip.h	4.10	83/06/15	*/
 /*
  * tip - terminal interface program
  *

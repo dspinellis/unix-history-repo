@@ -1,4 +1,4 @@
-#	Makefile	4.7	82/11/07
+#	Makefile	4.8	83/06/15
 #
 # makefile for intermachine communications package
 #
@@ -13,10 +13,12 @@
 #	DEC DF02-AC, DF03-AC
 #	DEC DN-11/Able Quadracall
 #	VENTEL intelligent modem
+#	VADIC 831 semi-smart modem
+#	VADIC 3451
 #
 # Configuration defines:
 #	DF02, DF03, DN11	ACU's supported
-#	  BIZ1031, BIZ1022, VENTEL
+#	  BIZ1031, BIZ1022, VENTEL, V831, VADIC
 #	ACULOG			turn on tip logging of ACU use
 #	PRISTINE		no phone #'s put in ACU log file
 #	CONNECT			worthless command
@@ -29,13 +31,15 @@
 
 ADM=	usr/adm
 OWNER=	uucp
-CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG
+GROUP=	daemon
+CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVMUNIX -DACULOG -DV831
 LDFLAGS=
 OBJECTS=acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o \
-	lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o
+	lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o v831.o \
+	chartab.o
 SOURCES=acu.c acutab.c biz22.c biz31.c cmds.c cmdtab.c cu.c df.c dn11.c hunt.c \
 	lock.c log.c remcap.c remote.c tip.c tipout.c uucplock.c value.c  \
-	vars.c ventel.c
+	vars.c ventel.c v831.c chartab.c
 CXREF=	/usr/ucb/ctags -xw
 
 tip:	${OBJECTS} remcap.o uucplock.o
@@ -46,9 +50,8 @@ tip:	${OBJECTS} remcap.o uucplock.o
 all:	tip aculog
 
 install: all
-	install tip ${DESTDIR}/usr/bin/tip
-	chown ${OWNER} ${DESTDIR}/usr/bin/tip
-	chmod 4711 ${DESTDIR}/usr/bin/tip
+	install -m 4711 -o ${OWNER} -g ${GROUP} tip ${DESTDIR}/usr/bin/tip
+	ln /usr/bin/tip /usr/bin/cu
 #	install aculog ${DESTDIR}/etc/aculog
 #	chown ${OWNER} ${DESTDIR}/etc/aculog
 #	chmod 4711 ${DESTDIR}/etc/aculog
