@@ -1,0 +1,1 @@
+egrep '^[-'$1']*$' /usr/dict/words ^ sed -n "`/usr/games/words1 $1`"
