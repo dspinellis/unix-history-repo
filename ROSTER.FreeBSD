@@ -66,6 +66,7 @@ ports/ispell		Piero Serini		piero@strider.st.dsi.unimi.it
 ports/jpeg              Scott Mace              smace@freefall.cdrom.com
 ports/kermit            Scott Mace              smace@freefall.cdrom.com
 ports/ksh               Sean Vickery            seanv@cs.uq.edu.au
+ports/kterm		Satoshi Asami		asami@cs.berkeley.edu
 ports/lynx              Serge V.Vakulenko       vak@cronyx.msk.su
 ports/mprof		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/mtools		Steven Wallace		swallace@freefall.cdrom.com
