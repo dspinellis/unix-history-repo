@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.5	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.6	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)bibargs.c	2.5	%G%";
    int  ednumrev     = 0;       /* number of editors to reverse              */
    int  sort         = false;   /* sort references ? (default no)            */
    int  foot         = false;   /* footnoted references ? (default endnotes) */
+   int  doacite      = true;    /* place citations ? */
    int  hyphen       = false;   /* hypenate contiguous references            */
    int  ordcite      = true;    /* order multiple citations                  */
    char sortstr[80]  = "1";     /* sorting template                          */
@@ -112,6 +113,8 @@ static char sccsid[] = "@(#)bibargs.c	2.5	%G%";
                               }
                        break;
 
+            case 'v':  doacite = false;
+			/*FALLTHROUGH*/
             case 'f':  foot = true;
                        hyphen = false;
                        break;
@@ -122,6 +125,8 @@ static char sccsid[] = "@(#)bibargs.c	2.5	%G%";
             case 'n':  for (p = &argv[i][2]; *p; p++)
                           if (*p == 'a')
                              abbrev = false;
+                          else if (*p == 'v')
+                             doacite = true;
                           else if (*p == 'f')
                              foot = false;
                           else if (*p == 'h')
@@ -721,6 +726,10 @@ char c;
             cp = astro(cp, ref);
          else if (c == '9')                     /* Last name of Senior Author*/
             cp = aabetlast(cp, ref);
+	 else if (c == '0') {			/* print nothing */
+            for (fp = field; *fp; )
+               *cp++ = *fp++;
+            }
 /*       else if (c == '4')          here is how to add new styles */
          else if (c == '{') {                   /* other information   */
             while (*p != '}')
