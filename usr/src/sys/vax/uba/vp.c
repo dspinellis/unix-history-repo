@@ -1,4 +1,4 @@
-/*	vp.c	6.4	84/08/29	*/
+/*	vp.c	6.5	85/04/10	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -261,7 +261,7 @@ vpioctl(dev, cmd, data, flag)
 
 	case VGETSTATE:
 		*(int *)data = sc->sc_state;
-		break;
+		return (0);
 
 	case VSETSTATE:
 		sc->sc_state =
