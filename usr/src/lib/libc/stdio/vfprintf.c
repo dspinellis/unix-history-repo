@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -238,9 +238,17 @@ pforw:			if (!(flags&LADJUST) && width)
 		case 'x':
 			ARG();
 			base = 16;
-			if (!_ulong)	/* leading 0x/X only if non-zero */
+			/* leading 0x/X only if non-zero */
+			if (!_ulong)
 				flags &= ~ALT;
-num:			t = buf + MAXBUF - 1;
+			/*
+			 * ``The result of converting a zero value with an
+			 * explicit precision of zero is no characters.''
+			 *	-- ANSI X3J11
+			 */
+num:			if (!_ulong && !prec)
+				break;
+			t = buf + MAXBUF - 1;
 			do {
 				*t-- = digs[_ulong % base];
 				_ulong /= base;
