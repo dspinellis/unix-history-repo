@@ -1,4 +1,4 @@
-#	Makefile.vax	4.8	%G%
+#	Makefile.vax	4.9	%G%
 #
 # Makefile for 4.2 bsd
 #
@@ -68,7 +68,7 @@ af.o : makefile
 assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
     ../h/proc.h ../h/msgbuf.h
-	cc ${IDENT} ../vax/genassym.c; ./a.out >assym.s; rm -f a.out
+	cc ${IDENT} ${PARAM} ../vax/genassym.c; ./a.out >assym.s; rm -f a.out
 
 ../h/param.h: /usr/include/signal.h
 	${TOUCH} ../h/param.h
