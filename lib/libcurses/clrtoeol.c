@@ -44,9 +44,9 @@ static char sccsid[] = "@(#)clrtoeol.c	5.4 (Berkeley) 6/1/90";
 wclrtoeol(win)
 reg WINDOW	*win; {
 
-	reg char	*sp, *end;
+	reg chtype      *sp, *end;
 	reg int		y, x;
-	reg char	*maxx;
+	reg chtype      *maxx;
 	reg int		minx;
 
 	y = win->_cury;

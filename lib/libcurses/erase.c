@@ -45,7 +45,7 @@ werase(win)
 reg WINDOW	*win; {
 
 	reg int		y;
-	reg char	*sp, *end, *start, *maxx;
+	reg chtype      *sp, *end, *start, *maxx;
 	reg int		minx;
 
 # ifdef DEBUG

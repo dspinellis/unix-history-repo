@@ -45,9 +45,9 @@ static char sccsid[] = "@(#)insertln.c	5.4 (Berkeley) 6/1/90";
 winsertln(win)
 reg WINDOW	*win; {
 
-	reg char	*temp;
+	reg chtype      *temp;
 	reg int		y;
-	reg char	*end;
+	reg chtype      *end;
 	reg int		x;
 
 #ifdef	DEBUG
@@ -59,7 +59,7 @@ reg WINDOW	*win; {
 		if (win->_orig == NULL)
 			win->_y[y] = win->_y[y - 1];
 		else
-			bcopy(win->_y[y - 1], win->_y[y], win->_maxx);
+			bcopy(win->_y[y - 1], win->_y[y], win->_maxx * sizeof(chtype));
 		touchline(win, y, 0, win->_maxx - 1);
 	}
 	if (win->_orig == NULL)

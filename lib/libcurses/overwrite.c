@@ -48,7 +48,6 @@ static char sccsid[] = "@(#)overwrite.c	5.4 (Berkeley) 6/1/90";
 overwrite(win1, win2)
 reg WINDOW	*win1, *win2; {
 
-	reg char	*sp, *end;
 	reg int		x, y, endy, endx, starty, startx;
 
 # ifdef DEBUG
@@ -66,7 +65,7 @@ reg WINDOW	*win1, *win2; {
 	x = endx - startx;
 	for (y = starty; y < endy; y++) {
 		bcopy(&win1->_y[y - win1->_begy][startx - win1->_begx],
-		      &win2->_y[y - win2->_begy][startx - win2->_begx], x);
+		      &win2->_y[y - win2->_begy][startx - win2->_begx], x * sizeof(chtype));
 		touchline(win2, y, startx - win2->_begx, endx - win2->_begx);
 	}
 }

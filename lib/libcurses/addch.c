@@ -43,7 +43,8 @@ static char sccsid[] = "@(#)addch.c	5.5 (Berkeley) 6/1/90";
  */
 waddch(win, c)
 WINDOW	*win;
-char		c;
+char c;
 {
-    return waddbytes(win, &c, 1);
+    chtype ch = (unsigned char) c;
+    return _waddbytes(win, &ch, 1);
 }

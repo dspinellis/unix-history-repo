@@ -36,7 +36,6 @@ static char sccsid[] = "@(#)overlay.c	5.6 (Berkeley) 6/1/90";
 #endif /* not lint */
 
 # include	"curses.ext"
-# include	<ctype.h>
 
 # define	min(a,b)	(a < b ? a : b)
 # define	max(a,b)	(a > b ? a : b)
@@ -48,7 +47,7 @@ static char sccsid[] = "@(#)overlay.c	5.6 (Berkeley) 6/1/90";
 overlay(win1, win2)
 reg WINDOW	*win1, *win2; {
 
-	reg char	*sp, *end;
+	reg chtype      *sp, *end;
 	reg int		x, y, endy, endx, starty, startx;
 	reg int 	y1,y2;
 
@@ -70,7 +69,7 @@ reg WINDOW	*win1, *win2; {
 		end = &win1->_y[y1][endx - win1->_begx];
 		x = startx - win2->_begx;
 		for (sp = &win1->_y[y1][startx - win1->_begx]; sp < end; sp++) {
-			if (!isspace(*sp))
+			if (*sp != ' ')
 				mvwaddch(win2, y2, x, *sp);
 			x++;
 		}

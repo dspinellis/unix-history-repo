@@ -55,7 +55,7 @@ newwin(num_lines, num_cols, begy, begx)
 int	num_lines, num_cols, begy, begx;
 {
 	reg WINDOW	*win;
-	reg char	*sp;
+	reg chtype      *sp;
 	reg int		i, by, bx, nl, nc;
 	reg int		j;
 
@@ -87,7 +87,7 @@ int	num_lines, num_cols, begy, begx;
 		win->_lastch[i] = _NOCHANGE;
 	}
 	for (i = 0; i < nl; i++)
-		if ((win->_y[i] = malloc(nc * sizeof win->_y[0])) == NULL) {
+		if ((win->_y[i] = (chtype *) malloc(nc * sizeof(chtype))) == NULL) {
 			for (j = 0; j < i; j++)
 				free(win->_y[j]);
 			free(win->_firstch);
@@ -188,7 +188,7 @@ int	num_lines, num_cols, begy, begx; {
 # ifdef DEBUG
 	fprintf(outf, "MAKENEW: nl = %d\n", nl);
 # endif
-	if ((win->_y = (char **) malloc(nl * sizeof win->_y[0])) == NULL) {
+	if ((win->_y = (chtype **) malloc(nl * sizeof(chtype *))) == NULL) {
 		free(win);
 		return NULL;
 	}

@@ -37,13 +37,29 @@ static char sccsid[] = "@(#)addbytes.c	5.4 (Berkeley) 6/1/90";
 
 # include	"curses.ext"
 
+waddbytes(win, bytes, count)
+reg WINDOW	*win;
+reg char        *bytes;
+int         count;
+{
+	chtype c;
+	reg int i;
+
+	for (i = 0; i < count; i++) {
+		c = (unsigned char) *bytes++;
+		if (_waddbytes(win, &c, 1) == ERR)
+			return ERR;
+	}
+	return OK;
+}
+
 /*
  *	This routine adds the character to the current position
  *
  */
-waddbytes(win, bytes, count)
+_waddbytes(win, bytes, count)
 reg WINDOW	*win;
-reg char	*bytes;
+reg chtype      *bytes;
 reg int		count;
 {
 #define	SYNCH_OUT()	{win->_cury = y; win->_curx = x;}
@@ -52,21 +68,18 @@ reg int		count;
 	reg int		newx;
 
 	SYNCH_IN();
-# ifdef FULLDEBUG
-	fprintf(outf, "ADDBYTES('%c') at (%d, %d)\n", c, y, x);
-# endif
 	while (count--) {
-	    register int c;
-	    static char blanks[] = "        ";
+	    register chtype c;
+	    static chtype blanks[] = {' ',' ',' ',' ',' ',' ',' ',' '};
 
 	    c = *bytes++;
 	    switch (c) {
 	      case '\t':
-		    SYNCH_IN();
-		    if (waddbytes(win, blanks, 8-(x%8)) == ERR) {
+		    SYNCH_OUT();
+		    if (_waddbytes(win, blanks, 8-(x%8)) == ERR) {
 			return ERR;
 		    }
-		    SYNCH_OUT();
+		    SYNCH_IN();
 		    break;
 
 	      default:
@@ -102,10 +115,10 @@ reg int		count;
     newline:
 			    if (++y >= win->_maxy)
 				    if (win->_scroll) {
+					    --y;
 					    SYNCH_OUT();
 					    scroll(win);
 					    SYNCH_IN();
-					    --y;
 				    }
 				    else
 					    return ERR;

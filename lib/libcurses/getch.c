@@ -45,7 +45,7 @@ wgetch(win)
 reg WINDOW	*win; {
 
 	reg bool	weset = FALSE;
-	reg char	inp;
+	reg int         inp;
 
 	if (!win->_scroll && (win->_flags&_FULLWIN)
 	    && win->_curx == win->_maxx - 1 && win->_cury == win->_maxy - 1)
@@ -58,13 +58,15 @@ reg WINDOW	*win; {
 		weset++;
 	}
 	inp = getchar();
+	if (inp != EOF) {
 # ifdef DEBUG
 	fprintf(outf,"WGETCH got '%s'\n",unctrl(inp));
 # endif
 	if (_echoit) {
 		mvwaddch(curscr, win->_cury + win->_begy,
-			win->_curx + win->_begx, inp);
-		waddch(win, inp);
+				win->_curx + win->_begx, (unsigned char) inp);
+			waddch(win, (unsigned char) inp);
+		}
 	}
 	if (weset)
 		nocbreak();

@@ -44,6 +44,8 @@
 #define	bool	char
 #define	reg	register
 
+typedef unsigned short chtype;
+
 #define	TRUE	(1)
 #define	FALSE	(0)
 #define	ERR	(0)
@@ -55,7 +57,7 @@
 #define	_FLUSH		010
 #define	_FULLLINE	020
 #define	_IDLINE		040
-#define	_STANDOUT	0200
+#define _STANDOUT       0400
 #define	_NOCHANGE	-1
 
 #define	_puts(s)	tputs(s, 0, _putchar)
@@ -92,7 +94,7 @@ struct _win_st {
 	bool		_clear;
 	bool		_leave;
 	bool		_scroll;
-	char		**_y;
+	chtype          **_y;
 	short		*_firstch;
 	short		*_lastch;
 	struct _win_st	*_nextp, *_orig;
@@ -127,7 +129,7 @@ int	__void__;
 #define	addch(ch)	VOID(waddch(stdscr, ch))
 #define	getch()		VOID(wgetch(stdscr))
 #define	addbytes(da,co)	VOID(waddbytes(stdscr, da,co))
-#define	addstr(str)	VOID(waddbytes(stdscr, str, strlen(str)))
+#define addstr(str)     VOID(waddstr(stdscr, str))
 #define	getstr(str)	VOID(wgetstr(stdscr, str))
 #define	move(y, x)	VOID(wmove(stdscr, y, x))
 #define	clear()		VOID(wclear(stdscr))
@@ -151,7 +153,7 @@ int	__void__;
 #define	mvwaddbytes(win,y,x,da,co) \
 		VOID(wmove(win,y,x)==ERR?ERR:waddbytes(win,da,co))
 #define	mvwaddstr(win,y,x,str) \
-		VOID(wmove(win,y,x)==ERR?ERR:waddbytes(win,str,strlen(str)))
+		VOID(wmove(win,y,x)==ERR?ERR:waddstr(win,str))
 #define mvwgetstr(win,y,x,str)  VOID(wmove(win,y,x)==ERR?ERR:wgetstr(win,str))
 #define	mvwinch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : winch(win))
 #define	mvwdelch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : wdelch(win))
@@ -174,7 +176,7 @@ int	__void__;
 #define	scrollok(win,bf) (win->_scroll = bf)
 #define flushok(win,bf)	 (bf ? (win->_flags |= _FLUSH):(win->_flags &= ~_FLUSH))
 #define	getyx(win,y,x)	 y = win->_cury, x = win->_curx
-#define	winch(win)	 (win->_y[win->_cury][win->_curx] & 0177)
+#define winch(win)       (win->_y[win->_cury][win->_curx] & 0xFF)
 
 #define raw()	 (_tty.sg_flags|=RAW, _pfast=_rawmode=TRUE, \
 	ioctl(_tty_ch, TIOCSETP, &_tty))
