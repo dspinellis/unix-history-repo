@@ -1,0 +1,113 @@
+%    Copyright (C) 1991, 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% pfbtogs.ps
+% Convert a PFB file to a Ghostscript font.
+
+% A .pfb file is a sequence of packets.  Each packet starts with byte
+% 0x80.  The second byte in the packet gives the type of packet: 1
+% means it's a packet of ascii data which should be sent out as is
+% (except for translating \r to the appropriate end-of-line
+% character(s)); 2 means it's a packet of binary data which should be
+% translated into hex; 3 means EOF.  For types 1 and 2, the type byte
+% is followed by four bytes giving the length of the packet, least
+% significant first.
+
+/envPFB 20 dict def
+envPFB begin
+
+% ------ Packet writing routines ------ %
+
+   /pfbtext		% str ->
+     {  { (\r) search
+           { ofile exch writestring pop
+	     ofile (\n) writestring
+	   }
+	   { ofile exch writestring exit
+	   }
+	  ifelse
+	} loop
+     } def
+
+   /pfbbinary		% str ->
+    {  { dup length 30 gt
+          { dup 0 30 getinterval ofile exch writehexstring
+	    ofile (\n) writestring
+	    dup length 30 sub 30 exch getinterval
+	  }
+	  { ofile exch writehexstring exit
+	  }
+	 ifelse
+       } loop ofile (\n) writestring
+     } def
+
+   /pfbcopy		% count proc ->
+    { exch		% proc count
+       { dup bufsize min
+         buf 0 3 -1 roll getinterval
+	 2 index exec
+	 bufsize sub dup 0 le { exit } if
+       } loop pop pop
+    } def
+
+% ------ The main program ------ %
+
+   /bufsize 30000 def
+   /buf bufsize string def
+
+   /pfbtogs		% infilename outfilename pfbtogs ->
+    { /psname exch def
+      /pfbname exch def
+
+      pfbname (r) file /ifile exch def
+      /packet 6 string def
+      ifile packet readstring
+       { dup length 6 eq { 0 get 128 eq } { pop false } ifelse }
+       { pop false }
+      ifelse
+      not { (Not a valid .PFB file.\n) print flush stop } if
+
+      ifile 0 setfileposition
+      psname (w) file /ofile exch def
+
+       { ifile packet readstring
+         not { exit } if
+	 packet 5 get 256 mul packet 4 get add
+	 256 mul packet 3 get add 256 mul packet 2 get add
+	 packet 1 get 1 sub
+	  { { { ifile exch readstring pop pfbtext } pfbcopy }
+	    { { ifile exch readstring pop pfbbinary } pfbcopy }
+	    { exit }
+	  } exch get exec
+       } loop
+
+      ofile closefile
+      ifile closefile
+
+    } bind def
+
+end
+
+% Enter the main program in the current dictionary.
+/pfbtogs
+ { envPFB begin   pfbtogs end
+ } bind def
+
+% If the program was invoked from the command line, run it now.
+shellarguments { pfbtogs } if
