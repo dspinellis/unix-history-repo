@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.3 (Berkeley) %G%
+.\"	@(#)3.t	6.4 (Berkeley) %G%
 .\"
 .NH 1
 Access control
@@ -14,7 +14,7 @@ The strategy used to maintain protected
 spooling areas is as follows:
 .IP \(bu 3
 The spooling area is writable only by a \fIdaemon\fP user
-and \fIspooling\fP group.
+and \fIdaemon\fP group.
 .IP \(bu 3
 The \fIlpr\fP program runs set-user-id to \fIroot\fP and
 set-group-id to group \fIdaemon\fP.  The \fIroot\fP access permits
