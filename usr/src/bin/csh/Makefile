@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.30 (Berkeley) %G%
+#	@(#)Makefile	5.31 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -8,7 +8,7 @@
 PROG=	csh
 DFLAGS=-DBUILTIN -DFILEC -DNLS -DSHORT_STRINGS
 #CFLAGS+=-g
-#CFLAGS+=-Wall
+#CFLAGS+=-Wall -ansi -pedantic
 CFLAGS+=-I${.CURDIR} -I. ${DFLAGS}
 SRCS=	alloc.c char.c const.c csh.c dir.c dol.c err.c exec.c exp.c file.c \
 	func.c glob.c hist.c init.c lex.c misc.c parse.c printf.c proc.c \
@@ -22,7 +22,6 @@ MLINKS=	csh.1 limit.1 csh.1 alias.1 csh.1 bg.1 csh.1 dirs.1 csh.1 fg.1 \
 	csh.1 stop.1 csh.1 source.1
 CLEANFILES+=err.h const.h
 
-OBJS+= 
 const.h: err.h
 
 err.h: err.c
