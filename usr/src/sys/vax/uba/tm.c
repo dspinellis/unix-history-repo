@@ -1,4 +1,4 @@
-/*	tm.c	4.45	82/01/17	*/
+/*	tm.c	4.46	82/02/03	*/
 
 #include "te.h"
 #include "ts.h"
@@ -114,15 +114,6 @@ int	tmgapsdcnt;		/* DEBUG */
 #define	SCOM	3		/* sending control command */
 #define	SREW	4		/* sending a drive rewind */
 
-#if NTS > 0
-/*
- * Kludge to get around fact that we don't really
- * check if a ts is there... if there are both tm's and ts's
- * declared in the system, then this driver sets havetm to 1
- * if it finds a tm, and ts just pretends there isn't a ts.
- */
-int	havetm = 0;
-#endif
 /*
  * Determine if there is a controller for
  * a tm at address reg.  Our goal is to make the
@@ -137,7 +128,7 @@ tmprobe(reg)
 	br = 0; cvec = br; br = cvec;
 	tmintr(0);
 #endif
-	((struct device *)reg)->tmcs = TM_IE;
+	((struct tmdevice *)reg)->tmcs = TM_IE;
 	/*
 	 * If this is a tm11, it ought to have interrupted
 	 * by now, if it isn't (ie: it is a ts04) then we just
@@ -150,7 +141,7 @@ tmprobe(reg)
 	 * a uba error for a ts; but our caller will notice that
 	 * so we won't check for it.
 	 */
-	if (badaddr((caddr_t)&((struct device *)reg)->tmrd, 2))
+	if (badaddr((caddr_t)&((struct tmdevice *)reg)->tmrd, 2))
 		return (0);
 	return (1);
 }
@@ -177,10 +168,6 @@ tmslave(ui, reg)
 tmattach(ui)
 	struct uba_device *ui;
 {
-
-#if NTS > 0
-	havetm = 1;
-#endif
 	/*
 	 * Tetotm is used in TMUNIT to index the ctmbuf and rtmbuf
 	 * arrays given a te unit number.
@@ -375,7 +362,7 @@ tmstart(um)
 	register struct uba_ctlr *um;
 {
 	register struct buf *bp, *dp;
-	register struct device *addr = (struct device *)um->um_addr;
+	register struct tmdevice *addr = (struct tmdevice *)um->um_addr;
 	register struct te_softc *sc;
 	register struct uba_device *ui;
 	int teunit, cmd;
@@ -397,7 +384,7 @@ loop:
 	 * Record pre-transfer status (e.g. for TM_SENSE)
 	 */
 	sc = &te_softc[teunit];
-	addr = (struct device *)um->um_addr;
+	addr = (struct tmdevice *)um->um_addr;
 	addr->tmcs = (ui->ui_slave << 8);
 	sc->sc_dsreg = addr->tmcs;
 	sc->sc_erreg = addr->tmer;
@@ -548,7 +535,7 @@ next:
 tmdgo(um)
 	register struct uba_ctlr *um;
 {
-	register struct device *addr = (struct device *)um->um_addr;
+	register struct tmdevice *addr = (struct tmdevice *)um->um_addr;
 
 	addr->tmba = um->um_ubinfo;
 	addr->tmcs = um->um_cmd | ((um->um_ubinfo >> 12) & 0x30);
@@ -564,7 +551,7 @@ tmintr(tm11)
 	struct buf *dp;
 	register struct buf *bp;
 	register struct uba_ctlr *um = tmminfo[tm11];
-	register struct device *addr;
+	register struct tmdevice *addr;
 	register struct te_softc *sc;
 	int teunit;
 	register state;
@@ -573,7 +560,7 @@ tmintr(tm11)
 		return;
 	bp = dp->b_actf;
 	teunit = TEUNIT(bp->b_dev);
-	addr = (struct device *)tedinfo[teunit]->ui_addr;
+	addr = (struct tmdevice *)tedinfo[teunit]->ui_addr;
 	sc = &te_softc[teunit];
 	/*
 	 * If last command was a rewind, and tape is still
@@ -734,8 +721,8 @@ tmseteof(bp)
 	register struct buf *bp;
 {
 	register int teunit = TEUNIT(bp->b_dev);
-	register struct device *addr = 
-	    (struct device *)tedinfo[teunit]->ui_addr;
+	register struct tmdevice *addr = 
+	    (struct tmdevice *)tedinfo[teunit]->ui_addr;
 	register struct te_softc *sc = &te_softc[teunit];
 
 	if (bp == &ctmbuf[TMUNIT(bp->b_dev)]) {
@@ -816,7 +803,7 @@ tmreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
-		((struct device *)(um->um_addr))->tmcs = TM_DCLR;
+		((struct tmdevice *)(um->um_addr))->tmcs = TM_DCLR;
 		for (teunit = 0; teunit < NTE; teunit++) {
 			if ((ui = tedinfo[teunit]) == 0 || ui->ui_mi != um ||
 			    ui->ui_alive == 0)
@@ -914,7 +901,7 @@ tmdump()
 {
 	register struct uba_device *ui;
 	register struct uba_regs *up;
-	register struct device *addr;
+	register struct tmdevice *addr;
 	int blk, num;
 	int start;
 
@@ -927,7 +914,7 @@ tmdump()
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 	ubainit(up);
 	DELAY(1000000);
-	addr = (struct device *)ui->ui_physaddr;
+	addr = (struct tmdevice *)ui->ui_physaddr;
 	tmwait(addr);
 	addr->tmcs = TM_DCLR | TM_GO;
 	while (num > 0) {
@@ -948,7 +935,7 @@ tmdump()
 
 tmdwrite(dbuf, num, addr, up)
 	register dbuf, num;
-	register struct device *addr;
+	register struct tmdevice *addr;
 	struct uba_regs *up;
 {
 	register struct pte *io;
@@ -966,7 +953,7 @@ tmdwrite(dbuf, num, addr, up)
 }
 
 tmwait(addr)
-	register struct device *addr;
+	register struct tmdevice *addr;
 {
 	register s;
 
@@ -976,7 +963,7 @@ tmwait(addr)
 }
 
 tmeof(addr)
-	struct device *addr;
+	struct tmdevice *addr;
 {
 
 	tmwait(addr);

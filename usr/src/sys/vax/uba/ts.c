@@ -1,22 +1,12 @@
-/*	ts.c	4.21	82/01/17	*/
+/*	ts.c	4.22	82/02/03	*/
 
 #include "ts.h"
-#include "te.h"
 #if NTS > 0
-#if TSDEBUG
-#define printd if(tsdebug)printf
-int tsdebug;
-#endif
 /*
  * TS11 tape driver
  *
  * TODO:
- *	test driver with more than one controller
- *	test reset code
- *	test dump code
- *	test rewinds without hanging in driver
- *	what happens if you offline tape during rewind?
- *	test using file system on tape
+ *	write dump code
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -61,7 +51,7 @@ struct	buf	rtsbuf[NTS];
 int	tsprobe(), tsslave(), tsattach(), tsdgo(), tsintr();
 struct	uba_ctlr *tsminfo[NTS];
 struct	uba_device *tsdinfo[NTS];
-struct buf	tsbuf[NTS];
+struct buf	tsutab[NTS];
 u_short	tsstd[] = { 0772520, 0 };
 /*** PROBABLY DON'T NEED ALL THESE SINCE CONTROLLER == DRIVE ***/
 struct	uba_driver zsdriver =
@@ -92,13 +82,12 @@ struct	ts_softc {
 	short	sc_resid;	/* copy of last bc */
 	daddr_t	sc_blkno;	/* block number, for block device tape */
 	daddr_t	sc_nxrec;	/* position of end of tape, if known */
-	struct ts_cmd sc_cmd;	/* the command packet - ADDR MUST BE 0 MOD 4 */
-	struct ts_sts sc_sts;	/* status packet, for returned status */
-	struct ts_char sc_char;	/* characteristics packet */
-	u_short	sc_uba;		/* Unibus addr of cmd pkt for tsdb */
+	struct	ts_cmd sc_cmd;	/* the command packet */
+	struct	ts_sts sc_sts;	/* status packet, for returned status */
+	struct	ts_char sc_char; /* characteristics packet */
+	struct	ts_softc *sc_ubaddr; /* Unibus address of ts_softc structure */
+	short	sc_mapped;	/* is ts_sfotc mapped in Unibus space? */
 } ts_softc[NTS];
-
-struct ts_softc *ts_ubaddr;	/* Unibus address of ts_softc */
 
 /*
  * States for um->um_tab.b_active, the per controller state flag.
@@ -109,10 +98,6 @@ struct ts_softc *ts_ubaddr;	/* Unibus address of ts_softc */
 #define	SCOM	3		/* sending control command */
 #define	SREW	4		/* sending a drive rewind */
 
-#if NTM > 0
-/* kludge... see tm.c */
-extern	havetm;
-#endif
 /*
  * Determine if there is a controller for
  * a ts at address reg.  Our goal is to make the
@@ -128,15 +113,12 @@ tsprobe(reg)
 	br = 0; cvec = br; br = cvec;
 	tsintr(0);
 #endif
-
-	/*
-	 * Too hard to make it interrupt; don't try.
-	 */
-#if NTM > 0
-	if (havetm)
-		return (0);
-#endif
-	cvec = 0224;
+	((struct tsdevice *)reg)->tssr = 0;
+	DELAY(100);
+	if ((((struct tsdevice *)reg)->tssr & TS_NBA) == 0)
+		return(0);
+	/* IT'S TOO HARD TO MAKE THIS THING INTERRUPT JUST TO FIND ITS VECTOR */
+	cvec = ((unsigned)reg) & 07 ? 0260 : 0224;
 	br = 0x15;
 	return (1);
 }
@@ -193,18 +175,9 @@ tsopen(dev, flag)
 	}
 	if (tsinit(tsunit)) {
 		u.u_error = ENXIO;
-#ifdef TSDEBUG
-		printd("init failed\n");
-#endif
 		return;
 	}
-#ifdef TSDEBUG
-	printd("init ok\n");
-#endif
 	tscommand(dev, TS_SENSE, 1);
-#ifdef TSDEBUG
-	printd("sense xs0 %o\n", sc->sc_sts.s_xs0);
-#endif
 	if ((sc->sc_sts.s_xs0&TS_ONL) == 0) {
 		uprintf("ts%d: not online\n", tsunit);
 		u.u_error = EIO;
@@ -260,7 +233,7 @@ tsinit(unit)
 {
 	register struct ts_softc *sc = &ts_softc[unit];
 	register struct uba_ctlr *um = tsminfo[unit];
-	register struct device *addr = (struct device *)um->um_addr;
+	register struct tsdevice *addr = (struct tsdevice *)um->um_addr;
 	register int i;
 
 	/*
@@ -269,15 +242,13 @@ tsinit(unit)
 	 * packets at once to minimize the amount of Unibus
 	 * mapping necessary.
 	 */
-	if (ts_ubaddr == 0) {
-		ctsbuf[unit].b_un.b_addr = (caddr_t)ts_softc;
-		ctsbuf[unit].b_bcount = sizeof(ts_softc);
+	if (sc->sc_mapped == 0) {
+		ctsbuf[unit].b_un.b_addr = (caddr_t)sc;
+		ctsbuf[unit].b_bcount = sizeof(*sc);
 		i = ubasetup(um->um_ubanum, &ctsbuf[unit], 0);
 		i &= 0777777;
-		ts_ubaddr = (struct ts_softc *)i;
-		/* MAKE SURE WE DON'T GET UNIBUS ADDRESS ZERO */
-		if (ts_ubaddr == 0)
-			printf("ts%d: zero ubaddr\n", unit);
+		sc->sc_ubaddr = (struct ts_softc *)i;
+		sc->sc_mapped++;
 	}
 	/*
 	 * Now initialize the TS11 controller.
@@ -286,25 +257,18 @@ tsinit(unit)
 	if (addr->tssr & (TS_NBA|TS_OFL)) {
 		addr->tssr = 0;		/* subsystem initialize */
 		tswait(addr);
-		i = (int)&ts_ubaddr[unit].sc_cmd;	/* Unibus addr of cmd */
-		if (i&3) {
-			printf("addr mod 4 != 0\n");
-			return(1);
-		}
+		i = (int)&sc->sc_ubaddr->sc_cmd;	/* Unibus addr of cmd */
 		sc->sc_uba = (u_short)(i + ((i>>16)&3));
-		sc->sc_char.char_addr = (int)&ts_ubaddr[unit].sc_sts;
+		sc->sc_char.char_addr = (int)&sc->sc_ubaddr->sc_sts;
 		sc->sc_char.char_size = sizeof(struct ts_sts);
 		sc->sc_char.char_mode = TS_ESS;
 		sc->sc_cmd.c_cmd = TS_ACK | TS_SETCHR;
-		i = (int)&ts_ubaddr[unit].sc_char;
+		i = (int)&sc->sc_ubaddr->sc_char;
 		sc->sc_cmd.c_loba = i;
 		sc->sc_cmd.c_hiba = (i>>16)&3;
 		sc->sc_cmd.c_size = sizeof(struct ts_char);
 		addr->tsdb = sc->sc_uba;
 		tswait(addr);
-/*
-		printd("%o %o %o %o %o %o %o %o\n", addr->tssr, sc->sc_sts.s_sts, sc->sc_sts.s_len, sc->sc_sts.s_rbpcr, sc->sc_sts.s_xs0, sc->sc_sts.s_xs1,sc->sc_sts.s_xs1,sc->sc_sts.s_xs2,sc->sc_sts.s_xs3);
-*/
 		if (addr->tssr & TS_NBA)
 			return(1);
 	}
@@ -336,9 +300,6 @@ tscommand(dev, com, count)
 	}
 	bp->b_flags = B_BUSY|B_READ;
 	splx(s);
-#ifdef TSDEBUG
-	printd("command %o dev %x count %d\n", com, dev, count);
-#endif
 	bp->b_dev = dev;
 	bp->b_repcnt = count;
 	bp->b_command = com;
@@ -372,8 +333,8 @@ tsstrategy(bp)
 	 */
 	bp->av_forw = NULL;
 	um = tsdinfo[tsunit]->ui_mi;
-	dp = &tsbuf[tsunit];
 	s = spl5();
+	dp = &tsutab[tsunit];
 	if (dp->b_actf == NULL)
 		dp->b_actf = bp;
 	else
@@ -396,7 +357,7 @@ tsstart(um)
 	register struct uba_ctlr *um;
 {
 	register struct buf *bp;
-	register struct device *addr = (struct device *)um->um_addr;
+	register struct tsdevice *addr = (struct tsdevice *)um->um_addr;
 	register struct ts_softc *sc;
 	register struct ts_cmd *tc;
 	register struct uba_device *ui;
@@ -434,9 +395,6 @@ loop:
 		um->um_tab.b_active =
 		    bp->b_command == TS_REW ? SREW : SCOM;
 		tc->c_repcnt = bp->b_repcnt;
-#ifdef TSDEBUG
-		printd("strat: do cmd\n");
-#endif
 		goto dobpcmd;
 	}
 	/*
@@ -483,9 +441,6 @@ loop:
 			cmd |= TS_RETRY;
 		um->um_tab.b_active = SIO;
 		tc->c_cmd = TS_ACK | TS_CVC | TS_IE | cmd;
-#ifdef TSDEBUG
-		printd("r/w %o size %d\n", tc->c_cmd, tc->c_size);
-#endif
 		(void) ubago(ui);
 		return;
 	}
@@ -495,9 +450,6 @@ loop:
 	 * This happens for raw tapes only on error retries.
 	 */
 	um->um_tab.b_active = SSEEK;
-#ifdef TSDEBUG
-	printd("seek blkno %d b_blkno %d\n", blkno, bp->b_blkno);
-#endif
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		bp->b_command = TS_SFORW;
 		tc->c_repcnt = dbtofsb(bp->b_blkno) - blkno;
@@ -535,14 +487,11 @@ next:
 tsdgo(um)
 	register struct uba_ctlr *um;
 {
-	register struct device *addr = (struct device *)um->um_addr;
+	register struct tsdevice *addr = (struct tsdevice *)um->um_addr;
 	register struct ts_softc *sc = &ts_softc[um->um_ctlr];
 	register int i;
 
 	i = um->um_ubinfo & 0777777;
-#ifdef TSDEBUG
-	printd("dgo addr %o\n", i);
-#endif
 	sc->sc_cmd.c_loba = i;
 	sc->sc_cmd.c_hiba = (i>>16)&3;
 	addr->tsdb = sc->sc_uba;
@@ -557,18 +506,15 @@ tsintr(ts11)
 {
 	register struct buf *bp;
 	register struct uba_ctlr *um = tsminfo[ts11];
-	register struct device *addr;
+	register struct tsdevice *addr;
 	register struct ts_softc *sc;
 	int tsunit;
 	register state;
 
-#ifdef TSDEBUG
-	printd("intr\n");
-#endif
 	if ((bp = um->um_tab.b_actf->b_actf) == NULL)
 		return;
 	tsunit = TSUNIT(bp->b_dev);
-	addr = (struct device *)tsdinfo[tsunit]->ui_addr;
+	addr = (struct tsdevice *)tsdinfo[tsunit]->ui_addr;
 	/*
 	 * If last command was a rewind, and tape is still
 	 * rewinding, wait for the rewind complete interrupt.
@@ -583,9 +529,6 @@ tsintr(ts11)
 	/*
 	 * An operation completed... record status
 	 */
-#ifdef TSDEBUG
-	printd("  ok1\n");
-#endif
 	sc = &ts_softc[tsunit];
 	if ((bp->b_flags & B_READ) == 0)
 		sc->sc_lastiow = 1;
@@ -716,9 +659,6 @@ opdone:
 	um->um_tab.b_actf->b_actf = bp->av_forw;
 	bp->b_resid = sc->sc_sts.s_rbpcr;
 	ubadone(um);
-#ifdef TSDEBUG
-	printd("  iodone\n");
-#endif
 	iodone(bp);
 	if (um->um_tab.b_actf->b_actf == 0)
 		return;
@@ -795,6 +735,8 @@ tsreset(uban)
 	int uban;
 {
 	register struct uba_ctlr *um;
+	register struct uba_device *ui;
+	register struct buf *dp;
 	register ts11;
 
 	for (ts11 = 0; ts11 < NTS; ts11++) {
@@ -804,10 +746,21 @@ tsreset(uban)
 		printf(" ts%d", ts11);
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
-		ts_softc[ts11].sc_openf = -1;
+		if (ts_softc[ts11].sc_openf > 0)
+			ts_softc[ts11].sc_openf = -1;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
+		}
+		if ((ui = tsdinfo[ts11]) && ui->ui_mi == um && ui->ui_alive) {
+			dp = &tsutab[ts11];
+			dp->b_active = 0;
+			dp->b_forw = 0;
+			if (um->um_tab.b_actf == NULL)
+				um->um_tab.b_actf = dp;
+			else
+				um->um_tab.b_actl->b_forw = dp;
+			um->um_tab.b_actl = dp;
 		}
 		(void) tsinit(ts11);
 		tsstart(um);
@@ -889,7 +842,7 @@ tsdump()
 {
 	register struct uba_device *ui;
 	register struct uba_regs *up;
-	register struct device *addr;
+	register struct tsdevice *addr;
 	int blk, num;
 	int start;
 
@@ -902,7 +855,7 @@ tsdump()
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 	ubainit(up);
 	DELAY(1000000);
-	addr = (struct device *)ui->ui_physaddr;
+	addr = (struct tsdevice *)ui->ui_physaddr;
 	addr->tssr = 0;
 	tswait(addr);
 	while (num > 0) {
@@ -923,7 +876,7 @@ tsdump()
 
 tsdwrite(dbuf, num, addr, up)
 	register dbuf, num;
-	register struct device *addr;
+	register struct tsdevice *addr;
 	struct uba_regs *up;
 {
 	register struct pte *io;
@@ -943,7 +896,7 @@ tsdwrite(dbuf, num, addr, up)
 }
 
 tswait(addr)
-	register struct device *addr;
+	register struct tsdevice *addr;
 {
 	register s;
 
@@ -953,7 +906,7 @@ tswait(addr)
 }
 
 tseof(addr)
-	struct device *addr;
+	struct tsdevice *addr;
 {
 
 	tswait(addr);
