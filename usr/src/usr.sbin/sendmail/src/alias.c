@@ -24,12 +24,12 @@
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.28 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.29 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.28 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.29 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.28 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.29 (Berkeley) %G% (without DBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -402,7 +402,7 @@ readaliases(aliasfile, init)
 # if defined(DBM) || defined(NEWDB)
 	/* see if someone else is rebuilding the alias file already */
 # ifdef LOCKF
-	if (lockf(fileno(af), F_TEST, 0) < 0 && errno == EACCES)
+	if (lockf(fileno(af), F_TLOCK, 0) < 0)
 # else
 	if (flock(fileno(af), LOCK_EX | LOCK_NB) < 0 && errno == EWOULDBLOCK)
 # endif
