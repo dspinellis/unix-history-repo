@@ -1,4 +1,4 @@
-#	@(#)disktab	4.5 (Berkeley) %G%
+#	@(#)disktab	4.6 (Berkeley) %G%
 # Disk geometry and partition layout tables. 
 # Key:
 #	dt	controller type
@@ -44,7 +44,7 @@ eagle|egl|474 Mb Fujitsu Eagle:\
 	:ph#307120:oh#429440:bh#4096:fh#1024:
 
 xsd|Xsd|515 Mb FSD:\
- 	:ty=winchester:ns#24:nt#24:nc#711:rm#3600:so:\
+ 	:ty=winchester:ns#24:nt#24:nc#711:rm#3600:se#512:\
 	:dt=SMD:\
  	:pa#61056:oa#0:ba#8192:fa#1024:\
  	:pb#61056:ob#61056:bb#4096:fb#1024:\
@@ -71,7 +71,7 @@ xfd|Xfd|XFD|340 Mb FSD:\
 	:ph#230400:oh#311808:bh#4096:fh#1024:
 
 fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
- 	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:so:\
+ 	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
  	:pa#38400:oa#0:ba#8192:fa#1024:\
  	:pb#48000:ob#38400:bb#4096:fb#1024:\
@@ -83,7 +83,7 @@ fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
 	:ph#72320:oh#451200:bh#4096:fh#1024:
 
 smd|Smd|SMD|300 Mb SMD:\
-	:ty=removable:ns#16:nt#19:nc#823:rm#3600:so:\
+	:ty=removable:ns#16:nt#19:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
 	:pa#40128:oa#0:ba#8192:fa#1024:\
 	:pb#27360:ob#40128:bb#4096:fb#1024:\
