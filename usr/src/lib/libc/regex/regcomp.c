@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regcomp.c	5.6 (Berkeley) %G%
+ *	@(#)regcomp.c	5.7 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regcomp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)regcomp.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -193,7 +193,7 @@ int cflags;
 	g->mlen = 0;
 	g->nsub = 0;
 	g->ncategories = 1;	/* category 0 is "everything else" */
-	g->categories = &g->catspace[-CHAR_MIN];
+	g->categories = &g->catspace[-(CHAR_MIN)];
 	(void) memset((char *)g->catspace, 0, NC*sizeof(cat_t));
 	g->backrefs = 0;
 
