@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.5	%G%
+#	@(#)makefile	1.6	%G%
 
 LIB = libU77.a
 LPR = lpr
@@ -148,7 +148,13 @@ mkindx:	mkindx.c
 clean:
 	rm -f $(OBJECTS) $(LIB)
 
-tape:
+# End of Makefile
+# Below this is not normally distributed ...
+
+Makefile:	makefile
+	@sed -n -e "1,/End of Makefile/p" makefile > Makefile
+
+tape:	Makefile
 	@tar cbf 20 $(TAPE) Makefile man $(SOURCES) mkindx.c mkvers.c
 
 # below here is SCCS stuff ---
@@ -156,6 +162,9 @@ tape:
 access_.c:	s.access_.c
 	rm -f access_.c
 	get s.access_.c
+alarm_.c:	s.alarm_.c
+	rm -f alarm_.c
+	get s.alarm_.c
 chdir_.c:	s.chdir_.c
 	rm -f chdir_.c
 	get s.chdir_.c
