@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dis.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dis.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -13,9 +13,6 @@ static char sccsid[] = "@(#)dis.c	1.1 (Berkeley) %G%";
 **	May '80.
 */
 
-/*
-#include	<local-system>
-*/
 #include	<signal.h>
 #include	<setjmp.h>
 #include	<sgtty.h>
