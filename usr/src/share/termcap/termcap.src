@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.11 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.12 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -531,7 +531,8 @@ Mu|sun-e|Sun Microsystems Workstation console hacked for emacs:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:dc=\E[P:
+	:al=\E[L:dl=\E[M:dc=\E[P:\
+	:AL=\E[%dL:DL=\E[%dM:
 M0|sun-48|Sun 48-line window:\
 	:li#48:co#80:tc=sun:
 M1|sun-34|Sun 34-line window:\
