@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.7	(Berkeley)	%G%"
+/* @(#)dterm.c	1.8	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -19,9 +19,12 @@
  *		of each page, print "dterm:" and wait for a command.
  *		Type ? to get a list of available commands.
  *
+ *	  -m	print margins.  Default action is to cut printing area down
+ *		to only the part of the page with information on it.
+ *
  *	  -L	put a form feed (^L) at the end of each page
  *
- *	  -w	sets h = 20, v = 12, l = 131, also sets -c and -L to allow
+ *	  -w	sets h = 20, v = 12, l = 131, also sets -c, -m and -L to allow
  *		for extra-wide printouts on the printer.
  *
  *	-fxxx	get special character definition file "xxx".  Default is
@@ -53,7 +56,7 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.7	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.8	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
@@ -64,6 +67,7 @@ int 	keepon	= 0;	/* flags:  Don't stop at the end of each page? */
 int	clearsc = 0;		/* Put out form feed at each page? */
 int	output	= 0;		/* Do we do output at all? */
 int	nolist	= 0;		/* Output page list if > 0 */
+int	margin	= 0;		/* Print blank margins? */
 int	olist[20];		/* pairs of page numbers */
 
 float	hscale	= 10.0;		/* characters and lines per inch for output */
@@ -114,6 +118,9 @@ char **argv;
 			break;
 		case 'c':		/* continue at endofpage */
 			keepon = !keepon;
+			break;
+		case 'm':		/* print margins */
+			margin = !margin;
 			break;
 		case 'L':		/* form feed after each page */
 			clearsc = !clearsc;
@@ -316,6 +323,10 @@ register FILE *fp;
 		case 'p':	/* new page */
 			fscanf(fp, "%d", &n);
 			t_page(n);
+			break;
+
+		case 'P':	/* new span (ignored) */
+			fscanf(fp, "%d", &n);
 			break;
 
 		case 'n':	/* end of line */
@@ -521,10 +532,11 @@ t_page(n)	/* do whatever new page functions */
 
 			/* print the contents of the current page.  puts out */
 putpage()		/* only the part of the page that's been written on */
-{
+{			/* unless "margin" is set. */
 	int i, j, k;
 
 	fflush(stdout);
+	if (margin) minv = minh = 0;
 	for (i = minv; i <= maxv; i++) {
 		for (k = maxh; pagebuf[i][k] == ' '; k--)
 			;
