@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.10 (Berkeley) %G%
+		@(#)README	6.11 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -623,7 +623,7 @@ confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
 confREAD_TIMEOUT	(undefined)	Or	SMTP read timeouts.
 confSAFE_QUEUE		True		Os	Commit all messages to disk
 						before forking.
-confMESSAGE_TIMEOUT	3d		OT	Timeout for messages before
+confMESSAGE_TIMEOUT	5d		OT	Timeout for messages before
 						sending error message.
 confTIME_ZONE		USE_SYSTEM	Oz	Time zone info -- can be
 						USE_SYSTEM to use the system's
