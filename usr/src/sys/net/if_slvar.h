@@ -1,4 +1,4 @@
-/*	@(#)if_slvar.h	7.4 (Berkeley) %G% */
+/*	@(#)if_slvar.h	7.5 (Berkeley) %G% */
 
 /*
  * Definitions for SLIP interface data structures
@@ -37,4 +37,4 @@ struct sl_softc {
 /* this stuff doesn't belong here... */
 #define	SLIOCGFLAGS	_IOR('t', 90, int)	/* get configuration flags */
 #define	SLIOCSFLAGS	_IOW('t', 89, int)	/* set configuration flags */
-#define	SLIOGUNIT	_IOW('t', 88, int)	/* get slip unit number */
+#define	SLIOCGUNIT	_IOW('t', 88, int)	/* get slip unit number */
