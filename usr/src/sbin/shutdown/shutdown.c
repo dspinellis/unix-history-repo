@@ -1,12 +1,13 @@
 #ifndef lint
-static	char *sccsid = "@(#)shutdown.c	4.17 (Berkeley) 83/05/22";
+static	char *sccsid = "@(#)shutdown.c	4.18 (Berkeley) 83/06/02";
 #endif
 
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 #include <utmp.h>
-#include <time.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/types.h>
 /*
  *	/etc/shutdown when [messages]
@@ -141,7 +142,7 @@ main(argc,argv)
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTERM, finish);
 	signal(SIGALRM, do_nothing);
-	nice(-20);
+	setpriority(PRIO_PROCESS, 0, PRIO_MIN);
 	fflush(stdout);
 #ifndef DEBUG
 	if (i = fork()) {
