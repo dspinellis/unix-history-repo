@@ -1,12 +1,13 @@
 /*-
- * Copyright (c) 1982, 1986, 1989, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1986, 1989, 1993 The Regents of the University of California.
+ * All rights reserved.
  *
- * This module is believed to contain source code proprietary to AT&T.
- * Use and redistribution is subject to the Berkeley Software License
- * Agreement and your Software Agreement with AT&T (Western Electric).
+ * This code is derived from software contributed to Berkeley by
+ * Berkeley Software Design Inc.
  *
- *	@(#)vfs_bio.c	8.1 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)vfs_bio.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
