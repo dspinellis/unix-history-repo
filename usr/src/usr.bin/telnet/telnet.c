@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.21 (Berkeley) %G%";
 #endif
 
 /*
@@ -96,8 +96,9 @@ char	*control();
 struct	cmd *getcmd();
 struct	servent *sp;
 
-struct	ttychars otc;
-int	oflags;
+struct	tchars otc;
+struct	ltchars oltc;
+struct	sgttyb ottyb;
 
 main(argc, argv)
 	int argc;
@@ -108,8 +109,9 @@ main(argc, argv)
 		fprintf(stderr, "telnet: tcp/telnet: unknown service\n");
 		exit(1);
 	}
-	ioctl(0, TIOCGET, (char *)&oflags);
-	ioctl(0, TIOCCGET, (char *)&otc);
+	ioctl(0, TIOCGETP, (char *)&ottyb);
+	ioctl(0, TIOCGETC, (char *)&otc);
+	ioctl(0, TIOCGLTC, (char *)&oltc);
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
@@ -242,8 +244,9 @@ suspend()
 	save = mode(0);
 	kill(0, SIGTSTP);
 	/* reget parameters in case they were changed */
-	ioctl(0, TIOCGET, (char *)&oflags);
-	ioctl(0, TIOCCGET, (char *)&otc);
+	ioctl(0, TIOCGETP, (char *)&ottyb);
+	ioctl(0, TIOCGETC, (char *)&otc);
+	ioctl(0, TIOCGLTC, (char *)&oltc);
 	(void) mode(save);
 }
 
@@ -315,47 +318,50 @@ call(routine, args)
 	(*routine)(argc, &args);
 }
 
-struct	ttychars notc = {
-	-1,	-1,	-1,	-1,	-1,
-	-1,	-1,	-1,	-1,	-1,
-	-1,	-1,	-1,	-1
-};
+struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
+struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
 
 mode(f)
 	register int f;
 {
 	static int prevmode = 0;
-	struct ttychars *tc;
-	int onoff, old, flags;
+	struct tchars *tc;
+	struct ltchars *ltc;
+	struct sgttyb sb;
+	int onoff, old;
 
 	if (prevmode == f)
 		return (f);
 	old = prevmode;
 	prevmode = f;
-	flags = oflags;
+	sb = ottyb;
 	switch (f) {
 
 	case 0:
 		onoff = 0;
 		tc = &otc;
+		ltc = &oltc;
 		break;
 
 	case 1:
 	case 2:
-		flags |= CBREAK;
+		sb.sg_flags |= CBREAK;
 		if (f == 1)
-			flags &= ~(ECHO|CRMOD);
+			sb.sg_flags &= ~(ECHO|CRMOD);
 		else
-			flags |= ECHO|CRMOD;
+			sb.sg_flags |= ECHO|CRMOD;
+		sb.sg_erase = sb.sg_kill = -1;
 		tc = &notc;
+		ltc = &noltc;
 		onoff = 1;
 		break;
 
 	default:
 		return;
 	}
-	ioctl(fileno(stdin), TIOCCSET, (char *)tc);
-	ioctl(fileno(stdin), TIOCSET, (char *)&flags);
+	ioctl(fileno(stdin), TIOCSLTC, (char *)ltc);
+	ioctl(fileno(stdin), TIOCSETC, (char *)tc);
+	ioctl(fileno(stdin), TIOCSETP, (char *)&sb);
 	ioctl(fileno(stdin), FIONBIO, &onoff);
 	ioctl(fileno(stdout), FIONBIO, &onoff);
 	return (old);
