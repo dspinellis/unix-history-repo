@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_fdesc.8	5.1 (Berkeley) %G%
+.\"	@(#)mount_fdesc.8	5.2 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -19,7 +19,9 @@
 .Nd mount the /dev/fd file system
 .Sh SYNOPSIS
 .Nm mount_fdesc
-.Pa /dev/fd /dev/fd
+.Op Fl F Ar fsoptions
+.Pa /dev/fd
+.Pa mount_point
 .Sh DESCRIPTION
 The
 .Nm mount_fdesc

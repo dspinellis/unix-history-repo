@@ -8,66 +8,54 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_fdesc.c	5.1 (Berkeley) %G%
- *
- * $Id: mount_fdesc.c,v 1.1 1992/05/17 17:50:13 jsp Exp jsp $
+ *	@(#)mount_fdesc.c	5.2 (Berkeley) %G%
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 
-main(c, v)
-int c;
-char *v[];
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void usage __P((void));
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
 {
-	extern char *optarg;
-	extern int optind;
-	int ch;
-	int usage = 0;
-	int mntflags;
-	char *dummy;
-	char *mountpt;
-	int rc;
+	int ch, mntflags;
 
-	/*
-	 * Crack -F option
-	 */
-	while ((ch = getopt(c, v, "F:")) != EOF)
-	switch (ch) {
-	case 'F':
-		mntflags = atoi(optarg);
-		break;
-	default:
-	case '?':
-		usage++;
-		break;
-	}
+	mntflags = 0;
+	while ((ch = getopt(argc, argv, "F:")) != EOF)
+		switch(ch) {
+		case 'F':
+			mntflags = atoi(optarg);
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
 
-	/*
-	 * Need two more arguments
-	 */
-	if (optind != (c - 2))
-		usage++;
+	if (argc != 2)
+		usage();
 
-	if (usage) {
-		fputs("usage: mount_fdesc [ fsoptions ] /dev/fd mount-point\n", stderr);
-		exit(1);
-	}
-
-	/*
-	 * Get target and mount point
-	 */
-	dummy = v[optind];
-	mountpt = v[optind+1];
-
-	rc = mount(MOUNT_FDESC, mountpt, mntflags, (caddr_t) 0);
-	if (rc < 0) {
-		perror("mount_fdesc");
+	if (mount(MOUNT_FDESC, argv[1], mntflags, NULL)) {
+		(void)fprintf(stderr, "mount_fdesc: %s\n", strerror(errno));
 		exit(1);
 	}
 	exit(0);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: mount_fdesc [ -F fsoptions ] /dev/fd mount_point\n");
+	exit(1);
 }
