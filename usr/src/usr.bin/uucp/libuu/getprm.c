@@ -1,13 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)getprm.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getprm.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 
 #define LQUOTE	'('
 #define RQUOTE ')'
-#define NOSYSPART	0
-#define HASSYSPART	1
 
 /*LINTLIBRARY*/
 
@@ -66,45 +64,4 @@ register char *s, *prm;
 	*prm = '\0';
 
 	return s;
-}
-
-/*
- *	split into system and file part
- *
- *	return codes:
- *		NOSYSPART
- *		HASSYSPART
- */
-
-split(name, sys, rest)
-register char *name, *rest;
-char *sys;
-{
-	register char *c;
-	register int i;
-
-	if (*name == LQUOTE) {
-		if ((c = index(name + 1, RQUOTE)) != NULL) {
-		/* strip off quotes */
-			name++;
-			while (c != name)
-				*rest++ = *name++;
-			*rest = '\0';
-			*sys = '\0';
-			return NOSYSPART;
-		}
-	}
-
-	if ((c = index(name, '!')) == NULL) {
-		strcpy(rest, name);
-		*sys = '\0';
-		return NOSYSPART;
-	}
-
-	*c++ = '\0';
-	strncpy(sys, name, MAXBASENAME);
-	sys[MAXBASENAME] = '\0';
-
-	strcpy(rest, c);
-	return HASSYSPART;
 }

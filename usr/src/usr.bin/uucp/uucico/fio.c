@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -23,17 +23,28 @@ static char sccsid[] = "@(#)fio.c	5.1 (Berkeley) %G%";
  * to trigger packet transmission, hence par 3 should be 
  * set to 2; a good value for the Idle Timer (par 4) is 10.
  * All other pars should be set to 0.
+ *
  * Normally a calling site will take care of setting the
  * local PAD pars via an X.28 command and those of the remote
  * PAD via an X.29 command, unless the remote site has a
  * special channel assigned for this protocol with the proper
  * par settings.
  *
- * Author: Piet Beertema, CWI, Amsterdam, Sep 1984
+ * Additional comments for hosts with direct X.25 access:
+ * - the global variable IsTcpIp, when set, excludes the ioctl's,
+ *   so the same binary can run on X.25 and non-X.25 hosts;
+ * - reads are done in small chunks, which can be smaller than
+ *   the packet size; your X.25 driver must support that.
+ *
+ *
+ * Author:
+ *	Piet Beertema, CWI, Amsterdam, Sep 1984
+ * Modified for X.25 hosts:
+ *	Robert Elz, Melbourne Univ, Mar 1985
  */
 
-#include <signal.h>
 #include "uucp.h"
+#include <signal.h>
 #ifdef USG
 #include <termio.h>
 #else !USG
@@ -41,7 +52,14 @@ static char sccsid[] = "@(#)fio.c	5.1 (Berkeley) %G%";
 #endif !USG
 #include <setjmp.h>
 
-#define FBUFSIZ		256
+#define FIBUFSIZ	256	/* for X.25 interfaces: set equal to packet size,
+				 * but see comment above
+				 */
+
+#define FOBUFSIZ	256	/* for X.25 interfaces: set equal to packet size;
+				 * otherwise make as large as feasible to reduce
+				 * number of write system calls 
+				 */
 
 #ifndef MAXMSGLEN
 #define MAXMSGLEN	BUFSIZ
@@ -70,16 +88,18 @@ fturnon()
 	int ret;
 	struct termio ttbuf;
 
-	ioctl(Ifn, TCGETA, &ttbuf);
+	if (!IsTcpIp) {
+		ioctl(Ifn, TCGETA, &ttbuf);
 #ifdef USG
-	ttbuf.c_iflag = IXOFF|IXON|ISTRIP;
-	ttbuf.c_cc[VMIN] = FBUFSIZ > 64 ? 64 : FBUFSIZ;
-	ttbuf.c_cc[VTIME] = 5;
-#else
-	ttbuf.sg_flags = ANYP|CBREAK|TANDEM;
+		ttbuf.c_iflag = IXOFF|IXON|ISTRIP;
+		ttbuf.c_cc[VMIN] = FIBUFSIZ > 64 ? 64 : FIBUFSIZ;
+		ttbuf.c_cc[VTIME] = 5;
+#else !USG
+		ttbuf.sg_flags = ANYP|CBREAK|TANDEM;
 #endif USG
-	ret = ioctl(Ifn, TCSETA, &ttbuf);
-	ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		ret = ioctl(Ifn, TCSETA, &ttbuf);
+		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+	}
 	fsig = signal(SIGALRM, falarm);
 	/* give the other side time to perform its ioctl;
 	 * otherwise it may flush out the first data this
@@ -110,6 +130,7 @@ char type;
 	if (*(s-1) == '\n')
 		s--;
 	*s++ = '\r';
+	*s = 0;
 	(void) write(fn, bufr, s - bufr);
 	return SUCCESS;
 }
@@ -127,10 +148,12 @@ register int fn;
 	for (;;) {
 		if (read(fn, str, 1) <= 0)
 			goto msgerr;
+		*str &= 0177;
 		if (*str == '\r')
 			break;
-		if (*str < ' ')
+		if (*str < ' ') {
 			continue;
+		}
 		if (str++ >= smax)
 			goto msgerr;
 	}
@@ -146,12 +169,12 @@ fwrdata(fp1, fn)
 FILE *fp1;
 int fn;
 {
-	register int flen, alen, ret;
-	char ibuf[FBUFSIZ];
-	char ack;
+	register int alen, ret;
+	register char *obp;
+	char ack, ibuf[MAXMSGLEN];
+	int flen, mil, retries = 0;
 	long abytes, fbytes;
 	struct timeb t1, t2;
-	int mil, retries = 0;
 
 	ret = FAIL;
 retry:
@@ -164,31 +187,22 @@ retry:
 #else !USG
 	ftime(&t1);
 #endif !USG
-	while ((flen = fread(ibuf, sizeof (char), FBUFSIZ, fp1)) > 0) {
-		alen = fwrblk(fn, ibuf, flen);
-		abytes += alen >= 0 ? alen : -alen;
-		if (alen <= 0)
-			goto acct;
+	do {
+		alen = fwrblk(fn, fp1, &flen);
 		fbytes += flen;
-	}
-	sprintf(ibuf, "\176\176%04x\r", fchksum);
-	abytes += alen = strlen(ibuf);
-	if (write(fn, ibuf, alen) == alen) {
-		DEBUG(8, "%d\n", alen);
-		DEBUG(8, "checksum: %04x\n", fchksum);
-		if (frdmsg(ibuf, fn) != FAIL) {
-			if ((ack = ibuf[0]) == 'G')
-				ret = 0;
-			DEBUG(4, "ack - '%c'\n", ack);
+		if (alen <= 0) {
+			abytes -= alen;
+			goto acct;
 		}
+		abytes += alen;
+	} while (!feof(fp1) && !ferror(fp1));
+	DEBUG(8, "\nchecksum: %04x\n", fchksum);
+	if (frdmsg(ibuf, fn) != FAIL) {
+		if ((ack = ibuf[0]) == 'G')
+			ret = SUCCESS;
+		DEBUG(4, "ack - '%c'\n", ack);
 	}
 acct:
-	if (ack == 'R') {
-		DEBUG(4, "RETRY:\n", 0);
-		fseek(fp1, 0L, 0);
-		retries++;
-		goto retry;
-	}
 #ifdef USG
 	time(&t2.time);
 	t2.millitm = 0;
@@ -203,14 +217,20 @@ acct:
 		mil += 1000;
 	}
 	sprintf(ibuf, "sent data %ld bytes %ld.%02d secs",
-				fbytes, (long)t2.time, mil/10);
+		fbytes, (long)t2.time, mil / 10);
 	sysacct(abytes, t2.time - t1.time);
-	if (retries > 0) 
-		sprintf((char *)ibuf+strlen(ibuf)," %d retries", retries);
+	if (retries > 0)
+		sprintf(&ibuf[strlen(ibuf)], ", %d retries", retries);
 	DEBUG(1, "%s\n", ibuf);
 	syslog(ibuf);
+	if (ack == 'R') {
+		DEBUG(4, "RETRY:\n", 0);
+		fseek(fp1, 0L, 0);
+		retries++;
+		goto retry;
+	}
 #ifdef SYSACCT
-	if (ret)
+	if (ret == FAIL)
 		sysaccf(NULL);		/* force accounting */
 #endif SYSACCT
 	return ret;
@@ -225,11 +245,10 @@ register FILE *fp2;
 {
 	register int flen;
 	register char eof;
-	char ibuf[FBUFSIZ];
-	int ret, retries = 0;
+	char ibuf[FIBUFSIZ];
+	int ret, mil, retries = 0;
 	long alen, abytes, fbytes;
 	struct timeb t1, t2;
-	int mil;
 
 	ret = FAIL;
 retry:
@@ -246,31 +265,14 @@ retry:
 		abytes += alen;
 		if (flen < 0)
 			goto acct;
-		if (eof = flen > FBUFSIZ)
-			flen -= FBUFSIZ + 1;
+		if (eof = flen > FIBUFSIZ)
+			flen -= FIBUFSIZ + 1;
 		fbytes += flen;
 		if (fwrite(ibuf, sizeof (char), flen, fp2) != flen)
 			goto acct;
 	} while (!eof);
-	ret = 0;
+	ret = SUCCESS;
 acct:
-	if (ret) {
-		if (retries++ < MAXRETRIES) {
-			DEBUG(8, "send ack: 'R'\n", 0);
-			fwrmsg('R', "", fn);
-			fseek(fp2, 0L, 0);
-			DEBUG(4, "RETRY:\n", 0);
-			goto retry;
-		}
-		DEBUG(8, "send ack: 'Q'\n", 0);
-		fwrmsg('Q', "", fn);
-#ifdef SYSACCT
-		sysaccf(NULL);		/* force accounting */
-#endif SYSACCT
-	} else {
-		DEBUG(8, "send ack: 'G'\n", 0);
-		fwrmsg('G', "", fn);
-	}
 #ifdef USG
 	time(&t2.time);
 	t2.millitm = 0;
@@ -285,12 +287,30 @@ acct:
 		mil += 1000;
 	}
 	sprintf(ibuf, "received data %ld bytes %ld.%02d secs",
-				fbytes, (long)t2.time, mil/10);
-	sysacct(abytes, t2.time - t1.time);
+		fbytes, (long)t2.time, mil/10);
 	if (retries > 0) 
-		sprintf((char *)ibuf+strlen(ibuf)," %d retries", retries);
+		sprintf(&ibuf[strlen(ibuf)]," %d retries", retries);
+	sysacct(abytes, t2.time - t1.time);
 	DEBUG(1, "%s\n", ibuf);
 	syslog(ibuf);
+	if (ret == FAIL) {
+		if (retries++ < MAXRETRIES) {
+			DEBUG(8, "send ack: 'R'\n", 0);
+			fwrmsg('R', "", fn);
+			fseek(fp2, 0L, 0);
+			DEBUG(4, "RETRY:\n", 0);
+			goto retry;
+		}
+		DEBUG(8, "send ack: 'Q'\n", 0);
+		fwrmsg('Q', "", fn);
+#ifdef SYSACCT
+		sysaccf(NULL);		/* force accounting */
+#endif SYSACCT
+	}
+	else {
+		DEBUG(8, "send ack: 'G'\n", 0);
+		fwrmsg('G', "", fn);
+	}
 	return ret;
 }
 
@@ -300,100 +320,115 @@ register char *blk;
 register int len;
 register int fn;
 {
-	static int ret = FBUFSIZ / 2;
-#ifndef Not080
-	extern int linebaudrate;
-#endif Not080
+	static int ret = FIBUFSIZ / 2;
 
 	if (setjmp(Ffailbuf))
 		return FAIL;
-#ifndef Not080
-	if (len == FBUFSIZ && ret < FBUFSIZ / 2 &&
-	    linebaudrate > 0 && linebaudrate < 4800)
-		sleep(1);
-#endif Not080
 	(void) alarm(MAXMSGTIME);
 	ret = read(fn, blk, len);
 	alarm(0);
 	return ret <= 0 ? FAIL : ret;
 }
 
+#if !defined(BSD4_2) && !defined(USG)
 /* call ultouch every TC calls to either frdblk or fwrblk  */
-
-#define	TC	20
-static	int tc = TC;
+#define TC	20
+static int tc = TC;
+#endif !defined(BSD4_2) && !defined(USG)
 
 /* Byte conversion:
  *
- *   from        pre       to
- * 000-037       172     100-137
- * 040-171               040-171
- * 172-177       173     072-077
- * 200-237       174     100-137
- * 240-371       175     040-171
- * 372-377       176     072-077
+ *   from	 pre	   to
+ * 000-037	 172	 100-137
+ * 040-171		 040-171
+ * 172-177	 173	 072-077
+ * 200-237	 174	 100-137
+ * 240-371	 175	 040-171
+ * 372-377	 176	 072-077
  */
 
 static
-fwrblk(fn, ip, len)
+fwrblk(fn, fp, lenp)
 int fn;
-register char *ip;
-register int len;
+register FILE *fp;
+int *lenp;
 {
 	register char *op;
-	register int sum, nl;
+	register int c, sum, nl, len;
+	char obuf[FOBUFSIZ + 8];
 	int ret;
-	char obuf[FBUFSIZ * 2];
 
+#if !defined(BSD4_2) && !defined(USG)
 	/* call ultouch occasionally */
 	if (--tc < 0) {
 		tc = TC;
 		ultouch();
 	}
-	DEBUG(8, "%d/", len);
+#endif !defined(BSD4_2) && !defined(USG)
 	op = obuf;
 	nl = 0;
+	len = 0;
 	sum = fchksum;
-	do {
+	while ((c = getc(fp)) != EOF) {
+		len++;
 		if (sum & 0x8000) {
 			sum <<= 1;
 			sum++;
 		} else
 			sum <<= 1;
-		sum += *ip & 0377;
+		sum += c;
 		sum &= 0xffff;
-		if (*ip & 0200) {
-			*ip &= 0177;
-			if (*ip < 040) {
+		if (c & 0200) {
+			c &= 0177;
+			if (c < 040) {
 				*op++ = '\174';
-				*op++ = *ip++ + 0100;
+				*op++ = c + 0100;
 			} else
-			if (*ip <= 0171) {
+			if (c <= 0171) {
 				*op++ = '\175';
-				*op++ = *ip++;
+				*op++ = c;
 			}
 			else {
 				*op++ = '\176';
-				*op++ = *ip++ - 0100;
+				*op++ = c - 0100;
 			}
 			nl += 2;
 		} else {
-			if (*ip < 040) {
+			if (c < 040) {
 				*op++ = '\172';
-				*op++ = *ip++ + 0100;
+				*op++ = c + 0100;
 				nl += 2;
 			} else
-			if (*ip <= 0171) {
-				*op++ = *ip++;
+			if (c <= 0171) {
+				*op++ = c;
 				nl++;
 			} else {
 				*op++ = '\173';
-				*op++ = *ip++ - 0100;
+				*op++ = c - 0100;
 				nl += 2;
 			}
 		}
-	} while (--len);
+		if (nl >= FOBUFSIZ - 1) {
+			/*
+			 * peek at next char, see if it will fit
+			 */
+			c = getc(fp);
+			if (c == EOF)
+				break;
+			(void) ungetc(c, fp);
+			if (nl >= FOBUFSIZ || c < 040 || c > 0171)
+				goto writeit;
+		}
+	}
+	/*
+	 * At EOF - append checksum, there is space for it...
+	 */
+	sprintf(op, "\176\176%04x\r", sum);
+	nl += strlen(op);
+writeit:
+	*lenp = len;
 	fchksum = sum;
+	DEBUG(8, "%d/", len);
 	DEBUG(8, "%d,", nl);
 	ret = write(fn, obuf, nl);
 	return ret == nl ? nl : ret < 0 ? 0 : -ret;
@@ -411,13 +446,14 @@ long *rlen;
 	int i;
 	static char special = 0;
 
+#if !defined(BSD4_2) && !defined(USG)
 	/* call ultouch occasionally */
 	if (--tc < 0) {
 		tc = TC;
 		ultouch();
 	}
-
-	if ((len = frdbuf(ip, FBUFSIZ, fn)) == FAIL) {
+#endif !defined(BSD4_2) && !defined(USG)
+	if ((len = frdbuf(ip, FIBUFSIZ, fn)) == FAIL) {
 		*rlen = 0;
 		goto dcorr;
 	}
@@ -435,7 +471,7 @@ long *rlen;
 				if (*ip++ != '\176' || (i = --len) > 5)
 					goto dcorr;
 				while (i--)
-					*op++ = *ip++;
+					*op++ = *ip++ & 0177;
 				while (len < 5) {
 					i = frdbuf(&buf[len], 5 - len, fn);
 					if (i == FAIL) {
@@ -445,13 +481,15 @@ long *rlen;
 					DEBUG(8, ",%d", i);
 					len += i;
 					*rlen += i;
+					while (i--)
+						*op++ &= 0177;
 				}
 				if (buf[4] != '\r')
 					goto dcorr;
 				sscanf(buf, "%4x", &fchksum);
 				DEBUG(8, "\nchecksum: %04x\n", sum);
 				if (fchksum == sum)
-					return FBUFSIZ + 1 + nl;
+					return FIBUFSIZ + 1 + nl;
 				else {
 					DEBUG(8, "\n", 0);
 					DEBUG(4, "Bad checksum\n", 0);
@@ -503,8 +541,9 @@ dcorr:
 	DEBUG(8, "\n", 0);
 	DEBUG(4, "Data corrupted\n", 0);
 	while (len != FAIL) {
-		if ((len = frdbuf(erbp, FBUFSIZ, fn)) != FAIL)
+		if ((len = frdbuf(erbp, FIBUFSIZ, fn)) != FAIL)
 			*rlen += len;
 	}
 	return FAIL;
 }
+

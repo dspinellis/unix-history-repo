@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gio.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gio.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -190,9 +190,11 @@ FILE *fp2;
 	return SUCCESS;
 }
 
-/* call ultouch every TC calls to either grdblk or gwrblk -- rti!trt */
+#if !defined(BSD4_2) && !defined(USG)
+/* call ultouch every TC calls to either grdblk or gwrblk */
 #define	TC	20
 static	int tc = TC;
+#endif !BSD4_2 && !USG
 
 /*ARGSUSED*/
 grdblk(blk, len,  fn)
@@ -201,11 +203,13 @@ char *blk;
 {
 	register int i, ret;
 
+#if !defined(BSD4_2) && !defined(USG)
 	/* call ultouch occasionally */
 	if (--tc < 0) {
 		tc = TC;
 		ultouch();
 	}
+#endif !BSD4_2 && !USG
 	for (i = 0; i < len; i += ret) {
 		ret = pkread(Pk, blk, len - i);
 		if (ret < 0)
@@ -221,13 +225,12 @@ char *blk;
 gwrblk(blk, len, fn)
 register char *blk;
 {
-	register int ret;
-
-	/* call ultouch occasionally -- rti!trt */
+#if !defined(BSD4_2) && !defined(USG)
+	/* call ultouch occasionally */
 	if (--tc < 0) {
 		tc = TC;
 		ultouch();
 	}
-	ret = pkwrite(Pk, blk, len);
-	return ret;
+#endif !BSD4_2 && !USG
+	return  pkwrite(Pk, blk, len);
 }

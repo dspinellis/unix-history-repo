@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)logent.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)logent.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -81,7 +81,6 @@ register FILE *fp;
 	static pid = 0;
 	register struct tm *tp;
 	extern struct tm *localtime();
-	time_t clock;
 
 	if (text == NULL)
 		text = "";
@@ -89,16 +88,20 @@ register FILE *fp;
 		status = "";
 	if (!pid)
 		pid = getpid();
-	time(&clock);
-	tp = localtime(&clock);
-	fprintf(fp, "%s %s ", User, Rmtname);
 #ifdef USG
-	fprintf(fp, "(%d/%d-%2.2d:%2.2d-%d) ", tp->tm_mon + 1,
-		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
+	time(&Now.time);
+	Now.millitm = 0;
 #else !USG
-	fprintf(fp, "(%d/%d-%02d:%02d-%d) ", tp->tm_mon + 1,
-		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
+	ftime(&Now);
 #endif !USG
+	tp = localtime(&Now.time);
+#ifdef USG
+	fprintf(fp, "%s %s (%d/%d-%2.2d:%2.2d-%d) ",
+#else !USG
+	fprintf(fp, "%s %s (%d/%d-%02d:%02d-%d) ",
+#endif !USG
+		User, Rmtname, tp->tm_mon + 1, tp->tm_mday,
+		tp->tm_hour, tp->tm_min, pid);
 	fprintf(fp, "%s (%s)\n", status, text);
 
 	/* Since it's buffered */
@@ -144,7 +147,6 @@ char *text;
 {
 	register struct tm *tp;
 	extern struct tm *localtime();
-	struct timeb clock;
 #ifdef LOGBYSITE
 	char lfile[MAXFULLNAME];
 	static char SLogRmtname[64];
@@ -184,22 +186,22 @@ char *text;
 	}
 
 #ifdef USG
-	time(&clock.time);
-	clock.millitm = 0;
+	time(&Now.time);
+	Now.millitm = 0;
 #else !USG
-	ftime(&clock);
+	ftime(&Now);
 #endif !USG
-	tp = localtime(&clock.time);
+	tp = localtime(&Now.time);
 
 	fprintf(Sp, "%s %s ", User, Rmtname);
 #ifdef USG
 	fprintf(Sp, "(%d/%d-%2.2d:%2.2d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
-	fprintf(Sp, "(%ld) %s\n", clock.time, text);
+	fprintf(Sp, "(%ld) %s\n", Now.time, text);
 #else !USG
 	fprintf(Sp, "(%d/%d-%02d:%02d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
-	fprintf(Sp, "(%ld.%02u) %s\n", clock.time, clock.millitm/10, text);
+	fprintf(Sp, "(%ld.%02u) %s\n", Now.time, Now.millitm/10, text);
 #endif !USG
 
 	/* Position at end and flush */

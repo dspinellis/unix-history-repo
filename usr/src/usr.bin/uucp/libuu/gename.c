@@ -1,10 +1,21 @@
 #ifndef lint
-static char sccsid[] = "@(#)gename.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)gename.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 
 #define SEQLEN 4
+#define SLOCKTIME 10L
+#define SLOCKTRIES 5
+/*
+ * the alphabet can be anything, but if it's not in ascii order,
+ * sequence ordering is not preserved
+ */
+static char alphabet[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+#ifdef BSD4_2
+#include <sys/file.h>
+#endif BSD4_2
 
 /*LINTLIBRARY*/
 
@@ -14,34 +25,12 @@ static char sccsid[] = "@(#)gename.c	5.5 (Berkeley) %G%";
 gename(pre, sys, grade, file)
 char pre, *sys, grade, *file;
 {
-	static char sqnum[5];
-
-	getseq(sqnum);
-	sprintf(file,"%c.%.*s%c%.*s", pre, SYSNSIZE, sys, grade, SEQLEN, sqnum);
-	DEBUG(4, "file - %s\n", file);
-}
-
-#define SLOCKTIME 10L
-#define SLOCKTRIES 5
-
-/*
- *	get next sequence number
- */
-
-static
-getseq(snum)
-register char *snum;
-{
-	/*
-	 * the alphabet can be anything, but if it's not in ascii order,
-	 * sequence ordering is not preserved
-	 */
-	char	*alphabet =
-	    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	register int i, fd;
+	static char snum[5];
 	static char *lastchar = NULL;
 
 	if (lastchar == NULL || (snum[SEQLEN-1] = *(lastchar++)) == '\0') {
+#ifndef BSD4_2
 		for (i = 0; i < SLOCKTRIES; i++) {
 			if (!ulockf(SEQLOCK, SLOCKTIME))
 				break;
@@ -49,33 +38,22 @@ register char *snum;
 		}
 
 		if (i >= SLOCKTRIES) {
-			int alphalen;
 			logent(SEQLOCK, "CAN NOT LOCK");
-			alphalen = strlen(alphabet);
-			srand((int)time((time_t *)0));
-			for (i=1;i<SEQLEN;i++)
-				*snum++ = alphabet[rand() % alphalen];
-			lastchar = alphabet;
-			*snum = *lastchar++;
-			return;
+			goto getrandseq;
 		}
+#endif !BSD4_2
 
 		if ((fd = open(SEQFILE, 2)) >= 0) {
-			int alphalen;
-			register char	*p;
-			char *index();
-
-			alphalen = strlen(alphabet);
+			register char *p;
+#ifdef BSD4_2
+			flock(fd, LOCK_EX);
+#endif !BSD4_2
 			read(fd, snum, SEQLEN);
-			/* initialize rand() for possible use */
-			srand((int)time((time_t *)0));
 			/* increment the penultimate character */
 			for (i = SEQLEN - 2; i >= 0; --i) {
-				if ((p = index(alphabet, snum[i])) == NULL) {
-					p = &alphabet[rand() % alphalen];
-					DEBUG(6, "bad seqf: %s\n", snum);
-				}
-				if (++p < &alphabet[alphalen]) {
+				if ((p = index(alphabet, snum[i])) == NULL)
+					goto getrandseq;
+				if (++p < &alphabet[sizeof alphabet - 1]) {
 					snum[i] = *p;
 					break;
 				} else		/* carry */
@@ -83,17 +61,25 @@ register char *snum;
 			}
 			snum[SEQLEN-1] = alphabet[0];
 		} else {
+			extern int errno;
+			fd = creat(SEQFILE, 0666);
+getrandseq:		srand((int)time((time_t *)0));
+			assert(SEQFILE, "is missing or trashed\n", errno);
 			for (i = 0; i < SEQLEN; i++)
-				snum[i] = alphabet[0];
-			if ((fd = creat(SEQFILE, 0666)) < 0)
-				return;
+				snum[i] = alphabet[rand() % (sizeof alphabet - 1)];
+			snum[SEQLEN-1] = alphabet[0];
 		}
 
-		lseek(fd, 0L, 0);
-		write(fd, snum, SEQLEN);
-		close(fd);
+		if (fd >= 0) {
+			lseek(fd, 0L, 0);
+			write(fd, snum, SEQLEN);
+			close(fd);
+		}
+#ifndef BSD4_2
 		rmlock(SEQLOCK);
+#endif !BSD4_2
 		lastchar = alphabet + 1;
 	}
-	return;
+	sprintf(file,"%c.%.*s%c%.*s", pre, SYSNSIZE, sys, grade, SEQLEN, snum);
+	DEBUG(4, "file - %s\n", file);
 }
