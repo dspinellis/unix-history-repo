@@ -1,4 +1,4 @@
-/*	file.h	4.1	%G%	*/
+/*	file.h	4.2	%G%	*/
 
 /*
  * One file structure is allocated
@@ -15,6 +15,9 @@ struct	file
 	union {
 		off_t	f_offset;	/* read/write character pointer */
 		struct chan *f_chan;	/* mpx channel pointer */
+#ifdef CHAOS
+		struct connection *f_conn;
+#endif
 	} f_un;
 };
 
