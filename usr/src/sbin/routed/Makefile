@@ -1,4 +1,5 @@
-# Makefile %G%
+#	Makefile (Berkeley) %G%
+#
 ALL=	routed
 OBJS=	af.o if.o input.o main.o output.o startup.o tables.o timer.o \
 	trace.o
@@ -9,7 +10,7 @@ LDFLAGS=
 all:	${ALL}
 
 routed: ${OBJS}
-	${CC} -o routed ${LDFLAGS} ${OBJS} -ljobs
+	${CC} -o routed ${LDFLAGS} ${OBJS}
 
 install: routed
 	install -s routed ${DESTDIR}/etc

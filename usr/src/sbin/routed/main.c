@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -114,7 +114,7 @@ main(argc, argv)
 	msg->rip_nets[0].rip_dst.sa_family = htons(AF_UNSPEC);
 	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
 	toall(sendmsg);
-	sigset(SIGALRM, timer);
+	signal(SIGALRM, timer);
 	timer();
 
 	for (;;) {
@@ -142,7 +142,7 @@ process(fd)
 	int fd;
 {
 	struct sockaddr from;
-	int fromlen = sizeof (from), cc;
+	int fromlen = sizeof (from), cc, omask;
 
 	cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
 	if (cc <= 0) {
@@ -152,9 +152,10 @@ process(fd)
 	}
 	if (fromlen != sizeof (struct sockaddr_in))
 		return;
-	sighold(SIGALRM);
+#define	mask(s)	(1<<((s)-1))
+	omask = sigblock(mask(SIGALRM));
 	rip_input(&from, cc);
-	sigrelse(SIGALRM);
+	sigsetmask(omask);
 }
 
 getsocket(domain, type, sin)
