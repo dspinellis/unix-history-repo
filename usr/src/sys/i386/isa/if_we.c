@@ -3,11 +3,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Tim L. Tucker
+ * Tim L. Tucker.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_we.c	7.2 (Berkeley) %G%
+ *	@(#)if_we.c	7.3 (Berkeley) %G%
  */
 
 /*
