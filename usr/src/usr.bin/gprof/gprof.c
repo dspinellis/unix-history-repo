@@ -1,8 +1,10 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.10 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.11 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
+
+char	*whoami = "gprof";
 
 main(argc, argv)
 	int argc;
@@ -65,13 +67,13 @@ main(argc, argv)
 	if ( *argv != 0 ) {
 	    gmonname = *argv;
 	}
-    } while ( sflag && *argv++ != 0 );
+    } while ( *argv++ != 0 );
 	/*
 	 *	dump out a gmon.sum file if requested
 	 */
-	if ( sflag ) {
-	    dumpsum( GMONSUM );
-	}
+    if ( sflag ) {
+	dumpsum( GMONSUM );
+    }
 	/*
 	 *	assign samples to procedures
 	 */
@@ -87,11 +89,11 @@ main(argc, argv)
     done();
 }
 
-/*
- * Set up string and symbol tables from a.out.
- *	and optionally the text space.
- * On return symbol table is sorted by value.
- */
+    /*
+     * Set up string and symbol tables from a.out.
+     *	and optionally the text space.
+     * On return symbol table is sorted by value.
+     */
 getnfile()
 {
     FILE	*nfile;
@@ -103,7 +105,7 @@ getnfile()
     }
     fread(&xbuf, 1, sizeof(xbuf), nfile);
     if (N_BADMAG(xbuf)) {
-	fprintf(stderr, "%s: bad format\n", a_outname );
+	fprintf(stderr, "%s: %s: bad format\n", whoami , a_outname );
 	done();
     }
     getstrtab(nfile);
@@ -128,17 +130,19 @@ getstrtab(nfile)
 
     fseek(nfile, (long)(N_SYMOFF(xbuf) + xbuf.a_syms), 0);
     if (fread(&ssiz, sizeof (ssiz), 1, nfile) == 0) {
-	fprintf(stderr, "%s: no string table (old format?)\n", a_outname );
+	fprintf(stderr, "%s: %s: no string table (old format?)\n" ,
+		whoami , a_outname );
 	done();
     }
     strtab = (char *)calloc(ssiz, 1);
     if (strtab == NULL) {
-	fprintf(stderr, "%s: no room for %d bytes of string table",
-		a_outname , ssiz);
+	fprintf(stderr, "%s: %s: no room for %d bytes of string table",
+		whoami , a_outname , ssiz);
 	done();
     }
     if (fread(strtab+sizeof(ssiz), ssiz-sizeof(ssiz), 1, nfile) != 1) {
-	fprintf(stderr, "%s: error reading string table\n", a_outname );
+	fprintf(stderr, "%s: %s: error reading string table\n",
+		whoami , a_outname );
 	done();
     }
 }
@@ -164,21 +168,14 @@ getsymtab(nfile)
 	nname++;
     }
     if (nname == 0) {
-	fprintf(stderr, "%s: no symbols\n", a_outname );
+	fprintf(stderr, "%s: %s: no symbols\n", whoami , a_outname );
 	done();
     }
-	/*
-	 *	ask also for CYCLEFRACTION extra namelist entries for 
-	 *	cycle entries.  these hide out at the end of the namelist
-	 *	and aren't accessed unless the whole namelist (nname+ncycles)
-	 *	is sorted and searched.
-	 */
-    ncycles = nname * CYCLEFRACTION;
-    askfor = nname + 1 + ncycles;
+    askfor = nname + 1;
     nl = (nltype *) calloc( askfor , sizeof(nltype) );
     if (nl == 0) {
-	fprintf(stderr, "prof: No room for %d bytes of symbol table\n",
-		askfor * sizeof(nltype) );
+	fprintf(stderr, "%s: No room for %d bytes of symbol table\n",
+		whoami, askfor * sizeof(nltype) );
 	done();
     }
 
@@ -225,14 +222,15 @@ gettextspace( nfile )
     }
     textspace = malloc( xbuf.a_text );
     if ( textspace == 0 ) {
-	fprintf( stderr , "gprof: ran out room for %d bytes of text space:  " );
-	fprintf( stderr , "can't do -c\n" , xbuf.a_text );
+	fprintf( stderr , "%s: ran out room for %d bytes of text space:  " ,
+			whoami , xbuf.a_text );
+	fprintf( stderr , "can't do -c\n" );
 	return;
     }
     (void) fseek( nfile , N_TXTOFF( xbuf ) , 0 );
     if ( fread( textspace , 1 , xbuf.a_text , nfile ) != xbuf.a_text ) {
-	fprintf( stderr , "couldn't read text space:  " );
-	fprintf( stderr , "can't do -c\n" , xbuf.a_text );
+	fprintf( stderr , "%s: couldn't read text space:  " , whoami );
+	fprintf( stderr , "can't do -c\n" );
 	free( textspace );
 	textspace = 0;
 	return;
@@ -389,8 +387,8 @@ readsamples(pfile)
     if (samples == 0) {
 	samples = (unsigned UNIT *) calloc(sampbytes, sizeof (unsigned UNIT));
 	if (samples == 0) {
-	    fprintf( stderr , "prof: No room for %d sample pc's\n", 
-		sampbytes / sizeof (unsigned UNIT));
+	    fprintf( stderr , "%s: No room for %d sample pc's\n", 
+		whoami , sampbytes / sizeof (unsigned UNIT));
 	    done();
 	}
     }
@@ -402,8 +400,8 @@ readsamples(pfile)
     }
     if (i != nsamples) {
 	fprintf(stderr,
-	    "prof: unexpected EOF after reading %d/%d samples\n",
-		--i, nsamples);
+	    "%s: unexpected EOF after reading %d/%d samples\n",
+		whoami , --i , nsamples );
 	done();
     }
 }
@@ -505,7 +503,7 @@ funcsymbol( nlistp )
 	return FALSE;
     }
 	/*
-	 *	can't have any `funny characters in name,
+	 *	can't have any `funny' characters in name,
 	 *	where `funny' includes	`.', .o file names
 	 *			and	`$', pascal labels.
 	 */
