@@ -1,7 +1,7 @@
-/*	inet_netof.c	4.2	82/10/07	*/
+/*	inet_netof.c	4.3	82/11/14	*/
 
 #include <sys/types.h>
-#include <net/in.h>
+#include <netinet/in.h>
 
 /*
  * Return the network number from an internet
@@ -10,17 +10,12 @@
 inet_netof(in)
 	struct in_addr in;
 {
-#if vax || pdp11
-	register u_long net;
+	register u_long i = ntohl(in.s_addr);
 
-	if ((in.s_addr&IN_CLASSA) == 0)
-		return (in.s_addr & IN_CLASSA_NET);
-	if ((in.s_addr&IN_CLASSB) == 0)
-		return ((int)htons((u_short)(in.s_addr & IN_CLASSB_NET)));
-	net = htonl((u_long)(in.s_addr & IN_CLASSC_NET));
-	net >>= 8;
-	return ((int)net);
-#else
-	return (IN_NETOF(in));
-#endif
+	if (IN_CLASSA(i))
+		return (((i)&IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
+	else if (IN_CLASSB(i))
+		return (((i)&IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
+	else
+		return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
