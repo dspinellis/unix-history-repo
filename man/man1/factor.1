@@ -1,0 +1,30 @@
+.pa 1
+.he 'FACTOR (I)'1/15/73'FACTOR (I)'
+.ti 0
+NAME		factor -- discover prime factors of a number
+.sp
+.ti 0
+SYNOPSIS	factor______
+.sp
+.ti 0
+DESCRIPTION	When factor is invoked, it types
+out "Enter:" at you.  If you type in a positive
+number less than 2^56 (about 7.2E16), it will repeat the number
+back at you and then its prime factors each one printed
+the proper number of times.  Then it says "Enter:" again.
+To exit, feed it an EOT or a delete.
+.sp
+Maximum time to factor is proportional to sqrt(n) and occurs
+when n is prime.  It takes 1 minute to factor a prime near 10^13.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	"Ouch." for input out of range or for garbage input.
+.sp
+.ti 0
+BUGS		--
