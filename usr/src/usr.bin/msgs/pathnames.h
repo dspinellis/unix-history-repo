@@ -1,15 +1,24 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-/*
- * Local definitions for msgs.
- */
-
-#define USRMSGS	"/usr/msgs"		/* msgs directory */
-#define MAIL	"/usr/ucb/Mail -f %s"	/* could set destination also */
-#define PAGE	"/usr/ucb/more -%d"	/* crt screen paging program */
+#define	_PATH_MSGS	"/var/msgs"
+#define	_PATH_MAIL	"/usr/bin/Mail -f %s"
+#define	_PATH_PAGER	"/usr/bin/more -%d"
+#undef _PATH_TMP
+#define	_PATH_TMP	"/tmp/msgXXXXXX"

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 COMMON=	../common_source
 CFLAGS=	-O -DVMUNIX -I${COMMON}
@@ -47,7 +47,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 troff ${DESTDIR}/usr/bin/troff
+	install -s -o bin -g bin -m 755 troff ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

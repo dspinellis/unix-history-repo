@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2	(Berkeley)	%G%
+#	@(#)Makefile	5.3	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -15,13 +15,14 @@ all: mkfont
 mkfont: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean: ${SRCS}
 	rm -f ${OBJS} core mkfont
 
-depend: FRC
-	mkdep ${CFLAGS} ${SRCS}
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
-install: FRC
+depend: ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
@@ -29,11 +30,4 @@ lint: FRC
 tags: FRC
 	ctags ${SRCS}
 
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-mkfont.o: mkfont.c mkfont1.c
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
+install FRC:

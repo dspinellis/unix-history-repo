@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -42,9 +42,7 @@ depend:
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 apropos ${DESTDIR}/usr/ucb/apropos
-	install -s -o bin -g bin -m 755 whatis ${DESTDIR}/usr/ucb/whatis
-	install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/ucb/man
+	install -s -o bin -g bin -m 755 apropos whatis man ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint:

@@ -1,12 +1,14 @@
 #ifndef lint
-static char *sccsid = "@(#)mkey3.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)mkey3.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
+#include "pathnames.h"
+
 #define COMNUM 500
 #define COMTSIZE 997
 
-char *comname = "/usr/lib/eign";
+char *comname = _PATH_EIGN;
 static int cgate = 0;
 extern char *comname;
 int comcount = 100;

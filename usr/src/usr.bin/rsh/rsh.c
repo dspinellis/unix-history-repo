@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)rsh.c	5.7 (Berkeley) 9/20/88";
 #include <signal.h>
 #include <pwd.h>
 #include <netdb.h>
+#include "pathnames.h"
 
 #ifdef	KERBEROS
 #include <kerberos/krb.h>
@@ -152,8 +153,8 @@ another:
 	if (argv[0] == 0) {
 		if (asrsh)
 			*argv0 = "rlogin";
-		execv("/usr/ucb/rlogin", argv0);
-		perror("/usr/ucb/rlogin");
+		execv(_PATH_RLOGIN, argv0);
+		perror(_PATH_RLOGIN);
 		exit(1);
 	}
 	pwd = getpwuid(getuid());

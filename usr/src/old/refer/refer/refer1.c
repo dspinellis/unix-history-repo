@@ -1,9 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)refer1.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)refer1.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
 #include "refer..c"
+#include "pathnames.h"
 
 main(argc,argv)		/* process command-line arguments */
 char *argv[];
@@ -80,9 +81,9 @@ char *argv[];
 	if (getenv("REFER") != NULL)
 		*search++ = getenv("REFER");
 	else if (nodeflt == 0)
-		*search++ = "/usr/dict/papers/Ind";
+		*search++ = _PATH_IND;
 	if (!labels) {
-		sprintf(ofile, "/tmp/rj%db", getpid());
+		sprintf(ofile, "%s/rj%db", _PATH_TMP, getpid());
 		ftemp = fopen(ofile, "w");
 		if (ftemp == NULL) {
 			fprintf(stderr, "Can't open scratch file\n");
@@ -90,7 +91,7 @@ char *argv[];
 		}
 	}
 	if (endpush) {
-		sprintf(tfile, "/tmp/rj%da", getpid());
+		sprintf(tfile, "%s/rj%da", _PATH_TMP, getpid());
 		fo = fopen(tfile, "w");
 		if (fo == NULL) {
 			fo = ftemp;

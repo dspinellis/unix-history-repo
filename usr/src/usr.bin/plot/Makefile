@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.11 (Berkeley) %G%
+#	@(#)Makefile	4.12 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -87,9 +87,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	for i in ${ALL}; do \
-		(install -s -o bin -g bin -m 755 $$i ${DESTDIR}/usr/bin/$$i); \
-	done
+	install -s -o bin -g bin -m 755 ${ALL} ${DESTDIR}/usr/libexec
 	install -c -o bin -g bin -m 755 plot.sh ${DESTDIR}/usr/bin/plot
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 

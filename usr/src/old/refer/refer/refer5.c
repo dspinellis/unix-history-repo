@@ -1,8 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.10 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
+#include "pathnames.h"
+
 #define SAME 0
 #define NFLAB 3000		/* number of bytes to record all labels */
 #define NLABC 1000		/* max number of labels */
@@ -136,7 +138,7 @@ char *flds[], *nstline, *endline;
 				strcat(sig, t1);
 			}
 			if (fo == ftemp) {	/* hide if need be */
-				sprintf(hidenam, "/tmp/rj%dc", getpid());
+				sprintf(hidenam, "%s/rj%dc", _PATH_TMP, getpid());
 #if EBUG
 				fprintf(stderr, "hiding in %s\n", hidenam);
 #endif

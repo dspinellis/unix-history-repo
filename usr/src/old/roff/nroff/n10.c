@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n10.c	4.4 %G%";
+static char sccsid[] = "@(#)n10.c	4.5 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -10,6 +10,7 @@ extern
 #include "v.h"
 extern
 #include "tw.h"
+#include "pathnames.h"
 /*
 nroff10.c
 
@@ -50,7 +51,7 @@ ptinit(){
 	int x[8];
 	extern char *setbrk();
 
-	if(((i=open(termtab,0)) < 0) && (i=open("/usr/lib/term/tablpr",0)) < 0){
+	if(((i=open(termtab,0)) < 0) && (i=open(_PATH_TERM,0)) < 0){
 		prstr("Cannot open ");
 		prstr(termtab);
 		prstr("\n");

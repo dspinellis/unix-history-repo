@@ -1,9 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)inv1.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)inv1.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <assert.h>
+#include "pathnames.h"
 
 main(argc, argv)
 char *argv[];
@@ -32,7 +33,7 @@ char *argv[];
 	int iflong =0;
 	char *sortdir;
 
-	sortdir = (access("/crp/tmp", 06)==0) ? "/crp/tmp" : "/usr/tmp";
+	sortdir = _PATH_USRTMP;
 	while (argv[1][0] == '-')
 	{
 		switch(argv[1][1])
@@ -89,13 +90,12 @@ char *argv[];
 			close(0);
 			_assert(dup(fr)==0);
 			close(fr);
-			execl("/bin/sort", "sort", "-T", sortdir, "-o", tmpa, 0);
-			execl("/usr/bin/sort", "sort", "-T", sortdir, "-o", tmpa, 0);
+			execl(_PATH_SORT, "sort", "-T", sortdir, "-o", tmpa, 0);
 			_assert(0);
 		}
 		_assert(pfork!= -1);
 		close(fr);
-		fta = fopen("/dev/null", "w");
+		fta = fopen(_PATH_DEVNULL, "w");
 		close(fta->_file);
 		fta->_file = fw;
 	}
@@ -120,8 +120,7 @@ char *argv[];
 			appflg=0;
 	}
 	fc = fopen(nmc,  appflg ? "a" : "w");
-	if (keepkey)
-		fd = keepkey ? fopen(nmd, "w") : 0;
+	fd = keepkey ? fopen(nmd, "w") : 0;
 	docs = newkeys(fta, stdin, fc, nhash, fd, &iflong);
 	fclose(stdin);
 	if (remove != NULL)
