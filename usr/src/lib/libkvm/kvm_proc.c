@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -35,7 +35,7 @@ static char sccsid[] = "@(#)kvm_proc.c	5.27 (Berkeley) %G%";
 #include <vm/vm_param.h>
 #include <vm/swap_pager.h>
 
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <sys/kinfo_proc.h>
 
 #include <limits.h>
@@ -174,19 +174,19 @@ kvm_proclist(kd, what, arg, p, bp, maxcnt)
 			KREAD(kd, (u_long)eproc.e_pcred.pc_ucred,
 			      &eproc.e_ucred);
 
-		switch(ki_op(what)) {
+		switch(what) {
 			
-		case KINFO_PROC_PID:
+		case KERN_PROC_PID:
 			if (proc.p_pid != (pid_t)arg)
 				continue;
 			break;
 
-		case KINFO_PROC_UID:
+		case KERN_PROC_UID:
 			if (eproc.e_ucred.cr_uid != (uid_t)arg)
 				continue;
 			break;
 
-		case KINFO_PROC_RUID:
+		case KERN_PROC_RUID:
 			if (eproc.e_pcred.p_ruid != (uid_t)arg)
 				continue;
 			break;
@@ -258,14 +258,14 @@ kvm_proclist(kd, what, arg, p, bp, maxcnt)
 		eproc.e_xsize = eproc.e_xrssize = 0;
 		eproc.e_xccount = eproc.e_xswrss = 0;
 
-		switch (ki_op(what)) {
+		switch (what) {
 
-		case KINFO_PROC_PGRP:
+		case KERN_PROC_PGRP:
 			if (eproc.e_pgid != (pid_t)arg)
 				continue;
 			break;
 
-		case KINFO_PROC_TTY:
+		case KERN_PROC_TTY:
 			if ((proc.p_flag&SCTTY) == 0 || 
 			     eproc.e_tdev != (dev_t)arg)
 				continue;
@@ -320,7 +320,7 @@ kvm_getprocs(kd, op, arg, cnt)
 	int op, arg;
 	int *cnt;
 {
-	int size, st, nprocs;
+	int mib[4], size, st, nprocs;
 
 	if (kd->procbase != 0) {
 		free((void *)kd->procbase);
@@ -332,17 +332,20 @@ kvm_getprocs(kd, op, arg, cnt)
 	}
 	if (ISALIVE(kd)) {
 		size = 0;
-		st = getkerninfo(op, NULL, &size, arg);
-		if (st < 0) {
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_PROC;
+		mib[2] = op;
+		mib[3] = arg;
+		st = sysctl(mib, 4, NULL, &size, NULL, 0);
+		if (st == -1) {
 			_kvm_syserr(kd, kd->program, "kvm_getprocs");
 			return (0);
 		}
-		kd->procbase = (struct kinfo_proc *)_kvm_malloc(kd, st);
+		kd->procbase = (struct kinfo_proc *)_kvm_malloc(kd, size);
 		if (kd->procbase == 0)
 			return (0);
-		size = st;
-		st = getkerninfo(op, kd->procbase, &size, arg);
-		if (st < 0) {
+		st = sysctl(mib, 4, kd->procbase, &size, NULL, 0);
+		if (st == -1) {
 			_kvm_syserr(kd, kd->program, "kvm_getprocs");
 			return (0);
 		}
