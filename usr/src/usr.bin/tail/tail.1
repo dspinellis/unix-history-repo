@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tail.1	6.7 (Berkeley) %G%
+.\"	@(#)tail.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TAIL 1
@@ -30,26 +30,29 @@ utility displays the contents of
 .Ar file
 or, by default, its standard input, to the standard output.
 .Pp
-The display begins at an offset from either the beginning or end
-of the input.
-Offsets may be specified in terms of bytes, lines or 512-byte blocks.
+The display begins at a byte, line or 512-byte block location in the
+input.
 Numbers having a leading plus (``+'') sign are relative to the beginning
-of the input.
+of the input, for example,
+.Dq -c +2
+starts the display at the second
+byte of the input.
 Numbers having a leading minus (``-'') sign or no explicit sign are
-relative to the end of the input.
-All offsets are 1 based, i.e. ``-c +1'' skips a single byte of the
-input.
-The default offset is ``-n 10'', or 10 lines from the end of the
-input.
+relative to the end of the input, for example,
+.Dq -n 2
+displays the last two lines of the input.
+The default starting location is
+.Dq -n 10 ,
+or the last 10 lines of the input.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl b Ar number
-The offset is
+The location is
 .Ar number
 512-byte blocks.
 .It Fl c Ar number
-The offset is
+The location is
 .Ar number
 bytes.
 .It Fl f
@@ -63,7 +66,7 @@ The
 .Fl f
 option is ignored on pipes but not on FIFO's.
 .It Fl n Ar number
-The offset is
+The location is
 .Ar number
 lines.
 .It Fl r
@@ -99,8 +102,29 @@ The
 utility is expected to be a superset of the POSIX 1003.2
 specification.
 In particular, the
+.Fl b
+and
 .Fl r
-option is an extension to that standard.
+options are extensions to that standard.
+.Pp
+The historic command line syntax of
+.Nm tail
+is supported by this implementation.
+The only difference between this implementation and historic versions
+of
+.Nm tail ,
+once the command line syntax translation has been done, is that the
+.Fl b ,
+.Fl c
+and
+.Fl n
+options modify the
+.Fl r
+option, i.e. ``-r -c 4'' displays the last 4 characters of the last line
+of the input, while the historic tail (using the historic syntax ``-4cr'')
+would ignore the
+.Fl c
+option and display the last 4 lines of the input.
 .Sh HISTORY
 A
 .Nm tail
