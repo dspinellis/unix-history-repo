@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.3 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,11 @@
 #include "tty.h"
 #include "buf.h"
 
-/* TODO - gather stats on average and max time spent */
+
+#define snderr(e) { error = (e); goto release;}
+extern int kinfo_doproc(), kinfo_rtable();
+struct kinfo_lock kinfo_lock;
+
 getkinfo()
 {
 	register struct a {
@@ -35,22 +39,64 @@ getkinfo()
 		int	*size;
 		int	arg;
 	} *uap = (struct a *)u.u_ap;
-	int wanted;
+	int wanted, (*server)(), error = 0;
+	int	bufsize,	/* max size of users buffer */
+		copysize, 	/* size copied */
+		needed,	
+		locked;
+
+	while (kinfo_lock.kl_lock) {
+		kinfo_lock.kl_want++;
+		sleep(&kinfo_lock, PRIBIO+1);
+		kinfo_lock.kl_want--;
+		kinfo_lock.kl_locked++;
+	}
+	kinfo_lock.kl_lock++;
 
 	switch (ki_type(uap->op)) {
 
 	case KINFO_PROC:
-		u.u_error = kinfo_proc(uap->op, (char *)uap->where, 
-				       (int *)uap->size, uap->arg, &wanted);
-		if (!u.u_error)
-			u.u_r.r_val1 = wanted;
+		server = kinfo_doproc;
+		break;
+
+	case KINFO_RT:
+		server = kinfo_rtable;
 		break;
 
 	default:
-		u.u_error = EINVAL;
+		snderr(EINVAL);
 	}
+	if (error = (*server)(uap->op, NULL, NULL, uap->arg, &needed))
+		goto release;
+	if (uap->where == NULL || uap->size == NULL)
+		goto release;  /* only want estimate of bufsize */
+	if (error = copyin((caddr_t)uap->size,
+				(caddr_t)&bufsize, sizeof (bufsize)))
+		goto release;
+	locked = copysize = MIN(needed, bufsize);
+	if (!useracc(uap->where, copysize, B_WRITE))
+		snderr(EFAULT);
+	/*
+	 * lock down target pages - NEED DEADLOCK AVOIDANCE
+	 */
+	if (copysize > ((int)ptob(freemem) - (20 * 1024))) 	/* XXX */
+		snderr(ENOMEM);
+	vslock(uap->where, copysize);
+	error = (*server)(uap->op, uap->where, &copysize, uap->arg, &needed);
+	vsunlock(uap->where, locked, B_WRITE);
+	if (error)
+		goto release;
+	error = copyout((caddr_t)&copysize,
+				(caddr_t)uap->size, sizeof (copysize));
 
-	return;
+release:
+	kinfo_lock.kl_lock--;
+	if (kinfo_lock.kl_want)
+		wakeup(&kinfo_lock);
+	if (error)
+		u.u_error = error;
+	else
+		u.u_r.r_val1 = needed;
 }
 
 /* 
@@ -60,46 +106,6 @@ getkinfo()
 
 int kinfo_proc_userfailed;
 int kinfo_proc_wefailed;
-
-kinfo_proc(op, where, asize, arg, awanted)
-	char *where;
-	int *asize, *awanted;
-{
-	int	bufsize,	/* max size of users buffer */
-		copysize, 	/* size copied */
-		needed;	
-	int locked;
-	int error;
-
-	if (error = kinfo_doprocs(op, NULL, NULL, arg, &needed))
-		return (error);
-	if (where == NULL || asize == NULL) {
-		*awanted = needed;
-		return (0);
-	}
-	if (error = copyin((caddr_t)asize, (caddr_t)&bufsize, sizeof (bufsize)))
-		return (error);
-	needed += KINFO_PROCSLOP;
-	locked = copysize = MIN(needed, bufsize);
-	if (!useracc(where, copysize, B_WRITE))
-		return (EFAULT);
-	/*
-	 * lock down target pages - NEED DEADLOCK AVOIDANCE
-	 */
-	if (copysize > ((int)ptob(freemem) - (20 * 1024))) 	/* XXX */
-		return (ENOMEM);
-	vslock(where, copysize);
-	error = kinfo_doprocs(op, where, &copysize, arg, &needed);
-	vsunlock(where, locked, B_WRITE);
-	if (error)
-		return (error);
-	*awanted = needed;
-	if (error = copyout((caddr_t)&copysize, (caddr_t)asize,
-	    sizeof (copysize)))
-		return (error);
-	
-	return (0);
-}
 
 kinfo_doprocs(op, where, acopysize, arg, aneeded)
 	char *where;
@@ -188,6 +194,8 @@ again:
 	}
 	if (where != NULL)
 		*acopysize = dp - where;
+	else
+		needed += KINFO_PROCSLOP;
 	*aneeded = needed;
 
 	return (0);
