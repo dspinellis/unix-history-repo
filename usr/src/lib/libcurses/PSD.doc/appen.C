@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.C	8.2 (Berkeley) %G%
+.\"	@(#)appen.C	6.5 (Berkeley) %G%
 .\"
-.ie t .oh '\*(Ln Appendix A''PS1:18-%'
-.eh 'PS1:18-%''\*(Ln Appendix A'
+.ie t .oh '\*(Ln Appendix A''PS1:19-%'
+.eh 'PS1:19-%''\*(Ln Appendix A'
 .el .he ''\fIAppendix A\fR''
 .bp
 .(x
