@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.24 (Berkeley) %G%
+#	@(#)Files.base	8.25 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -81,6 +81,7 @@ src/Makefiles/Makefile.DGUX
 src/Makefiles/Makefile.Dell
 src/Makefiles/Makefile.DomainOS
 src/Makefiles/Makefile.Dynix
+src/Makefiles/Makefile.EWS-UX_V
 src/Makefiles/Makefile.FreeBSD
 src/Makefiles/Makefile.HP-UX
 src/Makefiles/Makefile.UNIX_SV.4.2.i386
@@ -89,10 +90,13 @@ src/Makefiles/Makefile.IRIX.5.x
 src/Makefiles/Makefile.IRIX64
 src/Makefiles/Makefile.ISC
 src/Makefiles/Makefile.Linux
+src/Makefiles/Makefile.LUNA
 src/Makefiles/Makefile.Mach386
 src/Makefiles/Makefile.NCR3000
 src/Makefiles/Makefile.NeXT
 src/Makefiles/Makefile.NetBSD
+src/Makefiles/Makefile.NEWS-OS.4.2.1R
+src/Makefiles/Makefile.NEWS-OS.6.0.3
 src/Makefiles/Makefile.NonStop-UX
 src/Makefiles/Makefile.OSF1
 src/Makefiles/Makefile.Paragon
