@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/stdc.h>
@@ -29,8 +29,18 @@ typedef	int word;		/* "word" used for optimal copy speed */
  * This is the routine that actually implements
  * (the portable versions of) bcopy, memcpy, and memmove.
  */
+#ifdef MEMCOPY
+void *
+memcpy(dst0, src0, length)
+#else
+#ifdef MEMMOVE
+void *
+memmove(dst0, src0, length)
+#else
 void
 bcopy(src0, dst0, length)
+#endif
+#endif
 	char *dst0;
 	const char *src0;
 	register size_t length;
@@ -94,5 +104,13 @@ bcopy(src0, dst0, length)
 		t = length & wmask;
 		TLOOP(*--dst = *--src);
 	}
+#ifdef MEMCOPY
+	return(dst0);
+#else
+#ifdef MEMMOVE
+	return(dst0);
+#else
 	return;
+#endif
+#endif
 }
