@@ -1,12 +1,19 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.7	%G%
+#	@(#)makefile	1.8	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
-LIBDIR = /usr/ucb/lib
 LIB = libI77.a
 CFLAGS = -O
-TAPE = /dev/nrmt1
+
+# for CFO 11's
+#ENV = ucb
+#LIBDIR = /usr/$(ENV)/lib
+#TAPE = /dev/nrmt1
+
+# for Vax
+LIBDIR = /usr/lib
+TAPE = /dev/rnmt0.1600
 
 SOURCES = backspace.c close.c dballoc.c dfe.c due.c endfile.c err.c fmt.c \
 	fmtlib.c iio.c inquire.c lwrite.c lread.c dolio.c open.c \
