@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.16 (Berkeley) 85/08/09";
+static char sccsid[] = "@(#)passwd.c	4.17 (Berkeley) 85/08/11";
 #endif
 
 /*
@@ -169,6 +169,7 @@ main(argc, argv)
 	endpwent();
 	if (dp != NULL && dbm_error(dp))
 		fprintf(stderr, "Warning: dbm_store failed\n");
+	fflush(tf);
 	if (ferror(tf)) {
 		fprintf(stderr, "Warning: %s write error, %s not updated\n",
 		    temp, passwd);
