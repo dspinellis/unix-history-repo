@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.18 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,6 +155,15 @@ out:
 	return ((qaddr_t)va);
 }
 
+#ifdef DIAGNOSTIC
+long addrmask[] = { 0x00000000,
+	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
+	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
+	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
+	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
+};
+#endif /* DIAGNOSTIC */
+
 /*
  * Free a block of memory allocated by malloc.
  */
@@ -172,10 +181,21 @@ free(addr, type)
 #endif
 
 	kup = btokup(addr);
+	size = 1 << kup->ku_indx;
+#ifdef DIAGNOSTIC
+	if (size > NBPG * CLSIZE)
+		alloc = addrmask[BUCKETINDX(NBPG * CLSIZE)];
+	else
+		alloc = addrmask[kup->ku_indx];
+	if (((u_long)addr & alloc) != 0) {
+		printf("free: unaligned addr 0x%x, size %d, type %d, mask %d\n",
+			addr, size, type, alloc);
+		panic("free: unaligned addr");
+	}
+#endif /* DIAGNOSTIC */
 	kbp = &bucket[kup->ku_indx];
 	s = splimp();
 	IN;
-	size = 1 << kup->ku_indx;
 	if (size > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
 		(void) memfree(&kmempt[alloc], (int)kup->ku_pagecnt, 1);
