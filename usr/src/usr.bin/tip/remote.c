@@ -1,4 +1,4 @@
-/*	remote.c	4.2	81/06/16	*/
+/*	remote.c	4.3	81/07/13	*/
 # include "tip.h"
 
 /*
@@ -50,6 +50,12 @@ getremcap(host)
 		fprintf(stderr, "%s: missing phone number\n", host);
 		exit(3);
 	}
+	/*
+	 * This effectively eliminates the "hw" attribute
+	 *   from the description file
+	 */
+	if (!HW)
+		HW = (CU == NOSTR) || (DU && equal(DV, CU));
 	HO = host;
 }
 
