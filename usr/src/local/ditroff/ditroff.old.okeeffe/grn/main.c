@@ -1,4 +1,4 @@
-/*	main.c	1.18	(Berkeley) 84/06/22
+/*	main.c	1.19	(Berkeley)	84/10/08
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -34,6 +34,7 @@
  *			   stipple, l  -  use a stipple font for polygons.  Arg
  *					  is troff font name.  No Default.  Can
  *					  use only one stipple font per picture.
+ *					  (see below for stipple font index)
  *			     scale, x  -  scale is IN ADDITION to the global
  *					  scale factor from the default.
  *			   pointscale  -  turn on scaling point sizes to
@@ -52,6 +53,15 @@
  *					  The operand for these two commands is
  *					  a floating-point number in units of
  *					  inches
+ *     l1, l2, l3, l4, l5, l6, l7, l8  -  set association between stipples
+ *					  (1 - 8) and the stipple font file
+ *					  index.  Valid cifplot indices are
+ *					  1 - 32 (although 24 is not defined)
+ *					  and valid unigrafix indices are
+ *					  1 - 64.  Nonetheless, any number
+ *					  between 0 and 255 is accepted since
+ *					  new stipple fonts may be added.
+ *					  An integer operand is required.
  *
  *	Troff number registers used:  g1 through g9.  g1 is the width of the
  *	picture, and g2 is the height.  g3, and g4, save information, g8
@@ -73,7 +83,12 @@ extern ELT *DBInit(), *DBRead();
 extern POINT *PTInit(), *PTMakePoint();
 
 
+#ifdef SUN
+#define GREMLIB		"/usr/local/lib/gremlin/"
+#else
 #define GREMLIB		"/usr/local/gremlib/"
+#endif
+
 #ifndef DEVDIR
 #define DEVDIR		"/usr/lib/font"
 #endif
@@ -87,7 +102,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.18	84/06/22";
+static char sccsid[] = "@(#) (Berkeley) %G%";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 char	*gremlib = GREMLIB;	/* place to find files after current dir. */
@@ -110,6 +125,7 @@ int	lastyline;		/* a line's vertical position is NOT the same */
 char *	deffont[] = {  "R", "I", "B", "S"  };
 int	defsize[] = {  10, 16, 24, 36  };
 int	defthick[STYLES] = {  1, 1, 5, 1, 1, 3  };
+int	defstipple_index[NSTIPPLES] = { 1, 3, 12, 14, 16, 19, 21, 23 };
 int	style[STYLES] = {  DOTTED, DOTDASHED, SOLID, DASHED, SOLID, SOLID  };
 double	scale = 1.0;		/* no scaling, default */
 int	defpoint = 0;		/* flag for pointsize scaling */
@@ -118,6 +134,7 @@ char *  defstipple = (char *) 0;
 int	thick[STYLES];	/* thicknesses set by defaults, then by commands */
 char	*tfont[FONTS];	/* fonts originally set to deffont values, then */
 int 	tsize[SIZES];	/*    optionally changed by commands inside grn */
+int	stipple_index[NSTIPPLES];	/* stipple font file indices */
 char *  stipple;
 
 double	xscale;		/* scaling factor from individual pictures */
@@ -144,6 +161,7 @@ char	*c2 = inputline + 1;		/* hunt for lines that begin with */
 char	*c3 = inputline + 2;		/* ".GS" by looking individually */
 char	GScommand[MAXINLINE];		/* put user's ".GS" command line here */
 char	gremlinfile[MAXINLINE];		/* filename to use for a picture */
+int	SUNFILE = FALSE;		/* TRUE if SUN gremlin file */
 
 char *doinput();
 
@@ -328,6 +346,9 @@ initpic()
     for (i = 0; i < SIZES; i++) {	/* font size defaults */
 	tsize[i] = defsize[i];
     }
+    for (i = 0; i < NSTIPPLES; i++) {	/* stipple font file default indices */
+	stipple_index[i] = defstipple_index[i];
+    }
     stipple = defstipple;
 
     gremlinfile[0] = 0;		/* filename is "null" */
@@ -499,6 +520,9 @@ savestate()
     for (i = 0; i < SIZES; i++) {	/* font size defaults */
 	defsize[i] = tsize[i];
     }
+    for (i = 0; i < NSTIPPLES; i++) {	/* stipple font file default indices */
+	defstipple_index[i] = stipple_index[i];
+    }
     defstipple = stipple;	/* if stipple has been set, it's remembered */
 
     scale *= xscale;		/* default scale of individual pictures */
@@ -598,6 +622,17 @@ char *line;
 	    break;
 
 	case 'l':	/* l */
+	    if ((str1[1] < '1') || (str1[1] > '8'))
+		goto stipplecommand;
+
+	    /* else set stipple index */
+	    i = atoi(str2);
+	    if (i >= 0 && i < 256)
+		stipple_index[str1[1] - '1'] = i;
+	    else
+		error("bad stipple index value at line %d", linenum);
+	    break;
+
 	stipplecommand:	/* stipple */
 	    stipple = malloc(strlen(str2) + 1);
 	    strcpy(stipple, str2);

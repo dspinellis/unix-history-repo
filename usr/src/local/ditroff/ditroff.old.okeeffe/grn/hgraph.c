@@ -1,4 +1,4 @@
-/*	hgraph.c	1.12	(Berkeley) 84/05/25
+/*	hgraph.c	1.13	(Berkeley) 84/10/08
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -17,7 +17,8 @@ extern int style[];	/* line and character styles */
 extern int thick[];
 extern char *tfont[];
 extern int tsize[];
-extern char *stipple;
+extern int stipple_index[];	/* stipple font index for stipples 1 - 8 */
+extern char *stipple;		/* stipple type (cf or ug) */
 
 
 extern double troffscale;	/* imports from main.c */
@@ -50,6 +51,7 @@ int baseline;
     register int length;
     static int didstipple = 1;	/* flag to prevent multipe messages about no */
 				/* stipple font requested from being printed */
+    float firstx, firsty;	/* for completing polygons */
 
     if ( !DBNullelt(element) && !Nullpoint((p1 = element->ptlist))) {
 						/* p1 always has first point */
@@ -96,9 +98,11 @@ int baseline;
 			    if (stipple) {
 				didstipple = 1;
 				if (element->brushf) {
-				    printf("\\D'p %d", element->size);
+				    printf("\\D'p %d",
+					    stipple_index[element->size - 1]);
 				} else {
-				    printf("\\D'P %d", element->size);
+				    printf("\\D'P %d",
+					    stipple_index[element->size - 1]);
 				}
 			    } else {
 				if (didstipple) {
@@ -107,10 +111,21 @@ int baseline;
 				}
 				printf("\\D'p 0");
 			    }
-                            while (!Nullpoint((p1 = PTNextPoint(p1)))) {
+
+			    firstx = p1->x;
+			    firsty = p1->y;
+                            while (!Nullpoint((PTNextPoint(p1)))) {
+				p1 = PTNextPoint(p1);
                                 dx((double) p1->x);
                                 dy((double) p1->y);
                             }  /* end while */;
+
+			    /* close polygon if not done so by user */
+			    if ((firstx != p1->x) || (firsty != p1->y)) {
+				dx((double) firstx);
+				dy((double) firsty);
+			    }
+
 			    putchar('\'');
 			    cr();
                             break;
