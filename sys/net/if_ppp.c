@@ -70,7 +70,8 @@
  */
 
 /*
- *	$Id$
+ *	$Id: if_ppp.c,v 1.2 1993/08/31 05:40:40 rgrimes Exp $
+ * 	From: if_ppp.c,v 1.22 1993/08/31 23:20:40 paulus Exp
  *	From: if_ppp.c,v 1.21 1993/08/29 11:22:37 paulus Exp
  *	From: if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp 
  */
@@ -1041,7 +1042,7 @@ pppinput(c, tp)
     struct mbuf *m;
     struct ifqueue *inq;
     int s, ilen, xlen, proto;
-    char *pkttype;
+    struct ppp_header hdr;
 
     tk_nin++;
     sc = (struct ppp_softc *)tp->t_sc;
@@ -1118,54 +1119,53 @@ pppinput(c, tp)
 	    pppdumpm(m, ilen);
 	}
 
-	proto = ntohs(mtod(m, struct ppp_header *)->ph_protocol);
-	switch (proto) {
-#ifdef INET
-	case PPP_IP:
-	    ilen -= PPP_HEADER_LEN;
-	    m->m_data += PPP_HEADER_LEN;
-	    m->m_len -= PPP_HEADER_LEN;
-	    break;
+	hdr = *mtod(m, struct ppp_header *);
+	proto = ntohs(hdr.ph_protocol);
 
 #ifdef VJC
-	case PPP_VJC_COMP:
-	case PPP_VJC_UNCOMP:
-	    pkttype = proto == PPP_VJC_COMP? "": "un";
-	    if (!(sc->sc_flags & SC_REJ_COMP_TCP)) {
+	/*
+	 * See if we have a VJ-compressed packet to uncompress.
+	 */
+	if (proto == PPP_VJC_COMP || proto == PPP_VJC_UNCOMP) {
+	    char *pkttype = proto == PPP_VJC_COMP? "": "un";
 
-		m->m_data += PPP_HEADER_LEN;
-		m->m_len -= PPP_HEADER_LEN;
-		ilen -= PPP_HEADER_LEN;
-
-		xlen = sl_uncompress_tcp_part((u_char **)(&m->m_data),
-					      m->m_len, ilen,
-					      COMPTYPE(proto), &sc->sc_comp);
-
-		if (xlen) {
-		    /* adjust the first mbuf by the decompressed amt */
-		    m->m_len += xlen - ilen;
-		    ilen = xlen;
-		    proto = PPP_IP;
-		    break;
-		}
-
-		if (ppp_debug)
-		    printf("ppp%d: sl_uncompress failed on type %scomp\n",
-		       sc->sc_if.if_unit, pkttype);
-
-	    } else {
+	    if (sc->sc_flags & SC_REJ_COMP_TCP) {
 		if (ppp_debug)
 		    printf("ppp%d: %scomp pkt w/o compression; flags 0x%x\n",
 			   sc->sc_if.if_unit, pkttype, sc->sc_flags);
+		sc->sc_if.if_ierrors++;
+		return;
 	    }
-	    if (ppp_debug)
-		printf("ppp%d: packet rejected, protocol 0x%x\n",
-		       sc->sc_if.if_unit, proto);
-	    sc->sc_if.if_ierrors++;
-	    return;
-#endif
-#endif
+
+	    m->m_data += PPP_HEADER_LEN;
+	    m->m_len -= PPP_HEADER_LEN;
+	    ilen -= PPP_HEADER_LEN;
+	    xlen = sl_uncompress_tcp_part((u_char **)(&m->m_data),
+					  m->m_len, ilen,
+					  COMPTYPE(proto), &sc->sc_comp);
+
+	    if (xlen == 0) {
+		if (ppp_debug)
+		    printf("ppp%d: sl_uncompress failed on type %scomp\n",
+			   sc->sc_if.if_unit, pkttype);
+		sc->sc_if.if_ierrors++;
+		return;
+	    }
+
+	    /* adjust the first mbuf by the decompressed amt */
+	    xlen += PPP_HEADER_LEN;
+	    m->m_len += xlen - ilen;
+	    ilen = xlen;
+	    m->m_data -= PPP_HEADER_LEN;
+	    proto = PPP_IP;
+
+#if NBPFILTER > 0
+	    /* put the ppp header back in place */
+	    hdr.ph_protocol = htons(PPP_IP);
+	    *mtod(m, struct ppp_header *) = hdr;
+#endif /* NBPFILTER */
 	}
+#endif /* VJC */
 
 	/* get this packet as an mbuf chain */
 	if ((m = ppp_btom(sc)) == NULL) {
@@ -1175,32 +1175,46 @@ pppinput(c, tp)
 	m->m_pkthdr.len = ilen;
 	m->m_pkthdr.rcvif = &sc->sc_if;
 
-	if (proto == PPP_IP) {
-	    /* IP packet - pass it up to IP */
-	    if ((sc->sc_if.if_flags & IFF_UP) == 0) {
-		/* interface is down - drop the packet. */
-		m_freem(m);
-		sc->sc_if.if_ierrors++;
-		return;
-	    }
-	    schednetisr(NETISR_IP);
-	    inq = &ipintrq;
-
-	} else {
-	    /* some other protocol - place on input queue for read() */
-	    /* Put a placeholder byte in canq for ttselect()/ttnread() */
-	    putc(0, &tp->t_canq);
-	    ttwakeup(tp);
-	    inq = &sc->sc_inq;
-	}
-
 #if NBPFILTER > 0
 	/* See if bpf wants to look at the packet. */
 	if (sc->sc_bpf)
 	    bpf_mtap(sc->sc_bpf, m);
 #endif
 
-	/* Put the packet on the appropriate input queue. */
+	switch (proto) {
+#ifdef INET
+	case PPP_IP:
+	    /*
+	     * IP packet - take off the ppp header and pass it up to IP.
+	     */
+	    if ((sc->sc_if.if_flags & IFF_UP) == 0) {
+		/* interface is down - drop the packet. */
+		m_freem(m);
+		sc->sc_if.if_ierrors++;
+		return;
+	    }
+	    m->m_pkthdr.len -= PPP_HEADER_LEN;
+	    m->m_data += PPP_HEADER_LEN;
+	    m->m_len -= PPP_HEADER_LEN;
+	    schednetisr(NETISR_IP);
+	    inq = &ipintrq;
+	    break;
+#endif
+
+	default:
+	    /*
+	     * Some other protocol - place on input queue for read().
+	     * Put a placeholder byte in canq for ttselect()/ttnread().
+	     */
+	    putc(0, &tp->t_canq);
+	    ttwakeup(tp);
+	    inq = &sc->sc_inq;
+	    break;
+	}
+
+	/*
+	 * Put the packet on the appropriate input queue.
+	 */
 	s = splimp();
 	if (IF_QFULL(inq)) {
 	    IF_DROP(inq);
