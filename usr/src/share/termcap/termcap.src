@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.77 (Berkeley) %G%
+#	@(#)termcap.src	5.78 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -1896,6 +1896,16 @@ d1|vt100-nam|vt100nam|vt100 w/no am:\
 	:tc=vt100-am:
 d2|gt42|dec gt42:\
 	:do=^J:le=^H:bs:co#72:ns:li#40:os:
+#From ts@pc.ecn.purdue.edu (Thomas Ruschak)
+dR|vt131|dec vt131:\
+	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:\
+	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
+	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
+	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:\
+	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:.ks=\E[?1h\E=:.ke=\E[?1l\E>:\
+	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:kb=^H:\
+	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:xn:\
+	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
 d3|vt132|vt132:\
 	:al=99\E[L:dl=99\E[M:ip=7:dc=7\E[P:ei=\E[4l:im=\E[4h:xn:dN#30:tc=vt100:
 d4|gt40|dec gt40:\
