@@ -14,12 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dev.c	7.4 (Berkeley) %G%
+ *	@(#)dev.c	7.5 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "inode.h"
-#include "fs.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/vnode.h"
+#include "ufs/inode.h"
+#include "ufs/fs.h"
 #include "saio.h"
 
 /*
