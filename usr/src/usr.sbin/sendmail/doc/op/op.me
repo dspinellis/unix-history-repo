@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.36 (Berkeley) %G%
+.\"	@(#)op.me	6.37 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.36
+Version 6.37
 .sp
 For Sendmail Version 6.52
 .)l
@@ -1154,7 +1154,11 @@ At least one recipient line is required under RFC 822.
 .pp
 .i Sendmail
 supports the IDENT protocol as defined in RFC 1413.
-Although this enhances authentication of email messages,
+Although this enhances identification
+of the author of an email message
+by doing a ``call back'' to the originating system to include
+the owner of a particular TCP connection
+in the audit trail
 it is in no sense perfect;
 a determined forger can easily spoof the IDENT protocol.
 The following description is excerpted from RFC 1413:
@@ -6013,7 +6017,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.36
+.\"Version 6.37
 .\".ce 0
 .pn 2
 .bp
