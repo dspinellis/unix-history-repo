@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)namei.h	7.4 (Berkeley) %G%
+ *	@(#)namei.h	7.5 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
@@ -76,6 +76,8 @@ struct nameidata {
 #define	ni_iovcnt	ni_nd.nd_uio.uio_iovcnt
 #define	ni_offset	ni_nd.nd_uio.uio_offset
 #define	ni_resid	ni_nd.nd_uio.uio_resid
+#define	ni_rw		ni_nd.nd_uio.uio_rw
+#define	ni_uio		ni_nd.nd_uio
 #define ni_hash		ni_nd.nd_hash
 
 #ifdef KERNEL
