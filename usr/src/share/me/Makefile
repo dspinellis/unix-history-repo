@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.10 (Berkeley) %G%
+#	@(#)Makefile	6.11 (Berkeley) %G%
 
 MELIB=	${BINDIR}/me
 TMLIB=	${BINDIR}/tmac
@@ -7,10 +7,6 @@ MESRCS=	acm.me chars.me deltext.me eqn.me float.me footnote.me \
 	tbl.me thesis.me
 TMSRCS=	tmac.e
 MAN7=	me.0
-
-all: ${MAN7}
-
-clean cleandir depend lint tags:
 
 beforeinstall:
 	cd ${.CURDIR}; for i in ${MESRCS}; do \
