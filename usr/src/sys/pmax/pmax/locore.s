@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.2 (Berkeley) %G%
+ *	@(#)locore.s	7.3 (Berkeley) %G%
  */
 
 /*
@@ -32,13 +32,12 @@
 
 #include "errno.h"
 
-#include "machine/regdef.h"
 #include "machine/param.h"
 #include "machine/vmparam.h"
 #include "machine/psl.h"
 #include "machine/reg.h"
 #include "machine/machAsmDefs.h"
-#include "pte.h"
+#include "machine/pte.h"
 #include "assym.h"
 
 /*
@@ -145,6 +144,10 @@ onfault_table:
 	.word	copyerr
 #define FSWBERR		4
 	.word	fswberr
+#ifdef KADB
+#define KADBERR		5
+	.word	kadberr
+#endif
 	.text
 
 /*
@@ -273,6 +276,29 @@ LEAF(strlen)
 	subu	v0, a0, v1		# compute length - 1 for '\0' char
 	j	ra
 END(strlen)
+
+/*
+ * NOTE: this version assumes unsigned chars in order to be "8 bit clean".
+ */
+LEAF(strcmp)
+1:
+	lbu	t0, 0(a0)		# get two bytes and compare them
+	lbu	t1, 0(a1)
+	beq	t0, zero, LessOrEq	# end of first string?
+	bne	t0, t1, NotEq
+	lbu	t0, 1(a0)		# unroll loop
+	lbu	t1, 1(a1)
+	add	a0, a0, 2
+	beq	t0, zero, LessOrEq	# end of first string?
+	add	a1, a1, 2
+	beq	t0, t1, 1b
+NotEq:
+	subu	v0, t0, t1
+	j	ra
+LessOrEq:
+	subu	v0, zero, t1
+	j	ra
+END(strcmp)
 
 /*
  * bzero(s1, n)
@@ -700,8 +726,8 @@ NON_LEAF(setrq, STAND_FRAME_SIZE, ra)
 	subu	sp, sp, STAND_FRAME_SIZE
 	.mask	0x80000000, (STAND_RA_OFFSET - STAND_FRAME_SIZE)
 	lw	t0, P_RLINK(a0)		## firewall: p->p_rlink must be 0
-	beq	t0, zero, 1f		##
 	sw	ra, STAND_RA_OFFSET(sp)	##
+	beq	t0, zero, 1f		##
 	PANIC("setrq")			##
 1:
 	lbu	t0, P_PRI(a0)		# put on queue which is p->p_pri / 4
@@ -737,8 +763,8 @@ NON_LEAF(remrq, STAND_FRAME_SIZE, ra)
 	sll	t1, t1, t0
 	lw	t2, whichqs		# check corresponding bit
 	and	v0, t2, t1
-	bne	v0, zero, 1f		##
 	sw	ra, STAND_RA_OFFSET(sp)	##
+	bne	v0, zero, 1f		##
 	PANIC("remrq")			## it wasn't recorded to be on its q
 1:
 	lw	v0, P_RLINK(a0)		# v0 = p->p_rlink
@@ -798,11 +824,14 @@ LEAF(idle)
 	li	t0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
 	mtc0	t0, MACH_COP_0_STATUS_REG	# enable all interrupts
 	nop
-	.set	reorder
 1:
 	lw	t0, whichqs			# look for non-empty queue
+	nop
 	beq	t0, zero, 1b
+	nop
 	b	sw1
+	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable all interrupts
+	.set	reorder
 END(idle)
 
 /*
@@ -823,8 +852,9 @@ NON_LEAF(swtch, STAND_FRAME_SIZE, ra)
 	addu	t2, t2, 1
 	beq	t1, zero, idle			# if none, idle
 	sw	t2, cnt+V_SWTCH
-sw1:
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable all interrupts
+sw1:
+	nop					# wait for intrs disabled
 	nop
 	lw	t0, whichqs			# look for non-empty queue
 	li	t2, -1				# t2 = lowest bit set
@@ -865,7 +895,6 @@ sw1:
 	sw	a0, STAND_FRAME_SIZE(sp)	# save p
 	lw	a0, STAND_FRAME_SIZE(sp)	# restore p
 	sll	v0, v0, VMMACH_TLB_PID_SHIFT	# v0 = aligned PID
-	or	v0, v0, UADDR			# v0 = first HI entry
 	lw	t0, P_UPTE+0(a0)		# t0 = first u. pte
 	lw	t1, P_UPTE+4(a0)		# t1 = 2nd u. pte
 	sw	s0, UADDR+U_PCB_CONTEXT+0	# do a 'savectx()'
@@ -877,6 +906,7 @@ sw1:
 	sw	s6, UADDR+U_PCB_CONTEXT+24
 	sw	s7, UADDR+U_PCB_CONTEXT+28
 	sw	s8, UADDR+U_PCB_CONTEXT+36
+	or	v0, v0, UADDR			# v0 = first HI entry
 /*
  * Resume process indicated by the pte's for its u struct
  * NOTE: This is hard coded to UPAGES == 2.
@@ -940,7 +970,6 @@ ALEAF(fuibyte)
 END(fubyte)
 
 LEAF(suword)
-ALEAF(suiword)
 	li	v0, FSWBERR
 	blt	a0, zero, fswberr	# make sure address is in user space
 	sw	v0, UADDR+U_PCB_ONFAULT
@@ -950,6 +979,23 @@ ALEAF(suiword)
 	j	ra
 END(suword)
 
+/*
+ * Have to flush instruction cache afterwards.
+ */
+LEAF(suiword)
+	li	v0, FSWBERR
+	blt	a0, zero, fswberr	# make sure address is in user space
+	sw	v0, UADDR+U_PCB_ONFAULT
+	sw	a1, 0(a0)		# store word
+	sw	zero, UADDR+U_PCB_ONFAULT
+	move	v0, zero
+	li	a1, 4			# size of word
+	b	MachFlushICache		# NOTE: this should not clobber v0!
+END(suiword)
+
+/*
+ * Will have to flush the instruction cache if byte merging is done in hardware.
+ */
 LEAF(subyte)
 ALEAF(suibyte)
 	li	v0, FSWBERR
@@ -1110,6 +1156,20 @@ SlowFault:
 NON_LEAF(MachKernGenException, KERN_EXC_FRAME_SIZE, ra)
 	.set	noreorder
 	.set	noat
+#ifdef KADB
+	la	k0, kdbpcb			# save registers for kadb
+	sw	s0, (S0 * 4)(k0)
+	sw	s1, (S1 * 4)(k0)
+	sw	s2, (S2 * 4)(k0)
+	sw	s3, (S3 * 4)(k0)
+	sw	s4, (S4 * 4)(k0)
+	sw	s5, (S5 * 4)(k0)
+	sw	s6, (S6 * 4)(k0)
+	sw	s7, (S7 * 4)(k0)
+	sw	s8, (S8 * 4)(k0)
+	sw	gp, (GP * 4)(k0)
+	sw	sp, (SP * 4)(k0)
+#endif
 	subu	sp, sp, KERN_EXC_FRAME_SIZE
 	.mask	0x80000000, (STAND_RA_OFFSET - KERN_EXC_FRAME_SIZE)
 /*
@@ -1576,6 +1636,7 @@ NON_LEAF(MachUserIntr, STAND_FRAME_SIZE, ra)
 	.set	reorder
 END(MachUserIntr)
 
+#if 0
 /*----------------------------------------------------------------------------
  *
  * MachTLBModException --
@@ -1593,7 +1654,6 @@ END(MachUserIntr)
  *----------------------------------------------------------------------------
  */
 LEAF(MachTLBModException)
-#if 0
 	.set	noreorder
 	.set	noat
 	tlbp					# find the TLB entry
@@ -1619,8 +1679,8 @@ LEAF(MachTLBModException)
 	break	0				# panic
 	.set	reorder
 	.set	at
-#endif
 END(MachTLBModException)
+#endif
 
 /*----------------------------------------------------------------------------
  *
@@ -1747,60 +1807,49 @@ LEAF(splsoftclock)
 	.set	reorder
 END(splsoftclock)
 
-LEAF(splnet)
+LEAF(Mach_spl0)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_SOFT_INT_MASK_0 | MACH_SOFT_INT_MASK_1)
+	li	t0, ~(MACH_INT_MASK_0|MACH_SOFT_INT_MASK_1|MACH_SOFT_INT_MASK_0)
 	and	t0, t0, v0
 	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
 	j	ra
 	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
 	.set	reorder
-END(splnet)
+END(Mach_spl0)
 
-LEAF(splbio)
+LEAF(Mach_spl1)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_0 | MACH_SOFT_INT_MASK_0 | MACH_SOFT_INT_MASK_1)
+	li	t0, ~(MACH_INT_MASK_1|MACH_SOFT_INT_MASK_0|MACH_SOFT_INT_MASK_1)
 	and	t0, t0, v0
 	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
 	j	ra
 	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
 	.set	reorder
-END(splbio)
+END(Mach_spl1)
 
-LEAF(splimp)
+LEAF(Mach_spl2)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_1 | MACH_SOFT_INT_MASK_1 | MACH_SOFT_INT_MASK_0)
+	li	t0, ~(MACH_INT_MASK_2|MACH_SOFT_INT_MASK_1|MACH_SOFT_INT_MASK_0)
 	and	t0, t0, v0
 	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
 	j	ra
 	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
 	.set	reorder
-END(splnet)
+END(Mach_spl2)
 
-LEAF(spltty)
+LEAF(Mach_spl3)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_2 | MACH_SOFT_INT_MASK_1 | MACH_SOFT_INT_MASK_0)
+	li	t0, ~(MACH_INT_MASK_3|MACH_SOFT_INT_MASK_1|MACH_SOFT_INT_MASK_0)
 	and	t0, t0, v0
 	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
 	j	ra
 	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
 	.set	reorder
-END(spltty)
-
-LEAF(splclock)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_3 | MACH_SOFT_INT_MASK_1 | MACH_SOFT_INT_MASK_0)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(splclock)
+END(Mach_spl3)
 
 LEAF(splhigh)
 	.set	noreorder
@@ -1879,8 +1928,8 @@ END(MachEmptyWriteBuffer)
 LEAF(MachTLBWriteIndexed)
 	.set	noreorder
 	mfc0	t1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	t0, MACH_COP_0_TLB_HI		# Save the current PID.
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Save the current PID.
 
 	sll	a0, a0, VMMACH_TLB_INDEX_SHIFT
 	mtc0	a0, MACH_COP_0_TLB_INDEX	# Set the index.
@@ -1916,8 +1965,8 @@ END(MachTLBWriteIndexed)
 LEAF(MachTLBWriteRandom)
 	.set	noreorder
 	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	v0, MACH_COP_0_TLB_HI		# Save the current PID.
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	v0, MACH_COP_0_TLB_HI		# Save the current PID.
 
 	mtc0	a0, MACH_COP_0_TLB_HI		# Set up entry high.
 	mtc0	a1, MACH_COP_0_TLB_LOW		# Set up entry low.
@@ -1975,21 +2024,20 @@ END(MachSetPID)
 LEAF(MachTLBFlush)
 	.set	noreorder
 	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	t0, MACH_COP_0_TLB_HI		# Save the PID
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Save the PID
 	li	t1, MACH_RESERVED_ADDR		# invalid address
 	mtc0	t1, MACH_COP_0_TLB_HI		# Mark entry high as invalid
 	mtc0	zero, MACH_COP_0_TLB_LOW	# Zero out low entry.
 /*
- * Align the starting value (t1), the increment (t2) and the upper bound (t3).
+ * Align the starting value (t1) and the upper bound (t2).
  */
 	li	t1, VMMACH_FIRST_RAND_ENTRY << VMMACH_TLB_INDEX_SHIFT
-	li	t2, 1 << VMMACH_TLB_INDEX_SHIFT
-	li	t3, VMMACH_NUM_TLB_ENTRIES << VMMACH_TLB_INDEX_SHIFT
+	li	t2, VMMACH_NUM_TLB_ENTRIES << VMMACH_TLB_INDEX_SHIFT
 1:
 	mtc0	t1, MACH_COP_0_TLB_INDEX	# Set the index register.
-	addu	t1, t1, t2			# Increment index.
-	bne	t1, t3, 1b			# NB: always executes next
+	addu	t1, t1, 1 << VMMACH_TLB_INDEX_SHIFT	# Increment index.
+	bne	t1, t2, 1b			# NB: always executes next
 	tlbwi					# Write the TLB entry.
 
 	mtc0	t0, MACH_COP_0_TLB_HI		# Restore the PID
@@ -2018,18 +2066,17 @@ END(MachTLBFlush)
 LEAF(MachTLBFlushPID)
 	.set	noreorder
 	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	t0, MACH_COP_0_TLB_HI		# Save the current PID
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Save the current PID
 	sll	a0, a0, VMMACH_TLB_PID_SHIFT	# Align the pid to flush.
 /*
- * Align the starting value (t1), the increment (t2) and the upper bound (t3).
+ * Align the starting value (t1) and the upper bound (t2).
  */
 	li	t1, VMMACH_FIRST_RAND_ENTRY << VMMACH_TLB_INDEX_SHIFT
-	li	t2, 1 << VMMACH_TLB_INDEX_SHIFT
-	li	t3, VMMACH_NUM_TLB_ENTRIES << VMMACH_TLB_INDEX_SHIFT
+	li	t2, VMMACH_NUM_TLB_ENTRIES << VMMACH_TLB_INDEX_SHIFT
 	mtc0	t1, MACH_COP_0_TLB_INDEX	# Set the index register
 1:
-	addu	t1, t1, t2			# Increment index.
+	addu	t1, t1, 1 << VMMACH_TLB_INDEX_SHIFT	# Increment index.
 	tlbr					# Read from the TLB
 	mfc0	t4, MACH_COP_0_TLB_HI		# Fetch the hi register.
 	nop
@@ -2041,7 +2088,7 @@ LEAF(MachTLBFlushPID)
 	nop
 	tlbwi					# Write the entry.
 2:
-	bne	t1, t3, 1b
+	bne	t1, t2, 1b
 	mtc0	t1, MACH_COP_0_TLB_INDEX	# Set the index register
 
 	mtc0	t0, MACH_COP_0_TLB_HI		# restore PID
@@ -2054,10 +2101,10 @@ END(MachTLBFlushPID)
  *
  * MachTLBFlushAddr --
  *
- *	Flush any TLB entries for the given address.
+ *	Flush any TLB entries for the given address and TLB PID.
  *
- *	MachTLBFlushAddr(virtaddr)
- *		unsigned virtaddr;
+ *	MachTLBFlushAddr(highreg)
+ *		unsigned highreg;
  *
  * Results:
  *	None.
@@ -2070,16 +2117,17 @@ END(MachTLBFlushPID)
 LEAF(MachTLBFlushAddr)
 	.set	noreorder
 	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	t0, MACH_COP_0_TLB_HI		# Get current PID
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Get current PID
+
 	mtc0	a0, MACH_COP_0_TLB_HI		# look for addr & PID
-	mtc0	zero, MACH_COP_0_TLB_LOW	# look for matching PID
 	nop
 	tlbp					# Probe for the entry.
 	mfc0	v0, MACH_COP_0_TLB_INDEX	# See what we got
 	li	t1, MACH_RESERVED_ADDR		# Load invalid entry.
 	bltz	v0, 1f				# index < 0 => !found
-	mtc0	t1, MACH_COP_0_TLB_HI		# Prepare index hi.
+	mtc0	t1, MACH_COP_0_TLB_HI		# Mark entry high as invalid
+	mtc0	zero, MACH_COP_0_TLB_LOW	# Zero out low entry.
 	nop
 	tlbwi
 1:
@@ -2109,8 +2157,9 @@ END(MachTLBFlushAddr)
 LEAF(MachTLBUpdate)
 	.set	noreorder
 	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	t0, MACH_COP_0_TLB_HI		# Save current PID
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Save current PID
+
 	mtc0	a0, MACH_COP_0_TLB_HI		# init high reg.
 	mtc0	a1, MACH_COP_0_TLB_LOW		# init low reg.
 	nop
@@ -2127,94 +2176,47 @@ LEAF(MachTLBUpdate)
 	.set	reorder
 END(MachTLBUpdate)
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(KADB)
 /*--------------------------------------------------------------------------
  *
- * MachTLBDump --
+ * MachTLBFind --
  *
- *	Print all entries in the TLB if 'all' is true; otherwise, just
- *	print valid entries.
+ *	Search the TLB for the given entry.
  *
- *	MachTLBDump(all)
- *		int all;
+ *	MachTLBFind(hi)
+ *		unsigned hi;
  *
  * Results:
- *	None.
+ *	Returns a value >= 0 if the entry was found (the index).
+ *	Returns a value < 0 if the entry was not found.
  *
  * Side effects:
- *	None.
+ *	tlbhi and tlblo will contain the TLB entry found.
  *
  *--------------------------------------------------------------------------
  */
-
-#define DUMP_FRAME_SIZE	(STAND_FRAME_SIZE + 4*4)
-
-NON_LEAF(MachTLBDump, DUMP_FRAME_SIZE, ra)
-	.set	noreorder
-	subu	sp, sp, DUMP_FRAME_SIZE
-	sw	s0, STAND_RA_OFFSET(sp)
-	sw	s1, STAND_RA_OFFSET+4(sp)
-	sw	s2, STAND_RA_OFFSET+8(sp)
-	sw	s3, STAND_RA_OFFSET+12(sp)
-	sw	ra, STAND_RA_OFFSET+16(sp)
-	.mask	0x80000000, (STAND_RA_OFFSET - STAND_FRAME_SIZE)
-
-	mfc0	s0, MACH_COP_0_TLB_HI		# Save the current PID
-	sw	a0, DUMP_FRAME_SIZE(sp)		# Save 'all'
-/*
- * Align the starting value (s1), the increment (s2) and the upper bound (s3).
- */
-	move	s1, zero
-	li	s2, 1 << VMMACH_TLB_INDEX_SHIFT
-	li	s3, VMMACH_NUM_TLB_ENTRIES << VMMACH_TLB_INDEX_SHIFT
-	mtc0	s1, MACH_COP_0_TLB_INDEX	# Set the index register
-1:
-	addu	s1, s1, s2			# Increment index.
-	tlbr					# Read from the TLB
-	bne	a0, zero, 2f			# skip valid check if 'all'
-	mfc0	a3, MACH_COP_0_TLB_LOW		# Fetch the low register.
-	nop
-	and	t0, a3, PG_V			# is it valid?
-	beq	t0, zero, 3f
-	nop
-2:
-	mfc0	a2, MACH_COP_0_TLB_HI		# Fetch the hi register.
-	PRINTF("%d: hi %x low %x\n")		# print entry
-	srl	a1, s1, VMMACH_TLB_INDEX_SHIFT	# this is in the delay slot
-	lw	a0, DUMP_FRAME_SIZE(sp)		# get 'all'
-3:
-	bne	s1, s3, 1b
-	mtc0	s1, MACH_COP_0_TLB_INDEX	# Set the index register
-
-	mtc0	s0, MACH_COP_0_TLB_HI		# restore PID
-	nop
-	lw	ra, STAND_RA_OFFSET+16(sp)
-	lw	s0, STAND_RA_OFFSET(sp)
-	lw	s1, STAND_RA_OFFSET+4(sp)
-	lw	s2, STAND_RA_OFFSET+8(sp)
-	lw	s3, STAND_RA_OFFSET+12(sp)
-	j	ra
-	addu	sp, sp, DUMP_FRAME_SIZE
-	.set	reorder
-END(MachTLBDump)
-
 	.comm	tlbhi, 4
 	.comm	tlblo, 4
 LEAF(MachTLBFind)
 	.set	noreorder
 	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
-	mfc0	t0, MACH_COP_0_TLB_HI		# Get current PID
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Get current PID
+	nop
 	mtc0	a0, MACH_COP_0_TLB_HI		# Set up entry high.
-	mtc0	a1, MACH_COP_0_TLB_LOW		# Set up entry low.
 	nop
 	tlbp					# Probe for the entry.
 	mfc0	v0, MACH_COP_0_TLB_INDEX	# See what we got
+	nop
+	bltz	v0, 1f				# not found
+	nop
+	tlbr					# read TLB
 	mfc0	t1, MACH_COP_0_TLB_HI		# See what we got
 	mfc0	t2, MACH_COP_0_TLB_LOW		# See what we got
 	sw	t1, tlbhi
 	sw	t2, tlblo
-	mtc0	t0, MACH_COP_0_TLB_HI		# Get current PID
+1:
+	mtc0	t0, MACH_COP_0_TLB_HI		# Restore current PID
 	j	ra
 	mtc0	v1, MACH_COP_0_STATUS_REG	# Restore the status register
 	.set	reorder
@@ -2222,9 +2224,47 @@ END(MachTLBFind)
 
 /*--------------------------------------------------------------------------
  *
- * MachGetPID --
+ * MachTLBRead --
  *
- *	MachGetPID()
+ *	Read the TLB entry.
+ *
+ *	MachTLBRead(entry)
+ *		unsigned entry;
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	tlbhi and tlblo will contain the TLB entry found.
+ *
+ *--------------------------------------------------------------------------
+ */
+LEAF(MachTLBRead)
+	.set	noreorder
+	mfc0	v1, MACH_COP_0_STATUS_REG	# Save the status register.
+	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+	mfc0	t0, MACH_COP_0_TLB_HI		# Get current PID
+
+	sll	a0, a0, VMMACH_TLB_INDEX_SHIFT
+	mtc0	a0, MACH_COP_0_TLB_INDEX	# Set the index register
+	nop
+	tlbr					# Read from the TLB
+	mfc0	t3, MACH_COP_0_TLB_HI		# fetch the hi entry
+	mfc0	t4, MACH_COP_0_TLB_LOW		# fetch the low entry
+	sw	t3, tlbhi
+	sw	t4, tlblo
+
+	mtc0	t0, MACH_COP_0_TLB_HI		# restore PID
+	j	ra
+	mtc0	v1, MACH_COP_0_STATUS_REG	# Restore the status register
+	.set	reorder
+END(MachTLBRead)
+
+/*--------------------------------------------------------------------------
+ *
+ * MachTLBGetPID --
+ *
+ *	MachTLBGetPID()
  *
  * Results:
  *	Returns the current TLB pid reg.
@@ -2234,7 +2274,7 @@ END(MachTLBFind)
  *
  *--------------------------------------------------------------------------
  */
-LEAF(MachGetPID)
+LEAF(MachTLBGetPID)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_TLB_HI		# get PID
 	nop
@@ -2242,7 +2282,18 @@ LEAF(MachGetPID)
 	j	ra
 	srl	v0, v0, VMMACH_TLB_PID_SHIFT	# put PID in right spot
 	.set	reorder
-END(MachGetPID)
+END(MachTLBGetPID)
+
+/*
+ * Return the current value of the cause register.
+ */
+LEAF(MachGetCauseReg)
+	.set	noreorder
+	mfc0	v0, MACH_COP_0_CAUSE_REG
+	j	ra
+	nop
+	.set	reorder
+END(MachGetCauseReg)
 #endif /* DEBUG */
 
 /*----------------------------------------------------------------------------
@@ -2276,7 +2327,8 @@ LEAF(MachSwitchFPState)
  * have completed.
  */
 	lw	a0, P_ADDR(a0)			# get pointer to pcb for proc
-	cfc1	t0, MACH_FPC_CSR		# stall til FP done, get status
+	cfc1	t0, MACH_FPC_CSR		# stall til FP done
+	cfc1	t0, MACH_FPC_CSR		# now get status
 	li	t3, ~MACH_SR_COP_1_BIT
 	lw	t2, U_PCB_REGS+(PS * 4)(a0)	# get CPU status register
 	sw	t0, U_PCB_FPREGS+(32 * 4)(a0)	# save FP status
@@ -2397,7 +2449,8 @@ LEAF(MachSaveCurFPState)
 	lw	t2, U_PCB_REGS+(PS * 4)(a0)	# get CPU status register
 	li	t3, ~MACH_SR_COP_1_BIT
 	and	t2, t2, t3			# clear COP_1 enable bit
-	cfc1	t0, MACH_FPC_CSR		# stall til FP done, get status
+	cfc1	t0, MACH_FPC_CSR		# stall til FP done
+	cfc1	t0, MACH_FPC_CSR		# now get status
 	sw	t2, U_PCB_REGS+(PS * 4)(a0)	# save new status register
 	sw	t0, U_PCB_FPREGS+(32 * 4)(a0)	# save FP status
 /*
@@ -2472,7 +2525,8 @@ NON_LEAF(MachFPInterrupt, STAND_FRAME_SIZE, ra)
 	mtc0	t1, MACH_COP_0_STATUS_REG
 	nop
 	nop
-	cfc1	t1, MACH_FPC_CSR	# stall til FP done, get status
+	cfc1	t1, MACH_FPC_CSR	# stall til FP done
+	cfc1	t1, MACH_FPC_CSR	# now get status
 	nop
 	.set	reorder
 	sll	t2, t1, (31 - 17)	# unimplemented operation?
@@ -2706,14 +2760,7 @@ LEAF(MachFlushCache)
 	j	v0
 	nop
 1:
-	sb	zero, 0(t0)
-	sb	zero, 4(t0)
-	sb	zero, 8(t0)
-	sb	zero, 12(t0)
-	sb	zero, 16(t0)
-	sb	zero, 20(t0)
-	sb	zero, 24(t0)
-	addu	t0, t0, 32
+	addu	t0, t0, 4
 	bne	t0, t1, 1b
 	sb	zero, -4(t0)
 
@@ -2733,14 +2780,7 @@ LEAF(MachFlushCache)
 	j	v0				# Back to cached mode
 	nop
 1:
-	sb	zero, 0(t0)
-	sb	zero, 4(t0)
-	sb	zero, 8(t0)
-	sb	zero, 12(t0)
-	sb	zero, 16(t0)
-	sb	zero, 20(t0)
-	sb	zero, 24(t0)
-	addu	t0, t0, 32
+	addu	t0, t0, 4
 	bne	t0, t1, 1b
 	sb	zero, -4(t0)
 
@@ -2762,9 +2802,11 @@ END(MachFlushCache)
  *
  * MachFlushICache --
  *
- *	MachFlushICache(addr, len)
+ *	void MachFlushICache(addr, len)
+ *		vm_offset_t addr, len;
  *
  *	Flush instruction cache for range of addr to addr + len - 1.
+ *	The address can be any valid address so long as no TLB misses occur.
  *
  * Results:
  *	None.
@@ -2776,53 +2818,162 @@ END(MachFlushCache)
  */
 LEAF(MachFlushICache)
 	.set	noreorder
-	lw	t1, machInstCacheSize
-	mfc0	t3, MACH_COP_0_STATUS_REG	# Save SR
-	subu	t0, t1, 1			# t0 = size - 1
-	and	a0, a0, t0			# mask off address bits
-	addu	t0, t0, MACH_UNCACHED_MEMORY_ADDR
-	subu	t0, t0, t1
+	mfc0	t0, MACH_COP_0_STATUS_REG	# Save SR
 	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts.
 
-	la	v0, 1f
-	or	v0, MACH_UNCACHED_MEMORY_ADDR	# Run uncached.
-	j	v0
+	la	v1, 1f
+	or	v1, MACH_UNCACHED_MEMORY_ADDR	# Run uncached.
+	j	v1
 	nop
 1:
-	li	v0, MACH_SR_ISOL_CACHES | MACH_SR_SWAP_CACHES
-	mtc0	v0, MACH_COP_0_STATUS_REG
-	bltu	t1, a1, 1f			# cache is smaller than region
+	bc0f	1b				# make sure stores are complete
+	li	v1, MACH_SR_ISOL_CACHES | MACH_SR_SWAP_CACHES
+	mtc0	v1, MACH_COP_0_STATUS_REG
 	nop
-	move	t1, a1
+	addu	a1, a1, a0			# compute ending address
 1:
-	addu	t1, t1, t0			# compute ending address
-	la	v0, 1f				# run cached
-	j	v0
-	nop
-1:
-	sb	zero, 0(t0)
-	sb	zero, 4(t0)
-	sb	zero, 8(t0)
-	sb	zero, 12(t0)
-	sb	zero, 16(t0)
-	sb	zero, 20(t0)
-	sb	zero, 24(t0)
-	addu	t0, t0, 32
-	bltu	t0, t1, 1b
-	sb	zero, -4(t0)
+	addu	a0, a0, 4
+	bne	a0, a1, 1b
+	sb	zero, -4(a0)
 
-	la	v0, 1f
-	or	v0, MACH_UNCACHED_MEMORY_ADDR
-	j	v0				# Run uncached
-	nop
-1:
-	nop				# insure isolated stores out of pipe
-	mtc0	zero, MACH_COP_0_STATUS_REG	# unisolate, unswap
-	nop					# keep pipeline clean
-	nop
-	nop
-	mtc0	t3, MACH_COP_0_STATUS_REG	# enable interrupts
+	mtc0	t0, MACH_COP_0_STATUS_REG	# enable interrupts
 	j	ra				# return and run cached
 	nop
 	.set	reorder
 END(MachFlushICache)
+
+#ifdef KADB
+/*
+ * Read a long and return it.
+ * Note: addresses can be unaligned!
+ *
+ * long
+L* kdbpeek(addr)
+L*	caddt_t addr;
+L* {
+L*	return (*(long *)addr);
+L* }
+ */
+LEAF(kdbpeek)
+	li	v0, KADBERR
+	sw	v0, UADDR+U_PCB_ONFAULT
+	and	v0, a0, 3		# unaligned address?
+	bne	v0, zero, 1f
+	lw	v0, (a0)		# aligned access
+	b	2f
+1:
+	lwr	v0, 0(a0)		# get next 4 bytes (unaligned)
+	lwl	v0, 3(a0)
+2:
+	sw	zero, UADDR+U_PCB_ONFAULT
+	j	ra			# made it w/o errors
+kadberr:
+	li	v0, 1			# trap sends us here
+	sw	v0, kdbmkfault
+	j	ra
+END(kdbpeek)
+
+/*
+ * Write a long to 'addr'.
+ * Note: addresses can be unaligned!
+ *
+L* void
+L* kdbpoke(addr, value)
+L*	caddt_t addr;
+L*	long value;
+L* {
+L*	*(long *)addr = value;
+L* }
+ */
+LEAF(kdbpoke)
+	li	v0, KADBERR
+	sw	v0, UADDR+U_PCB_ONFAULT
+	and	v0, a0, 3		# unaligned address?
+	bne	v0, zero, 1f
+	sw	a1, (a0)		# aligned access
+	b	2f
+1:
+	swr	a1, 0(a0)		# store next 4 bytes (unaligned)
+	swl	a1, 3(a0)
+	and	a0, a0, ~3		# align address for cache flush
+2:
+	sw	zero, UADDR+U_PCB_ONFAULT
+	li	a1, 8
+	b	MachFlushICache		# flush instruction cache
+END(kdbpoke)
+
+/*
+ * Save registers and state so we can do a 'kdbreset' (like longjmp) later.
+ * Always returns zero.
+ *
+L* int kdb_savearea[11];
+L*
+L* int
+L* kdbsetexit()
+L* {
+L*	kdb_savearea[0] = 0;
+L*	return (0);
+L* }
+ */
+	.comm	kdb_savearea, (11 * 4)
+
+LEAF(kdbsetexit)
+	.set	noreorder
+	la	a0, kdb_savearea
+	sw	s0, 0(a0)
+	sw	s1, 4(a0)
+	sw	s2, 8(a0)
+	sw	s3, 12(a0)
+	sw	s4, 16(a0)
+	sw	s5, 20(a0)
+	sw	s6, 24(a0)
+	sw	s7, 28(a0)
+	sw	sp, 32(a0)
+	sw	s8, 36(a0)
+	sw	ra, 40(a0)
+	j	ra
+	move	v0, zero
+	.set	reorder
+END(kdbsetexit)
+
+/*
+ * Restore registers and state (like longjmp) and return x.
+ *
+L* int
+L* kdbreset(x)
+L* {
+L*	return (x);
+L* }
+ */
+LEAF(kdbreset)
+	.set	noreorder
+	la	v0, kdb_savearea
+	lw	ra, 40(v0)
+	lw	s0, 0(v0)
+	lw	s1, 4(v0)
+	lw	s2, 8(v0)
+	lw	s3, 12(v0)
+	lw	s4, 16(v0)
+	lw	s5, 20(v0)
+	lw	s6, 24(v0)
+	lw	s7, 28(v0)
+	lw	sp, 32(v0)
+	lw	s8, 36(v0)
+	j	ra
+	move	v0, a0
+	.set	reorder
+END(kdbreset)
+
+/*
+ * Trap into the debugger.
+ *
+L* void
+L* kdbpanic()
+L* {
+L* }
+ */
+LEAF(kdbpanic)
+	break	MACH_BREAK_KDB_VAL
+	j	ra
+END(kdbpanic)
+#endif /* KADB */
