@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.63 91/03/02		*/
+/*	@(#)ww.h	3.64 92/06/24		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.63 (Berkeley) %G%
+ *	@(#)ww.h	3.64 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
