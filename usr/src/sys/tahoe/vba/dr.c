@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dr.c	7.3 (Berkeley) %G%
+ *	@(#)dr.c	7.4 (Berkeley) %G%
  */
 
 #include "dr.h"
@@ -287,7 +287,7 @@ drioctl(dev, cmd, data)
 	register int unit = RSUNIT(dev);
 	register struct dr_aux *dra;
 	register struct rsdevice *rsaddr = RSADDR(unit);
-	int s;
+	int s, error = 0;
 	u_short status;
 	long temp;
 
@@ -472,8 +472,9 @@ drioctl(dev, cmd, data)
 		 * NB: MUST HAVE LOOPBACK CABLE ATTACHED --
 		 * Test results are printed on system console
 		 */
-		if (suser())
-			dr11loop(rsaddr, dra, unit);
+		if (error = suser(u.u_cred, &u.u_acflag))
+			break;
+		dr11loop(rsaddr, dra, unit);
 		break;
 
 	default:
@@ -483,7 +484,7 @@ drioctl(dev, cmd, data)
 	if (DR11 & 0x10)
 		printf("**** (data[0]:%lx)",data[0]);
 #endif
-	return (0);
+	return (error);
 }
 
 #define NPAT	2

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_hy.c	7.4 (Berkeley) %G%
+ *	@(#)if_hy.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -1382,10 +1382,8 @@ hyioctl(ifp, cmd, data)
 		break;
 
 	case HYSETROUTE:
-		if (!suser()) {
-			error = EPERM;
+		if (error = suser(u.u_cred, &u.u_acflag))
 			goto out;
-		}
 
 		if (sg->hyrsg_len != sizeof(struct hy_route)) {
 			error = EINVAL;
@@ -1424,10 +1422,8 @@ hyioctl(ifp, cmd, data)
 			goto out;
 		}
 		if (sgl->hylsg_cmd) {
-			if (!suser()) {
-				error = EPERM;
+			if (error = suser(u.u_cred, &u.u_acflag))
 				goto out;
-			}
 			bzero((caddr_t)hy_elog, sizeof(hy_elog));
 		}
 		break;
@@ -1435,10 +1431,8 @@ hyioctl(ifp, cmd, data)
 
 #ifdef HYLOG
 	case HYSETLOG:
-		if (!suser()) {
-			error = EPERM;
+		if (error = suser(u.u_cred, &u.u_acflag))
 			goto out;
-		}
 		hy_log.hyl_enable = HYL_DISABLED;
 		hylog(HYL_NOP, 0, (char *)0);		/* force log init */
 		hy_log.hyl_enable = sgl->hylsg_cmd & 0x0f;
