@@ -1,15 +1,14 @@
 /* 
- * Copyright (c) 1987 Carnegie-Mellon University
  * Copyright (c) 1991 Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * The Mach Operating System project at Carnegie-Mellon University.
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
- * The CMU software License Agreement specifies the terms and conditions
- * for use and redistribution.
+ * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.7 (Berkeley) %G%
+ *	@(#)pmap.c	7.5 (Berkeley) %G%
  */
 
 /*
