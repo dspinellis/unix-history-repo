@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)environ.7	6.3 (Berkeley) %G%
+.\"	@(#)environ.7	6.4 (Berkeley) %G%
 .\"
 .TH ENVIRON 7 ""
 .UC 5
@@ -16,8 +16,7 @@ An array of strings called the
 is made available by
 .IR execve (2)
 when a process begins.  By convention these strings have the form
-.IR name = value .
-The following names are used by various commands:
+``\fIname=value\fP''.  The following names are used by various commands:
 .TP "\w'TERMPATH 'u"
 EXINIT
 A startup list of commands read by
@@ -38,9 +37,8 @@ The sequence of directories, separated by colons, searched by
 .IR sh (1),
 .IR system (3),
 .IR execvp (3),
-.IR etc ,
-when looking for an executable file.
-PATH is set to :/usr/ucb:/bin:/usr/bin initially by
+etc, when looking for an executable file.
+PATH is set to ``:/usr/ucb:/bin:/usr/bin'' initially by
 .IR login (1).
 .TP
 PRINTER
@@ -74,9 +72,8 @@ and
 .TP
 TERMPATH
 A sequence of pathnames of termcap files, separated by colons or spaces,
-which are searched for terminal descriptions in the order listed.
-Having no TERMPATH is equivalent to a TERMPATH of
-$HOME/.termcap:/etc/termcap.
+which are searched for terminal descriptions in the order listed.  Having
+no TERMPATH is equivalent to a TERMPATH of ``$HOME/.termcap:/etc/termcap''.
 TERMPATH is ignored if TERMCAP contains a full pathname.
 .TP
 USER
