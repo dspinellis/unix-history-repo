@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)ftpd.c	5.20 (Berkeley) %G%";
 #include <errno.h>
 #include <strings.h>
 #include <syslog.h>
+#include <varargs.h>
 
 /*
  * File containing login names
@@ -725,35 +726,29 @@ fatal(s)
 	dologout(0);
 }
 
-/* VARARGS2 */
-reply(n, s, p0, p1, p2, p3, p4)
+reply(n, s, argp)
 	int n;
 	char *s;
+	va_list argp;
 {
-
 	printf("%d ", n);
-	printf(s, p0, p1, p2, p3, p4);
+	printf(s, argp);
 	printf("\r\n");
-	(void) fflush(stdout);
+	(void)fflush(stdout);
 	if (debug) {
 		syslog(LOG_DEBUG, "<--- %d ", n);
-		syslog(LOG_DEBUG, s, p0, p1, p2, p3, p4);
+		syslog(LOG_DEBUG, s, argp);
 	}
 }
 
-/* VARARGS2 */
-lreply(n, s, p0, p1, p2, p3, p4)
+lreply(n, s)
 	int n;
 	char *s;
 {
-	printf("%d-", n);
-	printf(s, p0, p1, p2, p3, p4);
-	printf("\r\n");
-	(void) fflush(stdout);
-	if (debug) {
-		syslog(LOG_DEBUG, "<--- %d- ", n);
-		syslog(LOG_DEBUG, s, p0, p1, p2, p3, p4);
-	}
+	printf("%d- %s\r\n", n, s);
+	(void)fflush(stdout);
+	if (debug)
+		syslog(LOG_DEBUG, "<--- %d- %s", n, s);
 }
 
 ack(s)
