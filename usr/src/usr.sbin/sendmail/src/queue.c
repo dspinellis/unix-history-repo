@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.30 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.31 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.30 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.31 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -547,7 +547,7 @@ orderq(doall)
 		    !strcontainedin(QueueLimitId, d->d_name))
 			continue;
 
-		if (strlen(d->d_name) != 9)
+		if (strlen(d->d_name) != 10)
 		{
 			if (Verbose)
 				printf("orderq: bogus qf name %s\n", d->d_name);
@@ -1057,9 +1057,9 @@ printqueue()
 	if (nrequests > QUEUESIZE)
 		printf(", only %d printed", QUEUESIZE);
 	if (Verbose)
-		printf(")\n--QID-- --Size-- -Priority- ---Q-Time--- -----------Sender/Recipient-----------\n");
+		printf(")\n--Q-ID-- --Size-- -Priority- ---Q-Time--- -----------Sender/Recipient-----------\n");
 	else
-		printf(")\n--QID-- --Size-- -----Q-Time----- ------------Sender/Recipient------------\n");
+		printf(")\n--Q-ID-- --Size-- -----Q-Time----- ------------Sender/Recipient------------\n");
 	for (w = WorkQ; w != NULL; w = w->w_next)
 	{
 		struct stat st;
@@ -1113,14 +1113,15 @@ printqueue()
 
 			  case 'C':	/* controlling user */
 				if (Verbose)
-					printf("\n\t\t\t\t     (---%.34s---)", &buf[1]);
+					printf("\n\t\t\t\t      (---%.34s---)",
+						&buf[1]);
 				break;
 
 			  case 'R':	/* recipient name */
 				if (Verbose)
-					printf("\n\t\t\t\t\t %.38s", &buf[1]);
+					printf("\n\t\t\t\t\t  %.38s", &buf[1]);
 				else
-					printf("\n\t\t\t\t  %.45s", &buf[1]);
+					printf("\n\t\t\t\t   %.45s", &buf[1]);
 				break;
 
 			  case 'T':	/* creation time */
@@ -1168,8 +1169,11 @@ queuename(e, type)
 	char type;
 {
 	static int pid = -1;
+	char c0;
 	static char c1 = 'A';
 	static char c2 = 'A';
+	time_t now;
+	struct tm *tm;
 	static char buf[MAXNAME];
 	extern bool lockfile();
 
@@ -1182,10 +1186,13 @@ queuename(e, type)
 		{
 			/* new process -- start back at "AA" */
 			pid = getpid();
+			now = curtime();
+			tm = localtime(&now);
+			c0 = 'A' + tm->tm_hour;
 			c1 = 'A';
 			c2 = 'A' - 1;
 		}
-		(void) sprintf(qf, "qfAA%05d", pid);
+		(void) sprintf(qf, "qf%cAA%05d", c0, pid);
 
 		while (c1 < '~' || c2 < 'Z')
 		{
@@ -1196,8 +1203,8 @@ queuename(e, type)
 				c1++;
 				c2 = 'A' - 1;
 			}
-			qf[2] = c1;
-			qf[3] = ++c2;
+			qf[3] = c1;
+			qf[4] = ++c2;
 			if (tTd(7, 20))
 				printf("queuename: trying \"%s\"\n", qf);
 
