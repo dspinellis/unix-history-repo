@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.11 (Berkeley) %G%
+ *	@(#)hp.c	7.12 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
