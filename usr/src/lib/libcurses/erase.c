@@ -3,7 +3,7 @@
 /*
  *	This routine erases everything on the window.
  *
- * %G% (Berkeley) @(#)erase.c	1.2
+ * @(#)erase.c	1.3 (Berkeley) %G%
  */
 werase(win)
 reg WINDOW	*win; {
@@ -26,13 +26,8 @@ reg WINDOW	*win; {
 					minx = sp - start;
 				*sp = ' ';
 			}
-		if (minx != _NOCHANGE) {
-			if (win->_firstch[y] > minx
-			     || win->_firstch[y] == _NOCHANGE)
-				win->_firstch[y] = minx;
-			if (win->_lastch[y] < maxx - win->_y[y])
-				win->_lastch[y] = maxx - win->_y[y];
-		}
+		if (minx != _NOCHANGE)
+			touchline(win, y, minx, maxx - win->_y[y]);
 	}
 	win->_curx = win->_cury = 0;
 }
