@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)networkdelta.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)networkdelta.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sgi
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)networkdelta.c	8.2 (Berkeley) %G%";
 
 #include "globals.h"
 
-static long median __P((float, float *, long *, long *, unsigned int));
+static long median __P((double, float *, long *, long *, unsigned int));
 
 /*
  * Compute a corrected date.
@@ -134,13 +134,14 @@ networkdelta()
  *	in <<Numerical Recipes>>.
  */
 static long
-median(a, eps_ptr, x, xlim, gnuf)
-	float a;			/* initial guess for the median */
+median(a0, eps_ptr, x, xlim, gnuf)
+	double a0;			/* initial guess for the median */
 	float *eps_ptr;			/* spacing near the median */
 	long *x, *xlim;			/* the data */
 	unsigned int gnuf;		/* good enough estimate */
 {
 	long *xptr;
+	float a = a0;
 	float ap = LONG_MAX;		/* bounds on the median */
 	float am = -LONG_MAX;
 	float aa;
