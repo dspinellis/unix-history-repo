@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.30 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -405,7 +405,8 @@ lfs_writeinode(fs, sp, ip)
 		daddr = fs->lfs_offset;
 		fs->lfs_offset += fsbtodb(fs, 1);
 		sp->ibp = *sp->cbpp++ =
-		    lfs_newbuf(fs->lfs_ivnode, daddr, fs->lfs_bsize);
+		    lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, daddr,
+		    fs->lfs_bsize);
 		++sp->start_bpp;
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		/* Set remaining space counters. */
@@ -417,9 +418,10 @@ lfs_writeinode(fs, sp, ip)
 	}
 
 	/* Update the inode times and copy the inode onto the inode page. */
+	if (ip->i_flag & IMOD)
+		--fs->lfs_uinodes;
 	ITIMES(ip, &time, &time);
 	ip->i_flag &= ~(IMOD | IACC | IUPD | ICHG);
-	--fs->lfs_uinodes;
 	bp = sp->ibp;
 	bp->b_un.b_dino[sp->ninodes % INOPB(fs)] = ip->i_din;
 	/* Increment inode count in segment summary block. */
@@ -509,6 +511,10 @@ lfs_gatherblock(sp, bp, sptr)
 	}
 
 	/* Insert into the buffer list, update the FINFO block. */
+if (bp->b_vp == sp->fs->lfs_ivnode &&
+((bp->b_lblkno == 0 && (bp->b_un.b_daddr[0] > 26 || bp->b_un.b_daddr[1] > 26)) ||
+(bp->b_lblkno > 2)))
+	printf ("Bad ifile block\n");
 	bp->b_flags |= B_GATHERED;
 	*sp->cbpp++ = bp;
 	sp->fip->fi_blocks[sp->fip->fi_nblocks++] = bp->b_lblkno;
@@ -678,8 +684,8 @@ lfs_initseg(fs, sp)
 
 	/* Get a new buffer for SEGSUM and enter it into the buffer list. */
 	sp->cbpp = sp->bpp;
-	*sp->cbpp =
-	    lfs_newbuf(fs->lfs_ivnode, fs->lfs_offset, LFS_SUMMARY_SIZE);
+	*sp->cbpp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, fs->lfs_offset,
+	     LFS_SUMMARY_SIZE);
 	sp->segsum = (*sp->cbpp)->b_un.b_addr;
 	sp->start_bpp = ++sp->cbpp;
 	fs->lfs_offset += LFS_SUMMARY_SIZE / DEV_BSIZE;
@@ -712,6 +718,9 @@ lfs_newseg(fs)
 
         LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
         sup->su_flags |= SEGUSE_DIRTY;
+	sup->su_nbytes = 0;
+	sup->su_nsums = 0;
+	sup->su_ninos = 0;
         (void) VOP_BWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
@@ -821,7 +830,8 @@ lfs_writeseg(fs, sp)
 		i -= num;
 		size = num * fs->lfs_bsize;
 
-		cbp = lfs_newbuf(fs->lfs_ivnode, (*bpp)->b_blkno, size);
+		cbp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp,
+		    (*bpp)->b_blkno, size);
 		cbp->b_dev = i_dev;
 		cbp->b_flags |= B_ASYNC | B_BUSY;
 
@@ -857,6 +867,16 @@ lfs_writeseg(fs, sp)
 		}
 		splx(s);
 		cbp->b_bcount = p - cbp->b_un.b_addr;
+		/*
+		 * XXXX This is a gross and disgusting hack.  Since these
+		 * buffers are physically addressed, they hang off the
+		 * device vnode (devvp).  As a result, they have no way
+		 * of getting to the LFS superblock or lfs structure to
+		 * keep track of the number of I/O's pending.  So, I am
+		 * going to stuff the fs into the saveaddr field of
+		 * the buffer (yuk).
+		 */
+		cbp->b_saveaddr = (caddr_t)fs;
 		vop_strategy_a.a_desc = VDESC(vop_strategy);
 		vop_strategy_a.a_bp = cbp;
 		(strategy)(&vop_strategy_a);
@@ -879,7 +899,8 @@ lfs_writesuper(fs, sp)
 
 	/* Checksum the superblock and copy it into a buffer. */
 	fs->lfs_cksum = cksum(fs, sizeof(struct lfs) - sizeof(fs->lfs_cksum));
-	bp = lfs_newbuf(fs->lfs_ivnode, fs->lfs_sboffs[0], LFS_SBPAD);
+	bp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, fs->lfs_sboffs[0],
+	    LFS_SBPAD);
 	*bp->b_un.b_lfs = *fs;
 
 	/* Write the first superblock (wait). */
@@ -978,7 +999,7 @@ lfs_callback(bp)
 {
 	struct lfs *fs;
 
-	fs = VFSTOUFS(bp->b_vp->v_mount)->um_lfs;
+	fs = (struct lfs *)bp->b_saveaddr;
 #ifdef DIAGNOSTIC
 	if (fs->lfs_iocount == 0)
 		panic("lfs_callback: zero iocount\n");
