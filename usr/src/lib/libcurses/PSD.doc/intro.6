@@ -1,0 +1,27 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)intro.6	1.1 (Berkeley) %G%
+.\"
+.sh 1 "The Functions"
+.pp
+In the following definitions,
+.q \*m
+means that the
+.q function
+is really a
+.q #define
+macro with arguments.
+This means that it will not show up in stack traces in the debugger,
+or, in the case of such functions as
+.Fn addch ,
+it will show up as it's
+.Bq w
+counterpart.
+The arguments are given to show the order and type of each.
+Their names are not mandatory,
+just suggestive.
+.ta 11m 17m 25m 33m 41m 49m 57m 65m 73m
+.so fns.doc
