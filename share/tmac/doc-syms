@@ -130,6 +130,8 @@
 .	if "\\$1"v7"  \&Version 7 \\*(tNAT&T UNIX\\*(aa\\$2
 .	if "\\$1"V"  \&\\*(tNAT&T\\*(aa System V \\*(tNUNIX\\*(aa\\$2
 .	if "\\$1"V.1"  \&\\*(tNAT&T\\*(aa System V.1 \\*(tNUNIX\\*(aa\\$2
+.	if "\\$1"V.2"  \&\\*(tNAT&T\\*(aa System V.2 \\*(tNUNIX\\*(aa\\$2
+.	if "\\$1"V.3"  \&\\*(tNAT&T\\*(aa System V.3 \\*(tNUNIX\\*(aa\\$2
 .	if "\\$1"V.4"  \&\\*(tNAT&T\\*(aa System V.4 \\*(tNUNIX\\*(aa\\$2
 .\}
 .if \\n(.$==1 \{\
@@ -138,6 +140,8 @@
 .	if "\\$1"v7"  \&Version 7 \\*(tNAT&T UNIX\\*(aa
 .	if "\\$1"V"  \&\\*(tNAT&T\\*(aa System V \\*(tNUNIX\\*(aa
 .	if "\\$1"V.1"  \&\\*(tNAT&T\\*(aa System V.1 \\*(tNUNIX\\*(aa
+.	if "\\$1"V.2"  \&\\*(tNAT&T\\*(aa System V.2 \\*(tNUNIX\\*(aa
+.	if "\\$1"V.3"  \&\\*(tNAT&T\\*(aa System V.3 \\*(tNUNIX\\*(aa
 .	if "\\$1"V.4"  \&\\*(tNAT&T\\*(aa System V.4 \\*(tNUNIX\\*(aa
 .\}
 ..
