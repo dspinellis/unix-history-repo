@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.111		%G%);
+SCCSID(@(#)main.c	3.112		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -307,12 +307,7 @@ main(argc, argv)
 			if (p[2] == '\0')
 				QueueDir = "mqueue";
 			else
-			{
-				if (strlen(&p[2]) > 50)
-					syserr("Absurd length Queue path");
-				else
-					QueueDir = &p[2];
-			}
+				QueueDir = &p[2];
 			break;
 
 		  case 'T':	/* set timeout interval */
@@ -446,6 +441,13 @@ main(argc, argv)
 		syserr("No prog mailer defined");
 	else
 		ProgMailer = st->s_mailer;
+
+	/* operate in queue directory */
+	if (chdir(QueueDir) < 0)
+	{
+		syserr("cannot chdir(%s)", QueueDir);
+		exit(EX_SOFTWARE);
+	}
 
 	/*
 	**  Initialize aliases.
@@ -771,18 +773,6 @@ setfrom(from, realname)
 	{
 		DefUid = CurEnv->e_from.q_uid;
 		DefGid = CurEnv->e_from.q_gid;
-	}
-
-	/*
-	**  Set up the $r and $s macros to show who it came from.
-	*/
-
-	if (macvalue('s') == NULL && CurEnv->e_from.q_host != NULL &&
-	    CurEnv->e_from.q_host[0] != '\0')
-	{
-		define('s', CurEnv->e_from.q_host);
-
-		/* should determine network type here */
 	}
 
 	/*
@@ -1230,32 +1220,47 @@ queuename(e, type)
 
 	if (e->e_id == NULL)
 	{
-		char counter = 'a' - 1;
-		char qf[MAXNAME];
-		char lf[MAXNAME];
-		int fx;
+		char counter = 'A' - 1;
+		char qf[20];
+		char lf[20];
 
 		/* find a unique id */
-		fx = strlen(QueueDir) + 3;
-		(void) sprintf(qf, "%s/qf_%05d", QueueDir, getpid());
+		(void) sprintf(qf, "qf_%05d", getpid());
 		strcpy(lf, qf);
-		lf[fx - 2] = 'l';
+		lf[0] = 'l';
 
-		for (;;)
+		while (counter < '~')
 		{
-			qf[fx] = lf[fx] = ++counter;
+			int fd;
+
+			qf[2] = lf[2] = ++counter;
+# ifdef DEBUG
+			if (tTd(7, 20))
+				printf("queuename: trying \"%s\"\n", lf);
+# endif DEBUG
 			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
 				continue;
 			errno = 0;
-			if (close(creat(lf, 0600)) < 0)
+			fd = creat(lf, 0600);
+			if (fd < 0)
+			{
+				(void) unlink(lf);	/* kernel bug on ENFILE */
 				continue;
+			}
+			(void) close(fd);
 			if (link(lf, qf) < 0)
 				(void) unlink(lf);
 			else
 				break;
 		}
+		if (counter >= '~')
+		{
+			syserr("queuename: Cannot create \"%s\" in \"%s\"",
+				lf, QueueDir);
+			exit(EX_OSERR);
+		}
 		e->e_qf = newstr(qf);
-		e->e_id = &e->e_qf[fx];
+		e->e_id = &e->e_qf[2];
 		define('i', e->e_id);
 # ifdef DEBUG
 		if (tTd(7, 1))
@@ -1265,7 +1270,7 @@ queuename(e, type)
 
 	if (type == '\0')
 		return (NULL);
-	(void) sprintf(buf, "%s/%cf%s", QueueDir, type, e->e_id);
+	(void) sprintf(buf, "%cf%s", type, e->e_id);
 # ifdef DEBUG
 	if (tTd(7, 2))
 		printf("queuename: %s\n", buf);
