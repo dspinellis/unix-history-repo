@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	7.1 (Berkeley) %G%
+ *	@(#)dmx.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,6 @@
 
 #include "machine/pte.h"
 
-#include "bk.h"
 #include "uba.h"
 #include "param.h"
 #include "conf.h"
