@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)reboot.2	4.1 (Berkeley) %G%
+.\"	@(#)reboot.2	5.1 (Berkeley) %G%
 .\"
-.TH REBOOT 2V 4/1/81
+.TH REBOOT 2 "18 July 1983"
 .UC 4
 .SH NAME
 reboot \- reboot system or halt processor
@@ -17,7 +17,7 @@ reboot \- reboot system or halt processor
 .fi
 .SH DESCRIPTION
 .I Reboot
-is used to cause a system reboot, and is invoked automatically
+reboots the system, and is invoked automatically
 in the event of unrecoverable system failures.
 .I Howto
 is a mask of options passed to the bootstrap program.
@@ -27,11 +27,7 @@ are used in scripts stored on the console storage media, or used
 in manual bootstrap procedures.
 When none of these options (e.g. RB_AUTOBOOT) is given, the system is rebooted
 from file \*(lqvmunix\*(rq in the root file system of unit 0
-of a disk chosen in a processor specific way:
-on the 11/780 it is specified by a line in the DEFBOO.CMD script on
-the console floppy; on the 11/750 it is determined by the setting
-of the front panel switch which picks the bootstrap device.
-.\"On the 11/730 it is determined by a file on the console casette.
+of a disk chosen in a processor specific way.
 An automatic consistency check of the disks is then normally performed.
 .PP
 The bits of
@@ -40,55 +36,36 @@ are:
 .TP
 RB_HALT
 the processor is simply halted; no reboot takes place.
-This should be used with caution.
+RB_HALT should be used with caution.
 .TP
 RB_ASKNAME
 Interpreted by the bootstrap program itself, causing it to
 inquire as to what file should be booted.  Normally, the system is
-booted from the file \*(lqxx(0,0)vmunix\*(rq without asking, where
-.I xx
-is determined by a code in register
-.I r10
-(which is known as
-.I devtype)
-at entry to the bootstrap program.  The code corresponds to the
-major device number of the root file system, i.e. \*(lqmajor(rootdev)\*(rq.
-Currently, the following values of
-.I devtype
-are understood:
-.RS
-.br
-.ns
-.IP
-.nf
-0	hp	rm03/rm05/rm80/rp06 massbus disk
-1	--	unused
-2	up	unibus disks (emulex sc21 w/ cdc/ampex/fujitsu drives)
-3	rk	rk07 unibus disks
-.fi
-.RE
-.IP
-Thus if
-.I r10
-contained a 2, the system
-.RS
-.IP
-.B up(0,0)vmunix.
-.RE
-.IP
-would be booted.
-This switch not available from the system call interface.
+booted from the file \*(lqxx(0,0)vmunix\*(rq without asking.
 .TP
 RB_SINGLE
 Normally, the reboot procedure involves an automatic disk consistency
-check and then multi-user operations.  This prevents the consistency
+check and then multi-user operations.  RB_SINGLE prevents the consistency
 check, rather simply booting the system with a single-user shell on
-the console, from the file system specified by
-.I r10.
-This switch is interpreted by the
+the console.
+RB_SINGLE is interpreted by the
 .IR init (8)
 program in the newly booted system.
 This switch is not available from the system call interface.
+.PP
+Only the super-user may
+.I reboot
+a machine.
+.SH "RETURN VALUES"
+If successful, this call never returns.  Otherwise, a \-1
+is returned and an error is returned in the global variable
+.IR errno .
+.SH ERRORS
+.TP 15
+[EPERM]
+The caller is not the super-user.
 .SH "SEE ALSO"
 crash(8), halt(8), init(8), reboot(8)
 .SH BUGS
+The notion of ``console medium'', among other things,
+is specific to the VAX.
