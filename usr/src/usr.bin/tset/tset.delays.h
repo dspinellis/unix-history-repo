@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tset.delays.h	1.3 (Berkeley) %G%
+ */
+
+/*
 **  SYSTEM DEPENDENT TERMINAL DELAY TABLES
 **
 **	Evans Hall VAX
