@@ -1,4 +1,4 @@
-/*	locore.s	4.68	82/09/04	*/
+/*	locore.s	4.69	82/09/18	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -168,13 +168,23 @@ SCBVEC(hardclock):
 	mtpr $ICCS_RUN|ICCS_IE|ICCS_INT|ICCS_ERR,$ICCS
 	pushl 4+6*4(sp); pushl 4+6*4(sp);
 	calls $2,_hardclock			# hardclock(pc,psl)
+#if NPS > 0
+	pushl	4+6*4(sp); pushl 4+6*4(sp);
+	calls	$2,_psextsync
+#endif
 	POPR;
 	incl	_cnt+V_INTR		## temp so not to break vmstat -= HZ
 	rei
 SCBVEC(softclock):
 	PUSHR
-	pushl 4+6*4(sp); pushl 4+6*4(sp);
-	calls $2,_softclock			# softclock(pc,psl)
+#if NDZ > 0
+	calls	$0,_dztimer
+#endif
+#if NDH > 0
+	calls	$0,_dhtimer
+#endif
+	pushl	4+6*4(sp); pushl 4+6*4(sp);
+	calls	$2,_softclock			# softclock(pc,psl)
 	POPR; 
 	rei
 	.globl	_netisr
