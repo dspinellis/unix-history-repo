@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.26 (Berkeley) %G%
+ *	@(#)sys_process.c	7.27 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -55,12 +55,40 @@ ptrace(curp, uap, retval)
 	int *retval;
 {
 	register struct proc *p;
+	int error;
 
+	p = pfind(uap->pid);
+	if (uap->req == PT_ATTACH) {
+		/*
+		 * Must be root if the process has used set user or
+		 * group privileges or does not belong to the real
+		 * user. Must not be already traced.
+		 */
+		if ((p->p_flag & SUGID ||
+		    p->p_cred->p_ruid != curp->p_cred->p_ruid) &&
+		    (error = suser(p->p_ucred, &p->p_acflag)) != 0)
+			return (error);
+		if (p->p_flag & STRC)
+			return (EALREADY);	/* ??? */
+		/*
+		 * It would be nice if the tracing relationship was separate
+		 * from the parent relationship but that would require
+		 * another set of links in the proc struct or for "wait"
+		 * to scan the entire proc table.  To make life easier,
+		 * we just re-parent the process we're trying to trace.
+		 * The old parent is remembered so we can put things back
+		 * on a "detach".
+		 */
+		p->p_flag |= STRC;
+		p->p_oppid = p->p_pptr->p_pid;
+		proc_reparent(p, curp);
+		psignal(p, SIGSTOP);
+		return (0);
+	}
 	if (uap->req <= 0) {
 		curp->p_flag |= STRC;
 		return (0);
 	}
-	p = pfind(uap->pid);
 	if (p == 0 || p->p_stat != SSTOP || p->p_pptr != curp ||
 	    !(p->p_flag & STRC))
 		return (ESRCH);
@@ -208,10 +236,10 @@ procxmt(p)
 
 	case PT_STEP:			/* single step the child */
 	case PT_CONTINUE:		/* continue the child */
+		if ((unsigned)ipc.ip_data >= NSIG)
+			goto error;
 		if ((int)ipc.ip_addr != 1)
 			p->p_md.md_regs[PC] = (int)ipc.ip_addr;
-		if ((unsigned)ipc.ip_data > NSIG)
-			goto error;
 		p->p_xstat = ipc.ip_data;	/* see issig */
 #ifdef PSL_T
 		/* need something more machine independent here... */
@@ -224,6 +252,23 @@ procxmt(p)
 	case PT_KILL:			/* kill the child process */
 		wakeup((caddr_t)&ipc);
 		exit(p, (int)p->p_xstat);
+
+	case PT_DETACH:			/* stop tracing the child */
+		if ((unsigned)ipc.ip_data >= NSIG)
+			goto error;
+		if ((int)ipc.ip_addr != 1)
+			p->p_md.md_regs[PC] = (int)ipc.ip_addr;
+		p->p_xstat = ipc.ip_data;	/* see issig */
+		p->p_flag &= ~STRC;
+		if (p->p_oppid != p->p_pptr->p_pid) {
+                        register struct proc *pp = pfind(p->p_oppid);
+
+                        if (pp)
+                                proc_reparent(p, pp);
+		}
+		p->p_oppid = 0;
+		wakeup((caddr_t)&ipc);
+		return (1);
 
 	default:
 	error:
