@@ -1,0 +1,47 @@
+.KF
+.TS
+center;
+l l
+| lw(22n) | aw(20n).
+_	
+T{
+.ce 1000
+.sp
+Saved lino
+.sp
+Saved lc
+.sp
+Saved dp
+.sp
+.ce 0
+T}	T{
+.if n .sp 2
+Created by \s-2CALL\s0
+T}
+_	
+T{
+.ce 1000
+.sp
+Saved dp contents
+.sp
+Pointer to current
+section name and
+entry line
+.sp
+Current file name
+and buffer
+.sp
+Top of stack reference
+.sp
+.ce 0
+T}	T{
+.if n .sp 2
+Created by \s-2BEG\s0
+T}
+_	
+.TE
+.sp
+.ce
+Figure 1.2 \- Block mark structure
+.sp
+.KE
