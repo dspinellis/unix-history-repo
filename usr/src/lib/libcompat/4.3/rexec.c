@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)rexec.c 4.1 %G%";
+static char sccsid[] = "@(#)rexec.c 4.2 %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)rexec.c 4.1 %G%";
 #include <wellknown.h>
 
 char	*index(), *malloc(), *getpass(), *getlogin();
-struct	sockaddr_in sin = { AF_INET };
+static	struct sockaddr_in sin = { AF_INET };
 
 rexec(ahost, port, cmd, name, pass)
 	char **ahost, *cmd, *name, *pass;
