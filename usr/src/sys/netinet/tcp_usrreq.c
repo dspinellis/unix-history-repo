@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.24 81/11/04 */
+/* tcp_usrreq.c 1.25 81/11/04 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,9 +42,11 @@ COUNT(TCP_TIMEO);
 	 */
 	for (tp = tcb.tcb_next; tp != (struct tcb *)&tcb; tp = tp->tcb_next) {
 		tmp = &tp->t_init;
-		for (i = 0; i < TNTIMERS; i++)
+		for (i = 0; i < TNTIMERS; i++) {
 			if (*tmp && --*tmp == 0)
 				tcp_usrreq(ISTIMER, i, tp, 0);
+			tmp++;
+		}
 		tp->t_xmt++;
 	}
 	tcp_iss += ISSINCR;		/* increment iss */
