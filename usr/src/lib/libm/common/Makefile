@@ -3,12 +3,12 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.2	(ucb.elefunt)	%G%
+#	@(#)Makefile	1.3	(ucb.elefunt)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	atan2.c cabs.c trig.c
-OBJS=	atan2.o cabs.o trig.o
+SRCS=	atan2.c cabs.c sincos.c tan.c
+OBJS=	atan2.o cabs.o sincos.o tan.o
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
@@ -37,6 +37,7 @@ FRC:
 
 atan2.o: atan2.c
 cabs.o: cabs.c
-trig.o: trig.c
+sincos.o: sincos.c trig.h
+tan.o: tan.c trig.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
