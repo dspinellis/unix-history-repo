@@ -1,9 +1,9 @@
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 
 PROG=	XNSrouted
 MAN8=	XNSrouted.0
 SRCS=	af.c if.c input.c main.c output.c startup.c tables.c timer.c trace.c
-DPADD=	${LIBUTIL}
-LDADD=	-lutil
+DPADD=	${LIBUTIL} ${LIBCOMPAT}
+LDADD=	-lutil -lcompat
 
 .include <bsd.prog.mk>
