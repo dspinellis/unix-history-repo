@@ -1,4 +1,4 @@
-/*	init_main.c	4.25	82/02/15	*/
+/*	init_main.c	4.26	82/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -83,6 +83,7 @@ main(firstaddr)
 	 * Initialize tables, protocols, and set up well-known inodes.
 	 */
 	mbinit();
+	cinit();			/* needed by dmc-11 driver */
 #ifdef INET
 	pfinit();
 #if NLOOP > 0
@@ -92,7 +93,6 @@ main(firstaddr)
 #endif
 	ihinit();
 	bhinit();
-	cinit();
 	binit();
 	bswinit();
 	iinit();
