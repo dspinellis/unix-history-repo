@@ -1,0 +1,52 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getmntinfo.3	6.1 (Berkeley) %G%
+.\"
+.TH GETMNTINFO 3 ""
+.UC 7
+.SH NAME
+getmntinfo - get information about mounted file systems
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mount.h>
+.LP
+.ft B
+int getmntinfo(mntbufp)
+struct statfs **mntbufp;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Getmntinfo
+returns an array of
+.I statfs
+structures describing each currently mounted file system (see
+.IR statfs (2)).
+.SH DIAGNOSTICS
+On successful completion,
+.I getmntinfo
+returns a count of the number of elements in the array.
+The pointer to the array is stored into
+.IR mntbufp .
+Otherwise, zero is returned and
+.I mntbufp
+is unmodified.
+.SH BUGS
+All information is contained in a static area,
+so it must be copied if it is to be saved.
+.SH SEE ALSO
+getfsstat(2), statfs(2), mount(2), mount(8)
