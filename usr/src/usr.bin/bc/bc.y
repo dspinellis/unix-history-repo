@@ -1,5 +1,5 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.4 (Berkeley) 87/12/12";
+static	char *sccsid = "@(#)bc.y	4.5 (Berkeley) 88/04/24";
 	int *getout();
 %}
 %right '='
@@ -18,7 +18,7 @@ static	char *sccsid = "@(#)bc.y	4.4 (Berkeley) 87/12/12";
 %{
 #include <stdio.h>
 #include <varargs.h>
-int in;
+FILE *in;
 char cary[1000], *cp = { cary };
 char string[1000], *str = {string};
 int crs = '0';
