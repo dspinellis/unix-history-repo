@@ -163,7 +163,7 @@ char *	ecvt(v, n, d, s) double v; int *d, *s; { return(""); }
 	encrypt(s, i) char *s; {}
 int	endfsent() { return 0; }
 int	endgrent() { return 0; }
-int	endpwent() { return 0; }
+void	endpwent() {}
 char **	environ;
 	/* VARARGS */
 	execl(f, a) char *f, *a; {;}
@@ -224,7 +224,7 @@ int	setgid(g) { return(0); }
 int	setjmp(e) jmp_buf e; { return(0); }
 	setkey(k) char *k; {}
 int	setlogmask(m) { return(0); }
-int	setpwent() { return 0; }
+void	setpwent() {}
 long *	setstate( st ) long *st; { return st; }
 int	setuid(u) { return(0); }
 	sleep(i) unsigned i; {}
@@ -245,7 +245,7 @@ int	sys_nerr;
 int	system(s) char *s; { return(0); }
 long	tell(f) { return((long)0); }
 long	telldir( p ) DIR *p; { return 1L; }
-time_t	time(t) time_t *t; { return( 0 );}
+long	time(t) long *t; { return( 0L );}
 char *	timezone( z, d ){ return timezone(z, d); }
 char *	ttyname(f) { return " "; }
 int	ttyslot() { return 1; }
@@ -269,7 +269,7 @@ int	fread( p, s, n, f ) char *p; FILE *f; {return(1);}
 FILE *	freopen(s, m, f) char *s, *m; FILE *f; { return(stdin); }
 	/* VARARGS2 */
 	fscanf( f, s ) FILE *f; char *s; {return(1);}
-	fseek(f, o, p) FILE *f; long o; { return(0); }
+long	fseek(f, o, p) FILE *f; long o; { return(0L); }
 long	ftell(f) FILE *f; { return(0L); }
 int	fwrite( p, s, n, f ) char *p; FILE *f; {return(0);}
 int	getw(f) FILE *f; { return 0;}
