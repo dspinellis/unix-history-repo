@@ -3,7 +3,7 @@ e y.tab.h
 1,$s/^/"/
 1,$s/ /", /
 1,$s/$/,/
-w temp
+w! temp
 e token.c
 /= *{$/+1,/^};$/-1d
 -r temp

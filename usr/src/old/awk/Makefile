@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/07/08
+#	Makefile	4.3	86/05/15
 #
 CFLAGS=-O
 YFLAGS=-d
@@ -18,7 +18,7 @@ awk.h:	y.tab.h
 $(FILES):	awk.h awk.def
 
 token.c:	awk.h
-	e - <tokenscript
+	ex - <tokenscript
 
 get:
 	for i in $(SOURCE) Makefile tokenscript README; do \
