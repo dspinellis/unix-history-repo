@@ -1,4 +1,4 @@
-/*	uba.c	4.34	81/07/08	*/
+/*	uba.c	4.35	81/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -397,6 +397,8 @@ ubawatch()
 	}
 }
 
+int	ubawedgecnt = 10;
+int	ubacrazy = 500;
 /*
  * This routine is called by the locore code to
  * process a UBA error on an 11/780.  The arguments are passed
@@ -438,6 +440,14 @@ ubaerror(uban, uh, xx, uvec, uba)
 	splx(s);
 	uba->uba_sr = sr;
 	uvec &= UBABRRVR_DIV;
+	if (++uh->uh_errcnt % ubawedgecnt == 0) {
+		if (uh->uh_errcnt > ubacrazy)
+			panic("uba crazy");
+		printf("ERROR LIMIT ");
+		ubareset(uban);
+		uvec = 0;
+		return;
+	}
 	return;
 }
 #endif
