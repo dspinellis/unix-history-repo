@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.13 %G%";
+char version[] = "@(#)main.c 2.14 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -439,6 +439,19 @@ again:
 				close(ofile);
 				break;
 			case IFLNK:
+				/*
+				 * Some early dump tapes have symbolic links
+				 * present without the associated data blocks.
+				 * This hack avoids trashing a file system with
+				 * inodes with missing data blocks.
+				 */
+				if (spcl.c_count == 0) {
+					if (vflag)
+						printf("%s: 0 length symbolic link (ignored)\n", name);
+					xp->x_flags |= XTRACTD;
+					xtrcnt--;
+					goto skipfile;
+				}
 				if (vflag)
 					fprintf(stdout, "extract symbolic link %s\n", name);
 				uid = spcl.c_dinode.di_uid;
