@@ -1,4 +1,4 @@
-/*	signal.h	6.2	84/08/30	*/
+/*	signal.h	6.3	84/12/31	*/
 
 #ifndef	NSIG
 #define NSIG	32
@@ -44,6 +44,7 @@
 #define	SIGXFSZ	25	/* exceeded file size limit */
 #define	SIGVTALRM 26	/* virtual time alarm */
 #define	SIGPROF	27	/* profiling time alarm */
+#define SIGWINCH 28	/* window size changes */
 
 #ifndef KERNEL
 int	(*signal())();
