@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -69,8 +69,11 @@ pass5()
 			fs->fs_postblformat);
 	}
 	bzero((char *)&idesc[0], sizeof idesc);
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++) {
 		idesc[i].id_type = ADDR;
+		if (doinglevel2)
+			idesc[i].id_fix = FIX;
+	}
 	bzero((char *)&cstotal, sizeof(struct csum));
 	(void)time(&now);
 	j = blknum(fs, fs->fs_size + fs->fs_frag - 1);
@@ -177,7 +180,7 @@ pass5()
 			bcopy((char *)&newcg->cg_cs, (char *)cs, sizeof *cs);
 			sbdirty();
 		}
-		if (cvtflag) {
+		if (doinglevel1) {
 			bcopy((char *)newcg, (char *)cg, (size_t)fs->fs_cgsize);
 			cgdirty();
 			continue;
