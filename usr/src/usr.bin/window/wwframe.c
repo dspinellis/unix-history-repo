@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.9 83/09/14";
+static	char *sccsid = "@(#)wwframe.c	3.10 83/09/15";
 #endif
 
 #include "ww.h"
@@ -158,35 +158,29 @@ struct ww *wframe;
 	}
 }
 
-wwframec(f, rr, cc, code)
+wwframec(f, r, c, code)
 register struct ww *f;
-register rr, cc;
+register r, c;
 char code;
 {
-	register r, c;
 	char oldcode;
 
-	if (rr < f->ww_i.t || rr >= f->ww_i.b
-	    || cc < f->ww_i.l || cc >= f->ww_i.r)
+	if (r < f->ww_i.t || r >= f->ww_i.b || c < f->ww_i.l || c >= f->ww_i.r)
 		return;
 	{
 		register struct ww *w;
 
-		w = wwindex[wwsmap[rr][cc]];
+		w = wwindex[wwsmap[r][c]];
 		if (w->ww_order > f->ww_order) {
 			if (w != &wwnobody) {
-				r = rr - w->ww_w.t;
-				c = cc - w->ww_w.l;
 				if ((w->ww_win[r][c] |= WWM_COV) == WWM_COV)
 					w->ww_nvis[r]--;
 				w->ww_cov[r][c] = f->ww_index;
 			}
-			wwsmap[rr][cc] = f->ww_index;
+			wwsmap[r][c] = f->ww_index;
 		}
 	}
 
-	r = rr - f->ww_w.t;
-	c = cc - f->ww_w.l;
 	if (f->ww_fmap != 0) {
 		register char *fmap;
 
@@ -199,22 +193,20 @@ char code;
 	} else
 		oldcode = 0;
 	{
-		{
-			register char *win = &f->ww_win[r][c];
+		register char *win = &f->ww_win[r][c];
 
-			if (*win == WWM_GLS)
-				f->ww_nvis[r]++;
-			*win &= ~WWM_GLS;
-		}
-		if (oldcode != code && (code & WWF_LABEL) == 0) {
-			register short frame;
+		if (*win == WWM_GLS)
+			f->ww_nvis[r]++;
+		*win &= ~WWM_GLS;
+	}
+	if (oldcode != code && (code & WWF_LABEL) == 0) {
+		register short frame;
 
-			frame = tt.tt_frame[code & WWF_MASK] & WWC_CMASK;
-			f->ww_buf[f->ww_scroll + r][c].c_w = frame;
-			if (wwsmap[rr][cc] == f->ww_index) {
-				wwtouched[rr] = 1;
-				wwns[rr][cc].c_w = frame;
-			}
+		frame = tt.tt_frame[code & WWF_MASK] & WWC_CMASK;
+		f->ww_buf[r][c].c_w = frame;
+		if (wwsmap[r][c] == f->ww_index) {
+			wwtouched[r] = 1;
+			wwns[r][c].c_w = frame;
 		}
 	}
 }

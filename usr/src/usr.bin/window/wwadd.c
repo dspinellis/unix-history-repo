@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwadd.c	3.4 83/09/14";
+static	char *sccsid = "@(#)wwadd.c	3.5 83/09/15";
 #endif
 
 #include "ww.h"
@@ -35,16 +35,13 @@ register struct ww *w1, *w2;
 		char *touched = &wwtouched[i];
 
 		for (; i < w1->ww_i.b; i++, touched++) {
-			int j = w1->ww_i.nc;
-			register char *win = &w1->ww_win[i - w1->ww_w.t]
-					[w1->ww_i.l - w1->ww_w.l];
-			register char *smap = &wwsmap[i][w1->ww_i.l];
-			register union ww_char *ns = &wwns[i][w1->ww_i.l];
-			register union ww_char *buf
-				= &w1->ww_buf[w1->ww_scroll + i - w1->ww_w.t]
-					[w1->ww_i.l - w1->ww_w.l];
+			int j = w1->ww_i.l;
+			register char *win = &w1->ww_win[i][j];
+			register char *smap = &wwsmap[i][j];
+			register union ww_char *ns = &wwns[i][j];
+			register union ww_char *buf = &w1->ww_buf[i][j];
 
-			while (--j >= 0) {
+			for (; j < w1->ww_i.r; j++) {
 				if ((*win & (WWM_GLS|WWM_COV)) == 0) {
 					*touched = 1;
 					*smap++ = w1->ww_index;

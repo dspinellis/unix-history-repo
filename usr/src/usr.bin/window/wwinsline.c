@@ -1,40 +1,41 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinsline.c	3.4 83/09/14";
+static	char *sccsid = "@(#)wwinsline.c	3.5 83/09/15";
 #endif
 
 #include "ww.h"
 
-wwinsline(w, line)
+wwinsline(w, row)
 register struct ww *w;
-int line;
+int row;
 {
 	register i;
 	register union ww_char **cpp, **cqq;
 	register union ww_char *cp;
-	int row11, row2;
+	int row1, row2;
 	char deleted;
 	int visible;
 
 	/*
 	 * Scroll first.
 	 */
-	if ((row11 = line - w->ww_scroll) < w->ww_i.t - w->ww_w.t) {
-		row11 = 0;
+	if ((row1 = row) < w->ww_i.t) {
+		row1 = w->ww_i.t;
 		visible = 0;
 	} else
 		visible = 1;
-	if ((row2 = w->ww_nline - w->ww_scroll) > w->ww_i.b - w->ww_w.t)
-		row2 = w->ww_i.b - w->ww_w.t;
-	deleted = wwscroll1(w, row11, row2, -1, visible);
+	if ((row2 = w->ww_b.b) > w->ww_i.b) {
+		row2 = w->ww_i.b;
+	}
+	deleted = wwscroll1(w, row1, row2, -1, visible);
 
 	/*
 	 * Fix the buffer.
 	 * But leave clearing the last line for wwclreol().
 	 */
-	cpp = &w->ww_buf[w->ww_nline];
+	cpp = &w->ww_buf[w->ww_b.b];
 	cqq = cpp - 1;
 	cp = *cqq;
-	for (i = w->ww_nline - line - 1; --i >= 0;)
+	for (i = w->ww_b.b - row; --i > 0;)
 		*--cpp = *--cqq;
 	*cqq = cp;
 
@@ -42,8 +43,8 @@ int line;
 	 * Now clear the last line.
 	 */
 	if (visible)
-		wwclreol1(w, line, 0, deleted);
+		wwclreol1(w, row, w->ww_b.l, deleted);
 	else
-		for (i = w->ww_w.nc; --i >= 0;)
+		for (i = w->ww_b.nc; --i >= 0;)
 			cp++->c_w = ' ';
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdump.c	3.4 83/08/19";
+static	char *sccsid = "@(#)wwdump.c	3.5 83/09/15";
 #endif
 
 #include "ww.h"
@@ -14,9 +14,9 @@ register struct ww *w;
 
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
-	for (i = 0; i < w->ww_w.nr; i++) {
-		(*tt.tt_move)(w->ww_w.t + i, w->ww_w.l);
-		for (j = 0; j < w->ww_w.nc; j++)
+	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
+		(*tt.tt_move)(i, w->ww_i.l);
+		for (j = w->ww_i.l; j < w->ww_i.r; j++)
 			(*tt.tt_putc)(cmap[w->ww_cov[i][j]]);
 	}
 }
@@ -28,9 +28,9 @@ register struct ww *w;
 
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
-	for (i = 0; i < w->ww_w.nr; i++) {
-		(*tt.tt_move)(w->ww_w.t + i, w->ww_w.l);
-		for (j = 0; j < w->ww_w.nc; j++)
+	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
+		(*tt.tt_move)(i, w->ww_i.l);
+		for (j = w->ww_i.l; j < w->ww_i.r; j++)
 			(*tt.tt_putc)(w->ww_win[i][j] & WWM_COV ? 'C' : ' ');
 	}
 }
@@ -43,7 +43,7 @@ register struct ww *w;
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
 	for (i = 0; i < w->ww_w.nr; i++) {
-		(*tt.tt_move)(w->ww_w.t + i, w->ww_w.l);
+		(*tt.tt_move)(i, w->ww_w.l);
 		(*tt.tt_putc)(w->ww_nvis[i] / 100 % 10 + '0');
 		(*tt.tt_putc)(w->ww_nvis[i] / 10 % 10 + '0');
 		(*tt.tt_putc)(w->ww_nvis[i] % 10 + '0');

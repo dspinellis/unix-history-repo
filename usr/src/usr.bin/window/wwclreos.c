@@ -1,15 +1,15 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreos.c	3.2 83/08/11";
+static	char *sccsid = "@(#)wwclreos.c	3.3 83/09/15";
 #endif
 
 #include "ww.h"
 
-wwclreos(w, line, col)
+wwclreos(w, row, col)
 register struct ww *w;
 {
 	register i;
 
-	wwclreol(w, line, col);
-	for (i = line + 1; i < w->ww_nline; i++)
-		wwclreol(w, i, 0);
+	wwclreol(w, row, col);
+	for (i = row + 1; i < w->ww_b.b; i++)
+		wwclreol(w, i, w->ww_b.l);
 }

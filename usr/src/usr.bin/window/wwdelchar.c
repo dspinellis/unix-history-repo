@@ -1,17 +1,14 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelchar.c	3.5 83/09/14";
+static	char *sccsid = "@(#)wwdelchar.c	3.6 83/09/15";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
-wwdelchar(w, line, col)
+wwdelchar(w, row, col)
 register struct ww *w;
 {
 	register i;
-	int row = line - w->ww_scroll;
-	int srow = row + w->ww_w.t;
-	int scol = col + w->ww_w.l;
 	int nvis;
 
 	/*
@@ -20,9 +17,9 @@ register struct ww *w;
 	{
 		register union ww_char *p, *q;
 
-		p = &w->ww_buf[line][col];
+		p = &w->ww_buf[row][col];
 		q = p + 1;
-		for (i = w->ww_w.nc - col - 1; --i >= 0;)
+		for (i = w->ww_b.r - col; --i > 0;)
 			*p++ = *q++;
 		p->c_w = ' ';
 	}
@@ -30,13 +27,12 @@ register struct ww *w;
 	/*
 	 * If can't see it, just return.
 	 */
-	if (srow < w->ww_i.t || srow >= w->ww_i.b
-	    || w->ww_i.r <= 0 || w->ww_i.r <= scol)
+	if (row < w->ww_i.t || row >= w->ww_i.b
+	    || w->ww_i.r <= 0 || w->ww_i.r <= col)
 		return;
 
-	if (scol < w->ww_i.l)
-		scol = w->ww_i.l;
-	col = scol - w->ww_w.l;
+	if (col < w->ww_i.l)
+		col = w->ww_i.l;
 
 	/*
 	 * Now find out how much is actually changed, and fix wwns.
@@ -49,15 +45,15 @@ register struct ww *w;
 		char *touched;
 
 		nvis = 0;
-		smap = &wwsmap[srow][scol];
-		for (i = w->ww_i.r - scol; i > 0 && *smap++ != w->ww_index; i--)
-			col++, scol++;
+		smap = &wwsmap[row][col];
+		for (i = w->ww_i.r - col; i > 0 && *smap++ != w->ww_index; i--)
+			col++;
 		if (i <= 0)
 			return;
-		buf = &w->ww_buf[line][col];
+		buf = &w->ww_buf[row][col];
 		win = &w->ww_win[row][col];
-		ns = &wwns[srow][scol];
-		touched = &wwtouched[srow];
+		ns = &wwns[row][col];
+		touched = &wwtouched[row];
 		for (; --i >= 0;) {
 			if (*win) {
 				if ((*win & (WWM_COV|WWM_GLS)) != 0) {
@@ -80,15 +76,15 @@ register struct ww *w;
 	/*
 	 * Can/Should we use delete character?
 	 */
-	if (tt.tt_delchar != 0 && nvis > (wwncol - scol) / 2) {
+	if (tt.tt_delchar != 0 && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
-		(*tt.tt_move)(srow, scol);
+		(*tt.tt_move)(row, col);
 		(*tt.tt_delchar)();
 
-		p = &wwos[srow][scol];
+		p = &wwos[row][col];
 		q = p + 1;
-		for (i = wwncol - scol; --i > 0;)
+		for (i = wwncol - col; --i > 0;)
 			*p++ = *q++;
 		p->c_w = ' ';
 	}

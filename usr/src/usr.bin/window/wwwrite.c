@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.10 83/09/14";
+static	char *sccsid = "@(#)wwwrite.c	3.11 83/09/15";
 #endif
 
 #include "ww.h"
@@ -18,47 +18,49 @@ int n;
 	while (n > 0) {
 		if (w->ww_wstate == 0 && !ISCTRL(*p)) {
 			register i;
-			int crow, ccol;
 			register union ww_char *bp;
 			union ww_char *bq;
+			int col;
 
 			if (w->ww_insert) {
 				n--;
-				wwinschar(w, w->ww_scroll + w->ww_cur.r,
-					w->ww_cur.c,
+				wwinschar(w, w->ww_cur.r, w->ww_cur.c,
 					*p++ | w->ww_modes << WWC_MSHIFT);
 				goto right;
 			}
 
-			bp = bq = &w->ww_buf[w->ww_scroll+w->ww_cur.r]
-				[w->ww_cur.c];
-			if ((i = w->ww_w.nc - w->ww_cur.c) > n)
+			bp = bq = &w->ww_buf[w->ww_cur.r][w->ww_cur.c];
+			if ((i = w->ww_b.r - w->ww_cur.c) > n)
 				i = n;
 			while (--i >= 0 && !ISCTRL(*p))
 				bp++->c_w = *p++ | w->ww_modes << WWC_MSHIFT;
+
 			i = bp - bq;
 			n -= i;
-			bp = bq;
-
-			crow = wwcurrow(w);
-			ccol = wwcurcol(w);
-			if (ccol < w->ww_i.l) {
-				bp += w->ww_i.l - ccol;
-				ccol = w->ww_i.l;
-			}
+			col = w->ww_cur.c;
 			w->ww_cur.c += i;
-			if (crow >= w->ww_i.t && crow < w->ww_i.b) {
+			bp = bq;
+			if (col < w->ww_i.l) {
+				/* use col as a temporary */
+				col = w->ww_i.l - col;
+				bp += col;
+				i -= col;
+				col = w->ww_i.l;
+			}
+			if (i > w->ww_i.r - col)
+				i = w->ww_i.r - col;
+
+			if (w->ww_cur.r >= w->ww_i.t && w->ww_cur.r < w->ww_i.b)
+			{
 				register union ww_char *ns;
 				register char *smap;
 				register char *win;
 				char *touched;
 
-				win = &w->ww_win[w->ww_cur.r][ccol - w->ww_w.l];
-				smap = &wwsmap[crow][ccol];
-				ns = &wwns[crow][ccol];
-				touched = &wwtouched[crow];
-				if (i > w->ww_i.r - ccol)
-					i = w->ww_i.r - ccol;
+				win = &w->ww_win[w->ww_cur.r][col];
+				smap = &wwsmap[w->ww_cur.r][col];
+				ns = &wwns[w->ww_cur.r][col];
+				touched = &wwtouched[w->ww_cur.r];
 				while (--i >= 0)
 					if (*smap++ == w->ww_index) {
 						*touched = 1;
@@ -70,8 +72,8 @@ int n;
 						win++;
 					}
 			}
-			if (w->ww_cur.c >= w->ww_w.nc) {
-				w->ww_cur.c = 0;
+			if (w->ww_cur.c >= w->ww_w.r) {
+				w->ww_cur.c = w->ww_w.l;
 				goto lf;
 			}
 			continue;
@@ -82,33 +84,32 @@ int n;
 			switch (*p++) {
 			case '\n':
 				if (w->ww_mapnl)
-					w->ww_cur.c = 0;
+					w->ww_cur.c = w->ww_w.l;
 		lf:
-				if (++w->ww_cur.r >= w->ww_w.nr) {
-					w->ww_cur.r = w->ww_w.nr - 1;
-					if (w->ww_scroll + w->ww_w.nr
-					    < w->ww_nline)
+				if (++w->ww_cur.r >= w->ww_w.b) {
+					w->ww_cur.r = w->ww_w.b - 1;
+					if (w->ww_w.b < w->ww_b.b)
 						wwscroll(w, 1);
 					else
-						wwdelline(w, 0);
+						wwdelline(w, w->ww_b.t);
 				}
 				break;
 			case '\t':
-				w->ww_cur.c |= 7;
-		right:
-				if (++w->ww_cur.c >= w->ww_w.nc) {
-					w->ww_cur.c = 0;
+				w->ww_cur.c +=
+					8 - (w->ww_cur.c - w->ww_w.l & 7);
+				if (w->ww_cur.c >= w->ww_w.r) {
+					w->ww_cur.c = w->ww_w.l;
 					goto lf;
 				}
 				break;
 			case '\b':
-				if (--w->ww_cur.c < 0) {
-					w->ww_cur.c = w->ww_w.nc - 1;
+				if (--w->ww_cur.c < w->ww_w.l) {
+					w->ww_cur.c = w->ww_w.r - 1;
 					goto up;
 				}
 				break;
 			case '\r':
-				w->ww_cur.c = 0;
+				w->ww_cur.c = w->ww_w.l;
 				break;
 			case CTRL(g):
 				wwbell();
@@ -126,43 +127,48 @@ int n;
 				break;
 			case 'A':
 		up:
-				if (--w->ww_cur.r < 0) {
-					w->ww_cur.r = 0;
-					if (w->ww_scroll > 0)
+				if (--w->ww_cur.r < w->ww_w.t) {
+					w->ww_cur.r = w->ww_w.t;
+					if (w->ww_w.t > w->ww_b.t)
 						wwscroll(w, -1);
 					else
-						wwinsline(w, 0);
+						wwinsline(w, w->ww_b.t);
 				}
 				break;
 			case 'B':
 				goto lf;
 			case 'C':
-				goto right;
+		right:
+				if (++w->ww_cur.c >= w->ww_w.r) {
+					w->ww_cur.c = w->ww_w.l;
+					goto lf;
+				}
+				break;
 			case 'E':
-				w->ww_scroll = 0;
-				w->ww_cur.c = w->ww_cur.r = 0;
-				wwclreos(w, 0, 0);
+				w->ww_b.t = w->ww_w.t;
+				w->ww_b.b = w->ww_b.t + w->ww_b.nr;
+				w->ww_cur.r = w->ww_w.t;
+				w->ww_cur.c = w->ww_w.l;
+				wwclreos(w, w->ww_w.t, w->ww_w.l);
 				break;
 			case 'H':
-				w->ww_cur.c = w->ww_cur.r = 0;
+				w->ww_cur.r = w->ww_w.t;
+				w->ww_cur.c = w->ww_w.l;
 				break;
 			case 'J':
-				wwclreos(w, w->ww_scroll + w->ww_cur.r,
-					w->ww_cur.c);
+				wwclreos(w, w->ww_cur.r, w->ww_cur.c);
 				break;
 			case 'K':
-				wwclreol(w, w->ww_scroll + w->ww_cur.r,
-					w->ww_cur.c);
+				wwclreol(w, w->ww_cur.r, w->ww_cur.c);
 				break;
 			case 'L':
-				wwinsline(w, w->ww_scroll + w->ww_cur.r);
+				wwinsline(w, w->ww_cur.r);
 				break;
 			case 'M':
-				wwdelline(w, w->ww_scroll + w->ww_cur.r);
+				wwdelline(w, w->ww_cur.r);
 				break;
 			case 'N':
-				wwdelchar(w, w->ww_scroll + w->ww_cur.r,
-					w->ww_cur.c);
+				wwdelchar(w, w->ww_cur.r, w->ww_cur.c);
 				break;
 			case 'O':
 				w->ww_insert = 0;
@@ -185,11 +191,11 @@ int n;
 			}
 			break;
 		case 2:
-			w->ww_cur.r = (*p++ - ' ') % w->ww_w.nr;
-			w->ww_wstate++;
+			w->ww_cur.r = w->ww_w.t + (*p++ - ' ') % w->ww_w.nr;
+			w->ww_wstate = 3;
 			break;
 		case 3:
-			w->ww_cur.c = (*p++ - ' ') % w->ww_w.nc;
+			w->ww_cur.c = w->ww_w.l + (*p++ - ' ') % w->ww_w.nc;
 			w->ww_wstate = 0;
 			break;
 		}

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.9 83/08/26";
+static	char *sccsid = "@(#)wwinit.c	3.10 83/09/15";
 #endif
 
 #include "ww.h"
@@ -54,21 +54,21 @@ wwinit()
 	else if (wwavailmodes & WWM_UL)
 		wwcursormodes = WWM_UL;
 
-	if ((wwsmap = wwalloc(wwnrow, wwncol, sizeof (char))) == 0)
+	if ((wwsmap = wwalloc(0, 0, wwnrow, wwncol, sizeof (char))) == 0)
 		goto bad;
 	for (i = 0; i < wwnrow; i++)
 		for (j = 0; j < wwncol; j++)
 			wwsmap[i][j] = WWX_NOBODY;
 
 	wwos = (union ww_char **)
-		wwalloc(wwnrow, wwncol, sizeof (union ww_char));
+		wwalloc(0, 0, wwnrow, wwncol, sizeof (union ww_char));
 	if (wwos == 0)
 		goto bad;
 	for (i = 0; i < wwnrow; i++)
 		for (j = 0; j < wwncol; j++)
 			wwos[i][j].c_w = ' ';
 	wwns = (union ww_char **)
-		wwalloc(wwnrow, wwncol, sizeof (union ww_char));
+		wwalloc(0, 0, wwnrow, wwncol, sizeof (union ww_char));
 	if (wwns == 0)
 		goto bad;
 	for (i = 0; i < wwnrow; i++)

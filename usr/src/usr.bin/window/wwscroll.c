@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.9 83/09/14";
+static	char *sccsid = "@(#)wwscroll.c	3.10 83/09/15";
 #endif
 
 #include "ww.h"
@@ -7,28 +7,31 @@ static	char *sccsid = "@(#)wwscroll.c	3.9 83/09/14";
 
 wwscroll(w, n)
 register struct ww *w;
-register n;
+int n;
 {
-	int dir;
-	register scroll;
+	register dir;
+	register top;
 
 	if (n == 0)
 		return;
 	dir = n < 0 ? -1 : 1;
-	scroll = w->ww_scroll + n;
-	if (scroll < 0)
-		scroll = 0;
-	else if (scroll > w->ww_nline - w->ww_w.nr)
-		scroll = w->ww_nline - w->ww_w.nr;
-	n = abs(scroll - w->ww_scroll);
+	top = w->ww_b.t - n;
+	if (top > w->ww_w.t)
+		top = w->ww_w.t;
+	else if (top + w->ww_b.nr < w->ww_w.b)
+		top = w->ww_w.b - w->ww_b.nr;
+	n = abs(top - w->ww_b.t);
 	if (n < w->ww_i.nr) {
 		while (--n >= 0) {
-			(void) wwscroll1(w, w->ww_i.t - w->ww_w.t,
-				w->ww_i.b - w->ww_w.t, dir, 0);
-			w->ww_scroll += dir;
+			(void) wwscroll1(w, w->ww_i.t, w->ww_i.b, dir, 0);
+			w->ww_buf += dir;
+			w->ww_b.t -= dir;
+			w->ww_b.b -= dir;
 		}
 	} else {
-		w->ww_scroll = scroll;
+		w->ww_buf -= top - w->ww_b.t;
+		w->ww_b.t = top;
+		w->ww_b.b = top + w->ww_b.nr;
 		wwredrawwin(w);
 	}
 }
@@ -85,42 +88,40 @@ int leaveit;
 		 * But do worry when scrolling up.  For hp2621.
 		 */
 		if (dir > 0) {
-			(*tt.tt_move)(row1x + w->ww_w.t, 0);
+			(*tt.tt_move)(row1x, 0);
 			(*tt.tt_delline)();
-			if (row2x + w->ww_w.t < wwnrow) {
-				(*tt.tt_move)(row2x + w->ww_w.t - 1, 0);
+			if (row2x < wwnrow) {
+				(*tt.tt_move)(row2x - 1, 0);
 				(*tt.tt_insline)();
 			}
 			/*
 			 * Fix up the old screen.
 			 */
-			cpp = &wwos[row1x + w->ww_w.t];
+			cpp = &wwos[row1x];
 			cqq = cpp + 1;
 			tmp = *cpp;
 			for (i = row2x - row1x; --i > 0;)
 				*cpp++ = *cqq++;
 			*cpp = tmp;
-			for (i = wwncol; --i >= 0;)
-				tmp++->c_w = ' ';
 		} else {
-			if (tt.tt_retain || row2x + w->ww_w.t != wwnrow) {
-				(*tt.tt_move)(row2x + w->ww_w.t - 1, 0);
+			if (tt.tt_retain || row2x != wwnrow) {
+				(*tt.tt_move)(row2x - 1, 0);
 				(*tt.tt_delline)();
 			}
-			(*tt.tt_move)(row1x + w->ww_w.t, 0);
+			(*tt.tt_move)(row1x, 0);
 			(*tt.tt_insline)();
 			/*
 			 * Fix up the old screen.
 			 */
-			cpp = &wwos[row2x + w->ww_w.t];
+			cpp = &wwos[row2x];
 			cqq = cpp - 1;
 			tmp = *cqq;
 			for (i = row2x - row1x; --i > 0;)
 				*--cpp = *--cqq;
 			*cqq = tmp;
-			for (i = wwncol; --i >= 0;)
-				tmp++->c_w = ' ';
 		}
+		for (i = wwncol; --i >= 0;)
+			tmp++->c_w = ' ';
 		deleted++;
 	}
 
@@ -136,7 +137,7 @@ int leaveit;
 				register union ww_char *tmp;
 				register union ww_char **cpp, **cqq;
 
-				cpp = &wwns[row1x + w->ww_w.t];
+				cpp = &wwns[row1x];
 				cqq = cpp + 1;
 				tmp = *cpp;
 				for (i = row2x - row1x; --i > 0;)
@@ -146,7 +147,7 @@ int leaveit;
 			if (deleted) {
 				register char *p, *q;
 
-				p = &wwtouched[row1x + w->ww_w.t];
+				p = &wwtouched[row1x];
 				q = p + 1;
 				for (i = row2x - row1x; --i > 0;)
 					*p++ = *q++;
@@ -154,19 +155,18 @@ int leaveit;
 			} else {
 				register char *p;
 
-				p = &wwtouched[row1x + w->ww_w.t];
+				p = &wwtouched[row1x];
 				for (i = row2x - row1x; --i >= 0;)
 					*p++ = 1;
 			}
-			wwredrawwin1(w, row1, row1x, w->ww_scroll + dir);
-			wwredrawwin1(w, row2x - 1, row2 - leaveit,
-				w->ww_scroll + dir);
+			wwredrawwin1(w, row1, row1x, dir);
+			wwredrawwin1(w, row2x - 1, row2 - leaveit, dir);
 		} else {
 			{
 				register union ww_char *tmp;
 				register union ww_char **cpp, **cqq;
 
-				cpp = &wwns[row2x + w->ww_w.t];
+				cpp = &wwns[row2x];
 				cqq = cpp - 1;
 				tmp = *cqq;
 				for (i = row2x - row1x; --i > 0;)
@@ -176,7 +176,7 @@ int leaveit;
 			if (deleted) {
 				register char *p, *q;
 
-				p = &wwtouched[row2x + w->ww_w.t];
+				p = &wwtouched[row2x];
 				q = p - 1;
 				for (i = row2x - row1x; --i > 0;)
 					*--p = *--q;
@@ -184,22 +184,19 @@ int leaveit;
 			} else {
 				register char *p;
 
-				p = &wwtouched[row1x + w->ww_w.t];
+				p = &wwtouched[row1x];
 				for (i = row2x - row1x; --i >= 0;)
 					*p++ = 1;
 			}
-			wwredrawwin1(w, row1 + leaveit, row1x - 1,
-				w->ww_scroll + dir);
-			wwredrawwin1(w, row2x, row2, w->ww_scroll + dir);
+			wwredrawwin1(w, row1 + leaveit, row1x + 1, dir);
+			wwredrawwin1(w, row2x, row2, dir);
 		}
 	} else {
 out:
 		if (dir > 0)
-			wwredrawwin1(w, row1, row2 - leaveit,
-				w->ww_scroll + dir);
+			wwredrawwin1(w, row1, row2 - leaveit, dir);
 		else
-			wwredrawwin1(w, row1 + leaveit, row2,
-				w->ww_scroll + dir);
+			wwredrawwin1(w, row1 + leaveit, row2, dir);
 	}
 	return deleted;
 }

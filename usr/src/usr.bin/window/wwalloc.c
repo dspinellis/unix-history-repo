@@ -1,12 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwalloc.c	3.4 83/08/26";
+static	char *sccsid = "@(#)wwalloc.c	3.5 83/09/15";
 #endif
 
 #include "ww.h"
 
 char **
-wwalloc(nrow, ncol, size)
-int nrow, ncol, size;
+wwalloc(row, col, nrow, ncol, size)
 {
 	register char *p, **pp;
 	register int i;
@@ -19,17 +18,18 @@ int nrow, ncol, size;
 		return 0;
 	}
 	p = (char *)&pp[nrow];
+	col *= size;
 	size /= sizeof (char);		/* paranoid */
 	size *= ncol;
 	for (i = 0; i < nrow; i++) {
-		pp[i] = p;
+		pp[i] = p - col;
 		p += size;
 	}
-	return pp;
+	return pp - row;
 }
 
-wwfree(p)
+wwfree(p, row)
 register char **p;
 {
-	free((char *)p);
+	free((char *)(p + row));
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelete.c	3.4 83/09/14";
+static	char *sccsid = "@(#)wwdelete.c	3.5 83/09/15";
 #endif
 
 #include "ww.h"
@@ -46,16 +46,14 @@ register struct ww *w;
 		register i;
 
 		for (i = w->ww_i.t; i < w->ww_i.b; i++) {
-			register j;
-			register char *win = &w->ww_win[i - w->ww_w.t]
-					[w->ww_i.l - w->ww_w.l];
-			register char *cov = &w->ww_cov[i - w->ww_w.t]
-					[w->ww_i.l - w->ww_w.l];
+			register j = w->ww_i.l;
+			register char *win = &w->ww_win[i][j];
+			register char *cov = &w->ww_cov[i][j];
 
 			for (j = w->ww_i.nc; --j >= 0;) {
 				if (*win != 0) {
 					if ((*win++ &= ~WWM_COV) == 0)
-						w->ww_nvis[i - w->ww_w.t]++;
+						w->ww_nvis[i]++;
 				} else
 					win++;
 				*cov++ = WWX_NOBODY;

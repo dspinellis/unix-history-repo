@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.13 83/09/14	
+ *	@(#)ww.h	3.14 83/09/15	
  */
 
 #include <stdio.h>
@@ -32,16 +32,20 @@ struct ww {
 	char ww_hasframe :1;	/* frame it */
 	char ww_index;		/* the index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
-	struct ww_dim ww_w;	/* window dimemsions */
+
+		/* sizes and positions */
+	struct ww_dim ww_w;	/* window size and pos */
+	struct ww_dim ww_b;	/* buffer size and pos */
 	struct ww_dim ww_i;	/* the part inside the screen */
-	int ww_nline;		/* size of the buffer */
-	int ww_scroll;		/* where the window is relative to the buffer */
 	struct ww_pos ww_cur;	/* the cursor position, relative to ww_w */
+
+		/* arrays */
 	char **ww_win;		/* the window */
 	union ww_char **ww_buf;	/* the buffer */
 	char **ww_cov;		/* the covered-by array */
 	char **ww_fmap;		/* map for frame and box windows */
 	short *ww_nvis;		/* how many ww_buf chars are visible per row */
+
 	int ww_pty;		/* file descriptor of pty */
 	int ww_tty;		/* . . . tty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
@@ -146,12 +150,11 @@ int wwnwrite, wwnwritec;
 int wwnupdate, wwntouched, wwnmiss;
 
 	/* quicky macros */
-#define wwcurrow(w)	((w)->ww_cur.r + (w)->ww_w.t)
-#define wwcurcol(w)	((w)->ww_cur.c + (w)->ww_w.l)
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
-#define wwcurtowin(w)	wwsetcursor(wwcurrow(w), wwcurcol(w))
+#define wwcurtowin(w)	wwsetcursor((w)->ww_cur.r, (w)->ww_cur.c)
 #define wwbell()	putchar(CTRL(g))
 #define wwunbox(w)	wwunframe(w)
+#define wwclreol(w,r,c)	wwclreol1((w), (r), (c), 0)
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"

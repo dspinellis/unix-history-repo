@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.6 83/08/26";
+static	char *sccsid = "@(#)wwlabel.c	3.7 83/09/15";
 #endif
 
 #include "ww.h"
@@ -26,22 +26,18 @@ char *l;
 	if (f->ww_fmap == 0)
 		return;
 
-	i = w->ww_w.t - 1 - f->ww_w.t;
-	if (i < 0)
+	i = w->ww_w.t - 1;
+	if (i < f->ww_i.t || i >= f->ww_i.b)
 		return;
-	j = w->ww_w.l + where - f->ww_w.l;
-	if (j < 0)
-		j = 0;
+	j = w->ww_i.l + where;
 	win = &f->ww_win[i][j];
-	buf = &f->ww_buf[f->ww_scroll + i][j];
+	buf = &f->ww_buf[i][j];
 	fmap = &f->ww_fmap[i][j];
 
-	i += f->ww_w.t;
-	j += f->ww_w.l;
 	ns = &wwns[i][j];
 	touched = &wwtouched[i];
 
-	j = MIN(w->ww_w.r, f->ww_w.r) - j;
+	j = MIN(w->ww_i.r, f->ww_i.r) - j;
 	for (; j > 0 && *l;)
 		for (p = unctrl(*l++); j > 0 && *p; j--) {
 			/* can't label if not already framed */
