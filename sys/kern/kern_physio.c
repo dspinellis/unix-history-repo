@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_physio.c,v 1.4 1994/03/19 22:55:43 wollman Exp $
+ *	$Id: kern_physio.c,v 1.5 1994/03/30 02:31:26 davidg Exp $
  */
 
 #include "param.h"
@@ -82,6 +82,13 @@ rawwrite(dev, uio)
 				(caddr_t) (u_long) dev, uio));
 }
 
+static void
+physwakeup(bp)
+	struct buf *bp;
+{
+	wakeup((caddr_t) bp);
+	bp->b_flags &= ~B_CALL;
+}
 
 int physio(strat, dev, bp, off, rw, base, len, p)
 	d_strategy_t strat; 
@@ -125,7 +132,6 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 		splx(s);
 	}
 
-	bp->b_flags = B_BUSY | B_PHYS | rw;
 	bp->b_proc = p;
 	bp->b_dev = dev;
 	bp->b_error = 0;
@@ -134,7 +140,8 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 
 	/* iteratively do I/O on as large a chunk as possible */
 	do {
-		bp->b_flags &= ~B_DONE;
+		bp->b_flags = B_BUSY | B_PHYS | B_CALL | rw;
+		bp->b_iodone = physwakeup;
 		bp->b_un.b_addr = base;
 		/*
 		 * Notice that b_bufsize is more owned by the buffer
