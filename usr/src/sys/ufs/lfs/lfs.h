@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.20 (Berkeley) %G%
+ *	@(#)lfs.h	7.21 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -70,6 +70,8 @@ struct lfs {
 	ino_t	lfs_free;		/* start of the free list */
 	u_long	lfs_bfree;		/* number of free disk blocks */
 	u_long	lfs_nfiles;		/* number of allocated inodes */
+	u_long	lfs_avail;		/* blocks available for writing */
+	u_long  lfs_uinodes;		/* inodes in cache not yet on disk */
 	daddr_t	lfs_idaddr;		/* inode file disk address */
 	ino_t	lfs_ifile;		/* inode file inode number */
 	daddr_t	lfs_lastseg;		/* address of last segment written */
@@ -116,6 +118,7 @@ struct lfs {
 	u_long	lfs_writer;		/* don't allow any dirops to start */
 	u_long	lfs_dirops;		/* count of active directory ops */
 	u_long	lfs_doifile;		/* Write ifile blocks on next write */
+	u_long	lfs_nactive;		/* Number of segments since last ckp */
 	u_char	lfs_fmod;		/* super block modified flag */
 	u_char	lfs_clean;		/* file system is clean flag */
 	u_char	lfs_ronly;		/* mounted read-only flag */
@@ -157,6 +160,9 @@ typedef struct _indir {
 
 /* Unassigned disk address. */
 #define	UNASSIGNED	-1
+
+/* Unused logical block number */
+#define LFS_UNUSED_LBN	-1
 
 typedef struct ifile IFILE;
 struct ifile {
@@ -231,30 +237,39 @@ struct segsum {
 
 /* Read in the block with a specific inode from the ifile. */
 #define	LFS_IENTRY(IP, F, IN, BP) { \
+	int _e; \
 	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
-	if (bread((F)->lfs_ivnode, \
+	if (_e = bread((F)->lfs_ivnode, \
 	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz, \
 	    (F)->lfs_bsize, NOCRED, &(BP))) \
-		panic("lfs: ifile read"); \
+		panic("lfs: ifile read %d", _e); \
 	(IP) = (IFILE *)(BP)->b_un.b_addr + (IN) % (F)->lfs_ifpb; \
 }
 
 /* Read in the block with a specific segment usage entry from the ifile. */
 #define	LFS_SEGENTRY(SP, F, IN, BP) { \
+	int _e; \
 	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
-	if (bread((F)->lfs_ivnode, \
+	if (_e = bread((F)->lfs_ivnode, \
 	    ((IN) >> (F)->lfs_sushift) + (F)->lfs_cleansz, \
 	    (F)->lfs_bsize, NOCRED, &(BP))) \
-		panic("lfs: ifile read"); \
+		panic("lfs: ifile read: %d", _e); \
 	(SP) = (SEGUSE *)(BP)->b_un.b_addr + ((IN) & (F)->lfs_sepb - 1); \
 }
 
-/* Write a block and update the inode change times. */
-#define	LFS_UBWRITE(BP) { \
-	VTOI((BP)->b_vp)->i_flag |= ICHG | IUPD; \
-	VOP_BWRITE(BP); \
-}
+/* 
+ * Determine if there is enough room currently available to write db
+ * disk blocks.  We need enough blocks for the new blocks, the current,
+ * inode blocks, a summary block, plus potentially the ifile inode and
+ * the segment usage table, plus an ifile page.
+ */
+#define LFS_FITS(fs, db)						\
+	((db + ((fs)->lfs_uinodes + INOPB((fs))) / INOPB((fs)) +	\
+	fsbtodb(fs, 1) + LFS_SUMMARY_SIZE / DEV_BSIZE + (fs)->lfs_segtabsz)\
+	< (fs)->lfs_avail)
 
+/* Determine if a buffer belongs to the ifile */
+#define IS_IFILE(bp)	(VTOI(bp->b_vp)->i_number == LFS_IFILE_INUM)
 /*
  * Structures used by lfs_bmapv and lfs_markv to communicate information
  * about inodes and data blocks.
@@ -273,3 +288,22 @@ typedef struct inode_info {
 	time_t	ii_segcreate;		/* origin segment create time */
 	struct dinode *ii_dinode;	/* data buffer */
 } INODE_INFO;
+
+/* In-memory description of a segment about to be written. */
+struct segment {
+	struct lfs	*fs;		/* file system pointer */
+	struct buf	**bpp;		/* pointer to buffer array */
+	struct buf	**cbpp;		/* pointer to next available bp */
+	struct buf	**start_bpp;	/* pointer to first bp in this set */
+	struct buf	*ibp;		/* buffer pointer to inode page */
+	struct finfo	*fip;		/* current fileinfo pointer */
+	void	*segsum;		/* segment summary info */
+	u_long	ninodes;		/* number of inodes in this segment */
+	u_long	seg_bytes_left;		/* bytes left in segment */
+	u_long	sum_bytes_left;		/* bytes left in summary block */
+	u_long	seg_number;		/* number of this segment */
+	daddr_t *start_lbp;		/* beginning lbn for this set */
+#define	SEGM_CKP	0x01		/* doing a checkpoint */
+#define	SEGM_CLEAN	0x02		/* cleaner call; don't sort */
+	u_long	seg_flags;		/* run-time flags for this segment */
+};
