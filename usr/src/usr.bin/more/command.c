@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -195,8 +195,10 @@ prompt()
 			}
 			else
 				putstr(": END");
-		else if (linenums) {
-			(void)sprintf(pbuf, ": %d", currline(TOP));
+		else if (!ispipe &&
+		    (pos = position(BOTTOM)) != NULL_POSITION &&
+		    (len = ch_length())) {
+			(void)sprintf(pbuf, " (%ld%%)", ((100 * pos) / len));
 			putstr(pbuf);
 		}
 		so_exit();
