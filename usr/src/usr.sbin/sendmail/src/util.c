@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	3.43		%G%);
+SCCSID(@(#)util.c	3.44		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -423,6 +423,7 @@ safefile(fn, uid, mode)
 	if (stat(fn, &stbuf) >= 0 && stbuf.st_uid == uid &&
 	    (stbuf.st_mode & mode) == mode)
 		return (TRUE);
+	errno = 0;
 	return (FALSE);
 }
 /*
@@ -505,6 +506,7 @@ dfopen(filename, mode)
 		if (errno != ENFILE && errno != EINTR)
 			break;
 	}
+	errno = 0;
 	return (fp);
 }
 /*
