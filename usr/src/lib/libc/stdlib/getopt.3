@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getopt.3	8.2 (Berkeley) %G%
+.\"     @(#)getopt.3	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETOPT 3
@@ -13,11 +13,11 @@
 .Nd get option character from command line argument list
 .Sh SYNOPSIS
 .Fd #include <stdlib.h>
-.Vt extern char *optarg
-.Vt extern int   optind
-.Vt extern int   optopt
-.Vt extern int   opterr
-.Vt extern int   optreset
+.Vt extern char *optarg;
+.Vt extern int   optind;
+.Vt extern int   optopt;
+.Vt extern int   opterr;
+.Vt extern int   optreset;
 .Ft int
 .Fn getopt "int argc" "char * const *argv" "const char *optstring"
 .Sh DESCRIPTION
