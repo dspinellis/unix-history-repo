@@ -1,7 +1,7 @@
 #!/bin/sh -
 copyright='
 /*
- * Copyright (c) 1992, 1993, 1994
+ * Copyright (c) 1992, 1993, 1994, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.sh%
@@ -9,7 +9,7 @@ copyright='
  * from: NetBSD: vnode_if.sh,v 1.7 1994/08/25 03:04:28 cgd Exp $
  */
 '
-SCRIPT_ID='@(#)vnode_if.sh	8.6 (Berkeley) %G%'
+SCRIPT_ID='@(#)vnode_if.sh	8.7 (Berkeley) %G%'
 
 # Script to produce VFS front-end sugar.
 #
@@ -138,7 +138,18 @@ function doit() {
 	printf("};\n");
 	printf("extern struct vnodeop_desc %s_desc;\n", name);
 	# Define inline function.
-	printf("static __inline int %s(", toupper(name));
+	printf("#define %s(", toupper(name));
+	for (i=0; i<argc; i++) {
+		printf("%s", argname[i]);
+		if (i < (argc-1)) printf(", ");
+	}
+	printf(") _%s(", toupper(name));
+	for (i=0; i<argc; i++) {
+		printf("%s", argname[i]);
+		if (i < (argc-1)) printf(", ");
+	}
+	printf(")\n");
+	printf("static __inline int _%s(", toupper(name));
 	for (i=0; i<argc; i++) {
 		printf("%s", argname[i]);
 		if (i < (argc-1)) printf(", ");
