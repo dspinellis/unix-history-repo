@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)login.1	6.5 (Berkeley) %G%
+.\"	@(#)login.1	6.6 (Berkeley) %G%
 .\"
 .TH LOGIN 1 ""
 .UC 4
@@ -133,11 +133,3 @@ if the name or the password is bad.
 \*(lqNo Shell\*(rq, \*(lqcannot open password file\*(rq,
 \*(lqno directory\*(rq:
 consult a programming counselor.
-.SH BUGS
-An undocumented option,
-.B \-r
-is used by the remote login server,
-.IR rlogind (8)
-to force
-.I login
-to enter into an initial connection protocol.
