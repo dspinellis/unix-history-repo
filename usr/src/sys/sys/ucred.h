@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ucred.h	8.2 (Berkeley) %G%
+ *	@(#)ucred.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _SYS_UCRED_H_
