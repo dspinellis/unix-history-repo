@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.65 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.66 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -311,6 +311,17 @@ ffs_mountfs(devvp, mp, p)
 	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
 		fs->fs_nrpos = 8;				/* XXX */
+	if (fs->fs_inodefmt < FS_44INODEFMT) {			/* XXX */
+		quad_t sizepb = fs->fs_bsize;			/* XXX */
+								/* XXX */
+		fs->fs_maxfilesize = fs->fs_bsize * NDADDR - 1;	/* XXX */
+		for (i = 0; i < NIADDR; i++) {			/* XXX */
+			sizepb *= NINDIR(fs);			/* XXX */
+			fs->fs_maxfilesize += sizepb;		/* XXX */
+		}						/* XXX */
+		fs->fs_qbmask = ~fs->fs_bmask;			/* XXX */
+		fs->fs_qfmask = ~fs->fs_fmask;			/* XXX */
+	}							/* XXX */
 
 	return (0);
 out:
