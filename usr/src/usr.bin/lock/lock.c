@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lock.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)lock.c	5.10 (Berkeley) %G%";
 
 #define	TIMEOUT	15
 
-int	quit(), bye(), hi();
+void quit(), bye(), hi();
 
 struct timeval	timeout;
 struct timeval	zerotime;
@@ -74,21 +74,25 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "pt:")) != EOF)
 		switch((char)ch) {
 		case 't':
-			if ((sectimeout = atoi(optarg)) <= 0)
+			if ((sectimeout = atoi(optarg)) <= 0) {
+				(void)fprintf(stderr,
+				    "lock: illegal timeout value.\n");
 				exit(1);
+			}
 			break;
 		case 'p':
 			usemine = 1;
 			if (!(pw = getpwuid(getuid()))) {
-				fprintf(stderr, "lock: unknown uid %d.\n",
-				    getuid());
+				(void)fprintf(stderr,
+				    "lock: unknown uid %d.\n", getuid());
 				exit(1);
 			}
 			mypw = strdup(pw->pw_passwd);
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: lock [-p] [-t timeout]\n");
+			(void)fprintf(stderr,
+			    "usage: lock [-p] [-t timeout]\n");
 			exit(1);
 	}
 	timeout.tv_sec = sectimeout * 60;
@@ -99,11 +103,12 @@ main(argc, argv)
 		exit(1);
 	gethostname(hostname, sizeof(hostname));
 	if (!(ttynam = ttyname(0))) {
-		printf("lock: not a terminal?\n");
+		(void)printf("lock: not a terminal?\n");
 		exit(1);
 	}
 	if (gettimeofday(&timval, (struct timezone *)NULL)) {
-		fprintf(stderr, "lock: gettimeofday: %s\n", strerror(errno));
+		(void)fprintf(stderr,
+		    "lock: gettimeofday: %s\n", strerror(errno));
 		exit(1);
 	}
 	nexttime = timval.tv_sec + (sectimeout * 60);
@@ -118,18 +123,18 @@ main(argc, argv)
 
 	if (!mypw) {
 		/* get key and check again */
-		printf("Key: ");
+		(void)printf("Key: ");
 		if (!fgets(s, sizeof(s), stdin) || *s == '\n')
 			quit();
-		printf("\nAgain: ");
+		(void)printf("\nAgain: ");
 		/*
 		 * Don't need EOF test here, if we get EOF, then s1 != s
 		 * and the right things will happen.
 		 */
 		(void)fgets(s1, sizeof(s1), stdin);
-		putchar('\n');
+		(void)putchar('\n');
 		if (strcmp(s1, s)) {
-			printf("\07lock: passwords didn't match.\n");
+			(void)printf("\07lock: passwords didn't match.\n");
 			ioctl(0, TIOCSETP, &tty);
 			exit(1);
 		}
@@ -148,11 +153,11 @@ main(argc, argv)
 	setitimer(ITIMER_REAL, &ntimer, &otimer);
 
 	/* header info */
-	printf ("lock: %s on %s. timeout in %d minutes\ntime now is %.20s%s%s",
-		ttynam, hostname, sectimeout, ap, tzn, ap + 19);
+(void)printf("lock: %s on %s. timeout in %d minutes\ntime now is %.20s%s%s",
+	    ttynam, hostname, sectimeout, ap, tzn, ap + 19);
 
 	for (;;) {
-		printf("Key: ");
+		(void)printf("Key: ");
 		if (!fgets(s, sizeof(s), stdin)) {
 			clearerr(stdin);
 			hi();
@@ -165,35 +170,35 @@ main(argc, argv)
 		}
 		else if (!strcmp(s, s1))
 			break;
-		printf("\07\n");
+		(void)printf("\07\n");
 		if (ioctl(0, TIOCGETP, &ntty))
 			exit(1);
 	}
 	quit();
 }
 
-static
+void
 hi()
 {
 	struct timeval timval;
 
 	if (!gettimeofday(&timval, (struct timezone *)NULL))
-	    printf("lock: type in the unlock key. timeout in %ld:%ld minutes\n",
+(void)printf("lock: type in the unlock key. timeout in %ld:%ld minutes\n",
 	    (nexttime - timval.tv_sec) / 60, (nexttime - timval.tv_sec) % 60);
 }
 
-static
+void
 quit()
 {
-	putchar('\n');
+	(void)putchar('\n');
 	(void)ioctl(0, TIOCSETP, &tty);
 	exit(0);
 }
 
-static
+void
 bye()
 {
 	(void)ioctl(0, TIOCSETP, &tty);
-	printf("lock: timeout\n");
+	(void)printf("lock: timeout\n");
 	exit(1);
 }
