@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.40 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,8 +140,10 @@ loop:
 	return (0);
 }
 
-nfs_inactive (ap)
-	struct vop_inactive_args *ap;
+nfs_inactive(ap)
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	register struct nfsnode *np;
 	register struct sillyrename *sp;
@@ -170,15 +172,18 @@ nfs_inactive (ap)
 /*
  * Reclaim an nfsnode so that it can be used for other purposes.
  */
-nfs_reclaim (ap)
-	struct vop_reclaim_args *ap;
+nfs_reclaim(ap)
+	struct vop_reclaim_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
-	register struct nfsnode *np = VTONFS(ap->a_vp);
-	register struct nfsmount *nmp = VFSTONFS(ap->a_vp->v_mount);
+	register struct vnode *vp = ap->a_vp;
+	register struct nfsnode *np = VTONFS(vp);
+	register struct nfsmount *nmp = VFSTONFS(vp->v_mount);
 	extern int prtactive;
 
-	if (prtactive && ap->a_vp->v_usecount != 0)
-		vprint("nfs_reclaim: pushing active", ap->a_vp);
+	if (prtactive && vp->v_usecount != 0)
+		vprint("nfs_reclaim: pushing active", vp);
 	/*
 	 * Remove the nfsnode from its hash chain.
 	 */
@@ -197,17 +202,19 @@ nfs_reclaim (ap)
 		else
 			np->n_tprev->n_tnext = np->n_tnext;
 	}
-	cache_purge(ap->a_vp);
-	FREE(ap->a_vp->v_data, M_NFSNODE);
-	ap->a_vp->v_data = (void *)0;
+	cache_purge(vp);
+	FREE(vp->v_data, M_NFSNODE);
+	vp->v_data = (void *)0;
 	return (0);
 }
 
 /*
  * Lock an nfsnode
  */
-nfs_lock (ap)
-	struct vop_lock_args *ap;
+nfs_lock(ap)
+	struct vop_lock_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	return (0);
@@ -216,8 +223,10 @@ nfs_lock (ap)
 /*
  * Unlock an nfsnode
  */
-nfs_unlock (ap)
-	struct vop_unlock_args *ap;
+nfs_unlock(ap)
+	struct vop_unlock_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	return (0);
@@ -226,8 +235,10 @@ nfs_unlock (ap)
 /*
  * Check for a locked nfsnode
  */
-nfs_islocked (ap)
-	struct vop_islocked_args *ap;
+nfs_islocked(ap)
+	struct vop_islocked_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	return (0);
@@ -239,8 +250,11 @@ nfs_islocked (ap)
  */
 /* ARGSUSED */
 int
-nfs_abortop (ap)
-	struct vop_abortop_args *ap;
+nfs_abortop(ap)
+	struct vop_abortop_args /* {
+		struct vnode *a_dvp;
+		struct componentname *a_cnp;
+	} */ *ap;
 {
 
 	if ((ap->a_cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
