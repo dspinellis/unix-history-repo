@@ -1,4 +1,4 @@
-/*	hp.c	4.14	83/02/17	*/
+/*	hp.c	4.15	83/02/18	*/
 
 /*
  * RP??/RM?? disk driver
@@ -24,23 +24,10 @@
 #define MAXBADDESC	126
 #define SECTSIZ 	512	/* sector size in bytes */
 #define HDRSIZ		4	/* number of bytes in sector header */
-#define MAXECC		5	/* the maximum number of bad bits accepted in
-				 * an ecc error when F_ECCLM is set */
+#define MAXECC		5	/* max # bits allow in ecc error w/ F_ECCLM */
 
 char	hp_type[MAXNMBA*8] = { 0 };
-
-/* THIS SHOULD BE READ IN OFF THE PACK, PER DRIVE */
-short	hp6_off[8] =	{ 0, 38, 0, -1, -1, -1, 118, -1 };
-short	rm3_off[8] =	{ 0, 100, 0, -1, -1, -1, 310, -1 };
-short	rm5_off[8] =	{ 0, 27, 0, 562, 589, 681, 562, 82 };
-short	rm80_off[8] =	{ 0, 37, 0, -1, -1, -1, 115, 305 };
-short	hp7_off[8] = 	{ 0, 10, 0, 330, 340, 500, 330, 50 };
-short	ml_off[8] =	{ 0, -1, -1, -1, -1, -1, -1, -1 };
-short	si9775_off[8] =	{ 0, 13, 0, -1, -1, -1, 40, 441 };
-short	si9730_off[8] = { 0, 50, 0, -1, -1, -1, -1, 155 };
-short	hpam_off[8] =	{ 0, 32, 0, 668, 723, 778, 668, 98 };
-short	hpfj_off[8] =	{ 0, 19, 0, -1, -1, -1, 398, 59 };
-/* END SHOULD BE READ IN */
+extern	struct st hpst[];
 
 short	hptypes[] = {
 	MBDT_RM03,	MBDT_RM05,	MBDT_RP06,	MBDT_RM80,
@@ -58,23 +45,6 @@ u_char	hp_offset[16] = {
     HPOF_P800, HPOF_M800, HPOF_P800, HPOF_M800,
     HPOF_P1200, HPOF_M1200, HPOF_P1200, HPOF_M1200,
     0, 0, 0, 0,
-};
-
-struct st hpst[] = {
-	32,	5,	32*5,	823,	rm3_off,	/* RM03 */
-	32,	19,	32*19,	823,	rm5_off,	/* RM05 */
-	22,	19,	22*19,	815,	hp6_off,	/* RP06 */
-	31,	14, 	31*14,	559,	rm80_off,	/* RM80 */
-	22,	19,	22*19,	411,	hp6_off,	/* RP06 */
-	50,	32,	50*32,	630,	hp7_off,	/* RP07 */
-	1,	1,	1,	1,	ml_off,		/* ML11A */
-	1,	1,	1,	1,	ml_off,		/* ML11B */
-	32,	40,	32*40,	843,	si9775_off,	/* 9775 */
-	32,	10,	32*10,	823,	si9730_off,	/* 9730 */
-	32,	16,	32*16,	1024,	hpam_off,	/* capricorn */
-	43,	20,	43*20,	842,	hpfj_off,	/* Eagle */
-	48,	20,	48*20,	842,	hpfj_off,	/* modif. eagle */
-	1,	1,	1,	1,	0,		/* rm02 - not used */
 };
 
 struct dkbad hpbad[MAXNMBA*8];
@@ -116,7 +86,7 @@ found:
 		 *	to tio for use during the bb pointer
 		 *	read operation.
 		 */
-		st = &hpst[i];
+		st = &hpst[hp_type[unit]];
 		tio = *io;
 		tio.i_bn = st->nspc * st->ncyl - st->nsect;
 		tio.i_ma = (char *)&hpbad[unit];
@@ -139,64 +109,6 @@ found:
 	    st->off[io->i_boff]== -1)
 		_stop("hp bad minor");
 	io->i_boff = st->off[io->i_boff] * st->nspc;
-}
-
-hpmaptype(hpaddr, type, unit)
-	register struct hpdevice *hpaddr;
-	unsigned type;
-	int unit;
-{
-	int ntracks, hpsn;
-
-	/*
-	 * Handle SI model byte stuff when
-	 * we think it's an RM03 or RM05.
-	 */
-	if (type == 0 || type == 1) {
-		hpsn = hpaddr->hpsn;
-		if ((hpsn & SIMB_LU) != unit)
-			return (type);
-		switch ((hpsn & SIMB_MB) &~ (SIMB_S6|SIRM03|SIRM05)) {
-		case SI9775D:
-			return (8);
-		case SI9730D:
-			return (9);
-		case SI9766:
-			hpaddr->hpcs1 = HP_RECAL|HP_GO;
-			DELAY(100000);
-			return (1);
-
-		case SI9762:
-			return (0);
-		}
-		return (type);
-	}
-	/*
-	 * RM03: EMULEX controller.  Map to correct
-	 * drive type by checking the holding
-	 * register for the disk geometry.
-	 */
-	if (type == 13) {
-		hpaddr->hpcs1 = HP_NOP;
-		hpaddr->hphr = HPHR_MAXTRAK;
-		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 16)
-			return (10);	/* AMPEX capricorn */
-		hpaddr->hphr = HPHR_MAXSECT;
-		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 48)
-			return (12);	/* 48 sector Eagle */
-		if (ntracks == 43)
-			return (11);	/* 43 sector Eagle */
-		printf("RM02 with %d sectors/track?\n", ntracks);
-		return (type);
-	}
-	/*
-	 * ML11's all map to the same type.
-	 */
-	if (type == 6 || type == 7)
-		return (6);
-	return (type);
 }
 
 int	ssect;		/* set to 1 if we are on a track with skip sectors */
@@ -229,6 +141,7 @@ hpstrategy(io, func)
 	membase = io->i_ma;
 	startblock = io->i_bn;
 	hprecal = 0;
+
 restart:
 	bn = io->i_bn;
 	cn = bn/st->nspc;
@@ -273,12 +186,24 @@ restart:
 		er1 &= ~(HPER1_HCE|HPER1_FER);
 		er2 &= ~HPER2_BSE;
 	}
+	/*
+	 * Give up early if drive write locked.
+	 */
 	if (er1&HPER1_WLE) {
 		printf("hp%d: write locked\n", unit);
 		return (-1);
 	}
+	/*
+	 * No bad sector handling on RP06's yet.
+	 */
 	if (MASKREG(er1) == HPER1_FER && RP06)
 		goto badsect;
+
+	/*
+	 * If a hard error, or maximum retry count
+	 * exceeded, clear controller state and
+	 * pass back error to caller.
+	 */
 	if (++io->i_errcnt > 27 || (er1 & HPER1_HARD) ||
 	    (!ML11 && (er2 & HPER2_HARD))) {
 hard0:
@@ -303,6 +228,13 @@ hard:
 		return (-1);
 
 	}
+	/*
+	 * Attempt to forward bad sectors on
+	 * anything but an ML11.  If drive
+	 * supports skip sector handling, try to
+	 * use it first; otherwise try the
+	 * bad sector table.
+	 */
 	if ((er2 & HPER2_BSE) && !ML11) {
 badsect:
 		if (!ssect && (er2&HPER2_SSE))
@@ -316,12 +248,19 @@ badsect:
 		io->i_error = EBSE;
 		goto hard;
 	}
+
+	/*
+	 * Skip sector handling.
+	 */
 	if (RM80 && er2&HPER2_SSE) {
 skipsect:
 		(void) hpecc(io, SSE);
 		ssect = 1;
 		goto success;
 	}
+	/*
+	 * ECC correction.
+	 */
 	if ((er1 & (HPER1_DCK|HPER1_ECH)) == HPER1_DCK) {
 		if (hpecc(io, ECC) == 0)
 			goto success;
@@ -333,11 +272,19 @@ skipsect:
 	/* fall thru to retry */
 	hpaddr->hpcs1 = HP_DCLR|HP_GO;
 	HPWAIT(hpaddr);
+
+	/* 
+	 * Every fourth retry recalibrate.
+	 */
 	if (((io->i_errcnt&07) == 4) ) {
 		hpaddr->hpcs1 = HP_RECAL|HP_GO;
 		hprecal = 1;
 		goto again;
 	}
+
+	/*
+	 * Recalibration state machine.
+	 */
 	switch (hprecal) {
 
 	case 1:
@@ -366,10 +313,15 @@ skipsect:
 	}
 	goto again;
 
-success:		 		/* continue with the next block */
+success:
+	/*
+	 * On successful error recovery, bump
+	 * block number to advance to next portion
+	 * of i/o transfer.
+	 */
 	bn++;
 	if ((bn-startblock) * sectsiz < bytecnt) {
-again:					/* re-read same block */
+again:
 		io->i_bn = bn;
 		io->i_ma = membase + (io->i_bn - startblock)*sectsiz;
 		io->i_cc = bytecnt - (io->i_bn - startblock)*sectsiz;
@@ -396,9 +348,11 @@ hpecc(io, flag)
 		bcr |= 0xffff0000;		/* sxt */
 	npf = (bcr + io->i_cc) / sectsiz;	/* # sectors read */
 	bn = io->i_bn + npf + ssect;		/* physical block #*/
-	switch (flag) {
 
-	case ECC: {
+	/*
+	 * ECC correction logic.
+	 */
+	if (flag == ECC) {
 		register int i;
 		caddr_t addr;
 		int bit, byte, mask, ecccnt = 0;
@@ -415,14 +369,13 @@ hpecc(io, flag)
 #ifdef HPECCDEBUG
 			printf("addr %x old:%x ",addr, (*addr&0xff));
 #endif
+			/* don't correct in-core copy during wcheck */
 			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0)
-				*addr ^= (mask << bit);	/* don't 'correct' mem-
-							 * ory during Wcheck */
+				*addr ^= (mask << bit);
 #ifdef HPECCDEBUG
 			printf("new:%x\n",(*addr&0xff));
 #endif
-			byte++;
-			i++;
+			byte++, i++;
 			bit -= 8;
 			if ((io->i_flgs & F_ECCLM) && ecccnt++ >= MAXECC)
 				return (1);
@@ -435,13 +388,17 @@ hpecc(io, flag)
 	 * Set skip-sector-inhibit and
 	 * read next sector
 	 */
-	case SSE:
+	if (flag == SSE) {
 		rp->hpcs1 = HP_DCLR | HP_GO;
 		HPWAIT(rp);
 		rp->hpof |= HPOF_SSEI;
 		return (0);	
+	}
 
-	case BSE: {
+	/*
+	 * Bad block forwarding.
+	 */
+	 if (flag == BSE) {
 		int bbn;
 
 		rp->hpcs1 = HP_DCLR | HP_GO;
@@ -475,10 +432,10 @@ hpecc(io, flag)
 		HPWAIT(rp);
 		return (rp->hpds&HPDS_ERR);
 	}
-	}
 	printf("hpecc: flag=%d\n", flag);
 	return (1);
 }
+
 /*ARGSUSED*/
 hpioctl(io, cmd, arg)
 	struct iob *io;

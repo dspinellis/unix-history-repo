@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.1	83/02/18	*/
+/*	hpmaptype.c	4.2	83/02/18	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
@@ -56,14 +56,12 @@ hpmaptype(hpaddr, type, unit)
 {
 	int ntracks, hpsn;
 
-printf("hpmaptype: type=%d\n", type);
 	/*
 	 * Handle SI model byte stuff when
 	 * we think it's an RM03 or RM05.
 	 */
 	if (type == 0 || type == 1) {
 		hpsn = hpaddr->hpsn;
-printf("hpsn=%x\n", hpsn&0xffff);
 		if ((hpsn & SIMB_LU) != unit)
 			return (type);
 		switch ((hpsn & SIMB_MB) &~ (SIMB_S6|SIRM03|SIRM05)) {
