@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  *
- * from: $Header: trap.c,v 1.31 92/07/11 11:08:57 torek Exp $
+ * from: $Header: trap.c,v 1.33 92/11/26 03:05:09 torek Exp $
  */
 
 #include <sys/param.h>
@@ -36,10 +36,9 @@
 #include <vm/vm_kern.h>
 
 #include <machine/cpu.h>
+#include <machine/ctlreg.h>
 #include <machine/frame.h>
 #include <machine/trap.h>
-
-#include <sparc/sparc/ctlreg.h>
 
 #define	offsetof(s, f) ((int)&((s *)0)->f)
 
