@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -19,10 +19,14 @@ static char sccsid[] = "@(#)vfprintf.c	5.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	MAXBUF		120			/* should hold any number */
-#define	DEFPREC		6			/* default precision */
+#define	MAXBUF		120
+#define	DEFPREC		6
 
 #define	PUTC(ch, fd)	{++cnt; putc(ch, fd);}
+
+#define	EFORMAT		1
+#define	FFORMAT		2
+#define	GFORMAT		3
 
 #define	LONGINT		0x01
 #define	LONGDBL		0x02
@@ -41,8 +45,8 @@ x_doprnt(fmt, argp, fp)
 	register int base;
 	register char *digs, *bp, *t, padc;
 	double _double;
-	char argsize, printsign, buf[MAXBUF], *ecvt(), *fcvt();
-	int alternate, cnt, decpt, n, ladjust, width, prec, sign, size;
+	char argsize, printsign, *_cvt(), buf[MAXBUF];
+	int alternate, cnt, n, ladjust, width, prec, size;
 
 	for (cnt = 0; *fmt; ++fmt) {
 		if (*fmt != '%') {
@@ -139,55 +143,15 @@ flags:		switch (*++fmt) {
 			goto num1;
 		case 'E':
 		case 'e':
-			if (prec == -1)
-				prec = DEFPREC;
 			_double = va_arg(argp, double);
-			t = fcvt(_double, prec + 1, &decpt, &sign);
-gise:			bp = buf;
-			*bp++ = *t ? *t++ : '0';
-			if (alternate || prec > 0)
-				*bp++ = '.';
-			while (prec--)
-				*bp++ = *t ? *t++ : '0';
-			*bp++ = *fmt;
-			if (decpt > 0 || !_double) {
-				*bp++ = '+';
-				--decpt;
-			}
-			else {
-				*bp++ = '-';
-				decpt = -decpt + 1;
-			}
-			/* exponents <= 99 in ANSI X3J11 */
-			*bp++ = (int)(decpt / 10) + '0';
-			*bp++ = (int)(decpt % 10) + '0';
+			bp = _cvt(_double, prec, buf, EFORMAT, *fmt,
+			    printsign);
 			goto pbuf;
 		case 'f':
-			if (prec == -1)
-				prec = DEFPREC;
 			_double = va_arg(argp, double);
-			t = fcvt(_double, prec + 1, &decpt, &sign);
-gisf:			bp = buf;
-			if (decpt >= 0)
-				for (;;) {
-					*bp++ = *t ? *t++ : '0';
-					if (!--decpt)
-						break;
-				}
-			if (alternate || prec > 0) {
-				if (decpt < 0)
-					*bp++ = '0';
-				*bp++ = '.';
-			}
-			while (decpt++) {
-				*bp++ = '0';
-				--prec;
-			}
-			while (prec--)
-				*bp++ = *t ? *t++ : '0';
+			bp = _cvt(_double, prec, buf, FFORMAT, 'f',
+			    printsign);
 pbuf:			size = bp - buf;
-			if (sign || printsign)
-				PUTC(sign ? '-' : printsign, fp);
 			if (size < width && !ladjust)
 				do {
 					PUTC(padc, fp);
@@ -198,25 +162,11 @@ pbuf:			size = bp - buf;
 				PUTC(padc, fp);
 			break;
 		case 'G':
-		case 'g': {
-			int gotoe;
-
-			if (prec == -1)
-				prec = DEFPREC;
+		case 'g':
 			_double = va_arg(argp, double);
-			t = fcvt(_double, prec + 1, &decpt, &sign);
-			gotoe = decpt > prec;
-			if (!alternate) {
-				for (bp = t + prec + decpt; prec &&
-				    *--bp == '0'; --prec);
-			}
-			if (gotoe || decpt < -3) {
-				*fmt -= 2;
-				goto gise;
-			}
-			--*fmt;
-			goto gisf;
-		}
+			bp = _cvt(_double, prec, buf, GFORMAT, *fmt - 2,
+			    printsign);
+			goto pbuf;
 		case 'n':
 			*(va_arg(argp, int *)) = cnt;
 			break;
@@ -237,7 +187,6 @@ pbuf:			size = bp - buf;
 				} while (--width > size);
 			PUTC('0', fp);
 			goto num2;
-			break;
 		case 'p':
 		case 's':
 			if (!(bp = va_arg(argp, char *)))
@@ -299,4 +248,84 @@ num2:			while (++bp != &buf[MAXBUF])
 		}
 	}
 	return(ferror(fp) ? -1 : cnt);
+}
+
+char *
+_cvt(number, prec, bp, format, fmtch, printsign)
+	double number;
+	int prec, format;
+	register char *bp;
+	char fmtch, printsign;
+{
+	int sign, decpt;
+	register char *t;
+	register int n;
+	double fabs();
+	char *ecvt(), *fcvt();
+
+	if (prec == -1)
+		prec = DEFPREC;
+	t = fabs(number) < 1 ? ecvt(number, prec + 1, &decpt, &sign) :
+	    fcvt(number, prec + 1, &decpt, &sign);
+
+	if (sign)
+		*bp++ = '-';
+	else if (printsign)
+		*bp++ = printsign;
+
+	/* E format */
+	/* use 'e' format if exponent > precision or less than -4 */
+	if (format == EFORMAT ||
+	    format == GFORMAT && (decpt > prec || decpt < -3)) {
+		*bp++ = *t ? *t++ : '0';
+		if (format != GFORMAT && prec || prec > 1) {
+			*bp++ = '.';
+			while(prec--)
+				*bp++ = *t ? *t++ : '0';
+		}
+		if (*t && *t > '4')
+			++bp[-1];
+		if (format == 2) {
+			for (; bp[-1] == '0'; --bp);
+			if (*bp == '.')
+				--bp;
+		}
+		*bp++ = fmtch;
+		if (--decpt < 0) {
+			decpt = -decpt;
+			*bp++ = '-';
+		}
+		else
+			*bp++ = '+';
+		*bp++ = decpt / 10 + '0';
+		*bp++ = decpt % 10 + '0';
+	}
+	/* F format */
+	else {
+		if (decpt <= 0) {
+			*bp++ = '0';
+			if (prec) {
+				*bp++ = '.';
+				if (format == FFORMAT)
+					while (decpt++ < 0 && prec--)
+						*bp++ = '0';
+				else while (decpt++ < 0)
+					*bp++ = '0';
+			}
+		}
+		else {
+			for (n = 1; n <= decpt; n++)
+				*bp++ = *t++;
+			if (prec)
+				*bp++ = '.';
+		}
+		for (n = 1; n <= prec; n++)
+			*bp++ = *t ? *t++ : '0';
+		if (format == GFORMAT) {
+			for (; bp[-1] == '0'; --bp);
+			if (bp[-1] == '.')
+				--bp;
+		}
+	}
+	return(bp);
 }
