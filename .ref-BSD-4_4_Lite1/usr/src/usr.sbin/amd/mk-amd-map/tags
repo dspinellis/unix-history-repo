@@ -1,6 +1,0 @@
-Mmk-amd-map	mk-amd-map.c	/^main(argc, argv)$/
-create_database	mk-amd-map.c	/^#define create_database(name) dbm_open(name, O_RDW/
-read_file	mk-amd-map.c	/^static int read_file(fp, map, db)$/
-read_line	mk-amd-map.c	/^static int read_line(buf, size, fp)$/
-remove_file	mk-amd-map.c	/^static int remove_file(f)$/
-store_data	mk-amd-map.c	/^static int store_data(db, k, v)$/
