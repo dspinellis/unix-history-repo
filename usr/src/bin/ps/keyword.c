@@ -260,13 +260,14 @@ showkey()
 parsefmt(p)
 	char *p;
 {
+	static struct varent *vtail;
 	register VAR *v;
 	register char *cp;
 	register struct varent *vent;
 	static VAR *findvar();
 
 #define	FMTSEP	" \t,\n"
-	while (p) {
+	while (p && *p) {
 		while ((cp = strsep(&p, FMTSEP)) != NULL && *cp == '\0')
 			/* void */;
 		if (!(v = findvar(cp)))
