@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	2.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	2.15 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
+#include <sys/stat.h>
 
 /*
  * Mail -- a mail program
@@ -24,12 +25,21 @@ setfile(name, isedit)
 {
 	FILE *ibuf;
 	int i;
+	struct stat stb;
 	static int shudclob;
 	static char efile[128];
 	extern char tempMesg[];
 
 	if ((ibuf = fopen(name, "r")) == NULL)
 		return(-1);
+	if (!edit) {
+		if (fstat(fileno(ibuf), &stb) < 0) {
+			perror(name);
+			exit(1);
+		}
+		if (stb.st_size == 0)
+			return(-1);
+	}
 
 	/*
 	 * Looks like all will be well.  We must now relinquish our
