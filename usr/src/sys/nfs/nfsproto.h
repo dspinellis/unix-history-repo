@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsproto.h	7.4 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -36,6 +36,8 @@
 #define	NFS_MAXPATHLEN	1024
 #define	NFS_MAXNAMLEN	255
 #define	NFS_FHSIZE	32
+#define	NFS_MAXPKTHDR	404
+#define NFS_MAXPACKET	(NFS_MAXPKTHDR+NFS_MAXDATA)
 #define	NFS_NPROCS	18
 
 /* Stat numbers for rpc returns */

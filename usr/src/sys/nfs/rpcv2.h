@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rpcv2.h	7.2 (Berkeley) %G%
+ *	@(#)rpcv2.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -28,10 +28,12 @@
 /* Version # */
 #define	RPC_VER2	2
 
-/* Authentication Flavours */
+/* Authentication */
 #define	RPCAUTH_NULL	0
 #define	RPCAUTH_UNIX	1
 #define	RPCAUTH_SHORT	2
+#define	RPCAUTH_MAXSIZ	400
+#define	RPCAUTH_UNIXGIDS 16
 
 /* Rpc Constants */
 #define	RPC_CALL	0

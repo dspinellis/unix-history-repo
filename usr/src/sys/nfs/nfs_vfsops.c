@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,6 +35,8 @@
 #include "nfsnode.h"
 #include "nfsmount.h"
 #include "nfs.h"
+#include "xdr_subs.h"
+#include "nfsm_subs.h"
 
 /*
  * nfs vfs operations.
@@ -64,6 +66,61 @@ struct vfsops nfs_vfsops = {
 };
 
 static u_char nfs_mntid;
+extern u_long nfs_procids[NFS_NPROCS];
+extern u_long nfs_prog, nfs_vers;
+void nfs_disconnect();
+
+#define TRUE	1
+#define	FALSE	0
+
+/*
+ * nfs statfs call
+ */
+nfs_statfs(mp, sbp)
+	struct mount *mp;
+	register struct statfs *sbp;
+{
+	register struct vnode *vp;
+	register struct nfsv2_statfs *sfp;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
+	struct nfsmount *nmp;
+	struct ucred *cred;
+	struct nfsnode *np;
+
+	nmp = VFSTONFS(mp);
+	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
+		return (error);
+	vp = NFSTOV(np);
+	nfsstats.rpccnt[NFSPROC_STATFS]++;
+	cred = crget();
+	cred->cr_ngroups = 1;
+	nfsm_reqhead(nfs_procids[NFSPROC_STATFS], cred, NFSX_FH);
+	nfsm_fhtom(vp);
+	nfsm_request(vp, NFSPROC_STATFS, u.u_procp);
+	nfsm_disect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
+	sbp->f_type = MOUNT_NFS;
+	sbp->f_flags = nmp->nm_flag;
+	sbp->f_bsize = fxdr_unsigned(long, sfp->sf_tsize);
+	sbp->f_fsize = fxdr_unsigned(long, sfp->sf_bsize);
+	sbp->f_blocks = fxdr_unsigned(long, sfp->sf_blocks);
+	sbp->f_bfree = fxdr_unsigned(long, sfp->sf_bfree);
+	sbp->f_bavail = fxdr_unsigned(long, sfp->sf_bavail);
+	sbp->f_files = 0;
+	sbp->f_ffree = 0;
+	if (sbp != &mp->mnt_stat) {
+		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
+		bcopy(mp->mnt_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);
+	}
+	nfsm_reqdone;
+	nfs_nput(vp);
+	crfree(cred);
+	return (error);
+}
 
 /*
  * Called by vfs_mountroot when nfs is going to be mounted as root
@@ -92,7 +149,7 @@ nfs_mount(mp, path, data, ndp)
 {
 	int error;
 	struct nfs_args args;
-	struct mbuf *saddr;
+	struct mbuf *nam;
 	char pth[MNAMELEN], hst[MNAMELEN];
 	int len;
 	nfsv2fh_t nfh;
@@ -110,21 +167,21 @@ nfs_mount(mp, path, data, ndp)
 		return (error);
 	bzero(&hst[len], MNAMELEN-len);
 	/* sockargs() call must be after above copyin() calls */
-	if (error = sockargs(&saddr, (caddr_t)args.addr,
+	if (error = sockargs(&nam, (caddr_t)args.addr,
 		sizeof (struct sockaddr), MT_SONAME))
 		return (error);
 	args.fh = &nfh;
-	error = mountnfs(&args, mp, saddr, pth, hst);
+	error = mountnfs(&args, mp, nam, pth, hst);
 	return (error);
 }
 
 /*
  * Common code for mount and mountroot
  */
-mountnfs(argp, mp, saddr, pth, hst)
+mountnfs(argp, mp, nam, pth, hst)
 	register struct nfs_args *argp;
 	register struct mount *mp;
-	register struct mbuf *saddr;
+	struct mbuf *nam;
 	char *pth, *hst;
 {
 	register struct nfsmount *nmp;
@@ -161,7 +218,6 @@ mountnfs(argp, mp, saddr, pth, hst)
 	}
 	if (major(tfsid.val[0]) > 127) {
 		error = ENOENT;
-		m_freem(saddr);
 		goto bad;
 	}
 	mp->mnt_stat.f_fsid.val[0] = tfsid.val[0];
@@ -177,6 +233,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 	mp->mnt_stat.f_type = MOUNT_NFS;
 	bcopy(hst, mp->mnt_stat.f_mntfromname, MNAMELEN);
 	bcopy(pth, mp->mnt_stat.f_mntonname, MNAMELEN);
+	nmp->nm_nam = nam;
 
 	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo > 0) {
 		nmp->nm_rto = argp->timeo;
@@ -215,10 +272,10 @@ mountnfs(argp, mp, saddr, pth, hst)
 			nmp->nm_rsize = NFS_MAXDATA;
 	}
 	/* Set up the sockets and per-host congestion */
-	if (error = nfs_connect(nmp, saddr)) {
-		m_freem(saddr);
+	nmp->nm_sotype = argp->sotype;
+	nmp->nm_soproto = argp->proto;
+	if (error = nfs_connect(nmp))
 		goto bad;
-	}
 
 	if (error = nfs_statfs(mp, &mp->mnt_stat))
 		goto bad;
@@ -236,11 +293,12 @@ mountnfs(argp, mp, saddr, pth, hst)
 	 * Unlock it, but keep the reference count.
 	 */
 	nfs_unlock(NFSTOV(np));
-	return (0);
 
+	return (0);
 bad:
 	nfs_disconnect(nmp);
 	FREE(nmp, M_NFSMNT);
+	m_freem(nam);
 	return (error);
 }
 
@@ -302,6 +360,7 @@ nfs_unmount(mp, mntflags)
 	vrele(vp);
 	vput(vp);
 	nfs_disconnect(nmp);
+	m_freem(nmp->nm_nam);
 	free((caddr_t)nmp, M_NFSMNT);
 	return (0);
 }
@@ -388,13 +447,11 @@ nfs_start(mp, flags)
 /*
  * Do operations associated with quotas, not supported
  */
-/* ARGSUSED */
 nfs_quotactl(mp, cmd, uid, arg)
 	struct mount *mp;
 	int cmd;
 	uid_t uid;
 	caddr_t arg;
 {
-
 	return (EOPNOTSUPP);
 }

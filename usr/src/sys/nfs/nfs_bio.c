@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,6 +30,7 @@
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsiom.h"
+#include "nfsmount.h"
 
 /* True and false, how exciting */
 #define	TRUE	1
@@ -39,62 +40,61 @@
  * Vnode op for read using bio
  * Any similarity to readip() is purely coincidental
  */
-nfs_read(vp, uio, ioflag, cred)
+nfs_bioread(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
 	int ioflag;
 	struct ucred *cred;
 {
 	register struct nfsnode *np = VTONFS(vp);
+	struct nfsmount *nmp;
 	struct buf *bp;
 	struct vattr vattr;
 	daddr_t lbn, bn, rablock;
 	int diff, error = 0;
 	long n, on;
 
-	/*
-	 * Avoid caching directories. Once everything is using getdirentries()
-	 * this will never happen anyhow.
-	 */
-	if (vp->v_type == VDIR)
-		return (nfs_readrpc(vp, uio, cred));
 	if (uio->uio_rw != UIO_READ)
 		panic("nfs_read mode");
-	if (vp->v_type != VREG)
-		panic("nfs_read type");
 	if (uio->uio_resid == 0)
 		return (0);
-	if (uio->uio_offset < 0)
+	if (uio->uio_offset < 0 && vp->v_type != VDIR)
 		return (EINVAL);
 	/*
 	 * If the file's modify time on the server has changed since the
 	 * last read rpc or you have written to the file,
 	 * you may have lost data cache consistency with the
 	 * server, so flush all of the file's data out of the cache.
-	 * This will implicitly bring the modify time up to date, since
-	 * up to date attributes are returned in the reply to any write rpc's
+	 * Then force a getattr rpc to ensure that you have up to date
+	 * attributes.
 	 * NB: This implies that cache data can be read when up to
 	 * NFS_ATTRTIMEO seconds out of date. If you find that you need current
 	 * attributes this could be forced by setting n_attrstamp to 0 before
 	 * the nfs_getattr() call.
 	 */
-	if (np->n_flag & NMODIFIED) {
-		np->n_flag &= ~NMODIFIED;
-		if (vinvalbuf(vp, TRUE)) {
+	if (vp->v_type != VLNK) {
+		if (np->n_flag & NMODIFIED) {
+			np->n_flag &= ~NMODIFIED;
+			vinvalbuf(vp, TRUE);
+			np->n_attrstamp = 0;
+			np->n_direofoffset = 0;
 			if (error = nfs_getattr(vp, &vattr, cred))
 				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
-		}
-	} else if (vp->v_cleanblkhd || vp->v_dirtyblkhd) {
-		if (error = nfs_getattr(vp, &vattr, cred))
-			return (error);
-		if (np->n_mtime != vattr.va_mtime.tv_sec) {
-			vinvalbuf(vp, TRUE);
-			np->n_mtime = vattr.va_mtime.tv_sec;
+		} else {
+			if (error = nfs_getattr(vp, &vattr, cred))
+				return (error);
+			if (np->n_mtime != vattr.va_mtime.tv_sec) {
+				np->n_direofoffset = 0;
+				vinvalbuf(vp, TRUE);
+				np->n_mtime = vattr.va_mtime.tv_sec;
+			}
 		}
 	}
-	np->n_flag |= NBUFFERED;
+	nmp = VFSTONFS(vp->v_mount);
 	do {
+	    switch (vp->v_type) {
+	    case VREG:
 		nfsstats.biocache_reads++;
 		lbn = uio->uio_offset >> NFS_BIOSHIFT;
 		on = uio->uio_offset & (NFS_BIOSIZE-1);
@@ -114,19 +114,43 @@ nfs_read(vp, uio, ioflag, cred)
 			error = bread(vp, bn, NFS_BIOSIZE, cred, &bp);
 		vp->v_lastr = lbn;
 		if (bp->b_resid) {
-			diff = (on >= (NFS_BIOSIZE-bp->b_resid)) ? 0 :
-				(NFS_BIOSIZE-bp->b_resid-on);
-			n = MIN(n, diff);
+		   diff = (on >= (NFS_BIOSIZE-bp->b_resid)) ? 0 :
+			(NFS_BIOSIZE-bp->b_resid-on);
+		   n = MIN(n, diff);
 		}
-		if (error) {
-			brelse(bp);
-			return (error);
-		}
-		if (n > 0)
-			error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+		break;
+	    case VLNK:
+		nfsstats.biocache_readlinks++;
+		on = 0;
+		error = bread(vp, (daddr_t)0, NFS_MAXPATHLEN, cred, &bp);
+		n = MIN(uio->uio_resid, NFS_MAXPATHLEN - bp->b_resid);
+		break;
+	    case VDIR:
+		nfsstats.biocache_readdirs++;
+		on = 0;
+		error = bread(vp, uio->uio_offset, DIRBLKSIZ, cred, &bp);
+		n = MIN(uio->uio_resid, DIRBLKSIZ - bp->b_resid);
+		break;
+	    };
+	    if (error) {
+		brelse(bp);
+		return (error);
+	    }
+	    if (n > 0)
+		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+	    switch (vp->v_type) {
+	    case VREG:
 		if (n+on == NFS_BIOSIZE || uio->uio_offset == np->n_size)
 			bp->b_flags |= B_AGE;
-		brelse(bp);
+		break;
+	    case VLNK:
+		n = 0;
+		break;
+	    case VDIR:
+		uio->uio_offset = bp->b_blkno;
+		break;
+	    };
+	    brelse(bp);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	return (error);
 }
@@ -142,20 +166,30 @@ nfs_write(vp, uio, ioflag, cred)
 {
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
+	struct vattr vattr;
 	daddr_t lbn, bn;
 	int n, on, error = 0;
 
+	if (uio->uio_rw != UIO_WRITE)
+		panic("nfs_write mode");
+	if (vp->v_type != VREG)
+		return (EIO);
 	/* Should we try and do this ?? */
-	if (vp->v_type == VREG && (ioflag & IO_APPEND))
+	if (ioflag & IO_APPEND) {
+		if (np->n_flag & NMODIFIED) {
+			np->n_flag &= ~NMODIFIED;
+			vinvalbuf(vp, TRUE);
+		}
+		np->n_attrstamp = 0;
+		if (error = nfs_getattr(vp, &vattr, cred))
+			return (error);
 		uio->uio_offset = np->n_size;
+		return (nfs_writerpc(vp, uio, cred, u.u_procp));
+	}
 #ifdef notdef
 	cnt = uio->uio_resid;
 	osize = np->n_size;
 #endif
-	if (uio->uio_rw != UIO_WRITE)
-		panic("nfs_write mode");
-	if (vp->v_type != VREG)
-		panic("nfs_write type");
 	if (uio->uio_offset < 0)
 		return (EINVAL);
 	if (uio->uio_resid == 0)
@@ -164,13 +198,12 @@ nfs_write(vp, uio, ioflag, cred)
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
-	if (vp->v_type == VREG &&
-	    uio->uio_offset + uio->uio_resid >
+	if (uio->uio_offset + uio->uio_resid >
 	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(u.u_procp, SIGXFSZ);
 		return (EFBIG);
 	}
-	np->n_flag |= (NMODIFIED|NBUFFERED);
+	np->n_flag |= NMODIFIED;
 	do {
 		nfsstats.biocache_writes++;
 		lbn = uio->uio_offset >> NFS_BIOSHIFT;
@@ -195,6 +228,7 @@ again:
 				bp->b_dirtyoff = MIN(on, bp->b_dirtyoff);
 				bp->b_dirtyend = MAX((on+n), bp->b_dirtyend);
 			} else {
+				bp->b_proc = u.u_procp;
 				if (error = bwrite(bp))
 					return (error);
 				goto again;
@@ -209,8 +243,10 @@ again:
 		}
 		if ((n+on) == NFS_BIOSIZE) {
 			bp->b_flags |= B_AGE;
+			bp->b_proc = (struct proc *)0;
 			bawrite(bp);
 		} else {
+			bp->b_proc = (struct proc *)0;
 			bdwrite(bp);
 		}
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);

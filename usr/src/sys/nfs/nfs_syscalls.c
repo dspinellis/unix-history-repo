@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,6 +35,10 @@
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "domain.h"
+#include "protosw.h"
+#include "netinet/in.h"
+#include "netinet/tcp.h"
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsrvcache.h"
@@ -44,7 +48,8 @@ extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
 extern struct buf nfs_bqueue;
 extern int nfs_asyncdaemons;
-extern struct proc *nfs_iodwant[MAX_ASYNCDAEMON];
+extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
+extern int nfs_tcpnodelay;
 struct file *getsock();
 
 #define	TRUE	1
@@ -99,59 +104,111 @@ nfssvc()
 {
 	register struct a {
 		int s;
-		u_long ormask;
-		u_long matchbits;
+		caddr_t mskval;
+		int msklen;
+		caddr_t mtchval;
+		int mtchlen;
 	} *uap = (struct a *)u.u_ap;
 	register struct mbuf *m;
 	register int siz;
 	register struct ucred *cr;
 	struct file *fp;
 	struct mbuf *mreq, *mrep, *nam, *md;
+	struct mbuf msk, mtch;
 	struct socket *so;
 	caddr_t dpos;
-	int procid;
+	int procid, repstat, error, cacherep, solock = 0;
 	u_long retxid;
-	u_long msk, mtch;
-	int repstat;
-	int error;
 
 	/*
 	 * Must be super user
 	 */
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
-	fp = getsock(uap->s, &error);
+		goto bad;
+	fp = getsock(uap->s);
 	if (fp == 0)
-		RETURN (error);
+		return;
 	so = (struct socket *)fp->f_data;
-	cr = u.u_cred = crcopy(u.u_cred);	/* Copy it so others don't see changes */
-	msk = uap->ormask;
-	mtch = uap->matchbits;
+	if (sosendallatonce(so))
+		siz = NFS_MAXPACKET;
+	else
+		siz = NFS_MAXPACKET + sizeof(u_long);
+	if (error = soreserve(so, siz, siz * 4))
+		goto bad;
+	if (error = sockargs(&nam, uap->mskval, uap->msklen, MT_SONAME))
+		goto bad;
+	bcopy((caddr_t)nam, (caddr_t)&msk, sizeof (struct mbuf));
+	msk.m_data = msk.m_dat;
+	m_freem(nam);
+	if (error = sockargs(&nam, uap->mtchval, uap->mtchlen, MT_SONAME))
+		goto bad;
+	bcopy((caddr_t)nam, (caddr_t)&mtch, sizeof (struct mbuf));
+	mtch.m_data = mtch.m_dat;
+	m_freem(nam);
+
+	/* Copy the cred so others don't see changes */
+	cr = u.u_cred = crcopy(u.u_cred);
+
+	/*
+	 * Set protocol specific options { for now TCP only } and
+	 * reserve some space. For datagram sockets, this can get called
+	 * repeatedly for the same socket, but that isn't harmful.
+	 */
+	if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
+		MGET(m, M_WAIT, MT_SOOPTS);
+		*mtod(m, int *) = 1;
+		m->m_len = sizeof(int);
+		sosetopt(so, SOL_SOCKET, SO_KEEPALIVE, m);
+	}
+	if (so->so_proto->pr_domain->dom_family == AF_INET &&
+	    so->so_proto->pr_protocol == IPPROTO_TCP &&
+	    nfs_tcpnodelay) {
+		MGET(m, M_WAIT, MT_SOOPTS);
+		*mtod(m, int *) = 1;
+		m->m_len = sizeof(int);
+		sosetopt(so, IPPROTO_TCP, TCP_NODELAY, m);
+	}
+	so->so_rcv.sb_flags &= ~SB_NOINTR;
+	so->so_rcv.sb_timeo = 0;
+	so->so_snd.sb_flags &= ~SB_NOINTR;
+	so->so_snd.sb_timeo = 0;
+
 	/*
 	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
-		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr, msk, mtch)) {
+		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr, &solock,
+		   &msk, &mtch)) {
 			if (nam)
 				m_freem(nam);
-			if (error == ERESTART || error == EINTR)
-				RETURN (EINTR);
+			if (error == EPIPE || error == EINTR ||
+			    error == ERESTART)
+				goto bad;
+			so->so_error = 0;
 			continue;
 		}
-		switch (nfsrv_getcache(nam, retxid, procid, &mreq)) {
+
+		if (nam)
+			cacherep = nfsrv_getcache(nam, retxid, procid, &mreq);
+		else
+			cacherep = RC_DOIT;
+		switch (cacherep) {
 		case RC_DOIT:
 			if (error = (*(nfsrv_procs[procid]))(mrep, md, dpos,
 				cr, retxid, &mreq, &repstat)) {
-				nfsrv_updatecache(nam, retxid, procid,
-					FALSE, repstat, mreq);
-				m_freem(nam);
 				nfsstats.srv_errs++;
+				if (nam) {
+					nfsrv_updatecache(nam, retxid, procid,
+						FALSE, repstat, mreq);
+					m_freem(nam);
+				}
 				break;
 			}
 			nfsstats.srvrpccnt[procid]++;
-			nfsrv_updatecache(nam, retxid, procid, TRUE,
-				repstat, mreq);
+			if (nam)
+				nfsrv_updatecache(nam, retxid, procid, TRUE,
+					repstat, mreq);
 			mrep = (struct mbuf *)0;
 		case RC_REPLY:
 			m = mreq;
@@ -160,14 +217,35 @@ nfssvc()
 				siz += m->m_len;
 				m = m->m_next;
 			}
-			if (siz <= 0 || siz > 9216) {
+			if (siz <= 0 || siz > NFS_MAXPACKET) {
 				printf("mbuf siz=%d\n",siz);
 				panic("Bad nfs svc reply");
 			}
-			error = nfs_send(so, nam, mreq, 0, siz);
-			m_freem(nam);
+			mreq->m_pkthdr.len = siz;
+			mreq->m_pkthdr.rcvif = (struct ifnet *)0;
+			/*
+			 * For non-atomic protocols, prepend a Sun RPC
+			 * Record Mark.
+			 */
+			if (!sosendallatonce(so)) {
+				M_PREPEND(mreq, sizeof(u_long), M_WAIT);
+				*mtod(mreq, u_long *) = htonl(0x80000000 | siz);
+			}
+			if (so->so_proto->pr_flags & PR_CONNREQUIRED)
+				nfs_solock(&solock, 0);
+			error = nfs_send(so, nam, mreq, (struct nfsreq *)0);
+			if (so->so_proto->pr_flags & PR_CONNREQUIRED)
+				nfs_sounlock(&solock);
+			if (nam)
+				m_freem(nam);
 			if (mrep)
 				m_freem(mrep);
+			if (error) {
+				if (error == EPIPE || error == EINTR ||
+				    error == ERESTART)
+					goto bad;
+				so->so_error = 0;
+			}
 			break;
 		case RC_DROPIT:
 			m_freem(mrep);
@@ -175,6 +253,8 @@ nfssvc()
 			break;
 		};
 	}
+bad:
+	RETURN (error);
 }
 
 /*
@@ -197,7 +277,7 @@ async_daemon()
 	/*
 	 * Assign my position or return error if too many already running
 	 */
-	if (nfs_asyncdaemons > MAX_ASYNCDAEMON)
+	if (nfs_asyncdaemons > NFS_MAXASYNCDAEMON)
 		RETURN (EBUSY);
 	myiod = nfs_asyncdaemons++;
 	dp = &nfs_bqueue;
@@ -208,7 +288,7 @@ async_daemon()
 		while (dp->b_actf == NULL) {
 			nfs_iodwant[myiod] = u.u_procp;
 			if (error = tsleep((caddr_t)&nfs_iodwant[myiod],
-			    PWAIT | PCATCH, "nfsidl", 0))
+				PWAIT | PCATCH, "nfsidl", 0))
 				RETURN (error);
 		}
 		/* Take one off the end of the list */

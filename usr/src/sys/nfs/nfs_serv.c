@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -29,13 +29,13 @@
  *   3 - build the rpc reply in an mbuf list
  *   nb:
  *	- do not mix the phases, since the nfsm_?? macros can return failures
- *	  on mbuf exhaustion or similar and do not do any vrele() or vput()'s
+ *	  on a bad rpc or similar and do not do any vrele() or vput()'s
  *
  *      - the nfsm_reply() macro generates an nfs rpc reply with the nfs
  *	error number iff error != 0 whereas
- *       nfsm_srverr simply drops the mbufs and gives up
- *       (==> nfsm_srverr implies an error here at the server, usually mbuf
- *	  exhaustion)
+ *	returning an error from the server function implies a fatal error
+ *	such as a badly constructed rpc request that should be dropped without
+ *	a reply.
  */
 
 #include "param.h"
@@ -232,7 +232,7 @@ nfsrv_readlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	u_long xid;
 	int *repstat;
 {
-	struct iovec iv[NFS_MAXPATHLEN/MLEN+1];
+	struct iovec iv[(NFS_MAXPATHLEN+MLEN-1)/MLEN];
 	register struct iovec *ivp = iv;
 	register struct mbuf *mp;
 	register u_long *p;
@@ -253,12 +253,14 @@ nfsrv_readlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	i = 0;
 	while (len < NFS_MAXPATHLEN) {
 		MGET(mp, M_WAIT, MT_DATA);
-		NFSMCLGET(mp, M_WAIT);
+		MCLGET(mp, M_WAIT);
 		mp->m_len = NFSMSIZ(mp);
 		if (len == 0)
 			mp3 = mp2 = mp;
-		else
+		else {
 			mp2->m_next = mp;
+			mp2 = mp;
+		}
 		if ((len+mp->m_len) > NFS_MAXPATHLEN) {
 			mp->m_len = NFS_MAXPATHLEN-len;
 			len = NFS_MAXPATHLEN;
@@ -311,9 +313,8 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	u_long xid;
 	int *repstat;
 {
-	struct iovec iv[NFS_MAXDATA/MCLBYTES+1];
-	register struct iovec *ivp = iv;
-	register struct mbuf *mp;
+	struct iovec iv[(NFS_MAXDATA+MLEN-1)/MLEN];
+	register struct mbuf *m;
 	register struct nfsv2_fattr *fp;
 	register u_long *p;
 	register long t1;
@@ -321,13 +322,13 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	int error = 0;
 	char *cp2;
 	struct mbuf *mb, *mb2, *mreq;
-	struct mbuf *mp2, *mp3;
+	struct mbuf *m2, *m3;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	struct uio io, *uiop = &io;
 	struct vattr va, *vap = &va;
-	int i, tlen, cnt, len, nio, left;
+	int i, cnt, len, left, siz, tlen;
 	off_t off;
 
 	fhp = &nfh.fh_generic;
@@ -342,48 +343,43 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	}
 	len = left = cnt;
-	nio = (cnt+MCLBYTES-1)/MCLBYTES;
-	uiop->uio_iov = ivp;
-	uiop->uio_iovcnt = nio;
+	/*
+	 * Generate the mbuf list with the uio_iov ref. to it.
+	 */
+	i = 0;
+	m3 = (struct mbuf *)0;
+	while (left > 0) {
+		MGET(m, M_WAIT, MT_DATA);
+		if (left > MINCLSIZE)
+			MCLGET(m, M_WAIT);
+		m->m_len = 0;
+		siz = min(M_TRAILINGSPACE(m), left);
+		m->m_len = siz;
+		iv[i].iov_base = mtod(m, caddr_t);
+		iv[i].iov_len = siz;
+		i++;
+		left -= siz;
+		if (m3) {
+			m2->m_next = m;
+			m2 = m;
+		} else
+			m3 = m2 = m;
+	}
+	uiop->uio_iov = iv;
+	uiop->uio_iovcnt = i;
 	uiop->uio_offset = off;
 	uiop->uio_resid = cnt;
 	uiop->uio_rw = UIO_READ;
 	uiop->uio_segflg = UIO_SYSSPACE;
-	for (i = 0; i < nio; i++) {
-		MGET(mp, M_WAIT, MT_DATA);
-		if (left > MLEN)
-			NFSMCLGET(mp, M_WAIT);
-		mp->m_len = (M_HASCL(mp)) ? MCLBYTES : MLEN;
-		if (i == 0) {
-			mp3 = mp2 = mp;
-		} else {
-			mp2->m_next = mp;
-			mp2 = mp;
-		}
-		if (left > MLEN && !M_HASCL(mp)) {
-			m_freem(mp3);
-			vput(vp);
-			nfsm_srverr;
-		}
-		ivp->iov_base = mtod(mp, caddr_t);
-		if (left > mp->m_len) {
-			ivp->iov_len = mp->m_len;
-			left -= mp->m_len;
-		} else {
-			ivp->iov_len = mp->m_len = left;
-			left = 0;
-		}
-		ivp++;
-	}
 	error = VOP_READ(vp, uiop, IO_NODELOCKED, cred);
 	off = uiop->uio_offset;
 	if (error) {
-		m_freem(mp3);
+		m_freem(m3);
 		vput(vp);
 		nfsm_reply(0);
 	}
 	if (error = VOP_GETATTR(vp, vap, cred))
-		m_freem(mp3);
+		m_freem(m3);
 	vput(vp);
 	nfsm_reply(NFSX_FATTR+NFSX_UNSIGNED);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
@@ -392,15 +388,15 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 		len -= uiop->uio_resid;
 		if (len > 0) {
 			tlen = nfsm_rndup(len);
-			nfsm_adj(mp3, cnt-tlen, tlen-len);
+			nfsm_adj(m3, cnt-tlen, tlen-len);
 		} else {
-			m_freem(mp3);
-			mp3 = (struct mbuf *)0;
+			m_freem(m3);
+			m3 = (struct mbuf *)0;
 		}
 	}
 	nfsm_build(p, u_long *, NFSX_UNSIGNED);
 	*p = txdr_unsigned(len);
-	mb->m_next = mp3;
+	mb->m_next = m3;
 	nfsm_srvdone;
 }
 
@@ -417,7 +413,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq, repstat)
 	register struct iovec *ivp;
 	register struct mbuf *mp;
 	register struct nfsv2_fattr *fp;
-	struct iovec iv[MAX_IOVEC];
+	struct iovec iv[NFS_MAXIOVEC];
 	struct vattr va;
 	register struct vattr *vap = &va;
 	register u_long *p;
@@ -465,7 +461,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq, repstat)
 	uiop->uio_rw = UIO_WRITE;
 	uiop->uio_segflg = UIO_SYSSPACE;
 	/*
-	 * Do up to MAX_IOVEC mbufs of write each iteration of the
+	 * Do up to NFS_MAXIOVEC mbufs of write each iteration of the
 	 * loop until done.
 	 */
 	while (len > 0 && uiop->uio_resid == 0) {
@@ -474,7 +470,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq, repstat)
 		uiop->uio_iov = ivp;
 		uiop->uio_iovcnt = 0;
 		uiop->uio_offset = off;
-		while (len > 0 && uiop->uio_iovcnt < MAX_IOVEC && mp != NULL) {
+		while (len > 0 && uiop->uio_iovcnt < NFS_MAXIOVEC && mp != NULL) {
 			ivp->iov_base = mtod(mp, caddr_t);
 			if (len < mp->m_len)
 				ivp->iov_len = xfer = len;
@@ -684,7 +680,7 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	fvp = ndp->ni_vp;
 	nfsm_srvmtofh(tfhp);
-	nfsm_srvstrsiz(len2, NFS_MAXNAMLEN);
+	nfsm_strsiz(len2, NFS_MAXNAMLEN);
 	if (rootflg)
 		cred->cr_uid = 0;
 	ndinit(&tond);
@@ -806,14 +802,17 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	register u_long *p;
 	register long t1;
 	caddr_t bpos;
+	struct uio io;
+	struct iovec iv;
 	int error = 0;
-	char *cp2;
+	char *pathcp, *cp2;
 	struct mbuf *mb, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len, tlen, len2;
 
+	pathcp = (char *)0;
 	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -822,14 +821,18 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		goto out1;
-	nfsm_srvstrsiz(len2, NFS_MAXPATHLEN);
-	tlen = nfsm_rndup(len2);
-	if (len2 == tlen) {
-		nfsm_disect(cp2, caddr_t, tlen+NFSX_UNSIGNED);
-		*(cp2+tlen) = '\0';
-	} else {
-		nfsm_disect(cp2, caddr_t, tlen);
-	}
+	nfsm_strsiz(len2, NFS_MAXPATHLEN);
+	MALLOC(pathcp, caddr_t, len2 + 1, M_TEMP, M_WAITOK);
+	iv.iov_base = pathcp;
+	iv.iov_len = len2;
+	io.uio_resid = len2;
+	io.uio_offset = 0;
+	io.uio_iov = &iv;
+	io.uio_iovcnt = 1;
+	io.uio_segflg = UIO_SYSSPACE;
+	io.uio_rw = UIO_READ;
+	nfsm_mtouio(&io, len2);
+	*(pathcp + len2) = '\0';
 	vp = ndp->ni_vp;
 	if (vp) {
 		error = EEXIST;
@@ -842,12 +845,16 @@ out:
 	if (error)
 		VOP_ABORTOP(ndp);
 	else
-		error = VOP_SYMLINK(ndp, vap, cp2);
+		error = VOP_SYMLINK(ndp, vap, pathcp);
 out1:
+	if (pathcp)
+		FREE(pathcp, M_TEMP);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
+	if (pathcp)
+		FREE(pathcp, M_TEMP);
 	return (error);
 }
 
@@ -977,7 +984,7 @@ out:
 /*
  * nfs readdir service
  * - mallocs what it thinks is enough to read
- *	count rounded up to a multiple of DIRBLKSIZ <= MAX_READDIR
+ *	count rounded up to a multiple of DIRBLKSIZ <= NFS_MAXREADDIR
  * - calls VOP_READDIR()
  * - loops around building the reply
  *	if the output generated exceeds count break out of loop
@@ -1040,9 +1047,9 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	off = (toff & ~(DIRBLKSIZ-1));
 	on = (toff & (DIRBLKSIZ-1));
 	cnt = fxdr_unsigned(int, *p);
-	siz = ((cnt+DIRBLKSIZ) & ~(DIRBLKSIZ-1));
-	if (cnt > MAX_READDIR)
-		siz = MAX_READDIR;
+	siz = ((cnt+DIRBLKSIZ-1) & ~(DIRBLKSIZ-1));
+	if (cnt > NFS_MAXREADDIR)
+		siz = NFS_MAXREADDIR;
 	fullsiz = siz;
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
@@ -1125,8 +1132,10 @@ again:
 			 * "len".
 			 */
 			len += (4*NFSX_UNSIGNED+nlen+rem);
-			if (len > cnt)
+			if (len > cnt) {
+				eofflag = 0;
 				break;
+			}
 	
 			/* Build the directory record xdr from the direct entry */
 			nfsm_clget;

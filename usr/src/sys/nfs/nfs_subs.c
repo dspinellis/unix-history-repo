@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.23 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -62,14 +62,16 @@ static u_long nfs_xid = 1;
 static char *rpc_unixauth;
 extern long hostid;
 extern enum vtype v_type[NFLNK+1];
-extern struct proc *nfs_iodwant[MAX_ASYNCDAEMON];
+extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern struct map nfsmap[NFS_MSIZ];
+extern struct nfsreq nfsreqh;
 
 /* Function ret types */
 static char *nfs_unixauth();
 
 /*
  * Maximum number of groups passed through to NFS server.
+ * According to RFC1057 it should be 16.
  * For release 3.X systems, the maximum value is 8.
  * For release 4.X systems, the maximum value is 10.
  */
@@ -109,7 +111,7 @@ struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
 
 	/* If we need a lot, alloc a cluster ?? */
 	if ((asiz+hsiz+RPC_SIZ) > MHLEN)
-		NFSMCLGET(mreq, M_WAIT);
+		MCLGET(mreq, M_WAIT);
 	mreq->m_len = NFSMSIZ(mreq);
 	siz = mreq->m_len;
 	m1 = mreq;
@@ -172,6 +174,7 @@ nfsm_mbuftouio(mrep, uiop, siz, dpos)
 	register struct mbuf *mp;
 	register char *mbufcp, *uiocp;
 	long uiosiz, rem;
+	int error = 0;
 
 	mp = *mrep;
 	mbufcp = *dpos;
@@ -179,7 +182,7 @@ nfsm_mbuftouio(mrep, uiop, siz, dpos)
 	rem = nfsm_rndup(siz)-siz;
 	while (siz > 0) {
 		if (uiop->uio_iovcnt <= 0 || uiop->uio_iov == NULL)
-			return(EFBIG);
+			return (EFBIG);
 		left = uiop->uio_iov->iov_len;
 		uiocp = uiop->uio_iov->iov_base;
 		if (left > siz)
@@ -221,11 +224,15 @@ nfsm_mbuftouio(mrep, uiop, siz, dpos)
 		}
 		siz -= uiosiz;
 	}
-	if (rem > 0)
-		mbufcp += rem;
 	*dpos = mbufcp;
 	*mrep = mp;
-	return(0);
+	if (rem > 0) {
+		if (len < rem)
+			error = nfs_adv(mrep, dpos, rem, len);
+		else
+			*dpos += rem;
+	}
+	return (error);
 }
 
 /*
@@ -252,7 +259,7 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 	mp2 = *mq;
 	while (siz > 0) {
 		if (uiop->uio_iovcnt <= 0 || uiop->uio_iov == NULL)
-			return(EINVAL);
+			return (EINVAL);
 		left = uiop->uio_iov->iov_len;
 		uiocp = uiop->uio_iov->iov_base;
 		if (left > siz)
@@ -261,7 +268,7 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 		while (left > 0) {
 			MGET(mp, M_WAIT, MT_DATA);
 			if (clflg)
-				NFSMCLGET(mp, M_WAIT);
+				MCLGET(mp, M_WAIT);
 			mp->m_len = NFSMSIZ(mp);
 			mp2->m_next = mp;
 			mp2 = mp;
@@ -307,7 +314,7 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 	} else
 		*bpos = mtod(mp, caddr_t)+mp->m_len;
 	*mq = mp;
-	return(0);
+	return (0);
 }
 
 /*
@@ -333,17 +340,16 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 	while (left == 0) {
 		*mdp = mp = mp->m_next;
 		if (mp == NULL)
-			return(EBADRPC);
+			return (EBADRPC);
 		left = mp->m_len;
 		*dposp = mtod(mp, caddr_t);
 	}
 	if (left >= siz) {
 		*cp2 = *dposp;
 		*dposp += siz;
-		return(0);
 	} else if (mp->m_next == NULL) {
-		return(EBADRPC);
-	} else if (siz > MCLBYTES) {
+		return (EBADRPC);
+	} else if (siz > MHLEN) {
 		panic("nfs S too big");
 	} else {
 		/* Iff update, you can overwrite, else must alloc new mbuf */
@@ -356,26 +362,23 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 			mp->m_len -= left;
 			mp = mp2;
 		}
-		/* Alloc cluster iff we need it */
-		if (!M_HASCL(mp) && siz > NFSMSIZ(mp)) {
-			NFSMCLGET(mp, M_WAIT);
-			if (!M_HASCL(mp))
-				return(ENOBUFS);
-		}
 		*cp2 = p = mtod(mp, caddr_t);
 		bcopy(*dposp, p, left);		/* Copy what was left */
 		siz2 = siz-left;
 		p += left;
 		mp2 = mp->m_next;
-		/* Loop arround copying up the siz2 bytes */
+		/* Loop around copying up the siz2 bytes */
 		while (siz2 > 0) {
 			if (mp2 == NULL)
 				return (EBADRPC);
 			xfer = (siz2 > mp2->m_len) ? mp2->m_len : siz2;
-			bcopy(mtod(mp2, caddr_t), p, xfer);
-			NFSMADV(mp2, xfer);
-			mp2->m_len -= xfer;
-			siz2 -= xfer;
+			if (xfer > 0) {
+				bcopy(mtod(mp2, caddr_t), p, xfer);
+				NFSMADV(mp2, xfer);
+				mp2->m_len -= xfer;
+				p += xfer;
+				siz2 -= xfer;
+			}
 			if (siz2 > 0)
 				mp2 = mp2->m_next;
 		}
@@ -387,7 +390,7 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 }
 
 /*
- * Advance the position in the mbuf chain with/without freeing mbufs
+ * Advance the position in the mbuf chain.
  */
 nfs_adv(mdp, dposp, offs, left)
 	struct mbuf **mdp;
@@ -404,12 +407,12 @@ nfs_adv(mdp, dposp, offs, left)
 		offs -= s;
 		m = m->m_next;
 		if (m == NULL)
-			return(EBADRPC);
+			return (EBADRPC);
 		s = m->m_len;
 	}
 	*mdp = m;
 	*dposp = mtod(m, caddr_t)+offs;
-	return(0);
+	return (0);
 }
 
 /*
@@ -447,7 +450,7 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 	while (siz > 0) {
 		MGET(m1, M_WAIT, MT_DATA);
 		if (siz > MLEN)
-			NFSMCLGET(m1, M_WAIT);
+			MCLGET(m1, M_WAIT);
 		m1->m_len = NFSMSIZ(m1);
 		m2->m_next = m1;
 		m2 = m1;
@@ -474,7 +477,7 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 	}
 	*mb = m1;
 	*bpos = mtod(m1, caddr_t)+m1->m_len;
-	return(0);
+	return (0);
 }
 
 /*
@@ -499,7 +502,7 @@ nfs_init()
 	for (i = 0; i < NFS_NPROCS; i++)
 		nfs_procids[i] = txdr_unsigned(i);
 	/* Ensure async daemons disabled */
-	for (i = 0; i < MAX_ASYNCDAEMON; i++)
+	for (i = 0; i < NFS_MAXASYNCDAEMON; i++)
 		nfs_iodwant[i] = (struct proc *)0;
 	v_type[0] = VNON;
 	v_type[1] = VREG;
@@ -511,7 +514,11 @@ nfs_init()
 	nfs_nhinit();			/* Init the nfsnode table */
 	nfsrv_initcache();		/* Init the server request cache */
 	rminit(nfsmap, (long)NFS_MAPREG, (long)1, "nfs mapreg", NFS_MSIZ);
-	/* And start timer */
+
+	/*
+	 * Initialize reply list and start timer
+	 */
+	nfsreqh.r_prev = nfsreqh.r_next = &nfsreqh;
 	nfs_timer();
 }
 
@@ -560,7 +567,7 @@ static char *nfs_unixauth(cr)
 	i = (((caddr_t)p)-rpc_unixauth)-12;
 	p = (u_long *)(rpc_unixauth+4);
 	*p = txdr_unsigned(i);
-	return(rpc_unixauth);
+	return (rpc_unixauth);
 }
 
 /*
@@ -643,7 +650,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				 * Discard unneeded vnode and update actual one
 				 */
 				vput(vp);
-				*vpp = vp = nvp;
+				*vpp = nvp;
 			}
 		}
 		np->n_mtime = mtime.tv_sec;
@@ -709,8 +716,7 @@ nfs_getattrcache(vp, vap)
 }
 
 /*
- * nfs_namei - a liitle like namei(), but for one element only
- *	essentially look up file handle, fill in ndp and call VOP_LOOKUP()
+ * Set up nameidata for a namei() call and do it
  */
 nfs_namei(ndp, fhp, len, mdp, dposp)
 	register struct nameidata *ndp;
@@ -722,28 +728,21 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	register int i, rem;
 	register struct mbuf *md;
 	register char *cp;
-	struct vnode *dp = NULLVP;
+	struct vnode *dp;
 	int flag;
-	int docache;
-	int wantparent;
-	int lockparent;
-	int error = 0;
+	int error;
 
-	ndp->ni_vp = ndp->ni_dvp = NULLVP;
 	flag = ndp->ni_nameiop & OPFLAG;
-	wantparent = ndp->ni_nameiop & (LOCKPARENT | WANTPARENT);
-	lockparent = ndp->ni_nameiop & LOCKPARENT;
-	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
-	if (flag == DELETE || wantparent)
-		docache = 0;
-
-	/* Fill in the nameidata and call lookup */
+	/*
+	 * Copy the name from the mbuf list to the d_name field of ndp
+	 * and set the various ndp fields appropriately.
+	 */
 	cp = *dposp;
 	md = *mdp;
 	rem = mtod(md, caddr_t)+md->m_len-cp;
 	ndp->ni_hash = 0;
 	for (i = 0; i < len;) {
-		if (rem == 0) {
+		while (rem == 0) {
 			md = md->m_next;
 			if (md == NULL)
 				return (EBADRPC);
@@ -761,30 +760,27 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 		rem--;
 	}
 	*mdp = md;
+	*dposp = cp;
 	len = nfsm_rndup(len)-len;
-	if (len > 0)
-		*dposp = cp+len;
-	else
-		*dposp = cp;
+	if (len > 0) {
+		if (rem < len) {
+			if (error = nfs_adv(mdp, dposp, len, rem))
+				return (error);
+		} else
+			*dposp += len;
+	}
 	ndp->ni_namelen = i;
 	ndp->ni_dent.d_namlen = i;
 	ndp->ni_dent.d_name[i] = '\0';
 	ndp->ni_pathlen = 1;
-	ndp->ni_dirp = ndp->ni_ptr = &ndp->ni_dent.d_name[0];
+	ndp->ni_pnbuf = ndp->ni_dirp = ndp->ni_ptr = &ndp->ni_dent.d_name[0];
 	ndp->ni_next = &ndp->ni_dent.d_name[i];
-	ndp->ni_loopcnt = 0;	/* Not actually used for now */
-	ndp->ni_endoff = 0;
-	if (docache)
-		ndp->ni_makeentry = 1;
-	else
-		ndp->ni_makeentry = 0;
-	ndp->ni_isdotdot = (i == 2 && 
-		ndp->ni_dent.d_name[1] == '.' && ndp->ni_dent.d_name[0] == '.');
+	ndp->ni_nameiop |= (NOCROSSMOUNT | REMOTE | HASBUF);
 
-	if (error = nfsrv_fhtovp(fhp, TRUE, &dp, ndp->ni_cred))
+	if (error = nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cred))
 		return (error);
 	if (dp->v_type != VDIR) {
-		vput(dp);
+		vrele(dp);
 		return (ENOTDIR);
 	}
 	/*
@@ -795,74 +791,10 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	ndp->ni_rdir = NULLVP;
 
 	/*
-	 * Handle "..":
-	 * If this vnode is the root of the mounted
-	 *    file system, then ignore it so can't get out
+	 * And call namei() to do the real work
 	 */
-	if (ndp->ni_isdotdot && (dp->v_flag & VROOT)) {
-		ndp->ni_dvp = dp;
-		ndp->ni_vp = dp;
-		VREF(dp);
-		goto nextname;
-	}
-
-	/*
-	 * We now have a segment name to search for, and a directory to search.
-	 */
-	if (error = VOP_LOOKUP(dp, ndp)) {
-		if (ndp->ni_vp != NULL)
-			panic("leaf should be empty");
-		/*
-		 * If creating and at end of pathname, then can consider
-		 * allowing file to be created.
-		 */
-		if (ndp->ni_dvp->v_mount->mnt_flag & (MNT_RDONLY|MNT_EXRDONLY))
-			error = EROFS;
-		if (flag == LOOKUP || flag == DELETE || error != ENOENT)
-			goto bad;
-		/*
-		 * We return with ni_vp NULL to indicate that the entry
-		 * doesn't currently exist, leaving a pointer to the
-		 * (possibly locked) directory inode in ndp->ni_dvp.
-		 */
-		return (0);	/* should this be ENOENT? */
-	}
-
-	dp = ndp->ni_vp;
-
-nextname:
-	ndp->ni_ptr = ndp->ni_next;
-	/*
-	 * Check for read-only file systems
-	 */
-	if (flag == DELETE || flag == RENAME) {
-		/*
-		 * Disallow directory write attempts on read-only
-		 * file systems.
-		 */
-		if ((dp->v_mount->mnt_flag & (MNT_RDONLY|MNT_EXRDONLY)) ||
-		    (wantparent &&
-		    (ndp->ni_dvp->v_mount->mnt_flag &
-		     (MNT_RDONLY|MNT_EXRDONLY)))) {
-			error = EROFS;
-			goto bad2;
-		}
-	}
-
-	if (!wantparent)
-		vrele(ndp->ni_dvp);
-
-	if ((ndp->ni_nameiop & LOCKLEAF) == 0)
-		VOP_UNLOCK(dp);
-	return (0);
-
-bad2:
-	if (lockparent)
-		VOP_UNLOCK(ndp->ni_dvp);
-	vrele(ndp->ni_dvp);
-bad:
-	vput(dp);
-	ndp->ni_vp = NULL;
+	error = namei(ndp);
+	vrele(dp);
 	return (error);
 }
 
@@ -933,7 +865,7 @@ nfsm_adj(mp, len, nul)
  *	- check that it is exported
  *	- get vp by calling VFS_FHTOVP() macro
  *	- if not lockflag unlock it with VOP_UNLOCK()
- *	- if cred->cr_uid == 0 set it to mnt_exroot
+ *	- if cred->cr_uid == 0 set it to m_exroot
  */
 nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 	fhandle_t *fhp;

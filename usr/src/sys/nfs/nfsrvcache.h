@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsrvcache.h	7.1 (Berkeley) %G%
+ *	@(#)nfsrvcache.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,7 @@ struct nfsrvcache {
 	struct	nfsrvcache *rc_prev;
 	int	rc_state;		/* Current state of request */
 	int	rc_flag;		/* Flag bits */
-	u_long	rc_saddr;		/* Internet addr. of requestor */
+	struct	mbuf rc_nam;		/* Sockaddr of requestor */
 	u_long	rc_xid;			/* rpc id number */
 	int	rc_proc;		/* rpc proc number */
 	long	rc_timestamp;		/* Time stamp */
