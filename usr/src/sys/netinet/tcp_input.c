@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_input.c	7.15.1.2 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,7 +40,6 @@ int	tcpprintfs = 0;
 int	tcpcksum = 1;
 int	tcprexmtthresh = 3;
 struct	tcpiphdr tcp_saveti;
-extern	tcpnodelack;
 
 struct	tcpcb *tcp_newtcpcb();
 
@@ -51,19 +50,24 @@ struct	tcpcb *tcp_newtcpcb();
  * (segment is the next to be received on an established connection,
  * and the queue is empty), avoiding linkage into and removal
  * from the queue and repetition of various conversions.
+ * Set DELACK for segments received in order, but ack immediately
+ * when segments are out of order (so fast retransmit can work).
  */
 #define	TCP_REASS(tp, ti, m, so, flags) { \
 	if ((ti)->ti_seq == (tp)->rcv_nxt && \
 	    (tp)->seg_next == (struct tcpiphdr *)(tp) && \
 	    (tp)->t_state == TCPS_ESTABLISHED) { \
+		tp->t_flags |= TF_DELACK; \
 		(tp)->rcv_nxt += (ti)->ti_len; \
 		flags = (ti)->ti_flags & TH_FIN; \
 		tcpstat.tcps_rcvpack++;\
 		tcpstat.tcps_rcvbyte += (ti)->ti_len;\
 		sbappend(&(so)->so_rcv, (m)); \
 		sorwakeup(so); \
-	} else \
+	} else { \
 		(flags) = tcp_reass((tp), (ti)); \
+		tp->t_flags |= TF_ACKNOW; \
+	} \
 }
 
 tcp_reass(tp, ti)
@@ -1033,10 +1037,6 @@ dodata:							/* XXX */
 	if ((ti->ti_len || (tiflags&TH_FIN)) &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		TCP_REASS(tp, ti, m, so, tiflags);
-		if (tcpnodelack == 0)
-			tp->t_flags |= TF_DELACK;
-		else
-			tp->t_flags |= TF_ACKNOW;
 		/*
 		 * Note the amount of data that peer has sent into
 		 * our window, in order to estimate the sender's

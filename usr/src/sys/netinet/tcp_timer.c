@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_timer.c	7.11.1.2 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,7 +35,6 @@
 #include "tcp_var.h"
 #include "tcpip.h"
 
-int	tcpnodelack = 0;
 int	tcp_keepidle = TCPTV_KEEP_IDLE;
 int	tcp_keepintvl = TCPTV_KEEPINTVL;
 int	tcp_maxidle;
