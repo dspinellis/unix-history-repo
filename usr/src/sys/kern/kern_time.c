@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	6.6 (Berkeley) %G%
+ *	@(#)kern_time.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -172,7 +172,7 @@ setitimer()
 		u_int	which;
 		struct	itimerval *itv, *oitv;
 	} *uap = (struct a *)u.u_ap;
-	struct itimerval aitv;
+	struct itimerval aitv, *aitvp;
 	int s;
 	register struct proc *p = u.u_procp;
 
@@ -180,14 +180,16 @@ setitimer()
 		u.u_error = EINVAL;
 		return;
 	}
-	u.u_error = copyin((caddr_t)uap->itv, (caddr_t)&aitv,
-	    sizeof (struct itimerval));
-	if (u.u_error)
-		return;
+	aitvp = uap->itv;
 	if (uap->oitv) {
 		uap->itv = uap->oitv;
 		getitimer();
 	}
+	if (aitvp == 0)
+		return;
+	u.u_error = copyin(aitvp, (caddr_t)&aitv, sizeof (struct itimerval));
+	if (u.u_error)
+		return;
 	if (itimerfix(&aitv.it_value) || itimerfix(&aitv.it_interval)) {
 		u.u_error = EINVAL;
 		return;
