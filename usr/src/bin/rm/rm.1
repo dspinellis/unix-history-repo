@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rm.1	8.3 (Berkeley) %G%
+.\"	@(#)rm.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RM 1
@@ -74,7 +74,9 @@ that directory is skipped.
 Equivalent to
 .Fl R .
 .It Fl W
-Removes a whiteout.
+Attempts to undelete the named files.
+Currently, this option can only be used to recover
+files covered by whiteouts.
 .El
 .Pp
 The
