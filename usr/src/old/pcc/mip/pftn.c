@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)pftn.c	1.1 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.2 (Berkeley) %G%";
 # include "mfile1"
 
 unsigned int offsz;
@@ -35,6 +35,7 @@ defid( q, class )  NODE *q; {
 	int scl;
 	int dsym, ddef;
 	int slev, temp;
+	int changed;
 
 	if( q == NIL ) return;  /* an error was detected */
 
@@ -103,15 +104,23 @@ defid( q, class )  NODE *q; {
 	/* test (and possibly adjust) dimensions */
 	dsym = p->dimoff;
 	ddef = q->fn.cdim;
+	changed = 0;
 	for( temp=type; temp&TMASK; temp = DECREF(temp) ){
 		if( ISARY(temp) ){
-			if( dimtab[dsym] == 0 ) dimtab[dsym] = dimtab[ddef];
-			else if( dimtab[ddef]!=0 && dimtab[dsym] != dimtab[ddef] ){
+			if (dimtab[dsym] == 0) {
+				dimtab[dsym] = dimtab[ddef];
+				changed = 1;
+				}
+			else if (dimtab[ddef]!=0&&dimtab[dsym]!=dimtab[ddef]) {
 				goto mismatch;
 				}
 			++dsym;
 			++ddef;
 			}
+		}
+
+	if (changed) {
+		FIXDEF(p);
 		}
 
 	/* check that redeclarations are to the same structure */
