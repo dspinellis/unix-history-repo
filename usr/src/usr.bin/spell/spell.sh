@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)spell.sh	1.4	(Berkeley)	89/05/11
+#	@(#)spell.sh	1.5	(Berkeley)	89/08/21
 #
 : V data for -v, B flags, D dictionary, S stop, H history, F files, T temp
 V=/dev/null		B=			F= 
