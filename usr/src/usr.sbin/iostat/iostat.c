@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1986 The Regents of the University of California.
+ * Copyright (c) 1986, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.proprietary.c%
@@ -7,25 +7,25 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1986 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1986, 1991 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * iostat
- */
 #include <sys/types.h>
-#include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/dkstat.h>
-#include <sys/signal.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <nlist.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <nlist.h>
+#include <stdlib.h>
+#include <string.h>
 #include <paths.h>
 
 struct nlist nl[] = {
@@ -66,11 +66,12 @@ struct nlist nl[] = {
 	{ 0 },
 };
 
-char	**dr_name;
-int	*dr_select;
-long	*dk_wpms;
-int	dk_ndrive;
-int	ndrives = 0;
+double etime;
+long *dk_wpms;
+int *dr_select;
+int dk_ndrive, hz, kmemfd, ndrives;
+char **dr_name;
+
 #ifdef vax
 char	*defdrives[] = { "hp0", "hp1", "hp2",  0 };
 #else
@@ -88,95 +89,106 @@ struct {
 	long	tk_nout;
 } s, s1;
 
-int	mf;
-int	hz;
-int	phz;
-double	etime;
-int	tohdr = 1;
-int	printhdr();
-
 main(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	extern char *ctime();
-	register  i;
-	int iter, ndrives;
-	double f1, f2;
+	extern int optind;
+	register int i;
 	long t;
-	char *arg, **cp, name[6], buf[BUFSIZ];
+	int ch, hdrcnt, reps, interval, phz, ndrives;
+	char *arg, **cp, buf[BUFSIZ];
+	void printhdr(), read_names(), stats(), stat1(), usage();
+
+	interval = reps = 0;
+	while ((ch = getopt(argc, argv, "c:i:")) != EOF)
+		switch(ch) {
+		case 'c':
+			reps = atoi(optarg);
+			break;
+		case 'i':
+			interval = atoi(optarg);
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
 
 	nlist(_PATH_UNIX, nl);
-	if(nl[X_DK_BUSY].n_type == 0) {
-		fprintf(stderr, "iostat: dk_busy not found in %s namelist\n",
+	if (nl[X_DK_BUSY].n_type == 0) {
+		(void)fprintf(stderr,
+		    "iostat: dk_busy not found in %s namelist\n",
 		    _PATH_UNIX);
 		exit(1);
 	}
-	mf = open(_PATH_KMEM, 0);
-	if(mf < 0) {
-		fprintf(stderr, "iostat: cannot open %s\n", _PATH_KMEM);
+	kmemfd = open(_PATH_KMEM, O_RDONLY);
+	if (kmemfd < 0) {
+		(void)fprintf(stderr, "iostat: cannot open %s\n", _PATH_KMEM);
 		exit(1);
 	}
-	iter = 0;
-	for (argc--, argv++; argc > 0 && argv[0][0] == '-'; argc--, argv++)
-		;
+
 	if (nl[X_DK_NDRIVE].n_value == 0) {
-		printf("dk_ndrive undefined in system\n");
+		(void)fprintf(stderr,
+		    "iostat: dk_ndrive not found in %s namelist\n",
+		    _PATH_UNIX);
 		exit(1);
 	}
-	lseek(mf, nl[X_DK_NDRIVE].n_value, L_SET);
-	read(mf, &dk_ndrive, sizeof (dk_ndrive));
+	(void)lseek(kmemfd, nl[X_DK_NDRIVE].n_value, L_SET);
+	(void)read(kmemfd, &dk_ndrive, sizeof(dk_ndrive));
 	if (dk_ndrive <= 0) {
-		printf("dk_ndrive %d\n", dk_ndrive);
+		(void)fprintf(stderr, "iostat: dk_ndrive %d\n", dk_ndrive);
 		exit(1);
 	}
-	dr_select = (int *)calloc(dk_ndrive, sizeof (int));
-	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
-	dk_wpms = (long *)calloc(dk_ndrive, sizeof (long));
-#define	allocate(e, t) \
-    s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
-    s1./**/e = (t *)calloc(dk_ndrive, sizeof (t));
-	allocate(dk_time, long);
-	allocate(dk_wds, long);
-	allocate(dk_seek, long);
-	allocate(dk_xfer, long);
+
+	s.dk_time = calloc(dk_ndrive, sizeof(long));
+	s.dk_wds = calloc(dk_ndrive, sizeof(long));
+	s.dk_seek = calloc(dk_ndrive, sizeof(long));
+	s.dk_xfer = calloc(dk_ndrive, sizeof(long));
+	s1.dk_time = calloc(dk_ndrive, sizeof(long));
+	s1.dk_wds = calloc(dk_ndrive, sizeof(long));
+	s1.dk_seek = calloc(dk_ndrive, sizeof(long));
+	s1.dk_xfer = calloc(dk_ndrive, sizeof(long));
+	dr_select = calloc(dk_ndrive, sizeof(int));
+	dr_name = calloc(dk_ndrive, sizeof(char *));
+	dk_wpms = calloc(dk_ndrive, sizeof(long));
+
 	for (arg = buf, i = 0; i < dk_ndrive; i++) {
 		dr_name[i] = arg;
-		sprintf(dr_name[i], "dk%d", i);
+		(void)sprintf(dr_name[i], "dk%d", i);
 		arg += strlen(dr_name[i]) + 1;
 	}
 	read_names();
-	lseek(mf, (long)nl[X_HZ].n_value, L_SET);
-	read(mf, &hz, sizeof hz);
-	lseek(mf, (long)nl[X_PHZ].n_value, L_SET);
-	read(mf, &phz, sizeof phz);
+	(void)lseek(kmemfd, (long)nl[X_HZ].n_value, L_SET);
+	(void)read(kmemfd, &hz, sizeof(hz));
+	(void)lseek(kmemfd, (long)nl[X_PHZ].n_value, L_SET);
+	(void)read(kmemfd, &phz, sizeof(phz));
 	if (phz)
 		hz = phz;
-	lseek(mf, (long)nl[X_DK_WPMS].n_value, L_SET);
-	read(mf, dk_wpms, dk_ndrive*sizeof (dk_wpms));
+	(void)lseek(kmemfd, (long)nl[X_DK_WPMS].n_value, L_SET);
+	(void)read(kmemfd, dk_wpms, dk_ndrive * sizeof(dk_wpms));
+
 	/*
-	 * Choose drives to be displayed.  Priority
-	 * goes to (in order) drives supplied as arguments,
-	 * default drives.  If everything isn't filled
-	 * in and there are drives not taken care of,
-	 * display the first few that fit.
+	 * Choose drives to be displayed.  Priority goes to (in order) drives
+	 * supplied as arguments and default drives.  If everything isn't
+	 * filled in and there are drives not taken care of, display the first
+	 * few that fit.
 	 */
-	ndrives = 0;
-	while (argc > 0 && !isdigit(argv[0][0])) {
+	for (ndrives = 0; *argv; ++argv)
 		for (i = 0; i < dk_ndrive; i++) {
-			if (strcmp(dr_name[i], argv[0]))
+			if (strcmp(dr_name[i], *argv))
 				continue;
 			dr_select[i] = 1;
-			ndrives++;
+			++ndrives;
 		}
-		argc--, argv++;
-	}
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
 		if (dr_select[i] || dk_wpms[i] == 0)
 			continue;
 		for (cp = defdrives; *cp; cp++)
 			if (strcmp(dr_name[i], *cp) == 0) {
 				dr_select[i] = 1;
-				ndrives++;
+				++ndrives;
 				break;
 			}
 	}
@@ -184,122 +196,145 @@ main(argc, argv)
 		if (dr_select[i])
 			continue;
 		dr_select[i] = 1;
-		ndrives++;
+		++ndrives;
 	}
-	if (argc > 1)
-		iter = atoi(argv[1]);
-	signal(SIGCONT, printhdr);
-loop:
-	if (--tohdr == 0)
-		printhdr();
-	lseek(mf, (long)nl[X_DK_BUSY].n_value, L_SET);
- 	read(mf, &s.dk_busy, sizeof s.dk_busy);
- 	lseek(mf, (long)nl[X_DK_TIME].n_value, L_SET);
- 	read(mf, s.dk_time, dk_ndrive*sizeof (long));
- 	lseek(mf, (long)nl[X_DK_XFER].n_value, L_SET);
- 	read(mf, s.dk_xfer, dk_ndrive*sizeof (long));
- 	lseek(mf, (long)nl[X_DK_WDS].n_value, L_SET);
- 	read(mf, s.dk_wds, dk_ndrive*sizeof (long));
-	lseek(mf, (long)nl[X_DK_SEEK].n_value, L_SET);
-	read(mf, s.dk_seek, dk_ndrive*sizeof (long));
- 	lseek(mf, (long)nl[X_TK_NIN].n_value, L_SET);
- 	read(mf, &s.tk_nin, sizeof s.tk_nin);
- 	lseek(mf, (long)nl[X_TK_NOUT].n_value, L_SET);
- 	read(mf, &s.tk_nout, sizeof s.tk_nout);
-	lseek(mf, (long)nl[X_CP_TIME].n_value, L_SET);
-	read(mf, s.cp_time, sizeof s.cp_time);
-	for (i = 0; i < dk_ndrive; i++) {
-		if (!dr_select[i])
-			continue;
+
+	(void)signal(SIGCONT, printhdr);
+
+	for (hdrcnt = 1;;) {
+		if (!--hdrcnt) {
+			printhdr();
+			hdrcnt = 20;
+		}
+		(void)lseek(kmemfd, (long)nl[X_DK_BUSY].n_value, L_SET);
+		(void)read(kmemfd, &s.dk_busy, sizeof(s.dk_busy));
+		(void)lseek(kmemfd, (long)nl[X_DK_TIME].n_value, L_SET);
+		(void)read(kmemfd, s.dk_time, dk_ndrive * sizeof(long));
+		(void)lseek(kmemfd, (long)nl[X_DK_XFER].n_value, L_SET);
+		(void)read(kmemfd, s.dk_xfer, dk_ndrive * sizeof(long));
+		(void)lseek(kmemfd, (long)nl[X_DK_WDS].n_value, L_SET);
+		(void)read(kmemfd, s.dk_wds, dk_ndrive * sizeof(long));
+		(void)lseek(kmemfd, (long)nl[X_DK_SEEK].n_value, L_SET);
+		(void)read(kmemfd, s.dk_seek, dk_ndrive * sizeof(long));
+		(void)lseek(kmemfd, (long)nl[X_TK_NIN].n_value, L_SET);
+		(void)read(kmemfd, &s.tk_nin, sizeof(s.tk_nin));
+		(void)lseek(kmemfd, (long)nl[X_TK_NOUT].n_value, L_SET);
+		(void)read(kmemfd, &s.tk_nout, sizeof(s.tk_nout));
+		(void)lseek(kmemfd, (long)nl[X_CP_TIME].n_value, L_SET);
+		(void)read(kmemfd, s.cp_time, sizeof(s.cp_time));
+		for (i = 0; i < dk_ndrive; i++) {
+			if (!dr_select[i])
+				continue;
 #define X(fld)	t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t
-		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
+			X(dk_xfer);
+			X(dk_seek);
+			X(dk_wds);
+			X(dk_time);
+		}
+		t = s.tk_nin;
+		s.tk_nin -= s1.tk_nin;
+		s1.tk_nin = t;
+		t = s.tk_nout;
+		s.tk_nout -= s1.tk_nout;
+		s1.tk_nout = t;
+		etime = 0;
+		for (i = 0; i < CPUSTATES; i++) {
+			X(cp_time);
+			etime += s.cp_time[i];
+		}
+		if (etime == 0.0)
+			etime = 1.0;
+		etime /= (float) hz;
+		(void)printf("%4.0f%5.0f", s.tk_nin / etime, s.tk_nout / etime);
+		for (i = 0; i < dk_ndrive; i++)
+			if (dr_select[i])
+				stats(i);
+		for (i = 0; i < CPUSTATES; i++)
+			stat1(i);
+		(void)printf("\n");
+		(void)fflush(stdout);
+
+		if (--reps <= 0)
+			break;
+		if (interval)
+			(void)sleep(interval);
 	}
-	t = s.tk_nin; s.tk_nin -= s1.tk_nin; s1.tk_nin = t;
-	t = s.tk_nout; s.tk_nout -= s1.tk_nout; s1.tk_nout = t;
-	etime = 0;
-	for(i=0; i<CPUSTATES; i++) {
-		X(cp_time);
-		etime += s.cp_time[i];
-	}
-	if (etime == 0.0)
-		etime = 1.0;
-	etime /= (float) hz;
-	printf("%4.0f%5.0f", s.tk_nin/etime, s.tk_nout/etime);
-	for (i=0; i<dk_ndrive; i++)
-		if (dr_select[i])
-			stats(i);
-	for (i=0; i<CPUSTATES; i++)
-		stat1(i);
-	printf("\n");
-	fflush(stdout);
-contin:
-	if (--iter && argc > 0) {
-		sleep(atoi(argv[0]));
-		goto loop;
-	}
+	exit(0);
 }
 
+void
 printhdr()
 {
 	register int i;
 
-	printf("      tty");
+	(void)printf("      tty");
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
-			printf("          %3.3s ", dr_name[i]);
-	printf("         cpu\n");
-	printf(" tin tout");
+			(void)printf("          %3.3s ", dr_name[i]);
+	(void)printf("         cpu\n tin tout");
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
-			printf(" bps tps msps ");
-	printf(" us ni sy id\n");
-	tohdr = 19;
+			(void)printf(" bps tps msps ");
+	(void)printf(" us ni sy id\n");
 }
 
+void
 stats(dn)
+	int dn;
 {
-	register i;
 	double atime, words, xtime, itime;
 
 	if (dk_wpms[dn] == 0) {
-		printf("%4.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
+		(void)printf("%4.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
 		return;
 	}
 	atime = s.dk_time[dn];
-	atime /= (float) hz;
-	words = s.dk_wds[dn]*32.0;	/* number of words transferred */
-	xtime = words/dk_wpms[dn];	/* transfer time */
+	atime /= (float)hz;
+	words = s.dk_wds[dn] * 32.0;	/* number of words transferred */
+	xtime = words / dk_wpms[dn];	/* transfer time */
 	itime = atime - xtime;		/* time not transferring */
 	if (xtime < 0)
 		itime += xtime, xtime = 0;
 	if (itime < 0)
 		xtime += itime, itime = 0;
-	printf("%4.0f", words/512/etime);
-	printf("%4.0f", s.dk_xfer[dn]/etime);
-	printf("%5.1f ",
-	    s.dk_seek[dn] ? itime*1000./s.dk_seek[dn] : 0.0);
+	(void)printf("%4.0f", words / 512 / etime);
+	(void)printf("%4.0f", s.dk_xfer[dn] / etime);
+	(void)printf("%5.1f ",
+	    s.dk_seek[dn] ? itime * 1000. / s.dk_seek[dn] : 0.0);
 }
 
-stat1(o)
+void
+stat1(state)
+	int state;
 {
-	register i;
+	register int i;
 	double time;
 
 	time = 0;
-	for(i=0; i<CPUSTATES; i++)
+	for (i = 0; i < CPUSTATES; i++)
 		time += s.cp_time[i];
 	if (time == 0.0)
 		time = 1.0;
-	printf("%3.0f", 100.*s.cp_time[o]/time);
+	(void)printf("%3.0f", 100. * s.cp_time[state] / time);
 }
 
-#define steal(where, var) \
-    lseek(mf, where, L_SET); read(mf, &var, sizeof var);
+void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: iostat [-c count] [-i interval] [drives]\n");
+	exit(1);
+}
+
+#define	steal(where, var) \
+	(void)lseek(kmemfd, (where), L_SET); \
+	(void)read(kmemfd, &var, sizeof(var));
 
 #ifdef vax
 #include <vax/uba/ubavar.h>
 #include <vax/mba/mbavar.h>
 
+void
 read_names()
 {
 	struct mba_device mdev;
@@ -313,7 +348,8 @@ read_names()
 	mp = (struct mba_device *) nl[X_MBDINIT].n_value;
 	up = (struct uba_device *) nl[X_UBDINIT].n_value;
 	if (up == 0) {
-		fprintf(stderr, "iostat: Disk init info not in namelist\n");
+		(void)fprintf(stderr,
+		    "iostat: disk init info not in namelist\n");
 		exit(1);
 	}
 	if (mp) for (;;) {
@@ -324,7 +360,7 @@ read_names()
 			continue;
 		steal(mdev.mi_driver, mdrv);
 		steal(mdrv.md_dname, two_char);
-		sprintf(dr_name[mdev.mi_dk], "%c%c%d",
+		(void)sprintf(dr_name[mdev.mi_dk], "%c%c%d",
 		    cp[0], cp[1], mdev.mi_unit);
 	}
 	if (up) for (;;) {
@@ -335,18 +371,16 @@ read_names()
 			continue;
 		steal(udev.ui_driver, udrv);
 		steal(udrv.ud_dname, two_char);
-		sprintf(dr_name[udev.ui_dk], "%c%c%d",
+		(void)sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		    cp[0], cp[1], udev.ui_unit);
 	}
 }
-#endif
+#endif /* vax */
 
 #ifdef tahoe
 #include <tahoe/vba/vbavar.h>
 
-/*
- * Read the drive names out of kmem.
- */
+void
 read_names()
 {
 	struct vba_device udev, *up;
@@ -354,9 +388,10 @@ read_names()
 	short two_char;
 	char *cp = (char *)&two_char;
 
-	up = (struct vba_device *) nl[X_VBDINIT].n_value;
+	up = (struct vba_device *)nl[X_VBDINIT].n_value;
 	if (up == 0) {
-		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
+		(void)fprintf(stderr,
+		    "iostat: disk init info not in namelist\n");
 		exit(1);
 	}
 	for (;;) {
@@ -367,8 +402,8 @@ read_names()
 			continue;
 		steal(udev.ui_driver, udrv);
 		steal(udrv.ud_dname, two_char);
-		sprintf(dr_name[udev.ui_dk], "%c%c%d",
+		(void)sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		     cp[0], cp[1], udev.ui_unit);
 	}
 }
-#endif
+#endif /* tahoe */
