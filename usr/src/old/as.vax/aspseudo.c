@@ -1,20 +1,20 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)aspseudo.c 4.1 %G%";
+static	char sccsid[] = "@(#)aspseudo.c 4.2 %G%";
 #include <stdio.h>
-#include <sys/types.h>
 #include "as.h"
 
-#define OP(name,opcode,nargs,arg1,arg2,arg3,arg4,arg5,arg6) \
+#define	OP(name, opcode, nargs, arg1, arg2, arg3, arg4, arg5, arg6) \
 	{ \
-		name,(nargs==0 ? INST0:INSTn), opcode,nargs, \
-		arg1,arg2,arg3,arg4,arg5,arg6 \
+		name, opcode, nargs, arg1, arg2, arg3, arg4, arg5, arg6, \
+		(nargs == 0 ? INST0:INSTn) \
 	}
-#define PSEUDO(name, type, tag) \
+#define	PSEUDO(name, type, tag) \
 	{ \
-		name, tag, type \
+		name, type, 0,   0, 0, 0, 0, 0, 0, \
+		tag \
 	}
 
-readonly struct instab instab[] = {
+readonly struct Instab instab[] = {
 PSEUDO(".space",	0,	ISPACE),
 PSEUDO(".fill",		0,	IFILL),
 PSEUDO(".byte",		0,	IBYTE),

@@ -1,8 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.1 %G%";
+static	char sccsid[] = "@(#)ascode.c 4.2 %G%";
 #include <stdio.h>
-#include <sys/types.h>
-#include <a.out.h>
 #include "as.h"
 #include "assyms.h"
 
@@ -20,7 +18,7 @@ insout(op, ap, nact)
 		register struct instab 	*ip;
 		int 			i,nexp;
 		ip = itab[op];
-		nexp = ip->nargs;
+		nexp = ip->i_nargs;
 		if (nact < nexp)
 			yyerror("Too few arguments");
 		if (nact > nexp) {
@@ -31,7 +29,7 @@ insout(op, ap, nact)
 		 *	Check argument compatability with instruction template
 		 */
 		for (ap2 = ap+nact, i = nact; --i >= 0;)
-			argcompat(--ap2, ip->argtype[i], i+1);
+			argcompat(--ap2, fetcharg(ip, i), i+1);
 	}
 	if (jxxflg < 0)
 		ijxout(op, ap, nact);
@@ -44,7 +42,7 @@ argcompat(act, exp, i)
 {
 	register 	at,atm;
 
-	at = act->atype;
+	at = act->a_atype;
 	atm = at & AMASK;
 
 	if ( (exp & ACCB) && (!((atm == AEXP) || (atm == AIMM))) ){
@@ -60,7 +58,7 @@ argcompat(act, exp, i)
 		return;
 	}
 	if (at & AINDX) {
-		if (act->areg2==017) {
+		if (act->a_areg2==017) {
 			yyerror("arg %d, PC used as index",i);
 			return;
 		}
@@ -72,7 +70,7 @@ argcompat(act, exp, i)
 			yyerror("arg %d, indexing a constant",i);
 			return;
 		}
-		if (((atm==ADECR) || (atm==AINCR)) && (act->areg1==act->areg2)) {
+		if (((atm==ADECR) || (atm==AINCR)) && (act->a_areg1==act->a_areg2)) {
 			yyerror("arg %d, indexing with modified register",i);
 			return;
 		}
@@ -99,57 +97,55 @@ putins(op, ap, n)
 	if (passno == 2)
 		goto PASS2;
 
-	dotp->xvalue += n+1;	/* 1 for the opcode, at least 1 per arg */
-	for (i=0; i<n; i++,ap++) {/* some args take more than 1 byte */
-	    xtrab = 0;
-	    a=ap->atype;
+	dotp->e_xvalue += n+1;		/* 1 for the opcode, at least 1 per arg */
+	for (i=0; i<n; i++,ap++) {	/* some args take more than 1 byte */
+	    a = ap->a_atype;
 	    if (a & AINDX)
-		dotp->xvalue++;
+		dotp->e_xvalue++;
 	    switch (a&~(AINDX|ASTAR)) {
 		case AEXP: 
-			a = itab[op]->argtype[i];
+			a = fetcharg(itab[op], i);
 			if (a == ACCB+TYPB)
 				break;
 			if (a==ACCB+TYPW){
-				dotp->xvalue++;
+				dotp->e_xvalue++;
 				break;
 			}
 			/*
 			 *	Reduces to PC relative
 			 */
-			xtrab++;
-			dotp->xvalue += ap->dispsize;
+			dotp->e_xvalue += ap->a_dispsize;
 			break;
 		
 		case ADISP: 
-			xp=ap->xp;
-			if ((xp->xtype&XTYPE)!=XABS || xp->xtype&XFORW){
-				dotp->xvalue += ap->dispsize;
+			xp=ap->a_xp;
+			if ((xp->e_xtype&XTYPE)!=XABS || xp->e_xtype&XFORW){
+				dotp->e_xvalue += ap->a_dispsize;
 				break;
 			}
-			if (xp->xvalue==0 && !(a&ASTAR))
+			if (xp->e_xvalue==0 && !(a&ASTAR))
 				break;
-			dotp->xvalue++;
-			if ((xp->xvalue<MINBYTE) || (xp->xvalue>MAXBYTE))
-				dotp->xvalue++;
-			if ((xp->xvalue<MINWORD) || (xp->xvalue>MAXWORD))
-				dotp->xvalue += 2;
+			dotp->e_xvalue++;
+			if ((xp->e_xvalue<MINBYTE) || (xp->e_xvalue>MAXBYTE))
+				dotp->e_xvalue++;
+			if ((xp->e_xvalue<MINWORD) || (xp->e_xvalue>MAXWORD))
+				dotp->e_xvalue += 2;
 			break;
 
 		case AIMM: 
-			if (ap->atype&ASTAR) a=TYPL;
+			if (ap->a_atype&ASTAR) a=TYPL;
 			else {
-				a = itab[op]->argtype[i];
+				a = fetcharg(itab[op], i);
 				if (a&ACCA)
 					a = TYPL;
 				else
 					a &= TYPMASK;
-				xp = ap->xp;
-				if (   ((xp->xtype&XTYPE)==XABS)
-				    && (!(xp->xtype&XFORW))
-				    && (xp->xvalue>=0)
-				    && (xp->xvalue<=63) 
-				    && (xp->yvalue == 0)
+				xp = ap->a_xp;
+				if (   ((xp->e_xtype&XTYPE)==XABS)
+				    && (!(xp->e_xtype&XFORW))
+				    && (xp->e_xvalue>=0)
+				    && (xp->e_xvalue<=63) 
+				    && (xp->e_yvalue == 0)
 				    && (a != TYPD)
 				    && (a != TYPF)
 				)
@@ -158,23 +154,23 @@ putins(op, ap, n)
 			switch (a) {
 			case TYPD:
 			case TYPF:
-				if (   !(((xp->xtype&XTYPE)==XABS)
-				    && (!(xp->xtype&XFORW))
+				if (   !(((xp->e_xtype&XTYPE)==XABS)
+				    && (!(xp->e_xtype&XFORW))
 				    && (slitflt(xp)))
 				){
 				/* it is NOT short */
-					dotp->xvalue += ((a==TYPF)?
+					dotp->e_xvalue += ((a==TYPF)?
 						4 : 8);
 				}
 				break;
 			case TYPQ: 
-				dotp->xvalue += 8;break;
+				dotp->e_xvalue += 8;break;
 			case TYPL:
-				dotp->xvalue += 4;break;
+				dotp->e_xvalue += 4;break;
 			case TYPW: 
-				dotp->xvalue += 2;break;
+				dotp->e_xvalue += 2;break;
 			case TYPB: 
-				dotp->xvalue += 1;break;
+				dotp->e_xvalue += 1;break;
 			}	/*end of the switch on a*/
 	    }	/*end of the switch on the type*/
 	}	/*end of looping for all arguments*/
@@ -187,115 +183,115 @@ PASS2:
 #endif UNIX
 #ifdef VMS
 	*vms_obj_ptr++ = -1; *vms_obj_ptr++ = (char)op;
-	dotp->xvalue += 1;
+	dotp->e_xvalue += 1;
 #endif VMS
 
 	for (i=0; i<n; i++,ap++) {/* now for the arguments */
-		a=ap->atype;
-		xp=ap->xp;
+		a=ap->a_atype;
+		xp=ap->a_xp;
 		xtrab=0;
 		if (a&AINDX) {
 #ifdef UNIX
-			{ outb(0x40 | ap->areg2); }
+			{ outb(0x40 | ap->a_areg2); }
 #endif UNIX
 #ifdef VMS
 			{ *vms_obj_ptr++ = -1;
-			  *vms_obj_ptr++ = (0x40 | ap->areg2);
-			  dotp->xvalue += 1; }
+			  *vms_obj_ptr++ = (0x40 | ap->a_areg2);
+			  dotp->e_xvalue += 1; }
 #endif VMS
 			a &= ~AINDX;
 		}
 		if (a&ASTAR) {
-			ap->areg1 |= 0x10;
+			ap->a_areg1 |= 0x10;
 			a &= ~ASTAR;
 		}
 		switch (a) {
 		case AREG:		/* %r */
-			ap->areg1 |= 0x50;
+			ap->a_areg1 |= 0x50;
 			break; 
 		case ABASE:		/* (%r) */
-			ap->areg1 |= 0x60;
+			ap->a_areg1 |= 0x60;
 			break; 
 		case ADECR: 		/* -(%r) */
-			ap->areg1 |= 0x70;
+			ap->a_areg1 |= 0x70;
 			break; 
 		case AINCR:		/* (%r) */
-			ap->areg1 |= 0x80;
+			ap->a_areg1 |= 0x80;
 			break;
 		case AEXP: /* expr */
-			a = itab[op]->argtype[i];
+			a = fetcharg(itab[op], i);
 			if (a == ACCB+TYPB) {
-				ap->areg1 = a = 
-					xp->xvalue - (dotp->xvalue + 1);
+				ap->a_areg1 = a = 
+					xp->e_xvalue - (dotp->e_xvalue + 1);
 				if (a<MINBYTE || a>MAXBYTE)
 					yyerror("Branch too far"); break;
 			}
 			if (a == ACCB+TYPW) {
-				ap->areg1 = a = xp->xvalue
-					-= dotp->xvalue + 2;
-				xp->xtype = XABS;
+				ap->a_areg1 = a = xp->e_xvalue
+					-= dotp->e_xvalue + 2;
+				xp->e_xtype = XABS;
 				if (a<MINWORD || a>MAXWORD) 
 					yyerror("Branch too far");
-				xp->xvalue = a>>8;
+				xp->e_xvalue = a>>8;
 				xtrab = LEN1;
 				break;
 			}
 			/* reduces to expr(pc) mode */
-			ap->areg1 |= (0xAF + mod124[ap->dispsize]);
-			xtrab = len124[ap->dispsize]+PCREL;
+			ap->a_areg1 |= (0xAF + mod124[ap->a_dispsize]);
+			xtrab = len124[ap->a_dispsize]+PCREL;
 			break;
 		
 		case ADISP: /* expr(%r) */
-			ap->areg1 |= 0xA0;
-			if ((xp->xtype&XTYPE)!=XABS || xp->xtype&XFORW){
-				ap->areg1 += mod124[ap->dispsize];
-				xtrab=len124[ap->dispsize];
+			ap->a_areg1 |= 0xA0;
+			if ((xp->e_xtype&XTYPE)!=XABS || xp->e_xtype&XFORW){
+				ap->a_areg1 += mod124[ap->a_dispsize];
+				xtrab=len124[ap->a_dispsize];
 				break;
 			}
-			if (xp->xvalue==0 && !(ap->areg1&0x10)) {
-				ap->areg1 ^= 0xC0;
+			if (xp->e_xvalue==0 && !(ap->a_areg1&0x10)) {
+				ap->a_areg1 ^= 0xC0;
 				break;
 			}
 			xtrab=LEN1;
-			if ((xp->xvalue<MINBYTE) || (xp->xvalue>MAXBYTE)){
-				ap->areg1 += 0x20;
+			if ((xp->e_xvalue<MINBYTE) || (xp->e_xvalue>MAXBYTE)){
+				ap->a_areg1 += 0x20;
 				xtrab=LEN2;
 			}
-			if ((xp->xvalue<MINWORD) || (xp->xvalue>MAXWORD)){
-				ap->areg1 += 0x20;
+			if ((xp->e_xvalue<MINWORD) || (xp->e_xvalue>MAXWORD)){
+				ap->a_areg1 += 0x20;
 				xtrab=LEN4;
 			}
 			break;
 		
 		case AIMM:  /* $expr */
-			if (ap->atype&ASTAR)
+			if (ap->a_atype&ASTAR)
 				a=TYPL;
 			else {
-				a = itab[op]->argtype[i];
+				a = fetcharg(itab[op], i);
 				if (a&ACCA)
 					a=TYPL;
 				else
 					a &= TYPMASK;
-				if (    ( (xp->xtype&XTYPE) == XABS) 
-				    && !(xp->xtype&XFORW)
-				    &&  (xp->xvalue >= 0)
-				    &&  (xp->xvalue <= 63)
-				    &&  (xp->yvalue == 0)
+				if (    ( (xp->e_xtype&XTYPE) == XABS) 
+				    && !(xp->e_xtype&XFORW)
+				    &&  (xp->e_xvalue >= 0)
+				    &&  (xp->e_xvalue <= 63)
+				    &&  (xp->e_yvalue == 0)
 				    &&  (a != TYPF)
 				    &&  (a != TYPD) ) {
-					ap->areg1 = xp->xvalue;
+					ap->a_areg1 = xp->e_xvalue;
 					break;
 				}
 			}
-			ap->areg1 |= 0x8F;
+			ap->a_areg1 |= 0x8F;
 			switch (a) {
 			case TYPD:
 			case TYPF:
-				if (   ((xp->xtype&XTYPE)==XABS)
-				    && (!(xp->xtype&XFORW))
+				if (   ((xp->e_xtype&XTYPE)==XABS)
+				    && (!(xp->e_xtype&XFORW))
 				    && (slitflt(xp))
 				){
-					ap->areg1=extlitflt(xp);
+					ap->a_areg1=extlitflt(xp);
 				} else {
 					xtrab = (a==TYPF) ? LEN4: LEN8;
 				}
@@ -312,11 +308,11 @@ PASS2:
 		 *	use the first byte to describe the argument
 		 */
 #ifdef UNIX
-		outb(ap->areg1);
+		outb(ap->a_areg1);
 #endif UNIX
 #ifdef VMS
-		*vms_obj_ptr++ = -1; *vms_obj_ptr++ = (char)(ap->areg1);
-		dotp->xvalue += 1;
+		*vms_obj_ptr++ = -1; *vms_obj_ptr++ = (char)(ap->a_areg1);
+		dotp->e_xvalue += 1;
 		if ((vms_obj_ptr-sobuf) > 400) {
 			write(objfil,sobuf,vms_obj_ptr-sobuf);
 			vms_obj_ptr=sobuf+1;
@@ -330,6 +326,6 @@ PASS2:
 			 *	immediately follow the field xvalue, which
 			 *	they do.
 			 */
-			outrel(&xp->xvalue, xtrab, xp->xtype, xp->xname);
+			outrel(&xp->e_xvalue, xtrab, xp->e_xtype, xp->e_xname);
 	}	/*end of the for to pick up all arguments*/
 }

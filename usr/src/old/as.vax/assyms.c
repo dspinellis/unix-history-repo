@@ -1,9 +1,7 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)assyms.c 4.1 %G%";
+static	char sccsid[] = "@(#)assyms.c 4.2 %G%";
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <a.out.h>
 #include "as.h"
 #include "asscan.h"
 #include "assyms.h"
@@ -47,9 +45,7 @@ int	hshused;	/* number of hash slots used */
  */
 #ifdef	FLEXNAMES
 struct	strpool		*strplhead = 0;
-#else
-char			*namebuffer;
-#endif
+#endif	FLEXNAMES
 
 symtabinit()
 {
@@ -73,18 +69,22 @@ syminstall()
 	register	struct	symtab	**hp;
 	register	char	*p1, *p2;
 
-	for (ip=instab; ip->name!=0; ip++) {
-		p1 = ip->name;
+#ifdef FLEXNAMES
+	for (ip = (struct instab *)instab; ip->s_name != 0; ip++) {
+#else not FLEXNAMES
+	for (ip = (struct instab *)instab; ip->s_name[0] != '\0'; ip++){
+#endif not FLEXNAMES
+		p1 = ip->s_name;
 		p2 = yytext;
 		while (*p2++ = *p1++);
 		hp = lookup(0);		/* 0 => don't install this*/
 		if (*hp==NULL) {
 			*hp = (struct symtab *)ip;
-			if (   (ip->tag!=INSTn)
-			    && (ip->tag!=INST0)
-			    && (ip->tag!=0))
+			if (   (ip->s_tag!=INSTn)
+			    && (ip->s_tag!=INST0)
+			    && (ip->s_tag!=0))
 				continue; /* was pseudo-op */
-			itab[ip->opcode & 0xFF] = ip;
+			itab[ip->i_opcode & 0xFF] = ip;
 		}
 	}
 }	/*end of syminstall*/
@@ -107,30 +107,30 @@ freezesymtab()
 
 	DECLITERATE(allocwalk, sp, ubsp)
 	{
-		if (sp->tag >= IGNOREBOUND)
+		if (sp->s_tag >= IGNOREBOUND)
 			continue; 		/*totally ignore jxxx entries */
 		/*
 		 *	Ignore stabs, but give them a symbol table index
 		 */
-		if (sp->type & STABFLAG)
+		if (sp->s_type & STABFLAG)
 			goto assignindex;
-		if ((sp->type&XTYPE)==XUNDEF)
-			sp->type = XXTRN+XUNDEF;
-		else if ((sp->type&XTYPE)==XDATA)
-			sp->value += usedot[sp->index].xvalue;
-		else if ((sp->type&XTYPE)==XTEXT)
-			sp->value += usedot[sp->index].xvalue;
-		else if ((sp->type&XTYPE)==XBSS) {
-			bs = sp->value;
-			sp->value = hdr.a_bss + datbase;
+		if ((sp->s_type&XTYPE)==XUNDEF)
+			sp->s_type = XXTRN+XUNDEF;
+		else if ((sp->s_type&XTYPE)==XDATA)
+			sp->s_value += usedot[sp->s_index].e_xvalue;
+		else if ((sp->s_type&XTYPE)==XTEXT)
+			sp->s_value += usedot[sp->s_index].e_xvalue;
+		else if ((sp->s_type&XTYPE)==XBSS) {
+			bs = sp->s_value;
+			sp->s_value = hdr.a_bss + datbase;
 			hdr.a_bss += bs;
 		}
 	   assignindex:
-		if (    (sp->name[0] != 'L')
-		     || (sp->tag != LABELID)
+		if (    (sp->s_name[0] != 'L')
+		     || (sp->s_tag != LABELID)
 		     || savelabels
 		     )			/*then, we will write it later on*/
-				sp->index = relpos++;
+				sp->s_index = relpos++;
 	}
 }
 
@@ -148,11 +148,11 @@ stabfix() {
 	register struct symtab *p;
 	
 	SYMITERATE(cosp, sp){
-		if(sp->ptype && (sp->type & STABFLAG)) {	
-			p = sp->dest;	
-			sp->value = p->value;	
-			sp->index = p->index;
-			sp->type = p->type;
+		if(sp->s_ptype && (sp->s_type & STABFLAG)) {	
+			p = sp->s_dest;	
+			sp->s_value = p->s_value;	
+			sp->s_index = p->s_index;
+			sp->s_type = p->s_type;
 		}
 	}
 }
@@ -185,9 +185,6 @@ struct symtab *symalloc()
 		newbox = (struct allocbox *)ClearCalloc(1,ALLOCQTY);
 		symsleft = SYMDALLOP;
 		nextsym = &newbox->symslots[0];
-#ifndef FLEXNAMES
-		namebuffer = &newbox->symnames[0];
-#endif not FLEXNAMES
 		if (alloctail == 0){
 			allochead = alloctail = newbox;
 		} else {
@@ -197,10 +194,6 @@ struct symtab *symalloc()
 	}
 	--symsleft;
 	++nsyms;
-#ifndef FLEXNAMES
-	nextsym->name = namebuffer;
-	namebuffer += NCPS;
-#endif not FLEXNAMES
 	return(nextsym++);
 }
 
@@ -221,22 +214,22 @@ symcmp(Pptr, Qptr)
 {
 	register struct symtab *p = *Pptr;
 	register struct symtab *q = *Qptr;
-	if (p->index < q->index)
+	if (p->s_index < q->s_index)
 		return(-1);
-	if (p->index > q->index)
+	if (p->s_index > q->s_index)
 		return(1);
-	if (p->value < q->value)
+	if (p->s_value < q->s_value)
 		return(-1);
-	if (p->value > q->value)
+	if (p->s_value > q->s_value)
 		return(1);
 	/*
 	 *	Force jxxx entries to virtually preceed labels defined
 	 *	to follow the jxxxx instruction, so that bumping the
 	 *	jxxx instruction correctly fixes up the following labels
 	 */
-	if (p->tag >= IGNOREBOUND)	/*p points to a jxxx*/
+	if (p->s_tag >= IGNOREBOUND)	/*p points to a jxxx*/
 		return(-1);		
-	if (q->tag >= IGNOREBOUND)
+	if (q->s_tag >= IGNOREBOUND)
 		return(1);
 	/*
 	 *	both are now just plain labels; the relative order doesn't
@@ -275,9 +268,9 @@ sortsymtab()
 	cowalk = symptrs;
 	symsin = 0;
 	DECLITERATE(allocwalk, sp, ubsp) {
-		if (sp->ptype && (sp->type &STABFLAG)){
-			sp->value = sp->dest->value;
-			sp->index = sp->dest->index;
+		if (sp->s_ptype && (sp->s_type &STABFLAG)){
+			sp->s_value = sp->s_dest->s_value;
+			sp->s_index = sp->s_dest->s_index;
 		}
 		if (symsin >= nsyms)
 			yyerror("INTERNAL ERROR: overfilled symbol table indirection table");
@@ -293,7 +286,7 @@ sortsymtab()
 	for (cowalk = symptrs, sp = *cowalk, segno = 0, slotno = 1;
 	     segno < NLOC + NLOC;
 	     segno++, slotno++){
-		for (; sp && sp->index == segno; sp = *++cowalk);
+		for (; sp && sp->s_index == segno; sp = *++cowalk);
 		symdelim[slotno] = cowalk;	/*forms the ub delimeter*/
 	}
 }	/*end of sortsymtab*/
@@ -311,17 +304,17 @@ dumpsymtab()
 		SEGITERATE(segno, 0, 0, cosp, sp, ub, ++){
 #ifdef FLEXNAMES
 			printf("\tSeg: %d \"%s\" value: %d index: %d tag %s\n",
-				segno, sp->name,
-				sp->value, sp->index,
-				tagstring(sp->tag));
+				segno, sp->s_name,
+				sp->s_value, sp->s_index,
+				tagstring(sp->s_tag));
 #else not FLEXNAMES
 			printf("\tSeg: %d \"%*.*s\" value: %d index: %d tag %s\n",
-				segno, NCPS, NCPS, sp->name,
-				sp->value, sp->index,
-				tagstring(sp->tag));
+				segno, NCPS, NCPS, sp->s_name,
+				sp->s_value, sp->s_index,
+				tagstring(sp->s_tag));
 #endif not FLEXNAMES
 			printf("\t\ttype: %d jxbump %d jxfear: %d\n",
-				sp->type, sp->jxbump, sp->jxfear);
+				sp->s_type, sp->s_jxbump, sp->s_jxfear);
 		}
 		printf("\n\n");
 	}
@@ -413,7 +406,7 @@ struct symtab **lookup(instflg)
 				nprobes += 2)
 		{
 			from = yytext;
-			to = (*hp)->name;
+			to = (*hp)->s_name;
 #ifndef FLEXNAMES
 			for (len = 0; (len<NCPS) && *from; len++)
 				if (*from++ != *to++)
@@ -450,7 +443,7 @@ struct symtab **lookup(instflg)
 		*hp = symalloc();
 		hdallop->h_nused++;
 #ifndef FLEXNAMES
-		for(len = 0, from = yytext, to = (*hp)->name; (len<NCPS); len++)
+		for(len = 0, from = yytext, to = (*hp)->s_name; (len<NCPS); len++)
  			if ((*to++ = *from++) == '\0')
  				break;
 #else FLEXNAMES
@@ -458,7 +451,7 @@ struct symtab **lookup(instflg)
 			continue;
 		if (len >= (STRPOOLDALLOP - strplhead->str_nalloc))
 			strpoolalloc();
-		for ( (*hp)->name = to = strplhead->str_names + strplhead->str_nalloc, from = yytext;
+		for ( (*hp)->s_name = to = strplhead->str_names + strplhead->str_nalloc, from = yytext;
 		     ( (*to++ = *from++) != '\0'); )
 			continue;
 		strplhead->str_nalloc += len;
@@ -513,11 +506,18 @@ struct	relbufdesc{
 extern	struct	relbufdesc	*tok_free;
 #define	rel_free tok_free
 static	struct	relbufdesc	*rel_temp;
-struct	relocation_info r_can_1PC = {0,0,0,0,0,0};
-struct	relocation_info	r_can_0PC = {0,0,0,0,0,0};
+struct	relocation_info r_can_1PC;
+struct	relocation_info	r_can_0PC;
 
 initoutrel()
 {
+	r_can_0PC.r_address = 0;
+	r_can_0PC.r_symbolnum = 0;
+	r_can_0PC.r_pcrel = 0;
+	r_can_0PC.r_length = 0;
+	r_can_0PC.r_extern = 0;
+
+	r_can_1PC = r_can_0PC;
 	r_can_1PC.r_pcrel = 1;
 }
 
@@ -543,12 +543,12 @@ outrel(pval,reftype,reltype,xsym)
 
 	if (reltype != XABS || reftype & PCREL) {
 		reloc = (reftype & PCREL)? r_can_1PC : r_can_0PC;
-		reloc.r_address = dotp->xvalue -
+		reloc.r_address = dotp->e_xvalue -
 			( (dotp < &usedot[NLOC]) ? 0 : datbase );
 		reloc.r_length = lgreflen[reftype];
 		switch(reltype){
 			case XXTRN | XUNDEF:
-				reloc.r_symbolnum = xsym->index;
+				reloc.r_symbolnum = xsym->s_index;
 				reloc.r_extern = 1;
 				break;
 			default:
@@ -572,9 +572,9 @@ outrel(pval,reftype,reltype,xsym)
 	/*
 	 *	write the unrelocated value to the text file
 	 */
-	dotp->xvalue += this_reflen;
+	dotp->e_xvalue += this_reflen;
 	if (reftype & PCREL)
-		*pval -= dotp->xvalue;
+		*pval -= dotp->e_xvalue;
 	bwrite((char *)pval, this_reflen, txtfil);
 }
 /*
@@ -613,26 +613,10 @@ u_long Closeoutrel(relfil, relocfile)
 	return(tail + relfil->rel_count * sizeof (struct relocation_info));
 }
 
+#define NOUTSYMS (nsyms - njxxx - nforgotten - (savelabels ? 0 : nlabels))
 int sizesymtab()
 {
-	struct symtab *sp;
-
-#define NOUTSYMS (nsyms - njxxx - nforgotten - (savelabels ? 0 : nlabels))
-
-	return (
-		(
-#ifndef FLEXNAMES
-		 NCPS
-#else FLEXNAMES
-		 sizeof (long)
-#endif FLEXNAMES
-		 + sizeof (sp->ptype)
-		 + sizeof (sp->other)
-		 + sizeof (sp->desc)
-		 + sizeof (sp->value)
-		) 
-		*	NOUTSYMS
-	);
+	return (sizeof (struct nlist) * NOUTSYMS);
 }
 
 #ifdef FLEXNAMES
@@ -663,8 +647,12 @@ int symwrite(symfile)
 	int	symsdesired = NOUTSYMS;
 	register	struct	symtab *sp, *ub;
 #ifdef FLEXNAMES
-	register	int	len;
+	char		*name;			/* temp to save the name */
 	long		stroff	= sizeof (stroff);
+	/*
+	 *	We use sp->s_index to hold the length of the
+	 *	name; it isn't used for anything else
+	 */
 #endif FLEXNAMES
 
 	register	struct	allocbox	*allocwalk;
@@ -672,35 +660,26 @@ int symwrite(symfile)
 	symsout = 0;
 	DECLITERATE(allocwalk, sp, ub)
 	{
-		if (sp->tag >= IGNOREBOUND) 
+		if (sp->s_tag >= IGNOREBOUND) 
 			continue;
-		if ((sp->name[0] == 'L') && (sp->tag == LABELID) && !savelabels)
+		if ((sp->s_name[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
 			continue;
 		symsout++;
-#ifndef FLEXNAMES
-		bwrite(sp->name, NCPS, symfile);
-#else FLEXNAMES
-		len = strlen(sp->name);
-		if (len != 0) {
-			bwrite(&stroff, sizeof (stroff), symfile);
-			stroff += len + 1;
-		} else
-			bwrite("\0\0\0\0", sizeof (stroff), symfile);
+
+#ifdef FLEXNAMES
+		name = sp->s_name;		/* save pointer */
+		if ( (sp->s_index = strlen(sp->s_name)) != 0){
+			sp->s_nmx = stroff;	/* clobber pointer */
+			stroff += sp->s_index + 1;
+		} else {
+			sp->s_nmx = 0;		/* clobber pointer */
+		}
+#endif
+		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
+		bwrite(&sp->s_nm, sizeof (struct nlist), symfile);
+#ifdef FLEXNAMES
+		sp->s_name = name;		/* restore pointer */
 #endif FLEXNAMES
-		sp->type &= ~XFORW;
-		bputc( ( (sp->ptype != 0) ? sp->ptype : sp->type ),
-			symfile);
-	/*
-	 *	WATCH OUT.  THIS DEPENDS THAT THE ALLOCATION OF
-	 *	the four fields ptype, other, desc and value are
-	 *	contiguous, which is compiler dependent.
-	 */
-		bwrite((char *)&(sp->other),
-			  sizeof (sp->other)
-			+ sizeof (sp->desc)
-		        + sizeof (sp->value),
-		       symfile
-		);
 	}
 	if (symsout != symsdesired)
 		yyerror("INTERNAL ERROR: Wrote %d symbols, wanted to write %d symbols\n",
@@ -715,13 +694,13 @@ int symwrite(symfile)
 	symsout = 0;
 	DECLITERATE(allocwalk, sp, ub)
 	{
-		if (sp->tag >= IGNOREBOUND) 
+		if (sp->s_tag >= IGNOREBOUND) 
 			continue;
-		if ((sp->name[0] == 'L') && (sp->tag == LABELID) && !savelabels)
+		if ((sp->s_name[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
 			continue;
-		len = strlen(sp->name);
-		if (len)
-			bwrite(sp->name, len + 1, symfile);
+		sp->s_index = strlen(sp->s_name);
+		if (sp->s_index)
+			bwrite(sp->s_name, sp->s_index + 1, symfile);
 	}
 #endif FLEXNAMES
 }
