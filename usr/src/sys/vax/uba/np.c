@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.2 (Berkeley) %G%
+ *	@(#)np.c	7.3 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -1182,21 +1182,29 @@ struct npmaster *mp;
 	register struct CQE *ep;
 	register struct npreq *rp;
 	register int base;
+	int s;
 
 	if(NpDebug & DEBENTRY)
 		printf("NpProcQueue\n");
 
 	cqp = &mp->shmemp->hostcq;	/* Command Queue pointer */
 
-	if(cqp->scanflag & ON)
+	s = spl5();
+	if(mp->flags & SCANNING) {
+		splx(s);
             	return;
+	}
+	mp->flags |= SCANNING;
+	splx(s);
 
-	else cqp->scanflag | = ON;
+	cqp->scanflag | = ON;
 
 	base = (int)mp->shmemp;		/* Shared memory base address */
 
-	while(cqp->scanflag & ON) {
+	while(1) {
 
+	       	cqp->scanflag |= ON;
+		cqp->chngflag &= ~ON;
 		while(ep = NpRemCQE(cqp,base)) {
 
 			rp = ep->cqe_reqid;
@@ -1254,11 +1262,13 @@ struct npmaster *mp;
 			}
 		}
 
+		cqp->scanflag &= ~ON;
 		if(!(cqp->chngflag & ON))
-			cqp->scanflag &= ~ON;
+			break;
 
 	}
 
+	mp->flags &= ~SCANNING;
 	if(NpDebug & DEBENTRY)
 		printf("NpProcQueue...\n");
 }
@@ -1421,14 +1431,14 @@ struct npmaster *mp;
 	}
 	else *temp = cqe_offset;	/* Enter this request's offset */
 
-	cqp->chngflag |= ON;		/* Set change flag unconditionally */
-
 	/* Update cqe_add where next request is to be added */
 
 	cqp->cq_add += sizeof(unsign16);
 
 	if(cqp->cq_add == cqp->cq_wrap)	/* Wrap if necessary */
 		cqp->cq_add = (unsign16)((int)cqp->cq_cqe - base);
+
+	cqp->chngflag |= ON;		/* Set change flag unconditionally */
 
 	/* Interrupt the Board if his scan flag isn't on */
 
@@ -1790,7 +1800,7 @@ struct npreq *curr_rp;
 
 	mp->reqtab->reqcnt = 0;		/* Init request count */
 
-	s = spl4();			/* Disable interrupts */
+	s = spl5();			/* Disable interrupts */
 
 	/* Mark each active request as having an error and wake him up */
 
@@ -1980,7 +1990,7 @@ unsign16 protocol;
 
 	NpAddReq(mp->reqtab,rp);	/* Queue onto active list */
 
-	pri = spl4();			/* Mask our interrupts */
+	pri = spl5();			/* Mask our interrupts */
 
 	NpAddCQE(ep,&mp->shmemp->devcq,mp); /* Add CQE to device's queue */
 
