@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.11 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.12 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -13,7 +13,9 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "vnode.h"
+#include "mount.h"
 #include "../ufs/inode.h"
+#include "../ufs/ufsmount.h"
 
 char	*BADRAD;
 
@@ -176,16 +178,20 @@ printtrace(modif)
 	case 'i': {
 		register struct vnode *vp;
 		register struct inode *ip;
+		register struct ufsmount *ump;
 
 		printf("Locked inodes\n");
-		for (vp = vnode; vp < vnodeNVNODE; vp++) {
-			if (vp->v_tag != VT_UFS)
+		for (ump = &mounttab[0]; ump < &mounttab[NMOUNT]; ump++) {
+			if (ump->um_fs == NULL)
 				continue;
-			ip = VTOI(vp);
-			if ((ip->i_flag & ILOCKED) == 0)
-				continue;
-			printf("inode %d dev 0x%x type %d\n", ip->i_number,
-				ip->i_dev, ITOV(ip)->v_type);
+			for (vp = ump->um_mountp->m_mounth;
+			     vp; vp = vp->v_mountf) {
+				ip = VTOI(vp);
+				if ((ip->i_flag & ILOCKED) == 0)
+					continue;
+				printf("inode %d dev 0x%x type %d\n",
+				    ip->i_number, ip->i_dev, vp->v_type);
+			}
 		}
 		break;
 	}
