@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.73		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.74		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.73		%G%);
+SCCSID(@(#)queue.c	3.74		%G%);
 
 /*
 **  Work queue.
@@ -722,18 +722,14 @@ printqueue()
 				break;
 
 			  case 'S':	/* sender name */
-				if (message[0] != '\0')
-				{
-					(void) strcat(buf, " (");
-					(void) strcat(buf, message);
-					(void) strcat(buf, ")");
-				}
-				printf("%8d %.16s %.40s", dfsize,
+				printf("%8d %.16s %.45s", dfsize,
 					ctime(&submittime), &buf[1]);
+				if (message[0] != '\0')
+					printf("\n\t\t\t\t  (%.43s)", message);
 				break;
 
 			  case 'R':	/* recipient name */
-				printf("\n\t\t\t\t  %.40s", &buf[1]);
+				printf("\n\t\t\t\t  %.45s", &buf[1]);
 				break;
 
 			  case 'T':	/* creation time */
