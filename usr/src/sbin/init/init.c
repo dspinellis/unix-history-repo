@@ -53,10 +53,10 @@ extern void logwtmp __P((const char *, const char *, const char *));
 /*
  * Sleep times; used to prevent thrashing.
  */
-#define	GETTY_SPACING		60	/* fork getty on a port every N secs */
+#define	GETTY_SPACING		10	/* fork getty on a port every N secs */
 #define	WINDOW_WAIT		 3	/* wait N secs after starting window */
 #define	STALL_TIMEOUT		30	/* wait N secs after warning */
-#define	DEATH_WATCH		30	/* wait N secs for procs to die */
+#define	DEATH_WATCH		10	/* wait N secs for procs to die */
 
 void handle __P((sig_t, ...));
 void delset __P((sigset_t *, ...));
@@ -110,8 +110,8 @@ session_t *sessions;
 
 char **construct_argv __P((char *));
 void start_window_system __P((session_t *));
+void collect_child __P((int));
 pid_t start_getty __P((session_t *));
-void chld_handler __P((int));
 void transition_handler __P((int));
 void alrm_handler __P((int));
 int clang;
@@ -120,21 +120,22 @@ int start_logger __P((void));
 void clear_session_logs __P((session_t *));
 int logger_enable;
 
-void start_session_db __P((void));
+int start_session_db __P((void));
 void add_session __P((session_t *));
 void del_session __P((session_t *));
 session_t *find_session __P((pid_t));
 DB *session_db;
 
-sigset_t multi_sig_mask;
-sigset_t death_mask;
-
+/*
+ * The mother of all processes.
+ */
 int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	int c;
+	struct sigaction sa;
 	sigset_t mask;
 
 	/*
@@ -147,7 +148,13 @@ main(argc, argv)
 	 * Note that this does NOT open a file...
 	 * Does 'init' deserve its own facility number?
 	 */
-	openlog("init", LOG_CONS, LOG_DAEMON);
+	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
+
+	/*
+	 * Create an initial session.
+	 */
+	if (setsid() < 0)
+		syslog(LOG_ERR, "setsid failed (initial) %m");
 
 	/*
 	 * This code assumes that we always get arguments through flags,
@@ -177,15 +184,15 @@ main(argc, argv)
 	       SIGBUS, SIGSYS, SIGXCPU, SIGXFSZ, 0);
 	handle(transition_handler, SIGHUP, SIGTERM, SIGTSTP, 0);
 	handle(alrm_handler, SIGALRM, 0);
-	handle(chld_handler, SIGCHLD, 0);
 	sigfillset(&mask);
-	delset(&mask, SIGABRT, SIGFPE, SIGILL, SIGSEGV,
-		SIGBUS, SIGSYS, SIGXCPU, SIGXFSZ, 0);
+	delset(&mask, SIGABRT, SIGFPE, SIGILL, SIGSEGV, SIGBUS, SIGSYS,
+		SIGXCPU, SIGXFSZ, SIGHUP, SIGTERM, SIGTSTP, SIGALRM, 0);
 	sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
-	multi_sig_mask = mask;
-	delset(&multi_sig_mask, SIGHUP, SIGTERM, SIGTSTP, SIGCHLD, 0);
-	death_mask = mask;
-	delset(&death_mask, SIGCHLD, SIGALRM);
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_IGN;
+	(void) sigaction(SIGTTIN, &sa, (struct sigaction *)0);
+	(void) sigaction(SIGTTOU, &sa, (struct sigaction *)0);
 
 	/*
 	 * Paranoia.
@@ -205,6 +212,9 @@ main(argc, argv)
 	return 1;
 }
 
+/*
+ * Associate a function with a signal handler.
+ */
 void
 #ifdef __STDC__
 handle(sig_t handler, ...)
@@ -237,6 +247,9 @@ handle(va_alist)
 	}
 }
 
+/*
+ * Delete a set of signals from a mask.
+ */
 void
 #ifdef __STDC__
 delset(sigset_t *maskp, ...)
@@ -350,9 +363,12 @@ emergency(va_alist)
 	vsyslog(LOG_EMERG, message, ap);
 	va_end(ap);
 	closelog();
-	openlog("init", LOG_CONS, LOG_DAEMON);
+	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
 }
 
+/*
+ * Catch an unexpected signal.
+ */
 void
 disaster(sig)
 	int sig;
@@ -435,6 +451,9 @@ start_logger()
 	return pfd[1];
 }
 
+/*
+ * Close out the accounting files for a login session.
+ */
 void
 clear_session_logs(sp)
 	session_t *sp;
@@ -453,6 +472,7 @@ setctty(name)
 {
 	int fd;
 
+	(void) revoke(name);
 	if ((fd = open(name, O_RDWR)) == -1) {
 		stall("can't open %s: %m", name);
 		_exit(1);
@@ -463,6 +483,9 @@ setctty(name)
 	}
 }
 
+/*
+ * Bring the system up single user.
+ */
 state_func_t
 single_user()
 {
@@ -546,17 +569,21 @@ single_user()
 		return (state_func_t) single_user;
 	}
 
-	while ((wpid = waitpid(pid, &status, WUNTRACED)) != pid ||
-	       WIFSTOPPED(status)) {
-		if (wpid == -1 && errno != EINTR) {
+	do {
+		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
+			collect_child(wpid);
+		if (wpid == -1) {
+			if (errno == EINTR)
+				continue;
 			warning("wait for single-user shell failed: %m; restarting");
 			return (state_func_t) single_user;
 		}
 		if (wpid == pid && WIFSTOPPED(status)) {
 			warning("init: shell stopped, restarting\n");
 			kill(pid, SIGCONT);
+			wpid = -1;
 		}
-	}
+	} while (wpid != pid);
 
 	if (!WIFEXITED(status)) {
 		warning("single user shell terminated abnormally, restarting");
@@ -567,15 +594,24 @@ single_user()
 	return (state_func_t) runcom;
 }
 
+/*
+ * Run the system startup script.
+ */
 state_func_t
 runcom()
 {
 	pid_t pid, wpid;
 	int status;
 	char *argv[4];
-	sigset_t mask;
+	struct sigaction sa;
 
 	if ((pid = fork()) == 0) {
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = SIG_IGN;
+		(void) sigaction(SIGTSTP, &sa, (struct sigaction *)0);
+		(void) sigaction(SIGHUP, &sa, (struct sigaction *)0);
+
 		setctty(_PATH_CONSOLE);
 
 		argv[0] = "sh";
@@ -583,8 +619,7 @@ runcom()
 		argv[2] = runcom_mode == AUTOBOOT ? "autoboot" : 0;
 		argv[3] = 0;
 
-		sigemptyset(&mask);
-		sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+		sigprocmask(SIG_SETMASK, &sa.sa_mask, (sigset_t *) 0);
 
 		execv(_PATH_BSHELL, argv);
 		stall("can't exec %s for %s: %m", _PATH_BSHELL, _PATH_RUNCOM);
@@ -594,16 +629,21 @@ runcom()
 	if (pid == -1) {
 		emergency("can't fork for %s on %s: %m",
 			_PATH_BSHELL, _PATH_RUNCOM);
+		while (waitpid(-1, (int *) 0, WNOHANG) > 0)
+			;
 		sleep(STALL_TIMEOUT);
 		return (state_func_t) single_user;
 	}
 
 	/*
-	 * Copied from single_user().  Is this too paranoid?
+	 * Copied from single_user().  This is a bit paranoid.
 	 */
-	while ((wpid = waitpid(pid, &status, WUNTRACED)) != pid ||
-	       WIFSTOPPED(status)) {
-		if (wpid == -1 && errno != EINTR) {
+	do {
+		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
+			collect_child(wpid);
+		if (wpid == -1) {
+			if (errno == EINTR)
+				continue;
 			warning("wait for %s on %s failed: %m; going to single user mode",
 				_PATH_BSHELL, _PATH_RUNCOM);
 			return (state_func_t) single_user;
@@ -612,8 +652,9 @@ runcom()
 			warning("init: %s on %s stopped, restarting\n",
 				_PATH_BSHELL, _PATH_RUNCOM);
 			kill(pid, SIGCONT);
+			wpid = -1;
 		}
-	}
+	} while (wpid != pid);
 
 	if (!WIFEXITED(status)) {
 		warning("%s on %s terminated abnormally, going to single user mode",
@@ -625,22 +666,31 @@ runcom()
 		return (state_func_t) single_user;
 
 	runcom_mode = AUTOBOOT;		/* the default */
+	logwtmp("~", "reboot", "");	/* XXX */
 	return (state_func_t) read_ttys;
 }
 
 /*
- * The db library seems awfully heavyweight for this task.
- * This code may get replaced later.
- * We could pass in the size here; is it worth it?
+ * Open the session database.
+ *
+ * NB: We could pass in the size here; is it necessary?
  */
-void
+int
 start_session_db()
 {
-	if (session_db)
-		(*session_db->close)(session_db);
-	session_db = hash_open((char *) 0, 0, 0, (HASHINFO *) 0);
+	if (session_db && (*session_db->close)(session_db))
+		emergency("session database close: %s", strerror(errno));
+	if ((session_db = hash_open(NULL, O_RDWR, 0, NULL)) == 0) {
+		emergency("session database open: %s", strerror(errno));
+		return (1);
+	}
+	return (0);
+		
 }
 
+/*
+ * Add a new login session.
+ */
 void
 add_session(sp)
 	session_t *sp;
@@ -653,9 +703,13 @@ add_session(sp)
 	data.data = &sp;
 	data.size = sizeof sp;
 
-	(*session_db->put)(session_db, &key, &data, R_PUT);
+	if ((*session_db->put)(session_db, &key, &data, R_PUT))
+		emergency("insert %d: %s", sp->se_process, strerror(errno));
 }
 
+/*
+ * Delete an old login session.
+ */
 void
 del_session(sp)
 	session_t *sp;
@@ -665,9 +719,13 @@ del_session(sp)
 	key.data = &sp->se_process;
 	key.size = sizeof sp->se_process;
 
-	(*session_db->del)(session_db, &key, 0);
+	if ((*session_db->del)(session_db, &key, 0))
+		emergency("delete %d: %s", sp->se_process, strerror(errno));
 }
 
+/*
+ * Look up a login session by pid.
+ */
 session_t *
 #ifdef __STDC__
 find_session(pid_t pid)
@@ -686,6 +744,9 @@ find_session(pid)
 	return *(session_t **)data.data;
 }
 
+/*
+ * Construct an argument vector from a command line.
+ */
 char **
 construct_argv(command)
 	char *command;
@@ -702,6 +763,9 @@ construct_argv(command)
 	return argv;
 }
 
+/*
+ * Deallocate a session descriptor.
+ */
 void
 free_session(sp)
 	register session_t *sp;
@@ -716,6 +780,9 @@ free_session(sp)
 	free(sp);
 }
 
+/*
+ * Allocate a new session descriptor.
+ */
 session_t *
 new_session(sprev, session_index, typ)
 	session_t *sprev;
@@ -772,6 +839,9 @@ new_session(sprev, session_index, typ)
 	return sp;
 }
 
+/*
+ * Walk the list of ttys and create sessions for each active line.
+ */
 state_func_t
 read_ttys()
 {
@@ -790,7 +860,8 @@ read_ttys()
 		free_session(sp);
 	}
 	sessions = 0;
-	start_session_db();
+	if (start_session_db())
+		return (state_func_t) single_user;
 
 	/*
 	 * Allocate a session entry for each active port.
@@ -806,6 +877,9 @@ read_ttys()
 	return (state_func_t) multi_user;
 }
 
+/*
+ * Start a window system running.
+ */
 void
 start_window_system(sp)
 	session_t *sp;
@@ -826,12 +900,18 @@ start_window_system(sp)
 	sigemptyset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
 
+	if (setsid() < 0)
+		emergency("setsid failed (window) %m");
+
 	execv(sp->se_window_argv[0], sp->se_window_argv);
 	stall("can't exec window system '%s' for port %s: %m",
 		sp->se_window_argv[0], sp->se_device);
 	_exit(1);
 }
 
+/*
+ * Start a login session running.
+ */
 pid_t
 start_getty(sp)
 	session_t *sp;
@@ -875,55 +955,51 @@ start_getty(sp)
 	_exit(1);
 }
 
+/*
+ * Collect exit status for a child.
+ * If an exiting login, start a new login running.
+ */
 void
-chld_handler(sig)
-	int sig;
-{
+collect_child(pid)
 	pid_t pid;
+{
 	register session_t *sp, *sprev, *snext;
 
-	while (pid = waitpid(-1, (int *) 0, WNOHANG)) {
-		if (pid == -1)
-			if (errno == EINTR)
-				continue;
-			else
-				break;
+	if (! sessions)
+		return;
 
-		if (! sessions)
-			continue;
+	if (! (sp = find_session(pid)))
+		return;
 
-		if (! (sp = find_session(pid)))
-			continue;
+	clear_session_logs(sp);
+	del_session(sp);
+	sp->se_process = 0;
 
-		clear_session_logs(sp);
-		del_session(sp);
-		sp->se_process = 0;
-
-		if (sp->se_flags & SE_SHUTDOWN) {
-			if (sprev = sp->se_prev)
-				sprev->se_next = sp->se_next;
-			else
-				sessions = sp->se_next;
-			if (snext = sp->se_next)
-				snext->se_prev = sp->se_prev;
-			free_session(sp);
-			continue;
-		}
-
-		if ((pid = start_getty(sp)) == -1) {
-			/* serious trouble */
-			requested_transition = clean_ttys;
-			return;
-		}
-
-		sp->se_process = pid;
-		sp->se_started = time((time_t *) 0);
-		add_session(sp);
+	if (sp->se_flags & SE_SHUTDOWN) {
+		if (sprev = sp->se_prev)
+			sprev->se_next = sp->se_next;
+		else
+			sessions = sp->se_next;
+		if (snext = sp->se_next)
+			snext->se_prev = sp->se_prev;
+		free_session(sp);
+		return;
 	}
 
-	requested_transition = 0;
+	if ((pid = start_getty(sp)) == -1) {
+		/* serious trouble */
+		requested_transition = clean_ttys;
+		return;
+	}
+
+	sp->se_process = pid;
+	sp->se_started = time((time_t *) 0);
+	add_session(sp);
 }
 
+/*
+ * Catch a signal and request a state transition.
+ */
 void
 transition_handler(sig)
 	int sig;
@@ -944,6 +1020,9 @@ transition_handler(sig)
 	}
 }
 
+/*
+ * Take the system multiuser.
+ */
 state_func_t
 multi_user()
 {
@@ -953,21 +1032,22 @@ multi_user()
 	requested_transition = 0;
 	logger_enable = 1;
 
-	for (sp = sessions; sp; sp = sp->se_next)
-		if (! sp->se_process) {
-			if ((pid = start_getty(sp)) == -1) {
-				/* serious trouble */
-				requested_transition = clean_ttys;
-				break;
-			}
-
-			sp->se_process = pid;
-			sp->se_started = time((time_t *) 0);
-			add_session(sp);
+	for (sp = sessions; sp; sp = sp->se_next) {
+		if (sp->se_process)
+			continue;
+		if ((pid = start_getty(sp)) == -1) {
+			/* serious trouble */
+			requested_transition = clean_ttys;
+			break;
 		}
+		sp->se_process = pid;
+		sp->se_started = time((time_t *) 0);
+		add_session(sp);
+	}
 
 	while (!requested_transition)
-		sigsuspend(&multi_sig_mask);
+		if ((pid = waitpid(-1, (int *) 0, 0)) != -1)
+			collect_child(pid);
 
 	return (state_func_t) requested_transition;
 }
@@ -1016,6 +1096,9 @@ clean_ttys()
 	return (state_func_t) multi_user;
 }
 
+/*
+ * Block further logins.
+ */
 state_func_t
 catatonia()
 {
@@ -1027,6 +1110,9 @@ catatonia()
 	return (state_func_t) multi_user;
 }
 
+/*
+ * Note SIGALRM.
+ */
 void
 alrm_handler(sig)
 	int sig;
@@ -1034,16 +1120,21 @@ alrm_handler(sig)
 	clang = 1;
 }
 
+/*
+ * Bring the system down to single user.
+ */
 state_func_t
 death()
 {
 	register session_t *sp;
 	register int i;
+	pid_t pid;
 	static const int death_sigs[3] = { SIGHUP, SIGTERM, SIGKILL };
 
 	for (sp = sessions; sp; sp = sp->se_next)
 		sp->se_flags |= SE_SHUTDOWN;
 
+	logwtmp("~", "shutdown", "");	/* XXX */
 	logger_enable = 0;
 
 	for (i = 0; i < 3; ++i) {
@@ -1053,10 +1144,11 @@ death()
 		clang = 0;
 		alarm(DEATH_WATCH);
 		do
-			sigsuspend(&death_mask);
-		while (! clang);
+			if ((pid = waitpid(-1, (int *)0, 0)) != -1)
+				collect_child(pid);
+		while (clang == 0 && errno != ECHILD);
 
-		if (waitpid(-1, (int *) 0, WNOHANG) == -1 && errno == ECHILD)
+		if (errno == ECHILD)
 			return (state_func_t) single_user;
 	}
 
