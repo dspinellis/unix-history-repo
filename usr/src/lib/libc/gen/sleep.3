@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sleep.3	4.1 (Berkeley) %G%
+.\"	@(#)sleep.3	5.1 (Berkeley) %G%
 .\"
-.TH SLEEP 3 
+.TH SLEEP 3  "19 January 1983"
 .UC 4
 .SH NAME
 sleep \- suspend execution for interval
@@ -21,11 +21,14 @@ that requested, because scheduled wakeups occur at fixed 1-second intervals,
 and an arbitrary amount longer because of other activity
 in the system.
 .PP
-The routine is implemented by setting an alarm clock signal
+The routine is implemented by setting an interval timer
 and pausing until it occurs.
-The previous state of this signal is saved and restored.
-If the sleep time exceeds the time to the alarm signal,
+The previous state of this timer is saved and restored.
+If the sleep time exceeds the time to the expiration of the
+previous timer,
 the process sleeps only until the signal would have occurred, and the
 signal is sent 1 second later.
 .SH "SEE ALSO"
-alarm(2), pause(2)
+setitimer(2), sigpause(2)
+.SH BUGS
+An interface with finer resolution is needed.
