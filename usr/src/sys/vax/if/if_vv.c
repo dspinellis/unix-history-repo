@@ -1,4 +1,4 @@
-/*	if_vv.c	4.18	83/05/10	*/
+/*	if_vv.c	4.19	83/05/10	*/
 
 #include "vv.h"
 
@@ -538,7 +538,7 @@ restart:
 	 * Have request mapped to UNIBUS for transmission.
 	 * Purge any stale data from this BDP, and start the otput.
 	 */
-	if (vs->vs_olen > VVMTU + sizeof (struct vvheader)) {
+	if (vs->vs_olen > VVMTU + sizeof (struct vv_header)) {
 		printf("vv%d vs_olen: %d > VVMTU\n", unit, vs->vs_olen);
 		panic("vvdriver vs_olen botch");
 	}
