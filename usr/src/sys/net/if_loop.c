@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_loop.c	7.1 (Berkeley) %G%
+ *	@(#)if_loop.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -21,15 +21,13 @@
 #include "../net/netisr.h"
 #include "../net/route.h"
 
+#include "../machine/mtpr.h"
+
 #ifdef	INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#endif
-
-#ifdef vax
-#include "../vax/mtpr.h"
 #endif
 
 #ifdef NS

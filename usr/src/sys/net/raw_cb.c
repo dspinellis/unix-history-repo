@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_cb.c	7.2 (Berkeley) %G%
+ *	@(#)raw_cb.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,7 +20,7 @@
 #include "raw_cb.h"
 #include "../netinet/in.h"
 
-#include "../vax/mtpr.h"
+#include "../machine/mtpr.h"
 
 /*
  * Routines to manage the raw protocol control blocks. 
