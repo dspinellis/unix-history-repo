@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.61 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -430,6 +430,18 @@ main(argc, argv, envp)
 
 		  case 'o':	/* set option */
 			setoption(p[2], &p[3], FALSE, TRUE);
+			break;
+
+		  case 'p':	/* set protocol */
+			p += 2;
+			if (*p == '\0' && ((p = *++av) == NULL || !isdigit(*p)))
+			{
+				usrerr("Bad -p (protocol) flag");
+				ExitStat = EX_USAGE;
+				av--;
+				break;
+			}
+			define('r', newstr(p), CurEnv);
 			break;
 
 		  case 'q':	/* run queue files at intervals */
