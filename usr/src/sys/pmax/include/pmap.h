@@ -41,12 +41,12 @@
 #define PMAP_HASH_KPAGES	3
 #define PMAP_HASH_UADDR		(UADDR - PMAP_HASH_UPAGES * NBPG)
 #define PMAP_HASH_KADDR		(UADDR - (PMAP_HASH_UPAGES + PMAP_HASH_KPAGES) * NBPG)
-#define PMAP_HASH_NUM_ENTRIES	512
-#define PMAP_HASH_SIZE_SHIFT	3
+#define PMAP_HASH_NUM_ENTRIES	256
+#define PMAP_HASH_SIZE_SHIFT	4
 #define PMAP_HASH_SHIFT1	12
-#define PMAP_HASH_SHIFT2	14
+#define PMAP_HASH_SHIFT2	21
 #define PMAP_HASH_MASK1		0x07f
-#define PMAP_HASH_MASK2		0x180
+#define PMAP_HASH_MASK2		0x080
 #define PMAP_HASH_SIZE		(PMAP_HASH_NUM_ENTRIES*sizeof(struct pmap_hash))
 
 /* compute pointer to pmap hash table */
@@ -58,8 +58,10 @@
  * A TLB hash entry.
  */
 typedef struct pmap_hash {
-	u_int	low;		/* The TLB low register value. */
-	u_int	high;		/* The TLB high register value. */
+	struct {
+		u_int	low;		/* The TLB low register value. */
+		u_int	high;		/* The TLB high register value. */
+	} pmh_pte[2];
 } *pmap_hash_t;
 
 /*
