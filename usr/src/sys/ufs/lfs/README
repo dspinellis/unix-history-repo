@@ -1,3 +1,4 @@
+#	@(#)README	7.2 (Berkeley) %G%
 
 The disk is laid out in segments.  Each segment is composed of one or more
 groups of:
