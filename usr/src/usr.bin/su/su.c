@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -120,15 +120,20 @@ main(argc, argv)
 		}
 	}
 
-	/* if not asme or target's shell isn't standard, use it */
-	if (!asme || !chshell(pwd->pw_shell))
-		if (pwd->pw_shell && *pwd->pw_shell) {
-			shell = pwd->pw_shell;
-			iscsh = UNSET;
-		} else {
-			shell = "/bin/sh";
-			iscsh = NO;
+	if (asme) {
+		/* if asme and non-standard target shell, must be root */
+		if (!chshell(pwd->pw_shell) && ruid) {
+			fprintf(stderr, "su: Permission denied.\n");
+			exit(1);
 		}
+	}
+	else if (pwd->pw_shell && *pwd->pw_shell) {
+		shell = pwd->pw_shell;
+		iscsh = UNSET;
+	} else {
+		shell = "/bin/sh";
+		iscsh = NO;
+	}
 
 	/* if we're forking a csh, we want to slightly muck the args */
 	if (iscsh == UNSET) {
