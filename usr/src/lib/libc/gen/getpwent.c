@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)getpwent.c	5.10 (Berkeley) %G%";
 static DBM *_pw_db;
 static FILE *_pw_fp;
 static struct passwd _pw_passwd;
-static int _pw_rewind = 1, _pw_stayopen;
+static int _pw_getfirstkey, _pw_stayopen;
 static char _pw_flag, *_pw_file = _PATH_PASSWD;
 
 #define	MAXLINELENGTH	1024
@@ -114,15 +114,17 @@ start_pw()
 	char *p;
 
 	if (_pw_db) {
-		_pw_rewind = 1;
+		_pw_getfirstkey = 1;
 		return(1);
 	}
 	if (_pw_fp) {
 		rewind(_pw_fp);
 		return(1);
 	}
-	if (_pw_db = dbm_open(_pw_file, O_RDONLY, 0))
+	if (_pw_db = dbm_open(_pw_file, O_RDONLY, 0)) {
+		_pw_getfirstkey = 1;
 		return(1);
+	}
 	/*
 	 * special case; if it's the official password file, look in
 	 * the master password file, otherwise, look in the file itself.
@@ -222,8 +224,8 @@ fetch_pw(key)
 	if (flock(dbm_dirfno(_pw_db), LOCK_SH))
 		return(0);
 	if (!key.dptr)
-		if (_pw_rewind) {
-			_pw_rewind = 0;
+		if (_pw_getfirstkey) {
+			_pw_getfirstkey = 0;
 			key = dbm_firstkey(_pw_db);
 		} else
 			key = dbm_nextkey(_pw_db);
