@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.3 (Berkeley) %G%
+ *	@(#)cpu.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -57,3 +57,7 @@ int	clk_enable;		/* clock enable startup flag */
  * Enable realtime clock.
  */
 #define	enablertclock()	(clk_enable = 1)
+
+#ifndef _MTPR_H_
+#include "mtpr.h"
+#endif /* !_MTPR_H_ */

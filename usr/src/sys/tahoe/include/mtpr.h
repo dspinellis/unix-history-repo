@@ -7,13 +7,14 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)mtpr.h	7.2 (Berkeley) %G%
+ *	@(#)mtpr.h	7.3 (Berkeley) %G%
  */
 
+#ifndef _MTPR_H__
+#define _MTPR_H_
 /*
  * TAHOE processor register numbers
  */
-
 #define	SBR	0x0		/* system base register */
 #define	SLR	0x1		/* system length register */
 #define	P0BR	0x2		/* p0 base register */
@@ -42,3 +43,4 @@
 #define HISR	0x1a		/* hardware interrupt summery register */
 #define DCR	0x1b		/* diagnostic control register */
 #define PDCS	0x1c		/* purge data cache slot */
+#endif /* !_MTPR_H_ */
