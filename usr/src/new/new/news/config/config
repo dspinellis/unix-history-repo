@@ -1,0 +1,9 @@
+t=/tmp/co$$
+trap "rm -f $t; exit" 0 1 2 3
+
+case $# in
+	0) set -- -
+esac
+
+awk -F'=' -f options.awk defs.dflt Makefile.dflt user.dflt $* >$t
+sh <$t
