@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -146,7 +146,7 @@ mailfor(name)
 	register char *cp;
 	off_t offset;
 
-	if (!(cp = index(name, '@')))
+	if (!(cp = strchr(name, '@')))
 		return;
 	*cp = '\0';
 	offset = atoi(cp + 1);
@@ -169,7 +169,7 @@ notify(utp, offset)
 
 	(void)snprintf(tty, sizeof(tty), "%s%.*s",
 	    _PATH_DEV, (int)sizeof(utp->ut_line), utp->ut_line);
-	if (index(tty + sizeof(_PATH_DEV) - 1, '/')) {
+	if (strchr(tty + sizeof(_PATH_DEV) - 1, '/')) {
 		/* A slash is an attempt to break security... */
 		syslog(LOG_AUTH | LOG_NOTICE, "'/' in \"%s\"", tty);
 		return;
