@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.4 (Berkeley) %G%
+#	@(#)rc	5.5 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -22,13 +22,19 @@ then
 		;;
 	4)
 		reboot -n
+		echo "reboot -n failed... help!" >/dev/console
+		exit 1
 		;;
 	8)
-		echo "Automatic reboot failed... help!" >/dev/console
+		echo "Automatic file system check failed... help!" >/dev/console
 		exit 1
 		;;
 	12)
 		echo "Reboot interrupted" >/dev/console
+		exit 1
+		;;
+	130)
+		# interrupt before catcher installed
 		exit 1
 		;;
 	*)
@@ -36,13 +42,6 @@ then
 		exit 1
 		;;
 	esac
-fi
-
-# check the password file
-if [ -f /etc/ptmp ]
-then
-	echo 'password file may be incorrect -- /etc/ptmp exists' \
-	    > /dev/console
 fi
 
 umount -a
@@ -80,9 +79,17 @@ if [ -d /var/crash ]; then
  	savecore /var/crash			>/dev/console 2>&1
 fi
 
+# check the password temp/lock file
+if [ -f /etc/ptmp ]
+then
+	logger -s -p auth.err \
+	'password file may be incorrect -- /etc/ptmp exists' >/dev/console 2>&1
+fi
+
 echo preserving editor files  >/dev/console
 (cd /tmp; /usr/libexec/ex3.7preserve -a)
 echo clearing /tmp 	>/dev/console
+(cd /tmp; rm -rf [a-km-pr-zA-Z]* )
 (cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
 
 echo -n standard daemons: >/dev/console
