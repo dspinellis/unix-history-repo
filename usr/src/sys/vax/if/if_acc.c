@@ -1,4 +1,4 @@
-/*	if_acc.c	4.9	82/03/13	*/
+/*	if_acc.c	4.10	82/03/19	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -176,19 +176,19 @@ COUNT(ACCINIT);
 	x = spl5();
 	addr->icsr = ACC_RESET; DELAY(5000);
         addr->ocsr = ACC_RESET; DELAY(5000);
-	addr->ocsr = OUT_BBACK;	DELAY(1000);	/* reset host master ready */
+	addr->ocsr = OUT_BBACK;	DELAY(5000);	/* reset host master ready */
 	addr->ocsr = 0;
 	splx(x);
 	addr->icsr = IN_MRDY | IN_WEN;		/* close the relay */
-	DELAY(5000);
+	DELAY(10000);
 	/* YECH!!! */
 	x = 500;
 	while (x-- > 0) {
 		if ((addr->icsr & IN_HRDY) ||
 		    (addr->icsr & (IN_RMR | IN_IMPBSY)) == 0)
 			break;
-		addr->icsr = IN_MRDY | IN_WEN;
-		DELAY(5000);			/* keep turning IN_RMR off */
+		addr->icsr = IN_MRDY | IN_WEN; DELAY(10000);
+		/* keep turning IN_RMR off */
 	}
 	if (x <= 0) {
 		printf("acc%d: imp doesn't respond, icsr=%b\n", unit,
