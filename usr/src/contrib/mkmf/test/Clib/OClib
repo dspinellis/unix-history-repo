@@ -1,0 +1,69 @@
+mkmf: creating Makefile from ../C.l
+CFLAGS	      = -I../include -O
+
+DEST	      = ../lib
+
+EXTHDRS	      = ../include/hash.h
+
+HDRS	      =
+
+INSTALL	      = /etc/install
+
+LIBRARY	      = libhash.a
+
+MAKEFILE      = Makefile
+
+OBJS	      = hthash.o \
+		htinit.o \
+		htinstall.o \
+		htlookup.o \
+		htrm.o
+
+PRINT	      = pr
+
+SHELL	      = /bin/sh
+
+SRCS	      = hthash.c \
+		htinit.c \
+		htinstall.c \
+		htlookup.c \
+		htrm.c
+
+all:		$(LIBRARY)
+
+$(LIBRARY):	$(OBJS)
+		@echo "Loading $(LIBRARY) ..."
+		@ar cru $(LIBRARY) $(OBJS)
+		@echo "done"
+
+clean:;		@rm -f $(OBJS) core
+
+clobber:;	@rm -f $(OBJS) $(LIBRARY) core tags
+
+depend:;	@mkmf -f $(MAKEFILE) ROOT=$(ROOT)
+
+echo:;		@echo $(HDRS) $(SRCS)
+
+extract:;	@ar x $(DEST)/$(LIBRARY)
+
+index:;		@ctags -wx $(HDRS) $(SRCS)
+
+install:	$(LIBRARY)
+		@echo Installing $(LIBRARY) in $(DEST)
+		@if [ $(DEST) != . ]; then \
+		(rm -f $(DEST)/$(LIBRARY); $(INSTALL) -f $(DEST) $(LIBRARY)); fi
+
+print:;		@$(PRINT) $(HDRS) $(SRCS)
+
+tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
+
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/$(LIBRARY): $(SRCS) $(HDRS) $(EXTHDRS)
+		@$(MAKE) -f $(MAKEFILE) ROOT=$(ROOT) DEST=$(DEST) install
+###
+hthash.o: ../include/hash.h
+htinit.o: ../include/hash.h
+htinstall.o: ../include/hash.h
+htlookup.o: ../include/hash.h
+htrm.o: ../include/hash.h
