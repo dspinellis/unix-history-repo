@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.54 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.55 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -113,7 +113,7 @@ int	spec_lookup(),
 	ufsspec_close(),
 	spec_advlock(),
 	spec_badop(),
-	spec_nullop();
+	nullop();
 
 struct vnodeops spec_inodeops = {
 	spec_lookup,		/* lookup */
@@ -129,7 +129,7 @@ struct vnodeops spec_inodeops = {
 	spec_ioctl,		/* ioctl */
 	spec_select,		/* select */
 	spec_badop,		/* mmap */
-	spec_nullop,		/* fsync */
+	nullop,			/* fsync */
 	spec_badop,		/* seek */
 	spec_badop,		/* remove */
 	spec_badop,		/* link */
@@ -162,8 +162,7 @@ int	fifo_lookup(),
 	ufsfifo_close(),
 	fifo_print(),
 	fifo_advlock(),
-	fifo_badop(),
-	fifo_nullop();
+	fifo_badop();
 
 struct vnodeops fifo_inodeops = {
 	fifo_lookup,		/* lookup */
@@ -179,7 +178,7 @@ struct vnodeops fifo_inodeops = {
 	fifo_ioctl,		/* ioctl */
 	fifo_select,		/* select */
 	fifo_badop,		/* mmap */
-	fifo_nullop,		/* fsync */
+	nullop,			/* fsync */
 	fifo_badop,		/* seek */
 	fifo_badop,		/* remove */
 	fifo_badop,		/* link */
@@ -1806,182 +1805,21 @@ ufs_advlock(vp, id, op, fl, flags)
 	 */
 	switch(op) {
 	case F_SETLK:
-		return (ufs_setlock(lock));
+		return (lf_setlock(lock));
 
 	case F_UNLCK:
-		return (ufs_advunlock(lock));
+		error = lf_clearlock(lock);
+		FREE(lock, M_LOCKF);
+		return (error);
 
 	case F_GETLK:
-		return (ufs_advgetlock(lock, fl));
+		error = lf_getlock(lock, fl);
+		FREE(lock, M_LOCKF);
+		return (error);
 	
 	default:
 		free(lock, M_LOCKF);
 		return (EINVAL);
 	}
 	/* NOTREACHED */
-}
-
-/*
- * This variable controls the maximum number of processes that will
- * be checked in doing deadlock detection.
- */
-int maxlockdepth = MAXDEPTH;
-
-/*
- * Set a byte-range lock.
- */
-ufs_setlock(lock)
-	register struct lockf *lock;
-{
-	register struct inode *ip = lock->lf_inode;
-	register struct lockf *block;
-	static char lockstr[] = "lockf";
-	int priority, error;
-
-#ifdef LOCKF_DEBUG
-	if (lockf_debug & 4)
-		lf_print("ufs_setlock", lock);
-#endif /* LOCKF_DEBUG */
-
-	/*
-	 * Set the priority
-	 */
-	priority = PLOCK;
-	if ((lock->lf_type & F_WRLCK) == 0)
-		priority += 4;
-	priority |= PCATCH;
-	/*
-	 * Scan lock list for this file looking for locks that would block us.
-	 */
-	while (block = lf_getblock(lock)) {
-		/*
-		 * Free the structure and return if nonblocking.
-		 */
-		if ((lock->lf_flags & F_WAIT) == 0) {
-			free(lock, M_LOCKF);
-			return (EAGAIN);
-		}
-		/*
-		 * We are blocked. Since flock style locks cover
-		 * the whole file, there is no chance for deadlock.
-		 * For byte-range locks we must check for deadlock.
-		 *
-		 * Deadlock detection is done by looking through the
-		 * wait channels to see if there are any cycles that
-		 * involve us. MAXDEPTH is set just to make sure we
-		 * do not go off into neverland.
-		 */
-		if ((lock->lf_flags & F_POSIX) &&
-		    (block->lf_flags & F_POSIX)) {
-			register struct proc *wproc;
-			register struct lockf *waitblock;
-			int i = 0;
-
-			/* The block is waiting on something */
-			wproc = (struct proc *)block->lf_id;
-			while (wproc->p_wchan &&
-			       (wproc->p_wmesg == lockstr) &&
-			       (i++ < maxlockdepth)) {
-				waitblock = (struct lockf *)wproc->p_wchan;
-				/* Get the owner of the blocking lock */
-				waitblock = waitblock->lf_next;
-				if ((waitblock->lf_flags & F_POSIX) == 0)
-					break;
-				wproc = (struct proc *)waitblock->lf_id;
-				if (wproc == (struct proc *)lock->lf_id) {
-					free(lock, M_LOCKF);
-					return (EDEADLK);
-				}
-			}
-		}
-		/*
-		 * Add our lock to the blocked
-		 * list and sleep until we're free.
-		 */
-#ifdef LOCKF_DEBUG
-		if (lockf_debug & 4)
-			lf_print("ufs_advlock: blocking on", block);
-#endif /* LOCKF_DEBUG */
-		/*
-		 * Remember who blocked us (for deadlock detection)
-		 */
-		lock->lf_next = block;
-		lf_addblock(block, lock);
-		if (error = tsleep((caddr_t *)lock, priority, lockstr, 0)) {
-			free(lock, M_LOCKF);
-			return (error);
-		}
-	}
-	/*
-	 * No blocks!!  Add the lock.  Note that addlock will
-	 * downgrade or upgrade any overlapping locks this
-	 * process already owns.
-	 */
-	lf_addlock(lock);
-#ifdef LOCKF_DEBUG
-	if (lockf_debug & 4) {
-		lf_print("ufs_advlock: got the lock", lock);
-		lf_printlist(lock);
-	}
-#endif /* LOCKF_DEBUG */
-	return (0);
-}
-
-/*
- * Remove a byte-range lock on an inode.
- */
-ufs_advunlock(lock)
-	struct lockf *lock;
-{
-	struct lockf *blocklist;
-
-	if (lock->lf_inode->i_lockf == (struct lockf *)0)
-		return (0);
-#ifdef LOCKF_DEBUG
-	if (lockf_debug & 4)
-		lf_print("ufs_advunlock", lock);
-#endif /* LOCKF_DEBUG */
-	/*
-	 * Generally, find the lock (or an overlap to that lock)
-	 * and remove it (or shrink it), then wakeup anyone we can.
-	 */
-	blocklist = lf_remove(lock);
-#ifdef LOCKF_DEBUG
-	lf_printlist(lock);
-#endif /* LOCKF_DEBUG */
-	FREE(lock, M_LOCKF);
-	lf_wakelock(blocklist);
-	return (0);
-}
-
-/*
- * Return the blocking pid
- */
-ufs_advgetlock(lock, fl)
-	register struct lockf *lock;
-	register struct flock *fl;
-{
-	register struct lockf *block;
-	off_t start, end;
-
-#ifdef LOCKF_DEBUG
-	if (lockf_debug & 4)
-		lf_print("ufs_advgetlock", lock);
-#endif /* LOCKF_DEBUG */
-
-	if (block = lf_getblock(lock)) {
-		fl->l_type = block->lf_type;
-		fl->l_whence = SEEK_SET;
-		fl->l_start = block->lf_start;
-		if (block->lf_end == -1)
-			fl->l_len = 0;
-		else
-			fl->l_len = block->lf_end - block->lf_start + 1;
-		if (block->lf_flags & F_POSIX)
-			fl->l_pid = ((struct proc *)(block->lf_id))->p_pid;
-		else
-			fl->l_pid = -1;
-	}
-	FREE(lock, M_LOCKF);
-	return (0);
 }
