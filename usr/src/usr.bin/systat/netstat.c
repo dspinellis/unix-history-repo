@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -106,7 +106,7 @@ static struct nlist nlst[] = {
 
 initnetstat()
 {
-	nlist(_PATH_UNIX, nlst);
+	kvm_nlist(nlst);
 	if (nlst[X_TCB].n_value == 0) {
 		error("No symbols in namelist");
 		return(0);
@@ -123,29 +123,31 @@ fetchnetstat()
 	struct inpcb inpcb;
 	struct socket sockb;
 	struct tcpcb tcpcb;
-	off_t off;
+	void *off;
 	int istcp;
 
 	if (nlst[X_TCB].n_value == 0)
 		return;
 	for (p = netcb.ni_forw; p != (struct netinfo *)&netcb; p = p->ni_forw)
 		p->ni_seen = 0;
-	if (protos&TCP)
-		off = nlst[X_TCB].n_value, istcp = 1;
-	else if (protos&UDP)
-		off = nlst[X_UDB].n_value, istcp = 0;
+	if (protos&TCP) {
+		off = NPTR(X_TCB); 
+		istcp = 1;
+	}
+	else if (protos&UDP) {
+		off = NPTR(X_UDB); 
+		istcp = 0;
+	}
 	else {
 		error("No protocols to display");
 		return;
 	}
 again:
-	lseek(kmem, off, L_SET);
-	read(kmem, &inpcb, sizeof (struct inpcb));
-	prev = (struct inpcb *)off;
-	for (; inpcb.inp_next != (struct inpcb *)off; prev = next) {
+	KREAD(off, &inpcb, sizeof (struct inpcb));
+	prev = off;
+	for (; inpcb.inp_next != off; prev = next) {
 		next = inpcb.inp_next;
-		lseek(kmem, (off_t)next, L_SET);
-		read(kmem, &inpcb, sizeof (inpcb));
+		KREAD(next, &inpcb, sizeof (inpcb));
 		if (inpcb.inp_prev != prev) {
 			p = netcb.ni_forw;
 			for (; p != (struct netinfo *)&netcb; p = p->ni_forw)
@@ -159,18 +161,16 @@ again:
 			continue;
 		if (nports && !checkport(&inpcb))
 			continue;
-		lseek(kmem, (off_t)inpcb.inp_socket, L_SET);
-		read(kmem, &sockb, sizeof (sockb));
-		lseek(kmem, (off_t)inpcb.inp_ppcb, L_SET);
+		KREAD(inpcb.inp_socket, &sockb, sizeof (sockb));
 		if (istcp) {
-			read(kmem, &tcpcb, sizeof (tcpcb));
+			KREAD(inpcb.inp_ppcb, &tcpcb, sizeof (tcpcb));
 			enter(&inpcb, &sockb, tcpcb.t_state, "tcp");
 		} else
 			enter(&inpcb, &sockb, 0, "udp");
 	}
 	if (istcp && (protos&UDP)) {
 		istcp = 0;
-		off = nlst[X_UDB].n_value;
+		off = NPTR(X_UDB);
 		goto again;
 	}
 }
@@ -366,7 +366,7 @@ inetname(in)
 				cp = np->n_name;
 		}
 		if (cp == 0) {
-			hp = gethostbyaddr(&in, sizeof (in), AF_INET);
+			hp = gethostbyaddr((char *)&in, sizeof (in), AF_INET);
 			if (hp)
 				cp = hp->h_name;
 		}

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -77,7 +77,7 @@ static void stat1();
 initiostat()
 {
 	if (nlst[X_DK_BUSY].n_type == 0) {
-		nlist(_PATH_UNIX, nlst);
+		kvm_nlist(nlst);
 		if (nlst[X_DK_BUSY].n_type == 0) {
 			error("Disk init information isn't in namelist");
 			return(0);
@@ -102,17 +102,12 @@ fetchiostat()
 {
 	if (nlst[X_DK_BUSY].n_type == 0)
 		return;
-	s.dk_busy = getword(nlst[X_DK_BUSY].n_value);
-	lseek(kmem, (long)nlst[X_DK_TIME].n_value, L_SET);
-	read(kmem, s.dk_time, dk_ndrive * sizeof (long));
-	lseek(kmem, (long)nlst[X_DK_XFER].n_value, L_SET);
-	read(kmem, s.dk_xfer, dk_ndrive * sizeof (long));
-	lseek(kmem, (long)nlst[X_DK_WDS].n_value, L_SET);
-	read(kmem, s.dk_wds, dk_ndrive * sizeof (long));
-	lseek(kmem, (long)nlst[X_DK_SEEK].n_value, L_SET);
-	read(kmem, s.dk_seek, dk_ndrive * sizeof (long));
-	lseek(kmem, (long)nlst[X_CP_TIME].n_value, L_SET);
-	read(kmem, s.cp_time, sizeof s.cp_time);
+	NREAD(X_DK_BUSY, &s.dk_busy, LONG);
+	NREAD(X_DK_TIME, s.dk_time, dk_ndrive * LONG);
+	NREAD(X_DK_XFER, s.dk_xfer, dk_ndrive * LONG);
+	NREAD(X_DK_WDS, s.dk_wds, dk_ndrive * LONG);
+	NREAD(X_DK_SEEK, s.dk_seek, dk_ndrive * LONG);
+	NREAD(X_CP_TIME, s.cp_time, sizeof s.cp_time);
 }
 
 #define	INSET	10
