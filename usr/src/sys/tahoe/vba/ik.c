@@ -1,4 +1,4 @@
-/*	ik.c	1.4	86/12/15	*/
+/*	ik.c	1.5	86/12/23	*/
 
 #include "ik.h"
 #if NIK > 0
@@ -53,7 +53,7 @@ struct	ik_softc {
 		u_short w[2];
 		u_long	l;
 	} is_nameaddr;		/* address of last symbol lookup */
-	caddr_t is_buf;		/* i/o buffer XXX */
+	caddr_t is_buf[PS_MAXDMA];/* i/o buffer XXX */
 } ik_softc[NIK];
 
 struct	buf iktab[NIK];		/* unit command queue headers */
@@ -82,10 +82,8 @@ ikprobe(reg, vi)
 	ik = (struct ikdevice *)reg;
 	ik->ik_vec = --vi->ui_hd->vh_lastiv;
 	/*
-	 * Use extended non-privileged address modifier to
-	 * insure DMA to/from intermediate buffer works when
-	 * buffer is not in lower 16Mb of memory (also avoids
-	 * other 24-bit devices mapped into overlapping regions).
+	 * Use extended non-privileged address modifier
+	 * to avoid address overlap with 24-bit devices.
 	 */
 	ik->ik_mod = 0xf1;			/* address modifier */
 	/*
@@ -144,9 +142,6 @@ ikopen(dev, flag)
 	if (sc->is_uid != (uid_t)-1 && sc->is_uid != u.u_uid)
 		return (EBUSY);
 	if (sc->is_uid == (uid_t)-1) {
-		sc->is_buf = (caddr_t)wmemall(vmemall, PS_MAXDMA);
-		if (sc->is_buf == 0)
-			return (ENOMEM);
 		sc->is_timeout = 0;
 		timeout(iktimer, (caddr_t)unit, hz);
 		/*
@@ -164,8 +159,6 @@ ikopen(dev, flag)
 				if (!reset++ && psreset(ik, 0))
 					goto again;
 				untimeout(iktimer, (caddr_t)unit);
-				wmemfree(sc->is_buf, PS_MAXDMA);
-				sc->is_buf = 0;
 				return (EIO);
 			}
 		}
@@ -185,10 +178,6 @@ ikclose(dev, flag)
 	if (!IKDIAG(dev))
 		(void) ikcommand(dev, PS_DETACH, 1);	/* auto detach */
 	sc->is_uid = -1;
-	if (sc->is_buf) {
-		wmemfree(sc->is_buf, PS_MAXDMA);
-		sc->is_buf = 0;
-	}
 	untimeout(iktimer, (caddr_t)unit);
 }
 
