@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.4 %G%";
+static char *SccsId = "@(#)lex.c	2.5 %G%";
 
 char	*prompt = "& ";
 
@@ -104,8 +104,7 @@ commands()
 	char linebuf[LINESIZE];
 	int hangup(), contin();
 
-	sigset(SIGCONT, contin);
-	sighold(SIGCONT);
+	sigset(SIGCONT, SIG_DFL);
 	if (rcvmode) {
 		if (sigset(SIGINT, SIG_IGN) != SIG_IGN)
 			sigset(SIGINT, stop);
@@ -148,7 +147,7 @@ commands()
 		eofloop = 0;
 top:
 		if (shudprompt && !sourcing) {
-			sigrelse(SIGCONT);
+			sigset(SIGCONT, contin);
 			printf(prompt);
 		}
 		flush();
@@ -186,7 +185,7 @@ top:
 				break;
 			linebuf[n++] = ' ';
 		}
-		sighold(SIGCONT);
+		sigset(SIGCONT, SIG_DFL);
 		if (execute(linebuf, 0))
 			return;
 more:		;
