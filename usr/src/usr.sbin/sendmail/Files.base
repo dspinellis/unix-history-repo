@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.1 (Berkeley) %G%
+#	@(#)Files.base	8.2 (Berkeley) %G%
 CHANGES-R5-R8
 FAQ
 KNOWNBUGS
@@ -64,7 +64,6 @@ src/deliver.c
 src/domain.c
 src/envelope.c
 src/err.c
-src/features.linux.h
 src/headers.c
 src/macro.c
 src/mailq.1
