@@ -1,16 +1,17 @@
-/*
- * Copyright (c) 1985 Regents of the University of California.
+/*-
+ * Copyright (c) 1985, 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
+#ifndef lint
+static char sccsid[] = "@(#)cksum.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
 #ifdef sgi
 #ident "$Revision: 1.3 $"
-#ifndef lint
-static char sccsid[] = "@(#)cksum.c	2.6 (Berkeley) 6/1/90";
-#endif /* not lint */
-#endif /* sgi */
+#endif
 
 #include <sys/types.h>
 
