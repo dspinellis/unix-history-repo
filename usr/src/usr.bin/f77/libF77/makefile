@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.3	%G%
+#	@(#)makefile	1.4	%G%
 
 LIBDIR = /usr/ucb/lib
 TAPE = /dev/nrmt1
@@ -45,7 +45,7 @@ libF77.a:	$(ALL)
 c_abs.c c_cos.c c_div.c c_div.c c_exp.c c_log.c c_sin.c c_sqrt.c d_cnjg.c d_imag.c pow_ci.c pow_zi.c pow_zz.c r_cnjg.c r_imag.c z_abs.c z_cos.c z_div.c z_div.c z_exp.c z_log.c z_sin.c z_sqrt.c:	complex
 
 install:	libF77.a
-#	mv $(LIBDIR)/libF77.a $(LIBDIR)/libF77.a.old
+	mv $(LIBDIR)/libF77.a $(LIBDIR)/libF77.a.old
 	cp libF77.a $(LIBDIR)/libF77.a
 	ranlib $(LIBDIR)/libF77.a
 
