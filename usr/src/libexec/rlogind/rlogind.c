@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.22.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -32,6 +32,9 @@ static char sccsid[] = "@(#)rlogind.c	5.22 (Berkeley) %G%";
  *	locuser\0
  *	terminal_type/speed\0
  *	data
+ *
+ * Automatic login protocol is done here, using login -f upon success,
+ * unless OLD_LOGIN is defined (then done in login, ala 4.2/4.3BSD).
  */
 
 #include <stdio.h>
@@ -46,8 +49,12 @@ static char sccsid[] = "@(#)rlogind.c	5.22 (Berkeley) %G%";
 #include <errno.h>
 #include <pwd.h>
 #include <signal.h>
+#ifndef TERMIOS
+#include <sgtty.h>
+#else /* TERMIOS */
 #include <sys/ioctl.h>
 #include <sys/termios.h>
+#endif /* TERMIOS */
 #include <stdio.h>
 #include <netdb.h>
 #include <syslog.h>
@@ -143,7 +150,9 @@ doit(f, fromp)
 	struct sockaddr_in *fromp;
 {
 	int i, p, t, pid, on = 1;
+#ifndef OLD_LOGIN
 	int authenticated = 0;
+#endif
 	register struct hostent *hp;
 	struct hostent hostent;
 	char c;
@@ -201,8 +210,10 @@ doit(f, fromp)
 		fatal(f, "Permission denied");
 	write(f, "", 1);
 #endif
+#ifndef OLD_LOGIN
 	if (do_rlogin(hp->h_name) == 0)
 		authenticated++;
+#endif
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -249,19 +260,25 @@ gotpty:
 	if (pid < 0)
 		fatalperror(f, "");
 	if (pid == 0) {
+#ifdef TERMIOS
 		if (setsid() < 0)
 			fatalperror(f, "setsid");
 		if (ioctl(t, TIOCSCTTY, 0) < 0)
 			fatalperror(f, "ioctl(sctty)");
+#endif /* TERMIOS */
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
+#ifdef OLD_LOGIN
+		execl("/bin/login", "login", "-r", hp->h_name, 0);
+#else /* OLD_LOGIN */
 		if (authenticated)
 			execl("/bin/login", "login", "-p", "-f",
 			    "-h", hp->h_name, lusername, 0);
 		else
 			execl("/bin/login", "login", "-p", "-h", hp->h_name,
 			    lusername, 0);
+#endif /* OLD_LOGIN */
 		fatalperror(2, "/bin/login");
 		/*NOTREACHED*/
 	}
@@ -504,6 +521,7 @@ fatalperror(f, msg)
 	fatal(f, buf);
 }
 
+#ifndef OLD_LOGIN
 do_rlogin(host)
 	char *host;
 {
@@ -539,6 +557,7 @@ getstr(buf, cnt, errmsg)
 
 extern	char **environ;
 
+#ifdef TERMIOS
 setup_term(fd)
 	int fd;
 {
@@ -564,6 +583,42 @@ setup_term(fd)
 	env[1] = 0;
 	environ = env;
 }
+#else /* TERMIOS */
+char *speeds[] = {
+	"0", "50", "75", "110", "134", "150", "200", "300", "600",
+	"1200", "1800", "2400", "4800", "9600", "19200", "38400",
+};
+#define	NSPEEDS	(sizeof(speeds) / sizeof(speeds[0]))
+
+setup_term(fd)
+	int fd;
+{
+	register char *cp = index(term, '/'), **cpp;
+	struct sgttyb sgttyb;
+	char *speed;
+
+	(void)ioctl(fd, TIOCGETP, &sgttyb);
+	if (cp) {
+		*cp++ = '\0';
+		speed = cp;
+		cp = index(speed, '/');
+		if (cp)
+			*cp++ = '\0';
+		for (cpp = speeds; cpp < &speeds[NSPEEDS]; cpp++)
+		    if (strcmp(*cpp, speed) == 0) {
+			sgttyb.sg_ispeed = sgttyb.sg_ospeed = cpp - speeds;
+			break;
+		    }
+	}
+	sgttyb.sg_flags = ECHO|CRMOD|ANYP|XTABS;
+	(void)ioctl(fd, TIOCSETP, &sgttyb);
+
+	env[0] = term;
+	env[1] = 0;
+	environ = env;
+}
+#endif /* TERMIOS */
+#endif /* OLD_LOGIN */
 
 #ifdef	KERBEROS
 #define	VERSION_SIZE	9
