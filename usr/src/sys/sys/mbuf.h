@@ -1,4 +1,4 @@
-/* mbuf.h 4.8 81/12/09 */
+/* mbuf.h 4.9 81/12/20 */
 
 /*
  * Constants related to memory allocator.
@@ -28,7 +28,7 @@ struct mbuf {
 	struct	mbuf *m_next;		/* next buffer in chain */
 	u_long	m_off;			/* offset of data */
 	short	m_len;			/* amount of data in this mbuf */
-	short	m_cnt;			/* reference count */
+	short	m_free;			/* is mbuf free? (consistency check) */
 	u_char	m_dat[MLEN];		/* data storage */
 	struct	mbuf *m_act;		/* link in higher-level mbuf list */
 };
@@ -45,7 +45,8 @@ struct mbuf {
 #define	MGET(m, i) \
 	{ int ms = splimp(); \
 	  if ((m)=mfree) \
-		{ mbstat.m_bufs--; mfree = (m)->m_next; (m)->m_next = 0; } \
+		{ if ((m)->m_free == 0) panic("mget"); (m)->m_free = 0; \
+		  mbstat.m_bufs--; mfree = (m)->m_next; (m)->m_next = 0; } \
 	  else \
 		(m) = m_more(i); \
 	  splx(ms); }
@@ -56,6 +57,7 @@ struct mbuf {
 	  splx(ms); }
 #define	MFREE(m, n) \
 	{ int ms = splimp(); \
+	  if ((m)->m_free) panic("mfree"); (m)->m_free = 1; \
 	  if ((m)->m_off > MSIZE) { \
 		(n) = (struct mbuf *)(mtod(m, int)&~0x3ff); \
 		if (--mclrefcnt[mtocl(n)] == 0) \
