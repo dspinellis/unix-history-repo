@@ -1,5 +1,5 @@
 #
-#	"@(#)bib.hnf	2.2	%G%";
+#	"@(#)bib.hnf	2.3	%G%";
 #
 #  Hanson Normal Form
 #
@@ -7,7 +7,7 @@ SAD-2
 CA3lD-2
 AA
 EA
-I BMACLIB/bibinc.shortnames
+I bibinc.shortnames
 .so \*(l]/bmac.std
 .de s[   \" start reference
 .nh

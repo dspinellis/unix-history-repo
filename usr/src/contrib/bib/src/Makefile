@@ -1,7 +1,7 @@
-#	@(#)Makefile	2.6	%G%
+#	@(#)Makefile	2.7	%G%
 #
-CFLAGS = -DINCORE
-#CFLAGS = -DINCORE -g
+# 
+CFLAGS = -DBASEDIR=\"$(DEST_BASE)\" -DINCORE -g
 CC = cc $(CFLAGS)
 .c.o:
 	$(CC) -c $*.c
@@ -10,16 +10,19 @@ INVo        = invert.o streams.o  makekey.o
 INVc        = invert.c streams.c  makekey.c
 LOOKo       = lookup.o locate.o alpha.seek.o streams.o makekey.o
 LOOKc       = lookup.c locate.c alpha.seek.c streams.c makekey.c
-NEWBIBo     = newbib.o newbibargs.o locate.o alpha.seek.o streams.o makekey.o
 BIBo        = bib.o bibargs.o locate.o alpha.seek.o streams.o makekey.o
 BIBc        = bib.c bibargs.c locate.c alpha.seek.c streams.c makekey.c
 LISTo       = listrefs.o bibargs.o streams.o makekey.o
-NEWLISTo    = listrefs.o newbibargs.o streams.o makekey.o
 LISTc       = listrefs.c bibargs.c streams.c makekey.c
+BIBINCo	    = bibinc.o
+BIBINCc     = bibinc.c
 
 SRCS = \
+	adsdebug.h \
 	bib.c \
 	bibargs.c \
+	bibinc.c \
+	comments.h \
 	alpha.seek.c \
 	bib.h \
 	invert.c \
@@ -30,13 +33,15 @@ SRCS = \
 	streams.c \
 	streams.h
 
-all:	invert lookup listrefs bib
+all:	invert lookup listrefs bib bibinc
 
 install: all
-	install -s -c invert $(DESTDIR)/usr/new/invert
-	install -s -c lookup $(DESTDIR)/usr/new/lookup
-	install -s -c listrefs $(DESTDIR)/usr/new/listrefs
-	install -s -c bib $(DESTDIR)/usr/new/bib
+	install -s -c bib $(DEST_BIN)/bib
+	install -s -c invert $(DEST_BIN)/invert
+	install -s -c lookup $(DEST_BIN)/lookup
+	install -s -c listrefs $(DEST_BIN)/listrefs
+	install -s -c bibinc $(DEST_BIN)/bibinc
+	install -c bib2tib $(DEST_BIN)/bib2tib
 
 invert:  $(INVo)
 	$(CC)   $(INVo)   -o invert
@@ -50,6 +55,9 @@ lookup: $(LOOKo)
 lookup.lint: $(LOOKc) bib.h streams.h
 	lint $(LOOKc) >lookup.lint
 
+bibinc: $(BIBINCc) adsdebug.h comments.h streams.h
+	$(CC)   $(BIBINCc)  -o bibinc
+
 bib: $(BIBo)
 	$(CC)   $(BIBo)  -o bib
 
@@ -59,9 +67,6 @@ bib.lint: $(BIBc) bib.h streams.h
 listrefs: $(LISTo)
 	$(CC)   $(LISTo)  -o listrefs
 
-newlisttrefs: $(NEWLISTo)
-	$(CC)   $(NEWLISTo)  -o newlistrefs
-
 bib.o:		bib.h
 bibargs.o:	bib.h
 listrefs.o:	bib.h
@@ -70,32 +75,10 @@ invert.o:       streams.h bib.h
 locate.o:       streams.h bib.h
 makekey.o:	bib.h
 alpha.seek.o:   streams.h
-streams.o:      streams.h
+streams.o:      streams.h bib.h
 
 $(SRCS) :
 	sccs get $@
 
-bibdoc:
-	tbl doc/bibdoc.ms | vtroff -ms
-	vtroff -man doc/invert.man
-	vtroff -man doc/bib.man
-
-doc/INDEX:	doc/testrefs
-	cd doc; invert -p INDEX testrefs
-
-styleman:
-	sed -e 's/STYLE/stdn - standard numeric/' tstyles | bib -tstdn >show.stdn
-	sed -e 's/STYLE/stdsn - standard sorted numeric/' tstyles | bib -tstdsn >show.stdsn
-	sed -e 's/STYLE/stda - standard alphabetic/' tstyles | bib -tstda >show.stda
-	sed -e 's/STYLE/opena - open alphabetic/' tstyles | bib -topena >show.opena
-	sed -e 's/STYLE/openn - open numeric/' tstyles | bib -topenn >show.openn
-	sed -e 's/STYLE/astro - astrophysical journal style/' tstyles | bib -tastro >show.astro
-	sed -e 's/STYLE/hnf - Hanson Normal Form/' tstyles | bib -thnf >show.hnf
-	sed -e 's/STYLE/list - listrefs default/' tstyles | bib -tlist >show.list
-	sed -e 's/STYLE/spe - S P and E Journal style/' tstyles | bib -tspe2 >show.spe
-	sed -e 's/STYLE/supn - superscripted numeric style/' tstyles | bib -tsupn >show.supn
-	sed -e 's/STYLE/foot - footnoted citations/' tstyles | bib -tfoot >show.foot
-	vtroff -ms styletop show.*
-
 clean:	
-	-rm -f *.o bib invert listrefs lookup tags
+	-rm -f *.o bib invert listrefs lookup tags bibinc

@@ -2,7 +2,7 @@
 #  standard superscipted numeric format
 #
 C1
-I BMACLIB/bibinc.fullnames
+I bibinc.fullnames
 H
 T AT
 .so \*(l]/bmac.std

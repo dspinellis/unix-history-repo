@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	2.7	%G%
+ *	@(#)bib.h	2.8	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
@@ -7,6 +7,7 @@
 
 # define true  1
 # define false 0
+# define bool unsigned char
 # define err  -1
 # define REFSIZE 2048                /* maximum size of reference string    */
 # define MAXFIELD 512                /* maximum size of any field in referece*/
@@ -30,10 +31,18 @@
 # define INVTEMPFILE "/tmp/invertXXXXXX"
 # define SYSINDEX "/usr/dict/papers/INDEX"	/* default system dictionary */
 
-# define N_BMACLIB "/usr/new/lib/bmac"		/* where macro libraries live */
-# define N_COMFILE "/usr/new/lib/bmac/common"	/* common words */
-# define N_DEFSTYLE "/usr/new/lib/bmac/bib.stdsn" /* default style of refs */
-char BMACLIB[64], COMFILE[64], DEFSTYLE[64];
+#ifndef BASEDIR
+# define BASEDIR   ""
+# endif
+
+# define N_BMACLIB "/lib/bmac"       /* where macro libraries live */
+# define N_COMFILE "/lib/bmac/common"	/* common words */
+# define N_DEFSTYLE "/lib/bmac/bib.stdsn" /* default style of refs */
+
+# define InitDirectory(arr,str) \
+   strcpy(arr,BASEDIR); strcat(arr,str);
+
+char BMACLIB[100], COMFILE[100], DEFSTYLE[100];
 
 /* size limits */
 
@@ -65,9 +74,11 @@ char *malloc();
 	char	*wi_word;	/* actual word */
 	char	*wi_def;	/* actual definition */
 	int	wi_length;	/* word length */
+	bool	wi_expanding;	/* is it being expanded? */
 	struct wordinfo *wi_hp;	/* hash chain */
    };
    int	strhash();
 #define HASHSIZE	509
 
 #define reg register
+

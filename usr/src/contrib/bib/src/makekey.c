@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)makekey.c	2.2	%G%";
+static char sccsid[] = "@(#)makekey.c	2.3	%G%";
 #endif not lint
 #
 
@@ -60,7 +60,7 @@ char *common;
 {   FILE    *commfile;          /*  stream of common words                  */
     char *p, *stop;
     commfile= fopen(common,"r");
-    if (commfile==NULL) fprintf(stderr, "cannot open '%s'\n", common);
+    if (commfile==NULL) fprintf(stderr,"cannot open '%s'\n", common);
     else
     {   /* read commfile into commlist  */
             p= commlist;    stop= commlist+MAXCOMM-1;
@@ -70,7 +70,7 @@ char *common;
             }
             if  (*p==EOF)  *p= NULL;
             else
-            {   fprintf(stderr, "invert: too many common words\n");
+            {   fprintf(stderr,"invert: too many common words\n");
                 commlist[0]= NULL;
             }
         fclose(commfile);
