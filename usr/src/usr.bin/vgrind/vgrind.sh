@@ -1,11 +1,11 @@
 #!/bin/csh -f
 #
-# Copyright (c) 1980 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1980, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)vgrind.sh	5.9 (Berkeley) %G%
+#       @(#)vgrind.sh	8.1 (Berkeley) %G%
 #
 
 set voptions=
