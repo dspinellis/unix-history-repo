@@ -1,4 +1,4 @@
-/*	tm.c	4.9	%G%	*/
+/*	tm.c	4.10	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
@@ -29,10 +29,9 @@ struct	buf	rtmbuf;
 
 int	tmcntrlr(), tmslave(), tmdgo(), tmintr();
 struct	uba_dinfo *tminfo[NTM];
-u_short	tmstd[] = { 0 };
-int	(*tmivec[])() = { tmintr, 0 };
+extern	u_short	tmstd[];
 struct	uba_driver tmdriver =
-	{ tmcntrlr, tmslave, tmdgo, 0, 0, tmstd, tminfo, tmivec };
+	{ tmcntrlr, tmslave, tmdgo, 4, 0, tmstd, "tm", tminfo };
 int	tm_ubinfo;
 
 /* bits in minor device */
@@ -64,10 +63,17 @@ short	t_resid;
 #define	LASTIOW 1		/* last op was a write */
 #define	WAITREW	2		/* someone is waiting for a rewind */
 
+/*
+ * Determine if there is a controller for
+ * a tm at address reg.  Our goal is to make the
+ * device interrupt.
+ * THE ARGUMENT UI IS OBSOLETE
+ */
 tmcntrlr(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
+
 	((struct device *)reg)->tmcs = IENABLE;
 	/*
 	 * If this is a tm03/tc11, it ought to have interrupted
@@ -95,6 +101,7 @@ tmslave(ui, reg, slaveno)
 	 * Something better will have to be done if you have two
 	 * tapes on one controller, or two controllers
 	 */
+	printf("tm: sl %d - tmi %x\n", slaveno, tminfo[0]);
 	if (slaveno != 0 || tminfo[0])
 		return(0);
 	return(1);
@@ -109,7 +116,7 @@ tmopen(dev, flag)
 
 	tmtab.b_flags |= B_TAPE;
 	unit = minor(dev)&03;
-	if (unit>=NTM || t_openf || !(ui = tminfo[minor(dev)>>3])->ui_alive) {
+	if (unit>=NTM || t_openf || !(ui = tminfo[minor(dev)&03])->ui_alive) {
 		u.u_error = ENXIO;		/* out of range or open */
 		return;
 	}
@@ -142,7 +149,7 @@ tmwaitrws(dev)
 	register dev;
 {
 	register struct device *addr =
-	    (struct device *)tminfo[minor(dev)>>3]->ui_addr;
+	    (struct device *)tminfo[minor(dev)&03]->ui_addr;
 
 	spl5();
 	for (;;) {
@@ -240,7 +247,7 @@ tmstart()
 loop:
 	if ((bp = tmtab.b_actf) == 0)
 		return;
-	ui = tminfo[minor(bp->b_dev)>>3];
+	ui = tminfo[minor(bp->b_dev)&03];
 	addr = (struct device *)ui->ui_addr;
 	t_dsreg = addr->tmcs;
 	t_erreg = addr->tmer;
@@ -341,8 +348,7 @@ tmintr(d)
 			if (++tmtab.b_errcnt < 7) {
 				if((addr->tmer&SOFT) == NXM)
 					printf("TM UBA late error\n");
-				else
-					t_blkno++;
+				t_blkno++;
 				ubarelse(tminfo[d]->ui_ubanum, &tm_ubinfo);
 				tmstart();
 				return;
@@ -400,7 +406,7 @@ tmseteof(bp)
 	register struct buf *bp;
 {
 	register struct device *addr = 
-	    (struct device *)tminfo[minor(bp->b_dev)>>3]->ui_addr;
+	    (struct device *)tminfo[minor(bp->b_dev)&03]->ui_addr;
 
 	if (bp == &ctmbuf) {
 		if (t_blkno > dbtofsb(bp->b_blkno)) {
@@ -506,24 +512,15 @@ tmioctl(dev, cmd, addr, flag)
 
 tmdump()
 {
-
-	tmwall((char *)0, maxfree);	/* write out memory */
-	tmeof();
-	tmeof();
-	tmrewind();
-	tmwait();
-}
-
-tmwall(start, num)
-	int start, num;
-{
 	register struct uba_dinfo *ui;
 	register struct uba_regs *up;
 	register struct device *addr;
-	int blk, bdp;
+	int blk, num;
+	int start;
 
-#define	phys1(a,b)	((b)((int)(a)&0x7fffffff))
-#define	phys(a,b)	phys1(*phys1(&a, b*), b)
+	start = 0;
+	num = maxfree;
+#define	phys(a,b)	((b)((int)(a)&0x7fffffff))
 	if (tminfo[0] == 0) {
 		printf("dna\n");
 		return (-1);
@@ -544,8 +541,11 @@ tmwall(start, num)
 		start += blk;
 		num -= blk;
 	}
-	bdp = 1;		/* crud to fool c compiler */
-	up->uba_dpr[bdp] |= UBA_BNE;
+	tmwait(addr);
+	tmeof(addr);
+	tmeof(addr);
+	tmrewind(addr);
+	tmwait(addr);
 	return (0);
 }
 
@@ -556,11 +556,8 @@ tmdwrite(buf, num, addr, up)
 {
 	register struct pte *io;
 	register int npf;
-	int bdp;
 
 	tmwait(addr);
-	bdp = 1;		/* more dastardly tricks on pcc */
-	up->uba_dpr[bdp] |= UBA_BNE;
 	io = up->uba_map;
 	npf = num+1;
 	while (--npf != 0)

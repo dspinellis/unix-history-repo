@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.10	%G%	*/
+/*	kern_physio.c	4.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -329,8 +329,10 @@ dev_t dev;
 daddr_t blkno;
 {
 	register struct buf *bp, *dp, *ep;
-	register int i, x;
 	register int dblkno = fsbtodb(blkno);
+#ifdef	DISKMON
+	register int i;
+#endif
 
 	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))
 		blkno = 1 << ((sizeof(int)*NBBY-PGSHIFT) + 1);

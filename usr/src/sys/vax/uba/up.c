@@ -1,4 +1,4 @@
-/*	up.c	4.13	81/02/10	*/
+/*	up.c	4.14	81/02/15	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -31,6 +31,7 @@ struct	up_softc {
 	int	sc_seek;
 	int	sc_info;
 	int	sc_wticks;
+	/* struct uba_minfo sc_minfo; */
 } up_softc[NSC21];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
@@ -76,10 +77,9 @@ struct	uba_minfo up_minfo[NSC21];
 	   any real need for upminfo, but the code still uses it so ...
 	*/
 
-u_short	upstd[] = { 0 };
-int	(*upivec[])() = { upintr, 0 };
+extern	u_short	upstd[];
 struct	uba_driver updriver =
-	{ upcntrlr, upslave, updgo, 4, 0, upstd, updinfo, upivec };
+	{ upcntrlr, upslave, updgo, 4, 0, upstd, "up", updinfo };
 struct	buf	uputab[NUP];
 
 struct	upst {
@@ -297,7 +297,7 @@ upstart(um)
 	register struct device *upaddr;
 	register struct upst *st;
 	daddr_t bn;
-	int dn, sn, tn, cn, cmd;
+	int dn, sn, tn, cmd;
 
 loop:
 	if ((dp = um->um_tab.b_actf) == NULL)
@@ -340,7 +340,7 @@ loop:
 			bp->b_flags |= B_ERROR;
 			iodone(bp);
 			/* A funny place to do this ... */
-			ubarelse(&up_softc[um->um_num].sc_info);
+			ubarelse(ui->ui_ubanum, &up_softc[um->um_num].sc_info);
 			goto loop;
 		}
 		printf("-- came back\n");
@@ -360,7 +360,7 @@ loop:
 	 * 2 bits of the UNIBUS address from the information
 	 * returned by ubasetup() for the cs1 register bits 8 and 9.
 	 */
-	upaddr->updc = cn;
+	upaddr->updc = bp->b_cylin;
 	upaddr->upda = (tn << 8) + sn;
 	upaddr->upba = up_softc[um->um_num].sc_info;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
@@ -473,7 +473,7 @@ upintr(sc21)
 					needie = 0;
 		}
 		up_softc[um->um_num].sc_softas &= ~(1<<ui->ui_slave);
-		ubarelse(&up_softc[um->um_num].sc_info);
+		ubarelse(ui->ui_ubanum, &up_softc[um->um_num].sc_info);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
@@ -604,16 +604,8 @@ upreset(uban)
 	register struct uba_minfo *um;
 	register struct uba_dinfo *ui;
 	register sc21, unit;
+	int any = 0;
 
-	/* we should really delay the printf & DELAY till we know
-	 * that there is at least one sc21 on this UBA, but then
-	 * we would have to remember we had done it before, or the
-	 * msg would come twice(or whatever) - but perhaps that
-	 * wouldn't be such a bad thing - too many delays would
-	 * be annoying however
-	 */
-	printf(" up");
-	DELAY(15000000);		/* give it time to self-test */
 	for (sc21 = 0; sc21 < NSC21; sc21++) {
 		if ((um = upminfo[sc21]) == 0)
 			continue;
@@ -621,11 +613,16 @@ upreset(uban)
 			continue;
 		if (!um->um_alive)
 			continue;
+		if (any == 0) {
+			printf(" up");
+			DELAY(15000000);	/* give it time to self-test */
+			any++;
+		}
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (up_softc[um->um_num].sc_info) {
 			printf("<%d>", (up_softc[um->um_num].sc_info>>28)&0xf);
-			ubarelse(&up_softc[um->um_num].sc_info);
+			ubarelse(um->um_ubanum, &up_softc[um->um_num].sc_info);
 		}
 		((struct device *)(um->um_addr))->upcs2 = CLR;
 		for (unit = 0; unit < NUP; unit++) {
@@ -686,7 +683,6 @@ updump(dev)
 	register struct uba_dinfo *ui;
 	register short *rp;
 	struct upst *st;
-	int bdp;
 
 	unit = minor(dev) >> 3;
 	if (unit >= NUP) {
@@ -741,8 +737,6 @@ updump(dev)
 		daddr_t bn;
 
 		blk = num > DBSIZE ? DBSIZE : num;
-		bdp = 1;		/* trick pcc */
-		uba->uba_dpr[bdp] |= UBA_BNE;
 		io = uba->uba_map;
 		for (i = 0; i < blk; i++)
 			*(int *)io++ = (btop(start)+i) | (1<<21) | UBA_MRV;
@@ -769,8 +763,6 @@ updump(dev)
 		start += blk*NBPG;
 		num -= blk;
 	}
-	bdp = 1;		/* crud to fool c compiler */
-	uba->uba_dpr[bdp] |= UBA_BNE;
 	return (0);
 }
 #endif

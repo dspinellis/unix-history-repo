@@ -1,4 +1,4 @@
-/*	uba.c	4.7	%G%	*/
+/*	uba.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -127,7 +127,19 @@ ubarelse(uban, amr)
 	*amr = 0;
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
-		uh->uh_uba->uba_dpr[bdp] |= UBA_BNE;
+		switch (cpu)
+		{
+#if VAX780
+		case VAX_780:
+			uh->uh_uba->uba_dpr[bdp] |= UBA_BNE;
+			break;
+#endif
+#if VAX750
+		case VAX_750:
+			uh->uh_uba->uba_dpr[bdp] |= UBA_PURGE|UBA_NXM|UBA_UCE;
+			break;
+#endif
+		}
 		uh->uh_bdpfree |= 1 << bdp;
 		if (uh->uh_bdpwant) {
 			uh->uh_bdpwant = 0;
@@ -148,7 +160,6 @@ ubarelse(uban, amr)
 
 ubareset(uban)
 {
-	struct uba_regs *up;
 	register struct cdevsw *cdp;
 	int s;
 
@@ -175,13 +186,13 @@ ubareset(uban)
 }
 
 /* pointer rather than number so we can be called with virt and phys addrs */
-ubainit(up)
-	register struct uba_regs *up;
+ubainit(uba)
+	register struct uba_regs *uba;
 {
 
-	up->uba_cr = UBA_ADINIT;
-	up->uba_cr = UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
-	while ((up->uba_cnfgr & UBA_UBIC) == 0)
+	uba->uba_cr = UBA_ADINIT;
+	uba->uba_cr = UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
+	while ((uba->uba_cnfgr & UBA_UBIC) == 0)
 		;
 }
 
@@ -220,6 +231,7 @@ ubawatch()
 }
 
 /* called from locore.s; parameters here (i.e. uvec) are value-result! */
+/*ARGSUSED*/
 ubaerror(uban, uh, xx, uvec, uba)
 	register int uban;
 	register struct uba_hd *uh;
@@ -247,7 +259,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 	sr = uba->uba_sr;
 	s = spl7();
 	printf("UBA%d ERROR SR %x FMER %x FUBAR %o\n",
-	    uba->uba_sr, uba->uba_fmer, uba->uba_fubar);
+	    uban, uba->uba_sr, uba->uba_fmer, uba->uba_fubar);
 	splx(s);
 	uba->uba_sr = sr;
 	uvec &= UBA_DIV;

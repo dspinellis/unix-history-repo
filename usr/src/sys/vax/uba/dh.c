@@ -1,13 +1,11 @@
-/*	dh.c	4.13	81/02/10	*/
+/*	dh.c	4.14	81/02/15	*/
 
 #include "dh.h"
 #if NDH11 > 0
 /*
  * DH-11 driver
  *
- * Loaded with dhdm if there are DM-11's otherwise with dhfdm.
- *
- * NB: WE HAVEN'T TESTED dhdm CODE ON VAX.
+ * DOESNT HANDLE EXTENDED ADDRESS BITS.
  */
 
 #include "../h/param.h"
@@ -32,9 +30,8 @@
 int	dhcntrlr(), dhslave(), dhrint(), dhxint();
 struct	uba_dinfo *dhinfo[NDH11];
 u_short	dhstd[] = { 0 };
-int	(*dhivec[])() = { dhrint, dhxint, 0 };	/* note: order matters */
 struct	uba_driver dhdriver =
-	{ dhcntrlr, dhslave, (int (*)())0, 0, 0, dhstd, dhinfo, dhivec };
+	{ dhcntrlr, dhslave, (int (*)())0, 0, 0, dhstd, "dh", dhinfo };
 
 struct	tty dh11[NDH11*16];
 int	dhact;
@@ -42,8 +39,8 @@ int	dhisilo;
 int	ndh11	= NDH11*16;
 int	dhstart();
 int	ttrstrt();
-int	dh_ubinfo[4];
-int	cbase[4];
+int	dh_ubinfo[MAXNUBA];
+int	cbase[MAXNUBA];
 
 /*
  * Hardware control bits
@@ -57,6 +54,7 @@ int	cbase[4];
 #define	OPAR	040
 #define	HDUPLX	040000
 
+#define	MAINT	01000
 #define	IENAB	030100
 #define	NXM	02000
 #define	CLRNXM	0400
@@ -64,6 +62,7 @@ int	cbase[4];
 #define	FRERROR	020000
 #define	OVERRUN	040000
 #define	XINT	0100000
+#define	RINT	0100
 #define	SSPEED	7	/* standard speed: 300 baud */
 
 /*
@@ -98,9 +97,18 @@ dhcntrlr(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
+	struct device *dhaddr = (struct device *)reg;
+	int i;
 
-	((struct device *)reg)->un.dhcsr |= IENABLE;
-	/* get it to interrupt */
+	dhaddr->un.dhcsr = IENAB;
+	dhaddr->dhbcr = -1;
+	dhaddr->dhbar = 1;
+	dhaddr->dhcar = 0;
+	for (i = 0; i < 1000000; i++)
+		;
+	/* we should have had an interrupt */
+	dhaddr->un.dhcsr = 0;
+	asm("cmpl r10,$0x200;beql 1f;subl2 $4,r10;1:;");
 }
 
 dhslave(ui, reg, slaveno)
@@ -138,10 +146,10 @@ dhopen(dev, flag)
 	tp->t_iproc = NULL;
 	tp->t_state |= WOPEN;
 	s = spl6();
-	if (dh_ubinfo[ui->ui_ubanum]) {
+	if (dh_ubinfo[ui->ui_ubanum] == 0) {
 		/* 512+ is a kludge to try to get around a hardware problem */
 		dh_ubinfo[ui->ui_ubanum] =
-		    uballoc((caddr_t)cfree,
+		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			512+NCLIST*sizeof(struct cblock), 0);
 		cbase[ui->ui_ubanum] = (short)dh_ubinfo[ui->ui_ubanum];
 	}
@@ -356,6 +364,7 @@ dhxint(dh)
 	addr = (struct device *)ui->ui_addr;
 	addr->un.dhcsr &= (short)~XINT;
 	if (addr->un.dhcsr & NXM) {
+		asm("halt");
 		addr->un.dhcsr |= CLRNXM;
 		printf("dh clr NXM\n");
 	}
@@ -499,35 +508,33 @@ dhreset(uban)
 {
 	register int dh, unit;
 	register struct tty *tp;
-	register struct device *addr;
 	register struct uba_dinfo *ui;
-	int uba;
+	int i;
 
-	/*** WE SHOULD LOOK TO SEE IF UBA BEING RESET IS INTERESTING ***/
-
+	if (dh_ubinfo[uban] == 0)
+		return;
 	printf(" dh");
-	dhisilo = 0;
-	for (uba = 0; uba < numuba; uba++)
-		if (dh_ubinfo[uba]) {
-			ubarelse(uba, &dh_ubinfo[uba]);
-			dh_ubinfo[uba] = uballoc(uba, (caddr_t)cfree,
-			    512+NCLIST*sizeof (struct cblock), 0);
-			cbase[uba] = (short)dh_ubinfo;
-		}
+	ubarelse(uban, &dh_ubinfo[uban]);
+	dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
+	    512+NCLIST*sizeof (struct cblock), 0);
+	cbase[uban] = dh_ubinfo[uban]&0x3ffff;
+	dhisilo = 0;		/* conservative */
 	dh = 0;
-	do {
-		if (dhact & (1<<dh))
-			((struct device *)dhinfo[dh]->ui_addr)->un.dhcsr |=
-			    IENAB;
-		dh++;
-	} while (dh < NDH11);
-	for (unit = 0; unit < NDH11*16; unit++) {
-		tp = &dh11[unit];
-		if (tp->t_state & (ISOPEN|WOPEN)) {
-			dhparam(unit);
-			dmctl(unit, TURNON, DMSET);
-			tp->t_state &= ~BUSY;
-			dhstart(tp);
+	for (dh = 0; dh < NDH11; dh++) {
+		ui = dhinfo[dh];
+		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
+			continue;
+		((struct device *)ui->ui_addr)->un.dhcsr |= IENAB;
+		unit = dh * 16;
+		for (i = 0; i < 16; i++) {
+			tp = &dh11[unit];
+			if (tp->t_state & (ISOPEN|WOPEN)) {
+				dhparam(unit);
+				dmctl(unit, TURNON, DMSET);
+				tp->t_state &= ~BUSY;
+				dhstart(tp);
+			}
+			unit++;
 		}
 	}
 	dhtimer();
