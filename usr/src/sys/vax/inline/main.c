@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.12 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -69,8 +69,10 @@ main(argc, argv)
 	int subset = 0;
 
 	whoami = argv[0];
-	while (argc > 1 && argv[1][0] == '-') {
-		switch(argv[1][1]) {
+	argc--;
+	argv++;
+	while (argc > 0 && argv[0][0] == '-') {
+		switch(argv[0][1]) {
 
 		case 's':
 			subset++;
@@ -85,10 +87,10 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
+	if (argc > 0)
+		freopen(argv[0], "r", stdin);
 	if (argc > 1)
-		freopen(argv[1], "r", stdin);
-	if (argc > 2)
-		freopen(argv[2], "w", stdout);
+		freopen(argv[1], "w", stdout);
 	/*
 	 * Set up the hash table for the patterns.
 	 */
