@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.14 (Berkeley) %G%
+ *	@(#)rtsock.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -77,8 +77,9 @@ route_usrreq(so, req, m, nam, control)
 	splx(s);
 	return (error);
 }
-#define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
-#define ADVANCE(x, n) (x += ((n) > 0 ? ROUNDUP(n) : sizeof(long)))
+#define ROUNDUP(a) \
+	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+#define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
 /*ARGSUSED*/
 route_output(m, so)
@@ -89,7 +90,7 @@ route_output(m, so)
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *genmask = 0;
-	struct sockaddr *ifpaddr = 0;
+	struct sockaddr *ifpaddr = 0, *ifaaddr;
 	caddr_t cp, lim;
 	int len, error = 0;
 	struct ifnet *ifp = 0;
@@ -118,21 +119,21 @@ route_output(m, so)
 	cp = (caddr_t) (rtm + 1);
 	if (rtm->rtm_addrs & RTA_DST) {
 		dst = (struct sockaddr *)cp;
-		ADVANCE(cp, dst->sa_len);
+		ADVANCE(cp, dst);
 	} else
 		senderr(EINVAL);
 	if ((rtm->rtm_addrs & RTA_GATEWAY) && cp < lim)  {
 		gate = (struct sockaddr *)cp;
-		cp += ROUNDUP(gate->sa_len);
+		ADVANCE(cp, gate);
 	}
 	if ((rtm->rtm_addrs & RTA_NETMASK) && cp < lim)  {
 		netmask = (struct sockaddr *)cp;
-		ADVANCE(cp, netmask->sa_len);
+		ADVANCE(cp, netmask);
 	}
 	if ((rtm->rtm_addrs & RTA_GENMASK) && cp < lim)  {
 		struct radix_node *t, *rn_addmask();
 		genmask = (struct sockaddr *)cp;
-		ADVANCE(cp, genmask->sa_len);
+		ADVANCE(cp, genmask);
 		t = rn_addmask(genmask, 1, 2);
 		if (t && Bcmp(genmask, t->rn_key, *(u_char *)genmask) == 0)
 			genmask = (struct sockaddr *)(t->rn_key);
@@ -174,25 +175,41 @@ route_output(m, so)
 		switch(rtm->rtm_type) {
 
 		case RTM_GET:
-			dst = rt_key(rt);
-			len = sizeof(*rtm) + (dst->sa_len > 0 ?
-				ROUNDUP(dst->sa_len) : sizeof(long));
+			dst = rt_key(rt); len = sizeof(*rtm);
+			ADVANCE(len, dst);
 			rtm->rtm_addrs |= RTA_DST;
 			if (gate = rt->rt_gateway) {
-				len += ROUNDUP(rt->rt_gateway->sa_len);
+				ADVANCE(len, gate);
 				rtm->rtm_addrs |= RTA_GATEWAY;
 			} else
 				rtm->rtm_addrs &= ~RTA_GATEWAY;
 			if (netmask = rt_mask(rt)) {
-				len += netmask->sa_len;
+				ADVANCE(len, netmask);
 				rtm->rtm_addrs |= RTA_NETMASK;
 			} else
 				rtm->rtm_addrs &= ~RTA_NETMASK;
-			if (rt->rt_genmask) {
-				len += ROUNDUP(rt->rt_genmask->sa_len);
+			if (genmask = rt->rt_genmask) {
+				ADVANCE(len, genmask);
 				rtm->rtm_addrs |= RTA_GENMASK;
 			} else
 				rtm->rtm_addrs &= ~RTA_GENMASK;
+			if (rtm->rtm_addrs & (RTA_IFP | RTA_IFA)) {
+				if (rt->rt_ifp == 0)
+					goto badif;
+				for (ifa = rt->rt_ifp->if_addrlist;
+				    ifa && ifa->ifa_addr->sa_family != AF_LINK;
+				     ifa = ifa->ifa_next){}
+				if (ifa && rt->rt_ifa) {
+					ifpaddr = ifa->ifa_addr;
+					ADVANCE(len, ifpaddr);
+					ifaaddr = rt->rt_ifa->ifa_addr;
+					ADVANCE(len, ifaaddr);
+					rtm->rtm_addrs |= RTA_IFP | RTA_IFA;
+				} else {
+				badif:	ifpaddr = 0;
+					rtm->rtm_addrs &= ~(RTA_IFP | RTA_IFA);
+				}
+			}
 			if (len > rtm->rtm_msglen) {
 				struct rt_msghdr *new_rtm;
 				R_Malloc(new_rtm, struct rt_msghdr *, len);
@@ -205,19 +222,25 @@ route_output(m, so)
 			rtm->rtm_flags = rt->rt_flags;
 			rtm->rtm_rmx = rt->rt_rmx;
 			cp = (caddr_t) (1 + rtm);
-			Bcopy(dst, cp, dst->sa_len);
-			ADVANCE(cp, dst->sa_len);
+			len = ROUNDUP(dst->sa_len); 
+			Bcopy(dst, cp, len); cp += len;
 			if (gate) {
-			    Bcopy(gate, cp, gate->sa_len);
-			    ADVANCE(cp, gate->sa_len);
+			    len = ROUNDUP(gate->sa_len);
+			    Bcopy(gate, cp, len); cp += len;
 			}
 			if (netmask) {
-			    Bcopy(netmask, cp, netmask->sa_len);
-			    ADVANCE(cp, netmask->sa_len);
+			    len = ROUNDUP(netmask->sa_len);
+			    Bcopy(netmask, cp, len); cp += len;
 			}
-			if (rt->rt_genmask) {
-			    Bcopy(rt->rt_genmask, cp, rt->rt_genmask->sa_len);
-			    ADVANCE(cp, rt->rt_genmask->sa_len);
+			if (genmask) {
+			    len = ROUNDUP(genmask->sa_len);
+			    Bcopy(genmask, cp, len); cp += len;
+			}
+			if (ifpaddr) {
+			    len = ROUNDUP(ifpaddr->sa_len);
+			    Bcopy(ifpaddr, cp, len); cp += len;
+			    len = ROUNDUP(ifaaddr->sa_len);
+			    Bcopy(ifaaddr, cp, len); cp += len;
 			}
 			break;
 
@@ -295,8 +318,8 @@ cleanup:
 		/* There is another listener, so construct message */
 		rp = sotorawcb(so);
 	}
-	if (cp = (caddr_t)rtm) {
-		m_copyback(m, 0, len, cp);
+	if (rtm) {
+		m_copyback(m, 0, rtm->rtm_msglen, (caddr_t)rtm);
 		Free(rtm);
 	}
 	if (rp)
@@ -416,10 +439,7 @@ struct sockaddr *gate, *mask, *src;
 		rtm->rtm_addrs |= RTA_GATEWAY;
 	}
 	if (mask) {
-		if (mask->sa_len)
-			dlen = ROUNDUP(mask->sa_len);
-		else
-			dlen = sizeof(long);
+		dlen = ROUNDUP(mask->sa_len);
 		m_copyback(m, len ,  dlen, (caddr_t)mask);
 		len += dlen;
 		rtm->rtm_addrs |= RTA_NETMASK;
@@ -476,8 +496,7 @@ rt_dumpentry(rn, w)
 	if (sa = rt->rt_gateway)
 		next(RTA_GATEWAY, ROUNDUP(sa->sa_len));
 	if (sa = rt_mask(rt))
-		next(RTA_NETMASK,
-			sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long));
+		next(RTA_NETMASK, ROUNDUP(sa->sa_len));
 	if (sa = rt->rt_genmask)
 		next(RTA_GENMASK, ROUNDUP(sa->sa_len));
 	w->w_needed += size;
@@ -497,7 +516,7 @@ rt_dumpentry(rn, w)
 		if (sa = rt->rt_gateway)
 			next(ROUNDUP(sa->sa_len));
 		if (sa = rt_mask(rt))
-			next(sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long));
+			next(ROUNDUP(sa->sa_len));
 		if (sa = rt->rt_genmask)
 			next(ROUNDUP(sa->sa_len));
 #undef next
@@ -514,7 +533,7 @@ rt_dumpentry(rn, w)
 	if (sa = rt->rt_gateway)
 		next(sa, ROUNDUP(sa->sa_len));
 	if (sa = rt_mask(rt))
-		next(sa, sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long));
+		next(sa, ROUNDUP(sa->sa_len));
 	if (sa = rt->rt_genmask)
 		next(sa, ROUNDUP(sa->sa_len));
     }
