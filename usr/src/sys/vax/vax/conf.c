@@ -1,4 +1,4 @@
-/*	conf.c	4.10	%G%	*/
+/*	conf.c	4.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,7 +60,7 @@ struct	buf	rktab;
 
 #include "tm.h"
 #if NTM > 0
-int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite();
+int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl();
 struct	buf	tmtab;
 #define	TMTAB	&tmtab
 #else
@@ -69,6 +69,7 @@ struct	buf	tmtab;
 #define	tmstrategy	nodev
 #define	tmread		nodev
 #define	tmwrite		nodev
+#define	tmioctl		nodev
 #define	TMTAB		0
 #endif
 
@@ -247,6 +248,15 @@ int	dt_lrend(), dt_lmeta(), dt_lstart();
 char	*dt_lwrite();
 #endif
 
+#if NCHLINE == 0
+#define	ch_lopen	nodev
+#define	ch_lclose	nodev
+#define	ch_linput	nodev
+#define	ch_lstart	nodev
+#else
+int	ch_lopen(), ch_lclose(), ch_linput(), ch_lstart();
+#endif
+
 int	syopen(),syread(),sywrite(),syioctl();
 
 int 	mmread(),mmwrite();
@@ -278,6 +288,7 @@ int	mxopen(),mxclose(),mxread(),mxwrite(),mxioctl();
 int	mcread();
 char	*mcwrite();
 
+#include "pty.h"
 #if WANTPTY > 0
 int	ptsopen(), ptsclose(), ptsread(), ptswrite();
 int	ptcopen(), ptcclose(), ptcread(), ptcwrite();
@@ -330,7 +341,7 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
 	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
-	nodev,		nodev,		nulldev,	0,
+	tmioctl,	nodev,		nulldev,	0,
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
 	lpioctl,	nodev,		lpreset,	0,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
@@ -374,19 +385,21 @@ struct	linesw linesw[] =
 	trinput, trrend, trmeta, trxint, trmodem,		/* 4 */
 	dt_lopen, dt_lclose, dt_lread, dt_lwrite, nullioctl,
 	dtlinput, dt_lrend, dt_lmeta, dt_lstart, nulldev, 	/* 5 */
+	ch_lopen, ch_lclose, nulldev, nulldev, nullioctl,
+	ch_linput, nulldev, nulldev, ch_lstart, nulldev, 	/* 6 */
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 6 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 7 */
 	0
 };
  
-int	nldisp = 6;
+int	nldisp = 7;
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
 struct	inode	inode[NINODE];
 struct	text	text[NTEXT];
 struct	proc	proc[NPROC];
-struct	buf	bfreelist;
+struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
 struct	buf	bswlist;	/* free list of swap headers */
 struct	buf	*bclnlist;	/* header for list of cleaned pages */
 struct	acct	acctbuf;
