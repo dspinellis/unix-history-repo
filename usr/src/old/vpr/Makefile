@@ -1,7 +1,7 @@
 DESTDIR=
 CFLAGS=-O 
-SOURCES=sidebyside.c vcat.c vfontedpr.c vgrindefs.c regexp.c vpac.c vpd.c vpf.c vpq.c vpr.c vprm.c vsort.c
-OBJS=sidebyside vcat vfontedpr vpac vad vpd vpf vpq vpr vprm vsort rvcat rvsort
+SOURCES=sidebyside.c vcat.c vpac.c vpd.c vpf.c vpq.c vpr.c vprm.c vsort.c
+OBJS=sidebyside vcat vpac vad vpd vpf vpq vpr vprm vsort rvcat rvsort
 
 all:	$(OBJS)
 
@@ -9,14 +9,6 @@ sidebyside: sidebyside.c
 	cc -O -o sidebyside sidebyside.c
 vcat: vcat.c
 	cc -O -o vcat vcat.c
-vfontedpr: vfontedpr.c vgrindefs.o regexp.o
-	cc -O -o vfontedpr vfontedpr.c vgrindefs.o regexp.o
-retest: retest.c regexp.o
-	cc -g -o retest retest.c regexp.o
-vgrindefs.o: vgrindefs.c
-	cc -O -c vgrindefs.c
-regexp.o: regexp.c
-	cc -O -c regexp.c
 vpac: vpac.c
 	cc -O -o vpac vpac.c
 vad: vpd.c
@@ -41,9 +33,6 @@ rvcat: rvcat.c
 install: all
 	install -s sidebyside ${DESTDIR}/usr/lib/sidebyside
 	install -s vcat ${DESTDIR}/usr/lib/vcat
-	install -s vfontedpr ${DESTDIR}/usr/lib/vfontedpr
-	install -c vgrind.sh ${DESTDIR}/usr/ucb/vgrind
-	install -c vgrindefs.src ${DESTDIR}/usr/lib/vgrindefs
 	install -s vpac ${DESTDIR}/etc
 	install -s vad ${DESTDIR}/usr/lib/vad
 	install -s vpd ${DESTDIR}/usr/lib/vpd
@@ -51,7 +40,6 @@ install: all
 	install -s vpq ${DESTDIR}/usr/ucb/vpq
 	install -s vpr ${DESTDIR}/usr/ucb/vpr
 	install -c vprint.sh ${DESTDIR}/usr/ucb/vprint
-	install -c tmac.vgrind ${DESTDIR}/usr/lib/tmac/tmac.vgrind
 	install -s vprm ${DESTDIR}/usr/ucb/vprm
 	install -s vsort ${DESTDIR}/usr/lib/vsort
 	install -c vtroff.sh ${DESTDIR}/usr/ucb/vtroff
