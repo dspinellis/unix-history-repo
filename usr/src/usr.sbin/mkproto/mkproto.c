@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)mkproto.c	5.8 (Berkeley) %G%";
  * usage: mkproto filsys proto
  */
 #include <sys/param.h>
+#include <sys/time.h>
 #include <sys/dir.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
@@ -327,9 +328,9 @@ iput(ip, aibc, ib, inum)
 	daddr_t d, alloc();
 	int i;
 	struct dinode buf[MAXBSIZE / sizeof (struct dinode)];
-	time_t time();
 
-	ip->di_atime = ip->di_mtime = ip->di_ctime = time((time_t *)NULL);
+	(void)gettimeofday(&ip->di_atime.tv_sec, NULL);
+	ip->di_mtime = ip->di_ctime = ip->di_atime;
 	switch (ip->di_mode&IFMT) {
 
 	case IFDIR:
