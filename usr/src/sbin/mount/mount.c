@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -258,7 +258,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 		argv[argc++] = spec;
 		argv[argc++] = name;
 		argv[argc++] = NULL;
-		sprintf(execname, "%s/%s", _PATH_EXECDIR, mntname);
+		sprintf(execname, "%s/mount_%s", _PATH_EXECDIR, mntname);
 		if (verbose) {
 			printf("exec: %s", execname);
 			for (i = 1; i < argc; i++)
@@ -280,7 +280,9 @@ mountfs(spec, name, flags, type, options, mntopts)
 			goto out;
 		}
 		execve(execname, argv, envp);
-		perror(execname);
+		fprintf(stderr, "mount: cannot exec %s for %s: ",
+			execname, name);
+		perror("");
 		exit (1);
 		/* NOTREACHED */
 
