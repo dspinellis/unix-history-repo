@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)utilities.c 1.3 %G%";
+static char sccsid[] = "@(#)utilities.c 1.4 %G%";
 
 #include	"whoami.h"
 #include	"vars.h"
@@ -88,7 +88,7 @@ backtrace(errnum)
 		ap = mydp->stp;
 		i = linum - (((ap)->entry)->offset & 0177777);
 		fprintf(stderr,"%s\"",(ap->entry)->name);
-		if (_nodump == 0)
+		if (_nodump == FALSE)
 			fprintf(stderr,"+%D near line %D.",i,linum);
 		fputc('\n',stderr);
 		*mydp = (ap)->odisp;
