@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.105 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.106 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1643,7 +1643,6 @@ ufsspec_read(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	extern int (**spec_vnodeop_p)();
 
 	/*
 	 * Set access flag.
@@ -1664,7 +1663,6 @@ ufsspec_write(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	extern int (**spec_vnodeop_p)();
 
 	/*
 	 * Set update and change flags.
@@ -1687,7 +1685,6 @@ ufsspec_close(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	extern int (**spec_vnodeop_p)();
 	register struct inode *ip = VTOI(ap->a_vp);
 
 	if (ap->a_vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
@@ -1864,7 +1861,6 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 {
 	struct inode *ip;
 	struct vnode *vp, *nvp;
-	extern int (**spec_vnodeop_p)();
 
 	vp = *vpp;
 	ip = VTOI(vp);
