@@ -1,3 +1,79 @@
+8.6.3/8.6.3	93/10/24
+	IMPORTANT FIX: Fix several problems that caused open files to
+		be "lost" during queue runs; this overflowed the open
+		file table on large runs.  An assumption that fdopen
+		always succeeds sometimes resulted in core dumps when
+		this happens; sometimes the message is delivered twice,
+		sometimes (probably) infinite times.  This problem in
+		various form was reported by P{r (Pell) Emanuelsson and
+		Robert Campbell of U.C. Berkeley.
+	Special diagnosis of EMFILE error conditions -- it now prints
+		the known open file descriptors so you can figure out
+		what is consuming so much resources.
+	Fix a couple of problems caused by early address parsing
+		errors -- one caused it to return a "this is only a
+		warning" when it really wasn't, and the other started
+		parsing through a random pointer.  The first was
+		noted by Eric Wassenaar.
+	Fix an infinite loop problem caused by null components in the
+		host signature.  Problem noted by Jan Sorensen.
+	Be sure to reset the "current date" when sending an error
+		message -- PostMasterCopy messages were being sent
+		with an old Date: header.
+	Fix a problem that caused duplicated mail when sendmail was
+		(1) compiled without HASFLOCK, (2) you are sending to
+		an alias that has an owner-* alias, (3) you execute
+		sendmail with -t flag, (4) you run in -odb mode, and
+		(5) the sender specifies both the alias name and
+		another alias [i.e., the envelope is split], then
+		duplicate messages are sent.  The problem description
+		and one-line fix are from Motonori Nakamura of Kyoto
+		University.
+	Avoid a problem that causes error messages to be discarded
+		in some cases -- this was the result of a "fix" to
+		avoid duplicate error messages, but two are better
+		than zero.  Reported by Tim Rylance.
+	Fix a minor botch in checkfd012() -- fix from Dave Hill of
+		Computervision R&D Ltd.
+	Remove "X-Authentication-Warning: <user> set sender to <address>
+		using -f" entirely -- it is far too eager to include
+		this, and it is confusing folks.  I'll try to make it
+		work "right" in 8.7.  Problem noted by Yoshitaka
+		Tokugawa of dit Co., Ltd.
+	Fix a race condition with the errno value in tick() and
+		reapchild() -- this caused occasional misdiagnosis
+		of problems.  Kyle Jones of UUNET helped this along.
+	Repair rule loop-detection code.  From Michael Corrigan of
+		U.C. San Diego.
+	Fix a problem that caused sender domain addition (C mailer
+		flag to be ignored if you use -odq or use -odb with
+		a high load average.  Problem reported by Jim Murray
+		of Stratus.
+	Fix ident protocol on multi-homed machines.  It was not
+		always using the correct interface.  Fix from J.R.
+		Oldroyd of Opal.
+	Previously, sendmail assumed that any SMTP greeting message
+		that wasn't 2xx was a temporary failure -- it should
+		only take 4xx as a temporary failure, and return a
+		solid error message on anything else -- for example,
+		to allow you to reject connections on a workstation
+		that is MXed to a mail server.
+	Portability enhancements for 386BSD/FreeBSD/NetBSD from
+		Ollivier Robert.
+	CONFIG: FEATURE(always_add_domain) didn't always add the domain;
+		in particular, on local mail it modified the header sender
+		but not the header recipient address(es).  Reported by
+		Jeffrey Honig of Cornell University.  Also, strip
+		any host from envelope recipient address(es), since
+		local mailers don't understand host names -- this is
+		to help mailertable entries.  From Christopher Davis.
+	CONFIG: masquerading didn't apply to addresses that already
+		had a domain.  This change replaces a local hostname
+		by the masquerade name in the SMTP mailer (previously
+		it only added the masquerade name if it didn't already
+		have a domain name).  Several people complained about
+		this.
+
 8.6.2/8.6.2	93/10/15
 	Put a "successful delivery" message in the transcript for
 		addresses that get return-receipts.
