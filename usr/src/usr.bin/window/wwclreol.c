@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.11 83/12/02";
+static	char *sccsid = "@(#)wwclreol.c	3.12 84/01/06";
 #endif
 
 #include "ww.h"
@@ -16,7 +16,7 @@ int row, col;
 char cleared;
 {
 	register i;
-	int nblank, ncleared;
+	int gain;
 
 	/*
 	 * Clear the buffer right off
@@ -42,38 +42,61 @@ char cleared;
 	/*
 	 * Now find out how much is actually cleared, and fix wwns.
 	 */
-	{
+	if (cleared) {
 		register union ww_char *s;
 		register char *smap, *win;
 
 		i = col;
 		smap = &wwsmap[row][i];
+		s = &wwns[row][i];
+		win = &w->ww_win[row][i];
+		for (i = w->ww_i.r - i; --i >= 0;) {
+			if (*smap++ != w->ww_index)
+				continue;
+			s++->c_w = ' ' | *win++ << WWC_MSHIFT;
+		}
+	} else {
+		register union ww_char *s;
+		register char *smap, *win;
+		int ntouched = 0;
+
+		i = col;
+		smap = &wwsmap[row][i];
 		s = wwns[row];
 		win = w->ww_win[row];
-		ncleared = nblank = 0;
-
+		gain = 0;
 		for (; i < w->ww_i.r; i++) {
 			if (*smap++ != w->ww_index) {
-				if (s[i].c_w == ' ')
-					nblank++;
+				if (s[i].c_w != ' ')
+					gain--;
 			} else if (win[i] == 0) {
-				nblank++;
 				if (s[i].c_w != ' ') {
-					ncleared++; 
+					gain++;
+					ntouched++;
 					s[i].c_w = ' ';
 				}
-			} else
-				s[i].c_w = ' ' | win[i] << WWC_MSHIFT;
+			} else {
+				short c = ' ' | win[i] << WWC_MSHIFT;
+				if (s[i].c_w == c)
+					gain--;
+				else {
+					s[i].c_w = c;
+					ntouched++;
+				}
+			}
 		}
-		if (ncleared > 0)
+		s += i;
+		for (i = wwncol - i; --i >= 0;)
+			if (s++->c_w != ' ')
+				gain--;
+		if (ntouched > 0)
 			wwtouched[row] |= WWU_TOUCHED;
 	}
 
 	/*
 	 * Can/Should we use clear eol?
 	 */
-	if (!cleared && tt.tt_clreol != 0
-	    && ncleared > wwncol - col - nblank + 4) {
+	if (!cleared && tt.tt_clreol != 0 && gain > 4) {
 		register union ww_char *s;
 
 		/* clear to the end */
