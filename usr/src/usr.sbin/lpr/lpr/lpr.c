@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.7	83/01/07	*/
+/*	lpr.c	4.8	83/02/10	*/
 /*
  *      lpr -- off line print
  *              also known as print

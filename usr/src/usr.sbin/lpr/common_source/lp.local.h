@@ -33,13 +33,9 @@
 #define DEFBINDIR	"/usr/ucb"
 #define	DEFMX		1000
 #define DEFFF		"\f"
+#define DEFWIDTH	132
+#define DEFLENGTH	66
 #define DEFUID		1
-
-/*
- * Some utilities used by lpd
- */
-#define PRLOC		"/bin/pr"
-#define MAIL		"/bin/mail"
 
 /*
  * When files are created in the spooling area, they are normally
