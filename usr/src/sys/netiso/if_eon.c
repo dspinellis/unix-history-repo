@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_eon.c	7.15 (Berkeley) %G%
+ *	@(#)if_eon.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -81,6 +81,7 @@ SOFTWARE.
 #include "iso_errno.h"
 #include "eonvar.h"
 extern struct timeval time;
+extern struct ifnet loif;
 
 #define EOK 0
 
@@ -185,7 +186,6 @@ register struct eon_iphdr *hdr;
 caddr_t loc;
 {
 	struct mbuf mhead;
-	extern struct ifnet loif;
 	register struct sockaddr_in *sin = (struct sockaddr_in *)&ro->ro_dst;
 	if (zero) {
 		bzero((caddr_t)hdr, sizeof (*hdr));
