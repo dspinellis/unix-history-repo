@@ -1,0 +1,41 @@
+.pa 1
+.he 'CRYPT (I)'10/23/71'CRYPT (I)'
+.ti 0
+NAME		crypt -- encode/decode
+.sp
+.ti 0
+SYNOPSIS	crypt_____ [ password ]
+.sp
+.ti 0
+DESCRIPTION	crypt_____
+is an exact implementation of Boris Hagelin's
+cryptographic machine called the M-209 by the U. S. Army [1].
+
+crypt_____ reads from the standard input file and writes
+on the standard output.
+For a given password, the encryption
+process is idempotent;
+that is,
+
+	crypt znorkle <clear >cypher
+	crypt znorkle <cypher
+
+will print the clear.
+
+crypt_____ is suitable
+for use as a filter:
+
+	pr <"crypt bandersnatch"<cypher
+
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	[1] U. S. Patent 2,089,603.
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--
