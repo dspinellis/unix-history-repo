@@ -1,7 +1,6 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	ls
-SRCS=	cmp.c getbsize.c stat_flags.c ls.c print.c util.c
-.PATH:	${.CURDIR}/../../bin/df
+SRCS=	cmp.c stat_flags.c ls.c print.c util.c
 
 .include <bsd.prog.mk>
