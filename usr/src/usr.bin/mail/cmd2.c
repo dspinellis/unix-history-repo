@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.9 %G%";
+static char *SccsId = "@(#)cmd2.c	2.10 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -122,7 +122,8 @@ save1(str, mark)
 	register int *ip, mesg;
 	register struct message *mp;
 	char *file, *disp, *cmd;
-	int f, *msgvec, lc, cc, t;
+	int f, *msgvec, lc, t;
+	long cc;
 	FILE *obuf;
 	struct stat statb;
 
@@ -152,7 +153,8 @@ save1(str, mark)
 		perror(NOSTR);
 		return(1);
 	}
-	cc = lc = 0;
+	cc = 0L;
+	lc = 0;
 	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
 		mesg = *ip;
 		touch(mesg);
@@ -163,7 +165,7 @@ save1(str, mark)
 			return(1);
 		}
 		lc += t;
-		cc += msize(mp);
+		cc += mp->m_size;
 		if (mark)
 			mp->m_flag |= MSAVED;
 	}
@@ -171,7 +173,7 @@ save1(str, mark)
 	if (ferror(obuf))
 		perror(file);
 	fclose(obuf);
-	printf("%s %d/%d\n", disp, lc, cc);
+	printf("%s %d/%ld\n", disp, lc, cc);
 	return(0);
 }
 
