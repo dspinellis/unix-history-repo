@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	restore
 SRCS=	 main.c interactive.c restore.c dirs.c symtab.c tape.c utilities.c
