@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.6 (Berkeley) %G%
+ *	@(#)locore.s	7.7 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -733,11 +733,16 @@ _/**/mname:	.globl	_/**/mname;		\
 #if VAX630
 	SYSMAP(Clockmap	,cldevice	,1		)
 	SYSMAP(Ka630map	,ka630cpu	,1		)
+	/* 
+	 * qvss and qdss can't coexist - one map will suffice 
+	 * for either. qvss is 256K each and qdss is 64K each.
+	 */
 #include "qv.h"
-#if NQV > 0
-	SYSMAP(QVmap	,qvmem		,512*NQV	)
-#endif
-#endif
+#include "qd.h"
+#if NQV > 0 || NQD > 0	
+	SYSMAP(QVmap	,qvmem		,((512*NQV)+(128*NQD)))
+#endif /* NQV || NQD */
+#endif /* VAX630 */
 	SYSMAP(UMBAend	,umbaend	,0		)
 
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
