@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.19 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -76,6 +76,8 @@ newline:			if (y == win->maxy - 1) {
 					lp = win->lines[y];
 					x = 0;
 				}
+				if (c == '\n')
+					break;
 			}
 				
 			stand = '\0';
