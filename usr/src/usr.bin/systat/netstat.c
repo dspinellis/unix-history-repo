@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -7,20 +7,12 @@ static char sccsid[] = "@(#)netstat.c	1.1 (Berkeley) %G%";
  */
 #include "systat.h"
 
-#include <netdb.h>
-#include <nlist.h>
-#include <signal.h>
-#include <arpa/inet.h>
-
-#include <sys/types.h>
-#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 
 #include <net/route.h>
-#include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/in_pcb.h>
 #include <netinet/ip.h>
@@ -39,6 +31,7 @@ static char sccsid[] = "@(#)netstat.c	1.1 (Berkeley) %G%";
 #include <netinet/udp_var.h>
 
 #define	streq(a,b)	(strcmp(a,b)==0)
+#define	YMAX(w)		((w)->_maxy-1)
 
 WINDOW *
 opennetstat()
@@ -104,14 +97,6 @@ static struct nlist nlst[] = {
         { "" },
 };
 
-static	long *ports;
-static	int nports;
-static	struct in_addr *hosts;
-static	int nhosts;
-static	int protos;
-#define	TCP	0x1
-#define	UDP	0x2
-
 initnetstat()
 {
         register  i;
@@ -122,100 +107,7 @@ initnetstat()
 		return;
 	}
 	netcb.ni_forw = netcb.ni_prev = (struct netinfo *)&netcb;
-	selectproto(0);
-	selectport(-1);
-	selecthost(0);
-}
-
-static
-selectproto(proto)
-	char *proto;
-{
-	int new = protos;
-
-	if (proto == 0 || streq(proto, "all"))
-		new = TCP|UDP;
-	else if (streq(proto, "tcp"))
-		new = TCP;
-	else if (streq(proto, "udp"))
-		new = UDP;
-	return (new != protos, protos = new);
-}
-
-static
-selectport(port)
-	long port;
-{
-	register long *p;
-
-	if (port == -1) {
-		if (nports == 1)
-			return (0);
-		if (ports)
-			free((char *)ports);
-		ports = (long *)malloc(sizeof (long));
-		*ports = -1;
-		nports = 1;
-		return (1);
-	}
-	for (p = ports; *p != -1; p++)
-		if (*p == port)
-			return (0);
-	ports = (long *)realloc(ports, (nports + 1)*sizeof (long));
-	ports[nports-1] = port;
-	ports[nports++] = -1;
-	return (1);
-}
-
-static
-checkport(inp)
-	register struct inpcb *inp;
-{
-	register long *p;
-
-	for (p = ports; *p != -1; p++)
-		if (*p == inp->inp_lport || *p == inp->inp_fport)
-			return (1);
-	return (0);
-}
-
-static
-selecthost(in)
-	struct in_addr *in;
-{
-	register struct in_addr *p;
-
-	if (in == 0) {
-		if (nhosts == 1)
-			return (0);
-		if (hosts)
-			free((char *)hosts);
-		hosts = (struct in_addr *)malloc(sizeof (struct in_addr));
-		hosts->s_addr = -1;
-		nhosts = 1;
-		return (1);
-	}
-	for (p = hosts; p->s_addr != -1; p++)
-		if (p->s_addr == in->s_addr)
-			return (0);
-	hosts = (struct in_addr *)realloc(hosts,
-	    (nhosts + 1)*sizeof (struct in_addr));
-	hosts[nhosts-1] = *in;
-	hosts[nhosts++].s_addr = -1;
-	return (1);
-}
-
-static
-checkhost(inp)
-	register struct inpcb *inp;
-{
-	register struct in_addr *p;
-
-	for (p = hosts; p->s_addr != -1; p++)
-		if (p->s_addr == inp->inp_laddr.s_addr ||
-		    p->s_addr == inp->inp_faddr.s_addr)
-			return (1);
-	return (0);
+	protos = TCP|UDP;
 }
 
 fetchnetstat()
@@ -232,6 +124,8 @@ fetchnetstat()
 		return;
 	for (p = netcb.ni_forw; p != (struct netinfo *)&netcb; p = p->ni_forw)
 		p->ni_seen = 0;
+	if (protos == 0)
+		error("No protocols to display");
 	if (protos&TCP)
 		off = nlst[X_TCB].n_value, istcp = 1;
 	else if (protos&UDP)
@@ -253,9 +147,9 @@ again:
 		}
 		if (!aflag && inet_lnaof(inpcb.inp_laddr) == INADDR_ANY)
 			continue;
-		if (nhosts != 1 && !checkhost(&inpcb))
+		if (nhosts && !checkhost(&inpcb))
 			continue;
-		if (nports != 1 && !checkport(&inpcb))
+		if (nports && !checkport(&inpcb))
 			continue;
 		lseek(kmem, (off_t)inpcb.inp_socket, L_SET);
 		read(kmem, &sockb, sizeof (sockb));
@@ -280,65 +174,44 @@ enter(inp, so, state, proto)
 	int state;
 	char *proto;
 {
-	register struct netinfo *p, *match = 0;
-	int matchwild = 3, wildcard;
+	register struct netinfo *p;
 
 	/*
-	 * Must mimic in_pcblookup to match partial connections.
+	 * Only take exact matches, any sockets with
+	 * previously unbound addresses will be deleted
+	 * below in the display routine because they
+	 * will appear as ``not seen'' in the kernel
+	 * data structures.
 	 */
 	for (p = netcb.ni_forw; p != (struct netinfo *)&netcb; p = p->ni_forw) {
 		if (!streq(proto, p->ni_proto))
 			continue;
-		if (p->ni_lport != inp->inp_lport)
+		if (p->ni_lport != inp->inp_lport ||
+		    p->ni_laddr.s_addr != inp->inp_laddr.s_addr)
 			continue;
-		wildcard = 0;
-		if (p->ni_laddr.s_addr != INADDR_ANY) {
-			if (inp->inp_laddr.s_addr == INADDR_ANY)
-				wildcard++;
-			else if (p->ni_laddr.s_addr != inp->inp_laddr.s_addr)
-				continue;
-		} else {
-			if (inp->inp_laddr.s_addr != INADDR_ANY)
-				wildcard++;
-		}
-		if (p->ni_faddr.s_addr != INADDR_ANY) {
-			if (inp->inp_faddr.s_addr == INADDR_ANY)
-				wildcard++;
-			else if (p->ni_faddr.s_addr != inp->inp_faddr.s_addr ||
-			    p->ni_fport != inp->inp_fport)
-				continue;
-		} else {
-			if (inp->inp_faddr.s_addr != INADDR_ANY)
-				wildcard++;
-		}
-		if (wildcard < matchwild) {
-			match = p;
-			matchwild = wildcard;
-			if (matchwild == 0)
-				break;
-		}
+		if (p->ni_faddr.s_addr == inp->inp_faddr.s_addr &&
+		    p->ni_fport == inp->inp_fport)
+			break;
 	}
-	if (match == 0) {
-		match = (struct netinfo *)malloc(sizeof (*p));
-		insque(match, &netcb);
-		match->ni_line = -1;
-		match->ni_flags = NIF_LACHG|NIF_FACHG;
+	if (p == (struct netinfo *)&netcb) {
+		p = (struct netinfo *)malloc(sizeof (*p));
+		if (p == 0) {
+			error("Out of memory");
+			return;
+		}
+		insque(p, &netcb);
+		p->ni_line = -1;
+		p->ni_laddr = inp->inp_laddr;
+		p->ni_lport = inp->inp_lport;
+		p->ni_faddr = inp->inp_faddr;
+		p->ni_fport = inp->inp_fport;
+		p->ni_proto = proto;
+		p->ni_flags = NIF_LACHG|NIF_FACHG;
 	}
-	if (match->ni_laddr.s_addr != inp->inp_laddr.s_addr ||
-	    match->ni_lport != inp->inp_lport)
-		match->ni_flags |= NIF_LACHG;
-	match->ni_laddr = inp->inp_laddr;
-	match->ni_lport = inp->inp_lport;
-	if (match->ni_faddr.s_addr != inp->inp_faddr.s_addr ||
-	    match->ni_fport != inp->inp_fport)
-		match->ni_flags |= NIF_FACHG;
-	match->ni_faddr = inp->inp_faddr;
-	match->ni_fport = inp->inp_fport;
-	match->ni_proto = proto;
-	match->ni_rcvcc = so->so_rcv.sb_cc;
-	match->ni_sndcc = so->so_snd.sb_cc;
-	match->ni_state = state;
-	match->ni_seen = 1;
+	p->ni_rcvcc = so->so_rcv.sb_cc;
+	p->ni_sndcc = so->so_snd.sb_cc;
+	p->ni_state = state;
+	p->ni_seen = 1;
 }
 
 /* column locations */
@@ -381,15 +254,17 @@ shownetstat()
 		wmove(wnd, p->ni_line, 0); wdeleteln(wnd);
 		q = netcb.ni_forw;
 		for (; q != (struct netinfo *)&netcb; q = q->ni_forw)
-			if (q != p && q->ni_line > p->ni_line)
+			if (q != p && q->ni_line > p->ni_line) {
 				q->ni_line--;
+				/* this shouldn't be necessary */
+				q->ni_flags |= NIF_LACHG|NIF_FACHG;
+			}
 		lastrow--;
 		q = p->ni_forw;
 		remque(p);
 		free((char *)p);
 		p = q;
 	}
-	wmove(wnd, lastrow, 0); wclrtobot(wnd);
 	/*
 	 * Update existing connections and add new ones.
 	 */
@@ -398,7 +273,7 @@ shownetstat()
 			/*
 			 * Add a new entry if possible.
 			 */
-			if (lastrow >= wnd->_maxy)
+			if (lastrow > YMAX(wnd))
 				continue;
 			p->ni_line = lastrow++;
 			p->ni_flags |= NIF_LACHG|NIF_FACHG;
@@ -424,6 +299,10 @@ shownetstat()
 				mvwaddstr(wnd, p->ni_line, STATE,
 				    tcpstates[p->ni_state]);
 		wclrtoeol(wnd);
+	}
+	if (lastrow < YMAX(wnd)) {
+		wmove(wnd, lastrow, 0); wclrtobot(wnd);
+		wmove(wnd, YMAX(wnd), 0); wdeleteln(wnd);	/* XXX */
 	}
 }
 
@@ -502,9 +381,7 @@ cmdnetstat(cmd, args)
         char *cmd, *args;
 {
 	register struct netinfo *p;
-	int omask;
 
-	omask = sigblock(sigmask(SIGALRM));
 	if (prefix(cmd, "all")) {
 		aflag = !aflag;
 		goto fixup;
@@ -514,7 +391,7 @@ cmdnetstat(cmd, args)
 
 		new = prefix(cmd, "numbers");
 		if (new == nflag)
-			goto done;
+			return (1);
 		p = netcb.ni_forw;
 		for (; p != (struct netinfo *)&netcb; p = p->ni_forw) {
 			if (p->ni_line == -1)
@@ -524,65 +401,12 @@ cmdnetstat(cmd, args)
 		nflag = new;
 		goto redisplay;
 	}
-	if (prefix(cmd, "tcp") || prefix(cmd, "udp")) {
-		if (selectproto(cmd))
-			goto fixup;
-		goto done;
-	}
-	if (prefix(cmd, "protocol")) {
-		if (selectproto(args))
-			goto fixup;
-		goto done;
-	}
-	if (prefix(cmd, "port")) {
-		struct servent *sp;
-		long port;
-
-		sp = getservbyname(args,
-			protos == TCP ? "tcp" : protos == UDP ? "udp" : 0);
-		if (sp == 0) {
-			port = atoi(args);
-			if (port <= 0) {
-				error("%s: unknown port", args);
-				goto done;
-			}
-			port = htons((u_short)port);
-		} else
-			port = sp->s_port;
-		if (selectport(port))
-			goto fixup;
-		goto done;
-	}
-	if (prefix(cmd, "host")) {
-		struct hostent *hp;
-		struct in_addr in;
-
-		hp = gethostbyname(args);
-		if (hp == 0) {
-			in.s_addr = inet_addr(args);
-			if (in.s_addr == -1) {
-				error("%s: unknown host", args);
-				goto done;
-			}
-		} else
-			in = *(struct in_addr *)hp->h_addr;
-		if (selecthost(&in))
-			goto fixup;
-		goto done;
-	}
-	if (prefix(cmd, "reset")) {
-		if (selectproto(0) | selecthost(0) | selectport(-1))
-			goto fixup;
-		goto done;
-	}
-	sigsetmask(omask);
-	return (0);
+	if (!netcmd(cmd, args))
+		return (0);
 fixup:
 	fetchnetstat();
 redisplay:
 	shownetstat();
 	refresh();
-done:
-	sigsetmask(omask);
 	return (1);
 }

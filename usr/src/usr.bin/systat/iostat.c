@@ -1,15 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	1.8 (Berkeley) %G%";
 #endif
 
 /*
  * iostat
  */
 #include "systat.h"
-#include <sys/param.h>
 #include <sys/buf.h>
-#include <sys/file.h>
-#include <nlist.h>
 
 WINDOW *
 openiostat()
@@ -54,17 +51,16 @@ static struct nlist nlst[] = {
 static struct {
         int     dk_busy;
         long    cp_time[CPUSTATES];
-        long    dk_time[DK_NDRIVE];
-        long    dk_wds[DK_NDRIVE];
-        long    dk_seek[DK_NDRIVE];
-        long    dk_xfer[DK_NDRIVE];
+        long    *dk_time;
+        long    *dk_wds;
+        long    *dk_seek;
+        long    *dk_xfer;
 } s, s1;
 
 static  int linesperregion;
 static  double etime;
 static  int numbers = 0;                /* default display bar graphs */
 static  int msps = 0;                   /* default ms/seek shown */
-static  int dk_select[DK_NDRIVE];
 
 initiostat()
 {
@@ -77,16 +73,17 @@ initiostat()
                         return;
                 }
         }
-        if (ndrives == 0) {
-                for (i = 0; i < DK_NDRIVE; i++)
-                        if (dk_mspw[i] != 0.0)
-                                sprintf(dr_name[i], "dk%d", i), ndrives++;
-#ifdef vax
-                read_names(nlst[X_MBDINIT].n_value, nlst[X_UBDINIT].n_value);
-#endif
-        }
-        for (i = 0; i < DK_NDRIVE; i++)
-                dk_select[i] = 1;
+	dkinit();
+	if (dk_ndrive) {
+#define	allocate(e, t) \
+    s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
+    s1./**/e = (t *)calloc(dk_ndrive, sizeof (t));
+		allocate(dk_time, long);
+		allocate(dk_wds, long);
+		allocate(dk_seek, long);
+		allocate(dk_xfer, long);
+#undef allocate
+	}
 }
 
 fetchiostat()
@@ -94,16 +91,15 @@ fetchiostat()
 
         if (nlst[X_DK_BUSY].n_type == 0)
                 return;
-        lseek(kmem, (long)nlst[X_DK_BUSY].n_value, L_SET);
-        read(kmem, &s.dk_busy, sizeof s.dk_busy);
+	s.dk_busy = getw(nlst[X_DK_BUSY].n_value);
         lseek(kmem, (long)nlst[X_DK_TIME].n_value, L_SET);
-        read(kmem, s.dk_time, sizeof s.dk_time);
+        read(kmem, s.dk_time, dk_ndrive * sizeof (long));
         lseek(kmem, (long)nlst[X_DK_XFER].n_value, L_SET);
-        read(kmem, s.dk_xfer, sizeof s.dk_xfer);
+        read(kmem, s.dk_xfer, dk_ndrive * sizeof (long));
         lseek(kmem, (long)nlst[X_DK_WDS].n_value, L_SET);
-        read(kmem, s.dk_wds, sizeof s.dk_wds);
+        read(kmem, s.dk_wds, dk_ndrive * sizeof (long));
         lseek(kmem, (long)nlst[X_DK_SEEK].n_value, L_SET);
-        read(kmem, s.dk_seek, sizeof s.dk_seek);
+        read(kmem, s.dk_seek, dk_ndrive * sizeof (long));
         lseek(kmem, (long)nlst[X_CP_TIME].n_value, L_SET);
         read(kmem, s.cp_time, sizeof s.cp_time);
 }
@@ -135,10 +131,13 @@ labeliostat()
 static
 numlabels(row)
 {
-        int i, col, regions;
+        int i, col, regions, ndrives;
 
 #define COLWIDTH        14
 #define DRIVESPERLINE   ((wnd->_maxx - INSET) / COLWIDTH)
+	for (ndrives = 0, i = 0; i < dk_ndrive; i++)
+		if (dk_select[i])
+			ndrives++;
         regions = howmany(ndrives, DRIVESPERLINE);
         /*
          * Deduct -regions for blank line after each scrolling region.
@@ -151,7 +150,7 @@ numlabels(row)
         if (linesperregion < 3)
                 linesperregion = 3;
         col = 0;
-        for (i = 0; i < DK_NDRIVE; i++)
+        for (i = 0; i < dk_ndrive; i++)
                 if (dk_select[i] && dk_mspw[i] != 0.0) {
                         if (col + COLWIDTH >= wnd->_maxx - INSET) {
                                 col = 0, row += linesperregion + 1;
@@ -176,7 +175,7 @@ barlabels(row)
         mvwaddstr(wnd, row++, INSET,
             "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50");
         linesperregion = 2 + msps;
-        for (i = 0; i < DK_NDRIVE; i++)
+        for (i = 0; i < dk_ndrive; i++)
                 if (dk_select[i] && dk_mspw[i] != 0.0) {
                         if (row > wnd->_maxy - linesperregion)
                                 break;
@@ -195,7 +194,7 @@ showiostat()
 
         if (nlst[X_DK_BUSY].n_type == 0)
                 return;
-        for (i = 0; i < DK_NDRIVE; i++) {
+        for (i = 0; i < dk_ndrive; i++) {
 #define X(fld)  t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t
                 X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
         }
@@ -212,7 +211,7 @@ showiostat()
                 stat1(row++, i);
         if (!numbers) {
                 row += 2;
-                for (i = 0; i < DK_NDRIVE; i++)
+                for (i = 0; i < dk_ndrive; i++)
                         if (dk_select[i] && dk_mspw[i] != 0.0) {
                                 if (row > wnd->_maxy - linesperregion)
                                         break;
@@ -225,7 +224,7 @@ showiostat()
         wdeleteln(wnd);
         wmove(wnd, row + 3, 0);
         winsertln(wnd);
-        for (i = 0; i < DK_NDRIVE; i++)
+        for (i = 0; i < dk_ndrive; i++)
                 if (dk_select[i] && dk_mspw[i] != 0.0) {
                         if (col + COLWIDTH >= wnd->_maxx) {
                                 col = 0, row += linesperregion + 1;
@@ -320,49 +319,16 @@ cmdiostat(cmd, args)
 {
         int i;
 
-        if (prefix(cmd, "msps")) {
+        if (prefix(cmd, "msps"))
                 msps = !msps;
-                goto fixdisplay;
-        }
-        if (prefix(cmd, "numbers")) {
+	else if (prefix(cmd, "numbers"))
                 numbers = 1;
-                goto fixdisplay;
-        }
-        if (prefix(cmd, "bars")) {
+	else if (prefix(cmd, "bars"))
                 numbers = 0;
-                goto fixdisplay;
-        }
-        if (prefix(cmd, "display") || prefix(cmd, "add")) {
-                dkselect(args, 1, dk_select);
-                goto fixdisplay;
-        }
-        if (prefix(cmd, "ignore") || prefix(cmd, "delete")) {
-                dkselect(args, 0, dk_select);
-                goto fixdisplay;
-        }
-        if (prefix(cmd, "drives")) {
-                move(CMDLINE, 0);
-                for (i = 0; i < DK_NDRIVE; i++)
-                        if (dk_mspw[i] != 0.0)
-                                printw("%s ", dr_name[i]);
-                return (1);
-        }
-        return (0);
-fixdisplay:
+	else if (!dkcmd(cmd, args))
+		return (0);
         wclear(wnd);
         labeliostat();
         refresh();
         return (1);
-}
-
-prefix(s1, s2)
-        register char *s1, *s2;
-{
-
-        while (*s1 == *s2) {
-                if (*s1 == '\0')
-                        return (1);
-                s1++, s2++;
-        }
-        return (*s1 == '\0');
 }

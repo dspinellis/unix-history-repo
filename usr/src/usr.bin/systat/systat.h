@@ -1,7 +1,16 @@
-/*      systat.h     1.5     85/04/28     */
+/*      systat.h     1.6     85/05/01     */
 
-#include <sys/dk.h>
+#include <netdb.h>
+#include <nlist.h>
+#include <signal.h>
 #include <curses.h>
+
+#include <sys/param.h>
+#include <sys/file.h>
+#include <sys/dk.h>
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 struct p_times {
         short   pt_pid;
@@ -54,12 +63,18 @@ double  lccpu;
 double	avenrun[3];
 
 char    *kmemf, *memf, *swapf;
-char	dr_name[DK_NDRIVE][10];
-int	ndrives;
-int	hz;
-int	phz;
-float	dk_mspw[DK_NDRIVE];
+int	hz, phz;
+char	**dr_name;
+int	dk_ndrive;
+int	*dk_select;
+float	*dk_mspw;
 char    c, *namp, hostname[32];
+
+int	nports;
+int	nhosts;
+int	protos;
+#define	TCP	0x1
+#define	UDP	0x2
 
 struct  pte *usrpt;
 struct  pte *Usrptma;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	1.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -7,7 +7,6 @@ static char sccsid[] = "@(#)cmds.c	1.6 (Berkeley) %G%";
  */
 
 #include "systat.h"
-#include <signal.h>
 #include <ctype.h>
 
 command(cmd)
@@ -15,9 +14,10 @@ command(cmd)
 {
         register char *cp;
         register struct cmdtab *p;
-	int interval;
+	int interval, omask;
         char *arg;
 
+	omask = sigblock(sigmask(SIGALRM));
         for (cp = cmd; *cp && !isspace(*cp); cp++)
                 ;
         if (*cp)
@@ -30,13 +30,13 @@ command(cmd)
                 die();
 	if (strcmp(cmd, "load") == 0) {
 		load();
-		return;
+		goto done;
 	}
         if (strcmp(cmd, "stop") == 0) {
                 alarm(0);
                 mvaddstr(CMDLINE, 0, "Refresh disabled.");
                 clrtoeol();
-                return;
+		goto done;
         }
 	if (strcmp(cmd, "help") == 0) {
 		int col, len;
@@ -51,7 +51,7 @@ command(cmd)
 				addch(' ');
 		}
 		clrtoeol();
-		return;
+		goto done;
 	}
 	interval = atoi(cmd);
         if (interval <= 0 &&
@@ -59,7 +59,7 @@ command(cmd)
 		interval = *cp ? atoi(cp) : naptime;
                 if (interval <= 0) {
 			error("%d: bad interval.", interval);
-                        return;
+			goto done;
                 }
 	}
 	if (interval > 0) {
@@ -67,16 +67,16 @@ command(cmd)
                 naptime = interval;
                 display();
                 status();
-                return;
+		goto done;
         }
 	p = lookup(cmd);
 	if (p == (struct cmdtab *)-1) {
 		error("%s: Ambiguous command.", cmd);
-		return;
+		goto done;
 	}
         if (p) {
                 if (curcmd == p)
-                        return;
+			goto done;
                 alarm(0);
 		(*curcmd->c_close)(wnd);
 		wnd = (*p->c_open)();
@@ -97,11 +97,12 @@ command(cmd)
 		labels();
                 display();
                 status();
-                return;
+		goto done;
         }
-	if (curcmd->c_cmd && (*curcmd->c_cmd)(cmd, cp))
-		return;
-	error("%s: Unknown command.", cmd);
+	if (curcmd->c_cmd == 0 || !(*curcmd->c_cmd)(cmd, cp))
+		error("%s: Unknown command.", cmd);
+done:
+	sigsetmask(omask);
 }
 
 struct cmdtab *
@@ -159,4 +160,16 @@ suspend()
         move(CMDLINE, col);
         wrefresh(curscr);
 	alarm(naptime);
+}
+
+prefix(s1, s2)
+        register char *s1, *s2;
+{
+
+        while (*s1 == *s2) {
+                if (*s1 == '\0')
+                        return (1);
+                s1++, s2++;
+        }
+        return (*s1 == '\0');
 }

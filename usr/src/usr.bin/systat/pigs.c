@@ -1,14 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	1.8 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
-#include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/time.h>
 #include <sys/proc.h>
-#include <sys/file.h>
-#include <nlist.h>
 #include <pwd.h>
 
 WINDOW *
