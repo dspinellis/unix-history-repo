@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)computer.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)computer.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
@@ -254,7 +254,7 @@ computer()
 				  case E_ENSLV:
 				  case E_REPRO:
 					printf("Starsystem %s in quadrant %d,%d is distressed\n",
-						systemname(e), e->x, e->y);
+						Systemname[e->systemname], e->x, e->y);
 					j = 0;
 					break;
 				}
