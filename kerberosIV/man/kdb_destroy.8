@@ -1,0 +1,34 @@
+.\" $Source: /usr/src/kerberosIV/man/RCS/kdb_destroy.8,v $
+.\" $Author: kfall $
+.\" $Header: /usr/src/kerberosIV/man/RCS/kdb_destroy.8,v 4.2 90/06/25 21:12:01 kfall Exp $
+.\" Copyright 1989 by the Massachusetts Institute of Technology.
+.\"
+.\" For copying and distribution information,
+.\" please see the file <mit-copyright.h>.
+.\"
+.TH KDB_DESTROY 8 "Kerberos Version 4.0" "MIT Project Athena"
+.SH NAME
+kdb_destroy \- destroy Kerberos key distribution center database
+.SH SYNOPSIS
+kdb_destroy
+.SH DESCRIPTION
+.I kdb_destroy
+deletes a Kerberos key distribution center database.
+.PP
+The user is prompted to verify that the database should be destroyed.  A
+response beginning with `y' or `Y' confirms deletion.
+Any other response aborts deletion.
+.SH DIAGNOSTICS
+.TP 20n
+"Database cannot be deleted at /etc/kerberosIV/principal"
+The attempt to delete the database failed (probably due to a system or
+access permission error).
+.TP
+"Database not deleted."
+The user aborted the deletion.
+.SH FILES
+.TP 20n
+/etc/kerberosIV/principal.pag, /etc/kerberosIV/principal.dir
+DBM files containing database
+.SH SEE ALSO
+kdb_init(8)
