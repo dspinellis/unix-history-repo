@@ -34,7 +34,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00070
+ * CURRENT PATCH LEVEL:         5       00094
  * --------------------         -----   ----------------------
  *
  * 11 Dec 92	Williams Jolitz		Fixed tty handling
@@ -44,6 +44,8 @@
  * 6 Oct 1992	Holger Veit		Fixed 'hanging console' bug
  * 11 Jan 93	Julian Elischer		Fixes multiple processes on one
  *					pty bug
+ * 27 Feb 93	Charles Hannum		Proper return values for ptsclose()
+ *					and ptcclose()
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 92/01/21 21:31:23 william Exp $";
 
@@ -144,6 +146,7 @@ ptsclose(dev, flag, mode, p)
 	(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
+	return(0);
 }
 
 ptsread(dev, uio, flag)
@@ -293,6 +296,8 @@ ptcclose(dev)
 /* XXX -hv- 6.Oct.92 this prevents the "hanging console bug" with X11 */
 	if (constty==tp)
 		constty = 0;
+
+	return (0);
 }
 
 ptcread(dev, uio, flag)
