@@ -1,0 +1,404 @@
+$Revision: 1.2 $
+Steven Grimm, <Steven.Grimm@eng.sun.com>
+November, 1991.
+
+Reap is a space-based expire program written by David B. Thomas,
+<dt@yenta.alb.nm.us>.  It was posted to alt.sources in March, 1991, with
+Message-ID <1991Mar28.025957.1976@yenta.alb.nm.us>.  Among other places,
+it is available for FTP from ftp.cs.widener.edu, as
+/pub/src/news/reap.shar.Z.
+
+Usage:
+	reap -m <amount of free space you want> | prunehistory
+
+The following patch adds two new flags:
+    -x foo	Ignore filename foo (useful for NN databases; for
+		example "-x .nnd -x .nnx").
+    -m		Print filename and Message-Id of every article
+		it removes (useful for modifying the INN history
+		database).
+It also sends reap's summary lines to stdout, so prunehistory won't
+complain about them.
+
+*** lib.c.ORIG	Mon Nov 25 13:54:15 1991
+--- lib.c	Mon Nov 25 13:54:14 1991
+***************
+*** 168,173 ****
+--- 168,188 ----
+  	f->next = incl;
+  	incl = f;
+  }
++ 
++ /*
++  * Add a name to the filename exclude list, "efil."
++  */
++ exclude_file(text)
++ char	*text;
++ {
++ 	struct filspec	*f;
++ 
++ 	f = newnode(text);
++ 	f->recurse = 0;		/* It's irrelevant here. */
++ 	f->next = efil;
++ 	efil = f;
++ }
++ 
+  preclude()
+  {
+  	struct filspec	*p;
+
+*** main.c.ORIG	Mon Nov 25 13:54:19 1991
+--- main.c	Mon Nov 25 13:54:18 1991
+***************
+*** 11,16 ****
+--- 11,17 ----
+  /* linked lists for included and excluded file specs */
+  struct filspec
+  		*incl = NULL,
++ 		*efil = NULL,		/* list of excluded filenames	*/
+  		*excl = NULL
+  ;
+  char
+***************
+*** 20,26 ****
+  ;
+  int
+  		verbose = 0,		/* verbosity (-v) flag		*/
+! 		dryrun = 0		/* do-not-unlink (-n) flag	*/
+  ;
+  time_t
+  		age,			/* unlink files older than this	*/
+--- 21,28 ----
+  ;
+  int
+  		verbose = 0,		/* verbosity (-v) flag		*/
+! 		dryrun = 0,		/* do-not-unlink (-n) flag	*/
+! 		printid = 0		/* print message-id (-m) flag	*/
+  ;
+  time_t
+  		age,			/* unlink files older than this	*/
+***************
+*** 53,60 ****
+  	progname = argv[0];
+  
+  /* parse args */
+! 	while ( (c=getopt(argc,argv,"vsnf:")) != EOF)
+  		switch(c) {
+  		case 'n':
+  			++dryrun;
+  			break;
+--- 55,65 ----
+  	progname = argv[0];
+  
+  /* parse args */
+! 	while ( (c=getopt(argc,argv,"mvsnf:x:")) != EOF)
+  		switch(c) {
++ 		case 'm':
++ 			++printid;
++ 			break;
+  		case 'n':
+  			++dryrun;
+  			break;
+***************
+*** 64,69 ****
+--- 69,78 ----
+  		case 'f':
+  			scriptfile = optarg;
+  			break;
++ 		case 'x':
++ 			if (optarg != NULL && optarg[0] != '\0')
++ 				exclude_file(optarg);
++ 			break;
+  		case 's':
+  			++summary;
+  			break;
+***************
+*** 78,88 ****
+  
+  	if (errflag) {
+  		fprintf (stderr,
+! 		    "usage: %s [-v] [-s] [-n] [-f funclist] freeblocks\n",
+  		    progname);
+  		exit (-1);
+  	}
+  
+  
+  /* stat newsdir to find the number of the device it's on */
+  	if (stat(newsdir, &st))
+--- 87,102 ----
+  
+  	if (errflag) {
+  		fprintf (stderr,
+! "usage: %s [-v] [-s] [-n] [-m] [-x filename] [-f funclist] freeblocks\n",
+  		    progname);
+  		exit (-1);
+  	}
+  
++ /* Add "." and ".." to the excluded-file list, so we don't try to remove
++  * them.
++  */
++ 	exclude_file(".");
++ 	exclude_file("..");
+  
+  /* stat newsdir to find the number of the device it's on */
+  	if (stat(newsdir, &st))
+
+*** reap.8.ORIG	Mon Nov 25 13:54:25 1991
+--- reap.8	Mon Nov 25 13:54:22 1991
+***************
+*** 3,9 ****
+  reap - remove news articles as space needed
+  .SH SYNOPSIS
+  .B reap
+! [-v] [-s] [-n] [-f scriptfile] freeblocks
+  .SH DESCRIPTION
+  .I Reap
+  checks disk freespace and deletes netnews articles
+--- 3,9 ----
+  reap - remove news articles as space needed
+  .SH SYNOPSIS
+  .B reap
+! [-v] [-s] [-n] [-m] [-x filename] [-f scriptfile] freeblocks
+  .SH DESCRIPTION
+  .I Reap
+  checks disk freespace and deletes netnews articles
+***************
+*** 49,54 ****
+--- 49,66 ----
+  The
+  .B -f
+  option is used to specify an alternate function script file.
++ .PP
++ The
++ .B -x
++ option (which may be used more than once) specifies a filename to ignore
++ wherever it occurs.  This can be used to ignore nn or trn database files,
++ for example.
++ .PP
++ The
++ .B -m
++ option instructs reap to print the filename and message ID of each article
++ it deletes.  The filename is output, followed by a tab, the message ID, and
++ a newline.
+  .SH FUNCTION SCRIPT FILE FORMAT
+  A function script file consists of a series of expire functions, one per line.
+  Each expire function contains an age limit (in days, decimals okay), followed
+
+*** reap.c.ORIG	Mon Nov 25 13:54:28 1991
+--- reap.c	Mon Nov 25 13:54:26 1991
+***************
+*** 10,15 ****
+--- 10,16 ----
+  
+  #include "reap.h"
+  
++ void print_message_id();
+  
+  reap()
+  {
+***************
+*** 42,48 ****
+  
+  /* open directory for reading */
+  	if ( (dirp = opendir(name)) == NULL)
+! 		ouch ("%s: can't read directory %s\n", name);
+  
+  
+  /* see if this directory is excluded.
+--- 43,52 ----
+  
+  /* open directory for reading */
+  	if ( (dirp = opendir(name)) == NULL)
+! 	{
+! 		fprintf(stderr, "Warning: can't read directory %s\n", name);
+! 		return;
+! 	}
+  
+  
+  /* see if this directory is excluded.
+***************
+*** 62,68 ****
+  
+  
+  /* loop for each directory entry */
+! 	while ( (dp = readdir(dirp)) != NULL) {
+  
+  	/* name might be exactly MAXFILENAME characters long, and thus
+  	 * might not be null-terminated.  Some insurance:
+--- 66,74 ----
+  
+  
+  /* loop for each directory entry */
+! 	while ( (dp = readdir(dirp)) != NULL)
+! 	{
+! 		int skipflag;	/* Skip this file? */
+  
+  	/* name might be exactly MAXFILENAME characters long, and thus
+  	 * might not be null-terminated.  Some insurance:
+***************
+*** 70,77 ****
+  		strncpy (thisname, dp->d_name, MAXFILENAME);
+  		thisname[MAXFILENAME] = '\0';
+  
+! 	/* skip dot and dotdot */
+! 		if (!strcmp(thisname, ".") || !strcmp(thisname, ".."))
+  			continue;
+  
+  	/* build the full pathname of current object */
+--- 76,90 ----
+  		strncpy (thisname, dp->d_name, MAXFILENAME);
+  		thisname[MAXFILENAME] = '\0';
+  
+! 	/* Scan through the excluded filename list to see if we should avoid
+! 	 * messing with this file.  "." and ".." are automatically members
+! 	 * of the excluded-file list, so we don't deal with them specially.
+! 	 */
+! 		skipflag = 0;
+! 		for (e = efil; e != NULL; e = e->next)
+! 			if (! strcmp(thisname, e->name))
+! 				skipflag = 1;
+! 		if (skipflag)
+  			continue;
+  
+  	/* build the full pathname of current object */
+***************
+*** 113,118 ****
+--- 126,133 ----
+  
+  	/* reap this file! */
+  		if (dryrun) {
++ 			if (printid)
++ 				print_message_id(fullpath);
+  			printf ("Would unlink %s\n", fullpath);
+  			free (fullpath);
+  			continue;
+***************
+*** 120,125 ****
+--- 135,143 ----
+  		if (verbose)
+  			printf ("Unlinking %s\n", fullpath);
+  
++ 		if (printid)
++ 			print_message_id(fullpath);
++ 
+  		if (unlink (fullpath) == -1)
+  			fprintf (stderr,
+  			    "%s: cannot unlink %s\n", progname, fullpath);
+***************
+*** 131,133 ****
+--- 149,210 ----
+  	closedir (dirp);
+  
+  } /* dodir() */
++ 
++ /* Replacement for index() so we don't have to worry about libraries */
++ char *
++ ind(s, c)
++ char *s, c;
++ {
++ 	while (*s)
++ 		if (*s == c)
++ 			return(s);
++ 		else
++ 			s++;
++ 	return(NULL);
++ }
++ 
++ /*
++  * koreth 11/24/91
++  *
++  * Open an article and scan for the message-ID header line, printing whatever
++  * is between the < and > there.  (And the <>, of course.)
++  */
++ void
++ print_message_id(name)
++ char *name;
++ {
++ 	char	buffer[BUFSIZ], *left, *right;
++ 	int	c;
++ 	FILE	*fp;
++ 
++ 	fp = fopen(name, "r");
++ 	if (fp == NULL)
++ 	{
++ 		perror(name);
++ 		return;
++ 	}
++ 
++ 	while (! feof(fp))
++ 	{
++ 		fgets(buffer, sizeof(buffer), fp);
++ 		if (buffer[0] == '\n' || buffer[0] == '\0')
++ 			break;
++ 
++ 		if (strncmp(buffer, "Message-ID: ", 12))
++ 			continue;
++ 
++ 		if ((left = ind(buffer, '<')) == NULL)
++ 			continue;
++ 		if ((right = ind(left, '>')) == NULL)
++ 			continue;
++ 
++ 		right[1] = '\0';
++ 
++ 		printf("%s\t%s\n", left, name);
++ 		fclose(fp);
++ 		return;
++ 	}
++ 		
++ 	fprintf(stderr, "%s has no Message-ID\n", name);
++ 	fclose(fp);
++ }
+***************
+*** 127,135 ****
+  
+        if (summary) {
+                c = freeblox(device);
+!               printf ("Freespace was %d, now %d.  Cleared %d.\n",
+                    thenfree, c, c - thenfree);
+!               printf ("Stopped after line %d in %s\n", lineno,
+                    scriptfile);
+        }
+  
+--- 127,135 ----
+  
+        if (summary) {
+                c = freeblox(device);
+!               fprintf (stderr, "Freespace was %d, now %d.  Cleared %d.\n",
+                    thenfree, c, c - thenfree);
+!               fprintf (stderr, "Stopped after line %d in %s\n", lineno,
+                    scriptfile);
+        }
+
+
+*** reap.h.ORIG	Mon Nov 25 13:54:30 1991
+--- reap.h	Mon Nov 25 13:54:29 1991
+***************
+*** 45,50 ****
+--- 45,51 ----
+  
+  extern struct filspec
+  		*incl,
++ 		*efil,
+  		*excl
+  ;
+  extern char
+***************
+*** 55,61 ****
+  extern int
+  		verbose,
+  		dryrun,
+! 		optind
+  ;
+  extern char	*optarg;
+  extern double	atof();
+--- 56,63 ----
+  extern int
+  		verbose,
+  		dryrun,
+! 		optind,
+! 		printid
+  ;
+  extern char	*optarg;
+  extern double	atof();
+
