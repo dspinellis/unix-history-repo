@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	8.11 (Berkeley) %G%
+ *	@(#)init_main.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -299,6 +299,7 @@ start_init(p, framep)
 	} */ args;
 	int options, i, error;
 	register_t retval[2];
+	char flags[4] = "-", *flagsp;
 	char **pathp, *path, *ucp, **uap, *arg0, *arg1;
 
 	initproc = p;
@@ -322,31 +323,36 @@ start_init(p, framep)
 
 	for (pathp = &initpaths[0]; (path = *pathp) != NULL; pathp++) {
 		/*
-		 * Move out the boot flag argument.
+		 * Construct the boot flag argument.
 		 */
 		options = 0;
+		flagsp = flags + 1;
 		ucp = (char *)USRSTACK;
-		(void)subyte(--ucp, 0);		/* trailing zero */
 		if (boothowto & RB_SINGLE) {
-			(void)subyte(--ucp, 's');
+			*flagsp++ = 's';
 			options = 1;
 		}
 #ifdef notyet
                 if (boothowto & RB_FASTBOOT) {
-			(void)subyte(--ucp, 'f');
+			*flagsp++ = 'f';
 			options = 1;
 		}
 #endif
-		if (options == 0)
-			(void)subyte(--ucp, '-');
-		(void)subyte(--ucp, '-');		/* leading hyphen */
-		arg1 = ucp;
+		/*
+		 * Move out the flags (arg 1), if necessary.
+		 */
+		if (options != 0) {
+			*flagsp++ = '\0';
+			i = flagsp - flags;
+			(void)copyout((caddr_t)flags, (caddr_t)(ucp -= i), i);
+			arg1 = ucp;
+		}
 
 		/*
 		 * Move out the file name (also arg 0).
 		 */
-		for (i = strlen(path) + 1; i >= 0; i--)
-			(void)subyte(--ucp, path[i]);
+		i = strlen(path) + 1;
+		(void)copyout((caddr_t)path, (caddr_t)(ucp -= i), i);
 		arg0 = ucp;
 
 		/*
@@ -354,7 +360,8 @@ start_init(p, framep)
 		 */
 		uap = (char **)((long)ucp & ~ALIGNBYTES);
 		(void)suword((caddr_t)--uap, 0);	/* terminator */
-		(void)suword((caddr_t)--uap, (long)arg1);
+		if (options != 0)
+			(void)suword((caddr_t)--uap, (long)arg1);
 		(void)suword((caddr_t)--uap, (long)arg0);
 
 		/*
