@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.2 (Berkeley) %G%
+ *	@(#)tm.c	7.3 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -13,7 +13,6 @@
  * TM11/TE10 tape driver
  *
  * TODO:
- *	test driver with more than one slave
  *	test driver with more than one controller
  *	test reset code
  *	what happens if you offline tape during rewind?
@@ -102,6 +101,7 @@ struct	te_softc {
 	daddr_t	sc_blkno;	/* block number, for block device tape */
 	daddr_t	sc_nxrec;	/* position of end of tape, if known */
 	u_short	sc_erreg;	/* copy of last erreg */
+	u_short	sc_ioerreg;	/* copy of last erreg for I/O command */
 	u_short	sc_dsreg;	/* copy of last dsreg */
 	short	sc_resid;	/* copy of last bc */
 #ifdef unneeded
@@ -494,7 +494,7 @@ loop:
 		addr->tmbc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
 			if (um->um_tab.b_errcnt &&
-			    (sc->sc_erreg & (TMER_HARD|TMER_SOFT)) != TMER_BGL)
+			    (sc->sc_ioerreg&(TMER_HARD|TMER_SOFT)) != TMER_BGL)
 				cmd = TM_WIRG;
 			else
 				cmd = TM_WCOM;
@@ -608,6 +608,8 @@ tmintr(tm11)
 	 * An operation completed... record status
 	 */
 	sc->sc_timo = INF;
+	if (um->um_tab.b_active = SIO)
+		sc->sc_ioerreg = addr->tmer;
 	sc->sc_dsreg = addr->tmcs;
 	sc->sc_erreg = addr->tmer;
 	sc->sc_resid = addr->tmbc;
