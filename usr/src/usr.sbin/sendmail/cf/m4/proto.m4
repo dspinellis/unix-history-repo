@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.71 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.72 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -124,13 +124,9 @@ DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
-# class D: dotted names, e.g., root.machinename
 #CL root
 CE root
 undivert(5)dnl
-ifdef(`__DOTTED_USER_LIST__',
-	`__DOTTED_USER_LIST__',
-	`#CD postmaster')
 
 # dequoting map
 Kdequote dequote
@@ -467,13 +463,13 @@ R$* @ $* @ $*		$1 % $2 @ $3			Undo all but the last.
 R$* @ $*		$@ $>96 $1 < @ $2 >		Insert < > and finish
 
 # else we must be a local name
+R$*			$@ $>96 $1
 
 
 ################################################
 ###  Ruleset 96 -- bottom half of ruleset 3  ###
 ################################################
 
-#  At this point, everything should be in a "local_part<@domain>extra" format.
 S96
 
 # handle special cases for local names
@@ -590,7 +586,6 @@ R<$* @ $* > $* < $+ >	$: $3 < $4 >
 ifdef(`_STICKY_LOCAL_DOMAIN_',
 `R$+ < @ $=w . >		$: < $H > $1 < @ $2 . >		first try hub
 R< $+ > $+ < $+ >	$>95 < $1 > $2 < $3 >		yep ....
-R< > $=D . $+ < $+ >	$#_LOCAL_ $: $1 . $2		dotted name?
 R< > $+ + $* < $+ >	$#_LOCAL_ $: $1 + $2		plussed name?
 R< > $+ < $+ >		$#_LOCAL_ $: @ $1			nope, local address',
 `R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
@@ -662,9 +657,9 @@ R$+			$#_LOCAL_ $: $1			regular local names
 
 S5
 
-# if we have a "special dotted user", convert it back to the base name
-R$=D . *		$#_LOCAL_ $: $1
-R$=D . $+		$#_LOCAL_ $: $1 . *
+# deal with plussed users so aliases work nicely
+R$+ + *			$#_LOCAL_ $@ $&h $: $1
+R$+ + $*		$#_LOCAL_ $@ $2 $: $1 + *
 
 # prepend an empty "forward host" on the front
 R$+			$: <> $1
