@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -15,7 +15,9 @@ static char sccsid[] = "@(#)subr.c	8.1 (Berkeley) %G%";
 #include <sys/proc.h>
 #include <sys/time.h>
 #include <sys/ktrace.h>
+
 #include <stdio.h>
+
 #include "ktrace.h"
 
 getpoints(s)
