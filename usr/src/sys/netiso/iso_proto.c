@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_proto.c	7.9 (Berkeley) %G%
+ *	@(#)iso_proto.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -49,6 +49,7 @@ SOFTWARE.
 #include "protosw.h"
 #include "domain.h"
 #include "mbuf.h"
+#include "net/radix.h"
 
 #include "iso.h"
 
@@ -135,15 +136,18 @@ struct protosw isosw[] = {
 
 };
 
-int	iso_init();
 
 struct domain isodomain = {
     AF_ISO, 			/* family */
 	"iso-domain", 		/* name */
-	iso_init,			/* initialize routine */
+	0,					/* initialize routine */
 	0,					/* externalize access rights */
 	0,					/* dispose of internalized rights */
 	isosw,				/* protosw */
-	&isosw[sizeof(isosw)/sizeof(isosw[0])] /* NPROTOSW */
+	&isosw[sizeof(isosw)/sizeof(isosw[0])], /* NPROTOSW */
+	0,					/* next */
+	rn_inithead,		/* rtattach */
+	48,					/* rtoffset */
+	sizeof(struct sockaddr_iso) /* maxkeylen */
 };
 #endif	ISO

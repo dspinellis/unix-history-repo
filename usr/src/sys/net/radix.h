@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.h	7.5 (Berkeley) %G%
+ *	@(#)radix.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -89,4 +89,6 @@ struct radix_node_head {
 #define Bzero(p, n) bzero((caddr_t)(p), (unsigned)(n));
 #define R_Malloc(p, t, n) (p = (t) malloc((unsigned long)(n), M_RTABLE, M_DONTWAIT))
 #define Free(p) free((caddr_t)p, M_RTABLE);
+
+int	rn_inithead __P((void **, int));
 #endif /*KERNEL*/

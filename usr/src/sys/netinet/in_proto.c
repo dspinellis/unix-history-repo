@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.6 (Berkeley) %G%
+ *	@(#)in_proto.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,8 @@
 
 #include "in.h"
 #include "in_systm.h"
+
+#include "net/radix.h"
 
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
@@ -122,7 +124,8 @@ struct protosw inetsw[] = {
 
 struct domain inetdomain =
     { AF_INET, "internet", 0, 0, 0, 
-      inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])] };
+      inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])], 0,
+      rn_inithead, 32, sizeof(struct sockaddr_in) };
 
 #if NIMP > 0
 extern	struct domain impdomain;

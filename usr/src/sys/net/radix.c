@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.14 (Berkeley) %G%
+ *	@(#)radix.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -15,9 +15,17 @@
 #include "radix.h"
 #include "malloc.h"
 #define	M_DONTWAIT M_NOWAIT
+#ifdef	KERNEL
+#include "domain.h"
 #endif
+#endif
+int	max_keylen;
 struct radix_mask *rn_mkfreelist;
 struct radix_node_head *mask_rnhead;
+static int gotOddMasks;
+static char *maskedKey;
+static char *rn_zeros, *rn_ones;
+
 #define rn_maskhead (mask_rnhead->rnh_treetop)
 #undef Bcmp
 #define Bcmp(a, b, l) (l == 0 ? 0 : bcmp((caddr_t)(a), (caddr_t)(b), (u_long)l))
@@ -110,10 +118,6 @@ rn_refines(m, n)
 	return (!masks_are_equal);
 }
 
-
-#define MAXKEYLEN 52
-static int gotOddMasks;
-static char maskedKey[MAXKEYLEN];
 
 struct radix_node *
 rn_match(v, head)
@@ -307,10 +311,10 @@ rn_addmask(netmask, search, skip)
 		if (Bcmp(netmask, x->rn_key, mlen) == 0)
 			return (x);
 	}
-	R_Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
+	R_Malloc(x, struct radix_node *, max_keylen + 2 * sizeof (*x));
 	if (x == 0)
 		return (0);
-	Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
+	Bzero(x, max_keylen + 2 * sizeof (*x));
 	cp = (caddr_t)(x + 2);
 	Bcopy(netmask, cp, mlen);
 	netmask = cp;
@@ -617,25 +621,38 @@ rn_walk(rn, f, w)
 	caddr_t  w;
 {
 	int error;
-	struct radix_node *orn;
+	struct radix_node *base, *next;
+	/*
+	 * This gets complicated because we may delete the node
+	 * while applying the function f to it, so we need to calculate
+	 * the successor node in advance.
+	 */
+	/* First time through node, go left */
+	while (rn->rn_b >= 0)
+		rn = rn->rn_l;
 	for (;;) {
-		while (rn->rn_b >= 0)
-			rn = rn->rn_l;	/* First time through node, go left */
-		for (orn = rn; rn; rn = rn->rn_dupedkey) /* Process Leaves */
+		base = rn;
+		/* If at right child go back up, otherwise, go right */
+		while (rn->rn_p->rn_r == rn && (rn->rn_flags & RNF_ROOT) == 0)
+			rn = rn->rn_p;
+		/* Find the next *leaf* since next node might vanish, too */
+		for (rn = rn->rn_p->rn_r; rn->rn_b >= 0;)
+			rn = rn->rn_l;
+		next = rn;
+		/* Process leaves */
+		while (rn = base) {
+			base = rn->rn_dupedkey;
 			if (!(rn->rn_flags & RNF_ROOT) && (error = (*f)(rn, w)))
 				return (error);
-		for (rn = orn; rn->rn_p->rn_r == rn; ) { /* If at right child */
-			rn = rn->rn_p;		/* go back up */
-			if (rn->rn_flags & RNF_ROOT)
-				return 0;
 		}
-		rn = rn->rn_p->rn_r;		/* otherwhise, go right*/
+		rn = next;
+		if (rn->rn_flags & RNF_ROOT)
+			return (0);
 	}
 }
-char rn_zeros[MAXKEYLEN], rn_ones[MAXKEYLEN];
 
 rn_inithead(head, off)
-	struct radix_node_head **head;
+	void **head;
 	int off;
 {
 	register struct radix_node_head *rnh;
@@ -661,15 +678,31 @@ rn_inithead(head, off)
 	rnh->rnh_match = rn_match;
 	rnh->rnh_walk = rn_walk;
 	rnh->rnh_treetop = t;
-	if (mask_rnhead == 0) {
-		caddr_t cp = rn_ones, cplim = rn_ones + MAXKEYLEN;
-		while (cp < cplim)
-			*cp++ = -1;
-		if (rn_inithead(&mask_rnhead, 0) == 0) {
-			Free(rnh);
-			*head = 0;
-			return (0);
-		}
-	}
 	return (1);
+}
+
+rn_init()
+{
+	char *cp, *cplim;
+#ifdef KERNEL
+	struct domain *dom;
+
+	for (dom = domains; dom; dom = dom->dom_next)
+		if (dom->dom_maxrtkey > max_keylen)
+			max_keylen = dom->dom_maxrtkey;
+#endif
+	if (max_keylen == 0) {
+		printf("rn_init: radix functions require max_keylen be set\n");
+		return;
+	}
+	R_Malloc(rn_zeros, char *, 3 * max_keylen);
+	if (rn_zeros == NULL)
+		panic("rn_init");
+	Bzero(rn_zeros, 3 * max_keylen);
+	rn_ones = cp = rn_zeros + max_keylen;
+	maskedKey = cplim = rn_ones + max_keylen;
+	while (cp < cplim)
+		*cp++ = -1;
+	if (rn_inithead((void **)&mask_rnhead, 0) == 0)
+		panic("rn_init 2");
 }
