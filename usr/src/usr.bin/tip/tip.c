@@ -1,4 +1,4 @@
-/*	tip.c	4.1	81/05/09	*/
+/*	tip.c	4.2	81/05/10	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -91,6 +91,7 @@ char *argv[];
 		printf("link down\n");
 		exit(3);
 	}
+	setbuf(stdout, NULL);
 	loginit();
 	/*
 	 * Now that we have the logfile and the ACU open
