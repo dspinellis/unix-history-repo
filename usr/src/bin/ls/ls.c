@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -245,7 +245,7 @@ doargs(argc, argv)
 	dstats = rstats = NULL;
 	for (dircnt = regcnt = 0; *argv; ++argv) {
 		if (statfcn(*argv, &sb) &&
-		    statfcn == stat && lstat(*argv, &sb)) {
+		    (statfcn == lstat || lstat(*argv, &sb))) {
 			(void)fprintf(stderr,
 			    "ls: %s: %s\n", *argv, strerror(errno));
 			if (errno == ENOENT)
