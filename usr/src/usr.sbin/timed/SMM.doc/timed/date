@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date	6.1 (Berkeley) %G%
+.\"	@(#)date	6.2 (Berkeley) %G%
 .\"
 .ft B
 .TS
@@ -19,6 +19,8 @@ _
 Microseconds of Time to Set
 _
 Machine Name
+_
+\&. . .
 _
 .TE
 .ft R
