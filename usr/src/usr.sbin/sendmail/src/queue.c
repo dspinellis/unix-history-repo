@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.40 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.41 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.40 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.41 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -153,7 +153,7 @@ queueup(e, queueall, announce)
 
 		e->e_df = queuename(e, 'd');
 		e->e_df = newstr(e->e_df);
-		fd = open(e->e_df, O_WRONLY|O_CREAT, FileMode);
+		fd = open(e->e_df, O_WRONLY|O_CREAT|O_TRUNC, FileMode);
 		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
 			syserr("!queueup: cannot create data temp file %s, uid=%d",
 				e->e_df, geteuid());
