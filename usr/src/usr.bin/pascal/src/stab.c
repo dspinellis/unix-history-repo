@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.10 %G%";
+static	char sccsid[] = "@(#)stab.c 1.11 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -29,6 +29,7 @@ static	char sccsid[] = "@(#)stab.c 1.10 %G%";
      *	absolute value: line numbers are negative if error recovery.
      */
 #define	ABS( x )	( x < 0 ? -x : x )
+long checksum();
 
     /*
      *	global variables
@@ -294,7 +295,7 @@ checksum(filename)
 	}
 	check ^= input;
     }
-    fclose(filep);
+    (void) fclose(filep);
     if ((unsigned) check <= N_FLAGCHECKSUM) {
 	return N_FLAGCHECKSUM + 1;
     } else {
