@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -17,11 +17,11 @@ static char sccsid[] = "@(#)init.c	5.2 (Berkeley) %G%";
 #include <sys/file.h>
 #include <ttyent.h>
 #include <syslog.h>
+#include <sys/stat.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	CMDSIZ	70	/* max string length for getty or window command*/
-#define	TABSIZ	100
-#define	ALL	p = &itab[0]; p < &itab[TABSIZ]; p++
+#define	ALL	p = itab; p ; p = p->next
 #define	EVER	;;
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)init.c	5.2 (Berkeley) %G%";
 char	shell[]	= "/bin/sh";
 char	minus[]	= "-";
 char	runc[]	= "/etc/rc";
-char	utmp[]	= "/etc/utmp";
+char	utmpf[]	= "/etc/utmp";
 char	wtmpf[]	= "/usr/adm/wtmp";
 char	ctty[]	= "/dev/console";
 
@@ -46,7 +46,8 @@ struct	tab
 	int	gettycnt;
 	time_t	windtime;
 	int	windcnt;
-} itab[TABSIZ];
+	struct	tab *next;
+} *itab;
 
 int	fi;
 int	mergflag;
@@ -60,6 +61,7 @@ char	*strcpy(), *strcat();
 long	lseek();
 
 struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
+
 
 #ifdef vax
 main()
@@ -119,14 +121,17 @@ int	shutreset();
 shutdown()
 {
 	register i;
-	register struct tab *p;
+	register struct tab *p, *p1;
 
-	close(creat(utmp, 0644));
+	close(creat(utmpf, 0644));
 	signal(SIGHUP, SIG_IGN);
-	for (ALL) {
+	for (p = itab; p ; ) {
 		term(p);
-		p->line[0] = 0;
+		p1 = p->next;
+		free(p);
+		p = p1;
 	}
+	itab = (struct tab *)0;
 	signal(SIGALRM, shutreset);
 	alarm(30);
 	for (i = 0; i < 5; i++)
@@ -246,12 +251,14 @@ multiple()
 {
 	register struct tab *p;
 	register pid;
+	int omask;
 
 	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
 	for (EVER) {
 		pid = wait((int *)0);
 		if (pid == -1)
 			return;
+		omask = sigblock(SIGHUP);
 		for (ALL) {
 			/* must restart window system BEFORE emulator */
 			if (p->wpid == pid || p->wpid == -1)
@@ -264,6 +271,7 @@ multiple()
 				dfork(p);
 			}
 		}
+		sigsetmask(omask);
 	}
 }
 
@@ -280,6 +288,7 @@ merge()
 {
 	register struct tab *p;
 	register struct ttyent *t;
+	register struct tab *p1;
 
 	for (ALL)
 		p->xflag = 0;
@@ -302,37 +311,59 @@ merge()
 			goto contin1;
 		}
 
-		for (ALL) {
-			if (p->line[0] != 0)
-				continue;
-			SCPYN(p->line, t->ty_name);
-			p->xflag |= FOUND|CHANGE;
-			SCPYN(p->comn, t->ty_getty);
-			if (strcmp(t->ty_window, "") != 0) {
-				p->xflag |= WCHANGE;
-				SCPYN(p->wcmd, t->ty_window);
-			}
+		/*
+		 * Make space for a new one
+		 */
+		p1 = (struct tab *)calloc(1, sizeof(*p1));
+		if (!p1) {
+			syslog(LOG_ERR, "no space for '%s' !?!", t->ty_name);
 			goto contin1;
+		}
+		/*
+		 * Put new terminal at the end of the linked list.
+		 */
+		if (itab) {
+			for (p = itab; p->next ; p = p->next)
+				;
+			p->next = p1;
+		} else
+			itab = p1;
+
+		p = p1;
+		SCPYN(p->line, t->ty_name);
+		p->xflag |= FOUND|CHANGE;
+		SCPYN(p->comn, t->ty_getty);
+		if (strcmp(t->ty_window, "") != 0) {
+			p->xflag |= WCHANGE;
+			SCPYN(p->wcmd, t->ty_window);
 		}
 	contin1:
 		;
 	}
 	endttyent();
+	p1 = (struct tab *)0;
 	for (ALL) {
 		if ((p->xflag&FOUND) == 0) {
 			term(p);
-			p->line[0] = 0;
 			wterm(p);
+			if (p1)
+				p1->next = p->next;
+			else
+				itab = p->next;
+			free(p);
+			p = p1 ? p1 : itab;
+		} else {
+			/* window system should be started first */
+			if (p->xflag&WCHANGE) {
+				wterm(p);
+				wstart(p);
+			}
+			if (p->xflag&CHANGE) {
+				term(p);
+				dfork(p);
+			}
 		}
-		/* window system should be started first */
-		if (p->xflag&WCHANGE) {
-			wterm(p);
-			wstart(p);
-		}
-		if (p->xflag&CHANGE) {
-			term(p);
-			dfork(p);
-		}
+		p1 = p;
 	}
 }
 
@@ -393,18 +424,38 @@ rmut(p)
 {
 	register f;
 	int found = 0;
+	static unsigned utmpsize;
+	static struct utmp *utmp;
+	register struct utmp *u;
+	int nutmp;
+	struct stat statbf;
 
-	f = open(utmp, O_RDWR);
+	f = open(utmpf, O_RDWR);
 	if (f >= 0) {
-		while (read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
-			if (SCMPN(wtmp.ut_line, p->line) || wtmp.ut_name[0]==0)
-				continue;
-			lseek(f, -(long)sizeof(wtmp), 1);
-			SCPYN(wtmp.ut_name, "");
-			SCPYN(wtmp.ut_host, "");
-			time(&wtmp.ut_time);
-			write(f, (char *)&wtmp, sizeof(wtmp));
-			found++;
+		fstat(f, &statbf);
+		if (utmpsize < statbf.st_size) {
+			utmpsize = statbf.st_size + 10 * sizeof(struct utmp);
+			if (utmp)
+				utmp = (struct utmp *)realloc(utmp, utmpsize);
+			else
+				utmp = (struct utmp *)malloc(utmpsize);
+			if (!utmp)
+				syslog(LOG_ERR, "utmp malloc failed");
+		}
+		if (statbf.st_size && utmp) {
+			nutmp = read(f, utmp, statbf.st_size);
+			nutmp /= sizeof(struct utmp);
+			for (u = utmp ; u < &utmp[nutmp] ; u++) {
+				if (SCMPN(u->ut_line, p->line) ||
+				    u->ut_name[0]==0)
+					continue;
+				lseek(f, ((long)u)-((long)utmp), L_SET);
+				SCPYN(u->ut_name, "");
+				SCPYN(u->ut_host, "");
+				time(&u->ut_time);
+				write(f, (char *)u, sizeof(*u));
+				found++;
+			}
 		}
 		close(f);
 	}
