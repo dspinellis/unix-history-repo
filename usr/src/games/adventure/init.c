@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1991, 1993 The Regents of the University of California.
+ * Copyright (c) 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * The game adventure was originally written in Fortran by Will Crowther
@@ -9,6 +9,10 @@
  *
  * %sccs.include.redist.c%
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*      Re-coding of advent in C: data initialization                   */
 
