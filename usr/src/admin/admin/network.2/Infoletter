@@ -1,4 +1,5 @@
-.\"     @(#)Infoletter	1.1 (Berkeley) %G%
+.\"     @(#)Infoletter	1.2 (Berkeley) %G%
+.\" use -ms
 .nr PS 11
 .ps 11
 .nr VS 13
@@ -17,78 +18,89 @@ Dear Colleague:
 .sp
 .PP
 We are happy to send you information about our April,
-1991 update to our 1988 freely-redistributable networking release.
-This software is copyright Berkeley, and may be freely redistributed.
+1991 update to our 1988 networking release.
+This software is copyright Berkeley and may be freely redistributed.
 It is available to anyone and requires no previous license, either from
 AT&T or The Regents of the University of California.
 .PP
 This packet is designed to serve two purposes.
-The first purpose is to acquaint you with the details of our distribution
-so you can decide whether you would like to receive it.
+The first is to acquaint you with the details of our distribution
+so you can decide whether you would like to purchase it.
 The second purpose is to tell you how to obtain our distribution.
 .SH
 Distribution contents
 .PP
-The distribution does not contain binaries for any architecture.
-It is a source distribution only.
-The distribution includes source code and manual pages for the C library
-and about 85% of the 4.3BSD-Reno utilities.
-See the attached appendix for an approximate list of
-included and excluded utilities.
+The distribution is a source distribution only, and does
+.B not
+contain binaries for any architecture.
+qIt includes source code and manual pages for the C library
+and approximately three-fourths of the utilities distributed as
+part of 4.3BSD-Reno.
+An approximate list of the included and excluded utilities is provided
+in the attached appendix.
 .PP
-The software includes source code for most of the
-4.3BSD-Reno kernel including machine support for the HP300
+Additionally, the distribution includes source code for most of the
+4.3BSD-Reno kernel, including machine support for the HP300
 (Motorola 68000 based machines)
 and for the PC's built by Compaq and others
 (Intel 386/486 based machines).
-It does not include machine support for the Tahoe or VAX architectures
-found in the standard 4.3BSD and 4.3BSD-Tahoe distributions.
-The kernel source code is not complete for any architecture.
-In particular, the code for executing files, doing physical I/O,
-managing the buffer cache, handling process tracing, and doing accounting
-is not included (as it still contains AT&T proprietary code).
+It does
+.B not
+include machine support for the Tahoe and VAX architectures
+found in the standard BSD distributions.
+The kernel source code is
+.B not
+complete for any architecture.
+Specifically, code for executing files, doing physical I/O,
+managing the buffer cache, handling process tracing and doing accounting
+is not included as it contains AT&T proprietary code.
 .PP
-This release represents an intermediate point in the development
+This distribution represents an intermediate point in the development
 of 4.4BSD; several new facilities have been completed and are ready
 for external use, while other new facilities slated for the 4.4BSD
 release have not yet been integrated.
 The major addition since the 4.3BSD-Reno release is the replacement 
-of the 1979 vintage virtual memory system with the virtual memory
-implementation from Carnegie-Mellon's MACH operating system.
+of the 1979 vintage virtual memory system with a virtual memory
+implementation derived from Carnegie-Mellon's MACH operating system.
 Other major kernel changes include the elimination of all references
-to the user area except for the per-process runtime stack.
-All substructures are referenced via the proc structure.
-The kernel has also been converted to full ANSI C (including prototypes).
+to the user area except for the per-process runtime stack and converting
+to ANSI C (including function prototypes).
 .SH
 Intended audience for this distribution
 .PP
-This distribution is NOT intended to be used on production systems;
-nor is it intended for sites without enough local expertise
-to find and fix any problems that are encountered.
-It is NOT suitable for the home hobbyist that wants BSD on their PC.
+This distribution is
+.B not
+intended to be used on production systems;
+nor is it intended for sites without sufficient expertise
+to find and fix problems that are encountered.
+It is
+.B not
+suitable for the home hobbyist wishing to run BSD on their PC.
 It is intended to be used to provide an advance look at some of the
 facilities and interfaces that we will be distributing in 4.4BSD.
-Our goal in making this release available is to get feedback on any
-problems in the design or implementation of the new facilities.
+Our goal in making this release available is to obtain feedback on
+problems in the design or implementation of these facilities and
+interfaces.
 This distribution will allow adventurous sites to gain experience with the
-new framework and to help us turn it into a complete system as 4.4BSD.
+new framework and to provide input as it evolves into 4.4BSD.
 Because many of the oldest and most stable parts of the
-system have been replaced recently to eliminate AT&T proprietary code,
-this software is not as stable or reliable as earlier BSD distributions.
+system have been replaced to eliminate code proprietary to AT&T,
+this software is not as stable, reliable or well documented as
+traditional BSD distributions.
 Much of the work to be done between now and the 4.4BSD distribution
 is release engineering and documentation.
 .PP
 Only limited support will be provided by our group.
-In particular,
+Specifically,
 we cannot provide help with installation
 of this software on other systems.
-We are interested in getting feedback on the problems that you find 
-and also any compatibility problems that you expect in trying
+We are, or course, interested in getting feedback on the problems that you
+find and also any compatibility problems that you expect in trying
 to convert your applications to run on this release.
-The interfaces in this release will change before the release
+Some of the interfaces in this release will change before the release
 of 4.4BSD (at least in part based on feedback from this test group).
-Thus, you should not expect applications ported to this release
-to work unchanged on 4.4BSD.
+Therefore, you should not depend on applications ported to this release
+working unchanged on 4.4BSD.
 We appreciate your help in this debugging effort and look
 forward to hearing from you.
 Please send your comments to reno43-bugs@vangogh.Berkeley.EDU.
@@ -178,8 +190,15 @@ but adds a security model that was missing in the
 Other additions include POSIX signals, FIFO's, byte-range file locking,
 and saved user and group identifiers.
 .PP
-We have been tracking the POSIX shell and utility work
+We have been tracking the POSIX 1003.2 shell and utility work
 and have included prototypes of many of the proposed utilities.
+Because most of the traditional utilities have been replaced to eliminate
+code proprietary to AT&T, you should realize that the utility software
+not as stable, reliable or well documented as traditional Berkeley
+releases.
+In particular, almost the entire manual suite has been rewritten to
+be freely redistributable and does not correctly reflect, in many
+instances, the current software.
 Most of the libraries and header files have been converted
 to be compliant with ANSI C.
 The compiler default is to require ANSI C;
@@ -187,7 +206,7 @@ the default can be over-ridden by using the \fB-traditional\fP flag.
 Another compiler default is to put strings into the shared text region.
 This change obviates the need for the xstr and mkstr utilities.
 The old behavior of placing strings in data space can be obtained
-by specifying the \fB-Fwritable-strings\fP flag.
+by specifying the \fB-fwritable-strings\fP flag.
 .PP
 Work has also progressed in several other areas.
 Several important enhancements have been added to the TCP/IP
@@ -210,7 +229,7 @@ HP 9000/300 series
 .IP \(bu
 Intel 386/486 based PC with AT-bus peripherals
 .IP \(bu
-Sample drivers for the VAX, but no complete machine support
+Sample drivers for the Tahoe and the VAX, but no complete machine support
 .PP
 The reason that this distribution is not considered an alpha release of 4.4BSD
 is because it does not contain several major interfaces that we 
@@ -228,6 +247,7 @@ This release does include several important structural kernel changes.
 The kernel uses a new internal system call convention:
 .ft C
 .nf
+.ti +5i
 error = (*callp)(proc, args, retval);
 .fi
 .ft P
@@ -236,6 +256,7 @@ Another major change is the introduction
 of a new sleep interface:
 .ft C
 .nf
+.ti +5i
 error = tsleep(wchan, pri|PCATCH, wstring, timeout);
 .fi
 .ft P
@@ -262,7 +283,7 @@ you need to follow the procedure below.
 .PP
 Before the distribution can be sent, we require:
 .IP \(bu
-Execution of the attached Berkeley License Agreement.
+Execution of the included Berkeley License Agreement.
 .IP \(bu
 A check from a U.S. bank for $495.00 US, payable to
 ``The Regents of the University of California.''
@@ -271,8 +292,8 @@ If this is not possible, insert and initial in the body of the Purchase
 Order the following clause: ``The terms and conditions of this Purchase
 Order are not accepted by The Regents of the University of California.
 The Berkeley License Agreement governs.''
-Because we are a research and development organization and not a commercial
-organization, this fee covers only our distribution costs.
+(We are a research and development organization and not a commercial
+organization; this fee covers only our distribution costs.)
 .IP \(bu
 The attached Site Information Form and
 Checklist for Hardware/Software completely filled out and dated.
@@ -343,9 +364,8 @@ and must reject your application if material submitted is not in order.
 If You Have Read Everything and Still Need Help
 .PP
 If you have questions about the licensing process after reading this letter,
-you may call Pauline Schwartz at 415-642-7780, write to her, or contact her
-via electronic mail at bsd-dist@cs.berkeley.edu. or
-uunet!bsd-dist@CS.Berkeley.EDU.
+you may call Pauline Schwartz at 415-642-7780, or contact her via electronic
+mail at bsd-dist@cs.berkeley.edu. or uunet!bsd-dist@cs.berkeley.edu.
 She will not be able to answer technical questions.
 .sp 2
 .ti +2.5i
