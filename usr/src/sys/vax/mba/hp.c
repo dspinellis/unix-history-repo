@@ -1,4 +1,4 @@
-/*	hp.c	3.3	%H%	*/
+/*	hp.c	3.4	%G%	*/
 
 /*
  * RP04/RP06/RM03 disk driver

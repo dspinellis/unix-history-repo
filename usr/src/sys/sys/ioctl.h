@@ -1,4 +1,4 @@
-/*	ioctl.h	3.3	%H%	*/
+/*	ioctl.h	3.4	%G%	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */

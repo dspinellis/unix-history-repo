@@ -1,4 +1,4 @@
-/*	acct.h	3.1	%H%	*/
+/*	acct.h	3.2	%G%	*/
 
 /*
  * Accounting structures

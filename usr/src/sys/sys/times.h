@@ -1,4 +1,4 @@
-/*	times.h	3.1	%H%	*/
+/*	times.h	3.2	%G%	*/
 
 /*
  * Structure returned by times()

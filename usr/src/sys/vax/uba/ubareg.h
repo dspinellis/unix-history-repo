@@ -1,4 +1,4 @@
-/*	ubareg.h	3.2	%H%	*/
+/*	ubareg.h	3.3	%G%	*/
 
 /*
  * Unibus adapter

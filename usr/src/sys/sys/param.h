@@ -1,4 +1,4 @@
-/*	param.h	3.5	%H%	*/
+/*	param.h	3.6	%G%	*/
 
 /*
  * tunable variables

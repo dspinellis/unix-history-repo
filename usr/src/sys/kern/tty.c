@@ -1,4 +1,4 @@
-/*	tty.c	3.7	%H%	*/
+/*	tty.c	3.8	%G%	*/
 
 /*
  * general TTY subroutines

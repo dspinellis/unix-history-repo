@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	3.2	%H%	*/
+/*	ufs_vnops.c	3.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

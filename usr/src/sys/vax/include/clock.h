@@ -1,4 +1,4 @@
-/*	clock.h	3.1	%H%	*/
+/*	clock.h	3.2	%G%	*/
 
 /*
  * VAX clock registers

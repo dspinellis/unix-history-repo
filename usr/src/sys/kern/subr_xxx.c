@@ -1,4 +1,4 @@
-/*	subr_xxx.c	3.1	%H%	*/
+/*	subr_xxx.c	3.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

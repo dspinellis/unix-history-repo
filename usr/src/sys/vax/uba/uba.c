@@ -1,4 +1,4 @@
-/*	uba.c	3.1	%H%	*/
+/*	uba.c	3.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
