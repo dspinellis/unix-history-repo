@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -64,15 +64,16 @@ static long	currentout,			/* current logout value */
 static char	*file = "/usr/adm/wtmp";	/* wtmp file */
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	extern int	optind;
-	extern char	*optarg;
-	int	ch;
-	long	atol();
-	char	*ttyconv();
+	extern int optind;
+	extern char *optarg;
+	int ch;
+	long atol();
+	char *p, *ttyconv();
 
+	maxrec = -1;
 	while ((ch = getopt(argc, argv, "0123456789f:h:t:")) != EOF)
 		switch((char)ch) {
 		case '0': case '1': case '2': case '3': case '4':
@@ -81,8 +82,15 @@ main(argc, argv)
 			 * kludge: last was originally designed to take
 			 * a number after a dash.
 			 */
-			if (!maxrec)
-				maxrec = atol(argv[optind - 1] + 1);
+			if (maxrec == -1) {
+				p = argv[optind - 1];
+				if (p[0] == '-' && p[1] == ch && !p[2])
+					maxrec = atol(++p);
+				else
+					maxrec = atol(argv[optind] + 1);
+				if (!maxrec)
+					exit(0);
+			}
 			break;
 		case 'f':
 			file = optarg;
@@ -161,7 +169,7 @@ wtmp()
 				if (want(bp, NO)) {
 					ct = ctime(&bp->ut_time);
 					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
-					if (maxrec && !--maxrec)
+					if (maxrec != -1 && !--maxrec)
 						return;
 				}
 				continue;
@@ -224,10 +232,10 @@ wtmp()
  */
 static
 want(bp, check)
-	register struct utmp	*bp;
-	int	check;
+	register struct utmp *bp;
+	int check;
 {
-	register ARG	*step;
+	register ARG *step;
 
 	if (check)
 		/*
@@ -266,11 +274,11 @@ want(bp, check)
  */
 static
 addarg(type, arg)
-	int	type;
-	char	*arg;
+	int type;
+	char *arg;
 {
-	register ARG	*cur;
-	char	*malloc();
+	register ARG *cur;
+	char *malloc();
 
 	if (!(cur = (ARG *)malloc((u_int)sizeof(ARG)))) {
 		fputs("last: malloc failure.\n", stderr);
@@ -288,10 +296,10 @@ addarg(type, arg)
  */
 static TTY *
 addtty(ttyname)
-	char	*ttyname;
+	char *ttyname;
 {
-	register TTY	*cur;
-	char	*malloc();
+	register TTY *cur;
+	char *malloc();
 
 	if (!(cur = (TTY *)malloc((u_int)sizeof(TTY)))) {
 		fputs("last: malloc failure.\n", stderr);
@@ -311,12 +319,11 @@ addtty(ttyname)
  */
 static
 hostconv(arg)
-	char	*arg;
+	char *arg;
 {
-	static int	first = 1;
-	static char	*hostdot,
-			name[MAXHOSTNAMELEN];
-	char	*argdot, *index();
+	static int first = 1;
+	static char *hostdot, name[MAXHOSTNAMELEN];
+	char *argdot, *index();
 
 	if (!(argdot = index(arg, '.')))
 		return;
@@ -338,10 +345,9 @@ hostconv(arg)
  */
 static char *
 ttyconv(arg)
-	char	*arg;
+	char *arg;
 {
-	char	*mval,
-		*malloc(), *strcpy();
+	char *mval, *malloc(), *strcpy();
 
 	/*
 	 * kludge -- we assume that all tty's end with
@@ -372,9 +378,9 @@ ttyconv(arg)
  */
 static
 onintr(signo)
-	int	signo;
+	int signo;
 {
-	char	*ct, *ctime();
+	char *ct, *ctime();
 
 	ct = ctime(&buf[0].ut_time);
 	printf("\ninterrupted %10.10s %5.5s \n", ct, ct + 11);
