@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)parser1.c	3.16 %G%";
+static char sccsid[] = "@(#)parser1.c	3.17 %G%";
 #endif
 
 #include "parser.h"
@@ -43,7 +43,7 @@ char flag;
 	case T_IF:
 		return p_if(flag);
 	default:
-		return p_command(flag);
+		return p_expression(flag);
 	}
 }
 
@@ -101,7 +101,7 @@ top:
 	return -1;
 }
 
-p_command(flag)
+p_expression(flag)
 char flag;
 {
 	struct value t;
@@ -109,11 +109,6 @@ char flag;
 	int p_function(), p_assign();
 
 	switch (token) {
-	case T_MOD:
-		t.v_type = V_STR;
-		t.v_str = str_cpy("%");
-		(void) s_gettok();
-		break;
 	case T_NUM:
 		t.v_type = V_NUM;
 		t.v_num = token_num;

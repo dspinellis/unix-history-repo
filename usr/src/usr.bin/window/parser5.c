@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)parser5.c	3.7 %G%";
+static char sccsid[] = "@(#)parser5.c	3.8 %G%";
 #endif
 
 #include "parser.h"
@@ -107,7 +107,6 @@ char flag;
 /*
  * string, number, ( expr )
  * Plus function calls.
- * Also we map % into string.
  *
  * Always return v_type == V_ERR when flag == 0.
  */
@@ -117,13 +116,6 @@ char flag;
 {
 	v->v_type = V_ERR;
 	switch (token) {
-	case T_MOD:
-		if (flag) {
-			v->v_type = V_STR;
-			v->v_str = str_cpy("%");
-		}
-		(void) s_gettok();
-		break;
 	case T_NUM:
 		if (flag) {
 			v->v_type = V_NUM;
@@ -158,7 +150,6 @@ char flag;
 	while (token == T_LP) {
 		char *cmd;
 
-		(void) s_gettok();
 		if (p_convstr(v) < 0)
 			return -1;
 		cmd = v->v_type == V_STR ? v->v_str : 0;
@@ -169,12 +160,6 @@ char flag;
 		}
 		if (cmd)
 			str_free(cmd);
-		if (token != T_RP) {
-			p_synerror();
-			val_free(*v);
-			return -1;
-		}
-		(void) s_gettok();
 	}
 	return 0;
 }

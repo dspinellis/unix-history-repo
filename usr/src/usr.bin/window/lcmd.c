@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd.c	3.22 %G%";
+static char sccsid[] = "@(#)lcmd.c	3.23 %G%";
 #endif
 
 #include "defs.h"
@@ -49,9 +49,7 @@ struct lcmd_arg arg_write[];
 struct lcmd_arg arg_null[] = 0;
 
 struct lcmd_tab lcmd_tab[] = {
-	"%",		1,	l_select,	arg_select,
 	"alias",	1,	l_alias,	arg_alias,
-	"buffer",	2,	l_nline,	arg_nline,
 	"close",	2,	l_close,	arg_close,
 	"cursormodes",	2,	l_cursormodes,	arg_cursormodes,
 	"debug",	1,	l_debug,	arg_debug,
