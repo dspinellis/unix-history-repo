@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vd.4	6.2 (Berkeley) %G%
+.\"	@(#)vd.4	6.3 (Berkeley) %G%
 .\"
 .TH VD 4 ""
 .UC 7
@@ -14,7 +14,7 @@ vd \- VERSAbus storage module controller/drives
 .B "disk dk0 at vd0 drive 0"
 .SH DESCRIPTION
 This is a generic VERSAbus storage module disk driver for the
-Computer Consoles smd and smd-e disk controllers.
+Computer Consoles SMD (VDDC) and SMD-E disk controllers.
 .PP
 Files with minor device numbers 0 through 7 refer to various portions
 of drive 0;
@@ -28,87 +28,52 @@ buffering mechanism and may be read and written without regard to
 physical disk records.  There is also a `raw' interface
 which provides for direct transmission between the disk
 and the user's read or write buffer.
-A single read or write call results in exactly one i/o operation
-and therefore raw i/o is considerably more efficient when
+A single read or write call results in exactly one I/O operation,
+and therefore raw I/O is considerably more efficient when
 many words are transmitted.  The names of the raw files
 conventionally begin with an extra `r.'
 .PP
-In raw i/o counts should be a multiple of 1024 bytes (a disk block).
-Likewise
+In raw I/O counts should be a multiple of 1024 bytes,
+whether the actual sector size is 512 or 1024 bytes.
+Likewise,
 .I seek
 calls should specify a multiple of 1024 bytes.
+.PP
+The first sector of each disk contains a disk label
+containing geometry information and partition layouts (see
+.IR disklabel (5).
+This sector is normally write-protected, and disk-to-disk copies should
+avoid copying this sector.
+The label may be updated with
+.IR disklabel (8),
+which can also be used to write-enable and write-disable the sector.
 .SH "DISK SUPPORT"
-The driver tries to access the last track on each drive
-to determine the type of drive attached.  The driver recognizes
-six different drives: CDC FSD (160 MB), CDC 9766 (300 MB),
-CDC XFSD (340 MB), CDC 515MB, Fujitsu 360 MB, and Fujitsu
-Eagle (440 MB).
-The origin and size of the pseudo-disks on each drive are
-as follows:
+During autoconfiguration,
+as well as when a drive is opened after all partitions are closed,
+the first sector of the drive is examined for a disk label.
+If a label is found, the geometry of the drive and the partition tables
+are taken from it.
+If no label is found,
+The driver checks for a disk label on sector 0 of each drive
+during autoconfiguration.
+If no label is found,
+the driver tries to access the last track on each drive
+to determine the type of drive attached.
+The driver has default partition tables for
+seven different drives: CDC FSD (160 MB), CDC 9766 (300 MB),
+CDC XFSD (340 MB), CDC 515MB, Fujitsu 360 MB, Fujitsu Eagle (440 MB),
+and Maxtor 340Mb.
+If the drive is not recognized, a single small partition is created
+to allow a label to be written.
 .PP
-.nf
-.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u
-FSD 160Mb drive partitions:
-	disk	start	length	   cyl
-	fsd?a	0	9600	  0 - 59
-	fsd?b	9600	12000	 60 - 134
-	fsd?c	21600	109280	135 - 817
-	fsd?d	39840	91040	249 - 817
-	fsd?e	58080	72800	363 - 817
-	fsd?f	76320	54560	477 - 817
-	fsd?g	94560	36320	591 - 817
-	fsd?h	112800	18080	705 - 817
-.PP
-SMD (CDC 9766) 300Mb drive partitions:
-	disk	start	length	   cyl
-	smd?a	0	20064	  0 - 65
-	smd?b	20064	13680	 66 - 110
-	smd?c	33744	214928	111 - 817
-	smd?d	69616	179056	229 - 817
-	smd?e	105488	143184	347 - 817
-	smd?f	141360	107312	465 - 817
-	smd?g	177232	71440	583 - 817
-	smd?h	213104	35568	701 - 817
-.PP
-XFD 340Mb drive partitions:
-	disk	start	length	   cyl
-	xfd?a	0	20352	  0 - 52
-	xfd?b	20352	20352	 53 - 105
-	xfd?c	40704	230400	106 - 705
-	xfd?d	79104	192000	206 - 705
-	xfd?e	117504	153600	306 - 705
-	xfd?f	155904	115200	406 - 705
-	xfd?g	194304	76800	506 - 705
-	xfd?h	232704	38400	606 - 705
-.PP
-FUJ 360Mb drive partitions:
-	disk	start	length	   cyl
-	fuj?a	0	19200	  0 - 59
-	fuj?b	19200	24000	 60 - 134
-	fuj?c	43200	218560	135 - 817
-	fuj?d	79680	182080 	249 - 817
-	fuj?e	116160	145600	363 - 817
-	fuj?f	152640	109120 	477 - 817
-	fuj?g	189120	72640	591 - 817
-	fuj?h	225600	36160	705 - 817
-.PP
-XSD 515Mb drive partitions:
-	disk	start	length	   cyl
-	xsd?a	0	30528	  0 - 52
-	xsd?b	30528	30528	 53 - 105
-	xsd?c	61056	345600	106 - 705
-	xsd?d	118656	288000 	206 - 705
-	xsd?e	176256	230400	306 - 705
-	xsd?f	233856	172800 	406 - 705
-	xsd?g	291456	115200	506 - 705
-	xsd?h	349056	57600	606 - 705
-.fi
-.PP
-It is unwise for all of these partitions to be present in one installation,
-since there is overlap in addresses and protection becomes
-a sticky matter.
-The ?a partition is normally used for the root file system,
-and the ?b partition as a paging area.
+The partition tables in the disk label and the
+.I disktab
+file specify partition offsets and sizes in sectors, which are 512 bytes
+on SMD drives and 1024 bytes on 5 1/4" ESDI drives.
+By convention,
+the ?a partition is normally used for the root file system or other small
+file system,
+and the ?b partition is used as a paging area.
 The ?c partition maps the rest of the pack,
 except the last 5 cylinders which are reserved for bad sector forwarding,
 and diagnostic use.
@@ -117,11 +82,11 @@ and diagnostic use.
 .br
 /dev/rdk[0-7][a-f]	dk raw files
 .SH SEE ALSO
-disktab(5)
+disklabel(5), disklabel(8)
 .SH DIAGNOSTICS
 \fBvd%d: %s controller\fP.
 This message is printed during autoconfiguration to identify
-the type of controller, either ``smd'' or ``smde''.
+the type of controller, either ``VDDC'' or ``SMDE''.
 .PP
 \fBvd%d: init error\fP.
 During autoconfiguration the controller failed to respond to
@@ -149,27 +114,49 @@ For each drive recognized during autoconfiguration the system
 prints a message of this form.  The drive type is displayed
 as well as the geometry: tracks/cylinder, cylinders, and sectors/track.
 .PP
-\fBvd%d: lost interrupt, status %b, error code %x\fP.
+\fBvd%d: lost interrupt\fP.
 The system failed to receive an interrupt from the controller after
-submitting a request.  The error status field of the device control
-block is printed in hexadecimal followed by a symbolic description.
-If this is an smde controller, the error code is also displayed.
+submitting a request.
 The system attempts to abort the current request and simulate an
 interrupt to unwedge the controller.
+During processing of the simulated interrupt, a controller error
+will be reported as described below.
 .PP
 \fBvd%d: stray interrupt\fP.
 The system received an unexpected interrupt; it is ignored.
 .PP
-\fBdk%d%c: hard error sn%d status %b ecode %x\fP.
-An unrecoverable error was encountered.  The sector number reported
-is a physical sector number on the drive.  The error status and code
-are displayed as described previously.  If the drive is write protected,
-``status %b ecode %x'' will not be shown.
+\fBdk%d%c: write locked\fP.
+An attempt was made to write to a drive that is physically write-protected.
 .PP
-\fBdk%d%c: soft error sn%d status %b ecode %x\fP.
-A recoverable error was detected by the controller.  The status and
-error code information will not be shown if the controller indicated
-it corrected the error itself.
+\fBdk%d%c: controller err %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d) status %b ecode %x; resetting controller... retrying\fP.
+.br
+\fBdk%d%c: drive err %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d) status %b ecode %x; resetting drive... retrying\fP.
+An attempted transfer resulted in a controller or drive error.
+The controller or drive is reset, and the transfer is attempted
+a second time.
+.PP
+\fBdk%d%c: hard error %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d)
+status %b ecode %x\fP.
+An unrecoverable error was encountered.  The filesystem block number reported
+is a logical sector number on the indicated partition;
+it is expressed using 1024-byte sectors.
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive
+(in 512- or 1024-byte blocks, as appropriate),
+as well as the cylinder, track and sector number of the block.
+The error status field of the device control
+block is printed in hexadecimal followed by a symbolic description.
+If this is an SMDE controller, the error code is also displayed.
+.PP
+\fBdk%d%c: soft error %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d)
+status %b ecode %x\fP.
+A recoverable error was detected by the controller.
+The fields are interpreted in the same way as those for hard errors.
+.PP
+\fBdk%d%c: soft ecc %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d)\fP.
+A recoverable ECC error was detected and corrected by the controller
+during the indicated transfer.
 .PP
 \fBvd%d: drive %d: couldn't reset\fP.
 The system was unable to reconfigure a drive during a controller reset.
@@ -183,6 +170,7 @@ command.
 Writes
 scribble on the tail of incomplete blocks.
 .PP
-The partition tables for the file systems should be read off of each
-pack, as they are never quite what any single installation would prefer,
-and this would make packs more portable.
+The system should use real disk sector numbers internally,
+instead of assuming 1024-byte sectors;
+errors should report filesystem block numbers using the actual sector size.
+Raw I/O should be permitted on any sector boundary.
