@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	8.3 (Berkeley) %G%
+ *	@(#)fifo.h	8.4 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -27,6 +27,7 @@ int	fifo_write __P((struct vop_write_args *));
 #define fifo_lease_check ((int (*) __P((struct  vop_lease_args *)))nullop)
 int	fifo_ioctl __P((struct vop_ioctl_args *));
 int	fifo_select __P((struct vop_select_args *));
+#define	fifo_revoke vop_revoke
 #define fifo_mmap ((int (*) __P((struct  vop_mmap_args *)))fifo_badop)
 #define fifo_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
 #define fifo_seek ((int (*) __P((struct  vop_seek_args *)))fifo_badop)
