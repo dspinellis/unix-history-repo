@@ -1,4 +1,4 @@
-/*	init_main.c	6.6	84/08/29	*/
+/*	init_main.c	6.7	85/03/03	*/
 
 #include "../machine/pte.h"
 
@@ -87,7 +87,7 @@ main(firstaddr)
 	u.u_rlimit[RLIMIT_STACK].rlim_max = ctob(MAXSSIZ);
 	u.u_rlimit[RLIMIT_DATA].rlim_max =
 	    u.u_rlimit[RLIMIT_DATA].rlim_cur = ctob(MAXDSIZ);
-	p->p_maxrss = RLIM_INFINITY/NBPG;
+	/* p_maxrss is set later, in pageout (process 2) */
 #if defined(QUOTA)
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
@@ -150,11 +150,6 @@ main(firstaddr)
 
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
-
-	/*
-	 * Set the scan rate and other parameters of the paging subsystem.
-	 */
-	setupclock();
 
 	/*
 	 * make init process
