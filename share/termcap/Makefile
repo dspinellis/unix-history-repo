@@ -18,5 +18,7 @@ beforeinstall:
 	     ${DESTDIR}${BINDIR}/misc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/map3270 \
 	     ${DESTDIR}${BINDIR}/misc
+	rm -f ${DESTDIR}/etc/termcap
+        ln -s ${BINDIR}/misc/termcap ${DESTDIR}/etc/termcap
 
 .include <bsd.prog.mk>
