@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.6 (Berkeley) %G%
+ *	@(#)locore.s	7.7 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -1209,9 +1209,9 @@ _proc0paddr:	.long	0
 LF:	.asciz "swtch %x"
 
 .text
- # To be done:
 	.globl _astoff
 _astoff:
+	movl	$0,_astpending
 	ret
 
 #define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
@@ -1311,12 +1311,42 @@ alltraps:
 calltrap:
 	incl	_cnt+V_TRAP
 	call	_trap
+
+	cli
+
+	/* this value may also be used in return_to_user_mode */
+	movl	0x34(%esp),%esi /* previous cs */
+	andl	$3,%esi
+	jz	trap_return
+
+	cmpl	$0,_astpending
+	jnz	do_astflt
+
+	cmpw	$0,_cpl
+	jnz	return_to_user_mode /* in icu.s */
+
+trap_return:
 	pop %es
 	pop %ds
 	popal
 	nop
 	addl	$8,%esp			# pop type, code
 	iret
+
+do_astflt:
+	/* pop off the old trap frame, then create a new one that
+	 * will give trap() another chance
+	 */
+	pop	%es
+	pop	%ds
+	popa
+	addl	$8,%esp
+
+	pushl	$0
+	TRAP (T_ASTFLT)
+	/* NORETURN */
+		
+
 
 #ifdef KGDB
 /*
@@ -1348,6 +1378,15 @@ IDTVEC(syscall)
 	movw	%ax,%ds
 	movw	%ax,%es
 	call	_syscall
+
+	cli
+
+	cmpl	$0,_astpending
+	jnz	syscall_ast
+
+	cmpw	$0,_cpl
+	jnz	syscall_fix_cpl
+
 	movw	__udatasel,%ax	# switch back to user segments
 	movw	%ax,%ds
 	movw	%ax,%es
@@ -1356,6 +1395,56 @@ IDTVEC(syscall)
 	popfl
 	lret
 
+syscall_ast:
+	movw	__udatasel,%ax
+	movw	%ax,%ds
+	movw	%ax,%es
+	popal
+
+	/* convert to trap frame
+	 * stack is now ss, sp, cs,    ip, flags
+	 * we want      ss, sp, flags, cs, ip   
+ 	 * offsets      16  12  8      4   0    
+	 */
+	xchgl	%eax,8(%esp) /* now eax has cs */
+	xchgl	%eax,4(%esp) /* now eax has ip */
+	xchgl	%eax,0(%esp) /* now eax has flags */
+	xchgl	%eax,8(%esp) /* now eax has its original value */
+	pushl $0
+	TRAP (T_ASTFLT)
+	/* NORETURN */
+
+syscall_fix_cpl:
+	movw	__udatasel,%ax
+	movw	%ax,%ds
+	movw	%ax,%es
+	popal
+
+	/* convert to trap frame
+	 * stack is now ss, sp, cs,    ip, flags
+	 * we want      ss, sp, flags, cs, ip   
+ 	 * offsets      16  12  8      4   0    
+	 */
+	xchgl	%eax,8(%esp) /* now eax has cs */
+	xchgl	%eax,4(%esp) /* now eax has ip */
+	xchgl	%eax,0(%esp) /* now eax has flags */
+	xchgl	%eax,8(%esp) /* now eax has its original value */
+	
+	pushl $0
+	pushl $ T_ASTFLT
+
+	pushal
+	nop
+	push %ds
+	push %es
+	movw	$0x10,%ax
+	movw	%ax,%ds
+	movw	%ax,%es
+
+	movl	$1, %esi /* non-zero to indicate return to user mode */
+	jmp	return_to_user_mode /* in icu.s */
+
+	
 ENTRY(htonl)
 ENTRY(ntohl)
 	movl	4(%esp),%eax
