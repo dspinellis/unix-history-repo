@@ -1,4 +1,4 @@
-/*	up.c	4.8	%G%	*/
+/*	up.c	4.9	%G%	*/
 
 #include "up.h"
 #if NUP > 0
@@ -424,7 +424,7 @@ loop:
 			bp->b_flags |= B_ERROR;
 			iodone(bp);
 			/* A funny place to do this ... */
-			ubafree(up_ubinfo), up_ubinfo = 0;
+			UBAFREECLR(up_ubinfo);
 			goto loop;
 		}
 		printf("-- came back\n");
@@ -600,7 +600,7 @@ upintr()
 		}
 		as &= ~(1<<unit);
 		upsoftas &= ~(1<<unit);
-		ubafree(up_ubinfo), up_ubinfo = 0;
+		UBAFREECLR(up_ubinfo);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
@@ -740,7 +740,7 @@ upreset()
 	uptab.b_actf = uptab.b_actl = 0;
 	if (up_ubinfo) {
 		printf("<%d>", (up_ubinfo>>28)&0xf);
-		ubafree(up_ubinfo), up_ubinfo = 0;
+		UBAFREECLR(up_ubinfo);
 	}
 	UPADDR->upcs2 = CLR;		/* clear controller */
 	for (unit = 0; unit < NUP; unit++) {

@@ -1,4 +1,4 @@
-/*	dh.c	4.6	%G%	*/
+/*	dh.c	4.7	%G%	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -482,7 +482,7 @@ dhreset()
 		return;
 	printf(" dh");
 	dhisilo = 0;
-	ubafree(dh_ubinfo);
+	UBAFREECLR(dh_ubinfo);
 	dh_ubinfo = uballoc((caddr_t)cfree, NCLIST*sizeof (struct cblock), 0);
 	cbase = (short)dh_ubinfo;
 	d = 0;
