@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.20 (Berkeley) %G%
+ *	@(#)user.h	7.21 (Berkeley) %G%
  */
 
 #include <machine/pcb.h>
@@ -40,6 +40,7 @@ struct	user {
 	 * not valid at other times!
 	 */
 	struct	kinfo_proc u_kproc;	/* proc + eproc */
+	struct	md_coredump u_md;	/* machine dependent glop */
 };
 
 /*
