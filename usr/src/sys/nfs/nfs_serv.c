@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.31 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -765,11 +765,7 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 		error = EINVAL;
 out:
 	if (!error) {
-		VREF(ndp->ni_cdir);
-		VREF(tond.ni_cdir);
 		error = VOP_RENAME(ndp, &tond);
-		vrele(ndp->ni_cdir);
-		vrele(tond.ni_cdir);
 	} else {
 		VOP_ABORTOP(&tond);
 		if (tdvp == tvp)
