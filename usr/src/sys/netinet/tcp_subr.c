@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	6.7 (Berkeley) %G%
+ *	@(#)tcp_subr.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -56,12 +56,14 @@ tcp_template(tp)
 	register struct mbuf *m;
 	register struct tcpiphdr *n;
 
-	m = m_get(M_WAIT, MT_HEADER);
-	if (m == NULL)
-		return (0);
-	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
-	m->m_len = sizeof (struct tcpiphdr);
-	n = mtod(m, struct tcpiphdr *);
+	if ((n = tp->t_template) == 0) {
+		m = m_get(M_WAIT, MT_HEADER);
+		if (m == NULL)
+			return (0);
+		m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
+		m->m_len = sizeof (struct tcpiphdr);
+		n = mtod(m, struct tcpiphdr *);
+	}
 	n->ti_next = n->ti_prev = 0;
 	n->ti_x1 = 0;
 	n->ti_pr = IPPROTO_TCP;
