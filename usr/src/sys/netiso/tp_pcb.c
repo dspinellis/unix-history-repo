@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.23 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.24 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -656,6 +656,7 @@ tp_attach(so, protocol)
 	tpcb->tp_lref = lref;
 	tpcb->tp_sock =  so;
 	tpcb->tp_domain = dom;
+	tpcb->tp_rhiwat = so->so_rcv.sb_hiwat;
 	/* tpcb->tp_proto = protocol; someday maybe? */
 	if (protocol && protocol<ISOPROTO_TP4) {
 		tpcb->tp_netservice = ISO_CONS;
