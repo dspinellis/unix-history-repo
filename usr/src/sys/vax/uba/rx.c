@@ -1,11 +1,11 @@
-/*	rx.c	4.5	83/03/20	*/
+/*	rx.c	4.6	83/03/23	*/
 
 #include "rx.h"
 #if NFX > 0
 /*
  * RX02 floppy disk device driver
  *
- * WARNING, UNTESTED
+ * -- WARNING, UNTESTED --
  */
 #include "../machine/pte.h"
 
@@ -41,8 +41,10 @@ struct	rx_ctlr {
 	u_short	rxc_rxxt[4];
 #define	RX_MAXTIMEOUT	30	/* # seconds to wait before giving up */
 } rx_ctlr[NFX];
-struct buf	rrxbuf[NFX];	/* buffer for I/O */
-struct buf	erxbuf[NFX];	/* buffer for reading error status */
+
+/* per-drive buffers */
+struct buf	rrxbuf[NRX];	/* buffers for I/O */
+struct buf	erxbuf[NRX];	/* buffers for reading error status */
 
 /* per-drive data */
 struct rx_softc {
@@ -74,6 +76,7 @@ struct uba_driver fxdriver =
 
 int	rxwstart;
 #define	RXUNIT(dev)	(minor(dev)>>3)
+#define MASKREG(reg)	(reg&0xffff)
 
 /* constants related to floppy data capacity */
 #define	RXSECS	2002				/* # sectors on a floppy */
@@ -167,14 +170,12 @@ rxstrategy(bp)
 	um = ui->ui_mi;
 	bp->b_actf = NULL;
 	s = spl5();
-	if (um->um_tab.b_actf->b_actf == NULL)
-		um->um_tab.b_actf->b_actf = bp;
+	if (um->um_tab.b_actf == NULL)
+		um->um_tab.b_actf = bp;
 	else
-		um->um_tab.b_actf->b_actl->b_forw = bp;
-	um->um_tab.b_actf->b_actl = bp;
-	bp = um->um_tab.b_actf;
-	if (!um->um_tab.b_active && bp->b_actf)
-		rxstart(um);
+		um->um_tab.b_actl->b_forw = bp;
+	um->um_tab.b_actl = bp;
+	rxstart(um);
 	splx(s);
 }
 
@@ -209,7 +210,7 @@ rxmap(bp, psector, ptrack)
 	register int lt, ls, ptoff;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
-	ls = bp->b_blkno * (NBPS / DEV_BSIZE);
+	ls = ( bp->b_blkno * DEV_BSIZE ) / NBPS;
 	lt = ls / 26;
 	ls %= 26;
 	/*
@@ -238,7 +239,7 @@ rxstart(um)
 	struct buf *bp;
 	int unit, sector, track;
 
-	if (um->um_tab.b_active || (bp = um->um_tab.b_actf->b_actf) == NULL)
+	if (um->um_tab.b_active || (bp = um->um_tab.b_actf) == NULL)
 		return;
 	um->um_tab.b_active++;
 	unit = RXUNIT(bp->b_dev);
@@ -277,11 +278,10 @@ rxdgo(um)
 {
 	register struct rxdevice *rxaddr = (struct rxdevice *)um->um_addr;
 	int ubinfo = um->um_ubinfo;
-	struct buf *bp = &rrxbuf[um->um_ctlr];
+	struct buf *bp = um->um_tab.b_actf;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 	struct rx_ctlr *rxc = &rx_ctlr[um->um_ctlr];
 
-	bp = um->um_tab.b_actf;
 	sc->sc_tocnt = 0;
 	if (rxc->rxc_state != RXS_RDERR) {
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
@@ -311,9 +311,10 @@ rxintr(dev)
 		return;
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
-	er = &rxerr[um->um_ctlr];
-	bp = um->um_tab.b_actf->b_actf;
-	printf("rxintr: unit=%d, state=0x%x\n", unit, rxc->rxc_state);
+	er = &rxerr[unit];
+	bp = um->um_tab.b_actf;
+	printf("rxintr: unit=%d, state=0x%x, ctrlr status=0x%x\n", 
+		unit, rxc->rxc_state, rxaddr->rxcs);
 	if ((rxaddr->rxcs & RX_ERR) &&
 	    rxc->rxc_state != RXS_RDSTAT && rxc->rxc_state != RXS_RDERR)
 		goto error;
@@ -373,8 +374,11 @@ rxintr(dev)
 		printf("rx%d: hard error, lsn%d (trk %d psec %d) ",
 			unit, bp->b_blkno * (NBPS / DEV_BSIZE),
 			track, sector);
-		printf("cs=%b, db=%b, err=%x\n", er->rxcs, 
-			RXCS_BITS, er->rxdb, RXES_BITS, er->rxxt[0]);
+		printf("cs=%b, db=%b, err=%x\n", MASKREG(er->rxcs), 
+			RXCS_BITS, MASKREG(er->rxdb), RXES_BITS, 
+			MASKREG(er->rxxt[0]));
+		printf("errstatus: 0x%x, 0x%x, 0x%x, 0x%x\n", er->rxxt[0],
+			er->rxxt[1], er->rxxt[2], er->rxxt[3]);
 		goto done;
 
 	default:
@@ -411,9 +415,12 @@ retry:
 	/*
 	 * In case we already have UNIBUS resources, give
 	 * them back since we reallocate things in rxstart.
+	 * Also, the active flag must be reset, otherwise rxstart
+	 * will refuse to restart the transfer
 	 */
 	if (um->um_ubinfo)
 		ubadone(um);
+	um->um_tab.b_active = 0;
 	rxstart(um);
 	return;
 
@@ -451,26 +458,26 @@ rderr:
 	bp->b_un.b_addr = (caddr_t)er->rxxt;
 	bp->b_bcount = sizeof (er->rxxt);
 	bp->b_flags &= ~(B_DIRTY|B_UAREA|B_PHYS|B_PAGET);
-	if (um->um_tab.b_actf->b_actf == NULL)
-		um->um_tab.b_actf->b_actl = bp;
-	bp->b_forw = um->um_tab.b_actf->b_actf;
-	um->um_tab.b_actf->b_actf = bp;
+	if (um->um_tab.b_actf == NULL)
+		um->um_tab.b_actl = bp;
+	bp->b_forw = um->um_tab.b_actf;
+	um->um_tab.b_actf = bp;
 	rxc->rxc_state = RXS_RDERR;
 	um->um_cmd = RX_RDERR;
 	(void) ubago(ui);
 	return;
 done:
 	um->um_tab.b_active = 0;
-	um->um_tab.b_actf->b_actf = bp->b_forw;
+	um->um_tab.b_actf = bp->b_forw;
 	bp->b_resid = 0;
 	iodone(bp);
 	rxc->rxc_state = RXS_IDLE;
 	ubadone(um);
 	/*
-	 * If this unit has more work to do,
+	 * If this unit (controller) has more work to do,
 	 * start it up right away
 	 */
-	if (um->um_tab.b_actf->b_actf)
+	if (um->um_tab.b_actf)
 		rxstart(um);
 }
 
@@ -493,6 +500,7 @@ rxtimo(dev)
 		timeout(rxtimo, (caddr_t)dev, hz);
 	if (++sc->sc_tocnt < RX_MAXTIMEOUT)
 		return;
+	printf("rx: timeout on dev %d\n", dev);
 	rxintr(dev);
 }
 
@@ -603,7 +611,7 @@ rxformat(dev)
 	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
 	int s, error = 0;
 
-	bp = &rrxbuf[ctlr];
+	bp = &rrxbuf[RXUNIT(dev)];
 	s = spl5();
 	while (bp->b_flags & B_BUSY)
 		sleep(bp, PRIBIO);
