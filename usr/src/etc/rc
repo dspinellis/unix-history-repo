@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.14 (Berkeley) %G%
+#	@(#)rc	5.15 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -80,7 +80,7 @@ if [ -d /var/crash ]; then
 fi
 
 			echo -n 'checking quotas:'	>/dev/console
-quotacheck -a -p					>/dev/console 2>&1
+quotacheck -a						>/dev/console 2>&1
 			echo ' done.'			>/dev/console
 quotaon -a						>/dev/console 2>&1
 
