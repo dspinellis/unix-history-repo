@@ -1,0 +1,16 @@
+NAME gs
+OPTION MAP=gs
+FILE gs,gsmain
+FILE ialloc,idebug,idict,iinit,iname
+FILE interp,isave,iscan,iutil,sfilter,stream
+FILE zarith,zarray,zcontrol,zdict
+FILE zfile,zfileio,zfilter,zgeneric,zmath
+FILE zmisc,zpacked,zprops,zrelbit,zstack,zstring,ztype,zvmem
+FILE zchar,zcolor,zfont,zfont1,zfont2,zdevice,zgstate
+FILE zht,zmatrix,zpaint,zpath,zpath2
+FILE gschar,gscolor,gscoord,gsdevice,gsfile
+FILE gsfont,gsimage,gsim2out,gsline,gsmatrix,gsmisc
+FILE gspaint,gspath,gspath2,gsstate,gstdev,gstype1,gsutil
+FILE gxcache,gxclist,gxcolor,gxcpath,gxdither,gxdraw,gxfill
+FILE gxht,gxpath,gxpath2,gxstroke
+FILE gdevmem1,gdevmem2,gdevmem3,gconfig
