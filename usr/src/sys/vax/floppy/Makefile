@@ -1,4 +1,4 @@
-#	Makefile	6.3	85/04/12
+#	Makefile	6.4	85/09/19
 #
 # Make a 780 rx01 floppy
 # 
@@ -8,9 +8,11 @@ DEFBOO=	defboo.hk defboo.hp defboo.ra defboo.up
 DEVBOO=	hkmboo.cmd hksboo.cmd hpmboo.cmd hpsboo.cmd \
 	ramboo.cmd rasboo.cmd upmboo.cmd upsboo.cmd
 UTILS=	format copy drtest
+
 # order is NOT random...
 OBJS=	${BOOTS} ${STDBOO} ${DEVBOO} ${UTILS}
 FROMDEC=du* dm* db* s[mbr]* *boo.* vmb.exe *.hlp cs* ci*
+
 FLOPPY=	/dev/floppy
 #FLOPPY= /dev/rrx0b		# for using RX device
 
@@ -31,6 +33,11 @@ update:	${OBJS}
 	rm -rf fromdec
 	arff rf ${FLOPPY} ${OBJS}
 
+defboo.cmd:
+	@echo You must copy one of \{${DEFBOO}\} to defboo.cmd.
+	@echo See installing and operating guide for details.
+	@/bin/false	#force exits
+
 clean:
-	rm -f ${BOOTS} ${UTILS} floppy
+	rm -f ${BOOTS} ${UTILS} floppy defboo.cmd
 	rm -rf fromdec
