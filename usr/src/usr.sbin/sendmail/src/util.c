@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -382,8 +382,8 @@ buildfname(gecos, login, buf)
 **		uname -- user name to compare against (used for group
 **			sets).
 **		flags -- modifiers:
-**			SF_MUSTOWN -- "uid" must own this file.
-**			SF_NOSLINK -- file cannot be a symbolic link.
+**			SFF_MUSTOWN -- "uid" must own this file.
+**			SFF_NOSLINK -- file cannot be a symbolic link.
 **		mode -- mode bits that must match.
 **
 **	Returns:
@@ -465,8 +465,8 @@ safefile(fn, uid, gid, uname, flags, mode)
 	}
 
 #ifdef HASLSTAT
-	if ((bitset(SF_NOSLINK, flags) ? lstat(fn, &stbuf)
-				       : stat(fn, &stbuf)) < 0)
+	if ((bitset(SFF_NOSLINK, flags) ? lstat(fn, &stbuf)
+					: stat(fn, &stbuf)) < 0)
 #else
 	if (stat(fn, &stbuf) < 0)
 #endif
@@ -481,7 +481,7 @@ safefile(fn, uid, gid, uname, flags, mode)
 	}
 
 #ifdef S_ISLNK
-	if (bitset(SF_NOSLINK, flags) && S_ISLNK(stbuf.st_mode))
+	if (bitset(SFF_NOSLINK, flags) && S_ISLNK(stbuf.st_mode))
 	{
 		if (tTd(54, 4))
 			printf("\t[mode %o]\tEPERM\n");
@@ -517,7 +517,7 @@ safefile(fn, uid, gid, uname, flags, mode)
 		printf("\t[uid %d, stat %o, mode %o] ",
 			stbuf.st_uid, stbuf.st_mode, mode);
 	if ((stbuf.st_uid == uid || stbuf.st_uid == 0 ||
-	     !bitset(SF_MUSTOWN, flags)) &&
+	     !bitset(SFF_MUSTOWN, flags)) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
