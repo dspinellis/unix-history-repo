@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.13 (Berkeley) %G%
+ *	@(#)vnode.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -233,12 +233,13 @@ extern void vattr_null();		/* set attributes to null */
 extern int getnewvnode();		/* allocate a new vnode */
 extern int bdevvp();			/* allocate a new special dev vnode */
 extern struct vnode *checkalias();	/* check for special device aliases */
+extern int vcount();			/* total references to a device */
 extern int vget();			/* get first reference to a vnode */
 extern void vref();			/* increase reference to a vnode */
 extern void vput();			/* unlock and release vnode */
 extern void vrele();			/* release vnode */
-extern void vclean();			/* clean out filesystem data in vnode */
 extern void vgone();			/* completely recycle vnode */
+extern void vgoneall();			/* recycle vnode and all its aliases */
 
 #define VREF(vp)    (vp)->v_count++;	/* increase reference to a vnode */
 
