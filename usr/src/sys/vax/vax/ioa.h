@@ -1,5 +1,5 @@
 /*
- * @(#)ioa.h	7.1 (Berkeley) %G%
+ * @(#)ioa.h	7.2 (Berkeley) %G%
  */
 
 /****************************************************************
@@ -26,10 +26,11 @@
  *								*
  ****************************************************************/
 
-#define	MAXNIOA 4
-#define	NIOA8600 2
-#define IOASIZE 0x2000000
-#define IOAMAPSIZ 512			/* Map one page to get at SBIA regs */
+#if VAX8600
+#define	MAXNIOA		4
+#define	NIOA8600	2
+#define IOASIZE		0x2000000
+#define IOAMAPSIZ 	512		/* Map one page to get at SBIA regs */
 #define	IOA8600(i)	((caddr_t)(0x20080000+IOASIZE*i))
 
 #ifndef LOCORE
@@ -86,3 +87,5 @@ struct ioa ioa[MAXNIOA];
 
 #define IOA_TYPMSK 0xf0
 #define IOA_SBIA	0x10
+
+#endif VAX8600
