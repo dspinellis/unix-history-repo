@@ -1,12 +1,10 @@
-/*	Locore.c	7.1	88/05/21	*/
-
-#include "../tahoe/mtpr.h"
-#include "../tahoe/trap.h"
-#include "../tahoe/psl.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/cp.h"
-#include "../tahoe/mem.h"
-#include "../tahoemath/fp.h"
+/*
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)Locore.c	1.6 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"
@@ -23,7 +21,16 @@
 #include "domain.h"
 #include "map.h"
 
-#include "../tahoe/cpu.h"
+#include "cpu.h"
+#include "mtpr.h"
+#include "trap.h"
+#include "psl.h"
+#include "pte.h"
+#include "scb.h"
+#include "cp.h"
+#include "mem.h"
+
+#include "../tahoemath/fp.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.
@@ -37,28 +44,26 @@ int	masterpaddr;		/* p_addr of current process on master cpu */
 struct	user u;
 int	icode[8];
 int	szicode = sizeof (icode);
-long	catcher[191];
+quad	catcher[SCB_LASTIV];
 /*
  * Variables declared for savecore, or
  * implicitly, such as by config or the loader.
  */
-char	version[] = "4.2 BSD UNIX ....";
+char	version[] = "4.3 BSD UNIX ....";
 int	etext;
-int	end;
 
 doadump() { dumpsys(); }
 
 lowinit()
 {
+#if !defined(GPROF)
 	caddr_t cp;
+#endif
 	extern int dumpmag;
 	extern int rthashsize;
 	extern int arptab_size;
 	extern int dk_ndrive;
 	extern struct domain unixdomain;
-#ifdef PUP
-	extern struct domain pupdomain;
-#endif
 #ifdef INET
 	extern struct domain inetdomain;
 #endif
@@ -73,10 +78,6 @@ lowinit()
 	/* cpp messes these up for lint so put them here */
 	unixdomain.dom_next = domains;
 	domains = &unixdomain;
-#ifdef PUP
-	pupdomain.dom_next = domains;
-	domains = &pupdomain;
-#endif
 #ifdef INET
 	inetdomain.dom_next = domains;
 	domains = &inetdomain;
@@ -135,6 +136,7 @@ lowinit()
 	dumpflag = 0; dumpflag = dumpflag;
 #if !defined(GPROF)
 	cp = (caddr_t)&etext;
+	cp = cp;
 #endif
 }
 
@@ -166,8 +168,8 @@ struct	pte mmap[1];
 char	vmmap[1];
 struct	pte msgbufmap[3*NBPG];
 struct	msgbuf msgbuf;
-struct	pte kmempt[100];
-int	kmembase, kmemlimit;
+struct	pte kmempt[100], ekmempt[1];
+char	kmembase[100*NBPG];
 struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 
@@ -234,7 +236,7 @@ addupc(pc, prof, counts) int pc; struct uprof *prof; int counts; { }
 
 /*ARGSUSED*/
 scanc(size, cp, table, mask)
-    unsigned size; char *cp, table[]; int mask;
+    unsigned size; u_char *cp, table[]; u_char mask;
 { return (0); }
 
 /*ARGSUSED*/

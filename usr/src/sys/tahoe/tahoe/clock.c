@@ -1,13 +1,26 @@
-/*	clock.c	7.1	88/05/21	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)clock.c	1.5 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "time.h"
 #include "kernel.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoe/clock.h"
-#include "../tahoe/cp.h"
+#include "pte.h"
+#include "cpu.h"
+#include "mtpr.h"
+#include "clock.h"
+#include "cp.h"
 
 /*
  * Machine-dependent clock routines.
@@ -46,7 +59,7 @@ startrtclock()
 			uncache(&cnlast->cp_unit);
 		cnlast = 0;
 	}
-	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)&cpclock));
+	mtpr(CPMDCB, kvtophys(&cpclock));
 	for (t = 30000; (cpclock.cp_unit&CPDONE) == 0 && t > 0; t--)
 		uncache(&cpclock.cp_unit);
 }

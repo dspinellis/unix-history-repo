@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982,1987 Regents of the University of California.
+ * Copyright (c) 1982,1987,1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.1 (Berkeley) %G%
+ *	@(#)machdep.c	1.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,14 +28,14 @@
 #include "msgbuf.h"
 #include "quota.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/reg.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/psl.h"
+#include "cpu.h"
+#include "reg.h"
+#include "pte.h"
+#include "psl.h"
+#include "mem.h"
+#include "mtpr.h"
+#include "cp.h"
 
-#include "../tahoe/mem.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoe/cp.h"
 #include "../tahoevba/vbavar.h"
 
 /*
@@ -653,13 +653,11 @@ initcpu()
 	register struct proc *p;
 
 	p = &proc[0];
-#ifndef lint
 #define	initkey(which, p, index) \
     which/**/_cache[index] = 1, which/**/_cnt[index] = 1; \
     p->p_/**/which = index;
 	initkey(ckey, p, MAXCKEY);
 	initkey(dkey, p, MAXDKEY);
-#endif
 }
 
 /*

@@ -1,4 +1,10 @@
-/*	autoconf.c	7.1	88/05/21	*/
+/*
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)autoconf.c	1.18 (Berkeley) %G%
+ */
 
 /*
  * Setup the system to run on the current machine.
@@ -145,7 +151,7 @@ vbafind(vban, vumem, memmap)
 	struct vba_driver *udp;
 	int i, octlr, (**ivec)();
 	caddr_t valloc;
-	extern long catcher[SCB_LASTIV*2];
+	extern quad catcher[SCB_LASTIV];
 
 #ifdef lint
 	br = 0; cvec = 0;
@@ -155,13 +161,13 @@ vbafind(vban, vumem, memmap)
 	 * Make the controllers accessible at physical address phys
 	 * by mapping kernel ptes starting at pte.
 	 */
-	vbaccess(memmap, (caddr_t)VBIOBASE, VBIOSIZE);
+	vbaccess(memmap, (caddr_t)VBIOBASE, (int)VBIOSIZE);
 	printf("vba%d at %x\n", vban, VBIOBASE);
 	/*
 	 * Setup scb device entries to point into catcher array.
 	 */
 	for (i = 0; i < SCB_LASTIV; i++)
-		scb.scb_devint[i] = (int (*)())&catcher[i*2];
+		scb.scb_devint[i] = (int (*)())((int)&catcher[i]);
 	/*
 	 * Set last free interrupt vector for devices with
 	 * programmable interrupt vectors.  Use is to decrement
@@ -183,7 +189,7 @@ vbafind(vban, vumem, memmap)
 #define	VSIZE(s)	(((s) + 0xff) / 0x100)
 #define	VALLOC(a)	(valloc[VSECT(vboff(a))])
 #define	VMAPSIZE	VSIZE(ctob(VBIOSIZE))
-	valloc = (caddr_t)malloc(VMAPSIZE, M_TEMP, M_NOWAIT);
+	valloc = (caddr_t)malloc((u_long)(VMAPSIZE), M_TEMP, M_NOWAIT);
 	if (valloc == (caddr_t)0)
 		panic("no mem for vbafind");
 	bzero(valloc, VMAPSIZE);

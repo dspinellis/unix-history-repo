@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)ns_cksum.c	7.1 (Berkeley) %G%
+ *      @(#)ns_cksum.c	7.2 (Berkeley) %G%
  */
 #include "types.h"
 #include "mbuf.h"
@@ -20,8 +20,8 @@
  * code and should be modified for each CPU to be as fast as possible.
  */
 
-#define ADDCARRY(x)  (x > 65535 ? x -= 65535 : x)
-#define FOLD(x) {l_util.l = x; x = l_util.s[0] + l_util.s[1]; ADDCARRY(x);}
+#define ADDCARRY(x)  { if ((x) > 65535) (x) -= 65535; }
+#define FOLD(x) {l_util.l = (x); (x) = l_util.s[0] + l_util.s[1]; ADDCARRY(x);}
 
 u_short
 ns_cksum(m, len)
