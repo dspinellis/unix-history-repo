@@ -25,6 +25,7 @@ input routines, escape function calling
 #include "ext.h"
 
 char	*sprintf();
+char	*getenv();
 tchar	inchar[LNSIZE], *pinchar = inchar;	/* XXX */
 filep ipl[NSO];
 long	offl[NSO];
@@ -59,6 +60,9 @@ char	**argv;
 	signal(SIGTERM, kcatch);
 	oargc = argc;
 	oargv = argv;
+	if (p = getenv("PRINTER")) strcpy(devname, p);
+	if (p = getenv("TYPESETTER")) strcpy(devname, p);
+	for (nfi = 0, p = nextf; *p; p++) nfi++;
 	init0();
 options:
 	while (--argc > 0 && (++argv)[0][0] == '-')
