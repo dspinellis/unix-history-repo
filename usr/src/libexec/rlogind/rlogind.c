@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.22.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.22.1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -49,12 +49,7 @@ static char sccsid[] = "@(#)rlogind.c	5.22.1.1 (Berkeley) %G%";
 #include <errno.h>
 #include <pwd.h>
 #include <signal.h>
-#ifndef TERMIOS
 #include <sgtty.h>
-#else /* TERMIOS */
-#include <sys/ioctl.h>
-#include <sys/termios.h>
-#endif /* TERMIOS */
 #include <stdio.h>
 #include <netdb.h>
 #include <syslog.h>
@@ -63,24 +58,6 @@ static char sccsid[] = "@(#)rlogind.c	5.22.1.1 (Berkeley) %G%";
 #ifndef TIOCPKT_WINDOW
 #define TIOCPKT_WINDOW 0x80
 #endif
-
-#ifdef	KERBEROS
-#include <sys/param.h>
-#include <kerberos/krb.h>
-#define	SECURE_MESSAGE "This rlogin session is using DES encryption for all transmissions.\r\n"
-
-AUTH_DAT	*kdata;
-KTEXT		ticket;
-u_char		auth_buf[sizeof(AUTH_DAT)];
-u_char		tick_buf[sizeof(KTEXT_ST)];
-Key_schedule	schedule;
-int		encrypt, retval;
-int		do_krb_login();
-
-#define		OLD_RCMD		0x00
-#define		KERB_RCMD		0x01
-#define		KERB_RCMD_MUTUAL	0x02
-#endif	/* KERBEROS */
 
 char	*env[2];
 #define	NMAX 30
@@ -159,29 +136,8 @@ doit(f, fromp)
 
 	alarm(60);
 	read(f, &c, 1);
-
-#ifdef	KERBEROS
-	/*
-	 * XXX 1st char tells us which client we're talking to
-	 */
-	switch (c) {
-
-	case KERB_RCMD:
-		break;
-
-	case KERB_RCMD_MUTUAL:
-		encrypt = 1;
-		break;
-
-
-	case OLD_RCMD:
-	default:
-		fatal(f, "Remote host requires Kerberos authentication");
-	}
-#else
 	if (c != 0)
 		exit(1);
-#endif
 
 	alarm(0);
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
@@ -195,21 +151,11 @@ doit(f, fromp)
 		hp->h_name = inet_ntoa(fromp->sin_addr);
 	}
 
-#ifdef	KERBEROS
-	retval = do_krb_login(hp->h_name, fromp, encrypt);
-	write(f, &c, 1);
-	if (retval == 0)
-		authenticated++;
-	else
-		if (retval > 0)
-			fatal(f, krb_err_txt[retval]);
-#else
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED ||
 	    fromp->sin_port < IPPORT_RESERVED/2)
 		fatal(f, "Permission denied");
 	write(f, "", 1);
-#endif
 #ifndef OLD_LOGIN
 	if (do_rlogin(hp->h_name) == 0)
 		authenticated++;
@@ -260,12 +206,6 @@ gotpty:
 	if (pid < 0)
 		fatalperror(f, "");
 	if (pid == 0) {
-#ifdef TERMIOS
-		if (setsid() < 0)
-			fatalperror(f, "setsid");
-		if (ioctl(t, TIOCSCTTY, 0) < 0)
-			fatalperror(f, "ioctl(sctty)");
-#endif /* TERMIOS */
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
@@ -284,17 +224,7 @@ gotpty:
 	}
 	close(t);
 
-#ifdef	KERBEROS
-	/*
-	 * If encrypted, don't turn on NBIO or the des read/write
-	 * routines will croak.
-	 */
-
-	if (encrypt)
-		(void) des_write(f, SECURE_MESSAGE, sizeof(SECURE_MESSAGE));
-	else
-#endif
-		ioctl(f, FIONBIO, &on);
+	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
 	ioctl(p, TIOCPKT, &on);
 	signal(SIGTSTP, SIG_IGN);
@@ -395,12 +325,7 @@ protocol(f, p)
 			}
 		}
 		if (ibits & fmask) {
-#ifdef	KERBEROS
-			if (encrypt)
-				fcc = des_read(f, fibuf, sizeof(fibuf));
-			else
-#endif
-				fcc = read(f, fibuf, sizeof(fibuf));
+			fcc = read(f, fibuf, sizeof(fibuf));
 			if (fcc < 0 && errno == EWOULDBLOCK)
 				fcc = 0;
 			else {
@@ -446,10 +371,7 @@ protocol(f, p)
 				break;
 			else if (pibuf[0] == 0) {
 				pbp++, pcc--;
-#ifdef	KERBEROS
-				if (!encrypt)
-#endif
-					obits |= fmask;	/* try a write */
+				obits |= fmask;	/* try a write */
 			} else {
 				if (pkcontrol(pibuf[0])) {
 					pibuf[0] |= oobdata[0];
@@ -459,12 +381,7 @@ protocol(f, p)
 			}
 		}
 		if ((obits & fmask) && pcc > 0) {
-#ifdef	KERBEROS
-			if (encrypt)
-				cc = des_write(f, pbp, pcc);
-			else
-#endif
-				cc = write(f, pbp, pcc);
+			cc = write(f, pbp, pcc);
 			if (cc < 0 && errno == EWOULDBLOCK) {
 				/* also shouldn't happen */
 				sleep(5);
@@ -557,33 +474,6 @@ getstr(buf, cnt, errmsg)
 
 extern	char **environ;
 
-#ifdef TERMIOS
-setup_term(fd)
-	int fd;
-{
-	struct termios tt;
-	register char *cp = index(term+ENVSIZE, '/');
-	char *speed;
-
-	tcgetattr(fd, &tt);
-	if (cp) {
-		*cp++ = '\0';
-		speed = cp;
-		cp = index(speed, '/');
-		if (cp)
-			*cp++ = '\0';
-		cfsetspeed(&tt, atoi(speed));
-	}
-	tt.c_iflag = BRKINT|ICRNL|IXON|ISTRIP|IEXTEN|IMAXBEL;
-	tt.c_oflag = OPOST|ONLCR|OXTABS;
-	tt.c_lflag = ISIG|ICANON|ECHO;
-	tcsetattr(fd, TCSADFLUSH, &tt);
-
-	env[0] = term;
-	env[1] = 0;
-	environ = env;
-}
-#else /* TERMIOS */
 char *speeds[] = {
 	"0", "50", "75", "110", "134", "150", "200", "300", "600",
 	"1200", "1800", "2400", "4800", "9600", "19200", "38400",
@@ -617,73 +507,4 @@ setup_term(fd)
 	env[1] = 0;
 	environ = env;
 }
-#endif /* TERMIOS */
 #endif /* OLD_LOGIN */
-
-#ifdef	KERBEROS
-#define	VERSION_SIZE	9
-
-/*
- * Do the remote kerberos login to the named host with the
- * given inet address
- *
- * Return 0 on valid authorization
- * Return -1 on valid authentication, no authorization
- * Return >0 for error conditions
- */
-do_krb_login(host, dest, encrypt)
-	char *host;
-	struct sockaddr_in *dest;
-	int encrypt;
-{
-	int rc;
-	char instance[INST_SZ], version[VERSION_SIZE];
-	long authopts = 0L;	/* !mutual */
-	struct sockaddr_in faddr;
-
-	if (getuid())
-		return(KFAILURE);
-
-	kdata = (AUTH_DAT *) auth_buf;
-	ticket = (KTEXT) tick_buf;
-	strcpy(instance, "*");
-
-	if (encrypt) {
-		rc = sizeof(faddr);
-		if (getsockname(0, &faddr, &rc))
-			return(-1);
-		authopts = KOPT_DO_MUTUAL;
-		rc = krb_recvauth(
-			authopts, 0,
-			ticket, "rcmd",
-			instance, dest, &faddr,
-			kdata, "", schedule, version);
-		 des_set_key(kdata->session, schedule);
-
-	} else {
-		rc = krb_recvauth(
-			authopts, 0,
-			ticket, "rcmd",
-			instance, dest, (struct sockaddr_in *) 0,
-			kdata, "", (bit_64 *) 0, version);
-	}
-
-	if (rc != KSUCCESS)
-		return(rc);
-
-	if ((rc = krb_kntoln(kdata, rusername)) != KSUCCESS)
-		return(rc);
-
-	getstr(lusername, sizeof(lusername), "locuser");
-	/* get the "cmd" in the rcmd protocol */
-	getstr(term+ENVSIZE, sizeof(term)-ENVSIZE, "Terminal type");
-
-	pwd = getpwnam(lusername);
-	if (pwd == NULL)
-		return(-1);
-
-	/* XXX need to use something other than ruserok */
-	/* returns -1 for invalid authentication */
-	return(ruserok(host, SUPERUSER(pwd), rusername, lusername));
-}
-#endif /* KERBEROS */
