@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.50 (Berkeley) %G%
+#	@(#)Makefile.inc	5.51 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
