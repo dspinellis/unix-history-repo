@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)quit.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -240,8 +240,8 @@ quit()
 			c = getc(ibuf);
 		}
 		Fclose(ibuf);
-		fflush(obuf);
 	}
+	fflush(obuf);
 	trunc(obuf);
 	if (ferror(obuf)) {
 		perror(mbox);
