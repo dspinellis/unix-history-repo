@@ -1,0 +1,84 @@
+!<arch>
+Iopenpdb        418697949   968   27    100644  0         `
+Oopenpdb        418871194   968   27    100644  240       `
+1
+2
+1
+3
+./Iopenpdb_temp temporary database exists
+Topenpdb: ./Iopenpdb temporarily unavailable
+./Iopenpdb_temp temporary database does not exist
+2
+Topenpdb: ./Iopenpdb temporarily unavailable
+24
+Topenpdb: ./Iopenpdb temporarily unavailable
+Topenpdb.c      418697955   968   27    100644  1735      `
+/*
+ * errpdb()
+ * openpdb()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+#include "system.h"
+#include "yesno.h"
+
+char *PGN = "Topenpdb";			/* program name */
+char *pdbfile = "Iopenpdb";		/* database */
+
+main()
+{
+	char *strcpy();			/* string copy */
+	char tempfile[PATHSIZE];	/* temporary database pathname */
+	int errpdb();			/* print database error message */
+	PDB *openpdb();			/* open database */
+	PDB *pdbp1;			/* database stream */
+	PDB *pdbp2;			/* database stream */
+	PDB *pdbp3;			/* database stream */
+
+	/* open for reading */
+	if ((pdbp1 = openpdb(pdbfile, ".", "r")) == NULL)
+		errpdb(NULL);
+	printf("%o\n", pdbp1->flag);
+	pdbp2 = openpdb(pdbfile, ".", "w");
+	printf("%o\n", pdbp2->flag);
+	pdbp3 = openpdb(pdbfile, ".", "r");
+	printf("%o\n", pdbp3->flag);
+	closepdb(pdbp1);
+	closepdb(pdbp2);
+	closepdb(pdbp3);
+
+	/* open for updating */
+	if ((pdbp1 = openpdb(pdbfile, ".", "rw")) == NULL)
+		errpdb(NULL);
+	printf("%o\n", pdbp1->flag);
+	strcpy(tempfile, pdbp1->tpath);
+	if (FILEXIST(tempfile) == YES)
+		printf("%s temporary database exists\n", tempfile);
+	fflush(stdout);
+	if ((pdbp2 = openpdb(pdbfile, ".", "rw")) == NULL)
+		errpdb(NULL);
+	closepdb(pdbp1);
+	if (FILEXIST(tempfile) == NO)
+		printf("%s temporary database does not exist\n", tempfile);
+
+	/* open for writing */
+	if ((pdbp1 = openpdb(pdbfile, ".", "w")) == NULL)
+		errpdb(NULL);
+	printf("%o\n", pdbp1->flag);
+	fflush(stdout);
+	if ((pdbp2 = openpdb(pdbfile, ".", "w")) == NULL)
+		errpdb(NULL);
+	closepdb(pdbp1);
+
+	/* open for appending */
+	if ((pdbp1 = openpdb(pdbfile, ".", "a")) == NULL)
+		errpdb(NULL);
+	printf("%o\n", pdbp1->flag);
+	fflush(stdout);
+	if ((pdbp2 = openpdb(pdbfile, ".", "w")) == NULL)
+		errpdb(NULL);
+	closepdb(pdbp1);
+	exit(0);
+}
+

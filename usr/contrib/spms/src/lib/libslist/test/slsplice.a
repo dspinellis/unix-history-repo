@@ -1,0 +1,94 @@
+!<arch>
+Islsplice       418431557   968   27    100644  12        `
+aaa
+bbb
+ccc
+Oslsplice       418431557   968   27    100644  118       `
+aaa	bbb	ccc
+aaa	bbb	ccc
+aaa	bbb	ccc	aaa	bbb	ccc
+aaa	bbb	ccc
+empty list
+aaa	bbb	ccc
+empty list
+aaa	bbb	ccc
+aaa	bbb	ccc
+Tslsplice.c     418431557   968   27    100644  1458      `
+/*
+ * slsplice()
+ */
+#include <stdio.h>
+#include "slist.h"
+#include "yesno.h"
+
+#define KEYSIZE 10
+
+char *PGN = "Tslsplice";
+
+main()
+{
+	char key[KEYSIZE];		/* key to be added */
+	char *gets();			/* get a line from stdin */
+	char *slappend();		/* append key */
+	SLIST *slinit();		/* initialize list */
+	SLIST *slist1;			/* pointer to list head block */
+	SLIST *slist2;			/* pointer to list head block */
+	void print();			/* print list */
+	void slrm();			/* remove list item */
+	void slsplice();		/* splice two lists */
+
+	/* both lists not empty */
+	slist1 = slinit();
+	slist2 = slinit();
+	while (gets(key) != NULL)
+		{
+		slappend(key, slist1);
+		slappend(key, slist2);
+		}
+	print(slist1);
+	print(slist2);
+	slsplice(slist1, slist2);
+	print(slist1);
+	slrm(NULL, slist1);
+	slrm(NULL, slist2);
+
+	/* one list empty */
+	rewind(stdin);
+	slist1 = slinit();
+	slist2 = slinit();
+	while (gets(key) != NULL)
+		slappend(key, slist1);
+	print(slist1);
+	print(slist2);
+	slsplice(slist1, slist2);
+	print(slist1);
+	slrm(NULL, slist1);
+	slrm(NULL, slist2);
+
+	/* the other list empty */
+	rewind(stdin);
+	slist1 = slinit();
+	slist2 = slinit();
+	while (gets(key) != NULL)
+		slappend(key, slist2);
+	print(slist1);
+	print(slist2);
+	slsplice(slist1, slist2);
+	print(slist1);
+
+	exit(0);
+}
+
+
+
+void
+print(slist)
+	SLIST *slist;			/* list to be printed */
+{
+	void slprint();			/* print list */
+
+	if (SLNUM(slist) > 0)
+		slprint(10, 8, YES, stdout, slist);
+	else
+		printf("empty list\n");
+}

@@ -1,0 +1,40 @@
+!<arch>
+Igetwd          418696307   968   27    100644  41        `
+/
+/usr/man/man1
+/usr/man
+../lib
+..
+..
+..
+
+Ogetwd          418696307   968   27    100644  43        `
+/
+/usr/man/man1
+/usr/man
+/usr/lib
+/usr
+/
+/
+
+Tgetwd.c        418696309   968   27    100644  336       `
+/*
+ * getwd()
+ */
+#include "null.h"
+#include "path.h"
+
+main()
+{
+	char *gets();			/* get a line from stdin */
+	char *getwd();			/* get current working directory */
+	char pathname[PATHSIZE];	/* destination directory */
+
+	while (gets(pathname) != NULL)
+		{
+		chdir(pathname);
+		getwd(pathname);
+		printf("%s\n", pathname);
+		}
+	exit(0);
+}

@@ -1,0 +1,22 @@
+!<arch>
+Ipperror        418696412   968   27    100644  0         `
+Opperror        418696412   968   27    100644  45        `
+Tpperror: UNKNOWN: No such file or directory
+
+Tpperror.c      418696414   968   27    100644  240       `
+/*
+ * pperror()
+ */
+#include <stdio.h>
+
+char *PGN = "Tpperror";			/* program name */
+
+main()
+{
+	FILE *fopen();			/* open a file */
+	FILE *fp;			/* file stream */
+
+	if ((fp = fopen("UNKNOWN", "r")) == NULL)
+		pperror("UNKNOWN");
+	exit(0);
+}

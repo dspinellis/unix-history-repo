@@ -1,0 +1,73 @@
+!<arch>
+Islsprepend     418431568   968   27    100644  179       `
+10th The
+1st Software
+2nd Project
+3rd Management
+4th System
+5th (SPMS)
+6th is
+7th a
+8th system
+9th for
+aaa management
+Aaa of
+BBB medium
+bbb to
+Bbb large
+bbb/ software
+bb/ systems
+
+Oslsprepend     418431568   968   27    100644  202       `
+bb/ systems
+bbb/ software
+Bbb large
+bbb to
+BBB medium
+Aaa of
+aaa management
+9th for
+8th system
+7th a
+6th is
+5th (SPMS)
+4th System
+3rd Management
+2nd Project
+1st Software
+10th The
+maxkey = 4
+maxstr = 10
+Tslsprepend.c   418431568   968   27    100644  771       `
+/*
+ * slsinit()
+ * slsprepend()
+ */
+#include <stdio.h>
+#include "null.h"
+#include "slslist.h"
+
+#define KEYSIZE 10
+#define STRSIZE 128
+
+char *PGN = "Tslsprepend";
+
+main()
+{
+	char key[KEYSIZE];		/* key to be added */
+	char *slsprepend();		/* prepend key+string */
+	char string[STRSIZE];		/* string to be added */
+	SLSBLK *curblk;			/* current list block */
+	SLSLIST *slsinit();		/* initialize list */
+	SLSLIST *slslist;		/* pointer to list head block */
+
+	slslist = slsinit();
+	while (scanf("%s%s", key, string) != EOF)
+		slsprepend(key, string, slslist);
+	for (curblk = slslist->head; curblk != NULL; curblk = curblk->next)
+		printf("%s %s\n", curblk->key, curblk->string);
+	printf("maxkey = %d\n", slslist->maxkey);
+	printf("maxstr = %d\n", slslist->maxstr);
+	exit(0);
+}
+
