@@ -2,48 +2,105 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)conf.c	1.7	%G%";
-# include <whoami.h>
-
 /*
 **  CONF.C -- Delivermail Configuration Tables.
 **
 **	Defines the configuration of this installation.
 **
-**	The first table describes available mailers.  This is
-**	just a list of argument vectors, with the following
-**	codes embedded:
-**		$u -- insert the user name.
-**		$h -- insert the host name.
-**		$f -- insert the from person name.
-**		$c -- insert the hop count.
-**	This stuff is interpreted in buildmail.  There are two
-**	important conventions here: entry zero must be the
-**	local mailer & entry one must be the shell.
+**	Compilation Flags:
+**		HASARPA -- set if this machine has a connection to
+**			the Arpanet.
+**		HASUUCP -- set if this machine has a connection to
+**			the UUCP network.
+**		NETV6MAIL -- set if you want to use "v6mail" that
+**			comes with the Berkeley network.  Normally
+**			/bin/mail will work fine, but around Berkeley
+**			we use v6mail because it is a "fixed target".
+**		V6 -- running on a version 6 system.  This determines
+**			whether to define certain routines between
+**			the two systems.  If you are running a funny
+**			system, e.g., V6 with long tty names, this
+**			should be checked carefully.
 **
-**	The second table gives a list of special characters.  This
-**	table is scanned linearly by parse() until an entry is
-**	found using one of the magic characters.  Other fields
-**	give more information on how to handle it.
-**
-**	Defined Constants:
-**		M_* -- indices into Mailer, used only in this module.
-**
-**	Defines:
-**		Mailer -- the mailer descriptor table.
-**		ParseTab -- the parse table.
-**
-**	Notes:
-**		Ingres 11/70 version.
-**
-**	History:
-**		3/5/80 -- Generalized to use <whoami.h>.
-**		12/26/79 -- written for Ingres 11/70.
+**	Configuration Variables:
+**		ArpaHost -- the name of the host through which arpanet
+**			mail will be sent.
+**		MyLocName -- the name of the host on a local network.
+**			This is used to disambiguate the contents of
+**			ArpaHost among many hosts who may be sharing
+**			a gateway.
+**		Mailer -- a table of mailers known to the system.
+**			The fields are:
+**			- the pathname of the mailer.
+**			- a list of flags describing the properties
+**			  of this mailer:
+**			   M_FOPT -- if set, the mailer has a picky "-f"
+**				option.  In this mode, the mailer will
+**				only accept the "-f" option if the
+**				sender is actually "root", "network",
+**				and possibly (but not necessarily) if
+**				the -f argument matches the real sender.
+**				The effect is that if the "-f" option
+**				is given to delivermail then it will be
+**				passed through (as arguments 1 & 2) to
+**				the mailer.
+**			   M_ROPT -- identical to M_FOPT, except uses
+**				-r instead.
+**			   M_QUIET -- if set, don't print a message if
+**				the mailer returns bad status.
+**			   M_RESTR -- if set, this mailer is restricted
+**				to use by "daemon"; otherwise, we do a
+**				setuid(getuid()) before calling the
+**				mailer.
+**			   M_HDR -- if set, the mailer wants us to
+**				insert a UNIX "From" line before
+**				outputing.
+**			   M_NOHOST -- if set, this mailer doesn't care
+**				about the host part (e.g., the local
+**				mailer).
+**			   M_STRIPQ -- if set, strip quote (`"')
+**				characters out of parameters as you
+**				transliterate them into the argument
+**				vector.  For example, the local mailer
+**				is called directly, so these should be
+**				stripped, but the program-mailer (i.e.,
+**				csh) should leave them in.
+**			- an exit status to use as the code for the
+**			  error message print if the mailer returns
+**			  something we don't understand.
+**			- A list of names that are to be considered
+**			  "local" (and hence are stripped off) for
+**			  this mailer.
+**			- An argument vector to be passed to the
+**			  mailer with the following substitutions:
+**			   $f - the from person name.
+**			   $u - the target user name.
+**			   $h - the target user host.
+**			   $c - the hop count.
+**			>>>>>>>>>> Entry zero must be for the local
+**			>> NOTE >> mailer and entry one must be for
+**			>>>>>>>>>> the shell.
+**		ParseTab -- a table driving the parsing process.  Each
+**			entry contains:
+**			- a character that will trigger this entry.
+**			- an index into the Mailer table.
+**			- a word of flags, described in dlvrmail.h.
+**			- an argument.  If we have P_MAP, it is the
+**			  character to turn the trigger character into.
+**			  If we have P_MOVE, it is the site to send it
+**			  to, using the mailer specified above.
 */
 
 
 
 
+static char SccsId[] = "@(#)conf.c	1.8	%G%";
+
+
+char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
+bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
+
+# include <whoami.h>		/* definitions of machine id's at berkeley */
 
 # ifdef ING70
 static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
