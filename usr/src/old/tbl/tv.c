@@ -1,4 +1,4 @@
-/*	tv.c	4.1	83/02/12	*/
+/*	tv.c	4.2	83/02/12	*/
 
  /* tv.c: draw vertical lines */
 # include "t..c"
@@ -135,6 +135,7 @@ barent(s)
 	char *s;
 {
 if (s==0) return (1);
+if (!point(s)) return(1);
 if (s[0]== '\\') s++;
 if (s[1]!= 0)
 	return(0);
