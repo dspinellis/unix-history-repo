@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.17 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -137,6 +137,22 @@ union_lookup(ap)
 	int rdonly = cnp->cn_flags & RDONLY;
 	struct union_mount *um = MOUNTTOUNIONMOUNT(dvp->v_mount);
 	struct ucred *saved_cred;
+
+#ifdef notyet
+	if (cnp->cn_namelen == 3 &&
+			cnp->cn_nameptr[2] == '.' &&
+			cnp->cn_nameptr[1] == '.' &&
+			cnp->cn_nameptr[0] == '.') {
+		dvp = *ap->a_vpp = LOWERVP(ap->a_dvp);
+		if (dvp == NULLVP)
+			return (ENOENT);
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		if (!lockparent || !(cnp->cn_flags & ISLASTCN))
+			VOP_UNLOCK(ap->a_dvp);
+		return (0);
+	}
+#endif
 
 	cnp->cn_flags |= LOCKPARENT;
 
