@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.21	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.22	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1585,6 +1585,17 @@ kC|h29|heath-29|z29|zenith-29:\
 	:kb=^H:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\EH:kn#1:k0=\E~:l0=HOME:\
 	:k1=\ES:k2=\ET:k3=\EU:k4=\EV:k5=\EW:k6=\EP:k7=\EQ:k8=\ER:k9=\E01:\
 	:es:hs:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:us=\Es8:ue=\Es0:
+#the z29-e entry sucks...but it works with emacs
+kD|z29-e|zenith 29 hacked for emacs:\
+	:ip=1.5:ks=\Et:ke=\Eu:vs@:ve@:cr=^M:nl=^J:bl=^G:al=1*\EL:am:le=^H:\
+	:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:dc=\EN:dl=1*\EM:\
+	:do=\EB:ho=\EH:li#24:nd=\EC:as=\EF:ae=\EG:ms:\
+	:ta=^I:pt:sr=\EI:se=\Eq:so=\Ep:up=\EA:vs=\Ex4:ve=\Ey4:kb=^h:\
+	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\EH:kn#8:k1=\ES:k2=\ET:k3=\EU:\
+	:k4=\EV:k5=\EW:l6=blue:l7=red:l8=white:k6=\EP:k7=\EQ:k8=\ER:es:hs:\
+	:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:
+kp|p19:\
+	:al=2*\EL:dl=2*\EM:tc=h19-b:
 kU|h19-us|h19us|heathkit w/keypad shifted/underscore cursor:\
 	:ks=\Et:ke=\Eu:tc=h19-u:
 kb|h19|heath|h19-b|h19b|heathkit|heath-19|z19|zenith|heathkit h19:\
