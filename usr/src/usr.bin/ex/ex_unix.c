@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_unix.c	7.5 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_unix.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -329,10 +329,13 @@ recover()
  */
 waitfor()
 {
+	int stat = 0;
 
-	do
-		rpid = wait(&status);
-	while (rpid != pid && rpid != -1);
+	do {
+		rpid = wait(&stat);
+		if (rpid == pid)
+			status = stat;
+	} while (rpid != -1);
 	status = (status >> 8) & 0377;
 }
 
