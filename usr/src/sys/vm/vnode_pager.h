@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.h	7.1 (Berkeley) %G%
+ *	@(#)vnode_pager.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_VNODE_PAGER_
@@ -29,24 +29,5 @@ typedef struct vnpager	*vn_pager_t;
 
 #define	VNP_PAGING	0x01		/* vnode used for pageout */
 #define VNP_CACHED	0x02		/* vnode is cached */
-
-#ifdef KERNEL
-
-void		vnode_pager_init();
-vm_pager_t	vnode_pager_alloc();
-void		vnode_pager_dealloc();
-int		vnode_pager_getpage(), vnode_pager_putpage();
-boolean_t	vnode_pager_haspage();
-
-struct pagerops vnodepagerops = {
-	vnode_pager_init,
-	vnode_pager_alloc,
-	vnode_pager_dealloc,
-	vnode_pager_getpage,
-	vnode_pager_putpage,
-	vnode_pager_haspage
-};
-
-#endif
 
 #endif	/* _VNODE_PAGER_ */
