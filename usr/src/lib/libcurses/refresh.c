@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.7
+ * %G% (Berkeley) @(#)refresh.c	1.8
  */
 
 # include	"curses.ext"
@@ -247,8 +247,6 @@ static
 domvcur(oy, ox, ny, nx)
 int	oy, ox, ny, nx; {
 
-	if (ny == 0 && nx == 0)
-		abort();
 	if (curscr->_flags & _STANDOUT && !MS) {
 		_puts(SE);
 		curscr->_flags &= ~_STANDOUT;
