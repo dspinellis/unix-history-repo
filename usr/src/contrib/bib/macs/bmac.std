@@ -34,7 +34,7 @@
 .\" reference formmating macros
 .de s[   \" start reference
 .nh
-.IP [\\*([F] 5m
+.IP "[\\*([F]" 5m
 ..
 .de e[   \" end reference
 .[-
