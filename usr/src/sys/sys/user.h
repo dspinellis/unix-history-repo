@@ -47,7 +47,7 @@ struct	user {
  * This subterfuge brought to you by coredump() and procxmt().
  * These fields are *only* valid at those times!
  */
-#define	U_ar0	u_kproc.kp_proc.p_regs	/* copy of curproc->p_regs */
+#define	U_ar0	u_kproc.kp_proc.p_md.md_regs /* copy of curproc->p_md.md_regs */
 #define	U_tsize	u_kproc.kp_eproc.e_vm.vm_tsize
 #define	U_dsize	u_kproc.kp_eproc.e_vm.vm_dsize
 #define	U_ssize	u_kproc.kp_eproc.e_vm.vm_ssize
