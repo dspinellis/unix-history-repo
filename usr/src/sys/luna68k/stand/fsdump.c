@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsdump.c	7.2 (Berkeley) %G%
+ *	@(#)fsdump.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -71,6 +71,8 @@ fsdump(argc, argv)
 		    (i != 5)) {
 			pp->p_size = 0;
 		}
+		if (i == 5 && argc > 1 && !strcmp(argv[1], "tailor"))
+			pp->p_size = 0;
 	}
 
 	st_rewind(rst0);
