@@ -1,4 +1,4 @@
-/*	param.h	4.33	83/05/21	*/
+/*	param.h	4.34	83/06/02	*/
 
 /*
  * Machine type dependent parameters.
@@ -44,18 +44,21 @@
 /*
  * Signals
  */
-#ifndef	NSIG
+#ifdef KERNEL
+#include "../h/signal.h"
+#else
 #include <signal.h>
 #endif
 
-#define	ISSIG(p)	((p)->p_sig && \
-	((p)->p_flag&STRC || ((p)->p_sig &~ (p)->p_ignsig)) && issig())
+#define	ISSIG(p) \
+	((p)->p_sig && ((p)->p_flag&STRC || \
+	 ((p)->p_sig &~ ((p)->p_sigignore | (p)->p_sigmask)) && issig()))
 
 /*
  * Fundamental constants of the implementation.
  */
-#define	NBBY		8		/* number of bits in a byte */
-#define	NBPW		sizeof(int)	/* number of bytes in an integer */
+#define	NBBY	8		/* number of bits in a byte */
+#define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
 #define	NULL	0
 #define	CMASK	0		/* default mask for file creation */
