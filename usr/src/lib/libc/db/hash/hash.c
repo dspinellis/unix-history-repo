@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -528,10 +528,15 @@ flush_meta()
 	-1 to indicate an internal ERROR (i.e. out of memory, etc)
 */
 static int
-hash_get ( dbp, key, data )
+hash_get ( dbp, key, data, flag )
 DB	*dbp;
-DBT *key, *data;
+DBT	*key, *data;
+u_long	flag;
 {
+#ifdef lint
+    flag = flag;
+#endif
+
     if ( !dbp ) {
 	return (ERROR);
     }
@@ -548,7 +553,7 @@ static int
 hash_put ( dbp, key, data, flag )
 DB	*dbp;
 DBT 	*key, *data;
-int	flag;
+u_long	flag;
 {
     if ( !dbp ) {
 	return (ERROR);
@@ -567,11 +572,14 @@ int	flag;
 }
 
 static int
-hash_delete ( dbp, key, flags )
+hash_delete ( dbp, key, flag )
 DB	*dbp;
 DBT 	*key;
-int	flags;		/* Ignored */
+u_long	flag;		/* Ignored */
 {
+#ifdef lint
+    flag = flag;
+#endif
     if ( !dbp ) {
 	return (ERROR);
     }
@@ -715,7 +723,7 @@ static int
 hash_seq(dbp, key, data, flag)
 DB	*dbp;
 DBT 	*key, *data;
-int flag;
+u_long	flag;
 {
 	register	int bucket;
 	register	BUFHEAD	*bufp;
