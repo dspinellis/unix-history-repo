@@ -1,4 +1,4 @@
-/*	conf.c	4.14	82/12/17	*/
+/*	conf.c	4.15	82/12/30	*/
 
 #include "../machine/pte.h"
 
@@ -13,15 +13,23 @@
 devread(io)
 	register struct iob *io;
 {
+	int error;
 
-	return( (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ) );
+	io->i_flgs |= F_RDDATA;
+	error = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
+	io->i_flgs &= ~F_TYPEMASK;
+	return (error);
 }
 
 devwrite(io)
 	register struct iob *io;
 {
+	int error;
 
-	return( (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE) );
+	io->i_flgs |= F_WRDATA;
+	error = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
+	io->i_flgs &= ~F_TYPEMASK;
+	return (error);
 }
 
 devopen(io)
@@ -38,20 +46,41 @@ devclose(io)
 	(*devsw[io->i_ino.i_dev].dv_close)(io);
 }
 
-nullsys()
+devioctl(io, cmd, arg)
+	register struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return ((*devsw[io->i_ino.i_dev].dv_ioctl)(io, cmd, arg));
+}
+
+/*ARGSUSED*/
+nullsys(io)
+	struct iob *io;
 {
 
 	;
 }
 
-int	nullsys();
+/*ARGSUSED*/
+nullioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
+}
+
+int	nullsys(), nullioctl();
 #if defined(VAX780) || defined(VAX750)
-int	hpstrategy(), hpopen();
+int	hpstrategy(), hpopen(), hpioctl();
 #endif
-int	upstrategy(), upopen();
-int	rkstrategy(), rkopen();
-int	udstrategy(), udopen();
-int	idcstrategy(), idcopen();
+int	upstrategy(), upopen(), upioctl();
+int	rkstrategy(), rkopen(), rkioctl();
+int	udstrategy(), udopen(), udioctl();
+int	idcstrategy(), idcopen(), idcioctl();
 #ifndef BOOT
 int	tmstrategy(), tmopen(), tmclose();
 int	tsstrategy(), tsopen(), tsclose();
@@ -64,20 +93,22 @@ int	utstrategy(), utopen(), utclose();
 
 struct devsw devsw[] = {
 #if defined(VAX780) || defined(VAX750)
-	"hp",	hpstrategy,	hpopen,		nullsys,
+	{ "hp",	hpstrategy,	hpopen,		nullsys,	hpioctl },
 #endif
-	"up",	upstrategy,	upopen,		nullsys,
-	"hk",	rkstrategy,	rkopen,		nullsys,
-	"ra",	udstrategy,	udopen,		nullsys,
-	"rb",	idcstrategy,	idcopen,	nullsys,
+	{ "up",	upstrategy,	upopen,		nullsys,	upioctl },
+	{ "hk",	rkstrategy,	rkopen,		nullsys,	rkioctl },
+	{ "ra",	udstrategy,	udopen,		nullsys,	udioctl },
+#if defined(VAX730)
+	{ "rb",	idcstrategy,	idcopen,	nullsys,	idcioctl },
+#endif
 #ifndef BOOT
-	"ts",	tsstrategy,	tsopen,		tsclose,
+	{ "ts",	tsstrategy,	tsopen,		tsclose,	nullioctl },
 #if defined(VAX780) || defined(VAX750)
-	"ht",	htstrategy,	htopen,		htclose,
-	"mt",	mtstrategy,	mtopen,		mtclose,
+	{ "ht",	htstrategy,	htopen,		htclose,	nullioctl },
+	{ "mt",	mtstrategy,	mtopen,		mtclose,	nullioctl },
 #endif
-	"tm",	tmstrategy,	tmopen,		tmclose,
-	"ut",	utstrategy,	utopen,		utclose,
+	{ "tm",	tmstrategy,	tmopen,		tmclose,	nullioctl },
+	{ "ut",	utstrategy,	utopen,		utclose,	nullioctl },
 #endif
-	0,0,0,0
+	{ 0, 0, 0, 0, 0 },
 };
