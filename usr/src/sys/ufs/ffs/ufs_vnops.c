@@ -1482,16 +1482,22 @@ ufs_readdir(ap)
 		struct vnode *a_vp;
 		struct uio *a_uio;
 		struct ucred *a_cred;
+		int *a_eofflag;
+		u_long *a_cookies;
+		int ncookies;
 	} */ *ap;
 {
 	register struct uio *uio = ap->a_uio;
-	int count, lost, error;
+	int error;
+	size_t count, lost;
+	off_t off = uio->uio_offset;
 
 	count = uio->uio_resid;
-	count &= ~(DIRBLKSIZ - 1);
-	lost = uio->uio_resid - count;
-	if (count < DIRBLKSIZ || (uio->uio_offset & (DIRBLKSIZ -1)))
+	/* Make sure we don't return partial entries. */
+	count -= (uio->uio_offset + count) & (DIRBLKSIZ -1);
+	if (count <= 0)
 		return (EINVAL);
+	lost = uio->uio_resid - count;
 	uio->uio_resid = count;
 	uio->uio_iov->iov_len = count;
 #	if (BYTE_ORDER == LITTLE_ENDIAN)
@@ -1536,7 +1542,32 @@ ufs_readdir(ap)
 #	else
 		error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
 #	endif
+	if (!error && ap->a_ncookies) {
+		register struct dirent *dp;
+		register u_long *cookies = ap->a_cookies;
+		register int ncookies = ap->a_ncookies;
+
+		/*
+		 * Only the NFS server uses cookies, and it loads the
+		 * directory block into system space, so we can just look at
+		 * it directly.
+		 */
+		if (uio->uio_segflg != UIO_SYSSPACE || uio->uio_iovcnt != 1)
+			panic("ufs_readdir: lost in space");
+		dp = (struct dirent *)
+		     (uio->uio_iov->iov_base - (uio->uio_offset - off));
+		while (ncookies-- && off < uio->uio_offset) {
+			if (dp->d_reclen == 0)
+				break;
+			off += dp->d_reclen;
+			*(cookies++) = off;
+			dp = (struct dirent *)((caddr_t)dp + dp->d_reclen);
+		}
+		lost += uio->uio_offset - off;
+		uio->uio_offset = off;
+	}
 	uio->uio_resid += lost;
+	*ap->a_eofflag = VTOI(ap->a_vp)->i_size <= uio->uio_offset;
 	return (error);
 }
 
