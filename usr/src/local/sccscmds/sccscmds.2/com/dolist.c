@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)dolist.c	4.1);
+SCCSID(@(#)dolist.c	4.2);
 
 static char br[] "bad range (co12)";
 
