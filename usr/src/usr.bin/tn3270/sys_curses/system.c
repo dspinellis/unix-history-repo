@@ -220,7 +220,11 @@ freestorage()
 
 
 static int
-getstorage(address, length)
+getstorage(address, length, copyin)
+int
+    address,
+    length,
+    copyin;
 {
     struct storage_descriptor sd;
     char buffer[40];
@@ -240,20 +244,23 @@ getstorage(address, length)
     }
     storage_location = address;
     storage_length = length;
-    sd.location = htonl(storage_location);
-    sd.length = htons(storage_length);
-    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
-	kill_connection();
-	return -1;
-    }
-    if (api_exch_incommand(EXCH_CMD_HEREIS) == -1) {
-	fprintf(stderr, "Bad data from other side.\n");
-	fprintf(stderr, "(Encountered at %s, %d.)\n", __FILE__, __LINE__);
-	return -1;
-    }
-    if (nextstore() == -1) {
-	kill_connection();
-	return -1;
+    if (copyin) {
+	sd.location = htonl(storage_location);
+	sd.length = htons(storage_length);
+	if (api_exch_outtype(EXCH_TYPE_STORE_DESC,
+					sizeof sd, (char *)&sd) == -1) {
+	    kill_connection();
+	    return -1;
+	}
+	if (api_exch_incommand(EXCH_CMD_HEREIS) == -1) {
+	    fprintf(stderr, "Bad data from other side.\n");
+	    fprintf(stderr, "(Encountered at %s, %d.)\n", __FILE__, __LINE__);
+	    return -1;
+	}
+	if (nextstore() == -1) {
+	    kill_connection();
+	    return -1;
+	}
     }
     return 0;
 }
@@ -275,7 +282,7 @@ int
     } else if (length == 0) {
 	return;
     }
-    getstorage(di, length);
+    getstorage(di, length, 1);
     memcpy(local, storage+(di-storage_location), length);
 }
 
@@ -305,10 +312,11 @@ int
 
 
 char *
-access_api(location, length)
+access_api(location, length, copyin)
 int
     location,
-    length;
+    length,
+    copyin;			/* Do we need to copy in initially? */
 {
     if (storage_accessed) {
 	fprintf(stderr, "Internal error - storage accessed twice\n");
@@ -317,13 +325,13 @@ int
 	quit();
     } else if (length != 0) {
 	freestorage();
-	getstorage(location, length);
+	getstorage(location, length, copyin);
 	storage_accessed = 1;
     }
     return (char *) storage;
 }
 
-unaccess_api(location, local, length)
+unaccess_api(location, local, length, copyout)
 int	location;
 char	*local;
 int	length;
@@ -335,7 +343,7 @@ int	length;
 	quit();
     }
     storage_accessed = 0;
-    storage_must_send = 1;	/* Needs to go back */
+    storage_must_send = copyout;	/* if needs to go back */
 }
 
 /*
