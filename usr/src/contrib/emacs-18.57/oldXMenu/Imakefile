@@ -1,0 +1,87 @@
+        HEADERS = XMenu.h
+       LINTLIBS = ../lib/X/llib-lX.ln
+   INSTALLFLAGS = $(INSTINCFLAGS)
+         RANLIB = ranlib -t
+
+SRCS =  Activate.c \
+	AddPane.c \
+	AddSel.c \
+	ChgPane.c \
+	ChgSel.c \
+	Create.c \
+	DelPane.c \
+	DelSel.c \
+	Destroy.c \
+	Error.c \
+	EvHand.c \
+	FindPane.c \
+	FindSel.c \
+	InsPane.c \
+	InsSel.c \
+	Internal.c \
+	Locate.c \
+	Post.c \
+	Recomp.c \
+	SetAEQ.c \
+	SetFrz.c \
+	SetPane.c \
+	SetSel.c
+
+OBJS =  Activate.o \
+	AddPane.o \
+	AddSel.o \
+	ChgPane.o \
+	ChgSel.o \
+	Create.o \
+	DelPane.o \
+	DelSel.o \
+	Destroy.o \
+	Error.o \
+	EvHand.o \
+	FindPane.o \
+	FindSel.o \
+	InsPane.o \
+	InsSel.o \
+	Internal.o \
+	Locate.o \
+	Post.o \
+	Recomp.o \
+	SetAEQ.o \
+	SetFrz.o \
+	SetPane.o \
+	SetSel.o
+
+#if DebugOldLibXMenu && ProfileOldLibXMenu
+DebuggedAndProfiledLibraryObjectRule()
+#else
+# if DebugOldLibXMenu
+DebuggedLibraryObjectRule()
+# else
+#  if ProfileOldLibXMenu
+ProfiledLibraryObjectRule()
+#  else
+NormalLibraryObjectRule()
+#  endif
+# endif
+#endif
+
+NormalLibraryTarget(XMenu11,$(OBJS))
+LintLibraryTarget(XMenu11,$(SRCS))
+InstallLibrary(XMenu11,$(USRLIBDIR))
+#if InstallLintLibs
+InstallLintLibrary(XMenu11,$(LINTLIBDIR))
+#endif
+InstallMultiple($(HEADERS),$(INCDIR))
+
+#if ProfileOldLibXMenu
+ProfiledLibraryTarget(XMenu11,$(OBJS))
+InstallLibrary(XMenu11_p,$(USRLIBDIR))
+#endif
+
+#if DebugOldLibXMenu
+DebuggedLibraryTarget(XMenu11,$(OBJS))
+#endif
+
+DependTarget()
+
+NormalLintTarget($(SRCS))
