@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ncheck.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	2.1 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
@@ -7,16 +7,27 @@ static	char *sccsid = "@(#)ncheck.c	1.8 (Berkeley) %G%";
 #define	HSIZE		2503
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
+#ifndef SIMFS
+#include <sys/param.h>
+#include <sys/inode.h>
+#include <sys/fs.h>
+#else
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
+#endif
 #include <stdio.h>
 #include <ndir.h>
 
 struct	fs	sblock;
 struct	dinode	itab[MAXIPG];
 struct 	dinode	*gip;
-ino_t	ilist[NB];
+struct ilist {
+	ino_t	ino;
+	u_short	mode;
+	short	uid;
+	short	gid;
+} ilist[NB];
 struct	htab
 {
 	ino_t	h_ino;
@@ -34,6 +45,8 @@ struct dirstuff {
 
 int	aflg;
 int	sflg;
+int	iflg; /* number of inodes being searched for */
+int	mflg;
 int	fi;
 ino_t	ino;
 int	nhent;
@@ -61,15 +74,19 @@ main(argc, argv)
 			continue;
 
 		case 'i':
-			for(i=0; i<NB; i++) {
+			for(iflg=0; iflg<NB; iflg++) {
 				n = atol(argv[1]);
 				if(n == 0)
 					break;
-				ilist[i] = n;
-				nxfile = i;
+				ilist[iflg].ino = n;
+				nxfile = iflg;
 				argv++;
 				argc--;
 			}
+			continue;
+
+		case 'm':
+			mflg++;
 			continue;
 
 		case 's':
@@ -106,29 +123,24 @@ check(file)
 		nerror++;
 		return;
 	}
-	nfiles = sblock.fs_ipg * sblock.fs_ncg;
-	if (nfiles > 65535) {
-		printf("%s: %d is a preposterous number of files\n",
-		    file, nfiles);
-		nerror++;
-		return;
-	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
-		for(j=0; j<sblock.fs_ipg; j++) {
-			pass1(&itab[j]);
+		for(j = 0; j < sblock.fs_ipg; j++) {
+			if (itab[j].di_mode != 0)
+				pass1(&itab[j]);
 			ino++;
 		}
 	}
-	ilist[nxfile+1] = 0;
+	ilist[nxfile+1].ino = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
-		for(j=0; j<sblock.fs_ipg; j++) {
-			pass2(&itab[j]);
+		for(j = 0; j < sblock.fs_ipg; j++) {
+			if (itab[j].di_mode != 0)
+				pass2(&itab[j]);
 			ino++;
 		}
 	}
@@ -136,23 +148,43 @@ check(file)
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
-		for(j=0; j<sblock.fs_ipg; j++) {
-			pass3(&itab[j]);
+		for(j = 0; j < sblock.fs_ipg; j++) {
+			if (itab[j].di_mode != 0)
+				pass3(&itab[j]);
 			ino++;
 		}
 	}
+	close(fi);
+	for (i = 0; i < HSIZE; i++)
+		htab[i].h_ino = 0;
+	for (i = iflg; i < NB; i++)
+		ilist[i].ino = 0;
+	nxfile = iflg;
 }
 
 pass1(ip)
 	register struct dinode *ip;
 {
-	if((ip->di_mode & IFMT) != IFDIR) {
+	int i;
+
+	if (mflg)
+		for (i = 0; i < iflg; i++)
+			if (ino == ilist[i].ino) {
+				ilist[i].mode = ip->di_mode;
+				ilist[i].uid = ip->di_uid;
+				ilist[i].gid = ip->di_gid;
+			}
+	if ((ip->di_mode & IFMT) != IFDIR) {
 		if (sflg==0 || nxfile>=NB)
 			return;
 		if ((ip->di_mode&IFMT)==IFBLK || (ip->di_mode&IFMT)==IFCHR
-		  || ip->di_mode&(ISUID|ISGID))
-			ilist[nxfile++] = ino;
+		  || ip->di_mode&(ISUID|ISGID)) {
+			ilist[nxfile].ino = ino;
+			ilist[nxfile].mode = ip->di_mode;
+			ilist[nxfile].uid = ip->di_uid;
+			ilist[nxfile++].gid = ip->di_gid;
 			return;
+		}
 	}
 	lookup(ino, 1);
 }
@@ -197,18 +229,20 @@ pass3(ip)
 	dirp.ip = ip;
 	gip = ip;
 	for(dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
-		if(dp->d_ino == 0)
-			continue;
 		if(aflg==0 && dotname(dp))
 			continue;
-		if(ilist[0] == 0)
+		if(sflg == 0 && iflg == 0)
 			goto pr;
-		for(k = 0; ilist[k] != 0; k++)
-			if(ilist[k] == dp->d_ino)
-				goto pr;
-		continue;
+		for(k = 0; ilist[k].ino != 0; k++)
+			if(ilist[k].ino == dp->d_ino)
+				break;
+		if (ilist[k].ino == 0)
+			continue;
+		if (mflg)
+			printf("mode %-6o uid %-5d gid %-5d ino ",
+			    ilist[k].mode, ilist[k].uid, ilist[k].gid);
 	pr:
-		printf("%u	", dp->d_ino);
+		printf("%-5u\t", dp->d_ino);
 		pname(ino, 0);
 		printf("/%s", dp->d_name);
 		if (lookup(dp->d_ino, 0))
