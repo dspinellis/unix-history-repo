@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.57 (Berkeley) %G%
+.\"	@(#)op.me	8.58 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.57
+Version 8.58
 .sp
 For Sendmail Version 8.7
 .)l
@@ -5846,9 +5846,15 @@ is seven atoms.
 .ip "MAXMAILERS [25]"
 The maximum number of mailers that may be defined
 in the configuration file.
-.ip "MAXRWSETS [100]"
+.ip "MAXRWSETS [200]"
 The maximum number of rewriting sets
 that may be defined.
+The first half of these are reserved for numeric specification
+(e.g., ``S92''),
+while the upper half are reserved for auto-numbering
+(e.g., ``Sfoo'').
+Thus, with a value of 200 an attempt to use ``S99'' will succeed,
+but ``S100'' will fail.
 .ip "MAXPRIORITIES [25]"
 The maximum number of values for the
 .q Precedence:
@@ -7432,7 +7438,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.57
+.\"Version 8.58
 .\".ce 0
 .bp 2
 .rs
