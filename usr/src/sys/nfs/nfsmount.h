@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsmount.h	7.7 (Berkeley) %G%
+ *	@(#)nfsmount.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -71,7 +71,7 @@ int	nfs_root __P((
 int	nfs_quotactl __P((
 		struct mount *mp,
 		int cmds,
-		int uid,	/* should be uid_t */
+		u_int uid,	/* should be uid_t */
 		caddr_t arg,
 		struct proc *p));
 int	nfs_statfs __P((
