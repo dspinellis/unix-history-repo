@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vlimit.3	6.2 (Berkeley) %G%
+.\"	@(#)vlimit.3	6.3 (Berkeley) %G%
 .\"
 .TH VLIMIT 3C ""
 .UC 4
@@ -14,7 +14,9 @@ vlimit \- control maximum system resource consumption
 .B vlimit(resource, value)
 .SH DESCRIPTION
 .ft B
-This facility is superseded by getrlimit(2).
+This interface is obsoleted by getrlimit(2).
+.br
+It is available from the compatibility library, libcompat.
 .ft R
 .PP
 Limits the consumption by the current process and each process

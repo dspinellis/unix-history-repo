@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vtimes.3	6.3 (Berkeley) %G%
+.\"	@(#)vtimes.3	6.4 (Berkeley) %G%
 .\"
 .TH VTIMES 3C ""
 .UC 4
@@ -18,7 +18,9 @@ vtimes \- get information about resource utilization
 .fi
 .SH DESCRIPTION
 .ft B
-This facility is superseded by getrusage(2).
+This interface is obsoleted by getrusage(2).
+.br
+It is available from the compatibility library, libcompat.
 .ft R
 .PP
 .I Vtimes
