@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	2.1	%G%";
+static char SccsId[] = "@(#)alias.c	2.2	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -159,6 +159,15 @@ alias()
 				goto syntaxerr;
 			}
 
+			/* if already in AliasQ don't realias */
+			for (q = &AliasQ; (q = nxtinq(q)) != NULL; )
+			{
+				if (sameaddr(&al, q, TRUE))
+					break;
+			}
+			if (q != NULL)
+				continue;
+
 			/*  Scan SendQ for that canonical form. */
 			for (q = &SendQ; (q = nxtinq(q)) != NULL; )
 			{
@@ -181,10 +190,10 @@ alias()
 					    p, al.q_paddr, al.q_host, al.q_user);
 # endif
 				tkoffq(q, &SendQ);
-				putonq(q, &AliasQ);
 				didalias++;
 				gotmatch++;
 				sendto(p, 1);
+				putonq(q, &AliasQ);
 			}
 		}
 	} while (didalias);
@@ -193,13 +202,31 @@ alias()
 	/*
 	**  Scan SendQ
 	**	We only have to do this once, since anything we alias
-	**	two is being put at the end of the queue we are
+	**	to is being put at the end of the queue we are
 	**	scanning.
+	**	If the alias on SendQ is also (already) on AliasQ, we
+	**	have an alias such as:
+	**		eric:eric,i:eric
+	**	In this case we have already done this alias once, and
+	**	we don't want to do it again (for obvious reasons!).
 	*/
 
-	for (q2 = nxtinq(&SendQ); (q = q2) != NULL; )
+	for (q2 = nxtinq(&SendQ); q2 != NULL; )
 	{
+		/* if already in AliasQ, don't realias */
+		for (q = &AliasQ; (q = nxtinq(q)) != NULL; )
+		{
+			if (sameaddr(q, q2, TRUE))
+				break;
+		}
+		if (q != NULL)
+		{
+			q2 = nxtinq(q2);
+			continue;
+		}
+
 		/* save ptr to next address */
+		q = q2;
 		q2 = nxtinq(q);
 
 		/* only alias local users */
@@ -229,8 +256,8 @@ alias()
 			    q->q_paddr, q->q_host, q->q_user, p);
 # endif
 		tkoffq(q, &SendQ);
-		putonq(q, &AliasQ);
 		sendto(p, 1);
+		putonq(q, &AliasQ);
 
 		/* if our last entry had an alias, process them */
 		if (q2 == NULL)
