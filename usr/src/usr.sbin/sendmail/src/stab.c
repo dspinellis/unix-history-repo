@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.5	%G%";
+static char SccsId[] = "@(#)stab.c	3.6	%G%";
 
 /*
 **  STAB -- manage the symbol table
@@ -42,7 +42,7 @@ stab(name, type, op)
 		printf("STAB: %s %d ", name, type);
 # endif DEBUG
 
-	while (s != NULL && !sameword(name, s->s_name) && s->s_type != type)
+	while (s != NULL && (!sameword(name, s->s_name) || s->s_type != type))
 	{
 		ps = &s->s_next;
 		s = s->s_next;
