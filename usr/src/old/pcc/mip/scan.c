@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.13 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.14 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -235,7 +235,9 @@ struct lxdope {
 	'\n',	A_NL,	0,	0,
 	'"',	A_STR,	0,	0,	/* character string */
 	'\'',	A_CC,	0,	0,	/* character constant */
+#ifdef gcos
 	'`',	A_BCD,	0,	0,	/* GCOS BCD constant */
+#endif
 	'(',	A_1C,	LP,	0,
 	')',	A_1C,	RP,	0,
 	'{',	A_1C,	LC,	0,
@@ -271,11 +273,13 @@ lxinit(){
 	register char *cp;
 	/* set up character classes */
 
-	lxenter( "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$", LEXLET );
+	lxenter( "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_", LEXLET );
+#ifdef VMS
+	lxmask['$'+1] |= LEXLET;
+#endif
 	lxenter( "0123456789", LEXDIG );
 	lxenter( "0123456789abcdefABCDEF", LEXHEX );
-		/* \013 should become \v someday; \013 is OK for ASCII and EBCDIC */
-	lxenter( " \t\r\b\f\013", LEXWS );
+	lxenter( " \t\r\b\f\v", LEXWS );
 	lxenter( "01234567", LEXOCT );
 	lxmask['.'+1] |= LEXDOT;
 
@@ -295,11 +299,14 @@ lxinit(){
 	/* handle letters, digits, and whitespace */
 	/* by convention, first, second, and third places */
 
-	cp = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$";
+	cp = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	while( *cp ) lxcp[*cp++ + 1] = &lxdope[1];
+#ifdef VMS
+	lxcp['$'+1] = &lxdope[1];
+#endif
 	cp = "123456789";
 	while( *cp ) lxcp[*cp++ + 1] = &lxdope[2];
-	cp = "\t\b\r\f\013";
+	cp = "\t\b\r\f\v";
 	while( *cp ) lxcp[*cp++ + 1] = &lxdope[3];
 
 	/* first line might have title */
@@ -337,6 +344,14 @@ lxstr(ct){
 				continue;
 
 			default:
+#ifdef LINT
+				if( hflag )
+					uerror( "superfluous backslash in %s constant", lxmatch == '\'' ? "char" : "string" );
+				/*FALLTHROUGH*/
+#endif
+			case '\\':
+			case '\"':
+			case '\'':
 				val = c;
 				goto mkcc;
 
@@ -361,7 +376,7 @@ lxstr(ct){
 				goto mkcc;
 
 			case 'v':
-				val = '\013';
+				val = '\v';
 				goto mkcc;
 
 			case '0':
@@ -533,7 +548,7 @@ yylex(){
 				break;
 				}
 			uerror( "illegal character: '%s'", s );
-			break;
+			continue; /* ignore it and see if we find more */
 
 		case A_LET:
 			/* collect an identifier, check for reserved word, and return */
@@ -675,6 +690,7 @@ yylex(){
 			yylval.intval = 0;
 			return( ICON );
 
+#ifdef gcos
 		case A_BCD:
 			{
 				register i;
@@ -689,7 +705,7 @@ yylex(){
 					}
 				yytext[i] = '\0';
 				if( i>6 ) uerror( "BCD constant exceeds 6 characters" );
-# ifdef gcos
+# ifndef unix
 				else strtob( yytext, &lastcon, i );
 				lastcon >>= 6*(6-i);
 # else
@@ -698,6 +714,7 @@ yylex(){
 				yylval.intval = 0;  /* not long */
 				return( ICON );
 				}
+#endif
 
 		case A_SL:
 			/* / */
