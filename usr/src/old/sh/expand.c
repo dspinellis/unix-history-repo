@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	4.5 %G%";
+static char sccsid[] = "@(#)expand.c	4.6 %G%";
 #endif
 
 #
@@ -182,11 +182,11 @@ LOCAL VOID	addg(as1,as2,as3)
 	THEN	*s2++='/';
 		WHILE *s2++ = *++s1 DONE
 	FI
-	makearg(endstak(s2));
+	makearg((ARGPTR)endstak(s2));
 }
 
 makearg(args)
-	REG STRING	args;
+	REG ARGPTR	args;
 {
 	args->argnxt=gchain;
 	gchain=args;
