@@ -11,7 +11,10 @@ OFILES=	tmac.an.v6compat tmac.an6n tmac.an6t tmac.a tmac.cp
 
 all clean cleandir depend lint tags:
 
-beforeinstall:
+strip.sed:
+	ln -s ../me/strip.sed strip.sed
+
+beforeinstall: strip.sed
 	for i in ${MSRCS}; do \
 		sed -f strip.sed < $$i > ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
