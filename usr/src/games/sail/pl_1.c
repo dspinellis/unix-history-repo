@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.3 83/03/19";
+static	char *sccsid = "@(#)pl_1.c	1.4 83/05/19";
 #endif
 #include "player.h"
 #include <sys/types.h>
