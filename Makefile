@@ -1,9 +1,42 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.10 1993/09/06 12:00:32 rgrimes Exp $
+#	$Id: Makefile,v 1.11 1993/09/07 19:36:35 rgrimes Exp $
 #
 
-SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
+SUBDIR=
+.if exists(bin)
+SUBDIR+= bin
+.endif
+.if exists(contrib)
+SUBDIR+= contrib
+.endif
+.if exists(games)
+SUBDIR+= games
+.endif
+.if exists(gnu)
+SUBDIR+= gnu
+.endif
+.if exists(include)
+SUBDIR+= include
+.endif
+.if exists(lib)
+SUBDIR+= lib
+.endif
+.if exists(libexec)
+SUBDIR+= libexec
+.endif
+.if exists(sbin)
+SUBDIR+= sbin
+.endif
+.if exists(share)
+SUBDIR+= share
+.endif
+.if exists(usr.bin)
+SUBDIR+= usr.bin
+.endif
+.if exists(usr.sbin)
+SUBDIR+= usr.sbin
+.endif
 
 # Special cases: etc sys
 # Not ported: kerberosIV
