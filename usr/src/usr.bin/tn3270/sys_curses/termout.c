@@ -450,11 +450,11 @@ static void
 #endif	/* defined(NOT43) */
 FastScreen()
 {
-#if	defined(msdos)
+#if	defined(MSDOS)
 #define	SaveCorner	0
-#else	/* defined(msdos) */
+#else	/* defined(MSDOS) */
 #define	SaveCorner	1
-#endif	/* defined(msdos) */
+#endif	/* defined(MSDOS) */
 
 #define	DoAttribute(a) 	    if (IsHighlightedAttr(a)) { \
 				standout(); \
@@ -481,11 +481,11 @@ FastScreen()
 
 	move(ScreenLine(Lowest), ScreenLineOffset(Lowest));
 	p = &Host[Lowest];
-#if	!defined(msdos)
+#if	!defined(MSDOS)
 	if (Highest == HighestScreen()) {
 	    Highest = ScreenDec(Highest);
 	}
-#endif	/* !defined(msdos) */
+#endif	/* !defined(MSDOS) */
 	upper = &Host[Highest];
 	fieldattr = FieldAttributes(Lowest);
 	DoAttribute(fieldattr);	/* Set standout, non-display status */
@@ -614,7 +614,7 @@ InitTerminal()
 #endif	/* defined(unix) */
 
 #if	defined(SLOWSCREEN)
-	bzero((char *)Terminal, sizeof Terminal);
+	ClearArray(Terminal);
 #endif	/* defined(SLOWSCREEN) */
 	terminalCursorAddress = SetBufferAddress(0,0);
 #if defined(unix)
@@ -735,7 +735,7 @@ LocalClearScreen()
     outputPurge();		/* flush all data to terminal */
     clear();			/* clear in curses */
 #if	defined(SLOWSCREEN)
-    bzero((char *)Terminal, sizeof Terminal);
+    ClearArray(Terminal);
 #endif	/* defined(SLOWSCREEN) */
     Clear3270();
     Lowest = HighestScreen()+1; /* everything in sync... */
@@ -753,7 +753,7 @@ BellOff()
 	Lowest = MIN(Lowest, LINES/2);
 	Highest = MAX(Highest, (LINES/2)+3);
 #if	defined(SLOWSCREEN)
-	bzero(Terminal+LINES/2, (sizeof Terminal[0])*(3*COLS));
+	memset(Terminal+LINES/2, 0, (sizeof Terminal[0])*(3*COLS));
 #endif	/* defined(SLOWSCREEN) */
 	touchwin(stdscr);
 	DoARefresh();
