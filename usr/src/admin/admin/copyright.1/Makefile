@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 BUILD=	redist.c redist.sh redist.man redist.gas
 STD=	386.c att.man contrib hdrs kern libc libs libs.cci main make \
@@ -28,5 +28,8 @@ redist.man: redist
 
 redist.gas: redist
 	sed 's/^/|/' < ${.CURDIR}/redist > redist.gas
+
+redist.tex: redist
+	sed 's/^/%/' < ${.CURDIR}/redist > redist.tex
 
 .include <bsd.prog.mk>
