@@ -1,5 +1,12 @@
 #include <sys/types.h>
+
+#if	!defined(sun)
 #include <sys/inode.h>
+#else	/* !defined(sun) */
+#define	IREAD	00400
+#define	IWRITE	00200
+#endif	/* !defined(sun) */
+
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/socket.h>
