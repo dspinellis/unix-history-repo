@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.7	81/04/23	*/
+/*	vm_meter.c	4.8	81/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -75,33 +75,22 @@ setupclock()
 		maxpgio = (DISKRPM * 2) / 3;
 
 	/*
-	 * Clock to scan using max of 10% of processor time for sampling,
-	 *     this estimated to allow maximum of 400 samples per second.
-	 * Allow slighly higher angular velocity if 2 or more swap devices,
-	 *     allow max of 600 samples per second (but only >= 2m)
-	 * Basic scan time for ``fastscan'', the time for a clock rev
-	 * with given memory and CLSIZE=2:
-	 *	swap ilv	<=1m	2m	3m	4m	6m	8m
-	 * 	one-way		4s	5s	7s	XXX	XXX	XXX
-	 * 	two-way		4s	4s	5s	6s	10s	13s
-	 * XXXs here are situations we should not be in.
+	 * Clock to scan using max of ~~15% of processor time for sampling,
+	 *     this estimated to allow maximum of 300 samples per second.
+	 * This yields a ``fastscan'' of roughly (with CLSIZE=2):
+	 *	<=1m	2m	3m	4m	>=6m
+	 * 	5s	6s	7s	13s	20s
 	 */
-	if (fastscan == 0) {
-		nclust = LOOPPAGES / CLSIZE;
-		nkb = (LOOPPAGES * NBPG) / 1024;
-		if (nswdev == 1 && physmem*NBPG > 2*1024*(1024-16))
-			printf("WARNING: should run interleaved swap with >= 2Mb\n");
-		if (nswdev == 1 || nkb < 2*1024)
-			fastscan = nclust / 400;
-		else {
-			maxpgio = (maxpgio * 3) / 2;
-			fastscan = nclust / 600;
-		}
-	}
-	if (fastscan < 4)
-		fastscan = 4;
+	if (nswdev == 1 && physmem*NBPG > 2*1024*(1024-16))
+		printf("WARNING: should run interleaved swap with >= 2Mb\n");
+	if (fastscan == 0)
+		fastscan = (LOOPPAGES/CLSIZE) / 300;
+	if (fastscan < 5)
+		fastscan = 5;
 	if (fastscan > maxslp)
 		fastscan = maxslp;
+	if (nswdev == 2)
+		maxpgio = (maxpgio * 3) / 2;
 
 	/*
 	 * Set slow scan time to 1/3 the fast scan time but at most
