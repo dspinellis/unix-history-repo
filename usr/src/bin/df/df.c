@@ -17,7 +17,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -91,13 +91,12 @@ main(argc, argv)
 {
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
-	long mntsize;
-	int err, ch, i, maxwidth, width;
+	long fsmask, mntsize;
+	int ch, err, i, maxwidth, width;
 	char *mntpt;
-	long fsmask;
 
 	while ((ch = getopt(argc, argv, "int:")) != EOF)
-		switch(ch) {
+		switch (ch) {
 		case 'i':
 			iflag = 1;
 			break;
@@ -224,8 +223,7 @@ addtype(omask, str)
 		for (tp = typetab; tp->str; tp++)
 			if (strcmp(str+2, tp->str) == 0)
 				return (~tp->types & (tflag ? omask : MT_ALL));
-	(void)fprintf(stderr, "df: unknown type `%s'\n", str);
-	exit(1);
+	errx(1, "unknown type `%s'", str);
 }
 
 /*
@@ -238,8 +236,8 @@ regetmntinfo(mntbufp, mntsize, fsmask)
 	struct statfs **mntbufp;
 	long mntsize, fsmask;
 {
-	register int i, j;
-	register struct statfs *mntbuf;
+	int i, j;
+	struct statfs *mntbuf;
 
 	if (fsmask == MT_ALL)
 		return (nflag ? mntsize : getmntinfo(mntbufp, MNT_WAIT));
@@ -271,7 +269,7 @@ regetmntinfo(mntbufp, mntsize, fsmask)
  */
 void
 prtstat(sfsp, maxwidth)
-	register struct statfs *sfsp;
+	struct statfs *sfsp;
 	int maxwidth;
 {
 	static long blocksize;
@@ -330,7 +328,7 @@ ufs_df(file, maxwidth)
 	int maxwidth;
 {
 	struct statfs statfsbuf;
-	register struct statfs *sfsp;
+	struct statfs *sfsp;
 	char *mntpt;
 	static int synced;
 
