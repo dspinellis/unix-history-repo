@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.45		%G%);
+SCCSID(@(#)parseaddr.c	3.46		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -914,6 +914,11 @@ remotename(name, m, force)
 	extern char *getxpart();
 	extern ADDRESS *buildaddr();
 
+# ifdef DEBUG
+	if (tTd(12, 1))
+		printf("remotename(%s)\n", name);
+# endif DEBUG
+
 	/*
 	**  See if this mailer wants the name to be rewritten.  There are
 	**  many problems here, owing to the standards for doing replies.
@@ -922,7 +927,13 @@ remotename(name, m, force)
 	*/
 
 	if (!bitset(M_RELRCPT, m->m_flags) && !force)
+	{
+# ifdef DEBUG
+		if (tTd(12, 1))
+			printf("remotename [ditto]\n");
+# endif DEBUG
 		return (name);
+	}
 
 	/*
 	**  Do general rewriting of name.
@@ -963,7 +974,7 @@ remotename(name, m, force)
 
 # ifdef DEBUG
 	if (tTd(12, 1))
-		printf("remotename(%s) => `%s'\n", name, buf);
+		printf("remotename => `%s'\n", buf);
 # endif DEBUG
 	return (buf);
 }
