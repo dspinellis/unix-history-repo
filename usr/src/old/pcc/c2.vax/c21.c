@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.17 %G%";
+static	char sccsid[] = "@(#)c21.c 4.18 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -1142,7 +1142,8 @@ splitrand(p) struct node *p; {
 compat(have, want) {
 register int hsrc, hdst;
 if (0==(want &= 0xF)) return(1); /* anything satisfies a wildcard want */
-hsrc=have&0xF; if (0==(hdst=((have>>4)&0xF)) || hdst>=OP2) hdst=hsrc;
+hsrc=have&0xF;
+if (0==(hdst=((have>>4)&0xF)) || (hdst>=OP2 && hdst<=OPX)) hdst=hsrc;
 if (want>=FFLOAT) return(hdst==want && hsrc==want);
 	/* FLOAT, DFLOAT not compat: rounding */
 return(hsrc>=want && hdst>=want && hdst<FFLOAT);
