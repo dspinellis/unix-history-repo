@@ -3,35 +3,41 @@
 # include <sys/stat.h>
 # include <sysexits.h>
 
-static char SccsId[] = "@(#)sccs.c 1.6 delta %G% 19:12:04 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c 1.7 delta %G% 20:24:38 get %H% %T%";
 
 # define bitset(bit, word)	((bit) & (word))
 
 typedef char	bool;
+# define TRUE	1
+# define FALSE	0
 
 struct sccsprog
 {
 	char	*sccsname;	/* name of SCCS routine */
-	short	sccsflags;	/* see below */
+	short	sccsoper;	/* opcode, see below */
+	short	sccsflags;	/* flags, see below */
 	char	*sccspath;	/* pathname of binary implementing */
 };
 
+/* values for sccsoper */
+# define PROG		0	/* call a program */
+
 /* bits for sccsflags */
-# define F_NOSDOT	0001	/* no s. on front of args */
-# define F_PROT		0002	/* protected (e.g., admin) */
+# define NO_SDOT	0001	/* no s. on front of args */
+# define REALUSER	0002	/* protected (e.g., admin) */
 
 struct sccsprog SccsProg[] =
 {
-	"admin",	F_PROT,			"/usr/sccs/admin",
-	"chghist",	0,			"/usr/sccs/rmdel",
-	"comb",		0,			"/usr/sccs/comb",
-	"delta",	0,			"/usr/sccs/delta",
-	"get",		0,			"/usr/sccs/get",
-	"help",		F_NOSDOT,		"/usr/sccs/help",
-	"prt",		0,			"/usr/sccs/prt",
-	"rmdel",	F_PROT,			"/usr/sccs/rmdel",
-	"what",		F_NOSDOT,		"/usr/sccs/what",
-	NULL,		0,			NULL
+	"admin",	PROG,	REALUSER,		"/usr/sccs/admin",
+	"chghist",	PROG,	0,			"/usr/sccs/rmdel",
+	"comb",		PROG,	0,			"/usr/sccs/comb",
+	"delta",	PROG,	0,			"/usr/sccs/delta",
+	"get",		PROG,	0,			"/usr/sccs/get",
+	"help",		PROG,	NO_SDOT,		"/usr/sccs/help",
+	"prt",		PROG,	0,			"/usr/sccs/prt",
+	"rmdel",	PROG,	REALUSER,		"/usr/sccs/rmdel",
+	"what",		PROG,	NO_SDOT,		"/usr/sccs/what",
+	NULL,		-1,	0,			NULL
 };
 
 char	*SccsPath = "SCCS";	/* pathname of SCCS files */
@@ -42,20 +48,20 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
-	register char **av;
-	char *newargv[1000];
-	extern char *makefile();
-	register struct sccsprog *cmd;
-	char buf[200];
-	register FILE *fp;
 
 	/*
 	**  Detect and decode flags intended for this program.
 	*/
 
-	while (--argc > 0)
+	if (argc < 2)
 	{
-		p = *++argv;
+		fprintf(stderr, "Usage: sccs [flags] command [flags]\n");
+		exit(EX_USAGE);
+	}
+	argv[argc] = NULL;
+
+	while ((p = *++argv) != NULL)
+	{
 		if (*p != '-')
 			break;
 		switch (*++p)
@@ -77,15 +83,22 @@ main(argc, argv)
 	if (SccsPath[0] == '\0')
 		SccsPath = ".";
 
-	/*
-	**  See if this user is an administrator.
-	*/
+	command(argv);
+	exit(EX_OK);
+}
+
+command(argv)
+	char **argv;
+{
+	register struct sccsprog *cmd;
+	register char *p;
 
 	/*
 	**  Look up command.
-	**	At this point, p and argv point to the command name.
+	**	At this point, argv points to the command name.
 	*/
 
+	p = *argv;
 	for (cmd = SccsProg; cmd->sccsname != NULL; cmd++)
 	{
 		if (strcmp(cmd->sccsname, p) == 0)
@@ -98,24 +111,48 @@ main(argc, argv)
 	}
 
 	/*
-	**  Set protection as appropriate.
+	**  Interpret operation associated with this command.
 	*/
 
-	if (bitset(F_PROT, cmd->sccsflags))
-		setuid(getuid());
+	switch (cmd->sccsoper)
+	{
+	  case PROG:		/* call an sccs prog */
+		callprog(cmd->sccspath, cmd->sccsflags, argv, FALSE);
+		fprintf(stderr, "Sccs internal error: callprog\n");
+		exit(EX_SOFTWARE);
+
+	  default:
+		fprintf(stderr, "Sccs internal error: oper %d\n", cmd->sccsoper);
+		exit(EX_SOFTWARE);
+	}
+}
+
+callprog(progpath, flags, argv, forkflag)
+	char *progpath;
+	short flags;
+	char **argv;
+	bool forkflag;
+{
+	register char *p;
+	register char **av;
+	char *newargv[1000];
+	extern char *makefile();
+	register int i;
+
+	if (*argv == NULL)
+		return (-1);
 
 	/*
 	**  Build new argument vector.
 	*/
 
 	av = newargv;
-	*av++ = p;
+	*av++ = *argv;
 
 	/* copy program filename arguments and flags */
-	while (--argc > 0)
+	while ((p = *++argv) != NULL)
 	{
-		p = *++argv;
-		if (!bitset(F_NOSDOT, cmd->sccsflags) && *p != '-')
+		if (!bitset(NO_SDOT, flags) && *p != '-')
 			*av++ = makefile(p);
 		else
 			*av++ = p;
@@ -128,9 +165,32 @@ main(argc, argv)
 	**  Call real SCCS program.
 	*/
 
-	execv(cmd->sccspath, newargv);
+	if (forkflag)
+	{
+		i = fork();
+		if (i < 0)
+		{
+			fprintf(stderr, "Sccs: cannot fork");
+			exit(EX_OSERR);
+		}
+		else if (i > 0)
+			return (i);
+	}
+
+	/*
+	**  Set protection as appropriate.
+	*/
+
+	if (bitset(REALUSER, flags))
+		setuid(getuid());
+
+	/*
+	**  Call the program.
+	*/
+
+	execv(progpath, newargv);
 	fprintf(stderr, "Sccs: cannot execute ");
-	perror(cmd->sccspath);
+	perror(progpath);
 	exit(EX_UNAVAILABLE);
 }
 
@@ -179,4 +239,3 @@ makefile(name)
 	strcpy(p, buf);
 	return (p);
 }
-
