@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.5 (Berkeley) %G%
+#	@(#)run.test	5.6 (Berkeley) %G%
 #
 
 # db regression tests
@@ -26,6 +26,7 @@ main()
 	test6
 	test7
 	test8
+	test9
 	rm -f $TMP1 $TMP2 $TMP3
 }
 
@@ -293,11 +294,28 @@ test7()
 	done
 }
 
-# Try a variety of bucketsizes and fill factors for hashing
+# Make sure that overflow pages are reused.
 test8()
 {
+	printf "Test 8: btree, hash: repeated small key, big data pairs\n"
+	rm -f $TMP1
+	awk 'BEGIN {
+		for (i = 1; i <= 100; ++i) {
+			printf("p\nkkey1\nD/bin/sh\n");
+			printf("p\nkkey2\nD/bin/csh\n");
+			printf("r\nkkey1\nr\nkkey2\n");
+		}
+	}' > $TMP1
+	$PROG -o $TMP2 btree $TMP1
+	$PROG -o $TMP2 hash $TMP1
+	# No explicit test for success.
+}
+
+# Try a variety of bucketsizes and fill factors for hashing
+test9()
+{
 	printf\
-    "Test 8: hash: bucketsize, fill factor; nelem 25000 cachesize 65536\n"
+    "Test 9: hash: bucketsize, fill factor; nelem 25000 cachesize 65536\n"
 	awk 'BEGIN {
 		for (i = 1; i <= 10000; ++i)
 			printf("%.*s\n", i % 34,
@@ -317,12 +335,12 @@ test8()
 	bsize=256
 	for ffactor in 11 14 21; do
 		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
-		$PROG -ot3 \
+		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test8: type hash:\
+			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
@@ -330,12 +348,12 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	bsize=512
 	for ffactor in 21 28 43; do
 		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
-		$PROG -ot3 \
+		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test8: type hash:\
+			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
@@ -343,12 +361,12 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	bsize=1024
 	for ffactor in 43 57 85; do
 		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
-		$PROG -ot3 \
+		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test8: type hash:\
+			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
@@ -356,12 +374,12 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	bsize=2048
 	for ffactor in 85 114 171; do
 		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
-		$PROG -ot3 \
+		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test8: type hash:\
+			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
@@ -369,12 +387,12 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	bsize=4096
 	for ffactor in 171 228 341; do
 		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
-		$PROG -ot3 \
+		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test8: type hash:\
+			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
@@ -382,12 +400,12 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	bsize=8192
 	for ffactor in 341 455 683; do
 		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
-		$PROG -ot3 \
+		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test8: type hash:\
+			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
