@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.17'DRAFT'Last Mod %G%'
+.fo 'Version 3.18'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.17
+Version 3.18
 .)l
 .sp
 .(l F
@@ -1232,6 +1232,10 @@ Normal message queueups.
 Unusual but benign incidents,
 e.g.,
 trying to process a locked queue file.
+.ip 9
+Log internal queue id to external message id mappings.
+This can be useful for tracing a message
+as it travels between several hosts.
 .ip 12
 Several messages that are basically only of interest
 when debugging.
@@ -3659,7 +3663,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.17
+Version 3.18
 .sp 2
 .sz 14
 DRAFT
