@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)user.h	7.7 (Berkeley) %G%
+ *	@(#)user.h	7.8 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -87,15 +87,16 @@ struct	user {
 	time_t	u_outime;		/* user time at last sample */
 
 /* 1.3 - signal management */
-	int	(*u_signal[NSIG])();	/* disposition of signals */
+	sig_t	u_signal[NSIG];		/* disposition of signals */
 	int	u_sigmask[NSIG];	/* signals to be blocked */
 	int	u_sigonstack;		/* signals to take on sigstack */
 	int	u_sigintr;		/* signals that interrupt syscalls */
 	int	u_oldmask;		/* saved mask from before sigpause */
-	int	u_code;			/* ``code'' to trap */
 	struct	sigstack u_sigstack;	/* sp & on stack state variable */
 #define	u_onstack	u_sigstack.ss_onstack
 #define	u_sigsp		u_sigstack.ss_sp
+#define	u_sig	u_arg[0]		/* for core dump/debugger XXX */
+#define	u_code	u_arg[1]		/* for core dump/debugger XXX */
 
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
