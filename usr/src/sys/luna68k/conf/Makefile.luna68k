@@ -1,4 +1,4 @@
-#	@(#)Makefile.luna68k	7.6 (Berkeley) %G%
+#	@(#)Makefile.luna68k	7.7 (Berkeley) %G%
 #
 # from: hp300/conf/Makefile.hp300	7.21 (Berkeley) 2/12/93
 #
@@ -68,10 +68,16 @@ NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
 SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ} libkern.a
 SYSTEM_LD_HEAD=	rm -f $@
-SYSTEM_LD=	@strip=-x; \
+SYSTEM_LD=	-@if [ X${DEBUG} = X-g ]; \
+		then strip=-X; \
+		else strip=-x; \
+		fi; \
 		echo ${LD} $$strip -n -o $@ '$${SYSTEM_OBJ}' vers.o libkern.a; \
 		${LD} $$strip -n -o $@ ${SYSTEM_OBJ} vers.o libkern.a
-SYSTEM_LD_TAIL=	@size $@; chmod 755 $@
+SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
+		[ X${DEBUG} = X-g ] && { \
+		echo cp $@ $@.gdb; rm -f $@.gdb; cp $@ $@.gdb; \
+		echo strip -d $@; strip -d $@; } || true
 
 %LOAD
 
