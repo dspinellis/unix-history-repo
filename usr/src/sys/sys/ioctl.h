@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.3 (Berkeley) %G%
+ *	@(#)ioctl.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -233,8 +233,8 @@ struct ttysize {
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 
-#define	FIOCLEX		_IO(f, 1)		/* set exclusive use on fd */
-#define	FIONCLEX	_IO(f, 2)		/* remove exclusive use */
+#define	FIOCLEX		_IO(f, 1)		/* set close on exec on fd */
+#define	FIONCLEX	_IO(f, 2)		/* remove close on exec */
 /* another local */
 #define	FIONREAD	_IOR(f, 127, int)	/* get # bytes to read */
 #define	FIONBIO		_IOW(f, 126, int)	/* set/clear non-blocking i/o */
