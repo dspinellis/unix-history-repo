@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
