@@ -212,7 +212,6 @@ The FreeBSD "core" group:
 		Paul Richards
 		Christoph Robitschko
 		Andreas Schulz
-		Rob Shady
 		Nate Williams
 
 
@@ -248,4 +247,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.9 1993/09/10 04:37:54 nate Exp $
+$Id: RELNOTES.FreeBSD,v 1.10 1993/10/10 02:38:03 jkh Exp $
