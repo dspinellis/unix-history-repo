@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)subdir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)subdir.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -95,6 +95,7 @@ register char *s;
 /*
  * return possibly corrected directory for searching
  */
+static char xdir[BUFSIZ];
 char *
 subdir(d, pre)
 register char *d, pre;
@@ -102,7 +103,11 @@ register char *d, pre;
 	if (strcmp(d, Spool) == 0)
 		if (pre == CMDPRE)
 			return CMDSDIR;
-		else if (pre == XQTPRE)
-			return XEQTDIR;
+		else if (pre == XQTPRE) {
+			if (xdir[0] == '\0')
+				sprintf(xdir,"%s/X.",Spool);
+			return xdir;
+
+		}
 	return d;
 }
