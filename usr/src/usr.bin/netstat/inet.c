@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -193,8 +193,8 @@ tcp_stats(off, name)
 	p(tcps_keepprobe, "\t\t%d keepalive probe%s sent\n");
 	p(tcps_keepdrops, "\t\t%d connection%s dropped by keepalive\n");
 	p(tcps_predack, "\t%d correct ACK header prediction%s\n");
-	p(tcps_predack, "\t%d correct data packet header prediction%s\n");
-	p3(tcps_pcbcachemiss, "\t%d cache miss%s\n");
+	p(tcps_preddat, "\t%d correct data packet header prediction%s\n");
+	p3(tcps_pcbcachemiss, "\t%d PCB cache miss%s\n");
 #undef p
 #undef p2
 #undef p3
