@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_alloc.c	6.17 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -109,10 +109,12 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	daddr_t bprev, bpref;
 	int osize, nsize;
 {
-	daddr_t bno;
 	register struct fs *fs;
 	register struct buf *bp, *obp;
 	int cg, request;
+	daddr_t bno, bn;
+	int i, count, s;
+	extern struct cmap *mfind();
 	
 	fs = ip->i_fs;
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
@@ -202,8 +204,15 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			brelse(obp);
 			return (NULL);
 		}
-		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
+		bn = fsbtodb(fs, bno);
+		bp = getblk(ip->i_dev, bn, nsize);
 		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
+		count = howmany(osize, DEV_BSIZE);
+		s = splimp();
+		for (i = 0; i < count; i += CLBYTES / DEV_BSIZE)
+			if (mfind(ip->i_dev, bn + i))
+				munhash(ip->i_dev, bn + i);
+		splx(s);
 		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		if (obp->b_flags & B_DELWRI) {
 			obp->b_flags &= ~B_DELWRI;
