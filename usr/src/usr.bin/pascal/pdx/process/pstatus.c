@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)pstatus.c 1.1 %G%";
+static char sccsid[] = "@(#)pstatus.c 1.2 %G%";
 
 /*
  * process status routines
@@ -49,7 +49,7 @@ printstatus()
 		fixbps();
 		fixintr();
 		if (process->status == FINISHED) {
-			exit(0);
+			quit(0);
 		} else {
 			printerror();
 		}
