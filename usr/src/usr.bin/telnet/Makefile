@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.13 (Berkeley) %G%
+#	@(#)Makefile	1.14 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -23,7 +23,7 @@
 
 VPATH	=	Source
 INCLUDES=	-ISource
-CFLAGS=	-O ${INCLUDES}
+CFLAGS=	-O ${INCLUDES} -DSRCRT -DKLUDGELINEMODE
 LIBC=	/lib/libc.a
 SRCS=	commands.c main.c network.c ring.c \
 	sys_bsd.c sys_dos.c telnet.c terminal.c \
