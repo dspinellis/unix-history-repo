@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)timed.c	2.14 (Berkeley) %G%";
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <setjmp.h>
+#include "pathnames.h"
 
 int id;
 int trace;
@@ -46,7 +47,7 @@ long delay2;
 long random();
 char hostname[MAXHOSTNAMELEN];
 struct host hp[NHOSTS];
-char tracefile[] = "/usr/adm/timed.log";
+char tracefile[] = _PATH_TIMEDLOG;
 FILE *fd;
 jmp_buf jmpenv;
 struct netinfo *nettab = NULL;

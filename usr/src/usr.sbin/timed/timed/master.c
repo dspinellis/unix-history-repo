@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)master.c	2.17 (Berkeley) %G%";
 #include <sys/file.h>
 #include <setjmp.h>
 #include <utmp.h>
+#include "pathnames.h"
 
 extern int machup;
 extern int measure_delta;
@@ -65,7 +66,7 @@ master()
 
 #ifdef MEASURE
 	if (fp == NULL) {
-		fp = fopen("/usr/adm/timed.masterlog", "w");
+		fp = fopen(_PATH_MASTERLOG, "w");
 		setlinebuf(fp);
 	}
 #endif
