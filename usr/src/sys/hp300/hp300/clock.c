@@ -11,7 +11,15 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.18 (Berkeley) %G%
+ *	@(#)clock.c	7.19 (Berkeley) %G%
+ */
+
+/*
+ * HPs use the MC6840 PTM with the following arrangement:
+ *	Timers 1 and 3 are externally driver from a 25Mhz source.
+ *	Output from timer 3 is tied to the input of timer 2.
+ * The latter makes it possible to use timers 3 and 2 together to get
+ * a 32-bit countdown timer.
  */
 
 #include <sys/param.h>
@@ -41,6 +49,7 @@ static int statvar = 1024 / 4;	/* {stat,prof}clock variance */
 static int statmin;		/* statclock interval - variance/2 */
 static int profmin;		/* profclock interval - variance/2 */
 static int timer3min;		/* current, from above choices */
+static int statprev;		/* previous value in stat timer */
 
 static int month_days[12] = {
 	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -117,16 +126,14 @@ cpu_initclocks()
 	statmin = statint - (statvar >> 1);
 	profmin = profint - (statvar >> 1);
 	timer3min = statmin;
+	statprev = statint;
 
 	/* finally, load hardware */
 	clk->clk_cr2 = CLK_CR1;
 	clk->clk_cr1 = CLK_RESET;
-	clk->clk_msb1 = intvl >> 8;
-	clk->clk_lsb1 = intvl;
-	clk->clk_msb2 = 0;
-	clk->clk_lsb2 = 0;
-	clk->clk_msb3 = statint >> 8;
-	clk->clk_lsb3 = statint;
+	asm volatile(" movpw %0,%1@(5)" : : "d" (intvl), "a" (clk));
+	asm volatile(" movpw %0,%1@(9)" : : "d" (0), "a" (clk));
+	asm volatile(" movpw %0,%1@(13)" : : "d" (statint), "a" (clk));
 	clk->clk_cr2 = CLK_CR1;
 	clk->clk_cr1 = CLK_IENAB;
 	clk->clk_cr2 = CLK_CR3;
@@ -168,8 +175,19 @@ statintr(fp)
 		r = random() & (var - 1);
 	} while (r == 0);
 	newint = timer3min + r;
-	clk->clk_msb3 = newint >> 8;
-	clk->clk_lsb3 = newint;
+
+	/*
+	 * The timer was automatically reloaded with the previous latch
+	 * value at the time of the interrupt.  Compensate now for the
+	 * amount of time that has run off since then (minimum of 2-12
+	 * timer ticks depending on CPU type) plus one tick roundoff.
+	 * This should keep us closer to the mean.
+	 */
+	asm volatile(" clrl %0; movpw %1@(13),%0" : "=d" (r) : "a" (clk));
+	newint -= (statprev - r + 1);
+
+	asm volatile(" movpw %0,%1@(13)" : : "d" (newint), "a" (clk));
+	statprev = newint;
 	statclock(fp);
 }
 
@@ -180,7 +198,7 @@ microtime(tvp)
 	register struct timeval *tvp;
 {
 	register volatile struct clkreg *clk;
-	register int s, u, h, l, sr, l2, h2, u2, s2;
+	register int s, u, t, u2, s2;
 
 	/*
 	 * Read registers from slowest-changing to fastest-changing,
@@ -196,25 +214,13 @@ microtime(tvp)
 	do {
 		s = time.tv_sec;
 		u = time.tv_usec;
-		h = clk->clk_msb1;
-		l = clk->clk_lsb1;
-		sr = clk->clk_sr;
-		l2 = clk->clk_lsb1;
-		h2 = clk->clk_msb1;
+		asm volatile (" clrl %0; movpw %1@(5),%0"
+			      : "=d" (t) : "a" (clk));
 		u2 = time.tv_usec;
 		s2 = time.tv_sec;
-	} while (l != l2 || h != h2 || u != u2 || s != s2);
+	} while (u != u2 || s != s2);
 
-	/*
-	 * Pending interrupt means that the counter wrapped and we did not
-	 * take the interrupt yet (can only happen if clock interrupts are
-	 * blocked).  If so, add one tick.  Then in any case, add remaining
-	 * count.  This should leave u < 2 seconds, since we can add at most
-	 * two clock intervals (assuming hz > 2!).
-	 */
-	if (sr & CLK_INT1)
-		u += tick;
-	u += (clkint - ((h << 8) | l)) * CLK_RESOLUTION;
+	u += (clkint - t) * CLK_RESOLUTION;
 	if (u >= 1000000) {		/* normalize */
 		s++;
 		u -= 1000000;
