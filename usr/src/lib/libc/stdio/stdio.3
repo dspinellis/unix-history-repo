@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stdio.3	8.4 (Berkeley) %G%
+.\"     @(#)stdio.3	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STDIO 3
@@ -68,35 +68,59 @@ of program termination, such as
 .Xr abort 3
 do not bother about closing files properly.
 .Pp
-At program startup, three text streams are predefined and need not be
-opened explicitly
-\(em
+This implementation needs and makes
+no distinction between
+.Dq text
+and
+.Dq binary
+streams.
+In effect, all streams are binary.
+No translation is performed and no extra padding appears on any stream.
+.Pp
+At program startup, three streams are predefined and need not be
+opened explicitly:
+.Bl -bullet -compact -offset indent
+.It
 .Em standard input 
 (for reading conventional input),
-\(em
+.It
 .Em standard output 
-(for writing conventional input),
-and
+(for writing conventional input), and
+.It
 .Em standard error
 (for writing diagnostic output).
+.El
 These streams are abbreviated
 .Em stdin , stdout
 and
 .Em stderr .
-When opened, the standard error stream
-is not fully buffered; the standard input and output streams are
+Initially, the standard error stream
+is unbuffered; the standard input and output streams are
 fully buffered if and only if the streams do not to refer to
-an interactive device.
-.Pp
-Output streams that refer to terminal devices
-are always line buffered by default;
+an interactive or
+.Dq terminal
+device, as determined by the
+.Xr isatty 3
+function.
+In fact,
+.Em all
+freshly-opened streams that refer to terminal devices
+default to line buffering, and
 pending output to such streams is written automatically
-whenever an input stream that refers to a terminal device is read.
-In cases where a large amount of computation is done after printing
+whenever an such an input stream is read.
+Note that this applies only to
+.Dq "true reads" ;
+if the read request can be satisfied by existing buffered data,
+no automatic flush will occur.
+In these cases,
+or when a large amount of computation is done after printing
 part of a line on an output terminal, it is necessary to
 .Xr fflush 3
 the standard output before going off and computing so that the output
 will appear.
+Alternatively, these defaults may be modified via the
+.Xr setvbuf 3
+function.
 .Pp
 The
 .Nm stdio
