@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	8.6 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,6 +16,16 @@
 #include <sys/malloc.h>
 #include <sys/resourcevar.h>
 #include <libkern/libkern.h>
+
+#ifdef DEBUG
+#include <vm/vm.h>
+#include <sys/sysctl.h>
+int doreallocblks = 1;
+struct ctldebug debug13 = { "doreallocblks", &doreallocblks };
+#else
+/* XXX for cluster_write */
+#define doreallocblks 1
+#endif
 
 /*
  * Local declarations
@@ -462,7 +472,8 @@ cluster_write(bp, filesize)
 			 * Otherwise try reallocating to make it sequential.
 			 */
 			cursize = vp->v_lastw - vp->v_cstart + 1;
-			if ((lbn + 1) * bp->b_bcount != filesize ||
+			if (!doreallocblks ||
+			    (lbn + 1) * bp->b_bcount != filesize ||
 			    lbn != vp->v_lastw + 1 || vp->v_clen <= cursize) {
 				cluster_wbuild(vp, NULL, bp->b_bcount,
 				    vp->v_cstart, cursize, lbn);
