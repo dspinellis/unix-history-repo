@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,11 +14,12 @@ rip_input(from, size)
 	struct sockaddr *from;
 	int size;
 {
-	struct rt_entry *rt;
-	struct netinfo *n;
-	struct interface *ifp, *if_ifwithdstaddr();
+	register struct rt_entry *rt;
+	register struct netinfo *n;
+	register struct interface *ifp;
+	struct interface *if_ifwithdstaddr();
 	int newsize;
-	struct afswitch *afp;
+	register struct afswitch *afp;
 
 	ifp = 0;
 	TRACE_INPUT(ifp, from, size);
@@ -113,7 +114,7 @@ rip_input(from, size)
 					ntohs(n->rip_dst.sa_family);
 				n->rip_metric = ntohl(n->rip_metric);
 			}
-			if ((unsigned) n->rip_metric >= HOPCNT_INFINITY)
+			if ((unsigned) n->rip_metric > HOPCNT_INFINITY)
 				continue;
 			if (n->rip_dst.sa_family >= AF_MAX)
 				continue;
@@ -122,7 +123,8 @@ rip_input(from, size)
 				continue;
 			rt = rtlookup(&n->rip_dst);
 			if (rt == 0) {
-				rtadd(&n->rip_dst, from, n->rip_metric, 0);
+				if (n->rip_metric < HOPCNT_INFINITY)
+				    rtadd(&n->rip_dst, from, n->rip_metric, 0);
 				continue;
 			}
 
@@ -131,6 +133,10 @@ rip_input(from, size)
 			 * shorter, or getting stale and equivalent.
 			 */
 			if (equal(from, &rt->rt_router)) {
+				if (n->rip_metric == HOPCNT_INFINITY) {
+					rtdelete(rt);
+					continue;
+				}
 				if (n->rip_metric != rt->rt_metric)
 					rtchange(rt, from, n->rip_metric);
 				rt->rt_timer = 0;
