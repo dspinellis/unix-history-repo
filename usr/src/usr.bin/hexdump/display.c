@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -145,11 +145,14 @@ display()
 		    }
 	if (endfu) {
 		/*
-		 * if eaddress not set, file size was multiple of blocksize,
-		 * and no partial block ever found.
+		 * if eaddress not set, error or file size was multiple of
+		 * blocksize, and no partial block ever found.
 		 */
-		if (!eaddress)
+		if (!eaddress) {
+			if (!address)
+				return;
 			eaddress = address + blocksize; 
+		}
 		for (pr = endfu->nextpr; pr; pr = pr->nextpr)
 			switch(pr->flags) {
 			case F_ADDRESS:
