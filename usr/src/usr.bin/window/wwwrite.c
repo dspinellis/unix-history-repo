@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.4 83/08/17";
+static	char *sccsid = "@(#)wwwrite.c	3.5 83/08/18";
 #endif
 
 #include "ww.h"
@@ -75,7 +75,11 @@ int n;
 		lf:
 				if (++w->ww_cur.r >= w->ww_w.nr) {
 					w->ww_cur.r = w->ww_w.nr - 1;
-					wwdelline(w, 0);
+					if (w->ww_scroll + w->ww_w.nr
+					    < w->ww_nline)
+						wwscroll(w, 1);
+					else
+						wwdelline(w, 0);
 				}
 				break;
 			case '\t':
@@ -87,8 +91,10 @@ int n;
 				}
 				break;
 			case '\b':
-				if (--w->ww_cur.c < 0)
-					w->ww_cur.c = 0;
+				if (--w->ww_cur.c < 0) {
+					w->ww_cur.c = w->ww_w.nc - 1;
+					goto up;
+				}
 				break;
 			case '\r':
 				w->ww_cur.c = 0;
@@ -108,8 +114,14 @@ int n;
 				w->ww_insert = 1;
 				break;
 			case 'A':
-				if (--w->ww_cur.r < 0)
+		up:
+				if (--w->ww_cur.r < 0) {
 					w->ww_cur.r = 0;
+					if (w->ww_scroll > 0)
+						wwscroll(w, -1);
+					else
+						wwinsline(w, 0);
+				}
 				break;
 			case 'B':
 				goto lf;

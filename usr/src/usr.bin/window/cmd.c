@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.2 83/08/17";
+static	char *sccsid = "@(#)cmd.c	3.3 83/08/18";
 #endif
 
 #include "defs.h"
@@ -27,6 +27,8 @@ top:
 				goto foo;
 			break;
 		case 'h': case 'j': case 'k': case 'l':
+		case CTRL(y):
+		case CTRL(e):
 		case CTRL(u):
 		case CTRL(d):
 		case CTRL(b):
@@ -108,20 +110,24 @@ top:
 		case 'l':
 			(void) wwwrite(selwin, "\033C", 2);
 			break;
-		/*
+		case CTRL(e):
+			wwscroll(selwin, 1);
+			break;
+		case CTRL(y):
+			wwscroll(selwin, -1);
+			break;
 		case CTRL(d):
-			c_scroll(1);
+			wwscroll(selwin, selwin->ww_w.nr / 2);
 			break;
 		case CTRL(u):
-			c_scroll(-1);
+			wwscroll(selwin, - selwin->ww_w.nr / 2);
 			break;
 		case CTRL(f):
-			c_scroll(2);
+			wwscroll(selwin, selwin->ww_w.nr);
 			break;
 		case CTRL(b):
-			c_scroll(-2);
+			wwscroll(selwin, - selwin->ww_w.nr);
 			break;
-		*/
 		case CTRL(s):
 			(void) write(selwin->ww_pty,
 				&wwwintty.ww_tchars.t_stopc, 1);

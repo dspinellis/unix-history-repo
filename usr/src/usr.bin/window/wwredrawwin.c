@@ -1,16 +1,14 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwredrawwin.c	3.2 83/08/16";
+static	char *sccsid = "@(#)wwredrawwin.c	3.3 83/08/18";
 #endif
 
 #include "ww.h"
 
-/*			nobody calls it
 wwredrawwin(w)
 register struct ww *w;
 {
 	wwredrawwin1(w, 0, w->ww_w.nr - 1, w->ww_scroll);
 }
-*/
 
 wwredrawwin1(w, srow, erow, offset)
 register struct ww *w;
