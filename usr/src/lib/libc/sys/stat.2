@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	6.6 (Berkeley) %G%
+.\"	@(#)stat.2	6.7 (Berkeley) %G%
 .\"
 .TH STAT 2 ""
 .UC 4
@@ -66,8 +66,8 @@ The contents of the structure pointed to by
 	ino_t	st_ino;	/* this inode's number */
 	u_short	st_mode;	/* protection */
 	short	st_nlink;	/* number or hard links to the file */
-	short	st_uid;	/* user-id of owner */
-	short	st_gid;	/* group-id of owner */
+	uid_t	st_uid;	/* user-id of owner */
+	gid_t	st_gid;	/* group-id of owner */
 	dev_t	st_rdev;	/* the device type, for inode that is device */
 	off_t	st_size;	/* total size of file */
 	time_t	st_atime;	/* file last access time */
