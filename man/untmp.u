@@ -1,0 +1,18 @@
+.TH UNTMP UCB 2/24/79 UCB
+.SH NAME
+untmp \- clean files out of /tmp
+.SH SYNOPSIS
+.B untmp
+[ user ]
+.SH DESCRIPTION
+.I Untmp
+removes all the files from /tmp owned by the invoker.
+It is useful for those developing programs which use
+temporary files or for stopping a C compilation cold.
+.PP
+If a user name is given, then files in /tmp owned
+by that user are removed rather than the files owned
+by the invoker.
+.SH BUGS
+Only certain users may
+specify another user name here.
