@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)savecore.8	5.1 (Berkeley) %G%
+.\"	@(#)savecore.8	6.1 (Berkeley) %G%
 .\"
-.TH SAVECORE 8 4/28/83
+.TH SAVECORE 8 ""
 .UC 4
 .SH NAME
 savecore \- save a core dump of the operating system
@@ -32,10 +32,10 @@ is run in that directory.
 .PP
 Before savecore writes out a core image, it reads a number from the file
 .IR dirname /minfree.
-If there are fewer free blocks on the filesystem
-which contains
+If the number of free bytes on the filesystem which contains
 .I dirname
-than the number obtained from the minfree file, the core dump is not done.
+is less than the number obtained from the minfree file times 1024,
+the core dump is not done.
 If the minfree file does not exist, savecore always writes out the core
 file (assuming that a core dump was taken).
 .PP
