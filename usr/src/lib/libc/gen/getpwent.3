@@ -1,9 +1,9 @@
-.\"	@(#)getpwent.3	5.1 (Berkeley) %G%
+.\"	@(#)getpwent.3	6.1 (Berkeley) %G%
 .\"
-.TH GETPWENT 3  "19 January 1983"
+.TH GETPWENT 3  ""
 .AT 3
 .SH NAME
-getpwent, getpwuid, getpwnam, setpwent, endpwent \- get password file entry
+getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile \- get password file entry
 .SH SYNOPSIS
 .nf
 .B #include <pwd.h>
@@ -19,6 +19,9 @@ getpwent, getpwuid, getpwnam, setpwent, endpwent \- get password file entry
 .B int setpwent()
 .PP
 .B int endpwent()
+.PP
+.B setpwfile(name)
+.B char *name;
 .fi
 .SH DESCRIPTION
 .I Getpwent,
@@ -52,6 +55,17 @@ line (opening the file if necessary);
 rewinds the file;
 .I endpwent
 closes it.
+.PP
+.I Setpwfile
+changes the default password file to
+.I name
+thus allowing alternate password files to be used.
+Note that it does
+.I not
+close the previous file.
+If this is desired,
+.I endpwent
+should be called prior to it.
 .PP
 .I Getpwuid
 and
