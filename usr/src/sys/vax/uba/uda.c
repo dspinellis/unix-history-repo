@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.13 (Berkeley) %G%
+ *	@(#)uda.c	7.14 (Berkeley) %G%
  *
  */
 
@@ -45,8 +45,6 @@
 #define	MAXUNIT	8		/* maximum allowed unit number */
 #define	DEFAULT_BURST	4	/* default DMA burst size */
 
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -63,6 +61,8 @@
 #include "syslog.h"
 #include "stat.h"
 
+#include "../machine/pte.h"
+
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
@@ -74,23 +74,6 @@
 #include "../vax/mscp.h"
 #include "../vax/mscpvar.h"
 #include "../vax/mtpr.h"
-
-/*
- * Backwards compatibility:  Reuse the old names.  Should fix someday.
- */
-#define	udaprobe	udprobe
-#define	udaslave	udslave
-#define	udaattach	udattach
-#define	udaopen		udopen
-#define	udaclose	udclose
-#define	udastrategy	udstrategy
-#define	udaread		udread
-#define	udawrite	udwrite
-#define	udaioctl	udioctl
-#define	udareset	udreset
-#define	udaintr		udintr
-#define	udadump		uddump
-#define	udasize		udsize
 
 /*
  * UDA communications area and MSCP packet pools, per controller.
@@ -544,12 +527,13 @@ udaattach(ui)
 	 * THIS ASSUMES THAT DRIVE TYPES ?X? ARE FLOPPIES
 	 */
 	if (MSCP_MID_ECH(1, ra_info[unit].ra_mediaid) == 'X' - '@') {
-		printf("ra%d: floppy\n", unit);
+		printf(": floppy");
 		return;
 	}
 		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
 	udaip[ui->ui_ctlr][ui->ui_slave] = ui;
 
+#ifdef notdef
 	/*
 	 * RX50s cannot be brought on line unless there is
 	 * a floppy in the drive.  Since an ONLINE while cold
@@ -558,13 +542,15 @@ udaattach(ui)
 	 * defer the ONLINE until someone tries to use the drive.
 	 */
 	if (ra_info[unit].ra_type == RA_TYPE_RX50) {
-		printf("ra%d: rx50\n", unit);
+		printf(": rx50");
 		return;
 	}
+#endif
 	if (uda_rainit(ui, 0))
-		printf("ra%d: offline\n", unit);
+		printf(": offline");
 	else {
-		printf("ra%d: %s\n", unit, udalabel[unit].d_typename);
+		printf(": %s, size = %d sectors",
+		    udalabel[unit].d_typename, ra_info[unit].ra_dsize);
 #ifdef notyet
 		addswap(makedev(UDADEVNUM, udaminor(unit, 0)), &udalabel[unit]);
 #endif
@@ -792,6 +778,7 @@ uda_rainit(ui, flags)
 	int flags;
 {
 	register struct uda_softc *sc = &uda_softc[ui->ui_ctlr];
+	register struct disklabel *lp;
 	register struct mscp *mp;
 	register int unit = ui->ui_unit;
 	register struct ra_info *ra;
@@ -850,7 +837,10 @@ uda_rainit(ui, flags)
 	 * Read pack label.
 	 */
 	if ((msg = readdisklabel(udaminor(unit, 0), udastrategy, lp)) != NULL) {
-		log(LOG_ERR, "ra%d: %s\n", unit, msg);
+		if (cold)
+			printf(": %s", msg);
+		else
+			log(LOG_ERR, "ra%d: %s\n", unit, msg);
 #ifdef COMPAT_42
 		if (udamaptype(unit, lp))
 			ra->ra_state = OPEN;
@@ -877,9 +867,9 @@ uda_rasave(unit, mp, check)
 {
 	register struct ra_info *ra = &ra_info[unit];
 
-	if (check && ra->ra_type != mp->mscp_guse.guse_mediaid) {
+	if (check && ra->ra_mediaid != mp->mscp_guse.guse_mediaid) {
 		printf("ra%d: changed types! was %d now %d\n", unit,
-			ra->ra_type, mp->mscp_guse.guse_mediaid);
+			ra->ra_mediaid, mp->mscp_guse.guse_mediaid);
 		ra->ra_state = CLOSED;	/* ??? */
 	}
 	/* ra->ra_type = mp->mscp_guse.guse_drivetype; */
@@ -1422,11 +1412,8 @@ initfailed:
 
 	/*
 	 * Handle buffer purge requests.
-	 * I have never seen these to work usefully, thus the log().
 	 */
 	if (ud->uda_ca.ca_bdp) {
-		log(LOG_DEBUG, "uda%d: purge bdp %d\n",
-			ctlr, ud->uda_ca.ca_bdp);
 		UBAPURGE(um->um_hd->uh_uba, ud->uda_ca.ca_bdp);
 		ud->uda_ca.ca_bdp = 0;
 		udaddr->udasa = 0;	/* signal purge complete */
@@ -1566,8 +1553,9 @@ udaonline(ui, mp)
 
 	ra->ra_state = OPENRAW;
 	ra->ra_dsize = (daddr_t)mp->mscp_onle.onle_unitsize;
-	printf("ra%d: uda%d, unit %d, size = %d sectors\n", ui->ui_unit,
-		ui->ui_ctlr, mp->mscp_unit, ra->ra_dsize);
+	if (!cold)
+		printf("ra%d: uda%d, unit %d, size = %d sectors\n", ui->ui_unit,
+		    ui->ui_ctlr, mp->mscp_unit, ra->ra_dsize);
 	/* can now compute ncyl */
 	ra->ra_geom.rg_ncyl = ra->ra_dsize / ra->ra_geom.rg_ntracks /
 		ra->ra_geom.rg_nsectors;
@@ -1685,7 +1673,7 @@ udaioctl(dev, cmd, data, flag)
 			error = EBADF;
 		else
 			error = setdisklabel(lp, (struct disklabel *)data,
-			    ra->ra_openpart);
+			    (ra->ra_state == OPENRAW) ? 0 : ra->ra_openpart);
 		break;
 
 	case DIOCWLABEL:
@@ -1703,11 +1691,11 @@ udaioctl(dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
-			    ra->ra_openpart)) == 0)
-			error = writedisklabel(dev, udastrategy, lp);
-		ra->ra_openpart = ra->ra_copenpart | ra->ra_bopenpart;
-		if (error == 0)
+		    (ra->ra_state == OPENRAW) ? 0 : ra->ra_openpart)) == 0) {
 			ra->ra_state = OPEN;
+			error = writedisklabel(dev, udastrategy, lp);
+		}
+		ra->ra_openpart = ra->ra_copenpart | ra->ra_bopenpart;
 		ra->ra_wlabel = wlab;
 		break;
 
@@ -2250,13 +2238,17 @@ udamaptype(unit, lp)
 	lp->d_ntracks = ra->ra_geom.rg_ntracks;
 	lp->d_ncylinders = ra->ra_geom.rg_ncyl;
 	i = ra->ra_mediaid;	/* print the port type too */
-	printf("ra%d: don't have a partition table for %c%c %c%c%c%d;\n\
-using (s,t,c)=(%d,%d,%d)\n",
-		unit, MSCP_MID_CHAR(4, i), MSCP_MID_CHAR(3, i),
+	if (!cold)
+		log(LOG_ERR, "ra%d", unit);
+	addlog(": don't have a partition table for %c%c %c%c%c%d;\n\
+using (s,t,c)=(%d,%d,%d)",
+		MSCP_MID_CHAR(4, i), MSCP_MID_CHAR(3, i),
 		MSCP_MID_CHAR(2, i), MSCP_MID_CHAR(1, i),
 		MSCP_MID_CHAR(0, i), MSCP_MID_CHAR(0, i),
 		MSCP_MID_NUM(i), lp->d_nsectors,
 		lp->d_ntracks, lp->d_ncylinders);
+	if (!cold)
+		addlog("\n");
 	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
 	lp->d_typename[0] = 'r';
 	lp->d_typename[1] = 'a';
