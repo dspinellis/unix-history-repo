@@ -20,7 +20,8 @@ rtalloc(ro)
 {
 	register struct rtentry *rt, *rtmin;
 	register struct mbuf *m;
-	register int hash, (*match)();
+	register unsigned hash;
+	register int (*match)();
 	struct afhash h;
 	struct sockaddr *dst = &ro->ro_dst;
 	int af = dst->sa_family;
