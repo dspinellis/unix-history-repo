@@ -1,5 +1,5 @@
 /***********************************************************
-		Copyright IBM Corporation 1987
+				Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -24,13 +24,10 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)tp_meas.h	7.3 (Berkeley) %G% */
-#ifdef TPPT
-#define TP_PERF_MEAS
-#endif TPPT
+/*	@(#)tp_meas.h	7.4 (Berkeley) %G% */
+#ifdef TP_PERF_MEAS
 #define tpmeas(a, b, t, c, d, e) \
 	Tpmeas((u_int)(a), (u_int)(b), t, (u_int)(c), (u_int)(d), (u_int)(e))
-#ifdef TP_PERF_MEAS
 
 struct tp_Meas {
 	int			tpm_tseq;

@@ -1,5 +1,5 @@
 /***********************************************************
-		Copyright IBM Corporation 1987
+				Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.4 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -742,7 +742,7 @@ tp_detach(tpcb)
 	ENDDEBUG
 	IFTRACE(D_CONN)
 		tptraceTPCB(TPPTmisc, "tp_detach tpcb so lsufx", 
-			tpcb, so, *(int *)(tpcb->tp_lsuffix), 0);
+			tpcb, so, *(u_short *)(tpcb->tp_lsuffix), 0);
 	ENDTRACE
 
 	if (so->so_head) {

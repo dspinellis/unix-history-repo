@@ -1,5 +1,5 @@
 /***********************************************************
-		Copyright IBM Corporation 1987
+				Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_usrreq.c	7.5 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -487,8 +487,8 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		}
 		IFPERF(tpcb)
 			u_int lsufx, fsufx;
-			lsufx = *(u_int *)(tpcb->tp_lsuffix);
-			fsufx = *(u_int *)(tpcb->tp_fsuffix);
+			lsufx = *(u_short *)(tpcb->tp_lsuffix);
+			fsufx = *(u_short *)(tpcb->tp_fsuffix);
 
 			tpmeas( tpcb->tp_lref, 
 				TPtime_open | (tpcb->tp_xtd_format <<4 ), 
@@ -504,8 +504,8 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		ENDDEBUG
 		IFPERF(tpcb)
 			u_int lsufx, fsufx;
-			lsufx = *(u_int *)(tpcb->tp_lsuffix);
-			fsufx = *(u_int *)(tpcb->tp_fsuffix);
+			lsufx = *(u_short *)(tpcb->tp_lsuffix);
+			fsufx = *(u_short *)(tpcb->tp_fsuffix);
 
 			tpmeas( tpcb->tp_lref, TPtime_open, 
 				&time, lsufx, fsufx, tpcb->tp_fref);
@@ -597,6 +597,7 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 				    - tp_headersize(DT_TPDU_type, tpcb)
 				    - (tpcb->tp_use_checksum?4:0) ;
 			int totlen = n->m_pkthdr.len;
+			struct mbuf *nn;
 
 			/*
 			 * Could have eotsdu and no data.(presently MUST have
@@ -622,16 +623,50 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			 * Pre-packetize the data in the sockbuf
 			 * according to negotiated mtu.  Do it here
 			 * where we can safely wait for mbufs.
+			 *
+			 * This presumes knowledge of sockbuf conventions.
 			 */
-			while (n->m_pkthdr.len > maxsize) {
-				struct mbuf *nn
-					    = m_copym(n, 0, maxsize, M_WAIT);
+			len = 0;
+			if (n = sb->sb_mb)
+				while (n->m_act)
+					n = n->m_act;
+			if (n && n->m_pkthdr.len < maxsize) {
+				int space = maxsize - n->m_pkthdr.len;
+				int eorseen = 0;
+				nn = n; 
+				for (;; n = n->m_next) {
+				 eorseen |= n->m_flags & M_EOR;
+					if (n->m_next == 0)
+						break;
+				}  
+				if (eorseen)
+					goto on1;
+				if (m->m_pkthdr.len <= space) {
+					n->m_next = m; 
+					if (eotsdu)
+						nn->m_flags |= M_EOR; 
+					goto on2; 
+				} else {   
+					nn->m_next = m_copym(n, 0, space, M_WAIT);
+					m_adj(n, space);
+				}
+			}	
+	on1:	len++;
+			for (n = m; n->m_pkthdr.len > maxsize;) {
+				nn = m_copym(n, 0, len, M_WAIT);
 				sbappendrecord(sb, nn);
 				m_adj(n, maxsize);
+				len++;
 			}
-			sbappendrecord(sb, n);
-			if (eotsdu)	/* This presumes knowledge of sbappendrecord() */
+			if (eotsdu)
 				n->m_flags |= M_EOR;
+			sbappendrecord(sb, n);
+	on2:	
+			IFTRACE(D_DATA)
+				tptraceTPCB(TPPTmisc,
+				"SEND BF: maxsize totlen frags eotsdu",
+					maxsize, totlen, len, eotsdu);
+			ENDTRACE
 			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: eot %d after sbappend 0x%x len 0x%x\n",
 					eotsdu, n, len);
@@ -685,6 +720,18 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 	ENDTRACE
 	splx(s);
 	return error;
+}
+tp_ltrace(so, uio)
+struct socket *so;
+struct uio *uio;
+{
+	IFTRACE(D_DATA)
+		register struct tp_pcb *tpcb =  sototpcb(so);
+		if (tpcb) {
+			tptraceTPCB(TPPTmisc, "sosend so resid iovcnt", so,
+				uio->uio_resid, uio->uio_iovcnt, 0);
+		}
+	ENDTRACE
 }
 
 tp_confirm(tpcb)
