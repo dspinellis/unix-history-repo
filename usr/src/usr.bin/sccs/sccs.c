@@ -100,7 +100,7 @@ char	MyName[] = "sccs";	/* name used in messages */
 
 /****************  End of Configuration Information  ****************/
 
-static char SccsId[] = "@(#)sccs.c	1.29 %G%";
+static char SccsId[] = "@(#)sccs.c	1.30 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -188,6 +188,7 @@ main(argc, argv)
 {
 	register char *p;
 	extern struct sccsprog *lookup();
+	register int i;
 
 	/*
 	**  Detect and decode flags intended for this program.
@@ -238,9 +239,27 @@ main(argc, argv)
 			SccsPath = ".";
 	}
 
-	command(argv, FALSE);
-	exit(EX_OK);
+	i = command(argv, FALSE);
+	exit(i);
 }
+/*
+**  COMMAND -- look up and perform a command
+**
+**	This routine is the guts of this program.  Given an
+**	argument vector, it looks up the "command" (argv[0])
+**	in the configuration table and does the necessary stuff.
+**
+**	Parameters:
+**		argv -- an argument vector to process.
+**		forkflag -- if set, fork before executing the command.
+**
+**	Returns:
+**		zero -- command executed ok.
+**		else -- error status.
+**
+**	Side Effects:
+**		none.
+*/
 
 command(argv, forkflag)
 	char **argv;
@@ -255,6 +274,7 @@ command(argv, forkflag)
 	char **avp;
 	register int i;
 	extern bool unedit();
+	int rval = 0;
 
 # ifdef DEBUG
 	if (Debug)
@@ -274,7 +294,7 @@ command(argv, forkflag)
 	if (cmd == NULL)
 	{
 		usrerr("Unknown command \"%s\"", argv[0]);
-		exit(EX_USAGE);
+		return (EX_USAGE);
 	}
 
 	/*
@@ -284,7 +304,7 @@ command(argv, forkflag)
 	switch (cmd->sccsoper)
 	{
 	  case PROG:		/* call an sccs prog */
-		callprog(cmd->sccspath, cmd->sccsflags, argv, forkflag);
+		rval = callprog(cmd->sccspath, cmd->sccsflags, argv, forkflag);
 		break;
 
 	  case CMACRO:		/* command macro */
@@ -304,26 +324,29 @@ command(argv, forkflag)
 			}
 			*q = '\0';
 			*avp = NULL;
-			xcommand(&argv[1], *p != '\0', nav[0], nav[1], nav[2],
-				 nav[3], nav[4], nav[5], nav[6]);
+			rval = xcommand(&argv[1], *p != '\0', nav[0], nav[1],
+					nav[2], nav[3], nav[4], nav[5], nav[6]);
+			if (rval != 0)
+				break;
 		}
-		syserr("internal error: CMACRO");
-		exit(EX_SOFTWARE);
+		break;
 
 	  case FIX:		/* fix a delta */
 		if (strncmp(argv[1], "-r", 2) != 0)
 		{
 			usrerr("-r flag needed for fix command");
+			rval = EX_USAGE;
 			break;
 		}
-		xcommand(&argv[1], TRUE, "get", "-k", NULL);
-		xcommand(&argv[1], TRUE, "rmdel", NULL);
-		xcommand(&argv[2], FALSE, "get", "-e", "-g", NULL);
-		syserr("FIX");
-		exit(EX_SOFTWARE);
+		rval = xcommand(&argv[1], TRUE, "get", "-k", NULL);
+		if (rval == 0)
+			rval = xcommand(&argv[1], TRUE, "rmdel", NULL);
+		if (rval == 0)
+			rval = xcommand(&argv[2], FALSE, "get", "-e", "-g", NULL);
+		break;
 
 	  case CLEAN:
-		clean((int) cmd->sccspath);
+		rval = clean((int) cmd->sccspath);
 		break;
 
 	  case UNEDIT:
@@ -335,13 +358,18 @@ command(argv, forkflag)
 		}
 		nav[i] = NULL;
 		if (i > 0)
-			xcommand(nav, FALSE, "get", NULL);
+			rval = xcommand(nav, FALSE, "get", NULL);
 		break;
 
 	  default:
 		syserr("oper %d", cmd->sccsoper);
 		exit(EX_SOFTWARE);
 	}
+# ifdef DEBUG
+	if (Debug)
+		printf("command: rval=%d\n", rval);
+# endif
+	return (rval);
 }
 /*
 **  LOOKUP -- look up an SCCS command name.
@@ -370,7 +398,23 @@ lookup(name)
 	}
 	return (NULL);
 }
-
+/*
+**  XCOMMAND -- special version of command
+**
+**	This routine prepends an argv to another argv and calls
+**	command.  It is used mostly for macros, etc.
+**
+**	Parameters:
+**		argv -- the normal argv.
+**		forkflag -- passed to command.
+**		arg0 -- the argv to prepend.
+**
+**	Returns:
+**		see 'command'.
+**
+**	Side Effects:
+**		none.
+*/
 
 xcommand(argv, forkflag, arg0)
 	char **argv;
@@ -387,8 +431,28 @@ xcommand(argv, forkflag, arg0)
 	for (av = argv; *av != NULL; av++)
 		*np++ = *av;
 	*np = NULL;
-	command(newargv, forkflag);
+	return (command(newargv, forkflag));
 }
+/*
+**  CALLPROG -- call a program
+**
+**	Used to call the SCCS programs.  Arguments in argv will be
+**	modified to be prepended by "SCCS/s." as appropriate.
+**
+**	Parameters:
+**		progpath -- pathname of the program to call.
+**		flags -- status flags from the command descriptors.
+**		argv -- an argument vector to pass to the program.
+**		forkflag -- if true, fork before calling, else just
+**			exec.
+**
+**	Returns:
+**		The exit status of the program.
+**		Nothing if forkflag == FALSE.
+**
+**	Side Effects:
+**		Can exit if forkflag == FALSE.
+*/
 
 callprog(progpath, flags, argv, forkflag)
 	char *progpath;
@@ -425,6 +489,8 @@ callprog(progpath, flags, argv, forkflag)
 		else if (i > 0)
 		{
 			wait(&st);
+			if ((st & 0377) == 0)
+				st = (st >> 8) & 0377;
 			return (st);
 		}
 	}
@@ -642,7 +708,7 @@ clean(mode)
 	if (dirfd == NULL)
 	{
 		usrerr("cannot open %s", buf);
-		return;
+		return (EX_NOINPUT);
 	}
 
 	/*
@@ -688,6 +754,7 @@ clean(mode)
 		printf("Nothing being edited\n");
 	if (mode == CHECKC)
 		exit(gotedit);
+	return (EX_OK);
 }
 /*
 **  UNEDIT -- unedit a file
