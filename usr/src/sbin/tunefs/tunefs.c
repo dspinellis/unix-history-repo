@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tunefs.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tunefs.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -179,7 +179,7 @@ again:
 	}
 	if (argc != 1)
 		goto usage;
-	bwrite(SBOFF / dev_bsize, (char *)&sblock, SBSIZE);
+	bwrite((daddr_t)SBOFF / dev_bsize, (char *)&sblock, SBSIZE);
 	if (Aflag)
 		for (i = 0; i < sblock.fs_ncg; i++)
 			bwrite(fsbtodb(&sblock, cgsblock(&sblock, i)),
@@ -207,7 +207,7 @@ getsb(fs, file)
 		fprintf(stderr, "tunefs: %s: %s\n", file, strerror(errno));
 		exit(3);
 	}
-	if (bread(SBOFF, (char *)fs, SBSIZE)) {
+	if (bread((daddr_t)SBOFF, (char *)fs, SBSIZE)) {
 		fprintf(stderr, "tunefs: %s: bad super block\n", file);
 		exit(4);
 	}
