@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.2 (Berkeley) %G%
+ *	@(#)locore.s	7.3 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -32,6 +32,7 @@
 	.set	MCKVEC,4	# offset into scb of machine check vector
 	.set	NBPG,512
 	.set	PGSHIFT,9
+	.set	SYSTEM,0x80000000	# virtual address of system start
 
 	.set	NISP,3		# number of interrupt stack pages
 
@@ -599,6 +600,8 @@ SCBVEC(bptflt):
 	pushl $0; TRAP(BPTFLT)
 SCBVEC(compatflt):
 	TRAP(COMPATFLT);
+SCBVEC(kdbintr):
+	pushl $0; TRAP(KDBTRAP);
 SCBVEC(tracep):
 	pushl $0; TRAP(TRCTRAP)
 SCBVEC(arithtrap):
@@ -791,9 +794,18 @@ start:
 1:
 #endif
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
-	movab	_edata,r6
-	movab	_end,r5
-	bbcc	$31,r5,0f; 0:
+	movab	_edata,r6; bicl2 $SYSTEM,r6
+	movab	_end,r5; bicl2 $SYSTEM,r5
+#ifdef KDB
+	subl2	$4,r5
+1:	clrl	(r6); acbl r5,$4,r6,1b		# clear just bss
+	addl2	$4,r5
+	bbc	$6,r11,0f			# check RB_KDB
+	bicl3	$SYSTEM,r9,r5			# skip symbol & string tables
+	bicl3	$SYSTEM,r9,r6
+#endif
+0:	bisl3	$SYSTEM,r5,r9			# convert to virtual address
+	addl2	$NBPG-1,r9			# roundup to next page
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
 1:	clrq	(r6); acbl r5,$8,r6,1b
 /* trap() and syscall() save r0-r11 in the entry mask (per ../h/reg.h) */
@@ -813,7 +825,7 @@ start:
 	movab	_etext+NBPG-1,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_URKR,r2,_Sysmap[r2]; aoblss r1,r2,1b
 /* make kernel data, bss, read-write */
-	movab	_end+NBPG-1,r1; bbcc $31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
+	bicl3	$SYSTEM,r9,r1; ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
 /* now go to mapped mode */
 	mtpr	$0,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
@@ -822,10 +834,9 @@ start:
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
 /* setup context for proc[0] == Scheduler */
-	movab	_end+NBPG-1,r6
+	bicl3	$SYSTEM,r9,r6
 	bicl2	$NBPG-1,r6		# make page boundary
 /* setup page table for proc[0] */
-	bbcc	$31,r6,0f; 0:
 	ashl	$-PGSHIFT,r6,r3			# r3 = btoc(r6)
 	bisl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
 	incl	r3
@@ -859,6 +870,7 @@ start:
 	mfpr	$P1BR,PCB_P1BR(r1)
 	mfpr	$P1LR,PCB_P1LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
+	movl	r9,PCB_R9(r1)			# r9 obtained from boot
 	movl	r10,PCB_R10(r1)
 	movl	r11,PCB_R11(r1)
 	movab	1f,PCB_PC(r1)			# initial pc
@@ -875,8 +887,10 @@ start:
 	movl	r10,_bootdev
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
+/* save end of symbol & string table in global _bootesym */
+	subl3	$NBPG-1,r9,_bootesym
 /* calculate firstaddr, and call main() */
-	movab	_end+NBPG-1,r0; bbcc $31,r0,0f; 0:; ashl $-PGSHIFT,r0,-(sp)
+	bicl3	$SYSTEM,r9,r0; ashl $-PGSHIFT,r0,-(sp)
 	addl2	$UPAGES+1,(sp); calls $1,_main
 /* proc[1] == /etc/init now running here; run icode */
 	pushl	$PSL_CURMOD|PSL_PRVMOD; pushl $0; rei
@@ -1290,6 +1304,46 @@ ENTRY(savectx, 0)
 	clrl	r0
 	ret
 
+#ifdef KDB
+/*
+ * C library -- reset, setexit
+ *
+ *	reset(x)
+ * will generate a "return" from
+ * the last call to
+ *	setexit()
+ * by restoring r6 - r12, ap, fp
+ * and doing a return.
+ * The returned value is x; on the original
+ * call the returned value is 0.
+ */
+ENTRY(setexit)
+	movab	setsav,r0
+	movq	r6,(r0)+
+	movq	r8,(r0)+
+	movq	r10,(r0)+
+	movq	8(fp),(r0)+		# ap, fp
+	movab	4(ap),(r0)+		# sp
+	movl	16(fp),(r0)		# pc
+	clrl	r0
+	ret
+
+ENTRY(reset)
+	movl	4(ap),r0	# returned value
+	movab	setsav,r1
+	movq	(r1)+,r6
+	movq	(r1)+,r8
+	movq	(r1)+,r10
+	movq	(r1)+,r12
+	movl	(r1)+,sp
+	jmp 	*(r1)
+
+	.data
+	.align  2
+setsav:	.space	10*4
+	.text
+#endif
+
 	.globl	_whichqs
 	.globl	_qs
 	.globl	_cnt
@@ -1315,7 +1369,7 @@ ENTRY(savectx, 0)
  * Call should be made at splclock(), and p->p_stat should be SRUN
  */
 	.align	1
- JSBENTRY(Setrq, R0)
+JSBENTRY(Setrq, R0)
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
 	pushab	set3			##
@@ -1337,7 +1391,7 @@ set3:	.asciz	"setrq"
  * Call should be made at splclock().
  */
 	.align	1
- JSBENTRY(Remrq, R0)
+JSBENTRY(Remrq, R0)
 	movzbl	P_PRI(r0),r1
 	ashl	$-2,r1,r1
 	bbsc	r1,_whichqs,rem1
@@ -1363,7 +1417,6 @@ rem3:	.asciz	"remrq"
 _masterpaddr:
 	.long	0
 
-	.set	ASTLVL_NONE,4
 	.text
 sw0:	.asciz	"swtch"
 
@@ -1374,9 +1427,10 @@ sw0:	.asciz	"swtch"
 	.globl	Idle
 Idle: idle:
 	mtpr	$0,$IPL			# must allow interrupts here
+1:
 	tstl	_whichqs		# look for non-empty queue
 	bneq	sw1
-	brb	idle
+	brb	1b
 
 badsw:	pushab	sw0
 	calls	$1,_panic
@@ -1392,13 +1446,13 @@ JSBENTRY(Swtch, 0)
 sw1:	ffs	$0,$32,_whichqs,r0	# look for non-empty queue
 	beql	idle			# if none, idle
 	mtpr	$0x18,$IPL		# lock out all so _whichqs==_qs
-	bbcc	r0,_whichqs,sw1		# proc moved via lbolt interrupt
+	bbcc	r0,_whichqs,sw1		# proc moved via interrupt
 	movaq	_qs[r0],r1
 	remque	*(r1),r2		# r2 = p = highest pri process
 	bvs	badsw			# make sure something was there
-sw2:	beql	sw3
+	beql	sw2
 	insv	$1,r0,$1,_whichqs	# still more procs in this queue
-sw3:
+sw2:
 	clrl	_noproc
 	clrl	_runrun
 	tstl	P_WCHAN(r2)		## firewalls

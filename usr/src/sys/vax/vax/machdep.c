@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -95,6 +95,10 @@ startup(firstaddr)
 	if (!qvcons_init())
 		printf("qvss not initialized\n");
 #endif
+#endif
+
+#ifdef KDB
+	kdb_init();
 #endif
 	/*
 	 * Good {morning,afternoon,evening,night}.
@@ -258,6 +262,12 @@ startup(firstaddr)
 	 * Set up CPU-specific registers, cache, etc.
 	 */
 	initcpu();
+
+	/*
+	 * Set up buffers, so they can be used to read disk labels.
+	 */
+	bhinit();
+	binit();
 
 	/*
 	 * Configure the system.
@@ -865,10 +875,20 @@ dumpsys()
 {
 
 	rpb.rp_flag = 1;
+	if (dumpdev == NODEV)
+		return;
 #ifdef notdef
 	if ((minor(dumpdev)&07) != 1)
 		return;
 #endif
+	/*
+	 * For dumps during autoconfiguration,
+	 * if dump device has already configured...
+	 */
+	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
+	if (dumplo < 0)
+		dumplo = 0;
 	dumpsize = physmem;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");

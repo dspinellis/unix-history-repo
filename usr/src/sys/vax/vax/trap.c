@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -44,12 +44,11 @@ char	*trap_type[] = {
 	"Protection fault",
 	"Trace trap",
 	"Compatibility mode trap",
-#ifdef notdef
 	"Page fault",
 	"Page table fault",
-#endif
+	"Kernel debugger trap",
 };
-#define	TRAP_TYPES	(sizeof trap_type / sizeof trap_type[0])
+int	TRAP_TYPES = (sizeof trap_type / sizeof trap_type[0]);
 
 /*
  * Called from the trap handler when a processor trap occurs.
@@ -73,6 +72,10 @@ trap(sp, type, code, pc, psl)
 	switch (type) {
 
 	default:
+#ifdef KDB
+		if (kdb_trap(&psl))
+			return;
+#endif
 		printf("trap type %d, code = %x, pc = %x\n", type, code, pc);
 		type &= ~USER;
 		if ((unsigned)type < TRAP_TYPES)

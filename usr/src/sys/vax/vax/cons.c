@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.1 (Berkeley) %G%
+ *	@(#)cons.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,20 @@
 #include "cons.h"
 #include "mtpr.h"
 
+/*
+ * On some machines (e.g. MicroVAX), a secondary console
+ * such as a display may supercede the standard serial console.
+ * On such machines, consops will be set to point to the cdevsw
+ * entry for the secondary console, and the standard console device
+ * (minor number 0) will be redirected.  Other minor numbers still
+ * refer to the standard console serial line.
+ *
+ * Also, console output may be redirected to another tty
+ * (e.g. a window); if so, constty will point to the current
+ * virtual console.
+ */
+struct	cdevsw *consops = 0;
+struct	tty *constty = 0;
 struct	tty cons;
 int	cnstart();
 int	ttrstrt();
@@ -34,6 +48,8 @@ cnopen(dev, flag)
 {
 	register struct tty *tp = &cons;
 
+	if (consops && minor(dev) == 0)
+		return ((*consops->d_open)(dev, flag));
 	tp->t_oproc = cnstart;
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
@@ -53,6 +69,8 @@ cnclose(dev)
 {
 	register struct tty *tp = &cons;
 
+	if (consops && minor(dev) == 0)
+		return ((*consops->d_close)(dev));
 	(*linesw[tp->t_line].l_close)(tp);
 	ttyclose(tp);
 }
@@ -64,6 +82,8 @@ cnread(dev, uio)
 {
 	register struct tty *tp = &cons;
 
+	if (consops && minor(dev) == 0)
+		return ((*consops->d_read)(dev, uio));
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
@@ -74,9 +94,16 @@ cnwrite(dev, uio)
 {
 	register struct tty *tp = &cons;
 
+	if (minor(dev) == 0) {
+		if (constty)
+			tp = constty;
+		else if (consops)
+			return ((*consops->d_write)(dev, uio));
+	}
 	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
 
+static	int cnpolling = 0;
 /*
  * Got a level-20 receive interrupt -
  * the LSI wants to give us a character.
@@ -89,6 +116,8 @@ cnrint(dev)
 	register int c;
 	register struct tty *tp;
 
+	if (cnpolling)
+		return;
 	c = mfpr(RXDB);
 	if (c&RXDB_ID) {
 #if VAX780
@@ -98,6 +127,9 @@ cnrint(dev)
 		return;
 	}
 	tp = &cons;
+#ifdef KDB
+	if (!kdbrintr(c, tp))
+#endif
 	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 
@@ -109,6 +141,8 @@ cnioctl(dev, cmd, addr, flag)
 	register struct tty *tp = &cons;
 	int error;
  
+	if (consops && minor(dev) == 0)
+		return ((*consops->d_ioctl)(dev, cmd, addr, flag));
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (error >= 0)
 		return (error);
@@ -165,17 +199,18 @@ cnstart(tp)
 	if (tp->t_outq.c_cc == 0)
 		goto out;
 	if (consdone == 0)
-		return;
-	c = getc(&tp->t_outq);
-	if (tp->t_flags&(RAW|LITOUT))
-		mtpr(TXDB, c&0xff);
-	else if (c <= 0177)
-		mtpr(TXDB, (c | (partab[c]&0200))&0xff);
-	else {
-		timeout(ttrstrt, (caddr_t)tp, (c&0177));
-		tp->t_state |= TS_TIMEOUT;
 		goto out;
+	c = getc(&tp->t_outq) & 0xff;
+	if ((tp->t_flags & (RAW|LITOUT)) == 0) {
+		if (c <= 0177)
+			c |= (partab[c] & 0200);
+		else {
+			timeout(ttrstrt, (caddr_t)tp, (c&0177));
+			tp->t_state |= TS_TIMEOUT;
+			goto out;
+		}
 	}
+	mtpr(TXDB, c);
 	consdone = 0;
 	tp->t_state |= TS_BUSY;
 out:
@@ -210,3 +245,31 @@ cnputc(c)
 	cnputc(0);
 	mtpr(TXCS, s);
 }
+
+#if defined(KDB) || defined(GENERIC)
+/*
+ * Get character from console.
+ */
+cngetc()
+{
+	register int c, s;
+
+	s = splhigh();
+	while (c == 0 ||
+	    (mfpr(RXCS)&RXCS_DONE) == 0 || (c = mfpr(RXDB)&0177) < 0)
+		;
+	if (c == '\r')
+		c = '\n';
+	(void) splx(s);
+	return (c);
+}
+#endif
+
+#ifdef KDB
+cnpoll(onoff)
+	int onoff;
+{
+
+	cnpolling = onoff;
+}
+#endif
