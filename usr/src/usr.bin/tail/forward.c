@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)forward.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)forward.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -174,8 +174,8 @@ rlines(fp, off, sbp)
 	if (!(size = sbp->st_size))
 		return;
 
-	if ((start = mmap(NULL,
-	    size, PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
+	if ((start = mmap(NULL, (size_t)size,
+	    PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
 		err(0, "%s", strerror(errno));
 		return;
 	}
@@ -190,7 +190,7 @@ rlines(fp, off, sbp)
 	/* Set the file pointer to reflect the length displayed. */
 	size = sbp->st_size - size;
 	WR(p, size);
-	if (fseek(fp, sbp->st_size, SEEK_SET) == -1) {
+	if (fseek(fp, (long)sbp->st_size, SEEK_SET) == -1) {
 		ierr();
 		return;
 	}

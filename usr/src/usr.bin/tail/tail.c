@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -165,7 +165,7 @@ main(argc, argv)
 		 * Determine if input is a pipe.  4.4BSD will set the SOCKET
 		 * bit in the st_mode field for pipes.  Fix this then.
 		 */
-		if (lseek(fileno(stdin), 0L, SEEK_CUR) == -1 &&
+		if (lseek(fileno(stdin), (off_t)0, SEEK_CUR) == -1 &&
 		    errno == ESPIPE) {
 			errno = 0;
 			fflag = 0;		/* POSIX.2 requires this. */
