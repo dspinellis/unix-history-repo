@@ -5,6 +5,17 @@
  * the terms and conditions for use and redistribution.
  */
 /* 
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00158
+ * --------------------         -----   ----------------------
+ *
+ * 27 May 93	Rodney W. Grimes	Added #ifndef around inb so that the
+ *					clash with cpufunc.h does not cause
+ *					a compile warning.. this is a hack.
+ *					All of this needs cleaned up at 0.1.5
+ *
  * HISTORY
  * $Log: pio.h,v $
  * Revision 1.1  1992/05/27  00:48:30  balsup
@@ -38,10 +49,18 @@
 	asm volatile(".byte 0x66; inl %1, %0" : "=a" (_tmp__) : "d" ((unsigned short)(y))); \
 	_tmp__; })
 
+/*
+ * only do this if it has not already be defined.. this is a crock for the
+ * patch kit for right now.  Need to clean up all the inx, outx stuff for
+ * 0.1.5 to use 1 common header file, that has Bruces fast mode inb/outb
+ * stuff in it.  Rgrimes 5/27/93
+ */
+#ifndef inb
 #define inb(y) \
 ({ unsigned char _tmp__; \
 	asm volatile("inb %1, %0" : "=a" (_tmp__) : "d" ((unsigned short)(y))); \
 	_tmp__; })
+#endif
 
 
 #define outl(x, y) \

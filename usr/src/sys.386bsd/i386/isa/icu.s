@@ -38,7 +38,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00154
+ * CURRENT PATCH LEVEL:         4       00158
  * --------------------         -----   ----------------------
  * 
  * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
@@ -46,6 +46,11 @@
  * 24 Mar 93	Rodney W. Grimes	Added interrupt counters for vmstat
  *					also stray and false intr counters added
  * 20 Apr 93	Bruce Evans		New npx-0.5 code
+ * 25 Apr 93	Bruce Evans		Support new interrupt code (intr-0.1)
+ *		Rodney W. Grimes	Reimplement above patches..
+ * 17 May 93	Rodney W. Grimes	Redid the interrupt counter stuff
+ *					moved the counters to vectors.s so
+ *					they are next to the name tables.
  */
 
 /*
@@ -53,369 +58,347 @@
  * Vector interrupt control section
  */
 
+/*
+ * XXX - this file is now misnamed.  All spls are now soft and the only thing
+ * related to the hardware icu is that the bit numbering is the same in the
+ * soft priority masks as in the hard ones.
+ */
+
+#define	HIGHMASK	0xffff
+#define	SOFTCLOCKMASK	0x8000
+
 	.data
-	ALIGN32
-	.globl	_imen
 	.globl	_cpl
-_cpl:	.long	0xffff			# current priority level (all off)
+_cpl:	.long	0xffff			# current priority (all off)
+	.globl	_imen
 _imen:	.long	0xffff			# interrupt mask enable (all off)
-	.globl	_highmask
-_highmask:	.long	0xffff
+#	.globl	_highmask
+_highmask:	.long	HIGHMASK
 	.globl	_ttymask
 _ttymask:	.long	0
 	.globl	_biomask
 _biomask:	.long	0
 	.globl	_netmask
 _netmask:	.long	0
-	.globl	_isa_intr
-	/*
-	 * This is the names of the counters for vmstat added by
-	 * rgrimes@agora.rain.com (Rodney W. Grimes) 10/30/1992
-	 * Added false and stray counters 3/25/1993 rgrimes
-	 */
-	.globl	_intrcnt, _eintrcnt	/* Added to make vmstat happy */
-	.globl	_isa_false7_intrcnt, _isa_false15_intrcnt, _isa_stray_intrcnt
-_intrcnt:				/* Added to make vmstat happy */
-_isa_false7_intrcnt:
-		.space	4		/* false IRQ7's */
-_isa_false15_intrcnt:
-		.space	4		/* false IRQ15's */
-_isa_stray_intrcnt:
-		.space	4		/* stray interrupts */
-_isa_intr:	.space	16*4
-_eintrcnt:				/* Added to make vmstat happy */
+	.globl	_ipending
+_ipending:	.long	0
+
+#define	GENSPL(name, mask, event) \
+	.globl	_spl/**/name ; \
+	ALIGN_TEXT ; \
+_spl/**/name: ; \
+	COUNT_EVENT(_intrcnt_spl, event) ; \
+	movl	_cpl,%eax ; \
+	movl	%eax,%edx ; \
+	orl	mask,%edx ; \
+	movl	%edx,_cpl ; \
+	SHOW_CPL ; \
+	ret
+
+#define	FASTSPL(mask) \
+	movl	mask,_cpl ; \
+	SHOW_CPL
+
+#define	FASTSPL_VARMASK(varmask) \
+	movl	varmask,%eax ; \
+	movl	%eax,_cpl ; \
+	SHOW_CPL
 
 	.text
+
+#undef BUILD_FAST_VECTOR
+#define	BUILD_FAST_VECTOR	BUILD_VECTOR
+
+#undef BUILD_VECTOR
+#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
+		     icu_num, icu_enables, reg) \
+	testb	$IRQ_BIT(irq_num),%reg ; \
+	jne	unpend_v/**/id_num
+
+	ALIGN_TEXT
+unpend_v:
+	COUNT_EVENT(_intrcnt_spl, 0)
+	BUILD_VECTORS
+
+/*
+ * XXX - we have already tested that the ipending bit is set, but we didn't
+ * disable interrupts, so if any interrupt occurs while we are test-and-
+ * resetting, then the doreti routine for the new interrupt is guaranteed to
+ * unpend the pending interrupt.  So use btrl to test the bit again.  We
+ * avoided using btrl in the chain of tests since it is slow (8 cycles to
+ * memory on 386's and 486's, while testing a register takes 2 cyles on 386's
+ * and 1 on 486's, and and-immediate to memory takes 7 cycles on 386's and 3
+ * on 486's).  We avoided bsf because it is slow and doesn't handle the
+ * strange priority order.  A reordered bsf can be done faster using table
+ * lookup but it is still slower than our dumb-looking linear search for the
+ * first 8 or so (configured) interrupts.  Binary search of 1-16 items would
+ * have too many slow branches taken.  Perhaps this code is not excecuted
+ * enough to be worth so much attention!
+ *
+ * TODO: get rid of slow btrl's and btsl's, and slower bsf's elsewhere.
+ *       Remove kludges for gas once not handling immediate-mode btrl's.
+ */
+
+#undef BUILD_FAST_VECTOR
+#define BUILD_FAST_VECTOR(name, unit, irq_num, id_num, mask, handler, \
+			  icu_num, icu_enables, reg) \
+	ALIGN_TEXT ; \
+unpend_v/**/id_num: ; \
+	btrl	$irq_num,_ipending ; \
+	jnc	unpend_v_confirmation_failed ; \
+	SHOW_IPENDING ; \
+	pushl	$unit ; \
+	call	_soft/**/name ; \
+	addl	$4,%esp ; \
+	jmp	unpend_v_confirmation_failed
+
+#undef BUILD_VECTOR
+#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
+		     icu_num, icu_enables, reg) \
+	ALIGN_TEXT ; \
+unpend_v/**/id_num: ; \
+	btrl	$irq_num,_ipending ; \
+	jnc	unpend_v_confirmation_failed ; \
+	SHOW_IPENDING ; \
+	jmp	Vretry/**/id_num
+
+	BUILD_VECTORS
+
+/*
+ * Unconfigured interrupt or no longer pending interrupt.
+ *
+ * XXX - unconfigured interrupts "can't happen", except possibly for
+ * strayintr's 7 and 15 when they are not configured.  If they happen,
+ * ipending will be checked forever.
+ */
+
+	ALIGN_TEXT
+unpend_v_confirmation_failed:
+	movl	_cpl,%eax
+	movl	%eax,%edx
+	notl	%eax
+	andl	_ipending,%eax
+	je	none_to_unpend
+	jmp	unpend_v
+
 /*
  * Handle return from interrupt after device handler finishes
  */
-	ALIGN32
+	ALIGN_TEXT
 doreti:
-	cli
-	popl	%ebx			# remove intr number
-	NOP
+	COUNT_EVENT(_intrcnt_spl, 1)
+	addl	$4,%esp			# discard unit arg
 	popl	%eax			# get previous priority
-	# now interrupt frame is a trap frame!
-	movw	%ax,%cx
-	movw	%ax,_cpl
-	orw	_imen,%ax
-	outb	%al,$ IO_ICU1+1		# re-enable intr?
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
+/*
+ * Now interrupt frame is a trap frame!
+ *
+ * XXX - setting up the interrupt frame to be almost a stack frame is mostly
+ * a waste of time.
+ */
+	movl	%eax,_cpl
+	SHOW_CPL
+	movl	%eax,%edx
+	notl	%eax
+	andl	_ipending,%eax
+	jne	unpend_v
+none_to_unpend:
+	testl	%edx,%edx		# returning to zero priority?
+	jne	1f			# nope, going to non-zero priority
+	movl	_netisr,%eax
+	testl	%eax,%eax		# check for softint s/traps
+	jne	2f			# there are some
+	jmp	test_resched		# XXX - schedule jumps better
+	COUNT_EVENT(_intrcnt_spl, 2)			# XXX
 
-	cmpw	$0x1f,13*4(%esp)	# to user?
-	je	1f			# nope, leave
-	andw	$0xffff,%cx	
-	cmpw	$0,%cx			# returning to zero?
-	je	1f
-
-	pop	%es			# nope, going to non-zero level
-	pop	%ds
-	popa
+	ALIGN_TEXT			# XXX
+1:					# XXX
+	COUNT_EVENT(_intrcnt_spl, 3)
+	popl	%es
+	popl	%ds
+	popal
 	addl	$8,%esp
 	iret
 
-	ALIGN32
-1:	cmpl	$0,_netisr		# check for softint s/traps
-	jne	1f
-	cmpl	$0,_astpending
-	jne	1f
-
-	pop	%es			# none, going back to base pri
-	pop	%ds
-	popa
-	addl	$8,%esp
-	iret
-	
 #include "../net/netisr.h"
 
-	ALIGN32
-1:
-
-#define DONET(s, c)	; \
-	.globl	c ;  \
-	btrl	$ s ,_netisr ;  \
-	jnb	1f ; \
+#define DONET(s, c, event) ; \
+	.globl	c ; \
+	btrl	$s,_netisr ; \
+	jnc	1f ; \
+	COUNT_EVENT(_intrcnt_spl, event) ; \
 	call	c ; \
 1:
 
-	call	_splnet
-
-	DONET(NETISR_RAW,_rawintr)
+	ALIGN_TEXT
+2:
+	COUNT_EVENT(_intrcnt_spl, 4)
+/*
+ * XXX - might need extra locking while testing reg copy of netisr, but
+ * interrupt routines setting it would not cause any new problems (since we
+ * don't loop, fresh bits will not be processed until the next doreti or spl0).
+ */
+	testl	$~((1 << NETISR_SCLK) | (1 << NETISR_AST)),%eax
+	je	test_ASTs		# no net stuff, just temporary AST's
+	FASTSPL_VARMASK(_netmask)
+	DONET(NETISR_RAW, _rawintr, 5)
 #ifdef INET
-	DONET(NETISR_IP,_ipintr)
+	DONET(NETISR_IP, _ipintr, 6)
 #endif
 #ifdef IMP
-	DONET(NETISR_IMP,_impintr)
+	DONET(NETISR_IMP, _impintr, 7)
 #endif
 #ifdef NS
-	DONET(NETISR_NS,_nsintr)
+	DONET(NETISR_NS, _nsintr, 8)
 #endif
-
-#ifdef notdef
-	NOP
-	popl	%eax
-	movw	%ax,_cpl
-	orw	_imen,%ax
-	outb	%al,$ IO_ICU1+1		# re-enable intr?
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-#else
-	call	_spl0
-#endif
-
-	btrl	$ NETISR_SCLK,_netisr
-	jnb	1f
-	# back to an interrupt frame for a moment
-	call	_splsoftclock
-	pushl	$0xff	# dummy intr
+	FASTSPL($0)
+test_ASTs:
+	btrl	$NETISR_SCLK,_netisr
+	jnc	test_resched
+	COUNT_EVENT(_intrcnt_spl, 9)
+	FASTSPL($SOFTCLOCKMASK)
+/*
+ * Back to an interrupt frame for a moment.
+ */
+	pushl	$0			# previous cpl (probably not used)
+	pushl	$0x7f			# dummy unit number
 	call	_softclock
-	popl	%eax
-	call	_spl0
-
-	# jmp	2f
-
-1:
-	cmpw	$0x1f,13*4(%esp)	# to user?
-	jne	2f			# nope, leave
-	cmpl	$0,_astpending
+	addl	$8,%esp			# discard dummies
+	FASTSPL($0)
+test_resched:
+#ifdef notused1
+	btrl	$NETISR_AST,_netisr
+	jnc	2f
+#endif
+#ifdef notused2
+	cmpl	$0,_want_resched
 	je	2f
+#endif
+	cmpl	$0,_astpending		# XXX - put it back in netisr to
+	je	2f			# reduce the number of tests
+	testb	$SEL_RPL_MASK,TRAPF_CS_OFF(%esp)
+					# to non-kernel (i.e., user)?
+	je	2f			# nope, leave
+	COUNT_EVENT(_intrcnt_spl, 10)
 	movl	$0,_astpending
 	call	_trap
-
-2:	pop	%es
-	pop	%ds
+2:
+	COUNT_EVENT(_intrcnt_spl, 11)
+	popl	%es
+	popl	%ds
 	popal
 	addl	$8,%esp
 	iret
 
 /*
  * Interrupt priority mechanism
- *
- * Two flavors	-- imlXX masks relative to ISA noemenclature (for PC compat sw)
- *		-- splXX masks with group mechanism for BSD purposes
+ *	-- soft splXX masks with group mechanism (cpl)
+ *	-- h/w masks for currently active or unused interrupts (imen)
+ *	-- ipending = active interrupts currently masked by cpl
  */
 
-	.globl	_splhigh
-	.globl	_splclock
-	ALIGN32
-_splhigh:
-_splclock:
-	cli				# disable interrupts
-	NOP
-	movw	$0xffff,%ax		# set new priority level
-	movw	%ax,%dx
-	# orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_spltty			# block clists
-	ALIGN32
-_spltty:
-	cli				# disable interrupts
-	NOP
-	movw	_cpl,%ax
-	orw	_ttymask,%ax
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_splimp
-	.globl	_splnet
-	ALIGN32
-_splimp:
-_splnet:
-	cli				# disable interrupts
-	NOP
-	movw	_cpl,%ax
-	orw	_netmask,%ax
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_splbio	
-	ALIGN32
-_splbio:
-	cli				# disable interrupts
-	NOP
-	movw	_cpl,%ax
-	orw	_biomask,%ax
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_splsoftclock
-	ALIGN32
-_splsoftclock:
-	cli				# disable interrupts
-	NOP
-	movw	_cpl,%ax
-	orw	$0x8000,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
+	GENSPL(bio, _biomask, 12)
+	GENSPL(clock, $HIGHMASK, 13)	/* splclock == splhigh ex for count */
+	GENSPL(high, $HIGHMASK, 14)
+	GENSPL(imp, _netmask, 15)	/* splimp == splnet except for count */
+	GENSPL(net, _netmask, 16)
+	GENSPL(softclock, $SOFTCLOCKMASK, 17)
+	GENSPL(tty, _ttymask, 18)
 
 	.globl _splnone
 	.globl _spl0
-	ALIGN32
+	ALIGN_TEXT
 _splnone:
 _spl0:
-	cli				# disable interrupts
-	NOP
-	pushl	_cpl			# save old priority
-	movw	_cpl,%ax
-	orw	_netmask,%ax		# mask off those network devices
-	movw	%ax,_cpl		# set new priority level
-	orw	_imen,%ax		# mask off those not enabled yet
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	sti				# enable interrupts
-
-	DONET(NETISR_RAW,_rawintr)
+	COUNT_EVENT(_intrcnt_spl, 19)
+in_spl0:
+	movl	_cpl,%eax
+	pushl	%eax			# save old priority
+	testl	$(1 << NETISR_RAW) | (1 << NETISR_IP),_netisr
+	je	over_net_stuff_for_spl0
+	movl	_netmask,%eax		# mask off those network devices
+	movl	%eax,_cpl		# set new priority
+	SHOW_CPL
+/*
+ * XXX - what about other net intrs?
+ */
+	DONET(NETISR_RAW, _rawintr, 20)
 #ifdef INET
-	DONET(NETISR_IP,_ipintr)
+	DONET(NETISR_IP, _ipintr, 21)
 #endif
-	cli				# disable interrupts
-	popl	_cpl			# save old priority
-	NOP
-	movw	$0,%ax			# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
+over_net_stuff_for_spl0:
+	movl	$0,_cpl			# set new priority
+	SHOW_CPL
+	movl	_ipending,%eax
+	testl	%eax,%eax
+	jne	unpend_V
+	popl	%eax			# return old priority
 	ret
 
 	.globl _splx
-	ALIGN32
+	ALIGN_TEXT
 _splx:
-	cli				# disable interrupts
-	NOP
-	movw	4(%esp),%ax		# new priority level
-	movw	%ax,%dx
-	cmpw	$0,%dx
-	je	_spl0			# going to "zero level" is special
-
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
+	COUNT_EVENT(_intrcnt_spl, 22)
+	movl	4(%esp),%eax		# new priority
+	testl	%eax,%eax
+	je	in_spl0			# going to "zero level" is special
+	COUNT_EVENT(_intrcnt_spl, 23)
+	movl	_cpl,%edx		# save old priority
+	movl	%eax,_cpl		# set new priority
+	SHOW_CPL
+	notl	%eax
+	andl	_ipending,%eax
+	jne	unpend_V_result_edx
+	movl	%edx,%eax		# return old priority
 	ret
 
-	/* hardware interrupt catcher (IDT 32 - 47) */
-	.globl	_isa_strayintr
+#undef BUILD_FAST_VECTOR
+#define BUILD_FAST_VECTOR	BUILD_VECTOR
 
-IDTVEC(intr0)
-	INTRSTRAY(0, _highmask, 0) ; call	_isa_strayintr ; INTREXIT1
+#undef BUILD_VECTOR
+#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
+		     icu_num, icu_enables, reg) \
+	testb	$IRQ_BIT(irq_num),%reg ; \
+	jne	unpend_V/**/id_num
 
-IDTVEC(intr1)
-	INTRSTRAY(1, _highmask, 1) ; call	_isa_strayintr ; INTREXIT1
+	ALIGN_TEXT
+unpend_V_result_edx:
+	pushl	%edx
+unpend_V:
+	COUNT_EVENT(_intrcnt_spl, 24)
+	BUILD_VECTORS
 
-IDTVEC(intr2)
-	INTRSTRAY(2, _highmask, 2) ; call	_isa_strayintr ; INTREXIT1
+	ALIGN_TEXT
+unpend_V_confirmation_failed:
+	movl	_cpl,%eax
+	notl	%eax
+	andl	_ipending,%eax
+	jne	unpend_V
+	popl	%eax
+	ret
 
-IDTVEC(intr3)
-	INTRSTRAY(3, _highmask, 3) ; call	_isa_strayintr ; INTREXIT1
+#undef BUILD_FAST_VECTOR
+#define BUILD_FAST_VECTOR(name, unit, irq_num, id_num, mask, handler, \
+			  icu_num, icu_enables, reg) \
+	ALIGN_TEXT ; \
+unpend_V/**/id_num: ; \
+	btrl	$irq_num,_ipending ; \
+	jnc	unpend_V_confirmation_failed ; \
+	SHOW_IPENDING ; \
+	pushl	$unit ; \
+	call	_soft/**/name ; \
+	addl	$4,%esp ; \
+	jmp	unpend_V_confirmation_failed
 
-IDTVEC(intr4)
-	INTRSTRAY(4, _highmask, 4) ; call	_isa_strayintr ; INTREXIT1
+#undef BUILD_VECTOR
+#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
+		     icu_num, icu_enables, reg) \
+	ALIGN_TEXT ; \
+unpend_V/**/id_num: ; \
+	btrl	$irq_num,_ipending ; \
+	jnc	unpend_V_confirmation_failed ; \
+	SHOW_IPENDING ; \
+	int	$ICU_OFFSET + irq_num ; \
+	popl	%eax ; \
+	ret
 
-IDTVEC(intr5)
-	INTRSTRAY(5, _highmask, 5) ; call	_isa_strayintr ; INTREXIT1
-
-IDTVEC(intr6)
-	INTRSTRAY(6, _highmask, 6) ; call	_isa_strayintr ; INTREXIT1
-
-IDTVEC(intr7)
-	INTRSTRAY(7, _highmask, 7) ; call	_isa_strayintr ; INTREXIT1
-
-
-IDTVEC(intr8)
-	INTRSTRAY(8, _highmask, 8) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr9)
-	INTRSTRAY(9, _highmask, 9) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr10)
-	INTRSTRAY(10, _highmask, 10) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr11)
-	INTRSTRAY(11, _highmask, 11) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr12)
-	INTRSTRAY(12, _highmask, 12) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr13)
-	INTRSTRAY(13, _highmask, 13) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr14)
-	INTRSTRAY(14, _highmask, 14) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intr15)
-	INTRSTRAY(15, _highmask, 15) ; call	_isa_strayintr ; INTREXIT2
-
-IDTVEC(intrdefault)
-	INTRSTRAY(255, _highmask, 255) ; call	_isa_strayintr ; INTREXIT2
+	BUILD_VECTORS

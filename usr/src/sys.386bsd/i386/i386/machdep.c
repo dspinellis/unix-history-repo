@@ -38,7 +38,7 @@
  *
  * PATCHES MAGIC		LEVEL	PATCH THAT GOT US HERE
  * --------------------		-----	----------------------
- * CURRENT PATCH LEVEL:		4	00154
+ * CURRENT PATCH LEVEL:		5	00158
  * --------------------		-----	----------------------
  *
  * 15 Aug 92	William Jolitz		Large memory bug
@@ -47,10 +47,12 @@
  *					the new microtime.s routine
  * 08 Apr 93	Andrew Herbert		Fixes for kmem_alloc panics
  * 20 Apr 93	Bruce Evans		New npx-0.5 code
+ * 25 Apr 93	Bruce Evans		New intr-0.1 code
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/machdep.c,v 1.2 92/01/21 14:22:09 william Exp Locker: root $";
 
 
+#include <stddef.h>
 #include "param.h"
 #include "systm.h"
 #include "signalvar.h"
@@ -418,7 +420,15 @@ sigreturn(p, uap, retval)
 	register int *regs = p->p_regs;
 
 
-	fp = (struct sigframe *) regs[sESP] ;
+	/*
+	 * (XXX old comment) regs[sESP] points to the return address.
+	 * The user scp pointer is above that.
+	 * The return address is faked in the signal trampoline code
+	 * for consistency.
+	 */
+	scp = uap->sigcntxp;
+	fp = (struct sigframe *)
+	     ((caddr_t)scp - offsetof(struct sigframe, sf_sc));
 
 	if (useracc((caddr_t)fp, sizeof (*fp), 0) == 0)
 		return(EINVAL);
@@ -428,7 +438,6 @@ sigreturn(p, uap, retval)
 	regs[sEDX] = fp->sf_edx ;
 	regs[sECX] = fp->sf_ecx ;
 
-	scp = fp->sf_scp;
 	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
 		return(EINVAL);
 #ifdef notyet

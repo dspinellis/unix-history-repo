@@ -36,12 +36,13 @@
  *	@(#)isa.h	5.7 (Berkeley) 5/9/91
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00135
+ * CURRENT PATCH LEVEL:         3       00158
  * --------------------         -----   ----------------------
  *
  * 15 Feb 93	Julian Elischer		Added entries for some scsi adapters
  * 06 Apr 93	Rodney W. Grimes	Added com3 and com4, added IO_ISASIZES
  *					section
+ * 26 Apr 93	Bruce Evans		Support for intr-0.1
  */
 
 /*
@@ -49,11 +50,14 @@
  */
 
 #ifndef LOCORE
-unsigned char inb(), rtcin();
-void outb();
+#include <sys/cdefs.h>
+
+unsigned char rtcin __P((int));
 extern unsigned int atdevbase;	/* offset in virtual memory of ISA io mem */
-void sysbeep(int,int);
-unsigned kbd_8042cmd(int);
+void sysbeep __P((int, int));
+unsigned kbd_8042cmd __P((int));
+struct isa_device;
+int isa_irq_pending __P((struct isa_device *dvp));
 #endif
 
 

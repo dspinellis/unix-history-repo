@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)subr_xxx.c	7.10 (Berkeley) 4/20/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00158
+ * --------------------         -----   ----------------------
+ *
+ * 25 Apr 93	Bruce Evans		Support new interrupt code (intr-0.1)
  */
 
 /*
@@ -197,10 +204,11 @@ bcmp(v1, v2, len)
 #endif /* NEED_BCMP */
 
 #ifdef NEED_STRLEN
+size_t
 strlen(s1)
-	register char *s1;
+	register const char *s1;
 {
-	register int len;
+	register size_t len;
 
 	for (len = 0; *s1++ != '\0'; len++)
 		;
