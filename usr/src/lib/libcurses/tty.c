@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)tty.c	5.8 (Berkeley) %G%";
 #include <termios.h>
 #include <unistd.h>
 
-struct termios origtermio;
+struct termios __orig_termios;
 static struct termios norawt, rawt;
 static int useraw;
 
@@ -31,13 +31,13 @@ gettmode()
 {
 	useraw = 0;
 	
-	if (tcgetattr(STDIN_FILENO, &origtermio))
+	if (tcgetattr(STDIN_FILENO, &__orig_termios))
 		return (ERR);
 
-	GT = (origtermio.c_oflag & OXTABS) == 0;
-	NONL = (origtermio.c_oflag & ONLCR) == 0;
+	GT = (__orig_termios.c_oflag & OXTABS) == 0;
+	NONL = (__orig_termios.c_oflag & ONLCR) == 0;
 
-	norawt = origtermio;
+	norawt = __orig_termios;
 	norawt.c_oflag &= ~OXTABS;
 	rawt = norawt;
 	cfmakeraw(&rawt);
@@ -144,20 +144,29 @@ nonl()
 int
 endwin()
 {
-	if (curscr && curscr->flags & __WSTANDOUT) {
-		tputs(SE, 0, __cputchar);
-		curscr->flags &= ~__WSTANDOUT;
+	if (curscr != NULL) {
+		if (curscr->flags & __WSTANDOUT) {
+			tputs(SE, 0, __cputchar);
+			curscr->flags &= ~__WSTANDOUT;
+		}
+		mvcur(curscr->cury, curscr->cury, curscr->maxy - 1, 0);
 	}
 
 	(void)tputs(VE, 0, __cputchar);
 	(void)tputs(TE, 0, __cputchar);
-	mvcur(curscr->cury, curscr->cury, curscr->maxy - 1, 0);
 	(void)fflush(stdout);
 
-	__echoit = origtermio.c_lflag & ECHO;
-	__rawmode = origtermio.c_lflag & ICANON;
-	__pfast = origtermio.c_iflag & ICRNL ? __rawmode : 1;
-	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &origtermio));
+	__echoit = __orig_termios.c_lflag & ECHO;
+	__rawmode = __orig_termios.c_lflag & ICANON;
+	__pfast = __orig_termios.c_iflag & ICRNL ? __rawmode : 1;
+	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &__orig_termios));
+}
+
+void
+__startwin()
+{
+	tputs(TI, 0, __cputchar);
+	tputs(VS, 0, __cputchar);
 }
 
 /*
