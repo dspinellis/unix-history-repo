@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.34 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -69,7 +69,6 @@ ufs_lookup(vdp, ndp, p)
 	struct proc *p;
 {
 	register struct inode *dp;	/* the directory we are searching */
-	register struct ufsmount *ump;	/* file system that directory is in */
 	struct buf *bp;			/* a buffer of directory entries */
 	register struct direct *ep;	/* the current directory entry */
 	int entryoffsetinblock;		/* offset of ep in bp's buffer */
@@ -82,7 +81,7 @@ ufs_lookup(vdp, ndp, p)
 	int endsearch;			/* offset to end directory search */
 	int prevoff;			/* prev entry ndp->ni_ufs.ufs_offset */
 	struct inode *pdp;		/* saved dp during symlink work */
-	struct inode *tdp;		/* returned by iget */
+	struct vnode *tdp;		/* returned by VOP_VGET */
 	off_t enduseful;		/* pointer past last used dir slot */
 	u_long bmask;			/* block offset mask */
 	int flag;			/* LOOKUP, CREATE, RENAME, or DELETE */
@@ -95,7 +94,6 @@ ufs_lookup(vdp, ndp, p)
 	ndp->ni_dvp = vdp;
 	ndp->ni_vp = NULL;
 	dp = VTOI(vdp);
-	ump = VFSTOUFS(vdp->v_mount);
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	flag = ndp->ni_nameiop & OPMASK;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
@@ -188,15 +186,15 @@ ufs_lookup(vdp, ndp, p)
 	 * profiling time and hence has been removed in the interest
 	 * of simplicity.
 	 */
-	bmask = ump->um_mountp->mnt_stat.f_bsize - 1;
+	bmask = VFSTOUFS(vdp->v_mount)->um_mountp->mnt_stat.f_bsize - 1;
 	if (flag != LOOKUP || dp->i_diroff == 0 || dp->i_diroff > dp->i_size) {
 		ndp->ni_ufs.ufs_offset = 0;
 		numdirpasses = 1;
 	} else {
 		ndp->ni_ufs.ufs_offset = dp->i_diroff;
 		if ((entryoffsetinblock = ndp->ni_ufs.ufs_offset & bmask) &&
-		    (error = (ump->um_blkatoff)
-		    (dp, ndp->ni_ufs.ufs_offset, NULL, &bp)))
+		    (error = VOP_BLKATOFF(vdp, ndp->ni_ufs.ufs_offset, NULL,
+		     &bp)))
 			return (error);
 		numdirpasses = 2;
 		nchstats.ncs_2passes++;
@@ -213,8 +211,8 @@ searchloop:
 		if ((ndp->ni_ufs.ufs_offset & bmask) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			if (error = (ump->um_blkatoff)
-			    (dp, ndp->ni_ufs.ufs_offset, NULL, &bp))
+			if (error = VOP_BLKATOFF(vdp, ndp->ni_ufs.ufs_offset,
+			    NULL, &bp))
 				return (error);
 			entryoffsetinblock = 0;
 		}
@@ -422,7 +420,7 @@ found:
 			ndp->ni_vp = vdp;
 			return (0);
 		}
-		if (error = (ump->um_iget)(dp, ndp->ni_ufs.ufs_ino, &tdp))
+		if (error = VOP_VGET(vdp, ndp->ni_ufs.ufs_ino, &tdp))
 			return (error);
 		/*
 		 * If directory is "sticky", then user must own
@@ -433,11 +431,11 @@ found:
 		if ((dp->i_mode & ISVTX) &&
 		    ndp->ni_cred->cr_uid != 0 &&
 		    ndp->ni_cred->cr_uid != dp->i_uid &&
-		    tdp->i_uid != ndp->ni_cred->cr_uid) {
-			ufs_iput(tdp);
+		    VTOI(tdp)->i_uid != ndp->ni_cred->cr_uid) {
+			vput(tdp);
 			return (EPERM);
 		}
-		ndp->ni_vp = ITOV(tdp);
+		ndp->ni_vp = tdp;
 		if (!lockparent)
 			IUNLOCK(dp);
 		return (0);
@@ -458,9 +456,9 @@ found:
 		 */
 		if (dp->i_number == ndp->ni_ufs.ufs_ino)
 			return (EISDIR);
-		if (error = (ump->um_iget)(dp, ndp->ni_ufs.ufs_ino, &tdp))
+		if (error = VOP_VGET(vdp, ndp->ni_ufs.ufs_ino, &tdp))
 			return (error);
-		ndp->ni_vp = ITOV(tdp);
+		ndp->ni_vp = tdp;
 		ndp->ni_nameiop |= SAVENAME;
 		if (!lockparent)
 			IUNLOCK(dp);
@@ -489,22 +487,22 @@ found:
 	pdp = dp;
 	if (ndp->ni_isdotdot) {
 		IUNLOCK(pdp);	/* race to get the inode */
-		if (error = (ump->um_iget)(dp, ndp->ni_ufs.ufs_ino, &tdp)) {
+		if (error = VOP_VGET(vdp, ndp->ni_ufs.ufs_ino, &tdp)) {
 			ILOCK(pdp);
 			return (error);
 		}
 		if (lockparent && *ndp->ni_next == '\0')
 			ILOCK(pdp);
-		ndp->ni_vp = ITOV(tdp);
+		ndp->ni_vp = tdp;
 	} else if (dp->i_number == ndp->ni_ufs.ufs_ino) {
 		VREF(vdp);	/* we want ourself, ie "." */
 		ndp->ni_vp = vdp;
 	} else {
-		if (error = (ump->um_iget)(dp, ndp->ni_ufs.ufs_ino, &tdp))
+		if (error = VOP_VGET(vdp, ndp->ni_ufs.ufs_ino, &tdp))
 			return (error);
 		if (!lockparent || *ndp->ni_next != '\0')
 			IUNLOCK(pdp);
-		ndp->ni_vp = ITOV(tdp);
+		ndp->ni_vp = tdp;
 	}
 
 	/*
@@ -582,10 +580,10 @@ ufs_direnter(ip, ndp)
 {
 	register struct direct *ep, *nep;
 	register struct inode *dp;
+	register struct vnode *dvp;
 	struct buf *bp;
 	struct direct newdir;
 	struct iovec aiov;
-	struct ufsmount *ump;
 	struct uio auio;
 	u_int dsize;
 	int error, loc, newentrysize, spacefree;
@@ -595,8 +593,8 @@ ufs_direnter(ip, ndp)
 	if ((ndp->ni_nameiop & SAVENAME) == 0)
 		panic("direnter: missing name");
 #endif
-	dp = VTOI(ndp->ni_dvp);
-	ump = VFSTOUFS(ndp->ni_dvp->v_mount);
+	dvp = ndp->ni_dvp;
+	dp = VTOI(dvp);
 	newdir.d_ino = ip->i_number;
 	newdir.d_namlen = ndp->ni_namelen;
 	bcopy(ndp->ni_ptr, newdir.d_name, (unsigned)ndp->ni_namelen + 1);
@@ -620,9 +618,9 @@ ufs_direnter(ip, ndp)
 		auio.uio_rw = UIO_WRITE;
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_procp = (struct proc *)0;
-		error =
-		    (ump->um_write)(ndp->ni_dvp, &auio, IO_SYNC, ndp->ni_cred);
-		if (DIRBLKSIZ > ump->um_mountp->mnt_stat.f_fsize)
+		error = VOP_WRITE(dvp, &auio, IO_SYNC, ndp->ni_cred);
+		if (DIRBLKSIZ >
+		    VFSTOUFS(dvp->v_mount)->um_mountp->mnt_stat.f_fsize)
 			/* XXX should grow with balloc() */
 			panic("ufs_direnter: frag size");
 		else if (!error) {
@@ -653,8 +651,7 @@ ufs_direnter(ip, ndp)
 	/*
 	 * Get the block containing the space for the new directory entry.
 	 */
-	if (error =
-	    (ump->um_blkatoff)(dp, ndp->ni_ufs.ufs_offset, &dirbuf, &bp))
+	if (error = VOP_BLKATOFF(dvp, ndp->ni_ufs.ufs_offset, &dirbuf, &bp))
 		return (error);
 	/*
 	 * Find space for the new entry. In the simple case, the entry at
@@ -697,12 +694,12 @@ ufs_direnter(ip, ndp)
 		ep = (struct direct *)((char *)ep + dsize);
 	}
 	bcopy((caddr_t)&newdir, (caddr_t)ep, (u_int)newentrysize);
-	error = (ump->um_bwrite)(bp);
+	error = VOP_BWRITE(bp);
 	dp->i_flag |= IUPD|ICHG;
 	if (!error && ndp->ni_ufs.ufs_endoff &&
 	    ndp->ni_ufs.ufs_endoff < dp->i_size)
-		error = (ump->um_itrunc)(dp,
-		    (u_long)ndp->ni_ufs.ufs_endoff, IO_SYNC);
+		error = VOP_TRUNCATE(dvp, (u_long)ndp->ni_ufs.ufs_endoff,
+		    IO_SYNC);
 	return (error);
 }
 
@@ -723,34 +720,31 @@ ufs_dirremove(ndp)
 	register struct nameidata *ndp;
 {
 	register struct inode *dp;
-	struct ufsmount *ump;
 	struct direct *ep;
 	struct buf *bp;
 	int error;
 
 	dp = VTOI(ndp->ni_dvp);
-	ump = VFSTOUFS(ndp->ni_dvp->v_mount);
 	if (ndp->ni_ufs.ufs_count == 0) {
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
-		error = (ump->um_blkatoff)(dp,
-		    ndp->ni_ufs.ufs_offset, (char **)&ep, &bp);
-		if (error)
+		if (error = VOP_BLKATOFF(ndp->ni_dvp, ndp->ni_ufs.ufs_offset,
+		    (char **)&ep, &bp))
 			return (error);
 		ep->d_ino = 0;
-		error = (ump->um_bwrite)(bp);
+		error = VOP_BWRITE(bp);
 		dp->i_flag |= IUPD|ICHG;
 		return (error);
 	}
 	/*
 	 * Collapse new free space into previous entry.
 	 */
-	if (error = (ump->um_blkatoff)(dp,
+	if (error = VOP_BLKATOFF(ndp->ni_dvp,
 	    ndp->ni_ufs.ufs_offset - ndp->ni_ufs.ufs_count, (char **)&ep, &bp))
 		return (error);
 	ep->d_reclen += ndp->ni_ufs.ufs_reclen;
-	error = (ump->um_bwrite)(bp);
+	error = VOP_BWRITE(bp);
 	dp->i_flag |= IUPD|ICHG;
 	return (error);
 }
@@ -767,15 +761,13 @@ ufs_dirrewrite(dp, ip, ndp)
 {
 	struct buf *bp;
 	struct direct *ep;
-	struct ufsmount *ump;
 	int error;
 
-	ump = VFSTOUFS(ndp->ni_dvp->v_mount);
-	if (error =
-	    (ump->um_blkatoff)(dp, ndp->ni_ufs.ufs_offset, (char **)&ep, &bp))
+	if (error = VOP_BLKATOFF(ITOV(dp), ndp->ni_ufs.ufs_offset,
+	    (char **)&ep, &bp))
 		return (error);
 	ep->d_ino = ip->i_number;
-	error = (ump->um_bwrite)(bp);
+	error = VOP_BWRITE(bp);
 	dp->i_flag |= IUPD|ICHG;
 	return (error);
 }
@@ -846,8 +838,8 @@ ufs_checkpath(source, target, cred)
 	struct ucred *cred;
 {
 	struct dirtemplate dirbuf;
-	struct inode *ip;
-	struct ufsmount *ump;
+	register struct inode *ip;
+	struct vnode *vp;
 	int error, rootino;
 
 	ip = target;
@@ -855,10 +847,7 @@ ufs_checkpath(source, target, cred)
 		error = EEXIST;
 		goto out;
 	}
-
-	ump = VFSTOUFS(ITOV(ip)->v_mount);
 	rootino = ROOTINO;
-
 	error = 0;
 	if (ip->i_number == rootino)
 		goto out;
@@ -868,7 +857,8 @@ ufs_checkpath(source, target, cred)
 			error = ENOTDIR;
 			break;
 		}
-		error = vn_rdwr(UIO_READ, ITOV(ip), (caddr_t)&dirbuf,
+		vp = ITOV(ip);
+		error = vn_rdwr(UIO_READ, vp, (caddr_t)&dirbuf,
 			sizeof (struct dirtemplate), (off_t)0, UIO_SYSSPACE,
 			IO_NODELOCKED, cred, (int *)0, (struct proc *)0);
 		if (error != 0)
@@ -886,8 +876,9 @@ ufs_checkpath(source, target, cred)
 		if (dirbuf.dotdot_ino == rootino)
 			break;
 		ufs_iput(ip);
-		if (error = (ump->um_iget)(ip, dirbuf.dotdot_ino, &ip))
+		if (error = VOP_VGET(vp, dirbuf.dotdot_ino, &vp))
 			break;
+		ip = VTOI(vp);
 	}
 
 out:
