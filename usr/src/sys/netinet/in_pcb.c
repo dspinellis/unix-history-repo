@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.12 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,10 +136,12 @@ in_pcbconnect(inp, nam)
 	}
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
 		ia = in_iaonnetof(in_netof(sin->sin_addr));
-		if (ia == (struct in_ifaddr *)0) {
+		if (ia == (struct in_ifaddr *)0 ||
+		    (ia->ia_ifp->if_flags & IFF_UP) == 0) {
 			register struct route *ro;
 			struct ifnet *ifp;
 
+			ia = (struct in_ifaddr *)0;
 			/* 
 			 * If route is known or can be allocated now,
 			 * our src addr is taken from the i/f, else punt.
