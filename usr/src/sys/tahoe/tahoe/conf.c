@@ -1,4 +1,4 @@
-/*	conf.c	1.10	87/11/17	*/
+/*	conf.c	1.11	88/05/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -7,8 +7,7 @@
 #include "tty.h"
 #include "conf.h"
 
-int	nulldev();
-int	nodev();
+int nulldev(), nodev(), rawread(), rawwrite(), swstrategy();
 
 #include "dk.h"
 #if NVD > 0
@@ -27,7 +26,8 @@ int	vddump(),vdsize();
 
 #include "yc.h"
 #if NCY > 0
-int	cyopen(),cyclose(),cystrategy(),cyread(),cywrite(),cydump(),cyioctl(),cyreset();
+int	cyopen(),cyclose(),cystrategy(),cyread(),cywrite(),cydump();
+int	cyioctl(),cyreset();
 #else
 #define	cyopen		nodev
 #define	cyclose		nodev
@@ -38,8 +38,6 @@ int	cyopen(),cyclose(),cystrategy(),cyread(),cywrite(),cydump(),cyioctl(),cyrese
 #define	cyioctl		nodev
 #define	cyreset		nulldev
 #endif
-
-int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
@@ -168,68 +166,68 @@ struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
 	cnioctl,	nulldev,	nulldev,	&cons,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	vxopen,		vxclose,	vxread,		vxwrite,	/*1*/
 	vxioctl,	vxstop,		vxreset,	vx_tty,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
-	syioctl,	nulldev,	nulldev,	0,
-	syselect,	nodev,
+	syioctl,	nulldev,	nulldev,	NULL,
+	syselect,	nodev,		NULL,
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
-	nodev,		nulldev,	nulldev,	0,
-	mmselect,	nodev,
+	nodev,		nulldev,	nulldev,	NULL,
+	mmselect,	nodev,		NULL,
 	nodev,		nulldev,	nodev,		nodev,		/*4*/
-	nodev,		nodev,		nulldev,	0,
-	seltrue,	nodev,
-	vdopen,		vdclose,	vdread,		vdwrite,	/*5*/
-	vdioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
+	vdopen,		vdclose,	rawread,	rawwrite,	/*5*/
+	vdioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		vdstrategy,
 	nodev,		nulldev,	nodev,		nodev,		/*6*/
-	nodev,		nodev,		nulldev,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
 	cyopen,		cyclose,	cyread,		cywrite,	/*7*/
-	cyioctl,	nodev,		cyreset,	0,
-	seltrue,	nodev,
-	nulldev,	nulldev,	swread,		swwrite,	/*8*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	cyioctl,	nodev,		cyreset,	NULL,
+	seltrue,	nodev,		NULL,
+	nulldev,	nulldev,	rawread,	rawwrite,	/*8*/
+	nodev,		nodev,		nulldev,	NULL,
+	nodev,		nodev,		swstrategy,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*9*/
 	ptyioctl,	ptsstop,	nodev,		pt_tty,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*10*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
-	ptcselect,	nodev,
+	ptcselect,	nodev,		NULL,
 	mpdlopen,	mpdlclose,	nodev,		mpdlwrite,	/*11*/
-	mpdlioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	mpdlioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
 	mpopen,		mpclose,	mpread,		mpwrite,	/*12*/
 	mpioctl,	mpstop,		nulldev,	mp_tty,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	nodev,		nodev,		nodev,		nodev,		/*13*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	nodev,		nodev,		NULL,
 	iiopen,		iiclose,	nulldev,	nulldev,	/*14*/
-	iiioctl,	nulldev,	nulldev,	0,
-	seltrue,	nodev,
+	iiioctl,	nulldev,	nulldev,	NULL,
+	seltrue,	nodev,		NULL,
 	logopen,	logclose,	logread,	nodev,		/*15*/
-	logioctl,	nodev,		nulldev,	0,
-	logselect,	nodev,
+	logioctl,	nodev,		nulldev,	NULL,
+	logselect,	nodev,		NULL,
 	enpr_open,	enpr_close,	enpr_read,	enpr_write,	/*16*/
-	enpr_ioctl,	nodev,		nulldev,	0,
-	nodev,		nodev,		
+	enpr_ioctl,	nodev,		nulldev,	NULL,
+	nodev,		nodev,		NULL,
 	nodev,		nodev,		nodev,		nodev,		/*17*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	nodev,		nodev,		NULL,
 	dropen,		drclose,	drread,		drwrite,	/*18*/
-	drioctl,	nodev,		drreset,	0,
-	nodev,		nodev,
+	drioctl,	nodev,		drreset,	NULL,
+	nodev,		nodev,		NULL,
 	nodev,		nodev,		nodev,		nodev,		/*19*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	nodev,		nodev,		NULL,
 /* 20-30 are reserved for local use */
 	ikopen,		ikclose,	ikread,		ikwrite,	/*20*/
-	ikioctl,	nodev,		nulldev,	0,
-	nodev,		nodev,
+	ikioctl,	nodev,		nulldev,	NULL,
+	nodev,		nodev,		NULL,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
