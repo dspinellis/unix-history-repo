@@ -12,26 +12,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/acct.h>
 
-#include <fcntl.h>
-#include <utmp.h>
-#include <struct.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <struct.h>
+#include <unistd.h>
+#include <utmp.h>
 #include "pathnames.h"
 
 char	*devname __P((dev_t, mode_t));
-void	 err __P((const char *, ...));
 time_t	 expand __P((u_int));
 char	*flagbits __P((int));
 char	*getdev __P((dev_t));
@@ -68,7 +67,7 @@ main(argc, argv)
 
 	/* Open the file. */
 	if ((fp = fopen(acctfile, "r")) == NULL || fstat(fileno(fp), &sb))
-		err("%s: %s\n", acctfile, strerror(errno));
+		err(1, "%s", acctfile);
 
 	/*
 	 * Round off to integral number of accounting records, probably
@@ -86,14 +85,14 @@ main(argc, argv)
 	 */
 	size -= sizeof(struct acct);
 	if (lseek(fileno(fp), size, SEEK_SET) == -1)
-		err("%s: %s\n", acctfile, strerror(errno));
+		err(1, "%s", acctfile);
 
 	for (;;) {
 		if (fread(&ab, sizeof(struct acct), 1, fp) != 1)
-			err("%s: %s\n", acctfile, strerror(errno));
+			err(1, "%s", acctfile);
 
 		if (fseek(fp, 2 * -(long)sizeof(struct acct), SEEK_CUR) == -1)
-			err("%s: %s\n", acctfile, strerror(errno));
+			err(1, "%s", acctfile);
 
 		if (size == 0)
 			break;
@@ -195,33 +194,4 @@ usage()
 	(void)fprintf(stderr,
 	    "lastcomm [ -f file ] [command ...] [user ...] [tty ...]\n");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "lastcomm: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
