@@ -3,7 +3,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.3 %G%";
+static char sccsid[] = "@(#)main.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -193,13 +193,13 @@ main(argc, argv)
 			    yycosts();
 			    pexit(NOSTART);
 		    case 'A':
-			    testtrace++;
+			    testtrace = TRUE;
 			    /* and fall through */
 		    case 'F':
-			    fulltrace++;
+			    fulltrace = TRUE;
 			    /* and fall through */
 		    case 'E':
-			    errtrace++;
+			    errtrace = TRUE;
 			    opt('r')++;
 			    break;
 		    case 'U':
@@ -254,10 +254,10 @@ main(argc, argv)
 				/*
 				 *	-p on the command line means profile
 				 */
-			    profflag++;
+			    profflag = TRUE;
 			    break;
 		    case 'z':
-			    monflg++;
+			    monflg = TRUE;
 			    break;
 		    default:
 usage:
