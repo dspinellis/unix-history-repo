@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 extern char tbuf[1024];			/* Temp buffer for anybody. */
@@ -22,4 +22,3 @@ void	 netfinger __P((char *));
 PERSON	*palloc __P((void));
 char	*prphone __P((char *));
 void	 sflag_print __P((void));
-WHERE	*walloc __P((PERSON *));
