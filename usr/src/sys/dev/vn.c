@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: fd.c 1.3 89/12/03$
+ * from: Utah $Hdr: vn.c 1.8 92/12/20$
  *
- *	@(#)vn.c	7.14 (Berkeley) %G%
+ *	@(#)vn.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,8 @@
  * the special file is controlled by the permissions on the special
  * file, the protection of the mapped file is ignored (effectively,
  * by using root credentials in all transactions).
+ *
+ * NOTE 3: Doesn't interact with leases, should it?
  */
 #include "vn.h"
 #if NVN > 0
@@ -168,6 +170,12 @@ vnstrategy(bp)
 		nbp->b_iodone = vniodone;
 		nbp->b_vp = vp;
 		nbp->b_pfcent = (int) bp;	/* XXX */
+		nbp->b_rcred = vn->sc_cred;	/* XXX crdup? */
+		nbp->b_wcred = vn->sc_cred;	/* XXX crdup? */
+		nbp->b_dirtyoff = bp->b_dirtyoff;
+		nbp->b_dirtyend = bp->b_dirtyend;
+		nbp->b_validoff = bp->b_validoff;
+		nbp->b_validend = bp->b_validend;
 		/*
 		 * Just sort by block number
 		 */
@@ -207,6 +215,8 @@ vnstart(unit)
 		       unit, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
 		       bp->b_bcount);
 #endif
+	if ((bp->b_flags & B_READ) == 0)
+		bp->b_vp->v_numoutput++;
 	VOP_STRATEGY(bp);
 }
 
@@ -393,7 +403,6 @@ vnthrottle(vn, vp)
 	register struct vn_softc *vn;
 	struct vnode *vp;
 {
-	extern int (**ufs_vnodeop_p)();
 	extern int (**nfsv2_vnodeop_p)();
 
 	if (vp->v_op == nfsv2_vnodeop_p)
