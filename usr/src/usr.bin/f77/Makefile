@@ -1,24 +1,36 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3 (Berkeley) 6/18/87
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
+#	@(#)Makefile	5.5 (Berkeley) %G%
+#
+MAN=	f77.0
 SUBDIR=	f77.${MACHINE}/f77 f77.${MACHINE}/f77pass1 fpr fsplit
 
-all: FRC
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS}); done
+all f77 clean lint tags: FRC
+	for i in ${SUBDIR}; \
+		do (cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
-install: FRC
+cleandir: clean
+	for i in ${SUBDIR}; \
+		do (cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
+	rm -f ${MAN} tags .depend
+
+install: ${MAN}
 	for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); \
-	done
-
-clean: FRC
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-
-depend: FRC
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 FRC:
