@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -255,24 +255,24 @@ dd_in()
 			++in.p_stats;
 		}
 
-		/*
-		 * POSIX states that if bs is set and no other conversions
-		 * are specified, the block is output as it is read, without
-		 * buffering.
-		 */
-		if (ddflags & C_BS) {
-			out.dbcnt = in.dbcnt;
-			dd_out(1);
-			in.dbcnt = 0;
-			continue;
-		}
-
 		if (ddflags & C_SWAB) {
 			if ((n = in.dbcnt) & 1) {
 				warn("%s: odd swab count", in.name);
 				--n;
 			}
 			swab(in.dbp, in.dbp, n);
+		}
+
+		/*
+		 * POSIX states that if bs is set and no other conversions
+		 * are specified, the block is output without buffering as
+		 * it is read.
+		 */
+		if (ddflags & C_BS) {
+			out.dbcnt = in.dbcnt;
+			dd_out(1);
+			in.dbcnt = 0;
+			continue;
 		}
 
 		in.dbp += in.dbrcnt;
