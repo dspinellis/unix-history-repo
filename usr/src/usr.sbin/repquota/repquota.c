@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	4.3 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)repquota.c	4.4 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
  * Quota report
  */
 #include <stdio.h>
+#include <errno.h>
 #include <sys/param.h>
 #include <sys/quota.h>
 #include <sys/stat.h>
@@ -99,6 +100,8 @@ repquota(fsdev, qffile)
 	u_short uid;
 	struct dqblk dqbuf;
 	struct stat statb;
+	static int warned = 0;
+	extern int errno;
 
 	if (vflag)
 		fprintf(stdout, "*** Quota report for %s\n", fsdev);
@@ -111,7 +114,12 @@ repquota(fsdev, qffile)
 		perror(qffile);
 		return (1);
 	}
-	quota(Q_SYNC, 0, statb.st_dev, 0);
+	if (quota(Q_SYNC, 0, statb.st_dev, 0) < 0 &&
+	    errno == EINVAL && !warned && vflag) {
+		warned++;
+		fprintf(stdout,
+		    "*** Warning: Quotas are not compiled into this kernel\n");
+	}
 	for (uid = 0; ; uid++) {
 		fread(&dqbuf, sizeof(struct dqblk), 1, qf);
 		if (feof(qf))
