@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.38	%G%";
+static char SccsId[] = "@(#)conf.c	3.39	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -93,7 +93,7 @@ char	Arpa_Usrerr[] =	"554";	/* some (fatal) user error */
 
 char	*AliasFile =	"/usr/lib/aliases";	/* alias file */
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
-char	*StatFile =	"/usr/lib/mailstats";	/* statistics summary */
+char	*StatFile =	"/usr/lib/sendmail.st";	/* statistics summary */
 char	*HelpFile =	"/usr/lib/sendmail.hf";	/* help file */
 char	*QueueDir =	"/usr/spool/mqueue";	/* queue of saved mail */
 char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
