@@ -63,7 +63,7 @@ int	error();
 char	*strsave();
 char	authbuf[sizeof(AUTH_DAT)];
 char	tickbuf[sizeof(KTEXT_ST)];
-int	use_kerberos = 0;
+int	use_kerberos = 0, vacuous = 0;
 
 #define	OLD_RCMD		0x00
 #define	KERB_RCMD		0x00
@@ -168,9 +168,11 @@ doit(f, fromp)
 	KTEXT		ticket = (KTEXT) NULL;
 	char		instance[INST_SZ], version[VERSION_SIZE];
 	char		*h_name;
-	struct		sockaddr_in	fromaddr = *fromp;
+	struct		sockaddr_in	fromaddr;
 	int		rc;
 	long		authopts;
+
+	fromaddr = *fromp;
 #endif
 
 	(void) signal(SIGINT, SIG_DFL);
@@ -343,6 +345,7 @@ doit(f, fromp)
 				error("Permission denied.\n");
 				exit(1);
 			}
+		}
 	} else
 #endif
 
