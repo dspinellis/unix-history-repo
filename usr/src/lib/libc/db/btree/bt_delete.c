@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_delete.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_delete.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -220,7 +220,7 @@ done1:	if (h->pgno != save.page->pgno)
 		dirty1 = 0;
 		if ((e->page = mpool_get(t->bt_mp, pg, 0)) == NULL)
 			return (RET_ERROR);
-		e->index = NEXTINDEX(h);
+		e->index = NEXTINDEX(e->page);
 	}
 
 	/*
