@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.19 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,6 +78,7 @@ in_pcbbind(inp, nam)
 	}
 	lport = sin->sin_port;
 	if (lport) {
+		struct inpcb *t;
 		u_short aport = ntohs(lport);
 		int wild = 0;
 
@@ -89,8 +90,10 @@ in_pcbbind(inp, nam)
 		    ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
 		     (so->so_options & SO_ACCEPTCONN) == 0))
 			wild = INPLOOKUP_WILDCARD;
-		if (in_pcblookup(head,
-		    zeroin_addr, 0, sin->sin_addr, lport, wild))
+		t = in_pcblookup(head, zeroin_addr, 0,
+				sin->sin_addr, lport, wild))
+		if (t && !((so->so_options & t->inp_socket->so_options) &
+		    SO_REUSEPORT))
 			return (EADDRINUSE);
 	}
 	inp->inp_laddr = sin->sin_addr;
@@ -423,9 +426,7 @@ in_pcblookup(head, faddr, fport, laddr, lport, flags)
 			else if (inp->inp_laddr.s_addr != laddr.s_addr)
 				continue;
 		} else {
-#ifndef MULTICAST
 			if (laddr.s_addr != INADDR_ANY)
-#endif
 				wildcard++;
 		}
 		if (inp->inp_faddr.s_addr != INADDR_ANY) {
