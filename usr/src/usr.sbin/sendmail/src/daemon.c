@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.3		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.4		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	4.3		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.3		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.4		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -126,12 +126,16 @@ getrequests()
 
 	for (;;)
 	{
+		register int pid;
 		auto int lotherend;
 		struct sockaddr_in otherend;
+		extern int RefuseLA;
+
+		/* see if we are rejecting connections */
+		while (getla() > RefuseLA)
+			sleep(5);
 
 		/* wait for a connection */
-		register int pid;
-
 		do
 		{
 			errno = 0;

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.1		%G%);
+SCCSID(@(#)readcf.c	4.2		%G%);
 
 /*
 **  READCF -- read control file.
@@ -593,6 +593,8 @@ setoption(opt, val, safe, sticky)
 {
 	extern bool atobool();
 	extern time_t convtime();
+	extern int QueueLA;
+	extern int RefuseLA;
 
 # ifdef DEBUG
 	if (tTd(37, 1))
@@ -777,6 +779,14 @@ setoption(opt, val, safe, sticky)
 			WizWord = newstr(val);
 		break;
 # endif DEBUG
+
+	  case 'x':		/* load avg at which to auto-queue msgs */
+		QueueLA = atoi(val);
+		break;
+
+	  case 'X':		/* load avg at which to auto-reject connections */
+		RefuseLA = atoi(val);
+		break;
 
 	  default:
 		break;
