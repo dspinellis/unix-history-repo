@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount_null.8	8.3 (Berkeley) %G%
+.\"     @(#)mount_null.8	8.4 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -86,7 +86,7 @@ pass.
 The bypass routine accepts arbitrary vnode operations for
 handling by the lower layer.  It begins by examing vnode
 operation arguments and replacing any null-nodes by their
-lower-layer equivalants.  It then invokes the operation
+lower-layer equivalents.  It then invokes the operation
 on the lower layer.  Finally, it replaces the null-nodes
 in the arguments and, if a vnode is returned by the operation,
 stacks a null-node on top of the returned vnode.
@@ -118,7 +118,7 @@ root of the new null layer.  All other vnode stacks
 are created as a result of vnode operations on
 this or other null vnode stacks.
 .Pp
-New vnode stacks come into existance as a result of
+New vnode stacks come into existence as a result of
 an operation which returns a vnode.  
 The bypass routine stacks a null-node above the new
 vnode before returning it to the caller.
@@ -127,7 +127,7 @@ For example, imagine mounting a null layer with
 .Bd -literal -offset indent
 mount_null /usr/include /dev/layer/null
 .Ed
-Chainging directory to 
+Changing directory to 
 .Pa /dev/layer/null
 will assign
 the root null-node (which was created when the null layer was mounted).
@@ -151,7 +151,7 @@ process when constructing other vnode stacks.
 .Sh CREATING OTHER FILE SYSTEM LAYERS
 One of the easiest ways to construct new file system layers is to make
 a copy of the null layer, rename all files and variables, and
-then begin modifing the copy.  Sed can be used to easily rename
+then begin modifyng the copy.  Sed can be used to easily rename
 all variables.
 .Pp
 The umap layer is an example of a layer descended from the 
@@ -180,7 +180,7 @@ the lower layer with the
 interface.
 The advantage of this method is that it is easy to invoke
 arbitrary operations on the lower layer.  The disadvantage
-is that vnodes arguments must be manualy mapped.
+is that vnodes arguments must be manually mapped.
 .\"
 .\"
 .Sh SEE ALSO
