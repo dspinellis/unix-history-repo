@@ -26,7 +26,7 @@ vaxif/if_hy.c		optional hy device-driver
 vaxif/if_il.c		optional il device-driver
 vaxif/if_pcl.c		optional pcl device-driver
 vaxif/if_uba.c		optional inet device-driver
-vaxif/if_un.c		optional un device-driver
+vaxif/if_ub.c		optional ub device-driver
 vaxif/if_vv.c		optional vv device-driver
 vaxmba/hp.c		optional hp device-driver
 vaxmba/ht.c		optional tu device-driver
