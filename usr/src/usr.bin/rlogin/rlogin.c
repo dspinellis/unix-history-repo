@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.3.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.3.1.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -30,7 +30,10 @@ static char sccsid[] = "@(#)rlogin.c	5.3.1.1 (Berkeley) %G%";
 #include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
-#include <setjmp.h>
+
+# ifndef TIOCPKT_WINDOW
+# define TIOCPKT_WINDOW 0x80
+# endif TIOCPKT_WINDOW
 
 char	*index(), *rindex(), *malloc(), *getenv();
 struct	passwd *getpwuid();
@@ -45,10 +48,10 @@ char	*speeds[] =
 char	term[256] = "network";
 extern	int errno;
 int	lostpeer();
-int	nosigwin;
-jmp_buf	winsizechanged;
+int	dosigwinch = 0;
+int	nosigwin = 0;
 struct	winsize winsize;
-int	sigwinch();
+int	sigwinch(), oob();
 
 main(argc, argv)
 	int argc;
@@ -58,7 +61,7 @@ main(argc, argv)
 	struct sgttyb ttyb;
 	struct passwd *pwd;
 	struct servent *sp;
-	int uid, options = 0;
+	int uid, options = 0, oldmask;
 	int on = 1;
 
 	host = rindex(argv[0], '/');
@@ -123,12 +126,10 @@ another:
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
 	}
-	if (!nosigwin && ioctl(0, TIOCGWINSZ, &winsize) == 0) {
-		cp = index(term, '\0');
-		sprintf(cp, "/%u,%u,%u,%u", winsize.ws_row, winsize.ws_col,
-		    winsize.ws_xpixel, winsize.ws_ypixel);
-	}
+	(void) ioctl(0, TIOCGWINSZ, &winsize);
 	signal(SIGPIPE, lostpeer);
+	signal(SIGURG, oob);
+	oldmask = sigblock(sigmask(SIGURG));
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
 	    name ? name : pwd->pw_name, term, 0);
         if (rem < 0)
@@ -141,7 +142,7 @@ another:
 		perror("rlogin: setuid");
 		exit(1);
 	}
-	doit();
+	doit(oldmask);
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
@@ -153,6 +154,7 @@ usage:
 
 int	child;
 int	catchild();
+int	writeroob();
 
 int	defflags, tabflag;
 int	deflflags;
@@ -162,7 +164,7 @@ struct	ltchars defltc;
 struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
 struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
 
-doit()
+doit(oldmask)
 {
 	int exit();
 	struct sgttyb sb;
@@ -178,7 +180,7 @@ doit()
 	notc.t_startc = deftc.t_startc;
 	notc.t_stopc = deftc.t_stopc;
 	ioctl(0, TIOCGLTC, (char *)&defltc);
-	signal(SIGINT, exit);
+	signal(SIGINT, SIG_IGN);
 	signal(SIGHUP, exit);
 	signal(SIGQUIT, exit);
 	child = fork();
@@ -186,14 +188,16 @@ doit()
 		perror("rlogin: fork");
 		done();
 	}
-	signal(SIGINT, SIG_IGN);
-	mode(1);
 	if (child == 0) {
+		mode(1);
+		sigsetmask(oldmask);
 		reader();
 		sleep(1);
 		prf("\007Connection closed.");
 		exit(3);
 	}
+	signal(SIGURG, writeroob);
+	sigsetmask(oldmask);
 	signal(SIGCHLD, catchild);
 	if (!nosigwin)
 		signal(SIGWINCH, sigwinch);
@@ -209,6 +213,17 @@ done()
 	if (child > 0 && kill(child, SIGKILL) >= 0)
 		wait((int *)0);
 	exit(0);
+}
+
+/*
+ * This is called when the reader process gets the out-of-band (urgent)
+ * request to turn on the window-changing protocol.
+ */
+writeroob()
+{
+
+	dosigwinch = 1;
+	sendwindow();
 }
 
 catchild()
@@ -241,33 +256,6 @@ writer()
 	register bol = 1;               /* beginning of line */
 	register local = 0;
 
-	/*
-	 * Handle SIGWINCH's with in-band signaling of new
-	 * window size.  It seems reasonable that we flush
-	 * pending input and not force out of band signal
-	 * as this most likely will occur from an input device
-	 * other than the keyboard (e.g. a mouse).
-	 *
-	 * The hack of using 0377 to signal an in-band signal
-	 * is pretty bad, but otherwise we'd be forced to
-	 * either get complicated (use MSG_OOB) or go to a
-	 * serious (telnet-style) protocol.
-	 */
-	if (setjmp(winsizechanged)) {
-		char obuf[4 + sizeof (struct winsize)];
-		struct winsize *wp = (struct winsize *)(obuf+4);
-
-		obuf[0] = 0377;			/* XXX */
-		obuf[1] = 0377;			/* XXX */
-		obuf[2] = 's';			/* XXX */
-		obuf[3] = 's';			/* XXX */
-		wp->ws_row = htons(winsize.ws_row);
-		wp->ws_col = htons(winsize.ws_col);
-		wp->ws_xpixel = htons(winsize.ws_xpixel);
-		wp->ws_ypixel = htons(winsize.ws_ypixel);
-		(void) write(rem, obuf, 4+sizeof (*wp));
-	}
-
 	for (;;) {
 		n = read(0, &c, 1);
 		if (n <= 0) {
@@ -275,8 +263,6 @@ writer()
 				continue;
 			break;
 		}
-		if (!eight)
-			c &= 0177;
 		/*
 		 * If we're at the beginning of the line
 		 * and recognize a command character, then
@@ -340,8 +326,6 @@ register char c;
 stop(cmdc)
 	char cmdc;
 {
-	struct winsize ws;
-
 	mode(0);
 	signal(SIGCHLD, SIG_IGN);
 	kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
@@ -354,36 +338,74 @@ sigwinch()
 {
 	struct winsize ws;
 
-	if (!nosigwin && ioctl(0, TIOCGWINSZ, &ws) == 0 &&
+	if (dosigwinch && !nosigwin && ioctl(0, TIOCGWINSZ, &ws) == 0 &&
 	    bcmp(&ws, &winsize, sizeof (ws))) {
 		winsize = ws;
-		longjmp(winsizechanged, 1);
+		sendwindow();
 	}
+}
+
+/*
+ * Send the window size to the server via the magic escape
+ */
+sendwindow()
+{
+	char obuf[4 + sizeof (struct winsize)];
+	struct winsize *wp = (struct winsize *)(obuf+4);
+
+	obuf[0] = 0377;
+	obuf[1] = 0377;
+	obuf[2] = 's';
+	obuf[3] = 's';
+	wp->ws_row = htons(winsize.ws_row);
+	wp->ws_col = htons(winsize.ws_col);
+	wp->ws_xpixel = htons(winsize.ws_xpixel);
+	wp->ws_ypixel = htons(winsize.ws_ypixel);
+	(void) write(rem, obuf, sizeof(obuf));
 }
 
 oob()
 {
 	int out = 1+1, atmark;
 	char waste[BUFSIZ], mark;
+	struct sgttyb sb;
 
 	ioctl(1, TIOCFLUSH, (char *)&out);
 	for (;;) {
+		int rv;
 		if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
 			perror("ioctl");
 			break;
 		}
 		if (atmark)
 			break;
-		if (read(rem, waste, sizeof (waste)) <= 0)
+		rv = read(rem, waste, sizeof (waste));
+		if (rv <= 0)
 			break;
 	}
 	recv(rem, &mark, 1, MSG_OOB);
+	if (mark & TIOCPKT_WINDOW) {
+		/*
+		 * Let server know about window size changes
+		 */
+		kill(getppid(), SIGURG);
+	}
+	if (eight)
+		return;
 	if (mark & TIOCPKT_NOSTOP) {
+		ioctl(0, TIOCGETP, (char *)&sb);
+		sb.sg_flags &= ~CBREAK;
+		sb.sg_flags |= RAW;
+		ioctl(0, TIOCSETN, (char *)&sb);
 		notc.t_stopc = -1;
 		notc.t_startc = -1;
 		ioctl(0, TIOCSETC, (char *)&notc);
 	}
 	if (mark & TIOCPKT_DOSTOP) {
+		ioctl(0, TIOCGETP, (char *)&sb);
+		sb.sg_flags &= ~RAW;
+		sb.sg_flags |= CBREAK;
+		ioctl(0, TIOCSETN, (char *)&sb);
 		notc.t_stopc = deftc.t_stopc;
 		notc.t_startc = deftc.t_startc;
 		ioctl(0, TIOCSETC, (char *)&notc);
@@ -398,7 +420,6 @@ reader()
 	char rb[BUFSIZ];
 	register int cnt;
 
-	signal(SIGURG, oob);
 	signal(SIGTTOU, SIG_IGN);
 	{ int pid = getpid();
 	  fcntl(rem, F_SETOWN, pid); }
@@ -459,10 +480,10 @@ mode(f)
 }
 
 /*VARARGS*/
-prf(f, a1, a2, a3)
+prf(f, a1, a2, a3, a4, a5)
 	char *f;
 {
-	fprintf(stderr, f, a1, a2, a3);
+	fprintf(stderr, f, a1, a2, a3, a4, a5);
 	fprintf(stderr, CRLF);
 }
 
