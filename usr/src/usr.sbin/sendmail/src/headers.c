@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -721,8 +721,11 @@ crackaddr(addr)
 	bool putgmac = FALSE;
 	bool quoteit = FALSE;
 	bool gotangle = FALSE;
+	bool gotcolon = FALSE;
 	register char *bp;
 	char *buflim;
+	char *bufhead;
+	char *addrhead;
 	static char buf[MAXNAME + 1];
 
 	if (tTd(33, 1))
@@ -737,9 +740,9 @@ crackaddr(addr)
 	**  adjusted later if we find them.
 	*/
 
-	bp = buf;
+	bp = bufhead = buf;
 	buflim = &buf[sizeof buf - 5];
-	p = addr;
+	p = addrhead = addr;
 	copylev = anglelev = realanglelev = cmtlev = realcmtlev = 0;
 	qmode = realqmode = FALSE;
 
@@ -823,6 +826,41 @@ crackaddr(addr)
 				bp--;
 		}
 
+		/* check for group: list; syntax */
+		if (c == ':' && anglelev <= 0 && !gotcolon && *p != ':' &&
+		    !ColonOkInAddr)
+		{
+			register char *q;
+
+			gotcolon = TRUE;
+
+			/* consider white space part of the group: part */
+			while (isascii(*p) && isspace(*p))
+				p++;
+			bp = bufhead;
+			for (q = addrhead; q < p; )
+			{
+				c = *q++;
+				if (bp < buflim)
+				{
+					*bp++ = c;
+				}
+			}
+			copylev = 0;
+			putgmac = FALSE;
+			bufhead = bp;
+			addrhead = p;
+			continue;
+		}
+
+		if (c == ';' && copylev <= 0 && !ColonOkInAddr)
+		{
+			register char *q = p;
+
+			if (bp < buflim)
+				*bp++ = c;
+		}
+
 		/* check for characters that may have to be quoted */
 		if (strchr(".'@,;:\\()[]", c) != NULL)
 		{
@@ -852,7 +890,7 @@ crackaddr(addr)
 			if (!skipping)
 				realanglelev = 1;
 
-			bp = buf;
+			bp = bufhead;
 			if (quoteit)
 			{
 				*bp++ = '"';
@@ -863,7 +901,7 @@ crackaddr(addr)
 					continue;
 				p++;
 			}
-			for (q = addr; q < p; )
+			for (q = addrhead; q < p; )
 			{
 				c = *q++;
 				if (bp < buflim)

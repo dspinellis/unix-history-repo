@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.79 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.80 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1312,6 +1312,8 @@ struct optioninfo
 	"SafeFileEnvironment",	O_SAFEFILEENV,	FALSE,
 #define O_MAXMSGSIZE	0x8a
 	"MaxMessageSize",	O_MAXMSGSIZE,	FALSE,
+#define O_COLONOKINADDR	0x8b
+	"ColonOkInAddr",	O_COLONOKINADDR, TRUE,
 
 	NULL,			'\0',		FALSE,
 };
@@ -1926,6 +1928,10 @@ setoption(opt, val, sticky)
 
 	  case O_MAXMSGSIZE:	/* maximum message size */
 		MaxMessageSize = atol(p);
+		break;
+
+	  case O_COLONOKINADDR:	/* old style handling of colon addresses */
+		ColonOkInAddr = atobool(p);
 		break;
 
 	  default:
