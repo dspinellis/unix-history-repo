@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -33,6 +33,7 @@ int	dead_lookup(),
 	dead_select(),
 	dead_lock(),
 	dead_bmap(),
+	dead_print(),
 	dead_ebadf(),
 	dead_badop(),
 	dead_nullop();
@@ -68,6 +69,8 @@ struct vnodeops dead_vnodeops = {
 	dead_nullop,	/* unlock */
 	dead_bmap,	/* bmap */
 	dead_strategy,	/* strategy */
+	dead_print,	/* print */
+	dead_nullop,	/* islocked */
 };
 
 /*
@@ -203,6 +206,16 @@ dead_bmap(vp, bn, vpp, bnp)
 	if (!chkvnlock(vp))
 		return (EIO);
 	return (VOP_BMAP(vp, bn, vpp, bnp));
+}
+
+/*
+ * Print out the contents of a dead vnode.
+ */
+dead_print(vp)
+	struct vnode *vp;
+{
+
+	printf("tag VT_NON, dead vnode\n");
 }
 
 /*
