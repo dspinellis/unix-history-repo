@@ -1,0 +1,50 @@
+The writing tools package contains 3 command files,
+	style, diction, and explain.
+``style'' reads a document and analyzes the surface
+	characteristics of the writing style of the document.
+``diction'' locates all sentences in a document containing
+	commonly misused or wordy phrases.
+``explain'' is an interactive thesaures for the phrases found by diction.
+
+The manual pages are in files style.1 and diction.1 - see the enclosed documentation
+	for more details.
+
+``style'' is a runcom that runs 4 programs, style1, style2, style3, and deroff.
+	style1, style2, style3 are included on the tape, you should not need to
+	make them, but if you do -
+
+To make style1, style2, style3:
+	set BIN in Makefile to the directory where the object files
+		are to be stored.
+	then run ``make style''
+	in the file ``style'' set B to the same directory as BIN above.
+
+``diction'' is a runcom that runs 2 programs, dprog and deroff.
+	dprog has been included on the tape, but you will need to make it
+	to include the full path name of dict.d
+
+To make dprog:
+	set DICT in Makefile to the full path name of diction's data
+		file ``dict.d''
+	the program ``dprog'' will get put in the same place as
+		the object files for style (BIN).
+	then run ``make diction''
+	the file ``diction'' also needs B set to the same directory as BIN
+		above
+
+The file ``explain'' needs D set to the full path name of the file
+	explain.d
+
+Both ``style'' and ``diction'' expect the document to contain formatting
+	commands.  A new version of deroff is included that knows about
+	the standard UNIX formatting macro packages.
+	the command ``make deroff'' will install deroff in BIN mentioned
+	above.  You may wish to install this version of deroff in /usr/bin
+	in which case the path names to it in files ``style'' and
+	``diction'' should be changed accordingly.
+
+The default flag passed to deroff (either -ms or -ml) in both
+	style and diction should be set to the proper one for your installation.
+
+These programs will not compile under UNIX version 6 or PWB 1.2 due
+	to size limitations on these systems.
