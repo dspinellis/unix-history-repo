@@ -9,20 +9,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#include <fcntl.h>
-#include <errno.h>
-#include <limits.h>
 #include <db.h>
-#include <unistd.h>
-#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include "recno.h"
 
 DB *
@@ -39,12 +40,13 @@ __rec_open(fname, flags, mode, openinfo)
 	int rfd;
 
 	/* Open the user's file -- if this fails, we're done. */
-	if ((rfd = open(fname, flags, mode)) < 0)
+	if (fname != NULL && (rfd = open(fname, flags, mode)) < 0)
 		return (NULL);
 
 	/* Create a btree in memory (backed by disk). */
+	dbp = NULL;
 	if (openinfo) {
-		if (openinfo->flags & ~(R_FIXEDLEN|R_NOKEY|R_SNAPSHOT))
+		if (openinfo->flags & ~(R_FIXEDLEN | R_NOKEY | R_SNAPSHOT))
 			goto einval;
 		btopeninfo.flags = 0;
 		btopeninfo.cachesize = openinfo->cachesize;
@@ -66,7 +68,7 @@ __rec_open(fname, flags, mode, openinfo)
 	t = dbp->internal;
 	if (openinfo) {
 		if (openinfo->flags & R_FIXEDLEN) {
-			t->bt_flags |= BTF_FIXEDLEN;
+			SET(t, BTF_FIXEDLEN);
 			t->bt_reclen = openinfo->reclen;
 			if (t->bt_reclen == 0)
 				goto einval;
@@ -75,44 +77,51 @@ __rec_open(fname, flags, mode, openinfo)
 	} else
 		t->bt_bval = '\n';
 
-	t->bt_flags = BTF_RECNO;
-	t->bt_reof = 0;
+	SET(t, BTF_RECNO);
+	if (fname == NULL) {
+		SET(t, BTF_RINMEM);
+		t->bt_reof = 1;
+	} else
+		t->bt_reof = 0;
 
 	/*
 	 * In 4.4BSD stat(2) returns true for ISSOCK on pipes.  Until
 	 * then, this is fairly close.  Pipes are read-only.
 	 */
-	if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
-		SET(t, BTF_RDONLY);
-		if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
-			goto err;
-		t->bt_irec = ISSET(t, BTF_FIXEDLEN) ? __rec_fpipe : __rec_vpipe;
-	} else {
-		if (fstat(rfd, &sb))
-			goto err;
-		switch(flags & O_ACCMODE) {
-		case O_RDONLY:
+	if (fname != NULL)
+		if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
 			SET(t, BTF_RDONLY);
-			break;
-		case O_RDWR:
-			break;
-		case O_WRONLY:
-		default:
-			goto einval;
+			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
+				goto err;
+			t->bt_irec =
+			    ISSET(t, BTF_FIXEDLEN) ? __rec_fpipe : __rec_vpipe;
+		} else {
+			if (fstat(rfd, &sb))
+				goto err;
+			switch(flags & O_ACCMODE) {
+			case O_RDONLY:
+				SET(t, BTF_RDONLY);
+				break;
+			case O_RDWR:
+				break;
+			case O_WRONLY:
+			default:
+				goto einval;
+			}
+				
+			if (sb.st_size > SIZE_T_MAX) {
+				errno = EFBIG;
+				goto err;
+			}
+			if ((t->bt_smap = mmap(NULL, (size_t)sb.st_size,
+			    PROT_READ, 0, rfd, (off_t)0)) == (caddr_t)-1)
+				goto err;
+			t->bt_emap = t->bt_smap + sb.st_size;
+			t->bt_rfd = rfd;
+			t->bt_rfp = NULL;
+			t->bt_irec =
+			    ISSET(t, BTF_FIXEDLEN) ? __rec_fmap : __rec_vmap;
 		}
-			
-		if (sb.st_size > SIZE_T_MAX) {
-			errno = EFBIG;
-			goto err;
-		}
-		if ((t->bt_smap = mmap(NULL, (size_t)sb.st_size,
-		    PROT_READ, 0, rfd, (off_t)0)) == (caddr_t)-1)
-			goto err;
-		t->bt_emap = t->bt_smap + sb.st_size;
-		t->bt_rfd = rfd;
-		t->bt_rfp = NULL;
-		t->bt_irec = ISSET(t, BTF_FIXEDLEN) ? __rec_fmap : __rec_vmap;
-	}
 
 	/* Use the recno routines. */
 	dbp->close = __rec_close;
@@ -132,13 +141,15 @@ __rec_open(fname, flags, mode, openinfo)
 		mpool_put(t->bt_mp, h, 0);
 
 	if (openinfo && openinfo->flags & R_SNAPSHOT &&
+	    !ISSET(t, BTF_RINMEM) &&
 	    t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
                 goto err;
 	return (dbp);
 
 einval:	errno = EINVAL;
-err:	if (dbp)
+err:	if (dbp != NULL)
 		__bt_close(dbp);
-	(void)close(rfd);
+	if (fname != NULL)
+		(void)close(rfd);
 	return (NULL);
 }
