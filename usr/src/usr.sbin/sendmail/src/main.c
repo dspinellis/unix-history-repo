@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.97 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.98 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -860,12 +860,6 @@ main(argc, argv, envp)
 		}
 		for (;;)
 		{
-			register char **pvp;
-			char *q;
-			auto char *delimptr;
-			extern bool invalidaddr();
-			extern char *crackaddr();
-
 			if (Verbose)
 				printf("> ");
 			(void) fflush(stdout);
@@ -873,132 +867,7 @@ main(argc, argv, envp)
 				finis();
 			if (!Verbose)
 				printf("> %s", buf);
-			switch (buf[0])
-			{
-			  case '#':
-				continue;
-
-			  case '?':		/* try crackaddr */
-			  	q = crackaddr(&buf[1]);
-			  	xputs(q);
-			  	printf("\n");
-			  	continue;
-
-			  case '.':		/* config-style settings */
-				switch (buf[1])
-				{
-				  case 'D':
-					define(buf[2], newstr(&buf[3]), CurEnv);
-					break;
-
-				  case 'C':
-					setclass(buf[2], &buf[3]);
-					break;
-
-				  case 'S':		/* dump rule set */
-					{
-						int rs;
-						struct rewrite *rw;
-						char *cp;
-						STAB *s;
-
-						if ((cp = strchr(buf, '\n')) != NULL)
-							*cp = '\0';
-						if (cp == buf+2)
-							continue;
-						s = stab(buf+2, ST_RULESET, ST_FIND);
-						if (s == NULL)
-						{
-							if (!isdigit(buf[2]))
-								continue;
-							rs = atoi(buf+2);
-						}
-						else
-							rs = s->s_ruleset;
-						if (rs < 0 || rs > MAXRWSETS)
-							continue;
-						if ((rw = RewriteRules[rs]) == NULL)
-							continue;
-						do
-						{
-							char **s;
-							putchar('R');
-							s = rw->r_lhs;
-							while (*s != NULL)
-							{
-								xputs(*s++);
-								putchar(' ');
-							}
-							putchar('\t');
-							putchar('\t');
-							s = rw->r_rhs;
-							while (*s != NULL)
-							{
-								xputs(*s++);
-								putchar(' ');
-							}
-							putchar('\n');
-						} while (rw = rw->r_next);
-					}
-					break;
-
-				  default:
-					printf("Unknown config command %s", buf);
-					break;
-				}
-				continue;
-
-			  case '-':		/* set command-line-like opts */
-				switch (buf[1])
-				{
-				  case 'd':
-					if (buf[2] == '\n')
-						tTflag("");
-					else
-						tTflag(&buf[2]);
-					break;
-
-				  default:
-					printf("Unknown \"-\" command %s", buf);
-					break;
-				}
-				continue;
-			}
-
-			for (p = buf; isascii(*p) && isspace(*p); p++)
-				continue;
-			q = p;
-			while (*p != '\0' && !(isascii(*p) && isspace(*p)))
-				p++;
-			if (*p == '\0')
-			{
-				printf("No address!\n");
-				continue;
-			}
-			*p = '\0';
-			if (invalidaddr(p + 1, NULL))
-				continue;
-			do
-			{
-				char pvpbuf[PSBUFSIZE];
-
-				pvp = prescan(++p, ',', pvpbuf, sizeof pvpbuf,
-					      &delimptr, NULL);
-				if (pvp == NULL)
-					continue;
-				p = q;
-				while (*p != '\0')
-				{
-					int stat;
-
-					stat = rewrite(pvp, atoi(p), 0, CurEnv);
-					if (stat != EX_OK)
-						printf("== Ruleset %s status %d\n",
-							p, stat);
-					while (*p != '\0' && *p++ != ',')
-						continue;
-				}
-			} while (*(p = delimptr) != '\0');
+			testmodeline(buf, CurEnv);
 		}
 	}
 
