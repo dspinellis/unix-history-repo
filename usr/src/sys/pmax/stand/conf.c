@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.1 (Berkeley) %G%
+ *	@(#)conf.c	7.2 (Berkeley) %G%
  */
 
 #include "saio.h"
@@ -32,9 +32,3 @@ devwrite(io)
 	return (write(io->i_unit, io->i_ma, io->i_cc));
 }
 #endif
-
-struct devsw devsw[] = {
-	"rz",
-	"tz",
-	0,
-};
