@@ -14,7 +14,7 @@
 xargs \- construct argument list(s) and execute utility.
 .SH SYNOPSIS
 .ft B
-xargs [\-t] [\-n number] [\-s size] [utility [argument ...]]
+xargs [\-t] [\-f] [\-n number] [\-s size] [utility [argument ...]]
 .ft R
 .SH DESCRIPTION
 The
@@ -69,6 +69,15 @@ is 2048.
 -t
 Echo the command to be executed to standard error immediately before it
 is executed.
+.TP
+-f
+Force
+.I xargs
+to ignore the exit status returned by
+.IR utility .
+Normally a nonzero exit status will cause
+.I xargs
+to exit with status 1.
 .PP
 If no
 .I utility
