@@ -1,138 +1,160 @@
 /*-
- * Copyright (c) 1986, 1989 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1986, 1989 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- *	Suck up system messages
- *	dmesg
- *		print current buffer
- *	dmesg -
- *		print and update incremental history
- */
-
-#include <sys/param.h>
-#include <sys/signal.h>
-#include <sys/file.h>
-#include <sys/vm.h>
+#include <sys/cdefs.h>
 #include <sys/msgbuf.h>
+#include <time.h>
 #include <nlist.h>
+#include <kvm.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include "pathnames.h"
+#include <ctype.h>
 
-struct	msgbuf msgbuf;
-char	*msgbufp;
-int	sflg;
-int	of	= -1;
-
-struct	msgbuf omesg;
-struct	nlist nl[2] = {
+struct nlist nl[] = {
+#define	X_MSGBUF	0
 	{ "_msgbuf" },
-	{ "" }
+	{ NULL },
 };
 
+void usage(), vputc();
+void err __P((const char *, ...));
+
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	int mem;
-	register char *mp, *omp, *mstart;
-	int samef, sawnl, ignore = 0;
+	register int ch, newl, skip;
+	register char *p, *ep;
+	struct msgbuf cur;
+	char *core, *namelist;
 
-	if (argc>1 && argv[1][0] == '-') {
-		sflg++;
-		argc--;
-		argv++;
-	}
-	if (sflg) {
-		of = open(_PATH_MSGBUF, O_RDWR | O_CREAT, 0644);
-		if (of < 0)
-			done("Can't open msgbuf file\n");
-		read(of, (char *)&omesg, sizeof(omesg));
-		lseek(of, 0L, 0);
-	}
-	sflg = 0;
-	nlist(argc>2? argv[2]:_PATH_UNIX, nl);
-	if (nl[0].n_type==0)
-		done("Can't get kernel namelist\n");
-	if ((mem = open((argc>1? argv[1]: _PATH_KMEM), 0)) < 0)
-		done("Can't read kernel memory\n");
-	lseek(mem, (long)nl[0].n_value, 0);
-	read(mem, &msgbuf, sizeof (msgbuf));
-	if (msgbuf.msg_magic != MSG_MAGIC)
-		done("Magic number wrong (namelist mismatch?)\n");
-	if (msgbuf.msg_bufx >= MSG_BSIZE)
-		msgbuf.msg_bufx = 0;
-	if (omesg.msg_bufx >= MSG_BSIZE)
-		omesg.msg_bufx = 0;
-	mstart = &msgbuf.msg_bufc[omesg.msg_bufx];
-	omp = &omesg.msg_bufc[msgbuf.msg_bufx];
-	mp = msgbufp = &msgbuf.msg_bufc[msgbuf.msg_bufx];
-	samef = 1;
-	do {
-		if (*mp++ != *omp++) {
-			mstart = msgbufp;
-			samef = 0;
-			pdate();
-			printf("...\n");
+	core = namelist = NULL;
+	while ((ch = getopt(argc, argv, "M:N:")) != EOF)
+		switch(ch) {
+		case 'M':
+			core = optarg;
 			break;
+		case 'N':
+			namelist = optarg;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-		if (mp >= &msgbuf.msg_bufc[MSG_BSIZE])
-			mp = msgbuf.msg_bufc;
-		if (omp >= &omesg.msg_bufc[MSG_BSIZE])
-			omp = omesg.msg_bufc;
-	} while (mp != mstart);
-	if (samef && omesg.msg_bufx == msgbuf.msg_bufx)
-		exit(0);
-	mp = mstart;
-	pdate();
-	sawnl = 1;
-	do {
-		if (sawnl && *mp == '<')
-			ignore = 1;
-		if (*mp && (*mp & 0200) == 0 && !ignore)
-			putchar(*mp);
-		if (ignore && *mp == '>')
-			ignore = 0;
-		sawnl = (*mp == '\n');
-		mp++;
-		if (mp >= &msgbuf.msg_bufc[MSG_BSIZE])
-			mp = msgbuf.msg_bufc;
-	} while (mp != msgbufp);
-	done((char *)NULL);
-}
+	argc -= optind;
+	argv += optind;
 
-done(s)
-char *s;
-{
-	if (s) {
-		pdate();
-		printf(s);
-	} else if (of != -1)
-		write(of, (char *)&msgbuf, sizeof(msgbuf));
-	exit(s!=NULL);
-}
+	/* Read in kernel message buffer, do sanity checks. */
+	if (kvm_openfiles(namelist, core, NULL) == -1)
+		err("kvm_openfiles: %s", kvm_geterr());
+	if (kvm_nlist(nl) == -1)
+		err("kvm_nlist: %s", kvm_geterr());
+	if (nl[X_MSGBUF].n_type == 0)
+		err("msgbuf not found namelist");
 
-pdate()
-{
-	extern char *ctime();
-	static firstime;
-	time_t tbuf;
+        kvm_read((void *)nl[X_MSGBUF].n_value, (void *)&cur, sizeof(cur));
+	if (cur.msg_magic != MSG_MAGIC)
+		err("magic number incorrect");
+	if (cur.msg_bufx >= MSG_BSIZE)
+		cur.msg_bufx = 0;
 
-	if (firstime==0) {
-		firstime++;
-		time(&tbuf);
-		printf("\n%.12s\n", ctime(&tbuf)+4);
+	/*
+	 * The message buffer is circular; start at the read pointer, and
+	 * go to the write pointer - 1.
+	 */
+	p = cur.msg_bufc + cur.msg_bufx;
+	ep = cur.msg_bufc + cur.msg_bufx - 1;
+	for (newl = skip = 0; p != ep; ++p) {
+		if (p == cur.msg_bufc + MSG_BSIZE)
+			p = cur.msg_bufc;
+		ch = *p;
+		/* Skip "\n<.*>" syslog sequences. */
+		if (skip) {
+			if (ch == '>')
+				newl = skip = 0;
+			continue;
+		}
+		if (newl && ch == '<') {
+			skip = 1;
+			continue;
+		}
+		if (ch == '\0')
+			continue;
+		newl = (ch = *p) == '\n';
+		vputc(ch);
 	}
+	if (!newl)
+		(void)putchar('\n');
+	exit(0);
+}
+
+void
+vputc(ch)
+	register int ch;
+{
+	int meta;
+
+	if (!isascii(ch)) {
+		(void)putchar('M');
+		(void)putchar('-');
+		ch = toascii(ch);
+		meta = 1;
+	} else
+		meta = 0;
+	if (isprint(ch) || !meta && (ch == ' ' || ch == '\t' || ch == '\n'))
+		(void)putchar(ch);
+	else {
+		(void)putchar('^');
+		(void)putchar(ch == '\177' ? '?' : ch | 0100);
+	}
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "dmesg: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: dmesg [-M core] [-N system]\n");
+	exit(1);
 }
