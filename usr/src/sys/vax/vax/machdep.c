@@ -1,4 +1,4 @@
-/*	machdep.c	4.83	83/06/19	*/
+/*	machdep.c	4.84	83/07/09	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -423,8 +423,10 @@ memerr()
 			break;
 #endif
 #if VAX730
-		case VAX_730:
-			if (M730_ERR(mcr)) {
+		case VAX_730: {
+			register int mcreg = mcr->mc_reg[1];
+
+			if (mcreg & M730_CRD) {
 				struct mcr amcr;
 				amcr.mc_reg[0] = mcr->mc_reg[0];
 				printf("mcr%d: soft ecc addr %x syn %x\n",
@@ -432,6 +434,7 @@ memerr()
 				M730_INH(mcr);
 			}
 			break;
+		}
 #endif
 		}
 	}
