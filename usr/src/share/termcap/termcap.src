@@ -1,15 +1,16 @@
 # ------------------------
 #
 #	Termcap source file	@(#)termcap.src	5.37 (Berkeley) %G%
-#
 #	John Kunze, Berkeley
 #
 # Please mail changes to (arpanet):  termcap@berkeley
+# See DESCRIPTION section for information about contents.
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
+# DESCRIPTION:
 # This file describes capabilities of various terminals, as needed by
 # software such as screen editors.  It does not attempt to describe
 # printing terminals very well, nor graphics terminals.  Someday.
@@ -172,7 +173,7 @@ Ax|x1720|x1700|1700|x1750|xerox 1720:\
 	:co#132:le=^H:bs:hc:os:pt:do=^J:ct=\E2:st=\E1:
 # # --------------------------------
 #
-# B: AT&T ATT att
+# B: AT&T ATT
 #
 # AT&T Teletype 5410 Terminal (a.k.a. 4410)
 # From: carvalho%kepler@Berkeley.EDU (Marcio de Carvalho)
@@ -320,33 +321,8 @@ HF|esprit-am|hazeltine esprit auto-margin:\
 	:am:tc=esprit:
 # # --------------------------------
 #
-# I: IBM, INTERACTIVE SYSTEMS, and INTECOLOR
+# I: IBM
 #
-# Some of these should go in the misc category, IBM, ISC, and ISC can't
-# all have I.  I will wait to see who comes out with more terminals.
-# These compucolors appear similar, but they at least have different
-# sized screens.  I don't know what's going on here.
-I8|8001|ISC8001|compucolor|intecolor:\
-	:do=^J:al=\EU:am:le=^Z:bc=^Z:cl=3*^L:cm=^C%r%.%.:\
-	:co#80:cd=\EQ:dm=\EQ:ed=\EF:dc=\177:dl=\EV:ei=\EF:\
-	:im=\EQ:li#40:nd=1^Y:ta=8\t:up=^\:ho=1^H:pc=^@:
-IG|compucolor2|compucolorII:\
-	:do=^J:pt:am:cm=%r^C%.%.:le=^Z:bc=^Z:li#32:co#64:\
-	:cl=^L:ho=^H:nd=^Y:up=^\:
-# From cithep!eric  Wed Sep 16 08:06:44 1981
-It|intext|Interactive Systems Corporation modified owl 1200:\
-	:do=^J:al=5.5*\020:am:le=^_:bc=^_:le=^H:bs:bt=^Y:cd=5.5*\026J:\
-	:ce=^K\160^R:cl=132\014:cm=\017%+ %+ :co#80:dc=5.5*\022:dl=5.5*\021:\
-	:ei=\026\074:im=\026\073:ip=5.5*:li#24:nd=\036:pt:up=\034:\
-	:se=^V# :sg#1:so=^V$,:ma=^K^P^R^L^L :\
-	:kl=^_:kd=^J:kr=^^:ku=\034:kb=^H:kh=^Z:\
-	:k1=^VA\r:k2=^VB\r:k3=^VC\r:k4=^VD\r:k5=^VE\r:\
-	:k6=^VF\r:k7=^VG\r:k8=^VH\r:k9=^VI\r:k0=^VJ\r:
-I9|ibm|ibm3101|3101|i3101|IBM 3101-10:\
-	:do=^J:ct=\EH:st=\E0:\
-	:if=/usr/lib/tabset/ibm3101:\
-	:am:le=^H:bs:cl=\EK:li#24:co#80:nd=\EC:up=\EA:cd=\EJ:ce=\EI:\
-	:kd=\EB:kl=\ED:kr=\EC:ku=\EA:ho=\EH:cm=\EY%+\40%+\40:pt:
 # ibm61 and ibm63 from Warren Gish (cswarren@violet.berkeley.edu).
 # installed 12-17-86.
 # 3161 only opens a new line if a null line exists on the screen.
@@ -360,9 +336,32 @@ I1|ibm61|ibm3161|3161|IBM 3161-11:\
 	:dl=\EO:dc=\EQ:kd=\EB:ku=\EA:kl=\ED:kr=\EC:kh=\EH:\
 	:us=\E4\102:ue=\E4\100:so=\E4\110:se=\E4\100:
 I3|ibm63|ibm3163|3163|i3163|IBM 3163:\
-	:tc=I1:
+	:tc=ibm61:
+I4|ibm|ibm3101|3101|i3101|IBM 3101-10:\
+	:do=^J:ct=\EH:st=\E0:\
+	:if=/usr/lib/tabset/ibm3101:\
+	:am:le=^H:bs:cl=\EK:li#24:co#80:nd=\EC:up=\EA:cd=\EJ:ce=\EI:\
+	:kd=\EB:kl=\ED:kr=\EC:ku=\EA:ho=\EH:cm=\EY%+\40%+\40:pt:
 Ia|ibm-apl|apl|IBM apl terminal simulator:\
 	:li#25:tc=dm1520:
+# ibmapa* and ibmmono entries come from ACIS 4.3 distribution
+Ib|rtpc|ibmapa16|ibm6155|IBM 6155 Extended Monochrome Graphics Display:\
+	:ts=\Ej\EY@%+ \Eo:ds=\Ej\EY@\40\EI\Ek:li#32:tc=ibmconsole:
+# Advanced Monochrome (6153) and Color (6154) Graphics Display:
+Ic|ibmapa8c|ibmapa8|ibm6154|ibm6153|IBM 6153/4 Advanced Graphics Display:\
+	:ts=\Ej\EY?%+ \Eo:ds=\Ej\EY?\40\EI\Ek:li#31:tc=ibmconsole:
+Id|ibmapa8c-c|ibm6154-c|IBM 6154 Advanced Color Graphics Display color termcap:\
+	:ts=\Ej\EY?%+ \Eo:ds=\Ej\EY?\40\EI\Ek:li#31:mh=\EF\Ef7;:tc=ibmega-c:
+Ie|ibmmono|ibmconsole|ibm5151|IBM workstation monochrome:\
+	:se=\Ez:so=\EZ:sr=\EA:al=\EL:dl=\EM:\
+	:kb=^H:us=\EW:ue=\Ew:\
+	:k1=\ES:k2=\ET:k3=\EU:k4=\EV:k5=\EW:k6=\EP:k7=\EQ:k8=\ER:k9=\EY:\
+	:k0=\E<:I0=f10:kI=\000:kh=\EH:kR=\EG:kP=\Eg:kF=\EE:kN=\EE:\
+	:md=\EZ:me=\Ew\Eq\Ez\EB:mk=\EF\Ef0;\Eb0;:mr=\Ep:\
+	:ts=\Ej\EY8%+ \Eo:fs=\Ek:ds=\Ej\EY8\40\EI\Ek:es:hs:sb:tc=ibm3101:
+If|ibmega-c|ibm5154-c|IBM Enhanced Color Display color termcap:\
+	:se=\EB:so=\EF\Ef3;:ue=\EB:us=\EF\Ef2;:tc=ibmconsole:
+# # --------------------------------
 #
 # M: MISCELLANEOUS TERMINALS
 #
@@ -407,7 +406,7 @@ M9|vc404-s|volker-craig 404 w/standout mode:\
 MA|vc404-na|volker-craig 404 w/no arrow keys:\
 	:ma@:kr@:ku@:tc=vc404:
 MB|vc404-s-na|volker-craig 404 w/standout mode and no arrow keys:\
-	:se=^O:so=^N:tc=vc404na:
+	:se=^O:so=^N:tc=vc404-na:
 # missing in vc303a and vc303 descriptions:  they scroll 2 lines at a time
 MC|vc303a|vc403a|volker-craig 303a:\
 	:do=^J:am:le=^H:bs:ce=20^V:cl=40^X:co#80:ho=40^Y:kd=^J:kl=^H::kr=^U:\
@@ -655,7 +654,7 @@ Mk|dg200|data general Dasher 200:\
 # mode rather than DG mode because standard UNIX tty drivers assume that ^H is
 # backspace on all terminals.  This is not so in DG mode.
 zF|dg460-ansi|Data General Dasher 460, ANSI-mode:\
-	:al=\E[L:am:bl=^G:bs:cd=\E[J:ce=\E[K:cl=\E[2J:\
+	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J:\
 	:cm=\E[%i%2;%2H:co#80:dc=\E[P:dl=\E[M:do=\E[B:\
 	:ei=:ho=\E[H:ic=\E[@:im=:ue=\E[05:ul:up=\E[A:us=\E[4m:is=\036F@:\
 	:k0=\E[001z:k1=\E[002z:k2=\E[003z:k3=\E[004z:k4=\E[005z:k5=\E[006z:\
@@ -909,8 +908,6 @@ S1|wsiris|iris40|iris emulating a 40 line visual 50 (approximately):\
 #
 #	unused
 #
-N0|aaa-29-np|aaa-29 with no padding (for psl):\
-	:al=\E[L:ce=\E[K:cl=\E[H\E[J:dc=\E[P:dl=\E[M:ic=\E[@:tc=aaa-29:
 NA|aaa-unk|ann arbor ambassador (internal - don't use this directly):\
 	:do=^J:al=3\E[L:am:le=^H:bs:\
 	:cd=\E[J:ce=5\E[K:cl=156\E[H\E[J:cm=\E[%i%d;%dH:co#80:\
@@ -1318,7 +1315,7 @@ Xd|tek4015|4015|tektronix 4015:\
 Xe|tek4014-sm|4014-sm|tektronix 4014 in small font:\
 	:is=\E^O\E\072:co#121:li#58:tc=tek4014:
 Xf|tek4015-sm|4015-sm|tektronix 4015 in small font:\
-	:as=\E^N:ae=\E^O:tc=4014sm:
+	:as=\E^N:ae=\E^O:tc=4014-sm:
 # I think the 1000UP is supposed to be so expensive it never happens.
 X4|tek4023|4023|tex|tektronix 4023:\
 	:do=^J:so=^_P:se=^_@:cm=\034%r%+ %+ :nd=\t:le=^H:\
@@ -1437,6 +1434,28 @@ XA|4404|tek4404:\
 	:md=\E[1m:me=\E[m:nd=\E[C:pt:rc=\E8:sc=\E7:se=\E[27m:so=\E[7m:\
 	:ta=\E[2I:ti=\E%\!1\E[1;32r\E[?6l\E>:te=\E[1;1H\E[0J\E[?6h\E[?1l:\
 	:ue=\E[m:up=\E[A:us=\E[4m:
+# # --------------------------------
+#
+# Z: Miscellaneous
+#
+# These compucolors appear similar, but they at least have different
+# sized screens.  I don't know what's going on here.
+Z1|8001|ISC8001|compucolor|intecolor:\
+	:do=^J:al=\EU:am:le=^Z:bc=^Z:cl=3*^L:cm=^C%r%.%.:\
+	:co#80:cd=\EQ:dm=\EQ:ed=\EF:dc=\177:dl=\EV:ei=\EF:\
+	:im=\EQ:li#40:nd=1^Y:ta=8\t:up=^\:ho=1^H:pc=^@:
+Z2|compucolor2|compucolorII:\
+	:do=^J:pt:am:cm=%r^C%.%.:le=^Z:bc=^Z:li#32:co#64:\
+	:cl=^L:ho=^H:nd=^Y:up=^\:
+# From cithep!eric  Wed Sep 16 08:06:44 1981
+Z3|intext|Interactive Systems Corporation modified owl 1200:\
+	:do=^J:al=5.5*\020:am:le=^_:bc=^_:le=^H:bs:bt=^Y:cd=5.5*\026J:\
+	:ce=^K\160^R:cl=132\014:cm=\017%+ %+ :co#80:dc=5.5*\022:dl=5.5*\021:\
+	:ei=\026\074:im=\026\073:ip=5.5*:li#24:nd=\036:pt:up=\034:\
+	:se=^V# :sg#1:so=^V$,:ma=^K^P^R^L^L :\
+	:kl=^_:kd=^J:kr=^^:ku=\034:kb=^H:kh=^Z:\
+	:k1=^VA\r:k2=^VB\r:k3=^VC\r:k4=^VD\r:k5=^VE\r:\
+	:k6=^VF\r:k7=^VG\r:k8=^VH\r:k9=^VI\r:k0=^VJ\r:
 # # --------------------------------
 #
 # a: ADDS
@@ -1622,7 +1641,7 @@ c6|c108-na|c108-na-8p|concept108-na-8p|concept 108 w/8 pages, no arrows:\
 	:ks@:ke@:k7=\E;:k8=\E<:k9=\E=:tc=c108-8p
 c7|c108-rv-na|c108-rv-na-8p|concept 108 w/8 pages, no arrows in rev video:\
 	:ts=\E z"\E?\E^C\EE\Ea %+ :fs=\Ee\E z :\
-	:ks@:ke@:k7=\E;:k8=\E<:k9=\E=:tc=c108-rv8p
+	:ks@:ke@:k7=\E;:k8=\E<:k9=\E=:tc=c108-rv-8p
 # this needs new frotz in the cm capability for 2-char addrs when > 95....
 c8|c108-w|c108-w-8p|concept108-w-8p|concept 108 w/8 pages in wide mode:\
 	:is=\EU\E F\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200\Eo\47\E\E"\E^G!\E^HA@ :\
@@ -1848,12 +1867,12 @@ do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
 	:co#132:tc=vt200:
 # @(#)termcap	X10/6.6	11/7/86, minus alternate screen, plus :cs
 vs|xterm|vs100|xterm terminal emulator (X window system):\
-	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:ho=\E[H:\
+	:do=^J:le=^H:ho=\E[H:\
 	:co#80:li#65:cl=\E[H\E[2J:bs:am:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:me=\E[m:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sf=\n:sr=\EM:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sf=\n:sr=\EM:\
 	:al=\E[L:dl=\E[M:ic=\E[@:dc=\E[P:\
 	:MT:ks=\E[?1h\E=:ke=\E[?1l\E>:xn:\
 	:AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:\
@@ -2184,8 +2203,8 @@ mv|mime2a|mime2a-v|microterm mime2a (emulating an enhanced vt52):\
 	:do=^J:al=20*^A:le=^H:bs:cd=20*\EQ:co#80:ce=\EP:cl=\EL:cm=\EY%+ %+ :\
 	:is=^Ydc=^N:dl=20*^W:ip=2:ei=^Z:ho=\EH:im=^O:kd=\EB:kl=\ED:kr=\EC:\
 	:ku=\EA:li#24:nd=\EC:pt:se=\E9:so=\E8:up=\EA:sr=\EA:us=\E4:ue=\E5:
-mx|mime-3ax|mime1 emulating enhanced 3a:\
-	:al=80^A:dl=80^W:pt:ce=^X:cd=^_:tc=mime-3a:
+mx|mime3ax|mime-3ax|mime1 emulating enhanced 3a:\
+	:al=80^A:dl=80^W:pt:ce=^X:cd=^_:tc=mime3a:
 # # --------------------------------
 #
 # p: PERKIN ELMER
@@ -2308,7 +2327,7 @@ v3|920b|920c|tvi920b|tvi920c|new televideo 920:\
 # set to page 1 when entering ex (\E-17 )
 # reset to page 0 when exiting ex (\E-07 )
 v4|tvi912-2p|tvi920-2p|912-2p|920-2p|tvi-2p|televideo w/2 pages:\
-	:ti=\E-17 :te=\E-07 :tc=tvi912:\
+	:ti=\E-17 :te=\E-07 :tc=tvi912:
 v5|tvi950-ap|tvi 950 w/alt pages:\
 	:is=\E\\1:ti=\E-06 :te=\E-16 :tc=tvi950:
 v6|tvi950-b|bare tvi950 no is:\
@@ -2542,7 +2561,7 @@ yh|w50-s|wyse50-s|Wyse 50 for sysline:\
 yg|w50-w|w50-132|wyse50-132|Wyse 50-132:\
 	:cm=\Ea%i%dR%dC:co#132:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:tc=w50:
 w6|w60|wyse60|Wyse 60 in native mode:\
-	:ae=\EcD:al=\EE:am:as=\EcE:bl=^G:bs:bt=\EI:bw:cd=\Ey:ce=\Et:\
+	:ae=\EcD:al=\EE:am:as=\EcE:bs:bt=\EI:bw:cd=\Ey:ce=\Et:\
 	:cl=^Z:cm=\E=%+\040%+\040:co#80:ct=\E0:dc=\EW:dl=\ER:do=^J:\
 	:ei=\Er:im=\Eq:is=:kb=^?:kd=^N:ke=\E~2:kl=^B:kr=^F:ks=\E~3:ku=^P:\
 	:le=^H:li#43:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:\
@@ -2598,10 +2617,9 @@ Wc|wy85|wyse85|wyse-85:\
 	:dc=\E[P:dl=\E[M:al=\E[L:ei=\E[4l:im=\E[4h:\
 	:vb=\E[?5h\E[?5l:\
 	:hs:es:ts=\E7\E[?25l\E[40h\E[25;%dH\E[2K:fs=\E[1;24r\E8\E[?25h:
-#
 # # --------------------------------
 #
-# z: MISC (cont)
+# z: Miscellaneous
 #
 z0|wind:\
 	:bs:cm=\Ep%r%.%.:cl=\En\120\030\Eo:co#80:\
