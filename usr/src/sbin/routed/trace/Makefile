@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
-PROG=	query
+PROG=	trace
 NOMAN=	noman
 
 .include "../../Makefile.inc"
