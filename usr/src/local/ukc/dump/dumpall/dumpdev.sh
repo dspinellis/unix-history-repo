@@ -1,5 +1,5 @@
 #!/bin/sh
-#	dumpdev.sh	1.2	%G%
+#	dumpdev.sh	1.3	%G%
 #	shell script to dump a single device
 #	the script is called with a single
 #	parameter - which is the device to be dumped
@@ -77,7 +77,7 @@ fi
 #	now finally set the dump level and the tape range
 LEVEL=`expr "$decodethis" : '^\(.*\) '`
 TAPE=`expr "$decodethis" : '^.* \(.*\)$'`
-$dump u${labelchk}${LEVEL} $TAPE /dev/$dev
+$dump ou${labelchk}${LEVEL} $TAPE /dev/$dev
 #
 #	dump returns 1 on a successful dump
 #
