@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.7 (Berkeley) %G%
+#	@(#)gettytab	5.8 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -41,9 +41,9 @@ d|std.600|600-baud:\
 f|std.1200|1200-baud:\
 	:fd#1:sp#1200:
 6|std.2400|2400-baud:\
-	:sp#2400:ht:
+	:sp#2400:
 7|std.4800|4800-baud:\
-	:sp#4800:ht:
+	:sp#4800:
 2|std.9600|9600-baud:\
 	:sp#9600:
 g|std.19200|19200-baud:\
