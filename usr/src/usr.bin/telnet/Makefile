@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.17 (Berkeley) %G%
+#	@(#)Makefile	1.18 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
