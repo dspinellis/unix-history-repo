@@ -1,0 +1,147 @@
+REGEXP(3)                   BSD Programmer's Manual                  REGEXP(3)
+
+NNAAMMEE
+     rreeggccoommpp, rreeggeexxeecc, rreeggssuubb, rreeggeerrrroorr - regular expression handlers
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<rreeggeexxpp..hh>>
+
+     _r_e_g_e_x_p _*
+     rreeggccoommpp(_c_o_n_s_t _c_h_a_r _*_e_x_p);
+
+     _i_n_t
+     rreeggeexxeecc(_c_o_n_s_t _r_e_g_e_x_p _*_p_r_o_g, _c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g);
+
+     _v_o_i_d
+     rreeggssuubb(_c_o_n_s_t _r_e_g_e_x_p _*_p_r_o_g, _c_o_n_s_t _c_h_a_r _*_s_o_u_r_c_e, _c_h_a_r _*_d_e_s_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     This interface is made obsolete by regex(3).
+
+     The rreeggccoommpp(), rreeggeexxeecc(), rreeggssuubb(), and rreeggeerrrroorr() functions implement
+     egrep(1)-style  regular expressions and supporting facilities.
+
+     The rreeggccoommpp() function compiles a regular expression into a structure of
+     type regexp,  and returns a pointer to it.  The space has been allocated
+     using malloc(3) and may be released by free.
+
+     The rreeggeexxeecc() function matches a NUL-terminated _s_t_r_i_n_g against the com-
+     piled regular expression in _p_r_o_g. It returns 1 for success and 0 for
+     failure, and adjusts the contents of _p_r_o_g's _s_t_a_r_t_p and _e_n_d_p (see below)
+     accordingly.
+
+     The members of a regexp structure include at least the following (not
+     necessarily in order):
+
+           char *startp[NSUBEXP];
+           char *endp[NSUBEXP];
+
+     where NSUBEXP is defined (as 10) in the header file.  Once a successful
+     rreeggeexxeecc() has been done using the rreeggeexxpp(), each _s_t_a_r_t_p- _e_n_d_p pair de-
+     scribes one substring within the _s_t_r_i_n_g, with the _s_t_a_r_t_p pointing to the
+     first character of the substring and the _e_n_d_p pointing to the first char-
+     acter following the substring.  The 0th substring is the substring of
+     _s_t_r_i_n_g that matched the whole regular expression.  The others are those
+     substrings that matched parenthesized expressions within the regular ex-
+     pression, with parenthesized expressions numbered in left-to-right order
+     of their opening parentheses.
+
+     The rreeggssuubb() function copies _s_o_u_r_c_e to _d_e_s_t, making substitutions accord-
+     ing to the most recent rreeggeexxeecc() performed using _p_r_o_g. Each instance of
+     `&' in _s_o_u_r_c_e is replaced by the substring indicated by _s_t_a_r_t_p[] and
+     _e_n_d_p[]. Each instance of `\_n', where _n is a digit, is replaced by the
+     substring indicated by _s_t_a_r_t_p[_n] and _e_n_d_p[_n]. To get a literal `&' or
+     `\_n' into _d_e_s_t, prefix it with `\'; to get a literal `\' preceding `&' or
+     `\_n', prefix it with another `\'.
+
+     The rreeggeerrrroorr() function is called whenever an error is detected in
+     rreeggccoommpp(), rreeggeexxeecc(), or rreeggssuubb().  The default rreeggeerrrroorr() writes the
+     string _m_s_g, with a suitable indicator of origin, on the standard error
+     output and invokes exit(2).  The rreeggeerrrroorr() function can be replaced by
+     the user if other actions are desirable.
+
+RREEGGUULLAARR EEXXPPRREESSSSIIOONN SSYYNNTTAAXX
+     A regular expression is zero or more _b_r_a_n_c_h_e_s, separated by `|'.  It
+     matches anything that matches one of the branches.
+
+     A branch is zero or more _p_i_e_c_e_s, concatenated.  It matches a match for
+     the first, followed by a match for the second, etc.
+
+     A piece is an _a_t_o_m possibly followed by `*', `+', or `?'.  An atom fol-
+     lowed by `*' matches a sequence of 0 or more matches of the atom.  An
+     atom followed by `+' matches a sequence of 1 or more matches of the atom.
+     An atom followed by `?' matches a match of the atom, or the null string.
+
+     An atom is a regular expression in parentheses (matching a match for the
+     regular expression), a _r_a_n_g_e (see below), `.'  (matching any single char-
+     acter), `^' (matching the null string at the beginning of the input
+     string), `$' (matching the null string at the end of the input string), a
+     `\' followed by a single character (matching that character), or a single
+     character with no other significance (matching that character).
+
+     A _r_a_n_g_e is a sequence of characters enclosed in `[]'.  It normally match-
+     es any single character from the sequence.  If the sequence begins with
+     `^', it matches any single character _n_o_t from the rest of the sequence.
+     If two characters in the sequence are separated by `-', this is shorthand
+     for the full list of ASCII characters between them (e.g. `[0-9]' matches
+     any decimal digit).  To include a literal `]' in the sequence, make it
+     the first character (following a possible `^').  To include a literal
+     `-', make it the first or last character.
+
+AAMMBBIIGGUUIITTYY
+     If a regular expression could match two different parts of the input
+     string, it will match the one which begins earliest.  If both begin in
+     the same place but match different lengths, or match the same length in
+     different ways, life gets messier, as follows.
+
+     In general, the possibilities in a list of branches are considered in
+     left-to-right order, the possibilities for `*', `+', and `?' are consid-
+     ered longest-first, nested constructs are considered from the outermost
+     in, and concatenated constructs are considered leftmost-first.  The match
+     that will be chosen is the one that uses the earliest possibility in the
+     first choice that has to be made.  If there is more than one choice, the
+     next will be made in the same manner (earliest possibility) subject to
+     the decision on the first choice.  And so forth.
+
+     For example, `(ab|a)b*c' could match `abc' in one of two ways.  The first
+     choice is between `ab' and `a'; since `ab' is earlier, and does lead to a
+     successful overall match, it is chosen.  Since the `b' is already spoken
+     for, the `b*' must match its last possibility--the empty string--since it
+     must respect the earlier choice.
+
+     In the particular case where no `|'s are present and there is only one
+     `*', `+', or `?', the net effect is that the longest possible match will
+     be chosen.  So `ab*', presented with `xabbbby', will match `abbbb'.  Note
+     that if `ab*', is tried against `xabyabbbz', it will match `ab' just af-
+     ter `x', due to the begins-earliest rule.  (In effect, the decision on
+     where to start the match is the first choice to be made, hence subsequent
+     choices must respect it even if this leads them to less-preferred alter-
+     natives.)
+
+RREETTUURRNN VVAALLUUEESS
+     The rreeggccoommpp() function returns NULL for a failure (rreeggeerrrroorr() permit-
+     ting), where failures are syntax errors, exceeding implementation limits,
+     or applying `+' or `*' to a possibly-null operand.
+
+SSEEEE AALLSSOO
+     ed(1),  ex(1),  expr(1),  egrep(1),  fgrep(1),  grep(1),  regex(3)
+
+HHIISSTTOORRYY
+     Both code and manual page for rreeggccoommpp(), rreeggeexxeecc(), rreeggssuubb(), and
+     rreeggeerrrroorr() were written at the University of Toronto and appeared in
+     4.3BSD-Tahoe. They are intended to be compatible with the Bell V8
+     regexp(3),  but are not derived from Bell code.
+
+BBUUGGSS
+     Empty branches and empty regular expressions are not portable to V8.
+
+     The restriction against applying `*' or `+' to a possibly-null operand is
+     an artifact of the simplistic implementation.
+
+     Does not support egrep's  newline-separated branches; neither does the V8
+     regexp(3),  though.
+
+     Due to emphasis on compactness and simplicity, it's not strikingly fast.
+     It does give special attention to handling simple cases quickly.
+
+4.4BSD                           June 4, 1993                                3
