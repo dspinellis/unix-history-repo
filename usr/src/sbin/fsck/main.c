@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.7	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.8	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -365,7 +365,7 @@ check(dev)
 	register ino_t *blp;
 	register int i, n;
 	ino_t savino;
-	int b, c;
+	int b, c, j, partial, ndb;
 	daddr_t d, s;
 
 	devname = dev;
@@ -404,15 +404,21 @@ check(dev)
 				}
 				n--;
 				lastino = inum;
-				if (ftypeok(dp) == 0) {
-					pfatal("UNKNOWN FILE TYPE I=%u", inum);
-					if (reply("CLEAR") == 1) {
-						zapino(dp);
-						inodirty();
-						inosumbad++;
-					}
-					continue;
-				}
+				if (ftypeok(dp) == 0)
+					goto unknown;
+				if (dp->di_size < 0)
+					goto unknown;
+				ndb = howmany(dp->di_size, sblock.fs_bsize);
+				if (SPECIAL)
+					ndb++;
+				for (j = ndb; j < NDADDR; j++)
+					if (dp->di_db[j] != 0)
+						goto unknown;
+				for (j = 0, ndb -= NDADDR; ndb > 0; j++)
+					ndb /= NINDIR(&sblock);
+				for (; j < NIADDR; j++)
+					if (dp->di_ib[j] != 0)
+						goto unknown;
 				n_files++;
 				if (setlncnt(dp->di_nlink) <= 0) {
 					if (badlnp < &badlncnt[MAXLNCNT])
@@ -426,6 +432,14 @@ check(dev)
 				setstate(DIRCT ? DSTATE : FSTATE);
 				badblk = dupblk = 0; filsize = 0; maxblk = 0;
 				ckinode(dp, ADDR);
+				continue;
+		unknown:
+				pfatal("UNKNOWN FILE TYPE I=%u", inum);
+				if (reply("CLEAR") == 1) {
+					zapino(dp);
+					inodirty();
+					inosumbad++;
+				}
 			} else {
 				if (isset(cgrp.cg_iused, i)) {
 					if (debug)
@@ -434,7 +448,15 @@ check(dev)
 					inosumbad++;
 					n--;
 				}
-				if (dp->di_mode != 0) {
+				partial = 0;
+				for (j = 0; j < NDADDR; j++)
+					if (dp->di_db[j] != 0)
+						partial++;
+				for (j = 0; j < NIADDR; j++)
+					if (dp->di_ib[j] != 0)
+						partial++;
+				if (partial || dp->di_mode != 0 ||
+				    dp->di_size != 0) {
 					pfatal("PARTIALLY ALLOCATED INODE I=%u", inum);
 					if (reply("CLEAR") == 1) {
 						zapino(dp);
