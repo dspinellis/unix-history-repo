@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -832,8 +832,6 @@ nfs_mkdir(ndp, vap)
 	nfsm_request(ndp->ni_dvp);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
-	if (error)
-		nfs_nput(ndp->ni_vp);
 	nfs_nput(ndp->ni_dvp);
 	return (error);
 }
