@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.28 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.29 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.28 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.29 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -73,26 +73,37 @@ queueup(e, queueall, announce)
 	bool queueall;
 	bool announce;
 {
-	char *tf;
 	char *qf;
-	char buf[MAXLINE];
+	char buf[MAXLINE], tf[MAXLINE];
 	register FILE *tfp;
 	register HDR *h;
 	register ADDRESS *q;
 	MAILER nullmailer;
-	int fd;
+	int fd, ret;
 
 	/*
 	**  Create control file.
 	*/
 
-	tf = newstr(queuename(e, 't'));
-	fd = open(tf, O_CREAT|O_WRONLY, FileMode);
-	if (fd < 0)
-	{
-		syserr("queueup: cannot create temp file %s", tf);
-		return NULL;
-	}
+	do {
+		strcpy(tf, queuename(e, 't'));
+		fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
+		if (fd < 0) {
+			if ( errno != EEXIST) {
+				syserr("queueup: cannot create temp file %s",
+					tf);
+				return NULL;
+			}
+		} else {
+			if (flock(fd, LOCK_EX|LOCK_NB) < 0) {
+				if (errno != EWOULDBLOCK)
+					syserr("cannot flock(%s)", tf);
+				close(fd);
+				fd = -1;
+			}
+		}
+	} while (fd < 0);
+
 	tfp = fdopen(fd, "w");
 
 	if (tTd(40, 1))
@@ -244,19 +255,10 @@ queueup(e, queueall, announce)
 	**  Clean up.
 	*/
 
-	if (flock(fileno(tfp), LOCK_EX|LOCK_NB) < 0)
-	{
-		syserr("cannot flock(%s)", tf);
-	}
-
 	qf = queuename(e, 'q');
-	if (tf != NULL)
-	{
-		(void) unlink(qf);
-		if (rename(tf, qf) < 0)
-			syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
-		errno = 0;
-	}
+	if (rename(tf, qf) < 0)
+		syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
+	errno = 0;
 
 # ifdef LOG
 	/* save log info */
@@ -667,12 +669,12 @@ dowork(w)
 		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
 			sendall(CurEnv, SM_DELIVER);
 
-		fclose(qflock);
 		/* finish up and exit */
 		if (ForkQueueRuns)
 			finis();
 		else
 			dropenvelope(CurEnv);
+		fclose(qflock);
 	}
 	else
 	{
@@ -733,7 +735,7 @@ readqf(e, full)
 # ifdef LOG
 		/* being processed by another queuer */
 		if (Verbose)
-			printf("%s: locked", CurEnv->e_id);
+			printf("%s: locked\n", CurEnv->e_id);
 # endif LOG
 		(void) fclose(qfp);
 		return NULL;
