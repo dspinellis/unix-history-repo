@@ -1,6 +1,9 @@
-.\"     @(#)V2A.t	1.1     89/02/23
+.\"     @(#)V2A.t	1.2     89/02/24
 .nr PS 18
 .nr VS 22
+.nr HM 1.75i
+.nr FM 2i
+.nr LL 5.75i
 .nr PO 1.25i
 \&
 .sp |2i
