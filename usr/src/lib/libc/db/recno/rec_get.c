@@ -6,17 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_get.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_get.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
-#include <unistd.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "recno.h"
 
 /*
@@ -53,15 +55,15 @@ __rec_get(dbp, key, data, flags)
 	 * original file.
 	 */
 	t = dbp->internal;
-	if (nrec > t->bt_nrecs &&
-	    (status = t->bt_irec(t, nrec)) != RET_SUCCESS)
+	if (nrec > t->bt_nrecs && (ISSET(t, BTF_RINMEM) ||
+	    (status = t->bt_irec(t, nrec)) != RET_SUCCESS))
 			return (status);
 
 	--nrec;
 	if ((e = __rec_search(t, nrec, SEARCH)) == NULL)
 		return (RET_ERROR);
 
-	status = __rec_ret(t, e, data);
+	status = __rec_ret(t, e, 0, NULL, data);
 	mpool_put(t->bt_mp, e->page, 0);
 	return (status);
 }
@@ -99,6 +101,7 @@ __rec_fpipe(t, top)
 		t->bt_dbufsz = t->bt_reclen;
 	}
 	for (nrec = t->bt_nrecs; nrec < top; ++nrec) {
+		len = t->bt_reclen;
 		for (p = t->bt_dbuf;; *p++ = ch)
 			if ((ch = getc(t->bt_rfp)) == EOF || !len--) {
 				if (__rec_iput(t, nrec, &data, 0)
