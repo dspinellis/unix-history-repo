@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)id.1	5.2 (Berkeley) %G%
+.\"	@(#)id.1	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt ID 1
@@ -31,7 +31,7 @@ The
 .Nm id
 utility displays the user and group names and numeric IDs, of the
 calling process, to the standard output.
-If the real and effective IDs are different both are displayed,
+If the real and effective IDs are different, both are displayed,
 otherwise only the real ID is displayed.
 .Pp
 If a
@@ -43,20 +43,28 @@ In this case, the real and effective IDs are assumed to be the same.
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl G
-Display all of the different group IDs (effective, real and supplementary)
-as white-space separated numbers.
+Display the different group IDs (effective, real and supplementary)
+as white-space separated numbers, in no particular order.
 .It Fl g
-Display only the effective group ID as a number.
+Display the effective group ID as a number.
 .It Fl n
-Display the name of the user or group ID instead of the number.
+Display the name of the user or group ID for the
+.Fl G ,
+.Fl g
+and
+.Fl u
+options instead of the number.
+If any of the ID numbers cannot be mapped into names, the number will be
+displayed as usual.
 .It Fl r
-Display the real ID instead of the effective ID.
+Display the real ID for the
+.Fl g
+and
+.Fl u
+options instead of the effective ID.
 .It Fl u
-Display only the effective user ID as a number.
+Display the effective user ID as a number.
 .El
-.Pp
-If any of the ID numbers cannot be mapped into names, the number is displayed
-instead.
 .Pp
 The
 .Nm id

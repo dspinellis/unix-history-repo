@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)id.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)id.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -72,8 +72,16 @@ main(argc, argv)
 
 	pw = *argv ? who(*argv) : NULL;
 
-	if (Gflag + gflag + uflag > 1)
+	switch(Gflag + gflag + uflag) {
+	case 1:
+		break;
+	case 0:
+		if (!nflag && !rflag)
+			break;
+		/* FALLTHROUGH */
+	default:
 		usage();
+	}
 
 	if (Gflag) {
 		if (nflag)
