@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.2 (Berkeley) %G%
+#	@(#)security	5.3 (Berkeley) %G%
 #
 PATH=/sbin:/bin:/usr/bin
 
@@ -13,7 +13,7 @@ TMP=/tmp/_secure.$$
 echo "checking setuid files and devices:"
 MP=`mount -t ufs | sed 's;/dev/;&r;' | awk '{ print $1 " " $3 }'`
 set $MP
-ls -lT `while test $# -ge 2; do
+ls -lgT `while test $# -ge 2; do
 	device=$1
 	shift
 	mount=$1
