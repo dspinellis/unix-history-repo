@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)ioctl.h	7.19 (Berkeley) 6/26/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00059
+ * --------------------         -----   ----------------------
+ *
+ * 27 Nov 1992	Scott Reynolds		Completed V7 ioctl compatablity
  */
 
 #ifndef	_IOCTL_H_
@@ -140,6 +147,7 @@ struct ttysize {
 #define	TIOCSWINSZ	_IOW('t', 103, struct winsize)	/* set window size */
 #define	TIOCUCNTL	_IOW('t', 102, int)	/* pty: set/clr usr cntl mode */
 #define		UIOCCMD(n)	_IO('u', n)		/* usr cntl op "n" */
+#define TIOCSTAT	_IOW('t', 101, int)	/* generate status message */
 #define	TIOCCONS	_IOW('t', 98, int)		/* become virtual console */
 #define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
 #define	TIOCEXT		_IOW('t', 96, int)	/* pty: external processing */

@@ -31,6 +31,15 @@
  * SUCH DAMAGE.
  *
  *	@(#)ioctl_compat.h	7.4 (Berkeley) 2/5/91
+ *
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00059
+ * --------------------         -----   ----------------------
+ *
+ * 27 Nov 1992	Scott Reynolds		Completed V7 ioctl compatablity
+ *					by adding gtty and stty macros
  */
 
 #ifndef _IOCTL_COMPAT_H_
@@ -163,5 +172,8 @@ struct sgttyb {
 #define	OTTYDISC	0
 #define	NETLDISC	1
 #define	NTTYDISC	2
+
+#define	gtty(fd, tty)	ioctl(fd, TIOCGETP, tty)
+#define	stty(fd, tty)	ioctl(fd, TIOCSETP, tty)
 
 #endif /* !_IOCTL_COMPAT_H_ */
