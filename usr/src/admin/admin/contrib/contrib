@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.11 (Berkeley) %G%
+.\"	@(#)contrib	5.12 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -52,7 +52,7 @@ Quotas	Robert Elz
 RPC support	Sun Microsystems Inc.
 Shared library support	Rob Gingell and Sun Microsystems Inc.
 Stdio	Chris Torek
-System documentation	IEEE (POSIX)
+System documentation	The Institute of Electrical and Electronics Engineers, Inc.
 Timezone support	Arthur David Olson
 Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
 User level XNS	Cornell University
@@ -104,6 +104,7 @@ curses(3)	Ken Arnold
 cut(1)	Adam S. Moskowitz and Marciano Pitargue
 db(3) (btree support)	Mike Olson
 db(3) (hashing support)	Margo Seltzer
+dd(1)	Keith Muller and Lance Visser
 des(1)	Phil Karn, Jim Gillogly
 	 and Richard Outerbridge
 disklable(8)	Symmetric Computer Systems
