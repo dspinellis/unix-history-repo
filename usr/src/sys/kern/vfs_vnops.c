@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.37 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "vnode.h"
 #include "ioctl.h"
 #include "tty.h"
+#include <vm/vm.h>
 
 struct 	fileops vnops =
 	{ vn_read, vn_write, vn_ioctl, vn_select, vn_closefile };
@@ -311,12 +312,9 @@ vn_stat(vp, sb, p)
 	sb->st_gid = vap->va_gid;
 	sb->st_rdev = vap->va_rdev;
 	sb->st_size = vap->va_size;
-	sb->st_atime = vap->va_atime.tv_sec;
-	sb->st_spare1 = 0;
-	sb->st_mtime = vap->va_mtime.tv_sec;
-	sb->st_spare2 = 0;
-	sb->st_ctime = vap->va_ctime.tv_sec;
-	sb->st_spare3 = 0;
+	sb->st_atimeval= vap->va_atime;
+	sb->st_mtimeval= vap->va_mtime;
+	sb->st_ctimeval= vap->va_ctime;
 	sb->st_blksize = vap->va_blocksize;
 	sb->st_flags = vap->va_flags;
 	sb->st_gen = vap->va_gen;
