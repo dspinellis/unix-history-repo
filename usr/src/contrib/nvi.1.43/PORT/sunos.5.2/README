@@ -1,0 +1,43 @@
+I can't get Solaris curses to work with nvi, I give up.  After lots
+of hacking, and lots and lots of additional code, there are still
+two problems.  The first is that it doesn't always restore the terminal
+correctly when endwin() is called, leaving special terminal characters
+unset.  A test program is attached.  I could work around this by adding
+yet more code to the already ugly SYSV_CURSES #ifdef's.
+
+The second problem is that it doesn't scroll the screen intelligently
+for the xterm (and vt100?) terminal types, and will repaint the screen
+on every change.  This trashes nvi's performance over slow lines, and
+nobody has been able to find a workaround.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+/*
+ * Compile with:
+ * /opt/SUNWspro/bin/cc curse.c -lcurses
+ *
+ * Broken on: SunOS baskerville 5.3 Generic_101318-45 sun4m sparc
+ *
+ * The broken behavior can be seen in that the susp key will not be
+ * reset by the endwin() call.  Do an "stty -a" before and after
+ * running the program and notice that the susp entry is unset the
+ * second time.
+ */
+#include <sys/types.h>
+
+#include <curses.h>
+#include <stdio.h>
+#include <termios.h>
+
+main()
+{
+	struct termios t;
+
+	newterm("xterm", stdout, stdin);
+
+	(void)tcgetattr(0, &t);
+	t.c_cc[VSUSP] = _POSIX_VDISABLE;
+	(void)tcsetattr(0, TCSADRAIN, &t);
+
+	endwin();
+	exit (0);
+}
