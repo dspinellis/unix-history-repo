@@ -7,7 +7,9 @@
  * the Systems Programming Group of the University of Utah Computer
  * Science Department.
  *
- *	@(#)pmap.h	7.5 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)pmap.h	7.6 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
