@@ -1,0 +1,66 @@
+
+
+
+PUTC(3S)	    UNIX Programmer's Manual		 PUTC(3S)
+
+
+
+NNAAMMEE
+     putc, putchar, fputc, putw - put character or word on a
+     stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     iinntt ppuuttcc((cc,, ssttrreeaamm))
+     cchhaarr cc;;
+     FFIILLEE **ssttrreeaamm;;
+
+     iinntt ppuuttcchhaarr((cc))
+
+     iinntt ffppuuttcc((cc,, ssttrreeaamm))
+     FFIILLEE **ssttrreeaamm;;
+
+     iinntt ppuuttww((ww,, ssttrreeaamm))
+     FFIILLEE **ssttrreeaamm;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_u_t_c appends the character _c to the named output _s_t_r_e_a_m.  It
+     returns the character written.
+
+     _P_u_t_c_h_a_r(_c) is defined as _p_u_t_c(_c, ssttddoouutt).
+
+     _F_p_u_t_c behaves like _p_u_t_c, but is a genuine function rather
+     than a macro.
+
+     _P_u_t_w appends word (that is, iinntt) _w to the output _s_t_r_e_a_m.  It
+     returns the word written.	_P_u_t_w neither assumes nor causes
+     special alignment in the file.
+
+SSEEEE AALLSSOO
+     fopen(3S), fclose(3S), getc(3S), puts(3S), printf(3S),
+     fread(3S)
+
+DDIIAAGGNNOOSSTTIICCSS
+     These functions return the constant EEOOFF upon error.  Since
+     this is a good integer, _f_e_r_r_o_r(3S) should be used to detect
+     _p_u_t_w errors.
+
+BBUUGGSS
+     Because it is implemented as a macro, _p_u_t_c treats a _s_t_r_e_a_m
+     argument with side effects improperly.  In particular
+
+     putc(c, *f++);
+
+     doesn't work sensibly.
+
+     Errors can occur long after the call to _p_u_t_c.
+
+
+
+
+
+Printed 7/9/88		November 6, 1985			1
+
+
+

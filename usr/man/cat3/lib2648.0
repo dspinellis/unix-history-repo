@@ -1,0 +1,462 @@
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+NNAAMMEE
+     lib2648 - subroutines for the HP 2648 graphics terminal
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     ttyyppeeddeeff cchhaarr *bbiittmmaatt;
+     FILE *trace;
+
+     cc file.c --ll22664488
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_i_b_2_6_4_8 is a general purpose library of subroutines useful
+     for interactive graphics on the Hewlett-Packard 2648 graph-
+     ics terminal.  To use it you must call the routine _t_t_y_i_n_i_t()
+     at the beginning of execution, and _d_o_n_e() at the end of exe-
+     cution.  All terminal input and output must go through the
+     routines _r_a_w_c_h_a_r, _r_e_a_d_l_i_n_e, _o_u_t_c_h_a_r, and _o_u_t_s_t_r.
+
+     _L_i_b_2_6_4_8 does the necessary ^E/^F handshaking if
+     _g_e_t_e_n_v(``_T_E_R_M'') returns ``hp2648'', as it will if set by
+     _t_s_e_t(1).  Any other value, including for example ``2648'',
+     will disable handshaking.
+
+     Bit matrix routines are provided to model the graphics
+     memory of the 2648.  These routines are generally useful,
+     but are specifically useful for the _u_p_d_a_t_e function which
+     efficiently changes what is on the screen to what is sup-
+     posed to be on the screen.  The primative bit matrix rou-
+     tines are _n_e_w_m_a_t, _m_a_t, and _s_e_t_m_a_t.
+
+     The file _t_r_a_c_e, if non-null, is expected to be a file
+     descriptor as returned by _f_o_p_e_n.  If so, _l_i_b_2_6_4_8 will trace
+     the progress of the output by writing onto this file.  It is
+     provided to make debugging output feasible for graphics pro-
+     grams without messing up the screen or the escape sequences
+     being sent.  Typical use of trace will include:
+	  sswwiittcchh (argv[1][1]) {
+	  ccaassee 'T':
+	       trace = fopen("trace", "w");
+	       bbrreeaakk;
+	  ...
+	  iiff (trace)
+	       fprintf(trace, "x is %d, y is %s\n", x, y);
+	  ...
+	  dumpmat("before update", xmat);
+
+RROOUUTTIINNEESS
+     aaggoottoo((xx,, yy))
+	  Move the alphanumeric cursor to position (x, y), meas-
+	  ured from the upper left corner of the screen.
+
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+     aaooffff(())
+	  Turn the alphanumeric display off.
+
+     aaoonn(())
+	  Turn the alphanumeric display on.
+
+     aarreeaacclleeaarr((rrmmiinn,, ccmmiinn,, rrmmaaxx,, ccmmaaxx))
+	  Clear the area on the graphics screen bordered by the
+	  four arguments.  In normal mode the area is set to all
+	  black, in inverse video mode it is set to all white.
+
+     bbeeeepp(())
+	  Ring the bell on the terminal.
+
+     bbiittccooppyy((ddeesstt,, ssrrcc,, rroowwss,, ccoollss)) bbiittmmaatt ddeesstt,,
+	  Copy a _r_o_w_s by _c_o_l_s bit matrix from _s_r_c to (user pro-
+	  vided) _d_e_s_t.
+
+     cclleeaarraa(())
+	  Clear the alphanumeric display.
+
+     cclleeaarrgg(())
+	  Clear the graphics display.  Note that the 2648 will
+	  only clear the part of the screen that is visible if
+	  zoomed in.
+
+     ccuurrooffff(())
+	  Turn the graphics cursor off.
+
+     ccuurroonn(())
+	  Turn the graphics cursor on.
+
+     ddiissppmmssgg((ssttrr,, xx,, yy,, mmaaxxlleenn)) cchhaarr **ssttrr;;
+	  Display the message _s_t_r in graphics text at position
+	  (_x, _y). The maximum message length is given by _m_a_x_l_e_n,
+	  and is needed for dispmsg to know how big an area to
+	  clear before drawing the message.  The lower left
+	  corner of the first character is at (_x, _y).
+
+     ddoonnee(())
+	  Should be called before the program exits.  Restores
+	  the tty to normal, turns off graphics screen, turns on
+	  alphanumeric screen, flushes the standard output, etc.
+
+     ddrraaww((xx,, yy))
+	  Draw a line from the pen location to (_x, _y). As with
+	  all graphics coordinates, (_x, _y) is measured from the
+	  bottom left corner of the screen.  (_x, _y) coordinates
+	  represent the first quadrant of the usual Cartesian
+	  system.
+
+     ddrraawwbbooxx((rr,, cc,, ccoolloorr,, rroowwss,, ccoollss))
+
+
+
+Printed 7/9/88		  May 27, 1986				2
+
+
+
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+	  Draw a rectangular box on the graphics screen.  The
+	  lower left corner is at location (_r, _c). The box is
+	  _r_o_w_s rows high and _c_o_l_s columns wide.  The box is drawn
+	  if _c_o_l_o_r is 1, erased if _c_o_l_o_r is 0.	(_r, _c) absolute
+	  coordinates represent row and column on the screen,
+	  with the origin at the lower left.  They are equivalent
+	  to (_x, _y) except for being reversed in order.
+
+     dduummppmmaatt((mmssgg,, mm,, rroowwss,, ccoollss)) cchhaarr **mmssgg;; bbiittmmaatt mm;;
+	  If _t_r_a_c_e is non-null, write a readable ASCII represen-
+	  tation of the matrix _m on _t_r_a_c_e. _M_s_g is a label to
+	  identify the output.
+
+     eemmppttyyrrooww((mm,, rroowwss,, ccoollss,, rr)) bbiittmmaatt mm;;
+	  Returns 1 if row _r of matrix _m is all zero, else
+	  returns 0.  This routine is provided because it can be
+	  implemented more efficiently with a knowledge of the
+	  internal representation than a series of calls to _m_a_t.
+
+     eerrrroorr((mmssgg)) cchhaarr **mmssgg;;
+	  Default error handler.  Calls _m_e_s_s_a_g_e(_m_s_g) and returns.
+	  This is called by certain routines in _l_i_b_2_6_4_8.  It is
+	  also suitable for calling by the user program.  It is
+	  probably a good idea for a fancy graphics program to
+	  supply its own error procedure which uses _s_e_t_j_m_p(3) to
+	  restart the program.
+
+     ggddeeffaauulltt(())
+	  Set the terminal to the default graphics modes.
+
+     ggooffff(())
+	  Turn the graphics display off.
+
+     ggoonn(())
+	  Turn the graphics display on.
+
+     kkooffff(())
+	  Turn the keypad off.
+
+     kkoonn(())
+	  Turn the keypad on.  This means that most special keys
+	  on the terminal (such as the alphanumeric arrow keys)
+	  will transmit an escape sequence instead of doing their
+	  function locally.
+
+     lliinnee((xx11,, yy11,, xx22,, yy22))
+	  Draw a line in the current mode from (_x_1, _y_1) to (_x_2,
+	  _y_2). This is equivalent to _m_o_v_e(_x_1, _y_1); _d_r_a_w(_x_2, _y_2);
+	  except that a bug in the terminal involving repeated
+	  lines from the same point is compensated for.
+
+     lloowwlleefftt(())
+
+
+
+Printed 7/9/88		  May 27, 1986				3
+
+
+
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+	  Move the alphanumeric cursor to the lower left (home
+	  down) position.
+
+     mmaatt((mm,, rroowwss,, ccoollss,, rr,, cc)) bbiittmmaatt mm;;
+	  Used to retrieve an element from a bit matrix.  Returns
+	  1 or 0 as the value of the [_r, _c] element of the _r_o_w_s
+	  by _c_o_l_s matrix _m. Bit matrices are numbered (_r, _c) from
+	  the upper left corner of the matrix, beginning at (0,
+	  0).  _R represents the row, and _c represents the column.
+
+     mmeessssaaggee((ssttrr)) cchhaarr **ssttrr;;
+	  Display the text message _s_t_r at the bottom of the
+	  graphics screen.
+
+     mmiinnmmaaxx((gg,, rroowwss,, ccoollss,, rrmmiinn,, ccmmiinn,, rrmmaaxx,, ccmmaaxx)) bbiittmmaatt gg;;
+     iinntt **rrmmiinn,, **ccmmiinn,, **rrmmaaxx,, **ccmmaaxx;;
+	  Find the smallest rectangle that contains all the 1
+	  (on) elements in the bit matrix g.  The coordinates are
+	  returned in the variables pointed to by rmin, cmin,
+	  rmax, cmax.
+
+     mmoovvee((xx,, yy))
+	  Move the pen to location (_x, _y). Such motion is inter-
+	  nal and will not cause output until a subsequent
+	  _s_y_n_c().
+
+     mmoovveeccuurrss((xx,, yy))
+	  Move the graphics cursor to location (_x, _y).
+
+     bbiittmmaatt nneewwmmaatt((rroowwss,, ccoollss))
+	  Create (with _m_a_l_l_o_c(3)) a new bit matrix of size _r_o_w_s
+	  by _c_o_l_s. The value created (e.g. a pointer to the first
+	  location) is returned.  A bit matrix can be freed
+	  directly with _f_r_e_e.
+
+     oouuttcchhaarr((cc)) cchhaarr cc;;
+	  Print the character _c on the standard output.  All out-
+	  put to the terminal should go through this routine or
+	  _o_u_t_s_t_r.
+
+     oouuttssttrr((ssttrr)) cchhaarr **ssttrr;;
+	  Print the string str on the standard output by repeated
+	  calls to _o_u_t_c_h_a_r.
+
+     pprriinnttgg(())
+	  Print the graphics display on the printer.  The printer
+	  must be configured as device 6 (the default) on the
+	  HPIB.
+
+     cchhaarr rraawwcchhaarr(())
+	  Read one character from the terminal and return it.
+	  This routine or _r_e_a_d_l_i_n_e should be used to get all
+
+
+
+Printed 7/9/88		  May 27, 1986				4
+
+
+
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+	  input, rather than _g_e_t_c_h_a_r(3).
+
+     rrbbooffff(())
+	  Turn the rubber band line off.
+
+     rrbboonn(())
+	  Turn the rubber band line on.
+
+     cchhaarr **rrddcchhaarr((cc)) cchhaarr cc;;
+	  Return a readable representation of the character _c. If
+	  _c is a printing character it returns itself, if a con-
+	  trol character it is shown in the ^X notation, if nega-
+	  tive an apostrophe is prepended.  Space returns ^`,
+	  rubout returns ^?.
+
+	  NNOOTTEE:: A pointer to a static place is returned.  For
+	  this reason, it will not work to pass rdchar twice to
+	  the same _f_p_r_i_n_t_f/_s_p_r_i_n_t_f call.  You must instead save
+	  one of the values in your own buffer with strcpy.
+
+     rreeaaddlliinnee((pprroommpptt,, mmssgg,, mmaaxxlleenn)) cchhaarr **pprroommpptt,, **mmssgg;;
+	  Display _p_r_o_m_p_t on the bottom line of the graphics
+	  display and read one line of text from the user, ter-
+	  minated by a newline.  The line is placed in the buffer
+	  _m_s_g, which has size _m_a_x_l_e_n characters.  Backspace pro-
+	  cessing is supported.
+
+     sseettcclleeaarr(())
+	  Set the display to draw lines in erase mode.	(This is
+	  reversed by inverse video mode.)
+
+     sseettmmaatt((mm,, rroowwss,, ccoollss,, rr,, cc,, vvaall)) bbiittmmaatt mm;;
+	  The basic operation to store a value in an element of a
+	  bit matrix.  The [_r, _c] element of _m is set to _v_a_l,
+	  which should be either 0 or 1.
+
+     sseettsseett(())
+	  Set the display to draw lines in normal (solid) mode.
+	  (This is reversed by inverse video mode.)
+
+     sseettxxoorr(())
+	  Set the display to draw lines in exclusive or mode.
+
+     ssyynncc(())
+	  Force all accumulated output to be displayed on the
+	  screen.  This should be followed by fflush(stdout).
+	  The cursor is not affected by this function.	Note that
+	  it is normally never necessary to call _s_y_n_c, since
+	  _r_a_w_c_h_a_r and _r_e_a_d_l_i_n_e call _s_y_n_c() and _f_f_l_u_s_h(_s_t_d_o_u_t)
+	  automatically.
+
+     ttooggvviidd(())
+
+
+
+Printed 7/9/88		  May 27, 1986				5
+
+
+
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+	  Toggle the state of video.  If in normal mode, go into
+	  inverse video mode, and vice versa.  The screen is
+	  reversed as well as the internal state of the library.
+
+     ttttyyiinniitt(())
+	  Set up the terminal for processing.  This routine
+	  should be called at the beginning of execution.  It
+	  places the terminal in CBREAK mode, turns off echo,
+	  sets the proper modes in the terminal, and initializes
+	  the library.
+
+     uuppddaattee((mmoolldd,, mmnneeww,, rroowwss,, ccoollss,, bbaasseerr,, bbaasseecc)) bbiittmmaatt mmoolldd,, mmnneeww;;
+	  Make whatever changes are needed to make a window on
+	  the screen look like _m_n_e_w.  _M_o_l_d is what the window on
+	  the screen currently looks like.  The window has size
+	  _r_o_w_s by _c_o_l_s, and the lower left corner on the screen
+	  of the window is [_b_a_s_e_r, _b_a_s_e_c]. Note: _u_p_d_a_t_e was not
+	  intended to be used for the entire screen.  It would
+	  work but be very slow and take 64K bytes of memory just
+	  for mold and mnew.  It was intended for 100 by 100 win-
+	  dows with objects in the center of them, and is quite
+	  fast for such windows.
+
+     vviiddiinnvv(())
+	  Set inverse video mode.
+
+     vviiddnnoorrmm(())
+	  Set normal video mode.
+
+     zzeerrmmaatt((mm,, rroowwss,, ccoollss)) bbiittmmaatt mm;;
+	  Set the bit matrix _m to all zeros.
+
+     zzoooommnn((ssiizzee))
+	  Set the hardware zoom to value _s_i_z_e, which can range
+	  from 1 to 15.
+
+     zzoooommooffff(())
+	  Turn zoom off.  This forces the screen to zoom level 1
+	  without affecting the current internal zoom number.
+
+     zzoooommoonn(())
+	  Turn zoom on.  This restores the screen to the previ-
+	  ously specified zoom size.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The routine _e_r_r_o_r is called when an error is detected.  The
+     only error currently detected is overflow of the buffer pro-
+     vided to _r_e_a_d_l_i_n_e.
+
+     Subscripts out of bounds to _s_e_t_m_a_t return without setting
+     anything.
+
+
+
+
+Printed 7/9/88		  May 27, 1986				6
+
+
+
+
+
+
+LIB2648(3X)	    UNIX Programmer's Manual	      LIB2648(3X)
+
+
+
+FFIILLEESS
+     /usr/lib/lib2648.a
+
+SSEEEE AALLSSOO
+     fed(1)
+
+AAUUTTHHOORR
+     Mark Horton
+
+BBUUGGSS
+     This library is not supported.  It makes no attempt to use
+     all of the features of the terminal, only those needed by
+     fed.  Contributions from users will be accepted for addition
+     to the library.
+
+     The HP 2648 terminal is somewhat unreliable at speeds over
+     2400 baud, even with the ^E/^F handshaking.  In an effort to
+     improve reliability, handshaking is done every 32 charac-
+     ters.  (The manual claims it is only necessary every 80
+     characters.) Nonetheless, I/O errors sometimes still occur.
+
+     There is no way to control the amount of debugging output
+     generated on _t_r_a_c_e without modifying the source to the
+     library.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				7
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+GETENV(3)	    UNIX Programmer's Manual		GETENV(3)
+
+
+
+NNAAMMEE
+     getenv, setenv, unsetenv - manipulate environmental vari-
+     ables
+
+SSYYNNOOPPSSIISS
+     cchhaarr **ggeetteennvv((nnaammee))
+     cchhaarr **nnaammee;;
+
+     sseetteennvv((nnaammee,, vvaalluuee,, oovveerrwwrriittee))
+     cchhaarr **nnaammee,, vvaalluuee;;
+     iinntt oovveerrwwrriittee;;
+
+     vvooiidd uunnsseetteennvv((nnaammee))
+     cchhaarr **nnaammee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_e_n_v searches the environment list (see _e_n_v_i_r_o_n(7)) for a
+     string of the form _n_a_m_e==_v_a_l_u_e and returns a pointer to the
+     string _v_a_l_u_e if such a string is present, and 0 (NULL) if it
+     is not.
+
+     _S_e_t_e_n_v searches the environment list as _g_e_t_e_n_v does; if the
+     string _n_a_m_e is not found, a string of the form _n_a_m_e==_v_a_l_u_e is
+     added to the environment.	If it is found, and _o_v_e_r_w_r_i_t_e is
+     non-zero, its value is changed to _v_a_l_u_e.  _S_e_t_e_n_v returns 0
+     on success and -1 on failure, where failure is caused by an
+     inability to allocate space for the environment.
+
+     _U_n_s_e_t_e_n_v removes all occurrences of the string _n_a_m_e from the
+     environment.  There is no library provision for completely
+     removing the current environment.	It is suggested that the
+     following code be used to do so.
+
+	  static char	 *envinit[1];
+	  extern char	 **environ;
+	  environ = envinit;
+
+     All of these routines permit, but do not require, a trailing
+     equals (``='') sign on _n_a_m_e or a leading equals sign on
+     _v_a_l_u_e.
+
+SSEEEE AALLSSOO
+     csh(1), sh(1), execve(2), environ(7)
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 March 20, 1987                         1
+
+
+

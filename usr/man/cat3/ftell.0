@@ -1,0 +1,66 @@
+
+
+
+FSEEK(3S)	    UNIX Programmer's Manual		FSEEK(3S)
+
+
+
+NNAAMMEE
+     fseek, ftell, rewind - reposition a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     ffsseeeekk((ssttrreeaamm,, ooffffsseett,, ppttrrnnaammee))
+     FFIILLEE **ssttrreeaamm;;
+     lloonngg ooffffsseett;;
+
+     lloonngg fftteellll((ssttrreeaamm))
+     FFIILLEE **ssttrreeaamm;;
+
+     rreewwiinndd((ssttrreeaamm))
+
+DDEESSCCRRIIPPTTIIOONN
+     _F_s_e_e_k sets the position of the next input or output opera-
+     tion on the _s_t_r_e_a_m.  The new position is at the signed dis-
+     tance _o_f_f_s_e_t bytes from the beginning, the current position,
+     or the end of the file, according as _p_t_r_n_a_m_e has the value
+     0, 1, or 2.
+
+     _F_s_e_e_k undoes any effects of _u_n_g_e_t_c(3S).
+
+     _F_t_e_l_l returns the current value of the offset relative to
+     the beginning of the file associated with the named _s_t_r_e_a_m.
+     It is measured in bytes on UNIX; on some other systems it is
+     a magic cookie, and the only foolproof way to obtain an
+     _o_f_f_s_e_t for _f_s_e_e_k.
+
+     _R_e_w_i_n_d(_s_t_r_e_a_m) is equivalent to _f_s_e_e_k(_s_t_r_e_a_m, 0L, L_SET).
+
+SSEEEE AALLSSOO
+     lseek(2), fopen(3S)
+
+DDIIAAGGNNOOSSTTIICCSS
+     _F_s_e_e_k returns -1 for improper seeks, otherwise zero.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		December 5, 1987			1
+
+
+

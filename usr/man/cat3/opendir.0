@@ -1,0 +1,132 @@
+
+
+
+DIRECTORY(3)	    UNIX Programmer's Manual	     DIRECTORY(3)
+
+
+
+NNAAMMEE
+     opendir, readdir, telldir, seekdir, rewinddir, closedir,
+     dirfd - directory operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ddiirr..hh>>
+
+     DDIIRR **ooppeennddiirr((ffiilleennaammee))
+     cchhaarr **ffiilleennaammee;;
+
+     ssttrruucctt ddiirreecctt **rreeaaddddiirr((ddiirrpp))
+     DDIIRR **ddiirrpp;;
+
+     lloonngg tteellllddiirr((ddiirrpp))
+     DDIIRR **ddiirrpp;;
+
+     sseeeekkddiirr((ddiirrpp,, lloocc))
+     DDIIRR **ddiirrpp;;
+     lloonngg lloocc;;
+
+     rreewwiinnddddiirr((ddiirrpp))
+     DDIIRR **ddiirrpp;;
+
+     cclloosseeddiirr((ddiirrpp))
+     DDIIRR **ddiirrpp;;
+
+     ddiirrffdd((ddiirrpp))
+     DDIIRR **ddiirrpp;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _O_p_e_n_d_i_r opens the directory named by _f_i_l_e_n_a_m_e and associates
+     a _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m with it.  _O_p_e_n_d_i_r returns a pointer to be
+     used to identify the _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m in subsequent opera-
+     tions.  The pointer NNUULLLL is returned if _f_i_l_e_n_a_m_e cannot be
+     accessed, or if it cannot _m_a_l_l_o_c(3) enough memory to hold
+     the whole thing.
+
+     _R_e_a_d_d_i_r returns a pointer to the next directory entry.  It
+     returns NNUULLLL upon reaching the end of the directory or
+     detecting an invalid _s_e_e_k_d_i_r operation.
+
+     _T_e_l_l_d_i_r returns the current location associated with the
+     named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m.
+
+     _S_e_e_k_d_i_r sets the position of the next _r_e_a_d_d_i_r operation on
+     the _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m. The new position reverts to the one
+     associated with the _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m when the _t_e_l_l_d_i_r opera-
+     tion was performed.  Values returned by _t_e_l_l_d_i_r are good
+     only for the lifetime of the DIR pointer from which they are
+     derived.  If the directory is closed and then reopened, the
+     _t_e_l_l_d_i_r value may be invalidated due to undetected directory
+
+
+
+Printed 7/9/88		December 22, 1986			1
+
+
+
+
+
+
+DIRECTORY(3)	    UNIX Programmer's Manual	     DIRECTORY(3)
+
+
+
+     compaction.  It is safe to use a previous _t_e_l_l_d_i_r value
+     immediately after a call to _o_p_e_n_d_i_r and before any calls to
+     _r_e_a_d_d_i_r.
+
+     _R_e_w_i_n_d_d_i_r resets the position of the named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m
+     to the beginning of the directory.
+
+     _C_l_o_s_e_d_i_r closes the named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m and frees the
+     structure associated with the DIR pointer.
+
+     _D_i_r_f_d returns the integer file descriptor associated with
+     the named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m, see open(2).
+
+     Sample code which searchs a directory for entry ``name'' is:
+
+	  len = strlen(name);
+	  dirp = opendir(".");
+	  for (dp = readdir(dirp); dp != NULL; dp =
+     readdir(dirp))
+	       if (dp->d_namlen == len && !strcmp(dp->d_name,
+     name)) {
+		    closedir(dirp);
+		    return FOUND;
+	       }
+	  closedir(dirp);
+	  return NOT_FOUND;
+
+SSEEEE AALLSSOO
+     open(2), close(2), read(2), lseek(2), dir(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		December 22, 1986			2
+
+
+

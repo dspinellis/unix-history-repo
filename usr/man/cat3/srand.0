@@ -1,0 +1,66 @@
+
+
+
+RAND(3C)	    UNIX Programmer's Manual		 RAND(3C)
+
+
+
+NNAAMMEE
+     rand, srand - random number generator
+
+SSYYNNOOPPSSIISS
+     ssrraanndd((sseeeedd))
+     iinntt sseeeedd;;
+
+     rraanndd(())
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhee nneewweerr rraannddoomm((33)) sshhoouulldd bbee uusseedd iinn nneeww aapppplliiccaattiioonnss;; rraanndd
+     rreemmaaiinnss ffoorr ccoommppaattiibbiillttyy..
+
+     _R_a_n_d uses a multiplicative congruential random number gen-
+     erator with period 2**32 to return successive pseudo-random
+     numbers in the range from 0 to (2**31)-1
+
+     The generator is reinitialized by calling _s_r_a_n_d with 1 as
+     argument.	It can be set to a random starting point by cal-
+     ling _s_r_a_n_d with whatever you like as argument.
+
+SSEEEE AALLSSOO
+     random(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 29, 1985			1
+
+
+

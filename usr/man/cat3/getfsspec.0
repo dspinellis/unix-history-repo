@@ -1,0 +1,132 @@
+
+
+
+GETFSENT(3)	    UNIX Programmer's Manual	      GETFSENT(3)
+
+
+
+NNAAMMEE
+     getfsent, getfsspec, getfsfile, getfstype, setfsent,
+     endfsent - get file system descriptor file entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffssttaabb..hh>>
+
+     ssttrruucctt ffssttaabb **ggeettffsseenntt(())
+
+     ssttrruucctt ffssttaabb **ggeettffssssppeecc((ssppeecc))
+     cchhaarr **ssppeecc;;
+
+     ssttrruucctt ffssttaabb **ggeettffssffiillee((ffiillee))
+     cchhaarr **ffiillee;;
+
+     ssttrruucctt ffssttaabb **ggeettffssttyyppee((ttyyppee))
+     cchhaarr **ttyyppee;;
+
+     iinntt sseettffsseenntt(())
+
+     iinntt eennddffsseenntt(())
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_f_s_e_n_t, _g_e_t_f_s_s_p_e_c, _g_e_t_f_s_t_y_p_e, and _g_e_t_f_s_f_i_l_e each return a
+     pointer to an object with the following structure containing
+     the broken-out fields of a line in the file system descrip-
+     tion file, <fstab.h>.
+
+	  struct fstab {
+	       char *fs_spec;
+	       char *fs_file;
+	       char *fs_type;
+	       int  fs_freq;
+	       int  fs_passno;
+	  };
+
+     The fields have meanings described in _f_s_t_a_b(5).
+
+     _G_e_t_f_s_e_n_t reads the next line of the file, opening	the  file
+     if necessary.
+
+     _S_e_t_f_s_e_n_t opens and rewinds the file.
+
+     _E_n_d_f_s_e_n_t closes the file.
+
+     _G_e_t_f_s_s_p_e_c and _g_e_t_f_s_f_i_l_e sequentially search from the  begin-
+     ning  of the file until a matching special file name or file
+     system file name is found,  or  until  EOF  is  encountered.
+     _G_e_t_f_s_t_y_p_e	does  likewise,  matching on the file system type
+     field.
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+GETFSENT(3)	    UNIX Programmer's Manual	      GETFSENT(3)
+
+
+
+FFIILLEESS
+     /etc/fstab
+
+SSEEEE AALLSSOO
+     fstab(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Null pointer (0) returned on EOF or error.
+
+BBUUGGSS
+     All information is contained in a static area so it must  be
+     copied if it is to be saved.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+

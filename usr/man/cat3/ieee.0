@@ -1,0 +1,132 @@
+
+
+
+IEEE(3M)	    UNIX Programmer's Manual		 IEEE(3M)
+
+
+
+NNAAMMEE
+     copysign, drem, finite, logb, scalb - copysign, remainder,
+     exponent manipulations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     ddoouubbllee ccooppyyssiiggnn((xx,,yy))
+     ddoouubbllee xx,,yy;;
+
+     ddoouubbllee ddrreemm((xx,,yy))
+     ddoouubbllee xx,,yy;;
+
+     iinntt ffiinniittee((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee llooggbb((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee ssccaallbb((xx,,nn))
+     ddoouubbllee xx;;
+     iinntt nn;;
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions are required for, or recommended by the IEEE
+     standard 754 for floating-point arithmetic.
+
+     Copysign(x,y) returns x with its sign changed to y's.
+
+     Drem(x,y) returns the remainder r := x - n*y where n is the
+     integer nearest the exact value of x/y; moreover if
+     |n-x/y|=1/2 then n is even.  Consequently the remainder is
+     computed exactly and |r| <_ |y|/2.	But drem(x,0) is excep-
+     tional; see below under DIAGNOSTICS.
+
+     Finite(x) = 1 just when -infinity < x < +infinity,
+	       = 0 otherwise (when |x| = infinity or x is _N_a_N or
+			      x is the VAX's reserved operand.)
+
+     Logb(x) returns x's exponent n, a signed integer converted
+     to double-precision floating-point and so chosen that
+     1 <_ |x|/2**n < 2 unless x = 0 or (only on machines that con-
+     form to IEEE 754) |x| = infinity or x lies between 0 and the
+     Underflow Threshold; see below under "BUGS".
+
+     Scalb(x,n) = x*(2**n) computed, for integer n, without first
+     computing 2**n.
+
+DDIIAAGGNNOOSSTTIICCSS
+     IEEE 754 defines drem(x,0) and drem(infinity,y) to be
+     invalid operations that produce a _N_a_N.  On a VAX, drem(x,0)
+     returns the reserved operand.  No infinity exists on a VAX.
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+IEEE(3M)	    UNIX Programmer's Manual		 IEEE(3M)
+
+
+
+     IEEE 754 defines logb(+_infinity) = +infinity and logb(0) =
+     -infinity, requires the latter to signal Division-by-Zero.
+     But on a VAX, logb(0) = 1.0 - 2.0**31 = -2,147,483,647.0.
+     And if the correct value of scalb(x,n) would overflow on a
+     VAX, it returns the reserved operand and sets _e_r_r_n_o to
+     ERANGE.
+
+SSEEEE AALLSSOO
+     floor(3M), math(3M), infnan(3M)
+
+AAUUTTHHOORR
+     Kwok-Choi Ng
+
+BBUUGGSS
+     Should drem(x,0) and logb(0) on a VAX signal invalidity by
+     setting _e_r_r_n_o = EDOM?  Should  logb(0) return  -1.7e38?
+
+     IEEE 754 currently specifies that logb(denormalized no.) =
+     logb(tiniest normalized no. > 0) but the consensus has
+     changed to the specification in the new proposed IEEE stan-
+     dard p854, namely that logb(x) satisfy
+	  1 <_ scalb(|x|,-logb(x)) < Radix   ... = 2 for IEEE 754
+     for every x except 0, infinity and _N_a_N.  Almost every pro-
+     gram that assumes 754's specification will work correctly if
+     logb follows 854's specification instead.
+
+     IEEE 754 requires copysign(x,_N_a_N) = +_x  but says nothing
+     else about the sign of a _N_a_N.  A _N_a_N (_Not _a _Number) is simi-
+     lar in spirit to the VAX's reserved operand, but very dif-
+     ferent in important details.  Since the sign bit of a
+     reserved operand makes it look negative,
+	  copysign(x,reserved operand) = -x;
+     should this return the reserved operand instead?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+

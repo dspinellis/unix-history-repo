@@ -1,0 +1,66 @@
+
+
+
+PERROR(3)	    UNIX Programmer's Manual		PERROR(3)
+
+
+
+NNAAMMEE
+     perror, sys_errlist, sys_nerr - system error messages
+
+SSYYNNOOPPSSIISS
+     ppeerrrroorr((ssttrriinngg))
+     cchhaarr **ssttrriinngg;;
+
+     iinntt ssyyss__nneerrrr;;
+     cchhaarr **ssyyss__eerrrrlliisstt[[]];;
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_e_r_r_o_r produces a short error message on the standard error
+     file describing the last error encountered during a call to
+     the system from a C program.  If _s_t_r_i_n_g is non-NULL, it is
+     printed, followed by a colon, followed by a space, followed
+     by the message and a new-line.  Otherwise, just the message
+     and the new-line are printed.  Most usefully, the argument
+     string is the name of the program which incurred the error.
+     The error number is taken from the external variable _e_r_r_n_o
+     (see _i_n_t_r_o(2)), which is set when errors occur but not
+     cleared when non-erroneous calls are made.
+
+     To simplify variant formatting of messages, the vector of
+     message strings _s_y_s__e_r_r_l_i_s_t is provided; _e_r_r_n_o can be used
+     as an index in this table to get the message string without
+     the newline.  _S_y_s__n_e_r_r is the number of messages provided
+     for in the table; it should be checked because new error
+     codes may be added to the system before they are added to
+     the table.
+
+SSEEEE AALLSSOO
+     intro(2), psignal(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 10, 1987			1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+FOPEN(3S)	    UNIX Programmer's Manual		FOPEN(3S)
+
+
+
+NNAAMMEE
+     fopen, freopen, fdopen - open a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     FFIILLEE **ffooppeenn((ffiilleennaammee,, ttyyppee))
+     cchhaarr **ffiilleennaammee,, **ttyyppee;;
+
+     FFIILLEE **ffrreeooppeenn((ffiilleennaammee,, ttyyppee,, ssttrreeaamm))
+     cchhaarr **ffiilleennaammee,, **ttyyppee;;
+     FFIILLEE **ssttrreeaamm;;
+
+     FFIILLEE **ffddooppeenn((ffiillddeess,, ttyyppee))
+     cchhaarr **ttyyppee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _F_o_p_e_n opens the file named by _f_i_l_e_n_a_m_e and associates a
+     stream with it.  _F_o_p_e_n returns a pointer to be used to iden-
+     tify the stream in subsequent operations.
+
+     _T_y_p_e is a character string having one of the following
+     values:
+
+     "r"  open for reading
+
+     "w"  create for writing
+
+     "a"  append: open for writing at end of file, or create for
+	  writing
+
+     In addition, each _t_y_p_e may be followed by a "+" to have the
+     file opened for reading and writing.  "r+" positions the
+     stream at the beginning of the file, "w+" creates or trun-
+     cates it, and "a+" positions it at the end.  Both reads and
+     writes may be used on read/write streams, with the limita-
+     tion that an _f_s_e_e_k, _r_e_w_i_n_d, or reading an end-of-file must
+     be used between a read and a write or vice-versa.
+
+     _F_r_e_o_p_e_n substitutes the named file in place of the open
+     _s_t_r_e_a_m.  It returns the original value of _s_t_r_e_a_m.	The ori-
+     ginal stream is closed.
+
+     _F_r_e_o_p_e_n is typically used to attach the preopened constant
+     names, ssttddiinn,, ssttddoouutt,, ssttddeerrrr,, to specified files.
+
+     _F_d_o_p_e_n associates a stream with a file descriptor obtained
+     from _o_p_e_n, _d_u_p, _c_r_e_a_t, or _p_i_p_e(2).  The _t_y_p_e of the stream
+     must agree with the mode of the open file.
+
+SSEEEE AALLSSOO
+     open(2), fclose(3)
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+
+
+
+
+FOPEN(3S)	    UNIX Programmer's Manual		FOPEN(3S)
+
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     _F_o_p_e_n and _f_r_e_o_p_e_n return the pointer NNUULLLL if _f_i_l_e_n_a_m_e cannot
+     be accessed, if too many files are already open, or if other
+     resources needed cannot be allocated.
+
+BBUUGGSS
+     _F_d_o_p_e_n is not portable to systems other than UNIX.
+
+     The read/write _t_y_p_e_s do not exist on all systems.	Those
+     systems without read/write modes will probably treat the
+     _t_y_p_e as if the "+" was not present.  These are unreliable in
+     any event.
+
+     In order to support the same number of open files as does
+     the system, _f_o_p_e_n must allocate additional memory for data
+     structures using _c_a_l_l_o_c after 20 files have been opened.
+     This confuses some programs which use their own memory allo-
+     cators.  An undocumented routine, _f__p_r_e_a_l_l_o_c, may be called
+     to force immediate allocation of all internal memory except
+     for buffers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				2
+
+
+

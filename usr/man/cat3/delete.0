@@ -1,0 +1,132 @@
+
+
+
+DBM(3X)             UNIX Programmer's Manual		  DBM(3X)
+
+
+
+NNAAMMEE
+     dbminit, fetch, store, delete, firstkey, nextkey - data base
+     subroutines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ddbbmm..hh>>
+
+     ttyyppeeddeeff ssttrruucctt {{
+	  cchhaarr **ddppttrr;;
+	  iinntt ddssiizzee;;
+     }} ddaattuumm;;
+
+     ddbbmmiinniitt((ffiillee))
+     cchhaarr **ffiillee;;
+
+     ddaattuumm ffeettcchh((kkeeyy))
+     ddaattuumm kkeeyy;;
+
+     ssttoorree((kkeeyy,, ccoonntteenntt))
+     ddaattuumm kkeeyy,, ccoonntteenntt;;
+
+     ddeelleettee((kkeeyy))
+     ddaattuumm kkeeyy;;
+
+     ddaattuumm ffiirrssttkkeeyy(())
+
+     ddaattuumm nneexxttkkeeyy((kkeeyy))
+     ddaattuumm kkeeyy;;
+
+DDEESSCCRRIIPPTTIIOONN
+     NNoottee:: tthhee ddbbmm lliibbrraarryy hhaass bbeeeenn ssuuppeerrcceeddeedd bbyy nnddbbmm((33)),, aanndd iiss
+     nnooww iimmpplleemmeenntteedd uussiinngg nnddbbmm..  These functions maintain
+     key/content pairs in a data base.	The functions will handle
+     very large (a billion blocks) databases and will access a
+     keyed item in one or two file system accesses.  The func-
+     tions are obtained with the loader option --llddbbmm.
+
+     _K_e_ys and _c_o_n_t_e_n_ts are described by the _d_a_t_u_m typedef.  A
+     _d_a_t_u_m specifies a string of _d_s_i_z_e bytes pointed to by _d_p_t_r.
+     Arbitrary binary data, as well as normal ASCII strings, are
+     allowed.  The data base is stored in two files.  One file is
+     a directory containing a bit map and has `.dir' as its suf-
+     fix.  The second file contains all data and has `.pag' as
+     its suffix.
+
+     Before a database can be accessed, it must be opened by
+     _d_b_m_i_n_i_t. At the time of this call, the files _f_i_l_e..ddiirr and
+     _f_i_l_e..ppaagg must exist.  (An empty database is created by
+     creating zero-length `.dir' and `.pag' files.)
+
+     Once open, the data stored under a key is accessed by _f_e_t_c_h
+     and data is placed under a key by _s_t_o_r_e.  A key (and its
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+DBM(3X)             UNIX Programmer's Manual		  DBM(3X)
+
+
+
+     associated contents) is deleted by _d_e_l_e_t_e.  A linear pass
+     through all keys in a database may be made, in an
+     (apparently) random order, by use of _f_i_r_s_t_k_e_y and _n_e_x_t_k_e_y.
+     _F_i_r_s_t_k_e_y will return the first key in the database.  With
+     any key _n_e_x_t_k_e_y will return the next key in the database.
+     This code will traverse the data base:
+
+	  ffoorr (key = firstkey(); key.dptr != NULL; key =
+	  nextkey(key))
+
+DDIIAAGGNNOOSSTTIICCSS
+     All functions that return an _i_n_t indicate errors with nega-
+     tive values.  A zero return indicates ok.	Routines that
+     return a _d_a_t_u_m indicate errors with a null (0) _d_p_t_r.
+
+SSEEEE AALLSSOO
+     ndbm(3)
+
+BBUUGGSS
+     The `.pag' file will contain holes so that its apparent size
+     is about four times its actual content.  Older UNIX systems
+     may create real file blocks for these holes when touched.
+     These files cannot be copied by normal means (cp, cat, tp,
+     tar, ar) without filling in the holes.
+
+     _D_p_t_r pointers returned by these subroutines point into
+     static storage that is changed by subsequent calls.
+
+     The sum of the sizes of a key/content pair must not exceed
+     the internal block size (currently 1024 bytes).  Moreover
+     all key/content pairs that hash together must fit on a sin-
+     gle block.  _S_t_o_r_e will return an error in the event that a
+     disk block fills with inseparable data.
+
+     _D_e_l_e_t_e does not physically reclaim file space, although it
+     does make it available for reuse.
+
+     The order of keys presented by _f_i_r_s_t_k_e_y and _n_e_x_t_k_e_y depends
+     on a hashing function, not on anything interesting.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+

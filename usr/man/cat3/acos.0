@@ -1,0 +1,198 @@
+
+
+
+SIN(3M)             UNIX Programmer's Manual		  SIN(3M)
+
+
+
+NNAAMMEE
+     sin, cos, tan, asin, acos, atan, atan2 - trigonometric func-
+     tions and their inverses
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     ddoouubbllee ssiinn((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee ccooss((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee ttaann((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee aassiinn((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee aaccooss((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee aattaann((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee aattaann22((yy,,xx))
+     ddoouubbllee yy,,xx;;
+
+DDEESSCCRRIIPPTTIIOONN
+     Sin, cos and tan return trigonometric functions of radian
+     arguments x.
+
+     Asin returns the arc sine in the range -pi/2 to pi/2.
+
+     Acos returns the arc cosine in the range 0 to pi.
+
+     Atan returns the arc tangent in the range -pi/2 to pi/2.
+
+     On a VAX,
+     atan2(y,x) :=   atan(y/x)			 if x > 0,
+		     sign(y)*(pi - atan(|y/x|))  if x < 0,
+		     0				 if x = y = 0, or
+		     sign(y)*pi/2		 if x = 0 != y.
+
+DDIIAAGGNNOOSSTTIICCSS
+     On a VAX, if |x| > 1 then asin(x) and acos(x) will return
+     reserved operands and _e_r_r_n_o will be set to EDOM.
+
+NNOOTTEESS
+     Atan2 defines atan2(0,0) = 0 on a VAX despite that previ-
+     ously atan2(0,0) may have generated an error message.  The
+     reasons for assigning a value to atan2(0,0) are these:
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+SIN(3M)             UNIX Programmer's Manual		  SIN(3M)
+
+
+
+     (1) Programs that test arguments to avoid computing
+	 atan2(0,0) must be indifferent to its value.  Programs
+	 that require it to be invalid are vulnerable to diverse
+	 reactions to that invalidity on diverse computer sys-
+	 tems.
+
+     (2) Atan2 is used mostly to convert from rectangular (x,y)
+	 to polar (r,theta) coordinates that must satisfy x =
+	 r*cos theta and y = r*sin theta.  These equations are
+	 satisfied when (x=0,y=0) is mapped to (r=0,theta=0) on a
+	 VAX.  In general, conversions to polar coordinates
+	 should be computed thus:
+		  r := hypot(x,y);	... := sqrt(x*x+y*y)
+	      theta := atan2(y,x).
+
+     (3) The foregoing formulas need not be altered to cope in a
+	 reasonable way with signed zeros and infinities on a
+	 machine that conforms to IEEE 754; the versions of hypot
+	 and atan2 provided for such a machine are designed to
+	 handle all cases.  That is why atan2(+_0,-0) = +_pi, for
+	 instance.  In general the formulas above are equivalent
+	 to these:
+	 r := sqrt(x*x+y*y); if r = 0 then x := copysign(1,x);
+	 if x > 0  then theta := 2*atan(y/(r+x))
+		   else theta := 2*atan((r-x)/y);
+     except if r is infinite then atan2 will yield an appropriate
+     multiple of pi/4 that would otherwise have to be obtained by
+     taking limits.
+
+EERRRROORR ((dduuee ttoo RRoouunnddooffff eettcc..))
+     Let P stand for the number stored in the computer in place
+     of pi = 3.14159 26535 89793 23846 26433 ... .  Let "trig"
+     stand for one of "sin", "cos" or "tan".  Then the expression
+     "trig(x)" in a program actually produces an approximation to
+     trig(x*pi/P), and "atrig(x)" approximates (P/pi)*atrig(x).
+     The approximations are close,  within 0.9 _u_l_ps for sin, cos
+     and atan, within 2.2 _u_l_ps for tan, asin, acos and atan2 on a
+     VAX.  Moreover, P = pi in the codes that run on a VAX.
+
+     In the codes that run on other machines, P differs from pi
+     by a fraction of an _u_l_p; the difference matters only if the
+     argument x is huge, and even then the difference is likely
+     to be swamped by the uncertainty in x.  Besides, every tri-
+     gonometric identity that does not involve pi explicitly is
+     satisfied equally well regardless of whether P = pi.  For
+     instance, sin(x)**2+cos(x)**2 = 1 and
+     sin(2x) = 2sin(x)cos(x) to within a few _u_l_ps no matter how
+     big x may be.  Therefore the difference between P and pi is
+     most unlikely to affect scientific and engineering computa-
+     tions.
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+
+
+
+
+SIN(3M)             UNIX Programmer's Manual		  SIN(3M)
+
+
+
+SSEEEE AALLSSOO
+     math(3M), hypot(3M), sqrt(3M), infnan(3M)
+
+AAUUTTHHOORR
+     Robert P. Corbett, W. Kahan, Stuart I. McDonald, Peter Tang
+     and, for the codes for IEEE 754, Dr. Kwok-Choi Ng.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				3
+
+
+

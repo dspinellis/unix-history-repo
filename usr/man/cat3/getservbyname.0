@@ -1,0 +1,132 @@
+
+
+
+GETSERVENT(3N)	    UNIX Programmer's Manual	   GETSERVENT(3N)
+
+
+
+NNAAMMEE
+     getservent, getservbyport, getservbyname, setservent,
+     endservent - get service entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     ssttrruucctt sseerrvveenntt **ggeettsseerrvveenntt(())
+
+     ssttrruucctt sseerrvveenntt **ggeettsseerrvvbbyynnaammee((nnaammee,, pprroottoo))
+     cchhaarr **nnaammee,, **pprroottoo;;
+
+     ssttrruucctt sseerrvveenntt **ggeettsseerrvvbbyyppoorrtt((ppoorrtt,, pprroottoo))
+     iinntt ppoorrtt;; cchhaarr **pprroottoo;;
+
+     sseettsseerrvveenntt((ssttaayyooppeenn))
+     iinntt ssttaayyooppeenn
+
+     eennddsseerrvveenntt(())
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_s_e_r_v_e_n_t, _g_e_t_s_e_r_v_b_y_n_a_m_e, and _g_e_t_s_e_r_v_b_y_p_o_r_t each return a
+     pointer to an object with the following structure containing
+     the broken-out fields of a line in the network services data
+     base, /_e_t_c/_s_e_r_v_i_c_e_s.
+
+	  struct    servent {
+	       char *s_name;  /* official name of service */
+	       char **s_aliases;   /* alias list */
+	       int  s_port;	   /* port service resides at */
+	       char *s_proto; /* protocol to use */
+	  };
+
+     The members of this structure are:
+
+     s_name	The official name of the service.
+
+     s_aliases	A zero terminated list of alternate names for the
+		service.
+
+     s_port	The port number at  which  the	service  resides.
+		Port numbers are returned in network byte order.
+
+     s_proto	The name of the protocol to use  when  contacting
+		the service.
+
+     _G_e_t_s_e_r_v_e_n_t reads the next line of the file, opening the file
+     if necessary.
+
+     _S_e_t_s_e_r_v_e_n_t opens and rewinds the file.  If the _s_t_a_y_o_p_e_n flag
+     is non-zero, the net data base will not be closed after each
+     call to _g_e_t_s_e_r_v_b_y_n_a_m_e or .IR getservbyport .
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+
+
+
+
+GETSERVENT(3N)	    UNIX Programmer's Manual	   GETSERVENT(3N)
+
+
+
+     _E_n_d_s_e_r_v_e_n_t closes the file.
+
+     _G_e_t_s_e_r_v_b_y_n_a_m_e and _g_e_t_s_e_r_v_b_y_p_o_r_t sequentially search from the
+     beginning of the file until a matching protocol name or port
+     number is found, or until EOF is encountered.  If a protocol
+     name  is  also supplied (non-NULL), searches must also match
+     the protocol.
+
+FFIILLEESS
+     /etc/services
+
+SSEEEE AALLSSOO
+     getprotoent(3N), services(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Null pointer (0) returned on EOF or error.
+
+BBUUGGSS
+     All information is contained in a static area so it must  be
+     copied  if it is to be saved.  Expecting port numbers to fit
+     in a 32 bit quantity is probably naive.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+GETLOGIN(3)	    UNIX Programmer's Manual	      GETLOGIN(3)
+
+
+
+NNAAMMEE
+     getlogin - get login name
+
+SSYYNNOOPPSSIISS
+     cchhaarr **ggeettllooggiinn(())
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_l_o_g_i_n returns a pointer to the login name as found in
+     /_e_t_c/_u_t_m_p.  It may be used in conjunction with _g_e_t_p_w_n_a_m to
+     locate the correct password file entry when the same userid
+     is shared by several login names.
+
+     If _g_e_t_l_o_g_i_n is called within a process that is not attached
+     to a terminal, or if there is no entry in /_e_t_c/_u_t_m_p for the
+     process's terminal, _g_e_t_l_o_g_i_n returns a NULL pointer (0).  A
+     reasonable procedure for determining the login name is to
+     first call _g_e_t_l_o_g_i_n and if it fails, to call
+     _g_e_t_p_w_u_i_d(_g_e_t_u_i_d()).
+
+FFIILLEESS
+     /etc/utmp
+
+SSEEEE AALLSSOO
+     getpwent(3), utmp(5), ttyslot(3)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Returns a NULL pointer (0) if name not found.
+
+BBUUGGSS
+     The return values point to static data whose content is
+     overwritten by each call.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 9, 1986				1
+
+
+

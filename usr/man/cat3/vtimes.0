@@ -1,0 +1,132 @@
+
+
+
+VTIMES(3C)	    UNIX Programmer's Manual	       VTIMES(3C)
+
+
+
+NNAAMMEE
+     vtimes - get information about resource utilization
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//vvttiimmeess..hh>>
+
+     vvttiimmeess((ppaarr__vvmm,, cchh__vvmm))
+     ssttrruucctt vvttiimmeess **ppaarr__vvmm,, **cchh__vvmm;;
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss ffaacciilliittyy iiss ssuuppeerrsseeddeedd bbyy ggeettrruussaaggee((22))..
+
+     _V_t_i_m_e_s returns accounting information for the current pro-
+     cess and for the terminated child processes of the current
+     process.  Either _p_a_r__v_m or _c_h__v_m or both may be 0, in which
+     case only the information for the pointers which are non-
+     zero is returned.
+
+     After the call, each buffer contains information as defined
+     by the contents of the include file
+     /_u_s_r/_i_n_c_l_u_d_e/_s_y_s/_v_t_i_m_e_s._h:
+
+     struct vtimes {
+	  int  vm_utime;      /* user time (*HZ) */
+	  int  vm_stime;      /* system time (*HZ) */
+	  /* divide next two by utime+stime to get averages */
+	  unsigned vm_idsrss;	   /* integral of d+s rss */
+	  unsigned vm_ixrss;	   /* integral of text rss */
+	  int  vm_maxrss;	   /* maximum rss */
+	  int  vm_majflt;	   /* major page faults */
+	  int  vm_minflt;	   /* minor page faults */
+	  int  vm_nswap;      /* number of swaps */
+	  int  vm_inblk;      /* block reads */
+	  int  vm_oublk;      /* block writes */
+     };
+
+     The _v_m__u_t_i_m_e and _v_m__s_t_i_m_e fields give the user and system
+     time respectively in 60ths of a second (or 50ths if that is
+     the frequency of wall current in your locality.) The
+     _v_m__i_d_r_s_s and _v_m__i_x_r_s_s measure memory usage.  They are com-
+     puted by integrating the number of memory pages in use each
+     over cpu time.  They are reported as though computed
+     discretely, adding the current memory usage (in 512 byte
+     pages) each time the clock ticks.	If a process used 5 core
+     pages over 1 cpu-second for its data and stack, then
+     _v_m__i_d_s_r_s_s would have the value 5*60, where _v_m__u_t_i_m_e+_v_m__s_t_i_m_e
+     would be the 60. _V_m__i_d_s_r_s_s integrates data and stack segment
+     usage, while _v_m__i_x_r_s_s integrates text segment usage.
+     _V_m__m_a_x_r_s_s reports the maximum instantaneous sum of the
+     text+data+stack core-resident page count.
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+VTIMES(3C)	    UNIX Programmer's Manual	       VTIMES(3C)
+
+
+
+     The _v_m__m_a_j_f_l_t field gives the number of page faults which
+     resulted in disk activity; the _v_m__m_i_n_f_l_t field gives the
+     number of page faults incurred in simulation of reference
+     bits; _v_m__n_s_w_a_p is the number of swaps which occurred.  The
+     number of file system input/output events are reported in
+     _v_m__i_n_b_l_k and _v_m__o_u_b_l_k These numbers account only for real
+     i/o; data supplied by the caching mechanism is charged only
+     to the first process to read or write the data.
+
+SSEEEE AALLSSOO
+     time(2), wait3(2), getrusage(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+

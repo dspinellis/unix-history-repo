@@ -1,0 +1,132 @@
+
+
+
+VARARGS(3)	    UNIX Programmer's Manual	       VARARGS(3)
+
+
+
+NNAAMMEE
+     varargs - variable argument list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<vvaarraarrggss..hh>>
+
+     _f_u_n_c_t_i_o_n(vvaa__aalliisstt)
+     vvaa__ddccll
+     vvaa__lliisstt _p_v_a_r;
+     vvaa__ssttaarrtt(_p_v_a_r);
+     f = vvaa__aarrgg(_p_v_a_r, _t_y_p_e);
+     vvaa__eenndd(_p_v_a_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     This set of macros provides a means of writing portable pro-
+     cedures that accept variable argument lists.  Routines hav-
+     ing variable argument lists (such as _p_r_i_n_t_f(3)) that do not
+     use varargs are inherently nonportable, since different
+     machines use different argument passing conventions.
+
+     vvaa__aalliisstt is used in a function header to declare a variable
+     argument list.
+
+     vvaa__ddccll is a declaration for vvaa__aalliisstt.  Note that there is no
+     semicolon after vvaa__ddccll..
+
+     vvaa__lliisstt is a type which can be used for the variable _p_v_a_r,
+     which is used to traverse the list.  One such variable must
+     always be declared.
+
+     vvaa__ssttaarrtt(pvar) is called to initialize _p_v_a_r to the beginning
+     of the list.
+
+     vvaa__aarrgg(_p_v_a_r, _t_y_p_e) will return the next argument in the list
+     pointed to by _p_v_a_r.  _T_y_p_e is the type to which the expected
+     argument will be converted when passed as an argument.  In
+     standard C, arguments that are cchhaarr or sshhoorrtt should be
+     accessed as iinntt, uunnssiiggnneedd cchhaarr or uunnssiiggnneedd sshhoorrtt are con-
+     verted to uunnssiiggnneedd iinntt, and ffllooaatt arguments are converted to
+     ddoouubbllee.  Different types can be mixed, but it is up to the
+     routine to know what type of argument is expected, since it
+     cannot be determined at runtime.
+
+     vvaa__eenndd(_p_v_a_r) is used to finish up.
+
+     Multiple traversals, each bracketed by vvaa__ssttaarrtt ...  vvaa__eenndd,,
+     are possible.
+
+EEXXAAMMPPLLEE
+	  ##iinncclluuddee <varargs.h>
+	  execl(vvaa__aalliisstt)
+	  vvaa__ddccll
+
+
+
+Printed 7/9/88		  May 15, 1986				1
+
+
+
+
+
+
+VARARGS(3)	    UNIX Programmer's Manual	       VARARGS(3)
+
+
+
+	  {
+	       vvaa__lliisstt ap;
+	       cchhaarr *file;
+	       cchhaarr *args[100];
+	       iinntt argno = 0;
+
+	       vvaa__ssttaarrtt(ap);
+	       file = vvaa__aarrgg((aapp,, cchhaarr **));;
+	       wwhhiillee ((aarrggss[[aarrggnnoo++++]] == vvaa__aarrgg((aapp,, cchhaarr **))))
+		    ;;
+	       vvaa__eenndd((aapp));;
+	       rreettuurrnn eexxeeccvv((ffiillee,, aarrggss));;
+	  }}
+
+BBUUGGSS
+     It is up to the calling routine to determine how many argu-
+     ments there are, since it is not possible to determine this
+     from the stack frame.  For example, _e_x_e_c_l passes a 0 to sig-
+     nal the end of the list.  _P_r_i_n_t_f can tell how many arguments
+     are supposed to be there by the format.
+
+     The macros _v_a__s_t_a_r_t and _v_a__e_n_d may be arbitrarily complex;
+     for example, _v_a__s_t_a_r_t might contain an opening brace, which
+     is closed by a matching brace in _v_a__e_n_d.  Thus, they should
+     only be used where they could be placed within a single com-
+     plex statement.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1986				2
+
+
+

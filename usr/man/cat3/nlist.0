@@ -1,0 +1,66 @@
+
+
+
+NLIST(3)	    UNIX Programmer's Manual		 NLIST(3)
+
+
+
+NNAAMMEE
+     nlist - get entries from name list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nnlliisstt..hh>>
+
+     nnlliisstt((ffiilleennaammee,, nnll))
+     cchhaarr **ffiilleennaammee;;
+     ssttrruucctt nnlliisstt nnll[[]];;
+
+DDEESSCCRRIIPPTTIIOONN
+     _N_l_i_s_t examines the name list in the given executable output
+     file and selectively extracts a list of values.  The name
+     list consists of an array of structures containing names,
+     types and values.	The list is terminated with a null name.
+     Each name is looked up in the name list of the file.  If the
+     name is found, the type and value of the name are inserted
+     in the next two fields.  If the name is not found, both
+     entries are set to 0.  See _a._o_u_t(5) for the structure
+     declaration.
+
+     This subroutine is useful for examining the system name list
+     kept in the file //vvmmuunniixx.	In this way programs can obtain
+     system addresses that are up to date.
+
+SSEEEE AALLSSOO
+     a.out(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the file cannot be found or if it is not a valid namelist
+     -1 is returned; otherwise, the number of unfound namelist
+     entries is returned.
+
+     The type entry is set to 0 if the symbol is not found.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

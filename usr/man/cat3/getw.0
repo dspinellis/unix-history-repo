@@ -1,0 +1,66 @@
+
+
+
+GETC(3S)	    UNIX Programmer's Manual		 GETC(3S)
+
+
+
+NNAAMMEE
+     getc, getchar, fgetc, getw - get character or word from
+     stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     iinntt ggeettcc((ssttrreeaamm))
+     FFIILLEE **ssttrreeaamm;;
+
+     iinntt ggeettcchhaarr(())
+
+     iinntt ffggeettcc((ssttrreeaamm))
+     FFIILLEE **ssttrreeaamm;;
+
+     iinntt ggeettww((ssttrreeaamm))
+     FFIILLEE **ssttrreeaamm;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_c returns the next character from the named input _s_t_r_e_a_m.
+
+     _G_e_t_c_h_a_r() is identical to _g_e_t_c(_s_t_d_i_n).
+
+     _F_g_e_t_c behaves like _g_e_t_c, but is a genuine function, not a
+     macro; it may be used to save object text.
+
+     _G_e_t_w returns the next iinntt (a 32-bit integer on a VAX-11)
+     from the named input _s_t_r_e_a_m.  It returns the constant EEOOFF
+     upon end of file or error, but since that is a good integer
+     value, _f_e_o_f and _f_e_r_r_o_r(3S) should be used to check the suc-
+     cess of _g_e_t_w.  _G_e_t_w assumes no special alignment in the
+     file.
+
+SSEEEE AALLSSOO
+     clearerr(3S), fopen(3S), putc(3S), gets(3S), scanf(3S),
+     fread(3S), ungetc(3S)
+
+DDIIAAGGNNOOSSTTIICCSS
+     These functions return the integer constant EEOOFF at end of
+     file, upon read error, or if an attempt is made to read a
+     file not opened by _f_o_p_e_n.	The end-of-file condition is
+     remembered, even on a terminal, and all subsequent attempts
+     to read will return EEOOFF until the condition is cleared with
+     _c_l_e_a_r_e_r_r(3S).
+
+BBUUGGSS
+     Because it is implemented as a macro, _g_e_t_c treats a _s_t_r_e_a_m
+     argument with side effects incorrectly.  In particular,
+     `getc(*f++);' doesn't work sensibly.
+
+
+
+
+
+
+Printed 7/9/88		  May 14, 1986				1
+
+
+
