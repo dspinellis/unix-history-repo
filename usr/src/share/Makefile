@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Missing:  ms
 
