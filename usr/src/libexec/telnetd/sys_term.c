@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -548,30 +548,6 @@ getpty()
  * tty_rspeed(val)	Set receive speed to val.
  */
 
-	int
-tty_flowmode()
-{
-#ifndef USE_TERMIO
-	return(((termbuf.tc.t_startc) > 0 && (termbuf.tc.t_stopc) > 0) ? 1 : 0);
-#else
-	return((termbuf.c_iflag & IXON) ? 1 : 0);
-#endif
-}
-
-	int
-tty_restartany()
-{
-#ifndef USE_TERMIO
-# ifdef	DECCTQ
-	return((termbuf.lflags & DECCTQ) ? 0 : 1);
-# else
-	return(-1);
-# endif
-#else
-	return((termbuf.c_iflag & IXANY) ? 1 : 0);
-#endif
-}
-
 #ifdef convex
 static int linestate;
 #endif
@@ -624,6 +600,30 @@ tty_isecho()
 #endif
 }
 #endif	/* LINEMODE */
+
+	int
+tty_flowmode()
+{
+#ifndef USE_TERMIO
+	return(((termbuf.tc.t_startc) > 0 && (termbuf.tc.t_stopc) > 0) ? 1 : 0);
+#else
+	return((termbuf.c_iflag & IXON) ? 1 : 0);
+#endif
+}
+
+	int
+tty_restartany()
+{
+#ifndef USE_TERMIO
+# ifdef	DECCTQ
+	return((termbuf.lflags & DECCTQ) ? 0 : 1);
+# else
+	return(-1);
+# endif
+#else
+	return((termbuf.c_iflag & IXANY) ? 1 : 0);
+#endif
+}
 
 	void
 tty_setecho(on)

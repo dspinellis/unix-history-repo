@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	5.18 (Berkeley) %G%
 
 PROG=	telnetd
-CFLAGS+=-DLINEMODE -DKLUDGELINEMODE -DUSE_TERMIO -DDIAGNOSTICS
+CFLAGS+=-DLINEMODE -DKLUDGELINEMODE -DUSE_TERMIO -DDIAGNOSTICS -DENV_HACK
 CFLAGS+=-DAUTHENTICATION -DENCRYPTION -I${.CURDIR}/../../lib
 SRCS=	authenc.c global.c slc.c state.c sys_term.c telnetd.c \
 	termstat.c utility.c

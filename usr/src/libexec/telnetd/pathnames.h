@@ -4,19 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.5 (Berkeley) %G%
+ *	@(#)pathnames.h	5.6 (Berkeley) %G%
  */
 
 #if BSD > 43
 
 # include <paths.h>
 
-# define	_PATH_LOGIN	"/usr/bin/login"
+# ifndef _PATH_LOGIN
+#  define	_PATH_LOGIN	"/usr/bin/login"
+# endif
 
 #else
  
 # define	_PATH_TTY	"/dev/tty"
-# define	_PATH_LOGIN	"/bin/login"
+# ifndef _PATH_LOGIN
+#  define	_PATH_LOGIN	"/bin/login"
+# endif
 
 #endif
 
