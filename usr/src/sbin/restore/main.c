@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.5 %G%";
+char version[] = "@(#)main.c 2.6 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -106,6 +106,9 @@ extern char *ctime();
 extern int seek();
 ino_t search();
 int dirwrite();
+#ifdef RRESTOR
+char *host;
+#endif
 
 main(argc, argv)
 	int argc;
@@ -134,6 +137,20 @@ usage:
 			break;
 		case 'f':
 			magtape = *argv++;
+#ifdef RRESTOR
+		{ char *index();
+		  host = magtape;
+		  magtape = index(host, ':');
+		  if (magtape == 0) {
+nohost:
+			msg("need keyletter ``f'' and device ``host:tape''");
+			done(1);
+		  }
+		  *magtape++ = 0;
+		  if (rmthost(host) == 0)
+			done(1);
+		}
+#endif
 			argc--;
 			break;
 		/* s dumpnum (skip to) for multifile dump tapes */
@@ -164,6 +181,10 @@ usage:
 			goto usage;
 		}
 	}
+#ifdef RRESTOR
+	if (host == 0)
+		goto nohost;
+#endif
 	doit(command, argc, argv);
 	done(0);
 }
@@ -175,15 +196,23 @@ doit(command, argc, argv)
 {
 	struct mtop tcom;
 
+#ifdef RRESTOR
+	if ((mt = rmtopen(magtape, 0)) < 0) {
+#else
 	if ((mt = open(magtape, 0)) < 0) {
+#endif
 		fprintf(stderr, "%s: cannot open tape\n", magtape);
 		done(1);
 	}
 	if (dumpnum != 1) {
 		tcom.mt_op = MTFSF;
 		tcom.mt_count = dumpnum -1;
+#ifdef RRESTOR
+		rmtioctl(MTFSF,dumpnum - 1);
+#else
 		if (ioctl(mt,MTIOCTOP,&tcom) < 0)
 			perror("ioctl MTFSF");
+#endif
 	}
 	blkclr(clearedbuf, (long)MAXBSIZE);
 	switch(command) {
@@ -272,7 +301,11 @@ extractfiles(argc, argv)
 		goto rbits;
 	}
 newvol:
+#ifdef RRESTOR
+	rmtclose();
+#else
 	close(mt);
+#endif
 getvol:
 	fprintf(stderr, "Mount desired tape volume; Specify volume #: ");
 	if (gets(tbf) == NULL)
@@ -282,7 +315,11 @@ getvol:
 		fprintf(stderr, "Volume numbers are positive numerics\n");
 		goto getvol;
 	}
+#ifdef RRESTOR
+	if ((mt = rmtopen(magtape, 0)) == -1) {
+#else
 	if ((mt = open(magtape, 0)) == -1) {
+#endif
 		fprintf(stderr, "Cannot open tape!\n");
 		goto getvol;
 	}
@@ -826,7 +863,11 @@ readtape(b)
 		for (i = 0; i < NTREC; i++)
 			((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
 		bct = 0;
+#ifdef RRESTOR
+		if ((i = rmtread(tbf, NTREC*TP_BSIZE)) < 0) {
+#else
 		if ((i = read(mt, tbf, NTREC*TP_BSIZE)) < 0) {
+#endif
 			fprintf(stderr, "Tape read error, continue?");
 			do	{
 				fprintf(stderr, "[yn]\n");
@@ -839,7 +880,11 @@ readtape(b)
 				done(1);
 			i = NTREC*TP_BSIZE;
 			blkclr(tbf, i);
+#ifdef RRESTOR
+			if (rmtseek(i, 1) < 0) {
+#else
 			if (lseek(mt, i, 1) < 0) {
+#endif
 				fprintf(stderr, "continuation failed\n");
 				done(1);
 			}
@@ -849,11 +894,19 @@ readtape(b)
 			volno++;
 loop:
 			flsht();
+#ifdef RRESTOR
+			rmtclose();
+#else
 			close(mt);
+#endif
 			fprintf(stderr, "Mount volume %d\n", volno);
 			while (getchar() != '\n')
 				;
+#ifdef RRESTOR
+			if ((mt = rmtopen(magtape, 0)) == -1) {
+#else
 			if ((mt = open(magtape, 0)) == -1) {
+#endif
 				fprintf(stderr, "Cannot open tape!\n");
 				goto loop;
 			}
@@ -910,14 +963,25 @@ resetmt()
 		tcom.mt_op = MTREW;
 	tcom.mt_count = 1;
 	flsht();
+#ifdef RRESTOR
+	if (rmtioctl(tcom.mt_op, 1) == -1) {
+		/* kludge for disk dumps */
+		rmtseek((long)0, 0);
+	}
+#else
 	if (ioctl(mt,MTIOCTOP,&tcom) == -1) {
 		/* kludge for disk dumps */
 		lseek(mt, (long)0, 0);
 	}
+#endif
 	if (dumpnum > 1) {
+#ifdef RRESTOR
+		rmtioctl(MTFSF, 1);
+#else
 		tcom.mt_op = MTFSF;
 		tcom.mt_count = 1;
 		ioctl(mt,MTIOCTOP,&tcom);
+#endif
 	}
 }
 
