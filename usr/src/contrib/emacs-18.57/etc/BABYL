@@ -1,0 +1,127 @@
+>From rlk@think.COM (Robert Krawitz) Mon Nov 30 10:56:46 1987
+
+Let's see if I remember my BNF for babyl files; this corresponds to
+version 5:
+
+
+File := <header>
+	<message>*	; Some say there must be at least one message.
+
+Header := Babyl Options:\n
+	  <header-option>*
+	  |^_
+
+Header-option := <header-token>	; See note [5]
+		 : *
+		 <value>
+
+header-token := [^\000-\017:\177-\377]*	; Not these characters [tab is OK]
+header-value := ditto, if a list, each element separated by a comma and
+		a space.
+
+message := \^L\n
+	   [01],	; See note [1] below
+	   ( <attribute>,)*	; Note space before and comma after token
+	   ,
+	   ( <label>,)*		; ditto, see note [4] below
+	   \n
+	   <header>*	; See note [1] and [2] below
+	   *** EOOH ***\n
+	   <header>*	; See note [2] below
+	   \n
+	   <body>
+	   \^_
+
+attribute := unseen |
+	     last |	; Not all programs implement this.  It
+			; generally only gets used internally, and
+			; isn't written out to a file.
+	     >last |	; Babyl uses this for a deleted message at the
+			; end.  It shouldn't be written out to a file.
+	     deleted |
+	     recent |	; Not all programs implement this.  It refers
+			; to a message in the last batch of new mail;
+			; thus it probably shouldn't be written out to
+			; a file during a normal save although it
+			; makes sense to write it out in an emergency save.
+	     filed |
+	     answered |
+	     forwarded |
+	     redistributed |
+	     badheader |	; Not all programs implement this
+	     filed		; Not all programs implement this
+
+label := [^\000-\020,\177-\377]*	; No control chars,
+			; whitespace, commas, rubout, or high bit set
+
+header := [^\000-\020:\177-\377]*:
+	  <header-line>
+	  <header-line>*
+
+header-line := [ \t][^\n]*\n	; Continuation lines must be indented
+
+body := (.*\n)*		; See note [3] below
+
+
+[1] A zero means that the headers have not been cleaned up,
+reprocessed, toggled, or whatever.  In this case there should be no
+headers before the EOOH line.  A one means that the headers have been
+reprocessed.  In this case, the original headers will typically be
+before the EOOH line and the reformatted or whatever subset of headers
+that the user should see will be after it.  Note that in this case
+it's permissible to garbage collect all headers before the EOOH line.
+No one's defined what it means to garbage collect SOME of the headers
+before this line, or what that means.
+
+[2] It's apparently permissible to add headers of the program's own
+choosing before the EOOH line.  Or at least, Rmail does so (it caches
+a summary line) and nothing seems to object.  There's no particular
+guarantee that something else won't step all over it, though.  Headers
+after the EOOH line can be reformatted as the program wishes (e. g.
+indent the header lines to the same distance, canonicalize machine
+names) for display to the user.  It's generally best for programs that
+read a babyl file to look at the headers before the EOOH line if they
+exist, since these should be untouched by the user.  Remember, the
+user can edit anything after the EOOH line.
+
+[3] A \^_ at the beginning of a line should be quoted somehow.  The
+normal way seems to be to decompose it into 2 characters: a ^ and a _.
+Strictly speaking, it doesn't always have to be, since the following
+text would have to be parsable as a message, but some programs don't
+try to use that much intelligence.  Oh well.
+
+[4] Labels, or keywords as they are often called, are generally
+defined by the user, although it's not entirely impermissible for a
+program to use these for its own purpose (e. g. a keyword named
+RemindMe might be used to automatically find important messages).
+Some people also want these used to cache other state implemented by
+certain programs; this use is undefined.  Note that all keywords used
+should be inserted in a header-option named Keywords:.  Can a keyword
+have the same name as an attribute?  Who knows?  It's probably not a
+good idea, since some programs use the concept of <labels> =
+<keywords> + <attributes>.  Sigh.
+
+[5] Some tokens are standardized in meaning.  Common tokens are Mail
+inboxes, babyl file version number, which is currently 5, labels used
+in messages, window format for Zmail, anything else you want to be
+associated with a file.  Be warned that labels should be a complete
+list of all user-defined keywords used in the file, so if you add a
+new label to a message, you should add it to this list.  You should
+also have a Babyl version: 5 file attribute (look in a babyl file for
+details).
+
+Anyone know if there actually is a "formal" standard?  This was done
+quickly from memory and a Zmail manual, but there are at least three
+programs around that use Babyl files (zmail, babyl, and emacs/rmail)
+and someone at SIPB was going to write a command-based mail reader
+similar to Unix Mail but operating on babyl files, and someone (of
+course not me :-)) should probably write xbabyl :-)
+
+References:
+
+ITS/Tops-20 INFO file on babyl (who wrote it?  ECC?  GZ?)
+
+Zmail manual (the MIT version was written by RMS; ECC wrote the
+section on Babyl file format)
+-- 
+
