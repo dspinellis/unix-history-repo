@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_timer.c	7.3 (Berkeley) %G%
+ *	@(#)pk_timer.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -64,7 +64,7 @@ pk_timer ()
 				case SENT_CALL: 
 					if (--lcp -> lcd_timer == 0) {
 						lcp -> lcd_so -> so_error = ETIMEDOUT;
-						pk_clear (lcp);
+						pk_clear (lcp, 49, 1);
 					}
 					break;
 
@@ -73,7 +73,7 @@ pk_timer ()
 						lcns_jammed++;
 					else
 						if (--lcp -> lcd_timer == 0)
-							pk_clear (lcp);
+							pk_clear (lcp, 50, 1);
 					break;
 
 				case DATA_TRANSFER:	/* lcn active */
