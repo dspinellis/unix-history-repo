@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t4.c	4.2 %G%";
+static char sccsid[] = "@(#)t4.c	4.3 %G%";
 #endif
 
  /* t4.c: read table specification */
@@ -81,6 +81,8 @@ while (c=get1char())
 		case '=': case '-':
 		case '^':
 		case 'c': case 's': case 'n': case 'r': case 'l':  case 'a':
+			if (icol>=MAXCOL)
+				error("too many columns in table");
 			style[nclin][icol]=c;
 			if (c== 's' && icol<=0)
 				error("first column can not be S-type");
@@ -97,8 +99,6 @@ while (c=get1char())
 			icol++;
 			if (c=='^' && nclin<=0)
 				error("first row can not contain vertical span");
-			if (icol>=MAXCOL)
-				error("too many columns in table");
 			sawchar=1;
 			continue;
 		case 'b': case 'i': 
