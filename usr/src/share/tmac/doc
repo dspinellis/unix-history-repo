@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.9 (Berkeley) %G%
+.\"     @(#)doc	5.10 (Berkeley) %G%
 .\"
 .\" .mdoc-parse - attempt to parse troff request arguments
 .\"     %beginstrip%
@@ -2837,6 +2837,7 @@
 .de rC
 .nr uK 0
 .nr jK 0
+.nr iK 0
 .nr nK 0
 .nr oK 0
 .nr qK 0
@@ -2848,7 +2849,7 @@
 .nr bK 0
 .ds rS
 .rm U1 U2 U3 U4 U5 U6 U7 U8
-.rm uK jK nK oK rK qK tK vK dK pK bK
+.rm uK jK iK nK oK rK qK tK vK dK pK bK
 ..
 .\" NS rZ macro - reference print
 .de rZ
@@ -2878,6 +2879,11 @@
 .	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(eM\\*(bK\\*(nO.
 .	if \\n(Kl>0 \&\\*(eM\\*(bK\\*(nO,
+.\}
+.if \\n(iK \{\
+.	nr Kl \\n(Kl-1
+.	if \\n(Kl==0 \&\\*(eM\\*(iK\\*(nO.
+.	if \\n(Kl>0 \&\\*(eM\\*(iK\\*(nO,
 .\}
 .if \\n(jK \{\
 .	nr Kl \\n(Kl-1
@@ -2999,6 +3005,37 @@
 .		nr dK \\n(dK+1
 .		nr Kl \\n(Kl+1
 .		ds rS dK
+.               ds A1 \\$1
+.               ds A2 \\$2
+.               ds A3 \\$3
+.               ds A4 \\$4
+.               ds A5 \\$5
+.               ds A6 \\$6
+.               ds A7 \\$7
+.               ds A8 \\$8
+.               ds A9 \\$9
+.		nr fV \\n(.$
+.		fV
+.	\}
+.\}
+.if \\n(aC>\\n(aP \{\
+.	nr aP \\n(aP+1
+.       nr cF \\n(.f
+.	nr cZ \\n(.s
+.       rR
+.\}
+..
+.\" NS %I macro - [reference] Issuer/Publisher Name
+.\" NS jK register - [reference] Issuer/Publisher Name flag
+.\" NS jK string - [reference] Issuer/Publisher Name
+.de %I
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 .tm Usage: .%I Issuer/Publisher Name (#\\n(.c)
+.       el \{\
+.		ds mN %I
+.		nr iK \\n(iK+1
+.		ds rS iK
+.		nr Kl \\n(Kl+1
 .               ds A1 \\$1
 .               ds A2 \\$2
 .               ds A3 \\$3
