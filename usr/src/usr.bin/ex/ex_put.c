@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.4	%G%";
+static char *sccsid = "@(#)ex_put.c	7.5	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -610,7 +610,7 @@ dontcr:
 	/* Move up, if necessary, to desired row */
 	while (outline > destline) {
 		j = outline - destline;
-		if (j > 1) {
+		if (UP_PARM && j > 1) {
 			/* Win big on Tek 4025 */
 			tputs(tgoto(UP_PARM, 0, j), j, plodput);
 			outline -= j;
