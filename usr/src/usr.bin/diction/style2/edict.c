@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)edict.c	4.2	(Berkeley)	82/11/06";
+static char edict_sccsid[] = "@(#)edict.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 struct dict able_d[] = {
@@ -128,6 +128,15 @@ struct dict ance_d[] = {
 "labnu",'V',
 "ksa",'D',
 "hcrep",'D',
+"veler",'N',		/*added*/
+"tropmi",'N',
+"tsni",'N',
+"cifingisni",'N',
+"tsbus",'N',
+"nimul",'N',
+"cifingis",'N',
+"iravni",'N',
+"velerri",'N',
 0,0
 };
 struct dict ant_d[] = {
@@ -242,6 +251,20 @@ struct dict ence_d[] = {
 "h",'D',
 "ht",'D',
 "hw",'D',
+"lav",'N',		/*added*/
+"uqesnoc",'N',
+"dive",'N',
+"idua",'N',
+"inevnoc",'N',
+"sse",'N',
+"ics",'N',
+"lupo",'N',
+"itap",'N',
+"rehoc",'N',
+"irepxeni",'N',
+"tsixenon",'N',
+"cselosbo",'N',
+"serp",'N',
 0,0
 };
 struct dict ess_d[] = {
@@ -599,6 +622,33 @@ struct dict ion_d[] = {
 "tidnocer",'V',
 "hsafer",'V',
 "ssim",'U',
+"tamrofni",'N',		/*added*/
+"tacol",'N',
+"tauqe",'N',
+"retirc",'N',
+"ger",'N',
+"srev",'N',
+"tarud",'N',
+"tnevnoc",'N',
+"taroproc",'N',
+"snemid",'N',
+"tcarf",'N',
+"tiutni",'N',
+"taton",'N',
+"ton",'N',
+"tpo",'N',
+"ssap",'N',
+"sses",'N',
+"tisnart",'N',
+"tilaoc",'N',
+"tcnujnoc",'N',
+"tpecxe",'N',
+"tnettani",'N',
+"tceridni",'N',
+"taercer",'N',
+"tatuper",'N',
+"tacitsihpos",'N',
+"tisnart",'N',
 0,0
 };
 struct dict ional_d[] = {
@@ -1088,6 +1138,14 @@ struct dict ment_d[] = {
 "elcni",'J',
 "ehev",'J',
 "llatsni",'Y',
+"norivne",'N',		/*added*/
+"om",'N',
+"irted",'N',
+"ele",'N',
+"nrevog",'N',
+"traped",'N',
+"ercni",'Z',
+"eganam",'N',
 0,0
 };
 struct dict ness_d[] = {
@@ -1306,12 +1364,13 @@ struct dict ing_d[] = {
 0,0
 };
 struct dict ed_d[] = {
+"rfla",'Y',	/*added*/
 "elb",'V',
 "bme",'V',
 "ecxe",'V',
 "ecorp",'V',
 "eccus",'V',
-"t",'V',
+"t",'Y',
 "w",'V',
 "b",'Z',
 "lsbob",'Z',
