@@ -16,147 +16,148 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uudecode.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uudecode.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
- * uudecode [input]
+ * uudecode [file ...]
  *
  * create the specified file, decoding as you go.
  * used with uuencode.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
-#include <stdio.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <strings.h>
 
-/* single character decode */
-#define DEC(c)	(((c) - ' ') & 077)
+char *filename;
 
+/* ARGSUSED */
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	FILE *in, *out;
-	int mode;
-	char dest[128];
-	char buf[80];
+	extern int errno;
+	int rval;
 
-	/* optional input arg */
-	if (argc > 1) {
-		if ((in = fopen(argv[1], "r")) == NULL) {
-			perror(argv[1]);
-			exit(1);
-		}
-		argv++; argc--;
-	} else
-		in = stdin;
-
-	if (argc != 1) {
-		printf("Usage: uudecode [infile]\n");
-		exit(2);
+	if (*++argv) {
+		rval = 0;
+		do {
+			if (!freopen(filename = *argv, "r", stdin)) {
+				(void)fprintf(stderr, "uudecode: %s: %s\n",
+				    *argv, strerror(errno));
+				rval = 1;
+				continue;
+			}
+			rval |= decode();
+		} while (*++argv);
+	} else {
+		filename = "stdin";
+		rval = decode();
 	}
+	exit(rval);
+}
+
+decode()
+{
+	extern int errno;
+	struct passwd *pw;
+	register int n;
+	register char ch, *p;
+	int mode, n1;
+	char buf[MAXPATHLEN];
 
 	/* search for header line */
-	for (;;) {
-		if (fgets(buf, sizeof buf, in) == NULL) {
-			fprintf(stderr, "No begin line\n");
-			exit(3);
+	do {
+		if (!fgets(buf, sizeof(buf), stdin)) {
+			(void)fprintf(stderr,
+			    "uudecode: %s: no \"begin\" line\n", filename);
+			return(1);
 		}
-		if (strncmp(buf, "begin ", 6) == 0)
-			break;
-	}
-	(void)sscanf(buf, "begin %o %s", &mode, dest);
+	} while (strncmp(buf, "begin ", 6));
+	(void)sscanf(buf, "begin %o %s", &mode, buf);
 
 	/* handle ~user/file format */
-	if (dest[0] == '~') {
-		char *sl;
-		struct passwd *getpwnam();
-		struct passwd *user;
-		char dnbuf[100], *index(), *strcat(), *strcpy();
-
-		sl = index(dest, '/');
-		if (sl == NULL) {
-			fprintf(stderr, "Illegal ~user\n");
-			exit(3);
+	if (buf[0] == '~') {
+		if (!(p = index(buf, '/'))) {
+			(void)fprintf(stderr, "uudecode: %s: illegal ~user.\n",
+			    filename);
+			return(1);
 		}
-		*sl++ = 0;
-		user = getpwnam(dest+1);
-		if (user == NULL) {
-			fprintf(stderr, "No such user as %s\n", dest);
-			exit(4);
+		*p++ = NULL;
+		if (!(pw = getpwnam(buf + 1))) {
+			(void)fprintf(stderr, "uudecode: %s: no user %s.\n",
+			    filename, buf);
+			return(1);
 		}
-		strcpy(dnbuf, user->pw_dir);
-		strcat(dnbuf, "/");
-		strcat(dnbuf, sl);
-		strcpy(dest, dnbuf);
+		n = strlen(pw->pw_dir);
+		n1 = strlen(p);
+		if (n + n1 + 2 > MAXPATHLEN) {
+			(void)fprintf(stderr, "uudecode: %s: path too long.\n",
+			    filename);
+			return(1);
+		}
+		bcopy(p, buf + n + 1, n1 + 1);
+		bcopy(pw->pw_dir, buf, n);
+		buf[n] = '/';
 	}
 
-	/* create output file */
-	out = fopen(dest, "w");
-	if (out == NULL) {
-		perror(dest);
-		exit(4);
+	/* create output file, set mode */
+	if (!freopen(buf, "w", stdout) || fchmod(fileno(stdout), mode)) {
+		(void)fprintf(stderr, "uudecode: %s: %s: %s\n", buf,
+		    filename, strerror(errno));
+		return(1);
 	}
-	chmod(dest, mode);
 
-	decode(in, out);
-
-	if (fgets(buf, sizeof buf, in) == NULL || strcmp(buf, "end\n")) {
-		fprintf(stderr, "No end line\n");
-		exit(5);
-	}
-	exit(0);
-}
-
-/*
- * copy from in to out, decoding as you go along.
- */
-decode(in, out)
-FILE *in;
-FILE *out;
-{
-	char buf[80];
-	char *bp;
-	int n;
-
+	/* for each input line */
 	for (;;) {
-		/* for each input line */
-		if (fgets(buf, sizeof buf, in) == NULL) {
-			printf("Short file\n");
-			exit(10);
+		if (!fgets(p = buf, sizeof(buf), stdin)) {
+			(void)fprintf(stderr, "uudecode: %s: short file.\n",
+			    filename);
+			return(1);
 		}
-		n = DEC(buf[0]);
-		if (n <= 0)
+#define	DEC(c)	(((c) - ' ') & 077)		/* single character decode */
+		/*
+		 * `n' is used to avoid writing out all the characters
+		 * at the end of the file.
+		 */
+		if ((n = DEC(*p)) <= 0)
 			break;
-
-		bp = &buf[1];
-		while (n > 0) {
-			outdec(bp, out, n);
-			bp += 4;
-			n -= 3;
-		}
+		for (++p; n > 0; p += 4, n -= 3)
+			if (n >= 3) {
+				ch = DEC(p[0]) << 2 | DEC(p[1]) >> 4;
+				putchar(ch);
+				ch = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
+				putchar(ch);
+				ch = DEC(p[2]) << 6 | DEC(p[3]);
+				putchar(ch);
+			}
+			else {
+				if (n >= 1) {
+					ch = DEC(p[0]) << 2 | DEC(p[1]) >> 4;
+					putchar(ch);
+				}
+				if (n >= 2) {
+					ch = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
+					putchar(ch);
+				}
+				if (n >= 3) {
+					ch = DEC(p[2]) << 6 | DEC(p[3]);
+					putchar(ch);
+				}
+			}
 	}
+	if (!fgets(buf, sizeof(buf), stdin) || strcmp(buf, "end\n")) {
+		(void)fprintf(stderr, "uudecode: %s: no \"end\" line.\n",
+		    filename);
+		return(1);
+	}
+	return(0);
 }
 
-/*
- * output a group of 3 bytes (4 input characters).
- * the input chars are pointed to by p, they are to
- * be output to file f.  n is used to tell us not to
- * output all of them at the end of the file.
- */
-outdec(p, f, n)
-char *p;
-FILE *f;
+usage()
 {
-	int c1, c2, c3;
-
-	c1 = DEC(*p) << 2 | DEC(p[1]) >> 4;
-	c2 = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
-	c3 = DEC(p[2]) << 6 | DEC(p[3]);
-	if (n >= 1)
-		putc(c1, f);
-	if (n >= 2)
-		putc(c2, f);
-	if (n >= 3)
-		putc(c3, f);
+	(void)fprintf(stderr, "usage: uudecode [file ...]\n");
+	exit(1);
 }
