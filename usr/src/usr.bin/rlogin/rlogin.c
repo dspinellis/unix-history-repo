@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -484,7 +484,7 @@ reader()
 			n = write(1, bufp, remaining);
 			if (n < 0) {
 				if (errno != EINTR)
-					return;
+					return (-1);
 				continue;
 			}
 			bufp += n;
