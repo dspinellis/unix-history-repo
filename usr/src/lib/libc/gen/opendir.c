@@ -6,13 +6,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	8.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
 
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,9 +39,15 @@ __opendir2(name, flags)
 	int fd;
 	int incr;
 	int unionstack;
+	struct stat statb;
 
 	if ((fd = open(name, O_RDONLY)) == -1)
 		return (NULL);
+	if (fstat(fd, &statb) || !S_ISDIR(statb.st_mode)) {
+		errno = ENOTDIR;
+		close(fd);
+		return (NULL);
+	}
 	if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1 ||
 	    (dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
 		close(fd);
@@ -68,7 +76,7 @@ __opendir2(name, flags)
 			close(fd);
 			return (NULL);
 		}
-		unionstack = (sfb.f_type == MOUNT_UNION);
+		unionstack = !strcmp(sfb.f_fstypename, "union");
 	} else {
 		unionstack = 0;
 	}
