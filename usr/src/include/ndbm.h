@@ -7,18 +7,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ndbm.h	5.4 (Berkeley) %G%
+ *	@(#)ndbm.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
 #include <db.h>
 
-/* Map dbm interface onto hash(3). */
+/* Map dbm interface onto db(3). */
 #define DBM_RDONLY	O_RDONLY
 
 /* Flags to dbm_store(). */
 #define DBM_INSERT      0
 #define DBM_REPLACE     1
+
+/*
+ * The db(3) support for ndbm(3) always appends this suffix to the
+ * file name to avoid overwriting the user's original database.
+ */
+#define	DBM_SUFFIX	".db"
 
 typedef struct {
 	char *dptr;
