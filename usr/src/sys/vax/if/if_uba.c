@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	6.5 (Berkeley) %G%
+ *	@(#)if_uba.c	6.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -35,14 +35,17 @@
  * Init UNIBUS for interface on uban whose headers of size hlen are to
  * end on a page boundary.  We allocate a UNIBUS map register for the page
  * with the header, and nmr more UNIBUS map registers for i/o on the adapter,
- * doing this twice: once for reading and once for writing.  We also
+ * doing this once for each read and once for each write buffer.  We also
  * allocate page frames in the mbuffer pool for these pages.
  */
-if_ubainit(ifu, uban, hlen, nmr)
-	register struct ifuba *ifu;
-	int uban, hlen, nmr;
+if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
+	register struct ifubinfo *ifu;
+	int uban, hlen, nmr, nr, nw;
+	register struct ifrw *ifr;
+	register struct ifxmt *ifw;
 {
-	register caddr_t cp;
+	register caddr_t p;
+	caddr_t cp;
 	int i, ncl, off;
 
 	if (hlen)
@@ -52,56 +55,75 @@ if_ubainit(ifu, uban, hlen, nmr)
 	ncl = clrnd(nmr) / CLSIZE;
 	if (hlen)
 		ncl++;
-	if (ifu->ifu_r.ifrw_addr)
-		cp = ifu->ifu_r.ifrw_addr - off;
+	if (ifr[0].ifrw_addr)
+		cp = ifr[0].ifrw_addr - off;
 	else {
-		cp = m_clalloc(2 * ncl, MPG_SPACE);
+		cp = m_clalloc((nr + nw) * ncl, MPG_SPACE);
 		if (cp == 0)
 			return (0);
-		ifu->ifu_r.ifrw_addr = cp + off;
-		ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + ncl * CLBYTES;
-		ifu->ifu_hlen = hlen;
-		ifu->ifu_uban = uban;
-		ifu->ifu_uba = uba_hd[uban].uh_uba;
+		p = cp;
+		for (i = 0; i < nr; i++) {
+			ifr[i].ifrw_addr = p + off;
+			p += ncl * CLBYTES;
+		}
+		for (i = 0; i < nw; i++) {
+			ifw[i].ifw_base = p;
+			ifw[i].ifw_addr = p + off;
+			p += ncl * CLBYTES;
+		}
+		ifu->iff_hlen = hlen;
+		ifu->iff_uban = uban;
+		ifu->iff_uba = uba_hd[uban].uh_uba;
 	}
-	if (if_ubaalloc(ifu, &ifu->ifu_r, nmr) == 0)
-		goto bad;
-	if (if_ubaalloc(ifu, &ifu->ifu_w, nmr) == 0)
-		goto bad2;
-	for (i = 0; i < nmr; i++)
-		ifu->ifu_wmap[i] = ifu->ifu_w.ifrw_mr[i];
-	ifu->ifu_xswapd = 0;
+	for (i = 0; i < nr; i++)
+		if (if_ubaalloc(ifu, &ifr[i], nmr) == 0) {
+			nr = i;
+			nw = 0;
+			goto bad;
+		}
+	for (i = 0; i < nw; i++)
+		if (if_ubaalloc(ifu, &ifw[i].ifrw, nmr) == 0) {
+			nw = i;
+			goto bad;
+		}
+	while (--nw >= 0) {
+		for (i = 0; i < nmr; i++)
+			ifw[nw].ifw_wmap[i] = ifw[nw].ifw_mr[i];
+		ifw[nw].ifw_xswapd = 0;
+	}
 	return (1);
-bad2:
-	ubarelse(ifu->ifu_uban, &ifu->ifu_r.ifrw_info);
 bad:
-	m_pgfree(cp, 2 * ncl);
-	ifu->ifu_r.ifrw_addr = 0;
+	while (--nw >= 0)
+		ubarelse(ifu->iff_uban, &ifr[nw].ifrw_info);
+	while (--nr >= 0)
+		ubarelse(ifu->iff_uban, &ifw[nr].ifw_info);
+	m_pgfree(cp, (nr + nw) * ncl);
+	ifr[0].ifrw_addr = 0;
 	return (0);
 }
 
 /*
- * Setup either a ifrw structure by allocating UNIBUS map registers,
+ * Setup an ifrw structure by allocating UNIBUS map registers,
  * possibly a buffered data path, and initializing the fields of
  * the ifrw structure to minimize run-time overhead.
  */
 static
 if_ubaalloc(ifu, ifrw, nmr)
-	struct ifuba *ifu;
+	struct ifubinfo *ifu;
 	register struct ifrw *ifrw;
 	int nmr;
 {
 	register int info;
 
 	info =
-	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, nmr*NBPG + ifu->ifu_hlen,
-	        ifu->ifu_flags);
+	    uballoc(ifu->iff_uban, ifrw->ifrw_addr, nmr*NBPG + ifu->iff_hlen,
+	        ifu->iff_flags);
 	if (info == 0)
 		return (0);
 	ifrw->ifrw_info = info;
 	ifrw->ifrw_bdp = UBAI_BDP(info);
 	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_BDP(info) << UBAMR_DPSHIFT);
-	ifrw->ifrw_mr = &ifu->ifu_uba->uba_map[UBAI_MR(info) + (ifu->ifu_hlen?
+	ifrw->ifrw_mr = &ifu->iff_uba->uba_map[UBAI_MR(info) + (ifu->iff_hlen?
 		1 : 0)];
 	return (1);
 }
@@ -119,15 +141,16 @@ if_ubaalloc(ifu, ifrw, nmr)
  * so that protocols can determine where incoming packets arrived.
  */
 struct mbuf *
-if_rubaget(ifu, totlen, off0, ifp)
-	register struct ifuba *ifu;
+if_ubaget(ifu, ifr, totlen, off0, ifp)
+	struct ifubinfo *ifu;
+	register struct ifrw *ifr;
 	int totlen, off0;
 	struct ifnet *ifp;
 {
-	struct mbuf *top, **mp, *m;
+	struct mbuf *top, **mp;
+	register struct mbuf *m;
 	int off = off0, len;
-	register caddr_t cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
-
+	register caddr_t cp = ifr->ifrw_addr + ifu->iff_hlen;
 
 	top = 0;
 	mp = &top;
@@ -137,7 +160,7 @@ if_rubaget(ifu, totlen, off0, ifp)
 			goto bad;
 		if (off) {
 			len = totlen - off;
-			cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen + off;
+			cp = ifr->ifrw_addr + ifu->iff_hlen + off;
 		} else
 			len = totlen;
 		if (len >= NBPG) {
@@ -157,7 +180,7 @@ if_rubaget(ifu, totlen, off0, ifp)
 			MCLGET(p, 1);
 			if (p == 0)
 				goto nopage;
-			len = m->m_len = min(len, CLBYTES);
+			m->m_len = MIN(len, CLBYTES);
 			m->m_off = (int)p - (int)m;
 			if (!claligned(cp))
 				goto copy;
@@ -168,13 +191,13 @@ if_rubaget(ifu, totlen, off0, ifp)
 			 */
 			cpte = &Mbmap[mtocl(cp)*CLSIZE];
 			ppte = &Mbmap[mtocl(p)*CLSIZE];
-			x = btop(cp - ifu->ifu_r.ifrw_addr);
-			ip = (int *)&ifu->ifu_r.ifrw_mr[x];
+			x = btop(cp - ifr->ifrw_addr);
+			ip = (int *)&ifr->ifrw_mr[x];
 			for (i = 0; i < CLSIZE; i++) {
 				struct pte t;
 				t = *ppte; *ppte++ = *cpte; *cpte = t;
 				*ip++ =
-				    cpte++->pg_pfnum|ifu->ifu_r.ifrw_proto;
+				    cpte++->pg_pfnum|ifr->ifrw_proto;
 				mtpr(TBIS, cp);
 				cp += NBPG;
 				mtpr(TBIS, (caddr_t)p);
@@ -202,7 +225,7 @@ nocopy:
 			/* sort of an ALGOL-W style for statement... */
 			off += m->m_len;
 			if (off == totlen) {
-				cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
+				cp = ifr->ifrw_addr + ifu->iff_hlen;
 				off = 0;
 				totlen = off0;
 			}
@@ -231,8 +254,9 @@ bad:
  * header which is copied to be in the mapped, aligned
  * i/o space.
  */
-if_wubaput(ifu, m)
-	register struct ifuba *ifu;
+if_ubaput(ifu, ifw, m)
+	struct ifubinfo *ifu;
+	register struct ifxmt *ifw;
 	register struct mbuf *m;
 {
 	register struct mbuf *mp;
@@ -241,22 +265,22 @@ if_wubaput(ifu, m)
 	int xswapd = 0;
 	int x, cc, t;
 
-	cp = ifu->ifu_w.ifrw_addr;
+	cp = ifw->ifw_addr;
 	while (m) {
 		dp = mtod(m, char *);
 		if (claligned(cp) && claligned(dp) &&
 		    (m->m_len == CLBYTES || m->m_next == (struct mbuf *)0)) {
 			struct pte *pte; int *ip;
 			pte = &Mbmap[mtocl(dp)*CLSIZE];
-			x = btop(cp - ifu->ifu_w.ifrw_addr);
-			ip = (int *)&ifu->ifu_w.ifrw_mr[x];
+			x = btop(cp - ifw->ifw_addr);
+			ip = (int *)&ifw->ifw_mr[x];
 			for (i = 0; i < CLSIZE; i++)
 				*ip++ =
-				    ifu->ifu_w.ifrw_proto | pte++->pg_pfnum;
+				    ifw->ifw_proto | pte++->pg_pfnum;
 			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
 			mp = m->m_next;
-			m->m_next = ifu->ifu_xtofree;
-			ifu->ifu_xtofree = m;
+			m->m_next = ifw->ifw_xtofree;
+			ifw->ifw_xtofree = m;
 			cp += m->m_len;
 		} else {
 			bcopy(mtod(m, caddr_t), cp, (unsigned)m->m_len);
@@ -267,27 +291,26 @@ if_wubaput(ifu, m)
 	}
 
 	/*
-	 * Xswapd is the set of clusters we just mapped out.  Ifu->ifu_xswapd
+	 * Xswapd is the set of clusters we just mapped out.  Ifu->iff_xswapd
 	 * is the set of clusters mapped out from before.  We compute
 	 * the number of clusters involved in this operation in x.
 	 * Clusters mapped out before and involved in this operation
 	 * should be unmapped so original pages will be accessed by the device.
 	 */
-	cc = cp - ifu->ifu_w.ifrw_addr;
-	x = ((cc - ifu->ifu_hlen) + CLBYTES - 1) >> CLSHIFT;
-	ifu->ifu_xswapd &= ~xswapd;
-	xswapd &= ~ifu->ifu_xswapd;
-	while (i = ffs(ifu->ifu_xswapd)) {
+	cc = cp - ifw->ifw_addr;
+	x = ((cc - ifu->iff_hlen) + CLBYTES - 1) >> CLSHIFT;
+	ifw->ifw_xswapd &= ~xswapd;
+	while (i = ffs(ifw->ifw_xswapd)) {
 		i--;
 		if (i >= x)
 			break;
-		ifu->ifu_xswapd &= ~(1<<i);
+		ifw->ifw_xswapd &= ~(1<<i);
 		i *= CLSIZE;
 		for (t = 0; t < CLSIZE; t++) {
-			ifu->ifu_w.ifrw_mr[i] = ifu->ifu_wmap[i];
+			ifw->ifw_mr[i] = ifw->ifw_wmap[i];
 			i++;
 		}
 	}
-	ifu->ifu_xswapd |= xswapd;
+	ifw->ifw_xswapd |= xswapd;
 	return (cc);
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	6.12 (Berkeley) %G%
+ *	@(#)if_de.c	6.13 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -33,12 +33,14 @@
 #include "../net/netisr.h"
 #include "../net/route.h"
 
+#ifdef	BBNNET
+#define	INET
+#endif
 #ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
 #endif
 
@@ -60,7 +62,6 @@
 
 #define	NXMT	3	/* number of transmit buffers */
 #define	NRCV	7	/* number of receive buffers (must be > 1) */
-#define	NTOT	(NXMT + NRCV)
 
 int	dedebug = 0;
 
@@ -70,28 +71,7 @@ u_short destd[] = { 0 };
 struct	uba_driver dedriver =
 	{ deprobe, 0, deattach, 0, destd, "de", deinfo };
 int	deinit(),deoutput(),deioctl(),dereset();
-struct	mbuf *deget();
 
-
-/*
- * The deuba structures generalizes the ifuba structure
- * to an arbitrary number of receive and transmit buffers.
- */
-struct	ifxmt {
-	struct	ifrw x_ifrw;			/* mapping information */
-	struct	pte x_map[IF_MAXNUBAMR];	/* output base pages */
-	short	x_xswapd;			/* mask of clusters swapped */
-	struct	mbuf *x_xtofree;		/* pages being dma'ed out */
-};
-
-struct	deuba {
-	short	ifu_uban;		/* uba number */
-	short	ifu_hlen;		/* local net header length */
-	struct	uba_regs *ifu_uba;	/* uba regs, in vm */
-	struct	ifrw ifu_r[NRCV];	/* receive information */
-	struct	ifxmt ifu_w[NXMT];	/* transmit information */
-	short	ifu_flags;		/* used during uballoc's */
-};
 
 /*
  * Ethernet software status per interface.
@@ -113,7 +93,9 @@ struct	de_softc {
 #define	DSF_LOCK	1		/* lock out destart */
 #define	DSF_RUNNING	2
 	int	ds_ubaddr;		/* map info for incore structs */
-	struct	deuba ds_deuba;		/* unibus resource structure */
+	struct	ifubinfo ds_deuba;	/* unibus resource structure */
+	struct	ifrw ds_ifr[NRCV];	/* unibus receive maps */
+	struct	ifxmt ds_ifw[NXMT];	/* unibus xmt maps */
 	/* the following structures are always mapped in */
 	struct	de_pcbb ds_pcbb;	/* port control block */
 	struct	de_ring ds_xrent[NXMT];	/* transmit ring entrys */
@@ -221,10 +203,10 @@ deattach(ui)
 	ifp->if_output = deoutput;
 	ifp->if_ioctl = deioctl;
 	ifp->if_reset = dereset;
-	ds->ds_deuba.ifu_flags = UBA_CANTWAIT;
+	ds->ds_deuba.iff_flags = UBA_CANTWAIT;
 #ifdef notdef
 	/* CAN WE USE BDP's ??? */
-	ds->ds_deuba.ifu_flags |= UBA_NEEDBDP;
+	ds->ds_deuba.iff_flags |= UBA_NEEDBDP;
 #endif
 	if_attach(ifp);
 }
@@ -270,8 +252,9 @@ deinit(unit)
 
 	if (ifp->if_flags & IFF_RUNNING)
 		return;
-	if (de_ubainit(&ds->ds_deuba, ui->ui_ubanum,
-	    sizeof (struct ether_header), (int)btoc(ETHERMTU)) == 0) { 
+	if (if_ubaminit(&ds->ds_deuba, ui->ui_ubanum,
+	    sizeof (struct ether_header), (int)btoc(ETHERMTU),
+	    ds->ds_ifr, NRCV, ds->ds_ifw, NXMT) == 0) { 
 		printf("de%d: can't initialize\n", unit);
 		ds->ds_if.if_flags &= ~IFF_UP;
 		return;
@@ -332,14 +315,14 @@ deinit(unit)
 		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
 
 	/* set up the receive and transmit ring entries */
-	ifxp = &ds->ds_deuba.ifu_w[0];
+	ifxp = &ds->ds_ifw[0];
 	for (rp = &ds->ds_xrent[0]; rp < &ds->ds_xrent[NXMT]; rp++) {
-		rp->r_segbl = ifxp->x_ifrw.ifrw_info & 0xffff;
-		rp->r_segbh = (ifxp->x_ifrw.ifrw_info >> 16) & 0x3;
+		rp->r_segbl = ifxp->ifw_info & 0xffff;
+		rp->r_segbh = (ifxp->ifw_info >> 16) & 0x3;
 		rp->r_flags = 0;
 		ifxp++;
 	}
-	ifrw = &ds->ds_deuba.ifu_r[0];
+	ifrw = &ds->ds_ifr[0];
 	for (rp = &ds->ds_rrent[0]; rp < &ds->ds_rrent[NRCV]; rp++) {
 		rp->r_slen = sizeof (struct de_buf);
 		rp->r_segbl = ifrw->ifrw_info & 0xffff;
@@ -389,10 +372,10 @@ destart(unit)
 		rp = &ds->ds_xrent[ds->ds_xfree];
 		if (rp->r_flags & XFLG_OWN)
 			panic("deuna xmit in progress");
-		len = deput(&ds->ds_deuba, ds->ds_xfree, m);
-		if (ds->ds_deuba.ifu_flags & UBA_NEEDBDP)
-			UBAPURGE(ds->ds_deuba.ifu_uba,
-			ds->ds_deuba.ifu_w[ds->ds_xfree].x_ifrw.ifrw_bdp);
+		len = if_ubaput(&ds->ds_deuba, &ds->ds_ifw[ds->ds_xfree], m);
+		if (ds->ds_deuba.iff_flags & UBA_NEEDBDP)
+			UBAPURGE(ds->ds_deuba.iff_uba,
+			ds->ds_ifw[ds->ds_xfree].ifw_bdp);
 		rp->r_slen = len;
 		rp->r_tdrerr = 0;
 		rp->r_flags = XFLG_STP|XFLG_ENP|XFLG_OWN;
@@ -444,7 +427,7 @@ deintr(unit)
 		if (rp->r_flags & XFLG_OWN)
 			break;
 		ds->ds_if.if_opackets++;
-		ifxp = &ds->ds_deuba.ifu_w[ds->ds_xindex];
+		ifxp = &ds->ds_ifw[ds->ds_xindex];
 		/* check for unusual conditions */
 		if (rp->r_flags & (XFLG_ERRS|XFLG_MTCH|XFLG_ONE|XFLG_MORE)) {
 			if (rp->r_flags & XFLG_ERRS) {
@@ -463,13 +446,13 @@ deintr(unit)
 			} else if (rp->r_flags & XFLG_MTCH) {
 				/* received our own packet */
 				ds->ds_if.if_ipackets++;
-				deread(ds, &ifxp->x_ifrw,
+				deread(ds, &ifxp->ifrw,
 				    rp->r_slen - sizeof (struct ether_header));
 			}
 		}
-		if (ifxp->x_xtofree) {
-			m_freem(ifxp->x_xtofree);
-			ifxp->x_xtofree = 0;
+		if (ifxp->ifw_xtofree) {
+			m_freem(ifxp->ifw_xtofree);
+			ifxp->ifw_xtofree = 0;
 		}
 		/* check if next transmit buffer also finished */
 		ds->ds_xindex++;
@@ -504,9 +487,9 @@ derecv(unit)
 	rp = &ds->ds_rrent[ds->ds_rindex];
 	while ((rp->r_flags & RFLG_OWN) == 0) {
 		ds->ds_if.if_ipackets++;
-		if (ds->ds_deuba.ifu_flags & UBA_NEEDBDP)
-			UBAPURGE(ds->ds_deuba.ifu_uba,
-			ds->ds_deuba.ifu_r[ds->ds_rindex].ifrw_bdp);
+		if (ds->ds_deuba.iff_flags & UBA_NEEDBDP)
+			UBAPURGE(ds->ds_deuba.iff_uba,
+			ds->ds_ifr[ds->ds_rindex].ifrw_bdp);
 		len = (rp->r_lenerr&RERR_MLEN) - sizeof (struct ether_header)
 			- 4;	/* don't forget checksum! */
 		/* check for errors */
@@ -520,7 +503,7 @@ derecv(unit)
 				unit, rp->r_flags, RFLG_BITS, rp->r_lenerr,
 				RERR_BITS, len);
 		} else
-			deread(ds, &ds->ds_deuba.ifu_r[ds->ds_rindex], len);
+			deread(ds, &ds->ds_ifr[ds->ds_rindex], len);
 
 		/* hang the receive buffer again */
 		rp->r_lenerr = 0;
@@ -574,16 +557,20 @@ deread(ds, ifrw, len)
 
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
-	 * has trailing header; deget will then force this header
+	 * has trailing header; if_ubaget will then force this header
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = deget(&ds->ds_deuba, ifrw, len, off);
+	m = if_ubaget(&ds->ds_deuba, ifrw, len, off, &ds->ds_if);
 	if (m == 0)
 		return;
 	if (off) {
+		struct ifnet *ifp;
+
+		ifp = *(mtod(m, struct ifnet **));
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
 	switch (eh->ether_type) {
 
@@ -742,270 +729,6 @@ bad:
 }
 
 /*
- * Routines supporting UNIBUS network interfaces.
- */
-
-/*
- * Init UNIBUS for interface on uban whose headers of size hlen are to
- * end on a page boundary.  We allocate a UNIBUS map register for the page
- * with the header, and nmr more UNIBUS map registers for i/o on the adapter,
- * doing this for each receive and transmit buffer.  We also
- * allocate page frames in the mbuffer pool for these pages.
- */
-de_ubainit(ifu, uban, hlen, nmr)
-	register struct deuba *ifu;
-	int uban, hlen, nmr;
-{
-	register caddr_t cp, dp;
-	register struct ifrw *ifrw;
-	register struct ifxmt *ifxp;
-	int i, ncl;
-
-	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
-	if (ifu->ifu_r[0].ifrw_addr)
-		/*
-		 * If the first read buffer has a non-zero
-		 * address, it means we have already allocated core
-		 */
-		cp = ifu->ifu_r[0].ifrw_addr - (CLBYTES - hlen);
-	else {
-		cp = m_clalloc(NTOT * ncl, MPG_SPACE);
-		if (cp == 0)
-			return (0);
-		ifu->ifu_hlen = hlen;
-		ifu->ifu_uban = uban;
-		ifu->ifu_uba = uba_hd[uban].uh_uba;
-		dp = cp + CLBYTES - hlen;
-		for (ifrw = ifu->ifu_r; ifrw < &ifu->ifu_r[NRCV]; ifrw++) {
-			ifrw->ifrw_addr = dp;
-			dp += ncl * CLBYTES;
-		}
-		for (ifxp = ifu->ifu_w; ifxp < &ifu->ifu_w[NXMT]; ifxp++) {
-			ifxp->x_ifrw.ifrw_addr = dp;
-			dp += ncl * CLBYTES;
-		}
-	}
-	/* allocate for receive ring */
-	for (ifrw = ifu->ifu_r; ifrw < &ifu->ifu_r[NRCV]; ifrw++) {
-		if (de_ubaalloc(ifu, ifrw, nmr) == 0) {
-			struct ifrw *rw;
-
-			for (rw = ifu->ifu_r; rw < ifrw; rw++)
-				ubarelse(ifu->ifu_uban, &rw->ifrw_info);
-			goto bad;
-		}
-	}
-	/* and now transmit ring */
-	for (ifxp = ifu->ifu_w; ifxp < &ifu->ifu_w[NXMT]; ifxp++) {
-		ifrw = &ifxp->x_ifrw;
-		if (de_ubaalloc(ifu, ifrw, nmr) == 0) {
-			struct ifxmt *xp;
-
-			for (xp = ifu->ifu_w; xp < ifxp; xp++)
-				ubarelse(ifu->ifu_uban, &xp->x_ifrw.ifrw_info);
-			for (ifrw = ifu->ifu_r; ifrw < &ifu->ifu_r[NRCV]; ifrw++)
-				ubarelse(ifu->ifu_uban, &ifrw->ifrw_info);
-			goto bad;
-		}
-		for (i = 0; i < nmr; i++)
-			ifxp->x_map[i] = ifrw->ifrw_mr[i];
-		ifxp->x_xswapd = 0;
-	}
-	return (1);
-bad:
-	m_pgfree(cp, NTOT * ncl);
-	ifu->ifu_r[0].ifrw_addr = 0;
-	return(0);
-}
-
-/*
- * Setup either a ifrw structure by allocating UNIBUS map registers,
- * possibly a buffered data path, and initializing the fields of
- * the ifrw structure to minimize run-time overhead.
- */
-static
-de_ubaalloc(ifu, ifrw, nmr)
-	struct deuba *ifu;
-	register struct ifrw *ifrw;
-	int nmr;
-{
-	register int info;
-
-	info =
-	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, nmr*NBPG + ifu->ifu_hlen,
-	        ifu->ifu_flags);
-	if (info == 0)
-		return (0);
-	ifrw->ifrw_info = info;
-	ifrw->ifrw_bdp = UBAI_BDP(info);
-	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_BDP(info) << UBAMR_DPSHIFT);
-	ifrw->ifrw_mr = &ifu->ifu_uba->uba_map[UBAI_MR(info) + 1];
-	return (1);
-}
-
-/*
- * Pull read data off a interface.
- * Len is length of data, with local net header stripped.
- * Off is non-zero if a trailer protocol was used, and
- * gives the offset of the trailer information.
- * We copy the trailer information and then all the normal
- * data into mbufs.  When full cluster sized units are present
- * on the interface on cluster boundaries we can get them more
- * easily by remapping, and take advantage of this here.
- */
-struct mbuf *
-deget(ifu, ifrw, totlen, off0)
-	register struct deuba *ifu;
-	register struct ifrw *ifrw;
-	int totlen, off0;
-{
-	struct mbuf *top, **mp, *m;
-	int off = off0, len;
-	register caddr_t cp = ifrw->ifrw_addr + ifu->ifu_hlen;
-
-	top = 0;
-	mp = &top;
-	while (totlen > 0) {
-		MGET(m, M_DONTWAIT, MT_DATA);
-		if (m == 0)
-			goto bad;
-		if (off) {
-			len = totlen - off;
-			cp = ifrw->ifrw_addr + ifu->ifu_hlen + off;
-		} else
-			len = totlen;
-		if (len >= CLBYTES) {
-			struct mbuf *p;
-			struct pte *cpte, *ppte;
-			int x, *ip, i;
-
-			MCLGET(p, 1);
-			if (p == 0)
-				goto nopage;
-			len = m->m_len = CLBYTES;
-			m->m_off = (int)p - (int)m;
-			if (!claligned(cp))
-				goto copy;
-
-			/*
-			 * Switch pages mapped to UNIBUS with new page p,
-			 * as quick form of copy.  Remap UNIBUS and invalidate.
-			 */
-			cpte = &Mbmap[mtocl(cp)*CLSIZE];
-			ppte = &Mbmap[mtocl(p)*CLSIZE];
-			x = btop(cp - ifrw->ifrw_addr);
-			ip = (int *)&ifrw->ifrw_mr[x];
-			for (i = 0; i < CLSIZE; i++) {
-				struct pte t;
-				t = *ppte; *ppte++ = *cpte; *cpte = t;
-				*ip++ =
-				    cpte++->pg_pfnum|ifrw->ifrw_proto;
-				mtpr(TBIS, cp);
-				cp += NBPG;
-				mtpr(TBIS, (caddr_t)p);
-				p += NBPG / sizeof (*p);
-			}
-			goto nocopy;
-		}
-nopage:
-		m->m_len = MIN(MLEN, len);
-		m->m_off = MMINOFF;
-copy:
-		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
-		cp += m->m_len;
-nocopy:
-		*mp = m;
-		mp = &m->m_next;
-		if (off) {
-			/* sort of an ALGOL-W style for statement... */
-			off += m->m_len;
-			if (off == totlen) {
-				cp = ifrw->ifrw_addr + ifu->ifu_hlen;
-				off = 0;
-				totlen = off0;
-			}
-		} else
-			totlen -= m->m_len;
-	}
-	return (top);
-bad:
-	m_freem(top);
-	return (0);
-}
-
-/*
- * Map a chain of mbufs onto a network interface
- * in preparation for an i/o operation.
- * The argument chain of mbufs includes the local network
- * header which is copied to be in the mapped, aligned
- * i/o space.
- */
-deput(ifu, n, m)
-	struct deuba *ifu;
-	int n;
-	register struct mbuf *m;
-{
-	register struct mbuf *mp;
-	register caddr_t cp;
-	register struct ifxmt *ifxp;
-	register struct ifrw *ifrw;
-	register int i;
-	int xswapd = 0;
-	int x, cc, t;
-	caddr_t dp;
-
-	ifxp = &ifu->ifu_w[n];
-	ifrw = &ifxp->x_ifrw;
-	cp = ifrw->ifrw_addr;
-	while (m) {
-		dp = mtod(m, char *);
-		if (claligned(cp) && claligned(dp) && m->m_len == CLBYTES) {
-			struct pte *pte; int *ip;
-			pte = &Mbmap[mtocl(dp)*CLSIZE];
-			x = btop(cp - ifrw->ifrw_addr);
-			ip = (int *)&ifrw->ifrw_mr[x];
-			for (i = 0; i < CLSIZE; i++)
-				*ip++ =
-				    ifrw->ifrw_proto | pte++->pg_pfnum;
-			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
-			mp = m->m_next;
-			m->m_next = ifxp->x_xtofree;
-			ifxp->x_xtofree = m;
-			cp += m->m_len;
-		} else {
-			bcopy(mtod(m, caddr_t), cp, (unsigned)m->m_len);
-			cp += m->m_len;
-			MFREE(m, mp);
-		}
-		m = mp;
-	}
-
-	/*
-	 * Xswapd is the set of clusters we just mapped out.  Ifxp->x_xswapd
-	 * is the set of clusters mapped out from before.  We compute
-	 * the number of clusters involved in this operation in x.
-	 * Clusters mapped out before and involved in this operation
-	 * should be unmapped so original pages will be accessed by the device.
-	 */
-	cc = cp - ifrw->ifrw_addr;
-	x = ((cc - ifu->ifu_hlen) + CLBYTES - 1) >> CLSHIFT;
-	ifxp->x_xswapd &= ~xswapd;
-	while (i = ffs(ifxp->x_xswapd)) {
-		i--;
-		if (i >= x)
-			break;
-		ifxp->x_xswapd &= ~(1<<i);
-		i *= CLSIZE;
-		for (t = 0; t < CLSIZE; t++) {
-			ifrw->ifrw_mr[i] = ifxp->x_map[i];
-			i++;
-		}
-	}
-	ifxp->x_xswapd |= xswapd;
-	return (cc);
-}
-
-/*
  * Process an ioctl request.
  */
 deioctl(ifp, cmd, data)
@@ -1079,6 +802,4 @@ int unit;
 		    ui->ui_unit, csr0, PCSR0_BITS, 
 		    addr->pcsr1, PCSR1_BITS);
 }
-
 #endif
-
