@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -790,7 +790,12 @@ errbody(mci, e, separator, flags)
 			/* Final-Recipient: -- the name from the RCPT command */
 			for (r = q; r->q_alias != NULL; r = r->q_alias)
 				continue;
-			(void) sprintf(buf, "Final-Recipient: %s", r->q_paddr);
+			if (strchr(r->q_user, '@') == NULL)
+				(void) sprintf(buf, "Final-Recipient: %s@%s",
+					r->q_user, MyHostName);
+			else
+				(void) sprintf(buf, "Final-Recipient: %s",
+					r->q_user);
 			putline(buf, mci);
 
 			/* Final-Status: -- same as Status?  XXX */
