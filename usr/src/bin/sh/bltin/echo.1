@@ -1,94 +1,85 @@
-.\" Copyright (c) 1991 The Regents of the University of California.
+.\" Copyright (c) 1991, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Kenneth Almquist.
+.\" Copyright 1989 by Kenneth Almquist
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)echo.1	5.1 (Berkeley) %G%
+.\"	@(#)echo.1	5.2 (Berkeley) %G%
 .\"
-.TH ECHO 1""
-.UC 7
-.SH NAME
-echo \- produce message in a shell script
-.SH SYNOPSIS
-.B echo
-[
-.B -n
-|
-.B -e
-]
-.I args...
-.SH COPYRIGHT
-Copyright 1989 by Kenneth Almquist.
-.SH DESCRIPTION
-.I Echo
+.Dd 
+.Dt ECHO 1
+.Os BSD 4.4
+.Sh NAME
+.Nm echo
+.Nd produce message in a shell script
+.Sh SYNOPSIS
+.Nm echo
+.Op Fl n | Fl e
+.Ar args... 
+.Sh DESCRIPTION
+.Nm Echo
 prints its arguments on the standard output, separated by spaces.
 Unless the
-.B -n
+.Fl n
 option is present, a newline is output following the arguments.
 The
-.B -e
+.Fl e
 option causes
-.I echo
+.Nm echo
 to treat the escape sequences specially, as described in the following
-paragraph.  The
-.B -e
+paragraph.
+The
+.Fl e
 option is the default, and is provided solely for compatibility with
 other systems.
 Only one of the options
-.B -n
+.Fl n
 and
-.B -e
+.Fl e
 may be given.
-.PP
+.Pp
 If any of the following sequences of characters is encountered during
 output, the sequence is not output.  Instead, the specified action is
 performed:
-.nr i 0.6i
-.de i
-.sp
-.ti -\\niu
-\\$1	\c
-.if \w'\\$1'-\\ni .br
-..
-.in 1.1i
-.ta 0.6i
-.i \eb
+.Bl -tag -width indent
+.It Li \eb
 A backspace character is output.
-.i \ec
+.It Li \ec
 Subsequent output is suppressed.  This is normally used at the end of the
 last argument to suppress the trailing newline that
-.I echo
+.Nm echo
 would otherwise output.
-.i \ef
+.It Li \ef
 Output a form feed.
-.i \en
+.It Li \en
 Output a newline character.
-.i \er
+.It Li \er
 Output a carriage return.
-.i \et
+.It Li \et
 Output a (horizontal) tab character.
-.i \ev
+.It Li \ev
 Output a vertical tab.
-.i \e0\fIdigits\fR
+.It Li \e0 Ns Ar digits
 Output the character whose value is given by zero to three digits.
 If there are zero digits, a nul character is output.
-.i \e\e
+.It Li \e\e
 Output a backslash.
-.in -1.1i
-.SH HINTS
+.El
+.Sh HINTS
 Remember that backslash is special to the shell and needs to be escaped.
 To output a message to standard error, say
-.sp
-.ti +1i
-echo message >&2
-.SH BUGS
-The octal character escape mechanism (\e0\fIdigits\fR) differs from the
+.Pp
+.D1  echo message >&2
+.Sh BUGS
+The octal character escape mechanism
+.Pq Li \e0 Ns Ar digits
+differs from the
 C language mechanism.
-.PP
+.Pp
 There is no way to force
-.I echo
+.Nm echo
 to treat its arguments literally, rather than interpreting them as
 options and escape sequences.
