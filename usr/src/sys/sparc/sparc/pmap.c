@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.3 (Berkeley) %G%
+ *	@(#)pmap.c	7.4 (Berkeley) %G%
  *
- * from: $Header: pmap.c,v 1.36 92/07/10 00:03:10 torek Exp $
+ * from: $Header: pmap.c,v 1.39 93/04/20 11:17:12 torek Exp $
  */
 
 /*
@@ -37,10 +37,10 @@
 #include <machine/autoconf.h>
 #include <machine/bsd_openprom.h>
 #include <machine/cpu.h>
+#include <machine/ctlreg.h>
 
 #include <sparc/sparc/asm.h>
 #include <sparc/sparc/cache.h>
-#include <sparc/sparc/ctlreg.h>
 
 #ifdef DEBUG
 #define PTE_BITS "\20\40V\37W\36S\35NC\33IO\32U\31M"
@@ -1511,6 +1511,26 @@ pmap_remove(pm, va, endva)
 	setcontext(ctx);
 }
 
+#define perftest
+#ifdef perftest
+/* counters, one per possible length */
+int	rmk_vlen[NPTESG+1];	/* virtual length per rmk() call */
+int	rmk_npg[NPTESG+1];	/* n valid pages per rmk() call */
+int	rmk_vlendiff;		/* # times npg != vlen */
+#endif
+
+/*
+ * The following magic number was chosen because:
+ *	1. It is the same amount of work to cache_flush_page 4 pages
+ *	   as to cache_flush_segment 1 segment (so at 4 the cost of
+ *	   flush is the same).
+ *	2. Flushing extra pages is bad (causes cache not to work).
+ *	3. The current code, which malloc()s 5 pages for each process
+ *	   for a user vmspace/pmap, almost never touches all 5 of those
+ *	   pages.
+ */
+#define	PMAP_RMK_MAGIC	5	/* if > magic, use cache_flush_segment */
+
 /*
  * Remove a range contained within a single segment.
  * These are egregiously complicated routines.
@@ -1523,23 +1543,36 @@ pmap_rmk(pm, va, endva, vseg, nleft, pmeg)
 	register vm_offset_t va, endva;
 	register int vseg, nleft, pmeg;
 {
-	register int i, tpte;
+	register int i, tpte, perpage, npg;
 	register struct pvlist *pv;
+#ifdef perftest
+	register int nvalid;
+#endif
 
 #ifdef DEBUG
 	if (pmeg == seginval)
-		panic("pmap_rmk: kernel seg not loaded");
+		panic("pmap_rmk: not loaded");
 	if (pm->pm_ctx == NULL)
-		panic("pmap_rmk: kernel lost context");
+		panic("pmap_rmk: lost context");
 #endif
 
-	/* flush cache */
-	/* XXX better to flush per page? (takes more code) */
 	setcontext(0);
+	/* decide how to flush cache */
+	npg = (endva - va) >> PGSHIFT;
+	if (npg > PMAP_RMK_MAGIC) {
+		/* flush the whole segment */
+		perpage = 0;
 #ifdef notdef
-	if (vactype != VAC_NONE)
+		if (vactype != VAC_NONE)
 #endif
-		cache_flush_segment(vseg);
+			cache_flush_segment(vseg);
+	} else {
+		/* flush each page individually; some never need flushing */
+		perpage = 1;
+	}
+#ifdef perftest
+	nvalid = 0;
+#endif
 	while (va < endva) {
 		tpte = getpte(va);
 		if ((tpte & PG_V) == 0) {
@@ -1547,6 +1580,14 @@ pmap_rmk(pm, va, endva, vseg, nleft, pmeg)
 			continue;
 		}
 		pv = NULL;
+		/* if cacheable, flush page as needed */
+		if ((tpte & PG_NC) == 0) {
+#ifdef perftest
+			nvalid++;
+#endif
+			if (perpage)
+				cache_flush_page(va);
+		}
 		if ((tpte & PG_TYPE) == PG_OBMEM) {
 			i = ptoa(HWTOSW(tpte & PG_PFNUM));
 			if (managed(i)) {
@@ -1559,6 +1600,12 @@ pmap_rmk(pm, va, endva, vseg, nleft, pmeg)
 		setpte(va, 0);
 		va += NBPG;
 	}
+#ifdef perftest
+	rmk_vlen[npg]++;
+	rmk_npg[nvalid]++;
+	if (npg != nvalid)
+		rmk_vlendiff++;
+#endif
 
 	/*
 	 * If the segment is all gone, remove it from everyone and
@@ -1576,6 +1623,20 @@ pmap_rmk(pm, va, endva, vseg, nleft, pmeg)
 	return (nleft);
 }
 
+#ifdef perftest
+/* as before but for pmap_rmu */
+int	rmu_vlen[NPTESG+1];	/* virtual length per rmu() call */
+int	rmu_npg[NPTESG+1];	/* n valid pages per rmu() call */
+int	rmu_vlendiff;		/* # times npg != vlen */
+int	rmu_noflush;		/* # times rmu does not need to flush at all */
+#endif
+
+/*
+ * Just like pmap_rmk_magic, but we have a different threshold.
+ * Note that this may well deserve further tuning work.
+ */
+#define	PMAP_RMU_MAGIC	4	/* if > magic, use cache_flush_segment */
+
 /* remove from user */
 static int
 pmap_rmu(pm, va, endva, vseg, nleft, pmeg)
@@ -1583,8 +1644,11 @@ pmap_rmu(pm, va, endva, vseg, nleft, pmeg)
 	register vm_offset_t va, endva;
 	register int vseg, nleft, pmeg;
 {
-	register int *pte0, i, pteva, tpte;
+	register int *pte0, i, pteva, tpte, perpage, npg;
 	register struct pvlist *pv;
+#ifdef perftest
+	register int doflush, nvalid;
+#endif
 
 	pte0 = pm->pm_pte[vseg];
 	if (pmeg == seginval) {
@@ -1620,12 +1684,20 @@ pmap_rmu(pm, va, endva, vseg, nleft, pmeg)
 	 */
 	if (pm->pm_ctx) {
 		/* process has a context, must flush cache */
-		/* XXX better to flush per page? (takes more code) */
-		setcontext(pm->pm_ctxnum);
-#ifdef notdef
-		if (vactype != VAC_NONE)
+		npg = (endva - va) >> PGSHIFT;
+#ifdef perftest
+		doflush = 1;
+		nvalid = 0;
 #endif
-			cache_flush_segment(vseg);
+		setcontext(pm->pm_ctxnum);
+		if (npg > PMAP_RMU_MAGIC) {
+			perpage = 0; /* flush the whole segment */
+#ifdef notdef
+			if (vactype != VAC_NONE)
+#endif
+				cache_flush_segment(vseg);
+		} else
+			perpage = 1;
 		pteva = va;
 	} else {
 		/* no context, use context 0; cache flush unnecessary */
@@ -1633,12 +1705,27 @@ pmap_rmu(pm, va, endva, vseg, nleft, pmeg)
 		/* XXX use per-cpu pteva? */
 		setsegmap(0, pmeg);
 		pteva = VA_VPG(va) * NBPG;
+		perpage = 0;
+#ifdef perftest
+		npg = 0;
+		doflush = 0;
+		nvalid = 0;
+		rmu_noflush++;
+#endif
 	}
 	for (; va < endva; pteva += PAGE_SIZE, va += PAGE_SIZE) {
 		tpte = getpte(pteva);
 		if ((tpte & PG_V) == 0)
 			continue;
 		pv = NULL;
+		/* if cacheable, flush page as needed */
+		if (doflush && (tpte & PG_NC) == 0) {
+#ifdef perftest
+			nvalid++;
+#endif
+			if (perpage)
+				cache_flush_page(va);
+		}
 		if ((tpte & PG_TYPE) == PG_OBMEM) {
 			i = ptoa(HWTOSW(tpte & PG_PFNUM));
 			if (managed(i)) {
@@ -1650,6 +1737,14 @@ pmap_rmu(pm, va, endva, vseg, nleft, pmeg)
 		nleft--;
 		setpte(pteva, 0);
 	}
+#ifdef perftest
+	if (doflush) {
+		rmu_vlen[npg]++;
+		rmu_npg[nvalid]++;
+		if (npg != nvalid)
+			rmu_vlendiff++;
+	}
+#endif
 
 	/*
 	 * If the segment is all gone, and the context is loaded, give
