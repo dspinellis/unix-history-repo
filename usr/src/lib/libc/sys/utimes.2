@@ -2,37 +2,76 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utimes.2	4.1 (Berkeley) %G%
+.\"	@(#)utimes.2	5.1 (Berkeley) %G%
 .\"
-.TH UTIME 2
+.TH UTIMES 2 "2 July 1983"
 .UC 4
 .SH NAME
-utime \- set file times
+utimes \- set file times
 .SH SYNOPSIS
 .nf
-.B #include <sys/types.h>
+.ft B
+#include <sys/time.h>
 .PP
-.B utime(file, timep)
-.B char *file;
-.B time_t timep[2];
+.ft B
+utimes(file, tvp)
+char *file;
+struct timeval *tvp[2];
 .fi
 .SH DESCRIPTION
 The
-.I utime
+.I utimes
 call
 uses the
-`accessed' and `updated' times in that order
+\*(lqaccessed\*(rq and \*(lqupdated\*(rq times in that order
 from the
-.I timep
+.I tvp
 vector
 to set the corresponding recorded times for
 .I file.
 .PP
 The caller must be the owner of the file or the super-user.
-The `inode-changed' time of the file is set to the current time.
+The \*(lqinode-changed\*(rq time of the file is set to the current time.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Utime
+will fail if one or more of the following are true:
+.TP 15
+[EPERM]
+The pathname contained a character with the high-order bit set.
+.TP 15
+[ENOENT]
+The pathname was too long.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EACCES]
+A component of the path prefix denies search permission.
+.TP 15
+[EPERM]
+The process is not super-user and not the owner of the file.
+.TP 15
+[EACCES]
+The effective user ID is not super-user and not the
+owner of the file and \fItimes\fP is NULL and write access
+is denied.
+.TP 15
+[EROFS]
+The file system containing the file is mounted read-only.
+.TP 15
+[EFAULT]
+.I Tvp
+points outside the process's allocated address space.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .SH SEE ALSO
-stat (2)
-.SH "ASSEMBLER (PDP-11)"
-(utime = 30.)
-.br
-.B sys utime; file; timep
+stat(2)
