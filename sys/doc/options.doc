@@ -1,4 +1,4 @@
-$Id: options.doc,v 1.6 1994/05/31 08:55:12 jkh Exp $
+$Id: options.texi,v 1.8 1994/06/08 01:38:31 phk Exp $
 
    This file documents the configuration options available in the
 FreeBSD operating system.
@@ -88,6 +88,11 @@ underscores must be quoted.
 
      This option will likely be replaced by run-time configuration in a
      future release of FreeBSD.
+
+`options "DISKLABEL_UNPROTECTED"'
+     This options disables the checks which normally protects the
+     disklabel from being overwritten.  This allows dd of=/dev/rwd0d
+     if=file bs=8k to restore an diskimage.
 
 `pseudo-device ether'
      This pseudo-device provides link-layer support for Ethernet device
@@ -191,8 +196,8 @@ underscores must be quoted.
      Enable multicast support for things like vat, nv, etc.
 
 `options MROUTING'
-     Enable multicast routing support (generally goes hand-in-hand with the
-     above).  See also mrouted(1).
+     Enable multicast routing support (generally goes hand-in-hand with
+     the above).  See also mrouted(1).
 
 `options NFS'
      The `NFS' option enables support for Sun's Network File System.
@@ -455,19 +460,19 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
      (*note SCSI::.) is a prerequisite.
 
 `options ALLOW_CONFLICT_IOADDR'
-     Allow devices on the ISA bus to share conflicting IO address spaces.
-     This is generally an error, though things like PS/2 mouse drivers
-     which are implemented seperately from the keyboard driver will require
-     this option to be set.  Note that this is almost always sub-optimal,
-     and the current PS/2 mouse driver will, in fact, frequently fight with
-     the keyboard if you try to use them concurrently.  Needing this option
-     enabled is a sure sign that you need to consider a different design
-     for your driver.
+     Allow devices on the ISA bus to share conflicting IO address
+     spaces.  This is generally an error, though things like PS/2 mouse
+     drivers which are implemented seperately from the keyboard driver
+     will require this option to be set.  Note that this is almost
+     always sub-optimal, and the current PS/2 mouse driver will, in
+     fact, frequently fight with the keyboard if you try to use them
+     concurrently.  Needing this option enabled is a sure sign that you
+     need to consider a different design for your driver.
 
 `options ALLOW_CONFLICT_IRQ'
      Allow devices on the ISA bus to share conflicting IRQ's.  This is
-     often necessary for multiport serial cards which have several devices
-     at the same IRQ.  Enable this only with caution!
+     often necessary for multiport serial cards which have several
+     devices at the same IRQ.  Enable this only with caution!
 
 `options COM_MULTIPORT'
      This option enables support in the `sio' serial driver for certain
