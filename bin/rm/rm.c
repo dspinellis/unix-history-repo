@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)rm.c	4.26 (Berkeley) 3/10/91";*/
-static char rcsid[] = "$Id: rm.c,v 1.5 1994/01/26 21:22:58 ats Exp $";
+static char rcsid[] = "$Id: rm.c,v 1.6 1994/02/02 09:59:47 davidg Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -140,8 +140,8 @@ rmtree(argv)
 	 */
 #define	SKIPPED	1
 
-	if (!(fts = fts_open(argv,
-	    needstat ? FTS_PHYSICAL : FTS_PHYSICAL|FTS_NOSTAT,
+	if (!(fts = fts_open(argv, needstat ? FTS_PHYSICAL|FTS_NOCHDIR :
+		FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT,
 		(int (*)())NULL))) {
 		if (!fflag)
 			(void)fprintf(stderr, "rm: %s.\n", strerror(errno));
