@@ -1,8 +1,7 @@
-/* @(#)fsck.h	3.4 (Berkeley) %G% */
+/* @(#)fsck.h	3.5 (Berkeley) %G% */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
 #define	MAXBAD		10	/* limit on bad blks (per inode) */
-#define	DUPTBLSIZE	100	/* num of dup blocks to remember */
 #define	MAXLNCNT	500	/* num zero link cnts to remember */
 
 typedef	int	(*SIG_TYP)();
@@ -89,10 +88,15 @@ struct inodesc {
 #define	DATA	1
 #define	ADDR	2
 
-
-daddr_t	duplist[DUPTBLSIZE];	/* dup block table */
-daddr_t	*enddup;		/* next entry in dup table */
-daddr_t	*muldup;		/* multiple dups part of table */
+/*
+ * Linked list of duplicate blocks
+ */
+struct dups {
+	struct dups *next;
+	daddr_t dup;
+};
+struct dups *duplist;		/* head of dup list */
+struct dups *muldup;		/* end of unique duplicate dup block numbers */
 
 ino_t	badlncnt[MAXLNCNT];	/* table of inos with zero link cnts */
 ino_t	*badlnp;		/* next entry in table */

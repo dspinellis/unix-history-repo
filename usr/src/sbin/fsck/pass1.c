@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass1.c	3.5 (Berkeley) %G%";
+static char version[] = "@(#)pass1.c	3.6 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -133,10 +133,11 @@ pass1()
 pass1check(idesc)
 	register struct inodesc *idesc;
 {
-	register daddr_t *dlp;
 	int res = KEEPON;
 	int anyout, nfrags;
 	daddr_t blkno = idesc->id_blkno;
+	register struct dups *dlp;
+	struct dups *new;
 
 	if ((anyout = outrange(blkno, idesc->id_numfrags)) != 0) {
 		blkerr(idesc->id_number, "BAD", blkno);
@@ -167,21 +168,26 @@ pass1check(idesc)
 					errexit("");
 				return (STOP);
 			}
-			if (enddup >= &duplist[DUPTBLSIZE]) {
+			new = (struct dups *)malloc(sizeof(struct dups));
+			if (new == NULL) {
 				pfatal("DUP TABLE OVERFLOW.");
 				if (reply("CONTINUE") == 0)
 					errexit("");
 				return (STOP);
 			}
-			for (dlp = duplist; dlp < muldup; dlp++)
-				if (*dlp == blkno) {
-					*enddup++ = blkno;
-					break;
-				}
-			if (dlp >= muldup) {
-				*enddup++ = *muldup;
-				*muldup++ = blkno;
+			new->dup = blkno;
+			if (muldup == 0) {
+				duplist = muldup = new;
+				new->next = 0;
+			} else {
+				new->next = muldup->next;
+				muldup->next = new;
 			}
+			for (dlp = duplist; dlp != muldup; dlp = dlp->next)
+				if (dlp->dup == blkno)
+					break;
+			if (dlp == muldup && dlp->dup != blkno)
+				muldup = new;
 		}
 		/*
 		 * count the number of blocks found in id_entryno

@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)main.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)main.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -143,7 +143,7 @@ checkfilesys(filesys)
 	/*
 	 * 1b: locate first references to duplicates, if any
 	 */
-	if (enddup != &duplist[0]) {
+	if (duplist) {
 		if (preen)
 			pfatal("INTERNAL ERROR: dups with -p");
 		printf("** Phase 1b - Rescan For More DUPS\n");
