@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)scandir.3	6.3 (Berkeley) %G%
+.\"	@(#)scandir.3	6.4 (Berkeley) %G%
 .\"
 .TH SCANDIR 3  ""
 .UC 5
@@ -26,7 +26,7 @@ scandir, alphasort \- scan a directory
 .PP
 .B scandir(dirname, namelist, select, compar)
 .B char *dirname;
-.B struct direct *(*namelist[]);
+.B struct direct ***namelist;
 .B int (*select)();
 .B int (*compar)();
 .PP
@@ -40,8 +40,9 @@ reads the directory
 and builds an array of pointers to directory
 entries using
 .IR malloc (3).
-It returns the number of entries in the array and a pointer to the
-array through
+It returns the number of entries in the array.
+A pointer to the array of directory entries is stored in the location
+referenced by
 .IR namelist .
 .PP
 The
