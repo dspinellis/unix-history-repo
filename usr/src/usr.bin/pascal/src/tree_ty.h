@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1980 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tree_ty.h	5.2 (Berkeley) %G%
+ *	@(#)tree_ty.h	8.1 (Berkeley) %G%
  */
 
 typedef struct /* T_FORU, T_FORD */
