@@ -1,4 +1,4 @@
-/*	mkheaders.c	1.12	82/10/25	*/
+/*	mkheaders.c	1.13	82/12/09	*/
 
 /*
  * Make all the .h files for the optional entries
@@ -32,7 +32,8 @@ do_count(dev, hname, search)
 	for (count = 0,dp = dtab; dp != 0; dp = dp->d_next)
 		if (dp->d_unit != -1 && eq(dp->d_name, dev)) {
 			if (dp->d_type == PSEUDO_DEVICE) {
-				count = dp->d_slave != UNKNOWN ? dp->d_slave : 1;
+				count =
+				    dp->d_slave != UNKNOWN ? dp->d_slave : 1;
 				break;
 			}
 			count++;
@@ -95,7 +96,7 @@ do_header(dev, hname, count)
 			inc = count;
 		}
 		cp = get_word(inf);
-		if (cp == 0 || cp == (char *)EOF)
+		if (cp == (char *)EOF)
 			break;
 		fl = (struct file_list *) malloc(sizeof *fl);
 		fl->f_fn = inw;
