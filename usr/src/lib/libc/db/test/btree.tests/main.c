@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -33,6 +33,7 @@ typedef struct cmd_table {
 int stopstop;
 DB *globaldb;
 
+void append	__P((DB *, char **));
 void bstat	__P((DB *, char **));
 void cursor	__P((DB *, char **));
 void delcur	__P((DB *, char **));
@@ -43,6 +44,7 @@ void get	__P((DB *, char **));
 void help	__P((DB *, char **));
 void iafter	__P((DB *, char **));
 void ibefore	__P((DB *, char **));
+void icursor	__P((DB *, char **));
 void insert	__P((DB *, char **));
 void keydata	__P((DBT *, DBT *));
 void last	__P((DB *, char **));
@@ -58,21 +60,23 @@ void user	__P((DB *));
 
 cmd_table commands[] = {
 	"?",	0, 0, help, "help", NULL,
+	"a",	2, 1, append, "append key def", "append key with data def",
 	"b",	0, 0, bstat, "bstat", "stat btree",
 	"c",	1, 1, cursor,  "cursor word", "move cursor to word",
 	"delc",	0, 0, delcur, "delcur", "delete key the cursor references",
 	"dele",	1, 1, delete, "delete word", "delete word",
 	"d",	0, 0, dump, "dump", "dump database",
 	"f",	0, 0, first, "first", "move cursor to first record",
-	"g",	1, 1, get, "get word", "locate word",
+	"g",	1, 1, get, "get key", "locate key",
 	"h",	0, 0, help, "help", "print command summary",
 	"ia",	2, 1, iafter, "iafter key data", "insert data after key",
 	"ib",	2, 1, ibefore, "ibefore key data", "insert data before key",
-	"in",	2, 1, insert, "insert word def", "insert key with data def",
+	"ic",	2, 1, icursor, "icursor key data", "replace cursor",
+	"in",	2, 1, insert, "insert key def", "insert key with data def",
 	"la",	0, 0, last, "last", "move cursor to last record",
 	"li",	1, 1, list, "list file", "list to a file",
 	"loa",	1, 1, load, "load file", NULL,
-	"loc",	1, 1, get, "get word", NULL,
+	"loc",	1, 1, get, "get key", NULL,
 	"m",	0, 0, mstat, "mstat", "stat memory pool",
 	"n",	0, 0, next, "next", "move cursor forward one record",
 	"p",	0, 0, previous, "previous", "move cursor back one record",
@@ -240,6 +244,36 @@ parse(lbuf, argv, maxargc)
 }
 
 void
+append(db, argv)
+	DB *db;
+	char **argv;
+{
+	DBT key, data;
+	int status;
+
+	if (!recno) {
+		(void)fprintf(stderr,
+		    "append only available for recno db's.\n");
+		return;
+	}
+	key.data = argv[1];
+	key.size = sizeof(recno_t);
+	data.data = argv[2];
+	data.size = strlen(data.data);
+	status = (db->put)(db, &key, &data, R_APPEND);
+	switch (status) {
+	case RET_ERROR:
+		perror("append/put");
+		break;
+	case RET_SPECIAL:
+		(void)printf("%s (duplicate key)\n", argv[1]);
+		break;
+	case RET_SUCCESS:
+		break;
+	}
+}
+
+void
 cursor(db, argv)
 	DB *db;
 	char **argv;
@@ -255,7 +289,7 @@ cursor(db, argv)
 	status = (*db->seq)(db, &key, &data, R_CURSOR);
 	switch (status) {
 	case RET_ERROR:
-		perror("cursor");
+		perror("cursor/seq");
 		break;
 	case RET_SPECIAL:
 		(void)printf("key not found\n");
@@ -276,7 +310,7 @@ delcur(db, argv)
 	status = (*db->del)(db, NULL, R_CURSOR);
 
 	if (status == RET_ERROR)
-		perror("delcur");
+		perror("delcur/del");
 }
 
 void
@@ -296,7 +330,7 @@ delete(db, argv)
 	status = (*db->del)(db, &key, 0);
 	switch (status) {
 	case RET_ERROR:
-		perror("delete");
+		perror("delete/del");
 		break;
 	case RET_SPECIAL:
 		(void)printf("key not found\n");
@@ -326,7 +360,7 @@ first(db, argv)
 
 	switch (status) {
 	case RET_ERROR:
-		perror("first");
+		perror("first/seq");
 		break;
 	case RET_SPECIAL:
 		(void)printf("no more keys\n");
@@ -355,7 +389,7 @@ get(db, argv)
 
 	switch (status) {
 	case RET_ERROR:
-		perror("get");
+		perror("get/get");
 		break;
 	case RET_SPECIAL:
 		(void)printf("key not found\n");
@@ -399,7 +433,7 @@ iafter(db, argv)
 	status = (db->put)(db, &key, &data, R_IAFTER);
 	switch (status) {
 	case RET_ERROR:
-		perror("iafter");
+		perror("iafter/put");
 		break;
 	case RET_SPECIAL:
 		(void)printf("%s (duplicate key)\n", argv[1]);
@@ -429,7 +463,36 @@ ibefore(db, argv)
 	status = (db->put)(db, &key, &data, R_IBEFORE);
 	switch (status) {
 	case RET_ERROR:
-		perror("ibefore");
+		perror("ibefore/put");
+		break;
+	case RET_SPECIAL:
+		(void)printf("%s (duplicate key)\n", argv[1]);
+		break;
+	case RET_SUCCESS:
+		break;
+	}
+}
+
+void
+icursor(db, argv)
+	DB *db;
+	char **argv;
+{
+	int status;
+	DBT data, key;
+
+	key.data = argv[1];
+	if (recno)
+		key.size = sizeof(recno_t);
+	else
+		key.size = strlen(argv[1]) + 1;
+	data.data = argv[2];
+	data.size = strlen(argv[2]) + 1;
+
+	status = (*db->put)(db, &key, &data, R_CURSOR);
+	switch (status) {
+	case RET_ERROR:
+		perror("icursor/put");
 		break;
 	case RET_SPECIAL:
 		(void)printf("%s (duplicate key)\n", argv[1]);
@@ -458,7 +521,7 @@ insert(db, argv)
 	status = (*db->put)(db, &key, &data, R_NOOVERWRITE);
 	switch (status) {
 	case RET_ERROR:
-		perror("put");
+		perror("insert/put");
 		break;
 	case RET_SPECIAL:
 		(void)printf("%s (duplicate key)\n", argv[1]);
@@ -480,7 +543,7 @@ last(db, argv)
 
 	switch (status) {
 	case RET_ERROR:
-		perror("last");
+		perror("last/seq");
 		break;
 	case RET_SPECIAL:
 		(void)printf("no more keys\n");
@@ -510,7 +573,7 @@ list(db, argv)
 		status = (*db->seq)(db, &key, &data, R_NEXT);
 	}
 	if (status == RET_ERROR)
-		perror("list");
+		perror("list/seq");
 }
 
 void
@@ -566,7 +629,7 @@ next(db, argv)
 
 	switch (status) {
 	case RET_ERROR:
-		perror("next");
+		perror("next/seq");
 		break;
 	case RET_SPECIAL:
 		(void)printf("no more keys\n");
@@ -589,7 +652,7 @@ previous(db, argv)
 
 	switch (status) {
 	case RET_ERROR:
-		perror("previous");
+		perror("previous/seq");
 		break;
 	case RET_SPECIAL:
 		(void)printf("no more keys\n");
@@ -610,17 +673,15 @@ show(db, argv)
 	pgno_t pg;
 
 	pg = atoi(argv[1]);
-	if (pg == 0) {
-		(void)printf("page 0 is meta-data page.\n");
-		return;
-	}
-
 	t = db->internal;
 	if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL) {
 		(void)printf("getpage of %ld failed\n", pg);
 		return;
 	}
-	__bt_dpage(h);
+	if (pg == 0)
+		__bt_dmpage(h);
+	else
+		__bt_dpage(h);
 	mpool_put(t->bt_mp, h, 0);
 }
 
