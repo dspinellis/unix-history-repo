@@ -1,12 +1,20 @@
-#	@(#)Makefile	4.5	(Berkeley)	85/10/25
 #
-DESTDIR=
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.6	(Berkeley)	%G%
+#
+all: doctor
 
-doctor: /usr/ucb/lisp /usr/ucb/liszt
+doctor: FRC
 	liszt -mrq -o doctor doctor.l
 
-install: doctor
-	install doctor $(DESTDIR)/usr/games
+install: FRC
+	install -o bin -g bin -m 755 doctor ${DESTDIR}/usr/games/doctor
 
-clean:
-	rm -f doctor
+clean: FRC
+	rm -f doctor core
+
+depend: FRC
+FRC:
