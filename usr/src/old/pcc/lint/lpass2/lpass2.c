@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.8	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.9	(Berkeley)	%G%";
 #endif lint
 
 # include "macdefs.h"
@@ -158,7 +158,7 @@ lread(m){ /* read a line into r.l */
 		portify(r.l.name);
 #endif /* !FLEXNAMES */
 		n = r.l.nargs;
-		if( n<0 ) n = -n;
+		if( n<0 ) n = ~n;
 		if( n>=NTY ) error( "more than %d args?", n );
 		fread( (char *)atyp, sizeof(ATYPE), n, stdin );
 		if( ( r.l.decflag & m ) ) return( 1 );
@@ -452,7 +452,7 @@ setuse(q) STAB *q; { /* check new type to ensure that it is used */
 		q->decflag = r.l.decflag;
 		q->symty.t = r.l.type;
 		if( r.l.nargs < 0 ){
-			q->nargs = -r.l.nargs;
+			q->nargs = ~r.l.nargs;
 			q->use = VARARGS;
 			}
 		else {
@@ -609,7 +609,7 @@ prc() {
 		printf( "type.extra1\t0x%x (%d,%d)\n",
 			j, j & X_NONAME ? 1 : 0, j & ~X_NONAME );
 		k = r.l.nargs;
-		if( k < 0 ) k = -k;
+		if( k < 0 ) k = ~k;
 		for( i = 0; i < k; i++ ){
 			printf( "atyp[%d].aty\t0%o (", i, atyp[i].aty );
 			pty( atyp[i].aty, "" );
