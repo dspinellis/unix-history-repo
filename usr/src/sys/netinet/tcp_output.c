@@ -1,4 +1,4 @@
-/*	tcp_output.c	6.6	84/11/01	*/
+/*	tcp_output.c	6.7	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -54,7 +54,8 @@ tcp_output(tp)
 again:
 	sendalot = 0;
 	off = tp->snd_nxt - tp->snd_una;
-	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
+	win = MIN(tp->snd_wnd, tp->snd_cwnd) + tp->t_force;
+	len = MIN(so->so_snd.sb_cc, win) - off;
 	if (len < 0)
 		return (0);	/* ??? */	/* past FIN */
 	if (len > tp->t_maxseg) {
@@ -62,7 +63,7 @@ again:
 		/*
 		 * Don't send more than one segment if retransmitting.
 		 */
-		if (SEQ_GT(tp->snd_nxt, tp->snd_max))
+		if (tp->t_rxtshift == 0)
 			sendalot = 1;
 	}
 
@@ -97,10 +98,10 @@ again:
 
 
 	/*
-	 * Calculate available window in i, and also amount
+	 * Calculate available window, and also amount
 	 * of window known to peer (as advertised window less
-	 * next expected input.)  If this is 35% or more of the
-	 * maximum possible window, then want to send a segment to peer.
+	 * next expected input.)  If the difference is 35% or more of the
+	 * maximum possible window, then want to send a window update to peer.
 	 */
 	win = sbspace(&so->so_rcv);
 	if (win > 0 &&
