@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -55,6 +55,8 @@ static char sccsid[] = "@(#)inetd.c	5.4 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -178,7 +180,7 @@ nextopt:
 	(void) dup2(0, 2);
 	{ int tt = open("/dev/tty", O_RDWR);
 	  if (tt > 0) {
-		ioctl(tt, TIOCNOTTY, 0);
+		ioctl(tt, TIOCNOTTY, (char *)0);
 		close(tt);
 	  }
 	}
@@ -194,7 +196,8 @@ nextopt:
 		while (nsock == 0)
 			sigpause(0);
 		readable = allsock;
-		if ((n = select(maxsock + 1, &readable, 0, 0, 0)) <= 0)
+		if ((n = select(maxsock + 1, &readable, (fd_set *)0,
+		    (fd_set *)0, (struct timeval *)0)) <= 0)
 			continue;
 		for (s = 0; s <= maxsock; s++)
 			if (FD_ISSET(s, &readable))
@@ -202,12 +205,12 @@ nextopt:
 		for (sep = servtab; sep; sep = sep->se_next)
 			if (s == sep->se_fd)
 				goto found;
-		abort(1);
+		abort();
 	found:
 		if (debug)
 			fprintf(stderr, "someone wants %s\n", sep->se_service);
 		if (!sep->se_wait && sep->se_socktype == SOCK_STREAM) {
-			ctrl = accept(s, 0, 0);
+			ctrl = accept(s, (struct sockaddr *)0, (int *)0);
 			if (debug)
 				fprintf(stderr, "accept, ctrl %d\n", ctrl);
 			if (ctrl < 0) {
@@ -218,7 +221,7 @@ nextopt:
 			}
 		} else
 			ctrl = sep->se_fd;
-		sigblock(sigmask(SIGCHLD)|sigmask(SIGHUP));
+		(void) sigblock(sigmask(SIGCHLD)|sigmask(SIGHUP));
 		pid = 0;
 		if (sep->se_bi == 0 || sep->se_bi->bi_fork)
 			pid = fork();
@@ -260,9 +263,9 @@ nextopt:
 					_exit(1);
 				}
 				if (pwd->pw_uid) {
-					(void) setgid(pwd->pw_gid);
+					(void) setgid((gid_t)pwd->pw_gid);
 					initgroups(pwd->pw_name, pwd->pw_gid);
-					(void) setuid(pwd->pw_uid);
+					(void) setuid((uid_t)pwd->pw_uid);
 				}
 				if (debug)
 					fprintf(stderr, "%d execl %s\n",
@@ -286,7 +289,7 @@ reapchild()
 	register struct servtab *sep;
 
 	for (;;) {
-		pid = wait3(&status, WNOHANG, 0);
+		pid = wait3(&status, WNOHANG, (struct rusage *)0);
 		if (pid <= 0)
 			break;
 		if (debug)
@@ -330,6 +333,8 @@ config()
 			omask = sigblock(sigmask(SIGCHLD));
 			sep->se_wait = cp->se_wait;
 #define SWAP(a, b) { char *c = a; a = b; b = c; }
+			if (cp->se_user)
+				SWAP(sep->se_user, cp->se_user);
 			if (cp->se_server)
 				SWAP(sep->se_server, cp->se_server);
 			for (i = 0; i < MAXARGV; i++)
@@ -354,7 +359,7 @@ config()
 			continue;
 		}
 #define	turnon(fd, opt) \
-	setsockopt(fd, SOL_SOCKET, opt, &on, sizeof (on))
+	setsockopt(fd, SOL_SOCKET, opt, (char *)&on, sizeof (on))
 		if (strcmp(sep->se_proto, "tcp") == 0 && (options & SO_DEBUG) &&
 		    turnon(sep->se_fd, SO_DEBUG) < 0)
 			syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
@@ -362,7 +367,7 @@ config()
 			syslog(LOG_ERR, "setsockopt (SO_REUSEADDR): %m");
 #undef turnon
 		if (bind(sep->se_fd, &sep->se_ctrladdr,
-		    sizeof (sep->se_ctrladdr), 0) < 0) {
+		    sizeof (sep->se_ctrladdr)) < 0) {
 			syslog(LOG_ERR, "%s/%s: bind: %m",
 			    sep->se_service, sep->se_proto);
 			continue;
@@ -428,7 +433,7 @@ setconfig()
 {
 
 	if (fconfig != NULL) {
-		fseek(fconfig, 0, L_SET);
+		fseek(fconfig, 0L, L_SET);
 		return (1);
 	}
 	fconfig = fopen(CONFIG, "r");
@@ -508,6 +513,8 @@ freeconfig(cp)
 		free(cp->se_service);
 	if (cp->se_proto)
 		free(cp->se_proto);
+	if (cp->se_user)
+		free(cp->se_user);
 	if (cp->se_server)
 		free(cp->se_server);
 	for (i = 0; i < MAXARGV; i++)
@@ -551,7 +558,7 @@ nextline(fd)
 {
 	char *cp;
 
-	if (fgets(line, sizeof (line), fconfig) == NULL)
+	if (fgets(line, sizeof (line), fd) == NULL)
 		return ((char *)0);
 	cp = index(line, '\n');
 	if (cp)
@@ -567,7 +574,7 @@ strdup(cp)
 
 	if (cp == NULL)
 		cp = "";
-	new = malloc(strlen(cp) + 1);
+	new = malloc((unsigned)(strlen(cp) + 1));
 	if (new == (char *)0) {
 		syslog(LOG_ERR, "Out of memory.");
 		exit(-1);
@@ -756,16 +763,15 @@ chargen_dg(s, sep)		/* Character generator */
  * we must add 2208988800 seconds to this figure to make up for
  * some seventy years Bell Labs was asleep.
  */
-#include <sys/time.h>
 
 long
 machtime()
 {
 	struct timeval tv;
 
-	if (gettimeofday(&tv, 0) < 0) {
+	if (gettimeofday(&tv, (struct timezone *)0) < 0) {
 		fprintf(stderr, "Unable to get time of day\n");
-		return;
+		return (0L);
 	}
 	return (htonl((long)tv.tv_sec + 2208988800));
 }
@@ -791,7 +797,7 @@ machtime_dg(s, sep)
 	int size;
 
 	size = sizeof(sa);
-	if (recvfrom(s, &result, sizeof(result), 0, &sa, &size) < 0)
+	if (recvfrom(s, (char *)&result, sizeof(result), 0, &sa, &size) < 0)
 		return;
 	result = machtime();
 	(void) sendto(s, (char *) &result, sizeof(result), 0, &sa, sizeof(sa));
@@ -809,7 +815,7 @@ daytime_stream(s, sep)		/* Return human-readable time of day */
 	clock = time((time_t *) 0);
 
 	sprintf(buffer, "%s\r", ctime(&clock));
-	write(s, buffer, strlen(buffer));
+	(void) write(s, buffer, strlen(buffer));
 }
 
 /* ARGSUSED */
