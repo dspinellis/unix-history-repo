@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.182 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.183 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -426,6 +426,7 @@ inithostmaps()
 {
 	register int i;
 	int nmaps;
+	STAB *s;
 	char *maptype[MAXMAPSTACK];
 	short mapreturn[MAXMAPACTIONS];
 	char buf[MAXLINE];
@@ -516,13 +517,21 @@ inithostmaps()
 		}
 #endif
 	}
-	if (stab("aliases", ST_MAP, ST_FIND) == NULL)
+	s = stab("aliases", ST_MAP, ST_FIND);
+	if (s == NULL)
 	{
 		strcpy(buf, "aliases switch aliases");
 		makemapentry(buf);
+		s = stab("aliases", ST_MAP, ST_FIND);
 	}
-	strcpy(buf, "switch:aliases");
-	setalias(buf);
+	if (s == NULL)
+		syserr("inithostmaps: cannot initialize default aliases map");
+	else
+	{
+		extern MAP *AliasDB[MAXALIASDB + 1];
+
+		AliasDB[0] = &s->s_map;
+	}
 
 #if 0		/* "user" map class is a better choice */
 	/*

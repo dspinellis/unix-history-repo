@@ -9,12 +9,12 @@
 # include "sendmail.h"
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.48 (Berkeley) %G%";
 #endif /* not lint */
 
 
 MAP	*AliasDB[MAXALIASDB + 1];	/* actual database list */
-int	NAliasDBs;			/* number of alias databases */
+int	NAliasDBs = 1;			/* number of alias databases */
 /*
 **  ALIAS -- Compute aliases.
 **
@@ -177,7 +177,7 @@ aliaslookup(name, pstat, e)
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
 		map = AliasDB[dbno];
-		if (!bitset(MF_OPEN, map->map_mflags))
+		if (map == NULL || !bitset(MF_OPEN, map->map_mflags))
 			continue;
 		p = (*map->map_class->map_lookup)(map, name, NULL, pstat);
 		if (p != NULL)
