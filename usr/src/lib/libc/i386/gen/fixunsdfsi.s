@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)fixunsdfsi.s	5.1	%G%"
+	.asciz "@(#)fixunsdfsi.s	8.1	%G%"
 #endif /* LIBC_SCCS and not lint */
 
 	.globl ___fixunsdfsi
