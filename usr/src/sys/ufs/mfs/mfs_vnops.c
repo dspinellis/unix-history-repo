@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.36 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -70,7 +70,6 @@ struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
 	{ &vop_islocked_desc, mfs_islocked },		/* islocked */
 	{ &vop_advlock_desc, mfs_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, mfs_blkatoff },		/* blkatoff */
-	{ &vop_vget_desc, mfs_vget },			/* vget */
 	{ &vop_valloc_desc, mfs_valloc },		/* valloc */
 	{ &vop_vfree_desc, mfs_vfree },			/* vfree */
 	{ &vop_truncate_desc, mfs_truncate },		/* truncate */
@@ -90,8 +89,13 @@ struct vnodeopv_desc mfs_vnodeop_opv_desc =
  */
 /* ARGSUSED */
 int
-mfs_open (ap)
-	struct vop_open_args *ap;
+mfs_open(ap)
+	struct vop_open_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 
 	if (ap->a_vp->v_type != VBLK) {
@@ -106,8 +110,15 @@ mfs_open (ap)
  */
 /* ARGSUSED */
 int
-mfs_ioctl (ap)
-	struct vop_ioctl_args *ap;
+mfs_ioctl(ap)
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int  a_command;
+		caddr_t  a_data;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 
 	return (ENOTTY);
@@ -117,8 +128,10 @@ mfs_ioctl (ap)
  * Pass I/O requests to the memory filesystem process.
  */
 int
-mfs_strategy (ap)
-	struct vop_strategy_args *ap;
+mfs_strategy(ap)
+	struct vop_strategy_args /* {
+		struct buf *a_bp;
+	} */ *ap;
 {
 	register struct buf *bp = ap->a_bp;
 	register struct mfsnode *mfsp;
@@ -253,8 +266,13 @@ mfs_doio(bp, base)
  * This is a noop, simply returning what one has been given.
  */
 int
-mfs_bmap (ap)
-	struct vop_bmap_args *ap;
+mfs_bmap(ap)
+	struct vop_bmap_args /* {
+		struct vnode *a_vp;
+		daddr_t  a_bn;
+		struct vnode **a_vpp;
+		daddr_t *a_bnp;
+	} */ *ap;
 {
 
 	if (ap->a_vpp != NULL)
@@ -269,8 +287,13 @@ mfs_bmap (ap)
  */
 /* ARGSUSED */
 int
-mfs_close (ap)
-	struct vop_close_args *ap;
+mfs_close(ap)
+	struct vop_close_args /* {
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct mfsnode *mfsp = VTOMFS(vp);
@@ -313,8 +336,10 @@ mfs_close (ap)
  */
 /* ARGSUSED */
 int
-mfs_inactive (ap)
-	struct vop_inactive_args *ap;
+mfs_inactive(ap)
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	register struct mfsnode *mfsp = VTOMFS(ap->a_vp);
 
@@ -328,8 +353,10 @@ mfs_inactive (ap)
  * Reclaim a memory filesystem devvp so that it can be reused.
  */
 int
-mfs_reclaim (ap)
-	struct vop_reclaim_args *ap;
+mfs_reclaim(ap)
+	struct vop_reclaim_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	FREE(ap->a_vp->v_data, M_MFSNODE);
@@ -341,8 +368,10 @@ mfs_reclaim (ap)
  * Print out the contents of an mfsnode.
  */
 int
-mfs_print (ap)
-	struct vop_print_args *ap;
+mfs_print(ap)
+	struct vop_print_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	register struct mfsnode *mfsp = VTOMFS(ap->a_vp);
 
