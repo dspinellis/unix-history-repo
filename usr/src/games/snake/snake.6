@@ -1,0 +1,67 @@
+.TH SNAKE 6
+.UC
+.SH NAME
+snake \- display chase game
+.SH SYNOPSIS
+.B /usr/games/snake
+.br
+.B /usr/games/snscore
+.SH DESCRIPTION
+Snake is a display-based game which must be played on a CRT terminal
+from among those supported by vi(1).
+The object of the game is to make as much money as possible without
+getting eaten by the snake.
+.PP
+You are represented on the screen by an I.
+The snake is 6 squares long and is represented by S's.
+The money is $, and an exit is #.
+Your score is posted in the upper left hand corner.
+.PP
+You can move around using the same conventions as vi(1),
+the h, j, k, and l keys work, as do the arrow keys.
+Other possibilities include:
+.IP sefc
+These keys are like hjkl but form a directed pad around the d key.
+.IP HJKL
+These keys move you all the way in the indicated direction to the
+same row or column as the money.
+This does
+.I not
+let you jump away from the snake, but rather saves you from having
+to type a key repeatedly.
+The snake still gets all his turns.
+.IP SEFC
+Likewise for the upper case versions on the left.
+.IP ATPB
+These keys move you to the four edges of the screen.
+Their position on the keyboard is the mnemonic, e.g.
+P is at the far right of the keyboard.
+.IP x
+This lets you quit the game at any time.
+.IP p
+Points in a direction you might want to go.
+.IP w
+Space warp to get out of tight squeezes, at a price.
+.IP !
+Shell escape
+.IP ^Z
+Suspend the snake game, on systems which support it.
+Otherwise an interactive shell is started up.
+.PP
+To earn money, move to the same square the money is on.
+A new $ will appear when you earn the current one.
+As you get richer, the snake gets hungrier.
+To leave the game, move to the exit (#).
+.PP
+A record is kept of the personal best score of each player.
+Scores are only counted if you leave at the exit,
+getting eaten by the snake is worth nothing.
+.PP
+As in pinball, matching the last digit of your score to the number
+which appears after the game is worth a bonus.
+.PP
+To see who wastes time playing snake, run
+.I /usr/games/snscore .
+.SH FILES
+/usr/games/lib/snakerawscores	database of personal bests
+.SH BUGS
