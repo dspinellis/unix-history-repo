@@ -1,4 +1,4 @@
-/*	autoconf.c	4.11	81/02/23	*/
+/*	autoconf.c	4.12	81/02/25	*/
 
 /*
  * Configure the system for the current machine.
@@ -61,7 +61,7 @@ configure()
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			cpu = ocp->pc_cputype;
 			(*ocp->pc_config)(ocp);
-#if VAX==ANY
+#if VAXANY
 			setconf();
 #endif
 			ip = (int *)Sysmap; *ip &= ~PG_PROT; *ip |= PG_KR;

@@ -1,4 +1,4 @@
-/*	uba.c	4.14	%G%	*/
+/*	uba.c	4.15	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -275,13 +275,13 @@ ubareset(uban)
 	wakeup((caddr_t)&uh->uh_bdpwant);
 	wakeup((caddr_t)&uh->uh_mrwant);
 	switch (cpu) {
-#if VAX==780
+#if VAX780
 	case VAX_780:
 		printf("UBA RESET %d:", uban);
 		ubainit(uh->uh_uba);
 		break;
 #endif
-#if VAX==750
+#if VAX750
 	case VAX_750:
 		printf("UNIBUS INIT:");
 		mtpr(IUR, 1);

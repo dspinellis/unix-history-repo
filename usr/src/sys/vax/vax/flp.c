@@ -1,6 +1,6 @@
-/*	flp.c	4.2	%G%	*/
+/*	flp.c	4.3	%G%	*/
 
-#if VAX==780
+#if VAX780
 #include "../h/flp.h"
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -26,6 +26,12 @@ flopen(dev, flag)
 {
 	struct buf *geteblk();
 
+#if VAX750
+	if (cpu != VAX_780) {
+		u.u_error = ENXIO;
+		return;
+	}
+#endif
 	if (fltab.fl_state != 0) {
 		u.u_error = ENXIO;
 		return;
