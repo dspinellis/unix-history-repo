@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.13	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.14	%G%";
 
 #define SENDMAIL	"/usr/lib/sendmail"
 
@@ -358,8 +358,12 @@ FILE *f1, *f2;
 	let[nlet].adr = nextadr;	/* last plus 1 */
 }
 
-copylet(n, f, type) FILE *f;
-{	int ch, k;
+copylet(n, f, type)
+	FILE *f;
+{
+	int ch;
+	long k;
+
 	fseek(tmpf, let[n].adr, 0);
 	k = let[n+1].adr - let[n].adr;
 	while(k-- > 1 && (ch=fgetc(tmpf))!='\n')
@@ -633,13 +637,14 @@ char *fromaddr;
 	mask = umask(MAILMODE);
 	if (!safefile(file))
 		return(0);
+	lock(file);
 	malf = fopen(file, "a");
 	umask(mask);
 	if (malf == NULL) {
+		unlock();
 		fprintf(stdout, "mail: cannot append to %s\n", file);
 		return(0);
 	}
-	lock(file);
 	chown(file, pw->pw_uid, pw->pw_gid);
 	{
 		hp = gethostbyname("localhost");
