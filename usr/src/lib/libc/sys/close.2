@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)close.2	6.1 (Berkeley) %G%
+.\"	@(#)close.2	6.2 (Berkeley) %G%
 .\"
 .TH CLOSE 2 ""
 .UC 4
@@ -32,7 +32,7 @@ A close of all of a process's descriptors is automatic on
 but since
 there is a limit on the number of active descriptors per process,
 .I close
-is necessary for programs which deal with many descriptors.
+is necessary for programs that deal with many descriptors.
 .PP
 When a process forks (see
 .IR fork (2)),
@@ -50,7 +50,7 @@ before the
 is attempted, but if some of these descriptors will still
 be needed if the execve fails, it is necessary to arrange for them
 to be closed if the execve succeeds.
-For this reason, the call ``fcntl(d, F_SETFD, 1)'' is provided
+For this reason, the call ``fcntl(d, F_SETFD, 1)'' is provided,
 which arranges that a descriptor will be closed after a successful
 execve; the call ``fcntl(d, F_SETFD, 0)'' restores the default,
 which is to not close the descriptor.
