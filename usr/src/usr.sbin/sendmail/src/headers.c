@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -529,6 +529,10 @@ crackaddr(addr)
 		/* check for backslash escapes */
 		if (c == '\\')
 		{
+			/* arrange to quote the address */
+			if (cmtlev <= 0 && !qmode)
+				quoteit = TRUE;
+
 			if ((c = *p++) == '\0')
 			{
 				/* too far */
