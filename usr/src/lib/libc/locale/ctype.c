@@ -1,4 +1,4 @@
-/* @(#)ctype.c	4.2 (Berkeley) %G% */
+/* @(#)ctype.c	4.3 (Berkeley) %G% */
 #include	<ctype.h>
 
 char _ctype_[] = {
