@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.2";
+char id_fmt[] = "@(#)fmt.c	1.3";
  *
  * fortran format parser
  */
@@ -93,6 +93,7 @@ ne_d(s,p) char *s,**p;
 	case 'b':
 		switch(lcase(*(s+1)))
 		{
+			case '\0': op_gen(BN,cblank,0,0,s); break;
 			case 'z': s++; op_gen(BZ,1,0,0,s); break;
 			case 'n': s++;
 			default:  op_gen(BN,0,0,0,s); break;
