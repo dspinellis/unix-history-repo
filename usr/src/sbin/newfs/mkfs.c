@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.18 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.19 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -137,7 +137,13 @@ main(argc, argv)
 		    sblock.fs_bsize, sblock.fs_fsize);
 		exit(1);
 	}
-	sblock.fs_frag = sblock.fs_bsize / sblock.fs_fsize;
+	sblock.fs_bmask = ~(sblock.fs_bsize - 1);
+	sblock.fs_fmask = ~(sblock.fs_fsize - 1);
+	for (sblock.fs_bshift = 0, i = sblock.fs_bsize; i > 1; i >>= 1)
+		sblock.fs_bshift++;
+	for (sblock.fs_fshift = 0, i = sblock.fs_fsize; i > 1; i >>= 1)
+		sblock.fs_fshift++;
+	sblock.fs_frag = numfrags(&sblock, sblock.fs_bsize);
 	if (sblock.fs_frag > MAXFRAG) {
 		printf("fragment size %d is too small, minimum with block size %d is %d\n",
 		    sblock.fs_fsize, sblock.fs_bsize,
@@ -268,8 +274,8 @@ next:
 		    (sblock.fs_fpg / sblock.fs_cpg));
 		exit(1);
 	}
-	sblock.fs_cgsize = roundup(sizeof(struct cg) +
-	    howmany(sblock.fs_fpg, NBBY), sblock.fs_fsize);
+	sblock.fs_cgsize = fragroundup(&sblock,
+	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY));
 	/*
 	 * Compute/validate number of cylinder groups.
 	 */
@@ -309,7 +315,7 @@ next:
 	sblock.fs_csaddr = cgdmin(&sblock, 0);
 	sblock.fs_cssize = sblock.fs_ncg * sizeof(struct csum);
 	fscs = (struct csum *)
-	    calloc(1, roundup(sblock.fs_cssize, sblock.fs_bsize));
+	    calloc(1, blkroundup(&sblock, sblock.fs_cssize));
 	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
 	sblock.fs_minfree = MINFREE;
@@ -351,7 +357,7 @@ next:
 	sblock.fs_time = utime;
 	wtfs(SBLOCK, SBSIZE, (char *)&sblock);
 	for (i = 0; i < sblock.fs_cssize; i += sblock.fs_bsize)
-		wtfs(fsbtodb(&sblock, sblock.fs_csaddr + i / sblock.fs_fsize),
+		wtfs(fsbtodb(&sblock, sblock.fs_csaddr + numfrags(&sblock, i)),
 			sblock.fs_bsize, ((char *)fscs) + i);
 	/* 
 	 * Write out the duplicate super blocks
@@ -420,7 +426,7 @@ initcg(cylno)
 	lseek(fso, fsbtodb(&sblock, cgimin(&sblock, cylno)) * DEV_BSIZE, 0);
 	if (write(fso, (char *)zino, sblock.fs_ipg * sizeof (struct dinode)) !=
 	    sblock.fs_ipg * sizeof (struct dinode))
-		printf("write error %D\n", tell(fso) / sblock.fs_bsize);
+		printf("write error %D\n", numfrags(&sblock, tell(fso)));
 	for (i = 0; i < MAXCPG; i++) {
 		acg.cg_btot[i] = 0;
 		for (j = 0; j < NRPOS; j++)
@@ -544,8 +550,8 @@ alloc(size, mode)
 	int i, frag;
 	daddr_t d;
 
-	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)),
-		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
+	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
+	    (char *)&acg);
 	if (acg.cg_cs.cs_nbfree == 0) {
 		printf("first cylinder group ran out of space\n");
 		return (0);
@@ -576,8 +582,8 @@ goth:
 		for (i = frag; i < sblock.fs_frag; i++)
 			setbit(acg.cg_free, d+i);
 	}
-	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)),
-		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
+	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
+	    (char *)&acg);
 	return (d);
 }
 
@@ -592,12 +598,12 @@ iput(ip)
 	int c;
 
 	c = itog(&sblock, ip->i_number);
-	rdfs(fsbtodb(&sblock, cgtod(&sblock, c)),
-		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
+	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
+	    (char *)&acg);
 	acg.cg_cs.cs_nifree--;
 	setbit(acg.cg_iused, ip->i_number);
-	wtfs(fsbtodb(&sblock, cgtod(&sblock, c)),
-		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
+	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
+	    (char *)&acg);
 	sblock.fs_cstotal.cs_nifree--;
 	fscs[0].cs_nifree--;
 	if(ip->i_number >= sblock.fs_ipg * sblock.fs_ncg) {

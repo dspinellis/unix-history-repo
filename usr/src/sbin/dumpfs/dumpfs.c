@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.11 (Berkeley) %G%";
 
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -31,33 +31,27 @@ main(argc, argv)
 	lseek(0, SBLOCK * DEV_BSIZE, 0);
 	if (read(0, &afs, SBSIZE) != SBSIZE)
 		perror(argv[1]), exit(1);
-	printf("magic\t%x\n", afs.fs_magic);
-	printf("bblkno\t%d\n", afs.fs_bblkno);
-	printf("sblkno\t%d\n", afs.fs_sblkno);
-	printf("cblkno\t%d\n", afs.fs_cblkno);
-	printf("iblkno\t%d\n", afs.fs_iblkno);
-	printf("dblkno\t%d\n", afs.fs_dblkno);
-	printf("time\t%s", ctime(&afs.fs_time));
-	printf("size\t%d\n", afs.fs_size);
-	printf("blocks\t%d\n", afs.fs_dsize);
-	printf("ncg\t%d\n", afs.fs_ncg);
-	printf("bsize\t%d\n", afs.fs_bsize);
-	printf("fsize\t%d\n", afs.fs_fsize);
-	printf("frag\t%d\n", afs.fs_frag);
-	printf("minfree\t%d%%\n", afs.fs_minfree);
-	printf("rotdelay %dms\n", afs.fs_rotdelay);
-	printf("rps\t%d\n", afs.fs_rps);
-	printf("csaddr\t%d\n", afs.fs_csaddr);
-	printf("cssize\t%d\n", afs.fs_cssize);
-	printf("cgsize\t%d\n", afs.fs_cgsize);
-	printf("ntrak\t%d\nnsect\t%d\nspc\t%d\nncyl\t%d\n",
+	printf("magic\t%x\ttime\t%s", afs.fs_magic, ctime(&afs.fs_time));
+	printf("bblkno\t%d\tsblkno\t%d\n", afs.fs_bblkno, afs.fs_sblkno);
+	printf("cblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
+	    afs.fs_cblkno, afs.fs_iblkno, afs.fs_dblkno);
+	printf("ncg\t%d\tsize\t%d\tblocks\t%d\tcgsize\t%d\n",
+	    afs.fs_ncg, afs.fs_size, afs.fs_dsize, afs.fs_cgsize);
+	printf("bsize\t%d\tshift\t%d\tmask\t0x%08x\n",
+	    afs.fs_bsize, afs.fs_bshift, afs.fs_bmask);
+	printf("fsize\t%d\tshift\t%d\tmask\t0x%08x\n",
+	    afs.fs_fsize, afs.fs_fshift, afs.fs_fmask);
+	printf("frag\t%d\tminfree\t%d%%\n", afs.fs_frag, afs.fs_minfree);
+	printf("rotdelay %dms\trps\t%d\n", afs.fs_rotdelay, afs.fs_rps);
+	printf("csaddr\t%d\tcssize\t%d\n", afs.fs_csaddr, afs.fs_cssize);
+	printf("ntrak\t%d\tnsect\t%d\tspc\t%d\tncyl\t%d\n",
 	    afs.fs_ntrak, afs.fs_nsect, afs.fs_spc, afs.fs_ncyl);
-	printf("cpg\t%d\nbpg\t%d\nfpg\t%d\nipg\t%d\n",
+	printf("cpg\t%d\tbpg\t%d\tfpg\t%d\tipg\t%d\n",
 	    afs.fs_cpg, afs.fs_fpg / afs.fs_frag, afs.fs_fpg, afs.fs_ipg);
-	printf("ndir\t%d\nnffree\t%d\nnbfree\t%d\nnifree\t%d\n",
-	    afs.fs_cstotal.cs_ndir, afs.fs_cstotal.cs_nffree,
-	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_nifree);
-	printf("cgrotor\t%d\nfmod\t%d\nronly\t%d\n",
+	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
+	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_ndir,
+	    afs.fs_cstotal.cs_nifree, afs.fs_cstotal.cs_nffree);
+	printf("cgrotor\t%d\tfmod\t%d\tronly\t%d\n",
 	    afs.fs_cgrotor, afs.fs_fmod, afs.fs_ronly);
 	if (afs.fs_cpc != 0)
 		printf("blocks available in each rotational position");
@@ -113,18 +107,19 @@ dumpcg(c)
 
 	printf("\ncg %d:\n", c);
 	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * DEV_BSIZE, 0);
-	printf("tell\t%x\n", tell(0));
+	i = tell(0);
 	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
 		printf("\terror reading cg\n");
 		return;
 	}
-	printf("magic\t%x\ntime\t%s", acg.cg_magic, ctime(&acg.cg_time));
-	printf("cgx\t%d\nncyl\t%d\nniblk\t%d\nndblk\t%d\n",
+	printf("magic\t%x\ttell\t%x\ttime\t%s",
+	    acg.cg_magic, i, ctime(&acg.cg_time));
+	printf("cgx\t%d\tncyl\t%d\tniblk\t%d\tndblk\t%d\n",
 	    acg.cg_cgx, acg.cg_ncyl, acg.cg_niblk, acg.cg_ndblk);
-	printf("nifree\t%d\nndir\t%d\nnffree\t%d\nnbfree\t%d\n",
-	    acg.cg_cs.cs_nifree, acg.cg_cs.cs_ndir,
-	    acg.cg_cs.cs_nffree, acg.cg_cs.cs_nbfree);
-	printf("rotor\t%d\nirotor\t%d\nfrotor\t%d\nfrsum",
+	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
+	    acg.cg_cs.cs_nbfree, acg.cg_cs.cs_ndir,
+	    acg.cg_cs.cs_nifree, acg.cg_cs.cs_nffree);
+	printf("rotor\t%d\tirotor\t%d\tfrotor\t%d\nfrsum",
 	    acg.cg_rotor, acg.cg_irotor, acg.cg_frotor);
 	for (i = 1, j = 0; i < afs.fs_frag; i++) {
 		printf("\t%d", acg.cg_frsum[i]);
@@ -153,7 +148,7 @@ pbits(cp, max)
 	for (i = 0; i < max; i++)
 		if (isset(cp, i)) {
 			if (count)
-				printf(",%s", count %10 == 9 ? "\n\t" : " ");
+				printf(",%s", count %9 == 8 ? "\n\t" : " ");
 			count++;
 			printf("%d", i);
 			j = i;
