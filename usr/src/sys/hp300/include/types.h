@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.6 (Berkeley) %G%
+ *	@(#)types.h	7.7 (Berkeley) %G%
  */
 
 #ifndef	_MACHTYPES_H_
@@ -28,14 +28,14 @@
 #define	_VA_LIST_	char *			/* va_list */
 #define	_WCHAR_T_	unsigned short		/* wchar_t */
 
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#if defined(KERNEL)
 typedef struct _physadr {
 	short r[1];
 } *physadr;
 typedef struct label_t {		/* consistent with HP-UX */
 	int val[15];
 } label_t;
-typedef	unsigned long	vm_offset_t;
-typedef	unsigned long	vm_size_t;
+typedef	u_long	vm_offset_t;
+typedef	u_long	vm_size_t;
 #endif
 #endif	/* _MACHTYPES_H_ */
