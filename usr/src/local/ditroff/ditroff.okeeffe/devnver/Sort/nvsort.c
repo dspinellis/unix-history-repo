@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)nvsort.c	1.2 (CWI) 86/11/26";
+static char sccsid[] = "@(#)nvsort.c	1.3 (CWI) 86/11/26";
 #endif
 /* 
  * from (Berkeley):
@@ -66,8 +66,6 @@ int	down	= 0;	/* # of pixels that the current size will hang down */
 int	font	= 1;	/* current font */
 char *	fontdir = FONTDIR;	/* place to find DESC.out file	*/
 int	inch	= 200;	/* resolution of the device, in inches	*/
-
-/* #ifdef BERK		/* leave this one in for now */
 int	thick	= 3;	/* line thickness */
 
 #ifdef BERK
@@ -75,9 +73,6 @@ int	stip	= 1;	/* current stipple */
 int	style	= -1;	/* line style bit-mask */
 #endif BERK
 
-#ifndef BERK
-int	started;	/* see or we started */
-#endif
 
 int	hpos	= 0;	/* horizontal position to be at next (left = 0) */
 int	vpos	= 0;	/* current vertical position (down positive) */
@@ -100,6 +95,7 @@ struct vlist {
 	unsigned short	d;	/* depth of height */
 	unsigned short	s;	/* point size */
 	unsigned char	f;	/* font number */
+	unsigned short  x;	/* set if this span starts with `x' command */
 	char	*p;		/* text pointer to this spread */
 };
 
@@ -130,6 +126,8 @@ char *argv[];
 	vlp->st = style;
 #endif BERK
 	vlp->t = thick;
+	/* we don't need added HxxVxxfxsxx for first span */
+	vlp->x++;
 
 	while (argc > 1 && **++argv == '-') {
 	    switch ((*argv)[1]) {
@@ -550,10 +548,6 @@ register FILE *fp;
 			startspan(vpos);
 			t_page(ngetnumber(fp));
 			vpos = 0;
-#ifndef BERK
-			if(!started)
-				started++;
-#endif BERK
 			break;
 		case 'n':	/* end of line */
 			hpos = leftmarg;
@@ -592,12 +586,8 @@ FILE *fp;		/* returns -1 apon recieving "stop" command */
 	int c, n, t1, t2;
 
 	fscanf(fp, "%s", str);
-	switch (str[0]) {	/* crude for now */
+	switch (str[0]) {
 	case 'r':	/* resolution assumed when prepared */
-		/*
-		fscanf(fp, "%d", &inRES);
-		if (n!=RES) error(FATAL,"Input computed for wrong printer");
-		 */
 		fscanf(fp, "%d %d %d", &inch, &t1, &t2);
 		sprintf(str1, "x res %d %d %d", inch, t1, t2); 
 		break;
@@ -607,12 +597,7 @@ FILE *fp;		/* returns -1 apon recieving "stop" command */
 	}
 
 	startspan(vpos);
-	/*
-	*op++ = c;
-	do
-	    *op++ = c = getc(fp);
-	while (c != '\n' && c != EOF);
-	 */
+	vlp->x++;		/* yes, this is an x command */
 	p = str1;
 	while (*p)
 		*op++ = *p++;
@@ -737,20 +722,11 @@ oflush()	/* sort, then dump out contents of obuf */
 		if(dbg>1)fprintf(stderr,"oflush: u=%d, d=%d,%.60s\n",vp->u,vp->d,vp->p);
 #endif DEBUGABLE
 		if (vp->u <= botv && vp->d >= topv) {
-#ifdef BERK
-		    printf("H%dV%ds%df%d\ni%d\nDs%d\nDt%d\n%s",
-			 vp->h,vp->v,vp->s,vp->f,vp->l,vp->st,vp->t,vp->p);
-#else
-		if(started)
-		    printf("H%dV%ds%df%d\n%s", vp->h,vp->v,vp->s,vp->f,vp->p);
-		else
-		    /*
-		     * only the real string to put out, else dver
-		     * complains since it didn't got an "x init
-		     * command", so it doen't know about any font yet
-		     */
-		    printf("%s", vp->p);
-#endif BERK
+			if(vp->x)	/* doesn't need position, etc.		*/
+			    printf("%s", vp->p);
+			else
+			    printf("H%dV%ds%df%d\n%s", 
+					vp->h,vp->v,vp->s,vp->f,vp->p);
 		}
 		notdone |= vp->d > botv;	/* not done if there's still */
 	    }					/* something to put lower */
@@ -773,6 +749,7 @@ oflush()	/* sort, then dump out contents of obuf */
 	vlp->st = style;
 #endif BERK
 	vlp->t = thick;
+	vlp->x = 0;
 	*op = 0;
 	nvlist = 1;
 }
@@ -893,6 +870,7 @@ register int n;
 	vlp->st = style;
 #endif BERK
 	vlp->t = thick;
+	vlp->x = 0;
 	nvlist++;
 }
 
