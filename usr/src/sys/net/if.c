@@ -1,4 +1,4 @@
-/*	if.c	6.5	84/04/13	*/
+/*	if.c	6.5	84/08/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
