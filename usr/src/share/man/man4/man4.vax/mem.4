@@ -1,51 +1,78 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)mem.4	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH MEM 4 ""
-.UC 4
-.SH NAME
-mem, kmem \- main memory
-.SH DESCRIPTION
-.lg
-.I Mem
-is a special file that is an image of the main memory
-of the computer.
-It may be used, for example, to examine
-(and even to patch) the system.
-.PP
-Byte addresses in
-.I mem
-are interpreted as physical memory addresses.
-References to non-existent locations cause errors to be returned.
-.PP
+.\"     @(#)mem.4	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEM 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm mem ,
+.Nm kmem ,
+.Nm kUmem
+.Nd memory files
+.Sh DESCRIPTION
+The special file
+.Nm /dev/mem
+is an interface to the physical memory of the computer.
+Byte offsets in this file are interpreted as physical memory addresses.
+Reading and writing this file is equivalent to reading and writing
+memory itself.
+Only offsets within the bounds of
+.Nm /dev/mem
+are allowed.
+.Pp
+Kernel virtual memory is accessed through the interface
+.Nm /dev/kmem
+in the same manner as
+.Nm /dev/mem .
+Only kernel virtual addresses that are currently mapped to memory are allowed.
+.Pp
 The file
-.I kmem
-is the same as 
-.I mem
-except that kernel virtual memory
-rather than physical memory is accessed.
-Only kernel virtual addresses that are mapped to memory are allowed.
-The file
-.I kUmem
+.Nm /dev/kUmem
 also refers to kernel virtual memory,
-but may be used to access areas mapped to UNIBUS address space
-and other I/O areas.
+but may be used to access areas mapped to
+.Tn UNIBUS
+address space
+and other
+.Tn I/O
+areas.
 It forces all accesses to use word (short integer) accesses.
-Examining and patching device registers is likely
-to lead to unexpected results when read-only or write-only
-bits are present.
-.PP
-On VAX 11/780 the I/O space begins at physical address 20000000(16);
-on an 11/750 I/O space addresses are of the form fxxxxx(16).
-On all VAX'en
-per-process data for the current process is UPAGES long, and ends at virtual
-address 80000000(16).
-.SH FILES
-/dev/mem
-.br
-/dev/kmem
-.br
-/dev/kUmem
+.Pp
+On the
+.Tn VAX
+11/780,
+the
+.Tn I/O
+space base address is
+20000000(16);
+on an 11/750
+the
+.Tn I/O space addresses are of the form fxxxxx(16).
+On all
+.Tn VAX Ns 'en
+the
+per-process data
+size
+for the current process
+is
+.Dv UPAGES
+long and ends at the virtual address 80000000(16).
+.Sh FILES
+.Bl -tag -width Pa -compact
+.It Pa /dev/mem
+.It Pa /dev/kmem
+.It Pa /dev/kUmem
+.El
+.Sh HISTORY
+The
+.Nm mem ,
+.Nm kmem
+files appeared in
+.At v6 .
+The file
+.Nm kUmem
+appeared in
+.Bx 3.0 .

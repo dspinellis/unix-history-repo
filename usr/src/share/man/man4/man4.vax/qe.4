@@ -1,36 +1,59 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)qe.4	6.3 (Berkeley) %G%
+.\"     @(#)qe.4	6.4 (Berkeley) %G%
 .\"
-.TH QE 4 ""
-.UC 6
-.SH NAME
-qe \- DEC DEQNA Q-bus 10 Mb/s Ethernet interface
-.SH SYNOPSIS
-.B "device qe0 at uba? csr 174440 vector qeintr"
-.SH DESCRIPTION
+.Dd 
+.Dt QE 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm qe
+.Nd
+.Tn DEC DEQNA
+.Tn Q-bus
+10 Mb/s Ethernet interface
+.Sh SYNOPSIS
+.Cd "device qe0 at uba? csr 174440 vector qeintr"
+.Sh DESCRIPTION
 The
-.B qe
+.Nm qe
 interface provides access to a 10 Mb/s Ethernet network through
-the DEC DEQNA Q-bus controller.
-.PP
+the
+.Tn DEC DEQNA
+.Tn Q-bus
+controller.
+.Pp
 Each of the host's network addresses
-is specified at boot time with an SIOCSIFADDR
-ioctl.  The
-.B qe
+is specified at boot time with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .
+The
+.Nm qe
 interface employs the address resolution protocol described in
-arp(4)
+.Xr arp 4
 to map dynamically  between Internet and Ethernet addresses on the local
 network.
-.PP
-The interface normally tries to use a ``trailer'' encapsulation
+.Pp
+The interface normally tries to use a
+.Dq trailer
+encapsulation
 to minimize copying data on input and output.
-The use of trailers is negotiated with ARP.
+The use of trailers is negotiated with
+.Tn ARP .
 This negotiation may be disabled, on a per-interface basis,
-by setting the IFF_NOTRAILERS
-flag with an SIOCSIFFLAGS ioctl.
-.SH "SEE ALSO"
-netintro(4), inet(4), arp(4)
+by setting the
+.Dv IFF_NOTRAILERS
+flag with an
+.Dv SIOCSIFFLAGS
+.Xr ioctl .
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4 ,
+.Xr arp 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

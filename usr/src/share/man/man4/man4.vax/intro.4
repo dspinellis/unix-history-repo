@@ -1,75 +1,107 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)intro.4	6.5 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH INTRO 4 ""
-.UC 4
-.SH NAME
-intro \- introduction to special files and hardware support
-.SH DESCRIPTION
+.\"     @(#)intro.4	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INTRO 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm intro
+.Nd introduction to special files and hardware support
+.Sh DESCRIPTION
 This section describes the special files, related driver functions,
 and networking support
 available in the system.
-In this part of the manual, the SYNOPSIS section of
+In this part of the manual, the
+.Tn SYNOPSIS
+section of
 each configurable device gives a sample specification
 for use in constructing a system description for the
-.IR config (8)
+.Xr config 8
 program.
-The DIAGNOSTICS section lists messages which may appear on the console
+The
+.Tn DIAGNOSTICS
+section lists messages which may appear on the console
 and/or in the system error log
-.I /var/log/messages
+.Pa /var/log/messages
 due to errors in device operation;
 see
-.IR syslogd (8)
+.Xr syslogd 8
 for more information.
-.SH "VAX DEVICE SUPPORT"
-This section describes the hardware supported on the DEC VAX-11.
+.Sh VAX DEVICE SUPPORT
+This section describes the hardware supported on the
+.Tn DEC
+.Tn VAX-11 .
 Software support for these devices comes in two forms.  A hardware
 device may be supported with a character or block
-.IR "device driver" ,
+.Em device driver ,
 or it may be used within the networking subsystem and have a
-.IR "network interface driver" .
+.Em network interface driver .
 Block and character devices are accessed through files in the file
-system of a special type; c.f.
-.IR mknod (8).
+system of a special type; see
+.Xr physio 4
+and
+.Xr mknod 8 .
 Network interfaces are indirectly accessed through the interprocess
 communication facilities provided by the system; see
-.IR socket (2).
-.PP
+.Xr socket 2 .
+.Pp
 A hardware device is identified to the system at configuration time
 and the appropriate device or network interface driver is then compiled
 into the system.  When the resultant system is booted, the
 autoconfiguration facilities in the system probe for the device
-on either the UNIBUS (or Q-bus) or MASSBUS and, if found, enable the software
-support for it.  If a UNIBUS device does not respond at autoconfiguration
+on either the
+.Tn UNIBUS
+(or
+.Tn Q-bus )
+or
+.Tn MASSBUS
+and, if found, enable the software
+support for it.  If a
+.Tn UNIBUS
+device does not respond at autoconfiguration
 time it is not accessible at any time afterwards.  To
-enable a UNIBUS device which did not autoconfigure, the system will have to
+enable a
+.Tn UNIBUS
+device which did not autoconfigure, the system will have to
 be rebooted.  If a
-MASSBUS device comes ``on-line'' after the autoconfiguration sequence
+.Tn MASSBUS
+device comes
+.Dq on-line
+after the autoconfiguration sequence
 it will be dynamically autoconfigured into the running system.
-.PP
+.Pp
 The autoconfiguration system is described in
-.IR autoconf (4).
+.Xr autoconf 4 .
 A list of the supported devices is given below.
-.SH SEE ALSO
-intro(4), netintro(4), autoconf(4), config(8).
-.PP
-Building 4.3BSD UNIX Systems with \fIConfig\fP (SMM:2)
-.SH "LIST OF DEVICES"
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr netintro 4 ,
+.Xr autoconf 4 ,
+.Xr config 8 .
+.Rs
+.%T "Building 4.3 BSD UNIX Systems with Config"
+.%B SMM
+.%N 2
+.Re
+.Sh LIST OF DEVICES
 The devices listed below are supported in this incarnation of
 the system.  Pseudo-devices are not listed.
 Devices are indicated by their functional interface.
 If second vendor products provide functionally identical interfaces
 they should be usable with the supplied software.
-(\fBBeware, however, that we promise the software works
-ONLY with the hardware indicated on the appropriate manual page.\fP)
+.Bf -symbolic
+Beware,
+however, that we promise the software works
+ONLY with the hardware indicated on the appropriate manual page.
+.Ef
 Occasionally, new devices of a similar type may be added
 simply by creating appropriate table entries in the driver.
-.sp
-.ta 1.0i
-.nf
+.Pp
+.Bl -column tmscp -offset indent
 acc	ACC LH/DH IMP communications interface
 ad	Data translation A/D interface
 css	DEC IMP-11A communications interface
@@ -116,3 +148,9 @@ uu	TU58 dual cassette drive interface (DL11)
 va	Benson-Varian printer/plotter interface
 vp	Versatec printer/plotter interface
 vv	Proteon proNET 10Mb/s and 80Mb/s ring network interface
+.El
+.Sh HISTORY
+The section 4
+.Nm intro
+appeared in
+.Bx 4.1 .

@@ -1,71 +1,102 @@
-.\" Copyright (c) 1988 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1988, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)dmv.4	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH DMV 4 ""
-.UC 6
-.SH NAME
-dmv \- DEC DMV-11 point-to-point communications device
-.SH SYNOPSIS
-.B "device dmv0 at uba0 csr 167000 vector dmvrint dmvxint"
-.SH DESCRIPTION
+.\"     @(#)dmv.4	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DMV 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm dmv
+.Nd
+.Tn DEC
+.Tn DMV-11
+point-to-point communications device
+.Sh SYNOPSIS
+.Cd "device dmv0 at uba0 csr 167000 vector dmvrint dmvxint"
+.Sh DESCRIPTION
 The
-.I dmv
+.Nm dmv
 interface provides access to a point-to-point communications
-device which runs at up to 56 Kb/s.  DMV-11's communicate
-using the DEC DDCMP link layer protocol.
-.PP
-The host's address must be specified with an SIOCSIFADDR ioctl,
-and the destination address specified with a SIOCSIFDSTADDR ioctl,
+device which runs at up to 56 Kb/s.
+.Tn DMV-11 Ns s
+communicate
+using the
+.Tn DEC
+.Tn DDCMP
+link layer protocol.
+.Pp
+The host's address must be specified with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 ,
+and the destination address specified with a
+.Dv SIOCSIFDSTADDR
+.Xr ioctl ,
 before the interface will transmit or receive any packets.
-.SH ROUTING
-The driver places a HOST entry in the kernel routing tables for the
-address given in the SIOCSIFDSTADDR ioctl.  To use the DMV as a
+.Sh ROUTING
+The driver places a
+.Tn HOST
+entry in the kernel routing tables for the
+address given in the
+.Dv SIOCSIFDSTADDR
+.Xr ioctl .
+To use the
+.Tn DMV
+as a
 link between local nets, the route to the remote net must be added manually
 with the
-.IR route (8)
+.Xr route 8
 command, or by the use of the routing process
-.IR routed (8)
+.Xr routed 8
 on each end of the link.
-.SH DIAGNOSTICS
-.BR "dmvprobe: can't start device"
-.BR "dmvprobe: device init failed, bsel4=%o, bsel6=%o"
+.Sh DIAGNOSTICS
+.Bl -diag
+.It dmvprobe: can't start device.
+.It "dmvprobe: device init failed, bsel4=%o, bsel6=%o."
 The probe routine was unable to start the device.
-.PP
-.BR "dmvinit: dmv%d not running"
-.BR "dmvrestart: can't start device"
-.BR "dmv%d: device init failed, bsel4=%o, bsel6=%o"
+.Pp
+.It dmvinit: dmv%d not running.
+.It dmvrestart: can't start device.
+.It "dmv%d: device init failed, bsel4=%o, bsel6=%o."
 The initialization/restart routine was unable to start the device.
-.PP
-.BR "dmv%d: far end on-line"
+.Pp
+.It dmv%d: far end on-line.
 The other end of the connection has come online.
-.PP
-.BR "dmv%d: far end restart"
+.Pp
+.It dmv%d: far end restart.
 The other end of the line has restarted.
-.PP
-.BR "dmv%d: bad control %o" .
+.Pp
+.It dmv%d: bad control %o.
 A bad parameter was passed to the
-.I dmvload
+.Em dmvload
 routine.
-.PP
-.BR "dmvxint: dmv%d bad rcv pkt addr 0x%x len 0x%x"
+.Pp
+.It "dmvxint: dmv%d bad rcv pkt addr 0x%x len 0x%x."
 A bad packet was received.
-.PP
-.BR "dmv%d: bad packet address 0x%x"
+.Pp
+.It "dmv%d: bad packet address 0x%x."
 An input packet was received which contained a type of
 address unknown to the driver.
-.PP
-.BR "dmvxint: dmv%d unallocated packet 0x%x"
+.Pp
+.It "dmvxint: dmv%d unallocated packet 0x%x."
 A protocol error has occured with the board.
-.PP
-.BR "dmvoutput, dmv%d can't handle af%d"
+.Pp
+.It "dmvoutput, dmv%d can't handle af%d."
 A packet for an unsupported address family has been sent.
-.PP
-.BR "dmv%d: output timeout, bsel0=%b bsel2=%b"
+.Pp
+.It "dmv%d: output timeout, bsel0=%b bsel2=%b."
 A device timeout occurred.
-.PP
+.El
+.Pp
 Numerous other device errors may be displayed.
-.SH SEE ALSO
-dmc(4), intro(4N), inet(4F)
+.Sh SEE ALSO
+.Xr dmc 4 ,
+.Xr intro 4 ,
+.Xr inet 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 tahoe .

@@ -1,21 +1,33 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)lp.4	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH LP 4 ""
-.UC 7
-.SH NAME
-lp \- line printer
-.SH SYNOPSIS
-device lp on the VIOC-P
-.SH DESCRIPTION
-.I Lp
-provides the interface to 4 serial
+.\"     @(#)lp.4	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LP 4 tahoe
+.Os 4.3t
+.Sh NAME
+.Nm lp
+.Nd line printer
+.Sh SYNOPSIS
+device lp on the
+.Tn VIOC-P
+.Sh DESCRIPTION
+The
+.Nm lp
+driver provides an interface to 4 serial
 printer lines.
-.SH FILES
-/dev/lp
-.SH "SEE ALSO"
-lpr(1),
-vioc(4)
+.Sh FILES
+.Bl -tag -width /dev/lpxx
+.It Pa /dev/lp
+.El
+.Sh SEE ALSO
+.Xr lpr 1 ,
+.Xr vioc 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 tahoe .

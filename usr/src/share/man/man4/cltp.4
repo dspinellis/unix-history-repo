@@ -1,74 +1,106 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)cltp.4	6.1 (Berkeley) %G%
+.\"     @(#)cltp.4	6.2 (Berkeley) %G%
 .\"
-.TH CLTP 4 ""
-.UC 5
-.SH NAME
-cltp \- ISO Connectionless Transport Protocol
-.SH SYNOPSIS
-.B #include <sys/socket.h>
-.br
-.B #include <netiso/iso.h>
-.PP
-.B s = socket(AF_ISO, SOCK_DGRAM, 0);
-.SH DESCRIPTION
-CLTP is a simple, unreliable datagram protocol which is accessed
-via the SOCK_DGRAM abstraction for the ISO
-protocol family.  CLTP sockets are connectionless, and are
+.Dd 
+.Dt CLTP 4
+.Os
+.Sh NAME
+.Nm cltp
+.Nd
+.Tn ISO
+Connectionless Transport Protocol
+.Sh SYNOPSIS
+.Fd #include <sys/socket.h>
+.Fd #include <netiso/iso.h>
+.Ft int
+.Fn socket AF_ISO SOCK_DGRAM 0
+.Sh DESCRIPTION
+.Tn CLTP
+is a simple, unreliable datagram protocol which is accessed
+via the
+.Dv SOCK_DGRAM
+abstraction for the
+.Tn ISO
+protocol family.
+.Tn CLTP
+sockets are connectionless, and are
 normally used with the
-.I sendto 
+.Xr sendto
 and
-.IR recvfrom 
+.Xr recvfrom
 calls, though the
-.IR connect (2)
+.Xr connect 2
 call may also be used to fix the destination for future
 packets (in which case the 
-.IR recv (2)
+.Xr recv 2
 or
-.IR read (2)
+.Xr read 2
 and 
-.IR send (2)
+.Xr send 2
 or
-.IR write(2)
+.Xr write 2
 system calls may be used).
-.PP
-CLTP address formats are identical to those used by TP.
-In particular CLTP provides a service selector in addition
-to the normal ISO NSAP.  Note that the CLTP selector
-space is separate from the TP selector space (i.e. a CLTP selector
-may not be \*(lqconnected\*(rq to a TP selector).
-.PP
-Options at the CLNP network level may be used with CLTP; see
-.IR clnp (4).
-.SH DIAGNOSTICS
+.Pp
+.Tn CLTP
+address formats are identical to those used by TP.
+In particular
+.Tn CLTP
+provides a service selector in addition
+to the normal
+.Tn ISO NSAP .
+Note that the
+.Tn CLTP
+selector
+space is separate from the TP selector space (i.e. a
+.Tn CLTP
+selector
+may not be
+.Dq connected
+to a TP selector).
+.Pp
+Options at the
+.Tn CLNP
+network level may be used with
+.Tn CLTP ;
+see
+.Xr clnp 4 .
+.Sh DIAGNOSTICS
 A socket operation may fail with one of the following errors returned:
-.TP 15
-[EISCONN]
+.Bl -tag -width [EADDRNOTAVAIL]
+.It Bq Er EISCONN
 when trying to establish a connection on a socket which
 already has one, or when trying to send a datagram with the destination
 address specified and the socket is already connected;
-.TP 15
-[ENOTCONN]
+.It Bq Er ENOTCONN
 when trying to send a datagram, but
 no destination address is specified, and the socket hasn't been
 connected;
-.TP 15
-[ENOBUFS]
+.It Bq Er ENOBUFS
 when the system runs out of memory for
 an internal data structure;
-.TP 15
-[EADDRINUSE]
+.It Bq Er EADDRINUSE
 when an attempt
 is made to create a socket with a selector which has already been
 allocated;
-.TP 15
-[EADDRNOTAVAIL]
+.It Bq Er EADDRNOTAVAIL
 when an attempt is made to create a 
 socket with a network address for which no network interface
 exists.
-.SH SEE ALSO
-getsockopt(2), recv(2), send(2), socket(2), intro(4), iso(4), clnp(4)
+.El
+.Sh SEE ALSO
+.Xr getsockopt 2 ,
+.Xr recv 2 ,
+.Xr send 2 ,
+.Xr socket 2 ,
+.Xr intro 4 ,
+.Xr iso 4 ,
+.Xr clnp 4
+.Sh HISTORY
+The
+.Nm
+protocol implementation
+.Ud

@@ -1,136 +1,164 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)spp.4	1.4 (Berkeley) %G%
+.\"     @(#)spp.4	1.5 (Berkeley) %G%
 .\"
-.TH SPP 4 ""
-.UC 6
-.SH NAME
-spp \- Xerox Sequenced Packet Protocol
-.SH SYNOPSIS
-.B #include <sys/socket.h>
-.br
-.B #include <netns/ns.h>
-.br
-.B s = socket(AF_NS, SOCK_STREAM, 0);
-.PP
-.B #include <netns/sp.h>
-.br
-.B s = socket(AF_NS, SOCK_SEQPACKET, 0);
-.SH DESCRIPTION
-The SPP protocol provides reliable, flow-controlled, two-way
+.Dd 
+.Dt SPP 4
+.Os BSD 4.3
+.Sh NAME
+.Nm spp
+.Nd Xerox Sequenced Packet Protocol
+.Sh SYNOPSIS
+.Fd #include <sys/socket.h>
+.Fd #include <netns/ns.h>
+.Fd #include <netns/sp.h>
+.Ft int
+.Fn socket AF_NS SOCK_STREAM 0
+.Ft int
+.Fn socket AF_NS SOCK_SEQPACKET 0
+.Sh DESCRIPTION
+The
+.Tn SPP
+protocol provides reliable, flow-controlled, two-way
 transmission of data.  It is a byte-stream protocol used to
-support the SOCK_STREAM abstraction.  SPP uses the standard
-NS(tm) address formats.
-.PP
-Sockets utilizing the SPP protocol are either \*(lqactive\*(rq or
-\*(lqpassive\*(rq.  Active sockets initiate connections to passive
-sockets.  By default SPP sockets are created active; to create a
+support the
+.Dv SOCK_STREAM
+abstraction.
+.Tn SPP
+uses the standard
+.Tn NS Ns (tm)
+address formats.
+.Pp
+Sockets utilizing the
+.Tn SPP
+protocol are either
+.Dq active
+or
+.Dq passive .
+Active sockets initiate connections to passive
+sockets.  By default
+.Tn SPP
+sockets are created active; to create a
 passive socket the
-.IR listen (2)
+.Xr listen 2
 system call must be used
 after binding the socket with the
-.IR bind (2)
+.Xr bind 2
 system call.  Only
 passive sockets may use the 
-.IR accept (2)
+.Xr accept 2
 call to accept incoming connections.  Only active sockets may
 use the
-.IR connect (2)
+.Xr connect 2
 call to initiate connections.
-.PP
-Passive sockets may \*(lqunderspecify\*(rq their location to match
+.Pp
+Passive sockets may
+.Dq underspecify
+their location to match
 incoming connection requests from multiple networks.  This
-technique, termed \*(lqwildcard addressing\*(rq, allows a single
+technique, termed
+.Dq wildcard addressing ,
+allows a single
 server to provide service to clients on multiple networks.
-To create a socket which listens on all networks, the NS
+To create a socket which listens on all networks, the
+.Tn NS
 address of all zeroes must be bound.
-The SPP port may still be specified
+The
+.Tn SPP
+port may still be specified
 at this time; if the port is not specified the system will assign one.
 Once a connection has been established the socket's address is
 fixed by the peer entity's location.   The address assigned the
 socket is the address associated with the network interface
 through which packets are being transmitted and received.  Normally
 this address corresponds to the peer entity's network.
-.LP
-If the SOCK_SEQPACKET socket type is specified,
+.Pp
+If the
+.Dv SOCK_SEQPACKET
+socket type is specified,
 each packet received has the actual 12 byte sequenced packet header
 left for the user to inspect:
-.nf
+.Bd -literal -offset indent
 struct sphdr {
-	u_char		sp_cc;		/* \fIconnection control\fP */
-#define	SP_EM	0x10			/* \fIend of message\fP */
-	u_char		sp_dt;		/* \fIdatastream type\fP */
+	u_char		sp_cc;	/* connection control */
+#define	SP_EM	0x10		/* end of message */
+	u_char		sp_dt;	/* datastream type */
 	u_short		sp_sid;
 	u_short		sp_did;
 	u_short		sp_seq;
 	u_short		sp_ack;
 	u_short		sp_alo;
 };
-.fi
+.Ed
+.Pp
 This facilitates the implementation of higher level Xerox protocols
 which make use of the data stream type field and the end of message bit.
 Conversely, the user is required to supply a 12 byte header,
 the only part of which inspected is the data stream type and end of message
 fields.
-.LP
+.Pp
 For either socket type,
 packets received with the Attention bit sent are interpreted as
-out of band data.  Data sent with send(..., ..., ..., MSG_OOB)
+out of band data.  Data sent with
+.Dq send(..., ..., ..., Dv MSG_OOB )
 cause the attention bit to be set.
-.SH DIAGNOSTICS
+.Sh DIAGNOSTICS
 A socket operation may fail with one of the following errors returned:
-.TP 20
-[EISCONN]
+.Bl -tag -width [EADDRNOTAVAIL]
+.It Bq Er EISCONN
 when trying to establish a connection on a socket which
 already has one;
-.TP 20
-[ENOBUFS]
+.It Bq Er ENOBUFS
 when the system runs out of memory for
 an internal data structure;
-.TP 20
-[ETIMEDOUT]
+.It Bq Er ETIMEDOUT
 when a connection was dropped
 due to excessive retransmissions;
-.TP 20
-[ECONNRESET]
+.It Bq Er ECONNRESET
 when the remote peer
 forces the connection to be closed;
-.TP 20
-[ECONNREFUSED]
+.It Bq Er ECONNREFUSED
 when the remote
 peer actively refuses connection establishment (usually because
 no process is listening to the port);
-.TP 20
-[EADDRINUSE]
+.It Bq Er EADDRINUSE
 when an attempt
 is made to create a socket with a port which has already been
 allocated;
-.TP 20
-[EADDRNOTAVAIL]
+.It Bq Er EADDRNOTAVAIL
 when an attempt is made to create a 
 socket with a network address for which no network interface
 exists.
-.SH SOCKET OPTIONS
-.TP 20
-SO_DEFAULT_HEADERS
+.El
+.Sh SOCKET OPTIONS
+.Bl -tag -width SO_DEFAULT_HEADERS
+.It Dv SO_DEFAULT_HEADERS
 when set, this determines the data stream type and whether
 the end of message bit is to be set on every ensuing packet.
-.TP 20
-SO_MTU
+.It Dv SO_MTU
 This specifies the maximum ammount of user data in a single packet.
 The default is 576 bytes - sizeof(struct spidp).  This quantity
-affects windowing -- increasing it without increasing the amount
+affects windowing \- increasing it without increasing the amount
 of buffering in the socket will lower the number of unread packets
 accepted.  Anything larger than the default will not be forwarded
-by a bona fide XEROX product internetwork router.
+by a bona fide
+.Tn XEROX
+product internetwork router.
 The data argument for the setsockopt call must be
 an unsigned short.
-.SH SEE ALSO
-intro(4), ns(4)
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr ns 4
+.Sh HISTORY
+The
+.Nm
+protocol appeared in
+.Bx 4.3 .
+.Sh BUGS
 There should be some way to reflect record boundaries in
 a stream.
 For stream mode, there should be an option to get the data stream type of

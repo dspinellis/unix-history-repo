@@ -1,41 +1,74 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)cons.4	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH CONS 4 ""
-.UC 7
-.SH NAME
-cons, CP, remote \- Tahoe console interface
-.SH DESCRIPTION
+.\"     @(#)cons.4	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CONS 4 tahoe
+.Os BSD 4.3t
+.Sh NAME
+.Nm cons ,
+.Nm CP ,
+.Nm remote
+.Nd Tahoe console interface
+.Sh DESCRIPTION
 The console is available to the processor through the console registers.
-It acts like a normal terminal, except that a ``~'' is used to transfer
+It acts like a normal terminal, except that a
+.Dq Ic ~
+is used to transfer
 commands to the console processor when the front panel key switch is
-in the ``foo'' or ``bar'' position.
-.PP
-Useful commands to the console processor include ``~h'' to halt
-the machine and ``~b'' to force a reboot.  When the console processor
-is in control, a ``#>'' prompt is displayed.  To continue execution
-after halting the machine with ``~h'', use ``r.''.
+in the
+.Dq foo
+or
+.Dq bar
+position.
+When the console processor
+is in control, a
+.Ql #>
+prompt is displayed.  To continue execution
+after halting the machine with
+.Ql ~h ,
+use
+.Ql r .
+.Bl -tag -width Ds
+.It Ic \&~h
+Halt the machine.
+.It Ic \&~b
+Force a reboot.
+.It Ic \&~r
+Continue execution after a
+.Ic \&~h .
+.El
+.Pp
 Refer to the Tahoe
 console processor handbook for the complete list of facilities available
 through the console processor.
-.PP
+.Pp
 The
-.I CP
+.Nm CP
 device provides direct access to the console processor.  The
-.I remote
+.Nm remote
 device is a secondary console terminal used for remote diagnosis;
 it is normally connected to a modem.
-.SH FILES
-.nf
-/dev/console,
-/dev/CP,
-/dev/remote
-.SH "SEE ALSO"
-kdb(4), tty(4), reboot(8)
-.br
-Console processor handbook
-.SH DIAGNOSTICS
+.Sh FILES
+.Bl -tag -width /dev/consolexx -compact
+.It Pa /dev/console
+.It Pa /dev/CP
+.It Pa /dev/remote
+.El
+.Sh DIAGNOSTICS
 None.
+.Sh SEE ALSO
+.Xr kdb 4 ,
+.Xr tty 4 ,
+.Xr reboot 8
+.Rs
+.%T Console Processor Handbook
+.Re
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.3 tahoe .

@@ -1,131 +1,137 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)dr.4	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH DR 4 "November 21, 1986"
-.UC 5
-.SH NAME
-dr \- Ikon DR-11W interface
-.SH SYNOPSIS
-.B "device dr0 at vba? csr 0xffff8000 vector drintr"
-.SH DESCRIPTION
+.\"     @(#)dr.4	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DR 4 tahoe
+.Os BSD 4.2
+.Sh NAME
+.Nm dr
+.Nd Ikon
+.Tn DR-11W
+interface
+.Sh SYNOPSIS
+.Cd "device dr0 at vba? csr 0xffff8000 vector drintr"
+.Sh DESCRIPTION
 The
-.I dr
+.Nm dr
 driver provides access
-to an Ikon DR-11W DMA controller.
+to an Ikon
+.Tn DR-11W
+.Tn DMA
+controller.
 Each minor device is a different controller.
-.PP
+.Pp
 In addition to reading and writing, the following
-.I ioctl
+.Xr ioctl 2
 requests are available:
-.TP 10
-DRWAIT
+.Bl -tag -width DRSETNORSTALL
+.It Dv DRWAIT
 Wait for an attention interrupt from the associated device.
-.TP
-DRPIOW
-Write to the programmed i/o register.
-.TP
-DRPACL
+.It Dv DRPIOW
+Write to the programmed
+.Tn I/O
+register.
+.It Dv DRPACL
 Write to the pulse register.
-.TP
-DRDACL
-Set the ``ac-low'' bit in the next command sent to the DR-11W.
-.TP
-DRPCYL
-Set the ``cycle'' bit in the next command sent to the DR-11W.
-.TP
-DRDFCN
+.It Dv DRDACL
+Set the ``ac-low'' bit in the next command sent to the
+.Tn DR-11W .
+.It Dv DRPCYL
+Set the ``cycle'' bit in the next command sent to the
+.Tn DR-11W .
+.It Dv DRDFCN
 Hold the function bits until the next command is issused.
-.TP
-DRRATN
+.It Dv DRRATN
 Reset the attention flag.
-.TP
-DRRDMA
-Reset the DMA complete flag.
-.TP
-DRSFCN
+.It Dv DRRDMA
+Reset the
+.Tn DMA
+complete flag.
+.It Dv DRSFCN
 Set the function bits in the control status register and,
 as a side effect, clear the interrupt enable flag.
-.TP
-DRRPER
+.It Dv DRRPER
 Reset the parity error flag.
-.TP
-DRSETRSTALL
+.It Dv DRSETRSTALL
 Set ``no stall'' mode for all subsequent reads.
 In no stall mode the driver will abort
 read requests that fail to complete before a user
 specified timeout expires.
-.TP
-DRSETNORSTALL
+.It Dv DRSETNORSTALL
 Disable no stall mode for reads.
-.TP
-DRGETRSTALL
+.It Dv DRGETRSTALL
 Return true if in no stall mode for reads.
-.TP
-DRSETRTIMEOUT
+.It Dv DRSETRTIMEOUT
 Set the value of the timeout used in no stall mode  for
 reads.  The time is specified in tenths of seconds.
-.TP
-DRGETRTIMEOUT
+.It Dv DRGETRTIMEOUT
 Return the time until (in tenths of seconds) before a read
 is timed out when in no stall mode.
-.TP
-DRSETWSTALL
+.It Dv DRSETWSTALL
 Set ``no stall'' mode for all subsequent writes.
 In no stall mode the driver will abort
 write requests that fail to complete before a user
 specified timeout expires.
-.TP
-DRSETNOWSTALL
+.It Dv DRSETNOWSTALL
 Disable no stall mode for writes.
-.TP
-DRGETWSTALL
+.It Dv DRGETWSTALL
 Return true if in no stall mode for writes.
-.TP
-DRSETWTIMEOUT
+.It Dv DRSETWTIMEOUT
 Set the value of the timeout used in no stall mode  for
 writes.  The time is specified in tenths of seconds.
-.TP
-DRGETRTIMEOUT
+.It Dv DRGETRTIMEOUT
 Return the time until (in tenths of seconds) before a write
 is timed out when in no stall mode.
-.TP
-DRWRITEREADY
+.It Dv DRWRITEREADY
 Return 1 if the device can accept data, 0 otherwise
-(this is areally the DR-11W A status bit).
-.TP
-DRREADREADY
+(this is really the
+.Tn DR-11W A
+status bit).
+.It Dv DRREADREADY
 Return 1 if the device has data for the host to read,
-0 otherwise (this is really the DR-11W B status bit).
-.TP
-DRBUSY
+0 otherwise (this is really the
+.Tn DR-11W B
+status bit).
+.It Dv DRBUSY
 Return 1  if the device is busy, 0 otherwise.
-.TP
-DRRESET
+.It Dv DRRESET
 Reset the DR-11W.
-.TP
-DR11STAT
+.It Dv DR11STAT
 Return the driver status and the contents of the
-DR-11W i/o registers.  The
+.Tn DR-11W
+.Tn I/O registers.  The
 eight words returned are, in order, the driver
 status flags, the contents of the control status
 register, the contents of the status register
 at the time of the last interrupt from the device,
-the contents of the programmed i/o data register,
+the contents of the programmed
+.Tn I/O data register,
 a combination of the address modifier used by the
-device in performing VERSAbus transfers and the
+device in performing
+.Tn VERSAbus
+transfers and the
 interrupt vector used by the device, the contents
 of the range register, the contents of the rahi
 register, and the contents of the ralo register.
-.TP
-DR11LOOP
+.It Dv DR11LOOP
 Perform loopback testing (the loopback cable must
 be in place for this to work).
-.SH FILES
-/dev/dr[0-7]	standard devices
-.SH DIAGNOSTICS
+.El
+.Sh FILES
+.Bl -tag -width /dev/dr[0-7]xx -compact
+.It Pa /dev/dr[0-7]
+standard devices
+.El
+.Sh DIAGNOSTICS
 Lots of them, none of them meaningful.
-.SH BUGS
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 tahoe .
+.Sh BUGS
 This driver needs to be rewritten.
