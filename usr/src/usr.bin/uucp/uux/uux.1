@@ -1,10 +1,10 @@
-.\" Copyright (c) 1988 Regents of the University of California.
+.\" Copyright (c) 1988, 1990 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uux.1	6.4 (Berkeley) %G%
+.\"		@(#)uux.1	6.5 (Berkeley) %G%
 .\"
-.TH UUX 1 ""
+.TH UUX 1 "October 24, 1988"
 .AT 3
 .SH NAME
 uux \- unix to unix command execution
@@ -53,7 +53,7 @@ and is replaced by that user's login directory;
 .BR ~;
 where
 .B ~
-is expanded to the system's public directory (usually /usr/spool/uucppublic);
+is expanded to the system's public directory (usually /var/spool/uucppublic);
 .IP
 (4) a partial pathname, which is prefixed by the current directory.
 .PP
@@ -67,7 +67,7 @@ execute a
 .IR diff (1)
 command
 and put the results in \fBfile.diff\fP in the 
-local /usr/spool/uucppublic/dan/ directory.
+local /var/spool/uucppublic/dan/ directory.
 .PP
 Any special shell characters, such as \fB<>;|\fP, should be quoted either
 by quoting the entire \fIcommand-string\fP, or quoting the special
@@ -176,7 +176,7 @@ calls to be made to local sites only (see
 .SH FILES
 .PD 0
 .TP 22
-/usr/spool/uucp
+/var/spool/uucp
 spool directories
 .TP
 /usr/lib/uucp/\(**

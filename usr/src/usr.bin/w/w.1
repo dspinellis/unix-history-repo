@@ -1,13 +1,14 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)w.1	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH W 1 ""
+.\"     @(#)w.1	6.4 (Berkeley) %G%
+.\"
+.TH W 1 "%Q"
 .UC 4
 .SH NAME
-w \- who is on and what they are doing
+w \- who is logged in and what they are doing
 .SH SYNOPSIS
 .B w
 [
@@ -54,7 +55,7 @@ name is included,
 the output will be restricted to that user.
 .SH FILES
 .ta 1i
-/etc/utmp
+/var/run/utmp
 .br
 /dev/kmem
 .br
