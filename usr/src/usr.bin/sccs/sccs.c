@@ -2,6 +2,8 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/dir.h>
+# include <errno.h>
+# include <signal.h>
 # include <sysexits.h>
 # include <whoami.h>
 
@@ -86,7 +88,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.35 %G%";
+static char SccsId[] = "@(#)sccs.c	1.36 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -132,6 +134,7 @@ struct sccsprog
 # define CLEAN		3	/* clean out recreatable files */
 # define UNEDIT		4	/* unedit a file */
 # define SHELL		5	/* call a shell file (like PROG) */
+# define DIFFS		6	/* diff between sccs & file out */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -171,6 +174,7 @@ struct sccsprog SccsProg[] =
 	"info",		CLEAN,	REALUSER,	"",		(char *) INFOC,
 	"check",	CLEAN,	REALUSER,	"",		(char *) CHECKC,
 	"unedit",	UNEDIT,	NO_SDOT,	"",		NULL,
+	"diffs",	DIFFS,	NO_SDOT|REALUSER, "",		NULL,
 	NULL,		-1,	0,		"",		NULL
 };
 
@@ -190,6 +194,7 @@ char	*SccsDir = SCCSDIR;	/* directory to begin search from */
 # else
 char	*SccsDir = "";
 # endif
+int	OutFile = -1;		/* override output file for commands */
 bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
 bool	Debug;			/* turn on tracing */
@@ -419,6 +424,25 @@ command(argv, forkflag, editflag, arg0)
 			rval = command(&ap[1], FALSE, FALSE, "get");
 		break;
 
+	  case DIFFS:		/* diff between s-file & edit file */
+		/* find the end of the flag arguments */
+		for (np = &ap[1]; *np != NULL && **np == '-'; np++)
+			continue;
+		argv = np;
+
+		/* for each file, do the diff */
+		while (*np != NULL)
+		{
+			*argv = *np++;
+			p = *np;
+			*np = NULL;
+			i = dodiff(ap, *argv);
+			if (rval == 0)
+				rval = i;
+			*np = p;
+		}
+		break;
+
 	  default:
 		syserr("oper %d", cmd->sccsoper);
 		exit(EX_SOFTWARE);
@@ -520,21 +544,33 @@ callprog(progpath, flags, argv, forkflag)
 			wait(&st);
 			if ((st & 0377) == 0)
 				st = (st >> 8) & 0377;
+			if (OutFile >= 0)
+			{
+				close(OutFile);
+				OutFile = -1;
+			}
 			return (st);
 		}
 	}
+	else if (OutFile >= 0)
+	{
+		syserr("callprog: setting stdout w/o forking");
+		exit(EX_SOFTWARE);
+	}
 
-	/*
-	**  Set protection as appropriate.
-	*/
-
+	/* set protection as appropriate */
 	if (bitset(REALUSER, flags))
 		setuid(getuid());
-	
-	/*
-	**  Call real SCCS program.
-	*/
 
+	/* change standard input & output if needed */
+	if (OutFile >= 0)
+	{
+		close(1);
+		dup(OutFile);
+		close(OutFile);
+	}
+	
+	/* call real SCCS program */
 	execv(progpath, argv);
 	syserr("cannot execute %s", progpath);
 	exit(EX_UNAVAILABLE);
@@ -910,6 +946,74 @@ unedit(fn)
 		printf("%12s: not being edited by you\n", fn);
 		return (FALSE);
 	}
+}
+
+/*
+**  DODIFF -- diff an s-file against a g-file
+**
+**	Parameters:
+**		getv -- argv for the 'get' command.
+**		gfile -- name of the g-file to diff against.
+**
+**	Returns:
+**		Result of get.
+**
+**	Side Effects:
+**		none.
+*/
+
+dodiff(getv, gfile)
+	char **getv;
+	char *gfile;
+{
+	int pipev[2];
+	int rval;
+	register int i;
+	register int pid;
+	auto int st;
+	extern int errno;
+	int (*osig)();
+
+	if (pipe(pipev) < 0)
+	{
+		syserr("dodiff: pipe failed");
+		exit(EX_OSERR);
+	}
+	if ((pid = fork()) < 0)
+	{
+		syserr("dodiff: fork failed");
+		exit(EX_OSERR);
+	}
+	else if (pid > 0)
+	{
+		/* in parent; run get */
+		OutFile = pipev[1];
+		close(pipev[0]);
+		rval = command(&getv[1], TRUE, FALSE, "get -s -k -p");
+		osig = signal(SIGINT, SIG_IGN);
+		while (((i = wait(&st)) >= 0 && i != pid) || errno == EINTR)
+			errno = 0;
+		signal(SIGINT, osig);
+		/* ignore result of diff */
+	}
+	else
+	{
+		/* in child, run diff */
+		if (close(pipev[1]) < 0 || close(0) < 0 ||
+		    dup(pipev[0]) != 0 || close(pipev[0]) < 0)
+		{
+			syserr("dodiff: magic failed");
+			exit(EX_OSERR);
+		}
+		execl(PROGPATH(bdiff), "bdiff", "-", gfile, NULL);
+# ifndef V6
+		execlp("bdiff", "bdiff", "-", gfile, NULL);
+		execlp("diff", "diff", "-", gfile, NULL);
+# endif NOT V6
+		syserr("bdiff: cannot execute");
+		exit(EX_OSERR);
+	}
+	return (rval);
 }
 
 /*
