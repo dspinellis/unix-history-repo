@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 FILES=	airport ascii birthtoken eqnchar flowers inter.phone man.template \
 	mdoc.template na.phone operator zipcodes

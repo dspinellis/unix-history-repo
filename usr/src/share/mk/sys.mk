@@ -1,4 +1,4 @@
-#	@(#)sys.mk	5.14 (Berkeley) %G%
+#	@(#)sys.mk	8.1 (Berkeley) %G%
 
 unix		?=	We run UNIX.
 

@@ -1,4 +1,4 @@
-#	@(#)bsd.man.mk	5.2 (Berkeley) %G%
+#	@(#)bsd.man.mk	8.1 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"

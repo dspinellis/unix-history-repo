@@ -1,4 +1,4 @@
-#	@(#)bsd.doc.mk	5.10 (Berkeley) %G%
+#	@(#)bsd.doc.mk	8.1 (Berkeley) %G%
 
 BIB?=		bib
 EQN?=		eqn
