@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mntopts.h	8.1 (Berkeley) %G%
+ *	@(#)mntopts.h	8.2 (Berkeley) %G%
  */
 
 struct mntopt {
@@ -14,21 +14,21 @@ struct mntopt {
 };
 
 /* User-visible MNT_ flags. */
-#define MOPT_ASYNC		{ "async",	 0, MNT_ASYNC }
-#define MOPT_NODEV		{ "dev",	 1, MNT_NODEV }
-#define MOPT_NOEXEC		{ "exec",	 1, MNT_NOEXEC }
-#define MOPT_NOSUID		{ "suid",	 1, MNT_NOSUID }
-#define MOPT_RDONLY		{ "rdonly",	 0, MNT_RDONLY }
-#define MOPT_SYNCHRONOUS	{ "synchronous", 0, MNT_SYNCHRONOUS }
-#define MOPT_UNION		{ "union",	 0, MNT_UNION }
+#define MOPT_ASYNC		{ "async",	0, MNT_ASYNC }
+#define MOPT_NODEV		{ "dev",	1, MNT_NODEV }
+#define MOPT_NOEXEC		{ "exec",	1, MNT_NOEXEC }
+#define MOPT_NOSUID		{ "suid",	1, MNT_NOSUID }
+#define MOPT_RDONLY		{ "rdonly",	0, MNT_RDONLY }
+#define MOPT_SYNC		{ "sync",	0, MNT_SYNCHRONOUS }
+#define MOPT_UNION		{ "union",	0, MNT_UNION }
 
 /* Control flags. */
-#define MOPT_FORCE		{ "exec",	 1, MNT_FORCE }
-#define MOPT_UPDATE		{ "update",	 0, MNT_UPDATE }
+#define MOPT_FORCE		{ "exec",	1, MNT_FORCE }
+#define MOPT_UPDATE		{ "update",	0, MNT_UPDATE }
 
 /* Support for old-style "ro", "rw" flags. */
-#define MOPT_RO			{ "ro",		 0, MNT_RDONLY }
-#define MOPT_RW			{ "rw",		 1, MNT_RDONLY }
+#define MOPT_RO			{ "ro",		0, MNT_RDONLY }
+#define MOPT_RW			{ "rw",		1, MNT_RDONLY }
 
 #define MOPT_FSTAB_COMPAT						\
 	MOPT_RO,							\
