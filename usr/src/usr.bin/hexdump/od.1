@@ -1,0 +1,30 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)od.1	5.1 (Berkeley) %G%
+.\"
+.TH OD 1 ""
+.UC 7
+.SH NAME
+od \- octal, decimal, hex, ascii dump
+.SH SYNOPSIS
+od [ \-aBbcDdeFfHhIiLlOoPpvXx ] [ file ]
+.SH DESCRIPTION
+.I Od
+has been deprecated in favor of
+.IR hexdump (1).
+.PP
+.IR Hexdump ,
+if called as
+.IR od ,
+provides compatibility for the options listed above.
+.PP
+It does not provide compatibility for the options ``-s'' and ``-w'',
+nor is compatibility provided for the extended argument syntax of
+``[ [\fB+\fP]offset[\fB.\fP][\fBb\fP] [label] ]''.
+.SH SEE ALSO
+hexdump(1)
+.SH BUGS
+Quite a few.
