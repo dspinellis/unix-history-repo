@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
+ * Copyright (c) 1982,1986,1990,1993 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.h	7.13 (Berkeley) %G%
+ *	@(#)in.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -147,6 +147,60 @@ struct ip_mreq {
 	struct in_addr	imr_multiaddr;	/* IP multicast address of group */
 	struct in_addr	imr_interface;	/* local IP address of interface */
 };
+
+/*
+ * Definitions for inet sysctl operations.
+ *
+ * Third level is protocol number.
+ * Fourth level is desired variable within that protocol.
+ */
+#define IPPROTO_MAXID	(IPPROTO_IDP + 1)	/* don't list to IPPROTO_MAX */
+
+#define CTL_IPPROTO_NAMES { \
+	{ "ip", CTLTYPE_NODE }, \
+	{ "icmp", CTLTYPE_NODE }, \
+	{ "igmp", CTLTYPE_NODE }, \
+	{ "ggp", CTLTYPE_NODE }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ "tcp", CTLTYPE_NODE }, \
+	{ 0, 0 }, \
+	{ "egp", CTLTYPE_NODE }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ "pup", CTLTYPE_NODE }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ "udp", CTLTYPE_NODE }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
+	{ "idp", CTLTYPE_NODE }, \
+}
+
+/*
+ * Names for IP sysctl objects
+ */
+#define	IPCTL_FORWARDING	1	/* act as router */
+#define	IPCTL_SENDREDIRECTS	2	/* may send redirects when forwarding */
+#define	IPCTL_DEFTTL		3	/* default TTL */
+#ifdef notyet
+#define	IPCTL_DEFMTU		4	/* default MTU */
+#endif
+#define	IPCTL_MAXID		5
+
+#define	IPCTL_NAMES { \
+	{ 0, 0 }, \
+	{ "forwarding", CTLTYPE_INT }, \
+	{ "redirect", CTLTYPE_INT }, \
+	{ "ttl", CTLTYPE_INT }, \
+	{ "mtu", CTLTYPE_INT }, \
+}
+
 
 #ifdef KERNEL
 struct	in_addr in_makeaddr();
