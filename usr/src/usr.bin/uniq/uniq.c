@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uniq.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uniq.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <errno.h>
@@ -145,7 +145,8 @@ show(ofp, str)
 	FILE *ofp;
 	char *str;
 {
-	if (cflag)
+
+	if (cflag && *str)
 		(void)fprintf(ofp, "%4d %s", repeats + 1, str);
 	if (dflag && repeats || uflag && !repeats)
 		(void)fprintf(ofp, "%s", str);
