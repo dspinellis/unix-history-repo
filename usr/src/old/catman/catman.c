@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)catman.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)catman.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -33,6 +33,7 @@ char	nflag;
 char	wflag;
 char	man[MAXNAMLEN+6] = "manx/";
 char	cat[MAXNAMLEN+6] = "catx/";
+char	lncat[MAXNAMLEN+6] = "catx/";
 char	*mandir = "/usr/man";
 char	*rindex();
 
@@ -91,7 +92,7 @@ usage:
 	}
 	msp = &man[5];
 	csp = &cat[5];
-	umask(0);
+	umask(022);
 	for (sp = sections; *sp; sp++) {
 		register DIR *mdir;
 		register struct direct *dir;
@@ -127,6 +128,7 @@ usage:
 			time_t time;
 			char *tsp;
 			FILE *inf;
+			int  makelink;
 
 			if (dir->d_ino == 0 || dir->d_name[0] == '.')
 				continue;
@@ -149,10 +151,24 @@ usage:
 				exstat = 1;
 				continue;
 			}
+			makelink = 0;
 			if (getc(inf) == '.' && getc(inf) == 's'
 			    && getc(inf) == 'o') {
-				fclose(inf);
-				continue;
+				if (getc(inf) != ' ' ||
+				    fgets(lncat, sizeof(lncat), inf)==NULL) {
+					fclose(inf);
+					continue;
+				}
+				if (lncat[strlen(lncat)-1] == '\n')
+					lncat[strlen(lncat)-1] = '\0';
+				if (strncmp(lncat, "man", 3) != 0) {
+					fclose(inf);
+					continue;
+				}
+				lncat[0] = 'c';
+				lncat[1] = 'a';
+				lncat[2] = 't';
+				makelink = 1;
 			}
 			fclose(inf);
 			strcpy(csp, dir->d_name);
@@ -163,8 +179,22 @@ usage:
 					continue;
 				unlink(cat);
 			}
-			sprintf(buf, "nroff -man %s > %s", man, cat);
-			SYSTEM(buf);
+			if (makelink) {
+				/*
+				 * Don't unlink a directory by accident.
+				 */
+				if (stat(lncat, &sbuf) >= 0 &&
+				    ((sbuf.st_mode&S_IFMT)==S_IFCHR))
+					unlink(cat);
+				if (pflag)
+					printf("ln %s %s\n", lncat, cat);
+				else
+					link(lncat, cat);
+			}
+			else {
+				sprintf(buf, "nroff -man %s > %s", man, cat);
+				SYSTEM(buf);
+			}
 			changed = 1;
 		}
 		closedir(mdir);
