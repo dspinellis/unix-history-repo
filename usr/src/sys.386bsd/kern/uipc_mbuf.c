@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00009
+ * --------------------         -----   ----------------------
+ *
+ * 31 Aug 92	Wolfgang Solfrank	Fixed mbuf allocation code
  */
 
 #include "param.h"
@@ -72,7 +79,7 @@ bad:
  * Must be called at splimp.
  */
 /* ARGSUSED */
-m_clalloc(ncl, canwait)
+m_clalloc(ncl, how)				/* 31 Aug 92*/
 	register int ncl;
 {
 	int npg, mbx;
@@ -81,7 +88,8 @@ m_clalloc(ncl, canwait)
 	static int logged;
 
 	npg = ncl * CLSIZE;
-	p = (caddr_t)kmem_malloc(mb_map, ctob(npg), canwait);
+	/* 31 Aug 92*/
+	p = (caddr_t)kmem_malloc(mb_map, ctob(npg), !(how&M_DONTWAIT));
 	if (p == NULL) {
 		if (logged == 0) {
 			logged++;
@@ -153,32 +161,32 @@ m_reclaim()
  * for critical paths.
  */
 struct mbuf *
-m_get(canwait, type)
-	int canwait, type;
+m_get(how, type)				/* 31 Aug 92*/
+	int how, type;
 {
 	register struct mbuf *m;
 
-	MGET(m, canwait, type);
+	MGET(m, how, type);
 	return (m);
 }
 
 struct mbuf *
-m_gethdr(canwait, type)
-	int canwait, type;
+m_gethdr(how, type)				/* 31 Aug 92*/
+	int how, type;
 {
 	register struct mbuf *m;
 
-	MGETHDR(m, canwait, type);
+	MGETHDR(m, how, type);
 	return (m);
 }
 
 struct mbuf *
-m_getclr(canwait, type)
-	int canwait, type;
+m_getclr(how, type)				/* 31 Aug 92*/
+	int how, type;
 {
 	register struct mbuf *m;
 
-	MGET(m, canwait, type);
+	MGET(m, how, type);
 	if (m == 0)
 		return (0);
 	bzero(mtod(m, caddr_t), MLEN);
