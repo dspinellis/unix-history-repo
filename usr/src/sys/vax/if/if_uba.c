@@ -1,4 +1,4 @@
-/*	if_uba.c	6.2	84/08/29	*/
+/*	if_uba.c	6.3	85/06/03	*/
 
 #include "../machine/pte.h"
 
@@ -37,16 +37,22 @@ if_ubainit(ifu, uban, hlen, nmr)
 	int uban, hlen, nmr;
 {
 	register caddr_t cp;
-	int i, ncl;
+	int i, ncl, off;
 
-	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
+	if (hlen)
+		off = CLBYTES - hlen;
+	else
+		off = 0;
+	ncl = clrnd(nmr) / CLSIZE;
+	if (hlen)
+		ncl++;
 	if (ifu->ifu_r.ifrw_addr)
-		cp = ifu->ifu_r.ifrw_addr - (CLBYTES - hlen);
+		cp = ifu->ifu_r.ifrw_addr - off;
 	else {
 		cp = m_clalloc(2 * ncl, MPG_SPACE);
 		if (cp == 0)
 			return (0);
-		ifu->ifu_r.ifrw_addr = cp + CLBYTES - hlen;
+		ifu->ifu_r.ifrw_addr = cp + off;
 		ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + ncl * CLBYTES;
 		ifu->ifu_hlen = hlen;
 		ifu->ifu_uban = uban;
@@ -89,7 +95,8 @@ if_ubaalloc(ifu, ifrw, nmr)
 	ifrw->ifrw_info = info;
 	ifrw->ifrw_bdp = UBAI_BDP(info);
 	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_BDP(info) << UBAMR_DPSHIFT);
-	ifrw->ifrw_mr = &ifu->ifu_uba->uba_map[UBAI_MR(info) + 1];
+	ifrw->ifrw_mr = &ifu->ifu_uba->uba_map[UBAI_MR(info) + (ifu->ifu_hlen?
+		1 : 0)];
 	return (1);
 }
 
@@ -198,7 +205,7 @@ if_wubaput(ifu, m)
 	register caddr_t cp, dp;
 	register int i;
 	int xswapd = 0;
-	int x, cc;
+	int x, cc, t;
 
 	cp = ifu->ifu_w.ifrw_addr;
 	while (m) {
@@ -241,7 +248,7 @@ if_wubaput(ifu, m)
 			break;
 		ifu->ifu_xswapd &= ~(1<<i);
 		i *= CLSIZE;
-		for (x = 0; x < CLSIZE; x++) {
+		for (t = 0; t < CLSIZE; t++) {
 			ifu->ifu_w.ifrw_mr[i] = ifu->ifu_wmap[i];
 			i++;
 		}
