@@ -115,23 +115,6 @@ cleandir: _PROGSUBDIR
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
-# some of the rules involve .h sources, so remove them from mkdep line
-.if !target(depend)
-depend: .depend _PROGSUBDIR
-.depend: ${DPSRCS} ${SRCS}
-.if defined(PROG)
-	rm -f .depend
-	files="${.ALLSRC:M*.c}"; \
-	if [ "$$files" != "" ]; then \
-	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
-	fi
-	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
-	if [ "$$files" != "  " ]; then \
-	  mkdep -a ${MKDEP} ${CXXFLAGS:M-nostd*} ${CXXFLAGS:M-[ID]*} $$files; \
-	fi
-.endif
-.endif
-
 .if !target(install)
 .if !target(beforeinstall)
 beforeinstall:
@@ -207,3 +190,5 @@ tags: ${SRCS} _PROGSUBDIR
 .elif !target(maninstall)
 maninstall:
 .endif
+
+.include <bsd.dep.mk>
