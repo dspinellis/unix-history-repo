@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)sinh.c	4.3 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)sinh.c	4.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SINH(X)
@@ -56,7 +56,7 @@ static char sccsid[] =
  * shown.
  */
 #ifdef VAX
-/* double static */
+/* static double */
 /* mln2hi =  8.8029691931113054792E1     , Hex  2^  7   *  .B00F33C7E22BDB */
 /* mln2lo = -4.9650192275318476525E-16   , Hex  2^-50   * -.8F1B60279E582A */
 /* lnovfl =  8.8029691931113053016E1     ; Hex  2^  7   *  .B00F33C7E22BDA */
@@ -67,7 +67,7 @@ static long    lnovflx[] = { 0x0f3343b0, 0x2bdac7e2};
 #define   mln2lo    (*(double*)mln2lox)
 #define   lnovfl    (*(double*)lnovflx)
 #else	/* IEEE double */
-double static 
+static double 
 mln2hi =  7.0978271289338397310E2     , /*Hex  2^ 10   *  1.62E42FEFA39EF */
 mln2lo =  2.3747039373786107478E-14   , /*Hex  2^-45   *  1.ABC9E3B39803F */
 lnovfl =  7.0978271289338397310E2     ; /*Hex  2^  9   *  1.62E42FEFA39EF */

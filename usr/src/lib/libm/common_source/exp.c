@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* EXP(X)
@@ -60,7 +60,7 @@ static char sccsid[] =
  */
 
 #ifdef VAX	/* VAX D format */
-/* double static */
+/* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
 /* lnhuge =  9.4961163736712506989E1     , Hex  2^  7   *  .BDEC1DA73E9010 */
@@ -77,7 +77,7 @@ static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
 #define   lntiny    (*(double*)lntinyx)
 #define   invln2    (*(double*)invln2x)
 #else	/* IEEE double */
-double static
+static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 lnhuge =  7.1602103751842355450E2     , /*Hex  2^  9   *  1.6602B15B7ECF2 */
