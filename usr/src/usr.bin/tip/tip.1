@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tip.1	6.1 (Berkeley) %G%
+.\"	@(#)tip.1	6.2 (Berkeley) %G%
 .\"
 .TH TIP 1C ""
 .UC 4
@@ -103,6 +103,10 @@ executes the command string ``cat 'from';echo ^A'' to send the file to
 .TP 10
 .B ~|
 Pipe the output from a remote command to a local UNIX process.
+The command string sent to the local UNIX system is processed by the shell.
+.TP 10
+.B ~$
+Pipe the output from a local UNIX process to the remote host.
 The command string sent to the local UNIX system is processed by the shell.
 .TP 10
 .B ~#
