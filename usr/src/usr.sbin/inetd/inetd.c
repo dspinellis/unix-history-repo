@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -68,9 +68,15 @@ static char sccsid[] = "@(#)inetd.c	5.5 (Berkeley) %G%";
 #include <syslog.h>
 #include <pwd.h>
 
+#define	TOOMANY		40		/* don't start more than TOOMANY */
+#define	CNT_INTVL	60		/* servers in CNT_INTVL sec. */
+#define	RETRYTIME	(60*10)		/* retry after bind or server fail */
+
+#define	SIGBLOCK	(sigmask(SIGCHLD)|sigmask(SIGHUP)|sigmask(SIGALRM))
+
 extern	int errno;
 
-int	reapchild();
+int	reapchild(), retry();
 char	*index();
 char	*malloc();
 
@@ -78,6 +84,7 @@ int	debug = 0;
 int	nsock, maxsock;
 fd_set	allsock;
 int	options;
+int	timingout;
 struct	servent *sp;
 
 struct	servtab {
@@ -93,6 +100,8 @@ struct	servtab {
 	char	*se_argv[MAXARGV+1];	/* program arguments */
 	int	se_fd;			/* open descriptor */
 	struct	sockaddr_in se_ctrladdr;/* bound address */
+	int	se_count;		/* number started since se_time */
+	struct	timeval se_time;	/* start of se_count */
 	struct	servtab *se_next;
 } *servtab;
 
@@ -141,7 +150,8 @@ main(argc, argv, envp)
 	register struct servtab *sep;
 	register struct passwd *pwd;
 	char *cp, buf[50];
-	int pid, i;
+	int pid, i, dofork;
+	struct sigvec sv;
 
 	Argv = argv;
 	if (envp == 0 || *envp == 0)
@@ -185,32 +195,39 @@ nextopt:
 	  }
 	}
 #endif
-	openlog("inetd", LOG_PID, LOG_DAEMON);
+	openlog("inetd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
+	bzero((char *)&sv, sizeof(sv));
+	sv.sv_mask = SIGBLOCK;
+	sv.sv_handler = retry;
+	sigvec(SIGALRM, &sv, (struct sigvec *)0);
 	config();
-	signal(SIGHUP, config);
-	signal(SIGCHLD, reapchild);
-	for (;;) {
-		int s, ctrl, n;
-		fd_set readable;
+	sv.sv_handler = config;
+	sigvec(SIGHUP, &sv, (struct sigvec *)0);
+	sv.sv_handler = reapchild;
+	sigvec(SIGCHLD, &sv, (struct sigvec *)0);
 
-		while (nsock == 0)
-			sigpause(0);
-		readable = allsock;
-		if ((n = select(maxsock + 1, &readable, (fd_set *)0,
-		    (fd_set *)0, (struct timeval *)0)) <= 0)
-			continue;
-		for (s = 0; s <= maxsock; s++)
-			if (FD_ISSET(s, &readable))
-				break;
-		for (sep = servtab; sep; sep = sep->se_next)
-			if (s == sep->se_fd)
-				goto found;
-		abort();
-	found:
+	for (;;) {
+	    int s, ctrl, n;
+	    fd_set readable;
+
+	    while (nsock == 0)
+		    sigpause(0);
+	    readable = allsock;
+	    if ((n = select(maxsock + 1, &readable, (fd_set *)0,
+		(fd_set *)0, (struct timeval *)0)) <= 0) {
+		    if (n < 0 && errno != EINTR)
+				syslog(LOG_WARNING, "select: %m\n");
+		    sleep(1);
+		    continue;
+	    }
+	    for (sep = servtab; n && sep; sep = sep->se_next)
+	    if (FD_ISSET(sep->se_fd, &readable)) {
+		n--;
 		if (debug)
 			fprintf(stderr, "someone wants %s\n", sep->se_service);
 		if (!sep->se_wait && sep->se_socktype == SOCK_STREAM) {
-			ctrl = accept(s, (struct sockaddr *)0, (int *)0);
+			ctrl = accept(sep->se_fd, (struct sockaddr *)0,
+			    (int *)0);
 			if (debug)
 				fprintf(stderr, "accept, ctrl %d\n", ctrl);
 			if (ctrl < 0) {
@@ -221,31 +238,63 @@ nextopt:
 			}
 		} else
 			ctrl = sep->se_fd;
-		(void) sigblock(sigmask(SIGCHLD)|sigmask(SIGHUP));
+		(void) sigblock(SIGBLOCK);
 		pid = 0;
-		if (sep->se_bi == 0 || sep->se_bi->bi_fork)
+		dofork = (sep->se_bi == 0 || sep->se_bi->bi_fork);
+		if (dofork) {
+			if (sep->se_count++ == 0)
+			    (void)gettimeofday(&sep->se_time,
+			        (struct timezone *)0);
+			else if (sep->se_count >= TOOMANY) {
+				struct timeval now;
+
+				(void)gettimeofday(&now, (struct timezone *)0);
+				if (now.tv_sec - sep->se_time.tv_sec >
+				    CNT_INTVL) {
+					sep->se_time = now;
+					sep->se_count = 1;
+				} else {
+					syslog(LOG_ERR,
+			"%s/%s server failing (looping), service terminated\n",
+					    sep->se_service, sep->se_proto);
+					FD_CLR(sep->se_fd, &allsock);
+					(void) close(sep->se_fd);
+					sep->se_fd = -1;
+					sep->se_count = 0;
+					nsock--;
+					sigsetmask(0);
+					if (!timingout) {
+						timingout = 1;
+						alarm(RETRYTIME);
+					}
+					continue;
+				}
+			}
 			pid = fork();
+		}
 		if (pid < 0) {
 			if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 				close(ctrl);
+			sigsetmask(0);
 			sleep(1);
 			continue;
 		}
-		if (sep->se_wait) {
+		if (pid && sep->se_wait) {
 			sep->se_wait = pid;
-			FD_CLR(s, &allsock);
+			FD_CLR(sep->se_fd, &allsock);
 			nsock--;
 		}
 		sigsetmask(0);
 		if (pid == 0) {
 #ifdef	DEBUG
-			int tt = open("/dev/tty", O_RDWR);
-			if (tt > 0) {
+			int tt;
+
+			if (dofork && (tt = open("/dev/tty", O_RDWR)) > 0) {
 				ioctl(tt, TIOCNOTTY, 0);
 				close(tt);
 			}
 #endif
-			if (sep->se_bi == 0 || sep->se_bi->bi_fork)
+			if (dofork)
 				for (i = getdtablesize(); --i > 2; )
 					if (i != ctrl)
 						close(i);
@@ -260,6 +309,8 @@ nextopt:
 					syslog(LOG_ERR,
 						"getpwnam: %s: No such user",
 						sep->se_user);
+					if (sep->se_socktype != SOCK_STREAM)
+						recv(0, buf, sizeof (buf), 0);
 					_exit(1);
 				}
 				if (pwd->pw_uid) {
@@ -279,6 +330,7 @@ nextopt:
 		}
 		if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 			close(ctrl);
+	    }
 	}
 }
 
@@ -314,7 +366,7 @@ config()
 {
 	register struct servtab *sep, *cp, **sepp;
 	struct servtab *getconfigent(), *enter();
-	int omask, on = 1;
+	int omask;
 
 	if (!setconfig()) {
 		syslog(LOG_ERR, "%s: %m", CONFIG);
@@ -330,8 +382,9 @@ config()
 		if (sep != 0) {
 			int i;
 
-			omask = sigblock(sigmask(SIGCHLD));
-			sep->se_wait = cp->se_wait;
+			omask = sigblock(SIGBLOCK);
+			if (cp->se_bi == 0)
+				sep->se_wait = cp->se_wait;
 #define SWAP(a, b) { char *c = a; a = b; b = c; }
 			if (cp->se_user)
 				SWAP(sep->se_user, cp->se_user);
@@ -344,46 +397,26 @@ config()
 		} else
 			sep = enter(cp);
 		sep->se_checked = 1;
-		if (sep->se_fd != -1)
-			continue;
 		sp = getservbyname(sep->se_service, sep->se_proto);
 		if (sp == 0) {
 			syslog(LOG_ERR, "%s/%s: unknown service",
 			    sep->se_service, sep->se_proto);
 			continue;
 		}
-		sep->se_ctrladdr.sin_port = sp->s_port;
-		if ((sep->se_fd = socket(AF_INET, sep->se_socktype, 0)) < 0) {
-			syslog(LOG_ERR, "%s/%s: socket: %m",
-			    sep->se_service, sep->se_proto);
-			continue;
+		if (sp->s_port != sep->se_ctrladdr.sin_port) {
+			sep->se_ctrladdr.sin_port = sp->s_port;
+			if (sep->se_fd != -1)
+				(void) close(sep->se_fd);
+			sep->se_fd = -1;
 		}
-#define	turnon(fd, opt) \
-	setsockopt(fd, SOL_SOCKET, opt, (char *)&on, sizeof (on))
-		if (strcmp(sep->se_proto, "tcp") == 0 && (options & SO_DEBUG) &&
-		    turnon(sep->se_fd, SO_DEBUG) < 0)
-			syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
-		if (turnon(sep->se_fd, SO_REUSEADDR) < 0)
-			syslog(LOG_ERR, "setsockopt (SO_REUSEADDR): %m");
-#undef turnon
-		if (bind(sep->se_fd, &sep->se_ctrladdr,
-		    sizeof (sep->se_ctrladdr)) < 0) {
-			syslog(LOG_ERR, "%s/%s: bind: %m",
-			    sep->se_service, sep->se_proto);
-			continue;
-		}
-		if (sep->se_socktype == SOCK_STREAM)
-			listen(sep->se_fd, 10);
-		FD_SET(sep->se_fd, &allsock);
-		nsock++;
-		if (sep->se_fd > maxsock)
-			maxsock = sep->se_fd;
+		if (sep->se_fd == -1)
+			setup(sep);
 	}
 	endconfig();
 	/*
 	 * Purge anything not looked at above.
 	 */
-	omask = sigblock(sigmask(SIGCHLD));
+	omask = sigblock(SIGBLOCK);
 	sepp = &servtab;
 	while (sep = *sepp) {
 		if (sep->se_checked) {
@@ -402,6 +435,54 @@ config()
 	(void) sigsetmask(omask);
 }
 
+retry()
+{
+	register struct servtab *sep;
+
+	timingout = 0;
+	for (sep = servtab; sep; sep = sep->se_next)
+		if (sep->se_fd == -1)
+			setup(sep);
+}
+
+setup(sep)
+	register struct servtab *sep;
+{
+	int on = 1;
+
+	if ((sep->se_fd = socket(AF_INET, sep->se_socktype, 0)) < 0) {
+		syslog(LOG_ERR, "%s/%s: socket: %m",
+		    sep->se_service, sep->se_proto);
+		return;
+	}
+#define	turnon(fd, opt) \
+setsockopt(fd, SOL_SOCKET, opt, (char *)&on, sizeof (on))
+	if (strcmp(sep->se_proto, "tcp") == 0 && (options & SO_DEBUG) &&
+	    turnon(sep->se_fd, SO_DEBUG) < 0)
+		syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
+	if (turnon(sep->se_fd, SO_REUSEADDR) < 0)
+		syslog(LOG_ERR, "setsockopt (SO_REUSEADDR): %m");
+#undef turnon
+	if (bind(sep->se_fd, &sep->se_ctrladdr,
+	    sizeof (sep->se_ctrladdr)) < 0) {
+		syslog(LOG_ERR, "%s/%s: bind: %m",
+		    sep->se_service, sep->se_proto);
+		(void) close(sep->se_fd);
+		sep->se_fd = -1;
+		if (!timingout) {
+			timingout = 1;
+			alarm(RETRYTIME);
+		}
+		return;
+	}
+	if (sep->se_socktype == SOCK_STREAM)
+		listen(sep->se_fd, 10);
+	FD_SET(sep->se_fd, &allsock);
+	nsock++;
+	if (sep->se_fd > maxsock)
+		maxsock = sep->se_fd;
+}
+
 struct servtab *
 enter(cp)
 	struct servtab *cp;
@@ -417,7 +498,7 @@ enter(cp)
 	}
 	*sep = *cp;
 	sep->se_fd = -1;
-	omask = sigblock(sigmask(SIGCHLD));
+	omask = sigblock(SIGBLOCK);
 	sep->se_next = servtab;
 	servtab = sep;
 	sigsetmask(omask);
