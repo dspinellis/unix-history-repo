@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	2.1 85/03/04";
+static	char *sccsid = "@(#)main.c	2.2 85/04/22";
 #endif
 
 #include "externs.h"
@@ -42,6 +42,9 @@ main(argc, argv)
 			break;
 		case 'l':
 			longfmt++;
+			break;
+		case 'b':
+			nobells++;
 			break;
 		default:
 			fprintf(stderr, "SAIL: Unknown flag %s.\n", p);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.8 85/04/06";
+static	char *sccsid = "@(#)sync.c	2.9 85/04/22";
 #endif
 
 #include "externs.h"
@@ -253,7 +253,10 @@ sync_update(type, ship, a, b, c, d)
 		}
 	case W_SIGNAL:
 		if (mode == MODE_PLAYER)
-			Signal("\7%s (%c%c): %s", ship, a);
+			if (nobells)
+				Signal("%s (%c%c): %s", ship, a);
+			else
+				Signal("\7%s (%c%c): %s", ship, a);
 		break;
 	case W_CREW: {
 		register struct shipspecs *s = ship->specs;
