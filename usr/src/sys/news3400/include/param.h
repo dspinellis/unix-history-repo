@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.3 (Berkeley) %G%
+ *	@(#)param.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,8 @@
  * data types (int, long, ...).   The result is u_int and must be cast to
  * any desired pointer type.
  */
-#define	ALIGN(p)	(((u_int)(p) + 3) &~ 3)
+#define	ALIGNBYTES	3
+#define	ALIGN(p)	(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 #define	NBPG		4096		/* bytes/page */
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
