@@ -1,12 +1,12 @@
-static	char sccsid[] = "@(#)ranlib.c 3.1 %G%";
+static	char sccsid[] = "@(#)ranlib.c 3.2 %G%";
 /*
  * ranlib - create table of contents for archive; string table version
  */
 #include <sys/types.h>
-#include <newar.h>
+#include <ar.h>
 #include <ranlib.h>
 #include <pagsiz.h>
-#include <newa.out.h>
+#include <a.out.h>
 #include <stdio.h>
 
 struct	ar_hdr	archdr;
@@ -16,7 +16,7 @@ struct	exec	exp;
 FILE	*fi, *fo;
 long	off, oldoff;
 long	atol(), ftell();
-#define TABSZ	1500
+#define TABSZ	2000
 struct	ranlib tab[TABSZ];
 int	tnum;
 #define	STRTABSZ	25000
@@ -119,9 +119,9 @@ char **argv;
 		fwrite(tstrtab, tssiz, 1, fo);
 		fclose(fo);
 		if(new)
-			sprintf(cmdbuf, "/usr/new/ar rlb %s %s %s\n", firstname, *argv, tempnm);
+			sprintf(cmdbuf, "ar rlb %s %s %s\n", firstname, *argv, tempnm);
 		else
-			sprintf(cmdbuf, "/usr/new/ar rl %s %s\n", *argv, tempnm);
+			sprintf(cmdbuf, "ar rl %s %s\n", *argv, tempnm);
 		if(system(cmdbuf))
 			fprintf(stderr, "ranlib: ``%s'' failed\n", cmdbuf);
 		else
