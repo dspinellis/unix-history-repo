@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.3 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.4 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.3 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.4 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -79,7 +79,7 @@ smtpinit(m, mci, e)
 	  case MCIS_ACTIVE:
 		/* need to clear old information */
 		smtprset(m, mci, e);
-		mci->mci_state = MCIS_OPEN;
+		/* fall through */
 
 	  case MCIS_OPEN:
 		return;
@@ -88,6 +88,7 @@ smtpinit(m, mci, e)
 	  case MCIS_SSD:
 		/* shouldn't happen */
 		smtpquit(m, mci, e);
+		/* fall through */
 
 	  case MCIS_CLOSED:
 		syserr("smtpinit: state CLOSED");
@@ -374,13 +375,15 @@ smtprset(m, mci, e)
 	int r;
 
 	smtpmessage("RSET", m, mci);
-	r = reply(m, mci, e, ReadTimeout);
-	if (r < 0 || REPLYTYPE(r) == 4)
-		return EX_TEMPFAIL;
+	r = reply(m, mci, e, (time_t) 300);
+	if (r < 0)
+		mci->mci_state = MCIS_ERROR;
 	else if (REPLYTYPE(r) == 2)
-		return EX_OK;
-	else
-		return EX_PROTOCOL;
+	{
+		mci->mci_state = MCIS_OPEN;
+		return;
+	}
+	smtpquit(m, mci, e);
 }
 /*
 **  SMTPNOOP -- send a NOOP (no operation) command to check the connection state
