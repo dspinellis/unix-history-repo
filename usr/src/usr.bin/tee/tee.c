@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tee.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tee.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,8 +43,9 @@ main(argc, argv)
 {
 	extern int errno, optind;
 	register LIST *p;
-	register int append, n, fd;
-	int ch, exitval;
+	register int n, fd, rval, wval;
+	register char *bp;
+	int append, ch, exitval;
 	char *buf, *malloc(), *strerror();
 	off_t lseek();
 
@@ -78,14 +79,21 @@ main(argc, argv)
 		else
 			add(fd, *argv);
 	exitval = 0;
-	while ((n = read(0, buf, sizeof(buf))) > 0)
-		for (p = head; p; p = p->next)
-			if (write(p->fd, buf, n) != n) {
-				(void)fprintf(stderr, "tee: %s: %s.\n",
-				    p->name, strerror(errno));
-				exitval = 1;
-			}
-	if (n < 0) {
+	while ((rval = read(0, buf, sizeof(buf))) > 0)
+		for (p = head; p; p = p->next) {
+			n = rval;
+			bp = buf;
+			do {
+				if ((wval = write(p->fd, bp, n)) == -1) {
+					(void)fprintf(stderr, "tee: %s: %s.\n",
+					    p->name, strerror(errno));
+					exitval = 1;
+					break;
+				}
+				bp += wval;
+			} while (n -= wval);
+		}
+	if (rval < 0) {
 		(void)fprintf(stderr, "tee: read: %s\n", strerror(errno));
 		exit(1);
 	}
