@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ec.4	6.2 (Berkeley) %G%
+.\"	@(#)ec.4	6.3 (Berkeley) %G%
 .\"
 .TH EC 4 ""
 .UC 5
 .SH NAME
 ec \- 3Com 10 Mb/s Ethernet interface
 .SH SYNOPSIS
-.B "device ec0 at uba0 csr 161000 vector ecrint eccollide ecxint"
+.B "device ec0 at uba0 csr 161000 vector ecrint eccollide ecxint flags 0"
 .SH DESCRIPTION
 The
 .I ec
@@ -20,6 +20,9 @@ The hardware has 32 kilobytes of dual-ported memory on the UNIBUS.
 This memory
 is used for internal buffering by the board, and the interface code reads
 the buffer contents directly through the UNIBUS.
+The address of this memory is given in the \fIflags\fP field
+in the configuration file.
+The first interface normally has its memory at Unibus address 0.
 .PP
 The host's Internet address is specified at boot time with an SIOCSIFADDR
 ioctl.  The
