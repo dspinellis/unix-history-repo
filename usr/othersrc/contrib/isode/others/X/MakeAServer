@@ -1,0 +1,24 @@
+T = /cs/sys/src/package/X11/R3/server
+
+I = /cs/research/dsa/hubris/incads/sun4.0/isode-5.8uk
+
+ISODELIBS = $I/libtsap.a $I/libisode.a $I/libcompat.a
+
+S = server/WaitFor.o \
+	server/access.o \
+	server/connection.o \
+	server/io.o \
+	tsap/tsapmisc.o
+
+L = $T/ddx/sun/sunInit.o $T/.././fonts/mkfontdir/fontdir.o \
+$T/ddx/sun/libsun.a $T/ddx/cfb/libcfb.a $T/dix/libdix.a  \
+$S \
+$T/os/4.2bsd/libos.a \
+$T/ddx/snf/libsnf.a $T/ddx/mfb/libmfb.a \
+$T/ddx/mi/libmi.a $T/.././extensions/server/libext.a \
+${ISODELIBS} 
+
+all: Xsun
+
+Xsun: $L
+	cc -O -o Xsun  $L -lm -ldbm

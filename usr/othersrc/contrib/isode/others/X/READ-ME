@@ -1,0 +1,258 @@
+This directory contains the work on mapping the X-Protocol onto the ISO
+Tranport Service.
+
+It is based on X11 R3 and ISODE Relase 6.0 tsap libraries.
+
+Basically, we require to build a server that Listens on well known
+T-SAPs. We then need clients that connect to this server.
+
+server/
+contains a libos for building an X server with (this directory
+contains a Makefile to build such a server for a Sun at UCL).
+
+These would replace the routines in ..../X11/R3/server/os/4.2bsd/
+(for example)
+
+client/
+contains the OS/Comms parts of Xlib, and so clients can be re-linked
+with the .o files here before Xlib, to force the right thing to
+happen.
+
+These would replace the relevant routines in .../X11/R3/lib/X/
+
+...although in both cases it is simpler to change the Imakefiles or 
+Makefiles just to pick up the .o's from here prior to searching the standard 
+libraries...
+
+-DISOCONN  in either, builds 
+ISO T-Service usage in client and server
+
+I would *NOT* advise defining TCPCONN or UNIXCONN or DNETCONN as well,
+but the code is sort of there...
+
+client: 
+server:
+
+so as we have an array of transport I/O fns and init it 
+in _XConnectDisplay in XConnDis.c and in
+CreateWellKnownSockets in connection.c appropriate for 
+DECNET/TCP or ISO TP
+
+THIS HAS NOT BEEN TESTED in SERVER, only for clients...
+
+Done this by:
+Add array of 
+a read(v), write(v), connect, listen, accept, close
+functions ptrs, which are used by
+
+TWrite(v)To[Server|Client]
+TRead(v)From[Server|Client]
+TConnect
+TListen
+TAccept
+TCloseDown
+
+well sort of...
+
+Note that TNetAccept will function for select as well as ISO TP so we dont need a fn for that...
+
+-DISODEBUG adds lots of fprintf(stderr...) for me.
+[if the variable isodexbug is set to TRUE in connection.c/XConnDis.c]
+
+I use isodetcpath to get my own isodetail/isoentities file. In
+a proper installation, this aint necessary, but UCL has a weird
+setup:-)
+
+Note, ISO Server names are 
+HostName:T-Name:DisplayNumber
+where T-Name is X or T to distinguish T/N service from TCP and DECNET
+Thus xhost must needs be changed, as must the rest of the access
+control stuff.
+So you could do a setenv DISPLAY `hostname`:X0 or what have you. 
+
+Note, because we do an AEI lookup on name + TServiceDisplayNumber, we 
+dont have to do the atoi stuff on display numbers for ISOCONNS...they 
+would be separate AEI entries in isoentities or directory.
+
+(server/)access.c,connect.c and (client/)XConnDis.c contain
+references to sockadd_in structs all over the place for working out
+peers and doing access control. These are changed to be TSAPaddr
+structs. Lenghts for authenitication of clients are the first NASIZE
+worth of the NSAP part of the TSAP...this is by analogy with doin it
+on the IP (i.e. per host) addr only...
+
+The parse of HostName:T-NameDisplayNumber goes straight into a call
+to str2aei(HostName, T-Name+DisplayNumber). So you nneed  an entry
+in your isoentities or directory!!
+
+T-Name = X or T at the moment.
+
+i.e. xterm -display perky:X0
+
+The entry in isoentities looks like:
+#
+# X Server (use Internet + X_TCP_PORT + 1 for now
+# The OID Is really one of Surreys at the mo!!
+# I guess OIDs for X should be done properly sometime...
+#
+
+perky		T0		1.17.4.3.36.1.1 \
+		Internet=perky.cs.ucl.ac.uk+6001
+
+dir		X0		1.17.4.3.36.1.3 \
+		Janet=00000511320041
+		
+#
+
+The mapping:
+
+X uses non-blocking writes, reads. The Open/Close are
+synchronous/blocking. A particular problem may lie in the nature of 
+reliable close in DECNET and TCP, but unreliable close in ISO TP, so we 
+really ought to use session; in fact, there's a lot of debate, but ideally,
+we would map the req/reply nature of X onto Remote Operations (which,
+contrary to popular belief, will do the streaming required by X).
+X doesnt use async (SIGIO) as far as i could find, luckily for me!!
+
+Unfortunately, the X Request/Response and Presentation functionality
+is spread throughout the X library and DDX code, which makes this
+approach a real headache.
+
+But, for now, its easier to do a transport mapping, and it buys us a
+lot, such as X over TP/X.25 and, through a TSB, between X.25 nets and
+TCP/IP nets, at low software effort. 
+
+routines that have changed:
+From ddx/libos stuff (based on 4.2bsd version)
+server/
+access.c
+connection.c
+WaitFor.c
+io.c
+
+From Xlib stuff
+client/
+XConnDis.c
+XlibInt.c
+Xlibint.h
+Xlibos.h
+
+1.
+socket+bind+connect=>
+TConnRequest
+QoS is set low for fun, and tsdu size is set to ethernet frame size (i
+dont understand why i did this!!).
+
+2.
+socket+bind+listen=>
+TNetListen
+Since an X server can handle multiple clients, we use the *static*
+server model, rather than the tsapd model.
+
+
+3. 
+accept=>TNetAccept (blocking...) plus
+TInit, TConnResponse
+
+4.
+read/write and readv writev go over to being
+TReadRequest/TTDataRequest and TReadRequest/TWriteReqest respectively
+
+5.
+In the client, Xlibos.h defines macros for 
+BytesReadable, WriteToServer, ReadFromServer, WritevToServer, ReadvFromServer.
+These map onto 
+BytesReadable, 
+TWriteToServer, TReadFromServer, TWritevToServer, TReadvFromServer.
+
+which are arrays of routines (currently [2]) indexed by the IO Family 
+(i.e. Unix or ISODE) initialised per X connection to call
+TSelectBytes, TReadRequest, TWriteReqest etc...or the unix (i.e. original) 
+equivalents...a similar trick is used in the server to achieve backwards compatibility for DECNET and raw TCP access...
+
+Since a TReadRequest returns *all* the buffered data in the transport 
+connection, the TRead(v)FromServer routines must hold onto extra data 
+beyond the X requested amount for later calls...This is a little horrid...
+
+6.
+The select loop in server in WaitFor.c goes to a
+TNetAccept loop, checking for
+a) new connections
+b) writables
+c) readables
+which cause scheduling actions in the server.
+NB select can poll for much shorter times than TNetAccept which may
+cause stickiness in X performance...
+
+7.
+getpeername=>TGetAddresses
+
+Finally, we have to map from ISODE back to X. Since all the tsap
+routines can return a disconnect with a reason, but (4.2bsd)
+X expects errno's to be meaningful, we should map the DR_*s to
+sensible errno's. In most cases (e.g. TService over TCP) this will
+probably happen anyway...
+
+
+***********************WARNING*******************************
+This has not been extensively tested. It is a sort of existence proof
+implementation rather than a proper port. I have tested it under
+Sun OS 4.0 on a Sun 3/60C and a Sun 4/330, using ISODE Release 6 beta,
+with TService over TCP and over Sunlink X.25 6.0 and over raw TCP
+! I havnt tested any X clients other than the
+ones with subdirectories here! 
+
+I have *not* checked that undefing ISOCONN makes a good old R3
+TCP/UNIX/DECNET lib, and i have not bothered merging in the hpux
+or CRAY ifdef'd stuff, since we run BSD4.3 on our HPs, and dont have 
+COS on our two Crays...
+
+The Makefiles are lazy simple minded peasantish and so forth...
+***********************WARNING*******************************
+jon crowcroft
+
+--------------------Addendum------------------------
+MakeAClient - how to make *a* client at UCL
+MakeAServer - how to make *a* server at UCL
+Makefile* - somethin that does all the above
+READ-ME - what you are doing now
+TODO - what i should be doing now
+bin/ - where i put them
+client/ - the client specific parts
+ideas/ - some notes from friends
+../isode@ - a link to the future
+../isodetail/ - my (Bond Street) tailor
+server/ - the server (dix/os) specifix
+tsap/ - another link to the future
+uwm/ - where i make uwm
+xclock/ - and a clock
+xedit/ - and something big with widgets
+xhost/ - a not quite there yet ISO auth
+ note this is the only client that actually requires source changes ...
+xinit/ - where i make my begining
+xmag/ - Room for a view
+xterm/ - terminal emulation (what zombies do)
+xwininfo/ - and just one more client to check
+
+[Currently, this code all derives from the X11R3 OS/Comms 4.2BSD
+specific code, so i guess the MIT/X Consortium Copyright should
+remain...perhaps with an ISODE one added. I certainly dont care to put
+my name to it :-) 
+
+The reason for this was i was hoping we could run a raw
+TCP+DECNET+T-Service multiprotocol X service...so i tried to make all
+the changes additions rather than substitutions for existing X code.
+This may be misled, but it worked for Julian Onions in his NTP
+port...and would admit of a first cut on an X/ISODE to X/TCP a(e.g.
+when shared X comes along...) - howz that for a boggle?
+
+Also, some path names are grotty, and need Xizing, or ISODEizing -
+again that is due to UCL weird installation]
+
+
+Jon Crowcroft
+
+jon@cs.ucl.ac.uk              internet
+jon@uk.ac.ucl.cs              JANET
+c=gb@o=University College London@ou=Computer Science@cn=Jon Crowcroft The Matrix
+
