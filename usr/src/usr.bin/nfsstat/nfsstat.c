@@ -15,21 +15,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/vmmac.h>
-#include <sys/file.h>
 #include <machine/pte.h>
 #include <sys/namei.h>
 #include <sys/mount.h>
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
+#include <signal.h>
+#include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
 #include <nlist.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <paths.h>
 
 #define	YES	1
@@ -45,47 +49,50 @@ struct nlist nl[] = {
 	"",
 };
 
-struct	pte *Sysmap;
+struct pte *Sysmap;
 
-char	*system = _PATH_UNIX;
-char	*kmemf = _PATH_KMEM;
-int	kmem;
-int	kflag;
-int	interval;
-
-extern	char *malloc();
-extern	off_t lseek();
+int kflag, kmem;
+char *kernel = _PATH_UNIX;
+char *kmemf = _PATH_KMEM;
+off_t klseek();
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
+	extern int optind;
+	extern char *optarg;
+	unsigned int interval;
 	int ch;
 
 	interval = 0;
-	argc--;
-	argv++;
-	if (argc > 0) {
-		interval = atoi(argv[0]);
-		if (interval <= 0)
+	while ((ch = getopt(argc, argv, "i:")) != EOF)
+		switch(ch) {
+		case 'i':
+			interval = atoi(optarg);
+			break;
+		case '?':
+		default:
 			usage();
-		argv++, argc--;
-		if (argc > 0) {
-			system = *argv;
-			argv++, argc--;
-			if (argc > 0) {
-				kmemf = *argv;
-				kflag++;
-			}
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (*argv) {
+		kernel = *++argv;
+		if (*++argv) {
+			kmemf = *argv;
+			kflag = 1;
 		}
 	}
-	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
-		fprintf(stderr, "%s: no namelist\n", system);
+	if (nlist(kernel, nl) < 0 || nl[0].n_type == 0) {
+		(void)fprintf(stderr, "nfsstate: %s: no namelist\n", kernel);
 		exit(1);
 	}
 	kmem = open(kmemf, O_RDONLY);
 	if (kmem < 0) {
-		perror(kmemf);
+		(void)fprintf(stderr,
+		    "nfsstat: %s: %s\n", kmemf, strerror(errno));
 		exit(1);
 	}
 	if (kflag) {
@@ -94,57 +101,34 @@ main(argc, argv)
 		Sysmap = (struct pte *)
 		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 		if (!Sysmap) {
-			fputs("nfsstat: can't get memory for Sysmap.\n", stderr);
+			(void)fprintf(stderr, "nfsstat: %s\n", strerror(errno));
 			exit(1);
 		}
 		off = nl[N_SYSMAP].n_value & ~KERNBASE;
 		(void)lseek(kmem, off, L_SET);
 		(void)read(kmem, (char *)Sysmap,
-			(int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 	}
-	intpr(interval, nl[N_NFSSTAT].n_value);
+
+	if (!nl[N_NFSSTAT].n_value) {
+		(void)fprintf(stderr, "nfsstat: nfsstats symbol not defined\n");
+		exit(1);
+	}
+	if (interval)
+		sidewaysintpr(interval, nl[N_NFSSTAT].n_value);
+	else
+		intpr(nl[N_NFSSTAT].n_value);
 	exit(0);
-}
-
-/*
- * Seek into the kernel for a value.
- */
-off_t
-klseek(fd, base, off)
-	int fd, off;
-	off_t base;
-{
-	if (kflag) {
-		/* get kernel pte */
-		base &= ~KERNBASE;
-		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
-	}
-	return (lseek(fd, base, off));
-}
-
-usage()
-{
-	fputs("Usage: nfsstat [interval [ system [ corefile ] ] ]\n", stderr);
-	exit(1);
 }
 
 /*
  * Print a description of the network interfaces.
  */
-intpr(interval, nfsstataddr)
-	int interval;
+intpr(nfsstataddr)
 	off_t nfsstataddr;
 {
 	struct nfsstats nfsstats;
 
-	if (nfsstataddr == 0) {
-		printf("nfsstat: symbol not defined\n");
-		return;
-	}
-	if (interval) {
-		sidewaysintpr((unsigned)interval, nfsstataddr);
-		return;
-	}
 	klseek(kmem, nfsstataddr, 0);
 	read(kmem, (char *)&nfsstats, sizeof(struct nfsstats));
 	printf("Client Info:\n");
@@ -296,7 +280,7 @@ loop:
 	fflush(stdout);
 	line++;
 	oldmask = sigblock(sigmask(SIGALRM));
-	if (! signalled) {
+	if (!signalled) {
 		sigpause(0);
 	}
 	sigsetmask(oldmask);
@@ -316,4 +300,27 @@ void
 catchalarm()
 {
 	signalled = YES;
+}
+
+/*
+ * Seek into the kernel for a value.
+ */
+off_t
+klseek(fd, base, off)
+	int fd, off;
+	off_t base;
+{
+	if (kflag) {
+		/* get kernel pte */
+		base &= ~KERNBASE;
+		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
+	}
+	return (lseek(fd, base, off));
+}
+
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: nfsstat [-i interval] [kernel [corefile]]\n");
+	exit(1);
 }
