@@ -1,0 +1,157 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)hp.4	4.1 (Berkeley) %G%
+.\"
+.TH HP 4 5/10/81
+.UC 4
+.SH NAME
+hp \- RP06, RM03, RM05, RM80, RP07 MASSBUS moving-head disk
+.SH SYNOPSIS
+disk hp0 at mba0 drive 0
+.SH DESCRIPTION
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0;
+minor devices 8 through 15 refer to drive 1, etc.
+The standard device names begin with ``hp'' followed by
+the drive number and then a letter a-h for partitions 0-7 respectively.
+The character ? stands here for a drive number in the range 0-7.
+.PP
+The origin and size of the pseudo-disks on each drive are
+as follows:
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
+RP06 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-37
+	hp?b	15884	33440	38-117
+	hp?c	0	340670	0-814
+	hp?g	49324	291280	118-814	
+.PP
+.nf
+RM03 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?g	49600	81984	310-822
+.PP
+.nf
+RM05 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-26
+	hp?b	16416	33440	27-81
+	hp?c	0	500384	0-822
+	hp?d	341696	15884	562-588
+	hp?e	358112	55936	589-680
+	hp?f	414048	86240	681-822
+	hp?g	341696	158592	562-822
+	hp?h	49856	291346	82-561
+.PP
+.nf
+RM80 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-36
+	hp?b	16058	33440	37-114
+	hp?c	0	242606	0-558
+	hp?g	49910	82080	115-304
+	hp?h	132370	110143	305-558
+.PP
+.nf
+RP07 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-9
+	hp?b	16000	64000	10-49
+	hp?c	0	1008000	0-629
+	hp?d	528000	15884	330-339
+	hp?e	544000	258000	340-499
+	hp?f	800000	207850	500-629
+	hp?g	528000	479850	330-629
+	hp?h	80000	448000	50-329
+.fi
+.DT
+.PP
+It is unwise for all of these files to be present in one installation,
+since there is overlap in addresses and protection becomes
+a sticky matter.
+The hp?a partition is normally used for the root file system,
+the hp?b partition as a paging area,
+and the hp?c partition for pack-pack copying (it maps the entire disk).
+On rp06's and rm03's the hp?g partition maps the rest of the pack.
+On rm80's, rm05's and rp07's, both hp?g and hp?h are used to map the
+remaining cylinders.
+.PP
+The block files access the disk via the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.  There is also a `raw' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files
+conventionally begin with an extra `r.'
+.PP
+In raw I/O counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.SH FILES
+.ta 2i
+/dev/hp[0-7][a-h]	block files
+.br
+/dev/rhp[0-7][a-h]	raw files
+.SH SEE ALSO
+hk(4), up(4)
+.SH DIAGNOSTICS
+\fBhp%d%c: hard error sn%d mbsr=%b er1=%b er2=%b\fR.  An unrecoverable
+error occured during transfer of the specified sector of the specified
+disk partition.  The MASSBUS status register is printed in hexadecimal and
+with the error bits decoded if any error bits other than MBEXC and DTABT
+are set.  In any case the contents of the two error registers are also printed
+in octal and symbolically with bits decoded.
+(Note that er2 is what old rp06 manuals would call er3; the terminology
+is that of the rm disks).
+The error was either unrecoverable, or a large number of retry attempts
+(including offset positioning and drive recalibration) could not
+recover the error.
+.PP
+\fBhp%d: write locked\fR.  The write protect switch was set on the drive
+when a write was attempted.  The write operation is not recoverable.
+.PP
+\fBhp%d: not ready\fR.  The drive was spun down or off line when it was
+accessed.  The i/o operation is not recoverable.
+.PP
+\fBhp%d%c: soft ecc sn%d\fR.  A recoverable ECC error occurred on the
+specified sector of the specified disk partition.  This happens normally
+a few times a week.  If it happens more frequently than
+this the sectors where the errors are occuring should be checked to see
+if certain cylinders on the pack, spots on the carriage of the drive
+or heads are indicated.
+.SH BUGS
+In raw I/O
+.I read
+and
+.IR write (2)
+truncate file offsets to 512-byte block boundaries,
+and
+.I write
+scribbles on the tail of incomplete blocks.
+Thus,
+in programs that are likely to access raw devices,
+.I read, write
+and
+.IR lseek (2)
+should always deal in 512-byte multiples.
+.PP
+DEC-standard error logging should be supported.
+.PP
+Bad block forwarding is not yet supported on RP06's.
+.PP
+A program to analyze the logged error information (even in its
+present reduced form) is needed.
+.PP
+The partition tables for the file systems should be read off of each
+pack, as they are never quite what any single installation would prefer,
+and this would make packs more portable.
