@@ -1,0 +1,275 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)rd.4	5.1 (Berkeley) %G%
+.\"
+.TH RD 4 ""
+.UC 7
+.SH NAME
+rd \- CS/80 disk interface
+.SH SYNOPSIS
+.B "master hpib? at scode?"
+.br
+.B "disk rd? at hpib? slave?"
+.SH DESCRIPTION
+This is a generic CS/80 disk driver.
+Only a small number of possible CS/80 drives are supported,
+but others can easily be added by adding tables to the driver.
+.PP
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0;
+minor devices 8 through 15 refer to drive 1, etc.
+The standard device names begin with ``rd'' followed by
+the drive number and then a letter a-h for partitions 0-7 respectively.
+The character ? stands here for a drive number in the range 0-7.
+.PP
+The block files access the disk via the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.  There is also a `raw' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files
+conventionally begin with an extra `r.'
+.PP
+In raw I/O counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+The driver interrogates the controller
+to determine the type of drive attached.
+The driver recognizes the following drives:
+7912, 7914, 7933, 7936, 7937, 7945, 7957A/B, 7958A/B,
+7959B, 7962, 7963, 9122, 9134, 7912, 7936, and 9122,
+not all of which have been tested.
+The origin and size of the pseudo-disks on each drive are
+as follows:
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u
+7945/7946 partitions:
+	disk	start	length	cyls
+	rd?a	112	15904	1-142
+	rd?b	16016	20160	143-322
+	rd?c	0	108416	0-967
+	rd?d	16016	40320	143-502
+	rd?e	undefined
+	rd?f	undefined
+	rd?g	36176	72240	323-967
+	rd?h	56336	52080	503-967
+.PP
+9134D partitions:
+	disk	start	length	cyls
+	rd?a	96	15936	1-166
+	rd?b	16032	13056	167-302
+	rd?c	0	29088	0-302
+	rd?d	undefined
+	rd?e	undefined
+	rd?f	undefined
+	rd?g	undefined
+	rd?h	undefined
+.PP
+9122S partitions:
+	disk	start	length	cyls
+	rd?a	undefined
+	rd?b	undefined
+	rd?c	0	1232	0-76
+	rd?d	undefined
+	rd?e	undefined
+	rd?f	undefined
+	rd?g	undefined
+	rd?h	undefined
+.PP
+7912P partitions:
+	disk	start	length	cyls
+	rd?a	0	15904	0-70
+	rd?b	16128	22400	72-171
+	rd?c	0	128128	0-571
+	rd?d	16128	42560	72-261
+	rd?e	undefined
+	rd?f	undefined
+	rd?g	38528	89600	172-571
+	rd?h	58688	69440	262-571
+.PP
+7914CT/P partitions:
+	disk	start	length	cyls
+	rd?a	224	15904	1-71
+	rd?b	16128	40320	72-251
+	rd?c	0	258048	0-1151
+	rd?d	16128	64960	72-361
+	rd?e	81088	98560	362-801
+	rd?f	179648	78400	802-1151
+	rd?g	56448	201600	252-1151
+	rd?h	81088	176960	362-1151
+.PP
+7958A partitions:
+	disk	start	length	cyls
+	rd?a	252	16128	1-64
+	rd?b	16380	32256	65-192
+	rd?c	0	255276	0-1012
+	rd?d	16380	48384	65-256
+	rd?e	64764	100800	257-656
+	rd?f	165564	89712	657-1012
+	rd?g	48636	206640	193-1012
+	rd?h	64764	190512	257-1012
+.PP
+7957A partitions:
+	disk	start	length	cyls
+	rd?a	154	16016	1-104
+	rd?b	16170	24640	105-264
+	rd?c	0	159544	0-1035
+	rd?d	16170	42350	105-379
+	rd?e	58520	54824	380-735
+	rd?f	113344	46200	736-1035
+	rd?g	40810	118734	265-1035
+	rd?h	58520	101024	380-1035
+.PP
+7933H partitions:
+	disk	start	length	cyls
+	rd?a	598	16146	1-27
+	rd?b	16744	66976	28-139
+	rd?c	0	789958	0-1320
+	rd?d	83720	16146	140-166
+	rd?e	99866	165646	167-443
+	rd?f	265512	165646	444-720
+	rd?g	83720	706238	140-1320
+	rd?h	431158	358800	721-1320
+.PP
+9134L partitions:
+	disk	start	length	cyls
+	rd?a	80	15920	1-199
+	rd?b	16000	20000	200-449
+	rd?c	0	77840	0-972
+	rd?d	16000	32000	200-599
+	rd?e	undefined
+	rd?f	undefined
+	rd?g	36000	41840	450-972
+	rd?h	48000	29840	600-972
+.PP
+7936H partitions:
+	disk	start	length	cyls
+	rd?a	861	16359	1-19
+	rd?b	17220	67158	20-97
+	rd?c	0	600978	0-697
+	rd?d	84378	16359	98-116
+	rd?e	100737	120540	117-256
+	rd?f	220416	120540	256-395
+	rd?g	84378	516600	98-697
+	rd?h	341817	259161	397-697
+.PP
+7937H partitions:
+	disk	start	length	cyls
+	rd?a	1599	15990	1-10
+	rd?b	17589	67158	11-52
+	rd?c	0	1116102	0-697
+	rd?d	84747	15990	53-62
+	rd?e	100737	246246	63-216
+	rd?f	346983	246246	217-370
+	rd?g	84747	1031355	53-697
+	rd?h	593229	522873	371-697
+.PP
+7957B/7961B partitions:
+	disk	start	length	cyls
+	rd?a	126	16002	1-127
+	rd?b	16128	32760	128-387
+	rd?c	0	159894	0-1268
+	rd?d	16128	49140	128-517
+	rd?e	65268	50400	518-917
+	rd?f	115668	44226	918-1268
+	rd?g	48888	111006	388-1268
+	rd?h	65268	94626	518-1268
+.PP
+7958B/7962B partitions:
+	disk	start	length	cyls
+	rd?a	378	16254	1-43
+	rd?b	16632	32886	44-130
+	rd?c	0	297108	0-785
+	rd?d	16632	49140	44-173
+	rd?e	65772	121716	174-495
+	rd?f	187488	109620	496-785
+	rd?g	49518	247590	131-785
+	rd?h	65772	231336	174-785
+.PP
+7959B/7963B partitions:
+	disk	start	length	cyls
+	rd?a	378	16254	1-43
+	rd?b	16632	49140	44-173
+	rd?c	0	594216	0-1571
+	rd?d	16632	65772	44-217
+	rd?e	82404	303912	218-1021
+	rd?f	386316	207900	1022-1571
+	rd?g	65772	528444	174-1571
+	rd?h	82404	511812	218-1571
+.PP
+.DT
+.fi
+.PP
+It is unwise for all of these files to be present in one installation,
+since there is overlap in addresses and protection becomes
+a sticky matter.
+The eight partitions as given support four basic, non-overlapping layouts,
+though not all partitions exist on all drive types.
+.PP
+In the first layout there are three partitions and a ``bootblock'' area.
+The bootblock area is at the beginning of the disk and holds
+the standalone disk boot program.
+The rd?a partition is for the root file system,
+rd?b is a paging/swapping area, and
+rd?g is for everything else.
+.PP
+The second layout is the same idea,
+but has a larger paging/swapping partition (rd?d) and
+a smaller ``everything else'' partition (rd?h).
+This layout is better for environments which run many large processes.
+.PP
+The third layout is a variation of the second,
+but breaks the rd?h partition into two partitions, rd?e and rd?f.
+.PP
+The final layout is intended for a large, single file system second disk.
+It is also used when writing out the boot program since it is the only
+partition mapping the bootblock area.
+.SH FILES
+/dev/rd[0-7][a-h]	block files
+.br
+/dev/rrd[0-7][a-h]	raw files
+.SH DIAGNOSTICS
+\fBrd%d err: v%d u%d, R0x%x F0x%x A0x%x I0x%x, block %d\fR
+.br
+An unrecoverable data error occurred during transfer of the
+specified block on the specified disk.
+.SH BUGS
+The current disk partitioning is totally bogus.
+CS/80 drives have 256 byte sectors which are mapped to 512 byte
+``sectors'' by the driver.
+Since some CS/80 drives have an odd number of sectors per cylinder,
+the disk geometry used is not always accurate.
+.PP
+The partition tables for the file systems should be read off of each pack,
+as they are never quite what any single installation would prefer,
+and this would make packs more portable.
+.PP
+In raw I/O
+.I read
+and
+.IR write (2)
+truncate file offsets to 512-byte block boundaries,
+and
+.I write
+scribbles on the tail of incomplete blocks.
+Thus,
+in programs that are likely to access raw devices,
+.I read, write
+and
+.IR lseek (2)
+should always deal in 512-byte multiples.
+.PP
+A program to analyze the logged error information (even in its
+present reduced form) is needed.
