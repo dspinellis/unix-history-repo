@@ -1,4 +1,4 @@
-/*	user.h	3.6	%G%	*/
+/*	user.h	3.7	%G%	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
