@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -555,7 +555,7 @@ single_user()
 		 */
 		emergency("can't fork single-user shell, trying again");
 		while (waitpid(-1, (int *) 0, WNOHANG) > 0)
-			;
+			continue;
 		return (state_func_t) single_user;
 	}
 
@@ -633,7 +633,7 @@ runcom()
 		emergency("can't fork for %s on %s: %m",
 			_PATH_BSHELL, _PATH_RUNCOM);
 		while (waitpid(-1, (int *) 0, WNOHANG) > 0)
-			;
+			continue;
 		sleep(STALL_TIMEOUT);
 		return (state_func_t) single_user;
 	}
@@ -740,12 +740,14 @@ find_session(pid)
 {
 	DBT key;
 	DBT data;
+	session_t *ret;
 
 	key.data = &pid;
 	key.size = sizeof pid;
 	if ((*session_db->get)(session_db, &key, &data, 0) != 0)
 		return 0;
-	return *(session_t **)data.data;
+	bcopy(data.data, (char *)&ret, sizeof(ret));
+	return ret;
 }
 
 /*
@@ -763,7 +765,7 @@ construct_argv(command)
 	if ((argv[argc++] = strtok(command, separators)) == 0)
 		return 0;
 	while (argv[argc++] = strtok((char *) 0, separators))
-		;
+		continue;
 	return argv;
 }
 
