@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.93		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.94		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -37,7 +37,6 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.93		%G%";
 # define MAXRWSETS	30		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define MAXTRUST	30		/* maximum number of trusted users */
-# define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 /*
 **  Address structure.
 **	Addresses are stored internally in this structure.
@@ -440,6 +439,7 @@ EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 extern char	*XcriptFile;	/* template for Transcript [conf.c] */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
+extern char	SpaceSub;	/* substitution for <lwsp> [conf.c] */
 /*
 **  Trace information
 */

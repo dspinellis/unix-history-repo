@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.32		%G%);
+SCCSID(@(#)util.c	3.33		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -48,6 +48,33 @@ stripquotes(s, qf)
 			*q++ = c & 0177;
 	}
 	*q = '\0';
+}
+/*
+**  QSTRLEN -- give me the string length assuming 0200 bits add a char
+**
+**	Parameters:
+**		s -- the string to measure.
+**
+**	Reurns:
+**		The length of s, including space for backslash escapes.
+**
+**	Side Effects:
+**		none.
+*/
+
+qstrlen(s)
+	register char *s;
+{
+	register int l = 0;
+	register char c;
+
+	while ((c = *s++) != '\0')
+	{
+		if (bitset(0200, c))
+			l++;
+		l++;
+	}
+	return (l);
 }
 /*
 **  CAPITALIZE -- return a copy of a string, properly capitalized.

@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.60		%G%);
+SCCSID(@(#)conf.c	3.61		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -100,6 +100,12 @@ char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
 
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
 char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
+
+/*
+**  Some other configuration....
+*/
+
+char	SpaceSub =	'.';
 
 # ifdef V6
 /*
