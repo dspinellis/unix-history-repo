@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)calendar.1	6.12 (Berkeley) %G%
+.\"     @(#)calendar.1	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CALENDAR 1
@@ -61,8 +61,8 @@ Some possible calendar entries:
 #include	<calendar.birthday>
 
 6/15		... June 15 (if ambiguous, will default to month/day).
-Jun. 15		... June 15.
-15 June		... June 15.
+Jun. 15	... June 15.
+15 June	... June 15.
 Thursday	... Every Thursday.
 June		... Every June 1st.
 15 *		... 15th of every month.
@@ -113,10 +113,6 @@ first on the line.
 A
 .Nm
 command appeared in Version 7 AT&T UNIX.
-The version of
-.Nm calendar
-released with this manual
-is new and unrelated to the former.
 .Sh BUGS
 .Nm Calendar
 doesn't handle events that move around from year to year, i.e.
