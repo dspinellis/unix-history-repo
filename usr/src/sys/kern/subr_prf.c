@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.7 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,6 +171,20 @@ logpri(level)
 	putchar('>', TOLOG, (struct tty *)0);
 }
 
+/*VARARGS1*/
+addlog(fmt, x1)
+	char *fmt;
+	unsigned x1;
+{
+	register s = splhigh();
+
+	prf(fmt, &x1, TOLOG, (struct tty *)0);
+	splx(s);
+	if (!log_open)
+		prf(fmt, &x1, TOCONS, (struct tty *)0);
+	logwakeup();
+}
+
 prf(fmt, adx, flags, ttyp)
 	register char *fmt;
 	register u_int *adx;
@@ -209,12 +223,12 @@ number:
 		break;
 	case 'c':
 		b = *adx;
-#if ENDIAN == LITTLE
+#if BYTE_ORDER == LITTLE_ENDIAN
 		for (i = 24; i >= 0; i -= 8)
 			if (c = (b >> i) & 0x7f)
 				putchar(c, flags, ttyp);
 #endif
-#if ENDIAN == BIG
+#if BYTE_ORDER == BIG_ENDIAN
 		if (c = (b & 0x7f))
 			putchar(c, flags, ttyp);
 #endif
@@ -244,6 +258,11 @@ number:
 		s = (char *)*adx;
 		while (c = *s++)
 			putchar(c, flags, ttyp);
+		break;
+
+	case 'r':
+		s = (char *)*adx++;
+		prf(s, *adx, flags, ttyp);
 		break;
 
 	case '%':
@@ -343,7 +362,7 @@ putchar(c, flags, tp)
 	register int c;
 	struct tty *tp;
 {
-	int startflags = flags;
+	extern int msgbufmapped;
 
 	if (panicstr)
 		constty = 0;
@@ -369,11 +388,8 @@ putchar(c, flags, tp)
 			constty = 0;
 		splx(s);
 	}
-	/*
-	 * Can send to log only after memory management enabled:
-	 * this has happened by the time maxmem is set.
-	 */
-	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177 && maxmem) {
+	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177 &&
+	    msgbufmapped) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			register int i;
 
