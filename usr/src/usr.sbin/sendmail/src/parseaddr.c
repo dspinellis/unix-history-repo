@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -179,7 +179,8 @@ invalidaddr(addr)
 {
 	for (; *addr != '\0'; addr++)
 	{
-		if ((((int) *addr) & 0377) >= '\040' || isspace(*addr))
+		if (!isascii((int) *addr & 0377) ||
+		    !iscntrl(*addr) || isspace(*addr))
 			continue;
 		setstat(EX_USAGE);
 		usrerr("Address contained invalid control characters");
@@ -1576,16 +1577,23 @@ buildaddr(tv, a)
 	/* do special mapping for local mailer */
 	if (m == LocalMailer && *tv != NULL)
 	{
-		if (**tv == '|')
+		register char *p = *tv;
+
+		if (*p == '"')
+			p++;
+		if (*p == '|')
 			a->q_mailer = m = ProgMailer;
-		else if (**tv == '/')
+		else if (*p == '/')
 			a->q_mailer = m = FileMailer;
-		else if (**tv == ':')
+		else if (*p == ':')
 		{
 			/* may be :include: */
 			cataddr(tv, buf, sizeof buf);
-			buf[9] = '\0';
-			if (strcasecmp(buf, ":include:") == 0)
+			p = buf;
+			if (*p == '"')
+				p++;
+			p[9] = '\0';
+			if (strcasecmp(p, ":include:") == 0)
 				a->q_mailer = m = InclMailer;
 		}
 	}

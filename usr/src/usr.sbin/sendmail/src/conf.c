@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -448,7 +448,7 @@ ttypath()
 **	forwarding or registration of users.
 **
 **	If the hosts are found to be incompatible, an error
-**	message should be given using "usrerr" and FALSE should
+**	message should be given using "usrerr" and 0 should
 **	be returned.
 **
 **	'NoReturn' can be set to suppress the return-to-sender
@@ -458,14 +458,14 @@ ttypath()
 **		to -- the person being sent to.
 **
 **	Returns:
-**		TRUE -- ok to send.
-**		FALSE -- not ok.
+**		+1 -- ok to send.
+**		0 -- not ok.
+**		-1 -- return TEMPFAIL.
 **
 **	Side Effects:
 **		none (unless you include the usrerr stuff)
 */
 
-bool
 checkcompat(to, e)
 	register ADDRESS *to;
 	register ENVELOPE *e;

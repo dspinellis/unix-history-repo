@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -618,6 +618,7 @@ makemailer(line)
 		i = NextMailer++;
 	}
 	Mailer[i] = s->s_mailer = m;
+	m->m_mno = i;
 }
 /*
 **  MUNCHSTRING -- translate a string into internal form.

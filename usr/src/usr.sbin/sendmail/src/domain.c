@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.1 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.2 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.1 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.2 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -23,12 +23,13 @@ static char sccsid[] = "@(#)domain.c	6.1 (Berkeley) %G% (without name server)";
 #include <resolv.h>
 #include <netdb.h>
 
-typedef union {
-	HEADER qb1;
-	char qb2[PACKETSZ];
+typedef union
+{
+	HEADER	qb1;
+	char	qb2[PACKETSZ];
 } querybuf;
 
-static char hostbuf[MAXMXHOSTS*PACKETSZ];
+static char	hostbuf[MAXMXHOSTS*PACKETSZ];
 
 getmxrr(host, mxhosts, localhost, rcode)
 	char *host, **mxhosts, *localhost;
@@ -42,6 +43,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 	querybuf answer;
 	int ancount, qdcount, buflen, seenlocal;
 	u_short pref, localpref, type, prefer[MAXMXHOSTS];
+	int weight[MAXMXHOSTS];
 
 	errno = 0;
 	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
@@ -117,6 +119,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 			seenlocal = 1;
 			continue;
 		}
+		weight[nmx] = mxrand(bp);
 		prefer[nmx] = pref;
 		mxhosts[nmx++] = bp;
 		n = strlen(bp);
@@ -129,16 +132,20 @@ getmxrr(host, mxhosts, localhost, rcode)
 		*bp++ = '\0';
 		buflen -= n + 1;
 	}
-	if (nmx == 0) {
+	if (nmx == 0)
+	{
 punt:		mxhosts[0] = strcpy(hostbuf, host);
-		return(1);
+		return (1);
 	}
 
 	/* sort the records */
-	for (i = 0; i < nmx; i++) {
-		for (j = i + 1; j < nmx; j++) {
+	for (i = 0; i < nmx; i++)
+	{
+		for (j = i + 1; j < nmx; j++)
+		{
 			if (prefer[i] > prefer[j] ||
-			    (prefer[i] == prefer[j] && (rand() & 0100) == 0)) {
+			    (prefer[i] == prefer[j] && weight[i] > weight[j]))
+			{
 				register int temp;
 				register char *temp1;
 
@@ -148,23 +155,78 @@ punt:		mxhosts[0] = strcpy(hostbuf, host);
 				temp1 = mxhosts[i];
 				mxhosts[i] = mxhosts[j];
 				mxhosts[j] = temp1;
+				temp = weight[i];
+				weight[i] = weight[j];
+				weight[j] = temp;
 			}
 		}
-		if (seenlocal && prefer[i] >= localpref) {
+		if (seenlocal && prefer[i] >= localpref)
+		{
 			/*
 			 * truncate higher pref part of list; if we're
 			 * the best choice left, we should have realized
 			 * awhile ago that this was a local delivery.
 			 */
-			if (i == 0) {
+			if (i == 0)
+			{
 				*rcode = EX_CONFIG;
-				return(-1);
+				return (-1);
 			}
 			nmx = i;
 			break;
 		}
 	}
-	return(nmx);
+	return (nmx);
+}
+/*
+**  MXRAND -- create a randomizer for equal MX preferences
+**
+**	If two MX hosts have equal preferences we want to randomize
+**	the selection.  But in order for signatures to be the same,
+**	we need to randomize the same way each time.  This function
+**	computes a pseudo-random hash function from the host name.
+**
+**	Parameters:
+**		host -- the name of the host.
+**
+**	Returns:
+**		A random but repeatable value based on the host name.
+**
+**	Side Effects:
+**		none.
+*/
+
+mxrand(host)
+	register char *host;
+{
+	int hfunc;
+	static unsigned int seed;
+
+	if (seed == 0)
+	{
+		seed = (int) curtime() & 0xffff;
+		if (seed == 0)
+			seed++;
+	}
+
+	if (tTd(17, 9))
+		printf("mxrand(%s)", host);
+
+	hfunc = seed;
+	while (*host != '\0')
+	{
+		int c = *host++;
+
+		if (isascii(c) && isupper(c))
+			c = tolower(c);
+		hfunc = ((hfunc << 1) + c) % 2003;
+	}
+
+	hfunc &= 0xff;
+
+	if (tTd(17, 9))
+		printf(" = %d\n", hfunc);
+	return hfunc;
 }
 /*
 **  GETCANONNAME -- get the canonical name for named host

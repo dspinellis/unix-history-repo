@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -60,6 +60,7 @@ deliver(e, firstto)
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	int rcode;			/* response code */
 	char *from;			/* pointer to from person */
+	char *firstsig;			/* signature of firstto */
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE-50];		/* text line of to people */
 	char buf[MAXNAME];
@@ -69,6 +70,7 @@ deliver(e, firstto)
 	extern ADDRESS *getctladdr();
 	extern char *remotename();
 	extern MCI *openmailer();
+	extern char *hostsignature();
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
@@ -211,6 +213,7 @@ deliver(e, firstto)
 	tobuf[0] = '\0';
 	e->e_to = tobuf;
 	ctladdr = NULL;
+	firstsig = hostsignature(firstto->q_mailer, firstto->q_host, e);
 	for (; to != NULL; to = to->q_next)
 	{
 		/* avoid sending multiple recipients to dumb mailers */
@@ -219,8 +222,8 @@ deliver(e, firstto)
 
 		/* if already sent or not for this host, don't send */
 		if (bitset(QDONTSEND, to->q_flags) ||
-		    strcmp(to->q_host, host) != 0 ||
-		    to->q_mailer != firstto->q_mailer)
+		    to->q_mailer != firstto->q_mailer ||
+		    strcmp(hostsignature(to->q_mailer, to->q_host, e), firstsig) != 0)
 			continue;
 
 		/* avoid overflowing tobuf */
@@ -254,7 +257,7 @@ deliver(e, firstto)
 			continue;
 		}
 		rcode = checkcompat(to, e);
-		if (r <= 0)
+		if (rcode <= 0)
 		{
 			giveresponse(rcode == 0 ? EX_UNAVAILABLE : EX_TEMPFAIL,
 				     m, e);
@@ -733,35 +736,14 @@ openmailer(m, pvp, ctladdr, clever, e)
 		 strcmp(m->m_mailer, "[TCP]") == 0)
 	{
 #ifdef DAEMON
-		register int i, j;
+		register int i;
 		register u_short port;
-		int nmx;
-		char *mxhosts[MAXMXHOSTS + 1];
+		char *curhost;
 		extern MCI *mci_get();
+		extern char *hostsignature();
 
 		CurHostName = pvp[1];
-#ifdef NAMED_BIND
-		if (CurHostName != NULL && CurHostName[0] != '\0' &&
-		    CurHostName[0] != '[')
-		{
-			int rcode;
-			char buf[MAXNAME];
-
-			expand("\001j", buf, &buf[sizeof(buf) - 1], e);
-			nmx = getmxrr(CurHostName, mxhosts, buf, &rcode);
-			if (nmx < 0)
-			{
-				mci = mci_get(CurHostName, m);
-				mci->mci_exitstat = rcode;
-				mci->mci_errno = errno;
-			}
-		}
-		else
-#endif
-		{
-			nmx = 1;
-			mxhosts[0] = CurHostName;
-		}
+		curhost = hostsignature(m, pvp[1], e);
 
 		if (!clever)
 			syserr("non-clever IPC");
@@ -769,11 +751,24 @@ openmailer(m, pvp, ctladdr, clever, e)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
-		for (j = 0; j < nmx; j++)
+		while (*curhost != '\0')
 		{
+			register char *p;
+			char hostbuf[MAXNAME];
+
+			/* pull the next host from the signature */
+			p = strchr(curhost, ':');
+			if (p == NULL)
+				p = &curhost[strlen(curhost)];
+			strncpy(hostbuf, curhost, p - curhost);
+			hostbuf[p - curhost] = '\0';
+			if (*p != '\0')
+				p++;
+			curhost = p;
+
 			/* see if we already know that this host is fried */
-			CurHostName = mxhosts[j];
-			mci = mci_get(CurHostName, m);
+			CurHostName = hostbuf;
+			mci = mci_get(hostbuf, m);
 			if (mci->mci_state != MCIS_CLOSED)
 			{
 				if (tTd(11, 1))
@@ -788,10 +783,10 @@ openmailer(m, pvp, ctladdr, clever, e)
 				continue;
 
 			/* try the connection */
-			setproctitle("%s %s: %s", e->e_id, mxhosts[j], "user open");
+			setproctitle("%s %s: %s", e->e_id, hostbuf, "user open");
 			message(Arpa_Info, "Connecting to %s (%s)...",
-				mxhosts[j], m->m_name);
-			i = makeconnection(mxhosts[j], port, mci,
+				hostbuf, m->m_name);
+			i = makeconnection(hostbuf, port, mci,
 				bitnset(M_SECURE_PORT, m->m_flags));
 			mci->mci_exitstat = i;
 			mci->mci_errno = errno;
@@ -1658,4 +1653,113 @@ sendall(e, mode)
 
 	if (mode == SM_FORK)
 		finis();
+}
+/*
+**  HOSTSIGNATURE -- return the "signature" for a host.
+**
+**	The signature describes how we are going to send this -- it
+**	can be just the hostname (for non-Internet hosts) or can be
+**	an ordered list of MX hosts.
+**
+**	Parameters:
+**		m -- the mailer describing this host.
+**		host -- the host name.
+**		e -- the current envelope.
+**
+**	Returns:
+**		The signature for this host.
+**
+**	Side Effects:
+**		Can tweak the symbol table.
+*/
+
+char *
+hostsignature(m, host, e)
+	register MAILER *m;
+	char *host;
+	ENVELOPE *e;
+{
+	register char *p;
+	register STAB *s;
+	int i;
+	int len;
+#ifdef NAMED_BIND
+	int nmx;
+	auto int rcode;
+	char *mxhosts[MAXMXHOSTS + 1];
+	static char myhostbuf[MAXNAME];
+#endif
+
+	/*
+	**  Check to see if this uses IPC -- if not, it can't have MX records.
+	*/
+
+	p = m->m_mailer;
+	if (strcmp(p, "[IPC]") != 0 && strcmp(p, "[TCP]") != 0)
+	{
+		/* just an ordinary mailer */
+		return host;
+	}
+
+	/*
+	**  If it is a numeric address, just return it.
+	*/
+
+	if (host[0] == '[')
+		return host;
+
+	/*
+	**  Look it up in the symbol table.
+	*/
+
+	s = stab(host, ST_HOSTSIG, ST_ENTER);
+	if (s->s_hostsig != NULL)
+		return s->s_hostsig;
+
+	/*
+	**  Not already there -- create a signature.
+	*/
+
+#ifdef NAMED_BIND
+	if (myhostbuf[0] == '\0')
+		expand("\001j", myhostbuf, &myhostbuf[sizeof myhostbuf - 1], e);
+
+	nmx = getmxrr(host, mxhosts, myhostbuf, &rcode);
+	if (nmx <= 0)
+	{
+		register MCI *mci;
+		extern int errno;
+		extern MCI *mci_get();
+
+		/* update the connection info for this host */
+		mci = mci_get(host, m);
+		mci->mci_exitstat = rcode;
+		mci->mci_errno = errno;
+
+		/* and return the original host name as the signature */
+		s->s_hostsig = host;
+		return host;
+	}
+
+	len = 0;
+	for (i = 0; i < nmx; i++)
+	{
+		len += strlen(mxhosts[i]) + 1;
+	}
+	s->s_hostsig = p = xalloc(len);
+	for (i = 0; i < nmx; i++)
+	{
+		if (i != 0)
+			*p++ = ':';
+		strcpy(p, mxhosts[i]);
+		p += strlen(p);
+	}
+	makelower(s->s_hostsig);
+#else
+	/* not using BIND -- the signature is just the host name */
+	s->s_hostsig = host;
+#endif
+	if (tTd(17, 1))
+		printf("hostsignature(%s) = %s\n", host, s->s_hostsig);
+	return s->s_hostsig;
 }
