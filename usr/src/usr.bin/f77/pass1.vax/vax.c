@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vax.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vax.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,8 +15,14 @@ static char sccsid[] = "@(#)vax.c	5.1 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: vax.c,v 3.1 85/02/27 19:14:58 donn Exp $
  * $Log:	vax.c,v $
+ * Revision 5.2  85/08/10  05:06:30  donn
+ * Deleted intcon[] and realcon[], since they are now made redundant by
+ * changes in intr.c.  From Jerry Berkman.
+ * 
+ * Revision 5.1  85/08/10  03:50:38  donn
+ * 4.3 alpha
+ * 
  * Revision 3.1  85/02/27  19:14:58  donn
  * Changed to use pcc.h instead of pccdefs.h.
  * 
@@ -52,37 +58,6 @@ extern int types2[];
 int maxregvar = MAXREGVAR;
 int regnum[] =  { 10, 9, 8, 7, 6 } ;
 static int regmask[] = { 0x800, 0xc00, 0xe00, 0xf00, 0xf80, 0xfc0 };
-
-
-
-ftnint intcon[14] =
-	{ 2, 2, 2, 2,
-	  15, 31, 24, 56,
-	  -128, -128, 127, 127,
-	  32767, 2147483647 };
-
-#if HERE == VAX
-	/* then put in constants in octal */
-long realcon[6][2] =
-	{
-		{ 0200, 0 },
-		{ 0200, 0 },
-		{ 037777677777, 0 },
-		{ 037777677777, 037777777777 },
-		{ 032200, 0 },
-		{ 022200, 0 }
-	};
-#else
-double realcon[6] =
-	{
-	2.9387358771e-39,
-	2.938735877055718800e-39
-	1.7014117332e+38,
-	1.701411834604692250e+38
-	5.960464e-8,
-	1.38777878078144567e-17,
-	};
-#endif
 
 
 /*
