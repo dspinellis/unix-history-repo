@@ -1,0 +1,2 @@
+Mmount_null	mount_null.c	/^main(argc, argv)$/
+usage	mount_null.c	/^usage()$/

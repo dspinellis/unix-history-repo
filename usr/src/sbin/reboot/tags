@@ -1,0 +1,3 @@
+Mreboot	reboot.c	/^main(argc, argv)$/
+err	reboot.c	/^err(fmt, va_alist)$/
+usage	reboot.c	/^usage()$/

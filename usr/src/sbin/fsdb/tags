@@ -1,0 +1,64 @@
+HEXLETTER	fsdb.c	/^#define HEXLETTER(c)	(((c) >= 'A') && ((c) <= 'F')/
+Mfsdb	fsdb.c	/^main(argc, argv)$/
+STRINGSIZE	fsdb.c	/^#define	STRINGSIZE(d)	((long)d->d_reclen - \\$/
+bcomp	fsdb.c	/^bcomp(addr)$/
+bmap	fsdb.c	/^bmap(bn)$/
+cg_blks	fsdb.c	/^#define cg_blks(fs, cgp, cylno) (((cgp))->cg_b[cyl/
+cg_blksfree	fsdb.c	/^#define cg_blksfree(cgp) (((cgp))->cg_free)$/
+cg_blktot	fsdb.c	/^#define cg_blktot(cgp) (((cgp))->cg_btot)$/
+cg_chkmagic	fsdb.c	/^#define cg_chkmagic(cgp) ((cgp)->cg_magic == CG_MA/
+cg_inosused	fsdb.c	/^#define cg_inosused(cgp) (((cgp))->cg_iused)$/
+cgrp_check	fsdb.c	/^cgrp_check(cgrp)$/
+check_addr	fsdb.c	/^check_addr(eof_flag, end, eof, keep_on)$/
+compare	fsdb.c	/^compare(s1, s2, at_start)$/
+devcheck	fsdb.c	/^devcheck(md)$/
+digit	fsdb.c	/^#define	digit(c)	(((c) >= '0') && ((c) <= '9'))$/
+eat_spaces	fsdb.c	/^eat_spaces()$/
+err	fsdb.c	/^err()$/
+expr	fsdb.c	/^expr()$/
+fcmp	fsdb.c	/^fcmp(f1, f2)$/
+ffcmp	fsdb.c	/^ffcmp(f1, f2)$/
+fill	fsdb.c	/^fill()$/
+find	fsdb.c	/^find()$/
+fmtentry	fsdb.c	/^fmtentry(fn)$/
+follow_path	fsdb.c	/^follow_path(level, inum)$/
+formatf	fsdb.c	/^formatf(fn0, fnlast)$/
+fprnt	fsdb.c	/^fprnt(style, po)$/
+freemem	fsdb.c	/^freemem(p, numb)$/
+get	fsdb.c	/^get(lngth)$/
+getachar	fsdb.c	/^getachar()$/
+getblk	fsdb.c	/^getblk(address)$/
+getdirslot	fsdb.c	/^getdirslot(slot)$/
+getname	fsdb.c	/^getname()$/
+getnextinput	fsdb.c	/^getnextinput()$/
+getnumb	fsdb.c	/^getnumb()$/
+hexletter	fsdb.c	/^#define hexletter(c)	(((c) >= 'a') && ((c) <= 'f')/
+hextodigit	fsdb.c	/^#define hextodigit(c)	((c) - 'a' + 10)$/
+icheck	fsdb.c	/^icheck(address)$/
+index	fsdb.c	/^index(b)$/
+insert	fsdb.c	/^insert(bp)$/
+itob	fsdb.c	/^#define itob(i)		((itod(fs, (i)) << FRGSHIFT) + it/
+letter	fsdb.c	/^#define	letter(c)	((((c) >= 'a')&&((c) <= 'z')) ||/
+lobyte	fsdb.c	/^#define lobyte(X)	(((unsigned char *)&X)[1])$/
+loword	fsdb.c	/^#define loword(X)	(((ushort *)&X)[1])$/
+ls	fsdb.c	/^ls(fn0, fnlast, level)$/
+match	fsdb.c	/^match(string, upto)$/
+min	fsdb.c	/^#define min(x, y)	((x) < (y) ? (x) : (y))$/
+nullblk	fsdb.c	/^nullblk(bn)$/
+numtodigit	fsdb.c	/^#define	numtodigit(c)	((c) - '0')$/
+octaldigit	fsdb.c	/^#define octaldigit(c)	(((c) >= '0') && ((c) <= '7'/
+parse	fsdb.c	/^parse()$/
+pbits	fsdb.c	/^pbits(cp, max)$/
+print	fsdb.c	/^print(value, fieldsz, digits, lead)$/
+print_check	fsdb.c	/^print_check(lptr, tcount, tbase, i)$/
+print_path	fsdb.c	/^print_path(p, pntr)$/
+printcg	fsdb.c	/^printcg(cg)$/
+printsb	fsdb.c	/^printsb(fs)$/
+put	fsdb.c	/^put(item, lngth)$/
+puta	fsdb.c	/^puta()$/
+putf	fsdb.c	/^putf(c)$/
+restore_inode	fsdb.c	/^restore_inode(inum)$/
+term	fsdb.c	/^term()$/
+ungetachar	fsdb.c	/^ungetachar(c)$/
+uppertolower	fsdb.c	/^#define uppertolower(c)	((c) - 'A' + 'a')$/
+valid_addr	fsdb.c	/^valid_addr()$/
