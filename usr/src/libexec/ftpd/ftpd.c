@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.28	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.29	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -211,12 +211,12 @@ nextopt:
 	if ((int)signal(SIGURG, myoob) < 0)
 		syslog(LOG_ERR, "signal: %m");
 
-	/* handle urgent data inline */
-	/* Sequent defines this, but it doesn't work */
+	/* Try to handle urgent data inline */
 #ifdef SO_OOBINLINE
 	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0)
 		syslog(LOG_ERR, "setsockopt: %m");
 #endif
+
 #ifdef	F_SETOWN
 	if (fcntl(fileno(stdin), F_SETOWN, getpid()) == -1)
 		syslog(LOG_ERR, "fcntl F_SETOWN: %m");
@@ -369,11 +369,12 @@ user(name)
 					    "FTP LOGIN REFUSED FROM %s, %s",
 					    remotehost, name);
 				pw = (struct passwd *) NULL;
+				(void) fclose(fd);
 				return;
 			}
 		    }
+		    (void) fclose(fd);
 		}
-		(void) fclose(fd);
 	}
 	reply(331, "Password required for %s.", name);
 	askpasswd = 1;
@@ -758,7 +759,7 @@ receive_data(instr, outstr)
 	FILE *instr, *outstr;
 {
 	register int c;
-	int cnt;
+	int cnt, bare_lfs = 0;
 	char buf[BUFSIZ];
 
 	transflag++;
@@ -788,6 +789,8 @@ receive_data(instr, outstr)
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
 			byte_count++;
+			if (c == '\n')
+				bare_lfs++;
 			while (c == '\r') {
 				if (ferror(outstr))
 					goto data_err;
@@ -806,6 +809,10 @@ receive_data(instr, outstr)
 		if (ferror(outstr))
 			goto file_err;
 		transflag = 0;
+		if (bare_lfs) {
+			lreply(230, "WARNING! %d bare linefeeds received in ASCII mode", bare_lfs);
+			printf("   File may not have transferred correctly.\r\n");
+		}
 		return (0);
 	default:
 		reply(550, "Unimplemented TYPE %d in receive_data", type);
@@ -863,7 +870,7 @@ statcmd()
 	lreply(211, "%s FTP server status:", hostname, version);
 	printf("     %s\r\n", version);
 	printf("     Connected to %s", remotehost);
-	if (isdigit(remotehost[0]))
+	if (!isdigit(remotehost[0]))
 		printf(" (%s)", inet_ntoa(his_addr.sin_addr));
 	printf("\r\n");
 	if (logged_in) {
