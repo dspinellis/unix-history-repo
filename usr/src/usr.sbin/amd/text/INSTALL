@@ -22,7 +22,7 @@ not possible (e.g. System V without reliable signals).  The current
 known operating systems (grouped by architecture) are:
 
 	acis43			(AOS) ACIS 4.3BSD on an IBM RT
-	aix3			AIX 3.1
+	aix3			AIX 3.2
 	aux			Apple A/UX
 	bsd44			4.4 BSD on whatever
 	concentrix		Concentrix on an Alliant
@@ -30,12 +30,14 @@ known operating systems (grouped by architecture) are:
 	fpx4			Celerity FPX 4.1/2
 	hlh42			4.2 BSD on HLH Orion 1/05
 	hpux			HP-UX 6.* and 7.* on a HP9000/300
-	irix			SGI Iris
+	irix3			SGI Iris
+	irix4			SGI Iris w/Irix 4.0.x
 	next			NeXT
 	riscix			4.3 BSD on an Acorn Archimedes
 	sos3, sos4		SunOS 3.* and 4.* on a Sun-3 and Sun-4
 	u2_2			Ultrix 2.2 (or 2.*?) on a VAX (broken)
-	u3_0			Ultrix 3.0/4.0 (or 3.*?) on a VAX (broken)
+	u3_0			Ultrix 3.0 (or 3.*?) on a VAX (broken)
+	u4_2			Ultrix 4.2
 	umax43			4.3 BSD on an Encore Multimax
 	xinu43			More/BSD (4.3 BSD) on a VAX or HP9000/300
 
@@ -189,14 +191,4 @@ mapping root to nobody.
 If anything interesting happened, eg it didn't work, please report it to me
 -- Jan-Simon Pendry <jsp@doc.ic.ac.uk> -- as detailed in the README file.
 
-KNOWN PROBLEMS - Contact me for more details
-
-* Amd does not work correctly on a DecStation 3100 system running
-  Ultrix 3.1 or 4.0.  This is a bug in Ultrix.  This is caused by a data structure
-  size problem in the Ultrix kernel.  Last I heard, this was still not fixed in
-  Ultrix 4.0.  Patches are available for anonymous ftp from dip.cs.wisc.edu:
-     pub/nfs_subr.o-3.1  (For Ultrix 3.1 -- probably breaks with 3.1C/D)
-     pub/nfs_subr.o-4.0  (For Ultrix 4.0, rev 179)
-  Thanks to Bruce Cole <cole@cs.wisc.edu> for making them available.
-
-$Id: INSTALL,v 5.2.2.1 1992/02/09 15:11:34 jsp beta $
+$Id: INSTALL,v 5.2.2.2 1992/05/31 16:49:22 jsp Exp $
