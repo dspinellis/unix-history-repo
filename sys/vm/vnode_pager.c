@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.18 1994/06/11 07:58:08 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.19 1994/06/16 08:53:55 davidg Exp $
  */
 
 /*
@@ -101,10 +101,8 @@ struct pagerops vnodepagerops = {
 
 static int vnode_pager_input(vn_pager_t vnp, vm_page_t * m, int count, int reqpage);
 static int vnode_pager_output(vn_pager_t vnp, vm_page_t * m, int count, int *rtvals);
-struct buf *
-getpbuf();
-void 
-relpbuf(struct buf * bp);
+struct buf * getpbuf();
+void relpbuf(struct buf * bp);
 
 extern vm_map_t pager_map;
 
