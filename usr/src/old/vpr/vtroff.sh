@@ -1,6 +1,6 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	4.3	(Berkeley)	%G%
+#	@(#)vtroff.sh	4.4	(Berkeley)	%G%
 #
 umask 0
 set flags=() noglob length=() fonts=() fontf=()
@@ -8,6 +8,7 @@ unset t
 set macp = (/usr/lib/tmac/tmac.vcat)
 set sort = (/usr/lib/rvsort)
 set lpr = (/usr/ucb/lpr -Pvarian)
+set troff = (/usr/bin/troff)
 top:
 	if ($#argv > 0) then
 		switch ($argv[1])
@@ -27,6 +28,15 @@ top:
 		case -W:
 			set sort = (/usr/lib/vsort -W)
 			set lpr = (/usr/ucb/lpr -Pversatec)
+			shift argv
+			goto top
+		case -h:
+			if ($#argv < 2) then
+				echo -h takes following host name.
+				exit(1)
+			endif
+			set host = $argv[2]
+			shift argv
 			shift argv
 			goto top
 		case -F:
@@ -73,18 +83,34 @@ top:
 			breaksw
 		endsw
 	endif
+
 if ($#argv == 0) then
 	set argv=(-)
 	set banner=vtroff
 else
 	set banner=$argv[1]
 endif
-if ($?t) then
-    /usr/bin/troff -t -rv1 $flags $macp $fontf $* | $sort $length
+
+set tflags=(-t -rv1 $flags $macp $fontf)
+
+if ($?host) then
+    if ($#fontf) then
+	echo vtroff -h does not support changing fonts -- run vtroff locally
+	exit(1)
+    endif
+    if ($?t) then
+	soelim $* | rsh $host \"$troff $tflags - | $sort $length\"
+    else
+	soelim $* | rsh $host \"$troff $tflags - | $sort $length | $lpr -J$banner -t $fonts\"
+    endif
 else
-    /usr/bin/troff -t -rv1 $flags $macp $fontf $* | $sort $length |\
-	$lpr -J$banner -t $fonts
+    if ($?t) then
+	$troff $tflags $* | $sort $length
+    else
+	$troff $tflags $* | $sort $length | $lpr -J$banner -t $fonts
+    endif
 endif
+
 if ($#fontf) then
     /bin/rm $fontf
 endif
