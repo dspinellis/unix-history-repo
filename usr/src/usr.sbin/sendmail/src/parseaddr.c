@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.16	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.17	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -213,6 +213,7 @@ prescan(addr, delim)
 		while ((c = *p++) != '\0' && c != delim)
 		{
 			/* chew up special characters */
+			c &= ~0200;
 			*q = '\0';
 			if (bslashmode)
 			{
@@ -224,13 +225,19 @@ prescan(addr, delim)
 				bslashmode = TRUE;
 				continue;
 			}
+			else if (c == '"')
+			{
+				if (state == QSTRING)
+					state = OPER;
+				else
+					state = QSTRING;
+				break;
+			}
 
 			nstate = toktype(c);
 			switch (state)
 			{
 			  case QSTRING:		/* in quoted string */
-				if (c == '"')
-					state = OPER;
 				break;
 
 			  case ATOM:		/* regular atom */
@@ -447,6 +454,8 @@ toktype(c)
 		(void) expand("$o", buf, &buf[sizeof buf - 1]);
 		strcat(buf, DELIMCHARS);
 	}
+	if (!isascii(c))
+		return (ATOM);
 	if (isspace(c))
 		return (SPACE);
 	if (iscntrl(c) || index(buf, c) != NULL)
@@ -489,13 +498,13 @@ rewrite(pvp, ruleset)
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern bool sameword();
 
-# ifdef DEBUGX
-	if (Debug)
+# ifdef DEBUG
+	if (Debug > 10)
 	{
 		printf("rewrite: original pvp:\n");
 		printav(pvp);
 	}
-# endif DEBUGX
+# endif DEBUG
 
 	/*
 	**  Run through the list of rewrite rules, applying
@@ -504,13 +513,13 @@ rewrite(pvp, ruleset)
 
 	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
-# ifdef DEBUGX
-		if (Debug)
+# ifdef DEBUG
+		if (Debug > 10)
 		{
 			printf("-----trying rule:\n");
 			printav(rwr->r_lhs);
 		}
-# endif DEBUGX
+# endif DEBUG
 
 		/* try to match on this rule */
 		clrmatch(mlist);
@@ -549,7 +558,7 @@ rewrite(pvp, ruleset)
 					class -= 'A';
 				else
 					class -= 'a';
-				s = stab(ap, ST_FIND);
+				s = stab(ap, ST_CLASS, ST_FIND);
 				if (s == NULL || (s->s_class & (1 << class)) == 0)
 					goto fail;
 				break;
@@ -597,13 +606,13 @@ rewrite(pvp, ruleset)
 
 		if (rvp >= rwr->r_lhs && *rvp == NULL)
 		{
-# ifdef DEBUGX
-			if (Debug)
+# ifdef DEBUG
+			if (Debug > 10)
 			{
 				printf("-----rule matches:\n");
 				printav(rwr->r_rhs);
 			}
-# endif DEBUGX
+# endif DEBUG
 
 			/* substitute */
 			for (rvp = rwr->r_rhs, avp = npvp; *rvp != NULL; rvp++)
@@ -646,10 +655,10 @@ rewrite(pvp, ruleset)
 		}
 		else
 		{
-# ifdef DEBUGX
-			if (Debug)
+# ifdef DEBUG
+			if (Debug > 10)
 				printf("----- rule fails\n");
-# endif DEBUGX
+# endif DEBUG
 			rwr = rwr->r_next;
 		}
 	}

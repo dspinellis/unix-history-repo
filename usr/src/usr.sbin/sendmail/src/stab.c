@@ -1,12 +1,13 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.4	%G%";
+static char SccsId[] = "@(#)stab.c	3.5	%G%";
 
 /*
 **  STAB -- manage the symbol table
 **
 **	Parameters:
 **		name -- the name to be looked up or inserted.
+**		type -- the type of symbol.
 **		op -- what to do:
 **			ST_ENTER -- enter the name if not
 **				already present.
@@ -27,8 +28,9 @@ static char SccsId[] = "@(#)stab.c	3.4	%G%";
 static STAB	*SymTab;
 
 STAB *
-stab(name, op)
+stab(name, type, op)
 	char *name;
+	int type;
 	int op;
 {
 	register STAB *s = SymTab;
@@ -37,10 +39,10 @@ stab(name, op)
 
 # ifdef DEBUG
 	if (Debug > 4)
-		printf("STAB: %s ", name);
+		printf("STAB: %s %d ", name, type);
 # endif DEBUG
 
-	while (s != NULL && !sameword(name, s->s_name))
+	while (s != NULL && !sameword(name, s->s_name) && s->s_type != type)
 	{
 		ps = &s->s_next;
 		s = s->s_next;
@@ -66,11 +68,10 @@ stab(name, op)
 
 	/* make new entry */
 	s = (STAB *) xalloc(sizeof *s);
+	clear((char *) s, sizeof *s);
 	s->s_name = newstr(name);
 	makelower(s->s_name);
-	s->s_type = 0;
-	s->s_class = 0;
-	s->s_next = NULL;
+	s->s_type = type;
 
 	/* and link it in */
 	*ps = s;

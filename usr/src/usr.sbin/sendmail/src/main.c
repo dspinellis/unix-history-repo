@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.16	%G%";
+static char	SccsId[] = "@(#)main.c	3.17	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -75,6 +75,7 @@ static char	SccsId[] = "@(#)main.c	3.16	%G%";
 **		-v		Give blow-by-blow description of
 **				everything that happens.
 **		-Cfilename	Use alternate configuration file.
+**		-Afilename	Use alternate alias file.
 **		-DXvalue	Define macro X to have value.
 **
 **	Return Codes:
@@ -124,6 +125,7 @@ bool	SuprErrs;	/* supress errors if set */
 bool	Verbose;	/* set if blow-by-blow desired */
 int	Debug;		/* debug level */
 int	Errors;		/* count of errors */
+int	AliasLevel;	/* current depth of aliasing */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 ADDRESS	From;		/* the from person */
@@ -159,6 +161,7 @@ main(argc, argv)
 	struct passwd *pw;
 	extern char *arpadate();
 	char *cfname;
+	char *aliasname;
 	register int i;
 	char pbuf[10];			/* holds pid */
 	char tbuf[10];			/* holds "current" time */
@@ -187,6 +190,7 @@ main(argc, argv)
 	errno = 0;
 	from = NULL;
 	cfname = CONFFILE;
+	aliasname = ALIASFILE;
 
 	/*
 	** Crack argv.
@@ -281,6 +285,10 @@ main(argc, argv)
 		  case 'C':	/* select configuration file */
 			cfname = &p[2];
 			break;
+
+		  case 'A':	/* select alias file */
+			aliasname = &p[2];
+			break;
 		
 		  case 'n':	/* don't alias */
 			NoAlias++;
@@ -358,6 +366,8 @@ main(argc, argv)
 			readcf(cfbuf);
 	}
 # endif V6
+
+	initaliases(aliasname);
 
 # ifdef DEBUG
 	if (Debug > 15)
@@ -514,7 +524,6 @@ main(argc, argv)
 	if (!MeToo)
 		recipient(&From);
 	To = NULL;
-	alias();
 
 	/*
 	**  Actually send everything.
