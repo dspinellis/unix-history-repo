@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,6 +33,45 @@ pass5()
 
 	bzero((char *)newcg, (size_t)fs->fs_cgsize);
 	newcg->cg_niblk = fs->fs_ipg;
+	if (cvtlevel > 3) {
+		if (fs->fs_maxcontig < 2 && fs->fs_contigsumsize > 0) {
+			if (preen)
+				pwarn("DELETING CLUSTERING MAPS\n");
+			if (preen || reply("DELETE CLUSTERING MAPS")) {
+				fs->fs_contigsumsize = 0;
+				doinglevel1 = 1;
+				sbdirty();
+			}
+		}
+		if (fs->fs_maxcontig > 1) {
+			char *doit = 0;
+
+			if (fs->fs_contigsumsize < 1) {
+				doit = "CREAT";
+			} else if (fs->fs_contigsumsize < fs->fs_maxcontig &&
+				   fs->fs_contigsumsize < FS_MAXCONTIG) {
+				doit = "EXPAND";
+			}
+			if (doit) {
+				i = fs->fs_contigsumsize;
+				fs->fs_contigsumsize =
+				    MIN(fs->fs_maxcontig, FS_MAXCONTIG);
+				if (CGSIZE(fs) > fs->fs_bsize) {
+					pwarn("CANNOT %s CLUSTER MAPS\n", doit);
+					fs->fs_contigsumsize = i;
+				} else if (preen ||
+				    reply("CREATE CLUSTER MAPS")) {
+					if (preen)
+						pwarn("%sING CLUSTER MAPS\n",
+						    doit);
+					fs->fs_cgsize =
+					    fragroundup(fs, CGSIZE(fs));
+					doinglevel1 = 1;
+					sbdirty();
+				}
+			}
+		}
+	}
 	switch ((int)fs->fs_postblformat) {
 
 	case FS_42POSTBLFMT:
@@ -47,16 +86,27 @@ pass5()
 
 	case FS_DYNAMICPOSTBLFMT:
 		newcg->cg_btotoff =
-		 	&newcg->cg_space[0] - (u_char *)(&newcg->cg_link);
+		     &newcg->cg_space[0] - (u_char *)(&newcg->cg_link);
 		newcg->cg_boff =
-			newcg->cg_btotoff + fs->fs_cpg * sizeof(long);
+		    newcg->cg_btotoff + fs->fs_cpg * sizeof(long);
 		newcg->cg_iusedoff = newcg->cg_boff + 
-			fs->fs_cpg * fs->fs_nrpos * sizeof(short);
+		    fs->fs_cpg * fs->fs_nrpos * sizeof(short);
 		newcg->cg_freeoff =
-			newcg->cg_iusedoff + howmany(fs->fs_ipg, NBBY);
-		newcg->cg_nextfreeoff = newcg->cg_freeoff +
-			howmany(fs->fs_cpg * fs->fs_spc / NSPF(fs),
-				NBBY);
+		    newcg->cg_iusedoff + howmany(fs->fs_ipg, NBBY);
+		if (fs->fs_contigsumsize <= 0) {
+			newcg->cg_nextfreeoff = newcg->cg_freeoff +
+			    howmany(fs->fs_cpg * fs->fs_spc / NSPF(fs), NBBY);
+		} else {
+			newcg->cg_clustersumoff = newcg->cg_freeoff +
+			    howmany(fs->fs_cpg * fs->fs_spc / NSPF(fs), NBBY) -
+			    sizeof(long);
+			newcg->cg_clustersumoff =
+			    roundup(newcg->cg_clustersumoff, sizeof(long));
+			newcg->cg_clusteroff = newcg->cg_clustersumoff +
+			    (fs->fs_contigsumsize + 1) * sizeof(long);
+			newcg->cg_nextfreeoff = newcg->cg_clusteroff +
+			    howmany(fs->fs_cpg * fs->fs_spc / NSPB(fs), NBBY);
+		}
 		newcg->cg_magic = CG_MAGIC;
 		basesize = &newcg->cg_space[0] - (u_char *)(&newcg->cg_link);
 		sumsize = newcg->cg_iusedoff - newcg->cg_btotoff;
@@ -92,6 +142,8 @@ pass5()
 		else
 			newcg->cg_ncyl = fs->fs_cpg;
 		newcg->cg_ndblk = dmax - dbase;
+		if (fs->fs_contigsumsize > 0)
+			newcg->cg_nclusterblks = newcg->cg_ndblk / fs->fs_frag;
 		newcg->cg_cs.cs_ndir = 0;
 		newcg->cg_cs.cs_nffree = 0;
 		newcg->cg_cs.cs_nbfree = 0;
@@ -159,10 +211,42 @@ pass5()
 				j = cbtocylno(fs, i);
 				cg_blktot(newcg)[j]++;
 				cg_blks(fs, newcg, j)[cbtorpos(fs, i)]++;
+				if (fs->fs_contigsumsize > 0)
+					setbit(cg_clustersfree(newcg),
+					    i / fs->fs_frag);
 			} else if (frags > 0) {
 				newcg->cg_cs.cs_nffree += frags;
 				blk = blkmap(fs, cg_blksfree(newcg), i);
 				ffs_fragacct(fs, blk, newcg->cg_frsum, 1);
+			}
+		}
+		if (fs->fs_contigsumsize > 0) {
+			long *sump = cg_clustersum(newcg);
+			u_char *mapp = cg_clustersfree(newcg);
+			int map = *mapp++;
+			int bit = 1;
+			int run = 0;
+
+			for (i = 0; i < newcg->cg_nclusterblks; i++) {
+				if ((map & bit) != 0) {
+					run++;
+				} else if (run != 0) {
+					if (run > fs->fs_contigsumsize)
+						run = fs->fs_contigsumsize;
+					sump[run]++;
+					run = 0;
+				}
+				if ((i & (NBBY - 1)) != (NBBY - 1)) {
+					bit <<= 1;
+				} else {
+					map = *mapp++;
+					bit = 1;
+				}
+			}
+			if (run != 0) {
+				if (run > fs->fs_contigsumsize)
+					run = fs->fs_contigsumsize;
+				sump[run]++;
 			}
 		}
 		cstotal.cs_nffree += newcg->cg_cs.cs_nffree;
