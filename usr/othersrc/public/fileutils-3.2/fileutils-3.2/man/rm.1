@@ -1,0 +1,66 @@
+.TH RM 1L \" -*- nroff -*-
+.SH NAME
+rm \- remove files
+.SH SYNOPSIS
+.B rm
+[\-dfirvR] [\-\-directory] [\-\-force] [\-\-interactive] [\-\-recursive]
+[\-\-verbose] path...
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR rm .
+.B rm
+removes each given file.  By default, it does not remove
+directories.
+.P
+If a file is unwritable, the standard input is a tty, and
+the \fI\-f\fR or \fI\-\-force\fR option is not given,
+.B rm
+prompts the user for whether to remove the file.  If the response
+does not begin with `y' or `Y', the file is skipped.
+.LP
+GNU
+.BR rm ,
+like every program that uses the getopt function to parse its
+arguments, lets you use the
+.I \-\-
+option to indicate that all following arguments are non-options.  To
+remove a file called `\-f' in the current directory, you could type
+either
+.RS
+rm \-\- \-f
+.RE
+or
+.RS
+rm ./\-f
+.RE
+The Unix
+.B rm
+program's use of a single `\-' for this purpose predates the
+development of the getopt standard syntax.
+.SS OPTIONS
+.TP
+.I "\-d, \-\-directory"
+Remove directories with `unlink' instead of `rmdir', and don't require
+a directory to be empty before trying to unlink it.  Only works for
+the super-user.  Because unlinking a directory causes any files in the
+deleted directory to become unreferenced, it is wise to
+.B fsck
+the filesystem after doing this.
+.TP
+.I "\-f, \-\-force"
+Ignore nonexistent files and never prompt the user.
+.TP
+.I "\-i, \-\-interactive"
+Prompt whether to remove each file.  If the response does not begin
+with `y' or `Y', the file is skipped.
+.TP
+.I "\-r, \-R, \-\-recursive"
+Remove the contents of directories recursively.
+.TP
+.I "\-v, \-\-verbose"
+Print the name of each file before removing it.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
