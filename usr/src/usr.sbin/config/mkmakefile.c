@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -90,6 +90,7 @@ static	struct users {
 	int	u_max;
 } users[] = {
 	{ 24, 8, 1024 },		/* MACHINE_VAX */
+	{ 4, 2, 128 },			/* MACHINE_TAHOE */
 };
 #define	NUSERS	(sizeof (users) / sizeof (users[0]))
 
@@ -487,6 +488,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_VAX:
+		case MACHINE_TAHOE:
 			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
 				extras, np);
 			fprintf(f, "\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
@@ -500,6 +502,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_VAX:
+		case MACHINE_TAHOE:
 			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
 				extras, np);
 			fprintf(f,"\t${C2} -i %ss | ${INLINE} | ${AS} -o %so\n",
@@ -518,6 +521,15 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			COPTS = "";
 		}
 		switch (machine) {
+
+		case MACHINE_TAHOE:
+			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
+				COPTS, extras, np);
+			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
+			fprintf(f,"\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
+			    tp, tp);
+			fprintf(f, "\trm -f %ss\n\n", tp);
+			break;
 
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
@@ -572,10 +584,9 @@ do_systemspec(f, fl, first)
 {
 
 	fprintf(f, "%s: Makefile", fl->f_needs);
-	if (machine == MACHINE_VAX)
-		fprintf(f, " ${INLINECMD}", machinename);
-	fprintf(f, " locore.o emulate.o ${OBJS} param.o ioconf.o swap%s.o\n",
-	    fl->f_fn);
+	if (machine == MACHINE_VAX || machine == MACHINE_TAHOE)
+		fprintf(f, " ${INLINE}", machinename);
+	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
 	if (first) {
@@ -587,9 +598,16 @@ do_systemspec(f, fl, first)
 	case MACHINE_VAX:
 		fprintf(f, "\t@${LD} -n -o %s -e start -x -T 80000000 ",
 			fl->f_needs);
+		fprintf(f,
+		    "locore.o emulate.o ${OBJS} vers.o ioconf.o param.o ");
+		break;
+
+	case MACHINE_TAHOE:
+		fprintf(f, "\t@${LD} -n -o %s -e start -x -T C0000800 ",
+			fl->f_needs);
+		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
 		break;
 	}
-	fprintf(f, "locore.o emulate.o ${OBJS} vers.o ioconf.o param.o ");
 	fprintf(f, "swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
 	fprintf(f, "\t@-symorder ../%s/symbols.sort %s\n",
@@ -616,6 +634,7 @@ do_swapspec(f, name)
 	switch (machine) {
 
 	case MACHINE_VAX:
+	case MACHINE_TAHOE:
 		fprintf(f, "\t${CC} -c -S ${COPTS} ");
 		fprintf(f, "../%s/swapgeneric.c\n", machinename);
 		fprintf(f, "\t${C2} swapgeneric.s | ${INLINE}");

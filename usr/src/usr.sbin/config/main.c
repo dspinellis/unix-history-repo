@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -52,8 +52,9 @@ main(argc, argv)
 		ubglue();		/* Create ubglue.s */
 		break;
 
-	case MACHINE_SUN:
-		sun_ioconf();
+	case MACHINE_TAHOE:
+		tahoe_ioconf();
+		vbglue();
 		break;
 
 	default:

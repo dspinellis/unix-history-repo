@@ -44,6 +44,7 @@
 %token	TIMEZONE
 %token	TRACE
 %token	UBA
+%token	VBA
 %token	VECTOR
 
 %token	<str>	ID
@@ -69,7 +70,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.y	5.2 (Berkeley) %G%
+ *	@(#)config.y	5.3 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -113,9 +114,9 @@ Config_spec:
 		if (!strcmp($2, "vax")) {
 			machine = MACHINE_VAX;
 			machinename = "vax";
-		} else if (!strcmp($2, "sun")) {
-			machine = MACHINE_SUN;
-			machinename = "sun";
+		} else if (!strcmp($2, "tahoe")) {
+			machine = MACHINE_TAHOE;
+			machinename = "tahoe";
 		} else
 			yyerror("Unknown machine type");
 	      } |
@@ -375,6 +376,8 @@ Mkoption:
 Dev:
 	UBA
 	      = { $$ = ns("uba"); } |
+	VBA
+	      = { $$ = ns("vba"); } |
 	MBA
 	      = { $$ = ns("mba"); } |
 	ID
@@ -410,6 +413,8 @@ Dev_name:
 			seen_mba = 1;
 		else if (eq($2, "uba"))
 			seen_uba = 1;
+		else if (eq($2, "vba"))
+			seen_vba = 1;
 		cur.d_unit = $3;
 		};
 
@@ -708,9 +713,9 @@ check_nexus(dev, num)
 			yyerror("can't give specific nexus numbers");
 		break;
 
-	case MACHINE_SUN:
-		if (!eq(dev->d_name, "mb"))
-			yyerror("only mb's should be connected to the nexus");
+	case MACHINE_TAHOE:
+		if (!eq(dev->d_name, "vba")) 
+			yyerror("only vba's should be connected to the nexus");
 		break;
 	}
 }

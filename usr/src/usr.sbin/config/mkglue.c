@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkglue.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkglue.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -109,16 +109,105 @@ dump_ubavec(fp, vector, number)
 	}
 }
 
+/*
+ * Create the VERSAbus interrupt vector glue file.
+ */
+vbglue()
+{
+	register FILE *fp, *gp;
+	register struct device *dp, *mp;
+
+	fp = fopen(path("vbglue.s"), "w");
+	if (fp == 0) {
+		perror(path("vbglue.s"));
+		exit(1);
+	}
+	gp = fopen(path("vbvec.s"), "w");
+	if (gp == 0) {
+		perror(path("vbvec.s"));
+		exit(1);
+	}
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		struct idlst *id, *id2;
+
+		mp = dp->d_conn;
+		if (mp == 0 || mp == (struct device *)-1 ||
+		    eq(mp->d_name, "mba"))
+			continue;
+		for (id = dp->d_vec; id; id = id->id_next)
+			for (id2 = dp->d_vec; id2; id2 = id2->id_next) {
+				if (id == id2) {
+					dump_vbavec(fp, id->id, dp->d_unit);
+					break;
+				}
+				if (eq(id->id, id2->id))
+					break;
+			}
+	}
+	dump_std(fp, gp);
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		mp = dp->d_conn;
+		if (mp != 0 && mp != (struct device *)-1 &&
+		    !eq(mp->d_name, "mba")) {
+			struct idlst *id, *id2;
+
+			for (id = dp->d_vec; id; id = id->id_next) {
+				for (id2 = dp->d_vec; id2; id2 = id2->id_next) {
+					if (id2 == id) {
+						dump_intname(fp, id->id,
+							dp->d_unit);
+						break;
+					}
+					if (eq(id->id, id2->id))
+						break;
+				}
+			}
+		}
+	}
+	dump_ctrs(fp);
+	(void) fclose(fp);
+	(void) fclose(gp);
+}
+
+/*
+ * Print a VERSAbus interrupt vector
+ */
+dump_vbavec(fp, vector, number)
+	register FILE *fp;
+	char *vector;
+	int number;
+{
+	char nbuf[80];
+	register char *v = nbuf;
+
+	(void) sprintf(v, "%s%d", vector, number);
+	fprintf(fp, "SCBVEC(%s):\n", v);
+	fprintf(fp, "\tCHECK_SFE(4)\n");
+	fprintf(fp, "\tSAVE_FPSTAT(4)\n");
+	fprintf(fp, "\tPUSHR\n");
+	fprintf(fp, "\tincl\t_fltintrcnt+(4*%d)\n", cntcnt++);
+	fprintf(fp, "\tpushl\t$%d\n", number);
+	fprintf(fp, "\tcallf\t$8,_%s\n", vector);
+	fprintf(fp, "\tincl\t_cnt+V_INTR\n");
+	fprintf(fp, "\tPOPR\n");
+	fprintf(fp, "\tREST_FPSTAT\n");
+	fprintf(fp, "\trei\n\n");
+}
+
 static	char *vaxinames[] = {
 	"clock", "cnr", "cnx", "tur", "tux",
 	"mba0", "mba1", "mba2", "mba3",
 	"uba0", "uba1", "uba2", "uba3"
+};
+static	char *tahoeinames[] = {
+	"clock", "cnr", "cnx", "rmtr", "rmtx", "buserr",
 };
 static	struct stdintrs {
 	char	**si_names;	/* list of standard interrupt names */
 	int	si_n;		/* number of such names */
 } stdintrs[] = {
 	{ vaxinames, sizeof (vaxinames) / sizeof (vaxinames[0]) },
+	{ tahoeinames, (sizeof (tahoeinames) / sizeof (tahoeinames[0])) }
 };
 /*
  * Start the interrupt name table with the names
