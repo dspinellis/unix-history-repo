@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 The Regents of the University of California.
+ * Copyright (c) 1983, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,6 +26,8 @@ static char sccsid[] = "@(#)rcp.c	5.27 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/signal.h>
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #include <pwd.h>
 #include <netdb.h>
 #include <errno.h>
@@ -186,7 +188,7 @@ toremote(targ, argc, argv)
 	int argc;
 	char **argv;
 {
-	int i;
+	int i, tos;
 	char *bp, *host, *src, *suser, *thost, *tuser;
 	char *colon(), *malloc();
 
@@ -257,6 +259,10 @@ toremote(targ, argc, argv)
 					    bp, 0);
 				if (rem < 0)
 					exit(1);
+				tos = IPTOS_THROUGHPUT;
+				if (setsockopt(rem, IPPROTO_IP, IP_TOS,
+				    (char *)&tos, sizeof(int)) < 0)
+					perror("Notice: set type-of-service failed: %m");
 				if (response() < 0)
 					exit(1);
 				(void)free(bp);
@@ -271,7 +277,7 @@ tolocal(argc, argv)
 	int argc;
 	char **argv;
 {
-	int i;
+	int i, tos;
 	char *bp, *host, *src, *suser;
 	char *colon(), *malloc();
 
@@ -314,9 +320,13 @@ tolocal(argc, argv)
 		(void)free(bp);
 		if (rem < 0)
 			continue;
-		(void)setreuid(0, userid);
+		(void)seteuid(userid);
+		tos = IPTOS_THROUGHPUT;
+		if (setsockopt(rem, IPPROTO_IP, IP_TOS,
+		    (char *)&tos, sizeof(int)) < 0)
+			perror("Notice: set type-of-service failed: %m");
 		sink(1, argv + argc - 1);
-		(void)setreuid(userid, 0);
+		(void)seteuid(0);
 		(void)close(rem);
 		rem = -1;
 	}
