@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.18	(Berkeley)	83/06/02";
+static char sccsid[] = "@(#)tape.c	3.19	(Berkeley)	83/06/19";
 #endif
 
 #include "restore.h"
@@ -20,6 +20,7 @@ static int	bct = NTREC+1;
 static char	tbf[NTREC*TP_BSIZE];
 static union	u_spcl endoftapemark;
 static long	blksread;
+static long	tapesread;
 static jmp_buf	restart;
 static int	gettingfile = 0;	/* restart has a valid frame */
 
@@ -160,14 +161,23 @@ setup()
 	getfile(xtrmap, xtrmapskip);
 }
 
+/*
+ * Prompt user to load a new dump volume.
+ * "Nextvol" is the next suggested volume to use.
+ * This suggested volume is enforced when doing full
+ * or incremental restores, but can be overrridden by
+ * the user when only extracting a subset of the files.
+ */
 getvol(nextvol)
 	long nextvol;
 {
 	long newvol;
-	long savecnt;
+	long savecnt, i;
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
 
+	if (nextvol == 1)
+		tapesread = 0;
 	if (pipein) {
 		if (nextvol != 1)
 			panic("Changing volumes on pipe input?\n");
@@ -184,6 +194,23 @@ again:
 	else 
 		newvol = 0;
 	while (newvol <= 0) {
+		if (tapesread == 0) {
+			fprintf(stderr, "%s%s%s%s%s",
+			    "You have not read any tapes yet.\n",
+			    "Unless you know which volume your",
+			    " file(s) are on you should start\n",
+			    "with the last volume and work",
+			    " towards towards the first.\n");
+		} else {
+			fprintf(stderr, "You have read volumes");
+			strcpy(tbf, ": ");
+			for (i = 1; i < 32; i++)
+				if (tapesread & (1 << i)) {
+					fprintf(stderr, "%s%d", tbf, i);
+					strcpy(tbf, ", ");
+				}
+			fprintf(stderr, "\n");
+		}
 		do	{
 			fprintf(stderr, "Specify next volume #: ");
 			(void) fflush(stderr);
@@ -197,8 +224,10 @@ again:
 			    "Volume numbers are positive numerics\n");
 		}
 	}
-	if (newvol == volno)
+	if (newvol == volno) {
+		tapesread |= 1 << volno;
 		return;
+	}
 	closemt();
 	fprintf(stderr, "Mount tape volume %d then type return ", newvol);
 	(void) fflush(stderr);
@@ -234,6 +263,7 @@ gethdr:
 		volno = 0;
 		goto again;
 	}
+	tapesread |= 1 << volno;
 	blksread = savecnt;
 	if (curfile.action == USING) {
 		if (volno == 1)
