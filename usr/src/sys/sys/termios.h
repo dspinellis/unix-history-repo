@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.9 (Berkeley) %G%
+ *	@(#)termios.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -182,7 +182,8 @@ struct termios {
  */
 #define	TCSANOW		0		/* make change immediate */
 #define	TCSADRAIN	1		/* drain output, then change */
-#define	TCSADFLUSH	2		/* drain output, flush input */
+#define	TCSAFLUSH	2		/* drain output, flush input */
+#define	TCSADFLUSH	TCSAFLUSH	/* XXX (was a typo, to be removed) */
 
 /*
  * Standard speeds
