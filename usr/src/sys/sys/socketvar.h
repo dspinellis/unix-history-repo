@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.7 (Berkeley) %G%
+ *	@(#)socketvar.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -59,18 +59,18 @@ struct socket {
 		u_long	sb_hiwat;	/* max actual char count */
 		u_long	sb_mbcnt;	/* chars of mbufs used */
 		u_long	sb_mbmax;	/* max chars of mbufs to use */
-		u_long	sb_lowat;	/* low water mark (not used yet) */
+		u_long	sb_lowat;	/* low water mark */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
 		struct	proc *sb_sel;	/* process selecting read/write */
 		short	sb_flags;	/* flags, see below */
 		short	sb_timeo;	/* timeout (not used yet) */
 	} so_rcv, so_snd;
-#define	SB_MAX		(64*1024)	/* max chars in sockbuf */
+#define	SB_MAX		(64*1024)	/* max chars in sockbuf (default) */
 #define	SB_LOCK		0x01		/* lock on data queue */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
-#define	SB_SEL		0x08		/* buffer is selected */
-#define	SB_COLL		0x10		/* collision selecting */
+#define	SB_COLL		0x08		/* collision selecting */
+#define	SB_NOINTR	0x10		/* operations not interruptible */
 	caddr_t	so_tpcb;		/* Wisc. protocol control block XXX*/
 };
 
@@ -106,12 +106,13 @@ struct socket {
 
 /* can we read something from so? */
 #define	soreadable(so) \
-    ((so)->so_rcv.sb_cc || ((so)->so_state & SS_CANTRCVMORE) || \
+    ((so)->so_rcv.sb_cc >= (so)->so_rcv.sb_lowat || \
+	((so)->so_state & SS_CANTRCVMORE) || \
 	(so)->so_qlen || (so)->so_error)
 
 /* can we write something to so? */
 #define	sowriteable(so) \
-    (sbspace(&(so)->so_snd) > 0 && \
+    (sbspace(&(so)->so_snd) >= (so)->so_snd.sb_lowat && \
 	(((so)->so_state&SS_ISCONNECTED) || \
 	  ((so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || \
      ((so)->so_state & SS_CANTSENDMORE) || \
@@ -133,17 +134,13 @@ struct socket {
 		(sb)->sb_mbcnt -= MCLBYTES; \
 }
 
-#ifndef _TSLEEP_
-#include "tsleep.h"
-#endif
-/* set lock on sockbuf sb */
-#define sblock(sb) { \
-	while ((sb)->sb_flags & SB_LOCK) { \
-		(sb)->sb_flags |= SB_WANT; \
-		tsleep((caddr_t)&(sb)->sb_flags, PZERO+1, SLP_SO_SBLOCK, 0); \
-	} \
-	(sb)->sb_flags |= SB_LOCK; \
-}
+/*
+ * Set lock on sockbuf sb; sleep if lock is already held.
+ * Unless SB_NOINTR is set on sockbuf, sleep is interruptible.
+ * Returns error without lock if sleep is interrupted.
+ */
+#define sblock(sb) ((sb)->sb_flags & SB_LOCK ? sb_lock(sb) : \
+		((sb)->sb_flags |= SB_LOCK), 0)
 
 /* release lock on sockbuf sb */
 #define	sbunlock(sb) { \
@@ -158,5 +155,11 @@ struct socket {
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
 #ifdef KERNEL
-struct	socket *sonewconn();
+u_long	sb_max;
+/* to catch callers missing new second argument to sonewconn: */
+#define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
+struct	socket *sonewconn1();
+
+/* strings for sleep message: */
+extern	char netio[], netcon[], netcls[];
 #endif
