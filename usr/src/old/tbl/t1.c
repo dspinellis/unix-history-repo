@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t1.c	4.3 %G%";
+static char sccsid[] = "@(#)t1.c	4.4 %G%";
 #endif
 
  /* t1.c: main control and input switching */
@@ -20,7 +20,7 @@ main(argc,argv)
 	char *argv[];
 {
 # ifdef unix
-int badsig();
+void badsig();
 signal(SIGPIPE, badsig);
 # endif
 # ifdef gcos
@@ -94,6 +94,7 @@ swapin()
 	return(1);
 }
 # ifdef unix
+void
 badsig()
 {
 signal(SIGPIPE, SIG_IGN);
