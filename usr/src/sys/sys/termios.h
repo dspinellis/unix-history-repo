@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.3 (Berkeley) %G%
+ *	@(#)termios.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -45,7 +45,6 @@
 #define VWERASE 	4	/* ICANON */
 #define VKILL		5	/* ICANON */
 #define	VREPRINT 	6	/* ICANON */
-#define VQUOTE		7	/* ICANON */
 #define VINTR		8	/* ISIG */
 #define VQUIT		9	/* ISIG */
 #define VSUSP		10	/* ISIG */
