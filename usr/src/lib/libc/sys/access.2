@@ -70,15 +70,19 @@ Access to the file is denied if one or more of the following are true:
 [ENOTDIR]
 A component of the path prefix is not a directory.
 .TP 15
-[ENOENT]
-The argument path name was too long.
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 Read, write, or execute (search) permission is requested for a null
 path name or the named file does not exist.
 .TP 15
-[EPERM]
-The argument contains a byte with the high-order bit set.
+[EACCES]
+Search permission is denied for a component of the path prefix.
 .TP 15
 [ELOOP]
 Too many symbolic links were encountered in translating the pathname.

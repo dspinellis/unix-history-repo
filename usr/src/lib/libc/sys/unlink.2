@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)unlink.2	6.1 (Berkeley) %G%
+.\"	@(#)unlink.2	6.2 (Berkeley) %G%
 .\"
 .TH UNLINK 2 ""
 .UC 4
@@ -34,14 +34,15 @@ is set to indicate the error.
 .SH "ERRORS
 The \fIunlink\fP succeeds unless:
 .TP 15
-[EPERM]
-The path contains a character with the high-order bit set.
-.TP 15
-[ENOENT]
-The path name is too long.
-.TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named file does not exist.
@@ -53,13 +54,25 @@ Search permission is denied for a component of the path prefix.
 Write permission is denied on the directory containing the link
 to be removed.
 .TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
 [EPERM]
 The named file is a directory and the effective user ID
 of the process is not the super-user.
 .TP 15
+[EPERM]
+The directory containing the file is marked sticky,
+and neither the containing directory nor the file to be removed
+are owned by the effective user ID.
+.TP 15
 [EBUSY]
 The entry to be unlinked is the mount point for a
 mounted file system.
+.TP 15
+[EIO]
+An I/O error occurred while deleting the directory entry
+or deallocating the inode.
 .TP 15
 [EROFS]
 The named file resides on a read-only file system.
@@ -67,8 +80,5 @@ The named file resides on a read-only file system.
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
 .SH "SEE ALSO"
 close(2), link(2), rmdir(2)

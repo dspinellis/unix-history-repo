@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utimes.2	6.1 (Berkeley) %G%
+.\"	@(#)utimes.2	6.2 (Berkeley) %G%
 .\"
 .TH UTIMES 2 ""
 .UC 4
@@ -41,23 +41,27 @@ is set to indicate the error.
 .I Utime
 will fail if one or more of the following are true:
 .TP 15
-[EPERM]
-The pathname contained a character with the high-order bit set.
+[ENOTDIR]
+A component of the path prefix is not a directory.
 .TP 15
-[ENOENT]
-The pathname was too long.
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named file does not exist.
 .TP 15
-[ENOTDIR]
-A component of the path prefix is not a directory.
-.TP 15
-[EACCES]
-A component of the path prefix denies search permission.
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EPERM]
 The process is not super-user and not the owner of the file.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
 .TP 15
 [EACCES]
 The effective user ID is not super-user and not the
@@ -70,8 +74,5 @@ The file system containing the file is mounted read-only.
 [EFAULT]
 .I Tvp
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
 .SH SEE ALSO
 stat(2)

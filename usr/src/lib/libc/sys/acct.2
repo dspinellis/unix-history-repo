@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)acct.2	6.1 (Berkeley) %G%
+.\"	@(#)acct.2	6.2 (Berkeley) %G%
 .\"
 .TH ACCT 2 ""
 .UC 4
@@ -46,17 +46,25 @@ will fail if one of the following is true:
 [EPERM]
 The caller is not the super-user.
 .TP 15
-[EPERM]
-The pathname contains a character with the high-order bit set.
-.TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named file does not exist.
 .TP 15
-[EISDIR]
-The named file is a directory.
+[EACCES]
+Search permission is denied for a component of the path prefix,
+or the path name is not a regular file.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EROFS]
 The named file resides on a read-only file system.
@@ -64,12 +72,6 @@ The named file resides on a read-only file system.
 [EFAULT]
 .I File
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
-.TP 15
-[EACCES]
-The file is a character or block special file.
 .SH "SEE ALSO"
 acct(5), sa(8)
 .SH BUGS

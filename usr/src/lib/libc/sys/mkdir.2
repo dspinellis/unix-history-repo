@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mkdir.2	6.1 (Berkeley) %G%
+.\"	@(#)mkdir.2	6.2 (Berkeley) %G%
 .\"
 .TH MKDIR 2 ""
 .UC 5
@@ -43,17 +43,30 @@ indicates an error, and an error code is stored in
 .I Mkdir
 will fail and no directory will be created if:
 .TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+A component of the path prefix does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
 [EPERM]
 The process's effective user ID is not super-user.
 .TP 15
 [EPERM]
 The \fIpath\fP argument contains a byte with the high-order bit set.
-.TP 15
-[ENOTDIR]
-A component of the path prefix is not a directory.
-.TP 15
-[ENOENT]
-A component of the path prefix does not exist.
 .TP 15
 [EROFS]
 The named file resides on a read-only file system.
@@ -61,12 +74,12 @@ The named file resides on a read-only file system.
 [EEXIST]
 The named file exists.
 .TP 15
+[EIO]
+An I/O error occurred while making the directory entry or allocating the inode.
+.TP 15
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EIO]
 An I/O error occured while writing to the file system.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mount.2	6.1 (Berkeley) %G%
+.\"	@(#)mount.2	6.2 (Berkeley) %G%
 .\"
 .TH MOUNT 2 ""
 .UC 4
@@ -83,12 +83,21 @@ file system.
 .I Mount
 will fail when one of the following occurs:
 .TP 15
-[NODEV]
+[ENAMETOOLONG]
+A component of either pathname exceeded 255 characters,
+or the entire length of either path name exceeded 1023 characters.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating either pathname.
+.TP 15
+[EPERM]
 The caller is not the super-user.
 .TP 15
-[NODEV]
-.I Special
-does not exist.
+[ENOENT]
+A component of \fIname\fP does not exist.
+.TP 15
+[ENODEV]
+A component of \fIspecial\fP does not exist.
 .TP 15
 [ENOTBLK]
 .I Special
@@ -100,45 +109,53 @@ The major device number of
 is out of range (this indicates no device driver exists
 for the associated hardware).
 .TP 15
-[EPERM]
-The pathname contains a character with the high-order bit set.
-.TP 15
 [ENOTDIR]
-A component of the path prefix in
-.I name
-is not a directory.
+A component of \fIname\fP is not a directory,
+or a path prefix of \fIspecial\fP is not a directory.
 .TP 15
-[EROFS]
-.I Name
-resides on a read-only file system.
+[EINVAL]
+Either pathname contains a character with the high-order bit set.
 .TP 15
-[EBUSY]
-.I Name
-is not a directory, or another process currently
-holds a reference to it.
-.TP 15
-[EBUSY]
-No space remains in the mount table.
-.TP 15
-[EBUSY]
+[EINVAL]
 The super block for the file system had a bad magic
 number or an out of range block size.
 .TP 15
 [EBUSY]
+Another process currently holds a reference to
+.IR name ,
+or \fIspecial\fP is already mounted.
+.TP 15
+[EMFILE]
+No space remains in the mount table.
+.TP 15
+[ENOMEM]
 Not enough memory was available to read the cylinder
 group information for the file system.
 .TP 15
-[EBUSY]
+[EIO]
 An i/o error occurred while reading the super block or
 cylinder group information.
 .PP
 .I Umount
 may fail with one of the following errors:
 .TP 15
-[NODEV]
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EPERM]
 The caller is not the super-user.
 .TP 15
-[NODEV]
+[ENODEV]
 .I Special
 does not exist.
 .TP 15
@@ -161,5 +178,4 @@ on the file system.
 .SH "SEE ALSO"
 mount(8), umount(8)
 .SH BUGS
-The error codes are in a state of disarray; too many errors
-appear to the caller as one value.
+Some of the error codes need translation to more obvious messages.

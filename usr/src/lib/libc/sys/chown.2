@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.2	6.1 (Berkeley) %G%
+.\"	@(#)chown.2	6.2 (Berkeley) %G%
 .\"
 .TH CHOWN 2 ""
 .UC 4
@@ -55,23 +55,24 @@ error code being placed in the global variable \fIerrno\fP.
 .I Chown
 will fail and the file will be unchanged if:
 .TP 15
-[EINVAL]
-The argument path does not refer to a file.
-.TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
 .TP 15
-[ENOENT]
-The argument pathname is too long.
+[EINVAL]
+The pathname contains a character with the high-order bit set.
 .TP 15
-[EPERM]
-The argument contains a byte with the high-order bit set.
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named file does not exist.
 .TP 15
 [EACCES]
-Search permission is denied on a component of the path prefix.
+Search permission is denied for a component of the path prefix.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EPERM]
 The effective user ID does not match the owner of the file and
@@ -83,9 +84,6 @@ The named file resides on a read-only file system.
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
 .PP
 .I Fchown
 will fail if:
@@ -97,5 +95,8 @@ does not refer to a valid descriptor.
 [EINVAL]
 .I Fd
 refers to a socket, not a file.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
 .SH "SEE ALSO"
 chmod(2), flock(2)

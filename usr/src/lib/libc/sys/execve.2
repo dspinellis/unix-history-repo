@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)execve.2	6.1 (Berkeley) %G%
+.\"	@(#)execve.2	6.2 (Berkeley) %G%
 .\"
 .TH EXECVE 2 ""
 .UC 4
@@ -147,16 +147,24 @@ will contain an error code.
 will fail and return to the calling process if one or more
 of the following are true:
 .TP 15
-[ENOENT]
-One or more components of the new process file's
-path name do not exist.
-.TP 15
 [ENOTDIR]
-A component of the new process file is not a directory.
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+The new process file does not exist.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EACCES]
-Search permission is denied for a directory listed
-in the new process file's path prefix.
+Search permission is denied for a component of the path prefix.
 .TP 15
 [EACCES]
 The new process file is not an ordinary file.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)readlink.2	6.1 (Berkeley) %G%
+.\"	@(#)readlink.2	6.2 (Berkeley) %G%
 .\"
 .TH READLINK 2 ""
 .UC 5
@@ -34,27 +34,24 @@ code in the global variable \fIerrno\fP.
 .I Readlink
 will fail and the file mode will be unchanged if:
 .TP 15
-[EPERM]
-The \fIpath\fP argument contained a byte with the high-order bit set.
-.TP 15
-[ENOENT]
-The pathname was too long.
-.TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named file does not exist.
 .TP 15
-[ENXIO]
-The named file is not a symbolic link.
-.TP 15
 [EACCES]
-Search permission is denied on a component of the path prefix.
+Search permission is denied for a component of the path prefix.
 .TP 15
-[EPERM]
-The effective user ID does not match the owner of the file and
-the effective user ID is not the super-user.
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EINVAL]
 The named file is not a symbolic link.
@@ -62,8 +59,5 @@ The named file is not a symbolic link.
 [EFAULT]
 .I Buf
 extends outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
 .SH SEE ALSO
 stat(2), lstat(2), symlink(2)
