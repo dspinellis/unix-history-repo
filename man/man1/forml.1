@@ -1,0 +1,50 @@
+.pa 1
+.he 'FORML (I)'10/24/72'FORML (I)'
+.ti 0
+NAME		forml -- form letter generator processor
+.sp
+.ti 0
+SYNOPSIS	forml_____ [ name ] ...
+.sp
+.ti0
+DESCRIPTION	A streamlined program for typing form letters.
+The names pick out
+prestored form letters prepared according to the conventions
+of
+.ul
+form
+and
+.ul
+roff.
+The program prompts to get each blank
+filled in.
+When all the forms are completed, it prompts "Set paper."
+It waits for a newline before printing each letter.
+
+If more than one name is given, the name of 
+each letter is announced
+before the prompts for it begin.
+If no names are given, the program asks "Which letter?" before
+each.
+Respond with the name and a newline, or newline only when done.
+.sp
+On a 2741 type terminal, the program assumes the
+letter is to be typed with a correspondence ball,
+and also prompts "Change ball."
+Replace the ball at the end.
+.sp
+.ti0
+FILES		form.m (memory),
+.br
+forma, formb, ... temporaries
+.sp
+.ti0
+SEE ALSO	form(I), fed(I), roff(I)
+.br
+.sp
+.ti0
+DIAGNOSTICS	"Try again"--can't get a process
+.br
+.sp
+.ti0
+BUGS		--
