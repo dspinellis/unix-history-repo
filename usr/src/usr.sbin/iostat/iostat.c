@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.11 (Berkeley) 84/11/24";
+static	char *sccsid = "@(#)iostat.c	4.12 (Berkeley) 84/11/26";
 /*
  * iostat
  */
@@ -10,9 +10,6 @@ static	char *sccsid = "@(#)iostat.c	4.11 (Berkeley) 84/11/24";
 #ifdef vax
 #include <vaxuba/ubavar.h>
 #include <vaxmba/mbavar.h>
-#endif
-#ifdef sun
-#include <sundev/mbvar.h>
 #endif
 
 struct nlist nl[] = {
@@ -43,10 +40,6 @@ struct nlist nl[] = {
 #define X_MBDINIT	11
 	{ "_ubdinit" },
 #define X_UBDINIT	12
-#endif
-#ifdef sun
-	{ "_mbdinit" },
-#define X_MBDINIT	11
 #endif
 	{ 0 },
 };
@@ -256,33 +249,6 @@ read_names()
 		steal(udev.ui_driver, udrv);
 		steal(udrv.ud_dname, two_char);
 		sprintf(dr_name[udev.ui_dk], "%c%c%d", cp[0], cp[1], udev.ui_unit);
-	}
-}
-#endif
-
-#ifdef sun
-read_names()
-{
-	struct mb_device mdev;
-	register struct mb_device *mp;
-	struct mb_driver mdrv;
-	short two_char;
-	char *cp = (char *) &two_char;
-
-	mp = (struct mb_device *) nl[X_MBDINIT].n_value;
-	if (mp == 0) {
-		fprintf(stderr, "iostat: Disk init info not in namelist\n");
-		exit(1);
-	}
-	for (;;) {
-		steal(mp++, mdev);
-		if (mdev.md_driver == 0)
-			break;
-		if (mdev.md_dk < 0 || mdev.md_alive == 0)
-			continue;
-		steal(mdev.md_driver, mdrv);
-		steal(mdrv.mdr_dname, two_char);
-		sprintf(dr_name[mdev.md_dk], "%c%c%d", cp[0], cp[1], mdev.md_unit);
 	}
 }
 #endif
