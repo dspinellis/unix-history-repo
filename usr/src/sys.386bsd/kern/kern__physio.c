@@ -47,10 +47,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00033
+ * CURRENT PATCH LEVEL:         2       00065
  * --------------------         -----   ----------------------
  *
  * 09 Sep 92	Paul Kranenburg		Fixed read from /dev/drum
+ * 28 Nov 92	Mark Tinguely		Fixed small leak in physio()
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/kern__physio.c,v 1.3 92/01/21 21:29:06 william Exp $";
 
@@ -117,10 +118,14 @@ static physio(strat, dev, off, rw, base, len, p)
 		bp->b_bcount = min (256*1024, amttodo);
 
 		/* first, check if accessible */
-		if (rw == B_READ && !useracc(base, bp->b_bcount, B_WRITE))
+		if (rw == B_READ && !useracc(base, bp->b_bcount, B_WRITE)) {
+			free(bp, M_TEMP);
 			return (EFAULT);
-		if (rw == B_WRITE && !useracc(base, bp->b_bcount, B_READ))
+		}
+		if (rw == B_WRITE && !useracc(base, bp->b_bcount, B_READ)) {
+			free(bp, M_TEMP);
 			return (EFAULT);
+		}
 
 		/* update referenced and dirty bits, handle copy objects */
 		if (rw == B_READ)
