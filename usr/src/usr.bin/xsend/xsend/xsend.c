@@ -1,23 +1,26 @@
 #ifndef lint
-static char sccsid[] = "@(#)xsend.c	4.1 %G%";
+static char sccsid[] = "@(#)xsend.c	4.2 %G%";
 #endif
 
 #include "xmail.h"
-#include "sys/types.h"
-#include "pwd.h"
-#include "sys/stat.h"
-#include "sys/dir.h"
+#include <sys/types.h>
+#include <pwd.h>
+#include <sys/stat.h>
+#include <dir.h>
 extern int errno;
 struct stat stbuf;
 int uid, destuid;
 char *myname, *dest, *keyfile[128], line[128];
-struct direct dbuf;
+struct direct *dbuf;
 char *maildir = "/usr/spool/secretmail/";
-FILE *kf, *mf, *df;
+FILE *kf, *mf;
+DIR *df;
 MINT *a[42], *cd[6][128];
 MINT *msg;
 char buf[256], eof;
 int dbg;
+extern char *malloc(), *getlogin();
+
 main(argc, argv) char **argv;
 {	int i, nmax, len;
 	char *p;
@@ -43,7 +46,7 @@ main(argc, argv) char **argv;
 	kf = fopen(keyfile, "r");
 	if(kf == NULL)
 		xfatal("addressee's key weird");
-	df = fopen(maildir, "r");
+	df = opendir(maildir);
 	if(df == NULL)
 	{	perror(maildir);
 		exit(1);
@@ -51,10 +54,8 @@ main(argc, argv) char **argv;
 	strcpy(line, dest);
 	strcat(line, ".%d");
 	nmax = -1;
-	for(; !feof(df);)
-	{	fread(&dbuf, sizeof(dbuf), 1, df);
-		if(dbuf.d_ino == 0) continue;
-		if(sscanf(dbuf.d_name, line, &i) != 1)
+	while ((dbuf=readdir(df))!=NULL)
+	{	if(sscanf(dbuf->d_name, line, &i) != 1)
 			continue;
 		if(i>nmax) nmax = i;
 	}
