@@ -1,18 +1,14 @@
-/*	dn11.c	4.12	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)dn11.c	4.13 (Berkeley) %G%";
+#endif
 
 #if DN11
 /*
  * Routines for dialing up on DN-11
  */
 #include "tip.h"
-#include <setjmp.h>
-#include <errno.h>
 
-int dn_abort();
-
-int alarmtr();
-
-static char *sccsid = "@(#)dn11.c	4.12 %G%";
+int dn_abort(), alarmtr();
 static jmp_buf jmpbuf;
 static int child = -1, dn;
 
@@ -81,6 +77,7 @@ dn_dialer(num, acu)
 
 alarmtr()
 {
+
 	alarm(0);
 	longjmp(jmpbuf, 1);
 }
@@ -91,25 +88,23 @@ alarmtr()
  */
 dn_disconnect()
 {
+
 	sleep(2);
-#ifdef VMUNIX
 	if (FD > 0)
 		ioctl(FD, TIOCCDTR, 0);
-#endif
 	close(FD);
 }
 
 dn_abort()
 {
+
 	sleep(2);
 	if (child > 0)
 		kill(child, SIGKILL);
 	if (dn > 0)
 		close(dn);
-#ifdef VMUNIX
 	if (FD > 0)
 		ioctl(FD, TIOCCDTR, 0);
-#endif
 	close(FD);
 }
 #endif

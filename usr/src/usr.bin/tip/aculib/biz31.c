@@ -1,13 +1,16 @@
-/*	biz31.c	4.5	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)biz31.c	4.6 (Berkeley) %G%";
+#endif
+
 #include "tip.h"
 
 #if BIZ1031
 #define MAXRETRY	3		/* sync up retry count */
-#define DISCONNECT	"\21\25\11\24"	/* disconnection string */
+#define DISCONNECT_CMD	"\21\25\11\24"	/* disconnection string */
 
-static char *sccsid = "@(#)biz31.c	4.5 %G%";
-static int sigALRM();
-static int timeout = 0;
+static	int sigALRM();
+static	int timeout = 0;
+static	jmp_buf timeoutbuf;
 
 /*
  * Dial up on a BIZCOMP Model 1031 with either
@@ -33,7 +36,7 @@ biz_dialer(num, mod)
 	echo(mod);
 	echo("$\r$\n");
 	echo("$>$.$ #\re$ ");			/* disconnection sequence */
-	echo(DISCONNECT);
+	echo(DISCONNECT_CMD);
 	echo("\r$\n$\r$\n");
 	echo("$>$.$ #\rr$ ");			/* repeat dial */
 	echo(num);
@@ -67,26 +70,29 @@ biz_dialer(num, mod)
 biz31w_dialer(num, acu)
 	char *num, *acu;
 {
+
 	return (biz_dialer(num, "w"));
 }
 
 biz31f_dialer(num, acu)
 	char *num, *acu;
 {
+
 	return (biz_dialer(num, "f"));
 }
 
 biz31_disconnect()
 {
-	write(FD, DISCONNECT, 4);
+
+	write(FD, DISCONNECT_CMD, 4);
 	sleep(2);
 	ioctl(FD, TIOCFLUSH);
 }
 
 biz31_abort()
 {
+
 	write(FD, "\33", 1);
-	timeout = 1;
 }
 
 static int
@@ -116,9 +122,9 @@ echo(s)
 static int
 sigALRM()
 {
-	signal(SIGALRM, SIG_IGN);
-	printf("\07timeout waiting for reply\n");
+
 	timeout = 1;
+	longjmp(timeoutbuf, 1);
 }
 
 static int
@@ -126,20 +132,24 @@ detect(s)
 	register char *s;
 {
 	char c;
+	int (*f)();
 
-	signal(SIGALRM, biz31_abort);
+	f = signal(SIGALRM, sigALRM);
 	timeout = 0;
 	while (*s) {
+		if (setjmp(timeoutbuf)) {
+			printf("\07timeout waiting for reply\n");
+			biz31_abort();
+			break;
+		}
 		alarm(number(value(DIALTIMEOUT)));
 		read(FD, &c, 1);
 		alarm(0);
-		if (timeout)
-			return (0);
 		if (c != *s++)
-			return (0);
+			break;
 	}
-	signal(SIGALRM, SIG_DFL);
-	return (1);
+	signal(SIGALRM, f);
+	return (timeout == 0);
 }
 
 static int
@@ -147,19 +157,18 @@ flush(s)
 	register char *s;
 {
 	char c;
+	int (*f)();
 
-	signal(SIGALRM, sigALRM);
-	timeout = 0;
+	f = signal(SIGALRM, sigALRM);
 	while (*s++) {
+		if (setjmp(timeoutbuf))
+			break;
 		alarm(10);
 		read(FD, &c, 1);
 		alarm(0);
-		if (timeout)
-			break;
 	}
-	signal(SIGALRM, SIG_DFL);
+	signal(SIGALRM, f);
 	timeout = 0;			/* guard against disconnection */
-	return (1);
 }
 
 /*
@@ -193,7 +202,7 @@ retry:
 	nono:
 			if (already > MAXRETRY)
 				return (0);
-			write(fd, DISCONNECT, 4);
+			write(fd, DISCONNECT_CMD, 4);
 			sleep(2);
 			already++;
 			goto retry;

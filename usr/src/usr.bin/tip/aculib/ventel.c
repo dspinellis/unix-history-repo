@@ -1,19 +1,19 @@
-/*	ventel.c	1.3	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)ventel.c	1.4 (Berkeley) %G%";
+#endif
 
 #if VENTEL
 /*
  * Routines for calling up on a Ventel Modem
+ * The Ventel is expected to be strapped for "no echo".
  */
 #include "tip.h"
-#include <setjmp.h>
-#include <errno.h>
 
 #define	MAXRETRY	5
-#define	DISCONNECT	"\03"		/* ^C */
 
-static char *sccsid = "@(#)ventel.c	1.3 %G%";
-static int sigALRM();
-static int timeout = 0;
+static	int sigALRM();
+static	int timeout = 0;
+static	jmp_buf timeoutbuf;
 
 ven_dialer(num, acu)
 	register char *num;
@@ -38,13 +38,12 @@ ven_dialer(num, acu)
 		printf("\ndialing...");
 	fflush(stdout);
 	ioctl(FD, TIOCHPCL, 0);
-	echo("k$\r$\n$D$I$A$L$:$ <");
+	echo("#k$\r$\n$D$I$A$L$:$ ");
 	for (cp = num; *cp; cp++) {
 		sleep(1);
 		write(FD, cp, 1);
-		read(FD, cp, 1);
 	}
-	echo(">\r$\n");
+	echo("\r$\n");
 	if (gobble('\n'))
 		connected = gobble('!');
 	ioctl(FD, TIOCFLUSH);
@@ -62,11 +61,13 @@ ven_dialer(num, acu)
 
 ven_disconnect()
 {
+
 	close(FD);
 }
 
 ven_abort()
 {
+
 	write(FD, "\03", 1);
 	close(FD);
 }
@@ -98,46 +99,49 @@ echo(s)
 static int
 sigALRM()
 {
-	signal(SIGALRM, SIG_IGN);
+
 	printf("\07timeout waiting for reply\n");
 	timeout = 1;
+	longjmp(timeoutbuf, 1);
 }
 
 static int
-gobble(s)
-	register char s;
+gobble(match)
+	register char match;
 {
 	char c;
+	int (*f)();
 
 	signal(SIGALRM, sigALRM);
 	timeout = 0;
 	do {
+		if (setjmp(timeoutbuf)) {
+			signal(SIGALRM, f);
+			return (0);
+		}
 		alarm(number(value(DIALTIMEOUT)));
 		read(FD, &c, 1);
-		c &= 0177;
 		alarm(0);
+		c &= 0177;
 #ifdef notdef
 		if (boolean(value(VERBOSE)))
 			putchar(c);
 #endif
-		if (timeout)
-			return (0);
-	} while (c != '\n' && c != s);
+	} while (c != '\n' && c != match);
 	signal(SIGALRM, SIG_DFL);
-	return (c == s);
+	return (c == match);
 }
 
 #define min(a,b)	((a)>(b)?(b):(a))
 /*
  * This convoluted piece of code attempts to get
- * the ventel in sync.  If you don't have the capacity or nread
- * call there are gory ways to simulate this.
+ * the ventel in sync.  If you don't have FIONREAD
+ * there are gory ways to simulate this.
  */
 static int
 vensync(fd)
 {
-	long nread;
-	register int already = 0, nbytes;
+	int already = 0, nread;
 	char buf[60];
 
 	/*
@@ -161,17 +165,18 @@ vensync(fd)
 		sleep(1);
 		write(fd, "\r", 1);
 		sleep(3);
-		if (ioctl(fd, FIONREAD, (caddr_t)&nread) >= 0) {
-			nbytes = nread;
-			while (nbytes > 0) {
-				read(fd, buf, min(nbytes, 60));
-				if ((buf[nbytes-1]&0177) == '$')
-					return (1);
-				nbytes -= min(nbytes, 60);
-			}
-			sleep(1);
-			already++;
+		if (ioctl(fd, FIONREAD, (caddr_t)&nread) < 0) {
+			perror("tip: ioctl");
+			continue;
 		}
+		while (nread > 0) {
+			read(fd, buf, min(nread, 60));
+			if ((buf[nread - 1] & 0177) == '$')
+				return (1);
+			nread -= min(nread, 60);
+		}
+		sleep(1);
+		already++;
 	}
 	return (0);
 }

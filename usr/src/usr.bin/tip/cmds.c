@@ -1,12 +1,13 @@
-/*	cmds.c	4.11	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)cmds.c	4.12 (Berkeley) %G%";
+#endif
+
 #include "tip.h"
 /*
  * tip
  *
  * miscellaneous commands
  */
-
-static char *sccsid = "@(#)cmds.c	4.11 %G%";
 
 int	quant[] = { 60, 60, 24 };
 
@@ -26,9 +27,7 @@ int	intcopy();		/* interrupt routine for file transfers */
 getfl(c)
 	char c;
 {
-	char buf[256];
-	char *copynamex;
-	char *expand();
+	char buf[256], *cp, *expand();
 	
 	putchar(c);
 	/*
@@ -36,8 +35,8 @@ getfl(c)
 	 */
 	if (prompt("Local file name? ", copyname))
 		return;
-	copynamex = expand(copyname);
-	if ((sfd = creat(copynamex, 0666)) < 0) {
+	cp = expand(copyname);
+	if ((sfd = creat(cp, 0666)) < 0) {
 		printf("\r\n%s: cannot creat\r\n", copyname);
 		return;
 	}
@@ -59,9 +58,7 @@ cu_take(cc)
 	char cc;
 {
 	int fd, argc;
-	char line[BUFSIZ];
-	char *expand();
-	char *copynamex;
+	char line[BUFSIZ], *expand(), *cp;
 
 	if (prompt("[take] ", copyname))
 		return;
@@ -71,8 +68,8 @@ cu_take(cc)
 	}
 	if (argc == 1)
 		argv[1] = argv[0];
-	copynamex = expand(argv[1]);
-	if ((fd = creat(copynamex, 0666)) < 0) {
+	cp = expand(argv[1]);
+	if ((fd = creat(cp, 0666)) < 0) {
 		printf("\r\n%s: cannot create\r\n", argv[1]);
 		return;
 	}
@@ -80,6 +77,7 @@ cu_take(cc)
 	transfer(line, fd, "\01");
 }
 
+static	jmp_buf intbuf;
 /*
  * Bulk transfer routine --
  *  used by getfl(), cu_take(), and pipefile()
@@ -92,10 +90,10 @@ transfer(buf, fd, eofchars)
 	register char *p = buffer;
 	register int cnt, eof;
 	time_t start;
+	int (*f)();
 
 	pwrite(FD, buf, size(buf));
 	quit = 0;
-	signal(SIGINT, intcopy);
 	kill(pid, SIGIOT);
 	read(repdes[0], (char *)&ccc, 1);  /* Wait until read process stops */
 	
@@ -108,7 +106,9 @@ transfer(buf, fd, eofchars)
 	while ((c&0177) != '\n');
 	ioctl(0, TIOCSETC, &defchars);
 	
+	f = signal(SIGINT, intcopy);
 	start = time(0);
+	(void) setjmp(intbuf);
 	for (ct = 0; !quit;) {
 		eof = read(FD, &c, 1) <= 0;
 		c &= 0177;
@@ -196,6 +196,7 @@ pipefile()
  */
 stopsnd()
 {
+
 	stop = 1;
 	signal(SIGINT, SIG_IGN);
 }
@@ -465,43 +466,6 @@ consh(c)
 #endif
 
 /*
- * Execute command under local shell
- */
-lcmd()
-{
-	int shpid, status;
-	extern char **environ;
-	char *cp;
-	char	cmdline[255];
-	register char *cmdp = cmdline;
-
-	if (prompt("!", cmdline))
-		if (stoprompt)
-			return;
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	unraw();
-	if (shpid = fork()) {
-		while (shpid != wait(&status));
-		raw();
-		printf("\r\n!\r\n");
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		return;
-	} else {
-		signal(SIGQUIT, SIG_DFL);
-		signal(SIGINT, SIG_DFL);
-		if ((cp = rindex(value(SHELL), '/')) == NULL)
-			cp = value(SHELL);
-		else
-			cp++;
-		execl(value(SHELL), cp, "-c", cmdline, 0);
-		printf("\r\ncan't execl!\r\n");
-		exit(1);
-	}
-}
-
-/*
  * Escape to local shell
  */
 shell()
@@ -562,14 +526,14 @@ setscript()
  */
 chdirectory()
 {
-	char	dirname[80];
+	char dirname[80];
 	register char *cp = dirname;
 
-	if (prompt("[cd] ", dirname))
+	if (prompt("[cd] ", dirname)) {
 		if (stoprompt)
 			return;
-		else
-			cp = value(HOME);
+		cp = value(HOME);
+	}
 	if (chdir(cp) < 0)
 		printf("%s: bad directory\r\n", cp);
 	printf("!\r\n");
@@ -593,8 +557,10 @@ finish()
 
 intcopy()
 {
+
 	raw();
 	quit = 1;
+	longjmp(intbuf, 1);
 }
 
 execute(s)
@@ -696,11 +662,10 @@ variable()
 }
 
 /*
- * turn tandem mode on or off for remote tty
+ * Turn tandem mode on or off for remote tty.
  */
-
 tandem(option)
-char *option;
+	char *option;
 {
 	struct sgttyb rmtty;
 
@@ -708,8 +673,7 @@ char *option;
 	if (strcmp(option,"on") == 0) {
 		rmtty.sg_flags |= TANDEM;
 		arg.sg_flags |= TANDEM;
-	}
-	else {
+	} else {
 		rmtty.sg_flags &= ~TANDEM;
 		arg.sg_flags &= ~TANDEM;
 	}
@@ -719,40 +683,25 @@ char *option;
 
 /*
  * Send a break.
- * If we can't do it directly (as on VMUNIX), then simulate it.
  */
 genbrk()
 {
-#ifdef VMUNIX
+
 	ioctl(FD, TIOCSBRK, NULL);
 	sleep(1);
 	ioctl(FD, TIOCCBRK, NULL);
-#else
-	struct sgttyb ttbuf;
-	int sospeed;
-
-	ioctl(FD, TIOCGETP, &ttbuf);
-	sospeed = ttbuf.sg_ospeed;
-	ttbuf.sg_ospeed = B150;
-	ioctl(FD, TIOCSETP, &ttbuf);
-	pwrite(FD, "\0\0\0\0\0\0\0\0\0\0", 10);
-	ttbuf.sg_ospeed = sospeed;
-	ioctl(FD, TIOCSETP, &ttbuf);
-	pwrite(FD, "@", 1);
-#endif
 }
 
-#ifdef SIGTSTP
 /*
  * Suspend tip
  */
 suspend()
 {
+
 	unraw();
 	kill(0, SIGTSTP);
 	raw();
 }
-#endif
 
 /*
  *	expand a file name if it includes shell meta characters

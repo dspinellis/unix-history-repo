@@ -1,4 +1,7 @@
-/*	tipout.c	4.7	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)tipout.c	4.8 (Berkeley) %G%";
+#endif
+
 #include "tip.h"
 /*
  * tip
@@ -7,7 +10,7 @@
  *  reading from the remote host
  */
 
-static char *sccsid = "@(#)tipout.c	4.7 %G%";
+static	jmp_buf sigbuf;
 
 /*
  * TIPOUT wait state routine --
@@ -15,11 +18,10 @@ static char *sccsid = "@(#)tipout.c	4.7 %G%";
  */
 intIOT()
 {
-	signal(SIGIOT, SIG_IGN);
+
 	write(repdes[1],&ccc,1);
 	read(fildes[0], &ccc,1);
-	signal(SIGIOT, intIOT);
-	intflag = 1;
+	longjmp(sigbuf, 1);
 }
 
 /*
@@ -32,7 +34,6 @@ intEMT()
 	register char *pline = line;
 	char reply;
 
-	signal(SIGEMT, SIG_IGN);
 	read(fildes[0], &c, 1);
 	while (c != '\n') {
 		*pline++ = c;
@@ -53,13 +54,12 @@ intEMT()
 		}
 	}
 	write(repdes[1], &reply, 1);
-	signal(SIGEMT, intEMT);
-	intflag = 1;
+	longjmp(sigbuf, 1);
 }
 
 intTERM()
 {
-	signal(SIGTERM, SIG_IGN);
+
 	if (boolean(value(SCRIPT)) && fscript != NULL)
 		fclose(fscript);
 	exit(0);
@@ -67,9 +67,9 @@ intTERM()
 
 intSYS()
 {
-	signal(SIGSYS, intSYS);
+
 	boolean(value(BEAUTIFY)) = !boolean(value(BEAUTIFY));
-	intflag = 1;
+	longjmp(sigbuf, 1);
 }
 
 /*
@@ -80,6 +80,7 @@ tipout()
 	char buf[BUFSIZ];
 	register char *cp;
 	register int cnt;
+	int omask;
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
@@ -88,14 +89,14 @@ tipout()
 	signal(SIGIOT, intIOT);		/* scripting going on signal */
 	signal(SIGHUP, intTERM);	/* for dial-ups */
 	signal(SIGSYS, intSYS);		/* beautify toggle */
-
-	for (;;) {
-		do {
-			intflag = 0;
-			cnt = read(FD, buf, BUFSIZ);
-		} while (intflag);
+	(void) setjmp(sigbuf);
+	for (omask = 0;; sigsetmask(omask)) {
+		cnt = read(FD, buf, BUFSIZ);
 		if (cnt <= 0)
 			continue;
+#define	mask(s)	(1 << ((s) - 1))
+#define	ALLSIGS	mask(SIGEMT)|mask(SIGTERM)|mask(SIGIOT)|mask(SIGSYS)
+		omask = sigblock(ALLSIGS);
 		for (cp = buf; cp < buf + cnt; cp++)
 			*cp &= 0177;
 		write(1, buf, cnt);
@@ -104,11 +105,10 @@ tipout()
 				fwrite(buf, 1, cnt, fscript);
 				continue;
 			}
-			for (cp = buf; cp < buf + cnt; cp++) {
-				if ((*cp < ' ' || *cp > '~') && !any(*cp, value(EXCEPTIONS)))
-					continue;
-				putc(*cp, fscript);
-			}
+			for (cp = buf; cp < buf + cnt; cp++)
+				if ((*cp >= ' ' && *cp <= '~') ||
+				    any(*cp, value(EXCEPTIONS)))
+					putc(*cp, fscript);
 		}
 	}
 }

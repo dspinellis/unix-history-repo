@@ -1,51 +1,32 @@
-/*	remcap.c	4.7	83/06/15	*/
-/* Copyright (c) 1979 Regents of the University of California */
-/*
- *	Modified 9/27/82 - Michael Wendel
- *			   General Instrument R&D
- *		Looks in user Remote file first.
- *		Looks in system Remote file for each tc= entry
- *		that cannot be resolved in the user Remote file.
- *		Finally looks into the system Remote file to
- *		resolve remote name.
- *		User remote file will supplement the system file
- *		since all the entries in the user file occur
- *		ahead of duplicate entries from the system file.
- */
-#ifndef BUFSIZ
-#define	BUFSIZ	1024
+#ifndef lint
+static char sccsid[] = "@(#)remcap.c	4.8 (Berkeley) %G%";
 #endif
-#define MAXHOP	32	/* max number of tc= indirections */
 
-#include <ctype.h>
-#ifdef VMUNIX
-#include "local/uparm.h"
-#endif
 /*
  * remcap - routines for dealing with the remote host data base
  *
- *	Made from termcap with the following defines.
+ * derived from termcap
  */
-#define REMOTE		/* special for tip */
-#define SYSREMOTE	"/etc/remote"  /* system remote file */
+#include <sys/file.h>
+#include <ctype.h>
 
-#ifdef REMOTE
+#ifndef BUFSIZ
+#define	BUFSIZ		1024
+#endif
+#define MAXHOP		32		/* max number of tc= indirections */
+#define SYSREMOTE	"/etc/remote"	/* system remote file */
+
 #define	tgetent		rgetent
 #define	tnchktc		rnchktc
 #define	tnamatch	rnamatch
 #define	tgetnum		rgetnum
 #define	tgetflag	rgetflag
 #define	tgetstr		rgetstr
-#undef	E_TERMCAP
 #define	E_TERMCAP	RM = SYSREMOTE
 #define V_TERMCAP	"REMOTE"
 #define V_TERM		"HOST"
 
 char	*RM;
-#else
-#define	V_TERMCAP	"TERMCAP"
-#define V_TERM		"TERM"
-#endif
 
 /*
  * termcap - routines for dealing with the terminal capability data base
@@ -61,14 +42,13 @@ char	*RM;
  * doesn't, and because living w/o it is not hard.
  */
 
-static char *sccsid = "@(#)remcap.c	4.7 %G%";
 static	char *tbuf;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
 char	*tskip();
 char	*tgetstr();
 char	*tdecode();
 char	*getenv();
-static	char	*remotefile;
+static	char *remotefile;
 
 /*
  * Get an entry for terminal name in buffer bp,
@@ -78,22 +58,20 @@ static	char	*remotefile;
 tgetent(bp, name)
 	char *bp, *name;
 {
-	char lbuf[BUFSIZ];
-	int	rc1, rc2;
-	char *cp;
-	char *p;
+	char lbuf[BUFSIZ], *cp, *p;
+	int rc1, rc2;
 
 	remotefile = cp = getenv(V_TERMCAP);
 	if (cp == (char *)0 || strcmp(cp, SYSREMOTE) == 0) {
 		remotefile = cp = SYSREMOTE;
-		return(getent(bp, name, cp));
+		return (getent(bp, name, cp));
 	} else {
 		if ((rc1 = getent(bp, name, cp)) != 1)
 			*bp = '\0';
 		remotefile = cp = SYSREMOTE;
 		rc2 = getent(lbuf, name, cp);
 		if (rc1 != 1 && rc2 != 1)
-			return(rc2);
+			return (rc2);
 		if (rc2 == 1) {
 			p = lbuf;
 			if (rc1 == 1)
@@ -101,12 +79,12 @@ tgetent(bp, name)
 					;
 			if (strlen(bp) + strlen(p) > BUFSIZ) {
 				write(2, "Remcap entry too long\n", 23);
-				return(-1);
+				return (-1);
 			}
 			strcat(bp, p);
 		}
 		tbuf = bp;
-		return(1);
+		return (1);
 	}
 }
 
@@ -115,13 +93,11 @@ getent(bp, name, cp)
 {
 	register int c;
 	register int i = 0, cnt = 0;
-	char ibuf[BUFSIZ];
-	char *cp2;
+	char ibuf[BUFSIZ], *cp2;
 	int tf;
 
 	tbuf = bp;
 	tf = 0;
-#ifndef V6
 	/*
 	 * TERMCAP can have one of two things in it. It can be the
 	 * name of a file to use instead of /etc/termcap. In this
@@ -132,24 +108,16 @@ getent(bp, name, cp)
 	if (cp && *cp) {
 		if (*cp!='/') {
 			cp2 = getenv(V_TERM);
-			if (cp2==(char *) 0 || strcmp(name,cp2)==0) {
+			if (cp2 == (char *)0 || strcmp(name,cp2) == 0) {
 				strcpy(bp,cp);
-				return(tnchktc());
-			} else {
-				tf = open(E_TERMCAP, 0);
-			}
+				return (tnchktc());
+			} else
+				tf = open(E_TERMCAP, O_RDONLY);
 		} else
-#ifdef REMOTE
-			tf = open(RM = cp, 0);
-#else
-			tf = open(cp, 0);
-#endif
+			tf = open(RM = cp, O_RDONLY);
 	}
-	if (tf==0)
-		tf = open(E_TERMCAP, 0);
-#else
-	tf = open(E_TERMCAP, 0);
-#endif
+	if (tf == 0)
+		tf = open(E_TERMCAP, O_RDONLY);
 	if (tf < 0)
 		return (-1);
 	for (;;) {
@@ -184,7 +152,7 @@ getent(bp, name, cp)
 		 */
 		if (tnamatch(name)) {
 			close(tf);
-			return(tnchktc());
+			return (tnchktc());
 		}
 	}
 }
@@ -214,7 +182,7 @@ tnchktc()
 	p++;
 	/* p now points to beginning of last field */
 	if (p[0] != 't' || p[1] != 'c')
-		return(1);
+		return (1);
 	strcpy(tcname, p+3);
 	q = tcname;
 	while (*q && *q != ':')
@@ -226,9 +194,9 @@ tnchktc()
 	}
 	if (getent(tcbuf, tcname, remotefile) != 1) {
 		if (strcmp(remotefile, SYSREMOTE) == 0)
-			return(0);
+			return (0);
 		else if (getent(tcbuf, tcname, SYSREMOTE) != 1)
-			return(0);
+			return (0);
 	}
 	for (q = tcbuf; *q++ != ':'; )
 		;
@@ -239,7 +207,7 @@ tnchktc()
 	}
 	strcpy(p, q);
 	tbuf = holdtbuf;
-	return(1);
+	return (1);
 }
 
 /*
@@ -255,7 +223,7 @@ tnamatch(np)
 
 	Bp = tbuf;
 	if (*Bp == '#')
-		return(0);
+		return (0);
 	for (;;) {
 		for (Np = np; *Np && *Bp == *Np; Bp++, Np++)
 			continue;
@@ -307,7 +275,7 @@ tgetnum(id)
 		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
 			continue;
 		if (*bp == '@')
-			return(-1);
+			return (-1);
 		if (*bp != '#')
 			continue;
 		bp++;
@@ -340,7 +308,7 @@ tgetflag(id)
 			if (!*bp || *bp == ':')
 				return (1);
 			else if (*bp == '@')
-				return(0);
+				return (0);
 		}
 	}
 }
@@ -366,7 +334,7 @@ tgetstr(id, area)
 		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
 			continue;
 		if (*bp == '@')
-			return(0);
+			return (0);
 		if (*bp != '=')
 			continue;
 		bp++;

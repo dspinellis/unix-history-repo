@@ -1,12 +1,15 @@
-/*	biz22.c	4.2	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)biz22.c	4.3 (Berkeley) %G%";
+#endif
+
 #include "tip.h"
 
 #if BIZ1022
-#define DISCONNECT	"\20\04"	/* disconnection string */
+#define DISCONNECT_CMD	"\20\04"	/* disconnection string */
 
-static char *sccsid = "@(#)biz22.c	4.2 %G%";
-static int sigALRM();
-static int timeout = 0;
+static	int sigALRM();
+static	int timeout = 0;
+static	jmp_buf timeoutbuf;
 
 /*
  * Dial up on a BIZCOMP Model 1022 with either
@@ -69,34 +72,38 @@ biz_dialer(num, mod)
 biz22w_dialer(num, acu)
 	char *num, *acu;
 {
+
 	return (biz_dialer(num, "W"));
 }
 
 biz22f_dialer(num, acu)
 	char *num, *acu;
 {
+
 	return (biz_dialer(num, "V"));
 }
 
 biz22_disconnect()
 {
-	write(FD, DISCONNECT, 4);
+	int rw = 2;
+
+	write(FD, DISCONNECT_CMD, 4);
 	sleep(2);
-	ioctl(FD, TIOCFLUSH);
+	ioctl(FD, TIOCFLUSH, &rw);
 }
 
 biz22_abort()
 {
+
 	write(FD, "\02", 1);
-	timeout = 1;
 }
 
 static int
 sigALRM()
 {
-	signal(SIGALRM, SIG_IGN);
-	printf("\07timeout waiting for reply\n");
+
 	timeout = 1;
+	longjmp(timeoutbuf, 1);
 }
 
 static int
@@ -104,16 +111,19 @@ cmd(s)
 	register char *s;
 {
 	char c;
+	int (*f)();
 
 	write(FD, s, strlen(s));
-	timeout = 0;
-	signal(SIGALRM, biz22_abort);
+	f = signal(SIGALRM, sigALRM);
+	if (setjmp(timeoutbuf)) {
+		biz22_abort();
+		signal(SIGALRM, f);
+		return (1);
+	}
 	alarm(number(value(DIALTIMEOUT)));
 	read(FD, &c, 1);
 	alarm(0);
-	signal(SIGALRM, SIG_DFL);
-	if (timeout)
-		return (1);
+	signal(SIGALRM, f);
 	c &= 0177;
 	return (c != '\r');
 }
@@ -123,20 +133,23 @@ detect(s)
 	register char *s;
 {
 	char c;
+	int (*f)();
 
-	signal(SIGALRM, biz22_abort);
+	f = signal(SIGALRM, sigALRM);
 	timeout = 0;
 	while (*s) {
+		if (setjmp(timeoutbuf)) {
+			biz22_abort();
+			break;
+		}
 		alarm(number(value(DIALTIMEOUT)));
 		read(FD, &c, 1);
 		alarm(0);
-		if (timeout)
-			return (0);
 		c &= 0177;
 		if (c != *s++)
 			return (0);
 	}
-	signal(SIGALRM, SIG_DFL);
-	return (1);
+	signal(SIGALRM, f);
+	return (timeout == 0);
 }
 #endif

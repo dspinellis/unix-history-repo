@@ -1,9 +1,11 @@
-/*	log.c	4.4	83/06/15	*/
-#include "tip.h"
+#ifndef lint
+static char sccsid[] = "@(#)log.c	4.5 (Berkeley) %G%";
+#endif
 
 #ifdef ACULOG
-static char *sccsid = "@(#)log.c	4.4 %G%";
-static FILE *flog = NULL;
+#include "tip.h"
+
+static	FILE *flog = NULL;
 
 /*
  * Log file maintenance routines
@@ -18,8 +20,8 @@ logent(group, num, acu, message)
 
 	if (flog == NULL)
 		return;
-	if (!lock(value(LOCK))) {
-		fprintf(stderr, "can't lock up accounting file\r\n");
+	if (flock(fileno(flog), LOCK_EX) < 0) {
+		perror("tip: flock");
 		return;
 	}
 	if ((user = getlogin()) == NOSTR)
@@ -39,12 +41,14 @@ logent(group, num, acu, message)
 #endif
 		acu, message);
 	fflush(flog);
-	unlock();
+	(void) flock(fileno(flog), LOCK_UN);
 }
 
 loginit()
 {
-	if ((flog = fopen(value(LOG), "a")) == NULL)
+
+	flog = fopen(value(LOG), "a");
+	if (flog == NULL)
 		fprintf(stderr, "can't open log file\r\n");
 }
 #endif

@@ -1,20 +1,22 @@
-/*	df.c	4.6	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)df.c	4.7 (Berkeley) %G%";
+#endif
+
 /*
  * Dial the DF02-AC or DF03-AC
  */
 
 #if defined(DF02) || defined(DF03)
 #include "tip.h"
-#include <setjmp.h>
 
-static char *sccsid = "@(#)df.c	4.6 %G%";
-static jmp_buf	Sjbuf;
+static jmp_buf Sjbuf;
 static timeout();
 
 #if DF02
 df02_dialer(num, acu)
 	char *num, *acu;
 {
+
 	return (df_dialer(num, acu, 0));
 }
 #endif
@@ -23,6 +25,7 @@ df02_dialer(num, acu)
 df03_dialer(num, acu)
 	char *num, *acu;
 {
+
 	return (df_dialer(num, acu, 1));
 }
 #endif
@@ -33,10 +36,8 @@ df_dialer(num, acu, df03)
 {
 	register int f = FD;
 	struct sgttyb buf;
-	int speed = 0, c = 0;
-#ifdef TIOCMSET
-	int st = MST;		/* Secondary Transmit flag, for speed select */
-#endif
+	int speed = 0, rw = 2;
+	char c = '\0';
 
 	ioctl(f, TIOCHPCL, 0);		/* make sure it hangs up when done */
 	if (setjmp(Sjbuf)) {
@@ -49,6 +50,8 @@ df_dialer(num, acu, df03)
 	fflush(stdout);
 #ifdef TIOCMSET
 	if (df03) {
+		int st = TIOCM_ST;	/* secondary Transmit flag */
+
 		ioctl(f, TIOCGETP, &buf);
 		if (buf.sg_ospeed != B1200) {	/* must dial at 1200 baud */
 			speed = buf.sg_ospeed;
@@ -61,12 +64,12 @@ df_dialer(num, acu, df03)
 #endif
 	signal(SIGALRM, timeout);
 	alarm(5 * strlen(num) + 10);
-	ioctl(f, TIOCFLUSH, 0);
+	ioctl(f, TIOCFLUSH, &rw);
 	write(f, "\001", 1);
 	sleep(1);
 	write(f, "\002", 1);
 	write(f, num, strlen(num));
-	read(f, (char *)&c, 1);
+	read(f, &c, 1);
 #ifdef TIOCMSET
 	if (df03 && speed) {
 		buf.sg_ispeed = buf.sg_ospeed = speed;
@@ -76,26 +79,27 @@ df_dialer(num, acu, df03)
 	return (c == 'A');
 }
 
-
 df_disconnect()
 {
+	int rw = 2;
+
 	write(FD, "\001", 1);
 	sleep(1);
-	ioctl(FD, TIOCFLUSH, 0);
+	ioctl(FD, TIOCFLUSH, &rw);
 }
 
 
 df_abort()
 {
-	write(FD, "\001", 1);
-	sleep(1);
-	ioctl(FD, TIOCFLUSH, 0);
+
+	df_disconnect();
 }
 
 
 static
 timeout()
 {
+
 	longjmp(Sjbuf, 1);
 }
 #endif

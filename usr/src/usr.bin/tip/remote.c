@@ -1,7 +1,8 @@
-/*	remote.c	4.6	83/06/15	*/
-# include "tip.h"
+#ifndef lint
+static char sccsid[] = "@(#)remote.c	4.7 (Berkeley) %G%";
+#endif
 
-static char *sccsid = "@(#)remote.c	4.6 %G%";
+# include "tip.h"
 
 /*
  * Attributes to be gleened from remote host description
@@ -70,27 +71,48 @@ getremcap(host)
 	/*
 	 * see if uppercase mode should be turned on initially
 	 */
-	if (rgetflag("ra")) boolean(value(RAISE)) = 1;
-	if (rgetflag("ec")) boolean(value(ECHOCHECK)) = 1;
-	if (rgetflag("be")) boolean(value(BEAUTIFY)) = 1;
-	if (rgetflag("nb")) boolean(value(BEAUTIFY)) = 0;
-	if (rgetflag("sc")) boolean(value(SCRIPT)) = 1;
-	if (rgetflag("tb")) boolean(value(TABEXPAND)) = 1;
-	if (rgetflag("vb")) boolean(value(VERBOSE)) = 1;
-	if (rgetflag("nv")) boolean(value(VERBOSE)) = 0;
-	if (rgetflag("ta")) boolean(value(TAND)) = 1;
-	if (rgetflag("nt")) boolean(value(TAND)) = 0;
-	if (rgetflag("rw")) boolean(value(RAWFTP)) = 1;
-	if (rgetflag("hd")) boolean(value(HALFDUPLEX)) = 1;
-	if (*RE == NULL) RE = (char *)"tip.record";
-	if (*EX == NULL) EX = (char *)"\t\n\b\f";
-	if (ES != NOSTR) vstring("es",ES);
-	if (FO != NOSTR) vstring("fo",FO);
-	if (PR != NOSTR) vstring("pr",PR);
-	if (RC != NOSTR) vstring("rc",RC);
-	if ((DL = rgetnum("dl")) < 0) DL = 0;
-	if ((CL = rgetnum("cl")) < 0) CL = 0;
-	if ((ET = rgetnum("et")) < 0) ET = 10;
+	if (rgetflag("ra"))
+		boolean(value(RAISE)) = 1;
+	if (rgetflag("ec"))
+		boolean(value(ECHOCHECK)) = 1;
+	if (rgetflag("be"))
+		boolean(value(BEAUTIFY)) = 1;
+	if (rgetflag("nb"))
+		boolean(value(BEAUTIFY)) = 0;
+	if (rgetflag("sc"))
+		boolean(value(SCRIPT)) = 1;
+	if (rgetflag("tb"))
+		boolean(value(TABEXPAND)) = 1;
+	if (rgetflag("vb"))
+		boolean(value(VERBOSE)) = 1;
+	if (rgetflag("nv"))
+		boolean(value(VERBOSE)) = 0;
+	if (rgetflag("ta"))
+		boolean(value(TAND)) = 1;
+	if (rgetflag("nt"))
+		boolean(value(TAND)) = 0;
+	if (rgetflag("rw"))
+		boolean(value(RAWFTP)) = 1;
+	if (rgetflag("hd"))
+		boolean(value(HALFDUPLEX)) = 1;
+	if (*RE == NULL)
+		RE = (char *)"tip.record";
+	if (*EX == NULL)
+		EX = (char *)"\t\n\b\f";
+	if (ES != NOSTR)
+		vstring("es", ES);
+	if (FO != NOSTR)
+		vstring("fo", FO);
+	if (PR != NOSTR)
+		vstring("pr", PR);
+	if (RC != NOSTR)
+		vstring("rc", RC);
+	if ((DL = rgetnum("dl")) < 0)
+		DL = 0;
+	if ((CL = rgetnum("cl")) < 0)
+		CL = 0;
+	if ((ET = rgetnum("et")) < 0)
+		ET = 10;
 }
 
 char *
