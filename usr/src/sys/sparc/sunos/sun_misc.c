@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	7.4 (Berkeley) %G%
+ *	@(#)sun_misc.c	7.5 (Berkeley) %G%
  *
- * from: $Header: sun_misc.c,v 1.12 92/07/12 13:26:10 torek Exp $
+ * from: $Header: sun_misc.c,v 1.16 93/04/07 02:46:27 torek Exp $
  */
 
 /*
@@ -26,6 +26,8 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/dirent.h>
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/filedesc.h>
@@ -126,7 +128,7 @@ sun_unmount(p, uap, retval)
 	int *retval;
 {
 
-	uap->flags = MNT_NOFORCE;
+	uap->flags = 0;
 	return (unmount(p, uap, retval));
 }
 
@@ -199,18 +201,13 @@ sun_sigpending(p, uap, retval)
 	return (copyout((caddr_t)&mask, (caddr_t)uap->mask, sizeof(int)));
 }
 
-#if 0
-/* here is the sun layout (not used directly): */
+/*
+ * Here is the sun layout.  (Compare the BSD layout in <sys/dirent.h>.)
+ * We can assume big-endian, so the BSD d_type field is just the high
+ * byte of the SunOS d_namlen field, after adjusting for the extra "long".
+ */
 struct sun_dirent {
 	long	d_off;
-	u_long	d_fileno;
-	u_short	d_reclen;
-	u_short	d_namlen;
-	char	d_name[256];
-};
-#endif
-/* and the BSD layout: */
-struct bsd_dirent {
 	u_long	d_fileno;
 	u_short	d_reclen;
 	u_short	d_namlen;
@@ -245,6 +242,7 @@ sun_getdents(p, uap, retval)
 	off_t off;			/* true file offset */
 	long soff;			/* Sun file offset */
 	int buflen, error, eofflag;
+#define	BSD_DIRENT(cp) ((struct dirent *)(cp))
 #define	SUN_RECLEN(reclen) (reclen + sizeof(long))
 
 	if ((error = getvnode(p->p_fd, uap->fd, &fp)) != 0)
@@ -280,11 +278,11 @@ again:
 	if ((len = buflen - auio.uio_resid) == 0)
 		goto eof;
 	for (; len > 0; len -= reclen) {
-		reclen = ((struct bsd_dirent *)inp)->d_reclen;
+		reclen = ((struct dirent *)inp)->d_reclen;
 		if (reclen & 3)
 			panic("sun_getdents");
 		off += reclen;		/* each entry points to next */
-		if (((struct bsd_dirent *)inp)->d_fileno == 0) {
+		if (BSD_DIRENT(inp)->d_fileno == 0) {
 			inp += reclen;	/* it is a hole; squish it out */
 			continue;
 		}
@@ -293,8 +291,13 @@ again:
 			outp++;
 			break;
 		}
-		/* copy out a Sun-shaped dirent */
-		((struct bsd_dirent *)inp)->d_reclen = SUN_RECLEN(reclen);
+		/*
+		 * Massage in place to make a Sun-shaped dirent (otherwise
+		 * we have to worry about touching user memory outside of
+		 * the copyout() call).
+		 */
+		BSD_DIRENT(inp)->d_reclen = SUN_RECLEN(reclen);
+		BSD_DIRENT(inp)->d_type = 0;
 		soff = off;
 		if ((error = copyout((caddr_t)&soff, outp, sizeof soff)) != 0 ||
 		    (error = copyout(inp, outp + sizeof soff, reclen)) != 0)
@@ -442,93 +445,6 @@ sun_mctl(p, uap, retval)
 	default:
 		return (EINVAL);
 	}
-}
-
-struct sun_setreuid_args {
-	int	ruid;		/* not uid_t */
-	int	euid;
-};
-sun_setreuid(p, uap, retval)
-	struct proc *p;
-	struct sun_setreuid_args *uap;
-	int *retval;
-{
-	register struct pcred *pc = p->p_cred;
-	register uid_t ruid, euid;
-	int error;
-
-	if (uap->ruid == -1)
-		ruid = pc->p_ruid;
-	else
-		ruid = uap->ruid;
-	/*
-	 * Allow setting real uid to previous effective, for swapping real and
-	 * effective.  This should be:
-	 *
-	 * if (ruid != pc->p_ruid &&
-	 *     (error = suser(pc->pc_ucred, &p->p_acflag)))
-	 */
-	if (ruid != pc->p_ruid && ruid != pc->pc_ucred->cr_uid /* XXX */ &&
-	    (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	if (uap->euid == -1)
-		euid = pc->pc_ucred->cr_uid;
-	else
-		euid = uap->euid;
-	if (euid != pc->pc_ucred->cr_uid && euid != pc->p_ruid &&
-	    euid != pc->p_svuid && (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	/*
-	 * Everything's okay, do it.  Copy credentials so other references do
-	 * not see our changes.
-	 */
-	pc->pc_ucred = crcopy(pc->pc_ucred);
-	pc->pc_ucred->cr_uid = euid;
-	pc->p_ruid = ruid;
-	p->p_flag |= SUGID;
-	return (0);
-}
-
-struct sun_setregid_args {
-	int	rgid;		/* not gid_t */
-	int	egid;
-};
-sun_setregid(p, uap, retval)
-	struct proc *p;
-	struct sun_setregid_args *uap;
-	int *retval;
-{
-	register struct pcred *pc = p->p_cred;
-	register gid_t rgid, egid;
-	int error;
-
-	if (uap->rgid == -1)
-		rgid = pc->p_rgid;
-	else
-		rgid = uap->rgid;
-	/*
-	 * Allow setting real gid to previous effective, for swapping real and
-	 * effective.  This didn't really work correctly in 4.[23], but is
-	 * preserved so old stuff doesn't fail.  This should be:
-	 *
-	 * if (rgid != pc->p_rgid &&
-	 *     (error = suser(pc->pc_ucred, &p->p_acflag)))
-	 */
-	if (rgid != pc->p_rgid && rgid != pc->pc_ucred->cr_groups[0] /* XXX */ &&
-	    (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	if (uap->egid == -1)
-		egid = pc->pc_ucred->cr_groups[0];
-	else
-		egid = uap->egid;
-	if (egid != pc->pc_ucred->cr_groups[0] && egid != pc->p_rgid &&
-	    egid != pc->p_svgid && (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	pc->pc_ucred = crcopy(pc->pc_ucred);
-	pc->pc_ucred->cr_groups[0] = egid;
-	pc->p_rgid = rgid;
-	p->p_flag |= SUGID;
-	return (0);
 }
 
 struct sun_setsockopt_args {
