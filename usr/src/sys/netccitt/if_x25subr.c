@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.6 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -74,7 +74,7 @@ register struct	rtentry *rt;
 	struct pklcd *lcp;
 	struct x25_ifaddr *ia;
 	struct mbuf    *prev;
-	int             s, error = 0, flags = 0;
+	int             s, error = 0, flags = 0, af;
 	union imp_addr  imp_addr;
 
 	if ((ifp->if_flags & IFF_UP) == 0)
@@ -114,8 +114,10 @@ register struct	rtentry *rt;
 		lx->lx_lcd = lcp;
 		lx->lx_rt = rt;
 		lx->lx_ia = ia;
+		lx->lx_family = dst->sa_family;
 		lcp->lcd_upnext = (caddr_t)lx;
 		lcp->lcd_upper = x25_ifinput;
+		lcp->lcd_packetsize = ia->ia_xc.xc_psize; /* XXX pk_fragment */
 	}
 	switch (lx->lx_state) {
 
@@ -151,13 +153,13 @@ register struct	rtentry *rt;
 	case LXS_RESOLVING:
 			if (sbspace(&lcp->lcd_sb) < 0)
 				senderr(ENOBUFS);
-			sbappendrecord(&lcp->lcd_sb, m);
+			pk_fragment(lcp, m, 0, 0, 0);
 			break;
 		}
 		/* FALLTHROUGH */
 	case LXS_FREE:
-		sbappendrecord(&lcp->lcd_sb, m);
 		lcp->lcd_pkp = &(lx->lx_ia->ia_pkcb);
+		pk_fragment(lcp, m, 0, 0, 0);
 		pk_connect(lcp, (struct mbuf *)0,
 				(struct sockaddr_x25 *)rt->rt_gateway);
 		break;
@@ -226,18 +228,44 @@ struct ifnet *ifp;
  */
 x25_ifinput(lcp, m)
 struct pklcd *lcp;
-struct mbuf *m;
+register struct mbuf *m;
 {
 	struct llinfo_x25 *lx = (struct llinfo_x25 *)lcp->lcd_upnext;
 	struct rtentry *rt = lx->lx_rt;
 	register struct ifnet *ifp = rt->rt_ifp;
 	struct ifqueue *inq;
 	extern struct timeval time;
-	int s;
+	struct x25_packet *xp = mtod(m, struct x25_packet *);
+	struct mbuf **mp = &lcp->lcd_ifrag;
+	int s, len;
 
 	ifp->if_lastchange = time;
+	switch (m->m_type) {
+	case MT_CONTROL:
+	case MT_OOBDATA:
+		m_freem(m);
+		return;
 
-	switch ((rt_key(rt))->sa_family) {
+	case MT_DATA:
+	case MT_HEADER:
+		m->m_len -= PKHEADERLN;
+		m->m_data += PKHEADERLN;
+		m->m_pkthdr.len -= PKHEADERLN;
+		while (*mp)
+			mp = &((*mp)->m_next);
+		*mp = m;
+		if (MBIT(xp))
+			return;
+	}
+	m = lcp->lcd_ifrag;
+	if (m->m_flags & M_PKTHDR) {
+		for (len = 0; m; m = m->m_next)
+			len += m->m_len;
+		m = lcp->lcd_ifrag;
+		m->m_pkthdr.len = len;
+	}
+
+	switch (lx->lx_family) {
 #ifdef INET
 	case AF_INET:
 		schednetisr(NETISR_IP);
@@ -358,7 +386,7 @@ struct sockaddr *dst;
 	case caseof(LXS_CONNECTING, RTM_DELETE):
 	case caseof(LXS_CONNECTING, RTM_CHANGE):
 		pk_disconnect(lcp);
-		lcp->lcd_upper = x25_ifrtfree;
+		/*lcp->lcd_upper = x25_ifrtfree; */
 		rt->rt_refcnt++;
 		break;
 

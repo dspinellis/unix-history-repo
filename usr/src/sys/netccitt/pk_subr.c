@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.6 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -147,7 +147,7 @@ int lcn, type;
 	register struct mbuf *m;
 	register struct x25_packet *xp;
 
-	MGET (m, M_DONTWAIT, MT_HEADER);
+	MGETHDR (m, M_DONTWAIT, MT_HEADER);
 	if (m == 0)
 		panic ("pk_template");
 	m -> m_act = 0;
@@ -157,7 +157,7 @@ int lcn, type;
 	 * of the packet level header with the hope that this will
 	 * be enough room for the link level to insert its header.
 	 */
-	m -> m_data += 4;
+	m -> m_data += max_linkhdr;
 	m -> m_len = PKHEADERLN;
 
 	xp = mtod (m, struct x25_packet *);
@@ -188,20 +188,20 @@ int restart_cause;
 	register int i;
 
 	/* Restart all logical channels. */
-	if (pkp->pk_chan == 0)
+	if (pkp -> pk_chan == 0)
 		return;
-	for (i = 1; i <= pkp->pk_maxlcn; ++i)
-		if ((lcp = pkp->pk_chan[i]) != NULL) {
+	for (i = 1; i <= pkp -> pk_maxlcn; ++i)
+		if ((lcp = pkp -> pk_chan[i]) != NULL) {
 			if (lcp -> lcd_so)
-				lcp->lcd_so -> so_error = ENETRESET;
+				lcp -> lcd_so -> so_error = ENETRESET;
 			pk_close (lcp);
 		}
 
 	if (restart_cause < 0)
 		return;
 
-	pkp->pk_state = DTE_SENT_RESTART;
-	lcp = pkp->pk_chan[0];
+	pkp -> pk_state = DTE_SENT_RESTART;
+	lcp = pkp -> pk_chan[0];
 	xp = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESTART);
 	(dtom (xp)) -> m_len++;
 	xp -> packet_data = 0;	/* DTE only */
@@ -267,7 +267,7 @@ struct mbuf *nam;
 
 	for (pp = pk_listenhead; pp; pp = pp -> lcd_listen)
 		if (bcmp (pp -> lcd_ceaddr -> x25_udata, sa -> x25_udata,
-			min (pp->lcd_ceaddr->x25_udlen, sa->x25_udlen)) == 0)
+		          min (pp -> lcd_ceaddr -> x25_udlen, sa -> x25_udlen)) == 0)
 			return (EADDRINUSE);
 
 	lcp -> lcd_laddr = *sa;
@@ -323,8 +323,8 @@ struct mbuf *nam;
 	}
 	if (sa -> x25_addr[0] == '\0')
 		return (EDESTADDRREQ);
-	if (lcp->lcd_pkp == 0)
-	    for (pkp = pkcbhead; ; pkp = pkp->pk_next) {
+	if (lcp -> lcd_pkp == 0)
+	    for (pkp = pkcbhead; ; pkp = pkp -> pk_next) {
 		if (pkp == 0)
 			return (ENETUNREACH);
 		/*
@@ -342,7 +342,7 @@ struct mbuf *nam;
 	if ((lcp -> lcd_lcn = pk_getlcn (pkp)) == 0)
 		return (EMFILE);
 	lcp -> lcd_faddr = *sa;
-	lcp -> lcd_ceaddr = & lcp->lcd_faddr;
+	lcp -> lcd_ceaddr = & lcp -> lcd_faddr;
 	pk_assoc (pkp, lcp, lcp -> lcd_ceaddr);
 	if (lcp -> lcd_so)
 		soisconnecting (lcp -> lcd_so);
@@ -384,7 +384,7 @@ register struct x25config *xcp;
 
 #ifdef ANDREW
 	printf ("call: ");
-	for (cp = mtod (m, octet *), posn = 0; posn < m->m_len; ++posn)
+	for (cp = mtod (m, octet *), posn = 0; posn < m -> m_len; ++posn)
 		printf ("%x ", *cp++);
 	printf ("\n");
 #endif
@@ -447,7 +447,7 @@ register struct pkcb *pkp;
 {
 	register int i;
 
-	if (pkp->pk_chan == 0)
+	if (pkp -> pk_chan == 0)
 		return (0);
 	for (i = pkp -> pk_maxlcn; i > 0; --i)
 		if (pkp -> pk_chan[i] == NULL)
@@ -544,9 +544,9 @@ char *errstr;
 
 	switch (error) {
 	case CLEAR: 
-		if (lcp->lcd_so) {
-			lcp->lcd_so -> so_error = ECONNABORTED;
-			soisdisconnecting (lcp->lcd_so);
+		if (lcp -> lcd_so) {
+			lcp -> lcd_so -> so_error = ECONNABORTED;
+			soisdisconnecting (lcp -> lcd_so);
 		}
 		pk_clear (lcp);
 		break;
@@ -724,13 +724,14 @@ pk_resetcause (pkp, xp)
 struct pkcb *pkp;
 register struct x25_packet *xp;
 {
-	register struct pklcd *lcp = pkp->pk_chan[xp -> logical_channel_number];
+	register struct pklcd *lcp =
+				pkp -> pk_chan[xp -> logical_channel_number];
 	register int code = xp -> packet_data;
 
 	if (code > MAXRESETCAUSE)
 		code = 7;	/* EXRNCG */
 
-	lcp->lcd_so -> so_error = Reset_cause[code];
+	lcp -> lcd_so -> so_error = Reset_cause[code];
 }
 
 #define MAXCLEARCAUSE	25
@@ -749,12 +750,13 @@ pk_clearcause (pkp, xp)
 struct pkcb *pkp;
 register struct x25_packet *xp;
 {
-	register struct pklcd *lcp = pkp->pk_chan[xp -> logical_channel_number];
+	register struct pklcd *lcp =
+		pkp -> pk_chan[xp -> logical_channel_number];
 	register int code = xp -> packet_data;
 
 	if (code > MAXCLEARCAUSE)
 		code = 5;	/* EXRNCG */
-	lcp->lcd_so -> so_error = Clear_cause[code];
+	lcp -> lcd_so -> so_error = Clear_cause[code];
 }
 
 char *
@@ -784,4 +786,68 @@ char *fmt;
 
 	printf (fmt, a1, a2, a3, a4, a5, a6);
 	printf ("\n");
+}
+
+pk_ifattach(ia, lloutput, llnext)
+register struct x25_ifaddr *ia;
+int (*lloutput)();
+caddr_t llnext;
+{
+	/* this is here because you can't include both pk_var and hd_var */
+	/* this will probably be replace by a streams gluing mechanism */
+	ia -> ia_pkcb.pk_lloutput = lloutput;
+	ia -> ia_pkcb.pk_llnext = llnext;
+}
+
+pk_fragment(lcp, m0, qbit, mbit, wait)
+struct mbuf *m0;
+register struct pklcd *lcp;
+{
+	register struct mbuf *m = m0;
+	register struct x25_packet *xp;
+	register struct sockbuf *sb;
+	struct mbuf *next = 0;
+	int totlen, psize = 1 << (lcp -> lcd_packetsize);
+
+	if (m == 0)
+		return;
+	if (m->m_flags & M_PKTHDR == 0)
+		panic("pk_fragment");
+	totlen = m -> m_pkthdr.len;
+	sb = lcp -> lcd_so ? &lcp -> lcd_so -> so_snd : & lcp -> lcd_sb;
+	do {
+		if (totlen > psize) {
+			next = m;
+			m = m_copym(m, 0, psize, wait);
+			if (m == 0)
+				goto abort;
+			m_adj(next, psize);
+			totlen -= psize;
+		}
+		M_PREPEND(m, PKHEADERLN, wait);
+		if (m == 0)
+			goto abort;
+		xp = mtod(m, struct x25_packet *);
+		0[(char *)xp] = 0;
+		if (qbit)
+			xp -> q_bit = qbit;
+		xp -> fmt_identifier = 1;
+		xp -> logical_channel_number = lcp -> lcd_lcn;
+		xp -> packet_type = X25_DATA;
+		if (next || mbit)
+			MBIT(xp) = 1;
+		m->m_act = next;
+	} while (m = next);
+	for (m = m0; m; m = next) {
+		next = m -> m_act;
+		m -> m_act = 0;
+		sbappendrecord(sb, m);
+	}
+	return 0;
+abort:
+	for (m = m0; m; m = next) {
+		next = m -> m_act;
+		m_freem(m);
+	}
+	return ENOBUFS;
 }
