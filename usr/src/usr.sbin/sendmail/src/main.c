@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	3.153		%G%);
+SCCSID(@(#)main.c	3.154		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -80,7 +80,7 @@ main(argc, argv)
 	extern putheader(), putbody();
 	extern ENVELOPE *newenvelope();
 	extern intsig();
-	extern char *myhostname();
+	extern char **myhostname();
 
 	/*
 	**  Check to see if we reentered.
@@ -157,9 +157,15 @@ main(argc, argv)
 	errno = 0;
 	from = NULL;
 	initmacros();
-	p = myhostname();
-	if (p != NULL && *p != '\0')
+	av = myhostname(jbuf);
+	if (jbuf[0] != '\0')
+	{
+		p = newstr(jbuf);
 		define('w', p, CurEnv);
+		setclass('w', p);
+	}
+	while (av != NULL && *av != NULL)
+		setclass('w', *av++);
 
 	/*
 	** Crack argv.
@@ -393,12 +399,16 @@ main(argc, argv)
 		for (i = 0; i < MAXMAILERS; i++)
 		{
 			register struct mailer *m = Mailer[i];
+			int j;
 
 			if (m == NULL)
 				continue;
-			printf("mailer %d (%s): P=%s F=%lo S=%d R=%d E=", i,
-			       m->m_name, m->m_mailer, m->m_flags, m->m_s_rwset,
-			       m->m_r_rwset);
+			printf("mailer %d (%s): P=%s S=%d R=%d F=", i, m->m_name,
+				m->m_mailer, m->m_s_rwset, m->m_r_rwset);
+			for (j = '\0'; j <= '\177'; j++)
+				if (bitnset(j, m->m_flags))
+					putchar(j);
+			printf(" E=");
 			xputs(m->m_eol);
 			printf("\n");
 		}

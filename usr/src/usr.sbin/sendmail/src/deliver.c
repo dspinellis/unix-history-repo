@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.146		%G%);
+SCCSID(@(#)deliver.c	3.147		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -73,7 +73,7 @@ deliver(e, firstto)
 	**		This should be on a per-mailer basis.
 	*/
 
-	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags) &&
+	if (NoConnect && !QueueRun && bitnset(M_EXPENSIVE, m->m_flags) &&
 	    !Verbose)
 	{
 		for (; to != NULL; to = to->q_next)
@@ -112,9 +112,9 @@ deliver(e, firstto)
 	*pvp++ = m->m_argv[0];
 
 	/* insert -f or -r flag as appropriate */
-	if (bitset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
+	if (FromFlag && (bitnset(M_FOPT, m->m_flags) || bitnset(M_ROPT, m->m_flags)))
 	{
-		if (bitset(M_FOPT, m->m_flags))
+		if (bitnset(M_FOPT, m->m_flags))
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
@@ -179,7 +179,7 @@ deliver(e, firstto)
 	for (; to != NULL; to = to->q_next)
 	{
 		/* avoid sending multiple recipients to dumb mailers */
-		if (tobuf[0] != '\0' && !bitset(M_MUSER, m->m_flags))
+		if (tobuf[0] != '\0' && !bitnset(M_MUSER, m->m_flags))
 			break;
 
 		/* if already sent or not for this host, don't send */
@@ -224,7 +224,7 @@ deliver(e, firstto)
 		**	about them.
 		*/
 
-		if (bitset(M_STRIPQ, m->m_flags))
+		if (bitnset(M_STRIPQ, m->m_flags))
 		{
 			stripquotes(user, TRUE);
 			stripquotes(host, TRUE);
@@ -560,7 +560,7 @@ sendoff(e, m, pvp, ctladdr)
 	i = endmailer(pid, pvp[0]);
 
 	/* arrange a return receipt if requested */
-	if (e->e_receiptto != NULL && bitset(M_LOCAL, m->m_flags))
+	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
 	{
 		e->e_flags |= EF_SENDRECEIPT;
 		/* do we want to send back more info? */
@@ -772,7 +772,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			_exit(EX_OSERR);
 		}
 		(void) close(mpvect[0]);
-		if (!bitset(M_RESTR, m->m_flags))
+		if (!bitnset(M_RESTR, m->m_flags))
 		{
 			if (ctladdr->q_uid == 0)
 			{
@@ -984,11 +984,11 @@ putfromline(fp, m)
 	char buf[MAXLINE];
 	extern char SentDate[];
 
-	if (bitset(M_NHDR, m->m_flags))
+	if (bitnset(M_NHDR, m->m_flags))
 		return;
 
 # ifdef UGLYUUCP
-	if (bitset(M_UGLYUUCP, m->m_flags))
+	if (bitnset(M_UGLYUUCP, m->m_flags))
 	{
 		extern char *macvalue();
 		char *sys = macvalue('g', CurEnv);
@@ -1312,7 +1312,7 @@ sendall(e, mode)
 			extern char *aliaslookup();
 
 			/* we can only have owners for local addresses */
-			if (!bitset(M_LOCAL, qq->q_mailer->m_flags))
+			if (!bitnset(M_LOCAL, qq->q_mailer->m_flags))
 				continue;
 
 			/* see if the owner list exists */

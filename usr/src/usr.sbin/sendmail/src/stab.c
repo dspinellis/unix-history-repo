@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)stab.c	3.13		%G%);
+SCCSID(@(#)stab.c	3.14		%G%);
 
 /*
 **  STAB -- manage the symbol table
@@ -74,7 +74,12 @@ stab(name, type, op)
 			if (s == NULL)
 				printf("not found\n");
 			else
-				printf("type %d val %lx\n", s->s_type, s->s_class);
+			{
+				long *lp = (long *) s->s_class;
+
+				printf("type %d val %lx %lx %lx %lx\n",
+					s->s_type, lp[0], lp[1], lp[2], lp[3]);
+			}
 		}
 # endif DEBUG
 		return (s);

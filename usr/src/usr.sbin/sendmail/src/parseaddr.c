@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.74		%G%);
+SCCSID(@(#)parseaddr.c	3.75		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -124,9 +124,9 @@ parseaddr(addr, a, copyf)
 	**  Do UPPER->lower case mapping unless inhibited.
 	*/
 
-	if (!bitset(M_HST_UPPER, m->m_flags))
+	if (!bitnset(M_HST_UPPER, m->m_flags))
 		makelower(a->q_host);
-	if (!bitset(M_USR_UPPER, m->m_flags))
+	if (!bitnset(M_USR_UPPER, m->m_flags))
 		makelower(a->q_user);
 
 	/*
@@ -521,20 +521,12 @@ rewrite(pvp, ruleset)
 			switch (*rp)
 			{
 				register STAB *s;
-				register int class;
 
 			  case MATCHCLASS:
 			  case MATCHNCLASS:
 				/* match any token in (not in) a class */
-				class = rp[1];
-				if (!isalpha(class))
-					goto backup;
-				if (isupper(class))
-					class -= 'A';
-				else
-					class -= 'a';
 				s = stab(ap, ST_CLASS, ST_FIND);
-				if (s == NULL || (s->s_class & (1L << class)) == 0)
+				if (s == NULL || !bitnset(rp[1], s->s_class))
 				{
 					if (*rp == MATCHCLASS)
 						goto backup;
@@ -783,7 +775,7 @@ buildaddr(tv, a)
 
 	/* figure out what host (if any) */
 	tv++;
-	if (!bitset(M_LOCAL, m->m_flags))
+	if (!bitnset(M_LOCAL, m->m_flags))
 	{
 		if (**tv++ != CANONHOST)
 		{
@@ -885,7 +877,7 @@ sameaddr(a, b)
 		return (FALSE);
 
 	/* if the mailer ignores hosts, we have succeeded! */
-	if (bitset(M_LOCAL, a->q_mailer->m_flags))
+	if (bitnset(M_LOCAL, a->q_mailer->m_flags))
 		return (TRUE);
 
 	/* otherwise compare hosts (but be careful for NULL ptrs) */

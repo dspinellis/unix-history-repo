@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.70		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.71		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.70		%G%);
+SCCSID(@(#)queue.c	3.71		%G%);
 
 /*
 **  Work queue.
@@ -150,18 +150,28 @@ queueup(e, queueall, announce)
 	**	no effect on the addresses as they are output.
 	*/
 
-	bzero(&nullmailer, sizeof nullmailer);
+	bzero((char *) &nullmailer, sizeof nullmailer);
 	nullmailer.m_r_rwset = nullmailer.m_s_rwset = -1;
 	nullmailer.m_eol = "\n";
 
 	define('g', "$f", e);
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
+		extern bool bitzerop();
+
 		if (h->h_value == NULL || h->h_value[0] == '\0')
 			continue;
 		fprintf(tfp, "H");
-		if (h->h_mflags != 0 && bitset(H_CHECK|H_ACHECK, h->h_flags))
-			mfdecode(h->h_mflags, tfp);
+		if (!bitzerop(h->h_mflags) && bitset(H_CHECK|H_ACHECK, h->h_flags))
+		{
+			int j;
+
+			putc('?', tfp);
+			for (j = '\0'; j <= '\177'; j++)
+				if (bitnset(j, h->h_mflags))
+					putc(j, tfp);
+			putc('?', tfp);
+		}
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf], e);

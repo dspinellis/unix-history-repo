@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.41		%G%);
+SCCSID(@(#)util.c	3.42		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -138,7 +138,8 @@ xalloc(sz)
 	if (p == NULL)
 	{
 		syserr("Out of memory!!");
-		exit(EX_UNAVAILABLE);
+		abort();
+		/* exit(EX_UNAVAILABLE); */
 	}
 	return (p);
 }
@@ -540,13 +541,13 @@ putline(l, fp, m)
 			p = &l[strlen(l)];
 
 		/* check for line overflow */
-		while (bitset(M_LIMITS, m->m_flags) && (p - l) > SMTPLINELIM)
+		while (bitnset(M_LIMITS, m->m_flags) && (p - l) > SMTPLINELIM)
 		{
 			register char *q = &l[SMTPLINELIM - 1];
 
 			svchar = *q;
 			*q = '\0';
-			if (l[0] == '.' && bitset(M_XDOT, m->m_flags))
+			if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
 				fputc('.', fp);
 			fputs(l, fp);
 			fputc('!', fp);
@@ -558,7 +559,7 @@ putline(l, fp, m)
 		/* output last part */
 		svchar = *p;
 		*p = '\0';
-		if (l[0] == '.' && bitset(M_XDOT, m->m_flags))
+		if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
 			fputc('.', fp);
 		fputs(l, fp);
 		fputs(m->m_eol, fp);
@@ -804,4 +805,55 @@ closeall()
 
 	for (i = 3; i < 50; i++)
 		(void) close(i);
+}
+/*
+**  BITINTERSECT -- tell if two bitmaps intersect
+**
+**	Parameters:
+**		a, b -- the bitmaps in question
+**
+**	Returns:
+**		TRUE if they have a non-null intersection
+**		FALSE otherwise
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+bitintersect(a, b)
+	BITMAP a;
+	BITMAP b;
+{
+	int i;
+
+	for (i = BITMAPBYTES / sizeof (int); --i >= 0; )
+		if ((a[i] & b[i]) != 0)
+			return (TRUE);
+	return (FALSE);
+}
+/*
+**  BITZEROP -- tell if a bitmap is all zero
+**
+**	Parameters:
+**		map -- the bit map to check
+**
+**	Returns:
+**		TRUE if map is all zero.
+**		FALSE if there are any bits set in map.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+bitzerop(map)
+	BITMAP map;
+{
+	int i;
+
+	for (i = BITMAPBYTES / sizeof (int); --i >= 0; )
+		if (map[i] != 0)
+			return (FALSE);
+	return (TRUE);
 }
