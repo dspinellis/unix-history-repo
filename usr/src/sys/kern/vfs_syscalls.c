@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.15 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1141,10 +1141,10 @@ rename(scp)
 	tvp = tond.ni_vp;
 	if (tvp != NULL) {
 		if (fvp->v_type == VDIR && tvp->v_type != VDIR) {
-			error = EISDIR;
+			error = ENOTDIR;
 			goto out;
 		} else if (fvp->v_type != VDIR && tvp->v_type == VDIR) {
-			error = ENOTDIR;
+			error = EISDIR;
 			goto out;
 		}
 	}
