@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.7 83/08/26";
+static	char *sccsid = "@(#)cmd.c	3.8 83/08/26";
 #endif
 
 #include "defs.h"
@@ -260,7 +260,7 @@ register struct ww *w;
 
 		buf[0] = w->ww_id + '1';
 		buf[1] = 0;
-		(void) wwlabel(w, framewin, 1, buf, mode);
+		wwlabel(w, framewin, 1, buf, mode);
 	}
 	if (w->ww_label) {
 		int col;
@@ -270,6 +270,6 @@ register struct ww *w;
 			col = MAX(3, col);
 		} else
 			col = 3;
-		(void) wwlabel(w, framewin, col, w->ww_label, mode);
+		wwlabel(w, framewin, col, w->ww_label, mode);
 	}
 }

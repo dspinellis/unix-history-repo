@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.8 83/08/26";
+static	char *sccsid = "@(#)cmd1.c	3.9 83/08/26";
 #endif
 
 #include "defs.h"
@@ -9,10 +9,8 @@ c_window()
 	int col, row, xcol, xrow;
 	int id;
 
-	if ((id = findid()) < 0) {
-		error("Too many windows.");
+	if ((id = findid()) < 0)
 		return;
-	}
 	if (!terse)
 		(void) wwputs("Upper left corner: ", cmdwin);
 	col = 0;
@@ -69,8 +67,7 @@ c_window()
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);
-	if (openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline) == 0)
-		error("Can't open window.");
+	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline);
 }
 
 findid()
@@ -79,7 +76,11 @@ findid()
 
 	for (i = 0; i < NWINDOW && window[i] != 0; i++)
 		;
-	return i < NWINDOW ? i : -1;
+	if (i >= NWINDOW) {
+		error("Too many windows.");
+		return -1;
+	}
+	return i;
 }
 
 getpos(row, col, minrow, mincol)
@@ -146,12 +147,16 @@ int id, nrow, ncol, row, col;
 {
 	register struct ww *w;
 
-	if (row <= 0)
-		return 0;
 	if (id < 0 && (id = findid()) < 0)
 		return 0;
-	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0)
+	if (row <= 0) {
+		error("Bad row number.");
 		return 0;
+	}
+	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {
+		error("%s.", wwerror());
+		return 0;
+	}
 	w->ww_id = id;
 	window[id] = w;
 	w->ww_hasframe = 1;
@@ -164,6 +169,7 @@ int id, nrow, ncol, row, col;
 	switch (wwfork(w)) {
 	case -1:
 		c_close(w);
+		error("%s.", wwerror());
 		return 0;
 	case 0:
 		execl(shell, shellname, 0);

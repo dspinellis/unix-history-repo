@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.7 83/08/23";
+static	char *sccsid = "@(#)wwopen.c	3.8 83/08/26";
 #endif
 
 #include "ww.h"
@@ -13,27 +13,28 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	short nvis;
 
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
-	if (w == 0)
+	if (w == 0) {
+		wwerrno = WWE_NOMEM;
 		goto bad;
+	}
 
 	for (i = 0; i < NWW && wwindex[i] != 0; i++)
 		;
-	if (i >= NWW)
+	if (i >= NWW) {
+		wwerrno = WWE_TOOMANY;
 		goto bad;
+	}
 	w->ww_index = i;
 
-	if (nrow <= 0 || ncol <= 0)
+	if ((w->ww_w.nr = nrow) <= 0
+	    || (w->ww_w.nc = ncol) <= 0
+	    || (w->ww_w.l = col) < 0
+	    || (w->ww_w.r = col + ncol) > wwncol
+	    || (w->ww_w.t = row) < 0
+	    || (w->ww_w.b = row + nrow) > wwnrow) {
+		wwerrno = WWE_SIZE;
 		goto bad;
-	if ((w->ww_w.l = col) < 0)
-		goto bad;
-	if ((w->ww_w.r = col + ncol) > wwncol)
-		goto bad;
-	if ((w->ww_w.t = row) < 0)
-		goto bad;
-	if ((w->ww_w.b = row + nrow) > wwnrow)
-		goto bad;
-	w->ww_w.nc = ncol;
-	w->ww_w.nr = nrow;
+	}
 	w->ww_nline = MAX(nline, w->ww_w.nr);
 
 	w->ww_pty = w->ww_tty = -1;	/* closing by mistake is still safe */
@@ -67,7 +68,7 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	if (flags & WWO_FRAME) {
 		w->ww_fmap = wwalloc(w->ww_w.nr, w->ww_w.nc, sizeof (char));
 		if (w->ww_fmap == 0)
-			goto bad;
+			wwerrno = WWE_NOMEM;
 		for (i = 0; i < wwnrow; i++)
 			for (j = 0; j < wwncol; j++)
 				w->ww_fmap[i][j] = 0;
@@ -82,8 +83,10 @@ wwopen(flags, nrow, ncol, row, col, nline)
 			w->ww_buf[i][j].c_w = ' ';
 
 	w->ww_nvis = (short *)malloc((unsigned) w->ww_w.nr * sizeof (short));
-	if (w->ww_nvis == 0)
+	if (w->ww_nvis == 0) {
+		wwerrno = WWE_NOMEM;
 		goto bad;
+	}
 	nvis = m ? 0 : w->ww_w.nc;
 	for (i = 0; i < w->ww_w.nr; i++)
 		w->ww_nvis[i] = nvis;

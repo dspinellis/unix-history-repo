@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.8 83/08/23";
+static	char *sccsid = "@(#)wwwrite.c	3.9 83/08/26";
 #endif
 
 #include "ww.h"
@@ -10,11 +10,8 @@ register char *p;
 int n;
 {
 	char c;
-	int oldn = n;
 	char hascursor = 0;
 
-	if (w == 0)
-		return -1;
 	wwnwrite++;
 	wwnwritec += n;
 	if (hascursor = w->ww_hascursor)
@@ -189,5 +186,5 @@ int n;
 	}
 	if (hascursor)
 		wwcursor(w, 1);
-	return oldn - n;
+	return 0;
 }

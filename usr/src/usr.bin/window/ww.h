@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.10 83/08/19	
+ *	@(#)ww.h	3.11 83/08/26	
  */
 
 #include <stdio.h>
@@ -106,6 +106,15 @@ union ww_char {
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
 
+#define WWE_NOERR	0
+#define WWE_SYS		1		/* system error */
+#define WWE_NOMEM	2		/* out of memory */
+#define WWE_TOOMANY	3		/* too many windows */
+#define WWE_NOPTY	4		/* no more ptys */
+#define WWE_SIZE	5		/* bad window size */
+#define WWE_BADTERM	6		/* bad terminal type */
+#define WWE_CANTDO	7		/* dumb terminal */
+
 struct ww wwhead;
 struct ww *wwindex[NWW + 1];		/* last location is for wwnobody */
 struct ww wwnobody;
@@ -129,6 +138,7 @@ char *wwtouched;		/* wwns changed flags */
 int wwbaudmap[];		/* maps stty() baud rate code into number */
 int wwbaud;			/* wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed] */
 int wwcursorrow, wwcursorcol;	/* where we want the cursor to be */
+int wwerrno;			/* error number */
 
 	/* statistics */
 int wwnwrite, wwnwritec;
@@ -159,6 +169,7 @@ int wwchild();
 int wwsuspend();
 char *unctrl();
 char **wwalloc();
+char *wwerror();
 
 	/* c library functions */
 char *malloc();

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.8 83/08/19";
+static	char *sccsid = "@(#)wwinit.c	3.9 83/08/26";
 #endif
 
 #include "ww.h"
@@ -31,10 +31,14 @@ wwinit()
 	if (wwsettty(0, &wwnewtty) < 0)
 		goto bad;
 
-	if ((wwterm = getenv("TERM")) == 0)
+	if ((wwterm = getenv("TERM")) == 0) {
+		wwerrno = WWE_BADTERM;
 		goto bad;
-	if (tgetent(wwtermcap, wwterm) != 1)
+	}
+	if (tgetent(wwtermcap, wwterm) != 1) {
+		wwerrno = WWE_BADTERM;
 		goto bad;
+	}
 	wwbaud = wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed];
 
 	if (ttinit() < 0)
@@ -72,8 +76,10 @@ wwinit()
 			wwns[i][j].c_w = ' ';
 
 	wwtouched = malloc((unsigned) wwnrow);
-	if (wwtouched == 0)
+	if (wwtouched == 0) {
+		wwerrno = WWE_NOMEM;
 		goto bad;
+	}
 	for (i = 0; i < wwnrow; i++)
 		wwtouched[i] = 0;
 

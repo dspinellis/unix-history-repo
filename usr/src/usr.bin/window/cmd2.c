@@ -1,17 +1,15 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.9 83/08/26";
+static	char *sccsid = "@(#)cmd2.c	3.10 83/08/26";
 #endif
 
 #include "defs.h"
-
-struct ww *openiwin();
 
 c_help()
 {
 	register struct ww *w;
 
 	if ((w = openiwin(wwnrow - 3, "Help")) == 0) {
-		error("Can't open help window.");
+		error("Can't open help window: %s.", wwerror());
 		return;
 	}
 	(void) wwprintf(w, "The escape character is %s, which gets you into command mode.\n\n",
@@ -59,7 +57,7 @@ c_time(flag)
 	struct timezone timezone;
 
 	if ((w = openiwin(6, "Timing and Resource Usage")) == 0) {
-		error("Can't open time window.");
+		error("Can't open time window: %s.", wwerror());
 		return;
 	}
 
@@ -123,7 +121,7 @@ c_stat()
 	register struct ww *w;
 
 	if ((w = openiwin(4, "IO Statics")) == 0) {
-		error("Can't open statistics window.");
+		error("Can't open statistics window: %s.", wwerror());
 		return;
 	}
 	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\tnupdate\tntouchd\tnmiss\n");
@@ -144,7 +142,7 @@ c_list()
 		if (window[i] != 0)
 			n++;
 	if ((w = openiwin(MAX(n, 1) + 2, "Active Windows")) == 0) {
-		error("Can't open listing window.");
+		error("Can't open listing window: %s.", wwerror());
 		return;
 	}
 	if (n == 0) {

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttinit.c	3.5 83/08/15";
+static	char *sccsid = "@(#)ttinit.c	3.6 83/08/26";
 #endif
 
 #include "ww.h"
@@ -30,7 +30,13 @@ ttinit()
 	for (tp = tt_tab; tp->tt_name != 0; tp++)
 		if (strncmp(tp->tt_name, wwterm, tp->tt_len) == 0)
 			break;
-	if (tp->tt_name == 0)
+	if (tp->tt_name == 0) {
+		wwerrno = WWE_BADTERM;
 		return -1;
-	return (*tp->tt_func)();
+	}
+	if ((*tp->tt_func)() < 0) {
+		wwerrno = WWE_CANTDO;
+		return -1;
+	}
+	return 0;
 }
