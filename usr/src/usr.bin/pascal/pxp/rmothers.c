@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)rmothers.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)rmothers.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1983 Regents of the University of California */
 #ifdef RMOTHERS
     /* and the rest of the file */
@@ -159,6 +159,9 @@ postcaseguard(othersp)
     ppgoout(STAT);
     ppnl();
     indent();
+    if (othersp == NIL) {
+	return;
+    }
     ppkw("else");
     ppgoin(STAT);
     if (othersp[0] == T_BLOCK) {
