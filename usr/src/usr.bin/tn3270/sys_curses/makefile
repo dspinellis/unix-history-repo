@@ -13,11 +13,15 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
+ALLH = terminal.h termout.ext
+
 ALLC = system.c termout.c
 
 ALLO = system.o termout.o
 
-ALLH = terminal.h
+ALLPRINT =	${ALLH} ${ALLC}
+
+ALLSOURCE =	${ALLPRINT} makefile
 
 sys.lib:	$(ALLO)
 	ar cr sys.lib $(ALLO)
@@ -26,8 +30,12 @@ sys.lib:	$(ALLO)
 clean:
 	rm -f $(ALLO) errs makefile.bak sys.lib
 
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
+
 print:
-	${PRINT} ${ALLH} ${ALLC}
+	${PRINT} ${ALLPRINT}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
