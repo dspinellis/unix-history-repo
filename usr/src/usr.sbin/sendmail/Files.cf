@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.7 (Berkeley) %G%
+#	@(#)Files.cf	8.8 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -39,6 +39,7 @@ cf/domain/eecs.hidden.m4
 cf/domain/s2k.m4
 cf/feature/allmasquerade.m4
 cf/feature/always_add_domain.m4
+cf/feature/bestmx_is_local.m4
 cf/feature/bitdomain.m4
 cf/feature/domaintable.m4
 cf/feature/local_procmail.m4
