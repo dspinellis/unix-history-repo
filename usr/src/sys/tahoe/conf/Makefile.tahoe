@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.6 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.7 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -12,7 +12,7 @@
 #	/sys/conf/Makefile.``machinetype''
 # after which config should be rerun for all machines.
 #
-# N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
+# N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE INVISIBLE TO MAKEFILE
 #	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
 #
 # -DTRACE	compile in kernel tracing hooks
@@ -71,6 +71,9 @@ af.o uipc_proto.o locore.o: Makefile
 
 # depend on maxusers
 assym.s machdep.o: Makefile
+
+# depends on KDB (cons.o also depends on GENERIC)
+trap.o cons.o: Makefile
 
 assym.s: ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../tahoevba/vbavar.h \

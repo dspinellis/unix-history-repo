@@ -1,4 +1,4 @@
-/*	boot.c	1.3	86/11/25	*/
+/*	boot.c	1.4	86/11/25	*/
 
 #include "../machine/mtpr.h"
 
@@ -118,9 +118,10 @@ main()
 copyunix(howto, devtype, io)
 	register io, howto, devtype;	/* NOTE ORDER */
 {
-	struct exec x;
+	register int esym;		/* must be r9 */
 	register int i;
 	register char *addr;
+	struct exec x;
 
 	i = read(io, (char *)&x, sizeof x);
 	if (i != sizeof x ||
@@ -140,6 +141,27 @@ copyunix(howto, devtype, io)
 		goto shread;
 	addr += x.a_data;
 	printf("+%d", x.a_bss);
+	if (howto & RB_KDB && x.a_syms) {
+		for (i = 0; i < x.a_bss; i++)
+			*addr++ = 0;
+		*(int *)addr = x.a_syms;		/* symbol table size */
+		addr += sizeof (int);
+		printf("[+%d", x.a_syms);
+		if (read(io, addr, x.a_syms) != x.a_syms)
+			goto shread;
+		addr += x.a_syms;
+		if (read(io, addr, sizeof (int)) != sizeof (int))
+			goto shread;
+		i = *(int *)addr - sizeof (int);	/* string table size */
+		addr += sizeof (int);
+		printf("+%d]", i);
+		if (read(io, addr, i) != i)
+			goto shread;
+		addr += i;
+		esym = roundup((int)addr, sizeof (int));
+		x.a_bss = 0;
+	} else
+		howto &= ~RB_KDB;
 	x.a_bss += 32*1024;	/* slop */
 	for (i = 0; i < x.a_bss; i++)
 		*addr++ = 0;
