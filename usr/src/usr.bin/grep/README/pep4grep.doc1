@@ -1,0 +1,141 @@
+>From postnews Tue Mar 18 18:04:08 1986
+Subject: More Pep for Boyer-Moore Grep (part 1 of 2)
+Newsgroups: net.unix
+
+#  The chief defect of Henry King
+   Was chewing little bits of string.
+
+	-- Hilaire Belloc, Cautionary Tales [1907]
+
+#  Attempt the end, and never stand to doubt
+   Nothing's so hard but search will find it out.
+
+	-- Robert Herrick, Hesperides [1648]
+
+     The world does not need another 'grep' variant.  And so, what is this
+we offer?  On the surface, the exact same 'egrep' actually, but underneath,
+a swift Boyer-Moore hybrid, in C, which can beat assembler versions utilizing
+microcoded string search instructions.  The offering, designed in the
+Kernighanian sense to utilize the existing 'egrep' when it must, also
+makes use of Mr. Henry Spencer's regexp(3) functions in an unusual way.
+For the edification of those without on-line access to system source code,
+the vendor-supplied 'egrep' is left in a pristine state.
+
+     With code now wending its way to mod.sources, we obtain the following
+results.  Times (in seconds) are all measured on a VAX 11/750 system running
+BSD 4.2 on Fujitsu Eagles, although our 'egrep' has been run on the Sun 2,
+V7 Unix/PDP 11, Vaxen configured with System V, and, for added effect, the
+NASA Ames Cray 2.
+
+			200K bytes       user   sys	notes
+
+  (new) egrep  astrian /usr/dict/words	 0.4    0.5    implementation by "jaw"
+	match	  "           "		 0.5    0.5    VAX-only (Waterloo)
+	bm	  "           "		 1.1    0.6    Peter Bain's version 2
+  (old) egrep     "           " 	 5.6    1.7    standard	
+
+[note:  the output here is the single word "Zoroastrian".]
+
+     Aha, you quip -- this is all very fine for the 99 and 44/100's percent
+metacharacter-free world, but what about timing for shorter strings, character
+folding, as well as for the more interesting universe of extended regular 
+expressions?  Samples forthwith.  (Egrep below refers to the new one, times for
+the /usr/bin code being about the same as above on most any pattern.)
+
+	egrep 	 zurich		0.4  0.5	0 words output
+	egrep -i zuRich  	0.4  0.5	1 
+	egrep -i zeus  		0.6  0.6	1
+	egrep -i zen  		0.7  0.6	11
+	bm 	 zen  		2.2  0.6	10
+	egrep 	 ZZ  		0.8  0.6	0
+	bm 	 ZZ  		3.0  0.7	0
+	egrep -c Z  		1.5  0.6	19
+	bm -c 	 Z  		5.9  0.7	19
+
+Admittedly, most people (or programs) don't search for single characters,
+where Boyer-Moore is a bit slow, but it's important for the layered regular
+expression approach described herein.  We might point out from the above that
+the popular "fold" option crippled by 'bm' costs little; it's only a slight
+adjustment of the precomputed "delta" table as well as a single character
+array reference in a secondary loop.  Why has Bain claimed complexity for this?
+Also, the times show that the inner loop chosen for our code (modeled after
+the original speedup done by Boyer-Moore for the PDP 10) consistently betters
+the "blindingly fast" version by a factor of two to three.  The tipoff was
+from previous paper studies (esp. Horspool, see header notes in code) noting
+that the algorithm should, when implemented efficiently, best typical microcode.
+Now it does. 
+
+	while ( (k += delta0 ( *k )) < strend )
+		;		/* over 80% of time spent here */
+
+is the key (modulo precomputation tricks), and takes but three or four
+instructions on most machines.
+
+     Basic method for regular expressions:
+
+	(1) isolate the longest metacharacter-free pattern string via the
+	    "regmust" field provided by H. Spencer's regcomp() routine.
+
+	    (Non-kosher, but worth not re-inventing the wheel.
+	    v8 folks just might have to reverse-engineer Spencer's
+	    reverse-engineering to provide equivalent functionality.
+	    You see, there are many more sites running his code than v8.
+	    Besides, we enjoy using regexpr technology on itself.
+
+	(2) for "short" input, submatching lines are passed to regexec().
+
+	(3) for "long" input, start up a standard 'egrep' process via
+	    popen() or equivalent.  Why not just use regexec()?  Unfortunately
+	    for our application, Spencer's otherwise admirable finite-state
+	    automaton exhibits poor performance for complex expressions.
+	    Setting a threshold on input length, though not perfect, helps.
+	    If pipes on Unix were free, we'd use this way exclusively.
+	    Until then, we buy happiness for those who might
+
+			egrep stuff /usr/spool/news/net/unix/*
+
+	    or on other directories full of short files.
+
+[note: the details of (3) have changed in the re-release -- see pep4grep.doc3]
+
+So,
+	[new] egrep -i 'hoe.*g' words		1.2  1.1
+					 	{shoestring,Shoenberg}
+	[new] egrep '(a|b).*zz.*[od]$'	words 	1.5  1.1
+					 	{blizzard,buzzword,palazzo}
+	[old] egrep 				6.3  1.4
+but,
+	{new,old} egrep -c 'first|second'	similar times (no isolate)
+
+Again, we stress that given the different nature of the simulations of the two
+nondeterministic reg. expr. state-machines (one functionless), cases can be
+"cooked" to show things in a bad light, so a hybrid is warranted.
+We can generally do better incorporating the Boyer-Moore algorithm directly
+into the AT&T code.  For the last example, the abstraction
+
+	(egrep first words &; egrep second words) | sort -u | wc
+
+ideally would work better on a parallel machine, but if you're expecting
+something as amazing in this draft as, say, Morwen B. Thistlethwaite's 52-move
+Rubik's Cube solution, you're in the wrong place.
+
+[note: but see pep4grep.doc3 -- now [ef]?grep handles some parallelism fast]
+
+     About options -- the SVID ones are supported (-c, -l, bonus -i for BSD),
+and -s and -h works as for BSD and v8.  Note: the 'egrep' here just hands off
+patterns to the old code for things like -n, -b, -v, and multiple patterns.
+As a bone to throw to the enemies of the cat-v school, there is a -1 flag
+(halt after printing first match), but we don't talk about it much.
+Multiple patterns can done ala 'bm' but laziness in the presence of lack of
+knowledge of where 'fgrep' wins has prevailed for version 1.
+
+     Personally I feel that adapting ("internationalizing") the 'egrep' effort
+for two-byte Kanji is FAR more important than tweeking options or tradeoffs,
+so for you large-alphabet Boyer-Moore algorithm specialists, send ideas
+this way.
+     
+     Further historical/philosophical comments follow in the sequel.
+
+     James A. Woods (ames!jaw)
+     NASA Ames Research Center
+
