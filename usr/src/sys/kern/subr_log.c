@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	7.11 (Berkeley) %G%
+ *	@(#)subr_log.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -60,8 +60,10 @@ logopen(dev, flags, mode, p)
 }
 
 /*ARGSUSED*/
-logclose(dev, flag)
+logclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	log_open = 0;
 	logsoftc.sc_state = 0;
@@ -158,8 +160,12 @@ logwakeup()
 }
 
 /*ARGSUSED*/
-logioctl(dev, com, data, flag)
+logioctl(dev, com, data, flag, p)
+	dev_t dev;
+	int com;
 	caddr_t data;
+	int flag;
+	struct proc *p;
 {
 	long l;
 	int s;
