@@ -1,0 +1,1473 @@
+.de eg
+.ti .5i
+.sp 1
+.bo \\$1
+.sp 1
+..
+.de ks
+.sp
+.ta .5i \\$1
+.in \\$1
+..
+.de dk		\" Describe Key
+.ti 0
+\t\\$1\t\c	\" Flow into the paragraph
+..
+.de ke		\" Key list End
+.in 0
+..
+.nr si 3n
+.st 2
+.m1 3
+.m4 0
+.he '%''JOVE Manual for UNIX Users'
+.bs "Introduction"
+JOVE
+.fb
+JOVE stands for Jonathan's Own Version of Emacs.
+.fe
+is an advanced, self-documenting, customizable real-time display
+editor.  It is based on the original EMACS editor written at M.I.T.
+by Richard Stallman.
+.fb
+Although JOVE is meant to be compatible with
+EMACS, and indeed many of the basic commands are very similar, there
+are some major differences between the two editors, and you should not
+rely on their behaving identically.
+.fe
+.lp
+We say that JOVE is a display editor because normally the text being
+edited is visible on the screen and is updated automatically as you
+type your commands.
+.lp
+We call it a real-time editor because the display is updated very
+frequently, usually after each character or pair of characters you
+type.  This minimizes the amount of information you must keep in your
+head as you edit.
+.lp
+We call JOVE advanced because it provides facilities that go beyond
+simple insertion and deletion: filling of text; automatic indentations
+of programs; view more than one file at once; and dealing in terms of
+characters, words, lines, sentences and paragraphs.  It is much easier
+to type one command meaning "go to the end of the paragraph" than to
+find the desired spot with repetition of simpler commands.
+.lp
+Self-documenting means that at almost any time you can type a key to
+find out what a command does, or to find all the commands that pertain
+to a topic.
+.lp
+Customizable means that you can change the definition of JOVE commands
+in little ways.  For example, you can rearrange the command set; if
+you prefer to use arrow keys for the four basic cursor motion commands
+(up, down, left and right), you can.  Another sort of customization is
+writing new commands by combining built in commands.
+.es
+.bs "The Organization of the Screen"
+JOVE divides the screen up into several sections.  The biggest of
+these sections is used to display the text you
+are editing.  The terminal's cursor shows the position of \fIpoint\fR,
+the location at which editing takes place.  While the cursor appears
+to point \fIat\fR a character, point should be thought of as between
+characters; it points \fIbefore\fR the character that the cursor
+appears on top of.  Terminals have only one cursor, and when output is
+in progress it must appear where the typing is being done.  This
+doesn't mean that point is moving; it is only that JOVE has no way of
+showing you the location of point except when the terminal is idle.
+.lp
+The lines of the screen are usually available for displaying text but
+sometimes are pre-empted by typeout from certain commands (such as, a
+listing of all the editor functions).  Most of the time, output from
+commands like these is only desired for a short period of time,
+usually just long enough to glance at it.  When you have finished
+looking at the output, you can type Space to make your text reappear.
+(Usually typing a Space inserts itself, but when there is typeout on
+the screen, it does nothing but get rid of that.) Any other command
+executes normally, \fIafter\fR redrawing your text.
+.bs "The Message Line"
+The bottom line on the screen, called the \fImessage line\fR is
+reserved for printing messages, and for accepting input from the user,
+such as file names, or search strings.  When JOVE prompts for input,
+the cursor will temporarily appear on the bottom line, waiting for you
+to type a string.  When you have finished typing your input, you can
+type a Return to send it to JOVE.  If you change your mind about
+running the command that is waiting for input, you can type ^G to
+abort, and you can continue with your editing.
+.lp
+Sometimes you will see --more-- on the message line.  This happens
+when typeout from a command is too long to fit in the screen.  It
+means that if you type a Space the next screenful of typeout will be
+printed.  If you are not interested, typing anything but a Space will
+cause the rest of the output to be discarded.  Typing C-G will discard
+the output and print Aborted where the --more-- was.  Typing any other
+command will discard the rest of the output and also do the command.
+.es
+.bs "The Mode Line"
+At the bottom of the screen, but above the message line, is the
+\fImode line\fR.  The mode line format looks like this:
+.sp 1
+     \fBJOVE (major minor)   Buffer: bufr  "file" *\fR
+.sp 1
+\fImajor\fR is the name of the current \fImajor mode\fR.  At any time,
+JOVE can be in only one of the possible major modes.  Currently there
+are only two major modes: Text and C.
+.lp
+\fIminor\fR is a list of the minor modes that are turned.  "Fill"
+means that Auto Fill mode is on; "Save" means Auto Save mode is on;
+"OvrWt" means that Over Write mode is on.  "Def" means that you are in
+the process of defining a keyboard macro.  This is not really a mode,
+but it's useful to be reminded about.
+.lp
+\fIbufr\fR is the name of the currently selected \fIbuffer\fR.
+Each buffer has its own name and holds a file being edited; this is
+how JOVE can hold several files at once.  But at any given time you
+are editing only one of them, the \fIselected\fR buffer.  When we
+speak of what some command does to "the buffer", we are talking about
+the currently selected buffer.  Multiple buffers makes it easy to
+switch around between several files, and then it is very useful that
+the mode line tells you which one you are editing at any time.
+.lp
+\fIfile\fR is the name of the file that you are editing.  This is the
+default file name for commands that expect a file name as input.
+.lp
+The star at the end of the mode line means that there are changes in
+the buffer that have not been saved in the file.  If the file has not
+been changed since it was read in or saved, there is no star.
+.es
+.es
+.bs "Command Input Conventions"
+.bs "Notational Conventions for ASCII Characters"
+In this manual, "Control" characters (that is, characters that are
+typed with the Control key and some other key at the same time) are
+represented by "C-" followed by another character.  Thus, C-A is the
+character you get when you type A with the Control key (sometimes
+labeled CTRL) down.  Most control characters when present in the JOVE
+buffer are displayed with a caret; thus, ^A for C-A.  Rubout is
+displayed as ^?.
+.es
+.bs "Commands, Functions, and Variables"
+JOVE is composed of \fIfunctions\fR, which have long names such as
+"next-line" and definitions which are programs that perform the
+editing operations.  Then \fIcommands\fR such as C-N are connected to
+functions through the \fIcommand dispatch table\fR.  When we say that
+C-N moves the cursor down a line, we are glossing over a distinction
+which is unimportant for ordinary use, but essential for simple
+customization: it is the function next-line which knows how to move
+down a line, and C-N moves down a line because it is connected to that
+function.
+.lp
+Sometimes the description of a command will say "to change this, set
+the variable mumble foo".  A variable is a name used to remember a
+value.  JOVE contains variables which are there so that you can change
+them if you want to customize.  The variable's value is examined by
+some command, and changing that value makes the command behave
+differently.  Until you are interesting in customizing, you can ignore
+this information.
+.es
+.bs "Prefix Characters"
+Because there are more function names than keys, JOVE provides
+\fIprefix characters\fR to increase the number of functions that can
+easily be invoked.  When you type a prefix character JOVE will wait
+for another character before deciding what to do.  If you wait more
+than a second or so, JOVE will print the prefix character on the
+message line and leave the cursor down there until you type your next
+character.  There are two prefix characters built into JOVE: Escape
+and Control-X.  How the next character is interpreted depends on which
+prefix character you typed.  For example, if you type Escape followed
+by F you'll run forward-word, but if you type Control-X followed by
+B you'll run select-buffer.
+.lp
+To get a list of keys and their associated function, you type ESC X
+describe-bindings.  If you want to describe a single key, ESC X
+describe-key will work.
+.es
+.es
+.bs "Basic Editing Commands"
+.bs "Inserting Text"
+To insert printing characters into the text you are editing, just type
+them.  All printing characters your type are inserted into the text at
+the cursor (that is, at \fIpoint\fR), and the cursor moves forward.
+Any characters after the cursor move forward too.  If the text in the
+buffer is FOOBAR, with the cursor before the B, then if you type XX,
+you get FOOXXBAR, with the cursor still before the B.
+.lp
+To correct text you have just inserted, you can use Rubout.  Rubout
+deletes the character \fIbefore\fR the cursor (not the one that the
+cursor is on top of or under; that is the character \fIafter\fR the
+cursor).  The cursor and all characters after it move backwards.
+Therefore, if you typing a printing character and then type Rubout,
+they cancel out.
+.lp
+To end a line and start typing a new one, type Return.  Return
+operates by inserting a \fIline-separator\fR, so if you type Return in
+the middle of a line, you break the line in two.  Because a
+line-separator is just a single character, you can type Rubout at the
+beginning of a line to delete the line-separator and join it with the
+preceding line.
+.lp
+If you add too many characters to one line, without breaking it with
+Return, the line will grow too long to display on one screen line.
+When this happens, JOVE puts an "!" at the extreme right margin, and
+doesn't bother to display the rest of the line.  The "!" is not part
+of your text; conversely, even though you can't see the rest of your
+line, it's still there, and if you break the line, the "!" will go
+away.
+.lp
+Direct insertion works for printing characters and space, but other
+characters act as editing commands and do not insert themselves.  If
+you need to insert a control character, Escape, or Rubout, you must
+first \fIquote\fR it by typing the Control-Q command first.
+.es
+.bs "Moving the Cursor"
+To do more than insert characters, you have to know how to move the
+cursor.  Here are a few of the commands for doing that.
+.ks 1.5i
+.dk C-A
+Move to the beginning of the line.
+.dk C-E
+Move to the end of the line.
+.dk C-F
+Move forward over one character.
+.dk C-B
+Move backward over one character.
+.dk C-N
+Move down one line, vertically.  If you start in the middle of one
+line, you end in the middle of the next.
+.dk C-P
+Move up one line, vertically.
+.dk "ESC <"
+Move to the beginning of your text.
+.dk "ESC >"
+Move to the end of your text.
+.ke
+.es
+.bs "Erasing Text"
+.ks 1.5i
+.dk Rubout
+Delete the character before the cursor.
+.dk C-D
+Delete the character after the cursor.
+.dk C-K
+Kill to the end of the line.
+.ke
+.lp
+You already know about the Rubout command which deletes the character
+before the cursor.  Another command, Control-D, deletes the character
+after the cursor, causing the rest of the text on the line to shift
+left.  If Control-D is typed at the end of a line, that line and the
+next line are joined together.
+.lp
+To erase a larger amount of text, use the Control-K command, which
+kills a line at a time.  If Control-K is done at the beginning or
+middle of a line, it kills all the text up to the end of the line.  If
+Control-K is done at the end of a line, it joins that line and the
+next line.
+.es
+.bs "Files - Saving Your Work"
+The commands above are sufficient for creating text in the JOVE
+buffer.  The more advanced JOVE commands just make things easier.  But
+to keep any text permanently you must put it in a \fIfile\fR.  Files
+are the objects which UNIX uses for storing data for a length of
+time.  To tell JOVE to edit text in a file, choose a \fIfilename\fR,
+such as foo.bar, and type C-X C-R foo.bar<cr>.  This \fIreads\fR
+the file foo.bar so that its contents appear on the screen for
+editing.  You can make changes, and then save the file by typing C-X
+C-S.  This makes the changes permanent and actually changes the file
+foo.bar.  Until then, the changes are only inside you JOVE, and the
+file foo.bar is not really changed.  If the file foo.bar doesn't
+exist, and you want to create it, read it as if it did exist.  When
+you save your text with C-X C-S the file will be created.
+.es
+.es
+.bs "Giving Numeric Arguments to JOVE Commands"
+Any JOVE command can be given a \fInumeric argument\fR.  Some commands
+interpret the argument as a repetition count.  For example, giving an
+argument of ten to the C-F command (forward-character) moves forward
+ten characters.  With these commands, no argument is equivalent to an
+argument of 1.
+.lp
+Some commands use the value of the argument, but do something peculiar
+when there is no argument.  For example, ESC G (goto-line) with an
+argument \fBn\fR goes to the beginning of the \fBn'th\fR line.  But
+ESC G with no argument doesn't do anything.
+.lp
+The fundamental way of specifying an argument is to use ESC followed
+by the digits of the argument.  Negative arguments are allowed,
+although not all of the commands know what to do with one.
+.lp
+Typing C-U means do the next command four times.  Two such C-U's
+multiply the next command by sixteen.  Thus, C-U C-U C-F moves forward
+sixteen characters.  This is a good way to move forward quickly, since
+it moves about 1/4 of a line on most terminals.  Other useful
+combinations are: C-U C-U C-N (move down a good fraction of the
+screen), C-U C-U C-O (make "a lot" of blank lines), and C-U C-K (kill
+four lines).
+.lp
+There are other, terminal-dependent ways of specifying arguments.
+They have the same effect but may be easier to type.  If your terminal
+has a numeric keypad which sends something recognizably different from
+the ordinary digits, it is possible to program JOVE to to allow use of
+the numeric keypad for specifying arguments.
+.es
+.bs "The Mark and the Region"
+In general, a command that processes an arbitray part of the buffer
+must know where to start and where to stop.  In JOVE, such commands
+usually operate on the text between point and \fIthe mark\fR.  This
+range of text is called \fIthe region\fR.  To specify a region, you
+set point to one end of it and mark at the other.  It doesn't matter
+which one is set first \fIchronologically\fR, or which one comes
+earlier in the text.
+.ks 1.5i
+.dk "C-@"
+Set the mark where point is.
+.dk "C-X C-X"
+Interchange mark and point.
+.ke
+.lp
+For example, if you wish to convert part of the buffer to all
+upper-case, you can use the C-X C-U command, which operates on the
+text in the region.  You can first go to the beginning of the text to
+be capitalized, put the mark there, move to the end, and then type C-X
+C-U.  Or, you can set the mark at the end of the text, move to the
+beginning, and then type C-X C-U.  C-X C-U runs the function
+\fIcase-region-upper\fR, whose name signifies that the region, or
+everything between point and mark, is to be capitalized.
+.lp
+The way to set the mark is with the C-@ command or the C-Space
+command.  They set the mark where point is.  Then you can move point
+away, leaving mark behind.
+.lp
+Since terminals have only one cursor, there is no way for JOVE to show
+you where the mark is located.  You have to remember.  The usual
+solution to this problem is to set the mark and then use it soon,
+before you forget where it is.  But you can see where the mark is with
+the command C-X C-X which puts the mark where point was and point
+where mark was.  The extent of the region is unchanged, but the cursor
+and point are now at the previous location of the mark.
+.bs "The Ring of Marks"
+Aside from delimiting the region, the mark is also useful for
+remembering a spot that you may want to go back to.  To make this
+feature more useful, JOVE remembers 16 previous locations of the
+mark.  Most commands that set the mark push the old mark onto this
+stack.  To return to a marked location, use C-U C-@.  This moves point
+to where the mark was, and restores the mark from the stack of former
+marks.  So repeated use of this command moves point to all of the old
+marks on the stack, one by one.  Since the stack is actually a ring,
+enough uses of C-U C-@ bring point back to where it was originally.
+.lp
+Some commands whose primary purpose is to move point a great distance
+take advantage of the stack of marks to give you a way to undo the
+command.  The best example is ESC <, which moves to the beginning of
+the buffer.  If there are more than 22 lines between the beginning of
+the buffer and point, ESC < sets the mark first, so that you can use
+C-U C-@ or C-X C-X to go back to where you were.  You can change the
+22 since it is kept in the variable \fImark-threshold\fR.  By setting
+it to 0, you can make these commands always set the mark.  By setting
+it to a very large number you can prevent these commands from ever
+setting the mark.  If a command desides to set the mark, it prints the
+message Point Pushed.
+.es
+.es
+.bs "Killing and Moving Text"
+The most common way of moving or copying text with JOVE is to kill it,
+and get it back again in one or more places.  This is very safe
+because the last several pieces of killed text are all remembered, and
+it is versatile, because the many commands for killing syntactic units
+can also be used for moving those units.  There are also other ways of
+moving text for special purposes.
+.bs "Deletion and Killing"
+Most commands which erase text from the buffer save it so that you can
+get it back if you change your mind, or move or copy it to other parts
+of the buffer.  These commands are known as \fIkill\fR commands.  The
+rest of the commands that erase text do not save it; they are known as
+\fIdelete\fR commands.  The delete commands include C-D and Rubout,
+which delete only one character at a time, and those commands that
+delete only spaces or line separators.  Commands that can destroy
+significant amounts of nontrivial data generally kill.  The commands'
+names and individual descriptions use the words "kill" and "delete" to
+say which they do.
+.ks 1.8i
+.dk C-D
+Delete next character.
+.dk Rubout
+Delete previous character.
+.dk "ESC \\\\"
+Delete spaces and tabs around point.
+.dk "C-X C-O"
+Delete blank lines around the current line.
+.dk "C-K"
+Kill rest of line or one or more lines.
+.dk "C-W"
+Kill region (from point to the mark).
+.dk "ESC D"
+Kill word.
+.dk "ESC Rubout"
+Kill word backwards.
+.dk "ESC K"
+Kill to end of sentence.
+.ke
+.bs "Deletion"
+The most basic delete commands are C-D and Rubout.  C-D deletes the
+character after the cursor, the one the cursor is "on top of" or
+"underneath".  The cursor doesn't move.  Rubout deletes the character
+before the cursor, and moves the cursor back.  Line separators act
+like normal characters when deleted.  Actually, C-D and Rubout aren't
+always delete commands; if you give an argument, they kill instead.
+This prevents you from losing a great deal of text by typing a large
+argument to a C-D or Rubout.
+.lp
+The other delete commands are those which delete only formatting
+characters: spaces, tabs, and line separators.  ESC \\ (delete white
+space) deletes all the spaces and tab characters before and after
+point.  C-X C-O (delete blank lines) deletes all blank lines after the
+current line, and if the current line is blank deletes all the blank
+lines preceding the current line as well (leaving one blank line, the
+current line).
+.es
+.bs "Killing by Lines"
+The simplest kill command is the C-K command.  If issued at the
+beginning of a line, it kills all the text on the line, leaving it
+blank.  If given on a blank line, the blank line disappears.  As a
+consequence, if you go to the front of a non-blank line and type two
+C-K's, the line disappears completely.
+.lp
+More generally, C-K kills from point up to the end of the line, unless
+it is at the end of a line.  In that case, it kills the line separator
+following the line, thus merging the next line into the current one.
+Invisible spaces and tabs at the end of the line are ignored when
+deciding which case applies, so if point appears to be at the end of the
+line, you can be sure the line separator will be killed.
+.lp
+C-K with an argument of zero kills all the text before point on the
+current line.
+.es
+.bs "Other Kill Commands"
+A kill command which is very general is C-W (kill-region), which kills
+everything between point and the mark.  With this command, you can
+kill and contiguous characters, if you first set the mark at one end
+of them and go to the other end.
+.lp
+Other syntactic units can be killed: words, with ESC Rubout and ESC D;
+sentences, with ESC K.
+.es
+.es
+.bs "Un-killing"
+Un-killing is getting back text which was killed.  The usual way to
+move or copy text is to kill it and then un-kill it one or more times.
+.ks 1.5i
+.dk C-Y
+Yank (re-insert) last killed text.
+.dk "ESC Y"
+Replace re-inserted killed text with the previously killed text.
+.dk "ESC W"
+Save region as last killed text without killing.
+.ke
+.lp
+Killed text is pushed onto a \fIring buffer\fR called the \fIkill
+ring\fR that remembers the last 10 blocks of text that were killed.
+(Why it is called a ring buffer will be explained below.) The command
+C-Y (yank) reinserts the text of the most recent kill.  It leaves the
+cursor at the end of the text, and puts the mark at the beginning.
+Thus, a single C-W undoes the C-Y.
+.lp
+If you wish to copy a block of text, you might want to use ESC W
+(copy-region), which copies the region into the kill ring without
+removing it from the buffer.  This is approximately equivalent to C-W
+followed by C-Y, except that ESC W does not mark the buffer as
+"changed" and does not temporarily change the screen.
+.lp
+There is only one kill ring, and switching buffers or files has no
+effect on it.  After visiting a new file, whatever was last killed in
+the previous file is still on top of the kill ring.  This is important
+for moving text between files.
+.bs "Appending Kills"
+Normally, each kill command pushes a new block onto the kill ring.
+However, two or more kill commands in a row combine their text into a
+single entry on the ring, so that a single C-Y command gets it all
+back as it was before it was killed.  This means that you don't have
+to kill all the text in one command; you can keep killing line after
+line, or word after word, until you have killed it all, and you can
+still get it all back at once.  (Thus we join television in leading
+people to kill thoughtlessly.)
+.fe
+.lp
+Commands that kill forward from point add onto the end of the previous
+killed text.  Commands that kill backward from point add onto the
+beginning.  This way, any sequence of mixed forward and backward kill
+commands puts all the killed text into one entry without rearrangement.
+.es
+.bs "Un-killing Earlier Kills"
+To recover killed text that is no longer the most recent kill, you
+need the ESC Y (yank-pop) command.  The ESC Y command should be used
+only after a C-Y command or another ESC Y.  It takes the un-killed
+text inserted by the C-Y and replaces it with the text from an earlier
+kill.  So, to recover the text of the next-to-the-last kill, you first
+use C-Y to recover the last kill, and then use ESC Y to move back to
+the previous kill.
+.lp
+You can think of all the last few kills as living on a ring.  After a
+C-Y command, the text at the front of the ring is also present in the
+buffer.  ESC Y "rotates" the ring bringing the previous string of text
+to the front, and this text replaces the other text in the buffer as
+well.  Enough ESC Y commands can rotate any part of the ring to the
+front, so you can get at any kiled text solong as it is recent enough
+to be still in the ring.  Eventually the ring rotates all the way
+around and the most recent killed text comes to the front (and into
+the buffer) again.  ESC Y with a negative argument rotates the ring
+backwards.
+.lp
+When the text you are looking for is brought into the buffer, you can
+stop doing ESC Y's and it will stay there.  It's really just a copy of
+what's in at the front of the ring, so editing it does not change
+what's in the ring.  And the ring, once rotated, stays rotated, so
+that doing another C-Y gets another copy of what you rotated to the
+fron with ESC Y.
+.lp
+If you change you mind about un-killing, and C-W gets rid of the
+un-killed text at any point, after any number of ESC Y's.  C-W pushes
+the text onto the ring again.
+.es
+.es
+.es
+.bs "Searching"
+The search commands are useful for finding and moving to arbitrary
+positions in the buffer in one swift motion.  For example, if you just
+ran the spell program on a paper and you want to correct some word,
+you can use the search commands to move directly to that word.
+.bs "Conventional Search"
+.ks 1.5i
+.dk "C-S"
+Search forward.
+.dk "C-R"
+Search backward.
+.ke
+.lp
+To search for the string "FOO" you type "C-S FOO<CR>".  If JOVE finds
+FOO it moves point to the end of it; otherwise JOVE prints an error
+message and leaves point unchanged.  C-S searches forward from point
+so only occurrences of FOO after point are found.  To search in the
+other direction use C-R.  It is exactly the same as C-S except it
+searches in the opposite direction, and if it finds the string, it
+leaves point at the beginning of it, not at the end as in C-S.
+.lp
+While JOVE is searching it prints the search string on the message
+line line.  This is so you know what JOVE is doing.  When the system
+is heavily loaded, when editing in exceptionally large buffers,
+searches can take several (sometimes many) seconds.
+.lp
+JOVE remembers the last search string you used, so if you want to
+search for the same string you can type "C-S <cr>".  If you mistyped
+the last search string, you can type C-S followed by C-R.  C-R, as
+usual inserts the default search string into the minibuffer, and then
+you can fix it up.
+.es
+.bs "Incremental Search"
+This search command is unusual in that is is \fIincremental\fR; it
+begins to search before you have finished typing the search string.
+As you type in the search string, JOVE shows you where it would be
+found.  WHen you have typed enough characters to identify the place
+you want, you can stop.  Depending on what you will do next, you may
+or may not need to terminate the search explicitly with a Return
+first.
+.lp
+The command to search is C-S (i-search-forward).
+.fb
+It is assumed that your JOVE has i-search-forward bound to C-S and
+i-search-reverse bound to C-R.  These are not the default bindings.
+.fe
+C-S reads in characters and positions the cursor at the first
+occurrence of the characters that you have typed.  If you type C-S and
+then F, the cursor moves right after the first "F".  Type an "O", and
+see the cursor move to after the first "FO".  After another "O", the
+cursor is after the first "FOO" after the place where you started the
+search.  At the same time, the "FOO" has echoed on the message line.
+.lp
+If you type a mistaken character, you can rub it out.  After the FOO,
+typing a Rubout makes the "O" disappear from the message line, leaving
+only "FO".  The cursor moves back to the "FO".  Rubbing out the "O"
+and "F" moves the cursor back to where you started the search.
+.lp
+When you are satisfied with the place you have reached, you can type a
+Return, which stops searching, leaving the cursor where the search
+brought it.  Also, any command not specially meaningful in searches
+stops the searching and is then executed.  Thus, typing C-A would exit
+the search and then move to the beginning of the line.  Return is
+necessary only of the next character you want to type is a printing
+character, Rubout, Return, or another search command, since those ar
+ethe characters that have special meanings inside the search.
+.lp
+Sometimes you search for "FOO" and find it, but not the one you
+expected to find.  There was a second FOO that you forgot about,
+before the one you were looking for.  Then type another C-S and the
+cursor will find the next FOO.  This can be done any number of times.
+If you overshoot, you can rub out the C-S's.
+.lp
+After you exist a search, you can search for the same string again by
+typing just C-S C-S: one C-S command to start the search and then
+another C-S to mean "search again".
+.lp
+If your string is not found at all, the message line says "Failing
+I-search".  The cursor is after the place where JOVE found as much of
+your string as it could.  Thus, if you search for FOOT, and there is
+not FOOT, you might see the cursor after the FOO in FOOL.  At this
+point there are several things you can do.  If your string was
+mistyped, you can rub some of it out and correct it.  If you like the
+places you have found, you can type Return or some other JOVE command
+to "accept what the search offered".  Or you can type C-G, which
+undoes the search altogether and positions you back where you started
+the search.
+.lp
+You can also type C-R at any time to start searching backwards.  If a
+search fails because the place you started was too late in the file,
+you should do this.  Repeated C-R's keep looking formore occurrences
+backwards.  A C-S starts going forwards again.  C-R's can be rubbed
+out just like anything else.  If you know that you want to start
+search backwards, you can use C-R (i-search-reverse) to search
+backward.
+.es
+.bs "Regular Expressions Search Strings"
+I couldn't describe them if I tried!
+.es
+.es
+.bs "Commands for English Text"
+.bs "Word Commands"
+JOVE has commands for moving over or operating on words.  By
+convention, they are all ESC commands.
+.ks 1.7i
+.dk "ESC F"
+Move Forward over a word.
+.dk "ESC B"
+Move Backward over a word.
+.dk "ESC D"
+Kill up to the end of a word.
+.dk "ESC Rubout"
+Kill up to the beginning of a word.
+.dk "ESC T"
+Transpose two words; drag a word forward or backward across other words.
+.ke
+.lp
+Notice how these commands form a group that parallels the character
+base commands, C-F, C-B, C-D, Rubout, and C-T.
+.lp
+The commands ESC F and ESC B move forward and backward over words.
+They are thus analogous to Control-F and Control-B, which move over
+single characters.  Like their Control- analogues, ESC F and ESC B
+move several words if given an argument.  ESC F with a negative
+argument moves backward like ESC B, and ESC B with a negative argument
+moves forward.  Forward motion stops right after the last letter of
+the word, while backward motion stops right before the first letter.
+.lp
+It is easy to kill a word at a time.  ESC D kills the word after
+point.  To be precise, it kills everything from point to the place ESC
+F would move to.  Thus, if point is in the middle of a word, only the
+part after point is killed.  If some punctuation comes after point,
+and before the next word, it is killed along with the word.  If you
+wish to kill only the next word but not the punctuation, simply do ESC
+F to get to the end, and kill the word backwards with ESC Rubout.  ESC
+D takes arguments just like ESC F.
+.lp
+ESC Rubout kills the word before point.  It kills everything from
+point back to where ESC B would move to.  If point is after the space
+int "FOO, BAR", then "FOO, " is killed.  If you wish to kill just
+"FOO", then do a ESC B and a ESC D instead of a ESC Rubout.
+.es
+.bs "Sentence and Paragraph Commands"
+The JOVE commands for manipulating sentences and paragraphs are
+entirely ESC commands, so as to resemble the word-handling commands.
+.ks 1.7i
+.dk "ESC A"
+Move back to the beginning of the sentence.
+.dk "ESC E"
+Move forward to the end of the sentence.
+.dk "ESC K"
+Kill forward to the end of the sentence."
+.dk "ESC ["
+Move back to previous paragraph beginning.
+.dk "ESC ]"
+Move forward to next paragraph end.
+.dk "C-X Rubout"
+Kill back to the beginning of the sentence.
+.ke
+.bs Sentences
+The commands ESC A and ESC E move to the beginning and end of the
+current sentence, respectively.  They were chosen to resemble
+Control-A and Control-E, which move to the beginning and end of a
+line.  Unlike them, ESC A and ESC E if repeated or given numeric
+arguments move over successive sentences.  JOVE considers a sentence
+to end wherever there is a ".", "?", or "!" followed by the end of a
+line, or one or more spaces.  Neither ESC A nor ESC E moves past the
+end of the line or spaces which delimit the sentence.
+.lp
+Just as C-A and C-E have a kill command, C-K, to go with them, so ESC
+A and ESC E have a corrisponding kill command ESC K which kills from
+point to the end of the sentence.  With minus one as an argument it
+kills back to the beginning of the sentence.  Larger arguments serve
+as a repeat count.
+.lp
+There is a special command, C-X Rubout for killing back to the
+beginning of a sentence, because this is useful when you change your
+mind in the middle of composing text.
+.es
+.bs Paragraphs
+ESC [ moves to the beginning of the current or previous paragraph,
+while ESC ] moves to the end of the current or next paragraph.  Blank
+lines and text justifier command lines separate paragraphs and are not
+part of any paragraph.  Also, an indented line starts a new
+paragraph.  A line beginning with a letter which can't be part of a
+word, e.g., period, singlequote, "-", "\\", it is considered a
+paragraph terminator.
+.es
+.es
+.bs Indentation Commands for Text
+.ks 1.7i
+.dk "Tab"
+Indent "appropriately" in a mode-dependent fashion.
+.dk "LineFeed"
+Is the same as Return, except it copies the indent of the line you
+just left.
+.dk "ESC M"
+Moves to the line's first non-blank character.
+.ke
+.lp
+The way to request indentation is with the Tab command.  Its precise
+effect depends on the major mode.  In Text mode, it indents to the
+next tab stop.  In C mode, it indents to the "right" position for C
+programs.
+.lp
+To move over the indentation on a line, do ESC M.  This command, given
+anywhere on a line, positions the cursor at the first nonblank
+character on the line.
+.es
+.bs "Text Filling"
+auto-fill mode lets you type in text that is \fIfilled\fR (broken up
+into lines that fit ina specified width) as you go.  If you alter
+existing text and this cause it to cease to be properly filled, JOVE
+can fill it again if you ask.
+.lp
+Entering auto-fill mode is done with ESC X auto-fill.  From then on,
+lines are broken automatically at spaces when they get longer than the
+desired width.  To leave auto-fill mode, execute ESC X auto-fill
+again.  When auto-fill mode is in effect, the word "Fill" appears in
+the mode line.
+.lp
+If you edit the middle of a paragraph, it may no longer correctly be
+filled.  To refill a paragraph, use the command ESC J.  It causes the
+paragraph that point is inside to be filled.  All the line breaks are
+removed and then new ones are inserted where necessary.
+.lp
+The maximum line width for filling is in the variable right-margin.
+Both ESC J and auto-fill make sure that no line exceeds this width.
+right-margin is initially 72.
+.es
+.bs "Case Conversion Commands"
+.ks 1.5i
+.dk "ESC L"
+Convert following word to lower case.
+.dk "ESC U"
+Convert following word to upper case.
+.dk "ESC C"
+Capitalize the following word.
+.ke
+.lp
+The word conversion commands are most useful.  ESC L converts the word
+after point to lower case, moving past it.  This, successive ESC L's
+convert successive words.  ESC U converts to all capitals instead,
+while ESC C puts the first letter of the word into upper case and the
+rest into lower case.  All these commands convert several words at
+once if given an argument.  They are especially convenient for
+converting a large amount of text from all upper case to mixed case,
+because you can move through the test using ESC L, ESC U or ESC C on
+each word as appropriate.
+.lp
+When given a negative argument, the word case conversion commands
+apply to the appropriate number of words before point, but do not move
+point.  This is convenient when you have just typed a word in the
+wrong case.  You can give the case conversion command and continue
+typing.
+.lp
+If a word case conversion command is given in the middle of a word, it
+applies only to the part of the word which follows the cursor,
+treating it as a whole word.
+.lp
+The other case conversion functions are case-region-upper and
+case-region-lower, which convert everything between point and mark to
+the specified case.  Point and mark do not move.
+.es
+.es
+.bs "Commands for Fixing Typos"
+In this section we describe the commands that are especially useful
+for the times when you catch a mistake on your text after you have
+made it, or change your mind while composing text on line.
+.ks 2.2i
+.dk "Rubout"
+Delete last character.
+.dk "ESC Rubout"
+Kill last word.
+.dk "C-X Rubout"
+Kill to beginning of sentence.
+.dk "C-T"
+Transpose two characters.
+.dk "C-X C-T"
+Transpose two lines.
+.dk "ESC Minus ESC L"
+Convert last word to lower case.
+.dk "ESC Minus ESC U"
+Convert last word to upper case.
+.dk "ESC Minus ESC C"
+Convert last word to lower case with capital initial.
+.ke
+.bs "Killing Your Mistakes"
+The Rubout command is the most important correction command.  When
+used among printing (self-inserting) characters, it can be thought of
+as canceling the last character typed.
+.lp
+When your mistake is longer than a couple of characters, it might be
+more convenient to use ESC Rubout or C-X Rubout.  ESC Rubout kills
+back to the start of the last word, and C-X Rubout kills back to the
+start of the last sentence.  C-X Rubout is particularly useful when
+you are thinking of what to write as you type it, in case you change
+your mind about phrasing.  ESC Rubout and C-X Rubout save the killed
+text for C-Y and ESC Y to retrieve.
+.lp
+ESC Rubout is often useful even when you have typed only a few
+characters wrong, if you know you are confused in your typing and
+aren't sure what you typed.  At such a time, you cannot correct with
+Rubout except by looking at the screen to see what you did.  It
+requires less thought to kill the whole word and start over again,
+especially if the system is heavily loaded.
+.es
+.bs "Transposition"
+The command error of transposing two characters can be fixed, when
+they are adjacent, with the C-T command.  Normally, C-T transposes the
+two characters on either side of the cursor.  When given at the end of
+a line, rather than switching the last character of the line with the
+line separator, which would be useless, C-T transposees the last two
+characters on the line.  So, if you catch your transposition error
+right away, you can fix it with just a C-T.  If you don't catch it so
+fast, you must move the cursor back to between the two characters.
+.lp
+To transpose two lines, use the C-X C-T command.
+.es
+.bs "Checking and Correcting Spelling"
+When you write a paper, you should correct its spelling at some point
+close the finishing it.  To correct the entire buffer, do ESC X
+spell-buffer.  This invokes the UNIX spell program, which prints a list
+of all the misspelled words.  JOVE catches the list and places it in a
+JOVE buffer called Spell, and then looks up each misspelled word and
+remembers where it is in the buffer being corrected.  Then you can go
+forward to each misspelled word with C-X C-N (next-error) and backward
+with C-X C-P (previous-error).  See error parsing.
+.es
+.es
+.bs "File Handling"
+The basic unit of stored data is the file.  Each program, each paper,
+lives usually in its own file.  To edit a program or paper, the editor
+must be told the name of the file that contains it.  This is called
+\fIvisiting\fR a file.  To make your changes to the file perminent on
+disk, you must \fIsave\fR the file.
+.bs "Visiting Files"
+.ks 1.5i
+.dk "C-X C-V"
+Visit a file.
+.dk "C-X C-R"
+Same as C-X C-V.
+.dk "C-X C-S"
+Save the visited file.
+.dk "ESC ~"
+Tell JOVE to forget that the buffer has been changed.
+.ke
+.lp
+\fIVisiting\fR a file means copying its contents into JOVE where you
+can edit them.  JOVE remembers the name of the file you visited.
+Unless you use the multiple buffer or window features of JOVE, you can
+only be visiting one file at a time.  The name of the current selected
+buffer is visible in the mode line.
+.lp
+The changes you make with JOVE are made in a copy inside JOVE.  The
+file itself is not changed.  The changed test is not permanent until
+you \fIsave\fR it in a file.  The first time you change the text, a
+star appears at the end of the mode line; this indicates that the text
+contains fresh changes which will be lost unless you save them.
+.lp
+To visit a file, use the command C-X C-V.  Follow the command with the
+name of the file you wish to visit, terminated by a Return.  You can
+abort the command by typing C-G, or edit the filename with the many of
+the standard JOVE commands (e.g., C-A, C-E, C-F, ESC F, ESC Rubout).
+If the filename you wish to visit is similar to the filename in the
+mode line (the default file name), you can type C-R to insert the
+default and then edit it.  If you do type a Return to finish the
+command, the new file's text appears on the screen, and its name
+appears in the mode line.  In addition, its name becomes the new
+default filename.
+.lp
+If you wish to save the file and make your changes permanent, type C-X
+C-S.  After the save is finished, C-X C-S prints the filename and the
+number of characters and lines that it wrote to the file.  If there
+are no changes to save (no star at the end of the mode line), the file
+is not saved; otherwise the changes saved and the star at the end of
+the mode line will disappear.
+.lp
+Because a system crash can cause you to lose everything you have done
+since the last save, we provide auto-save mode, which saves the files
+you are visiting at regular intervals automatically.  See auto-save.
+.lp
+What if you want to create a file?  Just visit it.  JOVE prints "(New
+file)" but aside from that behaves as if you had visited an existing
+empty file.  If you make any changes and save them, the file is
+created.  If you visit a nonexistent file unintentionally (because you
+typed the wrong filename), go ahead and visit the file you meant.  If
+you don't save the unwanted file, it is not created.
+.lp
+If you alter one file and then visit another in the same buffer, JOVE
+offers to save the old one.  If you answer YES, the old file is saved;
+if you answer NO, all the changes you have made to it since the last
+save are lost.  You should not type ahead after a file visiting
+command, because your type-ahead might answer an unexpected question
+in a way that you would regret.
+.lp
+Sometimes you will change a buffer by accident.  Even if you undo the
+change by hand, JOVE still knows that "the buffer has been changed".
+You can tell JOVE to belive that there have been no changes with the
+ESC ~ command.  This command simply clears the "modified" flag which
+says that the buffer contains changes which need to be saved.  Even if
+the buffer really \fIis\fR changed JOVE will still act as if it were
+not.
+.lp
+If JOVE is about to save a file and sees that the date of the version
+on disk does not match what JOVE last read or wrote, JOVE notifies you
+of this fact, and asks what to do, because this probably means that
+something is wrong.  For example, somebody else may have been editing
+the same file.  If this is so, there is a good chance that your work
+or his work will be lost if you don't take the proper steps.  You
+should first find out exactly what is going on.  If you determine that
+somebody else has modified the file, save your file under a different
+name and then DIFF the two files to merge the two sets of changes.
+Also get in touch with the other person so that he doesn't continue
+editing.
+.es
+.bs "How to Undo Drastic Changes to a File"
+If you have made several extensive changes to a file and then change
+your mind about them, and you haven't yet saved them, you can get rid
+of them by reading in the previous version of the file.  You can do
+this with the C-X C-V command, to visit the unsaved version of the file.
+.es
+.bs "Auto Save Mode"
+In auto-save mode, JOVE saves your file from time to time (based on
+counting your commands) without being asked.  This prevents you from
+losing more than a limited amount of work in a disaster.
+.lp
+You can turn auto saving on or off in an individual buffer with ESC X
+auto-save.  In addition, you can have auto savng by default in all
+buffers by putting the auto-save line in your initialization file.
+See initialization files.  The frequency of saving can be specified.
+.lp
+Once you have visited a file, you can turn auto saving on or off with
+ESC X auto-save.  Line other minor mode commands, ESC X auto-save
+toggles.  If you start typing a new file into a buffer without
+visiting anything, auto-save mode is initially off, but you can turn
+it on with ESC X auto-save.
+.lp
+When JOVE decides to do an auto-save, it doesn't save it under the
+name you have visited; instead it saves it under some special "auto
+save file name".  This file name will be the same as your visited file
+name except for having "+" appended to it.  An error in the process of
+auto saving prints "(Auto Save Error!)".  When you leave the editor
+normally, all auto saved files are removed.  However, if there is an
+internal error or the system crashes, the save files will not be
+removed so that you salvage your work.
+.lp
+If you want to save your file "for real", use C-X C-S, as always.
+.es
+.bs "Miscellaneous File Operations"
+.lp
+ESC X write-named-file <file><cr> writes the contents of the buffer
+into the file <file>, and then visits that file.  It can be thought of
+as a way of "changing the name" of the file you are visiting.  Unlike
+C-X C-S, write-file saves even if the buffer has not been changed.
+C-X C-W is another way of getting this command.
+.lp
+ESC X insert-file <file><cr> inserts the contents of <file> into the
+buffer at point, leaving point unchanged before the contents.  You can
+also use C-X C-I to get this command.
+.lp
+ESC X write-region <file><cr> writes the region (the text between
+point and mark) to the specified file.  It does not set the visited
+filenames.  The buffer is not changed.
+.lp
+ESC X append-region <file><cr> appends the region to <file>.  The text
+is added to the end of <file>.
+.es
+.es
+.bs "Using Multiple Buffers"
+When we speak of "the buffer", which contains the text you are
+editing, we have given the impression that there is only one.  In
+fact, there may be many of them, each with its own body of text.  At
+any time only one buffer can be \fIselected\fR and available for
+editing, but it isn't hard to switch to a different one.  Each buffer
+individually remembers which file it is visiting, what modes are in
+effect, and whether there are any changes that need saving.
+.ks 1.3i
+.dk "C-X B"
+Select or create a buffer.
+.dk "C-X C-F"
+Visit a file in its own buffer.
+.dk "C-X C-B"
+List the existing buffers.
+.dk "C-X K"
+Kill a buffer.
+.ke
+.lp
+Each buffer in JOVE has a single name, which normally doesn't change.
+A buffer's name can be anylength.  The name of the currently selected
+buffer, and the name of the file visited in it, are visible in the
+mode line when you are at top level.  A newly started JOVE has only
+one buffer, named "Main".
+.bs "Creating and Selecting Buffers"
+To create a new buffer, you need only think of a name for it (say,
+FOO) and then do C-X B FOO<cr>, which is the command C-X B
+(select-buffer) followed by the name.  This makes a new, empty buffer
+and selects it for editing.  The new buffer is not visiting any file,
+so if you try to save it you will be asked for the filename to use.
+Each buffer as its own major mode; the new buffer's major mode is
+always Text mode.
+.lp
+To return to buffer FOO later after hacing switched to another, the
+same command C-X B FOO<cr> is used, since C-X B can atell whether a
+buffer named FOO exists already or not.  C-X B Main<cr> reselects the
+buffer Main that JOVE started out with.  Just C-X B<cr> reselects the
+previous buffer.  Repeated C-X B<cr>'s alternate between the last two
+buffers selected.
+.lp
+You can also read a file into its own newly created buffer, all with
+one command: C-X C-F (find-file), followed by the filename.  The name
+of the buffer is the last name in the element of the file's pathname.
+C-F stands for "Find", because if the specified file already resides
+in a buffer in your JOVE, that buffer is reselected.  So you need not
+remember whether you have brought the file in already or not.  A
+buffer created by C-X C-F can be reslected later with C-X B or C-X
+C-F, whichever you find more convenient.  Nonexistent files can be
+created with C-X C-F just as they can with C-X C-V.
+.es
+.bs "Using Existing Buffers"
+To get a list of all the buffers that exist, do C-X C-B
+(list-buffers).  Each buffer's type, name, and visited
+filenames are printed.  A star before the buffer name indicates a
+buffer which contains changes that hav enot been saved.  The number
+that appears at the beginning of a line in a C-X C-B listing is that
+buffer's \FIbuffer number\fR.  You can select a buffer by typing its
+number in place of its name.  If a buffer with that number doesn't
+already exist, a new buffer is created with that number as its name.
+.lp
+If several buffers have stars, you should save some of them with C-X
+C-M (write-modified-files).  This finds all the buffers that need
+saving and then saves them.  Saving the buffers this way is much
+easier and more efficient than selecting each one and typing C-X C-S.
+If a numeric argument is supplied, it asks whether to save each buffer,
+individually.
+.lp
+ESC X rename-buffer <new name><cr> changes the name of the currently
+selected buffer.
+.lp
+ESC X erase-buffer<buffer name><cr> erases the contents of the <buffer
+name> without deleting the buffer entirely.
+.es
+.bs "Killing Buffers"
+After you use a JOVE for a while, it may fill up with buffers which
+you no longer need.  Eventually you can reach a point where trying to
+create any more results in an "out of memory" or "out of lines"
+error.  When this happens you will want to kill some buffers with the
+C-X K (delete-buffer) command.  You can kill the buffer FOO by doing
+C-X K FOO<cr>.  If you type C-X K <cr> JOVe will kill the previously
+selected buffer.  If you try to kill a buffer that needs saving JOVE
+will ask you to confirm it.
+.es
+.es
+.bs "Controlling the Display"
+Since only part of a large file fits on the screen, JOVE tries to show
+the part that is likely to be interesting.  The display control
+commands allow you to see a different part of the file.
+.ks 1.5i
+.dk "C-L"
+Reposition point at a specified vertical position, OR clear and redraw
+the screen with point in the same place.
+.dk "C-V"
+Scroll forwards (a screen or a few lines).
+.dk "ESC V"
+Scroll backwards.
+.dk "C-Z"
+Scroll forward some lines.
+.dk "ESC Z"
+Scroll backwards some lines.
+.dk "ESC ,"
+Beginning of screen.
+.dk "ESC ."
+End of screen.
+.ke
+.lp
+The terminal screen is rarely large enough to display all of your
+file.  If the whole buffer doesn't fit on the screen, JOVE shows a
+contiguous portion of it, containing point.  It continues to show
+approximately the same portion until point moves outside of it; then
+JOVE chooses a new portion centered the new point.  This is JOVE's
+guess as to what you are most interested in seeing.  But if the guess
+is wrong, you can use the display control commands to see a different
+portion.  The finite area of screen through which you can see part of
+the buffer is called \fIthe window\fR, and the choice of where in the
+buffer to start displaying is also called \fIthe window\fR.
+.lp
+First we describe how JOVE chooses a new window position on its own.
+The goal is usually to place point half way down the screen.  This is
+controlled by the variable scroll-step, whose value is the number of
+lines above the bottom or below the top of the window that the line
+containing point is placed.  A value of 0 (the initial value) means
+center the screen.
+.lp
+The basic display control command is C-L (redraw-display).  In its
+simplest form, with no argument, it tells JOVE to choose a new window
+position, centering point half way from the top as usual.
+.lp
+C-L with a positive argument chooses a new window so as to point point
+that many lines from the top.  An argument of zero puts point on the
+very top line.  Point does not move with respect to the text; rather,
+the text and point move rigidly on the screen.
+.lp
+If point stays on the same line, the screen is first cleared and then
+redrawn.  Thus, two C-L's in a row are guarenteed to clear the screen.
+.lp
+The \fIscrolling\fR commands C-V, ESC V, C-Z, and ESC Z, let you move
+the whole display up or down a few lines.  C-V (next-page) with an
+argument shows you that many more lines at the bottom of the screen,
+moving the text and point up together as C-L might.  C-V with a
+negative argument shows you more lines at the top of the screen, as
+does ESC V with a positive argument.
+.lp
+To read the buffer a screenful at a time, use the C-V command with no
+argument.  It takes the last line at the bottom of the screen and puts
+it at the top, followed by nearly a whole screenful of lines not
+visible before.  Point is put at the top of the screen.  Thus, each
+C-V shows the "next screenful", except for one line of overlap to
+provide continuity.  To move backward, use ESC V without an argument,
+which moves a whole screenful backwards (again with overlap).
+.lp
+C-Z and ESC Z scroll one line forward and one line backward,
+respectively.  These are convenient for moving in units of lines
+without having to type a numeric argument.
+.lp
+Use ESC , to move to the top of the window and ESC .  to go to the
+end.  Notice the similarity between ESC , and ESC <, and ESC .  and
+ESC >.  The only difference between them is how far they move.
+.es
+.bs "Multiple Windows"
+JOVE allows you to split the screen into two or more \fIwindows\fR and
+use them to display parts of different files, or different parts of
+the same file.
+.ks 1.5i
+.dk "C-X 2"
+Divide the current window into two smaller ones.
+.dk "C-X 1"
+Delete windows all but the current one.
+.dk "C-X N"
+Switch to the next window.
+.dk "C-X P"
+Switch to the previous window.
+.dk "C-X O"
+Same as C-X P.
+.dk "C-X ^"
+Make this window bigger.
+.dk "ESC C-V"
+Scroll the other window.
+.ke
+.lp
+When using \fImultiple window\fR mode, the text portion of the screen
+is divided into separate parts called \fIwindows\fR, which display
+different pieces of text.  Each window can display different files, or
+parts of the same file.  Only one of the windows is selected; that is
+the window which the cursor is in.  Editing normally takes place in
+that window alone.  To edit in another window, you would give a
+special command to move the cursor to the other window, and then edit
+there.
+.lp
+Each window displays a mode line for the buffer it's displaying.  This
+is useful when we are editing different files and want to know which
+file the other window is displaying.  In addition, all except the bottom
+window put dashes at the beginning and end of the mode line so that
+there is a clear seperator between windows.
+.lp
+The command C-X 2 (split-current-window) enters multiple window mode.
+A new mode line appears accross the middle of the screen, dividing the
+text display area into two halves.  Both windows contain the same
+buffer and display the same position in it, namely where point was at
+the time you issued the command.  The cursor moves to the second
+window.
+.lp
+To return to viewing only one window, use the command C-X 1
+(delete-other-windows).  The current window expands to fill the whole
+screen, and the other windows disappear until the next C-X 2.
+.lp
+While there is more than one window, you can use C-X N (next-window)
+to switch to the next window, and C-X P (previous-window) to switch to
+the previous one.  If you are in the bottom window and you type C-X N,
+you will be placed in the top window, and the same kind of thing
+happens when you type C-X P in the top window, namely you will be
+placed in the bottom window.  C-X O is the same as C-X P.  It stands
+for other window because when there are only two windows, repeated use
+of this command with switch between the two windows.
+.lp
+Often you will be editing one window while using the other just for
+reference.  Then, the command ESC C-V (page-next-window) is very
+useful.  It scrolls the next window, as if you switched to the next
+window, typed C-V, and switched back, without your having to do all
+that.  With a negative argument, ESC C-V will do an ESC V in the next
+window.
+.lp
+When a window splits, both halves are approximately the same size.
+You can redistribute the screen space between the windows with the C-X
+^ (grow-window) command.  It makes the currently selected window grow
+one line bigger, or as many lines as is specified with a numeric
+argument.  Use ESC X shrink-window to make the current window smaller.
+.bs Multiple Windows and Mulitple Buffers
+Buffers can be selected independently in each window.  The C-X B
+command selects a new buffer in whichever window the cursor is in.
+The other window's buffer does not change.
+.lp
+You can view the same buffer in more than one window.  Although the
+same buffer appears in both windows, they have different values of
+point, so you can move around in one window while the other window
+continues to show the same text.  Then, having found the place you
+wish to refer to, you can go back into the other window with C-X O to
+make your changes.
+.lp
+If you have the same buffer in both windows, you must beware of trying
+to visit a different file in one of the windows with C-X C-V, because
+if you bring a new file into this buffer, it will replaced the old
+file in \fIboth\fR windows.  To view different files in differnent
+windows, you must switch buffers in one of the windows first (with C-X
+B or C-X C-F, perhaps).
+.lp
+A convenient "combination" command for viewing something in another
+window is C-X 4 (visit-in-other-window).  With this command you can
+ask to see any specified buffer, file or tag in the other window.
+Follow the C-X 4 with either B and a buffer name, F and a file name,
+or T and a tag name.  This switches to the other window and finds
+there what you specified.  If you were previously in one-window mode,
+multiple-window mode is entered.  C-X 4 B is similar to C-X 2 C-X B.
+C-X 4 F is similar to C-X 2 C-X C-F.  C-X 4 T is similar to C-X 2 C-X
+T.  The difference is one of efficiency, and also that C-X 4 works
+equally as well if you are already using two windows.
+.es
+.es
+.bs "Replacement Commands"
+Global search-and-replace operations are not needed as often in JOVE
+as they are in other editors, but they are available.  In addition to
+the simple Replace operation which is like that found in most editors,
+there is a Query Replace operation which asks you, for each occurrence
+of the pattern, whether to replace it.
+.lp
+To replace every occurrence of FOO after point which BAR, you can do
+.eg "ESC R FOO<cr>BAR"
+Replacement occurs only after point, so if you want to cover the whole
+buffer you must go to the beginning first.  Replacement continues to
+the end of the buffer.
+.bs "Query Replace"
+If you want to change only some of the occurrences of FOO, not all,
+then you cannot use and ordinary Replace.  Instead, use
+.eg "ESC Q FOO<cr>BAR"
+This displays each occurrence of FOO and waits for you to say whether
+to replace it with a BAR.  The things you can type when you are shown
+an occurrence of FOO are:
+.ks 1.3i
+.dk "Space"
+to replace the FOO.
+.dk "Rubout"
+to skip the next FOO without replacing this one.
+.dk "Return"
+to exit without doing any more replacements.
+.dk "Period"
+to replace this FOO and then exit.
+.dk "! or P"
+to replace all remaining FOO's without asking.
+.dk "C-R or R"
+to enter a recursive editing level, in case the FOO needs to be edited
+rather than just replaced with a BAR.  When you are done, exit the
+recursive editing level with C-X C-C and the next FOO will be
+displayed.
+.dk "C-W"
+to delete the FOO, and then start editing the buffer.  When you are
+finished editing whatever is to replace the FOO, exit the recursive
+editing level with C-X C-C and the next FOO will be displayed.
+.dk "U"
+move to the last replacement and undo it, and then enter a recursive
+editing level.  When you have finished editing the FOO, exit the
+recursive editing level with C-X C-C and then next FOO will be
+displayed.
+.ke
+.es
+.es
+.bs "Processes Under JOVE"
+Another feature in JOVE is its ability to interact with UNIX in a
+useful way.  You can run other UNIX commands from JOVE and catch their
+output in JOVE buffers.  In this chapter we will discuss the different
+ways to run and interact with UNIX commands.
+.bs Non-interactive UNIX commands
+To run a UNIX command from JOVE just type "C-X !" followed by the name
+of the command terminated with Return.  For example, to get a list of
+all the users on the system, you do:
+.eg "C-X ! who<cr>"
+Then JOVE picks a reasonable buffer in which the output from the
+command will be placed.  E.g., "who" uses the buffer called "who", and
+"ps alx" uses "ps", and "fgrep -n foo *.c" uses "fgrep".  If JOVE
+wants to use a buffer that already exists it first erases the old
+contents.  If the buffer it selects holds a file, not output from a
+previous shell command, you must first delete that buffer with C-X K.
+.lp
+Once JOVE has picked a buffer it puts that buffer in a window so you
+can see the command's output as it is running.  If there is only one
+window JOVE will automatically make another one.  Otherwise, JOVE
+tries to pick the most convenient one window which isn't the current
+one.
+.lp
+It's not a good idea to type anything while the command is running.
+There are two reasons for this:
+.ks 1i
+.dk "(1)"
+JOVE won't see the characters (thus won't execute them) until the
+command finishes, so you may forget what you've typed.
+.dk "(2)"
+Although JOVE won't know what you've typed, it WILL know that you've
+typed something, and then it will try to be "smart" and not update the
+display until it's interpreted your what you've typed.  But, of
+course, JOVE won't interpret what you type until the UNIX command
+completes, so you're left with the uneasy feeling you get when you
+don't know what the hell the computer is doing.
+.fb
+This is a bug and should be fixed, but probably won't be for a while.
+.fe
+.ke
+.lp
+If you want to interrupt the command for some reason (perhaps you
+mistyped it,or you changed your mind) you can type C-].  Typing this
+inside JOVE while a process is running is the same as type C-C when
+you are outside JOVE, namely the process stops in a hurry.
+.lp
+When the command finishes JOVE puts you back in the window you started
+in.  Then it prints a message indicating whether or not the command
+completed successfully in its (the command's) opinion.  That is, if
+the command had what it considers and error, JOVE will print an
+appropriate message.  Interrupting a command with C-] is considered an
+error.
+.bs "Limitations of Non-Interactive Processes"
+The reason these are called non-interactive processes is that you
+can't type any input to them; you can't interact with them; they can't
+ask you questions because there is no way for you to answer.  For
+example, you can't run a command interpreter (a shell) with C-X !
+because there is no way to type it a command.  Remember that JOVE is
+listening to your keyboard, not the process in the window, and JOVE
+doesn't see what you type until the process dies.
+.lp
+C-X ! is useful for running commands that do some output and then
+exit.  For example, it's very useful to use with the C compiler to
+catch compilation error messages (see Compiling C Programs), or with
+the "grep" commands.
+.es
+.es
+.bs "Interactive Processes -- Run a Shell in a Window"
+Some versions of JOVE have the capability of running interative
+processes.  This is more useful than non-interactive processes for
+certain types of jobs:
+.ks
+.dk "(1)"
+You can go off and do some editing while the command is running.  This
+is useful for commands that do sporadic output and run for fairly long
+periods of time.
+.dk "(2)"
+Unlike non-interactive processes, you can type input to this type.  In
+addition, you can edit what you type with the power of all the JOVE
+commands \fBbefore\fR you send the input to the process.  This is a
+really important feature, and is especially useful for running a shell
+in a window.
+.dk "(3)"
+Because you can continue with normal editing while one of the
+processes is running, you can create a bunch of contexts and manage
+them (select them, delete them, or temporarily put them aside) with
+JOVE's window and buffer mechanisms.
+.ke
+.lp
+Although we've created an image of processes being attached to
+windows, in fact they are attached to buffers.  Therefore, once an
+i-process is running you can select another buffer into that window,
+or if you wish you can delete the window altogether.  If you reselect
+that buffer later it will be up to date.  That is, even though the
+buffer wasn't visible it was still receiving output from the process.
+You don't have to worry about missing anything when the buffer isn't
+visible.
+.bs Advantages of Running Processes in JOVE Windows.
+There are several advantages to running a shell in a window.  What you
+type isn't seen immediately by the process ; instead JOVE waits until
+you type an entire line before passing it on to the process to read.
+This means that before you type Return, all JOVE's editing
+capabilities are available for fixing typos on your input line.  If
+you discover an error at the beginning of the line, rather than
+erasing it and starting over, you can simply move to the error,
+correct it, move back and continue typing.
+.lp
+Another feature is that you have the entire history of your session is
+a JOVE buffer.  You don't have to worry about output from a command
+moving past the top of the screen.  if you missed some output you can
+move back through it with ESC V and other command.  In addition, you
+can save yourself retyping a command (or a similar one) by sending
+edited versions of previous ones.
+.es
+.bs "Differences between Normal and I-process Buffers"
+JOVE behaves differently in several ways when you are in an I-process
+buffer.  The most obvious one is that Return does different things
+depending on both your position in the buffer and on the state of the
+process.  In the normal case, when point is at the end of the buffer,
+Return does what you'd expect: it inserts a line-separator and then
+sends the line to the process.  If you are somewhere else in the
+buffer, possibly positioned at a previous command that you want to
+edit, Return will place a copy of that line (with the prompt discarded
+if there is one) at the end of the buffer and move you there.  Then
+you can edit the line and type Return as in the normal case.  If the
+process has died for some reason, Return does nothing.  It doesn't
+even insert itself.  If that happens unexpectedly, you should type ESC
+X list-processes<cr> to get a list of each process and its state.  If
+your process died abnormally, list-processes may help you figure out
+why.
+.es
+.bs "How to Run a Shell in a Window"
+Type ESC X i-shell<cr> to start up a shell.  As with C-X !, JOVE will
+create a buffer, called \fBshell.1\fR, and select a window for this
+new buffer.  But unlike C-X ! you will be left in the new window.  Now,
+the shell process is said to be attached to shell.1, and it is
+considered an I-process buffer.
+.lp
+Needs work.
+.es
+.es
+.es
+
+.bs "Editing C Programs"
+.bs "Compiling Your Program"
+.es
+.bs "Indentation Commands"
+.es
+.bs "Parenthesis and Brace Matching"
+.es
+.bs "C Tags"
+.es
+.es
+.bs "Error Message Parsing"
+.es
+.bs "Simple Customization"
+.bs "Minor Modes"
+.es
+.bs "Variables"
+.es
+.bs "Key Re-binding"
+.es
+.bs "Keyboard Macros"
+.es
+.bs "Initialization Files"
+.es
+.es
+.TC
+.hy 0
