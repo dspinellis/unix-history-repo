@@ -22,11 +22,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.14 (Berkeley) 1/23/89";
 #endif /* not lint */
 
 /*
  * remote shell server:
+ *	\0
  *	remuser\0
  *	locuser\0
  *	command\0
@@ -55,6 +56,24 @@ char	*index(), *rindex(), *strncat();
 /*VARARGS1*/
 int	error();
 
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+#define	VERSION_SIZE	9
+#define	OPTIONS		"lnkv"
+char	*strsave();
+char	authbuf[sizeof(AUTH_DAT)];
+char	tickbuf[sizeof(KTEXT_ST)];
+int	use_kerberos = 0;
+
+#define	OLD_RCMD		0x00
+#define	KERB_RCMD		0x00
+#define	KERB_RCMD_MUTUAL	0x03
+
+int	encrypt = 0;
+#else
+#define	OPTIONS	"ln"
+#endif
+
 /*ARGSUSED*/
 main(argc, argv)
 	int argc;
@@ -68,7 +87,7 @@ main(argc, argv)
 	openlog("rsh", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "ln")) != EOF)
+	while ((ch = getopt(argc, argv, OPTIONS)) != EOF)
 		switch((char)ch) {
 		case 'l':
 			_check_rhosts_file = 0;
@@ -76,13 +95,30 @@ main(argc, argv)
 		case 'n':
 			keepalive = 0;
 			break;
+#ifdef	KERBEROS
+		case 'k':
+			use_kerberos = 1;
+			break;
+
+		case 'v':
+			vacuous = 1;
+			break;
+#endif
 		case '?':
 		default:
 			syslog(LOG_ERR, "usage: rshd [-l]");
 			break;
 		}
+
 	argc -= optind;
 	argv += optind;
+
+#ifdef	KERBEROS
+	if(use_kerberos && vacuous) {
+		syslog(LOG_ERR, "only one of -k and -v allowed");
+		exit(1);
+	}
+#endif
 
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
@@ -124,6 +160,18 @@ doit(f, fromp)
 	long ready, readfrom;
 	char buf[BUFSIZ], sig;
 	int one = 1;
+	char	localhost[MAXHOSTNAMELEN], remotehost[MAXHOSTNAMELEN];
+	char	*raddr;
+
+#ifdef	KERBEROS
+	AUTH_DAT	*kdata = (AUTH_DAT *) NULL;
+	KTEXT		ticket = (KTEXT) NULL;
+	char		instance[INST_SZ], version[VERSION_SIZE];
+	char		*h_name;
+	struct		sockaddr_in	fromaddr = *fromp;
+	int		rc;
+	long		authopts;
+#endif
 
 	(void) signal(SIGINT, SIG_DFL);
 	(void) signal(SIGQUIT, SIG_DFL);
@@ -141,11 +189,16 @@ doit(f, fromp)
 		syslog(LOG_ERR, "malformed from address\n");
 		exit(1);
 	}
+
+#ifndef	KERBEROS
 	if (fromp->sin_port >= IPPORT_RESERVED ||
 	    fromp->sin_port < IPPORT_RESERVED/2) {
-		syslog(LOG_NOTICE, "connection from bad port\n");
+		syslog(LOG_NOTICE, "Connection from %s on illegal port",
+			inet_ntoa(fromp->sin_addr));
 		exit(1);
 	}
+#endif
+
 	(void) alarm(60);
 	port = 0;
 	for (;;) {
@@ -156,10 +209,21 @@ doit(f, fromp)
 			shutdown(f, 1+1);
 			exit(1);
 		}
+#ifdef	KERBEROS
+		if(c == OLD_RCMD || c == KERB_RCMD)
+			break;
+
+		if(c == KERB_RCMD_MUTUAL) {
+			encrypt = 1;
+			break;
+		}
+#else
 		if (c == 0)
 			break;
+#endif
 		port = port * 10 + c - '0';
 	}
+
 	(void) alarm(0);
 	if (port != 0) {
 		int lport = IPPORT_RESERVED - 1;
@@ -168,26 +232,87 @@ doit(f, fromp)
 			syslog(LOG_ERR, "can't get stderr port: %m");
 			exit(1);
 		}
+#ifndef	KERBEROS
 		if (port >= IPPORT_RESERVED) {
 			syslog(LOG_ERR, "2nd port not reserved\n");
 			exit(1);
 		}
+#endif
 		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp)) < 0) {
 			syslog(LOG_INFO, "connect second port: %m");
 			exit(1);
 		}
 	}
+
+#ifdef	KERBEROS
+	if(vacuous) {
+		error("rshd: remote host requires Kerberos authentication\n");
+		exit(1);
+	}
+#endif
+
 	dup2(f, 0);
 	dup2(f, 1);
 	dup2(f, 2);
 	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
-	if (hp)
+	if (hp) {
+		(void) gethostname(localhost, sizeof(localhost));
+		if(same_domain(hp->h_name, localhost)) {
+			bcopy(hp->h_name, remotehost, sizeof(remotehost));
+			hp = gethostbyname(remotehost);
+			if(hp == NULL) {
+				syslog(LOG_NOTICE, "Couldn't get host entry for %s",
+					remotehost);
+				error("Couldn't get host entry for your host");
+				exit(1);
+			} else {
+			    for(;;) {
+				if(!(raddr = hp->h_addr_list[0])) {
+					syslog(LOG_NOTICE, "Host addr not listed for host %s",
+						hp->h_name);
+					error("Host address mismatch");
+					exit(1);
+				}
+				if(!bcmp(raddr, (caddr_t)&fromp->sin_addr,
+					sizeof(struct in_addr))) {
+						break;
+				}
+				hp->h_addr_list++;
+			    }
+			}
+		}
 		hostname = hp->h_name;
-	else
+	} else {
 		hostname = inet_ntoa(fromp->sin_addr);
-	getstr(remuser, sizeof(remuser), "remuser");
+	}
+
+#ifdef	KERBEROS
+	if(use_kerberos) {
+		h_name = strsave(hp->h_name);
+		kdata = (AUTH_DAT *) authbuf;
+		ticket = (KTEXT) tickbuf;
+		authopts = 0L;
+		strcpy(instance, "*");
+		version[VERSION_SIZE - 1] = '\0';
+		if(rc = krb_recvauth(
+			authopts, f, ticket, "rcmd",
+			instance, &fromaddr,
+			(struct sockaddr_in *) 0,
+			kdata, "", (bit_64 *) 0, version)
+		) {
+			fprintf(stderr,
+				"Kerberos authentication failure: %s\r\n",
+				  krb_err_txt[rc]);
+			exit(1);
+		}
+		free(h_name);
+		h_name = NULL;
+	} else
+#endif
+		getstr(remuser, sizeof(remuser), "remuser");
+
 	getstr(locuser, sizeof(locuser), "locuser");
 	getstr(cmdbuf, sizeof(cmdbuf), "command");
 	setpwent();
@@ -204,16 +329,45 @@ doit(f, fromp)
 		exit(1);
 #endif
 	}
-	if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
-	    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
-		error("Permission denied.\n");
-		exit(1);
-	}
+
+#ifdef	KERBEROS
+	if(use_kerberos) {
+		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0') {
+			if(krb_kntoln(kdata, remuser) != KSUCCESS) {
+				error("Permission denied.\n");
+				exit(1);
+			}
+			if(kuserok(kdata, locuser) != 0) {
+				syslog(LOG_NOTICE, "Kerberos rlogin denied to %s.%s@%s",
+					kdata->pname, kdata->pinst, kdata->prealm);
+				error("Permission denied.\n");
+				exit(1);
+			}
+	} else
+#endif
+
+		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
+		    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
+			error("Permission denied.\n");
+			exit(1);
+		}
+
 	if (pwd->pw_uid && !access("/etc/nologin", F_OK)) {
 		error("Logins currently disabled.\n");
 		exit(1);
 	}
+#ifdef	KERBEROS
+	if(encrypt) {
+		char c = KERB_RCMD_MUTUAL;
+		(void) write(2, &c, 1);
+	} else {
+		char c = KERB_RCMD;
+		(void) write(2, &c, 1);
+	}
+#else
 	(void) write(2, "\0", 1);
+#endif
+
 	if (port) {
 		if (pipe(pv) < 0) {
 			error("Can't make pipe.\n");
@@ -305,4 +459,15 @@ getstr(buf, cnt, err)
 			exit(1);
 		}
 	} while (c != 0);
+}
+
+int
+same_domain(h1, h2)
+	register char	*h1, *h2;
+{
+	register char *p1 = index(h1, '.');
+	register char *p2 = index(h2, '.');
+	if(!strcasecmp(p1, p2))
+		return(1);
+	return(0);
 }
