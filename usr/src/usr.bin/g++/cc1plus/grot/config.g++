@@ -1,0 +1,363 @@
+#!/bin/sh
+# Configuration script for GNU C++
+#   Copyright (C) 1988 Free Software Foundation, Inc.
+
+#This file is part of GNU CC.
+
+#GNU CC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 1, or (at your option)
+#any later version.
+
+#GNU CC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GNU CC; see the file COPYING.  If not, write to
+#the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+#
+# Shell script to create proper links to machine-dependent files in
+# preparation for compiling g++.  Also, files borrowed verbatim from
+# GNU CC have their links made by this program.
+#
+# Usage: config.g++ [vint] machine
+#
+# If config.g++ succeeds, it leaves its status in config.status.
+# If config.g++ fails after disturbing the status quo, 
+# 	config.status is removed.
+#
+
+progname=$0
+remove=rm
+hard_link=ln
+symbolic_link='ln -s'
+
+#for Test
+#remove="echo rm"
+#hard_link="echo ln"
+#symbolic_link="echo ln -s"
+
+for arg in $*;
+do
+  case $arg in
+   -srcdir=*)
+	srcdir=`echo $arg | sed s/-srcdir=//`
+	;;
+   -vint)
+	vint=on
+	;;
+   *)
+	machine=$arg
+	;;
+  esac
+done
+
+# Find the source files, if location was not specified.
+if [ x$srcdir = x ]
+then
+	srcdirdefaulted=1
+	srcdir=.
+	if [ ! -r tree.c ]
+	then
+		srcdir=..
+	fi
+fi
+
+if [ ! -r ${srcdir}/tree.c ]
+then
+	if [ x$srcdirdefaulted = x ]
+	then
+	  echo "$progname: Can't find compiler sources in \`${srcdir}'." 1>&2
+	else
+	  echo "$progname: Can't find compiler sources in \`.' or \`..'." 1>&2
+	fi
+	exit 1
+fi
+
+if [ x$machine != x ];
+then
+	case $machine in
+	vax)					# for vaxen running bsd
+		;;
+	vms)					# for vaxen running VMS
+		cpu_type=vax
+		configuration_file=xm-${machine}.h
+		machine_type=${machine}
+		;;
+	vax-sysv | vaxv)			# for vaxen running system V
+		cpu_type=vax
+		configuration_file=xm-vaxv.h
+		machine_type=vaxv
+		;;
+	sequent-i386)			# for Intel 80386's on Sequent Symmetry
+		cpu_type=i386
+		configuration_file=xm-i386.h
+		machine_type=seq386
+		;;
+	i386-sysv | i386v)		# for Intel 80386's running system V
+		machine=i386v
+		cpu_type=i386
+		configuration_file=xm-${machine}.h
+		machine_type=${machine}
+		;;
+	i386-sysv-gas | i386g)
+		cpu_type=i386
+		configuration_file=xm-i386v.h
+		machine_type=i386gas
+		;;		
+	i860)
+		;;
+	next )
+		cpu_type=m68k
+		configuration_file=xm-m68k.h      
+		machine_type=next
+	;;
+	sun4 | sun-4)
+		cpu_type=sparc
+		configuration_file=xm-sparc.h
+		machine_type=sun4os3
+		;;
+	sun3 | sun-3)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun3
+		;;
+	sun3-nfp | sun-3-nfp)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun3-nfp
+		;;
+	sun3-fpa | sun-3-fpa)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun3-fpa
+		;;
+	sun2 | sun-2)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun2
+		;;
+	sun386 | sun386i | roadrunner)
+		cpu_type=i386
+		configuration_file=xm-sun386i.h
+		machine_type=sun386i
+		;;
+	sun4-os4 | sun-4-os4)
+		cpu_type=sparc
+		target_machine=tm-sparc.h
+		machine_type=sparc
+		;;
+	sun3-os4 | sun-3-os4)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun3
+		;;
+	sun3-nfp-os4 | sun-3-nfp-os4)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun3-nfp
+		;;
+	sun3-fpa-os4 | sun-3-fpa-os4)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun3-fpa
+		;;
+	sun2-os4 |sun-2-os4)
+		cpu_type=m68k
+		configuration_file=xm-m68k.h
+		machine_type=sun2
+		;;
+	hp9k320)			# HP 9000 series 300 with gcc alone
+		cpu_type=m68k
+		configuration_file=xm-hp9k320.h
+		;;
+	hp9k320-old)			# HP 9000 series 300 with gcc alone
+		cpu_type=m68k
+		target_machine=tm-hp9k32old.h
+		configuration_file=xm-hp9k320.h
+		;;
+	hp9k320-gas | hp9k320g)			#    with gnu as, ld and gdb
+		cpu_type=m68k
+		configuration_file=xm-hp9k320.h
+		;;
+	hp9k320-bsd | hp300)		# HP 9000/3xx running Berkeley Unix
+		cpu_type=m68k
+		target_machine=tm-hp9k3bsd.h
+		;;
+	hp9k800)			# HP 9000 series 800 with g++ alone
+		cpu_type=hp9k8
+		configuration_file=xm-hp9k8.h
+		aux_output=out-hp9k8.c
+		machine_type=hp9k8
+		;;
+	isi68)
+		cpu_type=m68k
+		;;
+	news800)
+	        configuration_file=xm-m68k.h
+	        target_machine=tm-news.h
+		cpu_type=m68k
+		;;
+	news-gas | news-g)
+	        configuration_file=xm-m68k.h
+	        target_machine=tm-newsgas.h
+		cpu_type=m68k
+		;;
+	altos | altos3068)        # Altos 3068 with gnu as, ld and gdb
+        	cpu_type=m68k
+	        configuration_file=xm-altos3068.h
+	        target_machine=tm-altos3068.h
+	        ;;
+	3b1)
+		cpu_type=m68k
+		configuration_file=xm-${machine}.h
+		;;
+	sequent-ns32k | sequent)
+		cpu_type=ns32k
+		aux_output=out-ns32k.c
+		;;
+	encore)
+		cpu_type=ns32k
+		aux_output=out-ns32k.c
+		;;
+	genix)
+		machine=ns32k
+		cpu_type=ns32k
+		configuration_file=xm-genix.h
+		;;
+	88000)
+		cpu_type=m88k
+		machine_type=${cpu_type}
+		;;
+	alliant)				# Alliant FX/8
+		;;
+	convex-c1)				# Convex C1
+		machine_type=convex1
+		cpu_type=convex
+		;;
+	convex-c2)				# Convex C2
+		machine_type=convex2
+		cpu_type=convex
+		;;
+	pyr)
+		;;
+	iris)					# Mostly like a MIPS.
+		cpu_type=mips
+		target_machine=tm-iris.h
+		configuration_file=xm-iris.h
+		;;
+	mips)				# Default MIPS environment
+		;;
+	mips-sysv)			# SYSV variant of MIPS system.
+		cpu_type=mips
+		target_machine=tm-mips-sysv.h
+	        ;;
+	mips-bsd43)			# BSD 4.3 variant of MIPS system.
+		cpu_type=mips
+		target_machine=tm-mips-bsd.h
+	        ;;
+	dec-3100 | decstation)		# Decstation or pmax.
+		cpu_type=mips
+		target_machine=tm-decstatn.h
+	        ;;
+#	370)
+#		machine=370
+#		;;
+	GNUmasscomp)
+		cpu_type=m68k
+		target_machine=tm-GNUmass.h
+		;;
+	masscomp)
+		cpu_type=m68k
+		machine_description=masscomp.md
+		;;
+	esac
+
+	$remove -f config.h tm.h md aux-output.c
+
+		# if cpu_type is not set, define cpu_type to machine.
+		#
+	cpu_type=${cpu_type-$machine}
+	configuration_file=${configuration_file-xm-$cpu_type.h}
+	machine_type=${machine_type-$machine}
+	target_machine=${target_machine-tm-${machine_type}.h}
+	machine_description=${machine_description-${cpu_type}.md}
+	aux_output=${aux_output=out-$cpu_type.c}
+
+	if [ xx${vint} = xx ]
+	then
+		files="$configuration_file $target_machine
+			$machine_description $aux_output"
+		links="config.h tm.h md aux-output.c"
+	else
+		files="$configuration_file tm-vmc.h $target_machine
+			$machine_description $aux_output"
+		links="config.h tm.h tm-pre.h md aux-output.c"
+	fi
+
+	while [ -n "$files" ]
+	do
+		# set file to car of files, files to cdr of files
+		set $files; file=$1; shift; files=$*
+		set $links; link=$1; shift; links=$*
+
+		if [ ! -r ${srcdir}/config/$file ]
+		then
+			echo "$progname: cannot create a link \`$link'," 1>&2
+			echo "since the file \`config/$file' does not exist." 1>&2
+			exit 1
+		fi
+
+		$remove -f $link
+		rm -f config.status
+		# Make a symlink if possible, otherwise try a hard link
+		$symbolic_link ${srcdir}/config/$file $link 2>/dev/null || $hard_link ${srcdir}/config/$file $link
+
+		if [ ! -r $link ]
+		then
+			echo "$progname: unable to link \`$link' to \`${srcdir}/config/$file'." 1>&2
+			exit 1
+		fi
+		echo "Linked \`$link' to \`${srcdir}/config/$file'."
+	done
+
+	if [ xx${vint} = xx ]
+	then
+		echo "Links are now set up for use with a $machine." \
+			| tee config.status
+	else
+		echo "Links are now set up for use with a $machine (vint)." \
+			| tee config.status
+	fi
+
+	# Install a makefile, and make it set VPATH
+	# if necessary so that the sources are found.
+	# Also change its value of srcdir.
+	# Also create a .gdbinit file which runs the one in srcdir
+	# and tells GDB to look there for source files.
+	case $srcdir in
+	.)
+		;;
+	*)
+		echo "VPATH = ${srcdir}" > x
+		cat x ${srcdir}/Makefile | sed "s@^srcdir = \.@srcdir = ${srcdir}@" > Makefile
+		rm x
+		echo "dir ${srcdir}" > .gdbinit
+		echo "source ${srcdir}/.gdbinit" >> .gdbinit
+		;;
+	esac
+
+	exit 0
+else
+	echo "Usage: $progname machine"
+	echo -n "Where \`machine' is something like "
+	echo "\`vax', \`sun3', \`umax', etc."
+	if [ -r config.status ]
+	then
+		cat config.status
+	fi
+	exit 1
+fi
