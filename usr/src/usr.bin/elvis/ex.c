@@ -5,6 +5,14 @@
  *	14407 SW Teal Blvd. #C
  *	Beaverton, OR 97005
  *	kirkenda@cs.pdx.edu
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00043
+ * --------------------         -----   ----------------------
+ *
+ * 27 Nov 1992	 Felix Gaehtgens	Fixed <ESC>:wq!
+ *
  */
 
 
@@ -120,7 +128,7 @@ static struct
 	{"tag",		CMD_TAG,	cmd_tag,	BANG+WORD1	},
 	{"version",	CMD_VERSION,	cmd_version,	EXRCOK+NONE	},
 	{"visual",	CMD_VISUAL,	cmd_edit,	BANG+NAMEDF	},
-	{"wq",		CMD_WQUIT,	cmd_xit,	NL		},
+	{"wq",		CMD_WQUIT,	cmd_xit,	BANG+NL		},
 
 #ifdef DEBUG
 	{"debug",	CMD_DEBUG,	cmd_debug,	RANGE+BANG+EXTRA+NL},
