@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.27	82/01/17	*/
+/*	uipc_socket.c	4.28	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -101,9 +101,12 @@ COUNT(SOFREE);
  * Close a socket on last file table reference removal.
  * Initiate disconnect if connected.
  * Free socket when disconnect complete.
+ *
+ * THIS IS REALLY A UNIX INTERFACE ROUTINE
  */
-soclose(so)
+soclose(so, exiting)
 	register struct socket *so;
+	int exiting;
 {
 	int s = splnet();		/* conservative */
 
@@ -114,22 +117,26 @@ COUNT(SOCLOSE);
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
 			u.u_error = sodisconnect(so, (struct sockaddr *)0);
 			if (u.u_error) {
+				if (exiting)
+					goto drop;
 				splx(s);
 				return;
 			}
 		}
 		if ((so->so_options & SO_DONTLINGER) == 0) {
 			if ((so->so_state & SS_ISDISCONNECTING) &&
-			    (so->so_options & SO_NONBLOCKING)) {
+			    (so->so_options & SO_NONBLOCKING) &&
+			    exiting == 0) {
 				u.u_error = EINPROGRESS;
 				splx(s);
 				return;
 			}
-			/* should use tsleep here */
+			/* should use tsleep here, for at most linger */
 			while (so->so_state & SS_ISCONNECTED)
 				sleep((caddr_t)&so->so_timeo, PZERO+1);
 		}
 	}
+drop:
 	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
 discard:
 	so->so_state |= SS_USERGONE;
