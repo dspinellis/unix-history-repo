@@ -1,0 +1,12 @@
+*** /tmp/,RCSt1a11376	Thu Aug  6 16:15:15 1992
+--- files	Thu Aug  6 16:14:59 1992
+***************
+*** 199,204 ****
+--- 199,205 ----
+  sundev/zs_isdlc.c	optional zsi device-driver
+  sundev/zs_proto.c	optional zs device-driver
+  sundev/zs_sdlc.c	optional zss device-driver
++ sundev/ppsclock.c	optional zs device-driver
+  sunif/dbx_sunif.c	optional dbx INET symbolic-info
+  sunif/dcp.c		optional dcp device-driver
+  sunif/ie_conf.c		optional ie device-driver

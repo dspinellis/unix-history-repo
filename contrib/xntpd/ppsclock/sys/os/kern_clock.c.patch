@@ -1,0 +1,19 @@
+*** kern_clock.c.virgin	Tue Feb 16 20:02:52 1993
+--- kern_clock.c	Tue Feb 16 20:03:16 1993
+***************
+*** 879,884 ****
+--- 879,885 ----
+  #define	HI_RES_CLOCK
+  #endif
+  
++ #if !defined(sun4c) && !defined(sun4m)
+  uniqtime(tv)
+  	register struct timeval *tv;
+  {
+***************
+*** 952,954 ****
+--- 953,956 ----
+  	*tv = last;
+  	(void) splx(s);
+  }
++ #endif

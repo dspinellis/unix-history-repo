@@ -1,0 +1,38 @@
+*** /tmp/,RCSt1a09603	Mon Sep 14 12:18:04 1992
+--- str_conf.c	Fri Sep  4 21:43:04 1992
+***************
+*** 19,24 ****
+--- 19,25 ----
+  #include "tirw.h"
+  #include "db.h"
+  #include "sl.h"
++ #include "zs.h"
+  #ifdef sun4c
+  #include "audioamd.h"
+  #else
+***************
+*** 52,57 ****
+--- 53,63 ----
+  #if	NSL > 0
+  extern struct streamtab if_slinfo;
+  #endif
++ #if	NZS > 0
++ #include "sys/time.h"
++ #include "sys/ppsclock.h"
++ extern struct streamtab ppsclockinfo;
++ #endif
+  
+  extern struct streamtab	ldtrinfo;
+  extern struct streamtab	ttycompatinfo;
+***************
+*** 86,91 ****
+--- 92,100 ----
+  	{ "ttcompat",	&ttycompatinfo },
+  #if	NSL > 0
+  	{ "slip",	&if_slinfo },
++ #endif
++ #if	NZS > 0
++ 	{ PPSCLOCKSTR,	&ppsclockinfo },
+  #endif
+  #ifdef VDDRV
+  	{ "",		0 },	/* reserved for loadable modules */

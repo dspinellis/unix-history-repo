@@ -1,0 +1,12 @@
+*** files.virgin	Thu Aug 13 18:44:53 1992
+--- files	Thu Aug  6 16:14:59 1992
+***************
+*** 121,126 ****
+--- 121,127 ----
+  sun4c/map.s		standard
+  sun4c/mem.c		standard
+  sun4c/memerr.c		standard
++ sun4c/microtime.s	standard
+  sun4c/mmu.c		standard
+  sun4c/subr.s		standard
+  sun4c/trap.c		standard
