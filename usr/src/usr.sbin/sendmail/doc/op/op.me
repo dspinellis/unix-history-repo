@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.39 (Berkeley) %G%
+.\"	@(#)op.me	8.40 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.39
+Version 8.40
 .sp
 For Sendmail Version 8.7
 .)l
@@ -4110,6 +4110,36 @@ Defaults to 90000.
 .ip 7
 Strip input to seven bits for compatibility with old systems.
 This shouldn't be necessary.
+.ip 8
+Set handling of eight-bit data.
+There are two kinds of eight-bit data:
+that declared as such using the
+.b BODY=8BITMIME
+ESMTP declaration or the
+.b \-B8BITMIME
+command line flag,
+and undeclared 8-bit data, that is,
+input that just happens to be eight bits.
+There are three basic operations that can happen:
+undeclared 8-bit data can be automatically converted to 8BITMIME,
+undeclared 8-bit data can be passed as-is without conversion to MIME
+(``just send 8''),
+and declared 8-bit data can be converted to 7-bits
+for transmission to a non-8BITMIME mailer.
+The possible actions are:
+.(b
+r	Reject undeclared 8-bit data; don't convert 8BITMIME\(->7BIT (``reject'')
+s	Reject undeclared 8-bit data; do convert 8BITMIME\(->7BIT (``strict'')
+c	Convert undeclared 8-bit data to MIME; don't convert 8BITMIME\(->7BIT (``convert'')
+m	Convert undeclared 8-bit data to MIME; do convert 8BITMIME\(->7BIT (``mime'')
+j	Pass 8-bit data; don't convert 8BITMIME\(->7BIT (``just send 8'')
+p	Pass 8-bit data; do convert 8BITMIME\(->7BIT (``pass'')
+a	Adaptive algorithm: see below
+.)b
+The adaptive algorithm is to accept 8-bit data,
+converting it to 8BITMIME only if the receiver understands that,
+otherwise just passing it as undeclared 8-bit data;
+8BITMIME\(->7BIT conversions are done.
 .lp
 All options can be specified on the command line using the
 \-o flag,
@@ -6894,7 +6924,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.39
+.\"Version 8.40
 .\".ce 0
 .bp 2
 .rs
