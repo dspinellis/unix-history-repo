@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,8 +63,10 @@ nfs_nhinit()
 	register int i;
 	register union  nhead *nh = nhead;
 
+#ifndef lint
 	if (VN_MAXPRIVATE < sizeof(struct nfsnode))
 		panic("nfs_nhinit: too small");
+#endif /* not lint */
 	for (i = NFSNOHSZ; --i >= 0; nh++) {
 		nh->nh_head[0] = nh;
 		nh->nh_head[1] = nh;

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -121,7 +121,7 @@ nfs_udpsend(so, nam, top, flags, siz)
 	int siz;
 {
 	register int space;
-	int error = 0, s, dontroute, first = 1;
+	int error = 0, s, dontroute;
 
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
@@ -174,7 +174,6 @@ nfs_udpreceive(so, aname, mp)
 {
 	register struct mbuf *m;
 	int s, error = 0;
-	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
 
 	if (aname)
@@ -260,6 +259,7 @@ struct rpc_replyhead {
  * We must search through the list of received datagrams matching them
  * with outstanding requests using the xid, until ours is found.
  */
+/* ARGSUSED */
 nfs_udpreply(so, mntp, myrep)
 	register struct socket *so;
 	struct nfsmount *mntp;
@@ -268,7 +268,6 @@ nfs_udpreply(so, mntp, myrep)
 	register struct mbuf *m;
 	register struct nfsreq *rep;
 	register int error = 0, s;
-	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
 	struct sockaddr_in *saddr;
 	u_long inaddr;
@@ -550,9 +549,12 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr)
 	register struct ucred *cr;
 {
 	register int i;
-	register struct mbuf *m;
-	nfsm_vars;
-	int len, len2;
+	register u_long *p;
+	register long t1;
+	caddr_t dpos, cp2;
+	int error = 0;
+	struct mbuf *mrep, *md;
+	int len;
 
 	if (error = nfs_udpreceive(so, nam, &mrep))
 		return (error);
@@ -585,30 +587,30 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr)
 		m_freem(mrep);
 		return (EPROCUNAVAIL);
 	}
-	len = fxdr_unsigned(int, *p++);
-	len2 = fxdr_unsigned(int, *++p);
-	nfsm_adv(nfsm_rndup(len2));
+	(void) fxdr_unsigned(int, *p++);
+	len = fxdr_unsigned(int, *++p);
+	nfsm_adv(nfsm_rndup(len));
 	nfsm_disect(p, u_long *, 3*NFSX_UNSIGNED);
 	cr->cr_uid = fxdr_unsigned(uid_t, *p++);
 	cr->cr_gid = fxdr_unsigned(gid_t, *p++);
-	len2 = fxdr_unsigned(int, *p);
-	if (len2 > 10) {
+	len = fxdr_unsigned(int, *p);
+	if (len > 10) {
 		m_freem(mrep);
 		return (EBADRPC);
 	}
-	nfsm_disect(p, u_long *, (len2+2)*NFSX_UNSIGNED);
-	for (i = 1; i <= len2; i++)
+	nfsm_disect(p, u_long *, (len + 2)*NFSX_UNSIGNED);
+	for (i = 1; i <= len; i++)
 		cr->cr_groups[i] = fxdr_unsigned(gid_t, *p++);
-	cr->cr_ngroups = len2+1;
+	cr->cr_ngroups = len + 1;
 	/*
 	 * Do we have any use for the verifier.
 	 * According to the "Remote Procedure Call Protocol Spec." it
 	 * should be AUTH_NULL, but some clients make it AUTH_UNIX?
 	 * For now, just skip over it
 	 */
-	len2 = fxdr_unsigned(int, *++p);
-	if (len2 > 0)
-		nfsm_adv(nfsm_rndup(len2));
+	len = fxdr_unsigned(int, *++p);
+	if (len > 0)
+		nfsm_adv(nfsm_rndup(len));
 	*mrp = mrep;
 	*mdp = md;
 	*dposp = dpos;
@@ -629,7 +631,10 @@ nfs_rephead(siz, retxid, err, mrq, mbp, bposp)
 	struct mbuf **mbp;
 	caddr_t *bposp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	struct mbuf *mreq, *mb, *mb2;
 
 	NFSMGETHDR(mreq);
 	mb = mreq;
@@ -690,7 +695,7 @@ nfs_timer()
 	register struct nfsreq *rep;
 	register struct mbuf *m;
 	register struct socket *so;
-	int s, len;
+	int s;
 
 	s = splnet();
 	rep = nfsreqh.r_next;
