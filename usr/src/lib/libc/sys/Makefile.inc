@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.29 (Berkeley) %G%
+#	@(#)Makefile.inc	5.30 (Berkeley) %G%
 
 # sys sources
 .PATH: ${.CURDIR}/${MACHINE}/sys ${.CURDIR}/sys
