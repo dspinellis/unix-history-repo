@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.22 (Berkeley) %G%
+#	@(#)security	5.23 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -58,6 +58,24 @@ if [ -s $TMP2 ] ; then
         while read uid; do
                 grep -w $uid $TMP1
         done < $TMP2 | column
+fi
+
+# Backup the master password file; a special case, the normal backup
+# mechanisms also print out file differences and we don't want to do
+# that because this file has encrypted passwords in it.
+CUR=/var/backups/`basename $MP`.current
+BACK=/var/backups/`basename $MP`.backup
+if [ -s $CUR ] ; then
+	if cmp -s $CUR $MP; then
+		:
+	else
+		cp -p $CUR $BACK
+		cp -p $MP $CUR
+		chown root.wheel $CUR
+	fi
+else
+	cp -p $MP $CUR
+	chown root.wheel $CUR
 fi
 
 # Check the group file syntax.
@@ -497,4 +515,29 @@ if cd /etc/mtree; then
 		printf "\nChecking system binaries:\n"
 		cat $OUTPUT
 	fi
+fi
+
+# List of files that get backed up and checked for any modifications.  Each
+# file is expected to have two backups, /var/backups/file.{current,backup}.
+# Any changes cause the files to rotate.
+if [ -s /etc/changelist ] ; then
+	for file in `cat /etc/changelist`; do
+		CUR=/var/backups/`basename $file`.current
+		BACK=/var/backups/`basename $file`.backup
+		if [ -s $file ]; then
+			if [ -s $CUR ] ; then
+				diff $CUR $file > $OUTPUT
+				if [ -s $OUTPUT ] ; then
+		printf "\n======\n%s diffs (OLD < > NEW)\n======\n" $file
+					cat $OUTPUT
+					cp -p $CUR $BACK
+					cp -p $file $CUR
+					chown root.wheel $CUR $BACK
+				fi
+			else
+				cp -p $file $CUR
+				chown root.wheel $CUR
+			fi
+		fi
+	done
 fi
