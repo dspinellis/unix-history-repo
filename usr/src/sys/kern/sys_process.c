@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.11 (Berkeley) %G%
+ *	@(#)sys_process.c	7.12 (Berkeley) %G%
  */
 
 #define IPCREG
 #include "param.h"
-#include "syscontext.h"
+#include "user.h"
 #include "proc.h"
 #include "vnode.h"
 #include "text.h"
@@ -57,12 +57,12 @@ ptrace(curp, uap, retval)
 
 	if (uap->req <= 0) {
 		curp->p_flag |= STRC;
-		RETURN (0);
+		return (0);
 	}
 	p = pfind(uap->pid);
 	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != curp->p_pid ||
 	    !(p->p_flag & STRC))
-		RETURN (ESRCH);
+		return (ESRCH);
 	while (ipc.ip_lock)
 		sleep((caddr_t)&ipc, IPCPRI);
 	ipc.ip_lock = p->p_pid;
@@ -79,8 +79,8 @@ ptrace(curp, uap, retval)
 	ipc.ip_lock = 0;
 	wakeup((caddr_t)&ipc);
 	if (ipc.ip_req < 0)
-		RETURN (EIO);
-	RETURN (0);
+		return (EIO);
+	return (0);
 }
 
 #define	PHYSOFF(p, o) \

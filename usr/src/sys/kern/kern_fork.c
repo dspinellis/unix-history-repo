@@ -14,13 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.17 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vnode.h"
@@ -51,9 +51,9 @@ fork(p, uap, retval)
 	u.u_csmap = zdmap;
 	if (error = swpexpand(u.u_dsize, u.u_ssize, &u.u_cdmap, &u.u_csmap)) {
 		retval[1] = 0;
-		RETURN (error);
+		return (error);
 	}
-	RETURN (fork1(p, 0, retval));
+	return (fork1(p, 0, retval));
 }
 
 /* ARGSUSED */
@@ -63,7 +63,7 @@ vfork(p, uap, retval)
 	int retval[];
 {
 
-	RETURN (fork1(p, 1, retval));
+	return (fork1(p, 1, retval));
 }
 
 fork1(p1, isvfork, retval)

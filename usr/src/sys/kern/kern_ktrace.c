@@ -14,13 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.7 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.8 (Berkeley) %G%
  */
 
 #ifdef KTRACE
 
 #include "param.h"
-#include "syscontext.h"
+#include "user.h"
 #include "proc.h"
 #include "file.h"
 #include "vnode.h"
@@ -193,7 +193,7 @@ ktrace(curp, uap, retval)
 	 * limit tracing to root (unless ktrace_nocheck is set).
 	 */
 	if (!ktrace_nocheck && (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	if (ops != KTROP_CLEAR) {
 		/*
 		 * an operation which requires a file argument.
@@ -201,11 +201,11 @@ ktrace(curp, uap, retval)
 		ndp->ni_segflg = UIO_USERSPACE;
 		ndp->ni_dirp = uap->fname;
 		if (error = vn_open(ndp, FREAD|FWRITE, 0))
-			RETURN (error);
+			return (error);
 		vp = ndp->ni_vp;
 		if (vp->v_type != VREG) {
 			vrele(vp);
-			RETURN (EACCES);
+			return (EACCES);
 		}
 	}
 	/*
@@ -259,7 +259,7 @@ ktrace(curp, uap, retval)
 done:
 	if (vp != NULL)
 		vrele(vp);
-	RETURN (error);
+	return (error);
 }
 
 ktrops(p, ops, facs, vp)
@@ -268,7 +268,7 @@ ktrops(p, ops, facs, vp)
 {
 
 	if (u.u_uid && u.u_uid != p->p_uid)
-		return 0;
+		return (0);
 	if (ops == KTROP_SET) {
 		if (p->p_tracep != vp) { 
 			/*

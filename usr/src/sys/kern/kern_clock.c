@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.8 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "dkstat.h"
 #include "callout.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vm.h"
@@ -447,5 +447,5 @@ profil(p, uap, retval)
 	upp->pr_size = uap->bufsize;
 	upp->pr_off = uap->pcoffset;
 	upp->pr_scale = uap->pcscale;
-	RETURN (0);
+	return (0);
 }

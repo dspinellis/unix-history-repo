@@ -14,12 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.14 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "vnode.h"
 #include "proc.h"
@@ -44,7 +44,7 @@ getdtablesize(p, uap, retval)
 {
 
 	*retval = NOFILE;
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -64,19 +64,19 @@ dup(p, uap, retval)
 	/*
 	 * XXX Compatibility
 	 */
-	if (uap->i &~ 077) { uap->i &= 077; RETURN (dup2(p, uap, retval)); }
+	if (uap->i &~ 077) { uap->i &= 077; return (dup2(p, uap, retval)); }
 
 	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if (error = ufalloc(0, &fd))
-		RETURN (error);
+		return (error);
 	u.u_ofile[fd] = fp;
 	u.u_pofile[fd] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
 	fp->f_count++;
 	if (fd > u.u_lastfile)
 		u.u_lastfile = fd;
 	*retval = fd;
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -95,12 +95,12 @@ dup2(p, uap, retval)
 	int error;
 
 	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if (uap->j < 0 || uap->j >= NOFILE)
-		RETURN (EBADF);
+		return (EBADF);
 	*retval = uap->j;
 	if (uap->i == uap->j)
-		RETURN (0);
+		return (0);
 	if (u.u_ofile[uap->j]) {
 		if (u.u_pofile[uap->j] & UF_MAPPED)
 			munmapfd(uap->j);
@@ -115,7 +115,7 @@ dup2(p, uap, retval)
 	 * dup2() must succeed even though the close had an error.
 	 */
 	error = 0;		/* XXX */
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -137,51 +137,51 @@ fcntl(p, uap, retval)
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	pop = &u.u_pofile[uap->fdes];
 	switch(uap->cmd) {
 	case F_DUPFD:
 		if (uap->arg < 0 || uap->arg >= NOFILE)
-			RETURN (EINVAL);
+			return (EINVAL);
 		if (error = ufalloc(uap->arg, &i))
-			RETURN (error);
+			return (error);
 		u.u_ofile[i] = fp;
 		u.u_pofile[i] = *pop &~ UF_EXCLOSE;
 		fp->f_count++;
 		if (i > u.u_lastfile)
 			u.u_lastfile = i;
 		*retval = i;
-		RETURN (0);
+		return (0);
 
 	case F_GETFD:
 		*retval = *pop & 1;
-		RETURN (0);
+		return (0);
 
 	case F_SETFD:
 		*pop = (*pop &~ 1) | (uap->arg & 1);
-		RETURN (0);
+		return (0);
 
 	case F_GETFL:
 		*retval = fp->f_flag + FOPEN;
-		RETURN (0);
+		return (0);
 
 	case F_SETFL:
 		fp->f_flag &= FCNTLCANT;
 		fp->f_flag |= (uap->arg-FOPEN) &~ FCNTLCANT;
 		if (error = fset(fp, FNDELAY, fp->f_flag & FNDELAY))
-			RETURN (error);
+			return (error);
 		if (error = fset(fp, FASYNC, fp->f_flag & FASYNC))
 			(void) fset(fp, FNDELAY, 0);
-		RETURN (error);
+		return (error);
 
 	case F_GETOWN:
-		RETURN (fgetown(fp, retval));
+		return (fgetown(fp, retval));
 
 	case F_SETOWN:
-		RETURN (fsetown(fp, uap->arg));
+		return (fsetown(fp, uap->arg));
 
 	default:
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
 	/* NOTREACHED */
 }
@@ -262,7 +262,7 @@ close(p, uap, retval)
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	pf = (u_char *)&u.u_pofile[uap->fdes];
 	if (*pf & UF_MAPPED)
 		munmapfd(uap->fdes);
@@ -270,7 +270,7 @@ close(p, uap, retval)
 	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
 		u.u_lastfile--;
 	*pf = 0;
-	RETURN (closef(fp));
+	return (closef(fp));
 }
 
 /*
@@ -291,7 +291,7 @@ fstat(p, uap, retval)
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
@@ -308,7 +308,7 @@ fstat(p, uap, retval)
 	}
 	if (error == 0)
 		error = copyout((caddr_t)&ub, (caddr_t)uap->sb, sizeof (ub));
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -424,22 +424,22 @@ flock(p, uap, retval)
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
-		RETURN (EOPNOTSUPP);
+		return (EOPNOTSUPP);
 	if (uap->how & LOCK_UN) {
 		vn_unlock(fp, FSHLOCK|FEXLOCK);
-		RETURN (0);
+		return (0);
 	}
 	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
-		RETURN (0);				/* error? */
+		return (0);				/* error? */
 	if (uap->how & LOCK_EX)
 		uap->how &= ~LOCK_SH;
 	/* avoid work... */
 	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
 	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
-		RETURN (0);
-	RETURN (vn_lock(fp, uap->how));
+		return (0);
+	return (vn_lock(fp, uap->how));
 }
 
 /*
