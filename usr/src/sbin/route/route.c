@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)route.c	5.46 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/mbuf.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -182,7 +182,8 @@ flushroutes(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int needed, seqno, rlen;
+	size_t needed;
+	int mib[6], rlen, seqno;
 	char *buf, *next, *lim;
 	register struct rt_msghdr *rtm;
 
@@ -213,15 +214,21 @@ flushroutes(argc, argv)
 		} else
 bad:			usage(*argv);
 	}
-	if ((needed = getkerninfo(KINFO_RT_DUMP, 0, 0, 0)) < 0)
-		quit("route-getkerninfo-estimate");
+	mib[0] = CTL_NET;
+	mib[1] = PF_ROUTE;
+	mib[2] = 0;		/* protocol */
+	mib[3] = 0;		/* wildcard address family */
+	mib[4] = NET_RT_DUMP;
+	mib[5] = 0;		/* no flags */
+	if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
+		quit("route-sysctl-estimate");
 	if ((buf = malloc(needed)) == NULL)
 		quit("malloc");
-	if ((rlen = getkerninfo(KINFO_RT_DUMP, buf, &needed, 0)) < 0)
+	if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0)
 		quit("actual retrieval of routing table");
-	lim = buf + rlen;
+	lim = buf + needed;
 	if (verbose)
-		(void) printf("Examining routing table from getkerninfo\n");
+		(void) printf("Examining routing table from sysctl\n");
 	seqno = 0;		/* ??? */
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;
@@ -900,17 +907,24 @@ ns_print(sns)
 void
 interfaces()
 {
-	int needed, rlen, af;
+	size_t needed;
+	int mib[6], af;
 	char *buf, *lim, *next;
 	register struct rt_msghdr *rtm;
 
-	if ((needed = getkerninfo(KINFO_RT_IFLIST, 0, 0, 0)) < 0)
-		quit("route-getkerninfo-estimate");
+	mib[0] = CTL_NET;
+	mib[1] = PF_ROUTE;
+	mib[2] = 0;		/* protocol */
+	mib[3] = 0;		/* wildcard address family */
+	mib[4] = NET_RT_IFLIST;
+	mib[5] = 0;		/* no flags */
+	if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
+		quit("route-sysctl-estimate");
 	if ((buf = malloc(needed)) == NULL)
 		quit("malloc");
-	if ((rlen = getkerninfo(KINFO_RT_IFLIST, buf, &needed, 0)) < 0)
+	if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0)
 		quit("actual retrieval of interface table");
-	lim = buf + rlen;
+	lim = buf + needed;
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;
 		print_rtmsg(rtm, rtm->rtm_msglen);
