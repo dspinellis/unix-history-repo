@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysexits.h	4.6 (Berkeley) %G%
+ *	@(#)sysexits.h	4.7 (Berkeley) %G%
  */
 
 /*
@@ -68,7 +68,7 @@
 **	Maintained by Eric Allman (eric@berkeley, ucbvax!eric) --
 **		please mail changes to me.
 **
-**			@(#)sysexits.h	4.6		%G%
+**			@(#)sysexits.h	4.7		%G%
 */
 
 # define EX_OK		0	/* successful termination */
@@ -90,3 +90,5 @@
 # define EX_PROTOCOL	76	/* remote error in protocol */
 # define EX_NOPERM	77	/* permission denied */
 # define EX_CONFIG	78	/* configuration error */
+
+# define EX__MAX	78	/* maximum listed value */
