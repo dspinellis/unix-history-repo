@@ -1,29 +1,11 @@
-#
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.8 (Berkeley) %G%
-#
-# make file for intermachine communications package
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 # Files are:
 #	/etc/remote		remote host description file
 #	/etc/phones		phone number file, owned by ${OWNER} and
-#				  mode 6??
-#	${ADM}/aculog		ACU accounting file, owned by ${OWNER} and
-#				  mode 6?? {if ACULOG defined}
+#				mode 6??
+#	/var/log/aculog		ACU accounting file, owned by ${OWNER} and
+#				mode 6?? {if ACULOG defined}
 # Presently supports:
 #	BIZCOMP
 #	DEC DF02-AC, DF03-AC
@@ -33,7 +15,6 @@
 #	VENTEL 212+
 #	VADIC 831 RS232 adaptor
 #	VADIC 3451
-# (drivers are located in aculib.a)
 #
 # Configuration defines:
 #	DF02, DF03, DN11	ACU's supported
@@ -46,59 +27,23 @@
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
-ADM=	usr/adm
-CONFIG=	-DV831 -DVENTEL -DHAYES -DCOURIER
-CFLAGS=	-O -DDEFBR=1200 -DDEFFS=BUFSIZ -DACULOG -DPRISTINE
-LIBC=	/lib/libc.a
+
+PROG=	tip
+CFLAGS+=-I${.CURDIR} -DV831 -DVENTEL -DHAYES -DCOURIER -DDEFBR=1200 \
+	-DDEFFS=BUFSIZ -DACULOG -DPRISTINE
+.PATH:	${.CURDIR}/aculib
+BINOWN=	uucp
+BINGRP=	dialer
+BINMODE=4510
+LINKS=	${BINDIR}/tip ${BINDIR}/cu
+MLINKS=	tip.1 cu.1
 SRCS=	acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c remcap.c \
-	remote.c tip.c tipout.c uucplock.c value.c vars.c
-OBJS=	acu.o acutab.o cmds.o cmdtab.o cu.o hunt.o log.o partab.o remcap.o \
-	remote.o tip.o tipout.o uucplock.o value.o vars.o
-MAN=	tip.0
+	remote.c tip.c tipout.c uucplock.c value.c vars.c biz22.c courier.c \
+	df.c dn11.c hayes.c v3451.c v831.c ventel.c
 
-all: aculib/aculib.a tip
+# -- acutab is configuration dependent, and so depends on the Makefile
+# -- remote.o depends on the Makefile because of DEFBR and DEFFS
+# -- log.o depends on the Makefile because of ACULOG
+acutab.o log.o remote.o: Makefile
 
-tip: ${OBJS} ${LIBC}
-	${CC} -o $@ ${OBJS} aculib/aculib.a
-
-# acutab is configuration dependent, and so depends on the makefile
-acutab.o: Makefile
-acutab.o: acutab.c
-	${CC} -c ${CFLAGS} ${CONFIG} acutab.c
-
-# remote.o depends on the makefile because of DEFBR and DEFFS
-# log.o depends on the makefile because of ACULOG
-log.o remote.o: Makefile
-
-aculib/aculib.a: FRC
-	cd aculib; make ${MFLAGS}
-
-clean:
-	rm -f ${OBJS} core tip
-	cd aculib; make ${MFLAGS} clean
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-	cd aculib; make ${MFLAGS} cleandir
-
-depend:
-	mkdep ${CFLAGS} ${SRCS}
-	cd aculib; make ${MFLAGS} depend
-
-install: ${MAN}
-	cd aculib; make ${MFLAGS} install
-	install -s -o uucp -g dialer -m 4710 tip ${DESTDIR}/usr/bin
-	rm -f ${DESTDIR}/usr/bin/cu
-	ln ${DESTDIR}/usr/bin/tip ${DESTDIR}/usr/bin/cu
-	install -c -o bin -g bin -m 444 tip.0 ${DESTDIR}/usr/man/cat1
-	rm -f ${DESTDIR}/usr/man/cat1/cu.0
-	ln ${DESTDIR}/usr/man/cat1/tip.0 ${DESTDIR}/usr/man/cat1/cu.0
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
-	cd aculib; make ${MFLAGS} tags
-
-FRC:
+.include <bsd.prog.mk>
