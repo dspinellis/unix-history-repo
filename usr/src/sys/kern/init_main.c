@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.25 (Berkeley) %G%
+ *	@(#)init_main.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -54,7 +54,6 @@ main(firstaddr)
 	int s;
 
 	rqinit();
-#include "loop.h"
 	startup(firstaddr);
 
 	/*
@@ -142,10 +141,14 @@ main(firstaddr)
 	 */
 	mbinit();
 	cinit();
+#ifdef SYSVSHM
+	shminit();
+#endif
 #include "sl.h"
 #if NSL > 0
 	slattach();			/* XXX */
 #endif
+#include "loop.h"
 #if NLOOP > 0
 	loattach();			/* XXX */
 #endif
@@ -210,7 +213,7 @@ main(firstaddr)
 	 * table so that it can map dirty pages into
 	 * its address space during asychronous pushes.
 	 */
-	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + UPAGES));
+	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + HIGHPAGES));
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
 		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
