@@ -7,12 +7,13 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)isa.h	5.1 (Berkeley) %G%
+ *	@(#)isa.h	5.2 (Berkeley) %G%
  */
 
 /*
  * AT bus specific definitions.
  */
+#ifndef LOCORE
 
 #define Rd(s) ({u_char rtn; u_short ioa; \
 	ioa = (s); \
@@ -74,8 +75,15 @@
 
 unsigned char inb() ;
 extern outb();
+#endif
 
-#define IO_KBD1	0x60		/* keyboard */
+#define IO_KBD	0x60			/* keyboard */
 
 #define IO_WD0	0x1f0			/* primary base i/o address */
 #define IO_WD1	0x170			/* secondary base i/o address */
+
+#define IO_FD0	0x3f2			/* primary base i/o address */
+#define IO_FD1	0x372			/* secondary base i/o address */
+
+#define IO_COM0	0x3f8			/* COM1 i/o address */
+#define IO_COM1	0x2f8			/* COM2 i/o address */
