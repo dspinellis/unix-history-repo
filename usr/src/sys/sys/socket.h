@@ -1,4 +1,4 @@
-/*	socket.h	4.9	81/11/29	*/
+/*	socket.h	4.10	81/12/02	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -73,7 +73,7 @@ struct sockaddr {
  * are also possible.
  */
 #define	AF_UNSPEC	0		/* unspecified */
-#define	AF_LOCAL	1		/* local to host (pipes, portals) */
+#define	AF_UNIX		1		/* local to host (pipes, portals) */
 #define	AF_INET		2		/* internetwork: UDP, TCP, etc. */
 #define	AF_IMPLINK	3		/* arpanet imp addresses */
 #define	AF_PUP		4		/* pup protocols: e.g. BSP */

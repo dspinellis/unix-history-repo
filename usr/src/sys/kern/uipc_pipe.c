@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.9	81/11/26	*/
+/*	uipc_pipe.c	4.10	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -16,9 +16,9 @@ int	piusrreq();
  * Code for pipes and other loopback protocols (single machine, that is.)
  */
 struct	protosw pipeproto = {
-	SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED|PR_WANTRCVD,
+	SOCK_STREAM,	PF_UNIX,	0,		PR_CONNREQUIRED|PR_WANTRCVD,
 	0,		0,		0,		0,
-	piusrreq,	0,		0,
+	piusrreq,
 	0,		0,		0,		0
 };
 

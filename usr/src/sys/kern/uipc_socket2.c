@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.11	81/11/26	*/
+/*	uipc_socket2.c	4.12	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,8 +21,22 @@
 
 /*
  * Procedures to manipulate state flags of socket
- * and do appropriate wakeups.
+ * and do appropriate wakeups.  Normal sequence is that
+ * soisconnecting() is called during processing of connect() call,
+ * resulting in an eventual call to soisconnected() if/when the
+ * connection is established.  When the connection is torn down
+ * soisdisconnecting() is called during processing of disconnect() call,
+ * and soisdisconnected() is called when the connection to the peer
+ * is totally severed.  The semantics of these routines are such that
+ * connectionless protocols can call soisconnected() and soisdisconnected()
+ * only, bypassing the in-progress calls when setting up a ``connection''
+ * takes no time.
+ *
+ * When higher level protocols are implemented in
+ * the kernel, the wakeups done here will sometimes
+ * be implemented as software-interrupt process scheduling.
  */
+
 soisconnecting(so)
 	struct socket *so;
 {
@@ -48,6 +62,8 @@ soisdisconnecting(so)
 	so->so_state &= ~(SS_ISCONNECTED|SS_ISCONNECTING);
 	so->so_state |= (SS_ISDISCONNECTING|SS_CANTRCVMORE|SS_CANTSENDMORE);
 	wakeup((caddr_t)&so->so_timeo);
+	sorwakeup(so);
+	sowwakeup(so);
 }
 
 soisdisconnected(so)
@@ -60,6 +76,16 @@ soisdisconnected(so)
 	sowwakeup(so);
 	sorwakeup(so);
 }
+
+/*
+ * Socantsendmore indicates that no more data will be sent on the
+ * socket; it would normally be applied to a socket when the user
+ * informs the system that no more data is to be sent, by the protocol
+ * code (in case PRU_SHUTDOWN).  Socantrcvmore indicates that no more data
+ * will be received, and will normally be applied to the socket by a
+ * protocol when it detects that the peer will send no more data.
+ * Data queued for reading in the socket may yet be read.
+ */
 
 socantsendmore(so)
 	struct socket *so;
@@ -78,7 +104,12 @@ socantrcvmore(so)
 }
 
 /*
- * Select a socket.
+ * Socket select/wakeup routines.
+ */
+
+/*
+ * Interface routine to select() system
+ * call for sockets.
  */
 soselect(so, flag)
 	register struct socket *so;
@@ -140,6 +171,44 @@ sbwakeup(sb)
 		wakeup((caddr_t)&sb->sb_cc);
 	}
 }
+
+/*
+ * Socket buffer (struct sockbuf) utility routines.
+ *
+ * Each socket contains two socket buffers: one for sending data and
+ * one for receiving data.  Each buffer contains a queue of mbufs,
+ * information about the number of mbufs and amount of data in the
+ * queue, and other fields allowing select() statements and notification
+ * on data availability to be implemented.
+ *
+ * Before using a new socket structure it is first necessary to reserve
+ * buffer space to the socket, by calling sbreserve.  This commits
+ * some of the available buffer space in the system buffer pool for the
+ * socket.  The space should be released by calling sbrelease when the
+ * socket is destroyed.
+ *
+ * The routine sbappend() is normally called to append new mbufs
+ * to a socket buffer, after checking that adequate space is available
+ * comparing the function spspace() with the amount of data to be added.
+ * Data is normally removed from a socket buffer in a protocol by
+ * first calling m_copy on the socket buffer mbuf chain and sending this
+ * to a peer, and then removing the data from the socket buffer with
+ * sbdrop when the data is acknowledged by the peer (or immediately
+ * in the case of unreliable protocols.
+ *
+ * Protocols which do not require connections place both source address
+ * and data information in socket buffer queues.  The source addresses
+ * are stored in single mbufs after each data item, and are easily found
+ * as the data items are all marked with end of record markers.  The
+ * sbappendaddr() routine stores a datum and associated address in
+ * a socket buffer.  Note that, unlike sbappend(), this routine checks
+ * for the caller that there will be enough space to store the data.
+ * It fails if there is not enough space, or if it cannot find
+ * a mbuf to store the address in.
+ *
+ * The higher-level routines sosend and soreceive (in socket.c)
+ * also add data to, and remove data from socket buffers.
+ */
 
 /*
  * Allot mbufs to a sockbuf.
@@ -206,6 +275,11 @@ sbappend(sb, m)
 	}
 }
 
+/*
+ * Append data and address.
+ * Return 0 if no space in sockbuf or if
+ * can't get mbuf to stuff address in.
+ */
 sbappendaddr(sb, asa, m0)
 	struct sockbuf *sb;
 	struct sockaddr *asa;
