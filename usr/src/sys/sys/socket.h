@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	8.5 (Berkeley) %G%
+ *	@(#)socket.h	8.6 (Berkeley) %G%
  */
 
 #ifndef _SYS_SOCKET_H_
@@ -161,7 +161,7 @@ struct sockproto {
 
 #define CTL_NET_NAMES { \
 	{ 0, 0 }, \
-	{ "unix", CTLTYPE_NODE }, \
+	{ "local", CTLTYPE_NODE }, \
 	{ "inet", CTLTYPE_NODE }, \
 	{ "implink", CTLTYPE_NODE }, \
 	{ "pup", CTLTYPE_NODE }, \
