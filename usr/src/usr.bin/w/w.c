@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #define ADDRHACK
@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)w.c	5.33 (Berkeley) %G%";
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/stat.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/ioctl.h>
@@ -280,7 +280,7 @@ main(argc, argv)
 		printf(HEADER);
 	}
 
-	if ((kp = kvm_getprocs(kd, KINFO_PROC_ALL, 0, &nentries)) == NULL)
+	if ((kp = kvm_getprocs(kd, KERN_PROC_ALL, 0, &nentries)) == NULL)
 		error("%s", kvm_geterr(kd));
 	for (i = 0; i < nentries; i++, kp++) {
 		register struct proc *p = &kp->kp_proc;
