@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.4 %G%"
+SCCSID = "@(#)Makefile 1.5 %G%"
 
 CFLAGS = -O
 DEFS = -DVAX -DOBJ
@@ -40,8 +40,8 @@ Version.c: version.c
 interp.o interp.s: interp.c
 	${CC} ${DEFS} -S interp.c
 	sed -f interp.sed <interp.s >tmp
-	/usr/lib/pc2 <tmp >interp.s
-	${OPT} interp.s tmp
+	${OPT} tmp interp.s
+	/usr/lib/pc2 <interp.s >tmp
 	mv tmp interp.s
 	as -o interp.o interp.s
 panics.h: panics make.ed1
@@ -97,6 +97,7 @@ interp.o: machdep.h
 interp.o: h01errs.h
 interp.o: libpc.h
 opc.o: OPnames.h
+pic.o: OPnames.h
 utilities.o: vars.h
 utilities.o: panics.h
 utilities.o: h02opcs.h
