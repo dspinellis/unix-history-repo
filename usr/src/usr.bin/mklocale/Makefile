@@ -1,7 +1,8 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	mklocale
-SRCS=	yacc.y lex.l
+SRCS=	yacc.c lex.c
 CFLAGS+=-I.
+CLEANFILES+=y.tab.h yacc.c lex.c
 
 .include <bsd.prog.mk>
