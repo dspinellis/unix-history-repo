@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -333,6 +333,7 @@ copygateways(f, filename)
 	char dname[80];
 	char gname[80];
 	char junk[80];
+	char buf[500];
 	u_long addr;
 	int net, metric;
 	extern int errno;
@@ -347,24 +348,23 @@ copygateways(f, filename)
 		return;
 	}
 	/* format: {net | host} XX gateway XX metric DD [passive]\n */
-#define	readentry(fp) \
-	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
-		type, dname, gname, &metric, junk)
 	for (;;) {
 		junk[0] = 0;
-		if (readentry(lhf) == EOF)
+		if (fgets(buf, sizeof(buf), lhf) == (char *)NULL)
 			break;
+		fputs(buf, gf);
+		if (buf[0] == '#' ||
+		    sscanf(buf, "%s %s gateway %s metric %d %s",
+		    type, dname, gname, &metric, junk) < 5)
+			continue;
 		if (strcmp(type, "net"))
-			goto dumpit;
+			continue;
 		if (!getnetaddr(dname, &net))
-			goto dumpit;
+			continue;
 		if (!gethostaddr(gname, &addr))
-			goto dumpit;
+			continue;
 		nl = newname(gname);
 		(void) savegateway(nl, net, addr, metric);
-dumpit:
-		fprintf(gf, "%s %s gateway %s metric %d %s\n",
-			type, dname, gname, metric, junk);
 	}
 	fclose(lhf);
 }
