@@ -9,17 +9,18 @@
 static char sccsid[] = "@(#)setterm.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Terminal initialization routines.
- *
- */
+#include <sys/ioctl.h>
 
-# include	"curses.ext"
+#include <curses.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-static bool	*sflags[] = {
-			&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI,
-			&MS, &NC, &NS, &OS, &UL, &XB, &XN, &XT, &XS,
-			&XX
+static void zap __P((void));
+
+static char	*sflags[] = {
+			&AM, &BS, &DA, &EO, &HC, &HZ, &IN, &MI, &MS,
+			&NC, &NS, &OS, &UL, &XB, &XN, &XT, &XS, &XX
 		};
 
 static char	*_PC,
@@ -34,141 +35,115 @@ static char	*_PC,
 			&DOWN_PARM, &LEFT_PARM, &RIGHT_PARM,
 		};
 
-extern char	*tgoto();
-
-char		_tspace[2048];		/* Space for capability strings */
-
 static char	*aoftspace;		/* Address of _tspace for relocation */
+static char	tspace[2048];		/* Space for capability strings */
 
 static int	destcol, destline;
 
-/*
- *	This routine does terminal type initialization routines, and
- * calculation of flags at entry.  It is almost entirely stolen from
- * Bill Joy's ex version 2.6.
- */
-short	ospeed = -1;
+char *ttytype;
 
-gettmode() {
-
-	if (ioctl(_tty_ch, TIOCGETP, &_tty) < 0)
-		return;
-	savetty();
-	if (ioctl(_tty_ch, TIOCSETP, &_tty) < 0)
-		_tty.sg_flags = _res_flg;
-	ospeed = _tty.sg_ospeed;
-	_res_flg = _tty.sg_flags;
-	UPPERCASE = (_tty.sg_flags & LCASE) != 0;
-	GT = ((_tty.sg_flags & XTABS) == 0);
-	NONL = ((_tty.sg_flags & CRMOD) == 0);
-	_tty.sg_flags &= ~XTABS;
-	ioctl(_tty_ch, TIOCSETP, &_tty);
-# ifdef DEBUG
-	fprintf(outf, "GETTMODE: UPPERCASE = %s\n", UPPERCASE ? "TRUE":"FALSE");
-	fprintf(outf, "GETTMODE: GT = %s\n", GT ? "TRUE" : "FALSE");
-	fprintf(outf, "GETTMODE: NONL = %s\n", NONL ? "TRUE" : "FALSE");
-	fprintf(outf, "GETTMODE: ospeed = %d\n", ospeed);
-# endif
-}
-
+int
 setterm(type)
-reg char	*type; {
-
-	reg int		unknown;
-	static char	genbuf[1024];
-# ifdef TIOCGWINSZ
+	register char *type;
+{
+	static char genbuf[1024];
+	static char __ttytype[1024];
+	register int unknown;
 	struct winsize win;
-# endif
+	char *p;
 
-# ifdef DEBUG
-	fprintf(outf, "SETTERM(\"%s\")\n", type);
-	fprintf(outf, "SETTERM: LINES = %d, COLS = %d\n", LINES, COLS);
-# endif
+#ifdef DEBUG
+	__TRACE("setterm: (\"%s\")\nLINES = %d, COLS = %d\n",
+	    type, LINES, COLS);
+#endif
 	if (type[0] == '\0')
 		type = "xx";
-	unknown = FALSE;
+	unknown = 0;
 	if (tgetent(genbuf, type) != 1) {
 		unknown++;
 		strcpy(genbuf, "xx|dumb:");
 	}
-# ifdef DEBUG
-	fprintf(outf, "SETTERM: tty = %s\n", type);
-# endif
-# ifdef TIOCGWINSZ
-	if (ioctl(_tty_ch, TIOCGWINSZ, &win) >= 0) {
-		if (LINES == 0)
-			LINES = win.ws_row;
-		if (COLS == 0)
-			COLS = win.ws_col;
-	}
-# endif
+#ifdef DEBUG
+	__TRACE("setterm: tty = %s\n", type);
+#endif
 
-	if (LINES == 0)
+	/* Try TIOCGWINSZ, and, if it fails, the termcap entry. */
+	if (ioctl(STDERR_FILENO, TIOCGWINSZ, &win) != -1 &&
+	    win.ws_row != 0 && win.ws_col != 0) {
+		LINES = win.ws_row;
+		COLS = win.ws_col;
+	}  else {
 		LINES = tgetnum("li");
-	if (LINES <= 5)
-		LINES = 24;
-
-	if (COLS == 0)
 		COLS = tgetnum("co");
-	if (COLS <= 4)
-		COLS = 80;
+	}
 
-# ifdef DEBUG
-	fprintf(outf, "SETTERM: LINES = %d, COLS = %d\n", LINES, COLS);
-# endif
-	aoftspace = _tspace;
-	zap();			/* get terminal description		*/
+	/* POSIX 1003.2 requires that the environment override. */
+	if ((p = getenv("ROWS")) != NULL)
+		LINES = strtol(p, NULL, 10);
+	if ((p = getenv("COLUMNS")) != NULL)
+		COLS = strtol(p, NULL, 10);
 
 	/*
-	 * Handle funny termcap capabilities
+	 * XXX
+	 * Historically, curses fails if rows <= 5, cols <= 4.
 	 */
-	if (CS && SC && RC) AL=DL="";
-	if (AL_PARM && AL==NULL) AL="";
-	if (DL_PARM && DL==NULL) DL="";
-	if (IC && IM==NULL) IM="";
-	if (IC && EI==NULL) EI="";
-	if (!GT) BT=NULL;	/* If we can't tab, we can't backtab either */
+	if (LINES <= 5 || COLS <= 4)
+		return (ERR);
 
-	if (tgoto(CM, destcol, destline)[0] == 'O')
-		CA = FALSE, CM = 0;
-	else
-		CA = TRUE;
+#ifdef DEBUG
+	__TRACE("setterm: LINES = %d, COLS = %d\n", LINES, COLS);
+#endif
+	aoftspace = tspace;
+	zap();			/* Get terminal description. */
 
-	PC = _PC ? _PC[0] : FALSE;
-	aoftspace = _tspace;
-	{
-		/* xtype should be the same size as genbuf for longname(). */
-		static char xtype[1024];
-
-		(void)strcpy(xtype,type);
-		strncpy(ttytype, longname(genbuf, xtype), sizeof(ttytype) - 1);
+	/* Handle funny termcap capabilities. */
+	if (CS && SC && RC)
+		AL = DL = "";
+	if (AL_PARM && AL == NULL)
+		AL = "";
+	if (DL_PARM && DL == NULL)
+		DL = "";
+	if (IC) {
+		if (IM == NULL)
+			IM = "";
+		if (EI == NULL)
+			EI = "";
 	}
-	ttytype[sizeof(ttytype) - 1] = '\0';
-	if (unknown)
-		return ERR;
-	return OK;
+	if (!GT)		/* If we can't tab, we can't backtab either. */
+		BT = NULL;
+
+	if (tgoto(CM, destcol, destline)[0] == 'O') {
+		CA = 0;
+		CM = 0;
+	} else
+		CA = 1;
+
+	PC = _PC ? _PC[0] : 0;
+	aoftspace = tspace;
+	ttytype = longname(genbuf, __ttytype);
+
+	return (unknown ? ERR : OK);
 }
 
 /*
- *	This routine gets all the terminal flags from the termcap database
+ * zap --
+ *	Gets all the terminal flags from the termcap database.
  */
-
+static void
 zap()
 {
-	register char	*namp;
-	register bool	**fp;
-	register char	***sp;
-#ifdef	DEBUG
+	register char *namp, ***sp;
+	register char **fp;
+#ifdef DEBUG
 	register char	*cp;
 #endif
-	extern char	*tgetstr();
 
 	namp = "ambsdadbeohchzinmimsncnsosulxbxnxtxsxx";
 	fp = sflags;
 	do {
 		*(*fp++) = tgetflag(namp);
 #ifdef DEBUG
-		fprintf(outf, "%2.2s = %s\n", namp, *fp[-1] ? "TRUE" : "FALSE");
+		__TRACE("2.2s = %s\n", namp, *fp[-1] ? "TRUE" : "FALSE");
 #endif
 		namp += 2;
 	} while (*namp);
@@ -177,11 +152,11 @@ zap()
 	do {
 		*(*sp++) = tgetstr(namp, &aoftspace);
 #ifdef DEBUG
-		fprintf(outf, "%2.2s = %s", namp, *sp[-1] == NULL ? "NULL\n" : "\"");
+		__TRACE("2.2s = %s", namp, *sp[-1] == NULL ? "NULL\n" : "\"");
 		if (*sp[-1] != NULL) {
 			for (cp = *sp[-1]; *cp; cp++)
-				fprintf(outf, "%s", unctrl(*cp));
-			fprintf(outf, "\"\n");
+				__TRACE("%s", unctrl(*cp));
+			__TRACE("\"\n");
 		}
 #endif
 		namp += 2;
@@ -201,13 +176,12 @@ zap()
 }
 
 /*
- * return a capability from termcap
+ * getcap --
+ *	Return a capability from termcap.
  */
 char *
 getcap(name)
-char *name;
+	char *name;
 {
-	char *tgetstr();
-
-	return tgetstr(name, &aoftspace);
+	return (tgetstr(name, &aoftspace));
 }
