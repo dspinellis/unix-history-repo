@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.13 1994/03/15 01:58:28 wollman Exp $
+ *	$Id: kern_clock.c,v 1.14 1994/04/02 07:00:57 davidg Exp $
  */
 
 /* Portions of this software are covered by the following: */
@@ -642,7 +642,7 @@ gatherstats(framep)
 			cpstate = CP_IDLE;
 #if defined(GPROF) && !defined(GUPROF)
 		s = (u_long) CLKF_PC(framep) - (u_long) s_lowpc;
-		if (_profiling < 2 && s < s_textsize)
+		if (profiling < 2 && s < s_textsize)
 			kcount[s / (HISTFRACTION * sizeof (*kcount))]++;
 #endif
 	}
