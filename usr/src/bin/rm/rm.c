@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.10 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
@@ -109,7 +109,7 @@ char arg[];
 			return;
 	}
 	else if(!fflg) {
-		if (access(arg, 02)<0) {
+		if ((buf.st_mode&S_IFMT) != S_IFLNK && access(arg, 02) < 0) {
 			printf("rm: override protection %o for %s? ", buf.st_mode&0777, arg);
 			if(!yes())
 				return;
