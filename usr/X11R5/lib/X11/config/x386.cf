@@ -1,0 +1,158 @@
+XCOMM platform:  $XConsortium: x386.cf,v 1.7 91/08/16 19:30:10 gildea Exp $
+
+/*****************************************************************************
+ *			  Site-specfic parameters                            *
+ *****************************************************************************/
+
+/*
+ * there are some switches to set appropriate...
+ */
+
+#define HasGcc			YES	/* doesn't work for SVR4 */
+#define HasSockets		YES
+#define HasNdbm			YES	/* correct for GNU dbm & SVR4 */
+#define ProjectRoot		/usr/X386
+#define StripInstalledPrograms	YES
+#define X386Server		YES
+#define ExtensionOSDefines	-DXTESTEXT1
+#define MotifBC	        	YES
+
+/*****************************************************************************
+ *                        Do not change anything below                       *
+ *****************************************************************************/
+
+/* You must manually compute BootstrapCFlags for initial build */
+#define BootstrapCFlags		OSDefines OSRelease
+
+#define StandardDefines		OSDefines OSRelease
+#define LdCombineFlags		-r
+
+#if defined(i386SVR3Architecture)
+
+#define SystemV			YES
+
+#define NeedBerklib		YES
+
+/*
+ * V/386 Release 3.2
+ */
+#ifdef ISC
+/* INTERACTIVE UNIX Version 2.2.1 */
+# define OSVendor		"Interactive System Corp."
+# define OSDefines		-DISC
+# define LocalLibraries		-lpt
+# define PosixLibraries		-lcposix
+# define SocketLibraries        -linet
+#endif
+
+#ifdef ESIX
+#define OSVendor		"ESIX System Inc."
+#define OSDefines		-DESIX
+#define LocalLibraries		-lpt
+#define SocketLibraries		-lnet -lnsl_s
+#define PosixLibraries		/**/
+#endif
+
+#ifdef SCO
+#define OSDefines		-DSCO -DBROKEN_FTOL -DNO_PROTOTYPE -D_SVID
+#define OSVendor		"Santa Cruz Operation Ltd."
+#define LocalLibraries		-lpt
+#define SocketLibraries		-lsocket 
+#define PosixLibraries		/**/
+#endif
+
+#ifdef ATT
+#define OSDefines		-DATT
+#define OSVendor		"AT&T"
+#define LocalLibraries		-lpt
+#define SocketLibraries		-lnet -lnsl_s    /* just a guess */
+#define PosixLibraries		/**/
+#endif
+
+#define OSName			Unix System V/386 Release 3.2
+#define OSMajorVersion		3
+#define OSMinorVersion		2
+#define OSRelease		-DSYSV -DSYSV386
+
+#if HasGcc
+# define CcCmd gcc -DNO_ASM -fstrength-reduce -fpcc-struct-return -fwritable-strings
+# define LibraryCcCmd gcc -DNO_ASM -fstrength-reduce -fpcc-struct-return
+# define ShlibDefines -D__GNUC__ -DGNULIB=/usr/local/lib/gcc-gnulib
+#else
+# define ShlibDefines /**/
+#endif
+
+#if HasSockets
+/* # define ConnectionFlags -DLOCALCONN -DTCPCONN */
+# define ConnectionFlags -DTCPCONN
+# define ExtraLibraries SocketLibraries LocalLibraries -lc_s PosixLibraries
+#else
+# define ConnectionFlags -DLOCALCONN
+# define ExtraLibraries $(LIBDIR)/etc/inetemul.o LocalLibraries -lc_s PosixLibraries
+#endif
+
+/* #include <sv3Lib.rules> */  /* not working yet */
+
+/*
+ * Man pages need to be formatted when installed, so override the default
+ * imake rules.
+ */
+#define InstallManPageLong(file,destdir,dest)                           @@\
+install.man:: file.man                                                  @@\
+	$(RM) destdir/dest.ManSuffix					@@\
+	cat file.man | neqn | nroff -man >/tmp/file.man  		@@\
+	$(INSTALL) -c $(INSTMANFLAGS) /tmp/file.man destdir/dest.ManSuffix @@\
+	$(RM) /tmp/file.man
+
+#define InstallMultipleMan(list,dest)                                   @@\
+install.man:: list                                                      @@\
+	@case '${MFLAGS}' in *[i]*) set +e;; esac; \                    @@\
+	for i in list; do \                                             @@\
+		(set -x; \						@@\
+		$(RM) dest/$$i; \					@@\
+		cat $$i | neqn | nroff -man >/tmp/$$i; \  		@@\
+		$(INSTALL) -c $(INSTMANFLAGS) /tmp/$$i dest/$$i; \	@@\
+		$(RM) /tmp/$$i); \					@@\
+	done
+
+/* If you have trouble with make bombing out in Xlib, try uncommenting this. */
+/* You will not get dependencies as a result, but better than nothing. */
+/* #define DependTarget3(srcs1,srcs2,srcs3) */
+
+#endif /* i386SVR3Architecture */
+
+
+/*
+ * V/386 Release 4.0
+ */
+#if defined(i386SVR4Architecture)
+
+#define SystemV4		YES
+
+/* this is now just for Dell's one */
+
+#ifdef DELL
+#define OSDefines		-DDELL
+#define OSVendor		"DELL Computer Corp."
+#endif
+
+#define OSName			Unix System V/386 Release 4.0
+#define OSMajorVersion		4
+#define OSMinorVersion		0
+#define OSRelease		-DSVR4 -DSYSV386
+
+#if HasGcc
+# define CcCmd 		gcc -ansi -fstrength-reduce -fpcc-struct-return -Di386
+# if HasSharedLibraries
+#  define LibraryCcCmd	cc -Xc -Di386 -Dasm=__asm
+# endif
+#else
+# define CcCmd		cc -Xc -Di386 -Dasm=__asm
+#endif
+
+#include <sv4Lib.rules>
+
+#endif /* i386SVR4Architecture */
+
+
+XCOMM operating system:  OSName OSVendor

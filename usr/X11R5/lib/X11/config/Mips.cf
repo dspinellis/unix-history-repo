@@ -1,0 +1,66 @@
+/*
+ * Set version numbers before making makefiles.
+ * 
+ * X11r5 only builds using the berkeley libraries and compiler.  Make
+ * sure your path includes /bsd43/bin before /bin/ or /usr/bin.
+ */
+
+#define OSName            RISCOS
+#define OSMajorVersion    4
+#define OSMinorVersion    50
+
+/**/# platform:  $XConsortium: Mips.cf,v 1.10 91/07/30 20:47:59 rws Exp $
+/**/# operating system:  OSName
+
+/*****************************************************************************
+ *			  Platform-specific parameters                       *
+ *****************************************************************************/
+
+#define HasVoidSignalReturn		NO
+#define SetTtyGroup			YES
+#define UnalignedReferencesAllowed	NO     /* if arbitrary deref is okay */
+#define HasBsearch			NO
+
+#define MipsArchitecture
+#define MakeEnv -e
+
+#define DefaultCCOptions -signed -systype bsd43 -Olimit 2000 -Wf,-XNd8400,-XNp12000
+#define StandardDefines -DMips -DBSD43
+#define ExtraLibraries -lmld
+#define ArCmd ar clr
+#define BootstrapCFlags -DMips
+#define InstallCmd $(ETCDIR)/mipsinstall
+#define MakeCmd make MakeEnv
+#define DoRanlibCmd 0
+#define AllocateLocalDefines -DINCLUDE_ALLOCA_H
+
+/*****************************************************************************
+ *                                                                           *
+ *			DEFINE PARAMETERS FOR BUILDING                       *
+ *                                                                           *
+ *****************************************************************************/
+
+#define XmipsServer	YES
+
+/*****************************************************************************
+ *                                                                           *
+ *	      OVERRIDE ANY CONFIGURATION PARAMETERS FROM Imake.tmpl          *
+ *                                                                           *
+ *****************************************************************************/
+
+#define SpecialMalloc		NO
+#define HasSockets		YES
+
+#define PrimaryScreenResolution	110
+
+#define ConstructMFLAGS	NO		/* build MFLAGS from MAKEFLAGS */
+
+#define DefaultUserPath /usr/net:/bin:/usr/bin:$(BINPATH):/usr/ucb
+#define DefaultSystemPath /usr/net:/bin:/usr/bin:/etc:$(BINPATH):/usr/ucb
+
+/* mips manuals are really complicated.  This certainly won't work. */
+
+#define ManDirectoryRoot /man/cat
+#define ManSourcePath $(MANPATH)/man
+
+#define InstKmemFlags -g sys -m 2755

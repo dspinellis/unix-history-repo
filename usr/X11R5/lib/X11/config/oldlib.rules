@@ -1,0 +1,109 @@
+/* You should not use these any more, use new Library.tmpl insead */
+
+XCOMM $XConsortium: oldlib.rules,v 1.2 91/04/09 19:15:13 rws Exp $
+
+/*
+ * ProfiledLibraryObjectRule - generate make rules to build both profiled
+ * and "normal" objects.
+ */
+#ifndef ProfiledLibraryObjectRule
+#define	ProfiledLibraryObjectRule()					@@\
+all::									@@\
+	LibMkdir(profiled)						@@\
+									@@\
+.c.o:									@@\
+	ProfiledLibObjCompile(NullParameter)				@@\
+	NormalLibObjCompile(NullParameter)				@@\
+									@@\
+clean::									@@\
+	LibCleanDir(profiled)						@@\
+
+#endif /* ProfiledLibraryObjectRule */
+
+
+/*
+ * DebuggedLibraryObjectRule - generate make rules to build both debuggable
+ * and "normal" objects.
+ */
+#ifndef DebuggedLibraryObjectRule
+#define	DebuggedLibraryObjectRule()					@@\
+all::									@@\
+	LibMkdir(debugger)						@@\
+									@@\
+.c.o:									@@\
+	DebuggedLibObjCompile(NullParameter)				@@\
+	NormalLibObjCompile(NullParameter)				@@\
+									@@\
+clean::									@@\
+	LibCleanDir(debugger)						@@\
+
+#endif /* DebuggedLibraryObjectRule */
+
+
+/*
+ * DebuggedAndProfiledLibraryOjbectRule - generate make rules to build
+ * debuggable, profiled, and "normal" objects.
+ */
+#ifndef DebuggedAndProfiledLibraryObjectRule
+#define	DebuggedAndProfiledLibraryObjectRule()				@@\
+all::									@@\
+	LibMkdir(profiled)						@@\
+	LibMkdir(debugger)						@@\
+									@@\
+.c.o:									@@\
+	ProfiledLibObjCompile(NullParameter)				@@\
+	DebuggedLibObjCompile(NullParameter)				@@\
+	NormalLibObjCompile(NullParameter)				@@\
+									@@\
+clean::									@@\
+	LibCleanDir(profiled)						@@\
+	LibCleanDir(debugger)						@@\
+
+#endif /* DebuggedAndProfiledLibraryObjectRule */
+
+
+/*
+ * SpecialProfiledObjectRule - generate rules to compile a file with special
+ * flags and to make a profiled version.
+ */
+#ifndef SpecialProfiledObjectRule
+#define	SpecialProfiledObjectRule(objs,depends,options)			@@\
+all::									@@\
+	LibMkdir(profiled)						@@\
+									@@\
+objs:	depends								@@\
+	ProfiledLibObjCompile(options)					@@\
+	NormalLibObjCompile(options)
+#endif /* SpecialProfiledObjectRule */
+
+
+/*
+ * SpecialDebuggedObjectRule - generate rules to compile a file with special
+ * flags and to make a debuggable version.
+ */
+#ifndef SpecialDebuggedObjectRule
+#define	SpecialDebuggedObjectRule(objs,depends,options)			@@\
+all::									@@\
+	LibMkdir(debugger)						@@\
+									@@\
+objs:	depends								@@\
+	DebuggedLibObjCompile(options)					@@\
+	NormalLibObjCompile(options)
+#endif /* SpecialDebuggedObjectRule */
+
+
+/*
+ * SpecialDebuggedAndProfiledObjectRule - generate rules to compile a file 
+ * with special flags and to make debuggable and profiled versions.
+ */
+#ifndef SpecialDebuggedAndProfiledObjectRule
+#define	SpecialDebuggedAndProfiledObjectRule(objs,depends,options)	@@\
+all::									@@\
+	LibMkdir(profiled)						@@\
+	LibMkdir(debugger)						@@\
+									@@\
+objs:	depends								@@\
+	ProfiledLibObjCompile(options)					@@\
+	DebuggedLibObjCompile(options)					@@\
+	NormalLibObjCompile(options)
+#endif /* SpecialDebuggedAndProfiledObjectRule */

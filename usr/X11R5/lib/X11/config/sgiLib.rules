@@ -1,0 +1,49 @@
+XCOMM $XConsortium: sgiLib.rules,v 1.5 91/03/25 09:52:02 rws Exp $
+
+#ifndef HasSharedLibraries
+#define HasSharedLibraries YES
+#endif
+#ifndef SharedDataSeparation
+#define SharedDataSeparation YES
+#endif
+#define SharedCodeDef -DSHAREDCODE
+#define SharedLibraryDef -DATTSHAREDLIB
+#define PositionIndependentCFlags -G 0
+
+/*
+ * SharedLibraryTarget - generate rules to create a shared library;
+ * build it into a different name so that the we don't hose people by having
+ * the library gone for long periods.
+ */
+#define SharedLibraryTarget(libname,rev,solist,down,up)			@@\
+AllTarget(Concat3(lib,libname,_s))					@@\
+									@@\
+Concat3(lib,libname,_s: sharedlib.o solist Concat(lib,libname.spec)	@@\
+	$(RM) $@ $@.a \							@@\
+	&& cd down \							@@\
+	&& mkshlib -s Concat(up/lib,libname.spec) -t up/$@ -h up/$@.a \	@@\
+	&& ar rs up/$@.a sharedlib.o					@@\
+									@@\
+clean::									@@\
+	$(RM) Concat3(lib,libname,_s) Concat3(lib,libname,_s.a)
+
+#define SharedLibraryDataTarget(libname,rev,salist)
+
+/*
+ * InstallSharedLibrary - generate rules to install the shared library.
+ * NOTE: file must be executable, hence "INSTBINFLAGS"
+ */
+#define	InstallSharedLibrary(libname,rev,dest)				@@\
+install:: Concat3(lib,libname,_s)					@@\
+	MakeDir($(DESTDIR)dest)						@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat3(lib,libname,_s.a) $(DESTDIR)dest @@\
+	$(INSTALL) -c $(INSTBINFLAGS) Concat3(lib,libname,_s) $(DESTDIR)dest
+
+
+/*
+ * InstallSharedLibraryData - generate rules to install the shared library data
+ */
+#define	InstallSharedLibraryData(libname,rev,dest)			@@\
+install:: Concat3(lib,libname,_s.a)					@@\
+	MakeDir($(DESTDIR)dest)						@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat3(lib,libname,_s.a) $(DESTDIR)dest

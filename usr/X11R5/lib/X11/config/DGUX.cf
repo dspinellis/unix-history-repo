@@ -1,0 +1,18 @@
+XCOMM platform:  $XConsortium: DGUX.cf,v 1.1 91/05/10 17:19:48 rws Exp $
+
+#define OSName            DG/UX 4.32
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    32
+
+#define BootstrapCFlags   -DDGUX
+#define StandardDefines   -DDGUX -DSYSV
+#define SystemV           YES
+#define HasPutenv         YES
+#define HasSockets        YES
+#define HasGcc            YES
+#define BuildServer       NO
+#define LnCmd ln -s
+#define UNCOMPRESSPATH /usr/bin/X11/uncompress
+
+#define ExtraFilesToClean *.lg

@@ -1,0 +1,244 @@
+XCOMM platform:  $XConsortium: ibm.cf,v 1.29 91/07/28 22:39:58 rws Exp $
+
+#ifdef RsArchitecture
+#define OSName		AIX 3.1.5
+#define OSMajorVersion	3
+#define OSMinorVersion	1
+#else
+#ifdef RtArchitecture
+#ifdef AIXArchitecture
+#define OSName		AIX 2.2
+#define OSMajorVersion	2
+#define OSMinorVersion	2
+#else
+#define OSName		AOS 4.3
+#define OSMajorVersion	4
+#define OSMinorVersion	3
+#endif
+#else
+#define OSName		AIX 1.2.1
+#define OSMajorVersion	1
+#define OSMinorVersion	2
+#endif
+#endif
+XCOMM operating system:  OSName
+
+#ifdef RsArchitecture
+
+#define ProjectRoot		/usr/local
+
+#define SystemV			YES
+#define LnCmd			ln -s
+#define HasSockets		YES
+#define LdCombineFlags		-r
+#define ExecableScripts		YES
+#define Malloc0ReturnsNull	YES
+#define CppCmd			/usr/lpp/X11/Xamples/util/cpp/cpp
+#define StandardDefines         -DSYSV -DAIXV3
+#define ExpandManNames		YES
+#define XibmServer 		YES
+#define ibmIncludeSKYWAY	YES
+#define OPERATING_SYSTEM 	AIX /* directory name under server/ddx/ibm/ */
+#define InstallCmd              /usr/ucb/install
+#include <ibmLib.rules>
+
+#else
+
+
+#define UnixCpp /**/
+#define cppdefs -DUNIXCPP
+
+#ifdef ATHENA
+#define ibmAthenaDefs -DATHENA
+#else
+#define ibmAthenaDefs /**/
+#endif
+
+#ifdef AIXArchitecture
+#define SystemV YES
+#define LnCmd ln -s
+#define HasSockets YES
+#ifdef RtArchitecture
+#define BootstrapCFlags -Daix
+#define OSDefines -DAIX -DAIXrt -DNO_FUNCTION_PROTOTYPES -DIBM_OS_HAS_HFT
+#else
+#define ExecableScripts		YES
+#define ExpandManNames		YES
+#define InstallCmd              /usr/ucb/install
+#define OSDefines -DAIX386 -DIBM_OS_HAS_HFT
+#define	NeedFunctionPrototypes	YES
+#define	NeedNestedPrototypes	YES
+#define	NeedConstPrototypes	YES
+#define	NeedVarargsPrototypes	YES
+#define LdCombineFlags -r /* PS/2 doesn't do ld -X */
+#endif
+#define OPERATING_SYSTEM AIX /* directory name under server/ddx/ibm/ */
+
+#ifdef USE_PCC
+#define CcCmd i386cc
+#define ibmosdefs -DHCVERSION=HCRevision
+#else
+#ifdef RtArchitecture
+#define CcCmd cc -Nd4000 -Nn3000 -DBSD_INCLUDES
+#define ibmosdefs -DSYSV -Nd4000 -Nn3000
+#define ibmlibdefs -Hcpp
+#else
+#define ibmosdefs -DSYSV
+#endif
+#endif /* USE_PCC */
+
+#else /* else AOS - warning: AOS is going away... */
+#define HasNdbm YES
+#define CcCmd hc
+#define ibmosdefs -DHCVERSION=HCRevision
+#define OSDefines -DBSDrt
+#define OPERATING_SYSTEM BSDrt
+#define BootstrapCFlags -Dibm
+#if OSMajorVersion >= 4 && OSMinorVersion >= 3
+#define SetTtyGroup YES
+#endif
+#endif /* AIXArchitecture */
+
+#define HasVoidSignalReturn    NO
+
+#ifdef RtArchitecture
+/*
+ * These define the screens the server will allow
+ * affected:    .../server/ddx/ibm/Makefile
+ *              .../server/ddx/ibm/common/Makefile
+ * Also, be sure to remove .../server/ddx/ibm/common/ibmscreen.o
+ */
+#define ibmInclude8514  NO /* YES */
+#define ibmIncludeAED   NO
+#define ibmIncludeAPA16 YES
+#define ibmIncludeAPA8c NO
+#define ibmIncludeEGA   NO /* YES */
+#define ibmIncludeMPEL  NO
+#define ibmIncludeVGA   NO /* YES */
+#define ibmIncludeGEN   NO
+#endif /* RtArchitecture */
+
+#ifdef PS2Architecture
+/*
+ * These define the screens the server will allow
+ * affected:    .../server/ddx/ibm/Makefile
+ *              .../server/ddx/ibm/common/Makefile
+ * Also, be sure to remove .../server/ddx/ibm/common/ibmscreen.o
+ * 
+ *                                        PS2, Rt, ...
+ */
+#define ibmInclude8514  YES
+#define ibmIncludeAED   NO
+#define ibmIncludeAPA16 NO
+#define ibmIncludeAPA8c NO
+#define ibmIncludeEGA   NO
+#define ibmIncludeMPEL  NO
+#define ibmIncludeVGA   YES
+#define ibmIncludeGEN   NO
+#endif /* PS2Architecture */
+
+/*
+ * These define the screens the server will allow
+ * affected:    .../server/ddx/ibm/Makefile
+ *              .../server/ddx/ibm/common/Makefile
+ * Also, be sure to remove .../server/ddx/ibm/common/ibmscreen.o
+ * 
+ *                                        PS2, Rt, ...
+ */
+#ifndef ibmosdefs
+#define ibmosdefs /**/
+#endif
+#ifndef ibmarchdefs
+#define ibmarchdefs /**/
+#endif
+#ifndef ibmlibdefs
+#define ibmlibdefs /**/
+#endif
+
+
+#define StandardDefines -Dibm ibmosdefs ibmarchdefs
+#define LintOpts -ax -Dibm ibmosdefs ibmarchdefs
+
+/* 
+ * This defines the name of server you want.
+ * affected: .../X11/server/Makefile
+ */
+#define XibmServer YES
+
+/*****************************************************************************
+ *                        Platform-specfic parameters                        *
+ *****************************************************************************/
+
+	/*
+	 * affected:	.../server/ddx/ibm/common/Makefile
+	 *		.../server/os/4.2bsd/Makefile
+	 * remove:	.../server/ddx/ibm/common/ibminit.o
+	 *		.../server/ddx/ibm/common/ibmio.o
+	 *		.../server/ddx/ibm/common/ibmutils.o
+	 *		.../server/os/4.2bsd/utils.o
+	 */
+
+/* Need This Also For our IBM Imakefiles */
+#define	SpecialMalloc		NO
+#define	ibmSpecialMalloc	NO
+
+            PCC = pcc
+
+#ifndef AIXArchitecture				/* AOS-specific */
+/*
+ * It's real useful to know the version of hc we're using, but hc doesn't
+ * identify itself in the pre-processor, so we have to do it by hand.
+ *
+ * To determine which version of hc you have, compile (DON'T link) some simple 
+ * program ("hello world" leaps to mind) and look in the .o (with "nm") for a 
+ * symbol named ".oVhc[0-9].[0-9][a-z]" -- this symbol is included in all 
+ * .o's by hc, and identifies the compiler release.
+ * 
+ * To Calculate HCRevision, multiply the version number by 1000 and add the
+ * index of the release letter.
+ * For example, if nm reports:
+ *	00000000 A .oVhc2.1d
+ * The HCRevision is ((2.1 * 1000)+('d'-'a'+1)) == 21004
+ * Another popular version of hc is:
+ *	00000000 A .oVhc1.4r
+ * Whose HCRevision is ((1.4 * 1000)+('r'-'a'+1)) == 14018
+ *
+ * A good clue that HCRevision is defined incorrectly is the undefined symbol
+ * '_Alloca' at load time.
+ */
+
+#define	HCRevision	21025
+
+/*
+ * hc revision 1.4r won't compile parts of Xt and some clients.
+ */
+#if HCRevision == 14018
+#define BandAidCompiler "rtcchack.bac"
+#undef MacroFile
+#define MacroFile ibm.cf $(IRULESRC)/rtcchack.bac
+#endif
+#endif /* AOS */
+
+
+/* 
+ * define this as you like for server compilation 
+ * affected: all makefiles in .../X11/server
+ */
+#define ServerOSDefines  cppdefs -DNOSTDHDRS OSDefines
+
+
+#define FontOSDefines StandardDefines
+/* define this as you like for server font support */
+#ifdef AIXArchitecture
+#define FontFilters BDFTOSNFFILT SHELLPATH
+#endif
+
+/* define the following line for easily debuggable servers, the */
+/* second line for especially speedy servers.			*/
+/* #define ServerCDebugFlags	-O -DDEBUG -DTRACE_X */
+#define	ServerCDebugFlags -O ibmAthenaDefs
+
+/* define this as you like for normal library compilation */
+#define LibraryDefines cppdefs ibmlibdefs StandardDefines
+
+#endif /* non RsArchitecture */

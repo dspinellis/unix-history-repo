@@ -1,0 +1,46 @@
+XCOMM platform:  $XConsortium: ultrix.cf,v 1.45.1.1 92/11/11 09:58:08 rws Exp $
+
+#define OSName            Ultrix-32 4.2
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    2
+
+#define HasPutenv YES
+#define HasSaberC YES
+#define HasShm YES
+#define LintLibFlag -o
+#define LintOpts -ax
+
+#ifdef VaxArchitecture
+#define XqdssServer YES
+#define XqvssServer YES
+#define PexNativeFPFormat PEXDEC_F_Floating
+#define UnalignedReferencesAllowed YES	       /* if arbitrary deref is okay */
+#if HasGcc
+#define BuildPexExt XqdssServer
+#else
+#define BuildPex NO /* compiler runs out of table space */
+#endif
+#endif
+
+#ifdef MipsArchitecture
+#if OSMajorVersion > 4 || (OSMajorVersion == 4 && OSMinorVersion >= 2)
+#define XdecServer YES
+/* Even under ultrix 4.2, the compiler miscompiles some alloca calls */
+#define AllocateLocalDefines /* -DINCLUDE_ALLOCA_H */
+#else
+#define XmfbpmaxServer NO
+#define XcfbpmaxServer YES
+#define AllocateLocalDefines /**/
+#endif
+#define NeedFunctionPrototypes YES
+#define PexCCOptions -Wf,-XNp15000,-XNd15000
+#endif
+
+#if HasGcc
+#define CcCmd gcc -ansi -Dvax -Dultrix -fpcc-struct-return
+#define ServerCCOptions /* */
+#define AllocateLocalDefines /* */
+#endif
+
+#define ServerOSDefines AllocateLocalDefines

@@ -1,0 +1,94 @@
+XCOMM platform:  $XConsortium: convex.cf,v 1.1 91/07/29 10:31:44 rws Exp $
+
+#define OSName            	ConvexOS V9.0
+XCOMM operating system:  OSName
+#define OSMajorVersion		9
+#define OSMinorVersion		0 
+#define VersionNumber 		0.0.0.0
+
+#define BootstrapCFlags   	-tm c1
+#define SetTtyGroup		YES
+#define BuildServer             NO
+#define ConnectionFlags		-DTCPCONN -DUNIXCONN -DCOVUENETCONN
+#define InstallXdmConfig	YES
+#define XdmDir			$(LIBDIR)/xdm-sample
+#define XdmServersType	fs	/* one tab here */
+#define HasXmWidgets		NO
+#define InstKmemFlags		-g kmem -m 2755 -v $(VERSION)
+#define InstScriptFlags		-m 0755 -g bin
+#define InstManFlags		-m 0444 -g bin
+#define DefaultCCOptions    	-fn -tm c1 
+#define LibraryCCOptions        -fx -tm c1 
+#define StripFlags		-r -x
+#define HasSecureOS		YES
+#define BuildExamples		YES
+#define BuildMotif		NO
+#define BuildConvexClients	YES
+#define MotifBC			YES
+#define UilCommand		uil
+#define ExampleDir		$(LIBDIR)/examples
+#define UnSupDir		$(LIBDIR)/unsupported
+#define BuildTestExt		YES
+#define DefaultScreenSaverTime	0
+
+#if BuildTestExt
+#define TestDefines -DXTESTEXT1
+#else
+#define TestDefines /**/
+#endif
+
+#define ExtensionOSDefines TestDefines
+
+        VERSION = VersionNumber
+            UIL = UilCommand
+       UNSUPDIR = UnSupDir	/* unsupported examples and code */
+
+/*
+ * _Use - makes a choice based on UseInstalled.
+ */
+#ifndef _Use
+#ifdef UseInstalled
+#define _Use(a,b) a
+#else
+#define _Use(a,b) b
+#endif
+#endif
+
+/*
+ * _UseCat - combination of _Use and Concat.
+ *           exists to avoid problems with some preprocessors
+ */
+#ifndef _UseCat
+#if (defined(__STDC__) || (defined(__convex__) && defined(__stdc__)))
+&& !defined(UnixCpp)
+#ifdef UseInstalled
+#define _UseCat(a,b,c) a##c
+#else
+#define _UseCat(a,b,c) b##c
+#endif
+#else
+#ifdef UseInstalled
+#define _UseCat(a,b,c) a/**/c
+#else
+#define _UseCat(a,b,c) b/**/c
+#endif
+#endif
+#endif
+
+#if HasXmWidgets
+   MRESOURCESRC = $(LIBSRC)/Mrm
+DEPMRESOURCELIB = _UseCat($(USRLIBDIR),$(MRESOURCESRC),/libMrm.a)
+   MRESOURCELIB = LoaderLibPrefix _Use(-lMrm,$(DEPMRESOURCELIB))
+LINTMRESOURCELIB= _UseCat($(LINTLIBDIR),$(MRESOURCESRC),/llib-lMrm.ln)
+
+       XMLIBSRC = $(LIBSRC)/Xm
+       DEPXMLIB = _UseCat($(USRLIBDIR),$(XMLIBSRC),/libXm.a)
+          XMLIB = LoaderLibPrefix _Use(-lXm,$(DEPXMLIB))
+      LINTXMLIB = _UseCat($(LINTLIBDIR),$(XMLIBSRC),/llib-lXm.ln)
+
+      UILLIBSRC = $(LIBSRC)/uil
+      DEPUILLIB = _UseCat($(USRLIBDIR),$(UILLIBSRC),/libUil.a)
+         UILLIB = LoaderLibPrefix _Use(-lUil,$(DEPUILLIB))
+     LINTUILLIB = _UseCat($(LINTLIBDIR),$(UILLIBSRC),/llib-lUil.ln)
+
+#endif

@@ -1,0 +1,80 @@
+XCOMM platform:  $XConsortium: luna.cf,v 1.16 91/08/26 11:23:34 rws Exp $
+/*
+ *	Please set the values for OSMajorVerion and OSMinorVersion
+ *	before making makefiles.	 
+ */
+
+#ifdef Mc68000Architecture
+# ifdef luna2
+#define OSName            Mach 2.5 Vers 1.40
+#define OSMajorVersion    1
+#define OSMinorVersion    40
+# else 
+#define OSName            UNIOS-B 4.3BSD UNIX: 2.00
+#define OSMajorVersion    2
+#define OSMinorVersion    0
+#define DirFailPrefix -
+# endif
+#else  /* Mc88000Architecture */
+#define OSName            Mach 2.5 Vers 1.13
+#define OSMajorVersion    1
+#define OSMinorVersion    13
+#endif
+XCOMM operating system:  OSName
+
+#define HasBsearch		NO
+#define HasSaberC		NO
+#define HasVoidSignalReturn	NO
+#define HasGcc			YES
+
+
+#define PrimaryScreenResolution 100
+
+#ifdef Mc68000Architecture
+#ifdef	luna2
+#define StandardDefines         -DXML
+#if ((OSMajorVersion <= 1) && (OSMinorVersion < 40))
+#define ServerOSDefines -DUNUSE_DRV_TIME -DUNUSE_SIGIO_SIGNAL 
+#endif
+#else	/* luna1 */
+#if ((OSMajorVersion <= 1) && (OSMinorVersion <= 60))
+#define StandardDefines         -Dluna -Duniosb -DXML
+#else
+#define StandardDefines         -DXML
+#endif
+#if ((OSMajorVersion < 2) || ((OSMajorVersion == 2) && (OSMinorVersion < 1)))
+#define ServerOSDefines -DUNUSE_DRV_TIME -DUNUSE_SIGIO_SIGNAL 
+#endif
+#endif	/* luna2 */
+#if HasGcc
+#define OptimizedCDebugFlags    -O -traditional
+#define ServerCDebugFlags       -Dmc68020 -O -traditional
+#else	/* cc */
+#define OptimizedCDebugFlags    -O -Z18
+#define ServerCDebugFlags       -Dmc68020 -O -Z18
+#endif /* HasGcc */
+#endif /* Mc68000Architecture */
+
+
+#ifdef Mc88000Architecture
+#define StandardDefines         -DXML
+#if ((OSMajorVersion <= 1) && (OSMinorVersion <= 12))
+#define ServerOSDefines -DUNUSE_DRV_TIME -DUNUSE_SIGIO_SIGNAL 
+#endif
+#define HasNdbm			YES
+#ifdef HasGcc
+#define CcCmd                   gcc -fstrength-reduce
+#define OptimizedCDebugFlags    -O2 /* -traditional */
+#endif
+#endif
+
+#ifdef Mc68000Architecture
+#define UnalignedReferencesAllowed YES  /* if arbitrary deref is okay */
+#define BuildPexExt		NO		
+#define XlunaServer 		YES
+#endif
+
+#ifdef Mc88000Architecture
+#define BuildPexExt		NO
+#define XlunaServer 		YES
+#endif

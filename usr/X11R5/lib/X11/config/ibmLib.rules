@@ -1,0 +1,76 @@
+XCOMM $XConsortium: ibmLib.rules,v 1.5 91/05/10 09:27:27 jap Exp $
+
+/*
+ * AIX shared library rules
+ */
+
+#ifndef HasSharedLibraries
+#define HasSharedLibraries YES
+#endif
+#ifndef ForceNormalLib
+#define ForceNormalLib NO
+#endif
+#ifndef SharedDataSeparation
+#define SharedDataSeparation NO
+#endif
+#ifndef SharedCodeDef
+#define SharedCodeDef -DSHAREDCODE
+#endif
+#ifndef SharedLibraryDef
+#define SharedLibraryDef -DAIXSHLIB
+#endif
+#ifndef ShLibIncludeFile
+#define ShLibIncludeFile <ibmLib.tmpl>
+#endif
+#ifndef PositionIndependentCFlags
+#define PositionIndependentCFlags -bM\:SRE
+#endif
+#ifndef ExtraLoadFlags
+#define ExtraLoadFlags -bnodelcsect
+#endif
+
+/*
+ * InstallSharedLibrary - generate rules to install the shared library.
+ */
+#ifndef InstallSharedLibrary
+#define	InstallSharedLibrary(libname,rev,dest)				@@\
+InstallLibrary(libname,dest)
+#endif /* InstallSharedLibrary */
+
+/*
+ * InstallSharedLibraryData - generate rules to install the shared library data
+ */
+#ifndef InstallSharedLibraryData
+#define	InstallSharedLibraryData(libname,rev,dest)
+#endif /* InstallSharedLibraryData */
+
+/*
+ * NormalSharedLibraryTarget - generate rules to create a shared library;
+ * build it into a different name so that the we do not hose people by having
+ * the library gone for long periods.
+ */
+#ifndef SharedLibraryTarget
+#define SharedLibraryTarget(libname,rev,solist,down,up)			@@\
+AllTarget(Concat(lib,libname.a))					@@\
+									@@\
+Concat(lib,libname.a):  solist $(UNSHAREDOBJS)				@@\
+	$(RM) $@~ shr.o							@@\
+	(cd down; $(AR) up/$@~ solist)					@@\
+	dump -g $@~ | sed -n -e 's/^[ 	]*[0-9][0-9]*[	 ]*\([^	 .][^	 ]*\)$$/\1/p' > $@.syms	@@\
+	$(LD) -o shr.o $@~ -H512 -T512 -bM\:SRE -bE\:$@.syms $(REQUIREDLIBS) -lc -lm -L$(USRLIBDIR)	@@\
+	$(RM) $@~							@@\
+	$(AR) $@~ shr.o $(UNSHAREDOBJS)					@@\
+	$(RM) $@.syms $@ shr.o						@@\
+	$(MV) $@~ $@							@@\
+									@@\
+clean::									@@\
+	$(RM) Concat(lib,libname.a)
+
+#endif /* SharedLibraryTarget */
+
+/*
+ * SharedLibraryDataTarget - generate rules to create shlib data file;
+ */
+#ifndef SharedLibraryDataTarget
+#define SharedLibraryDataTarget(libname,rev,salist)
+#endif /* SharedLibraryTarget */

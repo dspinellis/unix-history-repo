@@ -1,0 +1,44 @@
+XCOMM $XConsortium: ibmLib.tmpl,v 1.2.1.1 92/11/11 09:50:49 rws Exp $
+
+/*
+ * AIX shared library template
+ */
+
+PICFLAGS = PositionIndependentCFlags
+
+/*
+ * and now a little bit of magic for using imake without source tree; if we
+ * are using shared libraries, we really do not need to depend on anything
+ */
+#if SharedLibXext
+  DEPEXTENSIONLIB = /* _UseCat($(USRLIBDIR),$(EXTENSIONSRC)/lib,/libXext.a) */
+     EXTENSIONLIB = _Use(-lXext,-L$(EXTENSIONSRC)/lib -lXext)
+#endif
+#if SharedLibX
+          DEPXLIB = $(DEPEXTENSIONLIB) /* _UseCat($(USRLIBDIR),$(XLIBSRC),/libX11.a) */
+             XLIB = $(EXTENSIONLIB) _Use(-lX11,-L$(XLIBSRC) -lX11)
+#endif
+#if SharedLibXmu
+        DEPXMULIB = /* _UseCat($(USRLIBDIR),$(XMUSRC),/libXmu.a) */
+           XMULIB = _Use(-lXmu,-L$(XMUSRC) -lXmu)
+#endif
+#if SharedOldLibX
+       DEPOLDXLIB = /* _UseCat($(USRLIBDIR),$(OLDXLIBSRC),/liboldX.a) */
+          OLDXLIB = _Use(-loldX,-L$(OLDXLIBSRC) -loldX)
+#endif
+#if SharedLibXt
+      DEPXTOOLLIB = _UseCat($(USRLIBDIR),$(TOOLKITSRC),/libXt.a)
+         XTOOLLIB = _Use(-lXt,-L$(TOOLKITSRC) -lXt)
+#endif
+#if SharedLibXaw
+        DEPXAWLIB = /* _UseCat($(USRLIBDIR),$(AWIDGETSRC),/libXaw.a) */
+           XAWLIB = _Use(-lXaw,-L$(AWIDGETSRC) -lXaw)
+#endif
+#if SharedLibXinput
+        DEPXILIB = /* _UseCat($(USRLIBDIR),$(XILIBSRC),/libXi.a) */
+           XILIB = _Use(-lXi,-L$(XILIBSRC) -lXi)
+#endif
+#if SharedLibPex
+        DEPPEXLIB = /* _UseCat($(USRLIBDIR),$(PEXLIBSRC),/libPEX5.a */
+           PEXLIB = _Use(-lPEX5,-L$(PEXLIBSRC) -lPEX5)
+#endif

@@ -1,0 +1,87 @@
+XCOMM $XConsortium: sunLib.rules,v 1.7 91/12/20 11:19:47 rws Exp $
+
+/*
+ * SunOS shared library rules
+ */
+
+#ifndef HasSharedLibraries
+#define HasSharedLibraries YES
+#endif
+#ifndef SharedDataSeparation
+#define SharedDataSeparation YES
+#endif
+#ifndef SharedCodeDef
+#define SharedCodeDef -DSHAREDCODE
+#endif
+#ifndef SharedLibraryDef
+#define SharedLibraryDef -DSUNSHLIB
+#endif
+#ifndef ShLibIncludeFile
+#define ShLibIncludeFile <sunLib.tmpl>
+#endif
+#ifndef SharedLibraryLoadFlags
+#define SharedLibraryLoadFlags -assert pure-text
+#endif
+#ifndef PositionIndependentCFlags
+#define PositionIndependentCFlags -pic
+#endif
+
+/*
+ * InstallSharedLibrary - generate rules to install the shared library.
+ */
+#ifndef InstallSharedLibrary
+#define	InstallSharedLibrary(libname,rev,dest)				@@\
+install:: Concat(lib,libname.so.rev) 					@@\
+	MakeDir($(DESTDIR)dest)						@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) $(DESTDIR)dest @@\
+
+#endif /* InstallSharedLibrary */
+
+/*
+ * InstallSharedLibraryData - generate rules to install the shared library data
+ */
+#ifndef InstallSharedLibraryData
+#define	InstallSharedLibraryData(libname,rev,dest)			@@\
+install:: Concat(lib,libname.sa.rev)					@@\
+	MakeDir($(DESTDIR)dest)						@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.sa.rev) $(DESTDIR)dest @@\
+	RanLibrary($(RANLIBINSTFLAGS) Concat($(DESTDIR)dest/lib,libname.sa.rev))
+
+#endif /* InstallSharedLibraryData */
+
+/*
+ * NormalSharedLibraryTarget - generate rules to create a shared library;
+ * build it into a different name so that the we do not hose people by having
+ * the library gone for long periods.
+ */
+#ifndef SharedLibraryTarget
+#define SharedLibraryTarget(libname,rev,solist,down,up)			@@\
+AllTarget(Concat(lib,libname.so.rev))					@@\
+									@@\
+Concat(lib,libname.so.rev):  solist					@@\
+	$(RM) $@~							@@\
+	(cd down; $(LD) -o up/$@~ $(SHLIBLDFLAGS) solist $(REQUIREDLIBS)) @@\
+	$(RM) $@ 							@@\
+	$(MV) $@~ $@							@@\
+									@@\
+clean::									@@\
+	$(RM) Concat(lib,libname.so.rev)
+
+#endif /* SharedLibraryTarget */
+
+/*
+ * SharedLibraryDataTarget - generate rules to create shlib data file;
+ */
+#ifndef SharedLibraryDataTarget
+#define SharedLibraryDataTarget(libname,rev,salist)			@@\
+AllTarget(Concat(lib,libname.sa.rev))					@@\
+									@@\
+Concat(lib,libname.sa.rev):  salist					@@\
+	$(RM) $@							@@\
+	$(AR) $@ salist							@@\
+	RanLibrary($@)							@@\
+									@@\
+clean::									@@\
+	$(RM) Concat(lib,libname.sa.rev)
+
+#endif /* SharedLibraryDataTarget */

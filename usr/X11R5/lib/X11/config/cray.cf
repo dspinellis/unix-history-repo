@@ -1,0 +1,42 @@
+XCOMM platform:  $XConsortium: cray.cf,v 1.31 91/07/16 16:24:17 rws Exp $
+
+#define OSName			UNICOS 5.1
+XCOMM operating system:  OSName
+#define OSMajorVersion		5
+#define OSMinorVersion		1
+
+#define SystemV			YES
+#define Malloc0ReturnsNull	YES
+#define RemoveTargetProgramByMoving YES
+#define InstallCmd		sh $(SCRIPTSRC)/install.sh
+#define ArCmd			bld cr
+#define StandardDefines		-DSYSV -DUSG
+#define ExecableScripts		NO
+#define BuildServer		NO
+#define BuildPex		NO
+#define CcCmd			scc
+#define ConnectionFlags		-DTCPCONN 
+#define HasShm			NO
+
+#ifdef CRAY2
+#define DefaultCCOptions	-hpagelm -hlimitlm
+#endif
+
+#ifndef UseInstalled
+#define LoaderLibPrefix -l
+#  if CRAY2 && OSMajorVersion < 6
+#  undef  LoaderLibPrefix
+#  define LoaderLibPrefix -L
+#  endif
+#endif
+
+#if OSMajorVersion >= 6
+#define PreProcessCmd 		/lib/pcpp
+#define CppCmd	 		/lib/pcpp
+#else
+#  if OSMajorVersion == 5
+#  define PreProcessCmd 	/lib/cpp
+#  define CppCmd	 	/lib/cpp
+#  define ExtraLoadFlags        -lnet
+#  endif
+#endif
