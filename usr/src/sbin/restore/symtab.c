@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.1	(Berkeley)	83/02/18";
+static char sccsid[] = "@(#)symtab.c	3.2	(Berkeley)	83/02/26";
 #endif
 
 #include "restore.h"
@@ -10,6 +10,8 @@ static char sccsid[] = "@(#)symtab.c	3.1	(Berkeley)	83/02/18";
 struct symtableheader {
 	long	volno;
 	long	stringsize;
+	time_t	dumptime;
+	time_t	dumpdate;
 	ino_t	maxino;
 };
 
@@ -370,6 +372,8 @@ dumpsymtable(filename, checkpt)
 	hdr.volno = checkpt;
 	hdr.maxino = maxino;
 	hdr.stringsize = stroff;
+	hdr.dumptime = dumptime;
+	hdr.dumpdate = dumpdate;
 	fwrite((char *)&hdr, sizeof(struct symtableheader), 1, fd);
 	if (ferror(fd)) {
 		perror("fwrite");
@@ -412,9 +416,44 @@ initsymtable(filename)
 		perror("read");
 		panic("cannot read symbol table file %s\n", filename);
 	}
+	switch (command) {
+	case 'r':
+		/*
+		 * For normal continuation, insure that we are using
+		 * the next incremental tape
+		 */
+		if (hdr.dumptime != dumpdate) {
+			if (hdr.dumptime < dumpdate)
+				fprintf(stderr, "Incremental tape too low\n");
+			else
+				fprintf(stderr, "Incremental tape too high\n");
+			done(1);
+		}
+		break;
+	case 'R':
+		/*
+		 * For restart, insure that we are using the same tape
+		 */
+		if (hdr.volno == 1) {
+			setup();
+			if (dumptime != hdr.dumptime ||
+			    dumpdate != hdr.dumpdate) {
+				fprintf(stderr, "Wrong dump tape\n");
+				done(1);
+			}
+			extractdirs();
+		} else {
+			curfile.action = SKIP;
+			dumptime = hdr.dumptime;
+			dumpdate = hdr.dumpdate;
+			getvol(hdr.volno);
+		}
+		break;
+	default:
+		panic("initsymtable called from command %c\n", command);
+		break;
+	}
 	maxino = hdr.maxino;
-	curfile.action = SKIP;
-	getvol(hdr.volno);
 	entry = (struct entry **)(base + hdr.stringsize);
 	baseep = (struct entry *)(&entry[maxino]);
 	lep = (struct entry *)(base + tblsize);

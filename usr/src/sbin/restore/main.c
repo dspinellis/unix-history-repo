@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.1	(Berkeley)	83/02/18";
+static char sccsid[] = "@(#)main.c	3.2	(Berkeley)	83/02/26";
 #endif
 
 /*
@@ -33,6 +33,7 @@ char	*dumpmap;
 char	*clrimap;
 ino_t	maxino;
 time_t	dumptime;
+time_t	dumpdate;
 struct	entry **entry;
 
 main(argc, argv)
@@ -104,6 +105,7 @@ usage:
 				goto usage;
 			}
 			command = 't';
+			break;
 		case 'R':
 			if (command != '\0') {
 				fprintf(stderr,
@@ -112,6 +114,7 @@ usage:
 				goto usage;
 			}
 			command = 'R';
+			break;
 		case 'r':
 			if (command != '\0') {
 				fprintf(stderr,
@@ -120,6 +123,7 @@ usage:
 				goto usage;
 			}
 			command = 'r';
+			break;
 		case 'x':
 			if (command != '\0') {
 				fprintf(stderr,
@@ -187,7 +191,6 @@ usage:
 
 	case 'r':
 		setup();
-		extractdirs(dirmodefile);
 		if (dumptime > 0) {
 			initsymtable(symtbl);
 		} else {
@@ -197,6 +200,7 @@ usage:
 				panic("no memory for entry table\n");
 			(void)addentry(".", ROOTINO, NODE);
 		}
+		extractdirs(dirmodefile);
 		markremove();
 		if ((ino = psearch(".")) == 0 || BIT(ino, dumpmap) == 0)
 			panic("Root directory is not on tape\n");

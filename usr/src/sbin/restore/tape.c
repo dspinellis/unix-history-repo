@@ -1,30 +1,33 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.1	(Berkeley)	83/02/18";
+static char sccsid[] = "@(#)tape.c	3.2	(Berkeley)	83/02/26";
 #endif
 
 #include "restore.h"
 #include <dumprestor.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
+#include <sys/file.h>
 #include <setjmp.h>
 #include <stat.h>
-#include <file.h>
 
-long	fssize;
-int	mt = -1;
-char	*magtape;
-int	insetup = 0;
-int	bct = NTREC+1;
-char	tbf[NTREC*TP_BSIZE];
-jmp_buf	restart;
-int	gettingfile = 0;	/* restart has a valid frame */
+static long	fssize;
+static int	mt = -1;
+static int	pipein = 0;
+static char	*magtape;
+static int	insetup = 0;
+static int	bct = NTREC+1;
+static char	tbf[NTREC*TP_BSIZE];
+static union	u_spcl endoftapemark;
+static long	blksread;
+static jmp_buf	restart;
+static int	gettingfile = 0;	/* restart has a valid frame */
 
-int	ofile;
-char	*map;
-char	lnkbuf[MAXPATHLEN + 1];
-int	pathlen;
+static int	ofile;
+static char	*map;
+static char	lnkbuf[MAXPATHLEN + 1];
+static int	pathlen;
 
 /*
  * Set up an input source
@@ -48,6 +51,10 @@ nohost:
 		done(1);
 	setuid(getuid());	/* no longer need or want root privileges */
 #else
+	if (strcmp(source, "-") == 0) {
+		pipein++;
+		yflag++;
+	}
 	magtape = source;
 #endif RRESTOR
 }
@@ -58,6 +65,7 @@ nohost:
  */
 setup()
 {
+	int i, j, *ip;
 	struct mtop tcom;
 	struct stat stbuf;
 	extern char *ctime();
@@ -68,35 +76,54 @@ setup()
 #ifdef RRESTOR
 	if ((mt = rmtopen(magtape, 0)) < 0)
 #else
-	if ((mt = open(magtape, 0)) < 0)
+	if (pipein)
+		mt = 0;
+	else if ((mt = open(magtape, 0)) < 0)
 #endif
 	{
 		fprintf(stderr, "%s: cannot open tape\n", magtape);
 		done(1);
 	}
 	if (dumpnum != 1) {
+		if (pipein) {
+			fprintf(stderr,
+				"Cannot have multiple dumps on pipe input\n");
+			done(1);
+		}
 		tcom.mt_op = MTFSF;
-		tcom.mt_count = dumpnum -1;
+		tcom.mt_count = dumpnum - 1;
 #ifdef RRESTOR
-		rmtioctl(MTFSF,dumpnum - 1);
+		rmtioctl(MTFSF, dumpnum - 1);
 #else
-		if (ioctl(mt,MTIOCTOP,&tcom) < 0)
+		if (ioctl(mt, MTIOCTOP, &tcom) < 0)
 			perror("ioctl MTFSF");
 #endif
 	}
 	flsht();
-	if (readhdr(&spcl) == 0) {
+	if (readhdr(&spcl) == FAIL) {
 		bct--; /* push back this block */
 		cvtflag++;
-		if (readhdr(&spcl) == 0) {
+		if (readhdr(&spcl) == FAIL) {
 			fprintf(stderr, "Tape is not a dump tape\n");
 			done(1);
 		}
 		fprintf(stderr, "Converting to new file system format.\n");
 	}
+	if (pipein) {
+		endoftapemark.s_spcl.c_magic = cvtflag ? OFS_MAGIC : NFS_MAGIC;
+		endoftapemark.s_spcl.c_type = TS_END;
+		ip = (int *)&endoftapemark;
+		j = sizeof(union u_spcl) / sizeof(int);
+		i = 0;
+		do
+			i += *ip++;
+		while (--j);
+		endoftapemark.s_spcl.c_checksum = CHECKSUM - i;
+	}
 	vprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
 	vprintf(stdout, "Dumped from: %s", ctime(&spcl.c_ddate));
 	dumptime = spcl.c_ddate;
+	dumpdate = spcl.c_date;
 	if (stat(".", &stbuf) < 0) {
 		fprintf(stderr, "cannot stat .\n");
 		done(1);
@@ -106,22 +133,26 @@ setup()
 		fprintf(stderr, "bad block size %d\n", fssize);
 		done(1);
 	}
-	if (checkvol(&spcl, (long)1) == 0) {
+	if (checkvol(&spcl, (long)1) == FAIL) {
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 		done(1);
 	}
-	if (readhdr(&spcl) == 0 || checktype(&spcl, TS_CLRI) != 1) {
+	if (readhdr(&spcl) == FAIL)
+		panic("no header after volume mark!\n");
+	findinode(&spcl, 1);
+	if (checktype(&spcl, TS_CLRI) == FAIL) {
 		fprintf(stderr, "Cannot find file removal list\n");
 		done(1);
 	}
-	maxino = spcl.c_count * TP_BSIZE + 1;
+	maxino = (spcl.c_count * TP_BSIZE * NBBY) + 1;
+	dprintf(stderr, "maxino = %d\n", maxino);
 	map = (char *)calloc(1, (int)howmany(maxino, NBBY));
 	if (map == (char *)NIL)
 		panic("no memory for file removal list\n");
 	curfile.action = USING;
 	getfile(xtrmap, xtrmapskip);
 	clrimap = map;
-	if (checktype(&spcl, TS_BITS) != 1) {
+	if (checktype(&spcl, TS_BITS) == FAIL) {
 		fprintf(stderr, "Cannot find file dump list\n");
 		done(1);
 	}
@@ -138,6 +169,7 @@ getvol(nextvol)
 	long nextvol;
 {
 	long newvol;
+	long savecnt;
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
 
@@ -147,11 +179,16 @@ getvol(nextvol)
 		 * volume 1, so as to avoid accidentally restoring
 		 * from a different dump!
 		 */
-		resetmt();
+		if (volno != 1)
+			panic("multiple dump at volno %d\n", volno);
 		dumpnum = 1;
-		volno = 1;
-		goto rbits;
 	}
+	if (pipein) {
+		if (volno != 1 || newvol != 1)
+			panic("Changing volumes on pipe input?\n");
+		return;
+	}
+	savecnt = blksread;
 again:
 	if (command == 'R' || command == 'r' || curfile.action != SKIP)
 		newvol = nextvol;
@@ -160,7 +197,7 @@ again:
 	while (newvol <= 0) {
 		fprintf(stderr, "Specify volume #: ");
 		if (gets(tbf) == NULL)
-			return;
+			continue;
 		newvol = atoi(tbf);
 		if (newvol <= 0) {
 			fprintf(stderr,
@@ -184,20 +221,25 @@ again:
 	}
 	volno = newvol;
 	flsht();
-	if (readhdr(&tmpbuf) == 0) {
+	if (readhdr(&tmpbuf) == FAIL) {
 		fprintf(stderr, "tape is not dump tape\n");
 		volno = 0;
 		goto again;
 	}
-	if (checkvol(&tmpbuf, volno) == 0) {
+	if (checkvol(&tmpbuf, volno) == FAIL) {
 		fprintf(stderr, "Wrong volume (%d)\n", tmpbuf.c_volume);
 		volno = 0;
 		goto again;
 	}
-rbits:
+	if (tmpbuf.c_date != dumpdate || tmpbuf.c_ddate != dumptime) {
+		fprintf(stderr, "Wrong dump date (%s)\n", ctime(tmpbuf.c_date));
+		volno = 0;
+		goto again;
+	}
 	if (curfile.action == USING) {
 		if (volno == 1)
 			panic("active file into volume 1\n");
+		blksread = savecnt;
 		return;
 	}
 	findinode(&spcl, curfile.action == UNKNOWN ? 1 : 0);
@@ -307,9 +349,9 @@ getfile(f1, f2)
 	static char clearedbuf[MAXBSIZE];
 	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
 
-	if (checktype(&spcl, TS_END) == 1)
+	if (checktype(&spcl, TS_END) == GOOD)
 		panic("ran off end of tape\n");
-	if (checktype(&spcl, TS_INODE) == 0)
+	if (!insetup && checktype(&spcl, TS_INODE) == FAIL)
 		panic("not at beginning of a file\n");
 	if (setjmp(restart) != 0)
 		return;
@@ -339,7 +381,7 @@ loop:
 			goto out;
 		}
 	}
-	if (gethead(&spcl) == 0 || checktype(&spcl, TS_ADDR) == 0) {
+	if (gethead(&spcl) == FAIL || checktype(&spcl, TS_ADDR) == FAIL) {
 		fprintf(stderr, "Missing address (header) block for %s\n",
 			curfile.name);
 		goto out;
@@ -483,6 +525,12 @@ readtape(b)
 			}
 		}
 		if (i == 0) {
+			if (pipein) {
+				bcopy((char *)&endoftapemark, b,
+					(long)TP_BSIZE);
+				flsht();
+				return;
+			}
 			newvol = volno + 1;
 			volno = 0;
 			getvol(newvol);
@@ -491,44 +539,13 @@ readtape(b)
 		}
 	}
 	bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
+	blksread++;
 }
 
 flsht()
 {
 
 	bct = NTREC+1;
-}
-
-resetmt()
-{
-	struct mtop tcom;
-
-	if (dumpnum > 1)
-		tcom.mt_op = MTBSF;
-	else
-		tcom.mt_op = MTREW;
-	tcom.mt_count = 1;
-	flsht();
-#ifdef RRESTOR
-	if (rmtioctl(tcom.mt_op, 1) == -1) {
-		/* kludge for disk dumps */
-		rmtseek((long)0, 0);
-	}
-#else
-	if (ioctl(mt,MTIOCTOP,&tcom) == -1) {
-		/* kludge for disk dumps */
-		(void) lseek(mt, (long)0, 0);
-	}
-#endif
-	if (dumpnum > 1) {
-#ifdef RRESTOR
-		rmtioctl(MTFSF, 1);
-#else
-		tcom.mt_op = MTFSF;
-		tcom.mt_count = 1;
-		ioctl(mt,MTIOCTOP,&tcom);
-#endif
-	}
 }
 
 closemt()
@@ -547,20 +564,18 @@ checkvol(b, t)
 	long t;
 {
 
-	if (b->c_volume == t)
-		return(1);
-	return(0);
+	if (b->c_volume != t)
+		return(FAIL);
+	return(GOOD);
 }
 
 readhdr(b)
 	struct s_spcl *b;
 {
 
-	if (gethead(b) == 0)
-		return(0);
-	if (checktype(b, TS_TAPE) == 0)
-		return(0);
-	return(1);
+	if (gethead(b) == FAIL)
+		return(FAIL);
+	return(GOOD);
 }
 
 /*
@@ -573,36 +588,41 @@ gethead(buf)
 	union u_ospcl {
 		char dummy[TP_BSIZE];
 		struct	s_ospcl {
-			int	c_type;
-			time_t	c_date;
-			time_t	c_ddate;
-			int	c_volume;
-			daddr_t	c_tapea;
-			ino_t	c_inumber;
-			int	c_magic;
-			int	c_checksum;
+			long	c_type;
+			long	c_date;
+			long	c_ddate;
+			long	c_volume;
+			long	c_tapea;
+			short	c_inumber;
+			long	c_magic;
+			long	c_checksum;
 			struct odinode {
 				unsigned short odi_mode;
 				short	odi_nlink;
 				short	odi_uid;
 				short	odi_gid;
-				off_t	odi_size;
-				daddr_t	odi_rdev;
+				long	odi_size;
+				long	odi_rdev;
 				char	odi_addr[36];
-				time_t	odi_atime;
-				time_t	odi_mtime;
-				time_t	odi_ctime;
+				long	odi_atime;
+				long	odi_mtime;
+				long	odi_ctime;
 			} c_dinode;
-			int	c_count;
-			char	c_addr[TP_NINDIR];
+			long	c_count;
+			char	c_addr[256];
 		} s_ospcl;
 	} u_ospcl;
 
 	if (!cvtflag) {
 		readtape((char *)buf);
-		if (buf->c_magic != NFS_MAGIC || checksum((int *)buf) == 0)
-			return(0);
-		return(1);
+		if (buf->c_magic != NFS_MAGIC || checksum((int *)buf) == FAIL) {
+			dprintf(stderr, "gethead fails at %d blocks\n",
+				blksread);
+			return(FAIL);
+		}
+		if (dflag)
+			accthdr(buf);
+		return(GOOD);
 	}
 	readtape((char *)(&u_ospcl.s_ospcl));
 	bzero((char *)buf, (long)TP_BSIZE);
@@ -624,12 +644,66 @@ gethead(buf)
 	buf->c_dinode.di_mtime = u_ospcl.s_ospcl.c_dinode.odi_mtime;
 	buf->c_dinode.di_ctime = u_ospcl.s_ospcl.c_dinode.odi_ctime;
 	buf->c_count = u_ospcl.s_ospcl.c_count;
-	bcopy(u_ospcl.s_ospcl.c_addr, buf->c_addr, (long)TP_NINDIR);
+	bcopy(u_ospcl.s_ospcl.c_addr, buf->c_addr, (long)256);
 	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
-	    checksum((int *)(&u_ospcl.s_ospcl)) == 0)
-		return(0);
+	    checksum((int *)(&u_ospcl.s_ospcl)) == FAIL) {
+		dprintf(stderr, "gethead fails at %d blocks\n", blksread);
+		return(FAIL);
+	}
 	buf->c_magic = NFS_MAGIC;
-	return(1);
+	if (dflag)
+		accthdr(buf);
+	return(GOOD);
+}
+
+/*
+ * Check that a header is where it belongs and predict the next header
+ */
+accthdr(header)
+	struct s_spcl *header;
+{
+	static ino_t previno = 0;
+	static int prevtype;
+	static long predict;
+	long blks, i;
+
+	if (previno == 0)
+		goto newcalc;
+	switch (prevtype) {
+	case TS_TAPE:
+		fprintf(stderr, "Volume");
+		break;
+	case TS_BITS:
+		fprintf(stderr, "Dump mask");
+		break;
+	case TS_CLRI:
+		fprintf(stderr, "Remove mask");
+		break;
+	case TS_INODE:
+		fprintf(stderr, "File");
+		break;
+	case TS_ADDR:
+		fprintf(stderr, "File continuation");
+		break;
+	case TS_END:
+		fprintf(stderr, "End of tape");
+		break;
+	}
+	fprintf(stderr, " header, ino %d", previno);
+	if (predict != blksread - 1)
+		fprintf(stderr, "; predicted %d blocks, got %d blocks",
+			predict, blksread - 1);
+	fprintf(stderr, "\n");
+newcalc:
+	blks = 0;
+	if (header->c_type != TS_TAPE && header->c_type != TS_END)
+		for (i = 0; i < header->c_count; i++)
+			if (header->c_addr[i] != 0)
+				blks++;
+	predict = blks;
+	blksread = 0;
+	prevtype = header->c_type;
+	previno = header->c_inumber;
 }
 
 /*
@@ -640,36 +714,47 @@ findinode(header, complain)
 	struct s_spcl *header;
 	int complain;
 {
-	static int skipcnt = 0;
+	static long skipcnt = 0;
+	long i;
 
 	curfile.name = "<name unknown>";
 	curfile.action = UNKNOWN;
 	curfile.dip = (struct dinode *)NIL;
 	curfile.ino = 0;
-	if (ishead(header) == 0)
-		while (gethead(header) == 0)
+	if (ishead(header) == FAIL) {
+		skipcnt++;
+		while (gethead(header) == FAIL)
 			skipcnt++;
+	}
 	for (;;) {
-		if (checktype(header, TS_INODE) == 1) {
+		if (checktype(header, TS_INODE) == GOOD) {
 			curfile.dip = &header->c_dinode;
 			curfile.ino = header->c_inumber;
 			break;
 		}
-		if (checktype(header, TS_END) == 1) {
+		if (checktype(header, TS_END) == GOOD) {
 			curfile.ino = maxino;
 			break;
 		}
-		if (insetup && checktype(header, TS_CLRI) == 1) {
+		if (checktype(header, TS_CLRI) == GOOD) {
 			curfile.name = "<file removal list>";
 			header->c_dinode.di_size = header->c_count * TP_BSIZE;
-			break;
+			for (i = 0; i < header->c_count; i++)
+				header->c_addr[i]++;
+			if (insetup)
+				break;
+			skipfile();
 		}
-		if (insetup && checktype(header, TS_BITS) == 1) {
+		if (checktype(header, TS_BITS) == GOOD) {
 			curfile.name = "<file dump list>";
 			header->c_dinode.di_size = header->c_count * TP_BSIZE;
-			break;
+			for (i = 0; i < header->c_count; i++)
+				header->c_addr[i]++;
+			if (insetup)
+				break;
+			skipfile();
 		}
-		while (gethead(header) == 0)
+		while (gethead(header) == FAIL)
 			skipcnt++;
 	}
 	if (skipcnt > 0 && complain)
@@ -685,8 +770,8 @@ ishead(buf)
 {
 
 	if (buf->c_magic != NFS_MAGIC)
-		return(0);
-	return(1);
+		return(FAIL);
+	return(GOOD);
 }
 
 checktype(b, t)
@@ -694,7 +779,9 @@ checktype(b, t)
 	int	t;
 {
 
-	return(b->c_type == t);
+	if (b->c_type != t)
+		return(FAIL);
+	return(GOOD);
 }
 
 checksum(b)
@@ -710,9 +797,9 @@ checksum(b)
 	if (i != CHECKSUM) {
 		fprintf(stderr, "Checksum error %o, inode %d file %s\n", i,
 			curfile.ino, curfile.name);
-		return(0);
+		return(FAIL);
 	}
-	return(1);
+	return(GOOD);
 }
 
 #ifdef RRESTOR
