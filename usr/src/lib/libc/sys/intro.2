@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.6 (Berkeley) %G%
+.\"	@(#)intro.2	6.7 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -82,8 +82,8 @@ is presented to
 .en 8 ENOEXEC "Exec format error
 A request is made to execute a file
 that, although it has the appropriate permissions,
-does not start with a valid magic number, see
-.IR a.out (5).
+does not start with a valid magic number, (see
+.IR a.out (5)).
 .en 9 EBADF "Bad file number
 Either a file descriptor refers to no
 open file,
@@ -107,7 +107,7 @@ or
 a program asks for more core or swap space than the system is
 able to supply,
 or a process size limit would be exceeded.
-A lack of swap space is normally a temporary condition, however
+A lack of swap space is normally a temporary condition; however,
 a lack of core
 is not a temporary condition; the maximum size
 of the text, data, and stack segments is a system parameter.
@@ -120,7 +120,7 @@ The system encountered a hardware fault in attempting to
 access the arguments of a system call.
 .en 15 ENOTBLK "Block device required
 A plain file was mentioned where a block device was required,
-e.g. in
+e.g., in
 .IR mount .
 .en 16 EBUSY "Device busy
 An attempt to mount a device that was already mounted or
@@ -130,7 +130,7 @@ on which there is an active file
 A request was made to an exclusive access device that was already in use.
 .en 17 EEXIST "File exists
 An existing file was mentioned in an inappropriate context,
-e.g.
+e.g.,
 .IR link .
 .en 18 EXDEV "Cross-device link
 A hard link to a file on another device
@@ -138,12 +138,12 @@ was attempted.
 .en 19 ENODEV "No such device
 An attempt was made to apply an inappropriate
 system call to a device,
-e.g. to read a write-only device,
+e.g., to read a write-only device,
 or the device is not configured by the system.
 .en 20 ENOTDIR "Not a directory
 A non-directory was specified where a directory
 is required,
-for example in a path name or
+for example, in a path name or
 as an argument to
 .IR chdir .
 .en 21 EISDIR "Is a directory
@@ -155,8 +155,8 @@ device,
 mentioning an unknown signal in
 .I signal,
 or some other argument inappropriate for the call.
-Also set by math functions, see 
-.IR math (3).
+Also set by math functions, (see 
+.IR math (3)).
 .en 23 ENFILE "File table overflow
 The system's table of open files is full,
 and temporarily no more
@@ -218,7 +218,7 @@ The value of a function in the math package (3M)
 is unrepresentable within machine precision.
 .en 35 EWOULDBLOCK "Operation would block"
 An operation that would cause a process to block was attempted
-on a object in non-blocking mode (see \fIfcntl\fP(2)).
+on an object in non-blocking mode (see \fIfcntl\fP(2)).
 .en 36 EINPROGRESS "Operation now in progress"
 An operation that takes a long time to complete (such as
 a \fIconnect\fP(2)) was attempted on a non-blocking object (see
@@ -235,7 +235,7 @@ A message sent on a socket was larger than the internal message buffer
 or some other network limit.
 .en 41 EPROTOTYPE "Protocol wrong type for socket"
 A protocol was specified that does not support the semantics of the
-socket type requested. For example you cannot use the ARPA Internet
+socket type requested. For example, you cannot use the ARPA Internet
 UDP protocol with type SOCK_STREAM.
 .en 42 ENOPROTOOPT "Option not supported by protocol 
 A bad option or level was specified in a
@@ -342,8 +342,8 @@ integer called a process ID.  The range of this ID is from 0 to 30000.
 .TP 5
 Parent process ID
 .br
-A new process is created by a currently active process; see
-.IR fork (2).
+A new process is created by a currently active process; (see
+.IR fork (2)).
 The parent process ID of a process is the process ID of its creator.
 .TP 5
 Process Group ID
@@ -361,10 +361,10 @@ Tty Group ID
 Each active process can be a member of a terminal group that is identified
 by a positive integer called the tty group ID.  This grouping is used
 to arbitrate between multiple jobs contending for the same terminal;
-see
-.IR csh (1),
+(see
+.IR csh (1)
 and
-.IR tty (4).
+.IR tty (4)).
 .TP 5
 Real User ID and Real Group ID
 .br
@@ -390,8 +390,8 @@ group access list.
 The effective user ID and effective group ID are initially the
 process's real user ID and real group ID respectively.  Either
 may be modified through execution of a set-user-ID or set-group-ID
-file (possibly by one its ancestors); see
-.IR execve (2).
+file (possibly by one its ancestors) (see
+.IR execve (2)).
 .IP
 The group access list is an additional set of group ID's
 used only in determining resource accessibility.  Access checks
