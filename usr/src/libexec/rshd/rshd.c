@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 1983, 1988, 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1988, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,19 +7,20 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1988, 1089 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1988, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.36.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
-/* From:
+/*
+ * From:
  *	$Source: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v $
- *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 5.2 89/07/31 19:30:04 kfall Exp $
+ *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 
+ *		5.2 89/07/31 19:30:04 kfall Exp $
  */
-
 
 /*
  * remote shell server:
@@ -31,25 +32,25 @@ static char sccsid[] = "@(#)rshd.c	5.36.1.1 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/file.h>
-#include <sys/signal.h>
-#include <sys/signal.h>
 #include <sys/time.h>
+#include <fcntl.h>
+#include <signal.h>
 
+#include <sys/socket.h>
 #include <netinet/in.h>
-
 #include <arpa/inet.h>
-
-#include <stdio.h>
-#include <errno.h>
-#include <pwd.h>
 #include <netdb.h>
+
+#include <pwd.h>
 #include <syslog.h>
 #include "pathnames.h"
-#include "pathnames.h"
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <paths.h>
 
-int	errno;
 int	keepalive = 1;
 int	check_all = 0;
 int	check_all = 0;
@@ -93,7 +94,7 @@ main(argc, argv)
 	argv += optind;
 
 	fromlen = sizeof (from);
-	if (getpeername(0, &from, &fromlen) < 0) {
+	if (getpeername(0, (struct sockaddr *)&from, &fromlen) < 0) {
 		syslog(LOG_ERR, "getpeername: %m");
 		_exit(1);
 	}
@@ -196,7 +197,7 @@ doit(fromp)
 		    "Connection received from %s using IP options (ignored):%s",
 		    inet_ntoa(fromp->sin_addr), lbuf);
 		if (setsockopt(0, ipproto, IP_OPTIONS,
-		    (char *)NULL, &optsize) != 0) {
+		    (char *)NULL, optsize) != 0) {
 			syslog(LOG_ERR, "setsockopt IP_OPTIONS NULL: %m");
 			exit(1);
 		}
@@ -231,7 +232,7 @@ doit(fromp)
 #ifdef	KERBEROS
 		if (!use_kerberos)
 		fromp->sin_port = htons(port);
-		if (connect(s, fromp, sizeof (*fromp)) < 0) {
+		if (connect(s, (struct sockaddr *)fromp, sizeof (*fromp)) < 0) {
 			syslog(LOG_INFO, "connect second port: %m");
 			exit(1);
 		}
