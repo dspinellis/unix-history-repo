@@ -1,5 +1,4 @@
-
-/* undodb.c -
+/* @(#)undodb.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -28,7 +27,7 @@ extern char *strcpy();
 
 extern DBClearElt();
 
-
+
 UNRembAdd(element, db)
 ELT *element, *(*db);
 /*
@@ -67,7 +66,7 @@ ELT *element, *(*db);
     unlist = temp;
 }  /* end RembDelete */
 
-
+
 UNRembMod(element, db)
 ELT *element, *(*db);
 /*
