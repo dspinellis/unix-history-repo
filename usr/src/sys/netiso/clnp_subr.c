@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
-/*	@(#)clnp_subr.c	7.9 (Berkeley) %G% */
+/*	@(#)clnp_subr.c	7.10 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
@@ -46,6 +46,7 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/0
 
 #include "../net/if.h"
 #include "../net/route.h"
+#include "../net/if_dl.h"
 
 #include "iso.h"
 #include "iso_var.h"
@@ -295,12 +296,10 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	 */
 	if ((iso_systype & SNPA_IS) && (inbound_shp) && 
 		(ifp == inbound_shp->snh_ifp)) {
-		struct snpa_cache 			*sc;
-
-		sc = snpac_look(&((struct sockaddr_iso *)next_hop)->siso_addr);
-		if (sc != NULL) {
-			esis_rdoutput(inbound_shp, m, oidx, dst, sc);
-		}
+			register struct sockaddr_dl *sdl =
+				(struct sockaddr_dl *) route.ro_rt->rt_gateway;
+			if (sdl->sdl_family == AF_LINK && sdl->sdl_alen != 0)
+				esis_rdoutput(inbound_shp, m, oidx, dst, route.ro_rt);
 	}
 
 	/*
