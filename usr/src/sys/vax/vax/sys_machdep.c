@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_machdep.c	7.6 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.7 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -17,7 +17,6 @@
 #include "sys/buf.h"
 #include "sys/trace.h"
 
-#include "dkio.h"
 #include "../include/pte.h"
 #include "../uba/ubareg.h"
 #include "../uba/ubavar.h"
