@@ -1,4 +1,4 @@
-/*	raw_ip.c	6.4	84/08/29	*/
+/*	raw_ip.c	6.5	85/06/02	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -75,7 +75,7 @@ rip_output(m0, so)
 	ip = mtod(m, struct ip *);
 	ip->ip_tos = 0;
 	ip->ip_off = 0;
-	ip->ip_p = so->so_proto->pr_protocol;
+	ip->ip_p = rp->rcb_proto.sp_protocol;
 	ip->ip_len = sizeof(struct ip) + len;
 	if (rp->rcb_flags & RAW_LADDR) {
 		sin = (struct sockaddr_in *)&rp->rcb_laddr;
