@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)t1	8.1 (Berkeley) %G%
+.\"	@(#)t1	6.3 (Berkeley) %G%
 .\"
 .EH 'USD:3-%''An Introduction to the UNIX Shell'
 .OH 'An Introduction to the UNIX Shell''USD:3-%'
@@ -10,7 +10,7 @@ An Introduction to the UNIX Shell
 .AU
 S. R. Bourne
 .AI
-.MH
+Murray Hill, NJ
 .AU
 (Updated for 4.3BSD by Mark Seiden)
 .AB
