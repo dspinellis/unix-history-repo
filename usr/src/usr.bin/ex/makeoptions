@@ -37,7 +37,7 @@ ex - /tmp/foo.c <<'X'
 .
 	$s/e[ 	].*[ 	]/e	NOPTS	/
 	0a
-	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	4.2 %G%  */
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	5.1 %G%  */
 .
 	w! ex_vars.h
 	q

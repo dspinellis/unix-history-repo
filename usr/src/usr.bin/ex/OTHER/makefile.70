@@ -1,4 +1,4 @@
-VERSION=3.4
+VERSION=3.5
 #
 # Ex skeletal makefile for VAX VM/Unix version 7
 #
@@ -8,7 +8,8 @@ VERSION=3.4
 # software.  Things that can be turned off to save
 # space include LISPCODE (-l flag, showmatch and lisp options), UCVISUAL
 # (visual \ nonsense on upper case only terminals), CHDIR (the undocumented
-# chdir command.)  VMUNIX makes ex considerably larger, raising many limits
+# chdir command.)  CRYPT includes the code to edit encrypted files (the -x
+# option, like ed.)  VMUNIX makes ex considerably larger, raising many limits
 # and improving speed and simplicity of maintenance.  It is suitable only
 # for a VAX or other large machine, and then probably only in a paged system.
 #
