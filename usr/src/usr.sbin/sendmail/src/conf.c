@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.58 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -422,7 +422,7 @@ rlsesigs()
 #define LA_SUBR		4	/* call getloadavg */
 
 #ifndef LA_TYPE
-#  if defined(sun)
+#  if defined(sun) && !defined(BSD)
 #    define LA_TYPE		LA_INT
 #  endif
 #  if defined(mips) || defined(__alpha)
