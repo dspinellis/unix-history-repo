@@ -1,4 +1,4 @@
-/*	up.c	4.17	81/02/19	*/
+/*	up.c	4.18	81/02/21	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -28,9 +28,8 @@
 
 struct	up_softc {
 	int	sc_softas;
-	int	sc_seek;
+	int	sc_ndrive;
 	int	sc_wticks;
-	/* struct uba_minfo sc_minfo; */
 } up_softc[NSC21];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
@@ -65,13 +64,14 @@ struct	size
 int	upSDIST = _upSDIST;
 int	upRDIST = _upRDIST;
 
-int	upcntrlr(), upslave(), updgo(), upintr();
+int	upprobe(), upslave(), upattach(), updgo(), upintr();
 struct	uba_minfo *upminfo[NSC21];
 struct	uba_dinfo *updinfo[NUP];
+struct	uba_dinfo *upip[NSC21][4];
 
-u_short	upstd[] = { 0776700, 0774400, 0776300 };
+u_short	upstd[] = { 0776700, 0774400, 0776300, 0 };
 struct	uba_driver updriver =
-	{ upcntrlr, upslave, updgo, 0, upstd, "up", updinfo, "sc", upminfo };
+    { upprobe, upslave, upattach, updgo, upstd, "up", updinfo, "sc", upminfo };
 struct	buf	uputab[NUP];
 
 struct	upst {
@@ -81,8 +81,8 @@ struct	upst {
 	short	ncyl;
 	struct	size *sizes;
 } upst[] = {
-	32,	19,	32*19,	815,	up_sizes,	/* 9300 */
-	32,	19,	32*19,	823,	up_sizes,	/* so cdc will boot */
+	32,	19,	32*19,	823,	up_sizes,	/* 9300/cdc */
+/* 9300 actually has 815 cylinders... */
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
 };
 
@@ -106,35 +106,47 @@ int	upwstart, upwatch();		/* Have started guardian */
 int	upseek;
 
 /*ARGSUSED*/
-upcntrlr(um, reg)
-	struct uba_minfo *um;
+upprobe(reg)
 	caddr_t reg;
 {
 	register int br, cvec;
 
-	((struct device *)reg)->upcs1 |= (IE|RDY);
+#ifdef lint	
+	br = 0; cvec = br; br = cvec;
+#endif
+	((struct device *)reg)->upcs1 = (IE|RDY);
+	DELAY(10);
+	((struct device *)reg)->upcs1 = 0;
 	return (1);
 }
 
-upslave(ui, reg, slaveno)
+upslave(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
 	register struct device *upaddr = (struct device *)reg;
 
 	upaddr->upcs1 = 0;		/* conservative */
-	upaddr->upcs2 = slaveno;
+	upaddr->upcs2 = ui->ui_slave;
 	if (upaddr->upcs2&NED) {
 		upaddr->upcs1 = DCLR|GO;
 		return (0);
 	}
+	return (1);
+}
+
+upattach(ui)
+	register struct uba_dinfo *ui;
+{
+
 	if (upwstart == 0) {
 		timeout(upwatch, (caddr_t)0, HZ);
 		upwstart++;
 	}
 	if (ui->ui_dk >= 0)
 		dk_mspw[ui->ui_dk] = .0000020345;
-	return (1);
+	upip[ui->ui_ctlr][ui->ui_slave] = ui;
+	up_softc[ui->ui_ctlr].sc_ndrive++;
 }
  
 upstrategy(bp)
@@ -188,8 +200,14 @@ upustart(ui)
 	int sn, cn, csn;
 	int didie = 0;
 
-	/* SC21 cancels commands if you say cs1 = IE, so dont */
-	/* being ultra-cautious, we clear as bits only in upintr() */
+	if (ui == 0)
+		return (0);
+	/*
+	 * The SC21 cancels commands if you just say
+	 *	cs1 = IE
+	 * so we are cautious about handling of cs1.
+	 * Also don't bother to clear as bits other than in upintr().
+	 */
 	dk_busy &= ~(1<<ui->ui_dk);
 	dp = &uputab[ui->ui_unit];
 	if ((bp = dp->b_actf) == NULL)
@@ -206,12 +224,15 @@ upustart(ui)
 	upaddr = (struct device *)um->um_addr;
 	upaddr->upcs2 = ui->ui_slave;
 	if ((upaddr->upds & VV) == 0) {
+		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		upaddr->upcs1 = IE|DCLR|GO;
 		upaddr->upcs1 = IE|PRESET|GO;
 		upaddr->upof = FMT22;
 		didie = 1;
 	}
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
+		goto done;
+	if (up_softc[um->um_ctlr].sc_ndrive == 1)
 		goto done;
 	st = &upst[ui->ui_type];
 	bn = dkblock(bp);
@@ -257,10 +278,8 @@ upstart(um)
 {
 	register struct buf *bp, *dp;
 	register struct uba_dinfo *ui;
-	register unit;
 	register struct device *upaddr;
 	struct upst *st;
-	struct up_softc *sc = &up_softc[um->um_ctlr];
 	daddr_t bn;
 	int dn, sn, tn, cmd;
 
@@ -284,8 +303,7 @@ loop:
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	upaddr = (struct device *)ui->ui_addr;
-	if ((upaddr->upcs2 & 07) != dn)
-		upaddr->upcs2 = dn;
+	upaddr->upcs2 = dn;
 	/*
 	 * If drive is not present and on-line, then
 	 * get rid of this with an error and loop to get
@@ -293,9 +311,9 @@ loop:
 	 * (Then on to any other ready drives.)
 	 */
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
-		printf("!DPR || !MOL, unit %d, ds %o", dn, upaddr->upds);
+		printf("up%d not ready", dkunit(bp));
 		if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
-			printf("-- hard\n");
+			printf("\n");
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
@@ -304,7 +322,7 @@ loop:
 			iodone(bp);
 			goto loop;
 		}
-		printf("-- came back\n");
+		printf(" (flakey... it came back)\n");
 	}
 	/*
 	 * If this is a retry, then with the 16'th retry we
@@ -360,10 +378,11 @@ upintr(sc21)
 	register struct device *upaddr = (struct device *)um->um_addr;
 	register unit;
 	struct up_softc *sc = &up_softc[um->um_ctlr];
-	int as = upaddr->upas & 0377;
+	int as = (upaddr->upas & 0377) | sc->sc_softas;
 	int needie = 1;
 
 	sc->sc_wticks = 0;
+	sc->sc_softas = 0;
 	if (um->um_tab.b_active) {
 		if ((upaddr->upcs1 & RDY) == 0)
 			printf("upintr !RDY\n");
@@ -376,6 +395,8 @@ upintr(sc21)
 			int cs2;
 			while ((upaddr->upds & DRY) == 0)
 				DELAY(25);
+			if (upaddr->uper1&WLE)	
+				printf("up%d is write locked\n", dkunit(bp));
 			if (++um->um_tab.b_errcnt > 28 || upaddr->uper1&WLE)
 				bp->b_flags |= B_ERROR;
 			else
@@ -414,32 +435,22 @@ upintr(sc21)
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
 			bp->b_resid = (-upaddr->upwc * sizeof(short));
-			/* CHECK FOR WRITE LOCK HERE... */
-			if (bp->b_resid)
-				printf("resid %d ds %o er? %o %o %o\n",
-				    bp->b_resid, upaddr->upds,
-				    upaddr->uper1, upaddr->uper2, upaddr->uper3);
 			iodone(bp);
 			if (dp->b_actf)
 				if (upustart(ui))
 					needie = 0;
 		}
-		sc->sc_softas &= ~(1<<ui->ui_slave);
+		as &= ~(1<<ui->ui_slave);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
 	}
-	as |= sc->sc_softas;
-	sc->sc_softas = 0;
-	for (unit = 0; unit < NUP; unit++) {
-		if ((ui = updinfo[unit]) == 0 || ui->ui_mi != um)
-			continue;
-		if (as & (1<<unit)) {
+	for (unit = 0; as; as >>= 1, unit++)
+		if (as & 1) {
 			upaddr->upas = 1<<unit;
-			if (upustart(ui))
+			if (upustart(upip[sc21][unit]))
 				needie = 0;
 		}
-	}
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
 		if (upstart(um))
 			needie = 0;
@@ -472,7 +483,6 @@ upecc(ui)
 	register struct buf *bp = uputab[ui->ui_unit].b_actf;
 	register struct uba_minfo *um = ui->ui_mi;
 	register struct upst *st;
-	struct up_softc *sc = &up_softc[um->um_ctlr];
 	struct uba_regs *ubp = ui->ui_hd->uh_uba;
 	register int i;
 	caddr_t addr;
@@ -558,14 +568,12 @@ upreset(uban)
 	register struct uba_minfo *um;
 	register struct uba_dinfo *ui;
 	register sc21, unit;
-	struct up_softc *sc;
 	int any = 0;
 
 	for (sc21 = 0; sc21 < NSC21; sc21++) {
 		if ((um = upminfo[sc21]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		sc = &up_softc[um->um_ctlr];
 		if (any == 0) {
 			printf(" up");
 			DELAY(10000000);	/* give it time to self-test */
@@ -635,7 +643,7 @@ updump(dev)
 {
 	struct device *upaddr;
 	char *start;
-	int num, blk, unit, nsect, ntrak, nspc;
+	int num, blk, unit;
 	struct size *sizes;
 	register struct uba_regs *uba;
 	register struct uba_dinfo *ui;
@@ -675,14 +683,11 @@ updump(dev)
 		return (-1);
 	}
 	st = &upst[ui->ui_type];
-	nsect = st->nsect;
-	ntrak = st->ntrak;
 	sizes = phys(struct size *, st->sizes);
 	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
 		printf("oor\n");
 		return (-1);
 	}
-	nspc = st->nspc;
 	while (num > 0) {
 		register struct pte *io;
 		register int i;
@@ -695,10 +700,10 @@ updump(dev)
 			*(int *)io++ = (btop(start)+i) | (1<<21) | UBA_MRV;
 		*(int *)io = 0;
 		bn = dumplo + btop(start);
-		cn = bn/nspc + sizes[minor(dev)&07].cyloff;
-		sn = bn%nspc;
-		tn = sn/nsect;
-		sn = sn%nsect;
+		cn = bn/st->nspc + sizes[minor(dev)&07].cyloff;
+		sn = bn%st->nspc;
+		tn = sn/st->nsect;
+		sn = sn%st->nsect;
 		upaddr->updc = cn;
 		rp = (short *) &upaddr->upda;
 		*rp = (tn << 8) + sn;

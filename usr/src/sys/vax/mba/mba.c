@@ -1,4 +1,4 @@
-/*	mba.c	4.7	81/02/19	*/
+/*	mba.c	4.8	81/02/21	*/
 
 /*
  * Massbus driver; arbitrates massbusses through device driver routines
@@ -130,7 +130,6 @@ mbstart(mhp)
 {
 	register struct mba_info *mi;
 	struct buf *bp;
-	register struct mba_drv *daddr;
 	register struct mba_regs *mbp;
 
 	dprintf("mbstart\n");

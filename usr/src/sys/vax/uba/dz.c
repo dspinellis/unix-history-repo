@@ -1,4 +1,4 @@
-/*	dz.c	4.14	%G%	*/
+/*	dz.c	4.15	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -27,11 +27,11 @@
 /*
  * Driver information for auto-configuration stuff.
  */
-int	dzcntrlr(), dzslave(), dzrint();
+int	dzprobe(), dzattach(), dzrint();
 struct	uba_dinfo *dzinfo[NDZ11];
 u_short	dzstd[] = { 0 };
 struct	uba_driver dzdriver =
-	{ dzcntrlr, dzslave, 0, 0, dzstd, "dz", dzinfo };
+	{ dzprobe, 0, dzattach, 0, dzstd, "dz", dzinfo };
 
 #define	NDZ 	(NDZ11*8)
  
@@ -99,13 +99,15 @@ struct	pdma dzpdma[NDZ];
 char	dz_speeds[] =
 	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,0,0 };
  
-dzcntrlr(ui, reg)
-	struct uba_dinfo *ui;
+dzprobe(reg)
 	caddr_t reg;
 {
 	register int br, cvec;
 	register struct device *dzaddr = (struct device *)reg;
 
+#ifdef lint
+	br = 0; br = cvec; cvec = br;
+#endif
 	dzaddr->dzcsr = DZ_TIE|DZ_MSE;
 	dzaddr->dztcr = 1;		/* enable any line */
 	DELAY(100000);
@@ -115,20 +117,15 @@ dzcntrlr(ui, reg)
 	return (1);
 }
 
-/*
- * Called by auto-configure to initialize good dz's;
- * set up pdma structures.
- */
-dzslave(ui, reg)
+dzattach(ui)
 	register struct uba_dinfo *ui;
-	caddr_t reg;
 {
 	register struct pdma *pdp = &dzpdma[ui->ui_unit*8];
 	register struct tty *tp = &dz_tty[ui->ui_unit*8];
-	register int cnt;
+	register int cntr;
 
-	for (cnt = 0; cnt < 8; cnt++) {
-		pdp->p_addr = (struct device *)reg;
+	for (cntr = 0; cntr < 8; cntr++) {
+		pdp->p_addr = (struct device *)ui->ui_addr;
 		pdp->p_arg = (int)tp;
 		pdp->p_fcn = dzxint;
 		pdp++, tp++;
@@ -225,7 +222,6 @@ dzrint(dz)
 	register struct device *dzaddr;
 	register struct tty *tp0;
 	register int unit;
-	int s;
  
 	if ((dzact & (1<<dz)) == 0)
 		return;
@@ -431,7 +427,7 @@ dzscan()
 		dzaddr = dzpdma[i].p_addr;
 		tp = &dz_tty[i];
 		bit = 1<<(i&07);
-		if ((dzsoftCAR[i]&bit) || (dzaddr->dzmsr&bit)) {
+		if ((dzsoftCAR[i>>3]&bit) || (dzaddr->dzmsr&bit)) {
 			/* carrier present */
 			if ((tp->t_state & CARR_ON) == 0) {
 				wakeup((caddr_t)&tp->t_rawq);

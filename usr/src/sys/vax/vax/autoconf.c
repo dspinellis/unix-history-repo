@@ -1,4 +1,4 @@
-/*	autoconf.c	4.8	81/02/19	*/
+/*	autoconf.c	4.9	81/02/21	*/
 
 /*
  * Configure the system for the current machine.
@@ -244,6 +244,7 @@ mbaconfig(ni, type)
 {
 	register struct mba_info *mi;
 	register short *tp;
+	register struct mba_hd *mh;
 
 	for (mi = mbinit; mi->mi_driver; mi++) {
 		if (mi->mi_alive)
@@ -260,8 +261,10 @@ found:
 		printf("%c%d at mba%d drive %d\n",
 		    mi->mi_name, mi->mi_unit, ni->mi_mbanum, ni->mi_drive);
 		mi->mi_alive = 1;
-		mi->mi_hd = &mba_hd[ni->mi_mbanum];
-		mba_hd[ni->mi_mbanum].mh_mbip[ni->mi_drive] = mi;
+		mh = &mba_hd[ni->mi_mbanum];
+		mi->mi_hd = mh;
+		mh->mh_mbip[ni->mi_drive] = mi;
+		mh->mh_ndrive++;
 		mi->mi_mba = ni->mi_mba;
 		mi->mi_drv = &mi->mi_mba->mba_drv[ni->mi_drive];
 		mi->mi_driver->md_info[mi->mi_unit] = mi;
@@ -272,6 +275,7 @@ found:
 			mi->mi_dk = dkn++;
 		else
 			mi->mi_dk = -1;
+		(*mi->mi_driver->md_dkinit)(mi);
 	}
 }
 
@@ -288,9 +292,9 @@ fixctlrmask()
 #define	phys(a,b) ((b)(((int)(a))&0x7fffffff))
 
 	for (um = ubminit; ud = phys(um->um_driver, struct uba_driver *); um++)
-		*phys(ud->ud_cntrlr, short *) &= ~0xc00;
+		*phys(ud->ud_probe, short *) &= ~0xc00;
 	for (ui = ubdinit; ud = phys(ui->ui_driver, struct uba_driver *); ui++)
-		*phys(ud->ud_cntrlr, short *) &= ~0xc00;
+		*phys(ud->ud_probe, short *) &= ~0xc00;
 }
 
 /*
@@ -382,7 +386,7 @@ unifind(vubp, pubp, vumem, pumem)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_cntrlr)(um, reg);
+		i = (*udp->ud_probe)(reg);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
@@ -434,6 +438,7 @@ unifind(vubp, pubp, vumem, pumem)
 				printf("%s%d at %s%d slave %d\n",
 				    udp->ud_dname, ui->ui_unit,
 				    udp->ud_mname, um->um_ctlr, ui->ui_slave);
+				(*udp->ud_attach)(ui);
 			}
 		}
 	}
@@ -455,7 +460,7 @@ unifind(vubp, pubp, vumem, pumem)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_cntrlr)(ui, reg);
+		i = (*udp->ud_probe)(reg);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
@@ -488,17 +493,17 @@ unifind(vubp, pubp, vumem, pumem)
 		ui->ui_dk = -1;
 		/* ui_type comes from driver */
 		udp->ud_dinfo[ui->ui_unit] = ui;
-		(*udp->ud_slave)(ui, reg);
+		(*udp->ud_attach)(ui);
 	}
 }
 
 setscbnex(nexnum, fn)
 	int nexnum, (*fn)();
 {
-	register struct scb *scb = &Scbbase;
+	register struct scb *scbp = &scb;
 
-	scb->scb_ipl14[nexnum] = scb->scb_ipl15[nexnum] =
-	    scb->scb_ipl16[nexnum] = scb->scb_ipl17[nexnum] =
+	scbp->scb_ipl14[nexnum] = scbp->scb_ipl15[nexnum] =
+	    scbp->scb_ipl16[nexnum] = scbp->scb_ipl17[nexnum] =
 		scbentry(fn, SCB_ISTACK);
 }
 

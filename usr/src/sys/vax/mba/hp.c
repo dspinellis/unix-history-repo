@@ -1,4 +1,4 @@
-/*	hp.c	4.9	81/02/15	*/
+/*	hp.c	4.10	81/02/21	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -106,6 +106,17 @@ struct	buf	rhpbuf;
 daddr_t dkblock();
 #endif
  
+int	hpseek;
+
+hpdkinit(mi)
+	struct mba_info *mi;
+{
+	register struct hpst *st = &hpst[mi->mi_type];
+
+	if (mi->mi_dk >= 0)
+		dk_mspw[mi->mi_dk] = 1.0 / HZ / (st->nsect * 256);
+}
+
 hpstrategy(bp)
 	register struct buf *bp;
 {
@@ -157,20 +168,17 @@ hpustart(mi)
 		hpaddr->hpcs1 = PRESET|GO;
 		hpaddr->hpof = FMT22;
 	}
-	if (mi->mi_tab.b_active)
+	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1)
 		return (MBU_DODATA);
 	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL))
-		return (MBU_DODATA);
-	if (flags&MH_NOSEEK)
 		return (MBU_DODATA);
 	hpaddr->hpdc = bp->b_cylin;
 	st = &hpst[mi->mi_type];
 	bn = dkblock(bp);
 	sn = bn%st->nspc;
 	sn = (sn+st->nsect-hpSDIST)%st->nsect;
-	flags = mi->mi_hd->mh_flags;
 	if (bp->b_cylin == (hpaddr->hpdc & 0xffff)) {
-		if (flags&MH_NOSEARCH)
+		if (hpseek)
 			return (MBU_DODATA);
 		dist = ((hpaddr->hpla & 0xffff)>>6) - st->nsect + 1;
 		if (dist < 0)
@@ -178,7 +186,7 @@ hpustart(mi)
 		if (dist > st->nsect - hpRDIST)
 			return (MBU_DODATA);
 	}
-	if (flags&MH_NOSEARCH)
+	if (hpseek)
 		hpaddr->hpcs1 = SEEK|GO;
 	else {
 		hpaddr->hpda = sn;
@@ -413,10 +421,5 @@ hpdump(dev)
 		num -= blk;
 	}
 	return (0);
-}
-
-hpdkinit()
-{
-	/* I don't really care what this does .. kre */
 }
 #endif
