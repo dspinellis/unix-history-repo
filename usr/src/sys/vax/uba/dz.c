@@ -1,4 +1,4 @@
-/*	dz.c	4.44	82/10/10	*/
+/*	dz.c	4.45	82/10/13	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -276,7 +276,7 @@ dzwrite(dev, uio)
 	register struct tty *tp;
  
 	tp = &dz_tty[minor(dev)];
-	(*linesw[tp->t_line].l_write)(tp, uio);
+	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
  
 /*ARGSUSED*/
