@@ -43,6 +43,7 @@ m68*-cbm-amigados)	my_host=amigados ;;
 m68*-cbm-sysv4*)	my_host=amix ;;
 m68*-hp-hpux)		my_host=hp300 ;;
 m68*-hp-bsd)		my_host=hp300bsd ;;
+m68*-omron-bsd)		my_host=luna68k ;;
 m68*-sony-*)		my_host=news ;;
 m68*-sun-*)		my_host=sun3 ;;
 m68*-apollo*-sysv*)	my_host=apollov68 ;;

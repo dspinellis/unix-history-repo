@@ -423,6 +423,10 @@ case $basic_machine in
 		basic_machine=m88k-harris
 		os=-m88kbcs
 		;;
+	luna68k)
+		basic_machine=m68k-omron
+		os=-bsd
+		;;
 	hp300bsd)
 		basic_machine=m68k-hp
 		os=-bsd
