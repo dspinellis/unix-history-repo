@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.17 %G%";
+static	char sccsid[] = "@(#)cc.c 4.18 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -17,7 +17,7 @@ char	*as = _PATH_AS;
 char	*ld = _PATH_LD;
 char	*crt0 = _PATH_CRT0;
 
-char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
+char	tmp0[MAXPATHLEN];
 char	*tmp1, *tmp2, *tmp3, *tmp4, *tmp5;
 char	*outfile;
 char	*savestr(), *strspl(), *setsuf();
@@ -127,7 +127,7 @@ main(argc, argv)
 				error("-B overwrites earlier option", 0);
 			npassname = argv[i]+2;
 			if (npassname[0]==0)
-				npassname = "/usr/c/o";
+				error("-B requires an argument", 0);
 			continue;
 		case 'd':
 			if (argv[i][2] == '\0') {
@@ -185,7 +185,7 @@ main(argc, argv)
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		signal(SIGHUP, idexit);
 	if (pflag==0)
-		(void)sprintf(tmp0, "/tmp/ctm%05.5d", getpid());
+		(void)sprintf(tmp0, "%s/ctm%05.5d", _PATH_TMP, getpid());
 	tmp1 = strspl(tmp0, "1");
 	tmp2 = strspl(tmp0, "2");
 	tmp3 = strspl(tmp0, "3");
