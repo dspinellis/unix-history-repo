@@ -5,14 +5,15 @@
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
- * Science Department and Ralph Campbell.
+ * Science Department, The Mach Operating System project at
+ * Carnegie-Mellon University and Ralph Campbell.
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: machdep.c 1.63 91/04/24$
- *
- *	@(#)machdep.c	7.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.2 (Berkeley) %G%
  */
+
+/* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
 
 #include "param.h"
 #include "systm.h"
@@ -42,10 +43,11 @@
 #include "../include/reg.h"
 #include "../include/psl.h"
 #include "../include/machMon.h"
-#include "clockreg.h"
-#include "pte.h"
+#include "../include/pte.h"
 
-#define	MAXMEM	24*1024*CLSIZE	/* XXX - from cmap.h */
+#include "../dev/device.h"
+
+#include "clockreg.h"
 
 vm_map_t buffer_map;
 
@@ -65,7 +67,7 @@ int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 int	maxmem;			/* max memory per process */
-int	physmem = MAXMEM;	/* max supported memory, changes to actual */
+int	physmem;		/* max supported memory, changes to actual */
 /*
  * safepri is a safe priority for sleep to set for a spin-wait
  * during autoconfiguration or after a panic.
@@ -99,6 +101,14 @@ mach_init(argc, argv)
 	v = (caddr_t)pmax_round_page(end) + 2 * UPAGES * NBPG;
 	bzero(edata, v - edata);
 
+#ifdef DS5000
+	/* check for direct boot from DS5000 PROM */
+	if (argc > 0 && strcmp(argv[0], "boot") == 0) {
+		argc--;
+		argv++;
+	}
+#endif
+
 	/* look at argv[0] and compute bootdev */
 	makebootdev(argv[0]);
 
@@ -110,26 +120,15 @@ mach_init(argc, argv)
 #else
 	boothowto = RB_SINGLE | RB_DFLTROOT;
 #endif
+#ifdef KADB
+	boothowto |= RB_KDB;
+#endif
 	if (argc > 1) {
 		for (i = 1; i < argc; i++) {
 			for (cp = argv[i]; *cp; cp++) {
 				switch (*cp) {
 				case '-':
 					continue;
-
-				case '0': /* XXX */
-				case '1': /* XXX */
-				case '2': /* XXX */
-				case '3': /* XXX */
-				case '4': /* XXX */
-				case '5': /* XXX */
-				case '6': /* XXX */
-				    {
-					extern int sii_debug;
-
-					sii_debug = *cp - '0';
-					break;
-				    }
 
 				case 'a': /* autoboot */
 					boothowto &= ~RB_SINGLE;
@@ -151,9 +150,10 @@ mach_init(argc, argv)
 	/*
 	 * Init mapping for u page(s) for proc[0], pm_tlbpid 1.
 	 */
-	firstaddr = pmax_round_page(end);
-	curproc->p_addr = proc0paddr = (struct user *)firstaddr;
-	curproc->p_regs = proc0paddr->u_pcb.pcb_regs;
+	firstaddr = MACH_CACHED_TO_PHYS(pmax_round_page(end));
+	curproc->p_addr = proc0paddr = (struct user *)
+		MACH_PHYS_TO_CACHED(firstaddr);
+	curproc->p_md.md_regs = proc0paddr->u_pcb.pcb_regs;
 	for (i = 0; i < UPAGES; i++) {
 		MachTLBWriteIndexed(i,
 			(UADDR + (i << PGSHIFT)) | (1 << VMMACH_TLB_PID_SHIFT),
@@ -167,7 +167,8 @@ mach_init(argc, argv)
 	 * init mapping for u page(s), pm_tlbpid 0
 	 * This could be used for an idle process.
 	 */
-	nullproc.p_regs = ((struct user *)firstaddr)->u_pcb.pcb_regs;
+	nullproc.p_md.md_regs =
+		((struct user *)MACH_PHYS_TO_CACHED(firstaddr))->u_pcb.pcb_regs;
 	for (i = 0; i < UPAGES; i++) {
 		nullproc.p_md.md_upte[i] = firstaddr | PG_V | PG_M;
 		firstaddr += NBPG;
@@ -190,39 +191,108 @@ mach_init(argc, argv)
 	MachFlushCache();
 
 	/*
-	 * Find out how much memory is available.
+	 * Determine what model of computer we are running on.
 	 */
-	physmem = btoc(v - KERNBASE);
-	cp = (char *)(MACH_UNCACHED_MEMORY_ADDR + (physmem << PGSHIFT));
-	while (cp < (char *)MACH_UNCACHED_FRAME_BUFFER_ADDR) {
-		if (badaddr(cp, 4))
-			break;
-		cp += NBPG;
-		physmem++;
+	{
+		char *(*f)() = (char *(*)())MACH_MON_GETENV2;
+
+		if (cp = (*f)("systype"))
+			i = atoi(cp);
+		else
+			cp = "";
+
+		/* check for MIPS based platform */
+		if (((i >> 24) & 0xFF) != 0x82) {
+			printf("Unknown System type '%s'\n", cp);
+			boot(RB_HALT | RB_NOSYNC);
+		}
 	}
-	maxmem = physmem + btoc(KERNBASE);
+
+	/* check what model platform we are running on */
+	switch ((i >> 16) & 0xFF) {
+#ifdef DS3100
+	case 1:	/* DS3100 Pmax */
+		/*
+		 * Find out how much memory is available.
+		 */
+		physmem = btoc(v - KERNBASE);
+		cp = (char *)MACH_PHYS_TO_UNCACHED(physmem << PGSHIFT);
+		while (cp < (char *)MACH_MAX_MEM_ADDR) {
+			if (badaddr(cp, 4))
+				break;
+			cp += NBPG;
+			physmem++;
+		}
+		break;
+#endif
+
+#ifdef DS5000
+	case 2:	/* DS5000 3max */
+	    {
+		extern void tc_find_all_options();
+
+		/* disable all TURBOchannel interrupts */
+		i = *(volatile int *)MACH_SYS_CSR_ADDR;
+		*(volatile int *)MACH_SYS_CSR_ADDR = i & ~(MACH_CSR_MBZ | 0xFF);
+
+		/*
+		 * Probe the TURBOchannel to see what controllers are present.
+		 */
+		tc_find_all_options();
+
+		/* clear any memory errors from probes */
+		*(unsigned *)MACH_ERROR_ADDR = 0;
+
+		/*
+		 * Find out how much memory is available.
+		 */
+		physmem = btoc(v - KERNBASE);
+		cp = (char *)MACH_PHYS_TO_UNCACHED(physmem << PGSHIFT);
+		while (cp < (char *)MACH_MAX_MEM_ADDR) {
+			if (badaddr(cp, 4))
+				break;
+			*(int *)cp = 0xa5a5a5a5;
+			/*
+			 * Data will persist on the bus if we read it right
+			 * away. Have to be tricky here.
+			 */
+			((int *)cp)[4] = 0x5a5a5a5a;
+			MachEmptyWriteBuffer();
+			if (*(int *)cp != 0xa5a5a5a5)
+				break;
+			cp += NBPG;
+			physmem++;
+		}
+		break;
+	    }
+#endif DS5000
+
+	case 5:	/* DS5800 Isis */
+	case 6:	/* DS5400 MIPSfair */
+	default:
+		printf("Unknown Box: systype 0x%x\n", i);
+		boot(RB_HALT | RB_NOSYNC);
+	}
+
+	maxmem = physmem;
 
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
 	maxmem -= btoc(sizeof (struct msgbuf));
-	msgbufp = (struct msgbuf *)(maxmem << PGSHIFT);
+	msgbufp = (struct msgbuf *)(MACH_PHYS_TO_CACHED(maxmem << PGSHIFT));
 	msgbufmapped = 1;
 
 	/*
 	 * Allocate space for system data structures.
-	 * The first available real memory address is in "firstaddr".
 	 * The first available kernel virtual address is in "v".
 	 * As pages of kernel virtual memory are allocated, "v" is incremented.
-	 * As pages of memory are allocated and cleared,
-	 * "firstaddr" is incremented.
-	 */
-	/*
+	 *
 	 * These data structures are allocated here instead of cpu_startup()
 	 * because physical memory is directly addressable. We don't have
 	 * to map these into virtual address space.
 	 */
-	firstaddr = (unsigned)v;
+	cp = (char *)v;
 
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
@@ -265,28 +335,42 @@ mach_init(argc, argv)
 	 * Clear allocated memory.
 	 */
 	v = (caddr_t)pmax_round_page(v);
-	bzero((caddr_t)firstaddr, (unsigned)v - firstaddr);
+	bzero((caddr_t)cp, v - (caddr_t)cp);
 
 	/*
 	 * Initialize the virtual memory system.
 	 */
-	pmap_bootstrap((vm_offset_t)v);
+	pmap_bootstrap((vm_offset_t)MACH_CACHED_TO_PHYS(v));
 }
 
 /*
  * Console initialization: called early on from main,
  * before vm init or startup.  Do enough configuration
  * to choose and initialize a console.
+ * XXX need something better here.
  */
 consinit()
 {
 
 #include "pm.h"
 #if NPM > 0
-	/*
-	 * Initialize the console before we print anything out.
-	 */
-	pminit();
+	if (pminit())
+		return;
+#endif
+
+#include "cfb.h"
+#if NCFB > 0
+	{
+		register struct pmax_ctlr *cp;
+		register struct driver *drp;
+
+		for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
+			if (strcmp(drp->d_name, "cfb"))
+				continue;
+			if (cfb_init(cp))
+				return;
+		}
+	}
 #endif
 }
 
@@ -297,7 +381,7 @@ consinit()
 cpu_startup()
 {
 	register unsigned i;
-	register caddr_t v, firstaddr;
+	register caddr_t v;
 	int base, residual;
 	extern long Usrptsize;
 	extern struct map *useriomap;
@@ -407,12 +491,12 @@ setregs(p, entry, retval)
 	u_long entry;
 	int retval[2];
 {
-	int sp = p->p_regs[SP];
+	int sp = p->p_md.md_regs[SP];
 
-	bzero((caddr_t)p->p_regs, (FSR + 1) * sizeof(int));
-	p->p_regs[SP] = sp;
-	p->p_regs[PC] = entry;
-	p->p_regs[PS] = PSL_USERSET;
+	bzero((caddr_t)p->p_md.md_regs, (FSR + 1) * sizeof(int));
+	p->p_md.md_regs[SP] = sp;
+	p->p_md.md_regs[PC] = entry;
+	p->p_md.md_regs[PS] = PSL_USERSET;
 	p->p_md.md_flags & ~MDP_FPUSED;
 }
 
@@ -452,7 +536,7 @@ sendsig(catcher, sig, mask, code)
 	int oonstack, fsize;
 	struct sigcontext ksc;
 
-	regs = p->p_regs;
+	regs = p->p_md.md_regs;
 	oonstack = ps->ps_onstack;
 	/*
 	 * Allocate and validate space for the signal handler
@@ -487,7 +571,7 @@ sendsig(catcher, sig, mask, code)
 			MachSaveCurFPState(p);
 			machFPCurProcPtr = (struct proc *)0;
 		}
-		bcopy((caddr_t)&p->p_regs[F0], (caddr_t)ksc.sc_fpregs,
+		bcopy((caddr_t)&p->p_md.md_regs[F0], (caddr_t)ksc.sc_fpregs,
 			sizeof(ksc.sc_fpregs));
 	}
 	if (copyout((caddr_t)&ksc, (caddr_t)scp, sizeof(ksc))) {
@@ -555,7 +639,7 @@ sigreturn(p, uap, retval)
 	if (sigdebug & SDB_FOLLOW)
 		printf("sigreturn: pid %d, scp %x\n", p->p_pid, scp);
 #endif
-	regs = p->p_regs;
+	regs = p->p_md.md_regs;
 	/*
 	 * Test and fetch the context structure.
 	 * We grab it all at once for speed.
@@ -598,7 +682,7 @@ sigreturn(p, uap, retval)
 		sizeof(ksc.sc_regs) - sizeof(int));
 	ksc.sc_fpused = p->p_md.md_flags & MDP_FPUSED;
 	if (ksc.sc_fpused)
-		bcopy((caddr_t)ksc.sc_fpregs, (caddr_t)&p->p_regs[F0],
+		bcopy((caddr_t)ksc.sc_fpregs, (caddr_t)&p->p_md.md_regs[F0],
 			sizeof(ksc.sc_fpregs));
 	return (EJUSTRETURN);
 }
@@ -609,7 +693,6 @@ boot(howto)
 	register int howto;
 {
 
-	trapDump("boot"); /* XXX */
 	/* take a snap shot before clobbering any registers */
 	if (curproc)
 		savectx(curproc->p_addr, 0);
@@ -664,6 +747,7 @@ boot(howto)
 		void (*f)() = (void (*)())MACH_MON_REINIT;
 #endif
 
+		trapDump("boot"); /* XXX */
 		(*f)();	/* jump back to prom monitor */
 	} else {
 		void (*f)() = (void (*)())MACH_MON_AUTOBOOT;
@@ -791,3 +875,353 @@ initcpu()
 	spl0();		/* safe to turn interrupts on now */
 	return (i);
 }
+
+/*
+ * Convert an ASCII string into an integer.
+ */
+int
+atoi(s)
+	char *s;
+{
+	int c;
+	unsigned base = 10, d;
+	int neg = 0, val = 0;
+
+	if (s == 0 || (c = *s++) == 0)
+		goto out;
+
+	/* skip spaces if any */
+	while (c == ' ' || c == '\t')
+		c = *s++;
+
+	/* parse sign, allow more than one (compat) */
+	while (c == '-') {
+		neg = !neg;
+		c = *s++;
+	}
+
+	/* parse base specification, if any */
+	if (c == '0') {
+		c = *s++;
+		switch (c) {
+		case 'X':
+		case 'x':
+			base = 16;
+			break;
+		case 'B':
+		case 'b':
+			base = 2;
+			break;
+		default:
+			base = 8;
+			break;
+		}
+	}
+
+	/* parse number proper */
+	for (;;) {
+		if (c >= '0' && c <= '9')
+			d = c - '0';
+		else if (c >= 'a' && c <= 'z')
+			d = c - 'a' + 10;
+		else if (c >= 'A' && c <= 'Z')
+			d = c - 'A' + 10;
+		else
+			break;
+		val *= base;
+		val += d;
+		c = *s++;
+	}
+	if (neg)
+		val = -val;
+out:
+	return val;	
+}
+
+#ifdef DS5000
+/* 
+ * Mach Operating System
+ * Copyright (c) 1991,1990,1989 Carnegie Mellon University
+ * All Rights Reserved.
+ * 
+ * Permission to use, copy, modify and distribute this software and its
+ * documentation is hereby granted, provided that both the copyright
+ * notice and this permission notice appear in all copies of the
+ * software, derivative works or modified versions, and any portions
+ * thereof, and that both notices appear in supporting documentation.
+ * 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
+ * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+ * 
+ * Carnegie Mellon requests users of this software to return to
+ * 
+ *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
+ *  School of Computer Science
+ *  Carnegie Mellon University
+ *  Pittsburgh PA 15213-3890
+ * 
+ * any improvements or extensions that they make and grant Carnegie the
+ * rights to redistribute these changes.
+ */
+
+#include "turbochannel.h"
+
+/*
+ * Driver map: associates a device driver to an option type.
+ * Drivers name are (arbitrarily) defined in each driver and
+ * used in the various config tables.
+ */
+struct drivers_map {
+	char	module_name[TC_ROM_LLEN];	/* from ROM, literally! */
+	char	*driver_name;			/* in bus_??_init[] tables */
+} tc_drivers_map[] = {
+	{ "KN02    ",	"dc"},		/* system board, serial I/O */
+	{ "PMAD-AA ",	"le"},		/* Ether */
+	{ "PMAZ-AA ",	"asc"},		/* SCSI */
+	{ "PMAG-BA ",	"cfb"},		/* Color Frame Buffer */
+	{ "PMAG-CA ",	"ga"},		/* 2D graphic board */
+	{ "PMAG-DA ",	"gq"},		/* 3D graphic board (LM) */
+	{ "PMAG-FA ",	"gq"},		/* 3D graphic board (HE) */
+
+	{ "", 0}			/* list end */
+};
+
+#ifdef DEBUG
+int tc_verbose = 0;
+#endif
+
+/*
+ * TURBOchannel autoconf procedure. Finds in one sweep what is
+ * hanging on the bus and fills in the tc_slot_info array.
+ * This is only the first part of the autoconf scheme, at this
+ * time we are basically only looking for a graphics board and
+ * serial port to use as system console (all workstations).
+ *
+ * XXX Someday make number of slots dynamic too.
+ */
+
+#define KN02_TC_NSLOTS	8
+
+tc_option_t	tc_slot_info[KN02_TC_NSLOTS];
+
+caddr_t	tc_slot_virt_addr[] = {
+	(caddr_t)0xbe000000,	/* TURBOchannel, slot 0 */
+	(caddr_t)0xbe400000,	/* TURBOchannel, slot 1 */
+	(caddr_t)0xbe800000,	/* TURBOchannel, slot 2 */
+	(caddr_t)0xbec00000,	/* TURBOchannel, slot 3 */
+	(caddr_t)0xbf000000,	/* TURBOchannel, slot 4 */
+	(caddr_t)0xbf400000,	/* TURBOchannel, slot 5 */
+	(caddr_t)0xbf800000,	/* TURBOchannel, slot 6 */
+/*	(caddr_t)0xbfc00000,	   TURBOchannel, slot 7 */
+};
+
+void
+tc_find_all_options()
+{
+	register int i;
+	caddr_t addr;
+	register tc_option_t *sl;
+	register struct drivers_map *map;
+	register struct pmax_ctlr *cp;
+	register struct driver *drp;
+
+	/*
+	 * Look for all controllers on the bus.
+	 */
+	i = sizeof(tc_slot_virt_addr) / sizeof(tc_slot_virt_addr[0]) - 1;
+	while (i >= 0) {
+		addr = tc_slot_virt_addr[i];
+		if (tc_probe_slot(addr, &tc_slot_info[i])) {
+			/*
+			 * Found a slot, make a note of it 
+			 */
+			tc_slot_info[i].present = 1;
+			tc_slot_info[i].module_address = addr;
+		}
+
+		i -= tc_slot_info[i].slot_size;
+	}
+
+	/*
+	 * Now for each slot found, see if we have a device driver that
+	 * handles it.
+	 */
+	for (i = 0, sl = tc_slot_info; i < KN02_TC_NSLOTS; i++, sl++) {
+		if (!sl->present)
+			continue;
+		/*
+		 * Look for mapping between the module name and
+		 * the device driver name.
+		 */
+		for (map = tc_drivers_map; map->driver_name; map++) {
+			if (bcmp(sl->module_name, map->module_name, TC_ROM_LLEN))
+				continue;
+			goto fnd_map;
+		}
+		if (tc_verbose)
+			printf("Cannot associate a device driver to %s\n",
+				sl->module_name);
+		sl->present = 0;
+		continue;
+
+		/*
+		 * Find the device driver entry and fill in the address.
+		 */
+	fnd_map:
+		for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
+			if (strcmp(drp->d_name, map->driver_name))
+				continue;
+			if (cp->pmax_addr == (char *)QUES) {
+				cp->pmax_addr = sl->module_address;
+				cp->pmax_pri = i;
+				continue;
+			}
+			if (cp->pmax_addr != sl->module_address) {
+				cp->pmax_addr = (char *)QUES;
+				printf("%s: device not at configued address (expected at %x, found at %x)\n",
+					drp->d_name,
+					cp->pmax_addr, sl->module_address);
+			}
+		}
+	}
+}
+
+/*
+ * Probe a slot in the TURBOchannel. Return TRUE if a valid option
+ * is present, FALSE otherwise. A side-effect is to fill the slot
+ * descriptor with the size of the option, whether it is
+ * recognized or not.
+ */
+int
+tc_probe_slot(addr, slot)
+	caddr_t addr;
+	tc_option_t *slot;
+{
+	int i;
+	static unsigned tc_offset_rom[] = {
+		TC_OFF_PROTO_ROM, TC_OFF_ROM
+	};
+#define TC_N_OFFSETS	sizeof(tc_offset_rom)/sizeof(unsigned)
+
+	slot->slot_size = 1;
+
+	for (i = 0; i < TC_N_OFFSETS; i++) {
+		if (badaddr(addr + tc_offset_rom[i], 4))
+			continue;
+		/* complain only on last chance */
+		if (tc_identify_option((tc_rommap_t *)(addr + tc_offset_rom[i]),
+		    slot, i == (TC_N_OFFSETS-1)))
+			return (1);
+	}
+	return (0);
+#undef TC_N_OFFSETS
+}
+
+/*
+ * Identify an option on the TURBOchannel.  Looks at the mandatory
+ * info in the option's ROM and checks it.
+ */
+int
+tc_identify_option(addr, slot, complain)
+	tc_rommap_t *addr;
+	tc_option_t *slot;
+	int complain;
+{
+	register int i;
+	unsigned char width;
+	char firmwr[TC_ROM_LLEN+1];
+	char vendor[TC_ROM_LLEN+1];
+	char module[TC_ROM_LLEN+1];
+	char host_type[TC_ROM_SLEN+1];
+
+	/*
+	 * We do not really use the 'width' info, but take advantage
+	 * of the restriction that the spec impose on the portion
+	 * of the ROM that maps between +0x3e0 and +0x470, which
+	 * is the only piece we need to look at.
+	 */
+	width = addr->rom_width.value;
+	switch (width) {
+	case 1:
+	case 2:
+	case 4:
+		break;
+
+	default:
+		if (complain)
+			printf("Invalid ROM width (0x%x) at x%x\n",
+			       width, addr);
+		return (0);
+	}
+
+	if (addr->rom_stride.value != 4) {
+		if (complain)
+			printf("Invalid ROM stride (0x%x) at x%x\n",
+			       addr->rom_stride.value, addr);
+		return (0);
+	}
+
+	if (addr->test_data[0] != 0x55 ||
+	    addr->test_data[4] != 0x00 ||
+	    addr->test_data[8] != 0xaa ||
+	    addr->test_data[12] != 0xff) {
+		if (complain)
+			printf("Test pattern failed, option at x%x\n",
+			       addr);
+		return (0);
+	}
+
+	for (i = 0; i < TC_ROM_LLEN; i++) {
+		firmwr[i] = addr->firmware_rev[i].value;
+		vendor[i] = addr->vendor_name[i].value;
+		module[i] = addr->module_name[i].value;
+		if (i >= TC_ROM_SLEN)
+			continue;
+		host_type[i] = addr->host_firmware_type[i].value;
+	}
+
+	if (tc_verbose) {
+		firmwr[TC_ROM_LLEN] = '\0';
+		vendor[TC_ROM_LLEN] = '\0';
+		module[TC_ROM_LLEN] = '\0';
+		host_type[TC_ROM_SLEN] = '\0';
+		printf("%s %s '%s' at x%x\n %s %s %s '%s'\n %s %d %s %d %s\n",
+		       "Found a", vendor, module, addr,
+		       "Firmware rev.", firmwr,
+		       "diagnostics for a", host_type,
+		       "ROM size is", addr->rom_size.value << 3,
+		       "Kbytes, uses", addr->slot_size.value, "TC slot(s)");
+	}
+
+	bcopy(module, slot->module_name, TC_ROM_LLEN);
+	bcopy(vendor, slot->module_id, TC_ROM_LLEN);
+	bcopy(firmwr, &slot->module_id[TC_ROM_LLEN], TC_ROM_LLEN);
+	slot->slot_size = addr->slot_size.value;
+	slot->rom_width = width;
+
+	return (1);
+}
+
+/*
+ * Enable/Disable interrupts for a TURBOchannel slot.
+ */
+tc_enable_interrupt(slotno, on)
+	register int slotno;
+	int on;
+{
+	register volatile int *p_csr = (volatile int *)MACH_SYS_CSR_ADDR;
+	int csr;
+	int s;
+
+	slotno = 1 << (slotno + MACH_CSR_IOINTEN_SHIFT);
+	s = Mach_spl0();
+	csr = *p_csr & ~(MACH_CSR_MBZ | 0xFF);
+	if (on)
+		*p_csr = csr | slotno;
+	else
+		*p_csr = csr & ~slotno;
+	splx(s);
+}
+
+#endif /* DS5000 */
