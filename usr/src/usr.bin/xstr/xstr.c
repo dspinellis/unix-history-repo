@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)xstr.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)xstr.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -294,7 +294,7 @@ flushsh()
 				old++;
 	if (new == 0 && old != 0)
 		return;
-	mesgwrit = fopen(strings, old ? "a" : "w");
+	mesgwrit = fopen(strings, old ? "r+" : "w");
 	for (i = 0; i < BUCKETS; i++)
 		for (hp = bucket[i].hnext; hp != NULL; hp = hp->hnext) {
 			found(hp->hnew, hp->hpt, hp->hstr);
