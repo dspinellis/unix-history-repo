@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id: pccons.c,v 1.13 1994/02/10 10:17:58 ache Exp $
+ *	$Id: pccons.c,v 1.14 1994/03/02 20:28:34 guido Exp $
  */
 
 /*
@@ -318,8 +318,8 @@ pcclose(dev, flag, mode, p)
 {
 	(*linesw[pccons->t_line].l_close)(pccons, flag);
 	ttyclose(pccons);
-	ttyfree(pccons);
 #ifdef broken /* session holds a ref to the tty; can't deallocate */
+	ttyfree(pccons);
 	pccons = (struct tty *)NULL;
 #endif
 	return(0);
