@@ -1,5 +1,5 @@
 /*
-char id_iio[] = "@(#)iio.c	1.4";
+char id_iio[] = "@(#)iio.c	1.5";
  *
  * internal (character array) i/o
  */
@@ -18,10 +18,7 @@ z_getc()
 		return(EOF);
 	}
 	if(recpos++ < svic->icirlen) return(*icptr++);
-	if(formatted == LISTDIRECTED)
-	{	leof = EOF;
-		return(EOF);
-	}
+	if(formatted == LISTDIRECTED) return(EOF);
 	return(' ');
 }
 
