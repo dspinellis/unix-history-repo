@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.58 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.59 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -411,6 +411,11 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 	daddr_t bn;
 	int i, inc;
 
+#ifdef DIAGNOSTIC
+	if (size != vp->v_mount->mnt_stat.f_iosize)
+		panic("cluster_rbuild: size %d != filesize %d\n",
+			size, vp->v_mount->mnt_stat.f_iosize);
+#endif
 	if (size * (lbn + run + 1) > filesize)
 		--run;
 	if (run == 0) {
@@ -646,41 +651,17 @@ cluster_write(bp, filesize)
 {
         struct vnode *vp;
         daddr_t lbn;
-        int clen, error, maxrun;
+        int clen;
 
         vp = bp->b_vp;
         lbn = bp->b_lblkno;
-	clen = 0;
 
-	/*
-	 * Handle end of file first.  If we are appending, we need to check
-	 * if the current block was allocated contiguously.  If it wasn't,
-	 * then we need to fire off a previous cluster if it existed.
-	 * Additionally, when we're appending, we need to figure out how
-	 * to initialize vp->v_clen.
-	 */
-	if ((lbn + 1) * bp->b_bcount == filesize) {
-		if (bp->b_blkno != vp->v_lasta + bp->b_bcount / DEV_BSIZE) {
-			/* This block was not allocated contiguously */
-			if (vp->v_clen)
-			    cluster_wbuild(vp, NULL, bp->b_bcount, vp->v_cstart,
-				vp->v_lastw - vp->v_cstart + 1, lbn);
-			vp->v_cstart = lbn;
-			clen = vp->v_clen =
-			    MAXBSIZE / vp->v_mount->mnt_stat.f_iosize - 1;
-			/*
-			 * Next cluster started. Write this buffer and return.
-			 */
-			vp->v_lastw = lbn;
-			vp->v_lasta = bp->b_blkno;
-			bdwrite(bp);
-			return;
-		}
-		vp->v_lasta = bp->b_blkno;
-	} else if (lbn == 0) {
-		vp->v_clen = vp->v_cstart = vp->v_lastw = 0;
-	}
-        if (vp->v_clen == 0 || lbn != vp->v_lastw + 1) {
+	/* Initialize vnode to beginning of file. */
+	if (lbn == 0)
+		vp->v_lasta = vp->v_clen = vp->v_cstart = vp->v_lastw = 0;
+
+        if (vp->v_clen == 0 || lbn != vp->v_lastw + 1 ||
+	    (bp->b_blkno != vp->v_lasta + bp->b_bcount / DEV_BSIZE)) {
 		if (vp->v_clen != 0)
 			/*
 			 * Write is not sequential.
@@ -690,12 +671,18 @@ cluster_write(bp, filesize)
 		/*
 		 * Consider beginning a cluster.
 		 */
-		if (error = VOP_BMAP(vp, lbn, NULL, &bp->b_blkno, &clen)) {
+		if ((lbn + 1) * bp->b_bcount == filesize)
+			/* End of file, make cluster as large as possible */
+			clen = MAXBSIZE / vp->v_mount->mnt_stat.f_iosize - 1;
+		else if (VOP_BMAP(vp, lbn, NULL, &bp->b_blkno, &clen)) {
 			bawrite(bp);
+			vp->v_clen = 0;
+			vp->v_lasta = bp->b_blkno;
 			vp->v_cstart = lbn + 1;
 			vp->v_lastw = lbn;
 			return;
-		}
+		} else
+			clen = 0;
                 vp->v_clen = clen;
                 if (clen == 0) {		/* I/O not contiguous */
 			vp->v_cstart = lbn + 1;
@@ -719,6 +706,7 @@ cluster_write(bp, filesize)
 		 */
                 bdwrite(bp);
         vp->v_lastw = lbn;
+	vp->v_lasta = bp->b_blkno;
 }
 
 
@@ -742,6 +730,11 @@ cluster_wbuild(vp, last_bp, size, start_lbn, len, lbn)
 	caddr_t	cp;
 	int i, s;
 
+#ifdef DIAGNOSTIC
+	if (size != vp->v_mount->mnt_stat.f_iosize)
+		panic("cluster_wbuild: size %d != filesize %d\n",
+			size, vp->v_mount->mnt_stat.f_iosize);
+#endif
 redo:
 	while ((!incore(vp, start_lbn) || start_lbn == lbn) && len) {
 		++start_lbn;
@@ -750,8 +743,12 @@ redo:
 
 	/* Get more memory for current buffer */
 	if (len <= 1) {
-		if (last_bp)
+		if (last_bp) {
 			bawrite(last_bp);
+		} else if (len) {
+			bp = getblk(vp, start_lbn, size, 0, 0);
+			bawrite(bp);
+		}
 		return;
 	}
 
@@ -797,6 +794,14 @@ redo:
 		++b_save->bs_nchildren;
 
 		/* Move memory from children to parent */
+		if (tbp->b_blkno != (bp->b_blkno + bp->b_bufsize / DEV_BSIZE)) {
+			printf("Clustered Block: %d addr %x bufsize: %d\n",
+			    bp->b_lblkno, bp->b_blkno, bp->b_bufsize);
+			printf("Child Block: %d addr: %x\n", tbp->b_lblkno,
+			    tbp->b_blkno);
+			panic("Clustered write to wrong blocks");
+		}
+
 		pagemove(tbp->b_un.b_daddr, cp, size);
 		bp->b_bcount += size;
 		bp->b_bufsize += size;
