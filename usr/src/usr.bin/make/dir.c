@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -308,7 +308,7 @@ DirMatchFiles (pattern, p, expansions)
 	{
 	    (void)Lst_AtEnd(expansions,
 			    (isDot ? strdup(entry->key.name) :
-			     Str_Concat(p->name, entry->key.name,
+			     str_concat(p->name, entry->key.name,
 					STR_ADDSLASH)));
 	}
     }
@@ -388,7 +388,7 @@ DirExpandCurly(word, brace, path, expansions)
 	/*
 	 * Allocate room for the combination and install the three pieces.
 	 */
-	file = malloc(otherLen + cp - start + 1);
+	file = emalloc(otherLen + cp - start + 1);
 	if (brace != word) {
 	    strncpy(file, word, brace-word);
 	}
@@ -702,7 +702,7 @@ Dir_FindFile (name, path)
 		    continue;
 		}
 	    }
-	    file = Str_Concat (p->name, cp, STR_ADDSLASH);
+	    file = str_concat (p->name, cp, STR_ADDSLASH);
 	    if (DEBUG(DIR)) {
 		printf("returning %s\n", file);
 	    }
@@ -759,7 +759,7 @@ Dir_FindFile (name, path)
 	while ((ln = Lst_Next (path)) != NILLNODE) {
 	    p = (Path *) Lst_Datum (ln);
 	    if (p != dot) {
-		file = Str_Concat (p->name, name, STR_ADDSLASH);
+		file = str_concat (p->name, name, STR_ADDSLASH);
 	    } else {
 		/*
 		 * Checking in dot -- DON'T put a leading ./ on the thing.
@@ -999,7 +999,7 @@ Dir_AddDir (path, name)
 	}
 	
 	if ((d = opendir (name)) != (DIR *) NULL) {
-	    p = (Path *) malloc (sizeof (Path));
+	    p = (Path *) emalloc (sizeof (Path));
 	    p->name = strdup (name);
 	    p->hits = 0;
 	    p->refCount = 1;
@@ -1089,8 +1089,8 @@ Dir_MakeFlags (flag, path)
     if (Lst_Open (path) == SUCCESS) {
 	while ((ln = Lst_Next (path)) != NILLNODE) {
 	    p = (Path *) Lst_Datum (ln);
-	    tstr = Str_Concat (flag, p->name, 0);
-	    str = Str_Concat (str, tstr, STR_ADDSPACE | STR_DOFREE);
+	    tstr = str_concat (flag, p->name, 0);
+	    str = str_concat (str, tstr, STR_ADDSPACE | STR_DOFREE);
 	}
 	Lst_Close (path);
     }
