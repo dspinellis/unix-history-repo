@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)courier.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)courier.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,7 +53,7 @@ badsynch:
 	sleep(1);
 #ifdef DEBUG
 	if (boolean(value(VERBOSE)))
-		verbose_read();
+		cour_verbose_read();
 #endif
 	ioctl(FD, TIOCFLUSH, 0);	/* flush any clutter */
 	cour_write(FD, "AT C1 E0 H0 Q0 X6 V1\r", 21);
@@ -145,6 +145,8 @@ struct baud_msg {
 	"",		B300,
 	" 1200",	B1200,
 	" 2400",	B2400,
+	" 9600",	B9600,
+	" 9600/ARQ",	B9600,
 	0,		0,
 };
 
@@ -189,7 +191,7 @@ again:
 			if (strncmp(dialer_buf, "CONNECT",
 				    sizeof("CONNECT")-1) != 0)
 				break;
-			for (bm = baud_msg ; bm ; bm++)
+			for (bm = baud_msg ; bm->msg ; bm++)
 				if (strcmp(bm->msg,
 				    dialer_buf+sizeof("CONNECT")-1) == 0) {
 					if (ioctl(FD, TIOCGETP, &sb) < 0) {
@@ -291,7 +293,7 @@ int n;
 }
 
 #ifdef DEBUG
-verbose_read()
+cour_verbose_read()
 {
 	int n = 0;
 	char buf[BUFSIZ];
