@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.139 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.140 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -373,13 +373,11 @@ setupmaps()
 		dequote_init, null_map_open, null_map_close,
 		dequote_map, null_map_store);
 
-#if 0
-# ifdef USERDB
+#ifdef USERDB
 	/* user database */
-	MAPDEF("udb", ".db", 0,
-		udb_map_parse, null_map_open, null_map_close,
+	MAPDEF("userdb", ".db", 0,
+		map_parseargs, null_map_open, null_map_close,
 		udb_map_lookup, null_map_store);
-# endif
 #endif
 
 	/* sequenced maps */

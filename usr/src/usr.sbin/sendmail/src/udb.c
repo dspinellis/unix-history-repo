@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.12 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.13 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.12 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.13 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -636,6 +636,39 @@ udbmatch(user, field)
 
 	/* still nothing....  too bad */
 	return NULL;
+}
+/*
+**  UDB_MAP_LOOKUP -- look up arbitrary entry in user database map
+**
+**	Parameters:
+**		map -- the map being queried.
+**		name -- the name to look up.
+**		av -- arguments to the map lookup.
+**		statp -- to get any error status.
+**
+**	Returns:
+**		NULL if name not found in map.
+**		The rewritten name otherwise.
+*/
+
+char *
+udb_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+	char *val;
+
+	if (tTd(38, 20))
+		printf("udb_map_lookup(%s, %s)\n", map->map_mname, name);
+	val = udbmatch(name, map->map_file);
+	if (val == NULL)
+		return NULL;
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, val, strlen(val), av);
 }
 /*
 **  _UDBX_INIT -- parse the UDB specification, opening any valid entries.
