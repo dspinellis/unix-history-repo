@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.16 (Berkeley) %G%
+ *	@(#)trap.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -204,12 +204,14 @@ trap(statusReg, causeReg, vadr, pc, args)
 		if ((int)vadr < 0) {
 			register pt_entry_t *pte;
 			register unsigned entry;
-#ifndef ATTR
 			register vm_offset_t pa;
-#endif
 
 			pte = kvtopte(vadr);
 			entry = pte->pt_entry;
+#ifdef DIAGNOSTIC
+			if (!(entry & PG_V) || (entry & PG_M))
+				panic("trap: ktlbmod: invalid pte");
+#endif
 			if (entry & PG_RO) {
 				/* write to read only page in the kernel */
 				ftype = VM_PROT_WRITE;
@@ -217,15 +219,16 @@ trap(statusReg, causeReg, vadr, pc, args)
 			}
 			entry |= PG_M;
 			pte->pt_entry = entry;
-			vadr &= PG_FRAME;
-			printf("trap: TLBupdate hi %x lo %x i %x\n", vadr,
-				entry, MachTLBUpdate(vadr, entry)); /* XXX */
-#ifdef ATTR
-			pmap_attributes[atop(entry - KERNBASE)] |= PMAP_ATTR_MOD;
-#else
+			vadr &= ~PGOFSET;
+			printf("trap: ktlbmod: TLBupdate hi %x lo %x i %x\n",
+				vadr, entry,
+				MachTLBUpdate(vadr, entry)); /* XXX */
 			pa = entry & PG_FRAME;
+#ifdef ATTR
+			pmap_attributes[atop(pa)] |= PMAP_ATTR_MOD;
+#else
 			if (!IS_VM_PHYSADDR(pa))
-				panic("trap: kmod");
+				panic("trap: ktlbmod: unmanaged page");
 			PHYS_TO_VM_PAGE(pa)->flags &= ~PG_CLEAN;
 #endif
 			return (pc);
@@ -234,40 +237,36 @@ trap(statusReg, causeReg, vadr, pc, args)
 
 	case T_TLB_MOD+T_USER:
 	    {
-		pmap_hash_t hp;
-#ifndef ATTR
-		vm_offset_t pa;
-#endif
-#ifdef DIAGNOSTIC
-		extern pmap_hash_t zero_pmap_hash;
-		extern pmap_t cur_pmap;
+		register pt_entry_t *pte;
+		register unsigned entry;
+		register vm_offset_t pa;
+		pmap_t pmap = &p->p_vmspace->vm_pmap;
 
-		if (cur_pmap->pm_hash == zero_pmap_hash ||
-		    cur_pmap->pm_hash == (pmap_hash_t)0)
-			panic("tlbmod");
+		if (!(pte = pmap_segmap(pmap, vadr)))
+			panic("trap: utlbmod: invalid segmap");
+		pte += (vadr >> PGSHIFT) & (NPTEPG - 1);
+		entry = pte->pt_entry;
+#ifdef DIAGNOSTIC
+		if (!(entry & PG_V) || (entry & PG_M))
+			panic("trap: utlbmod: invalid pte");
 #endif
-		hp = &((pmap_hash_t)PMAP_HASH_UADDR)[PMAP_HASH(vadr)];
-		if (((hp->pmh_pte[0].high ^ vadr) & ~PGOFSET) == 0)
-			i = 0;
-		else if (((hp->pmh_pte[1].high ^ vadr) & ~PGOFSET) == 0)
-			i = 1;
-		else
-			panic("trap: tlb umod not found");
-		if (hp->pmh_pte[i].low & PG_RO) {
+		if (entry & PG_RO) {
+			/* write to read only page */
 			ftype = VM_PROT_WRITE;
 			goto dofault;
 		}
-		hp->pmh_pte[i].low |= PG_M;
-		printf("trap: TLBupdate hi %x lo %x i %x\n",
-			hp->pmh_pte[i].high, hp->pmh_pte[i].low,
-			MachTLBUpdate(hp->pmh_pte[i].high, hp->pmh_pte[i].low)); /* XXX */
+		entry |= PG_M;
+		pte->pt_entry = entry;
+		vadr = (vadr & ~PGOFSET) |
+			(pmap->pm_tlbpid << VMMACH_TLB_PID_SHIFT);
+		printf("trap: utlbmod: TLBupdate hi %x lo %x i %x\n",
+			vadr, entry, MachTLBUpdate(vadr, entry)); /* XXX */
+		pa = entry & PG_FRAME;
 #ifdef ATTR
-		pmap_attributes[atop(hp->pmh_pte[i].low - KERNBASE)] |=
-			PMAP_ATTR_MOD;
+		pmap_attributes[atop(pa)] |= PMAP_ATTR_MOD;
 #else
-		pa = hp->pmh_pte[i].low & PG_FRAME;
 		if (!IS_VM_PHYSADDR(pa))
-			panic("trap: umod");
+			panic("trap: utlbmod: unmanaged page");
 		PHYS_TO_VM_PAGE(pa)->flags &= ~PG_CLEAN;
 #endif
 		if (!USERMODE(statusReg))
@@ -314,22 +313,14 @@ trap(statusReg, causeReg, vadr, pc, args)
 	dofault:
 	    {
 		register vm_offset_t va;
-		register struct vmspace *vm = p->p_vmspace;
-		register vm_map_t map = &vm->vm_map;
+		register struct vmspace *vm;
+		register vm_map_t map;
 		int rv;
 
+		vm = p->p_vmspace;
+		map = &vm->vm_map;
 		va = trunc_page((vm_offset_t)vadr);
 		rv = vm_fault(map, va, ftype, FALSE);
-		if (rv != KERN_SUCCESS) {
-			printf("vm_fault(%x, %x, %x, 0) -> %x ADR %x PC %x RA %x\n",
-				map, va, ftype, rv, vadr, pc,
-				!USERMODE(statusReg) ? ((int *)&args)[19] :
-					p->p_md.md_regs[RA]); /* XXX */
-			printf("\tpid %d %s PC %x RA %x SP %x\n", p->p_pid,
-				p->p_comm, p->p_md.md_regs[PC],
-				p->p_md.md_regs[RA],
-				p->p_md.md_regs[SP]); /* XXX */
-		}
 		/*
 		 * If this was a stack access we keep track of the maximum
 		 * accessed stack size.  Also, if vm_fault gets a protection
@@ -669,7 +660,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 #endif
 		panic("trap");
 	}
-	printf("trap: pid %d %s sig %d adr %x pc %x ra %x\n", p->p_pid,
+	printf("trap: pid %d '%s' sig %d adr %x pc %x ra %x\n", p->p_pid,
 		p->p_comm, i, vadr, pc, p->p_md.md_regs[RA]); /* XXX */
 	trapsignal(p, i, ucode);
 out:
@@ -1552,14 +1543,14 @@ kdbpeek(addr)
  * Print a stack backtrace.
  */
 void
-stacktrace()
+stacktrace(a0, a1, a2, a3)
+	int a0, a1, a2, a3;
 {
 	unsigned pc, sp, fp, ra, va, subr;
-	int a0, a1, a2, a3;
 	unsigned instr, mask;
 	InstFmt i;
 	int more, stksize;
-	int regs[8];
+	int regs[3];
 	extern setsoftclock();
 	extern char start[], edata[];
 
@@ -1567,13 +1558,9 @@ stacktrace()
 
 	/* get initial values from the exception frame */
 	sp = regs[0];
-	pc = regs[2];
+	pc = regs[1];
 	ra = 0;
-	a0 = regs[3];
-	a1 = regs[4];
-	a2 = regs[5];
-	a3 = regs[6];
-	fp = regs[7];
+	fp = regs[2];
 
 loop:
 	/* check for current PC in the kernel interrupt handler code */
