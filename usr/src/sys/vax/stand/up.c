@@ -1,4 +1,4 @@
-/*	up.c	4.11	83/03/02	*/
+/*	up.c	4.12	83/03/02	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -121,13 +121,11 @@ upstrategy(io, func)
 	io->i_errcnt = 0;
 
 restart: 
-#define	rounddown(x, y)	(((x) / (y)) * (y))
-	upaddr->upwc = rounddown(upaddr->upwc, sectsiz / sizeof (short));
 	o = io->i_cc + (upaddr->upwc * sizeof (short));
 	upaddr->upba = info + o;
 	bn = io->i_bn + o / sectsiz;
 	if (doprintf && updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG))
-		printf("upwc=%d o=%d i_bn=%d bn=%d\n",
+		printf("wc=%d o=%d i_bn=%d bn=%d\n",
 			upaddr->upwc, o, io->i_bn, bn);
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
@@ -148,13 +146,13 @@ restart:
 	}
 	if (updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG)) {
 		printf("up error: (cyl,trk,sec)=(%d,%d,%d) ",
-		  upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f-1));
-		printf("cs2=%b er1=%b er2=%b wc=%x\n",
+		  upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f)-1);
+		printf("cs2=%b er1=%b er2=%b wc=%d\n",
 	    	  upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
-		  UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
+		  UPER1_BITS, upaddr->uper2, UPER2_BITS, upaddr->upwc);
 	}
 	waitdry = 0;
-	while ((upaddr->upds & UPDS_DRY) == 0 && ++waitdry < sectsiz)
+	while ((upaddr->upds&UPDS_DRY) == 0 && ++waitdry < sectsiz)
 		DELAY(5);
 	if (upaddr->uper1&UPER1_WLE) {
 		/*
@@ -200,22 +198,14 @@ hard:
 		goto hard;
 	}
 	/*
-	 * Retriable error.
-	 * If a soft ecc, correct it 
-	 * Otherwise fall through and retry the transfer
+	 * ECC error. If a soft error, correct it;
+	 * otherwise fall through and retry the transfer.
 	 */
-	if (upaddr->uper1 & UPER1_DCK) {
-		/*
-		 * If a write check command is active, all
-		 * ecc errors give UPER1_ECH.
-		 */
-		if ((upaddr->uper1 & UPER1_ECH) == 0 || 
-		    (upaddr->upcs2 & UPCS2_WCE)) {
-			if (upecc(io, ECC) == 0)
-				goto success;
-			io->i_error = EECC;
-			goto hard;
-		}
+	if ((upaddr->uper1 & (UPER1_DCK|UPER1_ECH)) == UPER1_DCK) {
+		if (upecc(io, ECC) == 0)
+			goto success;
+		io->i_error = EECC;
+		goto hard;
 	} 
 	/*
 	 * Clear drive error and, every eight attempts,
@@ -270,7 +260,9 @@ hard:
 	goto restart;
 
 success:
-	if (upaddr->upwc != 0) {
+#define	rounddown(x, y)	(((x) / (y)) * (y))
+	upaddr->upwc = rounddown(upaddr->upwc, sectsiz / sizeof (short));
+	if (upaddr->upwc) {
 		doprintf++;
 		goto restart;
 	}
@@ -308,8 +300,8 @@ upecc(io, flag)
 	twc = up->upwc;
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
 	if (updebug[unit] & UPF_ECCDEBUG)
-		printf("npf=%d mask=0x%x pos=%d wc=0x%x\n",
-			npf, up->upec2, up->upec1, -twc);
+		printf("npf=%d mask=0x%x ec1=%d wc=%d\n",
+			npf, up->upec2, up->upec1, twc);
 	bn = io->i_bn + npf;
 	st = &upst[up_type[unit]];
 	cn = bn/st->nspc;
@@ -334,8 +326,8 @@ upecc(io, flag)
 		 */
 		npf--;
 		i = up->upec1 - 1;		/* -1 makes 0 origin */
-		bit = i&07;
-		o = (i&~07) >> 3;
+		bit = i & 07;
+		o = (i & ~07) >> 3;
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		/*
 		 * Correct while possible bits remain of mask.
@@ -382,7 +374,7 @@ upecc(io, flag)
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		if ((bbn = isbad(&upbad[unit], cn, tn, sn)) < 0)
 			return (1);
-		bbn = st->ncyl * st->nspc -st->nsect - 1 - bbn;
+		bbn = (st->ncyl * st->nspc) - st->nsect - 1 - bbn;
 		twc = up->upwc + sectsiz;
 		up->upwc = - (sectsiz / sizeof (short));
 		if (updebug[unit] & UPF_BSEDEBUG)
@@ -394,16 +386,16 @@ upecc(io, flag)
 		 * registers in a normal fashion. 
 	 	 * The UNIBUS address need not be changed.
 	 	 */
-		while (up->upcs1 & UP_RDY == 0) 
+		while ((up->upcs1 & UP_RDY) == 0) 
 			;
-		if (upstart(io, bbn) != 0)
+		if (upstart(io, bbn))
 			return (1);		/* error */
 		io->i_errcnt = 0;		/* success */
 		do {
 			DELAY(25);
-		} while ( up->upcs1 & UP_RDY == 0) ;
-		if (up->upds & UPDS_ERR || up->upcs1 & UP_TRE) {
-			up->upwc = twc -sectsiz;
+		} while ((up->upcs1 & UP_RDY) == 0) ;
+		if ((up->upds & UPDS_ERR) || (up->upcs1 & UP_TRE)) {
+			up->upwc = twc - sectsiz;
 			return (1);
 		}
 	}
