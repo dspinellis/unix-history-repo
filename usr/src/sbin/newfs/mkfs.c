@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.13 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -46,7 +46,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	long c, i, inos, fssize;
+	long cylno, rpos, blk, i, inos, fssize;
 
 #ifndef STANDALONE
 	argc--, argv++;
@@ -145,6 +145,11 @@ main(argc, argv)
 		    sblock.fs_bsize / MAXFRAG);
 		exit(1);
 	}
+	sblock.fs_bblkno = BBLOCK;
+	sblock.fs_sblkno = SBLOCK;
+	sblock.fs_cblkno = (daddr_t)
+	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag);
+	sblock.fs_iblkno = sblock.fs_cblkno + sblock.fs_frag;
 	/* 
 	 * collect and verify the number of cylinders per group
 	 */
@@ -174,15 +179,58 @@ main(argc, argv)
 	 */
 	sblock.fs_size = fssize = dbtofsb(&sblock, fssize);
 	sblock.fs_ncyl = fssize * NSPF(&sblock) / sblock.fs_spc;
-	if (sblock.fs_spc > MAXBPC * NSPB(&sblock)) {
-		printf("too many sectors per cylinder (%d sectors)\n",
-		    sblock.fs_spc);
-		while (sblock.fs_spc > MAXBPC * NSPB(&sblock))
-			sblock.fs_bsize <<= 1;
-		printf("nsect %d, and ntrak %d, requires block size of %d\n",
-		    sblock.fs_nsect, sblock.fs_ntrak, sblock.fs_bsize);
+	if (fssize * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc) {
+		printf("Warning: %d sector(s) in last cylinder unallocated\n",
+		    sblock.fs_spc -
+		    (fssize * NSPF(&sblock) - sblock.fs_ncyl * sblock.fs_spc));
+		sblock.fs_ncyl++;
+	}
+	if (sblock.fs_ncyl < 1) {
+		printf("file systems must have at least one cylinder\n");
 		exit(1);
 	}
+	/*
+	 * determine feasability/values of rotational layout tables
+	 */
+	if (sblock.fs_ntrak == 1) {
+		sblock.fs_cpc = 0;
+		goto next;
+	}
+	for (sblock.fs_cpc = NSPB(&sblock), i = sblock.fs_spc;
+	     sblock.fs_cpc > 1 && (i & 1) == 0;
+	     sblock.fs_cpc >>= 1, i >>= 1)
+		/* void */;
+	if (sblock.fs_spc * sblock.fs_cpc > MAXBPC * NSPB(&sblock) ||
+	    sblock.fs_nsect > (1 << NBBY) * NSPB(&sblock)) {
+		printf("%s %s %d %s %d.%s",
+		    "Warning: insufficient space in super block for\n",
+		    "rotational layout tables with nsect", sblock.fs_nsect,
+		    "and ntrak", sblock.fs_ntrak,
+		    "\nFile system performance may be impared.\n");
+		sblock.fs_cpc = 0;
+		goto next;
+	}
+	/*
+	 * calculate the available blocks for each rotational position
+	 */
+	for (cylno = 0; cylno < MAXCPG; cylno++)
+		for (rpos = 0; rpos < NRPOS; rpos++)
+			sblock.fs_postbl[cylno][rpos] = -1;
+	blk = sblock.fs_spc * sblock.fs_cpc / NSPF(&sblock);
+	for (i = 0; i < blk; i += sblock.fs_frag)
+		/* void */;
+	for (i -= sblock.fs_frag; i >= 0; i -= sblock.fs_frag) {
+		cylno = cbtocylno(&sblock, i);
+		rpos = cbtorpos(&sblock, i);
+		blk = i / sblock.fs_frag;
+		if (sblock.fs_postbl[cylno][rpos] == -1)
+			sblock.fs_rotbl[blk] = 0;
+		else
+			sblock.fs_rotbl[blk] =
+			    sblock.fs_postbl[cylno][rpos] - blk;
+		sblock.fs_postbl[cylno][rpos] = blk;
+	}
+next:
 	/*
 	 * Validate specified/determined cpg.
 	 */
@@ -204,7 +252,7 @@ main(argc, argv)
 	if (sblock.fs_fpg > MAXBPG(&sblock) * sblock.fs_frag) {
 		printf("cylinder group too large (%d cylinders); ",
 		    sblock.fs_cpg);
-		printf("max: %d cylinders\n",
+		printf("max: %d cylinders per group\n",
 		    MAXBPG(&sblock) * sblock.fs_frag /
 		    (sblock.fs_fpg / sblock.fs_cpg));
 		exit(1);
@@ -214,10 +262,6 @@ main(argc, argv)
 	/*
 	 * Compute/validate number of cylinder groups.
 	 */
-	if (fssize * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc) {
-		printf("%d sector(s) in last cylinder unused\n",
-		    fssize * NSPF(&sblock) - sblock.fs_ncyl * sblock.fs_spc);
-	}
 	sblock.fs_ncg = sblock.fs_ncyl / sblock.fs_cpg;
 	if (sblock.fs_ncyl % sblock.fs_cpg)
 		sblock.fs_ncg++;
@@ -228,20 +272,19 @@ main(argc, argv)
 		printf("is not a multiple of %d; choke!\n", sblock.fs_fsize);
 		exit(1);
 	}
-	fscs = (struct csum *)
-	    calloc(1, roundup(sblock.fs_ncg * sizeof (struct csum),
-		sblock.fs_bsize));
 	/*
 	 * Compute number of inode blocks per cylinder group.
 	 * Start with one inode per NBPI bytes; adjust as necessary.
 	 */
-	inos = ((fssize * sblock.fs_fsize) / MAX(NBPI, sblock.fs_fsize)) /
-	    INOPB(&sblock);
+	i = sblock.fs_iblkno + MAXIPG / INOPF(&sblock);
+	inos = (fssize - sblock.fs_ncg * i) * sblock.fs_fsize /
+	    MAX(NBPI, sblock.fs_fsize) / INOPB(&sblock);
 	if (inos <= 0)
 		inos = 1;
 	sblock.fs_ipg = ((inos / sblock.fs_ncg) + 1) * INOPB(&sblock);
 	if (sblock.fs_ipg > MAXIPG)
 		sblock.fs_ipg = MAXIPG;
+	sblock.fs_dblkno = sblock.fs_iblkno + sblock.fs_ipg / INOPF(&sblock);
 	if (cgdmin(0,&sblock) >= sblock.fs_fpg) {
 		printf("inode blocks/cyl group (%d) >= data blocks (%d)\n",
 		    cgdmin(0,&sblock) / sblock.fs_frag,
@@ -250,26 +293,16 @@ main(argc, argv)
 		exit(1);
 	}
 	/*
-	 * calculate the available blocks for each rotational position
-	 */
-	for (i = 0; i < NRPOS; i++)
-		sblock.fs_postbl[i] = -1;
-	for (i = 0; i < sblock.fs_spc; i += NSPB(&sblock))
-		/* void */;
-	for (i -= NSPB(&sblock); i >= 0; i -= NSPB(&sblock)) {
-		c = i % sblock.fs_nsect * NRPOS / sblock.fs_nsect;
-		sblock.fs_rotbl[i / NSPB(&sblock)] = sblock.fs_postbl[c];
-		sblock.fs_postbl[c] = i / NSPB(&sblock);
-	}
-	/*
 	 * fill in remaining fields of the super block
 	 */
 	sblock.fs_csaddr = cgdmin(0, &sblock);
 	sblock.fs_cssize = sblock.fs_ncg * sizeof(struct csum);
+	fscs = (struct csum *)
+	    calloc(1, roundup(sblock.fs_cssize, sblock.fs_bsize));
+	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
 	sblock.fs_minfree = MINFREE;
-	sblock.fs_magic = FS_MAGIC;
-	sblock.fs_sblkno = SBLOCK;
+	sblock.fs_rps = HZ;	/* assume disk speed == HZ */
 	sblock.fs_cgrotor = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
 	sblock.fs_cstotal.cs_nbfree = 0;
@@ -291,15 +324,14 @@ main(argc, argv)
 	 * Now build the cylinders group blocks and
 	 * then print out indices of cylinder groups.
 	 */
-	for (c = 0; c < sblock.fs_ncg; c++)
-		initcg(c);
+	for (cylno = 0; cylno < sblock.fs_ncg; cylno++)
+		initcg(cylno);
 	if (sblock.fs_ncg == 1)
-		printf("Warning, no super-block backups with only one cylinder group\n");
+		printf("Warning: no super-block backups with only one cylinder group\n");
 	else
 		printf("\tsuper-block backups (for fsck -b#) at %d+k*%d (%d .. %d)\n",
-		    SBLOCK, fsbtodb(&sblock, cgsblock(1, &sblock)) - SBLOCK,
-		    fsbtodb(&sblock, cgsblock(1, &sblock)),
-		    fsbtodb(&sblock, cgsblock(sblock.fs_ncg - 1, &sblock)));
+		    SBLOCK, cgsblock(1, &sblock) - SBLOCK, cgsblock(1, &sblock),
+		    cgsblock(sblock.fs_ncg - 1, &sblock));
 	/*
 	 * Now construct the initial file system,
 	 * then write out the super-block.
@@ -313,9 +345,8 @@ main(argc, argv)
 	/* 
 	 * Write out the duplicate super blocks
 	 */
-	for (c = 1; c < sblock.fs_ncg; c++)
-		wtfs(fsbtodb(&sblock, cgsblock(c, &sblock)),
-			SBSIZE, (char *)&sblock);
+	for (cylno = 1; cylno < sblock.fs_ncg; cylno++)
+		wtfs(cgsblock(cylno, &sblock), SBSIZE, (char *)&sblock);
 #ifndef STANDALONE
 	exit(0);
 #endif
@@ -324,8 +355,8 @@ main(argc, argv)
 /*
  * Initialize a cylinder group.
  */
-initcg(c)
-	int c;
+initcg(cylno)
+	int cylno;
 {
 	daddr_t cbase, d, dmin, dmax;
 	long i, j, s;
@@ -336,16 +367,16 @@ initcg(c)
 	 * Allow space for super block summary information in first
 	 * cylinder group.
 	 */
-	cbase = cgbase(c,&sblock);
+	cbase = cgbase(cylno,&sblock);
 	dmax = cbase + sblock.fs_fpg;
 	if (dmax > sblock.fs_size)
 		dmax = sblock.fs_size;
-	dmin = cgdmin(c,&sblock) - cbase;
+	dmin = sblock.fs_dblkno;
 	d = cbase;
-	cs = fscs+c;
+	cs = fscs + cylno;
 	acg.cg_time = utime;
 	acg.cg_magic = CG_MAGIC;
-	acg.cg_cgx = c;
+	acg.cg_cgx = cylno;
 	acg.cg_ncyl = sblock.fs_cpg;
 	acg.cg_niblk = sblock.fs_ipg;
 	acg.cg_ndblk = dmax - cbase;
@@ -366,7 +397,7 @@ initcg(c)
 		}
 		acg.cg_cs.cs_nifree += INOPB(&sblock);
 	}
-	if (c == 0)
+	if (cylno == 0)
 		for (i = 0; i < ROOTINO; i++) {
 			setbit(acg.cg_iused, i);
 			acg.cg_cs.cs_nifree--;
@@ -375,14 +406,14 @@ initcg(c)
 		clrbit(acg.cg_iused, i);
 		i++;
 	}
-	lseek(fso, fsbtodb(&sblock, cgimin(c,&sblock)) * DEV_BSIZE, 0);
+	lseek(fso, fsbtodb(&sblock, cgimin(cylno,&sblock)) * DEV_BSIZE, 0);
 	if (write(fso, (char *)zino, sblock.fs_ipg * sizeof (struct dinode)) !=
 	    sblock.fs_ipg * sizeof (struct dinode))
 		printf("write error %D\n", tell(fso) / sblock.fs_bsize);
 	for (i = 0; i < MAXCPG; i++)
 		for (j = 0; j < NRPOS; j++)
 			acg.cg_b[i][j] = 0;
-	if (c == 0) {
+	if (cylno == 0) {
 		dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) *
 			sblock.fs_frag;
 	}
@@ -391,12 +422,11 @@ initcg(c)
 	while ((d+sblock.fs_frag) <= dmax - cbase) {
 		setblock(&sblock, acg.cg_free, d/sblock.fs_frag);
 		acg.cg_cs.cs_nbfree++;
-		s = d * NSPF(&sblock);
-		acg.cg_b[s / sblock.fs_spc]
-		    [s % sblock.fs_nsect * NRPOS / sblock.fs_nsect]++;
+		acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]++;
 		d += sblock.fs_frag;
 	}
 	if (d < dmax - cbase)
+		acg.cg_frsum[dmax - cbase - d]++;
 		for (; d < dmax - cbase; d++) {
 			setbit(acg.cg_free, d);
 			acg.cg_cs.cs_nffree++;
@@ -409,7 +439,7 @@ initcg(c)
 	sblock.fs_cstotal.cs_nbfree += acg.cg_cs.cs_nbfree;
 	sblock.fs_cstotal.cs_nifree += acg.cg_cs.cs_nifree;
 	*cs = acg.cg_cs;
-	wtfs(fsbtodb(&sblock, cgtod(c, &sblock)),
+	wtfs(fsbtodb(&sblock, cgtod(cylno, &sblock)),
 		sblock.fs_bsize, (char *)&acg);
 }
 
@@ -466,10 +496,9 @@ alloc(size, mode)
 	int size;
 	int mode;
 {
-	int c, i, s, frag;
+	int i, frag;
 	daddr_t d;
 
-	c = 0;
 	rdfs(fsbtodb(&sblock, cgtod(0,&sblock)),
 		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
 	if (acg.cg_cs.cs_nbfree == 0) {
@@ -491,9 +520,7 @@ goth:
 		sblock.fs_cstotal.cs_ndir++;
 		fscs[0].cs_ndir++;
 	}
-	s = d * NSPF(&sblock);
-	acg.cg_b[s / sblock.fs_spc]
-		[s % sblock.fs_nsect * NRPOS / sblock.fs_nsect]--;
+	acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]--;
 	if (size != sblock.fs_bsize) {
 		frag = howmany(size, sblock.fs_fsize);
 		fscs[0].cs_nffree += sblock.fs_frag - frag;

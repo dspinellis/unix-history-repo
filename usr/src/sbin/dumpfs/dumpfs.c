@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.8 (Berkeley) %G%";
 
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -23,7 +23,7 @@ union {
 main(argc, argv)
 	char **argv;
 {
-	int i, j, k;
+	int c, i, j, k;
 
 	close(0);
 	if (open(argv[1], 0) != 0)
@@ -32,7 +32,11 @@ main(argc, argv)
 	if (read(0, &afs, SBSIZE) != SBSIZE)
 		perror(argv[1]), exit(1);
 	printf("magic\t%x\n", afs.fs_magic);
+	printf("bblkno\t%d\n", afs.fs_bblkno);
 	printf("sblkno\t%d\n", afs.fs_sblkno);
+	printf("cblkno\t%d\n", afs.fs_cblkno);
+	printf("iblkno\t%d\n", afs.fs_iblkno);
+	printf("dblkno\t%d\n", afs.fs_dblkno);
 	printf("time\t%s", ctime(&afs.fs_time));
 	printf("size\t%d\n", afs.fs_size);
 	printf("blocks\t%d\n", afs.fs_dsize);
@@ -42,6 +46,7 @@ main(argc, argv)
 	printf("frag\t%d\n", afs.fs_frag);
 	printf("minfree\t%d%%\n", afs.fs_minfree);
 	printf("rotdelay %dms\n", afs.fs_rotdelay);
+	printf("rps\t%d\n", afs.fs_rps);
 	printf("csaddr\t%d\n", afs.fs_csaddr);
 	printf("cssize\t%d\n", afs.fs_cssize);
 	printf("cgsize\t%d\n", afs.fs_cgsize);
@@ -54,15 +59,24 @@ main(argc, argv)
 	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_nifree);
 	printf("cgrotor\t%d\nfmod\t%d\nronly\t%d\n",
 	    afs.fs_cgrotor, afs.fs_fmod, afs.fs_ronly);
-	printf("blocks available in each rotational position");
-	for (i = 0; i < NRPOS; i++) {
-		if (afs.fs_postbl[i] > -1)
-			printf("\nposition %d:\t", i);
-		for (j = afs.fs_postbl[i], k = 1; j > -1;
-		     j = afs.fs_rotbl[j], k++) {
-			if (k % 15 == 0)
-				printf("\n\t\t");
-			printf("%4d", j);
+	if (afs.fs_cpc != 0)
+		printf("blocks available in each rotational position");
+	else
+		printf("insufficient space to maintain rotational tables\n");
+	for (c = 0; c < afs.fs_cpc; c++) {
+		printf("\ncylinder number %d:", c);
+		for (i = 0; i < NRPOS; i++) {
+			if (afs.fs_postbl[c][i] == -1)
+				continue;
+			printf("\n   position %d:\t", i);
+			for (j = afs.fs_postbl[c][i], k = 1; ;
+			     j += afs.fs_rotbl[j], k++) {
+				printf("%5d", j);
+				if (k % 12 == 0)
+					printf("\n\t\t");
+				if (afs.fs_rotbl[j] == 0)
+					break;
+			}
 		}
 	}
 	printf("\ncs[].cs_(nbfree,ndir,nifree,nffree):\n\t");

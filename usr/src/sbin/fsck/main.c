@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.17 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -597,9 +597,8 @@ out1b:
 				/* this is clumsy ... */
 				n_ffree -= sblock.fs_frag;
 				n_bfree++;
-				s = b * NSPF(&sblock);
-				bo[s/sblock.fs_spc]
-				    [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
+				bo[cbtocylno(&sblock, b)]
+				    [cbtorpos(&sblock, b)]++;
 			} else {
 				for (d = 0; d < sblock.fs_frag; d++)
 					if (isset(cgrp.cg_free, b+d))
@@ -1197,6 +1196,9 @@ setup(dev)
 		return (0);
 	sblk.b_bno = super;
 	sblk.b_size = SBSIZE;
+	/*
+	 * run a few consistency checks of the super block
+	 */
 	if (sblock.fs_magic != FS_MAGIC)
 		{ badsb("MAGIC NUMBER WRONG"); return (0); }
 	if (sblock.fs_ncg < 1)
@@ -1207,28 +1209,33 @@ setup(dev)
 		{ badsb("NSECT < 1"); return (0); }
 	if (sblock.fs_ntrak < 1)
 		{ badsb("NTRAK < 1"); return (0); }
-	if (sblock.fs_ipg*sblock.fs_ncg > 65535 || sblock.fs_ipg%INOPB(&sblock))
-		{ badsb("TOO MANY INODES IMPLIED"); return (0); }
-	if (sblock.fs_ipg/INOPF(&sblock)+IBLOCK(&sblock) >=
-	    sblock.fs_cpg*sblock.fs_nsect*sblock.fs_ntrak/NSPF(&sblock))
+	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
+		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
+	if (sblock.fs_ipg % INOPB(&sblock))
+		{ badsb("INODES NOT MULTIPLE OF A BLOCK"); return (0); }
+	if (cgdmin(0, &sblock) >= sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
 		{ badsb("IMPLIES MORE INODE THAN DATA BLOCKS"); return (0); }
-/* THE FOLLOWING COULD BE CHECKED MORE CLOSELY... */
-	if ((sblock.fs_ncg + 1) * sblock.fs_cpg < sblock.fs_ncyl ||
-	    (sblock.fs_ncg - 1) * sblock.fs_cpg > sblock.fs_ncyl)
+	if (sblock.fs_ncg * sblock.fs_cpg < sblock.fs_ncyl ||
+	    (sblock.fs_ncg - 1) * sblock.fs_cpg >= sblock.fs_ncyl)
 		{ badsb("NCYL DOES NOT JIVE WITH NCG*CPG"); return (0); }
 	if (sblock.fs_fpg != sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
 		{ badsb("FPG DOES NOT JIVE WITH CPG & SPC"); return (0); }
-	if (sblock.fs_size <=
-	    (sblock.fs_ncg-1)*sblock.fs_fpg+IBLOCK(&sblock)+sblock.fs_ipg/INOPF(&sblock))
+	if (sblock.fs_size * NSPF(&sblock) <=
+	    (sblock.fs_ncyl - 1) * sblock.fs_spc)
 		{ badsb("SIZE PREPOSTEROUSLY SMALL"); return (0); }
-	if (sblock.fs_size*NSPF(&sblock) >
-	    (sblock.fs_ncg+2)*sblock.fs_cpg*sblock.fs_spc)
+	if (sblock.fs_size * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc)
 		{ badsb("SIZE PREPOSTEROUSLY LARGE"); return (0); }
 	/* rest we COULD repair... */
 	if (sblock.fs_sblkno != SBLOCK)
-		{ badsb("BLKNO CORRUPTED"); return (0); }
-	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
-		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
+		{ badsb("SBLKNO CORRUPTED"); return (0); }
+	if (sblock.fs_cblkno !=
+	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag))
+		{ badsb("CBLKNO CORRUPTED"); return (0); }
+	if (sblock.fs_iblkno != sblock.fs_cblkno + sblock.fs_frag)
+		{ badsb("IBLKNO CORRUPTED"); return (0); }
+	if (sblock.fs_dblkno != 
+	    sblock.fs_iblkno + sblock.fs_ipg / INOPF(&sblock))
+		{ badsb("DBLKNO CORRUPTED"); return (0); }
 	if (sblock.fs_cgsize !=
 	    roundup(sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY),
 	    sblock.fs_fsize))
@@ -1237,7 +1244,9 @@ setup(dev)
 		{ badsb("CSSIZE INCORRECT"); return (0); }
 	fmax = sblock.fs_size;
 	imax = sblock.fs_ncg * sblock.fs_ipg;
-
+	/*
+	 * allocate the necessary maps
+	 */
 	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
 	blkmap = (char *)calloc(bmapsz, sizeof (char));
 	freemap = (char *)calloc(bmapsz, sizeof (char));
@@ -1515,9 +1524,8 @@ makecg()
 			}
 			if (j == sblock.fs_frag) {
 				cgrp.cg_cs.cs_nbfree++;
-				s = d * NSPF(&sblock);
-				cgrp.cg_b[s/sblock.fs_spc]
-				  [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
+				cgrp.cg_b[cbtocylno(&sblock, d)]
+				    [cbtorpos(&sblock, d)]++;
 			} else if (j > 0) {
 				cgrp.cg_cs.cs_nffree += j;
 				blk = ((cgrp.cg_free[d / NBBY] >> (d % NBBY)) &
