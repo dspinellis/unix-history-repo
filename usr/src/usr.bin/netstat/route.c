@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)route.c	5.25 (Berkeley) %G%";
 
 #include <netns/ns.h>
 
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #include <netdb.h>
 #include <stdio.h>
@@ -253,16 +253,23 @@ p_rtnode()
 static void
 ntreestuff()
 {
-	int needed;
+	size_t needed;
+	int mib[6];
 	char *buf, *next, *lim;
 	register struct rt_msghdr *rtm;
 
-	if ((needed = getkerninfo(KINFO_RT_DUMP, 0, 0, 0)) < 0)
-		{ perror("route-getkerninfo-estimate"); exit(1);}
+        mib[0] = CTL_NET;
+        mib[1] = PF_ROUTE;
+        mib[2] = 0;
+        mib[3] = 0;
+        mib[4] = NET_RT_DUMP;
+        mib[5] = 0;
+        if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
+		{ perror("route-sysctl-estimate"); exit(1);}
 	if ((buf = malloc(needed)) == 0)
 		{ printf("out of space\n"); exit(1);}
-	if (getkerninfo(KINFO_RT_DUMP, buf, &needed, 0) < 0)
-		{ perror("getkerninfo of routing table"); exit(1);}
+        if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0)
+		{ perror("sysctl of routing table"); exit(1);}
 	lim  = buf + needed;
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unix.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)unix.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)unix.c	5.15 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <sys/un.h>
 #include <sys/unpcb.h>
 #define KERNEL
@@ -47,7 +47,7 @@ unixpr(off)
 	char *filebuf;
 	struct protosw *unixsw = (struct protosw *)off;
 
-	filebuf = (char *)kvm_getfiles(kvmd, KINFO_FILE, 0, &nfiles);
+	filebuf = (char *)kvm_getfiles(kvmd, KERN_FILE, 0, &nfiles);
 	if (filebuf == 0) {
 		printf("Out of memory (file table).\n");
 		return;
