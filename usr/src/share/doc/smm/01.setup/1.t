@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.1 (Berkeley) %G%
+.\"	@(#)1.t	6.2 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -73,29 +73,24 @@ and format of the tape(s).
 .NH 2
 \*(Ux device naming
 .PP
-The standalone system, used to boot the full \*(Ux system,
-uses device names of the form:
-.DS
-xx(c,d,p)
-.DE
-where \fIxx\fP is the device type, normally \fI\*(Dk\fP or \fI\*(Mt\fP.
-The value \fIc\fP specifies the controller to use, and \fId\fP specifies
-the device.  The \fIp\fP value is interpreted differently for tapes
-and disks: for disks it is a disk \fIpartition\fP (in the range 0-7),
-and for tapes it is a file number offset on the tape.  Thus, partition
-1 of a ``\*(Dk'' type disk drive on controller 0 at unit 2 would be
-``\*(Dk(0,2,1)''.  Normally the controller will be controller 0; it
-may therefore be omitted from the device specification, and most of
-the examples in this document reflect this convention.  When not running
-standalone, this partition would normally be available as ``/dev/\*(Dk2b''.
-Here the prefix ``/dev'' is the name of the directory where all
-``special files'' normally live, the ``\*(Dk'' serves the obvious purpose,
-the ``2'' identifies this as a partition of \*(Dk drive number ``2'' and
-the ``b'' identifies this as the second partition.
+Device names have a different syntax depending on whether you are talking
+to the standalone system or a running \*(Ux kernel.
+The standalone system syntax is currently architecture dependent and is
+described in the various architecture specific sections.
+When not running standalone, devices are available via files in
+the ``/dev/'' directory.
+The file name typically encodes the device type, its logical unit and
+a partition within that unit.
+For example, ``/dev/sd2b'' refers to the second partition (``b'') of
+SCSI (``sd'') drive number ``2'', while ``/dev/mt0'' refers to 9-track
+tape (``mt'') unit ``0''.
 .PP
+The mapping of physical addressing information (e.g. controller, target)
+to a logical unit number is dependent on the system configuration.
 In all simple cases, where only a single controller is present, a drive
-with unit number 0 (determined by its unit plug on the front of the drive)
-will be called unit 0 in its \*(Ux file name.  This is not, however, strictly
+with physical unit number 0 (e.g., as determined by its unit plug on the
+front of the drive) will be called unit 0 in its \*(Ux file name.
+This is not, however, strictly
 necessary, since the system has a level of indirection in this naming.
 If there are multiple controllers, the disk unit numbers will normally
 be counted sequentially across controllers.  This can be taken
@@ -108,7 +103,7 @@ each of which may occupy any consecutive cylinder range on the physical
 device.  The cylinders occupied by the 8 partitions for each drive type
 are specified initially in the disk description file /etc/disktab
 (c.f. \fIdisktab\fP(5)).  The partition information and description of the
-drive geometry are written in the first sector of each disk with the
+drive geometry are written in one of the first sectors of each disk with the
 \fIdisklabel\|\fP(8) program.  Each partition may be used for either a
 raw data area such as a paging area or to store a \*(Ux file system.
 It is conventional for the first partition on a disk to be used
