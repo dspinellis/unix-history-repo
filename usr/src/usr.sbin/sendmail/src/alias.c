@@ -18,14 +18,18 @@
 # include <db.h>
 # endif
 
+# ifdef LOCKF
+# include <unistd.h>
+# endif
+
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.27 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.28 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.27 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.28 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.27 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.28 (Berkeley) %G% (without DBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -397,14 +401,22 @@ readaliases(aliasfile, init)
 
 # if defined(DBM) || defined(NEWDB)
 	/* see if someone else is rebuilding the alias file already */
+# ifdef LOCKF
+	if (lockf(fileno(af), F_TEST, 0) < 0 && errno == EACCES)
+# else
 	if (flock(fileno(af), LOCK_EX | LOCK_NB) < 0 && errno == EWOULDBLOCK)
+# endif
 	{
 		/* yes, they are -- wait until done and then return */
 		message(Arpa_Info, "Alias file is already being rebuilt");
 		if (OpMode != MD_INITALIAS)
 		{
 			/* wait for other rebuild to complete */
+# ifdef LOCKF
+			(void) lockf(fileno(af), F_LOCK, 0);
+# else
 			(void) flock(fileno(af), LOCK_EX);
+# endif
 		}
 		(void) fclose(af);
 		errno = 0;
