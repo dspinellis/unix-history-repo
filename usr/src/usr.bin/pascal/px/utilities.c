@@ -1,10 +1,11 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)utilities.c 1.6 %G%";
+static char sccsid[] = "@(#)utilities.c 1.7 %G%";
 
 #include	<signal.h>
 #include	"whoami.h"
 #include	"vars.h"
+#include	"objfmt.h"
 
 stats()
 {
@@ -64,11 +65,11 @@ skipprof:
 backtrace(type)
 	char	*type;
 {
-	register struct disp *mydp;
-	register struct stack *ap;
+	register struct dispsave *mydp;
+	register struct blockmark *ap;
 	register char *cp;
 	register long i, linum;
-	struct disply disp;
+	struct display disp;
 
 	if (_lino <= 0) {
 		fputs("Program was not executed.\n",stderr);
