@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)qsort.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)qsort.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <stdlib.h>
 
 /*
  * MTHRESH is the smallest partition for which we compare for a median
@@ -25,10 +26,11 @@ static char sccsid[] = "@(#)qsort.c	5.8 (Berkeley) %G%";
 
 void
 qsort(bot, nmemb, size, compar)
-	char *bot;
-	int nmemb, size, (*compar)();
+	void *bot;
+	size_t nmemb, size;
+	int (*compar) __P((const void *, const void *));
 {
-	void insertion_sort(), quick_sort();
+	static void insertion_sort(), quick_sort();
 
 	if (nmemb <= 1)
 		return;
@@ -90,6 +92,7 @@ quick_sort(bot, nmemb, size, compar)
 	register char *top, *mid, *t1, *t2;
 	register int n1, n2;
 	char *bsv;
+	static void insertion_sort();
 
 	/* bot and nmemb must already be set. */
 partition:

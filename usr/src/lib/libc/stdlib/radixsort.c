@@ -6,13 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 
 /*
  * __rspartition is the cutoff point for a further partitioning instead
@@ -53,7 +54,7 @@ int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
 #define	NBUCKETS	(UCHAR_MAX + 1)
 
 typedef struct _stack {
-	u_char **bot;
+	const u_char **bot;
 	int indx, nmemb;
 } CONTEXT;
 
@@ -85,12 +86,22 @@ typedef struct _stack {
  * the simple sort as soon as possible.  Takes linear time relative to
  * the number of bytes in the strings.
  */
+int
+#if __STDC__
+radixsort(const u_char **l1, int nmemb, const u_char *tab, u_char endbyte)
+#else
 radixsort(l1, nmemb, tab, endbyte)
-	u_char **l1, *tab, endbyte;
+	const u_char **l1;
 	register int nmemb;
+	const u_char *tab;
+	u_char endbyte;
+#endif
 {
 	register int i, indx, t1, t2;
-	register u_char **l2, **p, **bot, *tr;
+	register const u_char **l2;
+	register const u_char **p;
+	register const u_char **bot;
+	register const u_char *tr;
 	CONTEXT *stack, *stackp;
 	int c[NBUCKETS + 1], max;
 	u_char ltab[NBUCKETS];
@@ -124,7 +135,7 @@ radixsort(l1, nmemb, tab, endbyte)
 	 * forth, thus avoiding the copy every iteration, turns out to not
 	 * be any faster than the current implementation.
 	 */
-	if (!(l2 = (u_char **)malloc(sizeof(u_char *) * nmemb)))
+	if (!(l2 = (const u_char **)malloc(sizeof(u_char *) * nmemb)))
 		return(-1);
 
 	/*
@@ -134,12 +145,12 @@ radixsort(l1, nmemb, tab, endbyte)
 	if (tab)
 		tr = tab;
 	else {
-		tr = ltab;
 		for (t1 = 0, t2 = endbyte; t1 < t2; ++t1)
-			tr[t1] = t1 + 1;
-		tr[t2] = 0;
+			ltab[t1] = t1 + 1;
+		ltab[t2] = 0;
 		for (t1 = endbyte + 1; t1 < NBUCKETS; ++t1)
-			tr[t1] = t1;
+			ltab[t1] = t1;
+		tr = ltab;
 	}
 
 	/* First sort is entire stack */

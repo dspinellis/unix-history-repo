@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)atol.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)atol.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)atol.c	5.6 (Berkeley) %G%";
 
 long
 atol(str)
-	char *str;
+	const char *str;
 {
 	return(strtol(str, (char **)NULL, 10));
 }
