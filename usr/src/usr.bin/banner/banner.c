@@ -1,5 +1,29 @@
+/*
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
 
-static char sccsid[] = "	banner.c	4.1	82/10/24	";
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1980 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)banner.c	4.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * banner - prints large signs
@@ -7,10 +31,8 @@ static char sccsid[] = "	banner.c	4.1	82/10/24	";
  */
 
 #include <stdio.h>
-#define dir(f) "/e1/mrh/ucb/lib/f"
-#define INDTBL dir(ban.dat.indtbl)
-#define OBJECT dir(ban.dat.object)
-#define MAXMSG 100
+
+#define MAXMSG 1024
 #define DWIDTH 132
 #define NCHARS 128
 #define NBYTES 9271
@@ -975,76 +997,88 @@ char data_table[NBYTES] = {
 /* 9270 */   193
 };
 
-FILE *fd;
-int i,j,k;
-char c;
+int i,j;
 int width = DWIDTH;	/* -w option: scrunch letters to 80 columns */
 int debug;
 int trace;
 char line[DWIDTH];
 char print[DWIDTH];
 char message[MAXMSG];
-char *messp;
 int nchars;
 int linen;
 int x,y;
-int term,dup;
+int term;
 int pc;
 int max;
 
-main(argc,argv)
-int argc; 
-char **argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 { 
-	if (argc > 1 && argv[1][0] == '-') {
-		switch(argv[1][1]) {
+	extern char *optarg;
+	extern int optind;
+	int ch;
+	char *strcpy(), *strcat();
+
+	while ((ch = getopt(argc, argv, "w:td")) != EOF)
+		switch((char)ch) {
 		case 'w':
-			width = atoi(&argv[1][2]);
-			if (width==0)
+			width = atoi(optarg);
+			if (width <= 0)
 				width = 80;
 			break;
 		case 'd':
-			debug++;
+			debug = 1;
 			break;
 		case 't':
-			trace++;
+			trace = 1;
 			break;
+		case '?':
 		default:
-			printf("bad switch %s\n",argv[1]);
-			break;
+			fprintf(stderr, "usage: banner [-w width]\n");
+			exit(1);
 		}
-		argc--;
-		argv++;
-	}
+	argc -= optind;
+	argv += optind;
 
 	for (i=0; i<width; i++) {
 		j = i * 132 / width;
 		print[j] = 1;
 	}
-#ifdef notdef
-	fd = fopen(INDTBL, "r");
-	for (i=0; i<NCHARS; i++) {
-		fscanf(fd, "%d", &asc_ptr[i]);
-	}
-	fclose(fd);
 
-	fd = fopen(OBJECT, "r");
-	fread(data_table, 1, NBYTES, fd);
-	fclose(fd);
+#ifdef notdef
+	{
+#define dir(f) "/e1/mrh/ucb/lib/f"
+#define INDTBL dir(ban.dat.indtbl)
+#define OBJECT dir(ban.dat.object)
+		FILE *fd;
+
+		fd = fopen(INDTBL, "r");
+		for (i=0; i<NCHARS; i++) {
+			fscanf(fd, "%d", &asc_ptr[i]);
+		}
+		fclose(fd);
+
+		fd = fopen(OBJECT, "r");
+		fread(data_table, 1, NBYTES, fd);
+		fclose(fd);
+	}
 #endif
 
 	/* Have now read in the data. Next get the message to be printed. */
-	if (argc > 1) {
-		strcpy(message, argv[1]);
-		for (i=2; i<argc; i++) {
+	if (*argv) {
+		strcpy(message, *argv);
+		while (*++argv) {
 			strcat(message, " ");
-			strcat(message, argv[i]);
+			strcat(message, *argv);
 		}
+		nchars = strlen(message);
 	} else {
 		fprintf(stderr,"Message: ");
-		gets(message);
+		(void)fgets(message, sizeof(message), stdin);
+		nchars = strlen(message);
+		message[nchars--] = '\0';	/* get rid of newline */
 	}
-	nchars = strlen(message);
 
 	/* some debugging print statements */
 	if (debug) {
