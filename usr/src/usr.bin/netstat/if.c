@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)if.c	5.1 (Berkeley) %G%";
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/in_var.h>
+#include <netns/ns.h>
 
 #include <stdio.h>
 
@@ -109,6 +110,15 @@ intpr(interval, ifnetaddr)
 						ifaddr.in.ia_subnetmask));
 #endif
 				printf("%-12.12s ", routename(sin->sin_addr));
+				break;
+			case AF_NS:
+				{
+				struct sockaddr_ns *sns =
+				(struct sockaddr_ns *)&ifaddr.in.ia_addr;
+				printf("ns:%-8d ",
+					ntohl(ns_netof(sns->sns_addr)));
+				printf("%-12s ",ns_phost(sns));
+				}
 				break;
 			default:
 				printf("af%2d: ", ifaddr.ifa.ifa_addr.sa_family);
