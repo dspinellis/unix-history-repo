@@ -1,21 +1,36 @@
 #!/bin/sh
-#	dumpall.sh	1.4	%G%
+#	dumpall.sh	1.5	%G%
 #	shell script to do all pending dumps
 #	Asks for confirmation before proceeding
 PATH=:/etc:/bin:/usr/bin:
 list=`dump w|sed -e '/^ /!d
 	/^ /s/^  //
 	s/	.*$//'`
+echo 'File systems which require dumping are:-'
+echo $list
 for fi in $list
 do
-	echo "File system to dump is $fi"
-	echo -n "Do you wish to continue? "
-	read ans
-	if [ "$ans" = "yes" -o "$ans" = "y" -o "$ans" = "Y" ]
-	then
-		doadump $fi
-		/etc/dumplogclean
-	else
-		exit 1
-	fi
+	askagain=yes
+	while  [ $askagain = yes ]
+	do
+		echo -n "Dump file system $fi [yne]? "
+		read ans
+		case $ans in
+		yes|y|Y)
+			doadump $fi
+			/etc/dumplogclean
+			askagain=no
+			;;
+		exit|e|E)
+			exit 1
+			;;
+		no|n|N)
+			echo "Abandoned dump of $fi"
+			askagain=no
+			;;
+		*)
+			echo 'Answer "y" to do a dump, "n" to skip this filesystem, "e" to exit from dumpall'
+			;;
+		esac
+	done
 done
