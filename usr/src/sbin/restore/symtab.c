@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.13	(Berkeley)	83/07/01";
+static char sccsid[] = "@(#)symtab.c	3.14	(Berkeley)	83/07/08";
 #endif
 
 /*
@@ -184,6 +184,8 @@ addentry(name, inum, type)
 		bzero((char *)np, (long)sizeof(struct entry));
 	} else {
 		np = (struct entry *)calloc(1, sizeof(struct entry));
+		if (np == NIL)
+			panic("no memory to extend symbol table\n");
 	}
 	np->e_type = type & ~LINK;
 	ep = lookupparent(name);
