@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.15 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,6 +145,7 @@ mfs_strategy(bp)
 	return (0);
 }
 
+#if defined(vax) || defined(tahoe)
 /*
  * Memory file system I/O.
  *
@@ -157,16 +158,11 @@ mfs_doio(bp, base)
 	register struct buf *bp;
 	caddr_t base;
 {
-#if !defined(hp300)
 	register struct pte *pte, *ppte;
 	register caddr_t vaddr;
 	int off, npf, npf2, reg;
-#endif
 	caddr_t kernaddr, offset;
 
-#if defined(hp300)
-	kernaddr = bp->b_un.b_addr;
-#else
 	/*
 	 * For phys I/O, map the b_addr into kernel virtual space using
 	 * the Mfsiomap pte's.
@@ -205,7 +201,6 @@ mfs_doio(bp, base)
 			vaddr += NBPG;
 		}
 	}
-#endif /* !defined(hp300) */
 	offset = base + (bp->b_blkno << DEV_BSHIFT);
 	if (bp->b_flags & B_READ)
 		bp->b_error = copyin(offset, kernaddr, bp->b_bcount);
@@ -213,7 +208,6 @@ mfs_doio(bp, base)
 		bp->b_error = copyout(kernaddr, offset, bp->b_bcount);
 	if (bp->b_error)
 		bp->b_flags |= B_ERROR;
-#if !defined(hp300)
 	/*
 	 * Release pte's used by physical I/O.
 	 */
@@ -224,9 +218,30 @@ mfs_doio(bp, base)
 			wakeup((caddr_t)&mfsmap_want);
 		}
 	}
-#endif
 	biodone(bp);
 }
+#endif	/* vax || tahoe */
+
+#if defined(hp300)
+/*
+ * Memory file system I/O.
+ *
+ * Trivial on the HP since buffer has already been mapping into KVA space.
+ */
+mfs_doio(bp, base)
+	register struct buf *bp;
+	caddr_t base;
+{
+	base += (bp->b_blkno << DEV_BSHIFT);
+	if (bp->b_flags & B_READ)
+		bp->b_error = copyin(base, bp->b_un.b_addr, bp->b_bcount);
+	else
+		bp->b_error = copyout(bp->b_un.b_addr, base, bp->b_bcount);
+	if (bp->b_error)
+		bp->b_flags |= B_ERROR;
+	biodone(bp);
+}
+#endif
 
 /*
  * This is a noop, simply returning what one has been given.
