@@ -12,11 +12,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/user.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -24,15 +23,19 @@ static char sccsid[] = "@(#)ps.c	5.50 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
-#include <nlist.h>
-#include <kvm.h>
+
+#include <ctype.h>
+#include <err.h>
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
+#include <kvm.h>
+#include <nlist.h>
+#include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <paths.h>
-#include <ctype.h>
+#include <unistd.h>
+
 #include "ps.h"
 
 #ifdef SPPWAIT
@@ -95,7 +98,7 @@ main(argc, argv)
 	if (argc > 1)
 		argv[1] = kludge_oldps_options(argv[1]);
 
-	all = fmt = wflag = xflg = 0;
+	all = fmt = prtheader = wflag = xflg = 0;
 	pid = uid = -1;
 	ttydev = NODEV;
 	memf = nlistf = swapf = NULL;
@@ -105,15 +108,14 @@ main(argc, argv)
 		case 'a':
 			all = 1;
 			break;
-		case 'e':
-			/* XXX set ufmt */
+		case 'e':			/* XXX set ufmt */
 			needenv = 1;
 			break;
 		case 'C':
 			rawcpu = 1;
 			break;
 		case 'g':
-			break;	/* no-op */
+			break;			/* no-op */
 		case 'h':
 			prtheader = ws.ws_row > 5 ? ws.ws_row : 22;
 			break;
@@ -162,7 +164,7 @@ main(argc, argv)
 			break;
 		case 'T':
 			if ((optarg = ttyname(STDIN_FILENO)) == NULL)
-				err("stdin: not a terminal");
+				errx(1, "stdin: not a terminal");
 			/* FALLTHROUGH */
 		case 't': {
 			struct stat sb;
@@ -176,9 +178,9 @@ main(argc, argv)
 			else
 				ttypath = optarg;
 			if (stat(ttypath, &sb) == -1)
-				err("%s: %s", ttypath, strerror(errno));
+				err(1, "%s", ttypath);
 			if (!S_ISCHR(sb.st_mode))
-				err("%s: not a terminal", ttypath);
+				errx(1, "%s: not a terminal", ttypath);
 			ttydev = sb.st_rdev;
 			break;
 		}
@@ -217,7 +219,6 @@ main(argc, argv)
 #define	BACKWARD_COMPATIBILITY
 #ifdef	BACKWARD_COMPATIBILITY
 	if (*argv) {
-
 		nlistf = *argv;
 		if (*++argv) {
 			memf = *argv;
@@ -235,7 +236,7 @@ main(argc, argv)
 
 	kd = kvm_openfiles(nlistf, memf, swapf, O_RDONLY, errbuf);
 	if (kd == 0)
-		err("%s", errbuf);
+		errx(1, "%s", errbuf);
 
 	if (!fmt)
 		parsefmt(dfmt);
@@ -264,10 +265,9 @@ main(argc, argv)
 	 * select procs
 	 */
 	if ((kp = kvm_getprocs(kd, what, flag, &nentries)) == 0)
-		err("%s", kvm_geterr(kd));
-	kinfo = malloc(nentries * sizeof(*kinfo));
-	if (kinfo == NULL)
-		err("%s", strerror(errno));
+		errx(1, "%s", kvm_geterr(kd));
+	if ((kinfo = malloc(nentries * sizeof(*kinfo))) == NULL)
+		err(1, NULL);
 	for (i = nentries; --i >= 0; ++kp) {
 		kinfo[i].ki_p = kp;
 		if (needuser)
@@ -296,7 +296,7 @@ main(argc, argv)
 				(void)putchar(' ');
 		}
 		(void)putchar('\n');
-		if (prtheader && lineno++ == prtheader-4) {
+		if (prtheader && lineno++ == prtheader - 4) {
 			(void)putchar('\n');
 			printheader();
 			lineno = 0;
@@ -335,9 +335,9 @@ fmt(fn, ki, comm, maxlen)
 {
 	register char *s;
 
-	s = fmt_argv((*fn)(kd, ki->ki_p, termwidth), comm, maxlen);
-	if (s == NULL)
-		err("%s", strerror(errno));
+	if ((s =
+	    fmt_argv((*fn)(kd, ki->ki_p, termwidth), comm, maxlen)) == NULL)
+		err(1, NULL);
 	return (s);
 }
 
@@ -419,7 +419,7 @@ kludge_oldps_options(s)
 
 	len = strlen(s);
 	if ((newopts = ns = malloc(len + 2)) == NULL)
-		err("%s", strerror(errno));
+		err(1, NULL);
 	/*
 	 * options begin with '-'
 	 */
@@ -445,7 +445,7 @@ kludge_oldps_options(s)
 			--cp;
 	}
 	cp++;
-	bcopy(s, ns, (size_t)(cp - s));	/* copy up to trailing number */
+	memmove(ns, s, (size_t)(cp - s));	/* copy up to trailing number */
 	ns += cp - s;
 	/*
 	 * if there's a trailing number, and not a preceding 'p' (pid) or
@@ -457,35 +457,6 @@ kludge_oldps_options(s)
 	(void)strcpy(ns, cp);		/* and append the number */
 
 	return (newopts);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "ps: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
 
 static void
