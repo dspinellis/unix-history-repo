@@ -1,0 +1,70 @@
+#
+# table of font 3600 with master 14 and unitwidth 10
+# Note: ascender and descender info generated automatically
+#
+# This is the Smal caps for Times Bold font
+#
+# The lower case input chars are automatically translated to upper case
+#
+name Bs
+internalname 3600
+charset
+\|	33	0	0	0	spacewidth is 66 decipoints
+\^	17	0	0	0	not really a quart space
+A	105	2	041	3600	SM CAP A
+a	"
+B	105	2	042	3600	SM CAP B
+b	"
+C	100	2	043	3600	SM CAP C
+c	"
+D	119	2	044	3600	SM CAP D
+d	"
+E	105	2	045	3600	SM CAP E
+e	"
+F	94	2	046	3600	SM CAP F
+f	"
+G	111	2	047	3600	SM CAP G
+g	"
+H	125	2	050	3600	SM CAP H
+h	"
+I	63	2	051	3600	SM CAP I
+i	"
+J	80	2	052	3600	SM CAP J
+j	"
+K	111	2	053	3600	SM CAP K
+k	"
+L	105	2	054	3600	SM CAP L
+l	"
+M	150	2	055	3600	SM CAP M
+m	"
+N	119	2	056	3600	SM CAP N
+n	"
+O	119	2	057	3600	SM CAP O
+o	"
+P	100	2	060	3600	SM CAP P
+p	"
+Q	119	2	061	3600	SM CAP Q
+q	"
+R	111	2	062	3600	SM CAP R
+r	"
+S	94	2	063	3600	SM CAP S
+s	"
+T	100	2	064	3600	SM CAP T
+t	"
+U	119	2	065	3600	SM CAP U
+u	"
+V	105	2	066	3600	SN CAP V
+v	"
+W	155	2	067	3600	SM CAP W
+w	"
+X	111	2	070	3600	SM CAP X
+x	"
+Y	111	2	071	3600	SM CAP Y
+y	"
+Z	105	2	072	3600	SM CAP Z
+z	"
+&	111	2	073	3600	SM CAP &
+AE	144	2	074	3600	SC DIPH
+ae	"
+OE	155	2	075	3600	SM C OE DIP
+oe	"
