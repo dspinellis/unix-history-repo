@@ -1,5 +1,20 @@
 This file lists known problems with this release of FreeBSD
 
+'hanging keyboard'
+------------------
+There are still problems with certain machines appearing to 'hang' on
+bootup even though a prompt is there.  The most common machines that
+exhibit these problems are Gateway 2000 machines with PHOENIX bios's but
+other machines with PHOENIX bios also exhibit this behavior.
+	The temporary solution until you can get the distribution
+installed on your hard-drive is to 'bounce' on a key like shift or
+num-lock (which works well since you can see when the keyboard comes
+back to life) until the boot sequence is finished.  The keyboard will
+work fine for installing FreeBSD onto the hard-drive.
+	Generally the problems go away at this point, but if it doesn't
+you should install a SYSCONS kernel which doesn't experience these
+keyboard problems.
+
 /usr/bin/gdb:
 	The gdb in the release will not work on shared objects nor will it
 	work with C++ executables.  Please use the gdb in the ports area for
@@ -21,4 +36,4 @@ This file lists known problems with this release of FreeBSD
 	will no longer be necessary.
 	
 
-$Id: KNOWNBUGS,v 1.2 1994/02/09 05:25:23 nate Exp $
+$Id: KNOWNBUGS,v 1.3 1994/02/09 06:22:58 wollman Exp $
