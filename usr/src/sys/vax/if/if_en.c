@@ -1,4 +1,4 @@
-/* if_en.c 4.1 81/10/31 */
+/* if_en.c 4.2 81/10/31 */
 
 #include "en.h"
 /*
@@ -42,10 +42,11 @@ struct	en_prefix {
 	struct th enp_th;
 };
 struct	uba_regs *enuba;
-struct	pte *enrmr;
+struct	pte *enrmr, *enxmr;
 int	enrbdp, enwbdp;
 int	enrproto, enwproto;
-int	enxmap[1];
+struct	pte enxmap[2];
+int	enxswapd;
 
 enprobe(reg)
 	caddr_t reg;
@@ -71,10 +72,10 @@ enprobe(reg)
 enattach(ui)
 	struct uba_device *ui;
 {
-	/* no local state to set up */
+
 }
 
-imp_init(unit)
+eninit(unit)
 	int unit;
 {	
 	register struct endevice *addr;
@@ -94,7 +95,7 @@ imp_init(unit)
 		k = n<<1;
 		i = rmalloc(netmap, n*2);
 		if (i == 0)
-			panic("imp_init");
+			panic("eninit");
 		j = i << 1;
 		cp = (char *)pftom(i);
 		if (memall(&Netmap[j], k, proc, CSYS) == 0)
@@ -121,6 +122,10 @@ imp_init(unit)
 	enrproto = UBAMR_MRV | (enrbdp << 21);
 	enwproto = UBAMR_MRV | (enwbdp << 21);
 	enrmr = &enuba->uba_map[((imp_stat.iaddr>>9)&0x1ff) + 1];
+	enxmr = &enuba->uba_map[((imp_stat.oaddr>>9)&0x1ff) + 1];
+	enxmap[0] = enxmr[0];
+	enxmap[1] = enxmr[1];
+	enxswapd = 0;
 	printf("enrbdp %x enrproto %x enrmr %x imp_stat.iaddr %x\n",
 	    enrbdp, enrproto, enrmr, imp_stat.iaddr);
 	imp_stat.impopen = 1;
@@ -146,12 +151,12 @@ enreset(uban)
 			ubarelse(uban, imp_stat.iaddr);
 		if (imp_stat.oaddr)
 			ubarelse(uban, imp_stat.oaddr);
-		imp_init(unit);
+		eninit(unit);
 		printf("en%d ", unit);
 	}
 }
 
-imp_output(dev)
+enstart(dev)
 	dev_t dev;
 {
 	register struct mbuf *m, *mp;
@@ -161,7 +166,8 @@ imp_output(dev)
         register int len;
 	u_short uaddr;
 	struct uba_device *ui;
-COUNT(IMP_OUTPUT);
+	int enxswapnow = 0;
+COUNT(ENSTART);
 
 	unit = ENUNIT(dev);
 	ui = eninfo[unit];
@@ -181,16 +187,29 @@ COUNT(IMP_OUTPUT);
 		cp = (caddr_t)xpkt;
 		top = (caddr_t)xpkt + sizeof(struct en_packet);
 		while (m != NULL) {
+			char *dp;
 			if (cp + m->m_len > top) {
 				printf("imp_snd: my packet runneth over\n");
 				m_freem(m);
 				return;
 			}
-			bcopy((int)m + m->m_off, cp, m->m_len);
+			dp = mtod(m, char *);
+			if (((int)cp&0x3ff)==0 && ((int)dp&0x3ff)==0) {
+				struct pte *pte = &Netmap[mtopf(dp)*2];
+				*(int *)enxmr = enwproto | pte++->pg_pfnum;
+				*(int *)(enxmr+1) = enwproto | pte->pg_pfnum;
+				enxswapd = enxswapnow = 1;
+			} else
+				bcopy((int)m + m->m_off, cp, m->m_len);
 			cp += m->m_len;
+			/* too soon! */
 			MFREE(m, mp);
 			m = mp;
 		}
+	}
+	if (enxswapnow == 0 && enxswapd) {
+		enxmr[0] = enxmap[0];
+		enxmr[1] = enxmap[1];
 	}
 	len = ntohs(((struct ip *)((int)xpkt + L1822))->ip_len) + L1822;
 	if (len > sizeof(struct en_packet)) {
@@ -201,12 +220,12 @@ COUNT(IMP_OUTPUT);
 	switch (cpu) {
 #if defined(VAX780)
 	case VAX_780:
-		UBA_PURGE780(ui->ui_hd->uh_uba, imp_stat.oaddr>>28);
+		UBA_PURGE780(enuba, enwbdp);
 		break;
 #endif
 #if defined(VAX750)
 	case VAX_750:
-		UBA_PURGE750(ui->ui_hd->uh_uba, imp_stat.oaddr>>28);
+		UBA_PURGE750(enuba, enwbdp);
 		break;
 #endif
 	}
@@ -222,16 +241,16 @@ COUNT(IMP_OUTPUT);
 }
 
 /*
- * Start a read operation.
+ * Setup for a read
  */
-imp_read(dev)
+ensetup(dev)
 	dev_t dev;
 {
 	register struct endevice *addr;
 	register struct uba_device *ui;
         register unsigned ubaddr;
 	register int sps;
-COUNT(IMP_READ);
+COUNT(ENSETUP);
 
 	ui = eninfo[ENUNIT(dev)];
 	if (ui == 0 || ui->ui_alive == 0) {
@@ -271,7 +290,8 @@ COUNT(ENXINT);
 		printf("en%d: output error ostat=%b\n", unit,
 			addr->en_ostat, EN_BITS);
 	imp_stat.outactive = 0;
-	imp_output(unit);
+	if (imp_stat.outq_head)
+		enstart(unit);
 }
 
 encollide(unit)
@@ -299,7 +319,7 @@ COUNT(ENCOLLIDE);
 		imp_stat.enmask <<= 1;
 		imp_stat.endelay = time & ~imp_stat.enmask;
 	}
-	imp_output(unit);
+	enstart(unit);
 }
 
 enrint(unit)
@@ -417,15 +437,17 @@ nocopy:
 	prt_byte(rpkt, len);
 #endif
 	setsoftnet();
-	imp_read(0);			/* begin next read */
-	return;
+	goto setup;
 flush:
 	m_freem(top);
 #ifdef IMPDEBUG
 	printf("en%d: flushing packet %x\n", unit, top);
 #endif
-	imp_read(0);			/* begin next read */
-}	
+setup:
+	addr->en_iba = imp_stat.iaddr;
+	addr->en_iwc = -600;
+	addr->en_istat = IEN|GO;
+}
 
 #ifdef IMPDEBUG
 prt_byte(s, ct)
