@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -263,17 +263,17 @@ main(argc, argv)
 	(void) setuid(getuid()); /* rmthost() is the only reason to be setuid */
 
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
-		signal(SIGHUP, sighup);
+		signal(SIGHUP, sig);
 	if (signal(SIGTRAP, SIG_IGN) != SIG_IGN)
-		signal(SIGTRAP, sigtrap);
+		signal(SIGTRAP, sig);
 	if (signal(SIGFPE, SIG_IGN) != SIG_IGN)
-		signal(SIGFPE, sigfpe);
+		signal(SIGFPE, sig);
 	if (signal(SIGBUS, SIG_IGN) != SIG_IGN)
-		signal(SIGBUS, sigbus);
+		signal(SIGBUS, sig);
 	if (signal(SIGSEGV, SIG_IGN) != SIG_IGN)
-		signal(SIGSEGV, sigsegv);
+		signal(SIGSEGV, sig);
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
-		signal(SIGTERM, sigterm);
+		signal(SIGTERM, sig);
 	if (signal(SIGINT, interrupt) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
 
@@ -457,24 +457,31 @@ main(argc, argv)
 }
 
 void
-sigAbort()
+sig(signo)
+	int signo;
 {
-	if (pipeout)
-		quit("Unknown signal, cannot recover\n");
-	msg("Rewriting attempted as response to unknown signal.\n");
-	(void) fflush(stderr);
-	(void) fflush(stdout);
-	close_rewind();
-	(void) exit(X_REWRITE);
+	switch(signo) {
+	case SIGALRM:
+	case SIGBUS:
+	case SIGFPE:
+	case SIGHUP:
+	case SIGTERM:
+	case SIGTRAP:
+		if (pipeout)
+			quit("Signal on pipe: cannot recover\n");
+		msg("Rewriting attempted as response to unknown signal.\n");
+		(void) fflush(stderr);
+		(void) fflush(stdout);
+		close_rewind();
+		(void) exit(X_REWRITE);
+		/* NOTREACHED */
+	case SIGSEGV:
+		msg("SIGSEGV: ABORTING!\n");
+		(void) signal(SIGSEGV, SIG_DFL);
+		(void) kill(0, SIGSEGV);
+		/* NOTREACHED */
+	}
 }
-
-void	sighup(){	msg("SIGHUP()  try rewriting\n"); sigAbort();}
-void	sigtrap(){	msg("SIGTRAP()  try rewriting\n"); sigAbort();}
-void	sigfpe(){	msg("SIGFPE()  try rewriting\n"); sigAbort();}
-void	sigbus(){	msg("SIGBUS()  try rewriting\n"); sigAbort();}
-void	sigsegv(){	msg("SIGSEGV()  ABORTING!\n"); abort();}
-void	sigalrm(){	msg("SIGALRM()  try rewriting\n"); sigAbort();}
-void	sigterm(){	msg("SIGTERM()  try rewriting\n"); sigAbort();}
 
 char *
 rawname(cp)

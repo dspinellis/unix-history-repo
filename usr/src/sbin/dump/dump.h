@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dump.h	5.20 (Berkeley) %G%
+ *	@(#)dump.h	5.21 (Berkeley) %G%
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -61,19 +61,13 @@ int	tp_bshift;	/* log2(TP_BSIZE) */
 /* operator interface functions */
 void	broadcast __P((char *message));
 void	lastdump __P((int arg));	/* int should be char */
-time_t	unctime __P((char *str));
-#if __STDC__
-void	msg(const char *fmt, ...);
-void	msgtail(const char *fmt, ...);
-void	quit(const char *fmt, ...);
-#else
-void	msg();
-void	msgtail();
-void	quit();
-#endif
+void	msg __P((const char *fmt, ...));
+void	msgtail __P((const char *fmt, ...));
 int	query __P((char *question));
-void	set_operators __P(());
-void	timeest __P(());
+void	quit __P((const char *fmt, ...));
+void	set_operators __P((void));
+void	timeest __P((void));
+time_t	unctime __P((char *str));
 
 /* mapping rouintes */
 struct	dinode;
@@ -82,29 +76,29 @@ int	mapfiles __P((ino_t maxino, long *tapesize));
 int	mapdirs __P((ino_t maxino, long *tapesize));
 
 /* file dumping routines */
-void	dumpino __P((struct dinode *dp, ino_t ino));
 void	blksout __P((daddr_t *blkp, int frags, ino_t ino));
+void	bread __P((daddr_t blkno, char *buf, int size));	
+void	dumpino __P((struct dinode *dp, ino_t ino));
 void	dumpmap __P((char *map, int type, ino_t ino));
 void	writeheader __P((ino_t ino));
-void	bread __P((daddr_t blkno, char *buf, int size));	
 
 /* tape writing routines */
-int	alloctape __P(());
-void	writerec __P((char *dp, int isspcl));
+int	alloctape __P((void));
+void	close_rewind __P((void));
 void	dumpblock __P((daddr_t blkno, int size));
-void	flushtape __P(());
-void	trewind __P(());
-void	close_rewind __P(());
-void	startnewtape __P(());
+void	flushtape __P((void));
+void	startnewtape __P((int top));
+void	trewind __P((void));
+void	writerec __P((char *dp, int isspcl));
 
-void	dumpabort __P(());
 void	Exit __P((int status));
-void	getfstab __P(());
+void	dumpabort __P((int signo));
+void	getfstab __P((void));
 
 char	*rawname __P((char *cp));
 struct	dinode *getino __P((ino_t inum));
 
-void	interrupt __P(());	/* in case operator bangs on console */
+void	interrupt __P((int signo));	/* in case operator bangs on console */
 
 /*
  *	Exit status codes
@@ -139,22 +133,13 @@ struct	dumptime *dthead;	/* head of the list version */
 int	nddates;		/* number of records (might be zero) */
 int	ddates_in;		/* we have read the increment file */
 struct	dumpdates **ddatev;	/* the arrayfied version */
-void	initdumptimes __P(());
-void	getdumptime __P(());
-void	putdumptime __P(());
+void	initdumptimes __P((void));
+void	getdumptime __P((void));
+void	putdumptime __P((void));
 #define	ITITERATE(i, ddp) \
 	for (ddp = ddatev[i = 0]; i < nddates; ddp = ddatev[++i])
 
-/*
- *	We catch these interrupts
- */
-void	sighup __P(());
-void	sigtrap __P(());
-void	sigfpe __P(());
-void	sigbus __P(());
-void	sigsegv __P(());
-void	sigalrm __P(());
-void	sigterm __P(());
+void	sig __P((int signo));
 
 /*
  * Compatibility with old systems.
