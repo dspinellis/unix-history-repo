@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.5 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,7 +78,7 @@ hardclock(pc, ps)
 	int ps;
 {
 	register struct callout *p1;
-	register struct proc *p;
+	register struct proc *p = u.u_procp;
 	register int s;
 
 	/*
@@ -112,16 +112,16 @@ hardclock(pc, ps)
 		 * user time counter, and process process-virtual time
 		 * interval timer. 
 		 */
-		BUMPTIME(&u.u_ru.ru_utime, tick);
+		BUMPTIME(&p->p_utime, tick);
 		if (timerisset(&u.u_timer[ITIMER_VIRTUAL].it_value) &&
 		    itimerdecr(&u.u_timer[ITIMER_VIRTUAL], tick) == 0)
-			psignal(u.u_procp, SIGVTALRM);
+			psignal(p, SIGVTALRM);
 	} else {
 		/*
 		 * CPU was in system state.
 		 */
 		if (!noproc)
-			BUMPTIME(&u.u_ru.ru_stime, tick);
+			BUMPTIME(&p->p_stime, tick);
 	}
 
 	/*
@@ -133,23 +133,23 @@ hardclock(pc, ps)
 	 * the entire last tick.
 	 */
 	if (noproc == 0) {
-		if ((u.u_ru.ru_utime.tv_sec+u.u_ru.ru_stime.tv_sec+1) >
+		if ((p->p_utime.tv_sec+p->p_stime.tv_sec+1) >
 		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
-			psignal(u.u_procp, SIGXCPU);
+			psignal(p, SIGXCPU);
 			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
 			    u.u_rlimit[RLIMIT_CPU].rlim_max)
 				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5;
 		}
 		if (timerisset(&u.u_timer[ITIMER_PROF].it_value) &&
 		    itimerdecr(&u.u_timer[ITIMER_PROF], tick) == 0)
-			psignal(u.u_procp, SIGPROF);
-		s = u.u_procp->p_rssize;
+			psignal(p, SIGPROF);
+		s = p->p_rssize;
 		u.u_ru.ru_idrss += s;
 #ifdef notdef
 		u.u_ru.ru_isrss += 0;		/* XXX (haven't got this) */
 #endif
-		if (u.u_procp->p_textp) {
-			register int xrss = u.u_procp->p_textp->x_rssize;
+		if (p->p_textp) {
+			register int xrss = p->p_textp->x_rssize;
 
 			s += xrss;
 			u.u_ru.ru_ixrss += xrss;
@@ -173,7 +173,6 @@ hardclock(pc, ps)
 	 * much recently, and to round-robin among other processes.
 	 */
 	if (!noproc) {
-		p = u.u_procp;
 		p->p_cpticks++;
 		if (++p->p_cpu == 0)
 			p->p_cpu--;
@@ -332,7 +331,7 @@ softclock(pc, ps)
 		 * reduce priority to give others a chance.
 		 */
 		if (p->p_uid && p->p_nice == NZERO &&
-		    u.u_ru.ru_utime.tv_sec > 10 * 60) {
+		    p->p_utime.tv_sec > 10 * 60) {
 			p->p_nice = NZERO+4;
 			(void) setpri(p);
 			p->p_pri = p->p_usrpri;
