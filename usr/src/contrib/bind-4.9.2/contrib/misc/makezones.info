@@ -1,0 +1,40 @@
+Newsgroups: comp.protocols.tcp-ip.domains
+Path: vixie!decwrl!uunet!pipex!pavo.csi.cam.ac.uk!camcus!ph10
+From: ph10@cus.cam.ac.uk (Philip Hazel)
+Subject: DNS maintenance: announcement
+Message-ID: <1993Sep22.153800.14422@infodev.cam.ac.uk>
+Sender: news@infodev.cam.ac.uk (USENET news)
+Nntp-Posting-Host: grus.cus.cam.ac.uk
+Organization: University of Cambridge Computing Service
+Date: Wed, 22 Sep 1993 15:38:00 GMT
+Lines: 29
+
+I have written a Perl script called "makezones" which builds one forwards zone 
+file and any number of reverse zone files from a single source file. (For 
+example, I build the files for cam.ac.uk, 111.131.in-addr.arpa, and 
+213.153.192.in-addr.arpa from a single source.)
+
+The script does extensive checks on the syntax of the input, and it also checks 
+for duplicate IP addresses and the use of CNAME domain names on other types of 
+record (which is illegal). The serial number on the SOA record is automatically 
+updated each time makezones is run; it is expected to be in the very common
+<year><mon><day><seq> format, but the year must be four digits - this code is 
+built to survive the turn of the century...
+
+The script is extensively commented and has a long description at its start. 
+Some of its features are configurable by setting appropriate Perl variables at 
+the start. These are all documented. Hacking for other requirements should be 
+relatively straightforward.
+
+Makezones is available for ftp from
+
+   ftp.cus.cam.ac.uk:/pub/software/programs/DNS/makezones
+   
+I'll be happy to receive comments and suggestions and bug reports.
+
+Philip 
+
+-- 
+Philip Hazel                   University Computing Service,
+ph10@cus.cam.ac.uk             New Museums Site, Cambridge CB2 3QG,
+P.Hazel@ucs.cam.ac.uk          England.  Phone: +44 223 334714
