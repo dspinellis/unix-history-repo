@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00036
+ * --------------------         -----   ----------------------
+ *
+ * 14 Sep 92	Goran Hammarback	Fixed ps exception due to gcc bug
  */
 
 #ifndef lint
@@ -78,6 +85,7 @@ enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 
 uid_t	getuid();
 char	*ttyname();
+double	getpcpu();					/* 14 Sep 92*/
 
 char dfmt[] = "pid tt state time command";
 char jfmt[] = "user pid ppid pgid sess jobc state tt time command";
