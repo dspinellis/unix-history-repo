@@ -9,278 +9,243 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <errno.h>
 #include <db.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "btree.h"
 
+static EPG *bt_fast __P((BTREE *, const DBT *, const DBT *, int *));
+
 /*
- *  _BT_INSERT -- Insert a new user datum in the btree.
+ * __BT_PUT -- Add a btree item to the tree.
  *
- *	This routine is called by bt_put, the public interface, once the
- *	location for the new item is known.  We do the work here, and
- *	handle splits if necessary.
+ * Parameters:
+ *	dbp:	pointer to access method
+ *	key:	key
+ *	data:	data
+ *	flag:	R_NOOVERWRITE
  *
- *	Parameters:
- *		t -- btree in which to do the insertion.
- *		item -- BTITEM describing location of new datum
- *		key -- key to insert
- *		data -- data associated with key
- *		flag -- magic cookie passed recursively to bt_put if we
- *			have to do a split
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS and RET_SPECIAL if the key is already in the
+ *	tree and R_NOOVERWRITE specified.
  */
-
 int
-_bt_insert(t, item, key, data, flag)
-	BTREE_P t;
-	BTITEM *item;
-	DBT *key;
-	DBT *data;
-	int flag;
+__bt_put(dbp, key, data, flags)
+	const DB *dbp;
+	const DBT *key, *data;
+	u_int flags;
 {
-	index_t index;
-	BTHEADER *h;
-	DATUM *d;
-	int nbytes;
-	int status;
-	pgno_t pgno;
-	int keysize, datasize;
-	int bigkey, bigdata;
+	BTREE *t;
+	DBT tkey, tdata;
+	EPG *e;
+	PAGE *h;
+	index_t index, nxtindex;
+	pgno_t pg;
+	size_t nbytes;
+	int dflags, exact;
+	char *dest, db[NOVFLSIZE], kb[NOVFLSIZE];
 
-	if (_bt_getpage(t, item->bti_pgno) == RET_ERROR)
+	if (flags && flags != R_NOOVERWRITE) {
+		errno = EINVAL;
 		return (RET_ERROR);
-	h = t->bt_curpage;
-
-	if (TOOBIG(t, data->size)) {
-		bigdata = TRUE;
-		datasize = sizeof(pgno_t);
-	} else {
-		bigdata = FALSE;
-		datasize = data->size;
 	}
-
-	if (TOOBIG(t, key->size)) {
-		bigkey = TRUE;
-		keysize = sizeof(pgno_t);
-	} else {
-		bigkey = FALSE;
-		keysize = key->size;
-	}
-
-	nbytes = keysize + datasize + (sizeof(DATUM) - sizeof(char));
-	nbytes = LONGALIGN(nbytes) + sizeof(index_t);
-
-	/* if there's not enough room here, split the page */
-	if ((h->h_upper - h->h_lower) < nbytes) {
-		if (_bt_split(t) == RET_ERROR)
-			return (RET_ERROR);
-
-		/* okay, try again (empty the stack first, though) */
-		while (_bt_pop((BTREE) t) != P_NONE)
-			continue;
-
-		return (bt_put((BTREE) t, key, data, flag));
-	}
-
-	/* put together a leaf page datum from the key/data pair */
-	index = item->bti_index;
-	nbytes = keysize + datasize + (sizeof(DATUM) - sizeof(char));
-
-	if ((d = (DATUM *) malloc((unsigned) nbytes)) == (DATUM *) NULL)
+	t = dbp->internal;
+	if (ISSET(t, BTF_RDONLY)) {
+		errno = EPERM;
 		return (RET_ERROR);
-
-	d->d_ksize = keysize;
-	d->d_dsize = datasize;
-	d->d_flags = 0;
-
-	if (bigkey) {
-		if (_bt_indirect(t, key, &pgno) == RET_ERROR)
+	}
+	
+	/*
+	 * If the key/data won't fit on a page, store it on indirect pages.
+	 *
+	 * XXX
+	 * If the insert fails later on, these pages aren't recovered.
+	 */
+	dflags = 0;
+	if (key->size >= t->bt_minkeypage) {
+		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 			return (RET_ERROR);
-		(void) bcopy((char *) &pgno, &(d->d_bytes[0]), sizeof(pgno));
-		d->d_flags |= D_BIGKEY;
-		if (_bt_getpage(t, item->bti_pgno) == RET_ERROR)
+		tkey.data = kb;
+		tkey.size = NOVFLSIZE;
+		*(pgno_t *)kb = pg;
+		*(size_t *)(kb + sizeof(pgno_t)) = key->size;
+		dflags |= P_BIGKEY;
+		key = &tkey;
+	}
+	if (data->size >= t->bt_minkeypage) {
+		if (__ovfl_put(t, data, &pg) == RET_ERROR)
 			return (RET_ERROR);
-	} else {
-		if (d->d_ksize > 0) {
-			(void) bcopy((char *) key->data,
-				      (char *) &(d->d_bytes[0]),
-				      (int) d->d_ksize);
-		}
+		tdata.data = db;
+		tdata.size = NOVFLSIZE;
+		*(pgno_t *)db = pg;
+		*(size_t *)(db + sizeof(pgno_t)) = data->size;
+		dflags |= P_BIGDATA;
+		data = &tdata;
 	}
 
-	if (bigdata) {
-		if (_bt_indirect(t, data, &pgno) == RET_ERROR)
-			return (RET_ERROR);
-		(void) bcopy((char *) &pgno,
-			     &(d->d_bytes[keysize]),
-			     sizeof(pgno));
-		d->d_flags |= D_BIGDATA;
-		if (_bt_getpage(t, item->bti_pgno) == RET_ERROR)
-			return (RET_ERROR);
-	} else {
-		if (d->d_dsize > 0) {
-			(void) bcopy((char *) data->data,
-				      (char *) &(d->d_bytes[keysize]),
-				      (int) d->d_dsize);
-		}
-	}
-
-	/* do the insertion */
-	status = _bt_insertat(t, (char *) d, index);
-
-	(void) free((char *) d);
-
-	return (status);
-}
-
-/*
- *  _BT_INSERTI -- Insert IDATUM on current page in the btree.
- *
- *	This routine handles insertions to internal pages after splits
- *	lower in the tree.  On entry, t->bt_curpage is the page to get
- *	the new IDATUM.  We are also given pgno, the page number of the
- *	IDATUM that is immediately left of the new IDATUM's position.
- *	This guarantees that the IDATUM for the right half of the page
- *	after a split goes next to the IDATUM for its left half.
- *
- *	Parameters:
- *		t -- tree in which to do insertion.
- *		id -- new IDATUM to insert
- *		pgno -- page number of IDATUM left of id's position
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- */
-
-int
-_bt_inserti(t, id, pgno)
-	BTREE_P t;
-	IDATUM *id;
-	pgno_t pgno;
-{
-	BTHEADER *h = t->bt_curpage;
-	index_t next, i;
-	IDATUM *idx;
-	char *key;
-	pgno_t chain;
-	int free_key;
-	int ignore;
-
-	if (id->i_flags & D_BIGKEY) {
-		free_key = TRUE;
-		bcopy(&(id->i_bytes[0]), (char *) &chain, sizeof(chain));
-		if (_bt_getbig(t, chain, &key, &ignore) == RET_ERROR)
-			return (RET_ERROR);
-	} else {
-		free_key = FALSE;
-		key = &(id->i_bytes[0]);
-	}
-	i = _bt_binsrch(t, key);
-
-	next = NEXTINDEX(h);
-	while (i < next && _bt_cmp(t, key, i) >= 0)
-		i++;
-
-	if (free_key)
-		(void) free(key);
-
-	/* okay, now we're close; find adjacent IDATUM */
-	for (;;) {
-		idx = (IDATUM *) GETDATUM(h,i);
-		if (idx->i_pgno == pgno) {
-			i++;
-			break;
-		}
-		--i;
-	}
-
-	/* correctly positioned, do the insertion */
-	return (_bt_insertat(t, (char *) id, i));
-}
-
-/*
- *  _BT_INSERTAT -- Insert a datum at a given location on the current page.
- *
- *	This routine does insertions on both leaf and internal pages.
- *
- *	Parameters:
- *		t -- tree in which to do insertion.
- *		p -- DATUM or IDATUM to insert.
- *		index -- index in line pointer array to put this item.
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		Will rearrange line pointers to make space for the new
- *		entry.  This means that any scans currently active are
- *		invalid after this.
- *
- *	Warnings:
- *		There must be sufficient room for the new item on the page.
- */
-
-int
-_bt_insertat(t, p, index)
-	BTREE_P t;
-	char *p;
-	index_t index;
-{
-	IDATUM *id = (IDATUM *) p;
-	DATUM *d = (DATUM *) p;
-	BTHEADER *h;
-	CURSOR *c;
-	index_t nxtindex;
-	char *src, *dest;
-	int nbytes;
-
-	/* insertion may confuse an active scan.  fix it. */
-	c = &(t->bt_cursor);
-	if (t->bt_flags & BTF_SEQINIT && t->bt_curpage->h_pgno == c->c_pgno)
-		if (_bt_fixscan(t, index, d, INSERT) == RET_ERROR)
+	/* bt_fast and __bt_search pin the returned page. */
+	if (t->bt_order == NOT || (e = bt_fast(t, key, data, &exact)) == NULL)
+		if ((e = __bt_search(t, key, &exact)) == NULL)
 			return (RET_ERROR);
 
-	h = t->bt_curpage;
-	nxtindex = (index_t) NEXTINDEX(h);
+	h = e->page;
+	index = e->index;
 
 	/*
-	 *  If we're inserting at the middle of the line pointer array,
-	 *  copy pointers that will follow the new one up on the page.
+	 * Add the specified key/data pair to the tree.  If an identical key
+	 * is already in the tree, and R_NOOVERWRITE is set, an error is
+	 * returned.  If R_NOOVERWRITE is not set, the key is either added (if
+	 * duplicates are permitted) or an error is returned.
+	 *
+	 * Pages are split as required.
 	 */
-
-	if (index < nxtindex) {
-		src = (char *) &(h->h_linp[index]);
-		dest = (char *) &(h->h_linp[index + 1]);
-		nbytes = (h->h_lower - (src - ((char *) h)))
-			 + sizeof(h->h_linp[0]);
-		(void) bcopy(src, dest, nbytes);
+	switch (flags) {
+	case R_NOOVERWRITE:
+		if (!exact)
+			break;
+		/*
+		 * One special case is if the cursor references the record and
+		 * it's been flagged for deletion.  If so, we delete it and
+		 * pretend it was never there.  Since the cursor will move to
+		 * the next record the inserted record won't be seen.
+		 */
+		if (ISSET(t, BTF_DELCRSR) && t->bt_bcursor.pgno == h->pgno &&
+		    t->bt_bcursor.index == index) {
+			UNSET(t, BTF_DELCRSR);
+			goto delete;
+		}
+		BT_CLR(t);
+		mpool_put(t->bt_mp, h, 0);
+		return (RET_SPECIAL);
+	default:
+		if (!exact || NOTSET(t, BTF_NODUPS))
+			break;
+delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
+			BT_CLR(t);
+			mpool_put(t->bt_mp, h, 0);
+			return (RET_ERROR);
+		}
+		break;
 	}
 
-	/* compute size and copy data to page */
-	if (h->h_flags & F_LEAF) {
-		nbytes = d->d_ksize + d->d_dsize
-			 + (sizeof(DATUM) - sizeof(char));
-	} else {
-		nbytes = id->i_size + (sizeof(IDATUM) - sizeof(char));
-	}
-	dest = (((char *) h) + h->h_upper) - LONGALIGN(nbytes);
-	(void) bcopy((char *) p, dest, nbytes);
+	/*
+	 * If not enough room, or the user has put a ceiling on the number of
+	 * keys permitted in the page, split the page.  The split code will
+	 * insert the key and data and unpin the current page.  If inserting
+	 * into the offset array, shift the pointers up.
+	 */
+	nbytes = NBLEAFDBT(key->size, data->size);
+	if (h->upper - h->lower < nbytes + sizeof(index_t) ||
+	    t->bt_maxkeypage && t->bt_maxkeypage < NEXTINDEX(h))
+		return (__bt_split(t, h, key, data, dflags, nbytes, index));
 
-	/* update statistics */
-	dest -= (int) h;
-	h->h_linp[index] = (index_t) dest;
-	h->h_upper = (index_t) dest;
-	h->h_lower += sizeof(index_t);
+	if (index < (nxtindex = NEXTINDEX(h)))
+		bcopy(h->linp + index, h->linp + index + 1,
+		    (nxtindex - index) * sizeof(index_t));
+	h->lower += sizeof(index_t);
 
-	/* we're done */
-	h->h_flags |= F_DIRTY;
+	h->linp[index] = h->upper -= nbytes;
+	dest = (char *)h + h->upper;
+	WR_BLEAF(dest, key, data, dflags);
 
+	if (t->bt_order == NOT)
+		if (h->nextpg == P_INVALID) {
+			if (index == NEXTINDEX(h) - 1) {
+				t->bt_order = FORWARD;
+				t->bt_last.index = index;
+				t->bt_last.pgno = h->pgno;
+			}
+		} else if (h->prevpg == P_INVALID) {
+			if (index == 0) {
+				t->bt_order = BACK;
+				t->bt_last.index = 0;
+				t->bt_last.pgno = h->pgno;
+			}
+		}
+
+	BT_CLR(t);
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+	SET(t, BTF_MODIFIED);
 	return (RET_SUCCESS);
+}
+
+#ifdef STATISTICS
+u_long bt_cache_hit, bt_cache_miss;
+#endif
+
+/*
+ * BT_FAST -- Do a quick check for sorted data.
+ *
+ * Parameters:
+ *	t:	tree
+ *	key:	key to insert
+ *
+ * Returns:
+ * 	EPG for new record or NULL if not found.
+ */
+static EPG *
+bt_fast(t, key, data, exactp)
+	BTREE *t;
+	const DBT *key, *data;
+	int *exactp;
+{
+	EPG e;
+	PAGE *h;
+	size_t nbytes;
+	int cmp;
+
+	if ((h = mpool_get(t->bt_mp, t->bt_last.pgno, 0)) == NULL) {
+		t->bt_order = NOT;
+		return (NULL);
+	}
+	e.page = h;
+	e.index = t->bt_last.index;
+
+	/*
+	 * If won't fit in this page or have too many keys in this page, have
+	 * to search to get split stack.
+	 */
+	nbytes =
+	    NBLEAFDBT(key->size >= t->bt_minkeypage ? NOVFLSIZE : key->size,
+	    data->size >= t->bt_minkeypage ? NOVFLSIZE : data->size);
+	if (h->upper - h->lower < nbytes + sizeof(index_t) ||
+	    t->bt_maxkeypage && t->bt_maxkeypage < NEXTINDEX(h))
+		goto miss;
+
+	if (t->bt_order == FORWARD) {
+		if (e.page->nextpg != P_INVALID)
+			goto miss;
+		if (e.index != NEXTINDEX(h) - 1)
+			goto miss;
+		if ((cmp = __bt_cmp(t, key, &e)) < 0)
+			goto miss;
+		t->bt_last.index = ++e.index;
+	} else {
+		if (e.page->prevpg != P_INVALID)
+			goto miss;
+		if (e.index != 0)
+			goto miss;
+		if ((cmp = __bt_cmp(t, key, &e)) > 0)
+			goto miss;
+		t->bt_last.index = 0;
+	}
+	*exactp = cmp == 0;
+#ifdef STATISTICS
+	++bt_cache_hit;
+#endif
+	return (&e);
+
+miss:	
+#ifdef STATISTICS
+	++bt_cache_miss;
+#endif
+	t->bt_order = NOT;
+	mpool_put(t->bt_mp, h, 0);
+	return (NULL);
 }

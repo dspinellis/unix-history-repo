@@ -9,349 +9,188 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_overflow.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_overflow.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <db.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "btree.h"
 
 /*
- *  _BT_GETBIG -- Get big data from indirect pages.
+ * Big key/data code.
  *
- *	This routine chases indirect blocks for the big object at the 
- *	specified page to a buffer, and return the address of the buffer.
+ * Big key and data entries are stored on linked lists of pages.  The initial
+ * reference is byte string stored with the key or data and is the page number
+ * and size.  The actual record is stored in a chain of pages linked by the
+ * nextpg field of the PAGE header.
  *
- *	Parameters:
- *		t -- btree with the indirect blocks
- *		pgno -- page number that starts the chain
- *		p -- (char **) to get the address of the buffer containing
- *		     the key or datum.
- *		sz -- pointer to an int to get the size of the instantiated
- *		      object.
+ * The first page of the chain has a special property.  If the record is used
+ * by an internal page, it cannot be deleted and the P_PRESERVE bit will be set
+ * in the header.
  *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		None.
+ * XXX
+ * A single DBT is written to each chain, so a lot of space on the last page
+ * is wasted.  This is a fairly major bug for some data sets.
  */
 
+/*
+ * __OVFL_GET -- Get an overflow key/data item.
+ *
+ * Parameters:
+ *	t:	tree
+ *	p:	pointer to { pgno_t, size_t }
+ *	buf:	storage address
+ *	bufsz:	storage size
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
+ */
 int
-_bt_getbig(t, pgno, p, sz)
-	BTREE_P t;
-	pgno_t pgno;
-	char **p;
-	int *sz;
+__ovfl_get(t, p, ssz, buf, bufsz)
+	BTREE *t;
+	void *p;
+	size_t *ssz;
+	char **buf;
+	size_t *bufsz;
 {
-	pgno_t save;
-	size_t nbytes;
-	size_t nhere;
-	BTHEADER *h;
-	char *top, *from, *where;
+	PAGE *h;
+	pgno_t pg;
+	size_t nb, plen, sz;
 
-	save = t->bt_curpage->h_pgno;
-	if (_bt_getpage(t, pgno) == RET_ERROR)
-		return (RET_ERROR);
+	pg = *(pgno_t *)p;
+	*ssz = sz = *(size_t *)((char *)p + sizeof(pgno_t));
 
-	h = t->bt_curpage;
-
-	bcopy((char *) &(h->h_linp[0]),
-	      (char *) &nbytes,
-	      (size_t) sizeof(nbytes));
-
-	if ((*p = (char *) malloc(nbytes)) == (char *) NULL)
-		return (RET_ERROR);
-
-	*sz = nbytes;
-	from = ((char *) (&h->h_linp[0])) + sizeof(nbytes);
-	top = ((char *) h) + t->bt_psize;
-
-	/* need more space for data? */
-
-	where = *p;
-
-	while (nbytes > 0) {
-		nhere = (int) (top - from);
-		if (nhere > nbytes) {
-			(void) bcopy(from, where, (size_t) nbytes);
-			nbytes = 0;
-		} else {
-			(void) bcopy(from, where, nhere);
-			where += nhere;
-			nbytes -= nhere;
-			if (_bt_getpage(t, h->h_nextpg) == RET_ERROR)
-				return (RET_ERROR);
-			h = t->bt_curpage;
-			top = ((char *) h) + t->bt_psize;
-			from = (char *) &(h->h_linp[0]);
-		}
+#ifdef DEBUG
+	if (pg == P_INVALID || sz == 0)
+		abort();
+#endif
+	/* Make the buffer bigger as necessary. */
+	if (*bufsz < sz) {
+		if ((*buf = realloc(*buf, sz)) == NULL)
+			return (RET_ERROR);
+		*bufsz = sz;
 	}
 
-	if (_bt_getpage(t, save) == RET_ERROR)
-		return (RET_ERROR);
+	/*
+	 * Step through the linked list of pages, copying the data on each one
+	 * into the buffer.  Never copy more than the data's length.
+	 */
+	plen = t->bt_psize - BTDATAOFF;
+	for (p = *buf;; p = (char *)p + nb, pg = h->nextpg) {
+		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+			return (RET_ERROR);
 
+		nb = MIN(sz, plen);
+		bcopy((char *)h + BTDATAOFF, p, nb);
+		mpool_put(t->bt_mp, h, 0);
+
+		if ((sz -= nb) == 0)
+			break;
+	}
 	return (RET_SUCCESS);
 }
 
 /*
- *  _BT_DELINDIR -- Delete a chain of indirect blocks from the btree.
+ * __OVFL_PUT -- Store an overflow key/data item.
  *
- *	When a large item is deleted from the tree, this routine puts the
- *	space that it occupied onto the free list for later reuse.  The
- *	bt_free entry in the btree structure points at the head of this list.
- *	This value is also stored on disk in the btree's metadata.
+ * Parameters:
+ *	t:	tree
+ *	data:	DBT to store
+ *	pgno:	storage page number
  *
- *	Parameters:
- *		t -- btree from which to delete pages
- *		chain -- page number that starts the chain.
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		Invalidates the current on-disk version of the btree's
- *		metadata (if any), and updates the free list appropriately.
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
  */
-
 int
-_bt_delindir(t, chain)
-	BTREE_P t;
-	pgno_t chain;
+__ovfl_put(t, dbt, pg)
+	BTREE *t;
+	const DBT *dbt;
+	pgno_t *pg;
 {
-	BTHEADER *h;
-	pgno_t save;
-	pgno_t oldfree;
-
-	h = t->bt_curpage;
-	save = h->h_pgno;
-	if (_bt_getpage(t, chain) == RET_ERROR)
-		return (RET_ERROR);
+	PAGE *h, *last;
+	void *p;
+	pgno_t npg;
+	size_t nb, plen, sz;
 
 	/*
-	 *  If some internal node is pointing at this chain, don't
-	 *  delete it.
+	 * Allocate pages and copy the key/data record into them.  Store the
+	 * number of the first page in the chain.
 	 */
-
-	if (t->bt_curpage->h_flags & F_PRESERVE) {
-		if (_bt_getpage(t, save) == RET_ERROR)
+	plen = t->bt_psize - BTDATAOFF;
+	for (last = NULL, p = dbt->data, sz = dbt->size;;
+	    p = (char *)p + plen, last = h) {
+		if ((h = mpool_new(t->bt_mp, &npg)) == NULL)
 			return (RET_ERROR);
+
+		h->pgno = npg;
+		h->nextpg = h->prevpg = P_INVALID;
+		h->lower = h->upper = 0;
+
+		nb = MIN(sz, plen);
+		bcopy(p, (char *)h + BTDATAOFF, nb);
+
+		if (last) {
+			last->nextpg = h->pgno;
+			last->flags |= P_OVERFLOW;
+			mpool_put(t->bt_mp, last, MPOOL_DIRTY);
+		} else
+			*pg = h->pgno;
+
+		if ((sz -= nb) == 0) {
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+			break;
+		}
+	}
+	return (RET_SUCCESS);
+}
+
+/*
+ * __OVFL_DELETE -- Delete an overflow chain.
+ *
+ * Parameters:
+ *	t:	tree
+ *	p:	pointer to { pgno_t, size_t }
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
+ */
+int
+__ovfl_delete(t, p)
+	BTREE *t;
+	void *p;
+{
+	PAGE *h;
+	pgno_t pg;
+	size_t plen, sz;
+
+	pg = *(pgno_t *)p;
+	sz = *(size_t *)((char *)p + sizeof(pgno_t));
+
+#ifdef DEBUG
+	if (pg == P_INVALID || sz == 0)
+		abort();
+#endif
+	if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+		return (RET_ERROR);
+
+	/* Don't delete chains used by internal pages. */
+	if (h->flags & P_PRESERVE) {
+		mpool_put(t->bt_mp, h, 0);
 		return (RET_SUCCESS);
 	}
 
-	/* if there's nothing on the free list, this is easy... */
-	if (t->bt_free == P_NONE) {
-		t->bt_free = chain;
-	} else {
-		oldfree = t->bt_free;
-
-		/* find the end of the data chain for the deleted datum */
-		t->bt_free = chain;
-		do {
-			if (_bt_getpage(t, chain) == RET_ERROR)
-				return (RET_ERROR);
-			h = t->bt_curpage;
-			if (h->h_nextpg != P_NONE)
-				chain = h->h_nextpg;
-		} while (h->h_nextpg != P_NONE);
-
-		/* link freed pages into free list */
-		h->h_nextpg = oldfree;
-		if (_bt_write(t, h, RELEASE) == RET_ERROR)
-			return (RET_ERROR);
-		if (_bt_getpage(t, oldfree) == RET_ERROR)
-			return (RET_ERROR);
-		h = t->bt_curpage;
-		h->h_prevpg = chain;
-		if (_bt_write(t, h, RELEASE) == RET_ERROR)
-			return (RET_ERROR);
-	}
-
-	/* restore the tree's current page pointer */
-	if (_bt_getpage(t, save) == RET_ERROR)
-		return (RET_ERROR);
-
-	/* we have trashed the tree metadata; rewrite it later */
-	t->bt_flags &= ~BTF_METAOK;
-
-	return (RET_SUCCESS);
-}
-
-/*
- *  _BT_INDIRECT -- Write a series of indirect pages for big objects.
- *
- *	A chain of indirect pages looks like
- *
- *	   +-------------------+   +---------------------+
- *	   |hdr|size|	       |   |hdr|		 |
- *	   +---+----+	       |   +---+		 |
- *	   |   ... data ...    |   |   ... data ...	 |    ...
- *	   |		       |   |			 |
- *	   +-------------------+   +---------------------+
- *
- *	where hdr is a standard btree page header (with the indirect bit
- *	set), size on the first page is the real size of the datum, and
- *	data are bytes of the datum, split across as many pages as necessary.
- *	Indirect pages are chained together with the h_prevpg and h_nextpg
- *	entries of the page header struct.
- *
- *	A single DBT is written per chain, so space on the last page is
- *	wasted.
- *
- *	We return the page number of the start of the chain.
- *
- *	When a big object is deleted from a tree, the space that it occupied
- *	is placed on a free list for later reuse.  This routine checks that
- *	free list before allocating new pages to the big datum being inserted.
- *
- *	Parameters:
- *		t -- btree in which to store indirect blocks
- *		data -- DBT with the big datum in it
- *		pgno -- place to put the starting page number of the chain
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		Current page is changed on return.
- */
-
-int
-_bt_indirect(t, data, pgno)
-	BTREE_P t;
-	DBT *data;
-	pgno_t *pgno;
-{
-	pgno_t prev;
-	char *top;
-	char *where;
-	char *from;
-	size_t dsize;
-	pgno_t nextchn;
-	int ischain;
-	BTHEADER *cur;
-
-	/* get set for first page in chain */
-	prev = P_NONE;
-	dsize = data->size;
-	from = (char *) data->data;
-
-	/* if there are blocks on the free list, use them first */
-	if ((*pgno = t->bt_free) == P_NONE) {
-		if ((cur = _bt_allocpg(t)) == (BTHEADER *) NULL)
-			return (RET_ERROR);
-
-		ischain = 0;
-		*pgno = cur->h_pgno = ++(t->bt_npages);
-	} else {
-		if (_bt_getpage(t, *pgno) == RET_ERROR)
-			return (RET_ERROR);
-		ischain = 1;
-		cur = t->bt_curpage;
-	}
-
-	cur->h_flags = F_CONT|F_LEAF;
-	(void) bcopy((char *) &dsize, (char *) &cur->h_linp[0], sizeof(size_t));
-	where = ((char *) (&cur->h_linp[0])) + sizeof(size_t);
-
-	/* fill and write pages in the chain */
-	for (;;) {
-		int nhere;
-
-		top = ((char *) cur) + t->bt_psize;
-		cur->h_prevpg = prev;
-		nextchn = cur->h_nextpg;
-		nhere = (int) (top - where);
-
-		if (nhere >= dsize) {
-			(void) bcopy(from, where, (int) dsize);
-			cur->h_nextpg = P_NONE;
-			dsize = 0;
-		} else {
-			(void) bcopy(from, where, (int) nhere);
-			dsize -= nhere;
-			from += nhere;
-			if (nextchn == P_NONE)
-				cur->h_nextpg = t->bt_npages + 1;
-			prev = cur->h_pgno;
-		}
-
-		/* current page is ready to go; write it out */
-		if (_bt_write(t, cur, RELEASE) == RET_ERROR)
-			return (RET_ERROR);
-
-		/* free the current page, if appropriate */
-		if (ISDISK(t) && !ISCACHE(t) && !ischain) {
-			(void) free ((char *) cur);
-		}
-
-		/* done? */
-		if (dsize == 0)
+	/* Step through the chain, calling the free routine for each page. */
+	plen = t->bt_psize - BTDATAOFF;
+	for (;; sz -= plen) {
+		if (sz >= plen)
 			break;
-
-		/* allocate another page */
-		if (nextchn == P_NONE) {
-			if ((cur = _bt_allocpg(t)) == (BTHEADER *) NULL)
-				return (RET_ERROR);
-			ischain = 0;
-			cur->h_pgno = ++(t->bt_npages);
-		} else {
-			if (_bt_getpage(t, nextchn) == RET_ERROR)
-				return (RET_ERROR);
-			ischain = 1;
-			cur = t->bt_curpage;
-		}
-		cur->h_flags = F_LEAF | F_CONT;
-
-		where = (char *) (&cur->h_linp[0]);
+		pg = h->nextpg;
+		/* XXX mpool_free(t->bt_mp, h->pgno); */
+		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+			return (RET_ERROR);
 	}
-
-	/* if we used pages from the free list, record changes to it */
-	if (*pgno == t->bt_free) {
-		t->bt_free = nextchn;
-		t->bt_flags &= ~BTF_METAOK;
-	}
-
-	return (RET_SUCCESS);
-}
-
-/*
- *  _BT_MARKCHAIN -- Mark a chain of pages as used by an internal node.
- *
- *	Chains of indirect blocks pointed to by leaf nodes get reclaimed
- *	when the item that points to them gets deleted.  Chains pointed
- *	to by internal nodes never get deleted.  This routine marks a
- *	chain as pointed to by an internal node.
- *
- *	Parameters:
- *		t -- tree in which to mark
- *		chain -- number of first page in chain
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		None.
- */
-
-int
-_bt_markchain(t, chain)
-	BTREE_P t;
-	pgno_t chain;
-{
-	pgno_t save;
-
-	save = t->bt_curpage->h_pgno;
-
-	if (_bt_getpage(t, chain) == RET_ERROR)
-		return (RET_ERROR);
-
-	t->bt_curpage->h_flags |= (F_DIRTY|F_PRESERVE);
-
-	if (_bt_getpage(t, save) == RET_ERROR)
-		return (RET_ERROR);
-
 	return (RET_SUCCESS);
 }
