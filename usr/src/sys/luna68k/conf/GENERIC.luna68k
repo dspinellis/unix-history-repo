@@ -1,4 +1,4 @@
-#	@(#)GENERIC.luna68k	7.3 (Berkeley) %G%
+#	@(#)GENERIC.luna68k	7.4 (Berkeley) %G%
 #
 machine		"luna68k"
 
@@ -9,8 +9,6 @@ ident		GENERIC
 # Need to set locally
 timezone	8 dst
 maxusers	48
-
-hz		60
 
 # Standard system options
 options		SWAPPAGER		# swap pager (anonymous and swap space)

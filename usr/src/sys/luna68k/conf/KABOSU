@@ -1,4 +1,4 @@
-#	@(#)KABOSU	7.1 (Berkeley) %G%
+#	@(#)KABOSU	7.2 (Berkeley) %G%
 #
 
 machine		"luna68k"
@@ -8,7 +8,6 @@ ident		KABOSU
 
 timezone	-9
 maxusers	16
-hz		60
 
 # Standard options
 options		QUOTA
