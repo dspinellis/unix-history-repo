@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.24 (Berkeley) %G%
+ *	@(#)tp_input.c	7.25 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -280,7 +280,6 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 	newtpcb->tp_l_tpdusize = tpcb->tp_l_tpdusize;
 	newtpcb->tp_lsuffixlen = tpcb->tp_lsuffixlen;
 	bcopy( tpcb->tp_lsuffix, newtpcb->tp_lsuffix, newtpcb->tp_lsuffixlen);
-	soreserve(so, (u_long)tpcb->tp_winsize, (u_long)tpcb->tp_winsize);
 
 	if( /* old */ tpcb->tp_ucddata) {
 		/* 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.20 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -324,6 +324,9 @@ struct nl_protosw nl_protosw[] = {
 	{ 0 }
 };
 
+u_long tp_sendspace = 1024 * 4;
+u_long tp_recvspace = 1024 * 4;
+
 /*
  * NAME:  tp_init()
  *
@@ -616,7 +619,7 @@ tp_attach(so, protocol)
 	int 					protocol;
 {
 	register struct tp_pcb	*tpcb;
-	int 					error;
+	int 					error = 0;
 	int 					dom = so->so_proto->pr_domain->dom_family;
 	u_long					lref;
 	extern struct tp_conn_param tp_conn_param[];
@@ -632,7 +635,8 @@ tp_attach(so, protocol)
 		return EISCONN;	/* socket already part of a connection*/
 	}
 
-	error = soreserve(so, 2 * TP_SOCKBUFSIZE, TP_SOCKBUFSIZE);
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0)
+		error = soreserve(so, tp_sendsize, tp_recvsize);
 		/* later an ioctl will allow reallocation IF still in closed state */
 
 	if (error)
