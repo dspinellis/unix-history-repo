@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -31,7 +31,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int cc, bits;
+	int cc, count, bits;
 	struct sockaddr from;
 	int fromlen = sizeof(from);
 	struct timeval shorttime;
@@ -60,6 +60,7 @@ usage:
 	}
 	while (argc > 0) {
 		query(*argv);
+		count++;
 		argv++, argc--;
 	}
 
@@ -133,7 +134,7 @@ rip_input(from, size)
 	int size;
 {
 	register struct rip *msg = (struct rip *)packet;
-	struct netinfo *n;
+	register struct netinfo *n;
 	char *name;
 	int lna, net, subnet;
 	struct hostent *hp;
@@ -153,22 +154,27 @@ rip_input(from, size)
 	size -= sizeof (int);
 	n = msg->rip_nets;
 	while (size > 0) {
-		register struct sockaddr_in *sin;
+	    if (size < sizeof (struct netinfo))
+		    break;
+	    if (msg->rip_vers > 0) {
+		    n->rip_dst.sa_family =
+			    ntohs(n->rip_dst.sa_family);
+		    n->rip_metric = ntohl(n->rip_metric);
+	    }
+	    switch (n->rip_dst.sa_family) {
 
-		if (size < sizeof (struct netinfo))
-			break;
-		if (msg->rip_vers > 0) {
-			n->rip_dst.sa_family =
-				ntohs(n->rip_dst.sa_family);
-			n->rip_metric = ntohl(n->rip_metric);
-		}
+	    case AF_INET:
+		{ register struct sockaddr_in *sin;
+
 		sin = (struct sockaddr_in *)&n->rip_dst;
 		net = inet_netof(sin->sin_addr);
 		subnet = inet_subnetof(sin->sin_addr);
 		lna = inet_lnaof(sin->sin_addr);
 		name = "???";
 		if (!nflag) {
-			if (lna == INADDR_ANY) {
+			if (sin->sin_addr.s_addr == 0)
+				name = "default";
+			else if (lna == INADDR_ANY) {
 				np = getnetbyaddr(net, AF_INET);
 				if (np)
 					name = np->n_name;
@@ -196,7 +202,21 @@ rip_input(from, size)
 		} else
 			printf("\t%s, metric %d\n",
 				inet_ntoa(sin->sin_addr), n->rip_metric);
-		size -= sizeof (struct netinfo), n++;
+		break;
+		}
+
+	    default:
+		{ u_short *p = (u_short *)n->rip_dst.sa_data;
+
+		printf("\t(af %d) %x %x %x %x %x %x %x, metric %d\n",
+		    p[0], p[1], p[2], p[3], p[4], p[5], p[6],
+		    n->rip_dst.sa_family,
+		    n->rip_metric);
+		break;
+		}
+			
+	    }
+	    size -= sizeof (struct netinfo), n++;
 	}
 }
 
