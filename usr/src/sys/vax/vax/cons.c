@@ -1,4 +1,4 @@
-/*	cons.c	3.1	%H%	*/
+/*	cons.c	3.2	%H%	*/
 
 /*
  *   Vax console driver and floppy interface
@@ -37,9 +37,13 @@ dev_t dev;
 		tp->t_state = ISOPEN|CARR_ON;
 		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
 	}
+	if (tp->t_state&XCLUDE && u.u_uid != 0) {
+		u.u_error = EBUSY;
+		return;
+	}
 	mtpr(RXCS, mfpr(RXCS)|RXCS_IE);
 	mtpr(TXCS, mfpr(TXCS)|TXCS_IE);
-	ttyopen(dev, tp);
+	(*linesw[tp->t_line].l_open)(dev, tp);
 }
 
 /*ARGSUSED*/
@@ -49,58 +53,28 @@ dev_t dev;
 	register struct tty *tp;
 
 	tp = &cons;
-	wflushtty(tp);
-	tp->t_state = 0;
+	(*linesw[tp->t_line].l_close)(tp);
+	ttyclose(tp);
 }
 
 /*ARGSUSED*/
 cnread(dev)
 dev_t dev;
 {
+	register struct tty *tp;
 
-	ttread(&cons);
+	tp = &cons;
+	(*linesw[tp->t_line].l_read)(tp);
 }
 
 /*ARGSUSED*/
 cnwrite(dev)
 dev_t dev;
 {
-
-	ttwrite(&cons);
-}
-
-/*
- * Got a level-20 transmission interrupt -
- * the LSI wants another character.  First,
- * see if we can send something to the typewriter.
- * If not, try the floppy.
- */
-/*ARGSUSED*/
-cnxint(dev)
-dev_t dev;
-{
-
-	if (cnxtty() == 0)
-		conxfl();
-}
-
-/*
- * Formerly cnxint -
- * called by new cnxint to see if there are
- * any characters to write to the console, and,
- * if there are, to do it.
- */
-cnxtty()
-{
 	register struct tty *tp;
 
 	tp = &cons;
-	if (tp->t_outq.c_cc == 0)
-		return(0);
-	ttstart(tp);
-	if (tp->t_outq.c_cc == 0 || tp->t_outq.c_cc == TTLOWAT)
-		wakeup((caddr_t)&tp->t_outq);
-	return(1);
+	(*linesw[tp->t_line].l_write)(tp);
 }
 
 /*
@@ -113,12 +87,15 @@ cnrint(dev)
 dev_t dev;
 {
 	register int c;
+	register struct tty *tp;
 
 	c = mfpr(RXDB);
-	if ((c&RXDB_ID)==0)		/* look at source byte */
-		ttyinput(c, &cons);	/* character from typewriter */
-	else
-		cnrfl(c);		/* character from floppy */
+	if (c&RXDB_ID) {
+		cnrfl(c);
+		return;
+	}
+	tp = &cons;
+	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 
 /*ARGSUSED*/
@@ -129,15 +106,53 @@ caddr_t addr;
 	register struct tty *tp;
  
 	tp = &cons;
-	if (ttioccom(cmd, tp, addr, dev) ==0)
+	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	if (cmd == 0)
+		return;
+	if (ttioccom(cmd, tp, addr, dev) == 0)
 		u.u_error = ENOTTY;
+}
+
+/*
+ * Got a level-20 transmission interrupt -
+ * the LSI wants another character.  First,
+ * see if we can send something to the typewriter.
+ * If not, try the floppy.
+ */
+/*ARGSUSED*/
+cnxint(dev)
+dev_t dev;
+{
+	register struct tty *tp;
+
+	tp = &cons;
+	tp->t_state &= ~BUSY;
+	if (tp->t_line)
+		(*linesw[tp->t_line].l_start)(tp);
+	else
+		cnstart(tp);
+	if ((tp->t_state & BUSY) == 0)
+		conxfl();
 }
 
 cnstart(tp)
 register struct tty *tp;
 {
 	register c;
+	register s;
 
+	s = spl5();
+	if (tp->t_state & (TIMEOUT|BUSY|TTSTOP))
+		goto out;
+	if (tp->t_outq.c_cc <= TTLOWAT && tp->t_state&ASLEEP) {
+		tp->t_state &= ~ASLEEP;
+		if (tp->t_chan)
+			mcstart(tp->t_char, (caddr_t)&tp->t_outq);
+		else
+			wakeup((caddr_t)&tp->t_outq);
+	}
+	if (tp->t_outq.c_cc == 0)
+		goto out;
 	if ((mfpr(TXCS)&TXCS_RDY) == 0)
 		return;
 	if ((c=getc(&tp->t_outq)) >= 0) {
@@ -148,8 +163,12 @@ register struct tty *tp;
 		else {
 			timeout(ttrstrt, (caddr_t)tp, (c&0177));
 			tp->t_state |= TIMEOUT;
+			goto out;
 		}
 	}
+	tp->t_state |= BUSY;
+    out:
+	splx(s);
 }
 
 char	*msgbufp = msgbuf;	/* Next saved printf character */
