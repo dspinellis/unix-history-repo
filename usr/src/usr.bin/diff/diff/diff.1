@@ -1,290 +1,397 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)diff.1	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH DIFF 1 ""
-.UC 4
-.SH NAME
-diff \- differential file and directory comparator
-.SH SYNOPSIS
-.B diff
-[
-.B \-l
-] [
-.B \-r
-] [
-.B \-s
-] [
-\fB\-cefhn\fR
-] [
-.B \-biwt
-] dir1 dir2
-.br
-.B diff
-[
-\fB\-cefhn
-] [
-\fB\-biwt\fR
-] file1 file2
-.br
-.B diff
-[
-.BI \-D string
-] [
-.B \-biw
-]
-file1 file2
-.SH DESCRIPTION
+.\"     @(#)diff.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DIFF 1
+.Os BSD 4
+.Sh NAME
+.Nm diff
+.Nd differential file and directory comparator
+.Sh SYNOPSIS
+.Nm diff
+.Op Fl l
+.Op Fl r
+.Op Fl s
+.Op Fl cefhn
+.Op Fl biwt
+.Ar dir1 dir2
+.Nm diff
+.Op Fl cefhn
+.Op Fl biwt
+.Ar file1 file2
+.Nm diff
+.Op Fl D Ar string
+.Op Fl biw
+.Ar file1 file2
+.Sh DESCRIPTION
+The
+.Nm diff
+utility compares the contents of
+.Ar file1
+and
+.Ar file2
+and writes to the standard output a minimal list of changes necessary to
+convert one of the files into the other.
+No output is produced if the files are identical.
+.Pp
 If both arguments are directories,
-.I diff
+.Nm diff
 sorts the contents of the directories by name, and then runs the
 regular file
-.I diff
-algorithm (described below)
+.Nm diff
+algorithm, producing a change list,
 on text files which are different.
 Binary files which differ,
 common subdirectories, and files which appear in only one directory
-are listed.
+are described as such.
+.Pp
+If only one of
+.Ar file1
+and
+.Ar file2
+is a directory,
+.Nm diff
+is applied to the non-directory file and the file contained in
+the directory file with a filename that is the same as the
+last component of the non-directory file.
+.Pp
+If either the
+.Ar file1
+or
+.Ar file2
+is
+.Fl ,
+the standard input is
+used in its place.
+.Pp
 Options when comparing directories are:
-.TP
-.B \-l
+.Tw Fl
+.Tp Fl l
 long output format; each text file
-.I diff
+.Sf Nm diff \'d
 is piped through
-.IR pr (1)
+.Xr pr  1
 to paginate it,
 other differences are remembered and summarized
 after all text file differences are reported.
-.TP
-.B \-r
+.Tp Fl r
 causes application of
-.I diff
+.Nm diff
 recursively to common subdirectories encountered.
-.TP
-.B \-s
-causes 
-.I diff
+.Tp Fl s
+causes
+.Nm diff
 to report files which are the same, which are otherwise not mentioned.
-.TP
-.B \-Sname
+.Tc Fl S
+.Ar name
+.Cx
 starts a directory
-.I diff
+.Nm diff
 in the middle beginning with file
-.I name.
-.PP
-When run on regular files, and when comparing text files which differ
-during directory comparison,
-.I diff
-tells what lines must be changed in the files to bring them into agreement.
-Except in rare circumstances,
-.I diff
-finds a smallest sufficient set of file differences.
-If neither
-.I file1
-nor
-.I file2
-is a directory, then either
-may be given as `\-', in which case the standard input is used.
-If
-.I file1
-is a directory,
-then a file in that directory whose file-name is the same as the file-name of
-.I file2
-is used (and vice versa).
-.PP
-There are several options for output format;
-the default output format contains lines of these forms:
-.IP "" 5
-.I n1
-a
-.I n3,n4
-.br
-.I n1,n2
-d
-.I n3
-.br
-.I n1,n2
-c
-.I n3,n4
-.PP
-These lines resemble
-.I ed
-commands to convert
-.I file1
-into
-.IR file2 .
-The numbers after the letters pertain to
-.IR file2 .
-In fact, by exchanging `a' for `d' and reading backward
-one may ascertain equally how to convert 
-.I file2
-into
-.IR file1 .
-As in 
-.I ed,
-identical pairs where
-.I n1
-=
-.I n2
+.Ar name .
+.Tp
+.Pp
+Output options. Except for
+.Fl b ,
+.Fl w ,
+.Fl i
 or
-.I n3
-=
-.I n4
-are abbreviated as a single number.
-.PP
-Following each of these lines come all the lines that are
-affected in the first file flagged by `<', 
-then all the lines that are affected in the second file
-flagged by `>'.
-.PP
-Except for
-\fB\-b, -w, -i\fP or \fB-t\fP
+.Fl t
 which may be given with any of the others,
 the following options are mutually exclusive:
-.TP 9
-.B \-e
-produces a script of
-.I "a, c"
-and 
-.I d
-commands for the editor
-.I ed,
-which will recreate
-.I file2
-from
-.IR file1 .
-In connection with
-.BR \-e ,
-the following shell program may help maintain
-multiple versions of a file.
-Only an ancestral file ($1) and a chain of 
-version-to-version
-.I ed
-scripts ($2,$3,...) made by
-.I diff
-need be on hand.
-A `latest version' appears on
-the standard output.
-.IP
-\ \ \ \ \ \ \ \ (shift; cat $*; echo \'1,$p\') \(bv ed \- $1
-.IP
-Extra commands are added to the output when comparing directories with
-.B \-e,
-so that the result is a
-.IR sh (1)
-script for converting text files which are common to the two directories
-from their state in
-.I dir1
-to their state in
-.I dir2.
-.TP 9
-.B \-f
-produces a script similar to that of
-.B \-e,
-not useful with
-.I ed,
-and in the opposite order.
-.TP 9
-.B \-n
-produces a script similar to that of
-.B \-e,
-but in the opposite order and with a count of changed lines on each
-insert or delete command.  This is the form used by
-.IR rcsdiff (1).
-.TP 9
-.B \-c
+.Tw Fl
+.Tp Fl c
 produces a diff with lines of context.
 The default is to present 3 lines of context and may be changed, e.g to 10, by
-.BR \-c10 \&.
+.Fl c10 .
 With
-.B \-c
+.Fl c
 the output format is modified slightly:
 the output beginning with identification of the files involved and
 their creation dates and then each change is separated
 by a line with a dozen *'s.
 The lines removed from
-.I file1
+.Ar file1
 are marked with `\(mi '; those added to
-.I file2
+.Ar file2
 are marked `+ '.  Lines which are changed from one
 file to the other are marked in both files with with `! '.
-
 Changes which lie within <context> lines of each other are grouped
 together on output.  (This is a change from the previous ``diff -c''
 but the resulting output is usually much easier to interpret.)
-.TP 9
-.B \-h
-does a fast, half-hearted job.
-It works only when changed stretches are short
-and well separated,
-but does work on files of unlimited length.
-.TP
-.B \-Dstring
+.Tp Fl e
+produces output in a form suitable as input for the editor utility,
+.Xr ed 1 ,
+which can then be used to convert file1 into file2.
+.Pp
+Extra commands are added to the output when comparing directories with
+.Fl e ,
+so that the result is a
+.Xr sh  1
+script for converting text files which are common to the two directories
+from their state in
+.Ar dir1
+to their state in
+.Ar dir2 .
+.Tp Fl f
+identical output of the
+.Fl e
+flag, but in reverse order.  It cannot
+be digested by
+.Xr ed 1 .
+.Tp Fl h
+Invokes an alternate algorithm which can handle files of very long lengths.
+There is a trade off. The algorithm can only deal with changes which are
+clearly delimited and brief. Long sections of changes and overlaps will
+confuse it.
+.Tp Fl n
+produces a script similar to that of
+.Fl e ,
+but in the opposite order and with a count of changed lines on each
+insert or delete command.  This is the form used by
+.Xr rcsdiff  1  .
+.Tc Fl D
+.Ar string
+.Cx
 causes
-.I diff
+.Nm diff
 to create a merged version of
-.I file1
+.Ar file1
 and
-.I file2
+.Ar file2
 on the standard output, with C preprocessor controls included so that
-a compilation of the result without defining \fIstring\fR is equivalent
+a compilation of the result without defining
+.Ar string
+is equivalent
 to compiling
-.I file1,
+.Ar file1 ,
 while defining
-.I string
+.Ar string
 will yield
-.I file2.
-.TP 9
-.B \-b
+.Ar file2 .
+.Tp Fl b
 causes trailing blanks (spaces and tabs) to be ignored, and other
 strings of blanks to compare equal.
-.TP 9
-.B \-w
-is similar to
-.B \-b
-but causes whitespace (blanks and tabs) to be totally ignored.  E.g.,
-``if\ (\ a\ ==\ b\ )'' will compare equal to ``if(a==b)''.
-.TP 9
-.B \-i
+.Tp Fl i
 ignores the case of letters.  E.g., ``A'' will compare equal to ``a''.
-.TP 9
-.B \-t
+.Tp Fl t
 will expand tabs in output lines.  Normal or
-.B \-c
+.Fl c
 output adds character(s) to the front of each line which may screw up
 the indentation of the original source lines and make the output listing
 difficult to interpret.  This option will preserve the original source's
 indentation.
-.SH FILES
-/tmp/d?????
+.Tp Fl w
+is similar to
+.Fl b
+but causes whitespace (blanks and tabs) to be totally ignored.  E.g.,
+``if\ (\ a\ ==\ b\ )'' will compare equal to ``if(a==b)''.
+.Tp
+.Ss Output Style
+The default (without
+.Fl e ,
+.Fl c ,
+.Fl n ,
+or
+.Fl t
+.\"  -C
+options) diff utility
+output contains lines of these forms, where
+.Va XX , YY , ZZ , QQ
+are line numbers respective of file order.
+.Pp
+.Dp Cx Li XX
+.Ic a
+.Li YY
+.Cx
+At (the end of) line
+.Va XX
+of
+.Ar file1 ,
+append the contents
+of line
+.Va YY
+of
+.Ar file2
+to make them equal.
+.Dp Cx Li XX
+.Ic a
+.Li YY ,
+.Li ZZ
+.Cx
+Same as above, but append the range of lines,
+.Va YY
+through
+.Va ZZ
+of
+.Ar file2
+to line
+.Va XX
+of file1.
+.Dp Cx Li XX
+.Ic d
+.Li YY
+.Cx
+At line
+.Va XX
+delete
+the line. The value
+.Va YY
+tells to which line the change
+would bring
+.Ar file1
+in line with
+.Ar file1 .
+.Dp Cx Li XX ,
+.Li YY
+.Ic d
+.Li ZZ
+.Cx
+Delete the range of lines
+.Va XX
+through
+.Va YY
+in
+.Ar file1 .
+.Dp Cx Li XX
+.Ic c
+.Li YY
+.Cx
+Change the line
+.Va XX
+in
+.Ar file1
+to the line
+.Va YY
+in
+.Ar file2.
+.Dp Cx Li XX ,
+.Li YY
+.Ic c
+.Li ZZ
+.Cx
+Replace the range of specified lines with the line
+.Va ZZ .
+.Dp Cx Li XX ,
+.Li YY
+.Ic c
+.Li ZZ ,
+.Li QQ
+.Cx
+Replace the range
+.Cx Va XX ,
+.Va YY
+.Cx
+from
+.Ar file1
+with the range
+.Cx Va ZZ ,
+.Va QQ
+.Cx
+from
+.Ar file2 .
+.Dp
+.Pp
+These lines resemble
+.Xr ed 1
+subcommands to convert
+.Ar file1
+into
+.Ar file2 .
+The line numbers before the action letters pertain to
+.Ar file1 ;
+those after pertain to
+.Ar file2 .
+Thus, by exchanging
+.Ic a
+for
+.Ic d
+and reading the line in reverse order, one can also
+determine how to convert
+.Ar file2
+into
+.Ar file1 .
+As in
+.Xr ed 1 ,
+identical
+pairs (where num1 = num2) are abbreviated as a single
+number.
+.Sh ENVIRONMENT
+.Tw Fl
+.Tp Ev TMPDIR
+If the environment variable
+.Ev TMPDIR
+exists,
+.Nm Diff
+will use the name specified by
+.Ev TMPDIR
+as an alternate temporary directory.
+.Tp
+.Sh FILES
+.Dw /usr/bin/diffh
+.Di L
+.Dp Pa /tmp/d?????
 .br
-/usr/lib/diffh for 
-.B \-h
-.br
-/bin/diff for directory diffs
-.br
-/bin/pr
-.SH "SEE ALSO"
-cmp(1), cc(1), comm(1), ed(1), diff3(1)
-.SH DIAGNOSTICS
-Exit status is 0 for no differences, 1 for some, 2 for trouble.
-.SH BUGS
-Editing scripts produced under the
-.BR \-e " or"
-.BR \-f " option are naive about"
-creating lines consisting of a single `\fB.\fR'.
-.PP
+.Dp Pa /usr/bin/diffh
+Alternate algorithm version (used by option
+.Fl h ) .
+.Dp Pa /usr/bin/diff
+for directory diffs
+.Dp Pa /usr/bin/pr
+used by the
+.Fl l
+option.
+.Dp
+.Sh SEE ALSO
+.Xr cmp 1 ,
+.Xr cc 1 ,
+.Xr comm 1 ,
+.Xr ed 1 ,
+.Xr diff3 1
+.Sh HISTORY
+.Nm Diff
+appeared in Version 6 AT&T Unix.
+.Sh DIAGNOSTICS
+The
+.Nm diff
+utility exits with one of the following values:
+.Dw Ds
+.Dp \&0
+No differences were found.
+.Dp \&1
+Differences were found.
+.Dp \&>\&1
+An error occurred.
+.Dp
+.Sh BUGS
+The
+.Fl f
+and
+.Fl e
+options
+have difficulties producing lines with the
+first and only character
+.Dq Li \&. ,
+as this is a command character for
+.Xr ed 1 .
+.Pp
 When comparing directories with the
-\fB\-b, -w\fP or \fB-i\fP
+.Fl b ,
+.Fl w
+or
+.Fl i
 options specified,
-.I diff
+.Nm diff
 first compares the files ala
-.I cmp,
+.Ar cmp ,
 and then decides to run the
-.I diff
+.Nm diff
 algorithm if they are not equal.
 This may cause a small amount of spurious output if the files
 then turn out to be identical because the only differences are
 insignificant blank string or case differences.
+.\" .Sh STANDARDS
