@@ -13,7 +13,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfs_ops.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfs_ops.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -535,6 +535,11 @@ mntfs *mf;
 		nfs_args.flags |= NFSMNT_BIODS;
 
 #endif /* NFSMNT_BIODS */
+
+#ifdef NFSMNT_MAXGRPS
+	if (nfs_args.maxgrouplist = hasmntval(&mnt, "maxgroups"))
+		nfs_args.flags |= NFSMNT_MAXGRPS;
+#endif /* NFSMNT_MAXGRPS */
 
 #ifdef notdef
 /*
