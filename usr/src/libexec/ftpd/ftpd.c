@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.22 (Berkeley) %G%";
 #endif
 
 /*
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)ftpd.c	4.21 (Berkeley) %G%";
 #include <netinet/in.h>
 
 #include <arpa/ftp.h>
+#include <arpa/inet.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -762,29 +763,34 @@ FILE *
 popen(cmd, mode)
 	char *cmd, *mode;
 {
-	int p[2], ac;
+	int p[2], ac, gac;
 	register myside, hisside, pid;
-	char *av[512];
-	char **pop, **popargs = NULL;
-	extern char **glob();
+	char *av[20], *gav[512];
 	register char *cp;
 
 	if (pipe(p) < 0)
 		return (NULL);
 	cp = cmd, ac = 0;
+	/* break up string into pieces */
 	do {
 		av[ac++] = cp;
 		cp = nextarg(cp);
-	} while (cp && *cp);
+	} while (cp && *cp && ac < 20);
 	av[ac] = (char *)0;
-	if (ac > 1) {
-		popargs = glob(&av[1]);
-		if (popargs == NULL)
-			return (NULL);
-		for (ac = 1, pop = popargs; *pop;) 
-			av[ac++] = *pop++;
+	gav[0] = av[0];
+	/* glob each piece */
+	for (gac = ac = 1; av[ac] != NULL; ac++) {
+		char **pop;
+		extern char **glob();
+
+		pop = glob(av[ac]);
+		if (pop) {
+			av[ac] = (char *)pop;		/* save to free later */
+			while (*pop && gac < 512)
+				gav[gac++] = *pop++;
+		}
 	}
-	av[ac] = (char *)0;
+	gav[gac] = (char *)0;
 	myside = tst(p[WTR], p[RDR]);
 	hisside = tst(p[RDR], p[WTR]);
 	if ((pid = fork()) == 0) {
@@ -792,11 +798,11 @@ popen(cmd, mode)
 		close(myside);
 		dup2(hisside, tst(0, 1));
 		close(hisside);
-		execv(av[0], av);
+		execv(gav[0], gav);
 		_exit(1);
 	}
-	if (popargs != NULL)
-		blkfree(popargs);
+	for (ac = 1; av[ac] != NULL; ac++)
+		blkfree((char **)av[ac]);
 	if (pid == -1)
 		return (NULL);
 	popen_pid[myside] = pid;
