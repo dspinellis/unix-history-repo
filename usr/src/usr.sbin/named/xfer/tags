@@ -1,0 +1,18 @@
+Mnamed-xfer	named-xfer.c	/^main(argc, argv)$/
+buildprotolist	../db_glue.c	/^buildprotolist()$/
+buildservicelist	../db_glue.c	/^buildservicelist()$/
+cgetprotobynumber	../db_glue.c	/^cgetprotobynumber(proto)$/
+cgetservbyport	../db_glue.c	/^cgetservbyport(port, proto)$/
+findservice	../db_glue.c	/^findservice(s, list)$/
+gettime	named-xfer.c	/^gettime(ttp)$/
+getzone	named-xfer.c	/^getzone(zp, serial_no, port)$/
+print_output	named-xfer.c	/^print_output(msg, msglen, rrp)$/
+protocolname	../db_glue.c	/^protocolname(num)$/
+protocolnumber	../db_glue.c	/^protocolnumber(p)$/
+read_alarm	named-xfer.c	/^read_alarm()$/
+savestr	named-xfer.c	/^savestr(str)$/
+servicename	../db_glue.c	/^servicename(port, proto)$/
+servicenumber	../db_glue.c	/^servicenumber(p)$/
+soa_zinfo	named-xfer.c	/^soa_zinfo(zp, cp, eom)$/
+usage	named-xfer.c	/^usage()$/
+writemsg	named-xfer.c	/^writemsg(rfd, msg, msglen)$/

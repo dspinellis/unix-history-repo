@@ -1,0 +1,16 @@
+CONVERT	vcat.c	/^#define CONVERT(n)		(n*(200.\/432.))$/
+Mvcat	vcat.c	/^main(argc, argv) $/
+RECONVERT	vcat.c	/^#define RECONVERT(n)		(n*(432.\/200.))$/
+account	vcat.c	/^account(who, from, acctfile)$/
+allpanic	vcat.c	/^allpanic(nbytes)$/
+crail	vcat.c	/^crail(nrail)$/
+findsize	vcat.c	/^findsize(code)$/
+getfont	vcat.c	/^getfont()$/
+loadfont	vcat.c	/^loadfont(fnum, size)$/
+nalloc	vcat.c	/^nalloc(i, j)$/
+nfree	vcat.c	/^nfree(cp)$/
+ofile	vcat.c	/^ofile()$/
+outc	vcat.c	/^outc(code)$/
+readrm	vcat.c	/^readrm()$/
+relfont	vcat.c	/^relfont()$/
+slop_lines	vcat.c	/^slop_lines(nlines)$/

@@ -1,0 +1,50 @@
+Mmain	main.c	/^main(argc, argv)$/
+devtoname	mkswapconf.c	/^devtoname(dev)$/
+do_cfiles	mkmakefile.c	/^do_cfiles(fp)$/
+do_count	mkheaders.c	/^do_count(dev, hname, search)$/
+do_header	mkheaders.c	/^do_header(dev, hname, count)$/
+do_load	mkmakefile.c	/^do_load(f)$/
+do_objs	mkmakefile.c	/^do_objs(fp)$/
+do_rules	mkmakefile.c	/^do_rules(f)$/
+do_swap	mkswapconf.c	/^do_swap(fl)$/
+do_swapspec	mkmakefile.c	/^do_swapspec(f, name)$/
+do_systemspec	mkmakefile.c	/^do_systemspec(f, fl, first)$/
+dump_ctrs	mkglue.c	/^dump_ctrs(fp)$/
+dump_intname	mkglue.c	/^dump_intname(fp, vector, number)$/
+dump_std	mkglue.c	/^dump_std(fp, gp)$/
+dump_ubavec	mkglue.c	/^dump_ubavec(fp, vector, number)$/
+dump_vbavec	mkglue.c	/^dump_vbavec(fp, vector, number)$/
+fl_lookup	mkmakefile.c	/^fl_lookup(file)$/
+fltail_lookup	mkmakefile.c	/^fltail_lookup(file)$/
+get_quoted_word	main.c	/^get_quoted_word(fp)$/
+get_word	main.c	/^get_word(fp)$/
+headers	mkheaders.c	/^headers()$/
+hp300_ioconf	mkioconf.c	/^hp300_ioconf()$/
+hpbadslave	mkioconf.c	/^hpbadslave(mp, dp)$/
+hpglue	mkglue.c	/^hpglue() {}$/
+i386_ioconf	mkioconf.c	/^i386_ioconf()$/
+initdevtable	mkswapconf.c	/^initdevtable()$/
+intv	mkioconf.c	/^intv(dev)$/
+ishpibdev	mkioconf.c	/^#define ishpibdev(n) (eq(n,"rd") || eq(n,"ct") || /
+isscsidev	mkioconf.c	/^#define isscsidev(n) (eq(n,"sd") || eq(n,"st"))$/
+makefile	mkmakefile.c	/^makefile()$/
+nametodev	mkswapconf.c	/^nametodev(name, defunit, defpartition)$/
+new_fent	mkmakefile.c	/^new_fent()$/
+next_quoted_word	mkmakefile.c	/^#define next_quoted_word(fp, wd) \\$/
+next_word	mkmakefile.c	/^#define next_word(fp, wd) \\$/
+opteq	mkmakefile.c	/^opteq(cp, dp)$/
+path	main.c	/^path(file)$/
+qu	mkioconf.c	/^qu(num)$/
+raise	mkmakefile.c	/^raise(str)$/
+read_files	mkmakefile.c	/^read_files()$/
+sirq	mkioconf.c	/^sirq(num)$/
+swapconf	mkswapconf.c	/^swapconf()$/
+tahoe_ioconf	mkioconf.c	/^tahoe_ioconf()$/
+tail	mkmakefile.c	/^tail(fn)$/
+toheader	mkheaders.c	/^toheader(dev)$/
+tomacro	mkheaders.c	/^char *tomacro(dev)$/
+ubglue	mkglue.c	/^ubglue()$/
+vax_ioconf	mkioconf.c	/^vax_ioconf()$/
+vbglue	mkglue.c	/^vbglue()$/
+vector	mkglue.c	/^vector() {$/
+wnum	mkioconf.c	/^wnum(num)$/
