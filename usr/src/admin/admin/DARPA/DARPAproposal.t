@@ -1,4 +1,4 @@
-.\"	@(#)DARPAproposal.t	1.8	87/06/15
+.\"	@(#)DARPAproposal.t	1.9	87/06/17
 .\" *troff -ms
 .rm CM
 .sp 2
@@ -107,6 +107,8 @@ using 64K and 256K memory chips.
 .PP
 The performance of the system has been improved to be at least as
 good as that of 4.1BSD, and in many instances is better.
+The system is much better adapted to the larger physical memories
+of current computers.
 In addition to improving the performance of kernel operations,
 heavily used utilities were optimized and
 many user level programs were improved by
@@ -477,8 +479,11 @@ Collaboration with the MACH Project
 .PP
 The projects being done at Berkeley and at Carnegie-Mellon are symbiotic;
 they are related but disjoint.
-Ultimately one will subsume the other;
-our goal is to make that as easy as possible.
+The two projects have different aims and are generally working
+on different parts of the system.
+If both are successful, one may subsume the other.
+Our goal is to make it as easy as possible for each project
+to take advantage of the work done by the other.
 This section outlines the interaction between the two projects
 for each of the areas of work that we have outlined in the previous sections.
 .PP
@@ -487,8 +492,14 @@ incorporation of multiple file system implementations
 fits in above the MACH interface.
 Thus it should be directly usable within the MACH system.
 This work has long term advantages in allowing the concurrent operation of
-traditional UNIX file systems along with object based file systems
+traditional UNIX file systems and network filesystems
+along with object based file systems
 such as those proposed to support an integrated Ada environment.
+The MACH system does not include a generalized filesystem interface
+to regularize the addition of new filesystem implementations.
+Especially if the filesystem(s) are moved from the kernel into user-level
+programs, we expect this style of interface to be important
+in supporting multiple filesystem types and implementations.
 .PP
 To date,
 the work on virtual memory at Berkeley and in MACH has been largely disjoint.
@@ -500,22 +511,30 @@ existing implementation.
 We plan to investigate the necessary extensions to MACH along with
 the implementations being done by several other groups that have
 been working on virtual memory over the past year.
+Our current design for the virtual memory system includes
+some features of the MACH implementation, some features that are orthogonal,
+and others that differ in style and functionality.
+We believe that our current design will provide more UNIX-like
+semantics than the threads facility in MACH.
 .PP
 The layering work approaches the modularization of the kernel
 in a way that is orthogonal to the MACH approach.
-MACH uses a message based approach of communicating between modules
-that reside in separate processes.
+MACH uses a message-based approach for communication between modules
+that reside in the kernel and in separate processes.
+It provides no structuring technique for communication within the kernel
+or between protocol modules within a process other than those found
+in 4.2BSD.
 By contrast our approach uses queues between modules within a single 
 process.
 Although the MACH approach more strongly enforces the separation of modules,
 it pays a heavy performance price since they must do a context
 switch where we can use a subroutine call.
-We believe that it is important to investigate both approaches.
+We believe that it is important to investigate both approaches,
+and that the stream layering will be important in either framework.
 .PP
 The process debugging interface interacts heavily with the virtual memory
 system, and will have to be retrofitted into the MACH virtual memory system
-if MACH becomes the basis for future distributions in place
-of the Berkeley system.
+if MACH is to support it.
 Since we expect to integrate much of the MACH virtual memory implementation,
 this should not prove difficult.
 Additionally, most of the issues that it addresses
@@ -525,7 +544,7 @@ and consequently can be used without change.
 If undertaken, the ISO protocol development would fit into the
 existing framework for networking protocols that lies above the
 MACH interface. 
-The ISO protocols would be immediately usable within a MACH system.
+The ISO protocols should be usable within a MACH system.
 .NH
 References
 .sp
