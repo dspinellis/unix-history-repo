@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.6	(Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.7	(Berkeley) %G%";
 #endif
 
 /*
@@ -70,7 +70,7 @@ static jmp_buf Ffailbuf;
 
 extern long Bytes_Sent, Bytes_Received;
 
-static
+static void
 falarm()
 {
 	signal(SIGALRM, falarm);
@@ -196,6 +196,7 @@ int fn;
 	long abytes, fbytes;
 	struct timeb t1, t2;
 	float ft;
+	static int fwrblk();
 
 	ret = FAIL;
 retry:
@@ -273,6 +274,7 @@ register FILE *fp2;
 	long alen, abytes, fbytes;
 	struct timeb t1, t2;
 	float ft;
+	static int frdblk();
 
 	ret = FAIL;
 retry:

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.19	(Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.20	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -105,8 +105,8 @@ char **envp;
 	char wkpre[NAMESIZE], file[NAMESIZE];
 	char msg[MAXFULLNAME], *q;
 	register char *p;
-	extern onintr(), timeout(), dbg_signal();
-	extern char *pskip();
+	static void onintr(), timeout(), dbg_signal();
+	static char *pskip();
 	extern char *optarg;
 	extern int optind;
 	char rflags[MAXFULLNAME];
@@ -358,13 +358,14 @@ char **envp;
 			from.sin_family = AF_INET;
 #else	!NOGETPEER
 			fromlen = sizeof(from);
-			if (getpeername(Ifn, &from, &fromlen) < 0) {
+			if (getpeername(Ifn,
+			    (struct sockaddr *)&from, &fromlen) < 0) {
 				logent(Rmtname, "NOT A TCP CONNECTION");
 				omsg('R', "NOT TCP", Ofn);
 				cleanup(0);
 			}
 #endif	!NOGETPEER
-			hp = gethostbyaddr(&from.sin_addr,
+			hp = gethostbyaddr((char *)&from.sin_addr,
 				sizeof (struct in_addr), from.sin_family);
 			if (hp == NULL) {
 				/* security break or just old host table? */
@@ -830,6 +831,7 @@ do_connect_accounting()
  *	on interrupt - remove locks and exit
  */
 
+static void
 onintr(inter)
 register int inter;
 {
@@ -853,6 +855,7 @@ register int inter;
  * (SIGUSR1), and toggle debugging between 0 and 30.
  * Handy for looking in on long running uucicos.
  */
+static void
 dbg_signal()
 {
 	Debug = (Debug == 0) ? 30 : 0;
@@ -985,6 +988,7 @@ int parm;
 /*
  *	catch SIGALRM routine
  */
+static void
 timeout()
 {
 	extern int HaveSentHup;
