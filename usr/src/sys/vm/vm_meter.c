@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.17	82/10/31	*/
+/*	vm_meter.c	4.18	83/01/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -417,11 +417,14 @@ schedpaging()
 	vavail = freemem - deficit;
 	if (vavail < 0)
 		vavail = 0;
-	if (freemem >= lotsfree)
-		return;
-	scanrate = (slowscan * vavail + fastscan * (lotsfree - vavail)) / nz(lotsfree);
-	desscan = ((LOOPPAGES / CLSIZE) / nz(scanrate)) / RATETOSCHEDPAGING;
-	wakeup((caddr_t)&proc[2]);
+	if (freemem < lotsfree) {
+		scanrate =
+			(slowscan * vavail + fastscan * (lotsfree - vavail)) /
+				nz(lotsfree);
+		desscan = ((LOOPPAGES / CLSIZE) / nz(scanrate)) /
+				RATETOSCHEDPAGING;
+		wakeup((caddr_t)&proc[2]);
+	}
 	timeout(schedpaging, (caddr_t)0, hz / RATETOSCHEDPAGING);
 }
 
