@@ -1,4 +1,4 @@
-/*	uda.c	4.19	83/02/23	*/
+/*	uda.c	4.20	83/02/23	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -95,7 +95,7 @@ struct	uba_ctlr *udminfo[NUDA];
 struct	uba_device *uddinfo[NRA];
 struct	uba_device *udip[NUDA][8];	/* 8 == max number of drives */
 
-u_short	udstd[] = { 0772150, 0 };
+u_short	udstd[] = { 0772150, 0772550, 0777550, 0 };
 struct	uba_driver udadriver =
  { udprobe, udslave, udattach, 0, udstd, "ra", uddinfo, "uda", udminfo, 0 };
 struct	buf rudbuf[NRA];
