@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <machine/pte.h>
@@ -248,7 +248,7 @@ kvm_nlist(nl)
 	/*
 	 * open database
 	 */
-	sprintf(dbname, "%s/kvm_%s", KVMDBDIR, basename(unixf));
+	sprintf(dbname, "%s/kvm_%s", _PATH_VARRUN, basename(unixf));
 	if ((db = dbm_open(dbname, O_RDONLY, 0)) == NULL)
 		goto hard2;
 	/*
