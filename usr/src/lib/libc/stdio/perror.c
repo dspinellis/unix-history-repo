@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)perror.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)perror.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -39,7 +39,8 @@ perror(s)
 		v->iov_len = 2;
 		v++;
 	}
-	v->iov_base = errno < sys_nerr ? sys_errlist[errno] : "Unknown error";
+	v->iov_base = (u_int)errno < sys_nerr ?
+	    sys_errlist[errno] : "Unknown error";
 	v->iov_len = strlen(v->iov_base);
 	v++;
 	v->iov_base = "\n";
