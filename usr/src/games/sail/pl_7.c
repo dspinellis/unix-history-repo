@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_7.c	2.5 83/12/17";
+static	char *sccsid = "@(#)pl_7.c	2.6 84/02/03";
 #endif
 
 #include "player.h"
@@ -263,7 +263,7 @@ draw_stat()
 	(void) wprintw(stat_w, "Crew %2d %2d %2d\n",
 		mc->crew1, mc->crew2, mc->crew3);
 	(void) wprintw(stat_w, "Guns %2d %2d\n", mc->gunL, mc->gunR);
-	(void) wprintw(stat_w, "Carr %2d %2d\n", mc->carR, mc->carL);
+	(void) wprintw(stat_w, "Carr %2d %2d\n", mc->carL, mc->carR);
 	(void) wprintw(stat_w, "Rigg %d %d %d ", mc->rig1, mc->rig2, mc->rig3);
 	if (mc->rig4 < 0)
 		(void) waddch(stat_w, '-');
