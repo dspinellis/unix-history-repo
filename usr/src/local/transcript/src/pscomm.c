@@ -1,6 +1,7 @@
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
-static char *RCSID="$Header: pscomm.bsd,v 2.1 85/11/24 11:50:16 shore Rel $";
+static char *ORCSID="$Header: pscomm.bsd,v 2.1 85/11/24 11:50:16 shore Rel $";
+static char *RCSID="$Header: pscomm.c,v 1.4 87/10/31 20:42:02 cuong Exp $";
 #endif
 /* pscomm.c
  *
@@ -60,7 +61,36 @@ static char *RCSID="$Header: pscomm.bsd,v 2.1 85/11/24 11:50:16 shore Rel $";
  * End Edit History.
  *
  * RCSLOG:
- * $Log:	pscomm.bsd,v $
+ * $Log:	pscomm.c,v $
+ * Revision 1.4  87/10/31  20:42:02  cuong
+ * Two changes:
+ *     1. Make sender wait for listener's signal when requesting initial
+ *        pagecount.  The problem is with short jobs & fast machines;
+ *        the sender will merrily finish the job and send an asynchronous
+ *        status request the response to which will clobber the listener's
+ *        input stream.
+ *     2. Make sender sleep(1) just after sending the job-finish EOF to give
+ *        the LaserWriter a chance to update its status.
+ * 
+ * Revision 1.3  87/10/03  16:42:47  cuong
+ * Takes care of improper handling of abnormal exits when
+ * accounting is turned on.  Pagecount information was again
+ * waited on abortively.  Now, it's fixed, no?
+ * 
+ * Revision 1.2  87/09/20  19:03:25  cuong
+ * Fixed bug:
+ * Symptom: pagecount accounting turned on, then pscomms will hang.
+ * Reason: old pscomm listener assumed the final pagecount information
+ *         will come after the ctrl-d; this is not true.  Hence it
+ * 	hangs waiting after the ctrl-d is received.
+ * Fix:    while waiting for ctrl-d, the pscomm listener must also
+ *         scan for the pattern %%[ pagecount: %d ]%%, and save
+ *         this in the pbuf[] array if found.  
+ * Cuong
+ * 
+ * Revision 1.1  87/06/13  19:26:31  cuong
+ * Initial revision
+ * 
  * Revision 2.1  85/11/24  11:50:16  shore
  * Product Release 2.0
  * 
@@ -92,7 +122,12 @@ static char *RCSID="$Header: pscomm.bsd,v 2.1 85/11/24 11:50:16 shore Rel $";
 #include "psspool.h"
 
 #ifdef BDEBUG
-#define debugp(x) {fprintf x ; (void) fflush(stderr);}
+#define debugp(x) \
+{ \
+   fprintf(stderr, "(pid %d) ", getpid()); \
+   fprintf x; \
+   (void) fflush(stderr); \
+}
 #else
 #define debugp(x)
 #endif BDEBUG
@@ -477,8 +512,55 @@ main(argc,argv)
 	if (doactng) {
 	    sprintf(mybuf, getpages, "\004");
 	    VOIDC write(fdsend, mybuf, strlen(mybuf));
+	    debugp((stderr, "%s: sent pagecount request\n", prog));
 	    progress++;
-        }
+
+            /* Sat Oct 31 17:51:45 PST 1987
+             * loop, waiting for the listener to signal initial pagecount is
+             * received.  The problem is with fast machines and short jobs;
+             * if we don't loop here, we may finish the job and send another
+             * CTRL-T before the initial pagecount ever came back.  The way
+             * the laserwriter behaves, this may result in a mix of pagecount
+             * data and status information like this:
+             * %%[ pagecount: %%[ status: busy; source: serial 25 ]%% 24418 ]%%
+             *
+             * That is really silly - Cuong
+             */
+
+	    VOIDC signal(SIGINT, intsend);
+	    VOIDC signal(SIGHUP, intsend);
+	    VOIDC signal(SIGQUIT, intsend);
+	    VOIDC signal(SIGTERM, intsend);
+	    VOIDC signal(SIGEMT, readynow);
+
+	    progress = oldprogress = 0; /* finite progress on sender */
+	    getstatus = FALSE; /* prime the pump for fun FALSE; */
+
+	    VOIDC signal(SIGALRM, salarm); /* sending phase alarm */
+	    VOIDC alarm(SENDALARM); /* schedule an alarm/timeout */
+
+	    cnt = 1; goahead = FALSE;
+	    VOIDC setjmp(startstatus);
+
+	    while (TRUE) {
+		if (goahead) break;
+		pause();
+		if (goahead) break; 
+		/* if we get here, we got an alarm */
+		ioctl(fdsend, TIOCFLUSH, &flg);
+		ioctl(fdsend, TIOCSTART, &flg);
+		sprintf(mybuf, "Not Responding for %d minutes",
+		    (cnt * SENDALARM+30)/60);
+		Status(mybuf);
+		alarm(SENDALARM);
+		cnt++;
+	    }
+
+	    VOIDC signal(SIGEMT, emtdead); /* now EMTs mean printer died */
+
+	    RestoreStatus();
+	    debugp((stderr,"%s: sender received EMT (goahead) from listener\n",prog));
+        } /* if (doactng) */
 
 	/* initial break page ? */
 	if (BannerFirst) {
@@ -502,6 +584,7 @@ main(argc,argv)
 
 	    /* get status every other time */
 	    if (getstatus) {
+		debugp((stderr,"%s: get periodic status\n",prog));
 		VOIDC write(fdsend, statusbuf, 1);
 		getstatus = FALSE;
 		progress++;
@@ -530,6 +613,12 @@ main(argc,argv)
 	    exit(TRY_AGAIN);	/* kill the listener? */
 	}
 
+	/* final break page ? */
+	if (BannerLast) {
+	    SendBanner();
+	    progress++;
+	}
+	if (BannerFirst) VOIDC unlink(".banner");
 
 	donefile:;
 
@@ -544,6 +633,7 @@ main(argc,argv)
 	    debugp((stderr,"%s: done sending\n",prog));
 
 	    /* now send the PostScript EOF character */
+	    debugp((stderr,"%s: sending PostScript EOF\n",prog));
 	    VOIDC write(fdsend, eofbuf, 1);
 	    sendend = 0;
 	    progress++;
@@ -558,12 +648,24 @@ main(argc,argv)
 	    getstatus = TRUE;
 	}
 
+	/* for very short jobs and very fast machines,
+	 * we've experienced that the whole job is sent
+	 * before the LaserWriter has a chance to update
+	 * its status.  Hence we may get a false idle
+	 * status if we immediately send the statusbuf.
+	 *
+	 * Keep in mind that the LaserWriter status response
+	 * is asynchronous to the datastream.
+	 */
+	sleep(1);
+
 	/* wait to sync with listener EMT signal
 	 * to indicate it got an EOF from the printer
 	 */
 	while (TRUE) {
 	    if (gotemt) break;
 	    if (getstatus) {
+		debugp((stderr,"%s: get final status\n",prog));
 		VOIDC write(fdsend, statusbuf, 1);
 		getstatus = FALSE;
 	    }
@@ -573,27 +675,13 @@ main(argc,argv)
 	    if (wpid == -1) break;
 	}
 
-	VOIDC signal(SIGALRM, falarm);
-	VOIDC alarm(WAITALARM);
-
-	/* final break page ? */
-	if (BannerLast) {
-	    SendBanner();
-	    progress++;
-	}
-	if (BannerFirst) VOIDC unlink(".banner");
-
 	/* final page accounting */
 	if (doactng) {
-	    sprintf(mybuf, getpages, "");
+	    sprintf(mybuf, getpages, "\004");
 	    VOIDC write(fdsend, mybuf, strlen(mybuf));
+	    debugp((stderr, "%s: sent pagecount request\n", prog));
 	    progress++;
         }
-	/* if we sent anything, finish it off */
-	if (BannerLast || doactng) {
-	    VOIDC write(fdsend, eofbuf, 1);
-	    progress++;
-	}
 
 	/* wait for listener to die */
 	VOIDC setjmp(dwait);
@@ -663,6 +751,7 @@ main(argc,argv)
 	  *pb++ = r;
       }
       *pb = 0;
+      debugp((stderr,"%s: initial status - %s\n",prog,pbuf));
       if (strcmp(pbuf, "%%[ status: idle ]%%\r") != 0) {
 	  fprintf(stderr,"%s: initial status - %s\n",prog,pbuf);
 	  VOIDC fflush(stderr);
@@ -699,11 +788,30 @@ main(argc,argv)
 	    VOIDC fflush(stderr);
 	}
 	debugp((stderr,"%s: accounting 1 (%s)\n",prog,pbuf));
+
+        /* flush input state and signal sender that we heard something */
+        ioctl(fdlisten, TIOCFLUSH, &flg);
+
+        VOIDC kill(ppid,SIGEMT);
+
+	/*
+	    Sun Sep 20 18:32:28 PDT 1987
+	    The previous bug was that it was assumed the ctrl-d comes
+	    before the final pagecount.  This doesn't happen, and the
+	    listener waits forever after a ctrl-d for a pagecount.
+	    The fix is to clear out the pbuf[] buffer, then check for it
+	    when we get to looking for the final pagecount.  If it is
+	    non-empty, we know we *already* read the final pagecount
+	    *before* the ctrl-d, and use it, without waiting for
+	    anything to come back from the printer.
+	*/
+	pbuf[0] = '\0';
       }
 
       /* listen for the user job */
       while (TRUE) {
 	r = getc(psin);
+	debugp((stderr, "%s: listener got character \\%o '%c'\n", prog, r, r));
 	if ((r&0377) == 004) break; /* PS_EOF */
 	else if (r == EOF) {
 	    VOIDC fclose(psin);
@@ -713,7 +821,13 @@ main(argc,argv)
 	    VOIDC kill(ppid,SIGEMT);
 	    exit(THROW_AWAY); 
 	}
-	GotChar(r);
+/*
+    Sun Sep 20 18:37:01 PDT 1987
+    GotChar() takes an addition argument: the pointer to the
+    pbuf[] buffer, and fills it with the final pagecount
+    information if that is received from the printer.
+*/
+	GotChar(r, pbuf);
       }
 
       /* let sender know we saw the end of the job */
@@ -725,21 +839,35 @@ main(argc,argv)
 
       /* now get final page count */
       if (doactng) {
-	pb = pbuf;
-	*pb = '\0';	/* ignore the previous pagecount */
-	while (TRUE) {
-	  r = getc(psin);
-	  if (r == EOF) {
-	      fprintf(stderr, EOFerr, prog, "accounting2");
-	      VOIDC fflush(stderr);
-	      RestoreStatus();
-	      sleep(10);
-	      exit(THROW_AWAY); /* what else to do? */
-	  }
-	  if ((r&0377) == 004) break; /* PS_EOF */
-	  *pb++ = r;
+/*
+    Sun Sep 20 18:48:35 PDT 1987
+    We attempt to wait for the final pagecount only if it has *not*
+    been sent by the printer.  It is the case that the final pagecount
+    is sent before the ctrl-d above, hence if we wait, it'll be forever.
+    Final pagecount information 'prematurely' received has already
+    been stored in pbuf[] iff pbuf[0] is non-null.
+*/
+
+	if (pbuf[0] == '\0') {
+	    debugp((stderr, "%s: waiting for pagecount\n", prog));
+	    pb = pbuf;
+	    *pb = '\0';	/* ignore the previous pagecount */
+	    while (TRUE) {
+	      r = getc(psin);
+	      if (r == EOF) {
+		  fprintf(stderr, EOFerr, prog, "accounting2");
+		  VOIDC fflush(stderr);
+		  RestoreStatus();
+		  sleep(10);
+		  exit(THROW_AWAY); /* what else to do? */
+	      }
+	      if ((r&0377) == 004) break; /* PS_EOF */
+	      *pb++ = r;
+	    }
+	    *pb = '\0';
+	} else {
+	    pb = pbuf + strlen(pbuf) - 1;
 	}
-	*pb = '\0';
 	debugp((stderr,"%s: accounting 2 (%s)\n",prog,pbuf));
 	if (pb = FindPattern(pb, pbuf, "%%[ pagecount: ")) {
 	    sc = sscanf(pb, "%%%%[ pagecount: %d ]%%%%\r", &pc2);
@@ -755,6 +883,13 @@ main(argc,argv)
 	else if (freopen(accountingfile, "a", stdout) != NULL) {
 	  printf("%7.2f\t%s:%s\n", (float)(pc2 - pc1), host, name);
 	  VOIDC fclose(stdout);
+/*
+    Sun Sep 20 18:55:32 PDT 1987
+    File append failure report added for future use.
+*/
+	} else {
+	  debugp((stderr, "%s: can't append accounting file\n", prog));
+	  perror(accountingfile);
 	}
       }
 
@@ -795,8 +930,9 @@ char *patt;
     return ((char *)NULL);
 }
 
-private GotChar(c)
+private GotChar(c, pbuf)
 register int c;
+char	*pbuf;
 {
     static char linebuf[BUFSIZ];
     static char *cp = linebuf;
@@ -910,6 +1046,17 @@ register int c;
 			/* clear status message */
 			RestoreStatus();
 		    }
+		}
+/*
+    Sun Sep 20 18:39:40 PDT 1987
+    Additional else necessary: if we get the final pagecount
+    information here from the printer, store it in the given
+    array pbuf[].
+*/
+		else if (match = FindPattern(cp, linebuf, "%%[ pagecount: ")) {
+		    /* fill pbuf */
+		    strcpy(pbuf, linebuf);
+		    debugp((stderr, "%s: 'premature' final pagecount read = '%s'\n", prog, pbuf));
 		}
 		else {
 		    /* message not for us */
