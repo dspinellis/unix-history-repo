@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -76,6 +76,37 @@ static char sccsid[] = "@(#)mail.local.c	8.18 (Berkeley) %G%";
 #ifndef BSD4_4
 # define _BSD_VA_LIST_	va_list
 extern char	*strerror __P((int));
+extern int	snprintf __P((char *, int, const char *, ...));
+#endif
+
+/*
+ * Compile with -DHAS_SAVED_IDS=0 if you don't have saved uids.  It will
+ * swap the effective uid (root) into the real uid using setreuid(),
+ * setting the effective uid to the recipient user, and then swap root
+ * back to effective uid when done.
+ *
+ * Use -DHAS_SAVED_IDS=1 if you can use seteuid(x) several times for
+ * various values of "x" -- that is, if your system will notice that you
+ * were originally invoked as root, and hence will allow future swaps.
+ *
+ * The following heuristic works for most common systems.  Note that
+ * SunOS claims to have _POSIX_SAVED_IDS, but doesn't -- but it does
+ * have an older version of _POSIX_VERSION.
+ *
+ * If you have a pure Posix system that does not have seteuid() or
+ * setreuid() (emulations don't count!) then you are out of luck.
+ */
+
+#ifndef HASSAVEDUIDS
+# if defined(_POSIX_SAVED_IDS) && _POSIX_VERSION >= 199009L
+#  define HAS_SAVED_IDS	1
+# else
+#  define HAS_SAVED_IDS	0
+# endif
+#endif
+
+#ifdef __hpux
+# define seteuid(e)	setresuid(-1, e, -1)
 #endif
 
 #ifndef _PATH_LOCTMP
@@ -297,14 +328,12 @@ tryagain:
 		} else if (fchown(mbfd, pw->pw_uid, pw->pw_gid)) {
 			e_to_sys(errno);
 			warn("chown %u.%u: %s", pw->pw_uid, pw->pw_gid, name);
-			unlockmbox();
-			return;
+			goto err1;
 		}
 	} else if (sb.st_nlink != 1 || !S_ISREG(sb.st_mode)) {
 		e_to_sys(errno);
 		warn("%s: irregular file", path);
-		unlockmbox();
-		return;
+		goto err0;
 	} else if (sb.st_uid != pw->pw_uid) {
 		warn("%s: wrong ownership (%d)", path, sb.st_uid);
 		unlockmbox();
@@ -316,24 +345,20 @@ tryagain:
 		    !S_ISREG(fsb.st_mode) || sb.st_dev != fsb.st_dev ||
 		    sb.st_ino != fsb.st_ino || sb.st_uid != fsb.st_uid)) {
 			warn("%s: file changed after open", path);
-			(void)close(mbfd);
-			unlockmbox();
-			return;
+			goto err1;
 		}
 	}
 
 	if (mbfd == -1) {
 		e_to_sys(errno);
 		warn("%s: %s", path, strerror(errno));
-		unlockmbox();
-		return;
+		goto err0;
 	}
 
 	/* Wait until we can get a lock on the file. */
 	if (flock(mbfd, LOCK_EX)) {
 		e_to_sys(errno);
 		warn("%s: %s", path, strerror(errno));
-		unlockmbox();
 		goto err1;
 	}
 
@@ -349,26 +374,53 @@ tryagain:
 		warn("temporary file: %s", strerror(errno));
 		goto err1;
 	}
+#if HAS_SAVED_IDS
+	if (seteuid(pw->pw_uid) < 0) {
+		e_to_sys(errno);
+		warn("seteuid(%d): %s", pw->pw_uid, strerror(errno));
+		goto err1;
+	}
+#else
+	if (setreuid(0, pw->pw_uid) < 0) {
+		e_to_sys(errno);
+		warn("setreuid(0, %d): %s (r=%d, e=%d)",
+		     pw->pw_uid, strerror(errno), getuid(), geteuid());
+		goto err1;
+	}
+#endif
+#ifdef DEBUG
+	printf("new euid = %d\n", geteuid());
+#endif
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
 		for (off = 0; off < nr; off += nw)
 			if ((nw = write(mbfd, buf + off, nr - off)) < 0) {
 				e_to_sys(errno);
 				warn("%s: %s", path, strerror(errno));
-				goto err2;;
+				goto err3;
 			}
 	if (nr < 0) {
 		e_to_sys(errno);
 		warn("temporary file: %s", strerror(errno));
-		goto err2;;
+		goto err3;
 	}
 
 	/* Flush to disk, don't wait for update. */
 	if (fsync(mbfd)) {
 		e_to_sys(errno);
 		warn("%s: %s", path, strerror(errno));
+err3:
+#if !HAS_SAVED_IDS
+		if (setreuid(0, 0) < 0) {
+			e_to_sys(errno);
+			warn("setreuid(0, 0): %s", strerror(errno));
+		}
+# ifdef DEBUG
+		printf("reset euid = %d\n", geteuid());
+# endif
+#endif
 err2:		(void)ftruncate(mbfd, curoff);
 err1:		(void)close(mbfd);
-		unlockmbox();
+err0:		unlockmbox();
 		return;
 	}
 		
@@ -380,6 +432,15 @@ err1:		(void)close(mbfd);
 		return;
 	}
 
+#if !HAS_SAVED_IDS
+	if (setreuid(0, 0) < 0) {
+		e_to_sys(errno);
+		warn("setreuid(0, 0): %s", strerror(errno));
+	}
+# ifdef DEBUG
+	printf("reset euid = %d\n", geteuid());
+# endif
+#endif
 	unlockmbox();
 	notifybiff(biffmsg);
 }
