@@ -1,4 +1,4 @@
-/* in_pcb.c 4.12 81/12/03 */
+/* in_pcb.c 4.13 81/12/11 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -44,6 +44,7 @@
  * TODO:
  *	use hashing
  */
+struct	in_addr zeroin_addr;
 
 /*
  * Allocate a protocol control block, space
@@ -57,9 +58,9 @@ in_pcbattach(so, head, sndcc, rcvcc, sin)
 	struct sockaddr_in *sin;
 {
 	struct mbuf *m;
-	register struct inpcb *inp, *xp;
+	register struct inpcb *inp;
 	struct ifnet *ifp;
-	u_long lport;
+	u_short lport;
 
 COUNT(IN_PCBATTACH);
 	if (sin) {
@@ -70,7 +71,7 @@ COUNT(IN_PCBATTACH);
 			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
 		if (lport &&
-		    in_pcblookup(head, 0, 0, sin->sin_addr.s_addr, lport))
+		    in_pcblookup(head, zeroin_addr, 0, sin->sin_addr, lport))
 			return (EADDRINUSE);
 	} else {
 		ifp = if_ifwithaddr(ifnet->if_addr);
@@ -91,7 +92,7 @@ COUNT(IN_PCBATTACH);
 			if (head->inp_lport++ < 1024)
 				head->inp_lport = 1024;
 			lport = htons(head->inp_lport);
-		} while (in_pcblookup(head, 0, 0, inp->inp_laddr, lport));
+		} while (in_pcblookup(head, zeroin_addr, 0, inp->inp_laddr, lport));
 	inp->inp_lport = lport;
 	inp->inp_socket = so;
 	insque(inp, head);
@@ -120,7 +121,7 @@ COUNT(IN_PCBCONNECT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
 	xp = in_pcblookup(inp->inp_head, sin->sin_addr, sin->sin_port, inp->inp_laddr, inp->inp_lport);
-	if (xp->inp_faddr)
+	if (xp->inp_faddr.s_addr)
 		return (EADDRINUSE);
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
