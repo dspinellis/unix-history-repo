@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.40 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -260,14 +260,16 @@ sync(scp)
 	struct syscontext *scp;
 {
 	register struct mount *mp;
-	struct mount *nmp;
 
 	mp = rootfs;
 	do {
-		nmp = mp->m_next;
+		/*
+		 * The lock check below is to avoid races with mount
+		 * and unmount.
+		 */
 		if ((mp->m_flag & (M_MLOCK|M_RDONLY)) == 0)
 			VFS_SYNC(mp, MNT_NOWAIT);
-		mp = nmp;
+		mp = mp->m_next;
 	} while (mp != rootfs);
 }
 
@@ -283,7 +285,7 @@ statfs(scp)
 	} *uap = (struct a *)scp->sc_ap;
 	register struct mount *mp;
 	register struct nameidata *ndp = &scp->sc_nd;
-	struct statfs sb;
+	register struct statfs *sp;
 	int error;
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
@@ -292,12 +294,12 @@ statfs(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	mp = ndp->ni_vp->v_mount;
+	sp = &mp->m_stat;
 	vrele(ndp->ni_vp);
-	if (error = VFS_STATFS(mp, &sb))
+	if (error = VFS_STATFS(mp, sp))
 		RETURN (error);
-	sb.f_flags = mp->m_flag & M_VISFLAGMASK;
-	sb.f_fsid = mp->m_fsid;
-	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
+	sp->f_flags = mp->m_flag & M_VISFLAGMASK;
+	RETURN (copyout((caddr_t)sp, (caddr_t)uap->buf, sizeof(*sp)));
 }
 
 fstatfs(scp)
@@ -309,17 +311,17 @@ fstatfs(scp)
 	} *uap = (struct a *)scp->sc_ap;
 	struct file *fp;
 	struct mount *mp;
-	struct statfs sb;
+	register struct statfs *sp;
 	int error;
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
 	mp = ((struct vnode *)fp->f_data)->v_mount;
-	if (error = VFS_STATFS(mp, &sb))
+	sp = &mp->m_stat;
+	if (error = VFS_STATFS(mp, sp))
 		RETURN (error);
-	sb.f_flags = mp->m_flag & M_VISFLAGMASK;
-	sb.f_fsid = mp->m_fsid;
-	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
+	sp->f_flags = mp->m_flag & M_VISFLAGMASK;
+	RETURN (copyout((caddr_t)sp, (caddr_t)uap->buf, sizeof(*sp)));
 }
 
 /*
@@ -331,11 +333,12 @@ getfsstat(scp)
 	struct a {
 		struct statfs *buf;
 		long bufsize;
+		int flags;
 	} *uap = (struct a *)scp->sc_ap;
 	register struct mount *mp;
+	register struct statfs *sp;
 	caddr_t sfsp;
 	long count, maxcount, error;
-	struct statfs sb;
 
 	maxcount = uap->bufsize / sizeof(struct statfs);
 	sfsp = (caddr_t)uap->buf;
@@ -343,15 +346,21 @@ getfsstat(scp)
 	count = 0;
 	do {
 		if (sfsp && count < maxcount && ((mp->m_flag & M_MLOCK) == 0)) {
-			if (error = VFS_STATFS(mp, &sb)) {
+			sp = &mp->m_stat;
+			/*
+			 * If MNT_NOWAIT is specified, do not refresh the
+			 * fsstat cache. MNT_WAIT overrides MNT_NOWAIT.
+			 */
+			if (((uap->flags & MNT_NOWAIT) == 0 ||
+			    (uap->flags & MNT_WAIT)) &&
+			    (error = VFS_STATFS(mp, sp))) {
 				mp = mp->m_prev;
 				continue;
 			}
-			sb.f_flags = mp->m_flag & M_VISFLAGMASK;
-			sb.f_fsid = mp->m_fsid;
-			if (error = copyout((caddr_t)&sb, sfsp, sizeof(sb)))
+			sp->f_flags = mp->m_flag & M_VISFLAGMASK;
+			if (error = copyout((caddr_t)sp, sfsp, sizeof(*sp)))
 				RETURN (error);
-			sfsp += sizeof(sb);
+			sfsp += sizeof(*sp);
 		}
 		count++;
 		mp = mp->m_prev;
