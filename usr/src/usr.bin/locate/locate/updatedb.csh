@@ -18,12 +18,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)updatedb.csh	4.10 (Berkeley) %G%
+#	@(#)updatedb.csh	4.11 (Berkeley) %G%
 #
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/libexec		# for subprograms
 if (! $?TMPDIR) set TMPDIR = /var/tmp	# for temp files
-set FINDHONCHO = root			# for error messages
 set FCODES = /var/db/find.database	# the database
 
 set path = ( /bin /usr/bin )
@@ -38,7 +37,6 @@ set errs = $TMPDIR/f.errs$$
 # ('awk', with its associative memory capacity, can do this in several
 # lines, but is too slow, and runs out of string space on small machines).
 
-nice +10
 find ${SRCHPATHS} -print | tr '/' '\001' | \
    (sort -f; echo $status > $errs) | \
    tr '\001' '/' >$filelist
@@ -49,7 +47,7 @@ $LIBDIR/find.bigram <$filelist | \
 # code the file list
 
 if { grep -s -v 0 $errs } then
-	echo 'squeeze error: out of sort space' | mail $FINDHONCHO
+	printf 'find: updatedb failed\n\n'
 else
 	$LIBDIR/find.code $bigrams < $filelist > $FCODES
 	chmod 644 $FCODES
