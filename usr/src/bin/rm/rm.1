@@ -1,4 +1,4 @@
-.\" Copyright (c) 1990, 1993
+.\" Copyright (c) 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rm.1	8.1 (Berkeley) %G%
+.\"	@(#)rm.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RM 1
@@ -17,7 +17,7 @@
 .Sh SYNOPSIS
 .Nm rm
 .Op Fl f | Fl i
-.Op Fl dRr
+.Op Fl dPRr
 .Ar file ...
 .Sh DESCRIPTION
 The
@@ -51,6 +51,10 @@ The
 option overrides any previous
 .Fl f 
 options.
+.It Fl P
+Overwrite regular files before deleting them.
+Files are overwritten three times, first with the byte pattern 0xff,
+then 0x00, and then 0xff again, before they are deleted.
 .It Fl R
 Attempt to remove the file hierarchy rooted in each file argument.
 The 
@@ -92,6 +96,14 @@ exits with a value >0.
 .Xr unlink 2 ,
 .Xr fts 3 ,
 .Xr symlink 7
+.Sh BUGS
+The
+.Fl P
+option assumes that the underlying file system is a fixed-block file
+system.
+UFS is a fixed-block file system, LFS is not.
+In addition, only regular files are overwritten, other types of files
+are not.
 .Sh COMPATIBILITY
 The
 .Nm rm
