@@ -7,8 +7,9 @@
 #
 #  This has been tested on IRIX 4.0.4.
 #
-#	@(#)Makefile.IRIX	8.2 (Berkeley) %G%
+#	@(#)Makefile.IRIX	8.3 (Berkeley) %G%
 #
+SHELL=	/bin/sh
 
 # use O=-O (usual) or O=-g (debugging)
 O=	-O
@@ -16,8 +17,8 @@ CC=gcc
 
 # define the database mechanisms available for map & alias lookups:
 #	-DNDBM -- use new DBM
-#	-DNEWDB -- use new Berkeley DB
-#	-DNIS -- include NIS support
+#	-DNEWDB -- use new Berkeley DB (requires -ldb)
+#	-DNIS -- include NIS support (requires -lsun)
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
 #
@@ -36,6 +37,7 @@ LIBDIRS=
 
 # libraries required on your system
 LIBS= -lmld
+#LIBS= -lsun -ldb -lmld
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib
@@ -86,11 +88,13 @@ sendmail.0: sendmail.8
 install: install-sendmail install-docs
 
 install-sendmail: sendmail
-	install -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} sendmail ${BINDIR}
+	install -u ${BINOWN} -g ${BINGRP} -m ${BINMODE} -f ${BINDIR} sendmail
 	for i in ${LINKS}; do rm -f $$i; ln -s ${BINDIR}/sendmail $$i; done
-	install -c -o ${BINOWN} -g ${BINGRP} -m 644 /dev/null \
-	    ${STDIR}/sendmail.st
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
+	cp /dev/null ${STDIR}/sendmail.st
+	chmod 644 ${STDIR}/sendmail.st
+	chown ${BINOWN} ${STDIR}/sendmail.st
+	chgrp ${BINGRP} ${STDIR}/sendmail.st
+	install -u ${BINOWN} -g ${BINGRP} -m 444 -f ${HFDIR} sendmail.hf
 
 # doesn't actually install them -- you may want to install pre-nroff versions
 install-docs: aliases.0 mailq.0 newaliases.0 sendmail.0
