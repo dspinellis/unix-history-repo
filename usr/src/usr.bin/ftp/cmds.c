@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -48,9 +48,10 @@ setpeer(argc, argv)
 	}
 	port = sp->s_port;
 	if (argc > 2) {
-		port = atoi(argv[1]);
+		port = atoi(argv[2]);
 		if (port <= 0) {
-			printf("%s: bad port number.\n", argv[1]);
+			printf("%s: bad port number-- %s\n", argv[1], argv[2]);
+			printf ("usage: %s host-name [port]\n", argv[0]);
 			return;
 		}
 		port = htons(port);
@@ -67,12 +68,13 @@ struct	types {
 	char	*t_name;
 	char	*t_mode;
 	int	t_type;
+	char	*t_arg;
 } types[] = {
-	{ "ascii",	"A",	TYPE_A },
-	{ "binary",	"I",	TYPE_I },
-	{ "image",	"I",	TYPE_I },
-	{ "ebcdic",	"E",	TYPE_E },
-	{ "tenex",	"L",	TYPE_L },
+	{ "ascii",	"A",	TYPE_A,	0 },
+	{ "binary",	"I",	TYPE_I,	0 },
+	{ "image",	"I",	TYPE_I,	0 },
+	{ "ebcdic",	"E",	TYPE_E,	0 },
+	{ "tenex",	"L",	TYPE_L,	bytename },
 	0
 };
 
@@ -83,6 +85,7 @@ settype(argc, argv)
 	char *argv[];
 {
 	register struct types *p;
+	int comret;
 
 	if (argc > 2) {
 		char *sep;
@@ -108,7 +111,11 @@ settype(argc, argv)
 		printf("%s: unknown mode\n", argv[1]);
 		return;
 	}
-	if (command("TYPE %s", p->t_mode) == COMPLETE) {
+	if ((p->t_arg != NULL) && (*(p->t_arg) != '\0'))
+		comret = command ("TYPE %s %s", p->t_mode, p->t_arg);
+	else
+		comret = command("TYPE %s", p->t_mode);
+	if (comret == COMPLETE) {
 		strcpy(typename, p->t_name);
 		type = p->t_type;
 	}

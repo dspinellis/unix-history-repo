@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.16 (Berkeley) %G%";
 #endif
 
 /*
@@ -74,7 +74,7 @@ main(argc, argv)
 
 	sp = getservbyname("ftp", "tcp");
 	if (sp == 0) {
-		fprintf(stderr, "ftpd: fpt/tcp: unknown service\n");
+		fprintf(stderr, "ftpd: ftp/tcp: unknown service\n");
 		exit(1);
 	}
 	ctrl_addr.sin_port = sp->s_port;
@@ -101,8 +101,9 @@ main(argc, argv)
 		exit(0);
 	for (s = 0; s < 10; s++)
 		(void) close(s);
-	(void) open("/dev/null", 0);
+	(void) open("/", 0);
 	(void) dup2(0, 1);
+	(void) dup2(0, 2);
 	{ int tt = open("/dev/tty", 2);
 	  if (tt > 0) {
 		ioctl(tt, TIOCNOTTY, 0);
@@ -138,6 +139,7 @@ main(argc, argv)
 			continue;
 		}
 		if (fork() == 0) {
+			signal (SIGCHLD, SIG_IGN);
 			if (logging)
 				dolog(&his_addr);
 			close(s);
@@ -411,11 +413,17 @@ send_data(instr, outstr)
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
-			if (c == '\n')
+			if (c == '\n') {
+				if (ferror (outstr))
+					return (1);
 				putc('\r', outstr);
-			if (putc(c, outstr) == EOF)
-				return (1);
+			}
+			putc(c, outstr);
+			if (c == '\r')
+				putc ('\0', outstr);
 		}
+		if (ferror (instr) || ferror (outstr))
+			return (1);
 		return (0);
 		
 	case TYPE_I:
@@ -444,7 +452,7 @@ receive_data(instr, outstr)
 	FILE *instr, *outstr;
 {
 	register int c;
-	int cr, escape, eof, cnt;
+	int cnt;
 	char buf[BUFSIZ];
 
 
@@ -462,23 +470,19 @@ receive_data(instr, outstr)
 		return (1);
 
 	case TYPE_A:
-		cr = 0;
 		while ((c = getc(instr)) != EOF) {
-			if (cr) {
-				if (c != '\r' && c != '\n')
-					putc('\r', outstr);
-				putc(c, outstr);
-				cr = c == '\r';
-				continue;
-			}
 			if (c == '\r') {
-				cr = 1;
-				continue;
+				if (ferror (outstr))
+					return (1);
+				if ((c = getc(instr)) != '\n')
+					putc ('\r', outstr);
+				if (c == '\0')
+					continue;
 			}
-			putc(c, outstr);
+			putc (c, outstr);
 		}
-		if (cr)
-			putc('\r', outstr);
+		if (ferror (instr) || ferror (outstr))
+			return (1);
 		return (0);
 	}
 	fatal("Unknown type in receive_data.");
@@ -695,7 +699,6 @@ ntoa(in)
 	static char b[18];
 	register char *p;
 
-	in.s_addr = ntohl(in.s_addr);
 	p = (char *)&in;
 #define	UC(b)	(((int)b)&0xff)
 	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
