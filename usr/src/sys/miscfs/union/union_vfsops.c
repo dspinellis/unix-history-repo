@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -209,13 +209,13 @@ union_mount(mp, path, data, ndp, p)
 
 	switch (um->um_op) {
 	case UNMNT_ABOVE:
-		cp = "un-above:";
+		cp = "<above>";
 		break;
 	case UNMNT_BELOW:
-		cp = "un-below:";
+		cp = "<below>";
 		break;
 	case UNMNT_REPLACE:
-		cp = "replace:";
+		cp = "";
 		break;
 	}
 	len = strlen(cp);
