@@ -1,6 +1,6 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	4.4	(Berkeley)	5/4/84; CWI	1.4	84/11/15
+#	@(#)vtroff.sh	4.4	(Berkeley)	5/4/84;	1.2	(CWI)	86/06/02
 #
 umask 0
 set flags=() noglob length=() fonts=() fontf=() banner=() Tflags=(-Tver) Dflags=()
@@ -42,6 +42,12 @@ top:
 		case -x:
 			set Tflags = -Thar
 			set banner = Harris
+			shift argv
+			goto top
+		case -N:
+			set Tflags = -Tnver
+			set banner = (New Harris)
+			set lpr = (/usr/ucb/lpr -Pnvp -n)
 			shift argv
 			goto top
 		case -*:
