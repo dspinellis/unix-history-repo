@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: swap_pager.c,v 1.9 1993/12/21 05:50:59 davidg Exp $
+ *	$Id: swap_pager.c,v 1.10 1993/12/22 12:51:53 davidg Exp $
  */
 
 /*
@@ -338,7 +338,6 @@ swap_pager_freespace(vm_pager_t pager, vm_offset_t start, vm_offset_t size) {
 /*
  * This routine copies pages from one pager to another and destroys
  * the original pager
- * Author: John S. Dyson, 18 Dec 93
  */
 int
 swap_pager_copy(vm_pager_t srcpager, vm_offset_t srcoffset,
@@ -596,8 +595,6 @@ swap_pager_iodone1(struct buf *bp) {
  * BOGUS:  lower level IO routines expect a KVA so we have to map our
  * provided physical page into the KVA to keep them happy.
  *
- * This routine substantially enhanced by John Dyson, 18 Dec 93.
- *
  */
 int
 swap_pager_io(swp, m, count, reqpage, flags)
@@ -738,13 +735,26 @@ swap_pager_io(swp, m, count, reqpage, flags)
 	/*
 	 * get a swap pager clean data structure, block until we get it
 	 */
-		if( queue_empty(&swap_pager_free)) {
+		/*
+		 * Note: The expected wakeup comes from swap_pager_iodone
+		 * (a routine called at interrupt time.)
+		 */
+		s = splbio();
+
+		if (queue_empty(&swap_pager_free))
 			(void) swap_pager_clean(NULL, B_WRITE);
-			while ( queue_empty(&swap_pager_free)) { 
-				tsleep((caddr_t)&swap_wakeup, PVM, "swpfre", 0);
-				(void) swap_pager_clean(NULL, B_WRITE);
-			}
+
+		while (queue_empty(&swap_pager_free)) { 
+			tsleep((caddr_t)&swap_wakeup, PVM, "swpfre", 0);
+			/*
+			 * Grr...it would be best to call the clean not at
+			 *	splbio..but it's necessary to stay at splbio
+			 *	until the queue_empty check is complete.
+			 */
+			(void) swap_pager_clean(NULL, B_WRITE);
 		}
+		splx(s);
+
 		queue_remove_first(&swap_pager_free, spc, swp_clean_t, spc_list);
 		for(i=0;i<count;i++) {
 			if( i != reqpage) {
