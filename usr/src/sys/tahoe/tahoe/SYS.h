@@ -1,4 +1,4 @@
-/*	SYS.h	1.1	86/01/05	*/
+/*	SYS.h	1.2	86/01/24	*/
 
 /*
  * Macros used to define entry points
@@ -6,9 +6,9 @@
  */
 #if defined(GPROF) || defined(PROF)
 #define	ENTRY(name, regs) \
-	.globl _/**/name; .align 2; _/**/name: .word regs; callf $0,mcount
+	.globl _/**/name; .align 2; _/**/name: .word regs; callf $4,mcount
 #define	ASENTRY(name, regs) \
-	.globl name; .align 2; name: .word regs; callf $0,mcount
+	.globl name; .align 2; name: .word regs; callf $4,mcount
 #else
 #define	ENTRY(name, regs) \
 	.globl _/**/name; .align 2; _/**/name: .word regs
