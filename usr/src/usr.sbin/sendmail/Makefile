@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	3.5		%G%
+#		@(#)Makefile	3.6		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -56,6 +56,7 @@ clean:
 	cd src; make clean
 	cd aux; make clean
 	cd lib; make clean
+	cd doc; make clean
 
 dirs:
 	mkdir $(SRCROOT)
