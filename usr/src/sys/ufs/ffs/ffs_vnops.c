@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.65 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.66 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -58,16 +58,111 @@ struct vnodeops ffs_vnodeops = {
 	ufs_readdir,		/* readdir */
 	ufs_readlink,		/* readlink */
 	ufs_abortop,		/* abortop */
-	ufs_inactive,		/* inactive */
+	ffs_inactive,		/* inactive */
 	ufs_reclaim,		/* reclaim */
 	ufs_lock,		/* lock */
 	ufs_unlock,		/* unlock */
-	ufs_bmap,		/* bmap */
+	ffs_bmap,		/* bmap */
 	ufs_strategy,		/* strategy */
 	ufs_print,		/* print */
 	ufs_islocked,		/* islocked */
 	ufs_advlock,		/* advlock */
+	ffs_blkatoff,		/* blkatoff */
+	ffs_vget,		/* vget */
+	ffs_valloc,		/* valloc */
+	ffs_vfree,		/* vfree */
+	ffs_truncate,		/* truncate */
+	ffs_update,		/* update */
+	bwrite,			/* bwrite */
 };
+
+struct vnodeops ffs_specops = {
+	spec_lookup,		/* lookup */
+	spec_create,		/* create */
+	spec_mknod,		/* mknod */
+	spec_open,		/* open */
+	ufsspec_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufsspec_read,		/* read */
+	ufsspec_write,		/* write */
+	spec_ioctl,		/* ioctl */
+	spec_select,		/* select */
+	spec_mmap,		/* mmap */
+	spec_fsync,		/* fsync */
+	spec_seek,		/* seek */
+	spec_remove,		/* remove */
+	spec_link,		/* link */
+	spec_rename,		/* rename */
+	spec_mkdir,		/* mkdir */
+	spec_rmdir,		/* rmdir */
+	spec_symlink,		/* symlink */
+	spec_readdir,		/* readdir */
+	spec_readlink,		/* readlink */
+	spec_abortop,		/* abortop */
+	ffs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	spec_bmap,		/* bmap */
+	spec_strategy,		/* strategy */
+	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
+	spec_advlock,		/* advlock */
+	spec_blkatoff,		/* blkatoff */
+	spec_vget,		/* vget */
+	spec_valloc,		/* valloc */
+	spec_vfree,		/* vfree */
+	spec_truncate,		/* truncate */
+	ffs_update,		/* update */
+	bwrite,			/* bwrite */
+};
+
+#ifdef FIFO
+struct vnodeops ffs_fifoops = {
+	fifo_lookup,		/* lookup */
+	fifo_create,		/* create */
+	fifo_mknod,		/* mknod */
+	fifo_open,		/* open */
+	ufsfifo_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufsfifo_read,		/* read */
+	ufsfifo_write,		/* write */
+	fifo_ioctl,		/* ioctl */
+	fifo_select,		/* select */
+	fifo_mmap,		/* mmap */
+	fifo_fsync,		/* fsync */
+	fifo_seek,		/* seek */
+	fifo_remove,		/* remove */
+	fifo_link,		/* link */
+	fifo_rename,		/* rename */
+	fifo_mkdir,		/* mkdir */
+	fifo_rmdir,		/* rmdir */
+	fifo_symlink,		/* symlink */
+	fifo_readdir,		/* readdir */
+	fifo_readlink,		/* readlink */
+	fifo_abortop,		/* abortop */
+	ffs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	fifo_bmap,		/* bmap */
+	fifo_strategy,		/* strategy */
+	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
+	fifo_advlock,		/* advlock */
+	fifo_blkatoff,		/* blkatoff */
+	fifo_vget,		/* vget */
+	fifo_valloc,		/* valloc */
+	fifo_vfree,		/* vfree */
+	fifo_truncate,		/* truncate */
+	ffs_update,		/* update */
+	bwrite,			/* bwrite */
+};
+#endif /* FIFO */
 
 int	maknode __P((int, struct nameidata *, struct inode **));
 
@@ -221,12 +316,12 @@ ffs_write(vp, uio, ioflag, cred)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (error && (ioflag & IO_UNIT)) {
-		(void)ffs_itrunc(ip, osize, ioflag & IO_SYNC);
+		(void)ffs_truncate(vp, osize, ioflag & IO_SYNC);
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
 	if (!error && (ioflag & IO_SYNC))
-		error = ffs_iupdat(ip, &time, &time, 1);
+		error = ffs_update(vp, &time, &time, 1);
 	return (error);
 }
 
@@ -247,5 +342,56 @@ ffs_fsync(vp, fflags, cred, waitfor, p)
 	if (fflags & FWRITE)
 		ip->i_flag |= ICHG;
 	vflushbuf(vp, waitfor == MNT_WAIT ? B_SYNC : 0);
-	return (ffs_iupdat(ip, &time, &time, waitfor == MNT_WAIT));
+	return (ffs_update(vp, &time, &time, waitfor == MNT_WAIT));
+}
+
+/*
+ * Last reference to an inode, write the inode out and if necessary,
+ * truncate and deallocate the file.
+ */
+int
+ffs_inactive(vp, p)
+	struct vnode *vp;
+	struct proc *p;
+{
+	register struct inode *ip;
+	int mode, error;
+	extern int prtactive;
+
+	if (prtactive && vp->v_usecount != 0)
+		vprint("ffs_inactive: pushing active", vp);
+
+	/* Get rid of inodes related to stale file handles. */
+	ip = VTOI(vp);
+	if (ip->i_mode == 0) {
+		if ((vp->v_flag & VXLOCK) == 0)
+			vgone(vp);
+		return (0);
+	}
+
+	error = 0;
+	ILOCK(ip);
+	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
+#ifdef QUOTA
+		if (!getinoquota(ip))
+			(void)chkiq(ip, -1, NOCRED, 0);
+#endif
+		error = ffs_truncate(vp, (u_long)0, 0);
+		mode = ip->i_mode;
+		ip->i_mode = 0;
+		ip->i_rdev = 0;
+		ip->i_flag |= IUPD|ICHG;
+		ffs_vfree(vp, ip->i_number, mode);
+	}
+	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD))
+		ffs_update(vp, &time, &time, 0);
+	IUNLOCK(ip);
+	ip->i_flag = 0;
+	/*
+	 * If we are done with the inode, reclaim it
+	 * so that it can be reused immediately.
+	 */
+	if (vp->v_usecount == 0 && ip->i_mode == 0)
+		vgone(vp);
+	return (error);
 }
