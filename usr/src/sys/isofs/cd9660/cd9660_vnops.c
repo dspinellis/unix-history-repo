@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,7 +30,7 @@
 #include <sys/dir.h>
 
 #include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/isofs_node.h>
+#include <isofs/cd9660/cd9660_node.h>
 #include <isofs/cd9660/iso_rrip.h>
 
 #if 0
@@ -38,7 +38,7 @@
  * Mknod vnode call
  *  Actually remap the device number
  */
-isofs_mknod(ndp, vap, cred, p)
+cd9660_mknod(ndp, vap, cred, p)
 	struct nameidata *ndp;
 	struct ucred *cred;
 	struct vattr *vap;
@@ -96,7 +96,7 @@ isofs_mknod(ndp, vap, cred, p)
  */
 /* ARGSUSED */
 int
-isofs_open(ap)
+cd9660_open(ap)
 	struct vop_open_args /* {
 		struct vnode *a_vp;
 		int  a_mode;
@@ -114,7 +114,7 @@ isofs_open(ap)
  */
 /* ARGSUSED */
 int
-isofs_close(ap)
+cd9660_close(ap)
 	struct vop_close_args /* {
 		struct vnode *a_vp;
 		int  a_fflag;
@@ -131,7 +131,7 @@ isofs_close(ap)
  * super user is granted all permissions.
  */
 /* ARGSUSED */
-isofs_access(ap)
+cd9660_access(ap)
 	struct vop_access_args /* {
 		struct vnode *a_vp;
 		int  a_mode;
@@ -142,7 +142,7 @@ isofs_access(ap)
 	return (0);
 }
 
-isofs_getattr(ap)
+cd9660_getattr(ap)
 	struct vop_getattr_args /* {
 		struct vnode *a_vp;
 		struct vattr *a_vap;
@@ -191,7 +191,7 @@ extern int doclusterread;
 /*
  * Vnode op for reading.
  */
-isofs_read(ap)
+cd9660_read(ap)
 	struct vop_read_args /* {
 		struct vnode *a_vp;
 		struct uio *a_uio;
@@ -260,7 +260,7 @@ isofs_read(ap)
 
 /* ARGSUSED */
 int
-isofs_ioctl(ap)
+cd9660_ioctl(ap)
 	struct vop_ioctl_args /* {
 		struct vnode *a_vp;
 		int  a_command;
@@ -276,7 +276,7 @@ isofs_ioctl(ap)
 
 /* ARGSUSED */
 int
-isofs_select(ap)
+cd9660_select(ap)
 	struct vop_select_args /* {
 		struct vnode *a_vp;
 		int  a_which;
@@ -299,7 +299,7 @@ isofs_select(ap)
  */
 /* ARGSUSED */
 int
-isofs_mmap(ap)
+cd9660_mmap(ap)
 	struct vop_mmap_args /* {
 		struct vnode *a_vp;
 		int  a_fflags;
@@ -318,7 +318,7 @@ isofs_mmap(ap)
  */
 /* ARGSUSED */
 int
-isofs_seek(ap)
+cd9660_seek(ap)
 	struct vop_seek_args /* {
 		struct vnode *a_vp;
 		off_t  a_oldoff;
@@ -434,7 +434,7 @@ iso_shipdir(idp)
  * are no longer args.
  */
 int
-isofs_readdir(ap)
+cd9660_readdir(ap)
 	struct vop_readdir_args /* {
 		struct vnode *a_vp;
 		struct uio *a_uio;
@@ -539,7 +539,7 @@ isofs_readdir(ap)
 		 */
 		switch (imp->iso_ftype) {
 		case ISO_FTYPE_RRIP:
-			isofs_rrip_getname(ep,idp->current.d_name,
+			cd9660_rrip_getname(ep,idp->current.d_name,
 					   (u_short *)&idp->current.d_namlen,
 					   &idp->current.d_fileno,imp);
 			if (idp->current.d_namlen)
@@ -598,14 +598,14 @@ isofs_readdir(ap)
 /*
  * Return target name of a symbolic link
  * Shouldn't we get the parent vnode and read the data from there?
- * This could eventually result in deadlocks in isofs_lookup.
+ * This could eventually result in deadlocks in cd9660_lookup.
  * But otherwise the block read here is in the block buffer two times.
  */
 typedef struct iso_directory_record ISODIR;
 typedef struct iso_node             ISONODE;
 typedef struct iso_mnt              ISOMNT;
 int
-isofs_readlink(ap)
+cd9660_readlink(ap)
 	struct vop_readlink_args /* {
 		struct vnode *a_vp;
 		struct uio *a_uio;
@@ -675,7 +675,7 @@ isofs_readlink(ap)
 	/*
 	 * Ok, we just gathering a symbolic name in SL record.
 	 */
-	if (isofs_rrip_getsymname(dirp,symname,&symlen,imp) == 0) {
+	if (cd9660_rrip_getsymname(dirp,symname,&symlen,imp) == 0) {
 		FREE(symname,M_NAMEI);
 		brelse(bp);
 		return EINVAL;
@@ -700,7 +700,7 @@ isofs_readlink(ap)
  * done. If a buffer has been saved in anticipation of a CREATE, delete it.
  */
 int
-isofs_abortop(ap)
+cd9660_abortop(ap)
 	struct vop_abortop_args /* {
 		struct vnode *a_dvp;
 		struct componentname *a_cnp;
@@ -715,7 +715,7 @@ isofs_abortop(ap)
  * Lock an inode.
  */
 int
-isofs_lock(ap)
+cd9660_lock(ap)
 	struct vop_lock_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
@@ -730,7 +730,7 @@ isofs_lock(ap)
  * Unlock an inode.
  */
 int
-isofs_unlock(ap)
+cd9660_unlock(ap)
 	struct vop_unlock_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
@@ -738,7 +738,7 @@ isofs_unlock(ap)
 	register struct iso_node *ip = VTOI(ap->a_vp);
 
 	if (!(ip->i_flag & ILOCKED))
-		panic("isofs_unlock NOT LOCKED");
+		panic("cd9660_unlock NOT LOCKED");
 	ISO_IUNLOCK(ip);
 	return 0;
 }
@@ -747,7 +747,7 @@ isofs_unlock(ap)
  * Check for a locked inode.
  */
 int
-isofs_islocked(ap)
+cd9660_islocked(ap)
 	struct vop_islocked_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
@@ -763,7 +763,7 @@ isofs_islocked(ap)
  * then call the device strategy routine.
  */
 int
-isofs_strategy(ap)
+cd9660_strategy(ap)
 	struct vop_strategy_args /* {
 		struct buf *a_bp;
 	} */ *ap;
@@ -775,7 +775,7 @@ isofs_strategy(ap)
 
 	ip = VTOI(vp);
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
-		panic("isofs_strategy: spec");
+		panic("cd9660_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
 		if (error =
 		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
@@ -801,7 +801,7 @@ isofs_strategy(ap)
  * Print out the contents of an inode.
  */
 int
-isofs_print(ap)
+cd9660_print(ap)
 	struct vop_print_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
@@ -814,7 +814,7 @@ isofs_print(ap)
  * Unsupported operation
  */
 int
-isofs_enotsupp()
+cd9660_enotsupp()
 {
 
 	return (EOPNOTSUPP);
@@ -823,101 +823,106 @@ isofs_enotsupp()
 /*
  * Global vfs data structures for isofs
  */
-#define isofs_create ((int (*) __P((struct  vop_create_args *)))isofs_enotsupp)
-#define isofs_mknod ((int (*) __P((struct  vop_mknod_args *)))isofs_enotsupp)
-#define isofs_setattr \
-	((int (*) __P((struct  vop_setattr_args *)))isofs_enotsupp)
-#define isofs_write ((int (*) __P((struct  vop_write_args *)))isofs_enotsupp)
-#define isofs_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
-#define isofs_remove ((int (*) __P((struct  vop_remove_args *)))isofs_enotsupp)
-#define isofs_link ((int (*) __P((struct  vop_link_args *)))isofs_enotsupp)
-#define isofs_rename ((int (*) __P((struct  vop_rename_args *)))isofs_enotsupp)
-#define isofs_mkdir ((int (*) __P((struct  vop_mkdir_args *)))isofs_enotsupp)
-#define isofs_rmdir ((int (*) __P((struct  vop_rmdir_args *)))isofs_enotsupp)
-#define isofs_symlink \
-	((int (*) __P((struct vop_symlink_args *)))isofs_enotsupp)
-#define isofs_pathconf \
-	((int (*) __P((struct vop_pathconf_args *)))isofs_enotsupp)
-#define isofs_advlock \
-	((int (*) __P((struct vop_advlock_args *)))isofs_enotsupp)
-#define isofs_blkatoff \
-	((int (*) __P((struct  vop_blkatoff_args *)))isofs_enotsupp)
-#define isofs_valloc ((int(*) __P(( \
+#define cd9660_create \
+	((int (*) __P((struct  vop_create_args *)))cd9660_enotsupp)
+#define cd9660_mknod ((int (*) __P((struct  vop_mknod_args *)))cd9660_enotsupp)
+#define cd9660_setattr \
+	((int (*) __P((struct  vop_setattr_args *)))cd9660_enotsupp)
+#define cd9660_write ((int (*) __P((struct  vop_write_args *)))cd9660_enotsupp)
+#define cd9660_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
+#define cd9660_remove \
+	((int (*) __P((struct  vop_remove_args *)))cd9660_enotsupp)
+#define cd9660_link ((int (*) __P((struct  vop_link_args *)))cd9660_enotsupp)
+#define cd9660_rename \
+	((int (*) __P((struct  vop_rename_args *)))cd9660_enotsupp)
+#define cd9660_mkdir ((int (*) __P((struct  vop_mkdir_args *)))cd9660_enotsupp)
+#define cd9660_rmdir ((int (*) __P((struct  vop_rmdir_args *)))cd9660_enotsupp)
+#define cd9660_symlink \
+	((int (*) __P((struct vop_symlink_args *)))cd9660_enotsupp)
+#define cd9660_pathconf \
+	((int (*) __P((struct vop_pathconf_args *)))cd9660_enotsupp)
+#define cd9660_advlock \
+	((int (*) __P((struct vop_advlock_args *)))cd9660_enotsupp)
+#define cd9660_blkatoff \
+	((int (*) __P((struct  vop_blkatoff_args *)))cd9660_enotsupp)
+#define cd9660_valloc ((int(*) __P(( \
 		struct vnode *pvp, \
 		int mode, \
 		struct ucred *cred, \
-		struct vnode **vpp))) isofs_enotsupp)
-#define isofs_vfree ((int (*) __P((struct  vop_vfree_args *)))isofs_enotsupp)
-#define isofs_truncate \
-	((int (*) __P((struct  vop_truncate_args *)))isofs_enotsupp)
-#define isofs_update ((int (*) __P((struct  vop_update_args *)))isofs_enotsupp)
-#define isofs_bwrite ((int (*) __P((struct  vop_bwrite_args *)))isofs_enotsupp)
+		struct vnode **vpp))) cd9660_enotsupp)
+#define cd9660_vfree ((int (*) __P((struct  vop_vfree_args *)))cd9660_enotsupp)
+#define cd9660_truncate \
+	((int (*) __P((struct  vop_truncate_args *)))cd9660_enotsupp)
+#define cd9660_update \
+	((int (*) __P((struct  vop_update_args *)))cd9660_enotsupp)
+#define cd9660_bwrite \
+	((int (*) __P((struct  vop_bwrite_args *)))cd9660_enotsupp)
 
 /*
  * Global vfs data structures for nfs
  */
-int (**isofs_vnodeop_p)();
-struct vnodeopv_entry_desc isofs_vnodeop_entries[] = {
+int (**cd9660_vnodeop_p)();
+struct vnodeopv_entry_desc cd9660_vnodeop_entries[] = {
 	{ &vop_default_desc, vn_default_error },
-	{ &vop_lookup_desc, isofs_lookup },	/* lookup */
-	{ &vop_create_desc, isofs_create },	/* create */
-	{ &vop_mknod_desc, isofs_mknod },	/* mknod */
-	{ &vop_open_desc, isofs_open },		/* open */
-	{ &vop_close_desc, isofs_close },	/* close */
-	{ &vop_access_desc, isofs_access },	/* access */
-	{ &vop_getattr_desc, isofs_getattr },	/* getattr */
-	{ &vop_setattr_desc, isofs_setattr },	/* setattr */
-	{ &vop_read_desc, isofs_read },		/* read */
-	{ &vop_write_desc, isofs_write },	/* write */
-	{ &vop_ioctl_desc, isofs_ioctl },	/* ioctl */
-	{ &vop_select_desc, isofs_select },	/* select */
-	{ &vop_mmap_desc, isofs_mmap },		/* mmap */
-	{ &vop_fsync_desc, isofs_fsync },	/* fsync */
-	{ &vop_seek_desc, isofs_seek },		/* seek */
-	{ &vop_remove_desc, isofs_remove },	/* remove */
-	{ &vop_link_desc, isofs_link },		/* link */
-	{ &vop_rename_desc, isofs_rename },	/* rename */
-	{ &vop_mkdir_desc, isofs_mkdir },	/* mkdir */
-	{ &vop_rmdir_desc, isofs_rmdir },	/* rmdir */
-	{ &vop_symlink_desc, isofs_symlink },	/* symlink */
-	{ &vop_readdir_desc, isofs_readdir },	/* readdir */
-	{ &vop_readlink_desc, isofs_readlink },	/* readlink */
-	{ &vop_abortop_desc, isofs_abortop },	/* abortop */
-	{ &vop_inactive_desc, isofs_inactive },	/* inactive */
-	{ &vop_reclaim_desc, isofs_reclaim },	/* reclaim */
-	{ &vop_lock_desc, isofs_lock },		/* lock */
-	{ &vop_unlock_desc, isofs_unlock },	/* unlock */
-	{ &vop_bmap_desc, isofs_bmap },		/* bmap */
-	{ &vop_strategy_desc, isofs_strategy },	/* strategy */
-	{ &vop_print_desc, isofs_print },	/* print */
-	{ &vop_islocked_desc, isofs_islocked },	/* islocked */
-	{ &vop_pathconf_desc, isofs_pathconf },	/* pathconf */
-	{ &vop_advlock_desc, isofs_advlock },	/* advlock */
-	{ &vop_blkatoff_desc, isofs_blkatoff },	/* blkatoff */
-	{ &vop_valloc_desc, isofs_valloc },	/* valloc */
-	{ &vop_vfree_desc, isofs_vfree },	/* vfree */
-	{ &vop_truncate_desc, isofs_truncate },	/* truncate */
-	{ &vop_update_desc, isofs_update },	/* update */
+	{ &vop_lookup_desc, cd9660_lookup },	/* lookup */
+	{ &vop_create_desc, cd9660_create },	/* create */
+	{ &vop_mknod_desc, cd9660_mknod },	/* mknod */
+	{ &vop_open_desc, cd9660_open },	/* open */
+	{ &vop_close_desc, cd9660_close },	/* close */
+	{ &vop_access_desc, cd9660_access },	/* access */
+	{ &vop_getattr_desc, cd9660_getattr },	/* getattr */
+	{ &vop_setattr_desc, cd9660_setattr },	/* setattr */
+	{ &vop_read_desc, cd9660_read },	/* read */
+	{ &vop_write_desc, cd9660_write },	/* write */
+	{ &vop_ioctl_desc, cd9660_ioctl },	/* ioctl */
+	{ &vop_select_desc, cd9660_select },	/* select */
+	{ &vop_mmap_desc, cd9660_mmap },	/* mmap */
+	{ &vop_fsync_desc, cd9660_fsync },	/* fsync */
+	{ &vop_seek_desc, cd9660_seek },	/* seek */
+	{ &vop_remove_desc, cd9660_remove },	/* remove */
+	{ &vop_link_desc, cd9660_link },	/* link */
+	{ &vop_rename_desc, cd9660_rename },	/* rename */
+	{ &vop_mkdir_desc, cd9660_mkdir },	/* mkdir */
+	{ &vop_rmdir_desc, cd9660_rmdir },	/* rmdir */
+	{ &vop_symlink_desc, cd9660_symlink },	/* symlink */
+	{ &vop_readdir_desc, cd9660_readdir },	/* readdir */
+	{ &vop_readlink_desc, cd9660_readlink },/* readlink */
+	{ &vop_abortop_desc, cd9660_abortop },	/* abortop */
+	{ &vop_inactive_desc, cd9660_inactive },/* inactive */
+	{ &vop_reclaim_desc, cd9660_reclaim },	/* reclaim */
+	{ &vop_lock_desc, cd9660_lock },	/* lock */
+	{ &vop_unlock_desc, cd9660_unlock },	/* unlock */
+	{ &vop_bmap_desc, cd9660_bmap },	/* bmap */
+	{ &vop_strategy_desc, cd9660_strategy },/* strategy */
+	{ &vop_print_desc, cd9660_print },	/* print */
+	{ &vop_islocked_desc, cd9660_islocked },/* islocked */
+	{ &vop_pathconf_desc, cd9660_pathconf },/* pathconf */
+	{ &vop_advlock_desc, cd9660_advlock },	/* advlock */
+	{ &vop_blkatoff_desc, cd9660_blkatoff },/* blkatoff */
+	{ &vop_valloc_desc, cd9660_valloc },	/* valloc */
+	{ &vop_vfree_desc, cd9660_vfree },	/* vfree */
+	{ &vop_truncate_desc, cd9660_truncate },/* truncate */
+	{ &vop_update_desc, cd9660_update },	/* update */
 	{ &vop_bwrite_desc, vn_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
-struct vnodeopv_desc isofs_vnodeop_opv_desc =
-	{ &isofs_vnodeop_p, isofs_vnodeop_entries };
+struct vnodeopv_desc cd9660_vnodeop_opv_desc =
+	{ &cd9660_vnodeop_p, cd9660_vnodeop_entries };
 
 /*
  * Special device vnode ops
  */
-int (**isofs_specop_p)();
-struct vnodeopv_entry_desc isofs_specop_entries[] = {
+int (**cd9660_specop_p)();
+struct vnodeopv_entry_desc cd9660_specop_entries[] = {
 	{ &vop_default_desc, vn_default_error },
 	{ &vop_lookup_desc, spec_lookup },	/* lookup */
-	{ &vop_create_desc, isofs_create },	/* create */
-	{ &vop_mknod_desc, isofs_mknod },	/* mknod */
+	{ &vop_create_desc, cd9660_create },	/* create */
+	{ &vop_mknod_desc, cd9660_mknod },	/* mknod */
 	{ &vop_open_desc, spec_open },		/* open */
 	{ &vop_close_desc, spec_close },	/* close */
-	{ &vop_access_desc, isofs_access },	/* access */
-	{ &vop_getattr_desc, isofs_getattr },	/* getattr */
-	{ &vop_setattr_desc, isofs_setattr },	/* setattr */
+	{ &vop_access_desc, cd9660_access },	/* access */
+	{ &vop_getattr_desc, cd9660_getattr },	/* getattr */
+	{ &vop_setattr_desc, cd9660_setattr },	/* setattr */
 	{ &vop_read_desc, spec_read },		/* read */
 	{ &vop_write_desc, spec_write },	/* write */
 	{ &vop_ioctl_desc, spec_ioctl },	/* ioctl */
@@ -925,49 +930,49 @@ struct vnodeopv_entry_desc isofs_specop_entries[] = {
 	{ &vop_mmap_desc, spec_mmap },		/* mmap */
 	{ &vop_fsync_desc, spec_fsync },	/* fsync */
 	{ &vop_seek_desc, spec_seek },		/* seek */
-	{ &vop_remove_desc, isofs_remove },	/* remove */
-	{ &vop_link_desc, isofs_link },		/* link */
-	{ &vop_rename_desc, isofs_rename },	/* rename */
-	{ &vop_mkdir_desc, isofs_mkdir },	/* mkdir */
-	{ &vop_rmdir_desc, isofs_rmdir },	/* rmdir */
-	{ &vop_symlink_desc, isofs_symlink },	/* symlink */
+	{ &vop_remove_desc, cd9660_remove },	/* remove */
+	{ &vop_link_desc, cd9660_link },	/* link */
+	{ &vop_rename_desc, cd9660_rename },	/* rename */
+	{ &vop_mkdir_desc, cd9660_mkdir },	/* mkdir */
+	{ &vop_rmdir_desc, cd9660_rmdir },	/* rmdir */
+	{ &vop_symlink_desc, cd9660_symlink },	/* symlink */
 	{ &vop_readdir_desc, spec_readdir },	/* readdir */
 	{ &vop_readlink_desc, spec_readlink },	/* readlink */
 	{ &vop_abortop_desc, spec_abortop },	/* abortop */
-	{ &vop_inactive_desc, isofs_inactive },	/* inactive */
-	{ &vop_reclaim_desc, isofs_reclaim },	/* reclaim */
-	{ &vop_lock_desc, isofs_lock },		/* lock */
-	{ &vop_unlock_desc, isofs_unlock },	/* unlock */
+	{ &vop_inactive_desc, cd9660_inactive },/* inactive */
+	{ &vop_reclaim_desc, cd9660_reclaim },	/* reclaim */
+	{ &vop_lock_desc, cd9660_lock },	/* lock */
+	{ &vop_unlock_desc, cd9660_unlock },	/* unlock */
 	{ &vop_bmap_desc, spec_bmap },		/* bmap */
 		/* XXX strategy: panics, should be notsupp instead? */
-	{ &vop_strategy_desc, isofs_strategy },	/* strategy */
-	{ &vop_print_desc, isofs_print },	/* print */
-	{ &vop_islocked_desc, isofs_islocked },	/* islocked */
+	{ &vop_strategy_desc, cd9660_strategy },/* strategy */
+	{ &vop_print_desc, cd9660_print },	/* print */
+	{ &vop_islocked_desc, cd9660_islocked },/* islocked */
 	{ &vop_pathconf_desc, spec_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, spec_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, spec_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, spec_valloc },	/* valloc */
 	{ &vop_vfree_desc, spec_vfree },	/* vfree */
 	{ &vop_truncate_desc, spec_truncate },	/* truncate */
-	{ &vop_update_desc, isofs_update },	/* update */
+	{ &vop_update_desc, cd9660_update },	/* update */
 	{ &vop_bwrite_desc, vn_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
-struct vnodeopv_desc isofs_specop_opv_desc =
-	{ &isofs_specop_p, isofs_specop_entries };
+struct vnodeopv_desc cd9660_specop_opv_desc =
+	{ &cd9660_specop_p, cd9660_specop_entries };
 
 #ifdef FIFO
-int (**isofs_fifoop_p)();
-struct vnodeopv_entry_desc isofs_fifoop_entries[] = {
+int (**cd9660_fifoop_p)();
+struct vnodeopv_entry_desc cd9660_fifoop_entries[] = {
 	{ &vop_default_desc, vn_default_error },
 	{ &vop_lookup_desc, fifo_lookup },	/* lookup */
-	{ &vop_create_desc, isofs_create },	/* create */
-	{ &vop_mknod_desc, isofs_mknod },	/* mknod */
+	{ &vop_create_desc, cd9660_create },	/* create */
+	{ &vop_mknod_desc, cd9660_mknod },	/* mknod */
 	{ &vop_open_desc, fifo_open },		/* open */
 	{ &vop_close_desc, fifo_close },	/* close */
-	{ &vop_access_desc, isofs_access },	/* access */
-	{ &vop_getattr_desc, isofs_getattr },	/* getattr */
-	{ &vop_setattr_desc, isofs_setattr },	/* setattr */
+	{ &vop_access_desc, cd9660_access },	/* access */
+	{ &vop_getattr_desc, cd9660_getattr },	/* getattr */
+	{ &vop_setattr_desc, cd9660_setattr },	/* setattr */
 	{ &vop_read_desc, fifo_read },		/* read */
 	{ &vop_write_desc, fifo_write },	/* write */
 	{ &vop_ioctl_desc, fifo_ioctl },	/* ioctl */
@@ -975,33 +980,33 @@ struct vnodeopv_entry_desc isofs_fifoop_entries[] = {
 	{ &vop_mmap_desc, fifo_mmap },		/* mmap */
 	{ &vop_fsync_desc, fifo_fsync },	/* fsync */
 	{ &vop_seek_desc, fifo_seek },		/* seek */
-	{ &vop_remove_desc, isofs_remove },	/* remove */
-	{ &vop_link_desc, isofs_link },		/* link */
-	{ &vop_rename_desc, isofs_rename },	/* rename */
-	{ &vop_mkdir_desc, isofs_mkdir },	/* mkdir */
-	{ &vop_rmdir_desc, isofs_rmdir },	/* rmdir */
-	{ &vop_symlink_desc, isofs_symlink },	/* symlink */
+	{ &vop_remove_desc, cd9660_remove },	/* remove */
+	{ &vop_link_desc, cd9660_link },	/* link */
+	{ &vop_rename_desc, cd9660_rename },	/* rename */
+	{ &vop_mkdir_desc, cd9660_mkdir },	/* mkdir */
+	{ &vop_rmdir_desc, cd9660_rmdir },	/* rmdir */
+	{ &vop_symlink_desc, cd9660_symlink },	/* symlink */
 	{ &vop_readdir_desc, fifo_readdir },	/* readdir */
 	{ &vop_readlink_desc, fifo_readlink },	/* readlink */
 	{ &vop_abortop_desc, fifo_abortop },	/* abortop */
-	{ &vop_inactive_desc, isofs_inactive },	/* inactive */
-	{ &vop_reclaim_desc, isofs_reclaim },	/* reclaim */
-	{ &vop_lock_desc, isofs_lock },		/* lock */
-	{ &vop_unlock_desc, isofs_unlock },	/* unlock */
+	{ &vop_inactive_desc, cd9660_inactive },/* inactive */
+	{ &vop_reclaim_desc, cd9660_reclaim },	/* reclaim */
+	{ &vop_lock_desc, cd9660_lock },	/* lock */
+	{ &vop_unlock_desc, cd9660_unlock },	/* unlock */
 	{ &vop_bmap_desc, fifo_bmap },		/* bmap */
 	{ &vop_strategy_desc, fifo_badop },	/* strategy */
-	{ &vop_print_desc, isofs_print },	/* print */
-	{ &vop_islocked_desc, isofs_islocked },	/* islocked */
+	{ &vop_print_desc, cd9660_print },	/* print */
+	{ &vop_islocked_desc, cd9660_islocked },/* islocked */
 	{ &vop_pathconf_desc, fifo_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, fifo_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, fifo_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, fifo_valloc },	/* valloc */
 	{ &vop_vfree_desc, fifo_vfree },	/* vfree */
 	{ &vop_truncate_desc, fifo_truncate },	/* truncate */
-	{ &vop_update_desc, isofs_update },	/* update */
+	{ &vop_update_desc, cd9660_update },	/* update */
 	{ &vop_bwrite_desc, vn_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
-struct vnodeopv_desc isofs_fifoop_opv_desc =
-	{ &isofs_fifoop_p, isofs_fifoop_entries };
+struct vnodeopv_desc cd9660_fifoop_opv_desc =
+	{ &cd9660_fifoop_p, cd9660_fifoop_entries };
 #endif /* FIFO */

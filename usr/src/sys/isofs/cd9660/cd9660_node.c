@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.c	8.1 (Berkeley) %G%
+ *	@(#)cd9660_node.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 
 #include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/isofs_node.h>
+#include <isofs/cd9660/cd9660_node.h>
 #include <isofs/cd9660/iso_rrip.h>
 
 #define	INOHSZ	512
@@ -58,7 +58,7 @@ int prtactive;	/* 1 => print out reclaim of active vnodes */
 /*
  * Initialize hash links for inodes and dnodes.
  */
-isofs_init()
+cd9660_init()
 {
 	register int i;
 	register union iso_ihead *ih = iso_ihead;
@@ -176,7 +176,7 @@ loop:
 	/*
 	 * Allocate a new vnode/iso_node.
 	 */
-	if (error = getnewvnode(VT_ISOFS, mntp, isofs_vnodeop_p, &nvp)) {
+	if (error = getnewvnode(VT_ISOFS, mntp, cd9660_vnodeop_p, &nvp)) {
 		*ipp = 0;
 		return error;
 	}
@@ -240,11 +240,11 @@ loop:
 		    && isonum_711(isodir->ext_attr_length))
 			iso_blkatoff(ip,-isonum_711(isodir->ext_attr_length),
 				     &bp2);
-		isofs_defattr(isodir,ip,bp2 );
-		isofs_deftstamp(isodir,ip,bp2 );
+		cd9660_defattr(isodir,ip,bp2 );
+		cd9660_deftstamp(isodir,ip,bp2 );
 		break;
 	case ISO_FTYPE_RRIP:
-		result = isofs_rrip_analyze(isodir,ip,imp);
+		result = cd9660_rrip_analyze(isodir,ip,imp);
 		break;
 	}
 	if (bp2)
@@ -259,15 +259,15 @@ loop:
 	
 	if ( vp->v_type == VFIFO ) {
 #ifdef	FIFO
-		extern int (**isofs_fifoop_p)();
-		vp->v_op = isofs_fifoop_p;
+		extern int (**cd9660_fifoop_p)();
+		vp->v_op = cd9660_fifoop_p;
 #else
 		iso_iput(ip);
 		*ipp = 0;
 		return EOPNOTSUPP;
 #endif	/* FIFO */
 	} else if ( vp->v_type == VCHR || vp->v_type == VBLK ) {
-		extern int (**isofs_specop_p)();
+		extern int (**cd9660_specop_p)();
 
 		/*
 		 * if device, look at device number table for translation
@@ -276,7 +276,7 @@ loop:
 		if (dp = iso_dmap(dev,ino,0))
 			ip->inode.iso_rdev = dp->d_dev;
 #endif
-		vp->v_op = isofs_specop_p;
+		vp->v_op = cd9660_specop_p;
 		if (nvp = checkalias(vp, ip->inode.iso_rdev, mntp)) {
 			/*
 			 * Reinitialize aliased inode.
@@ -327,7 +327,7 @@ iso_iput(ip)
  * truncate and deallocate the file.
  */
 int
-isofs_inactive(ap)
+cd9660_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
@@ -337,7 +337,7 @@ isofs_inactive(ap)
 	int mode, error = 0;
 	
 	if (prtactive && vp->v_usecount != 0)
-		vprint("isofs_inactive: pushing active", vp);
+		vprint("cd9660_inactive: pushing active", vp);
 	
 	ip->i_flag = 0;
 	/*
@@ -353,7 +353,7 @@ isofs_inactive(ap)
  * Reclaim an inode so that it can be used for other purposes.
  */
 int
-isofs_reclaim(ap)
+cd9660_reclaim(ap)
 	struct vop_reclaim_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
@@ -363,7 +363,7 @@ isofs_reclaim(ap)
 	int i;
 	
 	if (prtactive && vp->v_usecount != 0)
-		vprint("isofs_reclaim: pushing active", vp);
+		vprint("cd9660_reclaim: pushing active", vp);
 	/*
 	 * Remove the inode from its hash chain.
 	 */
@@ -423,7 +423,7 @@ iso_iunlock(ip)
  * File attributes
  */
 void
-isofs_defattr(isodir,inop,bp)
+cd9660_defattr(isodir,inop,bp)
 	struct iso_directory_record *isodir;
 	struct iso_node *inop;
 	struct buf *bp;
@@ -484,7 +484,7 @@ isofs_defattr(isodir,inop,bp)
  * Time stamps
  */
 void
-isofs_deftstamp(isodir,inop,bp)
+cd9660_deftstamp(isodir,inop,bp)
 	struct iso_directory_record *isodir;
 	struct iso_node *inop;
 	struct buf *bp;
@@ -504,17 +504,17 @@ isofs_deftstamp(isodir,inop,bp)
 		ap = (struct iso_extended_attributes *)bp->b_un.b_addr;
 		
 		if (isonum_711(ap->version) == 1) {
-			if (!isofs_tstamp_conv17(ap->ftime,&inop->inode.iso_atime))
-				isofs_tstamp_conv17(ap->ctime,&inop->inode.iso_atime);
-			if (!isofs_tstamp_conv17(ap->ctime,&inop->inode.iso_ctime))
+			if (!cd9660_tstamp_conv17(ap->ftime,&inop->inode.iso_atime))
+				cd9660_tstamp_conv17(ap->ctime,&inop->inode.iso_atime);
+			if (!cd9660_tstamp_conv17(ap->ctime,&inop->inode.iso_ctime))
 				inop->inode.iso_ctime = inop->inode.iso_atime;
-			if (!isofs_tstamp_conv17(ap->mtime,&inop->inode.iso_mtime))
+			if (!cd9660_tstamp_conv17(ap->mtime,&inop->inode.iso_mtime))
 				inop->inode.iso_mtime = inop->inode.iso_ctime;
 		} else
 			ap = NULL;
 	}
 	if (!ap) {
-		isofs_tstamp_conv7(isodir->date,&inop->inode.iso_ctime);
+		cd9660_tstamp_conv7(isodir->date,&inop->inode.iso_ctime);
 		inop->inode.iso_atime = inop->inode.iso_ctime;
 		inop->inode.iso_mtime = inop->inode.iso_ctime;
 	}
@@ -523,7 +523,7 @@ isofs_deftstamp(isodir,inop,bp)
 }
 
 int
-isofs_tstamp_conv7(pi,pu)
+cd9660_tstamp_conv7(pi,pu)
 char *pi;
 struct timeval *pu;
 {
@@ -567,7 +567,7 @@ struct timeval *pu;
 }
 
 static unsigned
-isofs_chars2ui(begin,len)
+cd9660_chars2ui(begin,len)
 	unsigned char *begin;
 	int len;
 {
@@ -581,34 +581,34 @@ isofs_chars2ui(begin,len)
 }
 
 int
-isofs_tstamp_conv17(pi,pu)
+cd9660_tstamp_conv17(pi,pu)
 	unsigned char *pi;
 	struct timeval *pu;
 {
 	unsigned char buf[7];
 	
 	/* year:"0001"-"9999" -> -1900  */
-	buf[0] = isofs_chars2ui(pi,4) - 1900;
+	buf[0] = cd9660_chars2ui(pi,4) - 1900;
 	
 	/* month: " 1"-"12"      -> 1 - 12 */
-	buf[1] = isofs_chars2ui(pi + 4,2);
+	buf[1] = cd9660_chars2ui(pi + 4,2);
 	
 	/* day:   " 1"-"31"      -> 1 - 31 */
-	buf[2] = isofs_chars2ui(pi + 6,2);
+	buf[2] = cd9660_chars2ui(pi + 6,2);
 	
 	/* hour:  " 0"-"23"      -> 0 - 23 */
-	buf[3] = isofs_chars2ui(pi + 8,2);
+	buf[3] = cd9660_chars2ui(pi + 8,2);
 	
 	/* minute:" 0"-"59"      -> 0 - 59 */
-	buf[4] = isofs_chars2ui(pi + 10,2);
+	buf[4] = cd9660_chars2ui(pi + 10,2);
 	
 	/* second:" 0"-"59"      -> 0 - 59 */
-	buf[5] = isofs_chars2ui(pi + 12,2);
+	buf[5] = cd9660_chars2ui(pi + 12,2);
 	
 	/* difference of GMT */
 	buf[6] = pi[16];
 	
-	return isofs_tstamp_conv7(buf,pu);
+	return cd9660_tstamp_conv7(buf,pu);
 }
 
 void

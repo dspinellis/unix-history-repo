@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.h	8.1 (Berkeley) %G%
+ *	@(#)iso.h	8.2 (Berkeley) %G%
  */
 
 #define ISODCL(from, to) (to - from + 1)
@@ -139,19 +139,19 @@ struct iso_mnt {
 #define iso_blksize(imp, ip, lbn) ((imp)->logical_block_size)
 #define iso_lblktosize(imp, blk) ((blk) << (imp)->im_bshift)
 
-int isofs_mount __P((struct mount *,
+int cd9660_mount __P((struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *));
-int isofs_start __P((struct mount *, int, struct proc *));
-int isofs_unmount __P((struct mount *, int, struct proc *));
-int isofs_root __P((struct mount *, struct vnode **));
-int isofs_quotactl __P((struct mount *, int, uid_t, caddr_t, struct proc *));
-int isofs_statfs __P((struct mount *, struct statfs *, struct proc *));
-int isofs_sync __P((struct mount *, int, struct ucred *, struct proc *));
-int isofs_vget __P((struct mount *, ino_t, struct vnode **));
-int isofs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
+int cd9660_start __P((struct mount *, int, struct proc *));
+int cd9660_unmount __P((struct mount *, int, struct proc *));
+int cd9660_root __P((struct mount *, struct vnode **));
+int cd9660_quotactl __P((struct mount *, int, uid_t, caddr_t, struct proc *));
+int cd9660_statfs __P((struct mount *, struct statfs *, struct proc *));
+int cd9660_sync __P((struct mount *, int, struct ucred *, struct proc *));
+int cd9660_vget __P((struct mount *, ino_t, struct vnode **));
+int cd9660_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **));
-int isofs_vptofh __P((struct vnode *, struct fid *));
-int isofs_init __P(());
+int cd9660_vptofh __P((struct vnode *, struct fid *));
+int cd9660_init __P(());
 
 struct iso_node;
 int iso_blkatoff __P((struct iso_node *ip, long offset, struct buf **bpp)); 
@@ -160,9 +160,9 @@ int iso_iget __P((struct iso_node *xp, ino_t ino, int relocated,
 int iso_iput __P((struct iso_node *ip)); 
 int iso_ilock __P((struct iso_node *ip)); 
 int iso_iunlock __P((struct iso_node *ip)); 
-int isofs_mountroot __P((void)); 
+int cd9660_mountroot __P((void)); 
 
-extern int (**isofs_vnodeop_p)();
+extern int (**cd9660_vnodeop_p)();
 
 extern inline int
 isonum_711(p)
