@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.37 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.38 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.37 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.38 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -562,7 +562,7 @@ getauthinfo(fd)
 	if (sp != NULL)
 		fa.sin.sin_port = sp->s_port;
 	else
-		fa.sin.sin_port = 113;
+		fa.sin.sin_port = htons(113);
 
 	s = -1;
 	if (setjmp(CtxAuthTimeout) != 0)
