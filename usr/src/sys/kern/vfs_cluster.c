@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.7 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -532,8 +532,7 @@ loop:
 	bp = dp->av_forw;
 	notavail(bp);
 	if (bp->b_flags & B_DELWRI) {
-		bp->b_flags |= B_ASYNC;
-		(void) bwrite(bp);
+		(void) bawrite(bp);
 		goto loop;
 	}
 	trace(TR_BRELSE,
@@ -672,9 +671,8 @@ loop:
 		if ((bp->b_flags & B_DELWRI) == 0)
 			continue;
 		if (dev == NODEV || dev == bp->b_dev) {
-			bp->b_flags |= B_ASYNC;
 			notavail(bp);
-			(void) bwrite(bp);
+			(void) bawrite(bp);
 			splx(s);
 			goto loop;
 		}
@@ -700,10 +698,9 @@ loop:
 	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
 		if (vp == (struct vnode *) 0 || vp == bp->b_vp) {
 			if (bp->b_flags & B_DELWRI) {
-				bp->b_flags |= B_ASYNC;
 				notavail(bp);
 				(void) splx(s);
-				(void) bwrite(bp);
+				(void) bawrite(bp);
 			} else {
 				bp->b_flags |= B_INVAL;
 				brelvp(bp);
@@ -719,29 +716,36 @@ loop:
 /*
  * Invalidate in core blocks belonging to closed or umounted filesystem
  *
- * This is not nicely done at all - the buffer ought to be removed from the
- * hash chains & have its dev/blkno fields clobbered, but unfortunately we
- * can't do that here, as it is quite possible that the block is still
- * being used for i/o. Eventually, all disc drivers should be forced to
- * have a close routine, which ought ensure that the queue is empty, then
- * properly flush the queues. Until that happy day, this suffices for
- * correctness.						... kre
+ * We walk through the buffer pool and invalidate any buffers for the
+ * indicated device. Normally this routine is preceeded by a bflush
+ * call, so that on a quiescent filesystem there will be no dirty
+ * buffers when we are done. We return the count of dirty buffers when
+ * we are finished.
  */
 binval(dev)
 	dev_t dev;
 {
 	register struct buf *bp;
 	register struct bufhd *hp;
+	int dirty = 0;
 #define dp ((struct buf *)hp)
 
-loop:
-	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++)
-		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
-			if (bp->b_dev == dev && (bp->b_flags & B_INVAL) == 0) {
-				bp->b_flags |= B_INVAL;
-				brelvp(bp);
-				goto loop;
+	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++) {
+		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
+			if (bp->b_dev != dev || (bp->b_flags & B_INVAL))
+				continue;
+			notavail(bp);
+			if (bp->b_flags & B_DELWRI) {
+				(void) bawrite(bp);
+				dirty++;
+				continue;
 			}
+			bp->b_flags |= B_INVAL;
+			brelvp(bp);
+			brelse(bp);
+		}
+	}
+	return (dirty);
 }
 
 brelvp(bp)
