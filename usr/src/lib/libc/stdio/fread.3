@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fread.3	6.7 (Berkeley) %G%
+.\"     @(#)fread.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FREAD 3
@@ -63,6 +63,11 @@ must use
 and
 .Xr ferror 3
 to determine which occurred.
+The function
+.Fn fwrite
+returns a value less than
+.Fa nmemb
+only if a write error has occurred.
 .Sh SEE ALSO
 .Xr read 2 ,
 .Xr write 2
