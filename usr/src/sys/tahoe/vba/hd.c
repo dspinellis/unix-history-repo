@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.5 (Berkeley) %G%
+ *	@(#)hd.c	7.6 (Berkeley) %G%
  */
 
 #include "hd.h"
@@ -578,7 +578,7 @@ hdcstart(vm)
 	/* mcb->context = 0;		/* what do we want on interrupt? */
 
 	hdc = &hdcsoftc[vm->um_ctlr];
-	if (!hd_sgsetup(bp, hdc->hdc_rbuf, mcb->chain)) {
+	if (!hd_sgsetup(bp, &hdc->hdc_rbuf, mcb->chain)) {
 		mcb->chain[0].wcount = (bp->b_bcount+3) >> 2;
 		mcb->chain[0].memadr =
 		    vbasetup(bp, &hdc->hdc_rbuf, (int)lp->d_secsize);
