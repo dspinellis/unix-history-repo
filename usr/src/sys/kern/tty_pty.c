@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.22 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -61,9 +61,12 @@ int	npty = NPTY;		/* for pstat -t */
 #define	PF_BLOCK	0x0800		/* block writes to slave */
 #define	PF_OWAIT	0x1000		/* waiting for PF_BLOCK to clear */
 
+void	ptsstop __P((struct tty *, int));
+
 /*ARGSUSED*/
 ptsopen(dev, flag, devtype, p)
 	dev_t dev;
+	int flag, devtype;
 	struct proc *p;
 {
 	register struct tty *tp;
@@ -96,7 +99,7 @@ ptsopen(dev, flag, devtype, p)
 		    ttopen, 0))
 			return (error);
 	}
-	error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
+	error = (*linesw[tp->t_line].l_open)(dev, tp);
 	ptcwakeup(tp, FREAD|FWRITE);
 	return (error);
 }
@@ -118,6 +121,7 @@ ptsclose(dev, flag, mode, p)
 ptsread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	struct proc *p = curproc;
 	register struct tty *tp = &pt_tty[minor(dev)];
@@ -188,6 +192,7 @@ ptswrite(dev, uio, flag)
  * Start output on pseudo-tty.
  * Wake up process selecting or sleeping for input from controlling tty.
  */
+void
 ptsstart(tp)
 	struct tty *tp;
 {
@@ -204,6 +209,7 @@ ptsstart(tp)
 
 ptcwakeup(tp, flag)
 	struct tty *tp;
+	int flag;
 {
 	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
 
@@ -244,6 +250,9 @@ ptcopen(dev, flag, devtype, p)
 	if (tp->t_oproc)
 		return (EIO);
 	tp->t_oproc = ptsstart;
+#ifdef sun4c
+	tp->t_stop = ptsstop;
+#endif
 	(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 	tp->t_lflag &= ~EXTPROC;
 	pti = &pt_ioctl[minor(dev)];
@@ -269,6 +278,7 @@ ptcclose(dev)
 ptcread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
@@ -339,6 +349,7 @@ ptcread(dev, uio, flag)
 	return (error);
 }
 
+void
 ptswake(tp)
 	register struct tty *tp;
 {
@@ -525,9 +536,12 @@ block:
 }
 
 /*ARGSUSED*/
-ptyioctl(dev, cmd, data, flag)
-	caddr_t data;
+ptyioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	int cmd;
+	caddr_t data;
+	int flag;
+	struct proc *p;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
@@ -628,18 +642,19 @@ ptyioctl(dev, cmd, data, flag)
 			ttyflush(tp, FREAD|FWRITE);
 			return (0);
 
+#ifdef COMPAT_43
 		case FIONREAD:
 			*(int *)data = tp->t_outq.c_cc;
 			return (0);
 
 		case TIOCSETP:		
 		case TIOCSETN:
+#endif
 		case TIOCSETD:
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
-			while (getc(&tp->t_outq) >= 0)
-				;
+			ndflush(&tp->t_outq, tp->t_outq.c_cc);
 			break;
 
 		case TIOCSIG:
@@ -716,7 +731,7 @@ ptyioctl(dev, cmd, data, flag)
 	}
 
  doioctl:
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error < 0)
 		 error = ttioctl(tp, cmd, data, flag);
 
@@ -739,9 +754,11 @@ ptyioctl(dev, cmd, data, flag)
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
+#ifdef COMPAT_43
 		case TIOCSETP:
 		case TIOCSETN:
-#ifdef	COMPAT_43
+#endif
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 		case TIOCSETC:
 		case TIOCSLTC:
 		case TIOCLBIS:
