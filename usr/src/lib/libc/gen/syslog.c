@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -72,7 +72,7 @@ vsyslog(pri, fmt, ap)
 	register int cnt;
 	register char *p;
 	time_t now, time();
-	int pid, saved_errno;
+	int fd, saved_errno;
 	char tbuf[2048], fmt_cpy[1024], *stdp, *ctime();
 
 	saved_errno = errno;
@@ -144,28 +144,16 @@ vsyslog(pri, fmt, ap)
 	if (send(LogFile, tbuf, cnt, 0) >= 0 || !(LogStat&LOG_CONS))
 		return;
 
-	/* output the message to the console */
-	pid = vfork();
-	if (pid == -1)
+	/*
+	 * output the message to the console; don't worry about
+	 * blocking, if console blocks everything will.
+	 */
+	if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) < 0)
 		return;
-	if (pid == 0) {
-		int fd;
-		long sigsetmask();
-
-		(void)signal(SIGALRM, SIG_DFL);
-		sigsetmask((long)~sigmask(SIGALRM));
-		(void)alarm((u_int)5);
-		if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) < 0)
-			return;
-		(void)alarm((u_int)0);
-		(void)strcat(tbuf, "\r");
-		p = index(tbuf, '>') + 1;
-		(void)write(fd, p, cnt + 1 - (p - tbuf));
-		(void)close(fd);
-		_exit(0);
-	}
-	if (!(LogStat & LOG_NOWAIT))
-		(void)waitpid(pid, (union wait *)NULL, WSIGRESTART);
+	(void)strcat(tbuf, "\r");
+	p = index(tbuf, '>') + 1;
+	(void)write(fd, p, cnt + 1 - (p - tbuf));
+	(void)close(fd);
 }
 
 static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
