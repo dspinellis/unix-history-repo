@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.80 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.81 (Berkeley) %G%
  */
 
 /*
@@ -2117,11 +2117,13 @@ nfsspec_read(ap)
 	struct vop_read_args *ap;
 {
 	extern int (**spec_vnodeop_p)();
+	register struct nfsnode *np = VTONFS(ap->a_vp);
 
 	/*
 	 * Set access flag.
 	 */
-	VTONFS(ap->a_vp)->n_flag |= NACC;
+	np->n_flag |= NACC;
+	np->n_atim = time;
 	return (VOCALL(spec_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
@@ -2133,11 +2135,13 @@ nfsspec_write(ap)
 	struct vop_write_args *ap;
 {
 	extern int (**spec_vnodeop_p)();
+	register struct nfsnode *np = VTONFS(ap->a_vp);
 
 	/*
-	 * Set update flags.
+	 * Set update flag.
 	 */
-	VTONFS(ap->a_vp)->n_flag |= NUPD;
+	np->n_flag |= NUPD;
+	np->n_mtim = time;
 	return (VOCALL(spec_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
@@ -2184,11 +2188,13 @@ nfsfifo_read(ap)
 	struct vop_read_args *ap;
 {
 	extern int (**fifo_vnodeop_p)();
+	register struct nfsnode *np = VTONFS(ap->a_vp);
 
 	/*
 	 * Set access flag.
 	 */
-	VTONFS(ap->a_vp)->n_flag |= NACC;
+	np->n_flag |= NACC;
+	np->n_atim = time;
 	return (VOCALL(fifo_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
@@ -2200,11 +2206,13 @@ nfsfifo_write(ap)
 	struct vop_write_args *ap;
 {
 	extern int (**fifo_vnodeop_p)();
+	register struct nfsnode *np = VTONFS(ap->a_vp);
 
 	/*
 	 * Set update flag.
 	 */
-	VTONFS(ap->a_vp)->n_flag |= NUPD;
+	np->n_flag |= NUPD;
+	np->n_mtim = time;
 	return (VOCALL(fifo_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
