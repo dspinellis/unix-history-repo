@@ -46,7 +46,8 @@ as compressed archives to save space.
 The primary purpose of this release is to provide support
 for the ``tahoe'' processor, the CPU used by
 Computer Consoles, Inc. (CCI Power 6/32, 6/32SX),
-and high end lines of Harris (HCX-7), Unisys (7000/40), and ICL.
+and high end lines of Harris (HCX-7 and HCX-9),
+Unisys (7000/40), and ICL (Clan 7).
 Support for this processor is derived from the 4.2BSD system
 done by CCI.
 Support for new DEC equipment has also been added,
@@ -56,7 +57,7 @@ and the QVSS and QDSS display drivers for the MicroVAX II, contributed
 by Digital Equipment Corporation.
 We expect to provide support for both the VAX and the tahoe
 processors in future releases.
-.PP
+.LP
 The major new software systems include the following features:
 .IP \(bu
 The TCP and IP code is the same as that 
@@ -174,7 +175,7 @@ accepted by The Regents of the University of California.
 The revised Berkeley License Agreement (6/83)
 and Addendum Number One govern.''
 .IP \(bu
-A completed Site Information Form and Equipment List
+A completed Site Information Form and Equipment List.
 The distribution itself will be sent to the technical contact.
 The site information is kept confidential
 and is for our use in identifying sites with specific configurations.
