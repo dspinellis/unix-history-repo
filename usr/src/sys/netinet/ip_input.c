@@ -1,21 +1,23 @@
-/*	ip_input.c	1.53	82/10/17	*/
+/*	ip_input.c	1.54	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../netinet/in.h"
-#include "../netinet/in_pcb.h"
-#include "../netinet/in_systm.h"
-#include "../net/if.h"
-#include "../netinet/ip.h"			/* belongs before in.h */
-#include "../netinet/ip_var.h"
-#include "../netinet/ip_icmp.h"
-#include "../netinet/tcp.h"
 #include <time.h>
 #include "../h/kernel.h"
 #include <errno.h>
+
+#include "../net/if.h"
+#include "../net/route.h"
+#include "../netinet/in.h"
+#include "../netinet/in_pcb.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#include "../netinet/ip_icmp.h"
+#include "../netinet/tcp.h"
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
@@ -579,10 +581,10 @@ ip_ctlinput(cmd, arg)
 	else
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
 /* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
-	in_pcbnotify(&tcb, (struct sockaddr *)sin,
-	    inetctlerrmap[cmd], tcp_abort);
-	in_pcbnotify(&udb, (struct sockaddr *)sin,
-	    inetctlerrmap[cmd], udp_abort);
+	in_pcbnotify(&tcb, (struct in_addr *)&sin->sin_addr,
+	    (int)inetctlerrmap[cmd], tcp_abort);
+	in_pcbnotify(&udb, (struct in_addr *)&sin->sin_addr,
+	    (int)inetctlerrmap[cmd], udp_abort);
 }
 
 int	ipprintfs = 0;

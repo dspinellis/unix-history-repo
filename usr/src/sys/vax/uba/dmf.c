@@ -1,4 +1,4 @@
-/*	dmf.c	4.11	82/10/17	*/
+/*	dmf.c	4.12	82/10/20	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -290,9 +290,9 @@ dmfclose(dev, flag)
 	unit = minor(dev);
 	tp = &dmf_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp);
-	dmfmctl(unit, DMF_BRK, DMBIC);
+	(void) dmfmctl(unit, DMF_BRK, DMBIC);
 	if (tp->t_state&TS_HUPCLS || (tp->t_state&TS_ISOPEN)==0)
-		dmfmctl(unit, DMF_OFF, DMSET);
+		(void) dmfmctl(unit, DMF_OFF, DMSET);
 	ttyclose(tp);
 }
 
@@ -417,31 +417,31 @@ dmfioctl(dev, cmd, data, flag)
 	switch (cmd) {
 
 	case TIOCSBRK:
-		dmfmctl(dev, DMF_BRK, DMBIS);
+		(void) dmfmctl(dev, DMF_BRK, DMBIS);
 		break;
 
 	case TIOCCBRK:
-		dmfmctl(dev, DMF_BRK, DMBIC);
+		(void) dmfmctl(dev, DMF_BRK, DMBIC);
 		break;
 
 	case TIOCSDTR:
-		dmfmctl(dev, DMF_DTR|DMF_RTS, DMBIS);
+		(void) dmfmctl(dev, DMF_DTR|DMF_RTS, DMBIS);
 		break;
 
 	case TIOCCDTR:
-		dmfmctl(dev, DMF_DTR|DMF_RTS, DMBIC);
+		(void) dmfmctl(dev, DMF_DTR|DMF_RTS, DMBIC);
 		break;
 
 	case TIOCMSET:
-		dmfmctl(dev, dmtodmf(*(int *)data), DMSET);
+		(void) dmfmctl(dev, dmtodmf(*(int *)data), DMSET);
 		break;
 
 	case TIOCMBIS:
-		dmfmctl(dev, dmtodmf(*(int *)data), DMBIS);
+		(void) dmfmctl(dev, dmtodmf(*(int *)data), DMBIS);
 		break;
 
 	case TIOCMBIC:
-		dmfmctl(dev, dmtodmf(*(int *)data), DMBIC);
+		(void) dmfmctl(dev, dmtodmf(*(int *)data), DMBIC);
 		break;
 
 	case TIOCMGET:
@@ -500,7 +500,7 @@ dmfparam(unit)
 	addr->dmfcsr = (unit&07) | DMFIR_LCR | DMF_IE;
 	if ((tp->t_ispeed)==0) {
 		tp->t_state |= TS_HUPCLS;
-		dmfmctl(unit, DMF_OFF, DMSET);
+		(void) dmfmctl(unit, DMF_OFF, DMSET);
 		return;
 	}
 	lpar = (dmf_speeds[tp->t_ospeed]<<12) | (dmf_speeds[tp->t_ispeed]<<8);
@@ -781,7 +781,7 @@ dmfreset(uban)
 			tp = &dmf_tty[unit];
 			if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
 				dmfparam(unit);
-				dmfmctl(unit, DMF_ON, DMSET);
+				(void) dmfmctl(unit, DMF_ON, DMSET);
 				tp->t_state &= ~TS_BUSY;
 				dmfstart(tp);
 			}

@@ -1,4 +1,4 @@
-/*	conf.c	4.57	82/10/17	*/
+/*	conf.c	4.58	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -203,6 +203,21 @@ int	dhopen(),dhclose(),dhread(),dhwrite(),dhioctl(),dhstop(),dhreset();
 struct	tty dh11[];
 #endif
 
+#include "dmf.h"
+#if NDMF == 0
+#define	dmfopen	nodev
+#define	dmfclose	nodev
+#define	dmfread	nodev
+#define	dmfwrite	nodev
+#define	dmfioctl	nodev
+#define	dmfstop	nodev
+#define	dmfreset	nulldev
+#define	dmf11	0
+#else
+int	dmfopen(),dmfclose(),dmfread(),dmfwrite(),dmfioctl(),dmfstop(),dmfreset();
+struct	tty dmf_tty[];
+#endif
+
 #if VAX780
 int	flopen(),flclose(),flread(),flwrite();
 #endif
@@ -360,7 +375,7 @@ int	adopen(),adclose(),adioctl(),adreset();
 #define adreset nodev
 #endif
 
-#include "efs.h"
+/* #include "efs.h" */
 #if NEFS > 0
 int	efsopen(),efsclose(),efsread(),efswrite(),efsioctl(),efsreset();
 #else
@@ -438,9 +453,9 @@ struct cdevsw	cdevsw[] =
 	seltrue,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nulldev,	0,
+	mtopen,		mtclose,	mtread,		mtwrite,	/*19*/
+	mtioctl,	nodev,		nodev,		0,
 	seltrue,
-	nodev,		nodev,		nodev,		nodev,		/*19*/
-	nodev,		nodev,		nulldev,	0,
 	nodev,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	ptsstop,	nodev,		pt_tty,
@@ -448,9 +463,9 @@ struct cdevsw	cdevsw[] =
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
 	ptcselect,
-	nodev,		nodev,		nodev,		nodev,		/*22*/
-	nodev,		nodev,		nodev,		0,
-	nodev,
+	dmfopen,	dmfclose,	dmfread,	dmfwrite,	/*22*/
+	dmfioctl,	dmfstop,	dmfreset,	0,
+	ttselect,
 	idcopen,	nulldev,	idcread,	idcwrite,	/*23*/
 	nodev,		nodev,		idcreset,	0,
 	seltrue,

@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.13	82/10/17	*/
+/*	kern_descrip.c	5.14	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -479,8 +479,7 @@ closef(fp, nouser, flags)
 		return;
 	}
 	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = 0;			/* XXX */
-		soclose(fp->f_socket, nouser);
+		u.u_error = soclose(fp->f_socket, nouser);
 		if (nouser == 0 && u.u_error)
 			return;
 		fp->f_socket = 0;

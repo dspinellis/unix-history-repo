@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.79	82/10/17	*/
+/*	tcp_input.c	1.80	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,6 @@
 
 int	tcpprintfs = 0;
 int	tcpcksum = 1;
-struct	mbuf tcp_mb;
 struct	tcpiphdr tcp_saveti;
 extern	tcpnodelack;
 

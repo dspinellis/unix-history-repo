@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.32	82/10/17	*/
+/*	uipc_syscalls.c	4.33	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -167,7 +167,7 @@ noname:
 	if ((so->so_options & SO_NEWFDONCONN) == 0) {
 		struct socket *nso = so->so_q;
 		(void) soqremque(nso, 1);
-		soclose(so, 1);
+		u.u_error = soclose(so, 1);
 		fp->f_socket = nso;
 		nso->so_q = 0;
 		so = nso;

@@ -1,4 +1,4 @@
-/*	tu.c	4.10	82/10/17	*/
+/*	tu.c	4.11	82/10/20	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -289,7 +289,7 @@ tustart()
 	tucmd.pk_count = tu.tu_count = bp->b_bcount;
 	tucmd.pk_block = bp->b_blkno;
 	tucmd.pk_chksum =
-	    tuchk(*((short *)&tucmd), (caddr_t)&tucmd.pk_op,
+	    tuchk(*((short *)&tucmd), (u_short *)&tucmd.pk_op,
 		(int)tucmd.pk_mcount);
 	tu.tu_state = bp->b_flags&B_READ ? TUS_SENDR : TUS_SENDW;
 	tu.tu_addr = bp->b_un.b_addr;
@@ -350,7 +350,7 @@ turintr()
 		tudata.pk_flag = TUF_DATA;
 		tudata.pk_mcount = MIN(128, tu.tu_count);
 		tudata.pk_chksum =
-		    tuchk(*((short *)&tudata), (caddr_t)tu.tu_addr,
+		    tuchk(*((short *)&tudata), (u_short *)tu.tu_addr,
 			(int)tudata.pk_mcount);
 		tu.tu_state = TUS_SENDH;
 		tu.tu_wbptr = (u_char *)&tudata;
@@ -389,8 +389,8 @@ turintr()
 		/* got entire packet */
 #ifdef notdef
 		if (tudata.pk_chksum !=
-		    tuchk(*((short *)&tudata),
-		     tudata.pk_flag == TUF_DATA ? tu.tu_addr : &tudata.pk_op,
+		    tuchk(*((short *)&tudata), (u_short *)
+		     (tudata.pk_flag == TUF_DATA ? tu.tu_addr : &tudata.pk_op),
 		     (int)tudata.pk_mcount))
 			tu.tu_cerrs++;
 #endif
@@ -601,8 +601,9 @@ top:
 tuchk(word, cp, n)
 	register word;
 	register unsigned short *cp;
+	int n;
 {
-	register c = n >> 1;
+	register int c = n >> 1;
 	register long temp;
 
 	do {

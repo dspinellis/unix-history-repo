@@ -1,4 +1,4 @@
-/*	kernel.h	4.4	82/09/12	*/
+/*	kernel.h	4.5	82/10/20	*/
 
 /*
  * Global variables for the kernel
@@ -8,7 +8,6 @@
 long	hostid;
 char	hostname[32];
 int	hostnamelen;
-int	nextpid;
 
 /* 1.2 */
 struct	timeval boottime;
@@ -17,7 +16,6 @@ struct	timezone tz;			/* XXX */
 int	hz;
 int	tick;
 int	lbolt;				/* awoken once a second */
-int	selitexpire();
 int	realitexpire();
 
 #ifdef GPROF

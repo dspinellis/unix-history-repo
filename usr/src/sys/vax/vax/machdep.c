@@ -1,4 +1,4 @@
-/*	machdep.c	4.64	82/10/13	*/
+/*	machdep.c	4.65	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -598,7 +598,7 @@ boot(paniced, arghowto)
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		waittime = 0;
-		update(1);
+		update();
 		printf("syncing disks... ");
 #ifdef notdef
 		{ register struct buf *bp;

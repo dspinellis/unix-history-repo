@@ -1,4 +1,4 @@
-/*	in.h	4.15	82/10/17	*/
+/*	in.h	4.16	82/10/20	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -92,21 +92,20 @@ struct in_addr {
 /*
  * Definitions of bits in internet address integers.
  */
-#define	IN_CLASSA(i)		(((i)&0x80000000)==0)
+#define	IN_CLASSA(i)		((((long)(i))&0x80000000)==0)
 #define	IN_CLASSA_NET		0xff000000
 #define	IN_CLASSA_NSHIFT	24
 #define	IN_CLASSA_HOST		0x00ffffff
 
-#define	IN_CLASSB(i)		(((i)&0xc0000000)==0x80000000)
+#define	IN_CLASSB(i)		((((long)(i))&0xc0000000)==0x80000000)
 #define	IN_CLASSB_NET		0xffff0000
 #define	IN_CLASSB_NSHIFT	16
 #define	IN_CLASSB_HOST		0x0000ffff
 
-#define	IN_CLASSC(i)		(((i)&0xc0000000)==0xc0000000)
+#define	IN_CLASSC(i)		((((long)(i))&0xc0000000)==0xc0000000)
 #define	IN_CLASSC_NET		0xffffff00
 #define	IN_CLASSC_NSHIFT	8
 #define	IN_CLASSC_HOST		0x000000ff
-#endif
 
 #define	INADDR_ANY	0x00000000
 

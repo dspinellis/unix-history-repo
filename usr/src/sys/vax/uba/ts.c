@@ -1,4 +1,4 @@
-/*	ts.c	4.34	82/10/17	*/
+/*	ts.c	4.35	82/10/20	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -852,7 +852,7 @@ tsdump()
 		return (ENXIO);
 	ui = phys(tsdinfo[0], struct uba_device *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
-	ubainit(ui->ui_hd);
+	ubainit(up);
 	DELAY(1000000);
 	addr = (struct tsdevice *)ui->ui_physaddr;
 	addr->tssr = 0;

@@ -1,5 +1,6 @@
-/*	quota.h	Melb 4.1	82/07/16	*/
+/*	quota.h	Melb 4.2	82/10/20	*/
 
+#ifdef QUOTA
 /*
  *	Various junk to do with various quotas (etc) imposed upon
  *	the average user (big brother finally hits unix)
@@ -208,3 +209,5 @@ struct	qclass	curclass[NCLASS];
  */
 #define	QUF_LOGIN	0x0001		/* this process incremented login cnt */
 #define	QUF_ATJ		0x0002		/* this process descended from atrun */
+
+#endif QUOTA
