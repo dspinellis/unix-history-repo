@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.15 82/06/09";
+static char sccsid[] = "@(#)routed.c	4.16 82/06/10";
 #endif
 
 /*
@@ -41,6 +41,8 @@ int	snoroute;		/* socket with no routing */
 int	kmem = -1;
 int	supplier = -1;		/* process should supply updates */
 int	install = 1;		/* if 1 call kernel */
+int	lookforinterfaces = 1;
+int	performnlist = 1;
 int	timeval = -TIMER_RATE;
 int	timer();
 int	cleanup();
@@ -53,8 +55,8 @@ char	packet[MAXPACKETSIZE+1];
 struct	rip *msg = (struct rip *)packet;
 
 struct in_addr if_makeaddr();
-struct ifnet *if_ifwithaddr(), *if_ifwithnet();
-extern char *malloc();
+struct interface *if_ifwithaddr(), *if_ifwithnet();
+extern char *malloc(), *sys_errlist[];
 extern int errno, exit();
 char	**argv0;
 
@@ -122,7 +124,7 @@ again2:
 	}
 	if (argc > 0) {
 usage:
-		fprintf(stderr, "usage: routed [ -s ]\n");
+		fprintf(stderr, "usage: routed [ -sq ]\n");
 		exit(1);
 	}
 	rtinit();
@@ -160,75 +162,103 @@ rtinit()
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
 }
 
-struct	ifnet *ifnet;
+struct	interface *ifnet;
 
 ifinit()
 {
-	struct ifnet *ifp, *next;
-	int uniquemultihostinterfaces = 0;
+	struct interface *ifp;
+	struct ifnet ifs, *next;
+	int externalinterfaces = 0;
 
-	nlist("/vmunix", nl);
-	if (nl[N_IFNET].n_value == 0) {
-		printf("ifnet: not in namelist\n");
-		goto bad;
+	if (performnlist) {
+		nlist("/vmunix", nl);
+		if (nl[N_IFNET].n_value == 0) {
+			printf("ifnet: not in namelist\n");
+			goto bad;
+		}
+		performnlist = 0;
 	}
-	kmem = open("/dev/kmem", 0);
 	if (kmem < 0) {
-		perror("/dev/kmem");
-		goto bad;
+		kmem = open("/dev/kmem", 0);
+		if (kmem < 0) {
+			perror("/dev/kmem");
+			goto bad;
+		}
 	}
 	if (lseek(kmem, (long)nl[N_IFNET].n_value, 0) == -1 ||
 	    read(kmem, (char *)&next, sizeof (next)) != sizeof (next)) {
 		printf("ifnet: error reading kmem\n");
 		goto bad;
 	}
+	lookforinterfaces = 0;
 	while (next) {
-		ifp = (struct ifnet *)malloc(sizeof (struct ifnet));
+		if (lseek(kmem, (long)next, 0) == -1 ||
+		    read(kmem, (char *)&ifs, sizeof (ifs)) != sizeof (ifs)) {
+			perror("read");
+			goto bad;
+		}
+		next = ifs.if_next;
+		if ((ifs.if_flags & IFF_UP) == 0) {
+			lookforinterfaces = 1;
+			continue;
+		}
+		if (if_ifwithaddr(&ifs.if_addr))
+			continue;
+		if (ifs.if_addr.sa_family != AF_INET)
+			continue;
+		if (ifs.if_net == LOOPBACKNET)
+			continue;
+		ifp = (struct interface *)malloc(sizeof (struct interface));
 		if (ifp == 0) {
 			printf("routed: out of memory\n");
 			break;
 		}
-		if (lseek(kmem, (long)next, 0) == -1 ||
-		    read(kmem, (char *)ifp, sizeof (*ifp)) != sizeof (*ifp)) {
-			perror("read");
-			goto bad;
-		}
-		next = ifp->if_next;
-		if (ifp->if_addr.sa_family != AF_INET)
-			continue;
-		if (ifp->if_net == LOOPBACKNET)
-			continue;
-		if ((ifp->if_flags & IFF_POINTOPOINT) == 0 ||
-		    if_ifwithaddr(&ifp->if_dstaddr) == 0)
-			uniquemultihostinterfaces++;
-		ifp->if_next = ifnet;
+		/*
+		 * Count the # of directly connected networks
+		 * and point to point links which aren't looped
+		 * back to ourself.  This is used below to
+		 * decide if we should be a routing "supplier".
+		 */
+		if ((ifs.if_flags & IFF_POINTOPOINT) == 0 ||
+		    if_ifwithaddr(&ifs.if_dstaddr) == 0)
+			externalinterfaces++;
+		ifp->int_addr = ifs.if_addr;
+		ifp->int_flags = ifs.if_flags | IFF_INTERFACE;
+		/* this works because broadaddr overlaps dstaddr */
+		ifp->int_broadaddr = ifs.if_broadaddr;
+		ifp->int_net = ifs.if_net;
+		ifp->int_metric = 0;
+		ifp->int_next = ifnet;
 		ifnet = ifp;
 		addrouteforif(ifp);
 	}
-	if (uniquemultihostinterfaces > 1 && supplier < 0)
+	if (externalinterfaces > 1 && supplier < 0)
 		supplier = 1;
 	return;
 bad:
 	sleep(60);
+	close(kmem), close(s), close(snoroute);
 	execv("/etc/routed", argv0);
 	_exit(0177);
 }
 
 addrouteforif(ifp)
-	struct ifnet *ifp;
+	struct interface *ifp;
 {
 	struct sockaddr_in net;
 	struct sockaddr *dst;
+	int state, metric;
 
-	if (ifp->if_flags & IFF_POINTOPOINT)
-		dst = &ifp->if_dstaddr;
+	if (ifp->int_flags & IFF_POINTOPOINT)
+		dst = &ifp->int_dstaddr;
 	else {
 		bzero((char *)&net, sizeof (net));
 		net.sin_family = AF_INET;
-		net.sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+		net.sin_addr = if_makeaddr(ifp->int_net, INADDR_ANY);
 		dst = (struct sockaddr *)&net;
 	}
-	rtadd(dst, &ifp->if_addr, 0, RTS_DONTDELETE|RTS_DONTROUTE);
+	rtadd(dst, &ifp->int_addr, ifp->int_metric,
+		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 }
 
 gwkludge()
@@ -236,22 +266,39 @@ gwkludge()
 	struct sockaddr_in dst, gate;
 	FILE *fp;
 	char buf[BUFSIZ];
+	struct interface *ifp;
+	int metric;
 
 	fp = fopen("/etc/gateways", "r");
 	if (fp == NULL)
 		return;
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
-	dst.sin_family = AF_INET;
-	gate.sin_family = AF_INET;
+	dst.sin_family = gate.sin_family = AF_INET;
+	/* format: dst XX gateway XX metric DD [passive]\n */
+#define	readentry(fp) \
+	fscanf((fp), "dst %x gateway %x metric %d %s\n", \
+	&dst.sin_addr.s_addr, &gate.sin_addr.s_addr, &metric, buf)
 	for (;;) {
-		buf[0] = '\0';
-		/* format is: dst XX gateway XX [passive]\n */
-		if (fscanf(fp, "dst %x gateway %x %s\n", &dst.sin_addr.s_addr, 
-		   &gate.sin_addr.s_addr, buf) == EOF)
+		if (readentry(fp) == EOF)
 			break;
-		rtadd((struct sockaddr *)&dst, (struct sockaddr *)&gate, 1,
-		   strcmp(buf, "passive") == 0 ? RTS_PASSIVE : RTS_DONTDELETE);
+		ifp = (struct interface *)malloc(sizeof (*ifp));
+		bzero((char *)ifp, sizeof (*ifp));
+		ifp->int_flags = IFF_REMOTE;
+		/* can't identify broadcast capability */
+		if ((*afswitch[dst.sin_family].af_checkhost)(&dst)) {
+			ifp->int_flags |= IFF_POINTOPOINT;
+			ifp->int_net = dst.sin_addr.s_net;	/* XXX */
+			ifp->int_dstaddr = *((struct sockaddr *)&dst);
+		} else
+			ifp->int_net = dst.sin_addr.s_addr;	/* XXX */
+		if (strcmp(buf, "passive") == 0)
+			ifp->int_flags |= IFF_PASSIVE;
+		ifp->int_addr = *((struct sockaddr *)&gate);
+		ifp->int_metric = metric;
+		ifp->int_next = ifnet;
+		ifnet = ifp;
+		addrouteforif(ifp);
 	}
 	fclose(fp);
 }
@@ -261,50 +308,32 @@ timer()
 	register struct rthash *rh;
 	register struct rt_entry *rt;
 	struct rthash *base = hosthash;
-	int doinghost = 1, state;
+	int doinghost = 1, supplyeverything;
 
 	timeval += TIMER_RATE;
+	if (lookforinterfaces && (timeval % CHECK_INTERVAL) == 0)
+		ifinit();
+	supplyeverything = supplier && (timeval % SUPPLY_INTERVAL) == 0;
 	tprintf(">>> time %d >>>\n", timeval);
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
 		rt = rh->rt_forw;
 		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-			if (!(rt->rt_state & RTS_PASSIVE)) {
+			if (!(rt->rt_state & RTS_PASSIVE))
 				rt->rt_timer += TIMER_RATE;
-				if (rt->rt_timer > 9999)
-					rt->rt_timer = 9999;
-			}
-			log("", rt);
-			if (rt->rt_state & RTS_HIDDEN)
-				continue;
 			if (rt->rt_timer >= EXPIRE_TIME)
 				rt->rt_metric = HOPCNT_INFINITY;
-			if ((rt->rt_state & RTS_DELRT) ||
-			    rt->rt_timer >= GARBAGE_TIME) {
+			log("", rt);
+			if (rt->rt_timer >= GARBAGE_TIME) {
 				rt = rt->rt_back;
 				rtdelete(rt->rt_forw);
 				continue;
 			}
-			state = rt->rt_state;
-			if (rt->rt_state & RTS_ADDRT) {
-				if (ioctl(s, SIOCADDRT,(char *)&rt->rt_rt) < 0)
-					perror("SIOCADDRT");
-				rt->rt_state &= ~RTS_ADDRT;
-			}
-			if (rt->rt_state & RTS_CHGRT) {
-				struct rtentry oldroute;
-
-				oldroute = rt->rt_rt;
-				oldroute.rt_gateway = rt->rt_oldrouter;
-				if (install &&
-				    ioctl(s, SIOCADDRT,(char *)&rt->rt_rt) < 0)
-					perror("SIOCADDRT");
-				if (install &&
-				    ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-					perror("SIOCDELRT");
-				rt->rt_state &= ~RTS_CHGRT;
-			}
-			if (supplier && (state & (RTS_CHGRT|RTS_ADDRT))) {
+			if (rt->rt_state & RTS_CHANGED) {
+				rt->rt_state &= ~RTS_CHANGED;
+				/* don't send extraneous packets */
+				if (supplyeverything)
+					continue;
 				log("broadcast", rt);
 				msg->rip_cmd = RIPCMD_RESPONSE;
 				msg->rip_nets[0].rip_dst = rt->rt_dst;
@@ -319,7 +348,7 @@ again:
 		base = nethash;
 		goto again;
 	}
-	if (supplier && (timeval % SUPPLY_INTERVAL) == 0)
+	if (supplyeverything)
 		toall(supply);
 	tprintf("<<< time %d <<<\n", timeval);
 	alarm(TIMER_RATE);
@@ -328,27 +357,16 @@ again:
 toall(f)
 	int (*f)();
 {
-	register struct rthash *rh;
-	register struct rt_entry *rt;
+	register struct interface *ifp;
 	register struct sockaddr *dst;
-	struct rthash *base = hosthash;
-	int doinghost = 1;
 
-again:
-	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
-	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if ((rt->rt_state & RTS_PASSIVE) || rt->rt_metric > 0)
+	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
+		if (ifp->int_flags & IFF_PASSIVE)
 			continue;
-		if (rt->rt_ifp && (rt->rt_ifp->if_flags & IFF_BROADCAST))
-			dst = &rt->rt_ifp->if_broadaddr;
-		else
-			dst = &rt->rt_router;
-		(*f)(dst, rt->rt_state & RTS_DONTROUTE);
-	}
-	if (doinghost) {
-		base = nethash;
-		doinghost = 0;
-		goto again;
+		dst = ifp->int_flags & IFF_BROADCAST ? &ifp->int_broadaddr :
+		      ifp->int_flags & IFF_POINTOPOINT ? &ifp->int_dstaddr :
+		      &ifp->int_addr;
+		(*f)(dst, ifp->int_flags & IFF_INTERFACE);
 	}
 }
 
@@ -375,8 +393,6 @@ supply(dst, dontroute)
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if (rt->rt_state & RTS_HIDDEN)
-			continue;
 		size = (char *)n - packet;
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
 			(*output)(sto, dst, size);
@@ -404,7 +420,7 @@ rip_input(from, size)
 {
 	struct rt_entry *rt;
 	struct netinfo *n;
-	struct ifnet *ifp;
+	struct interface *ifp;
 	time_t t;
 	int newsize;
 	struct afswitch *afp;
@@ -491,23 +507,11 @@ rip_input(from, size)
 		/* are we talking to ourselves? */
 		ifp = if_ifwithaddr(from);
 		if (ifp) {
-			rt = rtfind(from, 0);
-			if (rt == 0) {
+			rt = rtfind(from);
+			if (rt == 0)
 				addrouteforif(ifp);
-				return;
-			}
-			/* interface previously thought down? */
-			if (rt->rt_metric > 0) {
-				struct rt_entry *downrt = rtfind(from, 1);
-				if (downrt) {
-					/* unhide old route and delete other */
-					downrt->rt_state &= ~RTS_HIDDEN;
-					downrt->rt_state |= RTS_ADDRT;
-					rt->rt_state |= RTS_DELRT;
-					log("unhide", downrt);
-				}
-			}
-			rt->rt_timer = 0;
+			else
+				rt->rt_timer = 0;
 			return;
 		}
 		size -= 4 * sizeof (char);
@@ -543,7 +547,7 @@ rip_input(from, size)
 		}
 		return;
 	}
-	printf("bad packet, cmd=%x\n", msg->rip_cmd);
+	tprintf("bad packet, cmd=%x\n", msg->rip_cmd);
 }
 
 struct rt_entry *
@@ -563,7 +567,7 @@ rtlookup(dst)
 	rh = &hosthash[hash % ROUTEHASHSIZ];
 again:
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if (rt->rt_hash != hash || (rt->rt_state & RTS_HIDDEN))
+		if (rt->rt_hash != hash)
 			continue;
 		if (equal(&rt->rt_dst, dst))
 			return (rt);
@@ -578,9 +582,8 @@ again:
 }
 
 struct rt_entry *
-rtfind(dst, lookfordownif)
+rtfind(dst)
 	struct sockaddr *dst;
-	int lookfordownif;
 {
 	register struct rt_entry *rt;
 	register struct rthash *rh;
@@ -598,8 +601,6 @@ rtfind(dst, lookfordownif)
 again:
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
 		if (rt->rt_hash != hash)
-			continue;
-		if (lookfordownif ^ (rt->rt_state & RTS_HIDDEN))
 			continue;
 		if (doinghost) {
 			if (equal(&rt->rt_dst, dst))
@@ -649,14 +650,14 @@ rtadd(dst, gate, metric, state)
 	rt->rt_metric = metric;
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | flags;
-	rt->rt_state = state;
+	rt->rt_state = state | RTS_CHANGED;
 	rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 	if (metric)
 		rt->rt_flags |= RTF_GATEWAY;
 	insque(rt, rh);
 	log("add", rt);
-	if (install)
-		rt->rt_state |= RTS_ADDRT;
+	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
+		tprintf("SIOCADDRT: %s\n", sys_errlist[errno]);
 }
 
 rtchange(rt, gate, metric)
@@ -665,41 +666,36 @@ rtchange(rt, gate, metric)
 	short metric;
 {
 	int doioctl = 0, metricchanged = 0;
+	struct rtentry oldroute;
 
-	if (!equal(&rt->rt_router, gate)) {
-		if (rt->rt_state & RTS_DONTDELETE) {
-			rtadd(&rt->rt_dst, gate, metric,
-			   rt->rt_state &~ (RTS_DONTDELETE|RTS_DONTROUTE));
-			rt->rt_state |= RTS_DELRT;
-			return;
-		}
+	if (!equal(&rt->rt_router, gate))
 		doioctl++;
-	}
 	if (metric != rt->rt_metric) {
 		metricchanged++;
 		rt->rt_metric = metric;
 	}
-	if (doioctl) {
-		if ((rt->rt_state & RTS_CHGRT) == 0)
-			rt->rt_oldrouter = rt->rt_router;
-		rt->rt_router = *gate;
-		rt->rt_state |= RTS_CHGRT;
-	}
-	if (doioctl || metricchanged)
+	if (doioctl || metricchanged) {
 		log("change", rt);
+		rt->rt_state |= RTS_CHANGED;
+	}
+	if (doioctl) {
+		oldroute = rt->rt_rt;
+		rt->rt_router = *gate;
+		if (install) {
+			if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
+				tprintf("SIOCADDRT: %s\n", sys_errlist[errno]);
+			if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
+				tprintf("SIOCDELRT: %s\n", sys_errlist[errno]);
+		}
+	}
 }
 
 rtdelete(rt)
 	struct rt_entry *rt;
 {
-
 	log("delete", rt);
 	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-		perror("SIOCDELRT");
-	if (rt->rt_state & RTS_DONTDELETE) {
-		rt->rt_state |= RTS_HIDDEN;
-		return;
-	}
+		tprintf("SIOCDELRT: %s\n", sys_errlist[errno]);
 	remque(rt);
 	free((char *)rt);
 }
@@ -718,13 +714,10 @@ log(operation, rt)
 		{ RTF_HOST,	"HOST" },
 		{ 0 }
 	}, statebits[] = {
-		{ RTS_ADDRT,	"ADD" },
-		{ RTS_DELRT,	"DELETE" },
-		{ RTS_CHGRT,	"CHANGE" },
 		{ RTS_PASSIVE,	"PASSIVE" },
-		{ RTS_DONTDELETE,"DONTDELETE" },
-		{ RTS_DONTROUTE,"DONTROUTE" },
-		{ RTS_HIDDEN,	"HIDDEN" },
+		{ RTS_REMOTE,	"REMOTE" },
+		{ RTS_INTERFACE,"INTERFACE" },
+		{ RTS_CHANGED,	"CHANGED" },
 		{ 0 }
 	};
 	register struct bits *p;
@@ -736,11 +729,8 @@ log(operation, rt)
 	printf("%s ", operation);
 	dst = (struct sockaddr_in *)&rt->rt_dst;
 	gate = (struct sockaddr_in *)&rt->rt_router;
-	printf("dst %x, router %x", dst->sin_addr, gate->sin_addr);
-	if (rt->rt_state & RTS_CHGRT)
-		printf(" (old %x)",
-			((struct sockaddr_in *)&rt->rt_oldrouter)->sin_addr);
-	printf(", metric %d, flags", rt->rt_metric);
+	printf("dst %x, router %x, metric %d, flags", dst->sin_addr,
+		gate->sin_addr, rt->rt_metric);
 	cp = " %s";
 	for (first = 1, p = flagbits; p->t_bits > 0; p++) {
 		if ((rt->rt_flags & p->t_bits) == 0)
@@ -765,42 +755,46 @@ log(operation, rt)
 	putchar('\n');
 }
 
-struct ifnet *
+struct interface *
 if_ifwithaddr(addr)
 	struct sockaddr *addr;
 {
-	register struct ifnet *ifp;
+	register struct interface *ifp;
 
 #define	same(a1, a2) \
 	(bcmp((caddr_t)((a1)->sa_data), (caddr_t)((a2)->sa_data), 14) == 0)
-	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
-		if (ifp->if_addr.sa_family != addr->sa_family)
+	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
+		if (ifp->int_flags & IFF_REMOTE)
 			continue;
-		if (same(&ifp->if_addr, addr))
+		if (ifp->int_addr.sa_family != addr->sa_family)
+			continue;
+		if (same(&ifp->int_addr, addr))
 			break;
-		if ((ifp->if_flags & IFF_BROADCAST) &&
-		    same(&ifp->if_broadaddr, addr))
+		if ((ifp->int_flags & IFF_BROADCAST) &&
+		    same(&ifp->int_broadaddr, addr))
 			break;
 	}
 	return (ifp);
 #undef same
 }
 
-struct ifnet *
+struct interface *
 if_ifwithnet(addr)
 	register struct sockaddr *addr;
 {
-	register struct ifnet *ifp;
+	register struct interface *ifp;
 	register int af = addr->sa_family;
 	register int (*netmatch)();
 
 	if (af >= AF_MAX)
 		return (0);
 	netmatch = afswitch[af].af_netmatch;
-	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
-		if (af != ifp->if_addr.sa_family)
+	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
+		if (ifp->int_flags & IFF_REMOTE)
 			continue;
-		if ((*netmatch)(addr, &ifp->if_addr))
+		if (af != ifp->int_addr.sa_family)
+			continue;
+		if ((*netmatch)(addr, &ifp->int_addr))
 			break;
 	}
 	return (ifp);
