@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 PROG=	man
 SRCS=	config.c man.c
