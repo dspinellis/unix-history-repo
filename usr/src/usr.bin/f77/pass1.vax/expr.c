@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.4 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,25 @@ static char *sccsid[] = "@(#)expr.c	5.4 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	expr.c,v $
+ * Revision 5.8  85/12/20  21:37:58  donn
+ * Fix bug in mklhs() that caused the 'first character' substring parameter
+ * to be evaluated twice.
+ * 
+ * Revision 5.7  85/12/20  19:42:05  donn
+ * Be more specfic -- name the offending subroutine when it's used as a
+ * function.
+ * 
+ * Revision 5.6  85/12/19  20:08:12  donn
+ * Don't optimize first/last char values when they contain function calls
+ * or array references.
+ * 
+ * Revision 5.5  85/12/19  00:35:22  donn
+ * Lots of changes for handling hardware errors which can crop up when
+ * evaluating constant expressions.
+ * 
+ * Revision 5.4  85/11/25  00:23:53  donn
+ * 4.3 beta
+ * 
  * Revision 5.3  85/08/10  05:48:16  donn
  * Fixed another of my goofs in the substring parameter conversion code.
  * 
@@ -638,7 +657,8 @@ switch(p->tag)
 			{
 			if(p->primblock.namep->vtype == TYSUBR)
 				{
-				err("function invocation of subroutine");
+				dclerr("function invocation of subroutine",
+					p->primblock.namep);
 				return( errnode() );
 				}
 			else
@@ -1283,6 +1303,7 @@ expptr mklhs(p)
 register struct Primblock *p;
 {
 expptr suboffset();
+expptr ep = ENULL;
 register Addrp s;
 Namep np;
 
@@ -1297,13 +1318,7 @@ if(s->tag!=TADDR || s->vstg==STGREG)
 	return( (expptr) s );
 	}
 
-/* compute the address modified by subscripts */
-
-s->memoffset = mkexpr(OPPLUS, s->memoffset, suboffset(p) );
-frexpr(p->argsp);
-p->argsp = NULL;
-
-/* now do substring part */
+/* do the substring part */
 
 if(p->fcharp || p->lcharp)
 	{
@@ -1316,20 +1331,40 @@ if(p->fcharp || p->lcharp)
 		if(p->fcharp)
 			{
 			if(p->fcharp->tag == TPRIM && p->lcharp->tag == TPRIM
-			&& p->fcharp->primblock.namep == p->lcharp->primblock.namep)
+			&& p->fcharp->primblock.namep == p->lcharp->primblock.namep
+			&& p->fcharp->primblock.argsp == NULL
+			&& p->lcharp->primblock.argsp == NULL)
 				/* A trivial optimization -- upper == lower */
 				s->vleng = ICON(1);
 			else
+				{
+				if(p->fcharp->tag == TEXPR
+				|| (p->fcharp->tag == TPRIM
+				   && p->fcharp->primblock.argsp != NULL))
+					{
+					ep = fixtype(p->fcharp);
+					p->fcharp = (expptr) mktemp(ep->headblock.vtype, ENULL);
+					}
 				s->vleng = mkexpr(OPMINUS, p->lcharp,
 					mkexpr(OPMINUS, p->fcharp, ICON(1) ));
+				}
 			}
 		else
 			s->vleng = p->lcharp;
 		}
 	}
 
+/* compute the address modified by subscripts */
+
+s->memoffset = mkexpr(OPPLUS, s->memoffset, suboffset(p) );
+frexpr(p->argsp);
+p->argsp = NULL;
+
 s->vleng = fixtype( s->vleng );
 s->memoffset = fixtype( s->memoffset );
+if(ep)
+	/* this code depends on memoffset being evaluated before vleng */
+	s->memoffset = mkexpr(OPCOMMA, mkexpr(OPASSIGN, cpexpr(p->fcharp), ep), s->memoffset);
 free( (charptr) p );
 return( (expptr) s );
 }
@@ -1844,11 +1879,40 @@ if(rtype == TYUNKNOWN && rtag == TPRIM && rp->primblock.argsp == NULL)
 	rtype = impltype[ k ];
 	}
 
+/*
+ * Eliminate all but the topmost OPPAREN operator when folding constants.
+ */
+if(lp->tag == TEXPR &&
+   lp->exprblock.opcode == OPPAREN &&
+   lp->exprblock.leftp->tag == TCONST)
+	{
+	q = (expptr) cpexpr(lp->exprblock.leftp);
+	frexpr(lp);
+	lp = q;
+	ltag = TCONST;
+	ltype = lp->constblock.vtype;
+	}
+if(rp &&
+   rp->tag == TEXPR &&
+   rp->exprblock.opcode == OPPAREN &&
+   rp->exprblock.leftp->tag == TCONST)
+	{
+	q = (expptr) cpexpr(rp->exprblock.leftp);
+	frexpr(rp);
+	rp = q;
+	rtag = TCONST;
+	rtype = rp->constblock.vtype;
+	}
+
 etype = cktype(opcode, ltype, rtype);
 if(etype == TYERROR)
 	goto error;
 
-if(etype != TYUNKNOWN)
+if(ltag==TCONST && (rp==0 || rtag==TCONST) )
+	goto makenode;
+if(etype == TYUNKNOWN)
+	goto makenode;
+
 switch(opcode)
 	{
 	/* check for multiplication by 0 and 1 and addition to 0 */
@@ -2066,6 +2130,8 @@ switch(opcode)
 		badop("mkexpr", opcode);
 	}
 
+makenode:
+
 e = (expptr) ALLOC(Exprblock);
 e->exprblock.tag = TEXPR;
 e->exprblock.opcode = opcode;
@@ -2220,6 +2286,45 @@ error:	err(errs);
 error1:	return(TYERROR);
 }
 
+#if HERE == VAX
+#include <signal.h>
+#include <setjmp.h>
+#define	setfpe()	;asm("bispsw	$0x60")
+jmp_buf jmp_fpe;
+
+LOCAL int fold_fpe_handler( sig, code )
+int sig;
+int code;
+{
+char		*message;
+
+switch ( code )
+	{
+	case FPE_INTOVF_TRAP:
+		message = "integer overflow"; break;
+	case FPE_INTDIV_TRAP:
+		message = "integer divide by zero"; break;
+	case FPE_FLTOVF_TRAP:
+	case FPE_FLTOVF_FAULT:
+		message = "floating overflow"; break;
+	case FPE_FLTDIV_TRAP:
+	case FPE_FLTDIV_FAULT:
+		message = "floating divide by zero"; break;
+	case FPE_FLTUND_TRAP:
+	case FPE_FLTUND_FAULT:
+		message = "floating underflow"; break;
+	default:
+		message		= "arithmetic exception";
+	}
+errstr("%s in constant expression", message);
+longjmp(jmp_fpe, 1);
+}
+#endif
+
+#ifndef setfpe
+#define	setfpe()
+#endif
+
 LOCAL expptr fold(e)
 register expptr e;
 {
@@ -2229,6 +2334,19 @@ int etype, mtype, ltype, rtype, opcode;
 int i, ll, lr;
 char *q, *s;
 union Constant lcon, rcon;
+
+#if HERE == VAX
+int (*fpe_handler)();
+
+if(setjmp(jmp_fpe))
+	{
+	(void) signal(SIGFPE, fpe_handler);
+	frexpr(e);
+	return(errnode());
+	}
+fpe_handler = signal(SIGFPE, fold_fpe_handler);
+setfpe();
+#endif
 
 opcode = e->exprblock.opcode;
 etype = e->exprblock.vtype;
@@ -2427,6 +2545,8 @@ switch(lt)
 consnegop(p)
 register Constp p;
 {
+setfpe();
+
 switch(p->vtype)
 	{
 	case TYSHORT:
@@ -2524,6 +2644,8 @@ register union Constant *ap, *bp, *cp;
 {
 int k;
 double temp;
+
+setfpe();
 
 switch(opcode)
 	{
@@ -2796,6 +2918,8 @@ register struct dcomplex *a, *b, *c;
 {
 double ratio, den;
 double abr, abi;
+
+setfpe();
 
 if( (abr = b->dreal) < 0.)
 	abr = - abr;
