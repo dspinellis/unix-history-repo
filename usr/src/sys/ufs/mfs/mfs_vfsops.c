@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1989, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.11 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,7 +24,6 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
-#include "tsleep.h"
 #include "../ufs/inode.h"
 #include "../ufs/ufsmount.h"
 #include "../ufs/mfsnode.h"
@@ -116,6 +115,8 @@ mfs_mount(mp, path, data, ndp)
 	return (0);
 }
 
+int	mfs_pri = PWAIT | PCATCH;		/* XXX prob. temp */
+
 /*
  * Used to grab the process and keep it in the kernel to service
  * memory filesystem I/O requests.
@@ -133,25 +134,23 @@ mfs_start(mp, flags)
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
 	register caddr_t base;
+	int error = 0;
 
 	base = mfsp->mfs_baseoff;
-	if (setjmp(&u.u_qsave)) {
-		/*
-		 * We have received a signal, so try to unmount.
-		 */
-		(void) dounmount(mp, MNT_NOFORCE);
-	} else {
-		tsleep((caddr_t)vp, PWAIT, SLP_MFS, 0);
-	}
 	while (mfsp->mfs_buflist != (struct buf *)(-1)) {
 		while (bp = mfsp->mfs_buflist) {
 			mfsp->mfs_buflist = bp->av_forw;
 			mfs_doio(bp, base);
 			wakeup((caddr_t)bp);
 		}
-		tsleep((caddr_t)vp, PWAIT, SLP_MFS, 0);
+		if (error = tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0)) {
+			/*
+			 * We have received a signal, so try to unmount.
+			 */
+			(void) dounmount(mp, MNT_NOFORCE);
+		}
 	}
-	return (0);
+	return (error);
 }
 
 /*
