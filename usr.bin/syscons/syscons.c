@@ -38,6 +38,8 @@
 #include <string.h>
 #include <sys/errno.h>
 
+#include "syscons.h"
+
 int		verbose = 0;
 char		*prgname;
 
