@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dumpdev.c	1.1 (CWI) 85/10/24";
+static char sccsid[] = "@(#)dumpdev.c	1.2 (CWI) 85/10/24";
 #endif lint
 
 /*
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)dumpdev.c	1.1 (CWI) 85/10/24";
 struct dev	dev;
 struct Font	font;
 
-char *fontdir	= "/usr/lib/ditroff/font";
+char *fontdir	= "/usr/local/lib/ditroff/font";
 char *devname	= "har";	/* devicename */
 
 int	nfonts;
