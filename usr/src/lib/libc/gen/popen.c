@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -38,7 +38,7 @@ popen(program, type)
 	if (pids == NULL) {
 		if ((fds = getdtablesize()) <= 0)
 			return (NULL);
-		if ((pids = (pid_t *)malloc((u_int)(fds * sizeof(int)))) == NULL)
+		if ((pids = malloc((u_int)(fds * sizeof(int)))) == NULL)
 			return (NULL);
 		bzero((char *)pids, fds * sizeof(pid_t));
 	}
