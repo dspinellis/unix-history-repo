@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmc.c	7.1 (Berkeley) %G%
+ *	@(#)bmc.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,8 @@
 #include <luna68k/stand/preset.h>
 
 extern	int dipsw1;
+extern	int nplane;
+
 extern	struct rcvbuf	rcvbuf[];
 
 bmcintr()
@@ -37,6 +39,11 @@ bmccnprobe(cp)
 	struct consdev *cp;
 {
 	if ((dipsw1 & PS_BMC_CONS) == 0) {
+		cp->cn_pri = CN_DEAD;
+		return;
+	}
+
+	if (nplane == 0) {
 		cp->cn_pri = CN_DEAD;
 		return;
 	}
