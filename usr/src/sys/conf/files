@@ -81,7 +81,6 @@ miscfs/specfs/spec_vnops.c	standard
 miscfs/umapfs/umap_subr.c	optional umapfs
 miscfs/umapfs/umap_vfsops.c	optional umapfs
 miscfs/umapfs/umap_vnops.c	optional umapfs
-net/af.c		standard
 net/bpf.c		optional bpfilter
 net/bpf_filter.c	optional bpfilter
 net/if.c		standard
