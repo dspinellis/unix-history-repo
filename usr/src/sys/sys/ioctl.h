@@ -1,4 +1,4 @@
-/*	ioctl.h	4.21	82/08/01	*/
+/*	ioctl.h	4.22	82/10/31	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -154,4 +154,10 @@ struct ltchars {
 #define	SIOCGPGRP	_IOR(s, 9, int)		/* get process group */
 #define	SIOCADDRT	_IOW(s,10, struct rtentry)/* add route */
 #define	SIOCDELRT	_IOW(s,11, struct rtentry)/* delete route */
+
+#define	KIOCTRANS	_IOW(k,0, int)	/* set keyboard translation */
+
+#define	MIOCGPOS	_IOR(m,0, XXX)	/* get mouse info */
+#define	MIOCGBUFS	_IOR(m,1, int)	/* get mouse buffer size */
+#define	MIOCWBUFS	_IOW(m,1, int)	/* set mouse buffer size */
 #endif
