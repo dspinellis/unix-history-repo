@@ -1,37 +1,39 @@
-#	@(#)Makefile	7.26 (Berkeley) %G%
+#	@(#)Makefile	7.27 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
-INCPATH=-I. -I../..
+INCPATH=-I. -I../.. -I${STAND}
 VPATH=	${STAND}:../vax
+
+CC=	cc
 C2=	/usr/libexec/c2
+AS=	as
+
+RELOC=	150000
+
 DEFS=	${INCPATH} -DSTANDALONE -DCOMPAT_42
 MACH=	-DVAX8600 -DVAX8200 -DVAX780 -DVAX750 -DVAX730 -DVAX630 -DVAX650
-LS=	/bin/ls
 
 # Collections of C options:
 #	COPTS	device drivers/assembler, not optimized
 #	SMOPTS	"small" versions for 7.5K bootxx programs
 #	730OPTS	"small" versions for 11/730-only versions
 #	CFLAGS	everything else
-
 COPTS=	${DEFS} ${MACH}
-CFLAGS=	-O ${DEFS} ${MACH}
-730OPTS=-O ${DEFS} -DVAX730
 SMOPTS=	${DEFS} -DSMALL -DVAX750 -DVAX630 -DVAX650
+730OPTS=-O ${DEFS} -DVAX730
+CFLAGS=	-O ${DEFS} ${MACH}
 
-RELOC=	150000
 LIBSA=	libsa.a
-
-SRCS=	autoconf.c boot.c bootxx.c cat.c copy.c dev.c drtest.c format.c \
-	format.c getfile.c gets.c hp.c hpmaptype.c ht.c idc.c kdb.c \
-	machdep.c mba.c mt.c prf.c printf.c qdcons.c qvcons.c qfont.c \
-	rk.c rl.c sys.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c \
-	ut.c conf.c ../vax/dkbad.c
+SASRC=  bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
+	printf.c read.c sys.c write.c
+DRIVERS=autoconf.c hp.c hpmaptype.c ht.c idc.c kdb.c mba.c mt.c qdcons.c \
+	qvcons.c rk.c rl.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c \
+	ut.c
+DOBJS=	${DRIVERS:.c=.o}
+SRCS=	boot.c bootxx.c cat.c copy.c drtest.c format.c format.c machdep.c \
+	prf.c qfont.c conf.c ../vax/dkbad.c ${DRIVERS} ${SASRC}
 DUMMIES=confxx.c
-DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o kdb.o mba.o mt.o qdcons.o \
-	qvcons.o rk.o rl.o tm.o tmscp.o ts.o up.o upmaptype.o uba.o uda.o \
-	ut.o
 SMOBJ=	bootxx.o sm_sys.o sm_autoconf.o 
 
 # These drivers don't have ecc correction and bad sector forwarding;
@@ -45,12 +47,11 @@ ALL=	boot tpboot cat copy tpcopy format tpformat drtest ls \
 
 all: ${ALL}
 
-${LIBSA}: conf.o dev.o dkbad.o getfile.o gets.o machdep.o prf.o printf.o \
-	qfont.o sys.o ${DRIVERS}
+${LIBSA}: conf.o dkbad.o machdep.o prf.o qfont.o ${SASRC:.c=.o} ${DOBJS}
 	ar crv ${LIBSA} $?
 	ranlib ${LIBSA}
 
-${DRIVERS}:
+${DOBJS}:
 	${CC} -c -S ${COPTS} $*.c
 	${C2} -i $*.s | as -o $*.o
 	rm -f $*.s
@@ -162,42 +163,42 @@ boothk: relsrt0.o confrk.o ${SMOBJ} ${LIBSA}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
-	${LS} -l $@
+	ls -l $@
 
 boothp: relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
-	${LS} -l $@
+	ls -l $@
 
 bootkra: relsrt0.o confkra.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confkra.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
-	${LS} -l $@
+	ls -l $@
 
 bootup: relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
-	${LS} -l $@
+	ls -l $@
 
 bootra: relsrt0.o confra.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confra.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
-	${LS} -l $@
+	ls -l $@
 
 bootrl: relsrt0.o confrl.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confrl.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
-	${LS} -l $@
+	ls -l $@
 
 sm_hp.o: hp.o
 	rm -f sm_hp.c
