@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)init.8	8.5 (Berkeley) %G%
+.\"     @(#)init.8	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INIT 8
@@ -75,6 +75,9 @@ disks for mounted filesystems,
 and
 .Pa /dev/kmem
 are read-only.
+The
+.Xr settimeofday 2
+system call can only advance the time.
 .It Ic 2
 Highly secure mode \- same as secure mode, plus disks are always
 read-only whether mounted or not.
