@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	7.3	%G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.4	%G%";
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
@@ -429,7 +429,7 @@ searchdir(dirname)
 	dir = fopen(dirname, "r");
 	if (dir == NULL)
 		return;
-	setbuf(dir, dbuf);
+	/* setbuf(dir, dbuf); this breaks UNIX/370. */
 	while (fread((char *) &dirent, sizeof dirent, 1, dir) == 1) {
 		if (dirent.d_ino == 0)
 			continue;

@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_re.c	7.1	%G%";
+static char *sccsid = "@(#)ex_re.c	7.2	%G%";
 #include "ex.h"
 #include "ex_re.h"
 
@@ -166,7 +166,7 @@ substitute(c)
 {
 	register line *addr;
 	register int n;
-	int gsubf, hopcount = 0;
+	int gsubf, hopcount;
 
 	gsubf = compsub(c);
 	if(FIXUNDO)
@@ -174,7 +174,7 @@ substitute(c)
 	stotal = 0;
 	slines = 0;
 	for (addr = addr1; addr <= addr2; addr++) {
-		scount = 0;
+		scount = hopcount = 0;
 		if (dosubcon(0, addr) == 0)
 			continue;
 		if (gsubf) {

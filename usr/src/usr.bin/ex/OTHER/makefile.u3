@@ -95,7 +95,7 @@ exrecover.o: exrecover.c
 	${CC} ${CFLAGS} -c -O exrecover.c
 
 expreserve: expreserve.o
-	${CC} expreserve.o ex_extern.o -o expreserve
+	${CC} expreserve.o -o expreserve
 
 expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
