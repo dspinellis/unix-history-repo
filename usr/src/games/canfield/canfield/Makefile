@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.1	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -45,8 +51,8 @@ FRC:
 
 canfield: canfield.c /usr/include/curses.h /usr/include/stdio.h
 canfield: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-canfield: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-canfield: /usr/include/ctype.h /usr/include/signal.h
+canfield: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+canfield: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/signal.h
 canfield: /usr/include/machine/trap.h /usr/include/sys/types.h
 cfscores: cfscores.c /usr/include/pwd.h
 
