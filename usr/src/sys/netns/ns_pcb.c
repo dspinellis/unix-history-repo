@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_pcb.c	7.9 (Berkeley) %G%
+ *	@(#)ns_pcb.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -119,25 +119,22 @@ ns_pcbconnect(nsp, nam)
 	 */
 	ro = &nsp->nsp_route;
 	dst = &satons_addr(ro->ro_dst);
-	if (ro->ro_rt) {
-		if (nsp->nsp_socket->so_options & SO_DONTROUTE)
-			goto flush;
-		if (!ns_neteq(nsp->nsp_lastdst, sns->sns_addr))
-			goto flush;
-		if (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr)) {
-			if (((ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
-			     == RTF_GATEWAY)
-			    || ((ifp = ro->ro_rt->rt_ifp) &&
-				 !(ifp->if_flags & IFF_POINTOPOINT))) {
-				/* can patch route to avoid rtalloc */
-				*dst = sns->sns_addr;
-			} else {
-		flush:
+	if (nsp->nsp_socket->so_options & SO_DONTROUTE)
+		goto flush;
+	if (!ns_neteq(nsp->nsp_lastdst, sns->sns_addr))
+		goto flush;
+	if (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr)) {
+		if (ro->ro_rt && ! (ro->ro_rt->rt_flags & RTF_HOST)) {
+			/* can patch route to avoid rtalloc */
+			*dst = sns->sns_addr;
+		} else {
+	flush:
+			if (ro->ro_rt)
 				RTFREE(ro->ro_rt);
-				ro->ro_rt = (struct rtentry *)0;
-			}
-		}/* else cached route is ok; do nothing */
-	}
+			ro->ro_rt = (struct rtentry *)0;
+			nsp->nsp_laddr.x_net = ns_zeronet;
+		}
+	}/* else cached route is ok; do nothing */
 	nsp->nsp_lastdst = sns->sns_addr;
 	if ((nsp->nsp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
 	    (ro->ro_rt == (struct rtentry *)0 ||
