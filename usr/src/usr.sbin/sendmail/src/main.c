@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.119 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.120 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1190,7 +1190,7 @@ finis()
 	if (LogLevel > 78)
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
 # endif /* LOG */
-	if (ExitStat == EX_TEMPFAIL)
+	if (ExitStat == EX_TEMPFAIL || CurEnv->e_errormode == EM_BERKNET)
 		ExitStat = EX_OK;
 
 	/* reset uid for process accounting */
