@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1076,6 +1076,7 @@ struct optioninfo
 } OptionTab[] =
 {
 	"SevenBitInput",	'7',	TRUE,
+	"EightBitMode",		'8',	TRUE,
 	"AliasFile",		'A',	FALSE,
 	"AliasWait",		'a',	FALSE,
 	"BlankSub",		'B',	FALSE,
