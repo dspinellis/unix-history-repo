@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.8 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.9 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1014,8 +1014,6 @@ lxtitle(){
 
 		lxget( ' ', LEXWS );
 		c = getchar();
-		if( c == '\n' )
-			continue;
 		if( c == 'i' ){
 			/* #ident -- currently a no-op */
 			lxget( c, LEXLET );
@@ -1082,13 +1080,25 @@ lxtitle(){
 				;
 			continue;
 			}
+		if( c == 'l' ){
+			/* #line -- just like # */
+			lxget( c, LEXLET );
+			if( strcmp( yytext, "line" ) ){
+				werror( "%s: undefined control", yytext );
+				while( (c = getchar()) != '\n' && c != EOF )
+					;
+				continue;
+				}
+			lxget( ' ', LEXWS );
+			c = getchar();
+			}
 		if( !isdigit(c) ){
 			if( isalpha(c) ){
 				lxget( c, LEXLET );
 				werror( "%s: undefined control", yytext );
 				}
-			while( (c = getchar()) != '\n' && c != EOF )
-				;
+			while( c != '\n' && c != EOF )
+				c = getchar();
 			continue;
 			}
 			
