@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)2.t	1.6 (Berkeley) %G%
+.\"	@(#)2.t	1.7 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -108,9 +108,9 @@ lw(2i) l.
 \fBType '#' to cancel boot\fP
 \fI#\fP	(cancel automatic reboot)
 \fBCP [a10.h0]#>\fP\fI\|h\fP	(halt the cpu)
-\fB#>\|\fP\fIy.\fP	(initialize the machine)
 \fB#>\|\fP\fIfd cyp(0,0)\fP	(make cypher default device)
 \fB#>\|\fP\fIp23 3.\fP \fB00000000\fP	(set boot flags)
+\fB#>\|\fP\fIy.\fP	(initialize the machine)
 \fB#>\|\fP\fIfb\fP	(boot machine)
 \fBcyp(0,0)/etc/fstab\fP
 \fBCP cold boot\fP
@@ -432,7 +432,8 @@ before labeling the affected disks.
 Note that the partition sizes and sectors per track in /etc/disktab
 are now specified in sectors, not units of kilobytes as in the vendors'
 4.2BSD and System V systems.
-For SMD disks, the sector size is 512 bytes, and is listed explicitly.
+For most SMD disks, the sector size is 512 bytes, and is listed explicitly.
+ESDI disks on a Power 6/32SX use a sector size of 1024 bytes.
 .NH 3
 Step 7: setting up the /usr file system
 .PP
@@ -442,7 +443,7 @@ You might wish to review the disk configuration information in section
 4.2 before continuing; the partitions used below are those most appropriate
 in size.
 .PP
-For the Cypher tape drive, execute the following commands:
+For the Cipher tape drive, execute the following commands:
 .DS
 \fB#\fP \fIcd /dev; MAKEDEV cy0\fP
 .DE
