@@ -13,7 +13,7 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	7.6 (Berkeley) %G%
+ *	@(#)clock.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,7 +75,7 @@ cpu_initclocks()
 	bbc->cal_ctl |= BBC_WRT;
 	bbc->cal_hour &= ~BBC_KICK;
 	bbc->cal_ctl &= ~BBC_WRT;
-	strcpy(bbc->nvram,rtcstrings);
+	strcpy(bbc->nvram.nv_calclock, rtcstrings);
 }
 
 void
