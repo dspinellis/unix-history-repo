@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989, 1993
+ * Copyright (c) 1982, 1986, 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	8.1 (Berkeley) %G%
+ *	@(#)wait.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@
  * this option is done, it is as though they were still running... nothing
  * about them is returned.
  */
-#define WNOHANG		1	/* dont hang in wait */
+#define WNOHANG		1	/* don't hang in wait */
 #define WUNTRACED	2	/* tell about stopped, untraced children */
 
 #ifndef _POSIX_SOURCE
