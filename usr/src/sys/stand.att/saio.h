@@ -1,4 +1,4 @@
-/*	saio.h	4.5	%G%	*/
+/*	saio.h	4.6	%G%	*/
 
 /*
  * header file for standalone package
@@ -57,3 +57,8 @@ daddr_t	blknos[NBUFS];
 
 #define NFILES	4
 struct	iob iob[NFILES];
+
+#define	PHYSUBA0	0x20006000
+#define	PHYSMBA0	0x20010000
+#define	PHYSMBA1	0x20012000
+#define	PHYSUMEM	0x2013e000
