@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -176,7 +176,7 @@ run(prog, argv)
 	char *prog, **argv;
 {
 	union wait pstat;
-	pid_t pid, waitpid();
+	pid_t pid;
 	char **p;
 
 	if (tflag) {
@@ -197,7 +197,7 @@ run(prog, argv)
 		   "xargs: %s: %s.\n", prog, strerror(errno));
 		_exit(1);
 	}
-	pid = waitpid(pid, &pstat, 0);
+	pid = waitpid(pid, (int *)&pstat, 0);
 	if (pid == -1) {
 		(void)fprintf(stderr,
 		   "xargs: waitpid: %s.\n", strerror(errno));
