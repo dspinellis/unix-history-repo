@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.6 (Berkeley) %G%
+ *	@(#)vm_page.h	7.7 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -108,8 +108,6 @@ struct vm_page {
 	vm_prot_t	unlock_request;	/* Outstanding unlock request */
 };
 
-typedef struct vm_page	*vm_page_t;
-
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \
 		if ( (((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
@@ -121,7 +119,7 @@ typedef struct vm_page	*vm_page_t;
 #define	VM_PAGE_CHECK(mem)
 #endif	VM_PAGE_DEBUG
 
-#ifdef	KERNEL
+#ifdef KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *
@@ -170,25 +168,8 @@ vm_offset_t	last_phys_addr;		/* physical address for last_page */
 extern
 simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive
 						   page queues */
-extern
+extern						/* lock on free page queue */
 simple_lock_data_t	vm_page_queue_free_lock;
-						/* lock on free page queue */
-void		vm_page_startup __P((vm_offset_t *start, vm_offset_t *end));
-vm_page_t	vm_page_lookup __P((vm_object_t object, vm_offset_t offset));
-vm_page_t	vm_page_alloc __P((vm_object_t object, vm_offset_t offset));
-void		vm_page_free __P((vm_page_t mem));
-void		vm_page_activate __P((vm_page_t mem));
-void		vm_page_deactivate __P((vm_page_t mem));
-void		vm_page_rename __P((vm_page_t mem, vm_object_t new_object,
-			vm_offset_t new_offset));
-
-boolean_t	vm_page_zero_fill __P((vm_page_t mem));
-void		vm_page_copy __P((vm_page_t src_mem, vm_page_t dst_mem));
-
-void		vm_page_wire __P((vm_page_t mem));
-void		vm_page_unwire __P((vm_page_t mem));
-
-void		vm_set_page_size __P((void));
 
 /*
  *	Functions implemented as macros
@@ -236,5 +217,19 @@ void		vm_set_page_size __P((void));
 	VM_PAGE_DEBUG_INIT(mem); \
 }
 
-#endif	KERNEL
-#endif	_VM_PAGE_
+void		 vm_page_activate __P((vm_page_t));
+vm_page_t	 vm_page_alloc __P((vm_object_t, vm_offset_t));
+void		 vm_page_copy __P((vm_page_t, vm_page_t));
+void		 vm_page_deactivate __P((vm_page_t));
+void		 vm_page_free __P((vm_page_t));
+void		 vm_page_insert __P((vm_page_t, vm_object_t, vm_offset_t));
+vm_page_t	 vm_page_lookup __P((vm_object_t, vm_offset_t));
+void		 vm_page_remove __P((vm_page_t));
+void		 vm_page_rename __P((vm_page_t, vm_object_t, vm_offset_t));
+void		 vm_page_startup __P((vm_offset_t *, vm_offset_t *));
+void		 vm_page_unwire __P((vm_page_t));
+void		 vm_page_wire __P((vm_page_t));
+boolean_t	 vm_page_zero_fill __P((vm_page_t));
+
+#endif /* KERNEL */
+#endif /* !_VM_PAGE_ */
