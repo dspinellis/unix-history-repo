@@ -1,4 +1,4 @@
-/*	trap.c	4.4	%G%	*/
+/*	trap.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -61,6 +61,7 @@ unsigned code;
 		goto out;
 
 	case ARITHTRAP + USER:
+		u.u_code = code;
 		i = SIGFPE;
 		break;
 
@@ -68,32 +69,32 @@ unsigned code;
 	 * If the user SP is above the stack segment,
 	 * grow the stack automatically.
 	 */
-	case SEGFLT + USER: /* segmentation exception */
-		if(grow((unsigned)locr0[SP]) || grow(code))
+	case SEGFLT + USER:
+		if (grow((unsigned)locr0[SP]) || grow(code))
 			goto out;
 		i = SIGSEGV;
 		break;
 
 	case TABLEFLT:		/* allow page table faults in kernel mode */
 	case TABLEFLT + USER:   /* page table fault */
-		panic("page table fault");
+		panic("ptable fault");
 
 	case PAGEFLT:		/* allow page faults in kernel mode */
 	case PAGEFLT + USER:	/* page fault */
 		i = u.u_error;
-		pagein(code);   /* bring in page containing virtual addr */
+		pagein(code);
 		u.u_error = i;
-/*
+#ifdef notdef
 		if (type == PAGEFLT)
-*/
 			return;
-/*
 		goto out;
-*/
+#else
+		return;
+#endif
 
 	case BPTFLT + USER:	/* bpt instruction fault */
 	case TRCTRAP + USER:	/* trace trap */
-		locr0[PS] &= ~PSL_T;	/* turn off trace bit */
+		locr0[PS] &= ~PSL_T;
 		i = SIGTRAP;
 		break;
 
@@ -102,7 +103,7 @@ unsigned code;
 		break;
 
 	case COMPATFLT + USER:	/* compatibility mode fault */
-		u.u_cfcode = code;
+		u.u_code = code;
 		i = SIGILL;
 		break;
 	}
