@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.46 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -691,7 +691,7 @@ wallmsg(f, iov)
 		if (ut.ut_name[0] == '\0')
 			continue;
 		if (f->f_type == F_WALL) {
-			if (p = ttymsg(iov, 6, ut.ut_line, 1)) {
+			if (p = ttymsg(iov, 6, ut.ut_line, 1, 60*5)) {
 				errno = 0;	/* already in msg */
 				logerror(p);
 			}
@@ -703,7 +703,7 @@ wallmsg(f, iov)
 				break;
 			if (!strncmp(f->f_un.f_uname[i], ut.ut_name,
 			    UT_NAMESIZE)) {
-				if (p = ttymsg(iov, 6, ut.ut_line, 1)) {
+				if (p = ttymsg(iov, 6, ut.ut_line, 1, 60*5)) {
 					errno = 0;	/* already in msg */
 					logerror(p);
 				}
