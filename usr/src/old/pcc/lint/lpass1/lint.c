@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.4	(Berkeley)	%G%";
 #endif lint
 
 # include "mfile1"
@@ -34,6 +34,7 @@ int argflag = 0;  /* used to turn off complaints about arguments */
 int libflag = 0;  /* used to generate library descriptions */
 int vaflag = -1;  /* used to signal functions with a variable number of args */
 int aflag = 0;  /* used to check precision of assignments */
+int zflag = 0;  /* no 'structure never defined' error */
 int Cflag = 0;  /* filter out certain output, for generating libraries */
 char *libname = 0;  /* name of the library we're generating */
 
@@ -113,7 +114,8 @@ ejobcode( flag ){
 		if( p->stype != TNULL ) {
 
 			if( p->stype == STRTY || p->stype == UNIONTY ){
-				if( dimtab[p->sizoff+1] < 0 ){ /* never defined */
+				if( !zflag && dimtab[p->sizoff+1] < 0 ){
+					/* never defined */
 #ifndef FLEXNAMES
 					if( hflag ) werror( "struct/union %.8s never defined", p->sname );
 #else
@@ -163,7 +165,7 @@ ejobcode( flag ){
 
 astype( t, i ) ATYPE *t; {
 	TWORD tt;
-	int j, k=0;
+	int j, k=0, l=0;
 
 	if( (tt=BTYPE(t->aty))==STRTY || tt==UNIONTY ){
 		if( i<0 || i>= DIMTABSZ-3 ){
@@ -172,7 +174,8 @@ astype( t, i ) ATYPE *t; {
 		else {
 			j = dimtab[i+3];
 			if( j<0 || j>SYMTSZ ){
-				k = ((-j)<<5)^dimtab[i]|1;
+				k = dimtab[i];
+				l = X_NONAME | stab[j].suse;
 				}
 			else {
 				if( stab[j].suse <= 0 ) {
@@ -183,11 +186,19 @@ astype( t, i ) ATYPE *t; {
 #endif
 						stab[j].sname );
 					}
-				else k = (stab[j].suse<<5) ^ dimtab[i];
+				else {
+					k = dimtab[i];
+#ifdef FLEXNAMES
+					l = hashstr(stab[j].sname);
+#else
+					l = hashstr(stab[j].sname, LCHNM);
+#endif
+					}
 				}
 			}
 		
 		t->extra = k;
+		t->extra1 = l;
 		return( 1 );
 		}
 	else return( 0 );
@@ -214,7 +225,8 @@ bfcode( a, n ) int a[]; {
 		else n = vaflag;
 		}
 	fsave( ftitle );
-	outdef( cfp, libflag?LIB:LDI, vaflag>=0?-n:n );
+	if( cfp->sclass == STATIC ) outdef( cfp, LST, vaflag>=0?-n:n );
+	else outdef( cfp, libflag?LIB:LDI, vaflag>=0?-n:n );
 	vaflag = -1;
 
 	/* output the arguments */
@@ -222,6 +234,7 @@ bfcode( a, n ) int a[]; {
 		for( i=0; i<n; ++i ) {
 			t.aty = stab[a[i]].stype;
 			t.extra = 0;
+			t.extra1 = 0;
 			if( !astype( &t, stab[a[i]].sizoff ) ) {
 				switch( t.aty ){
 
@@ -268,6 +281,7 @@ lpta( p ) NODE *p; {
 
 	t.aty = p->in.type;
 	t.extra = (p->in.op==ICON);
+	t.extra1 = 0;
 
 	if( !astype( &t, p->in.csiz ) ) {
 		switch( t.aty ){
@@ -432,7 +446,7 @@ lprt( p, down, uses ) register NODE *p; {
 			q = &stab[id];
 			if( (uses&VALUSED) && !(q->sflags&SSET) ){
 				if( q->sclass == AUTO || q->sclass == REGISTER ){
-					if( !ISARY(q->stype ) && !ISFTN(q->stype) && q->stype!=STRTY ){
+					if( !ISARY(q->stype ) && !ISFTN(q->stype) && q->stype!=STRTY && q->stype!=UNIONTY ){
 #ifndef FLEXNAMES
 						werror( "%.8s may be used before set", q->sname );
 #else
@@ -576,10 +590,11 @@ aocode(p) struct symtab *p; {
 		}
 
 	if( p->stype == STRTY || p->stype == UNIONTY || p->stype == ENUMTY ){
+		if( !zflag && dimtab[p->sizoff+1] < 0 )
 #ifndef FLEXNAMES
-		if( dimtab[p->sizoff+1] < 0 ) werror( "structure %.8s never defined", p->sname );
+			werror( "structure %.8s never defined", p->sname );
 #else
-		if( dimtab[p->sizoff+1] < 0 ) werror( "structure %s never defined", p->sname );
+			werror( "structure %s never defined", p->sname );
 #endif
 		}
 
@@ -590,7 +605,9 @@ defnam( p ) register struct symtab *p; {
 
 	if( p->sclass == STATIC && (p->slevel>1 || Cflag) ) return;
 
-	if( !ISFTN( p->stype ) ) outdef( p, libflag?LIB:LDI, USUAL );
+	if( !ISFTN( p->stype ) )
+		if( p->sclass == STATIC ) outdef( p, LST, USUAL );
+		else outdef( p, libflag?LIB:LDI, USUAL );
 	}
 
 zecode( n ){
@@ -866,8 +883,15 @@ main( argc, argv ) char *argv[]; {
 			case 'n':	/* done in shell script */
 				continue;
 
+			case 'z':
+				zflag = 1;
+				continue;
+
 			case 't':
 				werror( "option %c now default: see `man 6 lint'", *p );
+				continue;
+
+			case 'P':	/* debugging, done in second pass */
 				continue;
 
 			case 'C':
@@ -915,7 +939,8 @@ ctype( type ) unsigned type; { /* are there any funny types? */
 
 commdec( i ){
 	/* put out a common declaration */
-	outdef( &stab[i], libflag?LIB:LDC, USUAL );
+	if( stab[i].sclass == STATIC ) outdef( &stab[i], LST, USUAL );
+	else outdef( &stab[i], libflag?LIB:LDC, USUAL );
 	}
 
 isitfloat ( s ) char *s; {
@@ -990,6 +1015,7 @@ outdef( p, lty, mode ) struct symtab *p; {
 	if( mode == DECTY ) t = DECREF(t);
 	rc.l.type.aty = t;
 	rc.l.type.extra = 0;
+	rc.l.type.extra1 = 0;
 	astype( &rc.l.type, p->sizoff );
 	rc.l.nargs = (mode>USUAL) ? mode : 0;
 	rc.l.fline = line;
