@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)whatis.1	6.5 (Berkeley) %G%
+.\"	@(#)whatis.1	6.6 (Berkeley) %G%
 .\"
 .TH WHATIS 1 ""
 .UC 4
@@ -37,7 +37,7 @@ The options are as follows:
 .I M
 Override the list of standard directories where
 .I whatis
-searches for its database.
+searches for its database named ``whatis.db''.
 The supplied
 .I path
 must be a colon (``:'') separated list of directories.
@@ -47,7 +47,7 @@ This search path may also be set using the environmental variable
 .I m
 Augment the list of standard directories where
 .I whatis
-searches for its database.
+searches for its database named ``whatis.db''.
 The supplied
 .I path
 must be a colon (``:'') separated list of directories.
@@ -69,3 +69,4 @@ The format of the path is a colon (``:'') separated list of directories.
 .SH FILES
 whatis.db		name of the whatis database
 .SH "SEE ALSO"
+apropos(1), man(1), whereis(1)
