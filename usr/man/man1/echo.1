@@ -1,0 +1,23 @@
+.TH ECHO 1 
+.SH NAME
+echo \- echo arguments
+.SH SYNOPSIS
+.B echo
+[
+.B \-n
+]
+[ arg ] ...
+.SH DESCRIPTION
+.I Echo
+writes its arguments separated by blanks and terminated by
+a newline on the standard output.
+If the flag
+.B \-n
+is used,
+no newline is added to the output.
+.PP
+.I Echo
+is useful for producing diagnostics in
+shell programs and for writing constant data on pipes.
+To send diagnostics to the standard error file, do
+`echo ... 1>&2'.

@@ -1,0 +1,72 @@
+.TH UNIQ 1 
+.SH NAME
+uniq \- report repeated lines in a file
+.SH SYNOPSIS
+.B uniq
+[
+.B \-udc
+[
+.BR + n
+] [
+.BR \- n
+]
+] [ input [ output ] ]
+.SH DESCRIPTION
+.I Uniq
+reads the input
+file comparing adjacent lines.
+In the normal case, the second and succeeding copies
+of repeated lines are
+removed; the remainder is written on the output file.
+Note that repeated lines must be adjacent
+in order to be found;
+see
+.IR  sort (1).
+If the
+.B \-u
+flag is used,
+just the lines that are not repeated
+in the original file are output.
+The
+.B \-d
+option specifies that
+one copy of just the repeated lines is to
+be written.
+The normal mode output is the union of the
+.B \-u
+and
+.B \-d
+mode outputs.
+.PP
+The
+.B \-c
+option supersedes
+.B \-u
+and
+.B \-d
+and generates
+an output report in default style
+but with each line preceded by a count of the
+number of times it occurred.
+.PP
+The
+.I n
+arguments specify skipping an initial portion of each line
+in the comparison:
+.TP 8
+.BI \- n
+The first
+.IR n 
+fields
+together with any blanks before each are ignored.
+A field is defined as a string of non-space, non-tab characters
+separated by tabs and spaces from its neighbors.
+.TP 8
+.BI + n
+The first
+.IR n 
+characters are ignored.
+Fields are skipped before characters.
+.PP
+.SH "SEE ALSO"
+sort(1), comm(1)

@@ -1,0 +1,43 @@
+.TH WHO 1 
+.SH NAME
+who \- who is on the system
+.SH SYNOPSIS
+.B who
+[ who-file ] [
+.B "am I"
+]
+.SH DESCRIPTION
+.I Who,
+without an argument,
+lists the login name, terminal name, and login time
+for each current UNIX user.
+.PP
+Without an argument,
+.I who
+examines the /etc/utmp
+file to obtain its information.
+If a file is given, that file is examined.
+Typically the given file will be /usr/adm/wtmp,
+which contains a record of all the logins since it
+was created.
+Then
+.I who
+lists
+logins, logouts, and crashes since the creation of
+the wtmp file.
+Each login is listed with user name,
+terminal name (with `/dev/'
+suppressed),
+and date and time.
+When an argument is given, logouts produce a similar line without a user name.
+Reboots produce a line with `x' in the place of the device name,
+and a fossil time indicative of when the system went down.
+.PP
+With two arguments,
+as in `who am I' (and also `who are you'),
+.I who
+tells who you are logged in as.
+.SH FILES
+/etc/utmp
+.SH "SEE ALSO"
+getuid(2), utmp(5)
