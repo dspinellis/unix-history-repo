@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.14 (Berkeley) %G%
+#	@(#)Files.base	8.15 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -91,6 +91,7 @@ src/Makefiles/Makefile.NeXT
 src/Makefiles/Makefile.NetBSD
 src/Makefiles/Makefile.NonStop-UX
 src/Makefiles/Makefile.OSF1
+src/Makefiles/Makefile.Paragon
 src/Makefiles/Makefile.PTX
 src/Makefiles/Makefile.RISCos
 src/Makefiles/Makefile.SCO
