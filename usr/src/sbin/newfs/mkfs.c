@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.16 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -150,6 +150,10 @@ main(argc, argv)
 	sblock.fs_cblkno = (daddr_t)
 	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag);
 	sblock.fs_iblkno = sblock.fs_cblkno + sblock.fs_frag;
+	for (sblock.fs_cpc = NSPB(&sblock), i = sblock.fs_spc;
+	     sblock.fs_cpc > 1 && (i & 1) == 0;
+	     sblock.fs_cpc >>= 1, i >>= 1)
+		/* void */;
 	/* 
 	 * collect and verify the number of cylinders per group
 	 */
@@ -157,7 +161,7 @@ main(argc, argv)
 		sblock.fs_cpg = atoi(argv[6]);
 		sblock.fs_fpg = (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
 	} else {
-		sblock.fs_cpg = DESCPG;
+		sblock.fs_cpg = MAX(sblock.fs_cpc, DESCPG);
 		sblock.fs_fpg = (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
 		while (sblock.fs_fpg / sblock.fs_frag > MAXBPG(&sblock)) {
 			--sblock.fs_cpg;
@@ -171,6 +175,11 @@ main(argc, argv)
 	}
 	if (sblock.fs_cpg > MAXCPG) {
 		printf("cylinder groups are limited to %d cylinders\n", MAXCPG);
+		exit(1);
+	}
+	if (sblock.fs_cpg % sblock.fs_cpc != 0) {
+		printf("cylinder groups must have a multiple of %d cylinders\n",
+		    sblock.fs_cpc);
 		exit(1);
 	}
 	/*
@@ -196,10 +205,6 @@ main(argc, argv)
 		sblock.fs_cpc = 0;
 		goto next;
 	}
-	for (sblock.fs_cpc = NSPB(&sblock), i = sblock.fs_spc;
-	     sblock.fs_cpc > 1 && (i & 1) == 0;
-	     sblock.fs_cpc >>= 1, i >>= 1)
-		/* void */;
 	if (sblock.fs_spc * sblock.fs_cpc > MAXBPC * NSPB(&sblock) ||
 	    sblock.fs_nsect > (1 << NBBY) * NSPB(&sblock)) {
 		printf("%s %s %d %s %d.%s",
