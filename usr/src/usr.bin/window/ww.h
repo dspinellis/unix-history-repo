@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.9 83/08/19	
+ *	@(#)ww.h	3.10 83/08/19	
  */
 
 #include <stdio.h>
@@ -38,6 +38,7 @@ struct ww {
 	char **ww_win;		/* the window */
 	union ww_char **ww_buf;	/* the buffer */
 	char **ww_cov;		/* the covered-by array */
+	char **ww_fmap;		/* map for frame and box windows */
 	short *ww_nvis;		/* how many ww_buf chars are visible per row */
 	int ww_pty;		/* file descriptor of pty */
 	int ww_tty;		/* . . . tty */
@@ -87,12 +88,7 @@ union ww_char {
 #define WWS_INCHILD	2	/* forked, in child */
 #define WWS_DEAD	3	/* child died */
 
-	/* flags to wwopen() */
-#define WWO_PTY		0x01		/* want pty */
-#define WWO_REVERSE	0x02		/* make it all reverse video */
-#define WWO_GLASS	0x04		/* make it all glass */
-
-	/* flags for wwfmap */
+	/* flags for ww_fmap */
 #define WWF_U		0x01
 #define WWF_R		0x02
 #define WWF_D		0x04
@@ -100,6 +96,12 @@ union ww_char {
 #define WWF_MASK	(WWF_U|WWF_R|WWF_D|WWF_L)
 #define WWF_LABEL	0x40
 #define WWF_TOP		0x80
+
+	/* flags to wwopen() */
+#define WWO_PTY		0x01		/* want pty */
+#define WWO_REVERSE	0x02		/* make it all reverse video */
+#define WWO_GLASS	0x04		/* make it all glass */
+#define WWO_FRAME	0x08		/* this is a frame window */
 
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
@@ -121,7 +123,6 @@ char wwcursormodes;		/* the modes for the fake cursor */
 char wwwrap;			/* terminal has auto wrap around */
 int wwdtablesize;		/* result of getdtablesize() call */
 char **wwsmap;			/* the screen map */
-char **wwfmap;			/* the frame map */
 union ww_char **wwos;		/* the old (current) screen */
 union ww_char **wwns;		/* the new (desired) screen */
 char *wwtouched;		/* wwns changed flags */
@@ -139,6 +140,7 @@ int wwnupdate, wwntouched, wwnmiss;
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
 #define wwcurtowin(w)	wwsetcursor(wwcurrow(w), wwcurcol(w))
 #define wwbell()	putchar(CTRL(g))
+#define wwunbox(w)	wwunframe(w)
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.6 83/08/19";
+static	char *sccsid = "@(#)wwframe.c	3.7 83/08/19";
 #endif
 
 #include "ww.h"
@@ -38,7 +38,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_R;
 				if (code)
-					wwframec(wframe, r, c, code|WWF_TOP, 1);
+					wwframec(wframe, r, c, code|WWF_TOP);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -46,7 +46,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(wframe, r, c, WWF_L|WWF_TOP, 1);
+			wwframec(wframe, r, c, WWF_L|WWF_TOP);
 	}
 
 	if (w->ww_w.b < wwnrow) {
@@ -68,7 +68,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_R;
 				if (code)
-					wwframec(wframe, r, c, code, 1);
+					wwframec(wframe, r, c, code);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -76,7 +76,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(wframe, r, c, WWF_L, 1);
+			wwframec(wframe, r, c, WWF_L);
 	}
 
 	if (w->ww_w.l > 0) {
@@ -97,7 +97,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_D;
 				if (code)
-					wwframec(wframe, r, c, code, 1);
+					wwframec(wframe, r, c, code);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -105,7 +105,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(wframe, r, c, WWF_U, 1);
+			wwframec(wframe, r, c, WWF_U);
 	}
 
 	if (w->ww_w.r < wwncol) {
@@ -126,7 +126,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_D;
 				if (code)
-					wwframec(wframe, r, c, code, 1);
+					wwframec(wframe, r, c, code);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -134,16 +134,16 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(wframe, r, c, WWF_U, 1);
+			wwframec(wframe, r, c, WWF_U);
 	}
 }
 
-wwframec(f, rr, cc, code, dofmap)
+wwframec(f, rr, cc, code)
 register struct ww *f;
 register rr, cc;
 char code;
-char dofmap;
 {
+	register r, c;
 	char oldcode;
 
 	if (rr < f->ww_w.t || rr >= f->ww_w.b
@@ -151,7 +151,6 @@ char dofmap;
 		return;
 	{
 		register struct ww *w;
-		register r, c;
 
 		w = wwindex[wwsmap[rr][cc]];
 		if (w->ww_order > f->ww_order) {
@@ -165,10 +164,13 @@ char dofmap;
 			wwsmap[rr][cc] = f->ww_index;
 		}
 	}
-	if (dofmap) {
+
+	r = rr - f->ww_w.t;
+	c = cc - f->ww_w.l;
+	if (f->ww_fmap != 0) {
 		register char *fmap;
 
-		fmap = &wwfmap[rr][cc];
+		fmap = &f->ww_fmap[r][c];
 		oldcode = *fmap;
 		*fmap |= code;
 		if (code & WWF_TOP)
@@ -177,10 +179,6 @@ char dofmap;
 	} else
 		oldcode = 0;
 	{
-		register r, c;
-
-		r = rr - f->ww_w.t;
-		c = cc - f->ww_w.l;
 		{
 			register char *win = &f->ww_win[r][c];
 

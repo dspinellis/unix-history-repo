@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.2 83/08/19";
+static	char *sccsid = "@(#)wwopen.c	3.3 83/08/19";
 #endif
 
 #include "ww.h"
@@ -59,6 +59,15 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	for (i = 0; i < w->ww_w.nr; i++)
 		for (j = 0; j < w->ww_w.nc; j++)
 			w->ww_cov[i][j] = WWX_NOBODY;
+
+	if (flags & WWO_FRAME) {
+		w->ww_fmap = wwalloc(w->ww_w.nr, w->ww_w.nc, sizeof (char));
+		if (w->ww_fmap == 0)
+			goto bad;
+		for (i = 0; i < wwnrow; i++)
+			for (j = 0; j < wwncol; j++)
+				w->ww_fmap[i][j] = 0;
+	}
 	
 	w->ww_buf = (union ww_char **)
 		wwalloc(w->ww_nline, w->ww_w.nc, sizeof (union ww_char));

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.4 83/08/19";
+static	char *sccsid = "@(#)main.c	3.5 83/08/19";
 #endif
 
 #include "defs.h"
@@ -70,7 +70,8 @@ char **argv;
 		(void) fprintf(stderr, "Can't open command window.\r\n");
 		goto bad;
 	}
-	if ((framewin = wwopen(WWO_GLASS, wwnrow, wwncol, 0, 0, 0)) == 0) {
+	if ((framewin = wwopen(WWO_GLASS|WWO_FRAME, wwnrow, wwncol, 0, 0, 0))
+	    == 0) {
 		(void) wwflush();
 		(void) fprintf(stderr, "Can't open frame window.\r\n");
 		goto bad;
