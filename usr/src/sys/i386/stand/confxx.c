@@ -5,16 +5,12 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)confxx.c	7.1 (Berkeley) %G%
+ *	@(#)confxx.c	7.2 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
-
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
 #include "saio.h"
 
 devread(io)
@@ -86,12 +82,6 @@ int	nullsys(), nullioctl();
 int	xxstrategy(), xxopen()/*, xxioctl()*/;
 
 struct devsw devsw[] = {
-	{ "XX",	xxstrategy,	xxopen,		nullsys,	/*xxioctl*/ },
-	{ 0, 0, 0, 0, 0 }
+	{ "XX",	xxstrategy,	xxopen,		nullsys,	/*xxioctl*/ }
 };
-#ifdef	TP
-char	bootprog[] = "XX0b:" ;
-#else
-char	bootprog[] = "XX0a:/boot" ;
-#endif
 int ndevs = 1 ;
