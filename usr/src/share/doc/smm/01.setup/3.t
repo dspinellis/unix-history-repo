@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.23 (Berkeley) %G%
+.\"	@(#)3.t	6.24 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -273,15 +273,15 @@ These goals are realized with the following general layouts.
 The reorganized root filesystem has the following directories:
 .TS
 lfC l.
-etc	(config files)
-bin	(user binaries needed when single-user)
-sbin	(root binaries needed when single-user)
-local	(locally added binaries used only by this machine)
-tmp	(mount point for memory based file system)
-dev	(local devices)
-home	(mount point for AMD)
-var	(mount point for per-machine variable directories)
-usr	(mount point for multiuser binaries and files)
+/etc	(config files)
+/bin	(user binaries needed when single-user)
+/sbin	(root binaries needed when single-user)
+/local	(locally added binaries used only by this machine)
+/tmp	(mount point for memory based file system)
+/dev	(local devices)
+/home	(mount point for AMD)
+/var	(mount point for per-machine variable directories)
+/usr	(mount point for multiuser binaries and files)
 .TE
 .LP
 The reorganized
@@ -289,18 +289,18 @@ The reorganized
 filesystem has the following directories:
 .TS
 lfC l.
-bin	(user binaries)
-contrib	(software contributed to \*(4B)
-games	(binaries for games, score files in \f(CW/var\fP)
-include	(standard include files)
-lib	(lib*.a from old \f(CW/usr/lib\fP)
-libdata	(databases from old \f(CW/usr/lib\fP)
-libexec	(executables from old \f(CW/usr/lib\fP)
-local	(locally added binaries used site-wide)
-old	(deprecated binaries)
-sbin	(root binaries)
-share	(mount point for site-wide shared text)
-src	(mount point for sources)
+/usr/bin	(user binaries)
+/usr/contrib	(software contributed to \*(4B)
+/usr/games	(binaries for games, score files in \f(CW/var\fP)
+/usr/include	(standard include files)
+/usr/lib	(lib*.a from old \f(CW/usr/lib\fP)
+/usr/libdata	(databases from old \f(CW/usr/lib\fP)
+/usr/libexec	(executables from old \f(CW/usr/lib\fP)
+/usr/local	(locally added binaries used site-wide)
+/usr/old	(deprecated binaries)
+/usr/sbin	(root binaries)
+/usr/share	(mount point for site-wide shared text)
+/usr/src	(mount point for sources)
 .TE
 .LP
 The reorganized
@@ -308,17 +308,17 @@ The reorganized
 filesystem has the following directories:
 .TS
 lfC l.
-calendar	(various useful calendar files)
-dict	(dictionaries)
-doc	(\*(4B manual sources)
-games	(games text files)
-groff_font	(groff font information)
-man	(typeset manual pages)
-misc	(dumping ground for random text files)
-mk	(templates for \*(4B makefiles)
-skel	(template user home directory files)
-tmac	(various groff macro packages)
-zoneinfo	(information on time zones)
+/usr/share/calendar	(various useful calendar files)
+/usr/share/dict	(dictionaries)
+/usr/share/doc	(\*(4B manual sources)
+/usr/share/games	(games text files)
+/usr/share/groff_font	(groff font information)
+/usr/share/man	(typeset manual pages)
+/usr/share/misc	(dumping ground for random text files)
+/usr/share/mk	(templates for \*(4B makefiles)
+/usr/share/skel	(template user home directory files)
+/usr/share/tmac	(various groff macro packages)
+/usr/share/zoneinfo	(information on time zones)
 .TE
 .LP
 The reorganized
@@ -326,26 +326,26 @@ The reorganized
 filesystem has the following directories:
 .TS
 lfC l.
-account	(accounting files, formerly \f(CW/usr/adm\fP)
-at	(\fIat\fP\|(1) spooling area)
-backups	(backups of system files)
-crash	(crash dumps)
-db	(system-wide databases, e.g. tags)
-games	(score files)
-log	(log files)
-mail	(users mail)
-obj	(hierarchy to build \f(CW/usr/src\fP)
-preserve	(preserve area for vi)
-quotas	(directory to store quota files)
-run	(directory to store *.pid files)
-rwho	(rwho databases)
-spool/ftp	(home directory for anonymous ftp)
-spool/mqueue	(sendmail spooling directory)
-spool/news	(news spooling area)
-spool/output	(printer spooling area)
-spool/uucp	(uucp spooling area)
-tmp	(disk-based temporary directory)
-users	(root of per-machine user home directories)
+/var/account	(accounting files, formerly \f(CW/usr/adm\fP)
+/var/at	(\fIat\fP\|(1) spooling area)
+/var/backups	(backups of system files)
+/var/crash	(crash dumps)
+/var/db	(system-wide databases, e.g. tags)
+/var/games	(score files)
+/var/log	(log files)
+/var/mail	(users mail)
+/var/obj	(hierarchy to build \f(CW/usr/src\fP)
+/var/preserve	(preserve area for vi)
+/var/quotas	(directory to store quota files)
+/var/run	(directory to store *.pid files)
+/var/rwho	(rwho databases)
+/var/spool/ftp	(home directory for anonymous ftp)
+/var/spool/mqueue	(sendmail spooling directory)
+/var/spool/news	(news spooling area)
+/var/spool/output	(printer spooling area)
+/var/spool/uucp	(uucp spooling area)
+/var/tmp	(disk-based temporary directory)
+/var/users	(root of per-machine user home directories)
 .TE
 .PP
 The \*(4B bootstrap routines pass the identity of the boot device
@@ -365,6 +365,12 @@ will be used.
 The \*(4B bootstrap is backward compatible with \*(Ps,
 so you can replace your old bootstrap if you use it
 to boot your first \*(4B kernel.
+However, the \*(Ps bootstrap cannot access \*(4B filesystems,
+so if you plan to convert your filesystems to \*(4B,
+you must install a new bootstrap \fIbefore\fP doing the conversion.
+Note that SPARC users cannot build a \*(4B compatible version
+of the bootstrap, so must \fInot\fP convert their root filesystem
+to the new \*(4B format.
 .PP
 Once you have extracted the \*(4B system and booted from it,
 you will have to build a kernel customized for your configuration.
@@ -471,7 +477,8 @@ some exceptions are noted below.
 The files marked with an asterisk (*) require
 particular attention and are discussed below.
 .PP
-The most immediately obvious change in \*(4B is the reorganization
+As described in section 3.3,
+the most immediately obvious change in \*(4B is the reorganization
 of the system filesystems.
 Users of certain recent vendor releases have seen this general organization,
 although \*(4B takes the reorganization a bit further.
@@ -982,7 +989,7 @@ privilege to set kernel state.
 .PP
 The kernel runs with four different levels of security.
 Any superuser process can raise the security level, but only 
-.Fn init
+.Fn init (8)
 can lower it.
 Security levels are defined as follows:
 .IP \-1
@@ -1063,7 +1070,7 @@ The semantics of the
 system call are slightly different.
 The synchronization between parent and child is preserved,
 but the memory sharing aspect is not.
-In practise this has been enough for backward compatibility,
+In practice this has been enough for backward compatibility,
 but newer code should just use
 .Xr fork (2).
 .NH 4
@@ -1515,7 +1522,9 @@ The standard include files for
 .Xr make
 are in
 .Pn /usr/share/mk .
-There is a bsd.README file in
+There is a
+.Pn bsd.README
+file in
 .Pn /usr/src/share/mk .
 .PP
 Another global change supported by the new
@@ -1606,8 +1615,8 @@ option to
 .Xr passwd (1)
 changes the ``local'' password if one exists.
 .PP
-Note that Version 5 of Kerberos will be released soon,
-and that Version 4 should probably be replaced at that time.
+Note that Version 5 of Kerberos will be released soon;
+Version 4 should probably be replaced at that time.
 .NH 4
 Additions and changes to other utilities
 .PP
@@ -1785,7 +1794,7 @@ from
 .Xr fopen ;
 this allocation has been known to cause problems with programs
 that use their own memory allocators.
-This does not occur until after 20 files have been opened
+Memory allocation does not occur until after 20 files have been opened
 by the standard I/O library.
 .PP
 .Xr Select
