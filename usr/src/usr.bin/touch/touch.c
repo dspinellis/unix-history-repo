@@ -23,29 +23,25 @@ main(argc,argv)
 	int	argc;
 	char	**argv;
 {
-	char	*argp;
+	extern int optind;
+	int ch;
 
-	dontcreate = 0;
-	force = 0;
-	for (argv++; **argv == '-'; argv++) {
-		for (argp = &(*argv)[1]; *argp; argp++) {
-			switch (*argp) {
-			case 'c':
-				dontcreate = 1;
-				break;
-			case 'f':
-				force = 1;
-				break;
-			default:
-				fprintf(stderr, "%s: bad option -%c\n",
-					whoami, *argp);
-				exit(1);
-			}
+	dontcreate = force = 0;
+	while ((ch = getopt(argc, argv, "cf")) != EOF)
+		switch((char)ch) {
+		case 'c':
+			dontcreate = 1;
+			break;
+		case 'f':
+			force = 1;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: %s [-cf] file ...\n", whoami);
+			exit(1);
 		}
-	}
-	for (/*void*/; *argv; argv++) {
+	for (argv += optind; *argv; ++argv)
 		touch(*argv);
-	}
 }
 
 touch(filename)
@@ -55,7 +51,7 @@ touch(filename)
 
 	if (stat(filename,&statbuffer) == -1) {
 		if (!dontcreate) {
-			readwrite(filename,0);
+			readwrite(filename,0L);
 		} else {
 			fprintf(stderr, "%s: %s: does not exist\n",
 				whoami, filename);
@@ -92,10 +88,11 @@ touch(filename)
 
 readwrite(filename,size)
 	char	*filename;
-	int	size;
+	off_t	size;
 {
 	int	filedescriptor;
 	char	first;
+	off_t	lseek();
 
 	if (size) {
 		filedescriptor = open(filename,2);
