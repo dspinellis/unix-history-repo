@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.10	85/04/16	*/
+/*	ip_icmp.c	6.11	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -245,12 +245,12 @@ icmp_input(m)
 			 in_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst, RTF_GATEWAY);
-			ip_ctlinput(PRC_REDIRECT_NET, (caddr_t)icp);
+			pfctlinput(PRC_REDIRECT_NET, (caddr_t)icp);
 		} else {
 			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst, RTF_GATEWAY | RTF_HOST);
-			ip_ctlinput(PRC_REDIRECT_HOST, (caddr_t)icp);
+			pfctlinput(PRC_REDIRECT_HOST, (caddr_t)icp);
 		}
 		/* FALL THROUGH */
 
