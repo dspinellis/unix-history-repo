@@ -999,12 +999,12 @@ cgetnum(buf, cap, num)
 	for (;;) {
 		if ('0' <= *bp && *bp <= '9')
 			digit = *bp - '0';
+		else if ('a' <= *bp && *bp <= 'f')
+			digit = 10 + *bp - 'a';
+		else if ('A' <= *bp && *bp <= 'F')
+			digit = 10 + *bp - 'A';
 		else
-			if (   ('a' <= *bp && *bp <= 'f')
-			    || ('A' <= *bp && *bp <= 'F'))
-				digit = 10 + *bp - 'a';
-			else
-				break;
+			break;
 
 		if (digit >= base)
 			break;
