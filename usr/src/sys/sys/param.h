@@ -1,6 +1,6 @@
 /* "@(#)param.h 2.1 3/25/82" */
 
-/*	param.h	4.18	82/06/11	*/
+/*	param.h	4.19	82/07/15	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -156,6 +156,14 @@
 #define	DEV_BSIZE	512
 #define BLKDEV_IOSIZE	4096
 #define MAXFRAG 	8
+
+/*
+ * Map a ``block device block'' to a file system block.
+ * This should be device dependent, and will be after we
+ * add an entry to cdevsw for that purpose.  For now though
+ * just use DEV_BSIZE.
+ */
+#define	bdbtofsb(bn)	((bn) / CLSIZE)
 
 /*
  * MAXPATHLEN defines the longest permissable path length
