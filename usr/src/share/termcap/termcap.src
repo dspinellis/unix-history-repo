@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.7	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.8	(Berkeley) %G%
 #	Mark Horton, U.C. Berkeley
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
@@ -105,7 +105,7 @@ Ac|dtc|ps|dtc382|382:\
 	:dl=^P^S:ei=^Pi:ho=^P^R:im=^PI:ve=^Pb:vs=^PB:pc=\177:te=20^P^]:\
 	:li#24:nd=^PR:.se=^P \200:.so=^P \002^PF:us=^P \020:ue=^P \200:\
 	:up=^P^L:nc:nl=\n:xr:xs:da:db:.pt:cr=^P^M:cd=^P^U^P^S^P^S:
-Ad|dtc300s|300|300s|dtc|dtc 300s:\
+Ad|dtc300s|300|300s|dtc 300s:\
 	:ct=\E3:st=\E1:cr=^M:do=^J:nl=^J:bl=^G:\
 	:kb=^h:le=^H:bs:co#132:ff=^L:hc:hu=\EH:hd=\Eh:os:ta=^I:pt:up=^Z:
 Ag|gsi:\
@@ -320,15 +320,8 @@ MD|vc303|vc103|vc203|volker-craig 303:\
 	:cr=^M:do=^J:bl=^G:\
 	:am:le=^H:bs:cl=40^L:co#80:ho=40^K:kd=^J:kl=^H:kr=^I:ku=^N:li#24:\
 	:ll=^O\200W:nd=^I:ns:up=^N:
-# From cbosg!ucbvax!SRC:george Fri Sep 11 22:38:32 1981
-ME|ampex|d80|dialogue|dialogue80|ampex dialogue 80:\
-	:ct=\E3:st=\E1:cr=^M:do=^J:nl=^J:bl=^G:\
-	:is=\EA:us=\El:ue=\Em:\
-	:am:le=^H:bs:ta=^I:pt:cl=75\E*:cm=\E=%+ %+ :\
-	:al=5*\EE:bt=\EI:ic=\EQ:im=:ei=:dl=5*\ER:dc=\EW:\
-	:ce=\Et:cd=\Ey:so=\Ej:se=\Ek:li#24:co#80:nd=^L:up=^K:
 # Test version for Falco ts-1. See "arpavax.hickman@ucb" for info
-MF|falco|ts1|ts-1|falco ts-1:is=\Eu\E3:\
+ME|falco|ts1|ts-1|falco ts-1:is=\Eu\E3:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:al=\EE:am:bs:ce=\ET\EG0^h:cm=\E=%+ %+ :cl=\E*:cd=\EY:co#80:dc=\EW:\
 	:dl=\ER:ei=\Er:ho=^^:im=\Eq:k0=^A0\r:kd=^J:kl=^H:pt:\
@@ -375,9 +368,16 @@ MK|tec500|tec 500:\
 ML|tec:\
 	:li#24:co#80:cl=^l:up=^k:nd=\037:am:le=^H:bs:ho=\036:ma=^K^P^_ :\
 	:cr=^M:do=^J:nl=^J:bl=^G:
-MM|teletec|tec|Teletec Datascreen:\
+MM|teletec|Teletec Datascreen:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:am:le=^H:bs:co#80:cl=^l:ho=^^:li#24:nd=^_:up=^k:
+# From cbosg!ucbvax!SRC:george Fri Sep 11 22:38:32 1981
+MN|ampex|d80|dialogue|dialogue80|ampex dialogue 80:\
+	:ct=\E3:st=\E1:cr=^M:do=^J:nl=^J:bl=^G:\
+	:is=\EA:us=\El:ue=\Em:\
+	:am:le=^H:bs:ta=^I:pt:cl=75\E*:cm=\E=%+ %+ :\
+	:al=5*\EE:bt=\EI:ic=\EQ:im=:ei=:dl=5*\ER:dc=\EW:\
+	:ce=\Et:cd=\Ey:so=\Ej:se=\Ek:li#24:co#80:nd=^L:up=^K:
 MP|digilog|333|digilog 333:\
 	:le=^H:bs:co#80:ce=\030:ho=^n:li#16:nd=^i:up=^o:\
 	:cr=^M:do=^J:nl=^J:bl=^G:
@@ -540,6 +540,11 @@ Mo|omron|Omron 8025AG:\
 Mp|plasma|plasma panel:\
 	:am:le=^H:bs:cl=^L:co#85:ho=^^:li#45:nd=\030:up=\026:\
 	:cr=^M:do=^J:nl=^J:bl=^G:
+Mq|pty|psuedo teletype:\
+	:cr=^M:do=^J:nl=^J:bl=^G:\
+	:co#80:li#24:am:cl=\EJ:le=^H:bs:cm=\EG%+ %+ :nd=\EC:\
+	:up=\EA:ce=\EK:cd=\EL:al=\EP:dl=\EN:ic=\EO:\
+	:so=\Ea$:se=\Eb$:us=\Ea!:ue=\Eb!:
 Mr|remote|virtual remote terminal:\
 	:co#79:am@:nl@:tc=virtual:
 Ms|swtp|ct82|southwest technical products ct82:\
@@ -563,11 +568,6 @@ Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:up=\E\101:ce=\E\113:cd=\E\114:al=\E\120:dl=\E\116:im=:ei=:ic=\E\117:\
 	:da:db:kl=\E\104:kr=\E\103:ku=\E\101:kd=\E\102:kh=\E\105:\
 	:so=\E\141\004:se=\E\142\004:us=\E\141\001:ue=\E\142\001:
-My|pty|psuedo teletype:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:co#80:li#24:am:cl=\EJ:le=^H:bs:cm=\EG%+ %+ :nd=\EC:\
-	:up=\EA:ce=\EK:cd=\EL:al=\EP:dl=\EN:ic=\EO:\
-	:so=\Ea$:se=\Eb$:us=\Ea!:ue=\Eb!:
 Mw|it2|intertube2|intertec data systems intertube 2:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:am:bs:cl=^L:co#80:ho=^A:li#25:up=^Z:ce=\EK:\
@@ -747,7 +747,7 @@ NG|aaa-28|ann arbor ambassador/28 lines:\
 	:ti=\E[2J\E[28;0;0;28p:te=\E[60;0;0;28p\E[28;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#28:tc=aaa-unk:
-NH|aaa|aaa-30|ambas|ambassador|ann arbor ambassador/30 lines:\
+NH|aaa|ambassador|aaa-30|ann arbor ambassador/30 lines:\
 	:ti=\E[2J\E[30;0;0;30p:te=\E[60;0;0;30p\E[30;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#30:tc=aaa-unk:
@@ -772,47 +772,47 @@ NS|aaa-unk-s|ann arbor ambassador unknown with/status:\
 	:ts=\E7\E[>51h\E[H\E[2K\E[%i%d`:fs=\E[>51l\E8:\
 	:ds=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
 	:tc=aaa-unk:
-NM|aaa-18-s|ambassador|ann arbor ambassador/18 lines + status line:\
+NM|aaa-18-s|ann arbor ambassador/18 lines + status line:\
 	:ti=\E[2J\E[18;1;0;18p:\
 	:te=\E[60;1;0;18p\E[17;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#17:tc=aaa-unk-s:
-NN|aaa-20-s|ambassador|ann arbor ambassador/20 lines + status line:\
+NN|aaa-20-s|ann arbor ambassador/20 lines + status line:\
 	:ti=\E[2J\E[20;1;0;20p:\
 	:te=\E[60;1;0;20p\E[19;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#19:tc=aaa-unk-s:
-NO|aaa-22-s|ambassador|ann arbor ambassador/22 lines + status line:\
+NO|aaa-22-s|ann arbor ambassador/22 lines + status line:\
 	:ti=\E[2J\E[22;1;0;22p:\
 	:te=\E[60;1;0;22p\E[21;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#21:tc=aaa-unk-s:
-NP|aaa-24-s|ambassador|ann arbor ambassador/24 lines + status line:\
+NP|aaa-24-s|ann arbor ambassador/24 lines + status line:\
 	:ti=\E[2J\E[24;1;0;24p:\
 	:te=\E[60;1;0;24p\E[23;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#23:tc=aaa-unk-s:
-NQ|aaa-26-s|ambassador|ann arbor ambassador/26 lines + status line:\
+NQ|aaa-26-s|ann arbor ambassador/26 lines + status line:\
 	:ti=\E[2J\E[26;1;0;26p:\
 	:te=\E[60;1;0;26p\E[25;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#25:tc=aaa-unk-s:
-NR|aaa-28-s|ambassador|ann arbor ambassador/28 lines + status line:\
+NR|aaa-28-s|ann arbor ambassador/28 lines + status line:\
 	:ti=\E[2J\E[28;1;0;28p:\
 	:te=\E[60;1;0;28p\E[27;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#27:tc=aaa-unk-s:
-NT|aaa-30-s|ambassador|ann arbor ambassador/30 lines + status line:\
+NT|aaa-30-s|ann arbor ambassador/30 lines + status line:\
 	:ti=\E[2J\E[30;1;0;30p:\
 	:te=\E[60;1;0;30p\E[29;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#29:tc=aaa-unk-s:
-NU|aaa-36-s|ambassador|ann arbor ambassador/36 lines + status line:\
+NU|aaa-36-s|ann arbor ambassador/36 lines + status line:\
 	:ti=\E[2J\E[36;1;0;36p:\
 	:te=\E[60;1;0;36p\E[35;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#35:tc=aaa-unk-s:
-NV|aaa-40-s|ambassador|ann arbor ambassador/40 lines + status line:\
+NV|aaa-40-s|ann arbor ambassador/40 lines + status line:\
 	:ti=\E[2J\E[40;1;0;40p:\
 	:te=\E[60;1;0;40p\E[39;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
@@ -821,7 +821,7 @@ NW|aaa-48-s|ann arbor ambassador/48 lines+sl:\
 	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[47;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\EP`?y~[[2J~[[H\E7\E[60;1;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#47:tc=aaa-unk-s:
-NX|aaa-60-s|ambassador|ann arbor ambassador/60 lines + status line:\
+NX|aaa-60-s|ann arbor ambassador/60 lines + status line:\
 	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[59;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#59:tc=aaa-unk-s:
@@ -1216,12 +1216,12 @@ c5|avt|concept avt w/4 or 8 pages, 80 columns:\
 	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:te=\E[w\E2\r\n:\
 	:ti=\E[1;24w\E2\r:ue=\E[4!{:ul:up=\E[A:us=\E[4m:ve=\E[=4;119l:\
 	:vs=\E[=4l\E[=119h:xn:
-c6|avt-rv|concept avt w/4 or 8 pages, 80 columns:\
+c6|avt-rv|concept avt w/4 or 8 pages, reverse video, 80 columns:\
 	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;205;207h\E)1\E[1Q\EW\E[7!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:tc=avt
 c8|c108|c108-8p|concept108-8p|concept 108 w/8 pages:\
 	:i2=\EU\E z"\Ev^A\177 !p\E ;"\E z \Ev  ^A\177p\Ep\n:\
 	:te=\Ev  ^A\177p\Ep\r\n:tc=c108-4p:
-cS|c108|c108-4p|concept108-4p|concept 108 w/4 pages:\
+cS|c108-4p|concept108-4p|concept 108 w/4 pages:\
 	:es:hs:\
 	:ts=\E z"\E?\E^C\Ea %+ :fs=\E z :ds=\E ;\177:\
 	:i2=\EU\E z"\Ev\177 !p\E ;"\E z \Ev  \177p\Ep\n:\
@@ -1329,7 +1329,7 @@ dp|vt100-np|vt100 with no padding (for psl games):\
 	:cl=\E[H\E[2J:sr=\EM:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:tc=vt100:
-d0|vt100|vt100-am|vt100|dec vt100:\
+d0|vt100|vt100-am|dec vt100:\
 	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
@@ -1339,7 +1339,7 @@ d0|vt100|vt100-am|vt100|dec vt100:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:xn:\
 	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
-d1|vt100|vt100-nam|vt100 w/no am:\
+d1|vt100-nam|vt100 w/no am:\
 	:am@:xn@:tc=vt100-am:
 d2|gt42|dec gt42:\
 	:cr=^M:do=^J:bl=^G:\
@@ -1360,9 +1360,22 @@ d6|vt125|vt125-am|vt125:\
 	:ke=\E[?1l\E>:rf=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
 	:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:\
 	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
+# DEC gigi color graphic terminal , same as vt52
+d7|gigi|dec gigi terminal:\
+	:co#80:is=200\E>\E[?4l\E[?5l\E[?7h\E[?8h:\
+	:li#24:cl=100\E[;H\E[2J:bs:cm=50\E[%i%2;%2H:nd=200\E[C:up=100\E[A:\
+	:ce=120\E[K:cd=100\E[J:so=20\E[7m:se=20\E[m:us=20\E[4m:ue=20\E[m:\
+	:ks=200\E[?1h\E=:ke=200\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=200\EM:\
+	:dC=50:dF=200:dN=50:dT=50:
 dI|dw1|decwriter I:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:co#72:hc:os:
+# From cbosg!ucbvax!G:tut Thu Sep 24 22:10:46 1981
+df|dw4|decwriter IV:\
+	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:bs:co#132:hc:os:am:\
+	:ta=^I:pt:is=\Ec:k0=\EOP:k1=\EOQ:k2=\EOR:k3=\EOS:kb=^H:
 dh|vt50h|dec vt50h:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#12:nd=\EC:\
@@ -1378,28 +1391,15 @@ ds|vt100-nav|dec vt100 132 cols 14 lines (w/o advanced video option):\
 	:li#14:tc=vt100-w:
 dt|vt100-w|dec vt100 132 cols (w/advanced video):\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:tc=vt100-am:
-dt|vt100-w-nam|dec vt100 132 cols (w/advanced video):\
+dv|vt100-w-nam|dec vt100 132 cols (w/advanced video), no am:\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:vt@:tc=vt100-nam:
-dv|vt52|dec vt52:\
+dw|vt52|dec vt52:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:nd=\EC:\
 	:ta=^I:pt:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
-# DEC gigi color graphic terminal , same as vt52
-dg|gigi|dec gigi terminal:\
-	:co#80:is=200\E>\E[?4l\E[?5l\E[?7h\E[?8h:\
-	:li#24:cl=100\E[;H\E[2J:bs:cm=50\E[%i%2;%2H:nd=200\E[C:up=100\E[A:\
-	:ce=120\E[K:cd=100\E[J:so=20\E[7m:se=20\E[m:us=20\E[4m:ue=20\E[m:\
-	:ks=200\E[?1h\E=:ke=200\E[?1l\E>:\
-	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=200\EM:\
-	:dC=50:dF=200:dN=50:dT=50:
-dw|dw2|dw3|decwriter II:\
+dx|dw2|dw3|decwriter II:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:kb=^h:le=^H:bs:co#132:hc:os:
-# From cbosg!ucbvax!G:tut Thu Sep 24 22:10:46 1981
-df|dw4|decwriter IV:\
-	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:bs:co#132:hc:os:am:\
-	:ta=^I:pt:is=\Ec:k0=\EOP:k1=\EOQ:k2=\EOR:k3=\EOS:kb=^H:
 # # --------------------------------
 #
 # h: HEWLETT PACKARD
@@ -1423,7 +1423,7 @@ h1|2621-ba|2621 w/new rom, strap A set:\
 # 2621 with function labels.  Most of the time they are off,
 # but inside vi, the function key labels appear.  You have to
 # hold down shift to get them to xmit.
-h2|2621|hp2621|hp2621a|hp2621p|2621|2621a|2621p|2621-pb|hp2621-fl|hp 2621:\
+h2|2621|hp2621|hp2621a|hp2621p|2621a|2621p|2621-pb|hp2621-fl|hp 2621:\
 	:is=\E&j@\r:bt=\Ei:cm=\E&a%r%dc%dY:dc=2\EP:ip=2:pb#19200:\
 	:so=\E&dD:se=\E&d@:us=\E&dD:ue=\E&d@:me=\E&d@:\
 	:kh=\Ep\r:ku=\Et\r:kl=\Eu\r:kr=\Ev\r:kd=\Ew\r:\
@@ -1433,9 +1433,7 @@ h2|2621|hp2621|hp2621a|hp2621p|2621|2621a|2621p|2621-pb|hp2621-fl|hp 2621:\
 # 2622: unsure if this is quite it, have only heard about the terminal.
 h3|2621k45|hp2621k45|k45|2622|hp2622|hp 2621 with 45 keyboard:\
 	:kb=^H:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=2621:
-# This terminal should be used at 4800 baud or less.
-hn|hp2645-np|2645 w/no padding:cm=\E&a%r%dc%dY:tc=hp2645:
-h4|hp2645|2645|hp45|hp 264x series:\
+h4|hp2645|2645|hp45:\
 	:mh=\E&dH:mr=\E&dB:us=\E&dD:mb=\E&dA:me=\E&d@:\
 	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=hp:
 h5|hp|hewlett-packard:\
@@ -1455,6 +1453,8 @@ h6|hp2626|hp2626a|hp2626p|2626|2626a|2626p|hp 2626:\
 # You should use this terminal at 4800 baud or less.
 h8|hp2648|hp2648a|2648a|2648|HP 2648a graphics terminal:\
 	:cl=50\EH\EJ:cm=20\E&a%r%dc%dY:dc=7\EP:ip=5:tc=2645:
+# This terminal should be used at 4800 baud or less.
+h9|hp2645-np|2645 w/no padding:cm=\E&a%r%dc%dY:tc=hp2645:
 # 2640a doesn't have the Y cursor addressing feature, and C is memory relative
 # instead of screen relative, as we need.
 ha|2640|hp2640a|2640a|hp 2640a:\
@@ -1465,13 +1465,13 @@ hb|2640b|hp2640b|2644a|hp2644a|hp 264x series:\
 hl|2621-48|48 line 2621:\
 	:li#48:ho=\EH:cm=\E&a%r%dc%dR:tc=2621:
 # 2621 with no labels ever.  Also prevents vi delays on escape.
-hn|2621-nl|hp2621-nl|2621|hp2621|hp 2621 with no labels:\
+hn|2621-nl|hp2621-nl|hp 2621 with no labels:\
 	:ks@:ke@:kh@:ku@:kl@:kr@:kd@:tc=hp2621-fl:
 # Needed for UCB ARPAVAX console, since lsi-11 expands tabs (wrong).
 ht|2621-nt|hp 2621 w/no tabs:\
 	:pt@:tc=hp2621:
 # 2621 with labels on all the time - normal outside vi, function inside vi.
-hw|2621-wl|hp2621-wl|2621|hp2621|hp 2621 w/labels:\
+hw|2621-wl|hp2621-wl|hp 2621 w/labels:\
 	:is=\E&jA\r:ke=\E&jA:tc=hp2621-fl:
 # # --------------------------------
 #
@@ -1685,13 +1685,15 @@ qx|xitex|xitex sct-100:\
 # Special "terminals".  These are used to label tty lines when you don't
 # know what kind of terminal is on it.  The characteristics of an unknown
 # terminal are the lowest common denominator - they look about like a ti 700.
-sa|arpanet|network:\
+sa|network:\
 	:tc=unknown:
-sb|bussiplexer:\
+sb|arpanet:\
+	:tc=unknown:
+sc|bussiplexer:\
 	:tc=unknown:
 sd|du|dialup:\
 	:tc=unknown:
-se|ethernet|network:\
+se|ethernet:\
 	:tc=unknown:
 sl|lpr|printer|print|printing|line printer:\
 	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:bs:co#132:hc:os:
@@ -1737,7 +1739,7 @@ v1|tvi912|912|920|tvi920|old televideo:\
 # Termcap makes you use the funct key on the 912 but the real keys on the 920.
 v2|912b|912c|tvi912b|tvi912c|tvi|new televideo 912:\
 	:al=5*\EE:dl=5*\ER:tc=tvi912:
-v3|920b|920c|tvi920b|tvi920c|tvi|new televideo 920:\
+v3|920b|920c|tvi920b|tvi920c|new televideo 920:\
 	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:k4=^AD\r:k5=^AE\r:\
 	:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:tc=tvi912b:
 # set to page 1 when entering ex (\E-17 )
@@ -1876,7 +1878,7 @@ y3|t3800|teleray 3800 series:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=^L:cm=\EY%+ %+ :co#80: \
 	:do=\n:ho=\EH:li#24:ll=\EY7 :nd=\EC:ta=^I:pt:up=^K:
-y6|t1061|teleray|teleray 1061:\
+y6|t1061|teleray 1061:\
 	:ct=\EG:st=\EF:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:al=2*\EL:am:le=^H:bs:cd=1\EJ:ce=\EK:cl=1^L:cm=\EY%+ %+ :co#80:\
@@ -1904,74 +1906,6 @@ y7|t10|teleray 10 special:\
 	:xs:xt:
 yf|t1061f|teleray 1061 with fast PROMs:\
 	:al=\EL:ip@:dl=\EM:tc=t1061:
-# # ------------------------
-#
-# The following have been included for upward compatibility with previous
-# names.  They are considered obsolete and the new name (which typically
-# contains an extra dash) should be used instead.  These names will go
-# away eventually (read: "soon") so you should start converting!
-#
-zz|hp2621nl|2621nl:tc=2621-nl:
-zz|hp2621nt|2621nt:tc=2621-nt:
-zz|hp2621wl|2621wl:tc=2621-wl:
-zz|9122p:tc=912-2p:
-zz|9202p:tc=920-2p:
-zz|9502p:tc=950-2p:
-zz|9504p:tc=950-4p:
-zz|950rv:tc=950-rv:
-zz|950rv2p:tc=950-rv2p:
-zz|950rv4p:tc=950-rv4p:
-zz|aaa18:tc=aaa-18:
-zz|aaa20:tc=aaa-20:
-zz|aaa22:tc=aaa-22:
-zz|aaa24:tc=aaa-24:
-zz|aaa26:tc=aaa-26:
-zz|aaa28:tc=aaa-28:
-zz|aaa30:tc=aaa-30:
-zz|aaa36:tc=aaa-36:
-zz|aaa40:tc=aaa-40:
-zz|aaa48:tc=aaa-48:
-zz|aaa60:tc=aaa-60:
-zz|aaadb:tc=aaa-db:
-zz|c1004p:tc=c100-4p:
-zz|c100rv:tc=c100-rv:
-zz|c100rv4p:tc=c100-rv-4p:
-zz|c100rv4pna:tc=c100-rv-4p-na:
-zz|c100rv4ppp:tc=c100-rv-4p-pp:
-zz|c100rvna:tc=c100-rv-na:
-zz|c100rvpp:tc=c100-rv-pp:
-zz|c100rvs:tc=c100-rv-s:
-zz|c100s:tc=c100-s:
-zz|c108-4:tc=c108-4p:
-zz|c108-8:tc=c108-8p:
-zz|h19A:tc=h19-A:
-zz|h19b:tc=h19-b:
-zz|h19bs:tc=h19-bs:
-zz|h19u:tc=h19-u:
-zz|h19us:tc=h19-us:
-zz|mime2as:tc=mime2a-s:
-zz|mime2av:tc=mime2a-v:
-zz|mimefb:tc=mime-fb:
-zz|mimehb:tc=mime-hb:
-zz|tvi2p:tc=tvi-2p:
-zz|tvi9122p:tc=tvi912-2p:
-zz|tvi9202p:tc=tvi920-2p:
-zz|tvi9502p:tc=tvi950-2p:
-zz|tvi9504p:tc=tvi950-4p:
-zz|tvi950b:tc=tvi950-b:
-zz|tvi950ns:tc=tvi950-ns:
-zz|tvi950rv:tc=tvi950-rv:
-zz|tvi950rv2p:tc=tvi950-rv2p:
-zz|tvi950rv4p:tc=tvi950-rv4p:
-zz|vt100am:tc=vt100-am:
-zz|vt100nam:tc=vt100-nam:
-zz|vt100s:tc=vt100-s:
-zz|vt100w:tc=vt100-w:
-zz|vi200rvic:tc=vi200-rv-ic:
-zz|vi200f:tc=vi200-f:
-zz|vi200rv:tc=vi200-rv:
-zz|vi200ic:tc=vi200-ic:
-zz|tek4014sm|4014sm:tc=tek4014-sm:
 #
 # END OF TERMCAP
 #  ------------------------
