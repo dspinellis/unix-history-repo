@@ -1,4 +1,4 @@
-/*	up.c	4.64	82/12/17	*/
+/*	up.c	4.65	82/12/17	*/
 
 #include "up.h"
 #if NSC > 0
@@ -797,8 +797,6 @@ upecc(ui, flag)
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
-	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = up->upec2;
 #ifdef UPECCDEBUG
 	printf("npf %d reg %x o %d mask %o pos %d\n", npf, reg, o, mask,
