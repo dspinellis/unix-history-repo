@@ -9,15 +9,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "btree.h"
 
 static EPG *bt_fast __P((BTREE *, const DBT *, const DBT *, int *));
@@ -38,7 +40,8 @@ static EPG *bt_fast __P((BTREE *, const DBT *, const DBT *, int *));
 int
 __bt_put(dbp, key, data, flags)
 	const DB *dbp;
-	const DBT *key, *data;
+	DBT *key;
+	const DBT *data;
 	u_int flags;
 {
 	BTREE *t;
@@ -50,6 +53,8 @@ __bt_put(dbp, key, data, flags)
 	size_t nbytes;
 	int dflags, exact, status;
 	char *dest, db[NOVFLSIZE], kb[NOVFLSIZE];
+
+	t = dbp->internal;
 
 	switch (flags) {
 	case R_CURSOR:
@@ -66,7 +71,6 @@ __bt_put(dbp, key, data, flags)
 		return (RET_ERROR);
 	}
 
-	t = dbp->internal;
 	if (ISSET(t, BTF_RDONLY)) {
 		errno = EPERM;
 		return (RET_ERROR);
@@ -144,14 +148,14 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 		 */
 		if (ISSET(t, BTF_DELCRSR) && t->bt_bcursor.pgno == h->pgno &&
 		    t->bt_bcursor.index == index) {
-			UNSET(t, BTF_DELCRSR);
+			CLR(t, BTF_DELCRSR);
 			goto delete;
 		}
 		BT_CLR(t);
 		mpool_put(t->bt_mp, h, 0);
 		return (RET_SPECIAL);
 	default:
-		if (!exact || NOTSET(t, BTF_NODUPS))
+		if (!exact || !ISSET(t, BTF_NODUPS))
 			break;
 delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 			BT_CLR(t);
@@ -169,10 +173,10 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 	 */
 	nbytes = NBLEAFDBT(key->size, data->size);
 	if (h->upper - h->lower < nbytes + sizeof(index_t)) {
-		status = __bt_split(t, h, key, data, dflags, nbytes, index);
-		if (status == RET_SUCCESS)
-			SET(t, BTF_MODIFIED);
-		return (status);
+		if ((status = __bt_split(t, h, key,
+		    data, dflags, nbytes, index)) != RET_SUCCESS)
+			return (status);
+		goto success;
 	}
 
 	if (index < (nxtindex = NEXTINDEX(h)))
@@ -201,6 +205,12 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 
 	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	BT_CLR(t);
+
+success:
+	if (flags == R_SETCURSOR) {
+		t->bt_bcursor.pgno = e->page->pgno;
+		t->bt_bcursor.index = e->index;
+	}
 	SET(t, BTF_MODIFIED);
 	return (RET_SUCCESS);
 }
