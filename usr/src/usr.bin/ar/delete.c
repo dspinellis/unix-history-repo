@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delete.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)delete.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
