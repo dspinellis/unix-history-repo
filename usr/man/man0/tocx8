@@ -1,0 +1,74 @@
+ac(8) ac: login accounting.
+adduser(8) adduser: procedure for adding new users.
+analyze(8) analyze: Virtual UNIX postmortem crash analyzer.
+arcv(8) arcv: convert archives to new format.
+arff(8) arff, flcopy: archiver and copier for floppy.
+bad144(8) bad144: read/write dec standard 144 bad sector information.
+badsect(8) badsect: create files to contain bad sectors.
+catman(8) catman: create the cat files for the manual.
+chown(8) chown: change owner.
+clri(8) clri: clear i-node.
+comsat(8) comsat: biff server.
+config(8) config: Build system configuration files.
+crash(8) crash: what happens when the system crashes.
+cron(8) cron: clock daemon.
+dcheck(8) dcheck: file system directory consistency check.
+diskpart(8) diskpart: calculate default disk partition sizes.
+dmesg(8) dmesg: collect system diagnostic messages to form error log.
+dump(8) dump: incremental file system dump.
+dumpfs(8) dumpfs: dump file system information.
+fastboot(8) fastboot: reboot the system without checking the disks.
+format(8) format: how to format disk packs.
+fsck(8) fsck: file system consistency check and interactive repair.
+ftpd(8) ftpd: DARPA Internet File Transfer Protocol server.
+gettable(8) gettable: get NIC format host tables from a host .
+getty(8) getty: set terminal mode.
+halt(8) halt: stop the processor.
+htable(8) htable: convert NIC standard format host tables.
+icheck(8) icheck: file system storage consistency check.
+implogd(8) implogd: IMP logger process.
+init(8) init: process control initialization.
+install(8) install: install binaries.
+intro(8) intro: introduction to system maintenance and operation commands.
+kgmon(8) kgmon: generate a dump of the operating systems profile buffers.
+lpd(8) lpd, lpdrestart: line printer daemon, restart downed daemons at reboot time.
+makedev(8) MAKEDEV: make system special files.
+makekey(8) makekey: generate encryption key.
+mkfs(8) mkfs: construct a file system.
+mklost+found(8) mklost+found: make a lost+found directory for fsck.
+mknod(8) mknod: build special file.
+mkproto(8) mkproto: construct a pototype file system.
+mount(8) mount, umount: mount and dismount file system.
+ncheck(8) ncheck: generate names from i-numbers.
+newfs(8) newfs: construct a new file system.
+pac(8) pac: printer/ploter accounting information.
+pstat(8) pstat: print system facts.
+quot(8) quot: summarize file system ownership.
+rc(8) rc: command script for auto-reboot and daemons.
+rdump(8) rdump: file system dump across the network.
+reboot(8) reboot: UNIX bootstrapping procedures.
+renice(8) renice: alter priority of running process by changing nice.
+restor(8) restor: incremental file system restore.
+rexecd(8) rexecd: remote execution server.
+rlogind(8) rlogind: remote login server.
+rmt(8) rmt: remote magtape protocol module.
+route(8) route: manually manipulate the routing tables.
+routed(8) routed: network routing daemon.
+rrestor(8) rrestor: file system dump across the network.
+rshd(8) rshd: remote shell server.
+rwhod(8) rwhod: system status server.
+sa(8) sa, accton: system accounting.
+savecore(8) savecore: save a core dump of the operating system.
+sendmail(8) sendmail: send mail over the internet.
+shutdown(8) shutdown: close down the system at a given time.
+sticky(8) sticky: executable files with persistent text.
+swapon(8) swapon: specify additional device for paging and swapping.
+sync(8) sync: update the super block.
+syslog(8) syslog: log systems messages.
+telnetd(8) telnetd: DARPA TELNET protocol server.
+tftpd(8) tftp: DARPA Trivial File Transfer Protocol server.
+trpt(8) trpt: transliterate protocol trace.
+tunefs(8) tunefs: tune up an existing file system.
+update(8) update: periodically update the super block.
+uuclean(8) uuclean: uucp spool directory clean-up.
+vipw(8) vipw: edit the password file with vi.

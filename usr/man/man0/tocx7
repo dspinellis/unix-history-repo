@@ -1,0 +1,9 @@
+ascii(7) ascii: map of ASCII character set.
+environ(7) environ: user environment.
+eqnchar(7) eqnchar: special character definitions for eqn.
+hier(7) hier: file system hierarchy.
+intro(7) miscellaneous: Miscellaneous useful information pages.
+man(7) man: macros to typeset manual.
+me(7) me: macros for formatting papers.
+ms(7) ms: macros for formatting manuscripts.
+term(7) terminals: conventional names.
