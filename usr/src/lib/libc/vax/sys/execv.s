@@ -1,4 +1,4 @@
-/* execv.s 4.1 82/12/04 */
+/* execv.s 4.2 82/12/29 */
 
 #include "SYS.h"
 
@@ -8,4 +8,4 @@ ENTRY(execv)
 	pushl	8(ap)
 	pushl	4(ap)
 	calls	$3,_execve
-	jmp	cerror		# execv(file, argv)
+	ret			# execv(file, argv)
