@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.17 84/04/08";
+static	char *sccsid = "@(#)wwinit.c	3.18 84/04/16";
 #endif
 
 #include "ww.h"
@@ -28,8 +28,8 @@ wwinit()
 	register char **p, **q;
 	char **env, **termcap;
 	extern char **environ;
+	int s;
 
-#ifndef O_4_1A
 	if (done)
 		return 0;
 	done++;
@@ -105,7 +105,7 @@ wwinit()
 	*q = 0;
 	environ = env;
 
-	(void) sigrelse(SIGIO);
+	(void) sigsetmask(s);
 	return 0;
 }
 

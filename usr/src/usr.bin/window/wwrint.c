@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwrint.c	3.1 84/03/03";
+static	char *sccsid = "@(#)wwrint.c	3.2 84/04/16";
 #endif
 
 #include "ww.h"
@@ -36,7 +36,7 @@ wwrint()
 		wwnreade++;
 	if (wwinterrupt() && wwsetjmp) {
 		wwsetjmp = 0;
-		(void) sigrelse(SIGIO);
+		(void) sigsetmask(sigblock(0) & ~sigmask(SIGIO));
 		longjmp(wwjmpbuf, 1);
 	}
 }
