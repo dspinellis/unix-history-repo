@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.6 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -144,7 +144,7 @@ loop:
 				ip->i_freef = NULL;
 				ip->i_freeb = NULL;
 			}
-			ip->i_flag |= ILOCKED;
+			ILOCK(ip);
 			vp->v_count++;
 			*ipp = ip;
 			return(0);
@@ -170,6 +170,7 @@ loop:
 		ip->i_back = ip;
 		ip->i_number = 0;
 		INSFREE(ip);
+		iunlock(ip);
 		ip->i_flag = 0;
 		brelse(bp);
 		*ipp = 0;
@@ -207,6 +208,7 @@ again:
 			ip->i_back = ip;
 			ip->i_number = 0;
 			INSFREE(ip);
+			iunlock(ip);
 			ip->i_flag = 0;
 			/*
 			 * Reinitialize aliased inode.
@@ -310,7 +312,8 @@ getnewino(dev, ino, ipp)
 		ih = &ihead[INOHASH(dev, ino)];
 		insque(ip, ih);
 	}
-	ip->i_flag = ILOCKED;
+	ip->i_flag = 0;
+	ILOCK(ip);
 	ip->i_lastr = 0;
 #endif SECSIZE
 	/*
@@ -372,7 +375,7 @@ igrab(ip)
 		ip->i_freeb = NULL;
 	}
 	vp->v_count++;
-	ip->i_flag |= ILOCKED;
+	ILOCK(ip);
 }
 
 /*
@@ -447,7 +450,7 @@ ufs_inactive(vp)
 
 	if (ITOV(ip)->v_count != 0)
 		panic("ufs_inactive: not inactive");
-	ip->i_flag |= ILOCKED;
+	ILOCK(ip);
 	if (ip->i_nlink <= 0 && (ITOV(ip)->v_mount->m_flag&M_RDONLY) == 0) {
 		error = itrunc(ip, (u_long)0);
 		mode = ip->i_mode;
