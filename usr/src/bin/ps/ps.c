@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -57,7 +57,7 @@ char	*ttyname();
 #define UFMT \
 	"user pid %cpu %mem vsz rss tt state start time command"
 #define	VFMT \
-	"pid tt state time sl re pagein vsz rss lim tsiz trs %cpu %mem command"
+	"pid state time sl re pagein vsz rss lim tsiz trs %cpu %mem command"
 
 main(argc, argv)
 	int argc;

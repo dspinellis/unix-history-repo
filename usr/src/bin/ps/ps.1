@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ps.1	6.11 (Berkeley) %G%
+.\"     @(#)ps.1	6.12 (Berkeley) %G%
 .\"
 .TH PS 1 "March 10, 1988"
 .UC 4
@@ -104,7 +104,7 @@ The \-u option implies the \-r option.
 .TP
 \-v
 Display information associated with the following keywords:
-pid, tt, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trs,
+pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trs,
 %cpu, %mem and command.
 The \-v option implies the \-m option.
 .TP
@@ -196,7 +196,7 @@ If the command started less than 24 hours ago, the start time is
 displayed using the ``%l:ps.1p'' format described in 
 .IR strftime (3).
 If the command started less than 7 days ago, the start time is
-displayed using the ``%a6.11p'' format.
+displayed using the ``%a6.12p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
 .TP
 state
