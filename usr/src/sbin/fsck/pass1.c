@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -184,7 +184,8 @@ checkinode(inumber, idesc)
 	} else
 		statemap[inumber] = FSTATE;
 	typemap[inumber] = IFTODT(mode);
-	if (doinglevel2 && (dp->di_ouid != -1 || dp->di_ogid != -1)) {
+	if (doinglevel2 &&
+	    (dp->di_ouid != (u_short)-1 || dp->di_ogid != (u_short)-1)) {
 		dp = ginode(inumber);
 		dp->di_uid = dp->di_ouid;
 		dp->di_ouid = -1;
