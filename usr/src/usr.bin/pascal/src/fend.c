@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.3 %G%";
+static char sccsid[] = "@(#)fend.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -52,9 +52,10 @@ funcend(fp, bundle, endline)
 	char *cp;
 	extern int cntstat;
 #	ifdef PC
-	    int	savlabel = getlab();
-	    int	toplabel = getlab();
-	    int	botlabel = getlab();
+	    int		savlabel = getlab();
+	    int		toplabel = getlab();
+	    int		botlabel = getlab();
+	    char	extname[ BUFSIZ ];
 #	endif PC
 
 	cntstat = 0;
@@ -133,15 +134,9 @@ funcend(fp, bundle, endline)
 	    ftnno = fp -> entloc;
 	    putprintf( "	.text" , 0 );
 	    putprintf( "	.align	1" , 0 );
-	    putprintf( "	.globl	" , 1 );
-	    for ( i = 1 ; i < cbn ; i++ ) {
-		putprintf( EXTFORMAT , 1 , enclosing[ i ] );
-	    }
-	    putprintf( "" , 0 );
-	    for ( i = 1 ; i < cbn ; i++ ) {
-		putprintf( EXTFORMAT , 1 , enclosing[ i ] );
-	    }
-	    putprintf( ":" , 0 );
+	    sextname( extname , fp -> symbol , cbn );
+	    putprintf( "	.globl	%s" , 0 , extname );
+	    putprintf( "%s:" , 0 , extname );
 	    stabfunc( fp -> symbol , fp -> class , bundle[1] , cbn - 1 );
 	    for ( p = fp -> chain ; p != NIL ; p = p -> chain ) {
 		stabparam( p -> symbol , p2type( p -> type )
@@ -580,3 +575,29 @@ funcend(fp, bundle, endline)
 		opop('l');
 	}
 }
+
+#ifdef PC
+    /*
+     *	construct the long name of a function based on it's static nesting.
+     *	into a caller-supplied buffer (that should be about BUFSIZ big).
+     */
+sextname( buffer , name , level )
+    char	buffer[];
+    char	*name;
+    int		level;
+{
+    char	*starthere;
+    int	i;
+
+    starthere = &buffer[0];
+    for ( i = 1 ; i < level ; i++ ) {
+	sprintf( starthere , EXTFORMAT , enclosing[ i ] );
+	starthere += strlen( enclosing[ i ] ) + 1;
+    }
+    sprintf( starthere , EXTFORMAT , p -> symbol );
+    starthere += strlen( p -> symbol ) + 1;
+    if ( starthere >= &buffer[ BUFSIZ ] ) {
+	panic( "sextname" );
+    }
+}
+#endif PC
