@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)g1	8.1 (Berkeley) %G%
+.\"	@(#)g1	8.2 (Berkeley) %G%
 .\"
 .if t .2C
 .SC Introduction
@@ -263,11 +263,7 @@ Knowledgeable users can also use
 four-character names
 for anything 
 .UC EQN
-doesn't know about,
-like
-.ul
-\\(bs
-for the Bell System sign \(bs.
+doesn't know about.
 .SC "Spaces, Again"
 .PP
 The only way
