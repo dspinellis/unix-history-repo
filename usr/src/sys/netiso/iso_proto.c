@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso_proto.c,v $ 
- *	@(#)iso_proto.c	7.3 (Berkeley) %G% *
+ *	@(#)iso_proto.c	7.4 (Berkeley) %G% *
  *
  * iso_proto.c : protocol switch tables in the ISO domain
  *
@@ -51,7 +51,6 @@ static char *rcsid = "$Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $"
 int clnp_output(), clnp_init(),clnp_slowtimo(),clnp_drain();
 int rclnp_input(), rclnp_output(), rclnp_ctloutput(), raw_usrreq();
 int	clnp_usrreq();
-int	iso_usrreq();
 
 int	tp_ctloutput();
 int	tpclnp_ctlinput();
@@ -60,6 +59,7 @@ int	tp_usrreq();
 int	tp_init(),tp_slowtimo(),tp_drain();
 
 int	esis_input(), esis_ctlinput(), esis_init(), esis_usrreq();
+int	cltp_input(), cltp_ctlinput(), cltp_init(), cltp_usrreq(), cltp_output();
 
 struct protosw isosw[] = {
 /*
@@ -70,10 +70,10 @@ struct protosw isosw[] = {
  *  pffindtype, which gets the first entry that matches the type.
  *  sigh.
  */
-{ SOCK_DGRAM,	&isodomain,		0,					PR_ATOMIC|PR_ADDR,
-	0,			0,				0,					0,
-	iso_usrreq,
-	0,			0, 				0,					0
+{ SOCK_DGRAM,	&isodomain,		ISOPROTO_CLTP,		PR_ATOMIC|PR_ADDR,
+	0,			cltp_output,	0,					0,
+	cltp_usrreq,
+	cltp_init,	0, 				0,					0
 },
 
 /*
@@ -85,8 +85,8 @@ struct protosw isosw[] = {
  *  	a clnp_usrreq() that returns error on PRU_ATTACH.
  */
 {SOCK_DGRAM,	&isodomain,		ISOPROTO_CLNP,		0,
- clnp_usrreq,	clnp_output,	0,					0,
- 0,
+ 0,				clnp_output,	0,					0,
+ clnp_usrreq,
  clnp_init,		0,				clnp_slowtimo, 		clnp_drain,
 },
 
