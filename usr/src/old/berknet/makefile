@@ -1,26 +1,25 @@
-#	@(#)makefile	4.2	(Berkeley)	%G%
+#	@(#)makefile	4.3	(Berkeley)	%G%
 #
 DESTDIR = /
 OBJS =
-ARCH = /usr/src/cmd/berknet/
+ARCH = /usr/src/ucb/berknet/
 RDIR = $(DESTDIR)/usr/ucb/
 CRYPT =
-OTHER = daemon
+OTHER = schmidt
 MWRITEMODE = 711
 NETLPRMODE = 711
-NETLPROWN = daemon
+NETLPROWN = schmidt
 V6MAILMODE = 4711
 CC = cc
 CFLAGS = -O
-LDFLAGS =  -n  -z
+LDFLAGS =  -n -s -z
 CPALL = cp
 TOM = y
 PR = /usr/ucb/vprint
 # the constants above are machine dependent.
 #
-# CSVAX version
+# ucbvax version
 # makefile for Berkeley Unix network
-# Eric Schmidt -- January 19, 1980
 #
 # to make net source:
 #
@@ -56,6 +55,8 @@ install:
 	-cp nsh /usr/net/network/nsh
 	-cp netlog.sh $(RDIR)/netlog
 	-cp nettroff.sh $(RDIR)/nettroff
+	-rm -f netcp netmail sendberkmail netdaemon netstart mmail mwrite \
+		netlpr net netq netrm nsh prmail chktroff netlogin v6mail
 	-chown $(OTHER) $(NDIR)netdaemon $(NDIR)netstart $(NDIR)mmail \
 		$(NDIR)mwrite $(NDIR)sendberkmail $(RDIR)netmail \
 		$(NDIR)netcp $(NDIR)prmail $(NDIR)chktroff $(RDIR)netlogin
@@ -73,7 +74,7 @@ install:
 	-rm -f $(RDIR)netcp $(RDIR)net
 	-ln $(NDIR)net		$(RDIR)net
 	-ln $(NDIR)netcp	$(RDIR)netcp
-clean:	ridX
+clean:
 	@-rm -f netdaemon net mwrite netq netcp netlpr sendberkmail \
 	mmail netmail netrm netstart nsh interact \
 	listen receive speedr speeds store nettest prmail \
@@ -82,9 +83,6 @@ clean:	ridX
 	listen.o receive.o speedr.o speeds.o store.o nettest.o \
 	nbs.o prot.o sub.o mach.o netrc.o setup.o header.o \
 	chktroff.o chktroff errs netlogin netlogin.o environ.o v6mail v6mail.o
-ridX:
-	-rm -f netcp netmail sendberkmail netdaemon netstart mmail mwrite \
-		netlpr net netq netrm nsh prmail chktroff netlogin v6mail
 othernet: interact listen speedr speeds store receive nettest setmode
 othernetclean:
 	-rm -f interact interact.o listen listen.o speedr speedr.o \
@@ -179,7 +177,8 @@ firstinstall:
 	chown network /usr/net/network
 	chmod 666 $(SPOOL)/logfile $(SPOOL)/plogfile$(TOM)
 	chmod 644 $(SPOOL)/usernames $(SPOOL)/netstat$(TOM) 
-	chmod 755 /usr/net $(SPOOL) $(NDIR) $(SPOOL)/rcv $(SPOOL)/send$(TOM)
+	chmod 755 /usr/net $(SPOOL) $(NDIR) $(SPOOL)/rcv
+	chmod 700 $(SPOOL)/send$(TOM)
 archive:
 	-ar rn berknet.a makefile TODO BUGLIST READ_ME *.h *.c *.sh $(CRYPT) 
 	-ar r  berknet.a update /usr/news/net ../othernet/*.c \
