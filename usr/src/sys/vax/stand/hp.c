@@ -1,4 +1,4 @@
-/*	hp.c	4.9	83/02/10	*/
+/*	hp.c	4.10	83/02/16	*/
 
 /*
  * RP??/RM?? disk driver
@@ -45,7 +45,7 @@ short	hpfj_off[8] =	{ 0, 19, 0, -1, -1, -1, 398, 59 };
 short	hptypes[] =
     { MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, MBDT_RP05, MBDT_RP07,
       MBDT_ML11A, MBDT_ML11B, -1/*9755*/, -1/*9730*/, -1/*Capr*/,
-      -1/* eagle */, -1/* 48 sect eagle*/, MBDT_RM02, 0};
+      -1/* eagle */, -1/* 48 sect eagle */, MBDT_RM02, 0};
 
 #define RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
 #define ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
@@ -74,6 +74,7 @@ struct st hpst[] = {
 	48,	20,	48*20,	842,	hpfj_off,	/* modif. eagle */
 	1,	1,	1,	1,	0,	/* rm02 - not used */
 };
+
 struct dkbad hpbad[MAXNMBA*8];
 int sectsiz;
 
@@ -102,52 +103,7 @@ hpopen(io)
 				goto found;
 		_stop("unknown drive type");
 found:
-		switch (i) {
-		case 0: case 1:	{	/* rm03 or rm05 */
-			register hpsn = hpaddr->hpsn;
-
-			if ((hpsn & SIMB_LU) != unit)
-				break;
-			switch ((hpsn & SIMB_MB) &~ (SIMB_S6|SIRM03|SIRM05)) {
-			case SI9775D:
-				i = 8;	/* si9775 */
-				break;
-			case SI9730D:
-				i = 9;	/* si9730 */
-				break;
-			case SI9766:
-				i = 1;	/* rm05 */
-				hpaddr->hpcs1 = HP_RECAL|HP_GO;
-				DELAY(100000);
-				break;
-			case SI9762:
-				i = 0;	/* rm03 */
-				break;
-			}
-			break;
-		}
-
-		case 13:		/* rm02 */
-
-			hpaddr->hpcs1 = HP_NOP;
-			hpaddr->hphr = HPHR_MAXTRAK;
-			
-			if (MASKREG(hpaddr->hphr) == 15)
-				i = 10;		/* ampex capricorn */
-			else {
-				hpaddr->hphr = HPHR_MAXSECT;
-				if (MASKREG(hpaddr->hphr) == 47)
-					i = 12;		/* modified eagle */
-				else	
-					i = 11;		/* eagle */
-			}
-			break;
-		
-		case 6: case 7:		/* ml11a ml11b */
-			i = 6;			/* ml11a */
-			break;
-		}
-		hp_type[unit] = i;
+		hp_type[unit] = hpmaptype(hpaddr, i, unit);
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;		/* init drive */
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 		if (!ML11)
@@ -183,6 +139,63 @@ found:
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 }
 
+hpmaptype(hpaddr, type, unit)
+	register struct hpdevice *hpaddr;
+	unsigned type;
+	int unit;
+{
+	int ntracks, hpsn;
+
+	/*
+	 * Handle SI model byte stuff when
+	 * we think it's an RM03 or RM05.
+	 */
+	if (type == 0 || type == 1) {
+		hpsn = hpaddr->hpsn;
+		if ((hpsn & SIMB_LU) != unit)
+			return (type);
+		switch ((hpsn & SIMB_MB) &~ (SIMB_S6|SIRM03|SIRM05)) {
+		case SI9775D:
+			return (8);
+		case SI9730D:
+			return (9);
+		case SI9766:
+			hpaddr->hpcs1 = HP_RECAL|HP_GO;
+			DELAY(100000);
+			return (1);
+
+		case SI9762:
+			return (0);
+		}
+		return (type);
+	}
+	/*
+	 * RM03: EMULEX controller.  Map to correct
+	 * drive type by checking the holding
+	 * register for the disk geometry.
+	 */
+	if (type == 13) {
+		hpaddr->hpcs1 = HP_NOP;
+		hpaddr->hphr = HPHR_MAXTRAK;
+		ntracks = MASKREG(hpaddr->hphr) + 1;
+		if (ntracks == 16)
+			return (10);	/* AMPEX capricorn */
+		hpaddr->hphr = HPHR_MAXSECT;
+		if (ntracks == 48)
+			return (12);	/* 48 sector Eagle */
+		if (ntracks == 43)
+			return (11);	/* 43 sector Eagle */
+		printf("RM02 with %d tracks?\n", ntracks);
+		return (type);
+	}
+	/*
+	 * ML11's all map to the same type.
+	 */
+	if (type == 6 || type == 7)
+		return (6);
+	return (type);
+}
+
 int	ssect;		/* set to 1 if we are on a track with skip sectors */
 
 hpstrategy(io, func)
@@ -204,7 +217,7 @@ hpstrategy(io, func)
 	if ((hpaddr->hpds & HPDS_VV) == 0) {
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
-		if (!ML11)			/* any but ml11 */
+		if (!ML11)
 			hpaddr->hpof = HPOF_FMT22;
 	}
 	io->i_errcnt = 0;
@@ -231,8 +244,8 @@ restart:
 	if (mbastart(io, func) != 0)		/* start transfer */
 		return (-1);
 	HPWAIT(hpaddr);
-	if (((hpaddr->hpds&HPDS_ERR) | (mba->mba_sr&MBSR_EBITS)) == 0 )
-		return(bytecnt);
+	if ((hpaddr->hpds&HPDS_ERR) == 0 && (mba->mba_sr&MBSR_EBITS) == 0)
+		return (bytecnt);
 
 	/* ------- error handling ------- */
 
@@ -259,109 +272,101 @@ restart:
 	}
 	if (er1&HPER1_WLE) {
 		printf("hp%d: write locked\n", unit);
-		return(-1);
-	} else if (MASKREG(er1) == HPER1_FER && RP06) {
+		return (-1);
+	}
+	if (MASKREG(er1) == HPER1_FER && RP06)
 		goto badsect;
-
-	} else if (++io->i_errcnt > 27 ||
-		   er1 & HPER1_HARD ||
-		   (!ML11 && (er2 & HPER2_HARD))) {
+	if (++io->i_errcnt > 27 || (er1 & HPER1_HARD) ||
+	    (!ML11 && (er2 & HPER2_HARD))) {
 hard0:
 		io->i_error = EHER;
-		if ((mba->mba_sr & (MBSR_WCKUP | MBSR_WCKLWR)) != 0)
+		if (mba->mba_sr & (MBSR_WCKUP|MBSR_WCKLWR))
 			io->i_error = EWCK;
 hard:
 		io->i_errblk = bn + ssect;
 		printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b \n",
 			   cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
-		printf("er1=%b er2=%b",
-			   er1, HPER1_BITS,
-			   er2, HPER2_BITS);
+		printf("er1=%b er2=%b", er1, HPER1_BITS, er2, HPER2_BITS);
 		if (hpaddr->hpmr)
 			printf(" mr1=%o", MASKREG(hpaddr->hpmr));
 		if (hpaddr->hpmr2)
 			printf(" mr2=%o", MASKREG(hpaddr->hpmr2));
 #ifdef HPDEBUG
 		printf("dc: %d, da: 0x%x",MASKREG(hpaddr->hpdc),
-					  MASKREG(hpaddr->hpda));
+		  MASKREG(hpaddr->hpda));
 #endif
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		printf("\n");
-		return(-1);
+		return (-1);
 
-	} else if ((er2 & HPER2_BSE) && !ML11) {
+	}
+	if ((er2 & HPER2_BSE) && !ML11) {
 badsect:
 		if (!ssect && (er2&HPER2_SSE))
 			goto skipsect;
-		if ((io->i_flgs & F_NBSF) != 0) {
+		if (io->i_flgs & F_NBSF) {
 			io->i_error = EBSE;	
 			goto hard;
 		}
 		if (hpecc(io, BSE) == 0)
 			goto success;
-		else {
-			io->i_error = EBSE;
-			goto hard;
-		}
-	} else if (RM80 && er2&HPER2_SSE) {
+		io->i_error = EBSE;
+		goto hard;
+	}
+	if (RM80 && er2&HPER2_SSE) {
 skipsect:
-	/* skip sector error */
 		(void) hpecc(io, SSE);
-		ssect=1;
+		ssect = 1;
 		goto success;
-	} else if ((er1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
+	}
+	if ((er1 & (HPER1_DCK|HPER1_ECH)) == HPER1_DCK) {
 		if (hpecc(io, ECC) == 0)
 			goto success;
-		else {
-			io->i_error = EECC;
-			return(1);	
-		}
+		io->i_error = EECC;
+		return (-1);	
 	} 
-
 	if (ML11 && (io->i_errcnt >= 16))
-			goto hard0;
-
+		goto hard0;
 	/* fall thru to retry */
-
 	hpaddr->hpcs1 = HP_DCLR|HP_GO;
 	HPWAIT(hpaddr);
 	if (((io->i_errcnt&07) == 4) ) {
 		hpaddr->hpcs1 = HP_RECAL|HP_GO;
 		hprecal = 1;
-		goto try_again;
+		goto again;
 	}
 	switch (hprecal) {
 
 	case 1:
 		hpaddr->hpdc = cn;
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-		hprecal++;
-		goto try_again;
+		hprecal = 2;
+		goto again;
 
 	case 2:
 		if (io->i_errcnt < 16 || (io->i_flgs & F_READ) == 0)
 			goto donerecal;
 		hpaddr->hpof = hp_offset[io->i_errcnt & 017]|HPOF_FMT22;
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-		hprecal++;
-		goto try_again;
+		hprecal = 3;
+		goto again;
 
-	donerecal:
 	case 3:
+	donerecal:
 		hprecal = 0;
-		goto try_again;
+		goto again;
 	}
 	if (io->i_errcnt >= 16) {
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
 		while (hpaddr->hpds & HPDS_PIP)
 			;
 	}
-	goto try_again;
-success:		 /* continue with the next block */
+	goto again;
+
+success:		 		/* continue with the next block */
 	bn++;
 	if ((bn-startblock) * sectsiz < bytecnt) {
-
-try_again:		/* re-read same block */
+again:					/* re-read same block */
 		io->i_bn = bn;
 		io->i_ma = membase + (io->i_bn - startblock)*sectsiz;
 		io->i_cc = bytecnt - (io->i_bn - startblock)*sectsiz;
@@ -382,15 +387,14 @@ hpecc(io, flag)
 	register struct mba_regs *mbp = mbamba(unit);
 	register struct hpdevice *rp = (struct hpdevice *)mbadrv(unit);
 	register struct st *st = &hpst[hp_type[unit]];
-	int npf;
-	int bn, cn, tn, sn;
-	int bcr;
+	int npf, bn, cn, tn, sn, bcr;
 
 	if (bcr = MASKREG(mbp->mba_bcr>>16))
 		bcr |= 0xffff0000;		/* sxt */
-	npf = (bcr + io->i_cc)/sectsiz;		/* number of sectors read */
-	bn = io->i_bn + npf + ssect;		/* bn is physical block number*/
+	npf = (bcr + io->i_cc) / sectsiz;	/* # sectors read */
+	bn = io->i_bn + npf + ssect;		/* physical block #*/
 	switch (flag) {
+
 	case ECC: {
 		register int i;
 		caddr_t addr;
@@ -398,7 +402,7 @@ hpecc(io, flag)
 
 		printf("hp%d: soft ecc sn%d\n", unit, bn);
 		mask = MASKREG(rp->hpec2);
-		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
+		i = MASKREG(rp->hpec1) - 1;	/* -1 makes 0 origin */
 		bit = i&07;
 		i = (i&~07)>>3;
 		byte = i;
@@ -417,22 +421,26 @@ hpecc(io, flag)
 			byte++;
 			i++;
 			bit -= 8;
-			if ((ecccnt++>=MAXECC) && ((io->i_flgs&F_ECCLM) != 0))
-				return(1);
+			if ((io->i_flgs & F_ECCLIM) && ecccnt++ >= MAXECC)
+				return (1);
 		}
 		return(0);
-		}
+	}
 
-	case SSE:	/* skip sector error */
-			/* set skip-sector-inhibit and read next sector */
+	/*
+	 * Skip sector error.
+	 * Set skip-sector-inhibit and
+	 * read next sector
+	 */
+	case SSE:
 		rp->hpcs1 = HP_DCLR | HP_GO;
 		HPWAIT(rp);
 		rp->hpof |= HPOF_SSEI;
-		return(0);	
+		return (0);	
 
-#ifndef NOBADSECT
 	case BSE: {
 		int bbn;
+
 		rp->hpcs1 = HP_DCLR | HP_GO;
 #ifdef HPDEBUG
 		printf("hpecc: BSE @ bn %d\n", bn);
@@ -443,7 +451,7 @@ hpecc(io, flag)
 		sn = sn%st->nsect;
 		bcr += sectsiz;
 		if ((bbn = isbad(&hpbad[unit], cn, tn, sn)) < 0)
-			return(1);
+			return (1);
 		bbn = st->ncyl*st->nspc - st->nsect - 1 - bbn;
 		cn = bbn/st->nspc;
 		sn = bbn%st->nspc;
@@ -463,8 +471,10 @@ hpecc(io, flag)
 		io->i_errcnt = 0;	/* error has been corrected */
 		HPWAIT(rp);
 		return (rp->hpds&HPDS_ERR);
-		}
 	}
+	}
+	printf("hpecc: flag=%d\n", flag);
+	return (1);
 }
 /*ARGSUSED*/
 hpioctl(io, cmd, arg)
@@ -482,22 +492,22 @@ hpioctl(io, cmd, arg)
 		if ((drv->mbd_dt&MBDT_TAP) == 0) {
 			tmp = (struct st *)arg;
 			*tmp = *st;
-			return(0);
+			return (0);
 		}
-		return(ECMD);
+		return (ECMD);
 
-	case SAIOSSI:			/* set the skip-sector-inhibit flag */
-		if ((drv->mbd_dt&MBDT_TAP) == 0) {
-			if ((io->i_flgs&F_SSI)==0) { /* make sure this is */
-				io->i_flgs |= F_SSI;  /* done only once    */
-				st->nsect++;
-				st->nspc += st->ntrak;
-			}
-			return(0);
+	case SAIOSSI:			/* skip-sector-inhibit */
+		if (drv->mbd_dt&MBDT_TAP)
+			return (ECMD);
+		if ((io->i_flgs&F_SSI) == 0) {
+			/* make sure this is done once only */
+			io->i_flgs |= F_SSI;
+			st->nsect++;
+			st->nspc += st->ntrak;
 		}
-		return(ECMD);
+		return (0);
 
-	case SAIONOSSI:			/* remove the skip-sector-inh. flag */
+	case SAIONOSSI:			/* remove skip-sector-inhibit */
 		if (io->i_flgs & F_SSI) {
 			io->i_flgs &= ~F_SSI;
 			drv->mbd_of &= ~HPOF_SSEI;
@@ -507,11 +517,7 @@ hpioctl(io, cmd, arg)
 		return(0);
 
 	case SAIOSSDEV:			/* drive have skip sector? */
-		if (RM80)
-			return(0);
-		return(ECMD);
-
-	default:
-		return (ECMD);
+		return (RM80 ? 0 : ECMD);
 	}
+	return (ECMD);
 }
