@@ -1,9 +1,9 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1980, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail3.nr	6.2 (Berkeley) %G%
+.\"	@(#)mail3.nr	8.1 (Berkeley) %G%
 .\"
 .sh 1 "Maintaining folders"
 .pp
