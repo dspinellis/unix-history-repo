@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 
 #include <db.h>
 #include <errno.h>
@@ -47,8 +48,9 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int c;
-	char *outname, *bak;
+	int c, fd;
+	char *outname, buf[MAXPATHLEN + 1], **f;
+	
 
 	outname = NULL;
 	while ((c = getopt(argc, argv, "f:")) != EOF) {
@@ -77,24 +79,22 @@ main(argc, argv)
 		err(1, "%s", strerror(errno));
 	(void)sprintf(capdb, "%s.db", outname);
 
-	/* Create the backup: outname.db.BAK */
-
-	if ((bak = malloc(strlen(outname) + CAPDBNAMEEXTLEN + 5)) == NULL)
-		err(1, "%s", strerror(errno));
-	(void)sprintf(bak, "%s.db.BAK", outname);
-	
 	/* 
 	 * We want to avoid the confusion of where the capability record 
-	 * is being read from.  Since we intend to read the ascii file, we
-	 * should make sure that the corresponding .db file is not present to
-	 * override.
+	 * is being read from.  Since the user probably intends to read the 
+	 * ascii file, we should make sure that user knows that the 
+	 * corresponding .db file will override.
          */
-	if (unlink(bak) != 0 && errno != ENOENT)
-		err(1, "unlink: %s -- %s", strerror(errno), bak);
-	if (link(capdb, bak) != 0 && errno != ENOENT)
-		err(1, "link: %s -- %s", strerror(errno), bak);
-	if (errno != ENOENT && unlink(capdb) != 0)
-		err(1, "unlink: %s -- %s", strerror(errno), capdb);
+	for (f = inputfiles; *f != NULL; f++) {
+		(void)sprintf(buf, "%s.db", *f);
+		fd = open(buf, O_RDONLY, 0444);
+	        if (fd == -1 && errno != ENOENT)
+			err(1, "open: %s", strerror(errno));
+		if (fd >= 0) {
+			err(0, "Warning -- %s.db will override %s.", *f, *f);
+			(void)close(fd);
+		}
+	}
 
         db_build(inputfiles);
 	exit(0);
@@ -107,7 +107,6 @@ main(argc, argv)
 
 #define RECOK	(char)0
 #define TCERR	(char)1
-
 
 #define NBUFSIZ		(8 * 1024)
 
