@@ -1561,7 +1561,7 @@ ftruncate(p, uap, retval)
 	register struct ftruncate_args *uap;
 	int *retval;
 {
-	struct __truncate_args nuap;
+	struct __ftruncate_args nuap;
 
 	nuap.fd = uap->fd;
 	nuap.length = uap->length;
@@ -1796,7 +1796,7 @@ ogetdirentries(p, uap, retval)
 	struct dirent *dp, *edp;
 	caddr_t dirbuf;
 	int error, readcnt;
-	off_t off;
+	long loff;
 
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		return (error);
@@ -1814,7 +1814,7 @@ ogetdirentries(p, uap, retval)
 	auio.uio_procp = p;
 	auio.uio_resid = uap->count;
 	VOP_LOCK(vp);
-	auio.uio_offset = off = fp->f_offset;
+	loff = auio.uio_offset = fp->f_offset;
 #	if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0)
 			error = VOP_READDIR(vp, &auio, fp->f_cred);
@@ -1832,12 +1832,19 @@ ogetdirentries(p, uap, retval)
 			readcnt = uap->count - kuio.uio_resid;
 			edp = (struct dirent *)&dirbuf[readcnt];
 			for (dp = (struct dirent *)dirbuf; dp < edp; ) {
-				dp->d_type = 0;
 #				if (BYTE_ORDER == LITTLE_ENDIAN)
-					{ u_char tmp = dp->d_namlen;
+					/*
+					 * The expected dp->d_namlen field
+					 * is in our dp->d_type.
+					 */
 					dp->d_namlen = dp->d_type;
-					dp->d_type = tmp; }
 #				endif
+				/*
+				 * The dp->d_type is the high byte
+				 * of the expected dp->d_namlen,
+				 * so must be zero'ed.
+				 */
+				dp->d_type = 0;
 				if (dp->d_reclen > 0) {
 					dp = (struct dirent *)
 					    ((char *)dp + dp->d_reclen);
@@ -1855,7 +1862,7 @@ ogetdirentries(p, uap, retval)
 	VOP_UNLOCK(vp);
 	if (error)
 		return (error);
-	error = copyout((caddr_t)&off, (caddr_t)uap->basep, sizeof(long));
+	error = copyout((caddr_t)&loff, (caddr_t)uap->basep, sizeof(long));
 	*retval = uap->count - auio.uio_resid;
 	return (error);
 }
@@ -1879,7 +1886,7 @@ getdirentries(p, uap, retval)
 	struct file *fp;
 	struct uio auio;
 	struct iovec aiov;
-	off_t off;
+	long loff;
 	int error;
 
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
@@ -1898,13 +1905,13 @@ getdirentries(p, uap, retval)
 	auio.uio_procp = p;
 	auio.uio_resid = uap->count;
 	VOP_LOCK(vp);
-	auio.uio_offset = off = fp->f_offset;
+	loff = auio.uio_offset = fp->f_offset;
 	error = VOP_READDIR(vp, &auio, fp->f_cred);
 	fp->f_offset = auio.uio_offset;
 	VOP_UNLOCK(vp);
 	if (error)
 		return (error);
-	error = copyout((caddr_t)&off, (caddr_t)uap->basep, sizeof(long));
+	error = copyout((caddr_t)&loff, (caddr_t)uap->basep, sizeof(long));
 	*retval = uap->count - auio.uio_resid;
 	return (error);
 }
