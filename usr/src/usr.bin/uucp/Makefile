@@ -1,4 +1,4 @@
-#	Makefile	5.9	85/06/24
+#	Makefile	5.10	85/09/18
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -123,16 +123,16 @@ mkdirs:
 	-for i in ${LIBDIR} ${SPOOL} ${PUBDIR} ${XQTDIR} ${CORRUPT} \
 		${AUDIT} ${LCK} ${LOG} ${STST} ; do \
 		rm -f $$i ; mkdir $$i ; \
-		chmod 755 $$i; chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
+		chmod 755 $$i; /etc/chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
 	done
 	chmod 777 ${PUBDIR} ${LCK}
 	-cd ${LOG}; for i in uucico uux uuxqt uucp xferstats; do\
 		rm -f $$i ; mkdir $$i ; \
-		chmod 755 $$i; chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
+		chmod 755 $$i; /etc/chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
 	done
 	-cd ${SPOOL}; for i in ${SUBDIRS} ; do \
 		mkdir $$i; \
-		chown ${OWNER} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
+		/etc/chown ${OWNER} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
 	done
 
 # The lorder...tsort below is for systems w/o ranlib
@@ -146,7 +146,7 @@ aculib/aculib.a:
 	cd aculib; make ${MFLAGS} "CFLAGS=${CFLAGS}"
 
 install: ${ALL}
-	chown ${OWNER} ${LIBDIR}
+	/etc/chown ${OWNER} ${LIBDIR}
 	chgrp ${GROUP} ${LIBDIR}
 	chmod 755 ${LIBDIR}
 	for i in uucico uuclean; do \
@@ -159,7 +159,7 @@ install: ${ALL}
 	ln ${BIN}/uusend ${BIN}/ruusend
 	install -s -m 6110 -o ${OWNER} -g ${GROUP} uuxqt ${LIBDIR}
 	install -s -m 6110 -o root -g ${GROUP} acucntrl ${LIBDIR}
-	install -s -m 700 -o root uucpd /etc/uucpd
+	install -s -m 500 -o uucp uucpd /etc/uucpd
 	@echo Dont forget to fork off /etc/uucpd in /etc/rc.local
 	@echo if you are not running /etc/inetd
 	install -s uuencode ${BIN}
