@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	4.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,7 +57,7 @@ main(argc, argv)
 			iflag = 1;
 			break;
 		case 'R':
-		case 'r':
+		case 'r':			/* compatibility */
 			rflag = 1;
 			break;
 		case '?':
@@ -111,24 +111,16 @@ rmtree(argv)
 	}
 	while (p = fts_read(fts)) {
 		switch(p->fts_info) {
-		case FTS_DC:
 		case FTS_DNR:
-		case FTS_DNX:
-			break;
 		case FTS_ERR:
 			error(p->fts_path, errno);
 			exit(1);
 		/*
 		 * FTS_NS: assume that if can't stat the file, it can't be
-		 * unlinked.  If we need stat information, should never see
-		 * FTS_NS (unless a file specified as an argument doesn't
-		 * exist), since such files are in directories that will be
-		 * returned FTS_DNX.
+		 * unlinked.
 		 */
 		case FTS_NS:
 			if (!needstat)
-				break;
-			if (!lstat(p->fts_accpath, &sb))	/* XXX */
 				break;
 			if (!fflag || errno != ENOENT)
 				error(p->fts_path, errno);
@@ -157,19 +149,17 @@ rmtree(argv)
 		 * able to remove it.  Don't print out the un{read,search}able
 		 * message unless the remove fails.
 		 */
-		if (p->fts_info == FTS_DP || p->fts_info == FTS_DNR ||
-		    p->fts_info == FTS_DNX) {
+		if (p->fts_info == FTS_DP || p->fts_info == FTS_DNR) {
 			if (!rmdir(p->fts_accpath))
 				continue;
 			if (errno == ENOENT) {
 				if (fflag)
 					continue;
 			} else if (p->fts_info != FTS_DP)
-				(void)fprintf(stderr, "rm: unable to %s %s.\n",
-				    p->fts_info == FTS_DNR ? "read" : "search",
-				    p->fts_path);
+				(void)fprintf(stderr,
+				    "rm: unable to read %s.\n", p->fts_path);
 		} else if (!unlink(p->fts_accpath) || fflag && errno == ENOENT)
-				continue;
+			continue;
 		error(p->fts_path, errno);
 	}
 }
@@ -194,7 +184,7 @@ rmfile(argv)
 			continue;
 		}
 		if (S_ISDIR(sb.st_mode) && !df) {
-			(void)fprintf(stderr, "rm: %s: Is a directory.\n", f);
+			(void)fprintf(stderr, "rm: %s: is a directory\n", f);
 			retval = 1;
 			continue;
 		}
@@ -220,7 +210,7 @@ check(path, name, sp)
 		/*
 		 * If it's not a symbolic link and it's unwritable and we're
 		 * talking to a terminal, ask.  Symbolic links are excluded
-		 * because the permissions are meaningless.
+		 * because their permissions are meaningless.
 		 */
 		if (S_ISLNK(sp->st_mode) || !stdin_ok || !access(name, W_OK))
 			return(1);
