@@ -1,4 +1,4 @@
-/*	tm.c	4.32	81/04/03	*/
+/*	tm.c	4.33	81/04/08	*/
 
 #include "te.h"
 #if NTM > 0
@@ -373,7 +373,7 @@ loop:
 	 * Default is that last command was NOT a write command;
 	 * if we do a write command we will notice this in tmintr().
 	 */
-	sc->sc_lastiow = 1;
+	sc->sc_lastiow = 0;
 	if (sc->sc_openf < 0 || (addr->tmcs&TM_CUR) == 0) {
 		/*
 		 * Have had a hard error on a non-raw tape
