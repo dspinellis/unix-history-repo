@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,6 +38,10 @@ static char sccsid[] = "@(#)tn3270.c	1.14 (Berkeley) %G%";
 #include "../ctlr/externs.h"
 
 #if	defined(unix)
+int
+	HaveInput,		/* There is input available to scan */
+	sigiocount;		/* Number of times we got a SIGIO */
+
 char	tline[200];
 char	*transcom = 0;	/* transparent mode command (default: none) */
 #endif	/* defined(unix) */
@@ -60,6 +64,10 @@ void
 init_3270()
 {
 #if	defined(TN3270)
+#if	defined(unix)
+    HaveInput = 0;
+    sigiocount = 0;
+#endif	/* defined(unix) */
     Sent3270TerminalType = 0;
     Ifrontp = Ibackp = Ibuf;
     init_ctlr();		/* Initialize some things */
@@ -142,6 +150,7 @@ void
 inputAvailable()
 {
     HaveInput = 1;
+    sigiocount++;
 }
 #endif	/* defined(unix) */
 
@@ -304,7 +313,7 @@ char c;
 #if	defined(sun)		/* SunOS 4.0 bug */
     c &= 0x7f;
 #endif	/* defined(sun) */
-    if (TTYBYTES()) {
+    if (!TTYROOM()) {
 	(void) DataToTerminal(&c, 1);
     } else {
 	TTYADD(c);
