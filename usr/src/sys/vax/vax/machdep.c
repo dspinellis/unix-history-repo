@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.24 (Berkeley) %G%
+ *	@(#)machdep.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,8 +17,6 @@
 #include "buf.h"
 #include "reboot.h"
 #include "conf.h"
-#include "vnode.h"
-#include "../ufs/inode.h"
 #include "file.h"
 #include "text.h"
 #include "clist.h"
@@ -128,7 +126,6 @@ startup(firstaddr)
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
-	valloclim(vnode, struct vnode, nvnode, vnodeNVNODE);
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
@@ -138,7 +135,6 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
-	valloc(namecache, struct namecache, nchsize);
 	valloc(kmemmap, struct map, ekmempt - kmempt);
 	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
 #ifdef QUOTA
