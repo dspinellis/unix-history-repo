@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.11 (Berkeley) %G%
+ *	@(#)nameser.h	5.12 (Berkeley) %G%
  */
 
 /*
@@ -26,16 +26,16 @@
 /*
  * Currently defined opcodes
  */
-#define QUERY		0		/* standard query */
-#define IQUERY		1		/* inverse query */
-#define CQUERYM		2		/* completion query (multiple) */
-#define CQUERYU		3		/* completion query (unique) */
+#define QUERY		0x0		/* standard query */
+#define IQUERY		0x1		/* inverse query */
+#define CQUERYM		0x2		/* completion query (multiple) */
+#define CQUERYU		0x3		/* completion query (unique) */
 	/* non standard */
-#define UPDATEA		100		/* add resource record */
-#define UPDATED		101		/* delete resource record */
-#define UPDATEM		102		/* modify resource record */
-#define ZONEINIT	103		/* initial zone transfer */
-#define ZONEREF		104		/* incremental zone referesh */
+#define UPDATEA		0xb		/* add resource record */
+#define UPDATED		0xc		/* delete resource record */
+#define UPDATEM		0xd		/* modify resource record */
+#define ZONEINIT	0xe		/* initial zone transfer */
+#define ZONEREF		0xf		/* incremental zone referesh */
 
 /*
  * Currently defined response codes
@@ -47,7 +47,7 @@
 #define NOTIMP		4		/* not implemented */
 #define REFUSED		5		/* query refused */
 	/* non standard */
-#define NOCHANGE	100		/* update failed to change db */
+#define NOCHANGE	0xf		/* update failed to change db */
 
 /*
  * Type values for resources and queries
