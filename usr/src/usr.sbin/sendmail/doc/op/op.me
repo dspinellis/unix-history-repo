@@ -1,10 +1,10 @@
-.\" Copyright (c) 1983 Eric P. Allman
+.\" Copyright (c) 1983, 1995 Eric P. Allman
 .\" Copyright (c) 1983, 1993
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.49 (Berkeley) %G%
+.\"	@(#)op.me	8.50 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.49
+Version 8.50
 .sp
 For Sendmail Version 8.7
 .)l
@@ -2386,6 +2386,11 @@ turns on the AAONLY (accept authoritative answers only)
 and turns off the DNSRCH (search the domain path) options.
 Most resolver libraries default DNSRCH, DEFNAMES, and RECURSE
 flags on and all others off.
+You can also include
+.q HasWildcardMX
+to specify that there is a wildcard MX record matching your domain;
+this turns off MX matching when canonifying names,
+which can lead to inappropriate canonifications.
 .pp
 Version level 1 configurations
 turn DNSRCH and DEFNAMES off when doing delivery lookups,
@@ -4240,6 +4245,23 @@ lines in the configuration file)
 and subtracted from the priority.
 Thus, messages with a higher Priority: will be favored.
 Defaults to 1800.
+.ip ColonOkInAddr
+[no short name]
+If set, colons are acceptable in e-mail addresses
+(e.g.,
+.q host:user ).
+If not set, colons indicate the beginning of a RFC 822 group construct
+(\c
+.q "groupname: member1, member2, ... memberN;" ).
+Doubled colons are always acceptable
+(\c
+.q nodename::user )
+and proper route-addr nesting is understood
+(\c
+.q <@relay:user@host> ).
+Furthermore, this option defaults on if the configuration version level
+is less than 6 (for back compatibility).
+However, it must be off for full compatibility with RFC 822.
 .ip ConnectionCacheSize=\fIN\fP
 [k]
 The maximum number of open connections that will be cached at a time.
@@ -4595,6 +4617,14 @@ can be
 .q stayopen ,
 or
 .q dnsrch .
+The string
+.q HasWildcardMX
+(without a
+.b +
+or
+.b \- )
+can be specified to turn off matching against MX records
+when doing name canonifications.
 .b N.B.
 Prior to 8.7,
 this option indicated that the name server be responding
@@ -5118,6 +5148,14 @@ change many of the local processing options
 to be mailer flags;
 this allows fine-grained control over the special local processing.
 Level six configuration files may also use long option names.
+The
+.b ColonOkInAddr
+option (to allow colons in the local-part of addresses)
+defaults
+.b on
+for lower numbered configuration files;
+the configuration file requires some additional intelligence
+to properly handle the RFC 822 group construct.
 .pp
 The
 .b V
@@ -7358,7 +7396,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.49
+.\"Version 8.50
 .\".ce 0
 .bp 2
 .rs
