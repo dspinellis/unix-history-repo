@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -97,11 +97,6 @@ another:
 		argv++, argc--;
 		goto another;
 	}
-	if (argc > 0 && !strcmp(*argv, "-w")) {
-		nosigwin++;
-		argv++, argc--;
-		goto another;
-	}
 	if (host == 0)
 		goto usage;
 	if (argc > 0)
@@ -145,7 +140,7 @@ another:
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
-	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ] [ -w ]\n");
+	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ]\n");
 	exit(1);
 }
 
@@ -195,8 +190,6 @@ doit()
 		exit(3);
 	}
 	signal(SIGCHLD, catchild);
-	if (!nosigwin)
-		signal(SIGWINCH, sigwinch);
 	writer();
 	prf("Closed connection.");
 	done();
