@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00168
+ * --------------------         -----   ----------------------
+ *
+ * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
+ *
  */
 
 #ifndef lint
@@ -68,6 +76,10 @@ struct redirtab {
 
 MKINIT struct redirtab *redirlist;
 
+/* We keep track of whether or not fd0 has been redirected.  This is for
+   background commands, where we want to redirect fd0 to /dev/null only
+   if it hasn't already been redirected.  */
+int fd0_redirected = 0;
 
 #ifdef __STDC__
 STATIC void openredirect(union node *, char *);
@@ -122,6 +134,8 @@ redirect(redir, flags)
 		} else {
 			close(fd);
 		}
+		if (fd == 0)
+			fd0_redirected++;
 		openredirect(n, memory);
 	}
 	if (memory[1])
@@ -255,6 +269,8 @@ popredir() {
 
 	for (i = 0 ; i < 10 ; i++) {
 		if (rp->renamed[i] != EMPTY) {
+			if (i == 0)
+				fd0_redirected--;
 			close(i);
 			if (rp->renamed[i] >= 0) {
 				copyfd(rp->renamed[i], i);
@@ -347,4 +363,10 @@ copyfd(from, to) {
 		return EMPTY;
 	return newfd;
 #endif
+}
+
+/* Return true if fd 0 has already been redirected at least once.  */
+int
+fd0_redirected_p () {
+	return fd0_redirected != 0;
 }
