@@ -1,10 +1,11 @@
-/*	main.c	4.5	82/12/25	*/
+/*	main.c	4.6	83/06/12	*/
 
 /*
  * TFTP User Program -- Command Interface.
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
 
@@ -14,6 +15,8 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include <netdb.h>
+
+#define	TIMEOUT		5		/* secs between rexmt's */
 
 struct	sockaddr_in sin;
 int	f;
@@ -30,7 +33,7 @@ int	intr();
 struct	servent *sp;
 
 int	quit(), help(), setverbose(), settrace(), status();
-int	get(), put(), setpeer(), setmode();
+int	get(), put(), setpeer(), setmode(), setrexmt(), settimeout();
 
 #define HELPINDENT (sizeof("connect"))
 
@@ -49,6 +52,8 @@ char	shelp[] = "send file";
 char	rhelp[] = "receive file";
 char	mhelp[] = "set file transfer mode";
 char	sthelp[] = "show current status";
+char	xhelp[] = "set per-packet retransmission timeout";
+char	ihelp[] = "set total retransmission timeout";
 
 struct cmd cmdtab[] = {
 	{ "connect",	chelp,		setpeer },
@@ -59,6 +64,8 @@ struct cmd cmdtab[] = {
 	{ "verbose",	vhelp,		setverbose },
 	{ "trace",	thelp,		settrace },
 	{ "status",	sthelp,		status },
+	{ "rexmt",	xhelp,		setrexmt },
+	{ "timeout",	ihelp,		settimeout },
 	{ "?",		hhelp,		help },
 	0
 };
@@ -71,6 +78,9 @@ char	*rindex();
 main(argc, argv)
 	char *argv[];
 {
+	struct sockaddr_in sin;
+	int top;
+
 	sp = getservbyname("tftp", "udp");
 	if (sp == 0) {
 		fprintf(stderr, "tftp: udp/tftp: unknown service\n");
@@ -78,18 +88,25 @@ main(argc, argv)
 	}
 	f = socket(AF_INET, SOCK_DGRAM, 0, 0);
 	if (f < 0) {
-		perror("socket");
+		perror("tftp: socket");
 		exit(3);
 	}
+	bzero((char *)&sin, sizeof (sin));
+	sin.sin_family = AF_INET;
+	if (bind(f, &sin, sizeof (sin)) < 0) {
+		perror("tftp: bind");
+		exit(1);
+	}
 	strcpy(mode, "netascii");
+	signal(SIGINT, intr);
 	if (argc > 1) {
 		if (setjmp(toplevel) != 0)
 			exit(0);
 		setpeer(argc, argv);
 	}
-	setjmp(toplevel);
+	top = setjmp(toplevel) == 0;
 	for (;;)
-		command(1);
+		command(top);
 }
 
 char	*hostname;
@@ -233,12 +250,11 @@ put(argc, argv)
 		printf("No target machine specified.\n");
 		return;
 	}
-	sigset(SIGINT, intr);
 	if (argc < 4) {
 		cp = argc == 2 ? tail(targ) : argv[1];
-		fd = open(cp);
+		fd = open(cp, O_RDONLY);
 		if (fd < 0) {
-			perror(cp);
+			fprintf(stderr, "tftp: "); perror(cp);
 			return;
 		}
 		sendfile(fd, targ);
@@ -248,9 +264,9 @@ put(argc, argv)
 	*cp++ = '/';
 	for (n = 1; n < argc - 1; n++) {
 		strcpy(cp, tail(argv[n]));
-		fd = open(argv[n], 0);
+		fd = open(argv[n], O_RDONLY);
 		if (fd < 0) {
-			perror(argv[n]);
+			fprintf(stderr, "tftp: "); perror(argv[n]);
 			continue;
 		}
 		sendfile(fd, targ);
@@ -293,7 +309,6 @@ get(argc, argv)
 				getusage(argv[0]);
 				return;
 			}
-	sigset(SIGINT, intr);
 	for (n = 1; argc == 2 || n < argc - 1; n++) {
 		src = index(argv[n], ':');
 		if (src == NULL)
@@ -316,7 +331,7 @@ get(argc, argv)
 			cp = argc == 3 ? argv[2] : tail(src);
 			fd = creat(cp, 0644);
 			if (fd < 0) {
-				perror(cp);
+				fprintf(stderr, "tftp: "); perror(cp);
 				return;
 			}
 			recvfile(fd, src);
@@ -327,7 +342,7 @@ get(argc, argv)
 		strcpy(cp, tail(src));
 		fd = creat(src, 0644);
 		if (fd < 0) {
-			perror(src);
+			fprintf(stderr, "tftp: "); perror(src);
 			continue;
 		}
 		recvfile(fd, src);
@@ -340,6 +355,58 @@ getusage(s)
 	printf("       %s file file ... file if connected\n", s);
 }
 
+int	rexmtval = TIMEOUT;
+
+setrexmt(argc, argv)
+	char *argv[];
+{
+	int t;
+
+	if (argc < 2) {
+		strcpy(line, "Rexmt-timeout ");
+		printf("(value) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc != 2) {
+		printf("usage: %s value\n", argv[0]);
+		return;
+	}
+	t = atoi(argv[1]);
+	if (t < 0)
+		printf("%s: bad value\n", t);
+	else
+		rexmtval = t;
+}
+
+int	maxtimeout = 5 * TIMEOUT;
+
+settimeout(argc, argv)
+	char *argv[];
+{
+	int t;
+
+	if (argc < 2) {
+		strcpy(line, "Maximum-timeout ");
+		printf("(value) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc != 2) {
+		printf("usage: %s value\n", argv[0]);
+		return;
+	}
+	t = atoi(argv[1]);
+	if (t < 0)
+		printf("%s: bad value\n", t);
+	else
+		maxtimeout = t;
+}
+
 status(argc, argv)
 	char *argv[];
 {
@@ -349,10 +416,13 @@ status(argc, argv)
 		printf("Not connected.\n");
 	printf("Mode: %s Verbose: %s Tracing: %s\n", mode,
 		verbose ? "on" : "off", trace ? "on" : "off");
+	printf("Rexmt-interval: %d seconds, Max-timeout: %d seconds\n",
+		rexmtval, maxtimeout);
 }
 
 intr()
 {
+
 	longjmp(toplevel, -1);
 }
 
@@ -383,14 +453,12 @@ command(top)
 
 	if (!top)
 		putchar('\n');
-	else
-		sigset(SIGINT, SIG_DFL);
 	for (;;) {
 		printf("%s> ", prompt);
 		if (gets(line) == 0)
-			break;
+			continue;
 		if (line[0] == 0)
-			break;
+			continue;
 		makeargv();
 		c = getcmd(margv[0]);
 		if (c == (struct cmd *)-1) {
@@ -402,10 +470,7 @@ command(top)
 			continue;
 		}
 		(*c->handler)(margc, margv);
-		if (c->handler != help)
-			break;
 	}
-	longjmp(toplevel, 1);
 }
 
 struct cmd *
