@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.16 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.17 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -596,7 +596,7 @@ R$+			$#_LOCAL_ $: $1			no relay or hub: local',
 
 `# if this is quoted, strip the quotes and try again
 R$+			$: $(dequote $1 $)		strip quotes
-R$* $=O $*		$@ $>_SET_97_ $1 $2 $3			try again
+R$+ $=O $+		$@ $>_SET_97_ $1 $2 $3			try again
 
 # handle locally delivered names
 R$=L			$#_LOCAL_ $: @ $1			special local names
