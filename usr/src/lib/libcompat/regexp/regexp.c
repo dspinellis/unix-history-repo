@@ -32,9 +32,11 @@
  * precedence is structured in regular expressions.  Serious changes in
  * regular-expression syntax might require a total rethink.
  */
+#include <regexp.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <regexp.h>
+#include <stdlib.h>
+#include <string.h>
 #include "regmagic.h"
 
 /*
@@ -199,21 +201,20 @@ STATIC int strcspn();
  */
 regexp *
 regcomp(exp)
-char *exp;
+const char *exp;
 {
 	register regexp *r;
 	register char *scan;
 	register char *longest;
 	register int len;
 	int flags;
-	extern char *malloc();
 
 	if (exp == NULL)
 		FAIL("NULL argument");
 
 	/* First pass: determine size, legality. */
 	if (exp[0] == '.' && exp[1] == '*') exp += 2;  /* aid grep */
-	regparse = exp;
+	regparse = (char *)exp;
 	regnpar = 1;
 	regsize = 0L;
 	regcode = &regdummy;
@@ -231,7 +232,7 @@ char *exp;
 		FAIL("out of space");
 
 	/* Second pass: emit code. */
-	regparse = exp;
+	regparse = (char *)exp;
 	regnpar = 1;
 	regcode = r->program;
 	regc(MAGIC);
@@ -782,8 +783,8 @@ STATIC char *regprop();
  */
 int
 regexec(prog, string)
-register regexp *prog;
-register char *string;
+register const regexp *prog;
+register const char *string;
 {
 	register char *s;
 	extern char *strchr();
@@ -802,7 +803,7 @@ register char *string;
 
 	/* If there is a "must appear" string, look for it. */
 	if (prog->regmust != NULL) {
-		s = string;
+		s = (char *)string;
 		while ((s = strchr(s, prog->regmust[0])) != NULL) {
 			if (strncmp(s, prog->regmust, prog->regmlen) == 0)
 				break;	/* Found it. */
@@ -813,14 +814,14 @@ register char *string;
 	}
 
 	/* Mark beginning of line for ^ . */
-	regbol = string;
+	regbol = (char *)string;
 
 	/* Simplest case:  anchored match need be tried only once. */
 	if (prog->reganch)
 		return(regtry(prog, string));
 
 	/* Messy cases:  unanchored match. */
-	s = string;
+	s = (char *)string;
 	if (prog->regstart != '\0')
 		/* We know what char it must start with. */
 		while ((s = strchr(s, prog->regstart)) != NULL) {

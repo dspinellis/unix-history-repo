@@ -1,8 +1,9 @@
+#include <regexp.h>
 #include <stdio.h>
 
 void
 regerror(s)
-char *s;
+const char *s;
 {
 #ifdef ERRAVAIL
 	error("regexp: %s", s);
