@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -137,7 +137,7 @@ char preamble[200];		/* match prefix (filename, line no.) */
 
 int fd;
 char *
-strchr(), *strrchr(), *strcpy(), *strncpy(), *strpbrk(), *sprintf(), *malloc();
+strchr(), *strrchr(), *strcpy(), *strncpy(), *strpbrk(), *malloc();
 char *
 grepxlat(), *fold(), *pfile(), *alternate(), *isolate();
 char **args;
@@ -628,7 +628,7 @@ gotamatch(file, s)
 			if (!squirrel)
 				printf("%s:", file);
 			else
-				sprintf(preamble, "%s:", file);
+				(void)sprintf(preamble, "%s:", file);
 		if (nflag) {
 			if (prevmatch)
 				prevnline = prevnline + nlcount(prevloc, s);
@@ -639,7 +639,7 @@ gotamatch(file, s)
 			if (!squirrel)
 				printf("%ld:", prevnline);
 			else
-				sprintf(preamble + strlen(preamble),
+				(void)sprintf(preamble + strlen(preamble),
 					"%ld:", prevnline);
 		}
 		if (!squirrel) {
@@ -819,7 +819,7 @@ isolate(regexpr)		/* isolate longest metacharacter-free string */
 	 * sees a leading * pattern.  Foo! 
 	 */
 	dummyexpr = malloc((unsigned) strlen(regexpr) + 5);
-	sprintf(dummyexpr, "(.)*%s", regexpr);
+	(void)sprintf(dummyexpr, "(.)*%s", regexpr);
 	if ((rspencer = regcomp(dummyexpr)) == NULL)
 		kernighan(args);
 	return (rspencer->regmust);

@@ -1,4 +1,4 @@
-/*	refer..c	4.3	86/04/23	*/
+/*	refer..c	4.4	87/10/22	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -40,4 +40,4 @@ extern char *class(),*caps(),*revauth();
 extern char *artskp(),*fpar();
 extern char *trimnl();
 
-extern char *getenv(), *sprintf(), *strcpy(), *strcat();
+extern char *getenv(), *strcpy(), *strcat();
