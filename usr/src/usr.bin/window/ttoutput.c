@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttoutput.c	3.3 %G%";
+static char sccsid[] = "@(#)ttoutput.c	3.4 %G%";
 #endif
 
 /*
@@ -49,4 +49,60 @@ register char *s;
 {
 	while (*s)
 		ttputc(*s++);
+}
+
+ttwrite(s, n)
+	register char *s;
+	register n;
+{
+	switch (n) {
+	case 0:
+		break;
+	case 1:
+		ttputc(*s);
+		break;
+	case 2:
+		if (tt_obe - tt_obp < 2)
+			ttflush();
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s;
+		break;
+	case 3:
+		if (tt_obe - tt_obp < 3)
+			ttflush();
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s;
+		break;
+	case 4:
+		if (tt_obe - tt_obp < 4)
+			ttflush();
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s;
+		break;
+	case 5:
+		if (tt_obe - tt_obp < 5)
+			ttflush();
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s++;
+		*tt_obp++ = *s;
+		break;
+	default:
+		while (n > 0) {
+			register m;
+
+			while ((m = tt_obe - tt_obp) == 0)
+				ttflush();
+			if ((m = tt_obe - tt_obp) > n)
+				m = n;
+			bcopy(s, tt_obp, m);
+			tt_obp += m;
+			s += m;
+			n -= m;
+		}
+	}
 }
