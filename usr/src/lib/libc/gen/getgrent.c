@@ -1,10 +1,8 @@
-/* @(#)getgrent.c	4.1 (Berkeley) %G% */
+/* @(#)getgrent.c	4.2 (Berkeley) %G% */
+
 #include <stdio.h>
 #include <grp.h>
 
-#define	CL	':'
-#define	CM	','
-#define	NL	'\n'
 #define	MAXGRP	100
 
 static char GROUP[] = "/etc/group";
@@ -49,15 +47,16 @@ getgrent()
 	if( !(p = fgets( line, BUFSIZ, grf )) )
 		return(NULL);
 	group.gr_name = p;
-	group.gr_passwd = p = grskip(p,CL);
-	group.gr_gid = atoi( p = grskip(p,CL) );
+	group.gr_passwd = p = grskip(p,':');
+	group.gr_gid = atoi( p = grskip(p,':') );
 	group.gr_mem = gr_mem;
-	p = grskip(p,CL);
-	grskip(p,NL);
+	p = grskip(p,':');
+	grskip(p,'\n');
 	q = gr_mem;
 	while( *p ){
-		*q++ = p;
-		p = grskip(p,CM);
+		if (q < &gr_mem[MAXGRP-1])
+			*q++ = p;
+		p = grskip(p,',');
 	}
 	*q = NULL;
 	return( &group );
