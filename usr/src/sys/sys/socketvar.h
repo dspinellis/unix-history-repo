@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.5 (Berkeley) %G%
+ *	@(#)socketvar.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,7 @@ struct socket {
 	short	so_qlimit;		/* max number queued connections */
 	short	so_timeo;		/* connection timeout */
 	u_short	so_error;		/* error affecting connection */
-	short	so_pgrp;		/* pgrp for signals */
+	pid_t	so_pgid;		/* pgid for signals */
 	u_long	so_oobmark;		/* chars to oob mark */
 /*
  * Variables for socket buffering.
@@ -62,15 +62,16 @@ struct socket {
 		u_long	sb_lowat;	/* low water mark (not used yet) */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
 		struct	proc *sb_sel;	/* process selecting read/write */
-		short	sb_timeo;	/* timeout (not used yet) */
 		short	sb_flags;	/* flags, see below */
+		short	sb_timeo;	/* timeout (not used yet) */
 	} so_rcv, so_snd;
 #define	SB_MAX		(64*1024)	/* max chars in sockbuf */
-#define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
+#define	SB_LOCK		0x01		/* lock on data queue */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
 #define	SB_SEL		0x08		/* buffer is selected */
 #define	SB_COLL		0x10		/* collision selecting */
+	caddr_t	so_tpcb;		/* Wisc. protocol control block XXX*/
 };
 
 /*
