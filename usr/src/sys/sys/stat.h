@@ -1,20 +1,10 @@
-/*
+/*-
  * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.4 (Berkeley) %G%
+ *	@(#)stat.h	7.5 (Berkeley) %G%
  */
 
 struct stat
@@ -89,4 +79,20 @@ struct stat
 #ifndef _POSIX_SOURCE
 #define	S_ISLNK(m)	((m & 0170000) == 0120000)	/* symbolic link */
 #define	S_ISSOCK(m)	((m & 0170000) == 0140000)	/* socket */
+#endif
+
+#ifdef __STDC__
+mode_t umask(mode_t);
+int mkdir(const char *, mode_t);
+int mkfifo(const char *, mode_t);
+int stat(const char *, struct stat *);
+int fstat(int, struct stat *);
+int chmod(const char *, mode_t);
+#else
+mode_t umask();
+int mkdir();
+int mkfifo();
+int stat();
+int fstat();
+int chmod();
 #endif
