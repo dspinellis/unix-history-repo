@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)exec.3	8.2 (Berkeley) %G%
+.\"     @(#)exec.3	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXEC 3
@@ -26,7 +26,7 @@
 .Ft int
 .Fn execle "const char *path" "const char *arg" ... "char *const envp[]"
 .Ft int
-.Fn exect "const char *path" "char *const argv[]" 
+.Fn exect "const char *path" "char *const argv[]"  "char *const envp[]"
 .Ft int
 .Fn execv "const char *path" "char *const argv[]"
 .Ft int
