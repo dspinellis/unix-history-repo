@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -86,19 +86,6 @@ char		*UserEnviron[MAXUSERENVIRON + 1];
 char		**Argv = NULL;		/* pointer to argument vector */
 char		*LastArgv = NULL;	/* end of argv */
 # endif /* SETPROCTITLE */
-
-/*
-**  The file in which to log raw recipient information.
-**	This is logged before aliasing, forwarding, and so forth so we
-**	can see how our addresses are being used.  For example, this
-**	would give us the names of aliases (instead of what they alias
-**	to), the pre-MX hostnames, and so forth.
-**
-**	This is specified on the command line, not in the config file,
-**	and is therefore really only useful for logging SMTP RCPTs.
-*/
-
-char		*RcptLogFile = NULL;	/* file name */
 
 static void	obsolete();
 
@@ -219,7 +206,7 @@ main(argc, argv, envp)
 	**	to the run that froze the configuration.
 	*/
 	nothaw = FALSE;
-#define OPTIONS		"b:C:cd:e:F:f:h:Iimno:p:q:R:r:sTtv"
+#define OPTIONS		"b:C:cd:e:F:f:h:Iimno:p:q:r:sTtv"
 	while ((j = getopt(argc, argv, OPTIONS)) != EOF)
 	{
 		switch (j)
@@ -491,10 +478,6 @@ main(argc, argv, envp)
 			OpMode = MD_INITALIAS;
 			break;
 # endif /* DBM */
-
-		  case 'R':	/* log raw recipient info */
-			RcptLogFile = newstr(optarg);
-			break;
 
 		  default:
 			ExitStat = EX_USAGE;
