@@ -5,6 +5,6 @@ FONTDIR = /usr/share/syscons.fonts
 install:
 	cd ${.CURDIR}; \
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${FONTS} \
-		${DESTDIR}/${FONTDIR}
+		${DESTDIR}${FONTDIR}
 
 .include <bsd.prog.mk>
