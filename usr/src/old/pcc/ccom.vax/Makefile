@@ -1,5 +1,5 @@
 #
-#	Makefile	1.16	87/06/06
+#	Makefile	1.16	87/07/06
 #
 # Makefile for PCC
 #
@@ -164,9 +164,9 @@ fcomm2.o: $(P2INCS) $M/common.c
 	$(RM) fcomm2.c
 
 install: all
-	install -s ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
-	install -s ${TESTDIR}/sccom ${DESTDIR}/lib/sccom
-	install -s ${TESTDIR}/f1 ${DESTDIR}/lib/f1
+	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
+	install -s -o bin -g bin -m 755 ${TESTDIR}/sccom ${DESTDIR}/lib/sccom
+	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/lib/f1
 
 GREP=	egrep
 
@@ -197,3 +197,6 @@ lintall:
 	lint -hax -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
 		$M/trees.c $M/optim.c code.c local.c stab.c $M/reader.c \
 		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
+
+depend:
+tags:
