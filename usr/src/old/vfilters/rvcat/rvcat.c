@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rvcat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rvcat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -824,7 +824,7 @@ slop_lines(ncols)
 	if (rcols < ncols) {
 		if (write(vc, buf0p, BYTES_PER_LINE * rcols) < 0)
 			exit(1);
-		clear(buf0p, rcols * BYTES_PER_LINE);
+		bzero(buf0p, rcols * BYTES_PER_LINE);
 		buf0p = buffer;
 		ncols -= rcols;
 		ypos -= rcols;
@@ -832,20 +832,12 @@ slop_lines(ncols)
 	}
 	if (write(vc, buf0p, BYTES_PER_LINE * ncols) < 0)
 		exit(1);
-	clear(buf0p, BYTES_PER_LINE * ncols);
+	bzero(buf0p, BYTES_PER_LINE * ncols);
 	buf0p += BYTES_PER_LINE * ncols;
 	if (buf0p >= &buffer[BUFFER_SIZE])
 		buf0p -= BUFFER_SIZE;
 	ypos -= ncols;
 	col -= RECONVERT(ncols);
-}
-
-/*ARGSUSED*/
-clear(lp, nbytes)
-	int *lp;
-	int nbytes;
-{
-	asm("movc5 $0,(sp),$0,8(ap),*4(ap)");
 }
 
 /* Start a new page by formfeeding, resetting buffer and column counters. */
@@ -854,7 +846,7 @@ new_page(lines_left)
 {
 	lines += lines_left;
 	buf0p = buffer;		/* Clear out buffer and reset pointers. */
-	clear(buf0p, BYTES_PER_LINE * NLINES);
+	bzero(buf0p, BYTES_PER_LINE * NLINES);
 	row = 0;
 	col = 0;
 	xpos = CONVERT(row);
