@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.1 %G%";
+static char *SccsId = "@(#)fio.c	2.2 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -292,24 +292,32 @@ edstop()
 {
 	register int gotcha, c;
 	register struct message *mp;
-	FILE *obuf, *ibuf;
+	FILE *obuf, *ibuf, *readstat;
 	struct stat statb;
-	char tempname[30];
+	char tempname[30], *id;
 	int (*sigs[3])();
 
 	if (readonly)
 		return;
 	holdsigs();
+	if (Tflag != NOSTR) {
+		if ((readstat = fopen(Tflag, "w")) == NULL)
+			Tflag = NOSTR;
+	}
 	for (mp = &message[0], gotcha = 0; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MNEW) {
 			mp->m_flag &= ~MNEW;
 			mp->m_flag |= MSTATUS;
 		}
-		if (mp->m_flag & (MODIFY|MDELETED|MSTATUS)) {
+		if (mp->m_flag & (MODIFY|MDELETED|MSTATUS))
 			gotcha++;
-			break;
+		if (Tflag != NOSTR && (mp->m_flag & (MREAD|MDELETED)) != 0) {
+			if ((id = hfield("article-id", mp)) != NOSTR)
+				fprintf(readstat, "%s\n", id);
 		}
 	}
+	if (Tflag != NOSTR)
+		fclose(readstat);
 	if (!gotcha)
 		goto done;
 	ibuf = NULL;
