@@ -1,4 +1,4 @@
-/*	up.c	4.51	82/05/19	*/
+/*	up.c	4.52	82/05/19	*/
 
 #include "up.h"
 #if NSC > 0
@@ -887,7 +887,7 @@ updump(dev)
 		DELAY(25);
 		if (++retry > 527)
 			break;
-	} while ((upaddr->upds & UPDS_RDY) == 0) {
+	} while ((upaddr->upds & UP_RDY) == 0);
 	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY)
 		return (EFAULT);
 	start = 0;
@@ -924,7 +924,7 @@ updump(dev)
 				break;
 		} while ((upaddr->upcs1 & UP_RDY) == 0);
 		if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
-			printf("up%d: not ready", dkunit(bp));
+			printf("up%d: not ready", unit);
 			if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
 				printf("\n");
 				return (EIO);
