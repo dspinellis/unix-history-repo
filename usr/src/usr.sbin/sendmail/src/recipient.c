@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -310,7 +310,7 @@ recipient(a, sendq, e)
 		a->q_flags |= QDONTSEND;
 		if (a->q_alias == NULL)
 		{
-			a->q_flags |= QBADADDR;
+			a->q_flags |= QDONTSEND|QBADADDR;
 			usrerr("550 Cannot mail directly to :include:s");
 		}
 		else
@@ -338,7 +338,7 @@ recipient(a, sendq, e)
 		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
 		    (*p = '\0', safefile(buf, getruid(), S_IWRITE|S_IEXEC) != 0))
 		{
-			a->q_flags |= QBADADDR;
+			a->q_flags |= QDONTSEND|QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, e);
 		}
 	}
@@ -414,7 +414,7 @@ recipient(a, sendq, e)
 		pw = finduser(buf, &fuzzy);
 		if (pw == NULL)
 		{
-			a->q_flags |= QBADADDR;
+			a->q_flags |= QDONTSEND|QBADADDR;
 			giveresponse(EX_NOUSER, m, NULL, e);
 		}
 		else
@@ -427,6 +427,7 @@ recipient(a, sendq, e)
 				a->q_user = newstr(pw->pw_name);
 				if (findusercount++ > 3)
 				{
+					a->q_flags |= QDONTSEND|QBADADDR;
 					usrerr("554 aliasing/forwarding loop for %s broken",
 						pw->pw_name);
 					return (a);
