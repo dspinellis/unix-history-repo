@@ -1,4 +1,9 @@
-.\"	@(#)swab.3	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)swab.3	6.2 (Berkeley) %G%
 .\"
 .TH SWAB 3  ""
 .AT 3
@@ -7,19 +12,23 @@
 swab \- swap bytes
 .SH SYNOPSIS
 .nf
-.B swab(from, to, nbytes)
-.B char *from, *to;
+.ft B
+void
+swab(const char *src, char *dst, size_t len);
+.ft R
 .fi
 .SH DESCRIPTION
-.I Swab
+The function
+.I swab
 copies
-.I nbytes
-bytes pointed to by
-.I from
-to the position pointed to by
-.I to,
-exchanging adjacent even and odd bytes.
-It is useful for carrying binary data between
-PDP11's and other machines.
-.I Nbytes
+.I len
+bytes from the location referenced by
+.I src
+to the location referenced by
+.IR dst ,
+swapping adjacent bytes.
+.PP
+.I Len
 should be even.
+.SH SEE ALSO
+bzero(3), memset(3)
