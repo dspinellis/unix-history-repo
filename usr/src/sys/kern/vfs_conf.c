@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.12 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -134,7 +134,6 @@ extern struct vnodeop_desc
 	vop_islocked_desc,
 	vop_advlock_desc,
 	vop_blkatoff_desc,
-	vop_vget_desc,
 	vop_valloc_desc,
 	vop_vfree_desc,
 	vop_truncate_desc,
@@ -179,7 +178,6 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_islocked_desc,
 	&vop_advlock_desc,
 	&vop_blkatoff_desc,
-	&vop_vget_desc,
 	&vop_valloc_desc,
 	&vop_vfree_desc,
 	&vop_truncate_desc,
