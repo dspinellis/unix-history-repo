@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.11 83/09/14";
+static	char *sccsid = "@(#)cmd1.c	3.12 83/09/15";
 #endif
 
 #include "defs.h"
@@ -151,7 +151,7 @@ int id, nrow, ncol, row, col;
 		return 0;
 	if (row + nrow <= 0 || row > wwnrow - 1
 	    || col + ncol <= 0 || col > wwncol - 1) {
-		error("Illegal window size or position.");
+		error("Illegal window position.");
 		return 0;
 	}
 	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {
@@ -161,6 +161,8 @@ int id, nrow, ncol, row, col;
 	w->ww_id = id;
 	window[id] = w;
 	w->ww_hasframe = 1;
+	w->ww_altpos.r = 1;
+	w->ww_altpos.c = 0;
 	wwcursor(w, 1);
 	wwadd(w, framewin);
 	selwin = w;

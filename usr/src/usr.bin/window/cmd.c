@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.12 83/09/15";
+static	char *sccsid = "@(#)cmd.c	3.13 83/09/15";
 #endif
 
 #include "defs.h"
@@ -66,6 +66,11 @@ docmd()
 			case 'm':
 				if ((w = getwin()) != 0)
 					c_move(w);
+				break;
+			case 'M':
+				if ((w = getwin()) != 0)
+					movewin(w, w->ww_altpos.r,
+						w->ww_altpos.c);
 				break;
 			case 'S':
 				c_show();
@@ -140,32 +145,13 @@ docmd()
 			case 'T':
 				c_time(RUSAGE_CHILDREN);
 				break;
-			/* debugging commands */
-			case 'M':
-				if (!debug)
-					goto badcmd;
-				wwdumpsmap();
-				break;
-			case 'V':
-				if (!debug)
-					goto badcmd;
-				if ((w = getwin()) != 0)
-					wwdumpnvis(w);
-				break;
-			case 'D':
-				if (!debug)
-					goto badcmd;
-				if ((w = getwin()) != 0)
-					wwdumpcov(w);
-				break;
-			case 'W':
-				if (!debug)
-					goto badcmd;
-				if ((w = getwin()) != 0)
-					wwdumpwin(w);
-				break;
+			/* debugging stuff */
+			case '&':
+				if (debug) {
+					c_debug();
+					break;
+				}
 			default:
-			badcmd:
 				if (c == escapec) {
 					if (checkproc(selwin) >= 0) {
 						(void) write(selwin->ww_pty,
@@ -244,8 +230,9 @@ struct ww *w;
 
 /*
  * This is all heuristic.
- * wwvisible() doesn't work for partially tinted windows.
- * and wwmoveup() doesn't work for transparent (completely or in part) windows.
+ * wwvisible() doesn't work for tinted windows.
+ * and wwmoveup() doesn't work for transparent windows
+ * (completely or partially).
  * But anything to make it faster.
  */
 front(w)

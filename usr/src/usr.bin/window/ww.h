@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.15 83/09/15	
+ *	@(#)ww.h	3.16 83/09/15	
  */
 
 #include <stdio.h>
@@ -46,14 +46,17 @@ struct ww {
 	char **ww_fmap;		/* map for frame and box windows */
 	short *ww_nvis;		/* how many ww_buf chars are visible per row */
 
+		/* things for the window process */
 	int ww_pty;		/* file descriptor of pty */
 	int ww_tty;		/* . . . tty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
 	char ww_ttyname[11];	/* "/dev/ttyp?" */
-	/* below are things for the user */
+
+		/* things for the user, they really don't belong here */
 	char ww_center :1;	/* center the label */
-	int ww_id;		/* the user id */
+	int ww_id;		/* the user window id */
 	char *ww_label;		/* the user supplied label */
+	struct ww_pos ww_altpos;/* alternate position */
 };
 
 struct ww_tty {
