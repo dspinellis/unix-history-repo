@@ -1,48 +1,48 @@
-#	@(#)sys.mk	5.11 (Berkeley) %G%
+#	@(#)sys.mk	5.12 (Berkeley) %G%
 
-unix=		We run UNIX.
+unix		?=	We run UNIX.
 
 .SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h 
 
 .LIBS:		.a
 
-AR=		ar
-ARFLAGS=	rl
-RANLIB=		ranlib
+AR		?=	ar
+ARFLAGS		?=	rl
+RANLIB		?=	ranlib
 
-AS=		as
-AFLAGS=
+AS		?=	as
+AFLAGS		?=
 
-CC=		cc
-CFLAGS=		-O
+CC		?=	cc
+CFLAGS		?=	-O
 
-CPP=		cpp
+CPP		?=	cpp
 
-FC=		f77
-FFLAGS=		-O
-EFLAGS=
+FC		?=	f77
+FFLAGS		?=	-O
+EFLAGS		?=
 
-LEX=		lex
-LFLAGS=
+LEX		?=	lex
+LFLAGS		?=
 
-LD=		ld
-LDFLAGS=
+LD		?=	ld
+LDFLAGS		?=
 
-LINT=		lint
-LINTFLAGS=	-chapbx
+LINT		?=	lint
+LINTFLAGS	?=	-chapbx
 
-MAKE=		make
+MAKE		?=	make
 
-PC=		pc
-PFLAGS=
+PC		?=	pc
+PFLAGS		?=
 
-RC=		f77
-RFLAGS=
+RC		?=	f77
+RFLAGS		?=
 
-SHELL=		sh
+SHELL		?=	sh
 
-YACC=		yacc
-YFLAGS=-d
+YACC		?=	yacc
+YFLAGS		?=	-d
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC}
