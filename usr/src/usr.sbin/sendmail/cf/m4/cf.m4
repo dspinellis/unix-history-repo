@@ -32,7 +32,13 @@ System V or GNU')
 	include(NoSuchFile)')
 define(`PUSHDIVERT', `pushdef(`__D__', divnum)divert($1)')
 define(`POPDIVERT', `divert(__D__)popdef(`__D__')')
-define(`OSTYPE', `PUSHDIVERT(-1)define(`_ARG_', $2)include(../ostype/$1.m4)POPDIVERT`'')
+define(`OSTYPE',
+	`PUSHDIVERT(-1)
+	ifdef(`__OSTYPE__', `errprint(`duplicate OSTYPE')')
+	define(`__OSTYPE__', $1)
+	define(`_ARG_', $2)
+	include(../ostype/$1.m4)
+	POPDIVERT`'')
 define(`MAILER',
 `ifdef(`_MAILER_$1_', `dnl`'',
 `define(`_MAILER_$1_', `')PUSHDIVERT(7)include(../mailer/$1.m4)POPDIVERT`'')')
@@ -114,4 +120,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confFORWARD_PATH', `$z/.forward.$w:$z/.forward')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.14 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.15 (Berkeley) %G%')
