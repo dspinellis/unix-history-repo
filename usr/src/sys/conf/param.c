@@ -1,4 +1,4 @@
-/*	param.c	6.7	84/08/23	*/
+/*	param.c	6.8	84/12/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,6 +28,7 @@
 #define	HZ 100
 int	hz = HZ;
 int	tick = 1000000 / HZ;
+int	tickadj = 1000000 / HZ / 10;
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
