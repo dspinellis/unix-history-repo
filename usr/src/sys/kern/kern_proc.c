@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.12	81/04/28	*/
+/*	kern_proc.c	4.13	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,24 +51,22 @@ exece()
 
 	if ((ip = namei(uchar, 0)) == NULL)
 		return;
-
 	bno = 0;
 	bp = 0;
 	indir = 0;
 	uid = u.u_uid;
 	gid = u.u_gid;
-
 	if (ip->i_mode & ISUID)
 		uid = ip->i_uid;
 	if (ip->i_mode & ISGID)
 		gid = ip->i_gid;
 
   again:
-	if(access(ip, IEXEC))
+	if (access(ip, IEXEC))
 		goto bad;
-	if((u.u_procp->p_flag&STRC) && access(ip, IREAD))
+	if ((u.u_procp->p_flag&STRC) && access(ip, IREAD))
 		goto bad;
-	if((ip->i_mode & IFMT) != IFREG ||
+	if ((ip->i_mode & IFMT) != IFREG ||
 	   (ip->i_mode & (IEXEC|(IEXEC>>3)|(IEXEC>>6))) == 0) {
 		u.u_error = EACCES;
 		goto bad;
@@ -94,7 +92,7 @@ exece()
 	u.u_segflg = 1;
 	readi(ip);
 	u.u_segflg = 0;
-	if(u.u_error)
+	if (u.u_error)
 		goto bad;
 	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A)
 		&& u.u_exdata.ux_shell[0] != '#') {
@@ -193,7 +191,7 @@ exece()
 		if (ap==NULL)
 			break;
 		na++;
-		if(ap == -1)
+		if (ap == -1)
 			u.u_error = EFAULT;
 		do {
 			if (nc >= NCARGS-1)
@@ -241,7 +239,6 @@ badarg:
 	/*
 	 * copy back arglist
 	 */
-
 	ucp = USRSTACK - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
 	u.u_ar0[SP] = ap;
@@ -294,28 +291,32 @@ register struct inode *ip;
 		pagi = SPAGI;
 	else
 		pagi = 0;
-
-	if(u.u_exdata.ux_tsize!=0 && (ip->i_flag&ITEXT)==0 && ip->i_count!=1) {
+	if (u.u_exdata.ux_tsize!=0 && (ip->i_flag&ITEXT)==0 &&
+	    ip->i_count!=1) {
 		register struct file *fp;
 
-		for (fp = file; fp < fileNFILE; fp++)
+		for (fp = file; fp < fileNFILE; fp++) {
+			if (fp->f_flag & FSOCKET)
+				continue;
 			if (fp->f_inode == ip && (fp->f_flag&FWRITE)) {
 				u.u_error = ETXTBSY;
 				goto bad;
 			}
+		}
 	}
 
 	/*
-	 * find text and data sizes
-	 * try them out for possible
-	 * exceed of max sizes
+	 * Compute text and data sizes and make sure not too large.
 	 */
-
 	ts = clrnd(btoc(u.u_exdata.ux_tsize));
 	ds = clrnd(btoc((u.u_exdata.ux_dsize+u.u_exdata.ux_bsize)));
 	ss = clrnd(SSIZE + btoc(nargc));
 	if (chksize(ts, ds, ss))
 		goto bad;
+
+	/*
+	 * Make sure enough space to start process.
+	 */
 	u.u_cdmap = zdmap;
 	u.u_csmap = zdmap;
 	if (swpexpand(ds, ss, &u.u_cdmap, &u.u_csmap) == NULL)
@@ -368,13 +369,8 @@ register struct inode *ip;
 	 * set SUID/SGID protections, if no tracing
 	 */
 	if ((u.u_procp->p_flag&STRC)==0) {
-#ifndef	MELB
-		if(u.u_uid != 0)
-#endif
-		{
-			u.u_uid = uid;
-			u.u_procp->p_uid = uid;
-		}
+		u.u_uid = uid;
+		u.u_procp->p_uid = uid;
 		u.u_gid = gid;
 	} else
 		psignal(u.u_procp, SIGTRAP);
@@ -394,7 +390,7 @@ setregs()
 	register i;
 	long sigmask;
 
-	for(rp = &u.u_signal[0], sigmask = 1L; rp < &u.u_signal[NSIG];
+	for (rp = &u.u_signal[0], sigmask = 1L; rp < &u.u_signal[NSIG];
 	    sigmask <<= 1, rp++) {
 		switch (*rp) {
 
@@ -422,17 +418,18 @@ setregs()
 		}
 	}
 /*
-	for(rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
+	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
 		*rp++ = 0;
 */
 	u.u_ar0[PC] = u.u_exdata.ux_entloc + 2; /* skip over entry mask */
-	for(i=0; i<NOFILE; i++) {
+	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&EXCLOSE) {
 			closef(u.u_ofile[i]);
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] &= ~EXCLOSE;
 		}
 	}
+
 	/*
 	 * Remember file name for accounting.
 	 */
@@ -441,8 +438,7 @@ setregs()
 }
 
 /*
- * exit system call:
- * pass back caller's arg
+ * Exit system call: pass back caller's arg
  */
 rexit()
 {
@@ -487,7 +483,7 @@ exit(rv)
 	(void) spl0();
 	p->p_cpticks = 0;
 	p->p_pctcpu = 0;
-	for(i=0; i<NSIG; i++)
+	for (i=0; i<NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
 	/*
 	 * Release virtual memory.  If we resulted from
@@ -503,15 +499,15 @@ exit(rv)
 			sleep((caddr_t)p, PZERO - 1);
 		p->p_flag &= ~SVFDONE;
 	}
-	for(i=0; i<NOFILE; i++) {
+	for (i=0; i<NOFILE; i++) {
 		f = u.u_ofile[i];
 		u.u_ofile[i] = NULL;
 		closef(f);
 	}
-	plock(u.u_cdir);
+	ilock(u.u_cdir);
 	iput(u.u_cdir);
 	if (u.u_rdir) {
-		plock(u.u_rdir);
+		ilock(u.u_rdir);
 		iput(u.u_rdir);
 	}
 	u.u_limit[LIM_FSIZE] = INFINITY;
@@ -519,7 +515,6 @@ exit(rv)
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
 	multprog--;
-/*	spl7();			/* clock will get mad because of overlaying */
 	p->p_stat = SZOMB;
 	noproc = 1;
 	i = PIDHASH(p->p_pid);
@@ -540,8 +535,8 @@ done:
 	((struct xproc *)p)->xp_xstat = rv;		/* overlay */
 	((struct xproc *)p)->xp_vm = u.u_vm;		/* overlay */
 	vmsadd(&((struct xproc *)p)->xp_vm, &u.u_cvm);
-	for(q = proc; q < procNPROC; q++)
-		if(q->p_pptr == p) {
+	for (q = proc; q < procNPROC; q++)
+		if (q->p_pptr == p) {
 			q->p_pptr = &proc[1];
 			q->p_ppid = 1;
 			wakeup((caddr_t)&proc[1]);
@@ -604,10 +599,10 @@ wait1(options, vp)
 
 	f = 0;
 loop:
-	for(p = proc; p < procNPROC; p++)
-	if(p->p_pptr == u.u_procp) {
+	for (p = proc; p < procNPROC; p++)
+	if (p->p_pptr == u.u_procp) {
 		f++;
-		if(p->p_stat == SZOMB) {
+		if (p->p_stat == SZOMB) {
 			u.u_r.r_val1 = p->p_pid;
 			u.u_r.r_val2 = ((struct xproc *)p)->xp_xstat;
 			((struct xproc *)p)->xp_xstat = 0;
@@ -674,7 +669,7 @@ fork1(isvfork)
 
 	a = 0;
 	p2 = NULL;
-	for(p1 = proc; p1 < procNPROC; p1++) {
+	for (p1 = proc; p1 < procNPROC; p1++) {
 		if (p1->p_stat==NULL && p2==NULL)
 			p2 = p1;
 		else {
@@ -699,7 +694,7 @@ fork1(isvfork)
 		goto out;
 	}
 	p1 = u.u_procp;
-	if(newproc(isvfork)) {
+	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  /* child */
 		u.u_start = time;
