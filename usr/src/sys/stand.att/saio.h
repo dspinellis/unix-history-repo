@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	7.8 (Berkeley) %G%
+ *	@(#)saio.h	7.9 (Berkeley) %G%
  */
 
 #include "saioctl.h"
@@ -18,7 +18,7 @@
  */
 struct iob {
 	int	i_flgs;		/* see F_ below */
-	int	i_adapt;	/* adapter */
+	int	i_adapt;	/* adapter or bus */
 	int	i_ctlr;		/* controller */
 	int	i_unit;		/* pseudo device unit */
 	int	i_part;		/* disk partition */
@@ -39,6 +39,7 @@ struct iob {
 	} i_un;
 };
 #define	i_fs	i_un.ui_fs
+#define	i_bus	i_adapt
 
 /* codes for sector header word 1 */
 #define	HDR1_FMT22	0x1000	/* standard 16 bit format */
