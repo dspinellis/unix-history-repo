@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.10 (Berkeley) %G%
+ *	@(#)locore.s	7.11 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -606,10 +606,6 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*MCLBYTES/NBPG+CLSIZE )
-	SYSMAP(camap	,cabase		,16*CLSIZE	 )
-#ifdef	GPROF
-	SYSMAP(profmap	,profbase	,600*CLSIZE	)
-#endif
 #ifdef MFS
 #include "../ufs/mfsiom.h"
 	/*
@@ -624,6 +620,15 @@ _/**/mname:	.globl	_/**/mname;		\
 	 */
 	SYSMAP(Nfsiomap	,nfsiobuf	,NFS_MAPREG )
 #endif /* NFS */
+	/*
+	 * This is the map used by the kernel memory allocator.
+	 * It is expanded as necessary by the special features
+	 * that use it.
+	 */
+	SYSMAP(kmempt	,kmembase	,300*CLSIZE 	)
+#ifdef	GPROF
+				ADDMAP( 600*CLSIZE	)
+#endif
 	/*
 	 * Enlarge kmempt as needed for bounce buffers allocated
 	 * by tahoe controllers.
