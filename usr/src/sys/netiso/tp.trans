@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.18 (Berkeley) %G%
+ *	@(#)tp.trans	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.18 (Berkeley) %G% */
+/* @(#)tp.trans	7.19 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -435,6 +435,7 @@ TP_REFWAIT 		<==		[ TP_CRSENT, TP_AKWAIT, TP_OPEN ] 			DR_TPDU
 				tp_cuntimeout($P, TM_retrans);
 				tp_cuntimeout($P, TM_inact);
 				tp_cuntimeout($P, TM_sendack);
+				$P.tp_flags &= ~TPF_DELACK;
 			}
 			tp_cuntimeout($P, TM_retrans);
 			if( $$.e_sref !=  0 ) 
@@ -908,6 +909,7 @@ TP_CLOSING		<==	[ TP_AKWAIT, TP_OPEN, TP_CRSENT, TP_CONFIRMING ]  T_DISC_req
 			tp_euntimeout($P, TM_data_retrans); /* all */
 			tp_cuntimeout($P, TM_inact);
 			tp_cuntimeout($P, TM_sendack);
+			$P.tp_flags &= ~TPF_DELACK;
 		}
 		if (data) {
 			IFDEBUG(D_CONN)
