@@ -1,4 +1,4 @@
-/*	ubareg.h	4.31	82/11/13	*/
+/*	ubareg.h	6.1	83/07/29	*/
 
 /*
  * VAX UNIBUS adapter registers

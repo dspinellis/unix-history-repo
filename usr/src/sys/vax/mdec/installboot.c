@@ -1,4 +1,4 @@
-/*	installboot.c	4.1	83/02/16	*/
+/*	installboot.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/fs.h"

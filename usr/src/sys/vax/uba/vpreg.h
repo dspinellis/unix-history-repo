@@ -1,4 +1,4 @@
-/*	vpreg.h	4.1	83/06/22	*/
+/*	vpreg.h	6.1	83/07/29	*/
 
 #define	VPPRI	(PZERO-1)
 

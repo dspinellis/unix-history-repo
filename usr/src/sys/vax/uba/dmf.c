@@ -1,4 +1,4 @@
-/*	dmf.c	4.19	83/05/27	*/
+/*	dmf.c	6.1	83/07/29	*/
 
 #include "dmf.h"
 #if NDMF > 0

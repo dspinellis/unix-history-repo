@@ -1,4 +1,4 @@
-/*	param.c	4.18	83/07/21	*/
+/*	param.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

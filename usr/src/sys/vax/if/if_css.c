@@ -1,4 +1,4 @@
-/*      if_css.c     4.8     83/05/27     */
+/*      if_css.c     6.1     83/07/29     */
 
 #include "css.h"
 

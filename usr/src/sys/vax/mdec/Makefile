@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	%G%
+#	@(#)Makefile	6.1	%G%
 #
 ALL=	hkboot hpboot htboot mtboot noboot raboot rlboot \
 	upboot utboot tmboot tsboot tuboot \

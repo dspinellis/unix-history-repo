@@ -1,4 +1,4 @@
-/*	if_enreg.h	4.2	81/11/07	*/
+/*	if_enreg.h	6.1	83/07/29	*/
 
 /*
  * Xerox experimental ethernet registers.

@@ -1,4 +1,4 @@
-/*	hkboot.c	4.1	83/02/16	*/
+/*	hkboot.c	6.1	83/07/29	*/
 
 /*
  * RK07 1st level boot program: loads next 7.5Kbytes from

@@ -1,4 +1,4 @@
-/*	rxreg.h	4.7	83/05/07	*/
+/*	rxreg.h	6.1	83/07/29	*/
 
 #include <sys/ioctl.h>
 /*

@@ -1,4 +1,4 @@
-/*	uttoggle.s	4.3	83/03/06	*/
+/*	uttoggle.s	6.1	83/07/29	*/
 
 /*
  * Prototype toggle in bootstrap code for ut type tapes.

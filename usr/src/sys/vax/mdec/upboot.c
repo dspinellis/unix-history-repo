@@ -1,4 +1,4 @@
-/*	upboot.c	4.1	83/02/16	*/
+/*	upboot.c	6.1	83/07/29	*/
 
 /*
  * UP 1st level boot program: loads next 7.5Kbytes from

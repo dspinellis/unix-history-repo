@@ -1,4 +1,4 @@
-/*	mttoggle.s	4.1	83/02/16	*/
+/*	mttoggle.s	6.1	83/07/29	*/
 
 /*
  * Prototype toggle in bootstrap code for mt type tapes.

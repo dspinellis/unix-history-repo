@@ -1,4 +1,4 @@
-/*	conf.c	4.19	83/07/06	*/
+/*	conf.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 

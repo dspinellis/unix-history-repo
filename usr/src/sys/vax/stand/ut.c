@@ -1,4 +1,4 @@
-/*	ut.c	4.7	83/03/06	*/
+/*	ut.c	6.1	83/07/29	*/
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS

@@ -1,4 +1,4 @@
-/*	kgclock.c	4.4	83/05/30	*/
+/*	kgclock.c	6.1	83/07/29	*/
 
 #include "kg.h"
 #if NKG > 0

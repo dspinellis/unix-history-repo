@@ -1,4 +1,4 @@
-/*	bootxx.c	4.3	83/02/20	*/
+/*	bootxx.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"

@@ -1,4 +1,4 @@
-/*	boot.c	4.10	83/06/16	*/
+/*	boot.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"

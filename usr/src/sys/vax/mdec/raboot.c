@@ -1,4 +1,4 @@
-/*	raboot.c	4.3	83/05/03	*/
+/*	raboot.c	6.1	83/07/29	*/
 
 /*
  * UDA50 1st level boot program: loads next 7.5Kbytes from

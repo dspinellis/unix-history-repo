@@ -1,4 +1,4 @@
-/*	if_dmc.h	4.2	82/02/21	*/
+/*	if_dmc.h	6.1	83/07/29	*/
 
 /*
  * DMC-11 Interface

@@ -1,4 +1,4 @@
-/*	machdep.c	4.3	82/11/13	*/
+/*	machdep.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 

@@ -1,4 +1,4 @@
-/*	tm.c	4.60	82/12/17	*/
+/*	tm.c	6.1	83/07/29	*/
 
 #include "te.h"
 #include "ts.h"

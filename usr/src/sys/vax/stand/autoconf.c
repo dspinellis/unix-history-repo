@@ -1,4 +1,4 @@
-/*	autoconf.c	4.7	82/12/17	*/
+/*	autoconf.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 

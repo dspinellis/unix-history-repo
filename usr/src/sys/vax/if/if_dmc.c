@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.29	83/06/13	*/
+/*	if_dmc.c	6.1	83/07/29	*/
 
 #include "dmc.h"
 #if NDMC > 0

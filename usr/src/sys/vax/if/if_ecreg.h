@@ -1,4 +1,4 @@
-/*	if_ecreg.h	4.3	82/07/21	*/
+/*	if_ecreg.h	6.1	83/07/29	*/
 
 /*
  * 3Com Ethernet controller registers.

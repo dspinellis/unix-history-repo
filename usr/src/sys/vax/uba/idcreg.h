@@ -1,4 +1,4 @@
-/*	idcreg.h	4.1	82/05/26	*/
+/*	idcreg.h	6.1	83/07/29	*/
 
 #define	NRB02SECT	40	/* RB02 sectors/track */
 #define	NRB02TRK	2	/* RB02 tracks/cylinder */

@@ -1,4 +1,4 @@
-/*	if_pclreg.h	4.1	83/03/31	*/
+/*	if_pclreg.h	6.1	83/07/29	*/
 
 /*
  * DEC CSS PCL-11B Parallel Communications Interface

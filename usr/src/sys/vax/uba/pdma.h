@@ -1,4 +1,4 @@
-/*	pdma.h	4.3	82/12/30	*/
+/*	pdma.h	6.1	83/07/29	*/
 
 struct pdma {
 	struct	dzdevice *p_addr;

@@ -1,4 +1,4 @@
-/*	copy.c	4.5	83/02/24	*/
+/*	copy.c	6.1	83/07/29	*/
 
 /*
  * Copy from to in 10K units.

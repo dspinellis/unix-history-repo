@@ -1,4 +1,4 @@
-/*	tstoggle.s	4.1	83/02/16	*/
+/*	tstoggle.s	6.1	83/07/29	*/
 
 /*
  * Prototype toggle in bootstrap code for ts type tapes.

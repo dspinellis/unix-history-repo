@@ -1,4 +1,4 @@
-/*	if_en.h	4.4	83/05/10	*/
+/*	if_en.h	6.1	83/07/29	*/
 
 /*
  * Structure of a Ethernet header.

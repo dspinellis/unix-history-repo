@@ -1,4 +1,4 @@
-/*	if_uba.h	4.5	82/02/03	*/
+/*	if_uba.h	6.1	83/07/29	*/
 
 /*
  * Structure and routine definitions

@@ -1,4 +1,4 @@
-/*	utboot.c	4.3	83/03/06	*/
+/*	utboot.c	6.1	83/07/29	*/
 
 /*
  * VAX tape boot block for distribution tapes

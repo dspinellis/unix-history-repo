@@ -1,4 +1,4 @@
-/*	saio.h	4.14	%G%	*/
+/*	saio.h	6.1	%G%	*/
 
 /*
  * Header file for standalone package

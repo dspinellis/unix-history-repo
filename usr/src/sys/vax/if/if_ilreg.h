@@ -1,4 +1,4 @@
-/*	if_ilreg.h	4.3	82/11/13	*/
+/*	if_ilreg.h	6.1	83/07/29	*/
 
 /*
  * Interlan Ethernet Communications Controller interface

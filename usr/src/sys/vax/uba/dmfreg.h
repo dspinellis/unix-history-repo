@@ -1,4 +1,4 @@
-/*	dmfreg.h	4.2	83/05/14	*/
+/*	dmfreg.h	6.1	83/07/29	*/
 
 /*
  * DMF-32 definitions.
