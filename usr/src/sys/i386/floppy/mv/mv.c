@@ -3,17 +3,9 @@
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ *
+ *	@(#)mv.c	5.2 (Berkeley) %G%
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
- All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)mv.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
 
 int eval;
 

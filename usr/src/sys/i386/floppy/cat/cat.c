@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cat.c	5.1 (Berkeley) %G%
+ *	@(#)cat.c	5.2 (Berkeley) %G%
  */
 
 int eval;
