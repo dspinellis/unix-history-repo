@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)tanh.c	4.3 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)tanh.c	4.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* TANH(X)
@@ -60,7 +60,7 @@ double x;
 	double expm1(), t, copysign(), sign;
 	int finite();
 
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(x!=x) return(x);	/* x is NaN */
 #endif
 

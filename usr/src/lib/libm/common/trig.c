@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.2 (ucb.elefunt) %G%";
+"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SIN(X), COS(X), TAN(X)
@@ -112,7 +112,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 /*thresh =  2.6117239648121182150E-1    , Hex  2^ -1   *  .85B8636B026EA0 */
 /*PIo4   =  7.8539816339744830676E-1    , Hex  2^  0   *  .C90FDAA22168C2 */
 /*PIo2   =  1.5707963267948966135E0     , Hex  2^  1   *  .C90FDAA22168C2 */
@@ -270,7 +270,7 @@ double x;
  *
  */
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 /*S0     = -1.6666666666666646660E-1    , Hex  2^ -2   * -.AAAAAAAAAAAA71 */
 /*S1     =  8.3333333333297230413E-3    , Hex  2^ -6   *  .8888888888477F */
 /*S2     = -1.9841269838362403710E-4    , Hex  2^-12   * -.D00D00CF8A1057 */
@@ -305,7 +305,7 @@ S5     =  1.5868926979889205164E-10   ; /*Hex  2^-33   *  1.5CF61DF672B13 */
 static double sin__S(z)
 double z;
 {
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 	return(z*(S0+z*(S1+z*(S2+z*(S3+z*(S4+z*(S5+z*S6)))))));
 #else 	/* IEEE double */
 	return(z*(S0+z*(S1+z*(S2+z*(S3+z*(S4+z*S5))))));
@@ -356,7 +356,7 @@ double z;
  *
  */
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 /*C0     =  4.1666666666666504759E-2    , Hex  2^ -4   *  .AAAAAAAAAAA9F0 */
 /*C1     = -1.3888888888865302059E-3    , Hex  2^ -9   * -.B60B60B60A0CCA */
 /*C2     =  2.4801587285601038265E-5    , Hex  2^-15   *  .D00D00CDCD098F */

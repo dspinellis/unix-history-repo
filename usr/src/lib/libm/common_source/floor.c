@@ -1,4 +1,4 @@
-/*	@(#)floor.c	4.2	9/11/85; 1.2 (ucb.elefunt) %G% */
+/*	@(#)floor.c	4.2	9/11/85; 1.3 (ucb.elefunt) %G% */
 
 /*
  * floor and ceil-- greatest integer <= arg
@@ -52,7 +52,7 @@ double d;
  * Note: Inexact will be signaled if x is not an integer, as is
  *	customary for IEEE 754.  No other signal can be emitted.
  */
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 static long Lx[] = {0x5c00,0x0};		/* 2**55 */
 #define L *(double *) Lx
 #else	/* IEEE double */
@@ -63,7 +63,7 @@ rint(x)
 double x;
 {
 	double s,t,one = 1.0,copysign();
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if (x != x)				/* NaN */
 		return (x);
 #endif

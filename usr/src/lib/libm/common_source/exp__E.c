@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* exp__E(x,c)
@@ -67,7 +67,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX	/* VAX D format */
+#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
 /* static double */
 /* p1     =  1.5150724356786683059E-2    , Hex  2^ -6   *  .F83ABE67E1066A */
 /* p2     =  6.3112487873718332688E-5    , Hex  2^-13   *  .845B4248CD0173 */
@@ -100,7 +100,7 @@ double x,c;
 	if(copysign(x,one)>small) {
            z = x*x  ;
 	   p = z*( p1 +z* p2 );
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
            q = z*( q1 +z*( q2 +z* q3 ));
 #else	/* IEEE double */
            q = z*( q1 +z*  q2 );

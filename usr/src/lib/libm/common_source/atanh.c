@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)atanh.c	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)atanh.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* ATANH(X)
@@ -42,7 +42,7 @@ static char sccsid[] =
  *	observed error was 1.87 ulps (units in the last place) at
  *	x= -3.8962076028810414000e-03.
  */
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 #include <errno.h>
 #endif
 
@@ -52,7 +52,7 @@ double x;
 	double copysign(),log1p(),z;
 	z = copysign(0.5,x);
 	x = copysign(x,1.0);
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 	if (x == 1.0) {
 	    extern double infnan();
 	    return(copysign(1.0,z)*infnan(ERANGE));	/* sign(x)*INF */

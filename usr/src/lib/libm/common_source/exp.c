@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
+"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
 #endif not lint
 
 /* EXP(X)
@@ -58,7 +58,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX	/* VAX D format */
+#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -111,7 +111,7 @@ double x;
 	double scalb(), copysign(), z,hi,lo,c;
 	int k,finite();
 
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(x!=x) return(x);	/* x is NaN */
 #endif
 	if( x <= lnhuge ) {

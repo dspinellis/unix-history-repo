@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log__L.c	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)log__L.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* log__L(Z)
@@ -50,7 +50,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX	/* VAX D format (56 bits) */
+#if (defined(VAX)||defined(TAHOE))	/* VAX D format (56 bits) */
 /* static double */
 /* L1     =  6.6666666666666703212E-1    , Hex  2^  0   *  .AAAAAAAAAAAAC5 */
 /* L2     =  3.9999999999970461961E-1    , Hex  2^ -1   *  .CCCCCCCCCC2684 */
@@ -90,7 +90,7 @@ L7     =  1.4795612545334174692E-1    ; /*Hex  2^ -3   *  1.2F039F0085122 */
 double log__L(z)
 double z;
 {
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*(L7+z*L8))))))));
 #else	/* IEEE double */
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*L7)))))));

@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* POW(X,Y)  
@@ -84,7 +84,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX	/* VAX D format */
+#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
 #include <errno.h>
 extern double infnan();
 
@@ -119,11 +119,11 @@ double x,y;
 
 	if     (y==zero)      return(one);
 	else if(y==one
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 		||x!=x
 #endif
 		) return( x );      /* if x is NaN or y=1 */
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	else if(y!=y)         return( y );      /* if y is NaN */
 #endif
 	else if(!finite(y))                     /* if y is INF */
@@ -147,7 +147,7 @@ double x,y;
 	else if(x==zero)	/* x is -0 */
 	    return((y>zero)?-x:one/(-x));
 	else {			/* return NaN */
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 	    return (infnan(EDOM));	/* NaN */
 #else	/* IEEE double */
 	    return(zero/zero);
@@ -166,7 +166,7 @@ double x,y;
         int n,m;
 
 	if(x==zero||!finite(x)) {           /* if x is +INF or +0 */
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 	     return((y>zero)?x:infnan(ERANGE));	/* if y<zero, return +INF */
 #else
 	     return((y>zero)?x:one/x);
@@ -176,7 +176,7 @@ double x,y;
 
     /* reduce x to z in [sqrt(1/2)-1, sqrt(2)-1] */
         z=scalb(x,-(n=logb(x)));  
-#ifndef VAX	/* IEEE double */	/* subnormal number */
+#if (!defined(VAX)&&!defined(TAHOE))	/* IEEE double; subnormal number */
         if(n <= -1022) {n += (m=logb(z)); z=scalb(z,-m);} 
 #endif
         if(z >= sqrt2 ) {n += 1; z *= half;}  z -= one ;

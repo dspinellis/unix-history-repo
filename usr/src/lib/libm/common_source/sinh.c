@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)sinh.c	4.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)sinh.c	4.3 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SINH(X)
@@ -55,7 +55,7 @@ static char sccsid[] =
  * from decimal to binary accurately enough to produce the hexadecimal values
  * shown.
  */
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 /* static double */
 /* mln2hi =  8.8029691931113054792E1     , Hex  2^  7   *  .B00F33C7E22BDB */
 /* mln2lo = -4.9650192275318476525E-16   , Hex  2^-50   * -.8F1B60279E582A */
@@ -73,7 +73,7 @@ mln2lo =  2.3747039373786107478E-14   , /*Hex  2^-45   *  1.ABC9E3B39803F */
 lnovfl =  7.0978271289338397310E2     ; /*Hex  2^  9   *  1.62E42FEFA39EF */
 #endif
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 static max = 126                      ;
 #else	/* IEEE double */
 static max = 1023                     ;
@@ -85,7 +85,7 @@ double x;
 {
 	static double  one=1.0, half=1.0/2.0 ;
 	double expm1(), t, scalb(), copysign(), sign;
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(x!=x) return(x);	/* x is NaN */
 #endif
 	sign=copysign(one,x);
