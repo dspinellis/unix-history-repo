@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -76,7 +76,8 @@ sendall(e, mode)
 
 	if (tTd(13, 1))
 	{
-		printf("\nSENDALL: mode %c, e_from ", mode);
+		printf("\n===== SENDALL: mode %c, id %s, e_from ",
+			mode, e->e_id);
 		printaddr(&e->e_from, FALSE);
 		printf("sendqueue:\n");
 		printaddr(e->e_sendqueue, TRUE);
@@ -358,8 +359,18 @@ sendenvelope(e, mode)
 		}
 		else if (pid > 0)
 		{
-			/* now drop the envelope in the parent */
-			e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+			/* be sure we leave the temp files to our child */
+			/* can't call unlockqueue to avoid unlink of xfp */
+			if (e->e_lockfp != NULL)
+				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
+			e->e_lockfp = NULL;
+
+			/* close any random open files in the envelope */
+			closexscript(e);
+			if (e->e_dfp != NULL)
+				(void) xfclose(e->e_dfp, "sendenvelope", e->e_df);
+			e->e_dfp = NULL;
+			e->e_id = e->e_df = NULL;
 			return;
 		}
 
