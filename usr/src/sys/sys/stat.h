@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.9 (Berkeley) %G%
+ *	@(#)stat.h	7.10 (Berkeley) %G%
  */
 
 struct stat
@@ -94,5 +94,8 @@ int	fstat __P((int, struct stat *));
 int	mkdir __P((const char *, mode_t));
 int	mkfifo __P((const char *, mode_t));
 int	stat __P((const char *, struct stat *));
+#ifndef _POSIX_SOURCE
+int	lstat __P((const char *, struct stat *));
+#endif /* not POSIX */
 __END_DECLS
 #endif
