@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lookup.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -47,7 +47,12 @@ nllookup( address )
 	    low = middle + 1;
 	}
     }
-    fprintf( stderr , "[nllookup] binary search fails???\n" );
+#   ifdef DEBUG
+	if ( debug & LOOKUPDEBUG ) {
+	    fprintf( stderr , "[nllookup] (%d) binary search fails\n" ,
+		nname-1 );
+	}
+#   endif DEBUG
     return 0;
 }
 
