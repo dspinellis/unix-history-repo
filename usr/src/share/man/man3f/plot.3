@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)plot.3	6.2 (Berkeley) %G%
+.\"	@(#)plot.3	6.3 (Berkeley) %G%
 .\"
 .TH PLOT 3F ""
 .UC 6
@@ -11,38 +11,38 @@ plot: openpl et al. \- f77 library interface to \fIplot\fR (3X)
 libraries.
 .SH SYNOPSIS
 .nf
-.B call openpl()
+.B subroutine openpl()
 .PP
-.B call erase()
+.B subroutine erase()
 .PP
-.B call label(str)
+.B subroutine label(str)
 .B character str*(*)
 .PP
-.B call line(ix1, iy1, ix2, iy2)
+.B subroutine line(ix1, iy1, ix2, iy2)
 .PP
-.B call box(ix1, iy1, ix2, iy2)
+.B subroutine box(ix1, iy1, ix2, iy2)
 .fi
 Draw a rectangle and leave the cursor at (
 .IR ix2 , iy2 ).
 .nf
 .PP
-.B call circle(ix, iy, ir)
+.B subroutine circle(ix, iy, ir)
 .PP
 .B
-call arc(ix, iy, ix0, iy0, ix1, iy1)
+subroutine arc(ix, iy, ix0, iy0, ix1, iy1)
 .PP
-.B call move(ix, iy)
+.B subroutine move(ix, iy)
 .PP
-.B call cont(ix, iy)
+.B subroutine cont(ix, iy)
 .PP
-.B call point(ix, iy)
+.B subroutine point(ix, iy)
 .PP
-.B call linemd(str)
+.B subroutine linemd(str)
 .B character str*(*)
 .PP
-.B call space(ix0, iy0, ix1, iy1)
+.B subroutine space(ix0, iy0, ix1, iy1)
 .PP
-.B call clospl()
+.B subroutine clospl()
 .fi
 .PP
 .ft R
