@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.28 (Berkeley) %G%
+ *	@(#)types.h	7.29 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -35,7 +35,7 @@ typedef	unsigned long	ino_t;		/* inode number */
 typedef	unsigned short	mode_t;		/* permissions */
 typedef	unsigned short	nlink_t;	/* link count */
 typedef	quad_t		off_t;		/* file offset */
-typedef	short		pid_t;		/* process id */
+typedef	unsigned long	pid_t;		/* process id */
 typedef	long		segsz_t;	/* segment size */
 typedef	long		swblk_t;	/* swap offset */
 typedef	unsigned long	uid_t;		/* user id */
