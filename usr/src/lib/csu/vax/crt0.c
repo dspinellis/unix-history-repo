@@ -2,12 +2,12 @@
  * Copyright (c) 1982 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crt0.c	5.7 (Berkeley) %G%";
-#endif /* LIBC_SCCS and not lint */
+#ifndef lint
+static char sccsid[] = "@(#)crt0.c	5.8 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *	C start up routine.
