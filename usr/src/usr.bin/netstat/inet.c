@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -291,7 +291,7 @@ inetprint(in, port, proto)
 	char line[80], *cp, *index();
 	int width;
 
-	sprintf(line, "%.*s.", Aflag ? 10 : 16, inetname(*in));
+	sprintf(line, "%.*s.", (Aflag && !nflag) ? 12 : 16, inetname(*in));
 	cp = index(line, '\0');
 	if (!nflag && port)
 		sp = getservbyport(port, proto);
