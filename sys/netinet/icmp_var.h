@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)icmp_var.h	7.5 (Berkeley) 6/28/90
- *	$Id: icmp_var.h,v 1.2 1993/10/16 18:25:52 rgrimes Exp $
+ *	$Id: icmp_var.h,v 1.3 1993/11/07 17:47:45 wollman Exp $
  */
 
 #ifndef _NETINET_ICMP_VAR_H_
@@ -46,6 +46,8 @@ struct	icmpstat {
 	int	icps_error;		/* # of calls to icmp_error */
 	int	icps_oldshort;		/* no error 'cuz old ip too short */
 	int	icps_oldicmp;		/* no error 'cuz old was icmp */
+	int	icps_oldmcast;		/* no error 'cuz old was multicast */
+	int	icps_oldbadaddr;	/* no error 'cuz old had bad address */
 	int	icps_outhist[ICMP_MAXTYPE + 1];
 /* statistics related to input messages processed */
  	int	icps_badcode;		/* icmp_code out of range */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_input.c	7.19 (Berkeley) 5/25/91
- *	$Id: ip_input.c,v 1.3 1993/11/07 17:47:58 wollman Exp $
+ *	$Id: ip_input.c,v 1.4 1993/11/12 04:03:55 wollman Exp $
  */
 
 #include "param.h"
@@ -762,7 +762,10 @@ ip_dooptions(m)
 	} else
 		return (0);
 bad:
-	icmp_error(m, type, code);
+	{
+	  static struct in_addr fake;
+	  icmp_error(m, type, code, fake, 0);
+	}
 	return (1);
 }
 
@@ -912,12 +915,39 @@ ip_stripoptions(m, mopt)
 }
 
 u_char inetctlerrmap[PRC_NCMDS] = {
-	0,		0,		0,		0,
-	0,		EMSGSIZE,	EHOSTDOWN,	EHOSTUNREACH,
-	EHOSTUNREACH,	EHOSTUNREACH,	ECONNREFUSED,	ECONNREFUSED,
-	EMSGSIZE,	EHOSTUNREACH,	0,		0,
-	0,		0,		0,		0,
-	ENOPROTOOPT
+	0,			/* ifdown */
+	0,			/* routedead */
+	0,			/* #2 */
+	0,			/* quench2 */
+	0,			/* quench */
+	EMSGSIZE,		/* msgsize */
+	EHOSTDOWN,		/* hostdead */
+	EHOSTUNREACH,		/* hostunreach */
+	EHOSTUNREACH,		/* unreachnet */
+	EHOSTUNREACH,		/* unreachhost */
+	ECONNREFUSED,		/* unreachproto */
+	ECONNREFUSED,		/* unreachport */
+	EMSGSIZE,		/* old needfrag */
+	EHOSTUNREACH,		/* srcfail */
+	EHOSTUNREACH,		/* netunknown */
+	EHOSTUNREACH,		/* hostunknown */
+	EHOSTUNREACH,		/* isolated */
+	ECONNREFUSED,		/* net admin. prohibited */
+	ECONNREFUSED,		/* host admin. prohibited */
+	EHOSTUNREACH,		/* tos net unreachable */
+	EHOSTUNREACH,		/* tos host unreachable */
+	0,			/* redirect net */
+	0,			/* redirect host */
+	0,			/* redirect tosnet */
+	0,			/* redirect toshost */
+	0,			/* time exceeded */
+	0,			/* reassembly timeout */
+	ENOPROTOOPT,		/* parameter problem */
+	ENOPROTOOPT,		/* required option missing */
+	0,			/* MTU changed */
+	/* NB: this means that this error will only
+	   get propagated by in_mtunotify(), which
+	   doesn't bother to check. */
 };
 
 /*
@@ -944,6 +974,7 @@ ip_forward(m, srcrt)
 	int error, type = 0, code;
 	struct mbuf *mcopy;
 	struct in_addr dest;
+	int mtu;
 
 	dest.s_addr = 0;
 #ifdef DIAGNOSTIC
@@ -958,7 +989,7 @@ ip_forward(m, srcrt)
 	}
 	HTONS(ip->ip_id);
 	if (ip->ip_ttl <= IPTTLDEC) {
-		icmp_error(m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, dest);
+		icmp_error(m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, dest, 0);
 		return;
 	}
 	ip->ip_ttl -= IPTTLDEC;
@@ -976,10 +1007,12 @@ ip_forward(m, srcrt)
 
 		rtalloc(&ipforward_rt);
 		if (ipforward_rt.ro_rt == 0) {
-			icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_HOST, dest);
+			icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_HOST, dest, 0);
 			return;
 		}
 		rt = ipforward_rt.ro_rt;
+		mtu = rt->rt_ifp->if_mtu;
+				/* salt away if's mtu */
 	}
 
 	/*
@@ -1079,5 +1112,5 @@ ip_forward(m, srcrt)
 		code = 0;
 		break;
 	}
-	icmp_error(mcopy, type, code, dest);
+	icmp_error(mcopy, type, code, dest, mtu);
 }

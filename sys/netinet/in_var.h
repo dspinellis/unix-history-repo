@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_var.h	7.6 (Berkeley) 6/28/90
- *	$Id: in_var.h,v 1.2 1993/10/16 18:26:07 rgrimes Exp $
+ *	$Id: in_var.h,v 1.3 1993/11/07 17:47:53 wollman Exp $
  */
 
 #ifndef _NETINET_IN_VAR_H_
@@ -77,5 +77,18 @@ struct	in_aliasreq {
 extern struct	in_ifaddr *in_ifaddr;
 struct	in_ifaddr *in_iaonnetof();
 extern struct	ifqueue	ipintrq;		/* ip packet input queue */
-#endif
+extern struct protosw inetsw[];
+extern u_char ip_protox[];
+extern struct in_addr in_makeaddr();
+extern struct in_ifaddr *ifptoia(struct ifnet *);
+extern u_char inetctlerrmap[];
+extern struct in_addr zeroin_addr;
+#ifdef MTUDISC
+struct route;
+extern unsigned in_nextmtu(unsigned, int);
+extern int	in_routemtu(struct route *);
+extern void	in_mtureduce(struct in_addr, unsigned);
+extern void	in_mtutimer(caddr_t, int);
+#endif /* MTUDISC */
+#endif /* KERNEL */
 #endif /* _NETINET_IN_VAR_H_ */

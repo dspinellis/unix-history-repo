@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_pcb.c	7.14 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: in_pcb.c,v 1.2 1993/10/16 18:26:01 rgrimes Exp $
  */
 
 #include "param.h"
@@ -232,6 +232,13 @@ in_pcbconnect(inp, nam)
 	}
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
+#ifdef MTUDISC
+	/*
+	 * If the upper layer asked for PMTU discovery services, see
+	 * if we can get an idea of what the MTU should be...
+	 */
+	in_pcbmtu(inp);
+#endif /* MTUDISC */
 	return (0);
 }
 
@@ -241,6 +248,9 @@ in_pcbdisconnect(inp)
 
 	inp->inp_faddr.s_addr = INADDR_ANY;
 	inp->inp_fport = 0;
+#ifdef MTUDISC
+	inp->inp_flags &= ~INP_MTUDISCOVERED;
+#endif
 	if (inp->inp_socket->so_state & SS_NOFDREF)
 		in_pcbdetach(inp);
 }
@@ -301,6 +311,7 @@ in_setpeeraddr(inp, nam)
  *
  * Must be called at splnet.
  */
+void
 in_pcbnotify(head, dst, fport, laddr, lport, cmd, notify)
 	struct inpcb *head;
 	struct sockaddr *dst;
@@ -312,7 +323,6 @@ in_pcbnotify(head, dst, fport, laddr, lport, cmd, notify)
 	struct in_addr faddr;
 	int errno;
 	int in_rtchange();
-	extern u_char inetctlerrmap[];
 
 	if ((unsigned)cmd > PRC_NCMDS || dst->sa_family != AF_INET)
 		return;
@@ -324,14 +334,16 @@ in_pcbnotify(head, dst, fport, laddr, lport, cmd, notify)
 	 * Redirects go to all references to the destination,
 	 * and use in_rtchange to invalidate the route cache.
 	 * Dead host indications: notify all references to the destination.
+	 * MTU change indications: same thing.
 	 * Otherwise, if we have knowledge of the local port and address,
 	 * deliver only to that socket.
 	 */
-	if (PRC_IS_REDIRECT(cmd) || cmd == PRC_HOSTDEAD) {
+	if (PRC_IS_REDIRECT(cmd) || cmd == PRC_HOSTDEAD 
+	    || cmd == PRC_MTUCHANGED) {
 		fport = 0;
 		lport = 0;
 		laddr.s_addr = 0;
-		if (cmd != PRC_HOSTDEAD)
+		if (cmd != PRC_HOSTDEAD && cmd != PRC_MTUCHANGED)
 			notify = in_rtchange;
 	}
 	errno = inetctlerrmap[cmd];
@@ -357,6 +369,7 @@ in_pcbnotify(head, dst, fport, laddr, lport, cmd, notify)
  * routing information.  If the route was created dynamically
  * (by a redirect), time to try a default gateway again.
  */
+void
 in_losing(inp)
 	struct inpcb *inp;
 {
@@ -372,10 +385,14 @@ in_losing(inp)
 				(struct rtentry **)0);
 		inp->inp_route.ro_rt = 0;
 		rtfree(rt);
+
+#ifdef MTUDISC
 		/*
-		 * A new route can be allocated
-		 * the next time output is attempted.
+		 * When doing MTU discovery, we want to find out as
+		 * quickly as possible what the MTU of the new route is.
 		 */
+		in_pcbmtu(inp);
+#endif /* MTUDISC */
 	}
 }
 
@@ -389,10 +406,14 @@ in_rtchange(inp)
 	if (inp->inp_route.ro_rt) {
 		rtfree(inp->inp_route.ro_rt);
 		inp->inp_route.ro_rt = 0;
+#ifdef MTUDISC
 		/*
 		 * A new route can be allocated the next time
-		 * output is attempted.
+		 * output is attempted, but make sure to let
+		 * MTU discovery know about it.
 		 */
+		in_pcbmtu(inp);
+#endif /* MTUDISC */
 	}
 }
 
