@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -147,7 +147,7 @@ char	**argv;
 			if (yorn(0))  {
 
 				fixtty (old);		/* restore tty */
-				execl (TEACH,"backgammon",args,0);
+				execl (TEACH,"teachgammon",args,0);
 
 				tflag = 0;		/* error! */
 				writel (noteach);
