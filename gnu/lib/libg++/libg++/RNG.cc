@@ -1,3 +1,19 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1989 Free Software Foundation
+
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
 #ifdef __GNUG__
 #pragma implementation
 #endif
@@ -5,6 +21,10 @@
 #include <assert.h>
 #include <builtin.h>
 #include <RNG.h>
+
+// These two static fields get initialized by RNG::RNG().
+PrivateRNGSingleType RNG::singleMantissa;
+PrivateRNGDoubleType RNG::doubleMantissa;
 
 //
 //	The scale constant is 2^-31. It is used to scale a 31 bit
@@ -88,3 +108,25 @@ RNG::RNG()
 	initialized = 1;
     }
 }
+
+float RNG::asFloat()
+{
+    PrivateRNGSingleType result;
+    result.s = 1.0;
+    result.u |= (asLong() & singleMantissa.u);
+    result.s -= 1.0;
+    assert( result.s < 1.0 && result.s >= 0);
+    return( result.s );
+}
+	
+double RNG::asDouble()
+{
+    PrivateRNGDoubleType result;
+    result.d = 1.0;
+    result.u[0] |= (asLong() & doubleMantissa.u[0]);
+    result.u[1] |= (asLong() & doubleMantissa.u[1]);
+    result.d -= 1.0;
+    assert( result.d < 1.0 && result.d >= 0);
+    return( result.d );
+}
+

@@ -4,22 +4,17 @@ Copyright (C) 1988 Free Software Foundation
     written by Kurt Baudendistel (gt-eedsp!baud@gatech.edu)
     adapted for libg++ by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 //
@@ -91,7 +86,7 @@ twolongs Fix48::assign(double d)
 }
 
 
-Fix48 operator * (Fix24& a, Fix24& b)
+Fix48 operator * (const Fix24& a, const Fix24& b)
 {
 // break a and b into lo and hi parts, and do a multiple-precision
 // multiply, with rounding
@@ -125,7 +120,7 @@ Fix48 operator * (Fix24& a, Fix24& b)
   return r;
 }
 
-Fix24 operator / (Fix24& a, Fix24& b)
+Fix24 operator / (const Fix24& a, const Fix24& b)
 {
   long q;
   int apos = (a.m >= 0);
@@ -144,7 +139,7 @@ Fix24 operator / (Fix24& a, Fix24& b)
 
     for (int i = 32; i > 0; i--)
     {
-	if (r > lb) {
+	if ((unsigned)(r) > lb) {
 	    q = (q << 1) | 1;
 	    r -= lb;
 	}
@@ -156,11 +151,11 @@ Fix24 operator / (Fix24& a, Fix24& b)
     q += 0x80;			// Round result to 24 bits
     if (apos != bpos) q = -q;	// Fix sign
   }
-  return (q & 0xffffff00);
+  return (q & ~0xFF);
 }
 
 
-Fix48 operator + (Fix48&  f, Fix48&  g)
+Fix48 operator + (const Fix48&  f, const Fix48&  g)
 {
   long lo_r = (f.m.l >> 8) + (g.m.l >> 8);
   twolongs r;
@@ -172,7 +167,7 @@ Fix48 operator + (Fix48&  f, Fix48&  g)
   return r;
 }
 
-Fix48 operator - (Fix48&  f, Fix48&  g)
+Fix48 operator - (const Fix48&  f, const Fix48&  g)
 {
   unsigned lo_r = (f.m.l >> 8) - (g.m.l >> 8);
   twolongs r;
@@ -184,7 +179,7 @@ Fix48 operator - (Fix48&  f, Fix48&  g)
   return r;
 }
 
-Fix48 operator * (Fix48& a, int b)
+Fix48 operator * (const Fix48& a, int b)
 {
   twolongs r;
   int bpos = (b >= 0);
@@ -209,9 +204,9 @@ Fix48 operator * (Fix48& a, int b)
   return r;
 }
 
-Fix48 operator << (Fix48& a, int b)
+Fix48 operator << (const Fix48& a, int b)
 {
-  twolongs r; r.u = r.l = 0;
+  twolongs r; r.u = 0; r.l = 0;
   if ( b >= 0 )
     if ( b < 24 ) {
       r.u = (a.m.u << b) + ((a.m.l >> (24 - b)) & 0xffffff00L);
@@ -223,9 +218,9 @@ Fix48 operator << (Fix48& a, int b)
   return r;
 }
 
-Fix48 operator >> (Fix48& a, int b)
+Fix48 operator >> (const Fix48& a, int b)
 {
-  twolongs r; r.u = r.l = 0;
+  twolongs r; r.u = 0; r.l = 0;
   if ( b >= 0 )
     if ( b < 24 ) {
       r.l = (a.m.u << (24 - b)) + ((a.m.l >> b) & 0xffffff00L);
@@ -244,22 +239,22 @@ Fix48 operator >> (Fix48& a, int b)
 
 // error handling
 
-void Fix24::overflow(long& i)
+void Fix24::overflow(long& i) const
 {
   (*Fix24_overflow_handler)(i);
 }
 
-void Fix48::overflow(twolongs& i)
+void Fix48::overflow(twolongs& i) const
 {
   (*Fix48_overflow_handler)(i);
 }
 
-void Fix24::range_error(long& i)
+void Fix24::range_error(long& i) const
 {
   (*Fix24_range_error_handler)(i);
 }
 
-void Fix48::range_error(twolongs& i)
+void Fix48::range_error(twolongs& i) const
 {
   (*Fix48_range_error_handler)(i);
 }

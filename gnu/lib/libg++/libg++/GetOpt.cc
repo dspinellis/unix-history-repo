@@ -1,36 +1,49 @@
-/* Getopt for GNU. 
-   Copyright (C) 1987, 1989 Free Software Foundation, Inc.
-   (Modified by Douglas C. Schmidt for use with GNU G++.)
+/*
+Getopt for GNU. 
+Copyright (C) 1987, 1989 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 1, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+(Modified by Douglas C. Schmidt for use with GNU G++.)
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
 
 #ifdef __GNUG__
 #pragma implementation
 #endif
+/* AIX requires the alloca decl to be the first thing in the file. */
+#ifdef __GNUC__
+#define alloca __builtin_alloca
+#elif defined(sparc)
+#include <alloca.h>
+extern "C" void *__builtin_alloca(...);
+#elif defined(_AIX)
+#pragma alloca
+#else
+char *alloca ();
+#endif
 #include <GetOpt.h>
 
-GetOpt::GetOpt (int argc, char **argv, char *optstring): opterr (1)
+char* GetOpt::nextchar = 0;
+int GetOpt::first_nonopt = 0;
+int GetOpt::last_nonopt = 0;
+
+GetOpt::GetOpt (int argc, char **argv, const char *optstring)
+ :opterr (1), nargc (argc), nargv (argv), noptstring (optstring)
 {
   /* Initialize the internal data when the first call is made.
      Start processing options with ARGV-element 1 (since ARGV-element 0
      is the program name); the sequence of previously skipped
      non-option ARGV-elements is empty.  */
 
-  nargc = argc;
-  nargv = argv;
-  noptstring = optstring;
   first_nonopt = last_nonopt = optind = 1;
   optarg = nextchar = 0;
 
@@ -53,10 +66,10 @@ GetOpt::exchange (char **argv)
 
   /* Interchange the two blocks of data in argv.  */
 
-  bcopy (&argv[first_nonopt], temp, nonopts_size);
-  bcopy (&argv[last_nonopt], &argv[first_nonopt],
+  memcpy (temp, &argv[first_nonopt], nonopts_size);
+  memcpy (&argv[first_nonopt], &argv[last_nonopt],
          (optind - last_nonopt) * sizeof (char *));
-  bcopy (temp, &argv[first_nonopt + optind - last_nonopt],
+  memcpy (&argv[first_nonopt + optind - last_nonopt], temp,
          nonopts_size);
 
   /* Update records for the slots the non-options now occupy.  */
@@ -178,7 +191,7 @@ GetOpt::operator () (void)
 
   {
     char c = *nextchar++;
-    char *temp = (char *) index (noptstring, c);
+    char *temp = (char *) strchr (noptstring, c);
 
     /* Increment `optind' when we start to process its last character.  */
     if (*nextchar == 0)
