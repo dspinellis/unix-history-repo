@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)logent.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)logent.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -69,6 +69,7 @@ char *text, *status;
 	/*  make entry in existing temp log file  */
 	mlogent(Lp, status, text);
 }
+static int pid = 0;
 
 /*
  *	make a log entry
@@ -78,7 +79,6 @@ mlogent(fp, status, text)
 char *text, *status;
 register FILE *fp;
 {
-	static pid = 0;
 	register struct tm *tp;
 	extern struct tm *localtime();
 
@@ -86,7 +86,7 @@ register FILE *fp;
 		text = "";
 	if (status == NULL)
 		status = "";
-	if (!pid)
+	if (pid == 0)
 		pid = getpid();
 #ifdef USG
 	time(&Now.time);
@@ -158,6 +158,8 @@ char *text;
 		Stried = 0;
 	}
 #endif LOGBYSITE
+	if (!pid)
+		pid = getpid();
 	if (Sp == NULL) {
 		if (!Stried) {
 			int savemask;
@@ -195,12 +197,12 @@ char *text;
 
 	fprintf(Sp, "%s %s ", User, Rmtname);
 #ifdef USG
-	fprintf(Sp, "(%d/%d-%2.2d:%2.2d) ", tp->tm_mon + 1,
-		tp->tm_mday, tp->tm_hour, tp->tm_min);
+	fprintf(Sp, "(%d/%d-%2.2d:%2.2d-%d) ", tp->tm_mon + 1,
+		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
 	fprintf(Sp, "(%ld) %s\n", Now.time, text);
 #else !USG
-	fprintf(Sp, "(%d/%d-%02d:%02d) ", tp->tm_mon + 1,
-		tp->tm_mday, tp->tm_hour, tp->tm_min);
+	fprintf(Sp, "(%d/%d-%02d:%02d-%d) ", tp->tm_mon + 1,
+		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
 	fprintf(Sp, "(%ld.%02u) %s\n", Now.time, Now.millitm/10, text);
 #endif !USG
 
