@@ -3,38 +3,48 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.1 (Berkeley) %G%
+.\"	@(#)1.2.t	8.2 (Berkeley) %G%
 .\"
-.sh "Memory management\(dg
-.NH 3
-Text, data and stack
+.Sh 2 "Memory management
+.Sh 3 "Text, data, and stack
 .PP
-.FS
-\(dg This section represents the interface planned for later
-releases of the system.  Of the calls described in this section,
-only \fIsbrk\fP and \fIgetpagesize\fP are included in 4.3BSD.
-.FE
 Each process begins execution with three logical areas of memory
-called text, data and stack.  
+called text, data, and stack.  
 The text area is read-only and shared, while the data and stack
 areas are private to the process.  Both the data and stack areas may
-be extended and contracted on program request.  The call
+be extended and contracted on program request.  The call:
 .DS
+.Fd brk 1 "set data section size
+brk(addr);
+caddr_t addr;
+.DE
+sets the end of the data segment to the specified address.
+More conveniently, the end can be extended by \fIincr\fP bytes,
+and the base of the new area returned with the call:
+.DS
+.Fd sbrk 1 "change data section size
 addr = sbrk(incr);
 result caddr_t addr; int incr;
 .DE
-changes the size of the data area by \fIincr\fP bytes and
-returns the new end of the data area, while
+Application programs usually use the library routines
+.Fn malloc ,
+and
+.Fn free
+that provide a more convenient interface to
+.Fn brk ,
+and
+.Fn sbrk .
+.LP
+The call:
 .DS
+.Fd sstk 1 "change stack size
 addr = sstk(incr);
 result caddr_t addr; int incr;
 .DE
 changes the size of the stack area.
-The stack area is also automatically extended as needed.
-On the VAX the text and data areas are adjacent in the P0 region,
-while the stack section is in the P1 region, and grows downward.
-.NH 3
-Mapping pages
+This call is not typically used as
+the stack area is also automatically extended as needed.
+.Sh 3 "Mapping pages
 .PP
 The system supports sharing of data between processes
 by allowing pages to be mapped into memory.  These mapped
@@ -42,45 +52,56 @@ pages may be \fIshared\fP with other processes or \fIprivate\fP
 to the process.
 Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 .DS
-.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
-/* protections are chosen from these bits, or-ed together */
-#define	PROT_READ	0x04	/* pages can be read */
-#define	PROT_WRITE	0x02	/* pages can be written */
-#define	PROT_EXEC	0x01	/* pages can be executed */
+.TS
+l s
+l l.
+Protections are chosen from these bits, or-ed together
+PROT_READ	/* pages can be read */
+PROT_WRITE	/* pages can be written */
+PROT_EXEC	/* pages can be executed */
+.TE
 .DE
 .DS
-.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
-/* flags contain mapping type, sharing type and options */
-/* mapping type; choose one */
-#define MAP_FILE	0x0001	/* mapped from a file or device */
-#define MAP_ANON	0x0002	/* allocated from memory, swap space */
-#define MAP_TYPE	0x000f	/* mask for type field */
+.TS
+l s
+l l.
+Flags contain sharing type and options. Sharing options, choose one
+MAP_SHARED	/* share changes */
+MAP_PRIVATE	/* changes are private */
+MAP_COPY	/* ``copy'' region at mmap time */
+MAP_ANON	/* allocated from virtual memory; \fIfd\fP ignored */
+.TE
 .DE
 .DS
-.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
-/* sharing types; choose one */
-#define	MAP_SHARED	0x0010	/* share changes */
-#define	MAP_PRIVATE	0x0000	/* changes are private */
-.DE
-.DS
-.ta \w'#define\ \ 'u +\w'MAP_HASSEMAPHORE\ \ 'u +\w'0x0080\ \ 'u
-/* other flags */
-#define MAP_FIXED	0x0020	/* map addr must be exactly as requested */
-#define MAP_INHERIT	0x0040	/* region is retained after exec */
-#define MAP_HASSEMAPHORE	0x0080	/* region may contain semaphores */
-#define MAP_NOPREALLOC	0x0100	/* do not preallocate space */
+.TS
+l s
+l l.
+Other flags
+MAP_FIXED	/* map addr must be exactly as requested */
+MAP_NORESERVE	/* don't reserve needed swap area */
+MAP_INHERIT	/* region is retained after exec */
+MAP_HASSEMAPHORE	/* region may contain semaphores */
+MAP_RENAME	/* Sun: rename private pages to file */
+.TE
 .DE
 The cpu-dependent size of a page is returned by the
-\fIgetpagesize\fP system call:
+.Fn sysctl
+interface described in section
+.Xr 1.7.1 .
+For convenience and backward compatibility, the
+.Fn getpagesize
+library routine is provided:
 .DS
+.Fd getpagesize 0 "get system page size
 pagesize = getpagesize();
 result int pagesize;
 .DE
 .LP
 The call:
 .DS
+.Fd mmap 6 "map files or devices into memory
 maddr = mmap(addr, len, prot, flags, fd, pos);
-result caddr_t maddr; caddr_t addr; int *len, prot, flags, fd; off_t pos;
+result caddr_t maddr; caddr_t addr; size_t len; int prot, flags, fd; off_t pos;
 .DE
 causes the pages starting at \fIaddr\fP and continuing
 for at most \fIlen\fP bytes to be mapped from the object represented by
@@ -90,10 +111,11 @@ for the convenience of the system,
 it may differ from that supplied
 unless the MAP_FIXED flag is given,
 in which case the exact address will be used or the call will fail.
-The actual amount mapped is returned in \fIlen\fP.
 The \fIaddr\fP, \fIlen\fP, and \fIpos\fP parameters
 must all be multiples of the pagesize.
-A successful \fImmap\fP will delete any previous mapping
+A successful
+.Fn mmap
+will delete any previous mapping
 in the allocated address range.
 The parameter \fIprot\fP specifies the accessibility
 of the mapped pages.
@@ -104,36 +126,30 @@ whether modifications made to
 this mapped copy of the page
 are to be kept \fIprivate\fP, or are to be \fIshared\fP with
 other references.
-Possible types include MAP_FILE,
-mapping a regular file or character-special device memory,
+Possible types include MAP_SHARED, MAP_PRIVATE, or MAP_COPY that
+map a regular file or character-special device memory,
 and MAP_ANON, which maps memory not associated with any specific file.
-The file descriptor used for creating MAP_ANON regions is used only
-for naming, and may be given as \-1 if no name
-is associated with the region.\(dd
-.FS
-\(dd The current design does not allow a process
-to specify the location of swap space.
-In the future we may define an additional mapping type, MAP_SWAP,
-in which the file descriptor argument specifies a file
-or device to which swapping should be done.
-.FE
-The MAP_INHERIT flag allows a region to be inherited after an \fIexec\fP.
+The file descriptor used when creating MAP_ANON regions is ignored.
+The MAP_INHERIT flag allows a region to be inherited after an
+.Fn execve .
 The MAP_HASSEMAPHORE flag allows special handling for
 regions that may contain semaphores.
-The MAP_NOPREALLOC flag allows processes to allocate regions whose
+The MAP_NORESERVE flag allows processes to allocate regions whose
 virtual address space, if fully allocated,
 would exceed the available memory plus swap resources.
 Such regions may get a SIGSEGV signal if they page fault and resources
 are not available to service their request;
-typically they would free up some resources via \fIunmap\fP so that
-when they return from the signal the page
+typically they would free up some resources via
+.Fn unmap
+so that when they return from the signal the page
 fault could be successfully completed.
-.PP
+.LP
 A facility is provided to synchronize a mapped region with the file
-it maps; the call
+it maps; the call:
 .DS
+.Fd msync 2 "synchronize a mapped region
 msync(addr, len);
-caddr_t addr; int len;
+caddr_t addr; size_t len;
 .DE
 writes any modified pages back to the filesystem and updates
 the file modification time.
@@ -144,103 +160,156 @@ succeeding locations will be examined.
 Any required synchronization of memory caches
 will also take place at this time.
 Filesystem operations on a file that is mapped for shared modifications
-are unpredictable except after an \fImsync\fP.
-.PP
+are unpredictable except after an
+.Fn msync .
+.LP
 A mapping can be removed by the call
 .DS
+.Fd munmap 2 "remove a mapping
 munmap(addr, len);
-caddr_t addr; int len;
+caddr_t addr; size_t len;
 .DE
 This call deletes the mappings for the specified address range,
 and causes further references to addresses within the range
 to generate invalid memory references.
-.NH 3
-Page protection control
-.PP
-A process can control the protection of pages using the call
+.Sh 3 "Page protection control
+.LP
+A process can control the protection of pages using the call:
 .DS
+.Fd mprotect 3 "control the protection of pages
 mprotect(addr, len, prot);
-caddr_t addr; int len, prot;
+caddr_t addr; size_t len; int prot;
 .DE
 This call changes the specified pages to have protection \fIprot\fP\|.
 Not all implementations will guarantee protection on a page basis;
 the granularity of protection changes may be as large as an entire region.
-.NH 3
-Giving and getting advice
-.PP
+.Sh 3 "Giving and getting advice
+.LP
 A process that has knowledge of its memory behavior may
-use the \fImadvise\fP call:
+use the
+.Fn madvise
+call:
 .DS
+.Fd madvise 3 "give advise about use of memory
 madvise(addr, len, behav);
-caddr_t addr; int len, behav;
+caddr_t addr; size_t len; int behav;
 .DE
 \fIBehav\fP describes expected behavior, as given
 in \fI<sys/mman.h>\fP:
 .DS
-.ta \w'#define\ \ 'u +\w'MADV_SEQUENTIAL\ \ 'u +\w'00\ \ \ \ 'u
-#define	MADV_NORMAL	0	/* no further special treatment */
-#define	MADV_RANDOM	1	/* expect random page references */
-#define	MADV_SEQUENTIAL	2	/* expect sequential references */
-#define	MADV_WILLNEED	3	/* will need these pages */
-#define	MADV_DONTNEED	4	/* don't need these pages */
-#define	MADV_SPACEAVAIL	5	/* insure that resources are reserved */
+.TS
+l l.
+MADV_NORMAL	/* no further special treatment */
+MADV_RANDOM	/* expect random page references */
+MADV_SEQUENTIAL	/* expect sequential references */
+MADV_WILLNEED	/* will need these pages */
+MADV_DONTNEED	/* don't need these pages */
+MADV_SPACEAVAIL	/* insure that resources are reserved */
+.TE
 .DE
-Finally, a process may obtain information about whether pages are
-core resident by using the call
+A process may obtain information about whether pages are
+core resident by using the call:
 .DS
+.Fd mincore 3 "get advise about use of memory
 mincore(addr, len, vec)
 caddr_t addr; int len; result char *vec;
 .DE
 Here the current core residency of the pages is returned
 in the character array \fIvec\fP, with a value of 1 meaning
 that the page is in-core.
-.NH 3
-Synchronization primitives
-.PP
+.Fn Mincore
+provides only transient information about page residency.
+Real-time processes that need guaranteed residence over time
+can use the call:
+.DS
+.Fd mlock  2 "lock physical pages in memory
+mlock(addr, len);
+caddr_t addr; size_t len;
+.DE
+This call locks the pages for the specified address range into memory
+(paging them in if necessary)
+ensuring that further references to addresses within the range
+will never generate page faults.
+The amount of memory that may be locked is controlled by a resource limit,
+see section
+.Xr 1.6.3 .
+When the memory is no longer critical it can be unlocked using:
+.DS
+.Fd munlock  2 "unlock physical pages in memory
+munlock(addr, len);
+caddr_t addr; size_t len;
+.DE
+After the
+.Fn munlock
+call, the pages in the specified address range are still accessible
+but may be paged out if memory is short and they are not accessed.
+.Sh 3 "Synchronization primitives
 Primitives are provided for synchronization using semaphores in shared memory.
+These primitives are expected to be superseded by the semaphore
+interface being specified by the POSIX Pthread standard.
+They are provided as an efficient interim solution.
+Application programmers are encouraged to use the Pthread interface
+when it becomes available.
+.PP
 Semaphores must lie within a MAP_SHARED region with at least modes
 PROT_READ and PROT_WRITE.
 The MAP_HASSEMAPHORE flag must have been specified when the region was created.
 To acquire a lock a process calls:
 .DS
+.Fd mset 2 "acquire and set a semaphore
 value = mset(sem, wait)
 result int value; semaphore *sem; int wait;
 .DE
-\fIMset\fP indivisibly tests and sets the semaphore \fIsem\fP.
-If the the previous value is zero, the process has acquired the lock
-and \fImset\fP returns true immediately.
+.Fn Mset
+indivisibly tests and sets the semaphore \fIsem\fP.
+If the the previous value is zero, the process has acquired the lock and
+.Fn mset
+returns true immediately.
 Otherwise, if the \fIwait\fP flag is zero,
 failure is returned.
 If \fIwait\fP is true and the previous value is non-zero,
-\fImset\fP relinquishes the processor until notified that it should retry.
+.Fn mset
+relinquishes the processor until notified that it should retry.
 .LP
 To release a lock a process calls:
 .DS
+.Fd mclear 2 "release a semaphore and awaken waiting processes
 mclear(sem)
 semaphore *sem;
 .DE
-\fIMclear\fP indivisibly tests and clears the semaphore \fIsem\fP.
+.Fn Mclear
+indivisibly tests and clears the semaphore \fIsem\fP.
 If the ``WANT'' flag is zero in the previous value,
-\fImclear\fP returns immediately.
+.Fn mclear
+returns immediately.
 If the ``WANT'' flag is non-zero in the previous value,
-\fImclear\fP arranges for waiting processes to retry before returning.
+.Fn mclear
+arranges for waiting processes to retry before returning.
 .PP
 Two routines provide services analogous to the kernel
-\fIsleep\fP and \fIwakeup\fP functions interpreted in the domain of
-shared memory.
-A process may relinquish the processor by calling \fImsleep\fP
+.Fn sleep
+and
+.Fn wakeup
+functions interpreted in the domain of shared memory.
+A process may relinquish the processor by calling
+.Fn msleep
 with a set semaphore:
 .DS
+.Fd msleep 1 "wait for a semaphore
 msleep(sem)
 semaphore *sem;
 .DE
 If the semaphore is still set when it is checked by the kernel,
 the process will be put in a sleeping state
-until some other process issues an \fImwakeup\fP for the same semaphore
-within the region using the call:
+until some other process issues an
+.Fn mwakeup
+for the same semaphore within the region using the call:
 .DS
+.Fd mwakeup 1 "awaken process(es) sleeping on a semaphore
 mwakeup(sem)
 semaphore *sem;
 .DE
-An \fImwakeup\fP may awaken all sleepers on the semaphore,
+An
+.Fn mwakeup
+may awaken all sleepers on the semaphore,
 or may awaken only the next sleeper on a queue.

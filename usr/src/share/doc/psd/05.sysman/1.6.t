@@ -3,52 +3,58 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.6.t	8.1 (Berkeley) %G%
+.\"	@(#)1.6.t	8.2 (Berkeley) %G%
 .\"
-.sh "Resource controls
-.NH 3
-Process priorities
+.Sh 2 "Resource controls
+.Sh 3 "Process priorities
 .PP
 The system gives CPU scheduling priority to processes that have not used
 CPU time recently.  This tends to favor interactive processes and
 processes that execute only for short periods.
 It is possible to determine the priority currently
-assigned to a process, process group, or the processes of a specified user,
+assigned to a process (PRIO_PROCESS),
+process group (PRIO_PGRP),
+or the processes of a specified user (PRIO_USER),
 or to alter this priority using the calls:
 .DS
-._d
-#define	PRIO_PROCESS	0	/* process */
-#define	PRIO_PGRP	1	/* process group */
-#define	PRIO_USER	2	/* user id */
-
+.Fd getpriority 2 "get program scheduling priority
 prio = getpriority(which, who);
 result int prio; int which, who;
-
+.DE
+.DS
+.Fd setpriority 3 "set program scheduling priority
 setpriority(which, who, prio);
 int which, who, prio;
 .DE
 The value \fIprio\fP is in the range \-20 to 20.
 The default priority is 0; lower priorities cause more
 favorable execution.
-The \fIgetpriority\fP call returns the highest priority (lowest numerical value)
+The
+.Fn getpriority
+call returns the highest priority (lowest numerical value)
 enjoyed by any of the specified processes.
-The \fIsetpriority\fP call sets the priorities of all of the
+The
+.Fn setpriority
+call sets the priorities of all the
 specified processes to the specified value.
 Only the super-user may lower priorities.
-.NH 3
-Resource utilization
+.Sh 3 "Resource utilization
 .PP
-The resources used by a process are returned by a \fIgetrusage\fP call,
-returning information in a structure defined in \fI<sys/resource.h>\fP:
+The
+.Fn getrusage
+call returns information describing the resources utilized by the
+current process (RUSAGE_SELF),
+or all its terminated child processes (RUSAGE_CHILDREN):
 .DS
-._d
-#define	RUSAGE_SELF	0		/* usage by this process */
-#define	RUSAGE_CHILDREN	-1		/* usage by all children */
-
+.Fd getrusage 2 "get information about resource utilization
 getrusage(who, rusage)
 int who; result struct rusage *rusage;
-
-._f
+.DE
+The information is returned in a structure defined in \fI<sys/resource.h>\fP:
+.DS
+.TS
+l s s s
+l l l l.
 struct rusage {
 	struct	timeval ru_utime;	/* user time used */
 	struct	timeval ru_stime;	/* system time used */
@@ -67,43 +73,57 @@ struct rusage {
 	int	ru_nvcsw;	/* voluntary context switches */
 	int	ru_nivcsw;	/* involuntary context switches */
 };
+.TE
 .DE
-The \fIwho\fP parameter specifies whose resource usage is to be returned.
-The resources used by the current process, or by all
-the terminated children of the current process may be requested.
-.NH 3
-Resource limits
+.Sh 3 "Resource limits
 .PP
 The resources of a process for which limits are controlled by the
 kernel are defined in \fI<sys/resource.h>\fP, and controlled by the
-\fIgetrlimit\fP and \fIsetrlimit\fP calls:
+.Fn getrlimit
+and
+.Fn setrlimit
+calls:
 .DS
-._d
-#define	RLIMIT_CPU	0	/* cpu time in milliseconds */
-#define	RLIMIT_FSIZE	1	/* maximum file size */
-#define	RLIMIT_DATA	2	/* maximum data segment size */
-#define	RLIMIT_STACK	3	/* maximum stack segment size */
-#define	RLIMIT_CORE	4	/* maximum core file size */
-#define	RLIMIT_RSS	5	/* maximum resident set size */
-
-#define	RLIM_NLIMITS	6
-
-#define	RLIM_INFINITY	0x7f\&f\&f\&f\&f\&f\&f
-
-._f
-struct rlimit {
-	int	rlim_cur;	/* current (soft) limit */
-	int	rlim_max;	/* hard limit */
-};
-
+.Fd getrlimit 2 "get maximum system resource consumption
 getrlimit(resource, rlp)
 int resource; result struct rlimit *rlp;
-
+.DE
+.DS
+.Fd setrlimit 2 "set maximum system resource consumption
 setrlimit(resource, rlp)
 int resource; struct rlimit *rlp;
+.DE
+The resources that may currently be controlled include:
+.DS
+.TS
+l l.
+RLIMIT_CPU	/* cpu time in milliseconds */
+RLIMIT_FSIZE	/* maximum file size */
+RLIMIT_DATA	/* data size */
+RLIMIT_STACK	/* stack size */
+RLIMIT_CORE	/* core file size */
+RLIMIT_RSS	/* resident set size */
+RLIMIT_MEMLOCK	/* locked-in-memory address space */
+RLIMIT_NPROC	/* number of processes */
+RLIMIT_NOFILE	/* number of open files */
+.TE
+.DE
+Each limit has a current value and a maximum defined
+by the \fIrlimit\fP structure:
+.DS
+.TS
+l s s s
+l l l l.
+struct rlimit {
+	quad_t	rlim_cur;	/* current (soft) limit */
+	quad_t	rlim_max;	/* hard limit */
+};
+.TE
 .DE
 .PP
 Only the super-user can raise the maximum limits.
 Other users may only
 alter \fIrlim_cur\fP within the range from 0 to \fIrlim_max\fP
 or (irreversibly) lower \fIrlim_max\fP.
+To remove a limit on a resource,
+the value is set to RLIM_INFINITY.

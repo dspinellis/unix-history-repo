@@ -3,37 +3,42 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.4.t	8.1 (Berkeley) %G%
+.\"	@(#)1.4.t	8.2 (Berkeley) %G%
 .\"
-.sh "Timers
-.NH 3
-Real time
+.Sh 2 "Timers
+.Sh 3 "Real time
 .PP
 The system's notion of the current Greenwich time and the current time
 zone is set and returned by the call by the calls:
 .DS
-#include <sys/time.h>
-
+.Fd settimeofday 2 "set date and time
 settimeofday(tvp, tzp);
 struct timeval *tp;
 struct timezone *tzp;
-
+.DE
+.DS
+.Fd gettimeofday 2 "get date and time
 gettimeofday(tp, tzp);
 result struct timeval *tp;
 result struct timezone *tzp;
 .DE
 where the structures are defined in \fI<sys/time.h>\fP as:
 .DS
-._f
+.TS
+l s s s
+l l l l.
 struct timeval {
 	long	tv_sec;	/* seconds since Jan 1, 1970 */
 	long	tv_usec;	/* and microseconds */
 };
-
+.T&
+l s s s
+l l l l.
 struct timezone {
 	int	tz_minuteswest;	/* of Greenwich */
 	int	tz_dsttime;	/* type of dst correction to apply */
 };
+.TE
 .DE
 The precision of the system clock is hardware dependent.
 Earlier versions of UNIX contained only a 1-second resolution version
@@ -42,17 +47,29 @@ of this call, which remains as a library routine:
 time(tvsec)
 result long *tvsec;
 .DE
-returning only the tv_sec field from the \fIgettimeofday\fP call.
-.NH 3
-Interval time
-.PP
+returning only the tv_sec field from the
+.Fn gettimeofday
+call.
+.LP
+The
+.Fn adjtime
+system calls allows for small changes in time without abrupt changes:
+.DS
+.Fd adjtime 2 "synchronization of the system clock
+adjtime(delta, olddelta);
+struct timeval *delta; result struct timeval *olddelta;
+.DE
+.Sh 3 "Interval time
+.LP
 The system provides each process with three interval timers,
 defined in \fI<sys/time.h>\fP:
 .DS
-._d
-#define	ITIMER_REAL	0	/* real time intervals */
-#define	ITIMER_VIRTUAL	1	/* virtual time intervals */
-#define	ITIMER_PROF	2	/* user and system virtual time */
+.TS
+l l.
+ITIMER_REAL	/* real time intervals */
+ITIMER_VIRTUAL	/* virtual time intervals */
+ITIMER_PROF	/* user and system virtual time */
+.TE
 .DE
 The ITIMER_REAL timer decrements
 in real time.  It could be used by a library routine to
@@ -68,24 +85,35 @@ the system is running on behalf of the process.
 It is designed to be used by processes to statistically profile
 their execution.
 A SIGPROF signal is delivered when it expires.
-.PP
+.LP
 A timer value is defined by the \fIitimerval\fP structure:
 .DS
-._f
+.TS
+l s s s
+l l l l.
 struct itimerval {
 	struct	timeval it_interval;	/* timer interval */
 	struct	timeval it_value;	/* current value */
 };
+.TE
 .DE
 and a timer is set or read by the call:
 .DS
-getitimer(which, value);
-int which; result struct itimerval *value;
-
+.Fd setitimer 3 "set value of interval timer
 setitimer(which, value, ovalue);
 int which; struct itimerval *value; result struct itimerval *ovalue;
 .DE
-The third argument to \fIsetitimer\fP specifies an optional structure
+.DS
+.Fd getitimer 2 "get value of interval timer
+getitimer(which, value);
+int which; result struct itimerval *value;
+.DE
+The \fIit_value\fP specifies the time until the next signal;
+the \fIit_interval\fP specified a new interval that should
+be loaded into the timer on each expiration.
+The third argument to
+.Fn setitimer
+specifies an optional structure
 to receive the previous contents of the interval timer.
 A timer can be disabled by specifying a timer value of 0.
 .PP
@@ -94,18 +122,23 @@ resolution of its clock.  This clock resolution can be determined
 by loading a very small value into a timer and reading the timer back to
 see what value resulted.
 .PP
-The \fIalarm\fP system call of earlier versions of UNIX is provided
+The
+.Fn alarm
+system call of earlier versions of UNIX is provided
 as a library routine using the ITIMER_REAL timer.  The process
 profiling facilities of earlier versions of UNIX
 remain because
 it is not always possible to guarantee
 the automatic restart of system calls after 
 receipt of a signal.
-The \fIprofil\fP call arranges for the kernel to begin gathering
+The
+.Fn profil
+call arranges for the kernel to begin gathering
 execution statistics for a process:
 .DS
-profil(buf, bufsize, offset, scale);
-result char *buf; int bufsize, offset, scale;
+.Fd profil 4 "control process profiling
+profil(samples, size, offset, scale);
+result char *samples; int size, offset, scale;
 .DE
-This begins sampling of the program counter, with statistics maintained
-in the user-provided buffer.
+This call begins sampling of the program counter,
+with statistics maintained in the user-provided buffer.

@@ -3,22 +3,22 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.0.t	8.1 (Berkeley) %G%
+.\"	@(#)1.0.t	8.2 (Berkeley) %G%
 .\"
-.ds ss 1
-.sh "Kernel primitives
+.Sh 1 "Kernel primitives
 .PP
-The facilities available to a UNIX user process are logically
+The facilities available to a user process are logically
 divided into two parts: kernel facilities directly implemented by
-UNIX code running in the operating system, and system facilities
+code running in the operating system, and system facilities
 implemented either by the system, or in cooperation with a
-\fIserver process\fP.  These kernel facilities are described in
-this section 1.
+\fIserver process\fP.  These kernel facilities are described
+in this, section
+.Xr 1 .
 .PP
 The facilities implemented in the kernel are those which define the
-\fIUNIX virtual machine\fP in which each process runs.
+\fI4.4BSD virtual machine\fP in which each process runs.
 Like many real machines, this virtual machine has memory management hardware,
-an interrupt facility, timers and counters.  The UNIX
+an interrupt facility, timers and counters.  The 4.4BSD
 virtual machine also allows access to files and other objects through a set of
 \fIdescriptors\fP.  Each descriptor resembles a device controller,
 and supports a set of operations.  Like devices on real machines, some
@@ -26,5 +26,5 @@ of which are internal to the machine and some of which are external,
 parts of the descriptor machinery are built-in to the operating system, while
 other parts are often implemented in server processes on other machines.
 The facilities provided through the descriptor machinery are described in
-section 2.
-.ds ss 2
+section
+.Xr 2 .
