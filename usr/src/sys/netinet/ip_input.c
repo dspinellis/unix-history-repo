@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.1 (Berkeley) %G%
+ *	@(#)ip_input.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -868,8 +868,13 @@ ip_forward(ip, ifp)
 	 * perhaps should send a redirect to sender to shortcut a hop.
 	 * Only send redirect if source is sending directly to us,
 	 * and if packet was not source routed (or has any options).
+	 * Also, don't send redirect if forwarding using a default route
+	 * or a route modfied by a redirect.
 	 */
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
 	if (ipforward_rt.ro_rt && ipforward_rt.ro_rt->rt_ifp == ifp &&
+	    (ipforward_rt.ro_rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
+	    satosin(&ipforward_rt.ro_rt->rt_dst)->sin_addr.s_addr != 0 &&
 	    ipsendredirects && ip->ip_hl == (sizeof(struct ip) >> 2)) {
 		struct in_ifaddr *ia;
 		extern struct in_ifaddr *ifptoia();
