@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -75,7 +75,7 @@ char *progname;
 #define DEFAULT_MAGIC ZMAGIC
 #endif
 
-#ifdef hp300
+#if defined(hp300) || defined(luna68k)
 #define	INITIALIZE_HEADER	outheader.a_mid = MID_HP300
 #endif
 
