@@ -2,18 +2,22 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date.1	4.1 (Berkeley) %G%
+.\"	@(#)date.1	5.1 (Berkeley) %G%
 .\"
-.TH DATE 1 VAX/11
+.TH DATE 1 "1 April 1983"
 .UC 4
 .SH NAME
 date \- print and set the date
 .SH SYNOPSIS
 .B date
-.RB "[ yymmddhhmm [ " . "ss ] ]"
+.RB "[ -u ] [ yymmddhhmm [ " . "ss ] ]"
 .SH DESCRIPTION
-If no argument is given, the current date and time are printed.
-If an argument is given, the current date is set.
+If no arguments are given, the current date and time are printed.
+If a date is specified, the current date is set.
+The
+.I -u
+flag is used to display the date in GMT (universal) time.
+This flag may also be used to set GMT time.
 .I yy
 is the last two digits of the year;
 the first
@@ -44,9 +48,8 @@ local standard and daylight time.
 .SH SEE ALSO
 utmp(5)
 .SH DIAGNOSTICS
-`No permission' if
-you aren't the super-user and you try to change the date;
-`bad conversion' if the date set is syntactically incorrect.
+`Failed to set date: Not owner' if you try to change the date
+but are not the super-user.
 .SH BUGS
 The system attempts to keep the date in a format closely compatible
 with VMS.  VMS, however, uses local time (rather than GMT) and does
