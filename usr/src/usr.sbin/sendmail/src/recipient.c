@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.9	%G%";
+static char SccsId[] = "@(#)recipient.c	3.10	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -27,15 +27,15 @@ sendto(list, copyf)
 	int copyf;
 {
 	register char *p;
-	register char *q;
-	register char c;
-	ADDRESS *a;
-	bool more;
+	bool more;		/* set if more addresses to send to */
 
-	/* more keeps track of what the previous delimiter was */
 	more = TRUE;
 	for (p = list; more; )
 	{
+		register char *q;
+		register char c;
+		ADDRESS *a;
+
 		/* find the end of this address */
 		while (*p == ' ' || *p == '\t')
 			p++;
@@ -75,8 +75,8 @@ recipient(a)
 	register ADDRESS *a;
 {
 	register ADDRESS *q;
+	ADDRESS **pq;
 	register struct mailer *m;
-	char buf[MAXNAME];
 
 	To = a->q_paddr;
 	m = Mailer[a->q_mailer];
@@ -120,32 +120,22 @@ recipient(a)
 	**  If the list is empty, just add it.
 	*/
 
-	if (m->m_sendq == NULL)
+	for (pq = &m->m_sendq; (q = *pq) != NULL; pq = &q->q_next)
 	{
-		m->m_sendq = a;
-	}
-	else
-	{
-		ADDRESS *pq;
-
-		for (q = m->m_sendq; q != NULL; pq = q, q = q->q_next)
+		if (!ForceMail && sameaddr(q, a, FALSE))
 		{
-			if (!ForceMail && sameaddr(q, a, FALSE))
-			{
 # ifdef DEBUG
-				if (Debug)
-					printf("(%s in sendq)\n", a->q_paddr);
+			if (Debug)
+				printf("(%s in sendq)\n", a->q_paddr);
 # endif DEBUG
-				if (Verbose && !bitset(QDONTSEND, a->q_flags))
-					message(Arpa_Info, "duplicate supressed");
-				return;
-			}
+			if (Verbose && !bitset(QDONTSEND, a->q_flags))
+				message(Arpa_Info, "duplicate supressed");
+			return;
 		}
-
-		/* add address on list */
-		q = pq;
-		q->q_next = a;
 	}
+
+	/* add address on list */
+	*pq = a;
 	a->q_next = NULL;
 	if (DontSend)
 		a->q_flags |= QDONTSEND;
@@ -262,5 +252,5 @@ include(fname, msg)
 		AliasLevel--;
 	}
 
-	fclose(fp);
+	(void) fclose(fp);
 }

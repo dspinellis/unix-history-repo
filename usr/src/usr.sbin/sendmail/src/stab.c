@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.7	%G%";
+static char SccsId[] = "@(#)stab.c	3.8	%G%";
 
 /*
 **  STAB -- manage the symbol table
@@ -36,6 +36,7 @@ stab(name, type, op)
 	extern bool sameword();
 	register int hfunc;
 	register char *p;
+	extern char lower();
 
 # ifdef DEBUG
 	if (Debug > 4)

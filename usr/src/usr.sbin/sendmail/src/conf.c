@@ -17,6 +17,10 @@
 **		HdrInfo -- a table describing well-known header fields.
 **			Each entry has the field name and some flags,
 **			which are described in sendmail.h.
+**		StdTimezone -- name of local timezone in standard time
+**			(V6 only).
+**		DstTimezone -- name of local timezone in daylight savings
+**			time (V6 only).
 **
 **	Notes:
 **		I have tried to put almost all the reasonable
@@ -32,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.27	%G%";
+static char SccsId[] = "@(#)conf.c	3.28	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -103,6 +107,17 @@ char	Arpa_Usrerr[] =	"450";	/* some (fatal) user error */
 char	*AliasFile =	"/usr/lib/aliases";	/* alias file */
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
 char	*StatFile =	"/usr/eric/mailstats";	/* statistics summary */
+
+
+
+/*
+**  V6 system configuration.
+*/
+
+# ifdef V6
+char	*StdTimezone =	"PST";		/* std time timezone */
+char	*DstTimezone =	"PDT";		/* daylight time timezone */
+# endif V6
 
 # ifdef V6
 /*

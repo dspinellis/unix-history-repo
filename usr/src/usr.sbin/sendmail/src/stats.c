@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)stats.c	3.1	%G%";
+static char	SccsId[] =	"@(#)stats.c	3.2	%G%";
 
 /*
 **  POSTSTATS -- post statistics in the statistics file
@@ -22,14 +22,16 @@ poststats(sfile)
 {
 	register int fd;
 	struct statistics stat;
+	extern long lseek();
+	extern long time();
 
-	time(&Stat.stat_itime);
+	(void) time(&Stat.stat_itime);
 	Stat.stat_size = sizeof Stat;
 
 	fd = open(sfile, 2);
 	if (fd < 0)
 		return;
-	if (read(fd, &stat, sizeof stat) == sizeof stat &&
+	if (read(fd, (char *) &stat, sizeof stat) == sizeof stat &&
 	    stat.stat_size == sizeof stat)
 	{
 		/* merge current statistics into statfile */
@@ -44,12 +46,12 @@ poststats(sfile)
 		}
 	}
 	else
-		bmove(&Stat, &stat, sizeof stat);
+		bmove((char *) &Stat, (char *) &stat, sizeof stat);
 
 	/* write out results */
-	lseek(fd, 0L, 0);
-	write(fd, &stat, sizeof stat);
-	close(fd);
+	(void) lseek(fd, 0L, 0);
+	(void) write(fd, (char *) &stat, sizeof stat);
+	(void) close(fd);
 }
 /*
 **  KBYTES -- given a number, returns the number of Kbytes.

@@ -4,7 +4,7 @@
 # include <sys/timeb.h>
 # endif
 
-static char SccsId[] = "@(#)arpadate.c	3.5	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.6	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -26,12 +26,11 @@ static char SccsId[] = "@(#)arpadate.c	3.5	%G%";
 **		Timezone is computed from local time, rather than
 **		from whereever (and whenever) the message was sent.
 **		To do better is very hard.
+**
+**		Some sites are now inserting the timezone into the
+**		local date.  This routine should figure out what
+**		the format is and work appropriately.
 */
-
-# ifdef V6
-# define DST_NAME	"PDT"
-# define STD_NAME	"PST"
-# endif
 
 # define NULL		0
 
@@ -83,14 +82,22 @@ arpadate(ud)
 	extern struct tm *localtime();
 # ifdef V6
 	long t;
+	extern char *StdTimezone, *DstTimezone;
+	extern long time();
 # else
 	struct timeb t;
 	extern struct timeb *ftime();
 	extern char *timezone();
 # endif
 
+	/*
+	**  Get current time.
+	**	This will be used if a null argument is passed and
+	**	to resolve the timezone.
+	*/
+
 # ifdef V6
-	time(&t);
+	(void) time(&t);
 	if (ud == NULL)
 		ud = ctime(&t);
 # else
@@ -98,6 +105,10 @@ arpadate(ud)
 	if (ud == NULL)
 		ud = ctime(&t.time);
 # endif
+
+	/*
+	**  Crack the UNIX date line in a singularly unoriginal way.
+	*/
 
 	q = b;
 
@@ -144,9 +155,9 @@ arpadate(ud)
 				/* -PST or -PDT */
 # ifdef V6
 	if (localtime(&t)->tm_isdst)
-		p = DST_NAME;
+		p = DstTimezone;
 	else
-		p = STD_NAME;
+		p = StdTimezone;
 # else
 	p = timezone(t.timezone, localtime(&t.time)->tm_isdst);
 # endif V6

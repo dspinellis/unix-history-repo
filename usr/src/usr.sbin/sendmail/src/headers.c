@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)headers.c	3.5	%G%";
+static char	SccsId[] = "@(#)headers.c	3.6	%G%";
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -17,6 +17,7 @@ static char	SccsId[] = "@(#)headers.c	3.5	%G%";
 **
 **	Side Effects:
 **		The header is saved on the header list.
+**		Contents of 'line' are destroyed.
 */
 
 chompheader(line, def)
@@ -131,6 +132,9 @@ hvalue(field)
 /*
 **  ISHEADER -- predicate telling if argument is a header.
 **
+**	A line is a header if it has a single word followed by
+**	optional white space followed by a colon.
+**
 **	Parameters:
 **		s -- string to check for possible headerness.
 **
@@ -140,6 +144,11 @@ hvalue(field)
 **
 **	Side Effects:
 **		none.
+**
+**	Bugs:
+**		According to RFC733, there should be a newline
+**		permitted after the word but before the colon.
+**		We don't seem to support that.....
 */
 
 bool

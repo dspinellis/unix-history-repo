@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.18	%G%";
+static char	SccsId[] = "@(#)collect.c	3.19	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -37,15 +37,9 @@ collect()
 	register FILE *tf;
 	char buf[MAXFIELD+1];
 	register char *p;
-	char c;
-	extern bool isheader();
 	char *xfrom;
 	extern char *hvalue();
 	extern char *mktemp();
-	extern char *capitalize();
-# ifdef DEBUG
-	HDR *h;
-# endif
 
 	/*
 	**  Create the temp file name and create the file.
@@ -59,7 +53,10 @@ collect()
 		return;
 	}
 
-	/* try to read a UNIX-style From line */
+	/*
+	**  Try to read a UNIX-style From line
+	*/
+
 	if (fgets(buf, sizeof buf, stdin) == NULL)
 		return;
 	if (strncmp(buf, "From ", 5) == 0)
@@ -78,6 +75,9 @@ collect()
 
 	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin))
 	{
+		register char c;
+		extern bool isheader();
+
 		/* see if the header is over */
 		if (!isheader(buf))
 			break;
@@ -166,7 +166,7 @@ collect()
 	if (xfrom == NULL)
 		xfrom = hvalue("original-from");
 	if (ArpaMode != ARPA_NONE)
-		setfrom(xfrom, NULL);
+		setfrom(xfrom, (char *) NULL);
 
 	/* full name of from person */
 	p = hvalue("full-name");
@@ -241,6 +241,9 @@ collect()
 # ifdef DEBUG
 	if (Debug)
 	{
+		HDR *h;
+		extern char *capitalize();
+
 		printf("----- collected header -----\n");
 		for (h = Header; h != NULL; h = h->h_link)
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
