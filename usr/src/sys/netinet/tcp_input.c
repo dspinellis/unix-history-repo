@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.22 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -768,6 +768,13 @@ step6:
 		 * in CLOSE_WAIT, CLOSING, LAST_ACK or TIME_WAIT STATES since
 		 * a FIN has been received from the remote side. 
 		 * In these states we ignore the URG.
+		 *
+		 * According to RFC961 (Assigned Protocols),
+		 * the urgent pointer points to the last octet
+		 * of urgent data.  We continue, however,
+		 * to consider it to indicate the first octet
+		 * of data past the urgent section
+		 * as the original spec states.
 		 */
 		if (SEQ_GT(ti->ti_seq+ti->ti_urp, tp->rcv_up)) {
 			tp->rcv_up = ti->ti_seq + ti->ti_urp;
@@ -784,7 +791,8 @@ step6:
 		 * but if two URG's are pending at once, some out-of-band
 		 * data may creep in... ick.
 		 */
-		if (ti->ti_urp <= ti->ti_len)
+		if (ti->ti_urp <= ti->ti_len &&
+		    (so->so_options & SO_OOBINLINE) == 0)
 			tcp_pulloutofband(so, ti);
 	} else
 		/*
