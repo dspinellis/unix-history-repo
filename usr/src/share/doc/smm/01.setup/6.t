@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	6.10 (Berkeley) %G%
+.\"	@(#)6.t	6.11 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -361,45 +361,60 @@ install command as in
 .DE
 The \-s option will insure the installed version of date has
 its symbol table stripped.  The install command should be used
-instead of mv or cp as it understands how to install programs
+instead of
+.Xr mv (1)
+or
+.Xr cp (1) as it understands how to install programs
 even when the program is currently in use.
 .PP
-If you wish to recompile and install all programs in a particular
-target area you can override the default target by doing:
+If you wish to recompile and install all programs into a particular
+target area you can override the default path prefix by doing:
 .DS
 \fB#\fP \fImake\fP
 \fB#\fP \fImake DESTDIR=\fPpathname \fIinstall\fP
 .DE
 .PP
-To regenerate all the system source you can do
+To regenerate all the system binaries you can do
 .DS
 \fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImake clean; make depend; make\fP
+\fB#\fP \fImake clean depend all\fP
 .DE
+.PP
+The additional target
+.DS
+\fB#\fP \fImake cleandir\P
+.DE
+not only removes the binaries and objects, but the dependency
+files and the formatted manual pages as well.
+The command \fImake depend\fP regenerates the dependency files,
+and the next make which builds the binary will also rebuild the
+formatted manual pages.
 .PP
 If you modify the C library, say to change a system call,
 and want to rebuild and install everything from scratch you
 have to be a little careful.
 You must insure that the libraries are installed before the
 remainder of the source, otherwise the loaded images will not
-contain the new routine from the library.  The following
-sequence will accomplish this.
+contain the new routine from the library.
+The following sequence will accomplish this.
 .DS
+\fB#\fP \fIcd /usr/src/lib/libc\fP
+\fB#\fP \fImake clean depend install\fP
 \fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImake clean\fP
-\fB#\fP \fImake depend\fP
-\fB#\fP \fImake build\fP
-\fB#\fP \fImake installsrc\fP
+\fB#\fP \fImake clean depend install\fP
 .DE
 The \fImake clean\fP removes any existing binary or object files in the source
 trees to insure that everything will be recompiled and reloaded.  The \fImake
 depend\fP recreates all the dependencies.  See
 .Xr mkdep (1)
-for further details. The \fImake build\fP compiles and installs the libraries
-and compilers, then recompiles the libraries and compilers and the remainder
-of the sources.  The \fImake installsrc\fP installs all the commands not
-installed as part of the \fImake build\fP.
-The build will take several hours on a reasonably configured machine.
+for further details.
+.PP
+Alternatively, the command \fImake build\fP in the
+.Pn /usr/src/
+directory will install the include files, and then build and
+install the libraries, and then build and install the system binaries
+and manual pages.
+This takes several hours on a reasonably configured machine.
 .NH 2
 Making local modifications
 .PP
