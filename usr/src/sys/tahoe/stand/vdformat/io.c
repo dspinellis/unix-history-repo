@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)io.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -28,18 +28,17 @@ int	wait;
 {
 	register struct vddevice *addr = C_INFO->addr;
 	int	tokens[10];
-	int	didmsg = 0;
 
-	wait_for_char = 0;
+	if (kill_processes == false)
+		wait_for_char = 0;
 	vdtimeout = wait*1000;
 	for (;;) {
 		uncache(&(dcb.operrsta));
 		if (dcb.operrsta & (DCBS_DONE | DCBS_ABORT))
 			break;
-		if (input()) {
+		if (kill_processes == false && input()) {
 			get_text_cmd(nul_table, tokens);
-			if (didmsg == 0 && kill_processes == true) {
-				didmsg = 1;
+			if (kill_processes == true) {
 				indent();
 				print(clean_up);
 				exdent(1);
@@ -113,15 +112,25 @@ vread(sn, buf, seccnt)
 int sn, seccnt;
 char *buf;
 {
-	return (vrdwr(sn, buf, seccnt, VDOP_RD));
+	int ret;
+
+	ret = vrdwr(sn, buf, seccnt, VDOP_RD);
+	if (ret == 0)
+		vd_error("read");
+	return (ret);
 }
 
 vwrite(sn, buf, seccnt)
 int sn, seccnt;
 char *buf;
 {
-	return (vrdwr(sn, buf, seccnt, VDOP_WD));
-}
+	int ret;
+
+	ret = vrdwr(sn, buf, seccnt, VDOP_WD);
+	if (ret == 0)
+		vd_error("write");
+	return (ret);
+};
 
 vrdwr(sn, buf, seccnt, op)
 int sn, seccnt, op;
@@ -237,13 +246,8 @@ top:
 		dcb.trail.rstrail.recovery = VDRF_NONE;
 		addr->vdcylskew = lab->d_cylskew;
 		addr->vdtrackskew = lab->d_trackskew;
-/*
 		addr->vdsecsize = lab->d_secsize/sizeof(short);
-*/
 	}
-/*
-printf("devsel %x, ncyl %d, ntrk %d, nsec %d, slip %d, cylskew %d, trackskew %d, secsize %d\n", dcb.devselect, dcb.trail.rstrail.ncyl, dcb.trail.rstrail.nsurfaces, dcb.trail.rstrail.nsectors, dcb.trail.rstrail.slip_sec, lab->d_cylskew, lab->d_trackskew, lab->d_secsize);
-*/
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
 	VDGO(addr, (u_long)&mdcb, C_INFO->type);
@@ -321,13 +325,13 @@ vd_error(s)
 {
 	register int	status = dcb.operrsta;
 
-	print("error at sector %d (cyl %d trk %d sect %d),\n",
-	    to_sector(cur.daddr), dcb.err_cyl & 0xfff, dcb.err_trk,
+	print("%s error at sector %d (cyl %d trk %d sect %d),\n",
+	    s, to_sector(cur.daddr), dcb.err_cyl & 0xfff, dcb.err_trk,
 	    dcb.err_sec);
 	print("  status=%b", dcb.operrsta, VDERRBITS);
 	if (C_INFO->type == VDTYPE_SMDE)
 		printf(", ecode=0x%x", dcb.err_code);
-	printf("\n");
+	printf(".\n");
 }
 
 

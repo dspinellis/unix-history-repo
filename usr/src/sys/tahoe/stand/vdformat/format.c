@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)format.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)format.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -29,6 +29,7 @@ format()
 			D_INFO->id = bad_map->bs_id;
 #endif
 		}
+		clear_relocations(false);
 	}
 	else
 		bad_map->bs_id = D_INFO->id;
@@ -43,8 +44,6 @@ format()
 	format_relocation_area();
 	format_maintenence_area();
 	format_users_data_area();
-	if(kill_processes == true)
-		_longjmp(quit_environ, 1);
 
 
 	/* verify the surface */
@@ -174,6 +173,4 @@ long	count;
 	}
 	if (dcb.operrsta & DCBS_HARD)
 		vd_error("format");
-	if(kill_processes == true)
-		_longjmp(quit_environ, 1);
 }

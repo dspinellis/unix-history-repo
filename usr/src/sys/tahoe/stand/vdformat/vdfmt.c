@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vdfmt.c	1.5 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)vdfmt.c	1.6 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)vdfmt.c	1.5 (Berkeley/CCI) %G%";
 main()
 {
 	exdent(-1);
-	print("VDFORMAT            Berkeley Version 1.5 \n\n");
+	print("VDFORMAT            Berkeley Version 1.6 \n\n");
 
 	for(;;) {
 		determine_controller_types();
@@ -66,8 +66,8 @@ report_unexecuted_ops()
 
 determine_controller_types()
 {
-	extern fmt_err	smd_decode_position(), smd_e_decode_position();
-	extern bs_entry	smd_code_position(), smd_e_code_position();
+	extern fmt_err	*smd_decode_position(), *smd_e_decode_position();
+	extern bs_entry	*smd_code_position(), *smd_e_code_position();
 	register int	ctlr, drive;
 	register ctlr_info *ci;
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -158,7 +158,7 @@ dskadr	dskaddr;
 		if(status & DCBS_ATA) {
 			error.err_adr = dskaddr;
 			error.err_stat = DATA_ERROR;
-			temp = (*C_INFO->code_pos)(error);
+			(*C_INFO->code_pos)(&error, &temp);
 			temp.bs_how = operator;
 			add_flaw(&temp);
 		}
@@ -171,40 +171,69 @@ dskadr	dskaddr;
 */
 
 remove_user_relocations(entry)
-bs_entry	entry;
+bs_entry	*entry;
 {
 	register int	i, j;
 	fmt_err		temp;
 	fmt_err		error;
-	bs_entry	*ptr;	
+	register bs_entry *ptr;	
 
-	error = (*C_INFO->decode_pos)(entry);
-	if(is_in_map(&error.err_adr) == true) {
-		ptr = bad_map->list;
-		for(i=0; i < bad_map->bs_count; i++) {
-			temp = (*C_INFO->decode_pos)(*ptr);
-			if((ptr->bs_how == operator) &&
-			    (temp.err_adr.cylinder == error.err_adr.cylinder) &&
-			    (temp.err_adr.track == error.err_adr.track) &&
-			    (temp.err_adr.sector == error.err_adr.sector)) {
+	(*C_INFO->decode_pos)(entry, &error);
+	ptr = bad_map->list;
+	for(i=0; i < bad_map->bs_count; i++) {
+		if (ptr->bs_cyl != entry->bs_cyl ||
+		    ptr->bs_trk != entry->bs_trk)
+			continue;
+		(*C_INFO->decode_pos)(ptr, &temp);
+		if((ptr->bs_how != flaw_map) &&
+		    (temp.err_adr.cylinder == error.err_adr.cylinder) &&
+		    (temp.err_adr.track == error.err_adr.track) &&
+		    (temp.err_adr.sector == error.err_adr.sector)) {
+			if(temp.err_stat & HEADER_ERROR)
+				remove_track(&temp, ptr);
+			else
+				remove_sector(&temp, ptr);
+			for(j=i+1; j < bad_map->bs_count; j++)
+				bad_map->list[j-1] = bad_map->list[j];
+			bad_map->bs_count--;
+			return;
+		}
+		ptr++;
+	}
+	indent();
+	print("Sector %d is not in bad sector map!\n",
+	    to_sector(error.err_adr));
+	exdent(1);
+}
+
+clear_relocations(reformat)
+boolean reformat;
+{
+	fmt_err		temp;
+	register bs_entry *ptr1, *ptr2, *end;	
+	int oldsub = cur.substate;
+
+	cur.substate = sub_rel;
+	ptr1 = bad_map->list;
+	ptr2 = bad_map->list;
+	end = &bad_map->list[bad_map->bs_count];
+	for (; ptr1 < end; ptr1++) {
+		if (ptr1->bs_how != flaw_map) {
+			if (reformat == true) {
+				(*C_INFO->decode_pos)(ptr1, &temp);
 				if(temp.err_stat & HEADER_ERROR)
-					remove_track(temp, ptr);
+					remove_track(&temp, ptr1);
 				else
-					remove_sector(temp, ptr);
-				for(j=i+1; j < bad_map->bs_count; j++)
-					bad_map->list[j-1] = bad_map->list[j];
-				bad_map->bs_count--;
-				return;
+					remove_sector(&temp, ptr1);
 			}
-			ptr++;
+			bad_map->bs_count--;
+		} else {
+			if (ptr1 != ptr2)
+				*ptr2 = *ptr1;
+			ptr2++;
 		}
 	}
-	else {
-		indent();
-		print("Sector %d is not in bad sector map!\n",
-		    to_sector(error.err_adr));
-		exdent(1);
-	}
+	cur.substate = oldsub;
 }
 
 
@@ -213,10 +242,10 @@ bs_entry	entry;
 */
 
 remove_sector(error, entry)
-fmt_err		error;
+fmt_err		*error;
 bs_entry	*entry;
 {
-	format_sectors(&error.err_adr, &error.err_adr, NRM, 1);
+	format_sectors(&error->err_adr, &error->err_adr, NRM, 1);
 	format_sectors(&entry->bs_alt, &entry->bs_alt, NRM, 1);
 }
 
@@ -226,10 +255,10 @@ bs_entry	*entry;
 */
 
 remove_track(error, entry)
-fmt_err		error;
+fmt_err		*error;
 bs_entry	*entry;
 {
-	format_sectors(&error.err_adr,&error.err_adr,NRM,(long)lab->d_nsectors);
+	format_sectors(&error->err_adr,&error->err_adr,NRM,(long)lab->d_nsectors);
 	format_sectors(&entry->bs_alt,&entry->bs_alt,NRM,(long)lab->d_nsectors);
 }
 
@@ -334,7 +363,7 @@ get_smde_relocations()
 				bad.err_adr.track = buffer.alt_trk;
 				bad.err_adr.sector = 0;
 				bad.err_stat = HEADER_ERROR;
-				temp = (*C_INFO->code_pos)(bad);
+				(*C_INFO->code_pos)(&bad, &temp);
 				temp.bs_alt = dskaddr;
 				temp.bs_how = scanning;
 				add_flaw(&temp);
@@ -348,7 +377,7 @@ get_smde_relocations()
 					bad.err_adr.track = buffer.alt_trk;
 					bad.err_adr.sector = buffer.alt_sec;
 					bad.err_stat = DATA_ERROR;
-					temp = (*C_INFO->code_pos)(bad);
+					(*C_INFO->code_pos)(&bad, &temp);
 					temp.bs_alt = dskaddr;
 					temp.bs_how = scanning;
 					add_flaw(&temp);
@@ -406,6 +435,13 @@ bs_entry	*b;
 }
 
 
+/*
+ * Add flaw to map.
+ * Return value:
+ *   1	OK
+ *   0	sector was in map
+ *  -1	failure
+ */
 add_flaw(entry)
 bs_entry	*entry;
 {
@@ -414,18 +450,18 @@ bs_entry	*entry;
 	register int	i;
 
 	if(bm->bs_count > MAX_FLAWS)
-		return;
+		return (-1);
 	if (entry->bs_cyl >= lab->d_ncylinders ||
 	    entry->bs_trk >= lab->d_ntracks ||
 	    entry->bs_offset >= lab->d_traksize)
-		return;
+		return (-1);
 	for(i=0; i < bm->bs_count; i++) {
 		if(((bm->list[i].bs_cyl == entry->bs_cyl)) &&
 		    (bm->list[i].bs_trk == entry->bs_trk) &&
 		    (bm->list[i].bs_offset == entry->bs_offset)) {
 			if((int)bm->list[i].bs_how > (int)entry->bs_how)
 				bm->list[i].bs_how = entry->bs_how;
-			return;
+			return (0);
 		}
 	}
 	bm->list[i] = *entry;
@@ -435,6 +471,7 @@ bs_entry	*entry;
 	bm->bs_count++;
 	qsort((char *)&(bm->list[0]), (unsigned)bm->bs_count,
 	    sizeof(bs_entry), cmp_entry);
+	return (1);
 }
 
 
@@ -449,7 +486,7 @@ dskadr	*dskaddr;
 	fmt_err		temp;
 
 	for(i=0; i < bad_map->bs_count; i++) {
-		temp = (*C_INFO->decode_pos)(bad_map->list[i]);
+		(*C_INFO->decode_pos)(&bad_map->list[i], &temp);
 		if((temp.err_adr.cylinder == dskaddr->cylinder) &&
 		    (temp.err_adr.track == dskaddr->track) &&
 		    (temp.err_adr.sector == dskaddr->sector)) {
@@ -468,6 +505,7 @@ print_bad_sector_list()
 {
 	register int	i;
 	fmt_err		errloc;
+	register bs_entry *bad;
 
 	if(bad_map->bs_count == 0) {
 		print("There are no bad sectors in bad sector map.\n");
@@ -476,42 +514,36 @@ print_bad_sector_list()
 	print("The following sector%s known to be bad:\n",
 	    (bad_map->bs_count == 1) ? " is" : "s are");
 	indent();
-	for(i=0; i < bad_map->bs_count; i++) {
-		print("cyl %d, head %d, pos %d, len %d ",
-			bad_map->list[i].bs_cyl,
-			bad_map->list[i].bs_trk,
-			bad_map->list[i].bs_offset,
-			bad_map->list[i].bs_length);
-		errloc = (*C_INFO->decode_pos)(bad_map->list[i]);
-		if(errloc.err_stat & HEADER_ERROR) {
-			printf("(Track #%d)", to_track(errloc.err_adr));
+	for(i=0, bad = bad_map->list; i < bad_map->bs_count; i++, bad++) {
+		(*C_INFO->decode_pos)(bad, &errloc);
+		print("%s %d cn %d tn %d sn %d pos %d len %d ",
+			errloc.err_stat & HEADER_ERROR ? "Track@" : "Sector",
+			to_sector(errloc.err_adr),
+			bad->bs_cyl,
+			bad->bs_trk,
+			errloc.err_adr.sector,
+			bad->bs_offset,
+			bad->bs_length);
+		if (bad->bs_how == flaw_map)
+			printf("(flawmap) ");
+		else if (bad->bs_how == scanning)
+			printf("(verify) ");
+		else
+			printf("(operator) ");
+		if((bad->bs_alt.cylinder != 0) || (bad->bs_alt.track != 0) ||
+		    (bad->bs_alt.sector != 0)) {
+			printf("-> ");
+			printf("cn %d tn %d sn %d", bad->bs_alt.cylinder,
+			    bad->bs_alt.track, bad->bs_alt.sector);
 		}
-		else {
-			printf("(Sector #%d)", to_sector(errloc.err_adr));
-		}
-		if((bad_map->list[i].bs_alt.cylinder != 0) ||
-		    (bad_map->list[i].bs_alt.track != 0) ||
-		    (bad_map->list[i].bs_alt.sector != 0)) {
-			indent();
-			printf(" -> ");
-			if(errloc.err_stat & HEADER_ERROR) {
-				printf("Track %d",
-		    		    to_track(bad_map->list[i].bs_alt));
-			}
-			else {
-				printf("Sector %d",
-		    		    to_sector(bad_map->list[i].bs_alt));
-			}
-			exdent(1);
-		}
-		printf(".\n");
+		printf("\n");
 	}
 	exdent(1);
 }
 
 
 /*
-**	Vdload_free_table checks each block in the bad block relocation area
+**	load_free_table checks each block in the bad block relocation area
 ** to see if it is used. If it is, the free relocation block table is updated.
 */
 
@@ -529,7 +561,7 @@ load_free_table()
 		if((bad_map->list[i].bs_alt.cylinder != 0) ||
 		    (bad_map->list[i].bs_alt.track != 0) ||
 		    (bad_map->list[i].bs_alt.sector != 0)) {
-			temp = (*C_INFO->decode_pos)(bad_map->list[i]);
+			(*C_INFO->decode_pos)(&bad_map->list[i], &temp);
 			allocate(&(bad_map->list[i].bs_alt), temp.err_stat);
 		}
 }
@@ -573,7 +605,7 @@ bs_entry	*entry;
 		return false;
 	trk *= lab->d_ntracks;
 	trk += entry->bs_trk;
-	temp = (*C_INFO->decode_pos)(*entry);
+	(*C_INFO->decode_pos)(entry, &temp);
 	/* if this relocation should take up the whole track */
 	if(temp.err_stat & HEADER_ERROR) {
 		for(sec=0; sec < lab->d_nsectors; sec++)
@@ -612,7 +644,7 @@ bs_entry	*entry;
 {
 	fmt_err		error;
 	
-	error = (*C_INFO->decode_pos)(*entry);
+	(*C_INFO->decode_pos)(entry, &error);
 	if(is_in_map(&error.err_adr) == false) {
 		if(mapping_collision(entry) == true)
 			report_collision();
@@ -648,7 +680,7 @@ bs_entry	*entry;
 	newaddr.cylinder = 0;
 	newaddr.track = 0;
 	newaddr.sector = 0;
-	temp = (*C_INFO->decode_pos)(*entry);
+	(*C_INFO->decode_pos)(entry, &temp);
 	/* If it is ouside of the user's data area */
 	if(entry->bs_cyl >= lab->d_ncylinders-NUMSYS) {
 		/* if it is in the relocation area */

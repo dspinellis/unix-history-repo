@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)disklabel.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -29,9 +29,9 @@ int	ctlr, drive, op_mask;
 		if (line[0] == 'y' || line[0] == 'Y') {
 			lp->d_secsize = 512;
 			lp->d_nsectors = 66;
-			lp->d_ntracks = 24;
-			lp->d_ncylinders = 711;
-			lp->d_secpercyl = 66*24;
+			lp->d_ntracks = 23;
+			lp->d_ncylinders = 850;
+			lp->d_secpercyl = 66*23;
 			if (D_INFO->alive != u_true)
 				spin_up_drive();
 			savedevflags = lab->d_devflags;
@@ -44,22 +44,26 @@ int	ctlr, drive, op_mask;
 			lp->d_typename[0] = 0;
 		}
 	}
-	print("Drive type for controller %d, drive %d? ", ctlr, drive);
-	if (lp->d_typename[0] != 0)
-		printf("(%s) ", lp->d_typename);
-	get_string_cmd(line, lab_help);
-	if (kill_processes == true)
-		return;
-	if (lp->d_typename[0] != 0 &&
-	    (line[0] == 0 || strcmp(lp->d_typename, line) == 0))
-		goto check;
-	lp = findproto(line);
-	while (lp == 0)
-		if ((lp = getdiskbyname(line)) == 0) {
-			lp = promptfordisk(line);
-			if (kill_processes == true)
-				return;
-		}
+	for (;;) {
+		print("Drive type for controller %d, drive %d? ", ctlr, drive);
+		if (lp->d_typename[0] != 0)
+			printf("(%s) ", lp->d_typename);
+		get_string_cmd(line, lab_help);
+		if (kill_processes == true)
+			return;
+		if (lp->d_typename[0] != 0 &&
+		    (line[0] == 0 || strcmp(lp->d_typename, line) == 0))
+			break;
+		if (lp = findproto(line))
+			break;;
+		if (lp = getdiskbyname(line))
+			break;
+		if (lp = promptfordisk(line))
+			break;
+		if (kill_processes == true)
+			return;
+		lp = lab;
+	}
 check:
 	plp = findproto(lp->d_typename);
 	while (op_mask & FORMAT_OP && lp->d_traksize == 0) {
@@ -224,8 +228,10 @@ readlabel()
 			break;
 	if (lp > (struct disklabel *)(labelsector+VD_MAXSECSIZE-sizeof(*lp)) ||
 	    lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC ||
-	    dkcksum(lp) != 0)
+	    dkcksum(lp) != 0) {
+		print("Disk is unlabeled.\n");
 		return (0);
+	}
 	*lab = *lp;
 	return (1);
 }
