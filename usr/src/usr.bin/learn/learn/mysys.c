@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mysys.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mysys.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -44,7 +44,7 @@ chgenv()
 		else if (strncmp(*p, "EXINIT=", 7) == 0)
 			sprintf(exinit, "%s|set prompt noopt open window=23", envp[i--]);
 #if vax
-		else if (strncmp(*p, "PS1=", 4) == 0);
+		else if (strncmp(*p, "PS1=", 4) == 0)
 			i--;
 	}
 	envp[2] = malloc(7);
