@@ -1,5 +1,5 @@
 /*
-char	id_rename[] = "@(#)rename_.c	1.1";
+char	id_rename[] = "@(#)rename_.c	1.2";
  *
  * rename a file atomically
  *
@@ -12,14 +12,18 @@ char	id_rename[] = "@(#)rename_.c	1.1";
  */
 
 #include "../libI77/f_errno.h"
+#include <sys/param.h>
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	128
+#endif
 
 long
 rename_ (from, to, frlen, tolen)
 char	*from, *to;
 long	frlen, tolen;
 {
-	char	frbuf[256];
-	char	tobuf[256];
+	char	frbuf[MAXPATHLEN];
+	char	tobuf[MAXPATHLEN];
 
 	if (frlen <= 0 || tolen <= 0 || *from == ' ' || *to == ' ')
 		return ((long)(errno = F_ERARG));

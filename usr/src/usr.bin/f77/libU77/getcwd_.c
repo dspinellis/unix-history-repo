@@ -1,5 +1,5 @@
 /*
-char id_getcwd[] = "@(#)getcwd_.c	1.4";
+char id_getcwd[] = "@(#)getcwd_.c	1.5";
  * Get pathname of current working directory.
  *
  * calling sequence:
@@ -10,6 +10,11 @@ char id_getcwd[] = "@(#)getcwd_.c	1.4";
  *	ierr will be 0 if successful, a system error code otherwise.
  */
 
+#include <sys/param.h>
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	128
+#endif
+
 extern int errno;
 char	*getwd();
 
@@ -19,7 +24,7 @@ char *path;
 long len;
 {
 	char	*p;
-	char	pathname[1024];
+	char	pathname[MAXPATHLEN];
 
 	p = getwd(pathname);
 	b_char(pathname, path, len);
