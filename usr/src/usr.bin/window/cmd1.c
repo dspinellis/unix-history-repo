@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.13 83/11/22";
+static	char *sccsid = "@(#)cmd1.c	3.14 83/11/29";
 #endif
 
 #include "defs.h"
@@ -21,15 +21,16 @@ c_window()
 		wwsetcursor(row, col);
 		while (bpeekc() < 0)
 			bread();
-		wwunbox(boxwin);
 		switch (getpos(&row, &col, 1, 0, wwnrow - 1, wwncol - 1)) {
-		case -1:
+		case 3:
+			wwunbox(boxwin);
 			wwdelete(boxwin);
-			if (!terse)
-				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
-		case 1:
+		case 2:
+			wwunbox(boxwin);
 			break;
+		case 1:
+			wwunbox(boxwin);
 		case 0:
 			continue;
 		}
@@ -46,16 +47,17 @@ c_window()
 		wwflush();
 		while (bpeekc() < 0)
 			bread();
-		wwunbox(boxwin);
 		switch (getpos(&xrow, &xcol, row, col, wwnrow - 1, wwncol - 1))
 		{
-		case -1:
+		case 3:
+			wwunbox(boxwin);
 			wwdelete(boxwin);
-			if (!terse)
-				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
-		case 1:
+		case 2:
+			wwunbox(boxwin);
 			break;
+		case 1:
+			wwunbox(boxwin);
 		case 0:
 			continue;
 		}
@@ -90,6 +92,7 @@ int maxrow, maxcol;
 	static int scount = 0;
 	int count;
 	char c;
+	int oldrow = *row, oldcol = *col;
 
 	while ((c = bgetc()) >= 0) {
 		switch (c) {
@@ -130,16 +133,18 @@ int maxrow, maxcol;
 			*row = minrow;
 			break;
 		case CTRL([):
-			return -1;
+			if (!terse)
+				(void) wwputs("\r\nCancelled.  ", cmdwin);
+			return 3;
 		case '\r':
-			return 1;
+			return 2;
 		default:
 			if (!terse)
 				(void) wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
 			wwbell();
 		}
 	}
-	return 0;
+	return oldrow != *row || oldcol != *col;
 }
 
 struct ww *
@@ -170,7 +175,7 @@ char *label;
 	wwcursor(w, 1);
 	wwadd(w, framewin);
 	selwin = w;
-	reframe();			/* setselwin() won't do it */
+	reframe();
 	wwupdate();
 	wwflush();
 	switch (wwfork(w)) {
