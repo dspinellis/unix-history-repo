@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tahoe.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tahoe.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -40,7 +40,7 @@ typedef unsigned int Word;
 #define BITSPERBYTE 8
 #define BITSPERWORD (BITSPERBYTE * sizeof(Word))
 
-#define nargspassed(frame) ((frame->removed-4)/4)
+#define nargspassed(frame) (((argn(-1, frame)&0xffff)-4)/4)
 /*
  * Extract a field's value from the integer i.  The value
  * is placed in i in such as way as the first bit of the
