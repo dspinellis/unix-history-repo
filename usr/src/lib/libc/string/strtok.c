@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,42 +16,57 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtok.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)strtok.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <stdio.h>
+
 char *
-strtok(s, sep)
-	register char *s, *sep;
+strtok(s, delim)
+	register char *s, *delim;
 {
-	register char *p;
-	register c;
-	static char *lasts;
+	register char *spanp;
+	register int c, sc;
+	char *tok;
+	static char *last;
 
-	if (s == 0)
-		s = lasts;
-	if (s == 0)
-		return (0);
 
-	while (c = *s) {
-		if (!index(sep, c))
-			break;
-		s++;
+	if (s == NULL && (s = last) == NULL)
+		return (NULL);
+
+	/*
+	 * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
+	 */
+cont:
+	c = *s++;
+	for (spanp = delim; (sc = *spanp++) != 0;) {
+		if (c == sc)
+			goto cont;
 	}
 
-	if (c == '\0') {
-		lasts = 0;
-		return (0);
+	if (c == 0) {		/* no non-delimiter characters */
+		last = NULL;
+		return (NULL);
 	}
+	tok = s - 1;
 
-	for (p = s; c = *++p; )
-		if (index(sep, c))
-			break;
-
-	if (c == '\0')
-		lasts = 0;
-	else {
-		*p++ = '\0';
-		lasts = p;
+	/*
+	 * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
+	 * Note that delim must have one NUL; we stop if we see that, too.
+	 */
+	for (;;) {
+		c = *s++;
+		spanp = delim;
+		do {
+			if ((sc = *spanp++) == c) {
+				if (c == 0)
+					s = NULL;
+				else
+					s[-1] = 0;
+				last = s;
+				return (tok);
+			}
+		} while (sc != 0);
 	}
-	return (s);
+	/* NOTREACHED */
 }
