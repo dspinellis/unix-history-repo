@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.45 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.46 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.45 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.46 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -293,6 +293,7 @@ clrdaemon()
 **		none.
 */
 
+int
 makeconnection(host, port, outfile, infile, usesecureport)
 	char *host;
 	u_short port;
@@ -411,7 +412,7 @@ again:
 	}
 
 	if (tTd(16, 1))
-		printf("makeconnection: %d\n", s);
+		printf("makeconnection: fd=%d\n", s);
 
 	/* turn on network debugging? */
 	if (tTd(16, 14))

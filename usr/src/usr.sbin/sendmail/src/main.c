@@ -13,13 +13,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
 #include <sys/param.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <sgtty.h>
 #include "sendmail.h"
@@ -375,9 +376,19 @@ main(argc, argv, envp)
 
 		  case 'q':	/* run queue files at intervals */
 # ifdef QUEUE
-			if (getuid() != 0) {
-				usrerr("Permission denied");
-				exit (EX_USAGE);
+			if (getuid() != 0)
+			{
+				struct stat stbuf;
+
+				/* check to see if we own the queue directory */
+				if (stat(QueueDir, &stbuf) < 0)
+					syserr("main: cannot stat %s", QueueDir);
+				if (stbuf.st_uid != getuid())
+				{
+					/* nope, really a botch */
+					usrerr("Permission denied");
+					exit (EX_NOPERM);
+				}
 			}
 			(void) unsetenv("HOSTALIASES");
 			queuemode = TRUE;
