@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	7.35 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -183,7 +183,7 @@ bdwrite(bp)
 	/*
 	 * If this is a tape drive, the write must be initiated.
 	 */
-	if (VOP_IOCTL(bp->b_vp, 0, B_TAPE, 0, NOCRED) == 0) {
+	if (VOP_IOCTL(bp->b_vp, 0, B_TAPE, 0, NOCRED, p) == 0) {
 		bawrite(bp);
 	} else {
 		bp->b_flags |= (B_DONE | B_DELWRI);
