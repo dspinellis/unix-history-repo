@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.17 (Berkeley) %G%
+ *	@(#)locore.s	7.18 (Berkeley) %G%
  */
 
 #include "tahoe/include/mtpr.h"
@@ -879,17 +879,19 @@ sigcode:
 	.align	2
 _icode:
 	/* try /sbin/init */
+	pushl	$0
 	pushab	b`argv1-l0(pc)
 l0:	pushab	b`init1-l1(pc)
 l1:	pushl	$2
 	movab	(sp),fp
-	kcall	$SYS_execv
+	kcall	$SYS_execve
 	/* try /etc/init */
+	pushl	$0
 	pushab	b`argv2-l2(pc)
 l2:	pushab	b`init2-l3(pc)
 l3:	pushl	$2
 	movab	(sp),fp
-	kcall	$SYS_execv
+	kcall	$SYS_execve
 	/* give up */
 	pushl	r0
 	pushl	$1
@@ -1239,7 +1241,11 @@ ENTRY(copyin, 0)
 	_ACBL($(CLSIZE*NBPG+1),$(-CLSIZE*NBPG),r0,1b)	# reduce count and loop
 2:
 	prober	$1,(r1),r0		# bytes accessible ?
-	beql	9f			# no
+	bneq	7f			# yes
+	tstl	r0			# copin 0 bytes ?
+	bneq	9f			# no, can't copyin
+	ret				# lie!
+7:
 	MOVC3(4(fp),8(fp),12(fp))
 	clrl	r0
 	ret
@@ -1266,7 +1272,11 @@ ENTRY(copyout, 0)
 	_ACBL($(CLSIZE*NBPG+1),$(-CLSIZE*NBPG),r0,1b)	# reduce count and loop
 2:
 	probew	$1,(r1),r0		# bytes accessible?
-	beql	9b			# no
+	bneq	7f			# yes
+	tstl	r0			# copin 0 bytes ?
+	bneq	9b			# no, can't copyin
+	ret				# lie!
+7:
 	MOVC3(4(fp),8(fp),12(fp))
 	clrl	r0
 	ret
