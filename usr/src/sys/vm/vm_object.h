@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	7.7 (Berkeley) %G%
+ *	@(#)vm_object.h	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -58,7 +58,6 @@ struct vm_object {
 	u_short			paging_in_progress; /* Paging (in or out) so
 						    don't collapse or destroy */
 	simple_lock_data_t	Lock;		/* Synchronization */
-	int			LockHolder;
 	int			ref_count;	/* How many refs?? */
 	vm_size_t		size;		/* Object size */
 	int			resident_page_count;
@@ -102,21 +101,12 @@ vm_object_t	kmem_object;
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)
 #endif	KERNEL
 
-#if	VM_OBJECT_DEBUG
-#define	vm_object_lock_init(object)	{ simple_lock_init(&(object)->Lock); (object)->LockHolder = 0; }
-#define	vm_object_lock(object)		{ simple_lock(&(object)->Lock); (object)->LockHolder = (int) current_thread(); }
-#define	vm_object_unlock(object)	{ (object)->LockHolder = 0; simple_unlock(&(object)->Lock); }
-#define	vm_object_lock_try(object)	(simple_lock_try(&(object)->Lock) ? ( ((object)->LockHolder = (int) current_thread()) , TRUE) : FALSE)
-#define	vm_object_sleep(event, object, interruptible) \
-					{ (object)->LockHolder = 0; thread_sleep((event), &(object)->Lock, (interruptible)); }
-#else	VM_OBJECT_DEBUG
 #define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock)
 #define	vm_object_lock(object)		simple_lock(&(object)->Lock)
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)
 #define	vm_object_sleep(event, object, interruptible) \
 					thread_sleep((event), &(object)->Lock, (interruptible))
-#endif	VM_OBJECT_DEBUG
 
 #ifdef KERNEL
 vm_object_t	 vm_object_allocate __P((vm_size_t));
