@@ -1,0 +1,170 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)man.conf.5	5.6 (Berkeley) 5/10/91
+.\"
+.Dd May 10, 1991
+.Dt MAN.CONF 5
+.Sh NAME
+.Nm man.conf
+.Nd configuration file for
+.Xr man 1
+.Sh DESCRIPTION
+The
+.Xr man 1 ,
+.Xr apropos 1 ,
+and
+.Xr whatis 1
+commands
+search for manual pages or their database files as specified by the
+.Nm man.conf
+file.
+Manual pages are expected to be preformatted (see
+.Xr nroff 1 )
+and named with a trailing ``.0''.
+.Pp
+The
+.Nm man.conf
+file contains two types of lines.
+.Pp
+The first type of line is a ``section'' line, which contains a
+section name followed by a directory path.
+Lines in this format specify that manual pages for the section
+may be found in the directory.
+.Pp
+Directories named with a trailing slash character (``/'') are expected
+to contain subdirectories (see the keyword ``_subdir'' below) instead
+of manual pages.
+These subdirectories are searched instead of the directory.
+.Pp
+All directories (either explicitly specified or named with a trailing
+slash) may contain subdirectories.
+The
+.Xr man 1
+command
+automatically searches any subdirectory with the same name as the
+current machine type before the directory is searched.
+No specification of these subdirectories is necessary in the
+.Nm man.conf
+file.
+.Pp
+Section names are unrestricted except for the reserved words specified
+below; in general, however, it is best to avoid anything beginning with
+an underscore (``_'') in order to avoid future incompatibilities.
+.Pp
+The section named ``_default'' is the list of directories to be
+searched if no section is specified.
+.Pp
+The second type of line is preceded with a ``keyword''.
+The possible keywords and their meanings are as follows:
+.Pp
+.Bl -tag -width indent
+.It _subdir
+The list (in search order) of subdirectories which will be searched in
+any directory named with a trailing slash (``/'') character.  This
+list is also used when a path is specified by the
+.Ev MANPATH
+environment 
+variable or the
+.Fl M
+option.
+.It _version
+The version of the configuration file.
+.It _whatdb
+The full pathname (not just a directory path) for a database to be used
+by the
+.Xr apropos 1
+and
+.Xr whatis 1
+commands.
+.El
+.Pp
+Multiple specifications for all types of lines (except for ``_version'')
+are cumulative and the entries are used in the order listed in the file;
+multiple entries may be listed per line, as well.
+.Pp
+Empty lines or lines whose first non-whitespace character is a hash
+mark (``#'') are ignored.
+.Sh EXAMPLES
+Given the following
+.Nm man.conf
+file:
+.Bd -literal -offset indent
+_version	BSD.1
+_subdir		cat1 cat2 cat3
+_default	/usr/share/man/
+sect3		/usr/share/man/cat3
+.Ed
+.Pp
+The default
+.Xr mktemp 3
+manual page should be stored in
+.Dq Pa /usr/share/man/cat3/mktemp.0 .
+Any
+.Tn VAX
+architecture specific version of it should be stored in
+.Dq Pa cat3/vax/mktemp.0 .
+.Pp
+The command
+.Dq Li man mktemp
+would search the subdirectories
+.Dq Pa cat1
+.Dq Pa cat2 ,
+and
+.Dq Pa cat3 ,
+in
+.Dq Pa /usr/share/man ,
+in that order, for
+.Dq Pa mktemp.0''.
+If a subdirectory with the same name as the current machine type
+existed in any of them, it would be searched as well.
+.Pp
+The command
+.Dq Li man sect3 mktemp
+would only search
+.Dq Li /usr/share/man/cat3
+and any possible per machine subdirectory.
+.Sh FILES
+.Bl -tag -width /etc/man.conf -compact
+.It Pa /etc/man.conf
+Standard manual directory search path.
+.El
+.Sh SEE ALSO
+.Xr apropos 1 ,
+.Xr machine 1 ,
+.Xr man 1 ,
+.Xr whatis 1 ,
+.Xr whereis 1
+.Sh HISTORY
+The
+.Nm
+file format
+.Ud .
