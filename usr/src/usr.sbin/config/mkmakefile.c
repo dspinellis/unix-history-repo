@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -84,6 +84,14 @@ new_fent()
 }
 
 char	*COPTS;
+static	struct users {
+	int	u_default;
+	int	u_min;
+	int	u_max;
+} users[] = {
+	{ 24, 8, 1024 },		/* MACHINE_VAX */
+};
+#define	NUSERS	(sizeof (users) / sizeof (users[0]))
 
 /*
  * Build the makefile from the skeleton
@@ -93,6 +101,7 @@ makefile()
 	FILE *ifp, *ofp;
 	char line[BUFSIZ];
 	struct opt *op;
+	struct users *up;
 
 	read_files();
 	strcpy(line, "../conf/Makefile.");
@@ -126,16 +135,19 @@ makefile()
 	fprintf(ofp, "\n");
 	if (hadtz == 0)
 		printf("timezone not specified; gmt assumed\n");
-#ifdef vax
+	if ((unsigned)machine > NUSERS) {
+		printf("maxusers config info isn't present, using vax\n");
+		up = &users[MACHINE_VAX-1];
+	} else
+		up = &users[machine-1];
 	if (maxusers == 0) {
-		printf("maxusers not specified; 24 assumed\n");
-		maxusers = 24;
-	} else if (maxusers < 8) {
-		printf("minimum of 8 maxusers assumed\n");
-		maxusers = 8;
-	} else if (maxusers > 1024)
-		printf("warning: maxusers > 1024 (%d)\n", maxusers);
-#endif
+		printf("maxusers not specified; %d assumed\n", up->u_default);
+		maxusers = up->u_default;
+	} else if (maxusers < up->u_min) {
+		printf("minimum of %d maxusers assumed\n", up->u_min);
+		maxusers = up->u_min;
+	} else if (maxusers > up->u_max)
+		printf("warning: maxusers > %d (%d)\n", up->u_max, maxusers);
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
 	    timezone, dst, maxusers);
 	while (fgets(line, BUFSIZ, ifp) != 0) {
@@ -475,12 +487,10 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
 				extras, np);
-			fprintf(f, "\t${C2} %ss | ../%s/inline/inline |",
-			    tp, machinename);
-			fprintf(f, " ${AS} -o %so\n", tp);
+			fprintf(f, "\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
+			    tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
-
 		}
 		break;
 
@@ -490,12 +500,10 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
 				extras, np);
-			fprintf(f,"\t${C2} -i %ss | ../%s/inline/inline |",
-			    tp, machinename);
-			fprintf(f, " ${AS} -o %so\n", tp);
+			fprintf(f,"\t${C2} -i %ss | ${INLINE} | ${AS} -o %so\n",
+			    tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
-
 		}
 		break;
 
@@ -513,11 +521,9 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
-			fprintf(f, "\t../%s/inline/inline %ss | ${AS} -o %so\n",
-			    machinename, tp, tp);
+			fprintf(f, "\t${INLINE} %ss | ${AS} -o %so\n", tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
-
 		}
 		break;
 
@@ -565,7 +571,7 @@ do_systemspec(f, fl, first)
 
 	fprintf(f, "%s: Makefile", fl->f_needs);
 	if (machine == MACHINE_VAX)
-		fprintf(f, " ../%s/inline/inline", machinename);
+		fprintf(f, " ${INLINE}", machinename);
 	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
@@ -579,7 +585,6 @@ do_systemspec(f, fl, first)
 		fprintf(f, "\t@${LD} -n -o %s -e start -x -T 80000000 ",
 			fl->f_needs);
 		break;
-
 	}
 	fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
 	fprintf(f, "swap%s.o\n", fl->f_fn);
@@ -610,12 +615,10 @@ do_swapspec(f, name)
 	case MACHINE_VAX:
 		fprintf(f, "\t${CC} -c -S ${COPTS} ");
 		fprintf(f, "../%s/swapgeneric.c\n", machinename);
-		fprintf(f, "\t${C2} swapgeneric.s | ");
-		fprintf(f, "../%s/inline/inline", machinename);
+		fprintf(f, "\t${C2} swapgeneric.s | ${INLINE}");
 		fprintf(f, " | ${AS} -o swapgeneric.o\n");
 		fprintf(f, "\trm -f swapgeneric.s\n\n");
 		break;
-
 	}
 }
 
