@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.5 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,7 @@ int ufs_statfs();
 int ufs_sync();
 int ufs_fhtovp();
 int ufs_vptofh();
+int mfs_init();
 
 struct vfsops mfs_vfsops = {
 	mfs_mount,
@@ -52,6 +53,7 @@ struct vfsops mfs_vfsops = {
 	ufs_sync,
 	ufs_fhtovp,
 	ufs_vptofh,
+	mfs_init,
 };
 
 /*
@@ -89,6 +91,8 @@ mfs_mount(mp, path, data, ndp)
 		return (error);
 	devvp->v_type = VBLK;
 	devvp->v_rdev = makedev(255, mfs_minor++);
+	if (checkalias(devvp, (struct mount *)0) != NULL)
+		panic("mfs_mount: dup dev");
 	mfsp = VTOMFS(devvp);
 	mfsp->mfs_baseoff = args.base;
 	mfsp->mfs_size = args.size;
