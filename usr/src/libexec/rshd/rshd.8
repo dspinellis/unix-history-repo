@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rshd.8	6.3 (Berkeley) %G%
+.\"	@(#)rshd.8	6.4 (Berkeley) %G%
 .\"
 .TH RSHD 8C ""
 .UC 5
@@ -34,7 +34,7 @@ The server reads characters from the socket up
 to a null (`\e0') byte.  The resultant string is
 interpreted as an ASCII number, base 10.
 .IP 3)
-If the number received in step 1 is non-zero,
+If the number received in step 2 is non-zero,
 it is interpreted as the port number of a secondary
 stream to be used for the 
 .BR stderr .
