@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -1039,21 +1039,6 @@ const time_t * const	timep;
 	return &tm;
 }
 
-#ifdef STD_INSPIRED
-
-struct tm *
-offtime(timep, offset)
-const time_t * const	timep;
-const long		offset;
-{
-	static struct tm	tm;
-
-	gmtsub(timep, offset, &tm);
-	return &tm;
-}
-
-#endif /* defined STD_INSPIRED */
-
 static void
 timesub(timep, offset, sp, tmp)
 const time_t * const			timep;
@@ -1390,20 +1375,4 @@ mktime(tmp)
 struct tm * const	tmp;
 {
 	return time1(tmp, localsub, 0L);
-}
-
-time_t
-timegm(tmp)
-struct tm * const	tmp;
-{
-	return time1(tmp, gmtsub, 0L);
-}
-
-time_t
-timeoff(tmp, offset)
-struct tm * const	tmp;
-const long		offset;
-{
-
-	return time1(tmp, gmtsub, offset);
 }
