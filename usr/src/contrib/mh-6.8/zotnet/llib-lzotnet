@@ -1,0 +1,6 @@
+/* LINTLIBRARY */
+
+#include "../zotnet/bboards/llib-lbboards"
+#include "../zotnet/mts/llib-lmts"
+#include "../zotnet/mf/llib-lmf"
+#include "../zotnet/tws/llib-ltws"
