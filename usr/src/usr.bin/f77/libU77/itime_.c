@@ -1,5 +1,5 @@
 /*
-char id_itime[] = "@(#)itime_.c	1.1";
+char id_itime[] = "@(#)itime_.c	1.2";
  *
  * return the current time in numerical form
  *
@@ -11,7 +11,7 @@ char id_itime[] = "@(#)itime_.c	1.1";
  */
 
 #include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 
 itime_(iar)
 struct { long ihr; long imin; long isec; } *iar;
