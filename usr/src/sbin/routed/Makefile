@@ -1,18 +1,20 @@
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 
 PROG=	routed
 SRCS=	af.c if.c input.c main.c output.c startup.c tables.c timer.c \
 	trace.c inet.c
 MAN8=	routed.0
 SUBDIR=	query trace
-C2=	/usr/libexec/c2
-INLINE=	/sys/${MACHINE}/inline/inline
 
 .include <bsd.prog.mk>
 
+.if (${MACHINE} == "vax")
 # The following can be deleted where not appropriate to use the kernel's
 # inline code expansions.
+INLINE=	/sys/vax/inline/inline
+C2=	/usr/libexec/c2
 .c.o:
 	${CC} -S ${CFLAGS} ${.CURDIR}/${.PREFIX}.c
 	@${C2} ${.PREFIX}.s | ${INLINE} | ${AS} -o ${.PREFIX}.o
 	@rm -f ${.PREFIX}.s
+.endif
