@@ -6,14 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/user.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <ndbm.h>
 #include <a.out.h>
+#include <db.h>
 #include <errno.h>
 #include <unistd.h>
 #include <kvm.h>
@@ -29,13 +30,13 @@ static char *kfile;
 
 create_knlist(name, db)
 	char *name;
-	DBM *db;
+	DB *db;
 {
 	register int nsyms;
 	struct exec ebuf;
 	FILE *fp;
 	NLIST nbuf;
-	datum key, data;
+	DBT data, key;
 	int fd, nr, strsize;
 	char *strtab, buf[1024];
 
@@ -76,8 +77,8 @@ create_knlist(name, db)
 	if (fseek(fp, N_SYMOFF(ebuf), SEEK_SET) == -1)
 		error(name);
 	
-	data.dptr = (char *)&nbuf;
-	data.dsize = sizeof(NLIST);
+	data.data = (u_char *)&nbuf;
+	data.size = sizeof(NLIST);
 
 	/* Read each symbol and enter it into the database. */
 	nsyms = ebuf.a_syms / sizeof(struct nlist);
@@ -90,12 +91,12 @@ create_knlist(name, db)
 		if (!nbuf._strx || nbuf.n_type&N_STAB)
 			continue;
 
-		key.dptr = strtab + nbuf._strx - sizeof(long);
-		key.dsize = strlen(key.dptr);
-		if (dbm_store(db, key, data, DBM_INSERT) < 0)
-			error("dbm_store");
+		key.data = (u_char *)strtab + nbuf._strx - sizeof(long);
+		key.size = strlen((char *)key.data);
+		if ((db->put)(db, &key, &data, 0))
+			error("put");
 
-		if (!strncmp(key.dptr, VRS_SYM, sizeof(VRS_SYM) - 1)) {
+		if (!strncmp((char *)key.data, VRS_SYM, sizeof(VRS_SYM) - 1)) {
 			off_t cur_off, rel_off, vers_off;
 
 			/* Offset relative to start of text image in VM. */
@@ -131,16 +132,16 @@ create_knlist(name, db)
 			if (fgets(buf, sizeof(buf), fp) == NULL)
 				badfmt("corrupted string table");
 
-			key.dptr = VRS_KEY;
-			key.dsize = sizeof(VRS_KEY) - 1;
-			data.dptr = buf;
-			data.dsize = strlen(buf);
-			if (dbm_store(db, key, data, DBM_INSERT) < 0)
-				error("dbm_store");
+			key.data = (u_char *)VRS_KEY;
+			key.size = sizeof(VRS_KEY) - 1;
+			data.data = (u_char *)buf;
+			data.size = strlen(buf);
+			if ((db->put)(db, &key, &data, 0))
+				error("put");
 
 			/* Restore to original values. */
-			data.dptr = (char *)&nbuf;
-			data.dsize = sizeof(NLIST);
+			data.data = (u_char *)&nbuf;
+			data.size = sizeof(NLIST);
 			if (fseek(fp, cur_off, SEEK_SET) == -1)
 				badfmt("corrupted string table");
 		}
