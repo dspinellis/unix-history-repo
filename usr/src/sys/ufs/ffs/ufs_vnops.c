@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.21	82/03/18	*/
+/*	ufs_vnops.c	4.22	82/04/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -409,7 +409,7 @@ fstat()
 }
 
 /*
- * Stat system call.  This version does not follow links.
+ * Stat system call; this follows links.
  */
 stat()
 {
@@ -420,7 +420,7 @@ stat()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 0, 0);
+	ip = namei(uchar, 0, 1);
 	if (ip == NULL)
 		return;
 	stat1(ip, uap->sb);
@@ -428,7 +428,7 @@ stat()
 }
 
 /*
- * Lstat system call.  This version does follow links.
+ * Lstat system call; like stat but doesn't follow links.
  */
 lstat()
 {
@@ -439,7 +439,7 @@ lstat()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 0, 1);
+	ip = namei(uchar, 0, 0);
 	if (ip == NULL)
 		return;
 	stat1(ip, uap->sb);
