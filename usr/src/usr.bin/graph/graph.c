@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)graph.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)graph.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -24,7 +24,7 @@ struct xy {
 	int	xlbf;	/*flag:explicit lower bound*/
 	int 	xubf;	/*flag:explicit upper bound*/
 	int	xqf;	/*flag:explicit quantum*/
-	double (*xf)();	/*transform function, e.g. log*/
+	double const (*xf)();	/*transform function, e.g. log*/
 	float	xa,xb;	/*scaling coefficients*/
 	float	xlb,xub;	/*lower and upper bound*/
 	float	xquant;	/*quantum*/
