@@ -4,8 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)syslog.h	7.16 (Berkeley) %G%
+ *	@(#)syslog.h	7.17 (Berkeley) %G%
  */
+
+#define	_PATH_LOG	"/dev/log"
 
 /*
  * priorities/facilities are encoded into a single 32-bit quantity, where the
@@ -67,6 +69,8 @@ CODE prioritynames[] = {
 #define	LOG_NEWS	(7<<3)	/* network news subsystem */
 #define	LOG_UUCP	(8<<3)	/* UUCP subsystem */
 #define	LOG_CRON	(9<<3)	/* clock daemon */
+#define	LOG_AUTHPRIV	(10<<3)	/* security/authorization messages (private) */
+
 	/* other codes through 15 reserved for system use */
 #define	LOG_LOCAL0	(16<<3)	/* reserved for local use */
 #define	LOG_LOCAL1	(17<<3)	/* reserved for local use */
@@ -85,6 +89,7 @@ CODE prioritynames[] = {
 #ifdef SYSLOG_NAMES
 CODE facilitynames[] = {
 	"auth",		LOG_AUTH,
+	"authpriv",	LOG_AUTHPRIV,
 	"cron", 	LOG_CRON,
 	"daemon",	LOG_DAEMON,
 	"kern",		LOG_KERN,
