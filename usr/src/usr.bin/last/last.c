@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -198,9 +198,11 @@ want(bp,check)
 register struct utmp	*bp;
 int	check;
 {
-	register char	**indx;
+	register char	**indx,
+			*C;
+	register int	cnt;
 
-	if (check) {
+	if (check)
 		/*
 		 * when uucp and ftp log in over a network, the entry in the
 		 * utmp file is the name plus their process id.  See etc/ftpd.c
@@ -210,12 +212,27 @@ int	check;
 			bp->ut_line[3] = '\0';
 		else if (!strncmp(bp->ut_line,"uucp",4))
 			bp->ut_line[4] = '\0';
-	}
 	if (!*sargs)
 		return(YES);
+	/*
+	 * match hostname only, case independent;
+	 * leave internet numbers alone
+	 */
+	if (!isdigit(*bp->ut_host)) {
+		for (C = bp->ut_host,cnt = HMAX;*C != '.' && cnt--;++C)
+			if (isupper(*C))
+				*C = tolower(*C);
+		if (*C == '.')
+			*C = '\0';
+		else
+			C = NULL;
+	}
 	for (indx = sargs;*indx;++indx)
-		if (nameq(*indx,bp->ut_name) || lineq(*indx,bp->ut_line))
+		if (nameq(*indx,bp->ut_name) || lineq(*indx,bp->ut_line) || hosteq(*indx,bp->ut_host)) {
+			if (C)
+				*C = '.';
 			return(YES);
+		}
 	return(NO);
 }
 
