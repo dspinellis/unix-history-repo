@@ -1,6 +1,7 @@
-#	@(#)services	1.16 (Berkeley) 86/04/20
 #
 # Network services, Internet style
+#
+#	@(#)services	5.2 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
@@ -30,6 +31,7 @@ finger		79/tcp
 link		87/tcp		ttylink
 supdup		95/tcp
 hostnames	101/tcp		hostname	# usually from sri-nic
+tsap		102/tcp				# part of ISODE.
 #csnet-cs	105/?
 pop		109/tcp		postoffice
 sunrpc		111/tcp
@@ -50,7 +52,6 @@ syslog		514/udp
 printer		515/tcp		spooler		# line printer spooler
 talk		517/udp
 ntalk		518/udp
-efs		520/tcp				# for LucasFilm
 route		520/udp		router routed
 timed		525/udp		timeserver
 tempo		526/tcp		newdate
