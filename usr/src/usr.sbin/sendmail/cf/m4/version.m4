@@ -6,8 +6,8 @@ divert(-1)
 #
 # %sccs.include.redist.sh%
 #
-VERSIONID(`@(#)version.m4	6.27 (Berkeley) %G%')
+VERSIONID(`@(#)version.m4	6.28 (Berkeley) %G%')
 #
 divert(0)
 # Configuration version number
-DZ6.27
+DZ6.28
