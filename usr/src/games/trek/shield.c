@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)shield.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)shield.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include	"trek.h"
@@ -87,9 +87,9 @@ int	f;
 	else
 	{
 		if (*stat)
-			sprintf(s, "%s %s up.  Do you want %s down", device, dev2, dev3);
+			(void)sprintf(s, "%s %s up.  Do you want %s down", device, dev2, dev3);
 		else
-			sprintf(s, "%s %s down.  Do you want %s up", device, dev2, dev3);
+			(void)sprintf(s, "%s %s down.  Do you want %s up", device, dev2, dev3);
 		if (!getynpar(s))
 			return;
 		i = !*stat;
