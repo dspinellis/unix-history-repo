@@ -197,21 +197,21 @@
 .       \}
 .       if "\\*(A\\n(aP"-ansiC" \{\
 .		ie \\n(sT==1 \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			ds b1 \&\\*(tNANSI \\*(aaX3.159-1989\\*(sV
 .			as b1 (``\\*(tNANSI C\\*(aa'')
 .		\}
 .		el \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			ds b1 \&\\*(tNANSI \\*(aaX3.159-1989\\*(sV
 .			as b1 (``\\*(tNANSI C\\*(aa'')
 .		\}
 .       \}
 .       if "\\*(A\\n(aP"-ansiC-89" \{\
 .		ie \\n(sT==1 \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			ds b1 \&\\*(tNANSI \\*(aaX3.159-1989\\*(sV
 .			as b1 (``\\*(tNANSI C\\*(aa'')
 .		\}
 .		el \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			ds b1 \&\\*(tNANSI \\*(aaX3.159-1989\\*(sV
 .			as b1 (``\\*(tNANSI C\\*(aa'')
 .		\}
 .       \}
