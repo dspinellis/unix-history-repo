@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	6.16 (Berkeley) %G%
+ *	@(#)tty_pty.c	6.17 (Berkeley) %G%
  */
 
 /*
@@ -546,7 +546,7 @@ ptyioctl(dev, cmd, data, flag)
 	    tp->t_stopc == CTRL(s) && tp->t_startc == CTRL(q);
 	if (pti->pt_flags & PF_NOSTOP) {
 		if (stop) {
-			pti->pt_send &= TIOCPKT_NOSTOP;
+			pti->pt_send &= ~TIOCPKT_NOSTOP;
 			pti->pt_send |= TIOCPKT_DOSTOP;
 			pti->pt_flags &= ~PF_NOSTOP;
 			ptcwakeup(tp, FREAD);
