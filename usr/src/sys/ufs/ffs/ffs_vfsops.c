@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.14 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -256,6 +256,7 @@ ffs_reload(mountp, cred, p)
 	struct csum *space;
 	struct buf *bp;
 	struct fs *fs;
+	struct partinfo dpart;
 	int i, blks, size, error;
 
 	if ((mountp->mnt_flag & MNT_RDONLY) == 0)
@@ -269,7 +270,11 @@ ffs_reload(mountp, cred, p)
 	/*
 	 * Step 2: re-read superblock from disk.
 	 */
-	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp))
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
+		size = DEV_BSIZE;
+	else
+		size = dpart.disklab->d_secsize;
+	if (error = bread(devvp, (daddr_t)(SBOFF / size), SBSIZE, NOCRED, &bp))
 		return (error);
 	fs = (struct fs *)bp->b_data;
 	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
@@ -354,11 +359,11 @@ ffs_mountfs(devvp, mp, p)
 	struct partinfo dpart;
 	int havepart = 0, blks;
 	caddr_t base, space;
-	int havepart = 0, blks;
-	int error, i, size, ronly;
+	int error, i, blks, size, ronly;
 	int32_t *lp;
 	struct ucred *cred;
 	extern struct vnode *rootvp;
+	u_int64_t maxfilesize;					/* XXX */
 
 	dev = devvp->v_rdev;
 	cred = p ? p->p_ucred : NOCRED;
@@ -366,14 +371,12 @@ ffs_mountfs(devvp, mp, p)
 		return (error);
 	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
 		size = DEV_BSIZE;
-	else {
-		havepart = 1;
+	else
 		size = dpart.disklab->d_secsize;
-	}
 
 	bp = NULL;
 	ump = NULL;
-	if (error = bread(devvp, SBLOCK, SBSIZE, cred, &bp))
+	if (error = bread(devvp, (daddr_t)(SBOFF / size), SBSIZE, cred, &bp))
 		goto out;
 	fs = (struct fs *)bp->b_data;
 		error = EINVAL;		/* XXX needs translation */
@@ -462,8 +465,9 @@ ffs_mountfs(devvp, mp, p)
 	devvp->v_specflags |= SI_MOUNTEDON;
 	ffs_oldfscompat(fs);
 	ump->um_savedmaxfilesize = fs->fs_maxfilesize;		/* XXX */
-	if (fs->fs_maxfilesize > (quad_t)1 << 39)		/* XXX */
-		fs->fs_maxfilesize = (quad_t)1 << 39;		/* XXX */
+	maxfilesize = (u_int64_t)0x40000000 * fs->fs_bsize - 1;	/* XXX */
+	if (fs->fs_maxfilesize > maxfilesize)			/* XXX */
+		fs->fs_maxfilesize = maxfilesize;		/* XXX */
 	return (0);
 out:
 	if (bp)
