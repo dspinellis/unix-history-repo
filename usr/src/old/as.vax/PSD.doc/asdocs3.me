@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs3.me 1.5 %G%
+.\"	@(#)asdocs3.me 1.6 %G%
 .\"
 .EQ
 delim $$
@@ -26,12 +26,14 @@ words are substitutable.
 The pseudo\-operations listed below
 are grouped into functional categories.
 .SH 2 "Interface to a Previous Pass"
+.(b
 .in -2n
 .TS
 lb l.
 \&.ABORT
 .TE
 .in +2n
+.)b
 .pp
 As soon as the assembler sees this directive,
 it ignores all further input
@@ -44,22 +46,26 @@ where the first major syntax error would
 cause the compiler to issue this directive,
 saving unnecessary work in assembling code
 that would have to be discarded anyway.
+.(b
 .in -2n
 .TS
 lb l.
 \&.file	$string$
 .TE
 .in +2n
+.)b
 .pp
 This directive causes the assembler to think it is in file
 .i string ,
 so error messages reflect the proper source file.
+.(b
 .in -2n
 .TS
 lb l.
 \&.line	$expression$
 .TE
 .in +2n
+.)b
 .pp
 This directive causes the assembler to think it is on line
 .i expression
@@ -73,6 +79,7 @@ and
 directives,
 with the appropriate values,
 at the beginning of the source from each file.
+.(b
 .in -2n
 .TS
 lb l.
@@ -80,6 +87,7 @@ lb l.
 #	$expression$
 .TE
 .in +2n
+.)b
 .pp
 This is the only instance where a comment is meaningful to the assembler.
 The
@@ -96,6 +104,7 @@ causes the assembler to believe it is in file
 .i string ,
 otherwise the current file name does not change.
 .SH 2 "Location Counter Control"
+.(b
 .in -2n
 .TS
 lb l.
@@ -103,6 +112,7 @@ lb l.
 \&.text	[ $expression$ ]
 .TE
 .in +2n
+.)b
 .pp
 These two pseudo-operations cause the
 assembler to begin assembling into the indicated text or data
@@ -132,12 +142,14 @@ and
 .b .org
 also control the placement of the location counter.
 .sh 2 "Filled Data"
+.(b
 .in -2n
 .TS
 lb l.
 \&.align	$align\*(USexpr$ [ \fB,\fP $fill\*(USexpr$ ]
 .TE
 .in +2n
+.)b
 .pp
 The location counter is adjusted
 so that the
@@ -164,12 +176,14 @@ the subsegment concatenation convention
 and the current loader conventions
 may not preserve attempts at aligning
 to more than 2 low-order zero bits.
+.(b
 .in -2n
 .TS
 lb l.
 \&.org	$org\*(USexpr$ [ \fB,\fP $fill\*(USexpr$ ]
 .TE
 .in +2n
+.)b
 .pp
 The location counter is set equal to the value of $org\*(USexpr$,
 which must be defined and absolute.
@@ -180,12 +194,14 @@ Space between the current value of the location counter
 and the desired value are filled with bytes taken from the
 low order byte of $fill\*(USexpr$,
 which must be absolute and defaults to 0.
+.(b
 .in -2n
 .TS
 lb l.
 \&.space	$space\*(USexpr$ [ \fB,\fP $fill\*(USexpr$ ]
 .TE
 .in +2n
+.)b
 .pp
 The location counter is advanced by
 $space\*(USexpr$ bytes.
@@ -199,12 +215,14 @@ The
 directive is a more general way to accomplish the
 .b .space
 directive.
+.(b
 .in -2n
 .TS
 lb l.
 \&.fill	$rep\*(USexpr$\fB,\fP $size\*(USexpr$\fB,\fP $fill\*(USexpr$
 .TE
 .in +2n
+.)b
 .pp
 All three expressions must be absolute.
 .i fill\*(USexpr ,
@@ -223,6 +241,7 @@ bytes.
 must be between 1 and 8.
 .SH 2 "Symbol Definitions"
 .SH 2 "Initialized Data"
+.(b
 .in -2n
 .TS
 lb l.
@@ -232,6 +251,7 @@ lb l.
 \&.long	$expr$ [ \fB,\fP $expr$ ]
 .TE
 .in +2n
+.)b
 .pp
 The
 .i expression s
@@ -284,6 +304,7 @@ assembles two bytes, containing the values 9 and 1.
 .b NB:
 Bit field initialization with the colon operator is likely
 to disappear in future releases of the assembler.
+.(b
 .in -2n
 .TS
 lb l.
@@ -297,6 +318,7 @@ lb l.
 \&.hfloat	$number$ [ , $number$ ]
 .TE
 .in +2n
+.)b
 .pp
 These initialize Bignums (see \(sc3.2.2)
 in successive locations whose size is a function on the key word.
@@ -333,6 +355,7 @@ but issues a warning message.
 performs all floating point initializations and conversions
 using only the facilities defined
 in the original (native) architecture.
+.(b
 .in -2n
 .TS
 lb l.
@@ -340,6 +363,7 @@ lb l.
 \&.asciz	$string$ [ , $string$]
 .TE
 .in +2n
+.)b
 .pp
 Each
 .i string
@@ -366,12 +390,14 @@ $string sub 1$
 .b ,
 $...$
 .br
+.(b
 .in -2n
 .TS
 lb l.
 \&.comm	$name$\fB,\fP $expression$
 .TE
 .in +2n
+.)b
 .pp
 Provided the
 .i name
@@ -395,12 +421,14 @@ are defined to lie in the bss segment,
 and enough space is left after the symbol to hold
 .i expression
 bytes.
+.(b
 .in -2n
 .TS
 lb l.
 \&.lcomm	$name$\fB,\fP $expression$
 .TE
 .in +2n
+.)b
 .pp
 .i expression
 bytes will be allocated in the bss segment and
@@ -410,12 +438,14 @@ but the
 .i name
 is not declared
 as global and hence will be unknown to the link editor.
+.(b
 .in -2n
 .TS
 lb l.
 \&.globl	$name$
 .TE
 .in +2n
+.)b
 .pp
 This statement makes the
 .i name
@@ -439,12 +469,14 @@ the link editor can combine the output of this assembly
 with that of others which define the symbol.
 The assembler makes all otherwise
 undefined symbols external.
+.(b
 .in -2n
 .TS
 lb l.
 \&.set	$name$\fB,\fP $expression$
 .TE
 .in +2n
+.)b
 .pp
 The ($name$, $expression$)
 pair is entered into the symbol table.
@@ -452,18 +484,21 @@ Multiple
 .b .set
 statements with the same name are legal;
 the most recent value replaces all previous values.
+.(b
 .in -2n
 .TS
 lb l.
 \&.lsym\&	$name$\fB,\fP $expression$
 .TE
 .in +2n
+.)b
 .pp
 A unique and otherwise unreferencable instance of the
 ($name$, $expression$)
 pair is created in the symbol table.
 The Fortran 77 compiler uses this mechanism to pass local symbol definitions
 to the link editor and debugger.
+.(b
 .in -2n
 .TS
 lb l.
@@ -472,6 +507,7 @@ lb l.
 \&.stabd	$expr sub 1$, $expr sub 2$, $expr sub 3$
 .TE
 .in +2n
+.)b
 .pp
 The
 .i stab
