@@ -1,4 +1,4 @@
-#	Makefile	4.11	83/07/03
+#	Makefile	4.12	83/07/03
 #
 DESTDIR=
 CFLAGS=	-O
@@ -38,7 +38,9 @@ install:
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 #	for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
-	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/games/$$i); done
+	for i in ${STD} ${NSTD}; do \
+		(install -s $$i ${DESTDIR}/usr/games/$$i); \
+	done
 	install -c chess.bin ${DESTDIR}/usr/games/lib/chess
 	cat >${DESTDIR}/usr/games/lib/cfscores </dev/null
 	chmod 777 ${DESTDIR}/usr/games/lib/cfscores
