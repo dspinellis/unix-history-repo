@@ -1,4 +1,4 @@
-/*	dkstat.h	3.1	%G%	*/
+/*	dkstat.h	3.2	%G%	*/
 
 /*
  * Instrumentation
@@ -11,12 +11,16 @@
 #define	CP_IDLE		3
 
 #define	DK_NDRIVE	4
-#define	DK_NSTATES	16		/* 2^DK_NDRIVE */
 
+#ifdef KERNEL
+long	cp_time[CPUSTATES];
 int	dk_busy;
-long	dk_time[CPUSTATES][DK_NSTATES];
-long	dk_numb[DK_NDRIVE];
+long	dk_time[DK_NDRIVE];
+long	dk_seek[DK_NDRIVE];
+long	dk_xfer[DK_NDRIVE];
 long	dk_wds[DK_NDRIVE];
+float	dk_mspw[DK_NDRIVE];
 
 long	tk_nin;
 long	tk_nout;
+#endif
