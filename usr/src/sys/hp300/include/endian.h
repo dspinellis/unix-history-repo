@@ -1,21 +1,32 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
+ * Copyright (c) 1987, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)endian.h	7.6 (Berkeley) %G%
+ *	@(#)endian.h	7.7 (Berkeley) %G%
  */
 
 /*
- * Definitions for byte order,
- * according to byte significance from low address to high.
+ * Definitions for byte order, according to byte significance from low
+ * address to high.
  */
-#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
-#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
-#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
+#define	LITTLE_ENDIAN	1234	/* LSB first: i386, vax */
+#define	BIG_ENDIAN	4321	/* MSB first: 68000, ibm, net */
+#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long */
 
 #define	BYTE_ORDER	BIG_ENDIAN
+
+#ifndef KERNEL
+#include <sys/cdefs.h>
+#endif
+
+__BEGIN_DECLS
+unsigned long	htonl __P((unsigned long));
+unsigned short	htons __P((unsigned short));
+unsigned long	ntohl __P((unsigned long));
+unsigned short	ntohs __P((unsigned short));
+__END_DECLS
 
 /*
  * Macros for network/external number representation conversion.
@@ -33,11 +44,8 @@
 
 #else
 
-unsigned short	ntohs(), htons();
-unsigned long	ntohl(), htonl();
-
-#define	NTOHL(x)	(x) = ntohl(x)
-#define	NTOHS(x)	(x) = ntohs(x)
-#define	HTONL(x)	(x) = htonl(x)
-#define	HTONS(x)	(x) = htons(x)
+#define	NTOHL(x)	(x) = ntohl((u_long)x)
+#define	NTOHS(x)	(x) = ntohs((u_short)x)
+#define	HTONL(x)	(x) = htonl((u_long)x)
+#define	HTONS(x)	(x) = htons((u_short)x)
 #endif
