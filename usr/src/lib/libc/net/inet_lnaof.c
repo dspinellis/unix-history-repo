@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_lnaof.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_lnaof.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)inet_lnaof.c	5.2 (Berkeley) %G%";
  * internet address; handles class a/b/c network
  * number formats.
  */
+u_long
 inet_lnaof(in)
 	struct in_addr in;
 {

@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.42 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.43 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -271,8 +271,8 @@ unsigned short htons(hostshort) u_short hostshort; { return hostshort; }
 #endif htons
 char *	index(s, c) char *s, c; { return s; }
 u_long	inet_addr(cp) char *cp; { return 0L; }
-int	inet_lnaof(in) struct in_addr in; { return 0; }
-int	inet_netof(in) struct in_addr in; { return 0; }
+u_long	inet_lnaof(in) struct in_addr in; { return 0L; }
+u_long	inet_netof(in) struct in_addr in; { return 0L; }
 struct in_addr	inet_makeaddr(net, host) { struct in_addr in; return in; }
 u_long	inet_network(cp) char *cp; { return 0L; }
 char *	inet_ntoa(in) struct in_addr in; { return (char *) 0; }
