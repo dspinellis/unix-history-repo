@@ -73,7 +73,7 @@ lfs_markv(p, uap, retval)
 	cnt = uap->blkcnt;
 	start = blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
 	if (error = copyin(uap->blkiov, blkp, cnt * sizeof(BLOCK_INFO))) {
-		free(blkp, M_SEGMENT);
+		free(start, M_SEGMENT);
 		return (error);
 	}
 
@@ -83,7 +83,7 @@ lfs_markv(p, uap, retval)
 	 * and hopefully subsequent calls from the cleaner will fix everything.
 	 */
 	fs = VFSTOUFS(mntp)->um_lfs;
-	bsize = VFSTOUFS(mntp)->um_lfs->lfs_bsize;
+	bsize = fs->lfs_bsize;
 	for (lastino = LFS_UNUSED_INUM; cnt--; ++blkp) {
 		/*
 		 * Get the IFILE entry (only once) and see if the file still
@@ -122,9 +122,9 @@ lfs_markv(p, uap, retval)
 		bp = getblk(vp, blkp->bi_lbn, bsize);
 		vput(vp);
 		if (!(bp->b_flags & B_CACHE) &&
-		    (error = copyin(blkp->bi_bp, bp->b_un.b_daddr, bsize))) {
+		    (error = copyin(blkp->bi_bp, bp->b_un.b_addr, bsize))) {
 			brelse(bp);
-			free(blkp, M_SEGMENT);
+			free(start, M_SEGMENT);
 			return (error);
 		}
 		lfs_bwrite(bp);
@@ -134,7 +134,7 @@ lfs_markv(p, uap, retval)
 	cnt = uap->inocnt;
 	start = inop = malloc(cnt * sizeof(INODE_INFO), M_SEGMENT, M_WAITOK);
 	if (error = copyin(uap->inoiov, inop, cnt * sizeof(INODE_INFO))) {
-		free(inop, M_SEGMENT);
+		free(start, M_SEGMENT);
 		return (error);
 	}
 
