@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/08/23
+#	Makefile	4.3	83/11/15
 #
 # Bug report processor and associated programs
 #
@@ -14,3 +14,6 @@ install: bugfiler sendbug.sh bugformat
 	install -s bugfiler ${DESTDIR}${LIBDIR}/bugfiler
 	install -c sendbug.sh ${DESTDIR}/usr/ucb/sendbug
 	install -c -m 644 bugformat ${DESTDIR}/usr/ucb/bugformat
+
+clean:
+	rm -f *.o bugfiler
