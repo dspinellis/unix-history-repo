@@ -245,102 +245,14 @@ typedef struct {
 	oia_group_number;
 } ReadOiaGroupParms;
 
-#define	OIA_ALL_GROUPS				0xFF
-#define	OIA_ONLINE_OWNERSHIP			0x01
-#	define	OIA_SETUP		0x80
-#	define	OIA_TEST		0x40
-#	define	OIA_SSCP_LU		0x20
-#	define	OIA_LU_LU		0x10
-#	define	OIA_UNOWNED		0x08
-#	define	OIA_SUBSYSTEM_READY	0x04
+/* If the user wants all groups, we return API_OIA_BYTES_ALL_GROUPS bytes */
+#define	API_OIA_ALL_GROUPS		0xFF
+#define	API_OIA_BYTES_ALL_GROUPS	22	/* 22 bytes of data */
 
-#define	OIA_CHARACTER_SELECTION			0x02
-#	define	OIA_EXTENDED_SELECT	0x80
-#	define	OIA_APL			0x40
-#	define	OIA_KANA		0x20
-#	define	OIA_ALPHA		0x10
-#	define	OIA_TEXT		0x08
+/* API_OIA_INPUT_INHIBITED is special.  It returns more than on byte of data */
+#define	API_OIA_INPUT_INHIBITED		8
 
-#define	OIA_SHIFT_STATE				0x03
-#	define	OIA_NUMERIC		0x80
-#	define	OIA_UPPER_SHIFT		0x40
-
-#define	OIA_PSS_GROUP_1				0x04
-#define	OIA_HIGHLIGHT_GROUP_1			0x05
-#define	OIA_COLOR_GROUP_1			0x06
-#	define	OIA_SELECTABLE		0x80
-#	define	OIA_FIELD_INHERIT	0x40
-
-#define	OIA_INSERT				0x07
-#	define	OIA_INSERT_MODE		0x80
-
-/* We define this to be a 'long' followed by a 'char' (5 bytes) */
-
-#define	OIA_INPUT_INHIBITED			0x08
-
-#	define	OIA_NON_RESETTABLE	0x80000000
-#	define	OIA_SECURITY_KEY	0x40000000
-#	define	OIA_MACHINE_CHECK	0x20000000
-#	define	OIA_COMM_CHECK		0x10000000
-#	define	OIA_PROGRAM_CHECK	0x08000000
-#	define	OIA_RETRY		0x04000000
-#	define	OIA_DEVICE_NOT_WORKING	0x02000000
-#	define	OIA_DEVICE_VERY_BUSY	0x01000000
-
-#	define	OIA_DEVICE_BUSY		0x00800000
-#	define	OIA_TERMINAL_WAIT	0x00400000
-#	define	OIA_MINUS_SYMBOL	0x00200000
-#	define	OIA_MINUS_FUNCTION	0x00100000
-#	define	OIA_TOO_MUCH_ENTERED	0x00080000
-#	define	OIA_NOT_ENOUGH_ENTERED	0x00040000
-#	define	OIA_WRONG_NUMBER	0x00020000
-#	define	OIA_NUMERIC_FIELD	0x00010000
-
-#	define	OIA_OP_UNAUTHORIZED	0x00008000
-#	define	OIA_OP_UNAUTHORIZED_MIN	0x00004000
-#	define	OIA_INVALID_DEAD_KEY_COMBO 0x00002000
-#	define	OIA_WRONG_PLACE		0x00001000
-
-#	define	OIA_MESSAGE_PENDING	0x00000080
-#	define	OIA_PARTITION_WAIT	0x00000040
-#	define	OIA_SYSTEM_WAIT		0x00000020
-#	define	OIA_HARDWARE_MISMATCH	0x00000010
-#	define	OIA_LOGICAL_TERM_NOT_CONF 0x00000008
-
-
-#	define	OIA_AUTOKEY_INHIBIT	0x80
-#	define	OIA_API_INHIBIT		0x40
-
-#define	OIA_PSS_GROUP_2				0x09
-#	define	OIA_PS_SELECTED		0x80
-#	define	OIA_PC_DISPLAY_DISABLE	0x40
-
-#define	OIA_HIGHLIGHT_GROUP_2			0x0a
-#define	OIA_COLOR_GROUP_2			0x0b
-#	define	OIA_SELECTED		0x80
-
-#define	OIA_COMM_ERROR_REMINDER		0x0c
-#	define	OIA_COMM_ERROR		0x80
-#	define	OIA_RTM			0x40
-
-#define	OIA_PRINTER_STATUS			0x0d
-#	define	OIA_PRINT_NOT_CUSTOM	0x80
-#	define	OIA_PRINTER_MALFUNCTION	0x40
-#	define	OIA_PRINTER_PRINTING	0x20
-#	define	OIA_ASSIGN_PRINTER	0x10
-#	define	OIA_WHAT_PRINTER	0x08
-#	define	OIA_PRINTER_ASSIGNMENT	0x04
-
-#define	OIA_AUTOKEY_PLAY_RECORD_STATUS		0x10
-#	define	OIA_PLAY		0x80
-#	define	OIA_RECORD		0x40
-
-#define	OIA_AUTOKEY_ABORT_PAUSE_STATUS		0x11
-#	define	OIA_RECORDING_OVERFLOW	0x80
-#	define	OIA_PAUSE		0x40
-
-#define	OIA_ENLARGE_STATE			0x12
-#	define	OIA_WINDOW_IS_ENLARGED	0x80
+#define	API_OIA_LAST_LEGAL_GROUP	18	/* Highest legal number */
 
 
 
@@ -358,6 +270,8 @@ typedef struct {
  * a dos system.
  */
 
+#define	FP_SEG(x)	(x)
+#define	FP_OFF(y)	(y)
 
 struct highlow {
     char

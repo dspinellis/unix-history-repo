@@ -29,6 +29,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include "../general/general.h"
 
 #include "hostctlr.h"
+#include "oia.h"
 #include "screen.h"
 #include "ebc_disp.h"
 
@@ -85,6 +86,7 @@ init_ctlr()
     OutputClock = TransparentClock = 0;
 #endif	/* !defined(PURE3274) */
     init_inbound();
+    init_oia();
 }
 
 
@@ -211,12 +213,14 @@ int	control;				/* this buffer ended block? */
 	    case CMD_READ_MODIFIED:
 	    case CMD_SNA_READ_MODIFIED:
 	    case CMD_SNA_READ_MODIFIED_ALL:
-		OiaOnlineA(1);
+		SetOiaOnlineA(&OperatorInformationArea);
+		SetOiaModified();
 		DoReadModified(Command);
 		break;
 	    case CMD_READ_BUFFER:
 	    case CMD_SNA_READ_BUFFER:
-		OiaOnlineA(1);
+		SetOiaOnlineA(&OperatorInformationArea);
+		SetOiaModified();
 		DoReadBuffer();
 		break;
 	    default:
@@ -252,8 +256,9 @@ int	control;				/* this buffer ended block? */
 	    {
 		int newlines, newcolumns;
 
-		OiaOnlineA(1);
-		OiaTWait(0);
+		SetOiaOnlineA(&OperatorInformationArea);
+		ResetOiaTWait(&OperatorInformationArea);
+		SetOiaModified();
 		if ((Command == CMD_ERASE_WRITE)
 				|| (Command == CMD_SNA_ERASE_WRITE)) {
 		    newlines = 24;
@@ -287,8 +292,9 @@ int	control;				/* this buffer ended block? */
 
 	case CMD_ERASE_ALL_UNPROTECTED:
 	case CMD_SNA_ERASE_ALL_UNPROTECTED:
-	    OiaOnlineA(1);
-	    OiaTWait(0);
+	    SetOiaOnlineA(&OperatorInformationArea);
+	    ResetOiaTWait(&OperatorInformationArea);
+	    SetOiaModified();
 	    CursorAddress = HighestScreen()+1;
 	    for (i = LowestScreen(); i <= HighestScreen(); i = ScreenInc(i)) {
 		if (IsUnProtected(i)) {
@@ -306,13 +312,15 @@ int	control;				/* this buffer ended block? */
 	    }
 	    UnLocked = 1;
 	    AidByte = 0;
-	    OiaSystemLocked(0);
+	    ResetOiaSystemLocked(&OperatorInformationArea);
+	    SetOiaModified();
 	    TerminalIn();
 	    break;
 	case CMD_WRITE:
 	case CMD_SNA_WRITE:
-	    OiaOnlineA(1);
-	    OiaTWait(0);
+	    SetOiaOnlineA(&OperatorInformationArea);
+	    ResetOiaTWait(&OperatorInformationArea);
+	    SetOiaModified();
 	    break;
 	default:
 	    {
@@ -526,7 +534,8 @@ int	control;				/* this buffer ended block? */
 		AidByte = 0;
 #endif	/* !defined(PURE3274) */
 		UnLocked = 1;
-		OiaSystemLocked(0);
+		ResetOiaSystemLocked(&OperatorInformationArea);
+		SetOiaModified();
 		TerminalIn();
 	    }
 	    if (Wcc & WCC_ALARM) {
