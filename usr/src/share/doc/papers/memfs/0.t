@@ -1,4 +1,4 @@
-.\"	@(#)0.t	1.3	(Copyright 1990 M. K. McKusick)	90/04/16
+.\"	@(#)0.t	1.4	(Copyright 1990 M. K. McKusick)	90/04/16
 .rm CM
 .nr PO 1.25i
 .ds CH "
@@ -41,12 +41,12 @@ Berkeley, California  94720
 email: mckusick@cs.Berkeley.EDU
 telephone: 415-642-4948
 .AB
-This paper describes the motivation for a memory-based filesystem.
-It compares the techniques used to implement them and
+This paper describes the motivations for memory-based filesystems.
+It compares techniques used to implement them and
 describes the drawbacks of using dedicated memory to
 support such filesystems.
 To avoid the drawbacks of using dedicated memory,
-it tells how to build a simple memory-based
+it discusses building a simple memory-based
 filesystem in pageable memory.
 It details the performance characteristics of this filesystem
 and concludes with areas for future work.
