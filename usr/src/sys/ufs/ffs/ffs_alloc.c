@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	6.8	85/01/07	*/
+/*	ffs_alloc.c	6.9	85/01/10	*/
 
 #include "param.h"
 #include "systm.h"
@@ -274,9 +274,14 @@ dirpref(fs)
  * the file. If no blocks have been allocated in any other section, the
  * policy is to place the section in a cylinder group with a greater than
  * average number of free blocks.  An appropriate cylinder group is found
- * by maintaining a rotor that sweeps the cylinder groups. When a new
- * group of blocks is needed, the rotor is advanced until a cylinder group
- * with greater than the average number of free blocks is found.
+ * by using a rotor that sweeps the cylinder groups. When a new group of
+ * blocks is needed, the sweep begins in the cylinder group following the
+ * cylinder group from which the previous allocation was made. The sweep
+ * continues until a cylinder group with greater than the average number
+ * of free blocks is found. If the allocation is for the first block in an
+ * indirect block, the information on the previous allocation is unavailable;
+ * here a best guess is made based upon the logical block number being
+ * allocated.
  * 
  * If a section is already partially allocated, the policy is to
  * contiguously allocate fs_maxcontig blocks.  The end of one of these
@@ -293,7 +298,8 @@ blkpref(ip, lbn, indx, bap)
 	daddr_t *bap;
 {
 	register struct fs *fs;
-	int cg, avgbfree;
+	register int cg;
+	int avgbfree, startcg;
 	daddr_t nextblk;
 
 	fs = ip->i_fs;
@@ -306,13 +312,18 @@ blkpref(ip, lbn, indx, bap)
 		 * Find a cylinder with greater than average number of
 		 * unused data blocks.
 		 */
+		if (indx == 0 || bap[indx - 1] == 0)
+			startcg = itog(fs, ip->i_number) + lbn / fs->fs_maxbpg;
+		else
+			startcg = dtog(fs, bap[indx - 1]) + 1;
+		startcg %= fs->fs_ncg;
 		avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
-		for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
+		for (cg = startcg; cg < fs->fs_ncg; cg++)
 			if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
 				fs->fs_cgrotor = cg;
 				return (fs->fs_fpg * cg + fs->fs_frag);
 			}
-		for (cg = 0; cg <= fs->fs_cgrotor; cg++)
+		for (cg = 0; cg <= startcg; cg++)
 			if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
 				fs->fs_cgrotor = cg;
 				return (fs->fs_fpg * cg + fs->fs_frag);
