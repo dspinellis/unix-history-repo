@@ -1,4 +1,4 @@
-.\"	@(#)NASA.proposal	1.7	91/09/17
+.\"	@(#)NASA.proposal	1.8	91/09/30
 .\"
 .\" use the me macro package
 .\"
@@ -10,6 +10,9 @@
 .nr OI 0.5i
 .in 0.5i
 .ps 11p
+.sh 1 Title
+.sp
+The 4.4BSD Operating Systems Project
 .sh 1 Summary
 .sp
 The attached is an unsolicited proposal for NASA requesting funding
@@ -190,6 +193,7 @@ Manchester, England, pp. 481-496, September 1986.
 .pp
 Equipment for the CSRG is currently being provided by Computer Consoles
 Inc., Hewlett-Packard Corp. and Compaq Corporation.
+This equipment is located in 458 Evans Hall.
 No additional equipment is required for the proposed project.
 .sh 1 "Proposed Costs"
 .pp
@@ -210,5 +214,5 @@ research investigator, or by other members of CSRG.
 .sp 8
 .nf
 .in +1.0i
-Marshall Kirk McKusick
-Research Computer Scientist, CSRG
+Professor Susan L. Graham
+Principal Investigator
