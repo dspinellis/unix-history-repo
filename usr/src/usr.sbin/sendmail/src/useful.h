@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.12		%G%
+**	@(#)useful.h	3.13		%G%
 */
 
 # ifndef makedev
@@ -58,8 +58,8 @@ extern char	*ctime();
 extern char	*getenv();
 # endif V6
 # ifndef VMUNIX
-typedef char	*u_short;
-typedef long	u_long;
-typedef char	u_char;
-typedef int	void;
+typedef unsigned short	u_short;
+typedef long		u_long;
+typedef char		u_char;
+typedef int		void;
 # endif VMUNIX
