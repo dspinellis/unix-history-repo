@@ -1,4 +1,4 @@
-/*	rx.c	4.11	83/04/06	*/
+/*	rx.c	4.12	83/04/09	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -8,6 +8,11 @@
  */
 
 /*
+ * TODO:
+ *	- Make the driver automatically detect the density of
+ *	  the floppy disks ( this is easily done using the 
+ *	  'read status' command )
+ *
  * 	Note: If the drive subsystem is
  * 	powered off at boot time, the controller won't interrupt!
  */
@@ -53,7 +58,7 @@ struct	rx_ctlr {
 /* per-drive buffers */
 struct buf	rrxbuf[NRX];	/* buffers for raw I/O */
 struct buf	erxbuf[NRX];	/* buffers for reading error status */
-struct buf	rxutab[NRX];	/* per drive buffer queue heads */
+struct buf	rxutab[NRX];	/* per drive buffers */
 
 /* per-drive data */
 struct rx_softc {
@@ -62,20 +67,23 @@ struct rx_softc {
 #define	RXF_DIRECT	0x02	/* use direct sector mapping */
 #define	RXF_TRKZERO	0x04	/* start mapping on track 0 */
 #define	RXF_DEVTYPE	0x07	/* density and mapping flags */
-#define	RXF_OPEN	0x10	/* open */
+#define	RXF_LOCK	0x10	/* exclusive use */
 #define	RXF_DDMK	0x20	/* deleted-data mark detected */
 #define	RXF_USEWDDS	0x40	/* write deleted-data sector */
+#define	RXF_FORMAT	0x80	/* format in progress */
 	int	sc_csbits;	/* constant bits for CS register */
-	caddr_t	sc_uaddr;	/* save orig. unibus address while */
-				/* doing multisector transfers */
-	long	sc_bcnt;	/* save total transfer count for */
-				/* multisector transfers */
-	long	sc_resid;	/* no of bytes left to transfer in multisect */
-				/* operations */
-	int	sc_offset;	/* raw mode kludge: gives the offset into */
-				/* a block of DEV_BSIZE for the current */
-				/* request */
 	int	sc_open;	/* count number of opens */
+	int	sc_offset;	/* raw mode kludge to avoid restricting */
+				/* single sector transfers to start on */
+				/* DEV_BSIZE boundaries */
+	/*
+	 * The rest of this structure is used to 
+	 * store temporaries while simulating multi 
+	 * sector transfers
+	 */
+	caddr_t	sc_uaddr;	/* unibus base address */
+	long	sc_bcnt;	/* total transfer count */
+	long	sc_resid;	/* no of bytes left to transfer */
 } rx_softc[NRX];
 
 struct rxerr {
@@ -148,14 +156,12 @@ rxopen(dev, flag)
 	register struct rx_softc *sc;
 	register struct uba_device *ui;
 	struct rx_ctlr *rxc;
-	int ctlr;
 
 	if (unit >= NRX || (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &rx_softc[unit];
 	if (sc->sc_open++ == 0) {
-		ctlr = ui->ui_mi->um_ctlr;
-		rxc = &rx_ctlr[ctlr];
+		rxc = &rx_ctlr[ui->ui_mi->um_ctlr];
 		sc->sc_flags = ( minor(dev) & RXF_DEVTYPE );
 		sc->sc_csbits = RX_INTR;
 		sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
@@ -164,6 +170,16 @@ rxopen(dev, flag)
 			rxc->rxc_tocnt = 0;
 			rxtimo();			/* start watchdog */
 		}
+	} else	{
+		if ((sc->sc_flags&RXF_DBLDEN) != (dev&RXF_DBLDEN)) {
+			/* 
+			 * Can't open the device if the density does 
+			 * not match the currently selected density 
+			 */
+			return(ENODEV);	
+		}
+		if (sc->sc_flags&RXF_LOCK)
+			return(EBUSY);
 	}
 	return (0);
 }
@@ -179,6 +195,7 @@ rxclose(dev, flag)
 		sc->sc_csbits = 0;
 		rxwstart--;
 	}
+	printf("rxclose: dev=0x%x, sc_open=%d\n", dev, sc->sc_open);
 }
 
 rxstrategy(bp)
@@ -476,7 +493,7 @@ rxintr(ctlr)
 	case RXS_RDSTAT:
 		if (rxaddr->rxdb&RXES_READY)
 			goto rderr;
-		bp->b_error = EIO;
+		bp->b_error = EBUSY;
 		bp->b_flags |= B_ERROR;
 		goto done;
 
@@ -646,8 +663,7 @@ rxtimo()
 		timeout(rxtimo, (caddr_t)0, hz);
 		for (i=0; i<NFX; i++) {
 			um = rxminfo[i];
-			if (um == 0 || um->um_alive ||	
-			    um->um_tab.b_active == 0)
+			if (um == 0 || um->um_alive || um->um_tab.b_active == 0)
 				continue;
 			rxc = &rx_ctlr[i];
 			if (++rxc->rxc_tocnt < RX_MAXTIMEOUT) {
@@ -690,7 +706,7 @@ rxread(dev, uio)
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
-		return (EIO);
+		return (ENXIO);
 	sc->sc_offset = uio->uio_offset % DEV_BSIZE;
 	return (physio(rxstrategy, &rrxbuf[unit], dev, B_READ, minphys, uio));
 }
@@ -705,7 +721,7 @@ rxwrite(dev, uio)
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
-		return (EIO);
+		return (ENXIO);
 	sc->sc_offset = uio->uio_offset % DEV_BSIZE;
 	return(physio(rxstrategy, &rrxbuf[unit], dev, B_WRITE, minphys, uio));
 }
@@ -719,7 +735,6 @@ rxwrite(dev, uio)
  *	(2) Arrange for the next sector to be written with a deleted-
  *		  data mark.
  *	(3) Report whether the last sector read had a deleted-data mark
- *		  (by returning with an EIO error code if it did).
  *
  * Requests relating to deleted-data marks can be handled right here.
  * A "set density" (format) request, however, must additionally be 
@@ -740,6 +755,8 @@ rxioctl(dev, cmd, data, flag)
 	case RXIOC_FORMAT:
 		if ((flag&FWRITE) == 0)
 			return (EBADF);
+		if (sc->sc_open > 1 )
+			return(EBUSY);
 		return (rxformat(dev));
 
 	case RXIOC_WDDS:
@@ -770,7 +787,7 @@ rxformat(dev)
 		sleep(bp, PRIBIO);
 	bp->b_flags = B_BUSY | B_CTRL;
 	splx(s);
-	sc->sc_flags = RXS_FORMAT;
+	sc->sc_flags = RXF_FORMAT | RXF_LOCK;
 	bp->b_dev = dev;
 	bp->b_error = 0;
 	bp->b_resid = 0;
@@ -780,6 +797,7 @@ rxformat(dev)
 		error = bp->b_error;
 	bp->b_flags &= ~B_BUSY;
 	wakeup((caddr_t)bp);
+	sc->sc_flags &= ~RXF_LOCK;
 	return (error);
 }
 #endif
