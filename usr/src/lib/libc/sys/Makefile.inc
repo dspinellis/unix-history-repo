@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.8 (Berkeley) %G%
+#	@(#)Makefile.inc	5.8.1.1 (Berkeley) %G%
 
 # sys sources
 .PATH: ${.CURDIR}/${MACHINE}/sys ${.CURDIR}/sys
@@ -55,6 +55,8 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
 
+# Missing: profil.0, ptrace.0
+
 MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
 	chdir.0 chflags.0 chmod.0 chown.0 chroot.0 close.0 connect.0 \
 	dup.0 execve.0 _exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
@@ -64,7 +66,7 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
 	getrlimit.0 getrusage.0 getsockname.0 getsockopt.0 \
 	gettimeofday.0 getuid.0 intro.0 ioctl.0 kill.0 link.0 listen.0 \
 	lseek.0 mkdir.0 mkfifo.0 mknod.0 mount.0 nfssvc.0 open.0 pipe.0 \
-	profil.0 ptrace.0 quotactl.0 read.0 readlink.0 reboot.0 recv.0 \
+	quotactl.0 read.0 readlink.0 reboot.0 recv.0 \
 	rename.0 rmdir.0 select.0 send.0 setgroups.0 setpgid.0 \
 	setregid.0 setreuid.0 shutdown.0 sigaction.0 sigprocmask.0 \
 	sigreturn.0 sigstack.0 sigsuspend.0 socket.0 socketpair.0 \
