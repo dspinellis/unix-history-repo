@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.13	85/05/27	*/
+/*	udp_usrreq.c	6.13	85/05/28	*/
 
 #include "param.h"
 #include "dir.h"
@@ -128,8 +128,9 @@ udp_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-	struct in_addr *sin;
+	struct in_addr *in;
 	extern u_char inetctlerrmap[];
+	int in_rtchange();
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
@@ -138,18 +139,27 @@ udp_ctlinput(cmd, arg)
 	case PRC_ROUTEDEAD:
 		break;
 
-	case PRC_QUENCH:
+	case PRC_REDIRECT_NET:
+	case PRC_REDIRECT_HOST:
+		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in_pcbnotify(&udb, in, 0, in_rtchange);
 		break;
 
-	/* these are handled by ip */
 	case PRC_IFDOWN:
+		in = &((struct sockaddr_in *)arg)->sin_addr;
+		goto notify;
+
 	case PRC_HOSTDEAD:
 	case PRC_HOSTUNREACH:
-		break;
+		in = (struct in_addr *)arg;
+		goto notify;
 
 	default:
-		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&udb, sin, (int)inetctlerrmap[cmd], udp_abort);
+		if (inetctlerrmap[cmd] == 0)
+			return;		/* XXX */
+		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
+notify:
+		in_pcbnotify(&udb, in, (int)inetctlerrmap[cmd], udp_abort);
 	}
 }
 
