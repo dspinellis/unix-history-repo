@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif /* !lint */
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.3 (Berkeley) %G%";
-#endif /* !lint */
+static char sccsid[] = "@(#)vipw.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <machine/machparam.h>
 #include <sys/types.h>
@@ -32,7 +38,7 @@ main()
 	register int n, fd_passwd, fd_temp;
 	static char *temp = "/etc/ptmp";
 	struct stat s1, s2;
-	char	*editor, *getenv();
+	char *editor, *getenv();
 
 	(void)signal(SIGHUP, SIG_IGN);
 	(void)signal(SIGINT, SIG_IGN);
