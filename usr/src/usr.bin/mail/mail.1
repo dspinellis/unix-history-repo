@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.1	8.4 (Berkeley) %G%
+.\"	@(#)mail.1	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -450,6 +450,13 @@ If
 .Ic ignore
 is executed with no arguments, it lists the current set of
 ignored fields.
+.It Ic inc
+Incorporate any new messages that have arrived while mail
+is being read.
+The new messages are added to the end of the message list,
+and the current message is reset to be the first new mail message.
+This does not renumber the existing message list, nor does
+does it cause any changes made so far to be saved.
 .It Ic mail
 .Pq Ic m
 Takes as argument login names and distribution group names and sends
@@ -785,6 +792,12 @@ Causes you to be prompted for additional carbon copy recipients at the
 end of each message.
 Responding with a newline indicates your
 satisfaction with the current list.
+.It Ar autoinc
+Causes new mail to be automatically incorporated when it arrives.
+Setting this is similar to issuing the
+.Ic inc
+command at each prompt, except that the current message is not
+reset when new mail arrives.
 .It Ar autoprint
 Causes the
 .Ic delete
@@ -970,6 +983,9 @@ Post office.
 User's old mail.
 .It ~/.mailrc
 File giving initial mail commands.
+This can be overridden by setting the
+.Ev MAILRC
+environment variable.
 .It Pa /tmp/R*
 Temporary files.
 .It Pa /usr/share/misc/Mail.help*

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -28,17 +28,18 @@ static char sccsid[] = "@(#)fio.c	8.1 (Berkeley) %G%";
  * Set up the input pointers while copying the mail file into /tmp.
  */
 void
-setptr(ibuf)
+setptr(ibuf, offset)
 	register FILE *ibuf;
+	off_t offset;
 {
 	extern char *tmpdir;
 	register int c, count;
 	register char *cp, *cp2;
 	struct message this;
 	FILE *mestmp;
-	off_t offset;
 	int maybe, inhead;
 	char linebuf[LINESIZE];
+	int omsgCount;
 
 	/* Get temporary file. */
 	(void)sprintf(linebuf, "%s/mail.XXXXXX", tmpdir);
@@ -49,10 +50,23 @@ setptr(ibuf)
 	}
 	(void)unlink(linebuf);
 
-	msgCount = 0;
+	if (offset == 0) {
+		 msgCount = 0;
+	} else {
+		/* Seek into the file to get to the new messages */
+		(void) fseek(ibuf, offset, 0);
+		/*
+		 * We need to make "offset" a pointer to the end of
+		 * the temp file that has the copy of the mail file.
+		 * If any messages have been edited, this will be
+		 * different from the offset into the mail file.
+		 */
+		(void) fseek(otf, 0L, 2);
+		offset = ftell(otf);
+	}
+	omsgCount = msgCount;
 	maybe = 1;
 	inhead = 0;
-	offset = 0;
 	this.m_flag = MUSED|MNEW;
 	this.m_size = 0;
 	this.m_lines = 0;
@@ -64,7 +78,7 @@ setptr(ibuf)
 				perror("temporary file");
 				exit(1);
 			}
-			makemessage(mestmp);
+			makemessage(mestmp, omsgCount);
 			return;
 		}
 		count = strlen(linebuf);
@@ -178,20 +192,27 @@ setinput(mp)
  * a dynamically allocated message structure.
  */
 void
-makemessage(f)
+makemessage(f, omsgCount)
 	FILE *f;
+	int omsgCount;
 {
 	register size = (msgCount + 1) * sizeof (struct message);
 
-	if (message != 0)
-		free((char *) message);
-	if ((message = (struct message *) malloc((unsigned) size)) == 0)
-		panic("Insufficient memory for %d messages", msgCount);
-	dot = message;
-	size -= sizeof (struct message);
+	if (omsgCount) {
+		message = (struct message *)realloc(message, (unsigned) size);
+		if (message == 0)
+			panic("Insufficient memory for %d messages\n", msgCount);
+	} else {
+		if (message != 0)
+			free((char *) message);
+		if ((message = (struct message *) malloc((unsigned) size)) == 0)
+			panic("Insufficient memory for %d messages", msgCount);
+		dot = message;
+	}
+	size -= (omsgCount + 1) * sizeof (struct message);
 	fflush(f);
 	(void) lseek(fileno(f), (off_t)sizeof *message, 0);
-	if (read(fileno(f), (char *) message, size) != size)
+	if (read(fileno(f), (char *) &message[omsgCount], size) != size)
 		panic("Message temporary file corrupted");
 	message[msgCount].m_size = 0;
 	message[msgCount].m_lines = 0;

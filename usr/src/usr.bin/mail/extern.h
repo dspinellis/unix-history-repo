@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 struct name *cat __P((struct name *, struct name *));
@@ -123,6 +123,7 @@ int	 igfield __P((char *[]));
 int	 ignore1 __P((char *[], struct ignoretab *, char *));
 int	 igshow __P((struct ignoretab *, char *));
 void	 intr __P((int));
+int	 inc __P((void));
 int	 isdate __P((char []));
 int	 isdir __P((char []));
 int	 isfileaddr __P((char *));
@@ -138,7 +139,7 @@ struct var *
 int	 mail __P((struct name *,
 	    struct name *, struct name *, struct name *, char *));
 void	 mail1 __P((struct header *, int));
-void	 makemessage __P((FILE *));
+void	 makemessage __P((FILE *, int));
 void	 mark __P((int));
 int	 markall __P((char [], int));
 int	 matchsender __P((char *, int));
@@ -150,7 +151,7 @@ void	 mespipe __P((FILE *, char []));
 int	 messize __P((int *));
 int	 metamess __P((int, int));
 int	 more __P((int *));
-int	 newfileinfo __P((void));
+int	 newfileinfo __P((int));
 int	 next __P((int *));
 int	 null __P((int));
 void	 panic __P((const char *, ...));
@@ -193,7 +194,7 @@ int	 sendmail __P((char *));
 int	 set __P((char **));
 int	 setfile __P((char *));
 void	 setmsize __P((int));
-void	 setptr __P((FILE *));
+void	 setptr __P((FILE *, off_t));
 void	 setscreensize __P((void));
 int	 shell __P((char *));
 void	 sigchild __P((int));
