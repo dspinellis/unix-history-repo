@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.4 (Berkeley) %G%
+ *	@(#)sys.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -175,7 +175,6 @@ dlook(s, io, dir)
 		return (0);
 	ip = &io->i_ino;
 	if ((ip->i_mode&IFMT) != IFDIR) {
-		printf("not a directory\n");
 		printf("%s: not a directory\n", dir);
 		return (0);
 	}
@@ -467,7 +466,7 @@ gotfile:
 		if ((file->i_unit = getunit(cp)) == -1)
 			goto bad;
 		for (; *cp != ','; cp++)
-			if (*cp == NULL) {
+			if (*cp == 0) {
 				errno = EOFFSET;
 				goto badspec;
 			}
@@ -515,18 +514,20 @@ gotfile:
 	}
 #endif
 	opendev = file->i_ino.i_dev << B_TYPESHIFT;
-	opendev |= ((file->i_unit % 8) << B_UNITSHIFT);
-	opendev |= ((file->i_unit / 8) << B_ADAPTORSHIFT);
+	opendev |= (file->i_unit % 8) << B_UNITSHIFT;
+	opendev |= (file->i_unit / 8) << B_ADAPTORSHIFT;
 	opendev |= file->i_boff << B_PARTITIONSHIFT;
 	opendev |= B_DEVMAGIC;
 	if (errno = devopen(file))
 		goto bad;
+#ifndef SMALL
 	if (cp != str && *cp == '\0') {
 		file->i_flgs |= how+1;
 		file->i_cc = 0;
 		file->i_offset = 0;
 		return (fdesc+3);
 	}
+#endif
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
 	file->i_bn = SBOFF / DEV_BSIZE + file->i_boff;
@@ -556,8 +557,10 @@ gotfile:
 	file->i_flgs |= F_FILE | (how+1);
 	return (fdesc+3);
 
+#ifndef SMALL
 badspec:
 	printf("malformed device specification\n");
+#endif
 bad:
 	file->i_flgs = 0;
 	return (-1);
@@ -566,16 +569,23 @@ bad:
 #ifndef SMALL
 static
 getdev(str, len)
-	char *str;
+	register char *str;
 	int len;
 {
 	register struct devsw *dp;
+	register int i;
+	char c = str[len];
 
-	for (dp = devsw; dp->dv_name; dp++) {
-		if (!strncmp(str, dp->dv_name, len))
-			return (dp - devsw);
-	}
-	printf("Unknown device\n");
+	str[len] = 0;
+	for (dp = devsw, i = 0; i < ndevs; dp++, i++)
+		if (dp->dv_name && strcmp(str, dp->dv_name) == 0) {
+			str[len] = c;
+			return (i);
+		}
+	printf("Unknown device\nKnown devices are:\n");
+	for (dp = devsw, i = 0; i < ndevs; dp++, i++)
+		if (dp->dv_name)
+			printf(" %s", dp->dv_name);
 	errno = ENXIO;
 	return (-1);
 }

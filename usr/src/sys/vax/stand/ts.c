@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.1 (Berkeley) %G%
+ *	@(#)ts.c	7.1 (Berkeley) 6/5/86
  */
 
 /*
@@ -11,9 +11,9 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "../vaxuba/tsreg.h"
 #include "../vaxuba/ubareg.h"
@@ -44,17 +44,21 @@ tsopen(io)
 
 	if (tsaddr == 0)
 		tsaddr = (struct tsdevice *)ubamem(io->i_unit, tsstd[0]);
+	if (badaddr((char *)tsaddr, sizeof (short))) {
+		printf("nonexistent device\n");
+		return (ENXIO);
+	}
 	tsaddr->tssr = 0;
 	while ((tsaddr->tssr & TS_SSR)==0) {
 		DELAY(10);
 		if (++i > 1000000) {
 			printf("ts: not ready\n");
-			return;
+			return (EUNIT);
 		}
 	}
 	if (tsaddr->tssr&TS_OFL) {
 		printf("ts: offline\n");
-		return;
+		return (EUNIT);
 	}
 	if (tsaddr->tssr&TS_NBA) {
 		int i;
@@ -77,6 +81,7 @@ tsopen(io)
 	tsstrategy(io, TS_REW);
 	if (io->i_cc = io->i_boff)
 		tsstrategy(io, TS_SFORWF);
+	return (0);
 }
 
 tsclose(io)

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.1 (Berkeley) %G%
+ *	@(#)mt.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -12,9 +12,9 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "../vaxmba/mtreg.h"
 #include "../vaxmba/mbareg.h"
@@ -33,14 +33,16 @@ mtopen(io)
 	register int skip;
 	register struct mtdevice *mtaddr =
 		(struct mtdevice *)mbadrv(io->i_unit);
-	int i;
+	register int i;
 
+	if (mbainit(UNITTOMBA(io->i_unit)) == 0)
+		return (ENXIO);
 	for (i = 0; mttypes[i]; i++)
 		if (mttypes[i] == (mtaddr->mtdt&MBDT_TYPE))
 			goto found;
-	_stop("not a tape\n");
+	printf("not a tape\n");
+	return (ENXIO);
 found:
-	mbainit(UNITTOMBA(io->i_unit));
 	mtaddr->mtid = MTID_CLR;
 	DELAY(250);
 	while ((mtaddr->mtid & MTID_RDY) == 0)
@@ -56,6 +58,7 @@ found:
 		io->i_cc = -1;
 		mtstrategy(io, MT_SFORWF);
 	}
+	return (0);
 }
 
 mtclose(io)

@@ -3,13 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ls.c	7.1 (Berkeley) %G%
+ *	@(#)ls.c	7.2 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/ino.h"
-#include "../h/dir.h"
+#include "param.h"
+#include "inode.h"
+#include "ino.h"
+#include "dir.h"
 #include "saio.h"
 
 char line[100];

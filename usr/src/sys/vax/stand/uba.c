@@ -3,15 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.1 (Berkeley) %G%
+ *	@(#)uba.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/vm.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "vm.h"
+#include "fs.h"
 
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"
@@ -66,6 +66,12 @@ ubafree(io, mr)
 		return;
 	switch (cpu) {
 
+#if VAX8200
+	case VAX_8200:
+		UBA_PURGEBUA(ubauba(io->i_unit), bdp);
+		break;
+#endif
+
 	case VAX_8600:
 	case VAX_780:
 		ubauba(io->i_unit)->uba_dpr[bdp] |= UBADPR_BNE;
@@ -75,7 +81,8 @@ ubafree(io, mr)
 		ubauba(io->i_unit)->uba_dpr[bdp] |=
 		     UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 		break;
-	case VAX_730:
+
+	default:
 		break;
 	}
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.1 (Berkeley) %G%
+ *	@(#)idc.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -11,9 +11,9 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "../vaxuba/idcreg.h"
 #include "../vaxuba/ubareg.h"
@@ -34,8 +34,10 @@ idcopen(io)
 	register int i;
 
 	idcaddr = (struct idcdevice *)((caddr_t)ubauba(io->i_unit) + 0x200);
-	if (io->i_boff < 0 || io->i_boff > 7)
-		_stop("idc bad unit");
+	if ((unsigned)io->i_boff > 7) {
+		printf("idc bad unit");
+		return (EUNIT);
+	}
 	idcaddr->idcmpr = IDCGS_GETSTAT;
 	idcaddr->idccsr = IDC_GETSTAT|(io->i_unit<<8);
 	idcwait(idcaddr);
@@ -46,7 +48,7 @@ idcopen(io)
 	idcwait(idcaddr);
 	if (idcaddr->idccsr & IDC_ERR) {
 		printf("idc error: idccsr %x\n", idcaddr->idccsr);
-		_stop("idc fatal error");
+		return (EIO);
 	}
 	i = idcaddr->idcmpr;
 	i = idcaddr->idcmpr;
@@ -57,8 +59,11 @@ idcopen(io)
 		idc_type[io->i_unit] = 0;
 		io->i_boff = rb02_off[io->i_boff] * NRB02SECT/2 * NRB02TRK;
 	}
-	if (io->i_boff < 0)
-		_stop("idc%d: bad unit type", io->i_unit);
+	if (io->i_boff < 0) {
+		printf("idc%d: bad unit type", io->i_unit);
+		return (EUNIT);
+	}
+	return (0);
 }
 
 idcstrategy(io, func)

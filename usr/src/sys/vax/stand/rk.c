@@ -3,18 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.2 (Berkeley) %G%
+ *	@(#)rk.c	7.3 (Berkeley) %G%
  */
 
 /*
  * RK611/RK07
  */
-#include "../machine/pte.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+#include "disklabel.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/disklabel.h"
+#include "../vax/pte.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/rkreg.h"
@@ -76,7 +76,7 @@ rkopen(io)
 u_long	rk_off[] = { 0, 241, 0, -1, -1, -1, 393, -1 };
 
 rkmaptype(io, lp)
-	register struct iob *io;
+	struct iob *io;
 	register struct disklabel *lp;
 {
 	register struct partition *pp;
@@ -95,18 +95,17 @@ rkstrategy(io, func)
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)ubamem(io->i_unit, rkstd[0]);
 	int com;
-	daddr_t bn;
-	short dn, cn, sn, tn;
+	register daddr_t bn;
+	short cn, sn, tn;
 	int ubinfo, errcnt = 0;
 
 retry:
 	ubinfo = ubasetup(io, 1);
 	bn = io->i_bn;
-	dn = UNITTODRIVE(io->i_unit);
-	cn = bn/(NRKSECT*NRKTRK);
-	sn = bn%NRKSECT;
+	cn = bn / (NRKSECT*NRKTRK);
+	sn = bn % NRKSECT;
 	tn = (bn / NRKSECT) % NRKTRK;
-	rkaddr->rkcs2 = dn;
+	rkaddr->rkcs2 = UNITTODRIVE(io->i_unit);
 	rkaddr->rkcs1 = RK_CDT|RK_PACK|RK_GO;
 	rkwait(rkaddr);
 	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;

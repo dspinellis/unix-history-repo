@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.1 (Berkeley) %G%
+ *	@(#)ut.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -11,9 +11,9 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/utreg.h"
@@ -30,10 +30,15 @@ utopen(io)
 {
 	int skip;
 
+	if (badaddr((char *)ubamem(io->i_unit, utstd[0]), sizeof(short))) {
+		printf("nonexistent device\n");
+		return (ENXIO);
+	}
 	utstrategy(io, UT_REW);
 	skip = io->i_boff;
 	while (skip-- > 0)
 		utstrategy(io, UT_SFORWF);
+	return (0);
 }
 
 utclose(io)

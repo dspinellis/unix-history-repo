@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.4 (Berkeley) %G%
+ *	@(#)hp.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -12,13 +12,14 @@
  * Also supports header io operations and
  * commands to write check header and data.
  */
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/dkbad.h"
-#include "../h/disklabel.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+#include "dkbad.h"
+#include "disklabel.h"
 
 #include "../vax/pte.h"
+
 #include "../vaxmba/hpreg.h"
 #include "../vaxmba/mbareg.h"
 
@@ -81,10 +82,8 @@ hpopen(io)
 	register struct disklabel *lp = &hplabel[unit];
 	struct disklabel *dlp;
 
-	if (mbainit(UNITTOMBA(unit)) == 0) {
-		printf("nonexistent mba");
+	if (mbainit(UNITTOMBA(unit)) == 0)
 		return (ENXIO);
-	}
 	if (sc->gottype == 0) {
 		register i;
 		struct iob tio;
@@ -97,11 +96,13 @@ hpopen(io)
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;		/* init drive */
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 #ifndef SMALL
-		if ((hpaddr->hpds & HPDS_DPR) == 0)
-			_stop("drive nonexistent");
+		if ((hpaddr->hpds & HPDS_DPR) == 0) {
+			printf("drive nonexistent\n");
+			return (ENXIO);
+		}
 		sc->type = hpaddr->hpdt & MBDT_TYPE;
 		if (sc->type == MBDT_ML11B)
-			sc->type == MBDT_ML11A;
+			sc->type = MBDT_ML11A;
 		if (!ML11(sc->type))
 #endif
 			hpaddr->hpof = HPOF_FMT22;
@@ -116,13 +117,13 @@ hpopen(io)
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
 		if (hpstrategy(&tio, READ) != SECTSIZ) {
-			printf("can't read disk label");
+			printf("can't read disk label\n");
 			return (EIO);
 		}
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
 		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
 			printf("hp%d: unlabeled\n", unit);
-#if defined(COMPAT_42) && !defined(SMALL)
+#if defined(COMPAT_42) /* && !defined(SMALL) */
 			hpmaptype(hpaddr, hpaddr->hpdt & MBDT_TYPE,
 			    UNITTODRIVE(unit), lp);
 #else
@@ -143,7 +144,7 @@ hpopen(io)
 			tio.i_bn += 2;
 		}
 		if (i == 5) {
-			printf("Unable to read bad sector table\n");
+			printf("can't read bad sector table\n");
 			for (i = 0; i < MAXBADDESC; i++) {
 				hpbad[unit].bt_bad[i].bt_cyl = -1;
 				hpbad[unit].bt_bad[i].bt_trksec = -1;
@@ -152,9 +153,9 @@ hpopen(io)
 #endif
 		sc->gottype = 1;
 	}
-	if (io->i_boff < 0 || io->i_boff >= lp->d_npartitions ||
+	if ((unsigned)io->i_boff >= lp->d_npartitions ||
 	    lp->d_partitions[io->i_boff].p_size == 0) {
-		printf("hp bad minor");
+		printf("hp bad minor\n");
 		return (EUNIT);
 	}
 	io->i_boff = lp->d_partitions[io->i_boff].p_offset;
@@ -170,7 +171,7 @@ hpstrategy(io, func)
 	struct hpdevice *hpaddr = (struct hpdevice *)mbadrv(unit);
 	register struct hp_softc *sc = &hp_softc[unit];
 	register struct disklabel *lp = &hplabel[unit];
-	int cn, tn, sn, bytecnt, bytesleft, rv; 
+	int cn, tn, sn, bytecnt, bytesleft, rv;
 	char *membase;
 	int er1, er2, hprecal;
 
@@ -474,7 +475,7 @@ hpecc(io, flag)
 		cn = bbn / lp->d_secpercyl;
 		sn = bbn % lp->d_secpercyl;
 		tn = sn / lp->d_nsectors;
-		sn = sn % lp ->d_nsectors;
+		sn = sn % lp->d_nsectors;
 		io->i_cc = sectsiz;
 		io->i_ma += npf * sectsiz;
 		if (sc->debug & HPF_BSEDEBUG)

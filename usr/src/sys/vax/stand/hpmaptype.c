@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.4 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -13,10 +13,10 @@
 #ifdef COMPAT_42
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/disklabel.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+#include "disklabel.h"
 
 #include "../vaxmba/hpreg.h"
 #include "../vaxmba/mbareg.h"
@@ -172,17 +172,15 @@ found:
 			if (hpst[type].nsect == nsectors &&
 			    hpst[type].ntrak == ntracks &&
 			    hpst[type].ncyl == ncyl)
-				break;
+				goto done;
 
-		if (type >= NTYPES) {
-			printf("%d sectors, %d tracks, %d cyl?\n",
-				nsectors, ntracks, ncyl);
-			type = HPDT_RM02;
-		}
+		printf("%d sectors, %d tracks, %d cyl?\n",
+			nsectors, ntracks, ncyl);
+		type = HPDT_RM02;
 	done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 	}
-	
+
 	/*
 	 * set up minimal disk label.
 	 */

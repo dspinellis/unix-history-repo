@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.1 (Berkeley) %G%
+ *	@(#)ht.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -11,9 +11,9 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "../vaxmba/htreg.h"
 #include "../vaxmba/mbareg.h"
@@ -32,14 +32,16 @@ htopen(io)
 	register int skip;
 	register struct htdevice *htaddr =
 	   (struct htdevice *)mbadrv(io->i_unit);
-	int i;
+	register int i;
 
+	if (mbainit(UNITTOMBA(io->i_unit)) == 0)
+		return (ENXIO);
 	for (i = 0; httypes[i]; i++)
 		if (httypes[i] == (htaddr->htdt&MBDT_TYPE))
 			goto found;
-	_stop("not a tape\n");
+	printf("not a tape\n");
+	return (ENXIO);
 found:
-	mbainit(UNITTOMBA(io->i_unit));
 	htaddr->htcs1 = HT_DCLR|HT_GO;
 	htstrategy(io, HT_REW);
 	skip = io->i_boff;
@@ -50,6 +52,7 @@ found:
 		DELAY(65536);
 		htstrategy(io, HT_SENSE);
 	}
+	return (0);
 }
 
 htclose(io)

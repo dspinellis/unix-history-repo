@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)upmaptype.c	7.1 (Berkeley) %G%
+ *	@(#)upmaptype.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -11,11 +11,11 @@
  * driver: drive type mapping routine.
  */
 
-#include "../h/param.h" 
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/dkbad.h"
-#include "../h/vmmac.h"
+#include "param.h" 
+#include "inode.h"
+#include "fs.h"
+#include "dkbad.h"
+#include "vmmac.h"
 
 #include "../vax/pte.h"
 #include "../vaxuba/upreg.h"

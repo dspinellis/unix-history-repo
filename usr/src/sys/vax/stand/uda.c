@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.5 (Berkeley) %G%
+ *	@(#)uda.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -28,9 +28,9 @@
 #define NRSP	1
 #define NCMD	1
 
-#include "udareg.h"
+#include "../vaxuba/udareg.h"
 #include "../vaxuba/ubareg.h"
-#include "mscp.h"
+#include "../vax/mscp.h"
 
 u_short udastd[] = { 0772150 };
 
@@ -40,7 +40,7 @@ struct iob	cudbuf;
  * Per-controller structures use dimension MAXNUBA,
  * as only one controller per UNIBUS is supported.
  */
-struct udadevice *udaddr[MAXNUBA] = { 0 };
+struct udadevice *udaddr[MAXNUBA];
 
 struct	uda1 {
 	struct	uda1ca uda1_ca;	/* communications area */
@@ -50,9 +50,8 @@ struct	uda1 {
 
 struct	uda1 *ud_ubaddr[MAXNUBA];	/* Unibus address of uda structure */
 struct	disklabel ralabel[MAXNUBA * NRA];
-static	int ratype[MAXNUBA * NRA];
+static	u_int ratype[MAXNUBA * NRA];
 char	lbuf[SECTSIZ];
-struct	mscp *udcmd();
 
 raopen(io)
 	register struct iob *io;
@@ -103,7 +102,7 @@ raopen(io)
 		uda1.uda1_ca.ca_rspdsc = (long)&ubaddr->uda1_rsp.mscp_cmdref;
 		uda1.uda1_ca.ca_cmddsc = (long)&ubaddr->uda1_cmd.mscp_cmdref;
 		/* uda1.uda1_cmd.mscp_cntflgs = 0; */
-		if (udcmd(M_OP_SETCTLRC, io) == 0) {
+		if (udcmd(M_OP_SETCTLRC, io)) {
 			printf("ra: open error, SETCTLRC\n");
 			return (EIO);
 		}
@@ -114,10 +113,11 @@ raopen(io)
 		struct iob tio;
 
 		uda1.uda1_cmd.mscp_unit = UNITTODRIVE(unit);
-		if (udcmd(M_OP_ONLINE, io) == 0) {
+		if (udcmd(M_OP_ONLINE, io)) {
 			printf("ra: open error, ONLINE\n");
 			return (EIO);
 		}
+		ratype[unit] = uda1.uda1_rsp.mscp_onle.onle_drivetype;
 		tio = *io;
 		tio.i_bn = LABELSECTOR;
 		tio.i_ma = lbuf;
@@ -127,16 +127,15 @@ raopen(io)
 			printf("can't read disk label\n");
 			return (EIO);
 		}
-		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
+		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
+		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
 			printf("ra%d: unlabeled\n", unit);
 #ifdef COMPAT_42
 			ramaptype(io, lp);
 #else
 			return (ENXIO);
 #endif
-		} else
-			*lp = *dlp;
+		}
 	}
 	if ((unsigned)io->i_boff >= lp->d_npartitions ||
 	    (io->i_boff = lp->d_partitions[io->i_boff].p_offset) == -1) {
@@ -146,38 +145,37 @@ raopen(io)
 	return (0);
 }
 
-struct mscp *
+int
 udcmd(op, io)
 	int op;
 	register struct iob *io;
 {
+	register struct uda1 *u = &uda1;
 	register struct mscp *mp;
 	int i;
 
-	uda1.uda1_cmd.mscp_opcode = op;
-	uda1.uda1_cmd.mscp_msglen = MSCP_MSGLEN;
-	uda1.uda1_rsp.mscp_msglen = MSCP_MSGLEN;
-	uda1.uda1_ca.ca_rspdsc |= MSCP_OWN|MSCP_INT;
-	uda1.uda1_ca.ca_cmddsc |= MSCP_OWN|MSCP_INT;
+	u->uda1_cmd.mscp_opcode = op;
+	u->uda1_cmd.mscp_msglen = MSCP_MSGLEN;
+	u->uda1_rsp.mscp_msglen = MSCP_MSGLEN;
+	u->uda1_ca.ca_rspdsc |= MSCP_OWN|MSCP_INT;
+	u->uda1_ca.ca_cmddsc |= MSCP_OWN|MSCP_INT;
 	i = udaddr[UNITTOUBA(io->i_unit)]->udaip;
-	mp = &uda1.uda1_rsp;
+	mp = &u->uda1_rsp;
 	for (;;) {
-		if (uda1.uda1_ca.ca_cmdint)
-			uda1.uda1_ca.ca_cmdint = 0;
-		if (uda1.uda1_ca.ca_rspint == 0)
+		if (u->uda1_ca.ca_cmdint)
+			u->uda1_ca.ca_cmdint = 0;
+		if (u->uda1_ca.ca_rspint == 0)
 			continue;
-		uda1.uda1_ca.ca_rspint = 0;
+		u->uda1_ca.ca_rspint = 0;
 		if (mp->mscp_opcode == (op | M_OP_END))
 			break;
-		printf("unexpected mscp response (type 0x%x) ignored",
-				MSCP_MSGTYPE(mp->mscp_msgtc));
-		uda1.uda1_ca.ca_rspdsc |= MSCP_OWN | MSCP_INT;
+		printf("unexpected rsp type %x op %x ignored\n",
+			MSCP_MSGTYPE(mp->mscp_msgtc), mp->mscp_opcode);
+		u->uda1_ca.ca_rspdsc |= MSCP_OWN | MSCP_INT;
 	}
 	if ((mp->mscp_status&M_ST_MASK) != M_ST_SUCCESS)
-		return(0);
-	if (mp->mscp_opcode == (M_OP_ONLINE|M_OP_END))
-		ratype[io->i_unit] = mp->mscp_onle.onle_drivetype;
-	return(mp);
+		return (-1);
+	return (0);
 }
 
 rastrategy(io, func)
@@ -192,7 +190,7 @@ rastrategy(io, func)
 	mp->mscp_seq.seq_lbn = io->i_bn;
 	mp->mscp_seq.seq_bytecount = io->i_cc;
 	mp->mscp_seq.seq_buffer = (ubinfo & 0x3ffff) | (((ubinfo>>28)&0xf)<<24);
-	if ((mp = udcmd(func == READ ? M_OP_READ : M_OP_WRITE, io)) == 0) {
+	if (udcmd(func == READ ? M_OP_READ : M_OP_WRITE, io)) {
 		printf("ra: I/O error\n");
 		ubafree(io, ubinfo);
 		return(-1);
@@ -241,18 +239,17 @@ u_long	*ra_off[] = {
 	rd53_off,	/* 9 = rd53 */
 };
 
-#define NOFFS	(sizeof(ra_off)/sizeof(int))
+#define NOFFS	(sizeof(ra_off)/sizeof(ra_off[0]))
 
 ramaptype(io, lp)
 	register struct iob *io;
 	register struct disklabel *lp;
 {
 	register struct partition *pp;
-	register int i;
+	register u_int i;
 	register u_long *off;
 
-	i = ratype[io->i_unit];
-	if ((unsigned)i >= NOFFS || (off = ra_off[i]) == 0) {
+	if ((i = ratype[io->i_unit]) >= NOFFS || (off = ra_off[i]) == 0) {
 		printf("ra%d: ra type %d unsupported\n", io->i_unit, i);
 		lp->d_npartitions = 0;
 		return;
