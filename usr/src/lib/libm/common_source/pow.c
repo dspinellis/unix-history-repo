@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
+"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
 #endif not lint
 
 /* POW(X,Y)  
