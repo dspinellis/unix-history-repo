@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.3 (Berkeley) %G%
+ *	@(#)Locore.c	7.4 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -39,10 +39,8 @@
  */
 
 struct	scb scb[1];
-int	(*UNIvec[128])();
-#if NUBA > 1
-int	(*UNI1vec[128])();
-#endif
+int	(*UNIvec[NUBA][128])();		/* unibus vec for ubas */
+int	(*eUNIvec)();			/* end of unibus vec */
 struct	rpb rpb;
 int	dumpflag;
 int	intstack[3*NBPG];
@@ -125,10 +123,7 @@ lowinit()
 	 */
 	panic("Machine check");
 	printf("Write timeout");
-	(*UNIvec[0])();
-#if NUBA > 1
-	(*UNI1vec[0])();
-#endif
+	(*UNIvec[0][0])();
 	ubaerror(0, (struct uba_hd *)0, 0, 0, (struct uba_regs *)0);
 	cnrint(0);
 	cnxint(0);
@@ -176,7 +171,9 @@ lowinit()
 		return;		/* use value */
 	boothowto = 0;
 	dumpflag = 0; dumpflag = dumpflag;
+#ifdef KADB
 	bootesym = 0; bootesym = bootesym;
+#endif
 #if !defined(GPROF)
 	cp = (caddr_t)&etext;
 	cp = cp;
@@ -195,7 +192,9 @@ int	cold = 1;
 Xustray() { }
 
 struct	pte Sysmap[6*NPTEPG];
+#ifdef KADB
 char	Sysbase[6*NPTEPG*NBPG];
+#endif
 int	umbabeg;
 struct	pte Nexmap[16][16];
 struct	nexus nexus[MAXNNEXUS];
@@ -229,7 +228,7 @@ struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 struct	pte msgbufmap[CLSIZE];
 struct	msgbuf msgbuf;
-struct	pte kmempt[200];
+struct	pte kmempt[200], ekmempt[1];
 #if VAX8200
 struct	pte RX50map[1];
 struct	pte Ka820map[1];
@@ -237,7 +236,7 @@ struct	pte Ka820map[1];
 #if VAX630
 struct	pte Ka630map[1];
 #endif
-int	kmembase, kmemlimit;
+char	kmembase[100*NBPG];
 #if VAX8200 || VAX630
 struct	pte Clockmap[1];
 #endif

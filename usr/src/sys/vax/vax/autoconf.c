@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.14 (Berkeley) %G%
+ *	@(#)autoconf.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -109,7 +109,6 @@ configure()
 	union cpusid cpusid;
 	register struct percpu *ocp;
 	register struct pte *ip;
-	extern char Sysbase[];
 
 	cpusid.cpusid = mfpr(SID);
 	switch (cpusid.cpuany.cp_type) {
@@ -907,10 +906,11 @@ unifind(uhp0, pumem)
 	 * registers and the buffered data path registers
 	 */
 	uhp->uh_map = (struct map *)
-		malloc(UAMSIZ * sizeof (struct map), M_DEVBUF, M_NOWAIT);
+		malloc((u_long)(UAMSIZ * sizeof (struct map)), M_DEVBUF,
+		    M_NOWAIT);
 	if (uhp->uh_map == 0)
 		panic("no mem for unibus map");
-	bzero(uhp->uh_map, UAMSIZ * sizeof (struct map));
+	bzero((caddr_t)uhp->uh_map, (unsigned)(UAMSIZ * sizeof (struct map)));
 	ubainitmaps(uhp);
 
 	/*
@@ -961,7 +961,7 @@ unifind(uhp0, pumem)
 	 * One day, someone will make a unibus with something other than
 	 * an 8K i/o address space, & screw this totally.
 	 */
-	ualloc = (caddr_t)malloc(8*1024, M_TEMP, M_NOWAIT);
+	ualloc = (caddr_t)malloc((u_long)(8 * 1024), M_TEMP, M_NOWAIT);
 	if (ualloc == (caddr_t)0)
 		panic("no mem for unifind");
 	bzero(ualloc, 8*1024);

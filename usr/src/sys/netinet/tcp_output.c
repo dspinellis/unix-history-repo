@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_output.c	7.13.1.3 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -229,11 +229,11 @@ send:
 			tcpstat.tcps_sndbyte += len;
 		}
 		if (len <= DATASPACE) {
-			m_copydata(so->so_snd.sb_mb, off, len,
+			m_copydata(so->so_snd.sb_mb, off, (int) len,
 			    mtod(m, caddr_t) + sizeof(struct tcpiphdr));
 			m->m_len += len;
 		} else {
-			m->m_next = m_copy(so->so_snd.sb_mb, off, len);
+			m->m_next = m_copy(so->so_snd.sb_mb, off, (int) len);
 			if (m->m_next == 0)
 				len = 0;
 		}
@@ -335,7 +335,8 @@ send:
 	if (len + optlen)
 		ti->ti_len = htons((u_short)(sizeof(struct tcphdr) +
 		    optlen + len));
-	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + (int)optlen + len);
+	ti->ti_sum = in_cksum(m,
+	    (int)(sizeof (struct tcpiphdr) + (int)optlen + len));
 
 	/*
 	 * In transmit state, time the transmission and arrange for
