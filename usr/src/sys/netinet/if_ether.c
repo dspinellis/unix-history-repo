@@ -3,11 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	7.1 (Berkeley) %G%
+ *	@(#)if_ether.c	7.2 (Berkeley) %G%
  */
 
 /*
  * Ethernet address resolution protocol.
+ * TODO:
+ *	run at splnet (add ARP protocol intr.)
+ *	link entries onto hash chains, keep free list
+ *	add "inuse/lock" bit (or ref. count) along with valid bit
  */
 
 #include "param.h"
@@ -26,8 +30,13 @@
 #include "ip.h"
 #include "if_ether.h"
 
+#ifdef GATEWAY
+#define	ARPTAB_BSIZ	16		/* bucket size */
+#define	ARPTAB_NB	37		/* number of buckets */
+#else
 #define	ARPTAB_BSIZ	9		/* bucket size */
 #define	ARPTAB_NB	19		/* number of buckets */
+#endif
 #define	ARPTAB_SIZE	(ARPTAB_BSIZ * ARPTAB_NB)
 struct	arptab arptab[ARPTAB_SIZE];
 int	arptab_size = ARPTAB_SIZE;	/* for arp command */
@@ -116,6 +125,8 @@ arpwhohas(ac, addr)
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 }
 
+int	useloopback = 1;	/* use loopback interface for local traffic */
+
 /*
  * Resolve an IP address into an ethernet address.  If success, 
  * desten is filled in.  If there is no entry in arptab,
@@ -138,9 +149,9 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	int *usetrailers;
 {
 	register struct arptab *at;
-	register struct ifnet *ifp;
 	struct sockaddr_in sin;
-	int s, lna;
+	u_long lna;
+	int s;
 
 	*usetrailers = 0;
 	if (in_broadcast(*destip)) {	/* broadcast address */
@@ -149,10 +160,19 @@ arpresolve(ac, m, destip, desten, usetrailers)
 		return (1);
 	}
 	lna = in_lnaof(*destip);
-	ifp = &ac->ac_if;
 	/* if for us, use software loopback driver if up */
 	if (destip->s_addr == ac->ac_ipaddr.s_addr) {
-		if (loif.if_flags & IFF_UP) {
+		/*
+		 * This test used to be
+		 *	if (loif.if_flags & IFF_UP)
+		 * It allowed local traffic to be forced
+		 * through the hardware by configuring the loopback down.
+		 * However, it causes problems during network configuration
+		 * for boards that can't receive packets they send.
+		 * It is now necessary to clear "useloopback"
+		 * to force traffic out to the hardware.
+		 */
+		if (useloopback) {
 			sin.sin_family = AF_INET;
 			sin.sin_addr = *destip;
 			(void) looutput(&loif, m, (struct sockaddr *)&sin);
@@ -169,7 +189,7 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	s = splimp();
 	ARPTAB_LOOK(at, destip->s_addr);
 	if (at == 0) {			/* not found */
-		if (ifp->if_flags & IFF_NOARP) {
+		if (ac->ac_if.if_flags & IFF_NOARP) {
 			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten, 3);
 			desten[3] = (lna >> 16) & 0x7f;
 			desten[4] = (lna >> 8) & 0xff;
@@ -178,6 +198,8 @@ arpresolve(ac, m, destip, desten, usetrailers)
 			return (1);
 		} else {
 			at = arptnew(destip);
+			if (at == 0)
+				panic("arpresolve: no free entry");
 			at->at_hold = m;
 			arpwhohas(ac, destip);
 			splx(s);
@@ -268,14 +290,14 @@ in_arpinput(ac, m)
 	struct sockaddr_in sin;
 	struct sockaddr sa;
 	struct in_addr isaddr, itaddr, myaddr;
-	int proto, op;
+	int proto, op, s;
 
 	myaddr = ac->ac_ipaddr;
 	ea = mtod(m, struct ether_arp *);
 	proto = ntohs(ea->arp_pro);
 	op = ntohs(ea->arp_op);
-	isaddr.s_addr = ((struct in_addr *)ea->arp_spa)->s_addr;
-	itaddr.s_addr = ((struct in_addr *)ea->arp_tpa)->s_addr;
+	bcopy((caddr_t)ea->arp_spa, (caddr_t)&isaddr, sizeof (isaddr));
+	bcopy((caddr_t)ea->arp_tpa, (caddr_t)&itaddr, sizeof (itaddr));
 	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
 	  sizeof (ea->arp_sha)))
 		goto out;	/* it's from me, ignore it. */
@@ -295,6 +317,7 @@ in_arpinput(ac, m)
 			goto reply;
 		goto out;
 	}
+	s = splimp();
 	ARPTAB_LOOK(at, isaddr.s_addr);
 	if (at) {
 		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
@@ -315,6 +338,7 @@ in_arpinput(ac, m)
 		    sizeof(ea->arp_sha));
 		at->at_flags |= ATF_COM;
 	}
+	splx(s);
 reply:
 	switch (proto) {
 
@@ -409,6 +433,7 @@ arptfree(at)
  * This always succeeds since no bucket can be completely filled
  * with permanent entries (except from arpioctl when testing whether
  * another permanent entry will fit).
+ * MUST BE CALLED AT SPLIMP.
  */
 struct arptab *
 arptnew(addr)
