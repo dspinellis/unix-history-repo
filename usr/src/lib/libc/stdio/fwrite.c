@@ -1,4 +1,4 @@
-/* @(#)fwrite.c	4.4 (Berkeley) %G% */
+/* @(#)fwrite.c	4.5 (Berkeley) %G% */
 #include	<stdio.h>
 
 fwrite(ptr, size, count, iop)
@@ -36,5 +36,5 @@ fwrite(ptr, size, count, iop)
 			return (count);
 		}
 	}
-	return (count - ((s + size - 1) / size));
+	return (size != 0 ? count - ((s + size - 1) / size) : 0);
 }

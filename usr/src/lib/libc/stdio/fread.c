@@ -1,4 +1,4 @@
-/* @(#)fread.c	4.2 (Berkeley) %G% */
+/* @(#)fread.c	4.3 (Berkeley) %G% */
 #include	<stdio.h>
 
 fread(ptr, size, count, iop)
@@ -33,5 +33,5 @@ fread(ptr, size, count, iop)
 			return (count);
 		}
 	}
-	return (count - ((s + size - 1) / size));
+	return (size != 0 ? count - ((s + size - 1) / size) : 0);
 }
