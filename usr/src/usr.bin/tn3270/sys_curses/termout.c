@@ -53,7 +53,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 extern void EmptyTerminal();
 
 #define CorrectTerminalCursor() ((TransparentClock == OutputClock)? \
-		terminalCursorAddress:UnLocked? CursorAddress: HighestScreen())
+		CursorAddress:UnLocked? CursorAddress: HighestScreen())
 
 
 static int terminalCursorAddress;	/* where the cursor is on term */
