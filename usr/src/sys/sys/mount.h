@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.40 (Berkeley) %G%
+ *	@(#)mount.h	7.41 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -99,6 +99,8 @@ struct mount {
 
 /*
  * Mount flags.
+ *
+ * Unmount uses MNT_FORCE flag.
  */
 #define	MNT_RDONLY	0x00000001	/* read only filesystem */
 #define	MNT_SYNCHRONOUS	0x00000002	/* file system written synchronously */
@@ -136,11 +138,14 @@ struct mount {
  */
 #define	MNT_UPDATE	0x00010000	/* not a real mount, just an update */
 #define	MNT_DELEXPORT	0x00020000	/* delete export host lists */
+#define	MNT_RELOAD	0x00040000	/* reload filesystem data */
+#define	MNT_FORCE	0x00080000	/* force unmount or readonly change */
 #define	MNT_MLOCK	0x00100000	/* lock so that subtree is stable */
 #define	MNT_MWAIT	0x00200000	/* someone is waiting for lock */
 #define MNT_MPBUSY	0x00400000	/* scan of mount point in progress */
 #define MNT_MPWANT	0x00800000	/* waiting for mount point */
 #define MNT_UNMOUNT	0x01000000	/* unmount in progress */
+#define MNT_WANTRDWR	0x02000000	/* want upgrade to read/write */
 
 /*
  * Operations supported on mounted file system.
@@ -191,11 +196,8 @@ struct vfsops {
 /*
  * Flags for various system call interfaces.
  *
- * forcibly flags for vfs_umount().
  * waitfor flags to vfs_sync() and getfsstat()
  */
-#define MNT_FORCE	1
-#define MNT_NOFORCE	2
 #define MNT_WAIT	1
 #define MNT_NOWAIT	2
 
