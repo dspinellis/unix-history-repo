@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 SUBDIR=	fortune
 
-.ifmake (clean) || ifmake (cleandir)
+.ifmake (clean) || (cleandir)
 SUBDIR+=datfiles
 .endif
 
