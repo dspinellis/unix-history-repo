@@ -190,10 +190,11 @@ kernfs_lookup(ap)
 	if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)
 		return (EROFS);
 
+	VOP_UNLOCK(dvp, 0, p);
 	if (cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
 		VREF(dvp);
-		/*VOP_LOCK(dvp);*/
+		vn_lock(dvp, LK_SHARED | LK_RETRY, p);
 		return (0);
 	}
 
@@ -201,7 +202,7 @@ kernfs_lookup(ap)
 	if (cnp->cn_namelen == 4 && bcmp(pname, "root", 4) == 0) {
 		*vpp = rootdir;
 		VREF(rootdir);
-		vn_lock(rootdir, LK_EXCLUSIVE | LK_RETRY, p)
+		vn_lock(rootdir, LK_SHARED | LK_RETRY, p)
 		return (0);
 	}
 #endif
@@ -216,14 +217,17 @@ kernfs_lookup(ap)
 	printf("kernfs_lookup: i = %d, failed", i);
 #endif
 
+	vn_lock(dvp, LK_SHARED | LK_RETRY, p);
 	return (cnp->cn_nameiop == LOOKUP ? ENOENT : EROFS);
 
 found:
 	if (kt->kt_tag == KTT_DEVICE) {
 		dev_t *dp = kt->kt_data;
 	loop:
-		if (*dp == NODEV || !vfinddev(*dp, kt->kt_vtype, &fvp))
+		if (*dp == NODEV || !vfinddev(*dp, kt->kt_vtype, &fvp)) {
+			vn_lock(dvp, LK_SHARED | LK_RETRY, p);
 			return (ENOENT);
+		}
 		*vpp = fvp;
 		if (vget(fvp, LK_EXCLUSIVE, p))
 			goto loop;
@@ -234,13 +238,16 @@ found:
 	printf("kernfs_lookup: allocate new vnode\n");
 #endif
 	if (error = getnewvnode(VT_KERNFS, dvp->v_mount, kernfs_vnodeop_p,
-	    &fvp))
+	    &fvp)) {
+		vn_lock(dvp, LK_SHARED | LK_RETRY, p);
 		return (error);
+	}
 
 	MALLOC(fvp->v_data, void *, sizeof(struct kernfs_node), M_TEMP,
 	    M_WAITOK);
 	VTOKERN(fvp)->kf_kt = kt;
 	fvp->v_type = kt->kt_vtype;
+	vn_lock(fvp, LK_SHARED | LK_RETRY, p);
 	*vpp = fvp;
 
 #ifdef KERNFS_DIAGNOSTIC
