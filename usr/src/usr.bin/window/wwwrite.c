@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.2 83/08/16";
+static	char *sccsid = "@(#)wwwrite.c	3.3 83/08/16";
 #endif
 
 #include "ww.h"
@@ -7,9 +7,9 @@ static	char *sccsid = "@(#)wwwrite.c	3.2 83/08/16";
 wwwrite(w, p, n)
 register struct ww *w;
 register char *p;
-register n;
+int n;
 {
-	register char c;
+	char c;
 
 	if (w == 0 || w->ww_win == 0)
 		return -1;
@@ -19,14 +19,11 @@ register n;
 		c = *p++ & 0x7f;
 		switch (w->ww_wstate) {
 		case 0:
-			asm("_wwwrite1:");
-			if (c >= ' ' && c < 0x7f) {
-				if (w->ww_insert)
+				if (w->ww_insert) {
 					Winschars(w->ww_win, 1);
 				Wputc(c, w->ww_win);
 				break;
 			}
-			asm("_wwwrite2:");
 			switch (c) {
 			case '\n':
 				Wputc(c, w->ww_win);
