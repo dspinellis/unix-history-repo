@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.7	81/11/22	*/
+/*	uipc_pipe.c	4.8	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -78,6 +78,7 @@ COUNT(PIUSRREQ);
 		if (so2 == 0)
 			return (ENOTCONN);
 		so->so_pcb = 0;
+		so2->so_pcb = 0;
 		soisdisconnected(so);
 		soisdisconnected(so2);
 		break;
@@ -117,6 +118,8 @@ psndrcv(snd, rcv);
 	case PRU_SEND:
 #define	rcv (&so2->so_rcv)
 #define	snd (&so->so_snd)
+		if (so2 == 0)
+			panic("pipe send");
 		/*
 		 * Send to paired receive port, and then
 		 * give it enough resources to hold what it already has.
