@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)muldi3.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)muldi3.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -201,7 +201,7 @@ __lmulq(u_long u, u_long v)
 	} else {
 		was = prodl;
 		prodl += LHUP(mid);
-		prodh += HHALF(mid >> 16) + (prodl < was);
+		prodh += HHALF(mid) + (prodl < was);
 	}
 
 	/* prod += low << N */
