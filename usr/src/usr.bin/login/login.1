@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)login.1	6.2 (Berkeley) %G%
+.\"	@(#)login.1	6.3 (Berkeley) %G%
 .\"
 .TH LOGIN 1 ""
 .UC 4
@@ -10,17 +10,36 @@
 login \- sign on
 .SH SYNOPSIS
 .B login
-[ \-p ] [ username ]
+[
+.B \-p
+] [ username ]
+.br
+.B login
+[
+.B \-p
+] [
+.B \-h
+hostname
+] [
+.B \-f
+] [
+username
+]
 .SH DESCRIPTION
 The
 .I login
 command
 is used when a user initially
-signs on, or it may be used at any time to change
+signs on.
+It may also be used at any time to change
 from one user to another.
-The latter case is the one summarized above and
-described here.
-See \*(lqHow to Get Started\*(rq for how to dial up initially.
+This case is the one summarized first above and described here.
+See \*(lqHow to Get Started\*(rq for how to connect initially.
+The invocation of
+.I login
+for initial sign-on
+is made by a system program or server using the latter form of the command
+and is described below.
 .PP
 If
 .I login
@@ -71,6 +90,24 @@ Login is recognized by
 and
 .IR csh (1)
 and executed directly (without forking).
+.PP
+There are several additional options to
+.I login
+for use at initial login.
+With one exception, these options are available only to the superuser.
+The
+.B \-h
+option is used by
+.IR telnetd (8C)
+and other servers to list the host from which
+the connection was received.
+The
+.B \-f
+option is used with a username on the command line
+to indicate that proper authentication has already been done
+and that no password need be requested.
+This option may be used by the superuser
+or by the user specified on the command line.
 .SH FILES
 .ta \w'/usr/spool/mail/*\ \ 'u
 /etc/utmp	accounting
@@ -87,7 +124,7 @@ and executed directly (without forking).
 .br
 \&.hushlogin	makes login quieter
 .SH "SEE ALSO"
-init(8), getty(8), mail(1), passwd(1), passwd(5), environ(7),
+init(8), getty(8), mail(1), passwd(1), passwd(5), utmp(5), environ(7),
 shutdown(8), rlogin(1c)
 .SH DIAGNOSTICS
 \*(lqLogin incorrect,\*(rq
@@ -104,7 +141,3 @@ is used by the remote login server,
 to force
 .I login
 to enter into an initial connection protocol.
-.B \-h is used by
-.IR telnetd (8C)
-and other servers to list the host from which
-the connection was received.
