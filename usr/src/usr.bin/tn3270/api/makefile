@@ -6,7 +6,7 @@ ALLH = apilib.h api_exch.h
 
 ALLPRINT = ${ALLH} ${ALLC}
 
-ALLSOURCE = ${ALLPRINT}
+ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 
 ALLO = apilib.o api_bsd.o api_exch.o
 
@@ -28,8 +28,8 @@ print:
 	${PRINT} ${ALLPRINT}
 
 
-sourcelist:
-	for i in ${ALLSOURCE}; \
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
 		do (echo ${DIRPATH}/$$i); done
 
 depend:
