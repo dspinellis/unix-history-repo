@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	8.3 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.9 1993/04/06 15:28:33 jsp Exp $
  */
@@ -30,19 +30,10 @@
 #include <sys/malloc.h>
 #include <miscfs/fdesc/fdesc.h>
 
-dev_t devctty;
-
-fdesc_init()
-{
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_init\n");		/* printed during system boot */
-#endif
-	devctty = makedev(nchrdev, 0);
-}
-
 /*
  * Mount the per-process file descriptors (/dev/fd)
  */
+int
 fdesc_mount(mp, path, data, ndp, p)
 	struct mount *mp;
 	char *path;
@@ -54,10 +45,6 @@ fdesc_mount(mp, path, data, ndp, p)
 	u_int size;
 	struct fdescmount *fmp;
 	struct vnode *rvp;
-
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_mount(mp = %x)\n", mp);
-#endif
 
 	/*
 	 * Update is a no-op
@@ -73,9 +60,6 @@ fdesc_mount(mp, path, data, ndp, p)
 				M_UFSMNT, M_WAITOK);	/* XXX */
 	rvp->v_type = VDIR;
 	rvp->v_flag |= VROOT;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_mount: root vp = %x\n", rvp);
-#endif
 	fmp->f_root = rvp;
 	/* XXX -- don't mark as local to work around fts() problems */
 	/*mp->mnt_flag |= MNT_LOCAL;*/
@@ -86,12 +70,10 @@ fdesc_mount(mp, path, data, ndp, p)
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
 	bzero(mp->mnt_stat.f_mntfromname, MNAMELEN);
 	bcopy("fdesc", mp->mnt_stat.f_mntfromname, sizeof("fdesc"));
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_mount: at %s\n", mp->mnt_stat.f_mntonname);
-#endif
 	return (0);
 }
 
+int
 fdesc_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -100,6 +82,7 @@ fdesc_start(mp, flags, p)
 	return (0);
 }
 
+int
 fdesc_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -109,10 +92,6 @@ fdesc_unmount(mp, mntflags, p)
 	int flags = 0;
 	extern int doforce;
 	struct vnode *rootvp = VFSTOFDESC(mp)->f_root;
-
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_unmount(mp = %x)\n", mp);
-#endif
 
 	if (mntflags & MNT_FORCE) {
 		/* fdesc can never be rootfs so don't check for it */
@@ -126,28 +105,11 @@ fdesc_unmount(mp, mntflags, p)
 	 * ever get anything cached at this level at the
 	 * moment, but who knows...
 	 */
-#if 0
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_unmount: calling mntflushbuf\n");
-#endif
-	mntflushbuf(mp, 0); 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_unmount: calling mntinvalbuf\n");
-#endif
-	if (mntinvalbuf(mp, 1))
-		return (EBUSY);
-#endif
 	if (rootvp->v_usecount > 1)
 		return (EBUSY);
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_unmount: calling vflush\n");
-#endif
 	if (error = vflush(mp, rootvp, flags))
 		return (error);
 
-#ifdef FDESC_DIAGNOSTIC
-	vprint("fdesc root", rootvp);
-#endif	 
 	/*
 	 * Release reference on underlying root vnode
 	 */
@@ -161,18 +123,16 @@ fdesc_unmount(mp, mntflags, p)
 	 */
 	free(mp->mnt_data, M_UFSMNT);	/* XXX */
 	mp->mnt_data = 0;
-	return 0;
+
+	return (0);
 }
 
+int
 fdesc_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
 	struct vnode *vp;
-
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_root(mp = %x)\n", mp);
-#endif
 
 	/*
 	 * Return locked reference to root.
@@ -184,6 +144,7 @@ fdesc_root(mp, vpp)
 	return (0);
 }
 
+int
 fdesc_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
@@ -191,9 +152,11 @@ fdesc_quotactl(mp, cmd, uid, arg, p)
 	caddr_t arg;
 	struct proc *p;
 {
+
 	return (EOPNOTSUPP);
 }
 
+int
 fdesc_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
@@ -204,10 +167,6 @@ fdesc_statfs(mp, sbp, p)
 	int i;
 	int last;
 	int freefd;
-
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_statfs(mp = %x)\n", mp);
-#endif
 
 	/*
 	 * Compute number of free file descriptors.
@@ -247,10 +206,12 @@ fdesc_statfs(mp, sbp, p)
 	return (0);
 }
 
+int
 fdesc_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+
 	return (0);
 }
 
@@ -258,6 +219,7 @@ fdesc_sync(mp, waitfor)
  * Fdesc flat namespace lookup.
  * Currently unsupported.
  */
+int
 fdesc_vget(mp, ino, vpp)
 	struct mount *mp;
 	ino_t ino;
@@ -267,7 +229,7 @@ fdesc_vget(mp, ino, vpp)
 	return (EOPNOTSUPP);
 }
 
-
+int
 fdesc_fhtovp(mp, fhp, setgen, vpp)
 	struct mount *mp;
 	struct fid *fhp;
@@ -277,10 +239,12 @@ fdesc_fhtovp(mp, fhp, setgen, vpp)
 	return (EOPNOTSUPP);
 }
 
+int
 fdesc_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
 {
+
 	return (EOPNOTSUPP);
 }
 
