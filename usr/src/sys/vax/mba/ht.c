@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.3 (Berkeley) %G%
+ *	@(#)ht.c	7.4 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -54,7 +54,7 @@ struct	mba_driver htdriver =
 /* bits in minor device */
 #define	TUUNIT(dev)	(minor(dev)&03)
 #define	H_NOREWIND	04
-#define	H_1600BPI	08
+#define	H_DENS(dev)	((minor(dev) >> 3) & 03)
 
 #define HTUNIT(dev)	(tutoht[TUUNIT(dev)])
 
@@ -112,6 +112,8 @@ htslave(mi, ms, sn)
 		return (0);
 }
 
+int	htdens[4] = { HTTC_800BPI, HTTC_1600BPI, HTTC_6250BPI, HTTC_800BPI };
+
 htopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -129,9 +131,7 @@ htopen(dev, flag)
 		return (EBUSY);
 	sc->sc_openf = 1;
 	olddens = sc->sc_dens;
-	dens = sc->sc_dens =
-	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
-		HTTC_PDP11|sc->sc_slave;
+	dens = sc->sc_dens = htdens[H_DENS(dev)] | HTTC_PDP11 | sc->sc_slave;
 	htcommand(dev, HT_SENSE, 1);
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0) {
