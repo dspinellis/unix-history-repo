@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.19 1993/10/25 21:09:32 rgrimes Exp $
+#	$Id: Makefile,v 1.20 1993/10/29 07:49:55 rgrimes Exp $
 #
 
 SUBDIR=
@@ -50,7 +50,7 @@ CLEANDIR=
 CLEANDIR=	cleandir
 .endif
 
-world:	directories cleandist mk includes libraries tools mdec
+world:	directories cleandist mk includes boostrapld libraries tools mdec
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR} The whole thing"
 	@echo "--------------------------------------------------------------"
@@ -101,6 +101,30 @@ includes:
 	cd ${.CURDIR}/gnu/libregex;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
+
+# XXX -- This will go away later -- hack to get up to speed with shlibs
+# setenv NOBOOTSTRAPLD to prevent building new shlib tools.
+# This is to save build time if you've already done it before,
+# you MUST run it the first time you get the new sources.
+
+bootstrapld:
+.if !defined(NOBOOTSTRAPLD)
+	@echo "--------------------------------------------------------------"
+	@echo " Building new shlib compiler tools"
+	@echo "--------------------------------------------------------------"
+	setenv NOPROFILE
+	setenv NOMAN
+	cd ${.CURDIR}/usr.bin/strip; make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gas; make depend all install ${CLEANDIR} obj
+	setenv NOPIC
+	cd ${.CURDIR}/gnu/gcc2; make depend all install
+	cd ${.CURDIR}/gnu/ld; make depend all install ${CLEANDIR} obj
+	unsetenv NOPIC
+	cd ${.CURDIR}/gnu/gcc2/libgcc; make all install ${CLEANDIR} obj;
+	cd ${.CURDIR}/lib/libc; make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/lib/csu.i386; make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/ld/rtld; make depend all install ${CLEANDIR} obj
+.endif
 
 libraries:
 	# setenv NOPROFILE if you do not want profiled libraries
