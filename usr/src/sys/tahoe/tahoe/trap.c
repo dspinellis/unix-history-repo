@@ -1,4 +1,4 @@
-/*	trap.c	1.2	86/01/05	*/
+/*	trap.c	1.3	86/01/07	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -133,17 +133,29 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		i = SIGTRAP;
 		break;
 
+	/*
+	 * For T_KSPNOTVAL and T_BUSERR, can not allow spl to
+	 * drop to 0 as clock could go off and we would end up
+	 * doing an rei to the interrupt stack at ipl 0 (a
+	 * reserved operand fault).  Instead, we allow psignal
+	 * to post an ast, then return to user mode where we
+	 * will reenter the kernel on the kernel's stack and
+	 * can then service the signal.
+	 */
 	case T_KSPNOTVAL:
+		if (noproc)
+			panic("ksp not valid");
+		/* fall thru... */
 	case T_KSPNOTVAL + USER:
-		i = SIGKILL;	/* There is nothing to do but to kill the 
-				 * process.. */
-		printf("KSP NOT VALID.\n");
-		break;
+		printf("pid %d: ksp not valid\n", u.u._procp->p_pid);
+		/* must insure valid kernel stack pointer? */
+		psignal(u.u_procp, SIGKILL);
+		return;
 
 	case T_BUSERR + USER:
-		i = SIGBUS;
 		u.u_code = code;
-		break;
+		psignal(u.u_procp, SIGBUS);
+		return;
 	}
 	psignal(u.u_procp, i);
 out:
