@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.5	(Berkeley) %G%";
 #endif
 
 /*
@@ -81,14 +81,13 @@ static int (*fsig)();
 
 #ifndef USG
 #define TCGETA	TIOCGETP
-#define TCSETA	TIOCSETP
+#define TCSETAF	TIOCSETP
 #define termio	sgttyb
 #endif USG
 static struct	termio ttbuf;
 
 fturnon()
 {
-	int ret;
 	int ttbuf_flags;
 
 	if (!IsTcpIp) {
@@ -98,18 +97,24 @@ fturnon()
 		ttbuf.c_iflag = IXOFF|IXON|ISTRIP;
 		ttbuf.c_cc[VMIN] = FIBUFSIZ > 64 ? 64 : FIBUFSIZ;
 		ttbuf.c_cc[VTIME] = 5;
-		ret = ioctl(Ifn, TCSETA, &ttbuf);
-		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		if (ioctl(Ifn, TCSETAF, &ttbuf) < 0) {
+			syslog(LOG_ERR, "ioctl(TCSETAF) failed: %m");
+			cleanup(FAIL);
+		}
 		ttbuf.c_iflag = ttbuf_flags;
 #else !USG
 		ttbuf_flags = ttbuf.sg_flags;
 		ttbuf.sg_flags = ANYP|CBREAK;
-		ret = ioctl(Ifn, TCSETA, &ttbuf);
-		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		if (ioctl(Ifn, TCSETAF, &ttbuf) < 0) {
+			syslog(LOG_ERR, "ioctl(TCSETAF) failed: %m");
+			cleanup(FAIL);
+		}
 		/* this is two seperate ioctls to set the x.29 params */
 		ttbuf.sg_flags |= TANDEM;
-		ret = ioctl(Ifn, TCSETA, &ttbuf);
-		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		if (ioctl(Ifn, TCSETAF, &ttbuf) < 0) {
+			syslog(LOG_ERR, "ioctl(TCSETAF) failed: %m");
+			cleanup(FAIL);
+		}
 		ttbuf.sg_flags = ttbuf_flags;
 #endif USG
 	}
@@ -125,7 +130,7 @@ fturnon()
 fturnoff()
 {
 	if (!IsTcpIp)
-		ioctl(Ifn, TCSETA, &ttbuf);
+		ioctl(Ifn, TCSETAF, &ttbuf);
 	(void) signal(SIGALRM, fsig);
 	sleep(2);
 	return SUCCESS;
@@ -240,7 +245,7 @@ acct:
 	if (retries > 0)
 		sprintf(&ibuf[strlen(ibuf)], ", %d retries", retries);
 	DEBUG(1, "%s\n", ibuf);
-	syslog(ibuf);
+	log_xferstats(ibuf);
 	if (ack == 'R') {
 		DEBUG(4, "RETRY:\n", 0);
 		fseek(fp1, 0L, 0);
@@ -313,7 +318,7 @@ acct:
 	sysacct(abytes, t2.time);
 	Bytes_Received += fbytes;
 	DEBUG(1, "%s\n", ibuf);
-	syslog(ibuf);
+	log_xferstats(ibuf);
 	if (ret == FAIL) {
 		if (retries++ < MAXRETRIES) {
 			DEBUG(8, "send ack: 'R'\n", 0);
