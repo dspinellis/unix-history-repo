@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.18 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.19 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.18	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.19	(Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -307,7 +307,11 @@ cmd:		USER SP username CRLF
 		}
 	|	SYST CRLF
 		= {
+#ifdef unix
 			reply(215, "UNIX Type: L%d Version: BSD-%d",
+#else
+			reply(215, "UNKNOWN Type: L%d Version: BSD-%d",
+#endif
 				NBBY, BSD);
 		}
 	|	QUIT CRLF
