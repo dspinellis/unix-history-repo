@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.26 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -335,19 +335,15 @@ ufs_unmount(mp, flags)
 	if (flags & MNT_FORCE)
 		return (EINVAL);
 	ump = VFSTOUFS(mp);
-#ifdef QUOTA
-	if ((error = iflush(dev, mp->m_qinod)) && !forcibly)
-#else
-	if ((error = iflush(dev)) && !forcibly)
-#endif
+	if (error = vflush(mp, ITOV(ump->um_qinod), flags))
 		return (error);
 #ifdef QUOTA
 	(void) closedq(ump);
 	/*
-	 * Here we have to iflush again to get rid of the quota inode.
 	 * A drag, but it would be ugly to cheat, & this doesn't happen often.
 	 */
-	(void) iflush(mp, (struct inode *)NULL);
+	if (vflush(mp, (struct vnode *)NULL, MNT_NOFORCE))
+		panic("ufs_unmount: quota");
 #endif
 	fs = ump->um_fs;
 	ronly = !fs->fs_ronly;
