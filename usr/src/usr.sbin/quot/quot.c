@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -124,7 +124,7 @@ quotall()
 		cp = rindex(fs->fs_spec, '/');
 		if (cp == 0)
 			continue;
-		(void)sprintf(dev, "%s/r%s", _PATH_DEV, cp + 1);
+		(void)snprintf(dev, sizeof(dev), "%sr%s", _PATH_DEV, cp + 1);
 		if (check(dev, fs->fs_file) == 0)
 			report();
 	}

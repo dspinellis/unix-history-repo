@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)announce.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)announce.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,8 @@ announce(request, remote_machine)
 	FILE *tf;
 	struct stat stbuf;
 
-	(void)sprintf(full_tty, "%s/%s", _PATH_DEV, request->r_tty);
+	(void)snprintf(full_tty, sizeof(full_tty),
+	    "%s%s", _PATH_DEV, request->r_tty);
 	if (stat(full_tty, &stbuf) < 0 || (stbuf.st_mode&020) == 0)
 		return (PERMISSION_DENIED);
 	return (print_mesg(request->r_tty, tf, request, remote_machine));
