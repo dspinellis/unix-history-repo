@@ -1,8 +1,10 @@
 /*
-char id_f_errno[] = "@(#)f_errno.h	1.1";
+char id_f_errno[] = "@(#)f_errno.h	1.2";
  *
  * f77 I/O error definitions
  */
+
+#include	<errno.h>
 
 extern int errno;
 
