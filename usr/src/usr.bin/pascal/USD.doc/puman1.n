@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)puman1.n	8.1 (Berkeley) %G%
+.\"	@(#)puman1.n	8.2 (Berkeley) %G%
 .\"
 .if !\n(xx \{\
 .so tmac.p \}
@@ -170,23 +170,6 @@ for
 .I ed
 users.
 .SH
-Edit: A tutorial
-.PP
-This introduces the use of
-.I edit,
-an editor similar to
-.I ed
-which provides a more hospitable environment for beginning users.
-.SH
-Ex/edit Command Summary
-.PP
-This summarizes the features of the editors
-.I ex
-and
-.I edit
-in a concise form.  If you have used a line oriented editor before
-this summary alone may be enough to get you started.
-.SH
 Ex Reference Manual \- Version 3.7
 .PP
 A complete reference on the features of
@@ -205,11 +188,22 @@ both as an introduction to editing with
 .I vi
 and a reference manual.
 .SH
-Vi Quick Reference
+Vi Reference Manual
 .PP
-This reference card is a handy quick guide to
-.I vi;
-you should get one when you get the introduction to
+This document summarizes the features of the
+.I nvi
+and
+.I nex
+editors distributed with 4.4BSD in a concise but complete fashion.
+The
+.I vi
+manual page is a shorter reference for these editors
+and also includes a minimal introduction on how to use them.
+.SH
+The Jove Editor
+.PP
+Jove is a small, self-documenting, customizable display editor, based on EMACS.
+A plausible alternative to
 .I vi.
 .NH 2
 Pascal documents \- The language
@@ -318,6 +312,9 @@ and the
 describe the structure of the
 execution profiler
 .I pxp .
+These documents are not reproduced in these manuals;
+they are available on the CD-ROM in
+.I /usr/src/share/doc/papers .
 .br
 .ne 8
 .NH 2
@@ -330,58 +327,42 @@ References
 .SH
 UNIX Documents
 .re
-.I "Communicating With UNIX"
-Computer Center
-University of California, Berkeley
-January, 1978.
-.re
-Ricki Blau and James Joyce
-.I "Edit: a tutorial"
-UNIX User's Supplementary Documents (USD), 14
-University of California, Berkeley, CA. 94720
-April, 1986.
-.re
-.I "Ex/edit Command Summary"
-Computer Center
-University of California, Berkeley
-August, 1978.
-.re
 William Joy
 .I "Ex Reference Manual \- Version 3.7"
-UNIX User's Supplementary Documents (USD), 16
+4.4BSD User's Supplementary Documents (USD), 12
 University of California, Berkeley, CA. 94720
-April, 1986.
+April, 1994.
 .re
 William Joy
 .I "An Introduction to Display Editing with Vi"
-UNIX User's Supplementary Documents (USD), 15
+4.4BSD User's Supplementary Documents (USD), 11
 University of California, Berkeley, CA. 94720
-April, 1986.
+April, 1994.
 .re
 William Joy
 .I "An Introduction to the C shell (Revised)"
-UNIX User's Supplementary Documents (USD), 4
+4.4BSD User's Supplementary Documents (USD), 4
 University of California, Berkeley, CA. 94720
-April, 1986.
+April, 1994.
 .re
 Brian W. Kernighan
 .I "UNIX for Beginners \- Second Edition"
-UNIX User's Supplementary Documents (USD), 1
+4.4BSD User's Supplementary Documents (USD), 1
 University of California, Berkeley, CA. 94720
-April, 1986.
+April, 1994.
 .re
 Brian W. Kernighan
 .I "A Tutorial Introduction to the UNIX Text Editor"
-UNIX User's Supplementary Documents (USD), 12
+4.4BSD User's Supplementary Documents (USD), 9
 University of California, Berkeley, CA. 94720
-April, 1986.
+April, 1994.
 .re
 Dennis M. Ritchie and Ken Thompson
 .I "The UNIX Time Sharing System"
 Reprinted from Communications of the ACM July 1974 in
-UNIX Programmer's Supplementary Documents, Volume 2 (PS2), 1
+4.4BSD Programmer's Supplementary Documents (PSD), 1
 University of California, Berkeley, CA. 94720
-April, 1986.
+April, 1994.
 .SH
 Pascal Language Documents
 .re
@@ -406,18 +387,3 @@ Niklaus Wirth
 .I "Algorithms + Data structures = Programs"
 Prentice-Hall, New York.
 1976, 366 pp.
-.SH
-Berkeley Pascal documents
-.PP
-The following documents are available from the Computer Center Library
-at the University of California, Berkeley.
-.nf
-.re
-William N. Joy
-.I "Berkeley Pascal PX Implementation Notes"
-Version 1.1, April 1979.
-(Vax-11 Version 2.0 By Kirk McKusick, December, 1979)
-.re
-William N. Joy
-.I "Berkeley Pascal PXP Implementation Notes"
-Version 1.1, April 1979.
