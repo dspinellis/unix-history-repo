@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.13 (Berkeley) %G%
+ *	@(#)rtsock.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,6 +78,7 @@ route_usrreq(so, req, m, nam, control)
 	return (error);
 }
 #define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
+#define ADVANCE(x, n) (x += ((n) > 0 ? ROUNDUP(n) : sizeof(long)))
 
 /*ARGSUSED*/
 route_output(m, so)
@@ -117,7 +118,7 @@ route_output(m, so)
 	cp = (caddr_t) (rtm + 1);
 	if (rtm->rtm_addrs & RTA_DST) {
 		dst = (struct sockaddr *)cp;
-		cp += ROUNDUP(dst->sa_len);
+		ADVANCE(cp, dst->sa_len);
 	} else
 		senderr(EINVAL);
 	if ((rtm->rtm_addrs & RTA_GATEWAY) && cp < lim)  {
@@ -126,19 +127,12 @@ route_output(m, so)
 	}
 	if ((rtm->rtm_addrs & RTA_NETMASK) && cp < lim)  {
 		netmask = (struct sockaddr *)cp;
-		if (*cp)
-			cp += ROUNDUP(netmask->sa_len);
-		else
-			cp += sizeof(long);
-
+		ADVANCE(cp, netmask->sa_len);
 	}
 	if ((rtm->rtm_addrs & RTA_GENMASK) && cp < lim)  {
 		struct radix_node *t, *rn_addmask();
 		genmask = (struct sockaddr *)cp;
-		if (*cp)
-			cp += ROUNDUP(netmask->sa_len);
-		else
-			cp += sizeof(long);
+		ADVANCE(cp, genmask->sa_len);
 		t = rn_addmask(genmask, 1, 2);
 		if (t && Bcmp(genmask, t->rn_key, *(u_char *)genmask) == 0)
 			genmask = (struct sockaddr *)(t->rn_key);
@@ -173,21 +167,32 @@ route_output(m, so)
 		rt = rtalloc1(dst, 0);
 		if (rt == 0)
 			senderr(ESRCH);
+		if (((struct radix_node *)rt)->rn_dupedkey) {
+			if (netmask == 0 && rtm->rtm_type != RTM_GET)
+				senderr(ETOOMANYREFS);
+		}
 		switch(rtm->rtm_type) {
-			 struct	sockaddr *outmask;
 
 		case RTM_GET:
-			netmask = rt_mask(rt);
-			len = sizeof(*rtm) + ROUNDUP(rt_key(rt)->sa_len);
-			rtm->rtm_addrs = RTA_DST;
-			if (rt->rt_gateway) {
+			dst = rt_key(rt);
+			len = sizeof(*rtm) + (dst->sa_len > 0 ?
+				ROUNDUP(dst->sa_len) : sizeof(long));
+			rtm->rtm_addrs |= RTA_DST;
+			if (gate = rt->rt_gateway) {
 				len += ROUNDUP(rt->rt_gateway->sa_len);
 				rtm->rtm_addrs |= RTA_GATEWAY;
-			}
-			if (netmask) {
+			} else
+				rtm->rtm_addrs &= ~RTA_GATEWAY;
+			if (netmask = rt_mask(rt)) {
 				len += netmask->sa_len;
 				rtm->rtm_addrs |= RTA_NETMASK;
-			}
+			} else
+				rtm->rtm_addrs &= ~RTA_NETMASK;
+			if (rt->rt_genmask) {
+				len += ROUNDUP(rt->rt_genmask->sa_len);
+				rtm->rtm_addrs |= RTA_GENMASK;
+			} else
+				rtm->rtm_addrs &= ~RTA_GENMASK;
 			if (len > rtm->rtm_msglen) {
 				struct rt_msghdr *new_rtm;
 				R_Malloc(new_rtm, struct rt_msghdr *, len);
@@ -195,24 +200,30 @@ route_output(m, so)
 					senderr(ENOBUFS);
 				Bcopy(rtm, new_rtm, rtm->rtm_msglen);
 				Free(rtm); rtm = new_rtm;
-				gate = (struct sockaddr *)
-				    (ROUNDUP(rt->rt_gateway->sa_len)
-								+ (char *)dst);
-				Bcopy(&rt->rt_gateway, gate,
-						rt->rt_gateway->sa_len);
-				rtm->rtm_flags = rt->rt_flags;
-				if (netmask) {
-				    outmask = (struct sockaddr *)
-				       (ROUNDUP(netmask->sa_len)+(char *)gate);
-				    Bcopy(netmask, outmask, netmask->sa_len);
-				}
+			}
+			rtm->rtm_msglen = len;
+			rtm->rtm_flags = rt->rt_flags;
+			rtm->rtm_rmx = rt->rt_rmx;
+			cp = (caddr_t) (1 + rtm);
+			Bcopy(dst, cp, dst->sa_len);
+			ADVANCE(cp, dst->sa_len);
+			if (gate) {
+			    Bcopy(gate, cp, gate->sa_len);
+			    ADVANCE(cp, gate->sa_len);
+			}
+			if (netmask) {
+			    Bcopy(netmask, cp, netmask->sa_len);
+			    ADVANCE(cp, netmask->sa_len);
+			}
+			if (rt->rt_genmask) {
+			    Bcopy(rt->rt_genmask, cp, rt->rt_genmask->sa_len);
+			    ADVANCE(cp, rt->rt_genmask->sa_len);
 			}
 			break;
 
 		case RTM_CHANGE:
-			if (gate == 0 || netmask != 0)
-				senderr(EINVAL);
-			if (gate->sa_len > (len = rt->rt_gateway->sa_len))
+			if (gate &&
+			    (gate->sa_len > (len = rt->rt_gateway->sa_len)))
 				senderr(EDQUOT);
 			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
 				rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, gate);
@@ -227,8 +238,8 @@ route_output(m, so)
 			} else {
 			    ifa = 0; ifp = 0;
 			}
-			Bcopy(gate, rt->rt_gateway, len);
-			rt->rt_gateway->sa_len = len;
+			if (gate)
+				Bcopy(gate, rt->rt_gateway, len);
 			rt_setmetrics(rtm->rtm_inits,
 				&rtm->rtm_rmx, &rt->rt_rmx);
 			if (ifa == 0)
@@ -290,7 +301,8 @@ cleanup:
 	}
 	if (rp)
 		rp->rcb_proto.sp_family = 0; /* Avoid us */
-	route_proto.sp_protocol = dst->sa_family;
+	if (dst)
+		route_proto.sp_protocol = dst->sa_family;
 	raw_input(m, &route_proto, &route_src, &route_dst);
 	if (rp)
 		rp->rcb_proto.sp_family = PF_ROUTE;
