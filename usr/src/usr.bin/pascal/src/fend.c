@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.10 %G%";
+static char sccsid[] = "@(#)fend.c 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -129,7 +129,8 @@ funcend(fp, bundle, endline)
 	    putprintf( "	movl	4(ap),__argc" , 0 );
 	    putprintf( "	movl	8(ap),__argv" , 0 );
 	    putprintf( "	calls	$0,_program" , 0 );
-	    putprintf( "	calls	$0,_PCEXIT" , 0 );
+	    putprintf( "	pushl	$0" , 0 );
+	    putprintf( "	calls	$1,_PCEXIT" , 0 );
 	    ftnno = fp -> entloc;
 	    putprintf( "	.text" , 0 );
 	    putprintf( "	.align	1" , 0 );
