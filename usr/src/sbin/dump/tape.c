@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -19,8 +19,8 @@ static char sccsid[] = "@(#)tape.c	8.3 (Berkeley) %G%";
 #include <ufs/fs.h>
 #include <ufs/inode.h>
 #else
-#include <ufs/ffs/fs.h>
 #include <ufs/ufs/dinode.h>
+#include <ufs/ffs/fs.h>
 #endif
 
 #include <protocols/dumprestore.h>
