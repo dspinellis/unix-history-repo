@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)whois.1	6.1 (Berkeley) %G%
+.\"	@(#)whois.1	6.2 (Berkeley) %G%
 .\"
-.TH whois 1 ""
+.TH WHOIS 1 ""
 .UC 6
 .SH NAME
 whois \- DARPA Internet user name directory service
@@ -23,7 +23,7 @@ starting with exclamation point forces handle-only.
 Examples:
 .nf
 	Smith			[looks for name or handle SMITH	]
-	!SRI-NIC		[looks for handle SRI-NIC only	]
+	!SRI-NIC			[looks for handle SRI-NIC only	]
 	.Smith, John		[looks for name JOHN SMITH only	]
 .fi
 Adding ``..." to the argument will match anything from that point,
@@ -35,9 +35,5 @@ an asterisk character `*' directly preceding the given argument.
 [CAUTION: If there are a lot of members this will take a long time!]
 You may of course use exclamation point and asterisk, or a period
 and asterisk together.
-.SH FILES
-/usr/doc/local/netinfo/rfc812
 .SH SEE ALSO
-RFC 812:  NICNAME/WHOIS
-.SH DIAGNOSTICS
-.SH BUGS
+RFC 812:  Nicname/Whois
