@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bpf.c	7.1 (Berkeley) %G%
+ *	@(#)bpf.c	7.2 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.23 91/01/30 18:22:13 mccanne Exp $";
@@ -798,7 +798,7 @@ bpfselect(dev, rw, p)
 	d = &bpf_dtab[minor(dev)];
 	
 	s = splimp();
-	if (d->bd_slen != 0 || d->bd_hbuf && d->bd_hlen != 0) {
+	if (d->bd_hlen != 0 || (d->bd_immediate && d->bd_slen != 0)) {
 		/*
 		 * There is data waiting.
 		 */
@@ -841,10 +841,6 @@ bpf_tap(arg, pkt, pktlen)
 	bp = (struct bpf_if *)arg;
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
-		if (d->bd_filter == 0) {
-			catchpacket(d, pkt, pktlen, (u_int)-1, bcopy);
-			continue;
-		}
 		slen = bpf_filter(d->bd_filter, pkt, pktlen, pktlen);
 		if (slen != 0)
 			catchpacket(d, pkt, pktlen, slen, bcopy);
@@ -876,11 +872,6 @@ bpf_mcopy(src, dst, len)
 }
 
 /*
- * Length of ethernet and TCP/IP header with no IP options.
- */
-#define BPF_MIN_SNAPLEN 50
-
-/*
  * bpf_mtap - incoming linkage from device drivers, when packet
  *   is in an mbuf chain
  */
@@ -895,18 +886,11 @@ bpf_mtap(arg, m)
 	struct mbuf *m0;
 
 	pktlen = 0;
-	m0 = m;
-	while (m0) {
+	for (m0 = m; m0 != m; m0 = m0->m_next)
 		pktlen += m0->m_len;
-		m0 = m0->m_next;
-	}
+
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
-		if (d->bd_filter == 0) {
-			catchpacket(d, (u_char *)m, pktlen, (u_int)-1,
-				    bpf_mcopy);
-			continue;
-		}
 		slen = bpf_filter(d->bd_filter, (u_char *)m, pktlen, 0);
 		if (slen != 0)
 			catchpacket(d, (u_char *)m, pktlen, slen, bpf_mcopy);
