@@ -2,335 +2,198 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ms.7	4.1 (Berkeley) %G%
+.\"	@(#)ms.7	5.1 (Berkeley) %G%
 .\"
-.hc %
-.TH MS 7 
-.AT 3
+.TH MS 7 "18 July 1983"
+.UC 4
+.ds ]W UCB Computer Center
 .SH NAME
-ms \- macros for formatting manuscripts
+ms \- text formatting macros
 .SH SYNOPSIS
-.B "nroff \-ms"
-[ options ]
-file ... 
+\fBnroff  \-ms\fP  [ options ]  file  ...
 .br
-.B "troff \-ms"
-[ options ]
-file ... 
+\fBtroff  \-ms\fP  [ options ]  file  ...
 .SH DESCRIPTION
-This package of 
-.I nroff
-and
-.I troff
-macro definitions provides a canned formatting
-.li
-facility for tech%nical papers in various formats.
-When producing 2-column output on a terminal, filter
-the output through
-.IR  col (1).
-.PP
-The macro requests are defined below.
-Many
-.I nroff
-and
-.I troff
-requests are unsafe in conjunction with
-this package, however these requests may be used with
-impunity after the first .PP:
-.IP
-.ta \w'.sp n 'u
-.li
-.bp	begin new page
+This package of \fInroff\fP\| and \fItroff\fP\|
+macro definitions provides a formatting facility
+for various styles of articles, theses, and books.
+When producing 2-column output on a terminal or lineprinter,
+or when reverse line motions are needed,
+filter the output through \fIcol\fP\|(1).
+All external \-ms macros are defined below.
+Many \fInroff\fP\| and \fItroff\fP\| requests
+are unsafe in conjunction with this package.
+However, the first four requests below
+may be used with impunity after initialization,
+and the last two may be used even before initialization:
+.sp .2
+.ta 5n 12n
 .nf
-.li
-.br	break output line here
-.li
-.sp n	insert n spacing lines
-.li
-.ls n	(line spacing) n=1 single, n=2 double space
-.li
-.na	no alignment of right margin
+	.bp	begin new page
+	.br	break output line
+	.sp n	insert n spacing lines
+	.ce n	center next n lines
+	.ls n	line spacing: n=1 single, n=2 double space
+	.na	no alignment of right margin
 .fi
-.PP
-Output of the
-.I eqn,
-.I neqn,
-.I refer,
-and
-.IR  tbl (1)
-preprocessors
-for equations and tables is acceptable as input.
+.sp .2
+Font and point size changes with \ef and \es are also allowed;
+for example, ``\efIword\efR'' will italicize \fIword.\fP
+Output of the \fItbl, eqn,\fP and \fIrefer\fP\|(1) preprocessors
+for equations, tables, and references is acceptable as input.
 .SH FILES
-/usr/lib/tmac/tmac.s
+/usr/lib/tmac/tmac.x
+.br
+/usr/lib/ms/x.???
 .SH "SEE ALSO"
-eqn(1), troff(1), refer(1), tbl(1)
-.tr &.
-.SH REQUESTS 
-.ta \w'..ND \fIdate\fR 'u +\w'Initial 'u +\w'Cause 'u
-.br
-.di x
-			\ka
-.br
-.di
-.in \nau
-.ti0
-Request	Initial	Cause	Explanation
-.ti0
-	Value	Break
-.br
-.in \nau
-.ti0
-.li
-.1C	yes	yes	One column format on a new page.
-.ti0
-.li
-.2C	no	yes	Two column format.
-.ti0
-.li
-.AB	no	yes	Begin abstract.
-.ti0
-.li
-.AE	-	yes	End abstract.
-.ti0
-.li
-.AI	no	yes	Author's institution follows.
-Suppressed in TM.
-.ti0
-.li
-.AT	no	yes	Print `Attached' and turn off line filling.
-.ti0
-.li
-.AU \fIx y\fR	no	yes	Author's name follows.
-.IR x " is location and " "y\fR is"
-extension, ignored except in TM.
-.ti0
-.li
-.B \fIx\fR	no	no	Print \fIx\fR in boldface; if no argument switch to boldface.
-.ti 0
-.li
-.B1	no	yes	Begin text to be enclosed in a box.
-.ti0
-.li
-.B2	no	yes	End text to be boxed & print it.
-.ti0
-.li
-.BT	date	no	Bottom title, automatically invoked at
-foot of page.
-May be redefined.
-.ti0
-.li
-.BX \fIx\fR	no	no	Print \fIx\fR in a box.
-.ti0
-.li
-.CS \fIx...\fR	-	yes	Cover sheet info if
-TM format, suppressed otherwise.
-Arguments are number of text pages,
-other pages, total pages, figures, tables, references.
-.ti0
-.li
-.CT	no	yes	Print `Copies to' and enter no-fill mode.
-.ti0
-.li
-.DA \fIx\fR	nroff	no	`Date line' at bottom of page
-is
-.IR x .
-Default is today.
-.ti0
-.li
-.DE	-	yes	End displayed text.
-Implies .KE.
-.ti0
-.li
-.DS \fIx\fR	no	yes	Start of displayed text,
-to appear verbatim line-by-line.
-.IR x "=I for indented display (default),"
-.IR x "=L for left-justified on the page,"
-.IR x "=C for centered,"
-.IR x "=B for make left-justified block, then center whole block."
-Implies .KS.
-.ti0
-.li
-.EG	no	-	Print document in BTL format for `Engineer's Notes.'  Must be first.
-.ti0
-.li
-.EN	-	yes	Space after equation
-produced by
-.I eqn
-or
-.IR neqn .
-.ti0
-.li
-.EQ \fIx y\fR	-	yes	Precede equation; break out and
-add space.
-Equation number is
-.IR y .
-The optional argument \fIx\fR
-may be
-.I I
-to indent equation (default),
-.I L
-to left-adjust the equation, or
-.I C
-to center the equation.
-.ti0
-.li
-.FE	-	yes	End footnote.
-.ti0
-.li
-.FS	no	no	Start footnote.
-The note will be moved to the bottom of the page.
-.ti0
-.li
-.HO	-	no	`Bell Laboratories, Holmdel,
-New Jersey 07733'.
-.ti0
-.li
-.I \fIx\fR	no	no	Italicize \fIx\fR;
-if \fIx\fR missing, italic text follows.
-.ti0
-.li
-.IH	no	no	`Bell Laboratories, Naperville, Illinois 60540'
-.ti0
-.li
-.IM	no	no	Print document in BTL format for an internal memorandum.  Must be first.
-.ti0
-.li
-.IP \fIx y\fR	no	yes	Start indented paragraph,
-with hanging tag
-.IR x .
-Indentation is
-.IR y ""
-ens (default 5).
-.ti0
-.li
-.KE	-	yes	End keep.
-Put kept text on next page if not enough room.
-.ti0
-.li
-.KF	no	yes	Start floating keep.
-If the kept text must be moved to the next page,
-float later text back to this page.
-.ti0
-.li
-.KS	no	yes	Start keeping following text.
-.ti0
-.li
-.LG	no	no	Make letters larger.
-.ti0
-.li
-.LP	yes	yes	Start left-blocked paragraph.
-.ti0
-.li
-.MF	-	-	Print document in BTL format for `Memorandum for File.'  Must be first.
-.ti0
-.li
-.MH	-	no	`Bell Laboratories, Murray Hill,
-New Jersey 07974'.
-.ti0
-.li
-.MR	-	-	Print document in BTL format for `Memorandum for Record.'  Must be first.
-.ti0
-.li
-.ND \fIdate\fR	troff	no	Use date supplied (if any) only in
-special BTL format positions; omit from page footer.
-.ti0
-.li
-.NH \fIn\fR	-	yes	Same as .SH, with section
-number supplied automatically.
-Numbers are multilevel, like 1.2.3,
-where
-.IR n ""
-tells what level is wanted (default is 1).
-.ti0
-.li
-.NL	yes	no	Make letters normal size.
-.ti0
-.li
-.OK	-	yes	`Other keywords' for TM cover
-sheet follow.
-.ti0
-.li
-.PP	no	yes	Begin paragraph.
-First line indented.
-.ti0
-.li
-.PT	pg #	-	Page title, automatically invoked at
-top of page.
-May be redefined.
-.ti0
-.li
-.PY	-	no	`Bell Laboratories, Piscataway, New Jersey 08854'
-.ti0
-.li
-.QE	-	yes	End quoted (indented and shorter) material.
-.ti0
-.li
-.QP	-	yes	Begin single paragraph which is indented and shorter.
-.ti0
-.li
-.QS	-	yes	Begin quoted (indented and shorter) material.
-.ti0
-.li
-.R	yes	no	Roman text follows.
-.ti0
-.li
-.RE	-	yes	End relative indent level.
-.ti0
-.li
-.RP	no	-	Cover sheet and first page for released
-paper.
-Must precede other requests.
-.ti0
-.li
-.RS	-	yes	Start level of relative indentation.
-Following .IP's are measured from current indentation.
-.ti0
-.li
-.SG \fIx\fR	no	yes	Insert signature(s) of author(s),
-ignored except in TM.
-.IR x " is the reference line (initials of author and typist)."
-.ti0
-.li
-.SH	-	yes	Section head follows,
-font automatically bold.
-.ti0
-.li
-.SM	no	no	Make letters smaller.
-.ti0
-.li
-.TA \fIx\fR...	5...	no	Set tabs in ens.
-Default is 5 10 15 ...
-.ti0
-.li
-.TE	-	yes	End table.
-.ti0
-.li
-.TH	-	yes	End heading section of table.
-.ti0
-.li
-.TL	no	yes	Title follows.
-.ti0
-.li
-.TM \fIx\fR...	no	-	Print document in BTL technical memorandum format.
-Arguments are TM number, (quoted list of) case number(s), and file number.
-Must precede other requests.
-.ti0
-.li
-.TR \fIx\fR	-	-	Print in BTL technical report format; report number is \fIx\fR.  Must be first.
-.ti0
-.li
-.TS \fIx\fR	-	yes	Begin table; if \fIx\fR is
-.I H
-table has repeated heading.
-.ti0
-.li
-.UL \fIx\fR	-	no	Underline argument (even in troff).
-.ti0
-.li
-.UX	-	no	`UNIX'; first time used, add footnote `UNIX is a trademark of
-Bell Laboratories.'
-.ti0
-.li
-.WH	-	no	`Bell Laboratories, Whippany,
-New Jersey 07981'.
-.tr &&
+eqn(1), refer(1), tbl(1), troff(1)
+.SH REQUESTS
+.if n .in 0
+.ds x \fIx\fP\|
+.ds y \fIy\fP\|
+.ds z \fI y\fP
+.ds Y \fIx y\fP
+.tr _.
+.ta \w'MacroNam'u +\w'InitialVal'u +\w'Break? 'u
+.sp .3
+.nf
+Macro	Initial	Break?	\0 Explanation
+Name	Value	Reset?
+.sp .3
+_AB \*x	\-	y	begin abstract; if \*x=no don't label abstract
+_AE	\-	y	end abstract
+_AI	\-	y	author's institution
+_AM	\-	n	better accent mark definitions
+_AU	\-	y	author's name
+_B \*x	\-	n	embolden \*x; if no \*x, switch to boldface
+_B1	\-	y	begin text to be enclosed in a box
+_B2	\-	y	end boxed text and print it
+_BT	date	n	bottom title, printed at foot of page
+_BX \*x	\-	n	print word \*x in a box
+_CM	if t	n	cut mark between pages
+_CT	\-	y,y	chapter title: page number moved to CF (TM only)
+_DA \*x	if n	n	force date \*x at bottom of page; today if no \*x
+_DE	\-	y	end display (unfilled text) of any kind
+_DS \*Y	I	y	begin display with keep; \*x=I,L,C,B; \*y=indent 
+_ID\*z	8n,.5i	y	indented display with no keep; \*y=indent
+_LD	\-	y	left display with no keep
+_CD	\-	y	centered display with no keep
+_BD	\-	y	block display; center entire block
+_EF \*x	\-	n	even page footer \*x (3 part as for .tl)
+_EH \*x	\-	n	even page header \*x (3 part as for .tl)
+_EN	\-	y	end displayed equation produced by \fIeqn\fP
+_EQ \*Y	\-	y	break out equation; \*x=L,I,C; \*y=equation number
+_FE	\-	n	end footnote to be placed at bottom of page
+_FP	\-	n	numbered footnote paragraph; may be redefined
+_FS \*x	\-	n	start footnote; \*x is optional footnote label
+_HD	undef	n	optional page header below header margin
+_I \*x	\-	n	italicize \*x; if no \*x, switch to italics
+_IP \*Y	\-	y,y	indented paragraph, with hanging tag \*x; \*y=indent
+_IX \*Y	\-	y	index words \*x \*y and so on (up to 5 levels)
+_KE	\-	n	end keep of any kind
+_KF	\-	n	begin floating keep; text fills remainder of page
+_KS	\-	y	begin keep; unit kept together on a single page
+_LG	\-	n	larger; increase point size by 2
+_LP	\-	y,y	left (block) paragraph.
+_MC \*x	\-	y,y	multiple columns; \*x=column width
+_ND \*x	if t	n	no date in page footer; \*x is date on cover
+_NH \*Y	\-	y,y	numbered header; \*x=level, \*x=0 resets, \*x=S sets to \*y
+_NL	10p	n	set point size back to normal
+_OF \*x	\-	n	odd page footer \*x (3 part as for .tl)
+_OH \*x	\-	n	odd page header \*x (3 part as for .tl)
+_P1	if TM	n	print header on 1st page
+_PP	\-	y,y	paragraph with first line indented
+_PT	- % -	n	page title, printed at head of page
+_PX \*x	\-	y	print index (table of contents); \*x=no suppresses title
+_QP	\-	y,y	quote paragraph (indented and shorter)
+_R	on	n	return to Roman font
+_RE	5n	y,y	retreat: end level of relative indentation
+_RP \*x	\-	n	released paper format; \*x=no stops title on 1st page
+_RS	5n	y,y	right shift: start level of relative indentation
+_SH	\-	y,y	section header, in boldface
+_SM	\-	n	smaller; decrease point size by 2
+_TA	8n,5n	n	set tabs to 8n 16n ... (nroff) 5n 10n ... (troff)
+_TC \*x	\-	y	print table of contents at end; \*x=no suppresses title
+_TE	\-	y	end of table processed by \fItbl\fP
+_TH	\-	y	end multi-page header of table
+_TL	\-	y	title in boldface and two points larger
+_TM	off	n	UC Berkeley thesis mode
+_TS \*x	\-	y,y	begin table; if \*x=H table has multi-page header
+_UL \*x	\-	n	underline \*x, even in \fItroff\fP
+_UX \*x	\-	n	UNIX; trademark message first time; \*x appended
+_XA \*Y	\-	y	another index entry; \*x=page or no for none; \*y=indent
+_XE	\-	y	end index entry (or series of .IX entries)
+_XP	\-	y,y	paragraph with first line exdented, others indented
+_XS \*Y	\-	y	begin index entry; \*x=page or no for none; \*y=indent
+_1C	on	y,y	one column format, on a new page
+_2C	\-	y,y	begin two column format
+_]-	\-	n	beginning of \fIrefer\fP\| reference
+_[0	\-	n	end of unclassifiable type of reference
+_[N	\-	n	N= 1:journal-article, 2:book, 3:book-article, 4:report
+.fi
+.if t .bp
+.DT
+.SH REGISTERS
+Formatting distances can be controlled in \-ms
+by means of built-in number registers.
+For example, this sets the line length to 6.5 inches:
+.sp .3
+	.nr  LL  6.5i
+.sp .3
+Here is a table of number registers and their default values:
+.sp .3
+.nf
+.ta .5i +\w'Name\0'u +\w'paragraph distance 'u +\w'Takes Effect 'u
+	Name	Register Controls	Takes Effect	Default
+.sp .3
+	PS	point size      	paragraph	10
+	VS	vertical spacing	paragraph	12
+	LL	line length     	paragraph	6i
+	LT	title length    	next page	same as LL
+	FL	footnote length 	next .FS	5.5i
+	PD	paragraph distance	paragraph	1v (if n), .3v (if t)
+	DD	display distance	displays	1v (if n), .5v (if t)
+	PI	paragraph indent	paragraph	5n
+	QI	quote indent    	next .QP	5n
+	FI	footnote indent 	next .FS	2n
+	PO	page offset     	next page	0 (if n), \(ap1i (if t)
+	HM	header margin   	next page	1i
+	FM	footer margin   	next page	1i
+	FF	footnote format 	next .FS	0 (1, 2, 3 available)
+.fi
+.sp .3
+When resetting these values,
+make sure to specify the appropriate units.
+Setting the line length to 7, for example,
+will result in output with one character per line.
+Setting FF to 1 suppresses footnote superscripting;
+setting it to 2 also suppresses indentation of the first line;
+and setting it to 3 produces an .IP-like footnote paragraph.
+.PP
+Here is a list of string registers available in \-ms;
+they may be used anywhere in the text:
+.sp .3
+.nf
+.ta .5i 1.1i
+	Name	String's Function
+.sp .3
+	\e*Q	quote (" in \fInroff,\fP\| `` in \fItroff\fP )
+	\e*U 	unquote (" in \fInroff,\fP\| '' in \fItroff\fP )
+	\e*\-	dash (-- in \fInroff,\fP \(em in \fItroff\fP )
+	\e*(MO	month (month of the year)
+	\e*(DY	day (current date)
+	\e**	automatically numbered footnote
+	\e*\'	acute accent (before letter)
+	\e*\`	grave accent (before letter)
+	\e*\d^	\ucircumflex (before letter)
+	\e*,	cedilla (before letter)
+	\e*:	umlaut (before letter)
+	\e*\d~	\utilde (before letter)
+.fi
+.sp .3
+When using the extended accent mark definitions available with .AM,
+these strings should come after, rather than before,
+the letter to be accented.
+.SH BUGS
+Floating keeps and regular keeps are diverted to the same space,
+so they cannot be mixed together with predictable results.
