@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -371,7 +371,7 @@ rebuildaliases(map, automatic)
 	}
 
 	/* see if someone else is rebuilding the alias file */
-	if (!lockfile(fileno(af), map->map_file, LOCK_EX|LOCK_NB))
+	if (!lockfile(fileno(af), map->map_file, NULL, LOCK_EX|LOCK_NB))
 	{
 		/* yes, they are -- wait until done */
 		message("Alias file %s is already being rebuilt",
@@ -379,7 +379,7 @@ rebuildaliases(map, automatic)
 		if (OpMode != MD_INITALIAS)
 		{
 			/* wait for other rebuild to complete */
-			(void) lockfile(fileno(af), map->map_file,
+			(void) lockfile(fileno(af), map->map_file, NULL,
 					LOCK_EX);
 		}
 		(void) fclose(af);

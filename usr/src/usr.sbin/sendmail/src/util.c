@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -603,7 +603,7 @@ dfopen(filename, omode, cmode)
 			locktype = LOCK_EX;
 		else
 			locktype = LOCK_SH;
-		(void) lockfile(fd, filename, locktype);
+		(void) lockfile(fd, filename, NULL, locktype);
 		errno = 0;
 	}
 	if (fd < 0)

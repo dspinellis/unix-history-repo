@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.16 (Berkeley) %G%
+ *	@(#)sendmail.h	8.17 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.16		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.17		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -904,7 +904,7 @@ extern ADDRESS		*getctladdr __P((ADDRESS *));
 extern char		*anynet_ntoa __P((SOCKADDR *));
 extern char		*remotename __P((char *, MAILER *, int, int *, ENVELOPE *));
 extern bool		shouldqueue __P((long, time_t));
-extern bool		lockfile __P((int, char *, int));
+extern bool		lockfile __P((int, char *, char *, int));
 extern char		*hostsignature __P((MAILER *, char *, ENVELOPE *));
 extern void		openxscript __P((ENVELOPE *));
 extern void		closexscript __P((ENVELOPE *));

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1494,6 +1494,7 @@ transienterror(err)
 **	Parameters:
 **		fd -- the file descriptor of the file.
 **		filename -- the file name (for error messages).
+**		ext -- the filename extension.
 **		type -- type of the lock.  Bits can be:
 **			LOCK_EX -- exclusive lock.
 **			LOCK_NB -- non-blocking.
@@ -1504,14 +1505,18 @@ transienterror(err)
 */
 
 bool
-lockfile(fd, filename, type)
+lockfile(fd, filename, ext, type)
 	int fd;
 	char *filename;
+	char *ext;
 	int type;
 {
 # ifndef HASFLOCK
 	int action;
 	struct flock lfd;
+
+	if (ext == NULL)
+		ext = "";
 		
 	bzero(&lfd, sizeof lfd);
 	if (bitset(LOCK_UN, type))
@@ -1527,8 +1532,8 @@ lockfile(fd, filename, type)
 		action = F_SETLKW;
 
 	if (tTd(55, 60))
-		printf("lockfile(%s, action=%d, type=%d): ",
-			filename, action, lfd.l_type);
+		printf("lockfile(%s%s, action=%d, type=%d): ",
+			filename, ext, action, lfd.l_type);
 
 	if (fcntl(fd, action, &lfd) >= 0)
 	{
@@ -1557,10 +1562,13 @@ lockfile(fd, filename, type)
 	}
 
 	if (!bitset(LOCK_NB, type) || (errno != EACCES && errno != EAGAIN))
-		syserr("cannot lockf(%s, %o)", filename, type);
+		syserr("cannot lockf(%s%s, %o)", filename, ext, type);
 # else
+	if (ext == NULL)
+		ext = "";
+
 	if (tTd(55, 60))
-		printf("lockfile(%s, type=%o): ", filename, type);
+		printf("lockfile(%s%s, type=%o): ", filename, ext, type);
 
 	if (flock(fd, type) >= 0)
 	{
@@ -1573,7 +1581,7 @@ lockfile(fd, filename, type)
 		printf("(%s) ", errstring(errno));
 
 	if (!bitset(LOCK_NB, type) || errno != EWOULDBLOCK)
-		syserr("cannot flock(%s, %o)", filename, type);
+		syserr("cannot flock(%s%s, %o)", filename, ext, type);
 # endif
 	if (tTd(55, 60))
 		printf("FAIL\n");
