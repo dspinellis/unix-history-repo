@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	6.6	85/05/27	*/
+/*	raw_usrreq.c	6.6	85/05/30	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -112,29 +112,26 @@ next:
 			continue;
 		if (last) {
 			struct mbuf *n;
-			if ((n = m_copy(m->m_next, 0, (int)M_COPYALL)) == 0)
-				goto nospace;
-			if (sbappendaddr(&last->so_rcv, &rh->raw_src,
-			    n, (struct mbuf *)0) == 0) {
-				/* should notify about lost packet */
-				m_freem(n);
-				goto nospace;
+			if (n = m_copy(m->m_next, 0, (int)M_COPYALL)) {
+				if (sbappendaddr(&last->so_rcv, &rh->raw_src,
+				    n, (struct mbuf *)0) == 0)
+					/* should notify about lost packet */
+					m_freem(n);
+				else
+					sorwakeup(last);
 			}
-			sorwakeup(last);
 		}
-nospace:
 		last = rp->rcb_socket;
 	}
 	if (last) {
-		m = m_free(m);		/* header */
 		if (sbappendaddr(&last->so_rcv, &rh->raw_src,
-		    m, (struct mbuf *)0) == 0)
-			goto drop;
-		sorwakeup(last);
-		goto next;
-	}
-drop:
-	m_freem(m);
+		    m->m_next, (struct mbuf *)0) == 0)
+			m_freem(m->m_next);
+		else
+			sorwakeup(last);
+		(void) m_free(m);		/* header */
+	} else
+		m_freem(m);
 	goto next;
 }
 
