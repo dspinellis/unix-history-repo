@@ -1,51 +1,10 @@
-#
-# Copyright (c) 1987 The Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	7.10 (Berkeley) %G%
-#
-CFLAGS=	-O -DMFS
-LIBC=	/lib/libc.a
+#	@(#)Makefile	7.11 (Berkeley) %G%
+
+PROG=	newfs
+CFLAGS+=-DMFS
 SRCS=	newfs.c mkfs.c
-OBJS=	newfs.o mkfs.o
-MAN=	newfs.0
+MAN8=	newfs.0
+LINKS=	${BINDIR}/newfs ${BINDIR}/mount_mfs
+MLINKS=	mfs.8 newfs.8
 
-all: newfs
-
-newfs: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} -o $@ ${OBJS}
-
-clean:
-	rm -f ${OBJS} core newfs
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 newfs ${DESTDIR}/sbin/newfs
-	rm -f ${DESTDIR}/sbin/mount_mfs
-	ln ${DESTDIR}/sbin/newfs ${DESTDIR}/sbin/mount_mfs
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-	rm -f ${DESTDIR}/usr/man/cat8/mfs.0
-	ln ${DESTDIR}/usr/man/cat8/${MAN} ${DESTDIR}/usr/man/cat8/mfs.0
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>

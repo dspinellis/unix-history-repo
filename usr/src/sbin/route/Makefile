@@ -1,48 +1,20 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation, advertising
-# materials, and other materials related to such redistribution and
-# use acknowledge that the software was developed by the University
-# of California, Berkeley.  The name of the University may not be
-# used to endorse or promote products derived from this software
-# without specific prior written permission.  THIS SOFTWARE IS PROVIDED
-# ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# @(#)Makefile	5.2 (Berkeley) %G%
-#
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
-CFLAGS=	-O
-LIBC=	/lib/libc.a
-SRCS=	route.c
-OBJS=
-MAN=	route.0
+PROG=	route
+MAN8=	route.0
+CFLAGS+=-I.
+CLEANFILES+=keywords.h
 
-all: route
+all route depend lint tags: keywords.h
 
-route: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+keywords.h: keywords
+	sed -e '/^#/d' -e '/^$$/d' ${.CURDIR}/keywords > _keywords.tmp
+	tr a-z A-Z < _keywords.tmp | paste _keywords.tmp /dev/stdin | \
+	    awk '{ \
+		if (NF > 1) \
+			printf "#define\tK_%s\t%d\n\t{\"%s\", K_%s},\n", \
+			    $$2, NR, $$1, $$2 }' \
+	    > ${.TARGET}
+	rm -f _keywords.tmp
 
-clean:
-	rm -f ${OBJS} core route
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 route ${DESTDIR}/sbin
-	install -c -o bin -g bin -m 444 route.0 ${DESTDIR}/usr/man/cat8
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>
