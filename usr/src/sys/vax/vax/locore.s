@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.29 (Berkeley) %G%
+ *	@(#)locore.s	7.30 (Berkeley) %G%
  */
 
 #include "vax/include/psl.h"
@@ -1183,6 +1183,7 @@ sigcode:
  * If the exec fails, process 1 exits.
  */
 _icode:
+	pushl	$0
 	pushab	b`argv-l0(pc)
 l0:	pushab	b`init-l1(pc)
 l1:	pushl	$2
@@ -1440,7 +1441,12 @@ JSBENTRY(Copyin, R1|R3|R5)
 	cmpl	r5,$(NBPG*CLSIZE)	# probing one page or less ?
 	bgtru	1f			# no
 	prober	$3,r5,(r1)		# bytes accessible ?
-	beql	ersb			# no
+	bneq	4f			# yes
+	tstl	r5			# if zero bytes, lie.
+	bneq	ersb
+	clrl	r0
+	rsb
+4:
 	movc3	r5,(r1),(r3)
 /*	clrl	r0			# redundant */
 	rsb
@@ -1489,7 +1495,12 @@ JSBENTRY(Copyout, R1|R3|R5)
 	cmpl	r5,$(NBPG*CLSIZE)	# moving one page or less ?
 	bgtru	1f			# no
 	probew	$3,r5,(r3)		# bytes writeable?
-	beql	ersb			# no
+	bneq	4f			# yes
+	tstl	r5			# if zero bytes, it's ok anyway.
+	bneq	ersb			# otherwise indicate error
+	clrl	r0
+	rsb
+4:
 	movc3	r5,(r1),(r3)
 /*	clrl	r0			# redundant */
 	rsb
