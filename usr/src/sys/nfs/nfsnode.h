@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.14 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -34,7 +34,7 @@ struct nfsnode {
 	pid_t	n_lockwaiter;	/* most recent waiter for nfsnode lock */
 	u_long	n_direofoffset;	/* Dir. EOF offset cache */
 	struct	sillyrename n_silly;	/* allocate here since we have room */
-	long	n_spare[9];	/* round up to size 256 */
+	long	n_spare[7];	/* round up to size 256 */
 };
 
 #define	n_forw		n_chain[0]
