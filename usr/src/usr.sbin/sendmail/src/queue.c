@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.36 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.37 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.36 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.37 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -22,12 +22,11 @@ static char sccsid[] = "@(#)queue.c	5.36 (Berkeley) %G% (without queueing)";
 # include <signal.h>
 # include <errno.h>
 # include <pwd.h>
+# ifdef LOCKF
+# include <fcntl.h>
+# endif
 
 # ifdef QUEUE
-
-# ifdef LOCKF
-# include <unistd.h>
-# endif
 
 /*
 **  Work queue.
@@ -94,6 +93,10 @@ queueup(e, queueall, announce)
 		/* get a locked tf file */
 		for (i = 100; --i >= 0; )
 		{
+# ifdef LOCKF
+			struct flock lfd;
+# endif
+
 			fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
 			if (fd < 0)
 			{
@@ -103,7 +106,9 @@ queueup(e, queueall, announce)
 				return;
 			}
 # ifdef LOCKF
-			if (lockf(fd, F_TLOCK, 0) >= 0)
+			lfd.l_type = F_WRLCK;
+			lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+			if (fcntl(fd, F_SETLK, &lfd) >= 0)
 				break;
 			if (errno != EACCES && errno != EAGAIN)
 				syserr("cannot lockf(%s)", tf);
@@ -720,12 +725,6 @@ dowork(w)
 **		The queue file is returned locked.
 */
 
-# ifdef LOCKF
-# define RDLK_MODE	"r+"
-# else
-# define RDLK_MODE	"r"
-# endif
-
 bool
 readqf(e)
 	register ENVELOPE *e;
@@ -737,6 +736,9 @@ readqf(e)
 	extern long atol();
 	int gotctluser = 0;
 	int fd;
+# ifdef LOCKF
+	struct flock lfd;
+# endif
 	extern ADDRESS *sendto();
 
 	/*
@@ -744,7 +746,7 @@ readqf(e)
 	*/
 
 	qf = queuename(e, 'q');
-	qfp = fopen(qf, RDLK_MODE);
+	qfp = fopen(qf, "r+");
 	if (qfp == NULL)
 	{
 		if (errno != ENOENT)
@@ -753,7 +755,9 @@ readqf(e)
 	}
 
 # ifdef LOCKF
-	if (lockf(fileno(qfp), F_TLOCK, 0) < 0)
+	lfd.l_type = F_WRLCK;
+	lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+	if (fcntl(fileno(qfp), F_SETLK, &lfd) < 0)
 # else
 	if (flock(fileno(qfp), LOCK_EX|LOCK_NB) < 0)
 # endif
@@ -919,6 +923,9 @@ printqueue()
 		auto time_t submittime = 0;
 		long dfsize = -1;
 		char message[MAXLINE];
+# ifdef LOCKF
+		struct flock lfd;
+# endif
 		extern bool shouldqueue();
 
 		f = fopen(w->w_name, "r");
@@ -929,7 +936,9 @@ printqueue()
 		}
 		printf("%7s", w->w_name + 2);
 # ifdef LOCKF
-		if (lockf(fileno(f), F_TEST, 0) < 0)
+		lfd.l_type = F_RDLCK;
+		lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+		if (fcntl(fileno(f), F_GETLK, &lfd) < 0 || lfd.l_type != F_UNLCK)
 # else
 		if (flock(fileno(f), LOCK_SH|LOCK_NB) < 0)
 # endif
@@ -1052,6 +1061,9 @@ queuename(e, type)
 		while (c1 < '~' || c2 < 'Z')
 		{
 			int i;
+# ifdef LOCKF
+			struct flock lfd;
+# endif
 
 			if (c2 >= 'Z')
 			{
@@ -1073,7 +1085,9 @@ queuename(e, type)
 				exit(EX_UNAVAILABLE);
 			}
 # ifdef LOCKF
-			if (lockf(i, F_TLOCK, 0) >= 0)
+			lfd.l_type = F_WRLCK;
+			lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+			if (fcntl(i, F_SETLK, &lfd) >= 0)
 # else
 			if (flock(i, LOCK_EX|LOCK_NB) >= 0)
 # endif
