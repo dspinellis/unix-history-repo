@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.21 (Berkeley) %G%
+ *	@(#)ioctl.h	6.22 (Berkeley) %G%
  */
 
 /*
@@ -222,6 +222,7 @@ struct ttysize {
 #define	TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
 #define	TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
 #define	TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
+#define		UIOCCMD(n)	_IO(u, n)		/* usr cntl op "n" */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
