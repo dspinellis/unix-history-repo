@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.4 (Berkeley) %G%
+ *	@(#)machdep.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1440,14 +1440,12 @@ findparerror()
 {
 	static label_t parcatch;
 	static int looking = 0;
-	volatile struct pte opte;
 	volatile int pg, o, s;
 	register volatile int *ip;
 	register int i;
 	int found;
 
 #ifdef lint
-	ip = &found;
 	i = o = pg = 0; if (i) return(0);
 #endif
 	/*
@@ -1479,8 +1477,9 @@ findparerror()
 	for (pg = btoc(lowram); pg < btoc(lowram)+physmem; pg++) {
 		pmap_enter(kernel_pmap, (vm_offset_t)vmmap, ctob(pg),
 		    VM_PROT_READ, TRUE);
+		ip = (int *)vmmap;
 		for (o = 0; o < NBPG; o += sizeof(int))
-			i = *(int *)(&vmmap[o]);
+			i = *ip++;
 	}
 	/*
 	 * Getting here implies no fault was found.  Should never happen.
@@ -1489,8 +1488,7 @@ findparerror()
 	found = 0;
 done:
 	looking = 0;
-	pmap_remove(kernel_pmap, (vm_offset_t)vmmap,
-	    (vm_offset_t)&vmmap[NBPG]);
+	pmap_remove(kernel_pmap, (vm_offset_t)vmmap, (vm_offset_t)&vmmap[NBPG]);
 	ecacheon();
 	splx(s);
 	return(found);
