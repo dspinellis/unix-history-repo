@@ -1,0 +1,52 @@
+Mfed	fed.c	?^main(argc,argv)$?
+abs	fed.h	?^#define abs(x)		((x) <  0  ? (-(x)) : (x))$?
+artificial	subr.c	?^artificial()$?
+blowupglyph	subr.c	?^blowupglyph(oldps, newps)$?
+boldglyph	subr.c	?^boldglyph()$?
+bufmod	subr.c	?^bufmod()$?
+cch	subr.c	?^cch()$?
+clearfont	io.c	?^clearfont()$?
+cmdloop	fed.c	?^cmdloop()$?
+confirm	subr.c	?^confirm()$?
+copymove	subr.c	?^copymove(cmd)$?
+delchar	subr.c	?^delchar()$?
+drawline	subr.c	?^drawline(from_r, from_c, to_r, to_c)$?
+drawpoint	subr.c	?^drawpoint(r, c)$?
+editfont	io.c	?^editfont(fname)$?
+error	subr.c	?^error(msg)$?
+esccmd	fed.c	?^esccmd()$?
+fileiocmd	io.c	?^fileiocmd(cmd)$?
+fillin	subr.c	?^fillin(x, y)$?
+findbits	subr.c	?^findbits(c, nr, nc, horoff, vertoff, rcenter, ccen?
+getglyph	io.c	?^getglyph(c)$?
+inchar	subr.c	?^inchar()$?
+initialize	subr.c	?^initialize()$?
+invert	subr.c	?^invert()$?
+italglyph	subr.c	?^italglyph()$?
+max	fed.h	?^#define max(x,y)	((x) > (y) ?   (x)  : (y))$?
+min	fed.h	?^#define min(x,y)	((x) < (y) ?   (x)  : (y))$?
+newglyph	subr.c	?^newglyph()$?
+numedit	subr.c	?^numedit()$?
+onintr	fed.c	?^onintr()$?
+onsig	fed.c	?^onsig(signo)$?
+packmat	io.c	?^packmat(c, result, nbytes)$?
+placechar	subr.c	?^placechar(ch, llr, llc, zero)$?
+readchars	io.c	?^readchars()$?
+readfont	io.c	?^readfont(fname, c1, c2)$?
+readnum	subr.c	?^readnum(prompt)$?
+redraw	subr.c	?^redraw()$?
+setcmd	subr.c	?^setcmd()$?
+setpen	subr.c	?^setpen(s)$?
+showfont	subr.c	?^showfont()$?
+shrinkglyph	subr.c	?^shrinkglyph(oldps, newps)$?
+synccurs	subr.c	?^synccurs()$?
+syncwind	subr.c	?^syncwind(n)$?
+truename	io.c	?^truename(fname, result)$?
+turnofcurs	subr.c	?^turnofcurs()$?
+turnofrb	subr.c	?^turnofrb()$?
+turnoncurs	subr.c	?^turnoncurs()$?
+turnonrb	subr.c	?^turnonrb()$?
+undo	subr.c	?^undo()$?
+writeback	io.c	?^writeback()$?
+writefont	io.c	?^writefont(fname)$?
+zoomout	subr.c	?^zoomout()$?
