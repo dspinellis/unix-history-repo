@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.22 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.23 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.22 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.23 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -90,6 +90,7 @@ getrequests()
 	int on = 1;
 	bool refusingconnections = TRUE;
 	FILE *pidf;
+	int socksize;
 	extern void reapchild();
 
 	/*
@@ -152,22 +153,22 @@ getrequests()
 	{
 # ifdef NETINET
 	  case AF_INET:
-		t = sizeof DaemonAddr.sin;
+		socksize = sizeof DaemonAddr.sin;
 		break;
 # endif
 
 # ifdef NETISO
 	  case AF_ISO:
-		t = sizeof DaemonAddr.siso;
+		socksize = sizeof DaemonAddr.siso;
 		break;
 # endif
 
 	  default:
-		t = sizeof DaemonAddr;
+		socksize = sizeof DaemonAddr;
 		break;
 	}
 
-	if (bind(DaemonSocket, &DaemonAddr.sa, t) < 0)
+	if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
 	{
 		syserr("getrequests: cannot bind");
 		(void) close(DaemonSocket);
@@ -235,7 +236,7 @@ getrequests()
 		do
 		{
 			errno = 0;
-			lotherend = sizeof RealHostAddr;
+			lotherend = socksize;
 			t = accept(DaemonSocket,
 			    (struct sockaddr *)&RealHostAddr, &lotherend);
 		} while (t < 0 && errno == EINTR);
