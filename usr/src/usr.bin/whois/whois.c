@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	4.1 82/12/31";
+static char sccsid[] = "@(#)whois.c	4.2 83/06/10";
 #endif
 
 #include <sys/types.h>
@@ -25,18 +25,15 @@ main(argc, argv)
 	struct servent *sp;
 
 	argc--, argv++;
-	if (argc > 2) {
-usage:
-		fprintf(stderr, "usage: whois [ -h host ] name\n");
-		exit(1);
-	}
-	if (strcmp(*argv, "-h") == 0) {
+	if (argc > 2 && strcmp(*argv, "-h") == 0) {
 		argv++, argc--;
 		host = *argv++;
 		argc--;
 	}
-	if (argc != 1)
-		goto usage;
+	if (argc != 1) {
+		fprintf(stderr, "usage: whois [ -h host ] name\n");
+		exit(1);
+	}
 	hp = gethostbyname(host);
 	if (hp == NULL) {
 		fprintf(stderr, "whois: %s: host unknown\n", host);
