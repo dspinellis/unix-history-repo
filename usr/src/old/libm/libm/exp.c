@@ -12,7 +12,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	4.3 (Berkeley) %G%";
 #endif not lint
 
 /* EXP(X)
@@ -35,14 +35,14 @@ static char sccsid[] = "@(#)exp.c	4.2 (Berkeley) %G%";
  *	                   x = k*ln2 + r,  |r| <= 0.5*ln2 .  
  *	   r will be represented as r := z+c for better accuracy.
  *
- *	2. Compute E(r)=exp(r)-1 by 
+ *	2. Compute expm1(r)=exp(r)-1 by 
  *
- *			E(r=z+c) := z + exp__E(z,r)
+ *			expm1(r=z+c) := z + exp__E(z,r)
  *
- *	3. exp(x) = 2^k * ( E(r) + 1 ).
+ *	3. exp(x) = 2^k * ( expm1(r) + 1 ).
  *
  * Special cases:
- *	exp(INF) is INF, exp(NAN) is NAN;
+ *	exp(INF) is INF, exp(NaN) is NaN;
  *	exp(-INF)=  0;
  *	for finite argument, only exp(0)=1 is exact.
  *
@@ -75,7 +75,7 @@ static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
 #define   lnhuge    (*(double*)lnhugex)
 #define   lntiny    (*(double*)lntinyx)
 #define   invln2    (*(double*)invln2x)
-#else		/* IEEE double format */
+#else	/* IEEE double */
 double static
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
@@ -90,7 +90,9 @@ double x;
 	double scalb(), copysign(), exp__E(), z,hi,lo,c;
 	int k,finite();
 
-	if(x!=x) return(x);
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 	if( x <= lnhuge ) {
 		if( x >= lntiny ) {
 
@@ -103,7 +105,7 @@ double x;
 			z=hi-(lo=k*ln2lo);
 			c=(hi-z)-lo;
 
-		    /* return 2^k*[E(x) + 1]  */
+		    /* return 2^k*[expm1(x) + 1]  */
 			z += exp__E(z,c);
 			return (scalb(z+1.0,k));  
 		}
@@ -122,4 +124,3 @@ double x;
 	/* exp(INF) is INF, exp(+big#) overflows to INF */
 	    return( finite(x) ?  scalb(1.0,5000)  : x);
 }
-
