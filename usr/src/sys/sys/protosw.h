@@ -1,4 +1,4 @@
-/*	protosw.h	4.14	82/11/13	*/
+/*	protosw.h	4.15	83/05/27	*/
 
 /*
  * Protocol switch table.
@@ -52,6 +52,7 @@ struct protosw {
 /* in the current implementation, PR_ADDR needs PR_ATOMIC to work */
 #define	PR_CONNREQUIRED	0x04		/* connection required by protocol */
 #define	PR_WANTRCVD	0x08		/* want PRU_RCVD calls */
+#define	PR_RIGHTS	0x10		/* passes capabilities */
 
 /*
  * The arguments to usrreq are:
