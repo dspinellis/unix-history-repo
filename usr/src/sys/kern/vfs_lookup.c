@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.22	85/04/19	*/
+/*	vfs_lookup.c	6.23	85/05/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -209,13 +209,14 @@ dirloop2:
 	hash = 0;
 	for (i = 0; *cp != 0 && *cp != '/'; cp++) {
 		if (i >= MAXNAMLEN) {
-			u.u_error = ENOENT;
+			u.u_error = ENAMETOOLONG;
 			goto bad;
 		}
-		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != DELETE) {
-			u.u_error = EPERM;
-			goto bad;
-		}
+		if (*cp & 0200)
+			if ((*cp&0377) == ('/'|0200) || flag != DELETE) {
+				u.u_error = EINVAL;
+				goto bad;
+			}
 		ndp->ni_dent.d_name[i++] = *cp;
 		hash += (unsigned char)*cp * i;
 	}
@@ -731,10 +732,7 @@ found:
 	}
 
 	/*
-	 * insert name into cache (if we want it, and it isn't "." or "..")
-	 *
-	 * all other cases where making a cache entry would be wrong
-	 * have already departed from the code sequence somewhere above.
+	 * insert name into cache if appropriate
 	 */
 	if (makeentry) {
 		if (ncp != NULL)
@@ -786,8 +784,11 @@ haveino:
 	    ((ndp->ni_nameiop & FOLLOW) || *cp == '/')) {
 		u_int pathlen = strlen(cp) + 1;
 
-		if (dp->i_size + pathlen >= MAXPATHLEN - 1 ||
-		    ++nlink > MAXSYMLINKS) {
+		if (dp->i_size + pathlen >= MAXPATHLEN - 1) {
+			u.u_error = ENAMETOOLONG;
+			goto bad2;
+		}
+		if (++nlink > MAXSYMLINKS) {
 			u.u_error = ELOOP;
 			goto bad2;
 		}
