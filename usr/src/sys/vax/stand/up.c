@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1982, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.6 (Berkeley) %G%
+ *	@(#)up.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -67,20 +67,23 @@ upopen(io)
 	register struct updevice *upaddr;
 	register struct up_softc *sc;
 	register struct st *st;
+	register struct disklabel *lp;
+	struct disklabel *dlp;
 	register int unit;
-	struct disklabel *dlp, *lp;
-	int error = 0;
+	int error = 0, uba, ctlr;
 
-	if ((u_int)io->i_ctlr >= MAXCTLR)
+	if ((u_int)(uba = io->i_adapt) >= nuba)
+		return (EADAPT);
+	if ((u_int)(ctlr = io->i_ctlr) >= MAXCTLR)
 		return (ECTLR);
-	if ((u_int)io->i_part >= MAXUNIT)
-		return (EPART);
-	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
 	unit = io->i_unit;
-	upaddr->upcs2 = unit % 8;
+	if ((u_int)unit >= MAXUNIT)
+		return (EUNIT);
+	upaddr = (struct updevice *)ubamem(uba, ubastd[ctlr]);
+	upaddr->upcs2 = unit;
 	while ((upaddr->upcs1 & UP_DVA) == 0);
-	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
-	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
+	sc = &up_softc[uba][ctlr][unit];
+	lp = &uplabel[uba][ctlr][unit];
 	if (sc->gottype == 0) {
 		register int i;
 		struct iob tio;
@@ -115,7 +118,7 @@ upopen(io)
 #ifndef SMALL
 		/* Read in the bad sector table. */
 		tio.i_bn = lp->d_secpercyl * lp->d_ncylinders - lp->d_nsectors;
-		tio.i_ma = (char *)&upbad[io->i_adapt][io->i_ctlr][io->i_unit];
+		tio.i_ma = (char *)&upbad[uba][ctlr][unit];
 		tio.i_cc = sizeof(struct dkbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
@@ -126,8 +129,8 @@ upopen(io)
 		if (i == 5) {
 			printf("up: can't read bad sector table\n");
 			for (i = 0; i < MAXBADDESC; i++) {
-				upbad[tio.i_adapt][tio.i_ctlr][unit].bt_bad[i].bt_cyl = -1;
-				upbad[tio.i_adapt][tio.i_ctlr][unit].bt_bad[i].bt_trksec = -1;
+				upbad[uba][ctlr][unit].bt_bad[i].bt_cyl = -1;
+				upbad[uba][ctlr][unit].bt_bad[i].bt_trksec = -1;
 			}
 		}
 #endif
@@ -135,7 +138,7 @@ upopen(io)
 	}
 	if (io->i_part >= lp->d_npartitions ||
 	    lp->d_partitions[io->i_part].p_size == 0)
-			return (EPART);
+		return (EPART);
 	io->i_boff = lp->d_partitions[io->i_part].p_offset;
 	io->i_flgs &= ~F_TYPEMASK;
 	return (0);
@@ -161,16 +164,18 @@ upstrategy(io, func)
 	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
 	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
 	sectsiz = SECTSIZ;
+#ifndef SMALL
 	if (io->i_flgs & (F_HDR|F_HCHECK))
 		sectsiz += HDRSIZ;
-	upaddr->upcs2 = unit % 8;
+#endif
+	upaddr->upcs2 = unit;
 	if ((upaddr->upds & UPDS_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_PRESET|UP_GO;
 		upaddr->upof = UPOF_FMT22;
 	}
 	if ((upaddr->upds & UPDS_DREADY) == 0) {
-		printf("up%d not ready", unit);
+		printf("up%d not ready\n", unit);
 		return (-1);
 	}
 	info = ubasetup(io, 1);
@@ -179,24 +184,21 @@ upstrategy(io, func)
 	io->i_errcnt = 0;
 
 restart: 
-	error = 0;
 	o = io->i_cc + (upaddr->upwc * sizeof (short));
 	upaddr->upba = info + o;
 	bn = io->i_bn + o / sectsiz;
 #ifndef SMALL
+	error = 0;
 	if (doprintf && sc->debug & (UPF_ECCDEBUG|UPF_BSEDEBUG))
 		printf("wc=%d o=%d i_bn=%d bn=%d\n",
 			upaddr->upwc, o, io->i_bn, bn);
 #endif
-	while((upaddr->upds & UPDS_DRY) == 0)
-		;
+	upwaitdry(upaddr);
 	if (upstart(io, bn, lp) != 0) {
 		rv = -1;
 		goto done;
 	}
-	do {
-		DELAY(25);
-	} while ((upaddr->upcs1 & UP_RDY) == 0);
+	upwaitrdy(upaddr);
 	/*
 	 * If transfer has completed, free UNIBUS
 	 * resources and return transfer size.
@@ -262,11 +264,14 @@ restart:
 		 * 12 with offset positioning) give up.
 		 */
 hard:
+#ifndef SMALL
 		if (error == 0) {
 			error = EHER;
 			if (upaddr->upcs2 & UPCS2_WCE)
 				error = EWCK;
 		}
+		io->i_error = error;
+#endif
 		printf("up error: sn%d (cyl,trk,sec)=(%d,%d,%d) ",
 		   bn, cn, tn, sn);
 		printf("cs2=%b er1=%b er2=%b\n",
@@ -277,8 +282,7 @@ hard:
 		if (io->i_errcnt >= 16) {
 			upaddr->upof = UPOF_FMT22;
 			upaddr->upcs1 = UP_RTC|UP_GO;
-			while ((upaddr->upds&UPDS_DRY) == 0)
-				DELAY(25);
+			upwaitdry(upaddr);
 		}
 		rv = -1;
 		goto done;
@@ -290,18 +294,15 @@ hard:
 	upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 	if ((io->i_errcnt&07) == 4 ) {
 		upaddr->upcs1 = UP_RECAL|UP_GO;
-		while ((upaddr->upds&UPDS_DRY) == 0)
-			DELAY(25);
+		upwaitdry(upaddr);
 		upaddr->updc = cn;
 		upaddr->upcs1 = UP_SEEK|UP_GO;
-		while ((upaddr->upds&UPDS_DRY) == 0)
-			DELAY(25);
+		upwaitdry(upaddr);
 	}
 	if (io->i_errcnt >= 16 && (func & READ)) {
 		upaddr->upof = up_offset[io->i_errcnt & 017] | UPOF_FMT22;
 		upaddr->upcs1 = UP_OFFSET|UP_GO;
-		while ((upaddr->upds&UPDS_DRY) == 0)
-			DELAY(25);
+		upwaitdry(upaddr);
 	}
 	goto restart;
 
@@ -323,10 +324,24 @@ done:
 	if (io->i_errcnt >= 16) {
 		upaddr->upof = UPOF_FMT22;
 		upaddr->upcs1 = UP_RTC|UP_GO;
-		while ((upaddr->upds&UPDS_DRY) == 0)
-			DELAY(25);
+		upwaitdry(upaddr);
 	}
 	return (rv);
+}
+
+upwaitrdy(upaddr)
+	register struct updevice *upaddr;
+{
+	do {
+		DELAY(25);
+	} while ((upaddr->upcs1 & UP_RDY) == 0);
+}
+
+upwaitdry(upaddr)
+	register struct updevice *upaddr;
+{
+	while ((upaddr->upds&UPDS_DRY) == 0)
+		DELAY(25);
 }
 
 #ifndef SMALL
@@ -450,14 +465,11 @@ upecc(io, flag)
 		 * registers in a normal fashion. 
 	 	 * The UNIBUS address need not be changed.
 	 	 */
-		while ((up->upcs1 & UP_RDY) == 0) 
-			;
+		upwaitrdy(up);
 		if (upstart(io, bbn, lp))
 			return (1);		/* error */
 		io->i_errcnt = 0;		/* success */
-		do {
-			DELAY(25);
-		} while ((up->upcs1 & UP_RDY) == 0) ;
+		upwaitrdy(up);
 		if ((up->upds & UPDS_ERR) || (up->upcs1 & UP_TRE)) {
 			up->upwc = twc - sectsiz;
 			return (1);
