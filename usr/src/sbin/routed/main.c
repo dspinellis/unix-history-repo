@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -7,11 +7,13 @@ static char sccsid[] = "@(#)main.c	4.7 (Berkeley) %G%";
  */
 #include "defs.h"
 #include <sys/ioctl.h>
+#include <sys/time.h>
+
 #include <net/if.h>
+
 #include <errno.h>
 #include <nlist.h>
 #include <signal.h>
-#include <time.h>
 
 int	supplier = -1;		/* process should supply updates */
 

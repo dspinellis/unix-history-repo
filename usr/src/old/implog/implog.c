@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
-#include <time.h>
 #include <signal.h>
 #include <sgtty.h>
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
