@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS=	-O
 SRCS=	query.c trace.c
@@ -18,10 +18,10 @@ all: query trace
 
 # test programs and utilities
 query:
-	${CC} -o $@ query.c
+	${CC} ${CFLAGS} -o $@ query.c
 
 trace:
-	${CC} -o $@ trace.c
+	${CC} ${CFLAGS} -o $@ trace.c
 
 install: FRC
 
@@ -41,15 +41,16 @@ FRC:
 
 query: query.c /usr/include/sys/param.h /usr/include/sys/types.h
 query: /usr/include/signal.h /usr/include/machine/trap.h
-query: /usr/include/machine/machparam.h /usr/include/sys/protosw.h
-query: /usr/include/sys/socket.h /usr/include/sys/time.h /usr/include/time.h
-query: /usr/include/netinet/in.h /usr/include/errno.h /usr/include/stdio.h
-query: /usr/include/netdb.h /usr/include/protocols/routed.h
+query: /usr/include/machine/machparam.h /usr/include/machine/endian.h
+query: /usr/include/sys/protosw.h /usr/include/sys/socket.h
+query: /usr/include/sys/time.h /usr/include/time.h /usr/include/netinet/in.h
+query: /usr/include/errno.h /usr/include/stdio.h /usr/include/netdb.h
+query: /usr/include/protocols/routed.h
 trace: trace.c /usr/include/sys/param.h /usr/include/sys/types.h
 trace: /usr/include/signal.h /usr/include/machine/trap.h
-trace: /usr/include/machine/machparam.h /usr/include/sys/protosw.h
-trace: /usr/include/sys/socket.h /usr/include/netinet/in.h /usr/include/errno.h
-trace: /usr/include/stdio.h /usr/include/netdb.h
-trace: /usr/include/protocols/routed.h
+trace: /usr/include/machine/machparam.h /usr/include/machine/endian.h
+trace: /usr/include/sys/protosw.h /usr/include/sys/socket.h
+trace: /usr/include/netinet/in.h /usr/include/errno.h /usr/include/stdio.h
+trace: /usr/include/netdb.h /usr/include/protocols/routed.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
