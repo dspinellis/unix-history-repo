@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.9 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -23,18 +23,19 @@
 #define cttyvp(p) ((p)->p_flag&SCTTY ? (p)->p_session->s_ttyvp : NULL)
 
 /*ARGSUSED*/
-syopen(dev, flag)
+cttyopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	struct vnode *ttyvp = cttyvp(u.u_procp);
+	struct proc *p = curproc;
+	struct vnode *ttyvp = cttyvp(p);
 	int error;
 
 	if (ttyvp == NULL)
 		return (ENXIO);
 	VOP_LOCK(ttyvp);
 	error = VOP_ACCESS(ttyvp,
-	   (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), u.u_cred);
+	   (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), p->p_ucred);
 	VOP_UNLOCK(ttyvp);
 	if (error)
 		return (error);
@@ -42,11 +43,11 @@ syopen(dev, flag)
 }
 
 /*ARGSUSED*/
-syread(dev, uio, flag)
+cttyread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct vnode *ttyvp = cttyvp(u.u_procp);
+	register struct vnode *ttyvp = cttyvp(curproc);
 	int error;
 
 	if (ttyvp == NULL)
@@ -58,11 +59,11 @@ syread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-sywrite(dev, uio, flag)
+cttywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct vnode *ttyvp = cttyvp(u.u_procp);
+	register struct vnode *ttyvp = cttyvp(curproc);
 	int error;
 
 	if (ttyvp == NULL)
@@ -74,19 +75,19 @@ sywrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-syioctl(dev, cmd, addr, flag)
+cttyioctl(dev, cmd, addr, flag)
 	dev_t dev;
 	int cmd;
 	caddr_t addr;
 	int flag;
 {
-	struct vnode *ttyvp = cttyvp(u.u_procp);
+	struct vnode *ttyvp = cttyvp(curproc);
 
 	if (ttyvp == NULL)
 		return (ENXIO);
 	if (cmd == TIOCNOTTY) {
-		if (!SESS_LEADER(u.u_procp)) {
-			u.u_procp->p_flag &= ~SCTTY;
+		if (!SESS_LEADER(curproc)) {
+			curproc->p_flag &= ~SCTTY;
 			return (0);
 		} else
 			return (EINVAL);
@@ -95,11 +96,11 @@ syioctl(dev, cmd, addr, flag)
 }
 
 /*ARGSUSED*/
-syselect(dev, flag)
+cttyselect(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	struct vnode *ttyvp = cttyvp(u.u_procp);
+	struct vnode *ttyvp = cttyvp(curproc);
 
 	if (ttyvp == NULL)
 		return (1);	/* try operation to get EOF/failure */

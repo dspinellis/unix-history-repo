@@ -3,23 +3,22 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.14 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "time.h"
+#include "namei.h"
+#include "resourcevar.h"
 #include "proc.h"
 #include "ioctl.h"
 #include "termios.h"
 #include "tty.h"
-#include "user.h"
 #include "vnode.h"
 #include "mount.h"
 #include "kernel.h"
 #include "file.h"
 #include "acct.h"
-#include "uio.h"
 #include "syslog.h"
 
 /*
@@ -47,12 +46,12 @@ sysacct(p, uap, retval)
 	int *retval;
 {
 	register struct vnode *vp;
-	register struct nameidata *ndp = &u.u_nd;
 	extern int acctwatch();
 	struct vnode *oacctp;
 	int error;
+	struct nameidata nd;
 
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	if (savacctp) {
 		acctp = savacctp;
@@ -66,11 +65,11 @@ sysacct(p, uap, retval)
 		}
 		return (0);
 	}
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = vn_open(ndp, FWRITE, 0644))
+	nd.ni_segflg = UIO_USERSPACE;
+	nd.ni_dirp = uap->fname;
+	if (error = vn_open(&nd, p, FWRITE, 0644))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VREG) {
 		vrele(vp);
 		return (EACCES);
@@ -128,7 +127,7 @@ acct(p)
 	if ((vp = acctp) == NULL)
 		return (0);
 	bcopy(p->p_comm, ap->ac_comm, sizeof(ap->ac_comm));
-	ru = &u.u_ru;
+	ru = &p->p_stats->p_ru;
 	s = splclock();
 	ut = p->p_utime;
 	st = p->p_stime;
@@ -136,15 +135,15 @@ acct(p)
 	splx(s);
 	ap->ac_utime = compress(ut.tv_sec, ut.tv_usec);
 	ap->ac_stime = compress(st.tv_sec, st.tv_usec);
-	timevalsub(&t, &u.u_start);
+	timevalsub(&t, &p->p_stats->p_start);
 	ap->ac_etime = compress(t.tv_sec, t.tv_usec);
-	ap->ac_btime = u.u_start.tv_sec;
-	ap->ac_uid = p->p_ruid;
-	ap->ac_gid = p->p_rgid;
+	ap->ac_btime = p->p_stats->p_start.tv_sec;
+	ap->ac_uid = p->p_cred->p_ruid;
+	ap->ac_gid = p->p_cred->p_rgid;
 	t = st;
 	timevaladd(&t, &ut);
 	if (i = t.tv_sec * hz + t.tv_usec / tick)
-		ap->ac_mem = (ru->ru_ixrss+ru->ru_idrss+ru->ru_isrss) / i;
+		ap->ac_mem = (ru->ru_ixrss + ru->ru_idrss + ru->ru_isrss) / i;
 	else
 		ap->ac_mem = 0;
 	ap->ac_io = compress(ru->ru_inblock + ru->ru_oublock, (long)0);
@@ -152,9 +151,9 @@ acct(p)
 		ap->ac_tty = p->p_session->s_ttyp->t_dev;
 	else
 		ap->ac_tty = NODEV;
-	ap->ac_flag = u.u_acflag;
+	ap->ac_flag = p->p_acflag;
 	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf),
-		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0));
+	    (off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, p->p_ucred, (int *)0));
 }
 
 /*
