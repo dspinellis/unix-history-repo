@@ -1,4 +1,0 @@
-yywrap()
-{
-	return(1);
-}

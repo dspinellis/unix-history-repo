@@ -1,9 +1,0 @@
-This directory contains source for most of the
-documents contained in Volume 2 of The UNIX
-Programmer's Manual, 7th Edition.
-Most use -ms to format; many also use
-refer, tbl and eqn. Precise incantations
-are engraved in ./run.
-
-The citations for those papers that use
-refer are taken from /usr/dict/papers/Rv7man.
