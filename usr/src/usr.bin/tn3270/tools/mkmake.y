@@ -26,6 +26,8 @@ typedef struct string {
  */
 
 typedef struct same {
+    unsigned int
+	visit_time;			/* For loops */
     string_t
 	*string;			/* My name */
     struct same
@@ -69,7 +71,7 @@ assignment :
     }
     | token maybe_white_space '=' maybe_white_space NL
     {
-	assign($1, same_copy(&null));
+	assign($1, same_copy(null));
     }
     ;
 
@@ -79,7 +81,7 @@ target_action: target actions
     }
     | target
     {
-	add_targets_actions($1, same_copy(&null));
+	add_targets_actions($1, same_copy(null));
     }
     ;
 
@@ -90,7 +92,7 @@ target :
     }
     | tokens maybe_white_space ':' maybe_white_space NL
     {
-	$$ = add_depends($1, same_copy(&null));
+	$$ = add_depends($1, same_copy(null));
     }
     ;
 
@@ -173,16 +175,31 @@ static int column = 0, lineno = 1;
 static string_t
     *strings = 0;
 static same_t
-    variables = { 0 },
-    targets = { 0 },
-    actions = { 0 };
+    *variables,
+    *targets,
+    *actions;
 
 static same_t
-    null = { 0 },
-    blank = { 0 },
-    newline = { 0 };
+    *null,
+    *blank,
+    *newline;
 
 extern char *malloc();
+
+static unsigned int
+	clock = -1;
+
+struct {
+    same_t *first;
+    int next;
+} visit_stack[20];		/* 20 maximum */
+
+#define	visit(what,via) \
+	(visit_stack[++clock].next = 0, visit_stack[clock].first = via = what)
+#define	visited(via)	\
+	(visit_stack[clock].next && (via == visit_stack[clock].first))
+#define	visit_next(via)	(visit_stack[clock].next = 1, (via) = (via)->nexttoken)
+#define	visit_end()	(clock--)
 
 yyerror(s)
 char *s;
@@ -257,14 +274,17 @@ same_t
 {
     same_t *ptr;
 
-    for (ptr = list; ptr; ptr = ptr->nexttoken) {
+    ptr = list;
+    for (visit(list, ptr); !visited(ptr); visit_next(ptr)) {
 	string_t *string;
 
 	string = ptr->string;
 	if (string_same(string, token->string)) {
+	    visit_end();
 	    return ptr;
 	}
     }
+    visit_end();
     return 0;
 }
 
@@ -279,14 +299,9 @@ same_t
     last = tokens->lasttoken;
     tokens->lasttoken = list->lasttoken;
     list->lasttoken = last;
-    } else {
-	list->lasttoken = tokens;
-    }
-    if (list->nexttoken == 0) {
-	list->nexttoken = tokens;
-    } else {
-	tokens->lasttoken->nexttoken = tokens;
-    }
+    tokens->lasttoken->nexttoken = tokens;
+    last->nexttoken = list;
+
     return list;
 }
 
@@ -301,6 +316,7 @@ string_t *string;
 	exit(1);
     }
     memset((char *)ptr, 0, sizeof *ptr);
+    ptr->nexttoken = ptr->lasttoken = ptr;
     ptr->string = string;
     return ptr;
 }
@@ -309,49 +325,39 @@ same_t *
 same_copy(same)
 same_t *same;
 {
-    same_t *head;
+    same_t *head, *copy;
 
     head = same_item(same->string);
-    for (same = same->nexttoken; same; same = same->nexttoken) {
+    for (copy = same->nexttoken; copy != same; copy = copy->nexttoken) {
 	same_t *ptr;
 
-	ptr = same_item(same->string);
+	ptr = same_item(copy->string);
 	same_cat(head, ptr);
     }
     return head;
 }
 
 void
-same_free(token)
-same_t *token;
+same_free(list)
+same_t *list;
 {
-    same_t *ptr;
+    same_t *token, *ptr;
 
-    while (token) {
+    token = list;
+    do {
 	ptr = token->nexttoken;
 	(void) free((char *)token);
 	token = ptr;
-    }
+    } while (token != list);
 }
 
 void
-same_unlink(token, base)
+same_unlink(token)
 same_t
-    *token,
-    *base;
+    *token;
 {
-    if (token->lasttoken) {
-	token->lasttoken->nexttoken = token->nexttoken;
-    }
-    if (token->nexttoken) {
-	token->nexttoken->lasttoken = token->lasttoken;
-    }
-    if (base->nexttoken == token) {
-	base->nexttoken = token->nexttoken;
-    }
-    if (base->lasttoken == token) {
-	base->lasttoken = token->lasttoken;
-    }
+    token->lasttoken->nexttoken = token->nexttoken;
+    token->nexttoken->lasttoken = token->lasttoken;
     (void) free((char *) token);
 }
 
@@ -362,8 +368,8 @@ same_t
 {
     same_t *ptr;
 
-    if ((ptr = same_search(&targets, target)) == 0) {
-	same_cat(&targets, target);
+    if ((ptr = same_search(targets, target)) == 0) {
+	same_cat(targets, target);
     } else {
 	same_cat(ptr->action_list, target->action_list);
 	same_cat(ptr->depend_list, target->depend_list);
@@ -377,15 +383,17 @@ same_t
     *target,
     *actions;
 {
-    same_t *next;
+    same_t *traverse;
 
-    while (target) {
-	next = target->lasttoken;
-	target->lasttoken = target->lasttoken = 0;
-	target->action_list = actions;
-	add_target(target);
-	target= next;
+    for (visit(target, traverse); !visited(traverse); visit_next(traverse)) {
+	if (target->action_list) {
+	    same_cat(target->action_list, actions);
+	} else {
+	    target->action_list = actions;
+	}
+	add_target(traverse);
     }
+    visit_end();
     return 0;
 }
 
@@ -397,12 +405,17 @@ same_t
 {
     same_t *original = target;
 
-    same_cat(depends, blank);			/* Separator */
+    same_cat(depends, same_copy(blank));			/* Separator */
 
-    while (target) {
-	target->depend_list = depends;
-	target = target->nexttoken;
+    for (visit(original, target); !visited(target); visit_next(target)) {
+	if (target->depend_list) {
+	    same_cat(target->depend_list, depends);
+	} else {
+	    target->depend_list = depends;
+	}
     }
+    visit_end();
+
     return original;
 }
 
@@ -419,22 +432,22 @@ same_t
 {
     same_t *ptr;
 
-    if ((ptr = same_search(&variables, variable)) != 0) {
+    if ((ptr = same_search(variables, variable)) != 0) {
 	same_free(ptr->value_list);
-	same_unlink(ptr, &variables);
+	same_unlink(ptr);
     }
     variable->value_list = value;
-    same_cat(&variables, variable);
+    same_cat(variables, variable);
 }
 
 same_t *
 value_of(variable)
 same_t *variable;
 {
-    same_t *ptr = same_search(&variables, variable);
+    same_t *ptr = same_search(variables, variable);
 
     if (ptr == 0) {
-	return &null;
+	return null;
     } else {
 	return ptr->value_list;
     }
@@ -575,10 +588,13 @@ main()
 #define	YYDEBUG
     extern int yydebug;
 
+    null = same_item(string_lookup(""));
+    newline = same_item(string_lookup("\n"));
+    blank = same_item(string_lookup(" "));
 
-    null.string = string_lookup("");
-    newline.string = string_lookup("\n");
-    blank.string = string_lookup(" ");
+    variables = same_item(string_lookup("variables"));
+    targets = same_item(string_lookup("targets"));
+    actions = same_item(string_lookup("actions"));
 
     return yyparse();
 }
@@ -597,28 +613,35 @@ do_dump()
     }
 
     printf("variables...\n");
-    for (same = variables.nexttoken; same; same = same->nexttoken) {
+    for (same = variables->nexttoken; same != variables;
+						same = same->nexttoken) {
 	printf("\t%s =\t", same->string->string);
-	for (same2 = same->value_list; same2; same2 = same2->nexttoken) {
+	for (visit(same->value_list, same2); !visited(same2);
+						visit_next(same2)) {
 	    printf(same2->string->string);
 	}
+	visit_end();
 	printf("\n");
     }
 
     printf("targets...\n");
-    for (same = targets.nexttoken; same; same = same->nexttoken) {
+    for (same = targets->nexttoken; same != targets; same = same->nexttoken) {
 	printf("\t%s :\t", same->string->string);
-	for (same2 = same->depend_list; same2; same2 = same2->nexttoken) {
+	for (visit(same->depend_list, same2); !visited(same2);
+						visit_next(same2)) {
 	    printf(same2->string->string);
 	}
+	visit_end();
 	if (same->action_list) {
 	    printf("\n\t\t");
-	    for (same2 = same->action_list; same2; same2 = same2->nexttoken) {
+	    for (visit(same->action_list, same2); !visited(same2);
+						visit_next(same2)) {
 		printf(same2->string->string);
 		if (same2->string->string[0] == '\n') {
 		    printf("\t\t");
 		}
 	    }
+	    visit_end();
 	    printf("\n");
 	}
     }
