@@ -27,6 +27,7 @@ vax/vax/trap.c		standard
 vax/vax/tu.c		standard
 vax/vax/udiv.s		standard
 vax/vax/urem.s		standard
+vax/vax/emulate.s	standard
 vax/vax/vm_machdep.c	standard
 vax/vax/iidr.o		optional ii
 vax/vax/iidrsys.o		optional ii
