@@ -1,5 +1,10 @@
-#! /bin/sh
-#	@(#)buildmini	4.5	%G%
+#!/bin/sh -
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)buildmini	4.6 (Berkeley) %G%
 #
 miniroot=hp0d
 minitype=rm80
