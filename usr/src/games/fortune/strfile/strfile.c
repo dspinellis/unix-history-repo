@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -160,8 +160,6 @@ char	**av;
 	add_offset(outf, ftell(inf));
 	last_off = 0;
 	do {
-		if (Num_pts > 508)
-			atoi("1");
 		sp = fgets(string, 256, inf);
 		if (sp == NULL || sp[0] == dc && sp[1] == '\n') {
 			pos = ftell(inf);
@@ -382,8 +380,6 @@ STR	*p1, *p2;
 		}
 		if (c1 != c2)
 			return c1 - c2;
-		if (c1 == '\n' || c2 == '\n')
-			atoi("1");
 		SET_N(n1, c1);
 		SET_N(n2, c2);
 		c1 = getc(Sort_1);
