@@ -1,4 +1,4 @@
-(Version 8.7 of %G%)
+(Version 8.8 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -35,6 +35,9 @@ E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 	about the return value, checking this bit instead of just
 	checking for == NULL.  (Eric Wassenaar)  [8.7]
 
+X ****	Run time configurable locking -- e.g., compile in HASFLOCK and
+	HASLOCKF, and then choose at runtime between these.
+
 E ***	Dynamically allocate MAXNAME buffers for headers.
 
 X ***	Add ability to disable Return-Receipt-To: on a privacy flag. [8.8]
@@ -48,6 +51,14 @@ E ***	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
 
 X ***	Add "user" map to look up a user name via getpwnam -- so that
 	non-local names can be forwarded to another site.  [8.8]
+
+E ***	Have daemons that start up check the alias database for
+	correctness and auto-rebuild if necessary.  This is to handle
+	the case of a system crash during an alias database rebuild.
+
+E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
+	e_receiptto.  This simplifies and gives symmetry.  (Eric
+	Wassenaar)
 
 X **	Allow $x in -bt mode to expand macro "x".  (BCX)  [8.8]
 
