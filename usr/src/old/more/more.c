@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.21 (Berkeley) 84/12/24";
+static	char *sccsid = "@(#)more.c	4.22 (Berkeley) 85/02/21";
 #endif
 
 /*
@@ -1358,6 +1358,7 @@ initterm ()
     int		lmode;
     char	*term;
     int		tgrp;
+    struct winsize win;
 
 retry:
     if (!(no_tty = gtty(fileno(stdout), &otty))) {
@@ -1383,14 +1384,24 @@ retry:
 	    dumb++; ul_opt = 0;
 	}
 	else {
-	    if (((Lpp = tgetnum("li")) < 0) || tgetflag("hc")) {
+	    if (ioctl(fileno(stdout), TIOCGWINSZ, &win) < 0) {
+		Lpp = tgetnum("li");
+		Mcol = tgetnum("co");
+	    } else {
+		if ((Lpp = win.ws_row) == 0)
+		    Lpp = tgetnum("li");
+		if ((Mcol = win.ws_col) == 0)
+		    Mcol = tgetnum("co");
+	    }
+	    if ((Lpp <= 0) || tgetflag("hc")) {
 		hard++;	/* Hard copy terminal */
 		Lpp = 24;
 	    }
+	    if (Mcol <= 0)
+		Mcol = 80;
+
 	    if (tailequ (fnames[0], "page") || !hard && tgetflag("ns"))
 		noscroll++;
-	    if ((Mcol = tgetnum("co")) < 0)
-		Mcol = 80;
 	    Wrap = tgetflag("am");
 	    bad_so = tgetflag ("xs");
 	    clearptr = clearbuf;
