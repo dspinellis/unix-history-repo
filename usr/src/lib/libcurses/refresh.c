@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <string.h>
@@ -646,15 +646,6 @@ quickch(win)
 /*
  * scrolln --
  *	Scroll n lines, where n is starts - startw.
- *
- * XXX
- * The initial tests that set __noqch don't let us reach here unless we
- * have either CS + HO + SF/sf/SR/sr, or AL + DL.  SF/sf/SR/sr scrolling
- * can only scroll the entire screen, not just a part of it, which means
- * that the quickch() routine is going to be sadly disappointed in us.
- * I've left the code here, as it would be useful to be able to scroll
- * part of the screen and repaint the rest, instead painting the entire
- * screen, on a terminal that didn't have CS or AL/DL.
  */
 static void
 scrolln(win, starts, startw, curs, bot, top)
@@ -667,31 +658,33 @@ scrolln(win, starts, startw, curs, bot, top)
 	ox = curscr->curx;
 	n = starts - startw;
 
+	/*
+	 * XXX
+	 * The initial tests that set __noqch don't let us reach here unless
+	 * we have either CS + HO + SF/sf/SR/sr, or AL + DL.  SF/sf and SR/sr
+	 * scrolling can only shift the entire scrolling region, not just a
+	 * part of it, which means that the quickch() routine is going to be
+	 * sadly disappointed in us if we don't have CS as well.
+	 *
+	 * If CS, HO and SF/sf are set, can use the scrolling region.  Because
+	 * the cursor position after CS is undefined, we need HO which gives us
+	 * the ability to move to somewhere without knowledge of the current
+	 * location of the cursor.  Still call __mvcur() anyway, to update its
+	 * idea of where the cursor is.
+	 *
+	 * When the scrolling region has been set, the cursor has to be at the
+	 * last line of the region to make the scroll happen.
+	 *
+	 * Doing SF/SR or AL/DL appears faster on the screen than either sf/sr
+	 * or al/dl, and, some terminals have AL/DL, sf/sr, and CS, but not
+	 * SF/SR.  So, if we're scrolling almost all of the screen, try and use
+	 * AL/DL, otherwise use the scrolling region.  The "almost all" is a
+	 * shameless hack for vi.
+	 */
 	if (n > 0) {
-		/* If scrolling the entire screen, SF/sf is all we need. */
-		if (top == 0 &&
-		    bot == win->maxy && (SF != NULL || sf != NULL)) {
-			__mvcur(oy, ox, win->maxy, 0, 1);
-			if (SF != NULL)
-				tputs(__tscroll(SF, n, 0), 0, __cputchar);
-			else
-				for (i = 0; i < n; i++)
-					tputs(sf, 0, __cputchar);
-			__mvcur(win->maxy, 0, oy, ox, 1);
-			return;
-		}
-
-		/*
-		 * If CS, HO and SF/sf are set, use the scrolling region.  We
-		 * need HO because the cursor position after CS is undefined,
-		 * so we need the ability to move to a fixed place without any
-		 * knowledge of the current location.  Note, we call __mvcur()
-		 * anyway, to update its idea of where the cursor is.
-		 *
-		 * When the scrolling region has been set, the cursor has to be
-		 * at the last line of that region to make the scroll happen.
-		 */
-		if (CS != NULL && HO != NULL && (SF != NULL || sf != NULL)) {
+		if (CS != NULL && HO != NULL && (SF != NULL ||
+		    (AL == NULL || DL == NULL ||
+		    top > 3 || bot + 3 < win->maxy) && sf != NULL)) {
 			tputs(__tscroll(CS, top, bot + 1), 0, __cputchar);
 			__mvcur(oy, ox, 0, 0, 1);
 			tputs(HO, 0, __cputchar);
@@ -708,57 +701,51 @@ scrolln(win, starts, startw, curs, bot, top)
 			return;
 		}
 
-		/*
-		 * Otherwise, we depend on having AL/al and DL/dl.
-		 *
-		 * Scroll up the block.
-		 */
+		/* Scroll up the block. */
 		__mvcur(oy, ox, top, 0, 1);
-		if (DL)
+		if (SF != NULL && top == 0)
+			tputs(__tscroll(SF, n, 0), 0, __cputchar);
+		else if (DL != NULL)
 			tputs(__tscroll(DL, n, 0), 0, __cputchar);
-		else
+		else if (dl != NULL)
 			for (i = 0; i < n; i++)
 				tputs(dl, 0, __cputchar);
+		else if (sf != NULL && top == 0)
+			for (i = 0; i < n; i++)
+				tputs(sf, 0, __cputchar);
+		else
+			abort();
 
 		/* Push down the bottom region. */
 		__mvcur(top, 0, bot - n + 1, 0, 1);
-		if (AL)
+		if (AL != NULL)
 			tputs(__tscroll(AL, n, 0), 0, __cputchar);
-		else
+		else if (al != NULL)
 			for (i = 0; i < n; i++)
 				tputs(al, 0, __cputchar);
+		else
+			abort();
 		__mvcur(bot - n + 1, 0, oy, ox, 1);
 	} else {
-		/* If scrolling the entire screen, SR/sr is all we need. */
-		if (top == 0 &&
-		    bot == win->maxy && (SR != NULL || sr != NULL)) {
-			__mvcur(oy, ox, 0, 0, 1);
-
-			n = -n;
-			if (SR != NULL)
-				tputs(__tscroll(SR, n, 0), 0, __cputchar);
-			else
-				for (i = 0; i < n; i++)
-					tputs(sr, 0, __cputchar);
-			__mvcur(0, 0, oy, ox, 1);
-			return;
-		}
-
 		/*
-		 * If CS, HO and SR/sr are set, use the scrolling region.  See
-		 * the above comment for details.
+		 * !!!
+		 * n < 0
+		 *
+		 * If CS, HO and SR/sr are set, can use the scrolling region.
+		 * See the above comments for details.
 		 */
-		if (CS != NULL && HO != NULL && (SR != NULL || sr != NULL)) {
+		if (CS != NULL && HO != NULL && (SR != NULL ||
+		    (AL == NULL || DL == NULL ||
+		    top > 3 || bot + 3 < win->maxy) && sr != NULL)) {
 			tputs(__tscroll(CS, top, bot + 1), 0, __cputchar);
 			__mvcur(oy, ox, 0, 0, 1);
 			tputs(HO, 0, __cputchar);
 			__mvcur(0, 0, top, 0, 1);
 
-			n = -n;
 			if (SR != NULL)
-				tputs(__tscroll(SR, n, 0), 0, __cputchar);
+				tputs(__tscroll(SR, -n, 0), 0, __cputchar);
 			else
-				for (i = 0; i < n; i++)
+				for (i = n; i < 0; i++)
 					tputs(sr, 0, __cputchar);
 			tputs(__tscroll(CS, 0, win->maxy), 0, __cputchar);
 			__mvcur(top, 0, 0, 0, 1);
@@ -767,25 +754,30 @@ scrolln(win, starts, startw, curs, bot, top)
 			return;
 		}
 
-		/*
-		 * Otherwise, we depend on having AL/al and DL/dl.
-		 *
-		 * Preserve the bottom lines.
-		 */
-		__mvcur(oy, ox, bot + n + 1, 0, 1);	/* n < 0 */
-		if (DL)
+		/* Preserve the bottom lines. */
+		__mvcur(oy, ox, bot + n + 1, 0, 1);
+		if (SR != NULL && bot == win->maxy)
+			tputs(__tscroll(SR, -n, 0), 0, __cputchar);
+		else if (DL != NULL)
 			tputs(__tscroll(DL, -n, 0), 0, __cputchar);
-		else
+		else if (dl != NULL)
 		       	for (i = n; i < 0; i++)
 				tputs(dl, 0, __cputchar);
-		__mvcur(bot + n + 1, 0, top, 0, 1);
+		else if (sr != NULL && bot == win->maxy)
+		       	for (i = n; i < 0; i++)
+				tputs(sr, 0, __cputchar);
+		else
+			abort();
 
 		/* Scroll the block down. */
-		if (AL)
+		__mvcur(bot + n + 1, 0, top, 0, 1);
+		if (AL != NULL)
 			tputs(__tscroll(AL, -n, 0), 0, __cputchar);
-		else
+		else if (al != NULL)
 			for (i = n; i < 0; i++)
 				tputs(al, 0, __cputchar);
+		else
+			abort();
 		__mvcur(top, 0, oy, ox, 1);
 	}
 }
