@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -179,7 +179,8 @@ map_parseargs(map, ap)
 	if (*p != '\0')
 		map->map_rebuild = newstr(p);
 
-	if (map->map_file == NULL)
+	if (map->map_file == NULL &&
+	    !bitset(MCF_OPTFILE, map->map_class->map_cflags))
 	{
 		syserr("No file name for %s map %s",
 			map->map_class->map_cname, map->map_mname);
