@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1194,7 +1194,7 @@ struct optioninfo
 	"QueueFactor",		'q',		FALSE,
 	"QueueDirectory",	'Q',		FALSE,
 	"DontPruneRoutes",	'R',		FALSE,
-	"Timeouts",		'r',		TRUE,
+	"Timeout",		'r',		TRUE,
 	"StatusFile",		'S',		FALSE,
 	"SuperSafe",		's',		TRUE,
 	"QueueTimeout",		'T',		FALSE,
@@ -1214,8 +1214,6 @@ struct optioninfo
 	"BrokenSmtpPeers",	O_BSP,		TRUE,
 #define O_QUEUESORTORD	0x81
 	"QueueSortOrder",	O_QUEUESORTORD,	TRUE,
-#define O_DNICE		0x82
-	"DeliveryNiceness",	O_DNICE,	TRUE,
 #define O_MQA		0x83
 	"MinQueueAge",		O_MQA,		TRUE,
 #define O_MHSA		0x84
@@ -1794,10 +1792,6 @@ setoption(opt, val, sticky)
 		  default:
 			syserr("Invalid queue sort order \"%s\"", val);
 		}
-		break;
-
-	  case O_DNICE:		/* delivery nice value */
-		DeliveryNiceness = atoi(val);
 		break;
 
 	  case O_MQA:		/* minimum queue age between deliveries */
