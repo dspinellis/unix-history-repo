@@ -49,22 +49,20 @@ tcp_usrreq(so, req, m, nam, rights)
 	int req;
 	struct mbuf *m, *nam, *rights;
 {
-	register struct inpcb *inp = sotoinpcb(so);
+	register struct inpcb *inp;
 	register struct tcpcb *tp;
-	int s = splnet();
+	int s;
 	int error = 0;
 	int ostate;
 
-	if (req == PRU_CONTROL) {
-		error = in_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights);
-		(void) splx(s);
-		return(error);
-	}
-	if (rights && rights->m_len) {
-		splx(s);
+	if (req == PRU_CONTROL)
+		return (in_control(so, (int)m, (caddr_t)nam,
+			(struct ifnet *)rights));
+	if (rights && rights->m_len)
 		return (EINVAL);
-	}
+
+	s = splnet();
+	inp = sotoinpcb(so);
 	/*
 	 * When a TCP is attached to a socket, then there will be
 	 * a (struct inpcb) pointed at by the socket, and this
@@ -226,10 +224,6 @@ tcp_usrreq(so, req, m, nam, rights)
 	 */
 	case PRU_SEND:
 		sbappend(&so->so_snd, m);
-#ifdef notdef
-		if (tp->t_flags & TF_PUSH)
-			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
-#endif
 		error = tcp_output(tp);
 		if (error) {		/* XXX fix to use other path */
 			if (error == ENOBUFS)		/* XXX */
