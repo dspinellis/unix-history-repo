@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.6 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -221,8 +221,17 @@ tcp_timers(tp, timer)
 			 * correspondent TCP to respond.
 			 */
 			tcpstat.tcps_keepprobe++;
+#ifdef TCP_COMPAT_42
+			/*
+			 * The keepalive packet must have nonzero length
+			 * to get a 4.2 host to respond.
+			 */
 			tcp_respond(tp, tp->t_template,
-			    tp->rcv_nxt - tcp_keeplen, tp->snd_una - 1, 0);
+			    tp->rcv_nxt - 1, tp->snd_una - 1, 0);
+#else
+			tcp_respond(tp, tp->t_template,
+			    tp->rcv_nxt, tp->snd_una - 1, 0);
+#endif
 		}
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		break;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.7 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,7 +105,6 @@ tcp_respond(tp, ti, ack, seq, flags)
 	register struct mbuf *m;
 	int win = 0, tlen;
 	struct route *ro = 0;
-	extern int tcp_keeplen;
 
 	if (tp) {
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
@@ -115,7 +114,11 @@ tcp_respond(tp, ti, ack, seq, flags)
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return;
-		tlen = tcp_keeplen;
+#ifdef TCP_COMPAT_42
+		tlen = 1;
+#else
+		tlen = 0;
+#endif
 		m->m_len = sizeof (struct tcpiphdr) + tlen;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
