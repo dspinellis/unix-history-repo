@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.47 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.48 (Berkeley) %G%
  */
 
 /*
@@ -588,6 +588,7 @@ nfs_init()
 		nfs_iodwant[i] = (struct proc *)0;
 	nfs_xdrneg1 = txdr_unsigned(-1);
 	nfs_nhinit();			/* Init the nfsnode table */
+	nfsrv_init(0);			/* Init server data structures */
 	nfsrv_initcache();		/* Init the server request cache */
 
 	/*
