@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.23 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -11,6 +11,7 @@
 #include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/reboot.h>
+#include <vm/vm.h>
 #include <sys/sysctl.h>
 
 struct reboot_args {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_domain.c	7.15 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -14,6 +14,8 @@
 #include <sys/mbuf.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
+#include <sys/proc.h>
+#include <vm/vm.h>
 #include <sys/sysctl.h>
 
 #define	ADDDOMAIN(x)	{ \
