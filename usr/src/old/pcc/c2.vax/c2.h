@@ -1,5 +1,5 @@
-/*static	char sccsid[] = "@(#)c2.h 4.1 %G%";*/
-/* @(#)c2.h 1.18 80/03/14 10:27:01 */
+/*static	char sccsid[] = "@(#)c2.h 4.2 %G%";*/
+/* @(#)c2.h 1.19 80/08/26 13:39:07 */
 /*
  * Header for object code improver
  */
@@ -60,8 +60,8 @@
 #define MTPR 56
 #define PROBER 57
 #define PROBEW 58
-#define	COMM 59
-#define LCOMM 60
+#define	LCOMM 59
+#define	COMM 60
 
 #define	JEQ	0
 #define	JNE	1
@@ -112,7 +112,7 @@ struct node {
 	struct	node	*ref;
 	char	*code;
 	struct	optab	*pop;
-	int	labno;
+	long	labno;
 	short	seq;
 };
 
