@@ -1,85 +1,187 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.roff%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vi.1	6.3 (Berkeley) %G%
+.\"     @(#)vi.1	6.3 (Berkeley) %G%
 .\"
-.TH VI 1 ""
-.UC
-.SH NAME
-vi \- screen oriented (visual) display editor based on ex
-.SH SYNOPSIS
-.B vi
-[
-.B \-t
-tag
-] [
-.B \-r
-] [
-\fB+\fR\fIcommand\fR
-] [
-.B \-l
-] [
-\fB\-w\fIn\fR
-]
-name ...
-.SH DESCRIPTION
-.I Vi
+.Dd 
+.Dt VI 1
+.Os BSD 3
+.Sh NAME
+.Nm vi
+.Nd screen oriented (visual) display editor based on ex
+.Sh SYNOPSIS
+.Nm vi
+.Op Fl R
+.Op Fl l
+.Op Fl r
+.Op Fl t Ar tag
+.Op Fl w Ar n
+.Op Cm \&+ Ns Ar command
+.Ar name ...
+.Sh DESCRIPTION
+.Nm Vi
 (visual) is a display oriented text editor based on
-.IR ex (1).
-.I Ex
+.Xr ex 1 .
+.Xr \&Ex
 and
-.I vi
+.Nm vi
 run the same code; it is possible to get to
 the command mode of
-.I ex
+.Xr ex
 from within
-.I vi
+.Nm vi
 and vice-versa.
-.PP
+.Pp
+Available options:
+.Bl -tag -width xcommandx
+.It Fl R
+Read only. Changes to the file may not be written out.
+.It Fl l
+Sets options for editing
+.Tn LISP
+source (options
+.Ic showmatch
+and
+.Ic lisp ) .
+.It Fl r
+In the event of an editor or system crash, the
+.Fl r
+option will retrieve the last saved version of the
+specified file, or if no file is specified,
+a list of saved files is printed.
+.It Fl t Ar tag
+If tags are used (see
+.Xr ctags 1 )
+the editor is postioned at
+.Ar tag .
+.It Fl w Ns Ar n
+The default window size is set to
+.Ar n .
+.It Cm \&+ Ns Ar command
+Enter the file with
+.Ar command.
+Useful for
+positioning on a string or line number.
+.El
+.Pp
 The
-.I "Vi Quick Reference"
+.%T "Vi Quick Reference"
 card and the
-.I "Introduction to Display Editing with Vi"
+.%T "Introduction to Display Editing with Vi"
 provide full details on using
-.I vi.
-.SH FILES
-See
-.IR ex (1).
-.SH SEE ALSO
-ex (1), edit (1), ``Vi Quick Reference'' card,
-``An Introduction to Display Editing with Vi''.
-.SH AUTHOR
-William Joy
-.br
-Mark Horton added macros to \fIvisual\fR mode and is maintaining version 3
-.SH BUGS
-Software tabs using \fB^T\fR work only immediately after the
-.I autoindent.
-.PP
+.Nm vi .
+.Sh ENVIRONMENT
+The
+.Nm
+command uses the following environment variables.
+.Bl -tag -width Fl
+.It Ev EXINIT
+User specified startup values for
+.Xr ex
+and
+.Nm vi .
+Usually specified in the file
+.Pa ~/.exrc
+.It Ev HOME
+Default directory to search for
+the file
+.Pa ~/.exrc
+.It Ev SHELL
+Shell used for
+.Em escaped
+commands (with the
+.Xr ex
+.Ic \&:!
+command).
+.It Ev TERM
+Terminal type used to lookup terminal capabilities from the
+file
+.Pa /usr/share/misc/termcap .
+.It Ev TERMCAP
+If set, specifies an alternate termcap file.
+.El
+.Sh FILES
+.Bl -tag -width /usr/libexec/ex?.?preserve -compact
+.It Pa  /usr/libexec/ex?.?strings
+error messages
+.It Pa  /usr/libexec/ex?.?recover
+recover command
+.It Pa  /usr/libexec/ex?.?preserve
+preserve command
+.It Pa  /usr/share/misc/termcap
+describes capabilities of terminals
+.It Pa  ~/.exrc
+editor startup file
+.Dc Pa /tmp/Ex Ns Em nnnnn
+editor temporary
+.Dc Pa /tmp/Rx Ns Em nnnnn
+named buffer temporary
+.It Pa /var/preserve
+preservation directory
+.El
+.Sh SEE ALSO
+.Xr awk 1 ,
+.Xr ed 1 ,
+.Xr grep 1 ,
+.Xr sed 1 ,
+.Xr grep 1 ,
+.Xr vi 1 ,
+.Xr termcap 5 ,
+.Xr environ 7
+.Rs
+.%T "Vi Quick Reference Card"
+.Re
+.Rs
+.%T "An Introduction to Display Editing with Vi"
+.Re
+.Sh BUGS
+Software tabs using
+.Sy \&^T
+work only immediately after the
+.Ic autoindent .
+.Pp
 Left and right shifts on intelligent terminals don't make use of
 insert and delete character operations in the terminal.
-.PP
+.Pp
 The
-.I wrapmargin
+.Ic wrapmargin
 option can be fooled since it looks at output columns when blanks are typed.
 If a long word passes through the margin and onto the next line without a 
 break, then the line won't be broken.
-.PP
+.Pp
 Insert/delete within a line can be slow if tabs are present on intelligent
 terminals, since the terminals need help in doing this correctly.
-.PP
+.Pp
 Saving text on deletes in the named buffers is somewhat inefficient.
-.PP
+.Pp
 The
-.I source
-command does not work when executed as \fB:source\fR;
-there is no way to use the \fB:append\fR, \fB:change\fR,
-and \fB:insert\fR commands, since it is not possible to give
-more than one line of input to a \fB:\fR escape.  To use these
-on a \fB:global\fR you must \fBQ\fR to \fIex\fR command mode,
+.Ic source
+command does not work when executed as
+.Ic :source ;
+there is no way to use the
+.Ic :append ,
+.Ic :change ,
+and
+.Ic :insert
+commands, since it is not possible to give
+more than one line of input to a
+.Ic \&:
+escape.  To use these
+on a
+.Ic :global
+you must
+.Ic Q
+to
+.Xr ex
+command mode,
 execute them, and then reenter the screen editor with
-.I vi
+.Nm vi
 or
-.I open.
+.Ic open .
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
