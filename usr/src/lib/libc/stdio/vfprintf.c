@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -226,7 +226,7 @@ pforw:			if (!(flags&LADJUST) && width)
 				PUTC(*t);
 			if (flags&LADJUST)
 				while (width-- > size)
-					PUTC(padc);
+					PUTC(' ');
 			break;
 		case 'u':
 			ARG();
@@ -274,8 +274,8 @@ num:			t = buf + MAXBUF - 1;
 					PUTC(padc);
 			while (++t < buf + MAXBUF)
 				PUTC(*t);
-			for (; width > size; --width)
-				PUTC(padc);
+			while (width-- > size)
+				PUTC(' ');
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
 			return(cnt);
