@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ch.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ch.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -86,9 +86,10 @@ static off_t last_piped_pos;
 static
 fch_get()
 {
+	extern int bs_mode;
 	register struct buf *bp;
-	register int n;
-	register char *p;
+	register int n, ch;
+	register char *p, *t;
 	off_t pos, lseek();
 
 	/* look for a buffer holding the desired block. */
@@ -157,22 +158,42 @@ read_more:
 	if (ispipe)
 		last_piped_pos += n;
 
+	p = &bp->data[bp->datasize];
 	bp->datasize += n;
 
 	/*
 	 * Set an EOI marker in the buffered data itself.  Then ensure the
 	 * data is "clean": there are no extra EOI chars in the data and
-	 * that the "meta" bit (the 0200 bit) is reset in each char.
+	 * that the "meta" bit (the 0200 bit) is reset in each char;
+	 * also translate \r\n sequences to \n if -u flag not set.
 	 */
 	if (n == 0) {
 		ch_fsize = pos;
 		bp->data[bp->datasize++] = EOI;
 	}
 
-	for (p = &bp->data[bp->datasize]; --n >= 0;) {
-		*--p &= 0177;
-		if (*p == EOI)
-			*p = 0200;
+	if (bs_mode) {
+		for (p = &bp->data[bp->datasize]; --n >= 0;) {
+			*--p &= 0177;
+			if (*p == EOI)
+				*p = 0200;
+		}
+	}
+	else {
+		for (t = p; --n >= 0; ++p) {
+			ch = *p & 0177;
+			if (ch == '\r' && n && (p[1] & 0177) == '\n') {
+				++p;
+				*t++ = '\n';
+			}
+			else
+				*t++ = (ch == EOI) ? 0200 : ch;
+		}
+		if (p != t) {
+			bp->datasize -= p - t;
+			if (ispipe)
+				last_piped_pos -= p - t;
+		}
 	}
 
 found:
