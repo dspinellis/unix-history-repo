@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.5 1993/11/25 01:37:50 wollman Exp $
+ *	$Id: buf.h,v 1.6 1993/12/19 00:55:11 wollman Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -110,6 +110,7 @@ struct buf
 	caddr_t	b_saveaddr;		/* original b_addr for PHYSIO */
 	void *	b_driver1;		/* for private use by the driver */
 	void *	b_driver2;		/* for private use by the driver */
+	void *	b_spc;			/* swap pager info */
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */

@@ -36,39 +36,27 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)swap_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id: swap_pager.h,v 1.3 1993/11/07 17:54:06 wollman Exp $
+ *	$Id: swap_pager.h,v 1.2 1993/10/16 16:20:21 rgrimes Exp $
+ */
+
+/*
+ * Modifications to the block allocation data structure by John S. Dyson
+ * 18 Dec 93.
  */
 
 #ifndef	_SWAP_PAGER_
 #define	_SWAP_PAGER_	1
 
 /*
- * In the swap pager, the backing store for an object is organized as an
- * array of some number of "swap blocks".  A swap block consists of a bitmask
- * and some number of contiguous DEV_BSIZE disk blocks.  The minimum size
- * of a swap block is:
- *
- *	max(PAGE_SIZE, dmmin*DEV_BSIZE)			[ 32k currently ]
- *
- * bytes (since the pager interface is page oriented), the maximum size is:
- *
- *	min(#bits(swb_mask)*PAGE_SIZE, dmmax*DEV_BSIZE)	[ 128k currently ]
- *
- * where dmmin and dmmax are left over from the old VM interface.  The bitmask
- * (swb_mask) is used by swap_pager_haspage() to determine if a particular
- * page has actually been written; i.e. the pager copy of the page is valid.
- * All swap blocks in the backing store of an object will be the same size.
- *
- * The reason for variable sized swap blocks is to reduce fragmentation of
- * swap resources.  Whenever possible we allocate smaller swap blocks to
- * smaller objects.  The swap block size is determined from a table of
- * object-size vs. swap-block-size computed at boot time.
+ * SWB_NPAGES can be set to any value from 1 to 32 pages per allocation,
+ * however, due to the allocation spilling into non-swap pager backed memory,
+ * suggest keeping SWB_NPAGES small (1-4).  If high performance is manditory
+ * perhaps up to 8 pages might be in order????
  */
-typedef	int	sw_bm_t;	/* pager bitmask */
-
+#define SWB_NPAGES 1
 struct	swblock {
-	sw_bm_t	 swb_mask;	/* bitmask of valid pages in this block */
-	daddr_t	 swb_block;	/* starting disk block for this block */
+	unsigned int swb_valid;		/* bitmask for valid pages */
+	int	 swb_block[SWB_NPAGES];	/* unfortunately int instead of daddr_t */
 };
 typedef struct swblock	*sw_blk_t;
 
@@ -77,7 +65,6 @@ typedef struct swblock	*sw_blk_t;
  */
 struct swpager {
 	vm_size_t    sw_osize;	/* size of object we are backing (bytes) */
-	int	     sw_bsize;	/* size of swap blocks (DEV_BSIZE units) */
 	int	     sw_nblocks;/* number of blocks in list (sw_blk_t units) */
 	sw_blk_t     sw_blocks;	/* pointer to list of swap blocks */
 	short	     sw_flags;	/* flags */
@@ -95,8 +82,9 @@ vm_pager_t	swap_pager_alloc(caddr_t, vm_size_t, vm_prot_t);
 void		swap_pager_dealloc(vm_pager_t);
 boolean_t	swap_pager_getpage(vm_pager_t, vm_page_t, boolean_t);
 boolean_t	swap_pager_putpage(vm_pager_t, vm_page_t, boolean_t);
+boolean_t	swap_pager_getmulti(vm_pager_t, vm_page_t *, int, int, boolean_t);
 boolean_t	swap_pager_haspage(vm_pager_t, vm_offset_t);
-extern int swap_pager_io(sw_pager_t, vm_page_t, int);
+int		swap_pager_io(sw_pager_t, vm_page_t *, int, int, int);
 void		swap_pager_iodone(struct buf *);
 boolean_t	swap_pager_clean(vm_page_t, int);
 

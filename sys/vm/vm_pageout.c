@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pageout.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_pageout.c,v 1.7 1993/12/19 00:56:12 wollman Exp $
+ *	$Id: vm_pageout.c,v 1.8 1993/12/21 05:51:06 davidg Exp $
  */
 
 /*
@@ -220,36 +220,21 @@ vm_pageout_scan()
 				 *	until all shadows are not paging.  This
 				 *	allows vm_object_collapse to work better and
 				 *	helps control swap space size.
-				 *	(J. Dyson 11 Nov 93)
+				 *	(J. Dyson 18 Dec 93)
 				 */
 				vm_page_unlock_queues();
 
-				if( !object->pager) {
-		/*
-		 *  If our shadow is active, then wait until paging is done
-		 *  this will allow vm_object_collapse to work well.
-		 *  The collapse is necessary to keep swap space down.
-		 */
-				if( ((object->shadow && object->shadow->paging_in_progress) ||
-					(vm_page_free_count < vm_pageout_free_min))) {
-						vm_object_unlock(object);
-						m = (vm_page_t) queue_next(&m->pageq);
-						continue;
-					} else {
-						vm_object_collapse(object);
-					/*
-					 * If we still have a shadow active, then defer the
-					 * creation of the pager further...
-					 */
-						if( object->shadow) {
-							if( object->shadow->paging_in_progress) {
-								vm_object_unlock(object);
-								m = (vm_page_t) queue_next(&m->pageq);
-								continue;
-							}
-						}
-					}
+
+				if( !object->pager &&
+					(object->shadow && object->shadow->paging_in_progress ) ||
+					(vm_page_free_count < vm_pageout_free_min)) {
+					vm_object_unlock(object);
+					m = (vm_page_t) queue_next(&m->pageq);
+					continue;
 				}
+
+
+				vm_object_collapse(object);
 
 				pmap_page_protect(VM_PAGE_TO_PHYS(m),
 						  VM_PROT_NONE);

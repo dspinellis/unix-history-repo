@@ -1,9 +1,12 @@
-$Id: Changes,v 1.1 1993/12/21 21:41:45 wollman Exp $
+$Id: Changes,v 1.2 1993/12/21 21:47:26 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.
 
 Since 1.0.2:
+
+- Fixed various swap 'leaks' and significantly improved paging
+  performance.  (davidg/dyson)
 
 - Add XNTPD to contrib section, and (un-compilable) kernel support for
   same to /sys/kern.  (wollman)

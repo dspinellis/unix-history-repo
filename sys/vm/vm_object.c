@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.11 1993/12/19 00:56:07 wollman Exp $
+ *	$Id: vm_object.c,v 1.12 1993/12/21 05:51:02 davidg Exp $
  */
 
 /*
@@ -65,6 +65,11 @@
  */
 
 /*
+ * Significant modifications to vm_object_collapse fixing the growing
+ * swap space allocation by John S. Dyson, 18 Dec 93.
+ */
+
+/*
  *	Virtual memory object module.
  */
 
@@ -75,7 +80,6 @@
 #include "vm.h"
 #include "vm_page.h"
 #include "ddb.h"
-
 
 static void _vm_object_allocate(vm_size_t, vm_object_t);
 static void vm_object_deactivate_pages(vm_object_t);
@@ -695,6 +699,12 @@ void vm_object_copy(src_object, src_offset, size,
 
 	vm_object_lock(src_object);
 
+	/*
+	 *	Try to collapse the object before copying it.
+	 */
+	vm_object_collapse(src_object);
+
+
 /*
  * we can simply add a reference to the object if we have no
  * pager or are using the swap pager or we have an internal object
@@ -731,11 +741,6 @@ void vm_object_copy(src_object, src_offset, size,
 		*src_needs_copy = TRUE;
 		return;
 	}
-
-	/*
-	 *	Try to collapse the object before copying it.
-	 */
-	vm_object_collapse(src_object);
 
 	/*
 	 *	If the object has a pager, the pager wants to
@@ -1084,7 +1089,17 @@ boolean_t	vm_object_collapse_allowed = TRUE;
  *	Requires that the object be locked and the page
  *	queues be unlocked.
  *
+ *	This routine substantially modified by John S. Dyson
+ *	Dec 18,1993.  Many restrictions have been removed from
+ *	this routine including:
+ *
+ *	1)	The object CAN now have a pager
+ *	2)	Backing object pager space is now removed if not needed
+ *	3)	Bypasses now check for existance of pages on paging space
+ *
  */
+
+
 void vm_object_collapse(object)
 	register vm_object_t	object;
 
@@ -1103,11 +1118,10 @@ void vm_object_collapse(object)
 		 *	Verify that the conditions are right for collapse:
 		 *
 		 *	The object exists and no pages in it are currently
-		 *	being paged out (or have ever been paged out).
+		 *	being paged out.
 		 */
 		if (object == NULL ||
-		    object->paging_in_progress != 0 ||
-		    object->pager != NULL)
+		    object->paging_in_progress != 0)
 			return;
 
 		/*
@@ -1127,7 +1141,7 @@ void vm_object_collapse(object)
 		 */
 	
 		if (!backing_object->internal ||
-		    backing_object->paging_in_progress != 0) {
+		    backing_object->paging_in_progress != 0 ) {
 			vm_object_unlock(backing_object);
 			return;
 		}
@@ -1143,10 +1157,22 @@ void vm_object_collapse(object)
 		 *	parent object.
 		 */
 		if (backing_object->shadow != NULL &&
-		    backing_object->shadow->copy != NULL) {
+		    backing_object->shadow->copy == backing_object) {
 			vm_object_unlock(backing_object);
 			return;
 		}
+
+		/*
+		 * we can deal only with the swap pager
+		 */
+		if( (object->pager && 
+		    	object->pager->pg_type != PG_SWAP) ||
+		    (backing_object->pager && 
+		    	backing_object->pager->pg_type != PG_SWAP)) {
+			vm_object_unlock(backing_object);
+			return;
+		}
+			
 
 		/*
 		 *	We know that we can either collapse the backing
@@ -1203,7 +1229,6 @@ void vm_object_collapse(object)
 				    }
 				    else {
 					if (pp) {
-#if 1
 					    /*
 					     *  This should never happen -- the
 					     *  parent cannot have ever had an
@@ -1213,13 +1238,6 @@ void vm_object_collapse(object)
 					    panic("vm_object_collapse: bad case");
 					    /* andrew@werple.apana.org.au - from
 					       mach 3.0 VM */
-#else
-					    /* may be someone waiting for it */
-					    PAGE_WAKEUP(pp);
-					    vm_page_lock_queues();
-					    vm_page_free(pp);
-					    vm_page_unlock_queues();
-#endif
 					}
 					/*
 					 *	Parent now has no page.
@@ -1233,44 +1251,39 @@ void vm_object_collapse(object)
 
 			/*
 			 *	Move the pager from backing_object to object.
-			 *
-			 *	XXX We're only using part of the paging space
-			 *	for keeps now... we ought to discard the
-			 *	unused portion.
 			 */
 
-			/*
-			 * Remove backing_object from the object hashtable now.
-			 * This is necessary since its pager is going away
-			 * and therefore it is not going to be removed from
-			 * hashtable in vm_object_deallocate().
-			 *
-			 * NOTE - backing_object can only get at this stage if
-			 * it has an internal pager. It is not normally on the
-			 * hashtable unless it was put there by eg. vm_mmap()
-			 *
-			 * XXX - Need I worry here about *named* ANON pagers ?
-			 */
-
-			if (backing_object->pager) {
-				vm_object_remove(backing_object->pager);
+			if( backing_object->pager) {
+				if( object->pager) {
+					object->paging_in_progress++;
+					backing_object->paging_in_progress++;
+					/*
+					 * copy shadow object pages into ours
+					 * and destroy unneeded pages in shadow object.
+					 */
+					swap_pager_copy(
+						backing_object->pager, backing_object->paging_offset,
+						object->pager, object->paging_offset,
+						object->shadow_offset);
+					object->paging_in_progress--;
+					if( object->paging_in_progress == 0)
+						wakeup((caddr_t)object);
+					backing_object->paging_in_progress--;
+					if( backing_object->paging_in_progress == 0)
+						wakeup((caddr_t)backing_object);
+				} else {
+					/*
+					 * grab the shadow objects pager
+					 */
+					object->pager = backing_object->pager;
+					object->paging_offset = backing_object->paging_offset + backing_offset;
+					/*
+					 * free unnecessary blocks
+					 */
+					swap_pager_freespace( object->pager, 0, object->paging_offset);
+				}
+				vm_object_remove( backing_object->pager);
 			}
-			object->pager = backing_object->pager;
-#if 1
-			/* Mach 3.0 code */
-			/* andrew@werple.apana.org.au, 12 Feb 1993 */
-
-			/*
-			 * If there is no pager, leave paging-offset alone.
-			 */
-			if (object->pager)
-				object->paging_offset =
-					backing_object->paging_offset +
-						backing_offset;
-#else
-			/* old VM 2.5 version */
-			object->paging_offset += backing_offset;
-#endif
 
 			backing_object->pager = NULL;
 
@@ -1346,9 +1359,10 @@ void vm_object_collapse(object)
 
 				if (p->offset >= backing_offset &&
 				    new_offset <= size &&
-				    ((pp = vm_page_lookup(object, new_offset))
-				      == NULL ||
-				     (pp->flags & PG_FAKE))) {
+				    ((pp = vm_page_lookup(object, new_offset)) == NULL ||
+					(pp->flags & PG_FAKE)) &&
+					(!object->pager ||
+					!vm_pager_has_page( object->pager, object->paging_offset+new_offset))) {
 					/*
 					 *	Page still needed.
 					 *	Can't go any further.
@@ -1386,6 +1400,8 @@ void vm_object_collapse(object)
 			 *	will not vanish; so we don't need to call
 			 *	vm_object_deallocate.
 			 */
+			if( backing_object->ref_count == 1)
+				printf("should have called obj deallocate\n");
 			backing_object->ref_count--;
 			vm_object_unlock(backing_object);
 
@@ -1398,6 +1414,7 @@ void vm_object_collapse(object)
 		 */
 	}
 }
+
 
 /*
  *	vm_object_page_remove: [internal]
