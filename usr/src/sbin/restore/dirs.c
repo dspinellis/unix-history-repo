@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,6 +29,8 @@ static char sccsid[] = "@(#)dirs.c	8.2 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <machine/endian.h>
 
 #include "pathnames.h"
 #include "restore.h"
@@ -322,14 +324,17 @@ putdir(buf, size)
 	} else {
 		for (loc = 0; loc < size; ) {
 			dp = (struct direct *)(buf + loc);
-			if (oldinofmt) {
-				if (Bcvt) {
-					swabst((u_char *)"l2s", (u_char *) dp);
-				}
-			} else {
-				if (Bcvt) {
-					swabst((u_char *)"ls", (u_char *) dp);
-				}
+			if (Bcvt)
+				swabst((u_char *)"ls", (u_char *) dp);
+			if (oldinofmt && dp->d_ino != 0) {
+#				if BYTE_ORDER == BIG_ENDIAN
+					if (Bcvt)
+						dp->d_namlen = dp->d_type;
+#				else
+					if (!Bcvt)
+						dp->d_namlen = dp->d_type;
+#				endif
+				dp->d_type = DT_UNKNOWN;
 			}
 			i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
 			if ((dp->d_reclen & 0x3) != 0 ||
