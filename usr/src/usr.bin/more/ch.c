@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ch.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -155,7 +155,7 @@ fch_get()
 			quit();
 		}
 	} else
-		lseek(file, pos, 0);
+		(void)lseek(file, pos, L_SET);
 
 	/*
 	 * Read the block.
@@ -389,7 +389,7 @@ ch_init(want_nbufs, keep)
 		 * If we don't have ANY, then quit.
 		 * Otherwise, just report the error and return.
 		 */
-		sprintf(message, "cannot allocate %d buffers",
+		(void)sprintf(message, "cannot allocate %d buffers",
 			want_nbufs - nbufs);
 		error(message);
 		if (nbufs == 0)
@@ -426,7 +426,7 @@ ch_addbuf(nnew)
 	 * We don't have enough buffers.  
 	 * Allocate some new ones.
 	 */
-	newbufs = (struct buf *) calloc(nnew, sizeof(struct buf));
+	newbufs = (struct buf *) calloc((u_int)nnew, sizeof(struct buf));
 	if (newbufs == NULL)
 		return (1);
 
