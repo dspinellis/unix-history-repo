@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.19 %G%";
+static char sccsid[] = "@(#)interp.c 1.20 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -1491,14 +1491,26 @@ interpreter(base)
 			continue;
 		case O_ATAN:
 			pc.cp++;
+			if (_runtst) {
+				push8(ATAN(pop8()));
+				continue;
+			}
 			push8(atan(pop8()));
 			continue;
 		case O_COS:
 			pc.cp++;
+			if (_runtst) {
+				push8(COS(pop8()));
+				continue;
+			}
 			push8(cos(pop8()));
 			continue;
 		case O_EXP:
 			pc.cp++;
+			if (_runtst) {
+				push8(EXP(pop8()));
+				continue;
+			}
 			push8(exp(pop8()));
 			continue;
 		case O_LN:
@@ -1511,6 +1523,10 @@ interpreter(base)
 			continue;
 		case O_SIN:
 			pc.cp++;
+			if (_runtst) {
+				push8(SIN(pop8()));
+				continue;
+			}
 			push8(sin(pop8()));
 			continue;
 		case O_SQRT:
