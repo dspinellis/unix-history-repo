@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.22 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.23 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -118,6 +118,11 @@ tmp             mode=01777
 
 # ./usr
 usr
+
+# ./usr/X11R5
+X11R5
+# ./usr/X11R5
+..
 
 # ./usr/bin
 bin
@@ -835,9 +840,9 @@ smm
 # ./usr/share/doc/smm/12.timed
 ..
 
-# ./usr/share/doc/smm/13.net
-13.net
-# ./usr/share/doc/smm/13.net
+# ./usr/share/doc/smm/13.amd
+13.amd
+# ./usr/share/doc/smm/13.amd
 ..
 
 # ./usr/share/doc/smm/14.uucpimpl
@@ -860,9 +865,9 @@ smm
 # ./usr/share/doc/smm/17.password
 ..
 
-# ./usr/share/doc/smm/18.termdesc
-18.termdesc
-# ./usr/share/doc/smm/18.termdesc
+# ./usr/share/doc/smm/18.net
+18.net
+# ./usr/share/doc/smm/18.net
 ..
 
 # ./usr/share/doc/smm
@@ -1038,6 +1043,11 @@ games
 # ./usr/share/games/atc
 atc
 # ./usr/share/games/atc
+..
+
+# ./usr/share/games/boggle
+boggle
+# ./usr/share/games/boggle
 ..
 
 # ./usr/share/games/ching
