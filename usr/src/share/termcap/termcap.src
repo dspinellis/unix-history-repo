@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.49 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.50 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -2530,6 +2530,217 @@ vx|ims-ansi|ultima2|ultimaII|IMS Ultima II:\
 	:so=\E[7m:se=\E[0m\E[1m:us=\E[4m:ue=\E[0m\E[1m:sr=\EM:
 # # --------------------------------
 #
+# w: WYSE
+#
+# The wy{30,50,75,85} entries are recommended by
+#	Wyse Technology
+#	3571 North First Street
+#	San Jose, CA 95134
+# Entries for the wy60 and wy99 are based on Wyse's recommendations.
+w0|wy30|wyse30|Wyse 30:\
+	:am:bw:hs:mi:xo:bs:pt:\
+	:co#80:li#24:sg#1:ug#1:kn#9:\
+	:ae=\EG0\EH^C:al=2\EE:as=\EG0\EH^B:bt=\EI:cd=80\Ey:\
+	:ce=\Et:cl=80\E*:cm=\E=%+ %+ :ct=\E0:dc=10\EW:dl=1\ER:\
+	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:im=\Eq:ip=2:\
+	:is=\E'\E(\E\^3\E`9^N^T:k1=^A@\r:k2=^AA\r:k3=^AB\r:\
+	:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:kb=\b:\
+	:kd=\n:kh=^^:kl=\b:kr=\f:ku=^K:nd=\f:se=\EG0:so=\EG4:\
+	:sr=3\Ej:st=\E1:ts=\EF:ue=\EG0:up=^K:us=\EG8:ve=\E`1:\
+	:pf=^T:po=^R:\
+	:vi=\E`0:ko=bt,le,do,nd,up,dc,dl,ho,al:
+w1|wy30-vb|wyse30-vb|wyse 30 visual bell:\
+	:vb=\E`8\E`\072\E`9:\
+	:tc=wy30:
+w2|wy50|wyse50|Wyse 50:\
+	:am:bw:hs:mi:xo:bs:pt:\
+	:co#80:li#24:sg#1:ug#1:kn#9:\
+	:ae=\EG0\EH^C:al=\EE:as=\EG0\EH^B:bt=\EI:cd=20\Ey:\
+	:ce=\Et:cl=20\E*:cm=\E=%+ %+ :ct=\E0:dc=1\EW:dl=\ER:\
+	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:i1=30\E`\072\E`9:im=\Eq:\
+	:ip=1:is=^N^T\E'\E(:k1=^A@\r:k2=^AA\r:k3=^AB\r:\
+	:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:\
+	:k9=^AH\r:kb=\b:kd=\n:kh=^^:kl=\b:kr=\f:ku=^K:nd=\f:\
+	:se=\EG0:so=\EGt:sr=\Ej:st=\E1:ts=\EF:ue=\EG0:up=^K:\
+	:us=\EG8:ve=\E`1:vi=\E`0:\
+	:pf=^T:po=^R:\
+	:ko=bt,le,do,nd,up,dc,dl,ho,al:
+w3|wy50-vb|wyse50-vb|wyse 50 visual bell:\
+	:vb=\E`8\E`\072\E`9:\
+	:tc=wy50:
+w4|wy50-w|wyse50-w|wyse 50 132-column:\
+	:cm=\Ea%i%dR%dC:co#132:dc=2\EW:i1=\E`;\E`9:\
+	:tc=wy50:
+w5|wy50-wvb|wyse50-wvb|wyse 50 132-column visual bell:\
+	:cm=\Ea%i%dR%dC:co#132:dc=2\EW:i1=\E`;\E`9:\
+	:vb=\E`8\E`;\E`9:\
+	:tc=wy50:
+# from John Gillmore hoptoad!gnu@lll-crg.arpa
+wg|wyse-vp|wyse|Wyse 50 in ADDS Viewpoint emulation mode with "enhance" on:\
+	:am:do=^J:if=/usr/share/tabset/wyse-adds:\
+	:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:nd=^F:\
+	:up=^Z:cl=^L:ho=^A:ll=^A^Z:kl=^U:kr=^F:kd=^J:ku=^Z:kh=^A:\
+	:pt:so=^N:se=^O:us=^N:ue=^O:dl=\El:al=\EM:im=\Eq:ei=\Er:dc=\EW:\
+	:is=\E`\072\E`9^O\Er:rs=\E`\072\E`9^O\Er:
+wh|wyse-vp-nk|Wyse 50 in ADDS Viewpoint enhanced mode with cursor keys gone:\
+	:kl@:kr@:kd@:ku@:kh@:tc=wyse-vp:
+wi|wyse925|Wyse-50 emulating tvi925:\
+	:xn@:tc=tvi925:
+# Wyse 60 in 24 row native mode, switches screens for vi and emacs.
+# This termcap is a composite of entries submitted by Steve Van Domelen
+# (Wyse Tech, svd@bigboy.wyse.com) and Douglas Good (doug@cli.com).
+# Merged by Paul Vojta (vojta@math.berkeley.edu).
+w6|wy60|Wyse 60 in native mode:\
+	:ae=\EH^C:al=4\EE:am:as=\EH^B:bl=^G:bs:bt=\EI:bw:cd=100\Ey:ce=\Et:\
+	:cl=100\E*:cm=\E=%+ %+ :co#80:ct=\E0:da:db:dc=11\EW:dl=5\ER:do=^J:\
+	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:hs:if=/usr/share/tabset/std:im=\Eq:ip=3:\
+	:is=\Ed$\EcD\E'\Er\EH^C\Ed/\EO\Ee1\Ed*\E`@\E`9\E`1^N^T\EwG\Ew0^^^K:\
+	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:k4=^AD\r:k5=^AE\r:k6=^AF\r:\
+	:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=\b:kd=\EOB:ke=200\EcU:kh=\E{:kl=\EOD:\
+	:km:kn#10:ko=bt,le,do,nd,up,dc,dl,ho,al:kr=\EOC:\
+	:ks=200\EZ0+\EOA\177\EZ0,\EOB\177\EZ0.\EOC\177\EZ0-\EOD\177\EZ0*\E{\177:\
+	:ku=\EOA:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
+	:le=\b:li#24:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:nd=\f:pf=^T:\
+	:po=^R:pt:rs=500\E~!\E~4\E`\:\EeF\Ee(\EwG:se=\EG0:sf=^J:so=\EGt:\
+	:sr=7\Ej:st=\E1:te=50^Z\Ew0:ti=50\Ew1:ts=\EF:ue=\EG0:up=^K:us=\EG8:
+#	Must delete uc= if using infocomp to translate
+w7|wy60-w|wyse60-w|wyse 60 132-column:\
+	:co#132:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee(\EwG:tc=wy60:
+#	From now on, page-switching is no longer possible
+w8|wy60-25|wyse60-25|wyse 60 80-column 25-lines:\
+	:li#25:te:ti:\
+	:rs=500\E~!\E~4\E`\:\EeG\Ee)\EwG:tc=wy60:
+w9|wy60-25-w|wyse60-25-w|wyse 60 132-column 25-lines:\
+	:co#132:li#25:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:te:ti:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee)\EwG:tc=wy60:
+wa|wy60-42|wyse60-42|wyse 60 80-column 42-lines:\
+	:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
+	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\E`\:\EeF\Ee*\EwG:tc=wy60:
+wb|wy60-42-w|wyse60-42-w|wyse 60 132-column 42-lines:\
+	:co#132:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
+	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee*\EwG:tc=wy60:
+wc|wy60-43|wyse60-43|wyse 60 80-column 43-lines:\
+	:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
+	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\E`\:\EeF\Ee+\EwG:tc=wy60:
+wd|wy60-43-w|wyse60-43-w|wyse 60 132-column 43-lines:\
+	:co#132:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
+	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee+\EwG:tc=wy60:
+#	Not recommended at high baud rates
+we|wy60-vb|wyse60-vb|Wyse 60 visual bell:\
+	:vb=\E`8\E`9:\
+	:tc=wy60:
+wf|wy60-w-vb|wy60-wvb|wyse60-wvb|Wyse 60 132-column visual bell:\
+	:vb=\E`8\E`9:\
+	:tc=wy60-w:
+#
+#	The Wyse 75 is a vt100 lookalike without advanced video.
+#
+#	   The Wyse 75 can support one attribute (e.g. Dim, Inverse,
+#	Underline) without magic cookies.  The following description
+#	uses this capability, but when more than one attribute is
+#	put on the screen at once, all attributes will be changed
+#	to be the same as the last attribute given.
+#	   The Wyse 75 can support more attributes when used with magic
+#	cookies.  The wy75-mc terminal description uses magic cookies
+#	to correctly handle multiple attributes on a screen.
+#
+wm|wy75|wyse75|wyse 75:\
+	:am:hs:mi:ms:xn:xo:bs:pt:\
+	:co#80:li#24:pb#1201:kn#6:\
+	:AL=2*\E[%dL:DC=3*\E[%dP:DL=1*\E[%dM:DO=\E[%dB:\
+	:IC=1*\E[%d@:LE=\E[%dD:RI=\E[%dC:UP=\E[%dA:ae=^O:\
+	:al=2\E[L:as=\E[0m^N:bt=\E[1Z:cd=30\E[J:ce=3\E[K:\
+	:ch=\E[%i%dG:cl=30\E[H\E[J:cm=\E[%i%d;%dH:\
+	:cs=2\E[%i%d;%dr:ct=\E[3g:dc=3\E[P:dl=\E[M:\
+	:ds=\E[>,^A^A\E[>-^A^A:ei=\E[4l:fs=^A:ho=\E[H:\
+	:im=\E[4h:ip=1:is=\E>\E[?7;?8h\E[4;?1l^O\E)0:kb=\b:\
+	:kd=\E[B:ke=\E[?1l\E>:kh=\E[H:kl=\E[D:kr=\E[C:\
+	:ks=\E[?1l\E[?7h\E=:ku=\E[A:nd=\E[C:r1=\E7\E[1;24r\E8:\
+	:r2=20\E[0m\E[35;?7;?8h\E[30;?1l:r3=80\E[?3l:rc=\E8:\
+	:sc=\E7:se=\E[0m:so=\E[1t\E[7m:sr=2\EM:st=\EH:\
+	:ts=\E[>,^A:ue=\E[0m:up=\E[A:us=\E[2t\E[4m:ve=\E[?25h:\
+	:po=\E[5i:pf=\E[4i:\
+	:vi=\E[?25l:ko=nd,up,dl,ce,ho,al:
+#
+#	This terminal description uses the non-hidden attribute mode
+#	(with magic cookie).
+#
+wn|wy75-mc|wyse75-mc|wyse 75 with magic cookies:\
+	:ae=\E[0p^O:as=\E[0p^N:ms@:r2=20\E[0p\E[35;?7;?8h\E[30;?1l:\
+	:se=\E[0p:sg#1:so=\E[17p:ue=\E[0p:ug#1:us=\E[8p:\
+	:tc=wy75:
+wo|wy75-vb|wyse75-vb|wyse 75 with visual bell:\
+	:vb=\E[30h\E,\E[30l:\
+	:tc=wy75:
+wp|wy75-w|wyse75-w|wyse 75 in 132 column mode:\
+	:co#132:r3=80\E[?3h:\
+	:tc=wy75:
+wq|wy75-wvb|wyse75-wvb|wyse 75 with visual bell 132 columns:\
+	:co#132:r3=80\E[?3h:vb=\E[30h\E,\E[30l:\
+	:tc=wy75:
+#
+wj|wy75ap|wyse75ap|wy-75ap|wyse-75ap|Wyse WY-75 Applications and Cursor keypad:\
+	:is=\E[1;24r\E[?10;3l\E[?1;25h\E[4l\E[m\E(B\E=:\
+	:kd=\EOB:ke=10\E[?1l\E>:kh=\EOH:kl=\EOD:kr=\EOC:\
+	:ks=10\E[?1h\E=:ku=\EOA:\
+	:tc=wyse75:
+#
+#	Wyse 85 emulating a vt220 7 bit mode.
+#		24 line screen with status line.
+#
+#	The vt220 mode permits more function keys but it wipes out
+#	the escape key.  I strongly reccomend that f11 be set to
+#	escape (esc).
+#	The terminal may have to be set for 8 data bits and 2 stop
+#	bits for the arrow keys to work.
+#	The Wyse 85 runs faster with XON/XOFF enabled.  Also the
+#	(dch) and (ich) work best when XON/XOFF is set.  (ich) and
+#	(dch) leave trash on the screen when used without XON/XOFF.
+#
+wr|wy85|wyse85|wyse 85:\
+	:am:hs:mi:ms:xn:xo:bs:pt:\
+	:co#80:li#24:kn#3:\
+	:AL=5*\E[%dL:DC=3*\E[%dP:DL=3*\E[%dM:DO=\E[%dB:\
+	:IC=4*\E[%d@:LE=\E[%dD:RI=\E[%dC:UP=\E[%dA:ae=^O:\
+	:al=5\E[L:as=^N:bt=\E[Z:cd=110\E[J:ce=\E[K:\
+	:cl=110\E[H\E[J:cm=1\E[%i%d;%dH:cs=\E[%i%d;%dr:\
+	:ct=\E[3g:dc=3\E[P:dl=3\E[M:ds=\E[40l:ei=\E[4l:\
+	:fs=\E[1;24r\E8:ho=\E[H:\
+	:i1=\E[62;1"p\E7\E[?6l\E8\E[?5W:im=\E[4h:ip=3:\
+	:is=16\E[2;4;20;30l\E[?1;4;10;16l\E[12;36h\E[?7;8;25h:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
+	:kb=\b:kd=\E[B:ke=\E>:kh=\E[26~:\
+	:kl=\E[D:kr=\E[C:ks=\E[?1l\E=:ku=\E[A:l1=PF1:l2=PF2:\
+	:l3=PF3:l4=PF4:nd=\E[C:\
+	:r1=\E<\E[3;13l\E[!p\E7\E[1;24r\E8\E(B:\
+	:r2=70\E[35h\E[?3l:rc=\E8:sc=\E7:se=\E[m:so=\E[1m:\
+	:sr=3\EM:st=\EH:ts=\E[40h\E7\E[25;%i%dH:ue=\E[m:\
+	:up=\E[A:us=\E[4m:ve=\E[?25h:vi=\E[?25l:nl=\E[B:\
+	:po=\E[5i:pf=\E[4i:\
+	:ko=do,nd,up:
+#
+#	Wyse 85 with visual bell.
+ws|wy85-vb|wyse85-vb|wyse 85 with visual bell:\
+	:vb=\E[30h\E,\E[30l:\
+	:tc=wy85:
+#
+#	Wyse 85 in 132-column mode.
+wt|wy85-w|wyse85-w|wyse 85 in 132-column mode:\
+	:co#132:\
+	:r2=120\E[35h\E[?3h:\
+	:tc=wy85:
+#
+#	Wyse 85 in 132-column mode with visual bell.
+wu|wy85-wvb|wyse85-wvb|wyse 85 with visual bell 132-columns:\
+	:vb=\E[30h\E,\E[30l:\
+	:tc=wy85:
+# # --------------------------------
+#
 # y: TELERAY
 #
 # Note two things called "teleray".  Reorder should move the common one
@@ -2568,119 +2779,6 @@ y7|t10|teleray 10 special:\
 	:xs:xt:
 yf|t1061f|teleray 1061 with fast PROMs:\
 	:al=\EL:ip@:dl=\EM:tc=t1061:
-# Wyse 50 entry by Toni Guttman extended by Jeff Anton
-ye|w50|wyse50|Wyse 50:\
-	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:\
-	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`\072\200\EC\EDF\E0\E'\E(\EA21:\
-	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
-	:so=\EG4:se=\EG0:sg#1:sr=\Ej:ho=^^:ug#1:
-# it is not known if the status line works with sysline
-yh|w50-s|wyse50-s|Wyse 50 for sysline:\
-	:hs:ts=\Ef:fs=\r:ds=\Ef\r:es:tc=w50:
-yg|w50-w|w50-132|wyse50-132|Wyse 50-132:\
-	:cm=\Ea%i%dR%dC:co#132:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:tc=w50:
-# from John Gillmore hoptoad!gnu@lll-crg.arpa
-wv|wyse-vp|wyse|Wyse 50 in ADDS Viewpoint emulation mode with "enhance" on:\
-	:am:do=^J:if=/usr/share/tabset/wyse-adds:\
-	:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:nd=^F:\
-	:up=^Z:cl=^L:ho=^A:ll=^A^Z:kl=^U:kr=^F:kd=^J:ku=^Z:kh=^A:\
-	:pt:so=^N:se=^O:us=^N:ue=^O:dl=\El:al=\EM:im=\Eq:ei=\Er:dc=\EW:\
-	:is=\E`\072\E`9^O\Er:rs=\E`\072\E`9^O\Er:
-wk|wyse-vp-nk|Wyse 50 in ADDS Viewpoint enhanced mode with cursor keys gone:\
-	:kl@:kr@:kd@:ku@:kh@:tc=wyse-vp:
-vw|wyse925|Wyse-50 emulating tvi925:\
-	:xn@:tc=tvi925:
-# Wyse 60 in 24 row native mode, switches screens for vi and emacs.
-# This termcap is a composite of entries submitted by Steve Van Domelen
-# (Wyse Tech, svd@bigboy.wyse.com) and Douglas Good (doug@cli.com).
-# Merged by Paul Vojta (vojta@math.berkeley.edu).
-ws|wy60|Wyse 60 in native mode:\
-	:ae=\EH^C:al=4\EE:am:as=\EH^B:bl=^G:bs:bt=\EI:bw:cd=100\Ey:ce=\Et:\
-	:cl=100\E*:cm=\E=%+ %+ :co#80:ct=\E0:da:db:dc=11\EW:dl=5\ER:do=^J:\
-	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:hs:if=/usr/lib/tabset/std:im=\Eq:ip=3:\
-	:is=\Ed$\EcD\E'\Er\EH^C\Ed/\EO\Ee1\Ed*\E`@\E`9\E`1^N^T\EwG\Ew0^^^K:\
-	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:k4=^AD\r:k5=^AE\r:k6=^AF\r:\
-	:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=\b:kd=\EOB:ke=200\EcU:kh=\E{:kl=\EOD:\
-	:km:kn#10:ko=bt,le,do,nd,up,dc,dl,ho,al:kr=\EOC:\
-	:ks=200\EZ0+\EOA\177\EZ0,\EOB\177\EZ0.\EOC\177\EZ0-\EOD\177\EZ0*\E{\177:\
-	:ku=\EOA:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
-	:le=\b:li#24:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:nd=\f:pf=^T:\
-	:po=^R:pt:rs=500\E~!\E~4\E`\:\EeF\Ee(\EwG:se=\EG0:sf=^J:so=\EGt:\
-	:sr=7\Ej:st=\E1:te=50^Z\Ew0:ti=50\Ew1:ts=\EF:ue=\EG0:up=^K:us=\EG8:
-#	Must delete uc= if using infocomp to translate
-w7|wy60-w|wyse60-w|wyse 60 132-column:\
-	:co#132:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:\
-	:rs=500\E~!\E~4\EeF\E`;\Ee(\EwG:tc=wy60:
-#	From now on, page-switching is no longer possible
-w8|wy60-25|wyse60-25|wyse 60 80-column 25-lines:\
-	:li#25:te:ti:\
-	:rs=500\E~!\E~4\E`\:\EeG\Ee)\EwG:tc=wy60:
-w9|wy60-25-w|wyse60-25-w|wyse 60 132-column 25-lines:\
-	:co#132:li#25:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:te:ti:\
-	:rs=500\E~!\E~4\EeF\E`;\Ee)\EwG:tc=wy60:
-wa|wy60-42|wyse60-42|wyse 60 80-column 42-lines:\
-	:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
-	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
-	:rs=500\E~!\E~4\E`\:\EeF\Ee*\EwG:tc=wy60:
-wb|wy60-42-w|wyse60-42-w|wyse 60 132-column 42-lines:\
-	:co#132:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
-	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
-	:rs=500\E~!\E~4\EeF\E`;\Ee*\EwG:tc=wy60:
-wc|wy60-43|wyse60-43|wyse 60 80-column 43-lines:\
-	:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
-	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
-	:rs=500\E~!\E~4\E`\:\EeF\Ee+\EwG:tc=wy60:
-wd|wy60-43-w|wyse60-43-w|wyse 60 132-column 43-lines:\
-	:co#132:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
-	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
-	:rs=500\E~!\E~4\EeF\E`;\Ee+\EwG:tc=wy60:
-#	Not recommended at high baud rates
-we|wy60-vb|wyse60-vb|Wyse 60 visible bell:\
-	:vb=\E`8\E`9:\
-	:tc=wy60:
-wf|wy60-w-vb|wy60-wvb|wyse60-wvb|Wyse 60 132-column visible bell:\
-	:vb=\E`8\E`9:\
-	:tc=wy60-w:
-# wyse 75 series from JLarson.pa@xerox.arpa
-wx|wyse75|wy75|wyse 75 terminal :\
-	:co#80:li#24:cl=50\E[H\E[2J:bs:cm=5\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:al=3\E[L:dl=3\E[M:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:do=\E[B:\
-	:ic=\E[@:ei=:im=:pt:bw:dc=\E[P:ce=3\E[K:ho=10\E[H:pt:\
-	:mi:nd=\E[C:bt=\E[Z:us=\E[8p:ue=\E[p:so=\E[5m:se=\E[m:\
-	:md=\E[1p:mr=\E[16p:mb=\E[2p:mk=\E[4p:me=\E[0p:hs:ll=\E[24;1H:\
-	:cd=50\E[J:cs=9\E[%i%d;%dr:ae=\E(B:as=\E(0:kh=\E[H:kb=^H:\
-	:k0=\EOP:k1=\EOQ:k2=\EOR:k3=\EOS:k4=\E[M:\
-	:k5=\E[17~:k6=\E[31~:k7=\E[18~:k8=\E[19~:k9=\E[20~:kn#10:\
-	:l0=PF1:l1=PF2:l2=PF3:l3=PF4:l4=F5:\
-	:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
-	:is=\E[1;24r\E[24;1H\E[35;?25h\E[4;?10;3;1l\E[m\E(B\E>:\
-	:ds=\E7\E[>,//\E8:ts=\E7\E[>,^A:fs=^A\E8:
-wy|wyse75-80|wy75-80|wyse 75 terminal with 80-column initialization:\
-	:is=\E[?3l:tc=wy75:
-wl|wyse75-132|wy75-132|wyse 75 terminal with 132 columns :\
-	:is=\E[?3h:co#132:tc=wy75:
-#
-#   Wyse WY75 utilizing keypad
-#
-w5|wy75ap|wyse75ap|wy-75ap|wyse-75ap|Wyse WY-75 Applications and Cursor keypad:\
-	:is=\E[1;24r\E[?10;3l\E[?1;25h\E[4l\E[m\E(B\E=:\
-	:kd=\EOB:ke=10\E[?1l\E>:kh=\EOH:kl=\EOD:kr=\EOC:\
-	:ks=10\E[?1h\E=:ku=\EOA:\
-	:tc=wyse75:
-# from ucbvax!ucsfmis!shewmake
-Wc|wy85|wyse85|wyse-85:\
-	:do=^J:co#80:li#24:cl=\E[;H\E[2J:\
-	:le=^H:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:ce=\E[0K:cd=\E[0J:so=\E[7m:se=\E[27m:\
-	:us=\E[4m:ue=\E[24m:\
-	:is=\E[1;24r\E[24;1H\E[0m:\
-	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
-	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
-	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:kh=\E[H"ta=^I:pt:sr=\EM:\
-	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:as=^N:ae=^O:bt=\E[Z:\
-	:dc=\E[P:dl=\E[M:al=\E[L:ei=\E[4l:im=\E[4h:\
-	:vb=\E[?5h\E[?5l:\
-	:hs:es:ts=\E7\E[?25l\E[40h\E[25;%dH\E[2K:fs=\E[1;24r\E8\E[?25h:
 # # --------------------------------
 #
 # z: Miscellaneous
