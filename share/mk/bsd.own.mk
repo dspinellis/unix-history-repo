@@ -1,4 +1,4 @@
-#	$Id$
+#	$Id: bsd.own.mk,v 1.3 1994/01/31 06:10:35 rgrimes Exp $
 
 BINGRP?=	bin
 BINOWN?=	bin
@@ -9,6 +9,6 @@ STRIP?=		-s
 COPY?=		-c
 
 MANDIR?=	/usr/share/man/man
-MANGRP?=	bin
+MANGRP?=	man
 MANOWN?=	bin
 MANMODE?=	444
