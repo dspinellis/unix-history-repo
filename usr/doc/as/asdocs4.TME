@@ -1,0 +1,661 @@
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.\"
+.\"	Copyright (c) 1982 Regents of the University of California
+.\"	@(#)asdocs4.me 1.7 2/9/83
+.\"
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.SH 1 "Machine instructions"
+.pp
+The syntax of machine instruction statements accepted by
+.i as
+is generally similar to the syntax of \*(DM.
+There are differences,
+however.
+.SH 2 "Character set"
+.pp
+.i As
+uses the character
+.q \*(DL
+instead of
+.q # 
+for immediate constants,
+and the character
+.q *
+instead of
+.q @ 
+for indirection.
+Opcodes and register names
+are spelled with lower-case rather than upper-case letters.
+.SH 2 "Specifying Displacement Lengths"
+.pp
+Under certain circumstances,
+the following constructs are (optionally) recognized by
+.i as
+to indicate the number of bytes to allocate for
+the displacement used when constructing
+displacement and displacement deferred addressing modes:
+.(b
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82
+.nr 80 0
+.nr 38 \wprimary
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3B\`\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3W\`\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3L\`\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \walternate
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3B^\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3W^\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3L^\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 82 0
+.nr 38 \wlength
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \wbyte (1 byte)
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \wword (2 bytes)
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \wlong word (4 bytes)
+.if \n(82<\n(38 .nr 82 \n(38
+.82
+.rm 82
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr TW \n(82
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 48 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'primary\h'|\n(41u'alternate\h'|\n(42u'length
+.nr 36 \n(.v
+.vs \n(.vu-\n(.sp
+\h'|0'\s\n(33\l'|\n(TWu\(ul'\s0
+.vs \n(36u
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3B\`\f\n(31\h'|\n(41u'\f3B^\f\n(31\h'|\n(42u'byte (1 byte)
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3W\`\f\n(31\h'|\n(41u'\f3W^\f\n(31\h'|\n(42u'word (2 bytes)
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3L\`\f\n(31\h'|\n(41u'\f3L^\f\n(31\h'|\n(42u'long word (4 bytes)
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-9
+.)b
+.pp
+One can also use lower case
+.b b ,
+.b w
+or
+.b l
+instead of the upper
+case letters.
+There must be no space between the size specifier letter and the
+.q "^"
+or
+.q "\`" .
+The constructs
+.b "S^"
+and
+.b "G^"
+are not recognized
+by
+.i as ,
+as they are by the \*(DM assembler.
+It is preferred to use the 
+.q "\`" displacement specifier,
+so that the
+.q "^"
+is not
+misinterpreted as the
+.b xor
+operator.
+.pp
+Literal values
+(including floating-point literals used where the
+hardware expects a floating-point operand)
+are assembled as short
+literals if possible,
+hence not needing the
+.b "S^"
+\*(DM directive.
+.pp
+If the displacement length modifier is present,
+then the displacement is 
+.b always
+assembled with that displacement,
+even if it will fit into a smaller field,
+or if significance is lost.
+If the length modifier is not present,
+and if the value of the displacement is known exactly in
+.i as 's
+first pass,
+then
+.i as
+determines the length automatically,
+assembling it in the shortest possible way,
+Otherwise,
+.i  as
+will use the value specified by the
+.b \-d
+argument,
+which defaults to 4 bytes.
+.SH 2 "case\fIx\fP Instructions"
+.pp
+.i As
+considers the instructions
+.b caseb ,
+.b casel ,
+.b casew
+to have three operands.
+The displacements must be explicitly computed by 
+.i as ,
+using one or more
+.b .word
+statements.
+.SH 2 "Extended branch instructions"
+.pp
+These opcodes (formed in general
+by substituting a
+.q j
+for the initial
+.q b
+of the standard opcodes)
+take as branch destinations
+the name of a label in the current subsegment.
+It is an error if the destination is known to be in a different subsegment,
+and it is a warning if the destination is not defined within
+the object module being assembled.
+.pp
+If the branch destination is close enough,
+then the corresponding
+short branch
+.q b
+instruction is assembled.
+Otherwise the assembler choses a sequence
+of one or more instructions which together have the same effect as if the
+.q b
+instruction had a larger span.
+In general,
+.i as
+chooses the inverse branch followed by a
+.b brw ,
+but a
+.b brw
+is sometimes pooled among several
+.q j
+instructions with the same destination.
+.pp
+.i As
+is unable to perform the same long/short branch generation
+for other instructions with a fixed byte displacement,
+such as the
+.b sob ,
+.b aob 
+families,
+or for the
+.b acbx
+family of instructions which has a fixed word displacement.
+This would be desirable,
+but is prohibitive because of the complexity of these instructions.
+.pp
+If the
+.b \-J
+assembler option is given,
+a
+.b jmp
+instruction is used instead of a
+.b brw
+instruction
+for
+.b ALL
+.q j
+instructions with distant destinations.
+This makes assembly of large (>32K bytes)
+programs (inefficiently)
+possible.
+.i As
+does not try to use clever combinations of
+.b brb ,
+.b brw
+and
+.b jmp
+instructions.
+The
+.b jmp
+instructions use PC relative addressing,
+with the length of the offset given by the
+.b \-d
+assembler
+option.
+.pp
+These are the extended branch instructions
+.i as
+recognizes:
+.(b
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82
+.nr 80 0
+.nr 38 \w\f3jeql\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jgeq\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jleq\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jbcc\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jlbc\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jcc\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jvc\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jbc\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3jbr\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3jeqlu\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jgequ\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jlequ\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jbsc\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jlbs\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jcs\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jvs\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w\f3jbs\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 82 0
+.nr 38 \w\f3jneq\fP
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w\f3jgtr\fP
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w\f3jlss\fP
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w\f3jbcs\fP
+.if \n(82<\n(38 .nr 82 \n(38
+.82
+.rm 82
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr TW \n(82
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 214 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jeql\f\n(31\h'|\n(41u'\f3jeqlu\f\n(31\h'|\n(42u'\f3jneq\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jgeq\f\n(31\h'|\n(41u'\f3jgequ\f\n(31\h'|\n(42u'\f3jgtr\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jleq\f\n(31\h'|\n(41u'\f3jlequ\f\n(31\h'|\n(42u'\f3jlss\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jbcc\f\n(31\h'|\n(41u'\f3jbsc\f\n(31\h'|\n(42u'\f3jbcs\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\f\n(31\h'|\n(41u'\f3\f\n(31\h'|\n(42u'\f3\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jlbc\f\n(31\h'|\n(41u'\f3jlbs\f\n(31\h'|\n(42u'\f3\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jcc\f\n(31\h'|\n(41u'\f3jcs\f\n(31\h'|\n(42u'\f3\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jvc\f\n(31\h'|\n(41u'\f3jvs\f\n(31\h'|\n(42u'\f3\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jbc\f\n(31\h'|\n(41u'\f3jbs\f\n(31\h'|\n(42u'\f3\f\n(31
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3jbr\f\n(31\h'|\n(41u'\f3\f\n(31\h'|\n(42u'\f3\f\n(31
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-13
+.)b
+.pp
+Note that
+.b jbr
+turns into
+.b brb
+if its target is close enough;
+otherwise a
+.b brw
+is used.
+.SH 1 "Diagnostics"
+.pp
+Diagnostics are intended to be self explanatory and appear on
+the standard output.
+Diagnostics either report an
+.i error
+or a
+.i warning.
+Error diagnostics complain about lexical, syntactic and some
+semantic errors, and abort the assembly.
+.pp
+The majority of the warnings complain about the use of \*(VX
+features not supported by all implementations of the architecture.
+.i As
+will warn if new opcodes are used,
+if
+.q G
+or
+.q H
+floating point numbers are used
+and will complain about mixed floating conversions.
+.SH 1 "Limits"
+.(b
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \wlimit
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wArbitrary\**
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wBUFSIZ
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wBUFSIZ
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w2048
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wArbitrary
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w4
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w4
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wwhat
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wFiles to assemble
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wSignificant characters per name
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wCharacters per input line
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wCharacters per string
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wSymbols
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wText segments
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wData segments
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 260 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'limit\h'|\n(41u'what
+.nr 36 \n(.v
+.vs \n(.vu-\n(.sp
+\h'|0'\s\n(33\l'|\n(TWu\(ul'\s0
+.vs \n(36u
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Arbitrary\**\h'|\n(41u'Files to assemble
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'BUFSIZ\h'|\n(41u'Significant characters per name
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'BUFSIZ\h'|\n(41u'Characters per input line
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'2048\h'|\n(41u'Characters per string
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Arbitrary\h'|\n(41u'Symbols
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'4\h'|\n(41u'Text segments
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'4\h'|\n(41u'Data segments
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-12
+.)b
+.(f
+\**Although the number of characters available to the \fIargv\fP line
+is restricted by \*(UX to 10240.
+.)f
+.SH 1 "Annoyances and Future Work"
+.pp
+Most of the annoyances deal with restrictions on the extended
+branch instructions.
+.pp
+.i As
+only uses a two level algorithm for resolving extended branch
+instructions into short or long displacements.
+What is really needed is a general mechanism
+to turn a short conditional jump into a 
+reverse conditional jump over one of
+.b two
+possible unconditional branches,
+either a
+.b brw
+or a 
+.b jmp
+instruction.
+Currently, the 
+.b \-J
+forces the
+.b jmp
+instruction to
+.i always
+be used,
+instead of the
+shorter
+.b brw
+instruction when needed.
+.pp
+The assembler should also recognize extended branch instructions for
+.b sob ,
+.b aob ,
+and
+.b acbx
+instructions.
+.b Sob
+instructions will be easy,
+.b aob
+will be harder because the synthesized instruction
+uses the index operand twice,
+so one must be careful of side effects,
+and the
+.b acbx
+family will be much harder (in the general case)
+because the comparison depends on the sign of the addend operand,
+and two operands are used more than once.
+Augmenting
+.i as
+with these extended loop instructions
+will allow the peephole optimizer to produce much better
+loop optimizations,
+since it currently assumes the worst
+case about the size of the loop body.

@@ -1,0 +1,856 @@
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.\"
+.\"	Copyright (c) 1982 Regents of the University of California
+.\"	@(#)asdocs1.me 1.7 2/9/83
+.\"
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.(l C
+.i "\*(VS \*(AM"
+.sp 2.0v
+John F. Reiser
+Bell Laboratories,
+Holmdel, NJ
+.sp 1.0v
+.i and
+.sp 1.0v
+Robert R. Henry\**
+.(f
+\**Preparation of this paper supported in part
+by the National Science Foundation under grant MCS #78-07291.
+.)f
+Electronics Research Laboratory
+University of California
+Berkeley, CA  94720
+.sp 1.0v
+November 5, 1979
+.sp 1.0v
+.i Revised
+\*(TD
+.)l
+.SH 1 Introduction
+.pp
+This document describes the usage and input syntax
+of the \*(UX \*(VX-11 assembler
+.i as .
+.i As
+is designed for assembling the code produced by the
+\*(CL compiler;
+certain concessions have been made to handle code written
+directly by people,
+but in general little sympathy has been extended.
+This document is intended only for the writer of a compiler or a maintainer
+of the assembler.
+.SH 2 "Assembler Revisions since November 5, 1979"
+.pp
+There has been one major change to
+.i as 
+since the last release.
+.i As
+has been updated to assemble the new instructions and
+data formats for
+.q G
+and
+.q H
+floating point numbers,
+as well as the new queue instructions.
+.SH 2 "Features Supported, but No Longer Encouraged as of \*(TD"
+.pp
+These feature(s) in
+.i as
+are supported, but no longer encouraged.
+.ip -
+The colon operator for field initialization is likely to disappear.
+.SH 1 "Usage"
+.pp
+.i As
+is invoked with these command arguments:
+.br
+.sp 0.25v
+as
+[
+.b \-LVWJR
+]
+[
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".b \-d 
+.ps 10
+.ft 2
+.ds 12 "n
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+]
+[
+.b \-DTS
+]
+[
+.b \-t
+.i directory
+]
+[
+.b \-o
+.i output
+]
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "[ 
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ] 
+.ps 10
+.ft 2
+.ds 12 "\v'-.3m'\ .\ .\ .\ \v'.3m'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "[ 
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 13 "n
+.as 12 \v'12u'\s-3\*(13\s+3\|\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.br
+.sp 0.25v
+.pp
+The
+.b \-L
+flag instructs the assembler to save labels beginning with a
+.q L
+in the symbol table portion of the
+.i output
+file.
+Labels are not saved by default,
+as the default action of the link editor
+.i ld
+is to discard them anyway.
+.pp
+The
+.b \-V
+flag tells the assembler to place its interpass temporary
+file into virtual memory.
+In normal circumstances,
+the system manager will decide where the temporary file should lie.
+Our experiments
+with very large temporary files show that placing the temporary
+file into virtual memory will save about 13% of the assembly time,
+where the size of the temporary file is about 350K bytes.
+Most assembler sources will not be this long.
+.pp
+The
+.b \-W
+turns of all warning error reporting.
+.pp
+The
+.b \-J
+flag forces \*(UX style pseudo\-branch
+instructions with destinations further away than a
+byte displacement to be
+turned into jump instructions with 4 byte offsets.
+The
+.b \-J
+flag buys you nothing if
+.b \-d2
+is set.
+(See \(sc8.4, and future work described in \(sc11)
+.pp
+The
+.b \-R
+flag effectively turns
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".q "\fB.data\fP 
+.ps 10
+.ft 2
+.ds 12 "n
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ""
+.ps \n(99
+.ft \n(98
+\*(11
+directives into
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".q "\fB.text\fP 
+.ps 10
+.ft 2
+.ds 12 "n
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ""
+.ps \n(99
+.ft \n(98
+\*(11
+directives.
+This obviates the need to run editor scripts on assembler source to
+.q "read\-only"
+fix initialized data segments.
+Uninitialized data (via
+.b .lcomm
+and
+.b .comm
+directives)
+is still assembled into the data or bss segments.
+.pp
+The
+.b \-d
+flag specifies the number of bytes
+which the assembler should allow for a displacement when the value of the
+displacement expression is undefined in the first pass.
+The possible values of
+.i n
+are 1, 2, or 4;
+the assembler uses 4 bytes
+if
+.b -d
+is not specified.
+See \(sc8.2.
+.pp
+Provided the
+.b \-V
+flag is not set,
+the
+.b \-t
+flag causes the assembler to place its single temporary file
+in the
+.i directory
+instead of in
+.i /tmp .
+.pp
+The
+.b \-o
+flag causes the output to be placed on the file
+.i output .
+By default,
+the output of the assembler is placed in the file
+.i a.out
+in the current directory.
+.pp
+The input to the assembler is normally taken from the standard input.
+If file arguments occur,
+then the input is taken sequentially from the files
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "\v'-.3m'\ .\ .\ .\ \v'.3m'
+.as 12 "\*(13
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "name
+.ds 14 "n
+.as 13 \v'12u'\s-3\*(14\s+3\|\v'-12u'
+.as 12 "\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+This is not to say that the files are assembled separately;
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " is effectively concatenated to 
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+so multiple definitions cannot occur amongst the input sources.
+.pp
+.pp
+The
+.b \-D
+(debug),
+.b \-T
+(token trace),
+and the
+.b \-S 
+(symbol table)
+flags enable assembler trace information,
+provided that the assembler has been compiled with
+the debugging code enabled.
+The information printed is long and boring,
+but useful when debugging the assembler.
+.SH 1 "Lexical conventions"
+.pp
+Assembler tokens include identifiers (alternatively,
+.q symbols
+or
+.q names ),
+constants,
+and operators.
+.SH 2 "Identifiers"
+.pp
+An identifier consists of a sequence of alphanumeric characters
+(including
+period
+.q "\fB\|.\|\fP" ,
+underscore
+.q "\*(US" ,
+and
+dollar
+.q "\*(DL" ).
+The first character may not be numeric.
+Identifiers may be (practically) arbitrary long;
+all characters are significant.
+.SH 2 "Constants"
+.SH 3 "Scalar constants"
+.pp
+All scalar (non floating point)
+constants are (potentially) 128 bits wide.
+Such constants are interpreted as two's complement numbers.
+Note that 64 bit (quad words) and 128 bit (octal word) integers
+are only partially supported by the \*(VX hardware.
+In addition,
+128 bit integers are only supported by the extended \*(VX architecture.
+.i As
+supports 64 and 128 bit integers 
+only so they can be used as immediate constants
+or to fill initialized data space.
+.i As
+can not perform arithmetic on constants larger than 32 bits.
+.pp
+Scalar constants are initially evaluated to a full 128 bits,
+but are pared down by discarding high order copies of the sign bit
+and categorizing the number as a long, quad or octal integer.
+Numbers with less precision than 32 bits are treated as 32 bit quantities.
+.pp
+The digits are
+.q 0123456789abcdefABCDEF
+with the obvious values.
+.pp
+An octal constant consists of a sequence of digits with a leading zero.
+.pp
+A decimal constant consists of a sequence of digits without a leading zero.
+.pp
+A hexadecimal constant consists of the characters
+.q 0x
+(or
+.q 0X )
+followed by a sequence of digits.
+.pp
+A single-character constant consists of a single quote
+.q "\|\(fm\|"
+followed by an \*(AC character,
+including \*(AC newline.
+The constant's value is the code for the
+given character.
+.SH 3 "Floating Point Constants"
+.pp
+Floating point constants are internally represented
+in the \*(VX floating point format
+that is specified by the lexical form of the constant.
+Using the meta notation that
+[dec] is a decimal digit (\c
+.q "0123456789" ),
+[expt] is a type specification character (\c,
+.q "fFdDhHgG" ),
+[expe] is a exponent delimiter and type specification character (\c,
+.q "eEfFdDhHgG" ),
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "x
+.ft 1
+.ds 13 "*
+.ds 13 \f1\*(13\f2
+.ft 2
+.as 12 \v'-24u'\s-3\|\*(13\s+3\v'24u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " means 0 or more occurences of 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 13 "\(pl
+.as 12 \v'-24u'\s-3\|\*(13\s+3\v'24u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " means 1 or more occurences of 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+then the general lexical form of a floating point number is:
+.ce 1
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "0[expe]([+-])
+.ps 10
+.ft 2
+.ft 1
+.ds 12 "[dec]
+.ds 12 \f1\*(12\f2
+.ft 2
+.ds 13 "\(pl
+.as 12 \v'-24u'\s-3\*(13\s+3\v'24u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "(.)(
+.ps 10
+.ft 2
+.ft 1
+.ds 12 "[dec]
+.ds 12 \f1\*(12\f2
+.ft 2
+.ft 1
+.ds 13 "*
+.ds 13 \f1\*(13\f2
+.ft 2
+.as 12 \v'-24u'\s-3\*(13\s+3\v'24u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ")([expt]([+-])(
+.ps 10
+.ft 2
+.ft 1
+.ds 12 "dec]
+.ds 12 \f1\*(12\f2
+.ft 2
+.ds 13 "\(pl
+.as 12 \v'-24u'\s-3\*(13\s+3\v'24u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "))
+.ps \n(99
+.ft \n(98
+\*(11
+.ce 0
+The standard semantic interpretation is used for the
+signed integer, fraction and signed power of 10 exponent.
+If the exponent delimiter is specified,
+it must be either an
+.q e
+or
+.q E ,
+or must agree with the initial type specification character that is used.
+The type specification character specifies
+the type and representation of the constructed number, as follows:
+.(b
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82
+.nr 80 0
+.nr 38 \wtype character
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wf, F
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wd, D
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wg, G
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wh, H
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wfloating representation
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wF format floating
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wD format floating
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wG format floating
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wH format floating
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 82 0
+.nr 38 \wsize (bits)
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 31 0
+.nr 32 0
+.nr 38 \w32
+.if \n(31<\n(38 .nr 31 \n(38
+.nr 38 \w64
+.if \n(31<\n(38 .nr 31 \n(38
+.nr 38 \w64
+.if \n(31<\n(38 .nr 31 \n(38
+.nr 38 \w128
+.if \n(31<\n(38 .nr 31 \n(38
+.82
+.rm 82
+.nr 62 \n(31
+.nr 38 \n(62+\n(32
+.if \n(38>\n(82 .nr 82 \n(38
+.if \n(38<\n(82 .nr 62 +(\n(82-\n(38)/2
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr 62 +\n(42
+.nr TW \n(82
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 311 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'type character\h'|\n(41u'floating representation\h'|\n(42u'size (bits)
+.nr 36 \n(.v
+.vs \n(.vu-\n(.sp
+\h'|0'\s\n(33\l'|\n(TWu\(ul'\s0
+.vs \n(36u
+.ta \n(80u \n(81u \n(62u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'f, F\h'|\n(41u'F format floating\h'|\n(42u'32
+.ta \n(80u \n(81u \n(62u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'd, D\h'|\n(41u'D format floating\h'|\n(42u'64
+.ta \n(80u \n(81u \n(62u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'g, G\h'|\n(41u'G format floating\h'|\n(42u'64
+.ta \n(80u \n(81u \n(62u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'h, H\h'|\n(41u'H format floating\h'|\n(42u'128
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-10
+.)b
+Note that
+.q G
+and
+.q H
+format floating point numbers are not supported
+by all implementations of the \*(VX architecture.
+.i As 
+does not require the augmented architecture in order to run.
+.pp
+The assembler uses the library routine
+.i atof()
+to convert
+.q F
+and
+.q D
+numbers,
+and uses its own conversion routine
+(derived from
+.i atof ,
+and believed to be numerically accurate)
+to convert
+.q G
+and
+.q H
+floating point numbers.
+.pp
+Collectively,
+all floating point numbers,
+together with quad and octal scalars are called
+.i Bignums .
+When
+.i as
+requires a Bignum,
+a 32 bit scalar quantity may also be used.
+.SH 3 "String Constants"
+.pp
+A string constant is defined using
+the same syntax and semantics as the \*(CL language uses.
+Strings begin and end with a
+.q "''"
+(double quote).
+The \*(DM assembler conventions for flexible string quoting is
+not implemented.
+All \*(CL backslash conventions are observed;
+the backslash conventions
+peculiar to the \*(PD assembler are not observed.
+Strings are known by their value and their length;
+the assembler does not implicitly end strings with a null byte.
+.SH 2 "Operators"
+.pp
+There are several single-character
+operators;
+see \(sc6.1.
+.SH 2 "Blanks"
+.pp
+Blank and tab characters
+may be interspersed freely between tokens,
+but may not be used within tokens (except character constants).
+A blank or tab is required to separate adjacent
+identifiers or constants not otherwise separated.
+.SH 2 "Scratch Mark Comments"
+.pp
+The character
+.q "#"
+introduces a comment,
+which extends through the end of the line on which it appears.
+Comments starting in column 1,
+having the format
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".q "# 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\ 
+.as 12 "\|\*(13
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "string
+.as 12 "\*(13
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "" ,
+.ps \n(99
+.ft \n(98
+\*(11
+are interpreted as an indication that the assembler is now assembling
+file
+.i string
+at line
+.i expression .
+Thus, one can use the \*(CL preprocessor on an assembly language source file,
+and use the
+.i #include
+and
+.i #define
+preprocessor directives.
+(Note that there may not be an assembler comment starting in column
+1 if the assembler source is given to the \*(CL preprocessor,
+as it will be interpreted by the preprocessor in a way not intended.)
+Comments are otherwise ignored by the assembler.
+.SH 2 "\*(CL Style Comments"
+.pp
+The assembler will recognize \*(CL style comments,
+introduced with the prologue
+.b "/*"
+and ending with the epilogue
+.b "*/" .
+\*(CL style comments may extend across multiple lines,
+and are the preferred comment style
+to use if one chooses to use the \*(CL preprocessor.
+.SH 1 "Segments and Location Counters"
+.pp
+Assembled code and data fall into three segments:  the text segment,
+the data segment,
+and the bss segment.
+The \*(UX operating system makes
+some assumptions about the content of these segments;
+the assembler does not.
+Within the text and data segments there are a number of sub-segments,
+distinguished by number (\c
+.q "\fBtext\fP 0" ,
+.q "\fBtext\fP 1" ,
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\v'-.3m'\ .\ .\ .\ \v'.3m'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.q "\fBdata\fP 0" ,
+.q "\fBdata\fP 1" ,
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\v'-.3m'\ .\ .\ .\ \v'.3m'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ").
+.ps \n(99
+.ft \n(98
+\*(11
+Currently there are four subsegments each in text and data.
+The subsegments are for programming convenience only.
+.pp
+Before writing the output file,
+the assembler zero-pads each text subsegment to a multiple of four
+bytes and then concatenates the subsegments in order to form the text segment;
+an analogous operation is done for the data segment.
+Requesting that the loader define symbols and storage regions is the only
+action allowed by the assembler with respect to the bss segment.
+Assembly begins in
+.q "\fBtext\fP 0" .
+.pp
+Associated with each (sub)segment is an implicit location counter which
+begins at zero and is incremented by 1 for each byte assembled into the
+(sub)segment.
+There is no way to explicitly reference a location counter.
+Note that the location counters of subsegments other than
+.q "\fBtext\fP 0"
+and
+.q "\fBdata\fP 0"
+behave peculiarly due to the concatenation used to form
+the text and data segments.

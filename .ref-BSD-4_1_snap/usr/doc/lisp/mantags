@@ -1,1 +1,0 @@
-/^\.Lf/	{ print $2, FILENAME, "?^\.Lf " $2 "?" }

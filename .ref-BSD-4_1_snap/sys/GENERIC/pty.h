@@ -1,1 +1,0 @@
-#define NPTY 0

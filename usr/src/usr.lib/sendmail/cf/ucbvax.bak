@@ -1,0 +1,520 @@
+############################################################
+############################################################
+#####
+#####		SENDMAIL CONFIGURATION FILE
+#####
+#####	This one is the big daddy.  There is no "upstairs"
+#####	to bounce a message to -- except perhaps the arpanet.
+#####
+#####		@(#)ucbvax.mc	3.24		1/3/83
+#####
+############################################################
+############################################################
+
+
+
+############################################################
+###	local info
+############################################################
+
+# internet hostname
+DHUCBVAX
+CHucbvax vax k UCB-VAX Berkeley UCB-C70 UCB LOCAL
+
+# uucp hostnames
+DUucbvax
+CUucbvax ernie
+
+# berknet hostname
+DBUCBVAX
+
+# UUCP connections on arpavax
+DVucbarpa
+CVsun
+
+# known computer center hosts and gateway
+############################################################
+############################################################
+#####
+#####	KNOWN COMPUTER CENTER HOSTNAMES
+#####
+#####		@(#)cchosts.m4	3.2		12/5/82
+#####
+############################################################
+############################################################
+
+
+DCUCBJADE
+CCucbcfo-a cfo-a A
+CCucbcfo-b cfo-b B
+CCucbcfo-c cfo-c C
+CCucbcfo-d cfo-d D
+CCucbcfo-e cfo-e E
+CCucbcfo-f cfo-f F
+CCucbcfo-g cfo-g G
+CCucbcfo-h cfo-h H ucbjade jade
+CCucbcfo-q cfo-q Q ucbruby ruby
+CCucbsrc Src S
+CCucbcfo-2 cfo-2 2 ucbtopaz topaz
+CCucbcfo-3 cfo-3 3 ucbcoral coral
+CCucbcfo-4 cfo-4 4 ucbamber amber
+CCucbcfo-5 cfo-5 5 ucbivory ivory
+CCucbcfo-6 cfo-6 6 ucblapis lapis
+
+
+# we have full sendmail support here
+Oa
+
+#################################################
+#
+#	General configuration information
+#
+#	@(#)csbase.m4	3.8		1/2/83
+#
+#################################################
+
+######################
+#   General Macros   #
+######################
+
+# our arpanet gateway
+DABerkeley
+CABerkeley ucbc70 c70 UCB-C70 u UCB UCB-VAX
+
+# local domain names
+DDBERKELEY
+CDBERKELEY UCB ucbc70 c70 ucb-c70 u
+
+# major relay host
+DRUCBVAX
+CRucbvax vax k
+
+# known SMTP/ethernet hosts (this domain only) -- only $R need be complete
+CSucbarpa arpa
+CSucbcad cad cad-a
+CSucbcalder calder
+CSucbdali dali
+CSucbdegas degas
+# CSucbear ear
+CSucbernie ernie
+# CSucbesvax esvax
+# CSucbingres ingres
+CSucbkim kim
+CSucbmatisse matisse
+CSucbmedea medea
+CSucbmiro miro
+CSucbmonet monet
+# CSucboz oz
+CSucbic ic ucbic-ec ic-ec cad-b cad-ic
+CSucbicw icw ucbicw-ec icw-ec cad-c cad-icw
+CSucbvax
+
+############################################################
+#
+#	General configuration information
+#
+#	This information is basically just "boiler-plate"; it must be
+#	there, but is essentially constant.
+#
+#	Information in this file should be independent of location --
+#	i.e., although there are some policy decisions made, they are
+#	not specific to Berkeley per se.
+#
+#		@(#)base.m4	3.36		1/3/83
+#
+############################################################
+
+##########################
+###   General macros   ###
+##########################
+
+# punctuation for <@domain,@domain:user@domain> syntax
+CP: ,
+
+##########################
+###   Special macros   ###
+##########################
+
+# my name
+DnMAILER-DAEMON
+# UNIX header format
+DlFrom $g  $d
+# delimiter (operator) characters
+Do.:%@!^=/[]
+# format of a total name
+Dq$g$?x ($x)$.
+# my official hostname
+Dj$H.$D.ARPA
+
+###################
+###   Options   ###
+###################
+
+# location of alias file
+OA/usr/lib/aliases
+# default delivery mode (deliver in background)
+Odbackground
+# (don't) connect to "expensive" mailers
+#Oc
+# temporary file mode
+OF0644
+# default GID
+Og1
+# location of help file
+OH/usr/lib/sendmail.hf
+# log level
+OL9
+# default messages to old style
+Oo
+# queue directory
+OQ/usr/spool/mqueue
+# read timeout -- violates protocols
+Or2h
+# status file
+OS/usr/lib/sendmail.st
+# queue up everything before starting transmission
+Os
+# default timeout interval
+OT1d
+# time zone names (V6 only)
+OtPST,PDT
+# default UID
+Ou1
+# wizard's password
+OWa/FjIfuGKXyc2
+
+###############################
+###   Message precedences   ###
+###############################
+
+Pfirst-class=0
+Pspecial-delivery=100
+Pjunk=-100
+
+#########################
+###   Trusted users   ###
+#########################
+
+Troot
+Tdaemon
+Tuucp
+Teric
+Tnetwork
+
+#############################
+###   Format of headers   ###
+#############################
+
+H?D?Date: $a
+H?F?From: $q
+H?x?Full-Name: $x
+HSubject:
+H?P?Return-Path: <$g>
+# HPosted-Date: $a
+# H?l?Received-Date: $b
+H?M?Message-Id: <$t.$p@$j>
+HReceived: $?sfrom $s $.by $j ($v)
+	id $i; $b
+
+###########################
+###   Rewriting rules   ###
+###########################
+
+# rules marked with "*" are removed or different when 819 becomed effective
+
+################################
+#  Sender Field Pre-rewriting  #
+################################
+S1
+
+R@			$@				handle <> error addr
+R@$+			$@@$1				handle route-addr
+R$+@$+@$=R		$>3$1@$2			u@h@gateway -> u@h
+R$-!$+@$=R		$>3$1!$2			h!u@relay -> h!u
+
+###################################
+#  Recipient Field Pre-rewriting  #
+###################################
+S2
+
+#################################
+#  Final Output Post-rewriting  #
+#################################
+S4
+
+R@$+			$@@$1				handle route-addr
+R$+@$*LOCAL		$1@$2$D.ARPA			convert local domain
+
+###########################
+#  Name Canonicalization  #
+###########################
+S3
+
+# handle "from:<>" special case
+R<>			$@@				turn into magic token
+
+# basic textual canonicalization
+R$*<$+>$*		$2				basic RFC821/822 parsing
+R$+ at $+		$1@$2				"at" -> "@" for RFC 822
+
+# take <@domain,@domain:user@domain> syntax directly
+R@$+			$@@$1				handle route-addr
+R$+@$+			$:$>6$1@$2			localize name
+R$+@$-.$+		$@$1@$2.$3			handle user@domain
+
+# delete multiple host specs and extra net info -- dangerous business here
+R$-:$-:$+		$2:$3				drop multiple old-style
+R$+@$=H.LOCAL		$1@$2				canonical form
+R$-:$+@LOCAL		$1:$2				drop @UCB on berknet
+R$-:$+@$=H		$1:$2				drop @local on berknet
+R$-:$+@$+		$2@$3				drop forwarding host
+R$-!$+@LOCAL		$1!$2				drop @UCB on uucp
+R$-!$+@$=H		$1!$2				drop @local on uucp
+R$+@$+@LOCAL		$1@$2				drop @UCB on arpanet
+R$+@$+@$=H		$1@$2				drop @local on arpanet
+
+# the heart of canonicalization....
+#	(there should be a .LOCAL on the RHS of the next three lines)
+R$-:$+			$2@$1				host:user
+R$-.$-			$2@$1				host.user
+R$-.$+@LOCAL		$2@$1				strip local arpa name
+
+# now resolve some things
+R$+@$+			$@$1@$2				reasonably canonical
+R$+^$+			$1!$2				convert ^ to !
+R$-!$+			$@$2@$1.UUCP			resolve uucp names
+# anything left is local
+
+###########################################
+#  Code to completely canonicalize names  #
+###########################################
+S9
+
+# take <@domain,@domain:user@domain> syntax directly
+R@$+$=P$+		$@$3@$1				convert to known format
+
+# first canonicalize it (probably already done)
+R$+			$:$>3$1
+
+# strip local info
+R$+@$+.LOCAL		$:$1@$2				strip local domain info
+R$+@LOCAL		$:$1@$A.ARPA			arpanet gateway
+R$+@$=H.UUCP		$@$>9$1				even local uucp style
+
+
+#######################
+#   Rewriting rules   #
+#######################
+
+##### special local conversions
+S6
+R$+@$*$=D		$1@$2LOCAL			convert local domain
+R$+@$*$=D.ARPA		$1@$2LOCAL
+R$+@$+.UUCP.LOCAL	$1@$2.UUCP			make UUCP top level
+R$+@$+.UUCP.ARPA	$1@$2.UUCP			make UUCP top level
+R$+@$=C.LOCAL		$1@$2.CC			adjust CC hosts (ucbvax)
+R$+@$=C			$1@$2.CC			adjust CC hosts (ucbvax)
+R$+@$+.CC.LOCAL		$1@$2.CC			adjust CC domain
+
+############################################################
+############################################################
+#####
+#####		Local and Program Mailer specification
+#####
+#####		@(#)localm.m4	3.2		12/6/82
+#####
+############################################################
+############################################################
+
+Mlocal	/bin/mail		rlsAmn	10  20	mail -d $u
+Mprog	/bin/csh		lsAe	10  20	csh -fc $u
+
+S10
+
+############################################################
+############################################################
+#####
+#####		Ethernet Mailer specification
+#####
+#####		@(#)etherm.m4	3.1		12/1/82
+#####
+############################################################
+############################################################
+
+Mether	[IPC]			msAueC	11  21	IPC $h
+
+S11
+R$+@$+			$@$1@$2				already ok
+R$+			$@$1@$H				tack on our hostname
+
+S21
+
+
+
+############################################################
+#	Recipient resolution
+############################################################
+S0
+
+R@			$#local$:root			handle <> form
+R$+@[$+]		$#tcp$@[$2]$:$1@[$2]		numeric internet spec
+R$+			$:$>9$1				=> our internal form
+
+# handle psuedo-UUCP syntax
+R$+@$=S.UUCP		$1@$2				ah, fudge it
+
+# resolve explicitly local names
+R$+@$*$=A.ARPA		$1@$2				we are the gateway
+R$+@			$#local$:$1			user@thishost
+R$+@$+.$=H		$1@$2				user@somewhere.thishost
+R$+@$=H			$#local$:$1			user@thishost
+
+# resolve explicitly arpanet names (to avoid with machine name "arpa" below)
+R$+@$*$-.ARPA		$#tcp$@$3$:$1@$2$3.ARPA		user@domain.ARPA
+
+# resolve names that can go via the ethernet
+R$+@$*$=S		$#ether$@$3$:$1@$2$3		user@etherhost
+
+# resolve berknet names
+R$+@$=Z			$#berk$@$2$:$1			user@berknethost
+
+# resolve names destined for the computer center
+R$+@$+.CC		$#ether$@$C$:$1@$2.CC		user@host.CC
+
+# resolve nonlocal UUCP links
+R$+@$*$=V.UUCP		$#ether$@$V$:$1@$2$3.UUCP	user@host.UUCP
+
+# resolve local UUCP links (all others)
+R$+@$-.UUCP		$#uucp$@$2$:$1			user@host.UUCP
+
+# resolve mmdf hack
+R$+@UDel-Test		$#ether$@ucbarpa$:$1@Udel-Test	user.host@UDel-Relay
+
+# other non-local names will be kicked upstairs
+R$+@$*$-		$#tcp$@$3$:$1@$2$3		user@host
+
+# remaining names must be local
+R$+			$#local$:$1			everything else
+
+############################################################
+############################################################
+#####
+#####		Berknet Mailer specification
+#####
+#####		@(#)berkm.m4	3.1		12/1/82
+#####
+############################################################
+############################################################
+
+############################################################
+############################################################
+#####
+#####		Provide Backward Compatibility
+#####
+#####		@(#)compat.m4	3.1		12/1/82
+#####
+############################################################
+############################################################
+
+
+
+############################################################
+############################################################
+#####
+#####		Berknet Host List
+#####
+#####		@(#)berkhosts.m4	3.2		12/6/82
+#####
+############################################################
+############################################################
+
+# A-H, Q, and S are in the computer center domain
+CZI Ing70 ucberl70 erl70
+CZJ IngVAX Ingres ucbingres
+CZK ucbvax vax
+CZL VLSI oz ucboz
+CZM medea ucbmedea
+CZN Kim ucbkim
+CZO ESVAX ucbesvax
+CZP CAD UCBCAD
+CZR ARPAVAX arpa ucbarpa
+CZT MathStat ucbmathstat
+CZU C70 ucbc70
+CZV CSVAX Ernie ucbernie
+CZW StatVax ucbstatvax stat ucbstat
+CZX onyx ucbonyx
+CZY Cory ucbcory
+CZZ EECS40 EARVAX ucbear ear
+
+
+#####################################################
+#  General code to convert back to old style names  #
+#####################################################
+S5
+
+R$+@$+.LOCAL		$2:$1				u@h.LOCAL => h:u
+R$+@$+.CC		$2:$1				u@h.CC => h:u
+R$+@$=Z			$@$2:$1				u@bhost => h:u
+R$+@$-.UUCP		$2!$1				u@host.UUCP => host!u
+R$+@$+.ARPA		$1@$2				u@host.ARPA => u@host
+
+
+Mberk	/usr/net/bin/sendberkmail fsAC	12  22	sendberkmail -m $h -h $c -t $u
+
+S12
+R$+			$:$>5$1				convert to old style
+R$-:$+			$@$1:$2				old berknet as is
+R$+@$+			$@$1@$2				don't modify arpanet
+R$-!$+			$@$1!$2				don't modify uucp
+R$+			$@$B:$1				make others relative
+
+S22
+R$+			$:$>5$1				convert to old style
+
+############################################################
+############################################################
+#####
+#####		UUCP Mailer specification
+#####
+#####		@(#)uucpm.m4	3.1		12/1/82
+#####
+############################################################
+############################################################
+
+
+
+Muucp	/usr/bin/uux		sDFhuU	13  23	uux - -r $h!rmail ($u)
+
+S13
+R$+			$:$>5$1				convert to old style
+R$=U!$+			$2				strip local name
+R$+			$:$U!$1				stick on our host name
+R$=U!$=R:$+		$:$1!$3				ucbvax!ucbvax:xxx
+
+S23
+R$+			$:$>5$1				convert to old style
+
+############################################################
+############################################################
+#####
+#####		Arpanet TCP Mailer specification
+#####
+#####		@(#)tcpm.m4	3.3		1/6/83
+#####
+############################################################
+############################################################
+
+Mtcp	[IPC]			msAueXRL 14  14	IPC $h
+
+S14
+R$+@$*LOCAL		$1@$2$D.ARPA			externalize local names
+R$+@$+.$=D		$1@$2.$D.ARPA			externalize local names
+R$+@$+.ARPA		$@$1@$2.ARPA			already ok
+R$+@$*[$+]		$@$1@$2[$3]			already ok
+R$+@$*$=S		$@$1@$2$3.$D.ARPA		local names
+R$+@$*$=Z		$@$1@$2$3.$D.ARPA		local names
+R$+@$+.UUCP		$@$1@$2.UUCP.$A.ARPA		uucp names
+R$+@$+			$@$1@$2.ARPA			tack on the domain
+R$+			$:$1@$H.$D.ARPA			tack on our hostname
+R$+@$=A.$=A.$+		$1@$3.$4			for gateway hosts
+

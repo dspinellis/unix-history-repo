@@ -1,8 +1,0 @@
-csh /usr/ucb/vtroff -W -1 sign sign
-csh /usr/ucb/vtroff -W -F stare stare
-csh /usr/ucb/vtroff -W -F times times
-csh /usr/ucb/vtroff -W -1 ugramma ugramma
-ugramma: font not found.
-*** Error code 1
-
-Stop.
