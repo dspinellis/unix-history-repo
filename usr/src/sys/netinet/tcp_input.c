@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.50	82/01/18	*/
+/*	tcp_input.c	1.51	82/01/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -864,8 +864,9 @@ COUNT(TCP_REASS);
 			break;
 		}
 		q = (struct tcpiphdr *)q->ti_next;
-		m_freem(dtom(q->ti_prev));
+		m = dtom(q->ti_prev);
 		remque(q->ti_prev);
+		m_freem(m);
 	}
 
 	/*
