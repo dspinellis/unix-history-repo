@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.46 %G%";
+static char SccsId[] = "@(#)sccs.c	1.47 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -183,8 +183,8 @@ struct sccsprog SccsProg[] =
 	"what",		PROG,	NO_SDOT,	PROGPATH(what),
 	"sccsdiff",	SHELL,	REALUSER,	PROGPATH(sccsdiff),
 	"edit",		CMACRO,	NO_SDOT,	"get -e",
-	"delget",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskecl -t",
-	"deledit",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskecl -e -t",
+	"delget",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskcl -t",
+	"deledit",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbskcl -e -t",
 	"fix",		FIX,	NO_SDOT,	NULL,
 	"clean",	CLEAN,	REALUSER,	(char *) CLEANC,
 	"info",		CLEAN,	REALUSER,	(char *) INFOC,
@@ -340,7 +340,7 @@ command(argv, forkflag, arg0)
 
 	np = ap = &nav[1];
 	editchs = NULL;
-	for (p = arg0, q = buf; *p != '\0' && *p != '/' && *p != ':'; )
+	for (p = arg0, q = buf; *p != '\0' && *p != '/'; )
 	{
 		*np++ = q;
 		while (*p == ' ')
@@ -351,7 +351,7 @@ command(argv, forkflag, arg0)
 		if (*p == ':')
 		{
 			editchs = q;
-			while (*++p != '\0' && *p != '/')
+			while (*++p != '\0' && *p != '/' && *p != ' ')
 				*q++ = *p;
 			*q++ = '\0';
 		}
