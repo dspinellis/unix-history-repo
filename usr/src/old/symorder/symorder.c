@@ -12,184 +12,161 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)symorder.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)symorder.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * symorder - reorder symbol table
  */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <a.out.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define SPACE 100
+#define SPACE 500
 
 struct	nlist order[SPACE];
 
-char	*savestr(), *index(), *malloc();
 struct	exec exec;
-off_t	sa;
 struct	stat stb;
-int	nsym = 0;
-int	symfound = 0;
-char	*strings;
-char	*newstrings;
-struct	nlist *symtab;
-struct	nlist *newtab;
-int	symsize;
-char	asym[BUFSIZ];
+struct	nlist *newtab, *symtab;
+off_t	sa;
+int	nsym, strtabsize, symfound; 
+char	*kfile, *newstrings, *strings, asym[BUFSIZ];
 
 main(argc, argv)
+	int argc;
 	char **argv;
 {
-	register char *ns;
-	register struct nlist *symp;
-	register struct nlist *p;
+	register struct nlist *p, *symp;
 	register FILE *f;
 	register int i;
+	register char *start, *t;
 	int n, o;
 
 	if (argc != 3) {
-		fprintf(stderr, "Usage: symorder orderlist file\n");
+		(void)fprintf(stderr, "usage: symorder orderlist file\n");
 		exit(1);
 	}
-	if ((f = fopen(argv[1], "r")) == NULL) {
-		perror(argv[1]);
-		exit(1);
-	}
-	for (p = order; fgets(asym, sizeof asym, f) != NULL; p++, nsym++) {
-		for (i = 0; asym[i] && asym[i] != '\n'; i++)
+	if ((f = fopen(argv[1], "r")) == NULL)
+		error(argv[1]);
+
+	for (p = order; fgets(asym, sizeof(asym), f) != NULL;) {
+		for (t = asym; isspace(*t); ++t);
+		if (!*(start = t))
 			continue;
-		if (asym[i] == '\n')
-			asym[i] = 0;
-		p->n_un.n_name = savestr(asym);
+		while (*++t);
+		if (*--t == '\n')
+			*t = '\0';
+		p->n_un.n_name = strdup(start);
+		++p;
+		++nsym;
 	}
-	fclose(f);
-	if ((f = fopen(argv[2], "r")) == NULL)
-		perror(argv[2]), exit(1);
-	if ((o = open(argv[2], 1)) < 0)
-		perror(argv[2]), exit(1);
-	if ((fread(&exec, sizeof exec, 1, f)) != 1 || N_BADMAG(exec)) {
-		fprintf(stderr, "symorder: %s: bad format\n", argv[2]);
-		exit(1);
-	}
-	if (exec.a_syms == 0) {
-		fprintf(stderr, "symorder: %s is stripped\n", argv[2]);
-		exit(1);
-	}
-	fstat(fileno(f), &stb);
-	if (stb.st_size < N_STROFF(exec)+sizeof(off_t)) {
-		fprintf(stderr, "symorder: %s is in old format or truncated\n",
-		    argv[2]);
-		exit(1);
-	}
+	(void)fclose(f);
+
+	kfile = argv[2];
+	if ((f = fopen(kfile, "r")) == NULL)
+		error(kfile);
+	if ((o = open(kfile, O_WRONLY)) < 0)
+		error(kfile);
+
+	/* read exec header */
+	if ((fread(&exec, sizeof(exec), 1, f)) != 1)
+		badfmt("no exec header");
+	if (N_BADMAG(exec))
+		badfmt("bad magic number");
+	if (exec.a_syms == 0)
+		badfmt("stripped");
+	(void)fstat(fileno(f), &stb);
+	if (stb.st_size < N_STROFF(exec) + sizeof(off_t))
+		badfmt("no string table");
+
+	/* seek to and read the symbol table */
 	sa = N_SYMOFF(exec);
-	fseek(f, sa, 0);
+	(void)fseek(f, sa, SEEK_SET);
 	n = exec.a_syms;
-	symtab = (struct nlist *)malloc(n);
-	if (symtab == (struct nlist *)0) {
-		fprintf(stderr, "symorder: Out of core, no space for symtab\n");
-		exit(1);
-	}
-	if (fread((char *)symtab, 1, n, f) != n) {
-		fprintf(stderr, "symorder: Short file "); perror(argv[2]);
-		exit(1);
-	}
-	if (fread((char *)&symsize, sizeof (int), 1, f) != 1 ||
-	    symsize <= 0) {
-		fprintf(stderr, "symorder: No strings "); perror(argv[2]);
-		exit(1);
-	}
-	strings = malloc(symsize);
-	if (strings == (char *)0) {
-		fprintf(stderr,"symorder: Out of core, no space for strings\n");
-		exit(1);
-	}
+	if (!(symtab = (struct nlist *)malloc(n)))
+		error((char *)NULL);
+	if (fread((char *)symtab, 1, n, f) != n)
+		badfmt("corrupted symbol table");
+
+	/* read string table size and string table */
+	if (fread((char *)&strtabsize, sizeof(int), 1, f) != 1 ||
+	    strtabsize <= 0)
+		badfmt("corrupted string table");
+	strings = malloc(strtabsize);
+	if (strings == (char *)NULL)
+		error((char *)NULL);
 	/*
-	 * Need to subtract four from symsize here since
-	 * symsize includes itself, and we've already read
-	 * it.  (6/30/85 chris@maryland)
+	 * Subtract four from strtabsize since strtabsize includes itself,
+	 * and we've already read it.
 	 */
-	if (fread(strings, 1, symsize - 4, f) != symsize - 4) {
-		fprintf(stderr, "symorder: Truncated strings "); 
-		perror(argv[2]);
-		exit(1);
-	}
+	if (fread(strings, 1, strtabsize - sizeof(int), f) !=
+	    strtabsize - sizeof(int))
+		badfmt("corrupted string table");
 
 	newtab = (struct nlist *)malloc(n);
-	if (newtab == (struct nlist *)0) {
-		fprintf(stderr,
-		    "symorder: Out of core, no space for new symtab\n");
-		exit(1);
-	}
-	i = n / sizeof (struct nlist);
+	if (newtab == (struct nlist *)NULL)
+		error((char *)NULL);
+
+	i = n / sizeof(struct nlist);
 	reorder(symtab, newtab, i);
 	free((char *)symtab);
 	symtab = newtab;
 
-	newstrings = malloc(symsize);
-	if (newstrings == (char *)0) {
-		fprintf(stderr,
-		    "symorder: Out of core, no space for newstrings\n");
-		exit(1);
-	}
-	ns = newstrings;
+	newstrings = malloc(strtabsize);
+	if (newstrings == (char *)NULL)
+		error((char *)NULL);
+	t = newstrings;
 	for (symp = symtab; --i >= 0; symp++) {
 		if (symp->n_un.n_strx == 0)
 			continue;
-		symp->n_un.n_strx -= sizeof (int);
-		if ((unsigned)symp->n_un.n_strx >= symsize) {
-			fprintf(stderr,"symorder: Corrupted string pointers\n");
-			exit(1);
-		}
-		strcpy(ns, &strings[symp->n_un.n_strx]);
-		symp->n_un.n_strx = (ns - newstrings) + sizeof (int);
-		ns = index(ns, 0) + 1;
-		if (ns > &newstrings[symsize]) {
-			fprintf(stderr, "symorder: Strings grew longer!\n");
-			exit(1);
-		}
+		symp->n_un.n_strx -= sizeof(int);
+		(void)strcpy(t, &strings[symp->n_un.n_strx]);
+		symp->n_un.n_strx = (t - newstrings) + sizeof(int);
+		t += strlen(t) + 1;
 	}
 
-	lseek(o, sa, 0);
-	if (write(o, (char *)symtab, n) != n) {
-		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
-		exit(1);
-	}
-	if (write(o, (char *)&symsize, sizeof (int)) != sizeof (int)) {
-		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
-		exit(1);
-	}
-	if (write(o, newstrings, symsize - 4) != symsize - 4) {
-		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
-		exit(1);
-	}
+	(void)lseek(o, sa, SEEK_SET);
+	if (write(o, (char *)symtab, n) != n)
+		error(kfile);
+	if (write(o, (char *)&strtabsize, sizeof(int)) != sizeof(int)) 
+		error(kfile);
+	if (write(o, newstrings, strtabsize - sizeof(int)) !=
+	    strtabsize - sizeof(int))
+		error(kfile);
 	if ((i = nsym - symfound) > 0) {
-		fprintf(stderr, "symorder: %d symbol%s not found:\n",
+		(void)printf("symorder: %d symbol%s not found:\n",
 		    i, i == 1 ? "" : "s");
-		for (i = 0; i < nsym; i++) {
+		for (i = 0; i < nsym; i++)
 			if (order[i].n_value == 0)
 				printf("%s\n", order[i].n_un.n_name);
-		}
 	}
 	exit(0);
 }
 
-reorder(st1, st2, n)
+reorder(st1, st2, entries)
 	register struct nlist *st1, *st2;
-	register n;
+	int entries;
 {
-	register struct nlist *stp = st2 + nsym;
-	register i;
+	register struct nlist *p;
+	register int i, n;
 
-	while (--n >= 0) {
+	for (p = st1, n = entries; --n >= 0; ++p)
+		if (inlist(p) != -1)
+			++symfound; 
+	for (p = st2 + symfound, n = entries; --n >= 0; ++st1) {
 		i = inlist(st1);
 		if (i == -1)
-			*stp++ = *st1++;
+			*p++ = *st1;
 		else
-			st2[i] = *st1++;
+			st2[i] = *st1;
 	}
 }
 
@@ -204,49 +181,36 @@ inlist(p)
 	if (p->n_un.n_strx == 0)
 		return (-1);
 
-	nam = &strings[p->n_un.n_strx - sizeof(int)];
-	if (nam >= &strings[symsize]) {
-		fprintf(stderr, "symorder: corrupt symtab\n");
-		exit(1);
-	}
+	if (p->n_un.n_strx >= strtabsize)
+		badfmt("corrupted symbol table");
 
+	nam = &strings[p->n_un.n_strx - sizeof(int)];
 	for (op = &order[nsym]; --op >= order; ) {
 		if (strcmp(op->n_un.n_name, nam) != 0)
 			continue;
-		if (op->n_value == 0) {
-			op->n_value++;
-			symfound++;
-		}
+		op->n_value = 1;
 		return (op - order);
 	}
 	return (-1);
 }
 
-#define	NSAVETAB	4096
-char	*savetab;
-int	saveleft;
-
-char *
-savestr(cp)
-	register char *cp;
+badfmt(why)
+	char *why;
 {
-	register int len;
+	(void)fprintf(stderr,
+	    "symorder: %s: %s: %s\n", kfile, why, strerror(EFTYPE));
+	exit(1);
+}
 
-	len = strlen(cp) + 1;
-	if (len > saveleft) {
-		saveleft = NSAVETAB;
-		if (len > saveleft)
-			saveleft = len;
-		savetab = (char *)malloc(saveleft);
-		if (savetab == 0) {
-			fprintf(stderr,
-			    "symorder: ran out of memory (savestr)\n");
-			exit(1);
-		}
-	}
-	strncpy(savetab, cp, len);
-	cp = savetab;
-	savetab += len;
-	saveleft -= len;
-	return (cp);
+error(n)
+	char *n;
+{
+	int sverr;
+
+	sverr = errno;
+	(void)fprintf(stderr, "symorder: ");
+	if (n)
+		(void)fprintf(stderr, "%s: ", n);
+	(void)fprintf(stderr, "%s\n", strerror(sverr));
+	exit(1);
 }
