@@ -1,4 +1,4 @@
-/* @(#)setbuffer.c	4.1 (Berkeley) %G% */
+/* @(#)setbuffer.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 setbuffer(iop, buf, size)
@@ -17,4 +17,21 @@ setbuffer(iop, buf, size)
 		iop->_bufsiz = size;
 	}
 	iop->_cnt = 0;
+}
+
+/*
+ * set line buffering for either stdout or stderr
+ */
+setlinebuf(iop)
+	register struct _iobuf *iop;
+{
+	static char _sebuf[BUFSIZ];
+	extern char _sobuf[];
+
+	if (iop != stdout && iop != stderr)
+		return;
+	fflush(iop);
+	setbuffer(iop, NULL, 0);
+	setbuffer(iop, iop == stderr ? _sebuf : _sobuf, BUFSIZ);
+	iop->_flag |= _IOLBF;
 }
