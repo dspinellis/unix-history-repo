@@ -1,4 +1,4 @@
-/*	dip.c	1.3	(Berkeley)	83/10/22
+/*	dip.c	1.4	(Berkeley)	83/11/30
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -218,9 +218,9 @@ char ***argvp;
 
 
 outlist(s)	/* process list of page numbers to be printed */
-char *s;
+register char *s;
 {
-	int n1, n2, i;
+	register int n1, n2;
 
 	nolist = 0;
 	while (*s) {
@@ -317,14 +317,16 @@ register FILE *fp;
 				drawarc(n, m, n1, m1);
 				break;
 			case 'g':	/* gremlin curve */
-			case '~':	/* wiggly line */
-				drawwig(buf+1);
+				drawwig(buf+1, fp, 0);
 				break;
-			case 't':
+			case '~':	/* wiggly line */
+				drawwig(buf+1, fp, 1);
+				break;
+			case 't':	/* line-thickness */
 				sscanf(buf+1, "%d", &n);
 				drawthick(n);
 				break;
-			case 's':
+			case 's':	/* line-style */
 				sscanf(buf+1, "%d", &n);
 				drawstyle(n);
 				break;
@@ -387,7 +389,7 @@ register FILE *fp;
 				;
 			break;
 		case 'x':	/* device control */
-			devcntrl(fp);
+			if (devcntrl(fp)) return;
 			break;
 		default:
 			error(FATAL, "unknown input character %o %c", c, c);
@@ -396,8 +398,8 @@ register FILE *fp;
 }
 
 
-devcntrl(fp)	/* interpret device control functions */
-FILE *fp;
+int devcntrl(fp)	/* interpret device control functions */
+FILE *fp;		/* returns -1 upon "stop" command */
 {
         char str[20], str1[50], buf[50];
 	int c, n;
@@ -411,8 +413,9 @@ FILE *fp;
 	case 'T':	/* device name */
 	case 't':	/* trailer */
 	case 'p':	/* pause -- can restart */
-	case 's':	/* stop */
 		break;
+	case 's':	/* stop */
+		return -1;
 	case 'r':	/* resolution assumed when prepared */
 		fscanf(fp, "%d", &n);
 		if (n!=RES) error(FATAL,"Input computed with wrong resolution");
@@ -436,7 +439,8 @@ FILE *fp;
 	}
 	while ((c = getc(fp)) != '\n')	/* skip rest of input line */
 		if (c == EOF)
-			break;
+			return -1;
+	return 0;
 }
 
 
@@ -662,16 +666,6 @@ t_wrapup()
 {
 	putc(AEND, tf);
 	putc(AEOF, tf);
-}
-
-
-t_rule(w, h)
-{
-	hvflush();
-	putc(ABRULE, tf);
-	putint(w, tf);
-	putint(h, tf);
-	putint(-h, tf);
 }
 
 
