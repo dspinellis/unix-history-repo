@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.46 (Berkeley) %G%
+#	@(#)Makefile.inc	5.47 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -28,8 +28,8 @@ errlst.o errlst.po:
 	rm -f errlst.s
 .endif
 
-MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 daemon.0 \
-	directory.0 err.0 exec.0 fnmatch.0 frexp.0 fts.0 getcap.0 \
+MAN3+=	alarm.0 clock.0 confstr.0 crypt.0 ctermid.0 ctime.0 ctype.0 \
+	daemon.0 directory.0 err.0 exec.0 fnmatch.0 frexp.0 fts.0 getcap.0 \
 	getcwd.0 getdiskbyname.0 getfsent.0 getgrent.0 getgrouplist.0 \
 	gethostname.0 getloadavg.0 getmntinfo.0 getnetgrent.0 \
 	getpagesize.0 getpass.0 getpwent.0 getttyent.0 getusershell.0 \
