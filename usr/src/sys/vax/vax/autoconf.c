@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -471,7 +471,7 @@ found:
 #define	match(fld)	(ni->fld == mi->fld || mi->fld == '?')
 		if (!match(mi_drive) || !match(mi_mbanum))
 			continue;
-		printf("%s%d at mba%d drive %d\n",
+		printf("%s%d at mba%d drive %d",
 		    mi->mi_driver->md_dname, mi->mi_unit,
 		    ni->mi_mbanum, ni->mi_drive);
 		mi->mi_alive = 1;
@@ -495,6 +495,7 @@ found:
 				mi->mi_dk = -1;
 		}
 		(*mi->mi_driver->md_attach)(mi);
+		printf("\n");
 		return (mi);
 	}
 	return (0);

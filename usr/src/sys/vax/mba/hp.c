@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.2 (Berkeley) %G%
+ *	@(#)hp.c	7.3 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -161,12 +161,12 @@ hpattach(mi, slave)
 	 * Try to initialize device and read pack label.
 	 */
 	if (hpinit(hpminor(unit, 0), 0) == 0) {
-		printf("hp%d: %s\n", unit, hplabel[unit].d_typename);
+		printf(": %s", hplabel[unit].d_typename);
 #ifdef notyet
 		addswap(makedev(HPMAJOR, hpminor(unit, 0)), &hplabel[unit]);
 #endif
 	} else
-		printf("hp%d: offline\n", unit);
+		printf(": offline");
 }
 
 hpopen(dev, flags)
@@ -265,6 +265,7 @@ hpinit(dev, flags)
 	struct hpdevice *hpaddr;
 	struct dkbad *db;
 	int unit, i, error = 0;
+	extern int cold;
 
 	unit = hpunit(dev);
 	sc = &hpsoftc[unit];
@@ -336,7 +337,10 @@ hpinit(dev, flags)
 	    dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) == 0) {
 		*lp = *dlp;
 	} else {
-		log(LOG_ERR, "hp%d: no disk label\n", unit);
+		if (cold)
+			printf(": no disk label");
+		else
+			log(LOG_ERR, "hp%d: no disk label\n", unit);
 #ifdef COMPAT_42
 		mi->mi_type = hpmaptype(mi, lp);
 #else
