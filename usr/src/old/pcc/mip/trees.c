@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.29 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.30 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1149,11 +1149,7 @@ tymatch(p)  register NODE *p; {
 	else if( t1==LONG || t2==LONG ) t = LONG;
 	else t = INT;
 
-#ifdef tahoe
-	if( asgop(o) )
-#else
 	if( o == ASSIGN || o == CAST || o == RETURN )
-#endif
 	{
 		tu = p->in.left->in.type;
 		t = t1;
@@ -1167,11 +1163,7 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
-#ifdef tahoe
-	if( t != t1 )
-#else
 	if( t != t1 && ! asgop(o) )
-#endif
 		p->in.left = makety( p->in.left, tu, 0, (int)tu );
 
 	if( t != t2 || o==CAST)
