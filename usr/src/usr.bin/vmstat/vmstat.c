@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)vmstat.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)vmstat.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
@@ -6,32 +6,30 @@ static char *sccsid = "@(#)vmstat.c	4.1 (Berkeley) %G%";
 #include <nlist.h>
 
 struct nlist nl[] = {
-#define	X_DKBUSY 0
-	{ "_dk_busy" },
-#define	X_DKTIME 1
-	{ "_dk_time" },
-#define	X_DKNUMB 2
-	{ "_dk_numb" },
-#define	X_RATE 3
+#define	X_CPTIME	0
+	{ "_cp_time" },
+#define	X_RATE		1
 	{ "_rate" },
-#define X_TOTAL 4
+#define X_TOTAL		2
 	{ "_total" },
-#define	X_DEFICIT 5
+#define	X_DEFICIT	3
 	{ "_deficit" },
-#define	X_FORKSTAT 6
+#define	X_FORKSTAT	4
 	{ "_forkstat" },
-#define X_SUM 7
+#define X_SUM		5
 	{ "_sum" },
-#define	X_FIRSTFREE 8
+#define	X_FIRSTFREE	6
 	{ "_firstfree" },
-#define	X_MAXFREE 9
+#define	X_MAXFREE	7
 	{ "_maxfree" },
-#define	X_BOOTIME 10
+#define	X_BOOTIME	8
 	{ "_bootime" },
+#define	X_DKXFER	9
+	{ "_dk_xfer" },
 #ifdef ERNIE
-#define X_REC 10
+#define X_REC		10
 	{ "_rectime" },
-#define X_PGIN 11
+#define X_PGIN		11
 	{ "_pgintime" },
 #endif
 	{ 0 },
@@ -42,8 +40,8 @@ int	firstfree, maxfree;
 struct
 {
 	int	busy;
-	long	etime[CPUSTATES][DK_NSTATES];
-	long	numb[DK_NDRIVE];
+	long	time[CPUSTATES];
+	long	xfer[DK_NDRIVE];
 	struct	vmmeter Rate;
 	struct	vmtotal	Total;
 	struct	vmmeter Sum;
@@ -152,12 +150,10 @@ printf("\
  R B W   AVM  FRE  RE AT PI PO FR  DE  SR I O  D0 D1 D2 D3  IN  SY  CS US SY ID\n\
 ");
 loop:
-	lseek(mf, (long)nl[X_DKBUSY].n_value, 0);
- 	read(mf, &s.busy, sizeof s.busy);
- 	lseek(mf, (long)nl[X_DKTIME].n_value, 0);
- 	read(mf, s.etime, sizeof s.etime);
- 	lseek(mf, (long)nl[X_DKNUMB].n_value, 0);
- 	read(mf, s.numb, sizeof s.numb);
+	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
+ 	read(mf, s.time, sizeof s.time);
+	lseek(mf, (long)nl[X_DKXFER].n_value, 0);
+	read(mf, s.xfer, sizeof s.xfer);
 	if (nintv != 1) {
 		lseek(mf, (long)nl[X_SUM].n_value, 0);
 		read(mf, &rate, sizeof rate);
@@ -169,23 +165,18 @@ loop:
 	read(mf, &total, sizeof total);
 	lseek(mf, (long)nl[X_DEFICIT].n_value, 0);
 	read(mf, &deficit, sizeof deficit);
+	etime = 0;
 	for (i=0; i < DK_NDRIVE; i++) {
-		t = s.numb[i];
-		s.numb[i] -= s1.numb[i];
-		s1.numb[i] = t;
+		t = s.xfer[i];
+		s.xfer[i] -= s1.xfer[i];
+		s1.xfer[i] = t;
 	}
 	for (i=0; i < CPUSTATES; i++) {
-		for (j=0; j < DK_NSTATES; j++) {
-			t = s.etime[i][j];
-			s.etime[i][j] -= s1.etime[i][j];
-			s1.etime[i][j] = t;
-		}
+		t = s.time[i];
+		s.time[i] -= s1.time[i];
+		s1.time[i] = t;
+		etime += s.time[i];
 	}
-	t = 0;
-	for (i=0; i < CPUSTATES; i++)
-		for (j=0; j < DK_NSTATES; j++)
-			t += s.etime[i][j];
-	etime = t;
 	if(etime == 0.)
 		etime = 1.;
 	if (iflag)
@@ -308,28 +299,21 @@ stats(dn)
 		printf("  0");
 		return;
 	}
-	printf("%3.0f", s.numb[dn]/etime);
+	printf("%3.0f", s.xfer[dn]/etime);
 }
 
 double
 stat1(row)
 {
-	register i, j;
-	long t;
-	double f1, f2;
+	double t;
+	register i;
 
 	t = 0;
 	for(i=0; i<CPUSTATES; i++)
-		for(j=0; j<DK_NSTATES; j++)
-			t += s.etime[i][j];
-	f1 = t;
-	if(f1 == 0.)
-		f1 = 1.;
-	t = 0;
-	for(j=0; j<DK_NSTATES; j++)
-		t += s.etime[row][j];
-	f2 = t;
-	return(f2*100./f1);
+		t += s.time[i];
+	if(t == 0.)
+		t = 1.;
+	return(s.time[row]*100./t);
 }
 
 pct(top, bot)
