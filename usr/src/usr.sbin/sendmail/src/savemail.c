@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -59,8 +59,15 @@ savemail(e)
 
 	if (tTd(6, 1))
 	{
-		printf("\nsavemail, errormode = %c\n  e_from=", e->e_errormode);
+		printf("\nsavemail, errormode = %c, id = %s\n  e_from=",
+			e->e_errormode, e->e_id == NULL ? "NONE" : e->e_id);
 		printaddr(&e->e_from, FALSE);
+	}
+
+	if (e->e_id == NULL)
+	{
+		/* can't return a message with no id */
+		return;
 	}
 
 	e->e_flags &= ~EF_FATALERRS;
