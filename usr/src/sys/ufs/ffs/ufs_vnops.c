@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.74 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.75 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -608,15 +608,15 @@ relookup(dvp, vpp, cnp)
 	struct vnode *dvp, **vpp;
 	struct componentname *cnp;
 {
-	register char *cp;		/* pointer into pathname argument */
 	register struct vnode *dp = 0;	/* the directory we are searching */
 	struct vnode *tdp;		/* saved dp */
 	struct mount *mp;		/* mount table entry */
 	int docache;			/* == 0 do not cache last component */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int rdonly;			/* lookup read-only flag bit */
+	char *cp;			/* DEBUG: check name ptr/len */
+	int newhash;			/* DEBUG: check name hash */
 	int error = 0;
-	int newhash;
 
 	/*
 	 * Setup: break out flag bits into variables.
@@ -642,17 +642,15 @@ relookup(dvp, vpp, cnp)
 	 * responsibility for freeing the pathname buffer.
 	 */
 #ifdef NAMEI_DIAGNOSTIC
-	newhash = 0;
-	for (cp = cnp->cn_nameptr; *cp != 0 && *cp != '/'; cp++)
+	for (newhash = 0, cp = cnp->cn_nameptr; *cp != 0 && *cp != '/'; cp++)
 		newhash += (unsigned char)*cp;
 	if (newhash != cnp->cn_hash)
 		panic("relookup: bad hash");
 	if (cnp->cn_namelen != cp - cnp->cn_nameptr)
 		panic ("relookup: bad len");
-	{ char c = *cp;
-	*cp = '\0';
+	if (*cp != 0)
+		panic("relookup: not last component");
 	printf("{%s}: ", cnp->cn_nameptr);
-	*cp = c; }
 #endif
 
 	/*
@@ -692,7 +690,7 @@ relookup(dvp, vpp, cnp)
 		printf("not found\n");
 #endif
 		if (cnp->cn_nameiop == LOOKUP || cnp->cn_nameiop == DELETE ||
-		    error != ENOENT || *cp != 0)
+		    error != ENOENT)
 			goto bad;
 		/*
 		 * If creating and at end of pathname, then can consider
@@ -702,17 +700,14 @@ relookup(dvp, vpp, cnp)
 			error = EROFS;
 			goto bad;
 		}
+		/* ASSERT(dvp == ndp->ni_startdir) */
+		if (cnp->cn_flags & SAVESTART)
+			VREF(dvp);
 		/*
 		 * We return with ni_vp NULL to indicate that the entry
 		 * doesn't currently exist, leaving a pointer to the
 		 * (possibly locked) directory inode in ndp->ni_dvp.
 		 */
-		if (cnp->cn_flags & SAVESTART) {
-			/*
-			 * startdir == dvp, always
-			 */
-			VREF(dvp);
-		}
 		return (0);
 	}
 #ifdef NAMEI_DIAGNOSTIC
@@ -751,10 +746,9 @@ nextname:
 			goto bad2;
 		}
 	}
-	if (cnp->cn_flags & SAVESTART) {
-		/* ASSERT(dvp==ndp->ni_startdir) */
+	/* ASSERT(dvp == ndp->ni_startdir) */
+	if (cnp->cn_flags & SAVESTART)
 		VREF(dvp);
-	}
 	
 	if (!wantparent)
 		vrele(dvp);
@@ -1024,7 +1018,7 @@ unlinkit:
 	if ((fcnp->cn_flags & SAVESTART) == 0)
 		panic("ufs_rename: lost from startdir");
 	p->p_spare[1]--;
-	(void) relookup(fdvp, &fvp, fcnp);   /* NEEDSWORK: startdir stuff */
+	(void) relookup(fdvp, &fvp, fcnp);
 	if (fvp != NULL) {
 		xp = VTOI(fvp);
 		dp = VTOI(fdvp);
