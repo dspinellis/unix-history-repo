@@ -1,4 +1,4 @@
-/*	uba.c	4.19	%G%	*/
+/*	uba.c	4.20	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -9,7 +9,8 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
+#include "../h/ubavar.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
@@ -36,9 +37,9 @@ char	ubasr_bits[] = UBASR_BITS;
  * of the request queue is likely to be a disaster.
  */
 ubago(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
-	register struct uba_minfo *um = ui->ui_mi;
+	register struct uba_ctlr *um = ui->ui_mi;
 	register struct uba_hd *uh;
 	register int s, unit;
 
@@ -80,7 +81,7 @@ rwait:
 }
 
 ubadone(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct uba_hd *uh = &uba_hd[um->um_ubanum];
 
@@ -138,10 +139,10 @@ ubasetup(uban, bp, flags)
 	reg--;
 	ubinfo = (bdp << 28) | (npf << 18) | (reg << 9) | o;
 	io = &uh->uh_uba->uba_map[reg];
-	temp = (bdp << 21) | UBA_MRV;
+	temp = (bdp << 21) | UBAMR_MRV;
 	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
 	if (bdp && (o & 01))
-		temp |= UBA_BO;
+		temp |= UBAMR_BO;
 	if (bp->b_flags & B_UAREA) {
 		for (i = UPAGES - bp->b_bcount / NBPG; i < UPAGES; i++) {
 			if (rp->p_addr[i].pg_pfnum == 0)
@@ -216,12 +217,13 @@ ubarelse(uban, amr)
 		switch (cpu) {
 #if VAX780
 		case VAX_780:
-			uh->uh_uba->uba_dpr[bdp] |= UBA_BNE;
+			uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
 			break;
 #endif
 #if VAX750
 		case VAX_750:
-			uh->uh_uba->uba_dpr[bdp] |= UBA_PURGE|UBA_NXM|UBA_UCE;
+			uh->uh_uba->uba_dpr[bdp] |=
+			    UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 			break;
 #endif
 		}
@@ -256,7 +258,7 @@ ubarelse(uban, amr)
 }
 
 ubapurge(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct uba_hd *uh = um->um_hd;
 	register int bdp = (um->um_ubinfo >> 28) & 0x0f;
@@ -264,12 +266,12 @@ ubapurge(um)
 	switch (cpu) {
 #if VAX780
 	case VAX_780:
-		uh->uh_uba->uba_dpr[bdp] |= UBA_BNE;
+		uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
 		break;
 #endif
 #if VAX750
 	case VAX_750:
-		uh->uh_uba->uba_dpr[bdp] |= UBA_PURGE|UBA_NXM|UBA_UCE;
+		uh->uh_uba->uba_dpr[bdp] |= UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 		break;
 #endif
 	}
@@ -297,29 +299,14 @@ ubareset(uban)
 	uh->uh_mrwant = 0;
 	wakeup((caddr_t)&uh->uh_bdpwant);
 	wakeup((caddr_t)&uh->uh_mrwant);
-	switch (cpu) {
-#if VAX780
-	case VAX_780:
-		printf("uba%d: reset", uban);
-		ubainit(uh->uh_uba);
-		break;
-#endif
-#if VAX750
-	case VAX_750:
-		printf("uba0: reset");
-		mtpr(IUR, 1);
-		/* give devices time to recover from power fail */
-		DELAY(5000000);
-		break;
-#endif
-	}
+	printf("uba%d: reset", uban);
+	ubainit(uh->uh_uba);
 	for (cdp = cdevsw; cdp->d_open; cdp++)
 		(*cdp->d_reset)(uban);
 	printf("\n");
 	splx(s);
 }
 
-#if VAX780
 /*
  * Init a uba.  This is called with a pointer
  * rather than a virtual address since it is called
@@ -332,12 +319,26 @@ ubainit(uba)
 	register struct uba_regs *uba;
 {
 
-	uba->uba_cr = UBA_ADINIT;
-	uba->uba_cr = UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
-	while ((uba->uba_cnfgr & UBA_UBIC) == 0)
-		;
+	switch (cpu) {
+#if VAX780
+	case VAX780:
+		uba->uba_cr = UBACR_ADINIT;
+		uba->uba_cr = UBACR_IFS|UBACR_BRIE|UBACR_USEFIE|UBACR_SUEFIE;
+		while ((uba->uba_cnfgr & UBACNFGR_UBIC) == 0)
+			;
+		break;
+#endif
+#if VAX750
+	case VAX750:
+		mtpr(IUR, 1);
+		/* give devices time to recover from power fail */
+		DELAY(5000000);
+		break;
+#endif
+	}
 }
 
+#if VAX780
 /*
  * Check to make sure the UNIBUS adaptor is not hung,
  * with an interrupt in the register to be presented,
@@ -422,7 +423,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 	    uban, uba->uba_sr, uba->uba_fmer, 4*uba->uba_fubar);
 	splx(s);
 	uba->uba_sr = sr;
-	uvec &= UBA_DIV;
+	uvec &= UBABRRVR_DIV;
 	return;
 }
 #endif
