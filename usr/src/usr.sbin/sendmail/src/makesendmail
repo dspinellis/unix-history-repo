@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.15 (Berkeley) %G%
+#       @(#)makesendmail	8.16 (Berkeley) %G%
 #
 
 #
@@ -63,50 +63,102 @@ then
 	fi
 fi
 
+# see if there is a "user suffix" specified
+if [ "${SUFFIX-}x" = "x" ]
+then
+	sfx=""
+else
+	sfx=".${SUFFIX}"
+fi
+
 # now try to find a reasonable object directory
-if [ -r obj.$os.$rel.$arch ]; then
+if [ -r obj.$os.$rel.$arch$sfx ]; then
+	obj=obj.$os.$rel.$arch$sfx
+elif [ -r obj.$os.$rel.$arch ]; then
 	obj=obj.$os.$rel.$arch
+elif [ -r obj.$os.$rbase.x.$arch$sfx ]; then
+	obj=obj.$os.$rbase.x.$arch$sfx
 elif [ -r obj.$os.$rbase.x.$arch ]; then
 	obj=obj.$os.$rbase.x.$arch
+elif [ -r obj.$os.$rel$sfx ]; then
+	obj=obj.$os.$rel$sfx
 elif [ -r obj.$os.$rel ]; then
 	obj=obj.$os.$rel
+elif [ -r obj.$os.$rbase.x$sfx ]; then
+	obj=obj.$os.$rbase.x$sfx
 elif [ -r obj.$os.$rbase.x ]; then
 	obj=obj.$os.$rbase.x
+elif [ -r obj.$os.$arch$sfx ]; then
+	obj=obj.$os.$arch$sfx
 elif [ -r obj.$os.$arch ]; then
 	obj=obj.$os.$arch
+elif [ -r obj.$rel.$arch$sfx ]; then
+	obj=obj.$rel.$arch$sfx
 elif [ -r obj.$rel.$arch ]; then
 	obj=obj.$rel.$arch
+elif [ -r obj.$rbase.x.$arch$sfx ]; then
+	obj=obj.$rbase.x.$arch$sfx
 elif [ -r obj.$rbase.x.$arch ]; then
 	obj=obj.$rbase.x.$arch
+elif [ -r obj.$os$sfx ]; then
+	obj=obj.$os$sfx
 elif [ -r obj.$os ]; then
 	obj=obj.$os
+elif [ -r obj.$arch$sfx ]; then
+	obj=obj.$arch$sfx
 elif [ -r obj.$arch ]; then
 	obj=obj.$arch
+elif [ -r obj.$rel$sfx ]; then
+	obj=obj.$rel$sfx
 elif [ -r obj.$rel ]; then
 	obj=obj.$rel
+elif [ -r obj$sfx ]; then
+	obj=obj$sfx
 else
 	# no existing obj directory -- try to create one if Makefile found
-	obj=obj.$os.$rel.$arch
-	if [ -r Makefiles/Makefile.$os.$rel.$arch ]; then
+	obj=obj.$os.$rel.$arch$sfx
+	if [ -r Makefiles/Makefile.$os.$rel.$arch$sfx ]; then
+		makefile=Makefile.$os.$rel.$arch$sfx
+	elif [ -r Makefiles/Makefile.$os.$rel.$arch ]; then
 		makefile=Makefile.$os.$rel.$arch
+	elif [ -r Makefiles/Makefile.$os.$rbase.x.$arch$sfx ]; then
+		makefile=Makefile.$os.$rbase.x.$arch$sfx
 	elif [ -r Makefiles/Makefile.$os.$rbase.x.$arch ]; then
 		makefile=Makefile.$os.$rbase.x.$arch
+	elif [ -r Makefiles/Makefile.$os.$rel$sfx ]; then
+		makefile=Makefile.$os.$rel$sfx
 	elif [ -r Makefiles/Makefile.$os.$rel ]; then
 		makefile=Makefile.$os.$rel
+	elif [ -r Makefiles/Makefile.$os.$rbase.x$sfx ]; then
+		makefile=Makefile.$os.$rbase.x$sfx
 	elif [ -r Makefiles/Makefile.$os.$rbase.x ]; then
 		makefile=Makefile.$os.$rbase.x
+	elif [ -r Makefiles/Makefile.$os.$arch$sfx ]; then
+		makefile=Makefile.$os.$arch$sfx
 	elif [ -r Makefiles/Makefile.$os.$arch ]; then
 		makefile=Makefile.$os.$arch
+	elif [ -r Makefiles/Makefile.$rel.$arch$sfx ]; then
+		makefile=Makefile.$rel.$arch$sfx
 	elif [ -r Makefiles/Makefile.$rel.$arch ]; then
 		makefile=Makefile.$rel.$arch
+	elif [ -r Makefiles/Makefile.$rbase.x.$arch$sfx ]; then
+		makefile=Makefile.$rbase.x.$arch$sfx
 	elif [ -r Makefiles/Makefile.$rbase.x.$arch ]; then
 		makefile=Makefile.$rbase.x.$arch
+	elif [ -r Makefiles/Makefile.$os$sfx ]; then
+		makefile=Makefile.$os$sfx
 	elif [ -r Makefiles/Makefile.$os ]; then
 		makefile=Makefile.$os
+	elif [ -r Makefiles/Makefile.$arch$sfx ]; then
+		makefile=Makefile.$arch$sfx
 	elif [ -r Makefiles/Makefile.$arch ]; then
 		makefile=Makefile.$arch
+	elif [ -r Makefiles/Makefile.$rel$sfx ]; then
+		makefile=Makefile.$rel$sfx
 	elif [ -r Makefiles/Makefile.$rel ]; then
 		makefile=Makefile.$rel
+	elif [ -r Makefiles/Makefile.$rel$sfx ]; then
+		makefile=Makefile.$rel$sfx
 	else
 		echo "Cannot determine how to support $arch.$os.$rel"
 		exit 1
