@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1383,6 +1383,8 @@ char	*DefaultUserShells[] =
 
 #endif
 
+#define WILDCARD_SHELL	"/SENDMAIL/ANY/SHELL/"
+
 bool
 usershellok(shell)
 	char *shell;
@@ -1393,7 +1395,7 @@ usershellok(shell)
 
 	setusershell();
 	while ((p = getusershell()) != NULL)
-		if (strcmp(p, shell) == 0 || strcmp(p, "*") == 0)
+		if (strcmp(p, shell) == 0 || strcmp(p, WILDCARD_SHELL) == 0)
 			break;
 	endusershell();
 	return p != NULL;
@@ -1428,7 +1430,7 @@ usershellok(shell)
 		while (*p != '\0' && *p != '#' && !isspace(*p))
 			p++;
 		*p = '\0';
-		if (strcmp(shell, q) == 0 || strcmp("*", q) == 0)
+		if (strcmp(shell, q) == 0 || strcmp(WILDCARD_SHELL, q) == 0)
 		{
 			fclose(shellf);
 			return TRUE;
