@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.49 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.50 (Berkeley) %G%
  */
 
 /*
@@ -661,7 +661,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	fp = (struct nfsv2_fattr *)cp2;
 	vtyp = nfstov_type(fp->fa_type);
 	vmode = fxdr_unsigned(u_short, fp->fa_mode);
-	if (vtyp == VNON)
+	if (vtyp == VNON || vtyp == VREG)
 		vtyp = IFTOVT(vmode);
 	rdev = fxdr_unsigned(long, fp->fa_rdev);
 	fxdr_time(&fp->fa_mtime, &mtime);
