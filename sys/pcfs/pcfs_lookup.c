@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_lookup.c,v 1.3 1993/10/16 19:29:35 rgrimes Exp $
+ *	$Id: pcfs_lookup.c,v 1.4 1993/10/17 01:48:37 rgrimes Exp $
  */
 
 #include "param.h"
@@ -296,7 +296,7 @@ printf("pcfs_lookup(): saving empty slot location\n");
 			ndp->ni_pcfs.pcfs_cluster = slotcluster;
 			ndp->ni_pcfs.pcfs_count   = 1;
 		}
-/*		dp->de_flag |= DEUPD; /* never update dos directories */
+/*		dp->de_flag |= DEUPD;*/ /* never update dos directories */
 		ndp->ni_nameiop |= SAVENAME;
 		if (!lockparent)	/* leave searched dir locked?	*/
 			DEUNLOCK(dp);
