@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.40 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.40 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -117,6 +117,7 @@ smtp(e)
 	message("220 %s", inp);
 	SmtpPhase = "startup";
 	protocol = NULL;
+	sendinghost = macvalue('s', e);
 	gothello = FALSE;
 	gotmail = FALSE;
 	for (;;)
@@ -200,7 +201,7 @@ smtp(e)
 				SmtpPhase = "HELO";
 			}
 			setproctitle("%s: %s", CurHostName, inp);
-			define('s', newstr(p), e);
+			sendinghost = newstr(p);
 			if (strcasecmp(p, RealHostName) != 0)
 			{
 				auth_warning(e, "Host %s claimed to be %s",
@@ -208,7 +209,7 @@ smtp(e)
 			}
 			p = macvalue('_', e);
 			if (p == NULL)
-				p = macvalue('s', e);
+				p = RealHostName;
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
 
@@ -219,8 +220,8 @@ smtp(e)
 			if (!gothello)
 			{
 				/* set sending host to our known value */
-				if (macvalue('s', e) == NULL)
-					define('s', RealHostName, e);
+				if (sendinghost == NULL)
+					sendinghost = RealHostName;
 
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
@@ -252,6 +253,7 @@ smtp(e)
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);
+			define('s', sendinghost, e);
 			initsys(e);
 			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 
