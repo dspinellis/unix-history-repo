@@ -1,4 +1,4 @@
-/*		lpf.c	4.10	83/04/29
+/*		lpf.c	4.10	83/05/02
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites
@@ -6,6 +6,7 @@
  *	modified by kls to use register references instead of arrays
  *	to try to gain a little speed.
  */
+
 #include <stdio.h>
 #include <signal.h>
 
@@ -23,12 +24,6 @@ char	*name;		/* user's login name */
 char	*host;		/* user's machine name */
 char	*acctfile;	/* accounting information file */
 
-onintr()
-{
-	signal(SIGTERM, SIG_IGN);
-	exit(1);
-}
-
 main(argc, argv) 
 	int argc;
 	char *argv[];
@@ -38,11 +33,6 @@ main(argc, argv)
 	register char *cp;
 	int done, linedone, maxrep;
 	char ch, *limit;
-
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTERM, onintr);
 
 	while (--argc) {
 		if (*(cp = *++argv) == '-') {
