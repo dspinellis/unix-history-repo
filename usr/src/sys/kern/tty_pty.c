@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.26 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.27 (Berkeley) %G%
  */
 
 /*

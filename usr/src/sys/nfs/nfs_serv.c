@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.54 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.55 (Berkeley) %G%
  */
 
 /*
@@ -396,7 +396,7 @@ nfsrv_read(nfsd, mrep, md, dpos, cred, nam, mrq)
 		       M_TEMP, M_WAITOK);
 		iv2 = iv;
 		while (left > 0) {
-			siz = MIN(M_TRAILINGSPACE(m), left);
+			siz = min(M_TRAILINGSPACE(m), left);
 			if (siz > 0) {
 				m->m_len += siz;
 				iv->iov_base = bpos;

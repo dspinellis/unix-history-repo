@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.33 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.34 (Berkeley) %G%
  */
 
 /*
@@ -1469,7 +1469,7 @@ nfs_realign(m, hsiz)
 					mnew = m2;
 					m2 = m2->m_next;
 				}
-				siz = MIN(mlen, olen);
+				siz = min(mlen, olen);
 				if (tcp != fcp)
 					bcopy(fcp, tcp, siz);
 				mnew->m_len += siz;

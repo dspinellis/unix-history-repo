@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.22 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -266,7 +266,7 @@ m_copym(m, off0, len, wait)
 				n->m_pkthdr.len = len;
 			copyhdr = 0;
 		}
-		n->m_len = MIN(len, m->m_len - off);
+		n->m_len = min(len, m->m_len - off);
 		if (m->m_flags & M_EXT) {
 			n->m_data = m->m_data + off;
 			mclrefcnt[mtocl(m->m_ext.ext_buf)]++;
@@ -315,7 +315,7 @@ m_copydata(m, off, len, cp)
 	while (len > 0) {
 		if (m == 0)
 			panic("m_copydata");
-		count = MIN(m->m_len - off, len);
+		count = min(m->m_len - off, len);
 		bcopy(mtod(m, caddr_t) + off, cp, count);
 		len -= count;
 		cp += count;
