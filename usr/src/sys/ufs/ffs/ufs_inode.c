@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.20	82/07/25	*/
+/*	ufs_inode.c	4.21	82/07/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -211,11 +211,6 @@ loop:
 	return (ip);
 }
 
-#ifdef MATISSE
-int	badinum = 3197;
-#else
-int	badinum = -1;
-#endif
 /*
  * Decrement reference count of
  * an inode structure.
@@ -229,11 +224,6 @@ iput(ip)
 
 	if ((ip->i_flag & ILOCK) == 0)
 		panic("iput");
-/* XXX */
-	if (ip->i_number == badinum && (ip->i_mode&IFMT) == IFCHR &&
-	    (major(ip->i_dev) != 3 || minor(ip->i_dev) != 2))
-		panic("/dev/null");
-/* XXX */
 	iunlock(ip);
 	irele(ip);
 }
@@ -347,6 +337,13 @@ itrunc(ip)
 	register long cnt = 0;
 	long tloop();
 #endif
+	/*
+	 * Only plain files, directories and symbolic
+	 * links contain blocks.
+	 */
+	i = ip->i_mode & IFMT;
+	if (i != IFREG && i != IFDIR && i != IFLNK)
+		return;
 
 	/*
 	 * Clean inode on disk before freeing blocks
@@ -362,13 +359,6 @@ itrunc(ip)
 	iupdat(&itmp, &time, &time, 1);
 	ip->i_flag &= ~(IUPD|IACC|ICHG);
 
-	/*
-	 * Only plain files, directories and symbolic
-	 * links contain blocks.
-	 */
-	i = ip->i_mode & IFMT;
-	if (i != IFREG && i != IFDIR && i != IFLNK)
-		return;
 	/*
 	 * Now return blocks to free list... if machine
 	 * crashes, they will be harmless MISSING blocks.

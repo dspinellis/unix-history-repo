@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.19	82/07/25	*/
+/*	ufs_lookup.c	4.20	82/07/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 extern	int	efs_major;
 #endif
 
-struct	buf *batoffset();
+struct	buf *blkatoff();
 int	dirchk = 1;
 /*
  * Convert a pathname into a pointer to a locked inode,
@@ -182,7 +182,7 @@ dirloop2:
 		if (blkoff(fs, u.u_offset) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			bp = batoffset(dp, u.u_offset, (char **)0);
+			bp = blkatoff(dp, u.u_offset, (char **)0);
 			if (bp == 0)
 				goto bad;
 			entryoffsetinblock = 0;
@@ -202,16 +202,20 @@ dirloop2:
 		/*
 		 * Get pointer to next entry, and do consistency checking:
 		 *	record length must be multiple of 4
+		 *	record length must not be zero
 		 *	entry must fit in rest of this DIRBLKSIZ block
 		 *	record must be large enough to contain name
+		 * When dirchk is set we also check:
+		 *	name is not longer than MAXNAMLEN
 		 *	name must be as long as advertised, and null terminated
-		 * Checking last condition is expensive, it is done only
-		 * when dirchk is set.
+		 * Checking last two conditions is done only when dirchk is
+		 * set, to save time.
 		 */
 		ep = (struct direct *)(bp->b_un.b_addr + entryoffsetinblock);
 		i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
-		if ((ep->d_reclen & 0x3) || ep->d_reclen > i ||
-		    DIRSIZ(ep) > ep->d_reclen || dirchk && dirbadname(ep)) {
+		if ((ep->d_reclen & 0x3) || ep->d_reclen == 0 ||
+		    ep->d_reclen > i || DIRSIZ(ep) > ep->d_reclen ||
+		    dirchk && (ep->d_namlen > MAXNAMLEN || dirbadname(ep))) {
 			dirbad(dp, "mangled entry");
 			u.u_offset += i;
 			entryoffsetinblock += i;
@@ -309,9 +313,9 @@ found:
 	 * Check that directory length properly reflects presence
 	 * of this entry.
 	 */
-	if (entryoffsetinblock + ep->d_reclen > dp->i_size) {
+	if (entryoffsetinblock + DIRSIZ(ep) > dp->i_size) {
 		dirbad(dp, "i_size too small");
-		dp->i_size = entryoffsetinblock + ep->d_reclen;
+		dp->i_size = entryoffsetinblock + DIRSIZ(ep);
 		dp->i_flag |= IUPD|ICHG;
 	}
 
@@ -406,6 +410,7 @@ found:
 		u.u_segflg = 1;
 		u.u_base = nbp->b_un.b_addr;
 		u.u_count = dp->i_size;
+		u.u_offset = 0;
 		readi(dp);
 		if (u.u_error)
 			goto bad2;
@@ -472,32 +477,6 @@ dirbadname(ep)
 }
 
 /*
- * Return the next character from the
- * kernel string pointed at by dirp.
- */
-schar()
-{
-
-	return (*u.u_dirp++ & 0377);
-}
-
-/*
- * Return the next character from the
- * user string pointed at by dirp.
- */
-uchar()
-{
-	register c;
-
-	c = fubyte(u.u_dirp++);
-	if (c == -1) {
-		u.u_error = EFAULT;
-		c = 0;
-	}
-	return (c);
-}
-
-/*
  * Write a directory entry after a call to namei, using the parameters
  * which it left in the u. area.  The argument ip is the inode which
  * the new directory entry will refer to.  The u. area field u.u_pdir is
@@ -550,13 +529,10 @@ direnter(ip)
 	 * DIRBLKSIZE.
 	 */
 	if (u.u_offset+u.u_count > u.u_pdir->i_size) {
-		if (((u.u_offset+u.u_count-1)&~(DIRBLKSIZ-1)) !=
-		    ((u.u_pdir->i_size-1)&~(DIRBLKSIZ-1))) {
-printf("wdir i_size dir %s/%d (of=%d,cnt=%d,psz=%d))\n",
-u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number,u.u_offset,
-u.u_count,u.u_pdir->i_size);
-			panic("wdir: span");
-		}
+/*ZZ*/		if (((u.u_offset+u.u_count-1)&~(DIRBLKSIZ-1)) !=
+/*ZZ*/		    ((u.u_pdir->i_size-1)&~(DIRBLKSIZ-1))) {
+/*ZZ*/			panic("wdir: span");
+/*ZZ*/		}
 		u.u_pdir->i_size = u.u_offset + u.u_count;
 	}
 
@@ -564,11 +540,9 @@ u.u_count,u.u_pdir->i_size);
 	 * Get the block containing the space for the new directory
 	 * entry.
 	 */
-	bp = batoffset(u.u_pdir, u.u_offset, (char **)&dirbuf);
+	bp = blkatoff(u.u_pdir, u.u_offset, (char **)&dirbuf);
 	if (bp == 0)
 		return;
-printf("direnter u.u_offset %d u.u_count %d, bpaddr %x, dirbuf %x\n",
-    u.u_offset, u.u_count, bp->b_un.b_addr, dirbuf);
 
 	/*
 	 * Find space for the new entry.  In the simple case, the
@@ -628,7 +602,6 @@ dirremove()
 	register struct buf *bp;
 	struct direct *ep;
 
-printf("dirremove u.u_offset %d u.u_count %d\n", u.u_offset, u.u_count);
 	if (u.u_count == 0) {
 		/*
 		 * First entry in block: set d_ino to zero.
@@ -637,13 +610,14 @@ printf("dirremove u.u_offset %d u.u_count %d\n", u.u_offset, u.u_count);
 /*ZZ*/,dp->i_fs->fs_fsmnt,dp->i_number,u.u_offset,u.u_dent.d_name);
 		u.u_base = (caddr_t)&u.u_dent;
 		u.u_count = DIRSIZ(&u.u_dent);
+		u.u_segflg = 1;
 		u.u_dent.d_ino = 0;
 		writei(dp);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
 		 */
-		bp = batoffset(dp, u.u_offset - u.u_count, (char **)&ep);
+		bp = blkatoff(dp, u.u_offset - u.u_count, (char **)&ep);
 		if (bp == 0)
 			return (0);
 		ep->d_reclen += u.u_dent.d_reclen;
@@ -655,8 +629,14 @@ printf("dirremove u.u_offset %d u.u_count %d\n", u.u_offset, u.u_count);
 	return (1);
 }
 
+/*
+ * Return buffer with contents of block "offset"
+ * from the beginning of directory "ip".  If "res"
+ * is non-zero, fill it in with a pointer to the
+ * remaining space in the directory.
+ */
 struct buf *
-batoffset(ip, offset, res)
+blkatoff(ip, offset, res)
 	struct inode *ip;
 	off_t offset;
 	char **res;
@@ -677,6 +657,5 @@ batoffset(ip, offset, res)
 	}
 	if (res)
 		*res = bp->b_un.b_addr + base;
-printf("b_addr %x res pointer %x\n", bp->b_un.b_addr, *res);
 	return (bp);
 }
