@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stabstring.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)stabstring.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -539,7 +539,7 @@ Address addr;
     enterRoutine(t, class);
     if (isnew) {
 	t->symvalue.funcv.src = false;
-	t->symvalue.funcv.inline = false;
+	t->symvalue.funcv.inlne = false;
 	t->symvalue.funcv.beginaddr = addr;
 	newfunc(t, codeloc(t));
 	findbeginning(t);

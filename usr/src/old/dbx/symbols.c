@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symbols.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)symbols.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -86,7 +86,7 @@ struct Symbol {
 	struct {
 	    int offset : 16;	/* offset for of function value */
 	    Boolean src : 1;	/* true if there is source line info */
-	    Boolean inline : 1;	/* true if no separate act. rec. */
+	    Boolean inlne : 1;	/* true if no separate act. rec. */
 	    Boolean intern : 1; /* internal calling sequence */
 	    int unused : 13;
 	    Address beginaddr;	/* address of function code */
@@ -130,7 +130,7 @@ boolean showaggrs;
 )
 
 #define nosource(f) (not (f)->symvalue.funcv.src)
-#define isinline(f) ((f)->symvalue.funcv.inline)
+#define isinline(f) ((f)->symvalue.funcv.inlne)
 
 #define isreg(s)		(s->storage == INREG)
 

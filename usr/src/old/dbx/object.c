@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)object.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)object.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -333,7 +333,7 @@ private initsyms ()
     program->class = PROG;
     program->language = primlang;
     program->symvalue.funcv.beginaddr = CODESTART;
-    program->symvalue.funcv.inline = false;
+    program->symvalue.funcv.inlne = false;
     newfunc(program, codeloc(program));
     findbeginning(program);
     enterblock(program);
@@ -531,7 +531,7 @@ Name n;
     f->block = curblock;
     f->level = program->level;
     f->symvalue.funcv.src = false;
-    f->symvalue.funcv.inline = false;
+    f->symvalue.funcv.inlne = false;
     if (f->chain != nil) {
 	panic("chain not nil in deffunc");
     }
@@ -755,7 +755,7 @@ register struct nlist *np;
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    t->class = FUNC;
 	    t->symvalue.funcv.src = false;
-	    t->symvalue.funcv.inline = false;
+	    t->symvalue.funcv.inlne = false;
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t, codeloc(t));
 	    findbeginning(t);
@@ -830,7 +830,7 @@ public chkUnnamedBlock ()
 	s->language = curlang;
 	s->class = PROC;
 	s->symvalue.funcv.src = false;
-	s->symvalue.funcv.inline = true;
+	s->symvalue.funcv.inlne = true;
 	s->symvalue.funcv.beginaddr = startaddr;
 	enterblock(s);
 	newfunc(s, startaddr);
