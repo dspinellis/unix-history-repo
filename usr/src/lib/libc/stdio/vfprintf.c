@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -155,19 +155,25 @@ rflag:		switch (*++fmt) {
 				_ulong = -_ulong;
 				sign = '-';
 			}
-			if (sign)
-				PUTC(sign);
 			base = 10;
-			goto num;
+			goto number;
 		case 'e':
 		case 'E':
 		case 'f':
 		case 'g':
 		case 'G':
 			_double = va_arg(argp, double);
-			size = _cvt(_double, prec, flags, *fmt, sign,
+			size = _cvt(_double, prec, flags, *fmt, padc, &sign,
 			    buf, buf + sizeof(buf)) - buf;
 			t = buf;
+			/*
+			 * zero-padded sign put out here; blank padded sign
+			 * placed in number in _cvt().
+			 */
+			if (sign && padc == '0') {
+				PUTC(sign);
+				--width;
+			}
 			goto pforw;
 		case 'n':
 			if (flags&LONGDBL || flags&LONGINT)
@@ -180,7 +186,7 @@ rflag:		switch (*++fmt) {
 		case 'o':
 			ARG();
 			base = 8;
-			goto num;
+			goto nosign;
 		case 'p':
 			/*
 			 * ``The argument shall be a pointer to void.  The
@@ -189,9 +195,10 @@ rflag:		switch (*++fmt) {
 			 * defined manner.''
 			 *	-- ANSI X3J11
 			 */
+			/*NOSTRICT*/
 			_ulong = (u_long)va_arg(argp, void *);
 			base = 16;
-			goto num;
+			goto nosign;
 		case 's':
 			if (!(t = va_arg(argp, char *)))
 				t = "(null)";
@@ -231,7 +238,7 @@ pforw:			if (!(flags&LADJUST) && width)
 		case 'u':
 			ARG();
 			base = 10;
-			goto num;
+			goto nosign;
 		case 'X':
 			digs = "0123456789ABCDEF";
 			/*FALLTHROUGH*/
@@ -241,32 +248,37 @@ pforw:			if (!(flags&LADJUST) && width)
 			/* leading 0x/X only if non-zero */
 			if (!_ulong)
 				flags &= ~ALT;
+
+			/* unsigned conversions */
+nosign:			sign = NULL;
 			/*
 			 * ``The result of converting a zero value with an
 			 * explicit precision of zero is no characters.''
 			 *	-- ANSI X3J11
 			 */
-num:			if (!_ulong && !prec)
+number:			if (!_ulong && !prec)
 				break;
+
 			t = buf + MAXBUF - 1;
 			do {
 				*t-- = digs[_ulong % base];
 				_ulong /= base;
 			} while(_ulong);
-			digs = "0123456789abcdef";
 			for (size = buf + MAXBUF - 1 - t; size < prec; ++size)
 				*t-- = '0';
+
+			/* alternate mode for hex and octal numbers */
 			if (flags&ALT)
 				switch (base) {
 				case 16:
 					/* avoid "00000x35" */
-					if (padc == '0') {
-						PUTC('0');
-						PUTC(*fmt);
-					}
-					else {
+					if (padc == ' ') {
 						*t-- = *fmt;
 						*t-- = '0';
+					}
+					else {
+						PUTC('0');
+						PUTC(*fmt);
 					}
 					width -= 2;
 					break;
@@ -277,6 +289,16 @@ num:			if (!_ulong && !prec)
 					}
 					break;
 				}
+
+			if (sign) {
+				/* avoid "0000-3" */
+				if (padc == ' ')
+					*t-- = sign;
+				else
+					PUTC(sign);
+				--width;
+			}
+
 			if (!(flags&LADJUST))
 				while (size++ < width)
 					PUTC(padc);
@@ -284,6 +306,7 @@ num:			if (!_ulong && !prec)
 				PUTC(*t);
 			while (width-- > size)
 				PUTC(' ');
+			digs = "0123456789abcdef";
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
 			return(cnt);
@@ -300,12 +323,12 @@ num:			if (!_ulong && !prec)
 #define	DEFPREC	6
 
 static char *
-_cvt(number, prec, flags, fmtch, sign, startp, endp)
+_cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 	double number;
 	register int prec;
 	int flags;
 	u_char fmtch;
-	char sign, *startp, *endp;
+	char padc, *sign, *startp, *endp;
 {
 	register char *p;
 	register int expcnt, format;
@@ -317,11 +340,13 @@ _cvt(number, prec, flags, fmtch, sign, startp, endp)
 		prec = DEFPREC;
 
 	if (number < 0) {
-		*startp++ = '-';
+		*sign = '-';
 		number = -number;
 	}
-	else if (sign)
-		*startp++ = sign;
+
+	/* if blank padded, add sign in as part of the number */
+	if (*sign && padc == ' ')
+		*startp++ = *sign;
 
 	switch(fmtch) {
 	case 'e':
