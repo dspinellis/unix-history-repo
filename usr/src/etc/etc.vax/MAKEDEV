@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.31 (Berkeley) %G%
+#	@(#)MAKEDEV	4.32 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -54,20 +54,20 @@ do
 case $i in
 
 std)
-	/etc/mknod console	c 0 0
-	/etc/mknod drum		c 7 0	; chmod 640 drum ; chgrp kmem drum
-	/etc/mknod floppy	c 8 0
-	/etc/mknod crl		c 35 0
-	/etc/mknod csa1		c 51 0
-	/etc/mknod csa2		c 51 1
-	/etc/mknod tu0		b 8 0
-	/etc/mknod tu1		b 8 1
-	/etc/mknod kUmem	c 3 3	; chmod 600 kUmem
-	/etc/mknod kmem		c 3 1	; chmod 640 kmem ; chgrp kmem kmem
-	/etc/mknod mem		c 3 0	; chmod 640 mem ; chgrp kmem mem
-	/etc/mknod null		c 3 2	; chmod 666 null
-	/etc/mknod tty		c 2 0	; chmod 666 tty
-	/etc/mknod klog		c 33 0	; chmod 600 klog
+	/sbin/mknod console	c 0 0
+	/sbin/mknod drum		c 7 0	; chmod 640 drum ; chgrp kmem drum
+	/sbin/mknod floppy	c 8 0
+	/sbin/mknod crl		c 35 0
+	/sbin/mknod csa1		c 51 0
+	/sbin/mknod csa2		c 51 1
+	/sbin/mknod tu0		b 8 0
+	/sbin/mknod tu1		b 8 1
+	/sbin/mknod kUmem	c 3 3	; chmod 600 kUmem
+	/sbin/mknod kmem		c 3 1	; chmod 640 kmem ; chgrp kmem kmem
+	/sbin/mknod mem		c 3 0	; chmod 640 mem ; chgrp kmem mem
+	/sbin/mknod null		c 3 2	; chmod 666 null
+	/sbin/mknod tty		c 2 0	; chmod 666 tty
+	/sbin/mknod klog		c 33 0	; chmod 600 klog
 	;;
 
 ht*|tm*|tms*|ts*|ut*)
@@ -83,22 +83,22 @@ ht*|tm*|tms*|ts*|ut*)
 	0|1|2|3|4|5|6|7)
 		four=`expr $unit + 4` ; eight=`expr $unit + 8`
 		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
-		/etc/mknod mt$unit	b $blk $unit
-		/etc/mknod mt$four	b $blk $four
-		/etc/mknod mt$eight	b $blk $eight
-		/etc/mknod mt$twelve	b $blk $twelve
-		/etc/mknod nmt$unit	b $blk $four ;: sanity w/pdp11 v7
-		/etc/mknod nmt$eight	b $blk $twelve ;: ditto
-		/etc/mknod nrmt$unit	c $chr $four ;: sanity w/pdp11 v7
-		/etc/mknod nrmt$eight	c $chr $twelve ;: ditto
-		/etc/mknod rmt$unit	c $chr $unit
-		/etc/mknod rmt$four	c $chr $four
-		/etc/mknod rmt$eight	c $chr $eight
-		/etc/mknod rmt$twelve	c $chr $twelve
+		/sbin/mknod mt$unit	b $blk $unit
+		/sbin/mknod mt$four	b $blk $four
+		/sbin/mknod mt$eight	b $blk $eight
+		/sbin/mknod mt$twelve	b $blk $twelve
+		/sbin/mknod nmt$unit	b $blk $four ;: sanity w/pdp11 v7
+		/sbin/mknod nmt$eight	b $blk $twelve ;: ditto
+		/sbin/mknod nrmt$unit	c $chr $four ;: sanity w/pdp11 v7
+		/sbin/mknod nrmt$eight	c $chr $twelve ;: ditto
+		/sbin/mknod rmt$unit	c $chr $unit
+		/sbin/mknod rmt$four	c $chr $four
+		/sbin/mknod rmt$eight	c $chr $eight
+		/sbin/mknod rmt$twelve	c $chr $twelve
 		if [ $i = ut ] 
 		then
-			/etc/mknod mt$twenty	b $blk $twenty
-			/etc/mknod rmt$twenty	c $chr $twenty
+			/sbin/mknod mt$twenty	b $blk $twenty
+			/sbin/mknod rmt$twenty	c $chr $twenty
 		fi
 		;;
 	*)
@@ -119,18 +119,18 @@ mt*)
 		twelve=`expr $unit + 4`; 
 		sixteen=`expr $unit + 8`;
 		twenty=`expr $unit + 12`;
-		/etc/mknod mt8		b $blk $eight
-		/etc/mknod mt12		b $blk $twelve
-		/etc/mknod mt16		b $blk $sixteen
-		/etc/mknod mt20		b $blk $twenty
-		/etc/mknod nmt8		b $blk $twelve ;: ditto
-		/etc/mknod nrmt8	c $chr $twelve ;: ditto
-		/etc/mknod rmt8		c $chr $eight
-		/etc/mknod rmt12	c $chr $twelve
-		/etc/mknod rmt16	c $chr $sixteen
-		/etc/mknod rmt20	c $chr $twenty
-		/etc/mknod nmt16	b $blk $twenty ;: ditto
-		/etc/mknod nrmt16	c $chr $twenty ;: ditto
+		/sbin/mknod mt8		b $blk $eight
+		/sbin/mknod mt12		b $blk $twelve
+		/sbin/mknod mt16		b $blk $sixteen
+		/sbin/mknod mt20		b $blk $twenty
+		/sbin/mknod nmt8		b $blk $twelve ;: ditto
+		/sbin/mknod nrmt8	c $chr $twelve ;: ditto
+		/sbin/mknod rmt8		c $chr $eight
+		/sbin/mknod rmt12	c $chr $twelve
+		/sbin/mknod rmt16	c $chr $sixteen
+		/sbin/mknod rmt20	c $chr $twenty
+		/sbin/mknod nmt16	b $blk $twenty ;: ditto
+		/sbin/mknod nrmt16	c $chr $twenty ;: ditto
 		;;
 	*)
 		echo bad unit for tape in: $1
@@ -153,24 +153,24 @@ hp*|hk*|up*|ra*|kra*|rl*|rb*)
 	case $unit in
 	0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|\
 	17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)
-		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
-		/etc/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
-		/etc/mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
-		/etc/mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
-		/etc/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
-		/etc/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
-		/etc/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
-		/etc/mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
+		/sbin/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
+		/sbin/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
+		/sbin/mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
+		/sbin/mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
+		/sbin/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		/sbin/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
+		/sbin/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
+		/sbin/mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
 		if [ $name != hk ]
 		then
-		/etc/mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
-		/etc/mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
-		/etc/mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
-		/etc/mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
-		/etc/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
-		/etc/mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
-		/etc/mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
-		/etc/mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
+		/sbin/mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
+		/sbin/mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
+		/sbin/mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
+		/sbin/mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
+		/sbin/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		/sbin/mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
+		/sbin/mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
+		/sbin/mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
 		fi
 		chgrp operator ${name}${unit}[a-h] r${name}${unit}[a-h]
 		chmod 640 ${name}${unit}[a-h] r${name}${unit}[a-h]
@@ -187,11 +187,11 @@ rx*)
 	name=rx; chr=30; blk=12;
 	case $unit in
 	0|1|2|3|4|5|6|7)
-		/etc/mknod ${name}${unit}	b $blk `expr $unit '*' 8 + 0`
-		/etc/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
-		/etc/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
-		/etc/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
-		/etc/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		/sbin/mknod ${name}${unit}	b $blk `expr $unit '*' 8 + 0`
+		/sbin/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		/sbin/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
+		/sbin/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
+		/sbin/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
 		;;
 	*)
 		echo bad unit for floppy disk in: $i
@@ -204,8 +204,8 @@ uu*)
 	name=uu; blk=13;
 	case $unit in
 	0|1|2|3)
-		/etc/mknod ${name}${unit}	b $blk `expr $unit '*' 2 + 0`
-		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 2 + 1`
+		/sbin/mknod ${name}${unit}	b $blk `expr $unit '*' 2 + 0`
+		/sbin/mknod ${name}${unit}a	b $blk `expr $unit '*' 2 + 1`
 		;;
 	*)
 		echo bad unit for uu cassette in: $i
@@ -219,7 +219,7 @@ dz*)
 	0|1|2|3|4|5|6|7)
 		eval `echo $unit | awk ' { u = $1 } END {
 		    for (i = 0; i < 8; i++)
-			printf("/etc/mknod tty%02d c 1 %d; ",u*8+i,u*8+i); }'`
+			printf("/sbin/mknod tty%02d c 1 %d; ",u*8+i,u*8+i); }'`
 		;;
 	*)
 		echo bad unit for dz in: $i
@@ -262,9 +262,9 @@ dhu*|dh*|dmf*|dmz*)
 	  awk ' { ch = $1; u = $4 * $2; m = $3; cnt = $4 } END {
 	    for (i = 0; i < cnt; i++)
 	      if (i < 10)
-		printf("/etc/mknod tty%s%x c %d %d; ",ch,i,m,u+i);
+		printf("/sbin/mknod tty%s%x c %d %d; ",ch,i,m,u+i);
 	      else
-		printf("/etc/mknod tty%s%c c %d %d; ",ch,87+i,m,u+i); }'`
+		printf("/sbin/mknod tty%s%c c %d %d; ",ch,87+i,m,u+i); }'`
 	;;
 
 lp*|va*|vp*)
@@ -276,7 +276,7 @@ lp*|va*|vp*)
 	unit=`expr $i : "$name\(.*\)"`
 	case $unit in
 	0|1|2|3|4|5|6|7)
-		/etc/mknod $i c $major $unit;
+		/sbin/mknod $i c $major $unit;
 		chmod 666 $i
 		;;
 	*)
@@ -301,8 +301,8 @@ pty*)
 		umask 0
 		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
 			for (i = 0; i < 16; i++)
-				printf("/etc/mknod tty%s%x c 20 %d; \
-					/etc/mknod pty%s%x c 21 %d; ", \
+				printf("/sbin/mknod tty%s%x c 20 %d; \
+					/sbin/mknod pty%s%x c 21 %d; ", \
 					n, i, b+i, n, i, b+i); }'`
 		umask 77
 		;;
@@ -321,7 +321,7 @@ np*)
 	0|1|2)
 		eval `echo $offset | awk ' { b=$1 } END {
 			for (i = 0; i < 4; i++)
-				printf("/etc/mknod np%02d c 39 %d;", \
+				printf("/sbin/mknod np%02d c 39 %d;", \
 					b+i, b+i); }'`
 		;;
 	esac
@@ -339,7 +339,7 @@ dn*|ik*|ps*|ad*|ct*)
 	case $unit in
 	0|1|2|3|4|5|6|7)
 		umask 0
-		/etc/mknod ${name}${unit} c ${chr} ${unit}
+		/sbin/mknod ${name}${unit} c ${chr} ${unit}
 		umask 77
 		;;
 	*)
@@ -349,9 +349,9 @@ dn*|ik*|ps*|ad*|ct*)
 	;;
 
 qv0)
-	/etc/mknod qv0 c 40 0
-	/etc/mknod qvcons c 40 1
-	/etc/mknod mouse c 40 2
+	/sbin/mknod qv0 c 40 0
+	/sbin/mknod qvcons c 40 1
+	/sbin/mknod mouse c 40 2
 	;;
 
 ttyv0)
