@@ -1,4 +1,4 @@
-/*	protosw.h	4.16.1.2	83/09/09	*/
+/*	protosw.h	6.2	83/09/19	*/
 
 /*
  * Protocol switch table.
@@ -82,14 +82,15 @@ struct protosw {
 #define	PRU_RCVOOB		13	/* retrieve out of band data */
 #define	PRU_SENDOOB		14	/* send out of band data */
 #define	PRU_SOCKADDR		15	/* fetch socket's address */
-#define	PRU_CONNECT2		16	/* connect two sockets */
+#define	PRU_PEERADDR		16	/* fetch peer's address */
+#define	PRU_CONNECT2		17	/* connect two sockets */
 /* begin for protocols internal use */
-#define	PRU_FASTTIMO		17	/* 200ms timeout */
-#define	PRU_SLOWTIMO		18	/* 500ms timeout */
-#define	PRU_PROTORCV		19	/* receive from below */
-#define	PRU_PROTOSEND		20	/* send to below */
+#define	PRU_FASTTIMO		18	/* 200ms timeout */
+#define	PRU_SLOWTIMO		19	/* 500ms timeout */
+#define	PRU_PROTORCV		20	/* receive from below */
+#define	PRU_PROTOSEND		21	/* send to below */
 
-#define	PRU_NREQ		20
+#define	PRU_NREQ		21
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
@@ -97,7 +98,8 @@ char *prurequests[] = {
 	"CONNECT",	"ACCEPT",	"DISCONNECT",	"SHUTDOWN",
 	"RCVD",		"SEND",		"ABORT",	"CONTROL",
 	"SENSE",	"RCVOOB",	"SENDOOB",	"SOCKADDR",
-	"FASTTIMO",	"SLOWTIMO",	"PROTORCV",	"PROTOSEND",
+	"PEERADDR",	"CONNECT2",	"FASTTIMO",	"SLOWTIMO",
+	"PROTORCV",	"PROTOSEND",
 };
 #endif
 
@@ -123,26 +125,24 @@ char *prurequests[] = {
 #define	PRC_UNREACH_HOST	9	/* no route to host */
 #define	PRC_UNREACH_PROTOCOL	10	/* dst says bad protocol */
 #define	PRC_UNREACH_PORT	11	/* bad port # */
-#define	PRC_UNREACH_NEEDFRAG	12	/* IP_DF caused drop */
-#define	PRC_UNREACH_SRCFAIL	13	/* source route failed */
-#define	PRC_REDIRECT_NET	14	/* net routing redirect */
-#define	PRC_REDIRECT_HOST	15	/* host routing redirect */
-#define	PRC_REDIRECT_TOSNET	16	/* redirect for type of service & net */
-#define	PRC_REDIRECT_TOSHOST	17	/* redirect for tos & host */
-#define	PRC_TIMXCEED_INTRANS	18	/* packet lifetime expired in transit */
-#define	PRC_TIMXCEED_REASS	19	/* lifetime expired on reass q */
-#define	PRC_PARAMPROB		20	/* header incorrect */
+#define	PRC_UNREACH_SRCFAIL	12	/* source route failed */
+#define	PRC_REDIRECT_NET	13	/* net routing redirect */
+#define	PRC_REDIRECT_HOST	14	/* host routing redirect */
+#define	PRC_REDIRECT_TOSNET	15	/* redirect for type of service & net */
+#define	PRC_REDIRECT_TOSHOST	16	/* redirect for tos & host */
+#define	PRC_TIMXCEED_INTRANS	17	/* packet lifetime expired in transit */
+#define	PRC_TIMXCEED_REASS	18	/* lifetime expired on reass q */
+#define	PRC_PARAMPROB		19	/* header incorrect */
 
-#define	PRC_NCMDS		21
+#define	PRC_NCMDS		20
 
 #ifdef PRCREQUESTS
 char	*prcrequests[] = {
-	"IFDOWN", "ROUTEDEAD", "#2", "#3",
-	"QUENCH", "MSGSIZE", "HOSTDEAD", "HOSTUNREACH",
-	"NET-UNREACH", "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
-	"FRAG-UNREACH", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
-	"TOSNET-REDIRECT", "TOSHOST-REDIRECT", "TX-INTRANS", "TX-REASS",
-	"PARAMPROB"
+	"IFDOWN",	   "ROUTEDEAD",	   "#2",	    "#3",
+	"QUENCH",	   "MSGSIZE",	   "HOSTDEAD",	    "HOSTUNREACH",
+	"NET-UNREACH",	   "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
+	"SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT", "TOSNET-REDIRECT",
+	"TOSHOST-REDIRECT","TX-INTRANS",   "TX-REASS",	    "PARAMPROB"
 };
 #endif
 
