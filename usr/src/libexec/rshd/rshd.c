@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -70,7 +70,6 @@ int	sent_null;
 #define	VERSION_SIZE	9
 #define SECURE_MESSAGE  "This rsh session is using DES encryption for all transmissions.\r\n"
 #define	OPTIONS		"alnkvx"
-char	*strsave();
 char	authbuf[sizeof(AUTH_DAT)];
 char	tickbuf[sizeof(KTEXT_ST)];
 int	use_kerberos = 0, vacuous = 0;
@@ -122,7 +121,7 @@ main(argc, argv)
 		case '?':
 		default:
 			usage();
-			break;
+			exit(2);
 		}
 
 	argc -= optind;
@@ -131,11 +130,11 @@ main(argc, argv)
 #ifdef	KERBEROS
 	if (use_kerberos && vacuous) {
 		syslog(LOG_ERR, "only one of -k and -v allowed");
-		exit(1);
+		exit(2);
 	}
 	if (encrypt && !use_kerberos) {
-			syslog(LOG_ERR, "-k is required for -x");
-					exit(1);
+		syslog(LOG_ERR, "-k is required for -x");
+		exit(2);
 	}
 #endif
 
@@ -171,7 +170,7 @@ doit(fromp)
 	struct passwd *pwd;
 	int s;
 	struct hostent *hp;
-	char *hostname;
+	char *hostname, *errorstr = NULL, *errorhost;
 	short port;
 	int pv[2], pid, cc;
 	int nfd;
@@ -184,7 +183,6 @@ doit(fromp)
 	AUTH_DAT	*kdata = (AUTH_DAT *) NULL;
 	KTEXT		ticket = (KTEXT) NULL;
 	char		instance[INST_SZ], version[VERSION_SIZE];
-	char		*h_name;
 	struct		sockaddr_in	fromaddr;
 	int		rc;
 	long		authopts;
@@ -207,7 +205,8 @@ doit(fromp)
 #endif
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	if (fromp->sin_family != AF_INET) {
-		syslog(LOG_ERR, "malformed from address\n");
+		syslog(LOG_ERR, "malformed \"from\" address (af %d)\n",
+		    fromp->sin_family);
 		exit(1);
 	}
 #ifdef IP_OPTIONS
@@ -227,7 +226,8 @@ doit(fromp)
 		for (cp = optbuf; optsize > 0; cp++, optsize--, lp += 3)
 			sprintf(lp, " %2.2x", *cp);
 		syslog(LOG_NOTICE,
-		    "Connection received using IP options (ignored):%s", lbuf);
+		    "Connection received from %s using IP options (ignored):%s",
+		    inet_ntoa(fromp->sin_addr), lbuf);
 		if (setsockopt(0, ipproto, IP_OPTIONS,
 		    (char *)NULL, &optsize) != 0) {
 			syslog(LOG_ERR, "setsockopt IP_OPTIONS NULL: %m");
@@ -243,8 +243,8 @@ doit(fromp)
 		if (fromp->sin_port >= IPPORT_RESERVED ||
 	    		fromp->sin_port < IPPORT_RESERVED/2) {
 			syslog(LOG_NOTICE|LOG_AUTH,
-				"Connection from %s on illegal port",
-				inet_ntoa(fromp->sin_addr));
+			    "Connection from %s on illegal port",
+			    inet_ntoa(fromp->sin_addr));
 			exit(1);
 		}
 
@@ -307,45 +307,52 @@ doit(fromp)
 		 * in a remote net; look up the name and check that this
 		 * address corresponds to the name.
 		 */
-		if (check_all || (!use_kerberos && local_domain(hp->h_name))) {
+#ifdef	KERBEROS
+		if (!use_kerberos)
+#endif
+		if (check_all || local_domain(hp->h_name)) {
 			strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
 			remotehost[sizeof(remotehost) - 1] = 0;
+			errorhost = remotehost;
 			hp = gethostbyname(remotehost);
 			if (hp == NULL) {
 				syslog(LOG_INFO,
 				    "Couldn't look up address for %s",
 				    remotehost);
-				error("Couldn't look up address for your host\n");
-				exit(1);
+				errorstr = 
+				"Couldn't look up address for your host (%s)\n";
+				hostname = inet_ntoa(fromp->sin_addr);
 			} else for (; ; hp->h_addr_list++) {
 				if (hp->h_addr_list[0] == NULL) {
 					syslog(LOG_NOTICE,
 					  "Host addr %s not listed for host %s",
 					    inet_ntoa(fromp->sin_addr),
 					    hp->h_name);
-					error("Host address mismatch\n");
-					exit(1);
+					errorstr =
+					    "Host address mismatch for %s\n";
+					hostname = inet_ntoa(fromp->sin_addr);
+					break;
 				}
 				if (!bcmp(hp->h_addr_list[0],
 				    (caddr_t)&fromp->sin_addr,
-				    sizeof(fromp->sin_addr)))
+				    sizeof(fromp->sin_addr))) {
+					hostname = hp->h_name;
 					break;
+				}
 			}
 		}
-		hostname = hp->h_name;
 	} else
-		hostname = inet_ntoa(fromp->sin_addr);
+		errorhost = hostname = inet_ntoa(fromp->sin_addr);
 
 #ifdef	KERBEROS
 	if (use_kerberos) {
-		h_name = strsave(hp->h_name);
 		kdata = (AUTH_DAT *) authbuf;
 		ticket = (KTEXT) tickbuf;
 		authopts = 0L;
 		strcpy(instance, "*");
 		version[VERSION_SIZE - 1] = '\0';
 		if (encrypt) {
-			struct sockaddr_in	local_addr;
+			struct sockaddr_in local_addr;
 			rc = sizeof(local_addr);
 			if (getsockname(0, &local_addr, &rc) < 0) {
 				syslog(LOG_ERR, "getsockname: %m");
@@ -369,8 +376,6 @@ doit(fromp)
 				  krb_err_txt[rc]);
 			exit(1);
 		}
-		free(h_name);
-		h_name = NULL;
 	} else
 #endif
 		getstr(remuser, sizeof(remuser), "remuser");
@@ -380,8 +385,9 @@ doit(fromp)
 	setpwent();
 	pwd = getpwnam(locuser);
 	if (pwd == NULL) {
-		error("Login incorrect.\n");
-		exit(1);
+		if (errorstr == NULL)
+			errorstr = "Login incorrect.\n";
+		goto fail;
 	}
 	if (chdir(pwd->pw_dir) < 0) {
 		(void) chdir("/");
@@ -395,8 +401,9 @@ doit(fromp)
 	if (use_kerberos) {
 		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0') {
 			if (kuserok(kdata, locuser) != 0) {
-				syslog(LOG_NOTICE|LOG_AUTH, "Kerberos rsh denied to %s.%s@%s",
-					kdata->pname, kdata->pinst, kdata->prealm);
+				syslog(LOG_NOTICE|LOG_AUTH,
+				    "Kerberos rsh denied to %s.%s@%s",
+				    kdata->pname, kdata->pinst, kdata->prealm);
 				error("Permission denied.\n");
 				exit(1);
 			}
@@ -404,9 +411,13 @@ doit(fromp)
 	} else
 #endif
 
- 		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
+ 		if (errorstr ||
+		    pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
 		    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
-			error("Permission denied.\n");
+fail:
+			if (errorstr == NULL)
+				errorstr = "Permission denied.\n";
+			error(errorstr, errorhost);
 			exit(1);
 		}
 
