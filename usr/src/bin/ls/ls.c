@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -171,7 +171,7 @@ main(argc, argv)
 	if (f_listdir)
 		f_recursive = 0;
 
-	/* if will need to stat files */
+	/* if need to stat files */
 	needstat = f_longform || f_recursive || f_timesort || f_size ||
 	    f_inode || f_type;
 
@@ -229,7 +229,7 @@ args(argc, argv)
 	struct stat sb;
 	LS *stats;
 	int num, (*statfcn)(), stat(), lstat();
-	char *names;
+	char *names, top[MAXPATHLEN + 1];
 
 	dstats = rstats = NULL;
 	statfcn = f_ignorelink ? stat : lstat;
@@ -274,12 +274,19 @@ args(argc, argv)
 	if (dircnt) {
 		register char *p;
 
-		if (dircnt > 1)
+		if (dircnt > 1) {
+			(void)getwd(top);
 			qsort((char *)dstats, dircnt, sizeof(LS), sortfcn);
-		for (cnt = 0; cnt < dircnt; ++cnt) {
+		}
+		for (cnt = 0; cnt < dircnt; ++dstats) {
 			for (endofpath = path, p = dstats->name;
 			    *endofpath = *p++; ++endofpath);
-			ls_dir(dstats++, cnt, regcnt || dircnt > 1);
+			ls_dir(dstats, cnt, regcnt || dircnt > 1);
+			if (++cnt < dircnt && chdir(top)) {
+				(void)fprintf(stderr, "ls: %s: %s\n",
+				    top, strerror(errno));
+				exit(1);
+			}
 		}
 	}
 #ifdef whybother
