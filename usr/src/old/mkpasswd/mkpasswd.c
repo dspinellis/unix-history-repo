@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkpasswd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkpasswd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@ main(argc, argv)
 	datum key, content;
 	int ch;
 	char buf[8192], nbuf[50], *strerror();
+	static int scanpw();
 
 	makeold = 0;
 	while ((ch = getopt(argc, argv, "pv")) != EOF)
