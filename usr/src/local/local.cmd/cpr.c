@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.7		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.8		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -17,6 +17,8 @@ static char	SccsId[] =	"@(#)cpr.c	1.7		%G%";
 **	Flags:
 **		-f	form feed following to print.
 */
+
+#define LINELEN	132			/* carriage width */
 
 typedef char	bool;
 #define TRUE	1
@@ -85,11 +87,6 @@ main(argc, argv)
 
 copyfile()
 {
-	char buf[200];
-	register char *p;
-	extern char *index();
-
-	while (fgets(buf, sizeof buf, stdin) != NULL)
 	{
 		p = index(buf, '\n');
 		if (p == NULL)
