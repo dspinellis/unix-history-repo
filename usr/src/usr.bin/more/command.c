@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -57,9 +57,6 @@ extern char *editor;
 extern int screen_trashed;	/* The screen has been overwritten */
 
 static char cmdbuf[120];	/* Buffer for holding a multi-char command */
-#if SHELL_ESCAPE
-static char *shellcmd = NULL;	/* For holding last shell command for "!!" */
-#endif
 static char *cp;		/* Pointer into cmdbuf */
 static int cmd_col;		/* Current column of the multi-char command */
 static int mca;			/* The multicharacter command (action) */
@@ -315,62 +312,6 @@ exec_mca()
 			;
 		edit(glob(p));
 		break;
-#if SHELL_ESCAPE
-	case A_SHELL:
-		/*
-		 * !! just uses whatever is in shellcmd.
-		 * Otherwise, copy cmdbuf to shellcmd,
-		 * replacing any '%' with the current
-		 * file name.
-		 */
-		if (*cmdbuf != '!')
-		{
-			register char *fr, *to;
-
-			/*
-			 * Make one pass to see how big a buffer we 
-			 * need to allocate for the expanded shell cmd.
-			 */
-			for (fr = cmdbuf;  *fr != '\0';  fr++)
-				if (*fr == '%')
-					n += strlen(current_file);
-				else
-					n++;
-
-			if (shellcmd != NULL)
-				free(shellcmd);
-			shellcmd = calloc(n+1, sizeof(char));
-			if (shellcmd == NULL)
-			{
-				error("cannot allocate memory");
-				break;
-			}
-
-			/*
-			 * Now copy the shell cmd, expanding any "%"
-			 * into the current filename.
-			 */
-			to = shellcmd;
-			for (fr = cmdbuf;  *fr != '\0';  fr++)
-			{
-				if (*fr != '%')
-					*to++ = *fr;
-				else
-				{
-					strcpy(to, current_file);
-					to += strlen(to);
-				}
-			}
-			*to = '\0';
-		}
-
-		if (shellcmd == NULL)
-			lsystem("");
-		else
-			lsystem(shellcmd);
-		error("!done");
-		break;
-#endif
 	}
 }
 
@@ -818,20 +759,6 @@ commands()
 			start_mca(A_FIRSTCMD, "+");
 			c = getcc();
 			goto again;
-
-		case A_SHELL:
-			/*
-			 * Shell escape.
-			 */
-#if SHELL_ESCAPE
-			cmd_reset();
-			start_mca(A_SHELL, "!");
-			c = getcc();
-			goto again;
-#else
-			error("Command not available");
-			break;
-#endif
 
 		case A_SETMARK:
 			/*
