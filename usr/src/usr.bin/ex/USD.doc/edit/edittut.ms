@@ -2,8 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)edittut.ms	5.1 (Berkeley) %G%
+.\"	@(#)edittut.ms	6.1 (Berkeley) %G%
 .\"
+.EH 'USD:14-%''Edit:  A Tutorial'
+.OH 'Edit:  A Tutorial''USD:14-%'
 .LP
 .ds u \s-2UNIX\s0
 .ll 5i
@@ -50,8 +52,9 @@ and the \s-2UNIX\s+2 documentation in general.
 .sp .5v
 September 1981
 .bp
-.ll 6i
-.nr LL 6i
+.ll 6.5i
+.nr LL 6.5i
+.nr LT 6.5i
 .ds u \s-2UNIX\s0
 .ce
 \s+2\f3Contents\f1\s0
@@ -142,13 +145,11 @@ what you want to add, change, or delete.
 You can review your text
 by typing a command
 to print the file contents
-as they were entered by you.
-Another program,
-a text formatter,
+as they are currently.
+Another program (which we do not discuss in this
+document), a text formatter,
 rearranges your text
 for you into ``finished form.''
-This document does not
-discuss the use of a text formatter.
 .PP
 These lessons assume no prior familiarity with computers
 or with text editing.
@@ -156,7 +157,7 @@ They consist of a series of text editing sessions
 which lead you through the fundamental steps
 of creating and revising text.
 After scanning each lesson and before beginning the next,
-you should practice the examples at a terminal to get a feeling
+you should try the examples at a terminal to get a feeling
 for the actual process of text editing.
 If you set aside some time for experimentation,
 you will soon become familiar with using the
@@ -165,12 +166,11 @@ In addition to the actual use of the text editor,
 other features of \s-2UNIX\s0 will be very important to your work.
 You can begin to
 learn about these other features by
-reading ``Communicating with \s-2UNIX\s0''
-or one of the other tutorials
+reading one of the other tutorials
 that provide a general introduction to the system.
 You will be ready to proceed with this lesson as soon as
 you are familiar with (1) your terminal and its special keys,
-(2) the login procedure,
+(2) how to login,
 (3) and the ways of correcting typing errors.
 Let's first define some terms:
 .sp .5
@@ -178,13 +178,13 @@ Let's first define some terms:
 A set of instructions, given to the computer,
 describing the sequence of steps the computer performs
 in order to accomplish a specific task.
-The tasks must be specific,
+The task must be specific,
 such as balancing your checkbook
 or editing your text.
 A general task,
 such as working for world peace,
-is something we can do,
-but not something we can write programs to do.
+is something we can all do,
+but not something we can currently write programs to do.
 .IP UNIX
 \s-2UNIX\s0 is a special type of program,
 called an operating system, that supervises the machinery
@@ -228,8 +228,8 @@ and the system will automatically locate the file.
 .IP disk
 Files are stored on an input/output device called a disk,
 which looks something like a stack of phonograph records.
-Each surface is coated with a material similar to the
-coating on magnetic recording tape,
+Each surface is coated with a material similar to that
+on magnetic recording tape,
 and information is recorded on it.
 .IP buffer
 A temporary work space, made available to the user
@@ -263,15 +263,15 @@ Dial-up terminals
 .PP
 If your terminal connects with the computer over a telephone line,
 turn on the terminal, dial the system access number,
-and, when you hear a high-pitched tone, place the receiver of
-the telephone in the acoustic coupler.
+and, when you hear a high-pitched tone, place the 
+telephone handset in the acoustic coupler, if you are using one.
 You are now ready to login.
 .SH
 Logging in
 .PP
 The message inviting you to login is:
 .DS I 1i
-:login:
+login:
 .DE
 .LP
 Type your login name, which identifies you to \s-2UNIX\s0,
@@ -285,10 +285,10 @@ be sure you enter your login name in lower case;
 otherwise \s-2UNIX\s0 assumes your terminal
 has only upper case and will not recognize lower case
 letters you may type.
-\s-2UNIX\s0 types ``:login:'' and you reply
+\s-2UNIX\s0 types ``login:'' and you reply
 with your login name, for example ``susan'':
 .DS I 1i
-:login: \fBsusan\fR \fI(and press the \s-2RETURN\s0 key)\fR
+login: \fBsusan\fR \fI(and press the \s-2RETURN\s0 key)\fR
 .DE
 (In the examples, input you would type appears in
 .B "bold face"
@@ -310,7 +310,7 @@ sequence was mistyped or incorrect,
 Login incorrect.
 .if t .sp .2v
 .if n .sp 1
-:login:
+login:
 .DE
 in which case you should start the login process anew.
 Assuming that you have successfully
@@ -334,7 +334,7 @@ type
 .B edit
 followed by a space and then the filename
 you have selected; for example, ``text''.
-When you have completed the command,
+After that,
 press the \s-2RETURN\s0 key and wait for edit's response:
 .DS I 1i
 % \fBedit text\fP    \fI(followed by a \s-2RETURN\s+2)\fR
@@ -345,11 +345,9 @@ If you typed the command correctly,
 you will now be in communication with edit.
 Edit has set aside a buffer for use as
 a temporary working space during your current editing session.
-It also checked to see if the file you named, ``text'',
-already existed.
-It was unable to find such a file,
-since ``text'' is a new file we are about to create.
-Edit confirms this with the line:
+Since ``text'' is a new file we are about to create
+the editor was unable to find that file, which it
+confirms by saying:
 .DS I 1i
 "text" No such file or directory
 .DE
@@ -361,7 +359,7 @@ You may now begin to create the new file.
 The ``Command not found'' message
 .PP
 If you misspelled edit by typing, say, ``editor'',
-your request would be handled as follows:
+this might appear:
 .DS I 1i
 % \fBeditor\fP
 editor: Command not found
@@ -381,7 +379,7 @@ A summary
 Your exchange with \s-2UNIX\s0 as you logged in and made contact with edit
 should look something like this:
 .DS I 1i
-:login: \fBsusan\fP
+login: \fBsusan\fP
 Password:
 \&... A Message of General Interest ...
 % \fBedit text\fP
@@ -399,16 +397,15 @@ you are appending text to nothing;
 in effect, 
 since you are adding text to nothing
 you are creating text.
-Most edit commands have two forms:
+Most edit commands have two equivalent forms:
 a word that suggests what the command does,
 and a shorter abbreviation of that word.
-Either form may be used.
 Many beginners find the full command names
 easier to remember at first,
 but once you are familiar with editing you may
 prefer to type the shorter abbreviations.
-The command to input text is ``append'',
-and it may be abbreviated ``a''.
+The command to input text is ``append''.
+(It may be abbreviated ``a''.)
 Type
 .B append
 and press the \s-2RETURN\s0 key.
@@ -507,7 +504,7 @@ being:
 .ps -2
 .R
 .DE
-Let's say that the lines of text you enter are
+Let's say that you enter the lines 
 (try to type
 .B exactly
 what you see, including ``thiss''):
@@ -525,19 +522,20 @@ that gets you out of append mode.
 Making corrections
 .PP
 If you have read a general introduction to \s-2UNIX\s0,
-such as ``Communicating with \s-2UNIX\s0'',
 you will recall that it is possible to erase individual
 letters that you have typed.
 This is done by typing the designated erase character
 as many times as there are characters
 you want to erase.
 .PP
-The usual erase character is the backspace (control-H),
-and you can correct typing errors
+The usual erase character varies from place to place and 
+user to user.  Often it
+is the backspace (control-H),
+so you can correct typing errors
 in the line you are typing
 by holding down the \s-1CTRL\s+1 key
-and typing the ``H'' key.
-If you try typing control-H
+and typing the ``H'' key.  (Sometimes it is the DEL key.)
+If you type the erase character
 you will notice
 that the terminal backspaces in the line you are on.
 You can backspace over your error,
@@ -560,16 +558,16 @@ When you type the at-sign (@), you erase
 the entire line typed so far
 and are given a fresh line to type on.
 You may immediately begin to retype the line.
-This, unfortunately, does not help after you type the
+This, unfortunately, does not work after you type the
 line and press \s-2RETURN\s+2.  
 To make corrections in lines that have been completed,
 it is necessary to use the editing commands
-covered in the next session and those that follow.
+covered in the next sessions.
 .SH
 Writing text to disk
 .PP
-You are now ready to edit the text.  The simplest kind of editing
-is to write it to disk as a file for safekeeping
+You are now ready to edit the text.  One common operation
+is to write the text to disk as a file for safekeeping
 after the session is over.
 This is the only way to save information from one session to the next,
 since the editor's buffer is temporary and will last only until the
@@ -598,14 +596,13 @@ All of the lines that were written to disk will still be
 in the buffer,
 should you want to modify or add to them.
 .PP
-Edit must have a filename to use before it can write a file.
+Edit must have a name for the file to be written.
 If you forgot to indicate the name of the file
-when you began the editing session,
-edit will print
+when you began to edit,
+edit will print in response to your write command:
 .DS I 1i
 No current filename
 .DE
-in response to your write command.
 If this happens, you can specify the filename in a new write command:
 .DS I 1i
 :\|\fBwrite text
@@ -652,7 +649,7 @@ Session 2
 .PP
 Login with \s-2UNIX\s0 as in the first session:
 .DS I 1i
-:login: \fBsusan\fP  \fI(carriage return)\fR
+login: \fBsusan\fP  \fI(carriage return)\fR
 Password:       \fI(give password and carriage return)\fR
 .if t .sp .2v
 .if n .sp 1
@@ -734,7 +731,7 @@ you may delete the incorrect character
 or cancel the entire line of input by erasing in the usual way.
 Refer either
 to the last few pages of Session 1
-or to ``Communicating with \s-2UNIX\s0'' if you need to review
+if you need to review
 the procedures for making a correction.
 The most important idea to remember is that
 erasing a character or cancelling a line must be done
@@ -1879,9 +1876,8 @@ a warning will be printed before the command is executed:
 [No write since last change]
 .DE
 The editor prints a ``!'' when the command is completed.
-The tutorial ``Communicating with \s-2UNIX\s0''
-describes useful features of the system,
-of which the editor is only one part.
+Other tutorials describe useful features of the system,
+of which an editor is only one part.
 .SH
 Filenames and file manipulation
 .PP
@@ -2108,8 +2104,6 @@ which is applicable to both
 .I ex
 and
 .I edit.
-The manual is available from the Computing Services Library,
-218 Evans Hall.
 One way to become familiar with the manual is to begin by reading
 the description of commands that you already know.
 .bd I 3
@@ -2121,18 +2115,24 @@ Using
 .PP
 As you become more experienced with using the editor,
 you may still find that edit continues to meet your needs.
-However, should you become interested in using ex,
+However, should you become interested in using 
+.I ex,
 it is easy to switch.
-To begin an editing session with ex,
+To begin an editing session with 
+.I ex,
 use the name
 .B ex
 in your command instead of
 .B edit.
 .PP
-Edit commands work the same way in ex,
+Edit commands also work in 
+.I ex,
 but the editing environment is somewhat different.
 You should be aware of a few differences
-that exist between the two versions of the editor.
+between 
+.I ex
+and 
+.I edit.
 In edit, only the characters ``^'', ``$'', and ``\\'' have
 special meanings in searching the buffer
 or indicating characters to be changed by a substitute command.
@@ -2148,7 +2148,7 @@ and
 .I visual,
 in which
 the editor behaves quite differently from normal command mode.
-If you are using ex and the editor behaves strangely,
+If you are using ex and you encounter strange behavior,
 you may have accidently entered open mode by typing ``o''.
 Type the \s-2ESC\s0 key and then a ``Q''
 to get out of open or visual mode and back into
@@ -2157,7 +2157,7 @@ The document
 .I
 An Introduction to Display Editing with Vi\|\|
 .R
-provides a full discussion of visual mode.
+provide full details of visual mode.
 .bp
 .SH
 .ce 1
