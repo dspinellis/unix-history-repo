@@ -1,4 +1,9 @@
-PC	[^\"]
+%{
+extern int yylineno;
+int yylineno = 1;
+%}
+
+PC	[^\"\n]
 AN	[A-Z_a-z0-9]
 %%
 
@@ -8,7 +13,8 @@ error_code	return ERROR_CODE_ENTRY;
 ec		return ERROR_CODE_ENTRY;
 end		return END;
 
-[\t\n ]		;
+[\t ]+		;
+\n		++yylineno;
 
 \"{PC}*\"	{ register char *p; yylval.dynstr = ds(yytext+1);
 		  if (p=rindex(yylval.dynstr, '"')) *p='\0';
@@ -17,7 +23,7 @@ end		return END;
 
 {AN}*	{ yylval.dynstr = ds(yytext); return STRING; }
 
-#.*\n		;
+#.*\n		++yylineno;
 
 .		{ return (*yytext); }
 %%
