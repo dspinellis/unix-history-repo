@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.1	6.19 (Berkeley) %G%
+.\"	@(#)mail.1	6.20 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -852,6 +852,10 @@ and
 commands.
 .It Ar quiet
 Suppresses the printing of the version when first invoked.
+.It Ar searchheaders
+If this option is set, then a message-list specifier in the form ``/x:y''
+will expand to all messages containing the substring ``y'' in the header
+field ``x''.  The string search is case insensitive.
 .It Ar verbose
 Setting the option
 .Ar verbose
