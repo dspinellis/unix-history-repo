@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.22 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -228,6 +228,7 @@ setuid(p, uap, retval)
 	pc->pc_ucred->cr_uid = uid;
 	pc->p_ruid = uid;
 	pc->p_svuid = uid;
+	p->p_flag |= SUGID;
 	return (0);
 }
 
@@ -253,6 +254,7 @@ seteuid(p, uap, retval)
 	 */
 	pc->pc_ucred = crcopy(pc->pc_ucred);
 	pc->pc_ucred->cr_uid = euid;
+	p->p_flag |= SUGID;
 	return (0);
 }
 
@@ -275,6 +277,7 @@ setgid(p, uap, retval)
 	pc->pc_ucred->cr_groups[0] = gid;
 	pc->p_rgid = gid;
 	pc->p_svgid = gid;		/* ??? */
+	p->p_flag |= SUGID;
 	return (0);
 }
 
@@ -296,6 +299,7 @@ setegid(p, uap, retval)
 		return (error);
 	pc->pc_ucred = crcopy(pc->pc_ucred);
 	pc->pc_ucred->cr_groups[0] = egid;
+	p->p_flag |= SUGID;
 	return (0);
 }
 
@@ -328,6 +332,7 @@ osetreuid(p, uap, retval)
 	pc->pc_ucred = crcopy(pc->pc_ucred);
 	pc->pc_ucred->cr_uid = euid;
 	pc->p_ruid = ruid;
+	p->p_flag |= SUGID;
 	return (0);
 }
 
@@ -355,6 +360,7 @@ osetregid(p, uap, retval)
 	pc->pc_ucred = crcopy(pc->pc_ucred);
 	pc->pc_ucred->cr_groups[0] = egid;
 	pc->p_rgid = rgid;
+	p->p_flag |= SUGID;
 	return (0);
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
@@ -386,6 +392,7 @@ setgroups(p, uap, retval)
 	/* convert from int's to gid_t's */
 	for (gp = pc->pc_ucred->cr_groups, lp = groups; ngrp--; )
 		*gp++ = *lp++;
+	p->p_flag |= SUGID;
 	return (0);
 }
 
