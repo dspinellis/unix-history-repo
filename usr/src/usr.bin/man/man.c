@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -30,24 +30,29 @@ static char sccsid[] = "@(#)man.c	5.3 (Berkeley) %G%";
 #define	S_NEW		10
 #define	S_OLD		11
 
-/* this array maps a character (ex: '4') to an offset in dirlist */
+/* this array maps a character (ex: '4') to an offset in stanlist */
 #define	secno(x)	(seclist[(int)(x - '0')])
 static int	seclist[] = { -1, 1, 4, 5, 6, 7, 3, 8, 2, -1, -1 };
 
 /* sub directory list, ordered for searching */
-typedef struct something_meaningful {
+typedef struct {
 	char	*name,
 		*msg;
 } DIR;
 
-DIR	dirlist[] = {		/* sub-directory list */
+DIR	stanlist[] = {		/* standard sub-directory list */
 	"notused", "",		"cat1", "1st",		"cat8", "8th",
 	"cat6", "6th",		"cat2", "2nd",		"cat3", "3rd",
 	"cat4", "4th",		"cat5", "5th", 		"cat7", "7th",
-	"cat3f", "3rd (F)",	"new", "new",		"old", "old",
+	"cat3f", "3rd (F)",	"cat.new", "new",	"cat.old", "old",
+	NULL, NULL,
+},	sec1list[] = {		/* section one list */
+	"notused", "",		"cat1", "1st",		"cat8", "8th",
+	"cat6", "6th",		"cat.new", "new",	"cat.old", "old",
 	NULL, NULL,
 };
 
+static DIR	*dirlist;		/* list of directories to search */
 static int	nomore;			/* copy file to stdout */
 static char	*defpath,		/* default search path */
 		*locpath,		/* local search path */
@@ -118,34 +123,56 @@ main(argc, argv)
 	locpath = LOCAL_PATH;
 	for (; *defpath && *defpath == ':'; ++defpath);
 
+	/* Gentlemen... start your kludges! */
 	for (; *argv; ++argv) {
 		section = NO_SECTION;
 		manpath = DEF_PATH;
+		dirlist = stanlist;
 		switch(**argv) {
-		/* hardwired section numbers, fix here if they change */
-		case '1': case '2': case '4': case '5': case '6':
+		/*
+		 * Section 1 requests are really for section 1, 6, 8, new and
+		 * old.  Since new and old aren't broken up into a directory
+		 * of cat[1-8], we just pretend that they are a subdirectory
+		 * of /usr/man.  Should be fixed -- make new and old full
+		 * structures just like local is, get rid of "sec1list" and
+		 * dirlist.
+		 */
+		case '1':
+			if (!(*argv)[1]) {
+				dirlist = sec1list;
+				goto numtest;
+			}
+			break;
+
+		case '2': case '4': case '5': case '6':
 		case '7': case '8':
 			if (!(*argv)[1]) {
 				section = secno((*argv)[0]);
 				goto numtest;
 			}
 			break;
+
+		/* sect. 3 requests are for either section 3, or section 3F. */
 		case '3':
 			if (!(*argv)[1]) {			/* "3" */
 				section = secno((*argv)[0]);
 numtest:			if (!*++argv) {
-					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", dirlist[section].msg);
+					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[section].msg);
 					exit(1);
 				}
 			}					/* "3[fF]" */
 			if (((*argv)[1] == 'f'  || (*argv)[1] == 'F') && !(*argv)[2]) {
 				section = S_THREEF;
 				if (!*++argv) {
-					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", dirlist[S_THREEF].msg);
+					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[S_THREEF].msg);
 					exit(1);
 				}
 			}
 			break;
+		/*
+		 * Requests for the local section can have subsection numbers
+		 * appended to them, i.e. "local3" is really local/cat3.
+		 */
 		case 'l':					/* local */
 			if (!(*argv)[1])			/* "l" */
 				section = NO_SECTION;		/* "l2" */
@@ -168,32 +195,45 @@ numtest:			if (!*++argv) {
 			manpath = locpath;
 			break;
 		case 'n':					/* new */
-			if (!(*argv)[1] || !strcmp(*argv, dirlist[S_NEW].name)) {
+			if (!(*argv)[1] || !strcmp(*argv, stanlist[S_NEW].msg)) {
 				section = S_NEW;
 				goto strtest;
 			}
 			break;
 		case 'o':					/* old */
-			if (!(*argv)[1] || !strcmp(*argv, dirlist[S_OLD].name)) {
+			if (!(*argv)[1] || !strcmp(*argv, stanlist[S_OLD].msg)) {
 				section = S_OLD;
 strtest:			if (!*++argv) {
-					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", dirlist[section].msg);
+					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[section].msg);
 					exit(1);
 				}
 			}
 			break;
 		}
+		/*
+		 * This is really silly, but I wanted to put out rational
+		 * errors, not just "I couldn't find it."  This if statement
+		 * knows an awful lot about what gets assigned to what in
+		 * the switch statement we just passed through.  Sorry.
+		 */
 		if (!manual(section, *argv))
 			if (manpath == locpath)
-				fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, dirlist[section].msg);
+				fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, stanlist[section].msg);
+			else if (dirlist == sec1list)
+				fprintf(stderr, "No entry for %s in the 1st section of the manual.\n", *argv);
 			else if (section == NO_SECTION)
 				fprintf(stderr, "No entry for %s in the manual.\n", *argv);
 			else
-				fprintf(stderr, "No entry for %s in the %s section of the manual.\n", *argv, dirlist[section].msg);
+				fprintf(stderr, "No entry for %s in the %s section of the manual.\n", *argv, stanlist[section].msg);
 	}
 	exit(0);
 }
 
+/*
+ * manual --
+ *	given a section number and a file name go through the directory
+ *	list and find a file that matches.
+ */
 static
 manual(section, name)
 	int	section;
@@ -206,12 +246,12 @@ manual(section, name)
 	for (beg = manpath;; beg = end + 1) {
 		if (end = index(beg, ':'))
 			*end = '\0';
-		if (section == NO_SECTION) {
-			for (dir = dirlist + 1; dir->name; ++dir)
+		if (section == NO_SECTION)
+			for (dir = dirlist; (++dir)->name;) {
 				if (find(beg, dir->name, name))
 					return(YES);
-		}
-		else if (find(beg, dirlist[section].name, name))
+			}
+		else if (find(beg, stanlist[section].name, name))
 			return(YES);
 		if (!end)
 			return(NO);
@@ -219,6 +259,12 @@ manual(section, name)
 	/*NOTREACHED*/
 }
 
+/*
+ * find --
+ *	given a directory path, a sub-directory and a file name,
+ *	see if a file exists in ${directory}/${dir}/{file name}
+ *	or in ${directory}/${dir}/${machine}/${file name}.
+ */
 static
 find(beg, dir, name)
 	char	*beg, *dir, *name;
@@ -238,6 +284,10 @@ find(beg, dir, name)
 	return(NO);
 }
 
+/*
+ * show --
+ *	display the file
+ */
 static
 show(fname)
 	char	*fname;
@@ -271,6 +321,10 @@ show(fname)
 	}
 }
 
+/*
+ * usage --
+ *	print out a usage message and die
+ */
 static
 usage()
 {
