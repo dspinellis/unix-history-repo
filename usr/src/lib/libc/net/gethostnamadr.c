@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.37 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ static FILE *hostf = NULL;
 static char hostaddr[MAXADDRS];
 static char *host_addrs[2];
 static int stayopen = 0;
-static char *any();
+char *strpbrk();
 
 #if PACKETSZ > 1024
 #define	MAXPACKET	PACKETSZ
@@ -315,11 +315,11 @@ again:
 		return (NULL);
 	if (*p == '#')
 		goto again;
-	cp = any(p, "#\n");
+	cp = strpbrk(p, "#\n");
 	if (cp == NULL)
 		goto again;
 	*cp = '\0';
-	cp = any(p, " \t");
+	cp = strpbrk(p, " \t");
 	if (cp == NULL)
 		goto again;
 	*cp++ = '\0';
@@ -335,7 +335,7 @@ again:
 		cp++;
 	host.h_name = cp;
 	q = host.h_aliases = host_aliases;
-	cp = any(cp, " \t");
+	cp = strpbrk(cp, " \t");
 	if (cp != NULL) 
 		*cp++ = '\0';
 	while (cp && *cp) {
@@ -345,28 +345,12 @@ again:
 		}
 		if (q < &host_aliases[MAXALIASES - 1])
 			*q++ = cp;
-		cp = any(cp, " \t");
+		cp = strpbrk(cp, " \t");
 		if (cp != NULL)
 			*cp++ = '\0';
 	}
 	*q = NULL;
 	return (&host);
-}
-
-static char *
-any(cp, match)
-	register char *cp;
-	char *match;
-{
-	register char *mp, c;
-
-	while (c = *cp) {
-		for (mp = match; *mp; mp++)
-			if (*mp == c)
-				return (cp);
-		cp++;
-	}
-	return ((char *)0);
 }
 
 struct hostent *
