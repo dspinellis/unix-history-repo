@@ -1,4 +1,4 @@
-/*	systm.h	4.2	%G%	*/
+/*	systm.h	4.3	%G%	*/
 
 /*
  * Random set of variables
@@ -61,7 +61,7 @@ daddr_t	bmap();
 unsigned max();
 unsigned min();
 int	memall();
-int	uchar();
+int	uchar(), schar();
 int	vmemall();
 swblk_t	vtod();
 
