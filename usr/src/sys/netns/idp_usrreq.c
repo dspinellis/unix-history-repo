@@ -1,4 +1,4 @@
-/*      idp_usrreq.c     6.1     85/05/30     */
+/*      idp_usrreq.c     6.2     85/05/31     */
 
 #include "param.h"
 #include "dir.h"
@@ -25,17 +25,13 @@
 
 struct	sockaddr_ns idp_ns = { AF_NS };
 
-int
-idp_input_panic = 1;
 idp_input(m, nsp)
 	struct mbuf *m;
 	register struct nspcb *nsp;
 {
 	register struct idp *idp = mtod(m, struct idp *);
-	if (idp_input_panic) {
-		if ((nsp==0) || ((idp->idp_pt==5) && (!(nsp->nsp_flags&NSP_RAWIN))))
-			panic("Impossible idp_input");
-	}
+	if (nsp==0)
+		panic("Impossible idp_input");
 
 	/*
 	 * Construct sockaddr format source address.
@@ -95,7 +91,10 @@ idp_output(nsp, m0)
 		} else {
 			struct mbuf *m1 = m_get(M_DONTWAIT, MT_DATA);
 
-			if (m1 == 0) return (ENOBUFS);
+			if (m1 == 0) {
+				m_freem(m0);
+				return (ENOBUFS);
+			}
 			m1->m_len = 1;
 			m1->m_off = MMAXOFF - 1;
 			* mtod(m1, char *) = 0;
@@ -422,7 +421,7 @@ idp_raw_usrreq(so, req, m, nam, rights)
 
 	case PRU_ATTACH:
 
-		if (nsp != NULL) {
+		if (!suser() || (nsp != NULL)) {
 			error = EINVAL;
 			break;
 		}
