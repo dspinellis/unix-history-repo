@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.6 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -568,9 +568,9 @@ getline(s, n, iop)
 {
 	register c;
 	register char *cs;
-	char ch;
 
 	cs = s;
+/* tmpline may contain saved command from urgent mode interruption */
 	for (c = 0; tmpline[c] != '\0' && --n > 0; ++c) {
 		*cs++ = tmpline[c];
 		if (tmpline[c] == '\n') {
@@ -585,18 +585,32 @@ getline(s, n, iop)
 			tmpline[0] = '\0';
 		}
 	}
-	while (--n > 0 && read(fileno(iop),&ch,1) >= 0) {
-		c = 0377 & ch;
+	while (--n > 0 && (c = getc(iop)) != EOF) {
+		c = 0377 & c;
 		while (c == IAC) {
-			(void) read(fileno(iop),&ch,1);	/* skip command */
-			(void) read(fileno(iop),&ch,1);	/* try next char */
-			c = 0377 & ch;
+			switch (c = 0377 & getc(iop)) {
+			case WILL:
+			case WONT:
+				c = 0377 & getc(iop);
+				printf("%c%c%c", IAC, WONT, c);
+				(void) fflush(stdout);
+				break;
+			case DO:
+			case DONT:
+				c = 0377 & getc(iop);
+				printf("%c%c%c", IAC, DONT, c);
+				(void) fflush(stdout);
+				break;
+			default:
+				break;
+			}
+			c = 0377 & getc(iop); /* try next character */
 		}
 		*cs++ = c;
 		if (c=='\n')
 			break;
 	}
-	if (c < 0 && cs == s)
+	if (c == EOF && cs == s)
 		return (NULL);
 	*cs++ = '\0';
 	if (debug) {
