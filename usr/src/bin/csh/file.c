@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.4 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -30,8 +30,6 @@ static char *sccsid = "@(#)file.c	5.3 (Berkeley) %G%";
 
 typedef enum {LIST, RECOGNIZE} COMMAND;
 
-static struct tchars  tchars;		/* INT, QUIT, XON, XOFF, EOF, BRK */
-
 /*
  * Put this here so the binary can be patched with adb to enable file
  * completion by default.  Filec controls completion, nobeep controls
@@ -44,19 +42,16 @@ setup_tty(on)
 	int on;
 {
 	struct sgttyb sgtty;
-	int omask;
+	static struct tchars tchars;	/* INT, QUIT, XON, XOFF, EOF, BRK */
 
-	omask = sigblock(sigmask(SIGINT));
 	if (on) {
 		(void) ioctl(SHIN, TIOCGETC, (char *)&tchars);
 		tchars.t_brkc = ESC;
 		(void) ioctl(SHIN, TIOCSETC, (char *)&tchars);
 		/*
-		 * This is a useful feature in it's own right...
-		 * The shell makes sure that the tty is not in some weird state
-		 * and fixes it if it is.  But it should be noted that the
-		 * tenex routine will not work correctly in CBREAK or RAW mode
-		 * so this code below is, therefore, mandatory.
+		 * This must be done after every command: if
+		 * the tty gets into raw or cbreak mode the user
+		 * can't even type 'reset'.
 		 */
 		(void) ioctl(SHIN, TIOCGETP, (char *)&sgtty);
 		if (sgtty.sg_flags & (RAW|CBREAK)) {
@@ -67,7 +62,6 @@ setup_tty(on)
 		tchars.t_brkc = -1;
 		(void) ioctl(SHIN, TIOCSETC, (char *)&tchars);
 	}
-	(void) sigsetmask(omask);
 }
 
 /*
@@ -117,6 +111,7 @@ pushback(string)
  * Des is a string whose maximum length is count.
  * Always null terminate.
  */
+static
 catn(des, src, count)
 	register char *des, *src;
 	register count;
@@ -141,6 +136,7 @@ max(a, b)
  * Like strncpy but always leave room for trailing \0
  * and always null terminate.
  */
+static
 copyn(des, src, count)
 	register char *des, *src;
 	register count;
@@ -221,7 +217,7 @@ print_by_column(dir, items, count)
  * expands to
  *	home_directory_of_person/mumble
  */
-char *
+static char *
 tilde(new, old)
 	char *new, *old;
 {
@@ -313,7 +309,7 @@ extract_dir_and_name(path, dir, name)
 	}
 }
 
-char *
+static char *
 getentry(dir_fd, looking_for_lognames)
 	DIR *dir_fd;
 {
@@ -455,6 +451,7 @@ again:	/* search for matches */
  * character mismatch between extended_name and entry.
  * If we shorten it back to the prefix length, stop searching.
  */
+static
 recognize(extended_name, entry, name_length, numitems)
 	char *extended_name, *entry;
 {
@@ -476,9 +473,9 @@ recognize(extended_name, entry, name_length, numitems)
 }
 
 /*
- * Return true if check items initial chars in template
+ * Return true if check matches initial chars in template.
  * This differs from PWB imatch in that if check is null
- * it items anything
+ * it matches anything.
  */
 static
 is_prefix(check, template)
