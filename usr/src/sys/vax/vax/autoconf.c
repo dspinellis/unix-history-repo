@@ -1,4 +1,4 @@
-/*	autoconf.c	4.3	81/02/15	*/
+/*	autoconf.c	4.4	81/02/15	*/
 
 #define	dprintf	printf
 
@@ -145,7 +145,7 @@ c780(pcpu)
 	register struct uba_hd *uhp;
 	struct nexus *nxp = NEXBASE;
 	union nexcsr nexcsr;
-	int i;
+	int i, ubawatch();
 	
 	for (nexnum = 0, nxv = nexus; nexnum < NNEXUS; nexnum++, nxp++, nxv++) {
 		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
@@ -226,6 +226,7 @@ c780(pcpu)
 			continue;
 		}
 	}
+	timeout(ubawatch, 0, HZ);
 }
 #endif
 
