@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	8.2 (Berkeley) %G%
+ *	@(#)subr_log.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,7 @@ struct logsoftc {
 int	log_open;			/* also used in log() */
 
 /*ARGSUSED*/
+int
 logopen(dev, flags, mode, p)
 	dev_t dev;
 	int flags, mode;
@@ -61,6 +62,7 @@ logopen(dev, flags, mode, p)
 }
 
 /*ARGSUSED*/
+int
 logclose(dev, flag, mode, p)
 	dev_t dev;
 	int flag, mode;
@@ -73,6 +75,7 @@ logclose(dev, flag, mode, p)
 }
 
 /*ARGSUSED*/
+int
 logread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -118,6 +121,7 @@ logread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
+int
 logselect(dev, rw, p)
 	dev_t dev;
 	int rw;
@@ -139,6 +143,7 @@ logselect(dev, rw, p)
 	return (0);
 }
 
+void
 logwakeup()
 {
 	struct proc *p;
@@ -159,6 +164,7 @@ logwakeup()
 }
 
 /*ARGSUSED*/
+int
 logioctl(dev, com, data, flag, p)
 	dev_t dev;
 	u_long com;
