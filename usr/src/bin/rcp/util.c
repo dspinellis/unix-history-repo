@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,9 @@ char *
 colon(cp)
 	register char *cp;
 {
+	if (*cp == ':')		/* Leading colon is part of file name. */
+		return (0);
+
 	for (; *cp; ++cp) {
 		if (*cp == ':')
 			return (cp);
