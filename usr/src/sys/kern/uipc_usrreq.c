@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	7.29 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -341,12 +341,11 @@ unp_bind(unp, nam, p)
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
-	register struct nameidata *ndp;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_dirp = soun->sun_path;
+	NDINIT(&nd, CREATE, FOLLOW | LOCKPARENT, UIO_SYSSPACE,
+		soun->sun_path, p);
 	if (unp->unp_vnode != NULL)
 		return (EINVAL);
 	if (nam->m_len == MLEN) {
@@ -356,10 +355,6 @@ unp_bind(unp, nam, p)
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
 	ndp->ni_nameiop = CREATE | FOLLOW;
-	ndp->ni_segflg = UIO_SYSSPACE;
-	ip = namei(ndp);
-	if (ip) {
-		iput(ip);
 		return (EADDRINUSE);
 	}
 	if (error = u.u_error) {
@@ -387,29 +382,16 @@ unp_connect(so, nam, p)
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
 	register struct socket *so2, *so3;
-	register struct nameidata *ndp;
 	struct unpcb *unp2, *unp3;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_dirp = soun->sun_path;
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_SYSSPACE, soun->sun_path, p);
 	if (nam->m_data + nam->m_len == &nam->m_dat[MLEN]) {	/* XXX */
 		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
 			return (EMSGSIZE);
 	} else
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_SYSSPACE;
-	ip = namei(ndp);
-	if (ip == 0) {
-		error = u.u_error;
-		u.u_error = 0;
-		return (error);		/* XXX */
-	}
-	if (access(ip, IWRITE)) {
-		error = u.u_error;
-		u.u_error = 0; 		/* XXX */
 	}
 	if ((ip->i_mode&IFMT) != IFSOCK) {
 		error = ENOTSOCK;
