@@ -1,11 +1,20 @@
 /*-
- * Copyright (c) 1988, 1990 Regents of the University of California.
+ * Copyright (c) 1988, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
- *
- * @(#)xi_sink.c	7.3 (Berkeley) %G%
  */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988, 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)xi_sink.c	7.4 (Berkeley) %G%";
+#endif /* not lint */
+
 /*
  * This is a test program to be a sink for X.25 connections.
  */
