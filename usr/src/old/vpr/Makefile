@@ -1,9 +1,11 @@
+#	@(#)Makefile	5.7	(Berkeley)	%G%
+#
 DESTDIR=
 CFLAGS=-O 
-SOURCES=sidebyside.c vcat.c vpac.c vpd.c vpf.c \
-	vfontinfo.c vpq.c vpr.c vprm.c vsort.c
-OBJS=sidebyside vcat vpac vad vpd vpf \
-	vfontinfo vpq vpr vprm vsort rvcat rvsort
+SOURCES=sidebyside.c vcat.c vpac.c vpd.c vpf.c vfontinfo.c \
+	vpq.c vpr.c vprm.c vsort.c rvcat.c rvsort.c vdmp.c
+OBJS=sidebyside vcat vpac vad vpd vpf vfontinfo \
+	vpq vpr vprm vsort rvcat rvsort vdmp
 
 all:	$(OBJS)
 
@@ -39,23 +41,21 @@ vdmp: vdmp.c
 install: all
 	install -s sidebyside ${DESTDIR}/usr/lib/sidebyside
 	install -s vcat ${DESTDIR}/usr/lib/vcat
-	install -s vpac ${DESTDIR}/etc
+	install -s vpac ${DESTDIR}/etc/vpac
 	install -s vad ${DESTDIR}/usr/lib/vad
 	install -s vpd ${DESTDIR}/usr/lib/vpd
 	install -s vpf ${DESTDIR}/usr/lib/vpf
-	install -s vpq ${DESTDIR}/usr/ucb/vpq
-	install -s vpr ${DESTDIR}/usr/ucb/vpr
-	install -c vprint.sh ${DESTDIR}/usr/ucb/vprint
-	install -s vprm ${DESTDIR}/usr/ucb/vprm
+	install -s vpq ${DESTDIR}/usr/lib/vpq
+	install -s vpr ${DESTDIR}/usr/lib/vpr
+	install -s vprm ${DESTDIR}/usr/lib/vprm
 	install -s vsort ${DESTDIR}/usr/lib/vsort
-	install -c vtroff.sh ${DESTDIR}/usr/ucb/vtroff
 	install -s rvsort ${DESTDIR}/usr/lib/rvsort
 	install -s rvcat ${DESTDIR}/usr/lib/rvcat
 	install -s vdmp ${DESTDIR}/usr/lib/vdmp
 	install -s vfontinfo ${DESTDIR}/usr/lib/vfontinfo
 
 clean:
-	rm -f ${OBJS}
+	rm -f ${OBJS} *.o
 
 vprintall:
 	csh /usr/ucb/vprint ${SOURCES}
