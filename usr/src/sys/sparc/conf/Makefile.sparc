@@ -1,4 +1,4 @@
-#	@(#)Makefile.sparc	8.1 (Berkeley) %G%
+#	@(#)Makefile.sparc	7.2 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -46,6 +46,9 @@ CFLAGS=	-O4 ${COPTS}
 
 NORMAL_C=	${CC} -c ${CFLAGS} ${PROF} $<
 NORMAL_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+# optimizer breaks sometimes; temporary workaround uses ${NOOPT_C}
+NOOPT_C=	${CC} -c ${COPTS} ${PROF} ${PARAM} $<
 
 NORMAL_S=	rm -f $*.c; ln -s $< $*.c; \
 		${CC} ${COPTS} -I${SPARC}/sparc -E $*.c > $*.i; \

@@ -1,4 +1,4 @@
-#	@(#)files.sparc	8.1 (Berkeley) %G%
+#	@(#)files.sparc	7.3 (Berkeley) %G%
 #
 # sparc-specific configuration info
 
@@ -66,9 +66,11 @@ file	sparc/rcons/rcons_font.c	rconsole
 file	sparc/rcons/rcons_kern.c	rconsole
 file	sparc/rcons/rcons_subr.c	rconsole
 
+# N.B.: optimizer breaks pmap.c and/or cache.c somehow -- have not
+# identified the exact problem yet.  NOOPT_C suffices for now.
 file	sparc/sparc/autoconf.c
 file	sparc/sparc/bsd_audiointr.s	bsdaudio audio needs-flag
-file	sparc/sparc/cache.c
+file	sparc/sparc/cache.c		compile-with "${NOOPT_C}"
 file	sparc/sparc/conf.c
 file	sparc/sparc/in_cksum.c
 file	sparc/sparc/intr.c
@@ -79,7 +81,7 @@ file	sparc/sparc/locore2.c
 file	sparc/sparc/machdep.c
 file	sparc/sparc/mem.c
 file	sparc/sparc/openprom.c
-file	sparc/sparc/pmap.c
+file	sparc/sparc/pmap.c		compile-with "${NOOPT_C}"
 # the following overrides the generic "sys_process.c"
 file	sparc/sparc/sys_process.c
 file	sparc/sparc/sys_machdep.c	trace
