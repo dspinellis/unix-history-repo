@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.32 (Berkeley) %G%
+#	@(#)Makefile.inc	5.33 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -23,8 +23,9 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
 	getrlimit.o getrusage.o getsockname.o getsockopt.o gettimeofday.o \
 	getuid.o indir.o ioctl.o kill.o ktrace.o lfs_bmapv.o lfs_markv.o \
 	lfs_segclean.o lfs_segwait.o link.o listen.o lstat.o \
-	madvise.o mincore.o mkdir.o mkfifo.o mknod.o mount.o mprotect.o \
-	msync.o munmap.o nfssvc.o open.o pathconf.o profil.o quotactl.o read.o \
+	madvise.o mincore.o mkdir.o mkfifo.o mknod.o mlock.o mount.o \
+	mprotect.o msync.o munlock.o munmap.o nfssvc.o open.o \
+	pathconf.o profil.o quotactl.o read.o \
 	readlink.o readv.o recvfrom.o recvmsg.o rename.o revoke.o rmdir.o \
 	select.o sendmsg.o sendto.o setegid.o seteuid.o setgid.o \
 	setgroups.o setitimer.o setpgid.o setpriority.o setrlimit.o \
@@ -70,7 +71,8 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
 	getpeername.0 getpgrp.0 getpid.0 getpriority.0 getrlimit.0 \
 	getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 getuid.0 intro.0 \
 	ioctl.0 kill.0 ktrace.0 link.0 listen.0 lseek.0 mkdir.0 mkfifo.0 \
-	mknod.0 madvise.0 mincore.0 mmap.0 mount.0 mprotect.0 msync.0 munmap.0 \
+	mknod.0 madvise.0 mincore.0 mlock.0 mmap.0 mount.0 mprotect.0 \
+	msync.0 munmap.0 \
 	nfssvc.0 open.0 pathconf.0 pipe.0 profil.0 ptrace.0 quotactl.0 \
 	munmap.0 nfssvc.0 open.0 pipe.0 profil.0 ptrace.0 quotactl.0 \
 	read.0 readlink.0 reboot.0 recv.0 rename.0 revoke.0 rmdir.0 \
@@ -97,6 +99,7 @@ MLINKS+=gettimeofday.2 settimeofday.2
 MLINKS+=getuid.2 geteuid.2
 MLINKS+=intro.2 errno.2
 MLINKS+=lseek.2 seek.2
+MLINKS+=mlock.2 munlock.2
 MLINKS+=mount.2 unmount.2
 MLINKS+=pathconf.2 fpathconf.2
 MLINKS+=read.2 readv.2
