@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pwcache.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwcache.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -60,7 +60,7 @@ group_from_gid(gid, nogroup)
 {
 	static struct ncache {
 		gid_t	gid;
-		char	name[UT_NAMESIZE];
+		char	name[UT_NAMESIZE + 1];
 	} c_gid[NCACHE];
 	static char nbuf[15];		/* 32 bits == 10 digits */
 	register struct group *gr;
