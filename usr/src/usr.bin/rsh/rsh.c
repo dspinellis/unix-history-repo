@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.10 84/12/17";
+static char sccsid[] = "@(#)rsh.c	4.11 85/03/02";
 #endif
 
 #include <sys/types.h>
@@ -214,8 +214,8 @@ usage:
 }
 
 sendsig(signo)
-	int signo;
+	char signo;
 {
 
-	(void) write(rfd2, (char *)&signo, 1);
+	(void) write(rfd2, &signo, 1);
 }
