@@ -1,4 +1,4 @@
-/*	if_en.c	4.58	82/04/20	*/
+/*	if_en.c	4.59	82/04/24	*/
 
 #include "en.h"
 #include "imp.h"
@@ -123,7 +123,14 @@ COUNT(ENATTACH);
 	if_attach(&es->es_if);
 #if NIMP == 0
 	/* here's one for you john baby.... */
-	enlhinit((ui->ui_flags &~ 0xff) | 0x0a);
+	if (ui->ui_flags &~ 0xff) {
+		struct in_addr logicaladdr;
+
+		logicaladdr.s_addr = ui->ui_flags;	/* gateway */
+		logicaladdr.s_lh = es->es_if.if_host[0];
+		logicaladdr.s_net = 10;
+		enlhinit(logicaladdr);
+	}
 #endif
 }
 
