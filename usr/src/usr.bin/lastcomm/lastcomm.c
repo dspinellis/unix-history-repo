@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)lastcomm.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)lastcomm.c	4.2 (Berkeley) %G%";
 #
 
 /*
@@ -49,7 +49,8 @@ char **argv;
  */
 	while (passwd = getpwent ())
 	{
-		move (passwd->pw_name, user_list [passwd->pw_uid]);
+		if (user_list[passwd->pw_uid][0])
+			move (passwd->pw_name, user_list [passwd->pw_uid]);
 	}
 
 	acct_desc = open ("/usr/adm/acct", 0);
