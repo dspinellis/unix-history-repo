@@ -1,4 +1,4 @@
-/*	code.300	4.1	83/08/05	*/
+/*	code.300	4.2	86/02/26	*/
 "\001 ",	/*space*/
 "\001!",	/*!*/
 "\001\"",	/*"*/
@@ -110,8 +110,8 @@
 "\203ffi",	 /*ffi*/
 "\203ffl",	 /*ffl*/
 "\001\344o\304",	 /*degree*/
-"\001|\b-",	 /*dagger*/
-"\001l\bo",	/* section*/
+"\001\342-\302|",	 /*dagger*/
+"\001\342s\302s",	 /*section*/
 "\001'",	 /*foot mark*/
 "\001'",	 /*acute accent*/
 "\001`",	 /*grave accent*/
@@ -147,7 +147,7 @@
 "\001\242/\303-\204-\343\\\242", /*Delta*/
 "\001O\b=", /*Theta*/
 "\001\242/\204\\\242", /*Lambda*/
-"\001\\b/",	 /*Xi*/
+"\001\341_\346_\307-",	/*Xi*/
 "\001\242[]\204[]\242\343-\303", /*Pi*/
 "\001\200>\302-\345-\303", /*Sigma*/
 "\000\0",	 /**/
@@ -155,48 +155,48 @@
 "\001o\b[\b]", /*Phi*/
 "\001\200[]-\302\202'\244`\202\342", /*Psi*/
 "\001\200O\302\241-\202-\241\342", /*Omega*/
-"\000\0",	 /*square root*/
-"\000\0",	 /*terminal sigma*/
-"\000\0",	 /*root en*/
+"\002-\242\304`\202\344/",	 /*square root*/
+"\001\341s\301\203`\243",	 /*terminal sigma*/
+"\001\343-\303",	 /*root en*/
 "\001>\b_",	 /*>=*/
 "\001<\b_",	 /*<=*/
 "\001=\b_",	 /*identically equal*/
 "\001-",	 /*equation minus*/
 "\001=\b~",	 /*approx =*/
-"\000\0",	 /*approximates*/
+"\001\301~\341",   /*approximates*/
 "\001=\b/",	 /*not equal*/
-"\002->",	 /*right arrow*/
-"\002<-",	 /*left arrow*/
+"\002 \245-\204->\201",	 /*right arrow*/
+"\002 \245<-\204-\201",	 /*left arrow*/
 "\001|\b^",	 /*up arrow*/
-"\000\0",	 /*down arrow*/
+"\001\301v\341|",	 /*down arrow*/
 "\001=",	 /*equation equal*/
 "\001x",	 /*multiply*/
-"\001/",	 /*divide*/
+"\001\200.\341-\343.\304",	 /*divide*/
 "\001+\b_",	 /*plus-minus*/
 "\001U",	 /*cup (union)*/
-"\000\0",	 /*cap (intersection)*/
-"\000\0",	 /*subset of*/
-"\000\0",	 /*superset of*/
-"\000\0",	 /*improper subset*/
-"\000\0",	 /* improper superset*/
-"\002oo",	 /*infinity*/
+"\001\242|\202^\202|\242",	 /*cap (intersection)*/
+"\002 \242\245(\341\204_\346_\203\307",	/*subset of*/
+"\002 \243\341_\346_\307\204)\241",	/*superset of*/
+"\002 \242\245(\341\204_\346_\307_\203",	/*improper subset of*/
+"\002 \243_\341_\346_\307\204)\241",	/*improper superset of*/
+"\002o\242o\202",	 /*infinity*/
 "\001\200o\201\301`\241\341`\241\341`\201\301", /*partial derivative*/
 "\001\242\\\343-\204-\303/\242", /*gradient*/
 "\001\200-\202\341,\301\242", /*not*/
 "\001\200|'\202`\243\306'\241`\202\346",	/*integral sign*/
-"\000\0",	 /*proportional to*/
-"\000\0",	 /*empty set*/
-"\000\0",	 /*member of*/
+"\002o\242c\202",	 /*proportional to*/
+"\0010\b/",	 /*empty set*/
+"\001\200(\201\341-\301\241",	 /*member of*/
 "\001+",	 /*equation plus*/
-"\001r\bO",	 /*registered*/
-"\001c\bO",	 /*copyright*/
+"\003(r)",	 /*registered*/
+"\003(c)",	 /*copyright*/
 "\001|",	 /*box rule */
 "\001c\b/",	 /*cent sign*/
-"\001|\b=",	 /*dbl dagger*/
-"\002=>",	 /*right hand*/
-"\002<=",	 /*left hand*/
+"\001\341=\301|",	 /*dbl dagger*/
+"\002*>",	 /*right hand*/
+"\002<*",	 /*left hand*/
 "\001*",	 /*math * */
-"\000\0",	 /*bell system sign*/
+"\003(b)",	 /*bell system sign*/
 "\001|",	 /*or (was star)*/
 "\001O",	 /*circle*/
 "\001|",	 /*left top (of big curly)*/
