@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttf100.c	3.2 3.2";
+static	char *sccsid = "@(#)ttf100.c	3.3 3.3";
 #endif
 
 #include "ww.h"
@@ -24,6 +24,6 @@ tt_f100()
 	ret = tt_generic();
 	tt.tt_frame = f100_frame;
 	gen_GS = "\033$";
-	gen_GE = "\033'";
+	gen_GE = "\033%";
 	return ret;
 }
