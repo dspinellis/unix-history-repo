@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.27	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.28	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -368,13 +368,6 @@ prescan(addr, delim)
 		else if (cmntcnt > 0)
 			continue;
 
-		if (avp >= &av[MAXATOM])
-		{
-			syserr("prescan: too many tokens");
-			return (NULL);
-		}
-		*avp++ = tok;
-
 		/* we prefer <> specs */
 		if (c == '<')
 		{
@@ -408,6 +401,13 @@ prescan(addr, delim)
 				continue;
 			}
 		}
+
+		if (avp >= &av[MAXATOM])
+		{
+			syserr("prescan: too many tokens");
+			return (NULL);
+		}
+		*avp++ = tok;
 	}
 	*avp = NULL;
 	if (cmntcnt > 0)
