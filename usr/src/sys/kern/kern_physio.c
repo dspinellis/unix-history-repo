@@ -1,15 +1,13 @@
 /*
  * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
- * All rights reserved.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
- * %sccs.include.redist.c%
- *
- *	@(#)kern_physio.c	7.17 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "buf.h"
 #include "conf.h"
 #include "proc.h"
@@ -18,6 +16,13 @@
 #include "map.h"
 #include "vnode.h"
 #include "specdev.h"
+
+#ifdef HPUXCOMPAT
+#include "user.h"
+#endif
+
+static	struct buf *getswbuf();
+static	freeswbuf();
 
 /*
  * Raw I/O. The arguments are
@@ -47,7 +52,6 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	register struct proc *p = curproc;
 	char *a;
 	int s, allocbuf = 0, error = 0;
-	struct buf *getswbuf();
 #ifdef SECSIZE
 	int bsize;
 	struct partinfo dpart;
