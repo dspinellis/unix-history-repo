@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)vaddrs.h	7.1 (Berkeley) %G%
+ *	@(#)vaddrs.h	7.2 (Berkeley) %G%
  *
  * from: $Header: vaddrs.h,v 1.2 92/07/11 11:19:25 leres Exp $
  */

@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
  *
  * from: $Header: vm_machdep.c,v 1.9 92/06/17 05:22:25 torek Exp $ (LBL)
  */

@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.1 (Berkeley) %G%
+ *	@(#)cpu.h	7.2 (Berkeley) %G%
  *
  * from: $Header: cpu.h,v 1.10 92/07/09 03:10:54 torek Exp $ (LBL)
  */

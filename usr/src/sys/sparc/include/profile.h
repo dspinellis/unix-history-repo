@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)profile.h	7.1 (Berkeley) %G%
+ *	@(#)profile.h	7.2 (Berkeley) %G%
  *
  * from: $Header: profile.h,v 1.7 92/07/09 01:34:21 mccanne Exp $
  */

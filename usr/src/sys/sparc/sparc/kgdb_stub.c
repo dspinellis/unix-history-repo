@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.1 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.2 (Berkeley) %G%
  *
  * from: $Header: kgdb_stub.c,v 1.11 92/06/17 05:22:07 torek Exp $
  */

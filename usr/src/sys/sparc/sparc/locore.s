@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	7.2 (Berkeley) %G%
  *
  * from: $Header: locore.s,v 1.45 92/07/12 08:19:55 torek Exp $
  */
