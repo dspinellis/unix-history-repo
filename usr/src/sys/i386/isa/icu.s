@@ -1,16 +1,15 @@
 /*-
- * Copyright (C) 1989,90 W. Jolitz
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (C) 1989, 1990 W. Jolitz
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)icu.s	7.7 (Berkeley) %G%
+ *	@(#)icu.s	7.8 (Berkeley) %G%
  */
-
 
 	.data
 	.globl	_imen
@@ -368,4 +367,3 @@ IDTVEC(intr14)
 
 IDTVEC(intr15)
 	INTR2(15, _highmask, 15) ; call	_isa_strayintr ; INTREXIT2
-
