@@ -1,9 +1,9 @@
-/* Copyright (c) 1982 Regents of the University of California */
-
-static char sccsid[] = "@(#)readdir.c 4.4 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)readdir.c	4.5 (Berkeley) %G%";
+#endif
 
 #include <sys/param.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 /*
  * get next entry in a directory.

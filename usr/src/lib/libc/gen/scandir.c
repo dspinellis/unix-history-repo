@@ -1,4 +1,7 @@
-/*	scandir.c	4.1	82/12/13	*/
+#ifndef lint
+static char sccsid[] = "@(#)scandir.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  * Scan the directory dirname calling select to make a list of selected
  * directory entries then sort using qsort and compare routine dcomp.
@@ -8,7 +11,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 scandir(dirname, namelist, select, dcomp)
 	char *dirname;

@@ -1,9 +1,9 @@
-/* Copyright (c) 1982 Regents of the University of California */
-
-static char sccsid[] = "@(#)seekdir.c 4.9 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)seekdir.c	4.10 (Berkeley) %G%";
+#endif
 
 #include <sys/param.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 /*
  * seek to an entry in a directory.

@@ -1,4 +1,6 @@
-/* @(#)ctime.c	4.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)ctime.c	4.3 (Berkeley) %G%";
+#endif
 /*
  * This routine converts time as follows.
  * The epoch is 0000 Jan 1 1970 GMT.
@@ -35,7 +37,7 @@
  * ctime(t) just calls localtime, then asctime.
  */
 
-#include <time.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
 
