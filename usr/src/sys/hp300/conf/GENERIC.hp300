@@ -54,6 +54,8 @@ options		GATEWAY		# IP packet forwarding
 #options	ISO		# OSI networking
 #options	TPIP
 #options	EON
+#options	NS,NSIP		# Xerox NS networking
+#options	CCITT,HDLC,LLC	# CCITT networking
 
 # Options for HP hardware
 options		PANICBUTTON	# Two fast <reset>s on console dump kernel
@@ -117,5 +119,7 @@ pseudo-device	sl		 4	# serial-line IP ports
 pseudo-device	pty		64	# pseudo ptys
 pseudo-device	bpfilter	16	# packet filter ports
 pseudo-device	ite
-pseudo-device	loop
+pseudo-device	loop			# loopback network interface
 pseudo-device	ether
+#pseudo-device	cd			# concatenated disk driver
+#pseudo-device	vn			# vnode disk driver
