@@ -1,4 +1,4 @@
-/* tcp_input.c 1.27 81/11/22 */
+/* tcp_input.c 1.28 81/11/23 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -88,7 +88,7 @@ COUNT(TCP_INPUT);
 		ti->ti_next = ti->ti_prev = 0;
 		ti->ti_x1 = 0;
 		ti->ti_len = htons((u_short)tlen);
-		if (ti->ti_sum = inet_cksum(m, len)) {
+		if ((ti->ti_sum = inet_cksum(m, len)) != 0xffff) {
 			tcpstat.tcps_badsum++;
 			printf("tcp cksum %x\ti", ti->ti_sum);
 			goto bad;
@@ -108,13 +108,8 @@ COUNT(TCP_INPUT);
 	/* PROCESS OPTIONS */
 
 	/*
-	 * Convert addresses and ports to host format.
 	 * Locate pcb for segment.
 	 */
-	ti->ti_src.s_addr = ntohl(ti->ti_src.s_addr);
-	ti->ti_dst.s_addr = ntohl(ti->ti_dst.s_addr);
-	ti->ti_sport = ntohs(ti->ti_sport);
-	ti->ti_dport = ntohs(ti->ti_dport);
 	inp = in_pcblookup(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport);
 	if (inp == 0)
 		goto notwanted;
@@ -444,6 +439,7 @@ notwanted:
 	ti->ti_off = 5;
 	ti->ti_sum = inet_cksum(m, sizeof(struct tcpiphdr));
 	((struct ip *)ti)->ip_len = sizeof(struct tcpiphdr);
+	((struct ip *)ti)->ip_ttl = MAXTTL;
 	ip_output(m);
 	tcpstat.tcps_badsegs++;
 }
