@@ -186,7 +186,7 @@ short	hptypes[] = {
 	0
 };
 struct	mba_device *hpinfo[NHP];
-int	hpattach(),hpustart(),hpstart(),hpdtint();
+int	hpattach(), hpustart(), hpstart(), hpdtint();
 struct	mba_driver hpdriver =
 	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
 	  hptypes, "hp", 0, hpinfo };
@@ -587,14 +587,12 @@ hpdtint(mi, mbsr)
 		    sc->sc_hdr ||
 		    (!ML11 && (er2 & HPER2_HARD))) {
  			/*
- 			 * If HCRC the header is screwed up and the sector
- 			 * might be in the bad sector table, better check..
-			 *
-			 * Note: If the header is screwed up on a skip sector
-			 * track, then the appropriate replacement sector
-			 * cannot be found.
+ 			 * HCRC means the header is screwed up and the sector
+ 			 * might well exist in the bad sector table, 
+			 * better check....
  			 */
- 			if (er1&HPER1_HCRC && !ML11 && hpecc(mi, BSE))
+ 			if ((er1&HPER1_HCRC) && 
+			    !ML11 && !sc->sc_hdr && hpecc(mi, BSE))
 				return (MBD_RESTARTED);
 hard:
 			if (ML11)
@@ -603,6 +601,14 @@ hard:
 				bp->b_blkno = MASKREG(hpaddr->hpdc) * st->nspc +
 				   (MASKREG(hpaddr->hpda) >> 8) * st->nsect +
 				   (hpaddr->hpda&0x1f);
+			/*
+			 * If we have a data check error or a hard
+			 * ecc error the bad sector has been read/written,
+			 * and the controller registers are pointing to
+			 * the next sector...
+			 */
+			 if (er1 && (HPER1_DCK|HPER1_ECH))
+				bp->b_blkno--;
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf("mbsr=%b ", mbsr, mbsr_bits);
@@ -613,6 +619,8 @@ hard:
 				printf(" mr=%o", MASKREG(hpaddr->hpmr));
 			if (hpaddr->hpmr2)
 				printf(" mr2=%o", MASKREG(hpaddr->hpmr2));
+			if (sc->sc_hdr)
+				printf(" (hdr i/o)");
 			printf("\n");
 			bp->b_flags |= B_ERROR;
 			retry = 0;
