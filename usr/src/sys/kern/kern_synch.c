@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	8.7 (Berkeley) %G%
+ *	@(#)kern_synch.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -223,7 +223,7 @@ updatepri(p)
  * of 2.  Shift right by 8, i.e. drop the bottom 256 worth.
  */
 #define TABLESIZE	128
-#define LOOKUP(x)	(((int)(x) >> 8) & (TABLESIZE - 1))
+#define LOOKUP(x)	(((long)(x) >> 8) & (TABLESIZE - 1))
 struct slpque {
 	struct proc *sq_head;
 	struct proc **sq_tailp;
@@ -574,6 +574,7 @@ mi_switch()
  * Initialize the (doubly-linked) run queues
  * to be empty.
  */
+void
 rqinit()
 {
 	register int i;

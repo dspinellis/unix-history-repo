@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	8.7 (Berkeley) %G%
+ *	@(#)kern_fork.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -25,14 +25,11 @@
 #include <sys/acct.h>
 #include <sys/ktrace.h>
 
-struct fork_args {
-	int	dummy;
-};
 /* ARGSUSED */
 fork(p, uap, retval)
 	struct proc *p;
-	struct fork_args *uap;
-	int retval[];
+	void *uap;
+	register_t *retval;
 {
 
 	return (fork1(p, 0, retval));
@@ -41,8 +38,8 @@ fork(p, uap, retval)
 /* ARGSUSED */
 vfork(p, uap, retval)
 	struct proc *p;
-	struct fork_args *uap;
-	int retval[];
+	void *uap;
+	register_t *retval;
 {
 
 	return (fork1(p, 1, retval));
@@ -52,7 +49,8 @@ int	nprocs = 1;		/* process 0 */
 
 fork1(p1, isvfork, retval)
 	register struct proc *p1;
-	int isvfork, retval[];
+	int isvfork;
+	register_t *retval;
 {
 	register struct proc *p2;
 	register uid_t uid;
@@ -73,6 +71,7 @@ fork1(p1, isvfork, retval)
 		tablefull("proc");
 		return (EAGAIN);
 	}
+
 	/*
 	 * Increment the count of procs running with this uid. Don't allow
 	 * a nonprivileged user to exceed their current limit.
@@ -131,7 +130,6 @@ again:
 			goto again;
 		}
 	}
-
 
 	nprocs++;
 	p2 = newproc;
