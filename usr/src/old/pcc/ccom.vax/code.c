@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)code.c	1.4 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.5 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -14,11 +14,13 @@ int fdefflag;  /* are we within a function definition ? */
 char NULLNAME[8];
 int labelno;
 
+# define putstr(s)	fputs((s), stdout)
+
 branch( n ){
 	/* output a branch to label n */
 	/* exception is an ordinary function branching to retlab: then, return */
 	if( n == retlab && !strftn ){
-		printf( "	ret\n" );
+		putstr( "	ret\n" );
 		}
 	else printf( "	jbr 	L%d\n", n );
 	}
@@ -44,25 +46,25 @@ locctr( l ){
 	switch( l ){
 
 	case PROG:
-		printf( "	.text\n" );
+		putstr( "	.text\n" );
 		psline();
 		break;
 
 	case DATA:
 	case ADATA:
-		printf( "	.data\n" );
+		putstr( "	.data\n" );
 		break;
 
 	case STRNG:
-		printf( "	.data	1\n" );
+		putstr( "	.data	1\n" );
 		break;
 
 	case ISTRNG:
-		printf( "	.data	2\n" );
+		putstr( "	.data	2\n" );
 		break;
 
 	case STAB:
-		printf( "	.stab\n" );
+		putstr( "	.stab\n" );
 		break;
 
 	default:
@@ -107,10 +109,10 @@ efcode(){
 
 		i = getlab();	/* label for return area */
 #ifndef LCOMM
-		printf("	.data\n" );
-		printf("	.align	2\n" );
+		putstr("	.data\n" );
+		putstr("	.align	2\n" );
 		printf("L%d:	.space	%d\n", i, tsize(t, p->dimoff, p->sizoff)/SZCHAR );
-		printf("	.text\n" );
+		putstr("	.text\n" );
 #else
 		{ int sz = tsize(t, p->dimoff, p->sizoff) / SZCHAR;
 		if (sz % sizeof (int))
@@ -162,7 +164,7 @@ bfcode( a, n ) int a[]; {
 
 	locctr( PROG );
 	p = &stab[curftn];
-	printf( "	.align	1\n");
+	putstr( "	.align	1\n");
 	defnam( p );
 	temp = p->stype;
 	temp = DECREF(temp);
@@ -180,11 +182,11 @@ bfcode( a, n ) int a[]; {
 	if( proflg ) {	/* profile code */
 		i = getlab();
 		printf("	movab	L%d,r0\n", i);
-		printf("	jsb 	mcount\n");
-		printf("	.data\n");
-		printf("	.align	2\n");
+		putstr("	jsb 	mcount\n");
+		putstr("	.data\n");
+		putstr("	.align	2\n");
 		printf("L%d:	.long	0\n", i);
-		printf("	.text\n");
+		putstr("	.text\n");
 		psline();
 		}
 
@@ -270,9 +272,9 @@ static	int	lastoctal = 0;
 
 	i &= 077;
 	if ( t < 0 ){
-		if ( i != 0 )	printf( "\"\n" );
+		if ( i != 0 )	putstr( "\"\n" );
 	} else {
-		if ( i == 0 ) printf("\t.ascii\t\"");
+		if ( i == 0 ) putstr("\t.ascii\t\"");
 		if ( t == '\\' || t == '"'){
 			lastoctal = 0;
 			printf("\\%c", t);
@@ -300,20 +302,20 @@ static	int	lastoctal = 0;
 			lastoctal = 0;
 			putchar(t);
 		}
-		if ( i == 077 ) printf("\"\n");
+		if ( i == 077 ) putstr("\"\n");
 	}
 #else
 
 	i &= 07;
 	if( t < 0 ){ /* end of the string */
-		if( i != 0 ) printf( "\n" );
+		if( i != 0 ) putchar( '\n' );
 		}
 
 	else { /* stash byte t into string */
-		if( i == 0 ) printf( "	.byte	" );
-		else printf( "," );
+		if( i == 0 ) putstr( "	.byte	" );
+		else putchar( ',' );
 		printf( "0x%x", t );
-		if( i == 07 ) printf( "\n" );
+		if( i == 07 ) putchar( '\n' );
 		}
 #endif
 	}
@@ -443,7 +445,7 @@ genswitch(p,n) register struct sw *p;{
 	for( i=1; i<=n; ++i ){
 		/* already in r0 */
 
-		printf( "	cmpl	r0,$" );
+		putstr( "	cmpl	r0,$" );
 		printf( CONFMT, p[i].sval );
 		printf( "\n	jeql	L%d\n", p[i].slab );
 		}

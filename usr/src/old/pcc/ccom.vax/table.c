@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.10 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.11 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -62,27 +62,6 @@ SCONV,	INTAREG|FORCC,
 	SANY,	TFLOAT|TDOUBLE,
 		NAREG|NASL,	RESC1|RESCC,
 		"	movzZLl	AL,A1\n	cvtld	A1,A1\n",
-
-/* char -> ushort, result in reg (forced to int type by reclaim()) */
-SCONV,	INTAREG|INAREG,
-	SAREG|AWD,	TCHAR,
-	SANY,	TUSHORT,
-		NAREG|NASL,	RESC1,
-		"	cvtbw	AL,A1\n	movzwl	A1,A1\n",
-
-/* uchar, ushort -> wider */
-SCONV,	INTAREG|INAREG,
-	SAREG|AWD,	TUCHAR|TUSHORT,
-	SANY,	TSHORT|TUSHORT|TINT|TUNSIGNED|TLONG|TULONG,
-		NAREG|NASL,	RESC1,
-		"	movzZLl	AL,A1\n",
-
-/* char, short -> wider */
-SCONV,	INTAREG|INAREG,
-	SAREG|AWD,	TCHAR|TSHORT,
-	SANY,	TSHORT|TUSHORT|TINT|TUNSIGNED|TLONG|TULONG,
-		NAREG|NASL,	RESC1,
-		"	cvtZLl	AL,A1\n",
 
 /* take care of redundant conversions introduced by reclaim() */
 SCONV,	INTAREG,
@@ -509,19 +488,18 @@ OPLTYPE,	FORARG,
 
 #if defined(FORT) || defined(SPRECC)
 UNARY MINUS,	INTAREG|FORCC,
-	SAREG|AWD,	TINT|TUNSIGNED|TLONG|TULONG|TFLOAT|TDOUBLE,
+	SAREG|AWD,	TFLOAT,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1|RESCC,
 		"	mnegZL	TAL,A1\n",
 
-#else
+#endif
 
 UNARY MINUS,	INTAREG|FORCC,
 	SAREG|AWD,	TINT|TUNSIGNED|TLONG|TULONG|TDOUBLE,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1|RESCC,
 		"	mnegZL	AL,A1\n",
-#endif
 
 COMPL,	INTAREG|FORCC,
 	SAREG|AWD,	TINT|TUNSIGNED|TLONG|TULONG,

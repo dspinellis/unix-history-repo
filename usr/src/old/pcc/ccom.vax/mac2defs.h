@@ -1,4 +1,4 @@
-/*	mac2defs.h	4.1	85/03/19	*/
+/*	mac2defs.h	4.2	85/08/23	*/
 
 /*
  * VAX-11/780 Registers
@@ -52,6 +52,19 @@ extern	int maxargs;
 #define STOFARG(p)
 #define STOSTARG(p)
 #define genfcall(a,b)	gencall(a,b)
+
+/*
+ * Some short routines that get called an awful lot are actually macros.
+ */
+#if defined(FORT) || defined(SPRECC)
+#define	szty(t)	((t) == DOUBLE ? 2 : 1)
+#else
+#define	szty(t)	(((t) == DOUBLE || (t) == FLOAT) ? 2 : 1)
+#endif
+#define	shltype(o, p) \
+	((o) == REG || (o) == NAME || (o) == ICON || \
+	 (o) == OREG || ((o) == UNARY MUL && shumul((p)->in.left)))
+#define	ncopy(q, p)	((q)->in = (p)->in)
 
 #define MYREADER(p) myreader(p)
 int	optim2();

@@ -1,5 +1,5 @@
 #
-#	Makefile	1.11	85/04/18
+#	Makefile	1.12	85/08/23
 #
 # Makefile for PCC
 #
@@ -30,35 +30,42 @@ SOBJS=	strees.o slocal.o slocal2.o sallo.o sorder.o stable.o
 FFILES=	freader.c fallo.c fmatch.c ftable.c forder.c flocal2.c fcomm2.c
 FOBJS=	freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o
 
+P1INCS=	$M/pass1.h macdefs.h $M/manifest.h pcclocal.h $M/config.h $M/ndu.h \
+	/usr/include/stdio.h
+P1ONEP=	$(P1INCS) $M/onepass.h
+P2INCS=	$M/pass2.h macdefs.h mac2defs.h $M/manifest.h pcclocal.h $M/config.h \
+	$M/ndu.h /usr/include/stdio.h
+P2ONEP=	$(P2INCS) $M/onepass.h
+
 M=../mip
 TESTDIR = .
 
-all: comp scomp fort
+all: ccom sccom f1
 
 #
-# 'comp' is a one-pass C compiler.
+# 'ccom' is a one-pass C compiler.
 #
-comp: rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o \
+ccom: rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o \
 	reader.o local2.o order.o match.o allo.o comm1.o table.o stab.o
 	$(CC) $(LDFLAGS) rodata.o cgram.o xdefs.o scan.o pftn.o trees.o \
 		optim.o code.o local.o reader.o local2.o order.o match.o \
-		allo.o comm1.o table.o stab.o -o $(TESTDIR)/comp
-trees.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/trees.c
-	$(CC) -c $(COPTS) -I$M -I.  $M/trees.c
-optim.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/optim.c
-	$(CC) -c $(COPTS) -I$M -I. $M/optim.c
-pftn.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/pftn.c
-	$(CC) -c $(COPTS) -I$M -I. $M/pftn.c
-code.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h
-	$(CC) -c $(COPTS) -I$M -I. code.c
-local.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h
-	$(CC) -c $(COPTS) -I$M -I. local.c
-scan.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/scan.c
-	$(CC) -c $(COPTS) -I$M -I. $M/scan.c
-xdefs.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h $M/xdefs.c
-	$(CC) -c $(COPTS) -I$M -I. $M/xdefs.c
-cgram.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h cgram.c
-	$(CC) -c $(COPTS) -I$M -I. cgram.c
+		allo.o comm1.o table.o stab.o -o $(TESTDIR)/ccom
+trees.o: $(P1ONEP) $M/trees.c
+	$(CC) -c $(COPTS) $M/trees.c
+optim.o: $(P1ONEP) $M/optim.c
+	$(CC) -c $(COPTS) $M/optim.c
+pftn.o: $(P1ONEP) $M/pftn.c
+	$(CC) -c $(COPTS) $M/pftn.c
+code.o: $(P1ONEP) code.c
+	$(CC) -c $(COPTS) code.c
+local.o: $(P1ONEP) local.c
+	$(CC) -c $(COPTS) local.c
+scan.o: $(P1ONEP) $M/scan.c
+	$(CC) -c $(COPTS) $M/scan.c
+xdefs.o: $(P1ONEP) $M/xdefs.c
+	$(CC) -c $(COPTS) $M/xdefs.c
+cgram.o: $(P1ONEP) cgram.c
+	$(CC) -c $(COPTS) cgram.c
 rodata.o: rodata.c
 	$(CC) -c $(COPTS) -R rodata.c
 rodata.c cgram.c: $M/cgram.y pcctokens
@@ -67,99 +74,102 @@ rodata.c cgram.c: $M/cgram.y pcctokens
 	$(RM) rodata.c
 	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cgram.c
-comm1.o: $M/manifest.h $M/pass1.h pcclocal.h $M/common.c macdefs.h
+comm1.o: $(P1ONEP) $M/common.c
 	ln $M/common.c comm1.c
-	$(CC) -c $(COPTS) -I$M -I. -DPASS1COMMON comm1.c
+	$(CC) -c $(COPTS) -DPASS1COMMON comm1.c
 	$(RM) comm1.c
-table.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h table.c
-	$(CC) -c $(COPTS) -R -I$M -I. table.c
-reader.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/reader.c
-	$(CC) -c $(COPTS) -I$M -I. $M/reader.c
-local2.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h
-	$(CC) -c $(COPTS) -I$M -I. local2.c
-order.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h
-	$(CC) -c $(COPTS) -I$M -I. order.c
-match.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/match.c
-	$(CC) -c $(COPTS) -I$M -I. $M/match.c
-allo.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/allo.c
-	$(CC) -c $(COPTS) -I$M -I. $M/allo.c
+stab.o: $(P1ONEP) stab.c \
+	/usr/include/stab.h /usr/include/a.out.h /usr/include/sys/types.h
+	$(CC) -c $(COPTS) stab.c
+table.o: $(P2ONEP) table.c
+	$(CC) -c $(COPTS) -R table.c
+reader.o: $(P2ONEP) $M/reader.c
+	$(CC) -c $(COPTS) $M/reader.c
+local2.o: $(P2ONEP) local2.c
+	$(CC) -c $(COPTS) local2.c
+order.o: $(P2ONEP) order.c
+	$(CC) -c $(COPTS) order.c
+match.o: $(P2ONEP) $M/match.c
+	$(CC) -c $(COPTS) $M/match.c
+allo.o: $(P2ONEP) $M/allo.c
+	$(CC) -c $(COPTS) $M/allo.c
 
 #
-# 'scomp' is a C compiler that does single precision computations in
+# 'sccom' is a C compiler that does single precision computations in
 #	single precision rather than double precision.
 #
-scomp: rodata.o cgram.o xdefs.o scan.o pftn.o strees.o optim.o code.o slocal.o \
+sccom: rodata.o cgram.o xdefs.o scan.o pftn.o strees.o optim.o code.o slocal.o \
 	reader.o slocal2.o sorder.o match.o sallo.o comm1.o stable.o stab.o
 	$(CC) $(LDFLAGS) rodata.o cgram.o xdefs.o scan.o pftn.o strees.o \
 		optim.o code.o slocal.o reader.o slocal2.o sorder.o match.o \
-		sallo.o comm1.o stable.o stab.o -o $(TESTDIR)/scomp
-strees.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/trees.c
+		sallo.o comm1.o stable.o stab.o -o $(TESTDIR)/sccom
+strees.o: $(P1ONEP) $M/trees.c
 	ln $M/trees.c strees.c
-	$(CC) -c $(SCOPTS) -I$M -I. strees.c
+	$(CC) -c $(SCOPTS) strees.c
 	$(RM) strees.c
-slocal.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h local.c
+slocal.o: $(P1ONEP) local.c
 	ln local.c slocal.c
-	$(CC) -c $(SCOPTS) -I$M -I. slocal.c
+	$(CC) -c $(SCOPTS) slocal.c
 	$(RM) slocal.c
-slocal2.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h local2.c
+slocal2.o: $(P2ONEP) local2.c
 	ln local2.c slocal2.c
-	$(CC) -c $(SCOPTS) -I$M -I. slocal2.c
+	$(CC) -c $(SCOPTS) slocal2.c
 	$(RM) slocal2.c
-sallo.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/allo.c
+sallo.o: $(P2ONEP) $M/allo.c
 	ln $M/allo.c sallo.c
-	$(CC) -c $(SCOPTS) -I$M -I. sallo.c
+	$(CC) -c $(SCOPTS) sallo.c
 	$(RM) sallo.c
-sorder.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h order.c
+sorder.o: $(P2ONEP) order.c
 	ln order.c sorder.c
-	$(CC) -c $(SCOPTS) -I$M -I. sorder.c
+	$(CC) -c $(SCOPTS) sorder.c
 	$(RM) sorder.c
-stable.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h table.c
+stable.o: $(P2ONEP) table.c
 	ln table.c stable.c
-	$(CC) -c $(SCOPTS) -R -I$M -I. stable.c
+	$(CC) -c $(SCOPTS) -R stable.c
 	$(RM) stable.c
 
 #
-# 'fort' is the f77 and pc code generator.
+# 'f1' is the f77 and pc code generator.
 #
-fort: fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
+f1: fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
 	fcomm2.o
 	$(CC) $(LDFLAGS) fort.o freader.o fallo.o fmatch.o ftable.o \
-		forder.o flocal2.o fcomm2.o -o $(TESTDIR)/fort
-fort.o: fort.h $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/fort.c
-	$(CC) -c $(FOPTS) -I$M -I. $M/fort.c
-freader.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/reader.c
+		forder.o flocal2.o fcomm2.o -o $(TESTDIR)/f1
+fort.o: $(P2INCS) fort.h $M/fort.c
+	$(CC) -c $(FOPTS) $M/fort.c
+freader.o: $(P2INCS) $M/reader.c
 	ln $M/reader.c freader.c
-	$(CC) -c $(FOPTS) -I$M -I. freader.c
+	$(CC) -c $(FOPTS) freader.c
 	$(RM) freader.c
-fallo.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/allo.c
+fallo.o: $(P2INCS) $M/allo.c
 	ln $M/allo.c fallo.c
-	$(CC) -c $(FOPTS) -I$M -I. fallo.c
+	$(CC) -c $(FOPTS) fallo.c
 	$(RM) fallo.c
-fmatch.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h $M/match.c
+fmatch.o: $(P2INCS) $M/match.c
 	ln $M/match.c fmatch.c
-	$(CC) -c $(FOPTS) -I$M -I. fmatch.c
+	$(CC) -c $(FOPTS) fmatch.c
 	$(RM) fmatch.c
-ftable.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h table.c
+ftable.o: $(P2INCS) table.c
 	ln table.c ftable.c
-	$(CC) -c -R $(FOPTS) -I$M -I. ftable.c
+	$(CC) -c -R $(FOPTS) ftable.c
 	$(RM) ftable.c
-forder.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h
+forder.o: $(P2INCS) order.c
 	ln order.c forder.c
-	$(CC) -c $(FOPTS) -I$M -I. forder.c
+	$(CC) -c $(FOPTS) forder.c
 	$(RM) forder.c
-flocal2.o: $M/manifest.h $M/pass2.h pcclocal.h mac2defs.h macdefs.h
+flocal2.o: $(P2INCS) local2.c
 	ln local2.c flocal2.c
-	$(CC) -c $(FOPTS) -I$M -I. flocal2.c
+	$(CC) -c $(FOPTS) flocal2.c
 	$(RM) flocal2.c
-fcomm2.o: $M/manifest.h $M/pass2.h pcclocal.h $M/common.c mac2defs.h macdefs.h
+fcomm2.o: $(P2INCS) $M/common.c
 	ln $M/common.c fcomm2.c
-	$(CC) -c $(FOPTS) -I$M -I. -DPASS2COMMON fcomm2.c
+	$(CC) -c $(FOPTS) -DPASS2COMMON fcomm2.c
 	$(RM) fcomm2.c
 
 install: all
-	install -s comp ${DESTDIR}/lib/ccom
-	install -s scomp ${DESTDIR}/lib/sccom
-	install -s fort ${DESTDIR}/lib/f1
+	install -s ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
+	install -s ${TESTDIR}/sccom ${DESTDIR}/lib/sccom
+	install -s ${TESTDIR}/f1 ${DESTDIR}/lib/f1
 
 GREP=	egrep
 
@@ -174,9 +184,9 @@ pcctokens: localdefs.h /usr/include/pcc.h
 DUMMIES=	$(SFILES) $(FFILES)
 
 shrink:
-	$(RM) *.o comp scomp fort $(DUMMIES)
+	$(RM) *.o ccom sccom f1 $(DUMMIES)
 clean:
-	$(RM) *.o comp scomp fort cgram.c rodata.c pcctokens pcclocal.h gram.in $(DUMMIES)
+	$(RM) *.o ccom sccom f1 cgram.c rodata.c pcctokens pcclocal.h gram.in $(DUMMIES)
 sfix:
 	$(RM) $(SFILES)
 sclean:
@@ -187,6 +197,6 @@ fclean:
 	$(RM) $(FOBJS) $(FFILES)
 
 lintall:
-	lint -hv -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
-		$M/trees.c $M/optim.c code.c local.c $M/reader.c \
+	lint -hax -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
+		$M/trees.c $M/optim.c code.c local.c stab.c $M/reader.c \
 		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c

@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.7 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.8 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -320,12 +320,11 @@ exname( p ) char *p; {
 
 	text[0] = '_';
 #ifndef FLEXNAMES
-	for( i=1; *p&&i<NCHNAM; ++i ){
+	for( i=1; *p&&i<NCHNAM; ++i )
 #else
-	for( i=1; *p; ++i ){
+	for( i=1; *p; ++i )
 #endif
 		text[i] = *p++;
-		}
 
 	text[i] = '\0';
 #ifndef FLEXNAMES

@@ -1,4 +1,4 @@
-/*	macdefs.h	4.1	85/03/19	*/
+/*	macdefs.h	4.2	85/08/23	*/
 
 #ifndef _MACDEFS_
 #define	_MACDEFS_
@@ -62,4 +62,7 @@ typedef	long	OFFSZ;		/* size in which offsets are kept */
 #define ADDROREG
 #define FIXDEF(p) outstab(p)
 #define FIXARG(p) fixarg(p)
+#ifndef ncopy
+#define	ncopy(q, p)	((q)->in = (p)->in)
+#endif
 #endif

@@ -9,6 +9,8 @@ int ftlab1, ftlab2;
 # endif
 /* a lot of the machine dependent parts of the second pass */
 
+# define putstr(s)	fputs((s), stdout)
+
 # define BITMASK(n) ((1L<<n)-1)
 
 where(c){
@@ -77,10 +79,10 @@ hopcode( f, o ){
 
 	for( q = ioptab;  q->opmask>=0; ++q ){
 		if( q->opmask == o ){
-			printf( "%s", q->opstring );
+			putstr( q->opstring );
 /* tbl
-			if( f == 'F' ) printf( "e" );
-			else if( f == 'D' ) printf( "d" );
+			if( f == 'F' ) putchar( 'e' );
+			else if( f == 'D' ) putchar( 'd' );
    tbl */
 /* tbl */
 			switch( f ) {
@@ -89,7 +91,7 @@ hopcode( f, o ){
 				case 'B':
 				case 'D':
 				case 'F':
-					printf("%c", tolower(f));
+					putchar(tolower(f));
 					break;
 
 				}
@@ -153,34 +155,34 @@ prtype(n) NODE *n;
 	switch (n->in.type)
 		{
 		case DOUBLE:
-			printf("d");
+			putchar('d');
 			return;
 
 		case FLOAT:
-			printf("f");
+			putchar('f');
 			return;
 
 		case LONG:
 		case ULONG:
 		case INT:
 		case UNSIGNED:
-			printf("l");
+			putchar('l');
 			return;
 
 		case SHORT:
 		case USHORT:
-			printf("w");
+			putchar('w');
 			return;
 
 		case CHAR:
 		case UCHAR:
-			printf("b");
+			putchar('b');
 			return;
 
 		default:
 			if ( !ISPTR( n->in.type ) ) cerror("zzzcode- bad type");
 			else {
-				printf("l");
+				putchar('l');
 				return;
 				}
 		}
@@ -232,14 +234,14 @@ zzzcode( p, c ) register NODE *p; {
 		if (r->in.op == ICON)
 			if (r->in.name[0] == '\0') {
 				if (r->tn.lval == 0) {
-					printf("clr");
+					putstr("clr");
 					prtype(l);
-					printf("	");
+					putchar('\t');
 					adrput(l);
 					return;
 					}
 				if (r->tn.lval < 0 && r->tn.lval >= -63) {
-					printf("mneg");
+					putstr("mneg");
 					prtype(l);
 					r->tn.lval = -r->tn.lval;
 					goto ops;
@@ -263,10 +265,10 @@ zzzcode( p, c ) register NODE *p; {
 						: INT))));
 				}
 			else {
-				printf("moval");
-				printf("	");
+				putstr("moval");
+				putchar('\t');
 				acon(r);
-				printf(",");
+				putchar(',');
 				adrput(l);
 				return;
 				}
@@ -290,16 +292,17 @@ zzzcode( p, c ) register NODE *p; {
 
 				*x = *l;
 				if (tlen(x) > tlen(r) && ISUNSIGNED(r->in.type))
-					printf("movz");
+					putstr("movz");
 				else
-					printf("cvt");
+					putstr("cvt");
 				prtype(r);
 				prtype(x);
-				printf("\t");
+				putchar('\t');
 				adrput(r);
-				printf(",");
+				putchar(',');
 				adrput(x);
-				printf("\n\t");
+				putchar('\n');
+				putchar('\t');
 				r = x;
 				}
 			l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
@@ -307,15 +310,15 @@ zzzcode( p, c ) register NODE *p; {
 
 		if (!mixtypes(l,r)) {
 			if (tlen(l) == tlen(r)) {
-				printf("mov");
+				putstr("mov");
 #ifdef FORT
 				if (Oflag)
 					prtype(l);
 				else {
 					if (l->in.type == DOUBLE)
-						printf("q");
+						putchar('q');
 					else if(l->in.type == FLOAT)
-						printf("l");
+						putchar('l');
 					else
 						prtype(l);
 					}
@@ -325,18 +328,18 @@ zzzcode( p, c ) register NODE *p; {
 				goto ops;
 				}
 			else if (tlen(l) > tlen(r) && ISUNSIGNED(r->in.type))
-				printf("movz");
+				putstr("movz");
 			else
-				printf("cvt");
+				putstr("cvt");
 			}
 		else
-			printf("cvt");
+			putstr("cvt");
 		prtype(r);
 		prtype(l);
 	ops:
-		printf("	");
+		putchar('\t');
 		adrput(r);
-		printf(",");
+		putchar(',');
 		adrput(l);
 		return;
 		}
@@ -347,11 +350,11 @@ zzzcode( p, c ) register NODE *p; {
 		if (xdebug) eprint(p, 0, &val, &val);
 		r = p->in.right;
 		if( tlen(r) == sizeof(int) && r->in.type != FLOAT )
-			printf("movl");
+			putstr("movl");
 		else {
-			printf("cvt");
+			putstr("cvt");
 			prtype(r);
-			printf("l");
+			putchar('l');
 			}
 		return;
 		}
@@ -369,22 +372,24 @@ zzzcode( p, c ) register NODE *p; {
 
 	case 'D':	/* INCR and DECR */
 		zzzcode(p->in.left, 'A');
-		printf("\n	");
+		putchar('\n');
+		putchar('\t');
 
 	case 'E':	/* INCR and DECR, FOREFF */
 		if (p->in.right->tn.lval == 1)
 			{
-			printf("%s", (p->in.op == INCR ? "inc" : "dec") );
+			putstr( p->in.op == INCR ? "inc" : "dec" );
 			prtype(p->in.left);
-			printf("	");
+			putchar('\t');
 			adrput(p->in.left);
 			return;
 			}
-		printf("%s", (p->in.op == INCR ? "add" : "sub") );
+		putstr( p->in.op == INCR ? "add" : "sub" );
 		prtype(p->in.left);
-		printf("2	");
+		putchar('2');
+		putchar('\t');
 		adrput(p->in.right);
-		printf(",");
+		putchar(',');
 		adrput(p->in.left);
 		return;
 
@@ -399,9 +404,9 @@ zzzcode( p, c ) register NODE *p; {
 
 		if (xdebug) printf("->%d<-", ty);
 
-		if ( ty==DOUBLE) printf("d");
-		else if ( ty==FLOAT ) printf("f");
-		else printf("l");
+		if ( ty==DOUBLE) putchar('d');
+		else if ( ty==FLOAT ) putchar('f');
+		else putchar('l');
 		return;
 		}
 
@@ -462,16 +467,16 @@ zzzcode( p, c ) register NODE *p; {
 
 			switch(size) {
 				case 1:
-					printf("	movb	");
+					putstr("	movb	");
 					break;
 				case 2:
-					printf("	movw	");
+					putstr("	movw	");
 					break;
 				case 4:
-					printf("	movl	");
+					putstr("	movl	");
 					break;
 				case 8:
-					printf("	movq	");
+					putstr("	movq	");
 					break;
 				default:
 					printf("	movc3	$%d,", size);
@@ -479,12 +484,12 @@ zzzcode( p, c ) register NODE *p; {
 			}
 			adrput(r);
 			if( p->in.op == STASG ){
-				printf(",");
+				putchar(',');
 				adrput(l);
-				printf("\n");
+				putchar('\n');
 				}
 			else
-				printf(",(sp)\n");
+				putstr(",(sp)\n");
 
 			if( r->in.op == NAME ) r->in.op = ICON;
 			else if( r->in.op == OREG ) r->in.op = REG;
@@ -514,10 +519,14 @@ NODE *dest, *src;
 	/*
 	 * Are there side effects of evaluating src?
 	 * If the derived type will not be the same size as src,
-	 * we have to use two steps.
+	 * we may have to use two steps.
 	 */
-	if (tlen(src) > tlen(dest) && tshape(src, STARREG))
-		return (0);
+	if (tlen(src) > tlen(dest)) {
+		if (tshape(src, STARREG))
+			return (0);
+		if (src->in.op == OREG && R2TEST(src->tn.rval))
+			return (0);
+		}
 
 	/*
 	 * Can we get an object of dest's type by punning src?
@@ -560,14 +569,6 @@ setregs(){ /* set up temporary registers */
 	;
 	}
 
-szty(t) TWORD t; { /* size, in registers, needed to hold thing of type t */
-#if defined(FORT) || defined(SPRECC)
-	return( (t==DOUBLE) ? 2 : 1 );
-#else
-	return( (t==DOUBLE||t==FLOAT) ? 2 : 1 );
-#endif
-	}
-
 rewfld( p ) NODE *p; {
 	return(1);
 	}
@@ -595,10 +596,23 @@ base( p ) register NODE *p; {
 
 offset( p, tyl ) register NODE *p; int tyl; {
 
-	if( tyl==1 && p->in.op==REG && (p->in.type==INT || p->in.type==UNSIGNED) ) return( p->tn.rval );
-	if( (p->in.op==LS && p->in.left->in.op==REG && (p->in.left->in.type==INT || p->in.left->in.type==UNSIGNED) &&
-	      (p->in.right->in.op==ICON && p->in.right->in.name[0]=='\0')
-	      && (1<<p->in.right->tn.lval)==tyl))
+	if( tyl==1 &&
+	    p->in.op==REG &&
+	    (p->in.type==INT || p->in.type==UNSIGNED) )
+		return( p->tn.rval );
+	if( p->in.op==LS &&
+	    p->in.left->in.op==REG &&
+	    (p->in.left->in.type==INT || p->in.left->in.type==UNSIGNED) &&
+	    p->in.right->in.op==ICON &&
+	    p->in.right->in.name[0]=='\0' &&
+	    (1<<p->in.right->tn.lval)==tyl)
+		return( p->in.left->tn.rval );
+	if( tyl==2 &&
+	    p->in.op==PLUS &&
+	    (p->in.left->in.type==INT || p->in.left->in.type==UNSIGNED) &&
+	    p->in.left->in.op==REG &&
+	    p->in.right->in.op==REG &&
+	    p->in.left->tn.rval==p->in.right->tn.rval )
 		return( p->in.left->tn.rval );
 	return( -1 );
 	}
@@ -658,10 +672,6 @@ canaddr( p ) NODE *p; {
 
 	if( o==NAME || o==REG || o==ICON || o==OREG || (o==UNARY MUL && shumul(p->in.left)) ) return(1);
 	return(0);
-	}
-
-shltype( o, p ) register NODE *p; {
-	return( o== REG || o == NAME || o == ICON || o == OREG || ( o==UNARY MUL && shumul(p->in.left)) );
 	}
 
 flshape( p ) register NODE *p; {
@@ -730,7 +740,7 @@ shumul( p ) register NODE *p; {
 	}
 
 adrcon( val ) CONSZ val; {
-	printf( "$" );
+	putchar( '$' );
 	printf( CONFMT, val );
 	}
 
@@ -742,7 +752,7 @@ conput( p ) register NODE *p; {
 		return;
 
 	case REG:
-		printf( "%s", rnames[p->tn.rval] );
+		putstr( rnames[p->tn.rval] );
 		return;
 
 	default:
@@ -773,12 +783,12 @@ adrput( p ) register NODE *p; {
 
 	case ICON:
 		/* addressable value of the constant */
-		printf( "$" );
+		putchar( '$' );
 		acon( p );
 		return;
 
 	case REG:
-		printf( "%s", rnames[p->tn.rval] );
+		putstr( rnames[p->tn.rval] );
 		return;
 
 	case OREG:
@@ -787,18 +797,18 @@ adrput( p ) register NODE *p; {
 			register int flags;
 
 			flags = R2UPK3(r);
-			if( flags & 1 ) printf("*");
-			if( flags & 4 ) printf("-");
+			if( flags & 1 ) putchar('*');
+			if( flags & 4 ) putchar('-');
 			if( p->tn.lval != 0 || p->in.name[0] != '\0' ) acon(p);
 			if( R2UPK1(r) != 100) printf( "(%s)", rnames[R2UPK1(r)] );
-			if( flags & 2 ) printf("+");
+			if( flags & 2 ) putchar('+');
 			printf( "[%s]", rnames[R2UPK2(r)] );
 			return;
 			}
 		if( r == AP ){  /* in the argument region */
 			if( p->tn.lval <= 0 || p->in.name[0] != '\0' ) werror( "bad arg temp" );
 			printf( CONFMT, p->tn.lval );
-			printf( "(ap)" );
+			putstr( "(ap)" );
 			return;
 			}
 		if( p->tn.lval != 0 || p->in.name[0] != '\0') acon( p );
@@ -808,7 +818,7 @@ adrput( p ) register NODE *p; {
 	case UNARY MUL:
 		/* STARNM or STARREG found */
 		if( tshape(p, STARNM) ) {
-			printf( "*" );
+			putchar( '*' );
 			adrput( p->in.left);
 			}
 		else {	/* STARREG - really auto inc or dec */
@@ -819,10 +829,10 @@ adrput( p ) register NODE *p; {
 			p->in.left->in.op = OREG;
 			if( p->in.op == INCR ) {
 				adrput( p->in.left );
-				printf( "+" );
+				putchar( '+' );
 				}
 			else {
-				printf( "-" );
+				putchar( '-' );
 				adrput( p->in.left );
 				}
    tbl */
@@ -861,7 +871,7 @@ acon( p ) register NODE *p; { /* print out a constant */
 #ifndef FLEXNAMES
 		printf( "%.8s", p->in.name );
 #else
-		printf( "%s", p->in.name );
+		putstr( p->in.name );
 #endif
 		}
 	else {
@@ -1079,6 +1089,22 @@ optim2( p ) register NODE *p; {
 
 		break;
 
+	case ASSIGN:
+		/*
+		 * Conversions are equivalent to assignments;
+		 * when the two operations are combined,
+		 * we can sometimes zap the conversion.
+		 */
+		r = p->in.right;
+		l = p->in.left;
+		if ( r->in.op == SCONV &&
+		     !mixtypes(l, r) &&
+		     tlen(l) == tlen(r) ) {
+				p->in.right = r->in.left;
+				r->in.op = FREE;
+			}
+		break;
+
 		}
 	}
 
@@ -1275,7 +1301,26 @@ fixpre(p) NODE *p; {
 	if( ty != LTYPE ) fixpre( p->in.left );
 }
 
+strip(p) register NODE *p; {
+	NODE *q;
+
+	/* strip nodes off the top when no side effects occur */
+	for( ; ; ) {
+		switch( p->in.op ) {
+		case SCONV:			/* remove lint tidbits */
+			q = p->in.left;
+			ncopy( p, q );
+			q->in.op = FREE;
+			break;
+		/* could probably add a few more here */
+		default:
+			return;
+			}
+		}
+	}
+
 myreader(p) register NODE *p; {
+	strip( p );		/* strip off operations with no side effects */
 	canon( p );		/* expands r-vals for fields */
 	walkf( p, hardops );	/* convert ops to function calls */
 	walkf( p, optim2 );
