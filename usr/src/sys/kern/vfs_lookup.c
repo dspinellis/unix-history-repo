@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.13	84/07/08	*/
+/*	vfs_lookup.c	6.14	84/07/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -1070,8 +1070,9 @@ blkatoff(ip, offset, res)
  *
  * NB: does not handle corrupted directories.
  */
-dirempty(ip)
+dirempty(ip, parentino)
 	register struct inode *ip;
+	ino_t parentino;
 {
 	register off_t off;
 	struct dirtemplate dbuf;
@@ -1101,7 +1102,9 @@ dirempty(ip)
 		 * 1 implies ".", 2 implies ".." if second
 		 * char is also "."
 		 */
-		if (dp->d_namlen == 1 || dp->d_name[1] == '.')
+		if (dp->d_namlen == 1)
+			continue;
+		if (dp->d_name[1] == '.' && dp->d_ino == parentino)
 			continue;
 		return (0);
 	}
