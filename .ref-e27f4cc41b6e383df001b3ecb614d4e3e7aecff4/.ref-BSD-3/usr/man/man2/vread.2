@@ -1,0 +1,110 @@
+.UC
+.TH VREAD 2
+.SH NAME
+vread \- read virtually
+.SH SYNOPSIS
+\fBvread(fildes, buffer, nbytes)\fR
+.br
+\fBchar *buffer;\fR
+.SH DESCRIPTION
+A file descriptor is a word returned from a successful
+.I open,
+.I creat,
+.I dup
+or
+.I pipe
+call.
+.I Buffer
+is the location of
+.I nbytes
+contiguous bytes into which the input will be placed.
+It is not guaranteed that all
+.I nbytes
+will be read (see
+.I read
+(2)).
+In particular, if the returned value is 0, then end-of-file has been reached.
+.PP
+Unlike
+.I read
+(2),
+.I vread
+does not necessarily or immediately fetch the data requested from
+.I fildes,
+but merely insures that the data will be fetched from the file descriptor
+.I "sometime before"
+the first reference to the data, at the system's discretion.
+Thus
+.I vread
+allows the system, among other possibilities,
+to choose to read data on demand,
+with whatever granularity is allowed by the memory management hardware,
+or to just read it in immediately as with
+.I read.
+A companion
+.I vwrite
+(2) call may be used with
+.I vread
+to provide an efficient mechanism for updating large files.
+The behavior of
+.I vread
+if other processes are writing to
+.I fildes
+is not defined.
+.PP
+Both the address of
+.I buffer
+and the current offset in
+.I fildes
+(as told by
+.I tell
+(2)) must be aligned to a multiple of VALSIZ (defined in ``<valign.h>'').
+The library routine
+.I valloc
+(3) allocates properly aligned blocks from the free list.
+.PP
+Note for non-virtual systems: the
+.I vread
+system call can be simulated (exactly, if less efficiently) by
+.I read.
+If the unit on which a
+.I vread
+is done is not capable of supporting efficient demand initialization
+(e.g. a terminal or a pipe), then the system may choose to treat a call to
+.I vread
+as if it were a call to
+.I read
+at its discretion.
+.SH SEE ALSO
+read(2), write(2), vwrite (2), valloc(3)
+.SH DIAGNOSTICS
+A 0 is returned at end-of-file.  If the read was otherwise unsuccessful,
+a -1 is returned.  Physical I/O errors, non-aligned or bad buffer addresses,
+preposterous
+.I nbytes,
+file descriptor not that of an input file, and file offset not properly
+aligned can all generate errors.
+.SH BUGS
+You can't
+.I close
+a file descriptor which you have
+.I vread
+from while there are still pages in the file which haven't been fetched by the
+system into your address space.  In no case can a file descriptor which had
+such pages at the point of a
+.I vfork
+be closed during the
+.I vfork.
+.PP
+The system refuses to truncate a file to which any process has a pending
+.I vread.
+.PP
+There is no primitive inverting
+.I vread
+to release the binding
+.I vread
+sets up so that the file may be closed.
+This can be only be done, clumsily, by reading another (plain) file onto the
+buffer area, or pulling the break back with
+.IR break (2)
+to completely release the pages.

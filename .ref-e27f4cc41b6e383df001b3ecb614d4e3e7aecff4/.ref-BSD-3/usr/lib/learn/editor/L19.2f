@@ -1,0 +1,27 @@
+#print
+There is a file "counties" in this directory.
+Try deleting the first five lines of the file.
+Then type "ready".
+#create Ref
+Morris
+Warren
+Union
+Somerset
+Hunterdon
+#create counties
+Bergen
+Passaic
+Sussex
+Hudson
+Essex
+Morris
+Warren
+Union
+Somerset
+Hunterdon
+#user
+#cmp counties Ref
+#log
+#next
+20.1a 10
+20.2a 5

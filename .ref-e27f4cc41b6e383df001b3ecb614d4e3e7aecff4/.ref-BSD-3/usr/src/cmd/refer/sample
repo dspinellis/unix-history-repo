@@ -1,0 +1,1737 @@
+%A A. V. Aho
+%A C. Beeri
+%A J. D. Ullman
+%T The  Theory of Joins in Relational Databases
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D 1977
+
+%A A. V. Aho
+%A Y. Sagiv
+%A J. D. Ullman
+%T Equivalence of Relational Expressions
+%O unpublished
+%D 1977
+
+%A W. W. Armstrong
+%T Dependency Structures of Data Base Relationships
+%J Proc. IFIP 74
+%I North Holland
+%D 1974
+%P 580-583
+
+%A P. A. Bernstein
+%A C. Beeri
+%T An Algorithmic Approach to Normalization of Relational Database Schemes
+%R TR CSRG-7B
+%I Computer Science Research Group, University of Toronto
+%D September 1976
+
+%A C. Beeri
+%A R. Fagin
+%A J. H. Howard
+%T A Complete Axiomatization for Functional and Multivalued Dependencies
+%R RJ1977
+%I IBM, San Jose, California
+%D 1977
+
+%A A. K. Chandra
+%A P. M. Merlin
+%T Optimal Implementation of Conjunctive Queries in Relational Data Bases
+%J Proc. 9th ACM Symp. on Theory of Computing
+%D 1976
+%P 77-90
+
+%A E. F. Codd
+%T A Relational Model for Large Shared Data Bases
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 13
+%N 6
+%D June 1970
+%P 377-387
+
+%A E. F. Codd
+%T Further Normalization of the Data Base Relational Model
+%B Data Base Systems
+%E R. Rustin
+%I Prentice Hall
+%C Englewood Cliffs, N. J
+%D 1972
+%P 33-64
+
+%A E. F. Codd
+%T Relational Completeness of Data Base Sublanguages
+%B Data Base Systems
+%E R. Rustin
+%I Prentice-Hall
+%C Englewood Cliffs, N. J
+%D May 1971
+%P 65-98
+
+%A S. A. Cook
+%T The Complexity of Theorem Proving Procedures
+%J Proc. 3rd ACM Symp. on Theory of Computing
+%D May 1971
+%P 151-158
+
+%A C. J. Date
+%T An Introduction to Database Systems
+%I Addison-Wesley
+%C Reading, Mass
+%D 1975
+
+%A C. Delobel
+%T Contributions Theoretiques a la Conception d'un Systeme d'informations
+%O Ph. D. thesis, Univ. of Grenoble, Oct
+%D 1973
+
+%A R. Fagin
+%T Multivalued Dependencies and a New Normal Form for Relational Databases
+%J ACM Trans. Data Base Systems
+%V 2
+%N 3
+%D September 1977
+%P 262-278
+
+%A P. A. V. Hall
+%T Optimization of a Single Relational Expression in a Relational
+Database System
+%J IBM J. Research and Development
+%D May 1976
+%P 244-257
+
+%A R. M. Karp
+%T Reducibility Among Combinatorial Problems
+%B Complexity of Computer Computations
+%E R. E. Miller and J. W. Thatcher
+%I Plenum Press
+%C New York
+%D 1972
+%P 85-104
+
+%A C. L. Lucchesi
+%A S. L. Osborn
+%T Candidate Keys for Relations
+%J J. Comp. Sys. Sci.
+%O (To appear; available from Department of Computer Science, University of Waterloo).
+%D 1976
+
+%A J. Minker
+%T Performing Inferences over Relational Databases
+%R TR363, Department of Computer Science
+%I University of Maryland
+%D March 1975
+
+%A R. M. Pecherer
+%T Efficient Evaluation of Expressions in a Relational Algebra
+%J Proc. ACM Pacific Conf.
+%D April 1975
+%P 44-49
+
+%A F. P. Palermo
+%T A Database Search Problem
+%B Information Systems COINS IV
+%E J. T. Tou
+%I Plenum Press
+%C New York
+%D 1974
+
+%A J. Rissanen
+%T Independent Components of Relations
+%R RJ1899, IBM, San Jose, California
+%D 1977
+
+%A Y. Sagiv
+%A M. Yannakakis
+%T unpublished
+
+%A J. M. Smith
+%A P. Y.\(hyT. Chang
+%T Optimizing the Performance of a Relational Algebra Database Interface
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 18
+%N 10
+%D October 1975
+
+%A M. Stonebraker
+%A L. A. Rowe
+%T Observations on Data Manipulation Languages and their
+Embedding in General Purpose Programming Languages
+%R TR UCB/ERL M77-53
+%D July 1977
+%I University of California, Berkeley
+
+%A E. Wong
+%A K. Youssefi
+%T Decomposition \(em a Strategy for Query Processing
+%J ACM Trans. Data Base Systems
+%V 1
+%N 3
+%D September 1976
+%P 223-241
+
+%A C. Zaniolo
+%T Analysis and Design of Relational Schemata for Database Systems
+%R Tech. Rept. UCLA-ENG-7769
+%I Department of Computer Science, UCLA
+%D July 1976
+
+%A M. M. Zloof
+%T Query-by-Example: the Invocation and Definition of Tables and Forms
+%J Proc. ACM International Conf. on Very Large Data Bases
+%D September 1975
+%P 1-24
+
+%A S. K. Abdali
+%T A lambda calculus model of programming languages \(em I. simple constructs
+%J J. Comp. Languages
+%V 1
+%D 1976
+%P 287-301
+
+%A S. K. Abdali
+%T A lambda calculus model of programming languages \(em II. jumps and procedures
+%J J. Comp. Languages
+%V 1
+%D 1976
+%P 303-320
+
+%A ADJ (J. A. Goguen, J. W. Thatcher, E. G. Wagner and J. B Wright)
+%T A junction between category theory and computer science, I: basic concepts and examples (Part 1)
+%R Report RC 4526
+%I IBM Research
+%C Yorktown Heights, N. Y.
+%K part1
+%D September 1973
+
+%A ADJ (J. A. Goguen, J. W. Thatcher, E. G. Wagner and J. B Wright)
+%T A junction between category theory and computer science, I: basic concepts and examples (Part 2)
+%R Report RC 5908
+%I IBM Research
+%K part2
+%C Yorktown Heights, N. Y.
+%D March 1976
+
+%A L. Ammeraal
+%T How program statements transform predicates
+%R Report IW 39/75
+%I Mathematisch Centrum
+%C Amsterdam
+%D December 1975
+
+%A L. Ammeraal
+%T On forward and backward proof rules for program verification
+%R Report IW 65/76
+%I Mathematisch Centrum
+%C Amsterdam
+%D November 1976
+
+%A E. R. Anderson
+%A F. C. Belz
+%A E. K. Blum
+%T Semanol (73) A metalanguage for programming the semantics of programming languages
+%J Acta Informatica
+%V 6
+%D 1976
+%P 109-131
+
+%A K. R. Apt
+%T Equivalence of operational and denotational semantics for a fragment of Pascal
+%R Report IW 71/76
+%I Mathematisch Centrum
+%C Amsterdam
+%D December 1976
+
+%A K. R. Apt
+%A J. W. de Bakker
+%T Exercises in denotational semantics
+%J Lecture Notes in Computer Science
+%V 45
+%D 1976
+%P 1-11
+
+%A K. R. Apt
+%A J. W. de Bakker
+%T Semantics and proof theory of Pascal procedures
+%J Lecture Notes in Computer Science
+%V 52
+%D 1977
+%P 30-44
+
+%A K. R. Apt
+%A L. G. L. T. Meertens
+%T Completeness with finite systems of intermediate assertions for recursive program schemas
+%R Report IW 84/77
+%I Mathematisch Centrum
+%C Amsterdam
+%D September 1977
+
+%A A. Arnold
+%A M. Nivat
+%T Non deterministic recursive program schemes
+%D 1977
+
+%A A. Arnold
+%A M. Nivat
+%T On nondeterministic program schemes
+%D 1977
+
+%A E. A. Ashcroft
+%A Maurice Clint
+%A C. A. R. Hoare
+%T Remarks on ``Program proving: jumps and functions by M. Clint and C. A. R. Hoare''
+%J Acta Informatica
+%V 6
+%D 1976
+%P 317-318
+
+%A J. W. Backus
+%A R. J. Beeber
+%A S. Best
+%A R. Goldberg
+%A L. M. Haibt
+%A H. L. Herrick
+%A R. A. Nelson
+%A D. Sayre
+%A P. B. Sheridan
+%A H. Stern
+%A I. Ziller
+%A R. A. Hughes
+%A R. Nutt
+%T The Fortran automatic coding system
+%J Western Computer Proceedings
+%D 1957
+%P 188-198
+
+%A J. P. Banatre
+%T Producing optimised code for coercions
+%J Information Processing Letters
+%V 6
+%N 2
+%D April 1977
+%P 56-59
+
+%A Henk Barendregt
+%T A global representation of the recursive functions in the $lambda -$claculus
+%J Theor. Comp. Sci.
+%V 3
+%D 1976
+%P 225-242
+
+%A H. Bekic
+%T Towards a mathematical theory of processes
+%R TR 25.125
+%I IBM Laboratory
+%C Vienna
+%D December 1971
+
+%A G. Berry
+%T Bottom-up computation of recursive programs
+%R Rapport de Recherche No 133
+%I IRIA
+%C Rocquencourt, France
+%D September 1975
+
+%A Gerard Berry
+%A Bruno Courcelle
+%T Program equivalence and canonical forms in stable discrete interpretations
+%E S. Michaelson and R. Milner
+%B Automata Languages and Programming , Third International Colloquium
+%I Edinburgh University Press
+%D July 1976
+%P 168-188
+
+%A Gerard Berry
+%A J. J. Levy
+%T Minimal and optimal computations of recursive programs
+%J J. Assoc. Comp. Mach.
+%K acm jacm
+%D to appear
+
+%A Richard Bird
+%T Programs and Machines
+%I John Wiley
+%C New York, N. Y.
+%D 1976
+
+%A A. Blikle
+%T Programs with subscripted variables
+%J Bulletin de L'Academie Polonaise des Sciences, Serie des sciences math., astr. et phys.
+%V XIX
+%N 9
+%D 1971
+%P 853-857
+
+%A C. Bohm
+%T The CUCH as a formal and description language
+%E T. B. Steel, Jr.
+%B Formal language description languages for computer programming
+%I North-Holland
+%C Amsterdam
+%D 1966
+%P 179-197
+
+%A H. J. Boom
+%T Extended type checking
+%R Report IW 60/76
+%I Mathematisch Centrum
+%C Amsterdam
+%D September 1976
+
+%A S. R. Bourne
+%A A. D. Birrell
+%A I. Walker
+%T Algol 68C Reference Manual
+%I Computer Laboratory, Cambridge University
+%C Cambridge, England
+%D 1975
+
+%A R. S. Boyer
+%A J. S. Moore
+%T A computer proof of the correctness of a simple optimizing compiler for expressions
+%R Tech. Rep. 5
+%I SRI
+%C Menlo Park, Ca.
+%D January 1977
+
+%A J. M. Boyle
+%A A. A. Grau
+%T An algorithmic semantics for Algol 60 identifier denotation
+%J J. Assoc. Comp. Mach.
+%K acm jacm
+%V 17
+%N 2
+%D April 1970
+%P 361-382
+
+%A R. M. Burstall
+%T Semantics of assignment
+%E Ella Dale and Donald Michie
+%B Machine Intelligence 2
+%I American Elsevier
+%C New York
+%D 1968
+%P 3-20
+
+%A R. M. Burstall
+%T Proving properties of programs by structural induction
+%J Comp. J.
+%P 41-48
+
+%A R. M. Burstall
+%T Some techniques for proving properties of programs which alter data structures
+%B Machine Intelligence
+
+%A E. M. Clarke, Jr.
+%T Program invariants as fixed points
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D October 1977
+%P 18-29
+
+%A Maurice Clint
+%T Program proving: coroutines
+%J Acta Informatica
+%V 2
+%N 1
+%D 1973
+%P 50-63
+
+%A Maurice Clint
+%A C. A. R. Hoare
+%T Program proving:jumps and functions
+%J Acta Informatica
+%V 1
+%D 1972
+%P 214-224
+%O see also Ashcroft, Clint and Hoare (1976)
+
+%A S. A. Cook
+%T Soundness and completeness of an axiom system for program verification
+%J SIAM J. Computing
+%D to appear
+
+%A S. A. Cook
+%A D. C. Oppen
+%T An assertion language for data structures
+%J Proc. 2nd ACM Symp. on Principles of Programming Languages
+%D January 1975
+%P 160-166
+
+%A D. C. Cooper
+%T Program scheme equivalences and second-order logic
+%B Machine Intelligence
+%P 3-15
+
+%A Bruno Courcelle
+%T On the definition of classes of interpretations
+%R Rapport de Recherche No 231
+%I IRIA
+%C Rocquencourt, France
+%D May 1977
+
+%A B. Courcelle
+%A I. Guessarian
+%T On some classes of interpretations
+%R Rapport de Recherche No 253
+%I IRIA
+%C Rocquencourt, France
+%D September 1977
+
+%A Bruno Courcelle
+%A Jean Vuillemin
+%T Completeness results for the equivalence of recursive schema
+%J J. Comp. Sys. Sci.
+%V 12
+%D 1976
+%P 179-197
+
+%A Karel Culik II
+%T A model for the formal definition of programming languages
+%J Int. J. Comp. Math.
+%V 3
+%D 1973
+%P 315-345
+
+%A R. J. Cunningham
+%A M. E. J. Guilford
+%T A note on the semantic definition of side effects
+%J Information Processing Letters
+%V 4
+%N 5
+%D February 1976
+%P 118-120
+
+%A Ole-Johan Dahl
+%A Bjorn Myhrhaug
+%A Kristen Nygaard
+%T Simula 67: common base language
+%R Publication S-22
+%I Norwegian Computing Centre
+%C Oslo, Norway
+%D October 1970
+
+%A J. W. de Bakker
+%T Semantics of programming languages
+%E J. T. Tou
+%B Advances in Information Systems Science, Vol. 2
+%I Plenum Press
+%C New York, N. Y.
+%D 1969
+%P 173-227
+
+%A J. W. de Bakker
+%T Recursive Procedures
+%I Mathematical Centre Tracts 24, Mathematisch Centrum
+%C Amsterdam
+%D 1971
+
+%A J. W. de Bakker
+%T Recursion, induction and symbol manipulation
+%B Informatica Symposium 1971
+%I Mathematisch Centre Tracts 25, Mathematisch Centrum
+%D 1971
+
+%A J. W. de Bakker
+%T Axiom systems for simple assignment statements
+%J Lecture Notes in Mathematics
+%V 188
+%D 1971
+%P 1-22
+
+%A J. W. de Bakker
+%T A property of linear conditionals
+%J Lecture Notes in Mathematics
+%V 188
+%D 1971
+%P 23-27
+
+%A J. W. de Bakker
+%T The fixpoint approach in semantics: theory and applications
+%E J. W. de Bakker
+%B Foundations of Computer Science
+%I Mathematical Centre Tracts 63
+%C Amsterdam
+%D 1975
+%P 3-53
+
+%A J. W. de Bakker
+%T Least fixed points revisited
+%J Theor. Comp. Sci.
+%V 2
+%D 1976
+%P 155-181
+
+%A J. W. de Bakker
+%A J. W. de Bakker
+%T Fixed point semantics and Dijkstra's fundamental invariance theorem
+%R Report IW 29/76
+%I Mathematisch centrum
+%C Amsterdam
+%D January 1976
+
+%A J. W. de Bakker
+%T Correctness proofs for assignment statements
+%R Report IW 55/76
+%I Mathematisch Centrum
+%C Amsterdam
+%D 1976
+
+%A J. W. de Bakker
+%T Semantics and the foundations of program proving
+%E B. Gilchrist
+%B Information Processing 77
+%I North-Holland
+%C Amsterdam
+%D 1977
+%P 279-284
+
+%A J. W. de Bakker
+%T Recursive programs as predicate transformers
+%E E. Neuhold
+%B IFIP Working Conference on the Formal Description of Programming Concepts
+%I North-Holland
+%C Amsterdam
+%D to appear
+
+%A J. W. de Bakker
+%A L. G. L. T. Meertens
+%T On the completeness of the inductive assertion method
+%J J. Comp. Sys. Sci.
+%V 11
+%D 1975
+%P 323-357
+
+%A J. W. de Bakker
+%A Dana Scott
+%T A theory of programs
+%R unpublished
+%D August 1969
+
+%A Mariangiola Dezani-Ciancaglini
+%A Maddalena Zacchi
+%T Application of Church-Rosser properties to increase the parallelism and efficiency of algorithms
+%J Lecture Notes in Computer Science
+%V 14
+%D 1974
+
+%A E. W. Dijkstra
+%T A Discipline of Programming
+%I Prentice Hall
+%C Englewood Cliffs, N. J.
+%D 1976
+
+%A J. E. Donahue
+%T The mathematical semantics of axiomatically defined programming language constructs
+%E G. Huet and G. Kahn
+%B Proving and Improving Programs
+%I IRIA
+%C Rocquencourt, France
+%D July 1975
+%P 353-367
+
+%A J. E. Donahue
+%T Complementary Definitions of Programming Language Semantics
+%J Lecture Notes in Computer Science
+%V 42
+%D 1976
+
+%A J. E. Donahue
+%T Locations considered unnecessary
+%J Acta Informatica
+%V 8
+%D 1977
+%P 221-242
+
+%A H. Egli
+%T A mathematical model for non-deterministic computations
+%D September 1975
+
+%A Herbert Egli
+%A Robert L. Constable
+%T Computability concepts for programming language semantics
+%J Theor. Comp. Sci.
+%V 2
+%D 1976
+%P 133-145
+
+%A G. W. Ernst
+%T Rules of inference for procedure calls
+%J Acta Informatica
+%V 8
+%D 1977
+%P 145-152
+
+%A R. W. Floyd
+%T Assigning meanings to programs
+%E J. T. Schwartz
+%B Mathematical Aspects of Computer Science, Proceedings of a Symposium in Applied Mathematics, Vol. 19
+%I American Math. Soc.
+%C Providence, R. I.
+%D 1967
+%P 19-32
+
+%A Nissim Francez
+%A Boris Klebansky
+%A Amir Pnueli
+%T Backtracking in recursive computations
+%J Acta Informatica
+%V 8
+%D 1977
+%P 125-144
+
+%A Jan V. Garwick
+%T The definition of programming languages by their compilers
+%E T. B. Steel, Jr.
+%B Formal Language Description Languages for Computer Programming
+%I North-Holland
+%C Amsterdam
+%D 1966
+%P 139-147
+
+%A Michael Gordon
+%T Operational reasoning and denotational semantics
+%E G. Huet and G. Kahn
+%B Proving and Improving Programs
+%I IRIA
+%C Rocquencourt, France
+%D July 1975
+%P 83-98
+
+%A G. A. Gorelick
+%T A complete axiomatic system for proving assertions about recursive and nonrecursive programs
+%R Tech. Rep. 75
+%I Department of Computer Science, University of Toronto
+%D January 1975
+
+%A David Gries
+%T Assignment to subscripted variables
+%R TR 77-305
+%I Department of Computer Science, Cornell University
+%D September 1976
+
+%A David Gries
+%T An illustration of current ideas on the derivation of correctness proofs and correct programs
+%J IEEE Trans. on Software Engineering
+%V SE-2
+%N 4
+%D December 1976
+%P 238-244
+
+%A David Gries
+%A Narain Gehani
+%T Some ideas on data types in high level languages
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 20
+%N 6
+%D July 1976
+%P 414-420
+
+%A D. Grune
+%T A view of coroutines
+%R Report IW 63/76
+%I Mathematisch Centrum
+%C Amsterdam
+%D November 1976
+
+%A Irene Guessarian
+%T Semantic equivalence of program schemes and its syntactic characterization
+%E S. Michaelson and R. Milner
+%B Automata, Languages and Programming, Third International Colloquium
+%I Edinburgh University Press
+%D July 1976
+%P 189-200
+
+%A I. Guessarian
+%T Sur quelques applications de la semantique algebrique des schemas recursifs polyadiques
+%D 1977
+
+%A John Guttag
+%T Abstract data types and the development of data structures
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 20
+%N 6
+%D July 1976
+%P 396-404
+
+%A J. V. Guttag
+%A Ellis Horowitz
+%A D. R. Musser
+%T Abstract data types and software validation
+%R Report ISI/RR-76-48
+%I Information Sciences Institute, University of Southern California
+%C Los Angeles, Ca.
+%D August 1976
+
+%A J. V. Guttag
+%A Ellis Horowitz
+%A D. R. Musser
+%T The design of data type specifications
+%R Report ISI/RR-76-49
+%I Information Sciences Institute, Univeristy of Southern California
+%C Los Angeles, Ca.
+%D November 1976
+
+%A D. Harel
+%T Arithmetical completeness in logics of programs
+%D September 1977
+
+%A David Harel
+%T On the correctness of regular deterministic programs; a unifying survey
+%D November 1977
+
+%A D. Harel
+%T Complete axiomatization of properties of recursive programs (extended abstract)
+%D November 1977
+
+%A David Harel
+%A Amir Pnueli
+%A Jonathan Stavi
+%T A complete axiomatic system for proving deductions about recursive programs
+%J Ninth ACM Symp. Theory of Computing
+%D May 1977
+%P 249-260
+
+%A D. Harel
+%A V. R. Pratt
+%T Nondeterminism in logics of programs
+%J Proc. 5th ACM Symp. on Principles of Programming Languages
+%D January 1978
+
+%A William Harrison
+%T Formal semantics of a schematic intermediate language
+%R Report RC 6271
+%I IBM Research
+%C Yorktown Heights, N. Y.
+%D November 1976
+
+%A R. Haskell
+%T Efficient implementation of a class of recursively defined functions
+%J Comp. J.
+%V 18
+%N 1
+%D 1975
+%P 23-29
+
+%A Peter Henderson
+%A J. H. Morris, Jr.
+%T A lazy evaluator
+%J Proc. 3rd ACM Symp. on Principles of Programming Languages
+%D January 1976
+%P 95-103
+
+%A M. C. B. Hennessy
+%T Parameter passing mechanisms and non-determinism
+
+%A M. C. B. Hennessy
+%A E. A. Ashcroft
+%T The semantics of nondeterminism
+%R Report CS-76-17
+%I Department of Computer Science, University of Waterloo
+%D April 1976
+
+%A C. A. R. Hoare
+%T An axiomatic basis for computer programming
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 12
+%N 10
+%D October 1969
+%P 576-580,583
+
+%A C. A. R. Hoare
+%T Procedures and parameters: an axiomatic approach
+%J Lecture Notes in Mathematics
+%V 188
+%D 1971
+%P 102-116
+
+%A C. A. R. Hoare
+%T Proof of correctness of data representations
+%J Acta Informatica
+%V 1
+%D 1972
+%P 271-281
+
+%A C. A. R. Hoare
+%T Hints on programming language design
+%O Invited address at ACM Symposium on Principles of Programming Languages.
+%D October 1973
+
+%A C. A. R. Hoare
+%T Some properties of non-deterministic computations
+
+%A C. A. R. Hoare
+%A P. E. Lauer
+%T Consistent and complementary formal theories of the semantics of programming languages
+%J Acta Informatica
+%V 3
+%D 1974
+%P 135-153
+
+%A C. M. Hoffman
+%T Design and correctness of a compiler for Lucid
+%R Research Report CS-76-20
+%I Computer Science Department, University of Waterloo
+%D May 1976
+
+%A C. M. Hoffman
+%A L. H. landweber
+%T A completeness theorem for straight-line programs with structured variables
+%J J. Assoc. Comp. Mach.
+%K acm jacm
+%V 23
+%N 1
+%D January 1976
+%P 203-220
+
+%A Chiharu Hosono
+%A Masahiko Sato
+%T The retracts in $P omega$ do not form a continuous lattice \(em a solution to Scott's problem
+%J Theor. Comp. Sci.
+%V 4
+%D 1977
+%P 137-142
+
+%A Gerard Huet
+%T Confluent Reductions: Abstract Properties and Applications to Term Rewriting Systems
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D October 1977
+%P 30-45
+
+%A Gerard Huet
+%A Bernard Lang
+%T Program transformations in classes of interpretations
+%O Lecture Notes
+%D May 1976
+
+%A Shigeru Igarashi
+%T Semantics of Algol-like statements
+%J Lecture Notes in Mathematics
+%V 188
+%D 1971
+%P 117-177
+
+%A Shigeru Igarashi
+%A R. L. London
+%A D. C. Luckham
+%T Automatic program verification I: a logical basis and its implementation
+%J Acta Informatica
+%V 4
+%D 1975
+%P 145-182
+
+%A Kurt Jensen
+%T An investigation into different semantic approaches
+%R Report DAIMI PB-61
+%I Department of Computer Science, University of Aarhus
+%D June 1976
+
+%A Gilles Kahn
+%T An approach to systems correctness
+
+%A Gilles Kahn
+%T The semantics of a simple language for parallel programming
+%E J. L. Rosenfeld
+%B Information Processing 74
+%I North-Holland
+%C Amsterdam
+%D 1974
+%P 471-475
+
+%A Gilles Kahn
+%A D. B. MacQueen
+%T Coroutines and networks of parallel processes
+%E B. Gilchrist
+%B Information Processing 77
+%I North-Holland
+%C Amsterdam
+%D 1977
+%P 993-998
+
+%A D. M. Kaplan
+%T Some completeness results in the mathematical theory of computation
+%J J. Assoc. Comp. Mach.
+%K acm jacm
+%V 15
+%N 1
+%D January 1968
+%P 124-134
+
+%A R. M. Keller
+%T Denotational models for parallel programs with indeterminate operators
+%E E. Neuhold
+%B IFIP Working Conference on the Formal Description of Programming Concepts
+%I North-Holland
+%C Amsterdam
+%D to appear
+
+%A D. E. Knuth
+%A P. B. Bendix
+%T Simple word problems in universal algebras
+%E J. Leech
+%B Computational Problems in Abstract Algebra
+%I Pergamon Press
+%C Oxford
+%D 1970
+%P 263-297
+
+%A D. E. Knuth
+%A L. Trabb Pardo
+%T Early development of programming languages
+%B Encyclopedia of Computer Science and Technology, Vol. 7
+%I Marcel Dekker
+%C New York, N. Y.
+%D 1977
+%P 419-493
+%R STAN-CS-76-562
+
+%A J. Kral
+%T On the equivalence of modes and the equivalence of finite automata
+%J ALGOL Bulletin
+%N 35
+%D March 1973
+%P 34-35
+
+%A P. J. Landin
+%T The mechanical evaluation of expressions
+%J Comp. J.
+%V 6
+%N 4
+%D January 1964
+%P 308-320
+
+%A P. J. Landin
+%T A correspondence between Algol 60 and Church's lambda-notation
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 8
+%N 2,3
+%D February and March 1965
+%P 89-101 and 158-165
+
+%A P. J. Landin
+%T A formal description of Algol 60
+%E T. B. Steel, Jr.
+%B Formal Language Description Languages for Computer Programming
+%I North-Holland
+%C Amsterdam
+%D 1966
+%P 266-294
+
+%A P. J. Landin
+%T The next 700 programming languages
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 9
+%N 3
+%D March 1966
+%P 157-166
+
+%A P. J. Landin
+%T A $lambda -$calculus approach
+%E L. Fox
+%B Advances in Programming and Non-numerical Computation
+%I Pergammon Press
+%C Oxford
+%D 1966
+%P 97-141
+
+%A Hans Langmaack
+%T On correct procedure parameter transmission in higher programming languages
+%J Acta Informatica
+%V 2
+%D 1973
+%P 110-142
+
+%A D. Lankford
+%T On deciding word problems by rewrite rule simplifiers
+%D September 1977
+
+%A H. F. Ledgard
+%T A model for type checking \(em with an application to Algol 60
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 15
+%N 11
+%D November 1972
+%P 956-
+
+%A J. A. N. Lee
+%T The formal definition of the Basic language
+%J Comp. J.
+%V 15
+%N 1
+%D February 1972
+%P 37-41
+
+%A D. J. Lehmann
+%A M. B. Smyth
+%T Data types
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D October 1977
+%P 7-12
+
+%A G. T. Ligler
+%T Proof rules, mathematical semantics and programming language design
+%D 1975
+
+%A G. T. Ligler
+%T Surface properties of programming language constructs
+%J Theor. Comp. Sci.
+%D to appear
+
+%A R. J. Lipton
+%T A necessary and sufficient condition for the existence of Hoare logics
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D October 1977
+%P 1-6
+
+%A R. L. London
+%T A bibliography on proving the correctness of programs
+%E B. Meltzer
+%E D. Michie
+%B Machine Intelligence 5
+%I Edinburgh University Press, Edinburgh, and American Elsevier, New York, N. Y.
+%D 1970
+%P 569-580
+
+%A R. L. London
+%A M. Shaw
+%A W. A. Wulf
+%T Abstraction and verification in Alphard: a symbol table example
+%D December 1976
+
+%A Peter Lucas
+%T On the semantics of programming languages and software devices
+%E R. Rustin
+%B Formal Semantics of Programming Languages
+%I Prentice-Hall
+%C Englewood Cliffs, N. J.
+%D 1972
+%P 41-57
+
+%A P. Lucas
+%T Formal definition of programming languages and systems
+%B Information Processing 71
+%I North-Holland
+%C Amsterdam
+%D 1971
+%P 291-297
+
+%A Peter Lucas
+%A Kurt Walk
+%T On the formal definition of PL/I
+%J Annual Review of Automatic Programming
+%V 6
+%N 3
+%D 1970
+%P 105-182
+
+%A D. C. Luckham
+%A D. M. R. Park
+%A M. S. Paterson
+%T On formalized computer programs
+%J J. Comp. Sys. Sci.
+%V 4
+%D 1970
+%P 220-249
+
+%A D. C. Luckham
+%A Norihisa Suzuki
+%T Automatic program verification V: verification oriented proof rules for arrays, records and pointers
+%R Report STAN-CS-76-549
+%D March 1976
+
+%A D. C. Luckham
+%A Norihisa Suzuki
+%T Proof of termination within a weak logic of programs
+%J Acta Informatica
+%V 8
+%D 1977
+%P 21-36
+
+%A M. E. Majster
+%T Extended data graphs, a formalism for structured data and data structures
+%J Acta Informatica
+%V 8
+%D 1977
+%P 37-59
+
+%A Zohar Manna
+%A Stephen Ness
+%A Jean Vuillemin
+%T Inductive methods for proving properties of programs
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 16
+%N 8
+%D August 1973
+%P 491-502
+
+%A Zohar Manna
+%A Jean Vuillemin
+%T Fixpoint approach to the theory of computation
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 15
+%N 7
+%D July 1972
+%P 528-536
+
+%A George Markowsky
+%T categories of chain-complete posets
+%J Theor. Comp. Sci.
+%V 4
+%D 1977
+%P 125-135
+
+%A G Markowsky
+%A B. K. Rosen
+%T Bases for chain-complete posets
+%J IBM J. Research and Development
+%V 20
+%N 2
+%D March 1976
+%P 138-147
+
+%A W. D. Maurer
+%T Induction principles for context-free languages
+%J Lecture Notes in Computer Science
+%V 1
+%D 1973
+%P 134-143
+
+%A John McCarthy
+%T Recursive functions of symbolic expressions and their computation by machine, part I
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 3
+%N 4
+%D April 1960
+%P 184-195
+
+%A John McCarthy
+%T Towards a mathematical science of computation
+%E C. M. Popplewell
+%B Information Processing 1962
+%I North-Holland
+%C Amsterdam
+%D 1963
+%P 21-28
+
+%A John McCarthy
+%T A basis for a mathematical theory of computation
+%E P. Braffort and D. Hirschberg
+%B Computer Programming and Formal Systems
+%I North-Holland
+%C Amsterdam
+%D 1963
+%P 33-70
+
+%A John McCarthy
+%T A formal description of a subset of Algol
+%E T. B. Steel, Jr.
+%B Formal Language Description Languages for Computer Programming
+%I North-Holland
+%C Amsterdam
+%D 1966
+%P 1-12
+
+%A John McCarthy
+%A James Painter
+%T Correctness of a compiler for arithmetic expressions
+%E J. T. Schwartz
+%B Proceedings of Symposia in Applied Mathematics, Volume XIX
+%I American Math. Society
+%C Providence, R. I.
+%D 1967
+%P 33-41
+
+%A M. D. McIlroy
+%T Coroutines
+%D 1968
+
+%A Robert Milne
+%T Verifying the correctness of implementations
+%D 1977
+
+%A R. E. Milne
+%T Transforming predicate transformers
+%E E. Neuhold
+%B IFIP Working Conference on the Formal Description of Programming Concepts
+%I North-Holland
+%C Amsterdam
+%D to appear
+
+%A Robin Milner
+%T Models in LCF
+%R Report STAN-CS-73-332
+%I Computer Science Department, Stanford University
+%D January 1973
+
+%A R. Milner
+%T Processes; a model of computing agents
+
+%A R. Milner
+%T Program semantics and mechanized proof
+%I Mathematical Centre Tracts 82
+%D 1976
+%P 3-44
+
+%A R. Milner
+%T LCF; a methodology for performing rigorous proofs about programs
+%B First IBM Symposium on Mathematical Foundations of Computer Science
+%I Academic and Scientific Programs, IBM Japan
+%C Tokyo
+%D October 1976
+
+%A J. H. Morris, Jr.
+%T Another recursion induction principle
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 14
+%N 5
+%D May 1971
+%P 351-354
+
+%A P. D. Mosses
+%T The mathematical semantics of Algol 60
+%R Technical Monograph PRG-12
+%I Programming Research Group, Oxford University
+%D 1974
+
+%A P. D. Mosses
+%T The semantics of semantic equations
+%J Lecture Notes in Computer Science
+%V 28
+%D 1975
+%P 409-422
+
+%A P. D. Mosses
+%T Compiler generation using denotational semantics
+%J Lecture Notes in Computer Science
+%V 45
+%D 1976
+%P 436-441
+
+%A P. D. Mosses
+%T Making denotational semantics less concrete
+%D 1977
+
+%A Maurice Nivat
+%T On some families of languages related to the Dyck language
+%J Proc. 2nd ACM Symp. on Theory of Computing
+%D May 1970
+%P 221-225
+
+%A M. Nivat
+%T On the interpretation of recursive program schemes
+%R Rapport de Recherche No 84
+%I IRIA
+%C Rocquencourt, France
+%D October 1974
+
+%A Mike O'Donnell
+%T Subtree replacement systems: a unifying theory for recursive equations, Lisp, Lucid and combinatory logic
+%J Ninth ACM Symp. Theory of Computing
+%D May 1977
+%P 295-305
+
+%A D. C. Oppen
+%A S. A. Cook
+%T Proving assertions about programs that manipulate data structures
+%J Proc. 7th ACM Symp. on Theory of Computing
+%D May 1975
+%P 107-116
+
+%A B. A. Othmer
+%T Programming language data structures: a comparative study
+%R Tech. Rep. No. 30
+%I Department of Computer Science, Rutgers University
+%D March 1974
+
+%A G. Pacini
+%T An optimal fix-point computation rule for a simple recursive language
+%R Nota Interna B73-10
+%I Consiglio Nazionale delle Ricerche, Istituto di Elaborazione della Informazione
+%C Pisa
+%D October 1973
+
+%A G. Pacini
+%A C. Montangero
+%A F. Turini
+%T Graph representation and computation rules for typeless recursive languages
+%J Lecture Notes in Computer Science
+%V 14
+%D 1974
+%P 158-169
+
+%A F. G. Pagan
+%T On interpreter oriented definitions of programming languages
+%J Comp. J.
+%V 19
+%N 2
+%D 1976
+%P 151-155
+
+%A David Park
+%T Some semantics for data structures
+%E D. Michie
+%B Machine Intelligence 3
+%I American Elsevier
+%C New York, N. Y.
+%D 1968
+%P 351-371
+
+%A David Park
+%T Fixpoint induction and proofs of program properties
+%B Machine Intelligence 5
+%D 1970
+%P 59-78
+
+%A David Park
+%T Finiteness is mu-ineffable
+%J Theor. Comp. Sci.
+%V 3
+%D 1976
+%P 173-181
+
+%A Helmut Partsch
+%A Peter Pepper
+%T A family of rules for recursion removal
+%J Information Processing Letters
+%V 5
+%N 6
+%D December 1976
+%P 174-177
+
+%A G. D. Plotkin
+%T A set-theoretical definition of application
+%R Memorandum MIP-R-95
+%I School of Artificial Intelligence, University of Edinburgh
+%D March 1972
+
+%A G. D. Plotkin
+%T Lambda-definability and logical relations
+%R Memorandum SAI-RM-4
+%I School of Artificial Intelligence, University of Edinburgh
+%D October 1973
+
+%A G. D. Plotkin
+%T Call-by-name, call-by-value and the $lambda -$calculus
+%J Theor. Comp. Sci.
+%V 1
+%D 1975
+%P 125-159
+
+%A A. Pnueli
+%T The temporal logic of programs
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D October 1977
+%P 46-57
+
+%A V. R. Pratt
+%T Semantical considerations in Floyd-Hoare logic
+%J Proc. 17th IEEE Symp. on Foundations of Computer Science
+%D October 1976
+%P 109-121
+
+%A J. C. Raoult
+%A J. Vuillemin
+%T Operational and semantic equivalence between recursive programs
+%D 1977
+
+%A J. C. Reynolds
+%T Relational and continuation semantics for a simple imperative language
+%B Seminaires IRIA: theorie des algorithmes, des langages et de la programmation
+%D 1974
+%P 51-58
+
+%A J. C. Reynolds
+%T On the relation between direct and continuation semantics
+%J Lecture Notes in Computer Science
+%V 14
+%D 1974
+%P 141-156
+
+%A J. C. Reynolds
+%T Formal semantics
+%O preliminary draft for Cosers
+%D June 1976
+
+%A J. C. Reynolds
+%T Semantics of the domain of flow diagrams
+%J J. Assoc. Comp. Mach.
+%K acm jacm
+%V 24
+%N 3
+%D July 1977
+%P 484-503
+
+%A H. G. Rice
+%T Recursion and iteration
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 8
+%N 2
+%D February 1965
+%P 114-115
+
+%A J. S. Rohl
+%T Converting a class of recursive procedures into non-recursive ones
+%J Software \(em Practice and Experience
+%V 7
+%D 1977
+%P 231-238
+
+%A B. D. Russell
+%T Implementation correctness involving a language with goto statements
+%J SIAM J. Computing
+%V 6
+%N 3
+%D September 1977
+%P 403-415
+
+%A Bruce Russell
+%T On an equivalence between continuation and stack semantics
+%J Acta Informatica
+%V 8
+%D 1977
+%P 113-123
+
+%A Andrzej Salwicki
+%T Procedures, formal computations and models
+%J Lecture Notes in Computer Science
+%V 28
+%D 1975
+%P 464-484
+
+%A J. G. Sanderson
+%T The lambda calculus, lattice theory and reflexive domains
+%D 1973
+
+%A E. Sciore
+%A A. Tang
+%T Computability theory in admissible domains
+%D 1977
+
+%A Dana Scott
+%T Outline of a mathematical theory of computation
+%J Proc. 4th Princeton Conf. on Information Sciences and Systems
+%D March 1970
+%P 169-176
+
+%A Dana Scott
+%T The lattice of flow diagrams
+%J Lecture Notes in Mathematics
+%V 188
+%D 1971
+%P 311-366
+
+%A Dana Scott
+%T Continuous lattices
+%E F. W. Lawvere
+%B Toposes, Algebraic Geometry and Logic
+%I Lecture Notes in Mathematics 274, Springer Verlag
+%C Berlin
+%D 1972
+%P 97-136
+
+%A Dana Scott
+%T Mathematical concepts in programming language semantics
+%J Proc. AFIPS SJCC
+%D 1972
+%P 225-234
+
+%A Dana Scott
+%T A simplified construction for $lambda -$calculus models
+%C Uppsala
+%D April 1973
+
+%A Dana Scott
+%T Data types as lattices
+%J SIAM J. Computing
+%V 5
+%N 3
+%D September 1976
+%P 522-587
+
+%A Dana Scott
+%T Logic and programming languages
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 20
+%N 9
+%D September 1977
+%P 634-640
+
+%A Dana Scott
+%A Christopher Strachey
+%T Towards a mathematical semantics for computer languages
+%B Proceedings of the Symposium on Computers and Automata
+%I Polytechnic Press
+%C Brooklyn, N. Y.
+%D April 1971
+%P 19-46
+
+%A Adi Shamir
+%A W. W. Wadge
+%T Data types as objects
+%J Lecture Notes in Computer Science
+%V 52
+%D 1977
+%P 465-479
+
+%A M. Shaw
+%A W. A. Wulf
+%A R. L. London
+%T Abstraction and verification in Alphard: iteration and generators
+%R Report ISI/RR-76-47
+%I Information Sciences Institute, University of Southern California
+%C Los Angeles
+%D August 1976
+
+%A M. B. Smyth
+%T Powerdomains
+%D 1977
+
+%A M. B. Smyth
+%A G. D. Plotkin
+%T The category-theoretic solution of recursive domain equations
+%J Proc. 18th IEEE Symp. on Foundations of Computer Science
+%D October 1977
+%P 13-17
+
+%A J. E. Stoy
+%T The congruence of two programming language definitions
+%J Theor. Comp. Sci.
+%D to appear
+
+%A Christopher Strachey
+%T Towards a formal semantics
+%E T. B. Steel, Jr.
+%B Formal Language Description Languages for Computer Programming
+%I North-Holland
+%C Amsterdam
+%D 1966
+%P 198-220
+
+%A Christopher Strachey
+%T Varieties of programming language
+%B International Computing Symposium Proceedings
+%I Cini Foundation
+%C Venice
+%D April 1972
+%P 222-233
+
+%A Christopher Strachey
+%A Christopher Wadsworth
+%T Continuations: a mathematical semantics which can deal with full jumps
+%R Technical Monograph PRG-11
+%I Programming Research Group, Oxford University
+%D 1974
+
+%A A. Tang
+%T Chain properties in P$omega$
+%D 1977
+
+%A Alfred Tarski
+%T A lattice-theoretical fixpoint theorem and its applications
+%J Pacific J. Math.
+%V 5
+%N 2
+%D June 1955
+%P 285-309
+
+%A R. D. Tennent
+%T Mathematical semantics of Snobol 4
+%J Proc. ACM Symp. on Principles of Programming Languages
+%D October 1973
+%P 95-107
+
+%A R. D. Tennent
+%T The denotational semantics of programming languages
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 19
+%N 8
+%D August 1976
+%P 437-453
+
+%A R. D. Tennent
+%T Language design methods based on semantic principles
+%J Acta Informatica
+%V 8
+%D 1977
+%P 97-112
+
+%A R. D. Tennent
+%T A denotational definition of the programming language Pascal
+%R Tech. Rep. 77-47
+%I Department of Computing and Information Science, Queen's University
+%C Kingston, Ontario
+%D July 1977
+
+%A A. van Wijngaarden
+%T Recursive definition of syntax and semantics
+%E T. B. Steel, Jr.
+%B Formal Language Description Languages for Computer Programming
+%I North-Holland
+%C Amsterdam
+%D 1966
+%P 13-24
+
+%A S. A. Walker
+%A H. R. Strong, Jr.
+%T Characterizations of flowchartable recursions
+%J J. Comp. Sys. Sci.
+%V 7
+%N 4
+%D August 1973
+%P 404-447
+
+%A Mitchell Wand
+%T A characterization of weakest preconditions
+%J J. Comp. Sys. Sci.
+%V 15
+%D 1977
+%P 209-212
+
+%A Ben Wegbreit
+%T Procedure closure in EL1
+%J Comp. J.
+%V 17
+%N 1
+%D February 1974
+%P 38-43
+
+%A Ben Wegbreit
+%T The treatment of data types in EL1
+%J Comm. Assoc. Comp. Mach.
+%K acm cacm
+%V 17
+%N 5
+%D May 1974
+%P 251-264
+
+%A Ben Wegbreit
+%T Constructive methods in program verification
+%J IEEE Trans. on Software Engineering
+%V SE-3
+%N 3
+%D May 1977
+%P 193-209
+
+%A W. A. Wulf
+%A R. L. London
+%A Mary Shaw
+%T An introduction to the construction and verification of Alphard programs
+%J IEEE Trans. on Software Engineering
+%V SE-2
+%N 4
+%D December 1976
+%P 253-265
+

@@ -1,0 +1,36 @@
+.TH GAMMA 3M 
+.SH NAME
+gamma \- log gamma function
+.SH SYNOPSIS
+.B #include <math.h>
+.PP
+.B double gamma(x)
+.br
+.B double x;
+.SH DESCRIPTION
+.I Gamma
+returns
+ln |\(*G(|\fIx\fR|)|.
+The sign of
+\(*G(|\fIx\fR|)
+is returned in the external integer
+.IR signgam .
+The following C program might be
+used to calculate
+\(*G:
+.PP
+	y = gamma(x);
+.br
+	if (y > 88.)
+.br
+		error( );
+.br
+	y = exp(y);
+.br
+	if(signgam)
+.br
+		y = \-y;
+.SH DIAGNOSTICS
+A huge value is returned for negative integer arguments.
+.SH BUGS
+There should be a positive indication of error.

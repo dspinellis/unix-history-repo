@@ -1,0 +1,172 @@
+.TH CU 1C 
+.UC
+.SH NAME
+cu \- call UNIX
+.SH SYNOPSIS
+.B cu
+telno
+[
+.BR \-t ""
+]
+[
+.BR \-s ""
+speed ]
+[
+.BR \-a ""
+acu ]
+[
+.BR \-l ""
+line ]
+.SH DESCRIPTION
+.I Cu
+calls up another UNIX system,
+a terminal,
+or possibly a non-UNIX system.
+It manages an interactive conversation with possible
+transfers of text files.
+.I Telno
+is the telephone number,
+with minus signs at appropriate places for delays.
+The
+.BR \-t ""
+flag is used to dial out to a terminal.
+.I Speed
+gives the transmission speed (110, 134, 150, 300, 1200);
+300 is the default value.
+.PP
+The
+.BR \-a ""
+and
+.BR \-l ""
+values may be used to
+specify pathnames
+for the ACU and communications line devices.
+They can be used to override the following
+built-in choices:
+.PP
+.BR \-a " /dev/cua0"
+.BR \-l " /dev/cul0"
+.PP
+After making the connection,
+.I cu
+runs as two processes:
+the
+.I send
+process reads the standard input and
+passes most of it to the remote system;
+the
+.I receive
+process reads from the remote system and passes
+most data to the standard output.
+Lines beginning with `~' have special meanings.
+.PP
+The
+.I send
+process interprets the following:
+.TP 18
+~\|\fB.\|
+terminate the conversation.
+.br
+.ns
+.TP 18
+~EOT
+terminate the conversation
+.TP 18
+~<file
+send the contents of
+.I file
+to the remote system,
+as though typed at the terminal.
+.TP 18
+~!
+invoke an interactive shell on the local system.
+.TP 18
+~!cmd ...
+run the command on the local system
+(via
+.BR "sh \-c" ")."
+.TP 18
+~$cmd ...
+run the command locally and send its output
+to the remote system.
+.TP 18
+~%take from [to]
+copy file `from' (on the remote system)
+to file `to' on the local system.
+If `to' is omitted,
+the `from' name is used both places.
+.TP 18
+~%put from [to]
+copy file `from' (on local system)
+to file `to' on remote system.
+If `to' is omitted, the `from' name is used both places.
+.TP 18
+~:
+during an output diversion, this toggles whether the operation of
+.I cu
+will be silent, i.e., whether information recieved from the foreign
+system will be written to the standard output.
+This allows a ``progress report'' during long transfers.
+.TP 18
+~~\fB\|.\|.\|.\fR
+send
+the line `~\|.\|.\|.'.
+.PP
+Both the
+.I send
+and
+.I receive
+processes handles output diversions of the following form:
+.PP
+\&~>[>][:]file
+.br
+zero or more lines to be written to file
+.br
+\&~>
+.PP
+In any case, output is diverted (or appended, if `>>' used) to the file.
+If `:' is used,
+the diversion is
+.I silent,
+i.e., it is written only to the file.
+If `:' is omitted,
+output is written both to the file and to the standard output.
+The trailing `~>' terminates the diversion.
+.PP
+The use of
+.B  ~%put
+requires
+.I stty
+and
+.I cat
+on the remote side.
+It also requires that the
+current erase and kill characters on the remote
+system be identical to the current ones on the local system.
+Backslashes are inserted at appropriate places.
+.PP
+The use of
+.B  ~%take
+requires the existence of
+.I echo
+and
+.I tee
+on the remote system.
+Also,
+.B "stty tabs"
+mode is required on the remote system if
+tabs are to be copied without expansion.
+.SH FILES
+/dev/cua0
+.br
+/dev/cul0
+.br
+/dev/null
+.SH "SEE ALSO"
+dn(4), tty(4)
+.SH DIAGNOSTICS
+Exit code is
+zero for normal exit,
+nonzero (various values) otherwise.
+.SH BUGS
+The syntax is unique.

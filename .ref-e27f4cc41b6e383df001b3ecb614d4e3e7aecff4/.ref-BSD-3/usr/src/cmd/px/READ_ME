@@ -1,0 +1,52 @@
+   This directory contains the source code for the Version 7 VAX
+interpreter for Pascal. Following standard convensions, the makefile
+contains four commands:
+
+	px - compile and load px.
+
+	install - compile px and install it in /usr/ucb
+
+	clean - clean out directory
+
+	print - print out a listing of px
+
+
+
+Bugs and Limitations:
+
+   Output of reals of value less than 1 does not print out a leading
+zero. (eg 1.0e-01 prints as .1 rather than 0.1)
+
+   Pi does not compute stdio format strings, so they must be computed
+at run time. (see 31writeold.s for details)
+
+   Runtime error messages could give far more information than they
+currently do. (eg the actual value of a subscript which is out
+of range)
+
+   It should be possible to resume execution following many of
+the runtime errors. (eg fixed overflow, interrupt, etc)
+
+
+
+Comparison of Pascal interpreter with C compiler
+
+In an attempt to compare compiled versus interpreted execution speeds
+the 'Tower of Hanoi' benchmark (see hanoi.p, hanoi.c) was run with 
+the following results:
+
+Data:
+	number of disks: 		   16
+	number of moves required:	65535
+
+Program			Run Time	Factor
+C, optimized		   2.5		  1.0
+C, unoptimized		   2.8		  1.1
+Pascal, no tests	  38.2		 15.3
+Pascal, full tests	  57.1		 22.8
+
+Note: The times for the C programs were obtained by running
+larger problems and scaling them down appropriately.
+
+Berkeley is developing a Pascal compiler which should improve the
+runtime by about a factor of 10.

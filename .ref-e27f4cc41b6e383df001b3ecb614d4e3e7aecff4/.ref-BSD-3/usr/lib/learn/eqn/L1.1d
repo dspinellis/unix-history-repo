@@ -1,0 +1,34 @@
+#print
+The "-ms" package lets you do some other nice things as
+well.  For example, you can arrange for a number to be
+placed on an equation, in the right margin:
+
+  a = b + c - d                               (1.23)
+
+by placing the number after the .EQ on the same line,
+like this:
+
+.EQ (1.23)
+
+You must leave a space between .EQ and the number.
+
+In the file "Example", number the equation "17.1a"
+and print it properly with neqn and nroff -ms.
+(Don't forget -Txxx for your terminal.)
+Then type "ready".
+#once #create Example
+.PP
+This is a tiny little text
+that includes one equation
+or at least it will when you find this line:
+.EQ
+x sub i = y sub i + z sub i
+.EN
+and convert it into an equation.
+(Naturally I changed it again.)
+.pl 1
+#user
+grep '\.EQ  *17\.1a$' <Example >/dev/null
+#log
+#next
+1.1e 10

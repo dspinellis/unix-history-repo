@@ -1,0 +1,38 @@
+#print
+You may have noticed that neqn threw away the spaces
+in several of the examples we did.  For example, in
+.EQ
+a = b + c - d
+.EN
+the output equation looks like
+a=b+c-d
+regardless of spaces in the input.
+
+Spaces are always thrown away, and so are new lines - you
+can type an equation on as many lines as you like.
+This latitude is permitted mainly to make it easy to type equations -
+longer equations are easier to edit when they are typed
+as a series of short input lines instead of one giant
+one.
+
+Will the printed output of this equation
+.EQ
+a
++
+b
++
+c
+.EN
+be any different from this one?
+.EQ
+a+b+c
+.EN
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+2.1b 10
+2.2a 5

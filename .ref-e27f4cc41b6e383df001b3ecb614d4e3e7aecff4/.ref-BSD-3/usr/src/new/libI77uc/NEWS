@@ -1,0 +1,32 @@
+Update info on the f77 I/O lib.		15 Feb., 1980
+
+1) All instances of:
+	if(!init) f_init();
+   have been removed. f_init() is called from main.c on startup in the new
+   libF77.a .
+
+2) Backspace now allows non-seek files to reset the EOF flag.
+
+3) The way SIGINT is handled in libF77/main.c has been changed.
+   If the signal is not SIG_DFL, it is left alone as otherwise the
+   program will be killed if run in the background and the user types DEL.
+
+4) The ANSI fortran standard requires that I/O routines return to the caller
+   on any error condition if iostat= is specified even if no err= or end=
+   trap is specified. The implication of this is that the program must
+   be prepared to deal with ALL I/O errors if iostat= is specified.
+   If only one trap is specified, end= for example, the program must test the
+   iostat variable for positive/non-zero after the I/O call since return
+   will occur on any error. This seems awkward and I've chosen to make this
+   feature optional. I am interested in other views on this.
+   
+   In the current version of the compiler (using the modified io.c),
+   iostat= is used only to return status information from
+   I/O calls but does not itself cause return on any I/O error. Only
+   the traps, err= and end=, will cause a return/branch, and only for
+   the specified trap(s).
+   
+   This feature has been made a compile time option in the current version
+   of (modified) io.c It implements the standard correctly if compiled
+   with -DKOSHER or -DIOSRETURN. Otherwise it executes as currently
+   implemented.

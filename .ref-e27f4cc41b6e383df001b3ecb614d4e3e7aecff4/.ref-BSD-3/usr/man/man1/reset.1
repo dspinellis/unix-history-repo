@@ -1,0 +1,24 @@
+.TH RESET 1 2/6/79
+.UC
+.SH NAME
+reset \- reset the teletype bits to a sensible state
+.SH SYNOPSIS
+.B reset
+.SH DESCRIPTION
+.I Reset
+sets the terminal to cooked mode, turns off cbreak,
+turns on nl, and restores stty and ioctl characters that are null
+to their default values.
+.PP
+This is most useful after crapping out in raw mode.
+.PP
+It isn't a bad idea to follow
+.I reset
+with
+.IR tset (1)
+.SH AUTHOR
+Kurt Shoens
+.br
+Mark Horton
+.SH BUGS
+Doesn't set tabs properly.

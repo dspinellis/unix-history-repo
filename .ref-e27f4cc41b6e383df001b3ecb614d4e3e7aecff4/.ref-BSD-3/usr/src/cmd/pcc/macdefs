@@ -1,0 +1,72 @@
+# define makecc(val,i)  lastcon = (lastcon<<8)|((val<<24)>>24);  
+
+# define  ARGINIT 32 
+# define  AUTOINIT 0 
+# define  SZCHAR 8
+# define  SZINT 32
+# define  SZFLOAT 32
+# define  SZDOUBLE 64
+# define  SZLONG 32
+# define  SZSHORT 16
+# define SZPOINT 32
+# define ALCHAR 8
+# define ALINT 32
+# define ALFLOAT 32
+# define ALDOUBLE 32
+# define ALLONG 32
+# define ALSHORT 16
+# define ALPOINT 32
+# define ALSTRUCT 8
+# define  ALSTACK 32 
+
+/*	size in which constants are converted */
+/*	should be long if feasable */
+
+# define CONSZ long
+# define CONFMT "%ld"
+
+/*	size in which offsets are kept
+/*	should be large enough to cover address space in bits
+*/
+
+# define OFFSZ long
+
+/* 	character set macro */
+
+# define  CCTRANS(x) x
+
+/* register cookie for stack poINTer */
+
+# define  STKREG 13
+# define ARGREG 12
+
+/*	maximum and minimum register variables */
+
+# define MAXRVAR 11
+# define MINRVAR 6
+
+	/* various standard pieces of code are used */
+# define STDPRTREE
+# define LABFMT "L%d"
+
+/* show stack grows negatively */
+#define BACKAUTO
+#define BACKTEMP
+
+/* show field hardware support on VAX */
+#define FIELDOPS
+
+/* bytes are numbered from right to left */
+#define RTOLBYTES
+
+/* we want prtree included */
+# define STDPRTREE
+# ifndef FORT
+# define ONEPASS
+#endif
+
+# define ENUMSIZE(high,low) INT
+
+
+
+
