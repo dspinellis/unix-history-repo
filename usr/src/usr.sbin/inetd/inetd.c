@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -224,32 +224,33 @@ main(argc, argv, envp)
 		    continue;
 	    }
 	    for (sep = servtab; n && sep; sep = sep->se_next)
-	    if (FD_ISSET(sep->se_fd, &readable)) {
-		n--;
-		if (debug)
-			fprintf(stderr, "someone wants %s\n", sep->se_service);
-		if (sep->se_socktype == SOCK_STREAM) {
-			ctrl = accept(sep->se_fd, (struct sockaddr *)0,
-			    (int *)0);
-			if (debug)
-				fprintf(stderr, "accept, ctrl %d\n", ctrl);
-			if (ctrl < 0) {
-				if (errno == EINTR)
-					continue;
-				syslog(LOG_WARNING, "accept (for %s): %m",
-					sep->se_service);
-				continue;
-			}
-		} else
-			ctrl = sep->se_fd;
-		(void) sigblock(SIGBLOCK);
-		pid = 0;
-		dofork = (sep->se_bi == 0 || sep->se_bi->bi_fork);
-		if (dofork) {
-			if (sep->se_count++ == 0)
-			    (void)gettimeofday(&sep->se_time,
-			        (struct timezone *)0);
-			else if (sep->se_count >= TOOMANY) {
+	        if (sep->se_fd != -1 && FD_ISSET(sep->se_fd, &readable)) {
+		    n--;
+		    if (debug)
+			    fprintf(stderr, "someone wants %s\n",
+				sep->se_service);
+		    if (sep->se_socktype == SOCK_STREAM) {
+			    ctrl = accept(sep->se_fd, (struct sockaddr *)0,
+				(int *)0);
+			    if (debug)
+				    fprintf(stderr, "accept, ctrl %d\n", ctrl);
+			    if (ctrl < 0) {
+				    if (errno == EINTR)
+					    continue;
+				    syslog(LOG_WARNING, "accept (for %s): %m",
+					    sep->se_service);
+				    continue;
+			    }
+		    } else
+			    ctrl = sep->se_fd;
+		    (void) sigblock(SIGBLOCK);
+		    pid = 0;
+		    dofork = (sep->se_bi == 0 || sep->se_bi->bi_fork);
+		    if (dofork) {
+			    if (sep->se_count++ == 0)
+				(void)gettimeofday(&sep->se_time,
+				    (struct timezone *)0);
+			    else if (sep->se_count >= TOOMANY) {
 				struct timeval now;
 
 				(void)gettimeofday(&now, (struct timezone *)0);
@@ -273,40 +274,44 @@ main(argc, argv, envp)
 					}
 					continue;
 				}
-			}
-			pid = fork();
-		}
-		if (pid < 0) {
-			if (sep->se_socktype == SOCK_STREAM)
-				close(ctrl);
-			sigsetmask(0L);
-			sleep(1);
-			continue;
-		}
-		if (pid && sep->se_wait) {
-			sep->se_wait = pid;
-			FD_CLR(sep->se_fd, &allsock);
-			nsock--;
-		}
-		sigsetmask(0L);
-		if (pid == 0) {
-			if (debug && dofork)
+			    }
+			    pid = fork();
+		    }
+		    if (pid < 0) {
+			    syslog(LOG_ERR, "fork: %m");
+			    if (sep->se_socktype == SOCK_STREAM)
+				    close(ctrl);
+			    sigsetmask(0L);
+			    sleep(1);
+			    continue;
+		    }
+		    if (pid && sep->se_wait) {
+			    sep->se_wait = pid;
+			    FD_CLR(sep->se_fd, &allsock);
+			    nsock--;
+		    }
+		    sigsetmask(0L);
+		    if (pid == 0) {
+			    if (debug && dofork)
 				setsid();
-			if (dofork)
+			    if (dofork)
 				for (tmpint = getdtablesize(); --tmpint > 2; )
 					if (tmpint != ctrl)
 						close(tmpint);
-			if (sep->se_bi)
+			    if (sep->se_bi)
 				(*sep->se_bi->bi_fn)(ctrl, sep);
-			else {
+			    else {
+				if (debug)
+					fprintf(stderr, "%d execl %s\n",
+					    getpid(), sep->se_server);
 				dup2(ctrl, 0);
 				close(ctrl);
 				dup2(0, 1);
 				dup2(0, 2);
 				if ((pwd = getpwnam(sep->se_user)) == NULL) {
 					syslog(LOG_ERR,
-						"getpwnam: %s: No such user",
-						sep->se_user);
+					    "getpwnam: %s: No such user",
+					    sep->se_user);
 					if (sep->se_socktype != SOCK_STREAM)
 						recv(0, buf, sizeof (buf), 0);
 					_exit(1);
@@ -316,38 +321,35 @@ main(argc, argv, envp)
 					initgroups(pwd->pw_name, pwd->pw_gid);
 					(void) setuid((uid_t)pwd->pw_uid);
 				}
-				if (debug)
-					fprintf(stderr, "%d execl %s\n",
-					    getpid(), sep->se_server);
 				execv(sep->se_server, sep->se_argv);
 				if (sep->se_socktype != SOCK_STREAM)
 					recv(0, buf, sizeof (buf), 0);
 				syslog(LOG_ERR, "execv %s: %m", sep->se_server);
 				_exit(1);
-			}
+			    }
+		    }
+		    if (sep->se_socktype == SOCK_STREAM)
+			    close(ctrl);
 		}
-		if (sep->se_socktype == SOCK_STREAM)
-			close(ctrl);
-	    }
 	}
 }
 
 void
 reapchild()
 {
-	union wait status;
+	int status;
 	int pid;
 	register struct servtab *sep;
 
 	for (;;) {
-		pid = wait3((int *)&status, WNOHANG, (struct rusage *)0);
+		pid = wait3(&status, WNOHANG, (struct rusage *)0);
 		if (pid <= 0)
 			break;
 		if (debug)
 			fprintf(stderr, "%d reaped\n", pid);
 		for (sep = servtab; sep; sep = sep->se_next)
 			if (sep->se_wait == pid) {
-				if (status.w_status)
+				if (status)
 					syslog(LOG_WARNING,
 					    "%s: exit status 0x%x",
 					    sep->se_server, status);
@@ -413,6 +415,9 @@ config()
 		if (sp == 0) {
 			syslog(LOG_ERR, "%s/%s: unknown service",
 			    sep->se_service, sep->se_proto);
+			if (sep->se_fd != -1)
+				(void) close(sep->se_fd);
+			sep->se_fd = -1;
 			continue;
 		}
 		if (sp->s_port != sep->se_ctrladdr.sin_port) {
@@ -665,9 +670,9 @@ char *
 newstr(cp)
 	char *cp;
 {
-	if (cp = strdup(cp))
+	if (cp = strdup(cp ? cp : ""))
 		return(cp);
-	syslog(LOG_ERR, "%m");
+	syslog(LOG_ERR, "strdup: %m");
 	exit(-1);
 }
 
