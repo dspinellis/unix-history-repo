@@ -1,16 +1,18 @@
-/*	rk.c	4.30	81/03/17	*/
+/*	rk.c	4.31	81/03/17	*/
 
 #include "rk.h"
 #if NHK > 0
 int	rkpip;		/* DEBUG */
 int	rknosval;	/* DEBUG */
+int	rkdebug;
 /*
- * RK11/RK07 disk driver
+ * RK611/RK0[67] disk driver
  *
  * This driver mimics up.c; see it for an explanation of common code.
  *
  * TODO:
  *	Learn why we lose an interrupt sometime when spinning drives down
+ *	Support rk06
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -74,7 +76,9 @@ struct	rkst {
 };
 
 u_char 	rk_offset[16] =
-  { P400,M400,P400,M400,P800,M800,P800,M800,P1200,M1200,P1200,M1200,0,0,0,0 };
+  { RKAS_P400,RKAS_M400,RKAS_P400,RKAS_M400,RKAS_P800,RKAS_M800,RKAS_P800,
+    RKAS_M800,RKAS_P1200,RKAS_M1200,RKAS_P1200,RKAS_M1200,0,0,0,0
+  };
 
 struct	buf rrkbuf[NRK];
 
@@ -111,7 +115,7 @@ rkslave(ui, reg)
 	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	DELAY(50);
-	if (rkaddr->rkcs2&RK_NED || (rkaddr->rkds&RK_SVAL) == 0) {
+	if (rkaddr->rkcs2&RKCS2_NED || (rkaddr->rkds&RKDS_SVAL) == 0) {
 		rkaddr->rkcs1 = RK_CDT|RK_CCLR;
 		return (0);
 	}
@@ -200,7 +204,7 @@ rkustart(ui)
 		rkwait(rkaddr);
 		return (0);
 	}
-	if ((rkaddr->rkds & RK_VV) == 0) {
+	if ((rkaddr->rkds & RKDS_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		rkaddr->rkcs1 = RK_CDT|RK_PACK|RK_GO;
 		rkwait(rkaddr);
@@ -208,7 +212,7 @@ rkustart(ui)
 	if (dp->b_active)
 		goto done;
 	dp->b_active = 1;
-	if ((rkaddr->rkds & RK_DREADY) != RK_DREADY)
+	if ((rkaddr->rkds & RKDS_DREADY) != RKDS_DREADY)
 		goto done;
 	if (rk_softc[um->um_ctlr].sc_ndrive == 1)
 		goto done;
@@ -267,17 +271,17 @@ retry:
 	rkaddr->rkcs2 = ui->ui_slave;
 	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
-	if ((rkaddr->rkds&RK_SVAL) == 0) {
+	if ((rkaddr->rkds&RKDS_SVAL) == 0) {
 		rknosval++;
 		goto nosval;
 	}
-	if (rkaddr->rkds&RK_PIP) {
+	if (rkaddr->rkds&RKDS_PIP) {
 		rkpip++;
 		goto retry;
 	}
-	if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
+	if ((rkaddr->rkds&RKDS_DREADY) != RKDS_DREADY) {
 		printf("rk%d: not ready", dkunit(bp));
-		if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
+		if ((rkaddr->rkds&RKDS_DREADY) != RKDS_DREADY) {
 			printf("\n");
 			rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 			rkwait(rkaddr);
@@ -341,7 +345,12 @@ rkintr(rk11)
 			u_short ds = rkaddr->rkds;
 			u_short cs2 = rkaddr->rkcs2;
 			u_short er = rkaddr->rker;
-			if (ds & RK_WLE) {
+			if (rkdebug) {
+				printf("cs2=%b ds=%b er=%b\n",
+				    cs2, RKCS2_BITS, ds, 
+				    RKDS_BITS, er, RKER_BITS);
+			}
+			if (er & RKER_WLE) {
 				printf("rk%d: write locked\n", dkunit(bp));
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 ||
@@ -354,15 +363,15 @@ rkintr(rk11)
 				sc->sc_recal = 0;
 			} else
 				um->um_tab.b_active = 0;
-			if (cs2&RK_MDS) {
-				rkaddr->rkcs2 = RK_SCLR;
+			if (cs2&RKCS2_MDS) {
+				rkaddr->rkcs2 = RKCS2_SCLR;
 				goto retry;
 			}
 			recal = 0;
-			if (ds&RK_DROT || er&(RK_OPI|RK_SKI|RK_UNS) ||
+			if (ds&RKDS_DROT || er&(RKER_OPI|RKER_SKI|RKER_UNS) ||
 			    (um->um_tab.b_errcnt&07) == 4)
 				recal = 1;
-			if ((er & (RK_DCK|RK_ECH)) == RK_DCK)
+			if ((er & (RKER_DCK|RKER_ECH)) == RKER_DCK)
 				if (rkecc(ui))
 					return;
 			rkaddr->rkcs1 = RK_CDT|RK_CCLR;
@@ -622,7 +631,7 @@ rkdump(dev)
 	rkaddr->rkcs2 = unit;
 	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
-	if ((rkaddr->rkds & RK_VV) == 0) {
+	if ((rkaddr->rkds & RKDS_VV) == 0) {
 		rkaddr->rkcs1 = RK_CDT|RK_IE|RK_PACK|RK_GO;
 		rkwait(rkaddr);
 	}
