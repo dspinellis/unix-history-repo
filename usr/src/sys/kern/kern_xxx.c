@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	6.4 (Berkeley) %G%
+ *	@(#)kern_xxx.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,7 +23,7 @@ gethostid()
 sethostid()
 {
 	struct a {
-		int	hostid;
+		long	hostid;
 	} *uap = (struct a *)u.u_ap;
 
 	if (suser())
