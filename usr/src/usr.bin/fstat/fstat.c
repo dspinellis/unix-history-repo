@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -301,10 +301,21 @@ itrans(ftype, g, fno)
 
 	switch(ftype) {
 	case DTYPE_INODE:
-		printf("\t%2d, %2d\t%5lu\t%6ld\t%3s %s\n", major(inode.i_dev),
-		    minor(inode.i_dev), inode.i_number,
-		    inode.i_mode == IFSOCK ? 0 : inode.i_size,
-		    itype(inode.i_mode), name ? name : "");
+		printf("\t%2d, %2d\t%5lu\t",
+		    major(inode.i_dev),
+		    minor(inode.i_dev), inode.i_number
+		);
+		switch(inode.i_mode & IFMT) {
+		case	IFSOCK:
+			printf("     0\t");
+			break;
+		case	IFCHR:
+			printf("%2d, %2d\t", major(inode.i_rdev), minor(inode.i_rdev));
+			break;
+		default:
+			printf("%6ld\t", inode.i_size);
+		}
+		printf("%3s %s\n", itype(inode.i_mode), name ? name : "");
 		break;
 	case DTYPE_SOCKET:
 		socktrans((struct socket *)g);
