@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -290,7 +290,7 @@ substitute(cp)
 	regex_t *re;
 	size_t re_off;
 	int n;
-	char *endp, *s;
+	char *s;
 
 	s = ps;
 	re = cp->u.s->re;
@@ -311,8 +311,6 @@ substitute(cp)
 		do {
 			/* Locate start of replaced string. */
 			re_off = match[0].rm_so;
-			/* Locate end of replaced string + 1. */
-			endp = s + match[0].rm_eo;
 			/* Copy leading retained string. */
 			cspace(&SS, s, re_off, APPEND);
 			/* Add in regular expression. */
