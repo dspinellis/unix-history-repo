@@ -1,11 +1,11 @@
-static char *sccsid = "@(#)rm.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.5 (Berkeley) %G%";
 int	errcode;
 short	uid, euid;
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <ndir.h>
 
 char	*sprintf();
 
@@ -62,8 +62,9 @@ rm(arg, fflg, rflg, iflg, level)
 char arg[];
 {
 	struct stat buf;
-	struct direct direct;
-	char name[100];
+	struct direct *dp;
+	DIR *dirp;
+	char name[BUFSIZ];
 	int d;
 
 	if(stat(arg, &buf)) {
@@ -86,17 +87,17 @@ char arg[];
 				if(!yes())
 					return;
 			}
-			if((d=open(arg, 0)) < 0) {
+			if((dirp = opendir(arg)) == NULL) {
 				printf("rm: cannot read %s?\n", arg);
 				exit(1);
 			}
-			while(read(d, (char *)&direct, sizeof(direct)) == sizeof(direct)) {
-				if(direct.d_ino != 0 && !dotname(direct.d_name)) {
-					sprintf(name, "%s/%.14s", arg, direct.d_name);
+			while((dp = readdir(dirp)) != NULL) {
+				if(dp->d_ino != 0 && !dotname(dp->d_name)) {
+					sprintf(name, "%s/%.14s", arg, dp->d_name);
 					rm(name, fflg, rflg, iflg, level+1);
 				}
 			}
-			close(d);
+			closedir(dirp);
 			errcode += rmdir(arg, iflg);
 			return;
 		}
