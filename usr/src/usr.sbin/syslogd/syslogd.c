@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #define COMPAT		/* include 4.3 Alpha compatibility */
@@ -42,6 +42,7 @@ static char sccsid[] = "@(#)syslogd.c	5.8 (Berkeley) %G%";
 #define	MAXLINE		1024		/* maximum line length */
 #define DEFUPRI		(LOG_USER|LOG_NOTICE)
 #define DEFSPRI		(LOG_KERN|LOG_CRIT)
+#define MARKCOUNT	10		/* ratio of minor to major marks */
 
 #include <syslog.h>
 #include <errno.h>
@@ -91,6 +92,7 @@ char	ctty[] = "/dev/console";
 #define SYNC_FILE	0x002	/* do fsync on file after printing */
 #define NOCOPY		0x004	/* don't suppress duplicate messages */
 #define ADDDATE		0x008	/* add a date to the message */
+#define MARK		0x010	/* this message is a mark */
 
 /*
  * This structure represents the files that will have log
@@ -100,6 +102,7 @@ char	ctty[] = "/dev/console";
 struct filed {
 	short	f_type;			/* entry type, see below */
 	short	f_file;			/* file descriptor */
+	time_t	f_time;			/* time this was last written */
 	u_char	f_pmask[LOG_NFACILITIES];	/* priority mask */
 	union {
 		char	f_uname[MAXUNAMES][UNAMESZ+1];
@@ -130,6 +133,7 @@ struct filed	Files[NLOGS];
 
 int	Debug;			/* debug flag */
 char	LocalHostName[MAXHOSTNAMELEN+1];	/* our hostname */
+char	*LocalDomain;		/* our local domain name */
 int	InetInuse = 0;		/* non-zero if INET sockets are being used */
 int	LogPort;		/* port number for INET connections */
 char	PrevLine[MAXLINE + 1];	/* copy of last line to supress repeats */
@@ -138,6 +142,8 @@ int	PrevFlags;
 int	PrevPri;
 int	PrevCount = 0;		/* number of times seen */
 int	Initialized = 0;	/* set when we have initialized ourselves */
+int	MarkInterval = 20;	/* interval between marks in minutes */
+int	MarkSeq = 0;		/* mark sequence number */
 
 extern	int errno, sys_nerr;
 extern	char *sys_errlist[];
@@ -224,6 +230,11 @@ main(argc, argv)
 				LogName = &p[2];
 			break;
 
+		case 'm':		/* mark interval */
+			if (p[2] != '\0')
+				MarkInterval = atoi(&p[2]);
+			break;
+
 		default:
 			usage();
 		}
@@ -241,15 +252,23 @@ main(argc, argv)
 	} else
 		setlinebuf(stdout);
 
+	(void) gethostname(LocalHostName, sizeof LocalHostName);
+	if (p = index(LocalHostName, '.')) {
+		*p++ = '\0';
+		LocalDomain = p;
+	}
+	else
+		LocalDomain = "";
 	(void) signal(SIGTERM, die);
 	(void) signal(SIGINT, Debug ? die : SIG_IGN);
 	(void) signal(SIGQUIT, Debug ? die : SIG_IGN);
 	(void) signal(SIGCHLD, reapchild);
+	(void) signal(SIGALRM, domark);
+	(void) alarm(MarkInterval * 60 / MARKCOUNT);
 	(void) unlink(LogName);
 
 	sun.sun_family = AF_UNIX;
 	(void) strncpy(sun.sun_path, LogName, sizeof sun.sun_path);
-	(void) gethostname(LocalHostName, sizeof LocalHostName);
 	funix = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (funix < 0 || bind(funix, (struct sockaddr *) &sun,
 	    sizeof(sun.sun_family)+strlen(sun.sun_path)) < 0 ||
@@ -351,7 +370,7 @@ main(argc, argv)
 
 usage()
 {
-	fprintf(stderr, "usage: syslogd [-d] [-ppath] [-fconffile]\n");
+	fprintf(stderr, "usage: syslogd [-d] [-mmarkinterval] [-ppath] [-fconffile]\n");
 	exit(1);
 }
 
@@ -490,28 +509,28 @@ logmsg(pri, msg, from, flags)
 	char *msg, *from;
 	int flags;
 {
-	char line[MAXLINE + 1];
 	register struct filed *f;
 	register int l;
 	int fac, prilev;
+	time_t now;
+	int omask;
 	struct iovec iov[6];
 	register struct iovec *v = iov;
-	int omask;
+	char line[MAXLINE + 1];
 
 	dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n", pri, flags, from, msg);
 
-	omask = sigblock(sigmask(SIGHUP));
+	omask = sigblock(sigmask(SIGHUP)|sigmask(SIGALRM));
 
 	/*
 	 * Check to see if msg looks non-standard.
 	 */
-	if (!(flags & ADDDATE) && (strlen(msg) < 16 ||
-	    msg[3] != ' ' || msg[6] != ' ' ||
-	    msg[9] != ':' || msg[12] != ':' || msg[15] != ' '))
+	if (strlen(msg) < 16 || msg[3] != ' ' || msg[6] != ' ' ||
+	    msg[9] != ':' || msg[12] != ':' || msg[15] != ' ')
 		flags |= ADDDATE;
 
-	if ((flags & NOCOPY) == 0) {
-		if (flags & ADDDATE)
+	if (!(flags & NOCOPY)) {
+		if (flags & (ADDDATE|MARK))
 			flushmsg();
 		else if (!strcmp(msg + 16, PrevLine + 16)) {
 			/* we found a match, update the time */
@@ -529,12 +548,10 @@ logmsg(pri, msg, from, flags)
 		}
 	}
 
-	if (flags & ADDDATE) {
-		time_t now;
-
-		(void) time(&now);
+	(void) time(&now);
+	if (flags & ADDDATE)
 		v->iov_base = ctime(&now) + 4;
-	} else
+	else
 		v->iov_base = msg;
 	v->iov_len = 15;
 	v++;
@@ -577,7 +594,12 @@ logmsg(pri, msg, from, flags)
 		if (f->f_pmask[fac] < prilev || f->f_pmask[fac] == NOPRI)
 			continue;
 
+		/* don't output marks to recently written files */
+		if ((flags & MARK) && (now - f->f_time) < (MarkInterval * 60 / 2))
+			continue;
+
 		dprintf("Logging to %s", TypeNames[f->f_type]);
+		f->f_time = now;
 		switch (f->f_type) {
 		case F_UNUSED:
 			dprintf("\n");
@@ -721,6 +743,7 @@ wallmsg(f, iov)
 			if (f->f_type == F_WALL) {
 				iov[0].iov_base = greetings;
 				iov[0].iov_len = len;
+				iov[1].iov_len = 0;
 			}
 			(void) signal(SIGALRM, SIG_DFL);
 			(void) alarm(30);
@@ -730,8 +753,6 @@ wallmsg(f, iov)
 				(void) writev(ttyf, iov, 6);
 			exit(0);
 		}
-		/* avoid having them all pile up at once */
-		sleep(1);
 	}
 	/* close the user login file */
 	(void) fclose(uf);
@@ -754,6 +775,7 @@ cvthname(f)
 	struct sockaddr_in *f;
 {
 	struct hostent *hp;
+	register char *p;
 	extern char *inet_ntoa();
 
 	dprintf("cvthname(%s)\n", inet_ntoa(f->sin_addr));
@@ -768,7 +790,20 @@ cvthname(f)
 			inet_ntoa(f->sin_addr));
 		return (inet_ntoa(f->sin_addr));
 	}
+	if ((p = index(hp->h_name, '.')) && strcmp(p + 1, LocalDomain) == 0)
+		*p = '\0';
 	return (hp->h_name);
+}
+
+domark()
+{
+	int pri;
+
+	if ((++MarkSeq % MARKCOUNT) == 0)
+		logmsg(LOG_SYSLOG|LOG_INFO, "-- MARK --", LocalHostName, ADDDATE|MARK);
+	else
+		flushmsg();
+	alarm(MarkInterval * 60 / MARKCOUNT);
 }
 
 flushmsg()
@@ -798,7 +833,7 @@ logerror(type)
 		(void) sprintf(buf, "syslogd: %s: %s", type, sys_errlist[errno]);
 	errno = 0;
 	dprintf("%s\n", buf);
-	logmsg(LOG_DAEMON|LOG_ERR, buf, LocalHostName, ADDDATE);
+	logmsg(LOG_SYSLOG|LOG_ERR, buf, LocalHostName, ADDDATE);
 }
 
 die(sig)
@@ -897,7 +932,7 @@ init()
 		}
 	}
 
-	logmsg(LOG_DAEMON|LOG_INFO, "syslogd: restart", LocalHostName, ADDDATE);
+	logmsg(LOG_SYSLOG|LOG_INFO, "syslogd: restart", LocalHostName, ADDDATE);
 	dprintf("syslogd: restarted\n");
 }
 
@@ -922,6 +957,7 @@ struct code	PriNames[] = {
 	"notice",	LOG_NOTICE,
 	"info",		LOG_INFO,
 	"debug",	LOG_DEBUG,
+	"none",		NOPRI,
 	NULL,		-1
 };
 
@@ -932,6 +968,8 @@ struct code	FacNames[] = {
 	"daemon",	LOG_DAEMON,
 	"auth",		LOG_AUTH,
 	"security",	LOG_AUTH,
+	"mark",		LOG_SYSLOG,
+	"syslog",	LOG_SYSLOG,
 	"local0",	LOG_LOCAL0,
 	"local1",	LOG_LOCAL1,
 	"local2",	LOG_LOCAL2,
