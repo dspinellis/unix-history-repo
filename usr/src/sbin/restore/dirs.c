@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -233,7 +233,7 @@ treescan(pname, ino, todo)
 	/*
 	 * a zero inode signals end of directory
 	 */
-	while (dp != NULL && dp->d_ino != 0) {
+	while (dp != NULL) {
 		locname[namelen] = '\0';
 		if (namelen + dp->d_namlen >= MAXPATHLEN) {
 			fprintf(stderr, "%s%s: name exceeds %d char\n",
@@ -246,8 +246,6 @@ treescan(pname, ino, todo)
 		dp = rst_readdir(dirp);
 		bpt = rst_telldir(dirp);
 	}
-	if (dp == NULL)
-		fprintf(stderr, "corrupted directory: %s.\n", locname);
 }
 
 /*
@@ -295,7 +293,7 @@ searchdir(inum, name)
 	len = strlen(name);
 	do {
 		dp = rst_readdir(dirp);
-		if (dp == NULL || dp->d_ino == 0)
+		if (dp == NULL)
 			return (NULL);
 	} while (dp->d_namlen != len || strncmp(dp->d_name, name, len) != 0);
 	return (dp);
@@ -472,8 +470,8 @@ rst_readdir(dirp)
 			return (NULL);
 		}
 		dirp->dd_loc += dp->d_reclen;
-		if (dp->d_ino == 0 && strcmp(dp->d_name, "/") != 0)
-			continue;
+		if (dp->d_ino == 0 && strcmp(dp->d_name, "/") == 0)
+			return (NULL);
 		if (dp->d_ino >= maxino) {
 			dprintf(stderr, "corrupted directory: bad inum %d\n",
 				dp->d_ino);
