@@ -1,9 +1,9 @@
-.\" Copyright (c) 1982 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1982, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	4.3 (Berkeley) %G%
+.\"	@(#)1.t	8.1 (Berkeley) %G%
 .\"
 .ds RH Introduction
 .NH
