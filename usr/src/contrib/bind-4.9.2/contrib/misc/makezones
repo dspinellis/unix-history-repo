@@ -1,0 +1,1381 @@
+#! /bin/perl
+
+$version_number = "0.06a [22-Sep-93]";
+
+
+########################################################################
+#                           MAKEZONES                                  #
+########################################################################
+
+# Copyright (c), University of Cambridge, 1993.
+# 
+# The University retains the copyright and all other legal rights
+# to this software and makes it available non-exclusively. All users
+# must ensure that the software in all its derivations carries a
+# copyright notice as above. No warranty is expressed or implied.
+
+# This file is available for anonymous ftp from
+# 
+# ftp.cus.cam.ac.uk:/pub/software/programs/DNS/makezones
+#
+# Enquires to Philip Hazel <ph10@cus.cam.ac.uk>.
+
+
+
+########################################################################
+# CONFIGURATION VARIABLES
+#
+# These are put at the top for ease of changing. See below for general
+# specification of the script.
+
+
+# Makezones checks the characters used in the components of names. Different
+# sites may have different local standards in this respect. The variable
+# $name_pattern is used to contain a regular expression pattern that
+# matches valid components of domain names. Change it to suit your
+# requirements. Note that:
+#
+#  (a) The variable contains only the pattern characters, NOT the delimiting
+#      slashes.
+#  (b) This pattern is for one component only, so should not contain things
+#      that match full stops.
+#  (c) The start and end of string metacharacters (^ and $) should not be
+#      included; makezones uses this variable to build up a larger pattern
+#      to match complete domain names, and it puts in ^ and $ itself.
+#  (d) Because it is being constructed as a Perl string, any backslash
+#      characters in the pattern must be doubled.
+
+# This pattern specifies that names must start with a letter, contain only 
+# letters, digits, and hyphens, and not end with a hyphen.
+
+$name_pattern = '[a-zA-Z]([a-zA-Z\\-\\d]*[a-zA-Z\\d]+|)';
+
+# Possible variations:
+#
+# $name_pattern = '[a-zA-Z\\d]([a-zA-Z\\-\\d]*[a-zA-Z\\d]+|)';  # digit at start
+# $name_pattern = '[a-z]([a-z\\-\\d]*[a-z\\d]+|)';              # all lower case
+#
+# Note that, in addition to this, "*" is permitted as the first component of
+# names on MX records, to allow MX wildcarding. Names for PTR records must
+# always consist of four numeric components; $name_pattern is not used. Also,
+# names on NS records may consist of numeric components - this is necessary
+# in order to specify devolved reverse subzones.
+
+
+# To disable the checking of new zone file lengths against the previous
+# versions, set $opt_short = 1 here. This forces the -short option for
+# all runs. 
+
+$opt_short = 0;
+
+
+# If you want fields in WKS records to be checked against the contents
+# of a file for validity, then set $services to the name of the file, 
+# and $grep to your favourite grep command. The values below will be
+# typical. The program searches for the service name followed by a space
+# or a tab at the start of a line. If you don't want this check, set
+# $services to the null string.
+
+$services = "/etc/services";
+$grep = "/usr/bin/egrep";
+
+
+# If you want makezones to output some commentary as it goes along,
+# to let you know it is making some progress, then set the $chatty
+# variable to 1.
+
+$chatty = 1;
+
+
+
+########################################################################
+# UNIX DEPENDENCIES
+#
+# The Unix "date" command is used to obtain the current date and time
+# in a particular format.
+#
+# Perl's "stat" function is used to obtain the lengths of files; this may
+# differ for other operating systems.
+#
+# Anything else I've forgotten?
+
+
+
+########################################################################
+# 
+# Makezones is a perl script for processing a source file for a DNS zone
+# and producing the relevant operational DNS zone files. It does a lot of 
+# checking to ensure that the data is not bad, and it also ensures that
+# the forward and reverse zone information is in step.
+#
+# Makezones handles the updating of the serial number automatically. It
+# does this by updating the SOURCE FILE before generating the zone files.
+#                >>>>>      NB NB NB NB      <<<<<
+# The source file therefore has to be writeable. Makezones insists that
+# the format of the serial number be <year><month><day><version> and that
+# the year be four digits long, so that this code will continue to work 
+# after then end of 1999.
+#
+# Makezones handles Class B and Class C networks, because those are the
+# ones that are around here in Cambridge, UK. It would not be hard to 
+# extend it to handle a Class A if that were required.
+#
+# Because the file should normally be correct, makezones makes no attempt
+# attempt to continue if it finds a serious error. It just reports it and 
+# stops. However, syntax errors in the general records don't prevent it
+# going on to check further records, so you can get more than one error
+# message in a run. However, if it finds too many errors it says so, and
+# gives up. "Too many" is currently more than ten.
+#
+# The input file looks like a normal DNS zone file, with the addition of
+# the following rules, which impose additional restrictions. Some of these
+# rules are to make it easy for makezones; some of them impose conventions
+# that we use in Cambridge which might not be liked elsewhere. The code is
+# well commented, and should be easy to modify.
+#
+#   . The class field ("IN") and the type fields ("A", "CNAME", etc.) must
+#     be specified in upper case, as must "TCP" and "UDP" in WKS records.
+#
+#   . With the exception of the SOA & WKS records, all records must be 
+#     complete on one line of input. That is, continuation is not supported
+#     in general.
+#
+#   . The SOA record must be right at the start of the file, and must be
+#     set up so that each numeric parameter is on a separate line. For
+#     example:
+#
+#     @    IN    SOA    cus.cam.ac.uk. hostmaster.ucs.cam.ac.uk. (
+#                             1993080601      ; Serial
+#                             10800           ; Refresh 3 hours
+#                             3600            ; Retry 1 hour
+#                             604800          ; Expire after a week
+#                             86400 )         ; Minimum ttl
+#
+#     Note that the serial number begins with the full year number, not just
+#     the last two digits. The SOA record is expected to have the "IN" class
+#     field; subsequent records may omit it.
+#
+#   . The NS records for the zone must appear at the top of the file, just
+#     after the SOA record. These will be copied into the forward and the
+#     reverse zone files. That is, the assumption is that the nameservers
+#     are the same for the forward and reverse zones. These NS records must
+#     NOT have anything in the name field. The copying stops on reaching
+#     the first record with a name field or the first non-NS record.
+#
+#   . NS records must always refer to fully qualified names. Makezones checks
+#     for the final dot, because it is so easy to overlook this.
+#   
+#   . Comments are not normally copied into the working zone files. They
+#     can, however, be forced into them by the following syntax:
+#     
+#     ;F   copy this comment (without the F) into the forward file
+#     ;R   copy this comment (without the R) into the reverse file
+# 
+#   . All records except PTR records are normally copied to the forward file. 
+#     However, A records can be marked as "reverse only" by preceding them
+#     with ">R " at the start. In this case, no A record is written to the
+#     forward file, but a PTR record is constructed for the appropriate
+#     reverse zone file. There should be exactly one space after the ">R";
+#     three characters are removed from the start of the record. If ">R" is
+#     followed by a tab, the tab is not removed (i.e. it acts as more than
+#     one space).
+#     
+#   . PTR records and A records are the only ones used when generating the 
+#     reverse zone files. "A" records can be marked "forwards only" by preced- 
+#     ing them with ">F " at the start. This suppresses generation of a PTR 
+#     record for the reverse zone. It does not, however, suppress the check that
+#     the address is in one of the networks being handled (see next item for
+#     external networks). If more than one A record has the same IP address,
+#     then all but one must have the ">F " flag, to ensure that only one PTR
+#     record is generated (for the canonical name). Again, there must be
+#     exactly one space or a tab after ">F".
+#     
+#   . We want to be able to check that all IP addresses are in one of the 
+#     networks that we are processing for. However, occasionally a record must
+#     specify an external network (glue records are the prime example). Such 
+#     records must be flagged by ">E " at their start to override the error 
+#     that would otherwise occur. (They naturally won't get into any reverse 
+#     zones.) The special local address 127.0.0.1 is recognized and treated as
+#     though ">E " is always present. The ">E " flag can be used on WKS 
+#     records as well as on A records.
+#
+#   . The name given for PTR records must be a complete, reversed IP address
+#     that corresponds to one of the reverse zones. The network portion of
+#     the "name" is removed when generating the PTR record for the reverse
+#     zone. PTR records have to be used instead of A records flagged with
+#     ">R " ("reverse only") when the name concerned is not in the domain
+#     of the forward zone, because of the following rule.
+#
+#   . The names on all records must not end with . as we conventionally
+#     specify them as partial domains for the forward zone. This means that,
+#     if you want a record with the name of the zone as its domain, you must
+#     use the "@" notation, which is supported.
+#
+#   . Makezones assumes that names consist of letters and digits, and start
+#     with a letter. You can, however, override this by enclosing a name
+#     in quotes. For example:
+#
+#     "3cpu"   A     134.232.45.69
+#
+#     I didn't want to allow these through normally, as in my zone they are
+#     more likely to be typos. You can change the rules for what characters
+#     are allowed in names (without quoting) by editing the variable 
+#     $name_pattern (see under CONFIGURATION VARIABLES at the head of this 
+#     file).
+#
+#   . CNAME records must point to fully qualified names. Makezones checks
+#     that if a name appears on a CNAME, it does not appear on any other
+#     record.
+#
+#   . MX records must point to fully qualified names.
+#     
+#
+# Makezones is run by a command of the following form:
+#
+#   makezones [options] <source> <forward-zone> <forward-zone-file> \
+#     [<reverse-zone-file>]*
+#
+# For example:
+# 
+#   makezones  DBsource  cam.ac.uk  db.cam  db.131.111  db.192.153.213
+#   
+# The source file is specified as the first argument. The second and third
+# arguments specify the name of the zone and the file into which the records
+# for that zone are to be written. The name is required so that fully
+# qualified names can be generated in the reverse zone files. The remaining
+# arguments specify the networks for which reverse zone files are to be 
+# written, and the corresponding files. There need not be any if there are 
+# no PTR or non-forwards-only A records in the source file. Each of these 
+# final arguments is the name of a zone file. The first part of the name can 
+# be anything you like - the only requirement is that the name must end with 
+# a valid Class B or Class C network number.
+#
+# [This combining of network number and zone file name is done for convenience.
+# To change makezones so that the numbers and file names are given as separate
+# arguments would not be difficult; the changes would affect only the sub-
+# routine that unpicks the arguments.]
+#
+# It is intended that makezones will normally be run as part of a "make" 
+# sequence which will also install the files and reload the nameserver(s)
+# after makezones has run successfully. Thus, the command to run it will
+# normally be stored in a file and not typed each time.
+# 
+# The output files are actually written to temporary files whose names are the 
+# same as the final ones with ".new" appended. If the processing succeeds,
+# these files are renamed; if it fails, they are deleted.
+#
+# Normally no options are required. There is currently only one option:
+#
+#   -short   Used when a new zone file is more than 5% shorter than the 
+#            previous version. If not given, the processing will fail if
+#            a new file is that much shorter. This guards against the case
+#            of accidental loss of large portions of the source file. Setting
+#            -short disables the length checking for all zones. You need to
+#            set this option if the previous versions of the files do not
+#            exist. The script can be configured to default to -short; see
+#            "configuration options" above.
+# 
+# The input file must be writable. The first thing the script does is to update 
+# the serial number in the original file. This forms a permanent record and 
+# ensures that all the created zones have the same number. The form of the
+# serial number must be <year><month><day><sequence>, as in the example SOA
+# record shown above. The code will continue to work after December 31, 1999.
+# If more than 99 updates are done in one day, the failure is soft in that a 
+# valid serial number is still generated, though it no longer contains that
+# day's date.
+#
+# 
+# Written by Philip Hazel <ph10@cus.cam.ac.uk>
+#   University Computing Service
+#   Computer Laboratory
+#   New Museums Site
+#   Cambridge CB2 3QG 
+#   United Kingdom
+#   +44 223 334714
+#
+# Started: August 1993
+# Running: September 1993
+#
+# Update history:
+#   0.03   07-Sep-93  I'd forgotten to allow TTLs on SOA records.
+#   0.04   08-Sep-93  Allow comments before the SOA record.
+#                     In several places, " " appeared in calls to split(),
+#                       where "\s" should have appeared.
+#                     Allow non-standard names in quotes. This lets in
+#                       names like "3cpu" and "*.something".
+#                     Treat tabs after >F etc as multiple spaces.
+#                     Allow the name "@"; replace by zone name + dot.
+#                     Allow omission of class field except on the SOA record.
+#                     Check WKS address is in known network unless >E given.
+#                     Fail broadcast addresses.
+#   0.05   09-Sep-93  Use $name_pattern to check names.
+#                     Permit "*" as first name component on MX records.
+#   0.06   10-Sep-93  Failed if trailing spaces followed 127.0.0.1
+#   0.06a  22-Sep-93  Updated the specification comments.
+
+
+
+
+##################################################
+#            Print error message and die         #
+##################################################
+
+# Ensure any temporary files are removed first. If reading the main file,
+# $nline will be set non-zero and the current line will be in $_.
+
+sub give_up {
+do remove_temps();
+print "\n** Makezones: $_[0]\n";
+if ($nline > 0)
+  {
+  print "   At line $nline of $source_file:\n";
+  print "   $_";  
+  } 
+die "** Processing abandoned.\n\n";
+}
+
+
+
+##################################################
+#       Print error message and continue         #
+##################################################
+
+# After too many errors, give up. Setting $nline to 0
+# stops it reflecting the input line again.
+
+sub error {
+print "\n** Makezones: $_[0]\n";
+if ($nline > 0)
+  {
+  print "   At line $nline of $source_file:\n";
+  print "   $_";  
+  } 
+if (++$errors > 10)
+  { 
+  do remove_temps();
+  die "\n** Makezones: too many errors - processing abandoned.\n\n";  
+  } 
+}
+
+
+
+##################################################
+#       Print line to all reverse zone files     #
+##################################################
+
+sub print_reverse {
+local($i);
+for ($i = 0; $i < $rzone_count; $i++)
+  {
+  local($handle) = "REVERSE$i"; 
+  print $handle $_[0];
+  }
+}   
+
+
+
+##################################################
+#            Unpick the argument list            #
+##################################################
+
+# Exit from the whole program on failure. 
+
+sub unpick_args {
+$rzone_count = 0;
+
+# Handle options
+
+while ($#ARGV >= 0 && substr($ARGV[0], 0, 1) eq '-')
+  {
+  if ($ARGV[0] eq "-short")  { $opt_short = 1; }
+  else { do give_up("unknown option \"$ARGV[0]\""); } 
+  shift ARGV;
+  }
+  
+# Now we should be left with at least four arguments   
+
+do give_up("at least three arguments are needed") if $#ARGV < 2;
+
+# The first argument is the source file
+
+$source_file = $ARGV[0]; shift ARGV;
+
+# The second argument is the zone name; remove the trailing dot
+# if present.
+
+$zone_name = $ARGV[0]; shift ARGV;
+chop($zone_name) if (substr($zone_name, -1, 1) eq ".");
+
+# The third argument is the forwards zone file
+
+$forward_file = $ARGV[0]; shift ARGV;
+
+# We now have zero or more reverse zone files
+
+while ($#ARGV >= 0)
+  {
+  local($rzone) = $ARGV[0]; shift ARGV;
+  $rzone_file[$rzone_count] = $rzone;
+
+  # Check explicitly for a class B or a class C number. I couldn't
+  # find a cunning way of writing a single regular expression that
+  # handled this. Anyway, we need to differentiate in order to check
+  # the values.   
+  
+  local($a,$b,$c) = $rzone =~ /^.*\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  
+  if ("$a" eq "")
+    {
+    ($a,$b) = $rzone =~ /^.*\.(\d{1,3})\.(\d{1,3})$/;  
+    do give_up("\"$rzone\" does not end with a class B or C ".
+      "network number") if $a eq ""; 
+    do give_up("bad class B network $a.$b") if ($a < 128 || $a > 191);
+    $rzone_number[$rzone_count++] = ($a << 24) + ($b << 16); 
+    } 
+  else
+    {
+    do give_up("bad class C network $a.$b.$c") 
+      if ($a < 192 || $a > 223);
+    $rzone_number[$rzone_count++] = ($a << 24) + ($b << 16) + ($c << 8);    
+    }  
+  }  
+}
+
+
+
+##################################################  
+#         Verify what we are going to do         #
+##################################################
+
+sub verify {
+print "\nMakezones $version_number\n";
+print "Generating DNS zone files for $zone_name from $source_file.\n";
+print "  Forward zone file:  $forward_file\n";
+printf "  Reverse zone file%s ", ($rzone_count == 1)? ": " : "s:";
+
+if ($rzone_count > 0)
+  {
+  for ($i = 0; $i < $rzone_count; $i++)
+    {
+    print " "x22 if $i != 0;
+    print "$rzone_file[$i]\n";  
+    }
+  }
+else { print "<none>\n"; }    
+}
+
+
+
+##################################################
+#           Update the serial number             #
+##################################################
+
+# This function also checks out the format of the SOA
+# record at the top of the file. We require it to be split
+# so that every field is on a different line.
+
+sub update_serial {
+local($i);
+print "\nUpdating the serial number in the source file...\n" if $chatty;
+open(SOURCE, "+<$source_file") ||
+  do give_up("unable to open $source_file for read/write (to update serial)");
+
+# Check out the first line as the start of the SOA data. Skip any
+# prior comments, counting them so that we know how many lines to
+# copy when copying the SOA data.
+
+for (;;)
+  {  
+  $_ = <SOURCE>;
+  last if (!/^\s*$/ && !/^\s*;/);
+  $soa_count++;
+  }  
+
+local($host,$hostmaster);
+local($at,$rest) = split(/\s+/, $_, 2);
+if ($rest =~ /^\d/)
+  {
+  ($ttl,$host,$hostmaster) = 
+    $rest =~ /^(\d+)\s+IN\s+SOA\s+(\S+)\s+(\S+)\s*\($/; 
+  }
+else
+  {  
+  ($host,$hostmaster) = $rest =~ /^IN\s+SOA\s+(\S+)\s+(\S+)\s*\($/;
+  }
+
+do give_up("malformed SOA record") 
+  if ($at ne "@" || $host eq "" || $hostmaster eq "");
+
+# Remember where to write the second line, read it, and fish
+# out the serial number.
+
+local($pos) = tell SOURCE;
+$_ = <SOURCE>;
+local($indent,$value) = /^(\s+)(\d{10})(\s*;.*|)$/;
+do give_up("malformed serial number line (line 2 of SOA)") if ($value eq "");
+  
+# Check out the remaining lines of the SOA record
+
+for ($i = 3; $i <= 6; $i++)
+  {
+  $_ = <SOURCE>;
+  local($check) = ($i == 6)? /^\s+(\d+)\s*\)(\s*;.*|)$/ : /^\s+(\d+)(\s*;.*|)$/;
+  do give_up("line $i of the SOA record is malformed") if ($check eq "");
+  }   
+
+# Calculate the serial number for the first update of
+# today, allowing for the impending millenium.
+
+local($today_serial) = `date +20%y%m%d01`;
+$today_serial -= 100000000 if (substr($today_serial, 2, 2) > 90);
+
+# If the existing serial number is already >= today's
+# start, increment it by one. Otherwise use today's start.
+
+$value = ($value >= $today_serial)? $value+1 : $today_serial;
+
+# Re-write the start of the second record with the new serial number.
+
+seek(SOURCE, $pos, 0);
+print SOURCE "$indent$value";
+close SOURCE;
+}
+
+
+
+
+
+##################################################
+#          Handle comment lines                  #
+##################################################
+
+sub handle_comment{
+if (/^;F /)
+  {
+  printf FORWARD "; %s", substr($_, 3);
+  }
+elsif (/^;R /)
+  {
+  do print_reverse(join("", "; ", substr($_, 3)));
+  }       
+}
+
+
+
+
+
+##################################################
+# Check final field is a fully-qualified name    #
+##################################################
+
+sub check_fqn{
+do error("$_[1] record must point to a valid, fully qualified name.")
+  if ($_[0] !~ /^[a-zA-Z][a-zA-Z\d\-]*(\.[a-zA-Z][a-zA-z\d\-]*)*\.\s*$/)
+}
+
+
+
+
+##################################################
+#              Handle non-comment records        #
+##################################################
+
+# The record is stored in $_ on entry. Do not alter this,
+# since it is reflected after an error message. However,
+# is is permitted to read a continuation record into it
+# (as is done for WKS handling).
+
+sub handle_record {
+$forwards_only = $reverse_only = $external_net = 0;
+
+# If the record starts with ">E ", ">F " or ">R " it is for the forward
+# or reverse zones only. Set flags for later checks once the type of
+# record is known, and remove these characters. $forwards_only must
+# always be set if $external_net is set. If ">E" etc. are followed by
+# a tab, this must be interpreted as if it were several spaces; the
+# right thing happens if the tab is not removed.
+
+if (/^>E\s/)
+  {
+  $forwards_only = $external_net = 1;
+  $rest = substr($_, (substr($_,2,1) eq " ")? 3:2);
+  }
+elsif (/^>F\s/)
+  {
+  $forwards_only = 1; 
+  $rest = substr($_, (substr($_,2,1) eq " ")? 3:2);
+  }
+elsif (/^>R\s/)
+  {
+  $reverse_only = 1;
+  $rest = substr($_, (substr($_,2,1) eq " ")? 3:2);
+  }
+else
+  { $rest = $_; }       
+
+# Split the line into the first field (name) and the rest
+# of the line. Name is null if the line starts with a space.
+# In this case, set it to the value from the previous record,
+# but set the printing name to blanks so it isn't output.
+# We still use split() in this case, because it gets rid
+# of the leading spaces on the remainder of the line.
+
+($name,$rest) = split(/\s+/, $rest, 2);
+if ($name eq "")
+  {
+  $name = $lastname;
+  $printname = "  ";
+  }
+else 
+  { 
+  $printname = $name;
+  $lastname = $name;
+  } 
+
+# If $name is null, it means we have hit a record without a name
+# field at the top of the file. In a zone file this would mean the
+# name of the zone, but we don't allow this laxness.
+
+if ($name eq "")
+  {
+  do error("missing name on the first record after initial SOA + NS records.");
+  return;
+  }   
+
+# Split off the TTL field, if present. It must consist entirely 
+# of digits.
+
+if ($rest =~ /^\d/)
+  {
+  ($ttl,$rest) = split(/\s+/, $rest, 2);
+  if ($ttl ne "" && $ttl !~ /^\d+$/)
+    {
+    do error("invalid TTL field (not all digits)."); 
+    return; 
+    }
+  }
+else { $ttl = ""; }
+
+# The class field may or may not be present. If not, the rule is to
+# copy it from the previous record, but we support only the "IN"
+# class anyway.
+
+($class,$rest) = split(/\s+/, $rest, 2);
+if ($class eq "IN")
+  {
+  ($type,$rest) = split(/\s+/, $rest, 2); 
+  }
+else
+  {
+  $type = $class;
+  $class = "";  
+  }   
+
+# Forward- and reverse-only flags may be specified only for A records,
+# except that >E may be specified for WKS records.
+
+if ($external_net)
+  {
+  do error(">E may be specified only for type A or type WKS records.")
+    if ($type ne "A" && $type ne "WKS");   
+  }
+else
+  {  
+  do error(">F and >R may be specified only for type A records.")
+    if (($forwards_only || $reverse_only) && $type ne "A");
+  } 
+
+# If the name's components all consists of digits, it it taken as a
+# reversed IP address for inclusion in the reverse zone. Otherwise its
+# components must match the pattern set in the $name_pattern variable.
+# It may not end with a dot, as it is a subdomain name. Repeated names
+# get checked twice, but this isn't a great overhead.
+#
+# To allow for exceptions to the general $name_pattern check, we permit
+# names in double quotes. These are not checked at all.
+#
+# We must also allow the name "@" so that people can set up, for example,
+# MX records for their entire zone, and we allow the first component of
+# names on MX records to be "*".
+
+if ($name eq "@")
+  {
+  $name = "$zone_name."; 
+  $printname = $name if (substr($printname, 0, 1) ne " "); 
+  } 
+elsif ($name =~ /^\*\./)
+  {
+  if ($name !~ /^\*\.$name_pattern(\.$name_pattern)*$/)
+    {
+    do error("invalid wildcard name field\n".
+             "** (or other components do not match name pattern).");
+    $name = $lastname = "dummy";     # prevent subsequent errors
+    }
+  elsif ($type ne "MX")
+    {
+    do error("wildcard names are permitted only on MX records.");
+    $name = $lastname = "dummy";     # prevent subsequent errors
+    }                 
+  }    
+elsif (substr($name, 0, 1) eq "\"" && substr($name, -1) eq "\"")
+  {
+  $name = substr($name, 1, length($name) - 2);   
+  $printname = $name if (substr($printname, 0, 1) ne " "); 
+  } 
+elsif ($name =~ /^\d{1,3}(\.\d{1,3})*$/)
+  {
+  # Just check that this is on a PTR or NS record - full checking of the
+  # name happens later for PTR & NS records. 
+  if ($type ne "PTR" && $type ne "NS")
+    {  
+    do error("invalid name field for this type of record.");
+    $name = $lastname = "dummy";     # prevent subsequent errors
+    }  
+  }
+elsif ($name !~ /^$name_pattern(\.$name_pattern)*$/) 
+  { 
+  do error("invalid name field (components do not match name pattern).");
+  $name = $lastname = "dummy";     # prevent subsequent errors
+  }
+
+
+
+# Now we perform individual check which depend on the
+# record's type field. We support only the following types:
+# A, NS, CNAME, PTR, HINFO, MX, TXT, WKS.
+
+
+
+# Type A - host address; the address must be in one of the networks
+# being processed, unless it was flagged as an external network.
+
+if ($type eq "A")
+  {
+  local($rzone); 
+  local($a,$b,$c,$d) = 
+    $rest =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\s*$/;
+
+  if ($a eq "")
+    {
+    do error("IP address is incomplete.");
+    return;
+    }
+    
+  if ($a > 255 || $b > 255 || $c > 255 || $d > 255) 
+    {
+    do error("IP address contains component with value greater than 255.");
+    return;
+    }
+    
+  do error ("Broadcast address not allowed.") 
+    if (($a >= 192 && $d == 255) || ($a < 192 && $c == 255 && $d == 255));
+    
+  # The loopback address is always treated as external
+  
+  $external_net = $forwards_only = 1 if ($rest =~ /^\s*127\.0\.0\.1\s*$/);
+    
+  # Check known network (& find network) unless external
+   
+  if (!$external_net)
+    { 
+    local($net) = ($a << 24) + ($b << 16);
+    $net += ($c << 8) if $a >= 192;
+    
+    for ($rzone = 0; $rzone < $rzone_count; $rzone++)
+      { last if ($net == $rzone_number[$rzone]); }
+      
+    if ($rzone >= $rzone_count)
+      {
+      do error("IP address is not in a known network (use >E for externals).");
+      return;
+      }    
+    }
+    
+  # Output the A record to the forward file, unless reverse-only record.
+  
+  print FORWARD "$printname  $ttl  $class  A  $rest" if !$reverse_only;
+  
+  # If required, generate a PTR record for the reverse file.
+ 
+  if (!$forwards_only)
+    {
+    $thisaddress = "$a.$b.$c.$d"; 
+    if ($addresses{"$thisaddress"} != "")
+      {
+      do error("duplicate IP address $thisaddress specified for a PTR record.\n".
+        "** The first occurrence was in line $addresses{$thisaddress}.");
+      }
+    else
+      {      
+      local($handle) = "REVERSE$rzone";
+      print $handle "$d";
+      print $handle ".$c" if ($a < 192);
+      print $handle "  $ttl  $class  PTR  $name"; 
+      print $handle ".$zone_name." if (substr($name, -1, 1) ne ".");
+      print $handle "\n";  
+      $addresses{"$thisaddress"} = $nline;
+      } 
+    }  
+    
+  return; 
+  }
+
+
+
+# Type NS - identity of nameserver. As the zone's nameserver records were
+# processed at the top of the file, these are NS records for devolved sub-
+# zones. Check that the name is fully qualified (ends with dot).
+
+if ($type eq "NS")
+  {
+  do check_fqn($rest, "NS");
+
+  # If the name starts with a digit, it must be the reversed address of
+  # a devolved sub-zone of a Class B network.
+  
+  if ($name =~ /^\d/)
+    {
+    local($net, $rzone); 
+    local($a,$b,$c) = $name =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    
+    if ($a eq "")
+      {
+      do error("subnet name on NS record is invalid.");
+      return; 
+      } 
+ 
+    $net = ($c << 24) + ($b << 16);
+     
+    for ($rzone = 0; $rzone < $rzone_count; $rzone++)
+      { last if ($net == $rzone_number[$rzone]); }
+      
+    if ($rzone >= $rzone_count)
+      { 
+      do error("$c.$b.$a is not a subnet of a known network."); 
+      }
+    else
+      {
+      local($handle) = "REVERSE$rzone";
+      print $handle "$a  $ttl  $class  NS  $rest";
+      }       
+    }
+    
+  # Otherwise this is a devolution from the main forwards zone
+  
+  else { print FORWARD "$printname  $ttl  $class  NS  $rest"; }
+  return;
+  }           
+  
+
+
+# Type CNAME - pointer to canonical name. We require the canonical
+# name to be fully qualified. We also want to check that any name
+# that is on a CNAME record does not also appear on any other records.
+# We do this by keeping a list of CNAME names in an associative array,
+# and re-scanning the file at the end.
+
+if ($type eq "CNAME")
+  {
+  do check_fqn($rest, "CNAME");  
+  if ($cnames{"$name"} eq "")
+    { 
+    $cnames{"$name"} = $nline;
+    print FORWARD "$name  $ttl $class  CNAME  $rest";
+    }
+  else 
+    { 
+    do error("$name appears on a previous CNAME record (line $cnames{$name}).");
+    } 
+  return;  
+  } 
+
+
+
+# Type PTR - pointer to entity elsewhere in the DNS; used only
+# for explicit reverse-lookup entries when the name is not in 
+# this forwards zone. The name must be a complete reversed
+# IP address.
+
+if ($type eq "PTR")
+  {
+  local($net, $rzone); 
+  local($a,$b,$c,$d) = 
+    $name =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    
+  if ($a eq "")
+    { 
+    do error("name on PTR record must be complete IP address");
+    return;
+    }
+    
+  if ($a > 255 || $b > 255 || $c > 255 || $d > 255) 
+    {
+    do error("IP address contains component with value greater than 255.");
+    return;
+    }    
+
+  do check_fqn($rest, "PTR"); 
+    
+  $net = ($d << 24) + ($c << 16);
+  $net += ($b << 8) if $d >= 192;
+   
+  for ($rzone = 0; $rzone < $rzone_count; $rzone++)
+    { last if ($net == $rzone_number[$rzone]); }
+    
+  if ($rzone >= $rzone_count)
+    { 
+    $net = ($d >= 192)? "$d.$c.$b" : "$d.$c"; 
+    do error("$net is not a known network."); 
+    }
+  else
+    {
+    $thisaddress = "$d.$c.$b.$a"; 
+    if ($addresses{"$thisaddress"} != "")
+      {
+      do error("duplicate IP address $thisaddress specified for a PTR record.\n".
+        "** The first occurrence was in line $addresses{$thisaddress}.");
+      }
+    else
+      { 
+      local($handle) = "REVERSE$rzone";
+      print $handle "$a";
+      print $handle ".$b" if $d < 192; 
+      print $handle "  $ttl $class  PTR  $rest";
+      $addresses{"$thisaddress"} = $nline;
+      }  
+    }       
+    
+  return; 
+  }
+
+
+
+# Type HINFO - host information; no further checking
+
+if ($type eq "HINFO")
+  {
+  print FORWARD "$printname  $ttl  $class  HINFO  $rest";
+  return;   
+  }
+
+
+
+# Type MX - mail exchanger; there must be a preference and
+# a fully-qualified gateway name.
+
+if ($type eq "MX")
+  {
+  ($pref,$gateway) = split(/\s+/, $rest, 2);
+  do check_fqn($gateway, "MX");
+  if ($pref !~ /^\d+$/)
+    {
+    do error("invalid MX preference field (not all digits)."); 
+    }
+  print FORWARD "$printname  $ttl  $class  MX  $pref  $gateway";
+  return; 
+  }
+
+
+
+# Type TXT - arbitrary descriptive text, enclosed in double quotes
+
+if ($type eq "TXT")
+  {
+  if ($rest !~ /^\".*\"\s*$/)
+    {
+    do error("malformed TXT record - must use double quotes.");
+    }
+  print FORWARD "$printname  $ttl  $class  TXT  $rest";
+  return; 
+  }
+
+
+
+# Type WKS - well-known services. This commonly is continued onto
+# other lines, so we must handle continuations. Check the protocol
+# field is either TCP or UDP, then check all the services appear
+# in the $services file, if it is set (typically /etc/services).
+# Check the address is in a known network, unless external.
+
+if ($type eq "WKS")
+  {
+  ($address,$proto,$rest) = split(/\s+/, $rest, 3);
+  
+  # Check the address
+   
+  if (!$external_net)
+    {
+    local($a,$b,$c,$d) = 
+      $address =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    
+    if ($a eq "")
+      { 
+      do error("IP address on WKS record is incomplete");
+      return;
+      }
+    
+    if ($a > 255 || $b > 255 || $c > 255 || $d > 255) 
+      {
+      do error("IP address contains component with value greater than 255.");
+      return;
+      }    
+       
+    $net = ($a << 24) + ($b << 16);
+    $net += ($c << 8) if $a >= 192;
+     
+    for ($rzone = 0; $rzone < $rzone_count; $rzone++)
+      { last if ($net == $rzone_number[$rzone]); }
+      
+    if ($rzone >= $rzone_count)
+      { 
+      $net = ($a >= 192)? "$a.$b.$c" : "$a.$b"; 
+      do error("$net is not a known network."); 
+      }
+    }  
+    
+  # Check the protocol 
+ 
+  if ($proto ne "UDP" && $proto ne "TCP")
+    {
+    do error("protocol in WKS record must be \"UCP\" or \"TCP\".");
+    }
+    
+  # Start of line prefix - the rest of the line is in $rest
+   
+  $pref = "$printname  $ttl  $class  WKS  $address $proto"; 
+
+  # Allow continuation bracket at start of list only
+   
+  if (substr($rest, 0, 1) eq "(") 
+    { 
+    $continued = 1;
+    ($list) = $rest =~ /^\(\s*(.+)$/;
+    }    
+  else { $continued = 0; $list = $rest; } 
+  
+  # Loop for handling continuation records 
+   
+  for (;;)
+    {
+    while (substr($list, -1) eq "\n") { chop($list); }
+    while (substr($list, -1) eq " ")  { chop($list); }
+
+    # Loop for scanning the list of services
+     
+    while ($list ne "")
+      {
+      if (index($list, " ") >= 0)
+        {  
+        ($servicename,$list) = split(/\s+/, $list, 2); 
+        }
+      else
+        {
+        $servicename = $list;
+        $list = "";
+  
+        # Check for closing bracket at end of line. It may or may not
+        # be preceded by a space.
+                
+        if ($continued && substr($servicename, -1) eq ")")
+          {
+          chop($servicename);
+          $continued = 0;
+          }     
+        }
+        
+      # Check the service if required. $servicename can be empty if
+      # a closing bracket is preceded by a space.
+        
+      if ("$services" ne "" && $servicename ne "")
+        { 
+        if (system("$grep \'^$servicename[ \t]\' $services >/dev/null")/256)
+          {
+          do error("\"$servicename\" does not appear in $services");
+          }
+        } 
+      }  
+    
+    print FORWARD "$pref  $rest";
+    return if !$continued;    
+    
+    # Read in the next line, which contains more services, for the
+    # next time round this loop. 
+    
+    $_ = <SOURCE>;
+    $nline++; 
+    ($list) = $_ =~ /^\s*(.+)$/;  
+    $rest = "$list\n"; 
+    $pref = "  "; 
+    }
+  } 
+  
+  
+
+# Else we have a bad record
+
+do error("unknown record type.");
+}
+
+
+
+
+
+##################################################
+#           Generate the zone data               #
+##################################################
+
+sub generate_zones{
+local($i);
+
+$lastname = "";
+$nline = 0;
+
+print "Generating the zone data...\n" if $chatty;
+
+# Open the input file
+
+open(SOURCE, "$source_file") ||
+  do give_up("unable to open $source_file");
+
+# Open the output files
+
+open(FORWARD, ">$forward_file.new") ||
+  do give_up("unable to open $forward_file.new");
+  
+for ($i = 0; $i < $rzone_count; $i++)
+  {
+  open("REVERSE$i", ">$rzone_file[$i].new") ||
+    do give_up("unable to open $rzone_file[$i].new");
+  }    
+
+# Copy the SOA record into all the output files
+
+for ($nline = 1; $nline <= $soa_count; $nline++)
+  {
+  $_ = <SOURCE>;
+  print FORWARD $_;
+  do print_reverse($_);  
+  }  
+
+# Copy all the NS records for these zones to all the outputs. Stop
+# on reaching a non-NS record or a record with a name field. Skip
+# blank lines, and handle comments as normal.
+
+$nline--;
+for (;;)
+  {
+  $_ = <SOURCE>;
+  $nline++; 
+  if (/^;/) { do handle_comment(); next; } 
+  next if /^\s*$/; 
+  last if /^\S/;
+  local($ttl,$class,$ns) = /^\s+(\d+\s+|)(IN\s+|)NS\s+(\S+)\s*$/; 
+  last if $ns eq "";
+  do check_fqn($ns, "NS");
+  print FORWARD $_;
+  do print_reverse($_); 
+  } 
+  
+# OK, now we have the first general record in $_. We can now scan
+# the rest of the file, processing as required. We do a check on
+# the first character of the line, because it is easy in moments
+# of absent-mindedness to do silly things like put in comments with
+# a sharp sign character instead of a semicolon. Let through only
+# those characters that can legally begin a line.
+  
+for (;;)
+  {
+  if (!/^\s*$/)
+    {
+    if (!/^[\s\da-zA-Z\;>\"@\*]/)
+      { do error("invalid line - semicolon omitted?"); }
+    elsif (substr($_, 0, 1) eq ";") 
+      { do handle_comment(); }
+    else 
+      { do handle_record(); }  
+    }  
+  last if ! ($_ = <SOURCE>);  
+  $nline++; 
+  }
+
+# Close all the files
+
+close FORWARD;
+close SOURCE;  
+for ($i = 0; $i < $rzone_count; $i++) { close("REVERSE$i"); }
+}
+
+
+
+
+##################################################
+#        Rescan source for CNAME check           #
+##################################################
+
+sub cname_check{
+$nline = 0;
+$lastname = "";
+
+print "Re-reading the source file for CNAME check...\n" if $chatty;
+
+# Open the input file
+
+open(SOURCE, "$source_file") ||
+  do give_up("unable to open $source_file");
+
+# Skip the SOA record
+
+for ($nline = 1; $nline <= $soa_count; $nline++) { $_ = <SOURCE>; }  
+$nline--;
+
+# Scan for CNAMEs. We only need to do a very little parsing,
+# as all checking has previously been done. We must still
+# do the lastname stuff, to catch cases of a CNAME record
+# followed by nameless records.
+
+for (;;)
+  {
+  last if ! ($_ = <SOURCE>);  
+  $nline++; 
+  if (!/^\s*$/ && substr($_, 0, 1) ne ";")
+    {
+    if (/^>(E|F|R) /) { $rest = substr($_, 3); }
+      else { $rest = $_; }       
+    ($name,$rest) = split(/\s+/, $rest, 2);
+    $name = $lastname if $name eq "";
+    $lastname = $name;
+    if ($rest =~ /^\d/) { ($ttl,$rest) = split(/\s+/, $rest, 2); }
+    ($class,$rest) = split(/\s+/, $rest, 2);
+    if ($class eq "IN")
+      { ($type,$rest) = split(/\s+/, $rest, 2); }
+    else { $type = $class; }
+    if ($type ne "CNAME" && $cnames{$name} ne "")
+      {
+      do error("$name appears on a CNAME record (line $cnames{$name}) and ".
+        "so may not\n   appear on any other records.");
+      } 
+    }  
+  }
+
+close SOURCE;  
+}
+
+
+
+
+##################################################
+#           Compare new/old zone lengths         #
+##################################################
+
+sub check_length{
+local($length_old, $length_new, $length_diff);
+local($name) = $_[0];
+
+if (! -e $name)
+  {
+  do give_up("$name is unavailable for length checking.");
+  return;
+  }   
+
+@stat_data = stat($name);
+$length_old = $stat_data[7];
+@stat_data = stat("$name.new");
+$length_new = $stat_data[7];
+$length_diff = $length_old - $length_new;
+
+if ($length_diff > ($length_old/20))
+  {
+  do error("$name.new is more than 5% shorter than $name.\n".
+    "** Use -short to override this check.");  
+  $lastwaserror = 1; 
+  } 
+elsif ($chatty)
+  {
+  print "\n" if $lastwaserror; 
+  print "Length of $name is OK\n";
+  $lastwaserror = 0; 
+  }   
+}
+
+
+sub compare_lengths{
+local($i);
+print "Comparing lengths of old and new zone files...\n" if $chatty;
+$lastwaserror = 0;
+do check_length("$forward_file");
+for ($i = 0; $i < $rzone_count; $i++)
+  {
+  do check_length("$rzone_file[$i]");
+  }  
+}
+
+
+
+##################################################
+#         Rename new zones to final names        #
+##################################################
+
+sub rename_zones {
+local($i);
+print "Renaming the new zone files to their final names...\n" if $chatty;
+rename("$forward_file.new", "$forward_file");
+for ($i = 0; $i < $rzone_count; $i++)
+  { rename("$rzone_file[$i].new", "$rzone_file[$i]"); }
+}
+
+
+
+##################################################
+#           Remove temporary files               #
+##################################################
+
+# This is used to remove the temporary files if processing
+# fails. It is not an error for the temps not to exist.
+
+sub remove_temps{
+local ($i);
+unlink "$forward_file.new";
+for ($i = 0; $i < $rzone_count; $i++)
+  { unlink "$rzone_file[$i].new"; }
+}
+
+
+
+##################################################
+#                Main Program                    #
+##################################################
+
+# After any serious error, the script dies and does not
+# return to the main code. Syntax errors etc. carry on,
+# leaving $errors containing the count. Only generate_zones()
+# cname_check() and compare_lengths() handle errors in this 
+#way - all the other routines generate hard errors.
+
+$rzone_count = $errors = 0;
+$soa_count = 6;
+
+do unpick_args();
+do verify();
+do update_serial();
+do generate_zones();
+print "\n" if $errors > 0;
+do cname_check();
+$nline = -1;
+
+if ($errors == 0)
+  {
+  do compare_lengths() if !$opt_short;
+  if ($errors == 0)
+    {  
+    do rename_zones();
+    print "\nMakezones completed successfully.\n";
+    exit 0;
+    } 
+  }
+
+do remove_temps(); 
+print "\n** Makezones failed.\n";
+exit 99;
+
+# End of makezones 
+
