@@ -16,30 +16,36 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)logwtmp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)logwtmp.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <utmp.h>
 
 #define	WTMPFILE	"/usr/adm/wtmp"
 
-logwtmp(line)
-	char *line;
+logwtmp(line, name, host)
+	char *line, *name, *host;
 {
 	struct utmp ut;
+	struct stat buf;
 	int fd;
 	time_t time();
 	char *strncpy();
 
 	if ((fd = open(WTMPFILE, O_WRONLY|O_APPEND, 0)) < 0)
 		return;
-	bzero(ut.ut_name, sizeof(ut.ut_name));
-	bzero(ut.ut_host, sizeof(ut.ut_host));
-	(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
-	(void)time(&ut.ut_time);
-	(void)write(fd, (char *)&ut, sizeof(struct utmp));
+	if (!fstat(fd, &buf)) {
+		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+		(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
+		(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+		(void)time(&ut.ut_time);
+		if (write(fd, (char *)&ut, sizeof(struct utmp)) !=
+		    sizeof(struct utmp))
+			(void) ftruncate(fd, buf.st_size);
+	}
 	(void)close(fd);
 }
