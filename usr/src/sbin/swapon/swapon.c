@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)swapon.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)swapon.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -22,10 +22,13 @@ main(argc, argv)
 		while ( (fsp = getfsent()) != 0){
 			if (strcmp(fsp->fs_type, FSTAB_SW) != 0)
 				continue;
-			fprintf(stdout, "Adding %s as swap device\n",
+			printf("Adding %s as swap device\n",
 			    fsp->fs_spec);
 			if (syscall(VSWAPON, fsp->fs_spec) == -1) {
-				perror(fsp->fs_spec);
+				extern errno;
+				extern char *sys_errlist[];
+				printf("%s: %s\n",
+				    sys_errlist[errno]);
 				stat = 1;
 			}
 		}
