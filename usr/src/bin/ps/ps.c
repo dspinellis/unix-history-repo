@@ -11,15 +11,29 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
  * ps
+ *
+ * $Log:	ps.c,v $
+ * Revision 5.2.1.4  85/08/25  22:25:43  crl
+ * 'n' flag now also causes usernames to be printed as uid's.
+ * 
+ * Revision 5.2.1.3  85/08/10  01:33:18  crl
+ * Implemented the wait channel stop list in addchan() and the index table
+ * 	in getchan()
+ * 
+ * Revision 5.2.1.2  85/08/05  23:40:34  crl
+ * Cut down # of calls to realloc by allocating in bigger chunks in
+ * 	addchan().
+ * If terminal width > WTSIZ, use a wider field for wchan.
+ * 
  */
 #include <stdio.h>
 #include <ctype.h>
-#include <nlist.h>
+#include <a.out.h>
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
@@ -35,37 +49,70 @@ static char sccsid[] = "@(#)ps.c	5.2 (Berkeley) %G%";
 #include <math.h>
 #include <errno.h>
 
-struct nlist nl[] = {
-	{ "_proc" },
+char *nl_names[] = {
+	"_proc",
 #define	X_PROC		0
-	{ "_Usrptmap" },
+	"_Usrptmap",
 #define	X_USRPTMAP	1
-	{ "_usrpt" },
+	"_usrpt",
 #define	X_USRPT		2
-	{ "_text" },
+	"_text",
 #define	X_TEXT		3
-	{ "_nswap" },
+	"_nswap",
 #define	X_NSWAP		4
-	{ "_maxslp" },
+	"_maxslp",
 #define	X_MAXSLP	5
-	{ "_ccpu" },
+	"_ccpu",
 #define	X_CCPU		6
-	{ "_ecmx" },
+	"_ecmx",
 #define	X_ECMX		7
-	{ "_nproc" },
+	"_nproc",
 #define	X_NPROC		8
-	{ "_ntext" },
+	"_ntext",
 #define	X_NTEXT		9
-	{ "_dmmin" },
+	"_dmmin",
 #define	X_DMMIN		10
-	{ "_dmmax" },
+	"_dmmax",
 #define	X_DMMAX		11
-	{ "_Sysmap" },
+	"_Sysmap",
 #define	X_SYSMAP	12
-	{ "_Syssize" },
+	"_Syssize",
 #define	X_SYSSIZE	13
-	{ "" },
+	"_inode",
+#define X_INODE		14
+	"_file",
+#define X_FILE		15
+	"_cfree",
+#define X_CFREE		16
+	"_callout",
+#define X_CALLOUT	17
+	"_swapmap",
+#define X_SWAPMAP	18
+	"_argmap",
+#define X_ARGMAP	19
+	"_kernelmap",
+#define X_KERNELMAP	20
+	"_mbmap",
+#define X_MBMAP		21
+	"_nch",
+#define X_NCH		22
+	"_quota",
+#define X_QUOTA		23
+	"_dquot",
+#define X_DQUOT		24
+	"_swbuf",
+#define X_SWBUF		25
+	"_buf",
+#define X_BUF		26
+	"_cmap",
+#define X_CMAP		27
+	"_buffers",
+#define X_BUFFERS	28
+	""
 };
+
+struct nlist *nl;			/* all because we can't init unions */
+int nllen;				/* # of nlist entries */
 
 struct	savcom {
 	union {
@@ -90,6 +137,7 @@ struct	asav {
 };
 
 char	*lhdr;
+int	wcwidth;		/* width of the wchan field for sprintf*/
 struct	lsav {
 	short	l_ppid;
 	char	l_cpu;
@@ -126,16 +174,18 @@ char	*psdb	= PSFILE;
 #endif
 
 int	chkpid;
-int	aflg, cflg, eflg, gflg, kflg, lflg, sflg,
+int	aflg, cflg, eflg, gflg, kflg, lflg, nflg, sflg,
 	uflg, vflg, xflg, Uflg;
+int	nchans;				/* total # of wait channels */
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *state();
 char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
 char	*strncpy(), *index(), *ttyname(), mytty[MAXPATHLEN+1];
-char	*malloc();
+char	*malloc(), *getchan();
 long	lseek();
 off_t	vtophys();
 double	pcpu(), pmem();
+int	wchancomp();
 int	pscomp();
 int	nswap, maxslp;
 struct	text *atext;
@@ -161,6 +211,36 @@ struct lttys {
 	struct lttys *next;
 } *lallttys;
 
+/*
+ * struct for the symbolic wait channel info
+ *
+ * WNAMESIZ is the max # of chars saved of the symbolic wchan gleaned
+ * from the namelist.  Normally, only WSNAMESIZ are printed in the long
+ * format, unless the terminal width is greater than WTSIZ wide.
+ */
+#define WNAMESIZ	12
+#define WSNAMESIZ	6
+#define WTSIZ		95
+
+struct wchan {
+	char	wc_name[WNAMESIZ+1];	/* symbolic name */
+	caddr_t wc_caddr;		/* addr in kmem */
+} *wchanhd;				/* an array sorted by wc_caddr */
+
+#define NWCINDEX	10		/* the size of the index array */
+
+caddr_t wchan_index[NWCINDEX];		/* used to speed searches */
+/*
+ * names listed here are not kept as wait channels -- this is used to 
+ * remove names that confuse ps, like symbols that define the end of an
+ * array that happen to be equal to the next symbol.
+ */
+char *wchan_stop_list[] = {
+	"umbabeg",
+	"umbaend",
+	"calimit",
+	NULL
+};
 
 int	npr;
 
@@ -222,6 +302,9 @@ main(argc, argv)
 			break;
 		case 'l':
 			lflg++;
+			break;
+		case 'n':
+			nflg++;
 			break;
 		case 's':
 			sflg++;
@@ -366,7 +449,6 @@ klseek(fd, loc, off)
 writepsdb(unixname)
 	char *unixname;
 {
-	int nllen;
 	register FILE *fp;
 	struct lttys *lt;
 
@@ -377,13 +459,15 @@ writepsdb(unixname)
 		exit(1);
 	} else
 		fchmod(fileno(fp), 0644);
-	nllen = sizeof nl / sizeof (struct nlist);
 	fwrite((char *) &nllen, sizeof nllen, 1, fp);
 	fwrite((char *) nl, sizeof (struct nlist), nllen, fp);
 	fwrite((char *) cand, sizeof (cand), 1, fp);
 	fwrite((char *) &nttys, sizeof nttys, 1, fp);
 	for (lt = lallttys ; lt ; lt = lt->next)
 		fwrite((char *)&lt->ttys, sizeof (struct ttys), 1, fp);
+	fwrite((char *) &nchans, sizeof nchans, 1, fp);
+	fwrite((char *) wchanhd, sizeof (struct wchan), nchans, fp);
+	fwrite((char *) wchan_index, sizeof (caddr_t), NWCINDEX, fp);
 	fwrite(unixname, strlen(unixname) + 1, 1, fp);
 	fclose(fp);
 }
@@ -391,7 +475,6 @@ writepsdb(unixname)
 readpsdb(unixname)
 	char *unixname;
 {
-	int nllen;
 	register i;
 	register FILE *fp;
 	char unamebuf[BUFSIZ];
@@ -406,6 +489,7 @@ readpsdb(unixname)
 	}
 
 	fread((char *) &nllen, sizeof nllen, 1, fp);
+	nl = (struct nlist *) malloc (nllen * sizeof (struct nlist));
 	fread((char *) nl, sizeof (struct nlist), nllen, fp);
 	fread((char *) cand, sizeof (cand), 1, fp);
 	fread((char *) &nttys, sizeof nttys, 1, fp);
@@ -415,6 +499,15 @@ readpsdb(unixname)
 		exit(1);
 	}
 	fread((char *) allttys, sizeof (struct ttys), nttys, fp);
+	fread((char *) &nchans, sizeof nchans, 1, fp);
+	wchanhd = (struct wchan *) malloc(nchans * sizeof (struct wchan));
+	if (wchanhd == NULL) {
+		fprintf(stderr, "ps: Can't malloc space for wait channels\n");
+		nflg++;
+		fseek(fp, (long) nchans * sizeof (struct wchan), 1);
+	} else
+		fread((char *) wchanhd, sizeof (struct wchan), nchans, fp);
+	fread((char *) wchan_index, sizeof (caddr_t), NWCINDEX, fp);
 	while ((*p = getc(fp)) != '\0')
 		p++;
 	return (strcmp(unixname, unamebuf) == 0);
@@ -456,16 +549,21 @@ openfiles(argc, argv)
 getkvars(argc, argv)
 	char **argv;
 {
+	int faildb = 0;			/* true if psdatabase init failed */
 
 	nlistf = argc > 1 ? argv[1] : "/vmunix";
 	if (Uflg) {
+		init_nlist();
 		nlist(nlistf, nl);
+		getvchans();
 		getdev();
 		writepsdb(nlistf);
 		exit (0);
 	} else if (!readpsdb(nlistf)) {
+		init_nlist();
 		if (!kflg)
-			nl[X_SYSMAP].n_name = "";
+			nl[X_SYSMAP].n_un.n_name = "";
+		faildb = 1;
 		nlist(nlistf, nl);
 		nttys = 0;
 		getdev();
@@ -491,6 +589,8 @@ getkvars(argc, argv)
 		(void) lseek(kmem, addr, 0);
 		read(kmem, (char *) Sysmap, Syssize * sizeof (struct pte));
 	}
+	if (faildb)
+		getvchans();
 	usrpt = (struct pte *)nl[X_USRPT].n_value;
 	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
 	klseek(kmem, (long)nl[X_NSWAP].n_value, 0);
@@ -533,6 +633,43 @@ getkvars(argc, argv)
 	dmmax = getw(nl[X_DMMAX].n_value);
 }
 
+/*
+ * get the valloc'ed kernel variables for symbolic wait channels
+ */
+getvchans()
+{
+	int i, tmp;
+
+	if (nflg)
+		return;
+
+#define addv(i) 	addchan(&nl[i].n_un.n_name[1], getw(nl[i].n_value))
+	addv(X_INODE);
+	addv(X_FILE);
+	addv(X_PROC);
+	addv(X_TEXT);
+	addv(X_CFREE);
+	addv(X_CALLOUT);
+	addv(X_SWAPMAP);
+	addv(X_ARGMAP);
+	addv(X_KERNELMAP);
+	addv(X_MBMAP);
+	addv(X_NCH);
+	if (nl[X_QUOTA].n_value != 0) {	/* these are #ifdef QUOTA */
+		addv(X_QUOTA);
+		addv(X_DQUOT);
+	}
+	addv(X_SWBUF);
+	addv(X_BUF);
+	addv(X_CMAP);
+	addv(X_BUFFERS);
+	qsort(wchanhd, nchans, sizeof (struct wchan), wchancomp);
+	for (i = 0; i < NWCINDEX; i++) {
+		tmp = i * nchans;
+		wchan_index[i] = wchanhd[tmp / NWCINDEX].wc_caddr;
+	}
+#undef addv
+}
 printhdr()
 {
 	char *hdr;
@@ -541,9 +678,29 @@ printhdr()
 		fprintf(stderr, "ps: specify only one of s,l,v and u\n");
 		exit(1);
 	}
-	hdr = lflg ? lhdr : 
-			(vflg ? vhdr : 
-				(uflg ? uhdr : shdr));
+	if (lflg) {
+		if (nflg)
+			wcwidth = 6;
+		else if (twidth > WTSIZ)
+			wcwidth = -WNAMESIZ;
+		else
+			wcwidth = -WSNAMESIZ;
+		if ((hdr = malloc(strlen(lhdr) + WNAMESIZ)) == NULL) {
+			fprintf(stderr, "ps: out of memory\n");
+			exit(1);
+		}
+		sprintf(hdr, lhdr, wcwidth, "WCHAN");
+	} else if (vflg)
+		hdr = vhdr;
+	else if (uflg) {
+		/* add enough on so that it can hold the sprintf below */
+		if ((hdr = malloc(strlen(uhdr) + 10)) == NULL) {
+			fprintf(stderr, "ps: out of memory\n");
+			exit(1);
+		}
+		sprintf(hdr, uhdr, nflg ? " UID" : "USER    ");
+	} else
+		hdr = shdr;
 	if (lflg+vflg+uflg+sflg == 0)
 		hdr += strlen("SSIZ ");
 	cmdstart = strlen(hdr);
@@ -1021,7 +1178,7 @@ retucomm:
 }
 
 char	*lhdr =
-"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS  WCHAN STAT TT  TIME";
+"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS %*s STAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
@@ -1032,7 +1189,12 @@ lpr(sp)
 	    ap->a_flag, ap->a_uid,
 	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
 	    ap->a_nice-NZERO, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
-	printf(lp->l_wchan ? " %6x" : "       ", (int)lp->l_wchan&0xffffff);
+	if (lp->l_wchan == 0)
+		printf(" %*s", wcwidth, "");
+	else if (nflg)
+		printf(" %*x", wcwidth, (int)lp->l_wchan&0xffffff);
+	else
+		printf(" %*.*s", wcwidth, abs(wcwidth), getchan(lp->l_wchan));
 	printf(" %4.4s ", state(ap));
 	ptty(ap->a_tty);
 	ptime(ap);
@@ -1053,7 +1215,7 @@ ptime(ap)
 }
 
 char	*uhdr =
-"USER       PID %CPU %MEM   SZ  RSS TT STAT  TIME";
+"%s   PID %%CPU %%MEM   SZ  RSS TT STAT  TIME";
 upr(sp)
 	struct savcom *sp;
 {
@@ -1064,9 +1226,12 @@ upr(sp)
 	rmsize = pgtok(ap->a_rss);
 	if (ap->a_xccount)
 		rmsize += pgtok(ap->a_txtrss/ap->a_xccount);
-	printf("%-8.8s %5d%5.1f%5.1f%5d%5d",
-	    getname(ap->a_uid), ap->a_pid, sp->s_un.u_pctcpu, pmem(ap),
-	    vmsize, rmsize);
+	if (nflg)
+		printf("%4d ", ap->a_uid);
+	else
+		printf("%-8.8s ", getname(ap->a_uid));
+	printf("%5d%5.1f%5.1f%5d%5d",
+	    ap->a_pid, sp->s_un.u_pctcpu, pmem(ap), vmsize, rmsize);
 	putchar(' ');
 	ptty(ap->a_tty);
 	printf(" %4.4s", state(ap));
@@ -1358,4 +1523,215 @@ long	loc;
 	}
 	loc = (long) (ptob(Sysmap[p].pg_pfnum) + (loc & PGOFSET));
 	return(loc);
+}
+
+/*
+ * since we can't init unions, the cleanest way to use a.out.h instead
+ * of nlist.h (required since nlist() uses some defines) is to do a
+ * runtime copy into the nl array -- sigh
+ */
+init_nlist()
+{
+	register struct nlist *np;
+	register char **namep;
+
+	nllen = sizeof nl_names / sizeof (char *);
+	np = nl = (struct nlist *) malloc(nllen * sizeof (struct nlist));
+	if (np == NULL) {
+		fprintf(stderr, "ps: out of memory allocating namelist\n");
+		exit(1);
+	}
+	namep = &nl_names[0];
+	while (nllen > 0) {
+		np->n_un.n_name = *namep;
+		if (**namep == '\0')
+			break;
+		namep++;
+		np++;
+	}
+}
+
+/*
+ * nlist - retreive attributes from name list (string table version)
+ * 	modified to add wait channels - Charles R. LaBrec 8/85
+ */
+nlist(name, list)
+	char *name;
+	struct nlist *list;
+{
+	register struct nlist *p, *q;
+	register char *s1, *s2;
+	register n, m;
+	int maxlen, nreq;
+	FILE *f;
+	FILE *sf;
+	off_t sa;		/* symbol address */
+	off_t ss;		/* start of strings */
+	int type;
+	struct exec buf;
+	struct nlist space[BUFSIZ/sizeof (struct nlist)];
+	char nambuf[BUFSIZ];
+
+	maxlen = 0;
+	for (q = list, nreq = 0; q->n_un.n_name && q->n_un.n_name[0]; q++, nreq++) {
+		q->n_type = 0;
+		q->n_value = 0;
+		q->n_desc = 0;
+		q->n_other = 0;
+		n = strlen(q->n_un.n_name);
+		if (n > maxlen)
+			maxlen = n;
+	}
+	f = fopen(name, "r");
+	if (f == NULL)
+		return (-1);
+	fread((char *)&buf, sizeof buf, 1, f);
+	if (N_BADMAG(buf)) {
+		fclose(f);
+		return (-1);
+	}
+	sf = fopen(name, "r");
+	if (sf == NULL) {
+		/* ??? */
+		fclose(f);
+		return(-1);
+	}
+	sa = N_SYMOFF(buf);
+	ss = sa + buf.a_syms;
+	n = buf.a_syms;
+	fseek(f, sa, 0);
+	while (n) {
+		m = sizeof (space);
+		if (n < m)
+			m = n;
+		if (fread((char *)space, m, 1, f) != 1)
+			break;
+		n -= m;
+		for (q = space; (m -= sizeof(struct nlist)) >= 0; q++) {
+			if (q->n_un.n_strx == 0 || q->n_type & N_STAB)
+				continue;
+			/*
+			 * since we know what type of symbols we will get,
+			 * we can make a quick check here -- crl
+			 */
+			type = q->n_type & (N_TYPE | N_EXT);
+			if ((q->n_type & N_TYPE) != N_ABS
+			    && type != (N_EXT | N_DATA)
+			    && type != (N_EXT | N_BSS))
+				continue;
+			fseek(sf, ss+q->n_un.n_strx, 0);
+			fread(nambuf, maxlen+1, 1, sf);
+			/* if using wchans, add it to the list of channels */
+			if (!nflg)
+				addchan(&nambuf[1], (caddr_t) q->n_value);
+			for (p = list; p->n_un.n_name && p->n_un.n_name[0]; p++) {
+				s1 = p->n_un.n_name;
+				s2 = nambuf;
+				if (strcmp(p->n_un.n_name, nambuf) == 0) {
+					p->n_value = q->n_value;
+					p->n_type = q->n_type;
+					p->n_desc = q->n_desc;
+					p->n_other = q->n_other;
+					--nreq;
+					break;
+				}
+			}
+		}
+	}
+alldone:
+	fclose(f);
+	fclose(sf);
+	return (nreq);
+}
+
+/*
+ * add the given channel to the channel list
+ */
+addchan(name, caddr)
+char *name;
+caddr_t caddr;
+{
+	static int left = 0;
+	register struct wchan *wp;
+	register char **p;
+
+	for (p = wchan_stop_list; *p; p++) {
+		if (**p != *name)	/* quick check first */
+			continue;
+		if (strncmp(name, *p, WNAMESIZ) == 0)
+			return;		/* if found, don't add */
+	}
+	if (left == 0) {
+		if (wchanhd) {
+			left = 100;
+			wchanhd = (struct wchan *) realloc(wchanhd,
+				(nchans + left) * sizeof (struct wchan));
+		} else {
+			left = 600;
+			wchanhd = (struct wchan *) malloc(left
+				* sizeof (struct wchan));
+		}
+		if (wchanhd == NULL) {
+			fprintf(stderr, "ps: out of memory allocating wait channels\n");
+			nflg++;
+			return;
+		}
+	}
+	left--;
+	wp = &wchanhd[nchans++];
+	strncpy(wp->wc_name, name, WNAMESIZ);
+	wp->wc_name[WNAMESIZ] = '\0';
+	wp->wc_caddr = caddr;
+}
+
+/*
+ * returns the symbolic wait channel corresponding to chan
+ */
+char *
+getchan(chan)
+register caddr_t chan;
+{
+	register i, iend;
+	register char *prevsym;
+	register struct wchan *wp;
+
+	prevsym = "???";		/* nothing, to begin with */
+	if (chan) {
+		for (i = 0; i < NWCINDEX; i++)
+			if ((unsigned) chan < (unsigned) wchan_index[i])
+				break;
+		iend = i--;
+		if (i < 0)		/* can't be found */
+			return prevsym;
+		iend *= nchans;
+		iend /= NWCINDEX;
+		i *= nchans;
+		i /= NWCINDEX;
+		wp = &wchanhd[i];
+		for ( ; i < iend; i++, wp++) {
+			if ((unsigned) wp->wc_caddr > (unsigned) chan)
+				break;
+			prevsym = wp->wc_name;
+		}
+	}
+	return prevsym;
+}
+
+/*
+ * used in sorting the wait channel array
+ */
+int
+wchancomp (w1, w2)
+struct wchan *w1, *w2;
+{
+	register unsigned c1, c2;
+
+	c1 = (unsigned) w1->wc_caddr;
+	c2 = (unsigned) w2->wc_caddr;
+	if (c1 > c2)
+		return 1;
+	else if (c1 == c2)
+		return 0;
+	else
+		return -1;
 }
