@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.33 (Berkeley) %G%
+ *	@(#)sendmail.h	8.34 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.33		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.34		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -278,9 +278,9 @@ ENVELOPE
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
 	ADDRESS		*e_errorqueue;	/* the queue for error responses */
 	long		e_msgsize;	/* size of the message in bytes */
+	long		e_flags;	/* flags, see below */
 	int		e_nrcpts;	/* number of recipients */
 	short		e_class;	/* msg class (priority, junk, etc.) */
-	short		e_flags;	/* flags, see below */
 	short		e_hopcount;	/* number of times processed */
 	short		e_nsent;	/* number of sends since checkpoint */
 	short		e_sendmode;	/* message send mode */
@@ -306,20 +306,21 @@ ENVELOPE
 };
 
 /* values for e_flags */
-#define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
-#define EF_INQUEUE	000002		/* this message is fully queued */
-#define EF_CLRQUEUE	000010		/* disk copy is no longer needed */
-#define EF_SENDRECEIPT	000020		/* send a return receipt */
-#define EF_FATALERRS	000040		/* fatal errors occured */
-#define EF_KEEPQUEUE	000100		/* keep queue files always */
-#define EF_RESPONSE	000200		/* this is an error or return receipt */
-#define EF_RESENT	000400		/* this message is being forwarded */
-#define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
-#define EF_WARNING	002000		/* warning message has been sent */
-#define EF_QUEUERUN	004000		/* this envelope is from queue */
-#define EF_GLOBALERRS	010000		/* treat errors as global */
-#define EF_PM_NOTIFY	020000		/* send return mail to postmaster */
-#define EF_METOO	040000		/* send to me too */
+#define EF_OLDSTYLE	0x0000001	/* use spaces (not commas) in hdrs */
+#define EF_INQUEUE	0x0000002	/* this message is fully queued */
+#define EF_CLRQUEUE	0x0000008	/* disk copy is no longer needed */
+#define EF_SENDRECEIPT	0x0000010	/* send a return receipt */
+#define EF_FATALERRS	0x0000020	/* fatal errors occured */
+#define EF_KEEPQUEUE	0x0000040	/* keep queue files always */
+#define EF_RESPONSE	0x0000080	/* this is an error or return receipt */
+#define EF_RESENT	0x0000100	/* this message is being forwarded */
+#define EF_VRFYONLY	0x0000200	/* verify only (don't expand aliases) */
+#define EF_WARNING	0x0000400	/* warning message has been sent */
+#define EF_QUEUERUN	0x0000800	/* this envelope is from queue */
+#define EF_GLOBALERRS	0x0001000	/* treat errors as global */
+#define EF_PM_NOTIFY	0x0002000	/* send return mail to postmaster */
+#define EF_METOO	0x0004000	/* send to me too */
+#define EF_LOGSENDER	0x0008000	/* need to log the sender */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
