@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chsh.sh	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)chsh.sh	4.3 (Berkeley) %G%";
 /*
  * chsh
  */
@@ -33,13 +33,13 @@ char *argv[];
 
 	insist = 0;
 	if(argc < 2 || argc > 3) {
-		printf("Usage: chsh user [ /bin/oldcsh ] [ /bin/csh ]\n");
+		printf("Usage: chsh user [ /bin/csh ]\n");
 		goto bex;
 	}
 	if (argc == 2)
 		argv[2] = "";
-	else if (strcmp(argv[2], "/bin/oldcsh") && strcmp(argv[2], "/bin/csh") && getuid()) {
-		printf("Only /bin/oldcsh or /bin/csh may be specified\n");
+	else if (strcmp(argv[2], "/bin/csh") && getuid()) {
+		printf("Only /bin/csh may be specified\n");
 		exit(1);
 	}
 	if (argc == 3)
