@@ -1,4 +1,4 @@
-#	@(#)VERSION	8.6 (Berkeley) %G%
+#	@(#)VERSION	8.7 (Berkeley) %G%
 
 This is version 1.72 of the Berkeley DB code.
 
@@ -8,6 +8,9 @@ this version file, it's really old, please update it!
 New versions of this software are periodically made
 available by anonymous ftp from ftp.cs.berkeley.edu,
 in the file ucb/4bsd/db.tar.Z, or from ftp.uu.net.
+If you'd like to get announcements of future releases
+of this software, send email to the contact address
+below.
 
 Email questions may be addressed to Keith Bostic at
 bostic@cs.berkeley.edu.
