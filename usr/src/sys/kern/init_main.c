@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.14 (Berkeley) %G%
+ *	@(#)init_main.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -246,6 +246,10 @@ binit()
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
+		bp->b_rcred = NOCRED;
+		bp->b_wcred = NOCRED;
+		bp->b_dirtyoff = 0;
+		bp->b_dirtyend = 0;
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
 		if (i < residual)
 			bp->b_bufsize = (base + 1) * CLBYTES;
