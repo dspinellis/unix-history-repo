@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.127 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.128 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -314,10 +314,10 @@ main(argc, argv, envp)
 		}
 		putchar('\n');
 #ifdef _PATH_UNIX
-		printf("     Unix path:\t%s\n", _PATH_UNIX);
+		printf("Kernel symbols:\t%s\n", _PATH_UNIX);
 #endif
 		printf("   Config file:\t%s\n", getcfname());
-		printf("  Proc Id file:\t%s\n", PidFile);
+		printf("      Pid file:\t%s\n", PidFile);
 	}
 
 	InChannel = stdin;
