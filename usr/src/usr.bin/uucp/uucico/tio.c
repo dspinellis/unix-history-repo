@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.8	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -74,9 +74,7 @@ register char *str;
 	alarm(MAXMSGTIME*5);
 	for (;;) {
 		len = read(fn, str, TPACKSIZE);
-		if (len == 0)
-			continue;
-		if (len < 0) {
+		if (len <= 0) {
 			alarm(0);
 			return FAIL;
 		}
@@ -153,7 +151,7 @@ FILE *fp1;
 	sysacct(bytes, t2.time);
 	Bytes_Sent += bytes;
 	DEBUG(1, "%s\n", text);
-	syslog(text);
+	log_xferstats(text);
 	return SUCCESS;
 }
 
@@ -222,7 +220,7 @@ FILE *fp2;
 	sysacct(bytes, t2.time);
 	Bytes_Received += bytes;
 	DEBUG(1, "%s\n", bufr);
-	syslog(bufr);
+	log_xferstats(bufr);
 	return SUCCESS;
 }
 
