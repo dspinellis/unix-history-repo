@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/file.h>
 #include <sys/user.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -46,7 +47,7 @@ int	sumrusage;		/* -S */
 int	termwidth;		/* width of screen (0 == infinity) */
 int	totwidth;		/* calculated width of requested variables */
 
-static int needuser, needcomm;
+static int needuser, needcomm, needenv;
 
 enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 
@@ -62,6 +63,8 @@ char ufmt[] = "user pid %cpu %mem vsz rss tt state start time command";
 char vfmt[] =
 	"pid state time sl re pagein vsz rss lim tsiz trs %cpu %mem command";
 
+kvm_t *kd;
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -69,8 +72,9 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	register struct proc *p;
-	register size_t nentries;
+	register struct kinfo_proc *kp;
 	register struct varent *vent;
+	int nentries;
 	register int i;
 	struct winsize ws;
 	dev_t ttydev;
@@ -78,6 +82,7 @@ main(argc, argv)
 	int pscomp();
 	char *nlistf, *memf, *swapf;
 	char *kludge_oldps_options();
+	char errbuf[80];
 
 	if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, (char *)&ws) == -1 &&
 	     ioctl(STDERR_FILENO, TIOCGWINSZ, (char *)&ws) == -1 &&
@@ -96,10 +101,14 @@ main(argc, argv)
 	ttydev = NODEV;
 	memf = nlistf = swapf = NULL;
 	while ((ch = getopt(argc, argv,
-	    "aCghjLlM:mN:O:o:p:rSTt:uvW:wx")) != EOF)
+	    "aCeghjLlM:mN:O:o:p:rSTt:uvW:wx")) != EOF)
 		switch((char)ch) {
 		case 'a':
 			all = 1;
+			break;
+		case 'e':
+			/* XXX set ufmt */
+			needenv = 1;
 			break;
 		case 'C':
 			rawcpu = 1;
@@ -114,7 +123,7 @@ main(argc, argv)
 			fmt = 1;
 			jfmt[0] = '\0';
 			break;
-		case 'L': 
+		case 'L':
 			showkey();
 			exit(0);
 		case 'l':
@@ -225,8 +234,9 @@ main(argc, argv)
 	if (nlistf != NULL || memf != NULL || swapf != NULL)
 		setgid(getgid());
 
-	if (kvm_openfiles(nlistf, memf, swapf) == -1)
-		err("kvm_openfiles: %s", kvm_geterr());
+	kd = kvm_openfiles(nlistf, memf, swapf, O_RDONLY, errbuf);
+	if (kd == 0)
+		err("%s", errbuf);
 
 	if (!fmt)
 		parsefmt(dfmt);
@@ -254,16 +264,15 @@ main(argc, argv)
 	/*
 	 * select procs
 	 */
-	if ((nentries = kvm_getprocs(what, flag)) == -1)
-		err("%s", kvm_geterr());
-	kinfo = malloc(nentries * sizeof(KINFO));
+	if ((kp = kvm_getprocs(kd, what, flag, &nentries)) == 0)
+		err("%s", kvm_geterr(kd));
+	kinfo = malloc(nentries * sizeof(*kinfo));
 	if (kinfo == NULL)
 		err("%s", strerror(errno));
-	for (nentries = 0; p = kvm_nextproc(); ++nentries) {
-		kinfo[nentries].ki_p = p;
-		kinfo[nentries].ki_e = kvm_geteproc(p);
+	for (i = nentries; --i >= 0; ++kp) {
+		kinfo[i].ki_p = kp;
 		if (needuser)
-			saveuser(&kinfo[nentries]);
+			saveuser(&kinfo[i]);
 	}
 	/*
 	 * print header
@@ -279,8 +288,8 @@ main(argc, argv)
 	 * for each proc, call each variable output function.
 	 */
 	for (i = lineno = 0; i < nentries; i++) {
-		if (xflg == 0 && (kinfo[i].ki_e->e_tdev == NODEV ||
-		    (kinfo[i].ki_p->p_flag & SCTTY ) == 0))
+		if (xflg == 0 && (KI_EPROC(&kinfo[i])->e_tdev == NODEV ||
+		    (KI_PROC(&kinfo[i])->p_flag & SCTTY ) == 0))
 			continue;
 		for (vent = vhead; vent; vent = vent->next) {
 			(*vent->var->oproc)(&kinfo[i], vent->var, vent->next);
@@ -317,39 +326,56 @@ scanvars()
 	totwidth--;
 }
 
+extern char *fmt_argv __P((char **, char *, int));
 
-/* XXX - redo */
+static char *
+fmt(fn, ki, comm, maxlen)
+	char **(*fn) __P((kvm_t *, const struct kinfo_proc *, int));
+	KINFO *ki;
+	char *comm;
+	int maxlen;
+{
+	register char *s;
+
+	s = fmt_argv((*fn)(kd, ki->ki_p, termwidth), comm, maxlen);
+	if (s == NULL)
+		err("%s", strerror(errno));
+	return (s);
+}
+
 saveuser(ki)
 	KINFO *ki;
 {
-	register struct usave *usp;
-	register struct user *up;
+	register struct usave *usp = &ki->ki_u;
+	struct pstats pstats;
+	extern char *fmt_argv();
 
-	if ((usp = calloc(1, sizeof(struct usave))) == NULL)
-		err("%s", strerror(errno));
-	up = kvm_getu(ki->ki_p);
+	if (kvm_read(kd, (u_long)&KI_PROC(ki)->p_addr->u_stats,
+		     (char *)&pstats, sizeof(pstats)) == sizeof(pstats)) {
+		/*
+		 * The u-area might be swapped out, and we can't get
+		 * at it because we have a crashdump and no swap.
+		 * If it's here fill in these fields, otherwise, just
+		 * leave them 0.
+		 */
+		usp->u_start = pstats.p_start;
+		usp->u_ru = pstats.p_ru;
+		usp->u_cru = pstats.p_cru;
+		usp->u_valid = 1;
+	} else
+		usp->u_valid = 0;
 	/*
 	 * save arguments if needed
 	 */
-	ki->ki_args = needcomm ? strdup(kvm_getargs(ki->ki_p, up)) : NULL;
-	if (up != NULL) {
-		ki->ki_u = usp;
-		/*
-		 * save important fields
-		 */
-#ifdef NEWVM
-		usp->u_start = up->u_stats.p_start;
-		usp->u_ru = up->u_stats.p_ru;
-		usp->u_cru = up->u_stats.p_cru;
-#else
-		usp->u_procp = up->u_procp;
-		usp->u_start = up->u_start;
-		usp->u_ru = up->u_ru;
-		usp->u_cru = up->u_cru;
-		usp->u_acflag = up->u_acflag;
-#endif
-	} else
-		free(usp);
+	if (needcomm)
+		ki->ki_args = fmt(kvm_getargv, ki, KI_PROC(ki)->p_comm,
+		    MAXCOMLEN);
+	else
+		ki->ki_args = NULL;
+	if (needenv)
+		ki->ki_env = fmt(kvm_getenvv, ki, (char *)NULL, 0);
+	else
+		ki->ki_env = NULL;
 }
 
 pscomp(k1, k2)
@@ -357,8 +383,8 @@ pscomp(k1, k2)
 {
 	int i;
 #ifdef NEWVM
-#define VSIZE(k) ((k)->ki_e->e_vm.vm_dsize + (k)->ki_e->e_vm.vm_ssize + \
-		  (k)->ki_e->e_vm.vm_tsize)
+#define VSIZE(k) (KI_EPROC(k)->e_vm.vm_dsize + KI_EPROC(k)->e_vm.vm_ssize + \
+		  KI_EPROC(k)->e_vm.vm_tsize)
 #else
 #define VSIZE(k) ((k)->ki_p->p_dsize + (k)->ki_p->p_ssize + (k)->ki_e->e_xsize)
 #endif
@@ -367,9 +393,9 @@ pscomp(k1, k2)
 		return (getpcpu(k2) - getpcpu(k1));
 	if (sortby == SORTMEM)
 		return (VSIZE(k2) - VSIZE(k1));
-	i =  k1->ki_e->e_tdev - k2->ki_e->e_tdev;
+	i =  KI_EPROC(k1)->e_tdev - KI_EPROC(k2)->e_tdev;
 	if (i == 0)
-		i = k1->ki_p->p_pid - k2->ki_p->p_pid;
+		i = KI_PROC(k1)->p_pid - KI_PROC(k2)->p_pid;
 	return (i);
 }
 
