@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.36 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.37 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -54,6 +54,7 @@ int	dup2( o, n) { return o; }
 	execve(s, v, e) char *s, *v[], *e[]; {;}
 	_exit(s) {;}
 int	fchmod(f, m) { return(0); }
+int	fchown(f, u, g) { return(0); }
 int	fcntl(f, c, a) { return (0); }
 int	flock( f, o ) { return 0; }
 int	fork() { return(0); }
@@ -364,10 +365,10 @@ int	strlen(s) char *s; { return(1); }
 char *	strncat(a, b, n) char *a, *b; { return a;}
 int	strncmp(a, b, n) char *a, *b; { return(1); }
 char *	strncpy(a, b, n) char *a, *b; { return a; }
-int	strpbrk(s, brk) char *s, *brk; { return(0); }
+char *	strpbrk(s, brk) char *s, *brk; { return s; }
 char *	strrchr(s, c) char *s, c; { return s; }
 int	strspn(s, set) char *s, *set; { return(0); }
-int	strtok(s, sep) char *s, *sep; { return(0); }
+char *	strtok(s, sep) char *s, *sep; { return s; }
 int	stty(f, b) struct sgttyb *b; { return(0); }
 	swab( f, t, n) char *f, *t; {;}
 	/* VARARGS2 */
