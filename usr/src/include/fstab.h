@@ -1,4 +1,4 @@
-/*	fstab.h	4.3	83/05/24	*/
+/*	fstab.h	4.4	83/05/24	*/
 
 /*
  * File system table, see fstab (5)
@@ -15,7 +15,7 @@
 #define	FSTAB		"/etc/fstab"
 
 #define	FSTAB_RW	"rw"	/* read/write device */
-#define	FSTAB_RQ	"rq",	/* read/write with quotas */
+#define	FSTAB_RQ	"rq"	/* read/write with quotas */
 #define	FSTAB_RO	"ro"	/* read-only device */
 #define	FSTAB_SW	"sw"	/* swap device */
 #define	FSTAB_XX	"xx"	/* ignore totally */
