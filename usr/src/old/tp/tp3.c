@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tp3.c	4.1 %G%";
+static char sccsid[] = "@(#)tp3.c	4.2 %G%";
 #endif
 
 #include "tp.h"
@@ -197,7 +197,7 @@ struct dent *dd;
 	register  mode;
 	register *m;
 	register char *s;
-	int count, *localtime();
+	int count;
 	char work[20];
 
 	if (flags & flv)  {
@@ -222,11 +222,13 @@ struct dent *dd;
 	printf("%s\n", name);
 }
 
+#include <sys/time.h>
 
 extract(d)
 register struct dent *d;
 {
 	register count, id;
+	struct timeval times[2];
 
 	if (d->d_size==0)	return;
 	if (verify('x') < 0)			return;
@@ -249,4 +251,8 @@ ng:			printf("%s -- write error\n", name);
 	}
 	close(id);
 	chown(name,d->d_uid & 0377, d->d_gid&0377);
+	times[0].tv_sec = d->d_time;
+	times[0].tv_usec = 0;
+	times[1] = times[0];
+	utimes(name, times);
 }
