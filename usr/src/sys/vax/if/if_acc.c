@@ -1,4 +1,4 @@
-/*	if_acc.c	4.3	82/02/12	*/
+/*	if_acc.c	4.4	82/02/16	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -231,7 +231,6 @@ accstart(dev)
 	u_short cmd;
 
 COUNT(ACCSTART);
-printf("accstart: active=%d\n", sc->acc_ic->ic_oactive);
 	if (sc->acc_ic->ic_oactive)
 		goto restart;
 	
@@ -241,13 +240,11 @@ printf("accstart: active=%d\n", sc->acc_ic->ic_oactive);
 	 * requeusts, just return.
 	 */
 	IF_DEQUEUE(&sc->acc_if->if_snd, m);
-printf("accstart: dequeue m=%x\n", m);
 	if (m == 0) {
 		sc->acc_ic->ic_oactive = 0;
 		return;
 	}
 	sc->acc_olen = if_wubaput(&sc->acc_ifuba, m);
-printf("accstart: olen=%d\n", sc->acc_olen);
 
 restart:
 	/*
@@ -283,7 +280,6 @@ COUNT(ACCXINT);
 		return;
 	}
 	addr = (struct accdevice *)ui->ui_addr;
-printf("accxint: ocsr=%b\n", addr->ocsr, ACC_OUTBITS);
 	sc->acc_if->if_opackets++;
 	sc->acc_ic->ic_oactive = 0;
 	if (addr->ocsr & ACC_ERR) {
@@ -295,9 +291,8 @@ printf("accxint: ocsr=%b\n", addr->ocsr, ACC_OUTBITS);
 		m_freem(sc->acc_ifuba.ifu_xtofree);
 		sc->acc_ifuba.ifu_xtofree = 0;
 	}
-	if (sc->acc_if->if_snd.ifq_head == 0)
-		return;
-	accstart(unit);
+	if (sc->acc_if->if_snd.ifq_head)
+		accstart(unit);
 }
 
 /*
@@ -320,7 +315,6 @@ COUNT(ACCRINT);
 	if (sc->acc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->acc_ifuba.ifu_uba, sc->acc_ifuba.ifu_r.ifrw_bdp);
 	addr = (struct accdevice *)accinfo[unit]->ui_addr;
-printf("accrint: icsr=%b, flush=%d\n", addr->icsr, ACC_INBITS, sc->acc_flush);
 	if (addr->icsr & ACC_ERR) {
 		printf("acc%d: input error, csr=%b\n", unit,
 		    addr->icsr, ACC_INBITS);
@@ -334,7 +328,6 @@ printf("accrint: icsr=%b, flush=%d\n", addr->icsr, ACC_INBITS, sc->acc_flush);
 		goto setup;
 	}
 	len = IMP_MTU + (addr->iwc << 1);
-printf("accrint: len=%d\n", len);
 	if (len < 0 || len > IMP_MTU) {
 		printf("acc%d: bad length=%d\n", len);
 		sc->acc_if->if_ierrors++;
@@ -346,7 +339,6 @@ printf("accrint: len=%d\n", len);
 	 * trailers on the ARPAnet is insane.
 	 */
 	m = if_rubaget(&sc->acc_ifuba, len, 0);
-printf("accrint: m=%x\n", m);
 	if (m == 0)
 		goto setup;
 	if ((addr->icsr & IN_EOM) == 0) {

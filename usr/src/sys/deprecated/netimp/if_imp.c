@@ -1,4 +1,4 @@
-/*	if_imp.c	4.4	82/02/12	*/
+/*	if_imp.c	4.5	82/02/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -11,7 +11,6 @@
  * TODO:
  *	rethink coupling between this module and device driver
  *	pass more error indications up to protocol modules
- *	test raw imp interface
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,9 +27,8 @@
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
-#define	IMPLEADERS
 #include "../net/if_imp.h"
-#include "../net/host.h"
+#include "../net/if_imphost.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 
@@ -143,8 +141,6 @@ impinput(unit, m)
 	struct in_addr addr;
 
 COUNT(IMP_INPUT);
-printf("impinput(%d, %x), len=%d\n", unit, m, m->m_len);
-printleader("impinput", mtod(m, struct imp_leader *));
 	/*
 	 * Verify leader length.  Be careful with control
 	 * message which don't get a length included.
@@ -181,7 +177,11 @@ printleader("impinput", mtod(m, struct imp_leader *));
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
 	case IMPTYPE_BADDATA:
+#ifdef notdef
 		addr.s_net = ip->il_network;
+#else
+		addr.s_net = 0;
+#endif
 		addr.s_imp = ip->il_imp;
 		addr.s_host = ip->il_host;
 		hp = hostlookup(addr);
@@ -284,7 +284,7 @@ printleader("impinput", mtod(m, struct imp_leader *));
 			if (hp->h_rfnm == 0)
 				hostfree(hp);
 		}
-		break;
+		goto rawlinkin;
 
 	/*
 	 * Host or IMP can't be reached.  Flush any packets
@@ -302,7 +302,7 @@ printleader("impinput", mtod(m, struct imp_leader *));
 	common:
 		if (hp)
 			hostfree(hp);		/* won't work right */
-		break;
+		goto rawlinkin;
 
 	/*
 	 * Error in data.  Clear RFNM status for this host and send
@@ -313,7 +313,7 @@ printleader("impinput", mtod(m, struct imp_leader *));
 		if (hp)
 			hp->h_rfnm = 0;
 		impnoops(sc);
-		break;
+		goto rawlinkin;
 
 	/*
 	 * Interface reset.
@@ -343,6 +343,7 @@ printleader("impinput", mtod(m, struct imp_leader *));
 #endif
 
 	default:
+rawlinkin:
 		impproto.sp_protocol = ip->il_link;
 		impdst.sin_addr = sc->imp_if.if_addr;
 		impsrc.sin_addr.s_net = ip->il_network;
@@ -394,8 +395,6 @@ impoutput(ifp, m0, pf)
 	int x, dhost, dimp, dlink, len, dnet;
 
 COUNT(IMPOUTPUT);
-printf("impoutput(%x, %x, %x)\n", ifp, m0, pf);
-
 #ifdef notdef
 	/*
 	 * Don't even try if the IMP is unavailable.
@@ -416,7 +415,6 @@ printf("impoutput(%x, %x, %x)\n", ifp, m0, pf);
 		dimp = ip->ip_dst.s_imp;
 		dlink = IMPLINK_IP;
 		len = ntohs(ip->ip_len);
-printf("impoutput: net=%d,host=%d,imp=%d,len=%d\n",dnet,dhost,dimp,len);
 		break;
 	}
 #endif
@@ -447,11 +445,13 @@ printf("impoutput: net=%d,host=%d,imp=%d,len=%d\n",dnet,dhost,dimp,len);
 	}
 	imp = mtod(m, struct imp_leader *);
 	imp->il_format = IMP_NFF;
+	imp->il_mtype = IMPTYPE_DATA;
 	imp->il_network = dnet;
 	imp->il_host = dhost;
 	imp->il_imp = dimp;
 	imp->il_length = htons((len + sizeof(struct imp_leader)) << 3);
 	imp->il_link = dlink;
+	imp->il_flags = imp->il_htype = imp->il_subtype = 0;
 
 leaderexists:
 	/*
@@ -479,7 +479,6 @@ impsnd(ifp, m)
 	int x;
 
 COUNT(IMPSND);
-printf("impsnd(%x, %x)\n", ifp, m);
 	ip = mtod(m, struct imp_leader *);
 
 	/*
@@ -489,9 +488,14 @@ printf("impsnd(%x, %x)\n", ifp, m);
 	if (ip->il_mtype == IMPTYPE_DATA) {
 		struct in_addr addr;
 
+#ifdef notdef
                 addr.s_net = ip->il_network;
+#else
+		addr.s_net = 0;
+#endif
                 addr.s_host = ip->il_host;
                 addr.s_imp = ip->il_imp;
+		x = splimp();
 		if ((hp = hostlookup(addr)) == 0)
 			hp = hostenter(addr);
 
@@ -504,6 +508,7 @@ printf("impsnd(%x, %x)\n", ifp, m);
 
 			if (hp->h_rfnm < 8) {
 				hp->h_rfnm++;
+				splx(x);
 				goto enque;
 			}
 			/*
@@ -527,14 +532,15 @@ printf("impsnd(%x, %x)\n", ifp, m);
 				m->m_next = n->m_next;
 				hp->h_q = n->m_next = m;
 			}
+			splx(x);
 			goto start;
 		}
 drop:
 		m_freem(m);
+		splx(x);
 		return (0);
 	}
 enque:
-printleader("impsnd", mtod(m, struct imp_leader *));
         x = splimp();
 	IF_ENQUEUE(&ifp->if_snd, m);
 	splx(x);
@@ -577,7 +583,6 @@ COUNT(IMPNOOPS);
 		cp->dl_host = sc->imp_if.if_addr.s_host;/* XXX */
 		cp->dl_imp = sc->imp_if.if_addr.s_imp;	/* XXX */
 #endif
-printleader("impnoops", cp);
 		x = splimp();
 		IF_PREPEND(&sc->imp_if.if_snd, m);
 		splx(x);
@@ -586,6 +591,7 @@ printleader("impnoops", cp);
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
 }
 
+#ifdef IMPLEADERS
 printleader(routine, ip)
 	char *routine;
 	register struct imp_leader *ip;
@@ -621,4 +627,5 @@ printbyte(cp, n)
 	}
 	putchar('\n');
 }
+#endif
 #endif
