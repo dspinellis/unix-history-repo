@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -37,14 +37,14 @@ crt0.o: crt0.c
 	${CPP} crt0.s > x.s
 	as -o x.o x.s
 	ld -x -r -o crt0.o x.o
-	rm -f x.s x.o crt0.s
+	rm -f x.s ${OBJDIR}x.o crt0.s
 
 moncrt0.o: crt0.c
 	${CC} -S ${DFLAGS} -DMCRT0 crt0.c
 	${CPP} crt0.s > x.s
 	as -o x.o x.s
 	ld -x -r -o moncrt0.o x.o
-	rm -f x.s x.o crt0.s
+	rm -f x.s ${OBJDIR}x.o crt0.s
 
 gcrt0.o: moncrt0.o gmon.o
 	ld -x -r -o gcrt0.o moncrt0.o gmon.o
@@ -57,17 +57,17 @@ mon.o: mon.c mon.ex
 	ex - mon.s < mon.ex
 	as -o x.o mon.s
 	ld -x -r -o mon.o x.o
-	rm -f x.o mon.s
+	rm -f ${OBJDIR}x.o mon.s
 
 gmon.o: gmon.c gmon.h gmon.ex
 	${CC} -S ${DEFS} ${DFLAGS} gmon.c
 	ex - gmon.s < gmon.ex
 	as -o x.o gmon.s
 	ld -x -r -o gmon.o x.o
-	rm -f x.o gmon.s
+	rm -f ${OBJDIR}x.o gmon.s
 
 clean:
-	rm -f *.o a.out core
+	rm -f ${OBJDIR}*.o ${OBJDIR}a.out core
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -85,5 +85,3 @@ tags:
 	for i in ${SRCS}; do \
 		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
 	done
-
-
