@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -160,6 +160,7 @@ gotpty:
 	signal(SIGCHLD, cleanup);
 	setpgrp(0, 0);
 	protocol(f, p);
+	signal(SIGCHLD, SIG_IGN);
 	cleanup();
 }
 
