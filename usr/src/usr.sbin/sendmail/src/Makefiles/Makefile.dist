@@ -5,9 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#  This has been tested on Ultrix.
-#
-#	@(#)Makefile.dist	8.3 (Berkeley) %G%
+#	@(#)Makefile.dist	8.4 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -16,11 +14,9 @@ O=	-O
 # define the database mechanisms available for map & alias lookups:
 #	-DNDBM -- use new DBM
 #	-DNEWDB -- use new Berkeley DB
-#	-DNDBM -DNEWDB -DYPCOMPAT -- use both plus YP compatility
-#	-DNIS -- include client NIS support
+#	-DNIS -- include NIS support
 # The really old (V7) DBM library is no longer supported.
-# If YPCOMPAT is defined and /var/yp/Makefile exists, sendmail will build
-#   both the NEWDB and DBM libraries (the DBM just for YP).
+# See READ_ME for a description of how these flags interact.
 #
 DBMDEF=	-DNDBM -DNEWDB
 
