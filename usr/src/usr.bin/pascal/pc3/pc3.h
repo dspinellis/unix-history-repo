@@ -1,13 +1,13 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-    /*	static	char sccsid[] = "@(#)pc3.h 1.2 %G%"; */
+    /*	static	char sccsid[] = "@(#)pc3.h 1.3 %G%"; */
 
     /*
      *	a symbol table entry.
      */
 struct symbol {
     char		*name;			/* pointer to string table */
-    unsigned char	type;			/* symbol type */
+    short		desc;			/* symbol description */
     int			lookup;			/* whether new or old */
     union {					/* either */
 	struct {				/*   for a symbol, */
@@ -16,7 +16,7 @@ struct symbol {
 	    long		iline;		/*     the .i file line */
 	    struct symbol	*rfilep;	/*     its resolving file */
 	    long		rline;		/*     resolving file line */
-	}			sym_str;
+	}		sym_str;
 	time_t		modtime;		/*   for a file, its st_mtime */
     }			sym_un;
 };

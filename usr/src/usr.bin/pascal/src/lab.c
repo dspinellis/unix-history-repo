@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lab.c 1.3 %G%";
+static	char sccsid[] = "@(#)lab.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -85,7 +85,7 @@ label(r, l)
 				 *	stab the label for separate compilation.
 				 *	make label number = label name.
 				 */
-			    stabglab( p -> symbol , line );
+			    stabglabel( p -> symbol , line );
 			    p -> value[1] = atol( p -> symbol );
 			    putprintf( "	.globl	" , 1 );
 			    putprintf( PREFIXFORMAT , 0 , PLABELPREFIX

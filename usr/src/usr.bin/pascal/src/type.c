@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)type.c 1.3 %G%";
+static	char sccsid[] = "@(#)type.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -72,7 +72,7 @@ type(tline, tid, tdecl)
 
 #ifdef PC
 	if (cbn == 1) {
-	    stabtname( tid , line );
+	    stabgtype( tid , line );
 	}
 #endif PC
 
