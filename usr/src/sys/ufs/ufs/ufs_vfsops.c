@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.49 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.50 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -198,6 +198,7 @@ mountfs(devvp, mp)
 	int error, i, size;
 	int needclose = 0;
 	int ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
+	extern struct vnode *rootvp;
 
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED))
 		return (error);
