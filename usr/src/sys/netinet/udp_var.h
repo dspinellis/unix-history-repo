@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_var.h	7.5 (Berkeley) %G%
+ *	@(#)udp_var.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -37,15 +37,20 @@ struct	udpiphdr {
 #define	ui_sum		ui_u.uh_sum
 
 struct	udpstat {
-	int	udps_hdrops;
-	int	udps_badsum;
-	int	udps_badlen;
-	int	udps_noport;
-	int	udps_ipackets;
-	int	udps_opackets;
+				/* input statistics: */
+	int	udps_ipackets;		/* total input packets */
+	int	udps_hdrops;		/* packet shorter than header */
+	int	udps_badsum;		/* checksum error */
+	int	udps_badlen;		/* data length larger than packet */
+	int	udps_noport;		/* no socket on port */
+	int	udps_noportbcast;	/* of above, arrived as broadcast */
+	int	udps_fullsock;		/* not delivered, input socket full */
+	int	udpps_pcbcachemiss;	/* input packets missing pcb cache */
+				/* output statistics: */
+	int	udps_opackets;		/* total output packets */
 };
 
-#define	UDP_TTL		30		/* deflt time to live for UDP packets */
+#define	UDP_TTL		30	/* default time to live for UDP packets */
 
 #ifdef KERNEL
 struct	inpcb udb;
