@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.18 83/12/06";
+static	char *sccsid = "@(#)cmd.c	3.19 83/12/09";
 #endif
 
 #include "defs.h"
@@ -214,6 +214,8 @@ struct ww *w;
 setselwin(w)
 struct ww *w;
 {
+	if (selwin == w)
+		return;
 	lastselwin = selwin;
 	front(selwin = w, 1);
 }
