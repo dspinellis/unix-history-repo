@@ -1,4 +1,4 @@
-/*	locore.s	6.8	84/07/08	*/
+/*	locore.s	6.9	84/07/08	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -752,12 +752,14 @@ _addupc:	.globl	_addupc
 /*
  * Copy a null terminated string from the user address space into
  * the kernel address space.
+ *
+ * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  */
 	.globl	_copyinstr
 _copyinstr:
 	.word	0x40			# save r6
 	movl	12(ap),r6		# r6 = max length
-	jlss	9f
+	jlss	8f
 	movl	4(ap),r1		# r1 = user address
 	bicl3	$~(NBPG-1),r1,r2	# r2 = bytes on first page
 	subl3	r2,$NBPG,r2
@@ -767,9 +769,9 @@ _copyinstr:
 	jgeq	2f
 	movl	r6,r2
 2:
-	subl2	r2,r6			# update bytes left count
 	prober	$3,r2,(r1)		# bytes accessible?
-	jeql	9f
+	jeql	8f
+	subl2	r2,r6			# update bytes left count
 	locc	$0,r2,(r1)		# null byte found?
 	jneq	3f
 	subl2	r2,r1			# back up pointer updated by `locc'
@@ -777,9 +779,15 @@ _copyinstr:
 	movl	$NBPG,r2		# check next page
 	tstl	r6			# run out of space?
 	jneq	1b
-	clrb	-(r1)			# null terminate what fit and return
-	jbr	8f
+	movl	$ENOENT,r0		# set error code and return
+	jbr	9f
 3:
+	tstl	16(ap)			# return length?
+	beql	4f
+	subl3	r6,12(ap),r6		# actual len = maxlen - unused pages
+	subl2	r0,r6			#	- unused on this page
+	addl3	$1,r6,*16(ap)		#	+ the null byte
+4:
 	subl2	r0,r2			# r2 = number of bytes to move
 	subl2	r2,r1			# back up pointer updated by `locc'
 	incl	r2			# copy null byte as well
@@ -787,21 +795,25 @@ _copyinstr:
 	clrl	r0			# redundant
 	ret
 8:
-	movl	$ENOENT,r0
-	ret
-9:
 	movl	$EFAULT,r0
+9:
+	tstl	16(ap)
+	beql	1f
+	subl3	r6,12(ap),*16(ap)
+1:
 	ret
 
 /*
  * Copy a null terminated string from one point to another in
  * the kernel address space.
+ *
+ * copystr(fromaddr, toaddr, maxlength, &lencopied)
  */
 	.globl	_copystr
 _copystr:
 	.word	0x40			# save r6
 	movl	12(ap),r6		# r6 = max length
-	jlss	9b
+	jlss	8b
 	movl	4(ap),r1		# r1 = src address
 	movl	8(ap),r3		# r3 = dest address
 1:
@@ -812,20 +824,14 @@ _copystr:
 2:
 	subl2	r2,r6			# update bytes left count
 	locc	$0,r2,(r1)		# null byte found?
-	jneq	3f
+	jneq	3b
 	subl2	r2,r1			# back up pointer updated by `locc'
 	movc3	r2,(r1),(r3)		# copy in next piece
 	tstl	r6			# run out of space?
 	jneq	1b
-	clrb	-(r1)			# null terminate what fit and return
-	jbr	8b
-3:
-	subl2	r0,r2			# r2 = number of bytes to move
-	subl2	r2,r1			# back up pointer updated by `locc'
-	incl	r2			# copy null byte as well
-	movc3	r2,(r1),(r3)		# copy in last piece
-	clrl	r0			# redundant
-	ret
+	movl	$ENOENT,r0		# set error code and return
+	jbr	9b
+
 
 _Copyin:	.globl	_Copyin		# <<<massaged for jsb by asm.sed>>>
 	movl	12(sp),r0		# copy length
