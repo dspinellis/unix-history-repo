@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.8 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -122,7 +122,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	/* output the message to the local logger */
 	if (sendto(LogFile, outline, c, 0, &SyslogAddr, sizeof SyslogAddr) >= 0)
 		return;
-	if (!(LogStat & LOG_CONS) && (pri & LOG_PRIMASK) <= LOG_ERR)
+	if (!(LogStat & LOG_CONS))
 		return;
 
 	/* output the message to the console */
@@ -137,12 +137,13 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		alarm(0);
 		strcat(o, "\r");
 		o = index(outline, '>') + 1;
-		write(LogFile, outline, c + 1 - (o - outline));
+		write(LogFile, o, c + 1 - (o - outline));
 		close(LogFile);
 		exit(0);
 	}
-	while ((c = wait((int *)0)) > 0 && c != pid)
-		;
+	if (!(LogStat & LOG_NOWAIT))
+		while ((c = wait((int *)0)) > 0 && c != pid)
+			;
 }
 
 /*
