@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.16 (Berkeley) %G%
+ *	@(#)union_subr.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -628,7 +628,7 @@ union_copyup(un, docopy, cred, p)
 		if (error == 0) {
 			error = union_copyfile(lvp, uvp, cred, p);
 			VOP_UNLOCK(lvp);
-			(void) VOP_CLOSE(lvp, FREAD);
+			(void) VOP_CLOSE(lvp, FREAD, cred, p);
 		}
 #ifdef UNION_DIAGNOSTIC
 		if (error == 0)
@@ -654,7 +654,7 @@ union_copyup(un, docopy, cred, p)
 		int i;
 
 		for (i = 0; i < un->un_openl; i++) {
-			(void) VOP_CLOSE(lvp, FREAD);
+			(void) VOP_CLOSE(lvp, FREAD, cred, p);
 			(void) VOP_OPEN(uvp, FREAD, cred, p);
 		}
 		un->un_openl = 0;
@@ -913,7 +913,7 @@ union_vn_close(vp, fmode, cred, p)
 
 	if (fmode & FWRITE)
 		--vp->v_writecount;
-	return (VOP_CLOSE(vp, fmode));
+	return (VOP_CLOSE(vp, fmode, cred, p));
 }
 
 void
