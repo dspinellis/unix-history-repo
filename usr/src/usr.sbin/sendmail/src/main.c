@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -726,6 +726,9 @@ main(argc, argv, envp)
 	/* our name for SMTP codes */
 	expand("\201j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
 	MyHostName = jbuf;
+	if (strchr(jbuf, '.') == NULL)
+		message("WARNING: local host name (%s) is not qualified; fix $j in config file",
+			jbuf);
 
 	/* make certain that this name is part of the $=w class */
 	setclass('w', MyHostName);
