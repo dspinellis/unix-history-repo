@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -29,9 +29,6 @@ main(argc, argv)
 	int cc;
 	struct sockaddr from;
 	u_char retry;
-#ifdef COMPAT
-	int snoroute;
-#endif
 	
 	argv0 = argv;
 	openlog("routed", LOG_PID, 0);
@@ -45,14 +42,6 @@ main(argc, argv)
 	s = getsocket(AF_INET, SOCK_DGRAM, &addr);
 	if (s < 0)
 		exit(1);
-#ifdef COMPAT
-	bzero(&addr, sizeof (addr));
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(ntohs(sp->s_port) + 1);
-	snoroute = getsocket(AF_INET, SOCK_DGRAM, &addr);
-	if (snoroute < 0)
-		exit(1);
-#endif
 	argv++, argc--;
 	while (argc > 0 && **argv == '-') {
 		if (strcmp(*argv, "-s") == 0) {
@@ -92,9 +81,6 @@ main(argc, argv)
 			exit(0);
 		for (t = 0; t < 20; t++)
 			if (t != s)
-#ifdef COMPAT
-				if (t != snoroute)
-#endif
 				(void) close(cc);
 		(void) open("/", 0);
 		(void) dup2(0, 1);
@@ -141,18 +127,11 @@ main(argc, argv)
 		register int n;
 
 		ibits = 1 << s;
-#ifdef COMPAT
-		ibits |= 1 << snoroute;
-#endif
 		n = select(20, &ibits, 0, 0, 0);
 		if (n < 0)
 			continue;
 		if (ibits & (1 << s))
 			process(s);
-#ifdef COMPAT
-		if (ibits & (1 << snoroute))
-			process(snoroute);
-#endif
 		/* handle ICMP redirects */
 	}
 }
