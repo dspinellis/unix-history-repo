@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -82,6 +82,7 @@ struct	ltchars ltc = {
 struct winsize win = { 0, 0, 0, 0 };
 
 int	rflag;
+int	usererr = -1;
 char	rusername[NMAX+1], lusername[NMAX+1];
 char	rpassword[NMAX+1];
 char	name[NMAX+1];
@@ -110,22 +111,37 @@ main(argc, argv)
 	 * -h is used by other servers to pass the name of the
 	 * remote host to login so that it may be placed in utmp and wtmp
 	 */
-	if (argc > 1) {
+	while (argc > 1) {
 		if (strcmp(argv[1], "-r") == 0) {
-			rflag = doremotelogin(argv[2]);
+			if (rflag || hflag) {
+				printf("Only one of -r and -h allowed\n");
+				exit(1);
+			}
+			rflag = 1;
+			usererr = doremotelogin(argv[2]);
 			SCPYN(utmp.ut_host, argv[2]);
-			argc = 0;
+			argc -= 2;
+			argv += 2;
+			continue;
 		}
 		if (strcmp(argv[1], "-h") == 0 && getuid() == 0) {
+			if (rflag || hflag) {
+				printf("Only one of -r and -h allowed\n");
+				exit(1);
+			}
 			hflag = 1;
 			SCPYN(utmp.ut_host, argv[2]);
-			argc = 0;
+			argc -= 2;
+			argv += 2;
+			continue;
 		}
 		if (strcmp(argv[1], "-p") == 0) {
 			argc--;
 			argv++;
 			pflag = 1;
+			continue;
 		}
+		break;
 	}
 	ioctl(0, TIOCLSET, &zero);
 	ioctl(0, TIOCNXCL, 0);
@@ -172,8 +188,7 @@ main(argc, argv)
 		 */
 		if (rflag) {
 			SCPYN(utmp.ut_name, lusername);
-			/* autologin failed, prompt for passwd */
-			if (rflag == -1)
+			if (usererr == -1)
 				rflag = 0;
 		} else
 			getloginname(&utmp);
@@ -186,7 +201,7 @@ main(argc, argv)
 		 * a password exists for this user, prompt
 		 * for one and verify it.
 		 */
-		if (!rflag && *pwd->pw_passwd != '\0') {
+		if (usererr == -1 && *pwd->pw_passwd != '\0') {
 			char *pp;
 
 			setpriority(PRIO_PROCESS, 0, -4);
@@ -242,7 +257,7 @@ main(argc, argv)
 		 * Remote login invalid must have been because
 		 * of a restriction of some sort, no extra chances.
 		 */
-		if (rflag && invalid)
+		if (!usererr && invalid)
 			exit(1);
 	} while (invalid);
 /* committed to login turn off timeout */
@@ -437,75 +452,19 @@ stypeof(ttyid)
 doremotelogin(host)
 	char *host;
 {
-	FILE *hostf;
-	int first = 1;
-
 	getstr(rusername, sizeof (rusername), "remuser");
 	getstr(lusername, sizeof (lusername), "locuser");
 	getstr(term, sizeof(term), "Terminal type");
 	if (getuid()) {
 		pwd = &nouser;
-		goto bad;
+		return(-1);
 	}
 	pwd = getpwnam(lusername);
 	if (pwd == NULL) {
 		pwd = &nouser;
-		goto bad;
+		return(-1);
 	}
-	hostf = pwd->pw_uid ? fopen("/etc/hosts.equiv", "r") : 0;
-again:
-	if (hostf) {
-		char ahost[32];
-
-		while (fgets(ahost, sizeof (ahost), hostf)) {
-			register char *p;
-			char *user;
-
-			p = ahost;
-			while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
-				p++;
-			if (*p == ' ' || *p == '\t') {
-				*p++ = '\0';
-				while (*p == ' ' || *p == '\t')
-					p++;
-				user = p;
-				while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
-					p++;
-			} else
-				user = p;
-			*p = '\0';
-			if (!strcmp(host, ahost) &&
-			    !strcmp(rusername, *user ? user : lusername)) {
-				fclose(hostf);
-				return (1);
-			}
-		}
-		fclose(hostf);
-	}
-	if (first == 1) {
-		char *rhosts = ".rhosts";
-		struct stat sbuf;
-
-		first = 0;
-		if (chdir(pwd->pw_dir) < 0)
-			goto again;
-		if (lstat(rhosts, &sbuf) < 0)
-			goto again;
-		if ((sbuf.st_mode & S_IFMT) == S_IFLNK) {
-			printf("login: .rhosts is a soft link.\r\n");
-			goto bad;
-		}
-		hostf = fopen(rhosts, "r");
-		fstat(fileno(hostf), &sbuf);
-		if (sbuf.st_uid && sbuf.st_uid != pwd->pw_uid) {
-			printf("login: Bad .rhosts ownership.\r\n");
-			fclose(hostf);
-			goto bad;
-		}
-		goto again;
-	}
-bad:
-	return (-1);
+	return(ruserok(host, (pwd->pw_uid == 0), rusername, lusername));
 }
 
 getstr(buf, cnt, err)
