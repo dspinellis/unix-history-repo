@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 # Makefile for f77 math & startup lib, libF77.a
 
@@ -309,7 +309,7 @@ Version:	$(SRCS) mkvers
 		@rm -f Version.c
 		./mkvers $(LIBRARY) $(SRCS) > Version.c
 		$(CC) -c Version.c
-		mv Version.o Version
+		mv -f Version.o Version
 		@rm -f profiled/Version
 		ln Version profiled/Version
 
