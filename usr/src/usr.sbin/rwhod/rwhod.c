@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.7 82/12/24";
+static char sccsid[] = "@(#)rwhod.c	4.8 %G%";
 #endif
 
 #include <sys/types.h>
@@ -36,6 +36,8 @@ struct	nlist nl[] = {
 
 struct	whod mywd;
 int	s, utmpf, kmemf = -1;
+
+#define	WHDRSIZE	(sizeof (wd) - sizeof (wd.wd_we))
 
 int	onalrm();
 char	*strcpy(), *sprintf();
@@ -142,6 +144,24 @@ main()
 			perror(path);
 			continue;
 		}
+#if vax || pdp11
+		{
+			int i, n = (cc - WHDRSIZE)/sizeof(struct utmp);
+			struct whoent *we;
+
+			/* undo header byte swapping before writing to file */
+			wd.wd_sendtime = ntohl(wd.wd_sendtime);
+			for (i = 0; i < 3; i++)
+				wd.wd_loadav[i] = ntohl(wd.wd_loadav[i]);
+			wd.wd_boottime = ntohl(wd.wd_boottime);
+			we = wd.wd_we;
+			for (i = 0; i < n; i++) {
+				we->we_idle = ntohl(we->we_idle);
+				we->we_utmp.ut_time = ntohl(we->we_utmp.ut_time);
+				we++;
+			}
+		}
+#endif
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);
 		(void) close(whod);
@@ -214,6 +234,18 @@ onalrm()
 		mywd.wd_loadav[i] = avenrun[i] * 100;
 	cc = (char *)we - (char *)&mywd;
 	(void) time(&mywd.wd_sendtime);
+#if vax || pdp11
+	mywd.wd_sendtime = htonl(mywd.wd_sendtime);
+	for (i = 0; i < 3; i++)
+		mywd.wd_loadav[i] = htonl(mywd.wd_loadav[i]);
+	mywd.wd_boottime = htonl(mywd.wd_boottime);
+	we = mywd.wd_we;
+	for (i = 0; i < utmpent; i++) {
+		we->we_idle = htonl(we->we_idle);
+		we->we_utmp.ut_time = htonl(we->we_utmp.ut_time);
+		we++;
+	}
+#endif
 	(void) sendto(s, (char *)&mywd, cc, 0, &sin, sizeof (sin));
 	(void) alarm(60);
 }
