@@ -1,8 +1,18 @@
-#ifndef lint
-static char sccsid[] = "@(#)main.c	3.16	(Berkeley)	85/03/24";
-#endif
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-/* Copyright (c) 1983 Regents of the University of California */
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  *	Modified to recursively extract all files within a subtree
