@@ -1,9 +1,10 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.19	%G%
+#	@(#)makefile	1.20	%G%
 
 DESTDIR =
 LIB = libF77.a
+LIB_P = libF77_p.a
 LPR = lpr
 CFLAGS = -O
 
@@ -42,38 +43,57 @@ CHAR =	s_cat.o rindex_.o s_cmp.o s_copy.o lnblnk_.o
 ALL =	$(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) $(HALF) \
 	$(CMP) $(EFL) $(CHAR)
 
-all:	$(LIB)
+all:	$(LIB) $(LIB_P)
 
 $(LIB):	$(ALL) Version
-	@rm -f $(LIB)
-	ar ru $(LIB) $(ALL) Version
+	ar ru $(LIB) $?
+	ranlib $(LIB)
+	chmod 644 $(LIB)
 	@ls -l $(LIB)
+
+$(LIB_P):	$(ALL) Version
+	cd profiled; ar ru ../$(LIB_P) $?
+	ranlib $(LIB_P)
+	chmod 644 $(LIB_P)
+	@ls -l $(LIB_P)
 
 c_abs.o c_cos.o c_div.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o d_cnjg.o d_imag.o pow_ci.o pow_zi.o pow_zz.o r_cnjg.o r_imag.o z_abs.o z_cos.o z_div.o z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o:	complex
 
 trapov_.o: trapov_.c
-	@cc -S ${OPTIONS} trapov_.c
-	@(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
+	-cd profiled; \
+		cc -S ${OPTIONS} ../trapov_.c; \
+		(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
+			| ex - trapov_.s; \
+		as trapov_.s -o trapov_.o; \
+		rm trapov_.s
+	cc -S ${OPTIONS} trapov_.c
+	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
 		| ex - trapov_.s
-	@as trapov_.s -o trapov_.o
-	@rm trapov_.s
+	as trapov_.s -o trapov_.o
+	rm trapov_.s
 
 # compile, then strip unnecessary symbols
 .c.o :
+	-cd profiled; \
+		cc -c -p ${CFLAGS} ${OPTIONS} ../$*.c; \
+		ld -r -x $*.o; \
+		mv a.out $*.o
 	cc -c ${CFLAGS} ${OPTIONS} $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
-install:	$(LIBDIR)/$(LIB)
+install:	$(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB_P)
 
 $(LIBDIR)/$(LIB):	$(LIB)
 	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
-	cp $(LIB) $(LIBDIR)/$(LIB)
-	ranlib $(LIBDIR)/$(LIB)
-	@chmod 644 $(LIBDIR)/$(LIB)
+	tar cf - $(LIB) | (cd $(LIBDIR); tar xvf - )
+
+$(LIBDIR)/$(LIB_P):	$(LIB_P)
+	@-mv $(LIBDIR)/$(LIB_P) $(LIBDIR)/$(LIB_P).old
+	tar cf - $(LIB_P) | (cd $(LIBDIR); tar xvf - )
 
 clean:
-	rm -f $(ALL) $(LIB)
+	rm -f $(ALL) Version $(LIB) $(LIB_P) profiled/*
 
 SOURCES = main.c s_rnge.c abort_.c exit_.c opcodes.h long_.c short_.c \
 	s_stop.c s_paus.c rand_.c bit.c range.c traper_.c trapov_.c \
@@ -103,6 +123,8 @@ Version:	$(SOURCES) mkvers
 	./mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
+	@rm -f profiled/Version
+	ln Version profiled/Version
 
 mkvers:	mkvers.c
 	@cc mkvers.c -o mkvers
