@@ -1,4 +1,4 @@
-/*	if_hyreg.h	6.1	83/07/29	*/
+/*	if_hyreg.h	6.2	85/05/28	*/
 
 /*
  * Network Systems Corporation Hyperchannel interface
