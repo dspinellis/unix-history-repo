@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.25 (Berkeley) %G%
+ *	@(#)signal.h	7.26 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNAL_H_
@@ -61,9 +61,19 @@
 #define SIGUSR1 30	/* user defined signal 1 */
 #define SIGUSR2 31	/* user defined signal 2 */
 
+#if defined(_ANSI_SOURCE) || defined(__cplusplus)
+/*
+ * Language spec sez we must list exactly one parameter, even though we
+ * actually supply three.  Ugh!
+ */
+#define	SIG_DFL		(void (*)(int))0
+#define	SIG_IGN		(void (*)(int))1
+#define	SIG_ERR		(void (*)(int))-1
+#else
 #define	SIG_DFL		(void (*)())0
 #define	SIG_IGN		(void (*)())1
 #define	SIG_ERR		(void (*)())-1
+#endif
 
 #ifndef _ANSI_SOURCE
 typedef unsigned int sigset_t;
