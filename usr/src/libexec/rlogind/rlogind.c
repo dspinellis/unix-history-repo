@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -158,6 +158,7 @@ gotpty:
 }
 
 char	magic[2] = { 0377, 0377 };
+char	oobdata[] = {TIOCPKT_WINDOW};
 
 /*
  * Handle a "control" request (signaled by magic being present)
@@ -173,6 +174,7 @@ control(pty, cp, n)
 
 	if (n < 4+sizeof (*wp) || cp[2] != 's' || cp[3] != 's')
 		return (0);
+	oobdata[0] &= ~TIOCPKT_WINDOW;	/* we know he heard */
 	wp = (struct winsize *)(cp+4);
 	wp->ws_row = ntohs(wp->ws_row);
 	wp->ws_col = ntohs(wp->ws_col);
@@ -195,7 +197,7 @@ protocol(f, p)
 	/*
 	 * Must ignore SIGTTOU, otherwise we'll stop
 	 * when we try and set slave pty's window shape
-	 * (our pgrp is that of the master pty).
+	 * (our controlling tty is the master pty).
 	 */
 	(void) signal(SIGTTOU, SIG_IGN);
 	for (;;) {
@@ -232,7 +234,7 @@ protocol(f, p)
 					break;
 				fbp = fibuf;
 			top:
-				for (cp = fibuf; cp < fibuf+fcc; cp++)
+				for (cp = fibuf; cp < fibuf+fcc-1; cp++)
 					if (cp[0] == magic[0] &&
 					    cp[1] == magic[1]) {
 						left = fcc - (cp-fibuf);
@@ -240,7 +242,7 @@ protocol(f, p)
 						if (n) {
 							left -= n;
 							if (left > 0)
-								bcopy(cp, cp+n, left);
+								bcopy(cp+n, cp, left);
 							fcc -= n;
 							goto top; /* n^2 */
 						}
@@ -259,13 +261,7 @@ protocol(f, p)
 			else {
 #define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
 				if (pkcontrol(pibuf[0])) {
-				/* The following 3 lines do nothing. */
-					int nstop = pibuf[0] &
-					    (TIOCPKT_NOSTOP|TIOCPKT_DOSTOP);
-
-					if (nstop)
-						stop = nstop;
-					pibuf[0] |= nstop | oob[0];
+					pibuf[0] |= oobdata[0];
 					send(f, &pibuf[0], 1, MSG_OOB);
 				}
 				pcc = 0;
