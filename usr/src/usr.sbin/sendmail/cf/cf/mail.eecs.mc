@@ -8,8 +8,8 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(@(#)mail.eecs.mc	2.9 (Berkeley) %G%)
-OSTYPE(ultrix)dnl
+VERSIONID(@(#)mail.eecs.mc	2.10 (Berkeley) %G%)
+OSTYPE(ultrix4.1)dnl
 DOMAIN(eecs.hidden)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
