@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 LIB=	rpc
 CFLAGS+=-I${.CURDIR}
@@ -16,6 +16,7 @@ MAN8=	portmap.0
 all: portmap
 
 portmap: portmap.c librpc.a
+	ranlib librpc.a
 	${CC} ${CFLAGS} ${.CURDIR}/portmap.c librpc.a -o ${.TARGET}
 
 beforeinstall: hdrs
@@ -23,7 +24,7 @@ beforeinstall: hdrs
 	    ${DESTDIR}/usr/sbin/portmap
 
 hdrs: ${HDRS}
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.ALLSRC} \
+	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${HDRS} \
 	    ${DESTDIR}/usr/include/rpc
 
 .include <bsd.own.mk>
