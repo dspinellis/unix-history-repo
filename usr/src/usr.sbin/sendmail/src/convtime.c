@@ -1,7 +1,7 @@
 # include <ctype.h>
 # include "useful.h"
 
-SCCSID(@(#)convtime.c	3.3		%G%);
+SCCSID(@(#)convtime.c	3.4		%G%);
 
 /*
 **  CONVTIME -- convert time
@@ -30,21 +30,20 @@ convtime(p)
 	char *p;
 {
 	register time_t t, r;
+	register char c;
 
 	r = 0;
 	while (*p != '\0')
 	{
 		t = 0;
-		while (isdigit(*p))
-			t = t * 10 + (*p++ - '0');
-		switch (*p++)
+		while (isdigit(c = *p++))
+			t = t * 10 + (c - '0');
+		if (c == '\0')
+			p--;
+		switch (c)
 		{
 		  case 'w':		/* weeks */
 			t *= 7;
-
-		  case '\0':
-			p--;
-			/* fall through... */
 
 		  case 'd':		/* days */
 		  default:
