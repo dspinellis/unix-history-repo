@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.50		%G%);
+SCCSID(@(#)readcf.c	3.51		%G%);
 
 /*
 **  READCF -- read control file.
@@ -689,6 +689,9 @@ mfdecode(flags, f)
 
 static int	StickyOpt[128 / sizeof (int)];	/* set if option is stuck */
 extern char	*WizWord;			/* the stored wizard password */
+#ifdef DAEMON
+extern int	MaxConnections;			/* max simult. SMTP conns */
+#endif DAEMON
 
 setoption(opt, val, safe, sticky)
 	char opt;
@@ -824,6 +827,12 @@ setoption(opt, val, safe, sticky)
 	  case 'm':		/* send to me too */
 		MeToo = atobool(val);
 		break;
+
+#ifdef DAEMON
+	  case 'N':		/* maximum simultaneous SMTP connections */
+		MaxConnections = atoi(val);
+		break;
+#endif DAEMON
 
 	  case 'o':		/* assume old style headers */
 		if (atobool(val))
