@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.5 %G%";
+static	char sccsid[] = "@(#)pc.c 3.6 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -6,16 +6,16 @@ static	char sccsid[] = "@(#)pc.c 3.5 %G%";
 /*
  * Pc - front end for Pascal compiler.
  */
-char	*pc0 = "/usr/new/pc0";
-char	*pc1 = "/usr/new/pc1";
-char	*pc2 = "/usr/new/pc2";
-char	*c2 = "/usr/new/c2";
-char	*pc3 = "/usr/new/pc3";
-char	*ld = "/usr/new/ld";
-char	*as = "/usr/new/as";
+char	*pc0 = "/usr/lib/pc0";
+char	*pc1 = "/lib/f1";
+char	*pc2 = "/usr/lib/pc2";
+char	*c2 = "/lib/c2";
+char	*pc3 = "/usr/lib/pc3";
+char	*ld = "/bin/ld";
+char	*as = "/bin/as";
 char	*lpc = "-lpc";
-char	*crt0 = "/usr/new/crt0.o";
-char	*mcrt0 = "/usr/new/mcrt0.o";
+char	*crt0 = "/lib/crt0.o";
+char	*mcrt0 = "/lib/mcrt0.o";
 
 char	*mktemp();
 char	*tname[2];
@@ -23,7 +23,7 @@ char	*tfile[2];
 
 char	*setsuf(), *savestr();
 
-int	Sflag, Oflag, cflag, gflag, pflag;
+int	Jflag, Sflag, Oflag, cflag, gflag, pflag;
 int	debug;
 
 #define	NARGS	512
@@ -37,8 +37,9 @@ int	pc3argx = 1;
 #define	pc3args	pc0args
 #define	ldargs	pc0args
 /* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
-/* char	*ldargs[NARGS] =	{ "ld", "-X", "/usr/new/crt0.o", 0, }; */
-char	*asargs[5] =		{ "as", 0, };
+/* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
+int	asargx;
+char	*asargs[6] =		{ "as", 0, };
 
 /*
  * If the number of .p arguments (np) is 1, and the number of .o arguments
@@ -111,20 +112,23 @@ main(argc, argv)
 		case 'S':
 			Sflag = 1;
 			continue;
+		case 'J':
+			Jflag = 1;
+			continue;
 		case 'T':
 			switch (argp[2]) {
 
 			case '0':
-				pc0 = "/usr/src/new/pc0/a.out";
+				pc0 = "/usr/src/cmd/pc0/a.out";
 				continue;
 			case '1':
-				pc1 = "/usr/src/new/pcc/pc1";
+				pc1 = "/usr/src/cmd/pcc/pc1";
 				continue;
 			case '2':
-				pc2 = "/usr/new/pc2";
+				pc2 = "/usr/src/cmd/pc2/a.out";
 				continue;
 			case '3':
-				pc3 = "/usr/src/new/pc3/a.out";
+				pc3 = "/usr/src/cmd/pc3/a.out";
 				continue;
 			case 'l':
 				lpc = "-lnpc";
@@ -207,10 +211,14 @@ main(argc, argv)
 			tfile[0] = 0;
 			continue;
 		}
-		asargs[1] = tfile[0];
-		asargs[2] = "-o";
+		asargx = 1;
+		if (Jflag)
+			asargs[asargx++] = "-J";
+		asargs[asargx++] = tfile[0];
+		asargs[asargx++] = "-o";
 		tfile[1] = setsuf(argp, 'o');
-		asargs[3] = tfile[1];
+		asargs[asargx++] = tfile[1];
+		asargs[asargx] = 0;
 		if (dosys(as, asargs, 0, 0))
 			continue;
 		tfile[1] = 0;
@@ -228,8 +236,6 @@ main(argc, argv)
 			continue;
 		switch (getsuf(argp)) {
 
-		case 'd':
-			continue;
 		case 'o':
 			pc3args[pc3argx++] = argp;
 			nxo++;
@@ -244,7 +250,7 @@ main(argc, argv)
 	pc3args[pc3argx] = 0;
 	if (dosys(pc3, pc3args, 0, 0))
 		done();
-/* char	*ldargs[NARGS] =	{ "ld", "-X", "/usr/new/crt0.o", 0, }; */
+/* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
 	ldargs[0] = "ld";
 	ldargs[1] = "-X";
 	ldargs[2] = crt0;
@@ -294,6 +300,7 @@ duplicate:
 		case 'w':
 		case 'p':
 		case 'S':
+		case 'J':
 		case 'T':
 		case 'O':
 		case 'C':
