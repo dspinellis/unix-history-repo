@@ -1,9 +1,11 @@
-#	Makefile	4.2	85/04/03
+#	Makefile	4.3	86/01/13
 
-CFLAGS= -O
+DEBUG=
+CFLAGS= -O  ${DEBUG}
 
 OBJS= bsdtcp.o df2.o df12.o dk.o dn.o hys.o hysq.o mic.o nov.o pen.o pnet.o \
-	rvmacs.o sy.o unet.o va212.o va811.o va820.o vad.o vent.o vmacs.o
+	rvmacs.o sy.o unet.o va212.o va811.o va820.o vad.o vent.o vmacs.o \
+	hys24.o cds224.o
 
 aculib.a: ${OBJS}
 	ar cr aculib.a ${OBJS}
