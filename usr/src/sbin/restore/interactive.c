@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -114,7 +114,7 @@ loop:
 			goto bad;
 		createfiles();
 		createlinks();
-		setdirmodes();
+		setdirmodes(0);
 		if (dflag)
 			checkrestore();
 		volno = 0;
@@ -198,7 +198,7 @@ loop:
 	case 's':
 		if (strncmp(cmd, "setmodes", strlen(cmd)) != 0)
 			goto bad;
-		setdirmodes();
+		setdirmodes(FORCE);
 		break;
 	/*
 	 * Print out dump header information.
