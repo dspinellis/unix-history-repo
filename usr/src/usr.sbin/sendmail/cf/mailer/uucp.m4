@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.14 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.15 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -125,7 +125,7 @@ R! $+				$: $j ! $1		in case $M undefined')
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
-R$* < @ $=Z . UUCP. > $*	$#uucp-uudom $@ $1 $: $1 < @ $2 .UUCP. > $3	@host.UUCP: ...
+R$* < @ $=Z . UUCP. > $*	$#uucp-uudom $@ $2 $: $1 < @ $2 .UUCP. > $3
 R$* < @ $=Y . UUCP. > $*	$#uucp-new $@ $2 $: $1 < @ $2 .UUCP. > $3
 R$* < @ $=U . UUCP. > $*	$#uucp-old $@ $2 $: $1 < @ $2 .UUCP. > $3
 POPDIVERT
