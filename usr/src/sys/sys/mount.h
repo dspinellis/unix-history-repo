@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.5 (Berkeley) %G%
+ *	@(#)mount.h	7.6 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -71,6 +71,7 @@ struct mount {
  */
 #define	M_MLOCK		0x1000		/* lock so that subtree is stable */
 #define	M_MWAIT		0x2000		/* someone is waiting for lock */
+#define	M_UPDATE	0x4000		/* not a real mount, just an update */
 
 /*
  * Operations supported on mounted file system.
