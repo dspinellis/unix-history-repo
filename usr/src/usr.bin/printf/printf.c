@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef BUILTIN
+#if ! defined(BUILTIN) && ! defined(SHELL)
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1989 The Regents of the University of California.\n\
@@ -14,14 +14,23 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
+
 
 #include <sys/types.h>
 #include <errno.h>
+#ifndef SHELL
 #include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef SHELL
+#define main printfcmd
+#define err error
+#include "/usr/src/devel/sh/bltin/bltin.h"
+#endif
 
 #define PF(f, func) { \
 	if (fieldwidth) \
@@ -36,7 +45,9 @@ static char sccsid[] = "@(#)printf.c	5.10 (Berkeley) %G%";
 }
 
 static int	 asciicode __P((void));
+#ifndef SHELL
 static void	 err __P((const char *fmt, ...));
+#endif
 static void	 escape __P((char *));
 static int	 getchr __P((void));
 static double	 getdouble __P((void));
@@ -173,17 +184,14 @@ mklong(str, ch)
 	char *str;
 	int ch;
 {
-	register char *copy;
+	static char copy[64];
 	int len;
 
 	len = strlen(str) + 2;
-	if (copy = malloc((u_int)len)) {	/* never freed; XXX */
-		bcopy(str, copy, len - 3);
-		copy[len - 3] = 'l';
-		copy[len - 2] = ch;
-		copy[len - 1] = '\0';
-	} else
-		err("%s", strerror(errno));
+	bcopy(str, copy, len - 3);
+	copy[len - 3] = 'l';
+	copy[len - 2] = ch;
+	copy[len - 1] = '\0';
 	return(copy);
 }
 
@@ -264,13 +272,13 @@ getstr()
 	return(*gargv++);
 }
 
-static char *number = "+-.0123456789";
+static char *Number = "+-.0123456789";
 static int
 getint()
 {
 	if (!*gargv)
 		return(0);
-	if (index(number, **gargv))
+	if (index(Number, **gargv))
 		return(atoi(*gargv++));
 	return(asciicode());
 }
@@ -280,7 +288,7 @@ getlong()
 {
 	if (!*gargv)
 		return((long)0);
-	if (index(number, **gargv))
+	if (index(Number, **gargv))
 		return(strtol(*gargv++, (char **)NULL, 0));
 	return((long)asciicode());
 }
@@ -290,7 +298,7 @@ getdouble()
 {
 	if (!*gargv)
 		return((double)0);
-	if (index(number, **gargv))
+	if (index(Number, **gargv))
 		return(atof(*gargv++));
 	return((double)asciicode());
 }
@@ -307,6 +315,7 @@ asciicode()
 	return(ch);
 }
 
+#ifndef SHELL
 #if __STDC__
 #include <stdarg.h>
 #else
@@ -333,3 +342,4 @@ err(fmt, va_alist)
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
 }
+#endif /* !SHELL */
