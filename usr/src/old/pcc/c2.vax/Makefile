@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	85/03/19
+#	@(#)Makefile	4.4	(Berkeley)	85/07/06
 #
 CFLAGS=-DCOPYCODE -DC2 -O
 LDFLAGS=
@@ -15,7 +15,7 @@ c22.o:  c22.c c2.h instrs.c2
 	$(CC) $(CFLAGS) -R -c c22.c
 
 instrs.c2: $(ASDIR)/instrs
-	(echo FLAVOR C2 ; cat $(ASDIR)/instrs) | awk -f /usr/src/bin/as/instrs > instrs.c2
+	(echo FLAVOR C2 ; cat $(ASDIR)/instrs) | awk -f $(ASDIR)/instrs > instrs.c2
 
 clean:
 	rm -f *.o *.s 
