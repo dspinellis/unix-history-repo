@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -275,10 +275,8 @@ release:
 pk_start (lcp)
 register struct pklcd *lcp;
 {
-	extern int pk_send ();
-
-	lcp -> lcd_send = pk_send;
-	return (pk_output (lcp));
+	pk_output (lcp);
+	return (0); /* XXX pk_output should return a value */
 }
 
 /*ARGSUSED*/
@@ -518,12 +516,14 @@ struct mbuf *m;
 	}
 	return (0);
 }
+
 pk_send (lcp, m)
 struct pklcd *lcp;
 register struct mbuf *m;
 {
 	int mqbit = 0, error = 0;
 	register struct x25_packet *xp;
+	register struct socket *so;
 
 	if (m -> m_type == MT_OOBDATA) {
 		if (lcp -> lcd_intrconf_pending)
@@ -533,13 +533,14 @@ register struct mbuf *m;
 		M_PREPEND(m, PKHEADERLN, M_WAITOK);
 		if (m == 0 || error)
 			goto bad;
-		lcp -> lcd_template = m;
 		*(mtod (m, octet *)) = 0;
 		xp = mtod (m, struct x25_packet *);
 		xp -> fmt_identifier = 1;
 		xp -> packet_type = X25_INTERRUPT;
 		SET_LCN(xp, lcp -> lcd_lcn);
-		return (pk_output (lcp));
+		sbinsertoob ( (so = lcp -> lcd_so) ?
+			&so -> so_snd : &lcp -> lcd_sb, m);
+		goto send;
 	}
 	/*
 	 * Application has elected (at call setup time) to prepend
@@ -556,8 +557,10 @@ register struct mbuf *m;
 		m -> m_data++;
 		m -> m_pkthdr.len--;
 	}
-	if ((error = pk_fragment (lcp, m, mqbit & 0x80, mqbit & 0x40, 1)) == 0)
-		error = pk_output (lcp);
+	error = pk_fragment (lcp, m, mqbit & 0x80, mqbit & 0x40, 1);
+send:
+	if (error == 0 && lcp -> lcd_state == DATA_TRANSFER)
+		lcp -> lcd_send (lcp); /* XXXXXXXXX fix pk_output!!! */
 	return (error);
 bad:
 	if (m)
