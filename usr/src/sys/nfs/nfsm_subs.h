@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.5 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -209,8 +209,8 @@ extern struct vnode *nfs_fhtovp();
 
 #define nfsm_rndup(a)	(((a)+3)&(~0x3))
 
-#define	nfsm_request(v)	\
-		if (error = nfs_request((v), mreq, xid, \
+#define	nfsm_request(v, t)	\
+		if (error = nfs_request((v), mreq, xid, 5*(t), \
 		   (v)->v_mount, &mrep, &md, &dpos)) \
 			goto nfsmout
 
