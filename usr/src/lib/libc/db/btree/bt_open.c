@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -331,13 +331,12 @@ bt_open(f, flags, mode, b)
  */
 
 int
-bt_get(tree, key, data, flag)
-	BTREE tree;
-	DBT *key;
-	DBT *data;
+bt_get(dbp, key, data, flag)
+	DB *dbp; 
+	DBT *key, *data;
 	u_long flag;
 {
-	BTREE_P t = (BTREE_P) tree;
+	BTREE_P t = (BTREE_P) (dbp->internal);
 	BTHEADER *h;
 	DATUM *d;
 	BTITEM *item;
@@ -398,14 +397,15 @@ bt_get(tree, key, data, flag)
  */
 
 int
-bt_put(tree, key, data, flag)
-	BTREE tree;
-	DBT *key;
-	DBT *data;
+bt_put(dbp, key, data, flag)
+	DB *dbp;
+	DBT *key, *data;
 	u_long flag;
 {
-	BTREE_P t = (BTREE_P) tree;
+	BTREE_P t;
 	BTITEM *item;
+
+	t = (BTREE_P)dbp->internal;
 
 	/* look for this key in the tree */
 	item = _bt_search(t, key);
@@ -449,15 +449,17 @@ bt_put(tree, key, data, flag)
  */
 
 int
-bt_delete(tree, key, flags)
-	BTREE tree;
+bt_delete(dbp, key, flags)
+	DB *dbp;
 	DBT *key;
 	u_long flags;
 {
-	BTREE_P t = (BTREE_P) tree;
+	BTREE_P t;
 	BTHEADER *h;
 	BTITEM *item;
 	int ndel = 0;
+
+	t = (BTREE_P)dbp->internal;
 
 	if (flags == R_CURSOR)
 		return (_bt_crsrdel(t));
@@ -521,12 +523,14 @@ bt_delete(tree, key, flags)
  *		RET_SUCCESS, RET_ERROR.
  */
 
-bt_sync(tree)
-	BTREE tree;
+bt_sync(dbp)
+	DB *dbp;
 {
-	BTREE_P t = (BTREE_P) tree;
+	BTREE_P t;
 	BTHEADER *h;
 	pgno_t pgno;
+
+	t = (BTREE_P)dbp->internal;
 
 	/* if this is an in-memory btree, syncing is a no-op */
 	if (!ISDISK(t))
@@ -594,16 +598,17 @@ bt_sync(tree)
  */
 
 int
-bt_seq(tree, key, data, flags)
-	BTREE tree;
-	DBT *key;
-	DBT *data;
+bt_seq(dbp, key, data, flags)
+	DB *dbp;
+	DBT *key, *data;
 	u_long flags;
 {
-	BTREE_P t = (BTREE_P) tree;
+	BTREE_P t;
 	BTHEADER *h;
 	DATUM *d;
 	int status;
+
+	t = (BTREE_P)dbp->internal;
 
 	/* do we need to initialize the scan? */
 	if (flags == R_CURSOR || flags == R_LAST || flags == R_FIRST
@@ -657,16 +662,17 @@ bt_seq(tree, key, data, flags)
  */
 
 int
-bt_close(tree)
-	BTREE tree;
+bt_close(dbp)
+	DB *dbp;
 {
-	BTREE_P t = (BTREE_P) tree;
-	int i;
-	BTHEADER *h;
-	char *cache;
 	struct HTBUCKET *b, *sb;
+	BTREE_P t;
+	BTHEADER *h;
 	HTABLE ht;
-	int fd;
+	int fd, i;
+	char *cache;
+
+	t = (BTREE_P)dbp->internal;
 
 	if (t->bt_cursor.c_key != (char *) NULL)
 		(void) free(t->bt_cursor.c_key);
