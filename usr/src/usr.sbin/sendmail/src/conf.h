@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.30 (Berkeley) %G%
+ *	@(#)conf.h	6.31 (Berkeley) %G%
  */
 
 /*
@@ -41,10 +41,6 @@
 
 # ifndef QUEUESIZE
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
-# endif
-
-# ifndef FORK
-# define FORK		vfork		/* function to call to fork mailer */
 # endif
 
 /*

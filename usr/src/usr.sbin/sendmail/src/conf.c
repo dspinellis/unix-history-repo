@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.60 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -140,9 +140,8 @@ int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
 */
 
 bool
-host_map_init(map, mapname, args)
+host_map_init(map, args)
 	MAP *map;
-	char *mapname;
 	char *args;
 {
 	register char *p = args;
@@ -511,6 +510,7 @@ rlsesigs()
 #    define LA_AVENRUN		"avenrun"
 #  endif
 
+/* now do the guesses based on general OS type */
 #  ifndef LA_TYPE
 #   if defined(SYSTEM5)
 #    define LA_TYPE		LA_INT
