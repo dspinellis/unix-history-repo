@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)isa.c	7.2 (Berkeley) %G%
+ *	@(#)isa.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -24,6 +24,7 @@
 #include "machine/segments.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/icu.h"
+#include "vm/vm.h"
 
 /*
  * Configure all ISA devices
@@ -183,7 +184,7 @@ int nbytes;
 	if (raw) phys = (unsigned long) bounce;
 	else phys = addr;
 	/* translate to physical */
-	phys = pmap_extract(pmap_kernel(), (vm_offset_t)phys);
+	phys = pmap_extract(kernel_pmap, (vm_offset_t)phys);
 	outb(0x4,phys & 0xFF);
 	outb(0x4,(phys>>8) & 0xFF);
 	outb(0x81,(phys>>16) & 0xFF);
