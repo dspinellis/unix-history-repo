@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.3 (Berkeley) %G%";
 #endif
 
 # include "mfile2"
@@ -380,60 +380,176 @@ zzzcode( p, c ) register NODE *p; {
 		}
 
 	case 'S':  /* structure assignment */
-		{
-			register NODE *l, *r;
-			register int size;
-
-			if( p->in.op == STASG ){
-				l = p->in.left;
-				r = p->in.right;
-
-				}
-			else if( p->in.op == STARG ){  /* store an arg into a temporary */
-				l = getlr( p, '3' );
-				r = p->in.left;
-				}
-			else cerror( "STASG bad" );
-
-			if( r->in.op == ICON ) r->in.op = NAME;
-			else if( r->in.op == REG ) r->in.op = OREG;
-			else if( r->in.op != OREG ) cerror( "STASG-r" );
-
-			size = p->stn.stsize;
-
-			if( size <= 0 || size > 65535 )
-				cerror("structure size <0=0 or >65535");
-			/*
-			 * Can't optimize with movw's or movl's here as
-			 * we don't know the alignment properties of
-			 * either source or destination (governed, potentially
-			 * by alignment of enclosing structure/union).
-			 * (PERHAPS WE COULD SIMULATE dclstruct?)
-			 */
-			if (size != 1) {
-				printf("\tmovab\t");
-				adrput(l);
-				printf(",r1\n\tmovab\t");
-				adrput(r);
-				printf(",r0\n\tmovl\t$%d,r2\n\tmovblk\n", size);
-				rname(2);
-			} else {
-				printf("\tmovb\t");
-				adrput(r);
-				printf(",");
-				adrput(l);
-				printf("\n");
-			}
-			if( r->in.op == NAME ) r->in.op = ICON;
-			else if( r->in.op == OREG ) r->in.op = REG;
-
-			}
+		stasg(p);
 		break;
 
 	default:
 		cerror( "illegal zzzcode" );
 		}
 	}
+
+#define	MOVB(dst, src, off) { \
+	printf("\tmovb\t"); upput(src, off); putchar(','); \
+	upput(dst, off); putchar('\n'); \
+}
+#define	MOVW(dst, src, off) { \
+	printf("\tmovw\t"); upput(src, off); putchar(','); \
+	upput(dst, off); putchar('\n'); \
+}
+#define	MOVL(dst, src, off) { \
+	printf("\tmovl\t"); upput(src, off); putchar(','); \
+	upput(dst, off); putchar('\n'); \
+}
+/*
+ * Generate code for a structure assignment.
+ */
+stasg(p)
+	register NODE *p;
+{
+	register NODE *l, *r;
+	register int size;
+
+	switch (p->in.op) {
+	case STASG:			/* regular assignment */
+		l = p->in.left;
+		r = p->in.right;
+		break;
+	case STARG:			/* place arg on the stack */
+		l = getlr(p, '3');
+		r = p->in.left;
+		break;
+	default:
+		cerror("STASG bad");
+		/*NOTREACHED*/
+	}
+	/*
+	 * Pun source for use in code generation.
+	 */
+	switch (r->in.op) {
+	case ICON:
+		r->in.op = NAME;
+		break;
+	case REG:
+		r->in.op = OREG;
+		break;
+	default:
+		cerror( "STASG-r" );
+		/*NOTREACHED*/
+	}
+	size = p->stn.stsize;
+	if (size <= 0 || size > 65535)
+		cerror("structure size out of range");
+	/*
+	 * Generate optimized code based on structure size
+	 * and alignment properties....
+	 */
+	switch (size) {
+
+	case 1:
+		printf("\tmovb\t");
+	optimized:
+		adrput(r);
+		printf(",");
+		adrput(l);
+		printf("\n");
+werror("optimized structure assignment (size %d alignment %d)", size, p->stn.stalign);
+		break;
+
+	case 2:
+		if (p->stn.stalign != 2) {
+			MOVB(l, r, SZCHAR);
+			printf("\tmovb\t");
+		} else
+			printf("\tmovw\t");
+		goto optimized;
+
+	case 4:
+		if (p->stn.stalign != 4) {
+			if (p->stn.stalign != 2) {
+				MOVB(l, r, 3*SZCHAR);
+				MOVB(l, r, 2*SZCHAR);
+				MOVB(l, r, 1*SZCHAR);
+				printf("\tmovb\t");
+			} else {
+				MOVW(l, r, SZSHORT);
+				printf("\tmovw\t");
+			}
+		} else
+			printf("\tmovl\t");
+		goto optimized;
+
+	case 6:
+		if (p->stn.stalign != 2)
+			goto movblk;
+		MOVW(l, r, 2*SZSHORT);
+		MOVW(l, r, 1*SZSHORT);
+		printf("\tmovw\t");
+		goto optimized;
+
+	case 8:
+		if (p->stn.stalign == 4) {
+			MOVL(l, r, SZLONG);
+			printf("\tmovl\t");
+			goto optimized;
+		}
+		/* fall thru...*/
+
+	default:
+	movblk:
+		/*
+		 * Can we ever get a register conflict with R1 here?
+		 */
+		printf("\tmovab\t");
+		adrput(l);
+		printf(",r1\n\tmovab\t");
+		adrput(r);
+		printf(",r0\n\tmovl\t$%d,r2\n\tmovblk\n", size);
+		rname(R2);
+		break;
+	}
+	/*
+	 * Reverse above pun for reclaim.
+	 */
+	if (r->in.op == NAME)
+		r->in.op = ICON;
+	else if (r->in.op == OREG)
+		r->in.op = REG;
+}
+
+/*
+ * Output the address of the second item in the
+ * pair pointed to by p.
+ */
+upput(p, size)
+	register NODE *p;
+{
+	CONSZ save;
+
+	if (p->in.op == FLD)
+		p = p->in.left;
+	switch (p->in.op) {
+
+	case NAME:
+	case OREG:
+		save = p->tn.lval;
+		p->tn.lval += size/SZCHAR;
+		adrput(p);
+		p->tn.lval = save;
+		break;
+
+	case REG:
+		if (size == SZLONG) {
+			printf("%s", rname(p->tn.rval+1));
+			break;
+		}
+		/* fall thru... */
+
+	default:
+		cerror("illegal upper address op %s size %d",
+		    opst[p->tn.op], size);
+		/*NOTREACHED*/
+	}
+}
 
 rmove( rt, rs, t ) TWORD t;{
 	printf( "	movl	%s,%s\n", rname(rs), rname(rt) );
@@ -601,33 +717,6 @@ conput( p ) register NODE *p; {
 
 insput( p ) NODE *p; {
 	cerror( "insput" );
-	}
-
-upput( p ) register NODE *p; {
-	/* output the address of the second long in the
-	   pair pointed to by p (for DOUBLEs)*/
-	CONSZ save;
-
-	if( p->in.op == FLD ){
-		p = p->in.left;
-		}
-	switch( p->in.op ){
-
-	case NAME:
-	case OREG:
-		save = p->tn.lval;
-		p->tn.lval += SZLONG/SZCHAR;
-		adrput(p);
-		p->tn.lval = save;
-		return;
-
-	case REG:
-		printf( "%s", rname(p->tn.rval+1) );
-		return;
-
-	default:
-		cerror( "illegal upper address" );
-		}
 	}
 
 adrput( p ) register NODE *p; {
