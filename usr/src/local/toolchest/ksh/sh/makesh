@@ -1,0 +1,175 @@
+CMD=${CMD-/bin/make}
+ARK=${ARK-lib.a}
+#
+# This script will make various version of ksh for different machines
+# You can invoke this command with a few flags and one argument which
+# is the name of the object file for the shell
+#
+JOBLIB= U370= DATA=data FIXDATA=text LFLAGS=-n Options= files= EDIT= \
+	EMACS=${EMACS-emacs.o} VI=${VI-vi.o} MYIO= JOBS=${JOBS-jobs.o} \
+	SUID_EXEC=suid_exec
+# check to see if segmentation faults work
+if	test -r option.init
+then	. ./option.init
+	# check to see if /bin/echo behaves like BSD echo
+else	if	test -f /bin/echo -a X"`/bin/echo -n`" = X
+	then	Options="$Options ECHO_N=-DECHO_N"
+	fi
+	# check for 16-bit machines
+	cat > try.c  <<\!
+	main() { int i = 0200000; exit(i!=0); }
+!
+	cc -c try.c
+	# check to see if -z flag works
+	if	cc -z -o try try.o 2> /dev/null
+	then	LFLAGS=-z
+	else	if	cc -n -o try try.o 2> /dev/null
+		then	LFLAGS=-n
+		else	cc -o try try.o
+		fi
+	fi
+	if	./try
+	then	LDFLAGS=-i
+	fi
+	# check to see if _sibuf already in library
+	cat > try.c  <<\!
+	extern char _sibuf[];
+	main() { exit(_sibuf[0]); }
+!
+	cc  -o try try.c 2> /dev/null || Options="$Options NOBUF=-DNOBUF"
+	rm -f try try.c try.o
+	echo "Options='$Options'" > option.init
+fi
+while	true
+do	case $1 in
+	-a*)	# accounting
+		Options="$Options ACCT=-DACCT" ;;
+	-j*)	# job monitor
+		JOBS=jobs.o ;;
+	+j*)	# job monitor off
+		JOBS= ;;
+	-e*|+v*)	# emacs mode only
+		VI= ;;
+	-v*|+e*)	# vi mode only
+		EMACS= ;;
+	-r*)	# vi raw only mode
+		Options="$Options VIRAW=-DRAWONLY" ;;
+	-m*)	# multibyte version
+		Options="$Options MULTIBYTE=-DMULTIBYTE" ;;
+	-f*)
+		VFORK=1 ;;
+	+f*)
+		VFORK= ;;
+	-s*)
+		SUID_EXEC=suid_exec ;;
+	+s*)
+		SUID_EXEC= ;;
+	-4.2)	# BSD 4_2
+		Options="$Options DBSD=-DBSD D4_2=-DBSD_4_2" \
+		LFLAGS=-z JOBS=jobs.o ;;
+	-*)
+		echo "USAGE: $0 [-e] [+e] [-f] [+f] [-j] [+j] [-m] [-r] [-s] [+s] [-v] [+v] [-4.2] [name]"
+		exit 1 ;;
+	*)
+		break ;;
+	esac
+	shift
+done
+sh=${1-ksh}
+if	test -d /dev/fd		# new research UNIX feature
+then	Options="$Options DEVFD=-DDEVFD"
+fi
+# if	test -d /dev/sxt	# sxt driver available
+# then	Options="$Options SXT=-DSXT"
+# fi
+if	test -f /vmunix -o "$SYSTYPE" = bsd4.1 -o "$SYSTYPE" = bsd4.2 # true for BSD unix
+then	JOBLIB=-ljobs Options="$Options DBSD=-DBSD" JOBS=jobs.o LFLAGS=-z
+	if	test -f /etc/networks #BSD 4.2
+	then	Options="$Options D4_2=-DBSD_4_2" JOBLIB=
+	fi
+	if	test -d /usr/suntool -o -f /usr/bin/suntools #sun workstations
+	then	Options="$Options NOBUF=-DNOBUF" DATA='data$$'
+	fi
+elif	test -f /usr/include/sys/vmparam.h -a -f /usr/include/sys/stream.h # true for 8th edition
+then	JOBLIB=-ljobs Options="$Options DBSD=-DBSD" JOBS=jobs.o LFLAGS=-z
+elif	test -f /venix
+then	LFLAGS=-i Options="$Options VIRAW=-DRAWONLY VENIX=-DVENIX" \
+		JOBS= MYIO=stdio.o
+elif	test -f /xenix
+then	LFLAGS=-i Options="$Options VIRAW=-DRAWONLY XENIX=-DXENIX" \
+		JOBS= MYIO=stdio.o
+elif	test -f /bin/uts && /bin/uts		# uts system
+then	if	test -x /etc/preroot 		# true for u370 on uts
+	then	FIXDATA=code DATA=idat
+	fi
+elif	test -f /bin/u370 && /bin/u370
+	then	U370=U370 FIXDATA=code DATA=idat Options="$Options NOBUF=-DNOBUF"
+elif	test -f /bin/pdp11 && /bin/pdp11
+then	LFLAGS=-i MYIO=stdio.o
+	if	test "$EMACS"
+	then	Options="$Options VIRAW=-DRAWONLY"	#save text space
+		SUID_EXEC=
+	fi
+elif	test -f /bin/iAPX286 && /bin/iAPX286
+then	LFLAGS=-i MYIO=stdio.o
+	if	test "$EMACS" -a "$VI"		# no room for both
+	then	EMACS=
+	fi
+	if	test "$VI"
+	then	Options="$Options VIRAW=-DRAWONLY"	#save text space
+	fi
+else	if	uname -m 2> /dev/null > /dev/null
+	then	set -- `uname -m`
+		case "$1" in
+		pdp*)
+			LFLAGS=-i
+			;;
+		ibm-pc*)
+			LFLAGS=-i Options="$Options VIRAW=-DRAWONLY"
+			;;
+		esac
+	else	set -- `uname -r`
+		case "$1" in
+		[23].*)
+			LFLAGS=-n Options="$Options VIRAW=-DRAWONLY"
+			;;
+		esac
+	fi
+fi
+if	test -f /sys/apollo_logo		# true for APOLLO DOMAIN
+then	FIXDATA= Options="$Options VIRAW=-DRAWONLY NOBUF=-DNOBUF" \
+	MYIO=apollo.o VFORK=1
+fi
+if	test "$EMACS$VI"
+then	EDIT=edit.o
+fi
+if	test "$EMACS"
+then	Options="$Options DESH=-DESH" EMACS=emacs.o
+else	Options="$Options DESH= EMACS="
+fi
+if	test "$VI"
+then	Options="$Options DVSH=-DVSH" VI=vi.o
+else	Options="$Options DVSH= VI="
+fi
+if	test "$JOBS"
+then	Options="$Options DJOBS=-DJOBS" JOBS=jobs.o
+else	Options="$Options DJOBS= JOBS="
+fi
+if	test "$VFORK"
+then	Options="$Options DVFORK=-DVFORK" VFORK=vfork.o
+else	Options="$Options DVFORK= VFORK="
+fi
+if	test X"$LFLAGS" = X-i
+then	Options="$Options INT16=-DINT16" FIXDATA=
+fi
+# test for Japanese version of shell
+if	test -f /usr/lib/dic/euc.dic
+then	Options="$Options MULTIBYTE=-DMULTIBYTE"
+fi
+if	test "$SUID_EXEC"
+then	Options="$Options SUID_EXEC=-DSUID_EXEC"
+else	Options="$Options SUID_EXEC="
+fi
+$CMD JOBLIB=$JOBLIB JOBS=$JOBS U370=$U370 LFLAGS=$LFLAGS ARK=$ARK DATA=$DATA \
+	FIXDATA="$FIXDATA" $Options EDIT=$EDIT EMACS=$EMACS VI=$VI \
+	JOBS=$JOBS VFORK=$VFORK MYIO=$MYIO $sh $SUID_EXEC
