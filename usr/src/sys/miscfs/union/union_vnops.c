@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -512,7 +512,7 @@ union_access(ap)
 	} */ *ap;
 {
 	struct union_node *un = VTOUNION(ap->a_vp);
-	int error = 0;
+	int error = EACCES;
 	struct vnode *vp;
 
 	if (vp = un->un_lowervp) {
@@ -1153,12 +1153,21 @@ int
 union_lock(ap)
 	struct vop_lock_args *ap;
 {
-	struct union_node *un = VTOUNION(ap->a_vp);
+	struct vnode *vp = ap->a_vp;
+	struct union_node *un;
+
+start:
+	while (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+	}
+
+	un = VTOUNION(vp);
 
 	if (un->un_uppervp) {
 		if ((un->un_flags & UN_ULOCK) == 0) {
-			VOP_LOCK(un->un_uppervp);
 			un->un_flags |= UN_ULOCK;
+			VOP_LOCK(un->un_uppervp);
 		}
 #ifdef DIAGNOSTIC
 		if (un->un_flags & UN_KLOCK)
@@ -1166,7 +1175,7 @@ union_lock(ap)
 #endif
 	}
 
-	while (un->un_flags & UN_LOCKED) {
+	if (un->un_flags & UN_LOCKED) {
 #ifdef DIAGNOSTIC
 		if (curproc && un->un_pid == curproc->p_pid &&
 			    un->un_pid > -1 && curproc->p_pid > -1)
@@ -1174,8 +1183,8 @@ union_lock(ap)
 #endif
 		un->un_flags |= UN_WANT;
 		sleep((caddr_t) &un->un_flags, PINOD);
+		goto start;
 	}
-	un->un_flags |= UN_LOCKED;
 
 #ifdef DIAGNOSTIC
 	if (curproc)
@@ -1184,6 +1193,7 @@ union_lock(ap)
 		un->un_pid = -1;
 #endif
 
+	un->un_flags |= UN_LOCKED;
 	return (0);
 }
 
