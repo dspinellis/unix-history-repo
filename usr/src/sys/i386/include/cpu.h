@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.2 (Berkeley) %G%
+ *	@(#)cpu.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -20,21 +20,11 @@
  * definitions of cpu-dependent requirements
  * referenced in generic code
  */
-#undef	COPY_SIGCODE		/* don't copy sigcode above user stack in exec */
+#undef	COPY_SIGCODE	/* don't copy sigcode above user stack in exec */
 
-/*
- * function vs. inline configuration;
- * these are defined to get generic functions
- * rather than inline or machine-dependent implementations
- */
-#define	NEED_MINMAX		/* need {,i,l,ul}{min,max} functions */
-#define	NEED_FFS		/* need ffs function */
-#define	NEED_BCMP		/* need bcmp function */
-#define	NEED_STRLEN		/* need strlen function */
-
-#define	cpu_exec(p)	/* nothing */
-#define cpu_setstack(p, ap) \
-	(p)->p_md.md_regs[SP] = ap
+#define	cpu_exec(p)			/* nothing */
+#define cpu_setstack(p, ap)		(p)->p_md.md_regs[SP] = ap
+#define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
 
 /*
  * Arguments to hardclock, softclock and gatherstats
