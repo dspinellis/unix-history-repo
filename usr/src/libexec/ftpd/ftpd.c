@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -437,8 +437,7 @@ receive_data(instr, outstr)
 	FILE *instr, *outstr;
 {
 	register int c;
-	int cr, escape, eof;
-	int netfd, filefd, cnt;
+	int cr, escape, eof, cnt;
 	char buf[BUFSIZ];
 
 
@@ -446,10 +445,8 @@ receive_data(instr, outstr)
 
 	case TYPE_I:
 	case TYPE_L:
-		netfd = fileno(instr);
-		netfd = fileno(outstr);
-		while ((cnt = read(netfd, buf, sizeof buf)) > 0)
-			if (write(filefd, buf, cnt) < 0)
+		while ((cnt = read(fileno(instr), buf, sizeof buf)) > 0)
+			if (write(fileno(outstr), buf, cnt) < 0)
 				return (1);
 		return (cnt < 0);
 
