@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)netintro.4	6.4 (Berkeley) %G%
+.\"	@(#)netintro.4	6.5 (Berkeley) %G%
 .\"
 .TH NETINTRO 4 ""
 .UC 5
@@ -227,19 +227,22 @@ structure as its parameter.  This structure has the form
 .nf
 .DT
 struct	ifreq {
-	char	ifr_name[16];		/* name of interface (e.g. "ec0") */
+#define	IFNAMSIZ	16
+	char	ifr_name[IFNAMSIZE];		/* if name, e.g. "en0" */
 	union {
 		struct	sockaddr ifru_addr;
 		struct	sockaddr ifru_dstaddr;
 		struct	sockaddr ifru_broadaddr;
 		short	ifru_flags;
 		int	ifru_metric;
+		caddr_t	ifru_data;
 	} ifr_ifru;
 #define	ifr_addr	ifr_ifru.ifru_addr	/* address */
 #define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
 #define	ifr_broadaddr	ifr_ifru.ifru_broadaddr	/* broadcast address */
 #define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
-#define	ifr_metric	ifr_ifru.ifru_metric	/* routing metric */
+#define	ifr_metric	ifr_ifru.ifru_metric	/* metric */
+#define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 };
 .fi
 .TP
