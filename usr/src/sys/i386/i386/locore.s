@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)locore.s	5.3 (Berkeley) %G%
+ *	@(#)locore.s	5.4 (Berkeley) %G%
  */
 
 /*
@@ -329,7 +329,7 @@ start:				# This is assumed to be location zero!
 	movl	%eax,0(%ebx)		# which is where _u maps!
 
 	movl	%edi,%eax		# phys address of ptd in proc 0
- # orl $0x80000000,%eax
+ 	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3		# load ptd addr into mmu
 	movl	%cr0,%eax		# get control word
 	orl	$0x80000001,%eax	# and let s page!
@@ -699,7 +699,7 @@ _ltr:
 _load_cr3:
 _lcr3:
 	movl	4(%esp),%eax
- 	# orl	$0x80000000,%eax
+ 	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3
 	movl	%cr3,%eax
 	ret
@@ -994,6 +994,7 @@ sw2:
 	movl	4(%edx),%eax
 	movl	%eax,_Swtchmap+4
 	movl	%cr3,%eax
+ 	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3
 	movl	_Swtchbase+PCB_CR3,%edx
 
@@ -1015,6 +1016,7 @@ sw2:
 	movl	_CMAP2,%eax		# save temporary map PTE
 	movl	%eax,PCB_CMAP2(%ecx)	# in our context
 
+ 	orl	$ I386_CR3PAT,%edx
 	movl	%edx,%cr3	# context switch
 
 	movl	$_u,%ecx
