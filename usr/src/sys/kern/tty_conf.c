@@ -1,10 +1,10 @@
-/*	tty_conf.c	6.2	83/09/25	*/
+/*	tty_conf.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/tty.h"
-#include "../h/conf.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "tty.h"
+#include "conf.h"
 
 int	nodev();
 int	nulldev();

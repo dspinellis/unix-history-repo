@@ -1,15 +1,15 @@
-/*	vm_meter.c	6.3	84/08/22	*/
+/*	vm_meter.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/seg.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/text.h"
-#include "../h/vm.h"
-#include "../h/cmap.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "seg.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "text.h"
+#include "vm.h"
+#include "cmap.h"
+#include "kernel.h"
 
 int	maxslp = MAXSLP;
 int	saferss = SAFERSS;

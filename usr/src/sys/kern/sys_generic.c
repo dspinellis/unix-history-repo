@@ -1,15 +1,15 @@
-/*	sys_generic.c	6.3	84/08/22	*/
+/*	sys_generic.c	6.4	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/ioctl.h"
-#include "../h/file.h"
-#include "../h/proc.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
-#include "../h/stat.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "file.h"
+#include "proc.h"
+#include "uio.h"
+#include "kernel.h"
+#include "stat.h"
 
 /*
  * Read system call.

@@ -1,10 +1,10 @@
-/*	kern_subr.c	6.2	84/07/08	*/
+/*	kern_subr.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "uio.h"
 
 uiomove(cp, n, rw, uio)
 	register caddr_t cp;

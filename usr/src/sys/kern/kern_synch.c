@@ -1,17 +1,17 @@
-/*	kern_synch.c	6.3	84/07/31	*/
+/*	kern_synch.c	6.4	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/file.h"
-#include "../h/inode.h"
-#include "../h/vm.h"
-#include "../h/kernel.h"
-#include "../h/buf.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "file.h"
+#include "inode.h"
+#include "vm.h"
+#include "kernel.h"
+#include "buf.h"
 
 #ifdef vax
 #include "../vax/mtpr.h"	/* XXX */

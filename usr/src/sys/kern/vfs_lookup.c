@@ -1,16 +1,16 @@
-/*	vfs_lookup.c	6.14	84/07/27	*/
+/*	vfs_lookup.c	6.15	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/mount.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "inode.h"
+#include "fs.h"
+#include "mount.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "conf.h"
+#include "uio.h"
+#include "kernel.h"
 
 struct	buf *blkatoff();
 struct	buf *freenamebuf;

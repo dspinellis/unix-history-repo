@@ -1,6 +1,6 @@
-/*	ffs_tables.c	6.1	83/07/29	*/
+/*	ffs_tables.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
+#include "param.h"
 
 /*
  * Bit patterns for identifying fragments in the block map

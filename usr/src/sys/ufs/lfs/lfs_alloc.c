@@ -1,16 +1,16 @@
-/*	lfs_alloc.c	6.4	84/07/28	*/
+/*	lfs_alloc.c	6.5	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mount.h"
-#include "../h/fs.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/inode.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/quota.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "mount.h"
+#include "fs.h"
+#include "conf.h"
+#include "buf.h"
+#include "inode.h"
+#include "dir.h"
+#include "user.h"
+#include "quota.h"
+#include "kernel.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();

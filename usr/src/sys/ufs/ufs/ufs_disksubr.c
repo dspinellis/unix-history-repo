@@ -1,4 +1,4 @@
-/*	ufs_disksubr.c	6.1	83/07/29	*/
+/*	ufs_disksubr.c	6.2	84/08/29	*/
 
 /*
  * Seek sort for disks.  We depend on the driver
@@ -17,9 +17,9 @@
  * blocks are allocated.
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
 
 #define	b_cylin	b_resid
 

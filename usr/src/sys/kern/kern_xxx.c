@@ -1,12 +1,12 @@
-/*	kern_xxx.c	6.1	83/07/29	*/
+/*	kern_xxx.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/proc.h"
-#include "../h/reboot.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "proc.h"
+#include "reboot.h"
 
 gethostid()
 {

@@ -1,18 +1,18 @@
-/*	lfs_inode.c	6.10	84/08/03	*/
+/*	lfs_inode.c	6.11	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mount.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
+#include "param.h"
+#include "systm.h"
+#include "mount.h"
+#include "dir.h"
+#include "user.h"
+#include "inode.h"
+#include "fs.h"
+#include "conf.h"
+#include "buf.h"
 #ifdef QUOTA
-#include "../h/quota.h"
+#include "quota.h"
 #endif
-#include "../h/kernel.h"
+#include "kernel.h"
 
 #define	INOHSZ	512
 #if	((INOHSZ&(INOHSZ-1)) == 0)

@@ -1,16 +1,16 @@
-/*	uipc_mbuf.c	6.2	84/02/22	*/
+/*	uipc_mbuf.c	6.3	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/cmap.h"
-#include "../h/map.h"
-#include "../h/mbuf.h"
-#include "../h/vm.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "cmap.h"
+#include "map.h"
+#include "mbuf.h"
+#include "vm.h"
+#include "kernel.h"
 
 mbinit()
 {

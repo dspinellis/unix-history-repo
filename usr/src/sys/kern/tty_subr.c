@@ -1,11 +1,11 @@
-/*	tty_subr.c	6.2	84/07/29	*/
+/*	tty_subr.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/tty.h"
-#include "../h/clist.h"
+#include "param.h"
+#include "systm.h"
+#include "conf.h"
+#include "buf.h"
+#include "tty.h"
+#include "clist.h"
 
 char	cwaiting;
 

@@ -1,20 +1,20 @@
-/*	vfs_vnops.c	6.2	84/07/08	*/
+/*	vfs_vnops.c	6.3	84/08/29	*/
 
 #include "../machine/reg.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/fs.h"
-#include "../h/file.h"
-#include "../h/conf.h"
-#include "../h/inode.h"
-#include "../h/acct.h"
-#include "../h/mount.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/proc.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "fs.h"
+#include "file.h"
+#include "conf.h"
+#include "inode.h"
+#include "acct.h"
+#include "mount.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "proc.h"
 
 /*
  * Check mode permission on inode pointer.

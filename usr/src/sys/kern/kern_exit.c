@@ -1,21 +1,21 @@
-/*	kern_exit.c	6.3	84/06/10	*/
+/*	kern_exit.c	6.4	84/08/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/proc.h"
-#include "../h/buf.h"
-#include "../h/wait.h"
-#include "../h/vm.h"
-#include "../h/file.h"
-#include "../h/mbuf.h"
-#include "../h/inode.h"
+#include "param.h"
+#include "systm.h"
+#include "map.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "proc.h"
+#include "buf.h"
+#include "wait.h"
+#include "vm.h"
+#include "file.h"
+#include "mbuf.h"
+#include "inode.h"
 
 /*
  * Exit system call: pass back caller's arg

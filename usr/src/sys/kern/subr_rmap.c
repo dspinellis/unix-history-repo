@@ -1,13 +1,13 @@
-/*	subr_rmap.c	6.1	83/07/29	*/
+/*	subr_rmap.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/text.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "map.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "text.h"
+#include "kernel.h"
 
 /*
  * Resource map handling routines.

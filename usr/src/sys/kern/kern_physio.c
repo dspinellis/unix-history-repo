@@ -1,19 +1,19 @@
-/*	kern_physio.c	6.2	83/09/09	*/
+/*	kern_physio.c	6.3	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/proc.h"
-#include "../h/seg.h"
-#include "../h/vm.h"
-#include "../h/trace.h"
-#include "../h/map.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "conf.h"
+#include "proc.h"
+#include "seg.h"
+#include "vm.h"
+#include "trace.h"
+#include "map.h"
+#include "uio.h"
 
 /*
  * Swap IO headers -

@@ -1,16 +1,16 @@
-/*	kern_resource.c	6.2	84/05/22	*/
+/*	kern_resource.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../h/proc.h"
-#include "../h/seg.h"
-#include "../h/fs.h"
-#include "../h/uio.h"
-#include "../h/vm.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "inode.h"
+#include "proc.h"
+#include "seg.h"
+#include "fs.h"
+#include "uio.h"
+#include "vm.h"
+#include "kernel.h"
 
 /*
  * Resource controls and accounting.

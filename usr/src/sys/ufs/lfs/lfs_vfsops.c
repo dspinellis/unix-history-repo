@@ -1,16 +1,16 @@
-/*	lfs_vfsops.c	6.7	84/07/18	*/
+/*	lfs_vfsops.c	6.8	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../h/proc.h"
-#include "../h/fs.h"
-#include "../h/buf.h"
-#include "../h/mount.h"
-#include "../h/file.h"
-#include "../h/conf.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "inode.h"
+#include "proc.h"
+#include "fs.h"
+#include "buf.h"
+#include "mount.h"
+#include "file.h"
+#include "conf.h"
 
 smount()
 {

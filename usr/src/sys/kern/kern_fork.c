@@ -1,23 +1,23 @@
-/*	kern_fork.c	6.4	84/07/14	*/
+/*	kern_fork.c	6.5	84/08/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
 #include "../machine/psl.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/proc.h"
-#include "../h/inode.h"
-#include "../h/seg.h"
-#include "../h/vm.h"
-#include "../h/text.h"
-#include "../h/file.h"
-#include "../h/acct.h"
-#include "../h/quota.h"
+#include "param.h"
+#include "systm.h"
+#include "map.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "proc.h"
+#include "inode.h"
+#include "seg.h"
+#include "vm.h"
+#include "text.h"
+#include "file.h"
+#include "acct.h"
+#include "quota.h"
 
 /*
  * fork system call.

@@ -1,18 +1,18 @@
-/*	uipc_usrreq.c	6.9	84/08/27	*/
+/*	uipc_usrreq.c	6.10	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/unpcb.h"
-#include "../h/un.h"
-#include "../h/inode.h"
-#include "../h/file.h"
-#include "../h/stat.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "unpcb.h"
+#include "un.h"
+#include "inode.h"
+#include "file.h"
+#include "stat.h"
 
 /*
  * Unix communications domain.
