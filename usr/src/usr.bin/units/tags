@@ -1,0 +1,11 @@
+Munits	units.c	/^main(argc, argv)$/
+convr	units.c	/^convr(up)$/
+equal	units.c	/^equal(s1, s2)$/
+fperr	units.c	/^fperr()$/
+get	units.c	/^get()$/
+getflt	units.c	/^getflt()$/
+hash	units.c	/^hash(name)$/
+init	units.c	/^init()$/
+lookup	units.c	/^lookup(name, up, den, c)$/
+pu	units.c	/^pu(u, i, f)$/
+units	units.c	/^units(up)$/

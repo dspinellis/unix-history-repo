@@ -1,0 +1,2 @@
+Muuname	uuname.c	/^main(argc, argv)$/
+cleanup	uuname.c	/^cleanup(code)$/

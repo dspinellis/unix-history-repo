@@ -1,0 +1,8 @@
+APPCMD	uux.c	/^#define APPCMD(d) {\\$/
+GENRCV	uux.c	/^#define GENRCV(f, a, b, c) {fprintf(f, "R %s %s %s/
+GENSEND	uux.c	/^#define GENSEND(f, a, b, c, d, e) {\\$/
+Muux	uux.c	/^main(argc, argv)$/
+arg_fix	uux.c	/^arg_fix(argc, argv)$/
+cleanup	uux.c	/^cleanup(code)$/
+split	uux.c	/^split(name, sys, rest)$/
+ufopen	uux.c	/^FILE *ufopen(file, mode)$/

@@ -1,0 +1,7 @@
+Muucp	uucp.c	/^main(argc, argv)$/
+chsys	uucp.c	/^chsys(s1)$/
+cleanup	uucp.c	/^cleanup(code)$/
+clscfile	uucp.c	/^clscfile()$/
+copy	uucp.c	/^copy(s1, f1, s2, f2)$/
+gtcfile	uucp.c	/^gtcfile(sys)$/
+xuux	uucp.c	/^xuux(ename, s1, f1, s2, f2, opts)$/

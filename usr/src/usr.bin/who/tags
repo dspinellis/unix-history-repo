@@ -1,0 +1,3 @@
+Mwho	who.c	/^main(argc, argv)$/
+file	who.c	/^file(name)$/
+output	who.c	/^output(up)$/
