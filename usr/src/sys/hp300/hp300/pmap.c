@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.2 (Berkeley) %G%
+ *	@(#)pmap.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -282,10 +282,11 @@ void pmap_check_wiring	__P((char *, vm_offset_t));
  * memory will never be freed, and in essence it is wired down.
  */
 void *
-pmap_bootstrap_alloc(size) {
-	vm_offset_t val;
-	int i;
+pmap_bootstrap_alloc(size)
+	int size;
+{
 	extern boolean_t vm_page_startup_initialized;
+	vm_offset_t val;
 	
 	if (vm_page_startup_initialized)
 		panic("pmap_bootstrap_alloc: called after startup initialized");
