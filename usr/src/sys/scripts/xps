@@ -1,7 +1,7 @@
 # xps
 # kernel ps
 #
-#	@(#)xps	8.2 (Berkeley) %G%
+#	@(#)xps	8.3 (Berkeley) %G%
 
 define xps
 
@@ -10,10 +10,10 @@ define xps
 	while ($i < 2)
 
 		if ($i == 0)
-			set $p = allproc
+			set $p = allproc.lh_first
 		end
 		if ($i == 1)
-			set $p = zombproc
+			set $p = zombproc.lh_first
 		end
 
 		printf "      proc   pid      flag st      wchan comm\n"
@@ -25,7 +25,7 @@ define xps
 				printf " (%s)", $p->p_wmesg
 			end
 			printf "\n"
-			set $p = $p->p_next
+			set $p = $p->p_list.le_next
 		end
 		set $i++
 	end
