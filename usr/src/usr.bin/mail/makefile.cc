@@ -1,7 +1,7 @@
 #
 # Computer center unix A
 #
-# Sccs Id = "@(#)makefile.cc	1.1 %G%";
+# Sccs Id = "@(#)makefile.cc	2.1 %G%";
 #
 
 CFLAGS=-O -DCC -I/usr/include/retrofit -Dsignal=Signal

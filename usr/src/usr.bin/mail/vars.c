@@ -8,7 +8,7 @@
  * Variable handling stuff.
  */
 
-static char *SccsId = "@(#)vars.c	1.1 %G%";
+static char *SccsId = "@(#)vars.c	2.1 %G%";
 
 /*
  * Assign a value to a variable.

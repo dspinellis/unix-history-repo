@@ -9,7 +9,7 @@
 
 int	oldsigs[17];
 
-static char *SccsId = "@(#)Signal.c	1.1 %G%";
+static char *SccsId = "@(#)Signal.c	2.1 %G%";
 
 int
 (*Signal())(sig, spot)

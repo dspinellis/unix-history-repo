@@ -3,7 +3,7 @@
  * in the string.
  */
 
-static char *SccsId = "@(#)index.c	1.1 %G%";
+static char *SccsId = "@(#)index.c	2.1 %G%";
 
 char *
 index(str, ch)

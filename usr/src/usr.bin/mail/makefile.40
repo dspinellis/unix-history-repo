@@ -1,7 +1,7 @@
 #
 # EECS/ERL 11/40 Unix
 #
-# Sccs Id = "@(#)makefile.40	1.1 %G%";
+# Sccs Id = "@(#)makefile.40	2.1 %G%";
 #
 
 CFLAGS=-O -DV40 -I/usr/include/retrofit

@@ -11,7 +11,7 @@
  * Author: Kurt Shoens (UCB) 12/7/78
  */
 
-static char *SccsId = "@(#)fmt.c	1.3 %G%";
+static char *SccsId = "@(#)fmt.c	2.1 %G%";
 
 #define	NOSTR	((char *) 0)	/* Null string pointer for lint */
 

@@ -10,7 +10,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)strings.c	1.1 %G%";
+static char *SccsId = "@(#)strings.c	2.1 %G%";
 
 /*
  * Allocate size more bytes of space and return the address of the
