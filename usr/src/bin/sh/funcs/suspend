@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)suspend	8.1 (Berkeley) %G%
+#	@(#)suspend	8.2 (Berkeley) %G%
 
 suspend() {
 	local -
