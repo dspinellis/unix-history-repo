@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwprintf.c	2.1 83/07/30";
+static	char *sccsid = "@(#)wwprintf.c	2.1.1.1 83/08/09";
 #endif
 
 #include "ww.h"
 
+/*VARARGS2*/
 wwprintf(w, fmt, args)
 struct ww *w;
 char *fmt;
@@ -23,35 +24,3 @@ char *fmt;
 	_doprnt(fmt, &args, &_wwbuf);
 	return wwwrite(w, buf, _wwbuf._ptr - buf);
 }
-
-/*
-wwprintf(w, fmt, args)
-struct ww *w;
-char *fmt;
-{
-	_doprnt(fmt, &args, w);
-	return 0;
-}
-
-_strout(count, string, adjust, file, fillch)
-register char *string;
-register count;
-int adjust;
-register struct ww *file;
-{
-	while (adjust < 0) {
-		if (*string=='-' && fillch=='0') {
-			wputc(*string++, file);
-			count--;
-		}
-		wputc(fillch, file);
-		adjust++;
-	}
-	while (--count>=0)
-		wputc(*string++, file);
-	while (adjust) {
-		wputc(fillch, file);
-		adjust--;
-	}
-}
-*/
