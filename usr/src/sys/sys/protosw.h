@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)protosw.h	7.4 (Berkeley) %G%
+ *	@(#)protosw.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -62,11 +62,12 @@ struct protosw {
 #define	PR_FASTHZ	5		/* 5 fast timeouts per second */
 
 /*
- * Values for pr_flags
+ * Values for pr_flags.
+ * PR_ADDR requires PR_ATOMIC;
+ * PR_ADDR and PR_CONNREQUIRED are mutually exclusive.
  */
 #define	PR_ATOMIC	0x01		/* exchange atomic messages only */
 #define	PR_ADDR		0x02		/* addresses given with messages */
-/* in the current implementation, PR_ADDR needs PR_ATOMIC to work */
 #define	PR_CONNREQUIRED	0x04		/* connection required by protocol */
 #define	PR_WANTRCVD	0x08		/* want PRU_RCVD calls */
 #define	PR_RIGHTS	0x10		/* passes capabilities */
@@ -122,28 +123,22 @@ char *prurequests[] = {
 
 /*
  * The arguments to the ctlinput routine are
- *	(*protosw[].pr_ctlinput)(cmd, arg);
- * where cmd is one of the commands below, and arg is
- * an optional argument (caddr_t).
- *
- * N.B. The IMP code, in particular, pressumes the values
- *      of some of the commands; change with extreme care.
- * TODO:
- *	spread out codes so new ICMP codes can be
- *	accomodated more easily
+ *	(*protosw[].pr_ctlinput)(cmd, sa, arg);
+ * where cmd is one of the commands below, sa is a pointer to a sockaddr,
+ * and arg is an optional caddr_t argument used within a protocol family.
  */
 #define	PRC_IFDOWN		0	/* interface transition */
-#define	PRC_ROUTEDEAD		1	/* select new route if possible */
+#define	PRC_ROUTEDEAD		1	/* select new route if possible ??? */
 #define	PRC_QUENCH2		3	/* DEC congestion bit says slow down */
-#define	PRC_QUENCH		4	/* some said to slow down */
+#define	PRC_QUENCH		4	/* some one said to slow down */
 #define	PRC_MSGSIZE		5	/* message size forced drop */
-#define	PRC_HOSTDEAD		6	/* normally from IMP */
-#define	PRC_HOSTUNREACH		7	/* ditto */
+#define	PRC_HOSTDEAD		6	/* host appears to be down */
+#define	PRC_HOSTUNREACH		7	/* deprecated (use PRC_UNREACH_HOST) */
 #define	PRC_UNREACH_NET		8	/* no route to network */
 #define	PRC_UNREACH_HOST	9	/* no route to host */
 #define	PRC_UNREACH_PROTOCOL	10	/* dst says bad protocol */
 #define	PRC_UNREACH_PORT	11	/* bad port # */
-#define	PRC_UNREACH_NEEDFRAG	12	/* IP_DF caused drop */
+/* was	PRC_UNREACH_NEEDFRAG	12	   (use PRC_MSGSIZE) */
 #define	PRC_UNREACH_SRCFAIL	13	/* source route failed */
 #define	PRC_REDIRECT_NET	14	/* net routing redirect */
 #define	PRC_REDIRECT_HOST	15	/* host routing redirect */
@@ -155,12 +150,15 @@ char *prurequests[] = {
 
 #define	PRC_NCMDS		21
 
+#define	PRC_IS_REDIRECT(cmd)	\
+	((cmd) >= PRC_REDIRECT_NET && (cmd) <= PRC_REDIRECT_TOSHOST)
+
 #ifdef PRCREQUESTS
 char	*prcrequests[] = {
 	"IFDOWN", "ROUTEDEAD", "#2", "DEC-BIT-QUENCH2",
-	"QUENCH", "MSGSIZE", "HOSTDEAD", "HOSTUNREACH",
+	"QUENCH", "MSGSIZE", "HOSTDEAD", "#7",
 	"NET-UNREACH", "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
-	"FRAG-UNREACH", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
+	"#12", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
 	"TOSNET-REDIRECT", "TOSHOST-REDIRECT", "TX-INTRANS", "TX-REASS",
 	"PARAMPROB"
 };
