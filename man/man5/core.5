@@ -1,0 +1,57 @@
+.pa 1
+.he 'CORE (V)'2/7/73'CORE (V)'
+.ti 0
+NAME		format of core image
+.sp
+.ti 0
+DESCRIPTION	UNIX
+writes out a core image of a terminated
+process when any of various errors occur.
+See wait____(II) for the list of reasons;
+the most common are memory violations, illegal
+instructions, bus errors, and user-generated
+quit signals.
+
+The core image is called "core" and is written in the process's
+working directory (provided it can be; normal
+access controls apply).
+
+The size and structure of the core image file
+depend to some extent on which system is involved.
+In general there is a 512-byte area
+at the end which contains the system's per-process
+data for that process.
+(64 bytes in older systems).  The
+remainder represents the actual contents of
+the user's core area when the core image
+was written.
+In the current system,
+this area is variable in size in that only the locations
+from user 0 to the program break, plus the stack, are
+dumped.
+
+When any fatal trap occurs,
+all the useful registers are stored on the stack.
+In the current system, which has relocation and protection
+hardware, the stack used is the system
+stack, which is kept in the per-process area;
+in older systems,
+there is only one stack, and it is located in the
+user's core area.
+
+The actual format of the information is complicated
+because it depends on what hardware is present (EAE,
+floating-point option),
+whether single- or double-precision
+floating mode is in effect,
+and also involves relocating addresses in the
+system's address space.
+A guru will have to be consulted
+if enlightenment is required.
+
+In general the debugger
+db(I) should
+be used to deal with core images.
+
+.ti 0
+SEE ALSO	db(I), wait(II)
