@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_io.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_io.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
