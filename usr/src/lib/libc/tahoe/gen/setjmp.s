@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Computer Consoles Inc.
@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)setjmp.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)setjmp.s	8.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
