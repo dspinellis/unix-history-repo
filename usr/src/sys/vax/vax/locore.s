@@ -1,4 +1,4 @@
-/*	locore.s	6.10	84/07/27	*/
+/*	locore.s	6.11	84/07/28	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -536,6 +536,9 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(mmap	,vmmap		,1		)
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(camap	,cabase		,16*CLSIZE	)
+#ifdef	GPROF
+	SYSMAP(profmap	,profbase	,600*CLSIZE	)
+#endif
 	SYSMAP(ecamap	,calimit	,0		)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE)
 
@@ -682,6 +685,21 @@ sigcode:
  * Primitives
  */ 
 
+#ifdef GPROF
+#define	ENTRY(name, regs) \
+	.globl _/**/name; .align 1; _/**/name: .word regs; jsb mcount
+#define	JSBENTRY(name) \
+	.globl _/**/name; _/**/name: \
+	movl fp,-(sp); movab -12(sp),fp; movq r0,-(sp); jsb mcount; \
+	movq (sp)+,r0; movl (sp)+,fp
+#else
+#define	ENTRY(name, regs) \
+	.globl _/**/name; .align 1; _/**/name: .word regs
+#define	JSBENTRY(name) \
+	.globl _/**/name; _/**/name:
+#endif GPROF
+#define R6 0x40
+
 /*
  * badaddr(addr, len)
  *	see if access addr with a len type instruction causes a machine check
@@ -725,8 +743,11 @@ _badaddr:
 	movab	2b,(sp)
 	rei
 
-_addupc:	.globl	_addupc
-	.word	0x0
+/*
+ * update profiling information for the user
+ * addupc(pc, &u.u_prof, ticks)
+ */
+ENTRY(addupc, 0)
 	movl	8(ap),r2		# &u.u_prof
 	subl3	8(r2),4(ap),r0		# corrected pc
 	blss	9f
@@ -755,9 +776,7 @@ _addupc:	.globl	_addupc
  *
  * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  */
-	.globl	_copyinstr
-_copyinstr:
-	.word	0x40			# save r6
+ENTRY(copyinstr, R6)
 	movl	12(ap),r6		# r6 = max length
 	jlss	8f
 	movl	4(ap),r1		# r1 = user address
@@ -809,9 +828,7 @@ _copyinstr:
  *
  * copyoutstr(fromaddr, toaddr, maxlength, &lencopied)
  */
-	.globl	_copyoutstr
-_copyoutstr:
-	.word	0x40			# save r6
+ENTRY(copyoutstr, R6)
 	movl	12(ap),r6		# r6 = max length
 	jlss	8b
 	movl	4(ap),r1		# r1 = kernel address
@@ -842,9 +859,7 @@ _copyoutstr:
  *
  * copystr(fromaddr, toaddr, maxlength, &lencopied)
  */
-	.globl	_copystr
-_copystr:
-	.word	0x40			# save r6
+ENTRY(copystr, R6)
 	movl	12(ap),r6		# r6 = max length
 	jlss	8b
 	movl	4(ap),r1		# r1 = src address
@@ -865,8 +880,11 @@ _copystr:
 	movl	$ENOENT,r0		# set error code and return
 	jbr	9b
 
-
-_Copyin:	.globl	_Copyin		# <<<massaged for jsb by asm.sed>>>
+/* 
+ * Copy specified amount of data from user space into the kernel
+ * Copyin(from, to, len)
+ */
+JSBENTRY(Copyin)
 	movl	12(sp),r0		# copy length
 	blss	ersb
 	movl	4(sp),r1		# copy user address
@@ -898,7 +916,11 @@ ersb:
 	movl	$EFAULT,r0
 	rsb
 
-_Copyout: 	.globl	_Copyout	# <<<massaged for jsb by asm.sed >>>
+/* 
+ * Copy specified amount of data from kernel to the user space
+ * Copyout(from, to, len)
+ */
+JSBENTRY(Copyout)
 	movl	12(sp),r0		# get count
 	blss	ersb
 	movl	8(sp),r1		# get user address
@@ -929,8 +951,7 @@ coshort:
 /*
  * non-local goto's
  */
-	.globl	_Setjmp
-_Setjmp:
+JSBENTRY(Setjmp)
 	movq	r6,(r0)+
 	movq	r8,(r0)+
 	movq	r10,(r0)+
@@ -940,8 +961,7 @@ _Setjmp:
 	clrl	r0
 	rsb
 
-	.globl	_Longjmp
-_Longjmp:
+JSBENTRY(Longjmp)
 	movq	(r0)+,r6
 	movq	(r0)+,r8
 	movq	(r0)+,r10
@@ -981,8 +1001,7 @@ lj1:	.asciz	"longjmp"
  *
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
-	.globl	_Setrq		# <<<massaged to jsb by "asm.sed">>>
-_Setrq:
+ JSBENTRY(Setrq)
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
 	pushab	set3			##
@@ -1003,8 +1022,7 @@ set3:	.asciz	"setrq"
  *
  * Call should be made at spl6().
  */
-	.globl	_Remrq		# <<<massaged to jsb by "asm.sed">>>
-_Remrq:
+ JSBENTRY(Remrq)
 	movzbl	P_PRI(r0),r1
 	ashl	$-2,r1,r1
 	bbsc	r1,_whichqs,rem1
@@ -1035,8 +1053,7 @@ sw0:	.asciz	"swtch"
 /*
  * Swtch(), using fancy VAX instructions
  */
-	.globl	_Swtch
-_Swtch:				# <<<massaged to jsb by "asm.sed">>>
+JSBENTRY(Swtch)
 	movl	$1,_noproc
 	clrl	_runrun
 sw1:	ffs	$0,$32,_whichqs,r0	# look for non-empty queue
@@ -1072,8 +1089,7 @@ sw3:
 /*
  * Resume(pf)
  */
-	.globl	_Resume		# <<<massaged to jsb by "asm.sed">>>
-_Resume:
+JSBENTRY(Resume)
 	mtpr	$0x18,$IPL			# no interrupts, please
 	movl	_CMAP2,_u+PCB_CMAP2	# yech
 	svpctx
@@ -1094,8 +1110,7 @@ res1:
 /*
  * {fu,su},{byte,word}, all massaged by asm.sed to jsb's
  */
-	.globl	_Fuword
-_Fuword:
+JSBENTRY(Fuword)
 	prober	$3,$4,(r0)
 	beql	fserr
 	movl	(r0),r0
@@ -1104,23 +1119,20 @@ fserr:
 	mnegl	$1,r0
 	rsb
 
-	.globl	_Fubyte
-_Fubyte:
+JSBENTRY(Fubyte)
 	prober	$3,$1,(r0)
 	beql	fserr
 	movzbl	(r0),r0
 	rsb
 
-	.globl	_Suword
-_Suword:
+JSBENTRY(Suword)
 	probew	$3,$4,(r0)
 	beql	fserr
 	movl	r1,(r0)
 	clrl	r0
 	rsb
 
-	.globl	_Subyte
-_Subyte:
+JSBENTRY(Subyte)
 	probew	$3,$1,(r0)
 	beql	fserr
 	movb	r1,(r0)
@@ -1131,8 +1143,7 @@ _Subyte:
  * Copy 1 relocation unit (NBPG bytes)
  * from user virtual address to physical address
  */
-_copyseg: 	.globl	_copyseg
-	.word	0x0
+ENTRY(copyseg, 0)
 	bisl3	$PG_V|PG_KW,8(ap),_CMAP2
 	mtpr	$_CADDR2,$TBIS	# invalidate entry for copy 
 	movc3	$NBPG,*4(ap),_CADDR2
@@ -1142,8 +1153,7 @@ _copyseg: 	.globl	_copyseg
  * zero out physical memory
  * specified in relocation units (NBPG bytes)
  */
-_clearseg: 	.globl	_clearseg
-	.word	0x0
+ENTRY(clearseg, 0)
 	bisl3	$PG_V|PG_KW,4(ap),_CMAP1
 	mtpr	$_CADDR1,$TBIS
 	movc5	$0,(sp),$0,$NBPG,_CADDR1
@@ -1154,8 +1164,7 @@ _clearseg: 	.globl	_clearseg
  * Given virtual address, byte count, and rw flag
  * returns 0 on no access.
  */
-_useracc:	.globl	_useracc
-	.word	0x0
+ENTRY(useracc, 0)
 	movl	4(ap),r0		# get va
 	movl	8(ap),r1		# count
 	tstl	12(ap)			# test for read access ?
@@ -1196,9 +1205,7 @@ uaerr:
  * We can't use the probe instruction directly because
  * it ors together current and previous mode.
  */
-	.globl	_kernacc
-_kernacc:
-	.word	0x0
+ ENTRY(kernacc, 0)
 	movl	4(ap),r0	# virtual address
 	bbcc	$31,r0,kacc1
 	bbs	$30,r0,kacerr
@@ -1257,6 +1264,12 @@ kacerr:
 	.globl	Fastreclaim
 Fastreclaim:
 	PUSHR
+#ifdef GPROF
+	movl	fp,-(sp)
+	movab	12(sp),fp
+	jsb	mcount
+	movl	(sp)+,fp
+#endif GPROF
 	extzv	$9,$23,28(sp),r3	# virtual address
 	bicl2	$1,r3			# v = clbase(btop(virtaddr)); 
 	movl	_u+U_PROCP,r5		# p = u.u_procp 
