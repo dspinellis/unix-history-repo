@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RESET.c 1.5 %G%";
+static char sccsid[] = "@(#)RESET.c 1.6 %G%";
 
 #include "h00vars.h"
 
@@ -23,10 +23,17 @@ RESET(filep, name, maxnamlen, datasize)
 	filep = GETNAME(filep, name, maxnamlen, datasize);
 	filep->fbuf = fopen(filep->fname, "r");
 	if (filep->fbuf == NULL) {
+		/*
+		 * This allows unnamed temp files to be opened even if
+		 * they have not been rewritten yet. We decided to remove
+		 * this feature since the standard requires that files be
+		 * defined before being reset.
+		 *
 		if (filep->funit & TEMP) {
 			filep->funit |= (EOFF | SYNC | FREAD);
 			return;
 		}
+		 */
 		PERROR("Could not open ", filep->pfname);
 		return;
 	}
