@@ -1,6 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.8 (Berkeley) %G%";
 #endif
+
+/*
+ * This file contains no ATT code and is not subject to the ATT
+ * license provisions regarding redistribution.
+ * 	Rick Adams 2/23/88
+ */
 
 /*
  *	Uusnap - displays a snapshot of the uucp system.
@@ -20,7 +26,7 @@ static char sccsid[] = "@(#)uusnap.c	5.7 (Berkeley) %G%";
 char SYSBUF[BUFSIZ];
 #endif
 
-#define	NSYSTEM	100				/* max # of systems queued */
+#define	NSYSTEM	300				/* max # of systems queued */
 
 #define	CMDSLEN	5				/* Length of trailer */
 #define	DATALEN	5				/* Length of trailer */
@@ -182,7 +188,10 @@ char *dnam, *prfx, fchr;
 		if(i == sndx) {
 			strcpy(sys[i].name, fnam);
 			++sys[i].cntr[type];
-			++sndx;
+			if(++sndx >=  NSYSTEM) {
+				sndx = NSYSTEM-1;
+				fprintf(stderr,"Too many system names.\n");
+			}
 		}
 	}
 	closedir(dirp);
