@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -430,7 +430,7 @@ flush_meta()
 	whdrp = &whdr;
 	swap_header_copy(&hashp->hdr, whdrp);
 #endif
-	if ((lseek(fp, 0, SEEK_SET) == -1) ||
+	if ((lseek(fp, (off_t)0, SEEK_SET) == -1) ||
 	    ((wsize = write(fp, whdrp, sizeof(HASHHDR))) == -1))
 		return (-1);
 	else
