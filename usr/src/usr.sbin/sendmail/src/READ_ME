@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.49 (Berkeley) %G%
+#	@(#)READ_ME	8.50 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -111,6 +111,12 @@ get the latest version from FTP.CS.Berkeley.EDU in /ucb/4bsd.  DO NOT
 use the version from the Net2 distribution!  However, if you are on
 BSD/386 or 386BSD-based systems, use the one that already exists
 on your system.  You may need to define OLD_NEWDB to do this.]
+
+[NOTE WELL: it is CRITICAL that you remove ndbm.o from libdb.a and
+ndbm.h from the appropriate include directories if you want to get
+ndbm support.  These files OVERRIDE calls to ndbm routines -- in
+particular, if you leave ndbm.h in, you can find yourself using
+the new db package even if you don't define NEWDB.]
 
 If NEWDB and NDBM are defined (but not NIS), then sendmail will read
 NDBM format alias files, but the next time a newaliases is run the
@@ -548,6 +554,36 @@ Apollo DomainOS
 
 	(The Makefile.DomainOS will attempt to do both of these for you.)
 
+HP-UX 8.00
+	Date: Mon, 24 Jan 1994 13:25:45 +0200
+	From: Kimmo Suominen <Kimmo.Suominen@lut.fi>
+	Subject: 8.6.5 w/ HP-UX 8.00 on s300
+
+	Just compiled and fought with sendmail 8.6.5 on a HP9000/360 (ie. a
+	series 300 machine) running HP-UX 8.00.
+
+	I was getting segmentation fault when delivering to a local user.
+	With debugging I saw it was faulting when doing _free@libc... *sigh*
+	It seems the new implementation of malloc on s300 is buggy as of 8.0,
+	so I tried out the one in -lmalloc (malloc(3X)).  With that it seems
+	to work just dandy.
+
+	When linking, you will get the following error:
+
+	ld: multiply defined symbol _freespace in file /usr/lib/libmalloc.a
+
+	but you can just ignore it.  You might want to add this info to the
+	README file for the future...
+
+Linux
+	Something broke between versions 0.99.13 and 0.99.14 of Linux:
+	the flock() system call gives errors.  If you are running .14,
+	you must not use flock.  You can do this with -DHASFLOCK=0.
+
+AIX
+	This version of sendmail does not support MB, MG, and MR resource
+	records, which are supported by AIX sendmail.
+
 System V Release 4 Based Systems
 	There is a single Makefile that is intended for all SVR4-based
 	systems (called Makefile.SVR4).  It defines __svr4__, which is
@@ -730,4 +766,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.49, last update %G% 08:59:39)
+(Version 8.50, last update %G% 17:36:09)
