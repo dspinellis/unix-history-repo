@@ -1,0 +1,127 @@
+This file is exec.def, from which is created exec.c.
+It implements the builtin "exec" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES exec.c
+
+$BUILTIN exec
+$FUNCTION exec_builtin
+$SHORT_DOC exec [ [-] file [redirection ...]]
+Exec FILE, replacing this shell with the specified program.
+If FILE is not specified, the redirections take effect in this
+shell.  If the first argument is `-', then place a dash in the
+zeroth arg passed to FILE.  This is what login does.  If the file
+cannot be exec'ed for some reason, the shell exits, unless the
+shell variable "no_exit_on_failed_exec" exists.
+$END
+
+#include "../shell.h"
+#include <sys/types.h>
+#include <signal.h>
+#include <errno.h>
+
+extern int interactive, errno;
+extern REDIRECT *redirection_undo_list;
+
+int
+exec_builtin (list)
+     WORD_LIST *list;
+{
+  extern char *find_user_command ();
+
+  maybe_make_export_env ();
+
+  /* First, let the redirections remain. */
+  dispose_redirects (redirection_undo_list);
+  redirection_undo_list = (REDIRECT *)NULL;
+
+  if (!list)
+    return (EXECUTION_SUCCESS);
+  else
+    {
+      /* Otherwise, execve the new command with args. */
+      char *command, **args;
+      int dash_name = 0;
+
+      if (strcmp (list->word->word, "-") == 0)
+	{
+	  /* The user would like to exec this command as if it was a
+	     login command.  Do so. */
+	  list = list->next;
+	  dash_name++;
+	}
+
+      if (!list)
+	return (EXECUTION_SUCCESS);
+
+      args = (char **)make_word_array (list);
+
+      /* A command with a slash anywhere in its name is not looked up in
+	 the search path. */
+      if (absolute_program (args[0]))
+	command = args[0];
+      else
+	command = find_user_command (args[0]);
+      if (!command)
+	{
+	  builtin_error ("%s: not found", args[0]);
+	  goto failed_exec;
+	}
+
+      command = (char *)full_pathname (command);
+      /* If the user wants this to look like a login shell, then
+	 prepend a `-' onto the first argument (argv[0]). */
+      if (dash_name)
+	{
+	  char *new_name = (char *)xmalloc (2 + strlen (args[0]));
+	  strcpy (new_name, "-");
+	  strcat (new_name, args[0]);
+	  free (args[0]);
+	  args[0] = new_name;
+	}
+
+      /* Decrement SHLVL by 1 so a new shell started here has the same value,
+	 preserving the appearance.  After we do that, we need to change the
+	 exported environment to include the new value. */
+      adjust_shell_level (-1);
+      maybe_make_export_env ();
+
+      maybe_save_shell_history ();
+
+      restore_default_signal (SIGINT);
+      restore_default_signal (SIGQUIT);
+      restore_default_signal (SIGTERM);
+      restore_original_signals ();
+
+      shell_execve (command, args, export_env);
+
+      adjust_shell_level (1);
+
+      if (!executable_file (command))
+	builtin_error ("%s: cannot execute: %s", command, strerror (errno));
+      else
+	file_error (command);
+
+  failed_exec:
+      if (!interactive && !find_variable ("no_exit_on_failed_exec"))
+	exit (EXECUTION_FAILURE);
+      return (EXECUTION_FAILURE);
+    }
+}
