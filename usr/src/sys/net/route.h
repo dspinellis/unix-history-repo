@@ -1,14 +1,17 @@
-/*	route.h	4.6	82/03/30	*/
+/*	route.h	4.7	82/03/31	*/
 
 /*
- * Structure of kernel resident routing
- * data base.  Assumption is user routing
- * daemon maintains this data base based
- * on routing information it gleans from
- * gateway protocols it listens to (e.g. GGP).
+ * Kernel resident routing tables.
+ * 
+ * Each interface makes an entry at boot time so that
+ * correspondents directly addressible can be found.
+ * User programs can update this data base from information
+ * stored in the file system or information gleaned from
+ * routing protocol interactions with gateways.
  *
- * TO ADD:
- *	more statistics -- smooth usage figures
+ * TODO:
+ *	keep statistics
+ *	smooth usage figures
  */
 struct rtentry {
 	u_long	rt_hash;		/* for net or for host */
@@ -32,6 +35,12 @@ struct route {
 #define	RTF_UP		0x1		/* route useable */
 #define	RTF_DIRECT	0x2		/* destination is a neighbor */
 #define	RTF_HOST	0x4		/* host entry (net otherwise) */
+
+#define	RTFREE(rt) \
+	if ((rt)->rt_refcnt == 1) \
+		rtfree(rt); \
+	else \
+		(rt)->rt_refcnt--;
 
 #ifdef KERNEL
 /*

@@ -1,4 +1,4 @@
-/*	route.c	4.5	82/03/30	*/
+/*	route.c	4.6	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -57,13 +57,14 @@ COUNT(RTALLOC);
 	}
 found:
 	ro->ro_rt = rtmin;
+	if (rtmin)
+		rtmin->rt_refcnt++;
 }
 
 rtfree(rt)
 	register struct rtentry *rt;
 {
 
-COUNT(FREEROUTE);
 	if (rt == 0)
 		panic("freeroute");
 	rt->rt_refcnt--;
@@ -87,6 +88,7 @@ rtrequest(req, new)
 	register struct sockaddr *sa = &new->rt_dst;
 	register struct sockaddr *gate = &new->rt_gateway;
 	struct afhash h;
+	struct mbuf **oldmprev;
 	int af = sa->sa_family, doinghost, s, error = 0;
 
 COUNT(RTREQUEST);
@@ -120,6 +122,7 @@ again:
 	}
 	if (m == 0 && doinghost) {
 		hash = h.afh_nethash;
+		oldmprev = mprev;
 		mprev = &rtnet[hash % RTHASHSIZ];
 		match = afswitch[af].af_netmatch;
 		doinghost = 0;
@@ -157,11 +160,15 @@ found:
 		}
 		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct rtentry);
-		*mprev = m;
 		rt = mtod(m, struct rtentry *);
 		*rt = *new;
-		rt->rt_hash = new->rt_flags & RTF_HOST ?
-			h.afh_hosthash : h.afh_nethash;
+		if (new->rt_flags & RTF_HOST) {
+			rt->rt_hash = h.afh_hosthash;
+			*oldmprev = m;
+		} else {
+			rt->rt_hash = h.afh_nethash;
+			*mprev = m;
+		}
 		rt->rt_use = 0;
 		rt->rt_refcnt = 0;
 newneighbor:
