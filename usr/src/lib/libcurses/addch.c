@@ -3,7 +3,7 @@
 /*
  *	This routine adds the character to the current position
  *
- * @(#)addch.c	1.6 (Berkeley) %G%
+ * @(#)addch.c	1.7 (Berkeley) %G%
  */
 waddch(win, c)
 reg WINDOW	*win;
@@ -11,24 +11,19 @@ char		c;
 {
 	reg int		x, y;
 	reg WINDOW	*wp;
+	reg int		newx;
 
 	x = win->_curx;
 	y = win->_cury;
 # ifdef FULLDEBUG
 	fprintf(outf, "ADDCH('%c') at (%d, %d)\n", c, y, x);
 # endif
-	if (y >= win->_maxy || x >= win->_maxx || y < 0 || x < 0)
-		return ERR;
 	switch (c) {
 	  case '\t':
-	  {
-		reg int		newx;
-
 		for (newx = x + (8 - (x & 07)); x < newx; x++)
 			if (waddch(win, ' ') == ERR)
 				return ERR;
 		return OK;
-	  }
 
 	  default:
 # ifdef FULLDEBUG
@@ -36,16 +31,13 @@ char		c;
 # endif
 		if (win->_flags & _STANDOUT)
 			c |= _STANDOUT;
-		set_ch(win, y, x, c, NULL);
-		for (wp = win->_nextp; wp != win; wp = wp->_nextp)
-			set_ch(wp, y, x, c, win);
+		set_ch(win, y, x, c);
 		win->_y[y][x++] = c;
 		if (x >= win->_maxx) {
 			x = 0;
 newline:
 			if (++y >= win->_maxy)
 				if (win->_scroll) {
-					wrefresh(win);
 					scroll(win);
 					--y;
 				}
@@ -79,23 +71,26 @@ newline:
  *	Set the first and last change flags for this window.
  */
 static
-set_ch(win, y, x, ch, orig)
+set_ch(win, y, x, ch)
 reg WINDOW	*win;
 int		y, x;
-WINDOW		*orig; {
-
-	if (orig != NULL) {
-		y -= win->_begy - orig->_begy;
-		x -= win->_begx - orig->_begx;
-	}
-	if (y < 0 || y >= win->_maxy || x < 0 || x >= win->_maxx)
-		return;
+{
+# ifdef	FULLDEBUG
+	fprintf(outf, "SET_CH(%0.2o, %d, %d)\n", win, y, x);
+# endif
 	if (win->_y[y][x] != ch) {
+		x += win->_ch_off;
 		if (win->_firstch[y] == _NOCHANGE)
-			win->_firstch[y] = win->_lastch[y] = x + win->_ch_off;
+			win->_firstch[y] = win->_lastch[y] = x;
 		else if (x < win->_firstch[y])
-			win->_firstch[y] = x + win->_ch_off;
+			win->_firstch[y] = x;
 		else if (x > win->_lastch[y])
-			win->_lastch[y] = x + win->_ch_off;
+			win->_lastch[y] = x;
+# ifdef FULLDEBUG
+		fprintf(outf, "SET_CH: change gives f/l: %d/%d [%d/%d]\n",
+			win->_firstch[y], win->_lastch[y],
+			win->_firstch[y] - win->_ch_off,
+			win->_lastch[y] - win->_ch_off);
+# endif
 	}
 }
