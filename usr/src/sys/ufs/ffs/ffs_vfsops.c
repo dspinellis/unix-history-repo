@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.36 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -191,11 +191,10 @@ ufs_mount(mp, path, data, ndp)
  * Common code for mount and mountroot
  */
 mountfs(devvp, mp)
-	struct vnode *devvp;
+	register struct vnode *devvp;
 	struct mount *mp;
 {
 	register struct ufsmount *ump;
-	struct ufsmount *fmp = NULL;
 	struct buf *bp = NULL;
 	register struct fs *fs;
 	dev_t dev = devvp->v_rdev;
@@ -207,14 +206,6 @@ mountfs(devvp, mp)
 	int needclose = 0;
 	int ronly = (mp->m_flag & M_RDONLY) != 0;
 
-	for (ump = &mounttab[0]; ump < &mounttab[NMOUNT]; ump++) {
-		if (ump->um_fs == NULL) {
-			if (fmp == NULL)
-				fmp = ump;
-		} else if (dev == ump->um_dev) {
-			return (EBUSY);		/* needs translation */
-		}
-	}
 	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE,
 	        S_IFBLK);
 	if (error) {
@@ -310,6 +301,7 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
+	devvp->v_specinfo->si_flags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
