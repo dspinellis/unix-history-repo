@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -24,8 +24,7 @@ char	*Macro[128];
 **	Parameters:
 **		s -- the string to expand.
 **		buf -- the place to put the expansion.
-**		buflim -- the buffer limit, i.e., the address
-**			of the first byte after buf.
+**		bufsize -- the size of the buffer.
 **
 **	Returns:
 **		none.
@@ -126,9 +125,9 @@ void
 		return (expand(xbuf, buf, buflim));
 
 	/* copy results out */
-	i = buflim - buf - 1;
-	if (i > xp - xbuf)
-		i = xp - xbuf;
+	i = xp - xbuf;
+	if (i >= bufsize)
+		i = bufsize - 1;
 	bcopy(xbuf, buf, i);
 	buf[i] = '\0';
 }

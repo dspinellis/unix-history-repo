@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.74 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -437,7 +437,7 @@ readcf(cfname)
 			if (bp[0] == 'C')
 			{
 				mid = macid(&bp[1], &ep);
-				expand(ep, exbuf, &exbuf[sizeof exbuf], e);
+				expand(ep, exbuf, sizeof exbuf, e);
 				p = exbuf;
 			}
 			else
