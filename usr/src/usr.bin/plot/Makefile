@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.16 (Berkeley) %G%
+#	@(#)Makefile	4.17 (Berkeley) %G%
 
 PROGS=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
 	hpplot hp7221plot implot atoplot plottoa grnplot
@@ -86,7 +86,8 @@ clean:
 cleandir: clean
 	rm -f ${MAN1} ${.CURDIR}/tags .depend
 
-depend: ${SRCS}
+depend: .depend
+.depend: ${SRCS}
 	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC}
 
 install: maninstall
