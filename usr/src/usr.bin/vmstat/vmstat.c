@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -565,12 +565,13 @@ char *kmemnames[] = {
 	"cred",		/* 16 M_CRED */
 	"pgrp",		/* 17 M_PGRP */
 	"session",	/* 18 M_SESSION */
+	"iov",		/* 19 M_IOV */
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0,
+	0, 0, 0, 0,
 	"temp",		/* 49 M_TEMP */
 };
 
