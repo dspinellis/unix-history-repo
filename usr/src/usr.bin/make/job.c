@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -2429,7 +2429,8 @@ JobInterrupt (runINTERRUPT)
     LstNode 	  ln;		/* element in job table */
     Job           *job;	    	/* job descriptor in that element */
     GNode         *interrupt;	/* the node describing the .INTERRUPT target */
-    
+    struct stat sb;
+
     aborting = ABORT_INTERRUPT;
 
     (void)Lst_Open (jobs);
@@ -2440,7 +2441,8 @@ JobInterrupt (runINTERRUPT)
 	    char  	*file = (job->node->path == (char *)NULL ?
 				 job->node->name :
 				 job->node->path);
-	    if (unlink (file) == 0) {
+	    if (!stat(file, &sb) && S_ISREG(sb.st_mode) &&
+		unlink(file) == 0) {
 		Error ("*** %s removed", file);
 	    }
 	}
