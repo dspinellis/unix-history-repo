@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_de.c	7.5 (Berkeley) %G%
+ *	@(#)if_de.c	7.6 (Berkeley) %G%
  */
 
 #include "de.h"
@@ -76,7 +76,7 @@ struct	uba_device *deinfo[NDE];
 u_short destd[] = { 0 };
 struct	uba_driver dedriver =
 	{ deprobe, 0, deattach, 0, destd, "de", deinfo };
-int	deinit(),deoutput(),deioctl(),dereset();
+int	deinit(),ether_output(),deioctl(),dereset(),destart();
 
 
 /*
@@ -220,9 +220,10 @@ deattach(ui)
 	printf("de%d: hardware address %s\n", ui->ui_unit,
 		ether_sprintf(ds->ds_addr));
 	ifp->if_init = deinit;
-	ifp->if_output = deoutput;
+	ifp->if_output = ether_output;
 	ifp->if_ioctl = deioctl;
 	ifp->if_reset = dereset;
+	ifp->if_start = destart;
 	ds->ds_deuba.iff_flags = UBA_CANTWAIT;
 #ifdef notdef
 	/* CAN WE USE BDP's ??? */
@@ -244,8 +245,8 @@ dereset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" de%d", unit);
-	de_softc[unit].ds_if.if_flags &= ~IFF_RUNNING;
-	de_softc[unit].ds_flags &= ~(DSF_LOCK | DSF_RUNNING);
+	de_softc[unit].ds_if.if_flags &= ~(IFF_RUNNING | IFF_OACTIVE);
+	de_softc[unit].ds_flags &= ~DSF_RUNNING;
 	((struct dedevice *)ui->ui_addr)->pcsr0 = PCSR0_RSET;
 	(void)dewait(ui, "reset");
 	deinit(unit);
@@ -345,7 +346,7 @@ deinit(unit)
 	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = ds->ds_nxmit = 0;
 	ds->ds_if.if_flags |= IFF_RUNNING;
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
-	destart(unit);				/* queue output packets */
+	(void) destart(&ds->ds_if);		/* queue output packets */
 	ds->ds_flags |= DSF_RUNNING;		/* need before de_setaddr */
 	if (ds->ds_flags & DSF_SETADDR)
 		de_setaddr(ds->ds_addr, unit);
@@ -358,10 +359,11 @@ deinit(unit)
  * Get another datagram to send off of the interface queue,
  * and map it to the interface before starting the output.
  */
-destart(unit)
-	int unit;
+destart(ifp)
+	struct ifnet *ifp;
 {
         int len;
+	int unit = ifp->if_unit;
 	struct uba_device *ui = deinfo[unit];
 	struct dedevice *addr = (struct dedevice *)ui->ui_addr;
 	register struct de_softc *ds = &de_softc[unit];
@@ -374,8 +376,8 @@ destart(unit)
 	 * the code is not reentrant and we have
 	 * multiple transmission buffers.
 	 */
-	if (ds->ds_flags & DSF_LOCK)
-		return;
+	if (ds->ds_if.if_flags & IFF_OACTIVE)
+		return (0);
 	for (nxmit = ds->ds_nxmit; nxmit < NXMT; nxmit++) {
 		IF_DEQUEUE(&ds->ds_if.if_snd, m);
 		if (m == 0)
@@ -400,6 +402,7 @@ destart(unit)
 		if (ds->ds_flags & DSF_RUNNING)
 			addr->pclow = PCSR0_INTE|CMD_PDMD;
 	}
+	return (0);
 }
 
 /*
@@ -420,7 +423,7 @@ deintr(unit)
 	addr->pchigh = csr0 >> 8;
 
 
-	ds->ds_flags |= DSF_LOCK;	/* prevent entering destart */
+	ds->ds_if.if_flags |= IFF_OACTIVE;	/* prevent entering destart */
 	/*
 	 * if receive, put receive buffer on mbuf
 	 * and hang the request again
@@ -470,8 +473,8 @@ deintr(unit)
 		if (ds->ds_xindex == NXMT)
 			ds->ds_xindex = 0;
 	}
-	ds->ds_flags &= ~DSF_LOCK;
-	destart(unit);
+	ds->ds_if.if_flags &= ~IFF_OACTIVE;
+	(void) destart(&ds->ds_if);
 
 	if (csr0 & PCSR0_RCBI) {
 		if (dedebug)
@@ -576,173 +579,16 @@ deread(ds, ifrw, len)
 	m = if_ubaget(&ds->ds_deuba, ifrw, len, off, &ds->ds_if);
 	if (m == 0)
 		return;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (eh->ether_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&ds->ds_ac, m);
-		return;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-	default:
-		m_freem(m);
-		return;
-	}
+	ether_input(&ds->ds_if, eh, m);
 
 	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
-		splx(s);
 		m_freem(m);
-		return;
-	}
-	IF_ENQUEUE(inq, m);
+	} else
+		IF_ENQUEUE(inq, m);
 	splx(s);
 }
-
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- */
-deoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
- 	u_char edst[6];
-	struct in_addr idst;
-	register struct de_softc *ds = &de_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *eh;
-	register int off;
-	int usetrailers;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-	switch (dst->sa_family) {
-
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
- 		if (!arpresolve(&ds->ds_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
-		type = ETHERTYPE_NS;
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		(caddr_t)edst, sizeof (edst));
-		off = 0;
-		goto gottype;
-#endif
-
-	case AF_UNSPEC:
-		eh = (struct ether_header *)dst->sa_data;
- 		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = eh->ether_type;
-		goto gottype;
-
-	default:
-		printf("de%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	eh = mtod(m, struct ether_header *);
-	eh->ether_type = htons((u_short)type);
- 	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
-	/* DEUNA fills in source address */
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		splx(s);
-		m_freem(m);
-		return (ENOBUFS);
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	destart(ifp->if_unit);
-	splx(s);
-	return (0);
-
-bad:
-	m_freem(m0);
-	return (error);
-}
-
 /*
  * Process an ioctl request.
  */
@@ -761,7 +607,7 @@ deioctl(ifp, cmd, data)
 		ifp->if_flags |= IFF_UP;
 		deinit(ifp->if_unit);
 
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
@@ -792,7 +638,8 @@ deioctl(ifp, cmd, data)
 			DELAY(100);
 			((struct dedevice *)
 			   (deinfo[ifp->if_unit]->ui_addr))->pclow = PCSR0_RSET;
-			ds->ds_flags &= ~(DSF_LOCK | DSF_RUNNING);
+			ds->ds_flags &= ~DSF_RUNNING;
+			ds->ds_if.if_flags &= ~IFF_OACTIVE;
 		} else if (ifp->if_flags & IFF_UP &&
 		    (ds->ds_flags & DSF_RUNNING) == 0)
 			deinit(ifp->if_unit);
