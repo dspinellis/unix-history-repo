@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getttyent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getttyent.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -119,11 +119,12 @@ getttyent()
 	tty.ty_status = 0;
 	tty.ty_window = EMPTY;
 	for (; *p; p = skip(p)) {
-		if (strncmp(p, "on", 2) == 0)
+#define space(x) ((c = p[x]) == ' ' || c == '\t' || c == '\n')
+		if (strncmp(p, "on", 2) == 0 && space(2))
 			tty.ty_status |= TTY_ON;
-		else if (strncmp(p, "off", 3) == 0)
+		else if (strncmp(p, "off", 3) == 0 && space(3))
 			tty.ty_status &= ~TTY_ON;
-		else if (strncmp(p, "secure", 6) == 0)
+		else if (strncmp(p, "secure", 6) == 0 && space(6))
 			tty.ty_status |= TTY_SECURE;
 		else if (strncmp(p, "window", 6) == 0) {
 			if ((tty.ty_window = value(p)) == NULL)
