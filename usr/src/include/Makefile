@@ -1,4 +1,4 @@
-#	Makefile	4.10	85/03/01
+#	Makefile	4.11	85/03/12
 #
 # Doing a make install builds /usr/include
 #
@@ -17,8 +17,8 @@ STD=	a.out.h ar.h assert.h ctype.h curses.h dbm.h ndbm.h \
 	disktab.h dumprestor.h fcntl.h fstab.h grp.h \
 	lastlog.h math.h mp.h mtab.h nameser.h netdb.h nlist.h ptrace.h pwd.h \
 	ranlib.h resolv.h setjmp.h sgtty.h stab.h stdio.h strings.h \
-	struct.h syscall.h sysexits.h syslog.h ttyent.h utmp.h varargs.h vfont.h
-LINKS=	errno.h signal.h
+	struct.h syscall.h sysexits.h ttyent.h utmp.h varargs.h vfont.h
+LINKS=	errno.h signal.h syslog.h
 MACHINE=vax
 MACHDEP=${MACHINE} vaxif vaxmba vaxuba
 NETDIRS=net netimp netinet netpup
