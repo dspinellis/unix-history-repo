@@ -11,12 +11,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
 #include <sys/time.h>
 #include <sys/types.h>
+#include <fcntl.h>
 
 extern int _wwdtablesize;
 
@@ -40,7 +41,7 @@ wwiomux()
 	register n;
 	register char *p;
 	char c;
-	static struct timeval tv = { 0, 0 };
+	struct timeval tv;
 	char noblock;
 
 	for (w = wwhead; w; w = w->ww_next)
