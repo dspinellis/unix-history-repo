@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 4.3''Last Mod %G%'
+.fo 'Version 4.4''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.3
+Version 4.4
 .)l
 .sp 2
 .pp
@@ -277,10 +277,6 @@ This can just be a link to
 rm \-f /usr/ucb/newaliases
 ln /usr/lib/sendmail /usr/ucb/newaliases
 .)b
-.sh 3 "/usr/lib/sendmail.cf"
-.pp
-The configuration file must be installed in /usr/lib.
-This is described above.
 .sh 3 "/usr/spool/mqueue"
 .pp
 The directory
@@ -853,8 +849,8 @@ unless you are running
 in parallel with
 .i sendmail.
 .)f
-It will wait up to five minutes
-for this entry to appear,
+.i Sendmail
+will wait for this entry to appear,
 at which point it will force a rebuild itself\**.
 .(f
 \**Note:
@@ -862,6 +858,12 @@ the
 .q D
 option must be specified in the configuration file
 for this operation to occur.
+If the
+.q D
+option is not specified,
+a warning message is generated and
+.i sendmail
+continues.
 .)f
 .sh 3 "List owners"
 .pp
@@ -1213,6 +1215,30 @@ Several messages that are basically only of interest
 when debugging.
 .ip 16
 Verbose information regarding the queue.
+.sh 2 "Load Limiting"
+.pp
+.i Sendmail
+can be asked to queue (but not deliver)
+mail if the system load average gets too high
+using the
+.b x
+option.
+When the load average exceeds the value of the
+.b x
+option,
+the delivery mode is set to
+.b q
+(queue only)
+until the load drops.
+.pp
+For drastic cases,
+the
+.b X
+option defines a load average at which sendmail will refuse
+to connect network connections.
+Locally generated mail
+(including incoming UUCP mail)
+is still accepted.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -1747,7 +1773,6 @@ u	The recipient user
 v	The version number of sendmail
 w	The hostname of this site
 x	The full name of the sender
-y	The id of the sender's tty
 z	The home directory of the recipient
 .)b
 .pp
@@ -1851,14 +1876,6 @@ macro is set to the queue id on this host;
 if put into the timestamp line
 it can be extremely useful for tracking messages.
 The
-.b $y
-macro is set to the id of the terminal of the sender
-(if known);
-some systems like to put this
-in the Unix
-.q From
-line.
-The
 .b $v
 macro is set to be the version number of
 .i sendmail ;
@@ -1950,7 +1967,7 @@ $2	eric
 .)b
 .sh 3 "The right hand side"
 .pp
-When the right hand side of a rewriting rule matches,
+When the left hand side of a rewriting rule matches,
 the input is deleted and replaced by the right hand side.
 Tokens are copied directly from the RHS
 unless they are begin with a dollar sign.
@@ -1958,6 +1975,7 @@ Metasymbols are:
 .(b
 .ta \w'$#mailer  'u
 \fB$\fP\fIn\fP	Substitute indefinite token \fIn\fP from LHS
+\fB$[\fP\fIname\fP\fB$]\fP	Canonicalize \fIname\fP
 \fB$>\fP\fIn\fP	\*(lqCall\*(rq ruleset \fIn\fP
 \fB$#\fP\fImailer\fP	Resolve to \fImailer\fP
 \fB$@\fP\fIhost\fP	Specify \fIhost\fP
@@ -1976,6 +1994,18 @@ or
 .b $~
 match on the LHS.
 It may be used anywhere.
+.pp
+A host name enclosed between
+.b $[
+and
+.b $]
+is looked up in the
+.i /etc/hosts
+file and replaced by the canonical name.
+For example,
+.q $[csam$]
+would become
+.q lbl-csam.arpa.
 .pp
 The
 .b $> \c
@@ -2048,6 +2078,19 @@ and continues;
 the
 .b $:
 is necessary to avoid an infinite loop.
+.pp
+Substitution occurs in the order described,
+that is,
+parameters from the LHS are substituted,
+hostnames are canonicalized,
+.q subroutines
+are called,
+and finally
+.b $# ,
+.b $@ ,
+and
+.b $:
+are processed.
 .sh 3 "Semantics of rewriting rule sets"
 .pp
 There are five rewriting sets
@@ -2807,6 +2850,9 @@ to deliver queued mail;
 otherwise, it only runs once.
 .ip \-C\fIfile\fP
 Use a different configuration file.
+.i Sendmail
+runs as the invoking user (rather than root)
+when this flag is specified.
 .ip \-d\fIlevel\fP
 Set debugging level.
 .ip \-o\fIx\|value\fP
@@ -2833,7 +2879,8 @@ The following options may be set using the
 flag on the command line
 or the
 .b O
-line in the configuration file:
+line in the configuration file.
+Many of them cannot be specified unless the invoking user is trusted.
 .nr ii 1i
 .ip A\fIfile\fP
 Use the named
@@ -2843,14 +2890,26 @@ If no file is specified,
 use
 .i aliases
 in the current directory.
-.ip a
+.ip a\fIN\fP
 If set,
-wait for an
+wait up to
+.i N
+minutes for an
 .q @:@
 entry to exist in the alias database
 before starting up.
-If it does not appear in five minutes,
-rebuild the database.
+If it does not appear in
+.i N
+minutes,
+rebuild the database
+(if the
+.b D
+option is also set)
+or issue a warning.
+.ip B\fIc\fP
+Set the blank substitution character to
+.i c .
+Unquoted spaces in addresses are replaced by this character.
 .ip c
 If an outgoing mailer is marked as being expensive,
 don't connect immediately.
@@ -2991,6 +3050,15 @@ flag in the mailer definition
 will run as this user.
 .ip v
 Run in verbose mode.
+.ip x\fILA\fP
+When the system load average exceeds
+.i LA ,
+just queue messages
+(i.e., don't try to send them).
+.ip X\fILA\fP
+When the system load average exceeds
+.i LA ,
+refuse incoming SMTP connections.
 .+c "MAILER FLAGS"
 The following flags may be set in the mailer description.
 .nr ii 4n
@@ -3134,6 +3202,10 @@ From: usera@hosta
 To: userb@hostb, userc@hosta
 .)b
 automatically.
+.ip E
+Escape lines beginning with
+.q From
+in the message with a `>' sign.
 .+c "OTHER CONFIGURATION"
 .rm $0
 .nr ii 1i
@@ -3657,7 +3729,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.3
+Version 4.4
 .ce 0
 .bp 1
 .ce
