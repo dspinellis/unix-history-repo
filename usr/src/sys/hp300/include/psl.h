@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)psl.h	7.3 (Berkeley) %G%
+ *	@(#)psl.h	7.4 (Berkeley) %G%
  */
 
 #ifndef PSL_C
@@ -36,7 +36,7 @@
 #define PSL_IPL		(PSL_IPL7)
 #define	PSL_USER	(0)
 
-#define	PSL_MBZ		0x58E0		/* must be zero bits */
+#define	PSL_MBZ		0xFFFF58E0	/* must be zero bits */
 
 #define	PSL_USERSET	(0)
 #define	PSL_USERCLR	(PSL_S | PSL_IPL7 | PSL_MBZ)
