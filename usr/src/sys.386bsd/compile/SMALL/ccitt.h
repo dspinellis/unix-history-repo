@@ -1,0 +1,1 @@
+#define NCCITT 0
