@@ -5,17 +5,20 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include "sh.proc.h"
 #include <sys/ioctl.h>
+#include "pathnames.h"
 
 /*
  * C shell
  */
 
+static int nosigchld = 0, osigmask;
+static int onosigchld = 0, oosigmask;
 /*VARARGS 1*/
 execute(t, wanttty, pipein, pipeout)
 	register struct command *t;
@@ -28,6 +31,22 @@ execute(t, wanttty, pipein, pipeout)
 
 	if (t == 0)
 		return;
+#ifdef REMOVE_THIS 
+{ short x=t->t_dtyp;
+int flg = t->t_dflg;
+printf("execute: cmd=%s pid=%d t_dtyp=%s wanttty=%d ", t->t_dcom[0], getpid(), 
+	x == TCOM ? "TCOM" : x == TPAR ? "TPAR" : x == TFIL ? "TFIL" : 
+	x == TLST ? "TLST" : x == TOR ? "TOR" : x == TAND ? "TAND" : "UNKNOWN",
+	wanttty);
+if (flg&FAND) printf("FAND "); if (flg&FCAT) printf("FCAT ");
+if (flg&FPIN) printf("FPIN "); if (flg&FPOU) printf("FPOU ");
+if (flg&FPAR) printf("FPAR "); if (flg&FINT) printf("FINT ");
+if (flg&FDIAG) printf("FDIAG "); if (flg&FANY) printf("FANY ");
+if (flg&FHERE) printf("FHERE "); if (flg&FREDO) printf("FREDO ");
+if (flg&FNICE) printf("FNICE "); if (flg&FNOHUP) printf("FNOHUP ");
+if (flg&FTIME) printf("FTIME "); printf("\n");
+}
+#endif
 	if ((t->t_dflg & FAND) && wanttty > 0)
 		wanttty = 0;
 	switch (t->t_dtyp) {
@@ -115,10 +134,27 @@ execute(t, wanttty, pipein, pipeout)
 #ifdef VFORK
 		    if (t->t_dtyp == TPAR || t->t_dflg&(FREDO|FAND) || bifunc)
 #endif
-			{ forked++; pid = pfork(t, wanttty); }
+			{ forked++; 
+			  if (wanttty >= 0 && !nosigchld) {
+#ifdef REMOVE_THIS
+				printf("(%d) blocking sigchld\n", getpid());
+#endif
+				osigmask = sigblock(sigmask(SIGCHLD));
+				nosigchld = 1;
+			  }
+
+			  pid = pfork(t, wanttty);
+			  if (pid == 0 && nosigchld) {
+#ifdef REMOVE_THIS
+				printf("%d unblocking sigchld after fork\n", getpid());
+#endif
+				sigsetmask(osigmask);
+				nosigchld = 0;
+			  }
+			}
 #ifdef VFORK
 		    else {
-			int vffree();
+			sig_t vffree;
 			int ochild, osetintr, ohaderr, odidfds;
 			int oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
 			long omask;
@@ -133,11 +169,19 @@ execute(t, wanttty, pipein, pipeout)
 			 * the signals the child touches before it
 			 * exec's.
 			 */
+			if (wanttty >= 0 && !nosigchld && !noexec) {
+#ifdef REMOVE_THIS
+				printf("(%d) blocking sigchld\n", getpid());
+#endif
+				osigmask = sigblock(sigmask(SIGCHLD));
+				nosigchld = 1;
+			}
 			omask = sigblock(sigmask(SIGCHLD));
 			ochild = child; osetintr = setintr;
 			ohaderr = haderr; odidfds = didfds;
 			oSHIN = SHIN; oSHOUT = SHOUT;
 			oSHDIAG = SHDIAG; oOLDSTD = OLDSTD; otpgrp = tpgrp;
+			oosigmask = osigmask; onosigchld = nosigchld;
 			Vsav = Vdp = 0; Vav = 0;
 			pid = vfork();
 			if (pid < 0) {
@@ -151,6 +195,7 @@ execute(t, wanttty, pipein, pipeout)
 				SHIN = oSHIN;
 				SHOUT = oSHOUT; SHDIAG = oSHDIAG;
 				OLDSTD = oOLDSTD; tpgrp = otpgrp;
+				osigmask = oosigmask; nosigchld = onosigchld;
 				xfree(Vsav); Vsav = 0;
 				xfree(Vdp); Vdp = 0;
 				xfree((char *)Vav); Vav = 0;
@@ -162,6 +207,13 @@ execute(t, wanttty, pipein, pipeout)
 				int pgrp;
 				bool ignint = 0;
 
+				if (nosigchld) {
+#ifdef REMOVE_THIS
+					printf("%d unblocking sigchld after fork\n", getpid());
+#endif
+					sigsetmask(osigmask);
+					nosigchld = 0;
+				}
 				if (setintr)
 					ignint =
 					    (tpgrp == -1 && (t->t_dflg&FINT))
@@ -187,11 +239,11 @@ execute(t, wanttty, pipein, pipeout)
 					(void) signal(SIGINT, SIG_IGN);
 					(void) signal(SIGQUIT, SIG_IGN);
 				}
+				if (wanttty >= 0 && tpgrp >= 0)
+					(void) setpgrp(0, pgrp);
 				if (wanttty > 0)
 					(void) ioctl(FSHTTY, TIOCSPGRP,
 						(char *)&pgrp);
-				if (wanttty >= 0 && tpgrp >= 0)
-					(void) setpgrp(0, pgrp);
 				if (tpgrp > 0)
 					tpgrp = 0;
 				if (t->t_dflg & FNOHUP)
@@ -215,8 +267,20 @@ execute(t, wanttty, pipein, pipeout)
 				(void) close(pipein[0]);
 				(void) close(pipein[1]);
 			}
-			if ((t->t_dflg & (FPOU|FAND)) == 0)
-				pwait();
+			if ((t->t_dflg & FPOU) == 0) {
+#ifdef REMOVE_THIS
+				printf("(%d) last command - should unblock sigchld? (%d)\n", getpid(), nosigchld);
+#endif
+				if (nosigchld) {
+#ifdef foobarbaz
+					printf("DID\n");
+#endif
+					sigsetmask(osigmask);
+					nosigchld = 0;
+				}
+				if ((t->t_dflg & FAND) == 0)
+					pwait();
+			}
 			break;
 		}
 		doio(t, pipein, pipeout);
@@ -346,7 +410,7 @@ doio(t, pipein, pipeout)
 			(void) close(pipein[1]);
 		} else if ((flags & FINT) && tpgrp == -1) {
 			(void) close(0);
-			(void) open("/dev/null", 0);
+			(void) open(_PATH_DEVNULL, 0);
 		} else
 			(void) dup(OLDSTD);
 	}
