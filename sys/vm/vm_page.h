@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.10 1994/03/17 23:07:19 davidg Exp $
+ *	$Id: vm_page.h,v 1.11 1994/03/19 22:24:39 davidg Exp $
  */
 
 /*
@@ -294,7 +294,9 @@ vm_page_hold(mem)
 	vm_page_t mem;
 {
 	mem->hold_count++;
+#if 0
 	mem->object->paging_in_progress++;
+#endif
 }
 
 static inline void
@@ -303,8 +305,10 @@ vm_page_unhold(mem)
 {
 	if( --mem->hold_count < 0)
 		panic("vm_page_unhold: hold count < 0!!!");
+#if 0
 	if( --mem->object->paging_in_progress == 0)
 		wakeup((caddr_t) mem->object);
+#endif
 }
 
 #endif /* KERNEL */
