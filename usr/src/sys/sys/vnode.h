@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.4 (Berkeley) %G%
+ *	@(#)vnode.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -28,6 +28,21 @@
  */
 enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VBAD };
 
+/*
+ * Vnode tag types.
+ * These are for the benefit of external programs only (e.g., pstat)
+ * and should NEVER be inspected inside the kernel.
+ */
+enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS };
+
+/*
+ * This defines the maximum size of the private data area
+ * permitted for any file system type. A defined constant 
+ * is used rather than a union structure to cut down on the
+ * number of header files that must be included.
+ */
+#define VN_MAXPRIVATE	204
+
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
 	long		v_count;		/* reference count */
@@ -36,6 +51,10 @@ struct vnode {
 	struct mount	*v_mount;		/* ptr to vfs we are in */
 	struct vnodeops	*v_op;			/* vnode operations */
 	u_long		v_id;			/* capability identifier */
+	struct vnode	*v_freef;		/* vnode freelist forward */
+	struct vnode	**v_freeb;		/* vnode freelist back */
+	struct vnode	*v_mountf;		/* vnode mountlist forward */
+	struct vnode	**v_mountb;		/* vnode mountlist back */
 	enum vtype	v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
@@ -43,7 +62,8 @@ struct vnode {
 		struct text	*vu_text;	/* text/mapped region (VREG) */
 		dev_t		vu_rdev;	/* device (VCHR, VBLK) */
 	} v_un;
-	qaddr_t		v_data;			/* private data for fs */
+	enum vtagtype	v_tag;			/* type of underlying data */
+	char v_data[VN_MAXPRIVATE];		/* private data for fs */
 };
 #define v_mountedhere v_un.vu_mountedhere
 #define v_socket v_un.vu_socket
@@ -91,6 +111,7 @@ struct vnodeops {
 
 	int	(*vn_abortop)(		/* ndp */ );
 	int	(*vn_inactive)(		/* vp */ );
+	int	(*vn_reclaim)(		/* vp */ );
 	int	(*vn_lock)(		/* vp */ );
 	int	(*vn_unlock)(		/* vp */ );
 
@@ -124,6 +145,7 @@ struct vnodeops {
 #define	VOP_READLINK(v,u,c)	(*((v)->v_op->vn_readlink))((v),(u),(c))
 #define	VOP_ABORTOP(n)		(*((n)->ni_dvp->v_op->vn_abortop))(n)
 #define	VOP_INACTIVE(v)		(*((v)->v_op->vn_inactive))(v)
+#define	VOP_RECLAIM(v)		(*((v)->v_op->vn_reclaim))(v)
 #define	VOP_LOCK(v)		(*((v)->v_op->vn_lock))(v)
 #define	VOP_UNLOCK(v)		(*((v)->v_op->vn_unlock))(v)
 #define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vn_bmap))((v),(s),(p),(n))
@@ -132,13 +154,11 @@ struct vnodeops {
 /*
  * flags for ioflag
  */
-#define IO_ATOMIC	0x01		/* do io as atomic unit for VOP_RDWR */
-#define IO_APPEND	0x02		/* append write for VOP_RDWR */
-#define IO_SYNC		0x04		/* sync io for VOP_RDWR */
+#define IO_UNIT		0x01		/* do I/O as atomic unit */
+#define IO_APPEND	0x02		/* append write to end */
+#define IO_SYNC		0x04		/* do I/O synchronously */
 #define	IO_NODELOCKED	0x08		/* underlying node already locked */
 #define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
-
-#define IO_UNIT		IO_ATOMIC	/* compat */
 
 /*
  * Vnode attributes.  A field value of VNOVAL
@@ -175,6 +195,7 @@ struct vattr {
 #define	VREAD	0400		/* read, write, execute permissions */
 #define	VWRITE	0200
 #define	VEXEC	0100
+
 /*
  * Token indicating no attribute value yet assigned
  */
@@ -187,23 +208,18 @@ struct vattr {
 extern int vn_open();			/* open vnode */
 extern int vn_rdwr();			/* read or write vnode */
 extern int vn_close();			/* close vnode */
+extern void vref();			/* reference vnode */
+extern void vput();			/* unlock and release vnode */
 extern void vrele();			/* release vnode */
 extern void vattr_null();		/* set attributes to null */
-#define VREF(vp)	(vp)->v_count++;/* increment vnode reference count */
-
-#define vinit(vp, mountp, type, vops)	{ \
-	(vp)->v_flag = 0; \
-	(vp)->v_count++; \
-	(vp)->v_shlockc = (vp)->v_exlockc = 0; \
-	(vp)->v_mount = (mountp); \
-	(vp)->v_type = (type); \
-	(vp)->v_op = (vops); \
-	(vp)->v_socket = 0; \
-}
+#define VREF(vp)    (vp)->v_count++;	/* increment vnode reference count */
 
 /*
  * Global vnode data.
  */
-extern struct vnode	*rootdir;		/* root (i.e. "/") vnode */
+extern	struct vnode *rootdir;		/* root (i.e. "/") vnode */
 
+extern	struct vnode *vnode;		/* The vnode table itself */
+extern	struct vnode *vnodeNVNODE;	/* The end of the vnode table */
+extern	int nvnode;			/* number of slots in the table */
 #endif
