@@ -1,0 +1,33 @@
+#
+# grap Makefile @(#)Makefile	1.1 (CWI) 85/10/25
+#
+DEST =
+BIN = /usr/local
+CFLAGS = -g
+YFLAGS = -d -D
+OFILES = main.o input.o print.o frame.o for.o coord.o ticks.o plot.o label.o misc.o
+CFILES = main.c input.c print.c frame.c for.c coord.c ticks.c plot.c label.c misc.c
+SRCFILES = grap.y grapl.l grap.h $(CFILES)
+
+all:	grap
+
+grap:	grap.o grapl.o $(OFILES) grap.h 
+	$(CC) -o grap $(CFLAGS) grap.o grapl.o $(OFILES) -lm
+
+$(OFILES) grapl.o:	grap.h prevy.tab.h
+
+grap.c:	grap.h grap.y			# grap.o: grap.h
+	yacc -d grap.y
+	mv y.tab.c grap.c
+
+y.tab.h:	grap.o
+
+prevy.tab.h:	y.tab.h
+	-cmp -s y.tab.h prevy.tab.h || cp y.tab.h prevy.tab.h
+
+install: grap
+	install -s grap $(DEST)$(BIN)/grap
+	install -c -m 644 $(DEST)/usr/local/lib/grap
+
+clean:
+	rm -rf grap *.o y.tab.h
