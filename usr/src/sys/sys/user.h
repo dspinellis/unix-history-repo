@@ -1,4 +1,4 @@
-/*	user.h	4.15	82/08/08	*/
+/*	user.h	4.16	82/08/24	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -10,23 +10,13 @@
 #include <sys/vtimes.h>
 #endif
 /*
- * The user structure.
- * One allocated per process.
- * Contains all per process data
- * that doesn't need to be referenced
- * while the process is swapped.
- * The user block is UPAGES*NBPG bytes
- * long; resides at virtual user
- * loc 0x80000000-UPAGES*NBPG; contains the system
- * stack per user; is cross referenced
- * with the proc structure for the
- * same process.
+ * Per process structure containing data that
+ * isn't needed in core when the process is swapped out.
  */
  
 #define	SHSIZE	32
  
-struct	user
-{
+struct	user {
 	struct	pcb u_pcb;
 	int	u_arg[5];		/* arguments to current system call */
 	label_t	u_qsav;			/* for non-local gotos on interrupts */
@@ -34,8 +24,7 @@ struct	user
 	char	u_error;		/* return error code */
 	short	u_uid;			/* effective user id */
 	short	u_gid;			/* effective group id */
-	int	u_grps[NGRPS/(sizeof(int)*8)];
-					/* group bit array */
+	int	u_groups[NGROUPS];	/* groups, 0 terminated */
 	short	u_ruid;			/* real user id */
 	short	u_rgid;			/* real group id */
 	struct	proc *u_procp;		/* pointer to proc structure */
