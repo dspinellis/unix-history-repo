@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -546,7 +546,7 @@ safefile(fn, uid, gid, uname, flags, mode)
 	}
 #endif
 
-	if (uid == 0)
+	if (uid == 0 && !bitset(SFF_ROOTOK, flags))
 		mode >>= 6;
 	else if (stbuf.st_uid != uid)
 	{
