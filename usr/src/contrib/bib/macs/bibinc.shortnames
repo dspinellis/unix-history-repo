@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.shortnames	2.7	%G%";
+#	"@(#)bibinc.shortnames	2.8	%G%";
 # short journal names, and other names
 #
 # journals
@@ -55,6 +55,8 @@ D CCC82 PROC SI\&GPLAN 1982 SYMP on Compiler Const.\
 %D JUN 1982
 D CCC84 PROC SI\&GPLAN 1984 SYMP on Compiler Const.\
 %D JUN 1984
+D CCC86 PROC SI\&GPLAN 1986 SYMP on Compiler Const.\
+%D JUL 1986
 D CHI83 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
 %D DEC 1983
 D CHI85 PROC S\&IGCHI CONF on Human Factors in Computing Systems\

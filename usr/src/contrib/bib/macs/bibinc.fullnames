@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.12	%G%";
+#	"@(#)bibinc.fullnames	2.13	%G%";
 # full journal names, and other names
 #
 # journals
@@ -67,6 +67,11 @@ D CCC84 PROC of the ACM SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
 %D JUN 1984\
 %V 19 \
 %N 6
+D CCC86 PROC of the ACM SI\&GPLAN 1986 SYMP on Compiler Construction, SIGPLAN\
+%C Palo Alto, CA\
+%D JUL 1986\
+%V 21 \
+%N 7
 D CHI83 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
 %C Boston, MA\
 %D DEC 1983
