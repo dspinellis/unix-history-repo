@@ -1,0 +1,120 @@
+#
+# Most of the table entries here are just copies of the
+# old getty table, it is by no means certain, or even likely,
+# then any of them are optimal for any purpose whatever.
+# Nor is it likely that more than a couple are even correct
+#
+
+#
+# The default gettytab entry, used to set defaults for all other
+# entries, and in cases where getty is called with no table name
+#
+default:\
+	:ap:fd#1000:\
+	:im=\r\n\r\n\r\nProject Athena (%h\072%t, %d)\r\n\r\n:\
+	:sp#1200:
+
+#
+# Fixed speed entries
+#
+#	the "std.NNN" names are known to the special case
+#	portselector code in getty, however they can
+#	be assigned to any table desired.
+#
+a|std.110|110-baud:\
+	:nd#1:cd#1:uc:sp#110:
+b|std.134|134.5-baud:\
+	:ep:nd#1:cd#2:ff#1:td#1:sp#134:ht:nl:
+1|std.150|150-baud:\
+	:ep:nd#1:cd#2:td#1:fd#1:sp#150:ht:nl:lm=\E\72\6\6\17login\72 :
+c|std.300|300-baud:\
+	:nd#1:cd#1:sp#300:
+d|std.600|600-baud:\
+	:nd#1:cd#1:sp#600:
+f|std.1200|1200-baud:\
+	:fd#1:sp#1200:ig
+y|rem.1200|rem-1200-baud:\
+	:fd#1:sp#1200:rm:ig:\
+ 	:im=\r\n\r\n\r\nAthena Login Server (%h\072%t, %d)\r\n\r\n:
+6|std.2400|2400-baud:\
+	:sp#2400:ht:ig:
+w|rem.2400|rem-2400-baud:\
+ 	:sp#2400:rm:ig:\
+ 	:im=\r\n\r\n\r\nAthena Login Server (%h\072%t, %d)\r\n\r\n:
+7|std.4800|4800-baud:\
+	:sp#4800:ht:ig:
+x|rem.4800|rem-4800-baud:\
+ 	:sp#4800:rm:ig:
+ 	:im=\r\n\r\n\r\nAthena Login Server (%h\072%t, %d)\r\n\r\n:
+2|std.9600|9600-baud:\
+	:sp#9600:ig:
+z|rem.9600|rem-9600-baud:\
+ 	:sp#9600:rm:ig:\
+ 	:im=\r\n\r\n\r\nAthena Login Server (%h\072%t, %d)\r\n\r\n:
+
+#
+# Dial in rotary tables, speed selection via 'break'
+#
+0|d300|Dial-300:\
+	:nx=d1200:cd#2:sp#300:
+d1200|Dial-1200:\
+	:nx=d150:fd#1:sp#1200:
+d150|Dial-150:\
+	:nx=d110:lm@:tc=150-baud:
+d110|Dial-110:\
+	:nx=d300:tc=300-baud:
+
+#
+# Odd special case terminals
+#
+-|tty33|asr33|Pity the poor user of this beast:\
+	:tc=110-baud:
+
+4|Console|Console Decwriter II:\
+	:nd@:cd@:rw:tc=300-baud:
+
+e|Console-1200|Console Decwriter III:\
+	:fd@:nd@:cd@:rw:tc=1200-baud:
+ 
+v|Vs100|Xwindow|X window system:\
+	:fd@:nd@:cd@:rw:sp#9600:
+
+i|Interdata console:\
+	:uc:sp#0:
+
+l|lsi chess terminal:\
+	:sp#300:
+
+#
+# Fast dialup terminals, 1200/300 rotary (can start either way)
+#
+3|D1200|Fast-Dial-1200:\
+	:nx=D300:tc=1200-baud:\
+ 	:im=\r\n\r\n\r\nAthena Login Server (%h\072%t, %d)\r\n\r\n:
+5|D300|Fast-Dial-300:\
+	:nx=D1200:tc=300-baud:
+ 	:im=\r\n\r\n\r\nAthena Login Server (%h\072%t, %d)\r\n\r\n:
+
+#
+# Wierdo special case for fast crt's with hardcopy devices
+#
+8|T9600|CRT with hardcopy:\
+	:nx=T300:tc=9600-baud:
+9|T300|CRT with hardcopy (300):\
+	:nx=T9600:tc=300-baud:
+
+#
+# Plugboard, and misc other terminals
+#
+p|P9600|Plugboard-9600:\
+	:nx=P300:tc=9600-baud:
+q|P300|Plugboard-300:\
+	:nx=P1200:tc=300-baud:
+r|P1200|Plugboard-1200:\
+	:nx=P9600:tc=1200-baud:
+
+#
+# XXXX Port selector
+#
+s|Port Selector:\
+	:ps:sp#1200:
