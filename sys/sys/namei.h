@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)namei.h	7.15 (Berkeley) 5/15/91
- *	$Id: namei.h,v 1.3 1993/11/07 17:52:53 wollman Exp $
+ *	$Id: namei.h,v 1.4 1994/05/22 23:08:06 ache Exp $
  */
 
 #ifndef _NAMEI_H_
@@ -101,7 +101,6 @@ struct nameidata {
 #define	NOCACHE		0x0020	/* name must not be left in cache */
 #define	FOLLOW		0x0040	/* follow symbolic links */
 #define	NOFOLLOW	0x0000	/* do not follow symbolic links (pseudo) */
-#define WILLBEDIR	0x0080	/* new files will be dirs; allow trailing / */
 #define	MODMASK		0x00fc	/* mask of operational modifiers */
 /*
  * Namei parameter descriptors.
