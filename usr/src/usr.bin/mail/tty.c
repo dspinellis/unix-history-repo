@@ -7,9 +7,8 @@
  */
 
 #include "rcv.h"
-#include <sgtty.h>
 
-static char *SccsId = "@(#)tty.c	2.1 %G%";
+static char *SccsId = "@(#)tty.c	2.2 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
