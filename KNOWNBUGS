@@ -47,10 +47,10 @@ keyboard problems.
 	easy - simply turn it off using your EISA configuration utility.
 	With the Bt445S, which is a VLB card, you must switch the undocumented
 	"SW10" on "SB2" to the off position.  Also note that certain revisions
-	of the Buslogic firmware can cause data corruption with systems
-	containing more than 16Mb of memory.  If you find this to be the case,
-	temporarily remove your extra memory and contact Buslogic for an
-	upgrade.
+	of the Buslogic board (Revision C or earlier, firmware revision <3.37)
+	will cause DATA CORRUPTION with systems containing more than 16MB of
+	memory.  If you find this to be the case, temporarily remove your
+	extra memory and contact Buslogic for an upgrade!
 
 /usr/bin/find
 	find doesn't work on CDROM's. You need to call find with the
@@ -62,4 +62,4 @@ keyboard problems.
 	Problem is already known by the gawk maintainers and will be fixed
 	in the next release of gawk.
 
-$Id: KNOWNBUGS,v 1.9 1994/03/20 18:04:18 ats Exp $
+$Id: KNOWNBUGS,v 1.10 1994/03/21 15:13:20 ache Exp $
