@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -1701,11 +1701,11 @@ getkey()
 	register c;
 
 	sig = signal(SIGINT, SIG_IGN);
-	if (gtty(0, &b) == -1)
+	if (ioctl(0, TIOCGETP, &b) == -1)
 		error("Input not tty");
 	save = b.sg_flags;
 	b.sg_flags &= ~ECHO;
-	stty(0, &b);
+	(void)ioctl(0, TIOCSETP, &b);
 	puts("Key:");
 	p = key;
 	while(((c=getchr()) != EOF) && (c!='\n')) {
@@ -1714,7 +1714,7 @@ getkey()
 	}
 	*p = 0;
 	b.sg_flags = save;
-	stty(0, &b);
+	(void)ioctl(0, TIOCSETP, &b);
 	signal(SIGINT, sig);
 	return(key[0] != 0);
 }
