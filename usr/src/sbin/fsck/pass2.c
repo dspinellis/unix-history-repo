@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -287,7 +287,7 @@ chk2:
 	}
 	idesc->id_entryno++;
 	n = 0;
-	if (dirp->d_ino > maxino || dirp->d_ino <= 0) {
+	if (dirp->d_ino > maxino) {
 		fileerror(idesc->id_number, dirp->d_ino, "I OUT OF RANGE");
 		n = reply("REMOVE");
 	} else {
