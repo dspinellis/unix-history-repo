@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.3	84/07/08	*/
+/*	kern_exec.c	6.4	84/07/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -19,6 +19,7 @@
 #include "../h/file.h"
 #include "../h/uio.h"
 #include "../h/acct.h"
+#include "../h/exec.h"
 
 #ifdef vax
 #include "../vax/mtpr.h"
@@ -51,7 +52,12 @@ execve()
 	struct inode *ip;
 	swblk_t bno;
 	char cfname[MAXCOMLEN + 1];
+#define	SHSIZE	32
 	char cfarg[SHSIZE];
+	union {
+		char	ex_shell[SHSIZE];	/* #! and name of interpreter */
+		struct	exec ex_exec;
+	} exdata;
 	register struct nameidata *ndp = &u.u_nd;
 	int resid;
 
@@ -95,42 +101,42 @@ execve()
 	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
 	 * THE ASCII LINE.
 	 */
-	u.u_exdata.ux_shell[0] = 0;	/* for zero length files */
-	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&u.u_exdata, sizeof (u.u_exdata),
-	    0, 1, &resid);
+	exdata.ex_shell[0] = '\0';	/* for zero length files */
+	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&exdata,
+	   sizeof (struct exec), 0, 1, &resid);
 	if (u.u_error)
 		goto bad;
 #ifndef lint
-	if (resid > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
-	    u.u_exdata.ux_shell[0] != '#') {
+	if (resid > sizeof (struct exec) - sizeof (exdata.ex_exec.a_magic) &&
+	    exdata.ex_shell[0] != '#') {
 		u.u_error = ENOEXEC;
 		goto bad;
 	}
 #endif
-	switch (u.u_exdata.ux_mag) {
+	switch (exdata.ex_exec.a_magic) {
 
 	case 0407:
-		u.u_exdata.ux_dsize += u.u_exdata.ux_tsize;
-		u.u_exdata.ux_tsize = 0;
+		exdata.ex_exec.a_data += exdata.ex_exec.a_text;
+		exdata.ex_exec.a_text = 0;
 		break;
 
 	case 0413:
 	case 0410:
-		if (u.u_exdata.ux_tsize == 0) {
+		if (exdata.ex_exec.a_text == 0) {
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
 		break;
 
 	default:
-		if (u.u_exdata.ux_shell[0] != '#' ||
-		    u.u_exdata.ux_shell[1] != '!' ||
+		if (exdata.ex_shell[0] != '#' ||
+		    exdata.ex_shell[1] != '!' ||
 		    indir) {
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
-		cp = &u.u_exdata.ux_shell[2];		/* skip "#!" */
-		while (cp < &u.u_exdata.ux_shell[SHSIZE]) {
+		cp = &exdata.ex_shell[2];		/* skip "#!" */
+		while (cp < &exdata.ex_shell[SHSIZE]) {
 			if (*cp == '\t')
 				*cp = ' ';
 			else if (*cp == '\n') {
@@ -143,7 +149,7 @@ execve()
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
-		cp = &u.u_exdata.ux_shell[2];
+		cp = &exdata.ex_shell[2];
 		while (*cp == ' ')
 			cp++;
 		ndp->ni_dirp = cp;
@@ -181,7 +187,8 @@ execve()
 	ne = 0;
 	nc = 0;
 	uap = (struct execa *)u.u_ap;
-	if ((bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))))) == 0) {
+	bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))));
+	if (bno == 0) {
 		swkill(u.u_procp, "exece");
 		goto bad;
 	}
@@ -240,7 +247,7 @@ execve()
 		bcopy((caddr_t)cfname, (caddr_t)ndp->ni_dent.d_name,
 		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 	}
-	getxfile(ip, nc + (na+4)*NBPW, uid, gid);
+	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
 		for (c = 0; c < nc; c += CLSIZE*NBPG) {
@@ -287,7 +294,7 @@ badarg:
 		} while(c&0377);
 	}
 	(void) suword((caddr_t)ap, 0);
-	setregs();
+	setregs(exdata.ex_exec.a_entry);
 	/*
 	 * Remember file name for accounting.
 	 */
@@ -305,19 +312,20 @@ bad:
 /*
  * Read in and set up memory for executed file.
  */
-getxfile(ip, nargc, uid, gid)
+getxfile(ip, ep, nargc, uid, gid)
 	register struct inode *ip;
+	register struct exec *ep;
 	int nargc, uid, gid;
 {
 	register size_t ts, ds, ss;
 	int pagi;
 
-	if (u.u_exdata.ux_mag == 0413)
+	if (ep->a_magic == 0413)
 		pagi = SPAGI;
 	else
 		pagi = 0;
-	if (u.u_exdata.ux_tsize!=0 && (ip->i_flag&ITEXT)==0 &&
-	    ip->i_count!=1) {
+	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
+	    ip->i_count != 1) {
 		register struct file *fp;
 
 		for (fp = file; fp < fileNFILE; fp++) {
@@ -334,8 +342,8 @@ getxfile(ip, nargc, uid, gid)
 	/*
 	 * Compute text and data sizes and make sure not too large.
 	 */
-	ts = clrnd(btoc(u.u_exdata.ux_tsize));
-	ds = clrnd(btoc((u.u_exdata.ux_dsize+u.u_exdata.ux_bsize)));
+	ts = clrnd(btoc(ep->a_text));
+	ds = clrnd(btoc((ep->a_data + ep->a_bss)));
 	ss = clrnd(SSIZE + btoc(nargc));
 	if (chksize((unsigned)ts, (unsigned)ds, (unsigned)ss))
 		goto bad;
@@ -376,14 +384,14 @@ getxfile(ip, nargc, uid, gid)
 		u.u_error =
 		    rdwri(UIO_READ, ip,
 			(char *)ctob(dptov(u.u_procp, 0)),
-			(int)u.u_exdata.ux_dsize,
-			(int)(sizeof(u.u_exdata)+u.u_exdata.ux_tsize),
+			(int)ep->a_data,
+			(int)(sizeof (struct exec) + ep->a_text),
 			0, (int *)0);
-	xalloc(ip, pagi);
+	xalloc(ip, ep, pagi);
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
 		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
-		    (long)(1 + ts/CLSIZE), (int)btoc(u.u_exdata.ux_dsize));
+		    (long)(1 + ts/CLSIZE), (int)btoc(ep->a_data));
 
 #ifdef vax
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
@@ -412,7 +420,8 @@ bad:
 /*
  * Clear registers on exec
  */
-setregs()
+setregs(entry)
+	int entry;
 {
 	register int i;
 	register struct proc *p = u.u_procp;
@@ -433,7 +442,7 @@ setregs()
 	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
 		*rp++ = 0;
 #endif
-	u.u_ar0[PC] = u.u_exdata.ux_entloc+2;
+	u.u_ar0[PC] = entry + 2;
 	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&UF_EXCLOSE) {
 			closef(u.u_ofile[i]);
