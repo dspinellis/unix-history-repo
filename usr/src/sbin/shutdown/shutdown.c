@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,16 +36,13 @@ static char sccsid[] = "@(#)shutdown.c	5.9 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
-
-#define	REBOOT		"/etc/reboot"
-#define	HALT		"/etc/halt"
+#include "pathnames.h"
 
 #ifdef DEBUG
-#define	NOLOGIN		"./nologin"
-#define	FASTBOOT	"./fastboot"
-#else
-#define	NOLOGIN		"/etc/nologin"
-#define	FASTBOOT	"/fastboot"
+#undef _PATH_NOLOGIN
+#define	_PATH_NOLOGIN	"./nologin"
+#undef _PATH_FASTBOOT
+#define	_PATH_FASTBOOT	"./fastboot"
 #endif
 
 #define	H		*60*60
@@ -190,8 +187,6 @@ main(argc, argv)
 	/*NOTREACHED*/
 }
 
-#define	WALL_CMD	"/bin/wall"
-
 loop()
 {
 	u_int sltime;
@@ -247,8 +242,8 @@ warn()
 		(void)gethostname(hostname, sizeof(hostname));
 	}
 
-	if (!(pf = popen(WALL_CMD, "w"))) {
-		syslog(LOG_ERR, "shutdown: can't find %s: %m", WALL_CMD);
+	if (!(pf = popen(_PATH_WALL, "w"))) {
+		syslog(LOG_ERR, "shutdown: can't find %s: %m", _PATH_WALL);
 		return;
 	}
 
@@ -310,13 +305,13 @@ die_you_gravy_sucking_pig_dog()
 	printf("\nkill -HUP 1\n");
 #else
 	if (doreboot) {
-		execle(REBOOT, "reboot", "-l", nosync, 0);
-		syslog(LOG_ERR, "shutdown: can't exec %s: %m.", REBOOT);
+		execle(_PATH_REBOOT, "reboot", "-l", nosync, 0);
+		syslog(LOG_ERR, "shutdown: can't exec %s: %m.", _PATH_REBOOT);
 		perror("shutdown");
 	}
 	else if (dohalt) {
-		execle(HALT, "halt", "-l", nosync, 0);
-		syslog(LOG_ERR, "shutdown: can't exec %s: %m.", HALT);
+		execle(_PATH_HALT, "halt", "-l", nosync, 0);
+		syslog(LOG_ERR, "shutdown: can't exec %s: %m.", _PATH_HALT);
 		perror("shutdown");
 	}
 	(void)kill(1, SIGTERM);		/* to single user */
@@ -390,13 +385,13 @@ getoffset(timearg)
 			++shuttime;
 		for (--year; year >= EPOCH_YEAR; --year)
 			shuttime += isleap(year) ?
-			    DAYS_PER_LYEAR : DAYS_PER_NYEAR;
+			    DAYSPERLYEAR : DAYSPERNYEAR;
 		while (--month)
 			shuttime += dmsize[month];
 		shuttime += day - 1;
-		shuttime = HOURS_PER_DAY * shuttime + hour;
-		shuttime = MINS_PER_HOUR * shuttime + min;
-		shuttime *= SECS_PER_MIN;
+		shuttime = HOURSPERDAY * shuttime + hour;
+		shuttime = MINSPERHOUR * shuttime + min;
+		shuttime *= SECSPERMIN;
 		shuttime -= lt->tm_gmtoff;
 		if ((offset = shuttime - now) >= 0)
 			break;
@@ -413,7 +408,8 @@ doitfast()
 {
 	int fastfd;
 
-	if ((fastfd = open(FASTBOOT, O_WRONLY|O_CREAT|O_TRUNC, 0664)) >= 0) {
+	if ((fastfd = open(_PATH_FASTBOOT, O_WRONLY|O_CREAT|O_TRUNC,
+	    0664)) >= 0) {
 		(void)write(fastfd, FSMSG, sizeof(FSMSG) - 1);
 		(void)close(fastfd);
 	}
@@ -425,12 +421,13 @@ nolog()
 	int logfd, finish();
 	char *ct, *ctime();
 
-	(void)unlink(NOLOGIN);		/* in case linked to another file */
+	(void)unlink(_PATH_NOLOGIN);	/* in case linked to another file */
 	(void)signal(SIGINT, finish);
 	(void)signal(SIGHUP, finish);
 	(void)signal(SIGQUIT, finish);
 	(void)signal(SIGTERM, finish);
-	if ((logfd = open(NOLOGIN, O_WRONLY|O_CREAT|O_TRUNC, 0664)) >= 0) {
+	if ((logfd = open(_PATH_NOLOGIN, O_WRONLY|O_CREAT|O_TRUNC,
+	    0664)) >= 0) {
 		(void)write(logfd, NOMSG, sizeof(NOMSG) - 1);
 		ct = ctime(&shuttime);
 		(void)write(logfd, ct + 11, 5);
@@ -442,7 +439,7 @@ nolog()
 
 finish()
 {
-	(void)unlink(NOLOGIN);
+	(void)unlink(_PATH_NOLOGIN);
 	exit(0);
 }
 
