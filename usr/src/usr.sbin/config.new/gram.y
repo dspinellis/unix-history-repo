@@ -15,7 +15,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gram.y	5.2 (Berkeley) %G%
+ *	@(#)gram.y	5.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -360,6 +360,7 @@ setmachine(mch)
 
 	machine = mch;
 	(void)sprintf(buf, "files.%s", mch);
-	if (include(buf, ENDFILE) || include("../../conf/files", ENDFILE))
+	if (include(buf, ENDFILE) ||
+	    include("../../conf/files.newconf", ENDFILE))
 		exit(1);
 }
