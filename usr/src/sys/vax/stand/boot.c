@@ -1,4 +1,4 @@
-/*	boot.c	4.5	81/11/12	*/
+/*	boot.c	4.6	81/12/01	*/
 
 #include "../h/param.h"
 #include "../h/ino.h"
@@ -28,6 +28,7 @@ char	devname[][2] = {
 	0,0,		/* 7 = mt */
 	0,0,		/* 8 = tu */
 	'r','a',	/* 9 = ra */
+	'u', 't',	/* 10 = ut */
 };
 
 char line[100] = "xx(0,0)vmunix";
