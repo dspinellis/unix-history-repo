@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.28 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.29 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.28 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.29 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -217,6 +217,8 @@ smtp(e)
 			(void) strcat(hostbuf, anynet_ntoa(&RealHostAddr));
 			if (strcasecmp(p, RealHostName) != 0)
 			{
+				auth_warning(e, "Host %s claimed to be %s",
+					RealHostName, p);
 				(void) strcat(hostbuf, "; ");
 				(void) strcat(hostbuf, RealHostName);
 			}
@@ -233,9 +235,14 @@ smtp(e)
 				sendinghost = RealHostName;
 
 			/* check for validity of this command */
-			if (!gothello && bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
+			if (!gothello)
 			{
-				message("503 Polite people say HELO first");
+				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
+					message("503 Polite people say HELO first");
+				else
+					auth_warning(e,
+						"Host %s didn't use HELO protocol",
+						RealHostName);
 				break;
 			}
 			if (gotmail)

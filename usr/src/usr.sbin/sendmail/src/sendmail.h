@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.33 (Berkeley) %G%
+ *	@(#)sendmail.h	6.34 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.33		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.34		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -591,6 +591,7 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define PRIV_NEEDVRFYHELO	00004	/* insist on HELO for VRFY */
 #define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
 #define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
+#define PRIV_AUTHWARNINGS	00040	/* flag possible authorization probs */
 #define PRIV_RESTRMAILQ		01000	/* restrict mailq command */
 #define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
 
@@ -760,15 +761,26 @@ EXTERN u_char	tTdvect[100];
 **  Declarations of useful functions
 */
 
-extern ADDRESS	*parseaddr();
-extern char	*xalloc();
-extern bool	sameaddr();
-extern FILE	*dfopen();
-extern EVENT	*setevent();
-extern char	*sfgets();
-extern char	*queuename();
-extern time_t	curtime();
-extern bool	transienterror();
+#ifdef __STDC__
+#define P(protos)	protos
+#else
+#define P(protos)	()
+#endif
+
+extern ADDRESS	*parseaddr P((char *, ADDRESS *, int, char, char **, ENVELOPE *));
+extern char	*xalloc P((int));
+extern bool	sameaddr P((ADDRESS *, ADDRESS *));
+extern FILE	*dfopen P((char *, char *));
+extern EVENT	*setevent P((time_t, int(*)(), int));
+extern char	*sfgets P((char *, int, FILE *, time_t));
+extern char	*queuename P((ENVELOPE *, char));
+extern time_t	curtime P(());
+extern bool	transienterror P((int));
+extern void	auth_warning P((ENVELOPE *, char *, ...));
+extern void	syserr P((char *, ...));
+extern void	usrerr P((char *, ...));
+extern void	message P((char *, ...));
+extern void	nmessage P((char *, ...));
 
 /*
 **  HACK to fix bug in C compiler on CCI

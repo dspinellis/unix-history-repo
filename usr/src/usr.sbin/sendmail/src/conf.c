@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -112,8 +112,9 @@ struct prival PrivacyValues[] =
 	"noexpn",		PRIV_NOEXPN,
 	"novrfy",		PRIV_NOVRFY,
 	"restrictmailq",	PRIV_RESTRMAILQ,
+	"authwarnings",		PRIV_AUTHWARNINGS,
 	"goaway",		PRIV_GOAWAY,
-	NULL,			PRIV_PUBLIC,
+	NULL,			0,
 };
 
 
@@ -167,6 +168,7 @@ setdefaults(e)
 	settimeouts(NULL);			/* option r */
 	TimeOuts.to_q_return = 5 DAYS;		/* option T */
 	TimeOuts.to_q_warning = 0;		/* option T */
+	PrivacyFlags = PRIV_AUTHWARNINGS;	/* option p */
 	setdefuser();
 	setupmaps();
 	setupmailers();

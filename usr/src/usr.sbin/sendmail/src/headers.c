@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -164,8 +164,9 @@ chompheader(line, def, e)
 **	This bypasses the special checking of chompheader.
 **
 **	Parameters:
-**		field -- the name of the header field.
-**		value -- the value of the field.  It must be lower-cased.
+**		field -- the name of the header field.  It must be
+**			lower-cased.
+**		value -- the value of the field.
 **		e -- the envelope to add them to.
 **
 **	Returns:
