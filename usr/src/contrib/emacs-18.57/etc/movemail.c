@@ -230,7 +230,7 @@ main (argc, argv)
   /* Stride, xenix have file locking, but no ftruncate.  This mess will do. */
   (void) close (open (inname, O_CREAT | O_TRUNC | O_RDWR, 0666));
 #else
-  (void) ftruncate (indesc, 0L);
+  (void) ftruncate (indesc, (off_t)0);
 #endif /* STRIDE or XENIX */
 #endif /* MAIL_USE_FLOCK */
   close (indesc);
