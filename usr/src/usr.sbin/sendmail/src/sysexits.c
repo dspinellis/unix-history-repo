@@ -7,10 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysexits.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysexits.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sysexits.h>
+#include <sendmail.h>
 
 /*
 **  SYSEXITS.C -- error messages corresponding to sysexits.h
