@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -155,6 +155,8 @@ mci_uncache(mcislot)
 	*mcislot = NULL;
 	mci->mci_flags &= ~MCIF_CACHED;
 
+	message(Arpa_Info, "Closing connection to %s", mci->mci_host);
+
 	/* only uses the envelope to flush the transcript file */
 	if (mci->mci_state != MCIS_CLOSED)
 		smtpquit(mci->mci_mailer, mci, &BlankEnvelope);
@@ -183,8 +185,11 @@ mci_get(host, m)
 	MAILER *m;
 {
 	register MCI *mci;
+	register STAB *s;
 
-	mci = &(stab(host, ST_MCI + m->m_mno, ST_ENTER))->s_mci;
+	s = stab(host, ST_MCI + m->m_mno, ST_ENTER);
+	mci = &s->s_mci;
+	mci->mci_host = s->s_name;
 
 	if (tTd(42, 2))
 	{
