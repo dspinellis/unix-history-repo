@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -38,8 +38,8 @@ static char sccsid[] = "@(#)login.c	5.14 (Berkeley) %G%";
 #include <syslog.h>
 #include <grp.h>
 
-#define WRITENAME	"write"		/* name of group to own ttys */
-#define WRITEGID(gid)	write_gid(gid)	/* gid that owns all ttys */
+#define TTYGRPNAME	"tty"		/* name of group to own ttys */
+#define TTYGID(gid)	tty_gid(gid)	/* gid that owns all ttys */
 
 #define	SCMPN(a, b)	strncmp(a, b, sizeof(a))
 #define	SCPYN(a, b)	strncpy(a, b, sizeof(a))
@@ -328,7 +328,7 @@ main(argc, argv)
 		write(f, (char *) &ll, sizeof ll);
 		close(f);
 	}
-	chown(ttyn, pwd->pw_uid, WRITEGID(pwd->pw_gid));
+	chown(ttyn, pwd->pw_uid, TTYGID(pwd->pw_gid));
 	if (!hflag && !rflag)					/* XXX */
 		ioctl(0, TIOCSWINSZ, &win);
 	chmod(ttyn, 0620);
@@ -571,13 +571,13 @@ setenv(var, value, clobber)
 	environ[++index] = NULL;
 }
 
-write_gid(default_gid)
+tty_gid(default_gid)
 	int default_gid;
 {
 	struct group *getgrnam(), *gr;
 	int gid = default_gid;
 
-	gr = getgrnam(WRITENAME);
+	gr = getgrnam(TTYGRPNAME);
 	if (gr != (struct group *) 0)
 		gid = gr->gr_gid;
 

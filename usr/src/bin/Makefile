@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.16 (Berkeley) %G%
+#	@(#)Makefile	5.17 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -39,9 +39,9 @@ OPERATOR= df
 #
 KMEM=	ps
 
-# Programs that must run set-group-id write.
+# Programs that must run set-group-id tty.
 #
-WRITE=	write
+TTY=	tty
 
 BINS=	${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${WRITE} cp mv strip
 
@@ -74,8 +74,8 @@ install:
 		(install -g operator -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
 	-for i in ${KMEM}; do \
 		(install -g kmem -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
-	-for i in ${WRITE}; do \
-		(install -g write -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
+	-for i in ${TTY}; do \
+		(install -g tty -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
 	rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chfn
