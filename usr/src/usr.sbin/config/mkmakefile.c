@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.24	83/01/14	*/
+/*	mkmakefile.c	1.25	83/02/09	*/
 
 /*
  * Build the makefile for the system, from
@@ -99,6 +99,7 @@ makefile()
 	fprintf(ofp, "\n");
 	if (hadtz == 0)
 		printf("timezone not specified; gmt assumed\n");
+#ifdef vax
 	if (maxusers == 0) {
 		printf("maxusers not specified; 24 assumed\n");
 		maxusers = 24;
@@ -109,6 +110,19 @@ makefile()
 		printf("maxusers truncated to 128\n");
 		maxusers = 128;
 	}
+#endif
+#ifdef sun
+	if (maxusers == 0) {
+		printf("maxusers not specified; 8 assumed\n");
+		maxusers = 8;
+	} else if (maxusers < 2) {
+		printf("minimum of 2 maxusers assumed\n");
+		maxusers = 2;
+	} else if (maxusers > 32) {
+		printf("maxusers truncated to 32\n");
+		maxusers = 32;
+	}
+#endif
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
 	    timezone, dst, maxusers);
 	while (fgets(line, BUFSIZ, ifp) != 0) {
