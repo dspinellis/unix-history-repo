@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.h	6.4 (Berkeley) 6/8/85
+ *	@(#)route.h	6.6 (Berkeley) %G%
  */
 
 /*
  * Kernel resident routing tables.
  * 
- * The routing tables are initialized at boot time by
- * making entries for all directly connected interfaces.
+ * The routing tables are initialized when interface addresses
+ * are set by making entries for all directly connected interfaces.
  */
 
 /*
@@ -21,9 +21,6 @@
 struct route {
 	struct	rtentry *ro_rt;
 	struct	sockaddr ro_dst;
-#ifdef notdef
-	caddr_t	ro_pcb;			/* not used yet */
-#endif
 };
 
 /*
@@ -42,8 +39,8 @@ struct rtentry {
 	short	rt_refcnt;		/* # held references */
 	u_long	rt_use;			/* raw # packets forwarded */
 	struct	ifnet *rt_ifp;		/* the answer: interface to use */
+#ifdef BBNNET
 	union {				/* domain specific info */
-#ifdef INET
 	    struct {
 		int in_rt_pc;		/* count of pings not answered */
 	    } rt_in_data;
@@ -51,15 +48,16 @@ struct rtentry {
 #define	irt_pings	rt_data.rt_in_data.in_rt_pc
 #define irt_gdown	rt_data.rt_in_data.in_rt_pc
 
-#endif
 	    char rt_dummy[32];
 	} rt_data;
+#endif
 };
 
 #define	RTF_UP		0x1		/* route useable */
 #define	RTF_GATEWAY	0x2		/* destination is a gateway */
 #define	RTF_HOST	0x4		/* host entry (net otherwise) */
 #define RTF_REINSTATE	0x8		/* re-instate route after timeout */
+#define	RTF_DYNAMIC	0x10		/* created dynamically (by redirect) */
 
 /*
  * Routing statistics.
