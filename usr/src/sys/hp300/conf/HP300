@@ -1,4 +1,4 @@
-#	@(#)HP300	8.4 (Berkeley) %G%
+#	@(#)HP300	8.5 (Berkeley) %G%
 #
 # PICASSO (HP300)
 #
@@ -45,7 +45,7 @@ options		HPFPLIB
 #options	NS		# Xeros NS networking
 options		CCITT,HDLC,LLC	# CCITT networking
 
-config		vmunix root on sd0 swap on sd0b and rd0b
+config		vmunix root on sd0 swap on sd0b and rd0b and sd1b and rd1b and sd2b and rd2b
 config		vgvmunix root on sd0 swap on sd0d and sd1d and sd2d
 config		rdvmunix root on rd0 swap on rd0b and rd1b
 config		genvmunix swap generic
