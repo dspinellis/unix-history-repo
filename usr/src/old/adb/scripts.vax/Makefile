@@ -9,10 +9,11 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
-LIST=	dmcstats findproc.nxt frame ifuba ifubinfo ifxmt mba_device mba_hd \
-	pcb proc setproc.nxt stacktrace trapframe tty ubahd
+LIST=	dirblk dmcstats findproc.nxt frame ifuba ifubinfo ifxmt \
+	mba_device mba_hd pcb proc setproc.nxt stacktrace trapframe \
+	tty ubahd
 
 all:
 
