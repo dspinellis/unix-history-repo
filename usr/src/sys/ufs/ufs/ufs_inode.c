@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_inode.c	7.25 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -120,7 +120,6 @@ loop:
 	ip->i_vnode = nvp;
 	ip->i_flag = 0;
 	ip->i_devvp = 0;
-	ip->i_lastr = 0;
 	ip->i_mode = 0;
 #ifdef QUOTA
 	ip->i_dquot = NODQUOT;
@@ -166,7 +165,6 @@ loop:
 			vp = nvp;
 			iq = VTOI(vp);
 			iq->i_vnode = vp;
-			iq->i_lastr = 0;
 			iq->i_flag = 0;
 			ILOCK(iq);
 			iq->i_din = ip->i_din;
@@ -231,7 +229,7 @@ ufs_inactive(vp)
 	register struct inode *ip = VTOI(vp);
 	int mode, error = 0;
 
-	if (prtactive && vp->v_count != 0)
+	if (prtactive && vp->v_usecount != 0)
 		vprint("ufs_inactive: pushing active", vp);
 	/*
 	 * Get rid of inodes related to stale file handles.
@@ -260,7 +258,7 @@ ufs_inactive(vp)
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_count == 0 && ip->i_mode == 0) {
+	if (vp->v_usecount == 0 && ip->i_mode == 0) {
 		vinvalbuf(vp, 0);
 		IUNLOCK(ip);
 		ip->i_flag = 0;
@@ -281,7 +279,7 @@ ufs_reclaim(vp)
 {
 	register struct inode *ip = VTOI(vp);
 
-	if (prtactive && vp->v_count != 0)
+	if (prtactive && vp->v_usecount != 0)
 		vprint("ufs_reclaim: pushing active", vp);
 	/*
 	 * Remove the inode from its hash chain.
