@@ -8,7 +8,7 @@
  *
  * from: hp/dev/grf.c		7.13 (Berkeley) 7/12/92
  *
- *	@(#)fb.c	7.2 (Berkeley) %G%
+ *	@(#)fb.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,10 @@
 
 #include "bmc.h"
 
+extern	int hz;
+
+int	fb_erase_screen();
+
 volatile struct fb_rfc *rfcPtr = (struct fb_rfc *) 0xB1000000;
 static   struct fb_rfc  rfcVal;
 
@@ -32,6 +36,8 @@ fbopen(dev, flags, mode, p)
 	int flags, mode;
 	struct proc *p;
 {
+	fb_erase_screen();
+
 	return(0);
 }
 
@@ -41,6 +47,10 @@ fbclose(dev, flags, mode, p)
 	int flags, mode;
 	struct proc *p;
 {
+	fb_adjust(7, -27);
+
+	timeout(fb_erase_screen, (caddr_t)0, hz);
+
 	return(0);
 }
 
@@ -57,18 +67,6 @@ fbioctl(dev, cmd, data, flags, p)
 
 	error = 0;
 	switch (cmd) {
-
-	case FBIO_ON:
-#if NBMC > 0
-		bmd_off();
-#endif
-		break;
-
-	case FBIO_OFF:
-#if NBMC > 0
-		bmd_on();
-#endif
-		break;
 
 	case FBIOSETRFCT:
 		*rfcPtr = rfcVal = *((struct fb_rfc *) data);
@@ -93,6 +91,28 @@ fb_adjust(hcnt, vcnt)
 	rfcVal.rfc_vcnt = vcnt;			/* shift down    1 dot */
 
 	*rfcPtr = rfcVal;
+}
+
+#define PL_WIDTH	64				/* Plane Width  (long) */
+
+#define	SB_HIGHT	1024				/* Screen Hight  (Bit) */
+#define SL_WIDTH	40				/* Screen Width (Long) */
+
+#define SKIP_NEXT_LINE(addr)			( addr += (PL_WIDTH - SL_WIDTH) )
+
+fb_erase_screen()
+{
+	volatile register u_long *lp = (u_long *) 0xB1080008;
+
+	register int i, j;
+
+	for (i = 0; i < SB_HIGHT; i++) {
+		for (j = 0; j < SL_WIDTH; j++)
+			*lp++ = 0;
+		SKIP_NEXT_LINE(lp);
+	}
+
+	return;
 }
 
 int

@@ -12,7 +12,7 @@
  *
  * from: sys/fbio.h		7.2 (Berkeley) 4/1/92
  *
- *	@(#)fbio.h	7.2 (Berkeley) %G%
+ *	@(#)fbio.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -39,8 +39,6 @@ struct fbtype {
 };
 
 #define	FBIOGTYPE	_IOR('F', 0, struct fbtype)
-#define	FBIO_ON		_IO('F', 1)
-#define	FBIO_OFF	_IO('F', 2)
 
 
 /*
