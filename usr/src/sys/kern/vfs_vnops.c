@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.14	81/11/08	*/
+/*	vfs_vnops.c	4.15	81/11/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,7 +58,7 @@ closef(fp)
 	}
 	flag = fp->f_flag;
 	if (flag & FSOCKET) {
-		skclose(fp->f_socket);
+		soclose(fp->f_socket);
 		fp->f_socket = 0;
 		fp->f_count = 0;
 		return;

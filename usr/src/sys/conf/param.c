@@ -1,12 +1,7 @@
-/*	param.c	4.9	81/11/08	*/
+/*	param.c	4.10	81/11/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#ifdef INET
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
-#include "../net/imp.h"
-#endif INET
 #include "../h/socket.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -40,10 +35,6 @@ int	ncallout = 16 + MAXUSERS;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbpages = NMBPAGES;
-#ifdef INET
-int     nnetcon = NCON;
-int     nhost = NHOST;
-#endif INET
 
 /*
  * These are initialized at bootstrap time
@@ -66,8 +57,3 @@ short	*swsize;
 int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
-#ifdef INET
-struct  host *host, *hostNHOST;
-struct  net_stat netstat;
-struct  impstat imp_stat;
-#endif INET

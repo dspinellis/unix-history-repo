@@ -1,12 +1,7 @@
-/*	machdep.c	4.44	81/11/08	*/
+/*	machdep.c	4.45	81/11/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#ifdef INET
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
-#include "../net/inet_host.h"
-#endif INET
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
@@ -121,9 +116,6 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbpages/2);
-#ifdef INET
-	valloclim(host, struct host, nhost, hostNHOST);
-#endif INET
 	/*
 	 * Now allocate space for core map
 	 */
