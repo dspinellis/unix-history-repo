@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -88,29 +88,27 @@ bracket(s)
 {
 	register char *p;
 
-	switch (*++s->str) {
+	switch (s->str[1]) {
 	case ':':				/* "[:class:]" */
-		if ((p = strpbrk(s->str + 1, ":]")) == NULL)
-			return (0);
-		if (p[0] != ':' || p[1] != ']')
+		if ((p = strstr(s->str + 2, ":]")) == NULL)
 			return (0);
 		*p = '\0';
-		++s->str;
+		s->str += 2;
 		genclass(s);
 		s->str = p + 2;
 		return (1);
 	case '=':				/* "[=equiv=]" */
-		if ((p = strpbrk(s->str + 1, "=]")) == NULL)
+		if ((p = strstr(s->str + 2, "=]")) == NULL)
 			return (0);
-		if (p[0] != '=' || p[1] != ']')
-			return (0);
+		s->str += 2;
 		genequiv(s);
 		return (1);
-	default:				/* "[\###*]" or "[#*]" */
-		if ((p = strpbrk(s->str + 1, "*]")) == NULL)
+	default:				/* "[\###*n]" or "[#*n]" */
+		if ((p = strpbrk(s->str + 2, "*]")) == NULL)
 			return (0);
 		if (p[0] != '*' || index(p, ']') == NULL)
 			return (0);
+		s->str += 1;
 		genseq(s);
 		return (1);
 	}
@@ -192,7 +190,7 @@ static void
 genequiv(s)
 	STR *s;
 {
-	if (*++s->str == '\\') {
+	if (*s->str == '\\') {
 		s->equiv[0] = backslash(s);
 		if (*s->str != '=')
 			err("misplaced equivalence equals sign");
