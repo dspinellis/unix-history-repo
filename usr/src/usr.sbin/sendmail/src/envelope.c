@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)envelope.c	5.3.1.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)envelope.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -46,10 +46,7 @@ newenvelope(e)
 	if (e == CurEnv)
 		parent = e->e_parent;
 	bzero((char *) e, sizeof *e);
-	if (e == CurEnv)
-		bcopy((char *) &NullAddress, (char *) &e->e_from, sizeof e->e_from);
-	else
-		bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
+	bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
 	e->e_parent = parent;
 	e->e_ctime = curtime();
 	e->e_puthdr = putheader;
@@ -143,6 +140,8 @@ dropenvelope(e)
 	if ((!queueit && !bitset(EF_KEEPQUEUE, e->e_flags)) ||
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
+		if (e->e_dfp != NULL)
+			(void) fclose(e->e_dfp);
 		if (e->e_df != NULL)
 			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));
@@ -162,8 +161,6 @@ dropenvelope(e)
 
 	/* make sure that this envelope is marked unused */
 	e->e_id = e->e_df = NULL;
-	if (e->e_dfp != NULL)
-		(void) fclose(e->e_dfp);
 	e->e_dfp = NULL;
 }
 /*
@@ -460,18 +457,11 @@ setsender(from)
 		/* log garbage addresses for traceback */
 		if (from != NULL)
 		{
-# ifdef LOG
-			if (LogLevel >= 1)
-				syslog(LOG_ERR, "Unparseable user %s wants to be %s",
-						realname, from);
-# endif LOG
+			syslog(LOG_ERR, "Unparseable user %s wants to be %s",
+					realname, from);
 		}
 		from = newstr(realname);
-		if (parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL &&
-		    parseaddr("postmaster", &CurEnv->e_from, 1, '\0') == NULL)
-		{
-			syserr("setsender: can't even parse postmaster!");
-		}
+		(void) parseaddr(from, &CurEnv->e_from, 1, '\0');
 	}
 	else
 		FromFlag = TRUE;
@@ -546,8 +536,7 @@ setsender(from)
 	define('f', newstr(buf), CurEnv);
 
 	/* save the domain spec if this mailer wants it */
-	if (CurEnv->e_from.q_mailer != NULL &&
-	    bitnset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
+	if (bitnset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
 	{
 		extern char **copyplist();
 

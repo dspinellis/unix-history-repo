@@ -10,9 +10,9 @@
 
 #ifndef lint
 # ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.3.1.1 (Berkeley) %G%	(with DBM)";
+static char	SccsId[] = "@(#)alias.c	5.4 (Berkeley) %G%	(with DBM)";
 # else DBM
-static char	SccsId[] = "@(#)alias.c	5.3.1.1 (Berkeley) %G%	(without DBM)";
+static char	SccsId[] = "@(#)alias.c	5.4 (Berkeley) %G%	(without DBM)";
 # endif DBM
 #endif not lint
 
@@ -71,6 +71,8 @@ alias(a, sendq)
 	register char *p;
 	extern char *aliaslookup();
 
+	if (NoAlias)
+		return;
 # ifdef DEBUG
 	if (tTd(27, 1))
 		printf("alias(%s)\n", a->q_paddr);
@@ -86,10 +88,7 @@ alias(a, sendq)
 	**  Look up this name
 	*/
 
-	if (NoAlias)
-		p = NULL;
-	else
-		p = aliaslookup(a->q_user);
+	p = aliaslookup(a->q_user);
 	if (p == NULL)
 		return;
 
@@ -222,16 +221,11 @@ initaliases(aliasfile, init)
 		{
 			init = TRUE;
 			message(Arpa_Info, "rebuilding alias database");
-#ifdef LOG
-			if (LogLevel >= 7)
-				syslog(LOG_INFO, "rebuilding alias database");
-#endif LOG
 		}
 		else
 		{
 #ifdef LOG
-			if (LogLevel >= 7)
-				syslog(LOG_INFO, "alias database out of date");
+			syslog(LOG_INFO, "alias database out of date");
 #endif LOG
 			message(Arpa_Info, "Warning: alias database out of date");
 		}
@@ -417,11 +411,8 @@ readaliases(aliasfile, init)
 					if (c == '\n')
 						c = '\0';
 					*p = '\0';
-					if (*p2 != '\0' &&
-					    parseaddr(p2, &bl, -1, ',') == NULL)
-					{
-						usrerr("%s... bad address");
-					}
+					if (*p2 != '\0')
+						(void) parseaddr(p2, &bl, -1, ',');
 					if (c != '\0')
 						*p++ = c;
 				}
@@ -504,11 +495,6 @@ readaliases(aliasfile, init)
 	FileName = NULL;
 	message(Arpa_Info, "%d aliases, longest %d bytes, %d bytes total",
 			naliases, longest, bytes);
-# ifdef LOG
-	if (LogLevel >= 8)
-		syslog(LOG_INFO, "%d aliases, longest %d bytes, %d bytes total",
-			naliases, longest, bytes);
-# endif LOG
 }
 /*
 **  FORWARD -- Try to forward mail
