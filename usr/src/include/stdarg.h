@@ -4,18 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdarg.h	5.3 (Berkeley) %G%
+ *	@(#)stdarg.h	5.4 (Berkeley) %G%
  */
 
 typedef char *va_list;
 
-/*
- * ANSI says: "If there is no actual next argument, or if type is not
- * compatible with the type of the actual next argument (as promoted
- * according to the default argument promotions), the behavior is
- * undefined."  We read this to mean that we're not allowed to do the
- * promotion for the user, so shorts and chars drop core.
- */
 #define	va_arg(ap, type) \
 	((type *)(ap += sizeof(type) < sizeof(int) ? \
 		(abort(), 0) : sizeof(type)))[-1]
