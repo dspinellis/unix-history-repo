@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.31 (Berkeley) %G%
+#	@(#)READ_ME	8.32 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -400,6 +400,16 @@ GNU getopt
 	by the double call.  Use the version in conf.c instead.
 
 
++--------------+
+| MANUAL PAGES |
++--------------+
+
+The manual pages have been written against the -mandoc macros
+instead of the -man macros.  The latest version of groff has them
+included.  You can also get a copy from FTP.UU.NET in directory
+/systems/unix/bsd-sources/share/tmac.
+
+
 +-----------------------------+
 | DESCRIPTION OF SOURCE FILES |
 +-----------------------------+
@@ -463,4 +473,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.31, last update %G% 11:33:09)
+(Version 8.32, last update %G% 09:46:52)
