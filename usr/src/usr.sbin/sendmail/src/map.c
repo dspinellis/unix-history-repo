@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -332,7 +332,8 @@ map_init(s, rebuild)
 
 	if (rebuild)
 	{
-		if (bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
+		if (bitset(MF_ALIAS, map->map_mflags) &&
+		    bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
 			rebuildaliases(map, FALSE);
 	}
 	else
