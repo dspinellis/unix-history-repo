@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.35 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.36 (Berkeley) %G%
  */
 
 /*
@@ -617,10 +617,12 @@ nfs_readlink(vp, uiop, cred)
 	nfsstats.rpccnt[NFSPROC_READLINK]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_READLINK], cred, NFSX_FH);
 	nfsm_fhtom(vp);
+	nfs_unlock(vp);
 	nfsm_request(vp, nonidempotent[NFSPROC_READLINK]);
 	nfsm_strsiz(len, NFS_MAXPATHLEN);
 	nfsm_mtouio(uiop, len);
 	nfsm_reqdone;
+	nfs_lock(vp);
 	return (error);
 }
 
