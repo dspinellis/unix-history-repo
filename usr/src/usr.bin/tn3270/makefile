@@ -121,7 +121,7 @@ tn3270:	telnet.o tn3270.a
 	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a $(LIBCURSES) $(LIBTERM)
 
 mset:	mset.o keyboard/map3270.o
-	${CC} ${CFLAGS} -o mset mset.o keyboard/map3270.o $(LIBCURSES)
+	${CC} ${CFLAGS} -o mset mset.o keyboard/map3270.o
 
 telnet.o:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
