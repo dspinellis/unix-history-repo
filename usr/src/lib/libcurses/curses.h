@@ -1,4 +1,4 @@
-/* @(#)curses.h	1.13 (Berkeley) %G% */
+/* @(#)curses.h	1.14 (Berkeley) %G% */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -146,4 +146,5 @@ char	*longname(), *getcap();
  * Used to be in unctrl.h.
  */
 #define	unctrl(c)	_unctrl[(c) & 0177]
+extern char *_unctrl[];
 # endif
