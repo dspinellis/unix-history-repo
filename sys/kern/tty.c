@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.16 1994/01/28 23:17:43 ache Exp $
+ *	$Id: tty.c,v 1.17 1994/01/31 07:47:51 ache Exp $
  */
 
 #include "param.h"
@@ -1421,6 +1421,8 @@ loop:
 			} else {
 				/* nothing, check expiration */
 				slp = t - diff(timecopy, stime);
+				if (slp <= 0)
+					goto read;
 			}
 			last_cc = rblen;
 		} else {	/* m == 0 */
@@ -1443,20 +1445,17 @@ loop:
 			}
 		}
 #undef diff
-		if (slp > 0) {
-			/*
-			 * Rounding down may make us wake up just short
-			 * of the target, so we round up.
-			 * The formula is ceiling(slp * hz/1000000).
-			 * 32-bit arithmetic is enough for hz < 169.
-			 * XXX see hzto() for how to avoid overflow if hz
-			 * is large (divide by `tick' and/or arrange to
-			 * use hzto() if hz is large).
-			 */
-			slp = (long) (((u_long)slp * hz) + 999999) / 1000000;
-			goto sleep;
-		} else
-			slp = 0;
+		/*
+		 * Rounding down may make us wake up just short
+		 * of the target, so we round up.
+		 * The formula is ceiling(slp * hz/1000000).
+		 * 32-bit arithmetic is enough for hz < 169.
+		 * XXX see hzto() for how to avoid overflow if hz
+		 * is large (divide by `tick' and/or arrange to
+		 * use hzto() if hz is large).
+		 */
+		slp = (long) (((u_long)slp * hz) + 999999) / 1000000;
+		goto sleep;
 	}
 	if (rblen <= 0) {
 		int carrier;
