@@ -3,14 +3,15 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.35		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.36		%G%	(w/o daemon mode));
 #else
 
-# include <sys/socket.h>
-# include <net/in.h>
-# include <wait.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <wait.h>
 
-SCCSID(@(#)daemon.c	3.35		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.36		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -55,10 +56,65 @@ static FILE	*MailPort;	/* port that mail comes in on */
 
 # define MAXCONNS	4	/* maximum simultaneous sendmails */
 
+struct sockaddr_in SendmailAddress;
+
 getrequests()
 {
+	int s;
+	int t;
 	union wait status;
 	int numconnections = 0;
+	struct sockaddr otherend;
+	register struct servent *sp;
+
+	/*
+	**  Set up the address for the mailer.
+	*/
+
+	sp = getservbyname("smtp", "tcp");
+	if (sp == NULL)
+	{
+		syserr("server \"smtp\" unknown");
+		return (-1);
+	}
+	SendmailAddress.sin_family = AF_INET;
+	SendmailAddress.sin_addr.s_addr = INADDR_ANY;
+	SendmailAddress.sin_port = htons(sp->s_port);
+
+	/*
+	**  Try to actually open the connection.
+	*/
+
+# ifdef DEBUG
+	if (tTd(15, 1))
+		printf("getrequests: port 0x%x\n", SendmailAddress.sin_port);
+# endif DEBUG
+
+	/* get a socket for the SMTP connection */
+	s = socket(AF_INET, SOCK_STREAM, 0, 0);
+	if (s < 0)
+	{
+		/* probably another daemon already */
+		syserr("getrequests: can't create socket");
+	  severe:
+# ifdef LOG
+		if (LogLevel > 0)
+			syslog(LOG_SALERT, "cannot get connection");
+# endif LOG
+		finis();
+	}
+	if (bind(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
+	{
+		syserr("getrequests: cannot bind");
+		close(s);
+		goto severe;
+	}
+	listen(s, 10);
+
+# ifdef DEBUG
+	if (tTd(15, 1))
+		printf("getrequests: %d\n", s);
+# endif DEBUG
 
 	struct wh wbuf;
 
@@ -67,100 +123,6 @@ getrequests()
 	wbuf.ccount = cnt;
 	wbuf.data = buf;
 	write(MailPort, &wbuf, sizeof wbuf);
-}
-/*
-**  GETCONNECTION -- make a connection with the outside world
-**
-**	This routine is horribly contorted to try to get around a bunch
-**	of 4.1a IPC bugs.  There appears to be nothing we can do to make
-**	it "right" -- the code to interrupt accepts just doesn't work
-**	right.  However, this is an attempt to minimize the probablity
-**	of problems.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		The port for mail traffic.
-**
-**	Side Effects:
-**		Waits for a connection.
-*/
-
-#define IPPORT_PLAYPORT	3055		/* random number */
-
-struct sockaddr_in SendmailAddress = { AF_INET, IPPORT_SMTP };
-
-getconnection()
-{
-	int s;
-#ifdef NVMUNIX
-	int t;
-#endif NVMUNIX
-	struct sockaddr otherend;
-
-	/*
-	**  Set up the address for the mailer.
-	*/
-
-	SendmailAddress.sin_addr.s_addr = 0;
-	SendmailAddress.sin_port = IPPORT_SMTP;
-# ifdef DEBUG
-	if (tTd(15, 15))
-		SendmailAddress.sin_port = IPPORT_PLAYPORT;
-# endif DEBUG
-	SendmailAddress.sin_port = htons(SendmailAddress.sin_port);
-
-	/*
-	**  Try to actually open the connection.
-	*/
-
-# ifdef DEBUG
-	if (tTd(15, 1))
-		printf("getconnection\n");
-# endif DEBUG
-
-	for (;;)
-	{
-		int i;
-
-		/* get a socket for the SMTP connection */
-#ifdef NVMUNIX
-		s = socket(AF_INET, SOCK_STREAM, 0, 0);
-		bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
-		listen(s, 10);
-#else NVMUNIX
-		/* do loop is to avoid 4.1b kernel bug (?) */
-		i = 60;
-		do
-		{
-			s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
-			if (s < 0)
-				sleep(10);
-		} while (--i > 0 && s < 0);
-#endif NVMUNIX
-		if (s < 0)
-		{
-			/* probably another daemon already */
-			syserr("getconnection: can't create socket");
-			return (-1);
-		}
-
-# ifdef DEBUG
-		if (tTd(15, 1))
-			printf("getconnection: %d\n", s);
-# endif DEBUG
-
-		/* wait for a connection */
-		/* contorted code is due to a 4.1a kernel bug */
-		errno = 0;
-		if (accept(s, &otherend) >= 0)
-			return (s);
-		if (errno != EINTR)
-			syserr("getconnection: accept");
-		sleep(5);
-		(void) close(s);
-	}
 }
 /*
 **  MAKECONNECTION -- make a connection to an SMTP socket on another machine.
@@ -215,10 +177,30 @@ makeconnection(host, port, outfile, infile)
 		}
 		SendmailAddress.sin_addr.s_addr = hid;
 	}
-	else if ((SendmailAddress.sin_addr.s_addr = rhost(&host)) == -1)
-		return (EX_NOHOST);
+	else
+	{
+		register struct hostent *hp = gethostbyname(host);
+
+		if (hp == 0)
+			return (EX_NOHOST);
+		bmove(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
+	}
+
+	/*
+	**  Determine the port number.
+	*/
+
 	if (port == 0)
-		port = IPPORT_SMTP;
+	{
+		register struct servent *sp = getservbyname("smtp", "tcp");
+
+		if (sp == NULL)
+		{
+			syserr("makeconnection: server \"smtp\" unknown");
+			return (EX_OSFILE);
+		}
+		port = sp->s_port;
+	}
 	SendmailAddress.sin_port = htons(port);
 
 	/*
@@ -233,7 +215,7 @@ makeconnection(host, port, outfile, infile)
 #ifdef NVMUNIX
 	s = socket(AF_INET, SOCK_STREAM, 0, 0);
 #else NVMUNIX
-	s = socket(SOCK_STREAM, 0, (struct sockaddr_in *) 0, 0);
+	s = socket(AF_INET, SOCK_STREAM, 0, 0);
 #endif NVMUNIX
 	if (s < 0)
 	{
@@ -250,7 +232,9 @@ makeconnection(host, port, outfile, infile)
 	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #else NVMUNIX
-	if (connect(s, &SendmailAddress) < 0)
+	SendmailAddress.sin_family = AF_INET;
+	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
+	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #endif NVMUNIX
 	{
 		/* failure, decide if temporary or not */
