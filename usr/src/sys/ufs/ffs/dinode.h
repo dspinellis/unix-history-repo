@@ -1,4 +1,4 @@
-/*	dinode.h	3.4	%H%	*/
+/*	dinode.h	3.5	%H%	*/
 
 /*
  * The I node is the focus of all
@@ -40,7 +40,7 @@ struct	inode
 	union {
 		struct {
 			daddr_t	I_addr[NADDR];	/* if normal file/directory */
-			daddr_t	I_last bnor;	/* last read (for read-ahead) */
+			daddr_t	I_lastr;	/* last read (for read-ahead) */
 		} i_f;
 #define	i_addr	i_f.I_addr
 #define	i_lastr	i_f.I_lastr
