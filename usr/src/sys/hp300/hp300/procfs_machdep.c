@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_machdep.c	8.2 (Berkeley) %G%
+ *	@(#)procfs_machdep.c	8.3 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_i386.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -27,6 +27,9 @@
  *	structure.  Take care to avoid clobbering special CPU
  *	registers or privileged bits in the PSL.
  *	The process is stopped at the time write_regs is called.
+ *
+ * procfs_read_fpregs, procfs_write_fpregs
+ *	deal with the floating point register set, otherwise as above.
  *
  * procfs_sstep(proc)
  *	Arrange for the process to trap after executing a single instruction.
@@ -88,6 +91,25 @@ procfs_write_regs(p, regs)
 
 	return (0);
 }
+
+int
+procfs_read_fpregs(p, fpregs)
+	struct proc *p;
+	struct fpreg *fpregs;
+{
+
+	return (EOPNOTSUPP);
+}
+
+int
+procfs_write_fpregs(p, fpregs)
+	struct proc *p;
+	struct fpreg *fpregs;
+{
+
+	return (EOPNOTSUPP);
+}
+
 
 int
 procfs_sstep(p)
