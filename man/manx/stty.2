@@ -1,0 +1,104 @@
+.pa 1
+.he 'STTY (II)'6/12/72'STTY (II)'
+.tr |
+.ti 0
+NAME		stty  --  set mode of typewriter
+.sp
+.ti 0
+SYNOPSIS	(file descriptor in r0)
+.br
+sys stty; arg  / stty = 31.
+.br
+.li
+...
+.ti -6
+arg:  dcrsr; dctsr; mode
+
+.nf
+stty(fildes, arg)
+int arg[3];
+.fi
+
+.ti 0
+DESCRIPTION	stty____
+sets mode bits for a typewriter whose file descriptor
+is passed in r0 (resp. is the first argument to the call).
+First, the system delays until the typewriter is quiescent.
+Then, the argument dcrsr_____ (first word in arg___) is placed into the typewriter's
+receiver control and status register,
+and dctsr_____ (second word in arg___) is placed in the transmitter control and status register.
+The DC-11 manual must be consulted for the format of these
+words.
+For the purpose of this call, the most important ro^le of
+these arguments is to adjust to the speed of the typewriter.
+It is reasonable, however, to
+use the values of these words as they
+are supplied by gtty____
+if the mode argument only is to be changed.
+.sp
+The mode____ argument (third word in arg___) contains several bits which determine the
+system's treatment of the typewriter:
+.sp
+.in +3
+.nf
+200  even parity allowed on input (e. g. for M37s)
+100  odd parity allowed on input
+040  raw mode: wake up on all characters
+020  map CR into LF; echo LF or CR as LF-CR
+010  echo (full duplex)
+004  map upper case to lower on input (e. g. M33)
+002  echo and print tabs as spaces
+001  inhibit all function delays (e. g. CRTs)
+.fi
+.in -3
+.sp
+.fi
+Characters with the wrong parity, as determined by bits 200 and
+100, are ignored.
+.sp
+In raw mode, every character is passed back immediately
+to the program.  No erase or kill processing is done;
+the end-of-file character (EOT), the interrupt character
+(DELETE) and the quit character (FS) are not treated specially.
+.sp
+Mode 020 causes input carriage returns to be turned into
+new-lines;
+input of either CR or LF causes LF-CR both to
+be echoed
+(used for GE TermiNet 300's and other terminals without the newline function).
+.sp
+Additional bits in the high order byte of the mode argument
+are used to indicate that the terminal is an IBM|2741
+and to specify 2741 modes.
+These mode bits are:
+.sp
+.in+8
+.ll+6
+.ti-6
+|400  terminal is an IBM|2741
+.ti-6
+1000  the 2741 has the transmit interrupt feature (currently ignored)
+.ti-6
+2000  use correspondence code conversion on output
+.ti-6
+4000  use correspondence code conversion on input (currently ignored)
+.sp
+.in -8
+.ll-6
+Normal input and output code conversion
+for 2741s is EBCDIC (e. g. 963 ball and corresponding keyboard).
+The presence of the transmit interrupt feature permits
+the system to do read-ahead while no output is in progress.
+In 2741 mode, the low order bits 331 are ignored.
+.ti0
+.sp
+SEE ALSO	stty(I), gtty(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set if the file descriptor does not refer to a typewriter.
+From C, a negative value indicates an error.
+.sp
+.ti 0
+BUGS		This call should be used with care.
+.tr ||
