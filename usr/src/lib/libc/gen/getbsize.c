@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getbsize.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getbsize.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -15,7 +15,8 @@ static char sccsid[] = "@(#)getbsize.c	5.1 (Berkeley) %G%";
 char *
 getbsize(prog, headerlenp, blocksizep)
 	char *prog;
-	int *headerlenp, *blocksizep;
+	int *headerlenp;
+	long *blocksizep;
 {
 	static char header[20];
 	long blocksize;
