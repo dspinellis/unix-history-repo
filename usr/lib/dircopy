@@ -1,0 +1,129 @@
+#! /bin/sh -x
+mkdir \
+${DESTDIR}/usr/lib/LISP \
+${DESTDIR}/usr/lib/adb \
+${DESTDIR}/usr/lib/bmac \
+${DESTDIR}/usr/lib/font \
+${DESTDIR}/usr/lib/lex \
+${DESTDIR}/usr/lib/lint \
+${DESTDIR}/usr/lib/lisp \
+${DESTDIR}/usr/lib/me \
+${DESTDIR}/usr/lib/refer \
+${DESTDIR}/usr/lib/struct \
+${DESTDIR}/usr/lib/fontinfo \
+${DESTDIR}/usr/lib/term \
+${DESTDIR}/usr/lib/tmac \
+${DESTDIR}/usr/lib/uucp
+#cp -r LISP ${DESTDIR}/usr/lib
+cp -r adb ${DESTDIR}/usr/lib
+cp -r bmac ${DESTDIR}/usr/lib
+#cp -r font ${DESTDIR}/usr/lib
+cp -r lex ${DESTDIR}/usr/lib
+cp -r lint ${DESTDIR}/usr/lib
+#cp -r lisp ${DESTDIR}/usr/lib
+#cp -r me ${DESTDIR}/usr/lib
+#cp -r refer ${DESTDIR}/usr/lib
+#cp -r struct ${DESTDIR}/usr/lib
+#cp -r fontinfo ${DESTDIR}/usr/lib
+#cp -r term ${DESTDIR}/usr/lib
+#cp -r tmac ${DESTDIR}/usr/lib
+#cp -r uucp ${DESTDIR}/usr/lib
+cp \
+Mail.help \
+Mail.help.~ \
+Mail.rc \
+aliases \
+aliases.dir \
+aliases.pag \
+calendar \
+callg.blurb \
+crontab \
+dict.d \
+diff3 \
+dprog \
+dshrc \
+ex3.6preserve \
+ex3.6recover \
+ex3.7preserve \
+ex3.7recover \
+explain.d \
+f77pass1 \
+flat.blurb \
+gcrt0.o \
+getNAME \
+hosts \
+how_pc \
+how_pi \
+how_pix \
+how_pxp \
+lib300.a \
+lib300s.a \
+lib4014.a \
+lib450.a \
+libF77.a \
+libI66.a \
+libI77.a \
+libI77uc.a \
+libc_p.a \
+libcurses.a \
+libdbm.a \
+libg.a \
+libjobs.a \
+libl.a \
+libln.a \
+libm.a \
+libm_p.a \
+libmp.a \
+libnm.a \
+libnm_p.a \
+libpc.a \
+libpc_p.a \
+libplot.a \
+libsa.a \
+libtermcap.a \
+libtermcap_p.a \
+libtermlib.a \
+libtermlib_p.a \
+mailers \
+makekey \
+makewhatis \
+mcrt0.o \
+networks \
+pc0 \
+pc2 \
+pc2.10strings \
+pc3 \
+pcexterns.o \
+pi2.10strings \
+protocols \
+px_header \
+rvcat \
+rvsort \
+sendmail \
+sendmail.cf \
+sendmail.hf \
+services \
+sidebyside \
+spell \
+style1 \
+style2 \
+style3 \
+tags \
+units \
+vad \
+vcat \
+vdmp \
+vfontedpr \
+vfontinfo \
+vgrindefs \
+vpd \
+vpf \
+vpq \
+vpr \
+vprm \
+vsort \
+w2006 \
+whatis \
+xf77pass1 \
+yaccpar \
+${DESTDIR}/usr/lib
