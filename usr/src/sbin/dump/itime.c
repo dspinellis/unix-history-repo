@@ -1,5 +1,7 @@
-static	char *sccsid = "@(#)itime.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.9 (Berkeley) %G%";
+
 #include "dump.h"
+#include <sys/file.h>
 
 char *prdate(d)
 	time_t d;
@@ -23,10 +25,15 @@ inititimes()
 			FILE	*df;
 	register	int	i;
 	register	struct	itime	*itwalk;
+			int fd;
 
 	if (idates_in)
 		return;
-	if ( (df = fopen(increm, "r")) == NULL){
+	if ((fd = open(increm, FSHLOCK|FRDONLY, 0600)) < 0) {
+		perror(increm);
+		return;
+	}
+	if ((df = fdopen(fd, "r")) == NULL) {
 		nidates = 0;
 		ithead = 0;
 	} else {
@@ -86,10 +93,19 @@ putitime()
 	FILE		*df;
 	register	struct	idates	*itwalk;
 	register	int	i;
+	int		fd;
 	char		*fname;
 
 	if(uflag == 0)
 		return;
+	if ((fd = open(temp, FCREATE|FEXLOCK|FRDWR, 0600)) < 0) {
+		perror(temp);
+		dumpabort();
+	}
+	if ((df = fdopen(fd, "w")) == NULL) {
+		perror(temp);
+		dumpabort();
+	}
 	fname = disk;
 	free(idatev);
 	idatev = 0;
@@ -119,14 +135,16 @@ putitime()
 	itwalk->id_incno = incno;
 	itwalk->id_ddate = spcl.c_date;
 
-	if ( (df = fopen(increm, "w")) == NULL){
-		msg("Cannot open %s\n", increm);
-		dumpabort();
-	}
 	ITITERATE(i, itwalk){
 		recout(df, itwalk);
 	}
-	fclose(df);
+	if (rename(temp, increm) < 0) {
+		perror("rename");
+		(void) unlink(temp);
+		dumpabort();
+	}
+	(void) chmod(increm, 0644);
+	(void) fclose(df);
 	msg("level %c dump on %s\n", incno, prdate(spcl.c_date));
 }
 
@@ -154,50 +172,13 @@ int getrecord(df, idatep)
 	recno++;
 	if (makeidate(idatep, buf) < 0)
 		msg("Unknown intermediate format in %s, line %d\n",
-			NINCREM, recno);
+			increm, recno);
 
 #ifdef FDEBUG
 	msg("getrecord: %s %c %s\n",
 		idatep->id_name, idatep->id_incno, prdate(idatep->id_ddate));
 #endif
 	return(0);
-}
-
-/*
- *	Convert from old format to new format
- *	Convert from /etc/ddate to /etc/dumpdates format
- */
-o_nconvert()
-{
-	FILE	*oldfile;
-	FILE	*newfile;
-	struct	idates	idate;
-	struct	idates	idatecopy;
-
-	if( (newfile = fopen(NINCREM, "w")) == NULL){
-		msg("%s: Can not open %s to update.\n", processname, NINCREM);
-		Exit(X_ABORT);
-	}
-	if ( (oldfile = fopen(OINCREM, "r")) != NULL){
-		while(!feof(oldfile)){
-			if (fread(&idate, sizeof(idate), 1, oldfile) != 1)
-				break;
-			/*
-			 *	The old format ddate did not have
-			 *	the full special path name on it;
-			 *	we add the prefix /dev/ to the
-			 *	special name, although this may not be
-			 *	always the right thing to do.
-			 */
-			idatecopy = idate;
-			strcpy(idatecopy.id_name, "/dev/");
-			strncat(idatecopy.id_name, idate.id_name,
-				sizeof(idate.id_name) - sizeof ("/dev/"));
-			recout(newfile, &idatecopy);
-		}
-	}
-	fclose(oldfile);
-	fclose(newfile);
 }
 
 time_t	unctime();
