@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prim.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)prim.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -82,16 +82,15 @@ squish_check()
 
 /*
  * Display n lines, scrolling forward, starting at position pos in the
- * input file.  "force" means display the n lines even if we hit end of
- * file.  "only_last" means display only the last screenful if n > screen
- * size.
+ * input file.  "only_last" means display only the last screenful if
+ * n > screen size.
  */
-forw(n, pos, force, only_last)
+forw(n, pos, only_last)
 	register int n;
 	off_t pos;
-	int force;
 	int only_last;
 {
+	extern int short_file;
 	static int first_time = 1;
 	int eof = 0, do_repaint;
 
@@ -113,7 +112,6 @@ forw(n, pos, force, only_last)
 			 */
 			clear();
 			home();
-			force = 1;
 		} else {
 			lower_left();
 			clear_eol();
@@ -127,7 +125,6 @@ forw(n, pos, force, only_last)
 		if (pos != position(BOTTOM_PLUS_ONE)) {
 			pos_clear();
 			add_forw_pos(pos);
-			force = 1;
 			if (top_scroll) {
 				clear();
 				home();
@@ -136,20 +133,23 @@ forw(n, pos, force, only_last)
 		}
 	}
 
-	while (--n >= 0) {
+	for (short_file = 0; --n >= 0;) {
 		/*
 		 * Read the next line of input.
 		 */
 		pos = forw_line(pos);
 		if (pos == NULL_POSITION) {
 			/*
-			 * End of file: stop here unless the top line 
-			 * is still empty, or "force" is true.
+			 * end of file; copy the table if the file was
+			 * too small for an entire screen.
 			 */
 			eof = 1;
-			if (!force && position(TOP) != NULL_POSITION)
-				break;
-			line = NULL;
+			if (position(TOP) == NULL_POSITION) {
+				copytable();
+				if (!position(TOP))
+					short_file = 1;
+			}
+			break;
 		}
 		/*
 		 * Add the position of the next line to the position table.
@@ -186,10 +186,9 @@ forw(n, pos, force, only_last)
 /*
  * Display n lines, scrolling backward.
  */
-back(n, pos, force, only_last)
+back(n, pos, only_last)
 	register int n;
 	off_t pos;
-	int force;
 	int only_last;
 {
 	int do_repaint;
@@ -204,14 +203,7 @@ back(n, pos, force, only_last)
 		 */
 		pos = back_line(pos);
 		if (pos == NULL_POSITION)
-		{
-			/*
-			 * Beginning of file: stop here unless "force" is true.
-			 */
-			if (!force)
-				break;
-			line = NULL;
-		}
+			break;
 		/*
 		 * Add the position of the previous line to the position table.
 		 * Display the line on the screen.
@@ -256,7 +248,7 @@ forward(n, only_last)
 		hit_eof++;
 		return;
 	}
-	forw(n, pos, 0, only_last);
+	forw(n, pos, only_last);
 }
 
 /*
@@ -276,7 +268,7 @@ backward(n, only_last)
 	 */
 	if (pos == NULL_POSITION)
 		return;   
-	back(n, pos, 0, only_last);
+	back(n, pos, only_last);
 }
 
 /*
@@ -286,7 +278,7 @@ prepaint(pos)
 	off_t pos;
 {
 	hit_eof = 0;
-	forw(sc_height-1, pos, 1, 0);
+	forw(sc_height-1, pos, 0);
 	screen_trashed = 0;
 }
 
@@ -321,7 +313,7 @@ jump_forw()
 	clear();
 	pos_clear();
 	add_back_pos(pos);
-	back(sc_height - 1, pos, 0, 0);
+	back(sc_height - 1, pos, 0);
 }
 
 /*
@@ -417,7 +409,7 @@ jump_loc(pos)
 		 * The line is currently displayed.  
 		 * Just scroll there.
 		 */
-		forw(nline, position(BOTTOM_PLUS_ONE), 1, 0);
+		forw(nline, position(BOTTOM_PLUS_ONE), 0);
 		return;
 	}
 
@@ -463,7 +455,7 @@ jump_loc(pos)
 		/*
 		 * Note that back() will repaint() if nline > back_scroll.
 		 */
-		back(nline, npos, 1, 0);
+		back(nline, npos, 0);
 		return;
 	}
 	/*

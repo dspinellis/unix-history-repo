@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -211,18 +211,17 @@ get_term()
 	/*
 	 * Get size of the screen.
 	 */
-	if (sc_height == -1)
 #ifdef TIOCGWINSZ
-		if (ioctl(2, TIOCGWINSZ, &w) == 0 && w.ws_row > 0)
-			sc_height = w.ws_row;
+	if (ioctl(2, TIOCGWINSZ, &w) == 0 && w.ws_row > 0)
+		sc_height = w.ws_row;
 #else
 #ifdef WIOCGETD
-		if (ioctl(2, WIOCGETD, &w) == 0 && w.uw_height > 0)
-			sc_height = w.uw_height/w.uw_vs;
+	if (ioctl(2, WIOCGETD, &w) == 0 && w.uw_height > 0)
+		sc_height = w.uw_height/w.uw_vs;
 #endif
 #endif
-		else
-			sc_height = tgetnum("li");
+	else
+		sc_height = tgetnum("li");
 	hard = (sc_height < 0 || tgetflag("hc"));
 	if (hard) {
 		/* Oh no, this is a hardcopy terminal. */
@@ -433,12 +432,15 @@ add_line()
 	tputs(sc_addline, sc_height, putchr);
 }
 
-/*
- * Move cursor to lower left corner of screen.
- */
+int short_file;				/* if file less than a screen */
 lower_left()
 {
-	tputs(sc_lower_left, 1, putchr);
+	if (short_file) {
+		putchr('\r');
+		flush();
+	}
+	else
+		tputs(sc_lower_left, 1, putchr);
 }
 
 /*

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)position.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)position.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -96,6 +96,17 @@ add_back_pos(pos)
 	for (i = sc_height - 1;  i > 0;  i--)
 		table[i] = table[i-1];
 	table[0] = pos;
+}
+
+copytable()
+{
+	register int a, b;
+
+	for (a = 0; a < sc_height && table[a] == NULL_POSITION; a++);
+	for (b = 0; a < sc_height; a++, b++) {
+		table[b] = table[a];
+		table[a] = NULL_POSITION;
+	}
 }
 
 /*
