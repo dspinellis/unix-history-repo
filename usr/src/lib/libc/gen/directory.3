@@ -1,0 +1,140 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)directory.3	5.1 (Berkeley) %G%
+.\"
+.TH DIRECTORY 3 "25 February 1983"
+.UC 5
+.SH NAME
+opendir, readdir, telldir, seekdir, rewinddir, closedir \- directory operations
+.SH SYNOPSIS
+.B #include <sys/dir.h>
+.PP
+.SM
+.B DIR
+.B *opendir(filename)
+.br
+.B char *filename;
+.PP
+.B struct direct
+.B *readdir(dirp)
+.br
+.SM
+.B DIR
+.B *dirp;
+.PP
+.B long
+.B telldir(dirp)
+.br
+.SM
+.B DIR
+.B *dirp;
+.PP
+.B seekdir(dirp, loc)
+.br
+.SM
+.B DIR
+.B *dirp;
+.br
+.B long loc;
+.PP
+.B rewinddir(dirp)
+.br
+.SM
+.B DIR
+.B *dirp;
+.PP
+.B closedir(dirp)
+.br
+.SM
+.B DIR
+.B *dirp;
+.SH DESCRIPTION
+.I Opendir
+opens the directory named by
+.I filename
+and associates a
+.I directory stream
+with it.
+.I Opendir
+returns a pointer to be used to identify the
+.I directory stream
+in subsequent operations.  The pointer
+.SM
+.B NULL
+is returned if
+.I filename
+cannot be accessed, or if it cannot
+.IR malloc (3)
+enough memory to hold the whole thing.
+.PP
+.I Readdir
+returns a pointer to the next directory entry.  It returns
+.B NULL
+upon reaching the end of the directory or detecting an invalid
+.I seekdir
+operation.
+.PP
+.I Telldir
+returns the current location associated with the named
+.I directory stream.
+.PP
+.I Seekdir
+sets the position of the next
+.I readdir
+operation on the
+.I directory stream.
+The new position reverts to the one associated with the
+.I directory stream
+when the
+.I telldir
+operation was performed.  Values returned by
+.I telldir
+are good only for the lifetime of the DIR pointer from which they are derived.
+If the directory is closed and then reopened, the 
+.I telldir
+value may be invalidated due to undetected directory compaction.
+It is safe to use a previous
+.I telldir
+value immediately after a call to
+.I opendir
+and before any calls to
+.I readdir.
+.PP
+.I Rewinddir
+resets the position of the named
+.I directory stream
+to the beginning of the directory.
+.PP
+.I Closedir
+closes the named
+.I directory stream
+and frees the structure associated with the DIR pointer.
+.PP
+Sample code which searchs a directory for entry ``name'' is:
+.PP
+.br
+	len = strlen(name);
+.br
+	dirp = opendir(".");
+.br
+	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp))
+.br
+		if (dp->d_namlen == len && !strcmp(dp->d_name, name)) {
+.br
+			closedir(dirp);
+.br
+			return FOUND;
+.br
+		}
+.br
+	closedir(dirp);
+.br
+	return NOT_FOUND;
+.SH "SEE ALSO"
+open(2),
+close(2),
+read(2),
+lseek(2),
+dir(5)
