@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clrtoeol.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)clrtoeol.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -41,7 +41,7 @@ wclrtoeol(win)
 	    win->lines[y]->lastch);
 #endif
 	/* Update firstch and lastch for the line. */
-	return (touchline(win, y, win->curx, win->maxx - 1));
+	return (__touchline(win, y, win->curx, win->maxx - 1, 0));
 }
 
 

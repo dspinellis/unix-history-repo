@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)box.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)box.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -47,6 +47,6 @@ box(win, vert, hor)
 		lp[0].attr &= ~__STANDOUT;
 		lp[endx].attr &= ~__STANDOUT;
 	}
-	touchwin(win);
+	__touchwin(win);
 	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvwin.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvwin.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -46,6 +46,6 @@ mvwin(win, by, bx)
 		__swflags(win);
 		__set_subwin(orig, win);
 	}
-	touchwin(win);
+	__touchwin(win);
 	return (OK);
 }
