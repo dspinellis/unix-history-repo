@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -48,12 +48,14 @@ distribution:
 	(cd root; \
 		install -c -o root -g wheel -m 644 dot.cshrc \
 		    ${DESTDIR}/root/.cshrc; \
-		install -c -o root -g wheel -m 644 dot.klogin \
+		install -c -o root -g wheel -m 600 dot.klogin \
 		    ${DESTDIR}/root/.klogin; \
 		install -c -o root -g wheel -m 644 dot.login \
 		    ${DESTDIR}/root/.login; \
 		install -c -o root -g wheel -m 644 dot.profile \
 		    ${DESTDIR}/root/.profile; \
+		install -c -o root -g wheel -m 600 dot.rhosts \
+		    ${DESTDIR}/root/.rhosts; \
 		rm -f ${DESTDIR}/.cshrc ${DESTDIR}/.profile; \
 		ln ${DESTDIR}/root/.cshrc ${DESTDIR}/.cshrc; \
 		ln ${DESTDIR}/root/.profile ${DESTDIR}/.profile)
