@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tac.c	1.4 %G%";
+static char sccsid[] = "@(#)tac.c	1.5 %G%";
 #endif
 
 /*
@@ -85,7 +85,7 @@ main(argc, argv)
 tacstdin()
 {
 
-    int (*sigint)(), (*sighup)(), (*sigterm)();
+    void (*sigint)(), (*sighup)(), (*sigterm)();
 
     if ((sigint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
 	(void) signal(SIGINT, cleanup);
