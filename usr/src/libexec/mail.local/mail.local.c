@@ -12,23 +12,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/file.h>
 #include <sys/socket.h>
-#include <sys/syslog.h>
 #include <sys/errno.h>
 #include <netinet/in.h>
+#include <syslog.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <time.h>
-#include <stdio.h>
 #include <unistd.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
 
 #define	FATAL		1
@@ -235,7 +235,8 @@ notifybiff(msg)
 		return;
 	}
 	len = strlen(msg) + 1;
-	if (sendto(f, msg, len, 0, &addr, sizeof(addr)) != len)
+	if (sendto(f, msg, len, 0, (struct sockaddr *)&addr, sizeof(addr))
+	    != len)
 		error(NOTFATAL, "sendto biff: %s.", strerror(errno));
 }
 
