@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.2 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,7 +136,6 @@ rwuio(uio, rw)
 		iov++;
 	}
 	count = uio->uio_resid;
-	uio->uio_offset = fp->f_offset;
 	if (setjmp(&u.u_qsave)) {
 		if (uio->uio_resid == count) {
 			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
@@ -147,7 +146,6 @@ rwuio(uio, rw)
 	} else
 		u.u_error = (*fp->f_ops->fo_rw)(fp, rw, uio);
 	u.u_r.r_val1 = count - uio->uio_resid;
-	fp->f_offset += u.u_r.r_val1;
 }
 
 /*
