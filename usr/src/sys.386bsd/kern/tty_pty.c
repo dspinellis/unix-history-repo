@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)tty_pty.c	7.21 (Berkeley) 5/30/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00061
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed tty handling
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 92/01/21 21:31:23 william Exp $";
 
@@ -66,7 +73,7 @@ static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 9
 struct	tty pt_tty[NPTY];
 struct	pt_ioctl {
 	int	pt_flags;
-	struct	proc *pt_selr, *pt_selw;
+	pid_t	pt_selr, pt_selw;
 	u_char	pt_send;
 	u_char	pt_ucntl;
 } pt_ioctl[NPTY];
@@ -410,10 +417,10 @@ ptcselect(dev, rw, p)
 		    (pti->pt_flags&PF_PKT && pti->pt_send ||
 		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl))
 			return (1);
-		if ((prev = pti->pt_selr) && prev->p_wchan == (caddr_t)&selwait)
+		if (pti->pt_selr && (prev = pfind(pti->pt_selr)) && prev->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_RCOLL;
 		else
-			pti->pt_selr = p;
+			pti->pt_selr = p->p_pid;
 		break;
 
 
@@ -429,10 +436,10 @@ ptcselect(dev, rw, p)
 				    return (1);
 			}
 		}
-		if ((prev = pti->pt_selw) && prev->p_wchan == (caddr_t)&selwait)
+		if (pti->pt_selw && (prev = pfind(pti->pt_selw)) && prev->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_WCOLL;
 		else
-			pti->pt_selw = p;
+			pti->pt_selw = p->p_pid;
 		break;
 
 	}

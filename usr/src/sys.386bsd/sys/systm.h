@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)systm.h	7.17 (Berkeley) 5/25/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00061
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed and tty handling
  */
 
 extern char *panicstr;		/* panic message */
@@ -80,7 +87,10 @@ int	enodev __P((void));
 int	enoioctl __P((void));
 int	enxio __P((void));
 int	eopnotsupp __P((void));
+int	selscan __P((struct proc *p, fd_set *ibits, fd_set *obits,
+		int nfd, int *retval));
 int	seltrue __P((dev_t dev, int which, struct proc *p));
+void	selwakeup  __P((pid_t pid, int coll));
 
 void	panic __P((char *));
 void	tablefull __P((char *));

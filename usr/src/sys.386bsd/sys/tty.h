@@ -35,10 +35,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00012
+ * CURRENT PATCH LEVEL:         2       00061
  * --------------------         -----   ----------------------
  *
  * 18 Aug 92	Stephen McKay		Fixed RB_LEN macro
+ * 11 Dec 92	Williams Jolitz		Fixed tty handling
+ * --------------------         -----   ----------------------
+ *
  */
 
 #include <sys/termios.h>
@@ -87,8 +90,8 @@ struct ringb {
 struct tty {
 	int	(*t_oproc)();		/* device */
 	int	(*t_param)();		/* device */
-	struct	proc *t_rsel;		/* tty */
-	struct	proc *t_wsel;
+	pid_t	t_rsel;			/* tty */
+	pid_t	t_wsel;
 	caddr_t	T_LINEP; 		/* XXX */
 	caddr_t	t_addr;			/* ??? */
 	dev_t	t_dev;			/* device */

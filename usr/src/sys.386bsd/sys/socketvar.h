@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)socketvar.h	7.17 (Berkeley) 5/5/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00061
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed tty handling
  */
 
 /*
@@ -77,7 +84,7 @@ struct socket {
 		u_long	sb_mbmax;	/* max chars of mbufs to use */
 		long	sb_lowat;	/* low water mark */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
-		struct	proc *sb_sel;	/* process selecting read/write */
+		pid_t	sb_sel;		/* process selecting read/write */
 		short	sb_flags;	/* flags, see below */
 		short	sb_timeo;	/* timeout for read/write */
 	} so_rcv, so_snd;
