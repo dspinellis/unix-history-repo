@@ -1,6 +1,7 @@
 /*
  *  Datakit terminal driver
  *	SCCSID[] = "@(#)dktty.c	1.8 Garage 84/05/14"
+ *		   "@(#)dktty.c	1.3 (Berkeley) %G%"
  */
 
 #include "dktty.h"
@@ -31,17 +32,20 @@ extern struct dkdev	dkdev[];
 struct tty	dkt[NDATAKIT];
 caddr_t	dktibuf[NDATAKIT];	/* Input buffer pointers */
 int	dktpaused[NDATAKIT];	/* delays for no output mbuf */
+
+#ifdef notdef
+speeds aren't used, don't bother
 int	dktdelay[] = {		/* Time to wait on close before dropping line */
 	4, 15, 15, 15, 15, 15, 15, 8,		/* B0-B300 */
 	4, 2, 2, 2, 1, 1, 1, 1
 };
-
-int	dktstart();
-
 static char dkt_tmr[16] = {
 	15, 15, 15, 15, 15, 15, 15, 15,
 	15, 9, 6, 4, 2, 1, 15, 15
 } ;
+#endif
+
+int	dktstart();
 
 
 /*
@@ -49,9 +53,6 @@ static char dkt_tmr[16] = {
  */
 #define	D_BREAK	0110
 #define	D_DELAY	0100
-
-#define	DKTSPEED	B9600
-#define	DKTFLAGS	(EVENP|ODDP|ECHO)
 
 extern int dkdebug ;
 
@@ -94,8 +95,12 @@ dktopen(dev, flag)
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp) ;
 		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = tp->t_ospeed = DKTSPEED;
-			tp->t_flags = DKTFLAGS;
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
+			ttsetwater(tp);
 		}
 		if (devDEBUG) log(LOG_ERR, "DKT_open(%x,%o)\n",dev,flag);
 	}
@@ -140,11 +145,13 @@ int  flag;
 	if (devDEBUG) log(LOG_ERR, "DKT_clos(%x)\n",dev);
 	dv->d_prot &= ~DpTTY;
 	tp->t_state &= ~TS_CARR_ON;
+#ifdef notdef
 	/* Wait for output to drain on far end */
 	if (dktdelay[tp->t_ispeed] > 0) {
 		timeout(wakeup, (caddr_t) tp, dktdelay[tp->t_ispeed] * hz);
 		sleep((caddr_t) tp, TTIPRI);
 	}
+#endif
 	if(!dv->d_prot){
 		(void) dk_close(d);
 		(void) dk_takedown(d);
@@ -170,7 +177,8 @@ dktcflush(tp)
 /*
  * Read from a DKT line.
  */
-dktread(dev, uio)
+dktread(dev, uio, flag)
+dev_t dev;
 struct uio *uio;
 {
 	register struct tty *tp;
@@ -178,7 +186,7 @@ struct uio *uio;
 
 	if (devDEBUG) log(LOG_ERR, "dktread(%x) %d\n", dev, uio->uio_resid) ;
 	tp = &dkt[minor(dev)];
-	err = (*linesw[tp->t_line].l_read)(tp, uio);
+	err = (*linesw[tp->t_line].l_read)(tp, uio, flag);
 	if (devDEBUG)
 		log(LOG_ERR, "dktread done(%x) %d err=%d\n", dev, uio->uio_resid, err) ;
 	dktfcon(tp);
@@ -188,14 +196,15 @@ struct uio *uio;
 /*
  * Write on a DKT line
  */
-dktwrite(dev, uio)
+dktwrite(dev, uio, flag)
+dev_t dev;
 struct uio *uio;
 {
 	register struct tty *tp;
 
 	if (devDEBUG) log(LOG_ERR, "dktwrite(%x)\n",dev);
 	tp = &dkt[minor(dev)];
-	return (*linesw[tp->t_line].l_write)(tp, uio);
+	return (*linesw[tp->t_line].l_write)(tp, uio, flag);
 }
 
 /*
@@ -225,18 +234,8 @@ register struct tty *tp ;
 		}
 		if ((c = (rctl & 0377)) != 0) {
 			if (chanDEBUG) log(LOG_ERR, "DKT_ctl 0%o on %d\n",c,chan);
-			if (c==D_BREAK) {
-				/*
-				 * At framing error (break) generate
-				 * a null (in raw mode, for getty), or a
-				 * interrupt (in cooked/cbreak mode).
-				 */
-				if (tp->t_flags&RAW)
-					c = 0;
-				else
-					c = tp->t_intrc;
-				(*linesw[tp->t_line].l_rint)(c, tp) ;
-			}
+			if (c==D_BREAK)
+				(*linesw[tp->t_line].l_rint)(TTY_FE, tp) ;
 		}
 	}
 	dktfcon(tp) ;
@@ -256,10 +255,13 @@ register struct tty *tp;
 		return ;
 	if (dktibuf[d] == NULL) return;
 	x = tp->t_rawq.c_cc + tp->t_canq.c_cc;
-	if (x >= TTYHOG/2 && (tp->t_delct>0 || (tp->t_flags&(RAW|CBREAK))))
+	if (x >= TTYHOG/2 && (!(tp->t_lflag&ICANON) || tp->t_canq.c_cc))
 		return;
 	(void) dk_recv(d, dktibuf[d], MLEN,
+#ifdef notdef
 	    DKR_BLOCK | DKR_TIME | (dkt_tmr[tp->t_ispeed]<<8),
+#endif
+	    DKR_BLOCK | DKR_TIME | (1<<8),
 	    dktrcv, (caddr_t) tp) ;
 }
 
@@ -281,8 +283,8 @@ caddr_t data;
 		if (tp->t_ispeed == 0) {
 			tp->t_state &= ~TS_CARR_ON;
 			if (devDEBUG) log(LOG_ERR, "DKT_ioctl carr off\n");
-			gsignal(tp->t_pgrp, SIGHUP);
-			gsignal(tp->t_pgrp, SIGCONT);
+			gsignal(tp->t_pgid, SIGHUP);
+			gsignal(tp->t_pgid, SIGCONT);
 		}
 		return (error);
 	}
@@ -326,7 +328,7 @@ register struct tty *tp;
 	 * If the writer was sleeping on output overflow,
 	 * wake the process when low tide is reached.
 	 */
-	if (tp->t_outq.c_cc<=TTLOWAT(tp)) {
+	if (tp->t_outq.c_cc<=tp->t_lowat) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
@@ -352,7 +354,7 @@ register struct tty *tp;
 		timeout(ttrstrt, (caddr_t) tp, hz/2);
 		goto out;
 	}
-	if (tp->t_flags & (RAW|LITOUT))
+	if (1 || !(tp->t_oflag&OPOST))
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);
@@ -421,9 +423,9 @@ register struct tty *tp;
 {
 	if (tpDEBUG) log(LOG_ERR, "dktshut %d\n", tp-dkt);
 	if ((tp->t_state&TS_ISOPEN) && (tp->t_state&TS_CARR_ON)) {
-		if (tpDEBUG) log(LOG_ERR, "DKT_sighup %d\n",tp->t_pgrp);
-		gsignal(tp->t_pgrp, SIGHUP);
-		gsignal(tp->t_pgrp, SIGCONT);
+		if (tpDEBUG) log(LOG_ERR, "DKT_sighup %d\n",tp->t_pgid);
+		gsignal(tp->t_pgid, SIGHUP);
+		gsignal(tp->t_pgid, SIGCONT);
 	}
 	tp->t_state &= ~TS_CARR_ON;
 	ttyflush(tp, (FREAD|FWRITE)) ;
