@@ -1,4 +1,4 @@
-/*	displayq.c	4.3	83/05/18	*/
+/*	displayq.c	4.4	83/05/27	*/
 /*
  * Routines to display the state of the queue.
  */
