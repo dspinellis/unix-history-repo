@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)errorinput.c	1.2 (Berkeley) 1/14/81";
+static	char *sccsid = "@(#)input.c	1.3 (Berkeley) 81/02/28";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
