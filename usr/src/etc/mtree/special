@@ -1,4 +1,4 @@
-#	@(#)special	5.3 (Berkeley) %G%
+#	@(#)special	5.4 (Berkeley) %G%
 #
 # Hand-crafted mtree specification for the dangerous files.
 #
@@ -120,6 +120,7 @@ at		type=dir mode=0755 uname=root gname=daemon ignore
 backups		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/backups
 db		type=dir mode=0775 uname=root gname=wheel ignore
+kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
 ..	#var/db
 local		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/local
@@ -132,7 +133,6 @@ mail		type=dir mode=0755 uname=root gname=wheel ignore
 preserve	type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/preserve
 run		type=dir mode=0755 uname=root gname=wheel
-kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
 utmp		type=file mode=0664 uname=root gname=utmp
 ..	#var/run
 spool		type=dir mode=0755 uname=root gname=wheel
