@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.10 (Berkeley) %G%
+ *	@(#)rtsock.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
