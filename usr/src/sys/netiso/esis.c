@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	8.1 (Berkeley) %G%
+ *	@(#)esis.c	8.2 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -940,7 +940,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		}
 		if (mm = m_copy(m0, 0, M_COPYALL)) { /*can't block at interrupt level */
 			if (sbappendaddr(&rp->rcb_socket->so_rcv,
-							  &esis_dl, mm, (struct mbuf *)0) != 0) {
+							  (struct sockaddr *)&esis_dl, mm,
+							  (struct mbuf *)0) != 0) {
 				sorwakeup(rp->rcb_socket);
 			 } else {
 				IFDEBUG(D_ISISINPUT)
@@ -951,7 +952,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		}
 	}
 	if (first_rp && sbappendaddr(&first_rp->rcb_socket->so_rcv,
-							  &esis_dl, m0, (struct mbuf *)0) != 0) {
+							  (struct sockaddr *)&esis_dl, m0,
+							  (struct mbuf *)0) != 0) {
 		sorwakeup(first_rp->rcb_socket);
 		return;
 	}
