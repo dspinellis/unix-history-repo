@@ -6,20 +6,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <time.h>
-#include <tzfile.h>
+
+#include <err.h>
 #include <errno.h>
-#include <utmp.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <tzfile.h>
+#include <unistd.h>
+#include <utmp.h>
 
 /* Derived from the print routines in the ls(1) source code. */
+
+static void printlink __P((char *));
+static void printtime __P((time_t));
 
 void
 printlong(name, accpath, sb)
@@ -47,6 +52,7 @@ printlong(name, accpath, sb)
 	(void)putchar('\n');
 }
 
+static void
 printtime(ftime)
 	time_t ftime;
 {
@@ -70,6 +76,7 @@ printtime(ftime)
 	(void)putchar(' ');
 }
 
+static void
 printlink(name)
 	char *name;
 {
@@ -77,8 +84,7 @@ printlink(name)
 	char path[MAXPATHLEN + 1];
 
 	if ((lnklen = readlink(name, path, MAXPATHLEN)) == -1) {
-		(void)fprintf(stderr,
-		    "\nfind: %s: %s\n", name, strerror(errno));
+		warn("%s", name);
 		return;
 	}
 	path[lnklen] = '\0';
