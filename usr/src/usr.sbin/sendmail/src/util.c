@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -550,7 +550,10 @@ dfopen(filename, omode, cmode)
 		(void) lockfile(fd, filename, locktype);
 		errno = 0;
 	}
-	return fdopen(fd, om->farg);
+	if (fd < 0)
+		return NULL;
+	else
+		return fdopen(fd, om->farg);
 }
 /*
 **  PUTLINE -- put a line like fputs obeying SMTP conventions

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -132,7 +132,14 @@ dropenvelope(e)
 			message(buf);
 		}
 		e->e_flags |= EF_TIMEOUT|EF_CLRQUEUE;
-		fprintf(e->e_xfp, "421 Message timed out\n");
+		fprintf(e->e_xfp, "Message could not be delivered for %s\n",
+			pintvl(TimeOuts.to_q_return, FALSE));
+		fprintf(e->e_xfp, "Message will be deleted from queue\n");
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (bitset(QQUEUEUP, q->q_flags))
+				q->q_flags |= QBADADDR;
+		}
 	}
 	else if (TimeOuts.to_q_warning > 0 &&
 	    curtime() > e->e_ctime + TimeOuts.to_q_warning)
@@ -155,6 +162,11 @@ dropenvelope(e)
 			pintvl(TimeOuts.to_q_warning, FALSE));
 		fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
 			pintvl(TimeOuts.to_q_return, FALSE));
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (bitset(QQUEUEUP, q->q_flags))
+				q->q_flags |= QREPORT;
+		}
 	}
 
 	/*
@@ -625,8 +637,8 @@ setsender(from, e, delimptr, internal)
 	{
 		if (e->e_from.q_home == NULL)
 			e->e_from.q_home = getenv("HOME");
-		e->e_from.q_uid = getuid();
-		e->e_from.q_gid = getgid();
+		e->e_from.q_uid = RealUid;
+		e->e_from.q_gid = RealGid;
 	}
 
 	/*

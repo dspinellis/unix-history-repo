@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -586,18 +586,23 @@ errbody(fp, m, e)
 	printheader = TRUE;
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 	{
-		if (bitset(QBADADDR, q->q_flags))
+		if (bitset(QBADADDR|QREPORT, q->q_flags))
 		{
 			if (printheader)
 			{
-				putline("   ----- The following addresses failed -----",
+				putline("   ----- The following addresses had delivery problems -----",
 					fp, m);
 				printheader = FALSE;
 			}
 			if (q->q_alias != NULL)
-				putline(q->q_alias->q_paddr, fp, m);
+				strcpy(buf, q->q_alias->q_paddr);
 			else
-				putline(q->q_paddr, fp, m);
+				strcpy(buf, q->q_paddr);
+			if (bitset(QBADADDR, q->q_flags))
+				strcat(buf, "  (hard error -- address deleted)");
+			else
+				strcat(buf, "  (temporary failure -- will retry)");
+			putline(buf, fp, m);
 		}
 	}
 	if (!printheader)

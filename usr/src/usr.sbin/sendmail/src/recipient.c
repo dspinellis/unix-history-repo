@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -352,7 +352,7 @@ recipient(a, sendq, e)
 			usrerr("550 Cannot mail directly to files");
 		}
 		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-		    (*p = '\0', safefile(buf, getruid(), TRUE, S_IWRITE|S_IEXEC) != 0))
+		    (*p = '\0', safefile(buf, RealUid, TRUE, S_IWRITE|S_IEXEC) != 0))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, e);
@@ -589,8 +589,8 @@ writable(s)
 
 	if (bitset(0111, s->st_mode))
 		return (FALSE);
-	euid = getruid();
-	egid = getrgid();
+	euid = RealUid;
+	egid = RealGid;
 	if (geteuid() == 0)
 	{
 		if (bitset(S_ISUID, s->st_mode))

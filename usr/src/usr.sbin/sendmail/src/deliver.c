@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -474,6 +474,9 @@ sendenvelope(e, mode)
 		    bitset(QDONTSEND, q->q_flags))
 			continue;
 
+		if (tTd(13, 3))
+			printf("FATAL ERRORS\n");
+
 		e->e_flags |= EF_FATALERRS;
 
 		if (q->q_owner == NULL && strcmp(e->e_from.q_paddr, "<>") != 0)
@@ -790,6 +793,7 @@ deliver(e, firstto)
 		rcode = checkcompat(to, e);
 		if (rcode != EX_OK)
 		{
+			markfailure(e, to, rcode);
 			giveresponse(rcode, m, NULL, e);
 			continue;
 		}

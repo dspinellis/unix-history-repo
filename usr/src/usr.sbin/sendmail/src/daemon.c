@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.1 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.2 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.1 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.2 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -108,7 +108,11 @@ getrequests()
 			syserr("554 service \"smtp\" unknown");
 			goto severe;
 		}
+#ifdef _SCO_unix_
+		DaemonAddr.sin.sin_port = htons(sp->s_port);
+#else
 		DaemonAddr.sin.sin_port = sp->s_port;
+#endif
 	}
 
 	/*
@@ -316,7 +320,11 @@ gothostent:
 			syserr("554 makeconnection: service \"smtp\" unknown");
 			return (EX_OSERR);
 		}
+#ifdef _SCO_unix_
+		port = htons(sp->s_port);
+#else
 		port = sp->s_port;
+#endif
 	}
 
 	switch (addr.sa.sa_family)
@@ -571,7 +579,13 @@ getauthinfo(fd)
 	/* create foreign address */
 	sp = getservbyname("auth", "tcp");
 	if (sp != NULL)
+	{
+#ifdef _SCO_unix_
+		fa.sin.sin_port = htons(sp->s_port);
+#else
 		fa.sin.sin_port = sp->s_port;
+#endif
+	}
 	else
 		fa.sin.sin_port = htons(113);
 

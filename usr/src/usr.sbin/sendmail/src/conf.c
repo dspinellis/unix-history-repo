@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -162,7 +162,7 @@ setdefaults(e)
 	WkClassFact = 1800L;			/* option z */
 	WkTimeFact = 90000L;			/* option Z */
 	QueueFactor = WkRecipFact * 20;		/* option q */
-	FileMode = (getuid() != geteuid()) ? 0644 : 0600;
+	FileMode = (RealUid != geteuid()) ? 0644 : 0600;
 						/* option F */
 	DefUid = 1;				/* option u */
 	DefGid = 1;				/* option g */
@@ -325,30 +325,6 @@ setupmaps()
 
 #undef MAPDEF
 /*
-**  GETRUID -- get real user id (V7)
-*/
-
-getruid()
-{
-	if (OpMode == MD_DAEMON)
-		return (RealUid);
-	else
-		return (getuid());
-}
-
-
-/*
-**  GETRGID -- get real group id (V7).
-*/
-
-getrgid()
-{
-	if (OpMode == MD_DAEMON)
-		return (RealGid);
-	else
-		return (getgid());
-}
-/*
 **  USERNAME -- return the user id of the logged in user.
 **
 **	Parameters:
@@ -377,13 +353,13 @@ username()
 		myname = getlogin();
 		if (myname == NULL || myname[0] == '\0')
 		{
-			pw = getpwuid(getruid());
+			pw = getpwuid(RealUid);
 			if (pw != NULL)
 				myname = newstr(pw->pw_name);
 		}
 		else
 		{
-			uid_t uid = getuid();
+			uid_t uid = RealUid;
 
 			myname = newstr(myname);
 			if ((pw = getpwnam(myname)) == NULL ||
@@ -997,19 +973,30 @@ unsetenv(name)
 **		none
 */
 
-#ifdef SYSTEM5
+#ifdef SOLARIS
+# include <sys/resource.h>
+#endif
 
 int
-getdtablesize()
+getdtsize()
 {
+#ifdef RLIMIT_NOFILE
+	struct rlimit rl;
+
+	if (getrlimit(RLIMIT_NOFILE, &rl) >= 0)
+		return rl.rlim_cur;
+#endif
+
 # ifdef _SC_OPEN_MAX
 	return sysconf(_SC_OPEN_MAX);
 # else
+#  ifdef HASGETDTABLESIZE
+	return getdtablesize();
+#  else
 	return NOFILE;
+#  endif
 # endif
 }
-
-#endif
 /*
 **  UNAME -- get the UUCP name of this system.
 */
