@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)queue.h	7.5 (Berkeley) %G%
+ *	@(#)queue.h	7.6 (Berkeley) %G%
  */
 
 #ifndef	_QUEUE_H_
