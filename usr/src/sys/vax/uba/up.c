@@ -1,4 +1,4 @@
-/*	up.c	4.48	82/04/30	*/
+/*	up.c	4.49	82/05/19	*/
 
 #include "up.h"
 #if NSC > 0
@@ -160,6 +160,7 @@ upslave(ui, reg)
 
 	upaddr->upcs1 = 0;		/* conservative */
 	upaddr->upcs2 = ui->ui_slave;
+	upaddr->upcs1 = UP_NOP|UP_GO;
 	if (upaddr->upcs2&UPCS2_NED) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		return (0);
