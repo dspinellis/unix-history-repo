@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.10 %G%";
+static char *sccsid = "@(#)cp.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -35,8 +35,10 @@ main(argc, argv)
 		case 'r':
 			rflag++; break;
 
-		case 'p':	/* preserve mtimes and atimes */
-			pflag++; break;
+		case 'p':	/* preserve mtimes, atimes, and modes */
+			pflag++;
+			(void) umask(0);
+			break;
 
 		default:
 			goto usage;
@@ -57,14 +59,14 @@ main(argc, argv)
 	exit(rc);
 usage:
 	fprintf(stderr,
-	    "Usage: cp [-ip] f1 f2; or: cp [-irp] f1 ... fn d2");
+	    "Usage: cp [-ip] f1 f2; or: cp [-irp] f1 ... fn d2\n");
 	exit(1);
 }
 
 copy(from, to)
 	char *from, *to;
 {
-	int fold, fnew, n;
+	int fold, fnew, n, exists;
 	char *last, destname[MAXPATHLEN + 1], buf[MAXBSIZE];
 	struct stat stfrom, stto;
 
@@ -100,7 +102,8 @@ copy(from, to)
 		} else if ((stto.st_mode&S_IFMT) != S_IFDIR) {
 			fprintf(stderr, "cp: %s: Not a directory.\n", to);
 			return (1);
-		}
+		} else if (pflag)
+			(void) chmod(to, stfrom.st_mode & 07777);
 		return (rcopy(from, to));
 	}
 
@@ -109,7 +112,8 @@ copy(from, to)
 			"cp: %s: Is a directory (copying as plain file).\n",
 				from);
 
-	if (stat(to, &stto) >= 0) {
+	exists = stat(to, &stto) == 0;
+	if (exists) {
 		if (stfrom.st_dev == stto.st_dev &&
 		   stfrom.st_ino == stto.st_ino) {
 			fprintf(stderr,
@@ -136,6 +140,9 @@ copy(from, to)
 		Perror(to);
 		(void) close(fold); return(1);
 	}
+	if (exists && pflag)
+		(void) fchmod(fnew, stfrom.st_mode & 07777);
+			
 	for (;;) {
 		n = read(fold, buf, sizeof buf);
 		if (n == 0)
