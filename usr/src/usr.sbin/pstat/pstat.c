@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.27 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.28 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -721,9 +721,9 @@ doswap()
 	tused = 0;
 	for (xp = xtext; xp < &xtext[ntext]; xp++)
 		if (xp->x_iptr!=NULL) {
-			tused += ctod(xp->x_size);
+			tused += ctod(clrnd(xp->x_size));
 			if (xp->x_flag & XPAGI)
-				tused += ctod(ctopt(xp->x_size));
+				tused += ctod(clrnd(ctopt(xp->x_size)));
 		}
 	used = tused;
 	waste = 0;
