@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	%G%
+#	@(#)Makefile	4.3	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -14,9 +14,9 @@ SCRIPT=	false true
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	ar cat cc chgrp chmod cmp cp date dd df du echo ed expr \
-	grep hostname kill ld ln login ls mail mkdir mt mv nice \
-	nm od passwd pr pwd rm rmail rmdir size strip stty su sync \
+STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
+	grep hostid hostname kill ld ln login ls mail mkdir mt mv nice \
+	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
 	tar tee test time wall who write
 
 # Programs that must run setuid to root
@@ -25,17 +25,20 @@ SETUID=	chgrp df login mail mkdir mv passwd rmdir su
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	ps
+NSTD=	ps time
 
-all:	${SUBDIR} ${STD} ${NSTD}
+all:	${SUBDIR} ${STD} ${NSTD} cp
 
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
 
-${STD}:
+${STD} cp:
 	cc ${CFLAGS} -o $@ $@.c
 
+# take care with cp, install uses it
 install:
+	install cp ${DESTDIR}/bin/newcp; \
+		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
@@ -72,6 +75,9 @@ depend:
 
 ps:
 	cc ${CFLAGS} -o ps ps.c -lm
+
+time:
+	cc ${CFLAGS} -o time time.c -ljobs
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
@@ -189,7 +195,7 @@ mail: /usr/include/sys/stat.h
 mail: /usr/include/setjmp.h
 mail: /usr/include/sysexits.h
 mail: /usr/include/sys/socket.h
-mail: /usr/include/net/in.h
+mail: /usr/include/netinet/in.h
 mkdir: mkdir.c
 mkdir: /usr/include/signal.h
 mkdir: /usr/include/stdio.h
