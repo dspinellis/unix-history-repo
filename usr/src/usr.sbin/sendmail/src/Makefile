@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -24,7 +24,7 @@ OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	deliver.o domain.o envelope.o err.o headers.o macro.o main.o \
 	parseaddr.o queue.o readcf.o recipient.o savemail.o srvrsmtp.o \
 	stab.o stats.o sysexits.o trace.o usersmtp.o util.o
-MAN=	sendmail.0
+MAN=	sendmail.0 newaliases.0 aliases.0
 
 CFLAGS=	-O -I. -I../include -DVMUNIX
 ASMSED=	../include/asm.sed.${MACHINE}
@@ -52,6 +52,8 @@ install: ${MAN}
 	install -c -o bin -g bin -m 644 /dev/null ${DESTDIR}/usr/lib/sendmail.fc
 	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/lib/sendmail.st
 	install -c -o bin -g bin -m 444 sendmail.0 ${DESTDIR}/usr/man/cat8
+	install -c -o bin -g bin -m 444 aliases.5 ${DESTDIR}/usr/man/cat5
+	install -c -o bin -g bin -m 444 newaliases.0 ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/ucb/newaliases
 	ln -s ${DESTDIR}/usr/lib/sendmail ${DESTDIR}/usr/ucb/newaliases
 	rm -f ${DESTDIR}/usr/ucb/mailq
