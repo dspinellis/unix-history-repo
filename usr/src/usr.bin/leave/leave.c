@@ -1,48 +1,54 @@
-static char *sccsid = "@(#)leave.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)leave.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 /*
- * leave [hhmm]
+ * leave [[+]hhmm]
  *
  * Reminds you when you have to leave.
  * Leave prompts for input and goes away if you hit return.
  * It nags you like a mother hen.
  */
-char origlogin[20], thislogin[20];
+char origlogin[20];
 char *getlogin();
 char *whenleave;
 char *ctime();
 char buff[100];
 
-main(argc,argv)
+main(argc, argv)
 char **argv;
 {
 	long when, tod, now, diff, hours, minutes;
+	char *cp;
 	int *nv;
 	int atoi();
 	int *localtime();
 
+	strcpy(origlogin, getlogin());
 	if (argc < 2) {
 		printf("When do you have to leave? ");
 		fflush(stdout);
-		buff[read(0,buff,sizeof buff)] = 0;
-	} else {
-		strcpy(buff,argv[1]);
-	}
-
-	if (buff[0] == '\n')
+		buff[read(0, buff, sizeof buff)] = 0;
+		cp = buff;
+	} else
+		cp = argv[1];
+	if (*cp == '\n')
 		exit(0);
-	if (buff[0] == '+') {
-		diff = atoi(buff+1);
+	if (*cp == '+') {
+		cp++;
+		if (*cp < '0' || *cp > '9')
+			usage();
+		tod = atoi(cp);
+		hours = tod / 100;
+		minutes = tod % 100;
+		if (minutes < 0 || minutes > 59)
+			usage();
+		diff = 60*hours+minutes;
 		doalarm(diff);
+		exit(0);
 	}
-	if (buff[0] < '0' || buff[0] > '9') {
-		printf("usage: %s [hhmm]\n",argv[0]);
-		exit(1);
-	}
-	strcpy(origlogin,getlogin());
-
-	tod = atoi(buff);
+	if (*cp < '0' || *cp > '9')
+		usage();
+	tod = atoi(cp);
 	hours = tod / 100;
 	if (hours > 12)
 		hours -= 12;
@@ -50,24 +56,31 @@ char **argv;
 		hours = 0;
 	minutes = tod % 100;
 
-	if (hours < 0 || hours > 12 || minutes < 0 || minutes > 59) {
-		printf("usage: %s [hhmm]\n",argv[0]);
-		exit(1);
-	}
+	if (hours < 0 || hours > 12 || minutes < 0 || minutes > 59)
+		usage();
 
 	time(&now);
 	nv = localtime(&now);
 	when = 60*hours+minutes;
-	if (nv[2] > 12) nv[2] -= 12;	/* do am/pm bit */
+	if (nv[2] > 12)
+		nv[2] -= 12;	/* do am/pm bit */
 	now = 60*nv[2] + nv[1];
 	diff = when - now;
 	while (diff < 0)
 		diff += 12*60;
-	if (diff > 11*60) printf("That time has already passed!\n");
+	if (diff > 11*60) {
+		printf("That time has already passed!\n");
+		exit(1);
+	}
 	doalarm(diff);
 	exit(0);
 }
 
+usage()
+{
+	printf("usage: leave [[+]hhmm]\n");
+	exit(1);
+}
 
 doalarm(nmins)
 long nmins;
@@ -108,7 +121,7 @@ long nmins;
 	time(&daytime);
 	daytime += gseconds;
 	whenleave = ctime(&daytime);
-	printf("Alarm set for %s\n",whenleave);
+	printf("Alarm set for %s", whenleave);
 	if (fork())
 		exit(0);
 	signal(SIGINT, SIG_IGN);
@@ -117,42 +130,42 @@ long nmins;
 	signal(SIGTTOU, SIG_IGN);
 
 	if (slp1)
-		bother(slp1,msg1);
+		bother(slp1, msg1);
 	if (slp2)
-		bother(slp2,msg2);
-	bother(slp3,msg3);
-	for (;;) {
-		bother(slp4,msg4);
-	}
+		bother(slp2, msg2);
+	bother(slp3, msg3);
+	for (i = 0; i < 10; i++)
+		bother(slp4, msg4);
+	printf("That was the last time I'll tell you. Bye.\n");
+	exit(0);
 }
 
-bother(slp,msg)
+bother(slp, msg)
 int slp;
 char *msg;
 {
 
 	delay(slp);
-	printf("\7\7\7");
-	printf("%s\n",msg);
+	printf("\7\7\7%s\n", msg);
 }
 
 /*
  * delay is like sleep but does it in 100 sec pieces and
  * knows what zero means.
  */
-delay(secs) int secs; {
+delay(secs)
+int secs;
+{
 	int n;
 
-	while(secs>0) {
+	while (secs > 0) {
 		n = 100;
-		secs = secs - 100;
-		if (secs < 0) {
-			n = n + secs;
-		}
+		if (secs < n)
+			n = secs;
+		secs -= n;
 		if (n > 0)
 			sleep(n);
-		strcpy(thislogin,getlogin());
-		if (strcmp(origlogin, thislogin))
+		if (strcmp(origlogin, getlogin()))
 			exit(0);
 	}
 }
