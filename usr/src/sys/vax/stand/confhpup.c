@@ -1,4 +1,4 @@
-/*	confhpup.c	4.1	83/02/04	*/
+/*	confhpup.c	4.2	83/02/16	*/
 
 #include "../machine/pte.h"
 
@@ -10,23 +10,25 @@
 devread(io)
 	register struct iob *io;
 {
-	int error;
+	int cc;
 
 	io->i_flgs |= F_RDDATA;
-	error = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
+	io->i_error = 0;
+	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
 	io->i_flgs &= ~F_TYPEMASK;
-	return (error);
+	return (cc);
 }
 
 devwrite(io)
 	register struct iob *io;
 {
-	int error;
+	int cc;
 
 	io->i_flgs |= F_WRDATA;
-	error = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
+	io->i_error = 0;
+	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
 	io->i_flgs &= ~F_TYPEMASK;
-	return (error);
+	return (cc);
 }
 
 devopen(io)
