@@ -11,15 +11,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Tape Archival Program
  */
-#include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <sys/dir.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
@@ -27,6 +27,8 @@ static char sccsid[] = "@(#)tar.c	5.12 (Berkeley) %G%";
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <strings.h>
+#include <stdio.h>
 
 #define TBLOCK	512
 #define NBLOCK	20
@@ -108,16 +110,15 @@ char	*malloc();
 long	time();
 off_t	lseek();
 char	*mktemp();
-char	*strcat();
-char	*strcpy();
-char	*rindex();
 char	*getcwd();
 char	*getwd();
 char	*getmem();
 
+extern int errno;
+
 main(argc, argv)
-int	argc;
-char	*argv[];
+	int argc;
+	char **argv;
 {
 	char *cp;
 
@@ -155,7 +156,7 @@ char	*argv[];
 			break;
 		
 		case 'u':
-			mktemp(tname);
+			(void)mktemp(tname);
 			if ((tfile = fopen(tname, "w")) == NULL) {
 				fprintf(stderr,
 				 "tar: cannot create temporary file (%s)\n",
@@ -285,7 +286,6 @@ openmt(tape, writing)
 	char *tape;
 	int writing;
 {
-
 	if (strcmp(tape, "-") == 0) {
 		/*
 		 * Read from standard input or write to standard output.
@@ -315,8 +315,7 @@ openmt(tape, writing)
 		} else
 			mt = open(tape, O_RDONLY);
 		if (mt < 0) {
-			fprintf(stderr, "tar: ");
-			perror(tape);
+			fprintf(stderr, "tar: %s: %s\n", tape, strerror(errno));
 			done(1);
 		}
 	}
@@ -358,8 +357,9 @@ dorep(argv)
 		if (!strcmp(cp2, "-C") && argv[1]) {
 			argv++;
 			if (chdir(*argv) < 0) {
-				fprintf(stderr, "tar: can't change directories to ");
-				perror(*argv);
+				fprintf(stderr,
+				    "tar: can't change directories to %s: %s\n",
+				    *argv, strerror(errno));
 			} else
 				(void) getcwd(wdir);
 			argv++;
@@ -372,8 +372,9 @@ dorep(argv)
 		if (cp2 != *argv) {
 			*cp2 = '\0';
 			if (chdir(*argv) < 0) {
-				fprintf(stderr, "tar: can't change directories to ");
-				perror(*argv);
+				fprintf(stderr,
+				    "tar: can't change directories to %s: %s\n",
+				    *argv, strerror(errno));
 				continue;
 			}
 			parent = getcwd(tempdir);
@@ -381,10 +382,9 @@ dorep(argv)
 			cp2++;
 		}
 		putfile(*argv++, cp2, parent);
-		if (chdir(wdir) < 0) {
-			fprintf(stderr, "tar: cannot change back?: ");
-			perror(wdir);
-		}
+		if (chdir(wdir) < 0)
+			fprintf(stderr, "tar: cannot change back?: %s: %s\n",
+			    wdir, strerror(errno));
 	}
 	putempty();
 	putempty();
@@ -479,8 +479,7 @@ putfile(longname, shortname, parent)
 	else
 		i = stat(shortname, &stbuf);
 	if (i < 0) {
-		fprintf(stderr, "tar: ");
-		perror(longname);
+		fprintf(stderr, "tar: %s: %s\n", longname, strerror(errno));
 		return;
 	}
 	if (tfile != NULL && checkupdate(longname) == 0)
@@ -510,15 +509,17 @@ putfile(longname, shortname, parent)
 		}
 		(void)sprintf(newparent, "%s/%s", parent, shortname);
 		if (chdir(shortname) < 0) {
-			perror(shortname);
+			fprintf(stderr, "tar: chdir %s: %s\n",
+			    shortname, strerror(errno));
 			return;
 		}
 		if ((dirp = opendir(".")) == NULL) {
 			fprintf(stderr, "tar: %s: directory read error\n",
 			    longname);
 			if (chdir(parent) < 0) {
-				fprintf(stderr, "tar: cannot change back?: ");
-				perror(parent);
+				fprintf(stderr,
+				    "tar: cannot change back?: %s: %s\n",
+				    parent, strerror(errno));
 			}
 			return;
 		}
@@ -535,8 +536,9 @@ putfile(longname, shortname, parent)
 		}
 		closedir(dirp);
 		if (chdir(parent) < 0) {
-			fprintf(stderr, "tar: cannot change back?: ");
-			perror(parent);
+			fprintf(stderr,
+			    "tar: cannot change back?: %s: %s\n",
+			    parent, strerror(errno));
 		}
 		break;
 
@@ -555,8 +557,9 @@ putfile(longname, shortname, parent)
 		}
 		i = readlink(shortname, dblock.dbuf.linkname, NAMSIZ - 1);
 		if (i < 0) {
-			fprintf(stderr, "tar: can't read symbolic link ");
-			perror(longname);
+			fprintf(stderr,
+			    "tar: can't read symbolic link %s: %s\n",
+			    longname, strerror(errno));
 			return;
 		}
 		dblock.dbuf.linkname[i] = '\0';
@@ -571,8 +574,8 @@ putfile(longname, shortname, parent)
 
 	case S_IFREG:
 		if ((infile = open(shortname, 0)) < 0) {
-			fprintf(stderr, "tar: ");
-			perror(longname);
+			fprintf(stderr, "tar: %s: %s\n",
+			    longname, strerror(errno));
 			return;
 		}
 		tomodes(&stbuf);
@@ -640,8 +643,8 @@ putfile(longname, shortname, parent)
 		if (bigbuf != buf)
 			free(bigbuf);
 		if (i < 0) {
-			fprintf(stderr, "tar: Read error on ");
-			perror(longname);
+			fprintf(stderr, "tar: Read error on %s: %s\n",
+			    longname, strerror(errno));
 		} else if (blocks != 0 || i != 0)
 			fprintf(stderr, "tar: %s: file changed size\n",
 			    longname);
@@ -659,7 +662,6 @@ putfile(longname, shortname, parent)
 doxtract(argv)
 	char *argv[];
 {
-	extern int errno;
 	long blocks, bytes;
 	int ofile, i;
 
@@ -699,9 +701,9 @@ doxtract(argv)
 					unlink(dblock.dbuf.name);
 			}
 			if (symlink(dblock.dbuf.linkname, dblock.dbuf.name)<0) {
-				fprintf(stderr, "tar: %s: symbolic link failed: ",
-				    dblock.dbuf.name);
-				perror("");
+				fprintf(stderr,
+				    "tar: %s: symbolic link failed: %s\n",
+				    dblock.dbuf.name, strerror(errno));
 				continue;
 			}
 			if (vflag)
@@ -727,9 +729,10 @@ doxtract(argv)
 					unlink(dblock.dbuf.name);
 			}
 			if (link(dblock.dbuf.linkname, dblock.dbuf.name) < 0) {
-				fprintf(stderr, "tar: can't link %s to %s: ",
-				    dblock.dbuf.name, dblock.dbuf.linkname);
-				perror("");
+				fprintf(stderr,
+				    "tar: can't link %s to %s: %s\n",
+				    dblock.dbuf.name, dblock.dbuf.linkname,
+				    strerror(errno));
 				continue;
 			}
 			if (vflag)
@@ -738,9 +741,8 @@ doxtract(argv)
 			continue;
 		}
 		if ((ofile = creat(dblock.dbuf.name,stbuf.st_mode&0xfff)) < 0) {
-			fprintf(stderr, "tar: can't create %s: ",
-			    dblock.dbuf.name);
-			perror("");
+			fprintf(stderr, "tar: can't create %s: %s\n",
+			    dblock.dbuf.name, strerror(errno));
 			passtape();
 			continue;
 		}
@@ -760,9 +762,8 @@ doxtract(argv)
 			nread = readtbuf(&bufp, nwant);
 			if (write(ofile, bufp, (int)min(nread, bytes)) < 0) {
 				fprintf(stderr,
-				    "tar: %s: HELP - extract write error: ",
-				    dblock.dbuf.name);
-				perror("");
+				    "tar: %s: HELP - extract write error: %s\n",
+				    dblock.dbuf.name, strerror(errno));
 				done(2);
 			}
 			bytes -= nread;
@@ -817,7 +818,7 @@ longt(st)
 	char *ctime();
 
 	pmode(st);
-	printf("%3d/%1d", st->st_uid, st->st_gid);
+	printf("%3u/%1u", st->st_uid, st->st_gid);
 	printf("%7ld", st->st_size);
 	cp = ctime(&st->st_mtime);
 	printf(" %-12.12s %-4.4s ", cp+4, cp+20);
@@ -885,7 +886,7 @@ checkdir(name)
 	if ((cp = rindex(name, '/')) == 0)
 		return (0);
 	*cp = '\0';
-	if (access(name, 0) == 0) {	/* already exists */
+	if (access(name, F_OK) == 0) {	/* already exists */
 		*cp = '/';
 		return (cp[1] == '\0');	/* return (lastchar == '/') */
 	}
@@ -898,9 +899,10 @@ checkdir(name)
 		if (*cp != '/')
 			continue;
 		*cp = '\0';
-		if (access(name, 0) < 0) {
+		if (access(name, F_OK) < 0) {
 			if (mkdir(name, 0777) < 0) {
-				perror(name);
+				fprintf(stderr, "tar: mkdir: %s: %s\n",
+				    name, strerror(errno));
 				*cp = '/';
 				return (0);
 			}
@@ -1252,12 +1254,12 @@ backtape()
 		mtdev = ioctl(mt, MTIOCGET, (char *)&mtget);
 	if (mtdev == 0) {
 		if (ioctl(mt, MTIOCTOP, (char *)&mtop) < 0) {
-			fprintf(stderr, "tar: tape backspace error: ");
-			perror("");
+			fprintf(stderr, "tar: tape backspace error: %s\n",
+			    strerror(errno));
 			done(4);
 		}
 	} else
-		lseek(mt, (daddr_t) -TBLOCK*nblock, 1);
+		(void)lseek(mt, (daddr_t) -TBLOCK*nblock, 1);
 	recno--;
 }
 
@@ -1274,11 +1276,8 @@ mterr(operation, i, exitcode)
 	char *operation;
 	int i;
 {
-	fprintf(stderr, "tar: tape %s error: ", operation);
-	if (i < 0)
-		perror("");
-	else
-		fprintf(stderr, "unexpected EOF\n");
+	fprintf(stderr, "tar: tape %s error: %s\n",
+	    operation, i < 0 ? strerror(errno) : "unexpected EOF");
 	done(exitcode);
 }
 
@@ -1407,10 +1406,9 @@ setimes(path, mt)
 	tv[0].tv_sec = time((time_t *) 0);
 	tv[1].tv_sec = mt;
 	tv[0].tv_usec = tv[1].tv_usec = 0;
-	if (utimes(path, tv) < 0) {
-		fprintf(stderr, "tar: can't set time on %s: ", path);
-		perror("");
-	}
+	if (utimes(path, tv) < 0)
+		fprintf(stderr, "tar: can't set time on %s: %s\n",
+		    path, strerror(errno));
 }
 
 char *
