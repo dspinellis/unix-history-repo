@@ -1,4 +1,4 @@
-/*	uda.c	4.10	82/10/10	*/
+/*	uda.c	4.11	82/10/17	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -168,10 +168,8 @@ udopen(dev, flag)
 	flag = flag;
 #endif
 	unit = minor(dev) >> 3;
-	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	sc = &uda_softc[ui->ui_ctlr];
 	s = spl5();
 	if (sc->sc_state != S_RUN) {
@@ -179,14 +177,13 @@ udopen(dev, flag)
 			udinit(ui->ui_ctlr);
 		/* wait for initialization to complete */
 		sleep((caddr_t)ui->ui_mi, 0);
-		if (sc->sc_state != S_RUN) {
-			u.u_error = EIO;
-			return;
-		}
+		if (sc->sc_state != S_RUN)
+			return (EIO);
 	}
 	splx(s);
 	/* SHOULD PROBABLY FORCE AN ONLINE ATTEMPT
 	   TO SEE IF DISK IS REALLY THERE */
+	return (0);
 }
 
 /*
@@ -839,7 +836,7 @@ udreset(uban)
 		}
 		for (bp = udwtab[d].av_forw; bp != &udwtab[d]; bp = nbp) {
 			nbp = bp->av_forw;
-			ubarelse(uban, (int *)&bp->b_ubinfo);
+			bp->b_ubinfo = 0;
 			/*
 			 * Link the buffer onto the drive queue
 			 */

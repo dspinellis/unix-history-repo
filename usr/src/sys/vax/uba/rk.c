@@ -1,4 +1,4 @@
-/*	rk.c	4.47	82/10/10	*/
+/*	rk.c	4.48	82/10/17	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -166,6 +166,17 @@ rkattach(ui)
 	ui->ui_flags = 0;
 }
  
+rkopen(dev)
+	dev_t dev;
+{
+	register int unit = minor(dev) >> 3;
+	register struct uba_device *ui;
+
+	if (unit >= NRK || (ui = rkdinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
+	return (0);
+}
+
 rkstrategy(bp)
 	register struct buf *bp;
 {

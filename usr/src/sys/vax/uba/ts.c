@@ -1,4 +1,4 @@
-/*	ts.c	4.30	82/10/10	*/
+/*	ts.c	4.31	82/10/17	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -171,29 +171,24 @@ tsopen(dev, flag)
 
 	tsunit = TSUNIT(dev);
 	if (tsunit>=NTS || (sc = &ts_softc[tsunit])->sc_openf ||
-	    (ui = tsdinfo[tsunit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
-	if (tsinit(tsunit)) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
+	if (tsinit(tsunit))
+		return (ENXIO);
 	tscommand(dev, TS_SENSE, 1);
 	if ((sc->sc_sts.s_xs0&TS_ONL) == 0) {
 		uprintf("ts%d: not online\n", tsunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((flag&(FREAD|FWRITE)) == FWRITE && (sc->sc_sts.s_xs0&TS_WLK)) {
 		uprintf("ts%d: no write ring\n", tsunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
+	return (0);
 }
 
 /*
@@ -793,7 +788,7 @@ tsioctl(dev, cmd, data, flag)
 
 	case MTIOCTOP:	/* tape operation */
 		mtop = (struct mtop *)data;
-		switch(mtop->mt_op) {
+		switch (mtop->mt_op) {
 
 		case MTWEOF:
 			callcount = mtop->mt_count;
@@ -812,25 +807,20 @@ tsioctl(dev, cmd, data, flag)
 			break;
 
 		default:
-			u.u_error = ENXIO;
-			return;
+			return (ENXIO);
 		}
-		if (callcount <= 0 || fcount <= 0) {
-			u.u_error = ENXIO;
-			return;
-		}
+		if (callcount <= 0 || fcount <= 0)
+			return (EINVAL);
 		while (--callcount >= 0) {
 			tscommand(dev, tsops[mtop->mt_op], fcount);
 			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
 			    bp->b_resid) {
-				u.u_error = EIO;
-				break;
-			}
+				return (EIO);
 			if ((bp->b_flags&B_ERROR) || sc->sc_sts.s_xs0&TS_BOT)
 				break;
 		}
-		geterror(bp);
-		return;
+		geterror(bp);		/* XXX */
+		return (u.u_error);	/* XXX */
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
@@ -838,11 +828,12 @@ tsioctl(dev, cmd, data, flag)
 		mtget->mt_erreg = sc->sc_sts.s_xs0;
 		mtget->mt_resid = sc->sc_resid;
 		mtget->mt_type = MT_ISTS;
-		return;
+		break;
 
 	default:
-		u.u_error = ENXIO;
+		return (ENXIO);
 	}
+	return (0);
 }
 
 #define	DBSIZE	20

@@ -1,4 +1,4 @@
-/*	dz.c	4.45	82/10/13	*/
+/*	dz.c	4.46	82/10/17	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -208,10 +208,8 @@ dzopen(dev, flag)
 	register int unit;
  
 	unit = minor(dev);
-	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0)
+		return (ENXIO);
 	tp = &dz_tty[unit];
 	tp->t_addr = (caddr_t)&dzpdma[unit];
 	tp->t_oproc = dzstart;
@@ -222,10 +220,8 @@ dzopen(dev, flag)
 		tp->t_flags = IFLAGS;
 		/* tp->t_state |= TS_HUPCLS; */
 		dzparam(unit);
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0) {
-		u.u_error = EBUSY;
-		return;
-	}
+	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+		return (EBUSY);
 	(void) dzmctl(dev, DZ_ON, DMSET);
 	(void) spl5();
 	while ((tp->t_state & TS_CARR_ON) == 0) {
@@ -233,7 +229,7 @@ dzopen(dev, flag)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
 	(void) spl0();
-	(*linesw[tp->t_line].l_open)(dev, tp);
+	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
  
 /*ARGSUSED*/
@@ -363,15 +359,19 @@ dzioctl(dev, cmd, data, flag)
 	register int unit = minor(dev);
 	register int dz = unit >> 3;
 	register struct device *dzaddr;
+	int error;
  
 	tp = &dz_tty[unit];
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
-	if (cmd == 0)
-		return;
-	if (ttioctl(tp, cmd, data, flag)) {
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	if (error >= 0)
+		return (error);
+	error = ttioctl(tp, cmd, data, flag);
+	if (error >= 0) {
 		if (cmd == TIOCSETP || cmd == TIOCSETN)
 			dzparam(unit);
-	} else switch(cmd) {
+		return (error);
+	}
+	switch (cmd) {
 
 	case TIOCSBRK:
 		dzaddr = ((struct pdma *)(tp->t_addr))->p_addr;
@@ -414,8 +414,9 @@ dzioctl(dev, cmd, data, flag)
 		break;
 
 	default:
-		u.u_error = ENOTTY;
+		return (ENOTTY);
 	}
+	return (0);
 }
 
 dmtodz(bits)

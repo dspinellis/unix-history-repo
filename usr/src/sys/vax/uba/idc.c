@@ -1,11 +1,11 @@
-/*	idc.c	4.6	82/10/10	*/
+/*	idc.c	4.7	82/10/17	*/
 
 #include "rb.h"
 #if NIDC > 0
-int idcdebug = 0;
-#define printd if(idcdebug)printf
-int idctrb[1000];
-int *trp = idctrb;
+int	idcdebug = 0;
+#define	printd if(idcdebug)printf
+int	idctrb[1000];
+int	*trp = idctrb;
 #define	trace(a,b) {*trp++ = (int)a; *trp++ = (int)b; if(trp>&idctrb[998])trp=idctrb;}
 /*
  * IDC (RB730) disk driver
@@ -182,6 +182,17 @@ idcattach(ui)
 			dk_mspw[ui->ui_dk] = 1.0 / (60 * NRB02SECT * 128);
 	idccyl[ui->ui_unit].dar_dar = -1;
 	ui->ui_flags = 0;
+}
+
+idcopen(dev)
+	dev_t dev;
+{
+	register int unit = minor(dev) >> 3;
+	register struct uba_device *ui;
+
+	if (unit >= NRB || (ui = idcdinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
+	return (0);
 }
  
 idcstrategy(bp)

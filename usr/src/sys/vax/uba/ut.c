@@ -1,4 +1,4 @@
-/*	ut.c	4.19	82/10/10	*/
+/*	ut.c	4.20	82/10/17	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -127,13 +127,12 @@ utopen(dev, flag)
 	register int s;
 
 	if (tjunit >= NTJ || (sc = &tj_softc[tjunit])->sc_openf ||
-	    (ui = tjdinfo[tjunit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = tjdinfo[tjunit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	olddens = sc->sc_dens;
-	dens = sc->sc_dens = utdens[(minor(dev)&(T_1600BPI|T_6250BPI))>>3]|
-				PDP11FMT|(ui->ui_slave&07);
+	dens = sc->sc_dens =
+	    utdens[(minor(dev)&(T_1600BPI|T_6250BPI))>>3]|
+	      PDP11FMT|(ui->ui_slave&07);
 get:
 	utcommand(dev, UT_SENSE, 1);
 	if (sc->sc_dsreg&UTDS_PIP) {
@@ -143,19 +142,16 @@ get:
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg&UTDS_MOL) == 0) {
 		uprintf("tj%d: not online\n", tjunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_dsreg&UTDS_WRL)) {
 		uprintf("tj%d: no write ring\n", tjunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((sc->sc_dsreg&UTDS_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
 		uprintf("tj%d: can't change density in mid-tape\n", tjunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
@@ -173,6 +169,7 @@ get:
 		timeout(uttimer, (caddr_t)dev, 5*hz);
 	}
 	splx(s);
+	return (0);
 }
 
 utclose(dev, flag)
@@ -732,26 +729,21 @@ utioctl(dev, cmd, data, flag)
 			break;
 
 		default:
-			u.u_error = ENXIO;
-			return;
+			return (ENXIO);
 		}
-		if (callcount <= 0 || fcount <= 0) {
-			u.u_error = ENXIO;
-			return;
-		}
+		if (callcount <= 0 || fcount <= 0)
+			return (EINVAL);
 		while (--callcount >= 0) {
 			utcommand(dev, utops[mtop->mt_op], fcount);
 			/* note this depends on the mtop values */
 			if ((mtop->mt_op >= MTFSF || mtop->mt_op <= MTBSR) &&
 			    bp->b_resid) {
-				u.u_error = EIO;
-				break;
-			}
+				return (EIO);
 			if ((bp->b_flags&B_ERROR) || (sc->sc_dsreg&UTDS_BOT))
 				break;
 		}
-		geterror(bp);
-		return;
+		geterror(bp);		/* XXX */
+		return (u.u_error);	/* XXX */
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
@@ -759,11 +751,12 @@ utioctl(dev, cmd, data, flag)
 		mtget->mt_erreg = sc->sc_erreg;
 		mtget->mt_resid = sc->sc_resid;
 		mtget->mt_type = MT_ISUT;
-		return;
+		break;
 
 	default:
-		u.u_error = ENXIO;
+		return (ENXIO);
 	}
+	return (0);
 }
 
 utreset(uban)

@@ -1,4 +1,4 @@
-/*	ps.c	4.6	82/10/10	*/
+/*	ps.c	4.7	82/10/17	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -117,8 +117,8 @@ psprobe(reg)
 psattach(ui)
 	register struct uba_device *ui;
 {
-}
 
+}
 
 psopen(dev)
 	dev_t dev;
@@ -127,11 +127,9 @@ psopen(dev)
 	register struct uba_device *ui;
 	register int unit = PSUNIT(dev);
 
-	if(unit >= NPS || (psp = &ps[minor(dev)])->ps_open ||
-			(ui = psdinfo[unit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (unit >= NPS || (psp = &ps[minor(dev)])->ps_open ||
+	    (ui = psdinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	psp->ps_open = 1;
 	psp->ps_uid = u.u_uid;
 	psp->ps_strayintr = 0;
@@ -145,6 +143,7 @@ psopen(dev)
 	psp->ps_clock.ticked = 0;
 	psp->ps_refresh.icnt = psp->ps_map.icnt = psp->ps_clock.icnt = 0;
 	maptouser(ui->ui_addr);
+	return (0);
 }
 
 psclose(dev)
@@ -193,53 +192,39 @@ psioctl(dev, cmd, data, flag)
 
 	case PSIOAUTOREFRESH:
 		n = fuword(waddr++);
-		if(n == -1)
-			u.u_error = EFAULT;
-		else if(n < 0 || n > MAXAUTOREFRESH)
-			u.u_error = EINVAL;
-		else {
-			for(i = 0; i < n; i++)
-				if((arg = fuword(waddr++)) == -1) {
-					u.u_error = EFAULT;
-					break;
-				}
-				else
-					psp->ps_refresh.sraddrs[i] = arg;
-			if(!u.u_error) {
-				psp->ps_refresh.state = AUTO_RF;
-				psp->ps_refresh.nsraddrs = n;
-				psp->ps_refresh.srcntr = 0;
-				psp->ps_refresh.mode = WAITING_MAP;
-			}
+		if (n == -1)
+			return (EFAULT);
+		if (n < 0 || n > MAXAUTOREFRESH)
+			return (EINVAL);
+		for (i = 0; i < n; i++) {
+			if ((arg = fuword(waddr++)) == -1)
+				return (EFAULT);
+			psp->ps_refresh.sraddrs[i] = arg;
 		}
+		psp->ps_refresh.state = AUTO_RF;
+		psp->ps_refresh.nsraddrs = n;
+		psp->ps_refresh.srcntr = 0;
+		psp->ps_refresh.mode = WAITING_MAP;
 		break;
 
 	case PSIOAUTOMAP:
 		n = fuword(waddr++);
-		if(n == -1)
-			u.u_error = EFAULT;
-		else if(n < 0 || n > MAXAUTOMAP)
-			u.u_error = EINVAL;
-		else {
-			for(i = 0; i < n; i++)
-				if((arg = fuword(waddr++)) == -1) {
-					u.u_error = EFAULT;
-					break;
-				}
-				else
-					psp->ps_map.maddrs[i] = arg;
-			if(!u.u_error)
-				if((arg = fuword(waddr++)) == -1)
-					u.u_error = EFAULT;
-				else
-					psp->ps_map.outputstart = arg;
-			if(!u.u_error) {
-				psp->ps_map.state = AUTO_MAP;
-				psp->ps_map.nmaddrs = n;
-				psp->ps_map.mcntr = 0;
-				psp->ps_map.mode = WAITING_START;
-			}
+		if (n == -1)
+			return (EFAULT);
+		if (n < 0 || n > MAXAUTOMAP)
+			return (EINVAL);
+		for (i = 0; i < n; i++) {
+			if ((arg = fuword(waddr++)) == -1)
+				return (EFAULT);
+			psp->ps_map.maddrs[i] = arg;
 		}
+		if ((arg = fuword(waddr++)) == -1)
+			return (EFAULT);
+		psp->ps_map.outputstart = arg;
+		psp->ps_map.state = AUTO_MAP;
+		psp->ps_map.nmaddrs = n;
+		psp->ps_map.mcntr = 0;
+		psp->ps_map.mode = WAITING_START;
 		break;
 
 	case PSIOSINGLEREFRESH:
@@ -251,21 +236,18 @@ psioctl(dev, cmd, data, flag)
 		break;
 
 	case PSIODOUBLEBUFFER:
-		if((arg = fuword(waddr++)) == -1)
-			u.u_error = EFAULT;
-		else {
-			psp->ps_dbuffer.dbaddrs[0] = arg;
-			if((arg = fuword(waddr++)) == -1)
-				u.u_error = EFAULT;
-			else if(arg <= 0 || arg > MAXDBSIZE)
-				u.u_error = EINVAL;
-			else {
-				psp->ps_dbuffer.dbsize = arg;
-				psp->ps_dbuffer.dbaddrs[1] =
-						psp->ps_dbuffer.dbaddrs[0]+arg;
-				psp->ps_dbuffer.state = ON_DB;
-				psp->ps_dbuffer.rbuffer = 0;
-			}
+		if ((arg = fuword(waddr++)) == -1)
+			return (EFAULT);
+		psp->ps_dbuffer.dbaddrs[0] = arg;
+		if ((arg = fuword(waddr++)) == -1)
+			return (EFAULT);
+		if (arg <= 0 || arg > MAXDBSIZE)
+			return (EINVAL);
+		psp->ps_dbuffer.dbsize = arg;
+		psp->ps_dbuffer.dbaddrs[1] =
+		    psp->ps_dbuffer.dbaddrs[0]+arg;
+		psp->ps_dbuffer.state = ON_DB;
+		psp->ps_dbuffer.rbuffer = 0;
 		}
 		break;
 
@@ -274,37 +256,40 @@ psioctl(dev, cmd, data, flag)
 		break;
 
 	case PSIOWAITREFRESH:
-		if(psp->ps_refresh.mode != RUNNING_RF)	/* not running */
-			return;				/* dont wait */
+		if (psp->ps_refresh.mode != RUNNING_RF)	/* not running */
+			return (0);				/* dont wait */
+		/* fall into ... */
 
 	case PSSIOTOPREFRESH:
-		if(cmd == PSSTOPREFRESH)
+		if (cmd == PSSTOPREFRESH)
 			psp->ps_refresh.stop = 1;
 		spl5();
 		psp->ps_refresh.waiting = 1;
-		while(psp->ps_refresh.waiting)
+		while (psp->ps_refresh.waiting)
 			sleep(&psp->ps_refresh.waiting, PSPRI);
 		spl0();
 		break;
 
 	case PSIOWAITMAP:
-		if(psp->ps_map.mode != RUNNING_MAP)	/* not running */
-			return;				/* dont wait */
+		if (psp->ps_map.mode != RUNNING_MAP)	/* not running */
+			return (0);				/* dont wait */
+		/* fall into ... */
 
 	case PSIOSTOPMAP:
-		if(cmd == PSSTOPMAP)
+		if (cmd == PSSTOPMAP)
 			psp->ps_map.stop = 1;
 		spl5();
 		psp->ps_map.waiting = 1;
-		while(psp->ps_map.waiting)
+		while (psp->ps_map.waiting)
 			sleep(&psp->ps_map.waiting, PSPRI);
 		spl0();
 		break;
 
 	default:
-		u.u_error = ENOTTY;	/* Not a legal ioctl cmd. */
+		return (ENOTTY);
 		break;
 	}
+	return (0);
 }
 
 #define SAVEPSADDR() {register short int i, x;x=spl6();i=psaddr->ps_addr;\
@@ -322,13 +307,13 @@ psclockintr(dev)
 	register struct ps *psp = &ps[PSUNIT(dev)];
 	int savepsaddr;
 
-	if(!psp->ps_open)
+	if (!psp->ps_open)
 		return;
 	psp->ps_clock.icnt++;
 	SAVEPSADDR();
 #ifndef EXTERNAL_SYNC
-	if(psp->ps_refresh.state == AUTO_RF) {
-		if(psp->ps_refresh.mode == SYNCING_RF) {
+	if (psp->ps_refresh.state == AUTO_RF) {
+		if (psp->ps_refresh.mode == SYNCING_RF) {
 			psrfnext(psp, psaddr);
 		} else {
 			psp->ps_clock.ticked++;
@@ -353,7 +338,7 @@ pssystemintr(dev)
 	short int request;
 	register int savepsaddr, x;
 
-	if(!psp->ps_open)
+	if (!psp->ps_open)
 		return;
 	SAVEPSADDR();
 	PSWAIT();
@@ -366,24 +351,24 @@ pssystemintr(dev)
 	PSWAIT();
 	psaddr->ps_data = request&(~(HALT_REQ|MOSTOP_REQ));   /* acknowledge */
 
-	if(request & (MOSTOP_REQ|HALT_REQ)) {	/* Map stopped */
+	if (request & (MOSTOP_REQ|HALT_REQ)) {	/* Map stopped */
 		psp->ps_map.icnt++;
 		psmapstop(psaddr);		/* kill it dead */
-		if(psp->ps_map.waiting) {
+		if (psp->ps_map.waiting) {
 			psp->ps_map.waiting = 0;
 			wakeup(&psp->ps_map.waiting);
-			if(psp->ps_map.stop) {
+			if (psp->ps_map.stop) {
 				psp->ps_map.stop = 0;
 				goto tryrf;
 			}
 		}
-		if(psp->ps_map.state == AUTO_MAP)
-			if(!psmapnext(psp, psaddr)) {
+		if (psp->ps_map.state == AUTO_MAP)
+			if (!psmapnext(psp, psaddr)) {
 				psp->ps_map.mcntr = 0;
 				/* prepare for next round */
 				pssetmapbounds(psp, psaddr);
-				if(psp->ps_refresh.mode == WAITING_MAP) {
-					if(psp->ps_dbuffer.state == ON_DB)
+				if (psp->ps_refresh.mode == WAITING_MAP) {
+					if (psp->ps_dbuffer.state == ON_DB)
 						/* fill other db */
 						psdbswitch(psp, psaddr);
 					else
@@ -394,22 +379,22 @@ pssystemintr(dev)
 			}
 	}
 tryrf:
-	if(request & RFSTOP_REQ) {		/* Refresh stopped */
+	if (request & RFSTOP_REQ) {		/* Refresh stopped */
 		psp->ps_refresh.icnt++;
 		psrfstop(psaddr, psp);
-		if(psp->ps_refresh.waiting) {
+		if (psp->ps_refresh.waiting) {
 			psp->ps_refresh.waiting = 0;
 			wakeup(&psp->ps_refresh.waiting);
-			if(psp->ps_refresh.stop) {
+			if (psp->ps_refresh.stop) {
 				psp->ps_refresh.stop = 0;
 				goto tryhit;
 			}
 		}
-		if(psp->ps_refresh.state == AUTO_RF)
-			if(!psrfnext(psp, psaddr)) {	/* at end of refresh cycle */
-				if(psp->ps_map.state == AUTO_MAP && 
+		if (psp->ps_refresh.state == AUTO_RF)
+			if (!psrfnext(psp, psaddr)) {	/* at end of refresh cycle */
+				if (psp->ps_map.state == AUTO_MAP && 
 						psp->ps_map.mode==WAITING_RF) {
-					if(psp->ps_dbuffer.state == ON_DB)
+					if (psp->ps_dbuffer.state == ON_DB)
 						psdbswitch(psp, psaddr);
 					else
 						psmapnext(psp, psaddr);
@@ -418,7 +403,7 @@ tryrf:
 #ifdef EXTERNAL_SYNC
 				x = spl6();
 #endif
-				if(!psp->ps_clock.ticked ||
+				if (!psp->ps_clock.ticked ||
 						!psrfnext(psp, psaddr)) {
 					psp->ps_refresh.mode = SYNCING_RF;
 				}
@@ -430,10 +415,10 @@ tryrf:
 			}
 	}
 tryhit:
-	if(request & HIT_REQ) {		/* Hit request */
+	if (request & HIT_REQ) {		/* Hit request */
 		psp->ps_hit.icnt++;
 	}
-	if(request == 0)
+	if (request == 0)
 		psp->ps_strayintr++;
 	RESTORPSADDR();
 }
@@ -443,10 +428,10 @@ psrfnext(psp, psaddr)
 	register struct psdevice *psaddr;
 {
 
-	if(psp->ps_refresh.srcntr < psp->ps_refresh.nsraddrs)
+	if (psp->ps_refresh.srcntr < psp->ps_refresh.nsraddrs)
 		psrfstart(psp->ps_refresh.sraddrs[psp->ps_refresh.srcntr++],
 						psp, psaddr);
-	else if(psp->ps_refresh.srcntr == psp->ps_refresh.nsraddrs
+	else if (psp->ps_refresh.srcntr == psp->ps_refresh.nsraddrs
 				&& psp->ps_dbuffer.state == ON_DB) {
 		psrfstart(psp->ps_dbuffer.dbaddrs[psp->ps_dbuffer.rbuffer],
 						psp, psaddr);
@@ -500,7 +485,7 @@ psmapnext(psp, psaddr)
 	register struct psdevice *psaddr;
 {
 
-	if(psp->ps_map.mcntr < psp->ps_map.nmaddrs)
+	if (psp->ps_map.mcntr < psp->ps_map.nmaddrs)
 		psmapstart(psp->ps_map.maddrs[psp->ps_map.mcntr++], psp, psaddr);
 	else
 		return(0);
@@ -516,7 +501,7 @@ pssetmapbounds(psp, psaddr)
 	PSWAIT();
 	psaddr->ps_addr = MAOL;
 	PSWAIT();
-	if(psp->ps_dbuffer.state == ON_DB) {
+	if (psp->ps_dbuffer.state == ON_DB) {
 		psaddr->ps_data = (start = psp->ps_dbuffer.dbaddrs[!psp->ps_dbuffer.rbuffer])
 				+psp->ps_dbuffer.dbsize-2;   /* 2 for a refresh halt command */
 		PSWAIT();
@@ -590,10 +575,10 @@ psextsync(PC, PS) {
 	register int savepsaddr;
 
 #ifdef EXTERNAL_SYNC
-	for(psp = ps, n = 0; n < NPS; psp++, n++) {
-		if(!psp->ps_open)
+	for (psp = ps, n = 0; n < NPS; psp++, n++) {
+		if (!psp->ps_open)
 			continue;
-		if(psp->ps_refresh.mode == SYNCING_RF) {
+		if (psp->ps_refresh.mode == SYNCING_RF) {
 			psaddr = (struct psdevice *) psdinfo[n]->ui_addr;
 			SAVEPSADDR();
 			psrfnext(psp, psaddr);

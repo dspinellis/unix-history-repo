@@ -1,4 +1,4 @@
-/*	ct.c	4.10	82/10/10	*/
+/*	ct.c	4.11	82/10/17	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -75,12 +75,11 @@ ctopen(dev)
 	register struct ctdevice *ctaddr;
 
 	if (CTUNIT(dev) >= NCT || (ui = ctdinfo[CTUNIT(dev)]) == 0 ||
-	    ui->ui_alive == 0 || (sc = &ct_softc[CTUNIT(dev)])->sc_openf) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    ui->ui_alive == 0 || (sc = &ct_softc[CTUNIT(dev)])->sc_openf)
+		return (ENXIO);
 	sc->sc_openf = 1;
 	ctaddr->ctcsr |= IENABLE;
+	return (0);
 }
 
 ctclose(dev)
