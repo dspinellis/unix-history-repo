@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kadb.c	7.1 (Berkeley) %G%
+ *	@(#)kadb.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,10 @@ REGLIST	kdbreglist[] = {
 	"AT", &kdbpcb.pcb_regs[AST],
 	"v0", &kdbpcb.pcb_regs[V0],
 	"v1", &kdbpcb.pcb_regs[V1],
+	"a0", &kdbpcb.pcb_regs[A0],
+	"a1", &kdbpcb.pcb_regs[A1],
+	"a2", &kdbpcb.pcb_regs[A2],
+	"a3", &kdbpcb.pcb_regs[A3],
 	"t0", &kdbpcb.pcb_regs[T0],
 	"t1", &kdbpcb.pcb_regs[T1],
 	"t2", &kdbpcb.pcb_regs[T2],
@@ -205,8 +209,6 @@ kdbsetsstep()
 		/* kernel address */
 		kdb_ss_instr = kdbpeek(va);
 		kdbpoke((caddr_t)va, MACH_BREAK_SSTEP);
-		kdbprintf("SS: breakpoint set at %x: %x (pc %x)\n",
-			kdb_ss_addr, kdb_ss_instr, locr0[PC]); /* XXX */
 		return;
 	}
 
@@ -229,8 +231,6 @@ kdbsetsstep()
 	}
 	if (i < 0)
 		return;
-	kdbprintf("SS: breakpoint set at %x: %x (pc %x)\n",
-		kdb_ss_addr, kdb_ss_instr, locr0[PC]); /* XXX */
 }
 
 void
@@ -257,7 +257,6 @@ kdbclrsstep()
 
 	/* read break instruction */
 	instr = kdbpeek(va);
-	printf("BREAK %x: %x\n", va, instr); /* XXX */
 	if (instr != MACH_BREAK_SSTEP)
 		return;
 
@@ -557,16 +556,16 @@ void
 kdbstacktrace(printlocals)
 	int printlocals;
 {
-	unsigned pc, sp, ra, va;
+	unsigned pc, sp, ra, va, subr;
 	int a0, a1, a2, a3;
 	unsigned instr;
 	InstFmt i;
 	int more, stksize;
 	extern MachKernGenException();
 	extern MachUserGenException();
-	extern MachKernInter();
-	extern MachUserInter();
-	extern MachTLBMissException();
+	extern MachKernIntr();
+	extern MachUserIntr();
+	extern setsoftclock();
 
 	/* get initial values from the exception frame */
 	sp = kdbpcb.pcb_regs[SP];
@@ -578,9 +577,23 @@ kdbstacktrace(printlocals)
 	a3 = kdbpcb.pcb_regs[A3];
 
 loop:
+	/* check for current PC in the kernel interrupt handler code */
+	if (pc >= (unsigned)MachKernIntr &&
+	    pc < (unsigned)MachUserIntr) {
+		/* NOTE: the offsets depend on the code in locore.s */
+		kdbprintf("interupt\n");
+		a0 = kdbchkget(sp + 36, DSP);
+		a1 = kdbchkget(sp + 40, DSP);
+		a2 = kdbchkget(sp + 44, DSP);
+		a3 = kdbchkget(sp + 48, DSP);
+		pc = kdbchkget(sp + 20, DSP);
+		ra = kdbchkget(sp + 92, DSP);
+		sp = kdbchkget(sp + 100, DSP);
+	}
+
 	/* check for current PC in the exception handler code */
-	if (pc >= (unsigned)MachKernGenException &&
-	    pc < (unsigned)MachTLBMissException) {
+	if (pc >= 0x80000000 &&
+	    pc < (unsigned)setsoftclock) {
 		ra = 0;
 		goto done;
 	}
@@ -589,11 +602,13 @@ loop:
 	 * from the current PC for the end of the previous subroutine.
 	 */
 	va = pc - sizeof(int);
-	kdbprintf("cur PC %X RA %X SP %X\n", va, ra, sp); /* XXX */
 	while ((instr = kdbchkget(va, ISP)) != MIPS_JR_RA)
 		va -= sizeof(int);
 	va += 2 * sizeof(int);	/* skip back over branch & delay slot */
-	kdbprintf("subr PC %X\n", va); /* XXX */
+	/* skip over nulls which might separate .o files */
+	while ((instr = kdbchkget(va, ISP)) == 0)
+		va += sizeof(int);
+	subr = va;
 
 	/* scan forwards to find stack size and any saved registers */
 	stksize = 0;
@@ -672,7 +687,11 @@ loop:
 	}
 
 done:
+#if 0
 	kdbpsymoff((long)pc, ISYM, "");
+#else
+	kdbprintf("%X+%X ", subr, pc - subr); /* XXX */
+#endif
 	kdbprintf("(%X,%X,%X,%X)\n", a0, a1, a2, a3);
 
 	if (ra) {
