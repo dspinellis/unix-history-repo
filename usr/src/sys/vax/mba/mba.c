@@ -1,4 +1,4 @@
-/*	mba.c	4.1	%G%	*/
+/*	mba.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/buf.h"
@@ -72,8 +72,8 @@ mbastart(bp, adcr)
 		*adcr = MBAWCOM | GO;
 }
 
-mbainit(mbanum)
-	int mbanum;
+mbainit(mbano)
+	int mbano;
 {
 	register struct pte *b;
 	register int i;
@@ -81,7 +81,7 @@ mbainit(mbanum)
 	register struct mba_regs *mbap;
 	unsigned v;
 
-	mi = &mbainfo[mbanum];
+	mi = &mbainfo[mbano];
 	v = btop((int)mi->mi_phys);
 	b = mi->mi_map;
 	for (i = 0; i < 8192; i += NBPG) {
@@ -92,5 +92,5 @@ mbainit(mbanum)
 	mbap = mi->mi_loc;
 	mbap->mba_cr = MBAINIT;
 	mbap->mba_cr = MBAIE;
-	mbaact |= (1<<mbanum);
+	mbaact |= (1<<mbano);
 }

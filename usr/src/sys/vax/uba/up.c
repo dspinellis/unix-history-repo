@@ -1,4 +1,4 @@
-/*	up.c	4.1	%G%	*/
+/*	up.c	4.2	%G%	*/
 
 #include "../conf/up.h"
 /*
@@ -207,7 +207,7 @@ register struct buf *bp;
 	long sz, bn;
 
 	if (upwstart == 0) {
-		timeout((caddr_t)upwatch, 0, HZ);
+		timeout(upwatch, (caddr_t)0, HZ);
 		upwstart++;
 	}
 	xunit = minor(bp->b_dev) & 077;
@@ -528,7 +528,8 @@ upintr()
 			else
 				uptab.b_active = 0;	/* To force retry */
 			if (uptab.b_errcnt > 27)
-				deverror(bp, upaddr->upcs2, upaddr->uper1);
+				deverror(bp, (int)upaddr->upcs2,
+				    (int)upaddr->uper1);
 			/*
 			 * If this was a correctible ECC error, let upecc
 			 * do the dirty work to correct it.  If upecc
@@ -610,7 +611,6 @@ upintr()
 	if (uptab.b_actf && uptab.b_active == 0)
 		if (upstart())
 			needie = 0;
-out:
 	if (needie)
 		upaddr->upcs1 = IE;
 }
@@ -745,7 +745,7 @@ upwatch()
 {
 	int i;
 
-	timeout((caddr_t)upwatch, 0, HZ);
+	timeout(upwatch, (caddr_t)0, HZ);
 	if (uptab.b_active == 0) {
 		for (i = 0; i < NUP; i++)
 			if (uputab[i].b_active)

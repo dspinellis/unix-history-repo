@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.1	%G%	*/
+/*	kern_resource.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -61,16 +61,16 @@ acct()
 	plock(ip);
 	for (i=0; i<sizeof(acctbuf.ac_comm); i++)
 		acctbuf.ac_comm[i] = u.u_comm[i];
-	acctbuf.ac_utime = compress(u.u_vm.vm_utime);
-	acctbuf.ac_stime = compress(u.u_vm.vm_stime);
-	acctbuf.ac_etime = compress(time - u.u_start);
+	acctbuf.ac_utime = compress((long)u.u_vm.vm_utime);
+	acctbuf.ac_stime = compress((long)u.u_vm.vm_stime);
+	acctbuf.ac_etime = compress((long)(time - u.u_start));
 	acctbuf.ac_btime = u.u_start;
 	acctbuf.ac_uid = u.u_ruid;
 	acctbuf.ac_gid = u.u_rgid;
 	acctbuf.ac_mem = 0;
 	if (i = u.u_vm.vm_utime + u.u_vm.vm_stime)
 		acctbuf.ac_mem = (u.u_vm.vm_ixrss + u.u_vm.vm_idsrss) / i;
-	acctbuf.ac_io = compress(u.u_vm.vm_inblk + u.u_vm.vm_oublk);
+	acctbuf.ac_io = compress((long)(u.u_vm.vm_inblk + u.u_vm.vm_oublk));
 	acctbuf.ac_tty = u.u_ttyd;
 	acctbuf.ac_flag = u.u_acflag;
 	siz = ip->i_size;
@@ -90,7 +90,7 @@ acct()
  * with 3 bits base-8 exponent, 13 bits fraction.
  */
 compress(t)
-register time_t t;
+register long t;
 {
 	register exp = 0, round = 0;
 
