@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.3	6.3 (Berkeley) %G%
+.\"	@(#)intro.3	6.4 (Berkeley) %G%
 .\"
 .sh 1 Usage
 .pp
@@ -28,7 +28,7 @@ Since it must allocate space for the windows,
 it can overflow core when attempting to do so.
 On this rather rare occasion,
 .Fn initscr
-returns ERR.
+returns CURSES_ERR.
 .Fn initscr
 must
 .bi always
@@ -96,14 +96,14 @@ and
 .Fn move .
 .Fn addch
 adds a character at the current \*y,
-returning ERR if it would cause the window to illegally scroll,
+returning CURSES_ERR if it would cause the window to illegally scroll,
 .i i.e. ,
 printing a character in the lower right-hand corner
 of a terminal which automatically scrolls
 if scrolling is not allowed.
 .Fn move
 changes the current \*y to whatever you want them to be.
-It returns ERR if you try to move off the window when scrolling is not allowed.
+It returns CURSES_ERR if you try to move off the window when scrolling is not allowed.
 As mentioned above, you can combine the two into
 .Fn mvaddch
 to do both things in one fell swoop.
@@ -170,12 +170,6 @@ If it is not,
 .Fn getch
 sets it to be cbreak,
 and then reads in the character.
-.sh 3 Miscellaneous
-.pp
-All sorts of fun functions exists for maintaining and changing information
-about the windows.
-For the most part,
-the descriptions in section 5.4. should suffice.
 .sh 2 "Finishing up"
 .pp
 In order to do certain optimizations,
@@ -198,7 +192,17 @@ It restores tty modes to what they were
 when
 .Fn initscr
 was first called.
+The terminal state module use the variable 
+.Vn origtermio
+to save the original terminal state which is then restored upon a call to 
+.Fn endwin .
 Thus,
 anytime after the call to initscr,
 .Fn endwin
-should be called before exiting.
+should be called before exiting.  Note however, that 
+.Fn endwin 
+should always be called 
+.b before
+the final calls to
+.Fn delwin 
+which free the storage of the windows.
