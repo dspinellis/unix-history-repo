@@ -1,18 +1,8 @@
-/*
+/*-
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -22,12 +12,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	1.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <cencode.h>
-#include "ktrace.h"
 #include <sys/ioctl.h>
+#include <vis.h>
+#define KERNEL
+#include <errno.h>
+#undef KERNEL
+#include "ktrace.h"
 
 int timestamp, decimal, fancy = 1, tail, maxdata;
 char *tracefile = DEF_TRACEFILE;
@@ -256,20 +249,16 @@ ktrsyscall(ktr, len)
 ktrsysret(ktr, len)
 	struct ktr_sysret *ktr;
 {
-	extern char *sys_errlist[];
-	int ret = ktr->ktr_retval;
+	register int ret = ktr->ktr_retval;
+	register int error = ktr->ktr_error;
+	register int code = ktr->ktr_code;
 
-	if (ktr->ktr_code >= nsyscalls || ktr->ktr_code < 0)
-		printf("[%d] ", ktr->ktr_code);
+	if (code >= nsyscalls || code < 0)
+		printf("[%d] ", code);
 	else
-		printf("%s ", syscallnames[ktr->ktr_code]);
-	if (ktr->ktr_eosys == RESTARTSYS)
-		printf("RESTART");
-	else if (ktr->ktr_error) {
-		printf("-1 errno %d", ktr->ktr_error);
-		if (fancy)
-			printf(" %s", strerror(ktr->ktr_error));
-	} else {
+		printf("%s ", syscallnames[code]);
+
+	if (error == 0) {
 		if (fancy) {
 			printf("%d", ret);
 			if (ret < 0 || ret > 9)
@@ -280,6 +269,14 @@ ktrsysret(ktr, len)
 			else
 				printf("%#x", ret);
 		}
+	} else if (error == ERESTART)
+		printf("RESTART");
+	else if (error == EJUSTRETURN)
+		printf("JUSTRETURN");
+	else {
+		printf("-1 errno %d", ktr->ktr_error);
+		if (fancy)
+			printf(" %s", strerror(ktr->ktr_error));
 	}
 	putchar('\n');
 }
@@ -290,8 +287,6 @@ ktrnamei(cp, len)
 	printf("\"%.*s\"\n", len, cp);
 }
 
-#define CENC_ALL (CENC_CSTYLE | CENC_GRAPH | CENC_OCTAL)
-
 ktrgenio(ktr, len)
 	struct ktr_genio *ktr;
 {
@@ -301,6 +296,7 @@ ktrgenio(ktr, len)
 	register int col = 0;
 	register char c;
 	register width;
+	char visbuf[5];
 	static screenwidth = 0;
 
 	if (screenwidth == 0) {
@@ -319,9 +315,8 @@ ktrgenio(ktr, len)
 	printf("       \"");
 	col = 8;
 	for (;datalen > 0; datalen--, dp++) {
-		cp = cencode(*dp, CENC_ALL | CENC_RACHAR, *(dp+1));
-		if (*cp == '\r')
-			cp = "\\r";
+		(void) vis(visbuf, *dp, VIS_CSTYLE, *(dp+1));
+		cp = visbuf;
 		/*
 		 * Keep track of printables and
 		 * space chars (like fold(1)).
