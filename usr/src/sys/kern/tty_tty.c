@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.6	82/01/19	*/
+/*	tty_tty.c	4.7	82/01/24	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -48,13 +48,17 @@ sywrite(dev)
 
 /*ARGSUSED*/
 syioctl(dev, cmd, addr, flag)
-caddr_t addr;
+	dev_t dev;
+	int cmd;
+	caddr_t addr;
+	int flag;
 {
 
 	if (cmd == TIOCNOTTY) {
 		u.u_ttyp = 0;
 		u.u_ttyd = 0;
 		u.u_procp->p_pgrp = 0;
+		u.u_procp->p_flags &= ~SDETACH;
 		return;
 	}
 	if (u.u_ttyp == NULL) {
