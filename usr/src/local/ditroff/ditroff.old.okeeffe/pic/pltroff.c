@@ -1,4 +1,4 @@
-/* pltroff.c	(Berkeley)	1.2	83/08/09
+/* pltroff.c	(Berkeley)	1.3	83/08/09
  *	This version has code generators to drive the old-style troff
  *	that produces output for the Graphic Systems C/A/T.  
  *	Very few people actually have a C/A/T; they instead typically
@@ -930,3 +930,4 @@ round(x, dx)	/* round x relative to dx */
 	x = (x + dx - 1) / dx;
 	return x * dx;
 }
+#endif
