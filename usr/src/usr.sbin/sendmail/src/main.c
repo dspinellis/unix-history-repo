@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.101 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.102 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -825,9 +825,6 @@ main(argc, argv, envp)
 
 	if (ConfigLevel < 6)
 	{
-		/* need config support for group:; handling */
-		ColonOkInAddr = TRUE;
-
 		/* heuristic tweaking of local mailer for back compat */
 		if (LocalMailer != NULL)
 		{
