@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.h	7.4 (Berkeley) %G%
+ *	@(#)map.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,6 @@ struct mapent {
 
 #ifdef KERNEL
 #define	ARGMAPSIZE	16
-struct	map *kernelmap, *kmemmap, *mbmap, *swapmap;
+struct	map *kmemmap, *mbmap, *swapmap;
 int	nswapmap;
 #endif
