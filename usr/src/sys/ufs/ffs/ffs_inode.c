@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.18 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -119,7 +119,6 @@ loop:
 	ip->i_devvp = 0;
 	ip->i_lastr = 0;
 	ip->i_mode = 0;
-	ip->i_flags = 0;
 #ifdef QUOTA
 	ip->i_dquot = NODQUOT;
 #endif
@@ -166,7 +165,7 @@ loop:
 			iq = VTOI(vp);
 			iq->i_vnode = vp;
 			iq->i_lastr = 0;
-			iq->i_flags = 0;
+			iq->i_flag = 0;
 			ILOCK(iq);
 			iq->i_din = ip->i_din;
 			iq->i_dev = dev;
