@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 SRCS=	version.c aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
 	getname.c head.c v7.local.c lex.c list.c main.c names.c popen.c \
@@ -50,7 +50,7 @@ lint: FRC
 	lint ${CFLAGS} ${SRCS}
 	lint ${CFLAGS} fmt.c head.c
 
-tags: xhead.c FRC
+tags: FRC
 	ctags ${SRCS}
 	ctags -a fmt.c
 	sort -o tags tags
