@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.53.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.54 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -72,15 +72,27 @@ int	check_all = 0;
 
 struct	passwd *pwd;
 
+void	doit __P((int, struct sockaddr_in *));
+int	control __P((int, char *, int));
+void	protocol __P((int, int));
+void	cleanup __P((void));
+void	fatal __P((int, char *, int));
+int	do_rlogin __P((struct sockaddr_in *));
+void	getstr __P((char *, int, char *));
+void	setup_term __P((int));
+int	do_krb_login __P((struct sockaddr_in *));
+void	usage __P((void));
+int	local_domain __P((char *));
+char	*topdomain __P((char *));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int opterr, optind;
-	extern int _check_rhosts_file;
-	int ch;
-	int on = 1, fromlen;
+	extern int __check_rhosts_file;
 	struct sockaddr_in from;
+	int ch, fromlen, on;
 
 	openlog("rlogind", LOG_PID | LOG_CONS, LOG_AUTH);
 
@@ -94,7 +106,7 @@ main(argc, argv)
 			check_all = 1;
 			break;
 		case 'l':
-			_check_rhosts_file = 0;
+			__check_rhosts_file = 0;
 			break;
 		case 'n':
 			keepalive = 0;
@@ -126,6 +138,7 @@ main(argc, argv)
 		syslog(LOG_ERR, "Couldn't get peer name of remote host: %m");
 		fatalperror("Can't get peer name of remote host");
 	}
+	on = 1;
 	if (keepalive &&
 	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
@@ -140,22 +153,21 @@ void	cleanup();
 int	netf;
 char	line[MAXPATHLEN];
 int	confirmed;
-extern	char	*inet_ntoa();
 
 struct winsize win = { 0, 0, 0, 0 };
 
 
+void
 doit(f, fromp)
 	int f;
 	struct sockaddr_in *fromp;
 {
-	int i, master, pid, on = 1;
-#ifndef OLD_LOGIN
-	int authenticated = 0, hostok = 0;
+	int master, pid, on = 1;
+	int authenticated = 0;
 #endif
 	register struct hostent *hp;
+	register char *hostname;
 	char remotehost[2 * MAXHOSTNAMELEN + 1];
-	struct hostent hostent;
 	char c;
 
 	alarm(60);
@@ -169,49 +181,9 @@ doit(f, fromp)
 	alarm(0);
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof(struct in_addr),
-		fromp->sin_family);
-	if (hp == 0) {
-		/*
-		 * Only the name is used below.
-		 */
-		hp = &hostent;
-		hp->h_name = inet_ntoa(fromp->sin_addr);
-#ifndef OLD_LOGIN
-		hostok++;
-#endif
-	}
-#ifndef OLD_LOGIN
-	else if (check_all || local_domain(hp->h_name)) {
-		/*
-		 * If name returned by gethostbyaddr is in our domain,
-		 * attempt to verify that we haven't been fooled by someone
-		 * in a remote net; look up the name and check that this
-		 * address corresponds to the name.
-		 */
-		strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
-		remotehost[sizeof(remotehost) - 1] = 0;
-		hp = gethostbyname(remotehost);
-		if (hp)
-#ifdef h_addr	/* 4.2 hack */
-		    for (; hp->h_addr_list[0]; hp->h_addr_list++)
-			if (!bcmp(hp->h_addr_list[0], (caddr_t)&fromp->sin_addr,
-			    sizeof(fromp->sin_addr))) {
-				hostok++;
-				break;
-			}
-#else
-			if (!bcmp(hp->h_addr, (caddr_t)&fromp->sin_addr,
-			    sizeof(fromp->sin_addr)))
-				hostok++;
-#endif
-	} else
-		hostok++;
-#endif /* OLD_LOGIN */
 
 	if (use_kerberos) {
-		if (!hostok)
-			fatal(f, "rlogind: Host address mismatch.", 0);
-		retval = do_krb_login(hp->h_name, fromp);
+		retval = do_krb_login(fromp);
 		if (retval == 0)
 			authenticated++;
 		else if (retval > 0)
@@ -221,27 +193,22 @@ doit(f, fromp)
 	} else
 #ifndef OLD_LOGIN
 	{
-	    if (fromp->sin_family != AF_INET ||
-	        fromp->sin_port >= IPPORT_RESERVED ||
-	        fromp->sin_port < IPPORT_RESERVED/2) {
-		    syslog(LOG_NOTICE, "Connection from %s on illegal port",
-			    inet_ntoa(fromp->sin_addr));
-		    fatal(f, "Permission denied", 0);
-	    }
-	    if (do_rlogin(hp->h_name) == 0 && hostok)
-		    authenticated++;
+		if (fromp->sin_family != AF_INET ||
+		    fromp->sin_port >= IPPORT_RESERVED ||
+		    fromp->sin_port < IPPORT_RESERVED/2) {
+			syslog(LOG_NOTICE, "Connection from %s on illegal port",
+				inet_ntoa(fromp->sin_addr));
+			fatal(f, "Permission denied", 0);
+		}
+		if (do_rlogin(fromp) == 0)
+			authenticated++;
 	}
 	if (confirmed == 0) {
 		write(f, "", 1);
 		confirmed = 1;		/* we sent the null! */
 	}
 #ifdef	KERBEROS
-	if (use_kerberos == 0)
 #endif
-	   if (!authenticated && !hostok)
-		write(f, "rlogind: Host address mismatch.\r\n",
-		    sizeof("rlogind: Host address mismatch.\r\n") - 1);
-
 	netf = f;
 
 	pid = forkpty(&master, line, NULL, &win);
@@ -252,7 +219,7 @@ doit(f, fromp)
 			fatal(f, "Forkpty", 1);
 	}
 	if (pid == 0) {
-		if (f > 2)	/* f should always be 0, but... */ 
+		if (f > 2)	/* f should always be 0, but... */
 			(void) close(f);
 		setup_term(0);
 #ifdef OLD_LOGIN
@@ -264,14 +231,14 @@ doit(f, fromp)
 				syslog(LOG_INFO|LOG_AUTH,
 				    "ROOT Kerberos login from %s.%s@%s on %s\n",
 				    kdata->pname, kdata->pinst, kdata->prealm,
-				    hp->h_name);
+				    hostname);
 #endif
 
 			execl(_PATH_LOGIN, "login", "-p",
-			    "-h", hp->h_name, "-f", lusername, 0);
+			    "-h", hostname, "-f", lusername, (char *)NULL);
 		} else
 			execl(_PATH_LOGIN, "login", "-p",
-			    "-h", hp->h_name, lusername, 0);
+			    "-h", hostname, lusername, (char *)NULL);
 #endif /* OLD_LOGIN */
 		fatal(STDERR_FILENO, _PATH_LOGIN, 1);
 		/*NOTREACHED*/
@@ -293,6 +260,7 @@ char	oobdata[] = {TIOCPKT_WINDOW};
  * in the data stream.  For now, we are only willing to handle
  * window size changes.
  */
+int
 control(pty, cp, n)
 	int pty;
 	char *cp;
@@ -315,6 +283,7 @@ control(pty, cp, n)
 /*
  * rlogin "protocol" machine.
  */
+void
 protocol(f, p)
 	register int f, p;
 {
@@ -470,9 +439,11 @@ cleanup()
 	exit(1);
 }
 
+void
 fatal(f, msg, syserr)
-	int f, syserr;
+	int f;
 	char *msg;
+	int syserr;
 {
 	int len;
 	char buf[BUFSIZ], *bp = buf;
@@ -493,8 +464,9 @@ fatal(f, msg, syserr)
 }
 
 #ifndef OLD_LOGIN
-do_rlogin(host)
-	char *host;
+int
+do_rlogin(dest)
+	struct sockaddr_in *dest;
 {
 	getstr(rusername, sizeof(rusername), "remuser too long");
 	getstr(lusername, sizeof(lusername), "locuser too long");
@@ -502,13 +474,14 @@ do_rlogin(host)
 
 	pwd = getpwnam(lusername);
 	if (pwd == NULL)
-		return(-1);
+		return (-1);
 	if (pwd->pw_uid == 0)
-		return(-1);
-	return(ruserok(host, 0, rusername, lusername));
+		return (-1);
+	/* XXX why don't we syslog() failure? */
+	return (iruserok(dest->sin_addr.s_addr, 0, rusername, lusername));
 }
 
-
+void
 getstr(buf, cnt, errmsg)
 	char *buf;
 	int cnt;
@@ -527,6 +500,7 @@ getstr(buf, cnt, errmsg)
 
 extern	char **environ;
 
+void
 char *speeds[] = {
 	"0", "50", "75", "110", "134", "150", "200", "300", "600",
 	"1200", "1800", "2400", "4800", "9600", "19200", "38400",
