@@ -1,4 +1,4 @@
-.\"	@(#)ae6	5.1 (Berkeley) %G%
+.\"	@(#)ae6	6.1 (Berkeley) %G%
 .\"
 .NH
 CUT AND PASTE WITH THE EDITOR
@@ -163,7 +163,7 @@ Writing out Part of a File
 The other side of the coin is writing out part of
 the document you're editing.
 For example, maybe
-you want to split out into a separate file
+you want to copy out into a separate file
 that table from the previous example,
 so it can be formatted and tested separately.
 Suppose that in the file being edited 
@@ -194,6 +194,8 @@ If you are confident, you can do it all at once with
 .P1
 /^\*e\*.TS/;/^\*e\*.TE/w table
 .P2
+and now you have two copies, one in the file you're still editing,
+one in the file `table' you've just written.
 .PP
 The point is that the
 .UL w
@@ -358,7 +360,7 @@ with a particular name so you can later reference it
 by name
 regardless of its actual line number.
 This can be handy for moving lines,
-and for keeping track of them as they move.
+and for keeping track of them even after they've been moved.
 The
 .ul
 mark
@@ -477,3 +479,16 @@ command, including another
 (This is quite common, in fact.)
 In this case, you can even do another
 .UL ! .
+.PP
+On Berkeley 
+.UX
+systems, there is an additional (and preferable) mechanism called
+.ul
+job control
+which lets you suspend your edit session (or, for that matter,
+any program), return to the shell from 
+which you invoked that program, and issue any commands, then resume
+the program from the point where it was stopped.  See
+.ul
+An Introduction to the C Shell
+for more details.
