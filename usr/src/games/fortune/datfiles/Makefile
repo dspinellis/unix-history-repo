@@ -1,20 +1,28 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
-DATFILES=fortunes.dat startrek.dat zippy.dat fortunes-o.dat
-CLEANFILES+=${DATFILES}
+# If TYPE is real, the real obscene fortunes get installed.  If TYPE is
+# fake, they don't.  See how easy that was?
 
-install: ${DATFILES}
+TYPE=	real
+#TYPE=	fake
+
+SRCS=	fortunes startrek zippy
+BLDS=	fortunes.dat startrek.dat zippy.dat fortunes-o fortunes-o.dat
+CLEANFILES+=${BLDS}
+
+install: ${SRCS} ${BLDS}
 	(cd ${.CURDIR} && install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    ${DATFILES:R} ${DESTDIR}/usr/share/games/fortune)
-	install -o ${BINOWN} -g ${BINGRP} -m 444 ${DATFILES} \
+	    ${SRCS} ${DESTDIR}/usr/share/games/fortune)
+	install -o ${BINOWN} -g ${BINGRP} -m 444 ${BLDS} \
 	    ${DESTDIR}/usr/share/games/fortune
 
-fortunes-o.dat: ${.TARGET:R}
-	${.CURDIR}/../strfile/obj/strfile -rsx \
-	    ${.CURDIR}/${.TARGET:R} ${.TARGET}
+fortunes.dat startrek.dat zippy.dat:
+	${.CURDIR}/../strfile/obj/strfile -rs ${.CURDIR}/${.TARGET:R} ${.TARGET}
 
-fortunes.dat startrek.dat zippy.dat: ${.TARGET:R}
-	${.CURDIR}/../strfile/obj/strfile -rs \
-	    ${.CURDIR}/${.TARGET:R} ${.TARGET}
+fortunes-o.dat: fortunes-o
+	${.CURDIR}/../strfile/obj/strfile -rsx fortunes-o ${.TARGET}
+
+fortunes-o: fortunes-o.${TYPE}
+	caesar 13 < ${.CURDIR}/${.ALLSRC} > ${.TARGET}
 
 .include <bsd.prog.mk>
