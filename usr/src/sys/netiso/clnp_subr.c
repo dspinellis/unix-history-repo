@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_subr.c	7.15 (Berkeley) %G%
+ *	@(#)clnp_subr.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -601,10 +601,10 @@ struct rtentry *rt; /* dst route */
 int line;			/* where the dirty deed occured */
 char *file;			/* where the dirty deed occured */
 {
-	printf("sending on route %x with no mtu, line %s of file %s\n",
+	printf("sending on route 0x%x with no mtu, line %d of file %s\n",
 		rt, line, file);
 #ifdef ARGO_DEBUG
-	printf("route dst is");
+	printf("route dst is ");
 	dump_isoaddr(rt_key(rt));
 #endif
 	return ifp->if_mtu;
