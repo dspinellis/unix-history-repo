@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)su.1	6.1 (Berkeley) %G%
+.\"	@(#)su.1	6.2 (Berkeley) %G%
 .\"
 .TH SU 1 ""
 .UC
@@ -33,7 +33,10 @@ The new user ID stays in force until the Shell exits.
 .PP
 If no 
 .I userid
-is specified, `root' is assumed.
+is specified, ``root'' is assumed.
+Only users in the ``wheel'' group (group 0) can
+.I su
+to ``root'', even with the root password.
 To remind the super-user of his responsibilities,
 the Shell substitutes `#' for its usual prompt.
 .PP
@@ -50,9 +53,3 @@ The
 option simulates a full login.
 .SH "SEE ALSO"
 sh(1), csh(1)
-.SH BUGS
-Local administrative rules cause restrictions to
-be placed on who can
-.I su
-to `root', even with the root password.
-These rules vary from site to site.
