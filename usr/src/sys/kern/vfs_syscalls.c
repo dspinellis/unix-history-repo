@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.25 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -272,27 +272,23 @@ statfs(scp)
 		char *path;
 		struct statfs *buf;
 	} *uap = (struct a *)scp->sc_ap;
-	register struct vnode *vp;
 	register struct mount *mp;
 	register struct nameidata *ndp = &scp->sc_nd;
 	struct statfs sb;
 	int error;
 
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->path;
 	if (error = namei(ndp))
 		RETURN (error);
-	vp = ndp->ni_vp;
-	mp = vp->v_mount;
+	mp = ndp->ni_vp->v_mount;
+	vrele(ndp->ni_vp);
 	if (error = VFS_STATFS(mp, &sb))
-		goto out;
+		RETURN (error);
 	sb.f_flags = mp->m_flag & M_VISFLAGMASK;
 	sb.f_fsid = mp->m_fsid;
-	error = copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb));
-out:
-	vput(vp);
-	RETURN (error);
+	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
 }
 
 fstatfs(scp)
