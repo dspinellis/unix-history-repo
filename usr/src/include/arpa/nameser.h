@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nameser.h	5.21 (Berkeley) %G%
+ *	@(#)nameser.h	5.22 (Berkeley) %G%
  */
 
 /*
@@ -123,7 +123,8 @@
 
 #endif
 #if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
-    defined(is68k) || defined (tahoe) || defined (BIT_ZERO_ON_LEFT)
+    defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || \
+    defined (BIT_ZERO_ON_LEFT)
 #define BYTE_ORDER	BIG_ENDIAN
 #endif
 #endif /* BYTE_ORDER */
@@ -154,7 +155,7 @@ typedef struct {
 	u_char	unused:2;	/* unused bits */
 	u_char	rcode:4;	/* response code */
 #endif
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if BYTE_ORDER == LITTLE_ENDIAN || BYTE_ORDER == PDP_ENDIAN
 			/* fields in third byte */
 	u_char	rd:1;		/* recursion desired */
 	u_char	tc:1;		/* truncated message */
