@@ -1,4 +1,4 @@
-/*	machdep.c	6.6	84/07/08	*/
+/*	machdep.c	6.7	84/08/03	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -617,10 +617,10 @@ boot(paniced, arghowto)
 	howto = 0; devtype = 0;
 	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
-	(void) spl1();
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		waittime = 0;
+		(void) spl1();
 		update();
 		printf("syncing disks... ");
 #ifdef notdef
