@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	7.9 (Berkeley) %G%
+ *      @(#)st.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -290,7 +290,7 @@ st_inqbuf.inqbuf.qual, st_inqbuf.inqbuf.version);
 			if (idstr[i] != ' ')
 				break;
 		idstr[i+1] = 0;
-		printf("st%d: %s %s rev %s\n", hd->hp_unit, idstr, &idstr[8],
+		printf("st%d: %s, %s rev %s\n", hd->hp_unit, idstr, &idstr[8],
 		       &idstr[24]);
 	} else if (inqlen == 5)
 		/* great it's a stupid device, doesn't know it's know name */
@@ -329,7 +329,8 @@ st_inqbuf.inqbuf.qual, st_inqbuf.inqbuf.version);
 		sc->sc_datalen[CMD_INQUIRY] = 36;
 		sc->sc_datalen[CMD_MODE_SELECT] = 12;
 		sc->sc_datalen[CMD_MODE_SENSE] = 12;
-	} else if (bcmp("123107 SCSI", &idstr[8], 11) == 0) {
+	} else if (bcmp("123107 SCSI", &idstr[8], 11) == 0 ||
+		   bcmp("OPEN REEL TAPE", &idstr[8], 14) == 0) {
 		sc->sc_tapeid = MT_ISMFOUR;
 		sc->sc_datalen[CMD_REQUEST_SENSE] = 8;
 		sc->sc_datalen[CMD_INQUIRY] = 5;
