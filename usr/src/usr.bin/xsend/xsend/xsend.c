@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)xsend.c	4.2 %G%";
+static char sccsid[] = "@(#)xsend.c	4.3 %G%";
 #endif
 
 #include "xmail.h"
 #include <sys/types.h>
 #include <pwd.h>
 #include <sys/stat.h>
-#include <dir.h>
+#include <sys/dir.h>
 extern int errno;
 struct stat stbuf;
 int uid, destuid;
