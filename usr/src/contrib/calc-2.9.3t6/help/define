@@ -1,0 +1,68 @@
+Function definitions
+
+	Function definitions are introduced by the 'define' keyword.
+	Other than this, the basic structure of a function is like in C.
+	That is, parameters are specified for the function within parenthesis,
+	the function body is introduced by a left brace, variables are
+	declared for the function, statements implementing the function
+	follow, and the function is ended with a right brace.
+
+	There are some subtle differences, however.  The types of parameters
+	and variables are not defined at compile time, but instead are typed
+	at runtime.  Thus there is no definitions needed to distinguish
+	between integers, fractions, complex numbers, matrices, and so on.
+	Thus when declaring parameters for a function, only the name of
+	the parameter is needed.  Thus there are never any declarations
+	between the function parameter list and the body of the function.
+
+	For example, the following function computes a factorial:
+
+		define factorial(n)
+		{
+			local	ans;
+
+			ans = 1;
+			while (n > 1)
+				ans *= n--;
+			return ans;
+		}
+
+	If a function is very simple and just returns a value, then the
+	function can be defined in shortened manner by using an equals sign
+	in place of the left brace.  In this case, the function declaration
+	is terminated by a newline character, and its value is the specified
+	expression.  Statements such as 'if' are not allowed.  An optional
+	semicolon ending the expression is allowed.  As an example, the
+	average of two numbers could be defined as:
+
+		define average(a, b) = (a + b) / 2;
+
+	Functions can be defined which can be very complex.  These can be
+	defined on the command line if desired, but editing of partial
+	functions is not possible past a single line.  If an error is made
+	on a previous line, then the function must be finished (with probable
+	errors) and reentered from the beginning.  Thus for complicated
+	functions, it is best to use an editor to create the function in a
+	file, and then enter the calculator and read in the file containing
+	the definition.
+
+	The parameters of a function can be referenced by name, as in
+	normal C usage, or by using the 'param' function.  This function
+	returns the specified parameter of the function it is in, where
+	the parameters are numbered starting from 1.  The total number
+	of parameters to the function is returned by using 'param(0)'.
+	Using this function allows you to implement varargs-like routines
+	which can handle any number of calling parameters.  For example:
+
+		define sc()
+		{
+			local s, i;
+
+			s = 0;
+			for (i = 1; i <= param(0); i++)
+				s += param(i)^3;
+			return s;
+		}
+
+	defines a function which returns the sum of the cubes of all it's
+	parameters.

@@ -1,0 +1,143 @@
+/*
+ * Copyright (c) 1993 Landon Curt Noll
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * By: Landon Curt Noll
+ *     chongo@toad.com  -or-  ...!{pyramid,sun,uunet}!hoptoad!chongo
+ *
+ *
+ * Lucasian criteria for primality
+ *
+ * The following table is taken from:
+ *
+ *	"Lucasian Criteria for the Primality of N=h*2^n-1", by Hans Riesel,
+ *	Mathematics of Computation, Vol 23 #108, p 872.
+ *
+ * The index of the *_val[] arrays correspond to the v(1) values found
+ * in the table.  That is, for v(1) == x:
+ *
+ *	D == d_val[x]
+ *	a == a_val[x]
+ *	b == b_val[x]
+ *	r == r_val[x]		(r == abs(a^2 - b^2*D))
+ *
+ *
+ * Note that when *_val[i] is not a number, the related v(1) value
+ * is not found in Table 1.
+ */
+
+trymax = 100;
+mat d_val[trymax+1];
+mat a_val[trymax+1];
+mat b_val[trymax+1];
+mat r_val[trymax+1];
+/* v1= 0	    INVALID */
+/* v1= 1	    INVALID */
+/* v1= 2	    INVALID */
+d_val[ 3]=   5;  a_val[ 3]= 1;  b_val[ 3]=1;  r_val[ 3]=4;
+d_val[ 4]=   3;  a_val[ 4]= 1;  b_val[ 4]=1;  r_val[ 4]=2;
+d_val[ 5]=  21;  a_val[ 5]= 3;  b_val[ 5]=1;  r_val[ 5]=12;
+d_val[ 6]=   2;  a_val[ 6]= 1;  b_val[ 6]=1;  r_val[ 6]=1;
+/* v1= 7	    INVALID */
+d_val[ 8]=  15;  a_val[ 8]= 3;  b_val[ 8]=1;  r_val[ 8]=6;
+d_val[ 9]=  77;  a_val[ 9]= 7;  b_val[ 9]=1;  r_val[ 9]=28;
+d_val[10]=   6;  a_val[10]= 2;  b_val[10]=1;  r_val[10]=2;
+d_val[11]=  13;  a_val[11]= 3;  b_val[11]=1;  r_val[11]=4;
+d_val[12]=  35;  a_val[12]= 5;  b_val[12]=1;  r_val[12]=10;
+d_val[13]= 165;  a_val[13]=11;  b_val[13]=1;  r_val[13]=44;
+/* v1=14	    INVALID */
+d_val[15]= 221;  a_val[15]=13;  b_val[15]=1;  r_val[15]=52;
+d_val[16]=   7;  a_val[16]= 3;  b_val[16]=1;  r_val[16]=2;
+d_val[17]= 285;  a_val[17]=15;  b_val[17]=1;  r_val[17]=60;
+/* v1=18	    INVALID */
+d_val[19]= 357;  a_val[19]=17;  b_val[19]=1;  r_val[19]=68;
+d_val[20]=  11;  a_val[20]= 3;  b_val[20]=1;  r_val[20]=2;
+d_val[21]= 437;  a_val[21]=19;  b_val[21]=1;  r_val[21]=76;
+d_val[22]=  30;  a_val[22]= 5;  b_val[22]=1;  r_val[22]=5;
+/* v1=23	    INVALID */
+d_val[24]= 143;  a_val[24]=11;  b_val[24]=1;  r_val[24]=22;
+d_val[25]=  69;  a_val[25]= 9;  b_val[25]=1;  r_val[25]=12;
+d_val[26]=  42;  a_val[26]= 6;  b_val[26]=1;  r_val[26]=6;
+d_val[27]=  29;  a_val[27]= 5;  b_val[27]=1;  r_val[27]=4;
+d_val[28]= 195;  a_val[28]=13;  b_val[28]=1;  r_val[28]=26;
+d_val[29]=  93;  a_val[29]= 9;  b_val[29]=1;  r_val[29]=12;
+d_val[30]=  14;  a_val[30]= 4;  b_val[30]=1;  r_val[30]=2;
+d_val[31]= 957;  a_val[31]=29;  b_val[31]=1;  r_val[31]=116;
+d_val[32]= 255;  a_val[32]=15;  b_val[32]=1;  r_val[32]=30;
+d_val[33]=1085;  a_val[33]=31;  b_val[33]=1;  r_val[33]=124;
+/* v1=34	    INVALID */
+d_val[35]=1221;  a_val[35]=33;  b_val[35]=1;  r_val[35]=132;
+d_val[36]= 323;  a_val[36]=17;  b_val[36]=1;  r_val[36]=34;
+d_val[37]=1365;  a_val[37]=35;  b_val[37]=1;  r_val[37]=140;
+d_val[38]=  10;  a_val[38]= 3;  b_val[38]=1;  r_val[38]=1;
+d_val[39]=1517;  a_val[39]=37;  b_val[39]=1;  r_val[39]=148;
+d_val[40]= 399;  a_val[40]=19;  b_val[40]=1;  r_val[40]=38;
+d_val[41]=1677;  a_val[41]=39;  b_val[41]=1;  r_val[41]=156;
+d_val[42]= 110;  a_val[42]=10;  b_val[42]=1;  r_val[42]=10;
+d_val[43]= 205;  a_val[43]=15;  b_val[43]=1;  r_val[43]=20;
+d_val[44]= 483;  a_val[44]=21;  b_val[44]=1;  r_val[44]=42;
+d_val[45]=2021;  a_val[45]=43;  b_val[45]=1;  r_val[45]=172;
+d_val[46]=  33;  a_val[46]= 6;  b_val[46]=1;  r_val[46]=3;
+/* v1=47	    INVALID */
+d_val[48]=  23;  a_val[48]= 5;  b_val[48]=1;  r_val[48]=2;
+d_val[49]=2397;  a_val[49]=47;  b_val[49]=1;  r_val[49]=188;
+d_val[50]=  39;  a_val[50]= 6;  b_val[50]=1;  r_val[50]=3;
+d_val[51]=  53;  a_val[51]= 7;  b_val[51]=1;  r_val[51]=4;
+/* v1=52	    INVALID */
+d_val[53]=2805;  a_val[53]=51;  b_val[53]=1;  r_val[53]=204;
+d_val[54]= 182;  a_val[54]=13;  b_val[54]=1;  r_val[54]=13;
+d_val[55]=3021;  a_val[55]=53;  b_val[55]=1;  r_val[55]=212;
+d_val[56]=  87;  a_val[56]= 9;  b_val[56]=1;  r_val[56]=6;
+d_val[57]=3245;  a_val[57]=55;  b_val[57]=1;  r_val[57]=220;
+d_val[58]= 210;  a_val[58]=14;  b_val[58]=1;  r_val[58]=14;
+d_val[59]=3477;  a_val[59]=57;  b_val[59]=1;  r_val[59]=228;
+d_val[60]= 899;  a_val[60]=29;  b_val[60]=1;  r_val[60]=58;
+d_val[61]= 413;  a_val[61]=21;  b_val[61]=1;  r_val[61]=28;
+/* v1=62	    INVALID */
+d_val[63]=3965;  a_val[63]=61;  b_val[63]=1;  r_val[63]=244;
+d_val[64]=1023;  a_val[64]=31;  b_val[64]=1;  r_val[64]=62;
+d_val[65]= 469;  a_val[65]=21;  b_val[65]=1;  r_val[65]=28;
+d_val[66]=  17;  a_val[66]= 4;  b_val[66]=1;  r_val[66]=1;
+d_val[67]=4485;  a_val[67]=65;  b_val[67]=1;  r_val[67]=260;
+d_val[68]=1155;  a_val[68]=33;  b_val[68]=1;  r_val[68]=66;
+d_val[69]=4757;  a_val[69]=67;  b_val[69]=1;  r_val[69]=268;
+d_val[70]=  34;  a_val[70]= 6;  b_val[70]=1;  r_val[70]=2;
+d_val[71]=5037;  a_val[71]=69;  b_val[71]=1;  r_val[71]=276;
+d_val[72]=1295;  a_val[72]=35;  b_val[72]=1;  r_val[72]=70;
+d_val[73]= 213;  a_val[73]=15;  b_val[73]=1;  r_val[73]=12;
+d_val[74]=  38;  a_val[74]= 6;  b_val[74]=1;  r_val[74]=2;
+d_val[75]=5621;  a_val[75]=73;  b_val[75]=1;  r_val[75]=292;
+d_val[76]=1443;  a_val[76]=37;  b_val[76]=1;  r_val[76]=74;
+d_val[77]= 237;  a_val[77]=15;  b_val[77]=1;  r_val[77]=12;
+d_val[78]=  95;  a_val[78]=10;  b_val[78]=1;  r_val[78]=5;
+/* v1=79	    INVALID */
+d_val[80]=1599;  a_val[80]=39;  b_val[80]=1;  r_val[80]=78;
+d_val[81]=6557;  a_val[81]=79;  b_val[81]=1;  r_val[81]=316;
+d_val[82]= 105;  a_val[82]=10;  b_val[82]=1;  r_val[82]=5;
+d_val[83]=  85;  a_val[83]= 9;  b_val[83]=1;  r_val[83]=4;
+d_val[84]=1763;  a_val[84]=41;  b_val[84]=1;  r_val[84]=82;
+d_val[85]=7221;  a_val[85]=83;  b_val[85]=1;  r_val[85]=332;
+d_val[86]= 462;  a_val[86]=21;  b_val[86]=1;  r_val[86]=21;
+d_val[87]=7565;  a_val[87]=85;  b_val[87]=1;  r_val[87]=340;
+d_val[88]= 215;  a_val[88]=15;  b_val[88]=1;  r_val[88]=10;
+d_val[89]=7917;  a_val[89]=87;  b_val[89]=1;  r_val[89]=348;
+d_val[90]= 506;  a_val[90]=22;  b_val[90]=1;  r_val[90]=22;
+d_val[91]=8277;  a_val[91]=89;  b_val[91]=1;  r_val[91]=356;
+d_val[92]= 235;  a_val[92]=15;  b_val[92]=1;  r_val[92]=10;
+d_val[93]=8645;  a_val[93]=91;  b_val[93]=1;  r_val[93]=364;
+d_val[94]= 138;  a_val[94]=12;  b_val[94]=1;  r_val[94]=6;
+d_val[95]=9021;  a_val[95]=93;  b_val[95]=1;  r_val[95]=372;
+d_val[96]=  47;  a_val[96]= 7;  b_val[96]=1;  r_val[96]=2;
+d_val[97]=1045;  a_val[97]=33;  b_val[97]=1;  r_val[97]=44;
+/* v1=98	    INVALID */
+d_val[99]=9797;  a_val[99]=97;  b_val[99]=1;  r_val[99]=388;
+d_val[100]=  51; a_val[100]= 7; b_val[100]=1; r_val[100]=2;
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "d_val[100] defined";
+    print "a_val[100] defined";
+    print "b_val[100] defined";
+    print "r_val[100] defined";
+}

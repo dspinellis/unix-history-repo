@@ -1,0 +1,219 @@
+Following is the change from calc version 2.9.2 to 2.9.3t6:
+
+    WARNING: This patch is an unofficial alpha test patch by chongo@toad.com
+	     (Landon Curt Noll) which as not been fully reviewed.  Blame
+	     chongo for any problems this patch may cause!  The paranoid may
+	     want to use 2.9.2 or wait for 2.9.4.
+
+    Calc can now compile on OSF/1, SGI and IBM RS6000 systems.
+
+    A number of systems that have both <varargs.h> and <stdarg.h> do
+    not correctly implement both types.  On some System V, MIPS and DEC
+    systems, vsprintf() and <stdarg.h> do not mix.  While calc will
+    pass the regression test, use of undefined variables will cause
+    problems.  The Makefile has been modified to look for this problem
+    and work around it.
+
+    Added randmprime.cal which find a prime of the form h*2^n-1 >= 2^x
+    for some given x.  The initial search points for 'h' and 'n'
+    are selected by a cryptographic pseudo-random generator.
+
+    The library script nextprim.cal is now a link to nextprime.cal.
+    The lib/Makefile will take care of this link and install.
+
+    The show command now takes singular forms.  For example, the
+    command 'show builtin' does the same as 'show builtins'.  This
+    allows show to match the historic singular names used in
+    the help system.
+
+    Synced 'show builtin' output with 'help builtin' output.
+
+    Certain 64 bit processors such as the Alpha are now supported.
+
+    Added -once to the READ command.  The command:
+
+	read -once filename
+
+    like the regular READ expect that it will ignore filename if
+    is has been previously read.
+
+    Improved the makefile.  One now can select the compiler type.  The
+    make dependency lines are now simple foo.o: bar.h lines.  While
+    this makes for a longer list, it is easier to maintain and will
+    make future Makefile patches smaller.  Added special options for
+    gcc version 1 & 2, and for cc on RS6000 systems.
+
+    Calc compiles cleanly under the watchful eye of gcc version 2.4.5
+    with the exception of warnings about 'aggregate has a partly
+    bracketed initializer'.  (gcc v2 should allow you to disable
+    this type of warning with using -Wall)
+
+    Fixed a longjmp bug that clobbered a local variable in main().
+
+    Fixed a number of cases where local variables or malloced storage was
+    being used before being set.
+
+    Fixed a number of fence post errors resulting in reads or writes
+    just outside of malloced storage.
+
+    A certain parallel processor optimizer would give up on
+    code in cases where math_error() was called.  The obscure
+    work-a-rounds involved initializing or making static, certain
+    local variables.
+
+    The cryrand.cal library has been improved.  Due to the way
+    the initial quadratic residues are selected, the random numbers
+    produced differ from previous versions.
+
+    The printing of a leading '~' on rounded values is now a config
+    option.  By default, tilde is still printed.  See help/config for
+    details.
+
+    The builtin function base() may be used to set the output mode or
+    base.  Calling base(16) is a convenient shorthand for typing
+    config("mode","hex").  See help/builtin.
+
+    The printing of a leading tab is now a config option.  This does not
+    alter the format of functions such as print or printf.  By default,
+    a tab is printed.  See help/config for details.
+
+    The value atan2(0,0) now returns 0 value in conformance with
+    the 4.3BSD ANSI/IEEE 754-1985 math library.
+
+    For all values of x, x^0 yields 1.  The major change here is
+    that 0^0 yields 1 instead of an error.
+
+    Fixed gcd() bug that caused gcd(2,3,1/2) to ignore the 1/2 arg.
+
+    Fixed ltol() rounding so that exact results are returned, similar
+    to the way sqrt() and hypot() round, when they exist.
+
+    The file help/full is now being built.
+
+    The man page is not installed by default.  One may install either
+    the man page source or the cat (formatted man) page.  See the
+    Makefile for details.
+
+    Added a quit binding.  The file lib/bindings2 shows how this new
+    binding may be used.
+
+    One can now do a 'make check' to run the calc regression test
+    within in the source tree.
+
+    The regression test code is now more extensive.
+
+    Updated the help/todo list.  A BUGS file was added.  Volunteers are
+    welcome to send in patches!
+
+Following is the change from calc version 2.9.1 to 2.9.2:
+
+    Fixed floor() for values -1 < x < 0.
+
+    Fixed ceil() for values -1 < x < 0.
+
+    Fixed frac() for values < 0 so that int(x) + frac(x) == x.
+
+    Fixed wild fetch bug in zdiv, zquo and zmod code.
+
+    Fixed bug which caused regression test #719 to fail on some machines.
+
+    Added more regression test code.
+
+Following is the change from calc version 2.9.0 to 2.9.1:
+
+    A major bug was fixed in subtracting two numbers when the first
+    number was zero.  The problem caused wrong answers and core dumps.
+
+Following is a list of visible changes to calc from version 1.27.0 to 2.9.0:
+
+    Full prototypes have been provided for all C functions, and are used
+    if calc is compiled with an ANSI compiler.
+
+    Newly defined variables are now initialized to the value of zero instead
+    of to the null value.  The elements of new objects are also initialized
+    to the value of zero instead of null.
+
+    The gcd, lcm, and ismult functions now work for fractional values.
+
+    A major bug in the // division for fractions with a negative divisor
+    was fixed.
+
+    A major bug in the calculation of ln for small values was fixed.
+
+    A major bug in the calculation of the ln and power functions for complex
+    numbers was fixed.
+
+    A major lack of precision for sin and tan for small values was fixed.
+
+    A major lack of precision for complex square roots was fixed.
+
+    The "static" keyword has been implemented for variables.  So permanent
+    variables can be defined to have either file scope or function scope.
+
+    Initialization of variables during their declaration are now allowed.
+    This is most convenient for the initialization of static variables.
+
+    The matrix definition statement can now be used within a declaration
+    statement, to immediately define a variable as a matrix.
+
+    Initializations of the elements of matrices are now allowed.  One-
+    dimensional matrices may have implicit bounds when initialization is
+    used.
+
+    The obj definition statement can now be used within a declaration
+    statement, to immediately define a variable as an object.
+
+    Object definitions can be repeated as long as they are exactly the same
+    as the previous definition.  This allows the rereading of files which
+    happen to define objects.
+
+    The integer, rational, and complex routines have been made into a
+    'libcalc.a' library so that they can be used in other programs besides
+    the calculator.  The "math.h" include file has been split into three
+    include files: "zmath.h", "qmath.h", and "cmath.h".
+
+Following is a list of visible changes to calc from version 1.26.4 to 1.27.0:
+
+    Added an assoc function to return a new type of value called an
+    association.  Such values are indexed by one or more arbitrary values.
+    They are stored in a hash table for quick access.
+
+    Added a hash() function which accepts one or more values and returns
+    a quickly calculated small non-negative hash value for those values.
+
+Following is a list of visible changes to calc from version 1.26.2 to 1.26.4:
+
+    Misc fixes to Makefiles.
+
+    Misc lint fixes.
+
+    Misc portability fixes.
+
+    Misc typo and working fixes to comments, help files and the man page.
+
+Following is a list of visible changes to calc from version 1.24.7 to 1.26.2:
+
+    There is a new emacs-like command line editing and edit history
+    feature.  The old history mechanism has been removed.  The key
+    bindings for the new editing commands are slightly configurable
+    since they are read in from an initialization file.  This file is
+    usually called /usr/lib/calc/bindings, but can be changed by the
+    CALCBINDINGS environment variable.  All editing code is
+    self-contained in the new files hist.c and hist.h, which can be
+    easily extracted and used in other programs.
+
+    Two new library files have been added: chrem.cal and cryrand.cal.
+    The first of these solves the chinese remainder problem for a set
+    of modulos and remainders.  The second of these implements several
+    very good random number generators for large numbers.
+
+    A small bug which allowed division by zero was fixed.
+
+    A major bug in the mattrans function was fixed.
+
+    A major bug in the acos function for negative arguments was fixed.
+
+    A major bug in the strprintf function when objects were being printed
+    was fixed.
+
+    A small bug in the library file regress.cal was fixed.

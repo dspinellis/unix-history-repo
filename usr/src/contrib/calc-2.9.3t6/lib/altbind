@@ -1,0 +1,45 @@
+# Alternate key bindings for calc line editing functions
+
+map	base-map
+default	insert-char
+^@	set-mark
+^A	start-of-line
+^B	backward-char
+^D	quit
+^E	end-of-line
+^F	forward-char
+^H	backward-kill-char
+^J	new-line
+^K	kill-line
+^L	refresh-line
+^M	new-line
+^N	forward-history
+^O	save-line
+^P	backward-history
+^R	reverse-search
+^T	swap-chars
+^U	flush-input
+^V	quote-char
+^W	kill-region
+^Y	yank
+^?	delete-char
+^[	ignore-char	esc-map
+
+map	esc-map
+default	ignore-char	base-map
+G	start-of-line
+H	backward-history
+P	forward-history
+K	backward-char
+M	forward-char
+O	end-of-line
+S	delete-char
+g	goto-line
+s	backward-word
+t	forward-word
+d	forward-kill-word
+u	uppercase-word
+l	lowercase-word
+h	list-history
+^[	flush-input
+[	arrow-key

@@ -1,0 +1,129 @@
+Operators
+
+	The operators are similar to C, but the precedence of some of
+	the operators differs.  In addition, there are several additional
+	operators, and some C operators are missing.  The following list
+	gives the operators arranged in order of precedence, from the
+	least tightly binding to the most tightly binding:
+
+	,	Comma operator.
+		For situations in which a comma is used for another purpose
+		(function arguments, array indexing, and the print statement),
+		parenthesis must be used around the comma operator.
+
+	? :	Conditional value.
+		a ? b : c  returns b if a is nonzero, c otherwise.
+		Thus it is equivalent to: if (a) return b; else return c;.
+		All that is required of the arguments in this function
+		is that the is-it-nonzero test is meaningful for a.
+
+	=  +=  -=  *=  /=  %=  //=  &=  |=  <<=  >>=  ^=  **=
+		Assignments.
+
+	||	Logical OR.
+		Unlike C, the result is the first non-zero expression or 0,
+		instead of just 0 or 1.  Thus a || b is equivalent to
+		a ? a : b.
+
+	&&	Logical AND.
+		Unlike C, the result is the last expression or 0,
+		instead of just 0 or 1.  Thus a && b is equivalent to
+		!a ? 0 : (!b ? 0 : b).
+
+	==  !=  <=  >=  <  >
+		Relations.
+
+	+  -
+		Binary plus and minus.
+
+	*  /  //  %
+		Multiply, divide. and modulo.
+		Please Note: The '/' operator is a fractional divide,
+		whereas the '//' is an integral divide.  Thus think of '/'
+		as division of real numbers, and think of '//' as division
+		of integers (e.g., 8 / 3 is 8/3 whereas 8 // 3 is 2).
+		The '%' is integral or fractional modulus (e.g., 11%4 is 3,
+		and 10%pi() is ~.575222).
+
+	|	Bitwise OR.
+		In a | b, both a and b are to be real integers;
+		the signs of a and b are ignored, i.e.
+		a | b = abs(a) | abs(b) and the result will
+		be a non-negative integer.
+
+	&	Bitwise AND.
+		In a & b, both a and b are to be real integers;
+		the signs of a and b are ignored as for a | b.
+
+	^  **  <<  >>
+		Powers and shifts.
+		The '^' and '**' are both exponentiation, e.g. 2^3
+		returns 8, 2^-3 returns .125.  In a ^ b, b has to be
+		an integer and if a is zero, nonnegative.  0^0 returns
+		the value 1.
+
+		For the shift operators both arguments are to be
+		integers, or if the first is complex, it is to have
+		integral real and imaginary parts.  Changing the
+		sign of the second argument reverses the shift, e.g.
+		a >> -b = a << b.  The result has the same sign as
+		the first argument except that a nonzero value is
+		reduced to zero by a sufficiently long shift to the
+		right.  These operators associate right to left,
+		e.g.  a << b ^ c = a << (b ^ c).
+
+	+  -  !
+		Unary operators.
+		The '!' is the logical NOT operator: !a returns 0 if
+		a is nonzero, and 1 if a is zero, i.e. it is
+		equivalent to a ? 0 : 1.  Be careful about
+		using this as the first character of a top level command,
+		since it is also used for executing shell commands.
+
+	++  --
+		Pre or post incrementing or decrementing.
+		These are applicable only to variables.
+
+	[ ]  [[ ]]  .  ( )
+		Indexing, double-bracket indexing, element references,
+		and function calls.  Indexing can only be applied to matrices,
+		element references can only be applied to objects, but
+		double-bracket indexing can be applied to matrices, objects,
+		or lists.
+
+	variables  constants  .  ( )
+		These are variable names and constants, the special '.' symbol,
+		or a parenthesized expression.  Variable names begin with a
+		letter, but then can contain letters, digits, or underscores.
+		Constants are numbers in various formats, or strings inside
+		either single or double quote marks.
+
+
+	The most significant difference from the order of precedence in
+	C is that | and & have higher precedence than ==, +, -, *, / and %.
+	For example, in C a == b | c * d is interpreted as:
+
+		(a == b) | (c * d)
+
+	and calc it is:
+
+		a == ((b | c) * d)
+
+
+	Most of the operators will accept any real or complex numbers
+	as arguments.  The exceptions are:
+
+	/  //  %
+		Second argument must be nonzero.
+
+	^
+		The exponent must be an integer.  When raising zero
+		to a power, the exponent must be non-negative.
+
+	|  &
+		Both both arguments must be integers.
+
+	<<  >>
+		The shift amount must be an integer.  The value being
+		shifted must be an integer or a complex number with
+		integral real and imaginary parts.

@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Calculate in degrees, minutes, and seconds.
+ */
+
+obj dms {deg, min, sec};
+
+define dms(deg, min, sec)
+{
+	local ans;
+
+	if (isnull(sec))
+		sec = 0;
+	if (isnull(min))
+		min = 0;
+	obj dms ans;
+	ans.deg = deg;
+	ans.min = min;
+	ans.sec = sec;
+	fixdms(&ans);
+	return ans;
+}
+
+
+define dms_add(a, b)
+{
+	local obj dms	ans;
+
+	ans.deg = 0;
+	ans.min = 0;
+	ans.sec = 0;
+	if (istype(a, ans)) {
+		ans.deg += a.deg;
+		ans.min += a.min;
+		ans.sec += a.sec;
+	} else
+		ans.deg += a;
+	if (istype(b, ans)) {
+		ans.deg += b.deg;
+		ans.min += b.min;
+		ans.sec += b.sec;
+	} else
+		ans.deg += b;
+	fixdms(&ans);
+	return ans;	
+}
+
+
+define dms_neg(a)
+{
+	local obj dms	ans;
+
+	ans.deg = -ans.deg;
+	ans.min = -ans.min;
+	ans.sec = -ans.sec;
+	return ans;
+}
+
+
+define dms_sub(a, b)
+{
+	return a - b;
+}
+
+
+define dms_mul(a, b)
+{
+	local obj dms	ans;
+
+	if (istype(a, ans) && istype(b, ans))
+		quit "Cannot multiply degrees together";
+	if (istype(a, ans)) {
+		ans.deg = a.deg * b;
+		ans.min = a.min * b;
+		ans.sec = a.sec * b;
+	} else {
+		ans.deg = b.deg * a;
+		ans.min = b.min * a;
+		ans.sec = b.sec * a;
+	}
+	fixdms(&ans);
+	return ans;
+}
+
+
+define dms_print(a)
+{
+	print a.deg : 'd' : a.min : 'm' : a.sec : 's' :;
+}
+
+
+define dms_abs(a)
+{
+	return a.deg + a.min / 60 + a.sec / 3600;
+}
+
+
+define fixdms(a)
+{
+	a.min += frac(a.deg) * 60;
+	a.deg = int(a.deg);
+	a.sec += frac(a.min) * 60;
+	a.min = int(a.min);
+	a.min += a.sec // 60;
+	a.sec %= 60;
+	a.deg += a.min // 60;
+	a.min %= 60;
+	a.deg %= 360;
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "obj dms {deg, min, sec} defined";
+    print "dms(deg, min, sec) defined";
+    print "dms_add(a, b) defined";
+    print "dms_neg(a) defined";
+    print "dms_sub(a, b) defined";
+    print "dms_mul(a, b) defined";
+    print "dms_print(a) defined";
+    print "dms_abs(a) defined";
+}

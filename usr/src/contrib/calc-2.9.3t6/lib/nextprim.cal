@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Function to find the next prime (probably).
+ */
+
+define nextprime(n, tries)
+{
+	if (isnull(tries))
+		tries = 20;
+	if (iseven(n))
+		n++;
+	while (ptest(n, tries) == 0)
+		n += 2;
+	return n;
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "nextprime(n, tries) defined";
+}
