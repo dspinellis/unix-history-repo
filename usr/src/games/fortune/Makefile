@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 PROGS=	fortune strfile unstr
 SRCS=	fortune.c strfile.c unstr.c
@@ -11,7 +11,7 @@ CLEANFILES+=strfile unstr
 all: ${PROGS} ${MAN6} ${DATFILES}
 
 ${PROGS}: ${LIBC} ${.PREFIX}.c
-	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${.PREFIX}.c
+	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${.PREFIX}.c -lcompat
 
 fortunes-o.dat: ${.TARGET:R}
 	./strfile -rsx ${.CURDIR}/datfiles/${.TARGET:R} ${.TARGET}
