@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.19	82/10/24	*/
+/*	mkmakefile.c	1.20	82/10/24	*/
 
 /*
  * Build the makefile for the system, from
@@ -425,7 +425,7 @@ do_load(f)
 	register FILE *f;
 {
 	register struct file_list *fl;
-	bool first = 1;
+	int first = 1;
 
 	for (fl = conf_list; fl != NULL; fl = fl->f_next) {
 		fprintf(f, "%s: makefile locore.o ${OBJS} param.o",

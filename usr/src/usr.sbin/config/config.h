@@ -1,4 +1,4 @@
-/*	config.h	1.8	82/10/24	*/
+/*	config.h	1.9	82/10/24	*/
 
 #define	machinename	machname
 
@@ -28,8 +28,6 @@ struct	idlst {
 	struct	idlst *id_next;
 };
 
-typedef	char bool;
-
 struct device {
 	int	d_type;			/* CONTROLLER, DEVICE, UBA or MBA */
 	struct	device *d_conn;		/* what it is connected to */
@@ -42,7 +40,7 @@ struct device {
 	int	d_slave;		/* slave number */
 #define QUES	-1	/* -1 means '?' */
 #define	UNKNOWN -2	/* -2 means not set yet */
-	bool	d_dk;			/* if init 1 set to number for iostat */
+	int	d_dk;			/* if init 1 set to number for iostat */
 	int	d_flags;		/* nlags for device init */
 	struct	device *d_next;		/* Next one in list */
 };
@@ -84,10 +82,10 @@ struct opt {
 } *opt;
 
 char	*ident, *ns(), *malloc(), *tc(), *qu();
-bool	do_trace;
+int	do_trace;
 
 #if MACHINE_VAX
-bool	seen_mba, seen_uba;
+int	seen_mba, seen_uba;
 #endif
 
 struct	device *connect();
@@ -106,6 +104,3 @@ int	profiling;
 int	maxusers;
 
 #define eq(a,b)	(!strcmp(a,b))
-
-#define TRUE	1
-#define FALSE	0

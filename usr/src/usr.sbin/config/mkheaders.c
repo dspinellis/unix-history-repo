@@ -1,4 +1,4 @@
-/*	mkheaders.c	1.9	82/10/24	*/
+/*	mkheaders.c	1.10	82/10/24	*/
 
 /*
  * Make all the .h files for the optional entries
@@ -15,7 +15,7 @@ headers()
 
 	for (fl = ftab; fl != 0; fl = fl->f_next)
 		if (fl->f_needs != 0)
-			do_count(fl->f_needs, fl->f_needs, TRUE);
+			do_count(fl->f_needs, fl->f_needs, 1);
 }
 
 /*
@@ -46,8 +46,8 @@ do_count(dev, hname, search)
 			if (search) {
 				mp = dp->d_conn;
 				if (mp != 0 && mp != -1 && mp->d_conn != -1) {
-					do_count(mp->d_name, hname, FALSE);
-					search = FALSE;
+					do_count(mp->d_name, hname, 0);
+					search = 0;
 				}
 			}
 		}
