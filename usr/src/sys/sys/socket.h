@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.19 (Berkeley) %G%
+ *	@(#)socket.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -85,8 +85,12 @@ struct	linger {
 #define	pseudo_AF_XTP	19		/* eXpress Transfer Protocol (no AF) */
 #define	AF_COIP		20		/* connection-oriented IP, aka ST II */
 #define	AF_CNT		21		/* Computer Network Technology */
+#define pseudo_AF_RTIP	22		/* Help Identify RTIP packets */
+#define	AF_IPX		23		/* Novell Internet Protocol */
+#define	AF_SIP		24		/* Simple Internet Protocol */
+#define pseudo_AF_PIP	25		/* Help Identify PIP packets */
 
-#define	AF_MAX		22
+#define	AF_MAX		26
 
 /*
  * Structure used by kernel to store most
@@ -133,6 +137,10 @@ struct sockproto {
 #define	PF_XTP		pseudo_AF_XTP	/* really just proto family, no AF */
 #define	PF_COIP		AF_COIP
 #define	PF_CNT		AF_CNT
+#define	PF_SIP		AF_SIP
+#define	PF_IPX		AF_IPX		/* same format as AF_NS */
+#define PF_RTIP		pseudo_AF_FTIP	/* same format as AF_INET */
+#define PF_PIP		pseudo_AF_PIP
 
 #define	PF_MAX		AF_MAX
 
