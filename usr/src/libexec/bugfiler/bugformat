@@ -1,0 +1,41 @@
+Subject: Short summary of the problem (please make this meaningful!)
+Index: folder 386BSD-0.1.2.3
+
+Description:
+	Detailed description of the problem, suggestion, or complaint.
+Repeat-By:
+	Describe the sequence of events that causes the problem
+	to occur.  If you can provide a shell script or program do
+	duplicate the problem please do so.
+Fix:
+	Description of how to fix the problem.  If you don't know a
+	fix for the problem, don't include this section.  If you can
+	provide context diffs (diff -c oldfile newfile) please do so.
+
+-------- Remove this line and what's below it, for reference only. --------
+
+To ensure that your bug report is handled correctly by bugfiler(8),
+you must replace "folder" (on the line above starting with "Index:")
+with one of the following values:
+
+	folder  ::= bin | doc | etc | games | ideas | include | lib
+			| libexec | man | misc | sbin | share | sys.386bsd
+			| usr.bin | usr.sbin
+
+This value should match the part of directory that the bug is in
+under /usr/src.  If it appears in more than one directory, use the
+first one on the list.  If the place that it appears is not on the list
+use the "misc" value.  If it is a suggestion use the "ideas" value.  If
+it is a manual page problem use the "man" value.
+
+If you're not running 386BSD-0.1.2.3, you should also replace
+"386BSD-0.1.2.3" on the same line with one of the following values.
+
+	version ::= 386BSD-0.1 | 386BSD-0.1.1 | 386BSD-0.1.2 | 386BSD-0.1.2.1
+		               | 386BSD-0.1.2.2 | 386BSD-0.1.2.3
+
+For example, if your bug concerns the program "/usr/bin/file" and
+you're currently running 386BSD-0.1.2.4, you should replace "folder"
+with "usr.bin/file", and "386BSD-0.1.2.3" with "386BSD-0.1.2.4".
+Thus, your Index line would look like this:
+Index: usr.bin/file 386BSD-0.1.2.4
