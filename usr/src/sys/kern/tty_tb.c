@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tb.c	8.1 (Berkeley) %G%
+ *	@(#)tty_tb.c	8.2 (Berkeley) %G%
  */
 
 #include "tb.h"
@@ -284,7 +284,9 @@ poldecode(tc, cp, polpos)
 /*ARGSUSED*/
 tbioctl(tp, cmd, data, flag)
 	struct tty *tp;
+	u_long cmd;
 	caddr_t data;
+	int flag;
 {
 	register struct tb *tbp = (struct tb *)tp->T_LINEP;
 

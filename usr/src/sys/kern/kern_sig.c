@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	8.11 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.12 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -598,7 +598,7 @@ void
 trapsignal(p, signum, code)
 	struct proc *p;
 	register int signum;
-	u_int code;
+	u_long code;
 {
 	register struct sigacts *ps = p->p_sigacts;
 	int mask;
@@ -1168,14 +1168,12 @@ out:
  * Nonexistent system call-- signal process (may want to handle it).
  * Flag error in case process won't see signal immediately (blocked or ignored).
  */
-struct nosys_args {
-	int	dummy;
-};
 /* ARGSUSED */
+int
 nosys(p, args, retval)
 	struct proc *p;
-	struct nosys_args *args;
-	int *retval;
+	void *args;
+	register_t *retval;
 {
 
 	psignal(p, SIGSYS);

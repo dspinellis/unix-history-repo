@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_socket.c	8.1 (Berkeley) %G%
+ *	@(#)sys_socket.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,7 +48,7 @@ soo_write(fp, uio, cred)
 
 soo_ioctl(fp, cmd, data, p)
 	struct file *fp;
-	int cmd;
+	u_long cmd;
 	register caddr_t data;
 	struct proc *p;
 {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	8.2 (Berkeley) %G%
+ *	@(#)tty_pty.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -551,7 +551,7 @@ block:
 /*ARGSUSED*/
 ptyioctl(dev, cmd, data, flag, p)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int flag;
 	struct proc *p;

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	8.7 (Berkeley) %G%
+ *	@(#)kern_prot.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -447,7 +447,7 @@ groupmember(gid, cred)
  */
 suser(cred, acflag)
 	struct ucred *cred;
-	short *acflag;
+	u_short *acflag;
 {
 	if (cred->cr_uid == 0) {
 		if (acflag)
@@ -475,6 +475,7 @@ crget()
  * Free a cred structure.
  * Throws away space when ref count gets to 0.
  */
+void
 crfree(cr)
 	struct ucred *cr;
 {

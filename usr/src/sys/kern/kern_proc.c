@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	8.5 (Berkeley) %G%
+ *	@(#)kern_proc.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,6 +48,7 @@ struct proclist zombproc;
 /*
  * Initialize global process hashing structures.
  */
+void
 procinit()
 {
 
@@ -235,6 +236,7 @@ leavepgrp(p)
 /*
  * delete a process group
  */
+void
 pgdelete(pgrp)
 	register struct pgrp *pgrp;
 {
@@ -260,6 +262,7 @@ static void orphanpg();
  * entering == 0 => p is leaving specified group.
  * entering == 1 => p is entering specified group.
  */
+void
 fixjobc(p, pgrp, entering)
 	register struct proc *p;
 	register struct pgrp *pgrp;

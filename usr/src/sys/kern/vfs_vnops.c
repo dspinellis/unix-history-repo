@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -333,7 +333,7 @@ vn_stat(vp, sb, p)
  */
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
-	int com;
+	u_long com;
 	caddr_t data;
 	struct proc *p;
 {

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.13 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.14 (Berkeley) %G%
  */
 
 /*
@@ -1044,6 +1044,7 @@ loop:
 static char *typename[] =
    { "VNON", "VREG", "VDIR", "VBLK", "VCHR", "VLNK", "VSOCK", "VFIFO", "VBAD" };
 
+void
 vprint(label, vp)
 	char *label;
 	register struct vnode *vp;
