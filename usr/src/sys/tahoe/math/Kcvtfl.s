@@ -1,12 +1,10 @@
-#include	"fp.h"
+/*	Kcvtfl.s	1.2	86/01/03	*/
+
+#include "fp.h"
+#include "SYS.h"
 
 	.text
-	.globl	_Kcvtfl
-_Kcvtfl:	.word	0x003c		# we use r2,r3,r4,r5
-
- #
- #Some initializations:
- #
+ENTRY(Kcvtfl, R5|R4|R3|R2)
 	clrl	r1
 	clrl	r4		# r4 - negative flag.
 	clrl	r2		# r2 - exponent.
@@ -58,6 +56,3 @@ retzero:
 retmin:
  	movl	$0xd0000000,r0
 	ret
-
-
-	

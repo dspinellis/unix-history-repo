@@ -1,11 +1,17 @@
-	.data
+/*	Ksubf.s	1.2	86/01/03	*/
+
+#include "SYS.h"
+
+/*
+ * _Ksubf(acc_most,acc_least,op_most,op_least,hfs)
+ *
+ * subf(d1,d2)
+ * {
+ * 	return(d1+(-d2));
+ * }
+ */
 	.text
-LL0:	.align	1
-	.globl	_Ksubf
-	.set	L12,0xffc
-	.data
-	.text
-_Ksubf:	.word	L12	# _Ksubf(acc_most,acc_least,op_most,op_least,hfs)
+ENTRY(Ksubf, 0)
 	tstl	4(fp)	# handle (a-b) where a and/or b = 0.0
 	jneq	next
 	movl	$0,r1
@@ -27,11 +33,3 @@ doit:
 	pushl	4(fp)	# acc
 	callf	$24,_Kaddf
 	ret
-
-
-/*
- * subf(d1,d2)
- * {
- * 	return(d1+(-d2));
- * }
-*/

@@ -1,14 +1,13 @@
+/*	Kdivd.s	1.2	86/01/03	*/
 
-#include 	"fp.h"
-#include 	"fp_in_krnl.h"
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
 
-
- 			# here we count from 0 not from 1 as in fp.h
-#define	HIDDEN	23	
+#define	HIDDEN	23		# here we count from 0 not from 1 as in fp.h
 
 	.text
-	.globl	_Kdivd	    # _Kdivd(acc_most,acc_least,op_most,op_least,hfs)
-_Kdivd:	.word	0xffc
+ENTRY(Kdivd, R9|R8|R7|R6|R5|R4|R3|R2)
 	clrl	r3		# r3 - sign: 0 for positive,1 for negative.
 	movl	4(fp),r0
 	jgeq	1f
@@ -71,7 +70,7 @@ _Kdivd:	.word	0xffc
 	
 over:
 	pushl 	20(fp)
-	callf	$8,Kfnorm
+	callf	$8,_Kfnorm
 sign:
 1:	bbc	$0,r3,done
 	orl2	$SIGNBIT,r0

@@ -1,18 +1,19 @@
+/*	Kaddf.s	1.2	86/01/03	*/
 
-#include	"fp.h"
+#include "fp.h"
+#include "SYS.h"
 
-
-
+/*
+ * _Kaddf(acc_most,acc_least,op_most,op_least,hfs)
+ */
 	.text
-	.globl	_Kaddf	# _Kaddf(acc_most,acc_least,op_most,op_least,hfs)
-_Kaddf:	.word	0x1ffc	# we use many registers...
-
-  #
-  # see which operand has a greater exponent
-  # The greater one will be fetched into r0,r1,r2,r3.
-  # r0,r1 - 'pure' fraction, r2 - exponent, r3 - sign).
-  # The smaller operand will be fetched into r4,r5,r6,r7.
-  #
+ENTRY(Kaddf, R10|R9|R8|R7|R6|R5|R4|R3|R2)
+/*
+ * see which operand has a greater exponent
+ * The greater one will be fetched into r0,r1,r2,r3.
+ * r0,r1 - 'pure' fraction, r2 - exponent, r3 - sign).
+ * The smaller operand will be fetched into r4,r5,r6,r7.
+ */
 	tstl	4(fp)	# handle (a+b) where a and/or b = 0.0
 	jneq	next
 	movl	$0,r1
@@ -129,7 +130,7 @@ comr00:	mcoml	r0,r0
 	bbc	$0,r9,norm
 	incl	r0
 norm:	pushl	20(fp)		# addr of returnen exception.
-	callf	$8,Kfnorm
+	callf	$8,_Kfnorm
  
  #
  #add the sign bit

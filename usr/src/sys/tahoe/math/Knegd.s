@@ -1,9 +1,11 @@
+/*	Knegd.s	1.2	86/01/03	*/
 
 #include "fp.h"
-#include "fp_in_krnl.h"
+#include "Kfp.h"
+#include "SYS.h"
+
 	.text
-	.globl	_Knegd
-_Knegd:	.word	0x0000
+ENTRY(Knegd, 0)
 	andl3	$EXPMASK,4(fp),r0	/* check for reserved operand,zero. */
 	beql	retzero
 	movl	4(fp),r0		/* fetch operand. */

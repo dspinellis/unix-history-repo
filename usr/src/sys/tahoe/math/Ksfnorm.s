@@ -1,11 +1,14 @@
+/*	Ksfnorm.s	1.2	86/01/03	*/
 
-#include 	"fp.h"
-#include 	"fp_in_krnl.h"
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
 
-
+/*
+ * Ksfnorm(hfs)
+ */
 	.text
-	.globl	Ksfnorm		# Ksfnorm(hfs)
-Ksfnorm:	.word	0x007c
+ENTRY(Ksfnorm, R6|R5|R4|R3|R2)
 	clrl	r1
 	movl	r0,r4		/* copy to temporary. */
 	jeql	retzero
@@ -46,4 +49,3 @@ overflow:
 retzero:
 	clrl	r0
 	ret
-	

@@ -1,14 +1,16 @@
+/*	Kmuld.s	1.2	86/01/03	*/
 
-#include 	"fp.h"
-#include 	"fp_in_krnl.h"
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
 
+#define	HIDDEN	23	/* here we count from 0 not from 1 as in fp.h */
 
- 			/* here we count from 0 not from 1 as in fp.h */
-#define	HIDDEN	23	
-
+/*
+ * _Kmuld(acc_most,acc_least,op_most,op_least,hfs)
+ */
 	.text
-	.globl	_Kmuld	    # _Kmuld(acc_most,acc_least,op_most,op_least,hfs)
-_Kmuld:	.word	0xffc
+ENTRY(Kmuld, R9|R8|R7|R6|R5|R4|R3|R2)
 	clrl	r3		/* r3 - sign: 0 for positive,1 for negative. */
 	movl	4(fp),r0
 	jgeq	1f
@@ -16,9 +18,9 @@ _Kmuld:	.word	0xffc
 1:	movl	12(fp),r2
 	jgeq	2f
 	bbc	$0,r3,1f	/* seconed operand is negative. */
-	clrl	r3		/* if first was negative, make result positive. */
+	clrl	r3		/* if first was neg, make result pos */
 	jmp	2f
-1:	movl	$1,r3		/* if first was positive, make result negative. */
+1:	movl	$1,r3		/* if first was pos, make result neg */
 2:	andl2	$EXPMASK,r0	/* compute first 'pure'exponent. */
 	jeql	retzero
 	shrl	$EXPSHIFT,r0,r0
@@ -33,9 +35,9 @@ _Kmuld:	.word	0xffc
 	cmpl	r2,$258		/* normalization can make the exp. smaller. */
 	jgeq	overflow
  /*
- *	We have the sign in r3,the exponent in r2,now is the time to
- * 	perform the multiplication...
- */
+  *	We have the sign in r3,the exponent in r2,now is the time to
+  * 	perform the multiplication...
+  */
 	/* fetch first fraction: (r0,r1) */
 	andl3	$(0!(EXPMASK | SIGNBIT)),4(fp),r0
 	orl2	$(0!CLEARHID),r0
@@ -95,18 +97,13 @@ sign:
 	orl2	$SIGNBIT,r0
 done:	ret
 
-
-
-  retzero:
-	  clrl	r0
-	  clrl	r1
-	  ret
-  overflow:
+retzero:
+	clrl	r0
+	clrl	r1
+	ret
+overflow:
 	orl2	$HFS_OVF,*20(fp)
 	ret
-  underflow:
+underflow:
 	orl2	$HFS_UNDF,*20(fp)
 	ret
-
-
-	

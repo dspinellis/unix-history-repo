@@ -1,65 +1,31 @@
-/* file: Kexpf.x
- */
-	.data
-	.comm	_errno,4
-	.align	2
-_p0:	.long	0x45BD3D04, 0x7F734DBD # .double 1513.9067990543389
-	.align	2
-_p1:	.long	0x42A19DD4, 0x989F60DA # .double 20.202065651286927
-	.align	2
-_p2:	.long	0x3DBD2E42, 0xAB70BDA9 # .double .023093347753750233
-	.align	2
-_q0:	.long	0x468881B1, 0x7C3A6529 # .double 4368.2116627275583
-	.align	2
-_q1:	.long	0x44692F28, 0x7AE89541 # .double 233.18421142748162
-	.align	2
-_q2:	.long	0x40800000, 0x00000000 # .double 1
-	.align	2
-_log2e:	.long	0x40B8AA3B, 0x295C17F0 # .double 1.4426950408889634
-	.align	2
-_sqrt2:	.long	0x40B504F3, 0x33F9DE64 # .double 1.414213562373095
-	.align	2
-_maxf:	.long	0x471C4000, 0x00000000 # .double 10000
-	.align	2
-_HUGE:	.long	0x7FFFFFFE, 0xFFFFFFFC # .double 1.701411733192644e+38
+/*	Kexpf.s	1.2	86/01/03	*/
+
+#include "SYS.h"
+
 	.text
-LL0:	.align	1
-	.globl	_Kexpf
-	.data
-	.align	2
-L28:	.long	0x40800000 # .float 1
-	.text
-	.data
-	.align	2
-L32:	.long	0x40000000, 0x00000000 # .double .5
-	.text
-	.set	L23,0xC
-	.data
-	.text
-_Kexpf:.word	L23
+ENTRY(Kexpf, R4|R3)
 	subl3	$88,fp,sp
 	tstl	4(fp)
-	jneq	L27
-	movl	L28,r0
+	jneq	1f
+	movl	one,r0
 	ret
-L27:	lnd	_maxf
+1:
+	lnd	_maxf
 	cmpd	4(fp)
-	jleq	L29
+	jleq	1f
 	clrl	r0
 	ret
-L29:	cmpd2	4(fp),_maxf
-	jleq	L30
-	movl	$34,_errno
+1:
+	cmpd2	4(fp),_maxf
+	jleq	1f
 	ldd	_HUGE
 	cvdf
 	stf	r0
 	ret
-L30:	
+1:	
 	pushl	20(fp)		# hfs
-	ldd	_log2e
-	pushd
-	ldd	4(fp)
-	pushd
+	ldd	_log2e; pushd
+	ldd	4(fp); pushd
 	callf	$24,_Kmuld
 	ldd	r0
 	std	4(fp)
@@ -76,110 +42,81 @@ L30:
 	pushl	20(fp)		# hfs
 	pushl	r1
 	pushl	r0
-	ldd	4(fp)
-	pushd
+	ldd	4(fp); pushd
 	callf	$24,_Ksubd	# (arg - ent)
 
 	pushl	20(fp)		# hfs
-	ldd	L32
-	pushd
-	ldd	r0
-	pushd
+	ldd	half; pushd
+	ldd	r0; pushd
 	callf	$24,_Ksubd
-	ldd	r0
-	std	-60(fp)		# fract
+	ldd	r0; std	-60(fp)	# fract
 
 	pushl	20(fp)		# hfs
 	pushd
 	pushd
 	callf	$24,_Kmuld
-	ldd	r0
-	std	-84(fp)		# xsq
+	ldd	r0; std	-84(fp)	# xsq
 
 	pushl	20(fp)		# hfs
 	pushd			# xsq
-	ldd	_p2
-	pushd
+	ldd	_p2; pushd
 	callf	$24,_Kmuld
 
 	pushl	20(fp)		# hfs
-	ldd	_p1
-	pushd
-	ldd	r0
-	pushd
+	ldd	_p1; pushd
+	ldd	r0; pushd
 	callf	$24,_Kaddd
 
 	pushl	20(fp)		# hfs
-	ldd	-84(fp)
-	pushd
-	ldd	r0
-	pushd
+	ldd	-84(fp); pushd
+	ldd	r0; pushd
 	callf	$24,_Kmuld
 
 	pushl	20(fp)		# hfs
-	ldd	_p0
-	pushd
-	ldd	r0
-	pushd
+	ldd	_p0; pushd
+	ldd	r0; pushd
 	callf	$24,_Kaddd
 
 	pushl	20(fp)		# hfs
-	ldd	-60(fp)		# fract
-	pushd
-	ldd	r0
-	pushd
+	ldd	-60(fp); pushd	# fract
+	ldd	r0; pushd
 	callf	$24,_Kmuld
-	ldd	r0
-	std	-68(fp)		# temp1
+	ldd	r0; std	-68(fp)	# temp1
 
 	pushl	20(fp)		# hfs
-	ldd	-84(fp)		# xsq
-	pushd
-	ldd	_q2
-	pushd
+	ldd	-84(fp); pushd	# xsq
+	ldd	_q2; pushd
 	callf	$24,_Kmuld
 
 	pushl	20(fp)		# hfs
-	ldd	_q1
-	pushd
-	ldd	r0
-	pushd
+	ldd	_q1; pushd
+	ldd	r0; pushd
 	callf	$24,_Kaddd
 
 	pushl	20(fp)		# hfs
-	ldd	-84(fp)
-	pushd
-	ldd	r0
-	pushd
+	ldd	-84(fp); pushd
+	ldd	r0; pushd
 	callf	$24,_Kmuld
 
 	pushl	20(fp)		# hfs
-	ldd	_q0
-	pushd
-	ldd	r0
-	pushd
+	ldd	_q0; pushd
+	ldd	r0; pushd
 	callf	$24,_Kaddd
-	ldd	r0
-	std	-76(fp)		# temp2
+	ldd	r0; std	-76(fp)	# temp2
 
 	pushl	20(fp)		# hfs for Kldexpf
 	pushl	-88(fp)		# ent
 
 	pushl	20(fp)		# hfs tor temp2+temp1
-	ldd	-68(fp)		# temp1
-	pushd
-	ldd	-76(fp)		# temp2
-	pushd
+	ldd	-68(fp); pushd	# temp1
+	ldd	-76(fp); pushd	# temp2
 	callf	$24,_Kaddd
 
 	pushl	20(fp)		# hfs
-	ldd	_sqrt2
-	pushd
-	ldd	r0		# temp2+temp1
-	pushd
+	ldd	_sqrt2; pushd
+	ldd	r0; pushd	# temp2+temp1
 	callf	$24,_Kmuld
-	ldd	r0
-	std	r2		# sqrt2*(temp2+temp1)
+	ldd	r0; std	r2		# sqrt2*(temp2+temp1)
 
 	pushl	20(fp)		# hfs
 	ldd	-68(fp)
@@ -259,3 +196,16 @@ L20:	ldd	4(fp)
 	cvdl	r0		# for Kexpf call only!
 	ret
 	
+	.data
+_p0:	.long	0x45BD3D04, 0x7F734DBD # .double 1513.9067990543389
+_p1:	.long	0x42A19DD4, 0x989F60DA # .double 20.202065651286927
+_p2:	.long	0x3DBD2E42, 0xAB70BDA9 # .double .023093347753750233
+_q0:	.long	0x468881B1, 0x7C3A6529 # .double 4368.2116627275583
+_q1:	.long	0x44692F28, 0x7AE89541 # .double 233.18421142748162
+_q2:	.long	0x40800000, 0x00000000 # .double 1
+_log2e:	.long	0x40B8AA3B, 0x295C17F0 # .double 1.4426950408889634
+_sqrt2:	.long	0x40B504F3, 0x33F9DE64 # .double 1.414213562373095
+_maxf:	.long	0x471C4000, 0x00000000 # .double 10000
+_HUGE:	.long	0x7FFFFFFE, 0xFFFFFFFC # .double 1.701411733192644e+38
+one:	.long	0x40800000 # .float 1
+half:	.long	0x40000000, 0x00000000 # .double .5

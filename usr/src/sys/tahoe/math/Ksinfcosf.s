@@ -1,23 +1,9 @@
-	.data
-	.align	2
-_twoopi:.long	0x4022F983, 0x6E4E4415 # .double .63661977236758134
-	.align	2
-_p0:.long	0x40C90FDA, 0x90304197 # .double 1.57079631844
-	.align	2
-_p1:.long	0xC0255DE0, 0xB36CEE75 # .double -.645963710599
-	.align	2
-_p2:.long	0x3EA33457, 0xA736E807 # .double .079689678945999999
-	.align	2
-_p3:.long	0xBC992665, 0x5E9A6554 # .double -.0046737666099999999
-	.align	2
-_p4:.long	0x3A1ED7FA, 0xCC54924E # .double .000151485129
+/*	Ksinfcosf.s	1.2	86/01/03	*/
+
+#include "SYS.h"
+
 	.text
-LL0:	.align	1
-	.globl	_Kcosf
-	.set	L18,0x0
-	.data
-	.text
-_Kcosf:	.word	L18
+ENTRY(Kcosf, 0)
 	tstl	4(fp)		# if (arg < 0)
 	jgeq	L23
 	lnd	4(fp)
@@ -29,31 +15,7 @@ L23:	pushl	20(fp)		# 	hfs
 	callf	$20,_sinus
 	ret			# return(sinus(arg,1));
 
-	.align	1
-	.globl	_Ksinf
-	.set	L25,0x0
-	.data
-	.text
-	.data
-	.align	2
-L36:	.long	0x47FFF800, 0x00000000 # .double 32764
-	.text
-	.data
-	.align	2
-L37:	.long	0x3F800000, 0x00000000 # .double .25
-	.text
-	.data
-	.align	2
-L38:	.long	0x41800000, 0x00000000 # .double 4
-	.text
-	.data
-	.align	2
-L41:	.long	0x40800000, 0x00000000 # .double 1
-	.text
-	.set	L29,0x0
-	.data
-	.text
-_Ksinf: .word	L25
+ENTRY(Ksinf, 0)
 	pushl	20(fp)		# hfs
 	pushl	$0
 	pushl	8(fp)
@@ -61,8 +23,7 @@ _Ksinf: .word	L25
 	callf	$20,_sinus
 	ret			# return(sinus(arg, 0));
 
-	.align	1
-_sinus: .word	L29
+ENTRY(sinus, 0)
 	subl3	$112,fp,sp
 	movl	8(fp),-80(fp)
 	movl	4(fp),-84(fp)	# x = arg;
@@ -243,3 +204,16 @@ L42:	pushl	16(fp)		# hfs
 	cvdf
 	stf	r0
 	ret#1
+
+	.data
+	.align	2
+_twoopi:.long	0x4022F983, 0x6E4E4415 # .double .63661977236758134
+_p0:	.long	0x40C90FDA, 0x90304197 # .double 1.57079631844
+_p1:	.long	0xC0255DE0, 0xB36CEE75 # .double -.645963710599
+_p2:	.long	0x3EA33457, 0xA736E807 # .double .079689678945999999
+_p3:	.long	0xBC992665, 0x5E9A6554 # .double -.0046737666099999999
+_p4:	.long	0x3A1ED7FA, 0xCC54924E # .double .000151485129
+L36:	.long	0x47FFF800, 0x00000000 # .double 32764
+L37:	.long	0x3F800000, 0x00000000 # .double .25
+L38:	.long	0x41800000, 0x00000000 # .double 4
+L41:	.long	0x40800000, 0x00000000 # .double 1

@@ -1,21 +1,18 @@
+/*	Kmodf.s	1.2	86/01/03	*/
 
-
-/* 	Kmodf.x	4.2	84/02/27	*/
+#include "SYS.h"
+#include "fp.h"
 
 /* 
-*  float Kmodf (value, iptr, hfs)
-*  float value, *iptr;
-*  int hfs;
-* 
-*  Modf returns the fractional part of "value",
-*  and stores the integer part indirectly through "iptr".
-*/ 
-#include	"fp.h"
- 
+ *  float Kmodf (value, iptr, hfs)
+ *  float value, *iptr;
+ *  int hfs;
+ * 
+ *  Modf returns the fractional part of "value",
+ *  and stores the integer part indirectly through "iptr".
+ */ 
 	.text
-	.globl	_Kmodf
-_Kmodf:	.word	0x1ffc		/* we use many registers */
-
+ENTRY(Kmodf, R8|R7|R6|R5|R4|R3|R2)
  /*
  * Some initializations:
  */
@@ -24,8 +21,8 @@ _Kmodf:	.word	0x1ffc		/* we use many registers */
 	movl	8(fp),r1
 	movl	12(fp),r6	/* fetch addr of int to r6. */
  /*
- * get exponent
- */
+  * get exponent
+  */
 	andl3	$EXPMASK,r0,r2	/* r2 will hold the exponent. */
 	shrl	$EXPSHIFT,r2,r2
 	subl2	$BIAS,r2	/* unbias it.  */
@@ -33,8 +30,8 @@ _Kmodf:	.word	0x1ffc		/* we use many registers */
 	cmpl	r2,$56
 	jgeq	allint		/* it's fraction part is zero. */
  /*
- * get fraction
- */
+  * get fraction
+  */
 	movl	r0,r4		/* remember the original number. */
 	movl	r1,r5
 	bbc	$31,r0,positive	/* if negative remember it. */
@@ -84,7 +81,7 @@ in_r1:
 norm:
 	addl2	$BIAS,r2	/* fnorm expects it biased. */
 	pushl	16(fp)		/* hfs */
-	callf	$8,Kfnorm	/* normelize fraction part. */
+	callf	$8,_Kfnorm	/* normelize fraction part. */
 	cmpl	$0,r0
 	jeql	1f
 	bbc	$0,r3,1f
