@@ -18,7 +18,7 @@
  * 
  */
 
-#if HERE!=TAHOE || TARGET!=TAHOE|| FAMILY!=PCC
+#if HERE!=TARGET || FAMILY!=PCC || (HERE!=VAX && HERE!=TAHOE)
 	Wrong Definitions File!
 #endif
 
@@ -30,30 +30,28 @@
 #define	PASS2OPT	"/usr/libexec/c2"
 #define	ASMNAME		"/usr/bin/as"
 #define	LDNAME		"/usr/bin/ld"
-#define	_PATH_UBIN	"/usr/bin"
 #define	CATNAME		"/bin/cat"
-#define FOOTNAME	"/usr/lib/crt0.o"
+#define	FOOTNAME	"/usr/lib/crt0.o"
 #define	PROFFOOT	"/usr/lib/mcrt0.o"
 #define	GPRFFOOT	"/usr/lib/gcrt0.o"
 #define	TEMPPREF	"fort"
 
-static char *liblist [ ] = {
-	"/usr/lib/libU77.a",
-	"/usr/lib/libF77.a",
-	"/usr/lib/libI77.a",
-	"/usr/lib/libm.a",
-	"/usr/lib/libc.a",
-	"/usr/lib/libcompat.a",
+static char *liblist [] = {
+	"-lU77",
+	"-lF77",
+	"-lI77",
+	"-lm",
+	"-lcompat",
+	"-lc",
 	NULL
 };
-static char *p_liblist [ ] = {
-	"/usr/lib/libU77_p.a",
-	"/usr/lib/libF77_p.a",
-	"/usr/lib/libI77_p.a",
-	"/usr/lib/libF77_p.a",
-	"/usr/lib/libm_p.a",
-	"/usr/lib/libc_p.a",
-	"/usr/lib/libcompat_p.a",
+static char *p_liblist [] = {
+	"-lU77_p",
+	"-lF77_p",
+	"-lI77_p",
+	"-lm_p",
+	"-lcompat_p",
+	"-lc_p",
 	NULL
 };
 
@@ -61,3 +59,4 @@ static char *p_liblist [ ] = {
 
 #define	_PATH_BSHELL	"/bin/sh"
 #define	_PATH_CPP	"/usr/bin/cpp"
+#define	_PATH_UBIN	"/usr/bin"
