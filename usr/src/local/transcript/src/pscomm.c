@@ -155,9 +155,6 @@ private int	goahead = FALSE;	/* got initial status back */
 private int	gotemt = FALSE;		/* got ^D ack from listener */
 private int	sendend = TRUE;		/* send an ^D */
 
-private char *bannerfirst;
-private char *bannerlast;
-private char *verboselog;
 private char *reverse;
 private int BannerFirst;
 private int BannerLast;
@@ -168,9 +165,9 @@ private int	cpid = 0;	/* listener pid */
 
 private int	intrup = FALSE;	/* interrupt flag */
 
-private char abortbuf[] = "\003";	/* ^C abort */
-private char statusbuf[] = "\024";	/* ^T status */
-private char eofbuf[] = "\004";		/* ^D end of file */
+private char abortbuf[] = {PS_INT, 0};		/* ^C abort */
+private char statusbuf[] = {PS_STATUS, 0};	/* ^T status */
+private char eofbuf[] = {PS_EOF, 0};		/* ^D end of file */
 
 private char EOFerr[] = "%s: unexpected EOF from printer (%s)!\n";
 
@@ -182,9 +179,6 @@ private int fdinput;		/* file to print (from stdin) */
 private FILE *jobout;		/* special printer output log */
 
 private int flg = FREAD|FWRITE;	 /* ioctl FLUSH arg */
-
-
-extern char *getenv();
 
 private VOID	intinit();
 private VOID	intsend();
@@ -201,28 +195,22 @@ private char 	*FindPattern();
 #define SENDALARM 90
 #define WAITALARM 30
 
-main(argc,argv)
+main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
-    register char  *cp;
     register int cnt, wc;
+    char *cp;
     register char *mbp;
-
-    char  **av;
     long clock;		/* for log timestamp */
     char magic[11];	/* first few bytes of stdin ?magic number and type */
-    int  noReverse = 0; /* flag if we should never page reverse */
-    int  canReverse = 0;/* flag if we can page-reverse the ps file */
     int  reversing = 0;
     FILE *streamin;
-
     char mybuf[BUFSIZ];
     int wpid;
     union wait status;
     int fdpipe[2];
     int format = 0;
-    int i;
 
     VOIDC signal(SIGINT, intinit);
     VOIDC signal(SIGHUP, intinit);
@@ -234,204 +222,174 @@ main(argc,argv)
     /* itself, so it should be canonical, but at least one 4.2-based */
     /* system uses -nlogin -hhost (insead of -n login -h host) so I */
     /* check for both */
-
-    av = argv;
-    prog = *av;
-
-    while (--argc) {
-	if (*(cp = *++av) == '-') {
-	    switch (*(cp + 1)) {
+    BannerFirst = (cp = envget("BANNERFIRST")) != NULL ? atoi(cp) : 0;
+    BannerLast = (cp = envget("BANNERLAST")) != NULL ? atoi(cp) : 0;
+    VerboseLog = (cp = envget("VERBOSELOG")) != NULL ? atoi(cp) : 1;
+    reverse = envget("REVERSE");	/* name of the filter itself */
+    prog = *argv;
+    while (*++argv)
+	if (**argv == '-') {
+	    switch (argv[0][1]) {
 		case 'P':	/* printer name */
 		    argc--;
-		    pname = *(++av);
+		    pname = *++argv;
 		    break;
 
 		case 'n': 	/* user name */
 		    argc--;
-		    name = *(++av);
+		    name = *++argv;
 		    break;
 
 		case 'h': 	/* host */
 		    argc--;
-		    host = *(++av);
+		    host = *++argv;
 		    break;
 
 		case 'p':	/* prog */
 		    argc--;
-		    prog = *(++av);
+		    prog = *++argv;
 		    break;
 
 		case 'r':	/* never reverse */
 		    argc--;
-		    noReverse = 1;
+		    reverse = NULL;
 		    break;
 
 		default:	/* unknown */
-		    fprintf(stderr,"%s: unknown option: %s\n",prog,cp);
+		    fprintf(stderr, "%s: unknown option: %s\n", prog, *argv);
 		    break;
 	    }
-	}
-	else
-	    accountingfile = cp;
-    }
-
-    debugp((stderr,"args: %s %s %s %s\n",prog,host,name,accountingfile));
+	} else
+	    accountingfile = *argv;
+    debugp((stderr, "args: %s %s %s %s\n", prog, host, name, accountingfile));
 
     /* do printer-specific options processing */
-
-    VerboseLog = 1;
-    BannerFirst = BannerLast = 0;
-    reverse = NULL;
-    if (bannerfirst=envget("BANNERFIRST")) {
-	BannerFirst=atoi(bannerfirst);
-    }
-    if (bannerlast=envget("BANNERLAST")) {
-	BannerLast=atoi(bannerlast);
-    }
-    if (verboselog=envget("VERBOSELOG")) {
-	VerboseLog=atoi(verboselog);
-    }
-    if (!noReverse) {
-	reverse=envget("REVERSE");	/* name of the filter itself */
-    }
 
     if (VerboseLog) {
 	fprintf(stderr, "%s: %s:%s %s start - %s", prog, host, name, pname,
             (VOIDC time(&clock), ctime(&clock)));
 	VOIDC fflush(stderr);
     }
-    debugp((stderr,"%s: pid %d ppid %d\n",prog,getpid(),getppid()));
-    debugp((stderr,"%s: options BF %d BL %d VL %d R %s\n",prog,BannerFirst,
-    	BannerLast, VerboseLog, ((reverse == NULL) ? "norev": reverse)));
+    debugp((stderr, "%s: pid %d ppid %d\n", prog, getpid(), getppid()));
+    debugp((stderr, "%s: options BF %d BL %d VL %d R %s\n", prog, BannerFirst,
+    	BannerLast, VerboseLog, reverse == NULL ? "norev" : reverse));
 
     /* IMPORTANT: in the case of cascaded filters, */ 
     /* stdin may be a pipe! (and hence we cannot seek!) */
 
-    if ((cnt = read(fileno(stdin),magic,11)) != 11) goto badfile;
-    debugp((stderr,"%s: magic number is %11.11s\n",prog,magic));
-    streamin = stdin;
-
-    if (strncmp(magic,"%!PS-Adobe-",11) == 0) {
-	canReverse = TRUE;
-	goto go_ahead;
+    switch (cnt = read(fileno(stdin), magic, 11)) {
+    case 11:
+	debugp((stderr, "%s: magic number is %11.11s\n", prog, magic));
+	streamin = stdin;
+	if (strncmp(magic, "%!PS-Adobe-", 11) == 0)
+	    goto go_ahead;
+    default:
+	if (strncmp(magic, "%!", 2) == 0) {
+	    reverse = NULL;
+	    goto go_ahead;
+	}
+	break;
+    case 0:
+	debugp((stderr, "%s: EOF reading magic number\n", prog));
+        fprintf(stderr,"%s: empty file\n", prog);
+	goto badfile;
+    case -1:
+	debugp((stderr, "%s: error reading magic number\n", prog));
+        fprintf(stderr,"%s: error reading magic number\n", prog);
+    badfile:
+	VOIDC fflush(stderr);
+	exit(THROW_AWAY);
     }
-    else if (strncmp(magic,"%!",2) == 0) {
-	canReverse = FALSE;
-	goto go_ahead;
-    }
-
-    /* here is where you might test for other file type
+    /*
+     * here is where you might test for other file type
      * e.g., PRESS, imPRESS, DVI, Mac-generated, etc.
      */
-
-    /* final sanity check on the text file, to guard
+    /*
+     * final sanity check on the text file, to guard
      * against arbitrary binary data
      */
-
-    for (i = 0; i < 11; i++) {
-	if (!isascii(magic[i]) || (!isprint(magic[i]) && !isspace(magic[i]))){
-	    fprintf(stderr,"%s: spooled binary file rejected\n",prog);
+    while (--cnt >= 0)
+	if (!isascii(magic[cnt]) ||
+	    !isprint(magic[cnt]) && !isspace(magic[cnt])) {
+	    fprintf(stderr, "%s: spooled binary file rejected\n", prog);
 	    VOIDC fflush(stderr);
-	    sprintf(mybuf,"%s/bogusmsg.ps",envget("PSLIBDIR"));
-	    if ((streamin = freopen(mybuf,"r",stdin)) == NULL) {
+	    sprintf(mybuf, "%s/bogusmsg.ps", envget("PSLIBDIR"));
+	    if ((streamin = freopen(mybuf, "r", stdin)) == NULL)
 		exit(THROW_AWAY);
-	    }
 	    format = 1;
 	    goto lastchance;
 	}
+    /* exec dumb formatter to make a listing */
+    debugp((stderr, "formatting\n"));
+    format = 1;
+    VOIDC lseek(0, 0L, 0);
+    if (pipe(fdpipe) < 0)
+	pexit2(prog, "format pipe", THROW_AWAY);
+    if ((fpid = fork()) < 0)
+	pexit2(prog, "format fork", THROW_AWAY);
+    if (fpid == 0) {		/* child */
+	/* set up child stdout to feed parent stdin */
+	if (close(1) < 0 || dup(fdpipe[1]) != 1 ||
+	    close(fdpipe[1]) < 0 || close(fdpipe[0]) < 0)
+	    pexit2(prog, "format child", THROW_AWAY);
+	execl(envget("PSTEXT"), "pstext", pname, 0);
+	pexit2(prog, "format exec", THROW_AWAY);
     }
+    /* parent continues, set up stdin to be pipe */
+    if (close(0) < 0 || dup(fdpipe[0]) != 0 ||
+	close(fdpipe[0]) < 0 || close(fdpipe[1]) < 0)
+	pexit2(prog, "format parent", THROW_AWAY);
+    /* fall through to spooler with new stdin */
+    /* can't seek here but we should be at the right place */
+    streamin = fdopen(0, "r");
 
-    goto format_text;
-
-    badfile:
-        fprintf(stderr,"%s: bad magic number, EOF\n", prog);
-	VOIDC fflush(stderr);
-	exit(THROW_AWAY);
-
-    format_text:
-        /* exec dumb formatter to make a listing */
-	    debugp((stderr,"formatting\n"));
-	    format = 1;
-	    VOIDC lseek(0,0L,0);
-	    rewind(stdin);
-	    if (pipe (fdpipe)) pexit2(prog, "format pipe",THROW_AWAY);
-	    if ((fpid = fork()) < 0) pexit2(prog, "format fork",THROW_AWAY);
-	    if (fpid == 0) { /* child */
-		/* set up child stdout to feed parent stdin */
-		if (close(1) || (dup(fdpipe[1]) != 1)
-		|| close(fdpipe[1]) || close(fdpipe[0])) {
-		    pexit2(prog, "format child",THROW_AWAY);
-		}
-		execl(envget("PSTEXT"), "pstext", pname, 0);
-	   	pexit2(prog,"format exec",THROW_AWAY);
-	    }
-	/* parent continues */
-	/* set up stdin to be pipe */
-	if (close(0) || (dup(fdpipe[0]) != 0)
-	|| close(fdpipe[0]) || close(fdpipe[1])) {
-	    pexit2(prog, "format parent",THROW_AWAY);
-	}
-
-	/* fall through to spooler with new stdin */
-	/* can't seek here but we should be at the right place */
-	streamin = fdopen(0,"r");
-	canReverse = TRUE; /* we know we can reverse pstext output */
-
-    go_ahead:
-
+go_ahead:
     /* do page reversal if specified */
-    if (reversing = ((reverse != NULL) && canReverse)) {
-	debugp((stderr,"reversing\n"));
+    if (reversing = reverse != NULL) {
+	debugp((stderr, "reversing\n"));
 	VOIDC setjmp(waitonreverse);
 	if (!revdone) {
 	    VOIDC signal(SIGEMT, reverseready);
-	    if (pipe (fdpipe)) pexit2(prog, "reverse pipe", THROW_AWAY);
-	    if ((fpid = fork()) < 0) pexit2(prog, "reverse fork", THROW_AWAY);
-	    if (fpid == 0) { /* child */
+	    if (pipe(fdpipe) < 0)
+		pexit2(prog, "reverse pipe", THROW_AWAY);
+	    if ((fpid = fork()) < 0)
+		pexit2(prog, "reverse fork", THROW_AWAY);
+	    if (fpid == 0) {		/* child */
 		/* set up child stdout to feed parent stdin */
-		if (close(1) || (dup(fdpipe[1]) != 1)
-		|| close(fdpipe[1]) || close(fdpipe[0])) {
+		if (close(1) < 0 || dup(fdpipe[1]) != 1 ||
+		    close(fdpipe[1]) < 0 || close(fdpipe[0]) < 0)
 		    pexit2(prog, "reverse child", THROW_AWAY);
-		}
 		execl(reverse, "psrv", pname, 0);
-		pexit2(prog,"reverse exec",THROW_AWAY);
+		pexit2(prog, "reverse exec", THROW_AWAY);
 	    }
 	    /* parent continues */
-	    if (close(0) || (dup(fdpipe[0]) != 0)
-	    || close(fdpipe[0]) || close(fdpipe[1])) {
+	    if (close(0) < 0 || dup(fdpipe[0]) != 0 ||
+		close(fdpipe[0]) < 0 || close(fdpipe[1]) < 0)
 		pexit2(prog, "reverse parent", THROW_AWAY);
-	    }
 	    /* fall through to spooler with new stdin */
-	    /* VOIDC lseek(0,0L,0); */
-	    streamin = fdopen(0,"r");
-
-	    while (TRUE) {
-		if (revdone) break;
+	    streamin = fdopen(0, "r");
+	    while (!revdone)
 		pause();
-	    }
 	}
 	VOIDC signal(SIGEMT, SIG_IGN);
-	debugp((stderr,"%s: reverse feeding\n",prog));
+	debugp((stderr, "%s: reverse feeding\n", prog));
     }
 
-    lastchance:;
-
-    /* establish an input stream from the printer --
+lastchance:
+    /*
+     * establish an input stream from the printer --
      * the printcap entry specifies "rw" and we get
      * invoked with stdout == the device, so we
      * dup stdout, and reopen it for reading;
      * this seems to work fine...
      */
-
-    fdinput = fileno(streamin); /* the file to print */
-    fdsend = fileno(stdout);	/* the printer (write) */
-
-    if ((fdlisten = dup(fdsend)) < 0) /* the printer (read) */
-       pexit(prog, THROW_AWAY);
-
-    doactng = name && accountingfile && (access(accountingfile, W_OK) == 0);
-
-    /* get control of the "status" message file.
+    fdinput = fileno(streamin);		/* the file to print */
+    fdsend = fileno(stdout);		/* the printer (write) */
+    if ((fdlisten = dup(fdsend)) < 0)	/* the printer (read) */
+	pexit(prog, THROW_AWAY);
+    doactng = name && accountingfile && access(accountingfile, W_OK) == 0;
+    /*
+     * get control of the "status" message file.
      * we copy the current one to ".status" so we can restore it
      * on exit (to be clean).
      * Our ability to use this is publicized nowhere in the
@@ -441,12 +399,11 @@ main(argc,argv)
      * Unfortunately, this notice may persist through
      * the end of the print job, but this is no big deal.
      */
-    BackupStatus(".status","status");
-
-    if ((cpid = fork()) < 0) pexit(prog, THROW_AWAY);
-    else if (cpid) {/* parent - sender */
+    BackupStatus(".status", "status");
+    if ((cpid = fork()) < 0)
+	pexit(prog, THROW_AWAY);
+    if (cpid) {			/* parent - sender */
 	VOIDC setjmp(sendint);
-
 	if (intrup) {
 	    /* we only get here if there was an interrupt */
 
@@ -457,7 +414,7 @@ main(argc,argv)
 	     * send an abort (^C) request and wait for the job to end
 	     */
 	    if (ioctl(fdsend, TIOCFLUSH,&flg) || ioctl(fdsend, TIOCSTART,&flg)
-	    || (write(fdsend, abortbuf, 1) != 1)) {
+	        || (write(fdsend, abortbuf, 1) != 1)) {
 		RestoreStatus();
 		pexit(prog,THROW_AWAY);
 	    }
@@ -487,16 +444,16 @@ main(argc,argv)
 	cnt = 1;
 	VOIDC setjmp(startstatus);
 
-	while (TRUE) {
-	    if (goahead) break;
-	    debugp((stderr,"%s: get start status\n",prog));
+	while (!goahead) {
+	    debugp((stderr, "%s: get start status\n", prog));
 	    VOIDC write(fdsend, statusbuf, 1);
 	    pause();
-	    if (goahead) break; 
+	    if (goahead)
+		break; 
 	    /* if we get here, we got an alarm */
 	    ioctl(fdsend, TIOCFLUSH, &flg);
 	    ioctl(fdsend, TIOCSTART, &flg);
-	    sprintf(mybuf, "Not Responding for %d minutes",
+	    sprintf(mybuf, "not responding for %d minutes",
 	    	(cnt * SENDALARM+30)/60);
 	    Status(mybuf);
 	    alarm(SENDALARM);
@@ -510,7 +467,7 @@ main(argc,argv)
 
 	/* initial page accounting (BEFORE break page) */
 	if (doactng) {
-	    sprintf(mybuf, getpages, "\004");
+	    sprintf(mybuf, getpages, eofbuf);
 	    VOIDC write(fdsend, mybuf, strlen(mybuf));
 	    debugp((stderr, "%s: sent pagecount request\n", prog));
 	    progress++;
@@ -542,14 +499,14 @@ main(argc,argv)
 	    cnt = 1; goahead = FALSE;
 	    VOIDC setjmp(startstatus);
 
-	    while (TRUE) {
-		if (goahead) break;
+	    while (!goahead) {
 		pause();
-		if (goahead) break; 
+		if (goahead)
+		    break; 
 		/* if we get here, we got an alarm */
 		ioctl(fdsend, TIOCFLUSH, &flg);
 		ioctl(fdsend, TIOCSTART, &flg);
-		sprintf(mybuf, "Not Responding for %d minutes",
+		sprintf(mybuf, "not responding for %d minutes",
 		    (cnt * SENDALARM+30)/60);
 		Status(mybuf);
 		alarm(SENDALARM);
@@ -569,8 +526,8 @@ main(argc,argv)
 	}
 
 	/* ship the magic number! */
-	if ((!format) && (!reversing)) {
-	   VOIDC write(fdsend,magic,11);
+	if (!format && !reversing) {
+	   VOIDC write(fdsend, magic, 11);
 	   progress++;
 	}
 
@@ -661,7 +618,7 @@ main(argc,argv)
 	/* wait to sync with listener EMT signal
 	 * to indicate it got an EOF from the printer
 	 */
-	while (TRUE) {
+	for (;;) {
 	    if (gotemt) break;
 	    if (getstatus) {
 		debugp((stderr,"%s: get final status\n",prog));
@@ -676,7 +633,7 @@ main(argc,argv)
 
 	/* final page accounting */
 	if (doactng) {
-	    sprintf(mybuf, getpages, "\004");
+	    sprintf(mybuf, getpages, eofbuf);
 	    VOIDC write(fdsend, mybuf, strlen(mybuf));
 	    debugp((stderr, "%s: sent pagecount request\n", prog));
 	    progress++;
@@ -684,7 +641,8 @@ main(argc,argv)
 
 	/* wait for listener to die */
 	VOIDC setjmp(dwait);
-        while ((wpid = wait(&status)) > 0);
+        while ((wpid = wait(&status)) > 0)
+	    ;
 	VOIDC alarm(0);
 	VOIDC signal(SIGINT, SIG_IGN);
 	VOIDC signal(SIGHUP, SIG_IGN);
@@ -694,23 +652,19 @@ main(argc,argv)
 	debugp((stderr,"w2: s%lo p%d = p%d\n", status, wpid, cpid));
 
 	if (VerboseLog) {
-	    fprintf(stderr,"%s: end - %s",prog,
-	    	(VOIDC time(&clock),ctime(&clock)));
+	    fprintf(stderr, "%s: end - %s", prog,
+		(time(&clock), ctime(&clock)));
 	    VOIDC fflush(stderr);
 	}
-    RestoreStatus();
-    exit(0);
-    }
-    else {/* child - listener */
+	RestoreStatus();
+	exit(0);
+    } else {			/* child - listener */
       register FILE *psin;
       register int r;
-
       char pbuf[BUFSIZ]; /* buffer for pagecount info */
       char *pb;		/* pointer for above */
       int pc1, pc2; 	/* page counts before and after job */
       int sc;		/* pattern match count for sscanf */
-      char *outname;	/* file name for job output */
-      int havejobout = FALSE; /* flag if jobout != stderr */
       int ppid;		/* parent process id */
 
       VOIDC signal(SIGINT, SIG_IGN);
@@ -722,11 +676,9 @@ main(argc,argv)
       ppid = getppid();
 
       /* get jobout from environment if there, otherwise use stderr */
-      if (((outname = envget("JOBOUTPUT")) == NULL)
-      || ((jobout = fopen(outname,"w")) == NULL)) {
+      if ((cp = envget("JOBOUTPUT")) == NULL ||
+	  (jobout = fopen(cp, "w")) == NULL)
 	  jobout = stderr;
-      }
-      else havejobout = TRUE;
 
       pc1 = pc2 = -1; /* bogus initial values */
       if ((psin = fdopen(fdlisten, "r")) == NULL) {
@@ -735,24 +687,24 @@ main(argc,argv)
       }
 
       /* listen for first status (idle?) */
-      pb = pbuf;
-      *pb = '\0';
-      while (TRUE) {
+      for (pb = pbuf;;) {
 	  r = getc(psin);
 	  if (r == EOF) {
 	      fprintf(stderr, EOFerr, prog, "startup");
 	      VOIDC fflush(stderr);
 	      sleep(20); /* printer may be coming up */
+	      continue;
 	      /* RestoreStatus(); */
 	      /* exit(TRY_AGAIN); */
 	  }
-	  if ((r & 0377) == '\n') break; /* newline */
+	  if ((r & 0377) == '\n')
+	      break;
 	  *pb++ = r;
       }
       *pb = 0;
-      debugp((stderr,"%s: initial status - %s\n",prog,pbuf));
+      debugp((stderr, "%s: initial status - %s\n", prog, pbuf));
       if (strcmp(pbuf, "%%[ status: idle ]%%\r") != 0) {
-	  fprintf(stderr,"%s: initial status - %s\n",prog,pbuf);
+	  fprintf(stderr,"%s: initial status - %s\n", prog, pbuf);
 	  VOIDC fflush(stderr);
       }
 
@@ -774,7 +726,8 @@ main(argc,argv)
 	      sleep(10);	/* give interface a chance */
 	      exit(TRY_AGAIN);
 	  }
-	  if ((r&0377) == 004) break; /* PS_EOF */
+	  if ((r&0377) == PS_EOF)
+		break;
 	  *pb++ = r;
 	}
 	*pb = '\0';
@@ -811,8 +764,9 @@ main(argc,argv)
       while (TRUE) {
 	r = getc(psin);
 	debugp((stderr, "%s: listener got character \\%o '%c'\n", prog, r, r));
-	if ((r&0377) == 004) break; /* PS_EOF */
-	else if (r == EOF) {
+	if ((r&0377) == PS_EOF)
+		break;
+	if (r == EOF) {
 	    VOIDC fclose(psin);
 	    fprintf(stderr, EOFerr, prog, "job");
 	    VOIDC fflush(stderr);
@@ -860,7 +814,8 @@ main(argc,argv)
 		  sleep(10);
 		  exit(THROW_AWAY); /* what else to do? */
 	      }
-	      if ((r&0377) == 004) break; /* PS_EOF */
+	      if ((r&0377) == PS_EOF)
+		break;
 	      *pb++ = r;
 	    }
 	    *pb = '\0';
@@ -893,9 +848,8 @@ main(argc,argv)
       }
 
       /* all done -- let sender know */
-      if (havejobout) VOIDC fclose(jobout);
-      VOIDC fclose(psin);
-      exit(0); /* to parent */
+      /* no need to close files */
+      exit(0);
     }
 }
 
@@ -906,10 +860,10 @@ private SendBanner()
     int cnt;
     char buf[BUFSIZ];
 
-    if ((banner = open(".banner",O_RDONLY|O_NDELAY,0)) < 0) return;
-    while ((cnt = read(banner,buf,sizeof buf)) > 0) {
-	VOIDC write(fdsend,buf,cnt);
-    }
+    if ((banner = open(".banner", O_RDONLY|O_NDELAY, 0)) < 0)
+	return;
+    while ((cnt = read(banner, buf, sizeof buf)) > 0)
+	VOIDC write(fdsend, buf, cnt);
     VOIDC close(banner);
     VOIDC unlink(".banner");
 }
@@ -1209,10 +1163,10 @@ private VOID intinit() {
     while (wait((union wait *) 0) > 0);
 
     if (VerboseLog) {
-	fprintf (stderr, "%s: end - %s", prog, (time(&clock), ctime(&clock)));
+	fprintf(stderr, "%s: end - %s", prog,
+	    (time(&clock), ctime(&clock)));
 	VOIDC fflush(stderr);
     }
-
     exit(THROW_AWAY);
 }
 
