@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)pstatus.c 1.2 %G%";
+static char sccsid[] = "@(#)pstatus.c 1.3 %G%";
 
 /*
  * process status routines
@@ -22,38 +22,55 @@ static char sccsid[] = "@(#)pstatus.c 1.2 %G%";
 
 printstatus()
 {
-	if (process->signo == SIGINT) {
-		isstopped = TRUE;
-		printerror();
-	}
-	if (isbperr() && isstopped) {
-		printf("stopped at ");
-		if (curline > 0) {
-			printf("line %d", curline);
-			if (nlhdr.nfiles > 1) {
-				printf(" in file %s", cursource);
-			}
-			putchar('\n');
-			printlines(curline, curline);
-		} else {
-#			if (isvaxpx)
-				printf("location %d\n", pc);
-#			else
-				printf("location 0x%x\n", pc);
-#			endif
-			printinst(pc, pc);
-		}
-		erecover();
+    if (process->signo == SIGINT) {
+	isstopped = TRUE;
+	printerror();
+    }
+    if (isbperr() && isstopped) {
+	skimsource(srcfilename(pc));
+	printf("stopped at ");
+	printwhere(curline, cursource);
+	putchar('\n');
+	if (curline > 0) {
+	    printlines(curline, curline);
 	} else {
-		isstopped = FALSE;
-		fixbps();
-		fixintr();
-		if (process->status == FINISHED) {
-			quit(0);
-		} else {
-			printerror();
-		}
+	    printinst(pc, pc);
 	}
+	erecover();
+    } else {
+	isstopped = FALSE;
+	fixbps();
+	fixintr();
+	if (process->status == FINISHED) {
+	    quit(0);
+	} else {
+	    printerror();
+	}
+    }
+}
+
+
+/*
+ * Print out the "line N [in file F]" information that accompanies
+ * messages in various places.
+ */
+
+printwhere(lineno, filename)
+LINENO lineno;
+char *filename;
+{
+    if (lineno > 0) {
+	printf("line %d", lineno);
+	if (nlhdr.nfiles > 1) {
+	    printf(" in file %s", filename);
+	}
+    } else {
+#	if (isvaxpx)
+	    printf("location %d\n", pc);
+#	else
+	    printf("location 0x%x\n", pc);
+#	endif
+    }
 }
 
 /*
@@ -63,5 +80,5 @@ printstatus()
 BOOLEAN isfinished(p)
 PROCESS *p;
 {
-	return(p->status == FINISHED);
+    return(p->status == FINISHED);
 }

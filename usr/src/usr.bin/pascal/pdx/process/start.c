@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)start.c 1.4 %G%";
+static char sccsid[] = "@(#)start.c 1.5 %G%";
 
 /*
  * Begin execution.
@@ -96,16 +96,12 @@ char *infile, *outfile;
 
 endprogram()
 {
-    char *filename;
-
     if (ss_variables) {
 	prvarnews();
     }
     printf("\nexecution completed\n");
     curfunc = program;
-    if ((filename = srcfilename(pc)) != cursource) {
-	skimsource(filename);
-    }
+    skimsource(srcfilename(pc));
     curline = lastlinenum;
     erecover();
 }
@@ -124,4 +120,5 @@ LOCAL setsigtrace()
     psigtrace(p, SIGTRAP, TRUE);
     psigtrace(p, SIGIOT, TRUE);
     psigtrace(p, SIGILL, TRUE);
+    psigtrace(p, SIGBUS, TRUE);
 }

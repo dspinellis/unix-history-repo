@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)step.c 1.1 %G%";
+static char sccsid[] = "@(#)step.c 1.2 %G%";
 
 /*
  * Continue execution up to the next source line.
@@ -22,11 +22,11 @@ static char sccsid[] = "@(#)step.c 1.1 %G%";
 #include "mappings.h"
 #include "process.rep"
 
-#	if (isvax)
-#		include "machine/vaxops.h"
+#   if (isvax)
+#       include "machine/vaxops.h"
 
-		LOCAL ADDRESS getcall();
-#	endif
+	LOCAL ADDRESS getcall();
+#   endif
 
 /*
  * Stepc is what is called when the step command is given.
@@ -35,27 +35,27 @@ static char sccsid[] = "@(#)step.c 1.1 %G%";
 
 stepc()
 {
-	if (!isstopped) {
-		error("can't continue execution");
-	}
-	isstopped = FALSE;
-	dostep(FALSE);
-	isstopped = TRUE;
+    if (!isstopped) {
+	error("can't continue execution");
+    }
+    isstopped = FALSE;
+    dostep(FALSE);
+    isstopped = TRUE;
 }
 
 next()
 {
-	if (!isstopped) {
-		error("can't continue execution");
-	}
-	isstopped = FALSE;
-	dostep(TRUE);
-	isstopped = TRUE;
+    if (!isstopped) {
+	error("can't continue execution");
+    }
+    isstopped = FALSE;
+    dostep(TRUE);
+    isstopped = TRUE;
 }
 
 step()
 {
-	dostep(FALSE);
+    dostep(FALSE);
 }
 
 /*
@@ -67,46 +67,42 @@ step()
 stepto(addr)
 ADDRESS addr;
 {
-	setbp(addr);
-	resume();
-	unsetbp(addr);
-	if (!isbperr()) {
-		printstatus();
-	}
+    setbp(addr);
+    resume();
+    unsetbp(addr);
+    if (!isbperr()) {
+	printstatus();
+    }
 }
 
 LOCAL dostep(isnext)
 BOOLEAN isnext;
 {
-	register ADDRESS addr;
-	register LINENO line;
-	char *filename;
+    register ADDRESS addr;
+    register LINENO line;
+    char *filename;
 
-	addr = pc;
-	do {
-#		if (isvaxpx)
-			addr = nextaddr(addr, isnext);
-#		else
-			if (isnext && (addr = getcall(addr)) != 0) {
-				stepto(addr);
-			} else {
-				pstep(process);
-				addr = process->pc;
-				pc = process->pc;
-				errnum = process->signo;
-				if (!isbperr()) {
-					printstatus();
-				}
-			}
-#		endif
-		line = linelookup(addr);
-	} while (line == 0 && !ss_instructions);
-	stepto(addr);
-	curline = line;
-	filename = srcfilename(addr);
-	if (filename != cursource) {
-		skimsource(filename);
-	}
+    addr = pc;
+    do {
+#       if (isvaxpx)
+	    addr = nextaddr(addr, isnext);
+#       else
+	    if (isnext && (addr = getcall(addr)) != 0) {
+		stepto(addr);
+	    } else {
+		pstep(process);
+		addr = process->pc;
+		pc = process->pc;
+		errnum = process->signo;
+		if (!isbperr()) {
+		    printstatus();
+		}
+	    }
+#       endif
+	line = linelookup(addr);
+    } while (line == 0 && !ss_instructions);
+    stepto(addr);
+    curline = line;
 }
 
 # if (isvax)
@@ -122,14 +118,14 @@ BOOLEAN isnext;
 LOCAL ADDRESS getcall(addr)
 ADDRESS addr;
 {
-	VAXOP op;
+    VAXOP op;
 
-	iread(&op, addr, sizeof(addr));
-	if (op == O_CALLS) {
-		return(addr + 7);
-	} else {
-		return(0);
-	}
+    iread(&op, addr, sizeof(addr));
+    if (op == O_CALLS) {
+	return(addr + 7);
+    } else {
+	return(0);
+    }
 }
 
 # endif
