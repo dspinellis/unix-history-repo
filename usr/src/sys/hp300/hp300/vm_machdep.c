@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: vm_machdep.c 1.18 89/08/23$
+ * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.9 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,7 +40,8 @@ cpu_fork(p1, p2)
 	register struct proc *p1, *p2;
 {
 	register struct user *up = p2->p_addr;
-	int foo, offset;
+	int offset;
+	extern caddr_t getsp();
 	extern char kstack[];
 
 	/*
@@ -55,15 +56,13 @@ cpu_fork(p1, p2)
 	 * replacing the bcopy and savectx.
 	 */
 	p2->p_addr->u_pcb = p1->p_addr->u_pcb;
-	offset = (caddr_t)&foo - kstack;
+	offset = getsp() - kstack;
 	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset,
 	    (unsigned) ctob(UPAGES) - offset);
-	p2->p_regs = p1->p_regs;
 
 	PMAP_ACTIVATE(&p2->p_vmspace->vm_pmap, &up->u_pcb, 0);
 
 	/*
-	 * 
 	 * Arrange for a non-local goto when the new process
 	 * is started, to resume here, returning nonzero from setjmp.
 	 */
@@ -120,8 +119,40 @@ pagemove(from, to, size)
 		to += NBPG;
 		size -= NBPG;
 	}
-	/* buffer pages not CI with new VM */
 	DCIS();
+}
+
+/*
+ * Map `size' bytes of physical memory starting at `paddr' into
+ * kernel VA space at `vaddr'.  Read/write and cache-inhibit status
+ * are specified by `prot'.
+ */ 
+physaccess(vaddr, paddr, size, prot)
+	caddr_t vaddr, paddr;
+	register int size, prot;
+{
+	register struct pte *pte;
+	register u_int page;
+
+	pte = kvtopte(vaddr);
+	page = (u_int)paddr & PG_FRAME;
+	for (size = btoc(size); size; size--) {
+		*(int *)pte++ = PG_V | prot | page;
+		page += NBPG;
+	}
+	TBIAS();
+}
+
+physunaccess(vaddr, size)
+	caddr_t vaddr;
+	register int size;
+{
+	register struct pte *pte;
+
+	pte = kvtopte(vaddr);
+	for (size = btoc(size); size; size--)
+		*(int *)pte++ = PG_NV;
+	TBIAS();
 }
 
 /*
