@@ -2,10 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tset.1	5.1 (Berkeley) %G%
+.\"	@(#)tset.1	6.1 (Berkeley) %G%
 .\"
-.\"	@(#)tset.1	1.2
-.TH TSET 1 "16 October 1982"
+.TH TSET 1 ""
 .UC 4
 .SH NAME
 tset \- terminal dependent initialization
@@ -29,7 +28,7 @@ It first determines the
 of terminal involved,
 and then does necessary initializations and mode settings.
 The type of terminal attached to each \s-2UNIX\s0 port is specified in the
-.I /etc/ttytype
+.IR /etc/ttys (5)
 database.
 Type names for terminals may be found in the
 .IR termcap (5)
@@ -56,7 +55,7 @@ for
 users) it is desirable to give information about the type of terminal
 you will usually use on ports which are not hardwired.
 These ports are identified in
-.I /etc/ttytype
+.I /etc/ttys
 as
 .I dialup
 or
@@ -139,8 +138,8 @@ option, not preceded by a
 .BR \-m ,
 is given on the command line
 then that type is used;
-otherwise the identifier found in the
-.I /etc/ttytype
+otherwise the type found in the
+.I /etc/ttys
 database will be taken to be the terminal type.
 This should always be the case for hardwired ports.
 .PP
@@ -161,16 +160,20 @@ setenv TERM \`tset - \fIoptions...\fR\`
 .PP
 With
 .I csh
-it is convenient to make an alias in your .cshrc:
+it is preferable to use the following command in your .login file to
+initialize the TERM and TERMCAP environment variables at the same time.
+.IP
+eval \`tset -s \fIoptions...\fR\`
 .PP
-.RS
-alias tset \'setenv TERM \`tset \- \e!*\`\'
-.RE
-Either of these aliases allow the command
-.RS
+It is also convenient to make an alias in your .cshrc:
+.IP
+alias tset \'eval \`tset \-s \e!*\`\'
+.PP
+This allows the command:
+.IP
 tset 2621
-.RE
-to be invoked at any time from your login csh.
+.PP
+to be invoked at any time to set the terminal and environment.
 .B "Note to Bourne Shell users:"
 It is
 .B not
@@ -229,6 +232,12 @@ The name of the terminal finally decided upon is output on the
 standard output.
 This is intended to be captured by the shell and placed in the
 environment variable TERM.
+.TP
+.B \-s
+Print the sequence of
+.I csh
+commands to initialize the environment variables TERM and TERMCAP based on
+the name of the terminal finally decided upon.
 .TP
 .B \-n
 On systems with the Berkeley 4BSD tty driver,
@@ -290,7 +299,7 @@ on a 2621.
 export TERM; TERM=\`tset \- 2621\`
 .PP
 You have an h19 at home which you dial up on, but your office terminal
-is hardwired and known in /etc/ttytype.
+is hardwired and known in /etc/ttys.
 .IP
 export TERM; TERM=\`tset \- \-m dialup:h19\`
 .PP
@@ -310,7 +319,7 @@ export TERM; TERM=\`tset \- \-m 'switch>1200:?vt100' \-m 'switch<=1200:2621'
 .PP
 All of the above entries will fall back on the terminal type
 specified in
-.I /etc/ttytype
+.I /etc/ttys
 if none of the conditions hold.
 The following entry is appropriate if
 you always dial up, always at the same baud rate,
@@ -322,7 +331,7 @@ defaulting to adm3a.
 export TERM; TERM=\`tset \- \?adm3a\`
 .PP
 If the file
-.I /etc/ttytype
+.I /etc/ttys
 is not properly installed and you want to
 key entirely on the baud rate, the following can be used:
 .IP
@@ -339,7 +348,7 @@ However, sometimes you log in from the university you used to go to,
 over the ARPANET; in this case you are on an ALTO emulating a dm2500.
 You also often log in on various hardwired ports, such as the console,
 all of which are properly entered in
-.IR /etc/ttytype .
+.IR /etc/ttys .
 You want your erase character set to control H,
 your kill character set to control U,
 and don't want
@@ -349,11 +358,11 @@ to print the ``Erase set to Backspace, Kill set to Control U'' message.
 export TERM; TERM=\`tset \-e \-k^U \-Q \- \-m 'switch<=1200:concept100' \-m 'switch:?vt100' \-m dialup:concept100 \-m arpanet:dm2500\`
 .SH FILES
 .DT
-/etc/ttytype	port name to terminal type mapping database
+/etc/ttys	port name to terminal type mapping database
 .br
 /etc/termcap	terminal capability database
 .SH SEE\ ALSO
-csh(1), sh(1), stty(1), ttytype(5), termcap(5), environ(7)
+csh(1), sh(1), stty(1), ttys(5), termcap(5), environ(7)
 .SH AUTHORS
 Eric Allman
 .br
