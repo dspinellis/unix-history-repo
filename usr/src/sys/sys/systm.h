@@ -1,4 +1,4 @@
-/*	systm.h	4.33	83/02/10	*/
+/*	systm.h	4.34	83/03/31	*/
 
 /*
  * Random set of variables
@@ -55,7 +55,6 @@ extern	int mcode[];		/* MUSH: startup code */
 extern	int szmcode;		/* & its size */
 #endif
 
-dev_t	getmdev();
 daddr_t	bmap();
 caddr_t	calloc();
 unsigned max();
