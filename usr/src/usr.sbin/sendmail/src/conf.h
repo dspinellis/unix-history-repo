@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.29 (Berkeley) %G%
+ *	@(#)conf.h	8.30 (Berkeley) %G%
  */
 
 /*
@@ -409,11 +409,12 @@ typedef int		pid_t;
 # define GIDSET_T	int
 #endif
 
-/*
+
+/**********************************************************************
 **  Remaining definitions should never have to be changed.  They are
 **  primarily to provide back compatibility for older systems -- for
 **  example, it includes some POSIX compatibility definitions
-*/
+**********************************************************************/
 
 /* System 5 compatibility */
 #ifndef S_ISREG
