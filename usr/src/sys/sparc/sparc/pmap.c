@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.3 (Berkeley) %G%
+ *	@(#)pmap.c	8.4 (Berkeley) %G%
  *
  * from: $Header: pmap.c,v 1.43 93/10/31 05:34:56 torek Exp $
  */
@@ -2085,7 +2085,7 @@ pmap_changeprot(pm, va, prot, wired)
 			setcontext(0);
 			/* XXX use per-cpu va? */
 			setsegmap(0, pmeg);
-			va = VA_VPG(va);
+			va = VA_VPG(va) * NBPG;
 			tpte = getpte(va);
 			if ((tpte & PG_PROT) == newprot)
 				goto useless;
