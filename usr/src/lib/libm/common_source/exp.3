@@ -30,14 +30,18 @@ returns
 .I exp(x)\-1
 accurately (even if
 .I x
-is close to 0).
+is close to
+.I 0
+).
 .PP
 .I L
 returns
 .I log(1+x)
 accurately (even if
 .I x
-is close to 0).
+is close to
+.I 0
+).
 .PP
 .I Exp
 returns the exponential function of 
@@ -47,7 +51,9 @@ returns the exponential function of
 returns the natural logarithm of 
 .IR x ;
 .I log10
-returns the base 10 logarithm.
+returns the base
+.I 10
+logarithm.
 .PP
 .I Pow
 returns
@@ -77,5 +83,213 @@ returns the reserved operand on the VAX when
 is zero or negative;
 .I errno
 is set to EDOM.
+.SH NOTES
+.I Pow
+defines
+.if n\
+.I x**0
+.if t\
+.I x\u\s80\s10\d
+=
+.I 1
+for all
+.I x,
+including
+.I zero,
+.if n\
+.I infinity
+.if t\
+\(if
+(not applicable on the VAX) and
+.I NaN
+(the reserved operand on the VAX).
+Previous implementations of
+.I pow
+may have defined
+.if n\
+.I x**0
+.if t\
+.I  x\u\s80\s10\d
+to be
+.I undefined
+in some or all of those cases.
+The reasons for setting
+.if n\
+.I x**0
+.if t\
+.I  x\u\s80\s10\d
+=
+.I 1
+in all cases are these:
+.IP (1)
+Any program that already tests whether
+.I x
+is
+.I 0
+(or
+.if n\
+.I infinity
+.if t\
+\(if
+or
+.I NaN\fR)
+before computing
+.if n\
+.I x**0
+.if t\
+.I  x\u\s80\s10\d
+will be indifferent to whether
+.if n\
+.I 0**0
+.if t\
+.I  0\u\s80\s10\d
+=
+.I 1
+or not.
+Any program that expects
+.if n\
+.I 0**0
+.if t\
+.I  0\u\s80\s10\d
+to be invalid is dubious anyway since that
+expectation is bound to be contradicted by some
+computer systems.
+.IP (2)
+Some Algebra texts (e.g. Sigler's) define
+.if n\
+.I x**0
+.if t\
+.I  x\u\s80\s10\d
+=
+.I 1
+for all
+.I x,
+including
+.I x
+=
+.I 0.
+This is compatible with the convention for polynomials
+that accepts
+.br
+.I p(x) =
+.if n \{\
+.I a[0]*x**0
++
+.I a[1]*x**1
++ ... +
+.I a[n]*x**n \}
+.if t \{\
+.I a\d\s80\s10\u\(**x\u\s80\s10\d
++
+.I a\d\s81\s10\u\(**x\u\s81\s10\d
++ ... +
+.I a\d\s8n\s10\u\(**x\u\s8n\s10\d \}
+and evaluates 
+.I p(0)
+=
+.if n\
+.I a[0]
+.if t\
+.I a\d\s80\s10\u
+rather than reject
+.if n\
+.I a[0]*0**0
+.if t\
+.I a\d\s80\s10\u\(**0\u\s80\s10\d
+as invalid.
+.IP (3)
+Analysts will accept
+.if n\
+.I 0**0
+.if t\
+.I  0\u\s80\s10\d
+=
+.I 1
+despite that
+.if n\
+.I x**y
+.if t\
+.I  x\u\s8y\s10\d
+can approach anything or nothing as
+.I x
+and
+.I y
+approach
+.I zero
+independently.
+The reason for setting
+.if n\
+.I 0**0
+.if t\
+.I  0\u\s80\s10\d
+=
+.I 1
+anyway is this:
+.br
+If
+.I x(z)
+and
+.I y(z)
+are
+.I any
+functions analytic (expressible as power series) in
+.I z
+at
+.I z
+=
+.I 0,
+and if
+.I x(0)
+=
+.I y(0)
+=
+.I 0,
+then
+.if n\
+.I x(z)**y(z)
+.if t\
+.I x(z)\u\s8y(z)\s10\d
+\(->
+.I 1
+as
+.I z
+\(->
+.I 0.
+.IP (4)
+If
+.if n\
+.I 0**0
+.if t\
+.I  0\u\s80\s10\d
+=
+.I 1,
+then
+.if n\
+.I infinity**0
+.if t\
+\(if\u\s8\fI0\fR\s10\d
+=
+.if t\
+.I  1/0\u\s80\s10\d
+.if n\
+.I 1/0**0
+=
+.I 1
+too; and then
+.if n\
+.I NaN**0
+.if t\
+.I  NaN\u\s80\s10\d
+=
+.I 1
+because
+.if n\
+.I x**0
+.if t\
+.I  x\u\s80\s10\d
+=
+.I 1
+for all finite and infinite
+.I x.
 .SH AUTHOR
-Kwok-Choi Ng
+Kwok\-Choi Ng, W. Kahan
