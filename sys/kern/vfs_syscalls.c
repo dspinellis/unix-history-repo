@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.12 1994/03/16 23:32:58 davidg Exp $
+ *	$Id: vfs_syscalls.c,v 1.13 1994/05/22 22:31:52 ache Exp $
  */
 
 #include "param.h"
@@ -846,6 +846,8 @@ link(p, uap, retval)
 		goto out1;
 	}
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
+	if (vp->v_type == VDIR)
+		ndp->ni_nameiop |= WILLBEDIR;
 	ndp->ni_dirp = (caddr_t)uap->linkname;
 	if (error = namei(ndp, p))
 		goto out1;
@@ -1637,6 +1639,8 @@ rename(p, uap, retval)
 		return (error);
 	fvp = fromnd.ni_vp;
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART;
+	if (fvp->v_type == VDIR)
+		tond.ni_nameiop |= WILLBEDIR;
 	tond.ni_segflg = UIO_USERSPACE;
 	tond.ni_dirp = uap->to;
 	if (error = namei(&tond, p)) {
@@ -1666,6 +1670,7 @@ rename(p, uap, retval)
 	}
 	if (fvp == tdvp)
 		error = EINVAL;
+#if 0
 	/*
 	 * If source is the same as the destination (that is the
 	 * same inode number with the same name in the same directory),
@@ -1675,6 +1680,15 @@ rename(p, uap, retval)
 	    fromnd.ni_namelen == tond.ni_namelen &&
 	    !bcmp(fromnd.ni_ptr, tond.ni_ptr, fromnd.ni_namelen))
 		error = -1;
+#else
+	/*
+	 * If the source is the same as the destination (that is, if they
+	 * are links to the same vnode), then there is nothing to do.
+	 * POSIX standard.
+	 */
+	if (fvp == tvp)
+		error = -1;
+#endif
 out:
 	if (!error) {
 		error = VOP_RENAME(&fromnd, &tond, p);
@@ -1724,7 +1738,7 @@ mkdir(p, uap, retval)
 	struct nameidata nd;
 
 	ndp = &nd;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
+	ndp->ni_nameiop = CREATE | LOCKPARENT | WILLBEDIR;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
 	if (error = namei(ndp, p))
