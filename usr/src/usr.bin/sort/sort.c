@@ -1,8 +1,8 @@
-static	char *sccsid = "@(#)sort.c	4.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.13 (Berkeley) %G%";
+#include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #define	L	2048
@@ -20,7 +20,7 @@ static	char *sccsid = "@(#)sort.c	4.12 (Berkeley) %G%";
 FILE	*is, *os;
 char	*dirtry[] = {"/usr/tmp", "/tmp", NULL};
 char	**dirs;
-char	file1[30];
+char	file1[MAXPATHLEN];
 char	*file = file1;
 char	*filep;
 int	nfiles;
