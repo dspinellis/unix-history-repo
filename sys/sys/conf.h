@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)conf.h	7.9 (Berkeley) 5/5/91
- *	$Id: conf.h,v 1.4 1993/11/25 01:37:55 wollman Exp $
+ *	$Id: conf.h,v 1.5 1994/03/02 20:29:00 guido Exp $
  */
 
 #ifndef _SYS_CONF_H_

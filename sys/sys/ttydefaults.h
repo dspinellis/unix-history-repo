@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) UNIX System Laboratories, Inc.  All or some portions
+ * of this file are derived from material licensed to the
+ * University of California by American Telephone and Telegraph Co.
+ * or UNIX System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ */
 /*-
  * Copyright (c) 1982, 1986 The Regents of the University of California.
  * All rights reserved.
@@ -31,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ttydefaults.h	7.9 (Berkeley) 5/9/91
- *	$Id: ttydefaults.h,v 1.2 1993/10/16 17:18:10 rgrimes Exp $
+ *	$Id: ttydefaults.h,v 1.3 1993/12/15 17:03:12 ache Exp $
  */
 
 /*
