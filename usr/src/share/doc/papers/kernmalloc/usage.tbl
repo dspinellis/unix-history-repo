@@ -1,4 +1,4 @@
-.\"	@(#)usage.tbl	1.2	(Copyright 1988 M. K. McKusick)	88/04/22
+.\"	@(#)usage.tbl	1.3	(Copyright 1988 M. K. McKusick)	88/04/22
 .TS
 box;
 c s s s
@@ -8,7 +8,7 @@ Memory statistics by bucket size
 =
 Size	In Use	Free	Requests
 _
-128	329	39	3129242
+128	329	39	3129219
 256	0	0	0
 512	4	0	16
 1024	17	5	648771
@@ -35,7 +35,6 @@ socket	37	5K	6K	1275
 pcb	55	7K	8K	1512
 routetbl	229	29K	29K	2424
 fragtbl	0	0K	1K	404
-arptbl	2	1K	1K	23
 zombie	3	1K	1K	24538
 namei	0	0K	5K	648754
 ioctlops	0	0K	1K	12
