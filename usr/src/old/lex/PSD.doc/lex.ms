@@ -1,5 +1,7 @@
-.\"	@(#)lex.ms	5.1 (Berkeley) %G%
+.\"	@(#)lex.ms	6.1 (Berkeley) %G%
 .\"
+.EH 'PS1:16-%''Lex \- A Lexical Analyzer Generator'
+.OH 'Lex \- A Lexical Analyzer Generator''PS1:16-%'
 .hc ~
 .bd I 2
 .de TS
@@ -12,13 +14,13 @@
 .SP 1v
 .fi
 ..
-.de PT
-.if \\n%>1 'tl ''\s7LEX\s0\s9\(mi%\s0''
-.if \\n%>1 'sp
-..
+.\".de PT
+.\".if \\n%>1 'tl ''\s7LEX\s0\s9\(mi%\s0''
+.\".if \\n%>1 'sp
+.\"..
 .ND July 21, 1975
-.RP
-.TM 75-1274-15 39199 39199-11
+.\".RP
+.\".TM 75-1274-15 39199 39199-11
 .TL
 Lex \- A Lexical Analyzer ~Generator~
 .AU ``MH 2C-569'' 6377
@@ -28,10 +30,10 @@ M. E. Lesk and E. Schmidt
 .AB
 .sp
 .bd I 2
-.nr PS 8
-.nr VS 9
-.ps 8
-.vs 9p
+.\".nr PS 8
+.\".nr VS 9
+.\".ps 8
+.\".vs 9p
 Lex helps write programs whose control flow
 is directed by instances of regular
 expressions in the input stream.
@@ -74,33 +76,9 @@ Lex is designed to simplify
 interfacing with Yacc, for those
 with access to this compiler-compiler system.
 ..
-.nr PS 9
-.nr VS 11
+.\".nr PS 9
+.\".nr VS 11
 .AE
-.SH
-.ce 1
-Table of Contents
-.LP
-.ce 100
-.TS
-r 1l 2r .
-1.	Introduction.	1
-2.	Lex Source.	3
-3.	Lex Regular Expressions.	3
-4.	Lex Actions.	5
-5.	Ambiguous Source Rules.	7
-6.	Lex Source Definitions.	8
-7.	Usage.	8
-8.	Lex and Yacc.	9
-9.	Examples.	10
-10.	Left Context Sensitivity.	11
-11.	Character Set.	12
-12.	Summary of Source Format.	12
-13.	Caveats and Bugs.	13
-14.	Acknowledgments.	13
-15.	References.	13
-.TE
-.ce 0
 .2C
 .NH
 Introduction.
@@ -206,7 +184,6 @@ Input \(->	yylex	\(-> Output
 
 .sp
 An overview of Lex
-.sp
 Figure 1
 .TE
 .GE
@@ -276,6 +253,8 @@ written by other generators
 or by hand, can
 be added easily to programs written by Lex.
 .BS 2
+.ps 9
+.vs 11
 .TS
 center;
 l c c c l
@@ -302,9 +281,10 @@ Input \(->	yylex	\(->	yyparse	\(-> Parsed input
 
 .sp
 	Lex with Yacc
-.sp
 	Figure 2
 .TE
+.ps 10
+.vs 12
 .BE
 Yacc users
 will realize that the name
@@ -1059,29 +1039,37 @@ text in various circumstances.  Consider the C problem of distinguishing
 the ambiguity of ``=\(mia''.
 Suppose it is desired to treat this as ``=\(mi a''
 but print a message.  A rule might be
+.ps 9
+.vs 11
 .TS
 center;
 l l.
 =\(mi[a\-zA\-Z]	{
-	printf("Operator (=\(mi) ambiguous\en");
+	printf("Op (=\(mi) ambiguous\en");
 	yyless(yyleng\-1);
 	... action for =\(mi ...
 	}
 .TE
+.ps 10
+.vs 12
 which prints a message, returns the letter after the
 operator to the input stream, and treats the operator as ``=\(mi''.
 Alternatively it might be desired to treat this as ``=  \(mia''.
 To do this, just return the minus
 sign as well as the letter to the input:
+.ps 9
+.vs 11
 .TS
 center;
 l l.
 =\(mi[a\-zA\-Z]	{
-	printf("Operator (=\(mi) ambiguous\en");
+	printf("Op (=\(mi) ambiguous\en");
 	yyless(yyleng\-2);
 	... action for = ...
 	}
 .TE
+.ps 10
+.vs 12
 will perform the other interpretation.
 Note that the expressions for the two cases might more easily
 be written
@@ -1423,8 +1411,11 @@ source is
 center;
 l l.
 %%
-[a\-z][a\-z]	{digram[yytext[0]][yytext[1]]++; REJECT;}
-.	;
+[a\-z][a\-z]	{
+	digram[yytext[0]][yytext[1]]++;
+	REJECT;
+	}
+\.	;
 \en	;
 .TE
 where the REJECT is necessary to pick up
@@ -1694,7 +1685,8 @@ l l.
 	int k;
 \-?[0\-9]+	{
 	k = atoi(yytext);
-	printf("%d", k%7 == 0 ? k+3 : k);
+	printf("%d",
+	  k%7 == 0 ? k+3 : k);
 	}
 \-?[0\-9.]+	ECHO;
 [A-Za-z][A-Za-z0-9]+	ECHO;
@@ -2215,7 +2207,8 @@ x+	1,2,3, ... instances of x.
 x|y	an x or a y.
 (x)	an x.
 x/y	an x but only if followed by y.
-{xx}	the translation of xx from the definitions section.
+{xx}	the translation of xx from the
+	definitions section.
 x{m,n}	\fIm\fR through \fIn\fR occurrences of x
 .TE
 .NH
