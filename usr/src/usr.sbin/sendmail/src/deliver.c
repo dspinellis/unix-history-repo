@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1357,6 +1357,9 @@ sendall(e, mode)
 	register ADDRESS *q;
 	bool oldverbose;
 	int pid;
+	char *owner;
+	int otherowners;
+	ENVELOPE *splitenv = NULL;
 # ifdef LOCKF
 	struct flock lfd;
 # endif
@@ -1408,12 +1411,129 @@ sendall(e, mode)
 		(void) recipient(&e->e_from, &e->e_sendqueue, e);
 	}
 
+	/*
+	**  Handle alias owners.
+	**
+	**	We scan up the q_alias chain looking for owners.
+	**	We discard owners that are the same as the return path.
+	*/
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		register struct address *a;
+
+		for (a = q; a != NULL && a->q_owner == NULL; a = a->q_alias)
+			continue;
+		if (a != NULL)
+			q->q_owner = a->q_owner;
+				
+		if (q->q_owner != NULL && !bitset(QDONTSEND, q->q_flags) &&
+		    strcmp(q->q_owner, e->e_returnpath) == 0)
+			q->q_owner = NULL;
+	}
+		
+	owner = "";
+	otherowners = 1;
+	while (owner != NULL && otherowners > 0)
+	{
+		owner = NULL;
+		otherowners = 0;
+
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (bitset(QDONTSEND, q->q_flags))
+				continue;
+
+			if (q->q_owner != NULL)
+			{
+				if (owner == NULL)
+					owner = q->q_owner;
+				else if (owner != q->q_owner)
+				{
+					if (strcmp(owner, q->q_owner) == 0)
+					{
+						/* make future comparisons cheap */
+						q->q_owner = owner;
+					}
+					else
+					{
+						otherowners++;
+					}
+					owner = q->q_owner;
+				}
+			}
+			else
+			{
+				otherowners++;
+			}
+		}
+
+		if (owner != NULL && otherowners > 0)
+		{
+			register ENVELOPE *ee;
+			extern ENVELOPE *newenvelope();
+			extern HDR *copyheader();
+			extern ADDRESS *copyqueue();
+
+			ee = (ENVELOPE *) xalloc(sizeof(ENVELOPE));
+			STRUCTCOPY(*e, *ee);
+			ee->e_id = NULL;
+			ee->e_parent = e;
+			ee->e_header = copyheader(e->e_header);
+			ee->e_sendqueue = copyqueue(e->e_sendqueue);
+			ee->e_errorqueue = copyqueue(e->e_errorqueue);
+			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE);
+			ee->e_returnpath = owner;
+			ee->e_putbody = parentbody;
+			ee->e_sibling = splitenv;
+			splitenv = ee;
+			
+			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+				if (q->q_owner == owner)
+					q->q_flags |= QDONTSEND;
+			for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
+				if (q->q_owner != owner)
+					q->q_flags |= QDONTSEND;
+
+			if (e->e_df != NULL && mode != SM_VERIFY)
+			{
+				ee->e_dfp = NULL;
+				ee->e_df = queuename(ee, 'd');
+				if (link(e->e_df, ee->e_df) < 0)
+				{
+					syserr("sendall: link(%s, %s)",
+						e->e_df, ee->e_df);
+				}
+			}
+		}
+	}
+
+	if (owner != NULL)
+		e->e_returnpath = owner;
+
 # ifdef QUEUE
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
 	     (mode != SM_VERIFY && SuperSafe)) &&
 	    !bitset(EF_INQUEUE, e->e_flags))
 		queueup(e, TRUE, mode == SM_QUEUE);
 #endif /* QUEUE */
+
+	if (splitenv != NULL)
+	{
+		if (tTd(13, 1))
+		{
+			printf("\nsendall: Split queue; remaining queue:\n");
+			printaddr(e->e_sendqueue, TRUE);
+		}
+
+		while (splitenv != NULL)
+		{
+			sendall(splitenv, mode);
+			splitenv = splitenv->e_sibling;
+		}
+
+		CurEnv = e;
+	}
 
 	oldverbose = Verbose;
 	switch (mode)
