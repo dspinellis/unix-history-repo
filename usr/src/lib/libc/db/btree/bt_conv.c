@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_conv.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_conv.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -174,7 +174,7 @@ __bt_pgout(t, pg, pp)
  * Parameters:
  *	p:	page to convert
  */
-void
+static void
 mswap(pg)
 	PAGE *pg;
 {
