@@ -1,9 +1,9 @@
-.\"	@(#)contrib	5.28 (Berkeley) %G%
+.\"	@(#)contrib	5.29 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
 .\" Then, compress multiple tabs into a single tab, and do "dtbl list |
-.\" psroff".  DON'T SAVE THE FILE IN COLUMNATED FORM, IT'S HARD TO UNDO!
+.\" psroff -ms".  DON'T SAVE THE FILE IN COLUMNATED FORM, IT'S HARD TO UNDO!
 .\"
 .\" Be careful sorting the list, there are some entries that span two
 .\" two lines.
@@ -19,6 +19,7 @@ Compaq Computer Corp.
 Cray Research Inc.
 Dept. of Defense Advance Research Projects Agency (DARPA)
 Digital Equipment Corp.
+NASA Ames Research Center
 The Hewlett-Packard Company
 The Open Software Foundation
 UUNET Technologies Inc.
@@ -74,15 +75,20 @@ item, program, library routine or program maintenance for the BSD system.
 .sp
 .ps 9
 .vs 11
-.TS
-l l l l.
+.nf
 386 device drivers	Carnegie-Mellon University Mach project
 386 device drivers	Don Ahn, Sean Fagan and Tim Tucker
 HCX device drivers	Harris Corp.
 Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone,
 	Piers Lauder, John Lions, Tim Long,
 	Chris Maltby, Greg Rose and John Wainwright 
-adventure(6)	Will Crowther, Don Woods and Jim Gillogly
+.fi
+.TS
+l l l l.
+X25/LLC2	Dirk Husemann
+adventure(6)	Don Woods
+adventure(6)	Jim Gillogly
+adventure(6)	Will Crowther
 ar(1)	Hugh A. Smith
 arithmetic(6)	Eamonn McManus
 arp(8)	Sun Microsystems Inc.
@@ -92,6 +98,7 @@ battlestar(6)	David Riggle
 bcd(6)	Steve Hayman
 bdes(1)	Matt Bishop
 bitstring(3)	Paul Vixie
+btree(3)	Mike Olson
 byte-range locking	Scooter Morris
 caesar(6)	Stan King and John Eldridge
 cal(1)	Kim Letkeman
@@ -102,17 +109,18 @@ cksum(1)	James W. Williams
 clri(8)	Rich $alz
 col(1)	Michael Rendell
 comm(1)	Case Larsen
-compress(1)	James A. Woods, Spencer Thomas
-	 and Joseph Orost
+compress(1)	James A. Woods
+compress(1)	Joseph Orost
+compress(1)	Spencer Thomas
 cp(1)	David Hitz
 csh(1)	Christos Zoulas and Len Shar
 curses(3)	Ken Arnold
-cut(1)	Adam S. Moskowitz and Marciano Pitargue
-db(3) (btree support)	Mike Olson
-db(3) (hashing support)	Margo Seltzer
+cut(1)	Adam S. Moskowitz
+cut(1)	Marciano Pitargue
 dd(1)	Keith Muller and Lance Visser
-des(1)	Phil Karn, Jim Gillogly
-	 and Richard Outerbridge
+des(1)	Jim Gillogly
+des(1)	Phil Karn
+des(1)	Richard Outerbridge
 disklabel(8)	Symmetric Computer Systems
 du(1)	Chris Newcomb
 emacs(1)	Richard Stallman
@@ -131,21 +139,28 @@ gcc/groff integration	UUNET Technologies, Inc.
 glob(3)	Guido van Rossum
 gprof(1)	Peter Kessler
 hack(6)	Andries Brouwer (and a cast of thousands)
-heapsort(3)	Ronnie Kon, Kevin Lew and Elmer Yglesias
 hangman(6)	Ken Arnold
+hash(3)	Margo Seltzer
+heapsort(3)	Elmer Yglesias
+heapsort(3)	Kevin Lew
+heapsort(3)	Ronnie Kon
 hunt(6)	Greg Couch and Conrad Huang
-indent(1)	David Willcox, Eric Schmidt,
-	 James Gosling and Sun Microsystems
+indent(1)	David Willcox
+indent(1)	Eric Schmidt
+indent(1)	James Gosling
+indent(1)	Sun Microsystems
 j0(3)	Sun Microsystems, Inc.
 j1(3)	Sun Microsystems, Inc.
 jn(3)	Sun Microsystems, Inc.
-join(1)	Steve Hayman, Michiro Hikida and David Goodenough
+join(1)	David Goodenough
+join(1)	Michiro Hikida
+join(1)	Steve Hayman
 jove(1)	Jonathon Payne
 kvm(3)	Peter Shipley
 larn(6)	Noah Morgan
 lex(1)	Vern Paxson
-libm(3)	Peter McIlroy, funded by
-	UUNET Communications Services
+libm(3)	Peter McIlroy
+libm(3)	UUNET Technologies, Inc.
 locate(1)	James A. Woods
 lock(1)	Bob Toxen
 log(3)	Peter McIlroy
@@ -202,7 +217,6 @@ worm(6)	Michael Toy
 worms(6)	Eric P. Scott
 write(1)	Craig Leres and Jef Poskanzer
 wump(6)	Dave Taylor
-X25/LLC2	Dirk Husemann
 xargs(1)	John B. Roll Jr.
 yacc(1)	Robert Paul Corbett
 .TE
