@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -181,7 +181,7 @@ do_entry(keyword, addrlist, namelist, cputype, opsys, protos)
 		nl = namelist;
 		if (nl == NONAME) {
 			fprintf(stderr, "htable: net");
-			putnet(stderr, addrlist->addr_val);
+			putnet(stderr, inet_netof(addrlist->addr_val));
 			fprintf(stderr, " missing names.\n");
 			break;
 		}
@@ -190,7 +190,7 @@ do_entry(keyword, addrlist, namelist, cputype, opsys, protos)
 		while (al = al2) {
 			char *cp;
 
-			putnet(nf, al->addr_val);
+			putnet(nf, inet_netof(al->addr_val));
 			cp = "\t%s";
 			while (nl = nl->name_link) {
 				fprintf(nf, cp, lower(nl->name_val));
@@ -330,7 +330,6 @@ copygateways(f, filename)
 	char *filename;
 {
 	register FILE *lhf;
-	register cc;
 	struct name *nl;
 	char type[80];
 	char dname[80];
@@ -353,7 +352,10 @@ copygateways(f, filename)
 #define	readentry(fp) \
 	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
 		type, dname, gname, &metric, junk)
-	while (readentry(lhf) != EOF) {
+	for (;;) {
+		junk[0] = 0;
+		if (readentry(lhf) == EOF)
+			break;
 		if (strcmp(type, "net"))
 			goto dumpit;
 		if (!getnetaddr(dname, &net))
@@ -427,15 +429,14 @@ copycomments(in, out, ccount)
  */
 putnet(f, v)
 	FILE *f;
-	u_long v;
+	register int v;
 {
 	if (v < 128)
 		fprintf(f, "%d", v);
 	else if (v < 65536)
-		fprintf(f, "%d.%d", (v >> 8) & 0xff, v & 0xff);
+		fprintf(f, "%d.%d", UC(v >> 8), UC(v));
 	else
-		fprintf(f, "%d.%d.%d", (v >> 16) & 0xff,
-			(v >> 8) & 0xff, v & 0xff);
+		fprintf(f, "%d.%d.%d", UC(v >> 16), UC(v >> 8), UC(v));
 }
 
 putaddr(f, v)
