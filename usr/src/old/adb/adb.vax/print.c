@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.4 %G%";
+static	char sccsid[] = "@(#)print.c 4.5 %G%";
 /*
  *
  *	UNIX debugger
@@ -149,10 +149,6 @@ printtrace(modif)
 		INT		index;
 
 		index=0;
-		IF modif=='<'
-		THEN	iclose(stack, 0);
-		ELSE	oclose();
-		FI
 		IF rdc()!=EOR
 		THEN	REP file[index++]=lastc;
 			    IF index>=63 THEN error(LONGFIL); FI
@@ -164,15 +160,23 @@ printtrace(modif)
 					strcat(Ifile, "/");
 					strcat(Ifile, file);
 				FI
-				infile=open(file,0);
-				IF infile<0 && (infile=open(Ifile,0))<0
+				IF strcmp(file, "-")!=0
+				THEN	iclose(stack, 0);
+					infile=open(file,0);
+					IF infile<0
+					THEN	infile=open(Ifile,0);
+					FI
+				ELSE	lseek(infile, 0L, 0);
+				FI
+				IF infile<0
 				THEN	infile=0; error(NOTOPEN);
 				ELSE	IF cntflg
 					THEN	var[9] = cntval;
 					ELSE	var[9] = 1;
 					FI
 				FI
-			ELSE	outfile=open(file,1);
+			ELSE	oclose();
+				outfile=open(file,1);
 				IF outfile<0
 				THEN	outfile=creat(file,0644);
 #ifndef EDDT
@@ -183,6 +187,7 @@ printtrace(modif)
 
 		ELSE	IF modif == '<'
 			THEN	iclose(-1, 0);
+			ELSE	oclose();
 			FI
 		FI
 		lp--;
@@ -224,7 +229,7 @@ printtrace(modif)
 		FOR i=0;i<=35;i++
 		DO IF var[i]
 		   THEN printc((i<=9 ? '0' : 'a'-10) + i);
-			printf(" = %Q\n",var[i]);
+			printf(" = %X\n",var[i]);
 		   FI
 		OD
 		break;
@@ -276,7 +281,7 @@ printtrace(modif)
 				ntramp = 0;
 				findsym(callpc,ISYM);
 				if (cursym &&
-				    !strcmp(cursym->n_un.n_name, "start"))
+				    !strcmp(cursym->n_un.n_name, "start")) 
 					break;
 				if (cursym)
 					name = cursym->n_un.n_name;
@@ -390,7 +395,6 @@ getreg(regnam) {
 			THEN lp=olp;
 			ELSE
 				int i = kcore ? (int)p->rkern : p->roffs;
-				printf("returning %X\n", i);
 				return (i);
 			FI
 		FI
