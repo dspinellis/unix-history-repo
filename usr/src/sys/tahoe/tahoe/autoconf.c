@@ -1,4 +1,4 @@
-/*	autoconf.c	1.5	86/01/20	*/
+/*	autoconf.c	1.6	86/07/16	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -19,10 +19,11 @@
 #include "systm.h"
 #include "map.h"
 #include "buf.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "vm.h"
 #include "conf.h"
 #include "dmap.h"
+#include "reboot.h"
 
 #include "../tahoevba/vbavar.h"
 #include "../tahoevba/vbaparam.h"
@@ -61,8 +62,16 @@ configure()
 	ip = (int *)&Sysmap[2]; *ip &= ~PG_PROT; *ip |= PG_KR;
 	mtpr(TBIS, Sysbase+2*NBPG);
 #if GENERIC
+	if ((boothowto & RB_ASKNAME) == 0)
+		setroot();
 	setconf();
+#else
+	setroot();
 #endif
+	/*
+	 * Configure swap area and related system
+	 * parameter based on device(s) used.
+	 */
 	swapconf();
 	cold = 0;
 }
@@ -333,4 +342,94 @@ swapconf()
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
 	if (dumplo < 0)
 		dumplo = 0;
+}
+
+#define	DOSWAP			/* change swdevt, argdev, and dumpdev too */
+u_long	bootdev;		/* should be dev_t, but not until 32 bits */
+
+static	char devname[][2] = {
+	0,0,		/* 0 = ud */
+	'd','k',	/* 1 = vd */
+	0,0,		/* 2 = xp */
+};
+
+#define	PARTITIONMASK	0x7
+#define	PARTITIONSHIFT	3
+
+/*
+ * Attempt to find the device from which we were booted.
+ * If we can do so, and not instructed not to do so,
+ * change rootdev to correspond to the load device.
+ */
+setroot()
+{
+	int  majdev, mindev, unit, part, adaptor;
+	dev_t temp, orootdev;
+	struct swdevt *swp;
+
+	if (boothowto & RB_DFLTROOT ||
+	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
+		return;
+	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
+	if (majdev > sizeof(devname) / sizeof(devname[0]))
+		return;
+	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	/*
+	 * Search Versabus devices.
+	 *
+	 * WILL HAVE TO DISTINGUISH VME/VERSABUS SOMETIME
+	 */
+	{
+		register struct vba_device *vbap;
+
+		for (vbap = vbdinit; vbap->ui_driver; vbap++)
+			if (vbap->ui_alive && vbap->ui_slave == unit &&
+			   vbap->ui_vbanum == adaptor &&
+#ifdef notdef
+			   vbap->ui_driver->ud_dname[0] == devname[majdev][0] &&
+			   vbap->ui_driver->ud_dname[1] == devname[majdev][1])
+#else
+			   1)	/* can't match names 'cuz of driver bogosity */
+#endif
+				break;
+		if (vbap->ui_driver == 0)
+			return;
+		mindev = vbap->ui_unit;
+	}
+	mindev = (mindev << PARTITIONSHIFT) + part;
+	orootdev = rootdev;
+	rootdev = makedev(majdev, mindev);
+	/*
+	 * If the original rootdev is the same as the one
+	 * just calculated, don't need to adjust the swap configuration.
+	 */
+	if (rootdev == orootdev)
+		return;
+	printf("changing root device to %c%c%d%c\n",
+		devname[majdev][0], devname[majdev][1],
+		mindev >> PARTITIONSHIFT, part + 'a');
+#ifdef DOSWAP
+	mindev &= ~PARTITIONMASK;
+	for (swp = swdevt; swp->sw_dev; swp++) {
+		if (majdev == major(swp->sw_dev) &&
+		    mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
+			temp = swdevt[0].sw_dev;
+			swdevt[0].sw_dev = swp->sw_dev;
+			swp->sw_dev = temp;
+			break;
+		}
+	}
+	if (swp->sw_dev == 0)
+		return;
+	/*
+	 * If argdev and dumpdev were the same as the old primary swap
+	 * device, move them to the new primary swap device.
+	 */
+	if (temp == dumpdev)
+		dumpdev = swdevt[0].sw_dev;
+	if (temp == argdev)
+		argdev = swdevt[0].sw_dev;
+#endif
 }
