@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)p2put.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)p2put.c	5.4 (Berkeley) %G%";
 #endif not lint
 
     /*
@@ -87,9 +87,9 @@ putlbracket(ftnno, sizesp)
     int	maxtempreg;	
     int	alignedframesize;
 
-#   ifdef vax
+#   if defined(vax) || defined(tahoe)
 	maxtempreg = sizesp->curtmps.next_avail[REG_GENERAL];
-#   endif vax
+#   endif vax || tahoe
 #   ifdef mc68000
 	    /*
 	     *	this is how /lib/f1 wants it.
@@ -349,9 +349,9 @@ putCON8( val )
 	putprintf( "	.data" , 0 );
 	aligndot(A_DOUBLE);
 	(void) putlab( label );
-#	ifdef vax
+#	if defined(vax) || defined(tahoe)
 	    putprintf( "	.double 0d%.20e" , 0 , val );
-#	endif vax
+#	endif vax || tahoe
 #	ifdef mc68000
 	    putprintf( "	.long 	0x%x,0x%x", 0, val);
 #	endif mc68000
@@ -736,10 +736,10 @@ printjbr( prefix , label )
     long	label;
     {
 
-#	ifdef vax
+#	if defined(vax) || defined(tahoe)
 	    putprintf( "	jbr	" , 1 );
 	    putprintf( PREFIXFORMAT , 0 , prefix , label );
-#	endif vax
+#	endif vax || tahoe
 #	ifdef mc68000
 	    putprintf( "	jra	" , 1 );
 	    putprintf( PREFIXFORMAT , 0 , prefix , label );

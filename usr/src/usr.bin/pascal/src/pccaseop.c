@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pccaseop.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pccaseop.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 
@@ -36,9 +36,9 @@ struct ct {
      *	the PCC_FORCE operator puts its operand into a register.
      *	these to keep from thinking of it as r0 all over.
      */
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 #   define	FORCENAME	"r0"
-#endif vax
+#endif vax || tahoe
 #ifdef mc68000
 #   define	FORCENAME	"d0"
 #   define	ADDRTEMP	"a0"
@@ -292,6 +292,38 @@ directsw( ctab , count )
 		    (int) (ctab[ count ].cconst - ctab[1].cconst ));
 	}
 #   endif vax
+
+#   ifdef tahoe
+	if (opt('J')) {
+	    /*
+	     *	We have a table of absolute addresses.
+	     *
+	     *	subl2	to make r0 a 0-origin byte offset.
+	     *	cmpl	check against upper limit.
+	     *	jlssu	error if out of bounds.
+	     *	shal	to make r0 a 0-origin long offset,
+	     *	jmp	and indirect through it.
+	     */
+	    putprintf("	subl2	$%d,%s", 0, (int) ctab[1].cconst, (int) FORCENAME);
+	    putprintf("	cmpl	$%d,%s", 0,
+			(int) (ctab[count].cconst - ctab[1].cconst),
+			(int) FORCENAME);
+	    putprintf("	jlssu	%s%d", 0, (int) LABELPREFIX, ctab[0].clabel);
+	    putprintf("	shal	$2,%s,%s", 0, (int) FORCENAME, (int) FORCENAME);
+	    putprintf("	jmp	*%s%d(%s)", 0,
+		    (int) LABELPREFIX, fromlabel, (int) FORCENAME);
+	} else {
+	    /*
+	     *	We can use the TAHOE casel instruction with a table
+	     *	of short relative offsets.
+	     */
+	    putprintf("	casel	%s,$%d,$%d" , 0 , (int) FORCENAME ,
+		    (int) ctab[1].cconst ,
+		    (int) (ctab[ count ].cconst - ctab[1].cconst ));
+	    putprintf("	.align 1", 0);
+	}
+#   endif tahoe
+
 #   ifdef mc68000
 	/*
 	 *	subl	to make d0 a 0-origin byte offset.
@@ -354,13 +386,13 @@ directsw( ctab , count )
 	}
 	j++;
     }
-#   ifdef vax
+#   if defined(vax) || defined(tahoe)
 	    /*
 	     *	execution continues here if value not in range of case.
 	     */
 	if (!opt('J'))
 	    putjbr( (long) ctab[0].clabel );
-#   endif vax
+#   endif vax || tahoe
 }
 
     /*
@@ -388,11 +420,11 @@ bsrecur( deflabel , ctab , count )
 	putjbr((long) deflabel);
 	return;
     } else if ( count == 1 ) {
-#	ifdef vax
+#	if defined(vax) || defined(tahoe)
 	    putprintf("	cmpl	%s,$%d", 0, (int) FORCENAME, (int) ctab[1].cconst);
 	    putprintf("	jeql	%s%d", 0, (int) LABELPREFIX, ctab[1].clabel);
 	    putjbr((long) deflabel);
-#	endif vax
+#	endif vax || tahoe
 #	ifdef mc68000
 	    putprintf("	cmpl	#%d,%s", 0, ctab[1].cconst, (int) FORCENAME);
 	    putprintf("	jeq	L%d", 0, (int) LABELPREFIX, ctab[1].clabel);
@@ -403,11 +435,11 @@ bsrecur( deflabel , ctab , count )
 	int	half = ( count + 1 ) / 2;
 	int	gtrlabel = (int) getlab();
 
-#	ifdef vax
+#	if defined(vax) || defined(tahoe)
 	    putprintf("	cmpl	%s,$%d", 0, (int) FORCENAME, (int) ctab[half].cconst);
 	    putprintf("	jgtr	%s%d", 0, (int) LABELPREFIX, gtrlabel);
 	    putprintf("	jeql	%s%d", 0, (int) LABELPREFIX, ctab[half].clabel);
-#	endif vax
+#	endif vax || tahoe
 #	ifdef mc68000
 	    putprintf("	cmpl	#%d,%s", 0, (int) ctab[half].cconst, (int) FORCENAME);
 	    putprintf("	jgt	%s%d", 0, (int) LABELPREFIX, gtrlabel);
@@ -427,10 +459,10 @@ itesw( ctab , count )
     int	i;
 
     for ( i = 1 ; i <= count ; i++ ) {
-#	ifdef vax
+#	if defined(vax) || defined(tahoe)
 	    putprintf("	cmpl	%s,$%d", 0, (int) FORCENAME, (int) ctab[i].cconst);
 	    putprintf("	jeql	%s%d", 0, (int) LABELPREFIX, ctab[i].clabel);
-#	endif vax
+#	endif vax || tahoe
 #	ifdef mc68000
 	    putprintf("	cmpl	#%d,%s", 0, (int) ctab[i].cconst, (int) FORCENAME);
 	    putprintf("	jeq	%s%d", 0, (int) LABELPREFIX, ctab[i].clabel);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tmps.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tmps.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -46,6 +46,19 @@ struct	regtype {
 	{ 6, 11, 4 },		/* r6..r11 */
 };
 #endif vax
+
+#ifdef tahoe
+    /*
+     *	first pass register declaration constants
+     */
+struct	regtype {
+    long	lowreg;
+    long	highreg;
+    long	regsize;
+} regtypes[NUMREGTYPES] = {
+	{ 6, 12, 4 },		/* r6..r12 */
+};
+#endif tahoe
 
 #ifdef mc68000
     /*
@@ -96,7 +109,7 @@ tmpalloc(size, type, mode)
 	long			alignment;
 
 #	ifdef PC
-#	    ifdef vax
+#	    if defined(vax) || defined(tahoe)
 		if (  mode == REGOK
 		   && size == regtypes[REG_GENERAL].regsize
 		   && op->curtmps.next_avail[REG_GENERAL]
@@ -109,7 +122,7 @@ tmpalloc(size, type, mode)
 			putlbracket(ftnno, op);
 			return nlp;
 		}
-#	    endif vax
+#	    endif vax || tahoe
 #	    ifdef mc68000
 		if (  mode == REGOK
 		   && type != nl + TPTR
@@ -173,14 +186,14 @@ tmpfree(restore)
     register struct om		*op = &sizes[ cbn ];
     bool			change = FALSE;
 
-#	ifdef vax
+#	if defined(vax) || defined(tahoe)
 	    if (restore->next_avail[REG_GENERAL]
 		> op->curtmps.next_avail[REG_GENERAL]) {
 		    op->curtmps.next_avail[REG_GENERAL]
 			= restore->next_avail[REG_GENERAL];
 		    change = TRUE;
 	    }
-#	endif vax
+#	endif vax || tahoe
 #	ifdef mc68000
 	    if (restore->next_avail[REG_DATA]
 		> op->curtmps.next_avail[REG_DATA]) {
@@ -206,7 +219,7 @@ tmpfree(restore)
 }
 
 #ifdef PC
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 /*
  * create a save mask for registers which have been used
  * in this level
@@ -226,5 +239,5 @@ savmask()
 	}
 	return mask;
 }
-#endif vax
+#endif vax || tahoe
 #endif PC

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -159,9 +159,9 @@ gotoop(s)
 		     * when the module is subsequently linked with
 		     * the rest of the program.
 		     */
-#		ifdef vax
+#		if defined(vax) || defined(tahoe)
 		    putprintf("	jmp	%s", 0, (int) extname);
-#		endif vax
+#		endif vax || tahoe
 #		ifdef mc68000
 		    putprintf("	jra	%s", 0, (int) extname);
 #		endif mc68000
