@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.4.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -107,7 +107,7 @@ main(argc, argv)
 }
 
 /*
- * Print a description of the network interfaces.
+ * Print a description of the nfs stats.
  */
 void
 intpr(nfsstataddr)
@@ -122,25 +122,32 @@ intpr(nfsstataddr)
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
 		"Write", "Create", "Remove");
 	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.rpccnt[1],
-		nfsstats.rpccnt[2],
-		nfsstats.rpccnt[4],
-		nfsstats.rpccnt[5],
-		nfsstats.rpccnt[6],
-		nfsstats.rpccnt[8],
-		nfsstats.rpccnt[9],
-		nfsstats.rpccnt[10]);
-	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
+		nfsstats.rpccnt[NFSPROC_GETATTR],
+		nfsstats.rpccnt[NFSPROC_SETATTR],
+		nfsstats.rpccnt[NFSPROC_LOOKUP],
+		nfsstats.rpccnt[NFSPROC_READLINK],
+		nfsstats.rpccnt[NFSPROC_READ],
+		nfsstats.rpccnt[NFSPROC_WRITE],
+		nfsstats.rpccnt[NFSPROC_CREATE],
+		nfsstats.rpccnt[NFSPROC_REMOVE]);
+	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Rename", "Link", "Symlink", "Mkdir", "Rmdir",
-		"Readdir", "Statfs");
-	printf("%9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.rpccnt[11],
-		nfsstats.rpccnt[12],
-		nfsstats.rpccnt[13],
-		nfsstats.rpccnt[14],
-		nfsstats.rpccnt[15],
-		nfsstats.rpccnt[16],
-		nfsstats.rpccnt[17]);
+		"Readdir", "Statfs", "RdirLook");
+	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
+		nfsstats.rpccnt[NFSPROC_RENAME],
+		nfsstats.rpccnt[NFSPROC_LINK],
+		nfsstats.rpccnt[NFSPROC_SYMLINK],
+		nfsstats.rpccnt[NFSPROC_MKDIR],
+		nfsstats.rpccnt[NFSPROC_RMDIR],
+		nfsstats.rpccnt[NFSPROC_READDIR],
+		nfsstats.rpccnt[NFSPROC_STATFS],
+		nfsstats.rpccnt[NQNFSPROC_READDIRLOOK]);
+	printf("%9.9s %9.9s %9.9s\n",
+		"GLease", "Vacate", "Evict");
+	printf("%9d %9d %9d\n",
+		nfsstats.rpccnt[NQNFSPROC_GETLEASE],
+		nfsstats.rpccnt[NQNFSPROC_VACATED],
+		nfsstats.rpccnt[NQNFSPROC_EVICTED]);
 	printf("Rpc Info:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"TimedOut", "Invalid", "X Replies", "Retries", "Requests");
@@ -178,25 +185,32 @@ intpr(nfsstataddr)
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
 		"Write", "Create", "Remove");
 	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.srvrpccnt[1],
-		nfsstats.srvrpccnt[2],
-		nfsstats.srvrpccnt[4],
-		nfsstats.srvrpccnt[5],
-		nfsstats.srvrpccnt[6],
-		nfsstats.srvrpccnt[8],
-		nfsstats.srvrpccnt[9],
-		nfsstats.srvrpccnt[10]);
-	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
+		nfsstats.srvrpccnt[NFSPROC_GETATTR],
+		nfsstats.srvrpccnt[NFSPROC_SETATTR],
+		nfsstats.srvrpccnt[NFSPROC_LOOKUP],
+		nfsstats.srvrpccnt[NFSPROC_READLINK],
+		nfsstats.srvrpccnt[NFSPROC_READ],
+		nfsstats.srvrpccnt[NFSPROC_WRITE],
+		nfsstats.srvrpccnt[NFSPROC_CREATE],
+		nfsstats.srvrpccnt[NFSPROC_REMOVE]);
+	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Rename", "Link", "Symlink", "Mkdir", "Rmdir",
-		"Readdir", "Statfs");
-	printf("%9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.srvrpccnt[11],
-		nfsstats.srvrpccnt[12],
-		nfsstats.srvrpccnt[13],
-		nfsstats.srvrpccnt[14],
-		nfsstats.srvrpccnt[15],
-		nfsstats.srvrpccnt[16],
-		nfsstats.srvrpccnt[17]);
+		"Readdir", "Statfs", "RdirLook");
+	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
+		nfsstats.srvrpccnt[NFSPROC_RENAME],
+		nfsstats.srvrpccnt[NFSPROC_LINK],
+		nfsstats.srvrpccnt[NFSPROC_SYMLINK],
+		nfsstats.srvrpccnt[NFSPROC_MKDIR],
+		nfsstats.srvrpccnt[NFSPROC_RMDIR],
+		nfsstats.srvrpccnt[NFSPROC_READDIR],
+		nfsstats.srvrpccnt[NFSPROC_STATFS],
+		nfsstats.srvrpccnt[NQNFSPROC_READDIRLOOK]);
+	printf("%9.9s %9.9s %9.9s\n",
+		"GLease", "Vacate", "Evict");
+	printf("%9d %9d %9d\n",
+		nfsstats.srvrpccnt[NQNFSPROC_GETLEASE],
+		nfsstats.srvrpccnt[NQNFSPROC_VACATED],
+		nfsstats.srvrpccnt[NQNFSPROC_EVICTED]);
 	printf("Server Ret-Failed\n");
 	printf("%17d\n", nfsstats.srvrpc_errs);
 	printf("Server Faults\n");
@@ -209,6 +223,13 @@ intpr(nfsstataddr)
 		nfsstats.srvcache_idemdonehits,
 		nfsstats.srvcache_nonidemdonehits,
 		nfsstats.srvcache_misses);
+	printf("Server Lease Stats:\n");
+	printf("%9.9s %9.9s %9.9s\n",
+		"Leases", "PeakL", "GLeases");
+	printf("%9d %9d %9d\n",
+		nfsstats.srvnqnfs_leases,
+		nfsstats.srvnqnfs_maxleases,
+		nfsstats.srvnqnfs_getleases);
 }
 
 u_char	signalled;			/* set if alarm goes off "early" */
