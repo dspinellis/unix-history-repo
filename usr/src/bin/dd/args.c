@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -96,7 +96,7 @@ jcl(argv)
 		 * just wanted to set both the input and output block sizes
 		 * and didn't want the bs semantics, so we don't warn.
 		 */
-		if (ddflags & (C_BLOCK|C_LCASE|C_UCASE|C_UNBLOCK))
+		if (ddflags & (C_BLOCK|C_LCASE|C_SWAB|C_UCASE|C_UNBLOCK))
 			ddflags &= ~C_BS;
 
 		/* Bs supersedes ibs and obs. */
