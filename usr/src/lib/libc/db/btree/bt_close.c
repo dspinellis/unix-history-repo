@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -107,8 +107,8 @@ __bt_sync(dbp)
 		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
 			return (RET_ERROR);
 		memmove(p, h, t->bt_psize);
-		if (status =
-		    __bt_dleaf(t, h, t->bt_bcursor.index) == RET_ERROR)
+		if ((status =
+		    __bt_dleaf(t, h, t->bt_bcursor.index)) == RET_ERROR)
 			goto ecrsr;
 		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	}
@@ -145,23 +145,13 @@ bt_meta(t)
 	if ((p = mpool_get(t->bt_mp, P_META, 0)) == NULL)
 		return (RET_ERROR);
 
-	/* Fill in metadata -- lorder is host-independent. */
+	/* Fill in metadata. */
 	m.m_magic = BTREEMAGIC;
 	m.m_version = BTREEVERSION;
 	m.m_psize = t->bt_psize;
 	m.m_free = t->bt_free;
 	m.m_nrecs = t->bt_nrecs;
 	m.m_flags = t->bt_flags & SAVEMETA;
-	m.m_lorder = htonl((u_long)t->bt_lorder);
-
-	if (t->bt_lorder != BYTE_ORDER) {
-		BLSWAP(m.m_magic);
-		BLSWAP(m.m_version);
-		BLSWAP(m.m_psize);
-		BLSWAP(m.m_free);
-		BLSWAP(m.m_nrecs);
-		BLSWAP(m.m_flags);
-	}
 
 	memmove(p, &m, sizeof(BTMETA));
 	mpool_put(t->bt_mp, p, MPOOL_DIRTY);
