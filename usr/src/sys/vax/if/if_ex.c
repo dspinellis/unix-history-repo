@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.3 (Berkeley) %G%
+ *	@(#)if_ex.c	6.4 (Berkeley) %G%
  */
 
 
@@ -31,12 +31,18 @@
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef	BBNNET
+#define	INET
+#endif
+#ifdef	INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#endif
+
 #ifdef PUP
 #include "../netpup/pup.h"
 #endif
@@ -151,6 +157,9 @@ printf("exprobe%d: cvec = %o\n", ex_ncall, cvec);
 		printf("ex: self-test failed\n");
 		return 0;
 	}
+#ifdef lint
+	br = br;
+#endif
 	return (sizeof(struct exdevice));
 }
 
@@ -575,12 +584,16 @@ exrecv(unit, bp)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = if_rubaget(&xs->xs_ifuba, len, off);
+	m = if_rubaget(&xs->xs_ifuba, len, off, &xs->xs_if);
 	if (m == 0)
 		return;
 	if (off) {
+		struct ifnet *ifp;
+
+		ifp = *(mtod(m, struct ifnet **));
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
 	switch (eh->ether_type) {
 
@@ -798,7 +811,7 @@ exioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
                 ifp->if_flags |= IFF_UP;
-                ecinit(ifp->if_unit);
+                exinit(ifp->if_unit);
 
                 switch (ifa->ifa_addr.sa_family) {
 		case AF_INET:
