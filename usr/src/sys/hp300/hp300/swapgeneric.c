@@ -4,10 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	7.3 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.4 (Berkeley) %G%
  */
-
-#include "../include/pte.h"
 
 #include "sys/param.h"
 #include "sys/conf.h"
