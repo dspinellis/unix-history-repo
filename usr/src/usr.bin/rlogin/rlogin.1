@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rlogin.1	6.17 (Berkeley) %G%
+.\"     @(#)rlogin.1	6.17.1.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RLOGIN 1
@@ -13,7 +13,7 @@
 .Nd remote login
 .Sh SYNOPSIS
 .Ar rlogin
-.Op Fl 8EKLdx
+.Op Fl 8EKLd
 .Op Fl e Ar char
 .Op Fl k Ar realm
 .Op Fl l Ar username
@@ -74,13 +74,6 @@ in realm
 .Ar realm
 instead of the remote host's realm as determined by
 .Xr krb_realmofhost  3  .
-.Tp Fl x
-The
-.Fl x
-option turns on DES encryption for all data passed via the
-rlogin session.
-This may impact response time and CPU utilization, but provides
-increased security.
 .Tp
 .Pp
 A line of the form ``<escape char>.'' disconnects from the remote host.
