@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.60 (Berkeley) %G%
+ *	@(#)sendmail.h	6.61 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.60		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.61		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -758,32 +758,33 @@ EXTERN char	*CurHostName;	/* current host we are dealing with */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
+EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
+EXTERN bool	MatchGecos;	/* look for user names in gecos field */
+EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
 extern char	*PidFile;	/* location of proc id file [conf.c] */
 extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
-EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN long	WkClassFact;	/* multiplier for message class -> priority */
 EXTERN long	WkRecipFact;	/* multiplier for # of recipients -> priority */
 EXTERN long	WkTimeFact;	/* priority offset each time this job is run */
+EXTERN char	*UdbSpec;	/* user database source spec */
+EXTERN int	MaxHopCount;	/* max # of hops until bounce */
+EXTERN int	ConfigLevel;	/* config file level */
+EXTERN char	*TimeZoneSpec;	/* override time zone specification */
+EXTERN char	*ForwardPath;	/* path to search for .forward files */
+EXTERN long	MinBlocksFree;	/* min # of blocks free on queue fs */
+EXTERN char	*FallBackMX;	/* fall back MX host */
+EXTERN long	MaxMessageSize;	/* advertised max size we will accept */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
-EXTERN char	*UdbSpec;		/* user database source spec */
-EXTERN int	MaxHopCount;		/* max # of hops until bounce */
-EXTERN int	ConfigLevel;		/* config file level */
-EXTERN char	*TimeZoneSpec;		/* override time zone specification */
-EXTERN bool	MatchGecos;		/* look for user names in gecos field */
 EXTERN bool	DontPruneRoutes;	/* don't prune source routes */
 EXTERN int	MaxMciCache;		/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
-EXTERN char	*ForwardPath;		/* path to search for .forward files */
-EXTERN long	MinBlocksFree;		/* min # of blocks free on queue fs */
 EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
 EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
 EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
-EXTERN char	*FallBackMX;		/* fall back MX host */
-EXTERN long	MaxMessageSize;		/* advertised max size we will accept */
 
 
 /*
