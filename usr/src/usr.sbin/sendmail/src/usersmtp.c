@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.31 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.32 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.31 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.32 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -423,13 +423,17 @@ smtpmailfrom(m, mci, e)
 	}
 	else if (r == 250)
 	{
-		mci->mci_exitstat = EX_OK;
 		return EX_OK;
+	}
+	else if (r == 501 || r == 553)
+	{
+		/* syntax error in arguments */
+		smtpquit(m, mci, e);
+		return EX_DATAERR;
 	}
 	else if (r == 552)
 	{
 		/* signal service unavailable */
-		mci->mci_exitstat = EX_UNAVAILABLE;
 		smtpquit(m, mci, e);
 		return EX_UNAVAILABLE;
 	}
@@ -444,7 +448,6 @@ smtpmailfrom(m, mci, e)
 
 	/* protocol error -- close up */
 	smtpquit(m, mci, e);
-	mci->mci_exitstat = EX_PROTOCOL;
 	return EX_PROTOCOL;
 }
 /*
