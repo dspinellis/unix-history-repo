@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_domain.c	6.9 (Berkeley) %G%
+ *	@(#)uipc_domain.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,6 +45,7 @@ domaininit()
 			if (pr->pr_init)
 				(*pr->pr_init)();
 	}
+	null_init();
 	pffasttimo();
 	pfslowtimo();
 }
