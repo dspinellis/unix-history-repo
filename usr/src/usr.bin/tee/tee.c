@@ -12,7 +12,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tee.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tee.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -30,14 +30,22 @@ static char sccsid[] = "@(#)tee.c	5.5 (Berkeley) %G%";
 #include <signal.h>
 #include <stdio.h>
 
+typedef struct _list {
+	struct _list *next;
+	int fd;
+	char *name;
+} LIST;
+LIST *head;
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	register int cnt, n, step;
-	int append, ch, *fd;
-	char buf[8192], *malloc();
+	extern int errno, optind;
+	register LIST *p;
+	register int append, n, fd;
+	int ch, exitval;
+	char *buf, *malloc(), *strerror();
 	off_t lseek();
 
 	append = 0;
@@ -51,30 +59,56 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: tee [-ai] [file ...]\n");
-			exit(2);
+			(void)fprintf(stderr, "usage: tee [-ai] [file ...]\n");
+			exit(1);
 		}
 	argv += optind;
 	argc -= optind;
 
-	if (!(fd = (int *)malloc((u_int)((argc + 1) * sizeof(int))))) {
-		fprintf(stderr, "tee: out of space.\n");
-		exit(2);
+	if (!(buf = malloc((u_int)8 * 1024))) {
+		(void)fprintf(stderr, "tee: out of space.\n");
+		exit(1);
 	}
-	fd[0] = 1;			/* always write to stdout */
-	for (cnt = 1; *argv; ++argv)
-		if ((fd[cnt] = open(*argv, append ? O_WRONLY|O_CREAT :
-		    O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0) {
-			fprintf(stderr, "tee: %s: ", *argv);
-			perror((char *)NULL);
-		}
+	add(1, "stdout");
+	for (; *argv; ++argv)
+		if ((fd = open(*argv, append ? O_WRONLY|O_CREAT :
+		    O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0)
+			(void)fprintf(stderr, "tee: %s: %s.\n",
+			    *argv, strerror(errno));
 		else {
 			if (append)
-				(void)lseek(fd[cnt], 0L, L_XTND);
-			++cnt;
+				(void)lseek(fd, 0L, L_XTND);
+			add(fd, *argv);
 		}
-	for (--cnt; (n = read(0, buf, sizeof(buf))) > 0;)
-		for (step = cnt; step >= 0; --step)
-			(void)write(fd[step], buf, n);
-	exit(0);
+	exitval = 0;
+	while ((n = read(0, buf, sizeof(buf))) > 0)
+		for (p = head; p; p = p->next)
+			if (write(p->fd, buf, n) != n) {
+				(void)fprintf(stderr, "tee: %s: %s.\n",
+				    p->name, strerror(errno));
+				exitval = 1;
+			}
+	if (n < 0) {
+		(void)fprintf(stderr, "tee: read: %s\n", strerror(errno));
+		exit(1);
+	}
+	exit(exitval);
+}
+
+add(fd, name)
+	int fd;
+	char *name;
+{
+	LIST *p;
+	char *malloc(), *strerror();
+
+	/* NOSTRICT */
+	if (!(p = (LIST *)malloc((u_int)sizeof(LIST)))) {
+		(void)fprintf(stderr, "tee: out of space.\n");
+		exit(1);
+	}
+	p->fd = fd;
+	p->name = name;
+	p->next = head;
+	head = p;
 }
