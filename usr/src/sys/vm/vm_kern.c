@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.c	7.4 (Berkeley) %G%
+ *	@(#)vm_kern.c	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -514,7 +514,7 @@ void kmem_init(start, end)
 	extern vm_map_t	kernel_map;
 
 	addr = VM_MIN_KERNEL_ADDRESS;
-	kernel_map = vm_map_create(pmap_kernel(), addr, end, FALSE);
+	kernel_map = vm_map_create(kernel_pmap, addr, end, FALSE);
 	(void) vm_map_find(kernel_map, NULL, (vm_offset_t) 0,
 				&addr, (start - VM_MIN_KERNEL_ADDRESS),
 				FALSE);
