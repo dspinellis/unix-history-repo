@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.146 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.147 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -889,7 +889,7 @@ deliver(firstto, editfcn)
 				    (e->e_receiptto != NULL ||
 				     bitset(QPINGONSUCCESS, to->q_flags)))
 				{
-					to->q_flags |= QREPORT;
+					to->q_flags |= QDELIVERED;
 					to->q_status = "2.1.5";
 					fprintf(e->e_xfp, "%s... Successfully delivered\n",
 						to->q_paddr);
