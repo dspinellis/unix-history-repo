@@ -1,0 +1,74 @@
+.TH PRMDIR 1P "22 June 1983"
+.UC 4
+.SH NAME
+prmdir \- remove a project directory
+.SH SYNOPSIS
+.B prmdir
+[\-\fBfru\fR]
+[{+\^\-}\fBT\fR type[,type ...]]
+pdirname ...
+.SH DESCRIPTION
+.I Prmdir
+deletes a project directory called
+.I pdirname.
+The directory must be empty.
+.PP
+If the
+.B \-r
+option is specified,
+.I prmdir
+recursively deletes the entire contents of a project directory, and the
+directory itself. The user is asked to confirm the generated
+.I "rm \-r"
+command before the directory is deleted. Subdirectories that are
+project root directories must be removed using
+.I rmproject
+before attempting to remove
+.I pdirname.
+Write permission is required in all subdirectories.
+.PP
+.I Prmdir
+may also be used to convert an existing project directory to a
+regular directory using the
+.B \-u
+option.
+.SH OPTIONS
+.IP \fB\-f\fR
+Stands for force. No questions are asked. This option overrides any mode
+restrictions.
+.IP \fB\-r\fR
+Recursively remove project directories.
+.IP \fB\-u\fR
+Undefine a project directory and convert it to a regular directory.
+.IP "\fB\-T\fI type\fR"
+Remove a type label from a project directory.
+.SH FILES
+.ta \w'..._temp'u+.5i
+\&...	Project link directory.
+.br
+\&..._temp	Temporary project link directory.
+.DT
+.SH "SEE ALSO"
+pmkdir(1P), rm(1), rmdir(1), rmproject(1P)
+.SH DIAGNOSTICS
+The error message, ``prmdir: \fIproject\fR/... temporarily unavailable'',
+indicates that a `..._temp' temporary project link directory exists. This could
+be because another user is altering the project link directory, or because a
+system crash terminated
+.I prmdir
+prematurely. If the latter case, then removing the temporary file will fix
+the problem.
+.PP
+Exit status 0 is normal. Exit status 1 indicates an error.
+.SH AUTHOR
+Peter J. Nicklin
+.SH BUGS
+If a project directory has already been removed by the
+.I rmdir
+or
+.I "rm -r"
+commands, that directory must be recreated using
+.I mkdir
+before
+.I prmdir
+will remove the directory from the project.

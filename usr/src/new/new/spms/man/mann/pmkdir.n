@@ -1,0 +1,81 @@
+.TH PMKDIR 1P "22 June 1983"
+.UC 4
+.SH NAME
+pmkdir \- make a project directory
+.SH SYNOPSIS
+.B pmkdir
+[{+\^\-}\fBd\fR]
+[{+\^\-}\fBN\fR alias]
+[{+\^\-}\fBT\fR type[,type ...]]
+pdirname ...
+.SH DESCRIPTION
+.I Pmkdir
+creates a directory called
+.I pdirname.
+The directory is known as a
+.I project directory.
+After the directory has been created,
+.I pmkdir
+prompts the user for a line describing its purpose.
+.PP
+If the name of the directory conflicts with an existing project directory,
+an alternative alias for the project directory may be specified via the
+.B \-N
+option. However, even if this option is used, the name of the directory
+will be recognized as a project directory unless it is disguised as a regular
+pathname. For example, to create another project directory called `work'
+with alias `morework', type:
+.PP
+		pmkdir  \-N morework  ./work
+.PP
+.I Pmkdir
+may also be used to convert an existing regular directory to a
+project directory.
+.PP
+.I Pmkdir
+requires write permission in the parent directory.
+.SH OPTIONS
+.IP "\fB+d\fR"
+Change the description of an existing project directory.
+.IP "\fB\-d\fR"
+Turn
+.B off
+prompting for the description of a new project directory.
+.IP "\fB\+N\fI alias\fR"
+Change the alias of the project directory.
+.IP "\fB\-N\fI alias\fR"
+Specify an alternative alias for a new project directory.
+.IP "\fB\+T\fI type\fR"
+Add a type label to an existing project directory. If the type label
+already exists but has a different priority, then it must be removed using
+the
+.I prmdir
+command.
+.IP "\fB\-T\fI type\fR"
+Specify a type label for a new project directory.
+.SH FILES
+.ta \w'..._temp'u+.5i
+\&...	Project link directory.
+.br
+\&..._temp	Temporary project link directory.
+.DT
+.SH LIMITATIONS
+Project directory descriptions can be no longer than 128 characters.
+.SH "SEE ALSO"
+mkdir(2), prmdir(1P)
+.SH DIAGNOSTICS
+The error message, ``pmkdir: \fIproject\fR/... temporarily unavailable'',
+indicates that a `..._temp' temporary project link directory exists. This could
+be because another user is altering the project link directory, or because a
+system crash terminated
+.I pmkdir
+prematurely. If the latter case, then removing the temporary file will fix
+the problem.
+.PP
+Exit status 0 is normal. Exit status 1 indicates an error.
+.SH AUTHOR
+Peter J. Nicklin
+.SH BUGS
+Directory aliases must not include the characters `:' or `|'.
+.PP
+Type labels must not include the characters `:' or `/'.

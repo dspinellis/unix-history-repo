@@ -1,0 +1,127 @@
+.TH PTEST 1P "22 June 1983"
+.UC 4
+.SH NAME
+ptest \- test a project module
+.SH SYNOPSIS
+.B ptest
+[\fB\-d\fR] [\fB\-F \fRtemplate] [\fB\-P \fRprojectname] [module ...]
+.SH DESCRIPTION
+.I Ptest
+does regression testing on project
+.I modules.
+Individual modules can be selected for testing, or if
+.I ptest
+is given without
+.I module
+arguments, all of the modules in a project are tested. Modules can be
+programs, libraries, or functions.
+.PP
+For each module to be tested there must exist an archive containing
+a test program, input data, and test results.
+.I Ptest
+tests a module by extracting the archive, compiling the test program,
+executing the test, and comparing the output with expected test results using
+the
+.I diff
+program:
+.PP
+		T\fItest\fR  <  I\fItest\fR  |  diff  \-  O\fItest\fR
+.PP
+where
+.I test
+is the name of the module test. If the test output differs from
+expected results, the test fails and error diagnostics are saved in a
+file named `E\fItest\fR'.
+.PP
+.B "Compiling The Test Program"
+.PP
+If an archive contains a compilable test program,
+.I ptest
+uses
+.I mkmf
+to edit the file name of the test program into a makefile which is then used by
+.I make
+to compile the program. If there are other source code file names in
+the current working directory, these are also included in the
+makefile. This mechanism allows experimental versions of functions to
+be tested since they will override any other occurrences of the
+functions (e.g. in a library).
+.PP
+.B "Creating Test Archives"
+.PP
+Archives containing module tests reside in the `test' directory located
+in the project root directory. Each archive must be created by the
+.I ar
+command and given the name \fItest\fR.a where
+.I test
+is the name of a module test. These archives include the following files:
+.IP (a)
+`T\fItest.lang\fR' test program source code. The file name suffix,
+.I lang,
+identifies the programming language in which the test program is written.
+.IP (b)
+`T\fItest\fR.sh' shell command script. `T\fItest\fR.sh' executes a test and
+compares the test output with expected results stored in the archive.
+If the output matchs expected results, `T\fItest\fR.sh' returns with
+exit code 0. If the results differ, the exit code should be non-zero.
+.IP
+Note: the shell command script must be made executable by doing:
+.IP
+		chmod  +x  T\fItest\fR.sh
+.IP
+If a `T\fItest\fR.sh' file is not found in the archive,
+.I ptest
+executes the following command:
+.IP
+	T\fItest\fR  <  I\fItest\fR  |  diff  \-  O\fItest\fR
+.IP
+or if there is no `I\fItest\fR' data file:
+.IP
+	T\fItest\fR  |  diff  \-  O\fItest\fR
+.IP (c)
+`I\fItest\fR' data file for test input.
+.IP (d)
+`O\fItest\fR' data file for validated test output. The output from a module
+test will be compared against the information in this file. If no output
+is expected, this file should be zero size.
+.PP
+The files `T\fItest.lang\fR', `T\fItest\fR.sh', and `I\fItest\fR' may be omitted
+from the archive.
+.SH OPTIONS
+.IP \fB\-d\fR
+Leave the files that have been extracted from an archive, in the current
+directory for debugging purposes.
+.IP "\fB\-F \fItemplate\fR"
+Specify an alternative makefile
+.I template
+file name. The default file name is `t.Makefile'.
+.IP "\fB\-P \fIprojectname\fR"
+Specify a project other than the current working project.
+.SH FILES
+.ta \w'/usr/new/lib/t.Makefile'u+.5i
+.nf
+/usr/new/lib/t.Makefile	Standard test program makefile template.
+\fIproject\fR/lib/t.Makefile	User-defined test program makefile template.
+\fIproject\fR/test/*.a	Project test archives.
+\fItest\fR.a	Module test archive.
+E\fItest\fR	Module error diagnostic file.
+I\fItest\fR	Module input data file.
+O\fItest\fR	Module validated output data file.
+T\fItest\fR	Compiled module test program.
+T\fItest\fR.sh	Module shell command script.
+T_makefile	Test program makefile.
+.DT
+.fi
+.SH "SEE ALSO"
+ar(1), chmod(1), diff(1), make(1), mkmf(1P)
+.SH DIAGNOSTICS
+Exit status 0 if the test succeeds. Exit status 1 if it fails.
+.SH AUTHOR
+Peter J. Nicklin
+.SH BUGS
+Since the PATH environment variable governs the order in which directories
+are searched for executable commands, the production version of a command
+may be used instead of an experimental version.
+.PP
+Any files beginning with `T' (except those with suffix `.sh') are deleted
+prior to each test.
