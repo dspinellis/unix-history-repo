@@ -1,5 +1,7 @@
 
-static char sccsid[] = "	number.c	4.1	82/10/24	";
+static char sccsid[] = "	number.c	4.2	86/11/26	";
+
+#include <stdio.h>
 
 int	flag;
 int max = 21;
@@ -72,7 +74,7 @@ main()
 
 
 	fraction = 0;
-	while(c = getchar()) {
+	while((c = getchar()) != EOF) {
 		if(!digit(c))  {
 			fraction = (c == '.');
 			putchar(c);
@@ -82,7 +84,7 @@ main()
 			while(digit(c)) {
 				putchar(' ');
 				putchar(c);
-				if(!(c=getchar()))
+				if((c=getchar()) == EOF)
 					exit(1);
 			}
 			putchar(' ');
@@ -94,12 +96,12 @@ main()
 		line[i++] = '0';
 		line[i++] = '0';
 		while(c == '0')
-			if(!(c=getchar()))
+			if((c=getchar()) == EOF)
 				exit(1);
 		while(digit(c)) {
 			if(i < 98)
 				line[i++] = c;
-			if(!(c=getchar()))
+			if((c=getchar()) == EOF)
 				exit(1);
 		}
 		line[i] = 0;
