@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.19 (Berkeley) %G%
+ *	@(#)machdep.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,6 +63,7 @@ int	bufpages = BUFPAGES;
 int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
+int	physmem = MAXMEM;	/* max supported memory, changes to actual */
 
 /*
  * Machine-dependent startup code
@@ -80,10 +81,10 @@ startup(firstaddr)
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
-	maxmem -= btoc(sizeof (struct msgbuf));
+	maxmem = physmem - btoc(sizeof (struct msgbuf));
 	pte = msgbufmap;
-	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
-		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
+	for (i = 1; i < btoc(sizeof (struct msgbuf)) + 1; i++)
+		*(int *)pte++ = PG_V | PG_KW | (physmem - i);
 	mtpr(TBIA, 0);
 	msgbufmapped = 1;
 
@@ -111,7 +112,7 @@ startup(firstaddr)
 	 * Good {morning,afternoon,evening,night}.
 	 */
 	printf(version);
-	printf("real mem  = %d\n", ctob(physmem));
+	printf("real mem = %d\n", ctob(physmem));
 
 	/*
 	 * Allocate space for system data structures.
@@ -725,6 +726,27 @@ tocons(c)
 
 int	dumpmag = 0x8fca0101;	/* magic number for savecore */
 int	dumpsize = 0;		/* also for savecore */
+
+dumpconf()
+{
+	int nblks;
+
+	dumpsize = physmem;
+	if (dumpdev != NODEV && bdevsw[major(dumpdev)].d_psize) {
+		nblks = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
+		if (dumpsize > btoc(dbtob(nblks - dumplo)))
+			dumpsize = btoc(dbtob(nblks - dumplo));
+		else if (dumplo == 0)
+			dumplo = nblks - btodb(ctob(physmem));
+	}
+	/*
+	 * Don't dump on the first CLSIZE pages,
+	 * in case the dump device includes a disk label.
+	 */
+	if (dumplo < CLSIZE)
+		dumplo = CLSIZE;
+}
+
 /*
  * Doadump comes here after turning off memory management and
  * getting on the dump stack, either when called above, or by
@@ -741,11 +763,10 @@ dumpsys()
 	 * For dumps during autoconfiguration,
 	 * if dump device has already configured...
 	 */
-	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
+	if (dumpsize == 0)
+		dumpconf();
 	if (dumplo < 0)
-		dumplo = 0;
-	dumpsize = physmem;
+		return;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
 	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) {
@@ -758,7 +779,7 @@ dumpsys()
 		printf("device not ready\n");
 		break;
 
-	case EINVAL:
+	case EINVAL:					/* XXX */
 		printf("area improper\n");
 		break;
 
