@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -94,7 +94,7 @@ collect(hp, printheaders)
 	t = GTO|GSUBJECT|GCC|GNL;
 	getsub = 0;
 	if (hp->h_subject == NOSTR && value("interactive") != NOSTR &&
-	    value("ask"))
+	    (value("ask") != NOSTR || value("asksub") != NOSTR))
 		t &= ~GNL, getsub++;
 	if (printheaders) {
 		puthead(hp, stdout, t);
