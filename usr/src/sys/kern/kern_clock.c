@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.16	81/03/09	*/
+/*	kern_clock.c	4.17	81/04/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -416,6 +416,12 @@ timeout(fun, arg, tim)
 	register int t;
 	int s;
 
+/* DEBUGGING CODE */
+	int ttrstrt();
+
+	if (fun == ttrstrt && arg == 0)
+		panic("timeout ttrstr arg");
+/* END DEBUGGING CODE */
 	t = tim;
 	p1 = &callout[0];
 	s = spl7();
