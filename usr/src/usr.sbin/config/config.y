@@ -63,7 +63,7 @@
 
 %{
 
-/*	config.y	1.18	83/05/18	*/
+/*	config.y	1.19	84/12/04	*/
 
 #include "config.h"
 #include <ctype.h>
@@ -551,6 +551,7 @@ mkswap(system, fl, size)
 		;
 	fl->f_next = *flp;
 	*flp = fl;
+	fl->f_swapsize = size;
 	/*
 	 * If first swap device for this system,
 	 * set up f_fn field to insure swap
