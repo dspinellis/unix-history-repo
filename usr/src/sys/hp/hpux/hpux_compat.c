@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
  *
- *	@(#)hpux_compat.c	7.25 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.26 (Berkeley) %G%
  */
 
 /*
@@ -1194,10 +1194,11 @@ hpuxsetpgrp2(p, uap, retval)
 }
 
 /*
- * XXX Same as BSD setre[ug]id right now.  Need to consider saved ids.
+ * XXX Same as old BSD setre[ug]id right now.  Need to consider saved ids.
  */
+/* ARGSUSED */
 hpuxsetresuid(p, uap, retval)
-	struct proc *p;
+	register struct proc *p;
 	struct args {
 		int	ruid;
 		int	euid;
@@ -1205,11 +1206,45 @@ hpuxsetresuid(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	return (osetreuid(p, uap, retval));
+	register struct pcred *pc = p->p_cred;
+	register uid_t ruid, euid;
+	int error;
+
+	if (uap->ruid == -1)
+		ruid = pc->p_ruid;
+	else
+		ruid = uap->ruid;
+	/*
+	 * Allow setting real uid to previous effective, for swapping real and
+	 * effective.  This should be:
+	 *
+	 * if (ruid != pc->p_ruid &&
+	 *     (error = suser(pc->pc_ucred, &p->p_acflag)))
+	 */
+	if (ruid != pc->p_ruid && ruid != pc->pc_ucred->cr_uid /* XXX */ &&
+	    (error = suser(pc->pc_ucred, &p->p_acflag)))
+		return (error);
+	if (uap->euid == -1)
+		euid = pc->pc_ucred->cr_uid;
+	else
+		euid = uap->euid;
+	if (euid != pc->pc_ucred->cr_uid && euid != pc->p_ruid &&
+	    euid != pc->p_svuid && (error = suser(pc->pc_ucred, &p->p_acflag)))
+		return (error);
+	/*
+	 * Everything's okay, do it.  Copy credentials so other references do
+	 * not see our changes.
+	 */
+	pc->pc_ucred = crcopy(pc->pc_ucred);
+	pc->pc_ucred->cr_uid = euid;
+	pc->p_ruid = ruid;
+	p->p_flag |= SUGID;
+	return (0);
 }
 
+/* ARGSUSED */
 hpuxsetresgid(p, uap, retval)
-	struct proc *p;
+	register struct proc *p;
 	struct args {
 		int	rgid;
 		int	egid;
@@ -1217,7 +1252,37 @@ hpuxsetresgid(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	return (osetregid(p, uap, retval));
+	register struct pcred *pc = p->p_cred;
+	register gid_t rgid, egid;
+	int error;
+
+	if (uap->rgid == -1)
+		rgid = pc->p_rgid;
+	else
+		rgid = uap->rgid;
+	/*
+	 * Allow setting real gid to previous effective, for swapping real and
+	 * effective.  This didn't really work correctly in 4.[23], but is
+	 * preserved so old stuff doesn't fail.  This should be:
+	 *
+	 * if (rgid != pc->p_rgid &&
+	 *     (error = suser(pc->pc_ucred, &p->p_acflag)))
+	 */
+	if (rgid != pc->p_rgid && rgid != pc->pc_ucred->cr_groups[0] /* XXX */ &&
+	    (error = suser(pc->pc_ucred, &p->p_acflag)))
+		return (error);
+	if (uap->egid == -1)
+		egid = pc->pc_ucred->cr_groups[0];
+	else
+		egid = uap->egid;
+	if (egid != pc->pc_ucred->cr_groups[0] && egid != pc->p_rgid &&
+	    egid != pc->p_svgid && (error = suser(pc->pc_ucred, &p->p_acflag)))
+		return (error);
+	pc->pc_ucred = crcopy(pc->pc_ucred);
+	pc->pc_ucred->cr_groups[0] = egid;
+	pc->p_rgid = rgid;
+	p->p_flag |= SUGID;
+	return (0);
 }
 
 /*
