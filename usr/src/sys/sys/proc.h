@@ -1,4 +1,4 @@
-/*	proc.h	4.12	82/07/17	*/
+/*	proc.h	4.13	82/09/04	*/
 
 #include "mush.h"
 #include "mu_msg.h"
@@ -11,8 +11,7 @@
  * Other per process data (user.h)
  * is swapped with the process.
  */
-struct	proc
-{
+struct	proc {
 	struct	proc *p_link;	/* linked list of running processes */
 	struct	proc *p_rlink;
 	struct	pte *p_addr;	/* u-area kernel map address */
@@ -33,8 +32,10 @@ struct	proc
 	short	p_pgrp;		/* name of process group leader */
 	short	p_pid;		/* unique process id */
 	short	p_ppid;		/* process id of parent */
-	short	p_poip;		/* count of page outs in progress */
-	short	p_szpt;		/* copy of page table size */
+	short	p_xstat;	/* Exit status for wait */
+	struct	rusage *p_ru;	/* mbuf holding exit information */
+	short	p_poip;	/* page outs in progress */
+	short	p_szpt;	/* copy of page table size */
 	size_t	p_tsize;	/* size of text (clicks) */
 	size_t	p_dsize;	/* size of data space (clicks) */
 	size_t	p_ssize;	/* copy of stack size (clicks) */
@@ -44,7 +45,6 @@ struct	proc
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	caddr_t p_wchan;	/* event process is awaiting */
 	struct	text *p_textp;	/* pointer to text structure */
-	int	p_clktim;	/* time to alarm clock signal */
 	struct	pte *p_p0br;	/* page table base P0BR */
 	struct	proc *p_xlink;	/* linked list of procs sharing same text */
 	short	p_cpticks;	/* ticks of cpu time */
@@ -58,6 +58,8 @@ struct	proc
 	struct	quota *p_quota;	/* quotas for this process (MUSH) */
 	mmsgbuf	p_mb;		/* pending message */
 	int	p_msgflgs;	/* message flags */
+	struct	itimerval p_realtimer;
+	struct	timeval p_seltimer;
 };
 
 #define	PIDHSZ		63
@@ -111,39 +113,6 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	STIMO	0x0040000	/* timing out during sleep */
 /* was SDETACH */
 #define	SNUSIG	0x0100000	/* using new signal mechanism */
-#define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
+/* unused */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
-
-/*
- * parallel proc structure
- * to replace part with times
- * to be passed to parent process
- * in ZOMBIE state.
- *
- * THIS SHOULD BE DONE WITH A union() CONSTRUCTION
- */
-struct	xproc
-{
-	struct	proc *xp_link;
-	struct	proc *xp_rlink;
-	struct	pte *xp_addr;
-	char	xp_usrpri;
-	char	xp_pri;		/* priority, negative is high */
-	char	xp_cpu;		/* cpu usage for scheduling */
-	char	xp_stat;
-	char	xp_time;	/* resident time for scheduling */
-	char	xp_nice;	/* nice for cpu usage */
-	char	xp_slptime;
-	char	p_cursig;
-	int	xp_sig;		/* signals pending to this process */
-	int	xp_siga0;
-	int	xp_siga1;
-	int	xp_flag;
-	short	xp_uid;		/* user id, used to direct tty signals */
-	short	xp_pgrp;	/* name of process group leader */
-	short	xp_pid;		/* unique process id */
-	short	xp_ppid;	/* process id of parent */
-	short	xp_xstat;	/* Exit status for wait */
-	struct	vtimes xp_vm;
-};
