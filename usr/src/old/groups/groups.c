@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)groups.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)groups.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)groups.c	4.7 (Berkeley) %G%";
 #include <sys/param.h>
 #include <grp.h>
 #include <pwd.h>
+#include <stdio.h>
 
 int	groups[NGROUPS];
 
@@ -39,16 +40,27 @@ showgroups(user)
 	register char *user;
 {
 	register struct group *gr;
+	register struct passwd *pw;
 	register char **cp;
 	char *sep = "";
 
-	while (gr = getgrent())
+	if ((pw = getpwnam(user)) == NULL) {
+		fprintf(stderr, "No such user\n");
+		exit(1);
+	}
+	while (gr = getgrent()) {
+		if (pw->pw_gid == gr->gr_gid) {
+			printf("%s%s", sep, gr->gr_name);
+			sep = " ";
+			continue;
+		}	
 		for (cp = gr->gr_mem; cp && *cp; cp++)
 			if (strcmp(*cp, user) == 0) {
 				printf("%s%s", sep, gr->gr_name);
 				sep = " ";
 				break;
 			}
+	}
 	printf("\n");
 	exit(0);
 }
