@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.19 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -109,16 +109,26 @@ exit(rv)
 		}
 	}
 	if (SESS_LEADER(p)) {
-		p->p_session->s_leader = 0;
-		if (p->p_session->s_ttyvp) {
-			vgoneall(p->p_session->s_ttyvp);
-			vrele(p->p_session->s_ttyvp);
-			p->p_session->s_ttyvp = NULL;
+		register struct session *sp = p->p_session;
+
+		if (sp->s_ttyvp) {
+			/*
+			 * Controlling process.
+			 * Signal foreground pgrp and revoke access
+			 * to controlling terminal.
+			 */
+			if (sp->s_ttyp->t_pgrp)
+				pgsignal(sp->s_ttyp->t_pgrp, SIGHUP, 0);
+			vgoneall(sp->s_ttyvp);
+			vrele(sp->s_ttyvp);
+			sp->s_ttyvp = NULL;
 			/*
 			 * s_ttyp is not zero'd; we use this to indicate
 			 * that the session once had a controlling terminal.
+			 * (for logging and informational purposes)
 			 */
 		}
+		sp->s_leader = 0;
 	}
 	VOP_LOCK(u.u_cdir);
 	vput(u.u_cdir);
@@ -177,11 +187,8 @@ done:
 	ruadd(p->p_ru, &u.u_cru);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t)&proc[1]);
-	if (PGRP_JOBC(p))
-		p->p_pgrp->pg_jobc--;
+	fixjobc(p, 0);
 	for (q = p->p_cptr; q != NULL; q = nq) {
-		if (PGRP_JOBC(q))
-			q->p_pgrp->pg_jobc--;
 		nq = q->p_osptr;
 		if (nq != NULL)
 			nq->p_ysptr = NULL;
@@ -196,23 +203,11 @@ done:
 		/*
 		 * Traced processes are killed
 		 * since their existence means someone is screwing up.
-		 * Stopped processes are sent a hangup and a continue.
-		 * This is designed to be ``safe'' for setuid
-		 * processes since they must be willing to tolerate
-		 * hangups anyways.
 		 */
 		if (q->p_flag&STRC) {
 			q->p_flag &= ~STRC;
 			psignal(q, SIGKILL);
-		} else if (q->p_stat == SSTOP) {
-			psignal(q, SIGHUP);
-			psignal(q, SIGCONT);
 		}
-		/*
-		 * Protect this process from future
-		 * tty signals, clear TSTP/TTIN/TTOU if pending.
-		 */
-		(void) spgrp(q);
 	}
 	p->p_cptr = NULL;
 	psignal(p->p_pptr, SIGCHLD);
