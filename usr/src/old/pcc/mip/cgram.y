@@ -1,4 +1,4 @@
-/*	cgram.y	4.9	87/12/09	*/
+/*	cgram.y	4.10	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -673,6 +673,13 @@ term:		   term INCOP
 			={  if( ISFTN($2->in.type) || ISARY($2->in.type) ){
 				werror( "& before array or function: ignored" );
 				$$ = $2;
+				}
+			    else if( $2->in.op == UNARY MUL &&
+				     ($2->in.left->in.op == STCALL ||
+				      $2->in.left->in.op == UNARY STCALL) ){
+				/* a legal tree but not available to users */
+				uerror( "can't take address of function return value" );
+				goto ubop;
 				}
 			    else goto ubop;
 			    }
