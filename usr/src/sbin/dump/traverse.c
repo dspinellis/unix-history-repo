@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.9 (Berkeley) %G%";
 
 #include "dump.h"
 #include <dir.h>
@@ -222,7 +222,7 @@ spclrec()
 	register int s, i, *ip;
 
 	spcl.c_inumber = ino;
-	spcl.c_magic = MAGIC;
+	spcl.c_magic = NFS_MAGIC;
 	spcl.c_checksum = 0;
 	ip = (int *)&spcl;
 	s = 0;
