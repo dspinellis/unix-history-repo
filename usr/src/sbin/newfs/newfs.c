@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -492,9 +492,6 @@ getdisklabel(s, fd)
 	"Bad pack magic number (label is damaged, or pack is unlabeled)\n");
 		exit(1);
 	}
-#if ENDIAN != BIG
-	swablabel(lp);
-#endif
 	return (lp);
 }
 
@@ -503,15 +500,8 @@ rewritelabel(s, fd, lp)
 	int fd;
 	register struct disklabel *lp;
 {
-	daddr_t alt;
-	register i;
-	int secsize, cfd;
+	int cfd;
 
-	secsize = lp->d_secsize;
-	alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
-#if ENDIAN != BIG
-	swablabel(lp);
-#endif
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	cfd = open(specname, O_WRONLY);
@@ -524,15 +514,23 @@ rewritelabel(s, fd, lp)
 		perror(specname);
 		exit(2);
 	}
-	for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
-		lseek(cfd, (off_t)(alt + i) * secsize, L_SET);
-		if (write(cfd, boot, secsize) < secsize) {
-			int oerrno = errno;
-			fprintf(stderr, "alternate label %d ", i/2);
-			errno = oerrno;
-			perror("write");
+#if vax
+	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT) {
+		register i;
+		daddr_t alt;
+
+		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
+		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
+			lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET);
+			if (write(cfd, boot, lp->d_secsize) < lp->d_secsize) {
+				int oerrno = errno;
+				fprintf(stderr, "alternate label %d ", i/2);
+				errno = oerrno;
+				perror("write");
+			}
 		}
 	}
+#endif
 	close(cfd);
 }
 #endif byioctl
