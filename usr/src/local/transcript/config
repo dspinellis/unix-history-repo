@@ -1,5 +1,5 @@
 #! /bin/sh
-# @(#)config	1.2 (Berkeley) %G%
+# @(#)config	1.3 (Berkeley) %G%
 #
 # Copyright (c) 1985 Adobe Systems Incorporated
 # PostScript and TranScript are trademarks of Adobe Systems Incorporated
@@ -23,7 +23,7 @@
 #	make sure it's in people's search paths.  The TranScript
 #	installation sequence will write in this directory.
 #BINDIR=/usr/bin
-BINDIR=/usr/local
+BINDIR=/usr/local/bin
 
 # PSLIBDIR
 #	This is a directory where TranScript keeps lots of things:.
@@ -62,7 +62,7 @@ MAN8=/usr/local/man/man8
 #	DITDIR/devpsc is where the "ditroff" fonts used by 
 #	psdit and psroff go.
 #DITDIR=/usr/lib/font
-DITDIR=/usr/local/lib/font
+DITDIR=/usr/local/libdata/ditroff_font
 
 # MAKEDEV 
 #	is the FULL pathname of the makedev program for ditroff

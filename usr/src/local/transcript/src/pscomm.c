@@ -178,7 +178,7 @@ private int fdinput;		/* file to print (from stdin) */
 
 private FILE *jobout;		/* special printer output log */
 
-private int flg = FREAD|FWRITE;	 /* ioctl FLUSH arg */
+private int flg = 3/*FREAD|FWRITE*/;	 /* ioctl FLUSH arg */
 
 private VOID	intinit();
 private VOID	intsend();
@@ -922,7 +922,7 @@ char	*pbuf;
 		*cp++ = c;
 		break;
 	    }
-	    if (c == '\%') {
+	    if (c == '%') {
 		putc('%',jobout);
 		VOIDC fflush(jobout);
 		/* don't do anything to cp */
@@ -935,13 +935,13 @@ char	*pbuf;
 	    break;
 	case inmessage:
 	    *cp++ = c;
-	    if (c == '\]') st = close1;
+	    if (c == ']') st = close1;
 	    break;
 	case close1:
 	    *cp++ = c;
 	    switch (c) {
 		case '%': st = close2; break;
-		case '\]': st = close1; break;
+		case ']': st = close1; break;
 		default: st = inmessage; break;
 	    }
 	    break;
@@ -949,7 +949,7 @@ char	*pbuf;
 	    *cp++ = c;
 	    switch (c) {
 		case '%': st = close3; break;
-		case '\]': st = close1; break;
+		case ']': st = close1; break;
 		default: st = inmessage; break;
 	    }
 	    break;
@@ -957,7 +957,7 @@ char	*pbuf;
 	    *cp++ = c;
 	    switch (c) {
 		case '\r': st = close4; break;
-		case '\]': st = close1; break;
+		case ']': st = close1; break;
 		default: st = inmessage; break;
 	    }
 	    break;
@@ -965,7 +965,7 @@ char	*pbuf;
 	    *cp++ = c;
 	    switch(c) {
 		case '\n': st = normal; break;
-		case '\]': st = close1; break;
+		case ']': st = close1; break;
 		default: st = inmessage; break;
 	    }
 	    if (st == normal) {

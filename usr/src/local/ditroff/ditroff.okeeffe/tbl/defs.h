@@ -1,11 +1,11 @@
-/*	@(#)defs.h	1.3 (CWI) 86/11/13	*/
+/*	@(#)defs.h	1.4 (Berkeley) %G%	*/
 #define max(a,b)	((a) > (b) ? (a) : (b))
 #define min(a,b)	((a) < (b) ? (a) : (b))
-#define MAXLIN 200
+#define MAXLIN 1024
 /*
  * Maximum columns to be output
  */
-#define MAXCOL 30
+#define MAXCOL 64
 
 /*
  * MAXCOL is amount of columns to be specified per column
@@ -25,10 +25,10 @@
  * Don't make MAXCOL bigger width adjusting nregs in globals.c (bwk)
  */
 
-#define MAXHEAD	44
-#define MAXCHS		2000
-#define MAXRPT		100
-#define CLLEN		10
+#define MAXHEAD	64
+#define MAXCHS		8192
+#define MAXRPT		256
+#define CLLEN		128
 #define SHORTLINE	4
 #define	ZEROW		001
 #define HALFUP		002
@@ -50,8 +50,8 @@
 #define THRU 3
 #define TOP 1
 #define BOT 2
-#define MACROS "/usr/lib/tmac.s"
-#define PYMACS "/usr/lib/tmac.m"
+#define MACROS "/usr/share/tmac/tmac.s"
+#define PYMACS "/usr/share/tmac/tmac.m"
 
 /* devices supported */
 #define DEVPSC	3

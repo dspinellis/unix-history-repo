@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)n3.c	2.3 (CWI) 86/11/27";
+*/
+static char sccsid[] = "@(#)n3.c	2.4 (Berkeley) %G%";
 #endif lint
 /*      @(#)n3.c	1.1     */
 /*
@@ -24,13 +27,8 @@ tchar	*argtop;
 int	pagech = '%';
 int	strflg;
 
-#ifdef	INCORE
 	tchar *wbuf;
 	tchar corebuf[NEV*sizeof(env)/sizeof(tchar) + NBLIST*BLK+ 1];
-#else
-	tchar wbuf[BLK];
-	tchar rbuf[BLK];
-#endif
 
 caseig()
 {
@@ -397,9 +395,7 @@ register tchar i;
 		return;
 	if (!woff) {
 		woff = offset;
-#ifdef INCORE
 		wbuf = &corebuf[woff];	/* INCORE only */
-#endif
 		wbfi = 0;
 	}
 	wbuf[wbfi++] = i;
@@ -428,10 +424,6 @@ wbfl()
 {
 	if (woff == 0)
 		return;
-#ifndef INCORE
-	lseek(ibf, ((long)woff) * sizeof(tchar), 0);
-	write(ibf, (char *)wbuf, wbfi * sizeof(tchar));
-#endif
 	if ((woff & (~(BLK - 1))) == (roff & (~(BLK - 1))))
 		roff = -1;
 	woff = 0;
@@ -451,20 +443,7 @@ tchar rbf()
 			return(popi());
 	}
 	/* this is an inline expansion of rbf0: dirty! */
-#ifndef INCORE
-	j = ip & ~(BLK - 1);
-	if (j != roff) {
-		roff = j;
-		lseek(ibf, (long)j * sizeof(tchar), 0);
-		if (read(ibf, (char *)rbuf, BLK * sizeof(tchar)) <= 0)
-			i = 0;
-		else
-			i = rbuf[ip & (BLK-1)];
-	} else
-		i = rbuf[ip & (BLK-1)];
-#else
 	i = corebuf[ip];
-#endif
 	/* end of rbf0 */
 	if (i == 0) {
 		if (!app)
@@ -495,19 +474,7 @@ tchar rbf()
 tchar rbf0(p)
 register filep p;
 {
-#ifndef INCORE
-	register filep i;
-
-	if ((i = p & ~(BLK - 1)) != roff) {
-		roff = i;
-		lseek(ibf, (long)roff * sizeof(tchar), 0);
-		if (read(ibf, (char *)rbuf, BLK * sizeof(tchar)) == 0)
-			return(0);
-	}
-	return(rbuf[p & (BLK-1)]);
-#else
 	return(corebuf[p]);
-#endif
 }
 
 
@@ -546,14 +513,17 @@ tchar popi()
  *	test that the end of the allocation is above a certain location
  *	in memory
  */
+#ifdef notdef
 #define SPACETEST(base, size) while ((enda - (size)) <= (char *)(base)){setbrk(DELTA);}
+#else
+#define SPACETEST(base, size)
+#endif
 
 pushi(newip, mname)
 filep newip;
 int mname;
 {
 	register struct s *p;
-	extern char *setbrk();
 
 	SPACETEST(nxf, sizeof(struct s));
 	p = nxf;
@@ -572,30 +542,6 @@ int mname;
 		nxf = (struct s *)argtop;
 	return(ip = newip);
 }
-
-
-char	*setbrk(x)
-int	x;
-{
-	register char	*i;
-	register j;
-	char	*sbrk();
-
-	if (j = x % sizeof(int))	/*allocate only whole words for 3B*/
-		x += sizeof(int) - j;
-	if ((i = sbrk(x)) == (char *) -1) {
-		errprint("Core limit reached");
-		edone(0100);
-	} else {
-		if ((unsigned)i % sizeof(int)) {	/*check alignment for 3B*/
-			errprint("alignment problem");
-			edone(0100);
-		}
-		enda = i + x;
-	}
-	return(i);
-}
-
 
 getsn()
 {
@@ -700,10 +646,6 @@ collect()
 			}
 			*strp++ = i;
 			if (strflg && strp >= lim) {
-#if 0
-				errprint("strp=0x%x, lim = 0x%x",
-					strp, lim);
-#endif 0
 				errprint("Macro argument too long");
 				copyf--;
 				edone(004);

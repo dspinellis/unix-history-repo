@@ -48,14 +48,14 @@ static char *RCSID="$Header: psrev.c,v 2.1 85/11/24 11:51:02 shore Rel $";
 #define ipgMax 2000	/* Maximum number of pages - first page index is 0 */
 #define irngMax 30	/* Maximum number of intervals in a page range spec */
 
-private struct Range	/* continuous interval of pages to be printed */
+struct Range	/* continuous interval of pages to be printed */
 			/* from a page range specification (i.e. -s) */
 			/* page numbers match the second parameter */
 			/* of the "%%Page: " comment */
     { int	pgnFst;
     int		pgnLst;
     };
-private struct Params	/* interesting info collected from command line */
+struct Params	/* interesting info collected from command line */
     { int	fReverse; /* true => reverse page order */
     int		fRemove;  /* true => remove input file */
     char	*scSrcFile; /* c-string containing source file name */
@@ -66,7 +66,7 @@ private struct Params	/* interesting info collected from command line */
                                      /* entry in the "-s" parameter */
     };
 
-private struct Psd	/* PS file descriptor */
+struct Psd	/* PS file descriptor */
     { FILE	*fp;	/* unix file descriptor  of source */
     FILE	*fpTemp;/* temp file descriptor.  Contains a 
 			   copy of source when fd is not a regular file */

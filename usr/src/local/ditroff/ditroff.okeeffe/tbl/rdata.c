@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rdata.c	1.2 (CWI) 85/10/02";
+static char sccsid[] = "@(#)rdata.c	1.3 (CWI) 93/07/27";
 #endif lint
 
 
@@ -18,7 +18,7 @@ gettbl(){
 	extern char *maknew();
 	extern int *alocv();
 	extern char *gettext();
-	int (*savsign)();
+	sig_t savsign;
 
 	cstore = cspace = chspace();
 	textflg = 0;

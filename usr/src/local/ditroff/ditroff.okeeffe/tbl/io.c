@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.4 (CWI) 86/11/13";
+static char sccsid[] = "@(#)io.c	1.5 (Berkeley) %G%";
 #endif lint
 
 
@@ -77,7 +77,7 @@ next:
 	return(p);
 }
 
-#define BACKMAX 500
+#define BACKMAX 2048
 static char    backup[BACKMAX];
 static char   *backp = backup;
 
