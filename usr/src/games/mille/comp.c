@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)comp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)comp.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"mille.h"
@@ -389,7 +389,7 @@ register PLAY	*pp;
 	card = -1;
 	if (pp->can_go || ((isrepair(bat) || bat == C_STOP || spd == C_LIMIT) &&
 			   Numseen[S_RIGHT_WAY] != 0) ||
-	    Numseen[safety(bat)] != 0)
+	    bat >= 0 && Numseen[safety(bat)] != 0)
 		switch (End - pp->mileage) {
 		  case 200:
 			if (pp->nummiles[C_200] == 2)
