@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)termcap.5	6.10 (Berkeley) %G%
+.\"     @(#)termcap.5	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TERMCAP 5
@@ -37,16 +37,12 @@ Entries in
 consist of a number of `:'-separated fields.
 The first entry for each terminal gives the names that are known for the
 terminal, separated by `|' characters.
-The first name is always two characters
-long and is used by older systems which store the terminal type
-in a 16-bit word in a system-wide data base.
-The second name given is the most common abbreviation for the terminal,
-the last name given should be a long name fully identifying the terminal,
+The first name given is the most common abbreviation for the terminal.
+The last name given should be a long name fully identifying the terminal,
 and all others are understood as synonyms for the terminal name.
-All names but the first and last
-should be in lower case and contain no blanks;
-the last name may well contain
-upper case and blanks for readability.
+All names but the last should be in lower case and contain no blanks;
+the last name may well contain upper case characters and blanks for
+readability.
 .Pp
 Terminal names (except for the last, verbose entry)
 should be chosen using the following conventions.
