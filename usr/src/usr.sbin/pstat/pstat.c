@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.9 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -366,6 +366,8 @@ dotty()
 	register char *mesg;
 
 	printf("1 cons\n");
+	if (kflg)
+		nl[SKL].n_value = clear(nl[SKL].n_value);
 	lseek(fc, (long)nl[SKL].n_value, 0);
 	read(fc, dz_tty, sizeof(dz_tty[0]));
 	mesg = " # RAW CAN OUT   MODE    ADDR   DEL COL  STATE   PGRP DISC\n";
@@ -373,6 +375,10 @@ dotty()
 	ttyprt(&dz_tty[0], 0);
 	if (nl[SNDZ].n_type == 0)
 		goto dh;
+	if (kflg) {
+		nl[SNDZ].n_value = clear(nl[SNDZ].n_value);
+		nl[SDZ].n_value = clear(nl[SDZ].n_value);
+	}
 	lseek(fc, (long)nl[SNDZ].n_value, 0);
 	read(fc, &ndz, sizeof(ndz));
 	printf("%d dz lines\n", ndz);
@@ -383,6 +389,10 @@ dotty()
 dh:
 	if (nl[SNDH].n_type == 0)
 		return;
+	if (kflg) {
+		nl[SNDH].n_value = clear(nl[SNDH].n_value);
+		nl[SDH].n_value = clear(nl[SDH].n_value);
+	}
 	lseek(fc, (long)nl[SNDH].n_value, 0);
 	read(fc, &ndz, sizeof(ndz));
 	printf("%d dh lines\n", ndz);
