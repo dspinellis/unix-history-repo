@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.2 (Berkeley) %G%
+ *	@(#)dh.c	7.3 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -701,16 +701,19 @@ dmopen(dev)
 	}
 	addr = (struct dmdevice *)ui->ui_addr;
 	s = spl5();
-	addr->dmcsr &= ~DM_SE;
-	while (addr->dmcsr & DM_BUSY)
-		;
-	addr->dmcsr = unit;
-	addr->dmlstat = DML_ON;
-	if ((addr->dmlstat&DML_CAR) || (dhsoftCAR[dm]&(1<<unit)))
-		tp->t_state |= TS_CARR_ON;
-	addr->dmcsr = DM_IE|DM_SE;
-	while ((tp->t_state&TS_CARR_ON)==0)
+	for (;;) {
+		addr->dmcsr &= ~DM_SE;
+		while (addr->dmcsr & DM_BUSY)
+			;
+		addr->dmcsr = unit;
+		addr->dmlstat = DML_ON;
+		if ((addr->dmlstat & DML_CAR) || (dhsoftCAR[dm] & (1 < unit)))
+			tp->t_state |= TS_CARR_ON;
+		addr->dmcsr = DM_IE|DM_SE;
+		if (tp->t_state & TS_CARR_ON)
+			break;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+	}
 	splx(s);
 }
 
