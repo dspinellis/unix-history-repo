@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -486,7 +486,7 @@ mput(argc, argv)
 	for (i = 1; i < argc; i++) {
 		char **cpp, **gargs;
 		glob_t gl;
-		int gflags;
+		int flags;
 
 		if (!doglob) {
 			if (mflag && confirm(argv[0], argv[i])) {
@@ -507,8 +507,8 @@ mput(argc, argv)
 		}
 
 		memset(&gl, 0, sizeof(gl));
-		gflags = GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE;
-		if (glob(argv[i], gflags, NULL, &gl) || gl.gl_pathc == 0) {
+		flags = GLOB_BRACE|GLOB_NOCHECK|GLOB_QUOTE|GLOB_TILDE;
+		if (glob(argv[i], flags, NULL, &gl) || gl.gl_pathc == 0) {
 			warnx("%s: not found", argv[i]);
 			globfree(&gl);
 			continue;
@@ -1516,12 +1516,14 @@ globulize(cpp)
 	char **cpp;
 {
 	glob_t gl;
+	int flags;
 
 	if (!doglob)
 		return (1);
 
+	flags = GLOB_BRACE|GLOB_NOCHECK|GLOB_QUOTE|GLOB_TILDE;
 	memset(&gl, 0, sizeof(gl));
-	if (glob(*cpp, GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE, NULL, &gl) ||
+	if (glob(*cpp, flags, NULL, &gl) ||
 	    gl.gl_pathc == 0) {
 		warnx("%s: not found", *cpp);
 		globfree(&gl);
