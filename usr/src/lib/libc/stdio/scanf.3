@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)scanf.3	6.6 (Berkeley) %G%
+.\"     @(#)scanf.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SCANF 3
@@ -14,6 +14,8 @@
 .Nm scanf ,
 .Nm fscanf ,
 .Nm sscanf ,
+.Nm vscanf ,
+.Nm vsscanf ,
 .Nm vfscanf
 .Nd input format conversion
 .Sh SYNOPSIS
@@ -22,11 +24,15 @@
 .Fn scanf "const char *format" ...
 .Ft int
 .Fn fscanf "FILE *stream" "const char *format" ...
+.Ft int
+.Fn sscanf "const char *str" "const char *format" ...
 .Fd #include <varargs.h>
 .Ft int
-.Fn sscanf "char *str" "const char *format" ...
+.Fn vscanf "const char *format" "va_list ap"
 .Ft int
-.Fn vfscanf "FILE *stream" "char *format" "va_list ap"
+.Fn vsscanf "const char *str" "const char *format" "va_list ap"
+.Ft int
+.Fn vfscanf "FILE *stream" "const char *format" "va_list ap"
 .Sh DESCRIPTION
 The
 .Fn scanf
@@ -60,6 +66,15 @@ and reads input from the stream pointer
 .Fa stream
 using a variable argument list of pointers (see
 .Xr varargs 3 ) .
+.Fn vscanf
+scans a variable argument list from the standard input and
+.Fn vsscanf
+scans it from a string;
+these are analogous to
+.Fn vprintf
+and
+.Fn vsprintf
+respectively.
 Each successive
 .Em pointer
 argument must correspond properly with
