@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -36,19 +36,23 @@ static char sccsid[] = "@(#)mountd.c	8.7 (Berkeley) %G%";
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
 
+#include <arpa/inet.h>
+
+#include <ctype.h>
 #include <errno.h>
 #include <grp.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <signal.h>
-#ifdef DEBUG
-#include <stdarg.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "pathnames.h"
+
+#ifdef DEBUG
+#include <stdarg.h>
+#endif
 
 /*
  * Structures for keeping the mount list and export list
@@ -111,31 +115,66 @@ struct hostlist {
 };
 
 /* Global defs */
-int mntsrv(), umntall_each(), xdr_fhs(), xdr_mlist(), xdr_dir(), xdr_explist();
-int check_dirpath();
-void get_exportlist(), send_umntall(), nextfield(), out_of_mem();
-void get_mountlist(), add_mlist(), del_mlist(), free_exp(), free_grp();
-void getexp_err(), hang_dirp(), add_dlist(), free_dir(), free_host();
-void setnetgrent(), endnetgrent();
-struct exportlist *ex_search(), *get_exp();
-struct grouplist *get_grp();
-char *add_expdir();
-struct in_addr inet_makeaddr();
-char *inet_ntoa();
-struct dirlist *dirp_search();
-struct hostlist *get_ht();
+char	*add_expdir __P((struct dirlist **, char *, int));
+void	add_dlist __P((struct dirlist **, struct dirlist *,
+				struct grouplist *));
+void	add_mlist __P((char *, char *));
+int	check_dirpath __P((char *));
+int	check_options __P((struct dirlist *));
+int	chk_host __P((struct dirlist *, u_long, int *));
+void	del_mlist __P((char *, char *));
+struct dirlist *dirp_search __P((struct dirlist *, char *));
+int	do_mount __P((struct exportlist *, struct grouplist *, int,
+				struct ucred *, char *, int, struct statfs *));
+int	do_opt __P((char **, char **, struct exportlist *, struct grouplist *,
+				int *, int *, struct ucred *));
+struct	exportlist *ex_search __P((fsid_t *));
+struct	exportlist *get_exp __P((void));
+void	free_dir __P((struct dirlist *));
+void	free_exp __P((struct exportlist *));
+void	free_grp __P((struct grouplist *));
+void	free_host __P((struct hostlist *));
+void	get_exportlist __P((void));
+int	get_host __P((char *, struct grouplist *));
+struct hostlist *get_ht __P((void));
+int	get_line __P((void));
+void	get_mountlist __P((void));
+int	get_net __P((char *, struct netmsk *, int));
+void	getexp_err __P((struct exportlist *, struct grouplist *));
+struct grouplist *get_grp __P((void));
+void	hang_dirp __P((struct dirlist *, struct grouplist *,
+				struct exportlist *, int));
+void	mntsrv __P((struct svc_req *, SVCXPRT *));
+void	nextfield __P((char **, char **));
+void	out_of_mem __P((void));
+void	parsecred __P((char *, struct ucred *));
+int	put_exlist __P((struct dirlist *, XDR *, struct dirlist *, int *));
+int	scan_tree __P((struct dirlist *, u_long));
+void	send_umntall __P((void));
+int	umntall_each __P((caddr_t, struct sockaddr_in *));
+int	xdr_dir __P((XDR *, char *));
+int	xdr_explist __P((XDR *, caddr_t));
+int	xdr_fhs __P((XDR *, nfsv2fh_t *));
+int	xdr_mlist __P((XDR *, caddr_t));
+
+/* C library */
+int	getnetgrent();
+void	endnetgrent();
+void	setnetgrent();
+
 #ifdef ISO
 struct iso_addr *iso_addr();
 #endif
+
 struct exportlist *exphead;
 struct mountlist *mlhead;
 struct grouplist *grphead;
 char exname[MAXPATHLEN];
 struct ucred def_anon = {
-	(u_short) 1,
+	1,
 	(uid_t) -2,
 	1,
-	(gid_t) -2,
+	{ (gid_t) -2 }
 };
 int root_only = 1;
 int opt_flags;
@@ -148,7 +187,6 @@ int opt_flags;
 #define	OP_ISO		0x20
 #define	OP_ALLDIRS	0x40
 
-extern int errno;
 #ifdef DEBUG
 int debug = 1;
 void	SYSLOG __P((int, const char *, ...));
@@ -164,14 +202,13 @@ int debug = 0;
  * default: _PATH_EXPORTS
  * and "-n" to allow nonroot mount.
  */
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	SVCXPRT *transp;
 	int c;
-	extern int optind;
-	extern char *optarg;
 
 	while ((c = getopt(argc, argv, "n")) != EOF)
 		switch (c) {
@@ -184,15 +221,15 @@ main(argc, argv)
 		};
 	argc -= optind;
 	argv += optind;
-	grphead = (struct grouplist *)0;
-	exphead = (struct exportlist *)0;
-	mlhead = (struct mountlist *)0;
+	grphead = (struct grouplist *)NULL;
+	exphead = (struct exportlist *)NULL;
+	mlhead = (struct mountlist *)NULL;
 	if (argc == 1) {
 		strncpy(exname, *argv, MAXPATHLEN-1);
 		exname[MAXPATHLEN-1] = '\0';
 	} else
 		strcpy(exname, _PATH_EXPORTS);
-	openlog("mountd:", LOG_PID, LOG_DAEMON);
+	openlog("mountd", LOG_PID, LOG_DAEMON);
 	if (debug)
 		fprintf(stderr,"Getting export list.\n");
 	get_exportlist();
@@ -206,8 +243,8 @@ main(argc, argv)
 		signal(SIGINT, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
 	}
-	signal(SIGHUP, get_exportlist);
-	signal(SIGTERM, send_umntall);
+	signal(SIGHUP, (void (*) __P((int))) get_exportlist);
+	signal(SIGTERM, (void (*) __P((int))) send_umntall);
 	{ FILE *pidfile = fopen(_PATH_MOUNTDPID, "w");
 	  if (pidfile != NULL) {
 		fprintf(pidfile, "%d\n", getpid());
@@ -232,12 +269,13 @@ main(argc, argv)
 /*
  * The mount rpc service
  */
+void
 mntsrv(rqstp, transp)
-	register struct svc_req *rqstp;
-	register SVCXPRT *transp;
+	struct svc_req *rqstp;
+	SVCXPRT *transp;
 {
-	register struct exportlist *ep;
-	register struct dirlist *dp;
+	struct exportlist *ep;
+	struct dirlist *dp;
 	nfsv2fh_t nfh;
 	struct authunix_parms *ucr;
 	struct stat stb;
@@ -260,10 +298,10 @@ mntsrv(rqstp, transp)
 	}
 
 	saddr = transp->xp_raddr.sin_addr.s_addr;
-	hp = (struct hostent *)0;
+	hp = (struct hostent *)NULL;
 	switch (rqstp->rq_proc) {
 	case NULLPROC:
-		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
+		if (!svc_sendreply(transp, xdr_void, (caddr_t)NULL))
 			syslog(LOG_ERR, "Can't send reply");
 		return;
 	case RPCMNT_MOUNT:
@@ -332,7 +370,7 @@ mntsrv(rqstp, transp)
 		sigsetmask(omask);
 		return;
 	case RPCMNT_DUMP:
-		if (!svc_sendreply(transp, xdr_mlist, (caddr_t)0))
+		if (!svc_sendreply(transp, xdr_mlist, (caddr_t)NULL))
 			syslog(LOG_ERR, "Can't send reply");
 		return;
 	case RPCMNT_UMOUNT:
@@ -344,7 +382,7 @@ mntsrv(rqstp, transp)
 			svcerr_decode(transp);
 			return;
 		}
-		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
+		if (!svc_sendreply(transp, xdr_void, (caddr_t)NULL))
 			syslog(LOG_ERR, "Can't send reply");
 		hp = gethostbyaddr((caddr_t)&saddr, sizeof(saddr), AF_INET);
 		if (hp)
@@ -356,15 +394,15 @@ mntsrv(rqstp, transp)
 			svcerr_weakauth(transp);
 			return;
 		}
-		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
+		if (!svc_sendreply(transp, xdr_void, (caddr_t)NULL))
 			syslog(LOG_ERR, "Can't send reply");
 		hp = gethostbyaddr((caddr_t)&saddr, sizeof(saddr), AF_INET);
 		if (hp)
-			del_mlist(hp->h_name, (char *)0);
-		del_mlist(inet_ntoa(transp->xp_raddr.sin_addr), (char *)0);
+			del_mlist(hp->h_name, (char *)NULL);
+		del_mlist(inet_ntoa(transp->xp_raddr.sin_addr), (char *)NULL);
 		return;
 	case RPCMNT_EXPORT:
-		if (!svc_sendreply(transp, xdr_explist, (caddr_t)0))
+		if (!svc_sendreply(transp, xdr_explist, (caddr_t)NULL))
 			syslog(LOG_ERR, "Can't send reply");
 		return;
 	default:
@@ -376,6 +414,7 @@ mntsrv(rqstp, transp)
 /*
  * Xdr conversion for a dirpath string
  */
+int
 xdr_dir(xdrsp, dirp)
 	XDR *xdrsp;
 	char *dirp;
@@ -386,6 +425,7 @@ xdr_dir(xdrsp, dirp)
 /*
  * Xdr routine to generate fhstatus
  */
+int
 xdr_fhs(xdrsp, nfh)
 	XDR *xdrsp;
 	nfsv2fh_t *nfh;
@@ -397,11 +437,12 @@ xdr_fhs(xdrsp, nfh)
 	return (xdr_opaque(xdrsp, (caddr_t)nfh, NFSX_FH));
 }
 
+int
 xdr_mlist(xdrsp, cp)
 	XDR *xdrsp;
 	caddr_t cp;
 {
-	register struct mountlist *mlp;
+	struct mountlist *mlp;
 	int true = 1;
 	int false = 0;
 	char *strp;
@@ -426,11 +467,12 @@ xdr_mlist(xdrsp, cp)
 /*
  * Xdr conversion for export list
  */
+int
 xdr_explist(xdrsp, cp)
 	XDR *xdrsp;
 	caddr_t cp;
 {
-	register struct exportlist *ep;
+	struct exportlist *ep;
 	int false = 0;
 	int omask, putdef;
 
@@ -441,7 +483,7 @@ xdr_explist(xdrsp, cp)
 		if (put_exlist(ep->ex_dirl, xdrsp, ep->ex_defdir, &putdef))
 			goto errout;
 		if (ep->ex_defdir && putdef == 0 &&
-			put_exlist(ep->ex_defdir, xdrsp, (struct dirlist *)0,
+			put_exlist(ep->ex_defdir, xdrsp, (struct dirlist *)NULL,
 			&putdef))
 			goto errout;
 		ep = ep->ex_next;
@@ -459,15 +501,15 @@ errout:
  * Called from xdr_explist() to traverse the tree and export the
  * directory paths.
  */
+int
 put_exlist(dp, xdrsp, adp, putdefp)
-	register struct dirlist *dp;
+	struct dirlist *dp;
 	XDR *xdrsp;
 	struct dirlist *adp;
 	int *putdefp;
 {
-	register struct grouplist *grp;
-	register struct hostlist *hp;
-	struct in_addr inaddr;
+	struct grouplist *grp;
+	struct hostlist *hp;
 	int true = 1;
 	int false = 0;
 	int gotalldir = 0;
@@ -506,7 +548,7 @@ put_exlist(dp, xdrsp, adp, putdefp)
 						return (1);
 				}
 				hp = hp->ht_next;
-				if (gotalldir && hp == (struct hostlist *)0) {
+				if (gotalldir && hp == (struct hostlist *)NULL) {
 					hp = adp->dp_hosts;
 					gotalldir = 0;
 				}
@@ -530,8 +572,8 @@ FILE *exp_file;
 void
 get_exportlist()
 {
-	register struct exportlist *ep, *ep2;
-	register struct grouplist *grp, *tgrp;
+	struct exportlist *ep, *ep2;
+	struct grouplist *grp, *tgrp;
 	struct exportlist **epp;
 	struct dirlist *dirhead;
 	struct statfs fsb, *fsp;
@@ -549,7 +591,7 @@ get_exportlist()
 		ep = ep->ex_next;
 		free_exp(ep2);
 	}
-	exphead = (struct exportlist *)0;
+	exphead = (struct exportlist *)NULL;
 
 	grp = grphead;
 	while (grp) {
@@ -557,7 +599,7 @@ get_exportlist()
 		grp = grp->gr_next;
 		free_grp(tgrp);
 	}
-	grphead = (struct grouplist *)0;
+	grphead = (struct grouplist *)NULL;
 
 	/*
 	 * And delete exports that are in the kernel for all local
@@ -596,7 +638,7 @@ get_exportlist()
 		syslog(LOG_ERR, "Can't open %s", exname);
 		exit(2);
 	}
-	dirhead = (struct dirlist *)0;
+	dirhead = (struct dirlist *)NULL;
 	while (get_line()) {
 		if (debug)
 			fprintf(stderr,"Got line %s\n",line);
@@ -613,7 +655,7 @@ get_exportlist()
 		exflags = MNT_EXPORTED;
 		got_nondir = 0;
 		opt_flags = 0;
-		ep = (struct exportlist *)0;
+		ep = (struct exportlist *)NULL;
 
 		/*
 		 * Create new exports list entry
@@ -626,7 +668,7 @@ get_exportlist()
 			    goto nextline;
 			}
 			if (*cp == '-') {
-			    if (ep == (struct exportlist *)0) {
+			    if (ep == (struct exportlist *)NULL) {
 				getexp_err(ep, tgrp);
 				goto nextline;
 			    }
@@ -660,7 +702,7 @@ get_exportlist()
 				     * in the list.
 				     */
 				    ep = ex_search(&fsb.f_fsid);
-				    if (ep == (struct exportlist *)0) {
+				    if (ep == (struct exportlist *)NULL) {
 					ep = get_exp();
 					ep->ex_fs = fsb.f_fsid;
 					ep->ex_fsdir = (char *)
@@ -696,7 +738,7 @@ get_exportlist()
 			    savedc = *endcp;
 			    *endcp = '\0';
 			    got_nondir = 1;
-			    if (ep == (struct exportlist *)0) {
+			    if (ep == (struct exportlist *)NULL) {
 				getexp_err(ep, tgrp);
 				goto nextline;
 			    }
@@ -740,12 +782,12 @@ get_exportlist()
 				fprintf(stderr,"Adding a default entry\n");
 			/* add a default group and make the grp list NULL */
 			hpe = (struct hostent *)malloc(sizeof(struct hostent));
-			if (hpe == (struct hostent *)0)
+			if (hpe == (struct hostent *)NULL)
 				out_of_mem();
 			hpe->h_name = "Default";
 			hpe->h_addrtype = AF_INET;
 			hpe->h_length = sizeof (u_long);
-			hpe->h_addr_list = (char **)0;
+			hpe->h_addr_list = (char **)NULL;
 			grp->gr_ptr.gt_hostent = hpe;
 
 		/*
@@ -779,11 +821,11 @@ get_exportlist()
 			grp->gr_next = grphead;
 			grphead = tgrp;
 		} else {
-			hang_dirp(dirhead, (struct grouplist *)0, ep,
+			hang_dirp(dirhead, (struct grouplist *)NULL, ep,
 			(opt_flags & OP_ALLDIRS));
 			free_grp(grp);
 		}
-		dirhead = (struct dirlist *)0;
+		dirhead = (struct dirlist *)NULL;
 		if ((ep->ex_flag & EX_LINKED) == 0) {
 			ep2 = exphead;
 			epp = &exphead;
@@ -803,7 +845,7 @@ get_exportlist()
 nextline:
 		if (dirhead) {
 			free_dir(dirhead);
-			dirhead = (struct dirlist *)0;
+			dirhead = (struct dirlist *)NULL;
 		}
 	}
 	fclose(exp_file);
@@ -815,10 +857,10 @@ nextline:
 struct exportlist *
 get_exp()
 {
-	register struct exportlist *ep;
+	struct exportlist *ep;
 
 	ep = (struct exportlist *)malloc(sizeof (struct exportlist));
-	if (ep == (struct exportlist *)0)
+	if (ep == (struct exportlist *)NULL)
 		out_of_mem();
 	bzero((caddr_t)ep, sizeof (struct exportlist));
 	return (ep);
@@ -830,10 +872,10 @@ get_exp()
 struct grouplist *
 get_grp()
 {
-	register struct grouplist *gp;
+	struct grouplist *gp;
 
 	gp = (struct grouplist *)malloc(sizeof (struct grouplist));
-	if (gp == (struct grouplist *)0)
+	if (gp == (struct grouplist *)NULL)
 		out_of_mem();
 	bzero((caddr_t)gp, sizeof (struct grouplist));
 	return (gp);
@@ -866,7 +908,7 @@ struct exportlist *
 ex_search(fsid)
 	fsid_t *fsid;
 {
-	register struct exportlist *ep;
+	struct exportlist *ep;
 
 	ep = exphead;
 	while (ep) {
@@ -887,13 +929,13 @@ add_expdir(dpp, cp, len)
 	char *cp;
 	int len;
 {
-	register struct dirlist *dp;
+	struct dirlist *dp;
 
 	dp = (struct dirlist *)malloc(sizeof (struct dirlist) + len);
 	dp->dp_left = *dpp;
-	dp->dp_right = (struct dirlist *)0;
+	dp->dp_right = (struct dirlist *)NULL;
 	dp->dp_flag = 0;
-	dp->dp_hosts = (struct hostlist *)0;
+	dp->dp_hosts = (struct hostlist *)NULL;
 	strcpy(dp->dp_dirp, cp);
 	*dpp = dp;
 	return (dp->dp_dirp);
@@ -905,12 +947,12 @@ add_expdir(dpp, cp, len)
  */
 void
 hang_dirp(dp, grp, ep, alldirs)
-	register struct dirlist *dp;
+	struct dirlist *dp;
 	struct grouplist *grp;
 	struct exportlist *ep;
 	int alldirs;
 {
-	register struct hostlist *hp;
+	struct hostlist *hp;
 	struct dirlist *dp2;
 
 	if (alldirs) {
@@ -918,7 +960,7 @@ hang_dirp(dp, grp, ep, alldirs)
 			free((caddr_t)dp);
 		else
 			ep->ex_defdir = dp;
-		if (grp == (struct grouplist *)0)
+		if (grp == (struct grouplist *)NULL)
 			ep->ex_defdir->dp_flag |= DP_DEFSET;
 		else while (grp) {
 			hp = get_ht();
@@ -948,10 +990,10 @@ void
 add_dlist(dpp, newdp, grp)
 	struct dirlist **dpp;
 	struct dirlist *newdp;
-	register struct grouplist *grp;
+	struct grouplist *grp;
 {
-	register struct dirlist *dp;
-	register struct hostlist *hp;
+	struct dirlist *dp;
+	struct hostlist *hp;
 	int cmp;
 
 	dp = *dpp;
@@ -967,7 +1009,7 @@ add_dlist(dpp, newdp, grp)
 			free((caddr_t)newdp);
 	} else {
 		dp = newdp;
-		dp->dp_left = (struct dirlist *)0;
+		dp->dp_left = (struct dirlist *)NULL;
 		*dpp = dp;
 	}
 	if (grp) {
@@ -991,10 +1033,10 @@ add_dlist(dpp, newdp, grp)
  */
 struct dirlist *
 dirp_search(dp, dirpath)
-	register struct dirlist *dp;
+	struct dirlist *dp;
 	char *dirpath;
 {
-	register int cmp;
+	int cmp;
 
 	if (dp) {
 		cmp = strcmp(dp->dp_dirp, dirpath);
@@ -1011,14 +1053,15 @@ dirp_search(dp, dirpath)
 /*
  * Scan for a host match in a directory tree.
  */
+int
 chk_host(dp, saddr, defsetp)
 	struct dirlist *dp;
 	u_long saddr;
 	int *defsetp;
 {
-	register struct hostlist *hp;
-	register struct grouplist *grp;
-	register u_long **addrp;
+	struct hostlist *hp;
+	struct grouplist *grp;
+	u_long **addrp;
 
 	if (dp) {
 		if (dp->dp_flag & DP_DEFSET)
@@ -1051,8 +1094,9 @@ chk_host(dp, saddr, defsetp)
 /*
  * Scan tree for a host that matches the address.
  */
+int
 scan_tree(dp, saddr)
-	register struct dirlist *dp;
+	struct dirlist *dp;
 	u_long saddr;
 {
 	int defset;
@@ -1073,7 +1117,7 @@ scan_tree(dp, saddr)
  */
 void
 free_dir(dp)
-	register struct dirlist *dp;
+	struct dirlist *dp;
 {
 
 	if (dp) {
@@ -1089,6 +1133,7 @@ free_dir(dp)
  * Option arguments may either be -<option>=<value> or
  * -<option> <value>
  */
+int
 do_opt(cpp, endcpp, ep, grp, has_hostp, exflagsp, cr)
 	char **cpp, **endcpp;
 	struct exportlist *ep;
@@ -1097,7 +1142,7 @@ do_opt(cpp, endcpp, ep, grp, has_hostp, exflagsp, cr)
 	int *exflagsp;
 	struct ucred *cr;
 {
-	register char *cpoptarg, *cpoptend;
+	char *cpoptarg, *cpoptend;
 	char *cp, *endcp, *cpopt, savedc, savedc2;
 	int allflag, usedarg;
 
@@ -1199,12 +1244,13 @@ do_opt(cpp, endcpp, ep, grp, has_hostp, exflagsp, cr)
  * Translate a character string to the corresponding list of network
  * addresses for a hostname.
  */
+int
 get_host(cp, grp)
 	char *cp;
-	register struct grouplist *grp;
+	struct grouplist *grp;
 {
-	register struct hostent *hp, *nhp;
-	register char **addrp, **naddrp;
+	struct hostent *hp, *nhp;
+	char **addrp, **naddrp;
 	struct hostent t_host;
 	int i;
 	u_long saddr;
@@ -1227,7 +1273,7 @@ get_host(cp, grp)
 				hp->h_length = sizeof (u_long);
 				hp->h_addr_list = aptr;
 				aptr[0] = (char *)&saddr;
-				aptr[1] = (char *)0;
+				aptr[1] = (char *)NULL;
 			}
 		} else {
 			syslog(LOG_ERR, "Gethostbyname failed");
@@ -1237,13 +1283,13 @@ get_host(cp, grp)
 	grp->gr_type = GT_HOST;
 	nhp = grp->gr_ptr.gt_hostent = (struct hostent *)
 		malloc(sizeof(struct hostent));
-	if (nhp == (struct hostent *)0)
+	if (nhp == (struct hostent *)NULL)
 		out_of_mem();
 	bcopy((caddr_t)hp, (caddr_t)nhp,
 		sizeof(struct hostent));
 	i = strlen(hp->h_name)+1;
 	nhp->h_name = (char *)malloc(i);
-	if (nhp->h_name == (char *)0)
+	if (nhp->h_name == (char *)NULL)
 		out_of_mem();
 	bcopy(hp->h_name, nhp->h_name, i);
 	addrp = hp->h_addr_list;
@@ -1252,20 +1298,20 @@ get_host(cp, grp)
 		i++;
 	naddrp = nhp->h_addr_list = (char **)
 		malloc(i*sizeof(char *));
-	if (naddrp == (char **)0)
+	if (naddrp == (char **)NULL)
 		out_of_mem();
 	addrp = hp->h_addr_list;
 	while (*addrp) {
 		*naddrp = (char *)
 		    malloc(hp->h_length);
-		if (*naddrp == (char *)0)
+		if (*naddrp == (char *)NULL)
 		    out_of_mem();
 		bcopy(*addrp, *naddrp,
 			hp->h_length);
 		addrp++;
 		naddrp++;
 	}
-	*naddrp = (char *)0;
+	*naddrp = (char *)NULL;
 	if (debug)
 		fprintf(stderr, "got host %s\n", hp->h_name);
 	return (0);
@@ -1276,7 +1322,7 @@ get_host(cp, grp)
  */
 void
 free_exp(ep)
-	register struct exportlist *ep;
+	struct exportlist *ep;
 {
 
 	if (ep->ex_defdir) {
@@ -1294,9 +1340,9 @@ free_exp(ep)
  */
 void
 free_host(hp)
-	register struct hostlist *hp;
+	struct hostlist *hp;
 {
-	register struct hostlist *hp2;
+	struct hostlist *hp2;
 
 	while (hp) {
 		hp2 = hp;
@@ -1308,12 +1354,12 @@ free_host(hp)
 struct hostlist *
 get_ht()
 {
-	register struct hostlist *hp;
+	struct hostlist *hp;
 
 	hp = (struct hostlist *)malloc(sizeof (struct hostlist));
-	if (hp == (struct hostlist *)0)
+	if (hp == (struct hostlist *)NULL)
 		out_of_mem();
-	hp->ht_next = (struct hostlist *)0;
+	hp->ht_next = (struct hostlist *)NULL;
 	return (hp);
 }
 
@@ -1337,7 +1383,7 @@ get_isoaddr(cp, grp)
 	}
 	isoaddr = (struct sockaddr_iso *)
 	    malloc(sizeof (struct sockaddr_iso));
-	if (isoaddr == (struct sockaddr_iso *)0)
+	if (isoaddr == (struct sockaddr_iso *)NULL)
 		out_of_mem();
 	bzero((caddr_t)isoaddr, sizeof (struct sockaddr_iso));
 	bcopy((caddr_t)isop, (caddr_t)&isoaddr->siso_addr,
@@ -1365,6 +1411,7 @@ out_of_mem()
  * Do the mount syscall with the update flag to push the export info into
  * the kernel.
  */
+int
 do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	struct exportlist *ep;
 	struct grouplist *grp;
@@ -1374,10 +1421,10 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	int dirplen;
 	struct statfs *fsb;
 {
-	register char *cp = (char *)0;
-	register u_long **addrp;
+	char *cp = (char *)NULL;
+	u_long **addrp;
 	int done;
-	char savedc;
+	char savedc = '\0';
 	struct sockaddr_in sin, imask;
 	union {
 		struct ufs_args ua;
@@ -1398,7 +1445,7 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	if (grp->gr_type == GT_HOST)
 		addrp = (u_long **)grp->gr_ptr.gt_hostent->h_addr_list;
 	else
-		addrp = (u_long **)0;
+		addrp = (u_long **)NULL;
 	done = FALSE;
 	while (!done) {
 		switch (grp->gr_type) {
@@ -1486,7 +1533,7 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 		}
 		if (addrp) {
 			++addrp;
-			if (*addrp == (u_long *)0)
+			if (*addrp == (u_long *)NULL)
 				done = TRUE;
 		} else
 			done = TRUE;
@@ -1499,13 +1546,14 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 /*
  * Translate a net address.
  */
+int
 get_net(cp, net, maskflg)
 	char *cp;
 	struct netmsk *net;
 	int maskflg;
 {
-	register struct netent *np;
-	register long netaddr;
+	struct netent *np;
+	long netaddr;
 	struct in_addr inetaddr, inetaddr2;
 	char *name;
 
@@ -1541,7 +1589,7 @@ get_net(cp, net, maskflg)
 		else
 			name = inet_ntoa(inetaddr);
 		net->nt_name = (char *)malloc(strlen(name) + 1);
-		if (net->nt_name == (char *)0)
+		if (net->nt_name == (char *)NULL)
 			out_of_mem();
 		strcpy(net->nt_name, name);
 		net->nt_net = inetaddr.s_addr;
@@ -1557,7 +1605,7 @@ nextfield(cp, endcp)
 	char **cp;
 	char **endcp;
 {
-	register char *p;
+	char *p;
 
 	p = *cp;
 	while (*p == ' ' || *p == '\t')
@@ -1576,10 +1624,11 @@ nextfield(cp, endcp)
  * Get an exports file line. Skip over blank lines and handle line
  * continuations.
  */
+int
 get_line()
 {
-	register char *p, *cp;
-	register int len;
+	char *p, *cp;
+	int len;
 	int totlen, cont_line;
 
 	/*
@@ -1616,12 +1665,13 @@ get_line()
 /*
  * Parse a description of a credential.
  */
+void
 parsecred(namelist, cr)
 	char *namelist;
-	register struct ucred *cr;
+	struct ucred *cr;
 {
-	register char *name;
-	register int cnt;
+	char *name;
+	int cnt;
 	char *names;
 	struct passwd *pw;
 	struct group *gr;
@@ -1648,13 +1698,13 @@ parsecred(namelist, cr)
 	 */
 	if (names == NULL) {
 		if (pw == NULL) {
-			syslog(LOG_ERR, "Unknown user: %s\n", name);
+			syslog(LOG_ERR, "Unknown user: %s", name);
 			return;
 		}
 		cr->cr_uid = pw->pw_uid;
 		ngroups = NGROUPS + 1;
 		if (getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups))
-			syslog(LOG_ERR, "Too many groups\n");
+			syslog(LOG_ERR, "Too many groups");
 		/*
 		 * Convert from int's to gid_t's and compress out duplicate
 		 */
@@ -1673,7 +1723,7 @@ parsecred(namelist, cr)
 	else if (isdigit(*name) || *name == '-')
 		cr->cr_uid = atoi(name);
 	else {
-		syslog(LOG_ERR, "Unknown user: %s\n", name);
+		syslog(LOG_ERR, "Unknown user: %s", name);
 		return;
 	}
 	cr->cr_ngroups = 0;
@@ -1683,14 +1733,14 @@ parsecred(namelist, cr)
 			cr->cr_groups[cr->cr_ngroups++] = atoi(name);
 		} else {
 			if ((gr = getgrnam(name)) == NULL) {
-				syslog(LOG_ERR, "Unknown group: %s\n", name);
+				syslog(LOG_ERR, "Unknown group: %s", name);
 				continue;
 			}
 			cr->cr_groups[cr->cr_ngroups++] = gr->gr_gid;
 		}
 	}
 	if (names != NULL && *names != '\0' && cr->cr_ngroups == NGROUPS)
-		syslog(LOG_ERR, "Too many groups\n");
+		syslog(LOG_ERR, "Too many groups");
 }
 
 #define	STRSIZ	(RPCMNT_NAMELEN+RPCMNT_PATHLEN+50)
@@ -1700,8 +1750,8 @@ parsecred(namelist, cr)
 void
 get_mountlist()
 {
-	register struct mountlist *mlp, **mlpp;
-	register char *eos, *dirp;
+	struct mountlist *mlp, **mlpp;
+	char *eos, *dirp;
 	int len;
 	char str[STRSIZ];
 	FILE *mlfile;
@@ -1733,7 +1783,7 @@ get_mountlist()
 			len = RPCMNT_PATHLEN;
 		bcopy(dirp, mlp->ml_dirp, len);
 		mlp->ml_dirp[len] = '\0';
-		mlp->ml_next = (struct mountlist *)0;
+		mlp->ml_next = (struct mountlist *)NULL;
 		*mlpp = mlp;
 		mlpp = &mlp->ml_next;
 	}
@@ -1742,9 +1792,9 @@ get_mountlist()
 
 void
 del_mlist(hostp, dirp)
-	register char *hostp, *dirp;
+	char *hostp, *dirp;
 {
-	register struct mountlist *mlp, **mlpp;
+	struct mountlist *mlp, **mlpp;
 	struct mountlist *mlp2;
 	FILE *mlfile;
 	int fnd = 0;
@@ -1779,9 +1829,9 @@ del_mlist(hostp, dirp)
 
 void
 add_mlist(hostp, dirp)
-	register char *hostp, *dirp;
+	char *hostp, *dirp;
 {
-	register struct mountlist *mlp, **mlpp;
+	struct mountlist *mlp, **mlpp;
 	FILE *mlfile;
 
 	mlpp = &mlhead;
@@ -1797,7 +1847,7 @@ add_mlist(hostp, dirp)
 	mlp->ml_host[RPCMNT_NAMELEN] = '\0';
 	strncpy(mlp->ml_dirp, dirp, RPCMNT_PATHLEN);
 	mlp->ml_dirp[RPCMNT_PATHLEN] = '\0';
-	mlp->ml_next = (struct mountlist *)0;
+	mlp->ml_next = (struct mountlist *)NULL;
 	*mlpp = mlp;
 	if ((mlfile = fopen(_PATH_RMOUNTLIST, "a")) == NULL) {
 		syslog(LOG_ERR, "Can't update %s", _PATH_RMOUNTLIST);
@@ -1819,6 +1869,7 @@ send_umntall()
 	exit(0);
 }
 
+int
 umntall_each(resultsp, raddr)
 	caddr_t resultsp;
 	struct sockaddr_in *raddr;
@@ -1831,9 +1882,9 @@ umntall_each(resultsp, raddr)
  */
 void
 free_grp(grp)
-	register struct grouplist *grp;
+	struct grouplist *grp;
 {
-	register char **addrp;
+	char **addrp;
 
 	if (grp->gr_type == GT_HOST) {
 		if (grp->gr_ptr.gt_hostent->h_name) {
@@ -1870,11 +1921,12 @@ SYSLOG(int pri, const char *fmt, ...)
 /*
  * Check options for consistency.
  */
+int
 check_options(dp)
 	struct dirlist *dp;
 {
 
-	if (dp == (struct dirlist *)0)
+	if (dp == (struct dirlist *)NULL)
 	    return (1);
 	if ((opt_flags & (OP_MAPROOT | OP_MAPALL)) == (OP_MAPROOT | OP_MAPALL) ||
 	    (opt_flags & (OP_MAPROOT | OP_KERB)) == (OP_MAPROOT | OP_KERB) ||
@@ -1903,9 +1955,9 @@ check_options(dp)
  */
 int
 check_dirpath(dirp)
-	register char *dirp;
+	char *dirp;
 {
-	register char *cp;
+	char *cp;
 	int ret = 1;
 	struct stat sb;
 
