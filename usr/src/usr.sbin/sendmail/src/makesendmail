@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.20 (Berkeley) %G%
+#       @(#)makesendmail	8.21 (Berkeley) %G%
 #
 
 #
@@ -14,13 +14,42 @@
 #  multiple architectures and Makefiles.
 #
 
+#
+#  Do heuristic guesses for machines that do not have uname
+#
 if [ -d /LocalApps -a ! -f /bin/uname -a ! -f /usr/bin/uname ]
 then
 	# probably a NeXT box
 	arch=NeXT
 	os=Mach
 	rel=`strings /mach | grep 'Mach.*:' | sed -e 's/.* Mach //' -e 's/:.*//'`
-else
+elif [ -f /usr/sony/bin/machine -a -f /etc/osversion ]
+then
+	# probably a Sony NEWS 4.x
+	os=NEWS-OS
+	rel=`awk '{ print $3}' /etc/osversion`
+	arch=`/usr/sony/bin/machine`
+elif [ -d /usr/omron -a -f /bin/luna ]
+then
+	# probably a Omron LUNA
+	os=LUNA
+	if [ -f /bin/luna1 -a /bin/luna1 ]
+	then
+		rel=unios-b
+		arch=luna1
+	elif [ -f /bin/luna2 -a /bin/luna2 ]
+	then
+		rel=Mach
+		arch=luna2
+	elif [ -f /bin/luna88k -a /bin/luna88k ]
+	then
+		rel=Mach
+		arch=luna88k
+	fi
+fi
+
+if [ ! "$arch" -a ! "$os" -a ! "$rel" ]
+then
 	arch=`uname -m | sed -e 's/ //g'`
 	os=`uname -s | sed 's/\//-/g'`
 	rel=`uname -r`
@@ -62,6 +91,11 @@ then
 	then
 		os=PTX
 	fi
+fi
+
+if [ -d /usr/nec -a "$os" = "UNIX_System_V" ]
+then
+	os=EWS-UX_V
 fi
 
 # see if there is a "user suffix" specified
