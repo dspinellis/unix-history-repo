@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.15 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.16 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -16,7 +16,7 @@ MAILER(local)dnl
 #   local info   #
 ##################
 
-ifdef(`_USE_CW_FILE_',
+ifdef(`USE_CW_FILE',
 `# file containing internet aliases in our primary domain
 Fw/etc/sendmail.cw', `dnl')
 
@@ -60,19 +60,19 @@ CO @ % !
 # a class with just dot (for identifying canonical names)
 C..
 
-ifdef(`USERDB_SPEC',
-`# list of locations of user database file (null means no lookup)
-CONCAT(`OU', USERDB_SPEC)',
-`dnl')
+# list of locations of user database file (null means no lookup)
+OU`'ifdef(`USERDB_SPEC', `USERDB_SPEC')
 
-ifdef(`_NO_WILDCARD_MX_',
-`# we can guarantee no wildcard MX records matching our domain
-Ow',
-`dnl')
+# set if we can guarantee no wildcard MX records matching our domain
+ifdef(`_NO_WILDCARD_MX_', `', `#')Ow
 
 ifdef(`NEWSENDMAIL',
 `# level 2 config file format
 O=2', `dnl')
+
+# if new sendmail and we want to ignore UDB for fully qualified user names
+# (e.g., "user@thishost" instead of "user"), set this to "@", else set to null
+CONCAT(`DO', ifdef(`NEWSENDMAIL', ifdef(`ALWAYS_USE_UDB', `', `@')))
 
 include(`../m4/version.m4')
 
@@ -219,17 +219,12 @@ R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec
 
 #R@			$#error$:Invalid address	handle <> form
 
-ifdef(`LOCAL_RELAY',
-`# now delete the local info -- note $=O to find characters that cause forwarding
+# now delete the local info -- note $=O to find characters that cause forwarding
 R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-ifdef(`NEWSENDMAIL',
-`R$+ < @ $j . >		$#local $: : $1			local address',
-`R$+ < @ $j . >		$#local $: $1			local address')',
-`# delete local info
-R$* < @ $j . > $*	$@ $>7 $1 $2')
+R$+ < @ $j . >		$#local $: $O $1		local address
 
 undivert(3)dnl
 
@@ -265,24 +260,23 @@ R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
 ifdef(`NEWSENDMAIL',
 `# handle locally delivered names
-ifdef(`LOCAL_RELAY',
-`R$=L			$# local $: : $1		special local names',
-	`dnl')
+R$=L			$# local $: $O $1		special local names
 R$+			$# local $: $1			regular local names
-', `ifdef(`LOCAL_RELAY',
-`# forward remaining names to local relay
-R$+			$# smtp $@ $R $: $1 @ $R',
-`# remaining names must be local
-R$+			$# local $: $1')')
+',
+`# forward remaining names to local relay, if any
+R$+			$: $1 < @ $R >
+R$+ < @ >		$# local $: $1
+R$+ < @ $+ >		$# smtp $@ $2 $: $1')
 
-ifdef(`LOCAL_RELAY', `ifdef(`NEWSENDMAIL',
+ifdef(`NEWSENDMAIL',
 `#
 # special rewriting after aliases have been expanded
 #
 
 S5
 
-R$+			$# smtp $@ $R $: $1 < @ $R >	send to relay')')
+R$+			$: $1 < @ $R >
+R$+ < @ $+ >		$# smtp $@ $2 $: $1		send to relay')
 #
 ######################################################################
 ######################################################################
