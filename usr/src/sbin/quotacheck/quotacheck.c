@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -574,7 +574,7 @@ bread(bno, buf, cnt)
 	long cnt;
 {
 
-	if (lseek(fi, (off_t)bno * dev_bsize, 0) < 0 ||
+	if (lseek(fi, (off_t)bno * dev_bsize, SEEK_SET) < 0 ||
 	    read(fi, buf, cnt) != cnt)
 		err("block %ld", bno);
 }
