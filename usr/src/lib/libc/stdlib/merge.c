@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)merge.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)merge.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -80,7 +80,7 @@ mergesort(base, nmemb, size, cmp)
 	register u_char *f1, *f2, *t, *b, *tp2, *q, *l1, *l2;
 	u_char *list2, *list1, *p2, *p, *last, **p1;
 
-	if (size < PSIZE/2) {	/* pointers must fit into 2*size */
+	if (size < PSIZE / 2) {		/* Pointers must fit into 2 * size. */
 		errno = EINVAL;
 		return (-1);
 	}
