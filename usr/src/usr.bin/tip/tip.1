@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tip.1	6.2 (Berkeley) %G%
+.\"	@(#)tip.1	6.3 (Berkeley) %G%
 .\"
 .TH TIP 1C ""
 .UC 4
@@ -124,6 +124,14 @@ Set a variable (see the discussion below).
 Stop
 .I tip
 (only available with job control).
+.TP 10
+.B ~^Y
+Stop only the ``local side'' of
+.I tip
+(only available with job control);
+the ``remote side'' of
+.IR tip ,
+the side that displays output from the remote host, is left running.
 .TP 10
 .B ~?
 Get a summary of the tilde escapes
