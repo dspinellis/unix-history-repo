@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_acct.c	7.4 (Berkeley) %G%
+ *	@(#)pk_acct.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -123,5 +123,6 @@ register struct pklcd *lcp;
 	acbuf.x25acct_rxcnt = lcp -> lcd_rxcnt;
 
 	(void) vn_rdwr(UIO_WRITE, vp, (caddr_t)&acbuf, sizeof (acbuf),
-		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0);
+		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0,
+		(struct proc *)0);
 }
