@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.26		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.27		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.26		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.27		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -111,7 +111,7 @@ getconnection()
 		printf("getconnection\n");
 # endif DEBUG
 
-	for (;;)
+	for (;; sleep(10))
 	{
 		/* get a socket for the SMTP connection */
 		s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
@@ -119,7 +119,7 @@ getconnection()
 		{
 			/* probably another daemon already */
 			syserr("getconnection: can't create socket");
-			break;
+			return (-1);
 		}
 
 # ifdef DEBUG
@@ -128,14 +128,15 @@ getconnection()
 # endif DEBUG
 
 		/* wait for a connection */
-		if (accept(s, &otherend) >= 0)
-			break;
+		do
+		{
+			errno = 0;
+			if (accept(s, &otherend) >= 0)
+				return (s);
+		} while (errno == EINTR);
 		syserr("getconnection: accept");
 		(void) close(s);
-		sleep(10);
 	}
-
-	return (s);
 }
 /*
 **  MAKECONNECTION -- make a connection to an SMTP socket on another machine.
