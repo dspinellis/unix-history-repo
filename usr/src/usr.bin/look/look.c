@@ -1,170 +1,314 @@
 /*-
- * Copyright (c) 1987 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * This code is derived from software contributed to Berkeley by
+ * David Hitz of Auspex Systems, Inc.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1987 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
+/*
+ * look -- find lines in a sorted list.
+ * 
+ * The man page said that TABs and SPACEs participate in -d comparisons.
+ * In fact, they were ignored.  This implements historic practice, not
+ * the manual page.
+ */
+
 #include <sys/types.h>
-#include <sys/file.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include "pathnames.h"
 
-#define	EOS		'\0'
-#define	MAXLINELEN	250
-#define	YES		1
+/*
+ * FOLD and DICT convert characters to a normal form for comparison,
+ * according to the user specified flags.
+ * 
+ * DICT expects integers because it uses a non-character value to
+ * indicate a character which should not participate in comparisons.
+ */
+#define	EQUAL		0
+#define	GREATER		1
+#define	LESS		(-1)
+#define NO_COMPARE	(-2)
 
-static int	fold, dict, len;
+#define	FOLD(c)	(isascii(c) && isupper(c) ? tolower(c) : (c))
+#define	DICT(c)	(isascii(c) && isalnum(c) ? (c) : NO_COMPARE)
+
+int dflag, fflag;
+
+char	*binary_search __P((char *, char *, char *));
+int	 compare __P((char *, char *, char *));
+void	 err __P((const char *fmt, ...));
+char	*linear_search __P((char *, char *, char *));
+int	 look __P((char *, char *, char *));
+void	 print_from __P((char *, char *, char *));
+void	 usage __P((void));
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char *argv[];
 {
-	extern char	*optarg;
-	extern int	optind;
-	static char	*filename = _PATH_WORDS;
-	register off_t	bot, mid, top;
-	register int	c;
-	struct stat	sb;
-	char	entry[MAXLINELEN], copy[MAXLINELEN];
+	struct stat sb;
+	int ch, fd;
+	char *back, *file, *front, *string;
 
-	while ((c = getopt(argc, argv, "df")) != EOF)
-		switch((char)c) {
+	file = _PATH_WORDS;
+	while ((ch = getopt(argc, argv, "df")) != EOF)
+		switch(ch) {
 		case 'd':
-			dict = YES;
+			dflag = 1;
 			break;
 		case 'f':
-			fold = YES;
+			fflag = 1;
 			break;
 		case '?':
 		default:
 			usage();
 		}
-	argv += optind;
 	argc -= optind;
+	argv += optind;
 
-	switch(argc) {
-	case 1:	/* if default file, set to dictionary order and folding */
-		dict = fold = YES;
+	switch (argc) {
+	case 2:				/* Don't set -df for user. */
+		string = *argv++;
+		file = *argv;
 		break;
-	case 2:
-		filename = argv[1];
+	case 1:				/* But set -df by default. */
+		dflag = fflag = 1;
+		string = *argv;
 		break;
 	default:
 		usage();
 	}
 
-	if (!freopen(filename, "r", stdin)) {
-		fprintf(stderr,"look: can't read %s.\n", filename);
-		exit(2);
-	}
-	if (fstat(fileno(stdin), &sb)) {
-		perror("look: fstat");
-		exit(2);
-	}
+	if ((fd = open(file, O_RDONLY, 0)) < 0 || fstat(fd, &sb) ||
+	    (front = mmap(NULL, sb.st_size, PROT_READ, MAP_FILE, fd,
+	    (off_t)0)) == NULL)
+		err("%s: %s", file, strerror(errno));
+	back = front + sb.st_size;
+	exit(look(string, front, back));
+}
 
-	len = strlen(*argv);
-	canon(*argv, *argv);
-	len = strlen(*argv);		/* may have changed */
-	if (len > MAXLINELEN - 1) {
-		(void)fprintf(stderr,
-		    "look: search string is too long.\n");
-		exit(2);
+look(string, front, back)
+	char *string, *front, *back;
+{
+	register int ch;
+	register char *readp, *writep;
+
+	/* Reformat string string to avoid doing it multiple times later. */
+	for (readp = writep = string; ch = *readp++;) {
+		if (fflag)
+			ch = FOLD(ch);
+		if (dflag)
+			ch = DICT(ch);
+		if (ch != NO_COMPARE)
+			*(writep++) = ch;
 	}
+	*writep = '\0';
 
-	for (bot = 0, top = sb.st_size;;) {
-		mid = (top + bot) / 2;
-		(void)fseek(stdin, mid, L_SET);
+	front = binary_search(string, front, back);
+	front = linear_search(string, front, back);
 
-		for (++mid; (c = getchar()) != EOF && c != '\n'; ++mid);
-		if (!getline(entry))
-			break;
-		canon(entry, copy);
-		if (strncmp(*argv, copy, len) <= 0) {
-			if (top <= mid)
-				break;
-			top = mid;
-		}
+	if (front)
+		print_from(string, front, back);
+	return (front ? 0 : 1);
+}
+
+
+/*
+ * Binary search for "string" in memory between "front" and "back".
+ * 
+ * This routine is expected to return a pointer to the start of a line at
+ * *or before* the first word matching "string".  Relaxing the constraint
+ * this way simplifies the algorithm.
+ * 
+ * Invariants:
+ * 	front points to the beginning of a line at or before the first 
+ *	matching string.
+ * 
+ * 	back points to the beginning of a line at or after the first 
+ *	matching line.
+ * 
+ * Base of the Invariants.
+ * 	front = NULL; 
+ *	back = EOF;
+ * 
+ * Advancing the Invariants:
+ * 
+ * 	p = first newline after halfway point from front to back.
+ * 
+ * 	If the string at "p" is not greater than the string to match, 
+ *	p is the new front.  Otherwise it is the new back.
+ * 
+ * Termination:
+ * 
+ * 	The definition of the routine allows it return at any point, 
+ *	since front is always at or before the line to print.
+ * 
+ * 	In fact, it returns when the chosen "p" equals "back".  This 
+ *	implies that there exists a string is least half as long as 
+ *	(back - front), which in turn implies that a linear search will 
+ *	be no more expensive than the cost of simply printing a string or two.
+ * 
+ * 	Trying to continue with binary search at this point would be 
+ *	more trouble than it's worth.
+ */
+#define	SKIP_PAST_NEWLINE(p, back) \
+	while (p < back && *p++ != '\n');
+
+char *
+binary_search(string, front, back)
+	register char *string, *front, *back;
+{
+	register char *p;
+
+	p = front + (back - front) / 2;
+	SKIP_PAST_NEWLINE(p, back);
+
+	while (p != back) {
+		if (compare(string, p, back) == GREATER)
+			front = p;
 		else
-			bot = mid;
+			back = p;
+		p = front + (back - front) / 2;
+		SKIP_PAST_NEWLINE(p, back);
 	}
-	(void)fseek(stdin, bot, L_SET);
-	while (ftell(stdin) < top) {
-		register int val;
+	return (front);
+}
 
-		if (!getline(entry))
-			exit(0);
-		canon(entry, copy);
-		if (!(val = strncmp(*argv, copy, len))) {
-			puts(entry);
+/*
+ * Find the first line that starts with string, linearly searching from front
+ * to back.
+ * 
+ * Return NULL for no such line.
+ * 
+ * This routine assumes:
+ * 
+ * 	o front points at the first character in a line. 
+ *	o front is before or at the first line to be printed.
+ */
+char *
+linear_search(string, front, back)
+	char *string, *front, *back;
+{
+	while (front < back) {
+		switch (compare(string, front, back)) {
+		case EQUAL:		/* Found it. */
+			return (front);
+			break;
+		case LESS:		/* No such string. */
+			return (NULL);
+			break;
+		case GREATER:		/* Keep going. */
 			break;
 		}
-		if (val < 0)
-			exit(0);
+		SKIP_PAST_NEWLINE(front, back);
 	}
-	while (getline(entry)) {
-		canon(entry, copy);
-		if (strncmp(*argv, copy, len))
-			break;
-		puts(entry);
-	}
-	exit(0);
+	return (NULL);
 }
 
 /*
- * getline --
- *	get a line
+ * Print as many lines as match string, starting at front.
  */
-getline(buf)
-	register char	*buf;
+void 
+print_from(string, front, back)
+	register char *string, *front, *back;
 {
-	register int	c;
-
-	for (;;) {
-		if ((c = getchar()) == EOF)
-			return(0);
-		if (c == '\n')
-			break;
-		*buf++ = c;
+	for (; front < back && compare(string, front, back) == EQUAL; ++front) {
+		for (; front < back && *front != '\n'; ++front)
+			if (putchar(*front) == EOF)
+				err("stdout: %s", strerror(errno));
+		if (putchar('\n') == EOF)
+			err("stdout: %s", strerror(errno));
 	}
-	*buf = EOS;
-	return(1);
 }
 
 /*
- * canon --
- *	create canonical version of word
+ * Return LESS, GREATER, or EQUAL depending on how the string1 compares with
+ * string2 (s1 ??? s2).
+ * 
+ * 	o Matches up to len(s1) are EQUAL. 
+ *	o Matches up to len(s2) are GREATER.
+ * 
+ * Compare understands about the -f and -d flags, and treats comparisons
+ * appropriately.
+ * 
+ * The string "s1" is null terminated.  The string s2 is '\n' terminated (or
+ * "back" terminated).
  */
-canon(src, copy)
-	register char	*src, *copy;
+int
+compare(s1, s2, back)
+	register char *s1, *s2, *back;
 {
-	register int	cnt;
-	register char	c;
+	register int ch;
 
-	for (cnt = len + 1; (c = *src++) && cnt; --cnt)
-		if (!dict || isalnum(c))
-			*copy++ = fold && isupper(c) ? tolower(c) : c;
-	*copy = EOS;
+	for (; *s1 && s2 < back && *s2 != '\n'; ++s1, ++s2) {
+		ch = *s2;
+		if (fflag)
+			ch = FOLD(ch);
+		if (dflag)
+			ch = DICT(ch);
+
+		if (ch == NO_COMPARE) {
+			++s2;		/* Ignore character in comparison. */
+			continue;
+		}
+		if (*s1 != ch)
+			return (*s1 < ch ? LESS : GREATER);
+	}
+	return (*s1 ? GREATER : EQUAL);
 }
 
-/*
- * usage --
- *	print a usage message and die
- */
+static void
 usage()
 {
 	(void)fprintf(stderr, "usage: look [-df] string [file]\n");
-	exit(1);
+	exit(2);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "look: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(2);
+	/* NOTREACHED */
 }

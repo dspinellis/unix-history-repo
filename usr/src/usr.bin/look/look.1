@@ -3,10 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)look.1	6.5 (Berkeley) %G%
+.\"     @(#)look.1	6.6 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LOOK 1
 .Os
@@ -20,38 +18,53 @@
 .Op Ar file
 .Sh DESCRIPTION
 The 
-.Nm Look
-utility searchs a text
-.Ar file
-for all
-matches of
-.Ar string .
-The
-.Ar file
-must be sorted for
 .Nm look
-to work properly. If
+utility displays any lines in
+.Ar file
+which contain
+.Ar string
+as a prefix.
+As
+.Nm look
+performs a binary search, the lines in
+.Ar file
+must be sorted.
+.Pp
+If
 .Ar file
 is not specified, the file
 .Pa /usr/share/dict/words
-is used.
+is used, only alphanumeric characters are compared and the case of
+alphabetic characters is ignored.
 .Pp
 Options:
-.Tw Ds
-.Tp Ar d
-Dictionary character set and order.
-.Tp Ar f
-Ignore case.
-.Tp
+.Bl -tag -width Ds
+.It Fl d
+Dictionary character set and order, i.e. only alphanumeric characters
+are compared.
+.It Fl f
+Ignore the case of alphabetic characters.
+.El
+.Pp
+The
+.Nm look
+utility exits 0 if one or more lines were found and displayed,
+1 if no lines were found, and >1 if an error occurred.
 .Sh FILES
-.Dw /usr/share/dict/words
-.Di L
-.Dp Pa /usr/share/dict/words
-A spelling dictionary.
-.Dp
+.Bl -tag -width /usr/share/dict/words -compact
+.It Pa /usr/share/dict/words
+the dictionary
+.El
 .Sh SEE ALSO
-.Xr sort 1 ,
-.Xr grep 1
+.Xr grep 1 ,
+.Xr sort 1
+.Sh COMPATIBILITY
+The original manual page stated that tabs and blank characters participated
+in comparisons when the
+.Fl d
+option was specified.
+This was incorrect and the current man page matches the historic
+implementation.
 .Sh HISTORY
 .Nm Look
 appeared in Version 7 AT&T Unix.
