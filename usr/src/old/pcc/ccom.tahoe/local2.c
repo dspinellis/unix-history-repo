@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.31 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -338,7 +338,12 @@ zzzcode( p, c ) register NODE *p; {
 		}
 
 	case 'D':	/* INCR and DECR */
-		zzzcode(p->in.left, 'U');
+		if (p->in.left->in.type == FLOAT)
+			expand(p, INAREG, "movl\tAL,A1");
+		else if (p->in.left->in.type == DOUBLE)
+			expand(p, INAREG, "ldd\tAL\n\tstd\tA1");
+		else
+			zzzcode(p->in.left, 'U');
 		putstr("\n	");
 
 	case 'E':	/* INCR and DECR, FOREFF */
@@ -351,10 +356,12 @@ zzzcode( p, c ) register NODE *p; {
 			return;
 			}
 		else if (p->in.left->in.type == FLOAT || p->in.left->in.type == DOUBLE) {
+			if (c == 'E' || p->in.left->in.type == FLOAT)
+				expand(p, INAREG, "ldZL\tAL\n\t");
 			if (p->in.op == INCR)
-				expand(p, INAREG, "ldZL\tAL\n\taddZL\tAR\n\tstZL\tAL");
+				expand(p, INAREG, "addZL\tAR\n\tstZL\tAL");
 			else /* DECR */
-				expand(p, INAREG, "ldZL\tAL\n\tsubZL\tAR\n\tstZL\tAL");
+				expand(p, INAREG, "subZL\tAR\n\tstZL\tAL");
 			return;
 			}
 		putstr(p->in.op == INCR ? "add" : "sub");
