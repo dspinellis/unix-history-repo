@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.10 (Berkeley) %G%
+ *	@(#)lfs.h	7.11 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -133,8 +133,8 @@ struct lfs {
 
 /* Address calculations for metadata located in the inode */
 #define	S_INDIR(fs)	-NDADDR
-#define	D_INDIR(fs)	(S_INDIR - NINDIR(fs) - 1)
-#define	T_INDIR(fs)	(D_INDIR - NINDIR(fs) * NINDIR(fs) - 1)
+#define	D_INDIR(fs)	(S_INDIR(fs) - NINDIR(fs) - 1)
+#define	T_INDIR(fs)	(D_INDIR(fs) - NINDIR(fs) * NINDIR(fs) - 1)
 
 /* Structure used to pass around logical block paths. */
 typedef struct _indir {
