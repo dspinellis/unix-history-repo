@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -50,6 +50,7 @@ setup(dev)
 	long cg, size, asked, i, j;
 	long bmapsize;
 	struct disklabel *lp;
+	off_t sizepb;
 	struct stat statb;
 	struct fs proto;
 
@@ -157,6 +158,16 @@ setup(dev)
 			sbdirty();
 			dirty(&asblk);
 		}
+	}
+	if (sblock.fs_inodefmt < FS_44INODEFMT) {	
+		sizepb = sblock.fs_bsize;
+		sblock.fs_maxfilesize = sblock.fs_bsize * NDADDR - 1;
+		for (i = 0; i < NIADDR; i++) {
+			sizepb *= NINDIR(&sblock);
+			sblock.fs_maxfilesize += sizepb;
+		}
+		sblock.fs_qbmask = ~sblock.fs_bmask;
+		sblock.fs_qfmask = ~sblock.fs_fmask;
 	}
 	if (cvtflag) {
 		if (sblock.fs_postblformat == FS_42POSTBLFMT) {
