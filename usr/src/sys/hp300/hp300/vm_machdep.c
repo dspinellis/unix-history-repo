@@ -11,22 +11,20 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.18 89/08/23$
  *
- *	@(#)vm_machdep.c	7.7 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.8 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/user.h"
-#include "sys/proc.h"
-#include "sys/cmap.h"
-#include "sys/malloc.h"
-#include "sys/buf.h"
+#include "param.h"
+#include "systm.h"
+#include "proc.h"
+#include "malloc.h"
+#include "buf.h"
 
 #include "../include/cpu.h"
 
-#include "vm/vm_param.h"
+#include "vm/vm.h"
 #include "vm/pmap.h"
-#include "vm/vm_map.h"
+#include "pte.h"
 
 /*
  * Move pages from one kernel virtual address to another.
@@ -128,7 +126,8 @@ vmapbuf(bp)
 	kva = kmem_alloc_wait(phys_map, ctob(npf));
 	bp->b_un.b_addr = (caddr_t) (kva + off);
 	while (npf--) {
-		pa = pmap_extract(vm_map_pmap(p->p_map), (vm_offset_t)addr);
+		pa = pmap_extract(vm_map_pmap(&p->p_vmspace->vm_map),
+		    (vm_offset_t)addr);
 		if (pa == 0)
 			panic("vmapbuf: null page frame");
 		pmap_enter(vm_map_pmap(phys_map), kva, trunc_page(pa),
