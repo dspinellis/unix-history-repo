@@ -1,0 +1,33 @@
+Return-Path: bryan@notorious.rs.itd.umich.edu
+Received: by gw.home.vix.com; id AA16267; Tue, 12 Oct 93 12:38:33 -0700
+Received: from notorious.rs.itd.umich.edu by notorious.rs.itd.umich.edu (5.67/2.25)
+	with SMTP id AA08439; Tue, 12 Oct 93 15:38:31 -0400
+Message-Id: <9310121938.AA08439@notorious.rs.itd.umich.edu>
+To: ken@uunet.uu.net (Ken Dahl)
+Cc: Paul A Vixie <paul>
+From: Bryan Beecher <bryan@umich.edu>
+Subject: bind 4.9.2 question 
+Date: Tue, 12 Oct 93 15:38:30 -0400
+Sender: bryan@notorious.rs.itd.umich.edu
+
+> 	I was rebuilding libc.so on our suns to include the bind 4.9.2
+> code, and wanted to disable the SUNSECURITY.  However, I noticed that in
+> conf/options.h where it forces SUNSECURITY to be defined on suns, it
+> claims that it is "mandatory on suns and rlogin etc. depend on this".
+> We've disabled this is previous versions of the bind code without
+> noticable problems.  What are the implications of disabling SUNSECURITY
+> on suns?
+
+The C library shipped with SunOS 4.1.3 (and perhaps earlier and later
+versions) has some added "security code" inside of gethostbyaddr().  This
+code consists of doing a gethostbyname() on the result of a
+gethostbyaddr(), and then checking to see if one of the addresses returned
+by gethostbyname() matches the original argument to gethostbyaddr().  In
+other words, it checks to see that a host has both a PTR record, and a
+matching A record.
+
+If you remove the Sun-supplied gethostbyaddr(), and replace it with the one
+provided by BIND 4.9.2, and you want the same behavior, then I believe the
+SUNSECURITY #ifdef is necessary.  If you want a less "fussy"
+gethostbyaddr(), then leaving it out is OK.
+					-- bryan
