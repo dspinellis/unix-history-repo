@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: fd.c 1.3 89/12/03$
  *
- *	@(#)vn.c	7.12 (Berkeley) %G%
+ *	@(#)vn.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -148,7 +148,7 @@ vnstrategy(bp)
 		nbp = getvnbuf();
 		off = bn % bsize;
 		sz = min(bsize - off, resid);
-		(void) VOP_BMAP(vn->sc_vp, bn / bsize, &vp, &nbn);
+		(void) VOP_BMAP(vn->sc_vp, bn / bsize, &vp, &nbn, NULL);
 #ifdef DEBUG
 		if (vndebug & VDB_IO)
 			printf("vnstrategy: vp %x/%x bn %x/%x\n",
