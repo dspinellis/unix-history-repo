@@ -7,12 +7,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "proc.h"
 #include "buf.h"
+#include "uio.h"
+#include "namei.h"
 #include "vnode.h"
 #include "trace.h"
 #include "mount.h"
@@ -49,8 +51,10 @@ nfs_bioread(vp, uio, ioflag, cred)
 #ifdef lint
 	ioflag = ioflag;
 #endif /* lint */
+#ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
 		panic("nfs_read mode");
+#endif
 	if (uio->uio_resid == 0)
 		return (0);
 	if (uio->uio_offset < 0 && vp->v_type != VDIR)
@@ -74,11 +78,13 @@ nfs_bioread(vp, uio, ioflag, cred)
 			vinvalbuf(vp, TRUE);
 			np->n_attrstamp = 0;
 			np->n_direofoffset = 0;
-			if (error = nfs_dogetattr(vp, &vattr, cred, 1))
+			if (error = nfs_dogetattr(vp, &vattr, cred, 1,
+			    uio->uio_procp))
 				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		} else {
-			if (error = nfs_dogetattr(vp, &vattr, cred, 1))
+			if (error = nfs_dogetattr(vp, &vattr, cred, 1,
+			    uio->uio_procp))
 				return (error);
 			if (np->n_mtime != vattr.va_mtime.tv_sec) {
 				np->n_direofoffset = 0;
@@ -123,8 +129,8 @@ nfs_bioread(vp, uio, ioflag, cred)
 	    case VDIR:
 		nfsstats.biocache_readdirs++;
 		on = 0;
-		error = bread(vp, uio->uio_offset, DIRBLKSIZ, cred, &bp);
-		n = MIN(uio->uio_resid, DIRBLKSIZ - bp->b_resid);
+		error = bread(vp, uio->uio_offset, NFS_DIRBLKSIZ, cred, &bp);
+		n = MIN(uio->uio_resid, NFS_DIRBLKSIZ - bp->b_resid);
 		break;
 	    };
 	    if (error) {
@@ -159,7 +165,7 @@ nfs_write(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	struct proc *p = curproc;		/* XXX */
+	struct proc *p = uio->uio_procp;
 	register int biosize;
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
@@ -167,8 +173,12 @@ nfs_write(vp, uio, ioflag, cred)
 	daddr_t lbn, bn;
 	int n, on, error = 0;
 
+#ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
 		panic("nfs_write mode");
+	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
+		panic("nfs_write proc");
+#endif
 	if (vp->v_type != VREG)
 		return (EIO);
 	/* Should we try and do this ?? */
@@ -179,11 +189,11 @@ nfs_write(vp, uio, ioflag, cred)
 		}
 		if (ioflag & IO_APPEND) {
 			np->n_attrstamp = 0;
-			if (error = nfs_dogetattr(vp, &vattr, cred, 1))
+			if (error = nfs_dogetattr(vp, &vattr, cred, 1, p))
 				return (error);
 			uio->uio_offset = np->n_size;
 		}
-		return (nfs_writerpc(vp, uio, cred, p));
+		return (nfs_writerpc(vp, uio, cred));
 	}
 #ifdef notdef
 	cnt = uio->uio_resid;
