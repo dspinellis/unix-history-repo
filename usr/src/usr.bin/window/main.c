@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.1 83/08/11";
+static	char *sccsid = "@(#)main.c	3.2 83/08/17";
 #endif
 
 #include "defs.h"
@@ -14,7 +14,8 @@ char **argv;
 {
 	register n;
 	register char *p;
-	char fast = 0;
+	char fflag = 0;
+	char dflag = 0;
 	int imask;
 	struct timezone timezone;
 
@@ -27,7 +28,7 @@ char **argv;
 		if (**argv == '-') {
 			switch (*++*argv) {
 			case 'f':
-				fast++;
+				fflag++;
 				break;
 			case 'e':
 				setescape(next(argv));
@@ -36,6 +37,9 @@ char **argv;
 				terse++;
 				break;
 			case 'd':
+				dflag++;
+				break;
+			case 'D':
 				debug++;
 				break;
 			default:
@@ -77,10 +81,10 @@ char **argv;
 	wwupdate();
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
-	if (!fast) {
+	if (!fflag) {
 		if (!terse)
 			wwadd(cmdwin, &wwhead);
-		if (doconfig() < 0)
+		if (dflag || doconfig() < 0)
 			dodefault();
 		if (selwin != 0) {
 			curwin = selwin;
@@ -154,7 +158,7 @@ bad:
 
 usage()
 {
-	(void) fprintf(stderr, "window: [-e escape] [-t] [-f]\n");
+	(void) fprintf(stderr, "window: [-e escape-char] [-t] [-f] [-d]\n");
 	exit(1);
 	return 0;			/* for lint */
 }
