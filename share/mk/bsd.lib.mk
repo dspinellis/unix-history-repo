@@ -1,14 +1,10 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
-# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-# --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00157
-# --------------------         -----   ----------------------
-#
-# 27 Apr 93	Rodney W. Grimes	Break up cleandir so that we do not
-#					overflow shell args
-# $History$
+ $History$
 # $Log: bsd.lib.mk,v $
+# Revision 1.3  1993/07/02  06:44:30  root
+# New manual page system
+#
 # Revision 1.2  1993/06/17  02:01:11  rgrimes
 # Make clean in src/lib/libc failed due to too many arguments to /bin/sh,
 # this was fixed for make cleandir in the patchkit, this fixes it for
@@ -86,14 +82,14 @@ llib-l${LIB}.ln: ${SRCS}
 
 .if !target(clean)
 clean:
-	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} \
+	rm -f a.out Errs errs mklog core core.* ${CLEANFILES} ${OBJS} \
 	    lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 .endif
 
 .if !target(cleandir)
 cleandir:
-	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} \
+	rm -f a.out Errs errs mklog core core.* ${CLEANFILES} ${OBJS} \
 	    lib${LIB}.a llib-l${LIB}.ln \
 	    ${.CURDIR}/tags .depend
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
