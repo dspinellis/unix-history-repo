@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tftpd.8	6.3 (Berkeley) %G%
+.\"	@(#)tftpd.8	6.4 (Berkeley) %G%
 .\"
 .TH TFTPD 8 ""
 .UC 5
@@ -21,6 +21,7 @@
 tftpd \- DARPA Trivial File Transfer Protocol server
 .SH SYNOPSIS
 .B /etc/tftpd
+[ directory ... ]
 .SH DESCRIPTION
 .I Tftpd
 is a server which supports the DARPA Trivial File Transfer
@@ -45,5 +46,13 @@ all users on all hosts that can be reached through the network;
 this may not be appropriate on all systems, and its implications
 should be considered before enabling tftp service.
 The server should have the user ID with the lowest possible privilege.
+.PP
+Access to files may be restricted by invoking
+.I tftpd
+with a list of directories by including pathnames
+as server program arguments in
+.IR /etc/inetd.conf .
+In this case access is restricted to files whose
+names are prefixed by the one of the given directories.
 .SH "SEE ALSO"
 tftp(1), inetd(8)

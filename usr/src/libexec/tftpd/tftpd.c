@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,12 +63,19 @@ char	ackbuf[PKTSIZE];
 struct	sockaddr_in from;
 int	fromlen;
 
-main()
+#define MAXARG	4
+char	*dirs[MAXARG+1];
+
+main(ac, av)
+	char **av;
 {
 	register struct tftphdr *tp;
-	register int n;
+	register int n = 0;
 	int on = 1;
 
+	ac--; av++;
+	while (ac-- > 0 && n < MAXARG)
+		dirs[n++] = *av++;
 	openlog("tftpd", LOG_PID, LOG_DAEMON);
 	if (ioctl(0, FIONBIO, &on) < 0) {
 		syslog(LOG_ERR, "ioctl(FIONBIO): %m\n");
@@ -231,6 +238,9 @@ FILE *file;
  * have no uid or gid, for now require
  * file to exist and be publicly
  * readable/writable.
+ * If we were invoked with arguments
+ * from inetd then the file must also be
+ * in one of the given directory prefixes.
  * Note also, full path name must be
  * given as we have no login directory.
  */
@@ -240,8 +250,14 @@ validate_access(filename, mode)
 {
 	struct stat stbuf;
 	int	fd;
+	char **dirp = dirs;
 
 	if (*filename != '/')
+		return (EACCESS);
+	for (; *dirp; dirp++)
+		if (strncmp(filename, *dirp, strlen(*dirp)) == 0)
+			break;
+	if (*dirp==0 && dirp!=dirs)
 		return (EACCESS);
 	if (stat(filename, &stbuf) < 0)
 		return (errno == ENOENT ? ENOTFOUND : EACCESS);
