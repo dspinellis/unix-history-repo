@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
@@ -311,7 +311,9 @@ otape()
 		spcl.c_count = blks + 1 - spcl.c_tapea + lastspclrec;
 		spcl.c_volume++;
 		spcl.c_type = TS_TAPE;
+		spcl.c_flags |= DR_NEWHEADER;
 		spclrec();
+		spcl.c_flags &=~ DR_NEWHEADER;
 		if (tapeno > 1)
 			msg("Tape %d begins with blocks from ino %d\n",
 				tapeno, ino);
