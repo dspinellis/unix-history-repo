@@ -1,4 +1,4 @@
-/*	fs.h	6.2	84/09/28	*/
+/*	fs.h	6.3	85/02/08	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -87,8 +87,8 @@
  * MAXCPG is limited only to dimension an array in (struct cg);
  * it can be made larger as long as that structures size remains
  * within the bounds dictated by MINBSIZE.
- * Note that super blocks are always of size MAXBSIZE,
- * and that MAXBSIZE must be >= MINBSIZE.
+ * Note that super blocks are always of size SBSIZE,
+ * and that both SBSIZE and MAXBSIZE must be >= MINBSIZE.
  */
 #define MINBSIZE	4096
 #define	MAXCPG		32	/* maximum fs_cpg */
@@ -291,7 +291,7 @@ struct	cg {
  * Compute the cylinder and rotational position of a cyl block addr.
  */
 #define blkmap(fs, map, loc) \
-    (((map)[loc / NBBY] >> (loc % NBBY)) & (0xff >> (NBBY - (fs)->fs_frag)))
+    (((map)[(loc) / NBBY] >> ((loc) % NBBY)) & (0xff >> (NBBY - (fs)->fs_frag)))
 #define cbtocylno(fs, bno) \
 	((bno) * NSPF(fs) / (fs)->fs_spc)
 #define cbtorpos(fs, bno) \
