@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.57		%G%);
+SCCSID(@(#)conf.c	3.58		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -123,6 +123,7 @@ int	DefGid =	1;		/* ditto for gid */
 time_t	TimeOut =	3*24*60*60L;	/* default timeout for queue files */
 int	ReadTimeout =	10*60;		/* timeout on external reads */
 int	LogLevel =	9;		/* default logging level */
+bool	SuperSafe =	TRUE;		/* always create qf file */
 
 
 

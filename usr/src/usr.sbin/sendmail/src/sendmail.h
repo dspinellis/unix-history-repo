@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.89		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.90		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -405,6 +405,7 @@ EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
+extern bool	SuperSafe;	/* be extra careful, despite cost [conf.c] */
 extern time_t	TimeOut;	/* time until timeout [conf.c] */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */

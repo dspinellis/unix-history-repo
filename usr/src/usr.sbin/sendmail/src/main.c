@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.116		%G%);
+SCCSID(@(#)main.c	3.117		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -633,6 +633,10 @@ main(argc, argv)
 	**		slower than it must be.
 	*/
 
+	if (Mode == MD_QUEUE || Mode == MD_FORK ||
+	    (Mode != MD_VERIFY && SuperSafe))
+		queueup(CurEnv, TRUE);
+
 	if (Mode == MD_FORK)
 	{
 		if (fork() > 0)
@@ -647,7 +651,8 @@ main(argc, argv)
 	}
 	else if (Mode == MD_QUEUE)
 	{
-		queueup(CurEnv, TRUE);
+		CurEnv->e_df = CurEnv->e_qf = NULL;
+		CurEnv->e_dontqueue = TRUE;
 		finis();
 	}
 
@@ -1213,6 +1218,11 @@ dropenvelope(e)
 **  QUEUENAME -- build a file name in the queue directory for this envelope.
 **
 **	Assigns an id code if one does not already exist.
+**	This code is very careful to avoid trashing existing files
+**	under any circumstances.
+**		We first create an xf file that is only used when
+**		assigning an id.  This file is always empty, so that
+**		we can never accidently truncate an lf file.
 **
 **	Parameters:
 **		e -- envelope to build it in/from.
@@ -1240,35 +1250,41 @@ queuename(e, type)
 		char counter = 'A' - 1;
 		char qf[20];
 		char lf[20];
+		char xf[20];
 
 		/* find a unique id */
 		(void) sprintf(qf, "qf_%05d", getpid());
 		strcpy(lf, qf);
 		lf[0] = 'l';
+		strcpy(xf, qf);
+		xf[0] = 'x';
 
 		while (counter < '~')
 		{
-			int fd;
+			int i;
 
-			qf[2] = lf[2] = ++counter;
+			qf[2] = lf[2] = xf[2] = ++counter;
 # ifdef DEBUG
 			if (tTd(7, 20))
-				printf("queuename: trying \"%s\"\n", lf);
+				printf("queuename: trying \"%s\"\n", xf);
 # endif DEBUG
 			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
 				continue;
 			errno = 0;
-			fd = creat(lf, 0600);
-			if (fd < 0)
+			i = creat(xf, 0600);
+			if (i < 0)
 			{
-				(void) unlink(lf);	/* kernel bug on ENFILE */
+				(void) unlink(xf);	/* kernel bug */
 				continue;
 			}
-			(void) close(fd);
-			if (link(lf, qf) < 0)
-				(void) unlink(lf);
-			else
+			(void) close(i);
+			i = link(xf, lf);
+			(void) unlink(xf);
+			if (i < 0)
+				continue;
+			if (link(lf, qf) >= 0)
 				break;
+			(void) unlink(lf);
 		}
 		if (counter >= '~')
 		{

@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.44		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.45		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.44		%G%);
+SCCSID(@(#)queue.c	3.45		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -158,17 +158,12 @@ queueup(e, queueall)
 		syserr("cannot link(%s, %s), df=%s", tf, qf, e->e_df);
 	else
 		(void) unlink(tf);
-	e->e_qf = NULL;
 
 # ifdef LOG
 	/* save log info */
 	if (LogLevel > 15)
 		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
 # endif LOG
-
-	/* disconnect this temp file from the job; don't requeue later */
-	e->e_df = NULL;
-	e->e_dontqueue = TRUE;
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.

@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.31		%G%);
+SCCSID(@(#)util.c	3.32		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -790,4 +790,28 @@ curtime()
 
 	(void) time(&t);
 	return (t);
+}
+/*
+**  ATOBOOL -- convert a string representation to boolean.
+**
+**	Defaults to "TRUE"
+**
+**	Parameters:
+**		s -- string to convert.  Takes "tTyY" as true,
+**			others as false.
+**
+**	Returns:
+**		A boolean representation of the string.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+atobool(s)
+	register char *s;
+{
+	if (*s == '\0' || index("tTyY", *s) != NULL)
+		return (TRUE);
+	return (FALSE);
 }

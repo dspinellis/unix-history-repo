@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.116		%G%);
+SCCSID(@(#)deliver.c	3.117		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1533,6 +1533,8 @@ checkerrors(e)
 		{
 # ifdef QUEUE
 			queueup(e, FALSE);
+			e->e_df = e->e_qf = NULL;
+			e->e_dontqueue = TRUE;
 # else QUEUE
 			syserr("checkerrors: trying to queue %s", e->e_df);
 # endif QUEUE
