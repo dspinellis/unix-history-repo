@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sccs.me	6.1 (Berkeley) %G%
+.\"	@(#)sccs.me	6.2 (Berkeley) %G%
 .\"
 .oh 'PS1:14-%''An Introduction to the Source Code Control System'
 .eh 'An Introduction to the Source Code Control System''PS1:14-%'
@@ -12,7 +12,7 @@
 .ev 1			\" only for keeps
 .ss 16
 .ev
-.he '\*S Introduction''%'
+.\".he '\*S Introduction''%'
 .+c
 .(l C
 .sz 14
@@ -48,7 +48,7 @@ see the section on
 .(l F
 This is a working document.
 Please send any comments or suggestions
-to csvax:eric.
+to eric@Berkeley.Edu.
 .)l
 .sh 1 "Introduction"
 .pp
@@ -1149,7 +1149,8 @@ as appropriate.
 .ip sources
 Creates all the source files from \*S files.
 .ip clean
-Removes all cruft from the directory.
+Removes all files from the current directory
+that can be regenerated from \*S files.
 .ip print
 Prints the contents of the directory.
 .lp
