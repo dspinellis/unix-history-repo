@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	6.7 (Berkeley) %G%
+.\"	@(#)mail.1	6.8 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -11,31 +11,25 @@ mail \- send and receive mail
 .SH SYNOPSIS
 .B mail
 [
-.B \-v
-]
-[
-.B \-i
-]
-[
-.B \-n
+.B \-inv
 ]
 [
 .B \-s
 subject
 ]
 [
-user ...
+.B \-c
+cc-addr
 ]
+[
+.B \-b
+bcc-addr
+]
+to-addr...
 .br
 .B mail
 [
-.B \-v
-]
-[
-.B \-i
-]
-[
-.B \-n
+.B \-inv
 ]
 .B \-f
 [
@@ -44,16 +38,12 @@ name
 .br
 .B mail
 [
-.B \-v
+.B \-inv
 ]
 [
-.B \-i
-]
-[
-.B \-n
-]
 .B \-u
 user
+]
 .SH INTRODUCTION
 .I Mail
 is a intelligent mail processing system, which has
@@ -87,7 +77,13 @@ A subject may be specified on the command line by using the
 flag. (Only the first argument after the
 .B \-s
 flag is used as a subject; be careful to quote subjects
-containing spaces.)
+containing spaces.)  Lists of users to send carbon copies and
+blind carbon copies to may be specified using the
+.B \-c
+and
+.B \-b
+options, respectively.  The single argument following the
+flag is taken to be a comma-separated list of names.
 The section below, labeled
 .I "Replying to or originating mail,"
 describes some features of
@@ -158,7 +154,8 @@ While you are composing a message,
 .I mail
 treats lines beginning with the character `~' specially.
 For instance, typing ``~m'' (alone on a line) will place a copy
-of the current message into the response right shifting it by a tabstop.
+of the current message into the response right shifting it by a tabstop
+(see ``tabstr'' variable, below).
 Other escapes will set up subject fields, add and delete recipients
 to the message and allow you to escape to an editor to revise the
 message or to a shell to run some commands.  (These options
@@ -284,7 +281,7 @@ command.
 .B alias
 (\fBa\fR) With no arguments, prints out all currently-defined aliases.  With one
 argument, prints out that alias.  With more than one argument, creates
-an new or changes an on old alias.
+a new alias or changes an old one.
 .TP
 .B alternates
 (\fBalt\fR)
@@ -367,9 +364,9 @@ directory.
 (\fBf\fR) Takes a list of messages and prints their message headers.
 .TP
 .B headers
-(\fBh\fR) Lists the current range of headers, which is an 18 message group.  If
-a ``+'' argument is given, then the next 18 message group is printed, and if
-a ``\-'' argument is given, the previous 18 message group is printed.
+(\fBh\fR) Lists the current range of headers, which is an 18\-message group.  If
+a ``+'' argument is given, then the next 18\-message group is printed, and if
+a ``\-'' argument is given, the previous 18\-message group is printed.
 .TP
 .B help
 A synonym for ?
@@ -488,6 +485,8 @@ option.  Arguments are of the form
 ``option=value''
 (no space before or after =) or
 ``option.''
+Quotation marks may be placed around any part of the assignment statement to
+quote blanks or tabs, i.e. ``set tabstr="-> "''.
 .TP
 .B saveignore
 \fBSaveignore\fP is to \fBsave\fP what \fBignore\fP is to \fBprint\fP
@@ -775,8 +774,9 @@ Pathname of the program to use in the
 .B more
 command or when
 .I crt
-variable is set.  A default paginator is used if this option is
-not defined.
+variable is set.  The default paginator
+.I more(1)
+is used if this option is not defined.
 .TP
 SHELL
 Pathname of the shell to use in the
@@ -811,6 +811,11 @@ folder directory is found relative to your home directory.
 .B record
 If defined, gives the pathname of the file used to record all outgoing
 mail.  If not defined, then outgoing mail is not so saved.
+.TP
+.B tabstr
+String used by the ``~m'' tilde escape for tabbing messages, in place of
+the normal tab character (^I).  Be sure to quote the value if it contains
+spaces or tabs.
 .TP
 .B toplines
 If defined, gives the number of lines of a message to be printed out
@@ -850,3 +855,4 @@ is just a link to
 which can be confusing.
 .SH AUTHOR
 Kurt Shoens
+
