@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.6 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -630,25 +630,24 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			if (n = sb->sb_mb)
 				while (n->m_act)
 					n = n->m_act;
-			if (n && n->m_pkthdr.len < maxsize) {
+			if ((nn = n) && n->m_pkthdr.len < maxsize) {
 				int space = maxsize - n->m_pkthdr.len;
-				int eorseen = 0;
-				nn = n; 
-				for (;; n = n->m_next) {
-				 eorseen |= n->m_flags & M_EOR;
-					if (n->m_next == 0)
-						break;
-				}  
-				if (eorseen)
-					goto on1;
+
+				do {
+					if (n->m_flags & M_EOR)
+						goto on1;
+				} while (n->m_next && (n = n->m_next));
+				nn->m_pkthdr.len += space;
 				if (m->m_pkthdr.len <= space) {
 					n->m_next = m; 
+					sballoc(sb, m);
 					if (eotsdu)
 						nn->m_flags |= M_EOR; 
 					goto on2; 
 				} else {   
-					nn->m_next = m_copym(n, 0, space, M_WAIT);
-					m_adj(n, space);
+					nn->m_next = m_copym(m, 0, space, M_WAIT);
+					sballoc(sb, nn->m_next);
+					m_adj(m, space);
 				}
 			}	
 	on1:	len++;
