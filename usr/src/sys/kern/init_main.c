@@ -1,4 +1,4 @@
-/*	init_main.c	3.10	%G%	*/
+/*	init_main.c	3.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -170,14 +170,15 @@ iinit()
  * as arguments to the I/O routines to describe
  * I/O to be done-- e.g. swap headers swbuf[] for
  * swapping.
+ *
+ * These are actually allocated kernel map slots and space is
+ * allocated in locore.s for them.
  */
 char	buffers[NBUF][BSIZE];
 
 /*
  * Initialize the buffer I/O system by freeing
  * all buffers and setting all device buffer lists to empty.
- *
- * SHOULD USE MEMALL HERE!!!
  */
 binit()
 {
