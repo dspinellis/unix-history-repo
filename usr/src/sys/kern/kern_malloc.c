@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.26 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,6 +40,24 @@ long addrmask[] = { WEIRD_ADDR,
 	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
 	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
 };
+
+/*
+ * Normally the first word of the structure is used to hold the list
+ * pointer for free objects. However, when running with diagnostics,
+ * we use the third and fourth fields, so as to catch modifications
+ * in the most commonly trashed first two words.
+ */
+struct freelist {
+	long	spare0;
+	long	spare1;
+	short	type;
+	short	spare2;
+	caddr_t	next;
+};
+#else /* !DIAGNOSTIC */
+struct freelist {
+	caddr_t	next;
+};
 #endif /* DIAGNOSTIC */
 
 /*
@@ -52,6 +70,7 @@ malloc(size, type, flags)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
+	register struct freelist *freep;
 	long indx, npg, alloc, allocsize;
 	int s;
 	caddr_t va, cp, rp;
@@ -181,6 +200,7 @@ free(addr, type)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
+	register struct freelist *freep;
 	long size;
 	int s;
 #ifdef DIAGNOSTIC
@@ -241,26 +261,34 @@ free(addr, type)
 		splx(s);
 		return;
 	}
+	freep = (struct freelist *)addr;
 #ifdef DIAGNOSTIC
 	/*
 	 * Check for multiple frees. Use a quick check to see if
 	 * it looks free before laboriously searching the freelist.
 	 */
-	*(caddr_t *)addr = (char *)WEIRD_ADDR;
 	copysize = size < sizeof addrmask ? size : sizeof addrmask;
-	if (!bcmp(addrmask, addr, copysize)) {
-		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
-			if (addr == cp) {
-				printf("multiply freed item 0x%x\n", addr);
-				panic("free: duplicated free");
+	if (freep->spare0 == WEIRD_ADDR) {
+		freep->type = ((struct freelist *)addrmask)->type;
+		freep->next = ((struct freelist *)addrmask)->next;
+		if (!bcmp(addrmask, addr, copysize)) {
+			for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
+				if (addr == cp) {
+					printf("multiply freed item 0x%x\n",
+					    addr);
+					panic("free: duplicated free");
+				}
 			}
 		}
 	}
 	/*
 	 * Copy in known text to detect modification after freeing
-	 * and to make it look free.
+	 * and to make it look free. Also, save the type being freed
+	 * so we can list likely culprit if modification is detected
+	 * when the object is reallocated.
 	 */
 	bcopy(addrmask, addr, copysize);
+	freep->type = type;
 #endif /* DIAGNOSTIC */
 	if (size == 128) {
 		long *lp = (long *)addr;
