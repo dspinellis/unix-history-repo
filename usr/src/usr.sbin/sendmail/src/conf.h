@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.23 (Berkeley) %G%
+ *	@(#)conf.h	6.24 (Berkeley) %G%
  */
 
 /*
@@ -116,6 +116,17 @@
 **  primarily to provide back compatibility for older systems -- for
 **  example, it includes some POSIX compatibility definitions
 */
+
+/* System 5 compatibility */
+#ifndef S_ISREG
+#define S_ISREG(foo)	((foo & S_IFREG) == S_IFREG)
+#endif
+#ifndef S_IWGRP
+#define S_IWGRP		020
+#endif
+#ifndef S_IWOTH
+#define S_IWOTH		002
+#endif
 
 /*
 **  Older systems don't have this error code -- it should be in
