@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	4.3 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)quota.c	4.4 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -164,7 +164,7 @@ showquotas(uid, name)
 		}
 		if (vflag || dqblk.dqb_curblocks || dqblk.dqb_curinodes) {
 			heading(uid, name);
-			printf("%8s%8d%c%7d%8d%8s%8d%c%7d%8d%8s\n"
+			printf("%10s%8d%c%7d%8d%8s%8d%c%7d%8d%8s\n"
 				, fs->fs_file
 				, (dqblk.dqb_curblocks / btodb(1024)) 
 				, (msgb == (char *)0) ? ' ' : '*'
@@ -207,7 +207,7 @@ heading(uid, name)
 	putchar('\n');
 	xprintf("Disc quotas for %s (uid %d):", name, uid);
 	xprintf(0);
-	printf("%8s%8s %7s%8s%8s%8s %7s%8s%8s\n"
+	printf("%10s%8s %7s%8s%8s%8s %7s%8s%8s\n"
 		, "Filsys"
 		, "current"
 		, "quota"
