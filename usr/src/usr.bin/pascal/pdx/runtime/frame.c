@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)frame.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)frame.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -29,6 +29,7 @@ static char sccsid[] = "@(#)frame.c	5.1 (Berkeley) %G%";
 #include "mappings.h"
 #include "process/pxinfo.h"
 #include "frame.rep"
+#include "process/process.rep"
 
 /*
  * Return a pointer to the current activation record.

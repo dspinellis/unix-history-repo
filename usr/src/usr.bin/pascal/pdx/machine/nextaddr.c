@@ -5,8 +5,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nextaddr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nextaddr.c	5.2 (Berkeley) %G%";
 #endif not lint
+
 /*
  * Calculate the next address that will be executed from the current one.
  *
@@ -30,6 +31,12 @@ static char sccsid[] = "@(#)nextaddr.c	5.1 (Berkeley) %G%";
 #include "process/pxinfo.h"
 #include "process/process.rep"
 
+#ifdef tahoe
+#define EVEN 3
+#else
+#define EVEN 1
+#endif
+
 LOCAL ADDRESS docase(), dofor();
 
 ADDRESS nextaddr(beginaddr, isnext)
@@ -46,6 +53,9 @@ BOOLEAN isnext;
 	char byte[2];
     } o;
 
+#ifdef tahoe
+    doret(process);
+#endif
     addr = beginaddr;
     iread(&o.word, addr, sizeof(o.word));
     op = (PXOP) o.byte[0];
@@ -53,27 +63,29 @@ BOOLEAN isnext;
     addr += sizeof(short);
     switch(op) {
 
-#   if (isvaxpx)
     /*
-     * The version of px on the VAX assumes that the instruction
+     * The version of px we are using assumes that the instruction
      * at the entry point of a function is a TRA4 to the beginning
      * of the block.
      */
-#   endif
 	case O_CALL: {
 	    ADDRESS eaddr;
 
 	    if (isnext) {
 		addr += sizeof(int);
+#ifdef tahoe
+	        addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
+#endif
 	    } else {
-#               if (isvaxpx)
-		    iread(&eaddr, addr, sizeof(eaddr));
-		    addr = eaddr + sizeof(short);
-		    iread(&addr, addr, sizeof(addr));
-#               else
-		    iread(&offset, addr, sizeof(offset));
-		    addr += offset;
-#               endif
+#ifdef tahoe
+		addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
+#endif
+		iread(&eaddr, addr, sizeof(eaddr));
+		addr = eaddr + sizeof(short);
+#ifdef tahoe
+		addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
+#endif
+		iread(&addr, addr, sizeof(addr));
 		stepto(addr);
 		if (linelookup(addr) == 0) {
 		    bpact();
@@ -90,17 +102,22 @@ BOOLEAN isnext;
 	    break;
 	}
 
-#   if (isvaxpx)
 	case O_FCALL: {
 	    ADDRESS eaddr;
 	    ADDRESS *fparam;
 
 	    if (!isnext) {
 		stepto(addr - sizeof(short));
+#ifdef tahoe
+		doret(process);
+#endif
 		dread(&fparam, process->sp + sizeof(ADDRESS), sizeof(fparam));
 		dread(&eaddr, fparam, sizeof(eaddr));
 		addr = eaddr - ENDOFF;
 		stepto(addr);
+#ifdef tahoe
+		doret(process);
+#endif
 		if (linelookup(addr) == 0) {
 		    bpact();
 		    addr = pc;
@@ -115,7 +132,6 @@ BOOLEAN isnext;
 	    }
 	    break;
 	}
-#   endif
 
 	case O_END:
 	    if ((addr - sizeof(short)) == lastaddr()) {
@@ -135,12 +151,13 @@ BOOLEAN isnext;
 	    }
 	    break;
 
-#   if (isvaxpx)
 	case O_TRA4:
 	case O_GOTO:
+#ifdef tahoe
+	    addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
+#endif
 	    iread(&addr, addr, sizeof(addr));
 	    break;
-#   endif
 
 	case O_TRA:
 	    iread(&offset, addr, sizeof(offset));
@@ -151,6 +168,9 @@ BOOLEAN isnext;
 	    short consize;
 
 	    if (nextbyte == 0) {
+#ifdef tahoe
+	        addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
+#endif
 		iread(&consize, addr, sizeof(consize));
 		addr += sizeof(consize);
 	    } else {
@@ -198,7 +218,12 @@ BOOLEAN isnext;
 
 	case O_IF:
 	    stepto(addr - sizeof(short));
+#ifdef tahoe
+	    doret(process);
+	    dread(&offset, process->sp+sizeof(int)-sizeof(offset), sizeof(offset));
+#else
 	    dread(&offset, process->sp, sizeof(offset));
+#endif
 	    if (offset == 0) {
 		iread(&offset, addr, sizeof(offset));
 		addr += offset;
@@ -208,7 +233,6 @@ BOOLEAN isnext;
 	    break;
 
 	default: {
-#   if (isvaxpx)
 	    int i;
 
 	    for (i = 0; optab[op].argtype[i] != 0; i++) {
@@ -216,6 +240,9 @@ BOOLEAN isnext;
 		    case ADDR4:
 		    case LWORD:
 			addr += 4;
+#ifdef tahoe
+		        addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
+#endif
 			break;
 
 		    case SUBOP:
@@ -243,9 +270,7 @@ BOOLEAN isnext;
 			    addr++;
 			}
 			addr++;
-			if ((addr&1) != 0) {
-			    addr++;
-			}
+		        addr = (ADDRESS)(((int)addr + EVEN) & ~EVEN);
 			break;
 		    }
 
@@ -254,28 +279,6 @@ BOOLEAN isnext;
 			/*NOTREACHED*/
 		}
 	    }
-#   else
-	    int oplen;
-
-	    oplen = optab[op].nargs;
-	    if (oplen < 0) {
-		oplen = (-oplen) - 1;
-	    } else  if (oplen > 0 && nextbyte != 0) {
-		oplen--;
-	    }
-	    oplen *= sizeof(int);
-	    switch (op) {
-		case O_BEG:
-		case O_NODUMP:
-		    oplen += 10;
-		    break;
-
-		case O_CON:
-		    oplen += ((nextbyte + 1)&~1);
-		    break;
-	    }
-	    addr += oplen;
-#   endif
 	    break;
 	}
     }
@@ -298,21 +301,41 @@ ADDRESS addr;
     long swtval, caseval;
 
     stepto(addr - 2);
+#ifdef tahoe
+    doret(process);
+#endif
     if (ncases == 0) {
 	iread(&ncases, addr, sizeof(ncases));
 	addr += sizeof(short);
     }
     jmptable = addr;
     firstval = jmptable + ncases*sizeof(short);
+#ifdef tahoe
+    if (size == 4) {
+	firstval = (ADDRESS)(((int)firstval + EVEN) & ~EVEN);
+    }
+#endif
     lastval = firstval + ncases*size;
+#ifdef tahoe
+    if (size <= 4) {
+	dread(&swtval, process->sp, 4);
+#else
     if (size <= 2) {
 	dread(&swtval, process->sp, 2);
+#endif
     } else {
 	dread(&swtval, process->sp, size);
     }
     for (i = firstval; i < lastval; i += size) {
+	caseval = 0;
+#ifdef tahoe
+	iread((char *)&caseval + sizeof caseval - size, i, size);
+	if (swtval == caseval)
+#else
 	iread(&caseval, i, size);
-	if (cmp(&swtval, &caseval, size) == 0) {
+	if (cmp(&swtval, &caseval, size) == 0)
+#endif
+	{
 	    i = ((i - firstval) / size) * sizeof(offset);
 	    iread(&offset, jmptable + i, sizeof(offset));
 	    addr = jmptable + offset;
@@ -329,21 +352,27 @@ short subop;
 int incr;
 {
     register PROCESS *p;
-    long i, limit, lower;
+    long i, limit;
     ADDRESS valaddr;
-    short offset;
 
     stepto(addr - sizeof(short));
     p = process;
+#ifdef tahoe
+    doret(p);
+#endif
     i = limit = 0;
     if (subop == 0) {
-	addr += size;
+	dread(&subop, addr, sizeof (short));
+	addr += sizeof (short);
     }
     dread(&valaddr, p->sp, sizeof(valaddr));
+#ifdef tahoe
+    dread((char *)&i + sizeof i - size, valaddr, size);
+#else
     dread(&i, valaddr, size);
-    dread(&limit, p->sp + sizeof(valaddr), size);
-    i += (incr << (8*(sizeof(i) - size)));
-    addr += size;
+#endif
+    dread(&limit, p->sp + sizeof(valaddr), sizeof limit);
+    i += incr;
 
 /*
  * It is very slow to go through the loop again and again.
@@ -351,10 +380,9 @@ int incr;
  * should be skipped.
  */
     if ((incr > 0 && i < limit) || (incr < 0 && i > limit)) {
-	iread(&offset, addr, sizeof(offset));
-	return(addr + offset);
+	return(addr + subop);
     } else {
-	return(addr + sizeof(short));
+	return(addr);
     }
 }
 

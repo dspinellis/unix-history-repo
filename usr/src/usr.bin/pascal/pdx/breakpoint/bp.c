@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bp.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -68,9 +68,8 @@ NODE *cond;
 NODE *node;
 LINENO line;
 {
-	BPINFO *p;
 
-	p = newbp(addr, type, block, cond, node, line);
+	(void) newbp(addr, type, block, cond, node, line);
 }
 
 /*

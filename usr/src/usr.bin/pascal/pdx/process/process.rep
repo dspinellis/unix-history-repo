@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)process.rep	5.2 (Berkeley) %G%
+ *	@(#)process.rep	5.3 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,11 @@
 
 #ifdef vax
 #define NREG 12			/* maximum number of saved registers */
-#else
+#endif
+#ifdef tahoe
+#define	NREG 13
+#endif
+#ifdef mc68000
 #define NREG 14			/* maximum number of saved registers */
 #endif
 #define CSIZE 101		/* size of instruction cache */
@@ -38,7 +42,11 @@ typedef struct {
 struct process {
 	int pid;		/* process being traced */
 	WORD reg[NREG];		/* process's registers */
+#ifdef tahoe
+	WORD fp, sp, pc;	/* special registers */
+#else
 	WORD ap, fp, sp, pc;	/* special registers */
+#endif
 	WORD oreg[NREG];	/* registers when process last stopped */
 	WORD oap, ofp, osp, opc;/* special registers when process stopped */
 	int status;		/* either STOPPED or FINISHED */
@@ -65,3 +73,10 @@ unsetsigtraces();		/* don't catch any signals */
 
 typedef enum { PREAD, PWRITE } PIO_OP;
 typedef enum { TEXTSEG, DATASEG } PIO_SEG;
+
+/* macros for things that used to be functions */
+
+#define	iread(buf, addr, nbytes)	dread(buf, addr+ENDOFF, nbytes)
+#define	iwrite(buf, addr, nbytes)	dwrite(buf, addr+ENDOFF, nbytes)
+#define dread(buf, addr, nbytes)	drdwr(PREAD, buf, addr, nbytes)
+#define dwrite(buf, addr, nbytes)	drdwr(PWRITE, buf, addr, nbytes)

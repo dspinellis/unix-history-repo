@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runcont.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)runcont.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -57,19 +57,14 @@ arginit()
 {
     infile = NIL;
     outfile = NIL;
-#   if (isvaxpx)
-	argv[0] = mode;
-	argv[1] = objname;
-	if (option('t') && realname == NIL) {
-	    argc = 2;
-	} else {
-	    argv[2] = realname;
-	    argc = 3;
-	}
-#   else
-	argv[0] = objname;
-	argc = 1;
-#   endif
+    argv[0] = mode;
+    argv[1] = objname;
+    if (option('t') && realname == NIL) {
+	argc = 2;
+    } else {
+	argv[2] = realname;
+	argc = 3;
+    }
 }
 
 /*
@@ -159,7 +154,6 @@ typedef int INTFUNC();
 LOCAL INTFUNC *dbintr;
 LOCAL intr();
 
-#define succeeds    == TRUE
 #define fails       == FALSE
 
 cont()

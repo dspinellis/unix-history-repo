@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ptrace.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ptrace.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -23,11 +23,9 @@ static char sccsid[] = "@(#)ptrace.c	5.1 (Berkeley) %G%";
 #include "object.h"
 #include "process.rep"
 
-#   if (isvaxpx)
 #       include "pxinfo.h"
-#   endif
 
-#ifndef vax
+#ifdef mc68000
 #	define U_PAGE 0x2400
 #	define U_AR0  (14*sizeof(int))
 	LOCAL int ar0val = -1;
@@ -38,7 +36,7 @@ static char sccsid[] = "@(#)ptrace.c	5.1 (Berkeley) %G%";
  * in its user structure.  Very gross.
  */
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 #	define regloc(reg)     (ctob(UPAGES) + ( sizeof(int) * (reg) ))
 #else
 #	define regloc(reg)     (ar0val + ( sizeof(int) * (reg) ))
@@ -47,8 +45,6 @@ static char sccsid[] = "@(#)ptrace.c	5.1 (Berkeley) %G%";
 #define WMASK           (~(sizeof(WORD) - 1))
 #define cachehash(addr) ((unsigned) ((addr >> 2) % CSIZE))
 
-#define FIRSTSIG        SIGINT
-#define LASTSIG         SIGQUIT
 #define ischild(pid)    ((pid) == 0)
 #define traceme()       ptrace(0, 0, 0, 0)
 #define setrep(n)       (1 << ((n)-1))
@@ -92,6 +88,7 @@ char *outfile;
     if (p->pid != 0) {                  /* child already running? */
 	ptrace(PKILL, p->pid, 0, 0);    /* ... kill it! */
     }
+    INTFP = (ADDRESS)0;
     psigtrace(p, SIGTRAP, TRUE);
     if ((p->pid = fork()) == -1) {
 	panic("can't fork");
@@ -199,17 +196,12 @@ PROCESS *p;
 
 typedef int INTFUNC();
 
-LOCAL INTFUNC *sigfunc[NSIG];
+LOCAL INTFUNC *onintr, *onquit;
 
 LOCAL sigs_off()
 {
-    register int i;
-
-    for (i = FIRSTSIG; i < LASTSIG; i++) {
-	if (i != SIGKILL) {
-	    sigfunc[i] = signal(i, SIG_IGN);
-	}
-    }
+    onintr = signal(SIGINT, SIG_IGN);
+    onquit = signal(SIGQUIT, SIG_IGN);
 }
 
 /*
@@ -218,13 +210,8 @@ LOCAL sigs_off()
 
 LOCAL sigs_on()
 {
-    register int i;
-
-    for (i = FIRSTSIG; i < LASTSIG; i++) {
-	if (i != SIGKILL) {
-	    signal(i, sigfunc[i]);
-	}
-    }
+    (void) signal(SIGINT, onintr);
+    (void) signal(SIGQUIT, onquit);
 }
 
 /*
@@ -235,7 +222,13 @@ LOCAL sigs_on()
     LOCAL int rloc[] ={
 	R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
     };
-#else
+#endif
+#if tahoe
+    LOCAL int rloc[] ={
+	R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12,
+    };
+#endif
+#if mc68000
     LOCAL int rloc[] ={
 	R0, R1, R2, R3, R4, R5, R6, R7, AR0, AR1, AR2, AR3, AR4, AR5,
     };
@@ -257,7 +250,7 @@ register int status;
 	p->status = FINISHED;
 	return;
     }
-#ifndef vax
+#if !defined(vax) && !defined(tahoe)
     if (ar0val < 0){
 	ar0val = ptrace(UREAD, p->pid, U_AR0, 0);
 	ar0val -= U_PAGE;
@@ -267,12 +260,15 @@ register int status;
 	p->reg[i] = ptrace(UREAD, p->pid, regloc(rloc[i]), 0);
 	p->oreg[i] = p->reg[i];
     }
-#ifdef vax
+#if defined(vax) || defined(tahoe)
     p->fp = p->ofp = ptrace(UREAD, p->pid, regloc(FP), 0);
-    p->ap = p->oap = ptrace(UREAD, p->pid, regloc(AP), 0);
     p->sp = p->osp = ptrace(UREAD, p->pid, regloc(SP), 0);
     p->pc = p->opc = ptrace(UREAD, p->pid, regloc(PC), 0);
-#else
+#endif
+#ifdef vax
+    p->ap = p->oap = ptrace(UREAD, p->pid, regloc(AP), 0);
+#endif
+#ifdef mc68000
     p->fp = p->ofp = ptrace(UREAD, p->pid, regloc(AR6), 0);
     p->ap = p->oap = p->fp;
     p->sp = p->osp = ptrace(UREAD, p->pid, regloc(SP), 0);
@@ -298,24 +294,24 @@ register PROCESS *p;
 	    ptrace(UWRITE, p->pid, regloc(rloc[i]), r);
 	}
     }
-#if vax
+#if vax || tahoe
     if ((r = p->fp) != p->ofp) {
 	ptrace(UWRITE, p->pid, regloc(FP), r);
     }
-    if ((r = p->sp) != p->osp) {
-	ptrace(UWRITE, p->pid, regloc(SP), r);
-    }
+#endif
+#if vax
     if ((r = p->ap) != p->oap) {
 	ptrace(UWRITE, p->pid, regloc(AP), r);
     }
-#else
+#endif
+#if mc68000
     if ((r = p->fp) != p->ofp) {
 	ptrace(UWRITE, p->pid, regloc(AR6), r);
     }
+#endif
     if ((r = p->sp) != p->osp) {
 	ptrace(UWRITE, p->pid, regloc(SP), r);
     }
-#endif
     if ((r = p->pc) != p->opc) {
 	ptrace(UWRITE, p->pid, regloc(PC), r);
     }
@@ -347,7 +343,7 @@ char *buff;
 ADDRESS addr;
 int nbytes;
 {
-    register int i;
+    register int i, k;
     register ADDRESS newaddr;
     register char *cp;
     char *bufend;
@@ -381,11 +377,16 @@ int nbytes;
     bufend = cp + nbytes;
     while (cp < bufend) {
 	if (op == PREAD) {
-	    *((WORD *) cp) = fetch(p, seg, newaddr);
+	    w.pword = fetch(p, seg, newaddr);
+	    for (k = 0; k < sizeof(WORD); k++) {
+		*cp++ = w.pbyte[k];
+	    }
 	} else {
-	    store(p, seg, newaddr, *((WORD *) cp));
+	    for (k = 0; k < sizeof(WORD); k++) {
+		w.pbyte[k] = *cp++;
+	    }
+	    store(p, seg, newaddr, w.pword);
 	}
-	cp += sizeof(WORD);
 	newaddr += sizeof(WORD);
     }
     if (byteoff > 0) {
@@ -426,38 +427,22 @@ register int addr;
 
     switch (seg) {
 	case TEXTSEG:
-#           if (isvaxpx)
-		panic("tried to fetch from px i-space");
-		/* NOTREACHED */
-#           else
+	    panic("tried to fetch from px i-space");
+	    /* NOTREACHED */
+
+	case DATASEG:
+	    if (addr >= ENDOFF && addr < ENDOFF + objsize) {
 		wp = &p->word[cachehash(addr)];
 		if (addr == 0 || wp->addr != addr) {
-		    w = ptrace(IREAD, p->pid, addr, 0);
+		    w = ptrace(DREAD, p->pid, addr, 0);
 		    wp->addr = addr;
 		    wp->val = w;
 		} else {
 		    w = wp->val;
 		}
-		break;
-#           endif
-
-	case DATASEG:
-#           if (isvaxpx)
-		if (addr >= ENDOFF && addr < ENDOFF + objsize) {
-		    wp = &p->word[cachehash(addr)];
-		    if (addr == 0 || wp->addr != addr) {
-			w = ptrace(DREAD, p->pid, addr, 0);
-			wp->addr = addr;
-			wp->val = w;
-		    } else {
-			w = wp->val;
-		    }
-		} else {
-		    w = ptrace(DREAD, p->pid, addr, 0);
-		}
-#           else
+	    } else {
 		w = ptrace(DREAD, p->pid, addr, 0);
-#           endif
+	    }
 	    break;
 
 	default:
@@ -489,13 +474,11 @@ WORD data;
 	    break;
 
 	case DATASEG:
-#           if (isvaxpx)
-		if (addr >= ENDOFF && addr < ENDOFF + objsize) {
-		    wp = &p->word[cachehash(addr)];
-		    wp->addr = addr;
-		    wp->val = data;
-		}
-#           endif
+	    if (addr >= ENDOFF && addr < ENDOFF + objsize) {
+		wp = &p->word[cachehash(addr)];
+		wp->addr = addr;
+		wp->val = data;
+	    }
 	    ptrace(DWRITE, p->pid, addr, data);
 	    break;
 
@@ -534,3 +517,38 @@ int newfd;
 	close(newfd);
     }
 }
+
+#ifdef tahoe
+BOOLEAN didret;
+
+void
+chkret(p, status)
+PROCESS *p;
+int status;
+{
+	if (((status == (SIGILL << 8) | STOPPED) ||
+	    (status == (SIGTRAP << 8) | STOPPED))) {
+		didret = FALSE;
+	} else {
+		didret = TRUE;
+	}
+}
+
+void
+doret(p)
+PROCESS *p;
+{
+	register count = 0;
+
+	if (!didret) {
+	    do {
+		if (++count > 5) {
+		    panic("px would not return to interpreter");
+		}
+		p->pc = RETLOC;
+		pstep(p);
+	    } while(INTFP && p->fp != INTFP);
+	    didret = TRUE;
+	}
+}
+#endif

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setbp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setbp.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * Breakpoint/machine interface.
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)setbp.c	5.1 (Berkeley) %G%";
 #include "main.h"
 #include "pxops.h"
 #include "process/process.rep"
+#include "process/pxinfo.h"
 
 #define BP_OP		O_BPT		/* breakpoint trap */
 #define BP_ERRNO	SIGILL		/* signal received at a breakpoint */
@@ -48,7 +49,7 @@ LOCAL SAVELIST *savelist;
 setbp(addr)
 ADDRESS addr;
 {
-	short w;
+	unsigned char w;
 	short save;
 	register SAVELIST *newsave, *s;
 

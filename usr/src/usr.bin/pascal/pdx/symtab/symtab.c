@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)symtab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -197,7 +197,7 @@ print_alias(table, name)
 SYMTAB *table;
 char *name;
 {
-    SYM *s, *t;
+    SYM *s;
     SYM *first, *last;
 
     if (name != NIL) {

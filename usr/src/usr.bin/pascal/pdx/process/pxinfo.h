@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pxinfo.h	5.1 (Berkeley) %G%
+ *	@(#)pxinfo.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -21,6 +21,18 @@
  *	the address of the main interpreter loop
  */
 
+#ifdef tahoe
+typedef struct {
+	short trp_savemask;
+	short trp_removed;
+	int trp_oldfp;
+	ADDRESS *disp;
+	ADDRESS *dp;
+	ADDRESS objstart;
+	ADDRESS pcaddrp;
+	ADDRESS loopaddr;
+} TRAPARGS;
+#else
 typedef struct {
 	int nargs;
 	ADDRESS *disp;
@@ -29,6 +41,7 @@ typedef struct {
 	ADDRESS pcaddrp;
 	ADDRESS loopaddr;
 } TRAPARGS;
+#endif
 
 ADDRESS *DISPLAY;
 ADDRESS *DP;
@@ -36,3 +49,7 @@ ADDRESS ENDOFF;
 ADDRESS PCADDRP;
 ADDRESS LOOPADDR;
 ADDRESS *pcframe;
+#ifdef tahoe
+ADDRESS RETLOC;
+ADDRESS INTFP;
+#endif
