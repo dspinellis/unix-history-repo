@@ -35,6 +35,7 @@ vaxmba/mt.c		optional mu device-driver
 vaxuba/ad.c		optional ad device-driver
 vaxuba/ct.c		optional ct device-driver
 vaxuba/dh.c		optional dh device-driver
+vaxuba/dhu.c		optional dhu device-driver
 vaxuba/dmf.c		optional dmf device-driver
 vaxuba/dn.c		optional dn device-driver
 vaxuba/dz.c		optional dz device-driver
