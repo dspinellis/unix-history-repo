@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.22 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.23 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.22 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.23 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -496,7 +496,8 @@ reply(m, mci, e, timeout)
 	MCI *mci;
 	ENVELOPE *e;
 {
-	char *bufp = SmtpReplyBuffer;
+	register char *bufp;
+	register int r;
 	char junkbuf[MAXLINE];
 
 	if (mci->mci_out != NULL)
@@ -509,9 +510,8 @@ reply(m, mci, e, timeout)
 	**  Read the input line, being careful not to hang.
 	*/
 
-	for (;; bufp = junkbuf)
+	for (bufp = SmtpReplyBuffer;; bufp = junkbuf)
 	{
-		register int r;
 		register char *p;
 		extern time_t curtime();
 
@@ -560,12 +560,12 @@ reply(m, mci, e, timeout)
 		}
 		fixcrlf(bufp, TRUE);
 
-		if (e->e_xfp != NULL && strchr("45", SmtpReplyBuffer[0]) != NULL)
+		if (e->e_xfp != NULL && strchr("45", bufp[0]) != NULL)
 		{
 			/* serious error -- log the previous command */
-			if (bufp[0] != '\0')
-				fprintf(e->e_xfp, ">>> %s\n", bufp);
-			bufp[0] = '\0';
+			if (SmtpMsgBuffer[0] != '\0')
+				fprintf(e->e_xfp, ">>> %s\n", SmtpMsgBuffer);
+			SmtpMsgBuffer[0] = '\0';
 
 			/* now log the message as from the other side */
 			fprintf(e->e_xfp, "<<< %s\n", bufp);
@@ -576,31 +576,39 @@ reply(m, mci, e, timeout)
 			nmessage("%s", bufp);
 
 		/* if continuation is required, we can go on */
-		if (bufp[3] == '-' ||
-		    !(isascii(bufp[0]) && isdigit(bufp[0])))
+		if (bufp[3] == '-')
+			continue;
+
+		/* ignore improperly formated input */
+		if (!(isascii(bufp[0]) && isdigit(bufp[0])))
 			continue;
 
 		/* decode the reply code */
-		r = atoi(SmtpReplyBuffer);
+		r = atoi(bufp);
 
 		/* extra semantics: 0xx codes are "informational" */
-		if (r < 100)
-			continue;
-
-		/* save temporary failure messages for posterity */
-		if (SmtpReplyBuffer[0] == '4' && SmtpError[0] == '\0')
-			(void) strcpy(SmtpError, SmtpReplyBuffer);
-
-		/* reply code 421 is "Service Shutting Down" */
-		if (r == SMTPCLOSING && mci->mci_state != MCIS_SSD)
-		{
-			/* send the quit protocol */
-			mci->mci_state = MCIS_SSD;
-			smtpquit(m, mci, e);
-		}
-
-		return (r);
+		if (r >= 100)
+			break;
 	}
+
+	/*
+	**  Now look at SmtpReplyBuffer -- only care about the first
+	**  line of the response from here on out.
+	*/
+
+	/* save temporary failure messages for posterity */
+	if (SmtpReplyBuffer[0] == '4' && SmtpError[0] == '\0')
+		(void) strcpy(SmtpError, SmtpReplyBuffer);
+
+	/* reply code 421 is "Service Shutting Down" */
+	if (r == SMTPCLOSING && mci->mci_state != MCIS_SSD)
+	{
+		/* send the quit protocol */
+		mci->mci_state = MCIS_SSD;
+		smtpquit(m, mci, e);
+	}
+
+	return (r);
 }
 /*
 **  SMTPMESSAGE -- send message to server
