@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -193,11 +193,7 @@ static Shell    shells[] = {
 {
     "sh",
     TRUE, "set -", "set -v", "set -", 5,
-#if (defined(sun) && !defined(Sprite)) || defined(SYSV)
-    TRUE, "set -e", "set +e",
-#else
     FALSE, "echo \"%s\"\n", "sh -c '%s || exit 0'\n",
-#endif
     "v", "e",
 },
     /*
@@ -609,11 +605,8 @@ JobFinish (job, status)
 	/*
 	 * If it exited non-zero and either we're doing things our
 	 * way or we're not ignoring errors, the job is finished.
-	 * Similarly, if the shell died because of a signal (the
-	 * conditional on SIGCONT is to handle the mapping of Sprite
-	 * signal semantics whereby wait will return a signal
-	 * termination with SIGCONT being the signal to indicate that the
-	 * child has resumed), the job is also finished. In these
+	 * Similarly, if the shell died because of a signal
+	 * the job is also finished. In these
 	 * cases, finish out the job's output before printing the exit
 	 * status...
 	 */
@@ -2020,13 +2013,8 @@ Job_CatchChildren (block)
     while ((pid = wait3(&status, (block?0:WNOHANG)|WUNTRACED,
 			(struct rusage *)0)) > 0)
     {
-	if (DEBUG(JOB)) {
-#ifdef Sprite
-	    printf("Process %x exited or stopped.\n", pid);
-#else
+	if (DEBUG(JOB))
 	    printf("Process %d exited or stopped.\n", pid);
-#endif /* Sprite */
-	}
 	    
 
 	jnode = Lst_Find (jobs, (ClientData)pid, JobCmpPid);
@@ -2035,21 +2023,13 @@ Job_CatchChildren (block)
 	    if (WIFSIGNALED(status) && (status.w_termsig == SIGCONT)) {
 		jnode = Lst_Find(stoppedJobs, (ClientData)pid, JobCmpPid);
 		if (jnode == NILLNODE) {
-#ifdef Sprite
-		    Error("Resumed child (%x) not in table", pid);
-#else
 		    Error("Resumed child (%d) not in table", pid);
-#endif /* Sprite */
 		    continue;
 		}
 		job = (Job *)Lst_Datum(jnode);
 		(void)Lst_Remove(stoppedJobs, jnode);
 	    } else {
-#ifdef Sprite
-		Error ("Child (%x) not in table?", pid);
-#else
 		Error ("Child (%d) not in table?", pid);
-#endif /* Sprite */
 		continue;
 	    }
 	} else {
@@ -2189,11 +2169,7 @@ Job_Init (maxproc, maxlocal)
 {
     GNode         *begin;     /* node for commands to do at the very start */
 
-#ifdef Sprite
-    sprintf (tfile, "/tmp/make%05x", getpid());
-#else
     sprintf (tfile, "/tmp/make%05d", getpid());
-#endif /* Sprite */
 
     jobs =  	  Lst_Init (FALSE);
     stoppedJobs = Lst_Init(FALSE);

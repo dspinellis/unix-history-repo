@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -57,16 +57,13 @@ static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
  *	    	  	    	exiting.
  */
 
-#include    <stdio.h>
-#ifdef Sprite
-#include    <stdlib.h>
-#endif /* Sprite */
 #include    <sys/types.h>
 #include    <sys/signal.h>
 #include    <sys/stat.h>
-#include    <fcntl.h>
 #include    <sys/errno.h>
+#include    <fcntl.h>
 #include    <ctype.h>
+#include    <stdio.h>
 #include    "make.h"
 
 extern int errno;
