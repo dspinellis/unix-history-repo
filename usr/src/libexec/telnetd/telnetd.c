@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -188,6 +188,7 @@ telnet(f, p)
 	ioctl(p, FIONBIO, &on);
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGCHLD, cleanup);
+	setpgrp(0, 0);
 
 	/*
 	 * Request to do remote echo.
