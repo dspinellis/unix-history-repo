@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.8 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -70,7 +70,7 @@ time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
 struct	proc *aproc;
 
-#define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
+#define	DIV60(t)	((t + 30) / 60)    /* x/60 rounded */ 
 #define	TTYEQ		(tty == pr[i].w_tty)
 #define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
 
@@ -331,9 +331,9 @@ putline()
 
 	if (lflag) {
 		/* print CPU time for all processes & children */
-		prttime(DIV60(jobtime)," ");
+		prttime(jobtime," ");
 		/* print cpu time for interesting process */
-		prttime(DIV60(proctime)," ");
+		prttime(proctime," ");
 	}
 
 	/* what user is doing, either command tail or args */
