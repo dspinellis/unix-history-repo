@@ -25,11 +25,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
+# include	<machine/endian.h>
 # include	<sys/param.h>
-# include	<sys/types.h>
 # include	<stdio.h>
 # include	<ctype.h>
 # include	"strfile.h"
@@ -165,7 +165,7 @@ char	**av;
 		sp = fgets(string, 256, inf);
 		if (sp == NULL || sp[0] == dc && sp[1] == '\n') {
 			pos = ftell(inf);
-			length = pos - last_off - strlen(sp);
+			length = pos - last_off - (sp ? strlen(sp) : 0);
 			last_off = pos;
 			if (!length)
 				continue;
