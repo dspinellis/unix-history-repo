@@ -1,0 +1,3 @@
+RANLIB = echo
+INSTALL = cp
+CC = cc -cckr
