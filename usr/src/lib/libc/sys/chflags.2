@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.2	6.8 (Berkeley) %G%
+.\"	@(#)chflags.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 2
@@ -32,31 +32,31 @@ The flags specified are formed by
 .Em or Ns 'ing
 the following values
 .Pp
-.Bl -tag -width "SYS_IMMUTABLE" -compact -offset indent
-.It NODUMP
+.Bl -tag -width "SF_IMMUTABLE" -compact -offset indent
+.It UF_NODUMP
 Do not dump the file.
-.It USR_IMMUTABLE
+.It UF_IMMUTABLE
 The file may not be changed.
-.It USR_APPEND
+.It UF_APPEND
 The file may only be appended to.
 .\".It ARCHIVED
 .\"File is archived.
-.It SYS_IMMUTABLE
+.It SF_IMMUTABLE
 The file may not be changed.
-.It SYS_APPEND
+.It SF_APPEND
 The file may only be appended to.
 .El
 .Pp
 The
-.Dq USR_IMMUTABLE
+.Dq UF_IMMUTABLE
 and
-.Dq USR_APPEND
+.Dq UF_APPEND
 flags may be set or unset by either the owner of a file or the super-user.
 .Pp
 The
-.Dq SYS_IMMUTABLE
+.Dq SF_IMMUTABLE
 and
-.Dq SYS_APPEND
+.Dq SF_APPEND
 flags may only be set or unset by the super-user.
 They may be set at any time, but normally may only be unset when
 the system is in single-user mode.
