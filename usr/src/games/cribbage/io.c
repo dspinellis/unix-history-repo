@@ -79,17 +79,18 @@ WINDOW		*win;
 int		cardno;
 CARD		c;
 {
-	prcard(win, cardno * 2, cardno, c);
+	prcard(win, cardno * 2, cardno, c, FALSE);
 }
 
 /*
  * prcard:
  *	Print out a card on the window at the specified location
  */
-prcard(win, y, x, c)
+prcard(win, y, x, c, blank)
 WINDOW		*win;
 int		y, x;
 CARD		c;
+BOOLEAN		blank;
 {
 	if (c.rank == EMPTY)
 	    return;
@@ -98,10 +99,12 @@ CARD		c;
 	mvwaddstr(win, y + 2, x, "|     |");
 	mvwaddstr(win, y + 3, x, "|     |");
 	mvwaddstr(win, y + 4, x, "+-----+");
-	mvwaddch(win, y + 1, x + 1, rankchar[c.rank][0]);
-	waddch(win, suitchar[c.suit][0]);
-	mvwaddch(win, y + 3, x + 4, rankchar[c.rank][0]);
-	waddch(win, suitchar[c.suit][0]);
+	if (!blank) {
+		mvwaddch(win, y + 1, x + 1, rankchar[c.rank][0]);
+		waddch(win, suitchar[c.suit][0]);
+		mvwaddch(win, y + 3, x + 4, rankchar[c.rank][0]);
+		waddch(win, suitchar[c.suit][0]);
+	}
 }
 
 /*

@@ -278,7 +278,7 @@ BOOLEAN		mycrib;
 	register char	*prompt;
 	CARD		crd;
 
-	msg("It's %s crib...", (mycrib ? "my" : "your"));
+	prcrib(mycrib, TRUE);
 	prompt = (quiet ? "Discard --> " : "Discard a card --> ");
 	msg(prompt);
 	cdiscard(mycrib);			/* puts best discard at end */
@@ -324,7 +324,6 @@ int		pos;
 		msg("I get two for his heels.");
 		win = chkscr(&cscore,2 );
 	    }
-	    cardx = CRIB_X;
 	}
 	else {
 	    i = (rand() >> 4) % (CARDS - pos) + pos;
@@ -336,12 +335,28 @@ int		pos;
 		msg("You get two for his heels.");
 		win = chkscr(&pscore, 2);
 	    }
-	    cardx = 0;
 	}
 	makeknown(&turnover, 1);
-	mvaddstr(CRIB_Y, cardx + 1, "CRIB");
-	prcard(stdscr, CRIB_Y + 1, cardx, turnover);
+	prcrib(mycrib, FALSE);
 	return win;
+}
+
+/*
+ * prcrib:
+ *	Print out the turnover card with crib indicator
+ */
+prcrib(mycrib, blank)
+BOOLEAN		mycrib, blank;
+{
+	register int	cardx;
+
+	if (mycrib)
+	    cardx = CRIB_X;
+	else
+	    cardx = 0;
+
+	mvaddstr(CRIB_Y, cardx + 1, "CRIB");
+	prcard(stdscr, CRIB_Y + 1, cardx, turnover, blank);
 }
 
 /*
