@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.61 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -681,6 +681,10 @@ safefile(fn, uid, gid, uname, flags, mode, st)
 **		Same as fopen.
 */
 
+#ifndef O_ACCMODE
+# define O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
+#endif
+
 FILE *
 safefopen(fn, omode, cmode, sff)
 	char *fn;
@@ -789,10 +793,6 @@ fixcrlf(line, stripnl)
 **	on very loaded systems, we may run out of resources (inodes,
 **	whatever), so this tries to get around it.
 */
-
-#ifndef O_ACCMODE
-# define O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
-#endif
 
 struct omodes
 {
