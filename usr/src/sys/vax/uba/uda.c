@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.9 (Berkeley) %G%
+ *	@(#)uda.c	6.10 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -576,22 +576,8 @@ loop:
 		i = UBA_CANTWAIT;
 		break;
 	}
-	if ((i = ubasetup(um->um_ubanum, bp, i)) == 0) {
-		if(dp->b_qsize != 0){
-			return(0); /* When a command completes and */
-				   /* frees a bdp udstart will be called */
-		}
-		if ((mp = udgetcp(um)) == NULL){
-			return (0);
-		}
-		mp->mscp_opcode = M_OP_GTUNT;
-		mp->mscp_unit = ui->ui_slave;
-		*((long *)mp->mscp_dscptr) |= UDA_OWN|UDA_INT;
-		if (udaddr->udasa&UDA_ERR)
-			printf("Uda(%d) udasa (%x)\n",um->um_ctlr, udaddr->udasa&0xffff);
-		i = udaddr->udaip;      /* initiate polling */
-		return(1);              /* wait for interrupt */
-	}
+	if ((i = ubasetup(um->um_ubanum, bp, i)) == 0)
+		return(1);
 	if ((mp = udgetcp(um)) == NULL) {
 		ubarelse(um->um_ubanum,&i);
 		return(0);
