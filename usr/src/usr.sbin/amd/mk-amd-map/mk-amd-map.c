@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 1990 Jan-Simon Pendry
+ * Copyright (c) 1990, 1993 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry at Imperial College, London.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mk-amd-map.c	8.1 (Berkeley) %G%
+ *	@(#)mk-amd-map.c	5.6 (Berkeley) %G%
  *
  * $Id: mk-amd-map.c,v 5.2.2.1 1992/02/09 15:09:18 jsp beta $
  */
@@ -20,15 +20,15 @@
 
 #ifndef lint
 char copyright[] = "\
-@(#)Copyright (c) 1990 Jan-Simon Pendry\n\
+@(#)Copyright (c) 1990, 1993 Jan-Simon Pendry\n\
 @(#)Copyright (c) 1990 Imperial College of Science, Technology & Medicine\n\
-@(#)Copyright (c) 1990 The Regents of the University of California.\n\
-@(#)All rights reserved.\n";
+@(#)Copyright (c) 1990, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
 static char rcsid[] = "$Id: mk-amd-map.c,v 5.2.2.1 1992/02/09 15:09:18 jsp beta $";
-static char sccsid[] = "@(#)mk-amd-map.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mk-amd-map.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -41,7 +41,11 @@ static char sccsid[] = "@(#)mk-amd-map.c	8.1 (Berkeley) %G%";
 #define HAS_DATABASE
 #include <ndbm.h>
 
-#define create_database(name) dbm_open(name, O_RDWR|O_CREAT, 0444)
+#ifdef DBM_SUFFIX
+#define USING_DB
+#endif
+
+#define create_database(name) dbm_open(name, O_RDWR|O_CREAT, 0644)
 
 static int store_data(db, k, v)
 voidp db;
@@ -206,8 +210,12 @@ char *argv[];
 	int rc = 0;
 	DBM *mapd;
 	static char maptmp[] = "dbmXXXXXX";
-	char maptpag[16], maptdir[16];
-	char *mappag, *mapdir;
+	char maptpag[16];
+	char *mappag;
+#ifndef USING_DB
+	char maptdir[16];
+	char *mapdir;
+#endif
 	int len;
 	char *sl;
 	int printit = 0;
@@ -244,6 +252,20 @@ char *argv[];
 
 	if (!printit) {
 		len = strlen(map);
+#ifdef USING_DB
+		mappag = (char *) malloc(len + 5);
+		if (!mappag) {
+			perror("mk-amd-map: malloc");
+			exit(1);
+		}
+		mktemp(maptmp);
+		sprintf(maptpag, "%s%s", maptmp, DBM_SUFFIX);
+		if (remove_file(maptpag) < 0) {
+			fprintf(stderr, "Can't remove existing temporary file");
+			perror(maptpag);
+			exit(1);
+		}
+#else
 		mappag = (char *) malloc(len + 5);
 		mapdir = (char *) malloc(len + 5);
 		if (!mappag || !mapdir) {
@@ -258,6 +280,7 @@ char *argv[];
 			perror(maptdir);
 			exit(1);
 		}
+#endif
 	}
 
 	mapf =  fopen(map, "r");
@@ -272,6 +295,7 @@ char *argv[];
 
 	if (mapd || printit) {
 		int error = read_file(mapf, map, mapd);
+		dbm_close(mapd);
 		(void) fclose(mapf);
 		if (printit) {
 			if (error) {
@@ -283,6 +307,16 @@ char *argv[];
 				fprintf(stderr, "Error reading source file  %s\n", map);
 				rc = 1;
 			} else {
+#ifdef USING_DB
+				sprintf(mappag, "%s%s", map, DBM_SUFFIX);
+				if (rename(maptpag, mappag) < 0) {
+					fprintf(stderr, "Couldn't rename %s to ", maptpag);
+					perror(mappag);
+					/* Throw away the temporary map */
+					unlink(maptpag);
+					rc = 1;
+				}
+#else
 				sprintf(mappag, "%s.pag", map);
 				sprintf(mapdir, "%s.dir", map);
 				if (rename(maptpag, mappag) < 0) {
@@ -304,6 +338,7 @@ char *argv[];
 						map);
 					rc = 1;
 				}
+#endif
 			}
 		}
 	} else {
