@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.31 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.32 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -229,7 +229,7 @@ zzzcode( p, c ) register NODE *p; {
 		/* case constant <= 1 is handled by optim() in pass 1 */
 		/* case constant < 0x80000000 is handled in table */
 		switch( p->in.op ) {
-		/* case DIV: handled in hardops() */
+		/* case DIV: handled in optim2() */
 		case MOD:
 			if( p->in.left->in.op == REG &&
 			    p->in.left->tn.rval == resc->tn.rval )
@@ -341,9 +341,36 @@ zzzcode( p, c ) register NODE *p; {
 		return;
 		}
 
-	case 'Z':	/* complement mask for bit instr */
-		printf("$%ld", ~p->in.right->tn.lval);
+	case 'Z':	/* AND for CC with ICON -- lval is complemented */
+		{
+		register NODE *l, *r;
+
+		l = getlr( p, 'L' );
+		r = getlr( p, 'R' );
+		m = (1 << tlen(l) * SZCHAR) - 1;
+		r->tn.lval = ~r->tn.lval;
+		if( (l->in.type == CHAR || l->in.type == SHORT) &&
+		    (r->tn.lval & ~m) ) {
+			putstr("cvt");
+			prtype(l);
+			putstr("l\t");
+			adrput(l);
+			putchar(',');
+			adrput(resc);
+			putstr("\n\t");
+			resc->tn.type = INT;
+			l = resc;
+			}
+		else if( l->in.type == UCHAR || l->in.type == USHORT )
+			/* remove trash left over from complementing */
+			r->tn.lval &= m;
+		putstr("bit");
+		prtype(l);
+		printf("\t$%ld", r->tn.lval);
+		putchar(',');
+		adrput(l);
 		return;
+		}
 
 	case 'U':	/* 32 - n, for unsigned right shifts */
 		printf("$%d", 32 - p->in.right->tn.lval );
@@ -441,7 +468,7 @@ NODE *makearg( ty ) int ty; {
 	p->in.op = ICON;
 	p->in.type = INT;
 	p->tn.name = "";
-	p->tn.lval = tlen(ty);
+	p->tn.lval = szty(ty) * (SZINT/SZCHAR);
 	q->in.right = p;
 	p = talloc();
 	p->in.op = UNARY MUL;
@@ -484,7 +511,7 @@ sconv( p, forarg ) register NODE *p; {
 		}
 	if (r->in.op == ICON)
 		if (r->in.name[0] == '\0') {
-			if (r->tn.lval == 0) {
+			if (r->tn.lval == 0 && !forarg) {
 				putstr("clr");
 				prtype(l);
 				putchar('\t');
@@ -514,10 +541,19 @@ sconv( p, forarg ) register NODE *p; {
 					: (r->tn.lval <= 32767 ? SHORT
 					: (r->tn.lval <= 65535 ? USHORT
 					: INT))));
+			if (forarg && r->in.type == INT) {
+				putstr("pushl\t");
+				adrput(r);
+				goto cleanup;
+				}
 			}
 		else {
-			putstr("moval");
-			putchar('\t');
+			if (forarg && tlen(r) == SZINT/SZCHAR) {
+				putstr("pushl\t");
+				adrput(r);
+				goto cleanup;
+				}
+			putstr("moval\t");
 			acon(r);
 			putchar(',');
 			adrput(l);
@@ -597,6 +633,11 @@ sconv( p, forarg ) register NODE *p; {
 
 	if (!mixtypes(l,r)) {
 		if (tlen(l) == tlen(r)) {
+			if (forarg && tlen(l) == SZINT/SZCHAR) {
+				putstr("pushl\t");
+				adrput(r);
+				goto cleanup;
+				}
 			putstr("mov");
 #ifdef FORT
 			if (Oflag)
@@ -713,7 +754,7 @@ callreg(p) NODE *p; {
 base( p ) register NODE *p; {
 	register int o = p->in.op;
 
-	if( (o==ICON && p->in.name[0] != '\0')) return( 100 ); /* ie no base reg */
+	if( o==ICON && p->tn.name[0] != '\0' ) return( 100 ); /* ie no base reg */
 	if( o==REG ) return( p->tn.rval );
     if( (o==PLUS || o==MINUS) && p->in.left->in.op == REG && p->in.right->in.op==ICON)
 		return( p->in.left->tn.rval );
@@ -724,6 +765,7 @@ base( p ) register NODE *p; {
 	if( o==UNARY MUL && p->in.left->in.op==INCR && p->in.left->in.left->in.op==REG
 	  && (p->in.type==INT || p->in.type==UNSIGNED || ISPTR(p->in.type)) )
 		return( p->in.left->in.left->tn.rval + 0200*(1+2) );
+	if( o==NAME ) return( 100 + 0200*1 );
 	return( -1 );
 	}
 
@@ -762,6 +804,7 @@ makeor2( p, q, b, o) register NODE *p, *q; register int b, o; {
 		case ICON:
 		case REG:
 		case OREG:
+		case NAME:
 			t = q;
 			break;
 
@@ -1153,17 +1196,18 @@ optim2( p ) register NODE *p; {
 			l = p->in.left;
 			mask = (1 << tlen(l) * SZCHAR) - 1;
 			if( ISUNSIGNED(r->in.type) ) {
-				i = (r->tn.lval & mask);
-				if( i == mask ) {
+				i = (~r->tn.lval & mask);
+				if( i == 0 ) {
 					r->in.op = FREE;
 					ncopy(p, l);
 					l->in.op = FREE;
 					break;
 					}
-				else if( i == 0 )
+				else if( i == mask )
 					goto zero;
 				else
 					r->tn.lval = i;
+				break;
 				}
 			else if( r->tn.lval == mask &&
 				 tlen(l) < SZINT/SZCHAR ) {
@@ -1196,6 +1240,19 @@ optim2( p ) register NODE *p; {
 
 	case SCONV:
 		l = p->in.left;
+		if( (l->in.type == UCHAR || l->in.type == USHORT) &&
+		    (p->in.type == DOUBLE || p->in.type == FLOAT) ) {
+			/* we can convert to INT without loss of significance */
+			r = talloc();
+			*r = *p;
+			r->in.type = INT;
+			p->in.left = r;
+#if !defined(FORT) && !defined(SPRECC)
+			/* nothing to be 'gained' by a FLOAT conversion */
+			p->in.type = DOUBLE;
+#endif
+			return;
+			}
 #if defined(FORT) || defined(SPRECC)
 		if( p->in.type == FLOAT || p->in.type == DOUBLE ||
 		    l->in.type == FLOAT || l->in.type == DOUBLE )
@@ -1203,7 +1260,10 @@ optim2( p ) register NODE *p; {
 #else
 		if( mixtypes(p, l) ) return;
 #endif
-		if( l->in.op == PCONV || l->in.op == CALL || l->in.op == UNARY CALL )
+		if( l->in.op == PCONV )
+			return;
+		if( (l->in.op == CALL || l->in.op == UNARY CALL) &&
+		    l->in.type != INT && l->in.type != UNSIGNED )
 			return;
 
 		/* Only trust it to get it right if the size is the same */
@@ -1233,6 +1293,18 @@ optim2( p ) register NODE *p; {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
 			}
+		else if( (r->in.type == UCHAR || r->in.type == USHORT) &&
+			 (p->in.type == DOUBLE || p->in.type == FLOAT) ) {
+			/* we can convert to INT without loss of significance */
+			l = talloc();
+			l->in.op = SCONV;
+			l->in.rall = NOPREF;
+			l->in.left = r;
+			l->in.right = NULL;
+			l->in.type = INT;
+			p->in.right = r;
+			return;
+			}
 		break;
 
 	case ULE:
@@ -1251,6 +1323,21 @@ optim2( p ) register NODE *p; {
 	case LT:
 	case GE:
 	case GT:
+		if( p->in.left->in.op == SCONV &&
+		    p->in.right->in.op == SCONV ) {
+			l = p->in.left;
+			r = p->in.right;
+			if( l->in.type == DOUBLE &&
+			    l->in.left->in.type == FLOAT &&
+			    r->in.left->in.type == FLOAT ) {
+				/* nuke the conversions */
+				p->in.left = l->in.left;
+				p->in.right = r->in.left;
+				l->in.op = FREE;
+				r->in.op = FREE;
+				}
+			/* more? */
+			}
 		(void) degenerate(p);
 		break;
 
