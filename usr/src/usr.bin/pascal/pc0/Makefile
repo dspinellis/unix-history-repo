@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	pc0
 SRCDIR=	${.CURDIR}/../src
@@ -6,6 +6,7 @@ CFLAGS=	-I. -I${.CURDIR} -I${SRCDIR}
 .PATH:	${SRCDIR}
 BINDIR=	/usr/libexec/pascal
 NOMAN=	noman
+CLEANFILES+=main.c xmain.c
 
 GET = sccs -d${SRCDIR} get
 
