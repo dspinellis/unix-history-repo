@@ -342,7 +342,7 @@ waitfor()
 
 	pstat.w_status = 0;
 	do {
-		wpid = wait(&stat);
+		wpid = wait((int *)&stat);
 		if (wpid == pid) {
 			pstat = stat;
 			rpid = wpid;

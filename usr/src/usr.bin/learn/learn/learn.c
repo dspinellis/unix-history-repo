@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)learn.c	4.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)learn.c	4.6	(Berkeley)	%G%";
 #endif not lint
 
 #include <sys/signal.h>
@@ -29,11 +29,12 @@ int	skip;
 int	teed;
 int	total;
 
+extern void hangup(), intrpt();
+
 main(argc,argv)
 int argc;
 char *argv[];
 {
-	extern hangup(), intrpt();
 	extern char * getlogin(), *malloc();
 
 	speed = 0;
@@ -55,11 +56,13 @@ char *argv[];
 	wrapup(0);
 }
 
+void
 hangup()
 {
 	wrapup(1);
 }
 
+void
 intrpt()
 {
 	char response[20], *p;

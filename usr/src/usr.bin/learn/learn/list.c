@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)list.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)list.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -11,7 +11,7 @@ int istop;
 list(r)
 char *r;
 {
-	int stop(), intrpt();
+	void stop(), intrpt();
 	FILE *ft;
 	char s[100];
 
@@ -28,6 +28,7 @@ char *r;
 	signal(SIGINT, intrpt);
 }
 
+void
 stop()
 {
 	istop=0;

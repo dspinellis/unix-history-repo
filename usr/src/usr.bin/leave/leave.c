@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)leave.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)leave.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -80,7 +80,6 @@ main(argc, argv)
 	exit(0);
 }
 
-static
 doalarm(secs)
 	u_int secs;
 {
@@ -131,7 +130,6 @@ doalarm(secs)
 	exit(0);
 }
 
-static
 usage()
 {
 	fprintf(stderr, "usage: leave [[+]hhmm]\n");

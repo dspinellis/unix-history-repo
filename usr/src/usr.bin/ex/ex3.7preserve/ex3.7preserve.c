@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7preserve.c	7.16 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.17 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -74,7 +74,6 @@ struct 	header {
 #define	ignorl(a)	a
 #endif
 
-struct	passwd *getpwuid();
 off_t	lseek();
 FILE	*popen();
 

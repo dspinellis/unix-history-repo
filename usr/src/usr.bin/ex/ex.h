@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.11 (Berkeley) %G%
+ *	@(#)ex.h	7.12 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -344,7 +344,7 @@ var	line	*undadot;	/* If we saved all lines, dot reverts here */
 extern	int	(*Outchar)();
 extern	int	(*Pline)();
 extern	int	(*Put_char)();
-var	void	(*oldhup)();
+sig_t	oldhup;
 int	(*setlist())();
 int	(*setnorm())();
 int	(*setnorm())();
@@ -393,15 +393,15 @@ int	normchar();
 int	normline();
 int	numbline();
 var	void (*oldquit)();
-int	onhup();
-int	onintr();
-int	onsusp();
+void	onhup();
+void	onintr();
+void	onsusp();
 int	putch();
 int	shift();
 int	termchar();
 int	vfilter();
 #ifdef CBREAK
-int	vintr();
+void	vintr();
 #endif
 int	vputch();
 int	vshftop();

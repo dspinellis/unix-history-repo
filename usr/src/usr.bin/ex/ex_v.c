@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_v.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_v.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -56,7 +56,7 @@ static char *sccsid = "@(#)ex_v.c	7.9 (Berkeley) %G%";
  */
 
 jmp_buf venv;
-int	winch();
+void	winch();
 
 /*
  * Enter open mode
@@ -392,6 +392,7 @@ vok(atube)
 }
 
 #ifdef CBREAK
+void
 vintr()
 {
 	extern jmp_buf readbuf;
@@ -430,6 +431,7 @@ vsetsiz(size)
 }
 
 #ifdef	SIGWINCH
+void
 winch()
 {
 	vsave();

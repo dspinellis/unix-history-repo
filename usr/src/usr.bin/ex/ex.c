@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex.c	7.7.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex.c	7.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -100,7 +100,7 @@ main(ac, av)
 	bool ivis;
 	bool itag = 0;
 	bool fast = 0;
-	extern int onemt();
+	extern void onemt();
 #ifdef UNIX_SBRK
 	extern char *sbrk();
 #else
