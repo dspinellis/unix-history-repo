@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)preen.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)preen.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,7 +43,8 @@ struct disk {
 	int	pid;			/* If != 0, pid of proc working on */
 } *disks;
 
-int	nrun, ndisks, hotroot;
+int	nrun, ndisks;
+char	hotroot;
 
 checkfstab(preen, maxrun, docheck, chkit)
 	int preen, maxrun;
