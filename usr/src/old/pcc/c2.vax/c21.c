@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.7 %G%";
+static	char sccsid[] = "@(#)c21.c 4.8 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -12,7 +12,22 @@ static	char sccsid[] = "@(#)c21.c 4.7 %G%";
 #define NUSE 6
 int ioflag;
 int biti[NUSE] = {1,2,4,8,16,32};
-int bitsize[4] = {0,8,16,32}; /* index by type codes */
+int bitsize[] = {	/* index by type codes */
+	0,		/* not allocated */
+	8,		/* BYTE */
+	16,		/* WORD */
+	32,		/* LONG */
+	32,		/* FFLOAT /
+	64,		/* DFLOAT */
+	64,		/* GFLOAT */
+	128,		/* HFLOAT */
+	64,		/* QUAD */
+	128,		/* OCTA */
+	0,		/* OP2 */
+	0,		/* OP3 */
+	0,		/* OPB */
+	0		/* OPX */
+};
 int pos,siz; long f; /* for bit field communication */
 struct node *uses[NUSE]; /* for backwards flow analysis */
 char *lastrand; /* last operand of instruction */
@@ -999,8 +1014,34 @@ register char *s;
 	source(s); /* handle addressing side effects */
 	if ((i = isreg(s)) >= 0) {
 		*(short *)(regs[i]) = 0; /* if register destination, that reg is a goner */
-		if (DOUBLE==(type&0xF) || DOUBLE==((type>>4)&0xF))
-			*(short *)(regs[i+1]) = 0; /* clobber two at once */
+		switch(type & 0xF){
+		case DFLOAT:	/* clobber two at once */
+			/*FALLTHROUGH*/
+		case GFLOAT:
+			*(short *)(regs[i+1]) = 0;
+			break;
+		case HFLOAT:	/* clobber four at once */
+			*(short *)(regs[i+1]) = 0;
+			*(short *)(regs[i+2]) = 0;
+			*(short *)(regs[i+3]) = 0;
+			break;
+		}
+		switch((type>>4)&0xF){
+		case DFLOAT:	/* clobber two at once */
+			/*FALLTHROUGH*/
+		case GFLOAT:
+			*(short *)(regs[i+1]) = 0;
+			break;
+		case HFLOAT:	/* clobber four at once */
+			*(short *)(regs[i+1]) = 0;
+			*(short *)(regs[i+2]) = 0;
+			*(short *)(regs[i+3]) = 0;
+			break;
+		}
+		/*
+		if (DFLOAT==(type&0xF) || DFLOAT==((type>>4)&0xF))
+			*(short *)(regs[i+1]) = 0;
+		*/
 	}
 	for (i=NREG; --i>=0;)
 		if (regs[i][1]=='*' && equstr(s, regs[i]+2))
@@ -1029,9 +1070,9 @@ compat(have, want) {
 register int hsrc, hdst;
 if (0==(want &= 0xF)) return(1); /* anything satisfies a wildcard want */
 hsrc=have&0xF; if (0==(hdst=((have>>4)&0xF)) || hdst>=OP2) hdst=hsrc;
-if (want>=FLOAT) return(hdst==want && hsrc==want);
-	/* FLOAT, DOUBLE not compat: rounding */
-return(hsrc>=want && hdst>=want && hdst<FLOAT);
+if (want>=FFLOAT) return(hdst==want && hsrc==want);
+	/* FLOAT, DFLOAT not compat: rounding */
+return(hsrc>=want && hdst>=want && hdst<FFLOAT);
 }
 
 equtype(t1,t2) {return(compat(t1,t2) && compat(t2,t1));}
