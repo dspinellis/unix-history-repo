@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.7 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,9 @@
 #include "acct.h"
 #include "uio.h"
 #include "syslog.h"
+#include "ioctl.h"
+#include "termios.h"
+#include "tty.h"
 
 /*
  * Values associated with enabling and disabling accounting
@@ -117,33 +120,38 @@ acct()
 {
 	register struct rusage *ru;
 	struct vnode *vp;
-	struct timeval t;
-	int i;
+	struct timeval t, ut, st;
+	int i, s;
 	struct acct acctbuf;
 	register struct acct *ap = &acctbuf;
+	register struct proc *p = u.u_procp;
 
 	if ((vp = acctp) == NULL)
 		return;
-	bcopy(u.u_comm, ap->ac_comm, sizeof(ap->ac_comm));
+	bcopy(p->p_comm, ap->ac_comm, sizeof(ap->ac_comm));
 	ru = &u.u_ru;
-	ap->ac_utime = compress(ru->ru_utime.tv_sec, ru->ru_utime.tv_usec);
-	ap->ac_stime = compress(ru->ru_stime.tv_sec, ru->ru_stime.tv_usec);
+	s = splclock();
+	ut = p->p_utime;
+	st = p->p_stime;
 	t = time;
+	splx(s);
+	ap->ac_utime = compress(ut.tv_sec, ut.tv_usec);
+	ap->ac_stime = compress(st.tv_sec, st.tv_usec);
 	timevalsub(&t, &u.u_start);
 	ap->ac_etime = compress(t.tv_sec, t.tv_usec);
 	ap->ac_btime = u.u_start.tv_sec;
 	ap->ac_uid = u.u_procp->p_ruid;
 	ap->ac_gid = u.u_procp->p_rgid;
-	t = ru->ru_stime;
-	timevaladd(&t, &ru->ru_utime);
+	t = st;
+	timevaladd(&t, &ut);
 	if (i = t.tv_sec * hz + t.tv_usec / tick)
 		ap->ac_mem = (ru->ru_ixrss+ru->ru_idrss+ru->ru_isrss) / i;
 	else
 		ap->ac_mem = 0;
 	ap->ac_mem >>= CLSIZELOG2;
 	ap->ac_io = compress(ru->ru_inblock + ru->ru_oublock, (long)0);
-	if (u.u_ttyp)
-		ap->ac_tty = u.u_ttyd;
+	if (p->p_session->s_ttyp)
+		ap->ac_tty = p->p_session->s_ttyp->t_dev;
 	else
 		ap->ac_tty = NODEV;
 	ap->ac_flag = u.u_acflag;
