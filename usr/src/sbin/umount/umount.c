@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,6 +48,8 @@ char	*getmntname();
 #define	MNTTYPE 3
 
 int *typelist, *maketypelist();
+
+char *namelist[] = INITMOUNTNAMES;
 
 main(argc, argv)
 	int argc;
@@ -129,59 +131,30 @@ umountall(typelist)
 	char **typelist;
 {
 	register struct fstab *fs;
-	struct fstab *allocfsent();
+	char *cp;
 
-	if ((fs = getfsent()) == (struct fstab *)0)
-		return;
-	fs = allocfsent(fs);
-	umountall(typelist);
-	if (strcmp(fs->fs_file, "/") == 0) {
-		freefsent(fs);
-		return;
+	while (fs = getfsent()) {
+		if (badtype(fsnametotype(fs->fs_vfstype), typelist))
+			continue;
+		if (strcmp(fs->fs_file, "/") == 0)
+			continue;
+		if (strcmp(fs->fs_type, FSTAB_RW) &&
+		    strcmp(fs->fs_type, FSTAB_RO) &&
+		    strcmp(fs->fs_type, FSTAB_RQ))
+			continue;
+		cp = (char *)malloc((unsigned)strlen(fs->fs_file) + 1);
+		if (cp == NULL) {
+			fprintf(stderr, "Out of memory.\n");
+			exit(2);
+		}
+		strcpy(cp, fs->fs_file);
+		umountall(typelist);
+		break;
 	}
-	if (strcmp(fs->fs_type, FSTAB_RW) &&
-	    strcmp(fs->fs_type, FSTAB_RO) &&
-	    strcmp(fs->fs_type, FSTAB_RQ)) {
-		freefsent(fs);
-		return;
+	if (fs) {
+		(void) umountfs(cp, typelist);
+		free(cp);
 	}
-	(void) umountfs(fs->fs_file, typelist);
-	freefsent(fs);
-}
-
-struct fstab *
-allocfsent(fs)
-	register struct fstab *fs;
-{
-	register struct fstab *new;
-	register char *cp;
-
-	new = (struct fstab *)malloc((unsigned)sizeof (*fs));
-	cp = (char *)malloc((unsigned)strlen(fs->fs_file) + 1);
-	strcpy(cp, fs->fs_file);
-	new->fs_file = cp;
-	cp = (char *)malloc((unsigned)strlen(fs->fs_type) + 1);
-	strcpy(cp, fs->fs_type);
-	new->fs_type = cp;
-	cp = (char *)malloc((unsigned)strlen(fs->fs_spec) + 1);
-	strcpy(cp, fs->fs_spec);
-	new->fs_spec = cp;
-	new->fs_passno = fs->fs_passno;
-	new->fs_freq = fs->fs_freq;
-	return (new);
-}
-
-freefsent(fs)
-	register struct fstab *fs;
-{
-
-	if (fs->fs_file)
-		free(fs->fs_file);
-	if (fs->fs_spec)
-		free(fs->fs_spec);
-	if (fs->fs_type)
-		free(fs->fs_type);
-	free((char *)fs);
 }
 
 umountfs(name, typelist)
@@ -347,17 +320,21 @@ maketypelist(fslist)
 	for (i = 0; fslist; fslist = nextcp) {
 		if (nextcp = index(fslist, ','))
 			*nextcp++ = '\0';
-		if (strcmp(fslist, "ufs") == 0)
-			av[i++] = MOUNT_UFS;
-		else if (strcmp(fslist, "nfs") == 0)
-			av[i++] = MOUNT_NFS;
-		else if (strcmp(fslist, "mfs") == 0)
-			av[i++] = MOUNT_MFS;
-		else if (strcmp(fslist, "pc") == 0)
-			av[i++] = MOUNT_PC;
+		av[i++] = fsnametotype(fslist);
 	}
 	av[i++] = 0;
 	return(av);
+}
+
+fsnametotype(name)
+	char *name;
+{
+	char **cp;
+
+	for (cp = namelist; *cp; cp++)
+		if (strcmp(name, *cp) == 0)
+			return (cp - namelist);
+	return (MOUNT_NONE);
 }
 
 #ifdef	NFS
