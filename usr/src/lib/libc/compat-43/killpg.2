@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)killpg.2	6.5 (Berkeley) %G%
+.\"     @(#)killpg.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KILLPG 2
@@ -12,7 +12,7 @@
 .Nm killpg
 .Nd send signal to a process group
 .Sh SYNOPSIS
-.Fd #include <sys/signal.h>
+.Fd #include <signal.h>
 .Ft int
 .Fn killpg "pid_t pgrp" "int sig"
 .Sh DESCRIPTION
