@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_inode.c	7.3 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -134,7 +134,7 @@ loop:
 				for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 					if(mp->m_inodp == ip) {
 						dev = mp->m_dev;
-						fs = mp->m_bufp->b_un.b_fs;
+						fs = mp->m_fs;
 						ino = ROOTINO;
 						goto loop;
 					}
