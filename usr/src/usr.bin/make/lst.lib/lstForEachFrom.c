@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lstForEachFrom.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lstForEachFrom.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -61,9 +61,9 @@ Lst_ForEachFrom (l, ln, proc, d)
 	
 	next = tln->nextPtr;
 	
-	tln->useCount++;
+	(void) tln->useCount++;
 	result = (*proc) (tln->datum, d);
-	tln->useCount--;
+	(void) tln->useCount--;
 
 	/*
 	 * We're done with the traversal if
@@ -83,4 +83,3 @@ Lst_ForEachFrom (l, ln, proc, d)
     } while (!result && !LstIsEmpty(list) && !done);
     
 }
-
