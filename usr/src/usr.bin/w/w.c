@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -259,13 +259,13 @@ main(argc, argv)
 
 		/* Headers for rest of output */
 		if (lflag && prfrom)
-			printf("User     tty from           login@  idle   JCPU   PCPU  what\n");
+			printf("USER    TTY FROM            LOGIN@  IDLE   JCPU   PCPU  WHAT\n");
 		else if (lflag)
-			printf("User     tty       login@  idle   JCPU   PCPU  what\n");
+			printf("USER     TTY       LOGIN@  IDLE   JCPU   PCPU  WHAT\n");
 		else if (prfrom)
-			printf("User    tty from            idle  what\n");
+			printf("USER    TTY FROM            IDLE  WHAT\n");
 		else
-			printf("User    tty  idle  what\n");
+			printf("USER    TTY  IDLE  WHAT\n");
 		fflush(stdout);
 	}
 
@@ -370,7 +370,10 @@ putline()
 	}
 
 	if (prfrom) {
-		printf(" %-14.14s", utmp.ut_host);
+		if (*utmp.ut_host == '\0')
+			printf(" -             ");
+		else
+			printf(" %-14.14s", utmp.ut_host);
 		width -= 15;
 	}
 
@@ -435,13 +438,11 @@ prttime(tim, tail)
 {
 
 	if (tim >= 60) {
-		printf("%3d:", tim/60);
+		printf(" %2d:", tim/60);
 		tim %= 60;
 		printf("%02d", tim);
-	} else if (tim > 0)
+	} else if (tim >= 0)
 		printf("    %2d", tim);
-	else
-		printf("      ");
 	printf("%s", tail);
 }
 
@@ -466,7 +467,8 @@ prtat(time)
 	if (now - *time <= 18 * HR)
 		prttime(hr * 60 + p->tm_min, pm ? "pm" : "am");
 	else if (now - *time <= 7 * DAY)
-		printf(" %s%2d%s", weekday[p->tm_wday], hr, pm ? "pm" : "am");
+		printf(" %*s%d%s", hr < 10 ? 4 : 3, weekday[p->tm_wday], hr,
+		   pm ? "pm" : "am");
 	else
 		printf(" %2d%s%2d", p->tm_mday, month[p->tm_mon], p->tm_year);
 }
