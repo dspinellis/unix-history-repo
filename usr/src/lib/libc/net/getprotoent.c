@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getprotoent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getprotoent.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -21,8 +21,8 @@ static FILE *protof = NULL;
 static char line[BUFSIZ+1];
 static struct protoent proto;
 static char *proto_aliases[MAXALIASES];
-static int stayopen = 0;
 static char *any();
+int _proto_stayopen;
 
 setprotoent(f)
 	int f;
@@ -31,15 +31,16 @@ setprotoent(f)
 		protof = fopen(PROTODB, "r" );
 	else
 		rewind(protof);
-	stayopen |= f;
+	_proto_stayopen |= f;
 }
 
 endprotoent()
 {
-	if (protof && !stayopen) {
+	if (protof) {
 		fclose(protof);
 		protof = NULL;
 	}
+	_proto_stayopen = 0;
 }
 
 struct protoent *
