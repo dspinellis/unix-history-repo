@@ -6,14 +6,20 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gmon.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
+
+#include <unistd.h>
 
 #ifdef DEBUG
 #include <stdio.h>
 #endif
 
 #include "gmon.h"
+
+extern mcount() asm ("mcount");
+extern mcount2() asm ("mcount2");
+extern char *minbrk asm ("minbrk");
 
     /*
      *	froms is actually a bunch of unsigned shorts indexing tos
@@ -40,8 +46,6 @@ monstartup(lowpc, highpc)
 {
     int			monsize;
     char		*buffer;
-    char		*sbrk();
-    extern char		*minbrk;
 
 	/*
 	 *	round lowpc and highpc to multiples of the density we're using
@@ -123,32 +127,22 @@ _mcleanup()
     close( fd );
 }
 
-asm(".text");
-asm(".align 2");
-asm("#the beginning of mcount()");
-asm(".data");
-mcount()
-{
-	register char			*selfpc;	/* r11 => r5 */
-	register unsigned short		*frompcindex;	/* r10 => r4 */
-	register struct tostruct	*top;		/* r9  => r3 */
-	register struct tostruct	*prevtop;	/* r8  => r2 */
-	register long			toindex;	/* r7  => r1 */
+asm(".text; .globl mcount; mcount: pushl 16(fp); calls $1,mcount2; rsb");
 
-	/*
-	 *	find the return address for mcount,
-	 *	and the return address for mcount's caller.
-	 */
-	asm("	.text");		/* make sure we're in text space */
-	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
-	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
+mcount2(frompcindex, selfpc)
+	register unsigned short		*frompcindex;
+	register char			*selfpc;
+{
+	register struct tostruct	*top;
+	register struct tostruct	*prevtop;
+	register long			toindex;
+
 	/*
 	 *	check that we are profiling
 	 *	and that we aren't recursively invoked.
 	 */
-	if (profiling) {
-		goto out;
-	}
+	if (profiling)
+		return;
 	profiling++;
 	/*
 	 *	check that frompcindex is a reasonable pc value.
@@ -232,19 +226,14 @@ mcount()
 	}
 done:
 	profiling--;
-	/* and fall through */
-out:
-	asm("	rsb");
+	return;
 
 overflow:
 	profiling++; /* halt further profiling */
 #   define	TOLIMIT	"mcount: tos overflow\n"
 	write(2, TOLIMIT, sizeof(TOLIMIT) - 1);
-	goto out;
+	return;
 }
-asm(".text");
-asm("#the end of mcount()");
-asm(".data");
 
 /*VARARGS1*/
 monitor( lowpc , highpc , buf , bufsiz , nfunc )
@@ -288,7 +277,7 @@ moncontrol(mode)
     if (mode) {
 	/* start */
 	profil(sbuf + sizeof(struct phdr), ssiz - sizeof(struct phdr),
-		s_lowpc, s_scale);
+		(int)s_lowpc, s_scale);
 	profiling = 0;
     } else {
 	/* stop */
