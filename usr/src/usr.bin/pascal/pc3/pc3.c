@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.5 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.6 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -71,7 +71,7 @@ char	program[] = "pc";
 #include <stab.h>
 #include <pagsiz.h>
 #include <stat.h>
-#include "/usr/src/new/pc0/pstab.h"
+#include "pstab.h"
 #include "pc3.h"
 
 int	errors = 0;
