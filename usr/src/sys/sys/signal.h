@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.8 (Berkeley) %G%
+ *	@(#)signal.h	7.9 (Berkeley) %G%
  */
 
 #ifndef	NSIG
@@ -73,7 +73,7 @@ void	(*signal())();
 
 typedef unsigned int sigset_t;
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 int sigemptyset(sigset_t *);
 int sigfillset(sigset_t *);
 int sigaddset(sigset_t *, int);
@@ -187,7 +187,7 @@ struct	sigcontext {
 
 #endif /* KERNEL */
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 int kill(pid_t, int);
 int sigaction(int, const struct sigaction *, struct sigaction *);
 int sigprocmask(int, const sigset_t *, sigset_t *);

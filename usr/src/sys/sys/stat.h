@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.5 (Berkeley) %G%
+ *	@(#)stat.h	7.6 (Berkeley) %G%
  */
 
 struct stat
@@ -81,7 +81,7 @@ struct stat
 #define	S_ISSOCK(m)	((m & 0170000) == 0140000)	/* socket */
 #endif
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 mode_t umask(mode_t);
 int mkdir(const char *, mode_t);
 int mkfifo(const char *, mode_t);
