@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tempnam.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tempnam.c	4.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -63,5 +63,7 @@ tempnam(dir, pfx)
 	if (f = mktemp(name))
 		return(f);
 	(void)sprintf(name, "/tmp/%sXXXXXX", pfx ? "" : pfx);
-	return(mktemp(name));
+	if (!(f = mktemp(name)))
+		(void)free(name);
+	return(f);
 }
