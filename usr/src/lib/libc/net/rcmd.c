@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
-#include <sys/types.h>
+#include <ctype.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 
 #include <netinet/in.h>
@@ -154,19 +155,33 @@ ruserok(rhost, superuser, ruser, luser)
 	char *ruser, *luser;
 {
 	FILE *hostf;
-	char ahost[32];
+	char fhost[MAXHOSTNAMELEN];
+	char ahost[MAXHOSTNAMELEN];
 	int first = 1;
+	register char *sp, *p;
+	int baselen = -1;
 
+	sp = rhost;
+	p = fhost;
+	while (*sp) {
+		if (*sp == '.') {
+			if (baselen == -1)
+				baselen = sp - rhost;
+			*p++ = *sp++;
+		} else {
+			*p++ = isupper(*sp) ? tolower(*sp++) : *sp++;
+		}
+	}
+	*p = '\0';
 	hostf = superuser ? (FILE *)0 : fopen("/etc/hosts.equiv", "r");
 again:
 	if (hostf) {
 		while (fgets(ahost, sizeof (ahost), hostf)) {
-			register char *p;
 			char *user;
 
 			p = ahost;
 			while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
-				p++;
+				*p++ = isupper(*p) ? tolower(*p) : *p;
 			if (*p == ' ' || *p == '\t') {
 				*p++ = '\0';
 				while (*p == ' ' || *p == '\t')
@@ -177,7 +192,7 @@ again:
 			} else
 				user = p;
 			*p = '\0';
-			if (!strcmp(rhost, ahost) &&
+			if (_checkhost(fhost, ahost, baselen) &&
 			    !strcmp(ruser, *user ? user : luser)) {
 				(void) fclose(hostf);
 				return (0);
@@ -191,4 +206,36 @@ again:
 		goto again;
 	}
 	return (-1);
+}
+
+_checkhost(rhost, lhost, len)
+char *rhost, *lhost;
+int len;
+{
+	static char ldomain[MAXHOSTNAMELEN];
+	static char *domainp = NULL;
+	register char *cp;
+
+	if (len == -1)
+		return(!strcmp(rhost, lhost));
+	if (strncmp(rhost, lhost, len))
+		return(0);
+	if (!strcmp(rhost, lhost))
+		return(1);
+	if (*(lhost + len) != '\0')
+		return(0);
+	if (!domainp) {
+		if (gethostname(ldomain, sizeof(ldomain)) == -1) {
+			domainp = (char *)1;
+			return(0);
+		}
+		ldomain[MAXHOSTNAMELEN] = NULL;
+		domainp = index(ldomain, '.') + 1;
+		cp = domainp;
+		while (*cp)
+			*cp++ = isupper(*cp) ? tolower(*cp) : *cp;
+	}
+	if (domainp == (char *)1)
+		return(0);
+	return(!strcmp(domainp, rhost + len +1));
 }
