@@ -50,6 +50,8 @@
 **
 **	Maintained by IngVAX:eric (eric@berkeley, ucbvax!eric) --
 **		please mail changes to me.
+**
+**			@(#)sysexits.h	1.3	%G%
 */
 
 # define EX_OK		0	/* successful termination */
