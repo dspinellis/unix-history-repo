@@ -5,7 +5,7 @@
  * symbolic debugging information into the object file.
  */
 
-static char *sccsid ="@(#)stab.c	1.2 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.3 (Berkeley) %G%";
 
 #include "mfile1"
 
@@ -38,8 +38,7 @@ int stabLCSYM;
 /*
  * Flag for producing either sdb or dbx symbol information.
  */
-
-Boolean oldway = false;
+int oldway = false;
 
 /*
  * Generate debugging info for a parameter.
