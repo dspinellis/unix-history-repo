@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.7 83/10/28";
+static	char *sccsid = "@(#)dr_1.c	1.8 83/10/28";
 #endif
 
 #include "driver.h"
@@ -177,6 +177,9 @@ int key;
 		tocap = to;
 	fromstrength = menfrom * fromcap->specs->qual;
 	strengthto = mento * tocap->specs->qual;
+	/*
+	 * Don't have surprised crews fight at a disadvantage 
+	 *
 	if (key && !menfrom) {
 		if (fromcap == from)
 			menfrom = from->specs->crew1
@@ -186,6 +189,7 @@ int key;
 		fromstrength = -1;
 		strengthto *= 2;
 	}
+	*/
 	for (count = 0;
 	     (fromstrength < strengthto * 3 && strengthto < fromstrength * 3
 	      || fromstrength == -1) && count < 4;
@@ -261,9 +265,9 @@ resolve()
 	register struct ship *sp, *sq;
 
 	foreachship(sp) {
-		thwart = 2;
 		if (sp->file->dir == 0)
 			continue;
+		thwart = 2;
 		foreachship(sq)
 			if (sq->file->dir && meleeing(sp, sq) && meleeing(sq, sp))
 				(void) fightitout(sp, sq, 0);
