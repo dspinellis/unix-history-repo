@@ -1,4 +1,4 @@
-/*	if.c	6.2	83/09/27	*/
+/*	if.c	6.3	84/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -191,7 +191,7 @@ ifunit(name)
 			break;
 	if (*cp == '\0' || cp == name + IFNAMSIZ)
 		return ((struct ifnet *)0);
-	unit = *cp - '0', *cp = 0;
+	unit = *cp - '0';
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
 		if (bcmp(ifp->if_name, name, (unsigned)(cp - name)))
 			continue;
