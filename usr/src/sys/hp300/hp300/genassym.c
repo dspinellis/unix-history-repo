@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.13 (Berkeley) %G%
+ *	@(#)genassym.c	7.14 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -26,6 +26,9 @@
 #include <hp300/hp300/clockreg.h>
 #include <vm/vm.h>
 #include <hp300/hp300/pte.h>
+#ifdef USELEDS
+#include <hp300/hp300/led.h>
+#endif
 
 #include <errno.h>
 #include <stdio.h>
@@ -191,6 +194,14 @@ main()
 
 	/* HP-UX trace bit */
 	def("MDP_TRCB", ffs(MDP_HPUXTRACE) - 1);
+
+#ifdef USELEDS
+	/* LEDs */
+	def("LED_PULSE", LED_PULSE);
+	def("LED_DISK", LED_DISK);
+	def("LED_LANRCV", LED_LANRCV);
+	def("LED_LANXMT", LED_LANXMT);
+#endif
 
 	exit(0);
 }
