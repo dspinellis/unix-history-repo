@@ -1,4 +1,4 @@
-/*	sys_machdep.c	4.2	83/06/13	*/
+/*	sys_machdep.c	4.3	83/06/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -85,7 +85,7 @@ vdoualarm(arg)
 }
 #endif
 
-#ifndef NOCOMPAT
+#ifdef COMPAT
 /*
  * Note: these tables are sorted by
  * ioctl "code" (in ascending order).
