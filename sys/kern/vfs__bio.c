@@ -45,11 +45,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.10 1993/11/25 01:33:39 wollman Exp $
+ *	$Id: vfs__bio.c,v 1.11 1993/11/25 13:16:09 davidg Exp $
  */
 
 #include "param.h"
 #include "systm.h"
+#include "kernel.h"
 #include "proc.h"
 #include "vnode.h"
 #include "buf.h"
@@ -627,7 +628,6 @@ biodone(register struct buf *bp)
  *	The variable vfs_update_wakeup allows for internal syncs.
  */
 int vfs_update_wakeup;
-extern int hz;
 
 void
 vfs_update() {
