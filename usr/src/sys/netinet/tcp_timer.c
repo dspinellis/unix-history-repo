@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	6.9 (Berkeley) %G%
+ *	@(#)tcp_timer.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -107,9 +107,8 @@ tcp_canceltimers(tp)
 		tp->t_timer[i] = 0;
 }
 
-float	tcp_backoff[TCP_MAXRXTSHIFT] =
-    { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0, 32.0, 32.0 };
-int	tcpexprexmtbackoff = 0;
+int	tcp_backoff[TCP_MAXRXTSHIFT+1] =
+    { 1, 2, 4, 6, 8, 10, 15, 20, 30, 30, 30, 30, 30 };
 /*
  * TCP timer processing.
  */
@@ -118,6 +117,7 @@ tcp_timers(tp, timer)
 	register struct tcpcb *tp;
 	int timer;
 {
+	register int rexmt;
 
 	switch (timer) {
 
@@ -152,18 +152,13 @@ tcp_timers(tp, timer)
 		 */
 		if (tp->t_rxtshift > TCP_MAXRXTSHIFT / 3)
 			in_losing(tp->t_inpcb);
-		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-		    (int)tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-		if (tcpexprexmtbackoff) {
-			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			    tp->t_timer[TCPT_REXMT] << tp->t_rxtshift,
+		if (tp->t_srtt == 0)
+			rexmt = tcp_beta * TCPTV_SRTTDFLT;
+		else
+			rexmt = (int)(tcp_beta * tp->t_srtt);
+		rexmt *= tcp_backoff[tp->t_rxtshift - 1];
+		TCPT_RANGESET(tp->t_timer[TCPT_REXMT], rexmt,
 			    TCPTV_MIN, TCPTV_MAX);
-		} else {
-			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			    tp->t_timer[TCPT_REXMT] *
-			        tcp_backoff[tp->t_rxtshift - 1],
-			    TCPTV_MIN, TCPTV_MAX);
-		}
 		tp->snd_nxt = tp->snd_una;
 		/*
 		 * If timing a segment in this window,
