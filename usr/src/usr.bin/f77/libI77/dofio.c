@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.3";
+char id_dofio[] = "@(#)dofio.c	1.4";
  *
  * fortran format executer
  */
@@ -101,9 +101,13 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		radix = p->p1;
 		pc++;
 		break;
+	case B:					/*** NOT STANDARD FORTRAN ***/
+		if (external) cblank = curunit->ublnk;
+		else cblank = 0;		/* blank = 'NULL' */
+		pc++;
+		break;
 #endif
-	case BN:
-	case BZ:
+	case BNZ:
 		cblank = p->p1;
 		pc++;
 		break;
