@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -256,8 +256,7 @@ blk_inactive(vp)
 
 	if (vp->v_count > 0)
 		return (0);
-printf("blk_inactive: free dev 0x%x\n", vp->v_rdev);
-	return (ufs_inactive(vp));
+	return (irele(ip));
 }
 
 /*
