@@ -1,4 +1,4 @@
-/* in_cksum.c 1.2 81/10/16 */
+/* in_cksum.c 1.3 81/10/18 */
 
 #include <sys/types.h>
 #include "../bbnnet/net.h"
@@ -55,13 +55,16 @@ COUNT(CKSUM);
 		if (len == 0)
 			break;
 		for (;;) {
-			if (m == 0)
-				panic("cksum: out of data");
+			if (m == 0) {
+				printf("cksum: out of data");
+				goto done;
+			}
 			if (m->m_len)
 				break;
 			m = m->m_next;
 		}
 	}
+done:
 	return(~(sum + (sum >> 16)) & 0xffff);
 }
 
