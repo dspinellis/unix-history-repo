@@ -1,14 +1,14 @@
-# Copyright (c) 1985 Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1985, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sincos.s	5.4 (Berkeley) %G%
+#	@(#)sincos.s	8.1 (Berkeley) %G%
 #
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sincos.s	1.1 (Berkeley) 8/21/85; 5.4 (ucb.elefunt) %G%"
+.asciz	"@(#)sincos.s	1.1 (Berkeley) 8/21/85; 8.1 (ucb.elefunt) %G%"
 
 #  This is the implementation of Peter Tang's double precision  
 #  sine and cosine for the VAX using Bob Corbett's argument reduction.
