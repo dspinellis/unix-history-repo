@@ -1,4 +1,4 @@
-/*	route.c	4.8	82/05/11	*/
+/*	route.c	4.9	82/06/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -88,26 +88,30 @@ rtfree(rt)
  */
 rtrequest(req, new)
 	int req;
-	register struct rtentry *new;
+	struct rtentry *new;
 {
 	register struct rtentry *rt;
 	register struct mbuf *m, **mprev;
-	register int hash, (*match)();
 	register struct sockaddr *sa = &new->rt_dst;
 	register struct sockaddr *gate = &new->rt_gateway;
 	struct afhash h;
-	struct mbuf **oldmprev;
 	int af = sa->sa_family, doinghost, s, error = 0;
+	int hash, (*match)();
 
 COUNT(RTREQUEST);
 	if (af >= AF_MAX)
 		return (EAFNOSUPPORT);
 	(*afswitch[af].af_hash)(sa, &h);
-	hash = h.afh_hosthash;
-	mprev = &rthost[hash % RTHASHSIZ];
-	doinghost = 1;
+	doinghost = new->rt_flags & RTF_HOST;
+	if (doinghost) {
+		hash = h.afh_hosthash;
+		mprev = &rthost[hash % RTHASHSIZ];
+	} else {
+		hash = h.afh_nethash;
+		mprev = &rtnet[hash % RTHASHSIZ];
+	}
+	match = afswitch[af].af_netmatch;
 	s = splimp();
-again:
 	for (; m = *mprev; mprev = &m->m_next) {
 		rt = mtod(m, struct rtentry *);
 		if (rt->rt_hash != hash)
@@ -120,33 +124,16 @@ again:
 			    (*match)(&rt->rt_dst, sa) == 0)
 				continue;
 		}
-		/* require full match on deletions */
-		if (req == SIOCDELRT && !equal(&rt->rt_gateway, gate))
-			continue;
-		/* don't keep multiple identical entries */
-		if (req == SIOCADDRT && equal(&rt->rt_gateway, gate)) {
-			error = EEXIST;
-			goto bad;
-		}
-		break;
+		if (equal(&rt->rt_gateway, gate))
+			break;
 	}
-	if (m == 0 && doinghost) {
-		hash = h.afh_nethash;
-		oldmprev = mprev;
-		mprev = &rtnet[hash % RTHASHSIZ];
-		match = afswitch[af].af_netmatch;
-		doinghost = 0;
-		goto again;
-	}
-
-	if (m == 0 && req != SIOCADDRT) {
-		error = ESRCH;
-		goto bad;
-	}
-found:
 	switch (req) {
 
 	case SIOCDELRT:
+		if (m == 0) {
+			error = ESRCH;
+			goto bad;
+		}
 		rt->rt_flags &= ~RTF_UP;
 		if (rt->rt_refcnt > 0)	/* should we notify protocols? */
 			error = EBUSY;
@@ -155,33 +142,38 @@ found:
 		break;
 
 	case SIOCCHGRT:
+		if (m == 0) {
+			error = ESRCH;
+			goto bad;
+		}
 		rt->rt_flags = new->rt_flags;
-		if (rt->rt_refcnt > 0)
+		if (rt->rt_refcnt > 0) {
 			error = EBUSY;
-		else if (!equal(&rt->rt_gateway, gate))
-			goto newneighbor;
+			goto bad;
+		}
+		if (!equal(&rt->rt_gateway, gate))
+			goto changerouter;
 		break;
 
 	case SIOCADDRT:
+		if (m != 0) {
+			error = EEXIST;
+			goto bad;
+		}
 		m = m_get(M_DONTWAIT);
 		if (m == 0) {
 			error = ENOBUFS;
-			break;
+			goto bad;
 		}
 		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct rtentry);
 		rt = mtod(m, struct rtentry *);
 		*rt = *new;
-		if (new->rt_flags & RTF_HOST) {
-			rt->rt_hash = h.afh_hosthash;
-			*oldmprev = m;
-		} else {
-			rt->rt_hash = h.afh_nethash;
-			*mprev = m;
-		}
+		rt->rt_hash = hash;
+		*mprev = m;
 		rt->rt_use = 0;
 		rt->rt_refcnt = 0;
-newneighbor:
+changerouter:
 		rt->rt_ifp = if_ifwithnet(gate);
 		if (rt->rt_ifp == 0)
 			rt->rt_flags &= ~RTF_UP;
