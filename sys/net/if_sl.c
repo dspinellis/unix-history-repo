@@ -72,13 +72,14 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Header: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.1.1.1 1993/06/12 14:57:51 rgrimes Exp $ */
+/* $Header: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.2 1993/08/31 15:44:45 rgrimes Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
 #if NSL > 0
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "mbuf.h"
 #include "buf.h"
@@ -375,9 +376,10 @@ sloutput(ifp, m, dst)
 		m_freem(m);
 		return (ENETDOWN);	/* sort of */
 	}
-	if ((sc->sc_ttyp->t_state & (TS_CARR_ON | CLOCAL)) == 0) {
+	if (((sc->sc_ttyp->t_state & TS_CARR_ON) == 0)
+	    && ((sc->sc_ttyp->t_cflag & CLOCAL) == 0)) {
 		m_freem(m);
-		return (EHOSTUNREACH);
+		return (ENETDOWN);
 	}
 	ifq = &sc->sc_if.if_snd;
 	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
@@ -451,7 +453,7 @@ slstart(tp)
 		 * of RBSZ in tty.h also has to be upped to be at least
 		 * SLMTU*2.
 		 */
-		if (RBSZ - RB_LEN(&tp->t_out) < 2 * SLMTU + 2)
+		if (min(RBSZ, 4 * SLMTU + 4) - RB_LEN(&tp->t_out) < 2 * SLMTU + 2)
 			return;
 
 		/*
@@ -650,7 +652,8 @@ slinput(c, tp)
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
-	if (c & TTY_ERRORMASK || (tp->t_state & (TS_CARR_ON | CLOCAL)) == 0) {
+	if ((c & TTY_ERRORMASK) || (((tp->t_state & TS_CARR_ON) == 0)
+	    && ((tp->t_cflag & CLOCAL) == 0))) {
 		/* XXX */
 		sc->sc_flags |= SC_ERROR;
 		return;
