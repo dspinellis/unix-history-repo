@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)vm_machdep.c	5.5 (Berkeley) %G%
+ *	@(#)vm_machdep.c	5.6 (Berkeley) %G%
  */
 
 /*
@@ -29,11 +29,10 @@
  *	@(#)vm_machdep.c	7.1 (Berkeley) 6/5/86
  */
 
-#include "pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "cmap.h"
@@ -75,8 +74,7 @@ chksize(ts, ids, uds, ss)
 	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ss) > u.u_rlimit[RLIMIT_STACK].rlim_cur) {
-		u.u_error = ENOMEM;
-		return (1);
+		return (ENOMEM);
 	}
 	return (0);
 }
@@ -92,7 +90,7 @@ newptes(pte, v, size)
 #ifdef lint
 	pte = pte;
 #endif
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
@@ -110,22 +108,19 @@ chgprot(addr, tprot)
 	register struct cmap *c;
 
 	v = clbase(btop(addr));
-	if (!isatsv(u.u_procp, v)) {
-		u.u_error = EFAULT;
-		return (0);
-	}
+	if (!isatsv(u.u_procp, v))
+		return (EFAULT);
 	tp = vtotp(u.u_procp, v);
 	pte = tptopte(u.u_procp, tp);
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
-		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mount[c->c_mdev].m_dev,
-			    (daddr_t)(u_long)c->c_blkno);
+		if (c->c_blkno)
+			munhash(c->c_vp, (daddr_t)(u_long)c->c_blkno);
 	}
 	*(u_int *)pte &= ~PG_PROT;
 	*(u_int *)pte |= tprot;
-	load_cr3(u.u_pcb.pcb_ptd);
-	return (1);
+	load_cr3(u.u_pcb.pcb_cr3);
+	return (0);
 }
 
 settprot(tprot)
@@ -138,7 +133,7 @@ settprot(tprot)
 		ptaddr[i] &= ~PG_PROT;
 		ptaddr[i] |= tprot;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
@@ -171,7 +166,7 @@ setptlr(region, nlen)
 		*(u_int *)pte++ = 0;
 	} while (--change);
 	/* short cut newptes */
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
@@ -192,7 +187,7 @@ physaccess(pte, paddr, size, prot)
 		page += NBPG;
 		pte++;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
@@ -208,8 +203,8 @@ pagemove(from, to, size)
 
 	if (size % CLBYTES)
 		panic("pagemove");
-	fpte = &Sysmap[btop(from-0xfe000000)];
-	tpte = &Sysmap[btop(to-0xfe000000)];
+	fpte = &Sysmap[btop(from -0xfe000000)];
+	tpte = &Sysmap[btop(to -0xfe000000)];
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
@@ -217,7 +212,7 @@ pagemove(from, to, size)
 		to += NBPG;
 		size -= NBPG;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
@@ -338,7 +333,6 @@ initcr3(p)
 	register struct proc *p;
 {
 	return(ctob(Usrptmap[btokmx(p->p_p0br+p->p_szpt*NPTEPG)].pg_pfnum));
-	/*return((int)Usrptmap[btokmx(p->p_p0br) + p->p_szpt].pg_pfnum);*/
 }
 
 /*
@@ -356,7 +350,7 @@ initpdt(p)
 
 	/* clear entire map */
 	pde = vtopde(p, 0);
-	/*bzero(pde, NBPG); */
+	/*bzero(pde, NBPG);*/
 	/* map kernel */
 	pde = vtopde(p, &Sysbase);
 	for (i = 0; i < 5; i++, pde++) {
@@ -367,6 +361,8 @@ initpdt(p)
 	pde = vtopde(p, &u);
 	*(int *)pde = PG_UW | PG_V;
 	pde->pd_pfnum = Usrptmap[btokmx(p->p_addr)].pg_pfnum;
+/*printf("%d.u. pde %x pfnum %x virt %x\n", p->p_pid, pde, pde->pd_pfnum,
+p->p_addr);*/
 
 	/* otherwise, fill in user map */
 	k = btokmx(p->p_p0br);
@@ -375,9 +371,11 @@ initpdt(p)
 
 	/* text and data */
 	sz = ctopt(p->p_tsize + p->p_dsize);
+/*dprintf(DEXPAND,"textdata 0 to %d\n",sz-1);*/
 	for (i = 0; i < sz; i++, pde++) {
 		*(int *)pde = PG_UW | PG_V;
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
+/*dprintf(DEXPAND,"%d.pde %x pf %x\n", p->p_pid, pde, *(int *)pde);*/
 	}
 	/*
 	 * Bogus!  The kernelmap may map unused PT pages
@@ -390,13 +388,21 @@ initpdt(p)
 		k += p->p_szpt - sz;
 	/* hole */
 	sz = NPTEPG - ctopt(p->p_ssize + UPAGES + btoc(&Sysbase));
+/*dprintf(DEXPAND,"zero %d upto %d\n", i, sz-1);*/
 	for ( ; i < sz; i++, pde++)
+/* definite bug here... does not hit all entries, but point moot due
+to bzero above XXX*/
+{
 		*(int *)pde = 0;
+/*pg("pde %x pf %x", pde, *(int *)pde);*/
+}
 	/* stack and u-area */
 	sz = NPTEPG - ctopt(UPAGES + btoc(&Sysbase));
+/*dprintf(DEXPAND,"stack %d upto %d\n", i, sz-1);*/
 	for ( ; i < sz; i++, pde++) {
 		*(int *)pde = PG_UW | PG_V;
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
+/*pg("pde %x pf %x", pde, *(int *)pde);*/
 	}
 	return(initcr3(p));
 }
@@ -476,6 +482,7 @@ vmapbuf(bp)
 		pte = &Usrptmap[btokmx((struct pte *)addr)];
 	else
 		pte = vtopte(p, btop(addr));
+
 	/*
 	 * Allocate some kernel PTEs and load them
 	 */
@@ -488,19 +495,19 @@ vmapbuf(bp)
 	}
 	splx(s);
 	iopte = &Usriomap[a];
+	bp->b_saveaddr = bp->b_un.b_addr;
 	addr = bp->b_un.b_addr = (caddr_t)(usrio + (a << PGSHIFT)) + off;
-	a = btop(addr);
 	while (npf--) {
-		mapin(iopte, a, pte->pg_pfnum, PG_V);
+		mapin(iopte, (u_int)addr, pte->pg_pfnum, PG_KW|PG_V);
 		iopte++, pte++;
-		a++;
+		addr += NBPG;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
  * Free the io map PTEs associated with this IO operation.
- * We also invalidate the TLB entries.
+ * We also invalidate the TLB entries and restore the original b_addr.
  */
 vunmapbuf(bp)
 	register struct buf *bp;
@@ -527,13 +534,7 @@ vunmapbuf(bp)
 		addr += NBPG;
 		pte++;
 	}
-	/*
-	 * If we just completed a dirty page push, we must reconstruct
-	 * the original b_addr since cleanup() needs it.
-	 */
-	if (bp->b_flags & B_DIRTY) {
-		a = ((bp - swbuf) * CLSIZE) * KLMAX;
-		bp->b_un.b_addr = (caddr_t)ctob(dptov(&proc[2], a));
-	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	load_cr3(u.u_pcb.pcb_cr3);
+	bp->b_un.b_addr = bp->b_saveaddr;
+	bp->b_saveaddr = NULL;
 }
