@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.3 (Berkeley) %G%
+ *	@(#)pmap.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -58,7 +58,6 @@ typedef struct pv_entry {
 	struct pv_entry	*pv_next;	/* next pv_entry */
 	struct pmap	*pv_pmap;	/* pmap where mapping lies */
 	vm_offset_t	pv_va;		/* virtual address for mapping */
-	int		pv_flags;	/* flags */
 } *pv_entry_t;
 
 pv_entry_t	pv_table;	/* array of entries, one per page */
@@ -137,7 +136,6 @@ pmap_bootstrap(firstaddr)
 {
 	register int i;
 	vm_offset_t start = firstaddr;
-	vm_offset_t pa;
 	extern int maxmem, physmem;
 
 	/*
@@ -160,17 +158,15 @@ pmap_bootstrap(firstaddr)
 	 * Allocate an empty TLB hash table for initial pmap's.
 	 */
 	zero_pmap_hash = (pmap_hash_t)MACH_PHYS_TO_CACHED(firstaddr);
-	pa = firstaddr;
-	firstaddr += PMAP_HASH_UPAGES * NBPG;
  
 	/* init proc[0]'s pmap hash table */
 	for (i = 0; i < PMAP_HASH_UPAGES; i++) {
-		kernel_pmap_store.pm_hash_ptes[i] = pa | PG_V | PG_RO;
+		kernel_pmap_store.pm_hash_ptes[i] = firstaddr | PG_V | PG_RO;
 		MachTLBWriteIndexed(i + UPAGES,
 			(PMAP_HASH_UADDR + (i << PGSHIFT)) |
 				(1 << VMMACH_TLB_PID_SHIFT),
 			kernel_pmap_store.pm_hash_ptes[i]);
-		pa += NBPG;
+		firstaddr += NBPG;
 	}
 
 	/*
@@ -200,8 +196,8 @@ pmap_bootstrap(firstaddr)
 	pmaxpagesperpage = 1;
 
 	cur_pmap = &kernel_pmap_store;
-	simple_lock_init(&kernel_pmap->pm_lock);
-	kernel_pmap->pm_count = 1;
+	simple_lock_init(&kernel_pmap_store.pm_lock);
+	kernel_pmap_store.pm_count = 1;
 }
 
 /*
@@ -333,7 +329,8 @@ pmap_pinit(pmap)
 	pmap->pm_hash = zero_pmap_hash;
 	for (i = 0; i < PMAP_HASH_UPAGES; i++)
 		pmap->pm_hash_ptes[i] =
-			((u_int)zero_pmap_hash + (i << PGSHIFT)) | PG_V | PG_RO;
+			(MACH_CACHED_TO_PHYS(zero_pmap_hash) + (i << PGSHIFT)) |
+				PG_V | PG_RO;
 	if (pmap == &vmspace0.vm_pmap)
 		pmap->pm_tlbpid = 1;	/* preallocated in mach_init() */
 	else
@@ -733,9 +730,10 @@ pmap_enter(pmap, va, pa, prot, wired)
 		panic("pmap_enter: pmap");
 	if (pmap->pm_tlbpid < 0)
 		panic("pmap_enter: tlbpid");
-	if (pmap == kernel_pmap) {
+	if (!pmap->pm_hash) {
 		enter_stats.kernel++;
-		if ((va & 0xE0000000) != 0xC0000000)
+		if (va < VM_MIN_KERNEL_ADDRESS ||
+		    va >= VM_MIN_KERNEL_ADDRESS + PMAP_HASH_KPAGES*NPTEPG*NBPG)
 			panic("pmap_enter: kva");
 	} else {
 		enter_stats.user++;
@@ -774,10 +772,6 @@ pmap_enter(pmap, va, pa, prot, wired)
 		 * Map in new TLB cache if it is current.
 		 */
 		if (pmap == cur_pmap) {
-#ifdef DIAGNOSTIC
-			if (pmap->pm_tlbpid < 0)
-				panic("pmap_enter: tlbpid");
-#endif
 			for (i = 0; i < PMAP_HASH_UPAGES; i++) {
 				MachTLBWriteIndexed(i + UPAGES,
 					(PMAP_HASH_UADDR + (i << PGSHIFT)) |
@@ -846,7 +840,6 @@ pmap_enter(pmap, va, pa, prot, wired)
 			pv->pv_va = va;
 			pv->pv_pmap = pmap;
 			pv->pv_next = NULL;
-			pv->pv_flags = 0;
 		} else {
 			/*
 			 * There is at least one other VA mapping this page.
@@ -935,10 +928,16 @@ pmap_enter(pmap, va, pa, prot, wired)
 				pmap->pm_stats.resident_count++;
 				MachTLBWriteRandom(va, npte);
 			} else {
+#ifdef DIAGNOSTIC
+				if (pte->pt_entry & PG_WIRED)
+					panic("pmap_enter: kernel wired");
+#endif
 				/*
 				 * Update the same virtual address entry.
 				 */
 				MachTLBUpdate(va, npte);
+				printf("TLB update kva %x pte %x -> %x\n",
+					va, pte->pt_entry, npte); /* XXX */
 			}
 			pte->pt_entry = npte;
 			va += NBPG;
@@ -975,19 +974,23 @@ pmap_enter(pmap, va, pa, prot, wired)
 #ifdef DEBUG
 			enter_stats.cachehit++;
 #endif
-			if (hp->high == va) {
-				/*
-				 * Update the same entry.
-				 */
-				hp->low = npte;
-				MachTLBUpdate(va, npte);
-			} else if (!(hp->low & PG_WIRED)) {
-				MachTLBFlushAddr(hp->high);
-				pmap_remove_pv(pmap, hp->high & PG_FRAME,
-					hp->low & PG_FRAME);
-				hp->high = va;
-				hp->low = npte;
-				MachTLBWriteRandom(va, npte);
+			if (!(hp->low & PG_WIRED)) {
+				if (hp->high == va &&
+				    (hp->low & PG_FRAME) == (npte & PG_FRAME)) {
+					/*
+					 * Update the same entry.
+					 */
+					hp->low = npte;
+					MachTLBUpdate(va, npte);
+				} else {
+					MachTLBFlushAddr(hp->high);
+					pmap_remove_pv(pmap,
+						hp->high & PG_FRAME,
+						hp->low & PG_FRAME);
+					hp->high = va;
+					hp->low = npte;
+					MachTLBWriteRandom(va, npte);
+				}
 			} else {
 				/*
 				 * Don't replace wired entries, just update
