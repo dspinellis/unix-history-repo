@@ -11,26 +11,27 @@
  *
  * from: Utah $Hdr: machdep.c 1.51 89/11/28$
  *
- *	@(#)machdep.c	7.10 (Berkeley) %G%
+ *	@(#)machdep.c	7.11 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/user.h"
-#include "sys/kernel.h"
-#include "sys/map.h"
-#include "sys/proc.h"
-#include "sys/buf.h"
-#include "sys/reboot.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/clist.h"
-#include "sys/callout.h"
-#include "sys/malloc.h"
-#include "sys/mbuf.h"
-#include "sys/msgbuf.h"
+#include "param.h"
+#include "systm.h"
+#include "signalvar.h"
+#include "kernel.h"
+#include "map.h"
+#include "proc.h"
+#include "buf.h"
+#include "reboot.h"
+#include "conf.h"
+#include "file.h"
+#include "clist.h"
+#include "callout.h"
+#include "malloc.h"
+#include "mbuf.h"
+#include "msgbuf.h"
+#include "user.h"
 #ifdef SYSVSHM
-#include "sys/shm.h"
+#include "shm.h"
 #endif
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
@@ -40,6 +41,7 @@
 #include "../include/reg.h"
 #include "../include/psl.h"
 #include "isr.h"
+#include "pte.h"
 #include "net/netisr.h"
 
 #define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
@@ -49,6 +51,7 @@
 #include "vm/vm_object.h"
 #include "vm/vm_kern.h"
 #include "vm/vm_page.h"
+
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
 
@@ -77,22 +80,12 @@ int   safepri = PSL_LOWIPL;
 extern	u_int lowram;
 
 /*
- * Machine-dependent startup code
+ * Console initialization: called early on from main,
+ * before vm init or startup.  Do enough configuration
+ * to choose and initialize a console.
  */
-startup(firstaddr)
-	int firstaddr;
+consinit()
 {
-	register unsigned i;
-	register caddr_t v;
-	int base, residual;
-	extern long Usrptsize;
-	extern struct map *useriomap;
-#ifdef DEBUG
-	extern int pmapdebug;
-	int opmapdebug = pmapdebug;
-#endif
-	vm_offset_t minaddr, maxaddr;
-	vm_size_t size;
 
 	/*
 	 * Set cpuspeed immediately since cninit() called routines
@@ -115,16 +108,35 @@ startup(firstaddr)
 		cpuspeed = MHZ_50;
 		break;
 	}
-#ifndef DEBUG
 	/*
          * Find what hardware is attached to this machine.
          */
 	find_devs();
+
 	/*
 	 * Initialize the console before we print anything out.
 	 */
 	cninit();
+}
+
+/*
+ * Machine-dependent startup code
+ */
+startup(firstaddr)
+	int firstaddr;
+{
+	register unsigned i;
+	register caddr_t v;
+	int base, residual;
+	extern long Usrptsize;
+	extern struct map *useriomap;
+#ifdef DEBUG
+	extern int pmapdebug;
+	int opmapdebug = pmapdebug;
 #endif
+	vm_offset_t minaddr, maxaddr;
+	vm_size_t size;
+
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
@@ -168,10 +180,9 @@ again:
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 	valloclim(file, struct file, nfile, fileNFILE);
-	valloclim(proc, struct proc, nproc, procNPROC);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
-	valloc(swapmap, struct map, nswapmap = nproc * 2);
+	valloc(swapmap, struct map, nswapmap = maxproc * 2);
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
@@ -284,29 +295,13 @@ again:
 	/*
 	 * Set up buffers, so they can be used to read disk labels.
 	 */
-	bhinit();
-	binit();
+	bufinit();
 
 	/*
 	 * Configure the system.
 	 */
 	configure();
 }
-
-#ifdef PGINPROF
-/*
- * Return the difference (in microseconds)
- * between the  current time and a previous
- * time as represented by the arguments.
- */
-/*ARGSUSED*/
-vmtime(otime, olbolt, oicr)
-	register int otime, olbolt, oicr;
-{
-
-	return (((time.tv_sec-otime)*100 + lbolt-olbolt)*10000);
-}
-#endif
 
 /*
  * Clear registers on exec
@@ -315,16 +310,18 @@ setregs(entry, retval)
 	u_long entry;
 	int retval[2];
 {
-	u.u_ar0[PC] = entry & ~1;
+	register struct proc *p = curproc;
+
+	p->p_regs[PC] = entry & ~1;
 #ifdef FPCOPROC
 	/* restore a null state frame */
 	u.u_pcb.pcb_fpregs.fpf_null = 0;
 	m68881_restore(&u.u_pcb.pcb_fpregs);
 #endif
 #ifdef HPUXCOMPAT
-	if (u.u_procp->p_flag & SHPUX) {
+	if (p->p_flag & SHPUX) {
 
-		u.u_ar0[A0] = 0;	/* not 68010 (bit 31), no FPA (30) */
+		p->p_regs[A0] = 0;	/* not 68010 (bit 31), no FPA (30) */
 		retval[0] = 0;		/* no float card */
 #ifdef FPCOPROC
 		retval[1] = 1;		/* yes 68881 */
@@ -342,8 +339,8 @@ setregs(entry, retval)
 	 * I didn't want to muck up kern_exec.c with this code, so I
 	 * stuck it here.
 	 */
-	if ((u.u_procp->p_pptr->p_flag & SHPUX) &&
-	    (u.u_procp->p_flag & STRC)) {
+	if ((p->p_pptr->p_flag & SHPUX) &&
+	    (p->p_flag & STRC)) {
 		tweaksigcode(1);
 		u.u_pcb.pcb_flags |= PCB_HPUXTRACE;
 	} else if (u.u_pcb.pcb_flags & PCB_HPUXTRACE) {
@@ -355,6 +352,7 @@ setregs(entry, retval)
 
 identifycpu()
 {
+
 	printf("HP9000/");
 	switch (machineid) {
 	case HP_320:
@@ -524,20 +522,22 @@ int sigpid = 0;
 /*
  * Send an interrupt to process.
  */
+void
 sendsig(catcher, sig, mask, code)
 	sig_t catcher;
 	int sig, mask;
 	unsigned code;
 {
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
 	register struct sigframe *fp, *kfp;
 	register struct frame *frame;
+	register struct sigacts *ps = p->p_sigacts;
 	register short ft;
 	int oonstack, fsize;
 
-	frame = (struct frame *)u.u_ar0;
+	frame = (struct frame *)p->p_regs;
 	ft = frame->f_format;
-	oonstack = u.u_onstack;
+	oonstack = ps->ps_onstack;
 	/*
 	 * Allocate and validate space for the signal handler
 	 * context. Note that if the stack is in P0 space, the
@@ -551,13 +551,13 @@ sendsig(catcher, sig, mask, code)
 	else
 #endif
 	fsize = sizeof(struct sigframe);
-	if (!u.u_onstack && (u.u_sigonstack & sigmask(sig))) {
-		fp = (struct sigframe *)(u.u_sigsp - fsize);
-		u.u_onstack = 1;
+	if (!ps->ps_onstack && (ps->ps_sigonstack & sigmask(sig))) {
+		fp = (struct sigframe *)(ps->ps_sigsp - fsize);
+		ps->ps_onstack = 1;
 	} else
 		fp = (struct sigframe *)(frame->f_regs[SP] - fsize);
-	if ((unsigned)fp <= USRSTACK - ctob(u.u_ssize)) 
-		(void)grow((unsigned)fp);
+	if ((unsigned)fp <= USRSTACK - ctob(p->p_vmspace->vm_ssize)) 
+		(void)grow(p, (unsigned)fp);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
 		printf("sendsig(%d): sig %d ssp %x usp %x scp %x ft %d\n",
@@ -750,9 +750,9 @@ sigreturn(p, uap, retval)
 		    (scp = hscp->hsc_realsc) == 0 ||
 		    useracc((caddr_t)scp, sizeof (*scp), B_WRITE) == 0 ||
 		    copyin((caddr_t)scp, (caddr_t)&tsigc, sizeof tsigc)) {
-			u.u_onstack = hscp->hsc_onstack & 01;
+			p->p_sigacts->ps_onstack = hscp->hsc_onstack & 01;
 			p->p_sigmask = hscp->hsc_mask &~ sigcantmask;
-			frame = (struct frame *) u.u_ar0;
+			frame = (struct frame *) p->p_regs;
 			frame->f_regs[SP] = hscp->hsc_sp;
 			frame->f_pc = hscp->hsc_pc;
 			frame->f_sr = hscp->hsc_ps &~ PSL_USERCLR;
@@ -782,9 +782,9 @@ sigreturn(p, uap, retval)
 	/*
 	 * Restore the user supplied information
 	 */
-	u.u_onstack = scp->sc_onstack & 01;
+	p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
 	p->p_sigmask = scp->sc_mask &~ sigcantmask;
-	frame = (struct frame *) u.u_ar0;
+	frame = (struct frame *) p->p_regs;
 	frame->f_regs[SP] = scp->sc_sp;
 	frame->f_regs[A6] = scp->sc_fp;
 	frame->f_pc = scp->sc_pc;
@@ -876,8 +876,8 @@ boot(howto)
 	register int howto;
 {
 	/* take a snap shot before clobbering any registers */
-	if (u.u_procp)
-		resume((u_int)pcbb(u.u_procp));
+	if (curproc)
+		resume((u_int)pcbb(curproc));
 
 	boothowto = howto;
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -892,11 +892,13 @@ boot(howto)
 		 */
 		if (panicstr == 0)
 			vnode_pager_umount(NULL);
+#ifdef notdef
 #include "fd.h"
 #if NFD > 0
 		fdshutdown();
 #endif
-		sync((struct sigcontext *)0);
+#endif
+		sync(&proc0, (void *)NULL, (int *)NULL);
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
@@ -1233,10 +1235,10 @@ parityerror(fp)
 	if (!findparerror())
 		printf("WARNING: transient parity error ignored\n");
 	else if (USERMODE(fp->f_sr)) {
-		printf("pid %d: parity error\n", u.u_procp->p_pid);
+		printf("pid %d: parity error\n", curproc->p_pid);
 		uprintf("sorry, pid %d killed due to memory parity error\n",
-			u.u_procp->p_pid);
-		psignal(u.u_procp, SIGKILL);
+			curproc->p_pid);
+		psignal(curproc, SIGKILL);
 #ifdef DEBUG
 	} else if (ignorekperr) {
 		printf("WARNING: kernel parity error ignored\n");
@@ -1323,7 +1325,7 @@ regdump(rp, sbytes)
 		return;
 	s = splhigh();
 	doingdump = 1;
-	printf("pid = %d, pc = %s, ", u.u_procp->p_pid, hexstr(rp[PC], 8));
+	printf("pid = %d, pc = %s, ", curproc->p_pid, hexstr(rp[PC], 8));
 	printf("ps = %s, ", hexstr(rp[PS], 4));
 	printf("sfc = %s, ", hexstr(getsfc(), 4));
 	printf("dfc = %s\n", hexstr(getdfc(), 4));
