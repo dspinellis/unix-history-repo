@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)strerror.3	6.4 (Berkeley) %G%
+.\"	@(#)strerror.3	6.5 (Berkeley) %G%
 .\"
 .TH PERROR 3  ""
 .UC 4
@@ -10,15 +10,16 @@
 perror, strerror, sys_errlist, sys_nerr \- system error messages
 .SH SYNOPSIS
 .nf
-.B perror(string)
-.B char *string;
-.PP
-.B char *
-.B strerror(errnum)
-.B int errnum;
-.PP
-.B extern int errno, sys_nerr;
-.B extern char *sys_errlist[];
+.ft B
+extern int errno, sys_nerr;
+extern char *sys_errlist[];
+
+#include <stdio.h>
+
+void perror(const char *string);
+
+char *strerror(int errnum);
+.ft R
 .fi
 .SH DESCRIPTION
 .I Perror
@@ -52,4 +53,4 @@ variables is deprecated;
 .I strerror
 should be used instead.
 .SH "SEE ALSO"
-intro(2)
+intro(2), psignal(3)

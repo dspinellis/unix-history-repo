@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mktemp.3	6.7 (Berkeley) %G%
+.\"	@(#)mktemp.3	6.8 (Berkeley) %G%
 .\"
 .TH MKTEMP 3  ""
 .AT 3
@@ -12,12 +12,11 @@ mktemp \- create a unique file name
 .SH SYNOPSIS
 .nf
 .ft B
-char *
-mktemp(template)
-char *template;
-.sp
-mkstemp(template)
-char *template;
+#include <unistd.h>
+
+char *mktemp(char *template);
+
+int mkstemp(char *template);
 .ft R
 .fi
 .SH DESCRIPTION

@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fseek.3	6.6 (Berkeley) %G%
+.\"	@(#)fseek.3	6.7 (Berkeley) %G%
 .\"
 .TH FSEEK 3 ""
 .UC 7
@@ -45,13 +45,8 @@ value of
 .IR whence .
 If 
 .I whence
-is set to 
-.IR SEEK_SET ,
-.IR SEEK_CUR ,
-or
-.IR SEEK_END ,
-the offset is from the beginning, the current position, or the end of
-the file, respectively.
+is set to SEEK_SET, SEEK_CUR, or SEEK_END, the offset is from the
+beginning, the current position, or the end of the file, respectively.
 .I Fseek
 undoes any effects of
 .IR ungetc .

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fgetln.3	5.2 (Berkeley) %G%
+.\"	@(#)fgetln.3	5.3 (Berkeley) %G%
 .\"
 .TH FGETLINE 3 ""
 .UC 7
@@ -37,9 +37,9 @@ or as soon as the stream is closed.
 Otherwise, NULL is returned.
 .I Fgetline
 does not distinguish between end-of-file and error, and callers must use
-.I feof
+.IR feof (3)
 and
-.I ferror
+.IR ferror (3)
 to determine which occurred.
 If an error occurrs, the global variable
 .I errno
@@ -47,7 +47,7 @@ is set to indicate the error.
 The end-of-file condition is remembered, even on a terminal, and all
 subsequent attempts to read will return NULL until the condition is
 cleared with
-.IR clearerr .
+.IR clearerr (3).
 .PP
 The text to which the returned pointer points may be modified,
 provided that no changes are made beyond the terminating NUL.

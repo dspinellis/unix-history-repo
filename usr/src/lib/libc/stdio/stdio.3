@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stdio.3	6.3 (Berkeley) %G%
+.\"	@(#)stdio.3	6.4 (Berkeley) %G%
 .\"
 .TH STDIO 3 ""
 .UC 4
@@ -84,41 +84,13 @@ The following are implemented as macros;
 these names may not be reused
 without first removing their current definitions with
 .BR #undef :
-.IR NULL ,
-.IR BUFSIZ ,
-.IR EOF ,
-.IR FOPEN_MAX ,
-.IR FILENAME_MAX ,
-.IR L_tmpnam ,
-.IR SEEK_SET ,
-.IR SEE_CUR ,
-.IR SEEK_END ,
-.IR TMP_MAX ,
-.IR stdin ,
-.IR stdout ,
-.IR stderr ,
-.IR fropen ,
-.IR fwopen ,
-.IR feof ,
-.IR ferror ,
-.IR clearerr ,
-.IR fileno ,
-.IR getc ,
-.IR getchar ,
-.IR putc ,
-.IR putchar ,
-.IR L_cuserid .
-Function versions of the macro functions
-.IR feof ,
-.IR ferror ,
-.IR clearerr ,
-.IR fileno ,
-.IR getc ,
-.IR getchar ,
-.IR putc ,
-and
-.I putchar
-exist and will be used if the macros definitions are explicitly removed.
+BUFSIZ, EOF, FILENAME_MAX, FOPEN_MAX, L_cuserid, L_tmpnam, NULL,
+SEEK_END, SEEK_SET, SEE_CUR, TMP_MAX, clearerr, feof, ferror,
+fileno, fropen, fwopen, getc, getchar, putc, putchar, stderr,
+stdin, stdout.
+Function versions of the macro functions feof, ferror, clearerr, fileno,
+getc, getchar, putc, and putchar exist and will be used if the macros
+definitions are explicitly removed.
 .PP
 Output streams that refer to terminal devices
 are always line buffered by default;
@@ -132,7 +104,7 @@ will appear.
 .SH "SEE ALSO"
 open(2), close(2), read(2), write(2)
 .br
-all of the manuals listed below
+all of the manual entries listed below
 .SH "RETURN VALUE"
 The value
 .SM
@@ -193,41 +165,20 @@ putc	putc.3	put a character or word to a stream
 putchar	putc.3	put a character or word to a stream
 puts	fputs.3	put a line to a stream
 putw	putc.3	put a character or word to a stream
-remove	remove.3	remove a file	xxx
+remove	remove.3	remove a file
 rewind	fseek.3	reposition a stream
 scanf	scanf.3	formatted input conversion
 setbuf	setvbuf.3	assign buffering to a stream
 setbuffer	setvbuf.3	assign buffering to a stream
 setlinebuf	setvbuf.3	assign buffering to a stream
 setvbuf	setvbuf.3	assign buffering to a stream
-.\" smprintf	printf.3	formatted output conversion
 snprintf	printf.3	formatted output conversion
 sprintf	printf.3	formatted output conversion
-tmpfile	xxx.3	xxx
-tmpnam	xxx.3	xxx
+tmpfile	tmpnam.3	create a temporary stream
+tmpnam	tmpnam.3	create a temporary file name
 ungetc	ungetc.3	push character back into input stream
 vfprintf	printf.3	formatted output conversion
 vprintf	printf.3	formatted output conversion
-.\" vsmprintf	printf.3	formatted output conversion
 vsnprintf	printf.3	formatted output conversion
 vsprintf	printf.3	formatted output conversion
-.fi
-.sp 2
-Although these have nothing to do with `standard I/O',
-the following declarations also appear in
-.RI < stdio.h >
-as required by ANSI X3.159-1989 and IEEE 1003.2 standards:
-.sp
-.nf
-.ta \w'setlinebuf'u+2n +\w'setvbuf.3'u+10n
-\fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
-.ta \w'setlinebuf'u+4n +\w'setvbuf.3'u+4n
-.sp 5p
-cuserid	cuserid.3	xxx
-getlogin	getlogin.3	get login name
-pclose	popen.3	initiate I/O to/from a process
-perror	strerror.3	xxx
-popen	popen.3	initiate I/O to/from a process
-remove	remove.3	xxx
-rename	rename.2	xxx
 .fi
