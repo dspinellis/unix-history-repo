@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.8 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,7 +44,8 @@ int	blk_lookup(),
 int	ufs_getattr(),
 	ufs_setattr(),
 	ufs_access(),
-	ufs_inactive();
+	ufs_inactive(),
+	ufs_reclaim();
 
 struct vnodeops blk_vnodeops = {
 	blk_lookup,
@@ -72,6 +73,7 @@ struct vnodeops blk_vnodeops = {
 	blk_badop,
 	blk_badop,
 	ufs_inactive,
+	ufs_reclaim,
 	blk_lock,
 	blk_unlock,
 	blk_badop,
