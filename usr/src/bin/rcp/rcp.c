@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.12 85/02/20";
+static char sccsid[] = "@(#)rcp.c	4.13 85/02/27";
 #endif
 
 /*
@@ -30,7 +30,8 @@ int	iamremote, targetshouldbedirectory;
 int	iamrecursive;
 struct	passwd *pwd;
 struct	passwd *getpwuid();
-struct	servent *sp;
+int	userid;
+int	port;
 
 /*VARARGS*/
 int	error();
@@ -45,15 +46,15 @@ main(argc, argv)
 	char *suser, *tuser;
 	int i;
 	char buf[BUFSIZ], cmd[16];
+	struct servent *sp;
 
 	sp = getservbyname("shell", "tcp");
 	if (sp == NULL) {
 		fprintf(stderr, "rcp: shell/tcp: unknown service\n");
 		exit(1);
 	}
-	setpwent();
-	pwd = getpwuid(getuid());
-	endpwent();
+	port = sp->s_port;
+	pwd = getpwuid(userid = getuid());
 	if (pwd == 0) {
 		fprintf(stderr, "who are you?\n");
 		exit(1);
@@ -70,13 +71,13 @@ main(argc, argv)
 	if (argc > 0 && !strcmp(*argv, "-f")) {
 		argc--, argv++; iamremote = 1;
 		(void) response();
-		(void) setuid(getuid());
+		(void) setuid(userid);
 		source(argc, argv);
 		exit(errs);
 	}
 	if (argc > 0 && !strcmp(*argv, "-t")) {
 		argc--, argv++; iamremote = 1;
-		(void) setuid(getuid());
+		(void) setuid(userid);
 		sink(argc, argv);
 		exit(errs);
 	}
@@ -122,13 +123,13 @@ main(argc, argv)
 					(void) sprintf(buf, "%s -t %s",
 					    cmd, targ);
 					host = argv[argc - 1];
-					rem = rcmd(&host, sp->s_port,
-					    pwd->pw_name, tuser,
+					rem = rcmd(&host, port, pwd->pw_name, tuser,
 					    buf, 0);
 					if (rem < 0)
 						exit(1);
 					if (response() < 0)
 						exit(1);
+					(void) setuid(userid);
 				}
 				source(1, argv+i);
 			}
@@ -156,12 +157,13 @@ main(argc, argv)
 					suser = pwd->pw_name;
 				(void) sprintf(buf, "%s -f %s", cmd, src);
 				host = argv[i];
-				rem = rcmd(&host, sp->s_port,
-				    pwd->pw_name, suser,
+				rem = rcmd(&host, port, pwd->pw_name, suser,
 				    buf, 0);
 				if (rem < 0)
 					exit(1);
+				(void) setreuid(0, userid);
 				sink(1, argv+argc-1);
+				(void) setreuid(userid, 0);
 				(void) close(rem);
 				rem = -1;
 			}
@@ -175,12 +177,11 @@ verifydir(cp)
 {
 	struct stat stb;
 
-	if (stat(cp, &stb) < 0)
-		goto bad;
-	if ((stb.st_mode & S_IFMT) == S_IFDIR)
-		return;
-	errno = ENOTDIR;
-bad:
+	if (stat(cp, &stb) >= 0) {
+		if ((stb.st_mode & S_IFMT) == S_IFDIR)
+			return;
+		errno = ENOTDIR;
+	}
 	error("rcp: %s: %s.\n", cp, sys_errlist[errno]);
 	exit(1);
 }
@@ -227,7 +228,7 @@ susystem(s)
 	register int (*istat)(), (*qstat)();
 
 	if ((pid = vfork()) == 0) {
-		setuid(getuid());
+		setuid(userid);
 		execl("/bin/sh", "sh", "-c", s, (char *)0);
 		_exit(127);
 	}
@@ -254,7 +255,7 @@ source(argc, argv)
 
 	for (x = 0; x < argc; x++) {
 		name = argv[x];
-		if (access(name, 4) < 0 || (f = open(name, 0)) < 0) {
+		if ((f = open(name, 0)) < 0) {
 			error("rcp: %s: %s\n", name, sys_errlist[errno]);
 			continue;
 		}
@@ -321,7 +322,7 @@ rsource(name, mode)
 	char *bufv[1];
 
 	if (d == 0) {
-		error("%s: %s\n", name, sys_errlist[errno]);
+		error("rcp: %s: %s\n", name, sys_errlist[errno]);
 		return;
 	}
 	last = rindex(name, '/');
@@ -407,7 +408,7 @@ sink(argc, argv)
 	char *myargv[1];
 
 	umask(mask);
-	if (argc > 1) {
+	if (argc != 1) {
 		error("rcp: ambiguous target\n");
 		exit(1);
 	}
@@ -476,45 +477,25 @@ sink(argc, argv)
 		else
 			(void) strcpy(nambuf, targ);
 		exists = stat(nambuf, &stb) == 0;
-		if (exists && access(nambuf, 2) < 0)
-			goto bad2;
-		{ char *slash = rindex(nambuf, '/'), *dir;
-		  if (slash == 0) {
-			slash = "/";
-			dir = ".";
-		  } else {
-			*slash = 0;
-			dir = nambuf;
-			if (*dir == '\0')
-				dir = "/";
-		  }
-		  if (exists == 0 && access(dir, 2) < 0)
-			goto bad;
-		  *slash = '/';
-		  if (cmdbuf[0] == 'D') {
-			if (stat(nambuf, &stb) == 0) {
+		if (cmdbuf[0] == 'D') {
+			if (exists) {
 				if ((stb.st_mode&S_IFMT) != S_IFDIR) {
 					errno = ENOTDIR;
 					goto bad;
 				}
-			} else if (makedir(nambuf, mode) < 0)
+			} else if (mkdir(nambuf, mode) < 0)
 				goto bad;
 			myargv[0] = nambuf;
 			sink(1, myargv);
 			continue;
-		  }
-		  if ((of = creat(nambuf, mode)) < 0) {
+		}
+		if ((of = creat(nambuf, mode)) < 0) {
 	bad:
-			*slash = '/';
-	bad2:
 			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
 			continue;
-		  }
 		}
-		if (exists == 0) {
-			(void) chown(nambuf, pwd->pw_uid, -1);
-			(void) chmod(nambuf, mode &~ mask);
-		}
+		if (exists)
+			(void) fchmod(of, mode &~ mask);
 		ga();
 		wrerr = 0;
 		for (i = 0; i < size; i += BUFSIZ) {
@@ -562,20 +543,4 @@ error(fmt, a1, a2, a3, a4, a5)
 	(void) write(rem, buf, strlen(buf));
 	if (iamremote == 0)
 		(void) write(2, buf+1, strlen(buf+1));
-}
-
-makedir(name, mode)
-	register char *name;
-	register int mode;
-{
-	register int _errno;
-
-	if (mkdir(name, mode) < 0 || chown(name, getuid(), -1) < 0) {
-		_errno = errno;
-		rmdir(name);
-		errno = _errno;
-		return (-1);
-	}
-
-	return (0);
 }
