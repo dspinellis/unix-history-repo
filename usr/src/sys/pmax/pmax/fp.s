@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fp.s	7.5 (Berkeley) %G%
+ *	@(#)fp.s	7.6 (Berkeley) %G%
  */
 
 /*
@@ -673,23 +673,23 @@ add_sub_s:
 	ble	v1, SFRAC_BITS+2, 2f		# is difference too great?
 	li	t8, STICKYBIT			# set the sticky bit
 	bge	v0, zero, 1f			# check which exp is larger
-	move	t1, t5				# result exp is FT's
-	move	t2, zero			# FS's fraction shifted is zero
+	move	t1, t5				# result exp is FTs
+	move	t2, zero			# FSs fraction shifted is zero
 	b	4f
 1:
-	move	t6, zero			# FT's fraction shifted is zero
+	move	t6, zero			# FTs fraction shifted is zero
 	b	4f
 2:
 	li	t9, 32				# compute 32 - abs(exp diff)
 	subu	t9, t9, v1
-	bgt	v0, zero, 3f			# if FS > FT, shift FT's frac
-	move	t1, t5				# FT > FS, result exp is FT's
+	bgt	v0, zero, 3f			# if FS > FT, shift FTs frac
+	move	t1, t5				# FT > FS, result exp is FTs
 	sll	t8, t2, t9			# save bits shifted out
-	srl	t2, t2, v1			# shift FS's fraction
+	srl	t2, t2, v1			# shift FSs fraction
 	b	4f
 3:
 	sll	t8, t6, t9			# save bits shifted out
-	srl	t6, t6, v1			# shift FT's fraction
+	srl	t6, t6, v1			# shift FTs fraction
 4:
 	bne	t0, t4, 1f			# if signs differ, subtract
 	addu	t2, t2, t6			# add fractions
@@ -713,7 +713,7 @@ add_sub_s:
 	subu	t2, t2, t9			# subtract barrow
 	b	norm_s
 3:
-	move	t0, t4				# sign of result = FT's
+	move	t0, t4				# sign of result = FTs
 	sltu	t9, zero, t8			# compute t6:zero - t2:t8
 	subu	t8, zero, t8
 	subu	t2, t6, t2			# subtract fractions
@@ -798,31 +798,31 @@ add_sub_d:
 	ble	v1, DFRAC_BITS+2, 2f		# is difference too great?
 	li	t8, STICKYBIT			# set the sticky bit
 	bge	v0, zero, 1f			# check which exp is larger
-	move	t1, t5				# result exp is FT's
-	move	t2, zero			# FS's fraction shifted is zero
+	move	t1, t5				# result exp is FTs
+	move	t2, zero			# FSs fraction shifted is zero
 	move	t3, zero
 	b	4f
 1:
-	move	t6, zero			# FT's fraction shifted is zero
+	move	t6, zero			# FTs fraction shifted is zero
 	move	t7, zero
 	b	4f
 2:
 	li	t9, 32
-	bge	v0, zero, 3f			# if FS > FT, shift FT's frac
-	move	t1, t5				# FT > FS, result exp is FT's
+	bge	v0, zero, 3f			# if FS > FT, shift FTs frac
+	move	t1, t5				# FT > FS, result exp is FTs
 	blt	v1, t9, 1f			# shift right by < 32?
 	subu	v1, v1, t9
 	subu	t9, t9, v1
 	sll	t8, t2, t9			# save bits shifted out
-	sltu	t9, zero, t3			# don't lose any one bits
+	sltu	t9, zero, t3			# dont lose any one bits
 	or	t8, t8, t9			# save sticky bit
-	srl	t3, t2, v1			# shift FS's fraction
+	srl	t3, t2, v1			# shift FSs fraction
 	move	t2, zero
 	b	4f
 1:
 	subu	t9, t9, v1
 	sll	t8, t3, t9			# save bits shifted out
-	srl	t3, t3, v1			# shift FS's fraction
+	srl	t3, t3, v1			# shift FSs fraction
 	sll	t9, t2, t9			# save bits shifted out of t2
 	or	t3, t3, t9			# and put into t3
 	srl	t2, t2, v1
@@ -832,13 +832,13 @@ add_sub_d:
 	subu	v1, v1, t9
 	subu	t9, t9, v1
 	sll	t8, t6, t9			# save bits shifted out
-	srl	t7, t6, v1			# shift FT's fraction
+	srl	t7, t6, v1			# shift FTs fraction
 	move	t6, zero
 	b	4f
 1:
 	subu	t9, t9, v1
 	sll	t8, t7, t9			# save bits shifted out
-	srl	t7, t7, v1			# shift FT's fraction
+	srl	t7, t7, v1			# shift FTs fraction
 	sll	t9, t6, t9			# save bits shifted out of t2
 	or	t7, t7, t9			# and put into t3
 	srl	t6, t6, v1
@@ -877,7 +877,7 @@ add_sub_d:
 	subu	t2, t2, v0			# subtract barrow
 	b	norm_d
 3:
-	move	t0, t4				# sign of result = FT's
+	move	t0, t4				# sign of result = FTs
 	beq	t8, zero, 1f			# compute t6:t7:zero - t2:t3:t8
 	subu	t8, zero, t8
 	sltu	v0, t7, 1			# compute barrow out
@@ -1305,7 +1305,7 @@ cvt_s_w:
  * Now shift t2 the correct number of bits.
  */
 1:
-	subu	t9, t9, SLEAD_ZEROS		# don't count leading zeros
+	subu	t9, t9, SLEAD_ZEROS		# dont count leading zeros
 	li	t1, 23				# init exponent
 	subu	t1, t1, t9			# compute exponent
 	beq	t9, zero, 1f
@@ -1387,7 +1387,7 @@ cvt_d_w:
  * Now shift t2 the correct number of bits.
  */
 1:
-	subu	t9, t9, DLEAD_ZEROS		# don't count leading zeros
+	subu	t9, t9, DLEAD_ZEROS		# dont count leading zeros
 	li	t1, DEXP_BIAS + 20		# init exponent
 	subu	t1, t1, t9			# compute exponent
 	beq	t9, zero, 1f
@@ -1463,14 +1463,14 @@ cvt_w:
 	sll	t2, t2, v0
 	srl	t9, t3, v1			# save bits shifted out of t3
 	or	t2, t2, t9			# and put into t2
-	sll	t3, t3, v0			# shift FS's fraction
+	sll	t3, t3, v0			# shift FSs fraction
 	b	2f
 1:
 	negu	v0				# shift right by v0
 	subu	v1, v1, v0
 	sll	t8, t3, v1			# save bits shifted out
-	sltu	t8, zero, t8			# don't lose any one's
-	srl	t3, t3, v0			# shift FS's fraction
+	sltu	t8, zero, t8			# dont lose any ones
+	srl	t3, t3, v0			# shift FSs fraction
 	or	t3, t3, t8
 	sll	t9, t2, v1			# save bits shifted out of t2
 	or	t3, t3, t9			# and put into t3
@@ -1678,7 +1678,7 @@ norm_s:
  * Now shift t2,t8 the correct number of bits.
  */
 1:
-	subu	t9, t9, SLEAD_ZEROS		# don't count leading zeros
+	subu	t9, t9, SLEAD_ZEROS		# dont count leading zeros
 	subu	t1, t1, t9			# adjust the exponent
 	beq	t9, zero, norm_noshift_s
 	li	v1, 32
@@ -1907,7 +1907,7 @@ norm_d:
  * Now shift t2,t3,t8 the correct number of bits.
  */
 1:
-	subu	t9, t9, DLEAD_ZEROS		# don't count leading zeros
+	subu	t9, t9, DLEAD_ZEROS		# dont count leading zeros
 	subu	t1, t1, t9			# adjust the exponent
 	beq	t9, zero, norm_noshift_d
 	li	v1, 32
@@ -3398,7 +3398,7 @@ LEAF(renorm_fs_s)
  * Now shift t2 the correct number of bits.
  */
 1:
-	subu	t9, t9, SLEAD_ZEROS	# don't count normal leading zeros
+	subu	t9, t9, SLEAD_ZEROS	# dont count normal leading zeros
 	li	t1, SEXP_MIN
 	subu	t1, t1, t9		# adjust exponent
 	sll	t2, t2, t9
@@ -3451,7 +3451,7 @@ LEAF(renorm_fs_d)
  * Now shift t2,t3 the correct number of bits.
  */
 1:
-	subu	t9, t9, DLEAD_ZEROS	# don't count normal leading zeros
+	subu	t9, t9, DLEAD_ZEROS	# dont count normal leading zeros
 	li	t1, DEXP_MIN
 	subu	t1, t1, t9		# adjust exponent
 	li	v0, 32
@@ -3511,7 +3511,7 @@ LEAF(renorm_ft_s)
  * Now shift t6 the correct number of bits.
  */
 1:
-	subu	t9, t9, SLEAD_ZEROS	# don't count normal leading zeros
+	subu	t9, t9, SLEAD_ZEROS	# dont count normal leading zeros
 	li	t5, SEXP_MIN
 	subu	t5, t5, t9		# adjust exponent
 	sll	t6, t6, t9
@@ -3564,7 +3564,7 @@ LEAF(renorm_ft_d)
  * Now shift t6,t7 the correct number of bits.
  */
 1:
-	subu	t9, t9, DLEAD_ZEROS	# don't count normal leading zeros
+	subu	t9, t9, DLEAD_ZEROS	# dont count normal leading zeros
 	li	t5, DEXP_MIN
 	subu	t5, t5, t9		# adjust exponent
 	li	v0, 32
