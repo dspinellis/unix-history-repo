@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.13 %G%
+\"	@(#)postp.me	1.14 %G%
 .EQ
 delim ##
 gsize 11
@@ -26,7 +26,7 @@ after a single traversal of each arc in the call graph.
 Each parent receives some fraction of a child's time.
 Thus time is charged to the
 caller in addition to being charged to the callee.
-.(b
+.(z C
 .TS
 center;
 c c c c c.
@@ -43,10 +43,11 @@ c c c c c.
 
 
 .TE
-.ce 1
-Figure 1.  Topological ordering
+.ce 2
+Topological ordering
+Figure 1.
 .ce 0
-.)b
+.)z
 .pp
 Let #C sub e# be the number of calls to some routine,
 #e#, and #C sub e sup r# be the number of
@@ -116,7 +117,7 @@ in which the nodes labelled 3 and 7 in Figure 1 are mutually
 recursive.
 The topologically sorted graph after the cycle is collapsed is
 given in Figure 3.
-.(b
+.(z C
 .TS
 center;
 c c c c c.
@@ -133,11 +134,12 @@ o		o		o
 
 
 .TE
-.ce 1
-Figure 2.  Cycle to be collapsed.
+.ce 2
+Cycle to be collapsed.
+Figure 2.
 .ce 0
-.)b
-.(b
+.)z
+.(z C
 .TS
 center;
 c c c c c.
@@ -154,10 +156,11 @@ c c c c c.
 
 
 .TE
-.ce 1
-Figure 3.  Topological numbering after cycle collapsing.
+.ce 2
+Topological numbering after cycle collapsing.
+Figure 3.
 .ce 0
-.)b
+.)z
 .pp
 Since the technique described above only collects the
 dynamic call graph,
