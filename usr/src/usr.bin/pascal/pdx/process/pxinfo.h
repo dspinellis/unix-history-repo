@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)pxinfo.h 1.1 %G%";
+/* static char sccsid[] = "@(#)pxinfo.h 1.2 %G%"; */
 
 /*
  * This is the information we get after the initial trap that px does.

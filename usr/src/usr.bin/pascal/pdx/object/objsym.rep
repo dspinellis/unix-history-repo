@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)objsym.rep 1.1 %G%";
+/* static char sccsid[] = "@(#)objsym.rep 1.2 %G%"; */
 
 /*
  * This file contains the definition of the representation of a

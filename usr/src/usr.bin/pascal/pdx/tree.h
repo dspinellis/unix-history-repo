@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.h 1.1 %G%";
+/* static char sccsid[] = "@(#)tree.h 1.2 %G%"; */
 
 /*
  * This file contains the declarations of the variables and routines
