@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.38 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -343,35 +343,7 @@ mountnfs(argp, mp, nam, pth, hst, vpp)
 		M_WAITOK);
 	bzero((caddr_t)nmp, sizeof (struct nfsmount));
 	mp->mnt_data = (qaddr_t)nmp;
-	/*
-	 * Generate a unique nfs mount id. The problem is that a dev number
-	 * is not unique across multiple systems. The techique is as follows:
-	 * 1) Set to nblkdev,0 which will never be used otherwise
-	 * 2) Generate a first guess as nblkdev,nfs_mntid where nfs_mntid is
-	 *	NOT 0
-	 * 3) Loop searching the mount list for another one with same id
-	 *	If a match, increment val[0] and try again
-	 * NB: I increment val[0] { a long } instead of nfs_mntid { a u_char }
-	 *	so that nfs is not limited to 255 mount points
-	 *     Incrementing the high order bits does no real harm, since it
-	 *     simply makes the major dev number tick up. The upper bound is
-	 *     set to major dev 127 to avoid any sign extention problems
-	 */
-	mp->mnt_stat.f_fsid.val[0] = makedev(nblkdev, 0);
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_NFS;
-	if (++nfs_mntid == 0)
-		++nfs_mntid;
-	tfsid.val[0] = makedev(nblkdev, nfs_mntid);
-	tfsid.val[1] = MOUNT_NFS;
-	while (rootfs && getvfs(&tfsid)) {
-		tfsid.val[0]++;
-		nfs_mntid++;
-	}
-	if (major(tfsid.val[0]) > 127) {
-		error = ENOENT;
-		goto bad;
-	}
-	mp->mnt_stat.f_fsid.val[0] = tfsid.val[0];
+	getnewfsid(mp, MOUNT_NFS);
 	nmp->nm_mountp = mp;
 	nmp->nm_flag = argp->flags;
 	if ((nmp->nm_flag & (NFSMNT_NQNFS | NFSMNT_MYWRITE)) ==
