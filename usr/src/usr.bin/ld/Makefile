@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	ld
 SRCS=	ld.c cplus-dem.c
