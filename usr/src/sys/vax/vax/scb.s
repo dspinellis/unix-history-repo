@@ -1,4 +1,4 @@
-/*	scb.s	4.3	%G%	*/
+/*	scb.s	4.4	%G%	*/
 
 /*
  * System control block
@@ -24,11 +24,11 @@ _Scbbase: .globl	_Scbbase
 /* 050 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 060 */	IS(wtime);	STRAY;		STRAY;		STRAY;
 /* 070 */	STRAY;		STRAY;		STRAY;		STRAY;
-/* 080 */	STRAY;		STRAY;		STRAY;		KS(resched);
+/* 080 */	STRAY;		STRAY;		KS(astflt);	STRAY;
 /* 090 */	STRAY;		STRAY;		STRAY;		STRAY;
-/* 0a0 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0a0 */	IS(softclock);	STRAY;		STRAY;		STRAY;
 /* 0b0 */	STRAY;		STRAY;		STRAY;		STRAY;
-/* 0c0 */	KS(clockint);	STRAY;		STRAY;		STRAY;
+/* 0c0 */	IS(hardclock);	STRAY;		STRAY;		STRAY;
 /* 0d0 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0e0 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0f0 */	IS(consdin);	IS(consdout);	IS(cnrint);	IS(cnxint);

@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.6	%G%	*/
+/*	kern_clock.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,42 +22,40 @@
 
 #define	SCHMAG	9/10
 
-/*
- * Constant for decay filter for cpu usage.
- */
-double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 
 /*
- * Clock is called straight from
+ * Hardclock is called straight from
  * the real time clock interrupt.
+ * We limit the work we do at real clock interrupt time to:
+ *	reloading clock
+ *	decrementing time to callouts
+ *	recording cpu time usage
+ *	modifying priority of current processing
+ *	arrange for soft clock interrupt
+ *	kernel pc profiling
  *
- * Functions:
+ * At softclock interrupt time we:
  *	implement callouts
- *	maintain user/system times
  *	maintain date
- *	profile
  *	lightning bolt wakeup (every second)
  *	alarm clock signals
  *	jab the scheduler
+ *
+ * On the vax softclock interrupts are implemented by
+ * software interrupts.  Note that we may have multiple softclock
+ * interrupts compressed into one (due to excessive interrupt load),
+ * but that hardclock interrupts should never be lost.
  */
 #ifdef KPROF
 unsigned short kcount[20000];
 #endif
 
-/*
- * We handle regular calls to the dh and dz silo input processors
- * without using timeouts to save a little time.
- */
-int	rintvl = 0;		/* every 1/60'th of sec check receivers */
-int	rcnt;
-
-clock(pc, ps)
-caddr_t pc;
+hardclock(pc, ps)
 {
-	register struct callo *p1, *p2;
+	register struct callo *p1;
 	register struct proc *pp;
-	register int s;
-	int a, cpstate, i;
+	register long *ip;
+	register int s, cpstate;
 
 	/*
 	 * reprime clock
@@ -65,72 +63,19 @@ caddr_t pc;
 	clkreld();
 
 	/*
-	 * callouts
-	 * else update first non-zero time
+	 * update callout times
 	 */
-
 	if(callout[0].c_func == NULL)
 		goto out;
-	p2 = &callout[0];
-	while(p2->c_time<=0 && p2->c_func!=NULL)
-		p2++;
-	p2->c_time--;
-
-	/*
-	 * if ps is high, just return
-	 */
-	if (BASEPRI(ps))
-		goto out;
-
-	/*
-	 * callout
-	 */
-
-	if(callout[0].c_time <= 0) {
-		p1 = &callout[0];
-		while(p1->c_func != 0 && p1->c_time <= 0) {
-			(*p1->c_func)(p1->c_arg);
-			p1++;
-		}
-		p2 = &callout[0];
-		while(p2->c_func = p1->c_func) {
-			p2->c_time = p1->c_time;
-			p2->c_arg = p1->c_arg;
-			p1++;
-			p2++;
-		}
-	}
-
-	/*
-	 * lightning bolt time-out
-	 * and time of day
-	 */
+	p1 = &callout[0];
+	while(p1->c_time<=0 && p1->c_func!=NULL)
+		p1++;
+	p1->c_time--;
 out:
 
 	/*
-	 * In order to not take input character interrupts to use
-	 * the input silo on DZ's we have to guarantee to echo
-	 * characters regularly.  This means that we have to
-	 * call the timer routines predictably.  Since blocking
-	 * in these routines is at spl5(), we have to make spl5()
-	 * really spl6() blocking off the clock to put this code
-	 * here.  Note also that it is critical that we run spl5()
-	 * (i.e. really spl6()) in the receiver interrupt routines
-	 * so we can't enter them recursively and transpose characters.
+	 * Maintain iostat and per-process cpu statistics
 	 */
-	if (rcnt >= rintvl) {
-#if NDH11 > 0
-		dhtimer();
-#endif
-#if NDZ11 > 0
-		dztimer();
-#endif
-		rcnt = 0;
-	} else
-		rcnt++;
-#ifdef CHAOS
-	ch_clock();
-#endif
 	if (!noproc) {
 		s = u.u_procp->p_rssize;
 		u.u_vm.vm_idsrss += s;
@@ -162,9 +107,9 @@ out:
 			u.u_vm.vm_stime++;
 	}
 	cp_time[cpstate]++;
-	for (i = 0; i < DK_NDRIVE; i++)
-		if (dk_busy&(1<<i))
-			dk_time[i]++;
+	for (s = 0; s < DK_NDRIVE; s++)
+		if (dk_busy&(1<<s))
+			dk_time[s]++;
 	if (!noproc) {
 		pp = u.u_procp;
 		pp->p_cpticks++;
@@ -177,20 +122,89 @@ out:
 		}
 	}
 	++lbolt;
+#ifdef KPROF
+	if (!USERMODE(ps) && !noproc) {
+		register int indx = ((int)pc & 0x7fffffff) / 4;
+
+		if (indx >= 0 && indx < 20000)
+			if (++kcount[indx] == 0)
+				--kcount[indx];
+	}
+#endif
+#if VAX==780
+	if (!BASEPRI(ps))
+		unhang();
+#endif
+	setsoftclock();
+}
+
+/*
+ * Constant for decay filter for cpu usage.
+ */
+double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
+
+/*
+ * Software clock interrupt.
+ * This routine is blocked by spl1(),
+ * which doesn't block device interrupts!
+ */
+softclock(pc, ps)
+caddr_t pc;
+{
+	register struct callo *p1, *p2;
+	register struct proc *pp;
+	register int a, s;
+
+	/*
+	 * callout
+	 */
+	if(callout[0].c_time <= 0) {
+		p1 = &callout[0];
+		while(p1->c_func != 0 && p1->c_time <= 0) {
+			(*p1->c_func)(p1->c_arg);
+			p1++;
+		}
+		p2 = &callout[0];
+		while(p2->c_func = p1->c_func) {
+			p2->c_time = p1->c_time;
+			p2->c_arg = p1->c_arg;
+			p1++;
+			p2++;
+		}
+	}
+
+	/*
+	 * Drain silos.
+	 */
+#if NDH11 > 0
+	s = spl5(); dhtimer(); splx(s);
+#endif
+#if NDZ11 > 0
+	s = spl5(); dztimer(); splx(s);
+#endif
+
+	/*
+	 * Run paging daemon and reschedule every 1/4 sec.
+	 */
 	if (lbolt % (HZ/4) == 0) {
 		vmpago();
 		runrun++;
+		aston();
 	}
+
+	/*
+	 * Lightning bolt every second:
+	 *	sleep timeouts
+	 *	process priority recomputation
+	 *	process %cpu averaging
+	 *	virtual memory metering
+	 *	kick swapper if processes want in
+	 */
 	if (lbolt >= HZ) {
 		if (BASEPRI(ps))
 			return;
 		lbolt -= HZ;
 		++time;
-		(void) spl1();
-#if VAX780
-		ubawatch();		/* should be a timeout */
-#endif
-		runrun++;
 		wakeup((caddr_t)&lbolt);
 		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
 		if (pp->p_stat && pp->p_stat!=SZOMB) {
@@ -265,27 +279,10 @@ out:
 			pp->p_pri = pp->p_usrpri;
 		}
 	}
-#if VAX==780
-	if (!BASEPRI(ps))
-		unhang();
-#endif
-	if (USERMODE(ps)) {
-		/*
-		 * We do this last since it
-		 * may block on a page fault in user space.
-		 */
-		if (u.u_prof.pr_scale)
-			addupc(pc, &u.u_prof, 1);
+	if (USERMODE(ps) && u.u_prof.pr_scale) {
+		u.u_procp->p_flag |= SOWEUPC;
+		aston();
 	}
-#ifdef KPROF
-	else if (!noproc) {
-		register int indx = ((int)pc & 0x7fffffff) / 4;
-
-		if (indx >= 0 && indx < 20000)
-			if (++kcount[indx] == 0)
-				--kcount[indx];
-	}
-#endif
 }
 
 /*
@@ -322,7 +319,7 @@ caddr_t arg;
 	p3 = &callout[NCALL-2];
 	while(p2->c_func != 0) {
 		if (p2 >= p3)
-			panic("Timeout table overflow");
+			panic("timeout");
 		p2++;
 	}
 	while(p2 >= p1) {
