@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1476,10 +1476,11 @@ printaddr(a, follow)
 		printf("%s:\n\tmailer %d (%s), host `%s', user `%s', ruser `%s'\n",
 		       a->q_paddr, m->m_mno, m->m_name,
 		       a->q_host, a->q_user, a->q_ruser? a->q_ruser: "<null>");
-		printf("\tnext=%x, flags=%o, alias %x\n", a->q_next, a->q_flags,
-		       a->q_alias);
-		printf("\thome=\"%s\", fullname=\"%s\"\n", a->q_home,
-		       a->q_fullname);
+		printf("\tnext=%x, flags=%o, alias %x, uid %d, gid %d\n",
+		       a->q_next, a->q_flags, a->q_alias, a->q_uid, a->q_gid);
+		printf("\towner=%s, home=\"%s\", fullname=\"%s\"\n",
+		       a->q_owner == NULL ? "(none)" : a->q_owner,
+		       a->q_home, a->q_fullname);
 
 		if (!follow)
 			return;
