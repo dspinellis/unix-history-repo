@@ -7,10 +7,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
+# include <pwd.h>
+# include <grp.h>
 #ifdef NAMED_BIND
 # include <arpa/nameser.h>
 # include <resolv.h>
@@ -71,6 +73,8 @@ readcf(cfname)
 	struct rewrite *rwp = NULL;
 	char *bp;
 	int nfuzzy;
+	char *file;
+	bool optional;
 	char buf[MAXLINE];
 	register char *p;
 	extern char **copyplist();
@@ -390,12 +394,21 @@ readcf(cfname)
 			break;
 
 		  case 'F':		/* word class from file */
-			/* read list of words from argument or file */
-			/* read from file */
-			for (p = &bp[2];
-			     *p != '\0' && !(isascii(*p) && isspace(*p));
-			     p++)
-				continue;
+			for (p = &bp[2]; isascii(*p) && isspace(*p); )
+				p++;
+			if (p[0] == '-' && p[1] == 'o')
+			{
+				optional = TRUE;
+				while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+					p++;
+				while (isascii(*p) && isspace(*p))
+					*p++;
+			}
+			else
+				optional = FALSE;
+			file = p;
+			while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+				p++;
 			if (*p == '\0')
 				p = "%s";
 			else
@@ -404,7 +417,7 @@ readcf(cfname)
 				while (isascii(*++p) && isspace(*p))
 					continue;
 			}
-			fileclass(bp[1], &bp[2], p, safe);
+			fileclass(bp[1], file, p, safe, optional);
 			break;
 
 #ifdef XLA
@@ -500,6 +513,9 @@ toomany(id, maxcnt)
 **		class -- class to define.
 **		filename -- name of file to read.
 **		fmt -- scanf string to use for match.
+**		safe -- if set, this is a safe read.
+**		optional -- if set, it is not an error for the file to
+**			not exist.
 **
 **	Returns:
 **		none
@@ -510,11 +526,12 @@ toomany(id, maxcnt)
 **			the named class.
 */
 
-fileclass(class, filename, fmt, safe)
+fileclass(class, filename, fmt, safe, optional)
 	int class;
 	char *filename;
 	char *fmt;
 	bool safe;
+	bool optional;
 {
 	FILE *f;
 	struct stat stbuf;
@@ -522,7 +539,8 @@ fileclass(class, filename, fmt, safe)
 
 	if (stat(filename, &stbuf) < 0)
 	{
-		syserr("fileclass: cannot stat %s", filename);
+		if (!optional)
+			syserr("fileclass: cannot stat %s", filename);
 		return;
 	}
 	if (!S_ISREG(stbuf.st_mode))
@@ -1085,7 +1103,19 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'g':		/* default gid */
-		DefGid = atoi(val);
+		if (isascii(*val) && isdigit(*val))
+			DefGid = atoi(val);
+		else
+		{
+			register struct group *gr;
+
+			DefGid = -1;
+			gr = getgrnam(val);
+			if (gr == NULL)
+				syserr("readcf: option g: unknown group %s", val);
+			else
+				DefGid = gr->gr_gid;
+		}
 		break;
 
 	  case 'H':		/* help file */
@@ -1279,7 +1309,19 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'u':		/* set default uid */
-		DefUid = atoi(val);
+		if (isascii(*val) && isdigit(*val))
+			DefUid = atoi(val);
+		else
+		{
+			register struct passwd *pw;
+
+			DefUid = -1;
+			pw = getpwnam(val);
+			if (pw == NULL)
+				syserr("readcf: option u: unknown user %s", val);
+			else
+				DefUid = pw->pw_uid;
+		}
 		setdefuser();
 		break;
 
