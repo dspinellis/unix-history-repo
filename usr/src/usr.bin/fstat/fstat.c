@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -218,7 +218,7 @@ char **argv;
 		exit(1);
 	}
 
-	printf("user\t cmd\t      pid    fd\tdevice\tinode\t  size\ttype\n");
+	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE\tTYPE\n");
 	openfiles();
 	getkvars();
 	procp = getw((off_t) nl[X_PROC].n_value);
