@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cache.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cache.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -425,7 +425,7 @@ gid_name(name, gid)
 
 	if (!gropn) {
 		setgroupent(1);
-		++pwopn;
+		++gropn;
 	}
 	if (ptr == NULL)
 		ptr = (GIDC *)malloc(sizeof(GIDC));
