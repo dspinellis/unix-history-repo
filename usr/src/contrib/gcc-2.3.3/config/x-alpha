@@ -1,0 +1,2 @@
+RANLIB = ar ts
+RANLIB_TEST = true
