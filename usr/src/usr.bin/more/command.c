@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -163,10 +163,10 @@ prompt()
 			putstr(pbuf);
 		}
 		if ((pos = position(BOTTOM)) != NULL_POSITION) {
-			(void)sprintf(pbuf, " byte %ld", pos);
+			(void)sprintf(pbuf, " byte %qd", pos);
 			putstr(pbuf);
 			if (!ispipe && (len = ch_length())) {
-				(void)sprintf(pbuf, "/%ld pct %ld%%",
+				(void)sprintf(pbuf, "/%qd pct %qd%%",
 				    len, ((100 * pos) / len));
 				putstr(pbuf);
 			}
@@ -188,7 +188,7 @@ prompt()
 		else if (!ispipe &&
 		    (pos = position(BOTTOM)) != NULL_POSITION &&
 		    (len = ch_length())) {
-			(void)sprintf(pbuf, " (%ld%%)", ((100 * pos) / len));
+			(void)sprintf(pbuf, " (%qd%%)", ((100 * pos) / len));
 			putstr(pbuf);
 		}
 		so_exit();
