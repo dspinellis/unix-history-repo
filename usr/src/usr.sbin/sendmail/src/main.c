@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -105,8 +105,8 @@ main(argc, argv, envp)
 	/* do machine-dependent initializations */
 	init_md(argc, argv);
 
-	/* arrange to dump state on signal */
 #ifdef SIGUSR1
+	/* arrange to dump state on user-1 signal */
 	setsignal(SIGUSR1, sigusr1);
 #endif
 
@@ -174,15 +174,18 @@ main(argc, argv, envp)
 	i = 0;
 	for (av = argv; *av != NULL; )
 		i += strlen(*av++) + 1;
+	SaveArgv = (char **) xalloc(sizeof (char *) * (argc + 1));
 	CommandLineArgs = xalloc(i);
 	p = CommandLineArgs;
-	for (av = argv; *av != NULL; )
+	for (av = argv, i = 0; *av != NULL; )
 	{
+		SaveArgv[i++] = newstr(*av);
 		if (av != argv)
 			*p++ = ' ';
 		strcpy(p, *av++);
 		p += strlen(p);
 	}
+	SaveArgv[i] = NULL;
 
 	/*
 	**  Do a quick prescan of the argument list.
@@ -233,8 +236,6 @@ main(argc, argv, envp)
 
 	if (setsignal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) setsignal(SIGINT, intsig);
-	if (setsignal(SIGHUP, SIG_IGN) != SIG_IGN)
-		(void) setsignal(SIGHUP, intsig);
 	(void) setsignal(SIGTERM, intsig);
 	(void) setsignal(SIGPIPE, SIG_IGN);
 	OldUmask = umask(022);
@@ -626,13 +627,21 @@ main(argc, argv, envp)
 
 	switch (OpMode)
 	{
-	  case MD_INITALIAS:
-		Verbose = TRUE;
-		break;
-
 	  case MD_DAEMON:
 		/* remove things that don't make sense in daemon mode */
 		FullName = NULL;
+
+		/* arrange to restart on hangup signal */
+		setsignal(SIGHUP, sighup);
+		break;
+
+	  case MD_INITALIAS:
+		Verbose = TRUE;
+		/* fall through... */
+
+	  default:
+		/* arrange to exit cleanly on hangup signal */
+		setsignal(SIGHUP, intsig);
 		break;
 	}
 
