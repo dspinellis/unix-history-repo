@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getmntopts.3	8.1 (Berkeley) %G%
+.\"	@(#)getmntopts.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETMNTOPTS 3
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Fd #include <mntopts.h>
 .Ft void
-.Fn getmntopts "char *options" "struct mntopt *mopts" "int *flagp"
+.Fn getmntopts "char *options" "struct mntopt *mopts" "int *flagp" "int *altflagp"
 .Sh DESCRIPTION
 The
 .Nm getmntopts
@@ -28,8 +28,13 @@ is broken down into a sequence of comma separated tokens.
 Each token is looked up in the table described by
 .Dv mopts
 and the bits in
-the word referenced by
+the word referenced by either
 .Dv flagp
+or
+.Dv altflagp
+(depending on the
+.Dv m_altloc
+field of the option's table entry)
 are updated.
 The flag word is not initialized by
 .Nm getmntopt .
@@ -41,6 +46,7 @@ struct mntopt {
 	char *m_option;		/* option name */
 	int m_inverse;		/* is this a negative option, eg "dev" */
 	int m_flag;		/* bit to set, eg MNT_RDONLY */
+	int m_altloc;		/* non-zero to use altflagp rather than flagp */
 };
 .Ed
 .Pp
@@ -74,6 +80,11 @@ by the letters
 The
 .Dv m_inverse
 flag causes these two operations to be reversed.
+.It Fa m_altloc
+the bit should be set or cleared in
+.Dv altflagp
+rather than
+.Dv flagp .
 .El
 .Pp
 Each of the user visible
