@@ -1,10 +1,10 @@
-/* main.c	(Berkeley)	1.6	83/12/19	*/
+/* main.c	(Berkeley)	1.7	83/12/19	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
 #include	"dev.h"
 
-#idndef DEVDIR
+#ifndef DEVDIR
 #define DEVDIR	"/usr/lib/font"		/* place to look up device files */
 #endif
 
