@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	1.4	%G%";
+static char SccsId[] = "@(#)macro.c	3.1	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -103,6 +103,37 @@ expand(s, buf, buflim)
 **
 **	Side Effects:
 **		Macro[n] is defined.
+**
+**	Notes:
+**		There is one macro for each ASCII character,
+**		although they are not all used.  The currently
+**		defined macros are:
+**
+**		$a   date in arpa format
+**		$c   hop count
+**		$d   date in ctime format
+**		$f   raw from address
+**		$g   translated from address
+**		$h   to host
+**		$l   UNIX-style from line+
+**		$n   name of sendmail ("MAILER-DAEMON" on local
+**		     net typically)+
+**		$o   delimiters ("operators") for address tokens+
+**		$p   my process id in decimal
+**		$t   the current time in seconds since 1/1/1970
+**		$u   to user
+**		$v   version number of sendmail
+**		$x   signature (full name) of from person
+**		$z   home directory of to person
+**
+**		Macros marked with + must be defined in the
+**		configuration file and are used internally, but
+**		are not set.
+**
+**		There are also some macros that can be used
+**		arbitrarily to make the configuration file
+**		cleaner.  In general all upper-case letters
+**		are available.
 */
 
 define(n, v)
