@@ -1,4 +1,4 @@
-/*	if_imp.c	4.34	82/06/14	*/
+/*	if_imp.c	4.35	82/06/15	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -23,7 +23,7 @@
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
-#define	IMPLEADERS
+/* define IMPLEADERS here to get leader printing code */
 #include "../net/if_imp.h"
 #include "../net/if_imphost.h"
 #include "../net/ip.h"
@@ -124,7 +124,9 @@ COUNT(IMPINIT);
 struct sockproto impproto = { PF_IMPLINK };
 struct sockaddr_in impdst = { AF_IMPLINK };
 struct sockaddr_in impsrc = { AF_IMPLINK };
+#ifdef IMPLEADERS
 int	impprintfs = 0;
+#endif
 
 /*
  * ARPAnet 1822 input routine.
@@ -157,8 +159,10 @@ COUNT(IMPINPUT);
 		    (m = m_pullup(m, sizeof(struct imp_leader))) == 0)
 			return;
 	ip = mtod(m, struct imp_leader *);
+#ifdef IMPLEADERS
 	if (impprintfs)
 		printleader("impinput", ip);
+#endif
 
 	/* check leader type */
 	if (ip->il_format != IMP_NFF) {
@@ -236,11 +240,6 @@ COUNT(IMPINPUT);
 		}
 		sc->imp_state = IMPS_UP;
 		sc->imp_if.if_flags |= IFF_UP;
-#ifdef notdef
-		/* restart output in case something was q'd */
-		if (sc->imp_cb.ic_oactive == 0)
-			(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
-#endif
 		goto drop;
 
 	/*
