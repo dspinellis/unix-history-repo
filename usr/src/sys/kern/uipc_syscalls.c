@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	8.2 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -333,7 +333,6 @@ sendto(p, uap, retval)
 {
 	struct msghdr msg;
 	struct iovec aiov;
-	int error;
 
 	msg.msg_name = uap->to;
 	msg.msg_namelen = uap->tolen;

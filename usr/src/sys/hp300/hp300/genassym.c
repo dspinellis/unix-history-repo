@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	8.2 (Berkeley) %G%
+ *	@(#)genassym.c	8.3 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -66,8 +66,6 @@ flush()
 
 main()
 {
-	register unsigned i;
-
 	/* general constants */
 	def("UPAGES", UPAGES);
 	def("NBPG", NBPG);

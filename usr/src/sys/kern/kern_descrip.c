@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	8.2 (Berkeley) %G%
+ *	@(#)kern_descrip.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -747,7 +747,6 @@ flock(p, uap, retval)
 	register struct file *fp;
 	struct vnode *vp;
 	struct flock lf;
-	int error;
 
 	if ((unsigned)uap->fd >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->fd]) == NULL)

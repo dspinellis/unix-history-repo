@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -201,7 +201,6 @@ kernfs_root(mp, vpp)
 	struct vnode **vpp;
 {
 	struct vnode *vp;
-	int error;
 
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_root(mp = %x)\n", mp);

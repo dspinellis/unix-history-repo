@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	8.3 (Berkeley) %G%
+ *	@(#)kern_proc.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -141,7 +141,6 @@ enterpgrp(p, pgid, mksess)
 {
 	register struct pgrp *pgrp = pgfind(pgid);
 	register struct proc **pp;
-	register struct proc *cp;
 	int n;
 
 #ifdef DIAGNOSTIC
