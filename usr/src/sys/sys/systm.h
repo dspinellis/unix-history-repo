@@ -1,4 +1,4 @@
-/*	systm.h	4.7	%G%	*/
+/*	systm.h	4.8	%G%	*/
 
 /*
  * Random set of variables
@@ -6,7 +6,6 @@
  * routine.
  */
 char	canonb[CANBSIZ];	/* buffer for erase and kill (#@) */
-int	cpu;			/* cpu SID register */
 char	version[];		/* system version */
 int	lbolt;			/* time of day in 60th not in time */
 time_t	time;			/* time in sec from 1970 */
@@ -78,6 +77,5 @@ extern struct sysent
 } sysent[];
 
 char	vmmap[];		/* poor name! */
-int	mcr[3];			/* memory controller registers */
 int	umbabeg,umbaend;	/* where sensitive vm begins/ends */
 int	noproc;			/* no one is running just now */

@@ -1,119 +1,13 @@
-/*	ubavar.h	4.4	%G%	*/
+/*	ubavar.h	4.5	%G%	*/
 
 /*
- * Unibus adapter
+ * unibus adapter
  */
 
-#define	UBA0		0x80060000	/* sys virt i/o for UBA 0 */
-#define	UBA0_DEV (UBA0+0x2000-0160000)	/* sys virt of device regs */
-#define	UNIBASE 0760000	 		/* UNIBUS phys base of i/o reg's */
-
-#if VAX==780
-#define	PHYSUBA0	0x20006000
-#define	PHYSUDEV0	0x20100000
-#else
-#define	PHYSUBA0	0xf30000
-#define	PHYSUDEV0	0xfc0000
-#endif
-#define	PHYSUMEM0	(PHYSUDEV0+0x3e000)
-#define	PHYSUMEM	PHYSUMEM0
-#define	PHYSUDEVSZ	0x40000
-
-#if VAX==780
-/* UBA Configuration Register, CNFGR */
-#define	PARFLT		0x80000000	/* SBI Parity Fault */
-#define	WSQFLT		0x40000000	/* SBI Write Sequence Fault */
-#define	URDFLT		0x20000000	/* SBI Unexpected Read Fault */
-#define	ISQFLT		0x10000000	/* SBI Interlock Sequence Fault */
-#define	MXTFLT		0x8000000	/* SBI Multiple Transmitter Fault */
-#define	XMTFLT		0x4000000	/* UBA is transmit faulter */
-#define	ADPDN		0x800000	/* Adapter Power Down */
-#define	ADPUP		0x400000	/* Adapter Power Up */
-#define	UBINIT		0x40000		/* UNIBUS INIT is asserted */
-#define	UBPDN		0x20000		/* UNIBUS Power Down */
-#define	UBIC		0x10000		/* UNIBUS Initialization */
-					/* UNIBUS Ready */
-#define	UBACOD		0xff		/* UBA Code bits */
- 
-/* UBA Control Register, UBACR */
- 
-#define	MRD16		0x40000000	/* Map Reg Disable Bit 4 */
-#define	MRD8		0x20000000	/* Map Reg Disable Bit 3 */
-#define	MRD4		0x10000000	/* Map Reg Disable Bit 2 */
-#define	MRD2		0x8000000	/* Map Reg Disable Bit 1 */
-#define	MRD1		0x4000000	/* Map Reg Disable Bit 0 */
-#define	IFS		0x40	  	/* Interrupt Field Switch */
-#define	BRIE		0x20	  	/* BR Interrupt Enable */
-#define	USEFIE		0x10	  	/* UNIBUS to SBI Error Field IE */
-#define	SUEFIE		0x8	  	/* SBI to UNIBUS Error Field IE */
-#define	CNFIE		0x4	  	/* Configuration IE */
-#define	UPF		0x2	  	/* UNIBUS Power Fail */
-#define	ADINIT		0x1	  	/* Adapter Init */
- 
-/* UBA Status Register, UASR */
-#define	BR7FULL		0x8000000	/* BR7 Receive Vector Rg Full */
-#define	BR6FULL		0x4000000	/* BR6 Receive Vector Reg Full */
-#define	BR5FULL		0x2000000	/* BR5 Receive Vector Reg Full */
-#define	BR4FULL		0x1000000	/* BR4 Receive Vector Reg Full */
-#define	RDTO		0x400		/* UNIBUS to SBI Read Data Timeout */
-#define	RDS		0x200		/* Read Data Substitute */
-#define	CRD		0x100		/* Corrected Read Data */
-#define	CXTER		0x80		/* Command Transmit Error */
-#define	CXTMO		0x40		/* Command Transmit Timeout */
-#define	DPPE		0x20		/* Data Path Parity Error */
-#define	IVMR		0x10		/* Invalid Map Register */
-#define	MRPF		0x8		/* Map Register Parity Failure */
-#define	LEB		0x4		/* Lost Error */
-#define	UBSTO		0x2		/* UNIBUS Select Timeout */
-#define	UBSSTO		0x1		/* UNIBUS Slave Sync Timeout */
- 
-/* Failed Map Entry Register, FMER */
- 
-#define	FMRN		0x1ff		/* Failed Map Reg. No. Field */
- 
-/* Failed UNIBUS Address Register, FUBAR */
-#define	FUA		0xffff		/* Failed UNIBUS Address Field */
- 
-/* BR Receive Vector register, BRRVR */
-#define	AIRI		0x80000000	/* Adapter Interrupt Request */
-#define	DIV		0xffff		/* Device Interrupt Vector Field */
-#endif
- 
-/* Data Path Register, DPR */
-#define	BNE		0x80000000	/* Buffer Not Empty - Purge */
-#define	BTE		0x40000000	/* Buffer Transfer Error */
-#define	DPF		0x20000000	/* DP Function (RO) */
-#define	BS		0x7f0000	/* Buffer State Field */
-#define	BUBA		0xffff		/* Buffered UNIBUS Address */
- 
-/* Map Register, MR */
-#define	MRV		0x80000000	/* Map Register Valid */
-#define	BO		0x2000000	/* Byte Offset Bit */
-#define	DPDB		0x1e00000	/* Data Path Designator Field */
-#define	SBIPFN		0xfffff		/* SBI Page Address Field */
-
-/*
- * Unibus maps
- */
-#if VAX==780
-#define	NUBABDP	15
-#else
-#define	NUBABDP	3
-#endif
-
-#ifdef	KERNEL
-#define	UAMSIZ 50
-
-struct	map ubamap[UAMSIZ];
-char	bdpwant;		/* someone is waiting for buffered data path */ 
-struct	map bdpmap[NUBABDP];
-char	umrwant;		/* ... for unibus map registers */
-#endif
-
+#if VAX780
 /*
  * UBA registers
  */
-
 struct uba_regs
 {
 	int	uba_cnfgr;
@@ -128,17 +22,163 @@ struct uba_regs
 	int	uba_dpr[16];
 	int	pad2[480];
 	struct	pte uba_map[496];
+	int	pad3[16];
 };
 
-union	ub_info {
-	struct ub_Info {
-	unsigned int	Ub_off:18,
-			Ub_npf:10,
-			Ub_bdp:4;
-	} ub_I;
-	int	ub_word;
+/* UBA control register, UBACR */
+#define	UBA_MRD16	0x40000000	/* map reg disable bit 4 */
+#define	UBA_MRD8	0x20000000	/* map reg disable bit 3 */
+#define	UBA_MRD4	0x10000000	/* map reg disable bit 2 */
+#define	UBA_MRD2	0x08000000	/* map reg disable bit 1 */
+#define	UBA_MRD1	0x04000000	/* map reg disable bit 0 */
+#define	UBA_IFS		0x00000040	/* interrupt field switch */
+#define	UBA_BRIE	0x00000020	/* BR interrupt enable */
+#define	UBA_USEFIE	0x00000010	/* UNIBUS to SBI error field IE */
+#define	UBA_SUEFIE	0x00000008	/* SBI to UNIBUS error field IE */
+#define	UBA_CNFIE	0x00000004	/* configuration IE */
+#define	UBA_UPF		0x00000002	/* UNIBUS power fail */
+#define	UBA_ADINIT	0x00000001	/* adapter init */
+
+/* UBA status register, UASR */
+#define	UBA_BR7FULL	0x08000000	/* BR7 receive vector reg full */
+#define	UBA_BR6FULL	0x04000000	/* BR6 receive vector reg full */
+#define	UBA_BR5FULL	0x02000000	/* BR5 receive vector reg full */
+#define	UBA_BR4FULL	0x01000000	/* BR4 receive vector reg full */
+#define	UBA_RDTO	0x00000400	/* UNIBUS to SBI read data timeout */
+#define	UBA_RDS		0x00000200	/* read data substitute */
+#define	UBA_CRD		0x00000100	/* corrected read data */
+#define	UBA_CXTER	0x00000080	/* command transmit error */
+#define	UBA_CXTMO	0x00000040	/* command transmit timeout */
+#define	UBA_DPPE	0x00000020	/* data path parity error */
+#define	UBA_IVMR	0x00000010	/* invalid map register */
+#define	UBA_MRPF	0x00000008	/* map register parity failure */
+#define	UBA_LEB		0x00000004	/* lost error */
+#define	UBA_UBSTO	0x00000002	/* UNIBUS select timeout */
+#define	UBA_UBSSTO	0x00000001	/* UNIBUS slave sync timeout */
+
+/* BR receive vector register, BRRVR */
+#define	UBA_AIRI	0x80000000	/* adapter interrupt request */
+#define	UBA_DIV		0x0000ffff	/* device interrupt vector field */
+#endif
+ 
+/* data path register, DPR */
+#if VAX780
+#define	UBA_BNE		0x80000000	/* buffer not empty - purge */
+#define	UBA_BTE		0x40000000	/* buffer transfer error */
+#define	UBA_DPF		0x20000000	/* DP function (RO) */
+#define	UBA_BS		0x007f0000	/* buffer state field */
+#define	UBA_BUBA	0x0000ffff	/* buffered UNIBUS address */
+#endif
+#if VAX750
+#define	UBA_ERROR	0x20000000
+#define	UBA_NXM		0x40000000
+#define	UBA_UCE		0x20000000
+#define	UBA_PURGE	0x00000001
+#endif
+ 
+/* map register, MR */
+#define	UBA_MRV		0x80000000	/* map register valid */
+#define	UBA_BO		0x02000000	/* byte offset bit */
+#define	UBA_DPDB	0x01e00000	/* data path designator field */
+#define	UBA_SBIPFN	0x000fffff	/* SBI page address field */
+
+#define	UBA_DPSHIFT	21		/* shift to data path designator */
+
+/*
+ * each UNIBUS mass storage controller has uba_minfo structure.
+ */
+struct	uba_minfo {
+	short	um_num;		/* controller index in driver */
+	short	um_ubanum;	/* the uba it is on */
+	short	um_alive;	/* controller exists */
+	caddr_t	um_addr;	/* address of device in i/o space */
+	struct	buf um_tab;	/* queue for this controller */
+	struct	uba_info *um_forw;
+};
+/*
+ * each UNIBUS device has a uba_dinfo structure.
+ * controllers which are not for mass storage often have ONLY
+ * a uba_dinfo structure, and no uba_minfo structure.
+ * if a controller has many drives attached, then there will
+ * be several uba_dinfo structures pointing at the same uba_minfo
+ * structure.
+ */
+struct	uba_dinfo {
+	struct	uba_driver *ui_driver;
+	short	ui_name;
+	short	ui_unit;	/* unit number on the system */
+	short	ui_ubanum;	/* the uba it is on */
+	short	ui_slave;	/* slave on controller */
+	int	(**ui_intr)();	/* interrupt handler(s) */
+	caddr_t	ui_addr;	/* address of device in i/o space */
+	short	ui_alive;	/* device exists */
+	short	ui_type;	/* driver specific type information */
+	short	ui_dk;		/* device number for iostat */
+	caddr_t	ui_physaddr;	/* phys addr, for standalone (dump) code */
+/* if the driver isn't also a controller, this is the controller it is on */
+	struct	uba_minfo *ui_mi;
+	struct	uba_hd *ui_hd;
 };
 
-#define	ub_off	ub_I.Ub_off
-#define	ub_npf	ub_I.Ub_npf
-#define	ub_bdp	ub_I.Ub_bdp
+#define	NUBA780	4
+#define	NUBA750	1
+#if VAX780
+#define	MAXNUBA	4
+#else
+#define	MAXNUBA	1
+#endif
+
+/*
+ * header per uba.		CAUTION: size & offsets known in uba.m
+ */
+struct	uba_hd {
+	int	uh_active;		/* bit per device transferring */
+	struct	uba_regs *uh_uba;	/* virt addr of uba */
+	struct	uba_regs *uh_physuba;	/* phys addr of uba */
+	int	(**uh_vec)();		/* interrupt vector */
+	struct	uba_minfo *uh_actf;	/* head of queue to transfer */
+	struct	uba_minfo *uh_actl;	/* tail of queue to transfer */
+	short	uh_mrwant;		/* someone is waiting for map reg */
+	short	uh_bdpwant;		/* someone awaits bdp's */
+	int	uh_bdpfree;		/* free bdp's */
+	int	uh_hangcnt;		/* number of ticks hung */
+	int	uh_zvcnt;		/* number of 0 vectors */
+#define	UAMSIZ 50
+	struct	map uh_map[UAMSIZ];
+} uba_hd[MAXNUBA];
+#ifdef KERNEL
+extern	struct	uba_minfo ubminit[];
+extern	struct	uba_dinfo ubdinit[];
+int	numuba;
+#endif
+/*
+ * each unibus driver defines entries for a set of routines
+ * as well as an array of types which are acceptable to it.
+ */
+struct uba_driver {
+	int	(*ud_cntrlr)();		/* see if a driver is really there */
+	int	(*ud_slave)();		/* see if a slave is there; init */
+	int	(*ud_dgo)();		/* routine to stuff driver regs */
+/* dgo is called back by the unibus (usu ubaalloc), when the bus is ready */
+	short	ud_maxslave;		/* max number of slaves */
+	short	ud_needexcl;		/* need exclusive use of uba (rk07) */
+	u_short	*ud_addr;		/* device csr addresses */
+	char	*ud_pname;
+	struct	uba_dinfo **ud_info;	/* backpointers to ubinit structs */
+};
+
+/*
+ * unibus maps
+ */
+#define	NBDP780	15
+#define	NBDP750	3
+#define	MAXNBDP	15
+
+#define	NUBMREG	496
+
+/*
+ * flags to uba map/bdp allocation routines
+ */
+#define	UBA_NEEDBDP	1		/* transfer needs a bdp */
+#define	UBA_CANTWAIT	2		/* don't block me */
+#define	UBA_NEED16	3		/* need 16 bit addresses only */
