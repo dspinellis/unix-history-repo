@@ -1,5 +1,5 @@
 /*
- *	@(#)if_enpreg.h	1.5 (Berkeley) %G%
+ *	@(#)if_enpreg.h	7.1 (Berkeley) %G%
  */
 
 /*	Copyright (c) 1984 by Communication Machinery Corporation

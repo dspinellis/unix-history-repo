@@ -1,5 +1,5 @@
 /*
- *	@(#)ik.c	1.6 (Berkeley) %G%
+ *	@(#)ik.c	7.1 (Berkeley) %G%
  */
 
 #include "ik.h"
