@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -1857,6 +1857,8 @@ wontoption(option, reply)
 
 	default:
 		fmt = dont;
+		hisopts[option] = 0;
+		break;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
@@ -2005,6 +2007,7 @@ SetIn3270()
 	    Init3270();		/* Initialize 3270 functions */
 	    /* initialize terminal key mapping */
 	    InitTerminal();	/* Start terminal going */
+	    LocalClearScreen();	/* Make sure the screen is clear */
 	    setconnmode();
 	}
     } else {
