@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.35 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -214,7 +214,6 @@ gethostbyname(name)
 	querybuf buf;
 	register char *cp;
 	int n;
-	struct hostent *hp;
 	extern struct hostent *_gethtbyname();
 
 	/*
@@ -259,7 +258,7 @@ gethostbyaddr(addr, len, type)
 	
 	if (type != AF_INET)
 		return ((struct hostent *) NULL);
-	(void)sprintf(qbuf, "%d.%d.%d.%d.in-addr.arpa",
+	(void)sprintf(qbuf, "%u.%u.%u.%u.in-addr.arpa",
 		((unsigned)addr[3] & 0xff),
 		((unsigned)addr[2] & 0xff),
 		((unsigned)addr[1] & 0xff),
