@@ -1,11 +1,11 @@
-/*	user.h	6.5	84/07/21	*/
+/*	user.h	6.6	84/08/28	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
-#include "../h/dmap.h"
-#include "../h/time.h"
-#include "../h/resource.h"
-#include "../h/namei.h"
+#include "dmap.h"
+#include "time.h"
+#include "resource.h"
+#include "namei.h"
 #else
 #include <machine/pcb.h>
 #include <sys/dmap.h>
@@ -123,7 +123,11 @@ struct	user {
 #define	REALLYRETURN	3
 
 /* u_error codes */
+#ifdef KERNEL
+#include "errno.h"
+#else
 #include <errno.h>
+#endif
 
 #ifdef KERNEL
 extern	struct user u;

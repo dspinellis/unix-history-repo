@@ -1,4 +1,4 @@
-/*	param.h	6.3	84/07/31	*/
+/*	param.h	6.4	84/08/28	*/
 
 /*
  * Machine type dependent parameters.
@@ -46,7 +46,7 @@
  * Signals
  */
 #ifdef KERNEL
-#include "../h/signal.h"
+#include "signal.h"
 #else
 #include <signal.h>
 #endif
@@ -101,7 +101,7 @@
 #include	<sys/types.h>
 #else
 #ifndef LOCORE
-#include	"../h/types.h"
+#include	"types.h"
 #endif
 #endif
 

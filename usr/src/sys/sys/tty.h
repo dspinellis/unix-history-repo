@@ -1,8 +1,8 @@
-/*	tty.h	6.1	83/07/29	*/
+/*	tty.h	6.2	84/08/28	*/
 
 #ifdef KERNEL
-#include "../h/ttychars.h"
-#include "../h/ttydev.h"
+#include "ttychars.h"
+#include "ttydev.h"
 #else
 #include <sys/ttychars.h>
 #include <sys/ttydev.h>
