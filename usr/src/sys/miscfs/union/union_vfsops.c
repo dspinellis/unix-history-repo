@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	2.1 (Berkeley) %G%
+ *	@(#)union_vfsops.c	2.2 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/filedesc.h>
+#include <sys/queue.h>
 #include "union.h"
 
 /*
