@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -718,6 +718,7 @@ putline(l, mci)
 {
 	register char *p;
 	register char svchar;
+	int slop = 0;
 
 	/* strip out 0200 bits -- these can look like TELNET protocol */
 	if (bitset(MCIF_7BIT, mci->mci_flags))
@@ -739,13 +740,14 @@ putline(l, mci)
 
 		/* check for line overflow */
 		while (mci->mci_mailer->m_linelimit > 0 &&
-		       (p - l) > mci->mci_mailer->m_linelimit)
+		       (p - l + slop) > mci->mci_mailer->m_linelimit)
 		{
-			register char *q = &l[mci->mci_mailer->m_linelimit - 1];
+			register char *q = &l[mci->mci_mailer->m_linelimit - slop - 1];
 
 			svchar = *q;
 			*q = '\0';
-			if (l[0] == '.' && bitnset(M_XDOT, mci->mci_mailer->m_flags))
+			if (l[0] == '.' && slop == 0 &&
+			    bitnset(M_XDOT, mci->mci_mailer->m_flags))
 			{
 				(void) putc('.', mci->mci_out);
 				if (TrafficLogFile != NULL)
@@ -754,15 +756,18 @@ putline(l, mci)
 			fputs(l, mci->mci_out);
 			(void) putc('!', mci->mci_out);
 			fputs(mci->mci_mailer->m_eol, mci->mci_out);
+			(void) putc(' ', mci->mci_out);
 			if (TrafficLogFile != NULL)
-				fprintf(TrafficLogFile, "%s!\n%05d >>> ",
+				fprintf(TrafficLogFile, "%s!\n%05d >>>  ",
 					l, getpid());
 			*q = svchar;
 			l = q;
+			slop = 1;
 		}
 
 		/* output last part */
-		if (l[0] == '.' && bitnset(M_XDOT, mci->mci_mailer->m_flags))
+		if (l[0] == '.' && slop == 0 &&
+		    bitnset(M_XDOT, mci->mci_mailer->m_flags))
 		{
 			(void) putc('.', mci->mci_out);
 			if (TrafficLogFile != NULL)
