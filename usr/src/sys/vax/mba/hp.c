@@ -1,4 +1,4 @@
-/*	hp.c	4.69	83/02/21	*/
+/*	hp.c	4.70	83/02/24	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -149,6 +149,15 @@ struct	size {
 	433776,	391,		/* G=cyl 391 thru 842 */
 	291346,	87,		/* H=cyl 87 thru 390 */
 #endif
+}, cdc9300_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 26 */
+	33440,	27,		/* B=cyl 27 thru 81 */
+	500384,	0,		/* C=cyl 0 thru 822 */
+	15884,	562,		/* D=cyl 562 thru 588 */
+	55936,	589,		/* E=cyl 589 thru 680 */
+	86240,	681,		/* F=cyl 681 thru 822 */
+	158592,	562,		/* G=cyl 562 thru 822 */
+	291346,	82,		/* H=cyl 82 thru 561 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -189,7 +198,9 @@ short	hptypes[] = {
 	-1,
 #define HPDT_EAGLE	11
 	-1,
-#define HPDT_RM02	12
+#define	HPDT_9300	12
+	-1,
+#define HPDT_RM02	13
 	MBDT_RM02,		/* beware, actually capricorn or eagle */
 	0
 };
@@ -216,8 +227,9 @@ struct hpst {
 	1,	1,	1,	1,	0,		/* ML11B */
 	32,	40,	32*40,	843,	cdc9775_sizes,	/* 9775 */
 	32,	10,	32*10,	823,	cdc9730_sizes,	/* 9730 */
-	32,	16,	32*16,	1024,	capricorn_sizes,/* AMPEX capricorn */
-	48,	20,	48*20,	842,	eagle_sizes,	/* Fujitsu EAGLE */
+	32,	16,	32*16,	1024,	capricorn_sizes,/* Capricorn */
+	48,	20,	48*20,	842,	eagle_sizes,	/* EAGLE */
+	32,	19,	32*19,	815,	cdc9300_sizes,	/* 9300 */
 };
 
 u_char	hp_offset[16] = {
@@ -279,7 +291,7 @@ hpmaptype(mi)
 	register int type = mi->mi_type;
 
 	/*
-	 * Model-byte processing for SI 9400 controllers.
+	 * Model-byte processing for SI controllers.
 	 * NB:  Only deals with RM03 and RM05 emulations.
 	 */
 	if (type == HPDT_RM03 || type == HPDT_RM05) {
@@ -290,31 +302,39 @@ hpmaptype(mi)
 		switch ((hpsn & SIMB_MB) & ~(SIMB_S6|SIRM03|SIRM05)) {
 
 		case SI9775D:
-			printf("hp%d: si 9775 (direct)\n", mi->mi_unit);
+			printf("hp%d: 9775 (direct)\n", mi->mi_unit);
 			type = HPDT_9775;
 			break;
 
 		case SI9730D:
-			printf("hp%d: si 9730 (direct)\n", mi->mi_unit);
+			printf("hp%d: 9730 (direct)\n", mi->mi_unit);
 			type = HPDT_9730;
 			break;
 
 		/*
-		 * AMPEX 9300, SI Combination needs a have the
-		 * drive cleared before we start.  We do not know
-		 * why, but tests show that the recalibrate fixes
-		 * the problem.
+		 * Beware, since the only SI controller we
+		 * have has a 9300 instead of a 9766, we map the
+		 * drive type into the 9300.  This means that
+		 * on a 9766 you lose the last 8 cylinders (argh).
 		 */
 		case SI9766:
-			printf("hp%d: 9776/9300\n", mi->mi_unit);
-			type = HPDT_RM05;
-			hpaddr->hpcs1 = HP_RECAL|HP_GO;
-			DELAY(100000);
+			printf("hp%d: 9300\n", mi->mi_unit);
+			type = HPDT_9300;
 			break;
 
 		case SI9762:
 			printf("hp%d: 9762\n", mi->mi_unit);
 			type = HPDT_RM03;
+			break;
+
+		case SICAPD:
+			printf("hp%d: capricorn\n", mi->mi_unit);
+			type = HPDT_CAPRICORN;
+			break;
+
+		case SI9751D:
+			printf("hp%d: eagle\n", mi->mi_unit);
+			type = HPDT_EAGLE;
 			break;
 		}
 		return (type);
