@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -982,7 +982,8 @@ dounsetenv(v, t)
 		Unsetenv(name);
 		break;
 	    }
-    xfree((ptr_t) name), name = NULL;
+    xfree((ptr_t) name);
+    name = NULL;
 }
 
 void
