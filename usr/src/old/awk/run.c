@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)run.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)run.c	4.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sys/param.h"
@@ -649,7 +649,7 @@ obj split(a,nnn) node **a;
 			temp = *s;
 			*s = '\0';
 			(void)sprintf(num, "%d", n);
-			if (isnumber(t))
+			if (isanumber(t))
 				setsymtab(num, tostring(t), atof(t), STR|NUM, ap->sval);
 			else
 				setsymtab(num, tostring(t), 0.0, STR, ap->sval);
@@ -666,7 +666,7 @@ obj split(a,nnn) node **a;
 			temp = *s;
 			*s = '\0';
 			(void)sprintf(num, "%d", n);
-			if (isnumber(t))
+			if (isanumber(t))
 				setsymtab(num, tostring(t), atof(t), STR|NUM, ap->sval);
 			else
 				setsymtab(num, tostring(t), 0.0, STR, ap->sval);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lib.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lib.c	4.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef __STDC__
@@ -182,7 +182,7 @@ fldbld()
 	maxfld = i;
 	donefld = 1;
 	for(i=1; i<=maxfld; i++)
-		if(isnumber(fldtab[i].sval)) {
+		if(isanumber(fldtab[i].sval)) {
 			fldtab[i].fval = atof(fldtab[i].sval);
 			fldtab[i].tval |= NUM;
 		}
@@ -262,7 +262,7 @@ PUTS(s) char *s; {
 
 #define	MAXEXPON	38	/* maximum exponenet for fp number */
 
-isnumber(s)
+isanumber(s)
 register char *s;
 {
 	register d1, d2;
@@ -323,5 +323,5 @@ register char *s;
 		return(0);
 }
 /*
-isnumber(s) char *s; {return(0);}
+isanumber(s) char *s; {return(0);}
 */

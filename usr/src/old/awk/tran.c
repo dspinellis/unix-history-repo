@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tran.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tran.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "stdio.h"
@@ -179,7 +179,7 @@ register cell *vp;
 		/* have unlikely numeric variables, so that */
 		/* $1 == $2 comparisons sort of make sense when */
 		/* one or the other is numeric */
-		if (isnumber(vp->sval)) {
+		if (isanumber(vp->sval)) {
 			vp->fval = atof(vp->sval);
 			if (!(vp->tval & CON))	/* don't change type of a constant */
 				vp->tval |= NUM;
