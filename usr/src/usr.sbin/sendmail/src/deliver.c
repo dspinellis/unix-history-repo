@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.141		%G%);
+SCCSID(@(#)deliver.c	3.142		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -555,12 +555,8 @@ sendoff(e, m, pvp, ctladdr, crlf)
 
 	/*
 	**  Format and send message.
-	**	We ignore broken pipes so that the mailer need not read
-	**	its input if it is not convenient to do so (e.g., on
-	**	some error).
 	*/
 
-	(void) signal(SIGPIPE, SIG_IGN);
 	putfromline(mfile, m, crlf);
 	(*e->e_puthdr)(mfile, m, e, crlf);
 	fprintf(mfile, "\n");

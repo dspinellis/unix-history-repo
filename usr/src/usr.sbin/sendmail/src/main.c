@@ -3,7 +3,7 @@
 # include <sys/ioctl.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	3.147		%G%);
+SCCSID(@(#)main.c	3.148		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -134,6 +134,7 @@ main(argc, argv)
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGHUP, intsig);
 	(void) signal(SIGTERM, intsig);
+	(void) signal(SIGPIPE, SIG_IGN);
 	OldUmask = umask(0);
 	OpMode = MD_DELIVER;
 	MotherPid = getpid();
