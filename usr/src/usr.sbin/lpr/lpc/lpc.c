@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -105,7 +105,7 @@ cmdscanner(top)
 			printf("lpc> ");
 			fflush(stdout);
 		}
-		if (gets(cmdline) == 0)
+		if (fgets(cmdline, sizeof(cmdline), stdin) == 0)
 			quit();
 		if (cmdline[0] == 0)
 			break;
