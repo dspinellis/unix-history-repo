@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.18 1994/04/23 11:35:22 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.19 1994/04/23 19:03:05 gclarkii Exp $
 
 
 Table of Contents
@@ -85,7 +85,14 @@ we have made in the VM system and i386-specific code into Berkeley's
 release of FreeBSD (we haven't decided whether to call it 1.2 or 2.0).
 We expect the integration to take place over a period of three to six
 months, during which time we will have to stop work on 1.1 and
-concentrate all our efforts on the merge.
+concentrate all our efforts on the merge, and we expect to make more 
+information available on the status of the merge effort as the situation 
+progresses.
+
+However, to answer the question, "No.  FreeBSD is not illegal."  We
+have been allowed by USL to distribute 1.1 as the last Net/2 derived
+version, after which we have committed to move to 4.4 as previously 
+stated.
 
 We expect to make more information available on the status of the
 merge effort as the situation progresses.
