@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)mkdep.sh	5.15 (Berkeley) %G%
+#	@(#)mkdep.sh	5.16 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
@@ -47,14 +47,6 @@ fi
 TMP=/tmp/mkdep$$
 
 trap 'rm -f $TMP ; exit 1' 1 2 3 13 15
-
-# If your compiler doesn't have -M, add it.  If you can't, the next two
-# lines will try and replace the "cc -M".  The real problem is that this
-# hack can't deal with anything that requires a search path, and doesn't
-# even try for anything using bracket (<>) syntax.
-#
-# egrep '^#include[ 	]*".*"' /dev/null $* |
-# sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' -e 's/\.c/.o/' |
 
 cc -M $* |
 sed "
