@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1993 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.9 (Berkeley) %G%
+ *	@(#)in_proto.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,8 +22,8 @@
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
 int	ip_output(),ip_ctloutput();
-int	ip_init(),ip_slowtimo(),ip_drain();
-int	icmp_input();
+int	ip_init(),ip_slowtimo(),ip_drain(),ip_sysctl();
+int	icmp_input(),icmp_sysctl();
 int	igmp_init(),igmp_input(),igmp_fasttimo();
 int	udp_input(),udp_ctlinput();
 int	udp_usrreq();
@@ -61,7 +61,7 @@ struct protosw inetsw[] = {
 { 0,		&inetdomain,	0,		0,
   0,		ip_output,	0,		0,
   0,
-  ip_init,	0,		ip_slowtimo,	ip_drain,
+  ip_init,	0,		ip_slowtimo,	ip_drain,	ip_sysctl
 },
 { SOCK_DGRAM,	&inetdomain,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp_input,	0,		udp_ctlinput,	ip_ctloutput,
@@ -81,7 +81,7 @@ struct protosw inetsw[] = {
 { SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
   icmp_input,	rip_output,	0,		rip_ctloutput,
   rip_usrreq,
-  0,		0,		0,		0,
+  0,		0,		0,		0,		icmp_sysctl
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_IGMP,	PR_ATOMIC|PR_ADDR,
   igmp_input,	rip_output,	0,		rip_ctloutput,
