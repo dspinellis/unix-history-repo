@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.18 (Berkeley) %G%
+ *	@(#)buf.h	7.19 (Berkeley) %G%
  */
 
 #ifndef _BUF_H_
@@ -30,24 +30,11 @@
  * pointers to keep track of them in their i/o active queues.
  */
 
-/*
- * Bufhd structures used at the head of the hashed buffer queues.
- * We only need three words for these, so this abbreviated
- * definition saves some space.
- */
-struct bufhd
-{
-	volatile long	b_flags;	/* see defines below */
-	struct	buf *b_forw, *b_back;	/* fwd/bkwd pointer in chain */
-};
-struct buf
-{
+struct buf {
 	volatile long	b_flags;	/* too much goes here to describe */
-	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
-	struct	buf *av_forw, *av_back;	/* position on free list if not BUSY */
+	struct	buf *b_forw, **b_back;	/* hash chain (2 way street) */
 	struct	buf *b_blockf, **b_blockb;/* associated vnode */
-#define	b_actf	av_forw			/* alternate names for driver queue */
-#define	b_actl	av_back			/*    head - isn't history wonderful */
+	struct	buf *b_actf, **b_actb;	/* position on free list if not BUSY */
 	long	b_bcount;		/* transfer count */
 	long	b_bufsize;		/* size of allocated buffer */
 #define	b_active b_bcount		/* driver queue head: drive active */
@@ -83,38 +70,13 @@ struct buf
 	int	b_validend;		/* offset of end of valid region */
 };
 
-#define	BQUEUES		4		/* number of free buffer queues */
-
-#define	BQ_LOCKED	0		/* super-blocks &c */
-#define	BQ_LRU		1		/* lru, useful buffers */
-#define	BQ_AGE		2		/* rubbish */
-#define	BQ_EMPTY	3		/* buffer headers with no memory */
-
-#ifdef	KERNEL
-#ifdef SECSIZE
-#define	BUFHSZ		512
-#define	MINSECSIZE	512
-#define RND	(MAXBSIZE/MINSECSIZE)
-#else SECSIZE
-#define	BUFHSZ	512
-#define RND	(MAXBSIZE/DEV_BSIZE)
-#endif SECSIZE
-#if	((BUFHSZ&(BUFHSZ-1)) == 0)
-#define	BUFHASH(dvp, dblkno)	\
-	((struct buf *)&bufhash[((int)(dvp)+(((int)(dblkno))/RND))&(BUFHSZ-1)])
-#else
-#define	BUFHASH(dvp, dblkno)	\
-	((struct buf *)&bufhash[((int)(dvp)+(((int)(dblkno))/RND)) % BUFHSZ])
-#endif
-
+#ifdef KERNEL
 struct	buf *buf;		/* the buffer pool itself */
 char	*buffers;
 int	nbuf;			/* number of buffer headers */
 int	bufpages;		/* number of memory pages in the buffer pool */
 struct	buf *swbuf;		/* swap I/O headers */
 int	nswbuf;
-struct	bufhd bufhash[BUFHSZ];	/* heads of hash lists */
-struct	buf bfreelist[BQUEUES];	/* heads of available lists */
 struct	buf bswlist;		/* head of free swap header list */
 struct	buf *bclnlist;		/* head of cleaned page list */
 
@@ -167,40 +129,6 @@ __END_DECLS
 #define	B_CALL		0x200000	/* call b_iodone from iodone */
 #define	B_RAW		0x400000	/* set by physio for raw transfers */
 #define	B_NOCACHE	0x800000	/* do not cache block after use */
-
-/*
- * Insq/Remq for the buffer hash lists.
- */
-#define	bremhash(bp) { \
-	(bp)->b_back->b_forw = (bp)->b_forw; \
-	(bp)->b_forw->b_back = (bp)->b_back; \
-}
-#define	binshash(bp, dp) { \
-	(bp)->b_forw = (dp)->b_forw; \
-	(bp)->b_back = (dp); \
-	(dp)->b_forw->b_back = (bp); \
-	(dp)->b_forw = (bp); \
-}
-
-/*
- * Insq/Remq for the buffer free lists.
- */
-#define	bremfree(bp) { \
-	(bp)->av_back->av_forw = (bp)->av_forw; \
-	(bp)->av_forw->av_back = (bp)->av_back; \
-}
-#define	binsheadfree(bp, dp) { \
-	(dp)->av_forw->av_back = (bp); \
-	(bp)->av_forw = (dp)->av_forw; \
-	(dp)->av_forw = (bp); \
-	(bp)->av_back = (dp); \
-}
-#define	binstailfree(bp, dp) { \
-	(dp)->av_back->av_forw = (bp); \
-	(bp)->av_back = (dp)->av_back; \
-	(dp)->av_back = (bp); \
-	(bp)->av_forw = (dp); \
-}
 
 #define	iodone	biodone
 #define	iowait	biowait
