@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.2 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.3 %G%";
 
 #include "diff.h"
 /*
@@ -97,7 +97,9 @@ long	*ixnew;		/* will be overlaid on file[1] */
 
 diffreg()
 {
-	register int k;
+	register int i, j;
+	FILE *f1, *f2;
+	char buf1[BUFSIZ], buf2[BUFSIZ];
 
 	if (hflag) {
 		diffargv[0] = "diffh";
@@ -119,8 +121,46 @@ diffreg()
 		file1 = copytemp();
 	} else if (!strcmp(file2, "-"))
 		file2 = copytemp();
-	prepare(0, file1);
-	prepare(1, file2);
+	if ((f1 = fopen(file1, "r")) == NULL) {
+		fprintf(stderr, "diff: ");
+		perror(file1);
+		fclose(f1);
+		done();
+	}
+	if ((f2 = fopen(file2, "r")) == NULL) {
+		fprintf(stderr, "diff: ");
+		perror(file2);
+		fclose(f1);
+		fclose(f2);
+		done();
+	}
+	if (stb1.st_size != stb2.st_size)
+		goto notsame;
+	for (;;) {
+		i = fread(buf1, BUFSIZ, 1, f1);
+		j = fread(buf2, BUFSIZ, 1, f2);
+		if (i < 0 || j < 0 || i != j)
+			goto notsame;
+		if (i == 0 && j == 0) {
+			fclose(f1);
+			fclose(f2);
+			goto same;
+		}
+		for (j = 0; j < i; j++)
+			if (buf1[j] != buf2[j])
+				goto notsame;
+	}
+notsame:
+	if (!ascii(fileno(f1)) || !ascii(fileno(f2))) {
+		printf("Binary files %s and %s differ\n", file1, file2);
+		fclose(f1);
+		fclose(f2);
+		done();
+	}
+	prepare(0, f1);
+	prepare(1, f2);
+	fclose(f1);
+	fclose(f2);
 	prune();
 	sort(sfile[0],slen[0]);
 	sort(sfile[1],slen[1]);
@@ -135,12 +175,12 @@ diffreg()
 
 	klist = (int *)talloc((slen[0]+2)*sizeof(int));
 	clist = (struct cand *)talloc(sizeof(cand));
-	k = stone(class, slen[0], member, klist);
+	i = stone(class, slen[0], member, klist);
 	free((char *)member);
 	free((char *)class);
 
 	J = (int *)talloc((len[0]+2)*sizeof(int));
-	unravel(klist[k]);
+	unravel(klist[i]);
 	free((char *)clist);
 	free((char *)klist);
 
@@ -149,6 +189,7 @@ diffreg()
 	check();
 	output();
 	status = anychange;
+same:
 	if (opt == D_CONTEXT && anychange == 0)
 		printf("No differences encountered\n");
 	done();
@@ -201,24 +242,22 @@ splice(dir, file)
 	return (savestr(buf));
 }
 
-prepare(i, arg)
-char *arg;
+prepare(i, fd)
+	int i;
+	FILE *fd;
 {
 	register struct line *p;
 	register j,h;
-	if((input[i] = fopen(arg,"r")) == NULL){
-		fprintf(stderr, "diff: ");
-		perror(arg);
-		done();
-	}
+
+	input[i] = fd;
+	fseek(fd, (long)0, 0);
 	p = (struct line *)talloc(3*sizeof(line));
-	for(j=0; h=readhash(input[i]);) {
+	for(j=0; h=readhash(fd);) {
 		p = (struct line *)ralloc((char *)p,(++j+3)*sizeof(line));
 		p[j].value = h;
 	}
 	len[i] = j;
 	file[i] = p;
-	fclose(input[i]);
 }
 
 prune()
