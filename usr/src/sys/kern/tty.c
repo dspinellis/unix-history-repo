@@ -1,4 +1,4 @@
-/*	tty.c	4.39	83/01/17	*/
+/*	tty.c	4.40	83/02/10	*/
 
 #include "../machine/reg.h"
 
@@ -272,18 +272,21 @@ ttioctl(tp, com, data, flag)
 		register int t = *(int *)data;
 		int error = 0;
 
-		if (t >= nldisp) {
-			u.u_error = ENXIO;
-			break;
-		}
+		if (t >= nldisp)
+			return (ENXIO);
 		s = spl5();
 		if (tp->t_line)
 			(*linesw[tp->t_line].l_close)(tp);
 		if (t)
 			error = (*linesw[t].l_open)(dev, tp);
 		splx(s);
-		if (error)
+		if (error) {
+			s = spl5();
+			if (tp->t_line)
+				(void) (*linesw[tp->t_line].l_open)(dev, tp);
+			splx(s);
 			return (error);
+		}
 		tp->t_line = t;
 		break;
 	}
