@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.20 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.21 %G%";
 
 #include "diff.h"
 #include "pathnames.h"
@@ -167,7 +167,7 @@ diffreg()
 			perror(file2);
 			done();
 		}
-	} else if (!strcmp(file1, "-")) {
+	} else if ((stb1.st_mode & S_IFMT) != S_IFREG || !strcmp(file1, "-")) {
 		if (!strcmp(file2, "-")) {
 			fprintf(stderr, "diff: can't specify - -\n");
 			done();
@@ -178,7 +178,7 @@ diffreg()
 			perror(file1);
 			done();
 		}
-	} else if (!strcmp(file2, "-")) {
+	} else if ((stb2.st_mode & S_IFMT) != S_IFREG || !strcmp(file2, "-")) {
 		file2 = copytemp();
 		if (stat(file2, &stb2) < 0) {
 			fprintf(stderr, "diff: ");
