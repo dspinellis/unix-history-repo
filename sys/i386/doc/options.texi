@@ -33,7 +33,7 @@ Trademarks are property of their respective owners.
 
 @titlepage
 @title Configuration Options in FreeBSD
-@subtitle for FreeBSD 1.1
+@subtitle for FreeBSD 1.1-1.2
 @author Garrett A. Wollman
 @author FreeBSD Project
 
@@ -71,12 +71,12 @@ authorship.
 @top FreeBSD Configuration Options
 
 This document describes kernel configuration options relevant to the
-FreeBSD operating system version 1.1.  It is intended for readers who
-already have a general understanding of the process of configuring a BSD
-kernel and wish to get a general overview of the meaning of various
-configuration options.  This document covers configurable options and
-pseudo-devices; it is intended that devices may be added at a later
-date.
+FreeBSD operating system between versions 1.1 and 1.2.  It is intended
+for readers who already have a general understanding of the process of
+configuring a BSD kernel and wish to get a general overview of the
+meaning of various configuration options.  This document covers
+configurable options and pseudo-devices; it is intended that devices may
+be added at a later date.
 
 @menu
 * Subsystems::          Controlling subsystems.
@@ -527,10 +527,10 @@ team.
 This option controls the number of bytes in an mbuf cluster, which is
 one of the basic units through which network data is managed.  It is
 equal to the log base two of @samp{MCLBYTES}, the size of an mbuf
-cluster, and defaults to eleven (for an @samp{MCLBYTES} of 2048).  It
-will likely eventually be bumped up to twelve (4096), so that the
-network code can take advantage of page flipping to reduce the numer of
-copies necessary.
+cluster, and defaults to twelve (for an @samp{MCLBYTES} of 4096).  It is
+unlikely you will ever need to change this, but in previous releases
+some performance gain could be had by increasing it from the
+then-default values.
 
 @item options SUBNETSARELOCAL
 @findex SUBNETSARELOCAL
@@ -786,7 +786,7 @@ actually be documentation somewhere for both of these.  The @samp{sc}
 device requires the @samp{NCONS} option to be defined to some value; it
 represents the number of virtual consoles to be provided by the driver;
 a reasonable value is 8.  One of @samp{pc} or @samp{sc} is presently
-required unless @samp{COMSONSOLE} is enabled, in which case a serial
+required unless @samp{COMCONSOLE} is enabled, in which case a serial
 port is made into the console.
 
 @c sb, anyone?

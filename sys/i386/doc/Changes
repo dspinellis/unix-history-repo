@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.15 1994/02/21 23:03:09 rgrimes Exp $
+$Id: Changes,v 1.17 1994/03/02 20:35:09 guido Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -8,7 +8,24 @@ chronological order; userids can be decoded with the chart at the end
 of this file.
 
 Since 1.1 BETA:
-- struct ttys now allocated dynamically. (guido)
+- MCLBYTES is now 4096, so each mbuf cluster is given a whole page, in
+  preparation for page flipping.  (davidg/dyson)
+
+- More VM system improvements (dyson/davidg):
+  o Pre-faulting of initial pages on process startup and mmap (faster
+    than starting and immediately taking a fault).
+  o Even more efficient physical map (pmap) code.
+  o Pageouts are now clustered, similar to pagein clustering in 1.1.
+  o The pageout code is more efficient and keeps better statistics.
+  o The procfs can now provide more information from the VM system.
+
+- Improved IP checksum and bzero routines.  (bde/dyson)
+
+- The Mitsumi CD-ROM driver is more careful about recognizing Ethernet
+  cards as CD-ROMs.  (jkh)
+
+- `struct tty's now allocated dynamically, and ring buffers can be
+  deallocated. (guido)
 
 Between 1.1 BETA and 1.0.2:
 - Improved lpt driver, should no longer lock up when lprm is done on
