@@ -14,21 +14,22 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)map3270	5.2 (Berkeley) %G%
+#	@(#)map3270	5.3 (Berkeley) %G%
 #
-# this file contains mappings between characters entered from the keyboard,
+# This file contains mappings between characters entered from the keyboard,
 # and 3270 keys, for use by programs (like tn3270) doing 3270 emulation
 # from unix.
 #
-# inside the single quotes, a caret ("^") introduces a control character
-# sequence (rub out = ^?, by the way).  also inside the single quotes,
+# Inside the single quotes, a caret ("^") introduces a control character
+# sequence (rub out = ^?, by the way).  Also inside the single quotes,
 # a backslash ('\') introduces an escaped character.  Also, \n, \r, \t,
-# are all as in c, and \E is another way of representing escape.
+# are all as in C, and \E is another way of representing escape.
 #
 #	NOTE that while we are defining lots of function, much of that
-# function (ie: local editing keys) may not yet be available from
-# tn3270.
-
+# function (ie: local editing keys) may not yet be available from tn3270.
+#
+# Please e-mail changes to termcap@berkeley.edu or uunet!ucbvax!termcap.
+#
 
 3a | adm3a {
     enter = '^m';
