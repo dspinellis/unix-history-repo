@@ -1,0 +1,5 @@
+yacc r.g
+cc -s -O r1.c r2.c lex.c -ly -lp
+cmp a.out /usr/lib/ratfor
+cp a.out /usr/lib/ratfor
+rm *.o a.out y.tab.c
