@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.9 (Berkeley) 87/04/23";
+static char sccsid[] = "@(#)bugfiler.c	5.10 (Berkeley) 87/07/20";
 #endif not lint
 
 /*
@@ -99,6 +99,10 @@ make_copy()
 			tfd;			/* temp file descriptor */
 	char	*strcpy();
 
+	if (access(TMP_DIR, F_OK)) {
+		(void)mkdir(TMP_DIR);
+		(void)chmod(TMP_DIR, 0775);
+	}
 	(void)strcpy(tmpname, TMP_BUG);
 	if (tfd = mkstemp(tmpname)) {
 		while ((cnt = read(fileno(stdin), bfr, sizeof(bfr))) != ERR && cnt)
