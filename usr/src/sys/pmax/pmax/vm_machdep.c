@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,7 +44,7 @@ cpu_fork(p1, p2)
 	register int i;
 	extern struct proc *machFPCurProcPtr;
 
-	p2->p_regs = up->u_pcb.pcb_regs;
+	p2->p_md.md_regs = up->u_pcb.pcb_regs;
 	p2->p_md.md_flags = p1->p_md.md_flags & (MDP_FPUSED | MDP_ULTRIX);
 
 	/*
