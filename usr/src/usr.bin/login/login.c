@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -119,6 +119,8 @@ main(argc, argv)
 	(void)signal(SIGINT, SIG_IGN);
 	(void)setpriority(PRIO_PROCESS, 0, 0);
 
+	openlog("login", LOG_ODELAY, LOG_AUTH);
+
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
  	 * -f is used to skip a second login authentication 
@@ -130,8 +132,6 @@ main(argc, argv)
 		syslog(LOG_ERR, "couldn't get local hostname: %m");
 	else
 		domain = index(localhost, '.');
-
-	openlog("login", LOG_ODELAY, LOG_AUTH);
 
 	fflag = hflag = pflag = 0;
 	passwd_req = 1;
