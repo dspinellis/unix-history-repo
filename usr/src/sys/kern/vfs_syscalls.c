@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.69 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.70 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1450,24 +1450,21 @@ rename(p, uap, retval)
 	int *retval;
 {
 	register struct vnode *tvp, *fvp, *tdvp;
-	register struct nameidata *ndp;
+	struct nameidata fromnd, tond;
 	int error;
-	struct nameidata nd, tond;
 
-	ndp = &nd;
-	ndp->ni_nameiop = DELETE | WANTPARENT;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->from;
-	if (error = namei(ndp, p))
+	fromnd.ni_nameiop = DELETE | WANTPARENT | SAVESTART;
+	fromnd.ni_segflg = UIO_USERSPACE;
+	fromnd.ni_dirp = uap->from;
+	if (error = namei(&fromnd, p))
 		return (error);
-	fvp = ndp->ni_vp;
-	nddup(ndp, &tond);
-	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
+	fvp = fromnd.ni_vp;
+	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART;
 	tond.ni_segflg = UIO_USERSPACE;
 	tond.ni_dirp = uap->to;
 	if (error = namei(&tond, p)) {
-		VOP_ABORTOP(ndp);
-		vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&fromnd);
+		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 		goto out1;
 	}
@@ -1493,14 +1490,17 @@ rename(p, uap, retval)
 	if (fvp == tdvp)
 		error = EINVAL;
 	/*
-	 * If source is the same as the destination,
+	 * If source is the same as the destination (that is the
+	 * same inode number with the same name in the same directory),
 	 * then there is nothing to do.
 	 */
-	if (fvp == tvp)
+	if (fvp == tvp && fromnd.ni_dvp == tdvp &&
+	    fromnd.ni_namelen == tond.ni_namelen &&
+	    !bcmp(fromnd.ni_ptr, tond.ni_ptr, fromnd.ni_namelen))
 		error = -1;
 out:
 	if (!error) {
-		error = VOP_RENAME(ndp, &tond, p);
+		error = VOP_RENAME(&fromnd, &tond, p);
 	} else {
 		VOP_ABORTOP(&tond);
 		if (tdvp == tvp)
@@ -1509,12 +1509,15 @@ out:
 			vput(tdvp);
 		if (tvp)
 			vput(tvp);
-		VOP_ABORTOP(ndp);
-		vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&fromnd);
+		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 	}
+	vrele(tond.ni_startdir);
+	FREE(tond.ni_pnbuf, M_NAMEI);
 out1:
-	ndrele(&tond);
+	vrele(fromnd.ni_startdir);
+	FREE(fromnd.ni_pnbuf, M_NAMEI);
 	if (error == -1)
 		return (0);
 	return (error);
