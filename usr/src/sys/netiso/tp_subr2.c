@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.9 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -53,6 +53,7 @@ SOFTWARE.
 #define LOCAL_CREDIT_EXPAND
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
