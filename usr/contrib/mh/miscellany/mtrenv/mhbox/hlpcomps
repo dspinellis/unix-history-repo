@@ -1,0 +1,12 @@
+To: %<{reply-to}%(formataddr{reply-to})%|\
+%<{from}%(formataddr{from})%|\
+%(formataddr{sender})%>%>
+cc: %(formataddr{to})%(formataddr{cc})%(formataddr(me))
+Fcc: +outbox%<{fcc},%{fcc}%>
+%<{subject}Subject: Re: %{subject}\n%>\
+%<{date}In-reply-to: Your message of %(putstr(tws{date})).%<{message-id}\n\
+             %{message-id}%>\n%>\
+--------
+Thanks.  That was 'real helpful.
+
+/mtr
