@@ -9,7 +9,7 @@
  * Message list handling.
  */
 
-static char *SccsId = "@(#)list.c	2.1 %G%";
+static char *SccsId = "@(#)list.c	2.2 %G%";
 
 /*
  * Convert the user string of message numbers and
@@ -107,7 +107,8 @@ number:
 				if (check(lexnumber, f))
 					return(-1);
 				for (i = beg; i <= lexnumber; i++)
-					mark(i);
+					if ((message[i - 1].m_flag & MDELETED) == f)
+						mark(i);
 				beg = 0;
 				break;
 			}
