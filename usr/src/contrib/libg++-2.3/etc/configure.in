@@ -1,0 +1,17 @@
+# This file is a shell script fragment that supplies the information
+# necessary to tailor a template configure script into the configure
+# script appropriate for this directory.  For more information, check
+# any existing configure script.
+
+srctrigger=configure.texi
+srcname="general documentation"
+
+# per-host:
+
+# per-target:
+
+#
+# Local Variables:
+# fill-column: 131
+# End:
+#
