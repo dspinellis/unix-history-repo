@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)systat.h	5.8 (Berkeley) %G%
+ *	@(#)systat.h	5.9 (Berkeley) %G%
  */
 
 #include <curses.h>
@@ -28,7 +28,7 @@ struct  cmdtab {
 #define	UDP	0x2
 
 #define KREAD(addr, buf, len)  kvm_ckread((addr), (buf), (len))
-#define NVAL(indx)  nl[(indx)].n_value
+#define NVAL(indx)  namelist[(indx)].n_value
 #define NPTR(indx)  (void *)NVAL((indx))
 #define NREAD(indx, buf, len) kvm_ckread(NPTR((indx)), (buf), (len))
 #define LONG	(sizeof (long))

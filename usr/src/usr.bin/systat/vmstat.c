@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -102,7 +102,7 @@ closekre(w)
 }
 
 
-static struct nlist nl[] = {
+static struct nlist namelist[] = {
 #define X_CPTIME	0
 	{ "_cp_time" },
 #define X_CNT		1
@@ -171,12 +171,12 @@ initkre()
 	int i;
 	static int once = 0;
 
-	if (nl[0].n_type == 0) {
-		if (kvm_nlist(kd, nl)) {
-			nlisterr(nl);
+	if (namelist[0].n_type == 0) {
+		if (kvm_nlist(kd, namelist)) {
+			nlisterr(namelist);
 			return(0);
 		}
-		if (nl[0].n_type == 0) {
+		if (namelist[0].n_type == 0) {
 			error("No namelist");
 			return(0);
 		}
@@ -198,12 +198,12 @@ initkre()
 #undef allocate
 	}
 	if (nintr == 0) {
-		nintr = (nl[X_EINTRCNT].n_value -
-			nl[X_INTRCNT].n_value) / sizeof (long);
-		intrloc = (long *) calloc(nintr, sizeof (long));
-		intrname = (char **) calloc(nintr, sizeof (long));
-		intrnamebuf = (char *) malloc(nl[X_EINTRNAMES].n_value -
-			nl[X_INTRNAMES].n_value);
+		nintr = (namelist[X_EINTRCNT].n_value -
+			namelist[X_INTRCNT].n_value) / sizeof (long);
+		intrloc = calloc(nintr, sizeof (long));
+		intrname = calloc(nintr, sizeof (long));
+		intrnamebuf = malloc(namelist[X_EINTRNAMES].n_value -
+			namelist[X_INTRNAMES].n_value);
 		if (intrnamebuf == 0 || intrname == 0 || intrloc == 0) {
 			error("Out of memory\n");
 			if (intrnamebuf)

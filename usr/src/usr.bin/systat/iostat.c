@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)iostat.c	5.9 (Berkeley) %G%";
 #include "systat.h"
 #include "extern.h"
 
-static struct nlist nl[] = {
+static struct nlist namelist[] = {
 #define X_DK_BUSY	0
 	{ "_dk_busy" },
 #define X_DK_TIME	1
@@ -86,12 +86,12 @@ closeiostat(w)
 int
 initiostat()
 {
-	if (nl[X_DK_BUSY].n_type == 0) {
-		if (kvm_nlist(kd, nl)) {
-			nlisterr(nl);
+	if (namelist[X_DK_BUSY].n_type == 0) {
+		if (kvm_nlist(kd, namelist)) {
+			nlisterr(namelist);
 			return(0);
 		}
-		if (nl[X_DK_BUSY].n_type == 0) {
+		if (namelist[X_DK_BUSY].n_type == 0) {
 			error("Disk init information isn't in namelist");
 			return(0);
 		}
@@ -114,7 +114,7 @@ initiostat()
 void
 fetchiostat()
 {
-	if (nl[X_DK_BUSY].n_type == 0)
+	if (namelist[X_DK_BUSY].n_type == 0)
 		return;
 	NREAD(X_DK_BUSY, &s.dk_busy, LONG);
 	NREAD(X_DK_TIME, s.dk_time, dk_ndrive * LONG);
@@ -131,7 +131,7 @@ labeliostat()
 {
 	int row;
 
-	if (nl[X_DK_BUSY].n_type == 0) {
+	if (namelist[X_DK_BUSY].n_type == 0) {
 		error("No dk_busy defined.");
 		return;
 	}
@@ -216,7 +216,7 @@ showiostat()
 	register int i, row, col;
 	register long t;
 
-	if (nl[X_DK_BUSY].n_type == 0)
+	if (namelist[X_DK_BUSY].n_type == 0)
 		return;
 	for (i = 0; i < dk_ndrive; i++) {
 #define X(fld)	t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t

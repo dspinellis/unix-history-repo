@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbufs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -104,7 +104,7 @@ showmbufs()
 	wmove(wnd, 1+j, 0); wclrtobot(wnd);
 }
 
-static struct nlist nl[] = {
+static struct nlist namelist[] = {
 #define	X_MBSTAT	0
 	{ "_mbstat" },
 	{ "" }
@@ -113,12 +113,12 @@ static struct nlist nl[] = {
 int
 initmbufs()
 {
-	if (nl[X_MBSTAT].n_type == 0) {
-		if (kvm_nlist(kd, nl)) {
-			nlisterr(nl);
+	if (namelist[X_MBSTAT].n_type == 0) {
+		if (kvm_nlist(kd, namelist)) {
+			nlisterr(namelist);
 			return(0);
 		}
-		if (nl[X_MBSTAT].n_type == 0) {
+		if (namelist[X_MBSTAT].n_type == 0) {
 			error("namelist on %s failed", _PATH_UNIX);
 			return(0);
 		}
@@ -131,7 +131,7 @@ initmbufs()
 void
 fetchmbufs()
 {
-	if (nl[X_MBSTAT].n_type == 0)
+	if (namelist[X_MBSTAT].n_type == 0)
 		return;
 	NREAD(X_MBSTAT, mb, sizeof (*mb));
 }
