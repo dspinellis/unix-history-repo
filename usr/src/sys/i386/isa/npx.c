@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1990 W. Jolitz
- * @(#)npx.c	1.3 (Berkeley) %G%
+ * @(#)npx.c	1.4 (Berkeley) %G%
  */
 #include "npx.h"
 #if	NNPX > 0
@@ -9,12 +9,12 @@
 #include "systm.h"
 #include "conf.h"
 #include "file.h"
-#include "dir.h"
-#include "user.h"
-#include "ioctl.h"
-#include "vm.h"
+#include "proc.h"
+#include "machine/pcb.h"
 #include "machine/pte.h"
-#include "machine/isa/isa_device.h"
+#include "ioctl.h"
+#include "machine/specialreg.h"
+#include "i386/isa/isa_device.h"
 #include "icu.h"
 /*
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.
@@ -25,9 +25,11 @@ struct	isa_driver npxdriver = {
 	npxprobe, npxattach, "npx",
 };
 
-struct proc	*npxproc;	/* process who owns device, otherwise zero */
+static struct proc *npxproc;	/* process who owns device, otherwise zero */
 extern struct user npxutl;	/* owners user structure */
 extern struct pte Npxmap[];	/* kernel ptes mapping owner's user structure */
+static npxexists;
+extern long npx0mask;
 
 /*
  * Probe routine - look device, otherwise set emulator bit
@@ -74,6 +76,8 @@ npxattach(dvp)
 	npxinit(0x262);
 	/* check for ET bit to decide 387/287 */
 	/*outb(0xb1,0);		/* reset processor */
+	npxexists++;
+	npx0mask = dvp->id_irq;
 }
 
 /*
@@ -81,20 +85,35 @@ npxattach(dvp)
  */
 npxinit(control) {
 
-	asm ("	fninit");
+	if (npxexists == 0) return;
+
+
+	load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+#ifdef INTEL_COMPAT
+	asm ("	finit");
 	asm("	fldcw %0" : : "g" (control));
+	asm("	fnsave %0 " : : "g"
+		(((struct pcb *)curproc->p_addr)->pcb_savefpu) );
+#else
+	asm("fninit");
+	asm("fnsave %0" : : "g"
+		(((struct pcb *)curproc->p_addr)->pcb_savefpu) );
+#endif
+	load_cr0(rcr0() | CR0_EM);	/* start emulating */
 
 }
 
+#ifdef notyet
 /*
  * Load floating point context and record ownership to suite
  */
 npxload() {
 
 	if (npxproc) panic ("npxload");
-	npxproc = u.u_procp;
+	npxproc = curproc;
 	uaccess(npxproc, Npxmap, &npxutl);
-	asm("	frstor %0 " : : "g" (u.u_pcb.pcb_savefpu) );
+	asm("	frstor %0 " : : "g"
+		(((struct pcb *)curproc->p_addr)->pcb_savefpu) );
 }
 
 /*
@@ -107,14 +126,19 @@ npxunload() {
 	npxproc = 0 ;
 }
 
+#endif
 /*
  * Record information needed in processing an exception and clear status word
  */
-npxexcept() {
+npxintr() {
+
+	outb(0xf0,0);		/* reset processor */
 
 	/* save state in appropriate user structure */
-	if (npxproc == 0) panic ("npxexcept");
-	asm ("	fsave %0 " : : "g" (npxutl.u_pcb.pcb_savefpu) );
+	if (npxproc == 0 || npxexists == 0) panic ("npxintr");
+#ifdef notyet
+	asm ("	fnsave %0 " : : "g" (npxutl.u_pcb.pcb_savefpu) );
+#endif
 
 	/*
 	 * encode the appropriate u_code for detailed information
@@ -129,16 +153,21 @@ npxexcept() {
 }
 
 /*
- * Catch AT/386 interrupt used to signal exception, and simulate trap()
- */
-npxintr() {
-	outb(0xf0,0);
-	pg("npxintr");
-}
-
-/*
  * Implement device not available (DNA) exception
  */
 npxdna() {
+
+	if (npxexists == 0) return(0);
+	if (!(((struct pcb *) curproc->p_addr)->pcb_flags & FP_WASUSED)
+	    ||(((struct pcb *) curproc->p_addr)->pcb_flags & FP_NEEDSRESTORE)) {
+		load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+		asm("	frstor %0 " : : "g" (((struct pcb *) curproc->p_addr)->pcb_savefpu) );
+		((struct pcb *) curproc->p_addr)->pcb_flags |= FP_WASUSED | FP_NEEDSSAVE;
+		((struct pcb *) curproc->p_addr)->pcb_flags &= ~FP_NEEDSRESTORE;
+		npxproc = curproc;
+		
+		return(1);
+	}
+	return (0);
 }
 #endif

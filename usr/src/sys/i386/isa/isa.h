@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)isa.h	5.6 (Berkeley) %G%
+ *	@(#)isa.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -83,8 +83,9 @@ void outb();
  */
 
 #ifndef	IOM_BEGIN
-#define	IOM_BEGIN	0xa0000		/* Start of I/O Memory "hole" */
-#define	IOM_END		0xFFFFF		/* End of I/O Memory "hole" */
+#define	IOM_BEGIN	0x0a0000		/* Start of I/O Memory "hole" */
+#define	IOM_END		0x100000		/* End of I/O Memory "hole" */
+#define	IOM_SIZE	(IOM_END - IOM_BEGIN)
 #endif	IOM_BEGIN
 
 /*
@@ -92,9 +93,10 @@ void outb();
  */
 
 #ifndef	RAM_BEGIN
-#define	RAM_BEGIN	0x000000	/* Start of RAM Memory */
-#define	RAM_END		0xFFFFFF	/* End of RAM Memory */
-#endif	IOM_BEGIN
+#define	RAM_BEGIN	0x0000000	/* Start of RAM Memory */
+#define	RAM_END		0x1000000	/* End of RAM Memory */
+#define	RAM_SIZE	(RAM_END - RAM_BEGIN)
+#endif	RAM_BEGIN
 
 /*
  * Oddball Physical Memory Addresses
