@@ -58,7 +58,7 @@ tpcopy:	copy.c tpsrt0.o /usr/lib/libsa.a
 
 tpformat: format.c tpsrt0.o /usr/lib/libsa.a
 	cp format.c tpformat.c; chmod +w tpformat.c
-	cc -c -O tpformat.c
+	cc -c -O -DJUSTEXIT tpformat.c
 	rm tpformat.c
 	ld -N tpsrt0.o tpformat.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
@@ -164,6 +164,7 @@ lint:
 install: ${ALL}
 	cp tpcopy ${DESTDIR}/tp/copy
 	cp tpboot ${DESTDIR}/tp/boot
+	cp tpformat ${DESTDIR}/tp/format
 	cp copy a.out; strip a.out; dd if=a.out of=../floppy/copy bs=32 skip=1
 	cp boot a.out; strip a.out; dd if=a.out of=../floppy/boot bs=32 skip=1
 	cp format a.out; strip a.out; \
