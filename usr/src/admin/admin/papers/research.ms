@@ -1,4 +1,4 @@
-.\" @(#)research.ms	1.2 %G%
+.\" @(#)research.ms	1.3 %G%
 .\" *troff -ms
 .rm CM
 .sp 2
@@ -26,10 +26,13 @@ The release of 4.3BSD in April of 1986 addressed many of the
 performance problems and unfinished interfaces
 present in 4.2BSD [Leffler84] [McKusick85].
 The Computer Systems Research Group at Berkeley
-has now embarked on a new development phase to
+has embarked on a new development phase to
 update other major components of the system, as well as to offer
 new functionality.
-There are six major ongoing projects.
+There are seven major ongoing projects.
+.PP
+The first five projects are near completion and will soon be sent to beta
+test sites.
 The first is to develop an OSI network protocol suite and to integrate
 existing ISO applications into Berkeley UNIX.
 The second is to develop and support an interface compliant with the
@@ -39,12 +42,20 @@ its performance and limit congestion on slow and/or lossy networks.
 The fourth is to provide a standard interface to file systems
 so that multiple local and remote file systems can be supported,
 much as multiple networking protocols are supported by 4.3BSD.
-The fifth is to replace the 4.3BSD virtual memory system
-in order to support mapped files, larger memories, copy-on-write on fork
-and I/O, and better portability.
-The final project is to evaluate alternate access control mechanisms and
+The fifth is to evaluate alternate access control mechanisms and
 audit the existing security features of the system, particularly
 with respect to network services.
+.PP
+The remaining two projects will not be in the next beta release,
+but are expected to be complete by the release of 4.4BSD. 
+The first is to replace the 4.3BSD virtual memory system
+in order to support mapped files, larger memories, copy-on-write on fork
+and I/O, and better portability.
+The other project is a revised internal network
+architecture incorporating the best features of both the existing
+socket support and the ``streams'' layering of the Ninth Edition
+research version of \s-1UNIX\s0.
+.PP
 Other areas of work include multi-architecture support, 
 a general purpose kernel memory allocator, disk labels, and
 extensions to the 4.2BSD fast filesystem.
@@ -145,10 +156,12 @@ The network architecture of 4.2BSD was designed to accommodate
 multiple network protocol families and address formats,
 and an implementation of the ISO OSI network protocols
 should enter into this framework without much difficulty.
-The current system implements the OSI Connectionless Network Protocol (CLNP),
+The current Berkeley system includes
+implementations of the OSI Connectionless Network Protocol (CLNP),
 the End System\-Intermediate System protocol (ES-IS),
-and OSI transport class 4 (TP-4).
-Device drivers for 802.3 are included,
+and OSI transport class 4 (TP-4)
+done by the University of Wisconsin with support from IBM.
+Device drivers for 802.3 are now included as well,
 and device drivers for X.25 and possibly 802.5 interfaces
 are expected to be added.
 We will also incorporate into the Berkeley Software Distribution an
@@ -157,42 +170,48 @@ featuring International Standard (IS) versions of OSI applications.
 ISODE implements the session and presentation layers of the OSI protocol suite,
 and includes an implementation of the file transfer protocol (FTAM)
 and the OSI Virtual Terminal protocol (VT).
-It is also possible that an X.400 implementation now being done at
+An X.400 implementation now being done at
 University College, London and the University of Nottingham
 will be available for testing and distribution.  
 .LP
-This implementation is comprised of four areas.
+This integration work is comprised of four areas.
 .IP 1)
 We are updating the University of
-Wisconsin TP-4 to match GOSIP requirements.
+Wisconsin TP-4 to match GOSIP and COS requirements.
 The University of Wisconsin developed a transport class 4
-implementation for the 4.2BSD kernel under contract to Mitre.
+implementation for the 4.2BSD kernel under contract to IBM.
 This implementation must be updated to reflect the National Institute
 of Standards and Technology (NIST, formerly NBS) workshop agreements,
-GOSIP, and 4.3BSD requirements.
-We will make this TP-4 operate with an OSI IP,
-as the original implementation was built to run over the DoD IP.
+GOSIP, and COS requirements.
 .IP 2)
-A kernel version of the OSI IP and ES-IS protocols must be produced.
-We will implement the kernel version of these protocols.
+There is an ongoing collaboration with resarchers at the University
+of Wisconsin who are developing an IS-IS routing daemon, which may require
+architectural changes at the routing and link level.  We believe we
+have provided adequate faciilities but requirements may change with time.
 .IP 3)
 The required device drivers need to be integrated into a BSD kernel.
-4.3BSD has existing device drivers for many ethernet devices; future
-BSD versions may also support X.25 devices as well as token ring
+4.3BSD has existing device drivers for many Ethernet devices;
+these are being upgraded to support 802.3.
+Future BSD versions should support X.25 devices and may support token ring
 networks.
-These device drivers must be integrated
-into the kernel OSI protocol implementations.
+A major reworking of the architecture is required to support
+connection-oriented networks like X.25 (see Protocol Layering below).
+With that layering, both kernel (for OSI and IP datagrams)
+and user level services (such as TP-0 over
+the Connection-Oriented Network Service, CONS,
+or traditional X.25 PAD services) can be supported over a variety
+of X.25 devices, from intelligent front ends to devices capable only of HDLC
+framing.
 .IP 4)
 The existing OSINET interoperability test network is available so 
 that the interoperability of the ISODE and BSD kernel protocols
 can be established through tests with several vendors.
 Testing is crucial because an openly available version of GOSIP protocols
 that does not interoperate with DEC, IBM, SUN, ICL, HIS, and other
-major vendors would be embarrassing.
-To allow testing of the integrated pieces the most desirable
-approach is to provide access to OSINET at UCB.
-A second approach is to do the interoperability testing at
-the site of an existing OSINET member, such as the NBS.
+major vendors would be useless.
+Berkeley has acquired OSINET (in reality ACCUNET) service; further
+funding is required to continue our connection until the X.25 implementation
+is completed.
 .NH 2
 Compliance with POSIX 1003
 .PP
@@ -346,34 +365,6 @@ a virtual-memory-resident file system (MFS).
 This file system is used for temporary file storage in /tmp,
 and greatly speeds ``I/O'' for creation and use of temporary files.
 .NH 2
-Virtual Memory
-.PP
-The 4.3BSD virtual memory system is a direct descendent of the original
-Berkeley virtual memory system for 3BSD, released in 1979.
-The state of the art in virtual memory hardware and software has
-changed tremendously in that time.
-There are several problems with the current system:
-.IP 1.
-Other than shared code regions, shared memory is not supported.
-.IP 2.
-Memory-mapped files and devices are not supported.
-.IP 3.
-Backing store is fully allocated for each process section,
-preventing support of sparse address spaces and requiring excessive
-backing store for large-memory systems.
-.IP 4.
-The implementation is tightly coupled to the VAX page table format.
-.LP
-Most of these problems have been addressed in the virtual memory system
-in the Mach system from Carnegie-Mellon University.
-That virtual memory system has been ported to 4.3BSD at the University
-of Utah, and work has begun to convert to the BSD
-.I mmap\^ ()
-interface for mapped files and shared memory.
-That virtual memory system is expected to be the basis for the 4.4BSD
-system, and its integration and development at Berkeley will begin
-in the next few months.
-.NH 2
 System Security
 .PP
 The invasion of the DARPA Internet by a quickly reproducing ``worm''
@@ -436,6 +427,78 @@ the X window system, and the mail system within an authentication
 domain (a Kerberos \fIrealm\fP).
 We hope to replace the existing password authentication completely
 with the network authentication system.
+.NH 2
+Virtual Memory
+.PP
+The 4.3BSD virtual memory system is a direct descendent of the original
+Berkeley virtual memory system for 3BSD, released in 1979.
+The state of the art in virtual memory hardware and software has
+changed tremendously in that time.
+There are several problems with the current system:
+.IP 1.
+Other than shared code regions, shared memory is not supported.
+.IP 2.
+Memory-mapped files and devices are not supported.
+.IP 3.
+Backing store is fully allocated for each process section,
+preventing support of sparse address spaces and requiring excessive
+backing store for large-memory systems.
+.IP 4.
+The implementation is tightly coupled to the VAX page table format.
+.LP
+Most of these problems have been addressed in the virtual memory system
+in the Mach system from Carnegie-Mellon University.
+That virtual memory system has been ported to 4.3BSD at the University
+of Utah, and work has begun to convert to the BSD
+.I mmap\^ ()
+interface for mapped files and shared memory.
+That virtual memory system is expected to be the basis for the 4.4BSD
+system, and its integration and development at Berkeley will begin
+in the next few months.
+.NH 2
+Changes to the Protocol Layering Interface
+.PP
+The original work on restructuring the UNIX character I/O system
+to allow flexible configuration of the internal processing modules
+was done at Bell Laboratories [Ritchie84].
+Known as the stream I/O system, the new system allowed a user
+process to open a raw terminal port and then insert appropriate
+processing modules (such as one to do normal terminal line editing).
+This model allowed terminal processing modules to be used with
+virtual-circuit networks to create ``network virtual terminals''
+by stacking a terminal processing module on top of a
+networking protocol.
+This architecture was substantially modified by the time of the 
+production implementation of \s-1STREAMS\s0 in System V Release 3.
+In doing the conversion, many pragmatic issues were addressed,
+including the handling of
+multiplexed connections and commercially important protocols.
+Unfortunately, the implementation complexity increased enormously.
+.PP
+The design of the networking facilities for 4.2BSD took
+a different approach, based on the \fBsocket\fP interface
+and a flexible multi-layer network architecture.
+This design allows a single system to support multiple sets of networking
+protocols with stream, datagram, and other types of access.
+Protocol modules may deal with multiplexing of data from different connections
+onto a single transport medium, and demultiplexing of data for different
+protocols and connections received from each network device.
+.PP
+We intend to combine the best features of the original Bell Labs
+version of streams with the network-level structure used in 4.2BSD.
+A socket interface will be used rather than a character device interface,
+and demultiplexing will be handled internally by the protocols in the kernel.
+However, like Streams, the interfaces between kernel
+protocol modules above the multiplexed layers
+will follow a uniform convention.
+This convention will allow incorporation of terminal processing
+modules into a network stream, producing efficient network virtual
+terminal connections.
+It will also allow kernel support for remote procedure
+protocols based on standard transport protocols.
+Finally, this interface will provide a mechanism to extend the kernel
+protocol framework into user processes to allow prototyping
+of new protocols and to do network monitoring functions.
 .NH 2
 Other projects
 .PP
@@ -522,6 +585,11 @@ pp. 295-303, June, 1988.
 Rifkin, A.P., M.P. Forbes, R.L. Hamilton, M. Sabrio, S. Shah, K. Yueh,
 ``RFS Architectural Overview,'' \fIUsenix Conference Proceedings\fP,
 pp. 248-259, June, 1986.
+.sp
+.IP Ritchie84
+Ritchie, D.M., ``A Stream Input-Output System,''
+\fIAT&T Bell Laboratories Technical Journal\fP,
+pp. 1897-1910, October, 1984.
 .sp
 .IP Rodriguez86
 Rodriguez, R., M. Koehler, R. Hyde,
