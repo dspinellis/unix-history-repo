@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER OPTIONS TRACE
 %token DISK SLAVE AT
 %{
-/*	config.y	1.1	81/02/24	*/
+/*	config.y	1.2	81/02/25	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -62,14 +62,7 @@ Dev_name:
 	;
 
 Init_dev:
-	= {
-		cur.d_name = "OHNO!!!";
-		cur.d_type = DEVICE;
-		cur.d_conn = NULL;
-		cur.d_vec1 = cur.d_vec2 = NULL;
-		cur.d_addr = cur.d_flags = cur.d_dk = 0;
-		cur.d_slave = cur.d_drive = cur.d_unit = -1;
-	}
+	= { init_dev(&cur); }
 	;
 
 Dev_info:
@@ -164,16 +157,82 @@ char *dev, *sysname;
  *	returns NULL if no such device and prints an error message
  */
 
-struct device *
-connect(dev, num)
+struct device *connect(dev, num)
 register char *dev;
 register int num;
 {
 	register struct device *dp;
+	struct device *huhcon();
 
+	if (num == -1)
+	    return huhcon(dev);
 	for (dp = dtab; dp != NULL; dp = dp->d_next)
 		if ((num == dp->d_unit || num == -1)
 		    && eq(dev, dp->d_name))
 			return dp;
 	yyerror(sprintf(errbuf, "%s %d not defined", dev, num));
+}
+
+/*
+ * huhcon
+ *	Connect to an unspecific thing
+ */
+
+struct device *huhcon(dev)
+register char *dev;
+{
+    register struct device *dp, *dcp;
+    struct device rdev;
+
+    /*
+     * First make certain that there are some of these to wildcard on
+     */
+    for (dp = dtab; dp != NULL; dp = dp->d_next)
+	if (eq(dp->d_name, dev))
+	    break;
+    if (dp == NULL)
+    {
+	yyerror(sprintf(errbuf, "no %s's to wildcard", dev));
+	return NULL;
+    }
+    dcp = dp->d_conn;
+    /*
+     * Now see if there is already a wildcard entry for this device
+     */
+    for (; dp != NULL; dp = dp->d_next)
+	if (eq(dev, dp->d_name) && dp->d_unit == -1)
+	    break;
+    /*
+     * If there isn't, make one
+     */
+    if (dp == NULL)
+    {
+	dp = &rdev;
+	init_dev(dp);
+	dp->d_unit = -1;
+	dp->d_name = ns(dev);
+	newdev(dp);
+	dp = dtab;
+	/*
+	 * Connect it to the same thing that other similar things are
+	 * connected to, but make sure it is a wildcard unit
+	 */
+	if (dcp == -1 || dcp == NULL)
+	    dp->d_conn = dcp;
+	else
+	    dp->d_conn = connect(dcp->d_name, -1);
+    }
+    return dp;
+}
+
+init_dev(dp)
+register struct device *dp;
+{
+    dp->d_name = "OHNO!!!";
+    dp->d_type = DEVICE;
+    dp->d_conn = NULL;
+    dp->d_vec1 = dp->d_vec2 = NULL;
+    dp->d_addr = dp->d_flags = dp->d_dk = 0;
+    dp->d_slave = -1;
+    dp->d_drive = dp->d_unit = -17;
 }
