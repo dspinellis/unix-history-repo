@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.1 (Berkeley) %G%
+ *	@(#)pmap.c	8.2 (Berkeley) %G%
  *
- * from: $Header: pmap.c,v 1.39 93/04/20 11:17:12 torek Exp $
+ * from: $Header: pmap.c,v 1.40 93/09/27 19:20:44 torek Exp $
  */
 
 /*
@@ -317,6 +317,34 @@ int	pmap_stod[BTSIZE];		/* sparse to dense */
 #define	HWTOSW(pg) (pmap_stod[(pg) >> BSHIFT] | ((pg) & BOFFSET))
 #define	SWTOHW(pg) (pmap_dtos[(pg) >> BSHIFT] | ((pg) & BOFFSET))
 
+/*
+ * Sort a memory array by address.
+ */
+static void
+sortm(mp, n)
+	register struct memarr *mp;
+	register int n;
+{
+	register struct memarr *mpj;
+	register int i, j;
+	register u_int addr, len;
+
+	/* Insertion sort.  This is O(n^2), but so what? */
+	for (i = 1; i < n; i++) {
+		/* save i'th entry */
+		addr = mp[i].addr;
+		len = mp[i].len;
+		/* find j such that i'th entry goes before j'th */
+		for (j = 0, mpj = mp; j < i; j++, mpj++)
+			if (addr < mpj->addr)
+				break;
+		/* slide up any additional entries */
+		ovbcopy(mpj, mpj + 1, (i - j) * sizeof(*mp));
+		mpj->addr = addr;
+		mpj->len = len;
+	}
+}
+
 #ifdef DEBUG
 struct	memarr pmap_ama[MA_SIZE];
 int	pmap_nama;
@@ -339,6 +367,21 @@ init_translations()
 #endif
 
 	nmem = makememarr(ama, MA_SIZE, MEMARR_AVAILPHYS);
+
+	/*
+	 * Open Boot supposedly guarantees at least 3 MB free mem at 0;
+	 * this is where the kernel has been loaded (we certainly hope the
+	 * kernel is <= 3 MB).  We need the memory array to be sorted, and
+	 * to start at 0, so that `software page 0' and `hardware page 0'
+	 * are the same (otherwise the VM reserves the wrong pages for the
+	 * kernel).
+	 */
+	sortm(ama, nmem);
+	if (ama[0].addr != 0) {
+		/* cannot panic here; there's no real kernel yet. */
+		printf("init_translations: no kernel memory?!\n");
+		callrom();
+	}
 #ifdef DEBUG
 	pmap_nama = nmem;
 #endif
