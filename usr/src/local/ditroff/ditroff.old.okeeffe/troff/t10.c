@@ -311,62 +311,50 @@ tchar	*pi;
 	if (k == DRAWFCN) {
 		if (esc)
 			ptesc();
-		dx = absmot(pi[3]);
-		if (isnmot(pi[3]))
+		dx = absmot(pi[2]);
+		if (isnmot(pi[2]))
 			dx = -dx;
-		dy = absmot(pi[4]);
-		if (isnmot(pi[4]))
+		dy = absmot(pi[3]);
+		if (isnmot(pi[3]))
 			dy = -dy;
 		switch (cbits(pi[1])) {
 		case DRAWCIRCLE:	/* circle */
 			fprintf(ptid, "D%c %d\n", DRAWCIRCLE, dx);	/* dx is diameter */
-			w = 0;
 			hpos += dx;
 			break;
 		case DRAWSTYLE:
 			fprintf(ptid, "D%c %d\n", DRAWSTYLE, dx);
-			w = 0;
 			break;
 		case DRAWTHICK:
 			fprintf(ptid, "D%c %d\n", DRAWTHICK, dx);
-			w = 0;
 			break;
 		case DRAWELLIPSE:
 			fprintf(ptid, "D%c %d %d\n", DRAWELLIPSE, dx, dy);
-			w = 0;
 			hpos += dx;
 			break;
 		case DRAWLINE:	/* line */
-			k = cbits(pi[2]);
-			fprintf(ptid, "D%c %d %d ", DRAWLINE, dx, dy);
-			if (k < 128)
-				fprintf(ptid, "%c\n", k);
-			else
-				fprintf(ptid, "%s\n", &chname[chtab[k - 128]]);
-			w = 0;
+			fprintf(ptid, "D%c %d %d\n", DRAWLINE, dx, dy);
 			hpos += dx;
 			vpos += dy;
 			break;
 		case DRAWARC:	/* arc */
-			dx2 = absmot(pi[5]);
-			if (isnmot(pi[5]))
+			dx2 = absmot(pi[4]);
+			if (isnmot(pi[4]))
 				dx2 = -dx2;
-			dy2 = absmot(pi[6]);
-			if (isnmot(pi[6]))
+			dy2 = absmot(pi[5]);
+			if (isnmot(pi[5]))
 				dy2 = -dy2;
 			fprintf(ptid, "D%c %d %d %d %d\n", DRAWARC,
 				dx, dy, dx2, dy2);
-			w = 0;
 			hpos += dx + dx2;
 			vpos += dy + dy2;
 			break;
 		case DRAWWIG:	/* wiggly line  -or- */
 		case DRAWCURVE:	/* gremlin-style curve */
 			fprintf(ptid, "D%c %d %d", cbits(pi[1]), dx, dy);
-			w = 0;
 			hpos += dx;
 			vpos += dy;
-			for (n = 5; cbits(pi[n]) != '.'; n += 2) {
+			for (n = 4; cbits(pi[n]) != '.'; n += 2) {
 				dx = absmot(pi[n]);
 				if (isnmot(pi[n]))
 					dx = -dx;
@@ -380,10 +368,10 @@ tchar	*pi;
 			fprintf(ptid, "\n");
 			break;
 		}
-		for (n = 3; cbits(pi[n]) != '.'; n++)
+		for (n = 2; cbits(pi[n]) != '.'; n++)
 			;
-		outsize = n + 1;
-	} else if (k < 128) {
+		return(n + 1);		/* leave here so the emboldening */
+	} else if (k < 128) {		/* doesn't screw up the graphics */
 		/* try to go faster and compress output */
 		/* by printing nnc for small positive motion followed by c */
 		/* kludgery; have to make sure set all the vars too */
