@@ -1,5 +1,5 @@
 #  @(#)Makefile 5.1beta 93/09/24 
-#  $Id: Makefile,v 1.4 1994/05/07 01:49:31 ljo Exp $
+#  $Id: Makefile,v 1.5 1994/05/28 00:17:13 ljo Exp $
 # 
 #  ====================================================
 #  Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -77,9 +77,8 @@ SRCS = k_standard.c k_rem_pio2.c k_cos.c k_sin.c k_tan.c \
 	s_ilogb.c s_lib_version.c \
 	s_log1p.c s_logb.c s_matherr.c s_nextafter.c \
 	s_rint.c s_scalbn.c s_signgam.c s_significand.c s_sin.c \
-	s_tanh.c
+	s_tanh.c s_tan.c
 
-# s_tan.c
 SRCS+=${ARCH_SRCS}
 
 
