@@ -1072,7 +1072,7 @@ restlab:
 			if (passno == 2){
 			   switch (num_type) {
 				case TYPF:
-					bwrite(&((struct exp *)yylval)->e_number.num_num.numFf_float.Ff_ulong,
+					bwrite(((struct exp *)yylval)->e_number.num_num.numFf_float.Ff_ulong,
 						ty_nbyte[num_type], txtfil);
 					if (liston)
 					{
