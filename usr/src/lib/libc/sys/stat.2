@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	6.4 (Berkeley) %G%
+.\"	@(#)stat.2	6.5 (Berkeley) %G%
 .\"
 .TH STAT 2 ""
 .UC 4
@@ -112,6 +112,7 @@ Changed by the following system calls:
 .IR chown (2),
 .IR link (2),
 .IR mknod (2),
+.IR rename (2),
 .IR unlink (2),
 .IR utimes (2),
 .IR write (2).
@@ -207,7 +208,6 @@ chmod(2), chown(2), utimes(2)
 Applying
 .I fstat
 to a socket (and thus to a pipe)
-returns a zero'd buffer, except for the blocksize field.
-.PP
-The list of calls that modify the various fields should be carefully
-checked with reality.
+returns a zero'd buffer,
+except for the blocksize field,
+and a unique device and inode number.
