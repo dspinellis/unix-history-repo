@@ -1,41 +1,90 @@
-/*	printcap.c	1.1	81/05/09	*/
 /* Copyright (c) 1979 Regents of the University of California */
-#define	BUFSIZ	512
+#define	BUFSIZ	1024
+#define MAXHOP	32	/* max number of tc= indirections */
 
 #include <ctype.h>
+#include "local/uparm.h"
 /*
- * printcap - routines for dealing with the line printer capability data base
+ * termcap - routines for dealing with the terminal capability data base
  *
  * BUG:		Should use a "last" pointer in tbuf, so that searching
  *		for capabilities alphabetically would not be a n**2/2
  *		process when large numbers of capabilities are given.
+ * Note:	If we add a last pointer now we will screw up the
+ *		tc capability. We really should compile termcap.
  *
  * Essentially all the work here is scanning and decoding escapes
  * in string capabilities.  We don't use stdio because the editor
  * doesn't, and because living w/o it is not hard.
  */
 
-static	char *pbuf;
-char	*pskip();
-char	*pgetstr();
-char	*pdecode();
+#define PRINTCAP
+
+#ifdef PRINTCAP
+#define tgetent	pgetent
+#define tskip	pskip
+#define tgetstr	pgetstr
+#define tdecode pdecode
+#define tgetnum	pgetnum
+#define	tgetflag pgetflag
+#define tdecode pdecode
+#define tnchktc	pnchktc
+#define	tnamatch pnamatch
+#undef E_TERMCAP
+#define E_TERMCAP "/etc/printcap"
+#define V6
+#endif
+
+static	char *tbuf;
+static	int hopcount;	/* detect infinite loops in termcap, init 0 */
+char	*tskip();
+char	*tgetstr();
+char	*tdecode();
+char	*getenv();
 
 /*
- * Get an entry for printer name in buffer bp,
- * from the printcap file.  Parse is very rudimentary;
+ * Get an entry for terminal name in buffer bp,
+ * from the termcap file.  Parse is very rudimentary;
  * we just notice escaped newlines.
  */
-pgetent(bp, name)
+tgetent(bp, name)
 	char *bp, *name;
 {
 	register char *cp;
 	register int c;
 	register int i = 0, cnt = 0;
 	char ibuf[BUFSIZ];
+	char *cp2;
 	int tf;
 
-	pbuf = bp;
-	tf = open("/etc/printcap", 0);
+	tbuf = bp;
+	tf = 0;
+#ifndef V6
+	cp = getenv("TERMCAP");
+	/*
+	 * TERMCAP can have one of two things in it. It can be the
+	 * name of a file to use instead of /etc/termcap. In this
+	 * case it better start with a "/". Or it can be an entry to
+	 * use so we don't have to read the file. In this case it
+	 * has to already have the newlines crunched out.
+	 */
+	if (cp && *cp) {
+		if (*cp!='/') {
+			cp2 = getenv("TERM");
+			if (cp2==(char *) 0 || strcmp(name,cp2)==0) {
+				strcpy(bp,cp);
+				return(tnchktc());
+			} else {
+				tf = open(E_TERMCAP, 0);
+			}
+		} else
+			tf = open(cp, 0);
+	}
+	if (tf==0)
+		tf = open(E_TERMCAP, 0);
+#else
+	tf = open(E_TERMCAP, 0);
+#endif
 	if (tf < 0)
 		return (-1);
 	for (;;) {
@@ -57,32 +106,86 @@ pgetent(bp, name)
 				}
 				break;
 			}
-			*cp++ = c;
+			if (cp >= bp+BUFSIZ) {
+				write(2,"Termcap entry too long\n", 23);
+				break;
+			} else
+				*cp++ = c;
 		}
 		*cp = 0;
 
 		/*
 		 * The real work for the match.
 		 */
-		if (pnamatch(name)) {
+		if (tnamatch(name)) {
 			close(tf);
-			return (1);
+			return(tnchktc());
 		}
 	}
 }
 
 /*
- * Tnamatch deals with name matching.  The first field of the printcap
+ * tnchktc: check the last entry, see if it's tc=xxx. If so,
+ * recursively find xxx and append that entry (minus the names)
+ * to take the place of the tc=xxx entry. This allows termcap
+ * entries to say "like an HP2621 but doesn't turn on the labels".
+ * Note that this works because of the left to right scan.
+ */
+tnchktc()
+{
+	register char *p, *q;
+	char tcname[16];	/* name of similar terminal */
+	char tcbuf[BUFSIZ];
+	char *holdtbuf = tbuf;
+	int l;
+
+	p = tbuf + strlen(tbuf) - 2;	/* before the last colon */
+	while (*--p != ':')
+		if (p<tbuf) {
+			write(2, "Bad termcap entry\n", 18);
+			return (0);
+		}
+	p++;
+	/* p now points to beginning of last field */
+	if (p[0] != 't' || p[1] != 'c')
+		return(1);
+	strcpy(tcname,p+3);
+	q = tcname;
+	while (q && *q != ':')
+		q++;
+	*q = 0;
+	if (++hopcount > MAXHOP) {
+		write(2, "Infinite tc= loop\n", 18);
+		return (0);
+	}
+	if (tgetent(tcbuf, tcname) != 1)
+		return(0);
+	for (q=tcbuf; *q != ':'; q++)
+		;
+	l = p - holdtbuf + strlen(q);
+	if (l > BUFSIZ) {
+		write(2, "Termcap entry too long\n", 23);
+		q[BUFSIZ - (p-tbuf)] = 0;
+	}
+	strcpy(p, q+1);
+	tbuf = holdtbuf;
+	return(1);
+}
+
+/*
+ * Tnamatch deals with name matching.  The first field of the termcap
  * entry is a sequence of names separated by |'s, so we compare
  * against each such name.  The normal : terminator after the last
  * name (before the first field) stops us.
  */
-pnamatch(np)
+tnamatch(np)
 	char *np;
 {
 	register char *Np, *Bp;
 
-	Bp = pbuf;
+	Bp = tbuf;
+	if (*Bp == '#')
+		return(0);
 	for (;;) {
 		for (Np = np; *Np && *Bp == *Np; Bp++, Np++)
 			continue;
@@ -99,10 +202,10 @@ pnamatch(np)
 /*
  * Skip to the next field.  Notice that this is very dumb, not
  * knowing about \: escapes or any such.  If necessary, :'s can be put
- * into the printcap file in octal.
+ * into the termcap file in octal.
  */
 static char *
-pskip(bp)
+tskip(bp)
 	register char *bp;
 {
 
@@ -121,18 +224,20 @@ pskip(bp)
  * a # character.  If the option is not found we return -1.
  * Note that we handle octal numbers beginning with 0.
  */
-pgetnum(id)
+tgetnum(id)
 	char *id;
 {
 	register int i, base;
-	register char *bp = pbuf;
+	register char *bp = tbuf;
 
 	for (;;) {
-		bp = pskip(bp);
+		bp = tskip(bp);
 		if (*bp == 0)
 			return (-1);
 		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
 			continue;
+		if (*bp == '@')
+			return(-1);
 		if (*bp != '#')
 			continue;
 		bp++;
@@ -152,17 +257,21 @@ pgetnum(id)
  * of the buffer.  Return 1 if we find the option, or 0 if it is
  * not given.
  */
-pgetflag(id)
+tgetflag(id)
 	char *id;
 {
-	register char *bp = pbuf;
+	register char *bp = tbuf;
 
 	for (;;) {
-		bp = pskip(bp);
+		bp = tskip(bp);
 		if (!*bp)
 			return (0);
-		if (*bp++ == id[0] && *bp != 0 && *bp++ == id[1] && (!*bp || *bp == ':'))
-			return (1);
+		if (*bp++ == id[0] && *bp != 0 && *bp++ == id[1]) {
+			if (!*bp || *bp == ':')
+				return (1);
+			else if (*bp == '@')
+				return(0);
+		}
 	}
 }
 
@@ -175,21 +284,23 @@ pgetflag(id)
  * No checking on area overflow.
  */
 char *
-pgetstr(id, area)
+tgetstr(id, area)
 	char *id, **area;
 {
-	register char *bp = pbuf;
+	register char *bp = tbuf;
 
 	for (;;) {
-		bp = pskip(bp);
+		bp = tskip(bp);
 		if (!*bp)
 			return (0);
 		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
 			continue;
+		if (*bp == '@')
+			return(0);
 		if (*bp != '=')
 			continue;
 		bp++;
-		return (pdecode(bp, area));
+		return (tdecode(bp, area));
 	}
 }
 
@@ -198,7 +309,7 @@ pgetstr(id, area)
  * string capability escapes.
  */
 static char *
-pdecode(str, area)
+tdecode(str, area)
 	register char *str;
 	char **area;
 {
