@@ -57,11 +57,13 @@ static char sccsid[] = "@(#)su.c	5.26 (Berkeley) 7/6/91";
 #include <kerberosIV/krb.h>
 #include <netdb.h>
 
-#define	ARGSTR	"-Kflm"
+#define	ARGSTR	"-Kflmc:"
+#define USAGE	"usage: su [-Kflm] [login] [-c cmd]\n"
 
 int use_kerberos = 1;
 #else
-#define	ARGSTR	"-flm"
+#define	ARGSTR	"-flmc:"
+#define USAGE	"usage: su [-flm] [login] [-c cmd]\n"
 #endif
 
 main(argc, argv)
@@ -74,40 +76,59 @@ main(argc, argv)
 	register char *p, **g;
 	struct group *gr;
 	uid_t ruid, getuid();
-	int asme, ch, asthem, fastlogin, prio;
+	int asme, ch, asthem, fastlogin, prio, docmd, gotuser;
 	enum { UNSET, YES, NO } iscsh = UNSET;
-	char *user, *shell, *username, *cleanenv[20], *nargv[4], **np;
+	char *user, *shell, *username, *cleanenv[20], *nargv[6], **np, *cmd;
 	char shellbuf[MAXPATHLEN];
 	char avshellbuf[MAXPATHLEN];
 	char *crypt(), *getpass(), *getenv(), *getlogin(), *ontty();
+	extern char *optarg;
 
-	np = &nargv[3];
+	np = &nargv[5];
 	*np-- = NULL;
 	asme = asthem = fastlogin = 0;
-	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
-		switch((char)ch) {
+	user = "root";
+	docmd = 0;
+	gotuser = 0;
+	while ( optind < argc )
+		if ((ch = getopt(argc, argv, ARGSTR)) != EOF)
+			switch((char)ch) {
 #ifdef KERBEROS
-		case 'K':
-			use_kerberos = 0;
-			break;
+			case 'K':
+				use_kerberos = 0;
+				break;
 #endif
-		case 'f':
-			fastlogin = 1;
-			break;
-		case '-':
-		case 'l':
-			asme = 0;
-			asthem = 1;
-			break;
-		case 'm':
-			asme = 1;
-			asthem = 0;
-			break;
-		case '?':
-		default:
-			(void)fprintf(stderr, "usage: su [%s] [login]\n",
-			    ARGSTR);
-			exit(1);
+			case 'f':
+				fastlogin = 1;
+				break;
+			case '-':
+			case 'l':
+				asme = 0;
+				asthem = 1;
+				break;
+			case 'm':
+				asme = 1;
+				asthem = 0;
+				break;
+			case 'c':
+				cmd = strdup( optarg );
+				if (!cmd ) {
+					(void)fprintf( stderr, "su: malloc failure\n" );				exit(1);
+				}
+				docmd = 1;
+				break;
+			case '?':
+			default:
+				(void)fprintf(stderr, USAGE );
+				exit(1);
+			}
+		else {
+			if (gotuser) {
+				(void)fprintf(stderr, USAGE );
+				exit(1);
+			}
+			user = argv[optind++];
+			gotuser = 1;
 		}
 	argv += optind;
 
@@ -138,7 +159,6 @@ main(argc, argv)
 		}
 
 	/* get target login information, default to root */
-	user = *argv ? *argv : "root";
 	if ((pwd = getpwnam(user)) == NULL) {
 		fprintf(stderr, "su: unknown login %s\n", user);
 		exit(1);
@@ -229,6 +249,11 @@ main(argc, argv)
 			(void)setenv("USER", pwd->pw_name, 1);
 		(void)setenv("HOME", pwd->pw_dir, 1);
 		(void)setenv("SHELL", shell, 1);
+	}
+
+	if (docmd) {
+			*np-- = cmd;
+			*np-- = "-c";
 	}
 
 	if (iscsh == YES) {
