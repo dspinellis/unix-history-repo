@@ -12,15 +12,8 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
-
-#ifdef KERBEROS
-/* From:
- *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
- *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
- */
-#endif
 
 /*
  * remote login server:
@@ -75,7 +68,7 @@ struct	passwd *pwd;
 void	doit __P((int, struct sockaddr_in *));
 int	control __P((int, char *, int));
 void	protocol __P((int, int));
-void	cleanup __P((void));
+void	cleanup __P((int));
 void	fatal __P((int, char *, int));
 int	do_rlogin __P((struct sockaddr_in *));
 void	getstr __P((char *, int, char *));
@@ -149,7 +142,6 @@ main(argc, argv)
 }
 
 int	child;
-void	cleanup();
 int	netf;
 char	line[MAXPATHLEN];
 int	confirmed;
@@ -249,7 +241,7 @@ doit(f, fromp)
 	signal(SIGCHLD, cleanup);
 	protocol(f, master);
 	signal(SIGCHLD, SIG_IGN);
-	cleanup();
+	cleanup(0);
 }
 
 char	magic[2] = { 0377, 0377 };
@@ -423,7 +415,8 @@ protocol(f, p)
 }
 
 void
-cleanup()
+cleanup(signo)
+	int signo;
 {
 	char *p;
 
