@@ -1,17 +1,16 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ar.c	4.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ar.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
  * ar - portable (ascii) format version
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 
 #include <stdio.h>
 #include <ar.h>
-#include <signal.h>
 
 struct	stat	stbuf;
 struct	ar_hdr	arbuf;
@@ -62,7 +61,7 @@ int	tf1;
 int	tf2;
 int	qf;
 int	bastate;
-char	buf[BUFSIZ];
+char	buf[MAXBSIZE];
 int	truncate;			/* ok to truncate argument filenames */
 
 char	*trim();
@@ -478,19 +477,19 @@ install()
 	}
 	if(tfnam) {
 		lseek(tf, 0l, 0);
-		while((i = read(tf, buf, BUFSIZ)) > 0)
+		while((i = read(tf, buf, MAXBSIZE)) > 0)
 			if (write(af, buf, i) != i)
 				wrerr();
 	}
 	if(tf2nam) {
 		lseek(tf2, 0l, 0);
-		while((i = read(tf2, buf, BUFSIZ)) > 0)
+		while((i = read(tf2, buf, MAXBSIZE)) > 0)
 			if (write(af, buf, i) != i)
 				wrerr();
 	}
 	if(tf1nam) {
 		lseek(tf1, 0l, 0);
-		while((i = read(tf1, buf, BUFSIZ)) > 0)
+		while((i = read(tf1, buf, MAXBSIZE)) > 0)
 			if (write(af, buf, i) != i)
 				wrerr();
 	}
@@ -555,7 +554,7 @@ copyfil(fi, fo, flag)
 	}
 	pe = 0;
 	while(larbuf.lar_size > 0) {
-		i = o = BUFSIZ;
+		i = o = MAXBSIZE;
 		if(larbuf.lar_size < i) {
 			i = o = larbuf.lar_size;
 			if(i&1) {
@@ -571,7 +570,7 @@ copyfil(fi, fo, flag)
 		if((flag & SKIP) == 0)
 			if (write(fo, buf, o) != o)
 				wrerr();
-		larbuf.lar_size -= BUFSIZ;
+		larbuf.lar_size -= MAXBSIZE;
 	}
 	if(pe)
 		phserr();
