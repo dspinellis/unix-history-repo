@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	6.8	84/06/30	*/
+/*	lfs_vnops.c	6.9	84/07/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -766,6 +766,7 @@ rename()
 		char	*to;
 	} *uap;
 	register struct inode *ip, *xp, *dp;
+	struct inode *zp;
 	int oldparent, parentdifferent, doingdirectory;
 	int error = 0;
 
@@ -937,14 +938,15 @@ rename()
 	 * 3) Unlink the source.
 	 */
 	u.u_dirp = uap->from;
-	dp = namei(uchar, DELETE, 0);
+	zp = namei(uchar, DELETE | LOCKPARENT, 0);
+	dp = u.u_pdir;
 	/*
 	 * Insure directory entry still exists and
 	 * has not changed since the start of all
 	 * this.  If either has occured, forget about
 	 * about deleting the original entry.
 	 */
-	if (dp != NULL && u.u_dent.d_ino == ip->i_number) {
+	if (dp != NULL && zp == ip) {
 		/*
 		 * If source is a directory, must adjust
 		 * link count of parent directory also.
@@ -960,12 +962,14 @@ rename()
 			dp->i_flag |= ICHG;
 		}
 		if (dirremove()) {
-			ip->i_nlink--;
-			ip->i_flag |= ICHG;
+			zp->i_nlink--;
+			zp->i_flag |= ICHG;
 		}
 		if (error == 0)		/* conservative */
 			error = u.u_error;
 	}
+	if (zp != NULL)
+		iput(zp);
 	irele(ip);
 	if (dp)
 		iput(dp);
