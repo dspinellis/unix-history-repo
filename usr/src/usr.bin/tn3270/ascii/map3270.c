@@ -608,7 +608,7 @@ GetDefinition()
     }
     string->array[string->length] = 0;
     if (doPaste) {
-	if ((Tc = (*GetTc)(string->array)) == STATE_NULL) {
+	if ((Tc = (*GetTc)(string->array)) == -1) {
 	    if (picky) {
 		fprintf(stderr, "%s: unknown 3270 key identifier\n",
 							string->array);
