@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-char sccsid[] = "@(#)fstat.c	5.22 (Berkeley) %G%";
+char sccsid[] = "@(#)fstat.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -169,6 +169,7 @@ main(argc, argv)
 		checkfile = 1;
 	}
 
+	/* modify the following to make work on dead kernels */
 	if (kvm_openfiles(NULL, NULL, NULL) == -1) {
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
@@ -249,7 +250,7 @@ dofiles(p)
 	 * text vnode
 	 */
 	if (p->p_textp && 
-	    kvm_read((int)p->p_textp+(int)&((struct text *)0)->x_vptr, &xvptr,
+	    kvm_read(&(p->p_textp->x_vptr), &xvptr,
 	    sizeof (struct vnode *)) == sizeof (struct vnode *) &&
 	    xvptr != NULL)
 		vtrans(xvptr, TEXT);
