@@ -1,8 +1,9 @@
-/*	uba.c	4.7	82/11/13	*/
+/*	uba.c	4.8	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/fs.h"
 

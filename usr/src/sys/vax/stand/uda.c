@@ -1,12 +1,12 @@
-/*	uda.c	4.3	82/11/13	*/
+/*	uda.c	4.4	82/12/17	*/
 
 /*
  * UDA50/RAxx disk device driver
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "saio.h"

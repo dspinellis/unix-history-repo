@@ -1,12 +1,12 @@
-/*	tm.c	4.8	82/11/13	*/
+/*	tm.c	4.9	82/12/17	*/
 
 /*
  * TM11/TE??
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "../vaxuba/ubareg.h"

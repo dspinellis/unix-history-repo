@@ -1,7 +1,8 @@
-/*	autoconf.c	4.6	82/11/13	*/
+/*	autoconf.c	4.7	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
-#include "../h/pte.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"

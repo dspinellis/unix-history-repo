@@ -1,5 +1,6 @@
+#include "../machine/pte.h"
+
 #include "../h/param.h"
-#include "../h/pte.h"
 #include "../h/inode.h"
 
 #include "../vaxuba/ubareg.h"
