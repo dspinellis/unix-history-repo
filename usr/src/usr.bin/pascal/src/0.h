@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.20 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.21 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -62,7 +62,9 @@ bool	monflg;
      *	profflag is set when we are generating a prof profile.
      *	this is set by the -p command line option.
      */
+#ifdef PC
 bool	profflag;
+#endif
 
 
 /*
@@ -143,8 +145,8 @@ bool	profflag;
 
 bool	Recovery;
 
-#define	eholdnl()	Eholdnl = 1
-#define	nocascade()	Enocascade = 1
+#define	eholdnl()	Eholdnl = TRUE
+#define	nocascade()	Enocascade = TRUE
 
 bool	Eholdnl, Enocascade;
 
@@ -185,8 +187,12 @@ bool	syneflg;
  * "obj" where we write the interpreter code.
  */
 short	efil;
+
+#ifdef OBJ
 short	ofil;
+
 short	obuf[518];
+#endif
 
 bool	Enoline;
 #define	elineoff()	Enoline = TRUE
@@ -238,10 +244,10 @@ struct	nl {
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
 	union {
-		int	*un_ptr[5];
-		int	un_value[5];
-		long	un_range[2];
-		double	un_real;
+		struct nl *un_ptr[5];
+		int	   un_value[5];
+		long	   un_range[2];
+		double	   un_real;
 	} nl_un;
 #	ifdef PTREE
 	    pPointer	inTree;
@@ -483,7 +489,7 @@ struct {
 	struct nl	*ctype;
 	short		cival;
 	double		crval;
-	int		*cpval;
+	char		*cpval;	/* note used to be int * */
 } con;
 
 /*
@@ -676,7 +682,9 @@ struct	udinfo {
  *
 short	codeline;
  */
+#ifdef OBJ
 char	*lc;
+#endif
 
 
 /*
@@ -693,21 +701,47 @@ long		roundup();
 struct nl 	*tmpalloc();
 struct nl 	*lookup();
 double		atof();
-int		*tree();
 int		*hash();
 char		*alloc();
-int		*calloc();
+int		*pcalloc();
 char		*savestr();
+char 		*esavestr();
 char		*parnam();
+char		*malloc();
+char		*getlab();
+char		*getnext();
+char		*skipbl();
+char		*nameof();
+char 		*pstrcpy();
+char		*myctime();
+char		*putlab();
 bool		fcompat();
+bool 		constval();
+bool		precset();
+bool		nilfnil();
+struct nl	*funccod();
+struct nl	*pcfunccod();
 struct nl	*lookup1();
 struct nl	*hdefnl();
 struct nl	*defnl();
+struct nl	*flvalue();
+struct nl	*plist();
 struct nl	*enter();
 struct nl	*nlcopy();
 struct nl	*tyrec();
 struct nl	*tyary();
+struct nl	*tyrang();
+struct nl	*tyscal();
 struct nl	*deffld();
+struct nl	*stklval();
+struct nl	*scalar();
+struct nl	*gen();
+struct nl	*stkrval();
+struct nl	*funcext();
+struct nl	*funchdr();
+struct nl	*funcbody();
+struct nl 	*yybaduse();
+struct nl	*stackRV();
 struct nl	*defvnt();
 struct nl	*tyrec1();
 struct nl	*reclook();
@@ -715,26 +749,40 @@ struct nl	*asgnop1();
 struct nl	*gtype();
 struct nl	*call();
 struct nl	*lvalue();
+struct nl	*pclvalue();
 struct nl	*rvalue();
 struct nl	*cset();
+struct tnode	*newlist();
+struct tnode	*addlist();
+struct tnode	*fixlist();
+struct tnode	*setupvar();
+struct tnode	*setuptyrec();
+struct tnode	*setupfield();
+struct tnode	*tree();
+struct tnode	*tree1();
+struct tnode	*tree2();
+struct tnode	*tree3();
+struct tnode	*tree4();
+struct tnode	*tree5();
 
 /*
  * type cast NIL to keep lint happy (which is not so bad)
  */
 #define		NLNIL	( (struct nl *) NIL )
+#define		TR_NIL	( (struct tnode *) NIL)
 
 /*
  * Funny structures to use
  * pointers in wild and wooly ways
  */
-struct {
+struct cstruct{
 	char	pchar;
 };
 struct {
 	short	pint;
 	short	pint2;
 };
-struct {
+struct lstruct {
 	long	plong;
 };
 struct {
