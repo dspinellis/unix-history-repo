@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cap_mkdb.1	5.2 (Berkeley) %G%
+.\"	@(#)cap_mkdb.1	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt CAP_MKDB 1
@@ -14,6 +14,7 @@
 .Pp
 .Sh SYNOPSIS
 .Nm cap_mkdb
+.Op Fl v
 .Op Fl f Ar outfile
 .Ar file1
 .Op Ar file2 ...
@@ -32,10 +33,12 @@ The
 routines can access the database in this form much more quickly
 than they can the original text file(s).
 .Pp
-.Sh OPTIONS
+The options as as follows:
 .Bl -tag -width XXXXXX -indent
 .It Fl f Ar outfile
 Specify a different database basename.
+.It Fl v
+Print out the number of capability records in the database.
 .El
 .Pp
 .Sh RETURN VALUE
