@@ -1,4 +1,4 @@
-/*	if_uba.c	4.7	81/12/21	*/
+/*	if_uba.c	4.8	81/12/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -171,7 +171,7 @@ nocopy:
 				totlen = off0;
 			}
 		} else
-			totlen -= len;
+			totlen -= m->m_len;
 	}
 	return (top);
 bad:
