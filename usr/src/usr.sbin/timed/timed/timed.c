@@ -11,7 +11,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sgi
@@ -120,7 +120,7 @@ main(argc, argv)
 	struct netinfo *savefromnet;
 	struct netent *nentp;
 	struct nets *nt;
-	struct sockaddr_in server;
+	static struct sockaddr_in server;
 	u_short port;
 	char c;
 	extern char *optarg;
@@ -207,44 +207,6 @@ main(argc, argv)
 #ifdef sgi
 		case 'P':
 			timetrim_fn = optarg;
-			timetrim_st = fopen(timetrim_fn, "r+");
-			if (0 == timetrim_st) {
-				if (errno != ENOENT) {
-					(void)fprintf(stderr,"timed: ");
-					perror(timetrim_fn);
-					timetrim_fn = 0;
-				}
-			} else {
-				int i;
-				long trim;
-				double adj, ticks;
-
-				i = fscanf(timetrim_st, timetrim_rpat,
-					   &trim, &adj, &ticks);
-				if (i < 1
-				    || trim > MAX_TRIM
-				    || trim < -MAX_TRIM
-				    || i == 2
-				    || (i == 3
-					&& trim != rint(adj*CLK_TCK/ticks))) {
-					if (trace && i != EOF)
-						(void)fprintf(stderr,
-				    "timed: unrecognized contents in %s\n",
-							      timetrim_fn);
-				} else {
-					if (0 > syssgi(SGI_SETTIMETRIM,
-						       trim)) {
-					 perror("timed: syssgi(SETTIMETRIM)");
-					} else {
-						timetrim = trim;
-					}
-					if (i == 3) {
-						tot_adj = adj;
-						tot_ticks -= ticks;
-					}
-				}
-				(void)fclose(timetrim_st);
-			}
 			break;
 #endif /* sgi */
 
@@ -258,6 +220,46 @@ main(argc, argv)
 		fprintf(stderr, USAGE);
 		exit(1);
 	}
+
+#ifdef sgi
+	if (timetrim_fn == 0) {
+		;
+	} else if (0 == (timetrim_st = fopen(timetrim_fn, "r+"))) {
+		if (errno != ENOENT) {
+			(void)fprintf(stderr,"timed: ");
+			perror(timetrim_fn);
+			timetrim_fn = 0;
+		}
+	} else {
+		int i;
+		long trim;
+		double adj, ticks;
+
+		i = fscanf(timetrim_st, timetrim_rpat,
+			   &trim, &adj, &ticks);
+		if (i < 1
+		    || trim > MAX_TRIM
+		    || trim < -MAX_TRIM
+		    || i == 2
+		    || (i == 3
+			&& trim != rint(adj*CLK_TCK/ticks))) {
+			if (trace && i != EOF)
+				(void)fprintf(stderr,
+		    "timed: unrecognized contents in %s\n",
+					      timetrim_fn);
+		} else {
+			if (0 > syssgi(SGI_SETTIMETRIM,
+				       trim)) {
+			 perror("timed: syssgi(SETTIMETRIM)");
+			} else {
+				timetrim = trim;
+			}
+			if (i == 3)
+				tot_ticks -= ticks;
+		}
+		(void)fclose(timetrim_st);
+	}
+#endif /* sgi */
 
 	if (gethostname(hostname, sizeof(hostname) - 1) < 0) {
 		perror("gethostname");
@@ -279,6 +281,7 @@ main(argc, argv)
 		exit(1);
 	}
 	port = srvp->s_port;
+	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = srvp->s_port;
 	server.sin_family = AF_INET;
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
