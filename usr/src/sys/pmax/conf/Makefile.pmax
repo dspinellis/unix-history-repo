@@ -1,4 +1,4 @@
-#	@(#)Makefile.pmax	7.3 (Berkeley) %G%
+#	@(#)Makefile.pmax	7.4 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -19,8 +19,8 @@
 # -DQUOTA	compile in file system quotas
 
 
-# DEBUG is set to -g by config if debugging is requested.
-# PROF is set to -pg by config if profiling is requested.
+# DEBUG is set to -g by config if debugging is requested (config -g).
+# PROF is set to -pg by config if profiling is requested (config -p).
 AS=	as ${DEBUG}
 CC=	cc ${DEBUG}
 CPP=	cpp
@@ -52,7 +52,7 @@ PROFILE_C=	${CC} -S -c ${COPTS} $<; \
 		${AS} -o $@ $*.s; \
 		rm -f $*.s
 
-NORMAL_S=	${CC} -c ${COPTS} $<
+NORMAL_S=	${AS} -o $@ ${COPTS} $<
 NORMAL_S_C=	${CC} -c ${COPTS} ${PARAM} $<
 
 %OBJS
@@ -64,11 +64,12 @@ NORMAL_S_C=	${CC} -c ${COPTS} ${PARAM} $<
 #	${SYSTEM_LD_HEAD}
 #	${SYSTEM_LD} swapxxx.o
 #	${SYSTEM_LD_TAIL}
-SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
 #SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
 SYSTEM_LD_HEAD=	@echo loading $@; rm -f $@
-SYSTEM_LD=	@${LD} -N -o $@ -e start -T 80030000 ${SYSTEM_OBJ} vers.o
+SYSTEM_LD=	@${LD} -N -o $@ -e start -T 80030000 ${SYSTEM_OBJ} vers.o \
+			../../libkern/obj/libkern.a
 #SYSTEM_LD_TAIL= @echo rearranging symbols;\
 #		symorder symbols.sort $@;\
 #SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
@@ -97,7 +98,7 @@ symbols.sort: ${PMAX}/pmax/symbols.raw
 
 locore.o: ${PMAX}/pmax/locore.s ${PMAX}/include/machAsmDefs.h \
 	${PMAX}/include/machConst.h ${PMAX}/include/reg.h assym.h
-	${CC} -c ${AFLAGS} ${PARAM} ${PMAX}/pmax/locore.s
+	${AS} -o locore.o ${AFLAGS} ${PARAM} ${PMAX}/pmax/locore.s
 
 # the following is necessary because autoconf.o depends on #if GENERIC
 autoconf.o: Makefile
@@ -107,7 +108,7 @@ autoconf.o: Makefile
 clock.o machdep.o autoconf.o conf.o: Makefile
 
 # depend on network configuration
-af.o uipc_proto.o: Makefile
+af.o uipc_proto.o vfs_conf.o: Makefile
 
 assym.h: genassym
 	./genassym >assym.h
@@ -115,7 +116,7 @@ assym.h: genassym
 genassym: ${PMAX}/pmax/genassym.c
 	${CC} ${INCLUDES} ${IDENT} ${PARAM} -o genassym ${PMAX}/pmax/genassym.c
 
-depend: assym.h param.c
+depend: assym.h param.c vnode_if.h
 	mkdep ${COPTS} ${CFILES} ioconf.c param.c
 	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ${PMAX}/pmax/genassym.c
 
@@ -139,5 +140,10 @@ param.c: $S/conf/param.c
 
 param.o: param.c Makefile
 	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+vnode_if.c: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+vnode_if.h: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
 
 %RULES
