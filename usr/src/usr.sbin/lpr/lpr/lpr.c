@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.10	83/03/09	*/
+/*	lpr.c	4.11	83/03/11	*/
 /*
  *      lpr -- off line print
  *
@@ -313,7 +313,22 @@ main(argc, argv)
 	}
 
 	if (nact) {
+		(void) close(tfd);
 		tfname[inchar]--;
+		/*
+		 * Touch the control file to fix position in the queue.
+		 */
+		if ((tfd = open(tfname, 2)) >= 0) {
+			char c;
+
+			if (read(tfd, &c, 1) == 1 && lseek(tfd, 0L, 0) == 0 &&
+			    write(tfd, &c, 1) != 1) {
+				printf("%s: cannot touch %s\n", name, tfname);
+				tfname[inchar]++;
+				out();
+			}
+			(void) close(tfd);
+		}
 		if (link(tfname, cfname) < 0) {
 			printf("%s: cannot rename %s\n", name, cfname);
 			tfname[inchar]++;
@@ -450,7 +465,14 @@ nfile(n)
 		printf("%s: cannot chown %s\n", name, n);
 		out();
 	}
-	n[inchar]++;
+	if (++n[inchar] > 'z') {
+		if (++n[inchar-2] == 't') {
+			printf("too many files - break up the job\n");
+			out();
+		}
+		n[inchar] = 'A';
+	} else if (n[inchar] == '[')
+		n[inchar] = 'a';
 	return(f);
 }
 
@@ -477,9 +499,12 @@ out()
 			unlink(cfname);
 		}
 	if (dfname)
-		while (dfname[i] != 'A') {
-			dfname[i]--;
-			unlink(dfname);
+		while (dfname[i-2] >= 'd') {
+			while (dfname[i] != 'A') {
+				dfname[i]--;
+				unlink(dfname);
+			}
+			dfname[i-2]--;
 		}
 	exit();
 }
