@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.46	%G%";
+static char SccsId[] = "@(#)deliver.c	3.47	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -54,6 +54,7 @@ deliver(to, editfcn)
 	char tfrombuf[MAXNAME];		/* translated from person */
 	extern char **prescan();
 
+	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
 		return (0);
 
@@ -89,7 +90,6 @@ deliver(to, editfcn)
 	define('g', tfrombuf);		/* translated sender address */
 	define('h', host);		/* to host */
 	Errors = 0;
-	errno = 0;
 	pvp = pv;
 	*pvp++ = m->m_argv[0];
 
@@ -282,6 +282,7 @@ deliver(to, editfcn)
 		ctladdr = &From;
 	i = sendoff(m, pv, editfcn, ctladdr);
 
+	errno = 0;
 	return (i);
 }
 /*
@@ -363,6 +364,7 @@ sendoff(m, pvp, editfcn, ctladdr)
 		printav(pvp);
 	}
 # endif DEBUG
+	errno = 0;
 
 	/* create a pipe to shove the mail through */
 	if (pipe(pvect) < 0)
