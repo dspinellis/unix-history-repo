@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -23,6 +23,7 @@ SRCS=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c \
 	mkglue.c mkheaders.c mkswapconf.c
 OBJS=	y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o \
 	mkglue.o mkheaders.o mkswapconf.o
+MAN=	config.0
 
 all: config
 
@@ -38,42 +39,21 @@ y.tab.h:
 y.tab.c: config.y
 	yacc config.y
 
-clean: FRC
+clean:
 	rm -f ${OBJS} lex.yy.c y.tab.c y.tab.h config core
 
-depend: y.tab.h ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: y.tab.h ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 config ${DESTDIR}/etc/config
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-y.tab.o: y.tab.c config.h /usr/include/sys/types.h /usr/include/ctype.h
-y.tab.o: /usr/include/stdio.h
-main.o: main.c /usr/include/sys/types.h /usr/include/sys/stat.h
-main.o: /usr/include/sys/file.h /usr/include/stdio.h /usr/include/ctype.h
-main.o: y.tab.h config.h /usr/include/sys/types.h
-lex.yy.o: lex.yy.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h config.h
-lex.yy.o: /usr/include/sys/types.h
-mkioconf.o: mkioconf.c /usr/include/stdio.h y.tab.h config.h
-mkioconf.o: /usr/include/sys/types.h
-mkmakefile.o: mkmakefile.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h
-mkmakefile.o: config.h /usr/include/sys/types.h
-mkglue.o: mkglue.c /usr/include/stdio.h config.h /usr/include/sys/types.h
-mkglue.o: y.tab.h /usr/include/ctype.h
-mkheaders.o: mkheaders.c /usr/include/stdio.h /usr/include/ctype.h config.h
-mkheaders.o: /usr/include/sys/types.h y.tab.h
-mkswapconf.o: mkswapconf.c config.h /usr/include/sys/types.h
-mkswapconf.o: /usr/include/stdio.h /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
