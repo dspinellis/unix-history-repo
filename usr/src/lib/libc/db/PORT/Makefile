@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	8.4 (Berkeley) %G%
 
 LIBDB=	libdb.a
 OBJ1=	hash.o hash_bigkey.o hash_buf.o hash_func.o hash_log2.o hash_page.o \
@@ -12,6 +12,9 @@ OBJ5=	rec_close.o rec_delete.o rec_get.o rec_open.o rec_put.o rec_search.o \
 	rec_seq.o rec_utils.o
 
 MISC=
+
+clean:
+	rm -f ${LIBDB} ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${MISC}
 
 ${LIBDB}: ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${MISC}
 	ar cq $@ \
@@ -97,6 +100,3 @@ realloc.o:
 	${CC} -c -O -I. -Iinclude clib/realloc.c
 snprintf.o:
 	${CC} -c -O -I. -Iinclude clib/snprintf.c
-
-clean:
-	rm -f ${LIBDB} ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${MISC}
