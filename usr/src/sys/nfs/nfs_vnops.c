@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -978,6 +978,7 @@ nfs_mknod(ap)
 		cache_enter(dvp, newvp, cnp);
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(dvp)->n_flag |= NMODIFIED;
+	VTONFS(dvp)->n_attrstamp = 0;
 	vrele(dvp);
 	return (error);
 }
@@ -1041,6 +1042,7 @@ nfs_create(ap)
 		cache_enter(dvp, *ap->a_vpp, cnp);
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(dvp)->n_flag |= NMODIFIED;
+	VTONFS(dvp)->n_attrstamp = 0;
 	vrele(dvp);
 	return (error);
 }
@@ -1105,6 +1107,7 @@ nfs_remove(ap)
 		nfsm_reqdone;
 		FREE(cnp->cn_pnbuf, M_NAMEI);
 		VTONFS(dvp)->n_flag |= NMODIFIED;
+		VTONFS(dvp)->n_attrstamp = 0;
 		/*
 		 * Kludge City: If the first reply to the remove rpc is lost..
 		 *   the reply to the retransmitted request will be ENOENT
@@ -1142,6 +1145,7 @@ nfs_removeit(sp)
 	nfsm_request(sp->s_dvp, NFSPROC_REMOVE, NULL, sp->s_cred);
 	nfsm_reqdone;
 	VTONFS(sp->s_dvp)->n_flag |= NMODIFIED;
+	VTONFS(sp->s_dvp)->n_attrstamp = 0;
 	return (error);
 }
 
@@ -1191,7 +1195,9 @@ nfs_rename(ap)
 	nfsm_request(fdvp, NFSPROC_RENAME, tcnp->cn_proc, tcnp->cn_cred);
 	nfsm_reqdone;
 	VTONFS(fdvp)->n_flag |= NMODIFIED;
+	VTONFS(fdvp)->n_attrstamp = 0;
 	VTONFS(tdvp)->n_flag |= NMODIFIED;
+	VTONFS(tdvp)->n_attrstamp = 0;
 	if (fvp->v_type == VDIR) {
 		if (tvp != NULL && tvp->v_type == VDIR)
 			cache_purge(tdvp);
@@ -1242,6 +1248,7 @@ nfs_renameit(sdvp, scnp, sp)
 	nfsm_reqdone;
 	FREE(scnp->cn_pnbuf, M_NAMEI);
 	VTONFS(sdvp)->n_flag |= NMODIFIED;
+	VTONFS(sdvp)->n_attrstamp = 0;
 	return (error);
 }
 
@@ -1285,7 +1292,8 @@ nfs_link(ap)
 	nfsm_reqdone;
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(tdvp)->n_attrstamp = 0;
-	VTONFS(vp)->n_flag |= NMODIFIED;
+	VTONFS(tdvp)->n_flag |= NMODIFIED;
+	VTONFS(vp)->n_attrstamp = 0;
 	vrele(vp);
 	/*
 	 * Kludge: Map EEXIST => 0 assuming that it is a reply to a retry.
@@ -1348,6 +1356,7 @@ nfs_symlink(ap)
 	nfsm_reqdone;
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(dvp)->n_flag |= NMODIFIED;
+	VTONFS(dvp)->n_attrstamp = 0;
 	vrele(dvp);
 	/*
 	 * Kludge: Map EEXIST => 0 assuming that it is a reply to a retry.
@@ -1415,6 +1424,7 @@ nfs_mkdir(ap)
 	nfsm_mtofh(dvp, *vpp);
 	nfsm_reqdone;
 	VTONFS(dvp)->n_flag |= NMODIFIED;
+	VTONFS(dvp)->n_attrstamp = 0;
 	/*
 	 * Kludge: Map EEXIST => 0 assuming that you have a reply to a retry
 	 * if we can succeed in looking up the directory.
@@ -1479,6 +1489,7 @@ nfs_rmdir(ap)
 	nfsm_reqdone;
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(dvp)->n_flag |= NMODIFIED;
+	VTONFS(dvp)->n_attrstamp = 0;
 	cache_purge(dvp);
 	cache_purge(vp);
 	vrele(vp);
