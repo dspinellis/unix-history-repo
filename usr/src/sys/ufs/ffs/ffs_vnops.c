@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	3.3	%G%	*/
+/*	ffs_vnops.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -230,6 +230,7 @@ found:
 			u.u_error = EBUSY;
 			return;
 		}
+	mpurge(mp - &mount[0]);
 	(*bdevsw[major(dev)].d_close)(dev, 0);
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;

@@ -1,4 +1,4 @@
-/*	init_main.c	3.6	%G%	*/
+/*	init_main.c	3.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,6 +17,7 @@
 #include "../h/clock.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
+#include "../h/text.h"
 
 /*
  * Initialization code.
@@ -105,6 +106,7 @@ main(firstaddr)
 	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
 		expand(clrnd((int)btoc(szicode)), P0BR);
+		swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
 		/*
 		 * Return goes to loc. 0 of user init
