@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	from: @(#)kern_acct.c	8.1 (Berkeley) 6/14/93
+ *	from: @(#)kern_acct.c	8.4 (Berkeley) 6/2/94
  */
 
 #include <sys/param.h>
@@ -46,7 +46,9 @@ acct_process(a1)
 
 /*
  * Periodically check the file system to see if accounting
- * should be turned on or off.
+ * should be turned on or off. Beware the case where the vnode
+ * has been vgone()'d out from underneath us, e.g. when the file
+ * system containing the accounting file has been forcibly unmounted.
  */
 
 /*
@@ -70,6 +72,11 @@ acctwatch(a)
 	struct statfs sb;
 
 	if (savacctp) {
+		if (savacctp->v_type == VBAD) {
+			(void) vn_close(savacctp, FWRITE, NOCRED, NULL);
+			savacctp = NULL;
+			return;
+		}
 		(void)VFS_STATFS(savacctp->v_mount, &sb, (struct proc *)0);
 		if (sb.f_bavail > acctresume * sb.f_blocks / 100) {
 			acctp = savacctp;
@@ -79,6 +86,11 @@ acctwatch(a)
 	} else {
 		if (acctp == NULL)
 			return;
+		if (acctp->v_type == VBAD) {
+			(void) vn_close(acctp, FWRITE, NOCRED, NULL);
+			acctp = NULL;
+			return;
+		}
 		(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
 		if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
 			savacctp = acctp;
