@@ -8,7 +8,7 @@
  * Give names to all the temporary files that we will need.
  */
 
-static char *SccsId = "@(#)temp.c	1.2 %G%";
+static char *SccsId = "@(#)temp.c	1.3 %G%";
 
 char	tempMail[14];
 char	tempQuit[14];
@@ -34,21 +34,24 @@ tinit()
 
 	if (strlen(myname) != 0) {
 		uid = getuserid(myname);
-		if (uid == -1)
-			goto youlose;
+		if (uid == -1) {
+			printf("\"%s\" is not a user of this system\n",
+			    myname);
+			exit(1);
+		}
 	}
 	else {
 		uid = getuid() & UIDMASK;
 		if (username(uid, uname) < 0) {
 			copy("ubluit", myname);
-youlose:
 			err++;
 			if (rcvmode) {
 				printf("Who are you!?\n");
 				exit(1);
 			}
 		}
-		copy(uname, myname);
+		else
+			copy(uname, myname);
 	}
 	mailname = mailspace;
 	cp = value("HOME");
