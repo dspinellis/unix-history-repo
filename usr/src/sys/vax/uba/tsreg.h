@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tsreg.h	7.2 (Berkeley) %G%
+ *	@(#)tsreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@ struct	tsdevice {
 #define	TS_UPE	0040000		/* Unibus parity error */
 #define	TS_SPE	0020000		/* serial bus parity error */
 #define	TS_RMR	0010000		/* register modification refused */
-#define	TS_NXM	0004000		/* nonexistant memory */
+#define	TS_NXM	0004000		/* non-existent memory */
 #define	TS_NBA	0002000		/* need buffer address */
 #define	TS_XMEM	0001400		/* Unibus xmem bits */
 #define	TS_SSR	0000200		/* subsytem ready */
