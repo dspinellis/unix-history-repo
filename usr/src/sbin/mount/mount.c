@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -160,7 +160,7 @@ main(argc, argv, arge)
 	if (argc == 0) {
 		if (verbose || fake || type)
 			usage();
-		if ((mntsize = getmntinfo(&mntbuf)) == 0) {
+		if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
 			fprintf(stderr,
 				"mount: cannot get mount information\n");
 			exit(1);
@@ -473,7 +473,7 @@ getmntpt(name)
 	register long i;
 	struct statfs *mntbuf;
 
-	mntsize = getmntinfo(&mntbuf);
+	mntsize = getmntinfo(&mntbuf, MNT_NOWAIT);
 	for (i = 0; i < mntsize; i++) {
 		if (!strcmp(mntbuf[i].f_mntfromname, name) ||
 		    !strcmp(mntbuf[i].f_mntonname, name))
