@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.29	83/06/30	*/
+/*	raw_usrreq.c	4.30	83/06/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -256,7 +256,6 @@ raw_usrreq(so, req, m, nam, rights)
 			error = ENOTCONN;
 			break;
 		}
-#ifdef notdef
 		/*
 		 * Check for routing.  If new foreign address, or
 		 * no route presently in use, try to allocate new
@@ -271,7 +270,6 @@ raw_usrreq(so, req, m, nam, rights)
 				rp->rcb_route.ro_dst = rp->rcb_faddr;
 				rtalloc(&rp->rcb_route);
 			}
-#endif
 		error = (*so->so_proto->pr_output)(m, so);
 		m = NULL;
 		if (nam)
