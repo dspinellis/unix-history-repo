@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -144,26 +144,19 @@ main(argc, argv)
 					rval = 1;
 			}
 		else {
-			if (verbose) {
-				usage();
-				/* NOTREACHED */
-			}
-
 			if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0)
 				err(1, "getmntinfo");
 			for (i = 0; i < mntsize; i++) {
 				if (badvfstype(mntbuf[i].f_type, vfslist))
 					continue;
 				prmount(mntbuf[i].f_mntfromname,
-				     mntbuf[i].f_mntonname, mntbuf[i].f_flags);
+				    mntbuf[i].f_mntonname, mntbuf[i].f_flags);
 			}
 		}
 		exit(rval);
 	case 1:
-		if (vfslist != NULL) {
+		if (vfslist != NULL)
 			usage();
-			/* NOTREACHED */
-		}
 
 		if (init_flags & MNT_UPDATE) {
 			if ((mntbuf = getmntpt(*argv)) == NULL)
@@ -173,6 +166,8 @@ main(argc, argv)
 			if ((fs = getfsfile(mntbuf->f_mntonname)) == NULL)
 				errx(1, "can't find fstab entry for %s.",
 				    *argv);
+			/* If it's an update, ignore the fstab file options. */
+			fs->fs_mntops = NULL;
 			mntonname = mntbuf->f_mntonname;
 		} else {
 			if ((fs = getfsfile(*argv)) == NULL &&
@@ -194,9 +189,7 @@ main(argc, argv)
 		 * a ':' or a '@' then assume that an NFS filesystem is being
 		 * specified ala Sun.
 		 */
-		if (vfslist == NULL &&
-		    (strchr(argv[0], ':') != NULL ||
-		    strchr(argv[0], '@') != NULL))
+		if (vfslist == NULL && strpbrk(argv[0], ":@") != NULL)
 			vfstype = "nfs";
 		rval = mountfs(vfstype,
 		    argv[0], argv[1], init_flags, options, NULL);
@@ -245,13 +238,12 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 
 	name = mntpath;
 
-	if (options == 0) {
-		if (!mntopts || !*mntopts)
+	if (options == NULL) {
+		if (mntopts == NULL || *mntopts == '\0')
 			options = "rw";
 		else
 			options = mntopts;
 		mntopts = "";
-
 	}
 	optbuf = catopt(strdup(mntopts), options);
 
