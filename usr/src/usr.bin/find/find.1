@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.23 (Berkeley) %G%
+.\"     @(#)find.1	6.24 (Berkeley) %G%
 .\"
 .Vx
 .Dd 
@@ -14,7 +14,7 @@
 .Nd walk a file hierarchy
 .Sh SYNOPSIS
 .Nm find
-.Op Fl drsXx
+.Op Fl dsXx
 .Op Fl f Ar file
 .Op Ar file ...
 .Ar expression
@@ -57,25 +57,6 @@ option specifies a file hierarchy for
 to traverse.
 File hierarchies may also be specified as the operands immediately
 following the options.
-.Tp Fl r
-The
-.Fl r
-option permits
-.Nm find
-to execute the utility specified for the
-.Ic exec
-and
-.Ic ok
-primaries from other than the directory where
-.Nm find
-was executed.
-.Nm Find
-may then change directories during the file hierarchy walk, meaning
-that
-.Nm find
-can traverse hierarchies with path names longer than those directly
-resolvable by the kernel.
-This usually results in a performance improvement as well.
 .Tp Fl s
 The
 .Fl s
@@ -140,7 +121,8 @@ Optional arguments may be passed to the utility.
 The expression must be terminated by a semicolon (``;'').
 If the string ``{}'' appears anywhere in the utility name or the
 arguments it is replaced by the pathname of the current file.
-Utility will be executed in the directory from which
+.Ar Utility
+will be executed from the directory from which
 .Nm find
 was executed.
 .Tp Cx Ic -fstype
@@ -418,15 +400,14 @@ utility syntax is a superset of the syntax specified by the POSIX
 1003.2 standard.
 .Pp
 The
-.Fl r ,
 .Fl s
 and
 .Fl X
-options, as well as the primaries
+options and the
 .Ic -inum
 and
-.Ic -ls ,
-are extensions to the POSIX standard.
+.Ic -ls
+primaries are extensions to the POSIX standard.
 .Pp
 Historically, the
 .Fl d ,

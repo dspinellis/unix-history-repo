@@ -6,23 +6,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
 #include <fts.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "find.h"
 
 time_t now;			/* time find was run */
+int dotfd;			/* starting directory */
 int ftsoptions;			/* options for the ftsopen(3) call */
 int isdeprecated;		/* using deprecated syntax */
 int isdepth;			/* do directories on post-order visit */
 int isoutput;			/* user specified output operator */
-int isrelative;			/* can do -exec/ok on relative path */
 int isxargs;			/* don't permit xargs delimiting chars */
 
 static void usage();
@@ -39,16 +41,13 @@ main(argc, argv)
 
 	p = start = argv;
 	ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
-	while ((ch = getopt(argc, argv, "df:rsXx")) != EOF)
+	while ((ch = getopt(argc, argv, "df:sXx")) != EOF)
 		switch(ch) {
 		case 'd':
 			isdepth = 1;
 			break;
 		case 'f':
 			*p++ = optarg;
-			break;
-		case 'r':
-			isrelative = 1;
 			break;
 		case 's':
 			ftsoptions &= ~FTS_PHYSICAL;
@@ -80,6 +79,9 @@ main(argc, argv)
 		usage();
 	*p = NULL;
 
+	if ((dotfd = open(".", O_RDONLY, 0)) < 0)
+		err(".: %s", strerror(errno));
+
 	find_execute(find_formplan(argv), start);
 }
 
@@ -87,6 +89,6 @@ static void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: find [-drsXx] [-f file] [file ...] expression\n");
+	    "usage: find [-dsXx] [-f file] [file ...] expression\n");
 	exit(1);
 }
