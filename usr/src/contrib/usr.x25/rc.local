@@ -1,0 +1,23 @@
+#
+# configure the x.25 interface (3com ethernet)
+#
+x25config ec0 default ieee802llc -net 3029 -ntn 8005 -maxlcn 20 -psize 256 >/dev/console
+#
+# configure the x.25 interface (dmf32 sync port)
+#
+#x25config dmf0 default -net 3020 -ntn 83200027 -maxlcn 8 -psize 256 >/dev/console
+#
+# ITI call-in server
+#
+if [ -f /etc/x29d ]; then
+	/etc/x29d -bcr datapac "/bin/login login -p -h" & echo -n ' x29d' >/dev/console
+fi
+#
+# startup three call-out servers
+#
+if [ -f /etc/nimd ]; then
+	/etc/nimd -c 1980 /dev/ptyq0 &				>/dev/console
+	/etc/nimd -c 1980 /dev/ptyq1 &				>/dev/console
+	/etc/nimd -c 1980 /dev/ptyq2 &				>/dev/console
+	echo -n ' nimd'						>/dev/console
+fi
