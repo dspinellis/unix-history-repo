@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)user.h	7.6 (Berkeley) %G%
+ *	@(#)user.h	7.7 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -66,8 +66,8 @@ struct	user {
 
 /* 1.1 - processes and protection */
 	char	u_logname[MAXLOGNAME];	/* login name, if available */
-#define	u_ruid	u_cred->cr_ruid		/* real user id */
-	gid_t	u_rgid;			/* real group id */
+#define	u_ruid	u_procp->p_ruid		/* real user id - XXX */
+#define	u_rgid	u_procp->p_rgid		/* real group id - XXX */
 #define u_cred u_nd.ni_cred
 #define u_uid	u_cred->cr_uid		/* effective user id */
 #define u_gid	u_cred->cr_gid		/* effective group id */
