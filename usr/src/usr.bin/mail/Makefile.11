@@ -1,45 +1,84 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile.11	1.2 %G%";
+# Sccs Id = "@(#)Makefile.11	1.3 %G%";
+#
+# If you are compiling this for a nonseparate I/D machine,
+# you must:
+#	change the definitions of LDFLAGS, CFLAGS, LIBES,
+#	SIGRETROSRC, and SIGRETROOBJ
+#	make Mail40 rather than Mail
+#
+# Mail is too large to fit on a nonseparate I/D machine without
+# text overlays.
+#
+# If you do not have a vfork system call or do not support
+# job control, you must change the definition of OPTIONS.
 #
 
-CFLAGS=-O -DV7
-XSTR=/usr/ucb/xstr
-DESTDIR=/
-CTAGS=/usr/ucb/ctags -w
-VPRINT=/usr/ucb/print
-CGRAF=/ja/rigel/rigel/bin/cgraf
-CGRAPH=/ja/rigel/rigel/bin/cgraph
-NMKINDEX=/ja/rigel/rigel/bin/nmkindex
-DIRTCLOD=/ja/rigel/rigel/bin/dirtclod
-LIBES=
-ED=-ed
-AS=-as
-RM=-rm
-OBJS=version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
-	config.o edit.o fio.o \
+OPTIONS=	-DV7 -DVMUNIX			# vfork and job control
+#OPTIONS=	-DV7				# no vfork or no job control
+
+LDFLAGS=	-i				# for separate I/D machines
+#LDFLAGS=	-n				# for nonseparate I/D machines
+
+CFLAGS=		-O ${OPTIONS} ${INCLUDES}	# for separate I/D machines
+#CFLAGS=	-O -V ${OPTIONS} ${INCLUDES}	# for nonseparate I/D machines
+
+LIBES=		-ljobs -lc			# for separate I/D machines
+#LIBES=		-lovjobs -lovc			# for nonseparate I/D machines
+
+SIGRETROSRC=					# for those with job control
+SIGRETROOBJ=					# for those with job control
+#SIGRETROSRC=	sigretro.c			# for those without job control
+#SIGRETROOBJ=	sigretro.o			# for those without job control
+
+XSTR=		/usr/ucb/xstr
+DESTDIR=	/
+CTAGS=		/usr/ucb/ctags -w
+ED=		-ed
+AS=		-as
+RM=		-rm
+OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o config.o edit.o fio.o \
 	getname.o head.o v7.local.o lock.o lex.o list.o main.o \
 	names.o optim.o popen.o quit.o send.o strings.o temp.o tty.o \
-	vars.o sigretro.o
+	vars.o version.o errlst.o str.o ${SIGRETROOBJ}
 
 SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c lex.c list.c main.c \
 	names.c optim.c popen.c quit.c send.c strings.c temp.c tty.c vars.c \
-	version.c sigretro.c
+	errlst.c version.c ${SIGRETROSRC}
 
-HDRS=rcv.h configdefs.h def.h glob.h v7.local.h local.h sigretro.h
+HDRS=rcv.h configdefs.h def.h glob.h v7.local.h local.h
 
 S = $(SRCS) $(HDRS)
+
+#
+# Special massaging of C files for sharing of strings
+#
+.c.o:
+	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+	${CC} -c ${CFLAGS} x.c 
+	mv x.o $*.o
+	@$(RM) -f x.c
 
 Mail:	$S $(OBJS)
 	$(RM) -f Mail
 	@echo Loading ...
-	@$(CC) -i -o Mail $(OBJS) $(LIBES)
+	@${CC} ${LDFLAGS} -o Mail ${OBJS} ${LIBES}
 	@size Mail
 
-mail.g:	$(SRCS)
-	$(CGRAF) $(SRCS) > mail.g
+Mail40:	$S $(OBJS)
+	$(RM) -f Mail
+	@echo Loading ...
+	@ld -X /lib/crt0.o ${LDFLAGS} -o Mail \
+	-Z	getname.o names.o optim.o popen.o send.o strings.o temp.o \
+		v7.local.o vars.o \
+	-Z	edit.o head.o lex.o list.o lock.o main.o quit.o tty.o \
+	-Z	cmd1.o cmd2.o cmd3.o collect.o ${SIGRETROOBJ} \
+	-L	aux.o cmdtab.o config.o errlst.o fio.o \
+		str.o version.o ${LIBES}
+	@size Mail
 
 install:
 	install -s Mail ${DESTDIR}/usr/ucb
@@ -56,23 +95,33 @@ tags:	$(SRCS)
 
 clean:
 	$(RM) -f *.o
-	rm -f Mail a.out fmt x.c xs.c tags core
+	rm -f Mail a.out fmt x.c xs.c core
 	cp /dev/null strings
 
 lint:
 	lint $(CFLAGS) $(SRCS)
 
 fmt:	fmt.c head.c
-	$(CC) fmt.c head.c -o fmt
+	$(CC) fmt.c head.c -O -o fmt
 	$(RM) fmt.o head.o
 	size fmt
 
-print:	$S fmt.c
-	$(CGRAPH) > mail.g;
-	$(NMKINDEX) > mail.i;
-	$(DIRTCLOD) -x mail.i -p mail.g > mail.x
-	@$(VPRINT) Makefile mail.x rcv.h def.h glob.h local.h v7.local.h \
-	    $(SRCS) fmt.c;
+str.o: strings
+	$(XSTR)
+	$(CC) -c $(CFLAGS) xs.c
+	mv xs.o str.o
+	$(RM) xs.c
+
+config.o:	config.c
+	$(CC) -c $(CFLAGS) config.c
+
+cmdtab.o: cmdtab.c
+	$(CC) -c $(CFLAGS) cmdtab.c
+
+errlst.o: errlst.c
+	${CC} -E ${CFLAGS} errlst.c | ${XSTR} -c -
+	${CC} ${CFLAGS} -c x.c
+	mv x.o errlst.o
 
 wc:
 	@wc rcv.h def.h glob.h local.h v7.local.h $(SRCS)
