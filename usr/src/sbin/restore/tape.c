@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.5	(Berkeley)	83/02/28";
+static char sccsid[] = "@(#)tape.c	3.6	(Berkeley)	83/03/05";
 #endif
 
 #include "restore.h"
@@ -42,7 +42,7 @@ setinput(source)
 	magtape = index(host, ':');
 	if (magtape == 0) {
 nohost:
-		msg("need keyletter ``f'' and device ``host:tape''");
+		msg("need keyletter ``f'' and device ``host:tape''\n");
 		done(1);
 	}
 	*magtape++ = '\0';
@@ -98,10 +98,10 @@ setup()
 #endif
 	}
 	flsht();
-	if (readhdr(&spcl) == FAIL) {
+	if (gethead(&spcl) == FAIL) {
 		bct--; /* push back this block */
 		cvtflag++;
-		if (readhdr(&spcl) == FAIL) {
+		if (gethead(&spcl) == FAIL) {
 			fprintf(stderr, "Tape is not a dump tape\n");
 			done(1);
 		}
@@ -196,7 +196,7 @@ again:
 	else 
 		newvol = 0;
 	while (newvol <= 0) {
-		fprintf(stderr, "Specify volume #: ");
+		fprintf(stderr, "Specify next volume #: ");
 		if (gets(tbf) == NULL)
 			continue;
 		newvol = atoi(tbf);
@@ -208,7 +208,7 @@ again:
 	if (newvol == volno)
 		return;
 	closemt();
-	fprintf(stderr, "Mount tape volume %d then type return: ", newvol);
+	fprintf(stderr, "Mount tape volume %d then type return ", newvol);
 	while (getchar() != '\n')
 		;
 #ifdef RRESTOR
@@ -238,14 +238,13 @@ gethdr:
 		volno = 0;
 		goto again;
 	}
+	blksread = savecnt;
 	if (curfile.action == USING) {
 		if (volno == 1)
 			panic("active file into volume 1\n");
-		blksread = savecnt;
 		return;
 	}
-	if (readhdr(&spcl) == FAIL)
-		panic("no header after volume mark!\n");
+	(void) gethead(&spcl);
 	findinode(&spcl, curfile.action == UNKNOWN ? 1 : 0);
 	if (gettingfile) {
 		gettingfile = 0;
@@ -397,7 +396,7 @@ loop:
 		if ((size -= TP_BSIZE) <= 0)
 			break;
 	}
-	if (gethead(&spcl) == GOOD && size > 0) {
+	if (readhdr(&spcl) == GOOD && size > 0) {
 		if (checktype(&spcl, TS_ADDR) == GOOD)
 			goto loop;
 		fprintf(stderr, "Missing address (header) block for %s\n",
@@ -603,8 +602,10 @@ readhdr(b)
 	struct s_spcl *b;
 {
 
-	if (gethead(b) == FAIL)
+	if (gethead(b) == FAIL) {
+		dprintf(stderr, "readhdr fails at %d blocks\n", blksread);
 		return(FAIL);
+	}
 	return(GOOD);
 }
 
@@ -615,6 +616,7 @@ readhdr(b)
 gethead(buf)
 	struct s_spcl *buf;
 {
+	long i;
 	union u_ospcl {
 		char dummy[TP_BSIZE];
 		struct	s_ospcl {
@@ -645,14 +647,9 @@ gethead(buf)
 
 	if (!cvtflag) {
 		readtape((char *)buf);
-		if (buf->c_magic != NFS_MAGIC || checksum((int *)buf) == FAIL) {
-			dprintf(stderr, "gethead fails at %d blocks\n",
-				blksread);
+		if (buf->c_magic != NFS_MAGIC || checksum((int *)buf) == FAIL)
 			return(FAIL);
-		}
-		if (dflag)
-			accthdr(buf);
-		return(GOOD);
+		goto good;
 	}
 	readtape((char *)(&u_ospcl.s_ospcl));
 	bzero((char *)buf, (long)TP_BSIZE);
@@ -676,11 +673,37 @@ gethead(buf)
 	buf->c_count = u_ospcl.s_ospcl.c_count;
 	bcopy(u_ospcl.s_ospcl.c_addr, buf->c_addr, (long)256);
 	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
-	    checksum((int *)(&u_ospcl.s_ospcl)) == FAIL) {
-		dprintf(stderr, "gethead fails at %d blocks\n", blksread);
+	    checksum((int *)(&u_ospcl.s_ospcl)) == FAIL)
 		return(FAIL);
-	}
 	buf->c_magic = NFS_MAGIC;
+
+good:
+	switch (buf->c_type) {
+
+	case TS_CLRI:
+	case TS_BITS:
+		/*
+		 * Have to patch up missing information in bit map headers
+		 */
+		buf->c_inumber = 0;
+		buf->c_dinode.di_size = buf->c_count * TP_BSIZE;
+		for (i = 0; i < buf->c_count; i++)
+			buf->c_addr[i]++;
+		break;
+
+	case TS_TAPE:
+	case TS_END:
+		buf->c_inumber = 0;
+		break;
+
+	case TS_INODE:
+	case TS_ADDR:
+		break;
+
+	default:
+		panic("gethead: unknown inode type %d\n", buf->c_type);
+		break;
+	}
 	if (dflag)
 		accthdr(buf);
 	return(GOOD);
@@ -692,41 +715,41 @@ gethead(buf)
 accthdr(header)
 	struct s_spcl *header;
 {
-	static ino_t previno = 0;
+	static ino_t previno = 0xffffffff;
 	static int prevtype;
 	static long predict;
 	long blks, i;
 
-	if (previno == 0)
+	if (header->c_type == TS_TAPE) {
+		fprintf(stderr, "Volume header\n");
+		return;
+	}
+	if (previno == 0xffffffff)
 		goto newcalc;
 	switch (prevtype) {
-	case TS_TAPE:
-		fprintf(stderr, "Volume");
-		break;
 	case TS_BITS:
-		fprintf(stderr, "Dump mask");
+		fprintf(stderr, "Dump mask header");
 		break;
 	case TS_CLRI:
-		fprintf(stderr, "Remove mask");
+		fprintf(stderr, "Remove mask header");
 		break;
 	case TS_INODE:
-		fprintf(stderr, "File");
+		fprintf(stderr, "File header, ino %d", previno);
 		break;
 	case TS_ADDR:
-		fprintf(stderr, "File continuation");
+		fprintf(stderr, "File continuation header, ino %d", previno);
 		break;
 	case TS_END:
-		fprintf(stderr, "End of tape");
+		fprintf(stderr, "End of tape header");
 		break;
 	}
-	fprintf(stderr, " header, ino %d", previno);
 	if (predict != blksread - 1)
 		fprintf(stderr, "; predicted %d blocks, got %d blocks",
 			predict, blksread - 1);
 	fprintf(stderr, "\n");
 newcalc:
 	blks = 0;
-	if (header->c_type != TS_TAPE && header->c_type != TS_END)
+	if (header->c_type != TS_END)
 		for (i = 0; i < header->c_count; i++)
 			if (header->c_addr[i] != 0)
 				blks++;
@@ -745,7 +768,6 @@ findinode(header, complain)
 	int complain;
 {
 	static long skipcnt = 0;
-	long i;
 
 	curfile.name = "<name unknown>";
 	curfile.action = UNKNOWN;
@@ -768,16 +790,10 @@ findinode(header, complain)
 		}
 		if (checktype(header, TS_CLRI) == GOOD) {
 			curfile.name = "<file removal list>";
-			header->c_dinode.di_size = header->c_count * TP_BSIZE;
-			for (i = 0; i < header->c_count; i++)
-				header->c_addr[i]++;
 			break;
 		}
 		if (checktype(header, TS_BITS) == GOOD) {
 			curfile.name = "<file dump list>";
-			header->c_dinode.di_size = header->c_count * TP_BSIZE;
-			for (i = 0; i < header->c_count; i++)
-				header->c_addr[i]++;
 			break;
 		}
 		while (gethead(header) == FAIL)
