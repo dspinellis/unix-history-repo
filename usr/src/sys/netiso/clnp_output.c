@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
-/*	@(#)clnp_output.c	7.7 (Berkeley) %G% */
+/*	@(#)clnp_output.c	7.8 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $";
@@ -463,16 +463,16 @@ int					flags;		/* flags */
 	 *	If small enough for interface, send directly
 	 *	Fill in segmentation part of hdr if using the full protocol
 	 */
-	if ((total_len = clnp->cnf_hdr_len + datalen)
-			<= SN_MTU(clcp->clc_ifa->ia_ifp)) {
-		if (clnp->cnf_type & CNF_SEG_OK) {
-			struct clnp_segment	seg_part;		/* segment part of hdr */
-			seg_part.cng_id = htons(clnp_id++);
-			seg_part.cng_off = htons(0);
-			seg_part.cng_tot_len = htons(total_len);
-			(void) bcopy((caddr_t)&seg_part, (caddr_t) clnp + clcp->clc_segoff, 
-				sizeof(seg_part));
-		}
+	total_len = clnp->cnf_hdr_len + datalen;
+	if (clnp->cnf_type & CNF_SEG_OK) {
+		struct clnp_segment	seg_part;		/* segment part of hdr */
+		seg_part.cng_id = htons(clnp_id++);
+		seg_part.cng_off = htons(0);
+		seg_part.cng_tot_len = htons(total_len);
+		(void) bcopy((caddr_t)&seg_part, (caddr_t) clnp + clcp->clc_segoff, 
+			sizeof(seg_part));
+	}
+	if (total_len <= SN_MTU(clcp->clc_ifa->ia_ifp)) {
 		HTOC(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb, total_len);
 		m->m_pkthdr.len = total_len;
 		/*

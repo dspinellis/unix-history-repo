@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
-/*	@(#)clnp_frag.c	7.8 (Berkeley) %G% */
+/*	@(#)clnp_frag.c	7.9 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
@@ -95,16 +95,15 @@ struct rtentry *rt;			/* route if direct ether */
 		struct mbuf			*hdr = NULL;		/* save copy of clnp hdr */
 		struct mbuf			*frag_hdr = NULL;
 		struct mbuf			*frag_data = NULL;
-		struct clnp_segment	seg_part, tmp_seg;	/* segmentation header */
-		extern int 			clnp_id;			/* id of datagram */
-		int					frag_size;
+		struct clnp_segment	seg_part;			/* segmentation header */
+		int					frag_size, frag_base;
 		int					error = 0;
 
 
 		INCSTAT(cns_fragmented);
-		seg_part.cng_id = clnp_id++;
-		seg_part.cng_off = 0;
-		seg_part.cng_tot_len = total_len + hdr_len;
+        (void) bcopy(segoff + mtod(m, caddr_t), (caddr_t)&seg_part,
+            sizeof(seg_part));
+		frag_base = ntohs(seg_part.cng_off);
 		/*
 		 *	Duplicate header, and remove from packet
 		 */
@@ -148,7 +147,7 @@ struct rtentry *rt;			/* route if direct ether */
 
 			IFDEBUG(D_FRAG)
 				printf("clnp_fragment: seg off %d, size %d, remaining %d\n", 
-					seg_part.cng_off, frag_size, total_len-frag_size);
+					ntohs(seg_part.cng_off), frag_size, total_len-frag_size);
 				if (last_frag)
 					printf("clnp_fragment: last fragment\n");
 			ENDDEBUG
@@ -183,13 +182,8 @@ struct rtentry *rt;			/* route if direct ether */
 			/* link together */
 			m_cat(frag_hdr, frag_data);
 
-			/* make sure segmentation fields are in network order */
-			tmp_seg.cng_id = htons(seg_part.cng_id);
-			tmp_seg.cng_off = htons(seg_part.cng_off);
-			tmp_seg.cng_tot_len = htons(seg_part.cng_tot_len);
-
-			/* insert segmentation part */
-			bcopy((caddr_t)&tmp_seg, mtod(frag_hdr, caddr_t) + segoff,
+			/* insert segmentation part; updated below */
+			bcopy((caddr_t)&seg_part, mtod(frag_hdr, caddr_t) + segoff,
 				sizeof(struct clnp_segment));
 
 			{
@@ -261,7 +255,8 @@ struct rtentry *rt;			/* route if direct ether */
 #endif	TROLL
 			total_len -= frag_size;
 			if (!last_frag) {
-				seg_part.cng_off += frag_size;
+				frag_base += frag_size;
+				seg_part.cng_off = htons(frag_base);
 				m_adj(m, frag_size);
 			}
 		}
@@ -306,8 +301,9 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 
 	/* look for other fragments of this datagram */
 	for (cfh = clnp_frags; cfh != NULL; cfh = cfh->cfl_next) {
-		if (iso_addrmatch1(src, &cfh->cfl_src) && 
-			iso_addrmatch1(dst, &cfh->cfl_dst) && seg->cng_id == cfh->cfl_id) {
+		if (seg->cng_id == cfh->cfl_id &&
+		    iso_addrmatch1(src, &cfh->cfl_src) && 
+			iso_addrmatch1(dst, &cfh->cfl_dst)) {
 			IFDEBUG(D_REASS)
 				printf("clnp_reass: found packet\n");
 			ENDDEBUG
@@ -316,7 +312,12 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 			 *	this fragment is of any help
 			 */
 			clnp_insert_frag(cfh, m, seg);
-			return (clnp_comp_pdu(cfh));
+			if (m = clnp_comp_pdu(cfh)) {
+				register struct clnp_fixed *clnp = mtod(m, struct clnp_fixed *);
+				HTOC(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb,
+					 seg->cng_tot_len);
+			}
+			return (m);
 		}
 	}
 
