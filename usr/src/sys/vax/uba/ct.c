@@ -1,9 +1,12 @@
-/*	ct.c	4.5	81/03/11	*/
+/*	ct.c	4.6	81/07/05	*/
 
 #include "ct.h"
 #if NCT > 0
 /*
  * GP DR11C driver used for C/A/T
+ *
+ * BUGS:
+ *	This driver hasn't been tested in 4.1bsd
  */
 
 #include "../h/param.h"
@@ -43,6 +46,7 @@ struct	uba_driver ctdriver =
 ctprobe(reg)
 	caddr_t reg;
 {
+	register int br, cvec;		/* value-result */
 	register struct ctdevice *ctaddr = (struct ctdevice *)reg;
 
 	ctaddr->ctcsr = IENABLE;
