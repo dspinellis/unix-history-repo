@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.35 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,9 +83,9 @@ spec_lookup(vp, ndp, p)
 }
 
 /*
- * Open called to allow handler
- * of special files to initialize and
- * validate before actual IO.
+ * Open a special file: Don't allow open if fs is mounted -nodev,
+ * and don't allow opens of block devices that are currently mounted.
+ * Otherwise, call device driver open function.
  */
 /* ARGSUSED */
 spec_open(vp, mode, cred, p)
@@ -395,7 +395,7 @@ spec_close(vp, flag, cred, p)
 	struct proc *p;
 {
 	dev_t dev = vp->v_rdev;
-	int (*cfunc) __P((dev_t, int, int, struct proc *));
+	int (*devclose) __P((dev_t, int, int, struct proc *));
 	int mode;
 
 	switch (vp->v_type) {
@@ -408,7 +408,7 @@ spec_close(vp, flag, cred, p)
 		 */
 		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
-		cfunc = cdevsw[major(dev)].d_close;
+		devclose = cdevsw[major(dev)].d_close;
 		mode = S_IFCHR;
 		break;
 
@@ -432,7 +432,7 @@ spec_close(vp, flag, cred, p)
 		 */
 		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
-		cfunc = bdevsw[major(dev)].d_close;
+		devclose = bdevsw[major(dev)].d_close;
 		mode = S_IFBLK;
 		break;
 
@@ -440,7 +440,7 @@ spec_close(vp, flag, cred, p)
 		panic("spec_close: not special");
 	}
 
-	return ((*cfunc)(dev, flag, mode, p));
+	return ((*devclose)(dev, flag, mode, p));
 }
 
 /*
