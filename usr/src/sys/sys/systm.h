@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.23 (Berkeley) %G%
+ *	@(#)systm.h	7.24 (Berkeley) %G%
  */
 
 extern const char *panicstr;	/* panic message */
@@ -85,5 +85,21 @@ int	fuword __P((void *base));
 int	fuiword __P((void *base));
 int	suword __P((void *base, int word));
 int	suiword __P((void *base, int word));
+
+int	hzto __P((struct timeval *tv));
+void	timeout __P((void (*func)(void *), void *arg, int ticks));
+void	untimeout __P((void (*func)(void *), void *arg));
+void	realitexpire __P((void *));
+
+struct clockframe;
+void	hardclock __P((struct clockframe *frame));
+void	softclock __P((void));
+void	statclock __P((struct clockframe *frame));
+
+void	initclocks __P((void));
+
+void	startprofclock __P((struct proc *));
+void	stopprofclock __P((struct proc *));
+void	setstatclockrate __P((int hzrate));
 
 #include <libkern/libkern.h>
