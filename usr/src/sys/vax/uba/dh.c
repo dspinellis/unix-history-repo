@@ -1,4 +1,4 @@
-/*	dh.c	3.13	%G%	*/
+/*	dh.c	3.14	%G%	*/
 
 /*
  *	DH-11 driver
@@ -125,7 +125,8 @@ dhopen(dev, flag)
 	s = spl6();
 	if (!getcbase) {
 		getcbase++;
-		dh_ubinfo = uballoc((caddr_t)cfree, NCLIST*sizeof(struct cblock), 0);
+		/* 512+ is a kludge to try to get around a hardware problem */
+		dh_ubinfo = uballoc((caddr_t)cfree, 512+NCLIST*sizeof(struct cblock), 0);
 		cbase = (short)dh_ubinfo;
 	}
 	splx(s);
