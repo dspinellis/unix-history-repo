@@ -1,8 +1,19 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)df.1	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)df.1	6.3 (Berkeley) %G%
 .\"
 .TH DF 1 ""
 .UC 4
@@ -11,28 +22,25 @@ df \- disk free
 .SH SYNOPSIS
 .B df
 [
-.B \-i
-] [ filesystem ... ] [ file ... ]
+.B \-ik
+] [ file | file_system ... ]
 .SH DESCRIPTION
 .I Df
-prints out the amount of free disk space
-available on the specified
-.I filesystem,
-e.g. ``/dev/rp0a'',
-or on the filesystem in which the specified
-.I file,
-e.g. ``$HOME'',
-is contained.
-If no file system is specified,
-the free space on all
-the mounted file systems is printed.
-The reported numbers are in kilobytes.
-.PP
-Other options are:
+displays statistics on the amount of free disk space on the
+file system
+.I file_system
+or on the file system of which
+.I file
+is a part.
+If neither a file or a file system is specified, statistics for
+all mounted file systems are displayed.
+The following options are available:
 .TP
-.B \-i
-Report also the number of inodes which are used and free.
-.SH FILES
-/etc/fstab	list of normally mounted filesystems
+-i
+Include statistics on the number of free inodes.
+.TP
+-k
+By default, all reported numbers are in 512-byte blocks.
+This causes the numbers to be reported in kilobytes.
 .SH "SEE ALSO"
-fstab(5), icheck(8), quot(8)
+quota(1), fstab(5), mount(8), quot(8)
