@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.4 (Berkeley) %G%
+# @(#)Makefile	5.5 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -39,7 +39,7 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 enpload ${DESTDIR}/sbin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8/tahoe
-	install -c -o bin -g bin -m 444 enpcode ${DESTDIR}/libdata
+	install -c -o bin -g bin -m 444 enpcode ${DESTDIR}/etc
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
