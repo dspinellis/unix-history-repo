@@ -1,5 +1,5 @@
 /*
- * @(#)dextern	4.1	(Berkeley)	%G%
+ * @(#)dextern	4.2	(Berkeley)	%G%
  */
 # include <stdio.h>
 # include <ctype.h>
@@ -19,9 +19,9 @@
 
 # ifdef HUGE
 # define ACTSIZE 12000
-# define MEMSIZE 12000
+# define MEMSIZE 24000
 # define NSTATES 750
-# define NTERMS 127
+# define NTERMS 300
 # define NPROD 600
 # define NNONTERM 300
 # define TEMPSIZE 1200
