@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)genassym.c	5.2 (Berkeley) %G%
+ *	@(#)genassym.c	5.3 (Berkeley) %G%
  */
 
 #include "../i386/pte.h"
@@ -96,6 +96,7 @@ main()
 	printf("#define\tPCB_IOOPT %d\n", &pcb->pcbtss.tss_ioopt);
 	printf("#define\tPCB_FPSAV %d\n", &pcb->pcb_fpsav);
 	printf("#define\tPCB_SAVEFPU %d\n", &pcb->pcb_savefpu);
+	printf("#define\tPCB_SAVEEMC %d\n", &pcb->pcb_saveemc);
 	printf("#define\tPCB_P0BR %d\n", &pcb->pcb_p0br);
 	printf("#define\tPCB_P1BR %d\n", &pcb->pcb_p1br);
 	printf("#define\tPCB_P0LR %d\n", &pcb->pcb_p0lr);
