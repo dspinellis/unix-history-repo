@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.4.1.1 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -429,11 +429,17 @@ klseek(fd, loc, off)
 	(void) lseek(fd, (long)loc, off);
 }
 
+/*
+ * Version allows change of db format w/o temporarily bombing ps's
+ */
+char thisversion[4] = "V2";		/* length must remain 4 */
+
 writepsdb(unixname)
 	char *unixname;
 {
 	register FILE *fp;
 	struct lttys *lt;
+	struct stat stb;
 
 	setgid(getgid());
 	setuid(getuid());
@@ -442,6 +448,13 @@ writepsdb(unixname)
 		exit(1);
 	} else
 		fchmod(fileno(fp), 0644);
+
+	fwrite(thisversion, sizeof (thisversion), 1, fp);
+	fwrite(unixname, strlen(unixname) + 1, 1, fp);
+	if (stat(unixname, &stb) < 0)
+		stb.st_mtime = 0;
+	fwrite((char *) &stb.st_mtime, sizeof (stb.st_mtime), 1, fp);
+
 	fwrite((char *) &nllen, sizeof nllen, 1, fp);
 	fwrite((char *) nl, sizeof (struct nlist), nllen, fp);
 	fwrite((char *) cand, sizeof (cand), 1, fp);
@@ -451,7 +464,6 @@ writepsdb(unixname)
 	fwrite((char *) &nchans, sizeof nchans, 1, fp);
 	fwrite((char *) wchanhd, sizeof (struct wchan), nchans, fp);
 	fwrite((char *) wchan_index, sizeof (caddr_t), NWCINDEX, fp);
-	fwrite(unixname, strlen(unixname) + 1, 1, fp);
 	fclose(fp);
 }
 
@@ -462,6 +474,9 @@ readpsdb(unixname)
 	register FILE *fp;
 	char unamebuf[BUFSIZ];
 	char *p	= unamebuf;
+	char dbversion[sizeof thisversion];
+	struct stat stb;
+	time_t dbmtime;
 	extern int errno;
 
 	if ((fp = fopen(psdb, "r")) == NULL) {
@@ -470,6 +485,22 @@ readpsdb(unixname)
 		perror(psdb);
 		exit(1);
 	}
+
+	/*
+	 * Does the db file match this unix?
+	 */
+	fread(dbversion, sizeof dbversion, 1, fp);
+	if (bcmp(thisversion, dbversion, sizeof thisversion))
+		goto bad;
+	while ((*p = getc(fp)) != '\0')
+		p++;
+	if (strcmp(unixname, unamebuf))
+		goto bad;
+	fread((char *) &dbmtime, sizeof dbmtime, 1, fp);
+	if (stat(unixname, &stb) < 0)
+		stb.st_mtime = 0;
+	if (stb.st_mtime != dbmtime)
+		goto bad;
 
 	fread((char *) &nllen, sizeof nllen, 1, fp);
 	nl = (struct nlist *) malloc (nllen * sizeof (struct nlist));
@@ -491,9 +522,12 @@ readpsdb(unixname)
 	} else
 		fread((char *) wchanhd, sizeof (struct wchan), nchans, fp);
 	fread((char *) wchan_index, sizeof (caddr_t), NWCINDEX, fp);
-	while ((*p = getc(fp)) != '\0')
-		p++;
-	return (strcmp(unixname, unamebuf) == 0);
+	fclose(fp);
+	return(1);
+
+bad:
+	fclose(fp);
+	return(0);
 }
 
 openfiles(argc, argv)
@@ -533,6 +567,7 @@ getkvars(argc, argv)
 	char **argv;
 {
 	int faildb = 0;			/* true if psdatabase init failed */
+	int i;
 
 	nlistf = argc > 1 ? argv[1] : "/vmunix";
 	if (Uflg) {
