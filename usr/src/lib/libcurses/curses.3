@@ -2,17 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)curses.3	6.1 (Berkeley) %G%
+.\"	@(#)curses.3	6.2 (Berkeley) %G%
 .\"
 .TH CURSES 3X ""
 .UC 4
 .SH NAME
 curses \- screen functions with ``optimal'' cursor motion
 .SH SYNOPSIS
+.B # include <curses.h>
+.sp
 .B cc
-[ flags ] files
+\&...
 .B \-lcurses \-ltermcap
-[ libraries ]
 .SH DESCRIPTION
 These routines give the user a method of updating screens with reasonable
 optimization.  They keep an image of the current screen,
@@ -24,7 +25,7 @@ In order to initialize the routines, the routine
 must be called before any of the other routines that deal with windows and
 screens are used.  The routine
 .I endwin()
-should be called before exiting.
+should always called before exiting.
 .SH SEE ALSO
 .I "Screen Updating and Cursor Movement Optimization: A Library Package,"
 Ken Arnold,
@@ -37,15 +38,17 @@ termcap(5)
 Ken Arnold
 .SH FUNCTIONS
 .nf
-.ds w \fIwin\fR
-.ds s \fIstdscr\fR
+.ds w \fIwin\fP
+.ds s \fIstdscr\fP
+.ds yx (\fIy\fP,\fIx\fP\|)
 .ta 3i
 addch(ch)	add a character to \*s
 addstr(str)	add a string to \*s
 box(win,vert,hor)	draw a box around a window
-crmode()	set cbreak mode
+baudrate()	return current baud rate
+cbreak()	set cbreak mode
 clear()	clear \*s
-clearok(scr,boolf)	set clear flag for \fIscr\fR
+clearok(scr,boolf)	set clear flag for \fIscr\fP
 clrtobot()	clear to bottom on \*s
 clrtoeol()	clear to end of line on \*s
 delch()	delete a character
@@ -54,22 +57,28 @@ delwin(win)	delete \*w
 echo()	set echo mode
 endwin()	end window modes
 erase()	erase \*s
+erasechar()	return user's erase char
+flusok(win,boolf)	set flush-on-refresh flag for \*w
+fullname(termbuf,name)	get full name from \fItermbuf\fP
 getch()	get a char through \*s
-getcap(name)	get terminal capability \fIname\fR
+getcap(name)	get terminal capability \fIname\fP
 getstr(str)	get a string through \*s
 gettmode()	get tty modes
-getyx(win,y,x)	get (y,x) co-ordinates
-inch()	get char at current (y,x) co-ordinates
+getyx(win,y,x)	get \*(yx co-ordinates
+idlok(win,boolf)	set use-insert/delete-line for \*w
+inch()	get char at current \*(yx co-ordinates
 initscr()	initialize screens
 insch(c)	insert a char
 insertln()	insert a line
+killchar()	return user's kill char
 leaveok(win,boolf)	set leave flag for \*w
-longname(termbuf,name)	get long name from \fItermbuf\fR
-move(y,x)	move to (y,x) on \*s
+longname(termbuf,name)	get long name from \fItermbuf\fP
+move(y,x)	move to \*(yx on \*s
 mvcur(lasty,lastx,newy,newx)	actually move cursor
+mvwin(win,y,x)	move \*w pos to \*(yx
 newwin(lines,cols,begin_y,begin_x)\ 	create a new window
 nl()	set newline mapping
-nocrmode()	unset cbreak mode
+nocbreak()	unset cbreak mode
 noecho()	unset echo mode
 nonl()	unset newline mapping
 noraw()	unset raw mode
@@ -87,8 +96,10 @@ setterm(name)	set term variables for name
 standend()	end standout mode
 standout()	start standout mode
 subwin(win,lines,cols,begin_y,begin_x)\ 	create a subwindow
+touchline(win,y,sx,ex)	mark line \fIy\fP \fIsx\fP through \fIsy\fP as changed
+touchoverlap(win1,win2)	mark overlap of \fIwin1\fP on \fIwin2\fP as changed
 touchwin(win)	\*(lqchange\*(rq all of \*w
-unctrl(ch)	printable version of \fIch\fR
+unctrl(ch)	printable version of \fIch\fP
 waddch(win,ch)	add char to \*w
 waddstr(win,str)	add string to \*w
 wclear(win)	clear \*w
@@ -99,13 +110,24 @@ wdeleteln(win)	delete line from \*w
 werase(win)	erase \*w
 wgetch(win)	get a char through \*w
 wgetstr(win,str)	get a string through \*w
-winch(win)	get char at current (y,x) in \*w
+winch(win)	get char at current \*(yx in \*w
 winsch(win,c)	insert char into \*w
 winsertln(win)	insert line into \*w
-wmove(win,y,x)	set current (y,x) co-ordinates on \*w
+wmove(win,y,x)	set current \*(yx co-ordinates on \*w
 wprintw(win,fmt,arg1,arg2,...)\ 	printf on \*w
 wrefresh(win)	make screen look like \*w
 wscanw(win,fmt,arg1,arg2,...)\ 	scanf through \*w
 wstandend(win)	end standout mode on \*w
 wstandout(win)	start standout mode on \*w
 .SH BUGS
+.PP
+.IR getch() ,
+.IR getstr() ,
+and
+.IR scanw()
+have been rarely used,
+and are probably buggy.
+.PP
+Insert/delete line and char sequences
+are not used as often as they should be,
+and scrolling regions are not used at all.
