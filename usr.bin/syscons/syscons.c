@@ -48,6 +48,7 @@ void	screensaver	__P((char *));
 void	linemode	__P((char *));
 void	keyrate		__P((char *));
 void	keymap		__P((char *));
+void    mapscr          __P((char *));
 void	loadfont	__P((char *, char *));
 void	switchto	__P((char *));
 void	setfkey		__P((char *, char *));
@@ -72,7 +73,7 @@ int		opt;
 	prgname = argv[0];
 	if (!is_syscons(0))
 		exit(1);
-	while((opt = getopt(argc, argv, "s:m:r:k:f:t:F:vd")) != -1)
+	while((opt = getopt(argc, argv, "s:m:r:k:f:t:F:S:vd")) != -1)
 		switch(opt) {
 			case 's':
 				screensaver(optarg);
@@ -85,6 +86,9 @@ int		opt;
 				break;
 			case 'k':
 				keymap(optarg);
+				break;
+			case 'S':
+				mapscr(optarg);
 				break;
 			case 'f':
 				loadfont(optarg, nextarg(argc, argv, &optind, 'f'));
@@ -150,6 +154,7 @@ Usage: syscons  -v               (be verbose)\n\
                 -f SIZE FILE     (load font file of size 8, 14 or 16)\n\
                 -t SCRNUM        (switch to specified VT)\n\
                 -F NUM STRING    (set function key NUM to send STRING)\n\
+                -S SCRNMAP       (load screen map file)\n\
 "};
 	fprintf(stderr, usagestr);
 }
@@ -335,6 +340,41 @@ const char	*postfix[] = {"", ".map", ".map"};
 		perror("setting keyboard map");
 }
 
+void
+mapscr(opt)
+char		*opt;
+{
+char		*mapfn;
+int		mapfd;
+scrmap_t        map;
+int		f;
+const char      *prefix[]  = {"", "",     SCRNMAP_PATH, NULL};
+const char      *postfix[] = {"", ".scr", ".scr"};
+
+
+	mapfd = -1;
+	for (f = 0; prefix[f]; f++) {
+		mapfn = mkfullname(prefix[f], opt, postfix[f]);
+		mapfd = open(mapfn, O_RDONLY, 0);
+		if (verbose)
+			fprintf(stderr, "trying to open scrnmap file %s ... %s\n", mapfn, (mapfd==-1?"failed":"OK"));
+		if (mapfd >= 0)
+			break;
+	}
+	if (mapfd == -1) {
+		perror("Scrnmap file not found");
+		return;
+	}
+	if ((read(mapfd, &map, sizeof(map)) != sizeof(map)) ||
+	    (read(mapfd, &map, 1) != 0)) {
+		fprintf(stderr, "\"%s\" is not in scrnmap format.\n", opt);
+		(void) close(mapfd);
+		return;
+	}
+	(void) close(mapfd);
+	if (ioctl(0, PIO_SCRNMAP, &map) == -1)
+		perror("setting screen map");
+}
 
 void
 loadfont(sizec, fname)
@@ -424,13 +464,14 @@ char		*str;
 {
 fkeyarg_t	fkey;
 char		*v1;
+long            keynum;
 
-
-	fkey.keynum = strtol(knumc, &v1, 0);
-	if ((fkey.keynum < 1) || (fkey.keynum > 12) || (*v1 != '\0')) {
-		fprintf(stderr, "function key number must be between 1 and 12.\n");
+	keynum = strtol(knumc, &v1, 0);
+	if (keynum < 0 || keynum > 59 || *v1 != '\0') {
+		fprintf(stderr, "function key number must be between 0 and 59.\n");
 		return;
 	}
+	fkey.keynum = keynum;
 	if ((fkey.flen = strlen(str)) > MAXFK) {
 		fprintf(stderr, "function key string too long (%d > %d)\n", fkey.flen, MAXFK);
 		return;
