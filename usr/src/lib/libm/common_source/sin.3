@@ -1,6 +1,6 @@
-.\"	@(#)sin.3	4.1 (Berkeley) %G%
+.\"	@(#)sin.3	5.1 (Berkeley) %G%
 .\"
-.TH SIN 3M 
+.TH SIN 3M  "19 January 1983"
 .AT 3
 .SH NAME
 sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
@@ -38,8 +38,7 @@ by the caller to make sure the result is meaningful.
 returns the arc sin in the range \-\(*p/2 to \(*p/2.
 .PP
 .I Acos
-returns the arc cosine in the range
-0 to \(*p.
+returns the arc cosine in the range 0 to \(*p.
 .PP
 .I Atan
 returns the arc tangent of
@@ -51,15 +50,13 @@ returns the arc tangent of
 .I x/y
 in the range \-\(*p to \(*p.
 .SH DIAGNOSTICS
-Arguments of magnitude greater than 1
-cause
+Arguments of magnitude greater than 1 cause
 .I asin
 and
 .I acos
 to return value 0;
 .I errno
-is set to EDOM.
-The value of
+is set to EDOM.  The value of
 .I tan
 at its singular points is a huge number, and
 .I errno
