@@ -1,4 +1,4 @@
-/*	remote.c	4.1	81/05/09	*/
+/*	remote.c	4.2	81/06/16	*/
 # include "tip.h"
 
 /*
@@ -39,6 +39,7 @@ getremcap(host)
 	if ((FS = rgetnum("fs")) < 0)
 		FS = DEFFS;
 	DU = rgetflag("du");
+	HW = rgetflag("hw");
 	if (DV == NOSTR) {
 		fprintf(stderr, "%s: missing device spec\n", host);
 		exit(3);

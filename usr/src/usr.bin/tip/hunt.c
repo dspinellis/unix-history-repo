@@ -1,4 +1,4 @@
-/*	hunt.c	4.1	81/05/09	*/
+/*	hunt.c	4.2	81/06/16	*/
 #include "tip.h"
 
 #define RD	04
@@ -28,6 +28,15 @@ char *name;
 			delock(uucplock);
 			continue;
 		}
+		/*
+		 * Straight through call units, such as the BIZCOMP
+		 *  and the DF, must indicate they're hardwired in
+		 *  order to get an open file descriptor placed in FD.
+		 * Otherwise, as for a DN-11, the open will have to
+		 *  be done in the "open" routine.
+		 */
+		if (!HW)
+			break;
 		alarm(10);
 		if((FD = open(cp, 2)) >= 0){
 			alarm(0);

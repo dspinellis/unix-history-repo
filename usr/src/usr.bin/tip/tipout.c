@@ -1,4 +1,4 @@
-/*	tipout.c	4.1	81/05/09	*/
+/*	tipout.c	4.2	81/06/16	*/
 #include "tip.h"
 /*
  * tip
