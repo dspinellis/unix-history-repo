@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.36		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.37		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.36		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.37		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -98,7 +98,7 @@ alias(a, sendq)
 # endif
 	message(Arpa_Info, "aliased to %s", p);
 	AliasLevel++;
-	sendto(p, 1, a, sendq);
+	sendto(p, a, sendq);
 	AliasLevel--;
 }
 /*

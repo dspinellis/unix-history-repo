@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.30		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.31		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.30		%G%);
+SCCSID(@(#)srvrsmtp.c	3.31		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -168,7 +168,7 @@ smtp()
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			sendto(p, 1, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+			sendto(p, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 			if (Errors == 0)
 			{
 				message("250", "%s... Recipient ok", p);
@@ -216,7 +216,7 @@ smtp()
 		  case CMDVRFY:		/* vrfy -- verify address */
 			vrfyqueue = NULL;
 			QuickAbort = TRUE;
-			sendto(p, 1, (ADDRESS *) NULL, &vrfyqueue);
+			sendto(p, (ADDRESS *) NULL, &vrfyqueue);
 			if (Errors != 0)
 				break;
 			while (vrfyqueue != NULL)
