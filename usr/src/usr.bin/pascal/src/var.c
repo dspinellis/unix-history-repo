@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -353,7 +353,7 @@ alignit:
      */
 aligndot(alignment)
     int	alignment;
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 {
     switch (alignment) {
 	case 1:
@@ -367,7 +367,7 @@ aligndot(alignment)
 	    return;
     }
 }
-#endif vax
+#endif vax || tahoe
 #ifdef mc68000
 {
     switch (alignment) {
