@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.34 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.35 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.34 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.35 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -92,7 +92,7 @@ queueup(df)
 # ifdef LOCKF
 			if (lockf(fd, F_TLOCK, 0) < 0)
 			{
-				if (errno != EACCES)
+				if (errno != EACCES && errno != EAGAIN)
 					syserr("cannot lockf(%s)", tf);
 				close(fd);
 				fd = -1;
@@ -615,6 +615,12 @@ dowork(w)
 **		we had been invoked by argument.
 */
 
+# ifdef LOCKF
+# define RDLK_MODE	"r+"
+# else
+# define RDLK_MODE	"r"
+# endif
+
 FILE *
 readqf(e, full)
 	register ENVELOPE *e;
@@ -633,7 +639,7 @@ readqf(e, full)
 	*/
 
 	qf = queuename(e, 'q');
-	qfp = fopen(qf, "r");
+	qfp = fopen(qf, RDLK_MODE);
 	if (qfp == NULL)
 	{
 		if (errno != ENOENT)

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.31 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.32 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.31 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.32 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -246,7 +246,7 @@ loop:
 			 */
 			if (errno == ECONNREFUSED) {
 				h_errno = TRY_AGAIN;
-				return rval;
+				return FALSE;
 			}
 			if (h_errno == NO_DATA)
 			{
@@ -256,11 +256,15 @@ loop:
 			}
 			if ((h_errno != HOST_NOT_FOUND) ||
 			    (_res.options & RES_DNSRCH) == 0)
-				return rval;
+				return FALSE;
 		}
 	}
 	if (ret < 0)
 	{
+		/*
+		**  Try the unmodified name.
+		*/
+
 		cp = host;
 		if (tTd(8, 5))
 			printf("getcanonname: trying %s\n", cp);
@@ -274,7 +278,8 @@ loop:
 		{
 			if (tTd(8, 8))
 				printf("\tNO: h_errno=%d\n", h_errno);
-			return rval;
+			if (h_errno != NO_DATA)
+				return FALSE;
 		}
 	}
 
@@ -301,7 +306,7 @@ loop:
 			if (tTd(8, 20))
 				printf("qdcount failure (%d)\n",
 					ntohs(hp->qdcount));
-			return rval;		/* ???XXX??? */
+			return FALSE;		/* ???XXX??? */
 		}
 	}
 
