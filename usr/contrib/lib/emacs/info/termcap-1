@@ -1,0 +1,1188 @@
+Info file: termcap,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: termcap.texinfo
+
+This file documents the termcap library of the GNU system.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+
+
+
+
+File: termcap  Node: Top, Prev: (DIR), Up: (DIR), Next: Introduction
+
+* Menu:
+
+* Introduction::What is termcap?  Why this manual?
+* Library::     The termcap library functions.
+* Data Base::   What terminal descriptions in `/etc/termcap' look like.
+* Capabilities::Definitions of the individual terminal capabilities:
+                 how to write them in descriptions, and how to use
+                 their values to do display updating.
+* Var Index::   Index of C functions and variables.
+* Cap Index::   Index of termcap capabilities.
+* Index::       Concept index.
+
+
+File: termcap  Node: Introduction, Prev: Top, Up: Top, Next: Library
+
+Introduction
+************
+
+"Termcap" is a library and data base that enables programs to use
+display terminals in a terminal-independent manner.  It originated in
+Berkeley Unix.
+
+The termcap data base describes the capabilities of hundreds of different
+display terminals in great detail.  Some examples of the information
+recorded for a terminal could include how many columns wide it is, what
+string to send to move the cursor to an arbitrary position (including how
+to encode the row and column numbers), how to scroll the screen up one or
+several lines, and how much padding is needed for such a scrolling
+operation.
+
+The termcap library is provided for easy access this data base in programs
+that want to do terminal-independent character-based display output.
+
+This manual describes the GNU version of the termcap library, which has
+some extensions over the Unix version.  All the extensions are identified
+as such, so this manual also tells you how to use the Unix termcap.
+
+The GNU version of the termcap library is available free as source code,
+for use in free programs, and runs on Unix and VMS systems (at least).  You
+can find it in the GNU Emacs distribution in the files `termcap.c' and
+`tparam.c'.
+
+This manual was written for the GNU project, whose goal is to develop a
+complete free operating system upward-compatible with Unix for user
+programs.  The project is approximately two thirds complete.  For more
+information on the GNU project, including the GNU Emacs editor and the
+mostly-portable optimizing C compiler, send one dollar to
+
+     Free Software Foundation
+     675 Mass Ave
+     Cambridge, MA 02139
+
+
+File: termcap  Node: Library, Prev: Top, Up: Top, Next: Data Base
+
+The Termcap Library
+*******************
+
+The termcap library is the application programmer's interface to the
+termcap data base.  It contains functions for the following purposes:
+
+   * Finding the description of the user's terminal type (`tgetent').
+
+   * Interrogating the description for information on various topics
+     (`tgetnum', `tgetflag', `tgetstr').
+
+   * Computing and performing padding (`tputs').
+
+   * Encoding numeric parameters such as cursor positions into the
+     terminal-specific form required for display commands (`tparam',
+     `tgoto').
+
+* Menu:
+
+* Preparation:: Preparing to use the termcap library.
+* Find::        Finding the description of the terminal being used.
+* Interrogate:: Interrogating the description for particular capabilities.
+* Initialize::  Initialization for output using termcap.
+* Padding::     Outputting padding.
+* Parameters::  Encoding parameters such as cursor positions.
+
+
+File: termcap  Node: Preparation, Prev: Library, Up: Library, Next: Find
+
+Preparing to Use the Termcap Library
+====================================
+
+To use the termcap library in a program, you need two kinds of preparation:
+
+   * The compiler needs declarations of the functions and variables in the
+     library.
+
+     On GNU systems, it suffices to include the header file `termcap.h'
+     in each source file that uses these functions and variables.
+
+     On Unix systems, there is often no such header file.  Then you must
+     explictly declare the variables as external.  You can do likewise for
+     the functions, or let them be implicitly declared and cast their
+     values from type `int' to the appropriate type.
+
+     We illustrate the declarations of the individual termcap library
+     functions with ANSI C prototypes because they show how to pass the
+     arguments.  If you are not using the GNU C compiler, you probably
+     cannot use function prototypes, so omit the argument types and names
+     from your declarations.
+
+   * The linker needs to search the library.  Usually either `-ltermcap'
+     or `-ltermlib' as an argument when linking will do this.
+
+
+File: termcap  Node: Find, Prev: Preparation, Up: Library, Next: Interrogate
+
+Finding a Terminal Description: `tgetent'
+=========================================
+
+An application program that is going to use termcap must first look up the
+description of the terminal type in use.  This is done by calling
+`tgetent', whose declaration in ANSI Standard C looks like:
+
+     int tgetent (char *BUFFER, char *TERMTYPE);
+
+This function finds the description and remembers it internally so that
+you can interrogate it about specific terminal capabilities
+(*Note Interrogate::).
+
+The argument TERMTYPE is a string which is the name for the type of
+terminal to look up.  Usually you would obtain this from the environment
+variable `TERM' using `getenv ("TERM")'.
+
+If you are using the GNU version of termcap, you can alternatively ask
+`tgetent' to allocate enough space.  Pass a null pointer for BUFFER, and
+`tgetent' itself allocates the storage using `malloc'.  In this case the
+returned value on success is the address of the storage, cast to `int'.
+But normally there is no need for you to look at the address.  Do not
+free the storage yourself.
+
+With the Unix version of termcap, you must allocate space for the
+description yourself and pass the address of the space as the argument
+BUFFER.  There is no way you can tell how much space is needed, so
+the convention is to allocate a buffer 2048 characters long and assume that
+is enough.  (Formerly the convention was to allocate 1024 characters and
+assume that was enough.  But one day, for one kind of terminal, that was
+not enough.)
+
+No matter how the space to store the description has been obtained,
+termcap records its address internally for use when you later
+interrogate the description with `tgetnum', `tgetstr' or `tgetflag'.  If
+the buffer was allocated by termcap, it will be freed by termcap too if
+you call `tgetent' again.  If the buffer was provided by you, you must
+make sure that its contents remain unchanged for as long as you still
+plan to interrogate the description.
+
+The return value of `tgetent' is -1 if there is some difficulty
+accessing the data base of terminal types, 0 if the data base is accessible
+but the specified type is not defined in it, and some other value
+otherwise.
+
+Here is how you might use the function `tgetent':
+
+     #ifdef unix
+     static char term_buffer[2048];
+     #else
+     #define term_buffer 0
+     #endif
+
+     init_terminal_data ()
+     {
+       char *termtype = getenv ("TERM");
+       int success;
+
+       if (termtype == 0)
+         fatal ("Specify a terminal type with `setenv TERM <yourtype>'.\n");
+
+       success = tgetent (term_buffer, termtype);
+       if (success < 0)
+         fatal ("Could not access the termcap data base.\n");
+       if (success == 0)
+         fatal ("Terminal type `%s' is not defined.\n", termtype);
+     }
+
+Here we assume the function `fatal' prints an error message and exits.
+
+If the environment variable `TERMCAP' is defined, its value is used to
+override the terminal type data base.  The function `tgetent' checks the
+value of `TERMCAP' automatically.  If the value starts with `/' then it
+is taken as a file name to use as the data base file, instead of
+`/etc/termcap' which is the standard data base.  If the value does not
+start with `/' then it is itself used as the terminal description,
+provided that the terminal type TERMTYPE is among the types it claims to
+apply to.  *Note Data Base::, for information on the format of a
+terminal description.
+
+
+File: termcap  Node: Interrogate, Prev: Find, Up: Library, Next: Initialize
+
+Interrogating the Terminal Description
+======================================
+
+Each piece of information recorded in a terminal description is called a
+"capability".  Each defined terminal capability has a two-letter code
+name and a specific meaning.  For example, the number of columns is named
+`co'.  *Note Capabilities::, for definitions of all the standard
+capability names.
+
+Once you have found the proper terminal description with `tgetent'
+(*Note Find::), your application program must "interrogate" it for
+various terminal capabilities.  You must specify the two-letter code of
+the capability whose value you seek.
+
+Capability values can be numeric, boolean (capability is either present
+or absent) or strings.  Any particular capability always has the same
+value type; for example, `co' always has a numeric value, while `am'
+(automatic wrap at margin) is always a flag, and `cm' (cursor motion
+command) always has a string value.  The documentation of each
+capability says which type of value it has.
+
+There are three functions to use to get the value of a capability,
+depending on the type of value the capability has.  Here are their
+declarations in ANSI C:
+
+     int tgetnum (char *NAME);
+     int tgetflag (char *NAME);
+     char *tgetstr (char *NAME, char **AREA);
+
+`tgetnum'
+     Use `tgetnum' to get a capability value that is numeric.  The
+     argument NAME is the two-letter code name of the capability.  If
+     the capability is present, `tgetnum' returns the numeric value
+     (which is nonnegative).  If the capability is not mentioned in the
+     terminal description, `tgetnum' returns -1.
+
+`tgetflag'
+     Use `tgetflag' to get a boolean value.  If the capability
+     NAME is present in the terminal description, `tgetflag'
+     returns 1; otherwise, it returns 0.
+
+`tgetstr'
+     Use `tgetstr' to get a string value.  It returns a pointer to a
+     string which is the capability value, or a null pointer if the
+     capability is not present in the terminal description.
+
+     There are two ways `tgetstr' can find space to store the string value:
+
+        * You can ask `tgetstr' to allocate the space.  Pass a null
+          pointer for the argument AREA, and `tgetstr' will use
+          `malloc' to allocate storage big enough for the value.
+          Termcap will never free this storage or refer to it again; you
+          should free it when you are finished with it.
+
+          This method is more robust, since there is no need to guess how
+          much space is needed.  But it is supported only by the GNU
+          termcap library.
+
+        * You can provide the space.  Provide for the argument AREA the
+          address of a pointer variable of type `char *'.  Before calling
+          `tgetstr', initialize the variable to point at available space.
+          Then `tgetstr' will store the string value in that space and will
+          increment the pointer variable to point after the space that has been
+          used.  You can use the same pointer variable for many calls to
+          `tgetstr'.
+
+          There is no way to determine how much space is needed for a single
+          string, and no way for you to prevent or handle overflow of the area
+          you have provided.  However, you can be sure that the total size of
+          all the string values you will obtain from the terminal description is
+          no greater than the size of the description (unless you get the same
+          capability twice).  You can determine that size with `strlen' on
+          the buffer you provided to `tgetent'.  See below for an example.
+
+          Providing the space yourself is the only method supported by the Unix
+          version of termcap.
+
+Note that you do not have to specify a terminal type or terminal
+description for the interrogation functions.  They automatically use the
+description found by the most recent call to `tgetent'.
+
+Here is an example of interrogating a terminal description for various
+capabilities, with conditionals to select between the Unix and GNU methods
+of providing buffer space.
+
+     char *tgetstr ();
+
+     char *cl_string, *cm_string;
+     int height;
+     int width;
+     int auto_wrap;
+
+     char PC;   /* For tputs.  */
+     char *BC;  /* For tgoto.  */
+     char *UP;
+
+     interrogate_terminal ()
+     {
+     #ifdef UNIX
+       /* Here we assume that an explicit term_buffer
+          was provided to tgetent.  */
+       char *buffer
+         = (char *) malloc (strlen (term_buffer));
+     #define BUFFADDR &buffer
+     #else
+     #define BUFFADDR 0
+     #endif
+
+       char *temp;
+
+       /* Extract information we will use.  */
+       cl_string = tgetstr ("cl", BUFFADDR);
+       cm_string = tgetstr ("cm", BUFFADDR);
+       auto_wrap = tgetflag ("am");
+       height = tgetnum ("li");
+       width = tgetnum ("co");
+
+       /* Extract information that termcap functions use.  */
+       temp = tgetstr ("pc", BUFFADDR);
+       PC = temp ? *temp : 0;
+       BC = tgetstr ("le", BUFFADDR);
+       UP = tgetstr ("up", BUFFADDR);
+     }
+
+*Note Padding::, for information on the variable `PC'.  *Note Using Parameters::, for information on `UP' and `BC'.
+
+
+File: termcap  Node: Initialize, Prev: Interrogate, Up: Library, Next: Padding
+
+Initialization for Use of Termcap
+=================================
+
+Before starting to output commands to a terminal using termcap,
+an application program should do two things:
+
+   * Initialize various global variables which termcap library output
+     functions refer to.  These include `PC' and `ospeed' for padding
+     (*Note Output Padding::) and `UP' and `BC' for cursor motion (*Note
+     tgoto::).
+
+   * Tell the kernel to turn off alteration and padding of horizontal-tab
+     characters sent to the terminal.
+
+To turn off output processing in Berkeley Unix you would use `ioctl'
+with code `TIOCLSET' to set the bit named `LLITOUT', and clear the bits
+`ANYDELAY' using `TIOCSETN'.  In POSIX or System V, you must clear the
+bit named `OPOST'.  Refer to the system documentation for details.
+
+If you do not set the terminal flags properly, some older terminals will
+not work.  This is because their commands may contain the characters that
+normally signify newline, carriage return and horizontal tab---characters
+which the kernel thinks it ought to modify before output.
+
+When you change the kernel's terminal flags, you must arrange to restore
+them to their normal state when your program exits.  This implies that the
+program must catch fatal signals such as `SIGQUIT' and `SIGINT'
+and restore the old terminal flags before actually terminating.
+
+Modern terminals' commands do not use these special characters, so if you
+do not care about problems with old terminals, you can leave the kernel's
+terminal flags unaltered.
+
+
+File: termcap  Node: Padding, Prev: Initialize, Up: Library, Next: Parameters
+
+Padding
+=======
+
+"Padding" means outputting null characters following a terminal display
+command that takes a long time to execute.  The terminal description says
+which commands require padding and how much; the function `tputs',
+described below, outputs a terminal command while extracting from it the
+padding information, and then outputs the padding that is necessary.
+
+* Menu:
+
+* Why Pad::          Explanation of padding.
+* Describe Padding:: The data base says how much padding a terminal needs.
+* Output Padding::   Using `tputs' to output the needed padding.
+
+
+File: termcap  Node: Why Pad, Prev: Padding, Up: Padding, Next: Describe Padding
+
+Why Pad, and How
+----------------
+
+Most types of terminal have commands that take longer to execute than they
+do to send over a high-speed line.  For example, clearing the screen may
+take 20msec once the entire command is received.  During that time, on a
+9600 bps line, the terminal could receive about 20 additional output
+characters while still busy clearing the screen.  Every terminal has a
+certain amount of buffering capacity to remember output characters that
+cannot be processed yet, but too many slow commands in a row can cause the
+buffer to fill up.  Then any additional output that cannot be processed
+immediately will be lost.
+
+To avoid this problem, we normally follow each display command with enough
+useless charaters (usually null characters) to fill up the time that the
+display command needs to execute.  This does the job if the terminal throws
+away null characters without using up space in the buffer (which most
+terminals do).  If enough padding is used, no output can ever be lost.  The
+right amount of padding avoids loss of output without slowing down
+operation, since the time used to transmit padding is time that nothing
+else could be done.
+
+The number of padding characters needed for an operation depends on the
+line speed.  In fact, it is proportional to the line speed.  A 9600 baud
+line transmits about one character per msec, so the clear screen command in
+the example above would need about 20 characters of padding.  At 1200 baud,
+however, only about 3 characters of padding are needed to fill up 20msec.
+
+
+File: termcap  Node: Describe Padding, Prev: Why Pad, Up: Padding, Next: Output Padding
+
+Specifying Padding in a Terminal Description
+--------------------------------------------
+
+In the terminal description, the amount of padding required by each display
+command is recorded as a sequence of digits at the front of the command.
+These digits specify the padding time in msec.  They can be followed
+optionally by a decimal point and one more digit, which is a number of
+tenths of msec.
+
+Sometimes the padding needed by a command depends on the cursor position.
+For example, the time taken by an "insert line" command is usually
+proportional to the number of lines that need to be moved down or cleared.
+An asterisk (`*') following the padding time says that the time
+should be multiplied by the number of screen lines affected by the command.
+
+     :al=1.3*\E[L:
+
+is used to describe the "insert line" command for a certain terminal.
+The padding required is 1.3 msec per line affected.  The command itself is
+`ESC [ L'.
+
+The padding time specified in this way tells `tputs' how many pad
+characters to output.  *Note Output Padding::.
+
+Two special capability values affect padding for all commands.  These are
+the `pc' and `pb'.  The variable `pc' specifies the
+character to pad with, and `pb' the speed below which no padding is
+needed.  The defaults for these variables, a null character and 0,
+are correct for most terminals.  *Note Pad Specs::.
+
+
+File: termcap  Node: Output Padding, Prev: Describe Padding, Up: Padding
+
+Performing Padding with `tputs'
+-------------------------------
+
+Use the termcap function `tputs' to output a string containing an
+optional padding spec of the form described above (*Note Describe Padding::).  The function `tputs' strips off and decodes the padding
+spec, outputs the rest of the string, and then outputs the appropriate
+padding.  Here is its declaration in ANSI C:
+
+     char PC;
+     short ospeed;
+
+     int tputs (char *STRING, int NLINES, int (*OUTFUN) ());
+
+Here STRING is the string (including padding spec) to be output;
+NLINES is the number of lines affected by the operation, which is
+used to multiply the amount of padding if the padding spec ends with a
+`*'.  Finally, OUTFUN is a function (such as `fputchar')
+that is called to output each character.  When actually called,
+OUTFUN should expect one argument, a character.
+
+The operation of `tputs' is controlled by two global variables,
+`ospeed' and `PC'.  The value of `ospeed' is supposed to be
+the terminal output speed, encoded as in the `ioctl' system call which
+gets the speed information.  This is needed to compute the number of
+padding characters.  The value of `PC' is the character used for
+padding.
+
+You are responsible for storing suitable values into these variables
+before using `tputs'.  The value stored into the `PC' variable should be
+taken from the `pc' capability in the terminal description (*Note Pad
+Specs::).  Store zero in `PC' if there is no `pc' capability.
+
+The argument NLINES requires some thought.  Normally, it should be the
+number of lines whose contents will be cleared or moved by the command.
+For cursor motion commands, or commands that do editing within one line,
+use the value 1.  For most commands that affect multiple lines, such as
+`al' (insert a line) and `cd' (clear from the cursor to the end of the
+screen), NLINES should be the screen height minus the current vertical
+position (origin 0).  For multiple insert and scroll commands such as
+`AL' (insert multiple lines), that same value for NLINES is correct; the
+number of lines being inserted is not correct.
+
+If a "scroll window" feature is used to reduce the number of lines
+affected by a command, the value of NLINES should take this into
+account.  This is because the delay time required depends on how much work
+the terminal has to do, and the scroll window feature reduces the work.
+*Note Scrolling::.
+
+Commands such as `ic' and `dc' (insert or delete characters) are
+problematical because the padding needed by these commands is proportional
+to the number of characters affected, which is the number of columns from
+the cursor to the end of the line.  It would be nice to have a way to
+specify such a dependence, and there is no need for dependence on vertical
+position in these commands, so it is an obvious idea to say that for these
+commands NLINES should really be the number of columns affected.
+However, the definition of termcap clearly says that NLINES is always
+the number of lines affected, even in this case, where it is always 1.  It
+is not easy to change this rule now, because too many programs and terminal
+descriptions have been written to follow it.
+
+Because NLINES is always 1 for the `ic' and `dc' strings,
+there is no reason for them to use `*', but some of them do.  These
+should be corrected by deleting the `*'.  If, some day, such entries
+have disappeared, it may be possible to change to a more useful convention
+for the NLINES argument for these operations without breaking any
+programs.
+
+
+File: termcap  Node: Parameters, Prev: Padding, Up: Library
+
+Filling In Parameters
+=====================
+
+Some terminal control strings require numeric "parameters".  For
+example, when you move the cursor, you need to say what horizontal and
+vertical positions to move it to.  The value of the terminal's `cm'
+capability, which says how to move the cursor, cannot simply be a string of
+characters; it must say how to express the cursor position numbers and
+where to put them within the command.
+
+The specifications of termcap include conventions as to which string-valued
+capabilities require parameters, how many parameters, and what the
+parameters mean; for example, it defines the `cm' string to take
+two parameters, the vertical and horizontal positions, with 0,0 being the
+upper left corner.  These conventions are described where the individual
+commands are documented.
+
+Termcap also defines a language used within the capability definition for
+specifying how and where to encode the parameters for output.  This language
+uses character sequences starting with `%'.  (This is the same idea as
+`printf', but the details are different.)  The language for parameter
+encoding is described in this section.
+
+A program that is doing display output calls the functions `tparam' or
+`tgoto' to encode parameters according to the specifications.  These
+functions produce a string containing the actual commands to be output (as
+well a padding spec which must be processed with `tputs';
+*Note Padding::).
+
+* Menu:
+
+* Encode Parameters:: The language for encoding parameters.
+* Using Parameters::  Outputting a string command with parameters.
+
+
+File: termcap  Node: Encode Parameters, Prev: Parameters, Up: Parameters, Next: Using Parameters
+
+Describing the Encoding
+-----------------------
+
+A terminal command string that requires parameters contains special
+character sequences starting with `%' to say how to encode the
+parameters.  These sequences control the actions of `tparam' and
+`tgoto'.
+
+The parameters values passed to `tparam' or `tgoto' are
+considered to form a vector.  A pointer into this vector determines
+the next parameter to be processed.  Some of the `%'-sequences
+encode one parameter and advance the pointer to the next parameter.
+Other `%'-sequences alter the pointer or alter the parameter
+values without generating output.
+
+For example, the `cm' string for a standard ANSI terminal is written
+as `\E[%i%d;%dH'.  (`\E' stands for ESC.)  `cm' by
+convention always requires two parameters, the vertical and horizontal goal
+positions, so this string specifies the encoding of two parameters.  Here
+`%i' increments the two values supplied, and each `%d' encodes
+one of the values in decimal.  If the cursor position values 20,58 are
+encoded with this string, the result is `\E[21;59H'.
+
+First, here are the `%'-sequences that generate output.  Except for
+`%%', each of them encodes one parameter and advances the pointer
+to the following parameter.
+
+`%%'
+     Output a single `%'.  This is the only way to represent a literal
+     `%' in a terminal command with parameters.  `%%' does not
+     use up a parameter.
+
+`%d'
+     As in `printf', output the next parameter in decimal.
+
+`%2'
+     Like `%02d' in `printf': output the next parameter in
+     decimal, and always use at least two digits.
+
+`%3'
+     Like `%03d' in `printf': output the next parameter in
+     decimal, and always use at least three digits.  Note that `%4'
+     and so on are *not* defined.
+
+`%.'
+     Output the next parameter as a single character whose ASCII code is
+     the parameter value.  Like `%c' in `printf'.
+
+`%+CHAR'
+     Add the next parameter to the character CHAR, and output the
+     resulting character.  For example, `%+ ' represents 0 as a space,
+     1 as `!', etc.
+
+The following `%'-sequences specify alteration of the parameters (their
+values, or their order) rather than encoding a parameter for output.
+They generate no output; they are used only for their side effects on
+the parameters.  Also, they do not advance the "next parameter" pointer
+except as explicitly stated.  Only `%i', `%r' and `%>' are defined in
+standard Unix termcap.  The others are GNU extensions.
+
+`%i'
+     Increment the next two parameters.  This is used for terminals that
+     expect cursor positions in origin 1.  For example, `%i%d,%d' would
+     output two parameters with `1' for 0, `2' for 1, etc.
+
+`%r'
+     Interchange the next two parameters.  This is used for terminals whose
+     cursor positioning command expects the horizontal position first.
+
+`%s'
+     Skip the next parameter.  Do not output anything.
+
+`%b'
+     Back up one parameter.  The last parameter used will become once again
+     the next parameter to be output, and the next output command will use
+     it.  Using `%b' more than once, you can back up any number of
+     parameters, and you can refer to each parameter any number of times.
+
+`%>C1C2'
+     Conditionally increment the next parameter.  Here C1 and C2 are
+     characters which stand for their ASCII codes as numbers.  If the
+     next parameter is greater than the ASCII code of C1, the ASCII code
+     of C2 is added to it.
+
+`%a OP TYPE POS'
+     Perform arithmetic on the next parameter, do not use it up, and do not
+     output anything.  Here OP specifies the arithmetic operation,
+     while TYPE and POS together specify the other operand.
+
+     Spaces are used above to separate the operands for clarity; the spaces
+     don't appear in the data base, where this sequence is exactly five
+     characters long.
+
+     The character OP says what kind of arithmetic operation to
+     perform.  It can be any of these characters:
+
+     `='
+          assign a value to the next parameter, ignoring its old value.
+          The new value comes from the other operand.
+
+     `+'
+          add the other operand to the next parameter.
+
+     `-'
+          subtract the other operand from the next parameter.
+
+     `*'
+          multiply the next parameter by the other operand.
+
+     `/'
+          divide the next parameter by the other operand.
+
+     The "other operand" may be another parameter's value or a constant;
+     the character TYPE says which.  It can be:
+
+     `p'
+          Use another parameter.  The character POS says which
+          parameter to use.  Subtract 64 from its ASCII code to get the
+          position of the desired parameter relative to this one.  Thus,
+          the character `A' as POS means the parameter after the
+          next one; the character `?' means the parameter before the
+          next one.
+
+     `c'
+          Use a constant value.  The character POS specifies the
+          value of the constant.  The 0200 bit is cleared out, so that 0200
+          can be used to represent zero.
+
+The following `%'-sequences are special purpose hacks to compensate
+for the weird designs of obscure terminals.  They modify the next parameter
+or the next two parameters but do not generate output and do not use up any
+parameters.  `%m' is a GNU extension; the others are defined in
+standard Unix termcap.
+
+`%n'
+     Exclusive-or the next parameter with 0140, and likewise the parameter
+     after next.
+
+`%m'
+     Complement all the bits of the next parameter and the parameter after next.
+
+`%B'
+     Encode the next parameter in BCD.  It alters the value of the
+     parameter by adding six times the quotient of the parameter by ten.
+     Here is a C statement that shows how the new value is computed:
+
+          PARM = (PARM / 10) * 16 + PARM % 10;
+
+`%D'
+     Transform the next parameter as needed by Delta Data terminals.
+     This involves subtracting twice the remainder of the parameter by 16.
+
+          PARM -= 2 * (PARM % 16);
+
+
+File: termcap  Node: Using Parameters, Prev: Encode Parameters, Up: Parameters
+
+Sending Display Commands with Parameters
+----------------------------------------
+
+The termcap library functions `tparam' and `tgoto' serve as the
+analog of `printf' for terminal string parameters.  The newer function
+`tparam' is a GNU extension, more general but missing from Unix
+termcap.  The original parameter-encoding function is `tgoto', which
+is preferable for cursor motion.
+
+* Menu:
+
+* tparam::   The general case, for GNU termcap only.
+* tgoto::    The special case of cursor motion.
+
+
+File: termcap  Node: tparam, Prev: Using Parameters, Up: Using Parameters, Next: tgoto
+
+`tparam'
+........
+
+The function `tparam' can encode display commands with any number of
+parameters and allows you to specify the buffer space.  It is the preferred
+function for encoding parameters for all but the `cm' capability.  Its
+ANSI C declaration is as follows:
+
+     char *tparam (char *CTLSTRING, char *BUFFER, int SIZE, int PARM1,...)
+
+The arguments are a control string CTLSTRING (the value of a terminal
+capability, presumably), an output buffer BUFFER and SIZE, and
+any number of integer parameters to be encoded.  The effect of
+`tparam' is to copy the control string into the buffer, encoding
+parameters according to the `%' sequences in the control string.
+
+You describe the output buffer by its address, BUFFER, and its size
+in bytes, SIZE.  If the buffer is not big enough for the data to be
+stored in it, `tparam' calls `malloc' to get a larger buffer.  In
+either case, `tparam' returns the address of the buffer it ultimately
+uses.  If the value equals BUFFER, your original buffer was used.
+Otherwise, a new buffer was allocated, and you must free it after you are
+done with printing the results.  If you pass zero for SIZE and
+BUFFER, `tparam' always allocates the space with `malloc'.
+
+All capabilities that require parameters also have the ability to specify
+padding, so you should use `tputs' to output the string produced by
+`tparam'.  *Note Padding::.  Here is an example.
+
+     {
+       char *buf;
+       char buffer[40];
+
+       buf = tparam (command, buffer, 40, parm);
+       tputs (buf, 1, fputchar);
+       if (buf != buffer)
+         free (buf);
+     }
+
+If a parameter whose value is zero is encoded with `%.'-style encoding,
+the result is a null character, which will confuse `tputs'.  This would
+be a serious problem, but luckily `%.' encoding is used only by a few
+old models of terminal, and only for the `cm' capability.  To solve the
+problem, use `tgoto' rather than `tparam' to encode the `cm' capability.
+
+
+File: termcap  Node: tgoto, Prev: tparam, Up: Using Parameters
+
+`tgoto'
+.......
+
+The special case of cursor motion is handled by `tgoto'.  There
+are two reasons why you might choose to use `tgoto':
+
+   * For Unix compatibility, because Unix termcap does not have `tparam'.
+
+   * For the `cm' capability, since `tgoto' has a special feature
+     to avoid problems with null characters, tabs and newlines on certain old
+     terminal types that use `%.' encoding for that capability.
+
+Here is how `tgoto' might be declared in ANSI C:
+
+     char *tgoto (char *CSTRING, int HPOS, int VPOS)
+
+There are three arguments, the terminal description's `cm' string and
+the two cursor position numbers; `tgoto' computes the parametrized
+string in an internal static buffer and returns the address of that buffer.
+The next time you use `tgoto' the same buffer will be reused.
+
+Parameters encoded with `%.' encoding can generate null characters,
+tabs or newlines.  These might cause trouble: the null character because
+`tputs' would think that was the end of the string, the tab because
+the kernel or other software might expand it into spaces, and the newline
+becaue the kernel might add a carriage-return, or padding characters
+normally used for a newline.  To prevent such problems, `tgoto' is
+careful to avoid these characters.  Here is how this works: if the target
+cursor position value is such as to cause a problem (that is to say, zero,
+nine or ten), `tgoto' increments it by one, then compensates by
+appending a string to move the cursor back or up one position.
+
+The compensation strings to use for moving back or up are found in global
+variables named `BC' and `UP'.  These are actual external C
+variables with upper case names; they are declared `char *'.  It is up
+to you to store suitable values in them, normally obtained from the
+`le' and `up' terminal capabilities in the terminal description
+with `tgetstr'.  Alternatively, if these two variables are both zero,
+the feature of avoiding nulls, tabs and newlines is turned off.
+
+It is safe to use `tgoto' for commands other than `cm' only if
+you have stored zero in `BC' and `UP'.
+
+Note that `tgoto' reverses the order of its operands: the horizontal
+position comes before the vertical position in the arguments to `tgoto',
+even though the vertical position comes before the horizontal in the
+parameters of the `cm' string.  If you use `tgoto' with a command such
+as `AL' that takes one parameter, you must pass the parameter to `tgoto'
+as the "vertical position".
+
+
+File: termcap  Node: Data Base, Prev: Library, Up: Top, Next: Capabilities
+
+The Format of the Data Base
+***************************
+
+The termcap data base of terminal descriptions is stored in the file
+`/etc/termcap'.  It contains terminal descriptions, blank lines, and
+comments.
+
+A terminal description starts with one or more names for the terminal type.
+The information in the description is a series of "capability names"
+and values.  The capability names have standard meanings
+(*Note Capabilities::) and their values describe the terminal.
+
+* Menu:
+
+* Format::            Overall format of a terminal description.
+* Capability Format:: Format of capabilities within a description.
+* Naming::            Naming conventions for terminal types.
+* Inheriting::        Inheriting part of a description from
+                        a related terminal type.
+
+
+File: termcap  Node: Format, Prev: Data Base, Up: Data Base, Next: Capability Format
+
+Terminal Description Format
+===========================
+
+Aside from comments (lines starting with `#', which are ignored), each
+nonblank line in the termcap data base is a terminal description.
+A terminal description is nominally a single line, but it can be split
+into multiple lines by inserting the two characters `\ newline'.
+This sequence is ignored wherever it appears in a description.
+
+The preferred way to split the description is between capabilities: insert
+the four characters `: \ newline tab' immediately before any colon.
+This allows each sub-line to start with some indentation.  This works
+because, after the `\ newline' are ignored, the result is `: tab
+:'; the first colon ends the preceding capability and the second colon
+starts the next capability.  If you split with `\ newline' alone, you
+may not add any indentation after them.
+
+Here is a real example of a terminal description:
+
+     dw|vt52|DEC vt52:\
+             :cr=^M:do=^J:nl=^J:bl=^G:\
+             :le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:\
+             :nd=\EC:ta=^I:pt:sr=\EI:up=\EA:\
+             :ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
+
+Each terminal description begins with several names for the terminal type.
+The names are separated by `|' characters, and a colon ends the last
+name.  The first name should be two characters long; it exists only for the
+sake of very old Unix systems and is never used in modern systems.  The
+last name should be a fully verbose name such as "DEC vt52" or "Ann
+Arbor Ambassador with 48 lines".  The other names should include whatever
+the user ought to be able to specify to get this terminal type, such as
+`vt52' or `aaa-48'.  *Note Naming::, for information on how to
+choose terminal type names.
+
+After the terminal type names come the terminal capabilities, separated by
+colons and with a colon after the last one.  Each capability has a
+two-letter name, such as `cm' for "cursor motion string" or `li'
+for "number of display lines".
+
+
+File: termcap  Node: Capability Format, Prev: Format, Up: Data Base, Next: Naming
+
+Writing the Capabilities
+========================
+
+There are three kinds of capabilities: flags, numbers, and strings.  Each
+kind has its own way of being written in the description.  Each defined
+capability has by convention a particular kind of value; for example,
+`li' always has a numeric value and `cm' always a string value.
+
+A flag capability is thought of as having a boolean value: the value is
+true if the capability is present, false if not.  When the capability is
+present, just write its name between two colons.
+
+A numeric capability has a value which is a nonnegative number.  Write
+the capability name, a `#', and the number, between two colons.  For
+example, `...:li#48:...' is how you specify the `li' capability for 48
+lines.
+
+A string-valued capability has a value which is a sequence of
+characters.  Usually these are the characters used to perform some
+display operation.  Write the capability name, a `=', and the characters
+of the value, between two colons.  For example, `...:cm=\E[%i%d;%dH:...'
+is how the cursor motion command for a standard ANSI terminal would be
+specified.
+
+Special characters in the string value can be expressed using `\'-escape
+sequences as in C; in addition, `\E' stands for ESC.  `^' is also a kind
+of escape character; `^' followed by CHAR stands for the
+control-equivalent of CHAR.  Thus, `^a' stands for the character
+control-a, just like `\001'.  `\' and `^' themselves can be represented
+as `\\' and `\^'.
+
+To include a colon in the string, you must write `\072'.  You might
+ask, "Why can't `\:' be used to represent a colon?"  The reason is
+that the interrogation functions do not count slashes while looking for a
+capability.  Even if `:ce=ab\:cd:' were interpreted as giving the
+`ce' capability the value `ab:cd', it would also appear to define
+`cd' as a flag.
+
+The string value will often contain digits at the front to specify padding
+(*Note Padding::) and/or `%'-sequences within to specify how to encode
+parameters (*Note Parameters::).  Although these things are not to be
+output literally to the terminal, they are considered part of the value of
+the capability.  They are special only when the string value is processed
+by `tputs', `tparam' or `tgoto'.  By contrast, `\' and
+`^' are considered part of the syntax for specifying the characters
+in the string.
+
+Let's look at the VT52 example again:
+
+     dw|vt52|DEC vt52:\
+             :cr=^M:do=^J:nl=^J:bl=^G:\
+             :le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:\
+             :nd=\EC:ta=^I:pt:sr=\EI:up=\EA:\
+             :ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
+
+Here we see the numeric-valued capabilities `co' and `li', the
+flags `bs' and `pt', and many string-valued capabilities.  Most
+of the strings start with ESC represented as `\E'.  The rest
+contain control characters represented using `^'.  The meanings of the
+individual capabilities are defined elsewhere (*Note Capabilities::).
+
+
+File: termcap  Node: Naming, Prev: Capability Format, Up: Data Base, Next: Inheriting
+
+Terminal Type Name Conventions
+==============================
+
+There are conventions for choosing names of terminal types.  For one thing,
+all letters should be in lower case.  The terminal type for a terminal in
+its most usual or most fundamental mode of operation should not have a
+hyphen in it.
+
+If the same terminal has other modes of operation which require
+different terminal descriptions, these variant descriptions are given
+names made by adding suffixes with hyphens.  Such alternate descriptions
+are used for two reasons:
+
+   * When the terminal has a switch that changes its behavior.  Since the
+     computer cannot tell how the switch is set, the user must tell the
+     computer by choosing the appropriate terminal type name.
+
+     For example, the VT-100 has a setup flag that controls whether the
+     cursor wraps at the right margin.  If this flag is set to "wrap",
+     you must use the terminal type `vt100-am'.  Otherwise you must use
+     `vt100-nam'.  Plain `vt100' is defined as a synonym for either
+     `vt100-am' or `vt100-nam' depending on the preferences of the local
+     site.
+
+     The standard suffix `-am' stands for "automatic margins".
+
+   * To give the user a choice in how to use the terminal.  This is done
+     when the terminal has a switch that the computer normally controls.
+
+     For example, the Ann Arbor Ambassador can be configured with many
+     screen sizes ranging from 20 to 60 lines.  Fewer lines make bigger
+     characters but more lines let you see more of what you are editing.
+     As a result, users have different preferences.  Therefore, termcap
+     provides terminal types for many screen sizes.  If you choose type
+     `aaa-30', the terminal will be configured to use 30 lines; if you
+     choose `aaa-48', 48 lines will be used, and so on.
+
+Here is a list of standard suffixes and their conventional meanings:
+
+`-w'
+     Short for "wide".  This is a mode that gives the terminal more
+     columns than usual.  This is normally a user option.
+
+`-am'
+     "Automatic margins".  This is an alternate description for use when
+     the terminal's margin-wrap switch is on; it contains the `am'
+     flag.  The implication is that normally the switch is off and the
+     usual description for the terminal says that the switch is off.
+
+`-nam'
+     "No automatic margins".  The opposite of `-am', this names an
+     alternative description which lacks the `am' flag.  This implies
+     that the terminal is normally operated with the margin-wrap switch
+     turned on, and the normal description of the terminal says so.
+
+`-na'
+     "No arrows".  This terminal description initializes the terminal to
+     keep its arrow keys in local mode.  This is a user option.
+
+`-rv'
+     "Reverse video".  This terminal description causes text output for
+     normal video to appear as reverse, and text output for reverse
+     video to come out as normal.  Often this description differs from
+     the usual one by interchanging the two strings which turn reverse
+     video on and off.
+
+     This is a user option; you can choose either the "reverse video"
+     variant terminal type or the normal terminal type, and termcap will
+     obey.
+
+`-s'
+     "Status".  Says to enable use of a status line which ordinary output
+     does not touch (*Note Status Line::).
+
+     Some terminals have a special line that is used only as a status line.
+     For these terminals, there is no need for an `-s' variant; the
+     status line commands should be defined by default.  On other
+     terminals, enabling a status line means removing one screen line from
+     ordinary use and reducing the effective screen height.  For these
+     terminals, the user can choose the `-s' variant type to request
+     use of a status line.
+
+`-NLINES'
+     Says to operate with NLINES lines on the screen, for terminals
+     such as the Ambassador which provide this as an option.  Normally this
+     is a user option; by choosing the terminal type, you control how many
+     lines termcap will use.
+
+`-NPAGESp'
+     Says that the terminal has NPAGES pages worth of screen memory,
+     for terminals where this is a hardware option.
+
+`-unk'
+     Says that description is not for direct use, but only for reference in
+     `tc' capabilities.  Such a description is a kind of subroutine,
+     because it describes the common characteristics of several variant
+     descriptions that would use other suffixes in place of `-unk'.
+
+
+File: termcap  Node: Inheriting, Prev: Naming, Up: Data Base
+
+Inheriting from Related Descriptions
+====================================
+
+When two terminal descriptions are similar, their identical parts do not
+need to be given twice.  Instead, one of the two can be defined in terms of
+the other, using the `tc' capability.  We say that one description
+"refers to" the other, or "inherits from" the other.
+
+The `tc' capability must be the last one in the terminal description,
+and its value is a string which is the name of another terminal type which
+is referred to.  For example,
+
+     N9|aaa|ambassador|aaa-30|ann arbor ambassador/30 lines:\
+             :ti=\E[2J\E[30;0;0;30p:\
+             :te=\E[60;0;0;30p\E[30;1H\E[J:\
+             :li#30:tc=aaa-unk:
+
+defines the terminal type `aaa-30' (also known as plain `aaa') in
+terms of `aaa-unk', which defines everything about the Ambassador that
+is independent of screen height.  The types `aaa-36', `aaa-48'
+and so on for other screen heights are likewise defined to inherit from
+`aaa-unk'.
+
+The capabilities overridden by `aaa-30' include `li', which says
+how many lines there are, and `ti' and `te', which configure the
+terminal to use that many lines.
+
+The effective terminal description for type `aaa' consists of the text
+shown above followed by the text of the description of `aaa-unk'.  The
+`tc' capability is handled automatically by `tgetent', which
+finds the description thus referenced and combines the two descriptions
+(*Note Find::).  Therefore, only the implementor of the terminal
+descriptions needs to think about using `tc'.  Users and application
+programmers do not need to be concerned with it.
+
+Since the reference terminal description is used last, capabilities
+specified in the referring description override any specifications of the
+same capabilities in the reference description.
+
+The referring description can cancel out a capability without specifying
+any new value for it by means of a special trick.  Write the capability in
+the referring description, with the character `@' after the capability
+name, as follows:
+
+     NZ|aaa-30-nam|ann arbor ambassador/30 lines/no automatic-margins:\
+             :am@:tc=aaa-30:
+
+
+File: termcap  Node: Capabilities, Prev: Data Base, Up: Top, Next: Summary
+
+Definitions of the Terminal Capabilities
+****************************************
+
+This section is divided into many subsections, each for one aspect of
+use of display terminals.  For writing a display program, you usually need
+only check the subsections for the operations you want to use.  For writing
+a terminal description, you must read each subsection and fill in the
+capabilities described there.
+
+String capabilities that are display commands may require numeric
+parameters (*Note Parameters::).  Most such capabilities do not use
+parameters.  When a capability requires parameters, this is explicitly
+stated at the beginning of its definition.  In simple cases, the first or
+second sentence of the definition mentions all the parameters, in the order
+they should be given, using a name
+in upper case
+for each one.  For example, the `rp' capability is a command that
+requires two parameters; its definition begins as follows:
+
+     String of commands to output a graphic character C, repeated N
+     times.
+
+In complex cases or when there are many parameters, they are described
+explicitly.
+
+When a capability is described as obsolete, this means that programs should
+not be written to look for it, but terminal descriptions should still be
+written to provide it.
+
+When a capability is described as very obsolete, this means that it should
+be omitted from terminal descriptions as well.
+
+* Menu:
+
+* Basic::             Basic characteristics.
+* Screen Size::       Screen size, and what happens when it changes.
+* Cursor Motion::     Various ways to move the cursor.
+* Scrolling::         Pushing text up and down on the screen.
+* Wrapping::          What happens if you write a character in the last column.
+* Windows::           Limiting the part of the window that output affects.
+* Clearing::          Erasing one or many lines.
+* Insdel Line::       Making new blank lines in mid-screen; deleting lines.
+* Insdel Char::       Inserting and deleting characters within a line.
+* Standout::          Highlighting some of the text.
+* Underlining::       Underlining some of the text.
+* Cursor Visibility:: Making the cursor more or less easy to spot.
+* Bell::              Attracts user's attention; not localized on the screen.
+* Keypad::            Recognizing when function keys or arrows are typed.
+* Meta Key::          META acts like an extra shift key.
+* Initialization::    Commands used to initialize or reset the terminal.
+* Pad Specs::         Info for the kernel on how much padding is needed.
+* Status Line::       A status line displays "background" information.
+* Half-Line::         Moving by half-lines, for superscripts and subscripts.
+* Printer::           Controlling auxiliary printers of display terminals.
+
+

@@ -1,0 +1,80 @@
+Info file: termcap,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: termcap.texinfo
+
+This file documents the termcap library of the GNU system.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+
+
+
+
+Indirect:
+termcap-1: 861
+termcap-2: 51295
+termcap-3: 102869
+
+Tag table:
+(Indirect)
+Node: Top863
+Node: Introduction1435
+Node: Library3136
+Node: Preparation4132
+Node: Find5314
+Node: Interrogate8812
+Node: Initialize14046
+Node: Padding15661
+Node: Why Pad16310
+Node: Describe Padding17938
+Node: Output Padding19388
+Node: Parameters22962
+Node: Encode Parameters24602
+Node: Using Parameters30663
+Node: tparam31241
+Node: tgoto33278
+Node: Data Base35798
+Node: Format36659
+Node: Capability Format38723
+Node: Naming41736
+Node: Inheriting46280
+Node: Capabilities48481
+Node: Basic51297
+Node: Screen Size55111
+Node: Cursor Motion56832
+Node: Wrapping66440
+Node: Scrolling69254
+Node: Windows74228
+Node: Clearing74943
+Node: Insdel Line76692
+Node: Insdel Char81556
+Node: Standout91470
+Node: Underlining100469
+Node: Cursor Visibility102871
+Node: Bell103604
+Node: Keypad104142
+Node: Meta Key108848
+Node: Initialization109786
+Node: Pad Specs112136
+Node: Status Line114169
+Node: Half-Line116035
+Node: Printer116820
+Node: Summary118478
+Node: Var Index128480
+Node: Cap Index128666
+Node: Index128828
+
+End tag table
