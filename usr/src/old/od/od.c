@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.13 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.14 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -360,6 +360,7 @@ char	**argv;
 		else
 			(*((*cv)->df_put))(0, *cv);
 	}
+	exit(0);
 }
 
 put_addr(a, l, c)
