@@ -1,5 +1,5 @@
 #ifndef lint
-static	char	*sccsid = "@(#)qv.c	1.2 (Berkeley) %G%";
+static	char	*sccsid = "@(#)qv.c	1.3 (Berkeley) %G%";
 static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
 #endif lint
 
@@ -35,6 +35,8 @@ static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
  * device in that it supports three subchannels. The first being the asr,
  * the second being a channel that intercepts the chars headed for the screen
  * ( like a pseudo tty ) and the third being a source of mouse state changes.
+ * NOTE: the second is conditional on #ifdef CONS_HACK in this version
+ * of the driver, as it's a total crock.
  *
  * There may be one and only one qvss in the system.  This restriction is based
  * on the inability to map more than one at a time.  This restriction will
@@ -109,11 +111,13 @@ static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
+#define CONS_HACK
+
 struct	uba_device *qvinfo[NQV];
 
 struct	tty qv_tty[NQV*4];
 
-int	nNQV = NQV;
+#define	nNQV  NQV
 int	nqv = NQV*4;
 
 /*
@@ -134,14 +138,22 @@ extern	struct pte QVmap[][512];
 
 #define QVWAITPRI 	(PZERO+1)
 #define QVSSMAJOR	40
+
+#define QVKEYBOARD 	0	/* minor 0, keyboard/glass tty */
+#define QVPCONS 	1	/* minor 1, console interceptor XXX */
+#define QVMOUSECHAN 	2	/* minor 2, mouse */
+#define	QVSPARE		3	/* unused */
+#define QVCHAN(unit)	((unit) & 03)
 /*
- * v_console is the switch that is used to redirect the console cnputc to the
- * virtual console vputc.
+ * v_putc is the switch that is used to redirect the console cnputc to the
+ * virtual console vputc.  consops is used to redirect the console
+ * device to the qvss console.
  */
-extern (*v_console)();
+extern (*v_putc)();
+extern struct cdevsw *consops;
 /*
  * qv_def_scrn is used to select the appropriate tables. 0=15 inch 1=19 inch,
- * 2 = uVAXII (untested).
+ * 2 = uVAXII.
  */
 int qv_def_scrn = 2;
 
@@ -177,7 +189,6 @@ static short qv_crt_parms[][16] = {
 /* VR100*/ { 39, 30, 32, 0262, 55, 5, 54, 54, 4, 15, 040, 0, 0, 0, 0, 0 },
 /* VR260*/ { 39, 32, 33, 0264, 56, 5, 54, 54, 4, 15, 040, 0, 0, 0, 0, 0},
 };
-#define QVMOUSECHAN 	2
 
 /*
  * Screen parameters
@@ -301,7 +312,7 @@ qvattach(ui)
         /*
          * If not the console then we have to setup the screen
          */
-        if( v_console != qvputc || ui->ui_unit != 0)
+        if( v_putc != qvputc || ui->ui_unit != 0)
                 qv_setup((struct qvdevice *)ui->ui_addr, ui->ui_unit, 1);
 	else
 		qv_scn->qvaddr = (struct qvdevice *)ui->ui_addr;
@@ -322,6 +333,12 @@ qvopen(dev, flag)
 	qv = unit >> 2;
 	if (unit >= nqv || (ui = qvinfo[qv])== 0 || ui->ui_alive == 0)
 		return (ENXIO);
+	if (QVCHAN(unit) == QVSPARE
+#ifdef CONS_HACK
+	   || QVCHAN(unit) == QVPCONS
+#endif
+	   )
+		return (ENODEV);
 	tp = &qv_tty[unit];
 	if (tp->t_state&TS_XCLUDE && u.u_uid!=0)
 		return (EBUSY);
@@ -335,7 +352,7 @@ qvopen(dev, flag)
 		tp->t_state = TS_ISOPEN|TS_CARR_ON;
 		tp->t_ispeed = B9600;
 		tp->t_ospeed = B9600;
-		if( unit == 0 ) {
+		if( QVCHAN(unit) == QVKEYBOARD ) {
 			/* make sure keyboard is always back to default */
 			qvkbdreset();
 			qvaddr->qv_csr |= QV_INT_ENABLE;
@@ -347,7 +364,7 @@ qvopen(dev, flag)
 	 * Process line discipline specific open if its not the
 	 * mouse channel. For the mouse we init the ring ptr's.
 	 */
-	if( ( unit % 4 ) != QVMOUSECHAN )
+	if( QVCHAN(unit) != QVMOUSECHAN )
 		return ((*linesw[tp->t_line].l_open)(dev, tp));
 	else {
 		mouseon = 1;
@@ -379,14 +396,14 @@ qvclose(dev, flag)
 	 * interface.
 	 */
 	qvaddr = (struct qvdevice *)tp->t_addr;
-	if( unit == 0 )
+	if (QVCHAN(unit) == QVKEYBOARD )
 		qvaddr->qv_csr &= ~QV_INT_ENABLE;
 
 	/*
 	 * If unit is not the mouse channel call the line disc.
 	 * otherwise clear the state flag, and put the keyboard into down/up.
 	 */
-	if( ( unit % 4 ) != QVMOUSECHAN ){
+	if (QVCHAN(unit) != QVMOUSECHAN) {
 		(*linesw[tp->t_line].l_close)(tp);
 		ttyclose(tp);
 	} else {
@@ -403,7 +420,7 @@ qvread(dev, uio)
 	register struct tty *tp;
 	int unit = minor( dev );
 
-	if( (unit % 4) != QVMOUSECHAN ) {
+	if (QVCHAN(unit) != QVMOUSECHAN) {
 		tp = &qv_tty[unit];
 		return ((*linesw[tp->t_line].l_read)(tp, uio));
 	}
@@ -421,7 +438,7 @@ qvwrite(dev, uio)
 	 * If this is the mouse we simply fake the i/o, otherwise
 	 * we let the line disp. handle it.
 	 */
-	if( (unit % 4) == QVMOUSECHAN ){
+	if (QVCHAN(unit) == QVMOUSECHAN) {
 		uio->uio_offset = uio->uio_resid;
 		uio->uio_resid = 0;
 		return 0;
@@ -438,10 +455,9 @@ qvselect(dev, rw)
 dev_t dev;
 {
 	register int s = spl5();
-	register int unit = minor(dev);
 	register struct qv_info *qp = qv_scn;
 
-	if( (unit % 4) == QVMOUSECHAN )
+	if( QVCHAN(minor(dev)) == QVMOUSECHAN )
 		switch(rw) {
 		case FREAD:			/* if events okay */
 			if(qp->ihead != qp->itail) {
@@ -714,7 +730,7 @@ qvvint(qv)
 	ui = qvinfo[qv];
 	unit = qv<<2;
 	qvaddr = (struct qvdevice *)ui->ui_addr;
-	tp0 = &qv_tty[(unit % 4 )+QVMOUSECHAN];
+	tp0 = &qv_tty[QVCHAN(unit) + QVMOUSECHAN];
 	/*
 	 * See if the mouse has moved.
 	 */
@@ -838,8 +854,10 @@ qvstart(tp)
 	int s;
 
 	unit = minor(tp->t_dev);
-	tp0 = &qv_tty[(unit&0xfc)+1];
-	unit &= 03;
+#ifdef CONS_HACK
+	tp0 = &qv_tty[(unit&0xfc)+QVPCONS];
+#endif
+	unit = QVCHAN(unit);
 
 	s = spl5();
 	/*
@@ -855,11 +873,13 @@ qvstart(tp)
 
 	while( tp->t_outq.c_cc ) {
 		c = getc(&tp->t_outq);
-		if( (unit & 0x03)  == 0 )
+		if (unit == QVKEYBOARD)
+#ifdef CONS_HACK
 			if( tp0->t_state & TS_ISOPEN ){
 				(*linesw[tp0->t_line].l_rint)(c, tp0);
 			} else
-				qvputc( c & 0xff );
+#endif
+				qvputchar( c & 0xff );
 	}
 	/*
 	 * Position the cursor to the next character location.
@@ -903,6 +923,14 @@ qvstop(tp, flag)
 	splx(s);
 }
 
+qvputc(c)
+char c;
+{
+	qvputchar(c);
+	if (c == '\n')
+		qvputchar('\r');
+}
+
 /*
  * Routine to display a character on the screen.  The model used is a 
  * glass tty.  It is assummed that the user will only use this emulation
@@ -910,7 +938,7 @@ qvstop(tp, flag)
  * by a window manager.
  *
  */
-qvputc( c )
+qvputchar( c )
 register char c;
 {
 
@@ -932,7 +960,7 @@ register char c;
 	switch ( c ) {
 	case '\t':				/* tab		*/
 		for( i = 8 - (qp->col & 0x7) ; i > 0 ; i-- )
-			qvputc( ' ' );
+			qvputchar( ' ' );
 		break;
 
 	case '\r':				/* return	*/
@@ -1119,16 +1147,23 @@ qvcons_init()
         struct percpu *pcpu;            /* pointer to percpu structure  */
 	register struct qbus *qb;
         struct qvdevice *qvaddr;        /* device pointer               */
-        short *devptr;                  /* vitual device space          */
+        short *devptr;                  /* virtual device space         */
+	extern cnputc();		/* standard serial console putc */
 #define QVSSCSR 017200
 
+	/*
+	 * If secondary console already configured,
+	 * don't override the previous one.
+	 */
+	if (v_putc != cnputc)
+		return;
         /*
          * find the percpu entry that matches this machine.
          */
         for( pcpu = percpu ; pcpu && pcpu->pc_cputype != cpu ; pcpu++ )
                 ;
         if( pcpu == NULL )
-                return(0);
+                return;
 
         /*
          * Found an entry for this cpu. Because this device is Microvax specific
@@ -1147,14 +1182,13 @@ qvcons_init()
         devptr = (short *)((char *)umem[0] + (qb->qb_memsize * NBPG));
         qvaddr = (struct qvdevice *)((u_int)devptr + ubdevreg(QVSSCSR));
         if( badaddr( qvaddr, sizeof(short) ) )
-                return(0);
+                return;
         /*
          * Okay the device is there lets set it up
          */
         qv_setup(qvaddr, 0, 0);
-	v_console = qvputc;
-        cdevsw[0] = cdevsw[QVSSMAJOR];
-	return(1);
+	v_putc = qvputc;
+        consops = &cdevsw[QVSSMAJOR];
 }
 /*
  * Do the board specific setup
