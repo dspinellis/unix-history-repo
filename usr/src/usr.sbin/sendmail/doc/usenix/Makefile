@@ -1,11 +1,11 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 SRCS=	usenix.me
 MACROS=	-me
 
-all: usenix.${PRINTER}
+all: usenix.ps
 
-usenix.${PRINTER}: ${SRCS}
+usenix.ps: ${SRCS}
 	${PIC} ${SRCS} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
