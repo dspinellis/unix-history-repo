@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cal.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cal.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,8 +25,11 @@ static char sccsid[] = "@(#)cal.c	4.8 (Berkeley) %G%";
 
 #define	THURSDAY		4		/* for reformation */
 #define	SATURDAY 		6		/* 1 Jan 1 was a Saturday */
+
 #define	FIRST_MISSING_DAY 	639787		/* 3 Sep 1752 */
 #define	NUMBER_MISSING_DAYS 	11		/* 11 day correction */
+
+#define	MAXDAYS			42		/* max slots in a month array */
 #define	SPACE			-1		/* used in day array */
 
 static int days_in_month[2][13] = {
@@ -34,29 +37,36 @@ static int days_in_month[2][13] = {
 	{0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
 };
 
-static int sep1752[42] = {
+int sep1752[MAXDAYS] = {
 	SPACE,	SPACE,	1,	2,	14,	15,	16,
 	17,	18,	19,	20,	21,	22,	23,
 	24,	25,	26,	27,	28,	29,	30,
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
-}, j_sep1752[42] = {
+}, j_sep1752[MAXDAYS] = {
 	SPACE,	SPACE,	245,	246,	258,	259,	260,
 	261,	262,	263,	264,	265,	266,	267,
 	268,	269,	270,	271,	272,	273,	274,
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+}, empty[MAXDAYS] = {
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 };
 
-static char *month_names[12] = {
+char *month_names[12] = {
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December",
 };
 
-static char *day_headings = " S  M  Tu W  Th F  S";
-static char *j_day_headings = " S   M   Tu  W   Th  F   S";
+char *day_headings = " S  M Tu  W Th  F  S";
+char *j_day_headings = "  S   M  Tu   W  Th   F   S";
 
 /* leap year -- account for gregorian reformation in 1752 */
 #define	leap_year(yr) \
@@ -103,16 +113,19 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+	month = 0;
 	switch(argc) {
 	case 2:
 		if ((month = atoi(*argv++)) <= 0 || month > 12) {
-			(void)fprintf(stderr, "cal: illegal month value.\n");
+			(void)fprintf(stderr,
+			    "cal: illegal month value: use 0-12\n");
 			exit(1);
 		}
 		/* FALLTHROUGH */
 	case 1:
 		if ((year = atoi(*argv)) <= 0 || year > 9999) {
-			(void)fprintf(stderr, "cal: illegal year value.\n");
+			(void)fprintf(stderr,
+			    "cal: illegal year value: use 0-9999\n");
 			exit(1);
 		}
 		break;
@@ -126,6 +139,7 @@ main(argc, argv)
 	default:
 		usage();
 	}
+
 	if (month)
 		monthly(month, year);
 	else if (julian)
@@ -140,14 +154,14 @@ main(argc, argv)
 #define	WEEK_LEN	20		/* 7 * 3 - one space at the end */
 #define	J_WEEK_LEN	27		/* 7 * 4 - one space at the end */
 #define	HEAD_SEP	2		/* spaces between day headings */
-#define	J_HEAD_SEP	3
+#define	J_HEAD_SEP	2
 
 monthly(month, year)
 	int month, year;
 {
 	register int col, row;
 	register char *p;
-	int len, days[42];
+	int len, days[MAXDAYS];
 	char lineout[30];
 
 	day_array(month, year, days);
@@ -169,14 +183,14 @@ j_yearly(year)
 {
 	register int col, *dp, i, month, row, which_cal;
 	register char *p;
-	int days[12][42];
+	int days[12][MAXDAYS];
 	char lineout[80];
 
 	(void)sprintf(lineout, "%d", year);
 	center(lineout, J_WEEK_LEN * 2 + J_HEAD_SEP, 0);
 	(void)printf("\n\n");
 	for (i = 0; i < 12; i++)
-		day_array(i + 1, year, &days[i][0]);
+		day_array(i + 1, year, days[i]);
 	(void)memset(lineout, ' ', sizeof(lineout) - 1);
 	lineout[sizeof(lineout) - 1] = '\0';
 	for (month = 0; month < 12; month += 2) {
@@ -203,14 +217,14 @@ yearly(year)
 {
 	register int col, *dp, i, month, row, which_cal;
 	register char *p;
-	int days[12][42];
+	int days[12][MAXDAYS];
 	char lineout[80];
 
 	(void)sprintf(lineout, "%d", year);
 	center(lineout, WEEK_LEN * 3 + HEAD_SEP * 2, 0);
 	(void)printf("\n\n");
 	for (i = 0; i < 12; i++)
-		day_array(i + 1, year, &days[i][0]);
+		day_array(i + 1, year, days[i]);
 	(void)memset(lineout, ' ', sizeof(lineout) - 1);
 	lineout[sizeof(lineout) - 1] = '\0';
 	for (month = 0; month < 12; month += 3) {
@@ -244,18 +258,16 @@ day_array(month, year, days)
 	register int *days;
 	int month, year;
 {
-	register int i, day, dw, dm, *p;
+	register int i, day, dw, dm;
 
-	dm = days_in_month[leap_year(year)][month];
-	dw = day_in_week(1, month, year);
 	if (month == 9 && year == 1752) {
-		p = julian ? j_sep1752 : sep1752;
-		for (i = 0; i < 42; i++)
-			*days++ = *p++;
+		bcopy(julian ? j_sep1752 : sep1752,
+		    days, MAXDAYS * sizeof(int));
 		return;
 	}
-	for (i = 42, p = days; i--;)
-		*p++ = SPACE;
+	bcopy(empty, days, MAXDAYS * sizeof(int));
+	dm = days_in_month[leap_year(year)][month];
+	dw = day_in_week(1, month, year);
 	day = julian ? day_in_year(1, month, year) : 1;
 	while (dm--)
 		days[dw++] = day++;
@@ -303,19 +315,32 @@ ascii_day(p, day)
 	register int day;
 {
 	register int display, val;
+	static char *aday[] = {
+		"",
+		" 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 ", " 7 ",
+		" 8 ", " 9 ", "10 ", "11 ", "12 ", "13 ", "14 ",
+		"15 ", "16 ", "17 ", "18 ", "19 ", "20 ", "21 ",
+		"22 ", "23 ", "24 ", "25 ", "26 ", "27 ", "28 ",
+		"29 ", "30 ", "31 ",
+	};
 
 	if (day == SPACE) {
-		memset(p, ' ', julian ? 4 : 3);
+		memset(p, ' ', julian ? J_DAY_LEN : DAY_LEN);
 		return;
 	}
-	display = 0;
-	if (julian) {
-		if (val = day / 100) {
-			day %= 100;
-			*p++ = val + '0';
-			display = 1;
-		} else
-			*p++ = ' ';
+	if (!julian) {
+		*p++ = aday[day][0];
+		*p++ = aday[day][1];
+		*p = aday[day][2];
+		return;
+	}
+	if (val = day / 100) {
+		day %= 100;
+		*p++ = val + '0';
+		display = 1;
+	} else {
+		*p++ = ' ';
+		display = 0;
 	}
 	val = day / 10;
 	if (val || display)
