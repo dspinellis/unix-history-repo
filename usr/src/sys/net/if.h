@@ -1,4 +1,4 @@
-/*	if.h	4.7	82/01/24	*/
+/*	if.h	4.8	82/03/09	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -38,6 +38,7 @@ struct ifnet {
 	short	if_net;			/* network number of interface */
 	int	if_host[2];		/* local net host number */
 	struct	in_addr if_addr;	/* internet address of interface */
+	struct	in_addr if_broadaddr;	/* broadcast address of interface */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
 		struct	mbuf *ifq_tail;
@@ -72,6 +73,8 @@ struct ifnet {
 }
 #define	IF_PREPEND(ifq, m) { \
 	(m)->m_act = (ifq)->ifq_head; \
+	if ((ifq)->ifq_tail == 0) \
+		(ifq)->ifq_tail = (m); \
 	(ifq)->ifq_head = (m); \
 }
 #define	IF_DEQUEUE(ifq, m) { \

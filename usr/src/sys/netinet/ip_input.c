@@ -1,4 +1,4 @@
-/*	ip_input.c	1.30	82/02/15	*/
+/*	ip_input.c	1.31	82/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -100,8 +100,10 @@ next:
 	 */
 	i = 0;
 	m0 = m;
-	for (; m != NULL; m = m->m_next)
+	for (; m != NULL; m = m->m_next) {
+		if (m->m_free) panic("ipinput already free");
 		i += m->m_len;
+	}
 	m = m0;
 	if (i != ip->ip_len) {
 		if (i < ip->ip_len) {
@@ -118,8 +120,11 @@ next:
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
 	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
+	    ip->ip_dst.s_addr != ifnet->if_broadaddr.s_addr &&
 	    if_ifwithaddr(ip->ip_dst) == 0) {
 printf("ip->ip_dst %x ip->ip_ttl %x\n", ip->ip_dst, ip->ip_ttl);
+		if (1)
+			goto bad;
 		if (--ip->ip_ttl == 0) {
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			goto next;

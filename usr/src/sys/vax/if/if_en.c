@@ -1,4 +1,4 @@
-/*	if_en.c	4.36	82/03/03	*/
+/*	if_en.c	4.37	82/03/09	*/
 
 #include "en.h"
 
@@ -110,6 +110,8 @@ COUNT(ENATTACH);
 #endif
 	es->es_if.if_addr =
 	    if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
+	es->es_if.if_broadaddr =
+	    if_makeaddr(es->es_if.if_net, 0);
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
 	es->es_if.if_ubareset = enreset;

@@ -1,4 +1,4 @@
-/*	if.c	4.8	82/02/03	*/
+/*	if.c	4.9	82/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,7 +45,9 @@ if_ifwithaddr(in)
 
 COUNT(IF_IFWITHADDR);
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (ifp->if_addr.s_addr == in.s_addr)
+		if (in.s_addr == ifp->if_addr.s_addr ||
+		    (ifp->if_broadaddr.s_addr != 0 &&
+		     in.s_addr == ifp->if_broadaddr.s_addr))
 			break;
 	return (ifp);
 }
