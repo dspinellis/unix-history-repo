@@ -6,7 +6,7 @@
  * Bill Joy UCB February 6, 1978
  */
 
-static char sccsid[] = "@(#)px_header.c 1.4 %G%";
+static char sccsid[] = "@(#)px_header.c 1.5 %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -16,7 +16,8 @@ static char sccsid[] = "@(#)px_header.c 1.4 %G%";
 #include "objfmt.h"
 
 #define	ETXTBSY	26
-#define	ADDR_LC	HEADER_BYTES - sizeof (struct exec) - sizeof (struct pxhdr)
+#define	ADDR_LC \
+	(START + HEADER_BYTES - sizeof (struct exec) - sizeof (struct pxhdr))
 #define MAXARGS 512
 
 extern	errno;
