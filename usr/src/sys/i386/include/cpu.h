@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	5.7 (Berkeley) %G%
+ *	@(#)cpu.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -41,11 +41,13 @@
  * encapsulate the previous machine state in an opaque
  * clockframe; for now, use generic intrframe.
  */
-typedef struct intrframe clockframe;
+struct clockframe {
+	struct intrframe	cf_if;
+};
 
-#define	CLKF_USERMODE(framep)	(ISPL((framep)->if_cs) == SEL_UPL)
-#define	CLKF_BASEPRI(framep)	((framep)->if_ppl == 0)
-#define	CLKF_PC(framep)		((framep)->if_eip)
+#define	CLKF_USERMODE(framep)	(ISPL((framep)->cf_if.if_cs) == SEL_UPL)
+#define	CLKF_BASEPRI(framep)	((framep)->cf_if.if_ppl == 0)
+#define	CLKF_PC(framep)		((framep)->cf_if.if_eip)
 
 #define	resettodr()	/* no todr to set */
 
