@@ -1,12 +1,19 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.14 1994/02/11 12:08:14 nate Exp $
+$Id: Changes,v 1.15 1994/02/21 23:03:09 rgrimes Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
 chronological order; userids can be decoded with the chart at the end
 of this file.
 
+<<<<<<< Changes
+Since 1.0.2:
+- Struct ttys are allocated dynamically.  (guido)
+
+||||||| 1.15
+Since 1.0.2:
+=======
 Since 1.1 BETA:
 
 Between 1.1 BETA and 1.0.2:
@@ -14,6 +21,7 @@ Between 1.1 BETA and 1.0.2:
   an active job.  Fixed up the probe routine so that it works on most
   if not all printers now. (csgr/rgrimes)
 
+>>>>>>> /tmp/T4025574
 - Substantial changes to system configuration; you MUST re-build
   `config' before attempting to build a 1.1 kernel.  (nate/martin)
 

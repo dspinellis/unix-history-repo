@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id: pccons.c,v 1.12 1994/01/03 07:55:45 davidg Exp $
+ *	$Id: pccons.c,v 1.13 1994/02/10 10:17:58 ache Exp $
  */
 
 /*
@@ -63,7 +63,7 @@
 int pc_xmode;
 #endif /* XSERVER */
 
-struct	tty pccons;
+struct	tty *pccons;
 
 struct	pcconsoftc {
 	char	cs_flags;
@@ -289,7 +289,7 @@ pcopen(dev, flag, mode, p)
 
 	if (minor(dev) != 0)
 		return (ENXIO);
-	tp = &pccons;
+	tp = pccons = ttymalloc(pccons);
 	tp->t_oproc = pcstart;
 	tp->t_param = pcparam;
 	tp->t_dev = dev;
@@ -316,8 +316,12 @@ pcclose(dev, flag, mode, p)
 	int flag, mode;
 	struct proc *p;
 {
-	(*linesw[pccons.t_line].l_close)(&pccons, flag);
-	ttyclose(&pccons);
+	(*linesw[pccons->t_line].l_close)(pccons, flag);
+	ttyclose(pccons);
+	ttyfree(pccons);
+#ifdef broken /* session holds a ref to the tty; can't deallocate */
+	pccons = (struct tty *)NULL;
+#endif
 	return(0);
 }
 
@@ -328,7 +332,7 @@ pcread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	return ((*linesw[pccons.t_line].l_read)(&pccons, uio, flag));
+	return ((*linesw[pccons->t_line].l_read)(pccons, uio, flag));
 }
 
 /*ARGSUSED*/
@@ -338,7 +342,7 @@ pcwrite(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	return ((*linesw[pccons.t_line].l_write)(&pccons, uio, flag));
+	return ((*linesw[pccons->t_line].l_write)(pccons, uio, flag));
 }
 
 /*
@@ -361,7 +365,7 @@ pcrint(dev, irq, cpl)
 	if (pcconsoftc.cs_flags & CSF_POLLING)
 		return;
 #ifdef KDB
-	if (kdbrintr(c, &pccons))
+	if (kdbrintr(c, pccons))
 		return;
 #endif
 	if (!openf)
@@ -369,11 +373,11 @@ pcrint(dev, irq, cpl)
 
 #ifdef XSERVER						/* 15 Aug 92*/
 	/* send at least one character, because cntl-space is a null */
-	(*linesw[pccons.t_line].l_rint)(*cp++ & 0xff, &pccons);
+	(*linesw[pccons->t_line].l_rint)(*cp++ & 0xff, pccons);
 #endif /* XSERVER */
 
 	while (*cp)
-		(*linesw[pccons.t_line].l_rint)(*cp++ & 0xff, &pccons);
+		(*linesw[pccons->t_line].l_rint)(*cp++ & 0xff, pccons);
 }
 
 #ifdef XSERVER						/* 15 Aug 92*/
@@ -389,7 +393,7 @@ pcioctl(dev, cmd, data, flag)
 	caddr_t data;
 	int flag;
 {
-	register struct tty *tp = &pccons;
+	register struct tty *tp = pccons;
 	register error;
 
 #ifdef XSERVER						/* 15 Aug 92*/
@@ -436,12 +440,12 @@ pcxint(dev)
 
 	if (!pcconsintr)
 		return;
-	pccons.t_state &= ~TS_BUSY;
+	pccons->t_state &= ~TS_BUSY;
 	pcconsoftc.cs_timo = 0;
-	if (pccons.t_line)
-		(*linesw[pccons.t_line].l_start)(&pccons);
+	if (pccons->t_line)
+		(*linesw[pccons->t_line].l_start)(pccons);
 	else
-		pcstart(&pccons);
+		pcstart(pccons);
 }
 
 void
@@ -454,10 +458,10 @@ pcstart(tp)
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
 	do {
-	if (RB_LEN(&tp->t_out) <= tp->t_lowat) {
+	if (RB_LEN(tp->t_out) <= tp->t_lowat) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
-			wakeup((caddr_t)&tp->t_out);
+			wakeup((caddr_t)tp->t_out);
 		}
 		if (tp->t_wsel) {
 			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
@@ -465,9 +469,9 @@ pcstart(tp)
 			tp->t_state &= ~TS_WCOLL;
 		}
 	}
-	if (RB_LEN(&tp->t_out) == 0)
+	if (RB_LEN(tp->t_out) == 0)
 		goto out;
-	c = getc(&tp->t_out);
+	c = getc(tp->t_out);
 	tp->t_state |= TS_BUSY;				/* 21 Aug 92*/
 	splx(s);
 	sput(c, 0);
@@ -491,7 +495,7 @@ pccnprobe(cp)
 
 	/* initialize required fields */
 	cp->cn_dev = makedev(maj, 0);
-	cp->cn_tp = &pccons;
+	cp->cn_tp = pccons;
 	cp->cn_pri = CN_INTERNAL;
 }
 

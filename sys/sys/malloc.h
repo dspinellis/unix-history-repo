@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)malloc.h	7.25 (Berkeley) 5/15/91
- *	$Id: malloc.h,v 1.3 1993/10/16 17:17:04 rgrimes Exp $
+ *	$Id: malloc.h,v 1.4 1993/11/07 17:52:43 wollman Exp $
  */
 
 #ifndef _MALLOC_H_
@@ -91,6 +91,7 @@
 #define	M_LOCKF		40	/* Byte-range locking structures */
 #define	M_PROC		41	/* Proc structures */
 #define	M_SUBPROC	42	/* Proc sub-structures */
+#define	M_TTYS		45	/* allocated tty structures */
 #define M_ISOFSMNT      48	/* isofs mount structures */
 #define	M_TEMP		49	/* misc temporary data buffers */
 #define	M_PCFSMNT	50	/* PCFS mount structure */
@@ -142,7 +143,9 @@
 	"lockf",	/* 40 M_LOCKF */ \
 	"proc",		/* 41 M_PROC */ \
 	"subproc",	/* 42 M_PROC */ \
-	0, 0, 0, 0, 0, \
+	0, 0, \
+	"ttys",		/* 45 M_TTYS */ \
+	0, 0, \
 	"isofs mount",  /* 48 M_ISOFSMNT */ \
 	"temp",		/* 49 M_TEMP */ \
 	"PCFS mount",	/* 50 M_PCFSMNT */ \

@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.19 1994/02/13 17:21:31 ache Exp $
+ *	$Id: tty.c,v 1.20 1994/02/24 16:13:09 phk Exp $
  */
 
 #include "param.h"
@@ -47,6 +47,7 @@
 #include "dkstat.h"
 #include "uio.h"
 #include "kernel.h"
+#include "malloc.h"
 #include "vnode.h"
 #include "syslog.h"
 #include "signalvar.h"
@@ -62,7 +63,7 @@
 #define	I_LOW_WATER	((TTYHOG - 2 * 256) * 7 / 8)	/* XXX */
 
 /* XXX RB_LEN() is too slow. */
-#define INPUT_LEN(tp)	(RB_LEN(&(tp)->t_can) + RB_LEN(&(tp)->t_raw))
+#define INPUT_LEN(tp)	(RB_LEN((tp)->t_can) + RB_LEN((tp)->t_raw))
 #undef MAX_INPUT		/* XXX wrong in <sys/syslimits.h> */
 #define	MAX_INPUT	TTYHOG
 
@@ -200,7 +201,7 @@ ttywait(tp)
 {
 	int error = 0, s = spltty();
 
-	while ((RB_LEN(&tp->t_out) || tp->t_state&TS_BUSY) &&
+	while ((RB_LEN(tp->t_out) || tp->t_state&TS_BUSY) &&
 	    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL) && 
 	    tp->t_oproc) {
 		/*
@@ -219,10 +220,10 @@ ttywait(tp)
 		tp->t_lowat = 0;
 
 		(*tp->t_oproc)(tp);
-		if ((RB_LEN(&tp->t_out) || tp->t_state&TS_BUSY) &&
+		if ((RB_LEN(tp->t_out) || tp->t_state&TS_BUSY) &&
 		    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL)) {
 			tp->t_state |= TS_ASLEEP;
-			if (error = ttysleep(tp, (caddr_t)&tp->t_out,
+			if (error = ttysleep(tp, (caddr_t)tp->t_out,
 			    TTOPRI | PCATCH, "ttywai", 0))
 				break;
 		} else
@@ -255,16 +256,16 @@ ttyflush(tp, rw)
 		tp->t_state &= ~TS_TTSTOP;
 	(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
 	if (rw & FREAD) {
-		flushq(&tp->t_can);
-		flushq(&tp->t_raw);
+		flushq(tp->t_can);
+		flushq(tp->t_raw);
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
 		tp->t_state &= ~TS_LOCAL;
 		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
-		flushq(&tp->t_out);
-		wakeup((caddr_t)&tp->t_out);
+		flushq(tp->t_out);
+		wakeup((caddr_t)tp->t_out);
 		if (tp->t_wsel) {
 			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
 			tp->t_wsel = 0;
@@ -284,16 +285,16 @@ ttyflush(tp, rw)
 			 * is still tricky because we don't want to add a
 			 * new obstruction to draining the output queue.
 			 */
-			out_cc = RB_LEN(&tp->t_out);
+			out_cc = RB_LEN(tp->t_out);
 			t_state = tp->t_state;
 			ttyunblock(tp);
 			tp->t_state &= ~TS_TBLOCK;
-			if (t_state & TS_TBLOCK && RB_LEN(&tp->t_out) != 0)
-				ttysleep(tp, (caddr_t)&tp->t_out, TTIPRI,
+			if (t_state & TS_TBLOCK && RB_LEN(tp->t_out) != 0)
+				ttysleep(tp, (caddr_t)tp->t_out, TTIPRI,
 					 "ttyfls", hz / 10);
-			if (out_cc == 0 && RB_LEN(&tp->t_out) != 0) {
+			if (out_cc == 0 && RB_LEN(tp->t_out) != 0) {
 				(*cdevsw[major(tp->t_dev)].d_stop)(tp, FWRITE);
-				flushq(&tp->t_out);
+				flushq(tp->t_out);
 			}
 		}
 	}
@@ -312,7 +313,7 @@ ttyblock(tp)
 
 	if ((tp->t_state & TS_TBLOCK) == 0
 	    && tp->t_cc[VSTOP] != _POSIX_VDISABLE
-	    && putc(tp->t_cc[VSTOP], &tp->t_out) == 0)
+	    && putc(tp->t_cc[VSTOP], tp->t_out) == 0)
 		tp->t_state |= TS_TBLOCK;
 	if (tp->t_cflag & CDTR_IFLOW)
 		tp->t_state |= TS_DTR_IFLOW;
@@ -332,7 +333,7 @@ ttyunblock(tp)
 
 	if (tp->t_state & TS_TBLOCK
 	    && tp->t_cc[VSTART] != _POSIX_VDISABLE
-	    && putc(tp->t_cc[VSTART], &tp->t_out) == 0)
+	    && putc(tp->t_cc[VSTART], tp->t_out) == 0)
 		tp->t_state &= ~TS_TBLOCK;
 	tp->t_state &= ~TS_HW_IFLOW;
 	ttstart(tp);
@@ -492,7 +493,7 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case TIOCOUTQ:
-		*(int *)data = RB_LEN(&tp->t_out);
+		*(int *)data = RB_LEN(tp->t_out);
 		break;
 
 	case TIOCSTOP:
@@ -590,8 +591,8 @@ ttioctl(tp, com, data, flag)
 					ttwakeup(tp);
 				}
 				else {
-					catb(&tp->t_raw, &tp->t_can);
-					catb(&tp->t_can, &tp->t_raw);
+					catb(tp->t_raw, tp->t_can);
+					catb(tp->t_can, tp->t_raw);
 				}
 		}
 		tp->t_iflag = t->c_iflag;
@@ -705,9 +706,9 @@ ttnread(tp)
 	/* XXX races. */
 	if (tp->t_lflag & PENDIN)
 		ttypend(tp);
-	nread = RB_LEN(&tp->t_can);
+	nread = RB_LEN(tp->t_can);
 	if ((tp->t_lflag & ICANON) == 0) {
-		nread += RB_LEN(&tp->t_raw);
+		nread += RB_LEN(tp->t_raw);
 		if (nread < tp->t_cc[VMIN])
 			nread = 0;
 	}
@@ -720,7 +721,7 @@ ttselect(dev, rw, p)
 	int rw;
 	struct proc *p;
 {
-	register struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)];
+	register struct tty *tp = cdevsw[major(dev)].d_ttys[minor(dev)];
 	int nread;
 	int s = spltty();
 	struct proc *selp;
@@ -739,7 +740,7 @@ ttselect(dev, rw, p)
 		break;
 
 	case FWRITE:
-		if (RB_LEN(&tp->t_out) <= tp->t_lowat)
+		if (RB_LEN(tp->t_out) <= tp->t_lowat)
 			goto win;
 		if (tp->t_wsel && (selp = pfind(tp->t_wsel)) && selp->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_WCOLL;
@@ -769,9 +770,9 @@ ttyopen(dev, tp, dummy)
 	tp->t_state &= ~TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
-		initrb(&tp->t_raw);
-		initrb(&tp->t_can);
-		initrb(&tp->t_out);
+		initrb(tp->t_raw);
+		initrb(tp->t_can);
+		initrb(tp->t_out);
 		bzero((caddr_t)&tp->t_winsize, sizeof(tp->t_winsize));
 	}
 	return (0);
@@ -889,12 +890,12 @@ ttypend(tp)
 
 	tp->t_lflag &= ~PENDIN;
 	tp->t_state |= TS_TYPEN;
-	hd = tp->t_raw.rb_hd;
-	tl = tp->t_raw.rb_tl;
-	flushq(&tp->t_raw);
+	hd = tp->t_raw->rb_hd;
+	tl = tp->t_raw->rb_tl;
+	flushq(tp->t_raw);
 	while (hd != tl) {
 		ttyinput(*hd, tp);
-		hd = RB_SUCC(&tp->t_raw, hd);
+		hd = RB_SUCC(tp->t_raw, hd);
 	}
 	tp->t_state &= ~TS_TYPEN;
 }
@@ -937,7 +938,7 @@ ttyinput(c, tp)
 	if ((iflag & IXOFF && (tp->t_state & TS_TBLOCK) == 0
 	     || tp->t_cflag & TS_HW_IFLOW && (tp->t_state & TS_HW_IFLOW) == 0)
 	    && INPUT_LEN(tp) > I_HIGH_WATER - 3
-	    && ((lflag & ICANON) == 0 || RB_LEN(&tp->t_can) != 0))
+	    && ((lflag & ICANON) == 0 || RB_LEN(tp->t_can) != 0))
 		ttyblock(tp);
 	/*
 	 * Handle exceptional conditions (break, parity, framing).
@@ -959,9 +960,9 @@ ttyinput(c, tp)
 parmrk:
 				if (INPUT_LEN(tp) > MAX_INPUT - 3)
 					goto input_overflow;
-				putc(0377|TTY_QUOTE, &tp->t_raw);
-				putc(0|TTY_QUOTE, &tp->t_raw);
-				putc(c|TTY_QUOTE, &tp->t_raw);
+				putc(0377|TTY_QUOTE, tp->t_raw);
+				putc(0|TTY_QUOTE, tp->t_raw);
+				putc(c|TTY_QUOTE, tp->t_raw);
 				goto endcase;
 			} else
 				c = 0;
@@ -1074,23 +1075,23 @@ parmrk:
 		 * erase (^H / ^?)
 		 */
 		if (CCEQ(cc[VERASE], c)) {
-			if (RB_LEN(&tp->t_raw))
-				ttyrub(unputc(&tp->t_raw), tp);
+			if (RB_LEN(tp->t_raw))
+				ttyrub(unputc(tp->t_raw), tp);
 			goto endcase;
 		}
 		/*
 		 * kill (^U)
 		 */
 		if (CCEQ(cc[VKILL], c)) {
-			if (lflag&ECHOKE && RB_LEN(&tp->t_raw) == tp->t_rocount &&
+			if (lflag&ECHOKE && RB_LEN(tp->t_raw) == tp->t_rocount &&
 			    (lflag&ECHOPRT) == 0) {
-				while (RB_LEN(&tp->t_raw))
-					ttyrub(unputc(&tp->t_raw), tp);
+				while (RB_LEN(tp->t_raw))
+					ttyrub(unputc(tp->t_raw), tp);
 			} else {
 				ttyecho(c, tp);
 				if (lflag&ECHOK || lflag&ECHOKE)
 					ttyecho('\n', tp);
-				while (getc(&tp->t_raw) > 0)
+				while (getc(tp->t_raw) > 0)
 					;
 				tp->t_rocount = 0;
 			}
@@ -1106,7 +1107,7 @@ parmrk:
 			/* 
 			 * erase whitespace 
 			 */
-			while ((c = unputc(&tp->t_raw)) == ' ' || c == '\t')
+			while ((c = unputc(tp->t_raw)) == ' ' || c == '\t')
 				ttyrub(c, tp);
 			if (c == -1)
 				goto endcase;
@@ -1115,14 +1116,14 @@ parmrk:
 			 * next chars type (for ALTWERASE)
 			 */
 			ttyrub(c, tp);
-			c = unputc(&tp->t_raw);
+			c = unputc(tp->t_raw);
 			if (c == -1)
 				goto endcase;
 			/*
 			 * Handle one-letter word cases.
 			 */
 			if (c == ' ' || c == '\t') {
-				putc(c, &tp->t_raw);
+				putc(c, tp->t_raw);
 				goto endcase;
 			}
 			ctype = ISALPHA(c);
@@ -1131,13 +1132,13 @@ parmrk:
 			 */
 			do {
 				ttyrub(c, tp);
-				c = unputc(&tp->t_raw);
+				c = unputc(tp->t_raw);
 				if (c == -1)
 					goto endcase;
 			} while (c != ' ' && c != '\t' && 
 				((lflag & ALTWERASE) == 0
 				 || ISALPHA(c) == ctype));
-			(void) putc(c, &tp->t_raw);
+			(void) putc(c, tp->t_raw);
 			goto endcase;
 		}
 		/*
@@ -1163,7 +1164,7 @@ parmrk:
 	if (INPUT_LEN(tp) >= MAX_INPUT) {
 input_overflow:
 		if (iflag&IMAXBEL) {
-			if (RB_LEN(&tp->t_out) < tp->t_hiwat)
+			if (RB_LEN(tp->t_out) < tp->t_hiwat)
 				(void) ttyoutput(CTRL('g'), tp);
 		} else
 			ttyflush(tp, FREAD);
@@ -1173,7 +1174,7 @@ input_overflow:
 	 * Put data char in q for user and
 	 * wakeup on seeing a line delimiter.
 	 */
-	if (putc(c, &tp->t_raw) >= 0) {
+	if (putc(c, tp->t_raw) >= 0) {
 		if ((lflag&ICANON) == 0) {
 			ttwakeup(tp);
 			ttyecho(c, tp);
@@ -1181,7 +1182,7 @@ input_overflow:
 		}
 		if (ttbreakc(c)) {
 			tp->t_rocount = 0;
-			catb(&tp->t_raw, &tp->t_can);
+			catb(tp->t_raw, tp->t_can);
 			ttwakeup(tp);
 		} else if (tp->t_rocount++ == 0)
 			tp->t_rocol = tp->t_col;
@@ -1236,7 +1237,7 @@ ttyoutput(c, tp)
 	if ((oflag&OPOST) == 0) {
 		if (tp->t_lflag&FLUSHO) 
 			return (-1);
-		if (putc(c, &tp->t_out))
+		if (putc(c, tp->t_out))
 			return (c);
 		tk_nout++;
 		tp->t_outcc++;
@@ -1261,17 +1262,17 @@ ttyoutput(c, tp)
 #ifdef was
 			c -= b_to_q("        ", c, &tp->t_outq);
 #else
-			i = imin(c, RB_CONTIGPUT(&tp->t_out));
-			bcopy("        ", tp->t_out.rb_tl, i);
-			tp->t_out.rb_tl =
-				RB_ROLLOVER(&tp->t_out, tp->t_out.rb_tl+i);
-			i = imin(c - i, RB_CONTIGPUT(&tp->t_out));
+			i = imin(c, RB_CONTIGPUT(tp->t_out));
+			bcopy("        ", tp->t_out->rb_tl, i);
+			tp->t_out->rb_tl =
+				RB_ROLLOVER(tp->t_out, tp->t_out->rb_tl+i);
+			i = imin(c - i, RB_CONTIGPUT(tp->t_out));
 
 			/* off end and still have space? */
 			if (i) {
-				bcopy("        ", tp->t_out.rb_tl, i);
-				tp->t_out.rb_tl =
-				   RB_ROLLOVER(&tp->t_out, tp->t_out.rb_tl+i);
+				bcopy("        ", tp->t_out->rb_tl, i);
+				tp->t_out->rb_tl =
+				   RB_ROLLOVER(tp->t_out, tp->t_out->rb_tl+i);
 			}
 #endif
 			tk_nout += c;
@@ -1291,7 +1292,7 @@ ttyoutput(c, tp)
 	 */
 	if (c == '\n' && (tp->t_oflag&ONLCR) && ttyoutput('\r', tp) >= 0)
 		return (c);
-	if ((tp->t_lflag&FLUSHO) == 0 && putc(c, &tp->t_out))
+	if ((tp->t_lflag&FLUSHO) == 0 && putc(c, tp->t_out))
 		return (c);
 
 	col = tp->t_col;
@@ -1373,7 +1374,7 @@ loop:
 	 * If canonical, use the canonical queue,
 	 * else use the raw queue.
 	 */
-	qp = lflag&ICANON ? &tp->t_can : &tp->t_raw;
+	qp = lflag&ICANON ? tp->t_can : tp->t_raw;
 	rblen = RB_LEN(qp);
 
 	if ((lflag & ICANON) == 0) {
@@ -1484,7 +1485,7 @@ sleep:
 			 */
 			timeout((timeout_func_t)wakeup, (caddr_t)qp, (int)slp);
 		}
-		error = ttysleep(tp, (caddr_t)&tp->t_raw, TTIPRI | PCATCH,
+		error = ttysleep(tp, (caddr_t)tp->t_raw, TTIPRI | PCATCH,
 		    carrier ? ttyin : ttopen, 0);
 		if (slp) {
 			slp = 0;
@@ -1612,17 +1613,17 @@ ttycheckoutq(tp, wait)
 		oldsig = curproc->p_sig;
 	else
 		oldsig = 0;
-	if (RB_LEN(&tp->t_out) > hiwat + 200)
-		while (RB_LEN(&tp->t_out) > hiwat) {
+	if (RB_LEN(tp->t_out) > hiwat + 200)
+		while (RB_LEN(tp->t_out) > hiwat) {
 			ttstart(tp);
 			if (wait == 0 || (curproc && curproc->p_sig != oldsig)) {
 				splx(s);
 				return (0);
 			}
-			timeout((timeout_func_t)wakeup, (caddr_t)&tp->t_out,
+			timeout((timeout_func_t)wakeup, (caddr_t)tp->t_out,
 				hz); /* XXX */
 			tp->t_state |= TS_ASLEEP;
-			tsleep((caddr_t)&tp->t_out, PZERO - 1, "ttchout", 0);
+			tsleep((caddr_t)tp->t_out, PZERO - 1, "ttchout", 0);
 		}
 	splx(s);
 	return (1);
@@ -1660,7 +1661,7 @@ loop:
 			/*
 			 * sleep awaiting carrier
 			 */
-			error = ttysleep(tp, (caddr_t)&tp->t_raw, 
+			error = ttysleep(tp, (caddr_t)tp->t_raw, 
 					TTIPRI | PCATCH,ttopen, 0);
 			splx(s);
 			if (error)
@@ -1704,7 +1705,7 @@ loop:
 		 * to fix this is messy because of all the gotos.
 		 */
 		s = spltty();
-		if (RB_LEN(&tp->t_out) > hiwat) {
+		if (RB_LEN(tp->t_out) > hiwat) {
 			splx(s);
 			goto ovhiwat;
 		}
@@ -1755,7 +1756,7 @@ loop:
 					cp++, cc--;
 					s = spltty();
 					if ((tp->t_lflag&FLUSHO) ||
-					    RB_LEN(&tp->t_out) > hiwat) {
+					    RB_LEN(tp->t_out) > hiwat) {
 						splx(s);
 						goto ovhiwat;
 					}
@@ -1778,18 +1779,18 @@ loop:
 #else
 			i = ce;
 			s = spltty();
-			ce = imin(ce, RB_CONTIGPUT(&tp->t_out));
-			bcopy(cp, tp->t_out.rb_tl, ce);
-			tp->t_out.rb_tl = RB_ROLLOVER(&tp->t_out,
-				tp->t_out.rb_tl + ce);
+			ce = imin(ce, RB_CONTIGPUT(tp->t_out));
+			bcopy(cp, tp->t_out->rb_tl, ce);
+			tp->t_out->rb_tl = RB_ROLLOVER(tp->t_out,
+				tp->t_out->rb_tl + ce);
 			i -= ce;
 			if (i > 0) {
 				int ii;
 
-				ii = imin(i, RB_CONTIGPUT(&tp->t_out));
-				bcopy(cp + ce, tp->t_out.rb_tl, ii);
-				tp->t_out.rb_tl = RB_ROLLOVER(&tp->t_out,
-					tp->t_out.rb_tl + ii);
+				ii = imin(i, RB_CONTIGPUT(tp->t_out));
+				bcopy(cp + ce, tp->t_out->rb_tl, ii);
+				tp->t_out->rb_tl = RB_ROLLOVER(tp->t_out,
+					tp->t_out->rb_tl + ii);
 				i -= ii;
 				ce += ii;
 			}
@@ -1801,13 +1802,13 @@ loop:
 			if (i > 0) {
 				ttstart(tp);
 				s = spltty();
-				if (RB_CONTIGPUT(&tp->t_out) > 0) {
+				if (RB_CONTIGPUT(tp->t_out) > 0) {
 					splx(s);
 					goto loop;	/* synchronous/fast */
 				}
 				/* out of space, wait a bit */
 				tp->t_state |= TS_ASLEEP;
-				if (error = ttysleep(tp, (caddr_t)&tp->t_out,
+				if (error = ttysleep(tp, (caddr_t)tp->t_out,
 					    TTOPRI | PCATCH, ttybuf, 0)) {
 					splx(s);
 					break;
@@ -1816,7 +1817,7 @@ loop:
 				goto loop;
 			}
 			s = spltty();
-			if (tp->t_lflag&FLUSHO || RB_LEN(&tp->t_out) > hiwat) {
+			if (tp->t_lflag&FLUSHO || RB_LEN(tp->t_out) > hiwat) {
 				splx(s);
 				break;
 			}
@@ -1841,7 +1842,7 @@ ovhiwat:
 	 * This can only occur if FLUSHO is set in t_lflag,
 	 * or if ttstart/oproc is synchronous (or very fast).
 	 */
-	if (RB_LEN(&tp->t_out) <= hiwat) {
+	if (RB_LEN(tp->t_out) <= hiwat) {
 		splx(s);
 		goto loop;
 	}
@@ -1853,7 +1854,7 @@ ovhiwat:
 		return (0);
 	}
 	tp->t_state |= TS_ASLEEP;
-	error = ttysleep(tp, (caddr_t)&tp->t_out, TTOPRI | PCATCH, ttyout, 0);
+	error = ttysleep(tp, (caddr_t)tp->t_out, TTOPRI | PCATCH, ttyout, 0);
 	splx(s);
 	if (error)
 		goto out;
@@ -1904,7 +1905,7 @@ ttyrub(c, tp)
 		case TAB: {
 			int c;
 
-			if (tp->t_rocount < RB_LEN(&tp->t_raw)) {
+			if (tp->t_rocount < RB_LEN(tp->t_raw)) {
 				ttyretype(tp);
 				return;
 			}
@@ -1913,9 +1914,9 @@ ttyrub(c, tp)
 			tp->t_state |= TS_CNTTB;
 			tp->t_lflag |= FLUSHO;
 			tp->t_col = tp->t_rocol;
-			cp = tp->t_raw.rb_hd;
-			for (c = nextc(&cp, &tp->t_raw); c ;
-				c = nextc(&cp, &tp->t_raw))
+			cp = tp->t_raw->rb_hd;
+			for (c = nextc(&cp, tp->t_raw); c ;
+				c = nextc(&cp, tp->t_raw))
 				ttyecho(c, tp);
 			tp->t_lflag &= ~FLUSHO;
 			tp->t_state &= ~TS_CNTTB;
@@ -1979,16 +1980,16 @@ ttyretype(tp)
 	(void) ttyoutput('\n', tp);
 
 	s = spltty();
-	cp = tp->t_can.rb_hd;
-	for (c = nextc(&cp, &tp->t_can); c ; c = nextc(&cp, &tp->t_can))
+	cp = tp->t_can->rb_hd;
+	for (c = nextc(&cp, tp->t_can); c ; c = nextc(&cp, tp->t_can))
 		ttyecho(c, tp);
-	cp = tp->t_raw.rb_hd;
-	for (c = nextc(&cp, &tp->t_raw); c ; c = nextc(&cp, &tp->t_raw))
+	cp = tp->t_raw->rb_hd;
+	for (c = nextc(&cp, tp->t_raw); c ; c = nextc(&cp, tp->t_raw))
 		ttyecho(c, tp);
 	tp->t_state &= ~TS_ERASE;
 	splx(s);
 
-	tp->t_rocount = RB_LEN(&tp->t_raw);
+	tp->t_rocount = RB_LEN(tp->t_raw);
 	tp->t_rocol = 0;
 }
 
@@ -2049,7 +2050,7 @@ ttwakeup(tp)
 	}
 	if (tp->t_state & TS_ASYNC)
 		pgsignal(tp->t_pgrp, SIGIO, 1); 
-	wakeup((caddr_t)&tp->t_raw);
+	wakeup((caddr_t)tp->t_raw);
 }
 
 /*
@@ -2272,4 +2273,58 @@ ttysleep(tp, chan, pri, wmesg, timo)
 	if (tp->t_gen != gen)
 		return (ERESTART);
 	return (0);
+}
+
+
+/*
+ * Allocate a tty structure and its associated buffers.
+ */
+struct tty *
+ttymalloc(itp)
+	struct tty *itp;
+{
+	struct tty *tp;
+
+#ifndef broken
+	/*
+	 * Note that the itp input is not necessary when we can dealloc
+	 * the struct tty.
+	 */
+	if(itp == NULL) {
+		MALLOC(tp, struct tty *, sizeof(struct tty), M_TTYS, M_WAITOK);
+		bzero(tp, sizeof *tp);
+	} else {
+		tp = itp;
+	}
+#endif
+	if(tp->t_raw == NULL) {
+		MALLOC(tp->t_raw, struct ringb *, sizeof(struct ringb), M_TTYS, M_WAITOK);
+		bzero(tp->t_raw, sizeof *tp->t_raw);
+	}
+	if(tp->t_can == NULL) {
+		MALLOC(tp->t_can, struct ringb *, sizeof(struct ringb), M_TTYS, M_WAITOK);
+		bzero(tp->t_can, sizeof *tp->t_can);
+	}
+	if(tp->t_out == NULL) {
+		MALLOC(tp->t_out, struct ringb *, sizeof(struct ringb), M_TTYS, M_WAITOK);
+		bzero(tp->t_out, sizeof *tp->t_out);
+	}
+	return(tp);
+}
+
+/*
+ * Free a tty structure and its buffers.
+ */
+void
+ttyfree(tp)
+struct tty *tp;
+{
+	FREE(tp->t_raw, M_TTYS);
+	FREE(tp->t_can, M_TTYS);
+	FREE(tp->t_out, M_TTYS);
+	tp->t_raw = tp->t_can = tp->t_out = NULL;
+#ifdef broken /* session holds a ref to the tty; can't deallocate */
+	/* also set tp to NULL when this isn't broken anymore */
+	FREE(tp, M_TTYS);
+#endif
 }

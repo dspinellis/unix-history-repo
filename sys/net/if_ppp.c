@@ -70,7 +70,7 @@
  */
 
 /*
- *	$Id: if_ppp.c,v 1.6 1993/12/19 00:52:03 wollman Exp $
+ *	$Id: if_ppp.c,v 1.7 1993/12/20 19:31:30 wollman Exp $
  * 	From: if_ppp.c,v 1.22 1993/08/31 23:20:40 paulus Exp
  *	From: if_ppp.c,v 1.21 1993/08/29 11:22:37 paulus Exp
  *	From: if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp 
@@ -355,7 +355,7 @@ pppread(tp, uio, flag)
 	    splx(s);
 	    return (EWOULDBLOCK);
 	}
-	error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI|PCATCH, ttyin, 0);
+	error = ttysleep(tp, (caddr_t)tp->t_rawq, TTIPRI|PCATCH, ttyin, 0);
 	if (error)
 	    return error;
     }
@@ -365,7 +365,7 @@ pppread(tp, uio, flag)
     }
 
     /* Pull place-holder byte out of canonical queue */
-    getc(&tp->t_canq);
+    getc(tp->t_canq);
 
     /* Get the packet from the input queue */
     IF_DEQUEUE(&sc->sc_inq, m0);
@@ -715,9 +715,9 @@ pppstart(tp)
 	 * We are being called in lieu of ttstart and must do what
 	 * it would.
 	 */
-	if (CCOUNT(&tp->t_outq) != 0 && tp->t_oproc != NULL) {
+	if (CCOUNT(tp->t_outq) != 0 && tp->t_oproc != NULL) {
 	    (*tp->t_oproc)(tp);
-	    if (CCOUNT(&tp->t_outq) > PPP_HIWAT)
+	    if (CCOUNT(tp->t_outq) > PPP_HIWAT)
 		return;
 	}
 	/*
@@ -809,9 +809,9 @@ pppstart(tp)
 	     * will flush any accumulated garbage.  We do this whenever
 	     * the line may have been idle for some time.
 	     */
-	    if (CCOUNT(&tp->t_outq) == 0) {
+	    if (CCOUNT(tp->t_outq) == 0) {
 		++sc->sc_bytessent;
-		(void) putc(PPP_FLAG, &tp->t_outq);
+		(void) putc(PPP_FLAG, tp->t_outq);
 	    }
 
 	    /* Calculate the FCS for the first mbuf's worth. */
@@ -834,7 +834,7 @@ pppstart(tp)
 		if (n) {
 #ifndef	RB_LEN
 		    /* NetBSD (0.9 or later), 4.3-Reno or similar. */
-		    ndone = n - b_to_q(start, n, &tp->t_outq);
+		    ndone = n - b_to_q(start, n, tp->t_outq);
 #else
 #ifdef	NetBSD
 		    /* NetBSD with 2-byte ring buffer entries */
@@ -843,12 +843,12 @@ pppstart(tp)
 		    /* 386BSD, FreeBSD */
 		    int cc, nleft;
 		    for (nleft = n; nleft > 0; nleft -= cc) {
-			if ((cc = RB_CONTIGPUT(&tp->t_out)) == 0)
+			if ((cc = RB_CONTIGPUT(tp->t_out)) == 0)
 			    break;
 			cc = min (cc, nleft);
-			bcopy((char *)start + n - nleft, tp->t_out.rb_tl, cc);
-			tp->t_out.rb_tl = RB_ROLLOVER(&tp->t_out,
-						      tp->t_out.rb_tl + cc);
+			bcopy((char *)start + n - nleft, tp->t_out->rb_tl, cc);
+			tp->t_out->rb_tl = RB_ROLLOVER(tp->t_out,
+						      tp->t_out->rb_tl + cc);
 		    }
 		    ndone = n - nleft;
 #endif	/* NetBSD */
@@ -866,10 +866,10 @@ pppstart(tp)
 		 * Put it out in a different form.
 		 */
 		if (len) {
-		    if (putc(PPP_ESCAPE, &tp->t_outq))
+		    if (putc(PPP_ESCAPE, tp->t_outq))
 			break;
-		    if (putc(*start ^ PPP_TRANS, &tp->t_outq)) {
-			(void) unputc(&tp->t_outq);
+		    if (putc(*start ^ PPP_TRANS, tp->t_outq)) {
+			(void) unputc(tp->t_outq);
 			break;
 		    }
 		    sc->sc_bytessent += 2;
@@ -912,10 +912,10 @@ pppstart(tp)
 		 * don't all fit, back out.
 		 */
 		for (q = endseq; q < p; ++q)
-		    if (putc(*q, &tp->t_outq)) {
+		    if (putc(*q, tp->t_outq)) {
 			done = 0;
 			for (; q > endseq; --q)
-			    unputc(&tp->t_outq);
+			    unputc(tp->t_outq);
 			break;
 		    }
 	    }
@@ -1213,7 +1213,7 @@ pppinput(c, tp)
 	     * Some other protocol - place on input queue for read().
 	     * Put a placeholder byte in canq for ttselect()/ttnread().
 	     */
-	    putc(0, &tp->t_canq);
+	    putc(0, tp->t_canq);
 	    ttwakeup(tp);
 	    inq = &sc->sc_inq;
 	    break;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id: tty.h,v 1.7 1993/12/19 00:55:28 wollman Exp $
+ *	$Id: tty.h,v 1.8 1994/01/28 23:15:17 ache Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -42,8 +42,11 @@
 /*
  * Ring buffers provide a contiguous, dense storage for
  * character data used by the tty driver.
+ *
+ * Make sizeof(struct ringb) be such that it fits exactly in
+ * a malloc bucket.
  */
-#define	RBSZ 1024
+#define	RBSZ 2040
 
 struct ringb {
 	char	*rb_hd;	  /* head of buffer segment to be read */
@@ -117,9 +120,9 @@ struct tty {
 #if 0
 	int     t_mask;                 /* interrupt mask */
 #endif
-	struct	ringb t_raw;		/* ring buffers */
-	struct	ringb t_can;
-	struct	ringb t_out;
+	struct	ringb *t_raw;		/* ring buffers */
+	struct	ringb *t_can;
+	struct	ringb *t_out;
 };
 
 #define	TTIPRI	25			/* sleep priority for tty reads */
@@ -127,7 +130,7 @@ struct tty {
 
 #define	TTMASK	15
 #define	OBUFSIZ	100
-#define	TTYHOG	1024
+#define	TTYHOG	RBSZ
 
 #ifdef KERNEL
 #define TTMAXHIWAT	(RBSZ/2)	/* XXX */
@@ -237,6 +240,8 @@ extern void ttsetwater(struct tty *);
 extern void ttyinfo(struct tty *);
 extern int tputchar(int, struct tty *);
 extern int ttysleep(struct tty *, caddr_t, int, const char *, int);
+extern struct tty *ttymalloc(struct tty *);
+extern void ttyfree(struct tty *);
 
 /* From tty_ring.c: */
 extern int putc(int, struct ringb *);
