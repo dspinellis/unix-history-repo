@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prof.c	7.5 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.6 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -62,7 +62,7 @@ kmstartup()
 		sbuf = 0;
 		return;
 	}
-	bzero(froms, fromsize);
+	bzero(froms, fromssize);
 	tolimit = s_textsize * ARCDENSITY / 100;
 	if (tolimit < MINARCS)
 		tolimit = MINARCS;
