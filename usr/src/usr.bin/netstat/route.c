@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,7 +27,8 @@ static char sccsid[] = "@(#)route.c	5.19 (Berkeley) %G%";
 #include <stdio.h>
 #include <string.h>
 
-extern	int nflag;
+extern	int nflag, aflag, Aflag, af;
+int do_rtent;
 extern	char *routename(), *netname(), *ns_print(), *plural();
 extern	char *malloc();
 #define kget(p, d) \
@@ -46,8 +47,9 @@ struct bits {
 	{ RTF_DYNAMIC,	'D' },
 	{ RTF_MODIFIED,	'M' },
 	{ RTF_CLONING,	'C' },
-	{ RTF_XRESOLVE,	'R' },
+	{ RTF_XRESOLVE,	'X' },
 	{ RTF_LLINFO,	'L' },
+	{ RTF_REJECT,	'R' },
 	{ 0 }
 };
 
@@ -66,6 +68,8 @@ routepr(hostaddr, netaddr, hashsizeaddr, treeaddr)
 	int i, doinghost = 1;
 
 	printf("Routing tables\n");
+	if (Aflag)
+		printf("%-8.8s ","Address");
 	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %s\n",
 		"Destination", "Gateway",
 		"Flags", "Refs", "Use", "Interface");
@@ -93,7 +97,9 @@ again:
 		m = routehash[i];
 		while (m) {
 			kget(m, mb);
-			p_rtentry((struct rtentry *)(mb.m_dat));
+			if (Aflag)
+				printf("%8.8x ", m);
+			p_ortentry((struct ortentry *)(mb.m_dat));
 			m = mb.m_next;
 		}
 	}
@@ -111,7 +117,10 @@ static union {
 	struct	sockaddr u_sa;
 	u_short	u_data[128];
 } pt_u;
-static struct rtentry rtentry;
+int do_rtent = 0;
+struct rtentry rtentry;
+struct radix_node rnode;
+struct radix_mask rmask;
 
 int NewTree = 0;
 treestuff(rtree)
@@ -119,17 +128,20 @@ off_t rtree;
 {
 	struct radix_node_head *rnh, head;
 
-	if (NewTree)
+	if (Aflag == 0 && NewTree)
 		return(ntreestuff());
 	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
 		kget(rnh, head);
 		if (head.rnh_af == 0) {
-			printf("Netmasks:\n");
-			p_tree(head.rnh_treetop, 0);
-		} else {
+			if (Aflag || af == AF_UNSPEC) { 
+				printf("Netmasks:\n");
+				p_tree(head.rnh_treetop);
+			}
+		} else if (af == AF_UNSPEC || af == head.rnh_af) {
 			printf("\nRoute Tree for Protocol Family %d:\n",
 								head.rnh_af);
-			p_tree(head.rnh_treetop, 1);
+			do_rtent = 1;
+			p_tree(head.rnh_treetop);
 		}
 	}
 }
@@ -145,21 +157,23 @@ register struct sockaddr *dst;
 	return (&pt_u.u_sa);
 }
 
-p_tree(rn, do_rtent)
+p_tree(rn)
 struct radix_node *rn;
 {
-	struct radix_node rnode;
-	register u_short *s, *slim;
-	int len;
 
 again:
 	kget(rn, rnode);
 	if (rnode.rn_b < 0) {
+		if (Aflag)
+			printf("%-8.8x ", rn);
 		if (rnode.rn_flags & RNF_ROOT)
-			printf("(root node)\n");
+			printf("(root node)%s",
+				    rnode.rn_dupedkey ? " =>\n" : "\n");
 		else if (do_rtent) {
 			kget(rn, rtentry);
 			p_rtentry(&rtentry);
+			if (Aflag)
+				p_rtnode();
 		} else {
 			p_sockaddr(kgetsa((struct sockaddr *)rnode.rn_key),
 				    0, 44);
@@ -168,9 +182,43 @@ again:
 		if (rn = rnode.rn_dupedkey)
 			goto again;
 	} else {
-		p_tree(rnode.rn_l, do_rtent);
-		p_tree(rnode.rn_r, do_rtent);
+		if (Aflag && do_rtent) {
+			printf("%-8.8x ", rn);
+			p_rtnode();
+		}
+		rn = rnode.rn_r;
+		p_tree(rnode.rn_l);
+		p_tree(rn);
 	}
+}
+char nbuf[20];
+
+p_rtnode()
+{
+
+	struct radix_mask *rm = rnode.rn_mklist;
+	if (rnode.rn_b < 0) {
+		if (rnode.rn_mask) {
+			printf("\t  mask ");
+			p_sockaddr(kgetsa((struct sockaddr *)rnode.rn_mask),
+				    0, -1);
+		} else if (rm == 0)
+			return;
+	} else {
+		sprintf(nbuf, "(%d)", rnode.rn_b);
+		printf("%6.6s %8.8x : %8.8x", nbuf, rnode.rn_l, rnode.rn_r);
+	}
+	while (rm) {
+		kget(rm, rmask);
+		sprintf(nbuf, " %d refs, ", rmask.rm_refs);
+		printf(" mk = %8.8x {(%d),%s",
+			rm, -1 - rmask.rm_b, rmask.rm_refs ? nbuf : " ");
+		p_sockaddr(kgetsa((struct sockaddr *)rmask.rm_mask), 0, -1);
+		putchar('}');
+		if (rm = rmask.rm_mklist)
+			printf(" ->");
+	}
+	putchar('\n');
 }
 
 ntreestuff()
@@ -254,21 +302,26 @@ int flags, width;
 
 	default:
 	    {
-		register u_short *s = ((u_short *)sa->sa_data),
-				*slim = ((sa->sa_len + 1)/2) + s;
+		register u_short *s = ((u_short *)sa->sa_data), *slim;
 
+		slim = (u_short *) sa + ((sa->sa_len + sizeof(u_short) - 1) /
+		    sizeof(u_short));
 		cp = workbuf;
 		cplim = cp + sizeof(workbuf) - 6;
 		cp += sprintf(cp, "(%d)", sa->sa_family);
 		while (s < slim && cp < cplim)
-			cp += sprintf(cp, "%x ", *s++);
+			cp += sprintf(cp, " %x", *s++);
 		cp = workbuf;
 	    }
 	}
-	if (nflag)
-		printf("%-*s ", width, cp);
-	else
-		printf("%-*.*s ", width, width, cp);
+	if (width < 0 )
+		printf("%s ", cp);
+	else {
+		if (nflag)
+			printf("%-*s ", width, cp);
+		else
+			printf("%-*.*s ", width, width, cp);
+	}
 }
 
 p_flags(f, format)
@@ -301,7 +354,8 @@ register struct rtentry *rt;
 	}
 	kget(rt->rt_ifp, ifnet);
 	kvm_read((off_t)ifnet.if_name, name, 16);
-	printf(" %.15s%d\n", name, ifnet.if_unit);
+	printf(" %.15s%d%s", name, ifnet.if_unit,
+		rt->rt_nodes[0].rn_dupedkey ? " =>\n" : "\n");
 }
 
 p_ortentry(rt)
