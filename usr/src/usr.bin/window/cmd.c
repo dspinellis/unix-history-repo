@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.8 83/07/28";
+static	char *sccsid = "@(#)cmd.c	1.9 83/07/28";
 #endif
 
 #include "defs.h"
@@ -32,7 +32,9 @@ top:
 		case CTRL([):
 		foo:
 			if (selwin == 0) {
-				if (!terse)
+				if (terse)
+					Ding();
+				else
 					wwputs("No window.  ", cmdwin);
 				continue;
 			}
