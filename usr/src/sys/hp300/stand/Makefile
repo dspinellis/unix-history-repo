@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.7 (Berkeley) %G%
+#	@(#)Makefile	7.8 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -19,16 +19,16 @@ DRIVERS=autoconf.c cons.c ct.c dca.c dcm.c fhpib.c hil.c hpib.c ite.c \
 	ite_dv.c ite_gb.c ite_rb.c ite_subr.c ite_tc.c nhpib.c rd.c \
 	scsi.c sd.c
 SRCS=	conf.c machdep.c prf.c ${DRIVERS}
-LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+LIBS=	libsa/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 ALL=	dboot nboot tboot tcopy
 
 all: ${ALL}
 
-dboot nboot tboot tcopy: ${STAND}/obj/libsa.a libdrive.a
+dboot nboot tboot tcopy: ${LIBS}
 
-${STAND}/obj/libsa.a:
-	cd ${STAND}; make
+libsa/libsa.a::
+	cd libsa; make
 
 libdrive.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
@@ -106,7 +106,7 @@ clean:
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c nboot.c
 	rm -f libdrive.a mkboot tboot tcopy dboot nboot installboot *.lif
-	cd ${STAND}; make clean
+	cd libsa; make cleandir
 
 lint:
 	lint ${INCPATH} -hxbn boot.c ${SRCS} | \
