@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.83 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.84 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.83 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.84 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -741,7 +741,16 @@ orderq(doall)
 #endif
 
 		/* open control file (if not too many files) */
-		if (++wn >= WorkListSize)
+		if (++wn > MaxQueueRun && MaxQueueRun > 0)
+		{
+# ifdef LOG
+			if (wn == MaxQueueRun + 1 && LogLevel > 0)
+				syslog(LOG_ALERT, "WorkList for %s maxed out at %d",
+						QueueDir, MaxQueueRun);
+# endif
+			continue;
+		}
+		if (wn >= WorkListSize)
 		{
 			grow_wlist();
 			if (wn >= WorkListSize)
@@ -910,20 +919,26 @@ orderq(doall)
 
 	return (wn);
 }
+/*
+**  GROW_WLIST -- make the work list larger
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Adds another QUEUESEGSIZE entries to WorkList if possible.
+**		It can fail if there isn't enough memory, so WorkListSize
+**		should be checked again upon return.
+*/
 
 grow_wlist()
 {
 	if (tTd(41, 1))
 		printf("grow_wlist: WorkListSize=%d\n", WorkListSize);
-	if (MaxQueueRun > 0 && WorkListSize >= MaxQueueRun)
-	{
-# ifdef LOG
-		if (LogLevel > 0)
-			syslog(LOG_ALERT, "WorkList for %s maxed out at %d",
-					QueueDir, WorkListSize);
-# endif
-	}
-	else if (WorkList == NULL)
+	if (WorkList == NULL)
 	{
 		WorkList = (WORK *) xalloc(sizeof(WORK) * (QUEUESEGSIZE + 1));
 		WorkListSize = QUEUESEGSIZE;
