@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.18	%G%";
+static char SccsId[] = "@(#)recipient.c	3.19	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -248,6 +248,7 @@ recipient(a)
 				a->q_home = newstr(pw->pw_dir);
 				a->q_uid = pw->pw_uid;
 				a->q_gid = pw->pw_gid;
+				a->q_flags |= QGOODUID;
 				if (!quoted)
 					forward(a);
 			}
@@ -383,6 +384,7 @@ include(fname, msg, ctladdr)
 	char buf[MAXLINE];
 	register FILE *fp;
 	char *oldto = To;
+	struct stat st;
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -390,6 +392,11 @@ include(fname, msg, ctladdr)
 		usrerr("Cannot open %s", fname);
 		return;
 	}
+	if (fstat(fileno(fp), &st) < 0)
+		syserr("Cannot fstat %s!", fname);
+	ctladdr->q_uid = st.st_uid;
+	ctladdr->q_gid = st.st_gid;
+	ctladdr->q_flags |= QGOODUID;
 
 	/* read the file -- each line is a comma-separated list. */
 	while (fgets(buf, sizeof buf, fp) != NULL)
@@ -469,7 +476,7 @@ ADDRESS *
 getctladdr(a)
 	register ADDRESS *a;
 {
-	while (a != NULL && a->q_home == NULL)
+	while (a != NULL && !bitset(QGOODUID, a->q_flags))
 		a = a->q_alias;
 	return (a);
 }
