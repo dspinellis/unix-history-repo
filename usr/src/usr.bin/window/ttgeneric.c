@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.12 83/08/23";
+static	char *sccsid = "@(#)ttgeneric.c	3.13 83/08/23";
 #endif
 
 #include "ww.h"
@@ -15,8 +15,8 @@ char gen_frame[16] = {
 };
 
 int gen_row, gen_col;
-char gen_modes;
-char gen_insert;
+char gen_modes, gen_nmodes;
+char gen_insert, gen_ninsert;
 
 char *gen_CM;
 char *gen_IM;
@@ -31,6 +31,8 @@ char *gen_CD;
 char *gen_CL;
 char *gen_VS;
 char *gen_VE;
+char *gen_TI;
+char *gen_TE;
 char *gen_SO;
 char *gen_SE;
 char *gen_US;
@@ -55,6 +57,11 @@ int gen_SG;
 #define ps(s) fputs((s), stdout)
 
 gen_setinsert(new)
+{
+	gen_ninsert = new;
+}
+
+gen_setinsert1(new)
 char new;
 {
 	if (gen_insert == new)
@@ -69,11 +76,16 @@ char new;
 }
 
 gen_setmodes(new)
+char new;
+{
+	gen_nmodes = new & tt.tt_availmodes;
+}
+
+gen_setmodes1(new)
 register new;
 {
 	register diff;
 
-	new &= tt.tt_availmodes;
 	if ((diff = new ^ gen_modes) == 0)
 		return;
 	if (diff & WWM_REV) {
@@ -97,12 +109,16 @@ register new;
 
 gen_insline()
 {
+	if (gen_modes)			/* for concept 100 */
+		gen_setmodes1(0);
 	if (gen_AL)
 		tt_tputs(gen_AL, gen_LI - gen_row);
 }
 
 gen_delline()
 {
+	if (gen_modes)			/* for concept 100 */
+		gen_setmodes1(0);
 	if (gen_DL)
 		tt_tputs(gen_DL, gen_LI - gen_row);
 }
@@ -110,6 +126,8 @@ gen_delline()
 gen_putc(c)
 register char c;
 {
+	gen_setinsert1(gen_ninsert);
+	gen_setmodes1(gen_nmodes);
 	if (gen_insert) {
 		if (gen_IC)
 			tt_tputs(gen_IC, gen_CO - gen_col);
@@ -128,6 +146,8 @@ register char c;
 gen_write(start, end)
 register char *start, *end;
 {
+	gen_setinsert1(gen_ninsert);
+	gen_setmodes1(gen_nmodes);
 	if (gen_insert) {
 		while (start <= end) {
 			if (gen_IC)
@@ -154,6 +174,8 @@ register n;
 {
 	if (n <= 0)
 		return;
+	gen_setinsert1(gen_ninsert);
+	gen_setmodes1(gen_nmodes);
 	if (gen_insert) {
 		while (--n >= 0) {
 			if (gen_IC)
@@ -181,11 +203,9 @@ register char row, col;
 	if (gen_row == row && gen_col == col)
 		return;
 	if (!gen_MI && gen_insert)
-		if (gen_EI)
-			ps(gen_EI);
-	if (!gen_MS && gen_modes & WWM_REV)
-		if (gen_SE)
-			ps(gen_SE);
+		gen_setinsert(0);
+	if (!gen_MS && gen_modes)
+		gen_setmodes(0);
 	if (gen_row == row) {
 		if (gen_col == col)
 			return;
@@ -222,47 +242,51 @@ register char row, col;
 out:
 	gen_col = col;
 	gen_row = row;
-	if (!gen_MI && gen_insert)
-		if (gen_IM)
-			ps(gen_IM);
-	if (!gen_MS && gen_modes & WWM_REV)
-		if (gen_SO)
-			ps(gen_SO);
 }
 
 gen_init()
 {
 	if (gen_VS)
 		ps(gen_VS);
+	if (gen_TI)
+		ps(gen_TI);
 	if (gen_CL)
 		ps(gen_CL);
 	gen_col = gen_row = 0;
-	gen_insert = 0;
-	gen_modes = 0;
+	gen_ninsert = gen_insert = 0;
+	gen_nmodes = gen_modes = 0;
 }
 
 gen_end()
 {
-	gen_setmodes(0);
-	gen_setinsert(0);
+	gen_setmodes1(0);
+	gen_setinsert1(0);
+	if (gen_TE)
+		ps(gen_TE);
 	if (gen_VE)
 		ps(gen_VE);
 }
 
 gen_clreol()
 {
+	if (gen_modes)			/* for concept 100 */
+		gen_setmodes1(0);
 	if (gen_CE)
 		tt_tputs(gen_CE, gen_CO - gen_col);
 }
 
 gen_clreos()
 {
+	if (gen_modes)			/* for concept 100 */
+		gen_setmodes1(0);
 	if (gen_CD)
 		tt_tputs(gen_CD, gen_LI - gen_row);
 }
 
 gen_clear()
 {
+	if (gen_modes)			/* for concept 100 */
+		gen_setmodes1(0);
 	if (gen_CL)
 		ps(gen_CL);
 }
@@ -288,6 +312,8 @@ tt_generic()
 	gen_CL = tt_xgetstr("cl");
 	gen_VS = tt_xgetstr("vs");
 	gen_VE = tt_xgetstr("ve");
+	gen_TI = tt_xgetstr("ti");
+	gen_TE = tt_xgetstr("te");
 	gen_SO = tt_xgetstr("so");
 	gen_SE = tt_xgetstr("se");
 	gen_US = tt_xgetstr("us");
