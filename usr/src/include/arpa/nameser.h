@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.14 (Berkeley) %G%
+ *	@(#)nameser.h	5.15 (Berkeley) %G%
  */
 
 /*
@@ -165,5 +165,5 @@ struct rrec {
 	char	*r_data;		/* pointer to data */
 };
 
-extern	u_short	getshort();
-extern	u_long	getlong();
+extern	u_short	_getshort();
+extern	u_long	_getlong();
