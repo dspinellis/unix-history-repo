@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -430,13 +430,15 @@ fprintf(stderr, "errno=%d\n",errno);
 				syslog(LOG_ERR, "Accept failed: %m");
 				exit(1);
 			}
+			bzero((char *)inetpeer.sin_zero,
+			    sizeof(inetpeer.sin_zero));
 			if (setsockopt(msgsock, SOL_SOCKET,
 			    SO_KEEPALIVE, (char *) &on, sizeof(on)) < 0)
 				syslog(LOG_ERR,
 				    "setsockopt SO_KEEPALIVE: %m");
 			nfsdargs.sock = msgsock;
 			nfsdargs.name = (caddr_t)&inetpeer;
-			nfsdargs.namelen = len;
+			nfsdargs.namelen = sizeof(inetpeer);
 			nfssvc(NFSSVC_ADDSOCK, &nfsdargs);
 			close(msgsock);
 		}
