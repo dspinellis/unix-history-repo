@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef STANDALONE
@@ -68,7 +68,7 @@ static char sccsid[] = "@(#)mkfs.c	6.11 (Berkeley) %G%";
 /*
  * variables set up by front end.
  */
-extern int	memfs;		/* run as the memory based filesystem */
+extern int	mfs;		/* run as the memory based filesystem */
 extern int	Nflag;		/* run mkfs without writing file system */
 extern int	fssize;		/* file system size */
 extern int	ntracks;	/* # tracks/cylinder */
@@ -132,12 +132,12 @@ mkfs(pp, fsys, fi, fo)
 #ifndef STANDALONE
 	time(&utime);
 #endif
-	if (memfs) {
+	if (mfs) {
 		ppid = getpid();
 		(void) signal(SIGUSR1, started);
 		if (i = fork()) {
 			if (i == -1) {
-				perror("memfs");
+				perror("mfs");
 				exit(10);
 			}
 			if (waitpid(i, &status, 0) != -1 && WIFEXITED(status))
@@ -523,7 +523,7 @@ next:
 		    NSPF(&sblock);
 		warn = 0;
 	}
-	if (warn && !memfs) {
+	if (warn && !mfs) {
 		printf("Warning: %d sector(s) in last cylinder unallocated\n",
 		    sblock.fs_spc -
 		    (fssize * NSPF(&sblock) - (sblock.fs_ncyl - 1)
@@ -559,7 +559,7 @@ next:
 	/*
 	 * Dump out summary information about file system.
 	 */
-	if (!memfs) {
+	if (!mfs) {
 		printf("%s:\t%d sectors in %d %s of %d tracks, %d sectors\n",
 		    fsys, sblock.fs_size * NSPF(&sblock), sblock.fs_ncyl,
 		    "cylinders", sblock.fs_ntrak, sblock.fs_nsect);
@@ -573,19 +573,19 @@ next:
 	 * Now build the cylinders group blocks and
 	 * then print out indices of cylinder groups.
 	 */
-	if (!memfs)
+	if (!mfs)
 		printf("super-block backups (for fsck -b #) at:");
 	for (cylno = 0; cylno < sblock.fs_ncg; cylno++) {
 		initcg(cylno);
-		if (memfs)
+		if (mfs)
 			continue;
 		if (cylno % 9 == 0)
 			printf("\n");
 		printf(" %d,", fsbtodb(&sblock, cgsblock(&sblock, cylno)));
 	}
-	if (!memfs)
+	if (!mfs)
 		printf("\n");
-	if (Nflag && !memfs)
+	if (Nflag && !mfs)
 		exit(0);
 	/*
 	 * Now construct the initial file system,
@@ -616,7 +616,7 @@ next:
 	/*
 	 * Notify parent process of success.
 	 */
-	if (memfs)
+	if (mfs)
 		kill(ppid, SIGUSR1);
 }
 
@@ -787,7 +787,7 @@ fsinit()
 	 * create the root directory
 	 */
 	node.i_number = ROOTINO;
-	if (memfs)
+	if (mfs)
 		node.i_mode = IFDIR | 01777;
 	else
 		node.i_mode = IFDIR | UMASK;
@@ -997,7 +997,7 @@ rdfs(bno, size, bf)
 {
 	int n;
 
-	if (memfs) {
+	if (mfs) {
 		bcopy(membase + bno * sectorsize, bf, size);
 		return;
 	}
@@ -1024,7 +1024,7 @@ wtfs(bno, size, bf)
 {
 	int n;
 
-	if (memfs) {
+	if (mfs) {
 		bcopy(bf, membase + bno * sectorsize, size);
 		return;
 	}
