@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -21,10 +21,10 @@ static char sccsid[] = "@(#)dirs.c	5.16 (Berkeley) %G%";
 #define HASHSIZE	1000
 #define INOHASH(val) (val % HASHSIZE)
 struct inotab {
-	struct inotab *t_next;
+	struct	inotab *t_next;
 	ino_t	t_ino;
-	daddr_t	t_seekpt;
-	long t_size;
+	long	t_seekpt;
+	long	t_size;
 };
 static struct inotab *inotab[HASHSIZE];
 extern struct inotab *inotablookup();
@@ -53,13 +53,13 @@ struct rstdirdesc {
 	char	dd_buf[DIRBLKSIZ];
 };
 extern RST_DIR *opendirfile();
-extern off_t rst_telldir();
+extern long rst_telldir();
 extern void rst_seekdir();
 
 /*
  * Global variables for this file.
  */
-static daddr_t	seekpt;
+static long	seekpt;
 static FILE	*df, *mf;
 static RST_DIR	*dirp;
 static char	dirfile[32] = "#";	/* No file */
@@ -67,7 +67,6 @@ static char	modefile[32] = "#";	/* No file */
 static char	dot[2] = ".";		/* So it can be modified */
 extern ino_t	search();
 struct direct 	*rst_readdir();
-extern void 	rst_seekdir();
 
 /*
  * Format of old style directories.
@@ -166,7 +165,7 @@ treescan(pname, ino, todo)
 	register struct direct *dp;
 	register struct entry *np;
 	int namelen;
-	daddr_t bpt;
+	long bpt;
 	char locname[MAXPATHLEN + 1];
 
 	itp = inotablookup(ino);
@@ -313,8 +312,20 @@ putdir(buf, size)
 			if ((dp->d_reclen & 0x3) != 0 ||
 			    dp->d_reclen > i ||
 			    dp->d_reclen < DIRSIZ(dp) ||
-			    dp->d_namlen > MAXNAMLEN) {
-				vprintf(stdout, "Mangled directory\n");
+			    dp->d_namlen > NAME_MAX) {
+				vprintf(stdout, "Mangled directory: ");
+				if ((dp->d_reclen & 0x3) != 0)
+					vprintf(stdout,
+					   "reclen not multiple of 4 ");
+				if (dp->d_reclen < DIRSIZ(dp))
+					vprintf(stdout,
+					   "reclen less than DIRSIZ (%d < %d) ",
+					   dp->d_reclen, DIRSIZ(dp));
+				if (dp->d_namlen > NAME_MAX)
+					vprintf(stdout,
+					   "reclen name too big (%d > %d) ",
+					   dp->d_namlen, NAME_MAX);
+				vprintf(stdout, "\n");
 				loc += i;
 				continue;
 			}
@@ -385,7 +396,7 @@ dcvt(odp, ndp)
 void
 rst_seekdir(dirp, loc, base)
 	register RST_DIR *dirp;
-	daddr_t loc, base;
+	long loc, base;
 {
 
 	if (loc == rst_telldir(dirp))
@@ -461,11 +472,11 @@ rst_opendir(name)
 /*
  * Simulate finding the current offset in the directory.
  */
-off_t
+long
 rst_telldir(dirp)
 	RST_DIR *dirp;
 {
-	off_t lseek();
+	long lseek();
 
 	return (lseek(dirp->dd_fd, 0L, 1) - dirp->dd_size + dirp->dd_loc);
 }
@@ -608,7 +619,7 @@ struct inotab *
 allocinotab(ino, dip, seekpt)
 	ino_t ino;
 	struct dinode *dip;
-	daddr_t seekpt;
+	long seekpt;
 {
 	register struct inotab	*itp;
 	struct modeinfo node;
