@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,6 +54,7 @@ static char sccsid[] = "@(#)locate.code.c	5.3 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
+#include <err.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,14 +62,12 @@ static char sccsid[] = "@(#)locate.code.c	5.3 (Berkeley) %G%";
 #include "locate.h"
 
 #define	BGBUFSIZE	(NBG * 2)	/* size of bigram buffer */
-#define OERR		err("stdout: %s", strerror(errno))
 
 char buf1[MAXPATHLEN] = " ";	
 char buf2[MAXPATHLEN];
 char bigrams[BGBUFSIZE + 1] = { 0 };
 
 int	bgindex __P((char *));
-void	err __P((const char *, ...));
 void	usage __P((void));
 
 int
@@ -92,13 +91,13 @@ main(argc, argv)
 	if (argc != 1)
 		usage();
 
-	if ((fp = fopen(argv[1], "r")) == NULL)
-		err("%s: %s", argv[1], strerror(errno));
+	if ((fp = fopen(argv[0], "r")) == NULL)
+		err(1, "%s", argv[0]);
 
 	/* First copy bigram array to stdout. */
 	(void)fgets(bigrams, BGBUFSIZE + 1, fp);
 	if (fwrite(bigrams, 1, BGBUFSIZE, stdout) != BGBUFSIZE)
-		err("stdout: %s", strerror(errno));
+		err(1, "stdout");
 	(void)fclose(fp);
 
 	oldpath = buf1;
@@ -128,25 +127,25 @@ main(argc, argv)
 		if (diffcount < 0 || diffcount > 2 * OFFSET) {
 			if (putchar(SWITCH) == EOF ||
 			    putw(diffcount, stdout) == EOF)
-				OERR;
+				err(1, "stdout");
 		} else
 			if (putchar(diffcount) == EOF)
-				OERR;
+				err(1, "stdout");
 
 		while (*cp != NULL) {
 			if (*(cp + 1) == NULL) {
 				if (putchar(*cp) == EOF)
-					OERR;
+					err(1, "stdout");
 				break;
 			}
 			if ((code = bgindex(cp)) < 0) {
 				if (putchar(*cp++) == EOF ||
 				    putchar(*cp++) == EOF)
-					OERR;
+					err(1, "stdout");
 			} else {
 				/* Found, so mark byte with parity bit. */
 				if (putchar((code / 2) | PARITY) == EOF)
-					OERR;
+					err(1, "stdout");
 				cp += 2;
 			}
 		}
@@ -184,33 +183,4 @@ usage()
 	(void)fprintf(stderr,
 	    "usage: locate.code common_bigrams < list > squozen_list\n");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "locate.code: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
