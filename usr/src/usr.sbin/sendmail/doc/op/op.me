@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.20 (Berkeley) %G%
+.\"	@(#)op.me	8.21 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.20
+Version 8.21
 .sp
 For Sendmail Version 8.6
 .)l
@@ -1650,7 +1650,7 @@ and 1800
 (for the class factor).
 The initial priority is:
 .EQ
-pri = size - (class times bold z) + (nrcpt times bold y)
+pri = msgsize - (class times bold z) + (nrcpt times bold y)
 .EN
 (Remember, higher values for this parameter actually mean
 that the job will be treated with lower priority.)
@@ -1699,8 +1699,8 @@ pri > { bold q } over { LA - { bold x } + 1 }
 .EN
 The
 .b q
-option defaults to 200000,
-so each point of load average is worth 200000
+option defaults to 600000,
+so each point of load average is worth 600000
 priority points
 (as described above).
 .pp
@@ -6751,7 +6751,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.20
+.\"Version 8.21
 .\".ce 0
 .bp 2
 .ce
