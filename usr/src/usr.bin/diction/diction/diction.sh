@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)diction.sh	4.6	(Berkeley)	89/05/11
+#	@(#)diction.sh	4.7	(Berkeley)	89/08/31
 #
 D=/usr/bin
 B=/usr/libexec
@@ -25,4 +25,4 @@ do case $i in
 *) rest=$*; break;;
 esac
 done
- $D/deroff $kflag $lflag $mflag $rest^$B/dprog -d $nflag $flag $file
+ $D/deroff $kflag $lflag $mflag $rest | $B/dprog -d $nflag $flag $file

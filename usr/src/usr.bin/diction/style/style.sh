@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)style.sh	4.6	(Berkeley)	89/05/11
+#	@(#)style.sh	4.7	(Berkeley)	89/08/31
 #
 L=/usr/libexec
 B=/usr/ucb
@@ -38,4 +38,4 @@ do case $i in
 *) break;;
 esac
 done
-$B/deroff $kflag $mflag $mlflag $*^$L/style1^$L/style2^$L/style3 $rflag $rcon $lflag $lcon $sflag $nflag $eflag $Pflag
+$B/deroff $kflag $mflag $mlflag $* | $L/style1 | $L/style2 | $L/style3 $rflag $rcon $lflag $lcon $sflag $nflag $eflag $Pflag
