@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.5 83/08/17";
+static	char *sccsid = "@(#)wwinit.c	3.6 83/08/17";
 #endif
 
 #include "ww.h"
@@ -42,6 +42,7 @@ wwinit()
 	wwnrow = tt.tt_nrow;
 	wwncol = tt.tt_ncol;
 	wwavailmodes = tt.tt_availmodes;
+	wwwrap = tt.tt_wrap;
 	(*tt.tt_init)();
 
 	if ((wwsmap = wwalloc(wwnrow, wwncol, sizeof (char))) == 0)

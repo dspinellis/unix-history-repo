@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.5 83/08/17	
+ *	@(#)ww.h	3.6 83/08/17	
  */
 
 #include <stdio.h>
@@ -116,6 +116,7 @@ char wwkeys[512];		/* termcap fields for the function keys */
 
 int wwnrow, wwncol;		/* the screen size */
 char wwavailmodes;		/* actually supported modes */
+char wwwrap;			/* terminal has auto wrap around */
 int wwdtablesize;		/* result of getdtablesize() call */
 char **wwsmap;			/* the screen map */
 char **wwfmap;			/* the frame map */

@@ -1,5 +1,5 @@
 /*
- *	@(#)tt.h	3.5 83/08/17
+ *	@(#)tt.h	3.6 83/08/17
  */
 
 struct tt {
@@ -20,6 +20,7 @@ struct tt {
 	int tt_nrow;
 	int tt_ncol;
 	char tt_availmodes;
+	char tt_wrap;			/* has auto wrap around */
 	char *tt_frame;
 };
 
