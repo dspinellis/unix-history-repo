@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -54,9 +54,10 @@ main(argc, argv)
 {
 	struct fstab *fs;
 	struct statfs *mntbuf;
-	FILE *pidfile;
+	FILE *mountdfp;
+	pid_t pid;
 	long mntsize;
-	int all, ch, i, ret, rval, updateflg;
+	int all, ch, i, rval, updateflg;
 	char *cp, *type, *options, **vfslist;
 
 	mntname = "ufs";
@@ -107,8 +108,8 @@ main(argc, argv)
 	(strcmp(type, FSTAB_RO) &&					\
 	    strcmp(type, FSTAB_RW) && strcmp(type, FSTAB_RQ))
 
+	rval = 0;
 	if (all) {
-		rval = 0;
 		while ((fs = getfsent()) != NULL) {
 			if (BADTYPE(fs->fs_type))
 				continue;
@@ -116,8 +117,9 @@ main(argc, argv)
 				continue;
 			/* `/' is special, it's always mounted. */
 			mnttype = getmnttype(fs->fs_vfstype);
-			rval |= mountfs(fs->fs_spec, fs->fs_file, updateflg,
-			    type, options, fs->fs_mntops);
+			if (mountfs(fs->fs_spec, fs->fs_file, updateflg,
+			    type, options, fs->fs_mntops))
+				rval = 1;
 		}
 		exit(rval);
 	}
@@ -136,8 +138,10 @@ main(argc, argv)
 		exit(0);
 	}
 
-	if (argc == 1 && vfslist != NULL)
+	if (argc == 1 && vfslist != NULL) {
 		usage();
+		/* NOTREACHED */
+	}
 
 	if (argc == 1 && updateflg) {
 		if ((mntbuf = getmntpt(*argv)) == NULL)
@@ -173,21 +177,21 @@ main(argc, argv)
 			(void)snprintf(cp, i, "%s,%s", fs->fs_mntops, options);
 			options = cp;
 		}
-		ret = mountfs(fs->fs_spec,
+		rval = mountfs(fs->fs_spec,
 		    mntbuf->f_mntonname, updateflg, type, options, NULL);
 	} else if (argc == 1) {
 		if ((fs = getfsfile(*argv)) == NULL &&
 		    (fs = getfsspec(*argv)) == NULL)
 			errx(1,
-			    "unknown special file or file system %s.", *argv);
+			    "%s: unknown special file or file system.", *argv);
 		if (BADTYPE(fs->fs_type))
 			errx(1, "%s has unknown file system type.", *argv);
 		mnttype = getmnttype(fs->fs_vfstype);
-		ret = mountfs(fs->fs_spec,
+		rval = mountfs(fs->fs_spec,
 		    fs->fs_file, updateflg, type, options, fs->fs_mntops);
 	} else if (argc != 2) {
 		usage();
-		ret = 1;
+		/* NOTREACHED */
 	} else {
 		/*
 		 * If -t flag has not been specified, and spec contains either
@@ -199,23 +203,23 @@ main(argc, argv)
 			mnttype = MOUNT_NFS;
 			mntname = "nfs";
 		}
-		ret = mountfs(argv[0], argv[1], updateflg, type, options, NULL);
+		rval =
+		    mountfs(argv[0], argv[1], updateflg, type, options, NULL);
 	}
 	/*
-	 * If the mount succeeded, and we're running as root,
-	 * then tell mountd the good news.
+	 * If the mount succeeded, and root did the mount, then tell
+	 * mountd the good news.  Pid checks are probably unnecessary,
+	 * but don't hurt.
 	 */
-	if ((ret == 0) && (getuid() == 0)) {
-		if ((pidfile = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
-			pid_t pid = 0;
-			(void)fscanf(pidfile, "%ld", &pid);
-			(void)fclose(pidfile);
-			if (pid > 0 && kill(pid, SIGHUP))
-				err(1, "signal mountd");
-		}
+	if (rval == 0 && getuid() == 0 &&
+	    (mountdfp = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
+		if (fscanf(mountdfp, "%ld", &pid) == 1 &&
+		    pid > 0 && pid != -1 && kill(pid, SIGHUP))
+			err(1, "signal mountd");
+		(void)fclose(mountdfp);
 	}
 
-	exit(ret);
+	exit(rval);
 }
 
 int
