@@ -258,11 +258,11 @@ svi_suspend(sp)
  * svi_putchar --
  *	Functional version of putchar, for tputs.
  */
-void
+int
 svi_putchar(ch)
 	int ch;
 {
-	(void)putchar(ch);
+	return putchar(ch);
 }
 
 /*

@@ -230,7 +230,7 @@ int	svi_line __P((SCR *, EXF *, SMAP *, size_t *, size_t *));
 int	svi_number __P((SCR *, EXF *));
 size_t	svi_opt_screens __P((SCR *, EXF *, recno_t, size_t *));
 int	svi_paint __P((SCR *, EXF *));
-void	svi_putchar __P((int));
+int	svi_putchar __P((int));
 size_t	svi_screens __P((SCR *, EXF *, char *, size_t, recno_t, size_t *));
 int	svi_sm_1down __P((SCR *, EXF *));
 int	svi_sm_1up __P((SCR *, EXF *));
