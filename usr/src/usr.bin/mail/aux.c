@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)aux.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)aux.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -169,20 +169,6 @@ offsetof(off)
 
 	a = off & 0777;
 	return((int) a);
-}
-
-/*
- * Determine if the passed file is actually a tty, via a call to
- * gtty.  This is not totally reliable, but . . .
- */
-
-isatty(f)
-{
-	struct sgttyb buf;
-
-	if (gtty(f, &buf) < 0)
-		return(0);
-	return(1);
 }
 
 /*
@@ -757,25 +743,6 @@ index(str, ch)
 		if (*cp == c)
 			return(cp);
 	return(NOSTR);
-}
-
-/*
- * String compare two strings of bounded length.
- */
-
-strncmp(as1, as2, an)
-	char *as1, *as2;
-{
-	register char *s1, *s2;
-	register int n;
-
-	s1 = as1;
-	s2 = as2;
-	n = an;
-	while (--n >= 0 && *s1 == *s2++)
-		if (*s1++ == '\0')
-			return(0);
-	return(n<0 ? 0 : *s1 - *--s2);
 }
 
 /*
