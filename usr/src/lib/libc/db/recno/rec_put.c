@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -87,7 +87,8 @@ einval:		errno = EINVAL;
 	 * already in the database.  If skipping records, create empty ones.
 	 */
 	if (nrec > t->bt_nrecs) {
-		if (!ISSET(t, BTF_RINMEM) && t->bt_irec(t, nrec) == RET_ERROR)
+		if (!ISSET(t, BTF_EOF | BTF_RINMEM) &&
+		    t->bt_irec(t, nrec) == RET_ERROR)
 			return (RET_ERROR);
 		if (nrec > t->bt_nrecs + 1) {
 			tdata.data = NULL;
