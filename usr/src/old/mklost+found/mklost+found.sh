@@ -1,6 +1,10 @@
-#! /bin/sh
+#!/bin/sh -
 #
-#	@(#)mklost+found.sh	1.2	(Berkeley)	85/01/10
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)mklost+found.sh	5.1 (Berkeley) %G%
 #
 mkdir lost+found
 cd lost+found
