@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	8.2 (Berkeley) %G%
+ *	@(#)signal.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _USER_SIGNAL_H
@@ -49,7 +49,7 @@ __END_DECLS
 /* List definitions after function declarations, or Reiser cpp gets upset. */
 #define	sigaddset(set, signo)	(*(set) |= 1 << ((signo) - 1), 0)
 #define	sigdelset(set, signo)	(*(set) &= ~(1 << ((signo) - 1)), 0)
-#define	sigemptyset(set)	(*(set) = 0)
+#define	sigemptyset(set)	(*(set) = 0, 0)
 #define	sigfillset(set)		(*(set) = ~(sigset_t)0, 0)
 #define	sigismember(set, signo)	((*(set) & (1 << ((signo) - 1))) != 0)
 
