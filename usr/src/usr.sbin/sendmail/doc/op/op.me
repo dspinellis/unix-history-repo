@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 1.4'DRAFT'Last Mod %G%'
+.fo 'Version 3.1'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -249,13 +249,15 @@ on the distribution).
 .pp
 A fast version of the configuration file
 may be set up by using the
-.b \-Z
+.b \-bz
 flag:
 .(b
-/usr/lib/sendmail \-Z
+/usr/lib/sendmail \-bz
 .)b
 This creates the file
-.i /usr/lib/sendmail.fc .
+.i /usr/lib/sendmail.fc
+(\c
+.q "frozen configuration."
 This file is an image of
 .i sendmail 's
 data space after reading in the configuration file.
@@ -565,7 +567,7 @@ This technique is used to improve performance.
 The DBM version of the database
 may be rebuilt explicitly by executing the command
 .(b
-/usr/lib/sendmail \-I
+/usr/lib/sendmail \-bi
 .)b
 .pp
 The alias database will be rebuilt automatically by
@@ -577,6 +579,18 @@ The DBM version of the database is mode 666.   -or-
 .np
 .i Sendmail
 is running setuid to root.
+.lp
+In either case
+the
+.b D
+option must be specified.
+This option can be dangerous
+on extremely heavily loaded machines
+with large alias files;
+if it might take more than five minutes
+to rebuild the database,
+there is a chance that several processes will start the rebuild process
+simultaneously.
 .sh 3 "Potential problems with the alias database"
 .pp
 There are a number of problems that can occur
@@ -612,7 +626,9 @@ at which point it will force a rebuild itself\**.
 \**Note:
 the
 .q a
-option must be specified in the configuration file
+and
+.q D
+options must be specified in the configuration file
 for this operation to occur.
 .)f
 .sh 3 "List owners"
@@ -1955,7 +1971,7 @@ For example,
 the specifications:
 .(b
 .ta \w'Mlocal 'u +\w'/bin/mail 'u +\w'rlsAmn 'u +\w'10 'u +\w'20 'u
-Mlocal	/bin/mail	rlsm	10	20	mail -d $u
+Mlocal	/bin/mail	rlsm	10	20	mail \-d $u
 Mether	[IPC]	meC	11	21	IPC $h
 .)b
 specifies two mailers.
@@ -2195,11 +2211,15 @@ and the DBM files are writable,
 a slightly sophisticated user
 can arrange to steal mail anyway.
 .pp
-If your DBM files are not writable by the world,
+If your DBM files are not writable by the world
+or you do not have auto-rebuild enabled
+(with the
+.q D
+option),
 then you must be careful to reconstruct the alias database
 each time you change the text version:
 .(b
-/usr/lib/sendmail -I
+/usr/lib/sendmail \-bi
 .)b
 If this step is ignored or forgotten
 any intended changes will also be ignored or forgotten.
@@ -2258,7 +2278,7 @@ It is frequently entertaining to use the
 flag (verbose)
 when this is done to watch what happens:
 .(b
-/usr/lib/sendmail -q -v
+/usr/lib/sendmail \-q \-v
 .)b
 .sh 2 "Debugging"
 .pp
@@ -2302,7 +2322,7 @@ can be specified using the
 .b \-C
 flag; for example,
 .(b
-/usr/lib/sendmail -Ctest.cf
+/usr/lib/sendmail \-Ctest.cf
 .)b
 uses the configuration file
 .i test.cf
@@ -2404,16 +2424,6 @@ to deliver queued mail;
 otherwise, it only runs once.
 .ip \-C\fIfile\fP
 Use a different configuration file.
-.ip \-I
-Initialize the DBM version
-of the alias file.
-If
-.b \-I
-is given,
-no delivery is attempted.
-The DBM version will be rebuilt automatically if the DBM files
-are mode 666,
-or if they are owned by the effective userid.
 .ip \-d\fIlevel\fP
 Set debugging level.
 .ip \-o\fIx\|value\fP
@@ -2422,9 +2432,6 @@ Set option
 to the specified
 .i value .
 These options are described in Appendix B.
-.ip \-Z
-Initialize the file
-.i /usr/lib/sendmail.fc.
 .pp
 There are a number of options that may be specified as
 primitive flags.
@@ -2472,6 +2479,9 @@ f	Fork before doing delivery
 q	Just queue up the message
 t	Run in test mode
 v	Just verify addresses, don't collect or deliver
+i	Initialize the alias database
+p	Print the mail queue
+z	Freeze the configuration file
 .)b
 .ip c
 If this mailer is marked as being expensive,
@@ -2479,6 +2489,15 @@ don't connect immediately.
 This requires that queueing be compiled in,
 since it will depend on a sender process to
 actually send the mail.
+.ip D
+If set,
+rebuild the alias database if necessary and possible.
+If this option is not set,
+.i sendmail
+will never rebuild the alias database
+unless explicitly requested
+using
+.b \-bi .
 .ip e\fIx\fP
 Dispose of errors using mode
 .i x .
@@ -2695,20 +2714,122 @@ To: userb@hostb, userc@hosta
 .)b
 automatically.
 .+c "OTHER CONFIGURATION"
+.nr ii 1i
 .pp
 There are some configuration changes that can be made by
 recompiling
 .i sendmail .
-Some of these are changes to compilation flags:
-.nr ii 1i
+These are located in three places:
+.ip Makefile
+Changes in the makefile are operating-system dependent.
+These include information about what version of UNIX
+you are running, etc.
+.ip conf.h
+Configuration parameters that may be tweaked by the installer
+are included in conf.h.
+.ip conf.c
+Some special routines and a few variables
+may be defined in conf.c.
+For the most part these are selected from the settings
+in conf.h.
+.uh "Changes to the Makefile"
+.pp
+The following compilation flags may be defined in the makefile
+to define the environment in which you are operating.
 .ip V6
 If set,
 this will compile a version 6 system,
 with 8-bit user id's,
 single character tty id's,
 etc.
-If not set,
+.ip VMUNIX
+If set,
+you will be assumed to have a Berkeley 4BSD or 4.1BSD,
+including the
+.i vfork (2)
+system call,
+special types defined in <sys/types.h>
+(e.g, u_char),
+etc.
+.ip NVMUNIX
+This flag indicates a new (4.2BSD) version of VMUNIX.
+Included are the new communication primitives,
+file locking,
+etc.
+If this is set,
+VMUNIX must also be set.
+.lp
+If none of these flags are set,
 a version 7 system is assumed.
+.uh "Parameters in conf.h"
+.pp
+Parameters and compilation options
+are defined in conf.h.
+Most of these need not normally be tweaked;
+common parameters are all in sendmail.cf.
+However, the sizes of certain primitive vectors, etc.,
+are included in this file.
+The numbers following the parameters
+are their default value.
+.ip "MAXLINE [256]"
+The maximum line length of any input line.
+If message lines exceed this length
+they will still be processed correctly;
+however, header lines,
+configuration file lines,
+alias lines,
+etc.,
+must fit within this limit.
+.ip "MAXNAME [128]"
+The maximum length of any name,
+such as a host or a user name.
+.ip "MAXFIELD [2500]"
+The maximum total length of any header field,
+including continuation lines.
+.ip "MAXPV [40]"
+The maximum number of parameters to any mailer.
+This limits the number of recipients that may be passed in one transaction.
+.ip "MAXHOP [30]"
+When a message has been processed more than this number of times,
+sendmail rejects the message
+on the assumption that there has been an aliasing loop.
+This can be determined from the
+.b \-h
+flag
+or by counting the number of trace lines
+(i.e,
+.q Received:
+lines)
+in the message header.
+.ip "MAXATOM [100]"
+The maximum number of atoms
+(tokens)
+in a single address.
+For example,
+the address
+.q "eric@Berkeley"
+is three atoms.
+.ip "MAXMAILERS [25]"
+The maximum number of mailers that may be defined
+in the configuration file.
+.ip "MAXRWSETS [30]"
+The maximum number of rewriting sets
+that may be defined.
+.ip "MAXPRIORITIES [25]"
+The maximum number of values for the
+.q Precedence:
+field that may be defined
+(using the
+.b P
+line in sendmail.cf).
+.ip "MAXTRUST [30]"
+The maximum number of trusted users that may be defined
+(using the
+.b T
+line in sendmail.cf).
+.lp
+A number of other compilation options exist.
+These specify whether or not specific code should be compiled in.
 .ip DBM
 If set,
 the
@@ -2717,16 +2838,6 @@ package in UNIX is used
 (see DBM(3X) in [UNIX80]).
 If not set,
 a much less efficient algorithm for processing aliases is used.
-.ip VFORK
-Set if your system has the experimental
-.i vfork
-system call.
-See vfork(2) in [UNIX80].
-If not set,
-the regular
-.i fork
-system call is used.
-This option improves performance.
 .ip DEBUG
 If set, debugging information is compiled in.
 To actually get the debugging output,
@@ -2752,6 +2863,21 @@ If set,
 the code to handle user and server SMTP will be compiled in.
 This is only necessary if your machine has some mailer
 that speaks SMTP.
+.ip DAEMON
+If set,
+code to run a daemon is compiled in.
+This code is for 4.2BSD
+if the
+NVMUNIX
+flag is specified;
+otherwise,
+4.1a BSD code is used.
+Beware however
+that there are bugs in the 4.1a code
+that make it impossible for
+.b sendmail
+to work correctly
+under heavy load.
 .ip UGLYUUCP
 If you have a UUCP host adjacent to you which is not running
 a reasonable version of
@@ -2775,7 +2901,7 @@ you can set this flag to turn off special processing
 of UNIX-style
 .q "From "
 lines.
-.nr ii 5n
+.uh "Configuration in conf.c"
 .pp
 Not all header semantics are defined in the configuration file.
 Header lines that should only be included by certain mailers
@@ -2785,33 +2911,25 @@ must be specified in the
 table in
 .i conf.c .
 This table contains the header name
-(which should be in all lower case),
-a set of header control flags (described below),
-and a set of mailer flags,
-used by some of the header flags.
-The header flags are:
-.nr ii \w'H_ACHECK  'u
-.ip H_CHECK
-Check the flags for the receiving mailer
-against the third field in the
-.i HdrInfo
-entry.
-If the mailer has any of those bits set,
-send this field;
-otherwise, do not send this field to that mailer.
-If the field was in the message originally, however,
-it will always be sent
-(i.e., this only applies to headers being added by
-.i sendmail ).
+(which should be in all lower case)
+and a set of header control flags (described below),
+The flags are:
 .ip H_ACHECK
-Same as H_CHECK,
+Normally when the check is made to see if a header line is compatible
+with a mailer,
+.i sendmail
+will not delete an existing line.
+If this flag is set,
+.i sendmail
+will delete
+even existing header lines.
 except that it even applies to headers that were in the
 original message.
 That is,
 if this bit is set and the mailer does not have flag bits set
-that intersect with the third field in this
-.i HdrInfo
-entry,
+that intersect with the required mailer flags
+in the header definition in
+sendmail.cf,
 the header line is
 .i always
 deleted.
