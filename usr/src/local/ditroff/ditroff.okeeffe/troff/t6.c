@@ -311,7 +311,7 @@ register int	i;
 	p = unpair(i);
 
 	/* first look for numbers */
-	if( isdigit(p[0] && (p[1] == 0 || isdigit(p[1])))) {
+	if( isdigit(p[0]) && (p[1] == 0 || isdigit(p[1]))) {
 		k = p[0] - '0';
 		if( p[1] > 0 && isdigit(p[1]))
 			k = 10 * k + ( p[1] - '0');
@@ -527,7 +527,10 @@ int	a;
 	if (i == 'S' || i == '0')
 		return;
 	if ((j = findft(i)) == -1)
+#ifdef notdef
+		/* findft does the setfp if possible */
 		if ((j = setfp(0, i, 0)) == -1)	/* try to put it in position 0 */
+#endif
 			return;
 s0:
 	font1 = font;
