@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)startslip.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)startslip.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,6 +39,11 @@ static char sccsid[] = "@(#)startslip.c	5.8 (Berkeley) %G%";
 
 #define DEFAULT_BAUD    B9600
 int     speed = DEFAULT_BAUD;
+#define	FC_NONE		0	/* flow control: none */
+#define	FC_SW		1	/* flow control: software (XON/XOFF) */
+#define	FC_HW		2	/* flow control: hardware (RTS/CTS) */
+int	flowcontrol = FC_NONE;
+char	*annex;
 int	hup;
 int	logged_in;
 int	wait_time = 60;		/* then back off */
@@ -78,7 +83,7 @@ main(argc, argv)
 	struct sgttyb sgtty;
 #endif
 
-	while ((ch = getopt(argc, argv, "db:s:p:")) != EOF)
+	while ((ch = getopt(argc, argv, "db:s:p:A:F:")) != EOF)
 		switch (ch) {
 		case 'd':
 			debug = 1;
@@ -94,6 +99,27 @@ main(argc, argv)
 		case 's':
 			dialerstring = optarg;
 			break;
+		case 'A':
+			annex = optarg;
+			break;
+		case 'F':
+#ifdef POSIX
+			if (strcmp(optarg, "none") == 0)
+				flowcontrol = FC_NONE;
+			else if (strcmp(optarg, "sw") == 0)
+				flowcontrol = FC_SW;
+			else if (strcmp(optarg, "hw") == 0)
+				flowcontrol = FC_HW;
+			else {
+				(void)fprintf(stderr,
+					"flow control: none, sw, hw\n");
+				exit(1);
+			}
+			break;
+#else
+			(void)fprintf(stderr, "flow control not supported\n");
+			exit(1);
+#endif
 		case '?':
 		default:
 			usage();
@@ -205,7 +231,18 @@ restart:
 	}
 	cfmakeraw(&t);
 	t.c_iflag &= ~IMAXBEL;
-	t.c_cflag |= CRTSCTS;
+	switch (flowcontrol) {
+	case FC_HW:
+		t.c_cflag |= (CRTS_IFLOW|CCTS_OFLOW);
+		break;
+	case FC_SW:
+		t.c_iflag |= (IXON|IXOFF);
+		break;
+	case FC_NONE:
+		t.c_cflag &= ~(CRTS_IFLOW|CCTS_OFLOW);
+		t.c_iflag &= ~(IXON|IXOFF);
+		break;
+	}
 	cfsetspeed(&t, speed);
 	if (tcsetattr(fd, TCSAFLUSH, &t) < 0) {
 		perror("tcsetattr");
@@ -265,16 +302,34 @@ restart:
 			sleep(wait_time * tries);
 			goto restart;
 		}
-	        if (bcmp(&buf[1], "ogin:", 5) == 0) {
-	                fprintf(wfd, "%s\r", argv[1]);
-			printd("Sent login: %s\n", argv[1]);
-	                continue;
-	        }
-	        if (bcmp(&buf[1], "assword:", 8) == 0) {
-	                fprintf(wfd, "%s\r", argv[2]);
-			printd("Sent password: %s\n", argv[2]);
-	                break;
-	        }
+		if (annex) {
+			if (bcmp(buf, annex, strlen(annex)) == 0) {
+				fprintf(wfd, "slip\r");
+				printd("Sent \"slip\"\n");
+				continue;
+			}
+			if (bcmp(&buf[1], "sername:", 8) == 0) {
+				fprintf(wfd, "%s\r", argv[1]);
+				printd("Sent login: %s\n", argv[1]);
+				continue;
+			}
+			if (bcmp(&buf[1], "assword:", 8) == 0) {
+				fprintf(wfd, "%s\r", pbuf);
+				printd("Sent password: %s\n", pbuf);
+				break;
+			}
+		} else {
+			if (bcmp(&buf[1], "ogin:", 5) == 0) {
+				fprintf(wfd, "%s\r", argv[1]);
+				printd("Sent login: %s\n", argv[1]);
+				continue;
+			}
+			if (bcmp(&buf[1], "assword:", 8) == 0) {
+				fprintf(wfd, "%s\r", argv[2]);
+				printd("Sent password: %s\n", argv[2]);
+				break;
+			}
+		}
 	}
 	
 	/*
@@ -366,6 +421,6 @@ getline(buf, size, fd)
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: startslip [-d] [-b speed] [-s string] dev user passwd\n");
+	    "usage: startslip [-d] [-b speed] [-s string] [-A annexname] [-F flowcontrol] dev user passwd\n");
 	exit(1);
 }
