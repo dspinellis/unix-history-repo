@@ -1,0 +1,5 @@
+Mnfsd	nfsd.c	/^main(argc, argv, envp)$/
+reapchild	nfsd.c	/^reapchild()$/
+setproctitle	nfsd.c	/^setproctitle(a)$/
+syslog	nfsd.c	/^#define	syslog(e, s)	fprintf(stderr,(s))$/
+usage	nfsd.c	/^usage()$/

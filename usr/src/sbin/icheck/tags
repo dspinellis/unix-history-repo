@@ -1,0 +1,9 @@
+Micheck	icheck.c	/^main(argc, argv)$/
+bread	icheck.c	/^bread(bno, buf, cnt)$/
+check	icheck.c	/^check(file)$/
+chk	icheck.c	/^chk(bno, s, size)$/
+duped	icheck.c	/^duped(bno, size)$/
+getsb	icheck.c	/^getsb(fs, file)$/
+isblock	icheck.c	/^isblock(fs, cp, h)$/
+pass1	icheck.c	/^pass1(ip)$/
+setblock	icheck.c	/^setblock(fs, cp, h)$/

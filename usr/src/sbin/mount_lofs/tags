@@ -1,0 +1,2 @@
+Mmount_lofs	mount_lofs.c	/^main(argc, argv)$/
+usage	mount_lofs.c	/^usage()$/

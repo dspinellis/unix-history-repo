@@ -1,0 +1,10 @@
+Mumount	umount.c	/^main(argc, argv)$/
+badtype	umount.c	/^badtype(type, typelist)$/
+fsnametotype	umount.c	/^fsnametotype(name)$/
+getmntname	umount.c	/^getmntname(name, what, type)$/
+maketypelist	umount.c	/^maketypelist(fslist)$/
+namematch	umount.c	/^namematch(hp, nfshost)$/
+umountall	umount.c	/^umountall(typelist)$/
+umountfs	umount.c	/^umountfs(name, typelist)$/
+usage	umount.c	/^usage()$/
+xdr_dir	umount.c	/^xdr_dir(xdrsp, dirp)$/

@@ -1,0 +1,9 @@
+Mscsiformat	scsiformat.c	/^main(argc, argv)$/
+do_command	scsiformat.c	/^do_command(fd, cdb, buf, len)$/
+do_format	scsiformat.c	/^do_format()$/
+pr_sense	scsiformat.c	/^pr_sense(fd)$/
+print_capacity	scsiformat.c	/^print_capacity()$/
+print_inquiry	scsiformat.c	/^print_inquiry()$/
+print_mode_page	scsiformat.c	/^print_mode_page(cp)$/
+print_mode_sense	scsiformat.c	/^print_mode_sense()$/
+usage	scsiformat.c	/^usage()$/

@@ -1,0 +1,11 @@
+Mncheck	ncheck.c	/^main(argc, argv)$/
+bmap	ncheck.c	/^bmap(bn)$/
+bread	ncheck.c	/^bread(bno, buf, lcount)$/
+check	ncheck.c	/^check(file)$/
+dotname	ncheck.c	/^dotname(dp)$/
+lookup	ncheck.c	/^lookup(i, ef)$/
+nreaddir	ncheck.c	/^nreaddir(dirp)$/
+pass1	ncheck.c	/^pass1(ip)$/
+pass2	ncheck.c	/^pass2(ip)$/
+pass3	ncheck.c	/^pass3(ip)$/
+pname	ncheck.c	/^pname(i, lev)$/

@@ -1,0 +1,2 @@
+Mmount_kernfs	mount_kernfs.c	/^main(argc, argv)$/
+usage	mount_kernfs.c	/^usage()$/

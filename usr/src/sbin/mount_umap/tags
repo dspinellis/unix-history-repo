@@ -1,0 +1,3 @@
+Mmount_umap	mount_umap.c	/^main(argc, argv)$/
+notMounted	mount_umap.c	/^notMounted()$/
+usage	mount_umap.c	/^usage()$/

@@ -1,0 +1,15 @@
+BADTYPE	mount.c	/^#define	BADTYPE(type) \\$/
+Mmount	mount.c	/^main(argc, argv, arge)$/
+PR	mount.c	/^#define	PR(msg)	(void)printf("%s%s", !first++ ? " /
+SETTYPE	mount.c	/^#define	SETTYPE(type) \\$/
+badvfsname	mount.c	/^badvfsname(vfsname, vfslist)$/
+badvfstype	mount.c	/^badvfstype(vfstype, vfslist)$/
+getexecopts	mount.c	/^getexecopts(options, argv)$/
+getmntpt	mount.c	/^getmntpt(name)$/
+getmnttype	mount.c	/^getmnttype(fstype)$/
+getstdopts	mount.c	/^getstdopts(options, flagp)$/
+getufsopts	mount.c	/^getufsopts(options, flagp)$/
+makevfslist	mount.c	/^makevfslist(fslist)$/
+mountfs	mount.c	/^mountfs(spec, name, flags, type, options, mntopts)/
+prmount	mount.c	/^prmount(spec, name, flags)$/
+usage	mount.c	/^usage()$/
