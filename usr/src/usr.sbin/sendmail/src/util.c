@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -570,10 +570,6 @@ xunlink(f)
 
 static jmp_buf	CtxReadTimeout;
 
-#ifndef ETIMEDOUT
-#define ETIMEDOUT	EINTR
-#endif
-
 char *
 sfgets(buf, siz, fp)
 	char *buf;
@@ -589,8 +585,11 @@ sfgets(buf, siz, fp)
 	{
 		if (setjmp(CtxReadTimeout) != 0)
 		{
-			errno = ETIMEDOUT;
-			syserr("net timeout");
+			syslog(LOG_NOTICE,
+			    "timeout waiting for input from %s\n",
+			    RealHostName);
+			errno = 0;
+			usrerr("timeout waiting for input");
 			buf[0] = '\0';
 			return (NULL);
 		}

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -407,9 +407,19 @@ eatheader(e)
 # ifdef LOG
 	if (!QueueRun && LogLevel > 1)
 	{
-		syslog(LOG_INFO, "%s: from=%s, size=%ld, class=%d\n",
-		       CurEnv->e_id, CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
-		       CurEnv->e_class);
+		char hbuf[100], *name = hbuf;
+
+		if (RealHostName == NULL)
+			name = "local";
+		else if (RealHostName[0] == '[')
+			name = RealHostName;
+		else
+			(void)sprintf(hbuf, "%.90s (%s)", 
+			    RealHostName, inet_ntoa(RealHostAddr.sin_addr));
+		syslog(LOG_INFO,
+		    "%s: from=%s, size=%ld, class=%d, received from %s\n",
+		    CurEnv->e_id, CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
+		    CurEnv->e_class, name);
 	}
 # endif LOG
 }

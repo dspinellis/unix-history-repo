@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.23 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.24 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.23 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.24 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -63,12 +63,13 @@ struct cmd
 # define CMDNOOP	7	/* noop -- do nothing */
 # define CMDQUIT	8	/* quit -- close connection and die */
 # define CMDHELO	9	/* helo -- be polite */
-# define CMDDBGQSHOW	10	/* showq -- show send queue (DEBUG) */
-# define CMDDBGDEBUG	11	/* debug -- set debug mode */
-# define CMDVERB	12	/* verb -- go into verbose mode */
-# define CMDDBGKILL	13	/* kill -- kill sendmail */
-# define CMDDBGWIZ	14	/* wiz -- become a wizard */
-# define CMDONEX	15	/* onex -- sending one transaction only */
+# define CMDONEX	10	/* onex -- sending one transaction only */
+# define CMDVERB	11	/* verb -- go into verbose mode */
+/* debugging-only commands, only enabled if SMTPDEBUG is defined */
+# define CMDDBGQSHOW	12	/* showq -- show send queue */
+# define CMDDBGDEBUG	13	/* debug -- set debug mode */
+# define CMDDBGKILL	14	/* kill -- kill sendmail */
+# define CMDDBGWIZ	15	/* wiz -- become a wizard */
 
 static struct cmd	CmdTab[] =
 {
@@ -86,23 +87,21 @@ static struct cmd	CmdTab[] =
 	"verb",		CMDVERB,
 	"onex",		CMDONEX,
 	"hops",		CMDHOPS,
-# ifdef DEBUG
+	/*
+	 * remaining commands are here only
+	 * to trap and log attempts to use them
+	 */
 	"showq",	CMDDBGQSHOW,
-# endif DEBUG
-# ifdef notdef
 	"debug",	CMDDBGDEBUG,
-# endif notdef
-# ifdef WIZ
 	"kill",		CMDDBGKILL,
-# endif WIZ
 	"wiz",		CMDDBGWIZ,
 	NULL,		CMDERROR,
 };
 
 # ifdef WIZ
 bool	IsWiz = FALSE;			/* set if we are a wizard */
-# endif WIZ
 char	*WizWord;			/* the wizard word to compare against */
+# endif WIZ
 bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
 
@@ -160,7 +159,7 @@ smtp()
 		if (p == NULL)
 		{
 			/* end of file, just die */
-			message("421", "%s Lost input channel to %s",
+			message("421", "%s Lost input channel from %s",
 				MyHostName, CurHostName);
 			finis();
 		}
@@ -199,9 +198,11 @@ smtp()
 			setproctitle("%s: %s", CurHostName, inp);
 			if (!strcasecmp(p, MyHostName))
 			{
-				/* connected to an echo server */
-				message("553", "%s I refuse to talk to myself",
-					MyHostName);
+				/*
+				 * didn't know about alias,
+				 * or connected to an echo server
+				 */
+				message("553", "Local configuration error, hostname not recognized as local");
 				break;
 			}
 			if (RealHostName != NULL && strcasecmp(p, RealHostName))
@@ -231,6 +232,7 @@ smtp()
 			}
 			if (InChild)
 			{
+				errno = 0;
 				syserr("Nested MAIL command");
 				exit(0);
 			}
@@ -402,7 +404,7 @@ smtp()
 			message("200", "Only one transaction");
 			break;
 
-# ifdef DEBUG
+# ifdef SMTPDEBUG
 		  case CMDDBGQSHOW:	/* show queues */
 			printf("Send Queue=");
 			printaddr(CurEnv->e_sendqueue, TRUE);
@@ -413,7 +415,6 @@ smtp()
 			tTflag(p);
 			message("200", "Debug set");
 			break;
-# endif DEBUG
 
 # ifdef WIZ
 		  case CMDDBGKILL:	/* kill the parent */
@@ -447,12 +448,26 @@ smtp()
 			message("500", "You wascal wabbit!  Wandering wizards won't win!");
 			break;
 # endif WIZ
+# else /* not SMTPDEBUG */
+
+		  case CMDDBGQSHOW:	/* show queues */
+		  case CMDDBGDEBUG:	/* set debug mode */
+		  case CMDDBGKILL:	/* kill the parent */
+		  case CMDDBGWIZ:	/* become a wizard */
+			if (RealHostName)
+				syslog(LOG_NOTICE,
+				    "\"%s\" command from %s (%s)\n",
+				    c->cmdname, RealHostName,
+				    inet_ntoa(RealHostAddr.sin_addr));
+			/* FALL THROUGH */
+# endif /* SMTPDEBUG */
 
 		  case CMDERROR:	/* unknown command */
 			message("500", "Command unrecognized");
 			break;
 
 		  default:
+			errno = 0;
 			syserr("smtp: unknown code %d", c->cmdcode);
 			break;
 		}

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -187,7 +187,11 @@ maketemp(from)
 	/* An EOF when running SMTP is an error */
 	if ((feof(InChannel) || ferror(InChannel)) && OpMode == MD_SMTP)
 	{
-		syserr("collect: unexpected close, from=%s", CurEnv->e_from.q_paddr);
+		if (RealHostName)
+			syslog(LOG_NOTICE,
+			    "collect: unexpected close on connection from %s: %m\n",
+			    CurEnv->e_from.q_paddr, RealHostName);
+		usrerr("collect: unexpected close, from=%s", CurEnv->e_from.q_paddr);
 
 		/* don't return an error indication */
 		CurEnv->e_to = NULL;
