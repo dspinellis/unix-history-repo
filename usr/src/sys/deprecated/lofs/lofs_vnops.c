@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vnops.c	7.4 (Berkeley) %G%
+ *	@(#)lofs_vnops.c	7.5 (Berkeley) %G%
  *
  * $Id: lofs_vnops.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -378,12 +378,15 @@ lofs_fsync(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
+	struct vnode *targetvp = LOFSVP(ap->a_vp);
 
 #ifdef LOFS_DIAGNOSTIC
-	printf("lofs_fsync(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
+	printf("lofs_fsync(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
 #endif
 
-	return VOP_FSYNC(LOFSVP(ap->a_vp), ap->a_cred, ap->a_waitfor, ap->a_p);
+	if (targetvp)
+		return VOP_FSYNC(targetvp, ap->a_cred, ap->a_waitfor, ap->a_p);
+	return (0);
 }
 
 lofs_seek(ap)
