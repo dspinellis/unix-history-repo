@@ -7,43 +7,31 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.3 (Berkeley) %G%
+ *	@(#)btree.h	5.4 (Berkeley) %G%
  */
 
 #include <mpool.h>
 
-#define	DEFMAXKEYPAGE	(0)		/* Maximum keys per page */
 #define	DEFMINKEYPAGE	(2)		/* Minimum keys per page */
 #define	MINCACHE	(5)		/* Minimum cached pages */
 #define	MINPSIZE	(512)		/* Minimum page size */
 
 /*
- * Page 0 of a btree file contains a BTMETA structure.  The rest of the first
- * page is empty, so that all disk operations are page-aligned.  This page is
- * also used as an out-of-band page, i.e. page pointers that point to nowhere
- * point to page 0.  The m_nrecs field is used only the RECNO code.  This is 
- * because the btree doesn't really need it and it requires that put or delete
- * calls modify the meta data.
+ * Page 0 of a btree file contains a copy of the meta-data.  This page is also
+ * used as an out-of-band page, i.e. page pointers that point to nowhere point
+ * to page 0.  Page 1 is the root of the btree.
  */
 #define	P_INVALID	 0		/* Invalid tree page number. */
-#define	P_META		 0		/* Tree meta-info page number. */
+#define	P_META		 0		/* Tree metadata page number. */
 #define	P_ROOT		 1		/* Tree root page number. */
 
-typedef struct BTMETA {
-	u_long	m_magic;		/* magic number */
-	u_long	m_version;		/* version */
-	u_long	m_psize;		/* page size */
-	u_long	m_free;			/* page number of first free page */
-	u_long	m_nrecs;		/* R: number of records */
-#define	SAVEMETA	(BTF_NODUPS | BTF_RECNO)
-	u_long	m_flags;		/* bt_flags & SAVEMETA */
-	u_long	m_lorder;		/* byte order */
-} BTMETA;
-
 /*
- * There are five page layouts in the btree: btree internal pages, btree leaf
- * pages, recno internal pages, recno leaf pages and overflow pages.  Each type
- * of page starts with a page header as typed by PAGE.
+ * There are five page layouts in the btree: btree internal pages (BINTERNAL),
+ * btree leaf pages (BLEAF), recno internal pages (RINTERNAL), recno leaf pages
+ * (RLEAF) and overflow pages.  All five page types have a page header (PAGE).
+ * This implementation requires that longs within structures are NOT padded.
+ * (ANSI C permits random padding.)  If your compiler pads randomly you'll have
+ * to do some work to get this package to run.
  */
 typedef struct PAGE {
 	pgno_t	pgno;			/* this page's page number */
@@ -84,7 +72,7 @@ typedef struct PAGE {
  * The size and page number fields in the items are long aligned so they can be
  * manipulated without copying.
  */
-#define	LALIGN(l)	(((l) + sizeof(u_long) - 1) & ~(sizeof(u_long) - 1))
+#define	LALIGN(n)	(((n) + sizeof(u_long) - 1) & ~(sizeof(u_long) - 1))
 #define	NOVFLSIZE	(sizeof(pgno_t) + sizeof(size_t))
 
 /*
@@ -115,12 +103,9 @@ typedef struct BINTERNAL {
 
 /* Copy a BINTERNAL entry to the page. */
 #define	WR_BINTERNAL(p, size, pgno, flags) { \
-	*(size_t *)p = size; \
-	p += sizeof(size_t); \
-	*(pgno_t *)p = pgno; \
-	p += sizeof(pgno_t); \
-	*(u_char *)p = flags; \
-	p += sizeof(u_char); \
+	*((size_t *)p)++ = size; \
+	*((pgno_t *)p)++ = pgno; \
+	*((u_char *)p)++ = flags; \
 }
 
 /*
@@ -142,8 +127,7 @@ typedef struct RINTERNAL {
 
 /* Copy a RINTERAL entry to the page. */
 #define	WR_RINTERNAL(p, nrecs, pgno) { \
-	*(size_t *)p = nrecs; \
-	p += sizeof(recno_t); \
+	*((recno_t *)p)++ = nrecs; \
 	*(pgno_t *)p = pgno; \
 }
 
@@ -160,9 +144,7 @@ typedef struct BLEAF {
 	((BLEAF *)((char *)(pg) + (pg)->linp[indx]))
 
 /* Get the number of bytes in the entry. */
-#define NBLEAF(p) \
-	LALIGN(sizeof(size_t) + sizeof(size_t) + sizeof(u_char) + \
-	    (p)->ksize + (p)->dsize)
+#define NBLEAF(p)	NBLEAFDBT((p)->ksize, (p)->dsize)
 
 /* Get the number of bytes in the user's key/data pair. */
 #define NBLEAFDBT(ksize, dsize) \
@@ -171,12 +153,9 @@ typedef struct BLEAF {
 
 /* Copy a BLEAF entry to the page. */
 #define	WR_BLEAF(p, key, data, flags) { \
-	*(size_t *)p = key->size; \
-	p += sizeof(size_t); \
-	*(size_t *)p = data->size; \
-	p += sizeof(size_t); \
-	*(u_char *)p = flags; \
-	p += sizeof(u_char); \
+	*((size_t *)p)++ = key->size; \
+	*((size_t *)p)++ = data->size; \
+	*((u_char *)p)++ = flags; \
 	bcopy(key->data, p, key->size); \
 	p += key->size; \
 	bcopy(data->data, p, data->size); \
@@ -194,8 +173,7 @@ typedef struct RLEAF {
 	((RLEAF *)((char *)(pg) + (pg)->linp[indx]))
 
 /* Get the number of bytes in the entry. */
-#define NRLEAF(p) \
-	LALIGN(sizeof(size_t) + sizeof(u_char) + (p)->dsize)
+#define NRLEAF(p)	NRLEAFDBT((p)->dsize)
 
 /* Get the number of bytes from the user's data. */
 #define	NRLEAFDBT(dsize) \
@@ -203,10 +181,8 @@ typedef struct RLEAF {
 
 /* Copy a RLEAF entry to the page. */
 #define	WR_RLEAF(p, data, flags) { \
-	*(size_t *)p = data->size; \
-	p += sizeof(size_t); \
-	*(u_char *)p = flags; \
-	p += sizeof(u_char); \
+	*((size_t *)p)++ = data->size; \
+	*((u_char *)p)++ = flags; \
 	bcopy(data->data, p, data->size); \
 }
 
@@ -219,6 +195,12 @@ typedef struct RLEAF {
  * record less than key in the tree so that descents work.  Leaf page searches
  * must find the smallest record greater than key so that the returned index
  * is the record's correct position for insertion.
+ *
+ * One comment about cursors.  The cursor key is never removed from the tree,
+ * even if deleted.  This is because it is quite difficult to decide where the
+ * cursor should be when other keys have been inserted/deleted in the tree;
+ * duplicate keys make it impossible.  This scheme does require extra work
+ * though, to make sure that we don't perform an operation on a deleted key.
  */
 typedef struct EPGNO {
 	pgno_t	pgno;			/* the page number */
@@ -230,14 +212,30 @@ typedef struct EPG {
 	index_t	 index;			/* the index on the page */
 } EPG;
 
+/*
+ * The metadata of the tree.  The m_nrecs field is used only by the RECNO code.
+ * This is because the btree doesn't really need it and it requires that every
+ * put or delete call modify the metadata.
+ */
+typedef struct BTMETA {
+	u_long	m_magic;		/* magic number */
+	u_long	m_version;		/* version */
+	u_long	m_psize;		/* page size */
+	u_long	m_free;			/* page number of first free page */
+	u_long	m_nrecs;		/* R: number of records */
+#define	SAVEMETA	(BTF_NODUPS | BTF_RECNO)
+	u_long	m_flags;		/* bt_flags & SAVEMETA */
+	u_long	m_lorder;		/* byte order */
+} BTMETA;
+
 /* The in-memory btree/recno data structure. */
 typedef struct BTREE {
 	MPOOL	*bt_mp;			/* memory pool cookie */
 
 	DB	*bt_dbp;		/* pointer to enclosing DB */
 
-	EPGNO	bt_bcursor;		/* btree cursor */
-	recno_t	bt_rcursor;		/* R: recno cursor */
+	EPGNO	bt_bcursor;		/* B: btree cursor */
+	recno_t	bt_rcursor;		/* R: recno cursor (1-based) */
 
 #define	BT_POP(t)	(t->bt_sp ? t->bt_stack + --t->bt_sp : NULL)
 #define	BT_CLR(t)	(t->bt_sp = 0)
@@ -254,12 +252,10 @@ typedef struct BTREE {
 	FILE	*bt_rfp;		/* R: record FILE pointer */
 	int	bt_rfd;			/* R: record file descriptor */
 
-	pgno_t	bt_free;		/* next free page */
-	size_t	bt_psize;		/* page size */
-	int	bt_maxkeypage;		/* maximum keys per page */
-	size_t	bt_minkeypage;		/* minimum keys per page */
+	pgno_t	bt_free;		/* XXX next free page */
+	index_t	bt_psize;		/* page size */
+	index_t	bt_ovflsize;		/* cut-off for key/data overflow */
 	int	bt_lorder;		/* byte order */
-
 					/* sorted order */
 	enum { NOT, BACK, FORWARD, } bt_order;
 	EPGNO	bt_last;		/* last insert */
@@ -268,21 +264,20 @@ typedef struct BTREE {
 	int	(*bt_cmp) __P((const DBT *, const DBT *));
 					/* B: prefix comparison function */
 	int	(*bt_pfx) __P((const DBT *, const DBT *));
-
 					/* R: recno input function */
 	int	(*bt_irec) __P((struct BTREE *, recno_t));
-	recno_t	bt_nrecs;		/* R: number of records in the tree */
+	recno_t	bt_nrecs;		/* R: number of records */
 	caddr_t	bt_smap;		/* R: start of mapped space */
 	caddr_t bt_emap;		/* R: end of mapped space */
 	size_t	bt_reclen;		/* R: fixed record length */
 	u_char	bt_bval;		/* R: delimiting byte/pad character */
 
-#define	BTF_DELCRSR	0x001		/* B: delete cursor when closes/moves */
+#define	BTF_DELCRSR	0x001		/* cursor has been deleted */
 #define	BTF_FIXEDLEN	0x002		/* fixed length records */
 #define	BTF_INMEM	0x004		/* in-memory tree */
-#define	BTF_METADIRTY	0x008		/* B: need to write meta-data */
+#define	BTF_METADIRTY	0x008		/* B: need to write metadata */
 #define	BTF_MODIFIED	0x010		/* tree modified */
-#define	BTF_NODUPS	0x020		/* no duplicate keys permitted */
+#define	BTF_NODUPS	0x020		/* B: no duplicate keys permitted */
 #define	BTF_RDONLY	0x040		/* read-only tree */
 #define	BTF_RECNO	0x080		/* record oriented tree */
 #define	BTF_SEQINIT	0x100		/* sequential scan initialized */
