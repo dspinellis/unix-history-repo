@@ -3,13 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.13		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.14		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
+# include <wait.h>
 
-SCCSID(@(#)daemon.c	3.13		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.14		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -32,8 +33,13 @@ static FILE	*MailPort;	/* port that mail comes in on */
 **		routine is always in the child.
 */
 
+# define MAXCONNS	4	/* maximum simultaneous sendmails */
+
 getrequests()
 {
+	union wait status;
+	int numconnections = 0;
+
 	struct wh wbuf;
 
 	wbuf.index = index;
@@ -55,6 +61,8 @@ getrequests()
 **		Waits for a connection.
 */
 
+#define IPPORT_PLAYPORT	3055		/* random number */
+
 struct sockaddr_in SendmailAddress = { AF_INET, IPPORT_SMTP };
 
 getconnection()
@@ -68,6 +76,11 @@ getconnection()
 
 	SendmailAddress.sin_addr.s_addr = 0;
 	SendmailAddress.sin_port = IPPORT_SMTP;
+# ifdef DEBUG
+	if (Debug > 0)
+		SendmailAddress.sin_port = IPPORT_PLAYPORT;
+# endif DEBUG
+	SendmailAddress.sin_port = htons(SendmailAddress.sin_port);
 
 	/*
 	**  Try to actually open the connection.
@@ -79,12 +92,22 @@ getconnection()
 # endif DEBUG
 
 	s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
+	if (s < 0)
+	{
+		sleep(10);
+		return (s);
+	}
 
 # ifdef DEBUG
 	if (Debug)
 		printf("getconnection: %d\n", s);
 # endif DEBUG
-	accept(s, &otherend);
+	if (accept(s, &otherend) < 0)
+	{
+		syserr("accept");
+		close(s);
+		return (-1);
+	}
 
 	return (s);
 }
@@ -122,7 +145,7 @@ makeconnection(host, port, outfile, infile)
 		return (EX_NOHOST);
 	if (port == 0)
 		port = IPPORT_SMTP;
-	SendmailAddress.sin_port = port;
+	SendmailAddress.sin_port = htons(port);
 
 	/*
 	**  Try to actually open the connection.
