@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mt.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mt.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)mt.c	5.5 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -76,7 +77,7 @@ main(argc, argv)
 		fprintf(stderr, "mt: don't grok \"%s\"\n", cp);
 		exit(1);
 	}
-	if ((mtfd = open(tape, comp->c_ronly ? 0 : 2)) < 0) {
+	if ((mtfd = open(tape, comp->c_ronly ? O_RDONLY : O_RDWR)) < 0) {
 		perror(tape);
 		exit(1);
 	}
