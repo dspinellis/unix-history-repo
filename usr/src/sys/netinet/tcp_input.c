@@ -1,4 +1,4 @@
-/* tcp_input.c 1.13 81/10/30 */
+/* tcp_input.c 1.14 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -225,21 +225,14 @@ goodseg:
 		}
 		tcp_ctldat(tp, n, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
-			if (n->th_flags&TH_ACK) {
-				if (n->t_ackno > tp->iss)
-					present_data(tp);	/* 32 */
-			} else {
+			if ((n->th_flags&TH_ACK) == 0) {
 				tp->t_finack = T_2ML;		/* 9 */
 				tp->tc_flags &= ~TC_WAITED_2_ML;
 			}
 			nstate = CLOSE_WAIT;
 			goto done;
 		}
-		if (n->th_flags&TH_ACK) {
-			present_data(tp);			/* 11 */
-			nstate = ESTAB;
-		} else
-			nstate = SYN_RCVD;			/* 8 */
+		nstate = (n->th_flags&TH_ACK) ? ESTAB : SYN_RCVD; /* 11:8 */
 		goto done;
 
 	case SYN_RCVD:
@@ -257,7 +250,6 @@ goodseg:
 	case TIME_WAIT:
 input:
 		tcp_ctldat(tp, n, 1);				/* 39 */
-		present_data(tp);
 		switch (tp->t_state) {
 
 		case ESTAB:
@@ -379,7 +371,11 @@ done:
 	case CLOSED:
 		/* IF CLOSED CANT LOOK AT tc_flags */
 		if ((tp->tc_flags&TC_NET_KEEP) == 0)
-			m_freem(mp);
+			/* inline expansion of m_freem */
+			while (mp) {
+				MFREE(mp, m);
+				mp = m;
+			}
 		return;
 	}
 	/* NOTREACHED */
@@ -432,7 +428,7 @@ COUNT(TCP_CTLDAT);
 	    n->t_ackno > tp->snd_una) {
 		register struct mbuf *mn;
 		register struct ucb *up;
-		register int len;
+		int len;
 
 		up = tp->t_ucb;
 
@@ -440,7 +436,6 @@ COUNT(TCP_CTLDAT);
 		tp->snd_una = n->t_ackno;
 		if (tp->snd_una > tp->snd_nxt)
 			tp->snd_nxt = tp->snd_una;
-
 		/* if timed msg acked, set retrans time value */
 		if ((tp->tc_flags&TC_SYN_ACKED) &&
 		    tp->snd_una > tp->t_xmt_val) {
@@ -594,6 +589,7 @@ COUNT(TCP_CTLDAT);
 	tp->tc_flags |= (TC_ACK_DUE|TC_NET_KEEP);
 	}
 notext:
+urgeolfin:
 /* urg */
 	if (n->th_flags&TH_URG) {
 		unsigned urgent;
@@ -660,16 +656,10 @@ ctlonly:
 		tp->t_rexmt_val = tp->t_rtl_val = tp->snd_lst;
 		tp->tc_flags &= ~TC_CANCELLED;
 	}
-}
-
-present_data(tp)
-	register struct tcb *tp;
-{
-	register struct th *t;
-	register struct ucb *up;
-	register struct mbuf *m, **mp;
-	seq_t ready;
-COUNT(PRESENT_DATA);
+/* present data to user */
+	{ register struct mbuf **mp;
+	  register struct ucb *up = tp->t_ucb;
+	  seq_t ready;
 
 	/* connection must be synced and data available for user */
 	if ((tp->tc_flags&TC_SYN_ACKED) == 0)
@@ -678,15 +668,15 @@ COUNT(PRESENT_DATA);
 	mp = &up->uc_rbuf;
 	while (*mp)
 		mp = &(*mp)->m_next;
-	t = tp->t_rcv_next;
+	n = tp->t_rcv_next;
 	/* SHOULD PACK DATA IN HERE */
-	while (t != (struct th *)tp && t->t_seq < tp->rcv_nxt) {
-		remque(t);
-		m = dtom(t);
-		up->uc_rcc += t->t_len;
-		tp->seqcnt -= t->t_len;
+	while (n != (struct th *)tp && n->t_seq < tp->rcv_nxt) {
+		remque(n);
+		m = dtom(n);
+		up->uc_rcc += n->t_len;
+		tp->seqcnt -= n->t_len;
 		if (tp->seqcnt < 0) panic("present_data");
-		t = t->t_next;
+		n = n->t_next;
 		while (m) {
 			if (m->m_len == 0) {
 				m = m_free(m);
@@ -703,4 +693,5 @@ COUNT(PRESENT_DATA);
 	    (tp->tc_flags&TC_USR_CLOSED) == 0 &&		/* ### */
 	    rcv_empty(tp))					/* ### */
 		to_user(up, UCLOSED);				/* ### */
+	}
 }
