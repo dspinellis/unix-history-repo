@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.2	%G%	*/
+/*	kern_proc.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,13 +42,28 @@ exece()
 	register struct buf *bp;
 	register struct execa *uap;
 	int na, ne, ucp, ap, c;
+	int indir, uid, gid;
+	char *sharg;
 	struct inode *ip;
 	swblk_t bno;
+	char cfname[DIRSIZ];
+	char cfarg[SHSIZE];
 
 	if ((ip = namei(uchar, 0)) == NULL)
 		return;
+
 	bno = 0;
 	bp = 0;
+	indir = 0;
+	uid = u.u_uid;
+	gid = u.u_gid;
+
+	if (ip->i_mode & ISUID)
+		uid = ip->i_uid;
+	if (ip->i_mode & ISGID)
+		gid = ip->i_gid;
+
+  again:
 	if(access(ip, IEXEC))
 		goto bad;
 	if((ip->i_mode & IFMT) != IFREG ||
@@ -56,6 +71,95 @@ exece()
 		u.u_error = EACCES;
 		goto bad;
 	}
+
+	/*
+	 * Read in first few bytes of file for segment sizes, ux_mag:
+	 *	407 = plain executable
+	 *	410 = RO text
+	 *	413 = demand paged RO text
+	 * Also an ASCII line beginning with #! is
+	 * the file name of a ``shell'' and arguments may be prepended
+	 * to the argument list if given here.
+	 *
+	 * SHELL NAMES ARE LIMITED IN LENGTH.
+	 *
+	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
+	 * THE ASCII LINE.
+	 */
+	u.u_base = (caddr_t)&u.u_exdata;
+	u.u_count = sizeof(u.u_exdata);
+	u.u_offset = 0;
+	u.u_segflg = 1;
+	readi(ip);
+	u.u_segflg = 0;
+	if(u.u_error)
+		goto bad;
+	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A)
+		&& u.u_exdata.ux_shell[0] != '#') {
+		u.u_error = ENOEXEC;
+		goto bad;
+	}
+	switch (u.u_exdata.ux_mag) {
+
+	case 0407:
+		u.u_exdata.ux_dsize += u.u_exdata.ux_tsize;
+		u.u_exdata.ux_tsize = 0;
+		break;
+
+	case 0413:
+	case 0410:
+		if (u.u_exdata.ux_tsize == 0) {
+			u.u_error = ENOEXEC;
+			goto bad;
+		}
+		break;
+
+	default:
+		if (u.u_exdata.ux_shell[0] != '#' ||
+		    u.u_exdata.ux_shell[1] != '!' ||
+		    indir) {
+			u.u_error = ENOEXEC;
+			goto bad;
+		}
+		cp = &u.u_exdata.ux_shell[2];		/* skip "#!" */
+		while (cp < &u.u_exdata.ux_shell[SHSIZE]) {
+			if (*cp == '\t')
+				*cp = ' ';
+			else if (*cp == '\n') {
+				*cp = '\0';
+				break;
+			}
+			cp++;
+		}
+		if (*cp != '\0') {
+			u.u_error = ENOEXEC;
+			goto bad;
+		}
+		cp = &u.u_exdata.ux_shell[2];
+		while (*cp == ' ')
+			cp++;
+		u.u_dirp = cp;
+		while (*cp && *cp != ' ')
+			cp++;
+		sharg = NULL;
+		if (*cp) {
+			*cp++ = '\0';
+			while (*cp == ' ')
+				cp++;
+			if (*cp) {
+				bcopy((caddr_t)cp, (caddr_t)cfarg, SHSIZE);
+				sharg = cfarg;
+			}
+		}
+		bcopy((caddr_t)u.u_dbuf, (caddr_t)cfname, DIRSIZ);
+		indir = 1;
+		iput(ip);
+		ip = namei(schar, 0);
+		if (ip == NULL)
+			return;
+		goto again;
+	}
+
 	/*
 	 * Collect arguments on "file" in swap space.
 	 */
@@ -71,7 +175,12 @@ exece()
 		panic("execa malloc");
 	if (uap->argp) for (;;) {
 		ap = NULL;
-		if (uap->argp) {
+		if (na == 1 && indir) {
+			if (sharg == NULL)
+				ap = (int)uap->fname;
+		} else if (na == 2 && indir && sharg != NULL)
+			ap = (int)uap->fname;
+		else if (uap->argp) {
 			ap = fuword((caddr_t)uap->argp);
 			uap->argp++;
 		}
@@ -90,7 +199,9 @@ exece()
 		do {
 			if (nc >= NCARGS-1)
 				u.u_error = E2BIG;
-			if ((c = fubyte((caddr_t)ap++)) < 0)
+			if (indir && na == 2 && sharg != NULL)
+				c = *sharg++ & 0377;
+			else if ((c = fubyte((caddr_t)ap++)) < 0)
 				u.u_error = EFAULT;
 			if (u.u_error) {
 				if (bp)
@@ -113,7 +224,9 @@ exece()
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	getxfile(ip, nc + (na+4)*NBPW);
+	if (indir)
+		bcopy((caddr_t)cfname, (caddr_t)u.u_dbuf, DIRSIZ);
+	getxfile(ip, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
 		for (c = 0; c < nc; c += BSIZE)
@@ -172,56 +285,17 @@ bad:
 /*
  * Read in and set up memory for executed file.
  */
-getxfile(ip, nargc)
+getxfile(ip, nargc, uid, gid)
 register struct inode *ip;
 {
 	register size_t ts, ds, ss;
-	int pagi = 0;
+	int pagi;
 
-	/*
-	 * read in first few bytes
-	 * of file for segment
-	 * sizes:
-	 * ux_mag = 407/410/413
-	 *  407 is plain executable
-	 *  410 is RO text
-	 *  413 is demand paged RO text
-	 */
-
-	u.u_base = (caddr_t)&u.u_exdata;
-	u.u_count = sizeof(u.u_exdata);
-	u.u_offset = 0;
-	u.u_segflg = 1;
-	readi(ip);
-	u.u_segflg = 0;
-	if(u.u_error)
-		goto bad;
-	if (u.u_count!=0) {
-		u.u_error = ENOEXEC;
-		goto bad;
-	}
-	switch (u.u_exdata.ux_mag) {
-
-	case 0407:
-		u.u_exdata.ux_dsize += u.u_exdata.ux_tsize;
-		u.u_exdata.ux_tsize = 0;
-		break;
-
-	case 0413:
+	if (u.u_exdata.ux_mag == 0413)
 		pagi = SPAGI;
-		/* fall into ... */
+	else
+		pagi = 0;
 
-	case 0410:
-		if (u.u_exdata.ux_tsize == 0) {
-			u.u_error = ENOEXEC;
-			goto bad;
-		}
-		break;
-
-	default:
-		u.u_error = ENOEXEC;
-		goto bad;
-	}
 	if(u.u_exdata.ux_tsize!=0 && (ip->i_flag&ITEXT)==0 && ip->i_count!=1) {
 		register struct file *fp;
 
@@ -295,13 +369,14 @@ register struct inode *ip;
 	 * set SUID/SGID protections, if no tracing
 	 */
 	if ((u.u_procp->p_flag&STRC)==0) {
-		if(ip->i_mode&ISUID)
-			if(u.u_uid != 0) {
-				u.u_uid = ip->i_uid;
-				u.u_procp->p_uid = ip->i_uid;
-			}
-		if(ip->i_mode&ISGID)
-			u.u_gid = ip->i_gid;
+#ifndef	MELB
+		if(u.u_uid != 0)
+#endif
+		{
+			u.u_uid = uid;
+			u.u_procp->p_uid = uid;
+		}
+		u.u_gid = gid;
 	} else
 		psignal(u.u_procp, SIGTRAP);
 	u.u_tsize = ts;
@@ -608,13 +683,14 @@ fork1(isvfork)
 				a++;
 		}
 	}
+
 	/*
 	 * Disallow if
 	 *  No processes at all;
 	 *  not su and too many procs owned; or
 	 *  not su and would take last slot.
 	 */
-	if (p2==NULL || (u.u_uid!=0 && (p2==&proc[NPROC-1] || a>MAXUPRC))) {
+	if (p2==NULL || (u.u_uid!=0 && (p2>=&proc[NPROC-5] || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
 			(void) vsexpand(0, &u.u_cdmap, 1);
