@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.26	(Berkeley)	85/02/18";
+static char sccsid[] = "@(#)tape.c	3.27	(Berkeley)	85/03/24";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -40,11 +40,10 @@ setinput(source)
 #endif RRESTORE
 
 	flsht();
-	tbf = (char *)malloc(ntrec * TP_BSIZE);
-	if (tbf == NULL) {
-		fprintf(stderr, "Cannot allocate space for tape buffer\n");
-		done(1);
-	}
+	if (bflag)
+		newtapebuf(ntrec);
+	else
+		newtapebuf(NTREC > HIGHDENSITYTREC ? NTREC : HIGHDENSITYTREC);
 	terminal = stdin;
 #ifdef RRESTORE
 	host = source;
@@ -80,6 +79,24 @@ nohost:
 #endif RRESTORE
 }
 
+newtapebuf(size)
+	long size;
+{
+	static tbfsize = -1;
+
+	ntrec = size;
+	if (size <= tbfsize)
+		return;
+	if (tbf != NULL)
+		free(tbf);
+	tbf = (char *)malloc(size * TP_BSIZE);
+	if (tbf == NULL) {
+		fprintf(stderr, "Cannot allocate space for tape buffer\n");
+		done(1);
+	}
+	tbfsize = size;
+}
+
 /*
  * Verify that the tape drive can be accessed and
  * that it actually is a dump tape.
@@ -106,6 +123,8 @@ setup()
 	volno = 1;
 	setdumpnum();
 	flsht();
+	if (!pipein && !bflag)
+		findtapeblksize();
 	if (gethead(&spcl) == FAIL) {
 		bct--; /* push back this block */
 		cvtflag++;
@@ -572,75 +591,108 @@ readtape(b)
 	long rd, newvol;
 	int cnt;
 
-	if (bct >= ntrec) {
-		for (i = 0; i < ntrec; i++)
-			((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
-		bct = 0;
-		cnt = ntrec*TP_BSIZE;
-		rd = 0;
-	getmore:
+	if (bct < ntrec) {
+		bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
+		blksread++;
+		return;
+	}
+	for (i = 0; i < ntrec; i++)
+		((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
+	bct = 0;
+	cnt = ntrec*TP_BSIZE;
+	rd = 0;
+getmore:
 #ifdef RRESTORE
-		i = rmtread(&tbf[rd], cnt);
+	i = rmtread(&tbf[rd], cnt);
 #else
-		i = read(mt, &tbf[rd], cnt);
+	i = read(mt, &tbf[rd], cnt);
 #endif
-		if (i > 0 && i != ntrec*TP_BSIZE) {
-			if (!pipein)
-				panic("partial block read: %d should be %d\n",
-					i, ntrec*TP_BSIZE);
+	if (i > 0 && i != ntrec*TP_BSIZE) {
+		if (pipein) {
 			rd += i;
 			cnt -= i;
 			if (cnt > 0)
 				goto getmore;
 			i = rd;
+		} else {
+			if (i % TP_BSIZE != 0)
+				panic("partial block read: %d should be %d\n",
+					i, ntrec * TP_BSIZE);
+			bcopy((char *)&endoftapemark, &tbf[i],
+				(long)TP_BSIZE);
 		}
-		if (i < 0) {
-			fprintf(stderr, "Tape read error while ");
-			switch (curfile.action) {
-			default:
-				fprintf(stderr, "trying to set up tape\n");
-				break;
-			case UNKNOWN:
-				fprintf(stderr, "trying to resyncronize\n");
-				break;
-			case USING:
-				fprintf(stderr, "restoring %s\n", curfile.name);
-				break;
-			case SKIP:
-				fprintf(stderr, "skipping over inode %d\n",
-					curfile.ino);
-				break;
-			}
-			if (!yflag && !reply("continue"))
-				done(1);
-			i = ntrec*TP_BSIZE;
-			bzero(tbf, i);
+	}
+	if (i < 0) {
+		fprintf(stderr, "Tape read error while ");
+		switch (curfile.action) {
+		default:
+			fprintf(stderr, "trying to set up tape\n");
+			break;
+		case UNKNOWN:
+			fprintf(stderr, "trying to resyncronize\n");
+			break;
+		case USING:
+			fprintf(stderr, "restoring %s\n", curfile.name);
+			break;
+		case SKIP:
+			fprintf(stderr, "skipping over inode %d\n",
+				curfile.ino);
+			break;
+		}
+		if (!yflag && !reply("continue"))
+			done(1);
+		i = ntrec*TP_BSIZE;
+		bzero(tbf, i);
 #ifdef RRESTORE
-			if (rmtseek(i, 1) < 0)
+		if (rmtseek(i, 1) < 0)
 #else
-			if (lseek(mt, i, 1) == (long)-1)
+		if (lseek(mt, i, 1) == (long)-1)
 #endif
-			{
-				perror("continuation failed");
-				done(1);
-			}
+		{
+			perror("continuation failed");
+			done(1);
 		}
-		if (i == 0) {
-			if (pipein) {
-				bcopy((char *)&endoftapemark, b,
-					(long)TP_BSIZE);
-				flsht();
-				return;
-			}
-			newvol = volno + 1;
-			volno = 0;
-			getvol(newvol);
-			readtape(b);
+	}
+	if (i == 0) {
+		if (pipein) {
+			bcopy((char *)&endoftapemark, b,
+				(long)TP_BSIZE);
+			flsht();
 			return;
 		}
+		newvol = volno + 1;
+		volno = 0;
+		getvol(newvol);
+		readtape(b);
+		return;
 	}
 	bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 	blksread++;
+}
+
+findtapeblksize()
+{
+	register long i;
+
+	for (i = 0; i < ntrec; i++)
+		((struct s_spcl *)&tbf[i * TP_BSIZE])->c_magic = 0;
+	bct = 0;
+#ifdef RRESTORE
+	i = rmtread(tbf, ntrec * TP_BSIZE);
+#else
+	i = read(mt, tbf, ntrec * TP_BSIZE);
+#endif
+	if (i <= 0) {
+		perror("Tape read error");
+		done(1);
+	}
+	if (i % TP_BSIZE != 0) {
+		fprintf(stderr, "Tape block size (%d) %s (%d)\n",
+			i, "is not a multiple of dump block size", TP_BSIZE);
+		done(1);
+	}
+	ntrec = i / TP_BSIZE;
+	vprintf(stdout, "Tape block size is %d\n", ntrec);
 }
 
 flsht()

@@ -1,4 +1,4 @@
-/*	restore.h	3.11	85/02/18	*/
+/*	restore.h	3.12	85/03/24	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -10,6 +10,7 @@
  * Flags
  */
 extern int	cvtflag;	/* convert from old to new tape format */
+extern int	bflag;		/* set input block size */
 extern int	dflag;		/* print out debugging info */
 extern int	hflag;		/* restore heirarchies */
 extern int	mflag;		/* restore by name instead of inode number */
