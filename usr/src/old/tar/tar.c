@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tar.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)tar.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -518,6 +518,7 @@ gotit:
 			passtape();
 			continue;
 		}
+		chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 
 		blocks = ((bytes = stbuf.st_size) + TBLOCK-1)/TBLOCK;
 		if (vflag)
@@ -544,10 +545,8 @@ gotit:
 			timep[1] = stbuf.st_mtime;
 			utime(dblock.dbuf.name, timep);
 		}
-		if(pflag) {
-		    chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
+		if (pflag)
 		    chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
-		}
 	}
 }
 
@@ -655,10 +654,10 @@ register char *name;
 				}
 				while ((rp = wait(&i)) >= 0 && rp != pid)
 					;
-				if(pflag) {
-				    chown(name, stbuf.st_uid, stbuf.st_gid);
-				    chmod(dblock.dbuf.name, stbuf.st_mode & 0777);
-				}
+				chown(name, stbuf.st_uid, stbuf.st_gid);
+				if (pflag)
+					chmod(dblock.dbuf.name,
+					    stbuf.st_mode & 0777);
 			}
 			*cp = '/';
 		}
