@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.51		%G%);
+SCCSID(@(#)recipient.c	3.52		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -37,6 +37,7 @@ sendtolist(list, ctladdr, sendq)
 	register ADDRESS *al;	/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
 	bool selfref;		/* set if this list includes ctladdr */
+	char delimiter;		/* the address delimiter */
 
 # ifdef DEBUG
 	if (tTd(25, 1))
@@ -51,6 +52,9 @@ sendtolist(list, ctladdr, sendq)
 	    (index(list, ',') != NULL || index(list, ';') != NULL ||
 	     index(list, '<') != NULL || index(list, '(') != NULL))
 		CurEnv->e_flags &= ~EF_OLDSTYLE;
+	delimiter = ' ';
+	if (!bitset(EF_OLDSTYLE, CurEnv->e_flags) || ctladdr != NULL)
+		delimiter = ',';
 
 	firstone = TRUE;
 	selfref = FALSE;
@@ -64,7 +68,7 @@ sendtolist(list, ctladdr, sendq)
 		/* parse the address */
 		while (isspace(*p) || *p == ',')
 			p++;
-		a = parseaddr(p, (ADDRESS *) NULL, 1);
+		a = parseaddr(p, (ADDRESS *) NULL, 1, delimiter);
 		p = DelimChar;
 		if (a == NULL)
 			continue;

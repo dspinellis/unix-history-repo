@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.79		%G%);
+SCCSID(@(#)parseaddr.c	3.80		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -28,6 +28,8 @@ SCCSID(@(#)parseaddr.c	3.79		%G%);
 **			0 -- copy out the parsed user & host, but
 **				don't copy the printname.
 **			+1 -- copy everything.
+**		delim -- the character to terminate the address, passed
+**			to prescan.
 **
 **	Returns:
 **		A pointer to the address descriptor header (`a' if
@@ -42,10 +44,11 @@ SCCSID(@(#)parseaddr.c	3.79		%G%);
 # define DELIMCHARS	"$()<>,;\\\"\r\n"	/* word delimiters */
 
 ADDRESS *
-parseaddr(addr, a, copyf)
+parseaddr(addr, a, copyf, delim)
 	char *addr;
 	register ADDRESS *a;
 	int copyf;
+	char delim;
 {
 	register char **pvp;
 	register struct mailer *m;
@@ -62,7 +65,7 @@ parseaddr(addr, a, copyf)
 		printf("\n--parseaddr(%s)\n", addr);
 # endif DEBUG
 
-	pvp = prescan(addr, bitset(EF_OLDSTYLE, CurEnv->e_flags) ? ' ' : ',');
+	pvp = prescan(addr, delim);
 	if (pvp == NULL)
 		return (NULL);
 

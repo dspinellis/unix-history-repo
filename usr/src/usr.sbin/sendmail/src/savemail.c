@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.59		%G%);
+SCCSID(@(#)savemail.c	3.60		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -51,7 +51,7 @@ savemail(e)
 
 	if (e->e_from.q_paddr == NULL)
 	{
-		if (parseaddr("root", &e->e_from, 0) == NULL)
+		if (parseaddr("root", &e->e_from, 0, '\0') == NULL)
 		{
 			syserr("Cannot parse root!");
 			ExitStat = EX_SOFTWARE;
