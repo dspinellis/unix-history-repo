@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.2 (CWI) 85/10/02";
+static char sccsid[] = "@(#)main.c	1.3 (CWI) 85/10/02";
 #endif lint
 
 /*
@@ -20,9 +20,20 @@ main(argc, argv)
 int	argc; char   *argv[];
 {
 	char line[BUFSIZ];
+	register char *p;
+	char *getenv();
 	extern int badsig();
 
 	signal(SIGPIPE, badsig);
+
+	if (p = getenv("TYPESETTER")) {
+		if(strcmp(p, "har") == 0)
+			device = HARRIS;
+		else if(strcmp(p, "ver") == 0)
+			device = DEVVER;
+		else
+			fprintf(stderr, "tbl: warning: unknown typesetter %s\n", p);
+	}
 
 	tabin = stdin;
 	sargv = ++argv;
