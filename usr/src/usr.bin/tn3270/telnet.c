@@ -1910,7 +1910,7 @@ int	block;			/* should we block in the select ? */
 	if (scc == 0) {
 	    sbp = sibuf;
 	}
-	canread = sibuf + sizeof sibuf - sbp;
+	canread = sibuf + sizeof sibuf - (sbp+scc);
 #if	!defined(SO_OOBINLINE)
 	    /*
 	     * In 4.2 (and some early 4.3) systems, the
@@ -1951,22 +1951,22 @@ int	block;			/* should we block in the select ? */
 
 	    ioctl(net, SIOCATMARK, (char *)&atmark);
 	    if (atmark) {
-		c = recv(net, sibuf, canread, MSG_OOB);
+		c = recv(net, sbp+scc, canread, MSG_OOB);
 		if ((c == -1) && (errno == EINVAL)) {
-		    c = read(net, sibuf, canread);
+		    c = read(net, sbp+scc, canread);
 		    if (clocks.didnetreceive < clocks.gotDM) {
 			SYNCHing = stilloob(net);
 		    }
 		}
 	    } else {
-		c = read(net, sibuf, canread);
+		c = read(net, sbp+scc, canread);
 	    }
 	} else {
-	    c = read(net, sibuf, canread);
+	    c = read(net, sbp+scc, canread);
 	}
 	settimer(didnetreceive);
 #else	/* !defined(SO_OOBINLINE) */
-	c = read(net, sbp, canread);
+	c = read(net, sbp+scc, canread);
 #endif	/* !defined(SO_OOBINLINE) */
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
@@ -1974,7 +1974,7 @@ int	block;			/* should we block in the select ? */
 	    return -1;
 	}
 	if (netdata) {
-	    Dump('<', sbp, c);
+	    Dump('<', sbp+scc, c);
 	}
 	scc += c;
 	returnValue = 1;
