@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.17 82/03/19 */
+/* tcp_timer.c 4.18 82/03/24 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -162,12 +162,11 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 	 * or drop connection if idle for too long.
 	 */
 	case TCPT_KEEP:
-		if (tp->t_state < TCPS_ESTABLISHED ||
-		    tp->t_idle >= TCPTV_MAXIDLE) {
-			tcp_drop(tp, ETIMEDOUT);
-			return;
-		}
+		if (tp->t_state < TCPS_ESTABLISHED)
+			goto dropit;
 		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE) {
+		    	if (tp->t_idle >= TCPTV_MAXIDLE)
+				goto dropit;
 			/*
 			 * Saying tp->rcv_nxt-1 lies about what
 			 * we have received, and by the protocol spec
@@ -183,6 +182,9 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		} else
 			tp->t_idle = 0;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+		return;
+	dropit:
+		tcp_drop(tp, ETIMEDOUT);
 		return;
 
 #ifdef TCPTRUEOOB

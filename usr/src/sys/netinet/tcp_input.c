@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.62	82/03/19	*/
+/*	tcp_input.c	1.63	82/03/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -690,6 +690,8 @@ dropafterack:
 	if ((tiflags&TH_RST) ||
 	    tlen == 0 && (tiflags&(TH_SYN|TH_FIN)) == 0)
 		goto drop;
+	if (tp->t_inpcb->inp_socket->so_options & SO_DEBUG)
+		tcp_trace(TA_RESPOND, ostate, tp, &tcp_saveti, 0);
 	tcp_respond(tp, ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
 	return;
 
@@ -716,6 +718,8 @@ drop:
 	/*
 	 * Drop space held by incoming segment and return.
 	 */
+	if (tp && (tp->t_inpcb->inp_socket->so_options & SO_DEBUG))
+		tcp_trace(TA_DROP, ostate, tp, &tcp_saveti, 0);
 	m_freem(m);
 	return;
 }
