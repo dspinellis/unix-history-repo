@@ -1,0 +1,194 @@
+.TH LD68 1
+.SU
+.SH NAME
+ld68 \- .b -> b.out linker for the MC68000
+.SH SYNOPSIS
+.B ld68
+[ option ] ... file ...
+.SH DESCRIPTION
+.I Ld68
+combines several
+object programs into one, resolves external
+references, and searches libraries.
+In the simplest case several object
+.I files
+are given, and
+.I ld68
+combines them, producing
+an object module which can be either executed or
+become the input for a further
+.I ld68
+run.
+(In the latter case, the
+.B \-r
+option must be given
+to preserve the relocation bits.)\ 
+The output of
+.I ld68
+is left on
+.BR b.out .
+This file is made executable
+only if no errors occurred during the load.
+.PP
+The argument routines are concatenated in the order
+specified.
+.PP
+The entry point of the output is determined by the first applicable item of the
+following list: the \fB\-e\fP option if given, the value of the symbol _start
+if defined, or the text origin (first instruction).
+.PP
+If any argument is a library, it is searched exactly once
+at the point it is encountered in the argument list.
+Only those routines defining an unresolved external
+reference are loaded.
+If a routine from a library
+references another routine in the library,
+the referenced routine must appear after the
+referencing routine in the library.
+Thus the order of programs within libraries
+may be important.
+.PP
+The symbols `\_etext', `\_edata' and `\_end'
+(`etext', `edata' and `end' in C)
+are reserved, and if referred to,
+are set to the first location above the program,
+the first location above initialized data,
+and the first location above all data respectively.
+It is erroneous to define these symbols.
+.PP
+.I Ld68
+understands several options.
+Except for
+.BR \-l ,
+they should appear before the file names.
+.TP
+.B \-D
+Take the next argument as a decimal number and pad the data segment
+with zero bytes to the indicated length.
+.TP 
+.B  \-d
+Force definition of common storage
+even if the
+.B \-r
+flag is present.
+.TP
+.B \-e
+The following argument is taken to be the
+name of the entry point of the loaded
+program; location 0x1000 is the default.
+.TP
+.B \-f
+Fold case on identifiers.
+That is, upper and lower case letters are not distinguished.
+Used to link with Pascal routines, for example.
+.TP 
+.BI \-l x
+This
+option is an abbreviation for the library name
+.RI `/usr/sun/lib/lib x .a',
+where
+.I x
+is a string.
+A library is searched when its name is encountered,
+so the placement of a
+.B  \-l
+is significant.
+.TP
+.BI  \-v x
+This denotes board version
+.I x
+which may at present only be 'm' for Motorola Design Module.  The default board
+version is the Sun1 prototype, v1.
+.TP
+.B  \-M
+Create a human-readable list of symbols in ``sym.out''.
+.TP
+.B  \-n
+Arrange (by giving the output file a 0410 "magic number") that
+when the output file is executed,
+the text portion will be read-only and shared
+among all users executing the file.
+This involves moving the data areas up to the first
+possible 64K byte boundary following the
+end of the text 
+(not really useful yet).
+.TP 
+.B  \-o
+The
+.I name
+argument after
+.B \-o
+is used as the name of the
+.I ld68
+output file, instead of
+.BR b.out .
+.TP 
+.B \-q
+Quicksort symbols in 
+.BR b.out 
+in ascending numerical order.
+.TP
+.B  \-r
+Generate relocation bits in the output file
+so that it can be the subject of another
+.I ld68
+run.
+This flag also prevents final definitions from being
+given to common symbols,
+and suppresses the `undefined symbol' diagnostics.
+.TP
+.B \-S
+`Strip' the output by removing all symbols except locals and globals.
+.TP 
+.B  \-s
+`Strip' the output, that is, remove the symbol table
+and relocation bits to save space (but impair the
+usefulness of the debuggers).
+This information can also be removed by
+.IR  strip (1).
+.TP
+.B \-T
+The next argument is a hexadecimal number which sets the text segment origin.
+The default origin is 0x1000.
+If you intend to use the output as input to another run of
+ld68, you must specify -T 0.
+.TP
+.B \-B
+The next argument is a hexadecimal number which sets the common/bss segment
+origin.  The default origin is immediately after the data segment.
+.TP 
+.B  \-u
+Take the following argument as a symbol and enter
+it as undefined in the symbol table.  This is useful
+for loading wholly from a library, since initially the symbol
+table is empty and an unresolved reference is needed
+to force the loading of the first routine.
+.TP 
+.B  \-X
+Save local symbols
+except for those whose names begin with `L'.
+This option is used by
+.IR cc (1)
+to discard internally-generated labels while
+retaining symbols local to routines.
+.TP 
+.B  \-x
+Do not preserve local
+(non-.globl) symbols in the output symbol table; only enter
+external symbols.
+This option saves some space in the output file.
+.SH FILES
+.ta \w'/usr/local/lib/lib*.a\ \ 'u
+/usr/sun/lib/lib*.a	libraries
+.br
+b.out	output file
+.SH "SEE ALSO"
+ar(1), cc68(1), a68(1)
+.SH BUGS
+The b.out format header does not contain any indication of the
+text segment origin, so if you specify something other than
+the default origin -T 1000, you will have to remember this
+value and specify it again to dl68 when you download. The
+standard Sun monitor cannot netload files with origins other
+than 1000, so you must either use dl68 or write a special
+loader for such programs.

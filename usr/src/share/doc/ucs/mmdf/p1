@@ -1,0 +1,111 @@
+.SH
+Introduction and History
+.PP
+The Multi-channel Memo Distribution Facility,
+commonly called MMDF,
+is a suite of software that has seen a great deal of work since it was
+originally released in 1980.
+The original code was designed and implemented by Dave Crocker
+working under Professor David Farber at the University
+of Delaware (UDEL).
+The MMDF system was then chosen to form the initial backbone
+software for the CSNET project and has been in use for several years
+by elements of the U.S. Army.
+The software has seen a great deal of change in the process.
+The original code is commonly referred to as MMDFI or MMDF Version 1.
+A number of minor additions and changes were made while fielding MMDFI
+as the result of collaboration between UDEL and BRL and some other
+sites.
+After the original code was fielded in CSNET, Dave Crocker began the
+development of a upgraded version of the MMDF system which was
+designed to work in the new Internet
+domain naming system
+and was to incorporate numerous design changes suggested by
+experience with MMDFI.
+Dave Crocker
+left the CSNET project before completing this work, approximately
+two weeks before the TCP/IP switchover of the ARPANET, 1 January 1983.
+At this time, BRL was a solid MMDF site.  
+We were reluctant to try to retrofit
+the existing version of MMDFI
+to handle the new mail protocols that also took effect on
+1 January, so Doug Kingston of
+BRL undertook the task of finishing the work
+needed to make MMDFII operational.
+A production version of MMDFII was installed at BRL during
+the third week of January 1983, and served
+as BRL's mail system on three hosts,
+but there was no stable version of the MMDFII code until June 1983.
+The first few months of MMDFII
+were quite rough and it needed a great deal of ``tender loving care''.
+.PP
+For reasons that will be clear in a moment, this stable version of June 1983
+is now referred to as the MMDFII-pre-England version.
+Around June, a copy of this stable version was delivered to Steve Kille
+of University College London (UCL) and to Brendan Reilly
+of UDEL, who
+had taken over Dave Crocker's work on MMDF at UDEL.
+Steve Kille made a number of major changes to the handling of domains,
+address parsing, and handling of the alias files.
+Steve also added support for NIFTP, a European file transfer protocol
+used for sending mail in a batch environment.
+At the same time that
+Steve was making his enhancements, Doug Kingston continued
+to develop BRL's copy of MMDFII to make it an even more solid
+mail system.  BRL's changes were not as major as Steve's
+but covered a great deal of code and fixed several major outstanding bugs.
+This dual development led to two variants of MMDFII that each
+needed the other's improvements.
+In late September of 1983
+Brendan Reilly and Doug Kingston spent a week in England with Steve
+to merge the variants and to discuss future changes and directions
+for MMDF.  The result of this meeting was a merged version of
+MMDFII which I will call MMDFII-post-England.
+Just prior to this trip, the CSNET Information Center (CIC)
+received a copy of the pre-England MMDF.
+Their later changes were based on this pre-England version
+which made merging of their changes into the
+post-England version somewhat difficult.
+.PP
+After the England meeting, Brendan Reilly of UDEL took the role
+of coordinator of the subsequent changes to MMDF.  Copies of the
+MMDF-post-England were made simultaneously available to BRL, UCL, and UDEL.
+Since then many minor changes have been made by all
+four sites;
+in essentially all cases these changes have been bug fixes or changes
+to make MMDF a more stable and robust system.
+.PP
+Since then, Doug Kingston at BRL has made changes
+to the local delivery mechanism, rewriting much of the original
+code, and the central delivery program has been upgraded to
+take advantage of large-address-space machines, when possible, to
+keep retry histories for messages on a host-by-host basis.
+Bernie Cosell at the CIC has undertaken to speed up MMDF
+execution by providing a facility for compiling in some of the information
+normally included in the ASCII text-based version.  Steve Kille
+an alternative to the ASCII text based version.  Steve Kille
+has continued to refine the address handling and the British
+``backwards'' domain code.
+.FN
+The British do domains backwards.  For example, if in the
+US (Internet) we write ``user@VAX1.EE.UDEL.ARPA'' known
+as ``little endian'' order, the British
+(SERC Net) 
+write ``user@ARPA.UDEL.EE.VAX1'' or ``big endian'' order.
+Put another way, ``big endians'' put the largest, most general,
+or most significant element of the domain first.  ``Little endians''
+use the other order, with the most significant part last.
+[See 
+.I
+Gulliver's Travels
+.R
+by Joanthan Swift.  The "big endian" vs. "little endian" controversy
+was a 
+.I
+causus belli
+.R
+in Lilliput.]
+.FE
+Brendan Reilly has made changes to the package to allow it to
+run on the Altos system and has fixed numerous bugs in
+the PhoneNet code.

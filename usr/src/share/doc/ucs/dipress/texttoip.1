@@ -1,0 +1,45 @@
+.TH TEXTTOIP 1 5/23/85
+.UC 4
+.\" differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\ 
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ``
+.if t \
+.	ds rq ''
+.SH NAME
+texttoip \- convert an intertext file into interpress
+.SH SYNOPSIS
+.B texttoip
+[
+.B \-o
+.I outputfile
+] [ file ... ]
+.SH DESCRIPTION
+.I Texttoip
+will convert a textual representation of an interpress file (called an
+.I intertext
+file) into an actual interpress file.  The utility
+.IR iptotext (1)
+generates output that is suitable to be used as input to this program.
+If
+.B \-o
+is specified, the interpress codes are written to the file
+.IR outputfile .
+If no output file name is given, the output is written to the file
+\*(lqintertext.ip\*(rq unless output has been redirected away from
+the terminal.  Sending interpress codes directly to a terminal is not
+considered to be a worthwhile operation.
+If more than one file is specified as input, the interpress
+header is taken from the first input file and any header specifications in
+subsequent files are ignored.
+.SH AUTHOR
+William LeFebvre
+.SH "SEE ALSO"
+iptotext(1)
+.PP
+Intertext\-a Textual Representation of Interpress, William LeFebvre
+.br
+Interpress Electronic Printing Standard, \s8XSIS\s0 048404

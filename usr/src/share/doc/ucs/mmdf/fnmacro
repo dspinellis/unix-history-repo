@@ -1,0 +1,7 @@
+.nr Fn 0 +1
+.de FN
+.ps -2
+\u\\n+(Fn\d\ 
+.ps +2
+.FS \\n(Fn
+..

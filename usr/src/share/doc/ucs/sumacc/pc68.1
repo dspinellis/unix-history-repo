@@ -1,0 +1,416 @@
+.TH PC68 1 MC68000
+.SU
+.SH NAME
+pc68 \- Pascal compiler for the MC68000
+.SH SYNOPSIS
+.B pc68
+[ option ] name ...
+.SH DESCRIPTION
+.I Pc68
+is the version of the portable Pascal* compiler that generates code for 
+the MC68000.
+.I Pc68
+is a flexible program for translating between various types of files.  The
+types catered for in order of appearance during translation are `.p' 
+(Pascal source files), `.a68' or '.s' (assembly language files), 
+`.b' (relocatable binary files),
+`b.out' (absolute binary files), `.r' (byte-reversed files, cf.
+.I rev68(1)
+).
+and `.dl' (Macsbug download format, cf.
+.I dl68(1)
+).
+.PP
+Arguments to pc68 are either flags or input files.
+The type of an input file is normally determined by its suffix.  When an
+argument to pc68 is not a flag and has none of the above suffixes, it is
+assumed to be of one of the types `.p', `.b', or `b.out', namely the latest of
+these three consistent with the type of the output (e.g. if the output type
+were `.s' or `.b' then the input would have to be `.p').
+.PP
+Translation proceeds as follows.  
+Each `.p' and `.s' program is translated to a `.b' relocatable using upas68, 
+ugen68, and as68 as necessary.  Then all .b files including those produced by
+translation are link edited into the one file, called `b.out'.  If the only
+input file was a single `.p' program then the `.b' file is deleted, otherwise
+all `.b' files are preserved.
+.PP
+The amount of processing performed by cc68 may be decreased or increased with
+some of the options.  The -S option takes translation no further than `.s'
+files, i.e. only upas68 and ugen68 are applied.  
+The -c option takes translation up to `.b' files, omitting the link-editing 
+and not deleting any `.b' files.
+The -d option goes beyond `b.out' to produce a `.dl' file (using dl68) that
+may be downloaded by the Motorola MACSBUG monitor and the Sun1 monitor.  The
+-r option similarly goes beyond `b.out' to produce a `.r' file (using rev68)
+that may be loaded directly by 68000 code based on ld68.  Both -d and -r may
+be used together.
+.PP
+The output may be named explicitly with the -o option; the output file's name
+should follow -o.  Otherwise the name is `b.out' in the normal case, or
+`filename.dl' for the -d option, or `filename.r' for the -r option, where
+`filename' is the first `.p', `.a68', `.s', or `.b' file named as an input.  
+If the input is not in any of those three categories, the names `d.out' 
+and `r.out' are used respectively for -d and -r.
+.PP
+The version of the target machine may be given as the flag
+.BI \-v n
+where 
+.I n
+is the version.
+-vm is "Version Macsbug."
+-vV means to run under the Vkernal. This is pretty much a hack:
+File I/O is not supported and you can't refer to C routines
+containing upper-case letters in their names.
+It's also rather minimally tested.
+.PP
+A complete list of options interpreted by pc68 follows:
+.TP 6
+\#flag
+Pass
+.I flag
+to the compiler. See the SOURCE FLAGS section below.
+.TP 6
+.B \-c
+Suppress loading and produce `.b' file(s) from source file(s).
+.TP 6
+.B \-g
+Have the compiler produce additional symbol table information for
+.IR pcdb68
+(not implemented).
+.TP 6
+.B \-e " entrypoint"
+Entrypoint specifies where to begin execution.
+.TP 6
+.BR \-o " output"
+Name the final output file
+.I output
+instead of
+.I b.out.
+.TP 6
+.B  \-s
+Accept standard Pascal only;
+non-standard constructs cause warning diagnostics (not implemented \- see 
+internally controlled options).
+.TP 6
+.B  \-v n
+Use the 'n' version of the runtime support.
+.TP 6
+.BR \-w
+Suppress warning messages (not implemented).
+.TP 6
+.B \-\-x
+Suppress passing the '\-x' flag to the loader, retaining local symbols.
+.TP 6
+.B \-E
+Run only the preprocessor (not implemented).
+.TP 6
+.B  \-L
+Make an assembly listing in filename.ls for each file assembled.
+.TP 6
+.SM
+.B \-O
+Invoke an
+object-code improver (not implemented).
+.TP 6
+.B  \-R
+Preserve relocation information in b.out.
+.TP 6
+.SM
+.B \-S
+Compile the named program, and leave the
+assembler-language output on the corresponding file suffixed `.s'.
+(No `.b' is created.).
+.TP 6
+.B \-T " org"
+Org specifies in hexadecimal where to begin loading the program.
+.TP 6
+.B \-V
+Show the various stages of the compilation by printing images of the processes
+forked off to perform the actual work of the compilation.
+.TP 6
+.B \-U
+Save the ucode associated with filname.p in filename.u (and filename.z,
+depending on the -W option).
+.TP 6
+.B \-W
+Invoke the global ucode-to-ucode optimizer.  If -U option active, generates
+filename.z.
+.TP 6
+.B \-P
+Save all intermediate files.  Most useful in conjuntion with \-V (so that it
+is possible to find the intermediates).
+.PP
+Other arguments
+are taken
+to be loader option arguments,
+perhaps libraries of
+.IR pc68
+compatible routines.
+.SH SEPARATE COMPILATION
+Object files 
+created by other language processors may be loaded together with
+object files created by 
+.IR pc68 .
+Calling conventions are as in C,
+with
+.B var
+parameters and arrays passed by address.
+Don't pass structures except by VAR (pointer) if you call C, since here
+pc68 and cc68 differ.
+As a convenience, string constants are followed by a zero byte, so that you
+can use them as C strings when calling C routines.
+.PP
+To refer to a subroutine defined in a separate module, it must be declared.
+This follows the same syntax as
+.B forward
+declarations, except that the keyword
+.B FORWARD
+is replaced by
+.B EXTERN .
+.PP
+A file of subroutines is similar to a program except that there
+is no main program, and the
+.B program
+statement at the beginning of the file is replaced by a
+.b module
+statement:
+.br
+   MODULE modulename;
+.br
+The 'end;' of the last function in the file is followed by a period -
+there is no main program block.
+.br
+The modulename will become significant in Pascal*.
+.pp
+Note that in identifiers (such as subprogram names) upper case is
+changed to lower case, and the linker is asked to ignore case.
+
+.SH OPENING FILES
+
+To open a file for both input and output, use the standard
+procedure REVISE, which is analogous with RESET and REWRITE.
+NOT TESTED.
+.sp
+You can read and write files on machines which run a Leaf server.
+To open  a file for reading do:
+.sp
+   reset(file,'[hostname:username:password]filename');
+.sp
+The same syntax applies to rewrite.
+You can of course also use a Pascal string variable.
+Terminating spaces in hostname, username and password are ignored.
+(This should make it easier for a program to construct the appropriate
+filename string.)
+.sp
+You can leave out fields (or the entire second parameter), and the
+program will assume you want the same as before.
+If there is no "before", it will ask you.
+.sp
+Reset, Rewrite and Revise may have an optional third parameter,
+which is a string of switches. E.g.:
+.br
+    Reset(Input,'data1.txt','Nofilter;Prompt:"Try again!"');
+.sp
+Standard switches are:
+.br
+ - Prompt:  The string  is used as  a prompt  (interactive
+systems only).   If  a file  name  is NOT  given,  this
+prompt is used to get the file name from the user.   If
+one IS given (like in the example above), the prompt is
+used to get another file name from the user if the file
+can't be opened.
+.br
+ - Default:  The string is used are used as a default file
+name, which is used if the user types a carriage return
+in response to the prompt.
+.br
+ - Standard:  If Reset, the standard input file  is  used.
+If Rewrite, the standard output is used.
+.br
+ - Nofilter:    (Reset, Revise only.) Normally a text file
+is 'filtered' by the runtimes so that  it  conforms  to
+the  standard  Pascal  definition of a text file.  Most
+notably, any end-of-line characters  are  changed  into
+one  space.    The  inclusion  of  Nofilter  causes all
+characters to be passed through exactly as they  appear
+in  the  text file.  Eoln, Eopage and Readln still work
+as for standard files.
+
+.SH EXTENSIONS TO READ AND WRITE
+
+For all field widths (if there are two field-width-type
+parameters,  the first one only), a negative value will
+mean  that  the  value  written  will  be  left-aligned
+instead  of  right-aligned.    For string variables, if
+Abs(Fieldwidth)  <  Length,  then   the   last   Length
+- Abs(Fieldwidth) characters  of  the  string  will  be 
+written.
+.sp
+Variables  of enumerated types may be read and written.
+The field width is interpreted the same as for strings.
+Enumerated constant names are uppercased when they  are
+read in.
+.sp
+Sets  of  readable and writeable types may also be read
+and written.  They  appear  exactly  as  set  constants
+appear   in  Pascal  programs.    The  field  width  is
+interpreted for each element the same as  it  would  be
+for    the   set   element   type.
+.sp
+Integers may be written in other bases beside  base  10
+by  including  an  optional field-width-type parameter,
+which may be anywhere from 1..16.  The field  width  is
+the  same  as  for  base 10.  Integers may also be read
+from a file in other  than  base  10,  by  including  a
+field-width-type  parameter  in  the  call  to  Read or
+Readln.
+.sp
+Real numbers may have a capital  "E"  as  well  as  the
+standard small "e" in the exponent part.
+
+.SH MORE ABOUT INPUT-OUTPUT
+Lazy lokahead is used for text files, so that terminal input
+works reasonably.
+.sp
+The procedure Eopage is true iff a page marker has just been read, and
+the corresponding space in now in the file buffer.
+.sp
+Random-access in files is done with the standard procedure
+.br
+    seek (File, N);
+.br
+This positions the file so that the next read/write will apply
+to component no. N of the file.
+.sp
+To close a file immediately do: close(file);
+.sp
+Function Filesize (var Filevar: Anyfile): 0..Maxint  
+returns the current number of components in a file.
+.sp
+Function Curpos (var Filevar: Anyfile): 0..Maxint:  Returns the
+current file position.
+.sp
+Procedure Filepos (var Filevar:  Text; var Pagenum, Linenum, Charnum: 0..Maxint):
+Returns page, line number, and column number of the next
+character that will be read from the file (must be open for input).
+Does not work for random access.
+
+.SH TIME AND DATE ROUTINES
+.nf
+    Clock -returns milli-seconds since the monitor was booted.
+.fi
+.sp
+The following routines routines don't work if you want to run stand-alone,
+but need an operating system (V or Unix).
+.nf
+
+    Ptime -returns (in theory) milli-seconds since midnight.
+    (under V, actually returns seconds*1000)
+
+    Pdate(day, month, year) -set day, month & year (say 1982).
+
+    Time(string) -sets string to 'HH:MM:SS'
+
+    Date(string) -sets string to 'MM/DD/YY'.
+.fi
+For both time and date, the string is a packed array [1..n] of char,
+where n>=8. (Any overflow is set to spaces.)
+
+.SH OTHER EXTENSIONS AND FEATURES
+An "others" label in as CASE statement, indicates a default case.
+.sp
+To include a file as part of the program source do:
+.br
+    INCLUDE 'filename';
+.br
+This is especially useful for declarations for
+seperately compiled modules.
+.sp
+Records declared as "packed" will be packed down to individual bits;
+however elements of packed arrays are at least a byte.
+.sp
+Function Min (X,Y:  T):  T -- returns the minimum of two arguments,
+which may be of any ordinal or real type.
+.sp
+Function Max (X,Y:  T):  T -- returns the maximum of two arguments.
+.sp
+Procedure Halt (Exitcode:  Integer):  Causes abnormal termaination of
+a program.  Passes a system-dependent exit code to the operating system.
+.sp
+The comment pairs '{ }' and '(* *) match independently, allowing
+limited nesting of comments.
+
+.SH "SOURCE FLAGS"
+.PP
+These flags can be passed to the compiler either at the command
+level when invoking pc68, or as comments within the program.
+A sample option line is a comment with # as its first character:
+.ta 1.5i 3.0i
+.nf
+.na
+Sample option line: (*#g+,tdpy 1,tchk 1,U-8 *)
+WARNING: Only (* *)-style comments will work; {#...} is ignored!
+Sample command line: pc68 file.p #g:+ #tdpy:1 #tchk:1 #U:-8
+.sp
+.b
+Switch	Meaning (Note that the default value is shown)
+
+B+	Bounds and nil pointer checking
+C+	Print ucode
+D-	Load with debugger
+E+	Emit source code (for system debugging)
+G-	Write error messages only to listing file
+L-	Write full listing
+I16	Number of characters of identifiers that
+	  are considered significant
+O-	Emit optimizer-compatible code
+P-	Keep execution profile
+R0	Put up to N local variables in (data) registers
+	(Register allocation should be done by the optimizer.)
+S-	Accept standard Pascal only
+T---	Code generator options 
+U+	Leave procedure names exactly as is
+V32	Number of bits (16 or 32) to allocate for 'Integer'.
+Wn	PRINT WARNINGS FOR:
+W1	  unused variables, types, procs, etc.
+W10	  nested comments
+Z---	Optimizer switches
+.fi
+.ad
+.SH FILES
+file.p	pascal source files
+.br
+file.b	binary files
+.br
+file.a68	assembler files
+.br
+file.s	assembler files  
+.br
+file.ls	assembler listing
+.br
+file.err	pascal listing
+.SH BUGS
+Displacements off a frame pointer is limited to 16 bits signed,
+so very large locally-defined arrays will crash.
+.sp 2
+Some attempted bogus conversions (e.g. structure to real) aren't detected
+by the front end, and result in messages about 'Illegal CVT datatypes'
+from the code generator.
+.sp 2
+Sometimes formfeeds in the source get passed to the assembler, causing it to crash.
+.sp 2
+There is no macro processor.
+.SH GRIPES
+Complaints should be sent to:
+.br
+    Per Bothner (mail to bothner@score)
+.sp
+There is also a pc68 mailing list. To add yourself to it, send a
+message to mailer@su-whitney. The first line of the message body
+should say:
+.br
+   add me to pc68
+.sp
+To say messages to to list, mail to pc68 at shasta, diablo,
+navajo or whitney.

@@ -1,0 +1,82 @@
+.SH
+The List Channel
+.PP
+The list channel was developed as the result of BRL's experience
+in managing \fBlarge\fR Internet mailing lists.
+Two major problems were discovered with dealing with mailing lists
+in MMDFI.  First, since \fBsubmit\fR always verifies all known addresses
+for a message at submission time, if you were on the machine with
+a large list and submitted mail to the list you would have to wait
+for every address on that list to be verified.
+On a busy machine
+with a list of hundreds of addresses, this could take
+five or ten minutes.
+Annoying as this may be for people,
+the situation was worse for mail submitted over communications
+channels like TCP/IP.  The remote end would continually time out
+before the message had been completely verified so the message
+could never be sent.
+.PP
+The second problem with large lists was that there were always
+rejected mail notices going back to those
+least able to do anything about the mail problem, the original
+sender of the message.  What was really desired was a method to
+try to have returned mail go to the list maintainer instead
+of the message's original sender.
+.PP
+The solution to both of the problems is embodied in the list channel.
+This is a channel with an incestuous relationship
+to \fBsubmit\fR, \fBdeliver\fR,
+and the alias file.
+Use of the list channel is best described in parallel with the
+special entries for the list channel in the alias file.
+If we were maintaining a large list called ``biglist'', the following
+entries would be in the alias file:
+.nf
+.ta 2.6i
+.sp .5
+.in +.6i
+biglist:	biglist-outbound@list-processor
+.br
+biglist-outbound:	</usr/mmdf/lists/biglist-file
+.br
+biglist-request:	maintainer
+.in -.6i
+.fi
+.sp .5
+The pseudo-host ``list-processor'' has its own domain table and its
+own host table but represents no actual host.  If someone submits
+mail to biglist, \fBsubmit\fR will find the alias entry and
+upon finding that it's
+not a local address, will queue it to the host ``list-processor'',
+so verification is complete after only one lookup.
+Unknown to
+\fBdeliver\fR, the list channel simply calls \fBsubmit\fR and feeds it the
+aliased addresses, ``biglist-outbound''.
+This time the actual verification is done on the contents of
+the address list ``biglist-file''.  Since the list channel is processed
+by a background daemon, no one is forced to wait through the
+verification process except the background daemon itself, which doesn't care
+how long it takes so long as it completes.
+.PP
+The list channel also performs another function to try to
+eliminate the problem of failed mail messages.
+For each address given to it, (normally just one), the list channel
+sees if there is a matching ``\fIlistname\fR-request'' entry in the alias
+table.  It knows enough to try stripping any ``\-outbound''s from
+the name first though.  If a ``\-request'' entry is found, then
+that address is substituted instead of the original return
+address.  The message text is \fInot\fR altered, but the new return address
+is recorded for use when resending the message.
+The new return address
+is supplied in SMTP ``MAIL FROM:<\fIaddress\fR>'' commands and any other
+situations where the return address is directly specifiable.
+.PP
+The changing of the return address is useful only if mail is rejected
+when submitted to the foreign host or if that host is smart enough to keep
+the return address information around.  Many hosts do not maintain this
+information,
+and many of the same hosts are also problematic in that they
+will completely accept a message containing total garbage and
+decide to tell you about it later.  This is precisely what MMDF tries
+to avoid by submission-time verification.

@@ -1,0 +1,71 @@
+.TH DIPRESS 1 5/23/85
+.UC 4
+.tr -\-
+.\" differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\ 
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ``
+.if t \
+.	ds rq ''
+.SH NAME
+dipress - convert device independent troff output to interpress
+.SH SYNOPSIS
+.B dipress
+[
+.BI -f directory
+] [
+.BI -o list
+] [
+.B -t
+] [ file ] ...
+.SH DESCRIPTION
+.I Dipress
+take the output of device independent
+.IR troff (1)
+found in the files specified,
+produce an interpress file, and queue that file for printing on the
+interpress printer.  If no files are specified, then standard input
+is used.  The following options are understood:
+.TP
+.BI -f directory
+Take font information from
+.I directory
+instead of the default.
+.TP
+.BI -o list
+Print pages whose numbers are given in the comma\(hyseparated
+.IR list .
+The list contains single numbers
+.I N
+and ranges
+.IB N1 \- N2.
+A missing 
+.I N1
+means the lowest numbered page, a missing
+.I N2
+means the highest.
+.TP
+.B -t
+Direct output to standard output rather than the printer.  No queueing
+is performed if this option is specified.  Redirecting standard output
+is highly recommended when this option is used.
+.SH FILES
+.DT
+/usr/local/lib/font/devipress	device and font information
+.SH "SEE ALSO"
+troff(1)
+.SH AUTHOR
+William LeFebvre, Webster Research Center, Xerox Corporation
+.SH BUGS
+If you have Services 11 or earlier on your printer, long boxes will
+experience a small overshoot at the right end.
+.PP
+For a similar reason, it is recommended that the -\fBD\fR option be used
+with
+.IR pic(1).
+Any pictures built with the drawing commands will not show up on the
+Xerox 8700/9700.  That printer uses a different representation for bitmaps
+than the 8044.

@@ -1,0 +1,67 @@
+.TH PCP 1P "22 June 1983"
+.UC 4
+.SH NAME
+pcp \- copy files
+.SH SYNOPSIS
+.B pcp
+[\fB\-i\fR] file1 file2
+.PP
+.B pcp
+[\fB\-i\fR] file ... dirname
+.SH DESCRIPTION
+.I Pcp
+copies
+.I file1
+onto
+.I file2.
+The mode and owner of
+.I file2
+are preserved if it already exists, otherwise the mode of the source file
+is used.
+.PP
+In the second form, one or more
+.I files
+are copied into
+.I dirname
+with their original file names.
+.PP
+.I File
+and
+.I dirname
+may be either regular or project pathnames. However, because
+.I pcp
+interprets both
+.I file
+and
+.I dirname
+arguments as project pathnames, if
+.I file
+matchs the name of a project directory within the same project, then
+.I pcp
+will print the error message `pcp: can't copy project directory
+.I file',
+unless
+.I file
+is disguised as ./\fIfile\fR.
+.PP
+.I Pcp
+blindly overwrites existing files unless the
+.B \-i
+option is specified.
+.PP
+.I Pcp
+refuses to copy a file onto itself.
+.SH OPTIONS
+.IP \fB\-i\fR
+Interactive mode.
+.I Pcp
+will prompt the user with the name of the file whenever the copy will cause
+an old file to be overwritten. An answer of `y' will cause
+.I pcp
+to continue. Any other answer will prevent it from overwriting the file
+.SH "SEE ALSO"
+cp(1)
+.SH DIAGNOSTICS
+Exit status 0 is normal. Exit status 1 indicates an error.
+.SH AUTHOR
+Peter J. Nicklin

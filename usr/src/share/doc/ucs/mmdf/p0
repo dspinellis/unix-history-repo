@@ -1,0 +1,53 @@
+.TL
+MMDFII:
+A Technical Review
+.AU
+Douglas P. Kingston III
+.AI
+Ballistic Research Laboratory
+Aberdeen Proving Grounds, Maryland  21005
+<dpk@brl>
+.AB
+.PP
+The Multi-channel Memo Distribution Facility (MMDF) is one of
+the most sophisticated mail systems available for the UNIX\(dg
+.FS \(dg
+Unix is a trademark of Bell Laboratories.
+.FE
+operating
+system.
+MMDF is a mail transport system that supports a variety of
+user interfaces and delivery mechanisms. The design was not encumbered
+with the need to be compatible with existing mail systems, and as a
+result MMDF has a unified family of mail handling programs.  This review
+will discuss MMDF's design and operation, concentrating on those features
+that are unique to MMDFII, the latest release of MMDF.
+.PP
+MMDF's design allows it to grow from a
+single-host system to a large mail relay without degradation of mail
+system performance, and to degrade gracefully as the load becomes huge.
+The demands of a high volume mail relay have led to many of MMDF's
+innovative design choices.
+.PP
+Unlike some other systems, MMDF has separate processes for
+mail submission and delivery.
+Recent changes to the delivery software to permit intelligent
+retry strategies based on the retry history for each dead host will
+be explained.
+The effect of the new domain server
+mechanism on address validation will be discussed.
+.PP
+The separation of mail into channels is key to MMDF's ability to
+handle large amounts of mail. Each channel represents a different class
+of delivery and each channel has its own queue.  This isolates
+problems and allows one to
+provide different ``levels of service'' to different channels.
+.PP
+Other topics to be discussed will include available user
+interfaces, the mailing list processor, aliasing, runtime
+configuration, and domain based naming.
+.PP
+The MMDF system was originally developed at the University of Delaware
+and has since seen significant development work at the Ballistic
+Research Laboratory and University College London.
+.AE
