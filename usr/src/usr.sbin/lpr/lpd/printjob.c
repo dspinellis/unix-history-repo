@@ -1,4 +1,4 @@
-/*	printjob.c	4.8	83/06/17	*/
+/*	printjob.c	4.9	83/06/22	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -222,6 +222,7 @@ printit(file)
 	 *		l -- "file name" text file with control chars
 	 *		p -- "file name" text file to print with pr(1)
 	 *		t -- "file name" troff(1) file to print
+	 *		n -- "file name" ditroff(1) file to print
 	 *		d -- "file name" dvi file to print
 	 *		g -- "file name" plot(1G) file to print
 	 *		v -- "file name" plain raster file to print
@@ -337,7 +338,7 @@ pass2:
 
 /*
  * Print a file.
- * Set up the chain [ PR [ | {IF, OF} ] ] or {IF, TF, CF, VF}.
+ * Set up the chain [ PR [ | {IF, OF} ] ] or {IF, RF, TF, NF, DF, CF, VF}.
  * Return -1 if a non-recoverable error occured, 1 if a recoverable error and
  * 0 if all is well.
  * Note: all filters take stdin as the file, stdout as the printer,
@@ -425,6 +426,7 @@ print(format, file)
 		n = 3;
 		break;
 	case 't':	/* print troff output */
+	case 'n':	/* print ditroff output */
 	case 'd':	/* print tex output */
 		(void) unlink(".railmag");
 		if ((fo = creat(".railmag", FILMOD)) < 0) {
@@ -439,7 +441,7 @@ print(format, file)
 			}
 			(void) close(fo);
 		}
-		prog = (format == 't') ? TF : DF;
+		prog = (format == 't') ? TF : (format == 'n') ? NF : DF;
 		av[1] = pxwidth;
 		av[2] = pxlength;
 		n = 3;
@@ -922,6 +924,7 @@ init()
 	IF = pgetstr("if", &bp);
 	RF = pgetstr("rf", &bp);
 	TF = pgetstr("tf", &bp);
+	NF = pgetstr("nf", &bp);
 	DF = pgetstr("df", &bp);
 	GF = pgetstr("gf", &bp);
 	VF = pgetstr("vf", &bp);
