@@ -1,49 +1,52 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980, 1988 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)su.1	6.3 (Berkeley) %G%
+.\"	@(#)su.1	6.4 (Berkeley) %G%
 .\"
 .TH SU 1 ""
 .UC
 .SH NAME
-su \- substitute user id temporarily
+su \- substitute user id
 .SH SYNOPSIS
 .B su
-[ \-fl] [ login ]
+[-fl] [login]
 .SH DESCRIPTION
 .I Su
-requests the password for the specified
-.I login,
-changes to that
-.I userid
-and invokes the login's shell without changing the current directory.
-The user environment is unchanged except for HOME and SHELL, which are
-taken from the password file for the user being substituted (see
-.IR environ (7)).
+requests the password for
+.I login
+(or for ``root'', if no login is provided), changes to that user and
+group ID and invokes another instance of your login shell.
+The environment is unmodified.
+.PP
+If the invoked shell is
+.IR csh ,
+the
+.I -f
+option prevents it from reading your
+.I .cshrc
+file.  Otherwise, the
+.I -f
+option is ignored.
+.PP
+The
+.I -l
+option simulates a full login; the environment is discarded except for
+HOME, SHELL, TERM, and USER.  HOME, SHELL, and USER are taken from the
+password file for the user being substituted.  TERM is copied from
+your environment.  The invoked shell is the substituted user's, not
+yours.
+.PP
 The new user ID stays in force until the shell exits.
 .PP
-If
-.I login
-is unspecified, the super-user, ``root'' is assumed.
-Only users in the ``wheel'' group (group 0) can
+If the substituted user has no password, their login shell is invoked
+rather than yours.
+.PP
+Only users in group 0 (normally ``wheel'') can
 .I su
 to ``root'', even with the root password.
+.PP
 To remind the super-user of his responsibilities, by default,
 the shell substitutes ``#'' for its usual prompt.
-.PP
-The
-.B \-f
-option prevents
-.IR csh (1)
-from executing the
-.I .cshrc
-file; thus making
-.I su
-start up faster.
-.PP
-The
-.B \-l
-option simulates a full login.
 .SH "SEE ALSO"
-sh(1), csh(1), environ(7)
+csh(1), login(1), sh(1), environ(7)
