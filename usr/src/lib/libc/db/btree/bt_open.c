@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -357,7 +357,7 @@ bt_get(tree, key, data, flag)
 
 	h = (BTHEADER *) t->bt_curpage;
 	data->size = 0;
-	data->data = (char *) NULL;
+	data->data = (u_char *) NULL;
 
 	/* match? */
 	if (VALIDITEM(t, item)
@@ -616,7 +616,7 @@ bt_seq(tree, key, data, flags)
 	}
 
 	key->size = data->size = 0;
-	key->data = data->data = (char *) NULL;
+	key->data = data->data = (u_char *) NULL;
 
 	h = t->bt_curpage;
 

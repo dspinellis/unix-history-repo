@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_seq.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_seq.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -60,7 +60,7 @@ _bt_seqinit(t, key, flags)
 	c = &(t->bt_cursor);
 
 	if (flags == R_CURSOR) {
-		if (key->data != (char *) NULL) {
+		if (key->data != (u_char *) NULL) {
 
 			/* key supplied, find first instance of it */
 			item = _bt_first(t, key);
