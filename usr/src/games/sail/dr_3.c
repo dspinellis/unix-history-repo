@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	1.5 83/10/10";
+static	char *sccsid = "@(#)dr_3.c	1.6 83/10/14";
 #endif
 
 #include "driver.h"
@@ -33,6 +33,9 @@ moveall()		/* move all comp ships */
 					ta, ma, af);
 		} else
 			*sp->file->last = '\0';
+		/*
+		makesignal(sp, "move (%d): %s", 0, turn, sp->file->last);
+		*/
 	}
 	/*
 	 * Then execute the moves for ALL ships (dead ones too),
@@ -75,7 +78,7 @@ moveall()		/* move all comp ships */
 		n = 0;
 		foreachship(sp) {
 			if ((d1 = sp->file->dir) == 0 || isolated(sp))
-				continue;
+				goto cont1;
 			r1 = sp->file->row;
 			c1 = sp->file->col;
 			sp->file->dir = dir[n];
@@ -83,14 +86,16 @@ moveall()		/* move all comp ships */
 			sp->file->col = col[n];
 			l = 0;
 			foreachship(sq) {
-				if ((d2 = sq->file->dir) == 0 || sp == sq)
-					continue;
+				if (sp == sq)
+					goto cont2;
+				if ((d2 = sq->file->dir) == 0)
+					goto cont2;
 				r2 = sq->file->row;
 				c2 = sq->file->col;
 				sq->file->dir = dir[l];
 				sq->file->row = row[l];
 				sq->file->col = col[l];
-				if (grappled2(sp, sq)
+				if (snagged2(sp, sq)
 				    && push(sp, sq) && range(sp, sq) > 1) {
 					Write(W_SHIPROW, sq, 0,
 						sp->file->row - 1, 0, 0, 0);
@@ -142,16 +147,18 @@ moveall()		/* move all comp ships */
 						sp->file->dir, 0, 0, 0);
 					Write(W_DRIFT, sq, 0, 0, 0, 0, 0);
 					Write(W_DRIFT, sp, 0, 0, 0, 0, 0);
-				} else {
-					sq->file->row = r2;
-					sq->file->col = c2;
-					sq->file->dir = d2;
+					goto cont2;
 				}
+				sq->file->row = r2;
+				sq->file->col = c2;
+				sq->file->dir = d2;
+			cont2:
 				l++;
 			}
 			sp->file->row = r1;
 			sp->file->col = c1;
 			sp->file->dir = d1;
+		cont1:
 			n++;
 		}
 	}
