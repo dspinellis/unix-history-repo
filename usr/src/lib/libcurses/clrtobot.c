@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clrtobot.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)clrtobot.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -39,5 +39,5 @@ wclrtobot(win)
 		            0);
 		startx = 0;
 	}
-	return (OK);
+	return (CURSES_OK);
 }

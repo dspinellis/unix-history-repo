@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)toucholap.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)toucholap.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -39,13 +39,13 @@ touchoverlap(win1, win2)
 	    win2->begx + win2->maxx);
 #endif
 	if (starty >= endy || startx >= endx)
-		return (OK);
+		return (CURSES_OK);
 	starty -= win2->begy;
 	startx -= win2->begx;
 	endy -= win2->begy;
 	endx -= win2->begx;
 	for (--endx, y = starty; y < endy; y++)
 		__touchline(win2, y, startx, endx, 0);
-	return (OK);
+	return (CURSES_OK);
 }
 
