@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.4 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.5 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -169,7 +169,7 @@ pccaseop( tcase )
 	putcnt();
 	level++;
 	statement( cstatp[3] );
-	nr &= noreach;
+	nr = (nr && noreach);
 	noreach = 0;
 	level--;
 	if (gotos[cbn]) {
