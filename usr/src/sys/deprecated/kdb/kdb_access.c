@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_access.c	7.3 (Berkeley) %G%
+ *	@(#)kdb_access.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -17,18 +17,18 @@
  * and get a word or byte not returning if an error occurred.
  */
 /*ARGSUSED*/
-put(addr, space, value) 
+kdbput(addr, space, value) 
     off_t addr; long value; { (void) kdbpoke((caddr_t)addr, value); }
 
 /*ARGSUSED*/
 u_int
-get(addr, space)
+kdbget(addr, space)
     off_t addr; { return (kdbpeek((caddr_t)addr)); };
 
 u_int
-chkget(addr, space)
-    off_t addr; { u_int w = get(addr, space); chkerr(); return (w); }
+kdbchkget(addr, space)
+    off_t addr; { u_int w = kdbget(addr, space); kdbchkerr(); return (w); }
 
 u_int
-bchkget(addr, space) 
-    off_t addr; { return (byte(chkget(addr, space))); }
+kdbbchkget(addr, space) 
+    off_t addr; { return (byte(kdbchkget(addr, space))); }
