@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	2.1 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	2.2 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -12,17 +12,17 @@ BINDIR=	../pxp
 #
 LOCOBJ=	Version.o call.o case.o const.o cset.o error.o fdec.o func.o \
 	lab.o lval.o main.o pmon.o pp.o proc.o rec.o rval.o stat.o \
-	string.o subr.o type.o var.o y.tab.o yycomm.o yyerror.o \
+	type.o var.o y.tab.o yycomm.o yyerror.o \
 	yymain.o yyput.o rmothers.o
 #
 # Files which are shared with pi and pc0
 #
-SRCOBJ=	TRdata.o hash.o nl.o tree.o treen.o yycopy.o yycosts.o yyget.o \
-	yyid.o yylex.o yypanic.o yyparse.o yyprint.o yyrecover.o \
-	yyseman.o yytree.o
-SRCSRC=	TRdata.c hash.c nl.c tree.c treen.c yycopy.c yycosts.c yyget.c \
-	yyid.c yylex.c yypanic.c yyparse.c yyprint.c yyrecover.c \
-	yyseman.c yytree.c
+SRCOBJ=	TRdata.o hash.o nl.o string.o subr.o tree.o treen.o yycopy.o \
+	yycosts.o yyget.o yyid.o yylex.o yypanic.o yyparse.o yyprint.o \
+	yyrecover.o yyseman.o yytree.o
+SRCSRC=	TRdata.c hash.c nl.c string.c subr.c tree.c treen.c yycopy.c \
+	yycosts.c yyget.c yyid.c yylex.c yypanic.c yyparse.c yyprint.c \
+	yyrecover.c yyseman.c yytree.c
 
 all: a.out
 
@@ -121,7 +121,6 @@ rmothers.o: rmothers.c
 rval.o: rval.c
 stat.o: stat.c
 string.o: string.c
-subr.o: subr.c
 type.o: type.c
 var.o: var.c
 version.o: version.c
@@ -133,6 +132,8 @@ yyput.o: yyput.c
 TRdata.o: ../src/TRdata.c
 hash.o: ../src/hash.c
 nl.o: ../src/nl.c
+string.o: ../src/string.c
+subr.o: ../src/subr.c
 tree.o: ../src/tree.c
 treen.o: ../src/treen.c
 yycopy.o: ../src/yycopy.c
@@ -151,46 +152,65 @@ TRdata.o: whoami.h
 TRdata.o: 0.h
 hash.o: whoami.h
 hash.o: 0.h
+hash.o: ../src/tree_ty.h
 hash.o: ../src/yy.h
 nl.o: whoami.h
 nl.o: 0.h
 nl.o: opcode.h
 nl.o: ../src/objfmt.h
+string.o: whoami.h
+string.o: 0.h
+string.o: ../src/send.h
+subr.o: whoami.h
+subr.o: 0.h
 tree.o: whoami.h
 tree.o: 0.h
+treen.o: 0.h
+treen.o: ../src/tree_ty.h
 yycopy.o: whoami.h
 yycopy.o: 0.h
+yycopy.o: ../src/tree_ty.h
 yycopy.o: ../src/yy.h
 yycosts.o: whoami.h
 yycosts.o: 0.h
+yycosts.o: ../src/tree_ty.h
 yycosts.o: ../src/yy.h
 yyget.o: whoami.h
 yyget.o: 0.h
+yyget.o: ../src/tree_ty.h
 yyget.o: ../src/yy.h
 yyid.o: whoami.h
 yyid.o: 0.h
+yyid.o: ../src/tree_ty.h
 yyid.o: ../src/yy.h
 yylex.o: whoami.h
 yylex.o: 0.h
+yylex.o: ../src/tree_ty.h
 yylex.o: ../src/yy.h
 yypanic.o: whoami.h
 yypanic.o: 0.h
+yypanic.o: ../src/tree_ty.h
 yypanic.o: ../src/yy.h
 yyparse.o: whoami.h
 yyparse.o: 0.h
+yyparse.o: ../src/tree_ty.h
 yyparse.o: ../src/yy.h
 yyprint.o: whoami.h
 yyprint.o: 0.h
+yyprint.o: ../src/tree_ty.h
 yyprint.o: ../src/yy.h
 yyrecover.o: whoami.h
 yyrecover.o: 0.h
+yyrecover.o: ../src/tree_ty.h
 yyrecover.o: ../src/yy.h
 yyseman.o: whoami.h
 yyseman.o: 0.h
+yyseman.o: ../src/tree_ty.h
 yyseman.o: ../src/yy.h
 yytree.o: whoami.h
 yytree.o: 0.h
 yytree.o: ../src/tree.h
+yytree.o: ../src/tree_ty.h
 call.o: 0.h
 call.o: ../src/tree.h
 case.o: 0.h
@@ -221,14 +241,16 @@ rval.o: 0.h
 rval.o: ../src/tree.h
 stat.o: 0.h
 stat.o: ../src/tree.h
+string.o: whoami.h
 string.o: 0.h
-subr.o: 0.h
+string.o: ../src/send.h
 type.o: 0.h
 type.o: ../src/tree.h
 var.o: 0.h
 var.o: ../src/tree.h
 y.tab.o: whoami.h
 y.tab.o: 0.h
+y.tab.o: ../src/tree_ty.h
 y.tab.o: ../src/yy.h
 y.tab.o: ../src/tree.h
 yycomm.o: whoami.h
