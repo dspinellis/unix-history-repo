@@ -1,4 +1,4 @@
-/*	if_de.c	6.2	84/02/02	*/
+/*	if_de.c	6.3	84/03/20	*/
 #include "de.h"
 #if NDE > 0
 
@@ -57,17 +57,22 @@ struct	mbuf *deget();
 
 
 /*
- * The following generalizes the ifuba structure
- * to an arbitrary number of receive and transmit
- * buffers.
+ * The deuba structures generalizes the ifuba structure
+ * to an arbitrary number of receive and transmit buffers.
  */
+struct	ifxmt {
+	struct	ifrw x_ifrw;			/* mapping information */
+	struct	pte x_map[IF_MAXNUBAMR];	/* output base pages */
+	short	x_xswapd;			/* mask of clusters swapped */
+	struct	mbuf *x_xtofree;		/* pages being dma'ed out */
+};
+
 struct	deuba {
 	short	ifu_uban;		/* uba number */
 	short	ifu_hlen;		/* local net header length */
 	struct	uba_regs *ifu_uba;	/* uba regs, in vm */
 	struct	ifrw ifu_r[NRCV];	/* receive information */
-	struct	ifrw ifu_w[NXMT];	/* transmit information */
-				/* these should only be pointers */
+	struct	ifxmt ifu_w[NXMT];	/* transmit information */
 	short	ifu_flags;		/* used during uballoc's */
 };
 
@@ -223,7 +228,6 @@ dereset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" de%d", unit);
-	/* NEED TO RESET IFF_RUNNING AND DSF_RUNNING? */
 	deinit(unit);
 }
 
@@ -238,9 +242,10 @@ deinit(unit)
 	register struct uba_device *ui = deinfo[unit];
 	register struct dedevice *addr;
 	register struct ifrw *ifrw;
+	register struct ifxmt *ifxp;
+	struct ifnet *ifp = &ds->ds_if;
+	struct sockaddr_in *sin;
 	int s;
-	register struct ifnet *ifp = &ds->ds_if;
-	register struct sockaddr_in *sin;
 	struct de_ring *rp;
 	int incaddr;
 	int csr0;
@@ -313,12 +318,12 @@ deinit(unit)
 		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
 
 	/* set up the receive and transmit ring entries */
-	ifrw = &ds->ds_deuba.ifu_w[0];
+	ifxp = &ds->ds_deuba.ifu_w[0];
 	for (rp = &ds->ds_xrent[0]; rp < &ds->ds_xrent[NXMT]; rp++) {
-		rp->r_segbl = ifrw->ifrw_info & 0xffff;
-		rp->r_segbh = (ifrw->ifrw_info >> 16) & 0x3;
+		rp->r_segbl = ifxp->x_ifrw.ifrw_info & 0xffff;
+		rp->r_segbh = (ifxp->x_ifrw.ifrw_info >> 16) & 0x3;
 		rp->r_flags = 0;
-		ifrw++;
+		ifxp++;
 	}
 	ifrw = &ds->ds_deuba.ifu_r[0];
 	for (rp = &ds->ds_rrent[0]; rp < &ds->ds_rrent[NRCV]; rp++) {
@@ -374,10 +379,10 @@ destart(unit)
 		rp = &ds->ds_xrent[ds->ds_xfree];
 		if (rp->r_flags & XFLG_OWN)
 			panic("deuna xmit in progress");
-		len = deput(&ds->ds_deuba.ifu_w[ds->ds_xfree], m);
+		len = deput(&ds->ds_deuba, ds->ds_xfree, m);
 		if (ds->ds_deuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(ds->ds_deuba.ifu_uba,
-			ds->ds_deuba.ifu_w[ds->ds_xfree].ifrw_bdp);
+			ds->ds_deuba.ifu_w[ds->ds_xfree].x_ifrw.ifrw_bdp);
 		rp->r_slen = len;
 		rp->r_tdrerr = 0;
 		rp->r_flags = XFLG_STP|XFLG_ENP|XFLG_OWN;
@@ -403,6 +408,7 @@ deintr(unit)
 	register struct dedevice *addr = (struct dedevice *)ui->ui_addr;
 	register struct de_softc *ds = &de_softc[unit];
 	register struct de_ring *rp;
+	register struct ifxmt *ifxp;
 	short csr0;
 
 	/* save flags right away - clear out interrupt bits */
@@ -428,6 +434,7 @@ deintr(unit)
 		if (rp->r_flags & XFLG_OWN)
 			break;
 		ds->ds_if.if_opackets++;
+		ifxp = &ds->ds_deuba.ifu_w[ds->ds_xindex];
 		/* check for unusual conditions */
 		if (rp->r_flags & (XFLG_ERRS|XFLG_MTCH|XFLG_ONE|XFLG_MORE)) {
 			if (rp->r_flags & XFLG_ERRS) {
@@ -446,9 +453,13 @@ deintr(unit)
 			} else if (rp->r_flags & XFLG_MTCH) {
 				/* received our own packet */
 				ds->ds_if.if_ipackets++;
-				deread(ds, &ds->ds_deuba.ifu_w[ds->ds_xindex],
+				deread(ds, &ifxp->x_ifrw,
 				    rp->r_slen - sizeof (struct ether_header));
 			}
+		}
+		if (ifxp->x_xtofree) {
+			m_freem(ifxp->x_xtofree);
+			ifxp->x_xtofree = 0;
 		}
 		/* check if next transmit buffer also finished */
 		ds->ds_xindex++;
@@ -718,7 +729,8 @@ de_ubainit(ifu, uban, hlen, nmr)
 {
 	register caddr_t cp, dp;
 	register struct ifrw *ifrw;
-	int ncl;
+	register struct ifxmt *ifxp;
+	int i, ncl;
 
 	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
 	if (ifu->ifu_r[0].ifrw_addr)
@@ -739,32 +751,36 @@ de_ubainit(ifu, uban, hlen, nmr)
 			ifrw->ifrw_addr = dp;
 			dp += ncl * CLBYTES;
 		}
-		for (ifrw = ifu->ifu_w; ifrw < &ifu->ifu_w[NXMT]; ifrw++) {
-			ifrw->ifrw_addr = dp;
+		for (ifxp = ifu->ifu_w; ifxp < &ifu->ifu_w[NXMT]; ifxp++) {
+			ifxp->x_ifrw.ifrw_addr = dp;
 			dp += ncl * CLBYTES;
 		}
 	}
 	/* allocate for receive ring */
 	for (ifrw = ifu->ifu_r; ifrw < &ifu->ifu_r[NRCV]; ifrw++) {
 		if (de_ubaalloc(ifu, ifrw, nmr) == 0) {
-			struct ifrw *if2;
+			struct ifrw *rw;
 
-			for (if2 = ifu->ifu_r; if2 < ifrw; if2++)
-				ubarelse(ifu->ifu_uban, &if2->ifrw_info);
+			for (rw = ifu->ifu_r; rw < ifrw; rw++)
+				ubarelse(ifu->ifu_uban, &rw->ifrw_info);
 			goto bad;
 		}
 	}
 	/* and now transmit ring */
-	for (ifrw = ifu->ifu_w; ifrw < &ifu->ifu_w[NXMT]; ifrw++) {
+	for (ifxp = ifu->ifu_w; ifxp < &ifu->ifu_w[NXMT]; ifxp++) {
+		ifrw = &ifxp->x_ifrw;
 		if (de_ubaalloc(ifu, ifrw, nmr) == 0) {
-			struct ifrw *if2;
+			struct ifxmt *xp;
 
-			for (if2 = ifu->ifu_w; if2 < ifrw; if2++)
-				ubarelse(ifu->ifu_uban, &if2->ifrw_info);
-			for (if2 = ifu->ifu_r; if2 < &ifu->ifu_r[NRCV]; if2++)
-				ubarelse(ifu->ifu_uban, &if2->ifrw_info);
+			for (xp = ifu->ifu_w; xp < ifxp; xp++)
+				ubarelse(ifu->ifu_uban, &xp->x_ifrw.ifrw_info);
+			for (ifrw = ifu->ifu_r; ifrw < &ifu->ifu_r[NRCV]; ifrw++)
+				ubarelse(ifu->ifu_uban, &ifrw->ifrw_info);
 			goto bad;
 		}
+		for (i = 0; i < nmr; i++)
+			ifxp->x_map[i] = ifrw->ifrw_mr[i];
+		ifxp->x_xswapd = 0;
 	}
 	return (1);
 bad:
@@ -894,55 +910,71 @@ bad:
  * The argument chain of mbufs includes the local network
  * header which is copied to be in the mapped, aligned
  * i/o space.
- *
- * This routine is unlike if_wubaput in that pages are
- * actually switched, rather than the UNIBUS maps temporarily
- * remapped.
  */
-deput(ifrw, m)
-	register struct ifrw *ifrw;
+deput(ifu, n, m)
+	struct deuba *ifu;
+	int n;
 	register struct mbuf *m;
 {
 	register struct mbuf *mp;
 	register caddr_t cp;
-	int cc;
-	register caddr_t dp;
+	register struct ifxmt *ifxp;
+	register struct ifrw *ifrw;
 	register int i;
-	int x;
+	int xswapd = 0;
+	int x, cc, t;
+	caddr_t dp;
 
+	ifxp = &ifu->ifu_w[n];
+	ifrw = &ifxp->x_ifrw;
 	cp = ifrw->ifrw_addr;
 	while (m) {
 		dp = mtod(m, char *);
 		if (claligned(cp) && claligned(dp) && m->m_len == CLBYTES) {
-			struct pte *cpte, *ppte;
-			int *ip;
-
-			cpte = &Mbmap[mtocl(cp)*CLSIZE];
-			ppte = &Mbmap[mtocl(dp)*CLSIZE];
+			struct pte *pte; int *ip;
+			pte = &Mbmap[mtocl(dp)*CLSIZE];
 			x = btop(cp - ifrw->ifrw_addr);
 			ip = (int *)&ifrw->ifrw_mr[x];
-			for (i = 0; i < CLSIZE; i++) {
-				struct pte t;
-				t = *ppte; *ppte++ = *cpte; *cpte = t;
+			for (i = 0; i < CLSIZE; i++)
 				*ip++ =
-				    cpte++->pg_pfnum|ifrw->ifrw_proto;
-				mtpr(TBIS, cp);
-				cp += NBPG;
-				mtpr(TBIS, dp);
-				dp += NBPG;
-			}
+				    ifrw->ifrw_proto | pte++->pg_pfnum;
+			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
+			mp = m->m_next;
+			m->m_next = ifxp->x_xtofree;
+			ifxp->x_xtofree = m;
+			cp += m->m_len;
 		} else {
 			bcopy(mtod(m, caddr_t), cp, (unsigned)m->m_len);
 			cp += m->m_len;
+			MFREE(m, mp);
 		}
-		MFREE(m, mp);
 		m = mp;
 	}
 
+	/*
+	 * Xswapd is the set of clusters we just mapped out.  Ifxp->x_xswapd
+	 * is the set of clusters mapped out from before.  We compute
+	 * the number of clusters involved in this operation in x.
+	 * Clusters mapped out before and involved in this operation
+	 * should be unmapped so original pages will be accessed by the device.
+	 */
 	cc = cp - ifrw->ifrw_addr;
+	x = ((cc - ifu->ifu_hlen) + CLBYTES - 1) >> CLSHIFT;
+	ifxp->x_xswapd &= ~xswapd;
+	while (i = ffs(ifxp->x_xswapd)) {
+		i--;
+		if (i >= x)
+			break;
+		ifxp->x_xswapd &= ~(1<<i);
+		i *= CLSIZE;
+		for (t = 0; t < CLSIZE; t++) {
+			ifrw->ifrw_mr[i] = ifxp->x_map[i];
+			i++;
+		}
+	}
+	ifxp->x_xswapd |= xswapd;
 	return (cc);
 }
-#endif
 
 /*
  * Process an ioctl request.
@@ -984,3 +1016,4 @@ desetaddr(ifp, sin)
 	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
 	ifp->if_flags |= IFF_BROADCAST;
 }
+#endif
