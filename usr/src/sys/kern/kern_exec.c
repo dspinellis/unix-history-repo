@@ -4,23 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exec.c	7.32 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "map.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "mount.h"
 #include "ucred.h"
 #include "malloc.h"
-#include "buf.h"
 #include "vnode.h"
 #include "seg.h"
-#include "vm.h"
-#include "text.h"
 #include "file.h"
 #include "uio.h"
 #include "acct.h"
@@ -28,9 +24,14 @@
 #include "ktrace.h"
 
 #include "machine/reg.h"
-#include "machine/pte.h"
 #include "machine/psl.h"
 #include "machine/mtpr.h"
+
+#include "mman.h"
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_kern.h"
+#include "../vm/vm_pager.h"
 
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux_exec.h"
@@ -65,14 +66,11 @@ execve(p, uap, retval)
 {
 	register nc;
 	register char *cp;
-	register struct buf *bp;
-	struct buf *tbp;
 	int na, ne, ucp, ap, cc;
 	unsigned len;
 	int indir, uid, gid;
 	char *sharg;
 	struct vnode *vp;
-	swblk_t bno;
 	struct vattr vattr;
 	char cfname[MAXCOMLEN + 1];
 	char cfarg[MAXINTERP];
@@ -89,6 +87,7 @@ execve(p, uap, retval)
 	register struct ucred *cred = u.u_cred;
 	register struct nameidata *ndp = &u.u_nd;
 	int resid, error, flags = 0;
+	vm_offset_t execargs;
 #ifdef SECSIZE
 	extern long argdbsize;			/* XXX */
 #endif SECSIZE
@@ -100,8 +99,6 @@ execve(p, uap, retval)
 	if (error = namei(ndp))
 		return (error);
 	vp = ndp->ni_vp;
-	bno = 0;
-	bp = 0;
 	indir = 0;
 	uid = cred->cr_uid;
 	gid = cred->cr_gid;
@@ -284,22 +281,6 @@ execve(p, uap, retval)
 		gid = cred->cr_gid;
 		goto again;
 	}
-	/*
-	 * If the vnode has been modified since we last used it,
-	 * then throw away all its pages and its text table entry.
-	 */
-	if (vp->v_text && vp->v_text->x_mtime != vattr.va_mtime.tv_sec) {
-		/*
-		 * Try once to release, if it is still busy
-		 * take more drastic action.
-		 */
-		xrele(vp);
-		if (vp->v_flag & VTEXT) {
-			vput(vp);
-			vgone(vp);
-			goto start;
-		}
-	}
 
 	/*
 	 * Collect arguments on "file" in swap space.
@@ -307,22 +288,9 @@ execve(p, uap, retval)
 	na = 0;
 	ne = 0;
 	nc = 0;
-	cc = 0;
-#ifdef SECSIZE
-	bno = rmalloc(argmap, (clrnd((int)btoc(NCARGS))) * CLBYTES / argdbsize);
-#else SECSIZE
-	bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))));
-#endif SECSIZE
-	if (bno == 0) {
-		swkill(p, "exec: no swap space");
-		goto bad;
-	}
-	if (bno % CLSIZE)
-		panic("execa rmalloc");
-#ifdef GENERIC
-	if (rootdev == dumpdev)
-		bno += 4096;
-#endif
+	cc = NCARGS;
+	execargs = kmem_alloc_wait(exec_map, NCARGS);
+	cp = (char *) execargs;
 	/*
 	 * Copy arguments into file in argdev area.
 	 */
@@ -352,33 +320,12 @@ execve(p, uap, retval)
 		na++;
 		if (ap == -1) {
 			error = EFAULT;
-			if (bp) {
-				brelse(bp);
-				bp = 0;
-			}
-			goto badarg;
+			goto bad;
 		}
 		do {
-			if (cc <= 0) {
-				/*
-				 * We depend on NCARGS being a multiple of
-				 * CLBYTES.  This way we need only check
-				 * overflow before each buffer allocation.
-				 */
-				if (nc >= NCARGS-1) {
-					error = E2BIG;
-					break;
-				}
-				if (bp)
-					bdwrite(bp);
-				cc = CLBYTES;
-#ifdef SECSIZE
-				bp = getblk(argdev, bno + nc / argdbsize, cc,
-				    argdbsize);
-#else SECSIZE
-				bp = getblk(argdev_vp, bno + ctod(nc/NBPG), cc);
-#endif SECSIZE
-				cp = bp->b_un.b_addr;
+			if (nc >= NCARGS-1) {
+				error = E2BIG;
+				break;
 			}
 			if (sharg) {
 				error = copystr(sharg, cp, (unsigned)cc, &len);
@@ -392,36 +339,14 @@ execve(p, uap, retval)
 			nc += len;
 			cc -= len;
 		} while (error == ENAMETOOLONG);
-		if (error) {
-			if (bp)
-				brelse(bp);
-			bp = 0;
-			goto badarg;
-		}
+		if (error)
+			goto bad;
 	}
-	if (bp)
-		bdwrite(bp);
-	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
 	error = getxfile(p, vp, &exdata.ex_exec, flags, nc + (na+4)*NBPW,
 	    uid, gid);
-	if (error) {
-badarg:
-		for (cc = 0; cc < nc; cc += CLBYTES) {
-			(void) baddr(argdev_vp, bno + ctod(cc/NBPG),
-				CLBYTES, NOCRED, &tbp);
-			bp = tbp;
-#endif SECSIZE
-			if (bp) {
-				bp->b_flags |= B_INVAL;		/* throw away */
-				brelse(bp);
-				bp = 0;
-			}
-		}
+	if (error)
 		goto bad;
-	}
-	if (vp->v_text)
-		vp->v_text->x_mtime = vattr.va_mtime.tv_sec;
 	vput(vp);
 	vp = NULL;
 
@@ -438,12 +363,13 @@ badarg:
 	/*
 	 * Copy back arglist.
 	 */
-	ucp = USRSTACK - nc - NBPW;
+	ucp = USRSTACK - sizeof(u.u_pcb.pcb_sigc) - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
 	u.u_ar0[SP] = ap;
 	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
-	cc = 0;
+	cp = (char *) execargs;
+	cc = NCARGS;
 	for (;;) {
 		ap += NBPW;
 		if (na == ne) {
@@ -454,22 +380,6 @@ badarg:
 			break;
 		(void) suword((caddr_t)ap, ucp);
 		do {
-			if (cc <= 0) {
-				if (bp)
-					brelse(bp);
-				cc = CLBYTES;
-#ifdef SECSIZE
-				bp = bread(argdev, bno + nc / argdbsize, cc,
-				    argdbsize);
-#else SECSIZE
-				error = bread(argdev_vp,
-				    (daddr_t)(bno + ctod(nc / NBPG)), cc,
-				    NOCRED, &tbp);
-				bp = tbp;
-#endif SECSIZE
-				bp->b_flags |= B_INVAL;		/* throw away */
-				cp = bp->b_un.b_addr;
-			}
 			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
 			    &len);
 			ucp += len;
@@ -496,6 +406,12 @@ badarg:
 		u.u_lastfile--;
 	setregs(exdata.ex_exec.a_entry, retval);
 	/*
+	 * Install sigcode at top of user stack.
+	 */
+	copyout((caddr_t)u.u_pcb.pcb_sigc,
+		(caddr_t)(USRSTACK - sizeof(u.u_pcb.pcb_sigc)),
+		sizeof(u.u_pcb.pcb_sigc));
+	/*
 	 * Remember file name for accounting.
 	 */
 	u.u_acflag &= ~AFORK;
@@ -508,14 +424,8 @@ badarg:
 		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 	}
 bad:
-	if (bp)
-		brelse(bp);
-	if (bno)
-#ifdef SECSIZE
-		rmfree(argmap, (clrnd((int)btoc(NCARGS))) * CLBYTES / argdbsize,
-		    bno);
-#else SECSIZE
-		rmfree(argmap, (long)ctod(clrnd((int) btoc(NCARGS))), bno);
+	if (execargs)
+		kmem_free_wakeup(exec_map, execargs, NCARGS);
 #endif SECSIZE
 	if (vp)
 		vput(vp);
@@ -531,19 +441,26 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	register struct exec *ep;
 	int flags, nargc, uid, gid;
 {
-	segsz_t ts, ds, ids, uds, ss;
+	segsz_t ts, ds, ss;
 	register struct ucred *cred = u.u_cred;
 	off_t toff;
-	int error;
+	int error = 0;
+	vm_offset_t addr;
+	vm_size_t size;
+	vm_map_t map = VM_MAP_NULL;
 
 #ifdef HPUXCOMPAT
-	if (ep->a_mid == MID_HPUX)
-		toff = sizeof (struct hpux_exec);
-	else
+	if (ep->a_mid == MID_HPUX) {
+		if (flags & SPAGV)
+			toff = CLBYTES;
+		else
+			toff = sizeof (struct hpux_exec);
+	} else
 #endif
-	toff = sizeof (struct exec);
-	if (vp->v_text && (vp->v_text->x_flag & XTRC))
-		return (ETXTBSY);
+	if (flags & SPAGV)
+		toff = CLBYTES;
+	else
+		toff = sizeof (struct exec);
 	if (ep->a_text != 0 && (vp->v_flag & VTEXT) == 0 &&
 	    vp->v_usecount != 1) {
 		register struct file *fp;
@@ -564,43 +481,23 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	 * when summed together.
 	 */
 	ts = clrnd(btoc(ep->a_text));
-	ids = clrnd(btoc(ep->a_data));
-	uds = clrnd(btoc(ep->a_bss));
 	ds = clrnd(btoc(ep->a_data + ep->a_bss));
-	ss = clrnd(SSIZE + btoc(nargc));
-	if (error =
-	    chksize((unsigned)ts, (unsigned)ids, (unsigned)uds, (unsigned)ss))
-		return (error);
-
-	/*
-	 * Make sure enough space to start process.
-	 */
-	u.u_cdmap = zdmap;
-	u.u_csmap = zdmap;
-	if (error = swpexpand(ds, ss, &u.u_cdmap, &u.u_csmap))
-		return (error);
-
-	/*
-	 * At this point, we are committed to the new image!
-	 * Release virtual memory resources of old process, and
-	 * initialize the virtual memory of the new process.
-	 * If we resulted from vfork(), instead wakeup our
-	 * parent who will set SVFDONE when he has taken back
-	 * our resources.
-	 */
-	if ((p->p_flag & SVFORK) == 0) {
-#ifdef MAPMEM
-		if (u.u_mmap && (error = mmexec(p)))
-			return (error);
+	ss = clrnd(SSIZE + btoc(nargc + sizeof(u.u_pcb.pcb_sigc)));
+#ifdef SYSVSHM
+	if (p->p_shm)
+		shmexit(p);
 #endif
-		vrelvm();
-	} else {
+	map = p->p_map;
+	(void) vm_map_remove(map, vm_map_min(map), vm_map_max(map));
+	/*
+	 * XXX preserve synchronization semantics of vfork
+	 */
+	if (p->p_flag & SVFORK) {
 		p->p_flag &= ~SVFORK;
-		p->p_flag |= SKEEP;
 		wakeup((caddr_t)p);
 		while ((p->p_flag & SVFDONE) == 0)
 			sleep((caddr_t)p, PZERO - 1);
-		p->p_flag &= ~(SVFDONE|SKEEP);
+		p->p_flag &= ~SVFDONE;
 	}
 #ifdef hp300
 	u.u_pcb.pcb_flags &= ~(PCB_AST|PCB_HPUXMMAP|PCB_HPUXBIN);
@@ -612,45 +509,67 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 #endif
 	p->p_flag &= ~(SPAGV|SSEQL|SUANOM|SHPUX);
 	p->p_flag |= flags | SEXEC;
-	u.u_dmap = u.u_cdmap;
-	u.u_smap = u.u_csmap;
-	vgetvm(ts, ds, ss);
+	addr = VM_MIN_ADDRESS;
+	if (vm_allocate(map, &addr, round_page(ctob(ts + ds)), FALSE)) {
+		uprintf("Cannot allocate text+data space\n");
+		error = ENOMEM;			/* XXX */
+		goto badmap;
+	}
+	size = round_page(MAXSSIZ);		/* XXX */
+	addr = trunc_page(VM_MAX_ADDRESS - size);
+	if (vm_allocate(map, &addr, size, FALSE)) {
+		uprintf("Cannot allocate stack space\n");
+		error = ENOMEM;			/* XXX */
+		goto badmap;
+	}
+	u.u_maxsaddr = (caddr_t)addr;
+	u.u_taddr = (caddr_t)VM_MIN_ADDRESS;
+	u.u_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
 
 	if ((flags & SPAGV) == 0)
 		(void) vn_rdwr(UIO_READ, vp,
-			(char *)ctob(dptov(p, 0)),
+			u.u_daddr,
 			(int)ep->a_data,
 			(off_t)(toff + ep->a_text),
 			UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), cred, (int *)0);
-	xalloc(vp, ep, toff, cred);
-#if defined(tahoe)
 	/*
-	 * Define new keys.
+	 * Read in text segment if necessary (0410), and read-protect it.
 	 */
-	if (p->p_textp == 0) {	/* use existing code key if shared */
-		ckeyrelease(p->p_ckey);
-		p->p_ckey = getcodekey();
+	if ((flags & SPAGV) == 0) {
+		if (ep->a_text > 0) {
+			error = vn_rdwr(UIO_READ, vp,
+					u.u_taddr, (int)ep->a_text, toff,
+					UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED),
+					cred, (int *)0);
+			(void) vm_map_protect(map,
+					VM_MIN_ADDRESS,
+					VM_MIN_ADDRESS+trunc_page(ep->a_text),
+					VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+		}
+	} else {
+		/*
+		 * Allocate a region backed by the exec'ed vnode.
+		 */
+		addr = VM_MIN_ADDRESS;
+		size = round_page(ep->a_text + ep->a_data);
+		error = vm_mmap(map, &addr, size, VM_PROT_ALL,
+				MAP_FILE|MAP_COPY|MAP_FIXED,
+				(caddr_t)vp, (vm_offset_t)toff);
+		(void) vm_map_protect(map, addr,
+				addr+trunc_page(ep->a_text),
+				VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
 	}
-	mtpr(CCK, p->p_ckey);
-	dkeyrelease(p->p_dkey);
-	p->p_dkey = getdatakey();
-	mtpr(DCK, p->p_dkey);
-#endif
-	if ((flags & SPAGV) && p->p_textp)
-		vinifod(p, (struct fpte *)dptopte(p, 0),
-		    PG_FTEXT, p->p_textp->x_vptr,
-		    (long)(1 + ts/CLSIZE), (segsz_t)btoc(ep->a_data));
-
-#if defined(vax) || defined(tahoe)
-	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
-	mtpr(TBIA, 0);
-#endif
-#ifdef hp300
-	TBIAU();
-#endif
-#if defined(i386)
-	tlbflush();
-#endif
+badmap:
+	if (error) {
+		if (map != VM_MAP_NULL)
+			vm_deallocate(map, vm_map_min(map), vm_map_max(map));
+		printf("pid %d: VM allocation failure\n", p->p_pid);
+		uprintf("sorry, pid %d was killed in exec: VM allocation\n",
+			p->p_pid);
+		psignal(p, SIGKILL);
+		p->p_flag |= SULOCK;
+		return(error);
+	}
 
 	/*
 	 * set SUID/SGID protections, if no tracing

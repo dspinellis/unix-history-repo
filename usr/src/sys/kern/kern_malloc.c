@@ -4,25 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.20 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "vm.h"
 #include "cmap.h"
 #include "time.h"
 #include "proc.h"
 #include "map.h"
 #include "kernel.h"
 #include "malloc.h"
-
-#include "machine/pte.h"
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_kern.h"
 
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
+char *kmembase, *kmemlimit;
 char *memname[] = INITKMEMNAMES;
-long wantkmemmap;
 long malloc_reentered;
 #define IN { if (malloc_reentered) panic("malloc reentered");\
 			else malloc_reentered = 1;}
@@ -52,7 +52,6 @@ malloc(size, type, flags)
 	kbp = &bucket[indx];
 	s = splimp();
 	IN;
-again:
 #ifdef KMEMSTATS
 	while (ksp->ks_memuse >= ksp->ks_limit) {
 		if (flags & M_NOWAIT) {
@@ -73,32 +72,13 @@ again:
 		else
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
-		if ((flags & M_NOWAIT) && freemem < npg) {
+		va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg),
+					   !(flags & M_NOWAIT));
+		if (va == NULL) {
 			OUT;
 			splx(s);
 			return (0);
 		}
-		alloc = rmalloc(kmemmap, npg);
-		if (alloc == 0) {
-			if (flags & M_NOWAIT) {
-				OUT;
-				splx(s);
-				return (0);
-			}
-#ifdef KMEMSTATS
-			if (ksp->ks_mapblocks < 65535)
-				ksp->ks_mapblocks++;
-#endif
-			wantkmemmap++;
-			OUT;
-			tsleep((caddr_t)&wantkmemmap, PSWP+2, memname[type], 0);
-			IN;
-			goto again;
-		}
-		alloc -= CLSIZE;		/* convert to base 0 */
-		(void) vmemall(&kmempt[alloc], (int)npg, &proc[0], CSYS);
-		va = (caddr_t) kmemxtob(alloc);
-		vmaccess(&kmempt[alloc], va, (int)npg);
 #ifdef KMEMSTATS
 		kbp->kb_total += kbp->kb_elmpercl;
 #endif
@@ -198,14 +178,7 @@ free(addr, type)
 	s = splimp();
 	IN;
 	if (size > MAXALLOCSAVE) {
-		alloc = btokmemx(addr);
-		(void) memfree(&kmempt[alloc], (int)kup->ku_pagecnt, 1);
-		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc + CLSIZE);
-		OUT;
-		if (wantkmemmap) {
-			wakeup((caddr_t)&wantkmemmap);
-			wantkmemmap = 0;
-		}
+		kmem_free(kmem_map, (vm_offset_t)addr, ctob(kup->ku_pagecnt));
 #ifdef KMEMSTATS
 		size = kup->ku_pagecnt << PGSHIFT;
 		ksp->ks_memuse -= size;
@@ -261,8 +234,11 @@ kmeminit()
 #if	(MAXALLOCSAVE < CLBYTES)
 		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
 #endif
-	npg = ekmempt - kmempt;
-	rminit(kmemmap, (long)npg, (long)CLSIZE, "malloc map", npg);
+	npg = VM_KMEM_SIZE/ NBPG;
+	kmemusage = (struct kmemusage *) kmem_alloc(kernel_map,
+		(vm_size_t)(npg * sizeof(struct kmemusage)));
+	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t)&kmembase,
+		(vm_offset_t)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		if (1 << indx >= CLBYTES)

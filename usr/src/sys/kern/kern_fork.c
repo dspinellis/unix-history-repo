@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.21 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,14 +15,11 @@
 #include "proc.h"
 #include "vnode.h"
 #include "seg.h"
-#include "vm.h"
-#include "text.h"
 #include "file.h"
 #include "acct.h"
 #include "ktrace.h"
 
 #include "machine/reg.h"
-#include "machine/pte.h"
 #include "machine/psl.h"
 
 /*
@@ -36,12 +33,6 @@ fork(p, uap, retval)
 {
 	int error;
 
-	u.u_cdmap = zdmap;
-	u.u_csmap = zdmap;
-	if (error = swpexpand(u.u_dsize, u.u_ssize, &u.u_cdmap, &u.u_csmap)) {
-		retval[1] = 0;
-		return (error);
-	}
 	return (fork1(p, 0, retval));
 }
 
@@ -82,10 +73,6 @@ fork1(p1, isvfork, retval)
 		tablefull("proc");
 	if (p2 == NULL ||
 	    (p1->p_uid != 0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
-		if (!isvfork) {
-			(void) vsexpand((segsz_t)0, &u.u_cdmap, 1);
-			(void) vsexpand((segsz_t)0, &u.u_csmap, 1);
-		}
 		retval[1] = 0;
 		return (EAGAIN);
 	}
@@ -176,11 +163,9 @@ again:
 	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SHPUX));
 	if (rip->p_session->s_ttyvp != NULL && rip->p_flag & SCTTY)
 		rpp->p_flag |= SCTTY;
-	if (isvfork) {
+	if (isvfork)
 		rpp->p_flag |= SVFORK;
-		rpp->p_ndx = rip->p_ndx;
-	} else
-		rpp->p_ndx = rpp - proc;
+	rpp->p_ndx = rpp - proc;
 	bcopy(rip->p_comm, rpp->p_comm, MAXCOMLEN+1);
 	bcopy(rip->p_logname, rpp->p_logname, MAXLOGNAME);
 	rpp->p_uid = rip->p_uid;
@@ -190,7 +175,6 @@ again:
 	rpp->p_pgrpnxt = rip->p_pgrpnxt;
 	rip->p_pgrpnxt = rpp;
 	rpp->p_nice = rip->p_nice;
-	rpp->p_textp = isvfork ? 0 : rip->p_textp;
 	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
@@ -207,21 +191,6 @@ again:
 	rpp->p_sigmask = rip->p_sigmask;
 	rpp->p_sigcatch = rip->p_sigcatch;
 	rpp->p_sigignore = rip->p_sigignore;
-	/* take along any pending signals like stops? */
-	if (isvfork) {
-		rpp->p_tsize = rpp->p_dsize = rpp->p_mmsize = rpp->p_ssize = 0;
-		rpp->p_szpt = clrnd(ctopt(HIGHPAGES));
-		forkstat.cntvfork++;
-		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
-	} else {
-		rpp->p_tsize = rip->p_tsize;
-		rpp->p_dsize = rip->p_dsize;
-		rpp->p_mmsize = rip->p_mmsize;
-		rpp->p_ssize = rip->p_ssize;
-		rpp->p_szpt = rip->p_szpt;
-		forkstat.cntfork++;
-		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
-	}
 #ifdef KTRACE
 	if (rip->p_traceflag&KTRFAC_INHERIT) {
 		rpp->p_traceflag = rip->p_traceflag;
@@ -244,7 +213,6 @@ again:
 	rpp->p_hash = *hash;
 	*hash = rpp;
 	}
-	multprog++;
 
 	/*
 	 * Increase reference counts on shared objects.
@@ -255,6 +223,10 @@ again:
 			continue;
 		fp->f_count++;
 	}
+#ifdef SYSVSHM
+	if (rip->p_shm)
+		shmfork(rip, rpp, isvfork);
+#endif
 	VREF(u.u_cdir);
 	if (u.u_rdir)
 		VREF(u.u_rdir);
@@ -294,23 +266,15 @@ again:
 	rip->p_flag &= ~SKEEP;
 
 	/*
-	 * If vfork make chain from parent process to child
-	 * (where virtal memory is temporarily).  Wait for
-	 * child to finish, steal virtual memory back,
-	 * and wakeup child to let it die.
+	 * XXX preserve synchronization semantics of vfork
 	 */
 	if (isvfork) {
-		u.u_procp->p_xlink = rpp;
 		u.u_procp->p_flag |= SNOVM;
 		while (rpp->p_flag & SVFORK)
 			sleep((caddr_t)rpp, PZERO - 1);
 		if ((rpp->p_flag & SLOAD) == 0)
 			panic("newproc vfork");
-		uaccess(rpp, Vfmap, &vfutl);
-		u.u_procp->p_xlink = 0;
-		vpassvm(rpp, u.u_procp, &vfutl, &u, Vfmap);
 		u.u_procp->p_flag &= ~SNOVM;
-		rpp->p_ndx = rpp - proc;
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rpp);
 	}

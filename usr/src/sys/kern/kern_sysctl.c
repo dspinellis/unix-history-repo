@@ -4,19 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.11 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "user.h"
 #include "proc.h"
-#include "text.h"
 #include "kinfo.h"
-#include "vm.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "buf.h"
-
 
 #define snderr(e) { error = (e); goto release;}
 extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode();
@@ -73,11 +70,6 @@ getkerninfo(p, uap, retval)
 
 	if (!useracc(uap->where, bufsize, B_WRITE))
 		snderr(EFAULT);
-	/*
-	 * lock down target pages - NEED DEADLOCK AVOIDANCE
-	 */
-	if (bufsize > ((int)ptob(freemem) - (20 * 1024))) 	/* XXX */
-		snderr(ENOMEM);
 	if (server != kinfo_vnode)	/* XXX */
 		vslock(uap->where, bufsize);
 	locked = bufsize;
@@ -157,7 +149,6 @@ again:
 			break;
 		}
 		if (where != NULL && buflen >= sizeof (struct kinfo_proc)) {
-			register struct text *txt;
 			register struct tty *tp;
 
 			if (error = copyout((caddr_t)p, &dp->kp_proc, 
@@ -180,15 +171,8 @@ again:
 				eproc.e_flag |= EPROC_SLEADER;
 			if (p->p_wmesg)
 				strncpy(eproc.e_wmesg, p->p_wmesg, WMESGLEN);
-			if (txt = p->p_textp) {
-				eproc.e_xsize = txt->x_size;
-				eproc.e_xrssize = txt->x_rssize;
-				eproc.e_xccount = txt->x_ccount;
-				eproc.e_xswrss = txt->x_swrss;
-			} else {
-				eproc.e_xsize = eproc.e_xrssize =
-				  eproc.e_xccount =  eproc.e_xswrss = 0;
-			}
+			eproc.e_xsize = eproc.e_xrssize = 0;
+			eproc.e_xccount =  eproc.e_xswrss = 0;
 			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc, 
 			    sizeof (eproc)))
 				return (error);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.29 (Berkeley) %G%
+ *	@(#)init_main.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,19 +17,19 @@
 #include "seg.h"
 #include "conf.h"
 #include "buf.h"
-#include "vm.h"
-#include "cmap.h"
-#include "text.h"
 #include "clist.h"
 #include "malloc.h"
 #include "protosw.h"
 #include "reboot.h"
 
-#include "machine/pte.h"
 #include "machine/reg.h"
 #include "machine/cpu.h"
 
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+
 int	cmask = CMASK;
+extern	caddr_t proc0paddr;
 extern	int (*mountroot)();
 /*
  * Initialization code.
@@ -54,6 +54,15 @@ main(firstaddr)
 	int s;
 
 	rqinit();
+#if defined(hp300) && defined(DEBUG)
+	/*
+	 * Assumes mapping is really on
+	 */
+	find_devs();
+	cninit();
+#endif
+	vm_mem_init();
+	kmeminit();
 	startup(firstaddr);
 
 	/*
@@ -61,13 +70,16 @@ main(firstaddr)
 	 */
 	p = &proc[0];
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
-	p->p_p0br = u.u_pcb.pcb_p0br;
-	p->p_szpt = 1;
-	p->p_addr = uaddr(p);
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;
 	p->p_nice = NZERO;
-	setredzone(p->p_addr, (caddr_t)&u);
+	/*
+	 * Allocate a prototype map so we have something to fork
+	 */
+	p->p_map = vm_map_create(pmap_create(0),
+				 round_page(VM_MIN_ADDRESS),
+				 trunc_page(VM_MAX_ADDRESS), TRUE);
+	p->p_addr = proc0paddr;
 	u.u_procp = p;
 	MALLOC(pgrphash[0], struct pgrp *, sizeof (struct pgrp), 
 		M_PGRP, M_NOWAIT);
@@ -159,7 +171,6 @@ main(firstaddr)
 	domaininit();
 	splx(s);
 	pqinit();
-	xinit();
 	swapinit();
 #ifdef GPROF
 	kmstartup();
@@ -168,7 +179,6 @@ main(firstaddr)
 /* kick off timeout driven events by calling first time */
 	roundrobin();
 	schedcpu();
-	schedpaging();
 
 /* set up the root file system */
 	if ((*mountroot)())
@@ -184,8 +194,6 @@ main(firstaddr)
 	VOP_UNLOCK(rootdir);
 	u.u_rdir = NULL;
 	boottime = u.u_start =  time;
-	u.u_dmap = zdmap;
-	u.u_smap = zdmap;
 
 	enablertclock();		/* enable realtime clock interrupts */
 	/*
@@ -193,10 +201,18 @@ main(firstaddr)
 	 */
 
 	siginit(&proc[0]);
-	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
-		expand(clrnd((int)btoc(szicode)), 0);
-		(void) swpexpand(u.u_dsize, (segsz_t)0, &u.u_dmap, &u.u_smap);
+		vm_offset_t addr = 0;
+
+		(void) vm_allocate(u.u_procp->p_map,
+				   &addr, round_page(szicode), FALSE);
+		if (addr != 0)
+			panic("init: couldn't allocate at zero");
+
+		/* need just enough stack to exec from */
+		addr = trunc_page(VM_MAX_ADDRESS - PAGE_SIZE);
+		(void) vm_allocate(u.u_procp->p_map, &addr, PAGE_SIZE, FALSE);
+		u.u_maxsaddr = (caddr_t)addr;
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
 		/*
 		 * Return goes to loc. 0 of user init
@@ -205,24 +221,18 @@ main(firstaddr)
 		return;
 	}
 	/*
-	 * make page-out daemon (process 2)
-	 * the daemon has ctopt(nswbuf*CLSIZE*KLMAX) pages of page
-	 * table so that it can map dirty pages into
-	 * its address space during asychronous pushes.
+	 * Start up pageout daemon (process 2).
 	 */
-	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + HIGHPAGES));
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
-		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
 		bcopy("pagedaemon", proc[2].p_comm, sizeof ("pagedaemon"));
-		pageout();
+		vm_pageout();
 		/*NOTREACHED*/
 	}
 
 	/*
 	 * enter scheduling loop
 	 */
-	proc[0].p_szpt = 1;
 	sched();
 }
 
@@ -304,12 +314,6 @@ swapinit()
 	if (nswdev > 1)
 		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
 	nswap *= nswdev;
-	/*
-	 * If there are multiple swap areas,
-	 * allow more paging operations per second.
-	 */
-	if (nswdev > 1)
-		maxpgio = (maxpgio * (2 * nswdev - 1)) / 2;
 	if (bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
 	if (error = swfree(0)) {
