@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.32	82/12/14	*/
+/*	uipc_socket2.c	4.33	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -113,7 +113,7 @@ sonewconn(head)
 	if (head->so_qlen + head->so_q0len > 3 * head->so_qlimit / 2)
 		goto bad;
 	m = m_getclr(M_DONTWAIT, MT_SOCKET);
-	if (m == 0)
+	if (m == NULL)
 		goto bad;
 	so = mtod(m, struct socket *);
 	so->so_type = head->so_type;
@@ -124,7 +124,8 @@ sonewconn(head)
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
 	soqinsque(head, so, 0);
-	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, 0, 0, 0)) {
+	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, (struct mbuf *)0,
+	  (struct mbuf *)0, (struct sockopt *)0)) {
 		(void) soqremque(so, 0);
 		(void) m_free(m);
 		goto bad;
@@ -347,6 +348,7 @@ sbreserve(sb, cc)
 
 	/* someday maybe this routine will fail... */
 	sb->sb_hiwat = cc;
+	/* the 2 implies names can be no more than 1 mbuf each */
 	sb->sb_mbmax = cc*2;
 	return (1);
 }
@@ -376,16 +378,6 @@ sbappend(sb, m)
 {
 	register struct mbuf *n;
 
-SBCHECK(sb, "sbappend begin");
-#ifdef notdef
-{ struct mbuf *p;
-printf("sba: ");
-for (p = sb->sb_mb; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
-printf("+= ");
-for (p = m; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
-printf("\n");
-}
-#endif
 	n = sb->sb_mb;
 	if (n)
 		while (n->m_next)
@@ -414,16 +406,6 @@ printf("\n");
 		m = m->m_next;
 		n->m_next = 0;
 	}
-#ifdef notdef
-{ struct mbuf *p;
-printf("res: ");
-for (p = sb->sb_mb; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
-printf("+= ");
-for (p = m; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
-printf("\n");
-}
-#endif
-SBCHECK(sb, "sbappend end");
 }
 
 /*
@@ -440,7 +422,6 @@ sbappendaddr(sb, asa, m0)
 	register struct mbuf *m;
 	register int len = sizeof (struct sockaddr);
 
-SBCHECK(sb, "sbappendaddr begin");
 	m = m0;
 	if (m == 0)
 		panic("sbappendaddr");
@@ -463,10 +444,10 @@ SBCHECK(sb, "sbappendaddr begin");
 	m->m_act = (struct mbuf *)1;
 	sbappend(sb, m);
 	sbappend(sb, m0);
-SBCHECK(sb, "sbappendaddr end");
 	return (1);
 }
 
+#ifdef notdef
 SBCHECK(sb, str)
 	struct sockbuf *sb;
 	char *str;
@@ -486,6 +467,7 @@ SBCHECK(sb, str)
 		panic(str);
 	}
 }
+#endif
 
 /*
  * Free all mbufs on a sockbuf mbuf chain.

@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.5	82/12/14	*/
+/*	uipc_usrreq.c	1.6	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -76,8 +76,9 @@ uipc_usrreq(so, req, m, nam, opt)
 
 		case SOCK_DGRAM:
 			panic("uipc 1");
+			/*NOTREACHED*/
 
-		case SOCK_STREAM: {
+		case SOCK_STREAM:
 #define	rcv (&so->so_rcv)
 #define snd (&so2->so_snd)
 			if (unp->unp_conn == 0)
@@ -94,7 +95,6 @@ uipc_usrreq(so, req, m, nam, opt)
 			sbwakeup(snd);
 #undef snd
 #undef rcv
-			}
 			break;
 
 		default:
@@ -200,18 +200,14 @@ unp_attach(so)
 	
 	error = soreserve(so, unp_sendspace, unp_recvspace);
 	if (error)
-		goto bad;
+		return (error);
 	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == 0) {
-		error = ENOBUFS;
-		goto bad;
-	}
+	if (m == NULL)
+		return (ENOBUFS);
 	unp = mtod(m, struct unpcb *);
 	so->so_pcb = (caddr_t)unp;
 	unp->unp_socket = so;
 	return (0);
-bad:
-	return (error);
 }
 
 unp_detach(unp)
@@ -246,7 +242,7 @@ unp_bind(unp, nam)
 	ip = namei(schar, CREATE, 1);
 	if (ip) {
 		iput(ip);
-		return (EEXIST);
+		return (EADDRINUSE);
 	}
 	ip = maknode(IFSOCK | 0777);
 	if (ip == NULL) {
@@ -277,7 +273,7 @@ unp_connect(so, nam)
 	if (ip == 0) {
 		error = u.u_error;
 		u.u_error = 0;
-		return (ENOENT);
+		return (error);		/* XXX */
 	}
 	if ((ip->i_mode&IFMT) != IFSOCK) {
 		error = ENOTSOCK;
