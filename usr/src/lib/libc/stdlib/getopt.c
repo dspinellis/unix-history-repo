@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getopt.c	4.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -20,42 +20,55 @@ char	*optarg;		/* argument associated with option */
 
 #define BADCH	(int)'?'
 #define EMSG	""
-#define tell(s)	if (opterr) {fputs(*nargv,stderr);fputs(s,stderr); \
-		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);}
+#define tell(s)	{ \
+	if (opterr) { \
+		fputs(*nargv, stderr); \
+		fputs(s, stderr); \
+		fputc(optopt, stderr); \
+		fputc((int)'\n', stderr); \
+	} \
+	return(BADCH); \
+}
 
-getopt(nargc,nargv,ostr)
-int	nargc;
-char	**nargv,
-	*ostr;
+getopt(nargc, nargv, ostr)
+	int	nargc;
+	char	**nargv, *ostr;
 {
-	static char	*place = EMSG;	/* option letter processing */
-	register char	*oli;		/* option letter list index */
+	static char	*place = EMSG;		/* option letter processing */
+	register char	*oli;			/* option letter list index */
 	char	*index();
 
-	if(!*place) {			/* update scanning pointer */
-		if(optind >= nargc || *(place = nargv[optind]) != '-' || !*++place) return(EOF);
-		if (*place == '-') {	/* found "--" */
+	if (!*place) {				/* update scanning pointer */
+		if (optind >= nargc || *(place = nargv[optind]) != '-' ||
+		    !*++place)
+			return(EOF);
+		if (*place == '-') {		/* found "--" */
 			++optind;
 			return(EOF);
 		}
-	}				/* option letter okay? */
-	if ((optopt = (int)*place++) == (int)':' || !(oli = index(ostr,optopt))) {
-		if(!*place) ++optind;
+	}					/* option letter okay? */
+	if ((optopt = (int)*place++) == (int)':' ||
+	    !(oli = index(ostr, optopt))) {
+		if (!*place)
+			++optind;
 		tell(": illegal option -- ");
 	}
-	if (*++oli != ':') {		/* don't need argument */
+	if (*++oli != ':') {			/* don't need argument */
 		optarg = NULL;
-		if (!*place) ++optind;
+		if (!*place)
+			++optind;
 	}
-	else {				/* need an argument */
-		if (*place) optarg = place;	/* no white space */
+	else {					/* need an argument */
+		if (*place)			/* no white space */
+			optarg = place;
 		else if (nargc <= ++optind) {	/* no arg */
 			place = EMSG;
 			tell(": option requires an argument -- ");
 		}
-	 	else optarg = nargv[optind];	/* white space */
+	 	else				/* white space */
+			optarg = nargv[optind];
 		place = EMSG;
 		++optind;
 	}
-	return(optopt);			/* dump back option letter */
+	return(optopt);				/* dump back option letter */
 }
