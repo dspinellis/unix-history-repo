@@ -14,54 +14,57 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)errno.h	7.3 (Berkeley) %G%
+ *	@(#)errno.h	7.4 (Berkeley) %G%
  */
 
-/*
- * Error codes
- */
-
-#define	EPERM		1		/* Not owner */
+#define	EPERM		1		/* Operation not permitted */
 #define	ENOENT		2		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
-#define	EINTR		4		/* Interrupted system call */
-#define	EIO		5		/* I/O error */
+#define	EINTR		4		/* Interrupted function call */
+#define	EIO		5		/* Input/output error */
 #define	ENXIO		6		/* No such device or address */
 #define	E2BIG		7		/* Arg list too long */
 #define	ENOEXEC		8		/* Exec format error */
-#define	EBADF		9		/* Bad file number */
-#define	ECHILD		10		/* No children */
+#define	EBADF		9		/* Bad file descriptor */
+#define	ECHILD		10		/* No child processes */
 					/* 11 - was EAGAIN */
-#define	ENOMEM		12		/* Not enough core */
+#define	ENOMEM		12		/* Not enough space */
 #define	EACCES		13		/* Permission denied */
 #define	EFAULT		14		/* Bad address */
+#ifndef _POSIX_SOURCE
 #define	ENOTBLK		15		/* Block device required */
-#define	EBUSY		16		/* Mount device busy */
+#endif
+#define	EBUSY		16		/* Resource busy */
 #define	EEXIST		17		/* File exists */
-#define	EXDEV		18		/* Cross-device link */
+#define	EXDEV		18		/* Improper link */
 #define	ENODEV		19		/* No such device */
-#define	ENOTDIR		20		/* Not a directory*/
+#define	ENOTDIR		20		/* Not a directory */
 #define	EISDIR		21		/* Is a directory */
 #define	EINVAL		22		/* Invalid argument */
-#define	ENFILE		23		/* File table overflow */
+#define	ENFILE		23		/* Too many open files in system */
 #define	EMFILE		24		/* Too many open files */
-#define	ENOTTY		25		/* Not a typewriter */
+#define	ENOTTY		25		/* Inappropriate I/O control op. */
+#ifndef _POSIX_SOURCE
 #define	ETXTBSY		26		/* Text file busy */
+#endif
 #define	EFBIG		27		/* File too large */
 #define	ENOSPC		28		/* No space left on device */
-#define	ESPIPE		29		/* Illegal seek */
+#define	ESPIPE		29		/* Invalid seek */
 #define	EROFS		30		/* Read-only file system */
 #define	EMLINK		31		/* Too many links */
 #define	EPIPE		32		/* Broken pipe */
 
 /* math software */
-#define	EDOM		33		/* Argument too large */
+#define	EDOM		33		/* Domain error */
 #define	ERANGE		34		/* Result too large */
 
 /* non-blocking and interrupt i/o */
+#ifndef _POSIX_SOURCE
 #define	EWOULDBLOCK	35		/* Operation would block */
-#define	EDEADLK		EWOULDBLOCK	/* ditto */
-#define EAGAIN		EWOULDBLOCK	/* or No Resources (fork failed) */
+#endif
+#define	EDEADLK		EWOULDBLOCK	/* Resource deadlock avoided */
+#define	EAGAIN		EWOULDBLOCK	/* Resource temporarily unavailable */
+#ifndef _POSIX_SOURCE
 #define	EINPROGRESS	36		/* Operation now in progress */
 #define	EALREADY	37		/* Operation already in progress */
 
@@ -97,26 +100,34 @@
 
 	/* */
 #define	ELOOP		62		/* Too many levels of symbolic links */
-#define	ENAMETOOLONG	63		/* File name too long */
+#endif
+#define	ENAMETOOLONG	63		/* Filename too long */
 
 /* should be rearranged */
+#ifndef _POSIX_SOURCE
 #define	EHOSTDOWN	64		/* Host is down */
 #define	EHOSTUNREACH	65		/* No route to host */
+#endif
 #define	ENOTEMPTY	66		/* Directory not empty */
 
 /* quotas & mush */
+#ifndef _POSIX_SOURCE
 #define	EPROCLIM	67		/* Too many processes */
 #define	EUSERS		68		/* Too many users */
 #define	EDQUOT		69		/* Disc quota exceeded */
 
 /* Network File System */
 #define	ESTALE		70		/* Stale NFS file handle */
-#define	EREMOTE         71		/* Too many levels of remote in path */
+#define	EREMOTE		71		/* Too many levels of remote in path */
 #define	EBADRPC		72		/* RPC struct is bad */
 #define	ERPCMISMATCH	73		/* RPC version wrong */
 #define	EPROGUNAVAIL	74		/* RPC prog. not avail */
 #define	EPROGMISMATCH	75		/* Program version wrong */
 #define	EPROCUNAVAIL	76		/* Bad procedure for program */
+#endif
+
+#define	ENOLCK		77		/* No locks available */
+#define	ENOSYS		78		/* Function not implemented */
 
 /*
  * User variables for accessing the error codes
