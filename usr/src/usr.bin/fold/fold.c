@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)fold.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)fold.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 /*
  * fold - fold long lines for finite output devices
@@ -22,7 +22,7 @@ main(argc, argv)
 		fold = 0;
 		argv[0]++;
 		while (*argv[0] >= '0' && *argv[0] <= '9')
-			fold =* 10, fold =+ *argv[0]++ - '0';
+			fold *= 10, fold += *argv[0]++ - '0';
 		if (*argv[0]) {
 			printf("Bad number for fold\n");
 			exit(1);
@@ -78,8 +78,8 @@ putch(c)
 			col = 0;
 			break;
 		case '\t':
-			col =+ 8;
-			col =& ~7;
+			col += 8;
+			col &= ~7;
 			break;
 		case '\b':
 			if (col)
