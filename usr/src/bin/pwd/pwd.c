@@ -12,15 +12,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
+
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void usage __P((void));
 
@@ -33,7 +35,7 @@ main(argc, argv)
 	char *p;
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
-		switch(ch) {
+		switch (ch) {
 		case '?':
 		default:
 			usage();
@@ -44,13 +46,12 @@ main(argc, argv)
 	if (argc != 0)
 		usage();
 
-	p = getcwd(NULL, 0);
-	if (p) {
-		(void)printf("%s\n", p);
-		exit(0);
+	if ((p = getcwd(NULL, 0)) == NULL) {
+		err(1, NULL);
+		exit(1);
 	}
-	(void)fprintf(stderr, "pwd: %s\n", strerror(errno));
-	exit(1);
+	(void)printf("%s\n", p);
+	exit(0);
 }
 
 void
