@@ -655,7 +655,19 @@ COUNT(ECPUT);
 	mp = m;
 	while (mp) {
 		mcp = mtod(mp, char *);
+		i = 0;
+		if ((int)bp&1) {
+			*bp++ = *mcp++;
+			i++;
+		}
 		for (i=0; i<mp->m_len; i++)
+		while (i < mp->m_len) {
+			*(short *)bp = *(short *)mcp;
+			bp += 2;
+			mcp += 2;
+			i += 2;
+		}
+		if (mp->m_len&1)
 			*bp++ = *mcp++;
 		mp = m_free(mp);
 	}
@@ -666,6 +678,9 @@ COUNT(ECPUT);
 /*
  * Routine to copy from UNIBUS memory into mbufs.
  * Similar in spirit to if_rubaget.
+ *
+ * Warning: This makes the fairly safe assumption that
+ * mbufs have even lengths.
  */
 struct mbuf *
 ecget(ecbuf, totlen, off0)
@@ -707,7 +722,12 @@ COUNT(ECGET);
 			m->m_off = MMINOFF;
 		}
 		mcp = mtod(m, char *);
-		for (i=0; i<len; i++)
+		for (i=0; i<len; i+=2) {
+			*(short *)mcp = *(short *)cp;
+			mcp += 2;
+			cp += 2;
+		}
+		if (len&1)
 			*mcp++ = *cp++;
 		*mp = m;
 		mp = &m->m_next;
