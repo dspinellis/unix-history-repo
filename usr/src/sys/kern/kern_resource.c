@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.4	81/03/09	*/
+/*	kern_resource.c	4.5	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,7 +25,7 @@ sysacct()
 	if (suser()) {
 		if (uap->fname==NULL) {
 			if (ip = acctp) {
-				plock(ip);
+				ilock(ip);
 				iput(ip);
 				acctp = NULL;
 			}
@@ -44,7 +44,7 @@ sysacct()
 			return;
 		}
 		acctp = ip;
-		prele(ip);
+		irele(ip);
 	}
 }
 
@@ -61,7 +61,7 @@ acct()
 
 	if ((ip=acctp)==NULL)
 		return;
-	plock(ip);
+	ilock(ip);
 	for (i=0; i<sizeof(ap->ac_comm); i++)
 		ap->ac_comm[i] = u.u_comm[i];
 	ap->ac_utime = compress((long)u.u_vm.vm_utime);
@@ -85,7 +85,7 @@ acct()
 	writei(ip);
 	if(u.u_error)
 		ip->i_size = siz;
-	prele(ip);
+	irele(ip);
 }
 
 /*
