@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.106		%G%);
+SCCSID(@(#)main.c	3.107		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -453,8 +453,8 @@ main(argc, argv)
 
 			if (m == NULL)
 				continue;
-			printf("mailer %d: %s %s %lo %s\n", i, m->m_name,
-			       m->m_mailer, m->m_flags, m->m_from);
+			printf("mailer %d: %s %s %lo %d %d\n", i, m->m_name,
+			       m->m_mailer, m->m_flags, m->m_s_rwset, m->m_r_rwset);
 		}
 	}
 # endif DEBUG
@@ -713,7 +713,7 @@ setfrom(from, realname)
 		realname = CurEnv->e_from.q_paddr;
 
 # ifdef DEBUG
-	if (tTd(1, 2))
+	if (tTd(1, 1))
 		printf("setfrom(%s, %s)\n", from, realname);
 # endif DEBUG
 
@@ -723,7 +723,7 @@ setfrom(from, realname)
 		    strcmp(realname, "uucp") != 0 &&
 		    strcmp(realname, "daemon") != 0 &&
 # ifdef DEBUG
-		    (!tTd(1, 1) || getuid() != geteuid()) &&
+		    (!tTd(1, 9) || getuid() != geteuid()) &&
 # endif DEBUG
 		    index(from, '!') == NULL && getuid() != 0)
 		{
@@ -809,8 +809,10 @@ finis()
 	**  Send back return receipts as requested.
 	*/
 
-	if (CurEnv->e_sendreceipt && ExitStat == EX_OK)
-		returntosender("Return receipt", FALSE);
+
+		sendto(CurEnv->e_receiptto, 1, (ADDRESS *) NULL, &rlist);
+		(void) returntosender("Return receipt", rlist, FALSE);
+	}
 
 	/*
 	**  Arrange to return errors or queue up as appropriate.
