@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	5.6	%G%
+#	@(#)MAKEDEV	5.7	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
