@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.42 81/12/19 */
+/* tcp_usrreq.c 1.43 81/12/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,6 +18,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
+#include "../net/tcp_debug.h"
 #include "../errno.h"
 
 extern char *tcpstates[];
@@ -37,6 +38,7 @@ tcp_usrreq(so, req, m, addr)
 	register struct tcpcb *tp;
 	int s = splnet();
 	int error = 0;
+	int ostate;
 COUNT(TCP_USRREQ);
 
 	/*
@@ -52,6 +54,7 @@ COUNT(TCP_USRREQ);
 #ifdef KPROF
 		tcp_acounts[tp->t_state][req]++;
 #endif
+		ostate = tp->t_state;
 	}
 	switch (req) {
 
@@ -77,6 +80,8 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_DETACH:
+		if (tp)
+			goto disconn;
 		in_pcbdetach(inp);
 		break;
 
@@ -84,9 +89,6 @@ COUNT(TCP_USRREQ);
 		error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
 		if (error)
 			break;
-		tp = tcp_newtcpcb(inp);
-		if (tp == 0)
-			goto badcon;
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0)
 			goto badcon2;
@@ -108,9 +110,11 @@ badcon:
 		break;
 
 	case PRU_ACCEPT:
+		*(struct sockaddr *)addr = so->so_addr;
 		break;
 
 	case PRU_DISCONNECT:
+disconn:
 		if (tp->t_state < TCPS_ESTABLISHED)
 			tcp_close(tp);
 		else {
@@ -163,11 +167,14 @@ badcon:
 
 	case PRU_SLOWTIMO:
 		tcp_timers(tp, (int)addr);
+		req |= (int)addr << 8;		/* for debug's sake */
 		break;
 
 	default:
 		panic("tcp_usrreq");
 	}
+	if (tp && (so->so_options & SO_DEBUG))
+		tcp_trace(TA_USER, ostate, tp, (struct tcpiphdr *)0, req);
 	splx(s);
 	return (error);
 }
