@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso_proto.c,v $ 
- *	@(#)iso_proto.c	7.5 (Berkeley) %G% *
+ *	@(#)iso_proto.c	7.6 (Berkeley) %G% *
  *
  * iso_proto.c : protocol switch tables in the ISO domain
  *
@@ -60,6 +60,7 @@ int	tp_init(),tp_slowtimo(),tp_drain();
 
 int	esis_input(), esis_ctlinput(), esis_init(), esis_usrreq();
 int	cltp_input(), cltp_ctlinput(), cltp_init(), cltp_usrreq(), cltp_output();
+int isis_input();
 
 struct protosw isosw[] = {
 /*
@@ -101,7 +102,14 @@ struct protosw isosw[] = {
 { SOCK_DGRAM,	&isodomain,		ISOPROTO_ESIS,		PR_ATOMIC|PR_ADDR,
   esis_input,	0,				esis_ctlinput,				0,
   esis_usrreq,
-  esis_init,			0,				0,					0
+  esis_init,	0,				0,					0
+},
+
+/* ISOPROTO_INTRAISIS */
+{ SOCK_DGRAM,	&isodomain,		ISOPROTO_INTRAISIS,	PR_ATOMIC|PR_ADDR,
+  isis_input,	0,				0,					0,
+  esis_usrreq,
+  0,			0,				0,					0
 },
 
 /* ISOPROTO_TP */

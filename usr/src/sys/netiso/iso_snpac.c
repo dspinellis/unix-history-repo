@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
-/*	@(#)iso_snpac.c	7.8 (Berkeley) %G% */
+/*	@(#)iso_snpac.c	7.9 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
@@ -60,6 +60,8 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 #include "argo_debug.h"
 
 int 				iso_systype = SNPA_ES;	/* default to be an ES */
+extern short	esis_holding_time, esis_config_time, esis_esconfig_time;
+extern int esis_config();
 
 struct sockaddr_iso blank_siso = {sizeof(blank_siso), AF_ISO};
 extern u_long iso_hashchar();
@@ -438,7 +440,6 @@ int		cmd;	/* ioctl to process */
 caddr_t	data;	/* data for the cmd */
 {
 	register struct systype_req *rq = (struct systype_req *)data;
-	extern short	esis_holding_time, esis_config_time;
 
 	IFDEBUG(D_IOCTL)
 		if (cmd == SIOCSSTYPE)
@@ -462,10 +463,16 @@ caddr_t	data;	/* data for the cmd */
 		}
 		esis_holding_time = rq->sr_holdt;
 		esis_config_time = rq->sr_configt;
+		if (esis_esconfig_time != rq->sr_esconfigt) {
+			untimeout(esis_config, (caddr_t)0);
+			esis_esconfig_time = rq->sr_esconfigt;
+			esis_config();
+		}
 	} else if (cmd == SIOCGSTYPE) {
 		rq->sr_type = iso_systype;
 		rq->sr_holdt = esis_holding_time;
 		rq->sr_configt = esis_config_time;
+		rq->sr_esconfigt = esis_esconfig_time;
 	} else {
 		return (EINVAL);
 	}

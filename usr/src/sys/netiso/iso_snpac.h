@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)iso_snpac.h	7.6 (Berkeley) %G% */
+/*	@(#)iso_snpac.h	7.7 (Berkeley) %G% */
 
 #define	MAX_SNPALEN		8			/* curiously equal to sizeof x.121 (
 										plus 1 for nibble len) addr */
@@ -45,6 +45,7 @@ struct snpa_req {
 struct systype_req {
 	short	sr_holdt;		/* holding timer */
 	short	sr_configt;		/* configuration timer */
+	short	sr_esconfigt;	/* suggested ES configuration timer */
 	char	sr_type;		/* SNPA_ES or SNPA_IS */
 };
 
@@ -70,7 +71,7 @@ struct llinfo_llc {
 /* ISO arp IOCTL data structures */
 
 #define	SIOCSSTYPE 	_IOW('a', 39, struct systype_req) /* set system type */
-#define	SIOCGSTYPE 	_IOW('a', 40, struct systype_req) /* set system type */
+#define	SIOCGSTYPE 	_IOR('a', 40, struct systype_req) /* get system type */
 
 #ifdef	KERNEL
 struct llinfo_llc llinfo_llc;	/* head for linked lists */
