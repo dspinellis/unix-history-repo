@@ -12,28 +12,30 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mtree.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mtree.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
+#include <fts.h>
 #include "mtree.h"
 
 ENTRY *root;
-int cflag, dflag, eflag, rflag, uflag, xflag, exitval;
-char path[MAXPATHLEN];
+int exitval;
+int cflag, dflag, eflag, rflag, uflag;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
+	extern int ftsoptions, optind;
 	extern char *optarg;
 	int ch;
-	char *p;
+	char *dir;
 
-	p = (char *)NULL;
+	dir = (char *)NULL;
 	while ((ch = getopt(argc, argv, "cdef:p:rux")) != EOF)
 		switch((char)ch) {
 		case 'c':
@@ -53,7 +55,7 @@ main(argc, argv)
 			}
 			break;
 		case 'p':
-			p = optarg;
+			dir = optarg;
 			break;
 		case 'r':
 			rflag = 1;
@@ -62,7 +64,7 @@ main(argc, argv)
 			uflag = 1;
 			break;
 		case 'x':
-			xflag = 1;
+			ftsoptions |= FTS_XDEV;
 			break;
 		case '?':
 		default:
@@ -75,19 +77,16 @@ main(argc, argv)
 	if (!cflag)
 		spec();
 
-	if (p && chdir(p)) {
+	if (dir && chdir(dir)) {
 		(void)fprintf(stderr,
-		    "mtree: %s: %s\n", p, strerror(errno));
+		    "mtree: %s: %s\n", dir, strerror(errno));
 		exit(1);
 	}
-	path[0] = '.';
 
-	if (cflag) {
-		create();
-		exit(0);
-	}
-
-	verify();
+	if (cflag)
+		cwalk();
+	else
+		verify();
 	exit(exitval);
 }
 
