@@ -1,0 +1,38 @@
+TODO list
+
+(1) switch to DEC 25th latest code				done
+
+(2) boot-strap from any partition				done
+
+(3) omit sd.c ioctl error					done
+
+(4) establish interface between kernel & boot program
+
+	4-A	DIP-SW setup					done
+
+	4-B	boot device infomation				done
+
+	4-C	number of plane					done
+
+(5) remake probing routine of sio.c & bmc.c
+
+(6) make bmc as standard console (includeing DIP-SW checking)
+
+(7) st.c driver testing
+
+(8) sync up to Mike Hibler's 12/27 updates
+
+	8-A	syncing up include files			done
+
+	8-B	longword aligning the kernel stacks		done (Maybe)
+
+	8-C	pmap 
+
+	8-D	LANCE						done
+
+(9) fixing bmc input bug of boot program			done
+
+(10) adding missing part for Xserver
+
+	10-A	ring Bell
+
