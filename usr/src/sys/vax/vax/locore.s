@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.8	%G%
+ *	locore.s		4.9	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -128,6 +128,8 @@ Xwtime:
 
 #endif
 #if VAX==780
+#include "hp.h"
+#include "ht.h"
 /*
  * Massbus 0 adapter interrupts
  */
@@ -139,7 +141,17 @@ Xmba0int:
 	cvtwl	r1,-(sp)		# push attn summary as arg
 	pushl	MBA_SR(r0)		# pass sr as argument
 	mnegl	$1,MBA_SR(r0)		# clear attention bit
-	calls	$2,_hpintr		# call rp06 interrupt dispatcher
+#if (NHP > 0) && HPMBANUM==0
+	calls	$2,_hpintr
+#else
+#if (NHT > 0) && HTMBANUM==0
+	calls	$2,_htintr
+#else
+	pushl	$0
+	pushl	mbasmsg
+	calls	$4,_printf
+#endif
+#endif
 	brw 	int_ret			# merge with common interrupt code
 
 /*
@@ -153,7 +165,17 @@ Xmba1int:
 	mnegl	$1,MBA_AS(r0)
 	pushl	MBA_SR(r0)		# pass sr as argument
 	mnegl	$1,MBA_SR(r0)		# clear attention bit
-	calls	$2,_htintr		# call te16 interrupt dispatcher
+#if (NHP > 0) && HPMBANUM==1
+	calls	$2,_hpintr
+#else
+#if (NHT > 0) && HTMBANUM==1
+	calls	$2,_htintr
+#else
+	pushl	$1
+	pushl	mbasmsg
+	calls	$4,_printf
+#endif
+#endif
 	brw 	int_ret			# return from interrupt
 
 /*
@@ -1234,6 +1256,7 @@ UBAmsg:	.asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
 straym:	.asciz	"Stray Interrupt\n"
 ZERmsg:	.asciz	"ZERO VECTOR "
 wtime:	.asciz	"write timeout %X\n"
+mbasmsg:.asciz	"stray interrupt mba %d\n"
 
 #if VAX==750
 UBAstraym: .asciz "Stray UBA Interrupt\n"
