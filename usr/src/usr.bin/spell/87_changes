@@ -1,0 +1,500 @@
+	Changes in the wordlists used by "spell" -- March 1987
+
+(a)  Words to be added to /usr/dict/words:
+
+(a1)  First, the straightforward cases: useful words not previously
+accepted by "spell".  Most were obtained by reading issues of Natural
+History Magazine (and also one book on India) at the terminal, and
+typing in words that I guessed might be missing but that seemed common
+enough to be worth including.  Others came up in different ways, such
+as thinking about the algorithms "spell" must use to get derived forms,
+guessing at loopholes, and testing them out.  Whenever I had a list of
+twenty or thirty words, I would run "spell" on it, and add the results
+to my collection.
+
+abhor abjure abnegation abscond absurdum acacia acetaminophen Achaean
+acidify acidulate acrimonious acrimony acrophobia acrophobic
+acupuncture Adlerian adrenalin adoration aerie aerofoil Aesop afreet
+Afrikaans Afrikaner afterbirth agar agog agribusiness agronomist
+agronomy airbrush Aladdin Alasdair Alastair albino alchemist Aleutian
+Algonquian alimentary allmsgs alpaca amoeboid Amharic ammonite amnesia
+amnesiac amnesty amniocentesis amniotic Anacreon Analects anatomist
+Andalusia androgen anaphora anaphoric animist annelid anoint
+anticonvulsant anthropocentric anthropoid anthropomorphism Antilles
+antipodal antivenin aphrodisiac apiary apical apoplectic apoplexy
+apostasy aquifer Arapaho arborescent Argentine Argentinian aria
+arthropod ashram astrologer astrology astrophysicist asymptomatic atoll
+atonic Attlee auspice austral autochthonous autopilot auxin Avernus
+avian Avignon avowal Azores bacchanalian backpedal backscatter
+backslash backslide backwash Baja bannock baobab bareback Barnum baryon
+basaltic basilica basketry Basque bassoon beagle bedevil beeswax
+bedfellow befriend begat begot Belize bellyaching bellyful beluga
+Benares bestiary Bhagavadgita bigamy bighorn bike Bilbao billfold
+bipedal birdcage birthrate Blackfoot blackguard blacktop blitzkrieg
+bloodletting blunderbuss blurb bogeyman bookmark bookworm boreal
+Bosporus bossy bottlecap bouillabaisse bouillon bountiful bowerbird
+brainchild brakemen breakneck Brie brigand bristlecone bristly
+broadminded brushstroke bubonic buccaneer bucketful bulbous bullrush
+bumpkin bumpy bushland businesswoman businesswomen busload busywork
+butterscotch buzzard caching cacophonous Caesarian Cajun calabash
+callosity calyx Camembert Cameroon canoeist Canopus capuchin carapace
+Carboniferous cardigan cardioid Carlsbad carousel carpal carpetbag
+carpetbagger carpetbagging cassava castrate cataleptic Catalonia caudal
+catwalk ceasefire celebratory Celt centripetal cetacean Chandigarh
+chapati charcuterie chauvinism chauvinist Cheddar cheesemaking Chelsea
+chewy chickpea childbearing childrearing chintz chintzy chitin
+chitinous Chloe choline chondrite chopstick choryza chromosomal
+chromosome chrysalis circadian clavicle clef Clemens cloaca cloacal
+clownish cob cockfight codex coevolution cognoscenti coldhearted colic
+collocate cologne comestible commensal compunction condominium
+conspecific constipate construal contraindicate contrapositive
+coprocessor copulate corolla corpuscle corset Corsica Cortez cottontail
+coterie countermand countermeasure counterrevolution
+counterrevolutionary counterthreat counterweight couplet crampon
+crinoid cropland crore crossword crowbar crunchy crustacean crusty
+cubicle cubby cubit cultivar cuneiform curmudgeon Cuzco Cuvier cygnet
+cymbal daemon daguerreotype dal Damocles damselfly datura dawdle
+decapitate decapod decoy defoliate Deimos Deirdre deliveryman
+deliverymen Demeter demographer dentition deplane depredation
+dermatology determinacy detritus deuteron diagrammed diagramming
+diatribe dieresis digamma diminuendo dimorphic dimorphism Diocletian
+Diogenes doddering dogmatist domesticate dormouse dorsal downy drably
+Draconian Dravidian drawstring drayman driftwood drupe duckbilled
+duckweed dumpling dugong dumbly dumpster duodenal duodenum dyestuff
+earshot Earthman Earthmen echolocation effusion Egyptology eightyfold
+elevenfold eliminable elver emacs embitter emblazon emetic emigre
+emigree emissive empathic emptyhanded endemic endometrial endometriosis
+epiphyte epiphytic epilepsy epiphany eponymous equivocate ermine
+escarpment estrogen estrous estrus ethernet ethnomusicology Etruria
+euglena eukaryotic euphony euphonious eutrophication Everglade
+eviscerate exactitude excrement exfoliate exoskeleta expatriate expiry
+extramural extracurricular extraterritorial eyesore faience Falkland
+Fallopian falsetto faunal fecal feces feckless feisty femoral fennec
+fervid festoon fiddlehead fiftyfold Fiji Fijian filamentous fingerling
+finitude flan floodwater floruit flunk flunky folic folksinger
+folksinging folktale foment foolscap foothold foraminifera forgather
+forgo forgone forswore forsworn fortyfold forwent foxtrot fractal
+freedman freeload fridge Friesland Frisian frizzy frolicked frolicking
+frond Fulbright fumarole fundraiser fundraising funerary funky Galilean
+Galileo gamesmanship gamete Gandhi Gandhian garnish gases gastronomic
+gatekeeper Gautama gauzy gazebo gazpacho Geminid gemsbok gentlewoman
+gentlewomen genuflect geode geothermal gestation gestural Ghanian
+gibberellin gimlet girt gizmo gizzard gjetost glibly gluten gluttonous
+gluttony Gobi gonad gonadotropic gramophone grasshopper gravitometer
+graviton gridlock grimy grotto grottoes grouch grouchy groundhog grouse
+grump grumpy Gruyere Guinevere Gujarat Gujarati gulch gunpoint haggis
+hagiography hairspring harebrained halftone hallucinatory hallucinogen
+hallucinogenic hamstrung handpicked handprint hangdog hangnail
+hardbound hardcover hardhearted hardwire harken hatchery Hausa
+haversack headcount headlong headman headmen heartland heartthrob
+heartrending heavyset Hebrides Heidegger heifer Hellespont herbarium
+herbicide herbivore herbivorous herdsmen hermaphrodite hermaphroditic
+hermit hermitage hernia hidebound hindquarters Hindi Hindustan hippie
+hoax hollandaise homeobox homeopathic homespun hominid honky hoofprint
+Hopi hormonal hornpipe Hottentot hotfoot housemate hubcap hullaballoo
+hullabaloo humdrum hunchback hydrocyanic hydrophone hyperthermia
+hypothalmus hypothermia hypotonic icecap iceman incisor iconography
+ideogram idetic idly ignominy immunology inchoate inauthentic inchworm
+incognito Indochinese Indus inebriate inedible inessential infanticide
+inflorescent info infusoria ingrained innard insectivore insolate
+instar insectivorous interdigitate interferon intestinal intuit
+invocable Iranian Iraqi ironbound irreconciliable islet isthmus itchy
+jackal java Johanna Judaica juggernaut jukebox Jung Jungian Jutland
+Kampuchea Kannada Kashmir katydid Kerouac keto Kilimanjaro kinkajou
+kinsman kinsmen Knossos krill krummholz Kumar labium lachrymose
+ladybird ladybug lakh lama Lancelot lancet landlady landlocked
+landlubber landmass landowning langur layperson lectern Leibniz lemur
+lepidopterist leviathan lexicographer liana Libra Lieberman lightfooted
+likeable limerick limnology linchpin Linnaeus linoleic Linton
+littermate llama loanword loch Lobelia longwinded loris lorry lox
+lugubrious lumbago lumberjack lycee lyre lyrebird Macadamia macaw
+macerate machete MacMahon Madhya maelstrom Mafia Mafioso Magellanic
+maharaja Maharashtra mainframe Majorca Malthus Malthusian maltster
+mammary Manchuria mandible mango mangy mangrove manicure manifesto
+manioc mannitol mantelpiece marmoset marshy marzipan matriarchy
+matrilineal mayfly meadowlark megalopolis Meiji melanism meltdown
+Mendelian menopausal menopause Menorca menstrual meow messiah messianic
+mestizo metazoa metazoan metonymy mezzanine miaow midyear militiaman
+millionfold mimicry mimosa Minotaur mocha Moghul Mohammed moldy mooch
+moonbeam mortuary mosquitoes motorcade motorcar mountaintop mountebank
+mousse mouthpart mozzarella mudhole Muenster mukluk Multics mummify
+musky mycoplasma mycorrhiza Mysore narwhal narrowminded nawab
+Nebuchadnezzar nefarious neigh nematocyst nematode neoteny nepotism
+nepotistic neutronium nifty nightshade ninetyfold noisome Nordic Norse
+nosy novae nucleon nudibranch numbly nurturant oatcake obstetrician
+obtuse oceanographer oddball odyssey oedipal oenology offprint Ojibwa
+okapi okra Olduvai Oligocene Olivier omnivore omnivorous oracular Orca
+origami ornithology ostentation oviduct oviparous ovipositor
+ovoviviparous ovulate ovum owlet oxbow paleoanthropology palaeontology
+palp palpate Panamanian Pangaea panicking pantaloon pantothenic papacy
+paralytic Paraguayan parallelogram parka Parmesan paroxysm Parsi
+Parthia passarine passim passbook pathbreaking patois patrilineage
+patrilineal Pavlovian pawnbroker pawpaw payload peahen pelagic pellucid
+Peloponnese pencilled pendulous peninsular penumbral Pentateuch
+pentatonic peon peppercorn peregrine perigee permafrost Perseid
+Persephone perspicacity peter petiole pH phalanges phantasm pheromone
+Phobos phosphite phosphorous phylogenetic phylum pianoforte Pict
+piloerection pincer pinniped pipetting pirouetting Pizarro placemat
+plait plasmid plaudit playpen plaything plebiscite plectrum pleurisy
+plowmen ploy policewoman pollywog polyandrous polyandry polygamous
+polygamy polygyny Polynesia polysemous polysemy pomelo pomology
+ponderosa pontification postmodern potsherd Pradesh praline predacious
+prehensile preparator priestess primordial probationary probosces
+proboscis profiteer programmatic prokaryotic pronghorn pronominal
+prosciutto proselyte prostaglandin Protista protractor Provence prude
+prudish prussic pseudonym pseudonymous punctilious Punjab Punjabi
+punctilio pupa pupae puree pushover pushy putdown putrefaction putrefy
+putrid pyridoxine quadrupedal quadruplet quarto Queensland quern
+queueing Quichua quintessence quintessential quintuplet quipped quitter
+quizzed quizzing rabbinate rabbinical racemose Ragusan rainwater
+rambunctious ramshackle rapacity raptor raptorial raunchy reclusive
+recrudescent redolent reductio rennet returnee rhizome ricotta rife
+roadrunner roguish Romanesque rootstock ropy rote Rubaiyat ruminate
+runny sacristan salaam Salton salutory samurai Sanskrit Sappho
+saprophyte saprophytic Sardinia sarong sashimi sauna saunter savanna
+scad scaly scarp scathing Scheherazade schoolyard scrappy screenful
+screwy scriptwriter scrubby scruffy seabed Seaborg seashell seawater
+seaworthy sebaceous seething senescent sericulture servitude
+seventyfold sextic Seychelle shaman sharecropper shebang sheepherder
+shellfish shepherdess shipload Shiva shorebird shorefront shortcake
+Shoshone sickbed sidestepped Sikh Sikkim silicosis simian Simla Sinbad
+singleminded Sinology sixtyfold skateboard skein skeleta skinflint
+skintight slapdash sleazy slink slipshod slunk slush slushy smelly
+smite smote snakebite snowbank snowshoe sociolinguistic softcover
+Somalia songbird sonorant soupy sowbug spartan spasmodic speciate
+spermatozoon spermatozoa sphygmomanometer spillover spindly spinel
+spirochaete Spirogyra spunky squatted squatter stalagmite starry
+statuesque stingray stinkbug stoat storefront storytelling stratus
+stupa suckle sudorific suet sugary sukiyaki supplicant supernovae
+supremum surah surefire surly Svetlana swampland sweatpants sweatshop
+sweatsocks sweetbread sweetie swidden swill switchback switchmen
+symbiont symbiote synecdoche syphilis syphilitic tabletop tachyon
+taciturn taiga taillight Talmudic tamarisk Tamil Tanganyika tankard
+Tantric tapioca taproot taro tarsier taxa taxidermist taxidermy taxon
+taxonomic taxonomist telltale tenderhearted testosterone thermophilic
+thirdhand thirtyfold thyself teak telephoto TEX theocratic Thessalonian
+Thessaly thimbleful thoracic thorax thousandfold Thrace Thracian
+thumbprint thundercloud tightwad tinny tithing titmice Tito tizzy toddy
+toehold tollbooth tomahawk toothache toothpick toothy topheavy toponym
+toponymy torrential torpedoes toto tracheae trafficker trailblazer
+trailblazing trainload transonic transudate Transvaal tremolo trillium
+trilingual triphammer triploid triploidy Trobriand truckload truffle
+Truk trunkful trusty tuberous tugboat turmeric tussock Tutankhamen
+Tutenkhamon twelvefold twentyfold tyke tympanum Tzeltal ulna unctuous
+underivable underived ungulate unisex upstage upstart upwell Urdu
+urinate urology urushiol Urquhart uterus varsity vasoconstriction
+venetian ventral ventriloquism ventriloquist Vesuvius Vikram
+vinaigrette Vinci viper viral viscid viviparous vivisection vodka
+volcanoes vole vs wagonload walla Warburton warehousemen watchworks
+watercress waterfowl waterhole watertight waxwing wellwisher whalebone
+wheelbarrow whey whimsy whitish whodunit whomever whoopee whorl
+wildebeest wildflower windblown windswept wingbeat wingspread
+wintergreen Wittgenstein wolverine woodchuck Woodstock Worcestershire
+workforce wraparound wrasse wren writhing wysiwyg Xhosa yeomen yew
+Yorkshire zillion zinnia zither zooplankton Zulu
+
+(a2)  Words previously in /usr/src/usr.bin/spell/local, being added to
+/usr/dict/words.  The former file is being removed (see point (f3)
+below); the following words which it contained are being added to
+/usr/dict/words because they are common English words not already in
+that file:
+
+	aardvark backgammon cribbage ex exec id
+
+and the following because they seem to be of interest to the general
+unix user as computer-related terms
+
+	ascii grep login nroff termcap troff tset tty
+
+(a3)  The next set of words are presently accepted by "spell" for
+reasons which might change, and are therefore being added to
+/usr/dict/words as a precaution.  For example, "microbe" is accepted as
+the combination of the prefix "micro-" and the entry "be", but it might
+be decided at some time in the future to revise spell so that 2-letter
+words are not combined with prefixes.  Similarly, if the bug that
+presently causes "happyly", "dayly" etc. to be accepted by spell were
+fixed, "shyly" and "coyly" would also be rejected.
+
+   coyly forthcoming has microbe shyly wasting
+
+(a4)  The next set of items are not words themselves, but prefixes
+which occur fairly commonly in hyphenated combinations, e.g.
+"pre-Columbian".  When "spell" encounters a hyphenated word, it looks
+for the separate elements, and will flag any of these that it does not
+find.  Hence the following common items will be added to /usr/dict/words
+even though they are not full words, because many hyphenated
+combinations in which they occur are correct
+
+	 co crypto de demi hyper Indo intra neo pre proto Sino trans un
+
+(There are many other commonly hyphenating elements that one can think
+of, but most are already in the dictionary as words, e.g. post,
+Anglo, Franco, self.)
+
+(b)  Words being deleted from /usr/dict/words:
+
+(b1)  The following words previously in /usr/dict/words are being
+removed because they are misspelled.  The correctly spelled version is
+shown in parenthesis; it is included in the list of words to be
+added (a1) if it is not already present:
+
+	bellyfull (bellyful) bucketfull (bucketful) earthmen (Earthmen)
+	gingko (ginkgo) belvidere (belvedere) sepuchral (sepulchral)
+	snyaptic (synaptic) alterman (alderman) lukemia (leukemia)
+	cardiod (cardioid) mantlepiece (mantelpiece)
+
+(b2)  The following words are being deleted because they are not
+English (nor commonly used in English contexts).  They seem to come
+from titles of journals; but there are so many important journals with
+Latin, German etc. titles that it would be excessive to include a
+complete list of words from such titles in /usr/dict/words.  Names of
+journals in particular fields might be included in local lists on
+machines with users in the such fields:
+
+	Mathematik Physik Biometrika Numerische Atlantica Econometrica
+	Informatica
+
+(b3)  The following are being deleted because "spell" can derive them
+from words in /usr/dict/words (in some cases, words now being added):
+
+Buzzard Cologne De Freedman Graves Grimes Hollandaise ID Limerick
+Maelstrom Odyssey Oedipal Salaam Albanian Everglades innards intuitable
+palpable collocation vis aging ambling angling belying clinging
+edging presuming suckling emissivity gentility polity rebelled
+rebelling rebut rebutted rebutting recent recession recur recurred
+recurring reeve Reeves regale rehearse relate reman remark remedial
+remember remiss remission remitted remitting Remus renegotiable repeal
+repeat repent repetition replaceable report republic request requited
+reredos resent reserve reside resign resin resolute resolution resolve
+resonant resort respire respite restrain restrict retail retire retort
+retract return reveal reverse reversion revery revet revile revise
+revision revisionary revolt reward
+
+(c)  Changes in the stoplist.
+     The program "spell" will accept a word if it can be derived from a
+word in its "dictionary" using certain prefixes and suffixes; e.g.  it
+accepts "happiness" because "happy" is in the dictionary, "doing"
+because "do" is there, "preoccupied" because "occupied" is there.  This
+also leads it to accept enormous numbers of non-words, such as
+"magnetohandkerchiefism", "waterly",
+"overundermetasillierererererity".  Most of these are harmless, but
+some are possible misspellings of correct words, and so are put into a
+list called the "stoplist"; words on that list and words which can be
+derived from them by the same prefixes or suffixes are rejected by
+spell even if they would otherwise be accepted.
+
+(c1)  Here are some new words to be added to the stoplist.  The end of
+the list consists of forms that could be typos for commonly occurring
+sequences of words, starting with "forevery", a possible typo for "for
+every".
+     I have not included cases that result from essential errors in the
+"spell" algorithm for dealing with suffixes, e.g. the fact that it will
+accept the addition of -ly to words such as "happy", "sticky", etc.
+without changing the -y to -i-; these should be handled by someone who
+can revise the source code.
+
+engin crystalize crystalise reguard pennance publical renoun pepperment
+spearment Dudly enroach accompanyist propagandaist revisor entier
+presense acquaince plummer plumer shily defication determinancy
+prerequite grammer reden redish metafor metafore presure convokable
+evokable invokable revokable frolicing froliced panicing paniced wifes
+wharfs shelfs Argentinan Athenan Ghanan Viennan Indochinan
+foreswore foresworn foreage foreborn foreborne foreensic foreest
+foreever forefit foregotten forematted forematting foremica foretress
+foretune compelable denyable dutyable envyable flamable inflamable
+pityable plyable remedyable varyable admirality certainity crotchity
+curiousity cruelity entirity enterity fifity fraility gayity
+generousity guility humbility impugnity loyality luminousity
+monstrousity nicity novelity pairity piity pompousity porousity
+religiousity properity rackity rickity royality scrupulousity sixity
+sovereignity subtlity surity suzerainity virtuousity viscousity
+assesser compresser connecter conquerer consigner contributer counseler
+depresser errer exhibiter governer intercepter jurer licenser locomoter
+multiplexer oppresser possesser postprocesser processer professer
+purveyer senser successer suiter surveyer suspenser transgresser
+forevery outin outof outthat outthe outto overthe overto underthe
+underthis underthat underwhich andless areless beless forless getless
+gotless hadless hasless haveless ifless inless isless muchless noless
+ofless orless slightlyless somewhatless strictlyless theless wasless
+wereless withless
+
+     Incidentally, a dictionary check surprised me as to how many of
+the forms in -er that I originally had scheduled to add to the
+stoplist as misspellings of forms in -or are in fact acceptable.  E.g.,
+Websters 2nd Int'l prefers "conveyer" to "conveyor"; a "confesser" is
+one who confesses, as distinct from the "confessor" to whom he or she
+gives confession; though "mayer" is a possible misspelling of "mayor",
+it cannot be put on the stoplist because a "Mayer" is one who goes
+Maying.
+     (And our chairman John Addison Jr., looking over my list, has
+suggested tongue in cheek that if you are not nice to the exterminator
+people, they might "enroach" your house.)
+
+(c2)  Next, forms that are to be *deleted* from the stoplist, because
+they are in fact correct!
+
+	inferable referable transferable tranquility idly gayly forebear
+
+(c3)  The next two forms are presently in the stoplist but are being
+deleted because, although they themselves are not correct words, the
+presence of "bely" on the stoplist causes the correct derivative
+"belying" (form of the verb "to belie") to be rejected, and the presence
+of "ams" causes "reams" (plural of "ream") to be rejected.
+	bely ams
+
+(c4)  Finally, the next set of words, although not correct, are being
+removed from the stoplist because they cannot be derived by "spell"'s
+algorithms from words in the dictionary!  Deleting them will in general
+have no visible effect, although it will decrease the likelihood of
+certain kinds of errors by "spell", and in a few cases it will allow
+correct words to be accepted.  (E.g., until now "spell" has rejected
+"dishes" because it can be analyzed as "dis- + hes", where "dis-" is one
+of "spell"'s prefixes, and "hes" was on the stoplist.  After this
+cleaning out, "hes" will be off the stoplist, and "dishes" will be
+accepted.)
+
+ator audable bes besoting cheator collapsable colourate colourful
+combustable comprehensable condensable controvertable credable
+defensable diffusable dispersable distributory doged doger doging eator
+edable enbolden entrapable entraped entraper entraping erosable
+expansable extensable feasable foable forety fusable glomed glumer
+glumest greator heator hes hily horrable iily imperceptable implausable
+inaccessable inaudable incombustable incompatable incomprehensable
+incontrovertable incorruptable incredable indefensable indelable
+indestructable indigestable indiscernable inexhaustable inexpressable
+infallable infeasable inflexable infusable insensable irresistable
+irresponsable irreversable lader moter nes notory ostensable outgaser
+padable pily plausable plugable preseter preseting refited refiter
+refiting reknited rekniter rekniting reprehensable responsable
+reversable risable ruber rubing secretory sensable setable shipable
+slank spotable stagging stopable subletable subleted subleter subleting
+susceptable swimable terrable tily vily visable wetable xily revved
+
+(d)  Changes involving the British and American lists.
+     "Spell" has two wordlists not yet mentioned, one for spellings
+occurring only in British usage (e.g. "gaol"), which are accepted only
+when the -b option is used, the other for spellings occurring only in
+American usage, which are accepted only when the -b option is not used.
+
+(d1)  The following forms are being added to the "American" list.  (The
+forms corresponding to those in the first line with the ending -logue
+or the vowel "-ae-" are already in /usr/dict/words, since they are
+acceptable in both British and American usage.  The forms corresponding
+to those in the second line with the ending -metre are already in the
+British list.)
+	dialog epilog homolog prolog travelog esthetic paleontology
+	centimeter nanometer
+
+(d2)  The following words are being added to the "British" list.  Those
+in the first line are variants of words already in the "American" list;
+those in the next, of words in /usr/dict/words or derivable therefrom;
+the last word is the British name for the variety of turnip we here
+call a "rutabaga".  (Although the British and American lists in general
+are supposed to reflect differences in spelling, not in word usage, I
+am putting this in the British list because in an American text it
+would almost always be a typo for "Swede".)
+
+	theatregoer theatregoing aluminise hiccough
+	clew shew reflexion inflexion deflexion
+	swede
+
+(d3) The words in the first group below are being moved from
+/usr/dict/words to the "American" list, and corresponding British
+forms shown in the second group are being put in the British list
+(except that "gaol" and "behavioural" are already there, and "grey",
+presently in /usr/dict/words because it is acceptable in America,
+will remain there):
+
+	hemoglobin hemolytic hemorrhage hemorrhoid hemosiderin
+	leukemia kinesthesis cognizant decolonize topologize
+	carburetor jail gray graybeard graywacke behavioral
+
+	haemoglobin haemolytic haemorrhage haemorrhoid haemosiderin
+	leukaemia kinaesthesis cognisant decolonise topologise
+	carburettor [gaol] [grey] greybeard greywacke [behavioural]
+
+
+(d4)  The following words are being removed from the American list, the
+first three because they can be derived from other words on the list,
+the last one because it is a typographical error (missing h) for a word
+elsewhere on the list:
+	preprogram colorist watercolorist
+	psycoanalyze
+
+(d5)  The words on the first line below are being removed from the
+British list because they are derivable from other words on the list;
+the word on the next line appears twice, and one of the occurrences
+(the one out of alphabetical order) are being removed:
+	kilometre preprogramme chequer colourist watercolourist
+	millimetre
+
+(d6)  The word in the first line below is in both /usr/dict/words
+and the American list.  It is being removed from /usr/dict/words,
+and the British spelling, shown in the second line, is being put
+in the British list.
+	louver
+	louvre
+
+(d7)  The following word is being moved from the stoplist to the
+British list:
+	colourful
+
+(d8)  The following word is being removed from the stoplist; it was put
+there as an incorrect plural of "emphasis", but it is also the correct
+British version of the verb-form "emphasizes", and its presence on the
+stoplist keeps that from being accepted with the -b option:
+	emphasises
+
+(d9) The next two words are being moved from the British list to
+/usr/dict/words, since I believe that in some contexts they are
+acceptable in American use
+	draught nought
+
+(d10)  The word below is being removed from /usr/dict/words, since it
+can be derived with the -b option in effect (and the corresponding
+American form when -b is not in effect) from the word "real".
+	realisable
+
+(d11)  The words in the first line below are being added to the
+American list and the versions in the next line to the British list
+	hemophilia hemophiliac cognize pasteurize dichotomize
+	haemophilia haemophiliac cognise pasteurise dichotomise
+In conjunction with this, the word
+	cognizable
+is being deleted from /usr/dict/words, since it and the British form
+in -s- can be derived by "spell" from the corresponding forms
+without "-able".
+
+(e)  Some misorderings of /usr/dict/words, involving words introduced
+last year, are being removed; the file now shows as correctly ordered
+using sort -cdf.
+
+(f)  Some changes are also being made in the arrangement of wordlist
+files themselves.
+
+(f1)  /usr/src/usr.bin/spell/{american,british,stop} are being made
+visible to the general user as /usr/dict/{american,british,stop}.
+
+(f2)  A new directory, /usr/dict/special is being created, which will
+contain lists of words in various specialized areas, which might be
+added to spell's hashlists on machines having users in those fields.
+(However, the most important terms of various specialties will still be
+kept in /usr/dict/words.)  Two files are being put in this directory
+initially: /usr/dict/special/math, consisting of mathematical terms
+to technical for /usr/dict/words, and /usr/dict/special/4bsd, consisting
+of unix commands and system calls, created by a sed script from
+a listing of /usr/man/man[123n], and the items marked for boldfacing
+in /usr/man/man1/csh.1.
+
+(f3)  /usr/src/usr.bin/spell/local  is being eliminated.  This was
+an out-of-date version of the material now being put in
+/usr/dict/special/4bsd.  It was hashed with the other wordlists,
+while the latter file will only be included with these on machines
+where this is desired.
+
+(f4)  A directory /usr/local/dict is being created, on which each
+machine can maintain lists of interest to the users thereof (e.g., for
+a departmental machine, the surnames of members of the department's
+faculty which are not in /usr/dict/words; and perhaps lists being
+developed, which could eventually be submitted for inclusion in
+/usr/dict/special).
