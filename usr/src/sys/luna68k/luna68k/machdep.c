@@ -13,7 +13,7 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * from: hp300/hp300/machdep.c   7.36 (Berkeley) 2/10/93
  *
- *	@(#)machdep.c	7.9 (Berkeley) %G%
+ *	@(#)machdep.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -314,11 +314,17 @@ extern	char ostype[], osrelease[], version[];
 
 identifyfpu()
 {
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+		sprintf(cpu_model, "LUNA-II (25MHz MC68040 CPU+MMU+FPU)");
+		printf("%s\n", cpu_model);
+		return;
+	}
+#endif
 	if ( fpptype == -1 ) {
 		printf("unknow FPU type \n");
 		panic("startup");
 	}
-
 	sprintf(cpu_model, "LUNA-I (20MHz MC68030 CPU+MMU, 20MHz MC6888%d FPU)", fpptype);
 	printf("%s\n", cpu_model);
 
@@ -1091,6 +1097,11 @@ unsigned char fpp_svarea[212];
 
 void checkfpp()
 {
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+		return;
+	}
+#endif
     SET_INT_FPP;	/* internal = on, external = off */
     if( is_68882() )
       fpptype = FPP68882;
@@ -1109,6 +1120,11 @@ void checkfpp()
 {
 int	internal_exist,external_exist;
 int	external_68882;
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+		return;
+	}
+#endif
 
     SET_INT_FPP;	/* internal = on, external = off */
     if ( internal_exist = havefpp() && is_68882() ) {	/* internal = 68882 */

@@ -7,7 +7,7 @@
  *
  * from: hp300/hp300/sys_machdep.c	7.11 (Berkeley) 12/27/92
  *
- *	@(#)sys_machdep.c	7.3 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -107,13 +107,104 @@ cachectl(req, addr, len)
 {
 	int error = 0;
 
+#if defined(LUNA2)
+	if (mmutype == MMU_68040) {
+		register int inc;
+		int pa = 0, doall = 0;
+		caddr_t end;
+
+		if (addr == 0 ||
+		    (req & ~CC_EXTPURGE) != CC_PURGE && len > 2*NBPG)
+			doall = 1;
+#ifdef HPUXCOMPAT
+		if ((curproc->p_md.md_flags & MDP_HPUX) &&
+		    len != 16 && len != NBPG)
+			doall = 1;
+#endif
+		if (!doall) {
+			end = addr + len;
+			if (len <= 1024) {
+				addr = (caddr_t)((int)addr & ~0xF);
+				inc = 16;
+			} else {
+				addr = (caddr_t)((int)addr & ~PGOFSET);
+				inc = NBPG;
+			}
+		}
+		do {
+			/*
+			 * Convert to physical address if needed.
+			 * If translation fails, we perform operation on
+			 * entire cache (XXX is this a rational thing to do?)
+			 */
+			if (!doall &&
+			    (pa == 0 || ((int)addr & PGOFSET) == 0)) {
+				pa = pmap_extract(&curproc->p_vmspace->vm_pmap,
+						  (vm_offset_t)addr);
+				if (pa == 0)
+					doall = 1;
+			}
+			switch (req) {
+			case CC_EXTPURGE|CC_IPURGE:
+			case CC_IPURGE:
+				if (doall) {
+					DCFA();
+					ICPA();
+				} else if (inc == 16) {
+					DCFL(pa);
+					ICPL(pa);
+				} else if (inc == NBPG) {
+					DCFP(pa);
+					ICPP(pa);
+				}
+				break;
+			
+			case CC_EXTPURGE|CC_PURGE:
+			case CC_PURGE:
+				if (doall)
+					DCFA();	/* note: flush not purge */
+				else if (inc == 16)
+					DCPL(pa);
+				else if (inc == NBPG)
+					DCPP(pa);
+				break;
+
+			case CC_EXTPURGE|CC_FLUSH:
+			case CC_FLUSH:
+				if (doall)
+					DCFA();
+				else if (inc == 16)
+					DCFL(pa);
+				else if (inc == NBPG)
+					DCFP(pa);
+				break;
+				
+			default:
+				error = EINVAL;
+				break;
+			}
+			if (doall)
+				break;
+			pa += inc;
+			addr += inc;
+		} while (addr < end);
+		return(error);
+	}
+#endif
 	switch (req) {
 	case CC_EXTPURGE|CC_PURGE:
 	case CC_EXTPURGE|CC_FLUSH:
 	case CC_PURGE:
 	case CC_FLUSH:
+#if defined(LUNA2)
+		DCIU();
+#endif
 		break;
 	case CC_EXTPURGE|CC_IPURGE:
+#if defined(LUNA2)
+		DCIU();
+		/* fall into... */
+#endif
 	case CC_IPURGE:
 		ICIA();
 		break;

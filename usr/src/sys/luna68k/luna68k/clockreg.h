@@ -13,7 +13,7 @@
  * from: Utah $Hdr: clockreg.h 1.14 91/01/18$
  * from: hp300/hp300/clockreg.h	7.4 (Berkeley) 12/27/92
  *
- *	@(#)clockreg.h	7.3 (Berkeley) %G%
+ *	@(#)clockreg.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -78,3 +78,23 @@ struct bbc {
 
 #define	binary_to_bcd(i)	(((i) / 10) << 4 | ((i) % 10))
 #define	bcd_to_binary(i)	(((i) >> 4) *10 + ((i) & 0x0F))
+
+#ifdef LUNA2
+struct bbc2 {
+    unsigned char	cal_sec;	/* secons resistor */
+    unsigned char	cal_sec_alarm;	/* secons alarm resistor */
+    unsigned char	cal_min;	/* minutes resistor */
+    unsigned char	cal_min_alarm;	/* minutes alarm resistor */
+    unsigned char	cal_hour;	/* hours resitor */
+    unsigned char	cal_hour_alarm;	/* hours alarm resitor */
+    unsigned char	cal_dow;	/* day of the weeks */
+    unsigned char	cal_day;	/* days resistor */
+    unsigned char	cal_mon;	/* months resistor */
+    unsigned char	cal_year;	/* years resistor */
+    unsigned char    	cal_ctl_a;	/* calender control resistor */
+    unsigned char    	cal_ctl_b;	/* calender control resistor */
+    unsigned char    	cal_ctl_c;	/* calender control resistor */
+    unsigned char    	cal_ctl_d;	/* calender control resistor */
+    unsigned char    	nvram[50];	/* non-volatile RAM area */
+};
+#endif
