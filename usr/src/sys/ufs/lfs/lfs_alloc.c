@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.40 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -173,10 +173,12 @@ lfs_vfree(vp, notused1, notused2)
 	ino_t notused1;
 	int notused2;
 {
+	SEGUSE *sup;
 	struct buf *bp;
 	struct ifile *ifp;
 	struct inode *ip;
 	struct lfs *fs;
+	daddr_t old_iaddr;
 	ino_t ino;
 
 	ip = VTOI(vp);
@@ -192,11 +194,23 @@ lfs_vfree(vp, notused1, notused2)
 	 * and link it into the free chain.
 	 */
 	LFS_IENTRY(ifp, fs, ino, bp);
+	old_iaddr = ifp->if_daddr;
 	ifp->if_daddr = LFS_UNUSED_DADDR;
 	++ifp->if_version;
 	ifp->if_nextfree = fs->lfs_free;
 	fs->lfs_free = ino;
 	LFS_UBWRITE(bp);
+
+	if (old_iaddr != LFS_UNUSED_DADDR) {
+		LFS_SEGENTRY(sup, fs, datosn(fs, old_iaddr), bp);
+#ifdef DIAGNOSTIC
+		if (sup->su_nbytes < sizeof(struct dinode))
+			panic("lfs_vfree: negative byte count (segment %d)\n",
+			    datosn(fs, old_iaddr));
+#endif
+		sup->su_nbytes -= sizeof(struct dinode);
+		LFS_UBWRITE(bp);
+	}
 
 	/* Set superblock modified bit and decrement file count. */
 	fs->lfs_fmod = 1;
