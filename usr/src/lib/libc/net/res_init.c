@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -27,24 +27,14 @@ static char sccsid[] = "@(#)res_init.c	6.9 (Berkeley) %G%";
 #include <resolv.h>
 
 /*
- * Resolver configuration file. Contains the address of the
- * inital name server to query and the default domain for
- * non fully qualified domain names.
- */
-
-#ifndef	CONFFILE
-#define	CONFFILE	"/etc/resolv.conf"
-#endif
-
-/*
  * Resolver state default settings
  */
 
 struct state _res = {
-    RES_TIMEOUT,               	/* retransmition time interval */
-    4,                         	/* number of times to retransmit */
-    RES_DEFAULT,		/* options flags */
-    1,                         	/* number of name servers */
+	RES_TIMEOUT,               	/* retransmition time interval */
+	4,                         	/* number of times to retransmit */
+	RES_DEFAULT,			/* options flags */
+	1,                         	/* number of name servers */
 };
 
 /*
@@ -59,85 +49,114 @@ struct state _res = {
  */
 res_init()
 {
-    register FILE *fp;
-    register char *cp, **pp;
-    char buf[BUFSIZ];
-    extern u_long inet_addr();
-    extern char *index();
-    extern char *strcpy(), *strncpy();
-    extern char *getenv();
-    int n = 0;    /* number of nameserver records read from file */
+	register FILE *fp;
+	register char *cp, **pp;
+	register int n;
+	char buf[BUFSIZ];
+	extern u_long inet_addr();
+	extern char *index();
+	extern char *strcpy(), *strncpy();
+	extern char *getenv();
+	int nserv = 0;    /* number of nameserver records read from file */
+	int havesearch = 0;
 
-    _res.nsaddr.sin_addr.s_addr = INADDR_ANY;
-    _res.nsaddr.sin_family = AF_INET;
-    _res.nsaddr.sin_port = htons(NAMESERVER_PORT);
-    _res.nscount = 1;
-    _res.defdname[0] = '\0';
+	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
+	_res.nsaddr.sin_family = AF_INET;
+	_res.nsaddr.sin_port = htons(NAMESERVER_PORT);
+	_res.nscount = 1;
 
-    if ((fp = fopen(CONFFILE, "r")) != NULL) {
-        /* read the config file */
-        while (fgets(buf, sizeof(buf), fp) != NULL) {
-            /* read default domain name */
-            if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
-                cp = buf + sizeof("domain") - 1;
-                while (*cp == ' ' || *cp == '\t')
-                    cp++;
-                if (*cp == '\0')
-                    continue;
-                (void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
-                _res.defdname[sizeof(_res.defdname) - 1] = '\0';
-                if ((cp = index(_res.defdname, '\n')) != NULL)
-                    *cp = '\0';
-                continue;
-            }
-            /* read nameservers to query */
-            if (!strncmp(buf, "nameserver", 
-               sizeof("nameserver") - 1) && (n < MAXNS)) {
-                cp = buf + sizeof("nameserver") - 1;
-                while (*cp == ' ' || *cp == '\t')
-                    cp++;
-                if (*cp == '\0')
-                    continue;
-                _res.nsaddr_list[n].sin_addr.s_addr = inet_addr(cp);
-                if (_res.nsaddr_list[n].sin_addr.s_addr == (unsigned)-1) 
-                    _res.nsaddr_list[n].sin_addr.s_addr = INADDR_ANY;
-                _res.nsaddr_list[n].sin_family = AF_INET;
-                _res.nsaddr_list[n].sin_port = htons(NAMESERVER_PORT);
-                if ( ++n >= MAXNS) { 
-                    n = MAXNS;
-#ifdef DEBUG
-                    if ( _res.options & RES_DEBUG )
-                        printf("MAXNS reached, reading resolv.conf\n");
-#endif DEBUG
-                }
-                continue;
-            }
-        }
-        if ( n > 1 ) 
-            _res.nscount = n;
-        (void) fclose(fp);
-    }
-    if (_res.defdname[0] == 0) {
-        if (gethostname(buf, sizeof(_res.defdname)) == 0 &&
-           (cp = index(buf, '.')))
-             (void)strcpy(_res.defdname, cp + 1);
-    }
+	/* Allow user to override the local domain definition */
+	if ((cp = getenv("LOCALDOMAIN")) != NULL)
+		(void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
 
-    /* Allow user to override the local domain definition */
-    if ((cp = getenv("LOCALDOMAIN")) != NULL)
-        (void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
+	if ((fp = fopen(_PATH_RESCONF, "r")) != NULL) {
+	    /* read the config file */
+	    while (fgets(buf, sizeof(buf), fp) != NULL) {
+		/* read default domain name */
+		if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
+		    if (_res.defdname[0])	/* skip if have from environ */
+			    continue;
+		    cp = buf + sizeof("domain") - 1;
+		    while (*cp == ' ' || *cp == '\t')
+			    cp++;
+		    if (*cp == '\0')
+			    continue;
+		    (void)strncpy(_res.defdname, cp, sizeof(_res.defdname) - 1);
+		    if ((cp = index(_res.defdname, '\n')) != NULL)
+			    *cp = '\0';
+		    havesearch = 0;
+		    continue;
+		}
+		/* set search list */
+		if (!strncmp(buf, "search", sizeof("search") - 1)) {
+		    cp = buf + sizeof("search") - 1;
+		    while (*cp == ' ' || *cp == '\t')
+			    cp++;
+		    if (*cp == '\0')
+			    continue;
+		    (void)strncpy(_res.defdname, cp, sizeof(_res.defdname) - 1);
+		    if ((cp = index(_res.defdname, '\n')) != NULL)
+			    *cp = '\0';
+		    /*
+		     * Set search list to be blank-separated strings
+		     * on rest of line.
+		     */
+		    cp = _res.defdname;
+		    pp = _res.dnsrch;
+		    *pp++ = cp;
+		    for (n = 0; *cp && pp < _res.dnsrch + MAXDNSRCH; cp++) {
+			    if (*cp == ' ' || *cp == '\t') {
+				    *cp = 0;
+				    n = 1;
+			    } else if (n) {
+				    *pp++ = cp;
+				    n = 0;
+			    }
+		    }
+		    havesearch = 1;
+		    continue;
+		}
+		/* read nameservers to query */
+		if (!strncmp(buf, "nameserver", sizeof("nameserver") - 1) &&
+		   nserv < MAXNS) {
+		    cp = buf + sizeof("nameserver") - 1;
+		    while (*cp == ' ' || *cp == '\t')
+			    cp++;
+		    if (*cp == '\0')
+			    continue;
+		    if ((_res.nsaddr_list[nserv].sin_addr.s_addr =
+			inet_addr(cp)) == (unsigned)-1) 
+			    continue;
+		    _res.nsaddr_list[nserv].sin_family = AF_INET;
+		    _res.nsaddr_list[nserv].sin_port = htons(NAMESERVER_PORT);
+		    nserv++;
+		    continue;
+		}
+	    }
+	    if (nserv > 1) 
+		_res.nscount = nserv;
+	    (void) fclose(fp);
+	}
+	if (_res.defdname[0] == 0) {
+		if (gethostname(buf, sizeof(_res.defdname)) == 0 &&
+		   (cp = index(buf, '.')))
+			(void)strcpy(_res.defdname, cp + 1);
+	}
 
-    /* find components of local domain that might be searched */
-    pp = _res.dnsrch;
-    *pp++ = _res.defdname;
-    for (cp = _res.defdname, n = 0; *cp; cp++)
-	if (*cp == '.')
-	    n++;
-    cp = _res.defdname;
-    for (; n >= LOCALDOMAINPARTS && pp < _res.dnsrch + MAXDNSRCH; n--) {
-	cp = index(cp, '.');
-	*pp++ = ++cp;
-    }
-    _res.options |= RES_INIT;
-    return(0);
+	/* find components of local domain that might be searched */
+	if (havesearch == 0) {
+		pp = _res.dnsrch;
+		*pp++ = _res.defdname;
+		for (cp = _res.defdname, n = 0; *cp; cp++)
+			if (*cp == '.')
+				n++;
+		cp = _res.defdname;
+		for (; n >= LOCALDOMAINPARTS && pp < _res.dnsrch + MAXDNSRCH;
+		    n--) {
+			cp = index(cp, '.');
+			*pp++ = ++cp;
+		}
+	}
+	_res.options |= RES_INIT;
+	return (0);
 }
