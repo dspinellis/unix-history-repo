@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.88 (Berkeley) %G%
+ *	@(#)conf.h	8.89 (Berkeley) %G%
  */
 
 /*
@@ -680,6 +680,10 @@ typedef int		pid_t;
 typedef int		pid_t;
 # define isgraph(c)	(isprint(c) && (c != ' '))
 
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+
 # ifndef _PATH_UNIX
 #  define _PATH_UNIX	"/dynix"
 # endif
@@ -708,6 +712,9 @@ typedef int		pid_t;
 # define LA_TYPE	LA_INT
 # define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # undef SETPROCTITLE
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
