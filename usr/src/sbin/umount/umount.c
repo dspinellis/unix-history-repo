@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,7 +40,7 @@ char *nfshost;
 #endif
 
 int	vflag, all, errs, fake;
-int	fflag = MNT_NOFORCE;
+int	fflag = 0;
 char	*getmntname();
 
 #define	MNTON	1
