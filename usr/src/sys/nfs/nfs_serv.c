@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.46 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.47 (Berkeley) %G%
  */
 
 /*
@@ -547,6 +547,10 @@ nfsrv_write(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nfsm_reply(NFSX_FATTR);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
 	nfsm_srvfillattr;
+	if (nfsd->nd_nqlflag != NQL_NOVAL) {
+		nfsm_build(tl, u_long *, 2*NFSX_UNSIGNED);
+		txdr_hyper(&vap->va_filerev, tl);
+	}
 	nfsm_srvdone;
 }
 

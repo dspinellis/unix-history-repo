@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -1056,9 +1056,9 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
 					if (np->n_flag & NQNFSEVICTED) {
 						vinvalbuf(vp, TRUE);
 						np->n_flag &= ~NQNFSEVICTED;
+						(void) nqnfs_vacated(vp, cred);
 					} else
 						vflushbuf(vp, B_SYNC);
-					(void) nqnfs_vacated(vp, cred);
 				}
 			      }
 			      vrele(vp);
