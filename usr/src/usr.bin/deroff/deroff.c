@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)deroff.c	4.6	(Berkeley)	87/09/28";
+static char sccsid[] = "@(#)deroff.c	4.7	(Berkeley)	88/04/24";
 #endif not lint
 
 #include <stdio.h>
@@ -288,9 +288,9 @@ char *s, *p;
 }
 
 /*ARGSUSED*/
-textline(str, const)
+textline(str, constant)
 	char	*str;
-	int	const;
+	int	constant;
 {
 	if (wordflag) {
 		msputwords(0);
@@ -314,9 +314,9 @@ work()
 	}
 }
 
-regline(pfunc, const)
+regline(pfunc, constant)
 	int	(*pfunc)();
-	int	const;
+	int	constant;
 {
 	line[0] = c;
 	lp = line;
@@ -342,7 +342,7 @@ regline(pfunc, const)
 	*lp = '\0';
 
 	if(line[0] != '\0')
-		(*pfunc)(line, const);
+		(*pfunc)(line, constant);
 }
 
 macro()
@@ -659,9 +659,9 @@ struct	mactab	manmactab[];
 /*
  *	Put out a macro line, using ms and mm conventions.
  */
-msputmac(s, const)
+msputmac(s, constant)
 	register char *s;
-	int	const;
+	int	constant;
 {
 	register char *t;
 	register found;
@@ -679,7 +679,7 @@ msputmac(s, const)
 		for(t = s ; *t!=' ' && *t!='\t' && *t!='\0' ; ++t)
 			;
 		if(*s == '\"')s++;
-		if(t>s+const && chars[ s[0] ]==LETTER && chars[ s[1] ]==LETTER){
+		if(t>s+constant && chars[ s[0] ]==LETTER && chars[ s[1] ]==LETTER){
 			while(s < t)
 				if(*s == '\"')s++;
 				else
@@ -739,9 +739,9 @@ msputwords(macline)
 #define SKIPBLANK(cp)	while(*cp == ' ' || *cp == '\t') { cp++; }
 #define SKIPNONBLANK(cp) while(*cp !=' ' && *cp !='\cp' && *cp !='\0') { cp++; }
 
-meputmac(cp, const)
+meputmac(cp, constant)
 	reg	char	*cp;
-		int	const;
+		int	constant;
 {
 	reg	char	*np;
 		int	found;
@@ -800,10 +800,10 @@ meputmac(cp, const)
 		/*
 		 *	Determine if the argument merits being printed
 		 *
-		 *	const is the cut off point below which something
+		 *	constant is the cut off point below which something
 		 *	is not a word.
 		 */
-		if (   ( (np - cp) > const)
+		if (   ( (np - cp) > constant)
 		    && (    inquote
 		         || (chars[cp[0]] == LETTER)) ){
 			for (cp = cp; cp < np; cp++){
