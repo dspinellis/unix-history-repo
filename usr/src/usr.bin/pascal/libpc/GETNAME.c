@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.4 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.5 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -71,7 +71,7 @@ GETNAME(filep, name, namlim, datasize)
 		filep->fchain = next;
 		prev->fchain = filep;
 	} else {
-		if ((filep->funit & FDEF) == 0) {
+		if ((filep->funit & FDEF) == 0 && filep->fbuf != NULL) {
 			/*
 			 * have a previous buffer, close associated file
 			 */
@@ -87,11 +87,11 @@ GETNAME(filep, name, namlim, datasize)
 			/*
 			 * renamed temporary files are discarded
 			 */
-			if ((filep->funit & TEMP) &&
-			    (name != NULL) &&
-			    (unlink(filep->pfname))) {
-				ERROR(EREMOVE, filep->pfname);
-				return;
+			if ((filep->funit & TEMP) && name != NULL) {
+			    	if (unlink(filep->pfname)) {
+					ERROR(EREMOVE, filep->pfname);
+					return;
+				}
 			}
 		}
 		filep->funit &= (TEMP | FTEXT);
@@ -105,10 +105,10 @@ GETNAME(filep, name, namlim, datasize)
 		}
 		/*
 		 * no name given and no previous name, so generate
-		 * a new one of the form tmp.xxxxxx
+		 * a new one of the form #tmp.xxxxxx
 		 */
 		filep->funit |= TEMP;
-		sprintf(filep->fname, "tmp.%c%d", 'a' + filep->fblk, getpid());
+		sprintf(filep->fname, "#tmp.%c%d", 'a' + filep->fblk, getpid());
 		filep->pfname = &filep->fname[0];
 		return(filep);
 	}
