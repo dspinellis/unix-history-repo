@@ -121,8 +121,7 @@ typedef struct {
 
 /* Define functions to set and read the oia */
 
-#define	SetOiaOnlineA(oia) \
-	/* Nothing defined for this */
+#define	SetOiaOnlineA(oia) SetOiaMyJob((oia))		/* Side-effect */
 #define	ResetOiaOnlineA(oia) \
 	/* Nothing defined for this */
 
@@ -143,9 +142,13 @@ typedef struct {
 				(oia)->input_inhibited[3] &= ~OIA_SYSTEM_WAIT
 #define	SetOiaSystemLocked(oia)	(oia)->input_inhibited[3] |= OIA_SYSTEM_WAIT
 
-#define	IsOiaTWait(oia)		((oia)->input_inhibited[1]&OIA_TERMINAL_WAIT))
+#define	IsOiaTWait(oia)		((oia)->input_inhibited[1]&OIA_TERMINAL_WAIT)
 #define	ResetOiaTWait(oia)	(oia)->input_inhibited[1] &= ~OIA_TERMINAL_WAIT
 #define	SetOiaTWait(oia)	(oia)->input_inhibited[1] |= OIA_TERMINAL_WAIT
+
+#define	IsOiaApiInhibit(oia)	((oia)->input_inhibited[4] &   OIA_API_INHIBIT)
+#define	ResetOiaApiInhibit(oia)	((oia)->input_inhibited[4] &= ~OIA_API_INHIBIT)
+#define	SetOiaApiInhibit(oia)	((oia)->input_inhibited[4] |=  OIA_API_INHIBIT)
 
 /* A macro to let the world know that someone has modified the OIA. */
 #define	SetOiaModified()	oia_modified = 1
