@@ -1,4 +1,4 @@
-/*	nsp_usrreq.c	1.2	82/05/15	*/
+/*	nsp_usrreq.c	1.3	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,12 +6,12 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include "../net/decnet.h"
-#include "../net/dn_systm.h"
+#include "../netdecnet/decnet.h"
+#include "../netdecnet/dn_systm.h"
 #include "../net/if.h"
-#include "../net/nsp.h"
-#include "../net/nsp_var.h"
-#include "../errno.h"
+#include "../netdecnet/nsp.h"
+#include "../netdecnet/nsp_var.h"
+#include <errno.h>
 
 /*
  * NSP protocol interface to socket abstraction.

@@ -1,4 +1,4 @@
-/*	dn_systm.h	1.2	82/05/15	*/
+/*	dn_systm.h	1.3	82/10/09	*/
 
 /*
  * Miscellaneous DECnet definitions for kernel
