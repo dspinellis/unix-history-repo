@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -365,12 +365,11 @@ loop:
 configure(s)
 	int s;
 {
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *cp, *cplim;
 	struct ifconf ifc;
 	struct ifreq ifreq, *ifr;
 	struct sockaddr_in *sin;
 	register struct neighbor *np;
-	int n;
 
 	ifc.ifc_len = sizeof (buf);
 	ifc.ifc_buf = buf;
@@ -379,7 +378,16 @@ configure(s)
 		return (0);
 	}
 	ifr = ifc.ifc_req;
-	for (n = ifc.ifc_len / sizeof (struct ifreq); n > 0; n--, ifr++) {
+#ifdef RTM_ADD
+#define max(a, b) (a > b ? a : b)
+#define size(p)	max((p).sa_len, sizeof(p))
+#else
+#define size(p) (sizeof (p))
+#endif
+	cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
+	for (cp = buf; cp < cplim;
+			cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) {
+		ifr = (struct ifreq *)cp;
 		for (np = neighbors; np != NULL; np = np->n_next)
 			if (np->n_name &&
 			    strcmp(ifr->ifr_name, np->n_name) == 0)
