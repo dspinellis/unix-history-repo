@@ -52,6 +52,7 @@ int	showoptions = 0;
 int	options;
 int	debug = 0;
 int	crmod = 0;
+int	telnetport = 1;
 char	*prompt;
 char	escape = CTRL(]);
 
@@ -87,8 +88,8 @@ char	helphelp[] =	"print help information";
 char	optionshelp[] =	"toggle viewing of options processing";
 char	crmodhelp[] =	"toggle mapping of received carriage returns";
 char	sendeschelp[] =	"send escape character";
-char	aythelp[] =	"send Are You There";
-char	intphelp[] =	"send Interrupt Process";
+char	aythelp[] =	"send \"Are You There\"";
+char	intphelp[] =	"send \"Interrupt Process\"";
 
 struct cmd cmdtab[] = {
 	{ "open",	openhelp,	tn },
@@ -103,6 +104,7 @@ struct cmd cmdtab[] = {
 	{ "ayt",	aythelp,	ayt },
 	{ "interrupt",	intphelp,	intp },
 	{ "passthru",	sendeschelp,	sendesc },
+	{ "help",	helphelp,	help },
 	{ "?",		helphelp,	help },
 	0
 };
@@ -192,11 +194,19 @@ tn(argc, argv)
 	sin.sin_port = sp->s_port;
 	if (argc == 3) {
 		sin.sin_port = atoi(argv[2]);
-		if (sin.sin_port < 0) {
-			printf("%s: bad port number\n", argv[2]);
-			return;
+		if (sin.sin_port <= 0) {
+			sp = getservbyname(argv[2], "tcp");
+			if (sp)
+				sin.sin_port = sp->s_port;
+			else {
+				printf("%s: bad port number\n", argv[2]);
+				return;
+			}
+		} else {
+			sin.sin_port = atoi(argv[2]);
+			sin.sin_port = htons(sin.sin_port);
 		}
-		sin.sin_port = htons(sin.sin_port);
+		telnetport = 0;
 	}
 	net = socket(AF_INET, SOCK_STREAM, 0);
 	if (net < 0) {
@@ -405,7 +415,7 @@ telnet(s)
 
 	(void) mode(2);
 	ioctl(s, FIONBIO, &on);
-	if (!hisopts[TELOPT_SGA])
+	if (telnetport && !hisopts[TELOPT_SGA])
 		willoption(TELOPT_SGA);
 	for (;;) {
 		int ibits = 0, obits = 0;
@@ -752,7 +762,7 @@ setoptions()
 {
 
 	showoptions = !showoptions;
-	printf("%s show option processing.\n", showoptions ? "Will" : "Wont");
+	printf("%s show option processing.\n", showoptions ? "Will" : "Won't");
 	fflush(stdout);
 }
 
@@ -761,7 +771,7 @@ setcrmod()
 {
 
 	crmod = !crmod;
-	printf("%s map carriage return on output.\n", crmod ? "Will" : "Wont");
+	printf("%s map carriage return on output.\n", crmod ? "Will" : "Won't");
 	fflush(stdout);
 }
 
@@ -771,7 +781,7 @@ setdebug()
 
 	debug = debug ? 0 : 1;
 	printf("%s turn on socket level debugging.\n",
-		debug ? "Will" : "Wont");
+		debug ? "Will" : "Won't");
 	fflush(stdout);
 	if (net > 0 &&
 	    setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
