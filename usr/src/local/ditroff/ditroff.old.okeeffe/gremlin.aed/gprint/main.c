@@ -1,4 +1,4 @@
-/* gprint.c-
+/*	main.c	1.4	83/03/30
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -8,7 +8,6 @@
  */
 
 #include "gprint.h"
-#include "grem2.h"
 #include <signal.h>
 #include <vfont.h>
 
@@ -32,30 +31,22 @@ extern POINT *PTInit(), *PTMakePoint();
 int	linethickness = 0;	/* brush styles */
 int	linmod = SOLID;
 char	chrtab[][16];
-char	*obuf;		/* output buffer DevRange x DevRange/8 */
-int	bufsize;	/* output buffer size */
+char	*obuf;			/* output buffer DevRange x DevRange/8 */
+int	bufsize;		/* output buffer size */
 int	lastx;
 int	lasty;
 int	angle, startx, starty, endx, endy;
-double	scale = 4.0;	/* Variables used to map gremlin screen */
-double	topx;		/* coordinates into output device coordinates */
-double	topy;
-double	botx;
-double	boty;
-int	centx = 0;
-int	centy = 0;
-double	delx;
-double	dely;
-double	del;
+double	scale = 3.0;		/* Variables used to map gremlin screen */
+double	orgx = 0.0;		/* x and y origin of gremlin picture */
+double	orgy = 0.0;
 
 FILE	*pfp = stdout;		/* file descriptor of current picture */
 char	picture[] = "/usr/tmp/rastAXXXXXX";
 int	run = 13;		/* index of 'a' in picture[] */
-int	DevRange = 1536;	/* Bits per line for output array */
-int	DevRange8 = 1536/8;	/* Bytes per line for output array */
+int	DevRange = 1536;	/* plot dimensions in pixels */
+int	DevRange8 = 1536/8;
 int	BytesPerLine = 264;	/* Bytes per raster line (different from range
 				   due to non-square paper). */
-char	device = 'V';		/* default device */
 int	lparg = 6;		/* index into lpargs */
 
 char	*lpargs[50] = { "lpr", "-Pvarian", "-v", "-s", "-r", "-J", };
@@ -95,14 +86,14 @@ char *argv[];
 			file[gfil++] = arg;
 		else switch (*++arg) {
 		case 'W':	/* Print to wide (versatec) device */
-			device = 'W';
+			scale = 4.0;
 			DevRange = 2048;
 			DevRange8 = 2048/8;
 			BytesPerLine = 880;
 			lpargs[1] = "-Pversatec";
 			break;
 		case 'V':	/* Print to narrow (varian) device */
-			device = 'V';
+			scale = 3.0;
 			DevRange = 1536;
 			DevRange8 = 1536/8;
 			BytesPerLine = 264;
@@ -224,12 +215,6 @@ char *argv[];
 		}
 	}
 
-	/* init constants for scaling */
-	topx = topy = DevRange;
-	botx = boty = 0;
-	delx = dely = del = DevRange;
-	centx = (DevRange - mapx(topx/scale))/2;
-	centy = mapy(topy/scale)/2;
 	signal(SIGTERM, cleanup);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, cleanup);
@@ -266,7 +251,7 @@ char *argv[];
 			continue;
 
 		if (!WriteRaster) {
-			umask(0);
+			umask(022);
 			if ((pfp = fopen(picture, "w")) == NULL) {
 				fprintf(stderr, "gprint: can't create %s\n", picture);
 				cleanup();
@@ -288,45 +273,48 @@ char *argv[];
 			HGPrintElt(e);	/* traverse picture, printing elements */
 			e = DBNextElt(e);
 		}
-		for (cp1 = obuf; cp1 < cp2; cp1 += DevRange8) {
-			fwrite(cp1, sizeof(char), DevRange8, pfp);
-			if (fseek(pfp, (long) BytesPerLine - DevRange8, 1) < 0)
-				for (i = BytesPerLine - DevRange8; i--; )
-					putc('\0', pfp);
+		for (cp1 = obuf; cp1 < cp2; ) {
+			for (i = DevRange8; i--; cp1++)
+				putc(*cp1, pfp);
+			for (i = BytesPerLine - DevRange8; i--; )
+				putc('\0', pfp);
 		}
 		if (!WriteRaster)
 			fclose(pfp);
 	}
+/*
 	if (!WriteRaster) {
 		lpargs[lparg] = 0;
 		execv(LPR, lpargs);
 		fprintf(stderr, "gprint: can't exec %s\n", LPR);
 		cleanup();
 	}
+*/
 	exit(0);
 }
 
 cleanup()
 {
-	while (picture[run] != 'a') {
+	do
 		unlink(picture);
-		picture[run]--;
-	}
+	while (picture[run]-- != 'A');
 	exit(1);
 }
 
 /*
- * Points should be in the range 0 <= x (or y) <= DevRange.
+ * Points should be in the range 0 <= x < DevRange, 0 <= y < DevRange.
  * The origin is the top left-hand corner with increasing x towards the
  * right and increasing y going down.
- * The output array is DevRange x DevRange pixels.
+ * The output array is DevRange x DevRange/8 pixels.
  */
 point(x, y)
 register int x, y;
 {
 	register unsigned byte;
 
-	byte = y * DevRange8 + (x >> 3);
-	if (byte < bufsize)
+	if ((unsigned) x < DevRange && (unsigned) y < DevRange) {
+		byte = y * DevRange8 + (x >> 3);
 		obuf[byte] |= 1 << (7 - (x & 07));
+	} else
+		printf("(%d, %d) out of range\n", x, y);
 }

@@ -1,15 +1,14 @@
-/*	gprint.h	1.2	83/03/02
+/*	gprint.h	1.3	83/03/30
  *
  * This file contains standard definitions used by the gprint program.
  */
 
-#define poffset ( (device == 'V') ? 10 : 117 )
-#define Ymax 483
 #define Xmax 511
+#define Ymax 483
 #define xorn(x,y) Orientation ? (y) : (x) 
-#define yorn(x,y) Orientation ? (Ymax - ((x) - poffset)) : (y) 
-#define mapx(x) ((DevRange*(((x) * scale)-botx)/del)+centx)
-#define mapy(y) ((DevRange*(del-((y) * scale)+boty)/del)-centy)
+#define yorn(x,y) Orientation ? (x) : (y) 
+#define mapx(x) (((x) * scale)-orgx)
+#define mapy(y) (((y) * scale)-orgy)
 #define STYLES 6
 #define SIZES 4
 #define FONTS 4
@@ -81,3 +80,9 @@ typedef struct {
 	int tx_y;	/* Row containing field */
 	int tx_size;	/* Size of field in characters */
 } TXFIELD;
+
+#define DBNextElt(elt) elt->nextelt
+#define DBNextofSet(elt) elt->setnext
+#define DBNullelt(elt) (elt == NULL)
+#define Nullpoint(pt)  (pt->x == nullpt)
+#define PTNextPoint(pt) pt->nextpt

@@ -1,5 +1,4 @@
-
-/* hpoint.c -
+/*	hpoint.c	1.3	83/03/30
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -8,7 +7,6 @@
  */
 
 #include "gprint.h"
-#include "grem2.h"
 
 /* imports from c */
 
