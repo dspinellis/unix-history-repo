@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -256,7 +256,7 @@ command(fmt, args)
 	return(r);
 }
 
-char reply_string[BUFSIZ];
+char reply_string[BUFSIZ];		/* last line of previous reply */
 
 #include <ctype.h>
 
@@ -270,10 +270,10 @@ getreply(expecteof)
 	int pflag = 0;
 	char *pt = pasv;
 
-	cp = reply_string;
 	oldintr = signal(SIGINT,cmdabort);
 	for (;;) {
 		dig = n = code = 0;
+		cp = reply_string;
 		while ((c = getc(cin)) != '\n') {
 			if (c == IAC) {     /* handle telnet commands */
 				switch (c = getc(cin)) {
@@ -337,7 +337,8 @@ getreply(expecteof)
 			}
 			if (n == 0)
 				n = c;
-			*cp++ = c;
+			if (cp < &reply_string[sizeof(reply_string) - 1])
+				*cp++ = c;
 		}
 		if (verbose > 0 || verbose > -1 && n == '5') {
 			(void) putchar(c);
