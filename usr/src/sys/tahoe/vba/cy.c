@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cy.c	7.4 (Berkeley) %G%
+ *	@(#)cy.c	7.4 (Berkeley) 5/5/89
  */
 
 #include "yc.h"
@@ -38,16 +38,15 @@ int	cydebug = 0;
 #include "vm.h"
 #include "buf.h"
 #include "file.h"
-#include "user.h"
-#include "proc.h"
 #include "signal.h"
 #include "ioctl.h"
 #include "mtio.h"
 #include "errno.h"
 #include "cmap.h"
+#include "time.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "tty.h"
+#include "tprintf.h"
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/mtpr.h"
@@ -114,7 +113,7 @@ struct	yc_softc {
 	u_short	yc_status;	/* copy of last tpcb.tpstatus */
 	u_short	yc_resid;	/* copy of last bc */
 	u_short	yc_dens;	/* prototype control word with density info */
-	struct	tty *yc_ttyp;	/* user's tty for errors */
+	tpr_t	yc_tpr;		/* handle for tprintf */
 	daddr_t	yc_blkno;	/* block number, for block device tape */
 	daddr_t	yc_nxrec;	/* position of end of tape, if known */
 	int	yc_blksize;	/* current tape blocksize estimate */
@@ -332,7 +331,7 @@ cyopen(dev, flag)
 	yc->yc_blksize = CYMAXIO;		/* guess > 0 */
 	yc->yc_blks = 0;
 	yc->yc_softerrs = 0;
-	yc->yc_ttyp = u.u_ttyp;
+	yc->yc_tpr = tprintf_open();
 	return (0);
 }
 
@@ -368,6 +367,7 @@ cyclose(dev, flag)
 		    YCUNIT(dev), yc->yc_softerrs, yc->yc_blks);
 	dlog((LOG_INFO, "%d soft errors in %d blocks\n",
 	    yc->yc_softerrs, yc->yc_blks));
+	tprintf_close(yc->yc_tpr);
 	yc->yc_openf = 0;
 	return (0);
 }
@@ -809,7 +809,7 @@ cyintr(cyunit)
 		/*
 		 * Couldn't recover from error.
 		 */
-		tprintf(yc->yc_ttyp,
+		tprintf(yc->yc_tpr,
 		    "yc%d: hard error bn%d status=%b, %s\n", YCUNIT(bp->b_dev),
 		    bp->b_blkno, yc->yc_status, CYS_BITS,
 		    (err < NCYERROR) ? cyerror[err] : "");
