@@ -1,43 +1,58 @@
-#	@(#)GENERIC.luna68k	7.2 (Berkeley) %G%
+#	@(#)GENERIC.luna68k	7.3 (Berkeley) %G%
 #
-
 machine		"luna68k"
 
-cpu		"luna1"
-
+cpu		"LUNA1"
+cpu		"LUNA2"
 ident		GENERIC
 
-timezone	5 dst
+# Need to set locally
+timezone	8 dst
+maxusers	48
 
 hz		60
 
-# Standard 4.3-Reno options
-maxusers	48
-options		INET
-options		NS
-options		QUOTA
-options		FIFO
-options		FFS
-options		MFS
-options		NFS
-options		DIAGNOSTIC
-options		"TCP_COMPAT_42"
-options		"COMPAT_43"
-options		"COMPAT_42"
-options		KTRACE
-#options	GATEWAY		# slip needs this for packet forwarding
+# Standard system options
+options		SWAPPAGER		# swap pager (anonymous and swap space)
+options		VNODEPAGER		# vnode pager (mapped files)
+options		DEVPAGER		# device pager (mapped devices)
+options		DIAGNOSTIC		# extra kernel debugging checks
+options		DEBUG			# extra kernel debugging support
+options		"COMPAT_43"		# compatibility with 4.3BSD binaries
+options		KTRACE			# system call tracing support
+options		"NKMEMCLUSTERS=1024"	# 4K pages in kernel malloc pool
 
-options		SWAPPAGER
-options		VNODEPAGER
-options		DEVPAGER
+# luna68k does not support GDB kernel debugging
+#options	KGDB			# support for kernel gdb
+#options	"KGDBRATE=19200"	# kernel gdb port rate (default 9600)
+#options	"KGDBDEV=15*256+0"	# device for kernel gdb
 
-# OSI stuff:
-#options	ISO
+# Filesystem options
+options		FIFO		# POSIX fifo support (in all filesystems)
+options		FFS,QUOTA	# fast filesystem with user and group quotas
+options		MFS		# memory-based filesystem
+options		NFS		# Sun NFS-compatible filesystem
+options		LOFS		# Loop-back filesystem
+options		KERNFS		# kernel data-structure filesystem
+options		FDESC		# user file descriptor filesystem
+#options	UMAPFS		# uid/gid remapping filesystem
+#options	NULLFS		# null layer filesystem
+#options	LFS		# Log-based filesystem (still experimental)
+#options	PORTAL		# portal filesystem (still experimental)
+
+# Networking options
+options		INET		# Internet protocols
+options		"TCP_COMPAT_42"	# compatibility with 4.2BSD TCP/IP
+options		GATEWAY		# IP packet forwarding
+#options	MULTICAST	# Multicast support
+#options	MROUTING	# Multicast routing support
+#options	ISO		# OSI networking
 #options	TPIP
 #options	EON
 
-options		DEBUG
-options		DEBUGPRINT
+# Options for LUNA hardware
+options		HPFPLIB		# floating point emulation for MC68040
+options		DEBUGPRINT	# extra kernel debugging support for SCSI drivers
 
 config		vmunix swap generic
 
@@ -50,6 +65,8 @@ device		sio0	at scode? flags 0x0
 device		bmc0	at scode? flags 0x0
 device		le0	at scode?
 
-pseudo-device	pty
+pseudo-device	sl		 4	# serial-line IP ports
+pseudo-device	pty		64	# pseudo ptys
+pseudo-device	bpfilter	16	# packet filter ports
 pseudo-device	loop
 pseudo-device	ether
