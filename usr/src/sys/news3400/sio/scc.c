@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scc.c,v 4.300 91/06/09 06:44:53 root Rel41 $ SONY
  *
- *	@(#)scc.c	7.2 (Berkeley) %G%
+ *	@(#)scc.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -169,71 +169,13 @@ This must be bug because scc->scc_param is not initialized yet.
 #define	vec_to_chan(vec)	scc2chan[vec_to_scc(vec)]
 
 int scc2chan[] = {
-#ifdef news700
-	0,	1,
-#else /* news700 */
 	1,	0,
-#endif /* news700 */
 	3,	2,
 	5,	4,
 	7,	6,
 	9,	8
 };
 
-#ifdef news700
-#define	OFF		0x80
-
-scc_rint(vec)
-	int vec;
-{
-	int chan = vec_to_chan(vec);
-	Scc_channel *scc = &sccsw[chan];
-	register struct scc_reg *port = scc->scc_port;
-	register int c;
-#if NMS > 0
-	extern int _ms_helper();
-#endif /* NMS > 0 */
-#if NBM > 0
-	extern int kb_softint();
-#endif /* NBM > 0 */
-
-	if ((scc->scc_status & CHAN_ACTIVE) == 0) {
-		scc_reset(chan);
-		goto out;
-	}
-	while (port->ctrl & R0_RxCA) {
-		SCCWAIT;
-		c = port->data;
-		SCCWAIT;
-		switch (chan) {
-
-		case SCC_MOUSE:
-#if NMS > 0
-			if (xputc(c, SCC_MOUSE) < 0)
-				printf("mouse queue overflow\n");
-			softcall(_ms_helper, (caddr_t)0);
-#endif
-			break;
-
-		case SCC_KEYBOARD:
-#if NBM > 0
-			if (xputc(c, SCC_KEYBOARD) < 0)
-				printf("keyboard queue overflow\n");
-			softcall(kb_softint, (caddr_t)0);
-#endif
-			break;
-
-		default:
-			printf("kb or ms stray intr\n");
-			break;
-		}
-		SCCWAIT;
-	}
-out:
-	port->ctrl = W0_RES_IUS;
-	SCCWAIT;
-}
-#else /* news700 */
 scc_rint(vec)
 	int vec;
 {
@@ -264,7 +206,6 @@ out:
 	port->ctrl = W0_RES_IUS;
 	SCCWAIT;
 }
-#endif /* news700 */
 
 #if NRS > 0
 scc_enable(chan)
@@ -390,7 +331,7 @@ scc_cint(vec)
 			scc->scc_param |= OVERRUN_ERROR;
 #if NRS > 0
 			rssint(chan, scc->scc_param);
-#endif /* NRS > 0 */
+#endif
 		}
 	}
 	if (status & R1_PARITY) {
@@ -437,29 +378,6 @@ scc_read_reg(chan, reg)
 	return (result);
 }
 
-#ifdef news1700
-#define	DSRA	0x20
-#define	RIA	0x04
-#define	DSRB	0x02
-#define	RIB	0x01
-
-#define	DSRC	0x01
-#define	RIC	0x02
-#define	DSRD	0x04
-#define	RID	0x08
-#define	DSRE	0x10
-#define	RIE	0x20
-#define	DSRF	0x40
-#define	RIF	0x80
-#endif /* news1700 */
-
-#ifdef news1200
-#define	DSRA	0x08
-#define	RIA	0x04
-#define	DSRB	0x02
-#define	RIB	0x01
-#endif /* news1200 */
-
 #ifdef news3400
 #define	DSRA	0x01
 #define	RIA	0x02
@@ -481,12 +399,9 @@ struct ri_dsr {
 	int	ri;
 	int	dsr;
 } ri_dsr[] = {
-#ifdef news700
-	{ (char *)0, 0, 0 }
-#else /* news700 */
 	{ (char *)SCC_STATUS0, RIA, DSRA },
 	{ (char *)SCC_STATUS0, RIB, DSRB },
-#if !defined(news1200) && !defined(news3200)
+#if !defined(news3200)
 	{ (char *)SCC_STATUS1, RIC, DSRC },
 	{ (char *)SCC_STATUS1, RID, DSRD },
 	{ (char *)SCC_STATUS1, RIE, DSRE },
@@ -495,8 +410,7 @@ struct ri_dsr {
 	{ (char *)SCC_STATUS2, RID, DSRD },
 	{ (char *)SCC_STATUS2, RIE, DSRE },
 	{ (char *)SCC_STATUS2, RIF, DSRF }
-#endif /* !news1200 && !news3200 */
-#endif /* news700 */
+#endif /* !news3200 */
 };
 
 get_ri_dsr(chan)
@@ -506,66 +420,16 @@ get_ri_dsr(chan)
 	register int status, param;
 
 	param = 0;
-#ifndef news700
 	p = &ri_dsr[chan];
 	status = *p->status;
 	if ((status & p->ri) == 0)
 		param |= RI;
 	if ((status & p->dsr) == 0)
 		param |= DSR;
-#endif /* !news700 */
 	return (param);
 }
 
-#ifdef news700
-/*
- *	tc = floor(5000000 / 32 / baudrate - 2 + 0.5);
- */
-static int tc0[] = {
-	0,		/* B0 */
-	3123,		/* B50 */
-	2081,		/* B75 */
-	1418,		/* B110 */
-	1164,		/* B134 */
-	1039,		/* B150 */
-	779,		/* B200 */
-	518,		/* B300 */
-	258,		/* B600 */
-	128,		/* B1200 */
-	84,		/* B1800 */
-	63,		/* B2400 */
-	30,		/* B4800 */
-	14,		/* B9600 */
-	14,		/* EXTA	*/
-	14		/* EXTB	*/
-};
-#endif /* news700 */
-
-#ifdef news1700
-/*
- *	tc0 = floor(4000000 / 32 / baudrate - 2 + 0.5);
- */
-static int tc0[] = {
-	0,		/* B0 */
-	2498,		/* B50 */
-	1664,		/* B75 */
-	1134,		/* B110 */
-	930,		/* B134 */
-	831,		/* B150 */
-	623,		/* B200 */
-	414,		/* B300 */
-	206,		/* B600 */
-	102,		/* B1200 */
-	67,		/* B1800 */
-	50,		/* B2400 */
-	24,		/* B4800 */
-	11,		/* B9600 */
-	11,		/* EXTA (B9600)*/
-	11		/* EXTB (B9600)*/
-};
-#endif /* news1700 */
-
-#if defined(news1200) || defined(news3400)
+#if defined(news3400)
 /*
  *	tc0 = floor(4915200 / 32 / baudrate - 2 + 0.5);
  */
@@ -587,9 +451,8 @@ static int tc0[] = {
 	6,		/* EXTA (B19200) */
 	2		/* EXTB (B38400) */
 	};
-#endif /* news1200 || news3400 */
+#endif /* news3400 */
 
-#ifndef news700
 static int tc1[] = {
 /*
  *	tc1 = floor(3686400 / 32 / baudrate - 2 + 0.5);
@@ -611,7 +474,6 @@ static int tc1[] = {
 	4,		/* B19200 */
 	1,		/* B38400 */
 };
-#endif /* !news700 */
 
 scc_set_param(chan, param)
 	int chan;
@@ -631,11 +493,7 @@ scc_set_param(chan, param)
 		scc_write_reg(chan, WR11, W11_RxC_RTxC|W11_TxC_TRxC);
 		bit = W4_X1;
 	} else {
-#ifdef news700
-		tc = tc0;
-#else /* news700 */
 		tc = (chan <= SCC_REMOTE1) ? tc0 : tc1;
-#endif /* news700 */
 		scc_write_reg(chan, WR11, W11_RxC_BRG|W11_TxC_BRG);
 		scc_write_reg(chan, WR12, tc[baud] & 0xff);
 		scc_write_reg(chan, WR13, tc[baud] >> 8);
