@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.3 %G%";
+static	char sccsid[] = "@(#)stab.c 1.4 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -58,7 +58,7 @@ stabvar( name , type , level , offset , length , line )
 	if ( level == 1 ) {
 		putprintf( "\",0x%x,0,0x%x,0" , 0 , N_GSYM , type );
 	} else {
-		putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_LSYM , type , offset );
+		putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_LSYM , type , -offset );
 	}
 	putprintf( "	.stabs	\"" , 1 );
 	putprintf( NAMEFORMAT , 1 , name );
