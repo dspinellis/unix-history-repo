@@ -2,7 +2,7 @@
 #	the sccs related things for the
 #	berkeley pascal system.
 
-SCCSID = "sccsmakefile 2.1 %G% 20:40:31"
+SCCSID = "sccsmakefile 2.2 %G% 11:43:43"
 
 PSCCSDIR = /usr/src/ucb/pascal/src
 PIDIR = ../pi
@@ -25,7 +25,7 @@ SRCS =	ato.c \
 	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c \
 	p2put.c stab.c pcproc.c pcfunc.c pccaseop.c pclval.c
 
-HDRS =	0.h OPnames.h align.h iorec.h objfmt.h pstab.h pc.h pcops.h \
+HDRS =	0.h OPnames.h align.h iorec.h objfmt.h pstab.h pc.h \
 	send.h tree.h whoami.h yy.h config.h
 
 OTHERS = pas.y opc.c CONFIG.c gram pic.c makefile
@@ -303,10 +303,6 @@ pstab.h: ${PSCCSDIR}/SCCS/s.pstab.h
 pc.h: ${PSCCSDIR}/SCCS/s.pc.h
 	cd ${PIDIR} ; ${GET} pc.h
 	cd ${PC0DIR} ; ${GET} pc.h
-
-pcops.h: ${PSCCSDIR}/SCCS/s.pcops.h
-	cd ${PIDIR} ; ${GET} pcops.h
-	cd ${PC0DIR} ; ${GET} pcops.h
 
 send.h: ${PSCCSDIR}/SCCS/s.send.h
 	cd ${PIDIR} ; ${GET} send.h
