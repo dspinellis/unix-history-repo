@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xdr_subs.h	8.1 (Berkeley) %G%
+ *	@(#)xdr_subs.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -25,12 +25,19 @@
 #define	txdr_unsigned(v)	(htonl((long)(v)))
 
 #define	fxdr_nfstime(f, t) { \
+	register u_long _nsec; \
 	(t)->ts_sec = ntohl(((struct nfsv2_time *)(f))->nfs_sec); \
-	(t)->ts_nsec = 1000 * ntohl(((struct nfsv2_time *)(f))->nfs_usec); \
+	_nsec = ntohl(((struct nfsv2_time *)(f))->nfs_usec); \
+	if (_nsec != VNOVAL) \
+		_nsec *= 1000; \
+	(t)->ts_nsec = _nsec; \
 }
 #define	txdr_nfstime(f, t) { \
+	register u_long _nsec = (f)->ts_nsec; \
 	((struct nfsv2_time *)(t))->nfs_sec = htonl((f)->ts_sec); \
-	((struct nfsv2_time *)(t))->nfs_usec = htonl((f)->ts_nsec) / 1000; \
+	if (_nsec != VNOVAL) \
+		_nsec /= 1000; \
+	((struct nfsv2_time *)(t))->nfs_usec = htonl(_nsec); \
 }
 
 #define	fxdr_nqtime(f, t) { \
