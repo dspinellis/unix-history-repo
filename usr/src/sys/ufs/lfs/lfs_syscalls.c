@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	8.5 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -438,7 +438,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 		if ((*vpp)->v_flag & VXLOCK)
 			printf ("Cleaned vnode VXLOCKED\n");
 		ip = VTOI(*vpp);
-		if (ip->i_flags & IN_LOCKED)
+		if (ip->i_flag & IN_LOCKED)
 			printf("cleaned vnode locked\n");
 		if (!(ip->i_flag & IN_MODIFIED)) {
 			++ump->um_lfs->lfs_uinodes;
