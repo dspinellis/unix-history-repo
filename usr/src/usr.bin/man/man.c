@@ -12,15 +12,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/file.h>
-#include <errno.h>
+
 #include <ctype.h>
-#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 
 extern int errno;
@@ -154,11 +158,13 @@ manual(path, name)
 			}
 			*cp = '\0';
 		}
-		(void)sprintf(fname, "%s/%s.0", path, name);
+		(void)snprintf(fname, sizeof(fname), "%s/%s.0", path, name);
 		if (access(fname, R_OK)) {
-			(void)sprintf(fname, "%s/%s/%s.0", path, machine, name);
+			(void)snprintf(fname, sizeof(fname),
+			    "%s/%s/%s.0", path, machine, name);
 			if (access(fname, R_OK)) {
-				++cp;
+				if (cp != NULL)
+					*cp++ = ':';
 				continue;
 			}
 		}
@@ -174,7 +180,7 @@ manual(path, name)
 		if (!f_all)
 			return(1);
 		res = 1;
-		if (cp)
+		if (cp != NULL)
 			*cp++ = ':';
 	}
 	return(res);
