@@ -1,0 +1,44 @@
+# Host machine: IBM RS/6000 running AIX 3.2.
+# Copyright 1990, 1991, 1992 Free Software Foundation, Inc.
+
+# This file is part of GDB.
+
+# GDB is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 1, or (at your option)
+# any later version.
+
+# GDB is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GDB; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+XDEPFILES= 
+XM_FILE= xm-rs6000.h
+NAT_FILE= nm-rs6000.h
+NATDEPFILES= fork-child.o infptrace.o inftarg.o corelow.o rs6000-nat.o
+
+# When compiled with cc, for debugging, this argument should be passed.
+# We have no idea who our current compiler is though, so we skip it.
+# MH_CFLAGS = -bnodelcsect
+
+# The IBM version of /usr/include/rpc/rpc.h has a bug -- it says
+# `extern fd_set svc_fdset;' without ever defining the type fd_set.
+# Unfortunately this occurs in the vx-share code, which is not configured
+# like the rest of GDB (e.g. it doesn't include "defs.h").
+# We circumvent this bug by #define-ing fd_set here, but undefining it in
+# the xm-rs6000.h file before ordinary modules try to use it.  FIXME, IBM!
+MH_CFLAGS=-Dfd_set=int
+
+# Because of shared libraries, we risk ending up with *two*
+# incompatible versions of malloc if we use GNU malloc ...
+MMALLOC_LIB = 
+MMALLOC_DISABLE = -DNO_MMALLOC
+
+# A bug in the AIX 3.2 libc.a results in unresolved references for .scalb and
+# .finite becuase we call ldexp.  Circumvent by adding -lm.  FIXME, IBM.
+XM_CLIBS= -lm
