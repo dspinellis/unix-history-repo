@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.13 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.14 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -184,7 +184,6 @@ restart:
 			break;
 
 	if (n == 0) {
-		ASSERT((tpcb->tp_flags & TPF_DISC_DATA_IN) == 0);
 		IFDEBUG(D_XPD)
 			printf("RCVOOB: empty queue!\n");
 		ENDDEBUG
