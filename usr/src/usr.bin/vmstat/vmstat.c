@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -68,10 +68,12 @@ struct nlist nl[] = {
 	{ "_eintrcnt" },
 #define	X_DK_NDRIVE	19
 	{ "_dk_ndrive" },
+#define	X_XSTATS	20
+	{ "_xstats" },
 #ifdef vax
-#define X_MBDINIT	20
+#define X_MBDINIT	21
 	{ "_mbdinit" },
-#define X_UBDINIT	21
+#define X_UBDINIT	22
 	{ "_ubdinit" },
 #endif
 	{ "" },
@@ -363,9 +365,27 @@ dotimes()
 	printf("average: %8.1f msec / page in\n", s.pgintime/(sum.v_pgin*10.0));
 }
 
+/* SHOULD BE AVAILABLE IN <sys/text.h> */
+/*
+ * Statistics
+ */
+struct xstats {
+	u_long	alloc;			/* calls to xalloc */
+	u_long	alloc_inuse;		/*	found in use/sticky */
+	u_long	alloc_cachehit;		/*	found in cache */
+	u_long	alloc_cacheflush;	/*	flushed cached text */
+	u_long	alloc_unused;		/*	flushed unused cached text */
+	u_long	free;			/* calls to xfree */
+	u_long	free_inuse;		/*	still in use/sticky */
+	u_long	free_cache;		/*	placed in cache */
+	u_long	free_cacheswap;		/*	swapped out to place in cache */
+};
+/* END SHOULD BE AVAILABLE... */
+
 dosum()
 {
 	struct nchstats nchstats;
+	struct xstats  xstats;
 	long nchtotal;
 
 	lseek(mf, (long)nl[X_SUM].n_value, L_SET);
@@ -414,6 +434,15 @@ dosum()
 	    nchstats.ncs_pass2 * 100 / nz(nchtotal));
 	printf("%9s badhits %d, falsehits %d, toolong %d\n", "",
 	    nchstats.ncs_badhits, nchstats.ncs_falsehits, nchstats.ncs_long);
+	lseek(mf, (long)nl[X_XSTATS].n_value, 0);
+	read(mf, &xstats, sizeof xstats);
+	printf("%9d total calls to xalloc (cache hits %d%%)\n",
+	    xstats.alloc, xstats.alloc_cachehit * 100 / nz(xstats.alloc));
+	printf("%9s sticky %d flushed %d unused %d\n", "",
+	    xstats.alloc_inuse, xstats.alloc_cacheflush, xstats.alloc_unused);
+	printf("%9d total calls to xfree", xstats.free);
+	printf(" (sticky %d cached %d swapped %d)\n",
+	    xstats.free_inuse, xstats.free_cache, xstats.free_cacheswap);
 }
 
 doforkst()
