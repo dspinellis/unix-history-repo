@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.29 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -258,7 +258,7 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
-	devvp->v_mount = mp;
+	devvp->v_mounton = mp;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
@@ -323,7 +323,7 @@ ufs_unmount(mp, flags)
 	ump->um_fs = NULL;
 	ump->um_dev = NODEV;
 	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
-	ump->um_devvp->v_mount = (struct mount *)0;
+	ump->um_devvp->v_mounton = (struct mount *)0;
 	vrele(ump->um_devvp);
 	ump->um_devvp = (struct vnode *)0;
 	return (error);
@@ -440,7 +440,7 @@ ufs_sync(mp, waitfor)
 	/*
 	 * Force stale buffer cache information to be flushed.
 	 */
-	bflush(ump->um_devvp->v_mount);
+	bflush(ump->um_devvp->v_mounton);
 	return (allerror);
 }
 
