@@ -1,4 +1,4 @@
-/*	if_vv.c	4.5	82/06/20	*/
+/*	if_vv.c	4.6	82/08/01	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -26,6 +26,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/route.h"
+#include <errno.h>
 
 #include "vv.h"
 
@@ -33,7 +34,7 @@
  * N.B. - if WIRECENTER is defined wrong, it can well break
  * the hardware!!
  */
-#undef AUTOIDENTIFY
+
 #define	WIRECENTER
 
 #ifdef WIRECENTER
@@ -43,6 +44,10 @@
 #endif
 
 #define	VVMTU	(1024+512)
+#define VVMRU	(1024+512+16)	/* space for trailer */
+
+int vv_dotrailer = 1,		/* so can do trailers selectively */
+    vv_trace = 0;
 
 int	vvprobe(), vvattach(), vvrint(), vvxint();
 struct	uba_device *vvinfo[NVV];
@@ -131,7 +136,7 @@ vvattach(ui)
 	vs->vs_if.if_init = vvinit;
 	vs->vs_if.if_output = vvoutput;
 	vs->vs_if.if_ubareset = vvreset;
-	vs->vs_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16;
+	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
 	if_attach(&vs->vs_if);
 }
 
@@ -162,105 +167,24 @@ vvinit(unit)
 	register struct uba_device *ui = vvinfo[unit];
 	register struct vvreg *addr;
 	struct sockaddr_in *sin;
-	struct mbuf *m;
-	struct vv_header *v;
-	int ubainfo, retrying, attempts, waitcount, s;
+	int ubainfo, s;
 
+	addr = (struct vvreg *)ui->ui_addr;
 	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
 	    sizeof (struct vv_header), (int)btoc(VVMTU)) == 0) { 
+nogo:
 		printf("vv%d: can't initialize\n", unit);
-		vs->vs_ifuba.if_flags &= ~IFF_UP;
+		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
-	addr = (struct vvreg *)ui->ui_addr;
-
-#ifdef AUTOIDENTIFY
-	/*
-	 * Build a multicast message to identify our address
-	 */
-	attempts = 0;		/* total attempts, including bad msg type */
-top:
-	retrying = 0;		/* first time through */
-	m = m_get(M_DONTWAIT);
-	if (m == 0)
-		panic("vvinit: can't get mbuf");
-	m->m_next = 0;
-	m->m_off = MMINOFF;
-	m->m_len = sizeof(struct vv_header);
-
-	v = mtod(m, struct vv_header *);
-	v->vh_dhost = 0;		/* multicast destination address */
-	v->vh_shost = 0;		/* will be overwritten with ours */
-	v->vh_version = RING_VERSION;
-	v->vh_type = RING_WHOAMI;
-	v->vh_info = 0;
 
 	/*
-	 * Reset interface, establish Digital Loopback Mode, and
-	 * send the multicast (to myself) with Input Copy enabled.
+	 * discover our host address and post it
 	 */
-retry:
-	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
-	addr->vvicsr = VV_RST;
-	addr->vviba = (u_short) ubainfo;
-	addr->vviea = (u_short) (ubainfo >> 16);
-	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
-	addr->vvicsr = VV_STE | VV_DEN | VV_ENB | VV_LPB;
-	/* map xmit message into uba if not already there */
-	if (!retrying)
-		vs->vs_olen =  if_wubaput(&vs->vs_ifuba, m);
-	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
-		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
-	addr->vvocsr = VV_RST | VV_CPB;	/* clear packet buffer */
-	ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
-	addr->vvoba = (u_short) ubainfo;
-	addr->vvoea = (u_short) (ubainfo >> 16);
-	addr->vvowc = -((vs->vs_olen + 1) >> 1);
-	addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
 
-	/*
-	 * Wait for receive side to finish.
-	 * Extract source address (which will our own),
-	 * and post to interface structure.
-	 */
-	DELAY(1000);
-	for (waitcount = 0; ((addr->vvicsr) & VV_RDY) == 0; waitcount++) {
-		if (waitcount < 10)
-			DELAY(1000);
-		else {
-			if (attempts++ < 10)s
-				goto retry;
-			else {
-				printf("vv%d: can't initialize\n", unit);
-				printf("vvinit loopwait: icsr = %b\n",
-					0xffff&(addr->vvicsr),VV_IBITS);
-				vs->vs_ifuba.if_flags &= ~IFF_UP;
-				return;
-			}
-		}
-	}
-
-	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
-		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
-	if (vs->vs_ifuba.ifu_xtofree)
-		m_freem(vs->vs_ifuba.ifu_xtofree);
-	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
-		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
-	m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header), 0);
-	if (m)
-		m_freem(m);
-	/*
-	 * check message type before we believe the source host address
-	 */
-	v = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
-	if (v->vh_type == RING_WHOAMI)
-		vs->vs_if.if_host[0] = v->vh_shost;
-	else
-		goto top;
-#else
-	vs->vs_if.if_host[0] = 24;
-#endif
-
+	vs->vs_if.if_host[0] = vvidentify(unit);
+	if (vs->vs_if.if_host[0] == 0)
+		goto nogo;
 	printf("vv%d: host %d\n", unit, vs->vs_if.if_host[0]);
 	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
 	sin->sin_family = AF_INET;
@@ -288,10 +212,107 @@ retry:
 	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
 	addr->vvicsr = VV_IEN | VV_CONF | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
-	vs->vs_ifuba.if_flags |= IFF_UP;
+	vs->vs_if.if_flags |= IFF_UP;
 	vvxint(unit);
 	splx(s);
 	if_rtinit(&vs->vs_if, RTF_UP);
+}
+
+/*
+ * vvidentify() - return our host address
+ */
+vvidentify(unit)
+{
+	register struct vv_softc *vs = &vv_softc[unit];
+	register struct uba_device *ui = vvinfo[unit];
+	register struct vvreg *addr;
+	struct mbuf *m;
+	struct vv_header *v;
+	int ubainfo, retrying, attempts, waitcount, s;
+
+	/*
+	 * Build a multicast message to identify our address
+	 */
+	addr = (struct vvreg *)ui->ui_addr;
+	attempts = 0;		/* total attempts, including bad msg type */
+	retrying = 0;		/* first time through */
+	m = m_get(M_DONTWAIT);
+	if (m == 0) {
+		printf("vvinit: can't get mbuf");
+		return (0);
+	}
+	m->m_off = MMINOFF;
+	m->m_len = sizeof(struct vv_header);
+
+	v = mtod(m, struct vv_header *);
+	v->vh_dhost = 0;		/* multicast destination address */
+	v->vh_shost = 0;		/* will be overwritten with ours */
+	v->vh_version = RING_VERSION;
+	v->vh_type = RING_WHOAMI;
+	v->vh_info = 0;
+	vs->vs_olen =  if_wubaput(&vs->vs_ifuba, m);
+	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
+		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
+
+	/*
+	 * Reset interface, establish Digital Loopback Mode, and
+	 * send the multicast (to myself) with Input Copy enabled.
+	 */
+retry:
+	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
+	addr->vvicsr = VV_RST;
+	addr->vviba = (u_short) ubainfo;
+	addr->vviea = (u_short) (ubainfo >> 16);
+	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
+	addr->vvicsr = VV_STE | VV_DEN | VV_ENB | VV_LPB;
+
+	/* let flag timers fire so ring will initialize */
+	sleep((caddr_t) &lbolt, PZERO);
+	sleep((caddr_t) &lbolt, PZERO);
+
+	addr->vvocsr = VV_RST | VV_CPB;	/* clear packet buffer */
+	ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
+	addr->vvoba = (u_short) ubainfo;
+	addr->vvoea = (u_short) (ubainfo >> 16);
+	addr->vvowc = -((vs->vs_olen + 1) >> 1);
+	addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
+
+	/*
+	 * Wait for receive side to finish.
+	 * Extract source address (which will be our own),
+	 * and post to interface structure.
+	 */
+	DELAY(1000);
+	for (waitcount = 0; (addr->vvicsr & VV_RDY) == 0; waitcount++)
+		if (waitcount < 10)
+			DELAY(1000);
+		else {
+			if (attempts++ < 10)
+				goto retry;
+			else {
+				printf("vv%d: can't initialize\n", unit);
+				printf("vvinit loopwait: icsr = %b\n",
+					0xffff&(addr->vvicsr),VV_IBITS);
+				vs->vs_if.if_flags &= ~IFF_UP;
+				return (0);
+			}
+		}
+	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
+		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
+	if (vs->vs_ifuba.ifu_xtofree)
+		m_freem(vs->vs_ifuba.ifu_xtofree);
+	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
+		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
+	m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header), 0);
+	if (m)
+		m_freem(m);
+	/*
+	 * check message type before we believe the source host address
+	 */
+	v = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
+	if (v->vh_type != RING_WHOAMI)
+		goto retry;
+	return (v->vh_shost);
 }
 
 /*
@@ -308,12 +329,10 @@ vvstart(dev)
 	register struct vv_softc *vs = &vv_softc[unit];
 	register struct vvreg *addr;
 	struct mbuf *m;
-	int ubainfo;
-	int dest;
+	int ubainfo, dest;
 
 	if (vs->vs_oactive)
 		goto restart;
-
 	/*
 	 * Not already active: dequeue another request
 	 * and map it to the UNIBUS.  If no more requests,
@@ -359,11 +378,12 @@ vvxint(unit)
 	addr = (struct vvreg *)ui->ui_addr;
 	oc = 0xffff & (addr->vvocsr);
 	if (vs->vs_oactive == 0) {
-		printf("vv%d: stray interrupt vvocsr = %b\n", unit,
+		printf("vv%d: stray interrupt, vvocsr=%b\n", unit,
 			oc, VV_OBITS);
 		return;
 	}
 	if (oc &  (VV_OPT | VV_RFS)) {
+		vs->vs_if.if_collisions++;
 		if (++(vs->vs_tries) < VVRETRY) {
 			if (oc & VV_OPT)
 				vs->vs_init++;
@@ -380,7 +400,7 @@ vvxint(unit)
 	vs->vs_tries = 0;
 	if (oc & VVXERR) {
 		vs->vs_if.if_oerrors++;
-		printf("vv%d: error vvocsr = %b\n", unit, 0xffff & oc,
+		printf("vv%d: error, vvocsr=%b\n", unit, 0xffff & oc,
 			VV_OBITS);
 	}
 	if (vs->vs_ifuba.ifu_xtofree) {
@@ -388,7 +408,7 @@ vvxint(unit)
 		vs->vs_ifuba.ifu_xtofree = 0;
 	}
 	if (vs->vs_if.if_snd.ifq_head == 0) {
-		vs->vs_lastx = 0;
+		vs->vs_lastx = 256;
 		return;
 	}
 	vvstart(unit);
@@ -412,6 +432,7 @@ vvrint(unit)
 	register struct ifqueue *inq;
     	struct mbuf *m;
 	int ubainfo, len, off;
+	short resid;
 
 	vs->vs_if.if_ipackets++;
 	/*
@@ -420,47 +441,77 @@ vvrint(unit)
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
 	if (addr->vvicsr & VVRERR) {
-		vs->vs_if.if_ierrors++;
+		/*
 		printf("vv%d: error vvicsr = %b\n", unit,
 			0xffff&(addr->vvicsr), VV_IBITS);
-		goto setup;
+		*/
+		goto dropit;
 	}
-	off = 0;
-	len = 0;
-	vv = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
-	/*
-	 * Demultiplex on packet type and deal with oddities of
-	 * trailer protocol format
-	 */
-	switch (vv->vh_type) {
 
+	/*
+	 * Get packet length from word count residue
+	 *
+	 * Compute header offset if trailer protocol
+	 *
+	 * Pull packet off interface.  Off is nonzero if packet
+	 * has trailing header; if_rubaget will then force this header
+	 * information to be at the front.  The vh_info field
+	 * carries the offset to the trailer data in trailer
+	 * format packets.
+	 */
+	vv = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
+	if (vv_trace)
+		vvprt_hdr("vi", vv);
+	resid = addr->vviwc;
+	if (resid)
+		resid |= 0176000;		/* ugly!!!! */
+	len = (((sizeof (struct vv_header) + VVMRU) >> 1) + resid) << 1;
+	len -= sizeof(struct vv_header);
+	if (len > VVMRU)
+		goto dropit;
+#define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
+	if (vv_dotrailer && vv->vh_type >= RING_IPTrailer &&
+	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer){
+		off = (vv->vh_type - RING_IPTrailer) * 512;
+		if (off > VVMTU)
+			goto dropit;
+		vv->vh_type = *vvdataaddr(vv, off, u_short *);
+		resid = *(vvdataaddr(vv, off+2, u_short *));
+		if (off + resid > len)
+			goto dropit;
+		len = off + resid;
+	} else
+		off = 0;
+	if (len == 0)
+		goto dropit;
+	m = if_rubaget(&vs->vs_ifuba, len, off);
+	if (m == 0)
+		goto dropit;
+	if (off) {
+		m->m_off += 2 * sizeof(u_short);
+		m->m_len -= 2 * sizeof(u_short);
+	}
+	switch (vv->vh_type) {
 #ifdef INET
 	case RING_IP:
-		len = htons((u_short)((struct ip *) vv)->ip_len);
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 #endif
 	default:
 		printf("vv%d: unknown pkt type 0x%x\n", unit, vv->vh_type);
+		m_freem(m);
 		goto setup;
 	}
-	if (len == 0)
-		goto setup;
-	/*
-	 * Pull packet off interface.  Off is nonzero if packet
-	 * has trailing header; if_rubaget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the two-byte type which is at the front of any trailer data.
-	 */
-	m = if_rubaget(&vs->vs_ifuba, len, off);
-	if (m == 0)
-		goto setup;
-	IF_ENQUEUE(inq, m);
+	if (IF_QFULL(inq)) {
+		IF_DROP(inq);
+		m_freem(m);
+	} else
+		IF_ENQUEUE(inq, m);
 
 setup:
 	/*
-	 * Reset for next packet.
+	 * Restart the read for next packet.
 	 */
 	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
 	addr->vviba = (u_short) ubainfo;
@@ -468,7 +519,15 @@ setup:
 	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
 	addr->vvicsr = VV_RST | VV_CONF;
 	addr->vvicsr |= VV_IEN | VV_DEN | VV_ENB;
+	return;
 
+dropit:
+	vs->vs_if.if_ierrors++;
+	/*
+	printf("vv%d: error vvicsr = %b\n", unit,
+		0xffff&(addr->vvicsr), VV_IBITS);
+	*/
+	goto setup;
 }
 
 /*
@@ -484,16 +543,28 @@ vvoutput(ifp, m0, dst)
 {
 	register struct mbuf *m = m0;
 	register struct vv_header *vv;
-	int type, dest, s;
+	register int off;
+	int type, dest, s, error;
 
 	switch (dst->sa_family) {
-
 #ifdef INET
 	case AF_INET: {
-		register struct ip *ip = mtod(m0, struct ip *);
-		int off;
-
-		dest = ip->ip_dst.s_addr >> 24;
+		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
+		if (dest & 0x00ffff00) {
+			error = EPERM;
+			goto bad;
+		}
+		dest = (dest >> 24) & 0xff;
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		if (vv_dotrailer && off > 0 && (off & 0x1ff) == 0 &&
+		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
+			type = RING_IPTrailer + (off>>9);
+			m->m_off -= 2 * sizeof (u_short);
+			m->m_len += 2 * sizeof (u_short);
+			*mtod(m, u_short *) = RING_IP;
+			*(mtod(m, u_short *) + 1) = m->m_len;
+			goto gottrailertype;
+		}
 		type = RING_IP;
 		off = 0;
 		goto gottype;
@@ -502,8 +573,8 @@ vvoutput(ifp, m0, dst)
 	default:
 		printf("vv%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
-		m_freem(m0);
-		return (0);
+		error = EAFNOSUPPORT;
+		goto bad;
 	}
 
 gottrailertype:
@@ -527,8 +598,8 @@ gottype:
 	    MMINOFF + sizeof (struct vv_header) > m->m_off) {
 		m = m_get(M_DONTWAIT);
 		if (m == 0) {
-			m_freem(m0);
-			return (0);
+			error = ENOBUFS;
+			goto bad;
 		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
@@ -542,21 +613,34 @@ gottype:
 	vv->vh_dhost = dest;
 	vv->vh_version = RING_VERSION;
 	vv->vh_type = type;
-	vv->vh_info = m->m_len;
+	vv->vh_info = off;
+	if (vv_trace)
+		vvprt_hdr("vo", vv);
 
 	/*
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
 	 */
 	s = splimp();
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+		error = ENOBUFS;
+		goto qfull;
+	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (vv_softc[ifp->if_unit].vs_oactive == 0)
 		vvstart(ifp->if_unit);
 	splx(s);
-	return (1);
+	return (0);
+
+qfull:
+	m0 = m;
+	splx(s);
+bad:
+	m_freem(m0);
+	return(error);
 }
 
-#ifdef notdef
 /*
  * vvprt_hdr(s, v) print the local net header in "v"
  * 	with title is "s"
@@ -590,4 +674,3 @@ vvprt_hex(s, l)
 		);
 	}
 }
-#endif
