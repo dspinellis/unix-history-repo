@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.11 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.12 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -309,7 +309,7 @@ u_int cachesize;
 .br
 int (*compare)(const void *, const void *);
 .br
-char *lorder;
+int lorder;
 .RE
 } BTREEINFO;
 .PP
@@ -355,11 +355,11 @@ is used.
 .TP
 lorder
 The byte order for 4-byte integers in the stored database metadata.
-Each character of the string represents a byte and should be one of the
-characters '1', '2', '3' or '4'.
+The number should represent the order as an integer; for example, 
+big endian order would be the number 4,321.
 If
 .I lorder
-is NULL (no order is specified) network order (``4321'') is used.
+is 0 (no order is specified) the current host order is used.
 If the  file already exists, the specified value is ignored and the
 value specified when the tree was created is used.
 (Obviously, portability of the data forming the key/data pairs is the
@@ -422,7 +422,7 @@ int nelem;
 .br
 u_long (*hash)(const void *, const size_t);
 .br
-char *lorder;
+int lorder;
 .RE
 } HASHINFO;
 .PP
@@ -457,11 +457,11 @@ string and a length) and return an u_long to be used as the hash value.
 .TP
 lorder
 The byte order for 4-byte integers in the stored database metadata.
-Each character of the string represents a byte and should be one of the
-characters '1', '2', '3' or '4'.
+The number should represent the order as an integer; for example, 
+big endian order would be the number 4,321.
 If
 .I lorder
-is NULL (no order is specified) network order (``4321'') is used.
+is 0 (no order is specified) the current host order is used.
 If the  file already exists, the specified value is ignored and the
 value specified when the tree was created is used.
 (Obviously, portability of the data forming the key/data pairs is the
@@ -673,10 +673,12 @@ Per-Ake Larson, Communications of the ACM, April 1988.
 Margo Seltzer, USENIX Proceedings, Winter 1991.
 .SH BUGS
 The typedef DBT is a mnemonic for ``data base thang'', and was used
-because all of the reasonable names were taken.
+because noone could think of a reasonable name that wasn't already used.
 .PP
 Btrees should reclaim unused pages automatically, and key lengths should
 be unbounded.
 .PP
 None of the access methods provide any form of concurrent access,
 locking, or transactions.
+.PP
+Only big and little endian byte order is supported.
