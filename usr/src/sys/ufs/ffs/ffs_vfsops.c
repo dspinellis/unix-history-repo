@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.67 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.68 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -199,8 +199,8 @@ ffs_mountfs(devvp, mp, p)
 	USES_VOP_CLOSE;
 	USES_VOP_IOCTL;
 	USES_VOP_OPEN;
-	register struct ufsmount *ump = (struct ufsmount *)0;
-	struct buf *bp = NULL;
+	register struct ufsmount *ump;
+	struct buf *bp;
 	register struct fs *fs;
 	dev_t dev = devvp->v_rdev;
 	struct partinfo dpart;
@@ -209,7 +209,7 @@ ffs_mountfs(devvp, mp, p)
 	int havepart = 0, blks;
 	int error, i, size;
 	int needclose = 0;
-	int ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
+	int ronly;
 	extern struct vnode *rootvp;
 
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p))
@@ -221,6 +221,9 @@ ffs_mountfs(devvp, mp, p)
 		havepart = 1;
 		size = dpart.disklab->d_secsize;
 	}
+
+	bp = NULL;
+	ump = NULL;
 	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp))
 		goto out;
 	fs = bp->b_un.b_fs;
@@ -351,16 +354,14 @@ ffs_unmount(mp, mntflags, p)
 	extern int doforce;
 	register struct ufsmount *ump;
 	register struct fs *fs;
-	int i, error, ronly, flags = 0;
+	int i, error, flags, ronly;
 
+	flags = 0;
 	if (mntflags & MNT_FORCE) {
 		if (!doforce || mp == rootfs)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
-	mntflushbuf(mp, 0);
-	if (mntinvalbuf(mp))
-		return (EBUSY);
 	ump = VFSTOUFS(mp);
 		return (error);
 #ifdef QUOTA
@@ -424,12 +425,14 @@ ffs_statfs(mp, sbp, p)
  * Note: we are always called with the filesystem marked `MPBUSY'.
  */
 int
-ffs_sync(mp, waitfor)
+ffs_sync(mp, waitfor, cred, p)
 	struct mount *mp;
 	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
 	USES_VOP_ISLOCKED;
-	USES_VOP_UPDATE;
+	USES_VOP_FSYNC;
 	extern int syncprt;
 	register struct vnode *vp;
 	register struct inode *ip;
@@ -473,17 +476,15 @@ loop:
 			continue;
 		if (vget(vp))
 			goto loop;
-		if (vp->v_dirtyblkhd)
-			vflushbuf(vp, 0);
-		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
-		    (error = VOP_UPDATE(vp, &time, &time, 0)))
+		if (error = VOP_FSYNC(vp, cred, waitfor, p))
 			allerror = error;
 		vput(vp);
 	}
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
-	vflushbuf(ump->um_devvp, waitfor == MNT_WAIT ? B_SYNC : 0);
+	if (error = VOP_FSYNC(ump->um_devvp, cred, waitfor, p))
+		allerror = error;
 #ifdef QUOTA
 	qsync(mp);
 #endif
@@ -497,13 +498,11 @@ loop:
  * - check that the inode number is valid
  * - call ffs_vget() to get the locked inode
  * - check for an unallocated inode (i_mode == 0)
- * - check that the generation number matches unless setgen true
  */
 int
-ffs_fhtovp(mp, fhp, setgen, vpp)
+ffs_fhtovp(mp, fhp, vpp)
 	register struct mount *mp;
 	struct fid *fhp;
-	int setgen;
 	struct vnode **vpp;
 {
 	USES_VOP_VGET;
@@ -523,19 +522,10 @@ ffs_fhtovp(mp, fhp, setgen, vpp)
 		return (error);
 	}
 	ip = VTOI(nvp);
-	if (ip->i_mode == 0) {
+	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
 		ufs_iput(ip);
 		*vpp = NULLVP;
 		return (EINVAL);
-	}
-	if (ip->i_gen != ufhp->ufid_gen) {
-		if (setgen)
-			ufhp->ufid_gen = ip->i_gen;
-		else {
-			ufs_iput(ip);
-			*vpp = NULLVP;
-			return (EINVAL);
-		}
 	}
 	*vpp = nvp;
 	return (0);
