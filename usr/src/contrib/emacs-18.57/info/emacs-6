@@ -1,0 +1,1233 @@
+Info file ../info/emacs, produced by Makeinfo, -*- Text -*- from
+input file emacs.tex.
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986, 1988 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "The GNU Manifesto", "Distribution" and
+"GNU General Public License" are included exactly as in the original,
+and provided that the entire resulting derived work is distributed
+under the terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "The GNU Manifesto",
+"Distribution" and "GNU General Public License" may be included in a
+translation approved by the author instead of in the original English.
+
+
+
+File: emacs,  Node: Windows,  Next: Major Modes,  Prev: Buffers,  Up: Top
+
+Multiple Windows
+****************
+
+  Emacs can split the screen into two or many windows, which can
+display parts of different buffers, or different parts of one buffer.
+
+* Menu:
+
+* Basic Window::     Introduction to Emacs windows.
+* Split Window::     New windows are made by splitting existing windows.
+* Other Window::     Moving to another window or doing something to it.
+* Pop Up Window::    Finding a file or buffer in another window.
+* Change Window::    Deleting windows and changing their sizes.
+
+ 
+
+File: emacs,  Node: Basic Window,  Next: Split Window,  Prev: Windows,  Up: Windows
+
+Concepts of Emacs Windows
+=========================
+
+  When multiple windows are being displayed, each window has an Emacs
+buffer designated for display in it.  The same buffer may appear in
+more than one window; if it does, any changes in its text are
+displayed in all the windows where it appears.  But the windows
+showing the same buffer can show different parts of it, because each
+window has its own value of point.
+
+  At any time, one of the windows is the "selected window"; the buffer
+this window is displaying is the current buffer.  The terminal's
+cursor shows the location of point in this window.  Each other window
+has a location of point as well, but since the terminal has only one
+cursor there is no way to show where those locations are.
+
+  Commands to move point affect the value of point for the selected
+Emacs window only.  They do not change the value of point in any
+other Emacs window, even one showing the same buffer.  The same is
+true for commands such as `C-x b' to change the selected buffer in
+the selected window; they do not affect other windows at all. 
+However, there are other commands such as `C-x 4 b' that select a
+different window and switch buffers in it.  Also, all commands that
+display information in a window, including (for example) `C-h f'
+(`describe-function') and `C-x C-b' (`list-buffers'), work by
+switching buffers in a nonselected window without affecting the
+selected window.
+
+  Each window has its own mode line, which displays the buffer name,
+modification status and major and minor modes of the buffer that is
+displayed in the window.  *Note Mode Line::, for full details on the
+mode line.
+
+
+
+File: emacs,  Node: Split Window,  Next: Other Window,  Prev: Basic Window,  Up: Windows
+
+Splitting Windows
+=================
+
+`C-x 2'
+     Split the selected window into two windows, one above the other
+     (`split-window-vertically').
+
+`C-x 5'
+     Split the selected window into two windows positioned side by
+     side (`split-window-horizontally').
+
+  The command `C-x 2' (`split-window-vertically') breaks the selected
+window into two windows, one above the other.  Both windows start out
+displaying the same buffer, with the same value of point.  By default
+the two windows each get half the height of the window that was
+split; a numeric argument specifies how many lines to give to the top
+window.
+
+  `C-x 5' (`split-window-horizontally') breaks the selected window into
+two side-by-side windows.  A numeric argument specifies how many
+columns to give the one on the left.  A line of vertical bars
+separates the two windows.  Windows that are not the full width of
+the screen have mode lines, but they are truncated; also, they do not
+always appear in inverse video, because, the Emacs display routines
+have not been taught how to display a region of inverse video that is
+only part of a line on the screen.
+
+  When a window is less than the full width, text lines too long to fit
+are frequent.  Continuing all those lines might be confusing.  The
+variable `truncate-partial-width-windows' can be set non-`nil' to
+force truncation in all windows less than the full width of the
+screen, independent of the buffer being displayed and its value for
+`truncate-lines'.  *Note Continuation Lines::.
+
+  Horizontal scrolling is often used in side-by-side windows.  *Note
+Display::.
+
+
+
+File: emacs,  Node: Other Window,  Next: Pop Up Window,  Prev: Split Window,  Up: Windows
+
+Using Other Windows
+===================
+
+`C-x o'
+     Select another window (`other-window').  That is `o', not zero.
+
+`C-M-v'
+     Scroll the next window (`scroll-other-window').
+
+`M-x compare-windows'
+     Find next place where the text in the selected window does not
+     match the text in the next window.
+
+  To select a different window, use `C-x o' (`other-window').  That is
+an `o', for `other', not a zero.  When there are more than two
+windows, this command moves through all the windows in a cyclic
+order, generally top to bottom and left to right.  From the rightmost
+and bottommost window, it goes back to the one at the upper left
+corner.  A numeric argument means to move several steps in the cyclic
+order of windows.  A negative argument moves around the cycle in the
+opposite order.  When the minibuffer is active, the minibuffer is the
+last window in the cycle; you can switch from the minibuffer window
+to one of the other windows, and later switch back and finish
+supplying the minibuffer argument that is requested.  *Note
+Minibuffer Edit::.
+
+  The usual scrolling commands (*note Display::.) apply to the selected
+window only, but there is one command to scroll the next window. 
+`C-M-v' (`scroll-other-window') scrolls the window that `C-x o' would
+select.  It takes arguments, positive and negative, like `C-v'.
+
+  The command `M-x compare-windows' compares the text in the current
+window with that in the next window.  Comparison starts at point in
+each window.  Point moves forward in each window, a character at a
+time in each window, until the next characters in the two windows are
+different.  Then the command is finished.
+
+
+
+File: emacs,  Node: Pop Up Window,  Next: Change Window,  Prev: Other Window,  Up: Windows
+
+Displaying in Another Window
+============================
+
+  `C-x 4' is a prefix key for commands that select another window
+(splitting the window if there is only one) and select a buffer in
+that window.  Different `C-x 4' commands have different ways of
+finding the buffer to select.
+
+`C-x 4 b BUFNAME RET'
+     Select buffer BUFNAME in another window.  This runs 
+      `switch-to-buffer-other-window'.
+
+`C-x 4 f FILENAME RET'
+     Visit file FILENAME and select its buffer in another window. 
+     This runs `find-file-other-window'.  *Note Visiting::.
+
+`C-x 4 d DIRECTORY RET'
+     Select a Dired buffer for directory DIRECTORY in another window.
+     This runs `dired-other-window'.  *Note Dired::.
+
+`C-x 4 m'
+     Start composing a mail message in another window.  This runs
+     `mail-other-window', and its same-window version is `C-x m'
+     (*note Sending Mail::.).
+
+`C-x 4 .'
+     Find a tag in the current tag table in another window.  This
+     runs `find-tag-other-window', the multiple-window variant of
+     `M-.' (*note Tags::.).
+
+
+
+File: emacs,  Node: Change Window,  Prev: Pop Up Window,  Up: Windows
+
+Deleting and Rearranging Windows
+================================
+
+`C-x 0'
+     Get rid of the selected window (`kill-window').  That is a zero.
+
+`C-x 1'
+     Get rid of all windows except the selected one
+     (`delete-other-windows').
+
+`C-x ^'
+     Make the selected window taller, at the expense of the other(s)
+     (`enlarge-window').
+
+`C-x }'
+     Make the selected window wider (`enlarge-window-horizontally').
+
+  To delete a window, type `C-x 0' (`delete-window').  (That is a
+zero.)  The space occupied by the deleted window is distributed among
+the other active windows (but not the minibuffer window, even if that
+is active at the time).  Once a window is deleted, its attributes are
+forgotten; there is no automatic way to make another window of the
+same shape or showing the same buffer.  But the buffer continues to
+exist, and you can select it in any window with `C-x b'.
+
+  `C-x 1' (`delete-other-windows') is more powerful than `C-x 0'; it
+deletes all the windows except the selected one (and the minibuffer);
+the selected window expands to use the whole screen except for the
+echo area.
+
+  To readjust the division of space among existing windows, use `C-x ^'
+(`enlarge-window').  It makes the currently selected window get one
+line bigger, or as many lines as is specified with a numeric argument.
+With a negative argument, it makes the selected window smaller.  `C-x
+}' (`enlarge-window-horizontally') makes the selected window wider by
+the specified number of columns.  The extra screen space given to a
+window comes from one of its neighbors, if that is possible;
+otherwise, all the competing windows are shrunk in the same
+proportion.  If this makes any windows too small, those windows are
+deleted and their space is divided up.  The minimum size is specified
+by the variables `window-min-height' and `window-min-width'.
+
+
+
+File: emacs,  Node: Major Modes,  Next: Indentation,  Prev: Windows,  Up: Top
+
+Major Modes
+***********
+
+  Emacs has many different "major modes", each of which customizes
+Emacs for editing text of a particular sort.  The major modes are
+mutually exclusive, and each buffer has one major mode at any time. 
+The mode line normally contains the name of the current major mode,
+in parentheses.  *Note Mode Line::.
+
+  The least specialized major mode is called "Fundamental mode".  This
+mode has no mode-specific redefinitions or variable settings, so that
+each Emacs command behaves in its most general manner, and each
+option is in its default state.  For editing any specific type of
+text, such as Lisp code or English text, you should switch to the
+appropriate major mode, such as Lisp mode or Text mode.
+
+  Selecting a major mode changes the meanings of a few keys to become
+more specifically adapted to the language being edited.  The ones
+which are changed frequently are TAB, DEL, and LFD.  In addition, the
+commands which handle comments use the mode to determine how comments
+are to be delimited.  Many major modes redefine the syntactical
+properties of characters appearing in the buffer.  *Note Syntax::.
+
+  The major modes fall into three major groups.  Lisp mode (which has
+several variants), C mode and Muddle mode are for specific
+programming languages.  Text mode, Nroff mode, TeX mode and Outline
+mode are for editing English text.  The remaining major modes are not
+intended for use on users' files; they are used in buffers created
+for specific purposes by Emacs, such as Dired mode for buffers made
+by Dired (*note Dired::.), and Mail mode for buffers made by `C-x m'
+(*note Sending Mail::.), and Shell mode for buffers used for
+communicating with an inferior shell process (*note Interactive
+Shell::.).
+
+  Most programming language major modes specify that only blank lines
+separate paragraphs.  This is so that the paragraph commands remain
+useful.  *Note Paragraphs::.  They also cause Auto Fill mode to use
+the definition of TAB to indent the new lines it creates.  This is
+because most lines in a program are usually indented.  *Note
+Indentation::.
+
+* Menu:
+
+* Choosing Modes::     How major modes are specified or chosen.
+
+ 
+
+File: emacs,  Node: Choosing Modes,  Prev: Major Modes,  Up: Major Modes
+
+How Major Modes are Chosen
+==========================
+
+  You can select a major mode explicitly for the current buffer, but
+most of the time Emacs determines which mode to use based on the file
+name or some text in the file.
+
+  Explicit selection of a new major mode is done with a `M-x' command. 
+From the name of a major mode, add `-mode' to get the name of a
+command to select that mode.  Thus, you can enter Lisp mode by
+executing `M-x lisp-mode'.
+
+  When you visit a file, Emacs usually chooses the right major mode
+based on the file's name.  For example, files whose names end in `.c'
+are edited in C mode.  The correspondence between file names and
+major mode is controlled by the variable `auto-mode-alist'.  Its
+value is a list in which each element has the form
+
+     (REGEXP . MODE-FUNCTION)
+
+For example, one element normally found in the list has the form
+`("\\.c$" . c-mode)', and it is responsible for selecting C mode for
+files whose names end in `.c'.  (Note that `\\' is needed in Lisp
+syntax to include a `\' in the string, which is needed to suppress
+the special meaning of `.' in regexps.)  The only practical way to
+change this variable is with Lisp code.
+
+  You can specify which major mode should be used for editing a certain
+file by a special sort of text in the first nonblank line of the
+file.  The mode name should appear in this line both preceded and
+followed by `-*-'.  Other text may appear on the line as well.  For
+example,
+
+     ;-*-Lisp-*-
+
+tells Emacs to use Lisp mode.  Note how the semicolon is used to make
+Lisp treat this line as a comment.  Such an explicit specification
+overrides any defaulting based on the file name.
+
+  Another format of mode specification is
+
+     -*-Mode: MODENAME;-*-
+
+which allows other things besides the major mode name to be specified.
+However, Emacs does not look for anything except the mode name.
+
+The major mode can also be specified in a local variables list. 
+*Note File Variables::.
+
+  When a file is visited that does not specify a major mode to use, or
+when a new buffer is created with `C-x b', the major mode used is
+that specified by the variable `default-major-mode'.  Normally this
+value is the symbol `fundamental-mode', which specifies Fundamental
+mode.  If `default-major-mode' is `nil', the major mode is taken from
+the previously selected buffer.
+
+
+
+File: emacs,  Node: Indentation,  Next: Text,  Prev: Major Modes,  Up: Top
+
+Indentation
+***********
+
+`TAB'
+     Indent current line "appropriately" in a mode-dependent fashion.
+
+`LFD'
+     Perform RET followed by TAB (`newline-and-indent').
+
+`M-^'
+     Merge two lines (`delete-indentation').  This would cancel out
+     the effect of LFD.
+
+`C-M-o'
+     Split line at point; text on the line after point becomes a new
+     line indented to the same column that it now starts in
+     (`split-line').
+
+`M-m'
+     Move (forward or back) to the first nonblank character on the
+     current line (`back-to-indentation').
+
+`C-M-\'
+     Indent several lines to same column (`indent-region').
+
+`C-x TAB'
+     Shift block of lines rigidly right or left (`indent-rigidly').
+
+`M-i'
+     Indent from point to the next prespecified tab stop column
+     (`tab-to-tab-stop').
+
+`M-x indent-relative'
+     Indent from point to under an indentation point in the previous
+     line.
+
+  Most programming languages have some indentation convention.  For
+Lisp code, lines are indented according to their nesting in
+parentheses.  The same general idea is used for C code, though many
+details are different.
+
+  Whatever the language, to indent a line, use the TAB command.  Each
+major mode defines this command to perform the sort of indentation
+appropriate for the particular language.  In Lisp mode, TAB aligns
+the line according to its depth in parentheses.  No matter where in
+the line you are when you type TAB, it aligns the line as a whole. 
+In C mode, TAB implements a subtle and sophisticated indentation
+style that knows about many aspects of C syntax.
+
+  In Text mode, TAB runs the command `tab-to-tab-stop', which indents
+to the next tab stop column.  You can set the tab stops with `M-x
+edit-tab-stops'.
+
+* Menu:
+
+* Indentation Commands:: Various commands and techniques for indentation.
+* Tab Stops::            You can set arbitrary "tab stops" and then
+                         indent to the next tab stop when you want to.
+* Just Spaces::          You can request indentation using just spaces.
+
+ 
+
+File: emacs,  Node: Indentation Commands,  Next: Tab Stops,  Prev: Indentation,  Up: Indentation
+
+Indentation Commands and Techniques
+===================================
+
+  If you just want to insert a tab character in the buffer, you can
+type `C-q TAB'.
+
+  To move over the indentation on a line, do `Meta-m'
+(`back-to-indentation').  This command, given anywhere on a line,
+positions point at the first nonblank character on the line.
+
+  To insert an indented line before the current line, do `C-a C-o TAB'.
+To make an indented line after the current line, use `C-e LFD'.
+
+  `C-M-o' (`split-line') moves the text from point to the end of the
+line vertically down, so that the current line becomes two lines. 
+`C-M-o' first moves point forward over any spaces and tabs.  Then it
+inserts after point a newline and enough indentation to reach the
+same column point is on.  Point remains before the inserted newline;
+in this regard, `C-M-o' resembles `C-o'.
+
+  To join two lines cleanly, use the `Meta-^' (`delete-indentation')
+command to delete the indentation at the front of the current line,
+and the line boundary as well.  They are replaced by a single space,
+or by no space if at the beginning of a line or before a `)' or after
+a `('.  To delete just the indentation of a line, go to the beginning
+of the line and use `Meta-\' (`delete-horizontal-space'), which
+deletes all spaces and tabs around the cursor.
+
+  There are also commands for changing the indentation of several lines
+at once.  `Control-Meta-\' (`indent-region') gives each line which
+begins in the region the "usual" indentation by invoking TAB at the
+beginning of the line.  A numeric argument specifies the column to
+indent to, and each line is shifted left or right so that its first
+nonblank character appears in that column.  `C-x TAB'
+(`indent-rigidly') moves all of the lines in the region right by its
+argument (left, for negative arguments).  The whole group of lines
+moves rigidly sideways, which is how the command gets its name.
+
+  `M-x indent-relative' indents at point based on the previous line
+(actually, the last nonempty line.)  It inserts whitespace at point,
+moving point, until it is underneath an indentation point in the
+previous line.  An indentation point is the end of a sequence of
+whitespace or the end of the line.  If point is farther right than
+any indentation point in the previous line, the whitespace before
+point is deleted and the first indentation point then applicable is
+used.  If no indentation point is applicable even then,
+`tab-to-tab-stop' is run (see next section).
+
+  `indent-relative' is the definition of TAB in Indented Text mode. 
+*Note Text::.
+
+
+
+File: emacs,  Node: Tab Stops,  Next: Just Spaces,  Prev: Indentation Commands,  Up: Indentation
+
+Tab Stops
+=========
+
+  For typing in tables, you can use Text mode's definition of TAB,
+`tab-to-tab-stop'.  This command inserts indentation before point,
+enough to reach the next tab stop column.  If you are not in Text
+mode, this function can be found on `M-i' anyway.
+
+  The tab stops used by `M-i' can be set arbitrarily by the user.  They
+are stored in a variable called `tab-stop-list', as a list of
+column-numbers in increasing order.
+
+  The convenient way to set the tab stops is using `M-x
+edit-tab-stops', which creates and selects a buffer containing a
+description of the tab stop settings.  You can edit this buffer to
+specify different tab stops, and then type `C-c C-c' to make those
+new tab stops take effect.  In the tab stop buffer, `C-c C-c' runs
+the function `edit-tab-stops-note-changes' rather than its usual
+definition `save-buffer'.  `edit-tab-stops' records which buffer was
+current when you invoked it, and stores the tab stops back in that
+buffer; normally all buffers share the same tab stops and changing
+them in one buffer affects all, but if you happen to make
+`tab-stop-list' local in one buffer then `edit-tab-stops' in that
+buffer will edit the local settings.
+
+  Here is what the text representing the tab stops looks like for
+ordinary tab stops every eight columns.
+
+             :       :       :       :       :       :
+     0         1         2         3         4
+     0123456789012345678901234567890123456789012345678
+     To install changes, type C-c C-c
+
+  The first line contains a colon at each tab stop.  The remaining
+lines are present just to help you see where the colons are and know
+what to do.
+
+  Note that the tab stops that control `tab-to-tab-stop' have nothing
+to do with displaying tab characters in the buffer.  *Note Display
+Vars::, for more information on that.
+
+
+
+File: emacs,  Node: Just Spaces,  Prev: Tab Stops,  Up: Indentation
+
+Tabs vs. Spaces
+===============
+
+  Emacs normally uses both tabs and spaces to indent lines.  If you
+prefer, all indentation can be made from spaces only.  To request
+this, set `indent-tabs-mode' to `nil'.  This is a per-buffer
+variable; altering the variable affects only the current buffer, but
+there is a default value which you can change as well.  *Note Locals::.
+
+  There are also commands to convert tabs to spaces or vice versa,
+always preserving the columns of all nonblank text.  `M-x tabify'
+scans the region for sequences of spaces, and converts sequences of
+at least three spaces to tabs if that can be done without changing
+indentation.  `M-x untabify' changes all tabs in the region to
+appropriate numbers of spaces.
+
+
+
+File: emacs,  Node: Text,  Next: Programs,  Prev: Indentation,  Up: Top
+
+Commands for Human Languages
+****************************
+
+  The term "text" has two widespread meanings in our area of the
+computer field.  One is data that is a sequence of characters.  Any
+file that you edit with Emacs is text, in this sense of the word. 
+The other meaning is more restrictive: a sequence of characters in a
+human language for humans to read (possibly after processing by a
+text formatter), as opposed to a program or commands for a program.
+
+  Human languages have syntactic/stylistic conventions that can be
+supported or used to advantage by editor commands: conventions
+involving words, sentences, paragraphs, and capital letters.  This
+chapter describes Emacs commands for all of these things.  There are
+also commands for "filling", or rearranging paragraphs into lines of
+approximately equal length.  The commands for moving over and killing
+words, sentences and paragraphs, while intended primarily for editing
+text, are also often useful for editing programs.
+
+  Emacs has several major modes for editing human language text.  If
+the file contains text pure and simple, use Text mode, which
+customizes Emacs in small ways for the syntactic conventions of text.
+For text which contains embedded commands for text formatters, Emacs
+has other major modes, each for a particular text formatter.  Thus,
+for input to TeX, you would use TeX mode; for input to nroff, Nroff
+mode.
+
+* Menu:
+
+* Text Mode::   The major modes for editing text files.
+* Nroff Mode::  The major mode for editing input to the formatter nroff.
+* TeX Mode::    The major modes for editing input to the formatter TeX.
+* Outline Mode::The major mode for editing outlines.
+* Words::       Moving over and killing words.
+* Sentences::   Moving over and killing sentences.
+* Paragraphs::	Moving over paragraphs.
+* Pages::	Moving over pages.
+* Filling::     Filling or justifying text
+* Case::        Changing the case of text
+
+
+
+File: emacs,  Node: Text Mode,  Next: Words,  Prev: Text,  Up: Text
+
+Text Mode
+=========
+
+  Editing files of text in a human language ought to be done using Text
+mode rather than Lisp or Fundamental mode.  Invoke `M-x text-mode' to
+enter Text mode.  In Text mode, TAB runs the function
+`tab-to-tab-stop', which allows you to use arbitrary tab stops set
+with `M-x edit-tab-stops' (*note Tab Stops::.).  Features concerned
+with comments in programs are turned off except when explicitly
+invoked.  The syntax table is changed so that periods are not
+considered part of a word, while apostrophes, backspaces and
+underlines are.
+
+  A similar variant mode is Indented Text mode, intended for editing
+text in which most lines are indented.  This mode defines TAB to run
+`indent-relative' (*note Indentation::.), and makes Auto Fill indent
+the lines it creates.  The result is that normally a line made by
+Auto Filling, or by LFD, is indented just like the previous line. 
+Use `M-x indented-text-mode' to select this mode.
+
+  Entering Text mode or Indented Text mode calls with no arguments the
+value of the variable `text-mode-hook', if that value exists and is
+not `nil'.  This value is also called when modes related to Text mode
+are entered; this includes Nroff mode, TeX mode, Outline mode and
+Mail mode.  Your hook can look at the value of `major-mode' to see
+which of these modes is actually being entered.
+
+* Menu:
+
+  Two modes similar to Text mode are of use for editing text that is to
+be passed through a text formatter before achieving the form in which
+humans are to read it.
+
+* Nroff Mode::  The major mode for editing input to the formatter nroff.
+* TeX Mode::    The major modes for editing input to the formatter TeX.
+
+  Another similar mode is used for editing outlines.  It allows you
+to view the text at various levels of detail.  You can view either
+the outline headings alone or both headings and text; you can also
+hide some of the headings at lower levels from view to make the high
+level structure more visible.
+
+* Outline Mode::The major mode for editing outlines.
+
+ 
+
+File: emacs,  Node: Nroff Mode,  Next: TeX Mode,  Prev: Text Mode,  Up: Text Mode
+
+Nroff Mode
+----------
+
+  Nroff mode is a mode like Text mode but modified to handle nroff
+commands present in the text.  Invoke `M-x nroff-mode' to enter this
+mode.  It differs from Text mode in only a few ways.  All nroff
+command lines are considered paragraph separators, so that filling
+will never garble the nroff commands.  Pages are separated by `.bp'
+commands.  Comments start with backslash-doublequote.  Also, three
+special commands are provided that are not in Text mode:
+
+`M-n'
+     Move to the beginning of the next line that isn't an nroff
+     command (`forward-text-line').  An argument is a repeat count.
+
+`M-p'
+     Like `M-n' but move up (`backward-text-line').
+
+`M-?'
+     Prints in the echo area the number of text lines (lines that are
+     not nroff commands) in the region (`count-text-lines').
+
+  The other feature of Nroff mode is that you can turn on Electric
+Nroff newline mode.  This is a minor mode that you can turn on or off
+with `M-x electric-nroff-mode' (*note Minor Modes::.).  When the mode
+is on, each time you use RET to end a line that contains an nroff
+command that opens a kind of grouping, the matching nroff command to
+close that grouping is automatically inserted on the following line. 
+For example, if you are at the beginning of a line and type `. ( b
+RET', the matching command `.)b' will be inserted on a new line
+following point.
+
+  Entering Nroff mode calls with no arguments the value of the variable
+`text-mode-hook', if that value exists and is not `nil'; then it does
+the same with the variable `nroff-mode-hook'.
+
+
+
+File: emacs,  Node: TeX Mode,  Next: Outline Mode,  Prev: Nroff Mode,  Up: Text Mode
+
+TeX Mode
+--------
+
+  TeX is a powerful text formatter written by Donald Knuth; it is also
+free, like GNU Emacs.  LaTeX is a simplified input format for TeX,
+implemented by TeX macros.  It comes with TeX.
+
+  Emacs has a special TeX mode for editing TeX input files.  It
+provides facilities for checking the balance of delimiters and for
+invoking TeX on all or part of the file.
+
+  TeX mode has two variants, Plain TeX mode and LaTeX mode (actually
+two distinct major modes which differ only slightly).  They are
+designed for editing the two different input formats.  The command
+`M-x tex-mode' looks at the contents of the buffer to determine
+whether the contents appear to be LaTeX input or not; it then selects
+the appropriate mode.  If it can't tell which is right (e.g., the
+buffer is empty), the variable `TeX-default-mode' controls which mode
+is used.
+
+  The commands `M-x plain-tex-mode' and `M-x latex-mode' explicitly
+select the two variants of TeX mode.  Use these commands when `M-x
+tex-mode' does not guess right.
+
+* Menu:
+
+* Editing: TeX Editing.   Special commands for editing in TeX mode.
+* Printing: TeX Print.    Commands for printing part of a file with TeX.
+
+   TeX for Unix systems can be obtained from the University of
+Washington for a distribution fee.
+
+  To order a full distribution, send $140.00 for a 1/2 inch 9-track
+tape, $165.00 for two 4-track 1/4 inch cartridge tapes (foreign sites
+$150.00, for 1/2 inch, $175.00 for 1/4 inch, to cover the extra
+postage) payable to the University of Washington to:
+
+     The Director
+     Northwest Computer Support Group,  DW-10
+     University of Washington
+     Seattle, Washington 98195
+
+Purchase orders are acceptable, but there is an extra charge of
+$10.00, to pay for processing charges. (Total of $150 for domestic
+sites, $175 for foreign sites).
+
+  The normal distribution is a tar tape, blocked 20, 1600 bpi, on an
+industry standard 2400 foot half-inch reel.  The physical format for
+the 1/4 inch streamer cartridges uses QIC-11, 8000 bpi, 4-track
+serpentine recording for the SUN.  Also, SystemV tapes can be written
+in cpio format, blocked 5120 bytes, ASCII headers.
+
+
+
+File: emacs,  Node: TeX Editing,  Next: TeX Print,  Prev: TeX Mode,  Up: TeX Mode
+
+TeX Editing Commands
+....................
+
+   Here are the special commands provided in TeX mode for editing the
+text of the file.
+
+`"'
+     Insert, according to context, either ```' or `"' or `'''
+     (`TeX-insert-quote').
+
+`LFD'
+     Insert a paragraph break (two newlines) and check the previous
+     paragraph for unbalanced braces or dollar signs
+     (`TeX-terminate-paragraph').
+
+`M-x validate-TeX-buffer'
+     Check each paragraph in the buffer for unbalanced braces or
+     dollar signs.
+
+`M-{'
+     Insert `{}' and position point between them (`TeX-insert-braces').
+
+`M-}'
+     Move forward past the next unmatched close brace (`up-list').
+
+`C-c C-f'
+     Close a block for LaTeX (`TeX-close-LaTeX-block').
+
+  In TeX, the character `"' is not normally used; one uses `"' to start
+a quotation and `"' to end one.  TeX mode defines the key `"' to
+insert `"' after whitespace or an open brace, `"' after a backslash,
+or `"' otherwise.  This is done by the command `TeX-insert-quote'. 
+If you need the character `"' itself in unusual contexts, use `C-q'
+to insert it.  Also, `"' with a numeric argument always inserts that
+number of `"' characters.
+
+  In TeX mode, `$' has a special syntax code which attempts to
+understand the way TeX math mode delimiters match.  When you insert a
+`$' that is meant to exit math mode, the position of the matching `$'
+that entered math mode is displayed for a second.  This is the same
+feature that displays the open brace that matches a close brace that
+is inserted.  However, there is no way to tell whether a `$' enters
+math mode or leaves it; so when you insert a `$' that enters math
+mode, the previous `$' position is shown as if it were a match, even
+though they are actually unrelated.
+
+  If you prefer to keep braces balanced at all times, you can use `M-{'
+(`TeX-insert-braces') to insert a pair of braces.  It leaves point
+between the two braces so you can insert the text that belongs inside.
+Afterward, use the command `M-}' (`up-list') to move forward past the
+close brace.
+
+  There are two commands for checking the matching of braces.  LFD
+(`TeX-terminate-paragraph') checks the paragraph before point, and
+inserts two newlines to start a new paragraph.  It prints a message
+in the echo area if any mismatch is found.  `M-x validate-TeX-buffer'
+checks the entire buffer, paragraph by paragraph.  When it finds a
+paragraph that contains a mismatch, it displays point at the
+beginning of the paragraph for a few seconds and pushes a mark at
+that spot.  Scanning continues until the whole buffer has been
+checked or until you type another key.  The positions of the last
+several paragraphs with mismatches can be found in the mark ring
+(*note Mark Ring::.).
+
+  Note that square brackets and parentheses are matched in TeX mode,
+not just braces.  This is wrong for the purpose of checking TeX syntax.
+However, parentheses and square brackets are likely to be used in
+text as matching delimiters and it is useful for the various motion
+commands and automatic match display to work with them.
+
+  In LaTeX input, `\begin' and `\end' commands must balance.  After you
+insert a `\begin', use `C-c C-f' (`TeX-close-LaTeX-block') to insert
+automatically a matching `\end' (on a new line following the
+`\begin').  A blank line is inserted between the two, and point is
+left there.
+
+
+
+File: emacs,  Node: TeX Print,  Prev: TeX Editing,  Up: TeX Mode
+
+TeX Printing Commands
+.....................
+
+   You can invoke TeX as an inferior of Emacs on either the entire
+contents of the buffer or just a region at a time.  Running TeX in
+this way on just one chapter is a good way to see what your changes
+look like without taking the time to format the entire file.
+
+`C-c C-r'
+     Invoke TeX on the current region, plus the buffer's header
+     (`TeX-region').
+
+`C-c C-b'
+     Invoke TeX on the entire current buffer (`TeX-buffer').
+
+`C-c C-l'
+     Recenter the window showing output from the inferior TeX so that
+     the last line can be seen (`TeX-recenter-output-buffer').
+
+`C-c C-k'
+     Kill the inferior TeX (`TeX-kill-job').
+
+`C-c C-p'
+     Print the output from the last `C-c C-r' or `C-c C-b' command
+     (`TeX-print').
+
+`C-c C-q'
+     Show the printer queue (`TeX-show-print-queue').
+
+  You can pass the current buffer through an inferior TeX by means of
+`C-c C-b' (`TeX-buffer').  The formatted output appears in a file in
+`/tmp'; to print it, type `C-c C-p' (`TeX-print').  Afterward use
+`C-c C-q' (`TeX-show-print-queue') to view the progress of your
+output towards being printed.
+
+  The console output from TeX, including any error messages, appear in
+a buffer called `*TeX-shell*'.  If TeX gets an error, you can switch
+to this buffer and feed it input (this works as in Shell mode; *note
+Interactive Shell::.).  Without switching to this buffer you can
+scroll it so that its last line is visible by typing `C-c C-l'.
+
+  Type `C-c C-k' (`TeX-kill-job') to kill the TeX process if you see
+that its output is no longer useful.  Using `C-c C-b' or `C-c C-r'
+also kills any TeX process still running.
+
+  You can also pass an arbitrary region through an inferior TeX by
+typing `C-c C-r' (`TeX-region').  This is tricky, however, because
+most files of TeX input contain commands at the beginning to set
+parameters and define macros, without which no later part of the file
+will format correctly.  To solve this problem, `C-c C-r' allows you
+to designate a part of the file as containing essential commands; it
+is included before the specified region as part of the input to TeX. 
+The designated part of the file is called the "header".
+
+  To indicate the bounds of the header in Plain TeX mode, you insert
+two special strings in the file.  Insert `%**start of header' before
+the header, and `%**end of header' after it.  Each string must appear
+entirely on one line, but there may be other text on the line before
+or after.  The lines containing the two strings are included in the
+header.  If `%**start of header' does not appear within the first 100
+lines of the buffer, `C-c C-r' assumes that there is no header.
+
+  In LaTeX mode, the header begins with `\documentstyle' and ends with
+`\begin{document}'.  These are commands that LaTeX requires you to
+use in any case, so nothing special needs to be done to identify the
+header.
+
+  Entering either kind of TeX mode calls with no arguments the value of
+the variable `text-mode-hook', if that value exists and is not `nil';
+then it does the same with the variable `TeX-mode-hook'.  Finally it
+does the same with either `plain-TeX-mode-hook' or `LaTeX-mode-hook'.
+
+
+
+File: emacs,  Node: Outline Mode,  Prev: TeX Mode,  Up: Text Mode
+
+Outline Mode
+------------
+
+  Outline mode is a major mode much like Text mode but intended for
+editing outlines.  It allows you to make parts of the text
+temporarily invisible so that you can see just the overall structure
+of the outline.  Type `M-x outline-mode' to turn on Outline mode in
+the current buffer.
+
+  Entering Outline mode calls with no arguments the value of the
+variable `text-mode-hook', if that value exists and is not `nil';
+then it does the same with the variable `outline-mode-hook'.
+
+  When a line is invisible in outline mode, it does not appear on the
+screen.  The screen appears exactly as if the invisible line were
+deleted, except that an ellipsis (three periods in a row) appears at
+the end of the previous visible line (only one ellipsis no matter how
+many invisible lines follow).
+
+  All editing commands treat the text of the invisible line as part of
+the previous visible line.  For example, `C-n' moves onto the next
+visible line.  Killing an entire visible line, including its
+terminating newline, really kills all the following invisible lines
+along with it; yanking it all back yanks the invisible lines and they
+remain invisible.
+
+* Menu:
+
+* Format: Outline Format.	  What the text of an outline looks like.
+* Motion: Outline Motion.	  Special commands for moving through outlines.
+* Visibility: Outline Visibility. Commands to control what is visible.
+
+ 
+
+File: emacs,  Node: Outline Format,  Next: Outline Motion,  Prev: Outline Mode,  Up: Outline Mode
+
+Format of Outlines
+..................
+
+   Outline mode assumes that the lines in the buffer are of two types:
+"heading lines" and "body lines".  A heading line represents a topic
+in the outline.  Heading lines start with one or more stars; the
+number of stars determines the depth of the heading in the outline
+structure.  Thus, a heading line with one star is a major topic; all
+the heading lines with two stars between it and the next one-star
+heading are its subtopics; and so on.  Any line that is not a heading
+line is a body line.  Body lines belong to the preceding heading
+line.  Here is an example:
+
+     * Food
+     
+     This is the body,
+     which says something about the topic of food.
+     
+     ** Delicious Food
+     
+     This is the body of the second-level header.
+     
+     ** Distasteful Food
+     
+     This could have
+     a body too, with
+     several lines.
+     
+     *** Dormitory Food
+     
+     * Shelter
+     
+     A second first-level topic with its header line.
+
+   A heading line together with all following body lines is called
+collectively an "entry".  A heading line together with all following
+deeper heading lines and their body lines is called a "subtree".
+
+  You can customize the criterion for distinguishing heading lines by
+setting the variable `outline-regexp'.  Any line whose beginning has
+a match for this regexp is considered a heading line.  Matches that
+start within a line (not at the beginning) do not count.  The length
+of the matching text determines the level of the heading; longer
+matches make a more deeply nested level.  Thus, for example, if a
+text formatter has commands `@chapter', `@section' and `@subsection'
+to divide the document into chapters and sections, you could make
+those lines count as heading lines by setting `outline-regexp' to
+`"@chap\\|@\\(sub\\)*section"'.  Note the trick: the two words
+`chapter' and `section' are equally long, but by defining the regexp
+to match only `chap' we ensure that the length of the text matched on
+a chapter heading is shorter, so that Outline mode will know that
+sections are contained in chapters.  This works as long as no other
+command starts with `@chap'.
+
+  Outline mode makes a line invisible by changing the newline before it
+into an ASCII Control-M (code 015).  Most editing commands that work
+on lines treat an invisible line as part of the previous line
+because, strictly speaking, it is part of that line, since there is
+no longer a newline in between.  When you save the file in Outline
+mode, Control-M characters are saved as newlines, so the invisible
+lines become ordinary lines in the file.  But saving does not change
+the visibility status of a line inside Emacs.
+
+
+
+File: emacs,  Node: Outline Motion,  Next: Outline Visibility,  Prev: Outline Format,  Up: Outline Mode
+
+Outline Motion Commands
+.......................
+
+   There are some special motion commands in Outline mode that move
+backward and forward to heading lines.
+
+`C-c C-n'
+     Move point to the next visible heading line
+     (`outline-next-visible-heading').
+
+`C-c C-p'
+     Move point to the previous visible heading line 
+      (`outline-previous-visible-heading').
+
+`C-c C-f'
+     Move point to the next visible heading line at the same level as
+     the one point is on (`outline-forward-same-level').
+
+`C-c C-b'
+     Move point to the previous visible heading line at the same
+     level (`outline-backward-same-level').
+
+`C-c C-u'
+     Move point up to a lower-level (more inclusive) visible heading
+     line (`outline-up-heading').
+
+  `C-c C-n' (`next-visible-heading') moves down to the next heading
+line.  `C-c C-p' (`previous-visible-heading') moves similarly
+backward.  Both accept numeric arguments as repeat counts.  The names
+emphasize that invisible headings are skipped, but this is not really
+a special feature.  All editing commands that look for lines ignore
+the invisible lines automatically.
+
+  More advanced motion commands understand the levels of headings.  The
+commands `C-c C-f' (`outline-forward-same-level') and `C-c C-b'
+(`outline-backward-same-level') move from one heading line to another
+visible heading at the same depth in the outline.  `C-c C-u'
+(`outline-up-heading') moves backward to another heading that is less
+deeply nested.
+
+
+
+File: emacs,  Node: Outline Visibility,  Prev: Outline Motion,  Up: Outline Mode
+
+Outline Visibility Commands
+...........................
+
+   The other special commands of outline mode are used to make lines
+visible or invisible.  Their names all start with `hide' or `show'. 
+Most of them fall into pairs of opposites.  They are not undoable;
+instead, you can undo right past them.  Making lines visible or
+invisible is simply not recorded by the undo mechanism.
+
+`M-x hide-body'
+     Make all body lines in the buffer invisible.
+
+`M-x show-all'
+     Make all lines in the buffer visible.
+
+`C-c C-h'
+     Make everything under this heading invisible, not including this
+     heading itself
+      (`hide-subtree').
+
+`C-c C-s'
+     Make everything under this heading visible, including body,
+     subheadings, and their bodies (`show-subtree').
+
+`M-x hide-leaves'
+     Make the body of this heading line, and of all its subheadings,
+     invisible.
+
+`M-x show-branches'
+     Make all subheadings of this heading line, at all levels, visible.
+
+`C-c C-i'
+     Make immediate subheadings (one level down) of this heading line
+     visible (`show-children').
+
+`M-x hide-entry'
+     Make this heading line's body invisible.
+
+`M-x show-entry'
+     Make this heading line's body visible.
+
+  Two commands that are exact opposites are `M-x hide-entry' and `M-x
+show-entry'.  They are used with point on a heading line, and apply
+only to the body lines of that heading.  The subtopics and their
+bodies are not affected.
+
+  Two more powerful opposites are `C-c C-h' (`hide-subtree') and `C-c
+C-s' (`show-subtree').  Both expect to be used when point is on a
+heading line, and both apply to all the lines of that heading's
+"subtree": its body, all its subheadings, both direct and indirect,
+and all of their bodies.  In other words, the subtree contains
+everything following this heading line, up to and not including the
+next heading of the same or higher rank.
+
+  Intermediate between a visible subtree and an invisible one is having
+all the subheadings visible but none of the body.  There are two
+commands for doing this, depending on whether you want to hide the
+bodies or make the subheadings visible.  They are `M-x hide-leaves'
+and `M-x show-branches'.
+
+  A little weaker than `show-branches' is `C-c C-i' (`show-children'). 
+It makes just the direct subheadings visible--those one level down. 
+Deeper subheadings remain invisible, if they were invisible.
+
+  Two commands have a blanket effect on the whole file.  `M-x
+hide-body' makes all body lines invisible, so that you see just the
+outline structure.  `M-x show-all' makes all lines visible.  These
+commands can be thought of as a pair of opposites even though `M-x
+show-all' applies to more than just body lines.
+
+  The use of ellipses at the ends of visible lines can be turned off by
+setting `selective-display-ellipses' to `nil'.  Then there is no
+visible indication of the presence of invisible lines.
+
+
+
+File: emacs,  Node: Words,  Next: Sentences,  Prev: Text Mode,  Up: Text
+
+Words
+=====
+
+  Emacs has commands for moving over or operating on words.  By
+convention, the keys for them are all `Meta-' characters.
+
+`M-f'
+     Move forward over a word (`forward-word').
+
+`M-b'
+     Move backward over a word (`backward-word').
+
+`M-d'
+     Kill up to the end of a word (`kill-word').
+
+`M-DEL'
+     Kill back to the beginning of a word (`backward-kill-word').
+
+`M-@'
+     Mark the end of the next word (`mark-word').
+
+`M-t'
+     Transpose two words;  drag a word forward or backward across
+     other words (`transpose-words').
+
+  Notice how these keys form a series that parallels the
+character-based `C-f', `C-b', `C-d', `C-t' and DEL.  `M-@' is related
+to `C-@', which is an alias for `C-SPC'.
+
+  The commands `Meta-f' (`forward-word') and `Meta-b' (`backward-word')
+move forward and backward over words.  They are thus analogous to
+`Control-f' and `Control-b', which move over single characters.  Like
+their `Control-' analogues, `Meta-f' and `Meta-b' move several words
+if given an argument.  `Meta-f' with a negative argument moves
+backward, and `Meta-b' with a negative argument moves forward. 
+Forward motion stops right after the last letter of the word, while
+backward motion stops right before the first letter.
+
+  `Meta-d' (`kill-word') kills the word after point.  To be precise, it
+kills everything from point to the place `Meta-f' would move to. 
+Thus, if point is in the middle of a word, `Meta-d' kills just the
+part after point.  If some punctuation comes between point and the
+next word, it is killed along with the word.  (If you wish to kill
+only the next word but not the punctuation before it, simply do
+`Meta-f' to get the end, and kill the word backwards with
+`Meta-DEL'.) `Meta-d' takes arguments just like `Meta-f'.
+
+  `Meta-DEL' (`backward-kill-word') kills the word before point.  It
+kills everything from point back to where `Meta-b' would move to.  If
+point is after the space in `FOO, BAR', then `FOO, ' is killed.  (If
+you wish to kill just `FOO', do `Meta-b Meta-d' instead of `Meta-DEL'.)
+
+  `Meta-t' (`transpose-words') exchanges the word before or containing
+point with the following word.  The delimiter characters between the
+words do not move.  For example, `FOO, BAR' transposes into
+`BAR, FOO' rather than `BAR FOO,'.  *Note Transpose::, for more on
+transposition and on arguments to transposition commands.
+
+  To operate on the next N words with an operation which applies
+between point and mark, you can either set the mark at point and then
+move over the words, or you can use the command `Meta-@'
+(`mark-word') which does not move point, but sets the mark where
+`Meta-f' would move to.  It can be given arguments just like `Meta-f'.
+
+  The word commands' understanding of syntax is completely controlled
+by the syntax table.  Any character can, for example, be declared to
+be a word delimiter.  *Note Syntax::.
+
+
+
+File: emacs,  Node: Sentences,  Next: Paragraphs,  Prev: Words,  Up: Text
+
+Sentences
+=========
+
+  The Emacs commands for manipulating sentences and paragraphs are
+mostly on `Meta-' keys, so as to be like the word-handling commands.
+
+`M-a'
+     Move back to the beginning of the sentence (`backward-sentence').
+
+`M-e'
+     Move forward to the end of the sentence (`forward-sentence').
+
+`M-k'
+     Kill forward to the end of the sentence (`kill-sentence').
+
+`C-x DEL'
+     Kill back to the beginning of the sentence 
+     (`backward-kill-sentence').
+
+  The commands `Meta-a' and `Meta-e' (`backward-sentence' and
+`forward-sentence') move to the beginning and end of the current
+sentence, respectively.  They were chosen to resemble `Control-a' and
+`Control-e', which move to the beginning and end of a line.  Unlike
+them, `Meta-a' and `Meta-e' if repeated or given numeric arguments
+move over successive sentences.  Emacs assumes that the typist's
+convention is followed, and thus considers a sentence to end wherever
+there is a `.', `?' or `!' followed by the end of a line or two
+spaces, with any number of `)', `]', `'', or `"' characters allowed
+in between.  A sentence also begins or ends wherever a paragraph
+begins or ends.
+
+  Neither `M-a' nor `M-e' moves past the newline or spaces beyond the
+sentence edge at which it is stopping.
+
+  Just as `C-a' and `C-e' have a kill command, `C-k', to go with them,
+so `M-a' and `M-e' have a corresponding kill command `M-k'
+(`kill-sentence') which kills from point to the end of the sentence. 
+With minus one as an argument it kills back to the beginning of the
+sentence.  Larger arguments serve as a repeat count.
+
+  There is a special command, `C-x DEL' (`backward-kill-sentence') for
+killing back to the beginning of a sentence, because this is useful
+when you change your mind in the middle of composing text.
+
+  The variable `sentence-end' controls recognition of the end of a
+sentence.  It is a regexp that matches the last few characters of a
+sentence, together with the whitespace following the sentence.  Its
+normal value is
+
+     "[.?!][]\"')]*\\($\\|\t\\|  \\)[ \t\n]*"
+
+This example is explained in the section on regexps.  *Note Regexps::.
+
+
