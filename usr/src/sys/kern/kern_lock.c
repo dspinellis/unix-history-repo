@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.5 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -58,11 +58,12 @@ int lock_wait_time = 100;
 #define ACQUIRE(lkp, error, extflags, wanted)				\
 	PAUSE(lkp, wanted);						\
 	for (error = 0; wanted; ) {					\
-		(lkp)->lk_flags |= LK_WAITING;				\
+		(lkp)->lk_waitcount++;					\
 		atomic_unlock(&(lkp)->lk_interlock);			\
 		error = tsleep((void *)lkp, (lkp)->lk_prio,		\
 		    (lkp)->lk_wmesg, (lkp)->lk_timo);			\
 		atomic_lock(&(lkp)->lk_interlock);			\
+		(lkp)->lk_waitcount--;					\
 		if (error)						\
 			break;						\
 		if ((extflags) & LK_SLEEPFAIL) {			\
@@ -117,18 +118,21 @@ lockstatus(lkp)
  * accepted shared locks and shared-to-exclusive upgrades to go away.
  */
 int
-lockmgr(lkp, p, flags)
+lockmgr(lkp, flags, p)
 	volatile struct lock *lkp;
-	struct proc *p;
 	u_int flags;
+	struct proc *p;
 {
 	int error;
 	pid_t pid;
 	volatile int extflags;
 
+	error = 0;
 	pid = p->p_pid;
 	atomic_lock(&lkp->lk_interlock);
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
+	if (lkp->lk_flags & LK_DRAINED)
+		panic("lockmgr: using decommissioned lock");
 
 	switch (flags & LK_TYPE_MASK) {
 
@@ -139,21 +143,18 @@ lockmgr(lkp, p, flags)
 			 */
 			if ((extflags & LK_NOWAIT) && (lkp->lk_flags &
 			    (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE))) {
-				atomic_unlock(&lkp->lk_interlock);
-				return (EBUSY);
+				error = EBUSY;
+				break;
 			}
 			/*
 			 * Wait for exclusive locks and upgrades to clear.
 			 */
 			ACQUIRE(lkp, error, extflags, lkp->lk_flags &
 			    (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE));
-			if (error) {
-				atomic_unlock(&lkp->lk_interlock);
-				return (error);
-			}
+			if (error)
+				break;
 			lkp->lk_sharecount++;
-			atomic_unlock(&lkp->lk_interlock);
-			return (0);
+			break;
 		}
 		/*
 		 * We hold an exclusive lock, so downgrade it to shared.
@@ -169,12 +170,9 @@ lockmgr(lkp, p, flags)
 		lkp->lk_exclusivecount = 0;
 		lkp->lk_flags &= ~LK_HAVE_EXCL;
 		lkp->lk_lockholder = LK_NOPROC;
-		if (lkp->lk_flags & LK_WAITING) {
-			lkp->lk_flags &= ~LK_WAITING;
+		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
-		}
-		atomic_unlock(&lkp->lk_interlock);
-		return (0);
+		break;
 
 	case LK_EXCLUPGRADE:
 		/*
@@ -184,8 +182,8 @@ lockmgr(lkp, p, flags)
 		 */
 		if (lkp->lk_flags & LK_WANT_UPGRADE) {
 			lkp->lk_sharecount--;
-			atomic_unlock(&lkp->lk_interlock);
-			return (EBUSY);
+			error = EBUSY;
+			break;
 		}
 		/* fall into normal upgrade */
 
@@ -207,8 +205,8 @@ lockmgr(lkp, p, flags)
 		if ((extflags & LK_NOWAIT) &&
 		    ((lkp->lk_flags & LK_WANT_UPGRADE) ||
 		     lkp->lk_sharecount > 1)) {
-			atomic_unlock(&lkp->lk_interlock);
-			return (EBUSY);
+			error = EBUSY;
+			break;
 		}
 		if ((lkp->lk_flags & LK_WANT_UPGRADE) == 0) {
 			/*
@@ -219,27 +217,22 @@ lockmgr(lkp, p, flags)
 			lkp->lk_flags |= LK_WANT_UPGRADE;
 			ACQUIRE(lkp, error, extflags, lkp->lk_sharecount);
 			lkp->lk_flags &= ~LK_WANT_UPGRADE;
-			if (error) {
-				atomic_unlock(&lkp->lk_interlock);
-				return (error);
-			}
+			if (error)
+				break;
 			lkp->lk_flags |= LK_HAVE_EXCL;
 			lkp->lk_lockholder = pid;
 			if (lkp->lk_exclusivecount != 0)
 				panic("lockmgr: non-zero exclusive count");
 			lkp->lk_exclusivecount = 1;
-			atomic_unlock(&lkp->lk_interlock);
-			return (0);
+			break;
 		}
 		/*
 		 * Someone else has requested upgrade. Release our shared
 		 * lock, awaken upgrade requestor if we are the last shared
 		 * lock, then request an exclusive lock.
 		 */
-		if (lkp->lk_sharecount == 0 && (lkp->lk_flags & LK_WAITING)) {
-			lkp->lk_flags &= ~LK_WAITING;
+		if (lkp->lk_sharecount == 0 && lkp->lk_waitcount)
 			wakeup((void *)lkp);
-		}
 		/* fall into exclusive request */
 
 	case LK_EXCLUSIVE:
@@ -250,8 +243,7 @@ lockmgr(lkp, p, flags)
 			if ((extflags & LK_CANRECURSE) == 0)
 				panic("lockmgr: locking against myself");
 			lkp->lk_exclusivecount++;
-			atomic_unlock(&lkp->lk_interlock);
-			return (0);
+			break;
 		}
 		/*
 		 * If we are just polling, check to see if we will sleep.
@@ -259,18 +251,16 @@ lockmgr(lkp, p, flags)
 		if ((extflags & LK_NOWAIT) && ((lkp->lk_flags &
 		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
 		     lkp->lk_sharecount != 0)) {
-			atomic_unlock(&lkp->lk_interlock);
-			return (EBUSY);
+			error = EBUSY;
+			break;
 		}
 		/*
 		 * Try to acquire the want_exclusive flag.
 		 */
 		ACQUIRE(lkp, error, extflags, lkp->lk_flags &
 		    (LK_HAVE_EXCL | LK_WANT_EXCL));
-		if (error) {
-			atomic_unlock(&lkp->lk_interlock);
-			return (error);
-		}
+		if (error)
+			break;
 		lkp->lk_flags |= LK_WANT_EXCL;
 		/*
 		 * Wait for shared locks and upgrades to finish.
@@ -278,20 +268,21 @@ lockmgr(lkp, p, flags)
 		ACQUIRE(lkp, error, extflags, lkp->lk_sharecount != 0 ||
 		       (lkp->lk_flags & LK_WANT_UPGRADE));
 		lkp->lk_flags &= ~LK_WANT_EXCL;
-		if (error) {
-			atomic_unlock(&lkp->lk_interlock);
-			return (error);
-		}
+		if (error)
+			break;
 		lkp->lk_flags |= LK_HAVE_EXCL;
 		lkp->lk_lockholder = pid;
 		if (lkp->lk_exclusivecount != 0)
 			panic("lockmgr: non-zero exclusive count");
 		lkp->lk_exclusivecount = 1;
-		atomic_unlock(&lkp->lk_interlock);
-		return (0);
+		break;
 
 	case LK_RELEASE:
 		if (lkp->lk_exclusivecount != 0) {
+			if (pid != lkp->lk_lockholder)
+				panic("lockmgr: pid %d, not %s %d unlocking",
+				    pid, "exclusive lock holder",
+				    lkp->lk_lockholder);
 			lkp->lk_exclusivecount--;
 			if (lkp->lk_exclusivecount == 0) {
 				lkp->lk_flags &= ~LK_HAVE_EXCL;
@@ -299,12 +290,37 @@ lockmgr(lkp, p, flags)
 			}
 		} else if (lkp->lk_sharecount != 0)
 			lkp->lk_sharecount--;
-		if (lkp->lk_flags & LK_WAITING) {
-			lkp->lk_flags &= ~LK_WAITING;
+		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
+		break;
+
+	case LK_DRAIN:
+		/*
+		 * If we are just polling, check to see if we will sleep.
+		 */
+		if ((extflags & LK_NOWAIT) && ((lkp->lk_flags &
+		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
+		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0)) {
+			error = EBUSY;
+			break;
 		}
-		atomic_unlock(&lkp->lk_interlock);
-		return (0);
+		PAUSE(lkp, ((lkp->lk_flags &
+		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
+		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0));
+		for (error = 0; ((lkp->lk_flags &
+		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
+		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0); ) {
+			lkp->lk_flags |= LK_WAITDRAIN;
+			atomic_unlock(&lkp->lk_interlock);
+			if (error = tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
+			    lkp->lk_wmesg, lkp->lk_timo))
+				return (error);
+			if ((extflags) & LK_SLEEPFAIL)
+				return (ENOLCK);
+			atomic_lock(&lkp->lk_interlock);
+		}
+		lkp->lk_flags |= LK_DRAINED;
+		break;
 
 	default:
 		atomic_unlock(&lkp->lk_interlock);
@@ -312,4 +328,12 @@ lockmgr(lkp, p, flags)
 		    flags & LK_TYPE_MASK);
 		/* NOTREACHED */
 	}
+	if ((lkp->lk_flags & LK_WAITDRAIN) && ((lkp->lk_flags &
+	     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) == 0 &&
+	     lkp->lk_sharecount == 0 && lkp->lk_waitcount == 0)) {
+		lkp->lk_flags &= ~LK_WAITDRAIN;
+		wakeup((void *)&lkp->lk_flags);
+	}
+	atomic_unlock(&lkp->lk_interlock);
+	return (error);
 }
