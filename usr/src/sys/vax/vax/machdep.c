@@ -1,4 +1,4 @@
-/*	machdep.c	3.14	%G%	*/
+/*	machdep.c	3.15	%G%	*/
 extern cmap,ecmap;
 
 #include "../h/param.h"
@@ -15,7 +15,7 @@ extern cmap,ecmap;
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.14) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.15) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -51,7 +51,6 @@ startup(firstaddr)
 	 * Allow for the u. area of process 0 and its (single)
 	 * page of page tables.
 	 */
-	printf("firstaddr %X unixsize %X, cmap %X, ecmap %X\n", firstaddr, unixsize, cmap, ecmap);
 	unixsize = (firstaddr+UPAGES+1);
 
 	/*
