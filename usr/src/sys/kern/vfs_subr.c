@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.15 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.16 (Berkeley) %G%
  */
 
 /*
@@ -256,7 +256,7 @@ newnodes++;
 		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
 		vp->v_lease = NULL;
 		if (vp->v_type != VBAD)
-			vgone(vp);
+			VOP_REVOKE(vp, 0);
 #ifdef DIAGNOSTIC
 		if (vp->v_data)
 			panic("cleaned vnode isn't");
@@ -770,7 +770,7 @@ loop:
 		 * out the vnode data structures and we are done.
 		 */
 		if (vp->v_usecount == 0) {
-			vgone(vp);
+			VOP_REVOKE(vp, 0);
 			continue;
 		}
 		/*
@@ -780,7 +780,7 @@ loop:
 		 */
 		if (flags & FORCECLOSE) {
 			if (vp->v_type != VBLK && vp->v_type != VCHR) {
-				vgone(vp);
+				VOP_REVOKE(vp, 0);
 			} else {
 				vclean(vp, 0);
 				vp->v_op = spec_vnodeop_p;
@@ -875,21 +875,25 @@ vclean(vp, flags)
  * Eliminate all activity associated with  the requested vnode
  * and with all vnodes aliased to the requested vnode.
  */
-void
-vgoneall(vp)
-	register struct vnode *vp;
+int
+vop_revoke(ap)
+	struct vop_revoke_args /* {
+		struct vnode *a_vp;
+		int a_flags;
+	} */ *ap;
 {
-	register struct vnode *vq;
+	register struct vnode *vp, *vq;
 
-	if (vp->v_flag & VALIASED) {
+	vp = ap->a_vp;
+	if ((ap->a_flags & REVOKEALL) && (vp->v_flag & VALIASED)) {
 		/*
 		 * If a vgone (or vclean) is already in progress,
 		 * wait until it is done and return.
 		 */
 		if (vp->v_flag & VXLOCK) {
 			vp->v_flag |= VXWANT;
-			tsleep((caddr_t)vp, PINOD, "vgoneall", 0);
-			return;
+			tsleep((caddr_t)vp, PINOD, "vop_revokeall", 0);
+			return (0);
 		}
 		/*
 		 * Ensure that vp will not be vgone'd while we
@@ -913,6 +917,7 @@ vgoneall(vp)
 		vp->v_flag &= ~VXLOCK;
 	}
 	vgone(vp);
+	return (0);
 }
 
 /*
