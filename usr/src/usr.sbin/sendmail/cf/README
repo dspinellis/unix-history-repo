@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.63 (Berkeley) %G%
+		@(#)README	8.64 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1386,6 +1386,20 @@ confMAX_QUEUE_RUN_SIZE	MaxQueueRunSize	If set, limit the maximum size of any
 					so this should be as large as your
 					system can tolerate.  If not set, there
 					is no limit.
+confDONT_EXPAND_CNAMES	DontExpandCnames
+					If set, $[ ... $] lookups that do DNS
+					based lookups do not expand CNAME
+					records.  This currently violates the
+					published standards, but the IETF
+					seems to be moving toward legalizing
+					this.  For example, if "FTP.Foo.ORG"
+					is a CNAME for "Cruft.Foo.ORG", then
+					with this option set a lookup of
+					"FTP" will return "FTP.Foo.ORG"; if
+					clear it returns "Cruft.FOO.ORG".  N.B.
+					you may not see any effect until your
+					downstream neighbors stop doing CNAME
+					lookups as well.
 
 
 +-----------+
