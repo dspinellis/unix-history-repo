@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.67 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.68 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -105,7 +105,7 @@ ffs_update(ap)
 #define	DOUBLE	1	/* index of double indirect block */
 #define	TRIPLE	2	/* index of triple indirect block */
 /*
- * Truncate the inode ip to at most length size.  Free affected disk
+ * Truncate the inode oip to at most length size.  Free affected disk
  * blocks -- the blocks of the file are removed in reverse order.
  */
 ffs_truncate(ap)
@@ -121,9 +121,9 @@ ffs_truncate(ap)
 	register daddr_t lastblock;
 	register struct inode *oip;
 	daddr_t bn, lbn, lastiblock[NIADDR], indir_lbn[NIADDR];
+	daddr_t oldblks[NDADDR + NIADDR], newblks[NDADDR + NIADDR];
 	off_t length = ap->a_length;
 	register struct fs *fs;
-	register struct inode *ip;
 	struct buf *bp;
 	int offset, size, level;
 	long count, nblocks, vflags, blocksreleased = 0;
@@ -192,7 +192,7 @@ ffs_truncate(ap)
 		if (ap->a_flags & IO_SYNC)
 			bwrite(bp);
 		else
-			bdwrite(bp);
+			bawrite(bp);
 	}
 	/*
 	 * Update file and block pointers on disk before we start freeing
@@ -200,9 +200,7 @@ ffs_truncate(ap)
 	 * will be returned to the free list.  lastiblock values are also
 	 * normalized to -1 for calls to ffs_indirtrunc below.
 	 */
-	MALLOC(ip, struct inode *, sizeof(*ip), M_FFSNODE, M_WAITOK);
-	*ip = *oip;
-	ip->i_size = osize;
+	bcopy((caddr_t)&oip->i_db[0], (caddr_t)oldblks, sizeof oldblks);
 	for (level = TRIPLE; level >= SINGLE; level--)
 		if (lastiblock[level] < 0) {
 			oip->i_ib[level] = 0;
@@ -211,10 +209,19 @@ ffs_truncate(ap)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	vflags = ((length > 0) ? V_SAVE : 0) | V_SAVEMETA;
-	allerror = vinvalbuf(ovp, vflags, ap->a_cred, ap->a_p, 0, 0);
 	if (error = VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
 		allerror = error;
+	/*
+	 * Having written the new inode to disk, save its new configuration
+	 * and put back the old block pointers long enough to process them.
+	 * Note that we save the new block configuration so we can check it
+	 * when we are done.
+	 */
+	bcopy((caddr_t)&oip->i_db[0], (caddr_t)newblks, sizeof newblks);
+	bcopy((caddr_t)oldblks, (caddr_t)&oip->i_db[0], sizeof oldblks);
+	oip->i_size = osize;
+	vflags = ((length > 0) ? V_SAVE : 0) | V_SAVEMETA;
+	allerror = vinvalbuf(ovp, vflags, ap->a_cred, ap->a_p, 0, 0);
 
 	/*
 	 * Indirect blocks first.
@@ -222,18 +229,17 @@ ffs_truncate(ap)
 	indir_lbn[SINGLE] = -NDADDR;
 	indir_lbn[DOUBLE] = indir_lbn[SINGLE] - NINDIR(fs) - 1;
 	indir_lbn[TRIPLE] = indir_lbn[DOUBLE] - NINDIR(fs) * NINDIR(fs) - 1;
-	ITOV(ip)->v_data = ip;
 	for (level = TRIPLE; level >= SINGLE; level--) {
-		bn = ip->i_ib[level];
+		bn = oip->i_ib[level];
 		if (bn != 0) {
-			error = ffs_indirtrunc(ip, indir_lbn[level],
+			error = ffs_indirtrunc(oip, indir_lbn[level],
 			    fsbtodb(fs, bn), lastiblock[level], level, &count);
 			if (error)
 				allerror = error;
 			blocksreleased += count;
 			if (lastiblock[level] < 0) {
-				ip->i_ib[level] = 0;
-				ffs_blkfree(ip, bn, fs->fs_bsize);
+				oip->i_ib[level] = 0;
+				ffs_blkfree(oip, bn, fs->fs_bsize);
 				blocksreleased += nblocks;
 			}
 		}
@@ -247,12 +253,12 @@ ffs_truncate(ap)
 	for (i = NDADDR - 1; i > lastblock; i--) {
 		register long bsize;
 
-		bn = ip->i_db[i];
+		bn = oip->i_db[i];
 		if (bn == 0)
 			continue;
-		ip->i_db[i] = 0;
-		bsize = blksize(fs, ip, i);
-		ffs_blkfree(ip, bn, bsize);
+		oip->i_db[i] = 0;
+		bsize = blksize(fs, oip, i);
+		ffs_blkfree(oip, bn, bsize);
 		blocksreleased += btodb(bsize);
 	}
 	if (lastblock < 0)
@@ -262,7 +268,7 @@ ffs_truncate(ap)
 	 * Finally, look for a change in size of the
 	 * last direct block; release any frags.
 	 */
-	bn = ip->i_db[lastblock];
+	bn = oip->i_db[lastblock];
 	if (bn != 0) {
 		long oldspace, newspace;
 
@@ -270,9 +276,9 @@ ffs_truncate(ap)
 		 * Calculate amount of space we're giving
 		 * back as old block size minus new block size.
 		 */
-		oldspace = blksize(fs, ip, lastblock);
-		ip->i_size = length;
-		newspace = blksize(fs, ip, lastblock);
+		oldspace = blksize(fs, oip, lastblock);
+		oip->i_size = length;
+		newspace = blksize(fs, oip, lastblock);
 		if (newspace == 0)
 			panic("itrunc: newspace");
 		if (oldspace - newspace > 0) {
@@ -282,24 +288,26 @@ ffs_truncate(ap)
 			 * required for the storage we're keeping.
 			 */
 			bn += numfrags(fs, newspace);
-			ffs_blkfree(ip, bn, oldspace - newspace);
+			ffs_blkfree(oip, bn, oldspace - newspace);
 			blocksreleased += btodb(oldspace - newspace);
 		}
 	}
 done:
 #ifdef DIAGNOSTIC
 	for (level = SINGLE; level <= TRIPLE; level++)
-		if (ip->i_ib[level] != oip->i_ib[level])
+		if (newblks[NDADDR + level] != oip->i_ib[level])
 			panic("itrunc1");
 	for (i = 0; i < NDADDR; i++)
-		if (ip->i_db[i] != oip->i_db[i])
+		if (newblks[i] != oip->i_db[i])
 			panic("itrunc2");
 	if (length == 0 &&
 	    (ovp->v_dirtyblkhd.le_next || ovp->v_cleanblkhd.le_next))
 		panic("itrunc3");
 #endif /* DIAGNOSTIC */
-	ITOV(ip)->v_data = oip;
-	FREE(ip, M_FFSNODE);
+	/*
+	 * Put back the real size.
+	 */
+	oip->i_size = length;
 	oip->i_blocks -= blocksreleased;
 	if (oip->i_blocks < 0)			/* sanity */
 		oip->i_blocks = 0;
