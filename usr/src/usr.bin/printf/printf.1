@@ -1,0 +1,236 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)printf.1	5.1 (Berkeley) %G%
+.\"
+.TH PRINTF 1 "
+.AT 1
+.SH NAME
+printf \- formatted output
+.SH SYNOPSIS
+.PP
+.B printf format [ arguments ... ]
+.SH DESCRIPTION
+.I Printf
+formats and prints its arguments, after the first, under control
+of the
+.IR format .
+The
+.I format
+is a character string which contains three types of objects: plain characters,
+which are simply copied to standard output, character escape sequences which
+are converted and copied to the standard output, and format specifications,
+each of which causes printing of the next successive
+.IR argument .
+.PP
+The
+.I arguments
+after the first are treated as strings if the corresponding format is
+either
+.I c
+or
+.IR s ;
+otherwise it is evaluated as a C constant, with the following extensions:
+.in +0.5i
+A leading plus or minus sign is allowed.
+.br
+If the leading character is a single or double quote, or not a digit,
+plus, or minus sign, the value is the ASCII code of the next character.
+.in -0.5i
+.PP
+The format string is reused as often as necessary to satisfy the
+.IR arguments .
+Any extra format specifications are evaluated with zero or the null
+string.
+.PP
+Character escape sequences are in backslash notation as defined in the
+draft proposed ANSI C Standard X3J11.  The characters and their meanings
+are as follows:
+.TP
+.B \ea
+Write the ASCII ``bel'' character.
+.TP
+.B \eb
+Write a <backspace> character.
+.TP
+.B \ef
+Write a <form-feed> character.
+.TP
+.B \en
+Write a <new-line> character.
+.TP
+.B \er
+Write a <carriage return> character.
+.TP
+.B \et
+Write a <tab> character.
+.TP
+.B \ev
+Write a <vertical tab> character.
+.TP
+.B \e\e
+Write a backslash character.
+.TP
+.B \enum
+Write an 8-bit character whose numeric value is the 1-, 2-, or 3-digit
+octal number
+.IR num .
+.PP
+Each format specification is introduced by the percent character
+(``%'').
+The remainder of the format specification includes, in the
+following order:
+.TP
+.B \(bu
+Zero or more of the following flags:
+.RS
+.TP
+.B \(bu
+a `#' character
+specifying that the value should be printed in an ``alternate form''.
+For 
+.BR c ,
+.BR d ,
+and
+.BR s ,
+formats, this option has no effect.  For the
+.B o
+formats the precision of the number is increased to force the first
+character of the output string to a zero.  For the
+.BR x ( X )
+format, a non-zero result has the string
+.BR 0x ( 0X )
+prepended to it.  For 
+.BR e ,
+.BR E ,
+.BR f ,
+.BR g ,
+and
+.BR G ,
+formats, the result will always contain a decimal point, even if no
+digits follow the point (normally, a decimal point only appears in the
+results of those formats if a digit follows the decimal point).  For
+.B g
+and
+.B G
+formats, trailing zeros are not removed from the result as they
+would otherwise be;
+.TP
+.B \(bu
+a minus sign `\-' which specifies
+.I "left adjustment"
+of the output in the indicated field;
+.TP
+.B \(bu
+a `+' character specifying that there should always be
+a sign placed before the number when using signed formats.
+.TP
+.B \(bu
+a space specifying that a blank should be left before a positive number
+for a signed format.  A `+' overrides a space if both are used;
+.TP
+.B \(bu
+a zero `0' character indicating that zero-padding should be used
+rather than blank-padding.  A `\-' overrides a `0' if both are used;
+.RE
+.TP
+.B \(bu
+an optional digit string specifying a
+.I "field width;"
+if the output string has fewer characters than the field width it will
+be blank-padded on the left (or right, if the left-adjustment indicator
+has been given) to make up the field width (note that a leading zero
+is a flag, but an embedded zero is part of a field width);
+.TP
+.B \(bu
+an optional period, followed by an optional digit string giving a
+.I precision
+which specifies the number of digits to appear after the decimal point,
+for e- and f-formats, or the maximum number of characters to be printed
+from a string; if the digit string is missing, the precision is treated
+as zero;
+.TP
+.B \(bu
+a character which indicates the type of format to use.
+.PP
+A field width or precision may be `*' instead of a digit string.
+In this case an
+.I argument
+supplies the field width or precision.
+.PP
+The format characters and their meanings are:
+.TP
+.B doux
+The
+.I argument
+is printed as a signed decimal, unsigned decimal, unsigned octal, or
+unsigned hexadecimal notation respectively.  A ``X'' may be used as a
+format character as well; it is identical to ``x'' except that the
+alternate form has ``X'' prepended instead of ``x''.
+.TP
+.B f
+The
+.I argument
+is printed in the style `[\fB\-\fR]ddd.ddd' where the number of d's
+after the decimal point is equal to the precision specification for
+the argument.
+If the precision is missing, 6 digits are printed after the decimal point;
+if the precision is explicitly 0, no digits and no decimal point are printed.
+.TP
+.B eE
+The
+.I argument
+is printed in the style `[\fB\-\fR]d\fB.\fRddd\fBe\fR\(+-dd' where there
+is one digit before the decimal point and the number after is equal to
+the precision specification for the argument; when the precision is
+missing, 6 digits are printed after the decimal point.
+An upper-case E is used for an `E' format.
+.TP
+.B gG
+The
+.I argument
+is printed in style
+.B f
+or in style
+.B e
+.RB ( E )
+whichever gives full precision in minimum space.
+.TP
+.B c
+The first character of
+.I argument
+is printed.
+.TP
+.B s
+Characters from the string
+.I argument
+are printed until the end is reached or until the number of characters
+indicated by the precision specification is reached; however if the
+precision is 0 or missing, all characters in the string are printed.
+.TP
+.B %
+Print a `%'; no argument is used.
+.PP
+In no case does a non-existent or small field width cause truncation of
+a field; padding takes place only if the specified field width exceeds
+the actual width.
+.SH DIAGNOSTICS
+None.
+.SH "RETURN VALUE"
+.IR Printf 's
+exit value is the number of characters printed.  If an error occurs,
+printf exits with a -1.
+.SH "SEE ALSO"
+printf(3)
