@@ -1,13 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)xget.c	4.3 %G%";
+static char sccsid[] = "@(#)xget.c	4.4 %G%";
 #endif
 
 #include "xmail.h"
-#include "sys/types.h"
-#include "dir.h"
-#include "ctype.h"
-#include "pwd.h"
-#include "sys/stat.h"
+#include <sys/types.h>
+#include <sys/dir.h>
+#include <ctype.h>
+#include <pwd.h>
+#include <sys/stat.h>
 char *myname;
 int uid;
 struct direct *dbuf;
