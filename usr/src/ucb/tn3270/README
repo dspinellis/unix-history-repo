@@ -1,0 +1,96 @@
+Welcome to the new (beta) tn3270.
+
+The good news is that MOST system dependent code is in a few subdirectories
+(mostly in sys_curses, on Unix, or sys_dos, on MS_DOS).
+
+Internally, the code has changed substantially.  We now look (to the
+best of our limited ability) like a 3274 controller.  The screen buffer
+is kept in 3270 display code format; keystokes are defined in terms
+of 3270 scan codes (but, no changes to /etc/map3270 are required).
+
+Unfortunately, things are much more complicated that ever.  There are now
+subdirectories.  To wit:
+
+    api/		General library of function needed by API
+			(and, to some extent, by the rest of tn3270).
+
+    arpa/		Location of "telnet.h" (for non-4.3 systems).
+
+    ascii/		Routines necessary to handle the case of running
+			from an ASCII-oriented system (ie: unix).
+
+    ctlr/		The main part of the emulator.  Handles 3270 scan
+			codes, 3270 data stream, 3270 display codes,
+			and EBCDIC.  Also, the internal API function
+			lives here.
+
+    general/		Some general subroutines and data structures of
+			interest to the emulator only.
+
+    sys_curses/		System-dependent code for a curses-based environment.
+
+    sys_dos/		System-dependent code for an MS-DOS-base environment.
+
+    tools/		Various tools.  Most of these are used during the
+			build process.  One (prt3270) is a debugging tool.
+			One (mkmake.y) is quite horrible, and attempts to
+			transform Unix makefiles into PC makefiles.
+
+    utilities/		The source for tnrecv, which receives files
+			(fairly slowly) from an IBM host.  We don't
+			include the IBM side, because we really aren't
+			happy with very much of it (except that it does,
+			sometimes, work).  Hopefully, when we get past
+			the beta stage we will have more robust (and
+			complete) code to share.
+
+The fact that system dependancies are isolated should make it easy
+to port to other systems.  I would like to hear about problems porting
+to new areas.
+
+WHAT IS NOT IN THIS VERSION (sigh):
+
+1)	We don't have a native X version yet.  I am waiting for X version 11
+	(though this is mostly an excuse; I could have done version 10,
+	but I haven't had the time).
+
+2)	We don't process structured fields.
+
+3)	We don't do 3270-style graphics (ala 3193, say).
+
+The above three items WILL be in the next version, which should come
+along "any day now" (say 6 months) (but, they WON'T be in the production
+release of this version).
+
+4.2 NOTE:
+
+If you run 4.2 on a vax, you may get error messages involving assignments
+to variables which are pointers to void returning functions.  These
+errors can be corrected by using makefile_4.2 as your makefile.
+
+MS-DOS NOTES:
+
+This version can be built on an MS-DOS system.
+
+We use version 4.0 of the MicroSoft C compiler.  We use version 4.0
+of the MicroSoft assembler.  We use "PolyMake" from "POLYTRON"
+(P.O. Box 787; Hillsboro, OR 97123; (503)648-8595).
+
+There is a problem in that, on a 512KB PC, memory fills up.  Possibly,
+before saying make in the "tn3270" directory, you should say make
+in the "tn3270/api" directory.
+
+The INCLUDE environmental variable is assumed to point to
+the standard include files, plus to whereever the networking include
+files are located.  These are files like <sys/socket.h>.  This is
+assuming that you have a 4.2/3 network emulation package (UB offers such
+a package with their product; my understanding is that FTP Software
+is, or soon will be, offering such a package).
+
+As mentioned in the last paragraph, we use Ungermann-Bass's library
+to perform the networking functions.  Probably other vendors' libraries
+could be integrated as well.
+
+The file utilities/tarread.exe is a small program which reads tar
+files on MS-DOS.  It is from Drew Perkins and CMU.  Many thanks
+to them.
