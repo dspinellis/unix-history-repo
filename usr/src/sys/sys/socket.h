@@ -1,4 +1,4 @@
-/*	socket.h	6.2	84/08/29	*/
+/*	socket.h	6.3	84/09/01	*/
 
 /*
  * Definitions related to sockets: types, address families, options.
@@ -33,7 +33,7 @@
 #define	SO_DONTKEEPALIVE	(~SO_KEEPALIVE)
 #define	SO_ROUTE		(~SO_DONTROUTE)
 #define	SO_DONTBROADCAST	(~SO_BROADCAST)
-#define	SO_DONTUSELOOPBACK	(~SO_LOOPBACK)
+#define	SO_DONTUSELOOPBACK	(~SO_USELOOPBACK)
 #define	SO_DONTLINGER		(~SO_LINGER)
 
 /*
