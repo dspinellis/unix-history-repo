@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.3.2.4 %G%";
+# Sccs Id = "@(#)Makefile	2.4 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -20,11 +20,11 @@ RM=-rm
 OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o config.o edit.o fio.o \
 	getname.o head.o v7.local.o lock.o optim.o names.o lex.o list.o main.o \
 	quit.o send.o strings.o temp.o tty.o vars.o version.o \
-	errlst.o str.o
+	errlst.o str.o npopen.o
 
 SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c optim.c names.c lex.c list.c main.c \
-	quit.c send.c strings.c temp.c tty.c vars.c errlst.c version.c
+	quit.c send.c strings.c temp.c tty.c vars.c errlst.c
 
 HDRS=rcv.h configdefs.h def.h glob.h v7.local.h local.h
 
@@ -53,7 +53,7 @@ install:
 	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
 
 $S:
-	sccs get $@;
+	sccs get $@
 
 srcs:	$S
 
@@ -64,6 +64,7 @@ clean:
 	$(RM) -f *.o
 	rm -f Mail a.out fmt x.c xs.c tags core
 	cp /dev/null strings
+	cp /dev/null version.c
 
 lint:
 	lint $(CFLAGS) $(SRCS)
@@ -89,6 +90,12 @@ errlst.o: errlst.c
 	${CC} -E ${CFLAGS} errlst.c | ${XSTR} -c -
 	${CC} ${CFLAGS} -R -c x.c
 	mv x.o errlst.o
+
+#
+# Make the version file.  /tmp is always changing.
+#
+version.c: #	/tmp
+	/bin/sh version > version.c
 
 print:	$S fmt.c
 	$(CGRAPH) > mail.g;
