@@ -6,14 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)devname.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)devname.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <fcntl.h>
 #include <ndbm.h>
 #include <stdio.h>
-#include "pathnames.h"
+#include <paths.h>
 
 char *
 devname(dev)
