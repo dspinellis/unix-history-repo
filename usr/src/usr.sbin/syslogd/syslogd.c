@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -396,12 +396,16 @@ printline(hname, msg)
 
 	while ((c = *p++ & 0177) != '\0' &&
 	    q < &line[sizeof(line) - 1])
-		if (c == '\n')
-			*q++ = ' ';
-		else if (iscntrl(c)) {
-			*q++ = '^';
-			*q++ = c ^ 0100;
-		} else
+		if (iscntrl(c))
+			if (c == '\n')
+				*q++ = ' ';
+			else if (c == '\t')
+				*q++ = '\t';
+			else {
+				*q++ = '^';
+				*q++ = c ^ 0100;
+			}
+		else
 			*q++ = c;
 	*q = '\0';
 
