@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -1460,6 +1460,7 @@ another_hunk()
 	}
 	p_context = 0;
 	while (p_end < p_max) {
+	    line_beginning = ftell(pfp);
 	    ret = pgets(buf,sizeof buf, pfp);
 	    if (ret == Nullch) {
 		if (p_max - p_end < 4)
@@ -1479,8 +1480,9 @@ another_hunk()
 		    /* to fill them in from the the old file's context */
 		    fillsrc = 1;
 		    filldst = p_end;
-		    fillcnt = p_max - p_end;
+		    fillcnt = p_max - repl_beginning;
 		    p_end = p_max;
+		    Fseek(pfp, line_beginning, 0); /* backup the diff input */
 		    break;
 		}
 		if (p_end != 0)
