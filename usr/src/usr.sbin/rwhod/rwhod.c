@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.28 (Berkeley) 85/02/25";
+static char sccsid[] = "@(#)rwhod.c	4.29 (Berkeley) 85/06/03";
 #endif
 
 #include <sys/types.h>
@@ -376,7 +376,8 @@ configure(s)
 			free((char *)np);
 			continue;
 		}
-		if ((ifreq.ifr_flags & (IFF_BROADCAST|IFF_POINTOPOINT)) == 0) {
+		if ((ifreq.ifr_flags & IFF_UP) == 0 ||
+		    (ifreq.ifr_flags & (IFF_BROADCAST|IFF_POINTOPOINT)) == 0) {
 			free((char *)np);
 			continue;
 		}
@@ -392,12 +393,14 @@ configure(s)
 			  np->n_addr, np->n_addrlen);
 		}
 		if (np->n_flags & IFF_BROADCAST) {
+			if (ioctl(s, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
+				syslog(LOG_ERR, "ioctl (get broadaddr)");
+				free((char *)np);
+				continue;
+			}
 			/* we assume addresses are all the same size */
-			sin = (struct sockaddr_in *)np->n_addr;
-			sin->sin_addr = inet_makeaddr((np->n_flags & IFF_LOCAL)?
-				inet_subnetof(sin->sin_addr) :
-				inet_netof(sin->sin_addr),
-				INADDR_ANY);
+			bcopy((char *)&ifreq.ifr_broadaddr,
+			  np->n_addr, np->n_addrlen);
 		}
 		/* gag, wish we could get rid of Internet dependencies */
 		sin = (struct sockaddr_in *)np->n_addr;
