@@ -5,11 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
-#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/text.h>
