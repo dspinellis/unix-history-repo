@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops.c	6.2 %G%";
+static char *sccsid = "@(#)ex_vops.c	6.3 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -97,7 +97,6 @@ bool show;	/* if true update the screen */
 			else
 				vreplace(undap1 - addr, undap2 - undap1,
 				    undkind == UNDPUT ? 0 : unddol - dol);
-vudump("before big undo");
 		savenote = notecnt;
 		undo(1);
 		if (show && (vundkind != VMCHNG || addr != dot))
