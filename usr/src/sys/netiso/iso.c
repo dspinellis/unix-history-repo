@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.6 (Berkeley) %G%
+ *	@(#)iso.c	7.7 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -772,7 +772,7 @@ iso_localifa(siso)
 			cp1 = ia->ia_sockmask.siso_data;
 			cp2 = siso->siso_data;
 			cp3 = ia->ia_addr.siso_data;
-			while (cp2 < cplim)
+			while (cp1 < cplim)
 				if (*cp1++ & (*cp2++ ^ *cp3++))
 					goto next;
 			ia_maybe = ia;
