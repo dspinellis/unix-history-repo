@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.39	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.40	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1162,7 +1162,17 @@ Xr|4025-cr|tek 4025 for curses and rogue:\
 # off the bottom line.  Out of the dialog area, ^K moves it up, but there
 # is no way to scroll.
 Xs|4112|4113|4114|tek4112|tektronix 4110 series:\
-	:le=^H:cr=^M:nl=^J:do=^J:bl=^G:bs:am:cl=\ELZ:li#34:co#80:
+	:is=\E3!1:\
+	:li#34:co#80:am:\
+	:al=\E[L:bs:bt=\E[Z:\
+	:cd=\E[0J:ce=\E[0K:\
+	:cl=\E[2J\E[0;0H:cm=\E[%i%d;%dH:\
+	:db:dc=\E[P:dl=\E[M:\
+	:ic=\E[@:im=:nd=\E[C:se=\E[m:\
+	:so=\E[7m:ue=\E[m:\
+	:up=\EM:us=\E[4m:\
+	:vs=:ve=:\
+	:sr=\E7\E[0;0H\E[L\E8:sf=\E7\E[0;0H\E[M\E8:
 Xt|4112-nd|4112 not in dialog area:up=^K:ns:tc=4112:
 Xu|4112-5|4112 in 5 line dialog area:li#5:tc=4112:
 Xv|4113|tek4113|tektronix 4113 color graphics, 5 line dialog area:\
