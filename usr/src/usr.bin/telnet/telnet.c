@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.16 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -35,6 +35,7 @@ int	connected;
 int	net;
 int	showoptions = 0;
 int	options;
+int	debug = 0;
 int	crmod = 0;
 char	*prompt;
 char	escape = CTRL(]);
@@ -64,6 +65,7 @@ char	ohelp[] = "connect to a site";
 char	chelp[] = "close current connection";
 char	qhelp[] = "exit telnet";
 char	zhelp[] = "suspend telnet";
+char	dhelp[] = "toggle debugging";
 char	ehelp[] = "set escape character";
 char	shelp[] = "print status information";
 char	hhelp[] = "print help information";
@@ -79,6 +81,7 @@ struct cmd cmdtab[] = {
 	{ "status",	shelp,		status },
 	{ "options",	phelp,		setoptions },
 	{ "crmod",	rhelp,		setcrmod },
+	{ "debug",	dhelp,		setdebug },
 	{ "?",		hhelp,		help },
 	0
 };
@@ -174,6 +177,9 @@ tn(argc, argv)
 		perror("telnet: socket");
 		return;
 	}
+	if (debug)
+		if (setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+			perror("telnet: setsockopt");
 	sigset(SIGINT, intr);
 	sigset(SIGPIPE, deadpeer);
 	printf("Trying...\n");
@@ -696,6 +702,16 @@ setcrmod()
 
 	crmod = !crmod;
 	printf("%s map carriage return on output.\n", crmod ? "Will" : "Wont");
+	fflush(stdout);
+}
+
+/*VARARGS*/
+setdebug()
+{
+
+	debug = !debug;
+	printf("%s turn on socket level debugging.\n",
+		debug ? "Will" : "Wont");
 	fflush(stdout);
 }
 
