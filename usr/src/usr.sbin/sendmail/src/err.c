@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.10	%G%";
+static char	SccsId[] = "@(#)err.c	3.11	%G%";
 
 extern bool	HasXscrpt;
 
@@ -60,10 +60,10 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 	if (ArpaMode != ARPA_NONE && !HasXscrpt)
-		printf("%s\r\n", errbuf);
+		fprintf(OutChannel, "%s\r\n", errbuf);
 	else
-		printf("sendmail: %s\n", &errbuf[4]);
-	(void) fflush(stdout);
+		fprintf(OutChannel, "sendmail: %s\n", &errbuf[4]);
+	(void) fflush(OutChannel);
 	Errors++;
 
 	/* determine exit status if not already set */
@@ -138,13 +138,13 @@ message(num, msg, a, b, c, d, e)
 
 	/* print arpa format header if needed */
 	if (ArpaMode != ARPA_NONE && !HasXscrpt)
-		printf("%.3s ", num);
+		fprintf(OutChannel, "%.3s ", num);
 
 	if (To != NULL && To[0] != '\0')
-		printf("%s... ", To);
-	printf(msg, a, b, c, d, e);
+		fprintf(OutChannel, "%s... ", To);
+	fprintf(OutChannel, msg, a, b, c, d, e);
 	if (ArpaMode != ARPA_NONE && !HasXscrpt)
-		printf("\r");
-	printf("\n");
-	(void) fflush(stdout);
+		fprintf(OutChannel, "\r");
+	fprintf(OutChannel, "\n");
+	(void) fflush(OutChannel);
 }
