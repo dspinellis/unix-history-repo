@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tip.1	8.1 (Berkeley) %G%
+.\"	@(#)tip.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TIP 1
@@ -100,7 +100,7 @@ defaults to the ``from'' file name if it isn't specified.
 The remote host
 executes the command string ``cat 'from';echo ^A'' to send the file to
 .Nm tip  .
-.It Ic \&~
+.It Ic \&~|
 Pipe the output from a remote command to a local
 .Ux
 process.
@@ -114,6 +114,19 @@ process to the remote host.
 The command string sent to the local
 .Ux
 system is processed by the shell.
+.It Ic \&~C
+Fork a child process on the local system to perform special protocols
+such as \s-1XMODEM\s+1.  The child program will be run with the following
+somewhat unusual arrangement of file descriptors:
+.nf
+.in +1i
+0 <-> local tty in
+1 <-> local tty out
+2 <-> local tty out
+3 <-> remote tty in
+4 <-> remote tty out
+.in -1i
+.fi
 .It Ic \&~#
 Send a
 .Dv BREAK
@@ -177,7 +190,7 @@ remote machine.
 guards against multiple users connecting to a remote system
 by opening modems and terminal lines with exclusive access,
 and by honoring the locking protocol used by
-.Xr uucp 1 .
+.Xr uucico 8 .
 .Pp
 During file transfers
 .Nm tip
