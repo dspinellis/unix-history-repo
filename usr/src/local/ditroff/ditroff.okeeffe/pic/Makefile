@@ -1,17 +1,17 @@
 #
-#	Makefile	(CWI)	1.1	85/07/19
+#	Makefile	(CWI)	1.2	85/07/23
 #
-CFLAGS= -O
+CFLAGS= -g
 YFLAGS= -d
 DESTDIR=
 BINDIR=/usr/local
 OFILES = main.o print.o misc.o symtab.o blockgen.o boxgen.o circgen.o \
-	arcgen.o linegen.o movegen.o troffgen.o textgen.o \
-	pic2.o pltroff.o
+	picy.o arcgen.o linegen.o movegen.o textgen.o \
+	input.o for.o pltroff.o
 OLDOFILES = OLDmain.o print.o misc.o symtab.o blockgen.o boxgen.o circgen.o \
 	arcgen.o linegen.o movegen.o troffgen.o textgen.o \
 	pic2.o OLDpltroff.o
-OBJECTS= pic pltroff vpic
+OBJECTS= pic
 
 all: ${OBJECTS}
 
@@ -19,9 +19,11 @@ pic:	picy.o picl.o ${OFILES}
 	cc -o pic picy.o picl.o ${OFILES} -lm
 
 pltroff:	driver.o pltroff.o
+	@echo "not supported"
 	cc -o pltroff pltroff.o driver.o -lm
 
 vpic:	picy.o picl.o ${OLDOFILES}
+	@echo "not supported"
 	cc -o vpic picy.o picl.o ${OLDOFILES} -lm
 
 OLDpltroff.o:	pltroff.c
