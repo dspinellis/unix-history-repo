@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,7 +23,6 @@ enum _vflag vflag = FIRST;
 
 static off_t address;			/* address/offset in stream */
 static off_t eaddress;			/* end address */
-static off_t savaddress;		/* saved address/offset in stream */
 
 #define PRINT { \
 	switch(pr->flags) { \
@@ -196,7 +195,7 @@ get()
 		tmpp = curp;
 		curp = savp;
 		savp = tmpp;
-		address = savaddress += blocksize;
+		address += blocksize;
 	}
 	for (need = blocksize, nread = 0;;) {
 		/*
@@ -238,7 +237,7 @@ get()
 			if (vflag == WAIT)
 				(void)printf("*\n");
 			vflag = DUP;
-			address = savaddress += blocksize;
+			address += blocksize;
 			need = blocksize;
 			nread = 0;
 		}
@@ -289,28 +288,36 @@ doskip(fname, statok)
 	char *fname;
 	int statok;
 {
-	extern int errno;
-	struct stat sbuf;
+	register int cnt;
+	struct stat sb;
 
 	if (statok) {
-		if (fstat(fileno(stdin), &sbuf)) {
+		if (fstat(fileno(stdin), &sb)) {
 			(void)fprintf(stderr, "hexdump: %s: %s.\n",
 			    fname, strerror(errno));
 			exit(1);
 		}
-		if (skip >= sbuf.st_size) {
-			skip -= sbuf.st_size;
-			address += sbuf.st_size;
+		if (S_ISREG(sb.st_mode) && skip >= sb.st_size) {
+			address += sb.st_size;
+			skip -= sb.st_size;
 			return;
 		}
 	}
-	if (fseek(stdin, skip, SEEK_SET)) {
-		(void)fprintf(stderr, "hexdump: %s: %s.\n",
-		    fname, strerror(errno));
-		exit(1);
+	if (S_ISREG(sb.st_mode)) {
+		if (fseek(stdin, skip, SEEK_SET)) {
+			(void)fprintf(stderr, "hexdump: %s: %s.\n",
+			    fname, strerror(errno));
+			exit(1);
+		}
+		address += skip;
+		skip = 0;
+	} else {
+		for (cnt = 0; cnt < skip; ++cnt)
+			if (getchar() == EOF)
+				break;
+		address += cnt;
+		skip -= cnt;
 	}
-	savaddress = address += skip;
-	skip = 0;
 }
 
 char *
