@@ -1,10 +1,10 @@
-static char *sccsid = "@(#)rm.c	4.11 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.12 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 char	*sprintf();
 
@@ -103,7 +103,7 @@ char arg[];
 					return;
 			}
 			if (rmdir(arg) < 0) {
-				fprintf("rm: ");
+				fprintf(stderr, "rm: ");
 				perror(arg);
 				errcode++;
 			}
