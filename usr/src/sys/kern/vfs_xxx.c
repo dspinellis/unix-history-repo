@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	4.2	82/12/23	*/
+/*	vfs_xxx.c	4.3	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,7 +46,7 @@ uchar()
  */
 struct	ostat {
 	dev_t	ost_dev;
-	u_int	ost_ino;
+	u_short	ost_ino;
 	u_short ost_mode;
 	short  	ost_nlink;
 	short  	ost_uid;
