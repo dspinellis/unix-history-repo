@@ -1,10 +1,10 @@
-#!/bin/sh -
+#!/bin/csh -f
 #
 # Copyright (c) 1983 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)sendbug.sh	5.1 (Berkeley) %G%
+#	@(#)sendbug.sh	5.2 (Berkeley) %G%
 #
 # Create a bug report and mail to '4bsd-bugs'.
 
