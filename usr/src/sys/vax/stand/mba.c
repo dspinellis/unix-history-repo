@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.4 (Berkeley) %G%
+ *	@(#)mba.c	7.5 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -101,10 +101,8 @@ mbainit(mbanum)
 {
 	register struct mba_regs *mba = mbaddr[mbanum];
 
-	if (badaddr((char *)mba, sizeof(long))) {
-		printf("nonexistent mba");
+	if (badaddr((char *)mba, sizeof(long)))
 		return (0);
-	}
 	if ((mbaact & (1<<mbanum)) == 0) {
 		mba->mba_cr = MBCR_INIT;
 		mbaact |= 1<<mbanum;
