@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.20 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -82,6 +82,7 @@ execve()
 	extern long argdbsize;			/* XXX */
 #endif SECSIZE
 
+  start:
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = ((struct execa *)u.u_ap)->fname;
@@ -209,6 +210,22 @@ execve()
 		gid = u.u_cred->cr_gid;
 		goto again;
 	}
+	/*
+	 * If the vnode has been modified since we last used it,
+	 * then throw away all its pages and its text table entry.
+	 */
+	if (vp->v_text && vp->v_text->x_mtime != vattr.va_mtime.tv_sec) {
+		/*
+		 * Try once to release, if it is still busy
+		 * take more drastic action.
+		 */
+		xrele(vp);
+		if (vp->v_flag & VTEXT) {
+			vput(vp);
+			vgone(vp);
+			goto start;
+		}
+	}
 
 	/*
 	 * Collect arguments on "file" in swap space.
@@ -322,6 +339,7 @@ badarg:
 		}
 		goto bad;
 	}
+	vp->v_text->x_mtime = vattr.va_mtime.tv_sec;
 	vput(vp);
 	vp = NULL;
 
