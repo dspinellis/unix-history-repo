@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	2.11 %G%";
+static char *SccsId = "@(#)cmd3.c	2.12 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -229,10 +229,10 @@ respond(msgvec)
 		for (ap = altnames; *ap; ap++)
 			np = delname(np, *ap, icequal);
 	head.h_seq = 1;
-	cp = detract(np, 0);
+	cp = detract(np, GCOMMA);		/* do it with commas */
 	if (cp != NOSTR && replyto == NOSTR) {
 		strcpy(buf, cp);
-		strcat(buf, " ");
+		strcat(buf, ", ");
 		strcat(buf, rcv);
 	}
 	else {
