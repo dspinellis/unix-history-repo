@@ -2,7 +2,11 @@
 static char *sccsid = "@(#)dd.c	4.7 (Berkeley) %G%";
 #endif
 
+#include <sys/types.h>
 #include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/mtio.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <signal.h>
 
@@ -144,6 +148,8 @@ char	atoibm[] =
 	0356,0357,0372,0373,0374,0375,0376,0377,
 };
 
+enum ftype { unknown, reg, chr, tape, pipe } iftype;
+enum ftype checktype();
 
 main(argc, argv)
 int	argc;
@@ -258,6 +264,7 @@ char	**argv;
 		perror(ifile);
 		exit(1);
 	}
+	iftype = checktype(ibf);
 	obf = ofile ? open(ofile, O_WRONLY|O_CREAT, 0666) : dup(1);
 	if(obf < 0) {
 		fprintf(stderr,"cannot create: %s\n", ofile);
@@ -289,22 +296,45 @@ char	**argv;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, term);
-	while(skip) {
-		read(ibf, ibuf, ibs);
-		skip--;
+	if (skip)
+	    switch (iftype) {
+		case tape: {
+			struct mtop op;
+
+			op.mt_op = MTFSR;
+			op.mt_count = skip;
+			if (ioctl(ibf, MTIOCTOP, (char *)&op) < 0)
+				perror("dd: skip: tape forward-space-record");
+			}
+			break;
+		case reg:
+			lseek(ibf, skip*ibs, L_INCR);
+			break;
+		default:
+			while (skip--)
+				read(ibf, ibuf, ibs);
+			break;
 	}
-	while(seekn) {
-		lseek(obf, (long)obs, 1);
-		seekn--;
+	if (seekn)
+	    switch (checktype(obf)) {
+		case reg:
+			lseek(obf, (long)obs*seekn, L_INCR);
+			break;
+		case pipe:
+			fprintf(stderr, "dd: can't seek on pipe\n");
+			break;
+		default:
+			while (seekn--)
+				lseek(obf, (long)obs, L_INCR);
+			break;
 	}
 
 loop:
 	if(ibc-- == 0) {
 		ibc = 0;
 		if(count==0 || nifr+nipr!=count) {
-			if(cflag&(NERR|SYNC))
-			for(ip=ibuf+ibs; ip>ibuf;)
-				*--ip = 0;
+			if (cflag&NERR)
+				bzero((char *)ibuf, ibs);
 			ibc = read(ibf, ibuf, ibs);
 		}
 		if(ibc == -1) {
@@ -313,20 +343,25 @@ loop:
 				flsh();
 				term();
 			}
-			ibc = 0;
+			/* guess actual read size; default still -1 */
 			for(c=0; c<ibs; c++)
 				if(ibuf[c] != 0)
-					ibc = c;
+					ibc = c + 1;
 			stats();
+			advance(ibf, iftype, ibs);
 		}
 		if(ibc == 0 && --files<=0) {
 			flsh();
 			term();
 		}
 		if(ibc != ibs) {
+			if (ibc == -1)
+				ibc = 0;
 			nipr++;
-			if(cflag&SYNC)
+			if (cflag&SYNC) {
+				bzero(ibuf + ibc, ibs - ibc);
 				ibc = ibs;
+			}
 		} else
 			nifr++;
 		ip = ibuf;
@@ -605,3 +640,40 @@ stats()
 	if(ntrunc)
 		fprintf(stderr,"%u truncated records\n", ntrunc);
 }
+
+enum ftype
+checktype(fd)
+	int fd;
+{
+	struct stat st;
+	struct mtget mt;
+
+	if (fstat(fd, &st) == -1)
+		return (unknown);
+	if (S_ISFIFO(st.st_mode))
+		return (pipe);
+	if (S_ISCHR(st.st_mode)) {
+		if (ioctl(fd, MTIOCGET, (char *)&mt) != -1)
+			return (tape);
+		return (chr);
+	}
+	return (reg);	/* or dir, symlink, blk, or ??? */
+}
+
+advance(fd, fdtype, count)
+{
+
+	switch (fdtype) {
+	case reg:
+	case chr:
+		lseek(fd, count, L_INCR);
+		break;
+	case pipe:
+	case tape:
+		break;
+	default:
+		fprintf(stderr, "dd: unknown input type, can't resynchronize\n");
+		exit(99);
+	}
+}
+
