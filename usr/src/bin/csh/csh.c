@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -938,7 +938,7 @@ process(catch)
 	     * read fresh stuff. Otherwise, we are rereading input and don't
 	     * need or want to prompt.
 	     */
-	    if (fseekp == feobp)
+	    if (aret == F_SEEK && fseekp == feobp)
 		printprompt();
 	    (void) fflush(cshout);
 	}

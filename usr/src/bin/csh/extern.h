@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.6 (Berkeley) %G%
+ *	@(#)extern.h	5.7 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -152,7 +152,8 @@ void	savehist __P((struct wordent *));
  * lex.c
  */
 void	 addla __P((Char *));
-void	 bseek __P((off_t));
+void	 bseek __P((struct Ain *));
+void	 btell __P((struct Ain *));
 void	 btoeof __P((void));
 void	 copylex __P((struct wordent *, struct wordent *));
 Char	*domod __P((Char *, int));
