@@ -1,7 +1,10 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
- $History$
 # $Log: bsd.lib.mk,v $
+# Revision 1.5  1993/07/08  12:17:07  paul
+# Removed the core.* before disaster strikes.
+# I removed core as well since it's pretty redundant.
+#
 # Revision 1.4  1993/07/07  21:42:45  nate
 # Cleaned up header files and added core.* to clean directives
 #
