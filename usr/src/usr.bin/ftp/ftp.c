@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -740,7 +740,7 @@ recvrequest(cmd, local, remote, mode)
 
 	case TYPE_A:
 		while ((c = getc(din)) != EOF) {
-			if (c == '\r') {
+			while (c == '\r') {
 				while (hash && (bytes >= hashbytes)) {
 					(void) putchar('#');
 					(void) fflush(stdout);
