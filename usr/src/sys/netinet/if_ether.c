@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	7.2 (Berkeley) %G%
+ *	@(#)if_ether.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -333,10 +333,11 @@ in_arpinput(ac, m)
 	}
 	if (at == 0 && itaddr.s_addr == myaddr.s_addr) {
 		/* ensure we have a table entry */
-		at = arptnew(&isaddr);
-		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
-		    sizeof(ea->arp_sha));
-		at->at_flags |= ATF_COM;
+		if (at = arptnew(&isaddr)) {
+			bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
+			    sizeof(ea->arp_sha));
+			at->at_flags |= ATF_COM;
+		}
 	}
 	splx(s);
 reply:
@@ -454,7 +455,7 @@ arptnew(addr)
 			goto out;	 /* found an empty entry */
 		if (at->at_flags & ATF_PERM)
 			continue;
-		if (at->at_timer > oldest) {
+		if ((int) at->at_timer > oldest) {
 			oldest = at->at_timer;
 			ato = at;
 		}
@@ -499,6 +500,10 @@ arpioctl(cmd, data)
 	case SIOCSARP:		/* set entry */
 		if (at == NULL) {
 			at = arptnew(&sin->sin_addr);
+			if (at == NULL) {
+				splx(s);
+				return (EADDRNOTAVAIL);
+			}
 			if (ar->arp_flags & ATF_PERM) {
 			/* never make all entries in a bucket permanent */
 				register struct arptab *tat;
