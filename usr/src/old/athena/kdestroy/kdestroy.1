@@ -22,29 +22,20 @@ The
 .I kdestroy
 utility destroys the user's active
 Kerberos
-authorization tickets by writing zeros to the file that contains them.
-If the ticket file does not exist,
+authorization tickets.
+If no tickets currently exist for the user,
 .I kdestroy
 displays a message to that effect.
 .PP
-After overwriting the file,
-.I kdestroy
-removes the file from the system.
 The utility
 displays a message indicating the success or failure of the
 operation.
 If
 .I kdestroy
-is unable to destroy the ticket file,
+is unable to destroy the tickets,
 the utility will warn you by making your terminal beep.
 .PP
-In the Athena workstation environment,
-the
-.I toehold
-service automatically destroys your tickets when you
-end a workstation session.
-If your site does not provide a similar ticket-destroying mechanism,
-you can place the
+You can place the
 .I kdestroy
 command in your
 .I .logout

@@ -32,31 +32,23 @@ see the
 .I kerberos(1)
 manual page.
 .PP
-If you are logged in to a workstation that is running the
-.I toehold
-service,
+If you system is configured so that
+.IR login (1)
+automatically provides your initial tickets,
 you do not have to use
 .I kinit.
-The
-.I toehold
-login procedure will log you into
-Kerberos
-automatically.
 You will need to use
 .I kinit
 only in those situations in which
 your original tickets have expired.
 (Tickets expire in about a day.)
-Note as well that
-.I toehold
-will automatically destroy your tickets when you logout from the workstation.
 .PP
 When you use
 .I kinit
 without options,
 the utility
-prompts for your username and Kerberos password,
-and tries to authenticate your login with the local
+prompts for your Kerberos principal name and password,
+and tries to authenticate your login with the local realm's
 Kerberos
 server.
 .PP
@@ -76,12 +68,7 @@ where
 .I uid
 specifies your user identification number.
 .PP
-If you have logged in to
-Kerberos
-without the benefit of the workstation
-.I toehold
-system,
-make sure you use the
+Make sure you use the
 .I kdestroy
 command to destroy any active tickets before you end your login session.
 You may want to put the
@@ -112,7 +99,7 @@ server.
 .B \-v
 Verbose mode.
 .I kinit
-prints the name of the ticket file used, and
+prints the location of your tickets, and
 a status message indicating the success or failure of
 your login attempt.
 .TP
@@ -123,7 +110,7 @@ restrictions in Kerberos Version 4, this value must be between 5 and
 1275 minutes.
 .SH SEE ALSO
 .PP
-kerberos(1), kdestroy(1), klist(1), toehold(1)
+kerberos(1), kdestroy(1), klist(1)
 .SH BUGS
 The
 .B \-r
