@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -236,10 +236,14 @@ main(argc, argv)
 #ifdef NEWDB
 	  case T_HASH:
 		dbp.db = dbopen(mapname, mode, 0644, DB_HASH, NULL);
+		if (dbp.db != NULL)
+			(void) (*dbp.db->sync)(dbp.db, 0);
 		break;
 
 	  case T_BTREE:
 		dbp.db = dbopen(mapname, mode, 0644, DB_BTREE, &bti);
+		if (dbp.db != NULL)
+			(void) (*dbp.db->sync)(dbp.db, 0);
 		break;
 #endif
 
