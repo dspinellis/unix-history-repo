@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.43		%G%);
+SCCSID(@(#)recipient.c	3.44		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -127,6 +127,9 @@ recipient(a, sendq)
 	register ADDRESS *q;
 	ADDRESS **pq;
 	register struct mailer *m;
+	register char *p;
+	bool quoted = FALSE;		/* set if the addr has a quote bit */
+	char buf[MAXNAME];		/* unquoted image of the user name */
 	extern ADDRESS *getctladdr();
 	extern bool safefile();
 
@@ -154,18 +157,23 @@ recipient(a, sendq)
 
 	a->q_timeout = TimeOut;
 
-	/* do sickly crude mapping for program mailing, etc. */
-	if (a->q_mailer == LocalMailer)
+	(void) strcpy(buf, a->q_user);
+	for (p = buf; *p != '\0' && !quoted; p++)
 	{
-		if (a->q_user[0] == '|')
+		if (!isascii(*p) && (*p & 0377) != (SpaceSub & 0377))
+			quoted = TRUE;
+	}
+	stripquotes(buf, TRUE);
+
+	/* do sickly crude mapping for program mailing, etc. */
+	if (m == LocalMailer && buf[0] == '|')
+	{
+		a->q_mailer = m = ProgMailer;
+		a->q_user++;
+		if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 		{
-			a->q_mailer = m = ProgMailer;
-			a->q_user++;
-			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
-			{
-				usrerr("Cannot mail directly to programs");
-				a->q_flags |= QDONTSEND;
-			}
+			usrerr("Cannot mail directly to programs");
+			a->q_flags |= QDONTSEND;
 		}
 	}
 
@@ -207,7 +215,7 @@ recipient(a, sendq)
 	**  Alias the name and handle :include: specs.
 	*/
 
-	if (a->q_mailer == LocalMailer)
+	if (m == LocalMailer && !bitset(QDONTSEND, a->q_flags))
 	{
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
@@ -232,21 +240,10 @@ recipient(a, sendq)
 	**  the user (which is probably correct anyway).
 	*/
 
-	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == LocalMailer)
+	if (!bitset(QDONTSEND, a->q_flags) && m == LocalMailer)
 	{
-		char buf[MAXNAME];
-		register char *p;
 		struct stat stb;
 		extern bool writable();
-		bool quoted = FALSE;
-
-		(void) strcpy(buf, a->q_user);
-		for (p = buf; *p != '\0' && !quoted; p++)
-		{
-			if (!isascii(*p) && (*p & 0377) != (SpaceSub & 0377))
-				quoted = TRUE;
-		}
-		stripquotes(buf, TRUE);
 
 		/* see if this is to a file */
 		if (buf[0] == '/')
