@@ -1,0 +1,58 @@
+.\" (c) Copyright 1986 Xerox Corporation
+.\" All rights reserved.
+.TH MP2RES 1 5/23/85
+.UC 4
+.tr -\-
+.\" differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\ 
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ``
+.if t \
+.	ds rq ''
+.SH NAME
+mp2res - convert a MacPaint file to an RES file
+.SH SYNOPSIS
+.B mp2res
+[
+.BI \-i
+] [
+.BI \-t top
+] [
+.BI \-b bottom
+] [
+.BI \-o outputfile
+]  MacPaintFile
+.SH DESCRIPTION
+.I Mp2res
+will convert a bitmap image from the Apple MacPaint format to the Xerox RES
+(Raster Encoding Standard) format.  The RES header will declare the natural
+resolution of the image to be 72 pixels per inch.
+.PP
+The following options are understood:
+.TP
+.BI \-t top
+The number of the first scan line to be output.  Scan lines are numbered
+from 0 to 719 (there are 720 scan lines).
+.TP
+.BI \-b bottom
+The last scan line to be output.  See above note.
+.TP
+.BI \-o outputfile
+The RES master will be placed in the named file.
+If the option is omitted, the RES master will be created on the
+standard ouptut.
+.TP
+.BI \-i
+Output an Interpress master instead of an RES file.  The picture will be
+printed at 72 pixels per inch.
+.SH SEE ALSO
+Raster Encoding Standard, \s8XNS Standard\s0 178506
+.br
+Interpress Electronic Printing Standard, \s8XNSS\s0 048601
+.br
+dipress(n)
+.SH BUGS
+Doesn't allow you to handle clipping the left and right sides off.
