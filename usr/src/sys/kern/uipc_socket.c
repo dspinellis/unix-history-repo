@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.54	82/10/16	*/
+/*	uipc_socket.c	4.55	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -546,25 +546,25 @@ soioctl(so, cmd, data)
 			so->so_state |= SS_NBIO;
 		else
 			so->so_state &= ~SS_NBIO;
-		return;
+		return (0);
 
 	case FIOASYNC:
 		if (*(int *)data)
 			so->so_state |= SS_ASYNC;
 		else
 			so->so_state &= ~SS_ASYNC;
-		return;
+		return (0);
 
 	case SIOCSKEEP:
 		if (*(int *)data)
 			so->so_options &= ~SO_KEEPALIVE;
 		else
 			so->so_options |= SO_KEEPALIVE;
-		return;
+		return (0);
 
 	case SIOCGKEEP:
 		*(int *)data = (so->so_options & SO_KEEPALIVE) != 0;
-		return;
+		return (0);
 
 	case SIOCSLINGER:
 		so->so_linger = *(int *)data;
@@ -572,19 +572,19 @@ soioctl(so, cmd, data)
 			so->so_options &= ~SO_DONTLINGER;
 		else
 			so->so_options |= SO_DONTLINGER;
-		return;
+		return (0);
 
 	case SIOCGLINGER:
 		*(int *)data = so->so_linger;
-		return;
+		return (0);
 
 	case SIOCSPGRP:
 		so->so_pgrp = *(int *)data;
-		return;
+		return (0);
 
 	case SIOCGPGRP:
 		*(int *)data = so->so_pgrp;
-		return;
+		return (0);
 
 	case SIOCDONE: {
 		int flags = *(int *)data;
@@ -597,10 +597,10 @@ soioctl(so, cmd, data)
 			splx(s);
 		}
 		if (flags & FWRITE)
-			u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
+			return ((*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
 			    (struct mbuf *)0, (struct mbuf *)0,
-			    (struct socketopt *)0);
-		return;
+			    (struct socketopt *)0));
+		return (0);
 	}
 
 	case SIOCSENDOOB: {
@@ -613,9 +613,8 @@ soioctl(so, cmd, data)
 		}
 		m->m_len = 1;
 		*mtod(m, char *) = oob;
-		(*so->so_proto->pr_usrreq)(so, PRU_SENDOOB,
-		    m, (struct mbuf *)0, (struct socketopt *)0);
-		return;
+		return ((*so->so_proto->pr_usrreq)(so, PRU_SENDOOB,
+		    m, (struct mbuf *)0, (struct socketopt *)0));
 	}
 
 	case SIOCRCVOOB: {
@@ -623,29 +622,28 @@ soioctl(so, cmd, data)
 
 		if (m == 0) {
 			u.u_error = ENOBUFS;
-			return;
+			return (0);
 		}
 		*mtod(m, caddr_t) = 0;
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
 		    m, (struct mbuf *)0, (struct socketopt *)0);
 		*(char *)data = *mtod(m, char *);
 		(void) m_free(m);
-		return;
+		return (0);
 	}
 
 	case SIOCATMARK:
 		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
-		return;
+		return (0);
 
 	/* routing table update calls */
 	case SIOCADDRT:
 	case SIOCDELRT:
 		if (!suser())
-			return;
-		u.u_error = rtrequest(cmd, (struct rtentry *)data);
-		return;
+			return (u.u_error);		/* XXX */
+		return (rtrequest(cmd, (struct rtentry *)data));
 
 	/* type/protocol specific ioctls */
 	}
-	u.u_error = EOPNOTSUPP;
+	return (EOPNOTSUPP);
 }
