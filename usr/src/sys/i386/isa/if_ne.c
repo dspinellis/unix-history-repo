@@ -3,7 +3,7 @@
 /*
  * NE2000 Ethernet driver
  * Copyright (C) 1990 W. Jolitz
- * @(#)if_ne.c	1.2 (Berkeley) %G%
+ * @(#)if_ne.c	1.3 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -287,7 +287,7 @@ neinit(unit)
 	outb (nec+ds0_tpsr, 0);
 	outb(nec+ds0_pstart, RBUF/DS_PGSIZE);
 	outb(nec+ds0_pstop, RBUFEND/DS_PGSIZE);
-	outb(nec+ds0_bnry, RBUFEND/DS_PGSIZE);
+	outb(nec+ds0_bnry, RBUF/DS_PGSIZE);
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
 	outb(nec+ds1_curr, RBUF/DS_PGSIZE);
 	ns->ns_cur = RBUF/DS_PGSIZE;
@@ -368,7 +368,7 @@ printf("|"); */
 	 * Init transmit length registers, and set transmit start flag.
 	 */
 
-#ifdef NEDEBUG
+#ifdef NEDEBUGx
 if(len < 0 || len > 1536)
 pg("T Bogus Length %d\n", len);
 dprintf(DEXPAND,"snd %d ", len);
@@ -380,8 +380,8 @@ dprintf(DEXPAND,"snd %d ", len);
 	outb(nec+ds_cmd, DSCM_TRANS|DSCM_NODMA|DSCM_START);
 }
 
-#define succ(n) (((n)+1 > RBUFEND/DS_PGSIZE) ? RBUF/DS_PGSIZE : (n)+1)
-#define pred(n) (((n)-1 < RBUF/DS_PGSIZE) ? RBUFEND/DS_PGSIZE : (n)-1)
+#define succ(n) (((n)+1 >= RBUFEND/DS_PGSIZE) ? RBUF/DS_PGSIZE : (n)+1)
+#define pred(n) (((n)-1 < RBUF/DS_PGSIZE) ? RBUFEND/DS_PGSIZE-1 : (n)-1)
 /*
  * Controller interrupt.
  */
@@ -392,22 +392,22 @@ neintr(vec, ppl)
 	u_char cmd,isr;
 static cnt;
 
-redstack();
 	/* save cmd, clear interrupt */
 	cmd = inb (nec+ds_cmd);
 loop:
 	isr = inb (nec+ds0_isr);
-#ifdef NEDEBUG
+#ifdef NEDEBUGx
 dprintf(DEXPAND,"|ppl %x isr %x ", ppl, isr);
 #endif
 
 	outb(nec+ds_cmd,DSCM_NODMA|DSCM_START);
-	outb (nec+ds0_isr, isr);
+	outb(nec+ds0_isr, isr);
 
 
-	if (isr & (/*DSIS_RXE|*/DSIS_TXE|DSIS_ROVRN))
+	if (isr & (DSIS_RXE|DSIS_TXE|DSIS_ROVRN))
 		log(LOG_ERR, "ne%d: error: isr %x\n", ns-ne_softc, isr/*, DSIS_BITS*/);
 
+#ifdef notdef
 	/* receiver ovverun? */
 	if (isr & DSIS_ROVRN) {
 		u_char pend,lastfree;
@@ -421,7 +421,7 @@ dprintf(DEXPAND,"|ppl %x isr %x ", ppl, isr);
 printf("Cur %x pend %x lastfree %x ", ns->ns_cur, pend, lastfree);
 #endif
 		/* have we wrapped */
-		if (lastfree > RBUFEND/DS_PGSIZE)
+		if (lastfree >= RBUFEND/DS_PGSIZE)
 			lastfree = RBUF/DS_PGSIZE;
 		/* something in the buffer? */
 		if (pend != succ(lastfree)) {
@@ -453,10 +453,8 @@ printf("nxt %x ", nxt);
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
 		outb (nec+ds0_rcr, DSRC_AB);
 		outb(nec+ds0_tcr,0);
-#ifdef NEDEBUG
-printf("\n");
-#endif
 	}
+#endif
 
 	/* receiver error */
 	if (isr & DSIS_RXE) {
@@ -468,7 +466,7 @@ printf("\n");
 		ns->ns_if.if_ierrors++;
 	}
 
-	if (isr & (DSIS_RX|DSIS_RXE)) {
+	if (isr & (DSIS_RX|DSIS_RXE|DSIS_ROVRN)) {
 		u_char pend,lastfree;
 
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
@@ -479,15 +477,22 @@ printf("\n");
 dprintf(DEXPAND,"cur %x pnd %x lfr %x ", ns->ns_cur, pend, lastfree);
 #endif
 		/* have we wrapped */
-		if (lastfree > RBUFEND/DS_PGSIZE)
+		if (lastfree >= RBUFEND/DS_PGSIZE)
 			lastfree = RBUF/DS_PGSIZE;
+		if (pend < lastfree && ns->ns_cur < pend)
+			lastfree = ns->ns_cur;
+		else	if (ns->ns_cur > lastfree)
+			lastfree = ns->ns_cur;
+
 		/* something in the buffer? */
-		if (pend != succ(lastfree)) {
+		while (pend != lastfree) {
 			u_char nxt;
 
-			fetchram(&ns->ns_ph,ns->ns_cur*DS_PGSIZE, sizeof(ns->ns_ph));
-			ns->ns_ba = ns->ns_cur*DS_PGSIZE+sizeof(ns->ns_ph);
+			fetchram(&ns->ns_ph,lastfree*DS_PGSIZE,
+				sizeof(ns->ns_ph));
+			ns->ns_ba = lastfree*DS_PGSIZE+sizeof(ns->ns_ph);
 
+			/* paranoia */
 			if (ns->ns_ph.pr_status == DSRS_RPC ||
 				ns->ns_ph.pr_status == 0x21)
 				nerecv (ns);
@@ -509,14 +514,19 @@ dprintf(DEXPAND,"nxt %x ", nxt);
 			&& nxt <= RBUFEND/DS_PGSIZE && nxt <= pend)
 				ns->ns_cur = nxt;
 			else	ns->ns_cur = nxt = pend;
-			lastfree = pred(nxt);
-			outb(nec+ds0_bnry, lastfree);
+			lastfree = nxt;
+			outb(nec+ds0_bnry, pred(nxt));
+			outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
 			pend = inb(nec+ds1_curr);
-		} else ns->ns_cur = pend;
+			outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
+		} /*else ns->ns_cur = pend;*/
+#ifdef NEDEBUG
+dprintf(DEXPAND,"cur %x pnd %x lfR %x ", ns->ns_cur, pend, lastfree);
+#endif
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
 	}
 	if (isr & DSIS_TXE) {
-	ns->ns_flags &= ~DSF_LOCK;
+		ns->ns_flags &= ~DSF_LOCK;
 #ifdef NEDEBUG
 dprintf(DEXPAND," clsn");
 #endif
@@ -525,13 +535,23 @@ dprintf(DEXPAND," clsn");
 		ns->ns_if.if_oerrors++;
 	}
 	if (isr & DSIS_TX) {
-#ifdef NEDEBUG
+#ifdef NEDEBUGx
 dprintf(DEXPAND,"tx ");
 #endif
-	ns->ns_flags &= ~DSF_LOCK;
+		ns->ns_flags &= ~DSF_LOCK;
 		++ns->ns_if.if_opackets;
-		ns->ns_if.if_collisions +=
-		    inb(nec+ds0_tbcr0);
+		ns->ns_if.if_collisions += inb(nec+ds0_tbcr0);
+	}
+
+	/* receiver ovverun? */
+	if (isr & DSIS_ROVRN) {
+		outb(nec+ds0_rbcr0, 0);
+		outb(nec+ds0_rbcr1, 0);
+		outb(nec+ds0_tcr, DSTC_LB0);
+		outb(nec+ds0_rcr, DSRC_MON);
+		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
+		outb(nec+ds0_rcr, DSRC_AB);
+		outb(nec+ds0_tcr, 0);
 	}
 
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
