@@ -1,0 +1,2225 @@
+Wed Mar 13 12:49:40 1991  James Clark  (jjc at jclark)
+
+	* Version 1.01 released. 
+
+	* dvi/devdvi/CompileFonts: Add cm*ss10 fonts.
+
+	* dvi/tmac.dvi: ftr HR to H.
+
+	* macros/tmac.e: Round up computation of $r.
+
+	* xditview/tmac.X:  Don't give up completely in compatibility mode.
+	Use \n(.s instead of \n[.s].
+
+	* dvi/tmac.dvi: Don't give up completely in compatibility mode.
+	Use \(ci instead of \[ci]. Use \n(.s instead of \n[.s].
+	Add u to factors inside \s[...]. Rename frac to dvi-frac.
+	Translate \(FM onto \[prime] and \(!/ onto \[slashnot]; use these
+	short names in the char definitions.
+
+	* ps/tmac.ps: Don't give up completely in compatibility mode.
+	Fix the fraction definitions to use \n(.s and \(f/. Add an extra
+	quote in front of \n(.s. Add u to factors inside \s[...].
+
+Mon Mar 11 12:01:20 1991  James Clark  (jjc at jclark)
+
+	* tty/tmac.tty: Call the nroff request.
+
+	* macros/tmac.e ((x, )x):  Better definitions that work properly
+	in a diversion.
+	(@0, @1): Helper macros for (x.
+
+	* macros/tmac.e ($s, hl): Use \l rather than \D.
+
+	* tty/tmac.tty: Make it work better in compatibility mode.
+	(pchar): Rename to tty-char.
+
+	* macros/tmac.e (@E): New macro.
+	(r, i, b, rb, bi): Use @E.
+
+	* macros/tmac.e (@F): Don't use (;...) syntax.
+
+	* macros/tmac.e: Remove mention of \*(||/revisions.  Mention that
+	it was modified for groff.
+
+	* macros/tmac.e: Make sure \n(ps and \n(es are >= \n(.V.
+
+	* macros/tmac.e (<., .>): Removed.
+	([., .]): If \n(.V>=1v, use [] instead of superscripting.
+
+	* macros/tmac.e: Remove check that groff is being used.
+
+	* macros/tmac.e (@C): Change families only if using groff; turn
+	compatibility mode off while changing familes. Save compatibility
+	mode before changing families and restore it afterwards.
+
+	* macros/tmac.e (@h): Remove test for offset + line length.
+
+	* macros/tmac.e (sorry): Rename to @S.  Use \$1 instead of \$0
+	(lo, th, ac): Define to call @S instead of using als.
+
+	* macros/tmac.e: Make $r and $R now contain \n(.v*100/\n(.sp, ie
+	the ratio of the vertical spacing to the point size in units
+	expressed as a percentage.  Use these instead of $10r and $10R,
+	Delete $10r and $10R.
+
+	* lib/font.c (font::load): In default computation of space_width,
+	divide by sizescale.  Use scale_round.
+
+	* macros/tmac.an (TP): Don't call `nf'.
+	(an-do-tag): Don't call `fi'.
+
+Sun Mar 10 09:52:35 1991  James Clark  (jjc at jclark)
+
+	* troff/input.c (process_input_stack): Handle the case where
+	spaces at the beginning of an input line are followed by a
+	newline.
+
+Thu Mar  7 20:18:07 1991  James Clark  (jjc at jclark)
+
+	* groff.c (device_table): Add PIC_X_OPTION for dvi device.
+	* groff.sh: Use pic -x with the dvi device.
+
+	* dvi/devdvi/FontMakefile (H): Don't use -s.
+
+	* dvi/devdvi/HI, dvi/devdvi/HB: New files.
+	* dvi/devdvi/Makefile: Add HI and HB to FONTS.
+	* dvi/devdvi/FontMakefile: Add rules for HI and HB. Include these
+	in FONTS.
+
+Mon Mar  4 13:20:14 1991  James Clark  (jjc at jclark)
+
+	* ps/psfig.diff: New file.
+	* ps/tmac.psfig: New file.
+
+Sat Mar  2 00:15:09 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (]=, ref*do-tl, ref*bib-print): Deleted.
+	(]-): Don't call ref*do-tl.
+
+	* macros/tmac.s (ref*end-print): Use XP if [F not defined.
+
+	* macros/tmac.s (ref*normal-print): Call FS rather than fn@do-FS.
+	(fn@do-FS): Rename to fn*do-FS.
+
+	* troff/input.c (transparent_translate): New function.
+	(process_input_stack): Apply transparent_translate before calling
+	diversion::transparent_output(unsigned char).
+
+Wed Feb 27 00:13:25 1991  James Clark  (jjc at jclark)
+
+	* troff/input.c (do_define_macro): Define the macro before calling
+	skip_line.
+
+	* xditview/Makefile: Add DEVICES variable.  Change install target
+	to use this.
+
+Tue Feb 26 10:46:22 1991  James Clark  (jjc at jclark)
+
+	* groff.c (run_commands): Handle the possibility that there are
+	child processes other than those forked by us.
+
+Sun Feb 24 21:32:30 1991  James Clark  (jjc at jclark)
+
+	* lib/string.c (string::append): New function.
+	* lib/stringclass.h: Declare it.
+
+Thu Feb 21 11:49:26 1991  James Clark  (jjc at jclark)
+
+	* eqn/main.c (main): New option -N which sets
+	no_newline_in_delim_flag. 
+	(do_file): If no_newline_in_delim_flag is set don't allow newlines
+	in delimiters.
+	* groff.c (main): Pass -N on to eqn.
+	(help, synopsis): Mention -N.
+	* groff.sh: Implement -N.
+
+Wed Feb 20 15:16:10 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (]=, ref*bib-print, ref*do-tl): New macros.
+	(]-): Call ref*do-tl if ref*need-tl is non-zero.
+	(XP): Allow as initializer.
+
+Tue Feb 19 14:09:06 1991  James Clark  (jjc at jclark)
+
+	* troff/env.c (environment::wrap_up_field): If field_spaces are
+	non-zero and we have a current_tab, subtract padding from
+	tab_distance.  If this makes tab_distance <= 0, use the next tab
+	stop instead.  If there isn't any next tab or it's a left tab,
+	wrap up the current tab.
+	(environment::start_field): Initialize tab_precedes_field.
+	(environment::wrap_up_tab): If there's a current field, update
+	pre_field_width, field_distance and tab_precedes_field.
+	* troff/env.h (environment::tab_precedes_field): New member.
+
+Fri Feb 15 01:24:00 1991  James Clark  (jjc at jclark)
+
+	* ps/ps.c (ps_printer::do_file): New function.
+	(ps_printer::special): Bind to `file' special.
+	(ps_printer::do_exec): Set ndefined_styles to 0.
+
+Sat Feb  9 03:03:04 1991  James Clark  (jjc at jclark)
+
+	* eqn/text.c (split_text): Grok \* and similar escapes sequences.
+	Avoid stripping first character from the start of unrecognized
+	escapes.  Use lex_error instead of error to report errors.
+	* eqn/lex.c (get_token): Rework handling of escapes.
+	(lex_error): Move declaration into...
+	* eqn/eqn.h.
+
+	* xditview/xditview.c (main): Make -page option work.
+
+	* Makefile: Correct comment about -DBROKEN_SPOOLER and pageview.
+
+Wed Feb  6 12:28:43 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (B2): Correct size of box.
+
+Tue Feb  5 00:37:35 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (B2): Postpone drawing the box until in the
+	top-level diversion.
+
+	* tty/tmac.tty: Add font translations for C, CR, CW.
+
+	* groff.c (synopsis, help): Document -i.
+	* groff.sh: Implement -i.
+
+	* macros/tmac.s (@NH): Put a `.' after multi-part numbers.
+	Simplify the construction of SN.
+
+	* troff/number.c (parse_term): Give `|' a higher precedence.
+	* tbl/table.c (numeric_text_entry::simple_print): Parenthesise
+	accordingly.
+
+	* macros/tmac.s (B2): Use par@finish instead of par@reset.
+
+Mon Feb  4 12:36:09 1991  James Clark  (jjc at jclark)
+
+	* lib/string.c (string::move): New function.
+	* lib/stringclass.h: Declare it.
+
+Sat Feb  2 16:02:16 1991  James Clark  (jjc at jclark)
+
+	* troff/env.c (distribute_space): Add optional argument
+	`force_forward'.
+	(environment::wrap_up_field): Call distribute_space with
+	`force_forward' argument of 1.
+
+Fri Feb  1 19:36:33 1991  James Clark  (jjc at jclark)
+
+	* lib/string.c, lib/stringclass.h (string::operator+=(char)):
+	Inline it.  Move reallocation into...
+	(string::grow1): New function.
+	* pic/Makefile, tbl/Makefile, eqn/Makefile, ps/Makefile: Redo
+	dependencies to include library header files.
+	* lib/Makefile: Make string.c and lf.c depend on stringclass.h.
+
+Thu Jan 31 15:02:27 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (@NH): Use the same number registers than -ms does
+	for the heading level counters.  Use the same string that -ms does
+	for the number for this heading.
+
+Wed Jan 30 14:25:40 1991  James Clark  (jjc at jclark)
+
+	* lib/new.c (operator new): Cast result of malloc to char *.
+
+	* troff/input.c (spring_trap, lookup_request): Add assert that nm
+	is not null.
+
+Tue Jan 29 18:08:05 1991  James Clark  (jjc at jclark)
+
+	* groff.c (main): Support -i.
+
+Sun Jan 27 13:23:17 1991  James Clark  (jjc at jclark)
+
+	* pic/pic.h: Include <osfcn.h>.
+
+	* ps/ps.c: Add declaration of mktemp.
+
+	* Makefile: Add -DHAVE_UNION_WAIT option for CPPDEFINES.
+	* groff.c: If HAVE_UNION_WAIT is defined, declare wait()'s
+	argument as union wait *.
+	(run_commands): If HAVE_UNION_WAIT is defined cast wait()'s
+	argument to union wait *.
+
+Sat Jan 26 12:04:52 1991  James Clark  (jjc at jclark)
+
+	* tty/tmac.tty: Add definition of \(co.
+
+	* pic/object.c (make_arc): Only increase radius when radius
+	strictly less than d.
+	(arc_object::update_bounding_box): May need to add 4.0 to end_quad
+	more than once.
+
+	* troff/env.c (environment::environment(symbol),
+	environment::environment(const environment *)):  Initialize
+	input_trap_count.
+
+Sat Jan 19 08:18:35 1991  James Clark  (jjc at jclark)
+
+	* tbl/main.c (main): Add exit(0).
+
+	* ps/ps.c (ps_printer::~ps_printer): Use fseek instead of rewind.
+
+	* pic/main.c (main):
+	* eqn/main.c (main):
+	* tbl/main.c (main):
+	* etc/soelim.c (main):
+	* driver/printer.c (printer::~printer):
+	* troff/node.c (real_output_file::~real_output_file,
+	real_output_file::flush):  Check for errors on stdout.
+
+	* most files: Add 1991 to copyright notice.
+
+	* macros/tmac.s: Don't test \n(.x and \n(.y.
+
+	* troff/input.c (token::next): Rename `escape_char' label to
+	`handle_escape_char' and `normal_char' label to
+	`handle_normal_char'.
+
+Thu Jan 17 15:46:35 1991  James Clark  (jjc at jclark)
+
+	* groff.c (main, synopsis, help): Support -a option.
+	* groff.sh: Likewise.  Also eliminate Zflag variable by adding -z
+	to trflags while parsing options.
+
+Tue Jan 15 13:07:27 1991  James Clark  (jjc at jclark)
+
+	* troff/number.c (parse_term): With `m', `M' and `n' scale
+	indicators, convert scale factor to hunits before scaling.
+
+Mon Jan 14 12:39:12 1991  James Clark  (jjc at jclark)
+
+	* lib/font.c (scale_round): Better test for overflow when n is
+	negative.
+
+Thu Jan 10 11:10:56 1991  James Clark  (jjc at jclark)
+
+	* tbl/main.c (process_format): Add second argument of type
+	options*. Change callers.  Allow opt->tab_char as well as '\t'
+	between format items.
+
+Mon Jan  7 12:30:18 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.an (PD): With no arguments, make sure register PD is
+	at least \n[.V].
+	(TH): Call PD with no argument, instead of setting register PD
+	directly.
+
+Sun Jan  6 11:18:39 1991  James Clark  (jjc at jclark)
+
+	* Version 1.00 released.
+
+Sat Jan  5 08:44:30 1991  James Clark  (jjc at jclark)
+
+	* ps/tmac.ps, xditview/tmac.X: Add font translation of C to CR.
+
+	* dvi/devdvi/DESC: Mount CW instead of CR.
+
+	* dvi/tmac.dvi: Add definition of \(tm.
+
+	* dvi/devdvi/texsy.map: Add lh, and rh.
+	* dvi/devdvi/texex.map: Add lt, rt, lb, rb, lk, rk.
+	* dvi/devdvi/texmi.map: Add *o. Regenerate fonts.
+
+	* dvi/devdvi/FontMakefile: Generate H from cmss10.
+	* dvi/devdvi/Makefile: Install H.
+	* dvi/devdvi/H: New file.
+
+Fri Jan  4 15:04:57 1991  James Clark  (jjc at jclark)
+
+	* troff/env.c (vertical_spacing): Don't allow vertical spacing to
+	be 0.
+
+Thu Jan  3 13:41:19 1991  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (@EN): Add \n(.V to the argument to ds@need.
+
+	* macros/tmac.pic (PS): Avoid attempting to set negative indent.
+
+	* macros/tmac.s (@EN): Handle the case where the equation is empty
+	but the label is not.
+
+Wed Jan  2 10:31:44 1991  James Clark  (jjc at jclark)
+
+	* troff/groff.h: New warning category WARN_SPACE.
+	* troff/input.c: Add WARN_SPACE to DEFAULT_WARNING_MASK. Add
+	WARN_SPACE to warning_table.
+	(interpolate_macro): Give a warning of type WARN_SPACE if the name
+	is longer than two characters and is not defined, but the first
+	two characters do make a defined name.
+
+	* PROBLEMS: New file.
+
+	* CHANGES: New file.
+	* README-0.6, README-1.00: Deleted.
+
+	* groff.c, groff.sh: Add X75-12 and X100-12 devices.
+	* xditview/devX75/Makefile: Make devX75-12.
+	* xditview/devX100/Makefile: Make devX100-12.
+
+	* xditview/devX100/eqnchar, xditview/devX75/eqnchar,
+	dvi/devdvi/eqnchar, ps/devps/eqnchar: Remove use of \R.
+
+Tue Jan  1 19:24:01 1991  James Clark  (jjc at jclark)
+
+	* README-0.7: Rename to README-1.00.
+
+	* macros/tmac.pic: New file.
+	* macros/Makefile (install.nobin): Install tmac.pic.
+
+Mon Dec 31 10:40:53 1990  James Clark  (jjc at jclark)
+
+	* troff/env.c (hyphen_word): Correct the test for whether the
+	token is a hyphen.  Reset npos to 0.
+
+	* macros/tmac.s (par@sup-start, par@sup-end): New implementations.
+
+Sun Dec 30 15:53:13 1990  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (ds*common-end): Call par*reset.
+	(PE): Likewise.
+	(par@reset-indent): Deleted.
+
+	* macros/tmac.s (@IP): Divert the label.
+
+Sat Dec 29 14:33:32 1990  James Clark  (jjc at jclark)
+
+	* xditview/draw.c (setGC): Use a line width of .1m rather than
+	.04m by default; round rather than truncate value.
+
+	* tbl/table.c (class empty_entry): New class.
+	(empty_entry::empty_entry, empty_entry::line_type): New functions.
+	(table::add_entry): Represent empty entries by objects of type
+	empty_entry.
+	(table_entry::line_type): Return -1.
+	(table::determine_row_type): Ignore entries with line_type 0.
+	Treat type -1 as non-lines.
+
+Fri Dec 28 15:04:41 1990  James Clark  (jjc at jclark)
+
+	* ps/devps/textmap, xditview/libXdvi/DviChar.c, tty/devlatin1/R.proto,
+	macros/tmac.s: Rename \(-d to \(Sd.
+
+Thu Dec 27 12:35:47 1990  James Clark  (jjc at jclark)
+
+	* ps/devps/textmap: Add `sd', `/_' and `3d' characters.
+	* xditview/libXdvi/DviChar.c: Likewise.
+	* dvi/devdvi/texsy.map: Add `<<', `>>'.
+
+Wed Dec 26 13:33:23 1990  James Clark  (jjc at jclark)
+
+	* troff/div.c (top_level_diversion::begin_page): Call
+	init_output() if the_output is 0.
+
+Sat Dec 22 12:35:29 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c: Replace ESCAPE_E by ESCAPE_e and ESCAPE_C by
+	ESCAPE_c.
+	(get_copy): Turn \E into ESCAPE_E.
+	(token::process, asciify): Handle ESCAPE_E.
+
+	* macros/tmac.s (ds*common-end, par@reset): Add `.rj 0'.
+	(RD): New macro.
+	(DS): Implement `.DS R'.
+
+Fri Dec 21 11:41:53 1990  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (FS): New macro.
+
+	* macros/tmac.s (fn@do-FS): Use @LP instead of LP.
+
+	* macros/tmac.s (cov*tl-init): Remove after first execution
+	instead of aliasing to @nop.  Call top of page macro explicitly
+	instead of setting trap; call @init first.  Set pg@top as top of
+	page macro.
+	(cov*auto-init): Deleted.  Set cov*tl-init instead of
+	cov*auto-init as top of page trap. 
+	(TL, LP): Do a break instead of calling cov*tl-init.
+	(cov*print): With RP format but no TL, alias FS and FE to @FS and
+	@FE; in this case also give a warning and always start another
+	page. No need to set pg@top here.
+	(cov*tl-init): Rename to cov*first-page-init.
+
+	* macros/tmac.s (RP): Do `.pn 0'.
+	(cov*tl-init): With RP format don't do `.pn 0'.
+
+	* macros/tmac.s (pg@cs-top): Set no space mode.
+
+	* macros/tmac.s (par@TL, par@AU, par@AI): New macros.
+	(cov*ab-init): Alias TL, AU and AI to these.
+
+Thu Dec 20 10:10:50 1990  James Clark  (jjc at jclark)
+
+	* macros/tmac.s (@EQ): Move the space before the equation into @EN
+	(@EN): Do nothing unless \n[dl] is > 0.
+
+Tue Dec 18 12:20:47 1990  James Clark  (jjc at jclark)
+
+	* pic/object.c (ellipse_object::radius): New function.
+
+	* VERSION: Change version to 0.7.
+
+	* tbl/table.c (block_entry::do_divert): Declare return type as
+	void.
+	(block_entry::divert, alphabetic_block_entry::divert): Return 1.
+
+Mon Dec 17 12:30:34 1990  James Clark  (jjc at jclark)
+
+	* troff/column.c: New file.
+	* troff/Makefile: Corresponding changes.
+
+	* troff/hvunits.c (scale(vunits, vunits, vunits)):  New function.
+	Friend of vunits.
+
+	* troff/div.c (top_level_diversion::space): If the space causes
+	the first-page transition and springs a trap, truncate the space
+	to 0.
+
+Fri Dec 14 12:30:02 1990  James Clark  (jjc at jclark)
+
+	* ps/ps.c (ps_printer::do_import): Add a `clear' after including
+	the document.
+
+	* pic/troff.c (troff_output::line_thickness,
+	troff_output::set_fill): Do a horizontal motion to compensate for
+	the width of the \D escape sequence.
+
+Thu Dec 13 10:17:14 1990  James Clark  (jjc at jclark)
+
+	* xditview/tmac.X: Reinstate definition of \(rn, but only for X100
+	(not X75).
+
+	* eqn/sqrt.c (sqrt_box::compute_metrics):  Supply missing argument
+	to printf.
+
+	* tbl/table.c (simple_entry::simply_print): Don't declare as pure.
+	Supply empty definition.
+	(text_entry::simple_print, simple_text_entry::simple_print):
+	Delete declarations.
+	(table::add_entry): Represent empty entries by objects of type
+	`simple_entry'.
+
+Wed Dec 12 08:50:48 1990  James Clark  (jjc at jclark)
+
+	* troff/Makefile: Remove -DHYPHEN_CONTROL from DEFINES.
+
+	* tbl/table.c (left_text_entry::add_tab): New function.
+
+	* macros/tmac.s: Make @RT an alias for par@reset.  Make RT
+	initialize like LP.
+
+Mon Dec 10 11:19:55 1990  James Clark  (jjc at jclark)
+
+	* troff/env.c (environment::start_field): Give an error message if
+	there is no next tab.
+
+Sun Dec  9 11:46:40 1990  James Clark  (jjc at jclark)
+
+	* troff/env.c (hyphenate): Skip initial elements with zero
+	hyphenation code.
+
+	* macros/tmac.s (par@init): Keep VS in points rather than units.
+
+Sat Dec  8 23:00:27 1990  James Clark  (jjc at jclark)
+
+	* pic/main.c (main): Implement `-c' option.
+	* pic/output.h: Declare make_tpic_output().
+	* pic/tex.c (tex_output::set_pen_size): Make it virtual and
+	protected.
+	(tpic_output): New class.
+	(tpic_output::tpic_output, tpic_output::set_pen_size,
+	tpic_output::command, make_tpic_output): New functions.
+
+Fri Dec  7 11:57:41 1990  James Clark  (jjc at jclark)
+
+	* tbl/main.c (main): Call `.ab' if \n(.g is false.  Define TS/TE
+	if they're not already defined.
+	* tbl/table.c (init_output): Don't test \n(.g.
+
+	* troff/input.c (do_if_request): Delete `g' condition. Recognize
+	`d', `r' and `c' conditions even in compatibility mode.
+
+Tue Dec  4 09:13:47 1990  James Clark  (jjc at jclark)
+
+	* ps/tmac.ps (ps-bb): Protect against negative numbers in bounding
+	box.
+
+Mon Dec  3 07:18:26 1990  James Clark  (jjc at jclark)
+
+	* troff/env.h (environment::prev_line_interrupted): New member.
+	(environment::get_prev_line_interrupted): New function.
+	* troff/env.c (environment::newline): Set prev_line_interrupted.
+	(environment::environment(const environment *),
+	environment::environment(symbol)): Initialize
+	prev_line_interrupted.
+	* troff/input.c (process_input_stack): Don't give special
+	treatment to space and newline at the beginning of the line if the
+	previous line was interrupted.
+
+Sat Dec  1 15:48:37 1990  James Clark  (jjc at jclark)
+
+	* eqn/eqn.y: Disallow PRIME by itself.
+	* eqn/lex.c (token_table): Bind `opprime' instead of `prime' to
+	PRIME.
+	(def_table): Remove definition of '.  Define prime to be `.
+
+	* eqn/eqn.y: Split off part of rule `script' into a new rule
+	`nonsup'.
+
+Fri Nov 30 10:23:44 1990  James Clark  (jjc at jclark)
+
+	* macros/tmac.s ({, }): New string aliases.
+
+Thu Nov 29 11:34:40 1990  James Clark  (jjc at jclark)
+
+	* README-0.7: New file.
+
+Wed Nov 28 10:09:57 1990  James Clark  (jjc at jclark)
+
+	* macros/tmac.s: New file.
+	* man/groff_ms.man: New file.
+	* Makefile: Add definition of TMAC_S. Pass TMAC_S in SUBFLAGS.
+	* Makefile.bd: Similarily.
+	* man/Makefile: Add groff_ms.n to MAN7PAGES. Replace @TMAC_S@. Add
+	definition of TMAC_S.
+	* macros/Makefile: Add definition of TMAC_S. Install tmac.s.
+	* macros/TODO: New file.
+
+Sat Nov 24 20:04:54 1990  James Clark  (jjc at jclark)
+
+	* troff/env.c (right_justify): New function.
+	(init_env_requests): Bind this to request "rj".
+	(center_lines): Set right_justify_lines to 0. If we get a bad
+	integer, center 1 line.
+	(environment::environment(symbol), environment::environment(const
+	environment *)): Initialize right_justify_lines.
+	(environment::get_right_justify_lines): New function.
+	(init_env_requests): Bind this to number_register ".rj".
+
+	* troff/env.c (environment::choose_breakpoint): Implement
+	hyphenation_margin and hyphenation_space.
+	(environment::get_hyphenation_space,
+	environment::get_hyphenation_margin): New functions.
+	(init_env_requests): Bind these to .hys and .hym.
+	(hyphenation_space_request, hyphenation_margin_request): New
+	functions
+	(init_env_requests): Bind these to hys and hym.
+	(environment::environment(symbol), environment::environment(const
+	environment *)): Initialize hyphenation_margin and
+	hyphenation_space.
+	* troff/env.h: Corresponding changes to class environment.
+
+Fri Nov 23 09:08:16 1990  James Clark  (jjc at jclark)
+
+	* troff/div.c (blank_line): Always do a break.
+
+	* eqn/box.c (do_text): Turn off escapes while appending text to
+	string.
+
+Thu Nov 22 10:58:59 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (while_break_request, while_continue_request): New
+	functions.
+	(init_input_requests): Bind these to "break" and "continue".
+	(while_depth, while_break_flag): New variables.
+	(while_request): Update while_depth.  Break out of loop if
+	while_break_flag is set.
+
+Wed Nov 21 10:54:40 1990  James Clark  (jjc at jclark)
+
+	* tbl/table.c (init_span_reg): Initialize span_width_reg to \n(.H
+	rather than 0.
+
+Mon Nov 19 00:45:03 1990  James Clark  (jjc at jclark)
+
+	* Makefile: Include -DBROKEN_SPOOLER by default.  Expand comment.
+
+	* stringify: New file.
+	* Makefile (groff.o): Use stringify.
+
+	* xditview/tmac.X: Remove definition of \(rn.
+	* xditview/libXdvi/DviChar.c: Remove radicalex from
+	Adobe_symbol_map.
+
+Sat Nov 17 10:44:58 1990  James Clark  (jjc at jclark)
+
+	* tbl/table.c (table::add_entry): Allow alphabetic text blocks.
+	(alphabetic_block_entry::alphabetic_block_entry,
+	alphabetic_block_entry::divert, alphabetic_block_entry::print):
+	New functions.
+	(block_entry::divert): Split off body into ...
+	(block_entry::do_divert): If the block is alphabetic, subtract 2n
+	from the line length; also update the span width to dl+2n, and the
+	alphabetic span width to dl.
+
+	* driver/input.c (do_file):  While reading argument to D command,
+	when expanding buffer, multiply szp by sizeof(int) rather than 2
+	in the argument to memcpy.
+
+	* tbl/table.c (compute_span_width): Add 2n rather than 1n to the
+	width of alphabetic columns.
+
+Fri Nov 16 06:34:27 1990  James Clark  (jjc at jclark)
+
+	* troff/node.c (lookup_family): Supply second argument to lookup.
+
+	* troff/dictionary.c (dictionary::lookup): After an unsuccesful
+	search, return immediately if v is 0.
+
+	* pic/troff.c: Define EQN_NO_EXTRA_SPACE_REG.
+	(troff_output::start_picture): Set this reg.
+	(troff_output::end_picture): Remove this reg
+	* eqn/box.c (box::extra_space): Don't produce `\x's if
+	EQN_NO_EXTRA_SPACE_REG is defined.
+
+	* eqn/eqn.y: Allow just a PRIME to be a `simple'.
+	* eqn/text.c (split_text): Map ' to \(fm when it's the first
+	character.
+
+Thu Nov 15 10:35:06 1990  James Clark  (jjc at jclark)
+
+	* macros/tmac.e: Use font 3 instead of B in $c. Remove `bd'
+	requests.
+
+	* troff/div.c (top_level_diversion::top_level_diversion):
+	Initialize page_number to 0.
+
+Wed Nov 14 21:41:58 1990  James Clark  (jjc at jclark)
+
+	* groff/troff (environment::environment(const environment *)):
+	Initialize name to e->name, rather than "anonymous".
+
+Sat Nov 10 01:59:37 1990  James Clark  (jjc at jclark)
+
+	* xditview/libXdvi/Dvi.c (ShowDvi): If eof is encountered, reset
+	requested_page.  Split middle part into ...
+	(FindPage): New function.
+	(SetValues): If we don't yet know the last page, and the requested
+	page is greater than the current page, call FindPage.
+	Update the font_map_string before doing this.
+
+	* xditview/tmac.X: Add definitions of \(sq, \(ga, \(dg and \(dd.
+	Translate \(lh and \(rh into left and right double arrows.
+
+	* troff/node.c (class hyphen_inhibitor_node): New class.
+	(hyphen_inhibitor_node::hyphen_inhibitor_node,
+	hyphen_inhibitor_node::copy, hyphen_inhibitor_node::same,
+	hyphen_inhibitor_node::type,
+	hyphen_inhibitor_node::get_hyphenation_type): New functions.
+	(node::add_discretionary_hyphen): Use hyphen_inhibitor_node rather
+	than dbreak_node(0, 0) to represent a `\%' at the beginning of a
+	word.
+
+Fri Nov  9 16:05:38 1990  James Clark  (jjc at jclark)
+
+	* troff/node.h (dummy_node::get_hyphenation_type,
+	transparent_dummy_node::get_hyphenation_type):  Declare them.
+	* troff/node.c: (dummy_node::get_hyphenation_type,
+	transparent_dummy_node::get_hyphenation_type): New functions.
+
+Wed Nov  7 10:09:06 1990  James Clark  (jjc at jclark)
+
+	* xditview/libXdvi/draw.c: If M_PI not defined after including
+	math.h, then define it.
+
+	* xditview/Makefile: Add definition of AR. Pass it to the submake
+	in libXdvi.
+	* xditview/libXdvi/Makefile: Add definitions of AR and RANLIB.
+
+Tue Nov  6 10:14:27 1990  James Clark  (jjc at jclark)
+
+	* troff/dictionary.h (object_dictionary::alias): Declare return
+	value as int.
+	* troff/dictionary.c (object_dictionary::alias): Return non-zero
+	if the old name was defined.
+	* troff/input.c (alias_macro): Give a warning if the old name was
+	not defined.
+	* troff/reg.c (alias_reg): Likewise.
+
+Mon Nov  5 00:31:39 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (token::next): Delete implementation of \R.
+
+	* macros/Makefile: Strip comments from tmac.e while installing it.
+
+	* troff/input.c: New variable `nroff_mode'.
+	(troff_request, nroff_request): New functions.
+	(init_input_requests): Bind `troff' and `nroff' to troff_request
+	and nroff_request.
+	(do_if_request): Compute results of t and n conditions from
+	nroff_mode.
+
+	* text/text.c (split_text): Fix typo in >=.
+
+	* eqn/lex.c: Add definition of `==' to def_table.
+
+Fri Nov  2 02:49:09 1990  James Clark  (jjc at jclark)
+
+	* pic/tex.c (tex_output::start_picture): Change the definitions of
+	\graph and \graphtemp so that they work properly with Plain TeX.
+
+	* pic/tex.c (tex_output::solid_arc): Ensure that the second angle
+	argument to `ar' is not less than the first.
+
+	* pic/pic.y: Allow a comma between elements of the variable list
+	in the argument to `reset'.
+
+	* pic/object.c (arc_object::arc_object): Fix computation of
+	radius.
+
+	* eqn/main.c (main): Add exit(0).
+
+Thu Nov  1 02:03:50 1990  James Clark  (jjc at jclark)
+
+	* troff/div.c (begin_page): Test no_space_mode after doing the
+	break, but still push the page ejector cookie before doing the
+	break.  Also set the next page number after doing the break.
+	
+	* xditview/xditview.c (NewFile): Don't set the title and icon name
+	if this is the first file and its name is `-'.
+	* groff/groff.c: Define a new device flag XT_OPTION.  Set it for
+	the X75 and X100 devices.
+	(main): If a device has the XT_OPTION flag set and there's exactly
+	one file argument, pass the driver -xrm and -title options to set
+	the icon name and window title to the name of the file.
+
+	* troff/env.c (environment_switch): If there was an argument but
+	it wasn't a valid number or name, then pop an environment but
+	don't give an error message on underflow.
+
+	* troff/number.c (start_number): Correct spelling in error message.
+
+	* troff/input.c (token::delimiter): Don't print an error message
+	if err is false.
+
+	* xditview/libXdvi/parse.c (ParseInput): In case 'D', only call
+	ParseDrawFunction if dw->display_enable is true.
+
+Wed Oct 31 05:49:50 1990  James Clark  (jjc at jclark)
+
+	* pic/pic.y: Parse text positioning like normal attributes, so as
+	to allow `"text" at 0,0 ljust'.  Don't allow `center' as a
+	positioning attribute.
+
+Mon Oct 29 22:50:38 1990  James Clark  (jjc at jclark)
+
+	* tbl/main.c (process_data): When in state START while reading a
+	text block, don't change to state MIDDLE if c is a newline.
+
+Sun Oct 28 21:59:56 1990  James Clark  (jjc at jclark)
+
+	* dvi/dvi.c (dvi_printer::begin_page): Rename `i' variable to `j'
+	so as to avoid shadowing parameter.
+
+Wed Oct 24 18:35:39 1990  James Clark  (jjc at jclark)
+
+	* tbl/table.c (trim_space): Deleted.
+	(table::add_entry): Don't call trim_space.
+
+Mon Oct 22 03:48:39 1990  James Clark  (jjc at jclark)
+
+	* VERSION: Change version to 0.6.
+
+	* troff/number.c (parse_expr): Make == work.
+
+Sat Oct 20 11:28:17 1990  James Clark  (jjc at jclark)
+
+	* man/grog.man: New file.
+	* man/Makefile: Add grog.n to MAN1PAGES.
+	* etc/grog.sh: New file.
+	* etc/Makefile: Install grog.sh as grog.
+
+Fri Oct 19 11:17:15 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (token::next): Implement \E.
+
+Thu Oct 18 11:56:24 1990  James Clark  (jjc at jclark)
+
+	* xditview/tmac.X: Change font translations to match tmac.ps.
+
+	* troff/input.c (non_empty_name_warning): Don't give a warning if
+	`\{' terminates the name.
+
+Tue Oct 16 10:04:23 1990  James Clark  (jjc at jclark)
+
+	* ps/devps/symbol.diff: New file.
+	* ps/devps/FontMakefile: Mention symbol.diff.
+
+Sun Oct 14 11:46:46 1990  James Clark  (jjc at jclark)
+
+	* troff/node.c (font_position): Use get_long_name to read the
+	external_name.
+
+	* troff/env.c (environment_switch): If we get a number that's < 0
+	or >= NENVIRONMENTS, treat it like a name.
+	Change NENVIRONMENTS to 10.
+
+	* troff/groff.h: Remove definition of FONTS_MAX.
+	* troff/node.h (class font_family): Make map a pointer instead of
+	an array. Add a map_size member. Make it a class. Make nm const
+	and public. Make invalidate_fontno a friend.
+	* troff/node.c: Define font_table_size. Make font_info a pointer
+	rather than an array.
+	(class troff_output_file): Allocate font_position dynamically. Add
+	nfont_positions member.
+	(troff_output_file::set_font): Grow font_position if necessary.
+	(troff_output_file::~troff_output_file): Delete font_position.
+	(troff_output_file::troff_output_file): Allocate font_position.
+	(grow_font_table): New function.
+	(troff_output_file::really_begin_page,
+	troff_output_file:really_copy_page): Use nfont_positions rather
+	than FONTS_MAX.
+	(mount_font_no_translate, mount_style): Call grow_font_table if
+	necessary.
+	(font_family::font_family): Allocate map.
+	(font_family::make_definite): Grow map if necessary. Use
+	font_table_size instead of FONTS_MAX.
+	(font_family::~font_family): New function.
+	(invalidate_fontno): Use font_family::map_size.
+	(get_fontno, env_space_width, env_half_narrow_space_width,
+	env_narrow_space_width, symbol_fotno, is_good_fontno,
+	get_bold_fontno, make_glyph_node): Use font_table_size rather than
+	FONTS_MAX.
+	(next_available_font_position): Never return 0.
+
+Fri Oct 12 10:17:52 1990  James Clark  (jjc at jclark)
+
+	* ps/tmac.ps: Add font translations for compatibility with dpost.
+
+Thu Oct 11 12:09:03 1990  James Clark  (jjc at jclark)
+
+	* eqn/pile.c: Rename default_baseline_sep to baseline_sep.
+	Move BASELINE_SEP_FORMAT and COLUMN_WIDTH_FORMAT into pbox.h.
+	Move definitions baseline_sep, shift_down, column_sep,
+	matrix_side_sep into...
+	* eqn/box.c: Add them to param_table.
+	* eqn/pbox.h: Add declarations to pbox.h.
+
+	* troff/input.c (set_string): Cast value to unsigned char *.
+
+	* troff/token.h (process_input_stack): Declare it static before
+	declaring it a friend.
+
+Wed Oct 10 09:59:13 1990  James Clark  (jjc at jclark)
+
+	* dvi/devdvi/texex.map: Fix positions of extensible brace middle
+	and bottom.
+	* dvi/devdvi/EX: Regenerate.
+
+	* troff/input.c (init_charset_table): Make ", ', ), ], *, \(dg
+	transparent.
+
+Tue Oct  9 08:34:02 1990  James Clark  (jjc at jclark)
+
+	* eqn/lex.c: In defaults_table, make definition of `dot' call
+	`dot_def'.  Don't explicitly make it roman.  Similarily for other
+	accents.
+
+	* pic/lex.c (for_input::for_input): Add by_is_multiplicative
+	argument.
+	(for_input::get, for_input::peek): Use this.
+	(do_for): Add by_is_multiplicative argument.
+	* pic/pic.y: Change optional_by clause to allow '*' after `by'.
+	Change semantic value of optional_by to be a double plus a flag
+	saying whethet the by clause is multiplicative.
+
+	* eqn/lex.c (get_delimited_text): Remember location of start of
+	definition.  Improve error handling when EOF is encountered.
+
+	* lib/font.h: Rename handle_x_command to
+	handle_unknown_font_command.
+	* lib/font.c (font::load): Call handle_unknown_font_command for
+	any unknown command in the font description file.  Don't call
+	handle_x_command. Include the name of the command in the argv.
+	Improve message for unknown command after kernpairs or charset
+	command.
+	* ps/ps.c (ps_font::handle_x_command): Rename to
+	handle_unknown_font_command.  Remove message about `x download'
+	command.  Give error message for wrong number of arguments.
+	* ps/devps/afmtodit: Generate `encoding' instead of `x encoding'.
+	* dvi/dvi.c (dvi_font::handle_x_command): Rename to
+	handle_unknown_font_command. Give an error message for wrong
+	number of arguments.  Rename design_size to designsize.
+	* dvi/tfmtodit.c (main): Generate `checksum' instead of `x
+	checksum', `designsize' instead of `design_size'.
+
+Mon Oct  8 00:38:55 1990  James Clark  (jjc at jclark)
+
+	* eqn/*.[chy]: Change underaccent to uaccent.
+
+	* eqn/eqn.y: Add rule for underaccent.  Declare UNDERACCENT token;
+	give it the same precedence as ACCENT.
+	* eqn/other.c (make_underaccent_box): New function.
+	* eqn/box.h: Declare it.
+	* eqn/lex.c: Add UNDERACCENT to token_table. Add utilde to
+	def_table.
+
+Sun Oct  7 11:25:16 1990  James Clark  (jjc at jclark)
+
+	* pic/pic.y (reset_all): New function. Called in rule for RESET.
+	(parse_init): Call reset_all.
+	(define_variable): When defining scale reset only those
+	pre-defined variables that are scaled.
+	(defaults_table): Add `scale' as non-scaled value.
+
+	* pic/pic.y: Redo parsing of text adjustments: parse adjustments
+	together with the text; allow any number of positioning words;
+	allow center as a positioning word.
+
+	* pic/object.c (output::compute_scale): Get picture maximum height
+	and width from variables called maxpswid and maxpsht.
+	* pic/pic.y: Add maxpswid and maxpsht to defaults_table.
+
+Sat Oct  6 10:16:56 1990  James Clark  (jjc at jclark)
+
+	* pic/object.c (object_spec::make_text): Multiply textht by number
+	of text items.
+
+	* pic/pic.y: Allow `sprintf("string", expr,...)' wherever text can
+	occur.
+	(do_sprintf): New function.
+	(pic.gperf): Add sprintf token.
+	(text, sprintf): New rules.
+
+	* pic/pic.y: `rand()' with no arguments returns a random number
+	in the range [0,1).
+
+	* pic/pic.y: Allow a bare expression to be an attribute: change
+	precedences to support this.  Change optional_ordinal rule to
+	optional_ordinal_last to avoid reduce/reduce conflict.
+	* pic/object.c (object_spec::object_spec): Initialize direction.
+
+	* pic/pic.y: Implement ^ operator meaning exponentiation.
+
+	* troff/node.h: Add default argument to mount_font.
+	* troff/node.c (font_position): Read an optional third argument
+	giving the external_name.
+	(mount_font): Add optional argument giving the external_name.
+	(mount_font_not_translate): Have additional argument giving
+	external name.  Use this name to load the font.  Pass both names
+	to font_info::font_info.
+	(font_info::font_info): Have additional argument giving
+	external_name.
+	(class tfont): New member external_name.
+	(font_info::get_tfont): Use external name to construct tfont_spec.
+
+Fri Oct  5 04:03:13 1990  James Clark  (jjc at jclark)
+
+	* eqn/lex.c (init_table): Add argument giving device.  Define
+	name of device to be "1".
+	(do_ifdef): Counts as true if the argument has been defined with
+	`define'.
+	* eqn/main.c (main): Call init_table with device argument. Make
+	device local to main.
+	* eqn/eqn.h: Change declaration of init_table. Remove declaration
+	of device.
+
+	* pic/lex.c (get_delimited): Allow text to be delimited by
+	matching {}s.  Don't recognize ending delimiter within a string.
+
+	* troff/input.c (get_delim_name): New function.
+	(token::next): Implement \C.
+
+	* lib/font.c (font::load): Grok ---.  Add an alias for each
+	character based on its code.
+	(font::get_code_width): Deleted.
+	* lib/font.h (class font): Declare font::number_to_index().
+	Remove declaration of font::get_code_width.
+	* lib/nametoindex.c (font::name_to_index): Add 512 rather than 256
+	to indices of named characters.
+	(font::number_to_index): New function.
+	* troff/input.c (font::number_to_index): New function.
+	(get_charinfo_by_number, charinfo::get_number,
+	charinfo::set_number): New functions.
+	(token::next): Turn \N into a TOKEN_NUMBERED_CHAR.
+	(token::process, token::description, token::get_char,
+	token::add_to_node_list, token::operator==): Handle
+	TOKEN_NUMBERED_CHAR.
+	* troff/charinfo.h: Declare get_charinfo_by_number,
+	charinfo::get_number, charinfo::set_number.  Add NUMBERED flag to
+	charinfo class.
+	(charinfo::numbered): New function.
+	* troff/token.h: Add TOKEN_NUMBERED_CHAR.
+	* troff/env.h (class environment): Remove declaration of ...
+	* troff/env.c (environment::make_numbered_char_node): Deleted.
+	* troff/node.c (make_numbered_node): Deleted.
+	(class numbered_glyph_node): Remove.
+	(troff_output_file::put_char_width, troff_output_file::put_char):
+	Handle numbered chars.
+	(troff_output_file::numbered_char): Removed.
+	(tfont::get_code_width): Removed.
+	(make_glyph_node): Don't search special fonts for numbered
+	characters.
+	* troff/node.h: Remove declaration of make_numbered_node.
+	* driver/input.c (do_file): Handle N command.
+	* driver/printer.h: Add declaration of ...
+	* driver/printer.c (printer::set_numbered_char): New function.
+	* dvi/tfmtodit.c (main): Generate unnamed entries.
+	* ps/devps/afmtodit: Likewise.
+	* xditview/xtotroff.c (MapFont): Likewise.
+	* xditview/libXdvi/parse.c (ParseInput): Grok N command.
+
+	* tbl/main.c (process_format): If multiple widths are specified
+	for a column but all the widths are the same, don't give an error
+	message.
+
+	* tbl/table.c (table::do_row): If the current row is all lines and
+	the stuff doesn't contains a line, mark the top of the row after
+	printing stuff before the row.  If the current row is not all
+	lines and the stuff doesn't contain a line, don't unnecessarily
+	mark the top of the row before printing the stuff.
+	
+Mon Oct  1 11:42:00 1990  James Clark  (jjc at jclark)
+
+	* troff/groff.h: Remove MAX_PATH.
+	* troff/input.c (open_file): Dynamically allocate space for the
+	path.
+	(open_mac_file, process_macro_file): Corresponding changes.
+
+Sun Sep 23 18:56:26 1990  James Clark  (jjc at jclark)
+
+	* troff/node.h (class output_file): Make copy_file pure.  Add
+	vspace method ifdef COLUMN. Add is_printing method.
+	* troff/node.c: Add class printing_reg. Add class
+	real_output_file. Derive other output_file classes from
+	real_output_file; in these classes rename begin_page to
+	really_begin_page, print_line to really_print_line, copy_file to
+	really_copy_file, transparent_char to really_transparent_char.
+	Move output_file::flush to real_output_file. Add printing member
+	to class output_file.
+	* troff/div.h: Remove printing member from top_level_diversion.
+	Add vspace member function to class diversion ifdef COLUMN. Add
+	some declarations ifdef COLUMN.
+	* troff/div.c (top_level_diversion::copy_file,
+	top_level_diversion::transparent_output,
+	top_level_diversion::output): Don't test printing member before
+	output.
+	* troff/input.c: Handle initial variable_space_request ifdef
+	COLUMN.
+	* troff/Makefile: Add column.c but comment it out. Add -DCOLUMN
+	but comment it out.
+
+Sat Sep 22 11:32:22 1990  James Clark  (jjc at jclark)
+
+	* troff/div.c (diversion::need): Make any space forced.  If we
+	sprung a trap, set truncated_space to minus the distance to the
+	trap and set needed_space to the amount that was needed.
+	(top_level_diversion::space): A forced space turns no_space_mode
+	off.
+	(class constant_vunits_reg): New class.
+	(init_div_requests): Implement number registers .trunc and .ne
+	using constant_vunits_reg.
+	(class truncated_space_reg): Deleted.	
+
+	* troff/div.h: Don't have a no_space_mode member in diversion.
+	Instead have it in top_level_diversion.
+	* troff/div.c (diversion::diversion): Don't initialize
+	no_space_mode.
+	(top_level_diversion::top_level_diversion): Initialize
+	no_space_mode.
+	(no_space, restore_spacing): Do nothing if curdiv != topdiv.
+	(macro_diversion::output): Don't clear no_space_mode.
+
+	* troff/input.c (diverted_space_node::reread): Don't call
+	environment::do_break.  In fill mode, act like a blank line.
+	(diverted_copy_file_node::reread): Don't call
+	environment::do_break.
+
+	* troff/div.c (blank_line): New function.
+	* troff/div.h: Declare it.
+	* troff/input.c (process_input_stack): Call it.
+
+	* troff/div.c (truncated_space_reg::get_string): New function.
+	(init_div_requests): Bind to .trunc.
+	(space_request, top_level_diversion::space,
+	top_level_diversion::output, macro_diversion::space,
+	macro_diversion::output): Update truncated_space.
+	(macro_diversion::output): Redo calculations when trap sprung.
+	(macro_diversion::output, macro_diversion::space): No need for
+	trap_flag.
+
+	* troff/div.c (top_level_diversion::output): Set nl_reg_contents
+	after truncating post line spacing.
+
+Fri Sep 21 11:27:25 1990  James Clark  (jjc at jclark)
+
+	* ps/devps/prologue (MF, SF): Make them work even if setfont is
+	defined as a procedure rather than as an operator.
+
+Thu Sep 20 12:55:05 1990  James Clark  (jjc at jclark)
+
+	* troff/div.c (macro_diversion::space): Ignore no_space_mode.
+
+Wed Sep 19 10:54:37 1990  James Clark  (jjc at jclark)
+
+	* troff/div.c (top_level_diversion::output): Merge
+	output_file::print_line and output_file::end_of_line member
+	functions.
+	* troff/div.h (class output_file):
+	* troff/node.c (troff_output_file::print_line,
+	troff_output_file::end_of_line, output_file::end_of_line,
+	ascii_output_file::print_line, suppress_output_file::print_line):
+	Corresponding changes.	
+
+Tue Sep 18 11:31:47 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (token::next): Don't give a warning for `\.'.
+
+	* troff/env.c (environment::get_center_lines): New function.
+	(init_env_requests): Bind number register .ce to it.
+	* troff/env.h: Declare it.
+	* tbl/table.c (table::init_output): Define reset macro to restore
+	.ce.  If center option not given, store .ce in SAVED_CENTER_REG.
+	Then do .ce 0.
+	(table::print): If center option not given, then imply center
+	option if SAVED_CENTER_REG > 0.
+
+Mon Sep 17 09:19:19 1990  James Clark  (jjc at jclark)
+
+	* ps/devps/Makefile: Remove T from FONTS. Remove TSymbol.ps and
+	Troff.ps from DOWNLOAD.
+	
+	* troff/Makefile: Change comment in DEFINES to avoid confusing
+	System V make.
+
+	* ps/ps.c (ps_printer::do_exec): Allow newlines within PostScript
+	code.  Don't try to catch errors with stopped.
+	(check_line_lengths): New function.
+	* ps/devps/prologue (EXEC): Deleted.
+	(EBEGIN, EEND): New procedures.
+
+Sun Sep 16 14:51:15 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c: Include request.h before node.h.
+	* troff/node.c: Likewise.
+	* troff/env.c: Likewise.
+	* troff/div.c: Likewise.
+	* troff/node.h (class special_node): Store argument as a macro
+	rather than a char *.
+	* troff/node.c (special_node::special_node, special_node::copy):
+	Grok this.
+	(special_node::~special_node): Deleted.
+	(special_node::tprint): Deleted.
+	(special_node::tprint_start, special_node::tprint_end,
+	special_node::tprint_char): New functions.
+	(troff_output_file::special): Deleted.
+	(troff_output_file::start_special, troff_output_file::end_special,
+	troff_output_file::special_char): New functions.
+	* troff/input.c (special_node::tprint): New function.
+	(do_special): Use macro not char *.
+	(do_transparent_macro): Deleted.
+	(token::next): Don't call do_transparent_macro.
+
+	* troff/input.c (token::next): Add 'Y' case.
+	(do_transparent_macro): New function.
+	* troff/node.c (troff_output_file::special): Handle newlines with
+	argument using new continuation convention.
+	* driver/input.c (get_string): Cope with continuation convention.
+	(do_file): Don't call skip_line after calling get_string(1).
+	* ps/ps.c (ps_printer::special, ps_printer::do_import,
+	ps_printer::do_def, ps_printer::do_exec): Cope with newlines in
+	arg.
+	* xditview/libXdvi/parse.c (ParseInput): Ignore lines starting
+	with +.
+
+Sat Sep 15 19:00:10 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (asciify): By default, illegal input characters
+	should return empty string.
+
+	* troff/input.c (copy_file): Handle first page transition like title.
+	(token::next, process_input_stack): Grok COPY_FILE_REQUEST.
+
+	* troff/input.c (token::next): Improve error message for EOF after
+	escape character.
+	(input_char_description): New function.
+	(get_char_for_escape_name): Use input_char_description.
+	(token::next): Warn about unrecognized escape sequences.
+	(warning_table): Add WARN_ESCAPE.
+	* troff/groff.h: Declare WARN_ESCAPE. Change WARN_TOTAL
+	accordingly.
+
+	* troff/token.h: Remove declaration of process_input_stack.
+
+	* troff/input.c: Remove declaration of init_hyphen_requests.
+	* troff/request.h: Correct spelling in declaration of same.
+
+	* troff/input.c (token::next): Check whether escape_char is 0.
+
+Fri Sep 14 12:09:25 1990  James Clark  (jjc at jclark)
+
+	* groff.c (main, usage, help): Implement -P and -L options.
+	* groff.sh: Likewise.
+
+	* troff/input.c (token::next): Use some gotos to avoid code
+	duplication.
+
+	* troff/input.c (get_long_name, get_name, read_long_ecsape_name):
+	Avoid calling symbol::symbol if name empty.
+
+Thu Sep 13 06:21:45 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (init_input_requests): Make \n(.x return the major
+	version number and \n(.y return the minor version number.
+	* troff/Makefile: Construct file majorminor.c defining
+	major_version and minor_version automatically from ../VERSION.
+
+	* troff/node.c (class glyph_node): Make operator new and operator
+	delete public.
+	(class ligature_node): Similarily.
+
+	* troff/input.c (operator==(const macro &, const macro &)): New
+	function.
+	(non_interpreted_node::same): Use this.
+	(string_iterator::string_iterator): Make macro& argument const.
+
+	* troff/input.c (input_iterator::get): New function. Don't make
+	asciify_macro or class non_interpreted_node friends of class
+	input_iterator.
+	(non_interpreted_node::interpret): Use input_iterator::get.
+	(asciify_macro): Likewise.
+
+	* troff/input.c (~token_node, ~string_iterator, ~arg_list,
+	~non_interpreted_node): Deleted.
+	* troff/node.c: (~suppress_output_file, ~ascii_output_file):
+	Deleted.
+
+	* troff/symbol.h: Make all symbol member functions const.
+
+	* lib/strtol.c: New file.
+	* lib/Makefile: Add strtol.c.
+	* Makefile: Define STRTOL as strtol.o to include strtol in
+	libgroff.a.
+
+Wed Sep 12 10:00:49 1990  James Clark  (jjc at jclark)
+
+	* pic/troff.c (troff_output::simple_circle): Divide by scale.
+
+Tue Sep 11 14:17:16 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (do_special): Use input_level.
+
+	* troff/token.h (TOKEN_BACKSPACE): New token.
+	(token::backspace): New function.
+	* troff/input.c (token::description, token::next, token::process):
+	Grok TOKEN_BACKSPACE.
+	(do_special): Turn TOKEN_BACKSPACE back into \b.
+
+	* troff/token.h (token::leader): New function.
+	* troff/input.c (do_special): Turn TOKEN_LEADER back into \001.
+
+	* troff/input.c (do_special): Turn TOKEN_TAB back into \t.
+
+	* troff/input.c (do_special): Use token::description in error
+	message.
+
+Mon Sep 10 11:06:27 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c (decode_args): Combine quoted and
+	quote_input_level variables. Make it a for (;;) loop.
+
+	* troff/input.c (get_char_for_escape_name): Check for \001 and \b.
+
+	* troff/input.c (read_long_escape_name): The test for whether to
+	expand buffer was off by 1.
+	(read_string): Similarily.
+
+Fri Sep  7 11:45:50 1990  James Clark  (jjc at jclark)
+
+	* troff/input.c: Use `const int' rather than `static const int'.
+
+	* troff/div.h (diversion::copy_file): Declare as pure virtual.
+	(macro_diversion::copy_file): New function.
+	* troff/node.h: New class diverted_copy_file_node.
+	* troff/node.c: Implement it.
+	* troff/input.c (copy_file): Use diversion::copy_file. Handle
+	first page transition by pushing a diverted_copy_file_node.
+	* troff/input.c (token::next, process_input_stack): Don't handle
+	COPY_FILE_REQUEST.
+
+Thu Sep  6 13:29:10 1990  James Clark  (jjc at jclark)
+
+	* ps/ps.c (flush_sbuf): Remember to add sbuf_kern when checking
+	whether space widths need adjusting.
+
+	* troff/charinfo.h: Generalize translated_to_space to
+	special_translation so as to allow translation to \&.
+	* troff/input.c (translate): Allow translation to \&.
+	(charinfo::*): Corresponding changes.
+	* troff/node.c (make_node, node::add_char): Corresponding changes.
+	* troff/node.h (dummy_node::dummy_node): Allow optional first
+	argument.
+
+	* lib/lib.h: Make codes 0200 to 0237 illegal input characters.
+	* troff/token.h: Remove TOKEN_TITLE. Remove token::title. Add
+	TOKEN_REQUEST.
+	* troff/input.c (token::next): Turn a TITLE_REQUEST into a
+	TOKEN_REQUEST with an argument of TITLE_REQUEST.
+	(token::process): Grok that.
+	* troff/input.c (copy_file): Handle first page transition like
+	title by pushing a COPY_FILE_REQUEST cookie.
+	(token::next, process_input_stack): Grok that.
+	* troff/node.h (output_file::copy_file): Add x and y arguments.
+	Make it non-pure.
+	* troff/div.c (top_level_diversion::copy_file): Supply them.
+	* troff/node.c (troff_output_file::copy_file): Add x and y
+	arguments; moveto specified position.  Invalidate font_position
+	array after copying file.
+	(output_file::copy_file): New function.
+	(suppressed_output_file::copy_file, ascii_output::copy_file):
+	Removed.
+	* troff/input.c (transparent_file): New function.
+	(init_input_requests): Bind to "trf".
+	(token::next): Handle TRANSPARENT_FILE_REQUEST cookie.
+	(process_input_stack): Likewise.
+
+	* troff/Makefile: Add ../lib/lib.h to GROFF_H.
+
+	* troff/node.c (init_node_requests): New number registers .kern
+	pointing to global_kern_mode, and .lg pointing to
+	global_ligature_mode.
+
+	* troff/node.c (ligature): Don't change it if we get a bad
+	integer.
+
+	* troff/input.c (do_define_string): Don't strip tabs.
+
+	* troff/input.c (asciify_macro): Make the string_iterator auto.
+
+	* troff/node.c (init_font_requests): Rename to...
+	(init_node_requests):
+	* troff/node.h: Change declaration.
+	* troff/input.c (main): Change call.
+
+	* troff/input.c (node::reread, diverted_space_node::reread): New
+	methods.
+	(process_input_stack): Call reread rather than
+	get_diverted_space_node.
+	* troff/node.c (node::get_diverted_space_node,
+	diverted_space_node::get_diverted_space_node): Removed.
+	* troff/node.h: Declare reread methods instead of
+	get_diverted_space_node methods. Make `n' member private.
+	* troff/input.c: (token::diverted_space): Removed.
+	* troff/token.h: Removed declaration.
+	
+
+Tue Sep  4 00:48:04 1990  James Clark  (jjc at jclark)
+
+	* eqn/script.c (script_box::compute_metrics): Don't let
+	SUP_RAISE_FORMAT become negative.
+
+	* tbl/table.c (table::do_row): Entries that don't end in the
+	this row shouldn't make the row non-blank.
+	
+	* tbl/table.c (table::make_columns_equal): Only set the width of
+	columns which are marked as equal.
+	
+	* tbl/main.c (process_data): Before issuing excess data error,
+	if last character was a newline unget it; then get it again after
+	the error.  Also include the contents of the entry in the message.
+
+	* groff.c: New file.
+	* Makefile: Build groff from groff.c.  Make it possible to use
+	either groff.sh or groff.c as groff.
+	* Makefile.bd: Similarily.
+
+Mon Sep  3 09:39:49 1990  James Clark  (jjc at jclark)
+
+	* groff.sh: Don't delay expansion of $@ in assignment to files.
+	Remove occurrences of \".
+
+Sun Sep  2 09:56:59 1990  James Clark  (jjc at jclark)
+
+	* all Makefiles: Simplify and rearrange.
+
+	* Makefile: Handle fmod like malloc.
+	* lib/Makefile: Similarily.
+	* lib/fmod.c: Remove #ifdef NEED_FMOD.
+
+	* Makefile: Rename OPTIMISE to OPTIMIZE.
+
+	* groff.sh: Remove assignment to PATH.
+	* Makefile: Remove SHPATH variable.
+	* Makefile.bd: Similarily.
+
+	* groff.sh: Add -V option to print the pipeline instead of
+	executing it.
+
+Fri Aug 31 00:56:46 1990  James Clark  (jjc at jclark)
+
+	* lib/font.c: Split off file searching into ...
+	* lib/fontfile.c: New file.
+
+	* lib/strerror.c (strerror): Use `Error %d' for unknown errors.
+
+Thu Aug 30 13:13:55 1990  James Clark  (jjc at jclark)
+
+	* tbl/table.c (table::do_hspan): Delete assertion that e != 0.
+	Also change misleading comment.
+	(table::do_vspan): Change similarily misleading comment.
+	* tbl/main.c (process_data): A format row with an explicit `s'
+	uses up a data line, even if all the other columns are `_' or `='.
+
+	* troff/input.c (token::description): Fix description of
+	TOKEN_DUMMY and TOKEN_EMPTY.
+
+Wed Aug 29 04:12:08 1990  James Clark  (jjc at jclark)
+
+	* groff.sh: Fix description of -Z in help message.
+
+Tue Aug 28 07:28:33 1990  James Clark  (jjc at jclark)
+
+	* pic/object.c (object_spec::make_object): Allow negative and zero
+	line thicknesses.
+	* pic/pic.y: Give linethick default value of -1.0.
+	* pic/troff.c (troff_output::troff_output): Initialize
+	last_line_thickness to BAD_THICKNESS.
+	(troff_output::finish_picture): Set thickness to BAD_THICKNESS.
+	(troff_output::line_thickness): Canonicalize negative thicknesses
+	to RELATIVE_THICKNESS.
+	* pic/tex.c (tex_output::set_pen_size): Silently map negative line
+	thicknesses to DEFAULT_PEN_SIZE. Canonicalize negative pen sizes
+	to -1.0.
+	(tex_output::start_picture): Set pen_size to -2.0.
+
+	* ps/ps.c (ps_printer::set_line_thickness): If line_thickness is
+	0, then use 0 linewidth.
+	(ps_printer::ps_printer): Initialize line_thickness to -1.
+
+	* pic/troff.c (troff_output::simple_ellipse): Divide by scale.
+
+	* ps/devps/symbolchars: Remove `or'.
+	* ps/tmac.ps: Implement \(or with .char.
+
+	* ps/devps/symbolchars: Move most characters into textmap.
+	* ps/devps/textmap: Add names for troff bracket characters. Remove
+	ul, ru, br, bv.
+
+	* ps/devps/TSymbol.ps: Removed.
+	* ps/devps/FontMakefile: Make S from Symbol not TSymbol.
+	* ps/tmac.ps: Do with .char what TSymbol did.
+	* ps/devps/download: Remove TSymbol.
+
+	* ps/devps/T: Removed.
+	* ps/devps/Troff.ps: Removed.
+	* ps/devps/Troff.afm: Removed.
+	* ps/tmac.ps: Implement \(ru, \(ul, and \(br with .char.
+	* ps/devps/download: Remove Troff.
+	* ps/devps/FontMakefile: Remove T target.
+	* ps/devps/DESC-A4: Remove T from font list.
+	* ps/devps/DESC-letter: Likewise.
+
+	* troff/input.c (macro_to_node): Rename to ...
+	(charinfo_to_node): Don't pass mac argument.  Temporarily remove the
+	character's definition while processing it.
+	* troff/node.c (node::add_char, make_node): Change calls to
+	macro_to_node accordingly.
+
+	* troff/input.c (token::next): Translate \_ to \(ul.
+
+	* tty/devascii/R.proto: Add `|'.
+	* tty/devlatin1/R.proto: Likewise.
+
+Mon Aug 27 11:25:41 1990  James Clark  (jjc at jclark)
+
+	* man: Put the version number in all the man pages.
+
+Sun Aug 26 11:40:05 1990  James Clark  (jjc at jclark)
+
+	* Makefile.bd: New file.
+	* README.bd: New file.
+
+	* VERSION: New file.
+	* lib/version.c: Removed.
+	* lib/Makefile: Create version.c from ../VERSION. Remove version.c
+	in clean target.
+
+	* troff/input.c (main): Get hyphen_file from GROFF_HYPHEN
+	environment variable.
+
+	* all Makefiles: Split install target into install.bin for
+	binaries, and install.nobin for everything else.
+	* Makefile: Add bindist target.
+
+	* man/afmtodit.man: New file.
+	* man/Makefile: Add afmtodit.n to MAN1PAGES.
+	* ps/devps/Makefile: Add textmap to DEVICEFILES. Install afmtodit
+	in BINDIR.
+	* ps/Makefile: Pass BINDIR to make install in devps.
+
+	* ps/ps.c (ps_printer::set_char): Do nothing if the character is
+	the space character.
+
+	* ps/devps/FontMakefile: Rename symbol.afm to tsymbol.afm.
+
+Sat Aug 25 15:39:03 1990  James Clark  (jjc at jclark)
+
+	* ps/ps.c: Redo font downloading.
+	* ps/devps/download: New file.
+	* ps/devps/Makefile: Add download to DEVICEFILES.
+	* ps/devps/afmtodit: Remove -d option.
+	* ps/devps/FontMakefile: Don't use -d option with afmtodit.
+	* ps/devps/symbosl.ps: Add %%DocumentFonts comment.
+	* ps/devps/zapfdr.ps: Likewise.
+	* ps/devps/TSymbol.ps: Likewise.
+
+Fri Aug 24 20:10:30 1990  James Clark  (jjc at jclark)
+
+	* groff.sh: Initialize dev to ${GROFF_TYPESETTER:-@DEVICE@}.
+
+Thu Aug 23 10:03:47 1990  James Clark  (jjc at yquem)
+
+	* ps/ps.c (ps_output::include_file): If BROKEN_SPOOLER is defined,
+	then strip the first line if it starts with %.
+	* Makefile: Add a comment about this.
+
+	* man/tfmtodit.man: New file.
+	* man/Makefile: Add tfmtodit.n to MAN1PAGES.
+	* dvi/Makefile: Install tfmtodit in BINDIR.
+
+	* dvi/tfmtodit.c (usage): Mention -v option.
+
+Wed Aug 22 09:56:36 1990  James Clark  (jjc at yquem)
+
+	* troff/node.c (troff_output_file::end_of_line): Call do_motion.
+	* troff/node.c (troff_output_file::transparent_char): Don't call
+	flush_tbuf.
+
+	* eqn: Add check_tabs method to most box classes.
+	* eqn/box.c (box::top_level): Call check_tabs.
+
+	* eqn/script.c (script_box::output): Use \Z.
+	* eqn/limit.c (limit_box::output): Use \Z.
+
+	* eqn/box.c (box::top_level): Use itoa.
+
+Tue Aug 21 09:29:28 1990  James Clark  (jjc at yquem)
+
+	* dvi/tmac.dvi: Add font translations for CR, C, TT.
+	* dvi/devdvi/Makefile: Don't make links to CW.
+
+	* ps/tmac.ps: Add font translations for C, CW, CO, CX, CD, H, HO,
+	HX, HD.
+	* xditview/tmac.X: Likewise.
+
+	* troff/node.c: Add font translation feature.
+	(get_font_translation): New function.
+	(symbol_fontno): Translate the font name.
+	(mount_font_no_translate): Rename to mount_font to this.
+	(mount_font): New function.
+	(font_family::make_definite): Call mount_font_no_translate instead
+	of mount_font.
+	(mount_style): Translate the font name.
+	(font_translate): New function.
+	(init_font_requests): Bind "ftr" to font_translate.
+
+	* ps/devps/prologue (SN): New procedure that rounds a position to
+	the nearest (pixel + (.25,.25)).
+	(DL): Use SN to round endpoints.
+
+	* lib/version.c: Changed version to 0.5.
+
+Sat Aug 18 04:43:21 1990  James Clark  (jjc at yquem)
+
+	* Makefile: Move definition of PAGE to the very beginning, so that
+	people are less likely to miss it.
+
+Fri Aug 17 02:15:11 1990  James Clark  (jjc at yquem)
+
+	* man/Makefile: Don't need to sed out @UPCASE_PROG_PREFIX@.
+
+	* troff/env.c (environment::choose_breakpoint): Make `can't find
+	breakpoint' error a warning of type WARN_BREAK.  Change message to
+	`can't break line'.
+	* troff/groff.h: Declare WARN_BREAK with code 4; change WARN_INPUT to
+	code 040000.
+	* troff/input.c: Add WARN_BREAK to warning_table.  Include
+	WARN_BREAK in DEFAULT_WARNING_MASK.
+
+	* tty/tmac.tty: Add definition of \(+-.
+
+	* groff.sh: Remove `--' option to set command.
+
+	* dvi/devdvi/texsy.map: Remove duplicate md entry.
+
+	* ps/devps/eqnchar: Better definition of cdot using md.
+	* dvi/devdvi/eqnchar:  Likewise.
+	* xditview/devX100/eqnchar:  Likewise.
+	* xditview/devX75/eqnchar: Likewise.
+	* eqn/lex.c: Add definition of cdot.
+
+Thu Aug 16 09:33:57 1990  James Clark  (jjc at yquem)
+
+	* troff/input.c (get_optional_char): New function.
+	* troff/input.c (set_page_character): Use get_optional_char(),
+	rather than has_arg() and tok.get_char(1).
+	* troff/env.c (tab_character, leader_character, hyphen_char,
+	field_characters): Likewise.
+	(margin_character): Likewise.  Also always delete the
+	margin_character_node.
+
+	* troff/input.c (token::get_char): Use token::description.
+
+	* troff/input.c (has_arg): Don't skip over tab and \}.
+	* troff/number.c (start_number): Give a warning if the number
+	starts with \} (WARN_RIGHT_BRACE) or tab (WARN_TAB).
+
+Wed Aug 15 10:04:37 1990  James Clark  (jjc at yquem)
+
+	* troff/input.c (empty_name_warning, non_empty_name_warning): New
+	functions.
+	(get_name, get_long_name): Use these.  Rename `warn' argument to
+	`required'.
+
+	* troff/node.c (get_fontno): Test that the symbol is not null.
+
+	* troff/input.c (token::description): New function.
+	* troff/number.c (parse_term): Use token::description in `numeric
+	expression expected' message.
+	* troff/groff.h: Add WARN_MISSING.
+	* troff/number.c (start_number): New function.
+	* troff/number.c (get_vunits, get_hunits, get_number, get_integer,
+	get_incr_number): Use start_number().
+	* troff/input.c (DEFAULT_WARNING_MASK): Enable WARN_NUMBER by
+	default.
+	* troff/input.c (get_name, get_long_name): Use WARN_MISSING.
+	* troff/reg.c (alter_format): Use WARN_MISSING. Also use
+	token::descripion.
+	* troff/input.c (token::get_char): Use WARN_MISSING.
+	* troff/input.c (token::delimiter): Use token::description.
+	* troff/env.c (environment_switch): Back out Aug 3 change.
+	* troff/input.c (has_arg): Skip over \}s and tabs but give a
+	warning.
+	* troff/token.h (token::tab): New function.
+	* troff/node.c (get_fontno): Use tok.skip() rather than has_arg().
+	* troff/reg.c (alter_format): Likewise.
+	* troff/node.c (bold_font): Use has_arg() rather than tok.skip().
+
+Tue Aug 14 10:11:21 1990  James Clark  (jjc at yquem)
+
+	* troff (most files): Redo warnings. Divide warnings into various
+	categories; warning() has an additional first argument indicating
+	the category it falls into.
+	* troff/input.c (main): -w now takes an argument. New option -W.
+	(enable_warning, disable_warning): New functions.
+
+	* ps/devps/afmtodit: Add -a option to lie about the italic angle.
+	* ps/devps/FontMakefile: Pretend TI has an angle of 7.
+
+Mon Aug 13 10:11:16 1990  James Clark  (jjc at yquem)
+
+	* ps/devps/eqnchar: Better definitions of dotdot, vec, dyad, inf.
+	* xditview/devX100/eqnchar: Likewise. Remove definition of dot.
+	* xditview/devX75/eqnchar: Likewise.
+	* dvi/devdvi/eqnchar: Better definitions of vec, dyad, dotdot.
+
+	* eqn/other.c: When bar or over applies to a single character
+	don't produce an overline_box or an underline_box. Instead produce
+	an accent_box or an underaccent_box, with the accent a line
+	whose width is accent_width.  New classes underaccent_box,
+	overline_char_box and underline_char_box.
+	* eqn/box.h: Move overline_box, underline_box, accent_box class
+	declarations into eqn/other.c. Add declarations of
+	make_underline_box, make_overline_box, make_accent_box.
+	* eqn/eqn.y: Call make_overline_box, make_underline_box
+	make_accent_box instead	of constructors.
+	* eqn/pbox.h, eqn/box.c: Add accent_width parameter.
+
+	* eqn/other.c: Add accent_box::~accent_box.
+	* eqn/box.h: Declare it.
+
+	* groff.sh: With -Tps, use eqn -D.
+
+	* eqn/other.c (overline_box::output): Use \Z. If draw_flag use \D
+	rather than \l.
+	(underline_box::output): Similarily.
+	(accent_box::output): Use \Z.
+
+	* xditview/tmac.X: Add definitions of ~ and ^ (so that they are a
+	bit smaller.)
+
+Sun Aug 12 09:41:15 1990  James Clark  (jjc at yquem)
+
+	* troff/div.c (top_level_diversion::transparent_output(unsigned
+	char)): Use asciify.
+	* troff/input.c (asciify): Don't make it static.
+	* troff/token.h (asciify): Declare it.
+	
+	* troff/input.c (get_name, get_long_name, token::get_char,
+	token::delimiter): Add an extra default argument which says
+	whether a warning should be printed.
+	* troff: Pass a non-zero argument to one of these rather than
+	printing a warning directly.
+
+Sat Aug 11 09:02:21 1990  James Clark  (jjc at yquem)
+
+	* troff: Consistently use symbol::is_null.
+
+	* troff/dictionary.h: Move some inline functions into
+	dictionary.c.
+
+	* troff/request.h: Move inline functions into input.c.
+	(request_or_macro::invoke): Make it pure.
+
+	* troff/input.c, troff/reg.h: New class `constant_int_reg'.
+	* troff/input.c (init_input_requests): Use class constant_int_reg.
+	(class compatible_reg): Deleted.
+	* troff/div.c (init_div_requests): Use class constant_int_reg.
+	(class last_post_line_extra_space_reg): Deleted.
+
+	* troff/env.c (tab_character): Don't change the tab character if
+	we get an invalid argument.
+	(hyphen_char): Similarily.
+
+	* troff/reg.c (alter_format): Check that nm is not null.
+
+	* Makefile, groff.sh: Make it possible to customize the commands
+	used for printing PostScript and dvi files. Also make it possible
+	to customize the path used by groff.sh.
+
+	* eqn/eqn.y: Make `left' right associative.
+
+Fri Aug 10 18:20:39 1990  James Clark  (jjc at yquem)
+
+	* pic/pic.h: Added definition of M_SQRT2 for those systems that
+	don't have it.
+
+	* pic/pic.h: Removed definition of INT_MAX.
+
+	* troff/node.c (italic_corrected_node::vertical_extent): Omit
+	`return'.
+
+	* troff/input.c (token::next):  Handle \R like \n.
+
+Tue Aug  7 09:46:33 1990  James Clark  (jjc at yquem)
+
+	* ps/tmac.pc (PSPIC): Simplify.
+
+	* troff/env.c (tab_stops::to_string):
+	* pic/pic.y (object_type_name):
+	* pic/troff.c (simple_output::line):
+	* pic/tex.c (tex_output::spline):
+	* pic/object.c (object_spec::make_object):
+	* tbl/main.c (process_data):  Add cases to switch statements to
+	avoid cfront warnings. (Some of these are spurious, since the
+	switch already has a default case.)
+
+	* ps/tmac.ps (PSPIC): Reformatted.  Prefix all local names with
+	`ps-'.  Don't test systat; instead check number of arguments to
+	ps-bb.
+
+Mon Aug  6 00:13:07 1990  James Clark  (jjc at yquem)
+
+	* macros/tmac.e: Do not decrease the page offset by 0.5i.
+
+	* ps/ps.c (ps_printer::ps_printer): Use mktemp instead of tempnam.
+	Unlink the file as soon as we have opened it, so that we don't
+	have to bother with signal handlers.
+	(handler): Deleted.
+	(fatal_error_exit): Deleted.
+	(main): Don't call signal.
+
+	* dvi/tfmtodit.c: Add -k option so that kerns with the skewchar
+	can be ignored.
+	* dvi/devdvi/Makefile: Use the -k option with S and MI.
+
+	* pic/pic.y:  If there is a label, or an nth construction before
+	the first `.' in the argument to `with', ignore it and generate a
+	warning.
+	* pic/lex.c (lex_warning): New function.
+
+	* tbl/table.c (table::init_output): In section keep and release
+	macro, use 0 indent when diverting and the correct indent when
+	rereading.
+
+	* troff/input.c (interpolate_number_format): Do not interpolate
+	anything if the number register is not defined.
+
+	* tbl/main.c (process_data): Don't add entry when col >= ncolumns.
+
+Sat Aug  4 08:12:05 1990  James Clark  (jjc at yquem)
+
+	* ps/devps/prologue (PICTURE): Set components of graphics state to
+	their default values.
+
+	* ps/devps/text.enc: Add trademark
+	* ps/devps/textmap: Add names for club, spade, heart, diamond,
+	carriagereturn, suchthat. Use Upsilon1 rather than Upsilon.
+	* ps/devps/symbolchars: Add names for summation and product.
+
+	* dvi/devdvi/texsy.map: Add names for club, spade, heart, diamond,
+	suchthat. Add pp. Add upper-case letters.
+
+	* xditview/libXdvi/DviChar.c: Add names for club, spade, heart,
+	diamond, carriagereturn, suchthat. Use Upsilon1 rather than
+	Upsilon.
+
+	* dvi/devdvi/texsy.map: Rename lA (left angle bracket) to la, and
+	rA (right angle bracket) to ra.  Introduce names for double-headed
+	arrows and double-barred arrows: <>, va, lA, rA, hA, uA, dA, vA.
+	* ps/devps/textmap: Likewise for ps device.
+	* xditview/libXdvi/DviChar.c: Likewise for X100 and X75 devices.
+	* tty/devascii/R.proto: Rename lA to la and rA to ra.
+	* tty/devascii/R.proto: Likewise.
+	* tty/tmac.tty: Provide definitions for \(<>, \(lA, \(rA, \(hA,
+	\(uA, \(dA.
+	* eqn/delim.c: In delim_table, rename \(lA to \(la and \(rA to \(ra.
+
+	* xditview/tmac.X: Add definitions for \(fi \(fl \(ff \(Fi \(Fl.
+
+	* eqn/lex.c: Added definitions of `approx', `grad' and `del' to
+	def_table.
+
+Fri Aug  3 09:59:27 1990  James Clark  (jjc at yquem)
+
+	* troff/div.c (when_request): Use symbol::is_null rather than
+	has_arg to determine whether we have an argument.
+	(change_trap): Remove the trap if we get an invalid number. Give
+	an error if we don't get at least the macro name.
+	(diversion_trap): Remove trap if we get an invalid name or number.
+
+	* troff/env.c (environment_switch): Pop if we get an invalid
+	symbol or numeric expression.
+
+	* troff/input.c (do_define_macro):  If EOF is encoutered while
+	defining the macro, do tok.next() before returning.
+
+	* troff/token.h (has_arg): Move definition from here, to ...
+	* troff/input.c (has_arg): ... here
+
+	* troff/env.c (space_size): Do nothing if we get an invalid argument.
+	* troff/input.c (shift): Likewise.
+
+	* pic/lex.c (get_token_after_dot):  Accept `.center' as a synonym
+	for `.c'.
+
+	* pic/troff.c (troff_output::start_picture):  Comment out calls to
+	`..'.
+
+	* eqn/main.c (do_file): Subtract 1 from current_lineno if
+	interpret_lf_args succeeds.
+
+	* eqn/main.c (do_file): Don't recognize delimiter if preceded by
+	\\.  This avoids problems with \$N.
+
+	* groff.sh: Pass -C to preprocessors.
+
+	* lib/lf.c (interpret_lf_args):  Be more flexible.
+
+	* tbl/main.c (main): Add -C option.
+	(table_input::get): Do not recognize TE if followed by character
+	other than a space or newline unless -C option given.
+	(process_input_file): Likewise for lf, TS.
+	(process_data): Likewise for lf in text blocks.
+
+	* eqn/main.c (main): Add -C option.
+	(do_file): Don't recognize EQ, EN or lf if followed by character
+	other than space or newline unless -C option given.
+	* eqn/lex.c (file_input::read_line): Similarily.
+	* eqn/eqn.h: Declare compatible_flag.
+
+	* etc/soelim.c (main): Add -C option.
+	(interpret_lf_args): Use version in libgroff.
+	(do_file):
+
+	* pic/main.c (main): Add -C option, which sets compatible_flag.
+	(top_input::get), (top_input::peek):  If -C option not given,
+	do not recognize .PS/.PE/.PF/.lf if followed by a character
+	other than space or newline.
+	* pic/lex.c (file_input::read_line): Similarily.
+	* pic/pic.h: Add declaration of compatible_flag.
+
+Thu Aug  2 11:11:27 1990  James Clark  (jjc at yquem)
+
+	* ps/tmac.ps (PSPIC): Avoid use of `echo -n'.
+
+	* troff/node.c, troff/node.h:  Add `asciify' methods to classes
+	derived from node.  New class space_char_hmotion_node.
+	* troff/input.c (asciify_macro): New function.
+	* troff/input.c (init_input_requests): New request `asciify' bound
+	to asciify_macro.
+	* macros/mm.diff: New file.
+	* Makefile:  In install.mm target use `patch' to apply
+	macros/mm.diff.
+
+	* troff/input.c (macro::print_size): Just print the size in bytes.
+
+	* troff/div.c (return_request): Correct the argument
+	interpretation.
+
+Wed Aug  1 12:38:36 1990  James Clark  (jjc at yquem)
+
+	* troff/node.h (class composite_node): Add sz member.
+	* troff/node.c (composite_node::size): Return sz.
+	* troff/input.c (macro_to_node):  Use the initial size in the
+	environment as the size of the composite_node.
+
+	* troff/node.c (node::zero_width_tprint):  Provide a reasonable
+	default.
+
+Tue Jul 31 10:07:10 1990  James Clark  (jjc at yquem)
+
+	* troff/div.c (change_trap): If we get a bad number expression,
+	do nothing.
+
+Mon Jul 30 10:30:49 1990  James Clark  (jjc at yquem)
+
+	* lib/matherr.c (matherr): Define this only if math.h defines
+	TLOSS.
+
+Sun Jul 29 10:34:27 1990  James Clark  (jjc at yquem)
+
+	* troff/div.c (macro_diversion::distance_to_next_trap): If there
+	no diversion trap return vunits(INT_MAX - vresolution).
+
+Sat Jul 28 14:28:14 1990  James Clark  (jjc at yquem)
+
+	* troff/input.c (do_zero_width): New implementation that doesn't
+	use a temporary environment. Use instead:
+	(token::add_to_node_list): New function.
+	* troff/env.c (environment::get_prev_char_height),
+	(environment::get_prev_char_height),
+	(environment::get_prev_char_skew): New functions.
+	(environment::get_prev_char): New function.
+	(environment::get_prev_char_width): Change to use get_prev_char.
+	(init_env_request): Implement new registers .cht, .cdp, .csk.
+	* eqn/sqrt.c (sqrt_box::output): Don't rely upon the argument to
+	\Z being processed in a separate environment.
+
+Fri Jul 27 10:21:25 1990  James Clark  (jjc at yquem)
+
+	* tbl/table.c: Removed TABLE_BOTTOM_REG.
+
+	* tbl/table.c (table::init_output): In the section release macro,
+	give a warning message if the section won't fit on one page.
+
+	* tbl/table.c (table::do_top): Emit table keep only if table is
+	boxed.
+	(table::do_bottom): Likewise for table release.
+	(table::table), (table::add_vertical_rule):  Remove reference to
+	keep member.
+	* tbl/table.h: Remove keep member.
+
+	* tbl/table.c: New register SUPPRESS_BOTTOM_REG. In
+	SECTION_RELEASE_MACRO, if there's not enough space before the next
+	trap to output the diversion, call T# ourselves, set
+	SUPPRESS_BOTTOM_REG to 1, spring the trap, then set
+	SUPPRESS_BOTTOM_REG back to 0.  In T#, do nothing if
+	SUPPRESS_BOTTOM_REG is non-zero.  In T#, always mark the current
+	vertical position and return to it before turning traps on again.
+	
+Thu Jul 26 02:54:32 1990  James Clark  (jjc at yquem)
+
+	* troff/node.c, troff/node.h: In classes derived from node,
+	replace prev_char_width method by last_char_node method.
+	* troff/env.c (environment::get_prev_char_width): Use
+	node::last_char_node rather than node::get_prev_char_width.
+
+	* Makefile: Added comment about -fno-inline on 68030-based
+	Apollos.
+
+	* troff/reg.c (number_format_to_ascii), eqn/delim.c (DELIM_TABLE_SIZE),
+	tty/tty.c (tty_font::load_tty_font), dvi/tfmtodit.c (main): Cast
+	expressions using sizeof to int.
+	* dvi/dvi.c (dvi_font::handle_x_command): Avoid long->int warnings.
+
+	* macros/tmac.e (TS):  Don't move @f back past the current
+	position.
+
+Wed Jul 25 09:11:08 1990  James Clark  (jjc at yquem)
+
+	* ps/ps.c (main): Buffer stderr.
+	* dvi/dvi.c (main): Likewise.
+	* tty/tty.c (main): Likewise.
+
+	* ps/ps.c (ps_printer::do_import): Improve error handling.
+
+	* troff/input.c (abort_request): Use asciify.
+
+	* driver/printer.h (printer::draw), driver/printer.c (printer::draw),
+	ps/ps.c (ps_printer::draw), dvi/dvi.c (dvi_printer::draw): Make
+	type of first argument int rather than char.  This works around a
+	bug on the 68030 based Apollo using g++ 1.37.1.
+
+	* tbl/table.h (class table): Add `keep' member.
+	* tbl/table.c (table::table): Initialize `keep'.
+	(table::add_vertical_rule): Set `keep' to 1.
+	(table::do_top): Only emit table keep macro is `keep' is non-zero.
+	(table::do_bottom): Likewise for table release macro.
+	(table::do_row): Emit section keep macro even if the row is 0.
+
+Tue Jul 24 08:35:07 1990  James Clark  (jjc at yquem)
+
+	* macros/tmac.e (@C): Preserve the font family across the change
+	in environments.
+
+Mon Jul 23 10:15:23 1990  James Clark  (jjc at yquem)
+
+	* lib/font.c: Initialize font::hor and font::vert to 1.
+	(font::load_desc): Check the values of font::hor and font::vert.
+
+	* lib/lib.h: Added definition of INT_DIGITS. Fix it so that it can
+	be included in a C compilation.
+	(iftoa): Use INT_DIGITS. Include lib.h.
+	(itoa): Likewise.
+	(as_string): Likewise.
+	* tbl/table.c: Removed definition of INT_DIGITS.
+	* eqn/box.c (box::top_level): Use INT_DIGITS + 1 instead of 12.
+	* troff/input.c (input_input_requests): Likewise.
+	* ps/ps.c (make_encoding_name): Likewise.
+	(ps_printer::set_style): Likewise.
+	(ps_output::put_number): Use 1 + INT_DIGITS + 1 instead	of 12.
+
+	* tty/devascii/R.proto: Map fm onto '.
+	* tty/devlatin1/R.proto: Likewise.
+
+Sat Jul 21 12:45:07 1990  James Clark  (jjc at yquem)
+
+	* tbl/table.c: Use ' instead of DELIMITER_CHAR in places where the
+	argument to \w is at a different input level.
+
+	* tbl/table.c (table::init_output): Define a new macro
+	REPEATED_VPT_MACRO, like vpt but if in a diversion also
+	transparently outputs itself.
+	(table::define_bottom_macro): Use REPEATED_VPT_MACRO instead of
+	vpt.
+	(table::do_row): Likewise.
+
+	* tbl/table.c (vertical_rule::print): Prefix the .sp -1 line with
+	TRANSPARENT_STRING_NAME.
+
+	* tbl/table.c (table::init_output): In the table release macro
+	print an error message and don't produce any output if after
+	issuing the need request the table still will not fit.  Also
+	remove the diversion after bringing it back.
+
+	* tbl/table.c (table::init_output): Define a new macro
+	REPEATED_MARK_MACRO, like mk but if in a diversion also
+	transparently outputs itself.
+	(table::do_row): Mark row_top_reg using	REPEATED_MARK_MACRO. This
+	is necessary because .TH might not call .T#.
+	(table::do_top): Likewise TOP_REG.
+	(table::define_bottom_macro): If TOP_REG is no longer valid, use
+	#T - DOUBLE_LINE_SEP rather than #T. This is necessary because the
+	table header might contain just the two top rules.
+
+Fri Jul 20 10:51:42 1990  James Clark  (jjc at yquem)
+
+	* troff/div.c: Implement new request `ptr' to print all traps.
+
+	* troff/env.c (init_env_requests): Implement `.tabs' reg with
+	init_string_env_reg.
+	* troff/env.c (class tab_reg): Deleted.
+
+Thu Jul 19 12:07:16 1990  James Clark  (jjc at yquem)
+
+	* troff/div.c: New number register .pn returns the number of the
+	next page as set by the pn request.
+
+	* macros/tmac.an: Redid headers and footers.  Number each manual
+	entry starting from 1 unless \nC is > 0, like Sun.  Added an
+	optional 5th argument to .TH which specifies the manual name and
+	appears in the center of the header.  Understand the X, P and D
+	registers like Sun.
+
+Wed Jul 18 10:23:31 1990  James Clark  (jjc at yquem)
+
+	* troff/env.c (init_env_requests): New number register `.lt' to
+	return the title length.
+
+	* troff/node.h (class transparent_dummy_node): New class.
+	* troff/node.c (class transparent_dummy_node): Provide member
+	functions. 
+	* troff/env.c (interrupt): Add a transparent_dummy_node, rather
+	than a dummy_node.
+
+	* troff/input.c (token::next): New escape sequence \).
+	* troff/input.c (get_copy): Recognize \) in copy mode.
+
+	* troff/input.c (input_stack::clear): New function.
+	* troff/input.c (exit_request): Use input_stack::clear.
+
+	* troff/token.h: Removed TOKEN_NO_PRINT_CHAR.
+	* troff/input.c (token::process): Removed case TOKEN_NO_PRINT_CHAR.
+
+	* troff/env.c: Move set_page_character to input.c.  Move
+	page_character to input.c also.
+	* troff/env.c (title): Split off the reading of the parts of the
+	title into read_title_parts.
+	* troff/input.c (read_title_parts): New function.  Check the
+	input_level when testing whether a token matches the delimiter.
+
+	* troff/input.c (exit_request): New function.
+	* troff/input.c (init_input_requests): Bind ex request to
+	exit_request rather than exit_groff.
+
+	* troff/input.c (exit_groff): Call tok.next() before
+	process_input_stack().
+
+Mon Jul 16 09:47:23 1990  James Clark  (jjc at yquem)
+
+	* troff/env.c: ifdef widow control support on WIDOW_CONTROL.
+	* troff/env.h: ditto.
+	* troff/input.c: ditto.
+
+	* troff/env.c (environment::is_empty): Test pending_lines.
+
+	* troff/env.c (environment::have_pending_lines): Removed.
+
+	* troff/input.c: Add request to flush pending lines from the
+	environment.
+
+	* troff/env.c, troff/env.h: Add automatic widow control feature.
+
+	* troff/input.c (exit_groff):  Do process_input_stack() after
+	do_break() but before setting exit_flag to 2.
+
+	* troff/input.c: Remove FLUSH_PENDING_LINES and
+	TOKEN_FLUSH_PENDING_LINES. Instead, flush pending lines from
+	environment after END_TRAP token seen, but only if there aren't
+	any more traps still unfinished.
+	* troff/token.h: Remove TOKEN_FLUSH_PENDING_LINES.
+
+Sun Jul 15 10:50:08 1990  James Clark  (jjc at yquem)
+
+	* troff/env.c: Rename the `retain_size' member of class
+	pending_output_line to `no_fill'.
+
+	* troff/env.c (title): When the line is output, make the
+	retain_size argument !fill.
+
+	* troff/node.h: Add `hyphenated' member to struct breakpoint.
+	* troff/node.c (space_node::get_breakpoints),
+	(dbreak_node::get_breakpoints):  Fill this in.
+	* troff/env.c:  Allow specification of maximum number of
+	consecutive hyphenated lines.
+
+	* troff/env.c (environment::is_empty): Add test for !current_tab.
+
+Sat Jul 14 11:23:01 1990  James Clark  (jjc at yquem)
+
+	* troff/env.c (environment::hyphenate_line): Don't completely give
+	up if the word is not to be hyphenated; continue so that breaks
+	can be made at break_char_node's.
+
+	* lib/lib.h: Only define INT_MAX if it's not already defined;
+	undef INT_MIN if it's already defined.
+
+	* Makefile: Make it easy to define CFRONT_ANSI_BUG.
+
+	* lib/lib.h: If CFRONT_ANSI_BUG is defined, cast INT_MIN to long.
+	This works around a bug in AT&T C++ 2.0 used with an ANSI C
+	compiler.
+	
+	* macros/tmac.an (an-header): Set no-space mode.
+
+	* macros/tmac.an (TH): Start a new page if necessary.
+
+	* Started using ChangeLog at version 0.4.
+
+Local Variables:
+version-control: never
+End:
