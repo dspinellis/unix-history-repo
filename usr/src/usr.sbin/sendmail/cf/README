@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.4 (Berkeley) %G%
+		@(#)README	8.5 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -768,6 +768,9 @@ confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
 confCW_FILE		/etc/sendmail.cw	Name of file used to get the
 					Fw	local additions to the $=w
 						class.
+confSMTP_MAILER		esmtp		-	The mailer name used when
+						SMTP connectivity is required.
+						Either "smtp" or "esmtp".
 
 
 +-----------+
