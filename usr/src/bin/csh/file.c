@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)file.c	1.7 (Berkeley from Hp Labs) %G%";
+static	char *sccsid = "@(#)file.c	1.8 (Berkeley from Hp Labs) %G%";
 #endif
 
 #ifdef FILEC
@@ -228,13 +228,14 @@ tilde(new, old)
 	for (p = person, o = &old[1]; *o && *o != '/'; *p++ = *o++)
 		;
 	*p = '\0';
-	if (person[0] == '\0')			/* then use current uid */
-		pw = getpwuid(getuid());
-	else
+	if (person[0] == '\0')
+		(void) strcpy(new, value("home"));
+	else {
 		pw = getpwnam(person);
-	if (pw == NULL)
-		return (NULL);
-	(void) strcpy(new, pw->pw_dir);
+		if (pw == NULL)
+			return (NULL);
+		(void) strcpy(new, pw->pw_dir);
+	}
 	(void) strcat(new, o);
 	return (new);
 }
