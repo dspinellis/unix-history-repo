@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.179 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.180 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3447,8 +3447,8 @@ ni_propval(keydir, keyprop, keyval, valprop, sepchar)
 # define MAXSYSLOGTRIES	100
 # undef syslog
 
-void
 # ifdef __STDC__
+void
 hard_syslog(int pri, char *msg, ...)
 # else
 hard_syslog(pri, msg, va_alist)
