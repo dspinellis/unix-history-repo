@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	1.4	%G%";
+static char	SccsId[] = "@(#)collect.c	1.5	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
@@ -96,7 +96,8 @@ maketemp()
 				if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
 					break;
 			}
-			ungetc(c, stdin);
+			if (c != EOF)
+				ungetc(c, stdin);
 		}
 
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
