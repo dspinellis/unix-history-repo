@@ -1,4 +1,4 @@
-/*	in_proto.c	6.3	84/02/15	*/
+/*	in_proto.c	6.4	84/07/31	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -61,18 +61,16 @@ struct protosw inetsw[] = {
   raw_usrreq,
   0,		0,		0,		0,
 },
+{ SOCK_RAW,	PF_INET,	IPPROTO_EGP,	PR_ATOMIC|PR_ADDR,
+  rip_input,	rip_output,	0,	0,
+  raw_usrreq,
+  0,		0,		0,		0,
+},
 { SOCK_RAW,	PF_INET,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
   icmp_input,	rip_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
 },
-#if NND > 0
-{ 0,		PF_INET,	IPPROTO_ND,	0,
-  nd_input,	0,		0,		0,
-  0,
-  nd_init,	0,		nd_slowtimo,	0,
-},
-#endif
 };
 
 struct domain inetdomain =

@@ -1,4 +1,4 @@
-/*	in.h	6.2	84/04/12	*/
+/*	in.h	6.3	84/07/31	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -11,6 +11,7 @@
 #define	IPPROTO_ICMP		1		/* control message protocol */
 #define	IPPROTO_GGP		2		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
+#define	IPPROTO_EGP		8		/* exterior gateway protocol */
 #define	IPPROTO_PUP		12		/* pup */
 #define	IPPROTO_UDP		17		/* user datagram protocol */
 #define	IPPROTO_ND		77		/* UNOFFICIAL net disk proto */
