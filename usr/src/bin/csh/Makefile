@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	5.18 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -6,7 +6,6 @@
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
 PROG=	csh
-SHAREDSTRINGS=1
 CFLAGS+=-DCSH -DTELL -DVFORK -DFILEC -I${.CURDIR}
 SRCS=	alloc.c sh.c sh.char.c sh.dir.c sh.dol.c sh.err.c sh.exec.c \
 	sh.exp.c sh.file.c sh.func.c sh.glob.c sh.hist.c sh.init.c \
@@ -20,17 +19,3 @@ MLINKS=	csh.1 limit.1 csh.1 alias.1 csh.1 bg.1 csh.1 dirs.1 csh.1 fg.1 \
 	csh.1 stop.1 csh.1 source.1
 
 .include <bsd.prog.mk>
-
-csh:	strings.o
-OBJS+=	strings.o
-
-# strings.o, sh.init.o, and sh.char.o are specially processed to be shared
-strings.o: ${OBJS:Nstrings.o}
-	xstr
-	${CC} ${.INCLUDES} ${CFLAGS} -c -R xs.c -o ${.TARGET}
-	@rm -f xs.c
-
-sh.char.o sh.init.o:
-	${CC} -E ${.INCLUDES} ${CFLAGS} ${.IMPSRC} | xstr -c -
-	@${CC} ${.INCLUDES} ${CFLAGS} -c -R x.c -o ${.TARGET}
-	@rm -f x.c
