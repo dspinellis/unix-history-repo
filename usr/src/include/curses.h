@@ -1,0 +1,1 @@
+../usr.lib/libcurses/curses.h
