@@ -1,4 +1,4 @@
-/*	main.c	1.8	(Berkeley) 83/09/23
+/*	main.c	1.9	(Berkeley) 83/10/07
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -55,8 +55,8 @@
  *					  inches
  *
  *	Troff number registers used:  g1 through g9.  g1 is the width of the
- *	picture, and g2 is the height.  g2-g6 save information, g8 and g9 are
- *	used for text processing and g7 is reserved.
+ *	picture, and g2 is the height.  g3, and g4, save information, g8
+ *	and g9 are used for text processing and g5-g7 are reserved.
  */
 
 
@@ -75,8 +75,8 @@ extern POINT *PTInit(), *PTMakePoint();
 
 
 #define GREMLIB		"/usr/local/gremlib/"
-#define DEVDIR		"/usr/lib/font/dev"
-#define DEFAULTDEV	"var"
+#define DEVDIR		"/usr/lib/font"
+#define DEFAULTDEV	"va"
 
 #define MAXINLINE	100		/* input line length */
 #define DEFTHICK	3		/* default thicknes */
@@ -90,7 +90,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.8	83/09/23";
+char	SccsId[] = "main.c	1.9	83/10/07";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -222,6 +222,7 @@ char **argv;
 			sscanf(operand(&argc, &argv),"%f", &mult);
 			scale *= mult;
 			break;
+		case 'P':
 		case 'T':	/* final output typesetter name */
 			printer = operand(&argc, &argv);
 			break;
@@ -321,7 +322,7 @@ char *name;
 	struct dev device;
 	char temp[60];
 
-	sprintf(temp, "%s%s/DESC.out", DEVDIR, name);
+	sprintf(temp, "%s/dev%s/DESC.out", DEVDIR, name);
 	if ((fin = open(temp, 0)) < 0) {
 	    fprintf(stderr, "can't open tables for %s\n", temp);
 	    exit(1);
@@ -467,9 +468,7 @@ int baseline;
 					/*   starts on left), and put out the */
 					/*   user's ".GS" line. */
 		printf(".nr g1 %d\n.nr g2 %d\n", xright-xleft, ybottom-ytop);
-		printf(".br\n%s", GScommand);
-		printf(".nr g3 \\n(.f\n.nr g4 \\n(.s\n");
-		printf(".nr g5 \\n(.v\n.nr g6 \\n(.u\n.nf\n.vs 0");
+		printf(".sp -1\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n", GScommand);
 
 		lastx = xleft;		/* note where we are, (upper left */
 		lastyline = lasty = ytop;	/* corner of the picture) */
@@ -487,8 +486,7 @@ int baseline;
 					/* then restore everything to the way */
 					/* it was before the .GS */
 		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
-		printf(".ft \\n(g3\n.ps \\n(g4\n");
-		printf(".vs \\n(g5u\n.if \\n(g6 .fi\n%s", inputline);
+		printf(".br\n.ft \\n(g3\n.ps \\n(g4\n%s", inputline);
 	    } else {
 		interpret(inputline);	/* take commands from the input file */
 	    }
