@@ -1,4 +1,4 @@
-/*	vm_meter.c	6.5	85/03/03	*/
+/*	vm_meter.c	6.6	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -137,11 +137,7 @@ loop:
 			/*
 			 * Kick out deadwood.
 			 */
-			(void) spl6();
 			rp->p_flag &= ~SLOAD;
-			if (rp->p_stat == SRUN)
-				remrq(rp);
-			(void) spl0();
 			(void) swapout(rp, rp->p_dsize, rp->p_ssize);
 			goto loop;
 		}
@@ -152,7 +148,7 @@ loop:
 	 * No one wants in, so nothing to do.
 	 */
 	if (outpri == -20000) {
-		(void) spl6();
+		(void) splhigh();
 		if (wantin) {
 			wantin = 0;
 			sleep((caddr_t)&lbolt, PSWP);
@@ -256,7 +252,7 @@ hardswap:
 	 * we kick the poor luser out.
 	 */
 	if (sleeper || desperate && p || deservin && inpri > maxslp) {
-		(void) spl6();
+		(void) splhigh();
 		p->p_flag &= ~SLOAD;
 		if (p->p_stat == SRUN)
 			remrq(p);
@@ -282,7 +278,7 @@ hardswap:
 	 * Want to swap someone in, but can't
 	 * so wait on runin.
 	 */
-	(void) spl6();
+	(void) splhigh();
 	runin++;
 	sleep((caddr_t)&runin, PSWP);
 	(void) spl0();
