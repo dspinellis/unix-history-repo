@@ -54,6 +54,7 @@ sys/kern_descrip.c	standard
 sys/kern_exec.c		standard
 sys/kern_exit.c		standard
 sys/kern_fork.c		standard
+sys/kern_malloc.c	standard
 sys/kern_mman.c		standard
 sys/kern_proc.c		standard
 sys/kern_prot.c		standard
