@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrusage.2	6.5 (Berkeley) %G%
+.\"	@(#)getrusage.2	6.6 (Berkeley) %G%
 .\"
 .TH GETRUSAGE 2 ""
 .UC 4
@@ -78,19 +78,17 @@ ru_ixrss
 an \*(lqintegral\*(rq value indicating the amount of memory used
 by the text segment
 that was also shared among other processes.  This value is expressed
-in units of kilobytes * seconds-of-execution and is calculated by
-summing the number of shared memory pages in use each time the internal
-system clock ticks and then averaging over 1 second intervals.
+in units of kilobytes * ticks-of-execution.
 .TP 15
 ru_idrss
 an integral value of the amount of unshared memory residing in the
 data segment of a process (expressed in units of
-kilobytes * seconds-of-execution).
+kilobytes * ticks-of-execution).
 .TP 15
 ru_isrss
 an integral value of the amount of unshared memory residing in the
 stack segment of a process (expressed in units of
-kilobytes * seconds-of-execution).
+kilobytes * ticks-of-execution).
 .TP 15
 ru_minflt
 the number of page faults serviced without any I/O activity; here
