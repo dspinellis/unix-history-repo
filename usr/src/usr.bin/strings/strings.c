@@ -1,7 +1,11 @@
-static char *sccsid = "@(#)strings.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)strings.c	4.2 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <a.out.h>
 #include <ctype.h>
+#include <sys/file.h>
 
 long	ftell();
 
@@ -59,15 +63,15 @@ main(argc, argv)
 			infile = argv[0];
 			argc--, argv++;
 		}
-		fseek(stdin, (long) 0, 0);
+		fseek(stdin, (long) 0, L_SET);
 		if (asdata ||
 		    fread((char *)&header, sizeof header, 1, stdin) != 1 || 
 		    N_BADMAG(header)) {
-			fseek(stdin, (long) 0, 0);
+			fseek(stdin, (long) 0, L_SET);
 			find((long) 100000000L);
 			continue;
 		}
-		fseek(stdin, (long) N_TXTOFF(header)+header.a_text, 1);
+		fseek(stdin, (long) N_TXTOFF(header)+header.a_text, L_SET);
 		find((long) header.a_data);
 	} while (argc > 0);
 }
