@@ -24,7 +24,10 @@ syscmd(rm -f TEMPFILE)dnl
 divert(-1)
 
 changecom()
-ifdef(`pushdef', `', `errprint(`You need a newer version of M4')include(NoSuchFile)')
+ifdef(`pushdef', `',
+	`errprint(`You need a newer version of M4, at least as new as
+System V or GNU')
+	include(NoSuchFile)')
 define(`PUSHDIVERT', `pushdef(`__D__', divnum)divert($1)')
 define(`POPDIVERT', `divert(__D__)popdef(`__D__')')
 define(`OSTYPE', `include(../ostype/$1.m4)')
@@ -52,9 +55,8 @@ define(`SITE', `ifelse(CONCAT($'2`, $3), SU,
 sinclude(../siteconfig/$1.m4)')
 define(`LOCAL_NAME', `PUSHDIVERT(5)CL$1
 POPDIVERT`'dnl')
-define(`DOIT', ifdef(`m4wrap', ``dnl'', ``include(`../m4/proto.m4')''))
 
 m4wrap(`include(`../m4/proto.m4')')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	2.19 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	2.20 (Berkeley) %G%')
