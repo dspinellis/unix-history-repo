@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.2";
+char id_libF77[] = "@(#)main.c	2.3	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -13,21 +13,20 @@ int argc;
 char **argv;
 char **arge;
 {
-int sigfdie(), sigidie(), sigqdie(), sigindie(), sigtdie();
-int sigildie(), sigedie(), sigbdie(), sigsdie();
+int sigdie();
 long int (*sigf)();
 
 xargc = argc;
 xargv = argv;
-signal(SIGFPE, sigfdie);	/* ignore underflow, enable overflow */
-signal(SIGIOT, sigidie);
-if(sigf=signal(SIGQUIT, sigqdie) != SIG_DFL) signal(SIGQUIT, sigf);
-if(sigf=signal(SIGINT, sigindie) != SIG_DFL) signal(SIGINT, sigf);
-if(sigf=signal(SIGTERM, sigtdie) != SIG_DFL) signal(SIGTERM, sigf);
-if(sigf=signal(SIGILL, sigildie) != SIG_DFL) signal(SIGILL, sigf);
-if(sigf=signal(SIGEMT, sigedie) != SIG_DFL) signal(SIGEMT, sigf);
-if(sigf=signal(SIGBUS, sigbdie) != SIG_DFL) signal(SIGBUS, sigf);
-if(sigf=signal(SIGSEGV, sigsdie) != SIG_DFL) signal(SIGSEGV, sigf);
+signal(SIGFPE, sigdie);	/* ignore underflow, enable overflow */
+signal(SIGIOT, sigdie);
+if(sigf=signal(SIGQUIT, sigdie) != SIG_DFL) signal(SIGQUIT, sigf);
+if(sigf=signal(SIGINT,  sigdie) != SIG_DFL) signal(SIGINT,  sigf);
+if(sigf=signal(SIGTERM, sigdie) != SIG_DFL) signal(SIGTERM, sigf);
+if(sigf=signal(SIGILL,  sigdie) != SIG_DFL) signal(SIGILL,  sigf);
+if(sigf=signal(SIGEMT,  sigdie) != SIG_DFL) signal(SIGEMT,  sigf);
+if(sigf=signal(SIGBUS,  sigdie) != SIG_DFL) signal(SIGBUS,  sigf);
+if(sigf=signal(SIGSEGV, sigdie) != SIG_DFL) signal(SIGSEGV, sigf);
 
 #ifdef pdp11
 	ldfps(01200); /* detect overflow as an exception */
@@ -38,77 +37,44 @@ MAIN__();
 f_exit();
 }
 
-
-static sigfdie()
-{
-sigdie("Floating Exception", 1);
-}
-
-
-static sigidie()
-{
-sigdie("IOT Trap", 1);
-}
-
-
-static sigqdie()
-{
-sigdie("Quit signal", 1);
-}
-
-
-static sigindie()
-{
-sigdie("Interrupt!", 0);
-}
+struct action {
+	char *mesg;
+	int   core;
+} sig_act[16] = {
+	{ 0, 0},			/* SIGHUP  */
+	{"Interrupt!", 0},		/* SIGINT  */
+	{"Quit!", 1},			/* SIGQUIT */
+	{"Illegal instruction", 1},	/* SIGILL  */
+	{ 0, 0},			/* SIGTRAP */
+	{"IOT Trap", 1},		/* SIGIOT  */
+	{"EMT trap", 1},		/* SIGEMT  */
+	{"Floating Point Exception", 1},/* SIGFPE  */
+	{ 0, 0},			/* SIGKILL */
+	{"Bus error", 1},		/* SIGBUS  */
+	{"Segmentation violation", 1},	/* SIGSEGV */
+	{ 0, 0},			/* SIGSYS  */
+	{ 0, 0},			/* SIGPIPE */
+	{ 0, 0},			/* SIGALRM */
+	{"Terminated", 0},		/* SIGTERM */
+	{ 0, 0},			/* unassigned */
+};
 
 
-static sigtdie()
-{
-sigdie("Killed", 0);
-}
-
-
-static sigildie()
-{
-sigdie("Illegal instruction", 1);
-}
-
-
-static sigedie()
-{
-sigdie("EMT trap", 1);
-}
-
-
-static sigbdie()
-{
-sigdie("Bus error", 1);
-}
-
-
-static sigsdie()
-{
-sigdie("Segmentation violation", 1);
-}
-
-
-static sigdie(s, core)
-register char *s;
-int core;
+sigdie(s)
+int s;
 {
 extern unit units[];
+register struct action *act = &sig_act[s-1];
 /* clear buffers, then print error message */
 f_exit();
-fprintf(units[STDERR].ufd, "%s\n", s);
+if (act->mesg) fprintf(units[STDERR].ufd, "%s\n", act->mesg);
 _cleanup();
 
-if(core)
+if(act->core)
 	{
 	/* now get a core */
-	signal(SIGIOT, 0);
+	signal(SIGIOT, SIG_DFL);
 	abort();
 	}
-else
-	exit(1);
+exit(s);
 }
