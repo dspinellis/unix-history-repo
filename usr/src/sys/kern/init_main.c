@@ -1,4 +1,4 @@
-/*	init_main.c	4.31	82/06/14	*/
+/*	init_main.c	4.32	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -96,6 +96,9 @@ main(firstaddr)
 	bhinit();
 	binit();
 	bswinit();
+#ifdef GPROF
+	kmstartup();
+#endif
 
 	fs = mountfs(rootdev, 0, 0);
 	if (fs == 0)
