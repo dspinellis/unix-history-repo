@@ -1,0 +1,66 @@
+
+
+
+MPCC(4)             UNIX Programmer's Manual		  MPCC(4)
+
+
+
+NNAAMMEE
+     mpcc - Multi protocol communications controller
+
+SSYYNNOOPPSSIISS
+     device mp0 at vba? csr 0xffff5000 mpintr mpdlintr
+     thru
+     device mp15 at vba? csr 0xffff5f00 mpintr mpdlintr
+
+DDEESSCCRRIIPPTTIIOONN
+     The MPCC has two different connecter panel styles.  The 16
+     port MPCC will support any combination of SYNC or ASYNC
+     ports.  The 32 port MPCC will only support ASYNC ports.
+     Each async line attached to the MPCC communications con-
+     troller behaves as described in _t_t_y(7) and may be set to run
+     at any of 16 speeds; see _t_t_y(7) for the encoding.
+
+     Each MPCC controller uses 2 consecutive entries in the SCB
+     for download/handshake, and command/response interrupts.
+     These entries start at 0xa0 for the 1st controllers
+     download/handshake interrupts and 0xa1 for the 1st controll-
+     ers command/response.
+
+     The MPCC controller requires a firmware download to be com-
+     pleted before it can function.  See _d_l_m_p_c_c(8) and _m_p_c_c_t_a_b(4)
+     for specific information on how to configure and download
+     the firmware into the MPCC controller.
+
+     A maximum of 16 MPCC communication controllers can be sup-
+     ported.
+
+FFIILLEESS
+     /dev/tty[A-P][0-f] for 16 port MPCC
+     /dev/tty[A-P][0-f,g-v] for 32 port MPCC
+
+SSEEEE AALLSSOO
+     tty(7)
+
+BBUUGGSS
+     As of the 4.3BSD-tahoe release, only 16 port mpcc's work,
+     and then only in async mode.  Attempting to reload firmware
+     on an mpcc with active ports may crash the system.  This
+     should be fixed within a short period of time; contact the
+     CSRG at University of California, Berkeley, for upgrade
+     information.
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/21/88           July 20, 1988                         1
+
+
+
