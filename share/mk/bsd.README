@@ -2,8 +2,7 @@
 
 This is the README file for the new make "include" files for the BSD
 source tree.  The files are installed in /usr/share/mk, and are, by
-convention, named with the suffix ".mk".  Each ".mk" file has a
-corresponding ".rd" file which is an explanation of the ".mk" file.
+convention, named with the suffix ".mk".
 
 Note, this file is not intended to replace reading through the .mk
 files for anything tricky.
@@ -66,7 +65,8 @@ environment or otherwise.  You probably don't want to touch this file.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 The include file <bsd.man.mk> handles installing manual pages and their
-links.
+links.  If you do not wish to install man pages, set the NOMAN environment
+variable.
 
 It has a single target:
 
@@ -86,7 +86,7 @@ MANMODE		Manual mode.
 MANSUBDIR	Subdirectory under the manual page section, i.e. "/vax"
 		or "/tahoe" for machine specific manual pages.
 
-MAN1 ... MAN8	The manual pages to be installed (use a .0 suffix).
+MAN1 ... MAN8	The manual pages to be installed (use a .1 - .8 suffix).
 
 MLINKS		List of manual page links (using a .1 - .8 suffix).  The
 		linked-to file must come first, the linked file second,
@@ -113,13 +113,13 @@ BINMODE		Binary mode.
 STRIP		The flag passed to the install program to cause the binary
 		to be stripped.  This is to be used when building your
 		own install script so that the entire system can be made
-		stripped/not-stripped using a single nob.
+		stripped/not-stripped using a single global variable
 
 COPY		The flag passed to the install program to cause the binary
 		to be copied rather than moved.  This is to be used when
-		building our own install script so that the entire system
-		can either be installed with copies, or with moves using
-		a single nob.
+		building your own install script so that the entire system
+		can either be installed with copies or moves using a single 
+		global variable.
 
 MANDIR		Base path for manual installation.
 
@@ -147,7 +147,7 @@ It has seven targets:
 		Errs, errs, mklog, and core.
 	cleandir:
 		remove all of the files removed by the target clean, as
-		well as .depend, tags, and any manual pages.
+		well as .depend, tags, obj, and any manual pages.
 	depend:
 		make the dependencies for the source files, and store
 		them in the file .depend.
@@ -193,8 +193,8 @@ LINKS		The list of binary links; should be full pathnames, the
 
 			LINKS=	${DESTDIR}/bin/test ${DESTDIR}/bin/[
 
-MAN1...MAN8	Manual pages (should end in .0).  If no MAN variable is
-		defined, "MAN1=${PROG}.0" is assumed.
+MAN1...MAN8	Manual pages (should end in .[1-8]).  If no MAN variable is
+		defined, "MAN1=${PROG}.1" is assumed.
 
 PROG		The name of the program to build.  If not supplied, nothing
 		is built.
@@ -251,7 +251,7 @@ To build foo from foo.c with a manual page foo.1, use:
 
 To build foo from foo.c with a manual page foo.2, add the line:
 
-	MAN2=	foo.0
+	MAN2=	foo.2
 
 If foo does not have a manual page at all, add the line:
 
@@ -292,7 +292,7 @@ LIBMODE		Library mode.
 
 LDADD		Additional loader objects.
 
-MAN1 ... MAN8	The manual pages to be installed (use a .0 suffix).
+MAN1 ... MAN8	The manual pages to be installed (use a .[1-8] suffix).
 
 SRCS		List of source files to build the library.  Suffix types
 		.s, .c, and .f are supported.  Note, .s files are preferred
@@ -303,6 +303,6 @@ The include file <bsd.lib.mk> includes the file named "../Makefile.inc"
 if it exists, as well as the include file <bsd.man.mk>.
 
 It has rules for building profiled objects; profiled libraries are
-built by default.
+built by default,  unless the NOPROFILE environment variable is set.
 
 Libraries are ranlib'd before installation.
