@@ -4,24 +4,26 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.2 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.3 (Berkeley) %G%
  */
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "domain.h"
-#include "protosw.h"
-#include "ioctl.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "net/if.h"
-#include "net/af.h"
-#include "net/radix.h"
+#include <net/if.h>
+#include <net/af.h>
+#include <net/radix.h>
 
-#include "netiso/iso.h"
-#include "tuba_addr.h"
+#include <netiso/iso.h>
+#include <netiso/tuba_addr.h>
 
 int	tuba_table_size;
 struct	tuba_cache **tuba_table;
@@ -33,7 +35,7 @@ tuba_timer()
 {
 	int s = splnet();
 	int	i;
-	register struct	tuba_cache **tc;
+	register struct	tuba_cache *tc;
 	long	timelimit = time.tv_sec - arpt_keep;
 
 	timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
@@ -47,7 +49,7 @@ tuba_timer()
 	splx(s);
 }
 
-tuba_timer_init()
+tuba_table_init()
 {
 	rn_inithead((void **)&tuba_tree, 40);
 	timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
@@ -58,9 +60,10 @@ tuba_lookup(isoa, flags, wait)
 	register struct iso_addr *isoa;
 	int flags;
 {
-	struct radix_node *rn;
+	struct radix_node *rn, *rn_match();
 	register struct tuba_cache *tc;
-	int dupentry = 0, sum_even = 0, sum_odd = 0, delta, i;
+	struct tuba_cache **new;
+	int dupentry = 0, sum_even = 0, sum_odd = 0, old_size, i;
 
 	if (rn = rn_match(tuba_tree, (caddr_t)isoa)) {
 		tc = (struct tuba_cache *)rn;
@@ -70,20 +73,17 @@ tuba_lookup(isoa, flags, wait)
 	if ((tc = (struct tuba_cache *)malloc(sizeof(*tc), M_RTABLE, wait))
 		== NULL)
 		return (0);
-	bzero((caddr_t)tc, sizeof (*tc))
+	bzero((caddr_t)tc, sizeof (*tc));
 	bcopy((caddr_t)isoa, (caddr_t)&tc->tc_addr, 1 + isoa->isoa_len);
 	rn_insert((caddr_t)&tc->tc_addr, tuba_tree, &dupentry, tc->tc_nodes);
 	if (dupentry)
 		panic("tuba_lookup 1");
 	tc->tc_time = time.tv_sec;
 	tc->tc_flags = flags;
-	sum_even = isoa->isoa_len;
-	for (i = sum_even; --i >= 0; ) {
-		delta = isoa->isoa_genaddr[i];
-		i & 1 ? sum_even += delta : sum_odd += delta;
-	}
+	for (i = isoa->isoa_len; --i >= 0; )
+		(i & 1 ? sum_even : sum_odd) += isoa->isoa_genaddr[i];
 	ICKSUM(tc->tc_sum_in, (sum_even << 8) + sum_odd);
-	ICKSUM(tc->tc_sum_out, tc->sum_in + 0x1fffe - tc->tc_index);
+	ICKSUM(tc->tc_sum_out, tc->tc_sum_in + 0x1fffe - tc->tc_index);
 	for (i = tuba_table_size; i > 0; i--)
 		if (tuba_table[i] == 0)
 			break;

@@ -4,40 +4,41 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_usrreq.c	7.2 (Berkeley) %G%
+ *	@(#)tuba_usrreq.c	7.3 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "errno.h"
-#include "stat.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/stat.h>
 
-#include "net/if.h"
-#include "net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "in_pcb.h"
-#include "ip_var.h"
-#include "tcp.h"
-#include "tcp_fsm.h"
-#include "tcp_seq.h"
-#include "tcp_timer.h"
-#include "tcp_var.h"
-#include "tcpip.h"
-#include "tcp_debug.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
 
-#include "netiso/argo_debug.h"
-#include "netiso/iso.h"
-#include "netiso/clnp.h"
-#include "netiso/iso_pcb.h"
-#include "netiso/iso_var.h"
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/clnp.h>
+#include <netiso/iso_pcb.h>
+#include <netiso/iso_var.h>
+#include <netiso/tuba_addr.h>
 /*
  * TCP protocol interface to socket abstraction.
  */
@@ -62,7 +63,7 @@ tuba_usrreq(so, req, m, nam, control)
 	int s;
 	int error = 0;
 	int ostate;
-	struct sockaddr_iso siso;
+	struct sockaddr_iso *siso;
 
 	if (req == PRU_CONTROL)
 		return (iso_control(so, (int)m, (caddr_t)nam,
@@ -80,11 +81,11 @@ tuba_usrreq(so, req, m, nam, control)
 		return (EINVAL);		/* XXX */
 	}
 	if (inp) {
-		tp = inpcbtotcpcb(inp);
+		tp = intotcpcb(inp);
 		if (tp == 0)
 			panic("tuba_usrreq");
 		ostate = tp->t_state;
-		isop = tp->tp_tuba_pcb;
+		isop = (struct isopcb *)tp->t_tuba_pcb;
 		if (isop == 0)
 			panic("tuba_usrreq 2");
 	} else
@@ -100,7 +101,7 @@ tuba_usrreq(so, req, m, nam, control)
 	case PRU_ATTACH:
 		if (error = iso_pcballoc(so, &tuba_isopcb))
 			break;
-		isop = (struct isopcb *) tp->tp_tuba_pcb = so->so_pcb;
+		isop = (struct isopcb *) tp->t_tuba_pcb = so->so_pcb;
 		if (error = tcp_userreq(so, req, m, nam, control)) {
 			isop->isop_socket = 0;
 			isop_detach(isop);
@@ -150,7 +151,7 @@ tuba_usrreq(so, req, m, nam, control)
 		    (error = iso_pcbbind(isop, (struct mbuf *)0)))
 			break;
 		bcopy(TSEL(isop->isop_laddr), &inp->inp_lport, 2);
-		if (cmd == PRU_LISTEN) {
+		if (req == PRU_LISTEN) {
 			tp->t_state = TCPS_LISTEN;
 			break;
 		}
@@ -173,7 +174,7 @@ tuba_usrreq(so, req, m, nam, control)
 			break;
 		}
 		bcopy(TSEL(isop->isop_faddr), &inp->inp_fport, 2);
-		if ((inp->inp_laddr.s_addr == 0 &&
+		if (inp->inp_laddr.s_addr == 0 &&
 		     (inp->inp_laddr.s_addr = 
 			    tuba_lookup(&isop->isop_laddr->siso_addr)) == 0)
 			goto unconnect;
