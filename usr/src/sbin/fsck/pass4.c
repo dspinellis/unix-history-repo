@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass4.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass4.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -82,7 +82,7 @@ pass4check(idesc)
 {
 	register struct dups *dlp;
 	int nfrags, res = KEEPON;
-	daddr_t blkno = idesc->id_blkno;
+	ufs_daddr_t blkno = idesc->id_blkno;
 
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
 		if (chkrange(blkno, 1)) {
