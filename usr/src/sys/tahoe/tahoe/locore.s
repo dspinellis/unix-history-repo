@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.2 (Berkeley) %G%
+ *	@(#)locore.s	7.3 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -603,7 +603,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(mmap	,vmmap		,1		)
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
-	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
+	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*MCLBYTES/NBPG+CLSIZE )
 	SYSMAP(camap	,cabase		,16*CLSIZE	 )
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
@@ -612,11 +612,19 @@ _/**/mname:	.globl	_/**/mname;		\
 	 * Enlarge kmempt as needed for bounce buffers allocated
 	 * by tahoe controllers.
 	 */
+#include "hd.h"
+#if NHD > 0
+				ADDMAP(	NHDC*(MAXPHYS/NBPG+CLSIZE) )
+#endif
 #include "dk.h"
+#if NDK > 0
 				ADDMAP(	NVD*(MAXPHYS/NBPG+CLSIZE) )
+#endif
 #include "yc.h"
 #include "yc.h"
+#if NYC > 0
 				ADDMAP(	NCY*(MAXPHYS/NBPG+CLSIZE) )
+#endif
 #include "mp.h"
 				ADDMAP(	NMP*14		)
 	SYSMAP(ecamap	,calimit	,0		)
@@ -630,8 +638,15 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(VMEMend	,vmemend	,0		)
 
 	SYSMAP(VBmap	,vbbase		,CLSIZE		)
+#if NHD > 0
+				ADDMAP(	NHDC*(MAXPHYS/NBPG+CLSIZE) )
+#endif
+#if NDK > 0
 				ADDMAP(	NVD*(MAXPHYS/NBPG+CLSIZE) )
+#endif
+#if NYC > 0
 				ADDMAP(	NCY*(MAXPHYS/NBPG+CLSIZE) )
+#endif
 				ADDMAP(	NMP*14		)
 	SYSMAP(eVBmap	,vbend		,0		)
 
