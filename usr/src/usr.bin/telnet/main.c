@@ -17,6 +17,8 @@ tninit()
     init_network();
     
     init_telnet();
+
+    init_sys();
 }
 
 

@@ -11,8 +11,8 @@
 #include "defines.h"
 #include "externs.h"
 
-Ring	netoring;
-char	netobuf[2*BUFSIZ];
+Ring	netoring, netiring;
+char	netobuf[2*BUFSIZ], netibuf[BUFSIZ];
 
 /*
  * Initialize internal network data structures.
@@ -21,6 +21,7 @@ char	netobuf[2*BUFSIZ];
 init_network()
 {
     ring_init(&netoring, netobuf, sizeof netobuf);
+    ring_init(&netiring, netibuf, sizeof netibuf);
     NetTrace = stdout;
 }
 

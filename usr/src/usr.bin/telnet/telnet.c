@@ -9,10 +9,6 @@ static char sccsid[] = "@(#)telnet.c	1.2 (Berkeley) 9/25/87";
 #endif	/* not lint */
 
 #include <sys/types.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-
-#include <netinet/in.h>
 
 #if	defined(unix)
 /* By the way, we need to include curses.h before telnet.h since,
@@ -23,17 +19,6 @@ static char sccsid[] = "@(#)telnet.c	1.2 (Berkeley) 9/25/87";
 #endif	/* defined(unix) */
 
 #include <arpa/telnet.h>
-
-#if	!defined(NOT43)
-#include <arpa/inet.h>
-#else	/* !defined(NOT43) */
-extern unsigned long inet_addr();
-extern char	*inet_ntoa();
-#endif	/* !defined(NOT43) */
-
-#include <ctype.h>
-#include <errno.h>
-#include <netdb.h>
 
 #if	defined(unix)
 #include <strings.h>
@@ -48,29 +33,8 @@ extern char	*inet_ntoa();
 #include "types.h"
 #include "general.h"
 
-
-void	setcommandmode(), command();	/* forward declarations */
-
-#ifndef	FD_SETSIZE
-/*
- * The following is defined just in case someone should want to run
- * this telnet on a 4.2 system.
- *
- */
-
-#define	FD_SET(n, p)	((p)->fds_bits[0] |= (1<<(n)))
-#define	FD_CLR(n, p)	((p)->fds_bits[0] &= ~(1<<(n)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[0] & (1<<(n)))
-#define FD_ZERO(p)	((p)->fds_bits[0] = 0)
-
-#endif
 
 #define	strip(x)	((x)&0x7f)
-#define min(x,y)	((x<y)? x:y)
-
-#if	defined(TN3270)
-static char	Ibuf[8*BUFSIZ], *Ifrontp, *Ibackp;
-#endif	/* defined(TN3270) */
 
 
 static char	subbuffer[SUBBUFSIZE],
@@ -81,13 +45,6 @@ static char	subbuffer[SUBBUFSIZE],
 				*subpointer++ = (c); \
 			}
 
-static char	sb_terminal[] = { IAC, SB,
-			TELOPT_TTYPE, TELQUAL_IS,
-			'I', 'B', 'M', '-', '3', '2', '7', '8', '-', '2',
-			IAC, SE };
-#define	SBTERMMODEL	13
-
-
 char	hisopts[256];
 char	myopts[256];
 
@@ -96,15 +53,8 @@ char	dont[] = { IAC, DONT, '%', 'c', 0 };
 char	will[] = { IAC, WILL, '%', 'c', 0 };
 char	wont[] = { IAC, WONT, '%', 'c', 0 };
 
-static Ring	netiring, ttyiring;
-static char	netibuf[BUFSIZ];
-static char	ttyibuf[BUFSIZ];
-static fd_set ibits, obits, xbits;
-
-
 int
 	connected,
-	net,
 	showoptions,
 	In3270,		/* Are we in 3270 mode? */
 	ISend,		/* trying to send network data in */
@@ -114,7 +64,16 @@ int
 	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
 	noasynch = 0,	/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
-	telnetport = 1;
+	telnetport = 1,
+	SYNCHing,	/* we are in TELNET SYNCH mode */
+	flushout,	/* flush output */
+	autoflush = 0,	/* flush output when interrupting? */
+	autosynch,	/* send interrupt characters with SYNCH? */
+	localchars,	/* we recognize interrupt/quit */
+	donelclchars,	/* the user has set "localchars" */
+	donebinarytoggle,	/* the user has put us in binary */
+	dontlecho,	/* do we suppress local echoing right now? */
+	globalmode;
 
 #define	CONTROL(x)	((x)&0x1f)		/* CTRL(x) is not portable */
 
@@ -122,31 +81,6 @@ char
 	*prompt = 0,
 	escape,
 	echoc;
-
-int
-	SYNCHing,		/* we are in TELNET SYNCH mode */
-	flushout,		/* flush output */
-	autoflush = 0,		/* flush output when interrupting? */
-	autosynch,		/* send interrupt characters with SYNCH? */
-	localchars,		/* we recognize interrupt/quit */
-	donelclchars,		/* the user has set "localchars" */
-	donebinarytoggle,	/* the user has put us in binary */
-	dontlecho,		/* do we suppress local echoing right now? */
-	globalmode;
-
-/*	The following are some tn3270 specific flags */
-#if	defined(TN3270)
-
-static int
-	Sent3270TerminalType;	/* Have we said we are a 3270? */
-
-#endif	/* defined(TN3270) */
-int
-
-	tout,			/* Output file descriptor */
-	tin;			/* Input file descriptor */
-
-
 
 /*
  * Telnet receiver states for fsm
@@ -196,8 +130,6 @@ init_telnet()
     SB_CLEAR();
     ClearArray(hisopts);
     ClearArray(myopts);
-    ring_init(&netiring, netibuf, sizeof netibuf);
-    ring_init(&ttyiring, ttyibuf, sizeof ttyibuf);
 
     connected = net = In3270 = ISend = donebinarytoggle = 0;
     telnetport = 0;
@@ -207,8 +139,6 @@ init_telnet()
 #endif	/* defined(unix) && defined(TN3270) */
 
     SYNCHing = 0;
-
-    errno = 0;
 
     /* Don't change NetTrace */
 
@@ -362,52 +292,10 @@ suboption()
 	    int len;
 
 #if	defined(TN3270)
-	    /*
-	     * Try to send a 3270 type terminal name.  Decide which one based
-	     * on the format of our screen, and (in the future) color
-	     * capaiblities.
-	     */
-#if	defined(unix)
-	    if (initscr() != ERR) {	/* Initialize curses to get line size */
-		MaxNumberLines = LINES;
-		MaxNumberColumns = COLS;
-	    }
-#else	/* defined(unix) */
-	    InitTerminal();
-#endif	/* defined(unix) */
-	    if ((MaxNumberLines >= 24) && (MaxNumberColumns >= 80)) {
-		Sent3270TerminalType = 1;
-		if ((MaxNumberLines >= 27) && (MaxNumberColumns >= 132)) {
-		    MaxNumberLines = 27;
-		    MaxNumberColumns = 132;
-		    sb_terminal[SBTERMMODEL] = '5';
-		} else if (MaxNumberLines >= 43) {
-		    MaxNumberLines = 43;
-		    MaxNumberColumns = 80;
-		    sb_terminal[SBTERMMODEL] = '4';
-		} else if (MaxNumberLines >= 32) {
-		    MaxNumberLines = 32;
-		    MaxNumberColumns = 80;
-		    sb_terminal[SBTERMMODEL] = '3';
-		} else {
-		    MaxNumberLines = 24;
-		    MaxNumberColumns = 80;
-		    sb_terminal[SBTERMMODEL] = '2';
-		}
-		NumberLines = 24;		/* before we start out... */
-		NumberColumns = 80;
-		ScreenSize = NumberLines*NumberColumns;
-		if ((MaxNumberLines*MaxNumberColumns) > MAXSCREENSIZE) {
-		    ExitString("Programming error:  MAXSCREENSIZE too small.\n",
-									1);
-		    /*NOTREACHED*/
-		}
-		printsub(">", sb_terminal+2, sizeof sb_terminal-2);
-		ring_supply_data(&netoring, sb_terminal, sizeof sb_terminal);
+	    if (tn3270_ttype()) {
 		return;
 	    }
 #endif	/* defined(TN3270) */
-
 	    name = getenv("TERM");
 	    if ((name == 0) || ((len = strlen(name)) > 40)) {
 		name = "UNKNOWN";
@@ -430,30 +318,6 @@ suboption()
 	break;
     }
 }
-
-#if	defined(TN3270)
-static void
-SetIn3270()
-{
-    if (Sent3270TerminalType && myopts[TELOPT_BINARY]
-			    && hisopts[TELOPT_BINARY] && !donebinarytoggle) {
-	if (!In3270) {
-	    In3270 = 1;
-	    Init3270();		/* Initialize 3270 functions */
-	    /* initialize terminal key mapping */
-	    InitTerminal();	/* Start terminal going */
-	    setconnmode();
-	}
-    } else {
-	if (In3270) {
-	    StopScreen(1);
-	    In3270 = 0;
-	    Stop3270();		/* Tell 3270 we aren't here anymore */
-	    setconnmode();
-	}
-    }
-}
-#endif	/* defined(TN3270) */
 
 
 static int
@@ -786,54 +650,6 @@ Ring	*ring;			/* Input ring */
     return returnValue||count;		/* Non-zero if we did anything */
 }
 
-#if	defined(TN3270)
-static void
-SetForExit()
-{
-    setconnmode();
-    if (In3270) {
-	Finish3270();
-    }
-    setcommandmode();
-    fflush(stdout);
-    fflush(stderr);
-    if (In3270) {
-	StopScreen(1);
-    }
-    setconnmode();
-    setcommandmode();
-}
-
-static void
-Exit(returnCode)
-int returnCode;
-{
-    SetForExit();
-    exit(returnCode);
-}
-
-void
-ExitString(string, returnCode)
-char *string;
-int returnCode;
-{
-    SetForExit();
-    fwrite(string, 1, strlen(string), stderr);
-    exit(returnCode);
-}
-
-void
-ExitPerror(string, returnCode)
-char *string;
-int returnCode;
-{
-    SetForExit();
-    perror(string);
-    exit(returnCode);
-}
-#endif	/* defined(TN3270) */
-
-
 /*
  * Scheduler()
  *
@@ -854,200 +670,45 @@ int	block;			/* should we block in the select ? */
 		 * and therefore probably won't be called to block next
 		 * time (TN3270 mode only).
 		 */
-    int returnValue = 0;
-    static struct timeval TimeValue = { 0 };
+    int returnValue;
+    int netin, netout, netex, ttyin, ttyout;
 
-    if ((!MODE_LINE(globalmode) || flushline) && NETBYTES()) {
-	FD_SET(net, &obits);
-    } 
-#if	!defined(MSDOS)
-    if (TTYBYTES()) {
-	FD_SET(tout, &obits);
-    }
+    /* Decide which rings should be processed */
+
+    netout = ring_full_count(&netoring) &&
+	    (!MODE_LINE(globalmode) || flushline || myopts[TELOPT_BINARY]);
+    ttyout = ring_full_count(&ttyoring);
+
 #if	defined(TN3270)
-    if ((tcc == 0) && NETROOM() && (shell_active == 0)) {
-	FD_SET(tin, &ibits);
-    }
+    ttyin = ring_empty_count(&ttyiring) && (shell_active == 0);
 #else	/* defined(TN3270) */
-    if (ring_empty_count(&netiring) && NETROOM()) {
-	FD_SET(tin, &ibits);
-    }
+    ttyin = ring_empty_count(&ttyiring);
 #endif	/* defined(TN3270) */
-#endif	/* !defined(MSDOS) */
-#   if !defined(TN3270)
-    if (TTYROOM()) {
-	FD_SET(net, &ibits);
-    }
+
+#if	defined(TN3270)
+    netin = ring_empty_count(&netiring);
 #   else /* !defined(TN3270) */
-    if (!ISend && TTYROOM()) {
-	FD_SET(net, &ibits);
-    }
+    netin = !ISend && ring_empty_count(&netiring);
 #   endif /* !defined(TN3270) */
-    if (!SYNCHing) {
-	FD_SET(net, &xbits);
-    }
+
+    netex = !SYNCHing;
+
+    /* If we have seen a signal recently, reset things */
 #   if defined(TN3270) && defined(unix)
     if (HaveInput) {
 	HaveInput = 0;
 	signal(SIGIO, inputAvailable);
     }
 #endif	/* defined(TN3270) && defined(unix) */
-    if ((c = select(16, &ibits, &obits, &xbits,
-			block? (struct timeval *)0 : &TimeValue)) < 0) {
-	if (c == -1) {
-		    /*
-		     * we can get EINTR if we are in line mode,
-		     * and the user does an escape (TSTP), or
-		     * some other signal generator.
-		     */
-	    if (errno == EINTR) {
-		return 0;
-	    }
-#	    if defined(TN3270)
-		    /*
-		     * we can get EBADF if we were in transparent
-		     * mode, and the transcom process died.
-		    */
-	    if (errno == EBADF) {
-			/*
-			 * zero the bits (even though kernel does it)
-			 * to make sure we are selecting on the right
-			 * ones.
-			*/
-		FD_ZERO(&ibits);
-		FD_ZERO(&obits);
-		FD_ZERO(&xbits);
-		return 0;
-	    }
-#	    endif /* defined(TN3270) */
-		    /* I don't like this, does it ever happen? */
-	    printf("sleep(5) from telnet, after select\r\n");
-#if	defined(unix)
-	    sleep(5);
-#endif	/* defined(unix) */
-	}
-	return 0;
-    }
 
-    /*
-     * Any urgent data?
-     */
-    if (FD_ISSET(net, &xbits)) {
-	FD_CLR(net, &xbits);
-	SYNCHing = 1;
-	ttyflush(1);	/* flush already enqueued data */
-    }
+    /* Call to system code to process rings */
 
-    /*
-     * Something to read from the network...
-     */
-    if (FD_ISSET(net, &ibits)) {
-	int canread;
+    returnValue = process_rings(netin, netout, netex, ttyin, ttyout, !block);
 
-	FD_CLR(net, &ibits);
-	canread = ring_empty_consecutive(&netiring);
-#if	!defined(SO_OOBINLINE)
-	    /*
-	     * In 4.2 (and some early 4.3) systems, the
-	     * OOB indication and data handling in the kernel
-	     * is such that if two separate TCP Urgent requests
-	     * come in, one byte of TCP data will be overlaid.
-	     * This is fatal for Telnet, but we try to live
-	     * with it.
-	     *
-	     * In addition, in 4.2 (and...), a special protocol
-	     * is needed to pick up the TCP Urgent data in
-	     * the correct sequence.
-	     *
-	     * What we do is:  if we think we are in urgent
-	     * mode, we look to see if we are "at the mark".
-	     * If we are, we do an OOB receive.  If we run
-	     * this twice, we will do the OOB receive twice,
-	     * but the second will fail, since the second
-	     * time we were "at the mark", but there wasn't
-	     * any data there (the kernel doesn't reset
-	     * "at the mark" until we do a normal read).
-	     * Once we've read the OOB data, we go ahead
-	     * and do normal reads.
-	     *
-	     * There is also another problem, which is that
-	     * since the OOB byte we read doesn't put us
-	     * out of OOB state, and since that byte is most
-	     * likely the TELNET DM (data mark), we would
-	     * stay in the TELNET SYNCH (SYNCHing) state.
-	     * So, clocks to the rescue.  If we've "just"
-	     * received a DM, then we test for the
-	     * presence of OOB data when the receive OOB
-	     * fails (and AFTER we did the normal mode read
-	     * to clear "at the mark").
-	     */
-	if (SYNCHing) {
-	    int atmark;
+    /* Now, look at the input rings, looking for work to do. */
 
-	    ioctl(net, SIOCATMARK, (char *)&atmark);
-	    if (atmark) {
-		c = recv(net, sbp+scc, canread, MSG_OOB);
-		if ((c == -1) && (errno == EINVAL)) {
-		    c = recv(net, sbp+scc, canread, 0);
-		    if (clocks.didnetreceive < clocks.gotDM) {
-			SYNCHing = stilloob(net);
-		    }
-		}
-	    } else {
-		c = recv(net, sbp+scc, canread, 0);
-	    }
-	} else {
-	    c = recv(net, sbp+scc, canread, 0);
-	}
-	settimer(didnetreceive);
-#else	/* !defined(SO_OOBINLINE) */
-	c = recv(net, netiring.supply, canread, 0);
-#endif	/* !defined(SO_OOBINLINE) */
-	if (c < 0 && errno == EWOULDBLOCK) {
-	    c = 0;
-	} else if (c <= 0) {
-	    return -1;
-	}
-	if (netdata) {
-	    Dump('<', netiring.supply, c);
-	}
-	ring_supplied(&netiring, c);
-	returnValue = 1;
-    }
-
-    /*
-     * Something to read from the tty...
-     */
-#if	defined(MSDOS)
-    if ((tcc == 0) && NETROOM() && (shell_active == 0) && TerminalCanRead())
-#else	/* defined(MSDOS) */
-    if (FD_ISSET(tin, &ibits))
-#endif	/* defined(MSDOS) */
-				    {
-	FD_CLR(tin, &ibits);
-	c = TerminalRead(tin, ttyiring.supply,
-			ring_empty_consecutive(&ttyiring));
-	if (c < 0 && errno == EWOULDBLOCK) {
-	    c = 0;
-	} else {
-#if	defined(unix)
-	    /* EOF detection for line mode!!!! */
-	    if (c == 0 && MODE_LOCAL_CHARS(globalmode)) {
-			/* must be an EOF... */
-		*ttyiring.supply = termEofChar;
-		c = 1;
-	    }
-#endif	/* defined(unix) */
-	    if (c <= 0) {
-		return -1;
-	    }
-	}
-	ring_supplied(&ttyiring, c);
-	returnValue = 1;		/* did something useful */
-    }
-
-#   if defined(TN3270)
     if (ring_full_count(&ttyiring)) {
+#   if defined(TN3270)
 	if (In3270) {
 	    c = DataFromTerminal(ttyiring.send,
 					ring_full_consecutive(&ttyiring));
@@ -1060,29 +721,15 @@ int	block;			/* should we block in the select ? */
 	    returnValue |= telsnd(&ttyiring);
 #   if defined(TN3270)
 	}
-    }
 #   endif /* defined(TN3270) */
-
-    if ((!MODE_LINE(globalmode) || flushline || myopts[TELOPT_BINARY]) &&
-	FD_ISSET(net, &obits) && (NETBYTES() > 0)) {
-	FD_CLR(net, &obits);
-	returnValue = netflush();
     }
+
     if (ring_full_count(&netiring)) {
 #	if !defined(TN3270)
 	returnValue |= telrcv();
 #	else /* !defined(TN3270) */
 	returnValue = Push3270();
 #	endif /* !defined(TN3270) */
-    }
-#if	defined(MSDOS)
-    if (TTYBYTES())
-#else	/* defined(MSDOS) */
-    if (FD_ISSET(tout, &obits) && (TTYBYTES() > 0))
-#endif	/* defined(MSDOS) */
-						    {
-	FD_CLR(tout, &obits);
-	returnValue = ttyflush(SYNCHing|flushout);
     }
     return returnValue;
 }
@@ -1093,36 +740,7 @@ int	block;			/* should we block in the select ? */
 void
 telnet()
 {
-#if	defined(MSDOS)
-#define	SCHED_BLOCK	0		/* Don't block in MSDOS */
-#else	/* defined(MSDOS) */
-#define	SCHED_BLOCK	1
-#endif	/* defined(MSDOS) */
-
-#if	defined(TN3270) && defined(unix)
-    int myPid;
-#endif	/* defined(TN3270) */
-
-    tout = fileno(stdout);
-    tin = fileno(stdin);
-    setconnmode();
-    FD_ZERO(&ibits);
-    FD_ZERO(&obits);
-    FD_ZERO(&xbits);
-
-    NetNonblockingIO(net, 1);
-
-#if	defined(TN3270)
-    if (noasynch == 0) {			/* DBX can't handle! */
-	NetSigIO(net, 1);
-    }
-    NetSetPgrp(net);
-#endif	/* defined(TN3270) */
-
-
-#if	defined(SO_OOBINLINE) && !defined(MSDOS)
-    SetSockOpt(net, SOL_SOCKET, SO_OOBINLINE, 1);
-#endif	/* defined(SO_OOBINLINE) && !defined(MSDOS) */
+    sys_telnet_init();
 
 #   if !defined(TN3270)
     if (telnetport) {
@@ -1146,7 +764,7 @@ telnet()
 	    }
 	}
 
-	if (Scheduler(SCHED_BLOCK) == -1) {
+	if (Scheduler(1) == -1) {
 	    setcommandmode();
 	    return;
 	}
@@ -1156,7 +774,7 @@ telnet()
 	int schedValue;
 
 	while (!In3270 && !shell_active) {
-	    if (Scheduler(SCHED_BLOCK) == -1) {
+	    if (Scheduler(1) == -1) {
 		setcommandmode();
 		return;
 	    }
@@ -1183,7 +801,7 @@ telnet()
 	    }
 	}
 	if (schedValue && (shell_active == 0)) {
-	    if (Scheduler(SCHED_BLOCK) == -1) {
+	    if (Scheduler(1) == -1) {
 		setcommandmode();
 		return;
 	    }
