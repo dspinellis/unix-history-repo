@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.20 (Berkeley) %G%
+		@(#)README	8.21 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -948,8 +948,8 @@ confMIN_FREE_BLOCKS	4		Ob	Minimum number of free blocks
 						SMTP mail.
 confBLANK_SUB		.		OB	Blank (space) substitution
 						character.
-confCON_EXPENSIVE	False		Oc	Connect immediately to
-						mailers marked expensive?
+confCON_EXPENSIVE	False		Oc	Avoid connecting immediately
+						to mailers marked expensive?
 confCHECKPOINT_INTERVAL	10		OC	Checkpoint queue files
 						every N recipients.
 confDELIVERY_MODE	background	Od	Default delivery mode.
