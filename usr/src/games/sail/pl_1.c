@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.14 83/10/28";
+static	char *sccsid = "@(#)pl_1.c	1.15 83/10/28";
 #endif
 
 #include "player.h"
@@ -96,7 +96,12 @@ reprint:
 			exit(0);
 		}
 		sp->file->stern = nat[sp->nationality]++;
+		sp->file->dir = sp->shipdir;
+		sp->file->row = sp->shiprow;
+		sp->file->col = sp->shipcol;
 	}
+	windspeed = cc->windspeed;
+	winddir = cc->winddir;
 
 	if (active) {
 		(void) puts("Synchronizing with the other players...");
@@ -209,22 +214,13 @@ reprint:
 		char num[10];
 		(void) sprintf(num, "%d", game);
 		if (!fork()) {
-			if (debug)
-				execl(DEBUGDRIVER, DRIVERNAME, num, 0);
-			else
-				execl(DRIVER, DRIVERNAME, num, 0);
-			perror(DRIVER);
+			execl(DRIVER1, DRIVERNAME, num, 0);
+			execl(DRIVER2, DRIVERNAME, num, 0);
+			execl(DRIVER3, DRIVERNAME, num, 0);
+			perror(DRIVERNAME);
 			exit(1);
 		}
 	}
-
-	foreachship(sp) {
-		sp->file->dir = sp->shipdir;
-		sp->file->row = sp->shiprow;
-		sp->file->col = sp->shipcol;
-	}
-	windspeed = cc->windspeed;
-	winddir = cc->winddir;
 
 	initscreen();
 
