@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.12 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -323,8 +323,10 @@ lfs_segwait(p, uap, retval)
 			return (error);
 		if (itimerfix(&atv))
 			return (EINVAL);
-		s = splhigh(); timevaladd(&atv, &time); splx(s);
+		s = splhigh();
+		timevaladd(&atv, &time);
 		timeout = hzto(&atv);
+		splx(s);
 	} else
 		timeout = 0;
 
