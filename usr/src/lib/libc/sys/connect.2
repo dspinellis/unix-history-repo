@@ -1,0 +1,87 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)connect.2	5.1 (Berkeley) %G%
+.\"
+.TH CONNECT 2 "7 July 1983"
+.UC 5
+.SH NAME
+connect \- initiate a connection on a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+connect(s, name, namelen)
+int s;
+struct sockaddr *name;
+int namelen;
+.fi
+.SH DESCRIPTION
+The parameter
+.I s
+is a socket.
+If it is of type SOCK_DGRAM,
+then this call permanently specifies the peer to which
+datagrams are to be sent;
+if it is of type SOCK_STREAM,
+then this call attempts to make a connection to
+another socket.
+The other socket is specified by
+.I name
+which is an address in the communications space of the socket.
+Each communications space interprets the
+.I name
+parameter in its own way.
+.SH "RETURN VALUE
+If the connection or binding succeeds, then 0 is returned.
+Otherwise a \-1 is returned, and a more specific error
+code is stored in \fIerrno\fP.
+.SH "ERRORS
+The call fails if:
+.TP 20
+[EBADF]
+.I S
+is not a valid descriptor.
+.TP 20
+[ENOTSOCK]
+.I S
+is a descriptor for a file, not a socket.
+.TP 20
+[EADDRNOTAVAIL]
+The specified address is not available on this machine.
+.TP 20
+[EAFNOSUPPORT]
+Addresses in the specified address family cannot be used with this socket.
+.TP 20
+[EISCONN]
+The socket is already connected.
+.TP 20
+[ETIMEDOUT]
+Connection establishment timed out without establishing a connection.
+.TP 20
+[ECONNREFUSED]
+The attempt to connect was forcefully rejected.
+.TP 20
+[ENETUNREACH]
+The network isn't reachable from this host.
+.TP 20
+[EADDRINUSE]
+The address is already in use.
+.TP 20
+[EFAULT]
+The \fIname\fP parameter specifies an area outside
+the process address space.
+.TP 20
+[EWOULDBLOCK]
+The socket is non-blocking and the
+and the connection cannot
+be completed immediately.
+It is possible to
+.IR select (2)
+the socket while it is connecting by selecting it for writing.
+.SH SEE ALSO
+accept(2), select(2), socket(2), getsockname(2)
