@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.43 (Berkeley) %G%
+.\"	@(#)contrib	5.44 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -327,6 +327,7 @@ tetris(6)	Darren F. Provine
 timed(8)	Riccardo Gusella
 timed(8)	Stefano Zatti
 tn3270(1)	Gregory Minshall
+tr(1)		Igor Belchinskiy
 traceroute(8)	Van Jacobson
 trek(6)	Eric Allman
 tset(1)	Eric Allman
