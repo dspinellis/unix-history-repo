@@ -5,94 +5,12 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)mkfs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.1 (Berkeley) %G%";
 #endif not lint
 
 /*
  * make file system for cylinder-group style file systems
- *
- * usage:
- *    mkfs -N special size [ nsect ntrak bsize fsize cpg minfree rps nbpi opt ]
  */
-
-/*
- * The following constants set the defaults used for the number
- * of sectors (fs_nsect), and number of tracks (fs_ntrak).
- */
-#define DFLNSECT	32
-#define DFLNTRAK	16
-
-/*
- * The following two constants set the default block and fragment sizes.
- * Both constants must be a power of 2 and meet the following constraints:
- *	MINBSIZE <= DESBLKSIZE <= MAXBSIZE
- *	DEV_BSIZE <= DESFRAGSIZE <= DESBLKSIZE
- *	DESBLKSIZE / DESFRAGSIZE <= 8
- */
-#define DESBLKSIZE	8192
-#define DESFRAGSIZE	1024
-
-/*
- * Cylinder groups may have up to MAXCPG cylinders. The actual
- * number used depends upon how much information can be stored
- * on a single cylinder. The default is to used 16 cylinders
- * per group.
- */
-#define	DESCPG		16	/* desired fs_cpg */
-
-/*
- * MINFREE gives the minimum acceptable percentage of file system
- * blocks which may be free. If the freelist drops below this level
- * only the superuser may continue to allocate blocks. This may
- * be set to 0 if no reserve of free blocks is deemed necessary,
- * however throughput drops by fifty percent if the file system
- * is run at between 90% and 100% full; thus the default value of
- * fs_minfree is 10%. With 10% free space, fragmentation is not a
- * problem, so we choose to optimize for time.
- */
-#define MINFREE		10
-#define DEFAULTOPT	FS_OPTTIME
-
-/*
- * ROTDELAY gives the minimum number of milliseconds to initiate
- * another disk transfer on the same cylinder. It is used in
- * determining the rotationally optimal layout for disk blocks
- * within a file; the default of fs_rotdelay is 4ms.
- */
-#define ROTDELAY	4
-
-/*
- * MAXCONTIG sets the default for the maximum number of blocks
- * that may be allocated sequentially. Since UNIX drivers are
- * not capable of scheduling multi-block transfers, this defaults
- * to 1 (ie no contiguous blocks are allocated).
- */
-#define MAXCONTIG	1
-
-/*
- * MAXBLKPG determines the maximum number of data blocks which are
- * placed in a single cylinder group. This is currently a function
- * of the block and fragment size of the file system.
- */
-#define MAXBLKPG(fs)	((fs)->fs_fsize / sizeof(daddr_t))
-
-/*
- * Each file system has a number of inodes statically allocated.
- * We allocate one inode slot per NBPI bytes, expecting this
- * to be far more than we will ever need.
- */
-#define	NBPI		2048
-
-/*
- * Disks are assumed to rotate at 60HZ, unless otherwise specified.
- */
-#define	DEFHZ		60
 
 #ifndef STANDALONE
 #include <stdio.h>
@@ -103,10 +21,37 @@ static char sccsid[] = "@(#)mkfs.c	5.3 (Berkeley) %G%";
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/dir.h>
+#include <sys/disklabel.h>
+
+/*
+ * MAXBLKPG determines the maximum number of data blocks which are
+ * placed in a single cylinder group. This is currently a function
+ * of the block and fragment size of the file system.
+ */
+#define MAXBLKPG(fs)	((fs)->fs_fsize / sizeof(daddr_t))
 
 #define UMASK		0755
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
+
+/*
+ * variables set up by front end.
+ */
+int	Nflag;			/* run mkfs without writing file system */
+int	fssize;			/* file system size */
+int	ntracks;		/* # tracks/cylinder */
+int	nsectors;		/* # sectors/track */
+int     secpercyl;              /* sectors per cylinder */
+int	sectorsize;		/* bytes/sector */
+int	rpm;			/* revolutions/minute of drive */
+int	fsize;			/* fragment size */
+int	bsize;			/* block size */
+int	cpg;			/* cylinders/cylinder group */
+int	minfree;		/* free space threshold */
+int	opt;			/* optimization preference (space or time) */
+int	density;		/* number of bytes per inode */
+int	maxcontig;		/* max contiguous blocks to allocate */
+int	rotdelay;		/* rotational delay between blocks */
 
 union {
 	struct fs fs;
@@ -123,103 +68,44 @@ union {
 
 struct	dinode zino[MAXIPG];
 
-char	*fsys;
+int	fsi, fso;
 time_t	utime;
-int	fsi;
-int	fso;
-int	Nflag;
 daddr_t	alloc();
 
-main(argc, argv)
-	int argc;
-	char *argv[];
+mkfs(pp, fsys, fi, fo)
+	struct partition *pp;
+	char *fsys;
+	int fi, fo;
 {
-	long cylno, rpos, blk, i, j, inos, fssize, warn = 0;
+	long cylno, rpos, blk, i, j, warn = 0;
 
 #ifndef STANDALONE
-	argc--, argv++;
-	if (argv[0][0] == '-') {
-		switch (argv[0][1]) {
-		case 'N':
-			Nflag++;
-			break;
-		default:
-			printf("%s: unknown flag\n", &argv[0][1]);
-			argc = 1;	/* force usage message */
-			break;
-		}
-		argc--, argv++;
-	}
 	time(&utime);
-	if (argc < 2) {
-		printf("usage: mkfs -N special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]\n");
-		exit(1);
-	}
-	fsys = argv[0];
-	fssize = atoi(argv[1]);
-	if (!Nflag) {
-		fso = creat(fsys, 0666);
-		if(fso < 0) {
-			printf("%s: cannot create\n", fsys);
-			exit(1);
-		}
-	}
-	fsi = open(fsys, 0);
-	if(fsi < 0) {
-		printf("%s: cannot open\n", fsys);
-		exit(1);
-	}
-#else
-	{
-		static char protos[60];
-		char fsbuf[100];
-
-		printf("file sys size: ");
-		gets(protos);
-		fssize = atoi(protos);
-		do {
-			printf("file system: ");
-			gets(fsbuf);
-			fso = open(fsbuf, 1);
-			fsi = open(fsbuf, 0);
-		} while (fso < 0 || fsi < 0);
-	}
-	argc = 0;
 #endif
+	fsi = fi;
+	fso = fo;
 	/*
 	 * Validate the given file system size.
 	 * Verify that its last block can actually be accessed.
 	 */
 	if (fssize <= 0)
 		printf("preposterous size %d\n", fssize), exit(1);
-	wtfs(fssize - 1, DEV_BSIZE, (char *)&sblock);
+	wtfs(fssize - 1, sectorsize, (char *)&sblock);
 	/*
 	 * collect and verify the sector and track info
 	 */
-	if (argc > 2)
-		sblock.fs_nsect = atoi(argv[2]);
-	else
-		sblock.fs_nsect = DFLNSECT;
-	if (argc > 3)
-		sblock.fs_ntrak = atoi(argv[3]);
-	else
-		sblock.fs_ntrak = DFLNTRAK;
+	sblock.fs_nsect = nsectors;
+	sblock.fs_ntrak = ntracks;
 	if (sblock.fs_ntrak <= 0)
 		printf("preposterous ntrak %d\n", sblock.fs_ntrak), exit(1);
 	if (sblock.fs_nsect <= 0)
 		printf("preposterous nsect %d\n", sblock.fs_nsect), exit(1);
-	sblock.fs_spc = sblock.fs_ntrak * sblock.fs_nsect;
+	sblock.fs_spc = secpercyl;
 	/*
 	 * collect and verify the block and fragment sizes
 	 */
-	if (argc > 4)
-		sblock.fs_bsize = atoi(argv[4]);
-	else
-		sblock.fs_bsize = DESBLKSIZE;
-	if (argc > 5)
-		sblock.fs_fsize = atoi(argv[5]);
-	else
-		sblock.fs_fsize = DESFRAGSIZE;
+	sblock.fs_bsize = bsize;
+	sblock.fs_fsize = fsize;
 	if (!POWEROF2(sblock.fs_bsize)) {
 		printf("block size must be a power of 2, not %d\n",
 		    sblock.fs_bsize);
@@ -230,9 +116,9 @@ main(argc, argv)
 		    sblock.fs_fsize);
 		exit(1);
 	}
-	if (sblock.fs_fsize < DEV_BSIZE) {
+	if (sblock.fs_fsize < sectorsize) {
 		printf("fragment size %d is too small, minimum is %d\n",
-		    sblock.fs_fsize, DEV_BSIZE);
+		    sblock.fs_fsize, sectorsize);
 		exit(1);
 	}
 	if (sblock.fs_bsize < MINBSIZE) {
@@ -262,8 +148,8 @@ main(argc, argv)
 	}
 	sblock.fs_nindir = sblock.fs_bsize / sizeof(daddr_t);
 	sblock.fs_inopb = sblock.fs_bsize / sizeof(struct dinode);
-	sblock.fs_nspf = sblock.fs_fsize / DEV_BSIZE;
-	for (sblock.fs_fsbtodb = 0, i = sblock.fs_nspf; i > 1; i >>= 1)
+	sblock.fs_nspf = sblock.fs_fsize / sectorsize;
+	for (sblock.fs_fsbtodb = 0, i = NSPF(&sblock); i > 1; i >>= 1)
 		sblock.fs_fsbtodb++;
 	sblock.fs_sblkno =
 	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag);
@@ -271,8 +157,7 @@ main(argc, argv)
 	    roundup(howmany(SBSIZE, sblock.fs_fsize), sblock.fs_frag));
 	sblock.fs_iblkno = sblock.fs_cblkno + sblock.fs_frag;
 	sblock.fs_cgoffset = roundup(
-	    howmany(sblock.fs_nsect, sblock.fs_fsize / DEV_BSIZE),
-	    sblock.fs_frag);
+	    howmany(sblock.fs_nsect, NSPF(&sblock)), sblock.fs_frag);
 	for (sblock.fs_cgmask = 0xffffffff, i = sblock.fs_ntrak; i > 1; i >>= 1)
 		sblock.fs_cgmask <<= 1;
 	if (!POWEROF2(sblock.fs_ntrak))
@@ -290,31 +175,27 @@ main(argc, argv)
 	/* 
 	 * collect and verify the number of cylinders per group
 	 */
-	if (argc > 6) {
-		sblock.fs_cpg = atoi(argv[6]);
+	sblock.fs_cpg = cpg;
+	if (sblock.fs_cpg % sblock.fs_cpc != 0) {
+		sblock.fs_cpg -= sblock.fs_cpg % sblock.fs_cpc;
+		printf("%s groups must have a multiple of %d cylinders\n",
+			"Warning: cylinder", sblock.fs_cpc);
+	}
+	sblock.fs_fpg = (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
+	while (sblock.fs_fpg / sblock.fs_frag > MAXBPG(&sblock) &&
+	    sblock.fs_cpg > sblock.fs_cpc) {
+		sblock.fs_cpg -= sblock.fs_cpc;
 		sblock.fs_fpg = (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
-	} else {
-		sblock.fs_cpg = MAX(sblock.fs_cpc, DESCPG);
-		sblock.fs_fpg = (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
-		while (sblock.fs_fpg / sblock.fs_frag > MAXBPG(&sblock) &&
-		    sblock.fs_cpg > sblock.fs_cpc) {
-			sblock.fs_cpg -= sblock.fs_cpc;
-			sblock.fs_fpg =
-			    (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
-		}
 	}
 	if (sblock.fs_cpg < 1) {
 		printf("cylinder groups must have at least 1 cylinder\n");
 		exit(1);
-	}
-	if (sblock.fs_cpg > MAXCPG) {
+	} else if (sblock.fs_cpg > MAXCPG) {
 		printf("cylinder groups are limited to %d cylinders\n", MAXCPG);
 		exit(1);
-	}
-	if (sblock.fs_cpg % sblock.fs_cpc != 0) {
-		printf("cylinder groups must have a multiple of %d cylinders\n",
-		    sblock.fs_cpc);
-		exit(1);
+	} else if (sblock.fs_cpg < cpg) {
+		printf("%s: block size restricts cylinders per group to %d\n",
+			"Warning", sblock.fs_cpg);
 	}
 	/*
 	 * Now have size for file system and nsect and ntrak.
@@ -411,22 +292,14 @@ next:
 	}
 	/*
 	 * Compute number of inode blocks per cylinder group.
-	 * Start with one inode per NBPI bytes; adjust as necessary.
+	 * Start with one inode per density bytes; adjust as necessary.
 	 */
-	inos = MAX(NBPI, sblock.fs_fsize);
-	if (argc > 9) {
-		i = atoi(argv[9]);
-		if (i <= 0)
-			printf("%s: bogus nbpi reset to %d\n", argv[9], inos);
-		else
-			inos = i;
-	}
 	i = sblock.fs_iblkno + MAXIPG / INOPF(&sblock);
-	inos = (fssize - sblock.fs_ncg * i) * sblock.fs_fsize / inos /
+	density = (fssize - sblock.fs_ncg * i) * sblock.fs_fsize / density /
 	    INOPB(&sblock);
-	if (inos <= 0)
-		inos = 1;
-	sblock.fs_ipg = ((inos / sblock.fs_ncg) + 1) * INOPB(&sblock);
+	if (density <= 0)
+		density = 1;
+	sblock.fs_ipg = ((density / sblock.fs_ncg) + 1) * INOPB(&sblock);
 	if (sblock.fs_ipg > MAXIPG)
 		sblock.fs_ipg = MAXIPG;
 	sblock.fs_dblkno = sblock.fs_iblkno + sblock.fs_ipg / INOPF(&sblock);
@@ -473,34 +346,12 @@ next:
 	sblock.fs_sbsize = fragroundup(&sblock, i);
 	fscs = (struct csum *)calloc(1, sblock.fs_cssize);
 	sblock.fs_magic = FS_MAGIC;
-	sblock.fs_rotdelay = ROTDELAY;
-	if (argc > 7) {
-		sblock.fs_minfree = atoi(argv[7]);
-		if (sblock.fs_minfree < 0 || sblock.fs_minfree > 99) {
-			printf("%s: bogus minfree reset to %d%%\n", argv[7],
-				MINFREE);
-			sblock.fs_minfree = MINFREE;
-		}
-	} else
-		sblock.fs_minfree = MINFREE;
-	sblock.fs_maxcontig = MAXCONTIG;
+	sblock.fs_rotdelay = rotdelay;
+	sblock.fs_minfree = minfree;
+	sblock.fs_maxcontig = maxcontig;
 	sblock.fs_maxbpg = MAXBLKPG(&sblock);
-	if (argc > 8)
-		sblock.fs_rps = atoi(argv[8]);
-	else
-		sblock.fs_rps = DEFHZ;
-	if (argc > 10)
-		if (*argv[10] == 's')
-			sblock.fs_optim = FS_OPTSPACE;
-		else if (*argv[10] == 't')
-			sblock.fs_optim = FS_OPTTIME;
-		else {
-			printf("%s: bogus optimization preference %s\n",
-				argv[10], "reset to time");
-			sblock.fs_optim = FS_OPTTIME;
-		}
-	else
-		sblock.fs_optim = DEFAULTOPT;
+	sblock.fs_rps = rpm / 60;
+	sblock.fs_optim = opt;
 	sblock.fs_cgrotor = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
 	sblock.fs_cstotal.cs_nbfree = 0;
@@ -550,9 +401,14 @@ next:
 	for (cylno = 0; cylno < sblock.fs_ncg; cylno++)
 		wtfs(fsbtodb(&sblock, cgsblock(&sblock, cylno)),
 		    SBSIZE, (char *)&sblock);
-#ifndef STANDALONE
-	exit(0);
-#endif
+	/*
+	 * Update information about this partion in pack
+	 * label, to that it may be updated on disk.
+	 */
+	pp->p_fstype = FS_BSDFFS;
+	pp->p_fsize = sblock.fs_fsize;
+	pp->p_frag = sblock.fs_frag;
+	pp->p_cpg = sblock.fs_cpg;
 }
 
 /*
@@ -676,17 +532,27 @@ initcg(cylno)
  * initialize the file system
  */
 struct inode node;
+
+#ifdef LOSTDIR
 #define PREDEFDIR 3
+#else
+#define PREDEFDIR 2
+#endif
+
 struct direct root_dir[] = {
 	{ ROOTINO, sizeof(struct direct), 1, "." },
 	{ ROOTINO, sizeof(struct direct), 2, ".." },
+#ifdef LOSTDIR
 	{ LOSTFOUNDINO, sizeof(struct direct), 10, "lost+found" },
+#endif
 };
+#ifdef LOSTDIR
 struct direct lost_found_dir[] = {
 	{ LOSTFOUNDINO, sizeof(struct direct), 1, "." },
 	{ ROOTINO, sizeof(struct direct), 2, ".." },
 	{ 0, DIRBLKSIZ, 0, 0 },
 };
+#endif
 char buf[MAXBSIZE];
 
 fsinit()
@@ -699,6 +565,7 @@ fsinit()
 	node.i_atime = utime;
 	node.i_mtime = utime;
 	node.i_ctime = utime;
+#ifdef LOSTDIR
 	/*
 	 * create the lost+found directory
 	 */
@@ -713,6 +580,7 @@ fsinit()
 	node.i_blocks = btodb(fragroundup(&sblock, node.i_size));
 	wtfs(fsbtodb(&sblock, node.i_db[0]), node.i_size, buf);
 	iput(&node);
+#endif
 	/*
 	 * create the root directory
 	 */
@@ -845,7 +713,7 @@ rdfs(bno, size, bf)
 {
 	int n;
 
-	if (lseek(fsi, bno * DEV_BSIZE, 0) < 0) {
+	if (lseek(fsi, bno * sectorsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("rdfs");
 		exit(1);
@@ -870,7 +738,7 @@ wtfs(bno, size, bf)
 
 	if (Nflag)
 		return;
-	if (lseek(fso, bno * DEV_BSIZE, 0) < 0) {
+	if (lseek(fso, bno * sectorsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("wtfs");
 		exit(1);
