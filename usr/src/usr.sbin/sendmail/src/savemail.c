@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -157,7 +157,7 @@ savemail(e)
 				break;
 			}
 
-			expand("\001n", buf, &buf[sizeof buf - 1], e);
+			expand("\201n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
 			if (e->e_xfp != NULL)
@@ -263,7 +263,7 @@ savemail(e)
 
 				/* we have a home directory; open dead.letter */
 				define('z', p, e);
-				expand("\001z/dead.letter", buf, &buf[sizeof buf - 1], e);
+				expand("\201z/dead.letter", buf, &buf[sizeof buf - 1], e);
 				Verbose = TRUE;
 				message(Arpa_Info, "Saving message in %s", buf);
 				Verbose = oldverb;
@@ -377,10 +377,10 @@ returntosender(msg, returnq, sendbody, e)
 	}
 
 	SendBody = sendbody;
-	define('g', "\001f", e);
-	define('<', "\001f", e);
+	define('g', "\201f", e);
+	define('<', "\201f", e);
 	ee = newenvelope(&errenvelope);
-	define('a', "\001b", ee);
+	define('a', "\201b", ee);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
 	ee->e_flags |= EF_RESPONSE;
@@ -404,7 +404,7 @@ returntosender(msg, returnq, sendbody, e)
 	addheader("subject", buf, ee);
 
 	/* fake up an address header for the from person */
-	expand("\001n", buf, &buf[sizeof buf - 1], e);
+	expand("\201n", buf, &buf[sizeof buf - 1], e);
 	ee->e_sender = ee->e_returnpath = newstr(buf);
 	if (parseaddr(buf, &ee->e_from, -1, '\0', e) == NULL)
 	{
@@ -417,7 +417,7 @@ returntosender(msg, returnq, sendbody, e)
 
 	/* push state into submessage */
 	CurEnv = ee;
-	define('f', "\001n", ee);
+	define('f', "\201n", ee);
 	define('x', "Mail Delivery Subsystem", ee);
 	eatheader(ee, FALSE);
 

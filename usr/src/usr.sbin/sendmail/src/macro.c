@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -67,7 +67,7 @@ expand(s, buf, buflim, e)
 
 		q = NULL;
 		c = *s;
-		switch (c)
+		switch (c & 0377)
 		{
 		  case CONDIF:		/* see if var set */
 			c = *++s;
@@ -89,7 +89,7 @@ expand(s, buf, buflim, e)
 				iflev--;
 			continue;
 
-		  case '\001':		/* macro interpolation */
+		  case MACROEXPAND:	/* macro interpolation */
 			c = *++s;
 			q = macvalue(c & 0177, e);
 			if (q == NULL)
@@ -110,7 +110,8 @@ expand(s, buf, buflim, e)
 			/* copy to end of q or max space remaining in buf */
 			while ((c = *q++) != '\0' && xp < &xbuf[sizeof xbuf - 1])
 			{
-				if (iscntrl(c) && !isspace(c))
+				/* check for any sendmail metacharacters */
+				if ((c & 0340) == 0200)
 					recurse = TRUE;
 				*xp++ = c;
 			}

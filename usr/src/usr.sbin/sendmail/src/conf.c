@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -268,7 +268,7 @@ host_map_init(map, mapname, args)
 
 	for (;;)
 	{
-		while (isspace(*p))
+		while (isascii(*p) && isspace(*p))
 			p++;
 		if (*p != '-')
 			break;
@@ -278,7 +278,7 @@ host_map_init(map, mapname, args)
 			map->map_app = ++p;
 			break;
 		}
-		while (*p != '\0' && !isspace(*p))
+		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
 		if (*p != '\0')
 			*p++ = '\0';

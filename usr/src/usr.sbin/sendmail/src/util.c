@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -82,13 +82,13 @@ capitalize(s)
 
 	for (;;)
 	{
-		while (!isalpha(*s) && *s != '\0')
+		while (!(isascii(*s) && isalpha(*s)) && *s != '\0')
 			*p++ = *s++;
 		if (*s == '\0')
 			break;
 		*p++ = toupper(*s);
 		s++;
-		while (isalpha(*s))
+		while (isascii(*s) && isalpha(*s))
 			*p++ = *s++;
 	}
 
@@ -212,7 +212,7 @@ char
 lower(c)
 	register char c;
 {
-	return(isascii(c) && isupper(c) ? tolower(c) : c);
+	return((isascii(c) && isupper(c)) ? tolower(c) : c);
 }
 /*
 **  XPUTS -- put string doing control escapes.
@@ -230,7 +230,7 @@ lower(c)
 xputs(s)
 	register char *s;
 {
-	register char c;
+	register int c;
 	register struct metamac *mp;
 	extern struct metamac MetaMacros[];
 
@@ -239,10 +239,25 @@ xputs(s)
 		printf("<null>");
 		return;
 	}
-	while ((c = *s++) != '\0')
+	while ((c = (*s++ & 0377)) != '\0')
 	{
 		if (!isascii(c))
 		{
+			if (c == MATCHREPL || c == MACROEXPAND)
+			{
+				putchar('$');
+				continue;
+			}
+			for (mp = MetaMacros; mp->metaname != '\0'; mp++)
+			{
+				if ((mp->metaval & 0377) == c)
+				{
+					printf("$%c", mp->metaname);
+					break;
+				}
+			}
+			if (mp->metaname != '\0')
+				continue;
 			(void) putchar('\\');
 			c &= 0177;
 		}
@@ -250,20 +265,6 @@ xputs(s)
 		{
 			putchar(c);
 			continue;
-		}
-		if (c == MATCHREPL || c == '\001')
-		{
-			putchar('$');
-			continue;
-		}
-		for (mp = MetaMacros; mp->metaname != '\0'; mp++)
-		{
-			if (mp->metaval == c)
-			{
-				printf("$%c", mp->metaname);
-				c = '\0';
-				break;
-			}
 		}
 
 		/* wasn't a meta-macro -- find another way to print it */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -64,7 +64,7 @@ char	*DelimChar;		/* set to point to the delimiter */
 */
 
 /* following delimiters are inherent to the internal algorithms */
-# define DELIMCHARS	"\001()<>,;\\\"\r\n"	/* word delimiters */
+# define DELIMCHARS	"\201()<>,;\\\"\r\n"	/* word delimiters */
 
 ADDRESS *
 parseaddr(addr, a, copyf, delim, e)
@@ -128,7 +128,7 @@ parseaddr(addr, a, copyf, delim, e)
 	**  See if we resolved to a real mailer.
 	*/
 
-	if (pvp[0][0] != CANONNET)
+	if ((pvp[0][0] & 0377) != CANONNET)
 	{
 		setstat(EX_USAGE);
 		usrerr("cannot resolve name");
@@ -179,8 +179,7 @@ invalidaddr(addr)
 {
 	for (; *addr != '\0'; addr++)
 	{
-		if (!isascii((int) *addr & 0377) ||
-		    !iscntrl(*addr) || isspace(*addr))
+		if ((*addr & 0340) != 0200)
 			continue;
 		setstat(EX_USAGE);
 		usrerr("Address contained invalid control characters");
@@ -508,7 +507,7 @@ prescan(addr, delim, pvpbuf)
 				}
 				anglecnt--;
 			}
-			else if (delim == ' ' && isspace(c))
+			else if (delim == ' ' && isascii(c) && isspace(c))
 				c = ' ';
 			else if (c == ':' && !CurEnv->e_oldstyle)
 			{
@@ -587,7 +586,7 @@ prescan(addr, delim, pvpbuf)
 
 static int
 toktype(c)
-	register char c;
+	register int c;
 {
 	static char buf[50];
 	static bool firstime = TRUE;
@@ -595,9 +594,10 @@ toktype(c)
 	if (firstime)
 	{
 		firstime = FALSE;
-		expand("\001o", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\201o", buf, &buf[sizeof buf - 1], CurEnv);
 		(void) strcat(buf, DELIMCHARS);
 	}
+	c &= 0377;
 	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS)
 		return (ONE);
 #ifdef MACVALUE
@@ -606,11 +606,13 @@ toktype(c)
 #endif /* MACVALUE */
 	if (c == '"')
 		return (QST);
+	if ((c & 0340) == 0200)
+		return (OPR);
 	if (!isascii(c))
 		return (ATM);
 	if (isspace(c) || c == ')')
 		return (SPC);
-	if (iscntrl(c) || strchr(buf, c) != NULL)
+	if (strchr(buf, c) != NULL)
 		return (OPR);
 	return (ATM);
 }
@@ -1113,18 +1115,18 @@ backup:
 		}
 
 		rp = *rvp;
-		if (*rp == CANONUSER)
+		if ((*rp & 0377) == CANONUSER)
 		{
 			rvp++;
 			rwr = rwr->r_next;
 			nmatches = 0;
 		}
-		else if (*rp == CANONHOST)
+		else if ((*rp & 0377) == CANONHOST)
 		{
 			rvp++;
 			rwr = NULL;
 		}
-		else if (*rp == CANONNET)
+		else if ((*rp & 0377) == CANONNET)
 			rwr = NULL;
 
 		/* substitute */
@@ -1220,7 +1222,8 @@ backup:
 			char begintype;
 			char db = '\0';
 
-			if (**rvp != HOSTBEGIN && **rvp != LOOKUPBEGIN)
+			if ((**rvp & 0377) != HOSTBEGIN &&
+			    (**rvp & 0377) != LOOKUPBEGIN)
 				continue;
 
 			/*
@@ -1232,7 +1235,7 @@ backup:
 			begintype = **rvp;
 			hbrvp = rvp;
 			ubrvp = NULL;
-			if (**rvp == HOSTBEGIN)
+			if ((**rvp & 0377) == HOSTBEGIN)
 			{
 				endtoken = HOSTEND;
 				mapname = "host";
@@ -1252,9 +1255,9 @@ backup:
 			arg_rvp = argvect;
 			xpvp = NULL;
 			replac = pvpbuf;
-			while (*rvp != NULL && **rvp != endtoken)
+			while (*rvp != NULL && (**rvp & 0377) != endtoken)
 			{
-				int nodetype = **rvp;
+				int nodetype = **rvp & 0377;
 
 				if (nodetype != CANONHOST && nodetype != CANONUSER)
 				{
@@ -1486,11 +1489,11 @@ buildaddr(tv, a)
 	tv++;
 	if (!strcasecmp(*tv, "error"))
 	{
-		if (**++tv == CANONHOST)
+		if ((**++tv & 0377) == CANONHOST)
 		{
 			register struct errcodes *ep;
 
-			if (isdigit(**++tv))
+			if (isascii(**++tv) && isdigit(**tv))
 			{
 				setstat(atoi(*tv));
 			}
@@ -1510,7 +1513,7 @@ buildaddr(tv, a)
 				(void) strcat(buf, " ");
 			(void) strcat(buf, *tv);
 		}
-		if (**tv != CANONUSER)
+		if ((**tv & 0377) != CANONUSER)
 			syserr("buildaddr: error: no user");
 		while (*++tv != NULL)
 		{
@@ -1581,7 +1584,7 @@ buildaddr(tv, a)
 	}
 
 	/* figure out the user */
-	if (*tv == NULL || **tv != CANONUSER)
+	if (*tv == NULL || (**tv & 0377) != CANONUSER)
 	{
 		syserr("buildaddr: no user");
 		return (NULL);
@@ -1839,7 +1842,7 @@ remotename(name, m, senderaddress, header, canonical, e)
 	*/
 
 	if (canonical || bitnset(M_NOCOMMENT, m->m_flags))
-		fancy = "\001g";
+		fancy = "\201g";
 	else
 		fancy = crackaddr(name);
 
@@ -2010,7 +2013,7 @@ maplocaluser(a, sendq, e)
 		return;
 
 	rewrite(pvp, 5);
-	if (pvp[0] == NULL || pvp[0][0] != CANONNET)
+	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 		return;
 
 	/* if non-null, mailer destination specified -- has it changed? */

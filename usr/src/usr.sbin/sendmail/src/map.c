@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -100,7 +100,7 @@ dbm_map_lookup(map, buf, bufsiz, av)
 		register char *p;
 
 		for (p = buf; *p != '\0'; p++)
-			if (isupper(*p))
+			if (isascii(*p) && isupper(*p))
 				*p = tolower(*p);
 	}
 	if (bitset(MF_INCLNULL, map->map_flags))
@@ -241,7 +241,7 @@ db_map_lookup(map, buf, bufsiz, av)
 		register char *p;
 
 		for (p = buf; *p != '\0'; p++)
-			if (isupper(*p))
+			if (isascii(*p) && isupper(*p))
 				*p = tolower(*p);
 	}
 	if (bitset(MF_INCLNULL, map->map_flags))
@@ -278,7 +278,7 @@ map_parseargs(map, pp)
 
 	for (;;)
 	{
-		while (isspace(*p))
+		while (isascii(*p) && isspace(*p))
 			p++;
 		if (*p != '-')
 			break;
@@ -308,7 +308,7 @@ map_parseargs(map, pp)
 			map->map_domain = ++p;
 			break;
 		}
-		while (*p != '\0' && !isspace(*p))
+		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
 		if (*p != '\0')
 			*p++ = 0;
@@ -321,7 +321,7 @@ map_parseargs(map, pp)
 	if (*p == '\0')
 		return NULL;
 	map->map_file = p;
-	while (*p != '\0' && !isspace(*p))
+	while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 		p++;
 	if (*p != '\0')
 		*p++ = '\0';
@@ -408,7 +408,7 @@ nis_map_lookup(map, buf, bufsiz, av)
 		register char *p;
 
 		for (p = buf; *p != '\0'; p++)
-			if (isupper(*p))
+			if (isascii(*p) && isupper(*p))
 				*p = tolower(*p);
 	}
 	if (yp_match(map->map_domain, map->map_file, buf, strlen(buf) + 1,
@@ -472,7 +472,7 @@ map_rewrite(s, slen, buf, buflen, av)
 			c = '%';
 		if (c == '%')
 			goto pushc;
-		if (!isdigit(c))
+		if (!(isascii(c) && isdigit(c)))
 		{
 			*bp++ = '%';
 			goto pushc;

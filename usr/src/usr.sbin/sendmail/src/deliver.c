@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -170,10 +170,17 @@ deliver(e, firstto)
 
 	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
-		while ((p = strchr(p, '\001')) != NULL)
-			if (*++p == 'u')
-				break;
-		if (p != NULL)
+		/* can't use strchr here because of sign extension problems */
+		while (*p != '\0')
+		{
+			if ((*p++ & 0377) == MACROEXPAND)
+			{
+				if (*p == 'u')
+					break;
+			}
+		}
+
+		if (*p != '\0')
 			break;
 
 		/* this entry is safe -- go ahead and process it */
@@ -1185,7 +1192,7 @@ putfromline(fp, m, e)
 	register MAILER *m;
 	ENVELOPE *e;
 {
-	char *template = "\001l\n";
+	char *template = "\201l\n";
 	char buf[MAXLINE];
 	extern char SentDate[];
 
@@ -1198,14 +1205,14 @@ putfromline(fp, m, e)
 		char *bang;
 		char xbuf[MAXLINE];
 
-		expand("\001<", buf, &buf[sizeof buf - 1], e);
+		expand("\201<", buf, &buf[sizeof buf - 1], e);
 		bang = strchr(buf, '!');
 		if (bang == NULL)
 			syserr("No ! in UUCP! (%s)", buf);
 		else
 		{
 			*bang++ = '\0';
-			(void) sprintf(xbuf, "From %s  \001d remote from %s\n", bang, buf);
+			(void) sprintf(xbuf, "From %s  \201d remote from %s\n", bang, buf);
 			template = xbuf;
 		}
 	}
@@ -1765,7 +1772,7 @@ hostsignature(m, host, e)
 
 #ifdef NAMED_BIND
 	if (myhostbuf[0] == '\0')
-		expand("\001j", myhostbuf, &myhostbuf[sizeof myhostbuf - 1], e);
+		expand("\201j", myhostbuf, &myhostbuf[sizeof myhostbuf - 1], e);
 
 	nmx = getmxrr(host, mxhosts, myhostbuf, &rcode);
 	if (nmx <= 0)

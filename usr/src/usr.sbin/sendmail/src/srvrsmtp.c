@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.7 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.8 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.7 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.8 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -112,7 +112,7 @@ smtp(e)
 		RealHostName = MyHostName;
 	CurHostName = RealHostName;
 	setproctitle("srvrsmtp %s", CurHostName);
-	expand("\001e", inp, &inp[sizeof inp], e);
+	expand("\201e", inp, &inp[sizeof inp], e);
 	message("220", "%s", inp);
 	SmtpPhase = "startup";
 	sendinghost = NULL;
@@ -155,15 +155,17 @@ smtp(e)
 			fprintf(e->e_xfp, "<<< %s\n", inp);
 
 		/* break off command */
-		for (p = inp; isspace(*p); p++)
+		for (p = inp; isascii(*p) && isspace(*p); p++)
 			continue;
 		cmd = cmdbuf;
-		while (*p != '\0' && !isspace(*p) && cmd < &cmdbuf[sizeof cmdbuf - 2])
+		while (*p != '\0' &&
+		       !(isascii(*p) && isspace(*p)) &&
+		       cmd < &cmdbuf[sizeof cmdbuf - 2])
 			*cmd++ = *p++;
 		*cmd = '\0';
 
 		/* throw away leading whitespace */
-		while (isspace(*p))
+		while (isascii(*p) && isspace(*p))
 			p++;
 
 		/* decode command */
@@ -455,14 +457,14 @@ skipword(p, w)
 	register char *q;
 
 	/* find beginning of word */
-	while (isspace(*p))
+	while (isascii(*p) && isspace(*p))
 		p++;
 	q = p;
 
 	/* find end of word */
-	while (*p != '\0' && *p != ':' && !isspace(*p))
+	while (*p != '\0' && *p != ':' && !(isascii(*p) && isspace(*p)))
 		p++;
-	while (isspace(*p))
+	while (isascii(*p) && isspace(*p))
 		*p++ = '\0';
 	if (*p != ':')
 	{
@@ -472,7 +474,7 @@ skipword(p, w)
 		return (NULL);
 	}
 	*p++ = '\0';
-	while (isspace(*p))
+	while (isascii(*p) && isspace(*p))
 		p++;
 
 	/* see if the input word matches desired word */

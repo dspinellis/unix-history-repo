@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -408,7 +408,8 @@ eatfrom(fm, e)
 			p++;
 		while (*p == ' ')
 			p++;
-		if (!isupper(*p) || p[3] != ' ' || p[13] != ':' || p[16] != ':')
+		if (!(isascii(*p) && isupper(*p)) ||
+		    p[3] != ' ' || p[13] != ':' || p[16] != ':')
 			continue;
 
 		/* we have a possible date */
