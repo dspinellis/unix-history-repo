@@ -1,0 +1,70 @@
+	.globl	_vsyscall
+_vsyscall:
+	.word	0x0000
+	movl	4(ap),r0		# point at arg array
+	movl	(r0)+,r1		# syscall number
+	cmpl	r1,$50			# legal syscall?
+	bgequ	error+2			# yes: error return
+	movl	$10,r2
+Loop:
+	pushl	(r0)[r2]		# push argument
+	sobgeq	r2,Loop			# push 10 arguments
+	movl	dispatch[r1],r1		# get dispatch address
+	calls	$10,(r1)		# do it
+	ret
+
+error:	.word	0			# dummy system call (returns error)
+	mnegl	$1,r0
+	ret
+
+dispatch:
+	.long	error			# 0  indir (error)
+	.long	exit			# 1  exit
+	.long	fork			# 2  fork
+	.long	read			# 3  read
+	.long	write			# 4  write
+	.long	open
+	.long	close
+	.long	wait
+	.long	creat
+	.long	link
+	.long	unlink
+	.long	execve
+	.long	chdir
+	.long	time
+	.long	error			# 14 mknod
+	.long	error			# 15 chmod
+	.long	error			# 16 chown
+	.long	sbrk
+	.long	stat
+	.long	lseek
+	.long	getpid
+	.long	error			# 21 mount
+	.long	error			# 22 umount
+	.long	error			# 23 setuid
+	.long	getuid
+	.long	error			# 25 stime
+	.long	error			# 26 ptrace
+	.long	error			# 27 alarm
+	.long	fstat
+	.long	error			# 29 pause
+	.long	error			# 30 utime
+	.long	stty			# 31 stty
+	.long	gtty
+	.long	access
+	.long	error			# 34 nice
+	.long	ftime
+	.long	error			# 36 sync
+	.long	error			# 37 kill
+	.long	error			# 38 switch
+	.long	error			# 39 setpgrp
+	.long	error			# 40 tell
+	.long	dup			# 41 dup
+	.long	pipe
+	.long	times
+	.long	error			# 44 prof
+	.long	error			# 45 tiu
+	.long	error			# 46 setgid
+	.long	signal			# 47 signal
+	.long	error			# 48 ioctl
+	.long	error			# 49
