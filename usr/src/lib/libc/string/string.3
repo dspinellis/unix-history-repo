@@ -2,14 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)string.3	4.1 (Berkeley) %G%
+.\"	@(#)string.3	5.1 (Berkeley) %G%
 .\"
-.TH STRING 3 
+.TH STRING 3  "19 January 1983"
 .UC 4
 .SH NAME
 strcat, strncat, strcmp, strncmp, strcpy, strncpy, strlen, index, rindex \- string operations
 .SH SYNOPSIS
 .nf
+.B #include <strings.h>
+.PP
 .B char *strcat(s1, s2)
 .B char *s1, *s2;
 .PP
@@ -49,16 +51,13 @@ to the end of string
 .I Strncat
 copies at most
 .I n
-characters.
-Both return a pointer to the null-terminated result.
+characters.  Both return a pointer to the null-terminated result.
 .PP
 .I Strcmp
 compares its arguments and returns an integer
-greater than, equal to, or less than 0,
-according as
+greater than, equal to, or less than 0, according as
 .I s1
-is lexicographically greater than, equal to, or
-less than
+is lexicographically greater than, equal to, or less than
 .IR s2 .
 .I Strncmp
 makes the same comparison but looks at at most
@@ -74,16 +73,13 @@ stopping after the null character has been moved.
 .I Strncpy
 copies exactly
 .I n
-characters,
-truncating or null-padding
+characters, truncating or null-padding
 .I s2;
-the target may not be null-terminated if the length
-of
+the target may not be null-terminated if the length of
 .I s2
 is
 .I n
-or more.
-Both return
+or more.  Both return
 .IR s1 .
 .PP
 .I Strlen
@@ -92,15 +88,10 @@ returns the number of non-null characters in
 .PP
 .I Index
 .RI ( rindex )
-returns a pointer to the first (last)
-occurrence of character 
+returns a pointer to the first (last) occurrence of character 
 .I c
 in string
 .I s,
 or zero if
 .I c
 does not occur in  the string.
-.SH BUGS
-.I Strcmp 
-uses native character comparison, which is signed
-on PDP11's and VAX-11's, unsigned on other machines.
